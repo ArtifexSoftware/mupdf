@@ -144,11 +144,17 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	fz_obj *obj;
 	pdf_page *page;
 	fz_obj *rdb;
+	pdf_comment *comments = nil;
+	pdf_link *links = nil;
 	fz_tree *tree;
 	fz_rect bbox;
 	int rotate;
 
 	pdf_logpage("load page {\n");
+
+	/*
+	 * Sort out page media
+	 */
 
 	obj = fz_dictgets(dict, "CropBox");
 	if (!obj)
@@ -169,6 +175,22 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	pdf_logpage("rotate %d\n", rotate);
 
 	/*
+	 * Load annotations
+ 	 */
+
+	obj = fz_dictgets(dict, "Annots");
+	if (obj)
+	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return error;
+		error = pdf_loadannots(&comments, &links, xref, obj);
+		fz_dropobj(obj);
+		if (error)
+			return error;
+	}
+
+	/*
 	 * Load resources
 	 */
 
@@ -176,10 +198,12 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	if (!obj)
 		return fz_throw("syntaxerror: Page missing Resources");
 	error = pdf_resolve(&obj, xref);
-	if (error) return error;
+	if (error)
+		return error;
 	error = pdf_loadresources(&rdb, xref, obj);
 	fz_dropobj(obj);
-	if (error) return error;
+	if (error)
+		return error;
 
 	/*
 	 * Interpret content stream to build display tree
@@ -219,6 +243,21 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page->resources = rdb;
 	page->tree = tree;
 
+	page->comments = comments;
+	page->links = links;
+	page->text = nil;
+
+	/*
+	 * Extract unicode text lines
+	 */
+
+	error = pdf_loadtextfromtree(&page->text, page->tree);
+	if (error)
+	{
+		pdf_droppage(page);
+		return error;
+	}
+
 	pdf_logpage("} %p\n", page);
 
 	return nil;
@@ -228,6 +267,14 @@ void
 pdf_droppage(pdf_page *page)
 {
 	pdf_logpage("drop page %p\n", page);
+/*
+	if (page->comments) 
+		pdf_dropcomment(page->comments);
+*/
+	if (page->links)
+		pdf_droplink(page->links);
+	if (page->text)
+		pdf_droptextline(page->text);
 	fz_dropobj(page->resources);
 	fz_droptree(page->tree);
 	fz_free(page);

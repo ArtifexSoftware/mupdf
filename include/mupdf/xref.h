@@ -2,8 +2,6 @@
  * xref and object / stream api
  */
 
-typedef struct pdf_store_s pdf_store;		/* parsed resource store */
-
 typedef struct pdf_xrefentry_s pdf_xrefentry;
 typedef struct pdf_xref_s pdf_xref;
 
@@ -20,7 +18,8 @@ struct pdf_xref_s
 	int cap;
 	pdf_xrefentry *table;
 
-	pdf_store *store;
+	struct pdf_nametree_s *dests;
+	struct pdf_store_s *store;
 };
 
 struct pdf_xrefentry_s

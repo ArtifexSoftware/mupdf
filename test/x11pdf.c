@@ -217,6 +217,10 @@ static void pdfopen(char *filename, char *password)
 
 	count = pdf_getpagecount(pages);
 
+	error = pdf_loadnametree(&xref->dests, xref, "Dests");
+	if (error)
+		fz_abort(error);
+
 	strlcpy(doctitle, filename, sizeof doctitle);
 	obj = fz_dictgets(xref->trailer, "Info");
 	if (fz_isindirect(obj))
@@ -253,6 +257,42 @@ static void dumptext()
 	pdf_droptextline(line);
 }
 
+static void drawlinks(void)
+{
+	pdf_link *link;
+	fz_matrix ctm;
+	fz_point a, b, c, d;
+	fz_rect r;
+
+	ctm = fz_identity();
+	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
+	ctm = fz_concat(ctm, fz_rotate(rotate + page->rotate));
+	ctm = fz_concat(ctm, fz_translate(-image->x, -image->y));
+
+	for (link = page->links; link; link = link->next)
+	{
+		r = link->rect;
+
+		a.x = r.min.x; a.y = r.min.y;
+		b.x = r.min.x; b.y = r.max.y;
+		c.x = r.max.x; c.y = r.max.y;
+		d.x = r.max.x; d.y = r.min.y;
+
+		a = fz_transformpoint(ctm, a);
+		b = fz_transformpoint(ctm, b);
+		c = fz_transformpoint(ctm, c);
+		d = fz_transformpoint(ctm, d);
+
+		XDrawLine(xdpy, xwin, xgc, a.x, a.y, b.x, b.y);
+		XDrawLine(xdpy, xwin, xgc, b.x, b.y, c.x, c.y);
+		XDrawLine(xdpy, xwin, xgc, c.x, c.y, d.x, d.y);
+		XDrawLine(xdpy, xwin, xgc, d.x, d.y, a.x, a.y);
+	}
+
+	XFlush(xdpy);
+}
+
 static void handlekey(int c)
 {
 	int oldpage = pageno;
@@ -271,6 +311,7 @@ static void handlekey(int c)
 	case 'a': rotate -= 5; break;
 	case 's': rotate += 5; break;
 	case 'x': dumptext(); break;
+	case 'o': drawlinks(); break;
 
 	case '\b':
 	case 'b':
@@ -343,6 +384,89 @@ static void handlekey(int c)
 		showpage();
 }
 
+static void handlemouse(float x, int y, int btn)
+{
+	pdf_link *link;
+	fz_matrix ctm;
+	fz_point p;
+	int oid, gen;
+	int i;
+
+	p.x = x + image->x;
+	p.y = y + image->y;
+
+	ctm = fz_identity();
+	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
+	ctm = fz_concat(ctm, fz_rotate(rotate + page->rotate));
+	ctm = fz_invertmatrix(ctm);
+
+	p = fz_transformpoint(ctm, p);
+
+	for (link = page->links; link; link = link->next)
+	{
+		if (p.x >= link->rect.min.x && p.x <= link->rect.max.x)
+			if (p.y >= link->rect.min.y && p.y <= link->rect.max.y)
+				break;
+	}
+
+	if (link)
+	{
+		XDefineCursor(xdpy, xwin, xchand);
+
+		if (btn)
+		{
+			if (link->uri)
+			{
+				char cmd[2048];
+				char buf[2048];
+
+				printf("goto uri: ");
+				fz_debugobj(link->uri);
+				printf("\n");
+
+				memcpy(buf, fz_tostringbuf(link->uri), fz_tostringlen(link->uri));
+				buf[fz_tostringlen(link->uri)] = 0;
+
+				if (getenv("BROWSER"))
+				{
+					sprintf(cmd, "%s %s &", getenv("BROWSER"), buf);
+					system(cmd);
+				}
+			}
+
+			if (link->page)
+			{
+				oid = fz_tonum(link->page);
+				gen = fz_togen(link->page);
+				printf("goto page: %d %d R\n", oid, gen);
+
+				for (i = 0; i < count; i++)
+				{
+					if (fz_tonum(pages->pref[i]) == oid)
+					{
+						if (histlen + 1 == 256)
+						{
+							memmove(hist, hist + 1, sizeof(int) * 255);
+							histlen --;
+						}
+						hist[histlen++] = pageno;
+						pageno = i + 1;
+						showpage();
+						return;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		XDefineCursor(xdpy, xwin, xcarrow);
+		if (btn)
+			printf("click empty\n");
+	}
+}
+
 int main(int argc, char **argv)
 {
 	char *filename;
@@ -399,6 +523,14 @@ int main(int argc, char **argv)
 			len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, 0);
 			if (len)
 				handlekey(buf[0]);
+			break;
+
+		case MotionNotify:
+			handlemouse(xevt.xbutton.x, xevt.xbutton.y, 0);
+			break;
+
+		case ButtonPress:
+			handlemouse(xevt.xbutton.x, xevt.xbutton.y, 1);
 			break;
 		}
 	}

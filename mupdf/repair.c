@@ -298,6 +298,8 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	if (error)
 		goto cleanup;
 
+	xref->dests = nil;
+
 	*xrefp = xref;
 	return nil;
 

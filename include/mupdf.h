@@ -18,5 +18,6 @@ void pdf_logpage(char *fmt, ...);
 #include "mupdf/xref.h"
 #include "mupdf/rsrc.h"
 #include "mupdf/content.h"
+#include "mupdf/annot.h"
 #include "mupdf/page.h"
 

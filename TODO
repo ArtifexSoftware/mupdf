@@ -1,5 +1,12 @@
 immediate plan:
 
+	+ refactor xref init
+	+ loadlowlevel
+	+ loadhighlevel
+		- load name trees 
+		- load page tree
+		- load outline
+
 	- altivec optimize
 	- design gui for editor
 	- go through spec and check all features!

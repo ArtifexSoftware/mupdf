@@ -178,6 +178,35 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 	error = pdf_loadindirect(&catalog, xref, ref);
 	if (error) goto cleanup;
 
+#if 1 // XXX XXX
+	names = fz_dictgets(catalog, "Names");
+	if (!names)
+	{
+		nt = *pnt = fz_malloc(sizeof(pdf_nametree));
+		if (!nt) { error = fz_outofmem; goto cleanup; }
+		nt->cap = 0;
+		nt->len = 0;
+		nt->items = 0;
+		return nil;
+	}
+
+	error = pdf_resolve(&names, xref);
+	if (error) goto cleanup;
+
+	root = fz_dictgets(names, key);
+	if (!root)
+	{
+		nt = *pnt = fz_malloc(sizeof(pdf_nametree));
+		if (!nt) { error = fz_outofmem; goto cleanup; }
+		nt->cap = 0;
+		nt->len = 0;
+		nt->items = 0;
+		return nil;
+	}
+	error = pdf_resolve(&root, xref);
+	if (error) goto cleanup;
+
+#else
 /*XXX create empty nametree instead of failing */
 	names = fz_dictgets(catalog, "Names");
 /*XXX never resolve something that can be null */
@@ -188,6 +217,7 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 /*XXX never resolve something that can be null */
 	error = pdf_resolve(&root, xref);
 	if (error) goto cleanup;
+#endif
 
 	nt = *pnt = fz_malloc(sizeof(pdf_nametree));
 	if (!nt) { error = fz_outofmem; goto cleanup; }

@@ -116,6 +116,7 @@ Library libmupdf :
 
 	mupdf/nametree.c
 	mupdf/outline.c
+	mupdf/annot.c
 	mupdf/pagetree.c
 
 	mupdf/store.c

@@ -51,6 +51,8 @@ struct pdf_page_s
 	fz_obj *resources;
 	fz_tree *tree;
 	pdf_textline *text;
+	pdf_comment *comments;
+	pdf_link *links;
 };
 
 struct pdf_textchar_s

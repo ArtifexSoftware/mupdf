@@ -2,6 +2,8 @@
  * Resource store
  */
 
+typedef struct pdf_store_s pdf_store;
+
 typedef enum pdf_itemkind_e
 {
 	PDF_KCOLORSPACE,
