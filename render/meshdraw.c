@@ -248,8 +248,8 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
 
 	for (i = 0; i < len; i++)
 	{
-		gel[i][0] = fz_floor(poly[i][0]) * 65536; /* trunc and fix */
-		gel[i][1] = fz_floor(poly[i][1]);	/* y is not fixpoint */
+		gel[i][0] = fz_floor(poly[i][0] + 0.5) * 65536; /* trunc and fix */
+		gel[i][1] = fz_floor(poly[i][1] + 0.5);	/* y is not fixpoint */
 		for (k = 2; k < n; k++)
 			gel[i][k] = poly[i][k] * 65536;	/* fix with precision */
 	}

@@ -128,6 +128,7 @@ Library libmupdf :
 	mupdf/image.c
 	mupdf/pattern.c
 	mupdf/shade.c
+	mupdf/shade1.c
 	mupdf/shade2.c
 	mupdf/shade3.c
 	mupdf/cmap.c

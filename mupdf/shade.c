@@ -13,8 +13,9 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	obj = fz_dictgets(shading, "Function");
 	if (obj)
 	{
-		t = t0 + (i / 256.0) * (t1 - t0);
-		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
+		shade->usefunction = 1;
+
+		error = pdf_loadfunction(&func, xref, obj);
 		if (error)
 			return error;
 
@@ -35,8 +36,16 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	return nil;
 }
 
+void
+pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
+{
+	mesh[i*3+0] = x;
+	mesh[i*3+1] = y;
+	mesh[i*3+2] = t;
+}
+
 static fz_error *
-loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_matrix mat)
+loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_matrix matrix)
 {
 	fz_error *error;
 	fz_shade *shade;
@@ -53,7 +62,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	shade->refs = 1;
 	shade->usebackground = 0;
 	shade->usefunction = 0;
-	shade->matrix = mat;
+	shade->matrix = matrix;
 
 	obj = fz_dictgets(dict, "ShadingType");
 	type = fz_toint(obj);
@@ -99,16 +108,16 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 
 	switch(type)
 	{
-//	case 1:
-//		error = pdf_loadtype1shade(shade, xref, dict, ref, mat);
-//		if (error) goto cleanup;
-//		break;
+	case 1:
+		error = pdf_loadtype1shade(shade, xref, dict, ref);
+		if (error) goto cleanup;
+		break;
 	case 2:
-		error = pdf_loadtype2shade(shade, xref, dict, ref, mat);
+		error = pdf_loadtype2shade(shade, xref, dict, ref);
 		if (error) goto cleanup;
 		break;
 	case 3:
-		error = pdf_loadtype3shade(shade, xref, dict, ref, mat);
+		error = pdf_loadtype3shade(shade, xref, dict, ref);
 		if (error) goto cleanup;
 		break;
 	default:
@@ -196,13 +205,5 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	}
 
 	return nil;
-}
-
-void
-pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
-{
-	mesh[i*3+0] = x;
-	mesh[i*3+1] = y;
-	mesh[i*3+2] = t;
 }
 

@@ -86,20 +86,15 @@ void pdf_droppattern(pdf_pattern *pat);
  * Shading
  */
 
-fz_error *
-pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
-				   fz_obj *ref, fz_matrix mat);
-fz_error *
-pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
-				   fz_obj *ref, fz_matrix mat);
-fz_error *
-pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
-				   fz_obj *ref, fz_matrix mat);
-
-fz_error *
-pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0, float t1);
-
 void pdf_setmeshvalue(float *mesh, int i, float x, float y, float t);
+fz_error *pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *dict, float t0, float t1);
+fz_error *pdf_loadtype1shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype2shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype3shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype4shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype5shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype6shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
+fz_error *pdf_loadtype7shade(fz_shade *, pdf_xref *, fz_obj *dict, fz_obj *ref);
 fz_error *pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 
 /*

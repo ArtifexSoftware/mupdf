@@ -1,20 +1,24 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+#define BIGNUM 32000
+
 fz_error *
-pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading, 
-					 fz_obj *ref, fz_matrix mat)
+pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_point p1, p2, p3, p4;
+	fz_point ep1, ep2, ep3, ep4;
 	float x0, y0, x1, y1;
 	float t0, t1;
 	int e0, e1;
 	fz_obj *obj;
-	pdf_function *func;
+	float theta;
+	float dist;
+	int n;
 
 	pdf_logshade("load type2 shade {\n");
 
-	obj = fz_dictgets(shading, "Coords");
+	obj = fz_dictgets(dict, "Coords");
 	x0 = fz_toreal(fz_arrayget(obj, 0));
 	y0 = fz_toreal(fz_arrayget(obj, 1));
 	x1 = fz_toreal(fz_arrayget(obj, 2));
@@ -22,7 +26,7 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 
 	pdf_logshade("coords %g %g %g %g\n", x0, y0, x1, y1);
 
-	obj = fz_dictgets(shading, "Domain");
+	obj = fz_dictgets(dict, "Domain");
 	if (obj) {
 		t0 = fz_toreal(fz_arrayget(obj, 0));
 		t1 = fz_toreal(fz_arrayget(obj, 1));
@@ -31,7 +35,7 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 		t1 = 1.;
 	}
 
-	obj = fz_dictgets(shading, "Extend");
+	obj = fz_dictgets(dict, "Extend");
 	if (obj) {
 		e0 = fz_tobool(fz_arrayget(obj, 0));
 		e1 = fz_tobool(fz_arrayget(obj, 1));
@@ -43,23 +47,19 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	pdf_logshade("domain %g %g\n", t0, t1);
 	pdf_logshade("extend %d %d\n", e0, e1);
 
-	pdf_loadshadefunction(shade, xref, shading, t0, t1);
+	pdf_loadshadefunction(shade, xref, dict, t0, t1);
 
-	shade->meshlen = 2 + e0 *2 + e1 * 2;
-	shade->mesh = (float*) malloc(sizeof(float) * 3*3 * shade->meshlen);
+	shade->meshlen = 2 + e0 * 2 + e1 * 2;
+	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
+	if (!shade->mesh)
+		return fz_outofmem;
 
-	float theta;
 	theta = atan2(y1 - y0, x1 - x0);
 	theta += M_PI / 2.0;
 
 	pdf_logshade("theta=%g\n", theta);
 
-	fz_point p1, p2, p3, p4;
-	fz_point ep1, ep2, ep3, ep4;
-	float dist;
 	dist = hypot(x1 - x0, y1 - y0);
-
-#define BIGNUM 1000
 
 	p1.x = x0 + BIGNUM * cos(theta);
 	p1.y = y0 + BIGNUM * sin(theta);
@@ -84,7 +84,7 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	pdf_logshade("p3 %g %g\n", p3.x, p3.y);
 	pdf_logshade("p4 %g %g\n", p4.x, p4.y);
 
-	int n = 0;
+	n = 0;
 
 	pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
 	pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
@@ -114,19 +114,5 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	pdf_logshade("}\n");
 
 	return nil;
-
-cleanup:
-	return error;
 }
 
-fz_error *
-pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
-				   fz_obj *ref, fz_matrix mat)
-{
-	fz_error *error;
-	fz_obj *obj;
-
-	pdf_buildt2shademesh(shade, xref, shading, ref, mat);
-
-	return nil;
-}

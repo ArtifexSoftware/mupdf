@@ -212,6 +212,12 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 			break;
 	}
 
+	if (rootoid == 0)
+	{
+		error = fz_throw("syntaxerror: could not find catalog");
+		goto cleanup;
+	}
+
 	error = fz_packobj(&xref->trailer,
 					"<< /Size %i /Root %r >>",
 					maxoid + 1, rootoid, rootgen);

@@ -87,7 +87,10 @@ static const featuretest features[] = {
 #endif
 
 #ifndef HAVE_CPUDEP
-static const featuretest features[] = {};
+static void dummy(void) {}
+static const featuretest features[1] = {
+	{ dummy, 0, "dummy" }
+};
 #endif
 
 #include <signal.h> /* signal/sigaction */
