@@ -67,6 +67,7 @@ fz_error *pdf_addtransform(pdf_gstate *gs, fz_node *transform);
 fz_error *pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
 fz_error *pdf_showtext(pdf_csi*, fz_obj *text);
 fz_error *pdf_flushtext(pdf_csi*);
+fz_error *pdf_showimage(pdf_csi*, pdf_image *img);
 
 /* interpret.c */
 fz_error *pdf_newcsi(pdf_csi **csip);

@@ -80,8 +80,6 @@ fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	gc->g = rgb[1] * 255;
 	gc->b = rgb[2] * 255;
 
-puts("render color");
-
 	error = fz_newpixmap(&gc->tmp, color->cs, gc->x, gc->y, gc->w, gc->h, 3, 1);
 	if (error)
 		return error;

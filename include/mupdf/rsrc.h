@@ -52,10 +52,10 @@ struct pdf_image_s
 	fz_image *mask;			/* explicit mask with subimage */
 	float decode[32];
 	int bpc;
-	unsigned char *data;
+	fz_buffer *data;
 };
 
-fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj);
+fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *stm);
 
 /*
  * CMap and Font

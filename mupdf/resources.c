@@ -122,7 +122,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 
 	else if (!strcmp(fz_toname(subtype), "Image"))
 	{
-		error = pdf_loadimage((pdf_image**)&rsrc->val, xref, obj);
+		error = pdf_loadimage((pdf_image**)&rsrc->val, xref, obj, ref);
 		fz_dropobj(obj);
 		if (error) {
 			fz_free(rsrc);

@@ -469,7 +469,7 @@ fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 
 	s.linecap = path->linecap;
 	s.linejoin = path->linejoin;
-	s.linewidth = path->linewidth;
+	s.linewidth = path->linewidth * 0.5;
 	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
@@ -664,7 +664,7 @@ fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 
 	s.linecap = path->linecap;
 	s.linejoin = path->linejoin;
-	s.linewidth = path->linewidth;
+	s.linewidth = path->linewidth * 0.5;
 	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;

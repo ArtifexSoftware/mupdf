@@ -544,6 +544,32 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (error) return error;
 		}
 
+		else if (!strcmp(buf, "Do"))
+		{
+			fz_obj *dict;
+			fz_obj *obj;
+			pdf_image *img;
+
+			if (csi->top != 1)
+				goto syntaxerror;
+
+			dict = fz_dictgets(rdb, "XObject");
+			if (!dict)
+				return fz_throw("syntaxerror: missing xobject resource");
+
+			obj = fz_dictget(dict, csi->stack[0]);
+			if (!obj)
+				return fz_throw("syntaxerror: missing xobject resource");
+
+			img = pdf_findresource(xref->rimage, obj);
+			if (!img)
+				return fz_throw("syntaxerror: missing image resource");
+
+			error = pdf_showimage(csi, img);
+			if (error)
+				return error;
+		}
+
 		else
 fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 			//return fz_throw("syntaxerror: unknown keyword '%s'", buf);

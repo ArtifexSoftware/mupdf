@@ -135,6 +135,33 @@ pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 	return nil;
 }
 
+fz_error *
+pdf_showimage(pdf_csi *csi, pdf_image *img)
+{
+	fz_error *error;
+	fz_node *node;
+
+	error = fz_newimagenode(&node, (fz_image*)img);
+	if (error)
+		return error;
+
+	if (img->super.n == 0 && img->super.a == 1)
+	{
+		error = pdf_addfillshape(csi->gstate + csi->gtop, node);
+		if (error) {
+			fz_freenode(node);
+			return error;
+		}
+	}
+	else
+	{
+		/* TODO image mask sub-image */
+		fz_insertnode(csi->gstate[csi->gtop].head, node);
+	}
+
+	return nil;
+}
+
 #if 0
 
 BMC ... EMC object nesting can be completely fucked up
