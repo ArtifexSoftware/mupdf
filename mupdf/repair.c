@@ -65,7 +65,7 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 		}
 
 		stmofs = fz_tell(file);
-		
+
 		length = fz_dictgets(dict, "Length");
 		if (fz_isint(length))
 		{
@@ -76,17 +76,17 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 			fz_seek(file, stmofs);
 		}
 
-		fz_read(file, buf, 8);
-		while (memcmp(buf, "endstream", 8) != 0)
+		fz_read(file, buf, 9);
+		while (memcmp(buf, "endstream", 9) != 0)
 		{
 			c = fz_readbyte(file);
 			if (c == EOF)
 				break;
-			memmove(buf, buf + 1, 7);
-			buf[7] = c;
+			memmove(buf, buf + 1, 8);
+			buf[8] = c;
 		}
 
-		*stmlen = fz_tell(file) - stmofs - 8;
+		*stmlen = fz_tell(file) - stmofs - 9;
 
 atobjend:
 		tok = pdf_lex(file, buf, cap, &len);
@@ -162,7 +162,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 		if (tok == PDF_TOBJ)
 		{
-
 			error = parseobj(file, buf, sizeof buf, &stmlen, &isroot, &isinfo);
 			if (error)
 				goto cleanup;
@@ -198,6 +197,9 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 			if (oid > maxoid)
 				maxoid = oid;
 		}
+
+		if (tok == PDF_TERROR)
+			fz_readbyte(file);
 
 		if (tok == PDF_TEOF)
 			break;
