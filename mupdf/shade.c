@@ -17,7 +17,7 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 
 	for (int i=0; i<256; ++i) {
 		t = t0 + (i / 255.0) * (t1 - t0);
-		error = pdf_evalfunction(func, &t, 1, shade->function[i], 0);
+		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->colorspace->n);
 	}
 	if (error) return error;
 

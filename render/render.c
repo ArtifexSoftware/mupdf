@@ -484,6 +484,8 @@ rendershade(fz_renderer *gc, fz_shadenode *node, fz_matrix ctm)
 
 	assert(!gc->maskonly);
 
+	DEBUG("shade;\n");
+
 	bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
 	bbox = fz_intersectirects(gc->clip, bbox);
 

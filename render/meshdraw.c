@@ -234,12 +234,9 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
 
 	int i, k;
 
-	for (i = 0; i < n; i++)
-	{
-		poly[0][i] = av[i];
-		poly[1][i] = bv[i];
-		poly[2][i] = cv[i];
-	}
+	copyvert(poly[0], av, n);
+	copyvert(poly[1], bv, n);
+	copyvert(poly[2], cv, n);
 
 	len = clippoly(poly, temp,   3, n, cx0, 0, 0);
 	len = clippoly(temp, poly, len, n, cx1, 0, 1);

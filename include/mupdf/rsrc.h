@@ -189,7 +189,7 @@ struct pdf_font_s
 fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_file *file);
 fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
 fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
-fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes); // XXX
+fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
 
 /* unicode.c */
 fz_error *pdf_loadtounicode(pdf_font *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);

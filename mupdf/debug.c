@@ -16,7 +16,7 @@ enum
 	PDF_LFONT = 4,
 	PDF_LIMAGE = 8,
 	PDF_LSHADE = 16,
-	PDF_LPAGE = 32,
+	PDF_LPAGE = 32
 };
 
 static inline void pdflog(int tag, char *name, char *fmt, va_list ap)
