@@ -266,7 +266,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		if (fz_isarray(sub))
 		{
 			pdf_logimage("color keyed transparency\n");
-			// FIXME
+			/* FIXME */
 		}
 		else
 		{
@@ -280,7 +280,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	else if (fz_isarray(obj))
 	{
 		pdf_logimage("color keyed transparency\n");
-		// FIXME
+		/* FIXME */
 	}
 
 	/*

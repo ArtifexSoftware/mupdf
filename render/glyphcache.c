@@ -354,14 +354,12 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	while (arena->load > arena->slots * 75 / 100)
 	{
 		covf ++;
-//		evictlast(arena);
 		evictall(arena);
 	}
 
 	while (arena->used + size >= arena->size)
 	{
 		coos ++;
-//		evictlast(arena);
 		evictall(arena);
 	}
 
