@@ -162,7 +162,6 @@ findcidfont(char *filename, char *path, int pathlen)
 		"/usr/share/fonts/kochi",
 		"/System/Library/Fonts",
 		"/Library/Fonts",
-		"c:/windows/fonts",
 		nil
 	};
 
@@ -175,6 +174,16 @@ findcidfont(char *filename, char *path, int pathlen)
 	{
 		strlcpy(path, dir, pathlen);
 		strlcat(path, "/", pathlen);
+		strlcat(path, filename, pathlen);
+		if (access(path, R_OK) == 0)
+			return 1;
+	}
+
+	dir = getenv("WINDIR");
+	if (dir)
+	{
+		strlcpy(path, dir, pathlen);
+		strlcat(path, "/Fonts/", pathlen);
 		strlcat(path, filename, pathlen);
 		if (access(path, R_OK) == 0)
 			return 1;
