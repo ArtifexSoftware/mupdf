@@ -31,7 +31,7 @@ int pdf_lex(fz_file *f, unsigned char *buf, int n, int *len);
 fz_error *pdf_parsearray(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
 fz_error *pdf_parsedict(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
 fz_error *pdf_parsestmobj(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
-fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, unsigned char *buf, int cap, int *oid, int *gid, int *stmofsj);
+fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, unsigned char *buf, int cap, int *oid, int *gid, int *stmofs);
 
 /*
  * xref and syntax object api
@@ -43,23 +43,27 @@ typedef struct pdf_crypt_s pdf_crypt;
 
 struct pdf_xref_s
 {
-	float version;
-	pdf_crypt *crypt;
 	fz_file *file;
-	int size;
-	int capacity;
-	pdf_xrefentry *table;
-	fz_obj *trailer;
+	fz_file *stream;
+	float version;
 	int startxref;
-	fz_hashtable *store;
+	fz_obj *trailer;		/* TODO split this into root/info/encrypt/id */
+	pdf_crypt *crypt;
+
+	int len;
+	int cap;
+	pdf_xrefentry *table;
 };
 
 struct pdf_xrefentry_s
 {
-	unsigned int ofs;	/* file offset / objstm object number */
-	unsigned short gen;	/* generation / objstm index */
-	char type;			/* 0=unset (f)ree i(n)use (o)bjstm (d)elete (a)dd */
-	char mark;			/* for garbage collection etc */
+	unsigned int ofs;		/* file offset / objstm object number */
+	unsigned short gen;		/* generation / objstm index */
+	char type;				/* 0=unset (f)ree i(n)use (o)bjstm (d)elete (a)dd */
+	char mark;				/* for garbage collection etc */
+	fz_buffer *stmbuf;		/* in-memory stream */
+	unsigned int stmofs;	/* on-disk stream */
+	fz_obj *obj;			/* stored/cached object */
 };
 
 struct pdf_crypt_s
@@ -77,16 +81,6 @@ struct pdf_crypt_s
 	int keylen;
 };
 
-/* stream.c */
-fz_error *pdf_buildfilter(fz_filter**, pdf_xref*, fz_obj *stm, int oid, int gid);
-fz_error *pdf_openrawstream0(pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
-fz_error *pdf_readrawstream0(fz_buffer **bufp, pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
-fz_error *pdf_openstream0(pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
-fz_error *pdf_openstream(pdf_xref*, fz_obj *stmref);
-fz_error *pdf_readstream0(fz_buffer **bufp, pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
-fz_error *pdf_readstream(fz_buffer **bufp, pdf_xref*, fz_obj *stmref);
-void pdf_closestream(pdf_xref*);
-
 /* crypt.c */
 fz_error *pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
 fz_error *pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id);
@@ -95,44 +89,43 @@ fz_error *pdf_cryptstm(fz_filter **fp, pdf_crypt *crypt, int oid, int gid);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid);
 void pdf_freecrypt(pdf_crypt *crypt);
 
-/* repair.c */
-fz_error *pdf_repairxref(pdf_xref*, char *filename);
+/* --- */
 
-/* open.c */
-fz_error *pdf_openxref(pdf_xref*, char *filename);
-fz_error *pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap);
+fz_error *pdf_repairpdf(pdf_xref **, char *filename);
+fz_error *pdf_openpdf(pdf_xref **, char *filename);
+fz_error *pdf_newpdf(pdf_xref **);
 
-/* xref.c */
-fz_error *pdf_newxref(pdf_xref **xrefp);
-fz_error *pdf_emptyxref(pdf_xref *xref, float version);
-fz_error *pdf_decryptxref(pdf_xref *xref);
-void pdf_closexref(pdf_xref*);
-void pdf_debugxref(pdf_xref*);
+fz_error *pdf_updatepdf(pdf_xref *, char *filename);
+fz_error *pdf_savepdf(pdf_xref *, char *filename, pdf_crypt *encrypt);
 
-fz_obj *pdf_findstoredobject(fz_hashtable *store, int oid, int gid);
-fz_buffer *pdf_findstoredstream(fz_hashtable *store, int oid, int gid);
-fz_error *pdf_deletestoredobject(fz_hashtable *store, int oid, int gid);
-fz_error *pdf_deletestoredstream(fz_hashtable *store, int oid, int gid);
-fz_error *pdf_storeobject(fz_hashtable *store, int oid, int gid, fz_obj *obj);
-fz_error *pdf_storestream(fz_hashtable *store, int oid, int gid, fz_buffer *buf);
+void pdf_debugpdf(pdf_xref *);
+void pdf_closepdf(pdf_xref *);
 
-fz_error *pdf_createobject(pdf_xref *xref, int *oidp, int *gidp);
-fz_error *pdf_deleteobject(pdf_xref *xref, int oid, int gid);
-fz_error *pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj);
-fz_error *pdf_loadobject0(fz_obj **, pdf_xref*, int oid, int gid, int *stmofs);
-fz_error *pdf_loadobject(fz_obj **, pdf_xref*, fz_obj *ref, int *stmofs);
-fz_error *pdf_resolve(fz_obj **, pdf_xref*);
+fz_error *pdf_allocobject(pdf_xref *, int *oidp, int *genp);
+fz_error *pdf_deleteobject(pdf_xref *, int oid, int gen);
+fz_error *pdf_updateobject(pdf_xref *, int oid, int gen, fz_obj *obj);
+fz_error *pdf_updatestream(pdf_xref *, int oid, int gen, fz_buffer *stm);
 
-fz_error *pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *buf);
-fz_error *pdf_deletestream(pdf_xref *xref, int oid, int gid);
+fz_error *pdf_cacheobject(pdf_xref *, int oid, int gen);
+fz_error *pdf_loadobject(fz_obj **objp, pdf_xref *, int oid, int gen);
+fz_error *pdf_loadindirect(fz_obj **objp, pdf_xref *, fz_obj *ref);
+fz_error *pdf_resolve(fz_obj **reforobj, pdf_xref *);
 
-/* doctor.c */
+int pdf_isstream(pdf_xref *xref, int oid, int gen);
+fz_error *pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
+fz_error *pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
+fz_error *pdf_openrawstream(pdf_xref *, int oid, int gen);
+fz_error *pdf_openstream(pdf_xref *, int oid, int gen);
+void pdf_closestream(pdf_xref *);
+
 fz_error *pdf_garbagecollect(pdf_xref *xref);
 fz_error *pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *old);
 
-/* save.c */
-fz_error *pdf_saveincrementalpdf(pdf_xref *xref, char *path);
-fz_error *pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt);
+/* private */
+fz_error *pdf_loadobjstm(pdf_xref *xref, int oid, int gen, unsigned char *buf, int cap);
+fz_error *pdf_decryptpdf(pdf_xref *xref);
+
+/* --- */
 
 /*
  * high-level semantic objects for resources and pages

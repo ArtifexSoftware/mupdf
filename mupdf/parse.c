@@ -97,7 +97,7 @@ cleanup:
 	if (obj) fz_dropobj(obj);
 	if (ary) fz_dropobj(ary);
 	if (error) return error;
-	return fz_throw("syntaxerror in array");
+	return fz_throw("syntaxerror: corrupt array");
 }
 
 fz_error *
@@ -184,7 +184,7 @@ cleanup:
 	if (val) fz_dropobj(val);
 	if (dict) fz_dropobj(dict);
 	if (error) return error;
-	return fz_throw("syntaxerror in dictionary");
+	return fz_throw("syntaxerror: corrupt dictionary");
 }
 
 fz_error *
@@ -207,7 +207,7 @@ pdf_parsestmobj(fz_obj **op, fz_file *file, unsigned char *buf, int cap)
 		case PDF_TINT:		return fz_newint(op, atoi(buf));
 	}
 
-	return fz_throw("syntaxerror in object stream");
+	return fz_throw("syntaxerror: corrupt object stream");
 }
 
 fz_error *
@@ -216,7 +216,7 @@ pdf_parseindobj(fz_obj **op, fz_file *file, unsigned char *buf, int cap,
 {
 	fz_error *error = nil;
 	fz_obj *obj = nil;
-	int oid, gid, stmofs;
+	int oid = 0, gid = 0, stmofs;
 	int tok, len;
 	int a, b;
 
@@ -280,14 +280,14 @@ skip:
 		{
 			c = fz_peekbyte(file);
 			if (c != '\n')
-				fz_warn("corrupt pdf stream (%d %d)\n", oid, gid);
+				fz_warn("syntaxerror: corrupt pdf stream (%d %d)\n", oid, gid);
 			else
 				c = fz_readbyte(file);
 		}
 		stmofs = fz_tell(file);
 	}
 	else if (tok == PDF_TENDOBJ)
-		stmofs = -1;
+		stmofs = 0;
 	else
 		goto cleanup;
 
@@ -300,6 +300,6 @@ skip:
 cleanup:
 	if (obj) fz_dropobj(obj);
 	if (error) return error;
-	return fz_throw("syntaxerror in indirect object");
+	return fz_throw("syntaxerror: corrupt indirect object (%d %d)", oid, gid);
 }
 

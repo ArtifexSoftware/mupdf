@@ -565,7 +565,7 @@ printf("  embedded CMap\n");
 			fz_buffer *buf;
 			int len;
 
-			error = pdf_readstream(&buf, xref, cidtogidmap);
+			error = pdf_loadstream(&buf, xref, fz_tonum(cidtogidmap), fz_togen(cidtogidmap));
 			if (error)
 				goto cleanup;
 

@@ -238,6 +238,7 @@ fz_readfile(fz_buffer **bufp, fz_file *file)
 			real->rp = buf;
 			real->wp = buf + pos;
 			real->ep = buf + pos;
+			real->eof = 1;
 
 			return nil;
 		}

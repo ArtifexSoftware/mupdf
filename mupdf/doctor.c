@@ -42,9 +42,9 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 	fz_obj *obj;
 	int oid;
 
-	oid = fz_toobjid(ref);
+	oid = fz_tonum(ref);
 
-	if (oid < 0 || oid >= xref->size)
+	if (oid < 0 || oid >= xref->len)
 		return fz_throw("rangecheck: object number out of range");
 
 	if (xref->table[oid].mark)
@@ -52,7 +52,7 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 
 	xref->table[oid].mark = 1;
 
-	error = pdf_loadobject(&obj, xref, ref, nil);
+	error = pdf_loadindirect(&obj, xref, ref);
 	if (error)
 		return error;
 
@@ -77,26 +77,21 @@ pdf_garbagecollect(pdf_xref *xref)
 	fz_error *error;
 	int i, g;
 
-	for (i = 0; i < xref->size; i++)
+	for (i = 0; i < xref->len; i++)
 		xref->table[i].mark = 0;
 
 	error = sweepobj(xref, xref->trailer);
 	if (error)
 		return error;
 
-	for (i = 0; i < xref->size; i++)
+	for (i = 0; i < xref->len; i++)
 	{
 		pdf_xrefentry *x = xref->table + i;
 		g = x->gen;
 		if (x->type == 'o')
 			g = 0;
-
 		if (!x->mark && x->type != 'f' && x->type != 'd')
-		{
-			error = pdf_deleteobject(xref, i, g);
-			if (error)
-				return error;
-		}
+			pdf_deleteobject(xref, i, g);
 	}
 
 	return nil;
@@ -121,8 +116,8 @@ remaprefs(fz_obj **newp, fz_obj *old, struct pair *map, int n)
 
 	if (fz_isindirect(old))
 	{
-		o = fz_toobjid(old);
-		g = fz_togenid(old);
+		o = fz_tonum(old);
+		g = fz_togen(old);
 		for (i = 0; i < n; i++)
 			if (map[i].soid == o && map[i].sgen == g)
 				return fz_newindirect(newp, map[i].doid, map[i].dgen);
@@ -184,17 +179,16 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	struct pair *map;
 	fz_obj *old, *new;
 	fz_buffer *stm;
-	int stmofs;
 	int i, n;
 
-	for (i = 0; i < src->size; i++)
+	for (i = 0; i < src->len; i++)
 		src->table[i].mark = 0;
 
 	error = sweepobj(src, root);
 	if (error)
 		return error;
 
-	for (n = 0, i = 0; i < src->size; i++)	
+	for (n = 0, i = 0; i < src->len; i++)	
 		if (src->table[i].mark)
 			n++;
 
@@ -202,7 +196,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	if (!map)
 		return fz_outofmem;
 
-	for (n = 0, i = 0; i < src->size; i++)	
+	for (n = 0, i = 0; i < src->len; i++)	
 	{
 		if (src->table[i].mark)
 		{
@@ -210,7 +204,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 			map[n].sgen = src->table[i].gen;
 			if (src->table[i].type == 'o')
 				map[n].sgen = 0;
-			error = pdf_createobject(dst, &map[n].doid, &map[n].dgen);
+			error = pdf_allocobject(dst, &map[n].doid, &map[n].dgen);
 			if (error)
 				goto cleanup;
 			n++;
@@ -223,22 +217,16 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 
 	for (i = 0; i < n; i++)	
 	{
-		error = pdf_loadobject0(&old, src, map[i].soid, map[i].sgen, &stmofs);
+		error = pdf_loadobject(&old, src, map[i].soid, map[i].sgen);
 		if (error)
 			goto cleanup;
 
-		if (stmofs != -1)
+		if (pdf_isstream(src, map[i].soid, map[i].sgen))
 		{
-			error = pdf_readrawstream0(&stm, src, old,
-						map[i].soid, map[i].sgen, stmofs);
+			error = pdf_loadrawstream(&stm, src, map[i].soid, map[i].sgen);
 			if (error)
 				goto cleanup;
-
-			error = pdf_savestream(dst, map[i].doid, map[i].dgen, stm);
-			if (error) {
-				fz_dropobj(old);
-				goto cleanup;
-			}
+			pdf_updatestream(dst, map[i].doid, map[i].dgen, stm);
 		}
 
 		error = remaprefs(&new, old, map, n);
@@ -246,10 +234,8 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 		if (error)
 			goto cleanup;
 
-		error = pdf_saveobject(dst, map[i].doid, map[i].dgen, new);
+		pdf_updateobject(dst, map[i].doid, map[i].dgen, new);
 		fz_dropobj(new);
-		if (error)
-			goto cleanup;
 	}
 
 	fz_free(map);

@@ -4,13 +4,14 @@
 struct entry
 {
 	int oid;
-	int gid;
+	int gen;
 	int ofs;
+	int stmofs;
 	int stmlen;
 };
 
 static fz_error *
-parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
+parseobj(fz_file *file, unsigned char *buf, int cap, int *stmofs, int *stmlen,
 	int *isroot, int *isinfo)
 {
 	fz_error *error;
@@ -19,7 +20,6 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 	fz_obj *filter;
 	fz_obj *type;
 	int tok, len;
-	int stmofs;
 
 	*stmlen = -1;
 	*isroot = 0;
@@ -64,16 +64,16 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 				fz_readbyte(file);
 		}
 
-		stmofs = fz_tell(file);
+		*stmofs = fz_tell(file);
 
 		length = fz_dictgets(dict, "Length");
 		if (fz_isint(length))
 		{
-			fz_seek(file, stmofs + fz_toint(length), 0);
+			fz_seek(file, *stmofs + fz_toint(length), 0);
 			tok = pdf_lex(file, buf, cap, &len);
 			if (tok == PDF_TENDSTREAM)
 				goto atobjend;
-			fz_seek(file, stmofs, 0);
+			fz_seek(file, *stmofs, 0);
 		}
 
 		fz_read(file, buf, 9);
@@ -86,7 +86,7 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 			buf[8] = c;
 		}
 
-		*stmlen = fz_tell(file) - stmofs - 9;
+		*stmlen = fz_tell(file) - *stmofs - 9;
 
 atobjend:
 		tok = pdf_lex(file, buf, cap, &len);
@@ -101,51 +101,50 @@ atobjend:
 }
 
 fz_error *
-pdf_repairxref(pdf_xref *xref, char *filename)
+pdf_repairpdf(pdf_xref **xrefp, char *filename)
 {
 	fz_error *error;
+	pdf_xref *xref;
 	fz_file *file;
 
 	struct entry *list = nil;
 	int listlen;
 	int listcap;
-	int maxoid;
+	int maxoid = 0;
 
 	unsigned char buf[65536];
 
-	int oid, gid;
-	int tmpofs, oidofs, gidofs;
-	int stmlen;
-	int isroot, rootoid = 0, rootgid = 0;
-	int isinfo, infooid = 0, infogid = 0;
+	int oid = 0;
+	int gen = 0;
+	int tmpofs, oidofs = 0, genofs = 0;
+	int isroot, rootoid = 0, rootgen = 0;
+	int isinfo, infooid = 0, infogen = 0;
+	int stmofs, stmlen;
 	int tok, len;
 	int next;
-	int n;
 	int i;
+
+	xref = fz_malloc(sizeof (pdf_xref));
+	if (!xref)
+		return fz_outofmem;
+
+	xref->file = nil;
+	xref->version = 0.0;
+	xref->startxref = 0;
+	xref->trailer = nil;
+	xref->crypt = nil;
+
+	error = fz_openfile(&file, filename, FZ_READ);
+	if (error)
+		goto cleanup;
+
+	xref->file = file;
 
 	listlen = 0;
 	listcap = 1024;
 	list = fz_malloc(listcap * sizeof(struct entry));
 	if (!list)
-		return fz_outofmem;
-
-	error = fz_openfile(&xref->file, filename, FZ_READ);
-	if (error)
 		goto cleanup;
-
-	file = xref->file;
-
-	n = fz_seek(file, 0, 0);
-	if (n < 0) {
-		error = fz_ferror(file);
-		goto cleanup;
-	}
-
-	maxoid = 0;
-	oid = 0;
-	gid = 0;
-	oidofs = 0;
-	gidofs = 0;
 
 	while (1)
 	{
@@ -154,26 +153,26 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		tok = pdf_lex(file, buf, sizeof buf, &len);
 		if (tok == PDF_TINT)
 		{
-			oidofs = gidofs;
-			oid = gid;
-			gidofs = tmpofs;
-			gid = atoi(buf);
+			oidofs = genofs;
+			oid = gen;
+			genofs = tmpofs;
+			gen = atoi(buf);
 		}
 
 		if (tok == PDF_TOBJ)
 		{
-			error = parseobj(file, buf, sizeof buf, &stmlen, &isroot, &isinfo);
+			error = parseobj(file, buf, sizeof buf, &stmofs, &stmlen, &isroot, &isinfo);
 			if (error)
 				goto cleanup;
 
 			if (isroot) {
 				rootoid = oid;
-				rootgid = gid;
+				rootgen = gen;
 			}
 
 			if (isinfo) {
 				infooid = oid;
-				infogid = gid;
+				infogen = gen;
 			}
 
 			if (listlen + 1 == listcap)
@@ -189,8 +188,9 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 			}
 
 			list[listlen].oid = oid;
-			list[listlen].gid = gid;
+			list[listlen].gen = gen;
 			list[listlen].ofs = oidofs;
+			list[listlen].stmofs = stmofs;
 			list[listlen].stmlen = stmlen;
 			listlen ++;
 
@@ -207,14 +207,14 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 	error = fz_packobj(&xref->trailer,
 					"<< /Size %i /Root %r >>",
-					maxoid + 1, rootoid, rootgid);
+					maxoid + 1, rootoid, rootgen);
 	if (error)
 		goto cleanup;
 
 	xref->version = 1.3;	/* FIXME */
-	xref->size = maxoid + 1;
-	xref->capacity = xref->size;
-	xref->table = fz_malloc(xref->capacity * sizeof(pdf_xrefentry));
+	xref->len = maxoid + 1;
+	xref->cap = xref->len;
+	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table) {
 		error = fz_outofmem;
 		goto cleanup;
@@ -225,42 +225,50 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	xref->table[0].ofs = 0;
 	xref->table[0].gen = 65535;
 
-	for (i = 1; i < xref->size; i++)
+	for (i = 1; i < xref->len; i++)
 	{
 		xref->table[i].type = 'f';
 		xref->table[i].mark = 0;
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
+		xref->table[i].stmbuf = nil;
+		xref->table[i].stmofs = 0;
+		xref->table[i].obj = nil;
 	}
 
 	for (i = 0; i < listlen; i++)
 	{
 		xref->table[list[i].oid].type = 'n';
 		xref->table[list[i].oid].ofs = list[i].ofs;
-		xref->table[list[i].oid].gen = list[i].gid;
+		xref->table[list[i].oid].gen = list[i].gen;
 		xref->table[list[i].oid].mark = 0;
+
+		xref->table[list[i].oid].stmofs = list[i].stmofs;
 
 		/* corrected stream length */
 		if (list[i].stmlen >= 0)
 		{
 			fz_obj *dict, *length;
-			error = pdf_loadobject0(&dict, xref, list[i].oid, list[i].gid, nil);
+
+			error = pdf_loadobject(&dict, xref, list[i].oid, list[i].gen);
 			if (error)
 				goto cleanup;
+
 			error = fz_newint(&length, list[i].stmlen);
 			if (error)
 				goto cleanup;
 			error = fz_dictputs(dict, "Length", length);
 			if (error)
 				goto cleanup;
-			error = pdf_saveobject(xref, list[i].oid, list[i].gid, dict);
-			if (error)
-				goto cleanup;
+
+			pdf_updateobject(xref, list[i].oid, list[i].gen, dict);
+
+			fz_dropobj(dict);
 		}
 	}
 
 	next = 0;
-	for (i = xref->size - 1; i >= 0; i--)
+	for (i = xref->len - 1; i >= 0; i--)
 	{
 		if (xref->table[i].type == 'f')
 		{
@@ -275,6 +283,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	return nil;
 
 cleanup:
+	fz_closefile(file);
+	fz_free(xref);
 	fz_free(list);
 	return error;
 }

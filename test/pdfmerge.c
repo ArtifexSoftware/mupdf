@@ -65,11 +65,7 @@ int main(int argc, char **argv)
 	 * Create new blank xref table
 	 */
 
-	error = pdf_newxref(&dst);
-	if (error)
-		fz_abort(error);
-
-	error = pdf_emptyxref(dst, 1.3);
+	error = pdf_newpdf(&dst);
 	if (error)
 		fz_abort(error);
 
@@ -83,15 +79,11 @@ int main(int argc, char **argv)
 
 	for (i = optind; i < argc; i++)
 	{
-		error = pdf_newxref(&src);
+		error = pdf_openpdf(&src, argv[i]);
 		if (error)
 			fz_abort(error);
 
-		error = pdf_openxref(src, argv[i]);
-		if (error)
-			fz_abort(error);
-
-		error = pdf_decryptxref(src);
+		error = pdf_decryptpdf(src);
 		if (error)
 			fz_abort(error);
 
@@ -119,9 +111,9 @@ int main(int argc, char **argv)
 			fz_dictdels(srcpages->pobj[k], "Annots");
 			fz_dictdels(srcpages->pobj[k], "Tabs");
 
-			pdf_saveobject(src,
-				fz_toobjid(srcpages->pref[k]),
-				fz_togenid(srcpages->pref[k]),
+			pdf_updateobject(src,
+				fz_tonum(srcpages->pref[k]),
+				fz_togen(srcpages->pref[k]),
 				srcpages->pobj[k]);
 			error = fz_arraypush(srcrefs, srcpages->pref[k]);
 			if (error)
@@ -141,14 +133,14 @@ int main(int argc, char **argv)
 
 		pdf_freepagetree(srcpages);
 
-		pdf_closexref(src);
+		pdf_closepdf(src);
 	}
 
 	/*
 	 * Create and relink Pages object
 	 */
 
-	error = pdf_createobject(dst, &pagesoid, &pagesgid);
+	error = pdf_allocobject(dst, &pagesoid, &pagesgid);
 	if (error)
 		fz_abort(error);
 
@@ -159,9 +151,7 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
-	error = pdf_saveobject(dst, pagesoid, pagesgid, obj);
-	if (error)
-		fz_abort(error);
+	pdf_updateobject(dst, pagesoid, pagesgid, obj);
 
 	fz_dropobj(obj);
 
@@ -171,17 +161,15 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < fz_arraylen(dstrefs); i++)
 	{
-		int oid = fz_toobjid(fz_arrayget(dstrefs, i));
-		int gid = fz_togenid(fz_arrayget(dstrefs, i));
-		error = pdf_loadobject0(&obj, dst, oid, gid, nil);
+		int oid = fz_tonum(fz_arrayget(dstrefs, i));
+		int gid = fz_togen(fz_arrayget(dstrefs, i));
+		error = pdf_loadobject(&obj, dst, oid, gid);
 		if (error)
 			fz_abort(error);
 		error = fz_dictputs(obj, "Parent", pagesref);
 		if (error)
 			fz_abort(error);
-		error = pdf_saveobject(dst, oid, gid, obj);
-		if (error)
-			fz_abort(error);
+		pdf_updateobject(dst, oid, gid, obj);
 		fz_dropobj(obj);
 	}
 
@@ -191,7 +179,7 @@ int main(int argc, char **argv)
 	 * Create Catalog and trailer
 	 */
 
-	error = pdf_createobject(dst, &rootoid, &rootgid);
+	error = pdf_allocobject(dst, &rootoid, &rootgid);
 	if (error)
 		fz_abort(error);
 
@@ -201,9 +189,7 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
-	error = pdf_saveobject(dst, rootoid, rootgid, obj);
-	if (error)
-		fz_abort(error);
+	pdf_updateobject(dst, rootoid, rootgid, obj);
 
 	fz_dropobj(obj);
 

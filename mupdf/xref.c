@@ -2,67 +2,50 @@
 #include <mupdf.h>
 
 /*
- * initialize xref
+ * initialize new empty xref
  */
 
 fz_error *
-pdf_newxref(pdf_xref **xrefp)
+pdf_newpdf(pdf_xref **xrefp)
 {
-	fz_error *error;
 	pdf_xref *xref;
 
-	xref = *xrefp = fz_malloc(sizeof(pdf_xref));
+	xref = fz_malloc(sizeof (pdf_xref));
 	if (!xref)
 		return fz_outofmem;
 
-	xref->version = 1.3;
-	xref->crypt = nil;
 	xref->file = nil;
-	xref->size = 0;
-	xref->capacity = 0;
-	xref->table = nil;
+	xref->version = 1.3;
+	xref->startxref = 0;
 	xref->trailer = nil;
-	xref->startxref = -1;
+	xref->crypt = nil;
 
-	error = fz_newhash(&xref->store, 256, sizeof(int) * 3);
-	if (error)
-	{
+	xref->cap = 256;
+	xref->len = 1;
+	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
+	if (!xref->table) {
 		fz_free(xref);
-		return error;
-	}
-
-	return nil;
-}
-
-fz_error *
-pdf_emptyxref(pdf_xref *xref, float version)
-{
-	assert(xref->table == nil);
-
-	xref->version = version;
-	xref->capacity = 256;
-	xref->size = 1;
-	xref->table = fz_malloc(xref->capacity * sizeof(pdf_xrefentry));
-	if (!xref->table)
 		return fz_outofmem;
+	}
 
 	xref->table[0].type = 'f';
     xref->table[0].mark = 0;
     xref->table[0].ofs = 0;
     xref->table[0].gen = 65535;
+    xref->table[0].stmbuf = nil;
+    xref->table[0].stmofs = 0;
+    xref->table[0].obj = nil;
 
+	*xrefp = xref;
 	return nil;
 }
 
 fz_error *
-pdf_decryptxref(pdf_xref *xref)
+pdf_decryptpdf(pdf_xref *xref)
 {
 	fz_error *error;
 	fz_obj *encrypt;
 	fz_obj *id;
-
-	if (xref->size < 0)
-		return fz_throw("rangecheck: xref missing first slot");
 
 	encrypt = fz_dictgets(xref->trailer, "Encrypt");
 	id = fz_dictgets(xref->trailer, "ID");
@@ -94,159 +77,45 @@ cleanup:
 }
 
 void
-pdf_closexref(pdf_xref *xref)
+pdf_closepdf(pdf_xref *xref)
 {
-	int *key;
-	void *val;
 	int i;
 
-	if (xref->store)
+	if (xref->table)
 	{
-		for (i = 0; i < fz_hashlen(xref->store); i++)
+		for (i = 0; i < xref->len; i++)
 		{
-			key = fz_hashgetkey(xref->store, i);
-			val = fz_hashgetval(xref->store, i);
-			if (val && key[2] == 0)
-				fz_dropobj((fz_obj*)val);
-			if (val && key[2] == 1)
-				fz_freebuffer((fz_buffer*)val);
+			if (xref->table[i].stmbuf)
+				fz_freebuffer(xref->table[i].stmbuf);
+			if (xref->table[i].obj)
+				fz_dropobj(xref->table[i].obj);
 		}
-		fz_freehash(xref->store);
+		fz_free(xref->table);
 	}
 
-	if (xref->table)
-		fz_free(xref->table);
-	if (xref->trailer)
-		fz_dropobj(xref->trailer);
 	if (xref->file)
 		fz_closefile(xref->file);
+
+	if (xref->trailer)
+		fz_dropobj(xref->trailer);
+
 	fz_free(xref);
 }
 
 void
-pdf_debugxref(pdf_xref *xref)
+pdf_debugpdf(pdf_xref *xref)
 {
 	int i;
-	printf("%%!PDF-%g\n", xref->version);
-	printf("xref\n0 %d\n", xref->size);
-	for (i = 0; i < xref->size; i++)
+	printf("xref\n0 %d\n", xref->len);
+	for (i = 0; i < xref->len; i++)
 	{
-		printf("%010d %05d %c \n",
+		printf("%010d %05d %c | %d %d\n",
 			xref->table[i].ofs,
 			xref->table[i].gen,
-			xref->table[i].type);
+			xref->table[i].type,
+			xref->table[i].obj ? xref->table[i].obj->refcount : 0,
+			xref->table[i].stmofs);
 	}
-	printf("trailer\n");
-	fz_debugobj(xref->trailer);
-	printf("\n");
-}
-
-/*
- * object and stream store (cached from objstm and saved for mutation)
- */
-
-void
-pdf_debugstore(fz_hashtable *store)
-{
-	int *key;
-	void *val;
-	int i;
-
-	printf("object store (%d)\n", fz_hashlen(store));
-	for (i = 0; i < fz_hashlen(store); i++)
-	{
-		key = fz_hashgetkey(store, i);
-		val = fz_hashgetval(store, i);
-		if (val)
-		{
-			printf("slot %d: %d %d ", i, key[0], key[1]);
-			if (key[2] == 0)
-				printf("obj[%d] ", ((fz_obj*)val)->refcount), fz_debugobj(val);
-			if (key[2] == 1)
-				printf("stream %d", ((fz_buffer*)val)->wp - ((fz_buffer*)val)->rp);
-			printf("\n");
-		}
-	}
-}
-
-fz_obj *
-pdf_findstoredobject(fz_hashtable *store, int oid, int gid)
-{
-	int key[3];
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 0;
-	return fz_hashfind(store, key);
-}
-
-fz_buffer *
-pdf_findstoredstream(fz_hashtable *store, int oid, int gid)
-{
-	int key[3];
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 1;
-	return fz_hashfind(store, key);
-}
-
-fz_error *
-pdf_deletestoredobject(fz_hashtable *store, int oid, int gid)
-{
-	int key[3];
-	fz_obj *obj;
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 0;
-	obj = fz_hashfind(store, key);
-	if (obj)
-		fz_dropobj(obj);
-	return fz_hashremove(store, key);
-}
-
-fz_error *
-pdf_deletestoredstream(fz_hashtable *store, int oid, int gid)
-{
-	int key[3];
-	fz_buffer *stm;
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 1;
-	stm = fz_hashfind(store, key);
-	if (stm)
-		fz_freebuffer(stm);
-	return fz_hashremove(store, key);
-}
-
-fz_error *
-pdf_storeobject(fz_hashtable *store, int oid, int gid, fz_obj *obj)
-{
-	int key[3];	
-	fz_obj *old;
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 0;
-	old = fz_hashfind(store, key);
-	if (old) {
-		fz_hashremove(store, key);
-		fz_dropobj(old);
-	}
-	return fz_hashinsert(store, key, fz_keepobj(obj));
-}
-
-fz_error *
-pdf_storestream(fz_hashtable *store, int oid, int gid, fz_buffer *stm)
-{
-	int key[3];	
-	fz_buffer *old;
-	key[0] = oid;
-	key[1] = gid;
-	key[2] = 1;
-	old = fz_hashfind(store, key);
-	if (old) {
-		fz_hashremove(store, key);
-		fz_freebuffer(old);
-	}
-	return fz_hashinsert(store, key, stm);
 }
 
 /*
@@ -265,14 +134,14 @@ static int findprev(pdf_xref *xref, int oid)
 static int findnext(pdf_xref *xref, int oid)
 {
 	int next;
-	for (next = oid + 1; next < xref->size; next++)
+	for (next = oid + 1; next < xref->len; next++)
 		if (xref->table[next].type == 'f' || xref->table[next].type == 'd')
 			return next;
 	return 0;
 }
 
 fz_error *
-pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
+pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 {
 	pdf_xrefentry *x;
 	int prev, next;
@@ -287,7 +156,7 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 			if (x->gen < 65535)
 			{
 				*oidp = oid;
-				*gidp = x->gen;
+				*genp = x->gen;
 
 				x->type = 'a';
 				x->ofs = 0;
@@ -307,9 +176,9 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 			break;
 	}
 
-	if (xref->size + 1 >= xref->capacity)
+	if (xref->len + 1 >= xref->cap)
 	{
-		int newcap = xref->capacity + 256;
+		int newcap = xref->cap + 256;
 		pdf_xrefentry *newtable;
 
 		newtable = fz_realloc(xref->table, sizeof(pdf_xrefentry) * newcap);
@@ -317,18 +186,21 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 			return fz_outofmem;
 
 		xref->table = newtable;
-		xref->capacity = newcap;
+		xref->cap = newcap;
 	}
 
-	oid = xref->size ++;
+	oid = xref->len ++;
 
 	xref->table[oid].type = 'a';
 	xref->table[oid].mark = 0;
 	xref->table[oid].ofs = 0;
 	xref->table[oid].gen = 0;
+	xref->table[oid].stmbuf = nil;
+	xref->table[oid].stmofs = 0;
+	xref->table[oid].obj = nil;
 
 	*oidp = oid;
-	*gidp = 0;
+	*genp = 0;
 
 	prev = findprev(xref, oid);
 	next = findnext(xref, oid);
@@ -339,22 +211,27 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 }
 
 fz_error *
-pdf_deleteobject(pdf_xref *xref, int oid, int gid)
+pdf_deleteobject(pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
 	int prev;
 
-	if (oid < 0 || oid >= xref->size)
-		return fz_throw("rangecheck: invalid object number");
+	if (oid < 0 || oid >= xref->len)
+		return fz_throw("rangecheck: object number out of range: %d", oid);
 
 	x = xref->table + oid;
-
-	if (x->type != 'n' && x->type != 'o' && x->type == 'a')
-		return fz_throw("rangecheck: delete nonexistant object");
 
 	x->type = 'd';
 	x->ofs = findnext(xref, oid);
 	x->gen ++;
+
+	if (x->stmbuf)
+		fz_freebuffer(x->stmbuf);
+	x->stmbuf = nil;
+
+	if (x->obj)
+		fz_dropobj(x->obj);
+	x->obj = nil;
 
 	prev = findprev(xref, oid);
 	xref->table[prev].type = 'd';
@@ -364,19 +241,19 @@ pdf_deleteobject(pdf_xref *xref, int oid, int gid)
 }
 
 fz_error *
-pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj)
+pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
 {
-	fz_error *error;
 	pdf_xrefentry *x;
 
-	if (oid < 0 || oid >= xref->size)
-		return fz_throw("rangecheck: invalid object number");
-
-	error = pdf_storeobject(xref->store, oid, gid, obj);
-	if (error)
-		return error;
+	if (oid < 0 || oid >= xref->len)
+		return fz_throw("rangecheck: object number out of range: %d", oid);
 
 	x = xref->table + oid;
+
+	if (x->obj)
+		fz_dropobj(x->obj);
+
+	x->obj = fz_keepobj(obj);
 
 	if (x->type == 'f' || x->type == 'd')
 	{
@@ -392,15 +269,20 @@ pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj)
 }
 
 fz_error *
-pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *stm)
+pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 {
-	return pdf_storestream(xref->store, oid, gid, stm);
-}
+	pdf_xrefentry *x;
 
-fz_error *
-pdf_deletestream(pdf_xref *xref, int oid, int gid)
-{
-	return pdf_deletestoredstream(xref->store, oid, gid);
+	if (oid < 0 || oid >= xref->len)
+		return fz_throw("rangecheck: object number out of range: %d", oid);
+
+	x = xref->table + oid;
+
+	if (x->stmbuf)
+		fz_freebuffer(x->stmbuf);
+	x->stmbuf = stm;
+
+	return nil;
 }
 
 /*
@@ -408,84 +290,83 @@ pdf_deletestream(pdf_xref *xref, int oid, int gid)
  */
 
 fz_error *
-pdf_loadobject0(fz_obj **objp, pdf_xref *xref, int oid, int gid, int *stmofs)
+pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 {
 	unsigned char buf[65536];	/* yeowch! */
 
 	fz_error *error;
 	pdf_xrefentry *x;
-	int roid, rgid;
+	int roid, rgen;
 	int n;
 
-	if (oid < 0 || oid >= xref->size)
+	if (oid < 0 || oid >= xref->len)
 		return fz_throw("rangecheck: object number out of range: %d", oid);
 
-	if (stmofs)
-		*stmofs = -1;
-
 	x = &xref->table[oid];
+
+	if (x->obj)
+		return nil;
 
 	if (x->type == 'f' || x->type == 'd')
 		return fz_throw("rangecheck: tried to load free object");
 
-	else if (x->type == 'n')
+	if (x->type == 'n')
 	{
 		n = fz_seek(xref->file, x->ofs, 0);
 		if (n < 0)
 			return fz_ferror(xref->file);
 
-		error = pdf_parseindobj(objp, xref->file, buf, sizeof buf,
-					&roid, &rgid, stmofs);
+		error = pdf_parseindobj(&x->obj, xref->file, buf, sizeof buf,
+					&roid, &rgen, &x->stmofs);
 		if (error)
 			return error;
 
+		if (roid != oid || rgen != gen)
+			return fz_throw("syntaxerror: found wrong object");
+
 		if (xref->crypt)
-			pdf_cryptobj(xref->crypt, *objp, oid, gid);
+			pdf_cryptobj(xref->crypt, x->obj, oid, gen);
 	}
 
 	else if (x->type == 'o')
 	{
-		*objp = pdf_findstoredobject(xref->store, oid, gid);
-		if (*objp) {
-			fz_keepobj(*objp);
-			return nil;
+		if (!x->obj)
+		{
+			error = pdf_loadobjstm(xref, x->ofs, 0, buf, sizeof buf);
+			if (error)
+				return error;
 		}
-
-		error = pdf_readobjstm(xref, x->ofs, 0, buf, sizeof buf);
-		if (error)
-			return error;
-
-		*objp = pdf_findstoredobject(xref->store, oid, gid);
-		if (!*objp)
-			return fz_throw("rangecheck: could not find object");
-		fz_keepobj(*objp);
 	}
-
-	else if (x->type == 'a')
-	{
-		*objp = pdf_findstoredobject(xref->store, oid, gid);
-		if (!*objp)
-			return fz_throw("rangecheck: could not find object");
-		fz_keepobj(*objp);
-	}
-
-	else
-		return fz_throw("rangecheck: unknown object type");
 
 	return nil;
 }
 
 fz_error *
-pdf_loadobject(fz_obj **objp, pdf_xref *xref, fz_obj *ref, int *stmofs)
+pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 {
-	return pdf_loadobject0(objp, xref, fz_toobjid(ref), fz_togenid(ref), stmofs);
+	fz_error *error;
+
+	error = pdf_cacheobject(xref, oid, gen);
+	if (error)
+		return error;
+
+	*objp = fz_keepobj(xref->table[oid].obj);
+
+	return nil;
+}
+
+fz_error *
+pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
+{
+	assert(ref != nil);
+	return pdf_loadobject(objp, xref, fz_tonum(ref), fz_togen(ref));
 }
 
 fz_error *
 pdf_resolve(fz_obj **objp, pdf_xref *xref)
 {
 	if (fz_isindirect(*objp))
-		return pdf_loadobject(objp, xref, *objp, nil);
+		return pdf_loadindirect(objp, xref, *objp);
 	fz_keepobj(*objp);
 	return nil;
 }

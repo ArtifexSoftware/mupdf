@@ -27,7 +27,7 @@ loadextgstatefonts(pdf_resources *rdb, pdf_xref *xref)
 				return fz_throw("syntaxerror in ExtGState/Font");
 
 			ref = fz_arrayget(obj, 0);
-			sprintf(name, "$f.%d.%d", fz_toobjid(ref), fz_togenid(ref));
+			sprintf(name, "$f.%d.%d", fz_tonum(ref), fz_togen(ref));
 
 			err = pdf_resolve(&ref, xref);
 			if (err) return err;

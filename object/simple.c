@@ -205,7 +205,7 @@ fz_tostringlen(fz_obj *obj)
 }
 
 int
-fz_toobjid(fz_obj *obj)
+fz_tonum(fz_obj *obj)
 {
 	if (fz_isindirect(obj))
 		return obj->u.r.oid;
@@ -213,7 +213,7 @@ fz_toobjid(fz_obj *obj)
 }
 
 int
-fz_togenid(fz_obj *obj)
+fz_togen(fz_obj *obj)
 {
 	if (fz_isindirect(obj))
 		return obj->u.r.gid;

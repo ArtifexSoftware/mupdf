@@ -93,18 +93,18 @@ fz_openbuffer(fz_file **filep, fz_buffer *buf, int mode)
 
 	if (mode == FZ_READ)
 	{
-		file->in = buf;
-		error = fz_newbuffer(&file->out, FZ_BUFSIZE);
+		file->out = buf;
+		error = fz_newbuffer(&file->in, FZ_BUFSIZE);
 		if (error)
 			goto cleanup;
 	}
 
 	else
 	{
-		error = fz_newbuffer(&file->in, FZ_BUFSIZE);
+		error = fz_newbuffer(&file->out, FZ_BUFSIZE);
 		if (error)
 			goto cleanup;
-		file->out = buf;
+		file->in = buf;
 	}
 
 	return nil;

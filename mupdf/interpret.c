@@ -96,7 +96,7 @@ runextgstate(pdf_gstate *gstate, pdf_resources *rdb, fz_obj *extgstate)
 			{
 				fz_obj *ref, *obj;
 				ref = fz_arrayget(val, 0);
-				sprintf(name, "$f.%d.%d", fz_toobjid(ref), fz_togenid(ref));
+				sprintf(name, "$f.%d.%d", fz_tonum(ref), fz_togen(ref));
 				obj = fz_dictgets(rdb->font, name);
 				if (!obj)
 					return fz_throw("syntaxerror: missing resource");

@@ -12,54 +12,56 @@ static inline int iswhite(int ch)
  */
 
 static fz_error *
-loadversion(float *version, fz_file *file)
+loadversion(pdf_xref *xref)
 {
 	char buf[20];
 	int n;
 
-	n = fz_seek(file, 0, 0);
+	n = fz_seek(xref->file, 0, 0);
 	if (n < 0)
-		return fz_ferror(file);
+		return fz_ferror(xref->file);
 
-	fz_readline(file, buf, sizeof buf);
+	fz_readline(xref->file, buf, sizeof buf);
 	if (memcmp(buf, "%PDF-", 5) != 0)
-		return fz_throw("syntaxerror: missing magic pdf marker");
+		return fz_throw("syntaxerror: corrupt version marker");
 
-	*version = atof(buf + 5);
+	xref->version = atof(buf + 5);
 
 	return nil;
 }
 
 static fz_error *
-readstartxref(int *ofs, fz_file *file)
+readstartxref(pdf_xref *xref)
 {
 	unsigned char buf[1024];
 	int t, n;
 	int i;
 
-	t = fz_seek(file, 0, 2);
+	t = fz_seek(xref->file, 0, 2);
 	if (t == -1)
-		return fz_ferror(file);
+		return fz_ferror(xref->file);
 
-	t = fz_seek(file, MAX(0, t - ((int)sizeof buf)), 0);
+	t = fz_seek(xref->file, MAX(0, t - ((int)sizeof buf)), 0);
 	if (t == -1)
-		return fz_ferror(file);
+		return fz_ferror(xref->file);
 
-	n = fz_read(file, buf, sizeof buf);
+	n = fz_read(xref->file, buf, sizeof buf);
 	if (n == -1)
-		return fz_ferror(file);
+		return fz_ferror(xref->file);
 
-	for (i = n - 9; i >= 0; i--) {
-		if (memcmp(buf + i, "startxref", 9) == 0) {
+	for (i = n - 9; i >= 0; i--)
+	{
+		if (memcmp(buf + i, "startxref", 9) == 0)
+		{
 			i += 9;
 			while (iswhite(buf[i]) && i < n)
 				i ++;
-			*ofs = atoi(buf + i);
+			xref->startxref = atoi(buf + i);
 			return nil;
 		}
 	}
 
-	return fz_throw("syntaxerror: missing startxref");
+	return fz_throw("syntaxerror: could not find startxref");
 }
 
 /*
@@ -67,7 +69,7 @@ readstartxref(int *ofs, fz_file *file)
  */
 
 static fz_error *
-readoldtrailer(fz_obj **objp, fz_file *file, unsigned char *buf, int cap)
+readoldtrailer(pdf_xref *xref, unsigned char *buf, int cap)
 {
 	int ofs, len;
 	char *s;
@@ -75,64 +77,64 @@ readoldtrailer(fz_obj **objp, fz_file *file, unsigned char *buf, int cap)
 	int t;
 	int c;
 
-	fz_readline(file, buf, cap);
+	fz_readline(xref->file, buf, cap);
 	if (strcmp(buf, "xref") != 0)
 		return fz_throw("syntaxerror: missing xref");
 
 	while (1)
 	{
-		c = fz_peekbyte(file);
+		c = fz_peekbyte(xref->file);
 		if (!(c >= '0' && c <= '9'))
 			break;
 
-		n = fz_readline(file, buf, cap);
-		if (n < 0) return fz_ferror(file);
+		n = fz_readline(xref->file, buf, cap);
+		if (n < 0) return fz_ferror(xref->file);
 
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
 		len = atoi(strsep(&s, " "));
 
-		t = fz_tell(file);
-		if (t < 0) return fz_ferror(file);
+		t = fz_tell(xref->file);
+		if (t < 0) return fz_ferror(xref->file);
 
-		n = fz_seek(file, t + 20 * len, 0);
-		if (n < 0) return fz_ferror(file);
+		n = fz_seek(xref->file, t + 20 * len, 0);
+		if (n < 0) return fz_ferror(xref->file);
 	}
 
-	t = pdf_lex(file, buf, cap, &n);
+	t = pdf_lex(xref->file, buf, cap, &n);
 	if (t != PDF_TTRAILER)
-		return fz_throw("syntaxerror: missing trailer");
+		return fz_throw("syntaxerror: expected trailer");
 
-	t = pdf_lex(file, buf, cap, &n);
+	t = pdf_lex(xref->file, buf, cap, &n);
 	if (t != PDF_TODICT)
-		return fz_throw("syntaxerror: trailer must be dictionary");
+		return fz_throw("syntaxerror: expected trailer dictionary");
 
-	return pdf_parsedict(objp, file, buf, cap);
+	return pdf_parsedict(&xref->trailer, xref->file, buf, cap);
 }
 
 static fz_error *
-readnewtrailer(fz_obj **objp, fz_file *file, unsigned char *buf, int cap)
+readnewtrailer(pdf_xref *xref, unsigned char *buf, int cap)
 {
-	return pdf_parseindobj(objp, file, buf, cap, nil, nil, nil);
+	return pdf_parseindobj(&xref->trailer, xref->file, buf, cap, nil, nil, nil);
 }
 
 static fz_error *
-readtrailer(fz_obj **objp, fz_file *file, int ofs, unsigned char *buf, int cap)
+readtrailer(pdf_xref *xref, unsigned char *buf, int cap)
 {
 	int n;
 	int c;
 
-	n = fz_seek(file, ofs, 0);
+	n = fz_seek(xref->file, xref->startxref, 0);
 	if (n < 0)
-		return fz_ferror(file);
+		return fz_ferror(xref->file);
 
-	c = fz_peekbyte(file);
+	c = fz_peekbyte(xref->file);
 	if (c == 'x')
-		return readoldtrailer(objp, file, buf, cap);
+		return readoldtrailer(xref, buf, cap);
 	else if (c >= '0' && c <= '9')
-		return readnewtrailer(objp, file, buf, cap);
+		return readnewtrailer(xref, buf, cap);
 
-	return fz_throw("syntaxerror: missing xref");
+	return fz_throw("syntaxerror: could not find xref");
 }
 
 /*
@@ -151,7 +153,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 
 	fz_readline(xref->file, buf, cap);
 	if (strcmp(buf, "xref") != 0)
-		return fz_throw("syntaxerror: missing xref");
+		return fz_throw("syntaxerror: expected xref");
 
 	while (1)
 	{
@@ -183,10 +185,10 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 
 	t = pdf_lex(xref->file, buf, cap, &n);
 	if (t != PDF_TTRAILER)
-		return fz_throw("syntaxerror: missing trailer");
+		return fz_throw("syntaxerror: expected trailer");
 	t = pdf_lex(xref->file, buf, cap, &n);
 	if (t != PDF_TODICT)
-		return fz_throw("syntaxerror: trailer must be dictionary");
+		return fz_throw("syntaxerror: expected trailer dictionary");
 
 	return pdf_parsedict(trailerp, xref->file, buf, cap);
 }
@@ -197,13 +199,23 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 	fz_error *error;
 	fz_obj *trailer;
 	fz_obj *obj;
-	int oid, gid, stmofs;
+	int oid, gen, stmofs;
 	int size, w0, w1, w2, i0, i1;
 	int i, n;
 
-	error = pdf_parseindobj(&trailer, xref->file, buf, cap, &oid, &gid, &stmofs);
+	error = pdf_parseindobj(&trailer, xref->file, buf, cap, &oid, &gen, &stmofs);
 	if (error)
 		return error;
+
+	if (oid < 0 || oid >= xref->len) {
+		error = fz_throw("rangecheck: object id out of range");
+		goto cleanup;
+	}
+
+	xref->table[oid].type = 'n';
+	xref->table[oid].gen = gen;
+	xref->table[oid].obj = fz_keepobj(trailer);
+	xref->table[oid].stmofs = stmofs;
 
 	obj = fz_dictgets(trailer, "Size");
 	if (!obj) {
@@ -231,12 +243,12 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 		i1 = size;
 	}
 
-	if (i0 < 0 || i1 > xref->size) {
+	if (i0 < 0 || i1 > xref->len) {
 		error = fz_throw("syntaxerror: xref stream has too many entries");
 		goto cleanup;
 	}
 
-	error = pdf_openstream0(xref, trailer, oid, gid, stmofs);
+	error = pdf_openstream(xref, oid, gen);
 	if (error)
 		goto cleanup;
 
@@ -246,9 +258,9 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 		int b = 0;
 		int c = 0;
 
-		if (fz_peekbyte(xref->file) == EOF)
+		if (fz_peekbyte(xref->stream) == EOF)
 		{
-			error = fz_ferror(xref->file);
+			error = fz_ferror(xref->stream);
 			if (!error)
 				error = fz_throw("syntaxerror: truncated xref stream");
 			pdf_closestream(xref);
@@ -256,11 +268,11 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 		}
 
 		for (n = 0; n < w0; n++)
-			a = (a << 8) + fz_readbyte(xref->file);
+			a = (a << 8) + fz_readbyte(xref->stream);
 		for (n = 0; n < w1; n++)
-			b = (b << 8) + fz_readbyte(xref->file);
+			b = (b << 8) + fz_readbyte(xref->stream);
 		for (n = 0; n < w2; n++)
-			c = (c << 8) + fz_readbyte(xref->file);
+			c = (c << 8) + fz_readbyte(xref->stream);
 
 		if (!xref->table[i].type)
 		{
@@ -298,7 +310,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, unsigned char *buf, int cap
 	else if (c >= '0' && c <= '9')
 		return readnewxref(trailerp, xref, buf, cap);
 
-	return fz_throw("syntaxerror: missing xref");
+	return fz_throw("syntaxerror: expected xref");
 }
 
 static fz_error *
@@ -343,7 +355,7 @@ cleanup:
  */
 
 fz_error *
-pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
+pdf_loadobjstm(pdf_xref *xref, int oid, int gen, unsigned char *buf, int cap)
 {
 	fz_error *error;
 	fz_obj *objstm;
@@ -351,12 +363,11 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 	int *ofsbuf;
 
 	fz_obj *obj;
-	int stmofs;
 	int first;
 	int count;
 	int i, n, t;
 
-	error = pdf_loadobject0(&objstm, xref, oid, gid, &stmofs);
+	error = pdf_loadobject(&objstm, xref, oid, gen);
 	if (error)
 		return error;
 
@@ -369,13 +380,13 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 	ofsbuf = fz_malloc(count * sizeof(int));
 	if (!ofsbuf) { error = fz_outofmem; goto cleanup2; }
 
-	error = pdf_openstream0(xref, objstm, oid, gid, stmofs);
+	error = pdf_openstream(xref, oid, gen);
 	if (error)
 		goto cleanup3;
 
 	for (i = 0; i < count; i++)
 	{
-		t = pdf_lex(xref->file, buf, cap, &n);
+		t = pdf_lex(xref->stream, buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");
@@ -383,7 +394,7 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 		}
 		oidbuf[i] = atoi(buf);
 
-		t = pdf_lex(xref->file, buf, cap, &n);
+		t = pdf_lex(xref->stream, buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");
@@ -392,10 +403,10 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 		ofsbuf[i] = atoi(buf);
 	}
 
-	n = fz_seek(xref->file, first, 0);
+	n = fz_seek(xref->stream, first, 0);
 	if (n < 0)
 	{
-		error = fz_ferror(xref->file);
+		error = fz_ferror(xref->stream);
 		goto cleanup4;
 	}
 
@@ -403,19 +414,19 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 	{
 		/* FIXME: seek to first + ofsbuf[i] */
 
-		error = pdf_parsestmobj(&obj, xref->file, buf, cap);
+		error = pdf_parsestmobj(&obj, xref->stream, buf, cap);
 		if (error)
 			goto cleanup4;
 
-		if (oidbuf[i] < 1 || oidbuf[i] >= xref->size)
+		if (oidbuf[i] < 1 || oidbuf[i] >= xref->len)
 		{
 			error = fz_throw("rangecheck: object number out of range");
 			goto cleanup4;
 		}
 
-		error = pdf_storeobject(xref->store, oidbuf[i], 0, obj);
-		if (error)
-			goto cleanup4;
+		if (xref->table[oidbuf[i]].obj)
+			fz_dropobj(xref->table[oidbuf[i]].obj);
+		xref->table[oidbuf[i]].obj = obj;
 	}
 
 	pdf_closestream(xref);
@@ -440,53 +451,76 @@ cleanup1:
  */
 
 fz_error *
-pdf_openxref(pdf_xref *xref, char *filename)
+pdf_openpdf(pdf_xref **xrefp, char *filename)
 {
 	fz_error *error;
+	pdf_xref *xref;
 	fz_obj *size;
 	int i;
 
 	unsigned char buf[65536];	/* yeowch! */
 
+	xref = fz_malloc(sizeof (pdf_xref));
+	if (!xref)
+		return fz_outofmem;
+
+	xref->file = nil;
+	xref->version = 1.0;
+	xref->startxref = 0;
+	xref->trailer = nil;
+	xref->crypt = nil;
+
+	xref->len = 0;
+	xref->cap = 0;
+	xref->table = nil;
+
 	error = fz_openfile(&xref->file, filename, FZ_READ);
 	if (error)
-		return error;
+		goto cleanup;
 
-	error = loadversion(&xref->version, xref->file);
+	error = loadversion(xref);
 	if (error)
-		return error;
+		goto cleanup;
 
-	error = readstartxref(&xref->startxref, xref->file);
+	error = readstartxref(xref);
 	if (error)
-		return error;
+		goto cleanup;
 
-	error = readtrailer(&xref->trailer, xref->file, xref->startxref, buf, sizeof buf);
+	error = readtrailer(xref, buf, sizeof buf);
 	if (error)
-		return error;
+		goto cleanup;
 
 	size = fz_dictgets(xref->trailer, "Size");
 	if (!size)
 		return fz_throw("syntaxerror: trailer missing Size entry");
 
-	xref->capacity = fz_toint(size);
-	xref->size = fz_toint(size);
+	xref->cap = fz_toint(size);
+	xref->len = fz_toint(size);
 
-	xref->table = fz_malloc(xref->capacity * sizeof(pdf_xrefentry));
+	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 		return fz_outofmem;
 
-	for (i = 0; i < xref->size; i++)
+	for (i = 0; i < xref->len; i++)
 	{
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
 		xref->table[i].type = 0;
 		xref->table[i].mark = 0;
+		xref->table[i].stmbuf = nil;
+		xref->table[i].stmofs = 0;
+		xref->table[i].obj = nil;
 	}
 
 	error = readxrefsections(xref, xref->startxref, buf, sizeof buf);
 	if (error)
 		return error;
 
+	*xrefp = xref;
 	return nil;
+
+cleanup:
+	pdf_closepdf(xref);
+	return error;
 }
 

@@ -92,8 +92,8 @@ float fz_toreal(fz_obj *obj);
 char *fz_toname(fz_obj *obj);
 char *fz_tostringbuf(fz_obj *obj);
 int fz_tostringlen(fz_obj *obj);
-int fz_toobjid(fz_obj *obj);
-int fz_togenid(fz_obj *obj);
+int fz_tonum(fz_obj *obj);
+int fz_togen(fz_obj *obj);
 void *fz_topointer(fz_obj *obj);
 
 int fz_arraylen(fz_obj *array);

@@ -87,12 +87,12 @@ Library libmupdf :
 	mupdf/lex.c
 	mupdf/parse.c
 	mupdf/crypt.c
-	mupdf/stream.c
 
 	mupdf/open.c
 	mupdf/repair.c
 	mupdf/save.c
 	mupdf/xref.c
+	mupdf/stream.c
 	mupdf/doctor.c
 
 	mupdf/cmap.c

@@ -82,7 +82,7 @@ main(int argc, char **argv)
 			pipe = filter;
 	}
 
-	err = fz_openfile(&file, "/dev/stdin", O_RDONLY);
+	err = fz_openfile(&file, "/dev/stdin", FZ_READ);
 	if (err) fz_abort(err);
 
 	if (pipe)

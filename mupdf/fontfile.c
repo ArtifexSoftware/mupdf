@@ -205,7 +205,7 @@ pdf_loadembeddedfont(void **fontp, pdf_xref *xref, fz_obj *stmref)
 	if (error)
 		return error;
 
-	error = pdf_readstream(&buf, xref, stmref);
+	error = pdf_loadstream(&buf, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		return error;
 

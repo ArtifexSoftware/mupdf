@@ -68,7 +68,7 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		{
 			kref = fz_arrayget(kids, i);
 
-			err = pdf_loadobject(&kobj, xref, kref, nil);
+			err = pdf_loadindirect(&kobj, xref, kref);
 			if (err) return err;
 
 			err = loadpagetree(xref, pages, inherit, kobj, kref);
@@ -115,11 +115,11 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	trailer = xref->trailer;
 
 	ref = fz_dictgets(trailer, "Root");
-	err = pdf_loadobject(&catalog, xref, ref, nil);
+	err = pdf_loadindirect(&catalog, xref, ref);
 	if (err) goto error;
 
 	ref = fz_dictgets(catalog, "Pages");
-	err = pdf_loadobject(&pages, xref, ref, nil);
+	err = pdf_loadindirect(&pages, xref, ref);
 	if (err) goto error;
 
 	ref = fz_dictgets(pages, "Count");

@@ -24,11 +24,11 @@ void preloadobjstms(pdf_xref *xref)
 	fz_obj *obj;
 	int i;
 
-	for (i = 0; i < xref->size; i++)
+	for (i = 0; i < xref->len; i++)
 	{
 		if (xref->table[i].type == 'o')
 		{
-			error = pdf_loadobject0(&obj, xref, i, 0, nil);
+			error = pdf_loadobject(&obj, xref, i, 0);
 			if (error) fz_abort(error);
 			fz_dropobj(obj);
 		}
@@ -39,23 +39,22 @@ void expandstreams(pdf_xref *xref)
 {
 	fz_error *error;
 	fz_obj *stmobj;
-	int stmofs;
 	fz_buffer *buf;
 	fz_obj *stmlen;
 	int i, gen;
 
-	for (i = 0; i < xref->size; i++)
+	for (i = 0; i < xref->len; i++)
 	{
 		if (xref->table[i].type == 'n')
 		{
 			gen = xref->table[i].gen;
 
-			error = pdf_loadobject0(&stmobj, xref, i, gen, &stmofs);
-			if (error) fz_abort(error);
-
-			if (stmofs != -1)
+			if (pdf_isstream(xref, i, gen))
 			{
-				error = pdf_readstream0(&buf, xref, stmobj, i, gen, stmofs);
+				error = pdf_loadobject(&stmobj, xref, i, gen);
+				if (error) fz_abort(error);
+
+				error = pdf_loadstream(&buf, xref, i, gen);
 				if (error) fz_abort(error);
 
 				fz_dictdels(stmobj, "Filter");
@@ -67,10 +66,10 @@ void expandstreams(pdf_xref *xref)
 				if (error) fz_abort(error);
 				fz_dropobj(stmlen);
 
-				error = pdf_saveobject(xref, i, gen, stmobj);
-				if (error) fz_abort(error);
-				error = pdf_savestream(xref, i, gen, buf);
-				if (error) fz_abort(error);
+				pdf_updateobject(xref, i, gen, stmobj);
+				pdf_updatestream(xref, i, gen, buf);
+
+				fz_dropobj(stmobj);
 			}
 		}
 	}
@@ -119,18 +118,14 @@ int main(int argc, char **argv)
 	infile = argv[optind++];
 	outfile = argv[optind++];
 
-	error = pdf_newxref(&xref);
-	if (error)
-		fz_abort(error);
-
 	if (dorepair)
-		error = pdf_repairxref(xref, infile);
+		error = pdf_repairpdf(&xref, infile);
 	else
-		error = pdf_openxref(xref, infile);
+		error = pdf_openpdf(&xref, infile);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptxref(xref);
+	error = pdf_decryptpdf(xref);
 	if (error)
 		fz_abort(error);
 
@@ -167,7 +162,7 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
-	pdf_closexref(xref);
+	pdf_closepdf(xref);
 
 	return 0;
 }

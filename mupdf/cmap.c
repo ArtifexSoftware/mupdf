@@ -389,7 +389,7 @@ fz_debugobj(stmobj);
 printf("\n");
 fflush(stdout);
 
-	error = pdf_openstream(xref, stmref);
+	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		goto cleanup;
 
