@@ -294,6 +294,10 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 
 	fz_free(list);
 
+	error = pdf_newstore(&xref->store);
+	if (error)
+		goto cleanup;
+
 	*xrefp = xref;
 	return nil;
 

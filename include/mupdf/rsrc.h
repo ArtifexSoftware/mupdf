@@ -1,16 +1,25 @@
 /*
- * Resource registry and dictionaries
+ * Resource store
  */
 
-struct pdf_rsrc_s
+typedef enum pdf_itemkind_e
 {
-	fz_obj *key;
-	void *val;
-	pdf_rsrc *next;
-};
+	PDF_KCOLORSPACE,
+	PDF_KFUNCTION,
+	PDF_KXOBJECT,
+	PDF_KIMAGE,
+	PDF_KPATTERN,
+	PDF_KSHADE,
+	PDF_KCMAP,
+	PDF_KFONT
+} pdf_itemkind;
+
+fz_error *pdf_newstore(pdf_store **storep);
+fz_error *pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
+void *pdf_finditem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
+void pdf_dropstore(pdf_store *store);
 
 fz_error *pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
-void *pdf_findresource(pdf_rsrc *list, fz_obj *key);
 
 /*
  * Functions
@@ -18,7 +27,7 @@ void *pdf_findresource(pdf_rsrc *list, fz_obj *key);
 
 typedef struct pdf_function_s pdf_function;
 
-fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj);
+fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *ref);
 fz_error *pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
 void pdf_dropfunction(pdf_function *func);
 
@@ -103,7 +112,7 @@ struct pdf_image_s
 };
 
 fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_file *file);
-fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *stm);
+fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
 
 /*
@@ -164,9 +173,9 @@ struct pdf_font_s
 
 /* cmap.c */
 fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_file *file);
-fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref);
+fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
 fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
-fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
+fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes); // XXX
 
 /* unicode.c */
 fz_error *pdf_loadtounicode(pdf_font *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);
@@ -178,10 +187,10 @@ fz_error *pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection);
 fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
 
 /* type3.c */
-fz_error *pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
+fz_error *pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 
 /* font.c */
 fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
-fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
+fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 void pdf_dropfont(pdf_font *font);
 

@@ -382,6 +382,9 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	fz_obj *wmode;
 	fz_obj *obj;
 
+	if ((*cmapp = pdf_finditem(xref->store, PDF_KCMAP, stmref)))
+		return nil;
+
 	pdf_logfont("load embedded cmap %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 
 	error = pdf_resolve(&stmobj, xref);
@@ -425,9 +428,13 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 		fz_dropcmap(usecmap);
 	}
 
-	fz_dropobj(stmobj);
-
 	pdf_logfont("}\n");
+
+	error = pdf_storeitem(xref->store, PDF_KCMAP, stmref, cmap);
+	if (error)
+		goto cleanup;
+
+	fz_dropobj(stmobj);
 
 	*cmapp = cmap;
 	return nil;

@@ -8,6 +8,9 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_xobject *form;
 	fz_obj *obj;
 
+	if ((*formp = pdf_finditem(xref->store, PDF_KXOBJECT, ref)))
+		return nil;
+
 	form = fz_malloc(sizeof(pdf_xobject));
 	if (!form)
 		return fz_outofmem;
@@ -54,6 +57,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		fz_dropobj(obj);
 	}
 
+	form->contents = nil;
 	error = pdf_loadstream(&form->contents, xref, fz_tonum(ref), fz_togen(ref));
 	if (error)
 	{
@@ -65,6 +69,15 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_logrsrc("stream %d bytes\n", form->contents->wp - form->contents->rp);
 
 	pdf_logrsrc("}\n");
+
+	error = pdf_storeitem(xref->store, PDF_KXOBJECT, ref, form);
+	if (error)
+	{
+		fz_dropbuffer(form->contents);
+		fz_dropobj(form->resources);
+		fz_free(form);
+		return error;
+	}
 
 	*formp = form;
 	return nil;

@@ -2,7 +2,7 @@
  * xref and object / stream api
  */
 
-typedef struct pdf_rsrc_s pdf_rsrc;		/* parsed resource registry */
+typedef struct pdf_store_s pdf_store;		/* parsed resource store */
 
 typedef struct pdf_xrefentry_s pdf_xrefentry;
 typedef struct pdf_xref_s pdf_xref;
@@ -20,12 +20,7 @@ struct pdf_xref_s
 	int cap;
 	pdf_xrefentry *table;
 
-	pdf_rsrc *rfont;
-	pdf_rsrc *rimage;
-	pdf_rsrc *rxobject;
-	pdf_rsrc *rpattern;
-	pdf_rsrc *rshade;
-	pdf_rsrc *rcolorspace;
+	pdf_store *store;
 };
 
 struct pdf_xrefentry_s

@@ -89,7 +89,7 @@ cleanup:
 fz_error *
 pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error *error = fz_throw("NYI");
 	fz_shade *shade;
 	
 	fz_obj *shading;

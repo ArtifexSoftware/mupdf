@@ -284,7 +284,7 @@ pdf_newfont(char *name)
  */
 
 static fz_error *
-loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
+loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error *error;
 	fz_obj *descriptor = nil;
@@ -313,7 +313,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	if (!font)
 		return fz_outofmem;
 
-	pdf_logfont("load simple font %p {\n", font);
+	pdf_logfont("load simple font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("basefont0 %s\n", basefont);
 	pdf_logfont("basefont1 %s\n", fontname);
 
@@ -570,7 +570,7 @@ cleanup:
  */
 
 static fz_error *
-loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *tounicode)
+loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj *encoding, fz_obj *tounicode)
 {
 	fz_error *error;
 	fz_obj *widths = nil;
@@ -625,7 +625,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 	if (!font)
 		return fz_outofmem;
 
-	pdf_logfont("load cid font %p {\n", font);
+	pdf_logfont("load cid font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("basefont %s\n", basefont);
 	pdf_logfont("collection %s\n", collection);
 
@@ -878,7 +878,7 @@ cleanup:
 }
 
 static fz_error *
-loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
+loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error *error;
 	fz_obj *dfonts;
@@ -902,9 +902,9 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	tounicode = fz_dictgets(dict, "ToUnicode");
 
 	if (!strcmp(fz_toname(subtype), "CIDFontType0"))
-		error = loadcidfont(fontp, xref, dfont, encoding, tounicode);
+		error = loadcidfont(fontp, xref, dfont, ref, encoding, tounicode);
 	else if (!strcmp(fz_toname(subtype), "CIDFontType2"))
-		error = loadcidfont(fontp, xref, dfont, encoding, tounicode);
+		error = loadcidfont(fontp, xref, dfont, ref, encoding, tounicode);
 	else
 		error = fz_throw("syntaxerror: unknown cid font type");
 
@@ -978,18 +978,33 @@ cleanup:
 }
 
 fz_error *
-pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
+pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	char *subtype = fz_toname(fz_dictgets(dict, "Subtype"));
+	fz_error *error;
+	char *subtype;
+
+	if ((*fontp = pdf_finditem(xref->store, PDF_KFONT, ref)))
+		return nil;
+
+	subtype = fz_toname(fz_dictgets(dict, "Subtype"));
 	if (!strcmp(subtype, "Type0"))
-		return loadtype0(fontp, xref, dict);
+		error = loadtype0(fontp, xref, dict, ref);
 	if (!strcmp(subtype, "Type1") || !strcmp(subtype, "MMType1"))
-		return loadsimplefont(fontp, xref, dict);
+		error = loadsimplefont(fontp, xref, dict, ref);
 	else if (!strcmp(subtype, "TrueType"))
-		return loadsimplefont(fontp, xref, dict);
+		error = loadsimplefont(fontp, xref, dict, ref);
 	else if (!strcmp(subtype, "Type3"))
-		return pdf_loadtype3font(fontp, xref, dict);
+		error = pdf_loadtype3font(fontp, xref, dict, ref);
 	else
-		return fz_throw("unimplemented: %s fonts", subtype);
+		error = fz_throw("unimplemented: %s fonts", subtype);
+
+	if (error)
+		return error;
+
+	error = pdf_storeitem(xref->store, PDF_KFONT, ref, *fontp);
+	if (error)
+		return error;
+
+	return nil;
 }
 

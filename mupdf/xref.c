@@ -8,6 +8,7 @@
 fz_error *
 pdf_newpdf(pdf_xref **xrefp)
 {
+	fz_error *error;
 	pdf_xref *xref;
 
 	xref = fz_malloc(sizeof(pdf_xref));
@@ -38,6 +39,13 @@ pdf_newpdf(pdf_xref **xrefp)
 	xref->table[0].stmbuf = nil;
 	xref->table[0].stmofs = 0;
 	xref->table[0].obj = nil;
+
+	error = pdf_newstore(&xref->store);
+	if (error)
+	{
+		pdf_closepdf(xref);
+		return error;
+	}
 
 	*xrefp = xref;
 	return nil;
@@ -81,6 +89,9 @@ pdf_closepdf(pdf_xref *xref)
 	int i;
 
 	pdf_logxref("closexref %p\n", xref);
+
+	if (xref->store)
+		pdf_dropstore(xref->store);
 
 	if (xref->table)
 	{

@@ -1,5 +1,4 @@
 #include <fitz.h>
-#include <mupdf.h>
 
 fz_error *
 fz_rendershade1(fz_shade *shade, fz_matrix ctm, fz_colorspace *dsts, fz_pixmap *dstp, int over)

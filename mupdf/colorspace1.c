@@ -548,8 +548,8 @@ static void
 dropindexed(fz_colorspace *fzcs)
 {
 	pdf_indexed *cs = (pdf_indexed *)fzcs;
-	fz_dropcolorspace(cs->base);
-	fz_free(cs->lookup);
+	if (cs->base) fz_dropcolorspace(cs->base);
+	if (cs->lookup) fz_free(cs->lookup);
 }
 
 static fz_error *
@@ -592,7 +592,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs->lookup = fz_malloc(n);
 	if (!cs->lookup)
 	{
-		dropindexed((fz_colorspace*)cs);
+		fz_dropcolorspace((fz_colorspace*)cs);
 		return fz_outofmem;
 	}
 
@@ -618,7 +618,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		error = pdf_loadstream(&buf, xref, fz_tonum(lookup), fz_togen(lookup));
 		if (error)
 		{
-			dropindexed((fz_colorspace*)cs);
+			fz_dropcolorspace((fz_colorspace*)cs);
 			return error;
 		}
 

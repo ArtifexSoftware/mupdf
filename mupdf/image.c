@@ -62,12 +62,13 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 			if (csd)
 			{
 				fz_obj *cso = fz_dictget(csd, cs);
-				img->super.cs = pdf_findresource(xref->rcolorspace, cso);
+				img->super.cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, cso);
 			}
 		}
 
 		if (!img->super.cs)
 		{
+			/* XXX danger! danger! does this resolve? */
 			error = pdf_loadcolorspace(&img->super.cs, xref, cs);
 			if (error)
 				return error;
@@ -177,6 +178,9 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_indexed *indexed = nil;
 	int stride;
 
+	if ((*imgp = pdf_finditem(xref->store, PDF_KIMAGE, ref)))
+		return nil;
+
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
 		return fz_outofmem;
@@ -197,13 +201,19 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "ColorSpace");
 	if (obj)
 	{
-		error = pdf_resolve(&obj, xref);
-		if (error)
-			return error;
+		cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, obj);
+		if (!cs)
+		{
+			error = pdf_resolve(&obj, xref);
+			if (error)
+				return error;
 
-		error = pdf_loadcolorspace(&cs, xref, obj);
-		if (error)
-			return error;
+			error = pdf_loadcolorspace(&cs, xref, obj);
+			if (error)
+				return error;
+
+			fz_dropobj(obj);
+		}
 
 		if (!strcmp(cs->name, "Indexed"))
 		{
@@ -215,8 +225,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		a = 0;
 
 		pdf_logimage("colorspace %s\n", cs->name);
-
-		fz_dropobj(obj);
 	}
 
 	/*
@@ -358,6 +366,13 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	img->mask = (fz_image*)mask;
 
 	pdf_logimage("}\n");
+
+	error = pdf_storeitem(xref->store, PDF_KIMAGE, ref, img);
+	if (error)
+	{
+		fz_dropimage((fz_image*)img);
+		return error;
+	}
 
 	*imgp = img;
 	return nil;

@@ -180,7 +180,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 		{
 			if (fz_isarray(val) && fz_arraylen(val) == 2)
 			{
-				gstate->font = pdf_findresource(xref->rfont, fz_arrayget(val, 0));
+				gstate->font = pdf_finditem(xref->store, PDF_KFONT, fz_arrayget(val, 0));
 				if (!gstate->font)
 					return fz_throw("syntaxerror: missing font resource");
 				gstate->size = fz_toreal(fz_arrayget(val, 1));
@@ -433,7 +433,8 @@ Lsetcolorspace:
 					obj = fz_dictget(dict, obj);
 					if (!obj)
 						return fz_throw("syntaxerror: missing colorspace resource");
-					cs = pdf_findresource(xref->rcolorspace, obj);
+
+					cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, obj);
 					if (!cs)
 						return fz_throw("syntaxerror: missing colorspace resource");
 				}
@@ -500,14 +501,14 @@ Lsetcolor:
 				if (!obj)
 					return fz_throw("syntaxerror: missing pattern resource");
 
-				pat = pdf_findresource(xref->rpattern, obj);
+				pat = pdf_finditem(xref->store, PDF_KPATTERN, obj);
 				if (pat)
 				{
 					error = pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
 					if (error) return error;
 				}
 
-				shd = pdf_findresource(xref->rshade, obj);
+				shd = pdf_finditem(xref->store, PDF_KSHADE, obj);
 				if (shd)
 				{
 					error = pdf_setshade(csi, what, shd);
@@ -627,7 +628,7 @@ Lsetcolor:
 			if (!obj)
 				return fz_throw("syntaxerror: missing font resource");
 
-			gstate->font = pdf_findresource(xref->rfont, obj);
+			gstate->font = pdf_finditem(xref->store, PDF_KFONT, obj);
 			if (!gstate->font)
 				return fz_throw("syntaxerror: missing font resource");
 
@@ -730,8 +731,8 @@ fz_debugobj(rdb);
 			if (!obj)
 				return fz_throw("syntaxerror: missing xobject resource");
 
-			img = pdf_findresource(xref->rimage, obj);
-			xobj = pdf_findresource(xref->rxobject, obj);
+			img = pdf_finditem(xref->store, PDF_KIMAGE, obj);
+			xobj = pdf_finditem(xref->store, PDF_KXOBJECT, obj);
 
 			if (!img && !xobj)
 				return fz_throw("syntaxerror: missing xobject resource");
@@ -769,7 +770,7 @@ fz_debugobj(rdb);
 			if (!obj)
 				return fz_throw("syntaxerror: missing shading resource");
 
-			shd = pdf_findresource(xref->rshade, obj);
+			shd = pdf_finditem(xref->store, PDF_KSHADE, obj);
 			if (!shd)
 				return fz_throw("syntaxerror: missing shading resource");
 

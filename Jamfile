@@ -118,23 +118,25 @@ Library libmupdf :
 	mupdf/outline.c
 	mupdf/pagetree.c
 
+	mupdf/store.c
+	mupdf/resources.c
 	mupdf/function.c
+	mupdf/colorspace1.c
+	mupdf/colorspace2.c
+	mupdf/xobject.c
+	mupdf/image.c
+	mupdf/pattern.c
+	mupdf/shade.c
 	mupdf/cmap.c
+	mupdf/unicode.c
 	mupdf/fontagl.c
 	mupdf/fontenc.c
 	mupdf/fontfile.c
 #	mupdf/fontfilefc.c
 #	mupdf/fontfilems.c
-	mupdf/unicode.c
 	mupdf/font.c
 	mupdf/type3.c
-	mupdf/colorspace1.c
-	mupdf/colorspace2.c
-	mupdf/image.c
-	mupdf/xobject.c
-	mupdf/pattern.c
-	mupdf/shade.c
-	mupdf/resources.c
+
 	mupdf/page.c
 	mupdf/build.c
 	mupdf/interpret.c

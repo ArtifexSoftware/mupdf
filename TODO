@@ -1,4 +1,6 @@
 immediate plan:
+	- fast parsed object store (scrap r* cache)
+	- global font/cmap cache
 	- image color key transparency
 	- text fill + clip mode
 	- pdf logging
@@ -8,7 +10,6 @@ immediate plan:
 	- page labels + dests + outline + annots
 	- design gui for editor
 	- go through spec and check all features!
-	- global font/cmap cache
 	- font and cmap config (where to load cmap and which cid fonts)
 	- talk to keithp about fontconfig cid-font + cmap support
 

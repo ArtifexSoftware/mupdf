@@ -86,7 +86,7 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 }
 
 fz_error *
-pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
+pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error *error;
 	char buf[256];
@@ -111,7 +111,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	if (!font)
 		return fz_outofmem;
 
-	pdf_logfont("load type3 font %p {\n", font);
+	pdf_logfont("load type3 font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("name %s\n", buf);
 
 	font->super.render = t3render;

@@ -534,7 +534,11 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 
 	error = readxrefsections(xref, xref->startxref, buf, sizeof buf);
 	if (error)
-		return error;
+		goto cleanup;
+
+	error = pdf_newstore(&xref->store);
+	if (error)
+		goto cleanup;
 
 	*xrefp = xref;
 	return nil;

@@ -1443,7 +1443,7 @@ pdf_dropfunction(pdf_function *func)
 }
 
 fz_error *
-pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
+pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error = nil;
 	fz_obj *objfunc = nil;
@@ -1452,12 +1452,15 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 	int tmp;
 	int i;
 	float min,max;
-	
+
+	if ((*func = pdf_finditem(xref->store, PDF_KFUNCTION, ref)))
+		return nil;
+
 	newfunc = fz_malloc(sizeof(pdf_function));
 	if(!newfunc) return fz_outofmem;
 	memset(newfunc,0,sizeof(pdf_function));
 	
-	objfunc = obj;
+	objfunc = ref;
 	error = pdf_resolve(&objfunc,xref);
 	if(error) { objfunc = nil; goto cleanup; }
 	
@@ -1514,12 +1517,12 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 	switch(newfunc->type)
 	{
 	case PDF_FUNC_SAMPLE:
-		if(!fz_isindirect(obj))
+		if(!fz_isindirect(ref))
 			goto cleanup;
-		if(!pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
+		if(!pdf_isstream(xref, fz_tonum(ref), fz_togen(ref)))
 			goto cleanup;
 		error = loadsamplefunc(newfunc, xref, objfunc,
-			fz_tonum(obj), fz_togen(obj));
+			fz_tonum(ref), fz_togen(ref));
 		if(error) goto cleanup;
 		break;
 	case PDF_FUNC_EXPONENTIAL:
@@ -1531,12 +1534,12 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 		if(error) goto cleanup;
 		break;
 	case PDF_FUNC_POSTSCRIPT:
-		if(!fz_isindirect(obj))
+		if(!fz_isindirect(ref))
 			goto cleanup;
-		if(!pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
+		if(!pdf_isstream(xref, fz_tonum(ref), fz_togen(ref)))
 			goto cleanup;
 		error = loadpostscriptfunc(newfunc, xref, objfunc,
-			fz_tonum(obj), fz_togen(obj));		
+			fz_tonum(ref), fz_togen(ref));		
 		if(error) goto cleanup;
 		break;
 	default:
@@ -1544,9 +1547,11 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 	}
 	
 	fz_dropobj(objfunc);
-	
+
+	error = pdf_storeitem(xref->store, PDF_KFUNCTION, ref, newfunc);
+	if (error) goto cleanup;
+
 	*func = newfunc;
-	
 	return nil;
 	
 cleanup:
