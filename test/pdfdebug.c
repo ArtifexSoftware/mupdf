@@ -5,11 +5,10 @@ static char *password = "";
 static int dodecode = 0;
 static int dorepair = 0;
 static int doprintxref = 0;
-static int doprintpages = 0;
 
 void usage()
 {
-	fprintf(stderr, "usage: mupdf [-drxp] [-u password] file.pdf\n");
+	fprintf(stderr, "usage: pdfdebug [-drx] [-u password] file.pdf [oid ...]\n");
 	exit(1);
 }
 
@@ -127,114 +126,11 @@ void printobject(pdf_xref *xref, int oid, int gid)
 	fz_dropobj(obj);
 }
 
-/*
- * Draw page
- */
-
-void runcsi(pdf_xref *xref, pdf_csi *csi, pdf_resources *rdb, fz_obj *stmref)
-{
-	fz_error *error;
-
-	error = pdf_openstream(xref, stmref);
-	if (error) fz_abort(error);
-
-	error = pdf_runcsi(csi, rdb, xref->file);
-	if (error) fz_abort(error);
-
-	pdf_closestream(xref);
-}
-
-void showpage(pdf_xref *xref, fz_obj *page)
-{
-	fz_error *error;
-	pdf_csi *csi;
-	pdf_resources *rdb = nil;
-	fz_obj *resources;
-	fz_obj *contents;
-	int i;
-
-	fz_debugobj(page);
-	printf("\n");
-
-	resources = fz_dictgets(page, "Resources");
-	if (resources)
-	{
-		error = pdf_resolve(&resources, xref);
-		if (error) fz_abort(error);
-
-		error = pdf_loadresources(&rdb, xref, resources);
-		if (error) fz_abort(error);
-
-		// parse resources into native res dict
-		fz_dropobj(resources);
-	}
-	else
-		fz_abort(fz_throw("syntaxerror: missing resource dictionary"));
-
-printf("resources:\n");
-printf("  font:\n");
-fz_debugobj(rdb->font);
-printf("\n  extgstate:\n");
-fz_debugobj(rdb->extgstate);
-printf("\nfitz tree:\n");
-
-	error = pdf_newcsi(&csi);
-	if (error) fz_abort(error);
-
-	contents = fz_dictgets(page, "Contents");
-	if (contents)
-	{
-		if (fz_isarray(contents))
-		{
-			for (i = 0; i < fz_arraylen(contents); i++)
-			{
-				runcsi(xref, csi, rdb, fz_arrayget(contents, i));
-			}
-		}
-		else
-		{
-			// XXX resolve and check if it is an array
-			runcsi(xref, csi, rdb, contents);
-		}
-	}
-
-	fz_debugtree(csi->tree);
-
-	{
-		fz_pixmap *pix;
-		fz_renderer *gc;
-		fz_matrix ctm;
-
-#define W 612
-#define H 792
-
-#define xW 1106
-#define xH 1548
-
-		fz_newrenderer(&gc);
-		fz_newpixmap(&pix, 0, 0, W, H, 1, 0);
-		ctm = fz_concat(fz_translate(0, -H), fz_scale(1,-1));
-
-		memset(pix->samples, 0x00, pix->stride * pix->h * 2);
-
-printf("rendering!\n");
-		fz_rendernode(gc, csi->tree->root, ctm, pix);
-printf("done!\n");
-		fz_debugpixmap(pix);
-
-		fz_freepixmap(pix);
-		fz_freerenderer(gc);
-	}
-
-	pdf_freecsi(csi);
-}
-
 int main(int argc, char **argv)
 {
 	fz_error *error;
 	char *filename;
 	pdf_xref *xref;
-	pdf_pagetree *pages;
 	int c;
 
 	while ((c = getopt(argc, argv, "drxopu:")) != -1)
@@ -249,9 +145,6 @@ int main(int argc, char **argv)
 			break;
 		case 'x':
 			doprintxref ++;
-			break;
-		case 'p':
-			doprintpages ++;
 			break;
 		case 'u':
 			password = optarg;
@@ -290,47 +183,18 @@ int main(int argc, char **argv)
 	if (doprintxref)
 		pdf_debugxref(xref);
 
-	if (doprintpages)
+	if (optind == argc)
 	{
-		error = pdf_loadpagetree(&pages, xref);
-		if (error) fz_abort(error);
-
-		if (optind == argc)
-		{
-			printf("pagetree\n");
-			pdf_debugpagetree(pages);
-			printf("\n");
-		}
-		else
-		{
-			for ( ; optind < argc; optind++)
-			{
-				int page = atoi(argv[optind]);
-				if (page < 1 || page > pages->count)
-					fprintf(stderr, "page out of bounds: %d\n", page);
-				printf("page %d\n", page);
-				showpage(xref, pages->pobj[page - 1]);
-			}
-		}
+		printf("trailer\n");
+		fz_debugobj(xref->trailer);
+		printf("\n");
 	}
 
-	else
+	for ( ; optind < argc; optind++)
 	{
-		if (optind == argc)
-		{
-			printf("trailer\n");
-			fz_debugobj(xref->trailer);
-			printf("\n");
-		}
-
-		for ( ; optind < argc; optind++)
-		{
-			printobject(xref, atoi(argv[optind]), 0);
-			printf("\n");
-		}
+		printobject(xref, atoi(argv[optind]), 0);
+		printf("\n");
 	}
-
-printf("done.\n");
 
 	pdf_closexref(xref);
 

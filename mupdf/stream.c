@@ -245,7 +245,23 @@ pdf_closestream(pdf_xref *xref)
 }
 
 fz_error *
-pdf_readstream(unsigned char **bufp, int *lenp, pdf_xref *xref, fz_obj *stmref)
+pdf_readstream0(fz_buffer **bufp, pdf_xref *xref, fz_obj *stmobj, int oid, int gid, int ofs)
+{
+	fz_error *error;
+
+	error = pdf_openstream0(xref, stmobj, oid, gid, ofs);
+	if (error)
+		return error;
+
+	error = fz_readfile(bufp, xref->file);
+
+	pdf_closestream(xref);
+
+	return error;
+}
+
+fz_error *
+pdf_readstream(fz_buffer **bufp, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_error *error;
 
@@ -253,7 +269,7 @@ pdf_readstream(unsigned char **bufp, int *lenp, pdf_xref *xref, fz_obj *stmref)
 	if (error)
 		return error;
 
-	error = fz_readfile(bufp, lenp, xref->file);
+	error = fz_readfile(bufp, xref->file);
 
 	pdf_closestream(xref);
 

@@ -175,11 +175,12 @@ fz_readline(fz_file *f, char *buf, int n)
  * a freshly allocated buffer; realloced and trimmed to size.
  */
 
-enum { CHUNKSIZE = 4096 };
+enum { CHUNKSIZE = 1024 * 32 };
 
 fz_error *
-fz_readfile(unsigned char **bufp, int *lenp, fz_file *file)
+fz_readfile(fz_buffer **bufp, fz_file *file)
 {
+	fz_buffer *real;
 	unsigned char *newbuf;
 	unsigned char *buf;
 	int len;
@@ -187,7 +188,6 @@ fz_readfile(unsigned char **bufp, int *lenp, fz_file *file)
 	int n;
 
 	*bufp = nil;
-	*lenp = 0;
 
 	len = 0;
 	pos = 0;
@@ -209,8 +209,6 @@ fz_readfile(unsigned char **bufp, int *lenp, fz_file *file)
 
 		n = fz_read(file, buf + pos, len - pos);
 
-printf("fz_read %d bytes\n", n);
-
 		if (n < 0)
 		{
 			fz_free(buf);
@@ -228,8 +226,19 @@ printf("fz_read %d bytes\n", n);
 				return fz_outofmem;
 			}
 
-			*bufp = newbuf;
-			*lenp = pos;
+			real = *bufp = fz_malloc(sizeof(fz_buffer));
+			if (!real)
+			{
+				fz_free(newbuf);
+				return fz_outofmem;
+			}
+
+			real->ownsdata = 1;
+			real->bp = buf;
+			real->rp = buf;
+			real->wp = buf + pos;
+			real->ep = buf + pos;
+
 			return nil;
 		}
 	}

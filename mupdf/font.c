@@ -562,17 +562,19 @@ printf("  embedded CMap\n");
 		cidtogidmap = fz_dictgets(dict, "CIDToGIDMap");
 		if (fz_isindirect(cidtogidmap))
 		{
-			unsigned char *buf;
+			fz_buffer *buf;
 			int len;
 
-			error = pdf_readstream(&buf, &len, xref, cidtogidmap);
+			error = pdf_readstream(&buf, xref, cidtogidmap);
 			if (error)
 				goto cleanup;
+
+			len = buf->wp - buf->rp;
 
 			font->cidtogidlen = len / 2;
 			font->cidtogidmap = fz_malloc((len / 2) * sizeof(int));
 			if (!font->cidtogidmap) {
-				fz_free(buf);
+				fz_freebuffer(buf);
 				error = fz_outofmem;
 				goto cleanup;
 			}
@@ -580,7 +582,9 @@ printf("  embedded CMap\n");
 printf("  cidtogidmap %d\n", len / 2);
 
 			for (i = 0; i < len / 2; i++)
-				font->cidtogidmap[i] = (buf[i * 2] << 8) + buf[i * 2 + 1];
+				font->cidtogidmap[i] = (buf->rp[i * 2] << 8) + buf->rp[i * 2 + 1];
+
+			fz_freebuffer(buf);
 		}
 
 		/* TODO: if truetype font is external, cidtogidmap should not be identity */

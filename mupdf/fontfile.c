@@ -194,20 +194,17 @@ pdf_loadembeddedfont(void **fontp, pdf_xref *xref, fz_obj *stmref)
 	fz_error *error;
 	int fterr;
 	FT_Face face;
-	unsigned char *buf;
-	int len;
+	fz_buffer *buf;
 
 	error = initfontlibs();
 	if (error)
 		return error;
 
-	error = pdf_readstream(&buf, &len, xref, stmref);
+	error = pdf_readstream(&buf, xref, stmref);
 	if (error)
 		return error;
 
-printf("readstream $%p %d\n", buf, len);
-
-	fterr = FT_New_Memory_Face(ftlib, buf, len, 0, &face);
+	fterr = FT_New_Memory_Face(ftlib, buf->rp, buf->wp - buf->rp, 0, &face);
 
 	if (fterr) {
 		fz_free(buf);

@@ -81,7 +81,8 @@ fz_error *pdf_buildfilter(fz_filter**, pdf_xref*, fz_obj *stm, int oid, int gid)
 fz_error *pdf_openstream0(pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
 fz_error *pdf_openstream(pdf_xref*, fz_obj *stmref);
 void pdf_closestream(pdf_xref*);
-fz_error *pdf_readstream(unsigned char **bufp, int *lenp, pdf_xref*, fz_obj *stmref);
+fz_error *pdf_readstream0(fz_buffer **bufp, pdf_xref*, fz_obj *stmobj, int oid, int gid, int ofs);
+fz_error *pdf_readstream(fz_buffer **bufp, pdf_xref*, fz_obj *stmref);
 
 /* crypt.c */
 fz_error *pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
@@ -117,6 +118,9 @@ fz_error *pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj);
 fz_error *pdf_loadobject0(fz_obj **, pdf_xref*, int oid, int gid, int *stmofs);
 fz_error *pdf_loadobject(fz_obj **, pdf_xref*, fz_obj *ref, int *stmofs);
 fz_error *pdf_resolve(fz_obj **, pdf_xref*);
+
+fz_error *pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *buf);
+fz_error *pdf_deletestream(pdf_xref *xref, int oid, int gid);
 
 /* save.c */
 fz_error *pdf_saveincrementalpdf(pdf_xref *xref, char *path);

@@ -13,15 +13,20 @@ fz_openfile(fz_file **filep, char *path, int mode)
 {
 	fz_error *error;
 	fz_file *file;
+	int realmode;
 	int fd;
 
-	assert(mode == O_RDONLY || mode == O_WRONLY);
+	assert(mode == O_RDONLY || mode == O_WRONLY || mode == O_APPEND);
+
+	realmode = mode;
+	if (mode == O_WRONLY)
+		realmode = O_WRONLY | O_CREAT | O_TRUNC;
 
 	file = *filep = fz_malloc(sizeof(fz_file));
 	if (!file)
 		return fz_outofmem;
 
-	fd = open(path, mode, 0);
+	fd = open(path, realmode, 0644);
 	if (fd == -1)
 		return fz_throw("ioerror: open '%s': %s", path, strerror(errno));
 

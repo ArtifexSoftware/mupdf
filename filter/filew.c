@@ -99,7 +99,12 @@ fz_write(fz_file *f, char *buf, int n)
 					return -1;
 				}
 
-				fz_rewindbuffer(f->in);
+				if (f->in->rp > f->in->bp)
+					f->error = fz_rewindbuffer(f->in);
+				else
+					f->error = fz_growbuffer(f->in);
+				if (f->error)
+					return -1;
 			}
 		}
 

@@ -325,6 +325,18 @@ pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj)
 	return nil;
 }
 
+fz_error *
+pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *buf)
+{
+	return pdf_storestream(xref->store, oid, gid, buf);
+}
+
+fz_error *
+pdf_deletestream(pdf_xref *xref, int oid, int gid)
+{
+	return pdf_deletestoredstream(xref->store, oid, gid);
+}
+
 /*
  * object loading
  */

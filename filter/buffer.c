@@ -32,7 +32,7 @@ fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
 	b->bp = data;
 
 	b->rp = b->bp;
-	b->wp = b->bp;
+	b->wp = b->bp + size;
 	b->ep = b->bp + size;
 	b->eof = 0;
 

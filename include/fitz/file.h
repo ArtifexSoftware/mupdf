@@ -26,7 +26,7 @@ int fz_peekbyte(fz_file *f);
 int fz_readline(fz_file *f, char *buf, int n);
 int fz_read(fz_file *f, char *buf, int n);
 
-fz_error *fz_readfile(unsigned char **bufp, int *lenp, fz_file *file);
+fz_error *fz_readfile(fz_buffer **bufp, fz_file *file);
 
 int fz_printstring(fz_file *f, char *s);
 int fz_printobj(fz_file *f, fz_obj *o, int tight);

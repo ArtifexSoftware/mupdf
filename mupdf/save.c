@@ -1,9 +1,12 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-static fz_error *writestored(FILE *out, pdf_xref *xref, int oid)
+#define TIGHT 0
+
+static fz_error *writestored(fz_file *out, pdf_xref *xref, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
+	fz_error *error;
 	fz_obj *obj;
 	fz_buffer *stm;
 
@@ -16,26 +19,27 @@ static fz_error *writestored(FILE *out, pdf_xref *xref, int oid)
 	if (xref->crypt)
 		pdf_cryptobj(xref->crypt, obj, oid, x->gen);
 
-	fprintf(out, "%d %d obj\n", oid, x->gen);
-	fz_debugobj(obj);
-	fprintf(out, "\n");
+	fz_print(out, "%d %d obj\n", oid, x->gen);
+	fz_printobj(out, obj, TIGHT);
+	fz_print(out, "\n");
 
 	if (stm)
 	{
-		fprintf(out, "stream\n");
-		fwrite(stm->rp, 1, stm->wp - stm->rp, out);
-		fprintf(out, "endstream\n");
+		fz_print(out, "stream\n");
+		fz_write(out, stm->rp, stm->wp - stm->rp);
+		fz_print(out, "endstream\n");
 	}
 
-	fprintf(out, "endobj\n\n");
+	fz_print(out, "endobj\n\n");
 
-	if (ferror(out))
-		return fz_throw("ioerror: write failed");
+	error = fz_ferror(out);
+	if (error)
+		return error;
 
 	return nil;
 }
 
-static fz_error *writecopy(FILE *out, pdf_xref *xref, int oid)
+static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
@@ -52,13 +56,13 @@ static fz_error *writecopy(FILE *out, pdf_xref *xref, int oid)
 	if (error)
 		return error;
 
-	fprintf(out, "%d %d obj\n", oid, x->gen);
-    fz_debugobj(obj);
-    fprintf(out, "\n");
+	fz_print(out, "%d %d obj\n", oid, x->gen);
+	fz_printobj(out, obj, TIGHT);
+	fz_print(out, "\n");
 
 	if (stmofs != -1)
 	{
-		fprintf(out, "stream\n");
+		fz_print(out, "stream\n");
 
 		length = fz_dictgets(obj, "Length");
 		error = pdf_resolve(&length, xref);
@@ -98,20 +102,21 @@ static fz_error *writecopy(FILE *out, pdf_xref *xref, int oid)
 				fz_popfilter(xref->file);
 				goto cleanup;
 			}
-			fwrite(buf, 1, n, out);
+			fz_write(out, buf, n);
 		}
 
 		fz_popfilter(xref->file);
 
-		fprintf(out, "endstream\n");
+		fz_print(out, "endstream\n");
 	}
 
-	fprintf(out, "endobj\n\n");
+	fz_print(out, "endobj\n\n");
+
+	error = fz_ferror(out);
+	if (error)
+		goto cleanup;
 
 	fz_dropobj(obj);
-
-	if (ferror(out))
-        return fz_throw("ioerror: write failed");
 
 	return nil;
 
@@ -133,22 +138,23 @@ fz_error *
 pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 {
 	fz_error *error;
-	FILE *out;
+	fz_file *out;
 	int oid;
 	int i, n;
 	int startxref;
 	fz_obj *obj;
 
-	out = fopen(path, "ab");
-	if (!out)
-		return fz_throw("ioerror: could not open '%s': %s", path, strerror(errno));
-	fprintf(out, "\n");
+	error = fz_openfile(&out, path, O_APPEND);
+	if (error)
+		return error;
+
+	fz_print(out, "\n");
 
 	for (oid = 0; oid < xref->size; oid++)
 	{
 		if (xref->table[oid].type == 'a')
 		{
-			xref->table[oid].ofs = ftell(out);
+			xref->table[oid].ofs = fz_tell(out);
 			error = writestored(out, xref, oid);
 			if (error)
 				goto cleanup;
@@ -158,15 +164,15 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 	/* always write out entry 0 in appended xref sections */
 	xref->table[0].type = 'd';
 
-	startxref = ftell(out);
-	fprintf(out, "xref\n");
+	startxref = fz_tell(out);
+	fz_print(out, "xref\n");
 
 	oid = 0;
 	while (oid < xref->size)
 	{
 		n = countmodified(xref, oid);
 
-		fprintf(out, "%d %d\n", oid, n);
+		fz_print(out, "%d %d\n", oid, n);
 
 		for (i = 0; i < n; i++)
 		{
@@ -175,7 +181,7 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 			if (xref->table[oid + i].type == 'a')
 				xref->table[oid + i].type = 'n';
 
-			fprintf(out, "%010d %05d %c \n",
+			fz_print(out, "%010d %05d %c \n",
 				xref->table[oid + i].ofs,
 				xref->table[oid + i].gen,
 				xref->table[oid + i].type);
@@ -188,42 +194,42 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 			oid ++;
 	}
 
-	fprintf(out, "\n");
+	fz_print(out, "\n");
 
-	fprintf(out, "trailer\n<<\n  /Size %d\n  /Prev %d", xref->size, xref->startxref);
+	fz_print(out, "trailer\n<<\n  /Size %d\n  /Prev %d", xref->size, xref->startxref);
 
 	obj = fz_dictgets(xref->trailer, "Root");
-	fprintf(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	fz_print(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
 
 	obj = fz_dictgets(xref->trailer, "Info");
 	if (obj)
-		fprintf(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
+		fz_print(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
 
 	obj = fz_dictgets(xref->trailer, "Encrypt");
 	if (obj) {
-		fprintf(out,"\n  /Encrypt ");
-		fz_debugobj(obj);
+		fz_print(out,"\n  /Encrypt ");
+		fz_printobj(out, obj, TIGHT);
 	}
 
 	obj = fz_dictgets(xref->trailer, "ID");
 	if (obj) {
-		fprintf(out,"\n  /ID ");
-		fz_debugobj(obj);
+		fz_print(out,"\n  /ID ");
+		fz_printobj(out, obj, TIGHT);
 	}
 
-	fprintf(out, "\n>>\n\n");
+	fz_print(out, "\n>>\n\n");
 
-	fprintf(out, "startxref\n");
-	fprintf(out, "%d\n", startxref);
-	fprintf(out, "%%%%EOF\n");
+	fz_print(out, "startxref\n");
+	fz_print(out, "%d\n", startxref);
+	fz_print(out, "%%%%EOF\n");
 
 	xref->startxref = startxref;
 
-	fclose(out);
+	fz_closefile(out);
 	return nil;
 
 cleanup:
-	fclose(out);
+	fz_closefile(out);
 	return error;
 }
 
@@ -231,7 +237,7 @@ fz_error *
 pdf_savepdf(pdf_xref *xref, char *path)
 {
 	fz_error *error;
-	FILE *out;
+	fz_file *out;
 	int oid;
 	int startxref;
 	int *ofsbuf;
@@ -241,28 +247,28 @@ pdf_savepdf(pdf_xref *xref, char *path)
 	if (!ofsbuf)
 		return fz_outofmem;
 
-	out = fopen(path, "wb");
-	if (!out)
+	error = fz_openfile(&out, path, O_WRONLY);
+	if (error)
 	{
 		fz_free(ofsbuf);
-		return fz_throw("ioerror: could not open '%s': %s", path, strerror(errno));
+		return error;
 	}
 
-	fprintf(out, "%%PDF-%1.1f\n", xref->version);
-	fprintf(out, "%%\342\343\317\323\n\n");
+	fz_print(out, "%%PDF-%1.1f\n", xref->version);
+	fz_print(out, "%%\342\343\317\323\n\n");
 
 	for (oid = 0; oid < xref->size; oid++)
 	{
 		if (xref->table[oid].type == 'n' || xref->table[oid].type == 'o')
 		{
-			ofsbuf[oid] = ftell(out);
+			ofsbuf[oid] = fz_tell(out);
 			error = writecopy(out, xref, oid);
 			if (error)
 				goto cleanup;
 		}
 		else if (xref->table[oid].type == 'a')
 		{
-			ofsbuf[oid] = ftell(out);
+			ofsbuf[oid] = fz_tell(out);
 			error = writestored(out, xref, oid);
 			if (error)
 				goto cleanup;
@@ -273,9 +279,9 @@ pdf_savepdf(pdf_xref *xref, char *path)
 		}
 	}
 
-	startxref = ftell(out);
-	fprintf(out, "xref\n");
-	fprintf(out, "0 %d\n", xref->size);
+	startxref = fz_tell(out);
+	fz_print(out, "xref\n");
+	fz_print(out, "0 %d\n", xref->size);
 
 	for (oid = 0; oid < xref->size; oid++)
 	{
@@ -284,30 +290,30 @@ pdf_savepdf(pdf_xref *xref, char *path)
 			type = 'n';
 		if (type == 'd')
 			type = 'f';
-		fprintf(out, "%010d %05d %c \n", ofsbuf[oid], xref->table[oid].gen, type);
+		fz_print(out, "%010d %05d %c \n", ofsbuf[oid], xref->table[oid].gen, type);
 	}
 
-	fprintf(out, "\n");
+	fz_print(out, "\n");
 
-	fprintf(out, "trailer\n<<\n  /Size %d", xref->size);
+	fz_print(out, "trailer\n<<\n  /Size %d", xref->size);
 	obj = fz_dictgets(xref->trailer, "Root");
-	fprintf(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	fz_print(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
 	obj = fz_dictgets(xref->trailer, "Info");
 	if (obj)
-		fprintf(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
-	fprintf(out, "\n>>\n\n");
+		fz_print(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	fz_print(out, "\n>>\n\n");
 
-	fprintf(out, "startxref\n");
-	fprintf(out, "%d\n", startxref);
-	fprintf(out, "%%%%EOF\n");
+	fz_print(out, "startxref\n");
+	fz_print(out, "%d\n", startxref);
+	fz_print(out, "%%%%EOF\n");
 
 	xref->startxref = startxref;
 
-	fclose(out);
+	fz_closefile(out);
 	return nil;
 
 cleanup:
-	fclose(out);
+	fz_closefile(out);
 	return error;
 }
 
