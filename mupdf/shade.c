@@ -13,9 +13,8 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	obj = fz_dictgets(shading, "Function");
 	if (obj)
 	{
-		shade->usefunction = 1;
-
-		error = pdf_loadfunction(&func, xref, obj);
+		t = t0 + (i / 256.0) * (t1 - t0);
+		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
 		if (error)
 			return error;
 
@@ -100,6 +99,10 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 
 	switch(type)
 	{
+//	case 1:
+//		error = pdf_loadtype1shade(shade, xref, dict, ref, mat);
+//		if (error) goto cleanup;
+//		break;
 	case 2:
 		error = pdf_loadtype2shade(shade, xref, dict, ref, mat);
 		if (error) goto cleanup;
