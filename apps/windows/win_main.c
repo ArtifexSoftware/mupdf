@@ -353,6 +353,28 @@ void dragndrop()
  * Event handling
  */
 
+void constrainpan(int *panx, int *pany)
+{
+	int newx = *panx;
+	int newy = *pany;
+
+	if (newx > 0)
+		newx = 0;
+	if (newx + image->w < winwidth)
+		newx = winwidth - image->w;
+	if (newy > 0)
+		newy = 0;
+	if (newy + image->h < winheight)
+		newy = winheight - image->h;
+	if (winwidth >= image->w)
+		newx = (winwidth - image->w) / 2;
+	if (winheight >= image->h)
+		newy = (winheight - image->h) / 2;
+
+	*panx = newx;
+	*pany = newy;
+}
+
 void dumptext()
 {
 	fz_error *error;
@@ -366,9 +388,6 @@ void dumptext()
 
 void gotouri(fz_obj *uri)
 {
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
-	char cmd[2048];
 	char buf[2048];
 
 	memcpy(buf, fz_tostrbuf(uri), fz_tostrlen(uri));
@@ -573,16 +592,7 @@ void handlemouse(int x, int y, int btn, int state)
 		int newx = panx + x - oldx;
 		int newy = pany + y - oldy;
 
-		/* constrain panning if window is smaller */
-		if (winwidth <= image->w && winheight <= image->h)
-		{
-			if (newx > 0) newx = 0;
-			if (newx + image->w < winwidth)
-				newx = winwidth - image->w;
-			if (newy > 0) newy = 0;
-			if (newy + image->h < winheight)
-				newy = winheight - image->h;
-		}
+		constrainpan(&newx, &newy);
 
 		if (panx != newx || pany != newy)
 		{
@@ -629,6 +639,7 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			shrinkwrap = 0;
 		winwidth = LOWORD(lParam);
 		winheight = HIWORD(lParam);
+		constrainpan(&panx, &pany);
 		winrepaint();
 		return 0;
 
@@ -687,9 +698,11 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) > 0) {
 			// wheel-up
+			handlekey('+');
 		}
 		else {
 			// wheel-down
+			handlekey('-');
 		}
 		return 0;
 
@@ -803,6 +816,8 @@ Lskipload:
 			pany = 0;
 		winresize(image->w, image->h);
 	}
+	else
+		constrainpan(&panx, &pany);
 
 	winrepaint();
 }
