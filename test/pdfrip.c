@@ -107,7 +107,6 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
-	pdf_outlinetree *outlines;
 	int c;
 
 	char *password = "";
@@ -137,11 +136,11 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
-	error = pdf_openpdf(&xref, filename);
+	error = pdf_loadxref(xref, filename);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptpdf(xref);
+	error = pdf_decryptxref(xref);
 	if (error)
 		fz_abort(error);
 
@@ -158,16 +157,7 @@ int main(int argc, char **argv)
 
 	if (optind == argc)
 	{
-		printf("pagetree\n");
-		pdf_debugpagetree(pages);
-		printf("\n");
-
-		if (outlines)
-		{
-			printf("outlines\n");
-			pdf_debugoutlinetree(outlines);
-			printf("\n");
-		}
+		printf("number of pages: %d\n", pdf_getpagecount(pages));
 	}
 
 	error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
@@ -183,7 +173,9 @@ int main(int argc, char **argv)
 		showpage(xref, pdf_getpageobject(pages, page - 1), page);
 	}
 
-	pdf_closepdf(xref);
+	fz_droprenderer(gc);
+
+	pdf_closexref(xref);
 
 	return 0;
 }
