@@ -422,7 +422,7 @@ static void mousemove(GtkWidget *widget, GdkEventMotion *event, void *data)
 		gtk_adjustment_value_changed(adj);
 	}
 	else
-		mouseup(widget, event, data); // XXX
+		mouseup(widget, event, data);
 }
 
 static void keypress(GtkWidget *widget, GdkEventKey *event, void *data)

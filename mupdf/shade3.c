@@ -344,11 +344,12 @@ fz_buildannulusmesh(float* mesh,
 	fz_point pt1, pt2, pt3, pt4;
 	float step;
 	float theta;
+	int n;
 
 	theta = 0.;
 	step = 3.1415921 * 2. / (float)nsegs;
 	
-	for (int n=0; theta < step*nsegs; theta += step) {
+	for (n=0; theta < step*nsegs; theta += step) {
 		pt1.x = cos (theta) * r1 + x1;
 		pt1.y = sin (theta) * r1 + y1;
 		pt2.x = cos (theta) * r0 + x0;
@@ -385,6 +386,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	float t0, t1;
 	fz_obj *obj;
 	pdf_function *func;
+	int i;
 
 	pdf_logshade("load type3 shade {\n");
 
@@ -419,7 +421,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	tn = t0;
 	tn1 = t0 + tstep;
 
-	for (int i = 0; i < 10; ++i) {
+	for (i = 0; i < 10; ++i) {
 		float tx0, ty0, tr0;
 		float tx1, ty1, tr1;
 		float c0, c1;

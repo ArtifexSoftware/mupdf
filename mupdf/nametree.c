@@ -178,7 +178,7 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 	error = pdf_loadindirect(&catalog, xref, ref);
 	if (error) goto cleanup;
 
-#if 1 // XXX XXX
+#if 1
 	names = fz_dictgets(catalog, "Names");
 	if (!names)
 	{
