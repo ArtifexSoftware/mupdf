@@ -374,6 +374,13 @@ int main(int argc, char **argv)
 	pdfopen(filename, password);
 	showpage();
 
+#ifdef RUNFAST
+	while (pageno < count)
+	{
+		pageno ++;
+		showpage();
+	}
+#else
 	while (1)
 	{
 		int len;
@@ -395,6 +402,7 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
+#endif
 
 	pdf_closepdf(xref);
 

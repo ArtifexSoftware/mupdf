@@ -159,17 +159,12 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	if (error)
 		return error;
 
-	/* parse windows-style font name descriptors Font,Style or Font-Style */
+	/* parse windows-style font name descriptors Font,Style */
+	/* TODO: reliable way to split style from Font-Style type names */
 	strlcpy(fontname, basefont, sizeof fontname);
 	style = strchr(fontname, ',');
-	if (style) {
+	if (style)
 		*style++ = 0;
-	}
-	else {
-		style = strchr(fontname, '-');
-		if (style)
-			*style++ = 0;
-	}
 
 	searchpat = FcPatternCreate();
 	if (!searchpat)
@@ -183,10 +178,10 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	if (collection)
 	{
 		if (!strcmp(collection, "Adobe-GB1"))
-			if (!FcPatternAddString(searchpat, FC_LANG, "zh"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "zh-TW"))
 				goto cleanup;
 		if (!strcmp(collection, "Adobe-CNS1"))
-			if (!FcPatternAddString(searchpat, FC_LANG, "zh"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "zh-CN"))
 				goto cleanup;
 		if (!strcmp(collection, "Adobe-Japan1"))
 			if (!FcPatternAddString(searchpat, FC_LANG, "ja"))
@@ -216,12 +211,16 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 		goto cleanup;
 
 	file = FcNameUnparse(searchpat);
-	pdf_logfont("fontconfig %s\n", file);
+	pdf_logfont("fontconfig0 %s\n", file);
 	free(file);
 
 	fcerr = FcResultMatch;
-	FcDefaultSubstitute(searchpat);
+/*	FcDefaultSubstitute(searchpat); */
 	FcConfigSubstitute(fclib, searchpat, FcMatchPattern);
+
+	file = FcNameUnparse(searchpat);
+	pdf_logfont("fontconfig1 %s\n", file);
+	free(file);
 
 	matchpat = FcFontMatch(fclib, searchpat, &fcerr);
 	if (fcerr != FcResultMatch)

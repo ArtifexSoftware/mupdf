@@ -1,15 +1,25 @@
 immediate plan:
+
 	- altivec optimize
-	- page labels + dests + outline + annots
 	- design gui for editor
 	- go through spec and check all features!
 	- talk to keithp about fontconfig cid-font + cmap support
 
+	* page labels + dests + outline + annots
+
+	* libfontfocus
+
+	* font and cmap config (where to load cmap and which cid fonts)
+	- global fontfile/cmap cache
 	- unify handling of mallocing fonts and images
-	- font and cmap config (where to load cmap and which cid fonts)
-	- global font/cmap cache
 	- split type3 and ftfont malloc (dont waste t3 charprocs on ft fonts)
 	- make ftfontfile separate struct w/ refcounting
+	- refactor font loading more. simple/cid/type3 have too much in common.
+		fix default .fonts.conf for base14 fonts
+		fix default .fonts.conf for asian fonts
+		maybe add CMap directory entry to fontconfig?
+
+	* clean up and 'freeze' public api
 
 ---
 

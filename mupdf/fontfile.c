@@ -40,15 +40,6 @@ static char *basenames[15] =
 	"Chancery"
 };
 
-static struct { char *collection; char *serif; char *gothic; } cidfonts[5] =
-{
-	{ "Adobe-CNS1", "bkai00mp.ttf", "bsmi00lp.ttf" },
-	{ "Adobe-GB1", "gkai00mp.ttf", "gbsn00lp.ttf" },
-	{ "Adobe-Japan1", "kochi-mincho.ttf", "kochi-gothic.ttf" },
-	{ "Adobe-Japan2", "kochi-mincho.ttf", "kochi-gothic.ttf" },
-	{ "Adobe-Korea1", "batang.ttf", "dotum.ttf" },
-};
-
 static void loadfontdata(int i, unsigned char **d, unsigned int *l)
 {
 	switch (i)
@@ -70,6 +61,42 @@ static void loadfontdata(int i, unsigned char **d, unsigned int *l)
 	default: *d=URWChanceryL_MediItal_cff;*l=URWChanceryL_MediItal_cff_len;break;
 	}
 }
+
+enum { CNS, GB, Japan, Korea };
+enum { MINCHO, GOTHIC };
+
+struct subent { int csi; int kind; char *name; };
+
+static struct subent fontsubs[] =
+{
+	{ CNS, MINCHO, "bkai00mp.ttf" },
+	{ CNS, GOTHIC, "bsmi00lp.ttf" },
+	{ CNS, MINCHO, "\345\204\267\345\256\213 Pro.ttf" }, /* LiSong Pro */
+	{ CNS, GOTHIC, "\345\204\267\351\273\221 Pro.ttf" }, /* LiHei Pro */
+	{ CNS, MINCHO, "simsun.ttc" },
+	{ CNS, GOTHIC, "simhei.ttf" },
+
+	{ GB, MINCHO, "gkai00mp.ttf" },
+	{ GB, GOTHIC, "gbsn00lp.ttf" },
+	{ GB, MINCHO, "\345\215\216\346\226\207\345\256\213\344\275\223.ttf" }, /* STSong */
+	{ GB, GOTHIC, "\345\215\216\346\226\207\346\245\267\344\275\223.ttf" }, /* STHeiti */
+	{ GB, MINCHO, "mingliu.ttc" },
+	{ GB, GOTHIC, "mingliu.ttc" },
+
+	{ Japan, MINCHO, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\346\230\216\346\234\235 Pro W3.otf" },
+	{ Japan, GOTHIC, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\350\247\222\343\202\263\343\202\231 Pro W3.otf" },
+	{ Japan, MINCHO, "kochi-mincho.ttf" },
+	{ Japan, GOTHIC, "kochi-gothic.ttf" },
+	{ Japan, MINCHO, "msmincho.ttc" },
+	{ Japan, GOTHIC, "msgothic.ttc" },
+
+	{ Korea, MINCHO, "batang.ttf" },
+	{ Korea, GOTHIC, "dotum.ttf" },
+	{ Korea, MINCHO, "AppleMyungjo.dfont" },
+	{ Korea, GOTHIC, "AppleGothic.dfont" },
+	{ Korea, MINCHO, "batang.ttc" },
+	{ Korea, GOTHIC, "dotum.ttc" },
+};
 
 static fz_error *initfontlibs(void)
 {
@@ -121,34 +148,87 @@ found:
 	return nil;
 }
 
-static fz_error *
-loadcidfont(pdf_font *font, char *filename)
+static int
+findcidfont(char *filename, char *path, int pathlen)
 {
-	char path[1024];
-	char *fontdir;
-	int e;
-
-	pdf_logfont("load system font '%s'\n", filename);
-
-	fontdir = getenv("FONTDIR");
-	if (!fontdir)
+	static char *dirs[] =
 	{
-		fontdir = "/usr/local/share/font";
-		fz_warn("FONTDIR environment not set");
+		"$/.fonts",
+		"$/Library/Fonts",
+		"/usr/X11R6/lib/X11/fonts/TTF",
+		"/usr/X11R6/lib/X11/fonts/TrueType",
+		"/usr/share/fonts/arphic",
+		"/usr/share/fonts/baekmuk",
+		"/usr/share/fonts/kochi",
+		"/System/Library/Fonts",
+		"/Library/Fonts",
+		"c:/windows/fonts",
+		nil
+	};
+
+	char **dirp;
+	char *home;
+	char *dir;
+
+	dir = getenv("FONTDIR");
+	if (dir)
+	{
+		strlcpy(path, dir, pathlen);
+		strlcat(path, "/", pathlen);
+		strlcat(path, filename, pathlen);
+		if (access(path, R_OK) == 0)
+			return 1;
 	}
 
-	strlcpy(path, fontdir, sizeof path);
-	strlcat(path, "/", sizeof path);
-	strlcat(path, filename, sizeof path);
+	home = getenv("HOME");
+	if (!home)
+		home = "/";
 
-	if (access(path, R_OK))
-		return fz_throw("ioerror: could not access file '%s'", path);
+	for (dirp = dirs; *dirp; dirp++)
+	{
+		dir = *dirp;
+		if (dir[0] == '$')
+		{
+			strlcpy(path, home, pathlen);
+			strlcat(path, "/", pathlen);
+			strlcat(path, dir + 1, pathlen);
+		}
+		else
+		{
+			strlcpy(path, dir, pathlen);
+		}
+		strlcat(path, "/", pathlen);
+		strlcat(path, filename, pathlen);
+		if (access(path, R_OK) == 0)
+			return 1;
+	}
 
-	e = FT_New_Face(ftlib, path, 0, (FT_Face*)&font->ftface);
-	if (e)
-		return fz_throw("freetype: could not load font: 0x%x", e);
+	return 0;
+}
 
-	return nil;
+static fz_error *
+loadcidfont(pdf_font *font, int csi, int kind)
+{
+	char path[1024];
+	int e;
+	int i;
+
+	for (i = 0; i < nelem(fontsubs); i++)
+	{
+		if (fontsubs[i].csi == csi && fontsubs[i].kind == kind)
+		{
+			if (findcidfont(fontsubs[i].name, path, sizeof path))
+			{
+				pdf_logfont("load system font '%s'\n", fontsubs[i].name);
+				e = FT_New_Face(ftlib, path, 0, (FT_Face*)&font->ftface);
+				if (e)
+					return fz_throw("freetype: could not load font: 0x%x", e);
+				return nil;
+			}
+		}
+	}
+
+	return fz_throw("could not find cid font file");
 }
 
 fz_error *
@@ -156,7 +236,6 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 {
 	fz_error *error;
 	char *name;
-	int i;
 
 	int isbold = 0;
 	int isitalic = 0;
@@ -193,24 +272,23 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 
 	if (collection)
 	{
-		char buf[256];
-		char *env;
+		int kind;
 
-		snprintf(buf, sizeof buf, "%s_%s", strstr(collection, "-") + 1, isserif ? "S" : "G");
-		env = getenv(buf);
-		if (env)
-			return loadcidfont(font, env);
+		if (isserif)
+			kind = MINCHO;
+		else
+			kind = GOTHIC;
 
-		for (i = 0; i < 5; i++)
-		{
-			if (!strcmp(collection, cidfonts[i].collection))
-			{
-				if (isserif)
-					return loadcidfont(font, cidfonts[i].serif);
-				else
-					return loadcidfont(font, cidfonts[i].gothic);
-			}
-		}
+		if (!strcmp(collection, "Adobe-CNS1"))
+			return loadcidfont(font, CNS, kind);
+		else if (!strcmp(collection, "Adobe-GB1"))
+			return loadcidfont(font, GB, kind);
+		else if (!strcmp(collection, "Adobe-Japan1"))
+			return loadcidfont(font, Japan, kind);
+		else if (!strcmp(collection, "Adobe-Japan2"))
+			return loadcidfont(font, Japan, kind);
+		else if (!strcmp(collection, "Adobe-Korea1"))
+			return loadcidfont(font, Korea, kind);
 
 		fz_warn("unknown cid collection: %s", collection);
 	}

@@ -39,7 +39,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 
 	shade->matrix = mat;
 
-	pdf_logshade("load shade dict {\n");
+	pdf_logshade("load shade dict %d %d {\n", fz_tonum(ref), fz_togen(ref));
 
 	sobj = fz_dictgets(shading, "ShadingType");
 	type = fz_toint(sobj);
@@ -124,7 +124,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref)
 	if ((*shadep = pdf_finditem(xref->store, PDF_KSHADE, ref)))
 		return nil;
 
-	pdf_logshade("loading shade %d %d {\n", fz_tonum(ref), fz_togen(ref));
+	pdf_logshade("load shade %d %d {\n", fz_tonum(ref), fz_togen(ref));
 
 	shading = fz_dictgets(obj, "Shading");
 
@@ -165,7 +165,7 @@ cleanup:
 void
 pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
 {
-	pdf_logshade("mesh %d: %g %g %g\n", i, x, y, t);
+//	pdf_logshade("mesh %d: %g %g %g\n", i, x, y, t);
 	mesh[i*3+0] = x;
 	mesh[i*3+1] = y;
 	mesh[i*3+2] = t;

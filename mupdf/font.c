@@ -963,6 +963,9 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 	obj3 = fz_dictgets(desc, "FontFile3");
 	obj = obj1 ? obj1 : obj2 ? obj2 : obj3;
 
+	if (getenv("NOFONT"))
+		obj = nil;
+
 	if (fz_isindirect(obj))
 	{
 		error = pdf_loadembeddedfont(font, xref, obj);

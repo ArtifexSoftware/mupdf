@@ -21,12 +21,15 @@ TODO:
 
 typedef struct PDFApp PDFApp;
 
+enum { ZOOM, FITWIDTH, FITPAGE };
+
 struct PDFApp
 {
 	GtkWidget *canvas;
 	GtkWidget *status;
 	GtkWidget *scroll;
 	int statusid;
+	int viewmode;
 
 	char *filename;
 	int pageno;
@@ -85,8 +88,9 @@ static void* drawpage(void*args)
 {
 	char msg[256];
 	fz_error *error;
+	float scalex, scaley, scale;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_irect bbox;
 	fz_obj *obj;
 
 	if (!gapp->xref)
@@ -119,6 +123,39 @@ Lskipload:
 
 	gdk_threads_enter();
 	showstatus(" drawing ... ");
+
+	ctm = fz_identity();
+	ctm = fz_concat(ctm, fz_translate(0, -gapp->page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_rotate(gapp->rotate + gapp->page->rotate));
+	bbox = fz_roundrect(fz_transformaabb(ctm, gapp->page->mediabox));
+
+	scale = gapp->zoom;
+	scalex = scaley = 1.0;
+
+	if (gapp->viewmode == FITWIDTH || gapp->viewmode == FITPAGE)
+	{
+		GtkAdjustment *hadj;
+		int w;
+		hadj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		w = bbox.max.x - bbox.min.x;
+		if (w != 0)
+			scalex = hadj->page_size / (float)w;
+		scale = scalex;
+	}
+
+	if (gapp->viewmode == FITPAGE)
+	{
+		GtkAdjustment *vadj;
+		int h;
+		vadj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		h = bbox.max.y - bbox.min.y;
+		if (h != 0)
+			scaley = vadj->page_size / (float)h;
+		scale = MIN(scale, scaley);
+	}
+
+	gapp->zoom = scale;
+
 	gdk_threads_leave();
 
 	if (gapp->image)
@@ -129,11 +166,9 @@ Lskipload:
 	ctm = fz_concat(ctm, fz_translate(0, -gapp->page->mediabox.max.y));
 	ctm = fz_concat(ctm, fz_scale(gapp->zoom, -gapp->zoom));
 	ctm = fz_concat(ctm, fz_rotate(gapp->rotate + gapp->page->rotate));
+	bbox = fz_roundrect(fz_transformaabb(ctm, gapp->page->mediabox));
 
-	bbox = fz_transformaabb(ctm, gapp->page->mediabox);
-
-	error = fz_rendertree(&gapp->image, gapp->gc, gapp->page->tree,
-				ctm, fz_roundrect(bbox), 1);
+	error = fz_rendertree(&gapp->image, gapp->gc, gapp->page->tree, ctm, bbox, 1);
 	if (error)
 		panic(error);
 
@@ -291,19 +326,40 @@ static void onlast(GtkWidget *widget, void *data)
 	forkwork(drawpage);
 }
 
-static void onzoomin(GtkWidget *widget, void *data) { gapp->zoom *= 1.25; forkwork(drawpage); }
-static void onzoomout(GtkWidget *widget, void *data) { gapp->zoom *= 0.8; forkwork(drawpage); }
-static void onzoom100(GtkWidget *widget, void *data) { gapp->zoom = 1.0; forkwork(drawpage); }
+static void onzoomin(GtkWidget * widget, void *data)
+{
+    gapp->viewmode = ZOOM;
+    gapp->zoom *= 1.25;
+    forkwork(drawpage);
+}
+
+static void onzoomout(GtkWidget * widget, void *data)
+{
+    gapp->viewmode = ZOOM;
+    gapp->zoom *= 0.8;
+    forkwork(drawpage);
+}
+
+static void onzoom100(GtkWidget * widget, void *data)
+{
+    gapp->viewmode = ZOOM;
+    gapp->zoom = 1.0;
+    forkwork(drawpage);
+}
 
 static void onrotl(GtkWidget *widget, void *data) { gapp->rotate -= 90; forkwork(drawpage); }
 static void onrotr(GtkWidget *widget, void *data) { gapp->rotate += 90; forkwork(drawpage); }
 
 static void onfitwidth(GtkWidget *widget, void *data)
 {
+	gapp->viewmode = FITWIDTH;
+	forkwork(drawpage);
 }
 
 static void onfitpage(GtkWidget *widget, void *data)
 {
+	gapp->viewmode = FITPAGE;
+	forkwork(drawpage);
 }
 
 static int startxpos;

@@ -11,7 +11,7 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	fz_obj *obj;
 	pdf_function *func;
 
-	pdf_logshade("loading type2 shade {\n");
+	pdf_logshade("load type2 shade {\n");
 
 	obj = fz_dictgets(shading, "Coords");
 	x0 = fz_toreal(fz_arrayget(obj, 0));

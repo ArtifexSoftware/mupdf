@@ -98,6 +98,10 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 		ofs = atoi(strsep(&s, " "));
 		len = atoi(strsep(&s, " "));
 
+		/* broken pdfs where the section is not on a separate line */
+		if (s && *s != '\0')
+			fz_seek(xref->file, -(n + buf - s + 2), 1);
+
 		t = fz_tell(xref->file);
 		if (t < 0) return fz_ferror(xref->file);
 
@@ -174,6 +178,13 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
 		len = atoi(strsep(&s, " "));
+
+		/* broken pdfs where the section is not on a separate line */
+		if (s && *s != '\0')
+		{
+			fz_warn("syntaxerror: broken xref section");
+			fz_seek(xref->file, -(n + buf - s + 2), 1);
+		}
 
 		for (i = 0; i < len; i++)
 		{

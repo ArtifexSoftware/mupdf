@@ -276,6 +276,12 @@ fz_seek(fz_file *f, int ofs, int whence)
 		return ofs;
 	}
 
+	if (whence == 1)
+	{
+		ofs = fz_tell(f) + ofs;
+		whence = 0;
+	}
+
 	t = lseek(f->fd, ofs, whence);
 	if (t == -1)
 	{

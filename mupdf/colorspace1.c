@@ -227,8 +227,13 @@ fz_colorspace *pdf_devicepattern = &kdevicepattern;
 static fz_error *
 loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
+	fz_error *error;
 	struct calgray *cs;
 	fz_obj *tmp;
+
+	error = pdf_resolve(&dict, xref);
+	if (error)
+		return error;
 
 	cs = fz_malloc(sizeof(struct calgray));
 	if (!cs)
@@ -268,6 +273,8 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	if (fz_isreal(tmp))
 		cs->gamma = fz_toreal(tmp);
 
+	fz_dropobj(dict);
+
 	*csp = (fz_colorspace*) cs;
 	return nil;
 }
@@ -275,9 +282,14 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 static fz_error *
 loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
+	fz_error *error;
 	struct calrgb *cs;
 	fz_obj *tmp;
 	int i;
+
+	error = pdf_resolve(&dict, xref);
+	if (error)
+		return error;
 
 	cs = fz_malloc(sizeof(struct calrgb));
 	if (!cs)
@@ -336,6 +348,8 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 
 	fz_invert3x3(cs->invmat, cs->matrix);
 
+	fz_dropobj(dict);
+
 	*csp = (fz_colorspace*) cs;
 	return nil;
 }
@@ -343,8 +357,13 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 static fz_error *
 loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
+	fz_error *error;
 	struct cielab *cs;
 	fz_obj *tmp;
+
+	error = pdf_resolve(&dict, xref);
+	if (error)
+		return error;
 
 	cs = fz_malloc(sizeof(struct cielab));
 	if (!cs)
@@ -391,6 +410,8 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 		cs->range[2] = fz_toreal(fz_arrayget(tmp, 2));
 		cs->range[3] = fz_toreal(fz_arrayget(tmp, 3));
 	}
+
+	fz_dropobj(dict);
 
 	*csp = (fz_colorspace*) cs;
 	return nil;
@@ -705,12 +726,21 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			/* load base colorspace instead */
 			else if (!strcmp(fz_toname(name), "Pattern"))
 			{
-				if (!fz_arrayget(obj, 1))
+				fz_error *error;
+
+				obj = fz_arrayget(obj, 1);
+				if (!obj)
 				{
 					*csp = pdf_devicepattern;
 					return nil;
 				}
-				return pdf_loadcolorspace(csp, xref, fz_arrayget(obj, 1));
+
+				error = pdf_resolve(&obj, xref);
+				if (error)
+					return error;
+				error = pdf_loadcolorspace(csp, xref, obj);
+				fz_dropobj(obj);
+				return error;
 			}
 
 			else

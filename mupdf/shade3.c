@@ -43,14 +43,16 @@ fz_buildannulusmesh(float* mesh,
 }
 
 fz_error *
-pdf_buildt3shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading, 
-					 fz_obj *ref, fz_matrix mat)
+pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
+					fz_obj *ref, fz_matrix mat)
 {
 	fz_error *error;
 	float x0, y0, r0, x1, y1, r1;
 	float t0, t1;
 	fz_obj *obj;
 	pdf_function *func;
+
+	pdf_logshade("load type3 shade {\n");
 
 	obj = fz_dictgets(shading, "Coords");
 	x0 = fz_toreal(fz_arrayget(obj, 0));
@@ -60,6 +62,8 @@ pdf_buildt3shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	y1 = fz_toreal(fz_arrayget(obj, 4));
 	r1 = fz_toreal(fz_arrayget(obj, 5));
 
+	pdf_logshade("coords  %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
+
 	obj = fz_dictgets(shading, "Domain");
 	if (obj) {
 		t0 = fz_toreal(fz_arrayget(obj, 0));
@@ -68,6 +72,8 @@ pdf_buildt3shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 		t0 = 0.;
 		t1 = 1.;
 	}
+
+	pdf_logshade("domain %g %g\n", t0, t1);
 
 	pdf_loadshadefunction(shade, xref, shading, t0, t1);
 
@@ -96,20 +102,11 @@ pdf_buildt3shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 		fz_buildannulusmesh(&(shade->mesh[i*36*2*9]), tx0, ty0, tr0, tx1, ty1, tr1, c0, c1, 36);
 	}
 
+	pdf_logshade("}\n");
+
 	return nil;
 
 cleanup:
 	return error;
 }
 
-fz_error *
-pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
-				   fz_obj *ref, fz_matrix mat)
-{
-	fz_error *error;
-	fz_obj *obj;
-
-	error = pdf_buildt3shademesh(shade, xref, shading, ref, mat);
-
-	return error;
-}

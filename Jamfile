@@ -208,8 +208,8 @@ Main pdffunction : test/pdffunction.c ;
 
 Main x11pdf : test/x11pdf.c test/ximage.c ;
 
-CCFLAGS += `gtk-config --cflags` ;
-LINKLIBS on gtkpdf = $(LINKLIBS) `gtk-config --libs` -lgthread ;
+CCFLAGS += `pkg-config --cflags gtk+ gthread` ;
+LINKLIBS on gtkpdf = $(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
 
 Main gtkpdf : test/gtkpdf.c ;
 

@@ -5,6 +5,10 @@
 #define DEBUG(args...)
 #endif
 
+#define QUANT(x,a) (((int)((x) * (a))) / (a))
+#define HSUBPIX 5.0
+#define VSUBPIX 5.0
+
 #define FNONE 0
 #define FOVER 1
 #define FRGB 4
@@ -227,12 +231,12 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	int sx1 = src->w;
 	int sy1 = src->h;
 
-	if (x1 < dx0 || x0 >= dx1) return;
-	if (y1 < dy0 || y0 >= dy1) return;
+	if (x1 <= dx0 || x0 >= dx1) return;
+	if (y1 <= dy0 || y0 >= dy1) return;
 	if (x0 < dx0) { sx0 += dx0 - x0; x0 = dx0; }
 	if (y0 < dy0) { sy0 += dy0 - y0; y0 = dy0; }
-	if (x1 >= dx1) { sx1 += dx1 - x1; x1 = dx1; }
-	if (y1 >= dy1) { sy1 += dy1 - y1; y1 = dy1; }
+	if (x1 > dx1) { sx1 += dx1 - x1; x1 = dx1; }
+	if (y1 > dy1) { sy1 += dy1 - y1; y1 = dy1; }
 
 	sp = src->samples + (sy0 * src->w + sx0);
 	dp = dst->samples + ((y0 - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
@@ -282,11 +286,6 @@ text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 	if (fz_isemptyrect(clip))
 		return nil;
 
-	clip.min.x ++;
-	clip.min.y ++;
-	clip.max.x ++;
-	clip.max.y ++;
-
 	if (!(gc->flag & FOVER))
 	{
 		error = fz_newpixmapwithrect(&gc->dest, clip, 1);
@@ -305,8 +304,8 @@ text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 		trm = fz_concat(tm, ctm);
 		x = fz_floor(trm.e);
 		y = fz_floor(trm.f);
-		trm.e = (trm.e - fz_floor(trm.e));
-		trm.f = (trm.f - fz_floor(trm.f));
+		trm.e = QUANT(trm.e - fz_floor(trm.e), HSUBPIX);
+		trm.f = QUANT(trm.f - fz_floor(trm.f), VSUBPIX);
 
 		error = fz_renderglyph(gc->cache, &glyph, text->font, cid, trm);
 		if (error)

@@ -4,6 +4,9 @@
 #undef offsetof
 #define offsetof(s, m) (unsigned long)(&(((s*)0)->m))
 
+#undef nelem
+#define nelem(x) (sizeof(x)/sizeof((x)[0]))
+
 #undef ABS
 #define ABS(x) ( (x) < 0 ? -(x) : (x) )
 

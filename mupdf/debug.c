@@ -19,7 +19,7 @@ enum
 	PDF_LPAGE = 32,
 };
 
-static inline void log(int tag, char *name, char *fmt, va_list ap)
+static inline void pdflog(int tag, char *name, char *fmt, va_list ap)
 {
 	static int flags = 128;
 	static int level = 0;
@@ -71,20 +71,20 @@ static inline void log(int tag, char *name, char *fmt, va_list ap)
 }
 
 void pdf_logxref(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LXREF,"xref",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LXREF,"xref",fmt,ap);va_end(ap);}
 
 void pdf_logrsrc(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LRSRC,"rsrc",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LRSRC,"rsrc",fmt,ap);va_end(ap);}
 
 void pdf_logfont(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LFONT,"font",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LFONT,"font",fmt,ap);va_end(ap);}
 
 void pdf_logimage(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LIMAGE,"imag",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LIMAGE,"imag",fmt,ap);va_end(ap);}
 
 void pdf_logshade(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LSHADE,"shad",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LSHADE,"shad",fmt,ap);va_end(ap);}
 
 void pdf_logpage(char *fmt, ...)
-{va_list ap;va_start(ap,fmt);log(PDF_LPAGE,"page",fmt,ap);va_end(ap);}
+{va_list ap;va_start(ap,fmt);pdflog(PDF_LPAGE,"page",fmt,ap);va_end(ap);}
 

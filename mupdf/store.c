@@ -5,9 +5,9 @@ typedef struct pdf_item_s pdf_item;
 
 struct pdf_item_s
 {
-    pdf_itemkind kind;
-    fz_obj *key;
-    void *val;
+	pdf_itemkind kind;
+	fz_obj *key;
+	void *val;
 	pdf_item *next;
 };
 

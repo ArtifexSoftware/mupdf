@@ -8,8 +8,8 @@ typedef unsigned char byte;
 
 static void decodetile(fz_pixmap *pix, int skip, float *decode)
 {
-    int min[FZ_MAXCOLORS];
-    int max[FZ_MAXCOLORS];
+	int min[FZ_MAXCOLORS];
+	int max[FZ_MAXCOLORS];
 	int sub[FZ_MAXCOLORS];
 	int useless = 1;
 	byte *p = pix->samples;
