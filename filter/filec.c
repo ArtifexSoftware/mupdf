@@ -148,12 +148,18 @@ fz_pushfilter(fz_file *file, fz_filter *filter)
 		file->out = file->in;
 		file->in = buf;
 
-// XXX
 		if (file->mode == O_RDONLY)
 		{
 			file->out->rp = file->out->bp;
 			file->out->wp = file->out->bp;
 			file->out->eof = 0;
+		}
+		else
+		{
+			file->out->eof = 0;
+			file->in->rp = file->in->bp;
+			file->in->wp = file->in->bp;
+			file->in->eof = 0;
 		}
 
 		file->filter = filter;
@@ -220,11 +226,6 @@ fz_popfilter(fz_file *file)
 		buf = file->out;
 		file->out = file->in;
 		file->in = buf;
-
-// XXX
-		file->in->rp = file->in->bp;
-		file->in->wp = file->in->bp;
-		file->in->eof = 0;
 	}
 	else
 	{

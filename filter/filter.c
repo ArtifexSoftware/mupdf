@@ -1,28 +1,8 @@
 #include <fitz.h>
 
-fz_error fz_kioneedin = {
-	.msg = {"<ioneedin>"},
-	.func = {"<process>"},
-	.file = {"filter.c"},
-    .line = 0,
-	.frozen = 1
-};
-
-fz_error fz_kioneedout = {
-	.msg = {"<ioneedout>"},
-	.func = {"<process>"},
-	.file = {"filter.c"},
-    .line = 0,
-	.frozen = 1
-};
-
-fz_error fz_kiodone = {
-	.msg = {"<iodone>"},
-	.func = {"<process>"},
-	.file = {"filter.c"},
-    .line = 0,
-	.frozen = 1
-};
+fz_error fz_kioneedin = { "<ioneedin>", "<process>", "filter.c", 0, 1 };
+fz_error fz_kioneedout = { "<ioneedout>", "<process>", "filter.c", 0, 1 };
+fz_error fz_kiodone = { "<iodone>", "<process>", "filter.c", 0, 1 };
 
 fz_error *
 fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)

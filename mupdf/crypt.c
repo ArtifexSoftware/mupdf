@@ -61,6 +61,9 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	crypt = *cp = fz_malloc(sizeof(pdf_crypt));	
 	if (!crypt) return fz_outofmem;
 
+	crypt->encrypt = fz_keepobj(enc);
+	crypt->id = nil;
+
 	obj = fz_dictgets(enc, "O");
 	if (!fz_isstring(obj) || fz_tostringlen(obj) != 32)
 		goto cleanup;
@@ -116,7 +119,8 @@ cleanup:
 void
 pdf_freecrypt(pdf_crypt *crypt)
 {
-	fz_dropobj(crypt->id);
+	if (crypt->encrypt) fz_dropobj(crypt->encrypt);
+	if (crypt->id) fz_dropobj(crypt->id);
 	fz_free(crypt);
 }
 
@@ -262,15 +266,17 @@ createuser(pdf_crypt *crypt, char *userpw)
 }
 
 fz_error *
-pdf_newencrypt(pdf_crypt **cp, fz_obj **dict,
+pdf_newencrypt(pdf_crypt **cp, 
 	char *userpw, char *ownerpw, int p, int n, fz_obj *id)
 {
 	fz_error *error;
 	pdf_crypt *crypt;
 
 	crypt = *cp = fz_malloc(sizeof(pdf_crypt));
-	if (!crypt) return fz_outofmem;
+	if (!crypt)
+		return fz_outofmem;
 
+	crypt->encrypt = nil;
 	crypt->id = fz_keepobj(fz_arrayget(id, 0));
 	crypt->p = p;
 	crypt->n = MIN(MAX(n / 8, 5), 16);
@@ -280,7 +286,7 @@ pdf_newencrypt(pdf_crypt **cp, fz_obj **dict,
 	createowner(crypt, userpw, ownerpw);
 	createuser(crypt, userpw);
 
-	error = fz_packobj(dict,
+	error = fz_packobj(&crypt->encrypt,
 			"<< /Filter /Standard "
 				"/V %i /R %i "
 				"/O %# /U %# "
@@ -292,7 +298,14 @@ pdf_newencrypt(pdf_crypt **cp, fz_obj **dict,
 			crypt->u, 32,
 			crypt->p,
 			crypt->n * 8);
-	return error;
+	if (error)
+	{
+		pdf_freecrypt(crypt);
+		return error;
+	}
+
+	*cp = crypt;
+	return nil;
 }
 
 /*

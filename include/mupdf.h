@@ -70,6 +70,7 @@ struct pdf_crypt_s
 	int r;
 	int n;
 
+	fz_obj *encrypt;
 	fz_obj *id;
 
 	unsigned char key[16];
@@ -86,7 +87,7 @@ fz_error *pdf_readstream(fz_buffer **bufp, pdf_xref*, fz_obj *stmref);
 
 /* crypt.c */
 fz_error *pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
-fz_error *pdf_newencrypt(pdf_crypt **cp, fz_obj **edict, char *userpw, char *ownerpw, int p, int n, fz_obj *id);
+fz_error *pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id);
 fz_error *pdf_setpassword(pdf_crypt *crypt, char *pw);
 fz_error *pdf_cryptstm(fz_filter **fp, pdf_crypt *crypt, int oid, int gid);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid);
@@ -127,7 +128,7 @@ fz_error *pdf_garbagecollect(pdf_xref *xref);
 
 /* save.c */
 fz_error *pdf_saveincrementalpdf(pdf_xref *xref, char *path);
-fz_error *pdf_savepdf(pdf_xref *xref, char *path);
+fz_error *pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt);
 
 /*
  * high-level semantic objects for resources and pages

@@ -3,30 +3,54 @@
 
 #define TIGHT 0
 
-static fz_error *writestored(fz_file *out, pdf_xref *xref, int oid)
+static fz_error *
+writestored(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
 	fz_obj *obj;
 	fz_buffer *stm;
+	fz_filter *filter;
+	int gid;
 
-	obj = pdf_findstoredobject(xref->store, oid, x->gen);
-	stm = pdf_findstoredstream(xref->store, oid, x->gen);
+	gid = x->gen;	
+	if (x->type == 'o')
+		gid = 0;
+
+	obj = pdf_findstoredobject(xref->store, oid, gid);
+	stm = pdf_findstoredstream(xref->store, oid, gid);
 
 	if (!obj)
 		return fz_throw("could not find stored object");
 
-	if (xref->crypt)
-		pdf_cryptobj(xref->crypt, obj, oid, x->gen);
+	if (encrypt)
+		pdf_cryptobj(encrypt, obj, oid, gid);
 
-	fz_print(out, "%d %d obj\n", oid, x->gen);
+	fz_print(out, "%d %d obj\n", oid, gid);
 	fz_printobj(out, obj, TIGHT);
 	fz_print(out, "\n");
 
 	if (stm)
 	{
 		fz_print(out, "stream\n");
+
+		if (encrypt)
+		{
+			error = pdf_cryptstm(&filter, encrypt, oid, gid);
+			if (error)
+				return error;
+			error = fz_pushfilter(out, filter);
+			if (error) {
+				fz_freefilter(filter);
+				return error;
+			}
+		}
+
 		fz_write(out, stm->rp, stm->wp - stm->rp);
+
+		if (encrypt)
+			fz_popfilter(out);
+
 		fz_print(out, "endstream\n");
 	}
 
@@ -39,7 +63,8 @@ static fz_error *writestored(fz_file *out, pdf_xref *xref, int oid)
 	return nil;
 }
 
-static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
+static fz_error *
+writecopy(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
@@ -49,14 +74,23 @@ static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
 	fz_filter *cf;
 	fz_filter *nf;
 	fz_filter *pipe;
+	fz_filter *ef;
+	int gid;
 	int n;
 	unsigned char buf[4096];
 
-	error = pdf_loadobject0(&obj, xref, oid, x->gen, &stmofs);
+	gid = x->gen;	
+	if (x->type == 'o')
+		gid = 0;
+
+	error = pdf_loadobject0(&obj, xref, oid, gid, &stmofs);
 	if (error)
 		return error;
 
-	fz_print(out, "%d %d obj\n", oid, x->gen);
+	if (encrypt)
+		pdf_cryptobj(encrypt, obj, oid, gid);
+
+	fz_print(out, "%d %d obj\n", oid, gid);
 	fz_printobj(out, obj, TIGHT);
 	fz_print(out, "\n");
 
@@ -74,7 +108,7 @@ static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
 			error = fz_newnullfilter(&nf, fz_toint(length));
 			if (error)
 				goto cleanup;
-			error = pdf_cryptstm(&cf, xref->crypt, oid, x->gen);
+			error = pdf_cryptstm(&cf, xref->crypt, oid, gid);
 			if (error)
 				goto cleanup;
 			error = fz_newpipeline(&pipe, nf, cf);
@@ -91,6 +125,18 @@ static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
 		fz_seek(xref->file, stmofs);
 		fz_pushfilter(xref->file, pipe);
 
+		if (encrypt)
+		{
+			error = pdf_cryptstm(&ef, encrypt, oid, gid);
+			if (error)
+				return error;
+			error = fz_pushfilter(out, ef);
+			if (error) {
+				fz_freefilter(ef);
+				goto cleanup;
+			}
+		}
+
 		while (1)
 		{
 			n = fz_read(xref->file, buf, sizeof buf);
@@ -101,9 +147,14 @@ static fz_error *writecopy(fz_file *out, pdf_xref *xref, int oid)
 				error = fz_ferror(xref->file);
 				fz_popfilter(xref->file);
 				goto cleanup;
+				if (encrypt)
+					fz_popfilter(out);
 			}
 			fz_write(out, buf, n);
 		}
+
+		if (encrypt)
+			fz_popfilter(out);
 
 		fz_popfilter(xref->file);
 
@@ -155,7 +206,7 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 		if (xref->table[oid].type == 'a')
 		{
 			xref->table[oid].ofs = fz_tell(out);
-			error = writestored(out, xref, oid);
+			error = writestored(out, xref, xref->crypt, oid);
 			if (error)
 				goto cleanup;
 		}
@@ -234,7 +285,7 @@ cleanup:
 }
 
 fz_error *
-pdf_savepdf(pdf_xref *xref, char *path)
+pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 {
 	fz_error *error;
 	fz_file *out;
@@ -262,14 +313,14 @@ pdf_savepdf(pdf_xref *xref, char *path)
 		if (xref->table[oid].type == 'n' || xref->table[oid].type == 'o')
 		{
 			ofsbuf[oid] = fz_tell(out);
-			error = writecopy(out, xref, oid);
+			error = writecopy(out, xref, encrypt, oid);
 			if (error)
 				goto cleanup;
 		}
 		else if (xref->table[oid].type == 'a')
 		{
 			ofsbuf[oid] = fz_tell(out);
-			error = writestored(out, xref, oid);
+			error = writestored(out, xref, encrypt, oid);
 			if (error)
 				goto cleanup;
 		}
@@ -297,10 +348,19 @@ pdf_savepdf(pdf_xref *xref, char *path)
 
 	fz_print(out, "trailer\n<<\n  /Size %d", xref->size);
 	obj = fz_dictgets(xref->trailer, "Root");
-	fz_print(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	fz_print(out, "\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
 	obj = fz_dictgets(xref->trailer, "Info");
 	if (obj)
-		fz_print(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
+		fz_print(out, "\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	if (encrypt)
+	{
+		fz_print(out, "\n  /Encrypt ");
+		fz_printobj(out, encrypt->encrypt, 1);
+		fz_print(out, "\n  /ID [");
+		fz_printobj(out, encrypt->id, 1);
+		fz_printobj(out, encrypt->id, 1);
+		fz_print(out, "]");
+	}
 	fz_print(out, "\n>>\n\n");
 
 	fz_print(out, "startxref\n");

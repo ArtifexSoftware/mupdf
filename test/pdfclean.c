@@ -67,6 +67,7 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	int c;
 
+	pdf_crypt *encrypt = 0;
 	int doencrypt = 0;
 	int dorepair = 0;
 	int doexpand = 0;
@@ -122,13 +123,26 @@ int main(int argc, char **argv)
 		if (error) fz_abort(error);
 	}
 
+	if (doencrypt)
+	{
+		fz_obj *id = fz_dictgets(xref->trailer, "ID");
+		if (!id)
+			fz_packobj(&id, "[(ABCDEFGHIJKLMNOP)(ABCDEFGHIJKLMNOP)]");
+		else
+			fz_keepobj(id);
+		error = pdf_newencrypt(&encrypt, userpw, ownerpw, perms, keylen, id);
+		if (error)
+			fz_abort(error);
+		fz_dropobj(id);
+	}
+
 	if (doexpand)
 		expandstreams(xref);
 
 	if (dogc)
 		pdf_garbagecollect(xref);
 
-	error = pdf_savepdf(xref, outfile);
+	error = pdf_savepdf(xref, outfile, encrypt);
 	if (error)
 		fz_abort(error);
 
