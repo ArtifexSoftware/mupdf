@@ -1,5 +1,40 @@
 #include <fitz.h>
 
+void fz_invert3x3(float *dst, float *m)
+{
+	float det;
+	int i;
+
+#define M3(m,i,j) (m)[3*i+j]
+#define D2(a,b,c,d) (a * d - b * c)
+#define D3(a1,a2,a3,b1,b2,b3,c1,c2,c3) \
+	(a1 * D2(b2,b3,c2,c3)) - \
+	(b1 * D2(a2,a3,c2,c3)) + \
+	(c1 * D2(a2,a3,b2,b3))
+
+	det = D3(M3(m,0,0), M3(m,1,0), M3(m,2,0),
+			 M3(m,0,1), M3(m,1,1), M3(m,2,1),
+			 M3(m,0,2), M3(m,1,2), M3(m,2,2));
+	if (det == 0)
+		det = 1.0;
+	det = 1.0 / det;
+
+	M3(dst,0,0) =  M3(m,1,1) * M3(m,2,2) - M3(m,1,2) * M3(m,2,1);
+	M3(dst,0,1) = -M3(m,0,1) * M3(m,2,2) + M3(m,0,2) * M3(m,2,1);
+	M3(dst,0,2) =  M3(m,0,1) * M3(m,1,2) - M3(m,0,2) * M3(m,1,1);
+
+	M3(dst,1,0) = -M3(m,1,0) * M3(m,2,2) + M3(m,1,2) * M3(m,2,0);
+	M3(dst,1,1) =  M3(m,0,0) * M3(m,2,2) - M3(m,0,2) * M3(m,2,0);
+	M3(dst,1,2) = -M3(m,0,0) * M3(m,1,2) + M3(m,0,2) * M3(m,1,0);
+
+	M3(dst,2,0) =  M3(m,1,0) * M3(m,2,1) - M3(m,1,1) * M3(m,2,0);
+	M3(dst,2,1) = -M3(m,0,0) * M3(m,2,1) + M3(m,0,1) * M3(m,2,0);
+	M3(dst,2,2) =  M3(m,0,0) * M3(m,1,1) - M3(m,0,1) * M3(m,1,0);
+
+	for (i = 0; i < 9; i++)
+		dst[i] *= det;
+}
+
 fz_matrix
 fz_concat(fz_matrix one, fz_matrix two)
 {

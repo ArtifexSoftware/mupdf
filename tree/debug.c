@@ -71,7 +71,7 @@ static void lispcolor(fz_colornode *node, int level)
 {
 	int i;
 	indent(level);
-	printf("(color ");
+	printf("(color %s ", node->cs->name);
 	for (i = 0; i < node->n; i++)
 		printf("%g ", node->samples[i]);
 	printf(")\n");

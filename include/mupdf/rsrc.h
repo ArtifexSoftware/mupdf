@@ -40,6 +40,10 @@ struct pdf_indexed_s
 extern fz_colorspace *pdf_devicegray;
 extern fz_colorspace *pdf_devicergb;
 extern fz_colorspace *pdf_devicecmyk;
+extern fz_colorspace *pdf_devicelab;
+
+void pdf_convcolor(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv);
+void pdf_convpixmap(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixmap *dp);
 
 fz_error *pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj);
 

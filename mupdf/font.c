@@ -135,7 +135,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
 	if (fterr)
-		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
+		fz_warn("freetype load glyph: 0x%x", fterr);
 
 #else
 
@@ -151,13 +151,13 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 	if (fterr)
-		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
+		fz_warn("freetype load glyph: 0x%x", fterr);
 
 #endif
 
 	fterr = FT_Render_Glyph(face->glyph, ft_render_mode_normal);
 	if (fterr)
-		return fz_throw("freetype failed to render glyph: 0x%x", fterr);
+		fz_warn("freetype render glyph: 0x%x", fterr);
 
 	glyph->w = face->glyph->bitmap.width;
 	glyph->h = face->glyph->bitmap.rows;

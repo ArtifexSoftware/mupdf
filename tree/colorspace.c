@@ -37,6 +37,7 @@ fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *ds
 {
 	float xyz[3];
 	int i;
+
 	if (srcs != dsts)
 	{	
 		srcs->toxyz(srcs, srcv, xyz);

@@ -36,6 +36,8 @@ struct fz_irect_s
 	fz_ipoint max;
 };
 
+void fz_invert3x3(float *dst, float *m);
+
 fz_rect fz_infiniterect(void);
 
 fz_matrix fz_concat(fz_matrix one, fz_matrix two);

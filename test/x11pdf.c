@@ -24,6 +24,8 @@ static XEvent xevt;
 static int mapped = 0;
 static Cursor xcarrow, xchand, xcwait;
 
+static char doctitle[256];
+
 static float zoom = 1.0;
 static int rotate = 0;
 static int pageno = 1;
@@ -181,6 +183,12 @@ Lskipload:
 	XDefineCursor(xdpy, xwin, xcarrow);
 	XFlush(xdpy);
 
+	{
+		char buf[512];
+		sprintf(buf, "%s - %d/%d", doctitle, pageno, count);
+		xtitle(buf);
+	}
+
 	xresize();
 	xblit();
 }
@@ -188,6 +196,7 @@ Lskipload:
 static void pdfopen(char *filename, char *password)
 {
 	fz_error *error;
+	fz_obj *obj;
 
 	error = pdf_openpdf(&xref, filename);
 	if (error)
@@ -207,6 +216,20 @@ static void pdfopen(char *filename, char *password)
 	if (error) fz_abort(error);
 
 	count = pdf_getpagecount(pages);
+
+	strlcpy(doctitle, filename, sizeof doctitle);
+	obj = fz_dictgets(xref->trailer, "Info");
+	if (fz_isindirect(obj))
+	{
+		pdf_resolve(&obj, xref);
+		obj = fz_dictgets(obj, "Title");
+		if (obj)
+		{
+			int n = MIN(fz_tostringlen(obj) + 1, sizeof doctitle);
+			if (obj)
+				strlcpy(doctitle, fz_tostringbuf(obj), n);
+		}
+	}
 
 	error = fz_newrenderer(&rast, pdf_devicergb, 1024 * 512);
 	if (error) fz_abort(error);
@@ -320,8 +343,6 @@ static void handlekey(int c)
 int main(int argc, char **argv)
 {
 	char *filename;
-	fz_obj *obj;
-	char buf[256];
 	int c;
 
 	char *password = "";
@@ -346,22 +367,6 @@ int main(int argc, char **argv)
 	xopen();
 	pdfopen(filename, password);
 	showpage();
-
-	strlcpy(buf, filename, sizeof buf);
-	obj = fz_dictgets(xref->trailer, "Info");
-	if (fz_isindirect(obj))
-	{
-		pdf_resolve(&obj, xref);
-		obj = fz_dictgets(obj, "Title");
-		if (obj)
-		{
-			int n = MIN(fz_tostringlen(obj) + 1, sizeof buf);
-			if (obj)
-				strlcpy(buf, fz_tostringbuf(obj), n);
-			printf("Title: %s\n", buf);
-		}
-	}
-	xtitle(buf);
 
 	while (1)
 	{
