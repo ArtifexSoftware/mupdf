@@ -14,6 +14,17 @@ fz_error *pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
 void *pdf_findresource(pdf_rsrc *list, fz_obj *ref);
 
 /*
+ * Functions
+ */
+
+
+typedef struct pdf_function_s pdf_function;
+
+fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj);
+fz_error *pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
+void pdf_freefunc(pdf_function *func);
+
+/*
  * ColorSpace
  */
 

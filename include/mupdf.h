@@ -9,7 +9,6 @@
 
 #include "mupdf/syntax.h"
 #include "mupdf/xref.h"
-#include "mupdf/function.h"
 #include "mupdf/rsrc.h"
 #include "mupdf/content.h"
 #include "mupdf/page.h"
