@@ -4,7 +4,8 @@ static inline void
 printbits(FILE *f, int code, int nbits)
 {
 	int n, b;
-	for (n = nbits - 1; n >= 0; n--) {
+	for (n = nbits - 1; n >= 0; n--)
+	{
 		b = (code >> n) & 1;
 		fprintf(f, "%c", b ? '1' : '0');
 	}
@@ -35,7 +36,8 @@ getrun(const unsigned char *line, int x, int w, int c)
 		x = 0;
 
 	z = x;
-	while (z < w) {
+	while (z < w)
+	{
 		b = getbit(line, z);
 		if (c != b)
 			break;
@@ -53,16 +55,19 @@ findchanging(const unsigned char *line, int x, int w)
 	if (line == 0)
 		return w;
 
-	if (x == -1) {
+	if (x == -1)
+	{
 		a = 0;
 		x = 0;
 	}
-	else {
+	else
+	{
 		a = getbit(line, x);
 		x++;
 	}
 
-	while (x < w) {
+	while (x < w)
+	{
 		b = getbit(line, x);
 		if (a != b)
 			break;
@@ -103,14 +108,18 @@ setbits(unsigned char *line, int x0, int x1)
 	b0 = x0 & 7;
 	b1 = x1 & 7;
 
-	if (a0 == a1) {
-		line[a0] |= lm[b0] & rm[b1];
+	if (a0 == a1)
+	{
+		if (b1)
+			line[a0] |= lm[b0] & rm[b1];
 	}
-	else {
+	else
+	{
 		line[a0] |= lm[b0];
 		for (a = a0 + 1; a < a1; a++)
 			line[a] = 0xFF;
-		line[a1] |= rm[b1];
+		if (b1)
+			line[a1] |= rm[b1];
 	}
 }
 

@@ -7,7 +7,7 @@
 
 include $(HOME)/.jamrules ;
 
-HDRS = include ;
+HDRS = include filter ;
 
 Library libfitz :
 	# util stuff
