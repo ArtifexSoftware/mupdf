@@ -3,10 +3,13 @@
 
 int showtree = 0;
 float zoom = 1.0;
+char *namefmt = "out-%02d.ppm";
+fz_renderer *gc;
+int nbands = 1;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfrip [-d] [-p password] [-z zoom] file.pdf [pages...]\n");
+	fprintf(stderr, "usage: pdfrip [-d] [-b bands] [-o out-%%02d.ppm] [-p password] [-z zoom] file.pdf pages...\n");
 	exit(1);
 }
 
@@ -14,13 +17,21 @@ void usage()
  * Draw page
  */
 
-void showpage(pdf_xref *xref, fz_obj *pageobj)
+void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 {
 	fz_error *error;
 	pdf_page *page;
+	char namebuf[256];
+	fz_pixmap *pix;
+	fz_matrix ctm;
+	fz_irect bbox;
+	fz_irect band;
+	FILE *f;
+	int x, y;
+	int w, h;
+	int b;
 
-	fz_debugobj(pageobj);
-	printf("\n");
+	sprintf(namebuf, namefmt, pagenum);
 
 	error = pdf_loadpage(&page, xref, pageobj);
 	if (error)
@@ -28,6 +39,9 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 
 	if (showtree)
 	{
+		fz_debugobj(pageobj);
+		printf("\n");
+
 		printf("page\n");
 		printf("  mediabox [ %g %g %g %g ]\n",
 			page->mediabox.min.x, page->mediabox.min.y,
@@ -43,37 +57,48 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 		printf("endtree\n");
 	}
 
+	ctm = fz_concat(fz_translate(0, -page->mediabox.max.y),
+					fz_scale(zoom, -zoom));
+
+	bbox = fz_roundrect(page->mediabox);
+	bbox.min.x = bbox.min.x * zoom;
+	bbox.min.y = bbox.min.y * zoom;
+	bbox.max.x = bbox.max.x * zoom;
+	bbox.max.y = bbox.max.y * zoom;
+	w = bbox.max.x - bbox.min.x;
+	h = bbox.max.y - bbox.min.y;
+
+	f = fopen(namebuf, "wb");
+	fprintf(f, "P6\n%d %d\n255\n", w, h);
+
+	for (b = 0; b < nbands; b++)
 	{
-		fz_pixmap *pix;
-		fz_renderer *gc;
-		fz_matrix ctm;
-		fz_rect bbox;
+		printf("band %d / %d\n", b, nbands);
 
-		error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
-		if (error) fz_abort(error);
+		band.min.x = bbox.min.x;
+		band.max.x = bbox.max.x;
+		band.min.y = bbox.min.y + (h * b) / nbands;
+		band.max.y = bbox.min.y + (h * (b + 1)) / nbands;
 
-		ctm = fz_concat(fz_translate(0, -page->mediabox.max.y), fz_scale(zoom, -zoom));
-printf("ctm %g %g %g %g %g %g\n",
-	ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
+		error = fz_rendertree(&pix, gc, page->tree, ctm, band, 1);
+		if (error)
+			fz_abort(error);
 
-printf("bounding!\n");
-		bbox = fz_boundtree(page->tree, ctm);
-printf("  [%g %g %g %g]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
-printf("rendering!\n");
-		bbox = page->mediabox;
-		bbox.min.x = bbox.min.x * zoom;
-		bbox.min.y = bbox.min.y * zoom;
-		bbox.max.x = bbox.max.x * zoom;
-		bbox.max.y = bbox.max.y * zoom;
-		error = fz_rendertree(&pix, gc, page->tree, ctm, fz_roundrect(bbox), 1);
-		if (error) fz_abort(error);
-printf("done!\n");
+		for (y = 0; y < pix->h; y++)
+		{
+			for (x = 0; x < pix->w; x++)
+			{
+				putc(pix->samples[y * pix->w * 4 + x * 4 + 1], f);
+				putc(pix->samples[y * pix->w * 4 + x * 4 + 2], f);
+				putc(pix->samples[y * pix->w * 4 + x * 4 + 3], f);
+			}
+		}
 
-		fz_debugpixmap(pix);
 		fz_droppixmap(pix);
-
-		fz_droprenderer(gc);
 	}
+
+	fclose(f);
+
 }
 
 int main(int argc, char **argv)
@@ -82,7 +107,7 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
-	pdf_outline *outlines;
+	pdf_outlinetree *outlines;
 	int c;
 
 	char *password = "";
@@ -90,13 +115,15 @@ int main(int argc, char **argv)
 	fz_cpudetect();
 	fz_accelerate();
 
-	while ((c = getopt(argc, argv, "dz:p:")) != -1)
+	while ((c = getopt(argc, argv, "dz:p:o:b:")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = optarg; break;
 		case 'z': zoom = atof(optarg); break;
 		case 'd': ++showtree; break;
+		case 'o': namefmt = optarg; break;
+		case 'b': nbands = atoi(optarg); break;
 		default: usage();
 		}
 	}
@@ -105,31 +132,29 @@ int main(int argc, char **argv)
 		usage();
 
 	filename = argv[optind++];
-
+	
 	error = pdf_newxref(&xref);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_loadxref(xref, filename);
+	error = pdf_openpdf(&xref, filename);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptxref(xref);
+	error = pdf_decryptpdf(xref);
 	if (error)
 		fz_abort(error);
 
 	if (xref->crypt)
 	{
 		error = pdf_setpassword(xref->crypt, password);
-		if (error) fz_abort(error);
+		if (error)
+			fz_abort(error);
 	}
 
 	error = pdf_loadpagetree(&pages, xref);
-	if (error) fz_abort(error);
-
-	outlines = nil;
-/*	error = pdf_loadoutlinetree(&outlines, xref); */
-/*	if (error) { fz_warn(error->msg); fz_droperror(error); } */
+	if (error)
+		fz_abort(error);
 
 	if (optind == argc)
 	{
@@ -140,10 +165,14 @@ int main(int argc, char **argv)
 		if (outlines)
 		{
 			printf("outlines\n");
-			pdf_debugoutline(outlines, 0);
+			pdf_debugoutlinetree(outlines);
 			printf("\n");
 		}
 	}
+
+	error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
+	if (error)
+		fz_abort(error);
 
 	for ( ; optind < argc; optind++)
 	{
@@ -151,10 +180,10 @@ int main(int argc, char **argv)
 		if (page < 1 || page > pdf_getpagecount(pages))
 			fprintf(stderr, "page out of bounds: %d\n", page);
 		printf("page %d\n", page);
-		showpage(xref, pdf_getpageobject(pages, page - 1));
+		showpage(xref, pdf_getpageobject(pages, page - 1), page);
 	}
 
-	pdf_closexref(xref);
+	pdf_closepdf(xref);
 
 	return 0;
 }
