@@ -91,10 +91,10 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "MediaBox");
 	if (!fz_isarray(obj))
 		return fz_throw("syntaxerror: Page missing MediaBox");
-	bbox.min.x = fz_toint(fz_arrayget(obj, 0));
-	bbox.min.y = fz_toint(fz_arrayget(obj, 1));
-	bbox.max.x = fz_toint(fz_arrayget(obj, 2));
-	bbox.max.y = fz_toint(fz_arrayget(obj, 3));
+	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
+	bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
+	bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
+	bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
 
 	obj = fz_dictgets(dict, "Rotate");
 	if (fz_isint(obj))

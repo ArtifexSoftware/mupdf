@@ -5,7 +5,7 @@ fz_newpixmap(fz_pixmap **pixp, fz_colorspace *cs, int x, int y, int w, int h, in
 {
 	fz_pixmap *pix;
 
-	pix = *pixp = fz_malloc(sizeof (fz_pixmap));
+	pix = *pixp = fz_malloc(sizeof(fz_pixmap));
 	if (!pix)
 		return fz_outofmem;
 
@@ -43,51 +43,32 @@ fz_clearpixmap(fz_pixmap *pix)
 }
 
 void
-fz_debugpixmap(fz_pixmap *pix)
+fz_convertpixmap(fz_pixmap *src, fz_pixmap *dst)
 {
-	int x, y;
+	float srcv[32];
+	float dstv[32];
+	int y, x, k;
+	int sna = src->n + src->a;
+	int dna = dst->n + dst->a;
 
-	FILE *ppm = fopen("out.ppm", "w");
-	FILE *pgm = fopen("out.pgm", "w");
+printf("convert pixmap from %s to %s\n", src->cs->name, dst->cs->name);
 
-	fprintf(ppm, "P6\n%d %d\n255\n", pix->w, pix->h);
-	fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
-
-	if (pix->n == 3 && pix->a == 1)
+	for (y = 0; y < src->h; y++)
 	{
-		for (y = 0; y < pix->h; y++)
-			for (x = 0; x < pix->w; x++)
-			{
-				int r = pix->samples[x * 4 + y * pix->stride + 0];
-				int g = pix->samples[x * 4 + y * pix->stride + 1];
-				int b = pix->samples[x * 4 + y * pix->stride + 2];
-				int a = pix->samples[x * 4 + y * pix->stride + 3];
-
-				//putc(r, ppm);
-				//putc(g, ppm);
-				//putc(b, ppm);
-				putc(((r * a) / 255) + (255 - a), ppm);
-				putc(((g * a) / 255) + (255 - a), ppm);
-				putc(((b * a) / 255) + (255 - a), ppm);
-
-				putc(a, pgm);
-			}
+		for (x = 0; x < src->w; x++)
+		{
+			for (k = 0; k < src->n; k++)
+				srcv[k] = src->samples[ y * src->stride + x * sna + k ] / 255.0;
+			fz_convertcolor(src->cs, srcv, dst->cs, dstv);
+			for (k = 0; k < dst->n; k++)
+				dst->samples[ y * dst->stride + x * dna + k ] = dstv[k] * 255;
+			if (src->a && dst->a)
+				dst->samples[ y * dst->stride + x * dna + dst->n ] = 
+					src->samples[ y * src->stride + x * sna + src->n ];
+			else if (dst->a)
+				dst->samples[ y * dst->stride + x * dna + dst->n ] = 255;
+		}
 	}
-	else if (pix->n == 0 && pix->a == 1)
-	{
-		for (y = 0; y < pix->h; y++)
-			for (x = 0; x < pix->w; x++)
-			{
-				int a = pix->samples[x + y * pix->stride];
-				putc(0, ppm);
-				putc(0, ppm);
-				putc(0, ppm);
-				putc(a, pgm);
-			}
-	}
-
-	fclose(ppm);
-	fclose(pgm);
 }
 
 void
@@ -145,5 +126,67 @@ fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 			*d++ = fz_mul255(*m++, *s++);
 		}
 	}
+}
+
+void
+fz_debugpixmap(fz_pixmap *pix)
+{
+	int x, y;
+
+	FILE *ppm = fopen("out.ppm", "w");
+	FILE *pgm = fopen("out.pgm", "w");
+
+	fprintf(ppm, "P6\n%d %d\n255\n", pix->w, pix->h);
+	fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
+
+	if (pix->n == 3 && pix->a == 1)
+	{
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				int r = pix->samples[x * 4 + y * pix->stride + 0];
+				int g = pix->samples[x * 4 + y * pix->stride + 1];
+				int b = pix->samples[x * 4 + y * pix->stride + 2];
+				int a = pix->samples[x * 4 + y * pix->stride + 3];
+
+				putc(r, ppm);
+				putc(g, ppm);
+				putc(b, ppm);
+				// putc(((r * a) / 255) + (255 - a), ppm);
+				// putc(((g * a) / 255) + (255 - a), ppm);
+				// putc(((b * a) / 255) + (255 - a), ppm);
+
+				putc(a, pgm);
+			}
+	}
+	if (pix->n == 3 && pix->a == 0)
+	{
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				int r = pix->samples[x * 3 + y * pix->stride + 0];
+				int g = pix->samples[x * 3 + y * pix->stride + 1];
+				int b = pix->samples[x * 3 + y * pix->stride + 2];
+				putc(r, ppm);
+				putc(g, ppm);
+				putc(b, ppm);
+				putc(255, pgm);
+			}
+	}
+	else if (pix->n == 0 && pix->a == 1)
+	{
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				int a = pix->samples[x + y * pix->stride];
+				putc(0, ppm);
+				putc(0, ppm);
+				putc(0, ppm);
+				putc(a, pgm);
+			}
+	}
+
+	fclose(ppm);
+	fclose(pgm);
 }
 

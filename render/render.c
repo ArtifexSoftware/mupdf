@@ -75,6 +75,8 @@ fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	int x, y;
 	float rgb[3];
 
+printf("render color\n");
+
 	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
 	gc->r = rgb[0] * 255;
 	gc->g = rgb[1] * 255;
@@ -118,7 +120,10 @@ fz_renderoverchild(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 
 	if (gc->tmp)
 	{
+printf("over src ");fz_debugpixmap(gc->tmp);getchar();
+printf("over dst ");fz_debugpixmap(gc->acc);getchar();
 		fz_blendover(gc->tmp, gc->acc);
+printf("over res ");fz_debugpixmap(gc->acc);getchar();
 		fz_freepixmap(gc->tmp);
 		gc->tmp = nil;
 	}
@@ -133,9 +138,12 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	fz_pixmap *oldacc = nil;
 	int oldmode;
 
+printf("begin over\n");
+
 	/* uh-oh! we have a new over cluster */
 	if (gc->mode != FZ_ROVER)
 	{
+printf("begin over accumulator\n");
 		oldacc = gc->acc;
 		error = fz_newpixmap(&gc->acc, gc->model, gc->x, gc->y, gc->w, gc->h, 3, 1);
 		if (error)
@@ -160,9 +168,12 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	/* uh-oh! end of over cluster */
 	if (gc->mode != FZ_ROVER)
 	{
+printf("end over accumulator\n");
 		gc->tmp = gc->acc;
 		gc->acc = oldacc;
 	}
+
+printf("end over\n");
 
 	return nil;
 }
@@ -188,6 +199,8 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			return fz_rendercolortext(gc, (fz_textnode*)shape, (fz_colornode*)color, ctm);
 	}
 
+printf("begin mask\n");
+
 	oldmode = gc->mode;
 	gc->mode = FZ_RMASK;
 
@@ -209,14 +222,16 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 
 	fz_blendmask(gc->tmp, colorpix, shapepix);
 
-//printf("mask color");fz_debugpixmap(colorpix);getchar();
-//printf("mask shape");fz_debugpixmap(shapepix);getchar();
-//printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
+printf("mask color");fz_debugpixmap(colorpix);getchar();
+printf("mask shape");fz_debugpixmap(shapepix);getchar();
+printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
 
 	fz_freepixmap(shapepix);
 	fz_freepixmap(colorpix);
 
 	gc->mode = oldmode;
+
+printf("end mask\n");
 
 	return nil;
 }
@@ -224,6 +239,7 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 fz_error *
 fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
+printf("render transform\n");
 	ctm = fz_concat(transform->m, ctm);
 	return fz_rendernode(gc, transform->super.child, ctm);
 }
@@ -270,6 +286,8 @@ fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, f
 	/* compensate for rounding */
 	ctm.e -= bbox.min.x - floor(bbox.min.x);
 	ctm.f -= bbox.min.y - floor(bbox.min.y);
+
+printf("render tree\n");
 
 	error = fz_rendernode(gc, tree->root, ctm);
 	if (error)

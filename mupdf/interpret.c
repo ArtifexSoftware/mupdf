@@ -37,8 +37,8 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
-//	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
-//	fz_insertnode(csi->tree->root, node);
+	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
+	fz_insertnode(csi->tree->root, node);
 
 	csi->clip = nil;
 
@@ -361,7 +361,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			}
 		}
 
-		else if (!strcmp(buf, "sc"))
+		else if (!strcmp(buf, "sc") || !strcmp(buf, "scn"))
 		{
 			if (csi->top != gstate->fillcs->n)
 				goto syntaxerror;
@@ -369,7 +369,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				gstate->fill[i] = fz_toreal(csi->stack[i]);
 		}
 
-		else if (!strcmp(buf, "SC"))
+		else if (!strcmp(buf, "SC") || !strcmp(buf, "SCN"))
 		{
 			if (csi->top != gstate->strokecs->n)
 				goto syntaxerror;
@@ -563,7 +563,10 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 
 			img = pdf_findresource(xref->rimage, obj);
 			if (!img)
-				return fz_throw("syntaxerror: missing image resource");
+			{
+fprintf(stderr, "syntaxerror: missing image resource");
+return nil;
+			}
 
 			error = pdf_showimage(csi, img);
 			if (error)

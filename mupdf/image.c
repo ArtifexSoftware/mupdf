@@ -1,56 +1,63 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-#define NEXTBYTE() \
-	{ c = *srcline++; }
-#define NEEDBITS(n) \
-    { while (k<(n)) { NEXTBYTE(); b = (b << 8) | c; k += 8; } }
-#define DUMPBITS(n) \
-    { k -= (n); }
-#define GETCOMP1 NEEDBITS(1);(cc)=((b>>(k-(1)))&0x0001);DUMPBITS(1)
-#define GETCOMP2 NEEDBITS(2);(cc)=((b>>(k-(2)))&0x0003);DUMPBITS(2)
-#define GETCOMP4 NEEDBITS(4);(cc)=((b>>(k-(4)))&0x000f);DUMPBITS(4)
-#define GETCOMP8 NEXTBYTE();(cc)=c
-
-static fz_error *loadtile(fz_image *fzimg, fz_pixmap *tile)
+static inline int getbit(const unsigned char *buf, int x)
 {
-	pdf_image *img = (pdf_image*)fzimg;
-	unsigned char *srcline;
-	unsigned char *dstline;
-	int x, y, z;
-	int stride;
-	unsigned cc, c, k, b;
+	return ( buf[x >> 3] >> ( 7 - (x & 7) ) ) & 1;
+}
 
-	assert(fzimg->w == tile->w && fzimg->h == tile->h);
-	assert(fzimg->n == tile->n);
-
-	stride = ((fzimg->w * (fzimg->n + fzimg->a)) * img->bpc + 7) / 8;
-	k = 0;
-	b = 0;
-
-	for (y = 0; y < fzimg->h; y++)
+static void loadtile1(pdf_image *src, fz_pixmap *dst)
+{
+	int x, y, k;
+	int n = dst->n + dst->a;
+	for (y = 0; y < dst->h; y++)
 	{
-		srcline = img->data->bp + y * stride;
-		dstline = tile->samples + y * tile->stride;
-
-		for (x = 0; x < fzimg->w; x++)
+		unsigned char *srcp = src->samples->bp + (dst->y + y) * src->stride;
+		unsigned char *dstp = dst->samples + (dst->y + y) * dst->stride;
+		for (x = 0; x < dst->w; x++)
 		{
-			for (z = 0; z < fzimg->n + fzimg->a; z++)
-			{
-				switch (img->bpc)
-				{
-				case 1: GETCOMP1; *dstline++ = cc * 255; break;
-				case 2: GETCOMP2; *dstline++ = cc * 85; break;
-				case 4: GETCOMP4; *dstline++ = cc * 17; break;
-				case 8: GETCOMP8; *dstline++ = cc; break;
-				}
-			}
-			if (!fzimg->a && tile->a)
-				*dstline++ = 0xff;
+			for (k = 0; k < n; k++)
+				dstp[(dst->x + x) * n + k] = getbit(srcp, (dst->x + x) * n + k) * 255;
 		}
 	}
+}
 
-	return nil;
+static void loadtile8(pdf_image *src, fz_pixmap *dst)
+{
+	int x, y, k;
+	int n = dst->n + dst->a;
+	for (y = 0; y < dst->h; y++)
+	{
+		unsigned char *srcp = src->samples->bp + (dst->y + y) * src->stride;
+		unsigned char *dstp = dst->samples + (dst->y + y) * dst->stride;
+		for (x = 0; x < dst->w; x++)
+		{
+			for (k = 0; k < n; k++)
+				dstp[(dst->x + x) * n + k] = srcp[(dst->x + x) * n + k];
+		}
+	}
+}
+
+static fz_error *loadtile(fz_image *img, fz_pixmap *tile)
+{
+	pdf_image *src = (pdf_image*)img;
+
+	assert(tile->n == img->n);
+	assert(tile->a == img->a);
+	assert(tile->x >= 0);
+	assert(tile->y >= 0);
+	assert(tile->x + tile->w <= img->w);
+	assert(tile->y + tile->h <= img->h);
+
+	switch (src->bpc)
+	{
+	case 1: loadtile1(src, tile); return nil;
+//	case 2: loadtile2(src, tile); return nil;
+//	case 4: loadtile4(src, tile); return nil;
+	case 8: loadtile8(src, tile); return nil;
+	}
+
+	return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
 }
 
 fz_error *
@@ -60,7 +67,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_image *img;
 	fz_colorspace *cs;
 	int ismask;
-	int stride;
 	fz_obj *obj;
 	int i;
 
@@ -81,7 +87,17 @@ printf("load image %d x %d @ %d\n", img->super.w, img->super.h, img->bpc);
 	cs = nil;
 	obj = fz_dictgets(dict, "ColorSpace");
 	if (obj)
+	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return error;
+
 		error = pdf_loadcolorspace(&cs, xref, obj);
+		if (error)
+			return error;
+
+		fz_dropobj(obj);
+	}
 
 	ismask = fz_tobool(fz_dictgets(dict, "ImageMask"));
 	if (!ismask)
@@ -96,6 +112,8 @@ printf("load image %d x %d @ %d\n", img->super.w, img->super.h, img->bpc);
 		img->super.n = 0;
 		img->super.a = 1;
 	}
+
+	img->stride = ((img->super.w * (img->super.n + img->super.a)) * img->bpc + 7) / 8;
 
 	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
@@ -112,7 +130,7 @@ for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
 printf("%g ", img->decode[i]);
 printf("]\n");
 
-	error = pdf_loadstream(&img->data, xref, fz_tonum(ref), fz_togen(ref));
+	error = pdf_loadstream(&img->samples, xref, fz_tonum(ref), fz_togen(ref));
 	if (error)
 	{
 		/* TODO: colorspace? */
@@ -120,16 +138,22 @@ printf("]\n");
 		return error;
 	}
 
-	stride = img->super.w * (img->super.n + img->super.a);
-	stride = (stride * img->bpc + 7) / 8;
-printf("  stride = %d -> %d bytes\n", stride, stride * img->super.h);
-printf("  data = %d bytes\n", img->data->wp - img->data->bp);
-	if (img->data->wp - img->data->bp != stride * img->super.h)
+printf("  stride = %d -> %d bytes\n", img->stride, img->stride * img->super.h);
+printf("  samples = %d bytes\n", img->samples->wp - img->samples->bp);
+	if (img->samples->wp - img->samples->bp != img->stride * img->super.h)
 	{
 		/* TODO: colorspace? */
-		fz_freebuffer(img->data);
+		fz_freebuffer(img->samples);
 		fz_free(img);
 		return fz_throw("syntaxerror: truncated image data");
+	}
+
+	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
+	if (ismask)
+	{
+		unsigned char *p;
+		for (p = img->samples->bp; p < img->samples->ep; p++)
+			*p = ~*p;
 	}
 
 	*imgp = img;

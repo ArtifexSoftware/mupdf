@@ -66,6 +66,7 @@ Library libfitz :
 	tree/cmap.c
 	tree/font.c
 	tree/colorspace.c
+	tree/image.c
 
 	tree/tree.c
 	tree/node1.c
@@ -81,6 +82,7 @@ Library libfitz :
 	render/scanconv.c
 	render/fill.c
 	render/stroke.c
+	render/scale.c
 	render/render.c
 	render/rendertext.c
 	render/renderpath.c
