@@ -519,7 +519,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 	else {
 		for(i = 0; i < func->n; ++i) {
 			decode[i*2] = func->range[i*2];
-			encode[i*2+1] = func->range[i*2+1];
+			decode[i*2+1] = func->range[i*2+1];
 		}
 	}
 	
@@ -527,7 +527,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 	err = pdf_openstream(xref, oid, gid);
 	if (err) goto cleanup;
 	
-	for(i = 0, samplecount = 1; i < func->m; ++i)
+	for(i = 0, samplecount = func->n; i < func->m; ++i)
 		samplecount *= size[i];
 	
 	bytetoread = (samplecount*bps + 7)/8;
@@ -601,6 +601,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 	float *range = func->range;
 	float *decode = func->u.sa.decode;
 	int *size = func->u.sa.size;
+	float byterange = 1<<func->u.sa.bps-1;
 	
 	if(func->type != PDF_FUNC_SAMPLE)
 		goto cleanup;
@@ -645,7 +646,8 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 			}
 			
 			// map output value to range
-			out[i] = s0[0] * (decode[i*2+1] - decode[i*2]) + decode[i*2];
+			//out[i] = s0[0] * (decode[i*2+1] - decode[i*2]) + decode[i*2];
+			out[i] = INTERPOLATE(s0[0],0,byterange,decode[i*2],decode[i*2+1]);
 			MIN_MAX(out[i],range[i*2],range[i*2+1]);
 		}
 		break;
@@ -1476,7 +1478,7 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 		newfunc->domain[i*2] = min;
 		newfunc->domain[i*2+1] = max;
 	}
-	
+
 	/* required for type0 and type4, optional otherwise */
 	tmpobj = fz_dictgets(objfunc,"Range");
 	if(fz_isarray(tmpobj)) {
