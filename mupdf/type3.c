@@ -5,27 +5,6 @@
 
 extern pdf_font *pdf_newfont(char *name);
 
-/* TODO: factor out loadencoding which is common with simple fonts */
-
-#include "fontenc.h"
-
-static void loadencoding(char **estrings, char *encoding)
-{
-    char **bstrings = nil;
-    int i;
-
-    if (!strcmp(encoding, "MacRomanEncoding"))
-        bstrings = macroman;
-    if (!strcmp(encoding, "MacExpertEncoding"))
-        bstrings = macexpert;
-    if (!strcmp(encoding, "WinAnsiEncoding"))
-        bstrings = winansi;
-
-    if (bstrings)
-        for (i = 0; i < 256; i++)
-            estrings[i] = bstrings[i];
-}
-
 static void
 t3dropfont(fz_font *font)
 {
@@ -124,6 +103,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error *error;
 	char buf[256];
+	unsigned short *utable;
 	char *estrings[256];
 	pdf_font *font;
 	fz_obj *encoding;
@@ -188,7 +168,7 @@ printf("  matrix [%g %g %g %g %g %g]\n",
 		goto cleanup;
 
 	if (fz_isname(obj))
-		loadencoding(estrings, fz_toname(encoding));
+		pdf_loadencoding(estrings, fz_toname(encoding));
 
 	if (fz_isdict(encoding))
 	{
@@ -196,7 +176,7 @@ printf("  matrix [%g %g %g %g %g %g]\n",
 
 		base = fz_dictgets(encoding, "BaseEncoding");
 		if (fz_isname(base))
-			loadencoding(estrings, fz_toname(base));
+			pdf_loadencoding(estrings, fz_toname(base));
 
 		diff = fz_dictgets(encoding, "Differences");
 		if (fz_isarray(diff))
@@ -221,6 +201,28 @@ printf("  matrix [%g %g %g %g %g %g]\n",
     error = pdf_makeidentitycmap(&font->encoding, 0, 1);
     if (error)
         goto cleanup;
+
+	/*
+	 * ToUnicode
+	 */
+
+	utable = fz_malloc(sizeof(unsigned short) * 256);
+	if (!utable)
+		goto cleanup;
+
+	for (i = 0; i < 256; i++)
+		if (estrings[i])
+			utable[i] = pdf_lookupagl(estrings[i]);
+		else
+			utable[i] = i;
+
+	if (fz_dictgets(dict, "ToUnicode"))
+	{
+printf("  load tounicode cmap for type3 font\n");
+	}
+
+	font->ncidtoucs = 256;
+	font->cidtoucs = utable;
 
 	/*
 	 * Widths

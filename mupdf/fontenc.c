@@ -2,9 +2,29 @@
  * Built-in font tables
  */
 
+#include <fitz.h>
+#include <mupdf.h>
+
 #define _notdef 0
 
-static char *macroman[256] = { _notdef, _notdef,
+void pdf_loadencoding(char **estrings, char *encoding)
+{
+	char **bstrings = nil;
+	int i;
+
+	if (!strcmp(encoding, "MacRomanEncoding"))
+		bstrings = pdf_macroman;
+	if (!strcmp(encoding, "MacExpertEncoding"))
+		bstrings = pdf_macexpert;
+	if (!strcmp(encoding, "WinAnsiEncoding"))
+		bstrings = pdf_winansi;
+
+	if (bstrings)
+		for (i = 0; i < 256; i++)
+			estrings[i] = bstrings[i];
+}
+
+char *pdf_macroman[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -44,7 +64,7 @@ static char *macroman[256] = { _notdef, _notdef,
 	"Ugrave", "dotlessi", "circumflex", "tilde", "macron", "breve",
 	"dotaccent", "ring", "cedilla", "hungarumlaut", "ogonek", "caron" };
 
-static char *macexpert[256] = { _notdef, _notdef,
+char *pdf_macexpert[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -97,7 +117,7 @@ static char *macexpert[256] = { _notdef, _notdef,
 	"msuperior", "commasuperior", "periodsuperior", "Dotaccentsmall",
 	"Ringsmall", _notdef, _notdef, _notdef, _notdef };
 
-static char *winansi[256] = { _notdef, _notdef, _notdef,
+char *pdf_winansi[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -140,7 +160,7 @@ static char *winansi[256] = { _notdef, _notdef, _notdef,
 
 #if 0
 
-static char *standard[256] = { _notdef, _notdef,
+char *pdf_standard[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -180,7 +200,7 @@ static char *standard[256] = { _notdef, _notdef,
 	_notdef, "dotlessi", _notdef, _notdef, "lslash", "oslash",
 	"oe", "germandbls", _notdef, _notdef, _notdef, _notdef };
 
-static char *expert[256] = { _notdef, _notdef, _notdef,
+char *pdf_expert[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -233,7 +253,7 @@ static char *expert[256] = { _notdef, _notdef, _notdef,
 	"Uacutesmall", "Ucircumflexsmall", "Udieresissmall", "Yacutesmall",
 	"Thornsmall", "Ydieresissmall" };
 
-static char *symbol[256] = { _notdef, _notdef, _notdef,
+char *pdf_symbol[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -280,7 +300,7 @@ static char *symbol[256] = { _notdef, _notdef, _notdef,
 	"bracketrightex", "bracketrightbt", "bracerighttp", "bracerightmid",
 	"bracerightbt", _notdef };
 
-static char *zapfdingbats[256] = { _notdef, _notdef,
+char *pdf_zapfdingbats[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,

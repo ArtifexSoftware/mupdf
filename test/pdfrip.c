@@ -83,9 +83,9 @@ void dumptext(fz_node *node)
 
 			if (fabs(dy) > 1.6)
 				puts("\n");
-			else if (fabs(dy) > 0.1)
+			else if (fabs(dy) > 0.2)
 				putchar('\n');
-			else if (fabs(dx) > 0.1)
+			else if (fabs(dx) > 0.2)
 				putchar(' ');
 
 			h = fz_gethmtx(text->font, cid);

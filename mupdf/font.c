@@ -10,9 +10,6 @@
 #include FT_FREETYPE_H
 #include <freetype/internal/ftobjs.h>
 
-#include "fontenc.h"
-#include "fontagl.h"
-
 static char *basefontnames[14][7] =
 {
 	{ "Courier", "CourierNew", "CourierNewPSMT", 0 },
@@ -163,54 +160,11 @@ static char *cleanfontname(char *fontname)
 	return fontname;
 }
 
-static void loadencoding(char **estrings, char *encoding)
-{
-	char **bstrings = nil;
-	int i;
-
-	if (!strcmp(encoding, "MacRomanEncoding"))
-		bstrings = macroman;
-	if (!strcmp(encoding, "MacExpertEncoding"))
-		bstrings = macexpert;
-	if (!strcmp(encoding, "WinAnsiEncoding"))
-		bstrings = winansi;
-
-	if (bstrings)
-		for (i = 0; i < 256; i++)
-			estrings[i] = bstrings[i];
-}
-
-static int aglcode(char *name)
-{
-	int l = 0;
-	int r = adobeglyphlen;
-
-	while (l <= r)
-	{
-		int m = (l + r) >> 1;
-		int c = strcmp(name, adobeglyphlist[m].name);
-		if (c < 0)
-			r = m - 1;
-		else if (c > 0)
-			l = m + 1;
-		else
-			return adobeglyphlist[m].code;
-	}
-
-	if (strstr(name, "uni") == name)
-		return strtol(name + 3, 0, 16);
-
-	if (strstr(name, "u") == name)
-		return strtol(name + 1, 0, 16);
-
-	return -1;
-}
-
 static int mrecode(char *name)
 {
 	int i;
 	for (i = 0; i < 256; i++)
-		if (macroman[i] && !strcmp(name, macroman[i]))
+		if (pdf_macroman[i] && !strcmp(name, pdf_macroman[i]))
 			return i;
 	return -1;
 }
@@ -376,7 +330,7 @@ printf("loading simple font %s\n", basefont);
 
 	for (i = 0; i < 256; i++)
 	{
-		estrings[i] = _notdef;
+		estrings[i] = nil;
 		etable[i] = 0;
 	}
 
@@ -388,7 +342,7 @@ printf("loading simple font %s\n", basefont);
 			goto cleanup;
 
 		if (fz_isname(encoding))
-			loadencoding(estrings, fz_toname(encoding));
+			pdf_loadencoding(estrings, fz_toname(encoding));
 
 		if (fz_isdict(encoding))
 		{
@@ -396,7 +350,7 @@ printf("loading simple font %s\n", basefont);
 
 			base = fz_dictgets(encoding, "BaseEncoding");
 			if (fz_isname(base))
-				loadencoding(estrings, fz_toname(base));
+				pdf_loadencoding(estrings, fz_toname(base));
 
 			diff = fz_dictgets(encoding, "Differences");
 			if (fz_isarray(diff))
@@ -434,7 +388,7 @@ printf("  winansi cmap\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
-						k = aglcode(estrings[i]);
+						k = pdf_lookupagl(estrings[i]);
 						if (k == -1)
 							etable[i] = FT_Get_Name_Index(face, estrings[i]);
 						else
@@ -497,7 +451,7 @@ printf("  builtin encoding\n");
 
 	for (i = 0; i < 256; i++)
 		if (estrings[i])
-			utable[i] = aglcode(estrings[i]);
+			utable[i] = pdf_lookupagl(estrings[i]);
 		else
 			utable[i] = i;
 

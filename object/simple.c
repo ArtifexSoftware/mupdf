@@ -189,7 +189,7 @@ fz_toname(fz_obj *obj)
 {
 	if (fz_isname(obj))
 		return obj->u.n;
-	return nil;
+	return "";
 }
 
 char *
@@ -197,7 +197,7 @@ fz_tostringbuf(fz_obj *obj)
 {
 	if (fz_isstring(obj))
 		return obj->u.s.buf;
-	return nil;
+	return "";
 }
 
 int

@@ -82,8 +82,6 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 	fz_node *transform;
 	fz_file *file;
 
-puts("run xobject");
-
 	/* gsave */
 	if (csi->gtop == 31)
 		return fz_throw("gstate overflow in content stream");

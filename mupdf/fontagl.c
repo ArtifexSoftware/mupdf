@@ -1,19 +1,44 @@
-/* Name:          Adobe Glyph List
+/* Name:		  Adobe Glyph List
  # Table version: 2.0
- # Date:          September 20, 2002
+ # Date:		  September 20, 2002
  #
  # See http:partners.adobe.com/asn/developer/typeforum/unicodegn.html
  #
  # Format: Semicolon-delimited fields:
- #            (1) glyph name
- #            (2) Unicode scalar value
+ #			(1) glyph name
+ #			(2) Unicode scalar value
  */
 
-struct aglpair { char *name; int code; };
+#include <fitz.h>
+#include <mupdf.h>
 
-#define adobeglyphlen (sizeof(adobeglyphlist) / sizeof(struct aglpair))
+int pdf_lookupagl(char *name)
+{
+	int l = 0;
+	int r = pdf_adobeglyphlen;
 
-static struct aglpair adobeglyphlist[] =
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		int c = strcmp(name, pdf_adobeglyphlist[m].name);
+		if (c < 0)
+			r = m - 1;
+		else if (c > 0)
+			l = m + 1;
+		else
+			return pdf_adobeglyphlist[m].code;
+	}
+
+	if (strstr(name, "uni") == name)
+		return strtol(name + 3, 0, 16);
+
+	if (strstr(name, "u") == name)
+		return strtol(name + 1, 0, 16);
+
+	return -1;
+}
+
+struct pdf_aglpair pdf_adobeglyphlist[] =
 {
 
 {"A",0x0041},
@@ -4302,4 +4327,6 @@ static struct aglpair adobeglyphlist[] =
 {"tchehmeeminitialarabic",0xFB7C FEE4},
 */
 };
+
+int pdf_adobeglyphlen = (sizeof(pdf_adobeglyphlist) / sizeof(struct pdf_aglpair));
 

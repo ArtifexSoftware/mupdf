@@ -110,8 +110,10 @@ Library libmupdf :
 
 	mupdf/function.c
 	mupdf/cmap.c
-	mupdf/font.c
+	mupdf/fontagl.c
+	mupdf/fontenc.c
 	mupdf/fontfile.c
+	mupdf/font.c
 	mupdf/type3.c
 	mupdf/colorspace.c
 	mupdf/image.c
