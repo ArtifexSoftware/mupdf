@@ -379,14 +379,14 @@ printf("\n");
 				float black[3];
 				float gamma;
 
-				tmp = fz_dictgets(dict, "White");
+				tmp = fz_dictgets(dict, "WhitePoint");
 				if (!fz_isarray(tmp))
-					return fz_throw("syntaxerror: CalGray missing White");
+					return fz_throw("syntaxerror: CalGray missing WhitePoint");
 				white[0] = fz_toreal(fz_arrayget(tmp, 0));
 				white[1] = fz_toreal(fz_arrayget(tmp, 1));
 				white[2] = fz_toreal(fz_arrayget(tmp, 2));
 
-				tmp = fz_dictgets(dict, "Black");
+				tmp = fz_dictgets(dict, "BlackPoint");
 				if (fz_isarray(tmp))
 				{
 					black[0] = fz_toreal(fz_arrayget(tmp, 0));
@@ -419,14 +419,14 @@ printf("\n");
 				float gamma[3];
 				float matrix[9];
 
-				tmp = fz_dictgets(dict, "White");
+				tmp = fz_dictgets(dict, "WhitePoint");
 				if (!fz_isarray(tmp))
 					return fz_throw("syntaxerror: CalRGB missing White");
 				white[0] = fz_toreal(fz_arrayget(tmp, 0));
 				white[1] = fz_toreal(fz_arrayget(tmp, 1));
 				white[2] = fz_toreal(fz_arrayget(tmp, 2));
 
-				tmp = fz_dictgets(dict, "Black");
+				tmp = fz_dictgets(dict, "BlackPoint");
 				if (fz_isarray(tmp))
 				{
 					black[0] = fz_toreal(fz_arrayget(tmp, 0));
@@ -486,14 +486,14 @@ printf("\n");
 				float black[3];
 				float range[4];
 
-				tmp = fz_dictgets(dict, "White");
+				tmp = fz_dictgets(dict, "WhitePoint");
 				if (!fz_isarray(tmp))
-					return fz_throw("syntaxerror: Lab missing White");
+					return fz_throw("syntaxerror: Lab missing WhitePoint");
 				white[0] = fz_toreal(fz_arrayget(tmp, 0));
 				white[1] = fz_toreal(fz_arrayget(tmp, 1));
 				white[2] = fz_toreal(fz_arrayget(tmp, 2));
 
-				tmp = fz_dictgets(dict, "Black");
+				tmp = fz_dictgets(dict, "BlackPoint");
 				if (fz_isarray(tmp))
 				{
 					black[0] = fz_toreal(fz_arrayget(tmp, 0));

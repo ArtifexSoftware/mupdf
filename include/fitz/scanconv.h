@@ -38,7 +38,7 @@ fz_error *fz_insertael(fz_ael *ael, fz_gel *gel, int y, int *e);
 void fz_advanceael(fz_ael *ael);
 void fz_freeael(fz_ael *ael);
 
-fz_error *fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
+fz_error *fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	void (*blitfunc)(int,int,int,short*,void*), void *blitdata);
 
 fz_error *fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness);

@@ -21,6 +21,7 @@ pdf_newcsi(pdf_csi **csip)
 	fz_error *error;
 	pdf_csi *csi;
 	fz_node *node;
+	float white = 1.0;
 
 	csi = *csip = fz_malloc(sizeof(pdf_csi));
 	if (!csi)
@@ -50,8 +51,8 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
-//	error = fz_newcolornode(&node, pdf_devicegray, 1);
-//	fz_insertnode(csi->tree->root, node);
+	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
+	fz_insertnode(csi->tree->root, node);
 
 	csi->clip = nil;
 

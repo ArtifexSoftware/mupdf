@@ -14,15 +14,15 @@ void
 fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv)
 {
 	float xyz[3];
-	int i;
+//int i;
 	if (srcs != dsts)
 	{	
-printf("convert color from %s to %s\n  ", srcs->name, dsts->name);
-for(i=0;i<srcs->n;i++)printf("%g ", srcv[i]);printf("\n");
+//printf("convert color from %s to %s\n  ", srcs->name, dsts->name);
+//for(i=0;i<srcs->n;i++)printf("%g ", srcv[i]);printf("\n");
 		srcs->toxyz(srcs, srcv, xyz);
-printf("  %g %g %g\n  ", xyz[0], xyz[1], xyz[2]);
+//printf("  %g %g %g\n  ", xyz[0], xyz[1], xyz[2]);
 		dsts->fromxyz(dsts, xyz, dstv);
-for(i=0;i<dsts->n;i++)printf("%g ", dstv[i]);printf("\n");
+//for(i=0;i<dsts->n;i++)printf("%g ", dstv[i]);printf("\n");
 	}
 	else
 	{

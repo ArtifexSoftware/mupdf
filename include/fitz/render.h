@@ -1,5 +1,20 @@
 typedef struct fz_renderer_s fz_renderer;
 
+enum { FZ_RNONE, FZ_ROVER, FZ_RMASK };
+
+struct fz_renderer_s
+{
+    fz_colorspace *model;
+    fz_glyphcache *cache;
+    fz_gel *gel;
+    fz_ael *ael;
+    int mode;
+    int x, y, w, h;
+    fz_pixmap *tmp;
+    fz_pixmap *acc;
+    unsigned char r, g, b;
+};
+
 fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm);
 void fz_freerenderer(fz_renderer *gc);
 

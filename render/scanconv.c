@@ -76,7 +76,7 @@ fz_emitdeltas(short *list, int y, int xofs, int n)
 */
 
 fz_error *
-fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
+fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	void (*blitfunc)(int,int,int,short*,void*), void *blitdata)
 {
 	fz_error *error;
@@ -86,8 +86,8 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 
 	int xmin = fz_idiv(gel->xmin, gel->hs);
 	int xmax = fz_idiv(gel->xmax, gel->hs) + 1;
-	int ymin = fz_idiv(gel->ymin, gel->vs);
-	int ymax = fz_idiv(gel->ymax, gel->vs) + 1;
+	// int ymin = fz_idiv(gel->ymin, gel->vs);
+	// int ymax = fz_idiv(gel->ymax, gel->vs) + 1;
 
 	int xofs = xmin * gel->hs;
 	int hs = gel->hs;
@@ -96,10 +96,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	if (gel->len == 0)
 		return nil;
 
-	deltas = fz_malloc(sizeof(short) * (xmax - xmin));
+	deltas = fz_malloc(sizeof(short) * (xmax - xmin + 1));
 	if (!deltas)
 		return fz_outofmem;
-	memset(deltas, 0, sizeof(short) * (xmax - xmin));
+
+	memset(deltas, 0, sizeof(short) * (xmax - xmin + 1));
 
 	e = 0;
 	y = gel->edges[0].y;
@@ -110,8 +111,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	{
 		yc = fz_idiv(y, vs);
 		if (yc != yd) {
-			blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
-			memset(deltas, 0, sizeof(short) * (xmax - xmin));
+			if (yd >= y0 && yd < y1)
+			{
+				blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
+				memset(deltas, 0, sizeof(short) * (xmax - xmin + 1));
+			}
 		}
 		yd = yc;
 
@@ -121,10 +125,13 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 			return error;
 		}
 
-		if (eofill)
-			evenodd(ael, deltas, xofs, hs);
-		else
-			nonzerowinding(ael, deltas, xofs, hs);
+		if (yd >= y0 && yd < y1)
+		{
+			if (eofill)
+				evenodd(ael, deltas, xofs, hs);
+			else
+				nonzerowinding(ael, deltas, xofs, hs);
+		}
 
 		fz_advanceael(ael);
 
@@ -134,8 +141,10 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 			y = gel->edges[e].y;
 	}
 
-	blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
+	if (yd >= y0 && yd < y1)
+		blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
 
+	fz_free(deltas);
 	return nil;
 }
 

@@ -6,7 +6,7 @@ struct fz_pixmap_s
 	int x, y, w, h;
 	int n, a;
 	int stride;
-	short *samples;
+	unsigned char *samples;
 };
 
 fz_error *fz_newpixmap(fz_pixmap **mapp, fz_colorspace *cs, int x, int y, int w, int h, int n, int a);
