@@ -104,7 +104,7 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 		return fz_newlzwd(fp, p);
 	}
 
-#ifdef HAVE_JBIG2
+#ifdef HAVE_JBIG2DEC
 	if (!strcmp(s, "JBIG2Decode"))
 	{
 		/* TODO: extract and feed JBIG2Global */

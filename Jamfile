@@ -1,23 +1,68 @@
 #
-# Jamfile for Fitz
-#
-# mpage -s4 -f -2 -c -H -W110 include/*/*.h */*.c > listing.ps
-# ps2pdf -sPAPERSIZE'='a4 listing.ps
+# Build flags
 #
 
 include $(HOME)/.jamrules ;
 
 HDRS = include filter ;
 
-Library libfitz :
-	# util stuff
-	#util/cleanname.c
-	#util/getopt.c
-	#util/strsep.c
-	#util/strlcpy.c
-	#util/strlcat.c
+# HAVE_JBIG2DEC = yes ;
+# HAVE_JASPER = yes ;
+# HAVE_X11 = yes ;
+# HAVE_GTK = yes ;
 
-	# base runtime
+if $(RELEASE)
+{
+	Echo Release build for $(OS) $(OSPLAT) ;
+	CCFLAGS += -DARCH_$(OSPLAT) ;
+	OPTIM = -O3 ;
+}
+else if $(PROFILE)
+{
+	Echo Profiling build for $(OS) $(OSPLAT) ;
+	OPTIM = -g -pg ;
+}
+else
+{
+	Echo Debug build for $(OS) $(OSPLAT) ;
+	OPTIM = -g ;
+}
+
+if $(OS) = LINUX
+{
+	CCFLAGS += -std=c99 -DHAVE_C99 -Wall ;
+	CCFLAGS += -DNEED_STRLCPY -DNEED_GETOPT -DNEED_MATH ;
+}
+
+if $(OS) = MACOSX
+{
+	CCFLAGS += -std=c99 -DHAVE_C99 -Wall -faltivec ;
+}
+
+if $(OS) = NT
+{
+	NOARSCAN = true ;
+	CCFLAGS += -std=c99 -DHAVE_C99 -Wall ;
+	CCFLAGS += -DNEED_STRLCPY -DNEED_STRSEP -DNEED_GETOPT ;
+}
+
+LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+
+if $(HAVE_JBIG2DEC) { CCFLAGS += -DHAVE_JBIG2DEC ; LINKLIBS += -ljbig2dec ; }
+if $(HAVE_JASPER)   { CCFLAGS += -DHAVE_JASPER ; LINKLIBS += -ljasper ; }
+
+#
+# Libraries
+#
+
+Library libfitz :
+	util/getopt.c
+	util/strsep.c
+	util/strlcpy.c
+	util/strlcat.c
+	;
+
+Library libfitz :
 	base/cpudep.c
 	base/error.c
 	base/memory.c
@@ -27,25 +72,25 @@ Library libfitz :
 	base/matrix.c
 	base/hash.c
 	base/rune.c
+	;
 
-	# object
+Library libfitz :
 	object/simple.c
 	object/array.c
 	object/dict.c
 	object/print.c
 	object/parse.c
+	;
 
-	# filter
+Library libfitz :
 	filter/buffer.c
 	filter/filter.c
 	filter/filec.c		# unistd.h
 	filter/filer.c		# unistd.h
 	filter/filew.c		# unistd.h
-
 	filter/null.c
 	filter/arc4filter.c
 	filter/pipeline.c
-
 	filter/ahxd.c
 	filter/ahxe.c
 	filter/a85d.c
@@ -55,35 +100,31 @@ Library libfitz :
 	filter/predict.c
 	filter/lzwd.c
 	filter/lzwe.c
-
 	filter/faxd.c
 	filter/faxdtab.c
 	filter/faxe.c
 	filter/faxetab.c
-
 	filter/flate.c		# libz
 	filter/dctd.c		# libjpeg
 	filter/dcte.c		# libjpeg
-	filter/jbig2d.c		# jbig2dec
-	filter/jpxd.c		# jasper
+	;
 
-	# tree
+Library libfitz :
 	tree/cmap.c
 	tree/font.c
 	tree/colorspace.c
 	tree/image.c
 	tree/shade.c
-
 	tree/tree.c
 	tree/node1.c
 	tree/node2.c
 	tree/text.c
 	tree/path.c
-
 	tree/debug.c
 	tree/optimize.c
+	;
 
-	# render
+Library libfitz :
 	render/glyphcache.c
 	render/pixmap.c
 	render/porterduff.c
@@ -95,11 +136,14 @@ Library libfitz :
 	render/pathfill.c
 	render/pathstroke.c
 	render/render.c
+	;
 
-	render/archppc.c
-	render/archsparc.c
-	render/archx86.c
-;
+if $(HAVE_JBIG2DEC)    { Library libfitz : filter/jbig2d.c ; }
+if $(HAVE_JASPER)      { Library libfitz : filter/jpxd.c ; }
+
+if $(OSPLAT) = PPC     { Library libfitz : render/archppc.c ; }
+if $(OSPLAT) = SPARC   { Library libfitz : render/archsparc.c ; }
+if $(OSPLAT) = X86     { Library libfitz : render/archx86.c ; }
 
 Library libmupdf :
 	mupdf/debug.c
@@ -127,25 +171,27 @@ Library libmupdf :
 	mupdf/xobject.c
 	mupdf/image.c
 	mupdf/pattern.c
-	mupdf/shade.c
-	mupdf/shade1.c
-	mupdf/shade2.c
-	mupdf/shade3.c
-	mupdf/shade4.c
 	mupdf/cmap.c
 	mupdf/unicode.c
 	mupdf/fontagl.c
 	mupdf/fontenc.c
 	mupdf/fontfile.c
-#	mupdf/fontfilefc.c
-#	mupdf/fontfilems.c
 	mupdf/font.c
 	mupdf/type3.c
 
 	mupdf/page.c
 	mupdf/build.c
 	mupdf/interpret.c
+
+	mupdf/shade.c
+	mupdf/shade1.c
+	mupdf/shade2.c
+	mupdf/shade3.c
+	mupdf/shade4.c
 	;
+
+# Library libmupdf : mupdf/fontfilefc.c ;
+# Library libmupdf : mupdf/fontfilems.c ;
 
 rule HexDump
 {
@@ -174,7 +220,7 @@ HexDump data/NimbusSanL-ReguItal.c : data/NimbusSanL-ReguItal.cff ;
 HexDump data/StandardSymL.c : data/StandardSymL.cff ;
 HexDump data/URWChanceryL-MediItal.c : data/URWChanceryL-MediItal.cff ;
 
-Library libfonts :
+Library libmupdf :
 	data/Dingbats.c
 	data/NimbusMonL-Bold.c
 	data/NimbusMonL-BoldObli.c
@@ -192,40 +238,43 @@ Library libfonts :
 	data/URWChanceryL-MediItal.c
 	;
 
-LINKLIBS =
-	-lfreetype
-	-ljbig2dec
-	-ljasper
-	-ljpeg
-	-lz 
-	-lm
-	;
+#
+# Applications
+#
 
-LINKLIBS on x11pdf$(SUFEXE) = -lX11 -lXext $(LINKLIBS) ;
-LINKLIBS on w32pdf$(SUFEXE) = -lgdi32 $(LINKLIBS) ;
+if $(OS) = NT
+{
+	Main w32pdf : test/w32pdf.c ;
+	LinkLibraries w32pdf : libmupdf libfitz ;
+	LINKLIBS on w32pdf$(SUFEXE) = -lgdi32 $(LINKLIBS) ;
+}
+
+if $(OS) = MACOSX
+{
+	Main carbonpdf : macpdf/carbonpdf.c macpdf/view.c ;
+	LinkLibraries carbonpdf : libmupdf libfitz ;
+	LINKLIBS on carbonpdf = -framework Carbon $(LINKLIBS) ;
+	File macpdf/carbonpdf.app/Contents/MacOS/carbonpdf : carbonpdf ;
+	MODE on macpdf/carbonpdf.app/Contents/MacOS/carbonpdf = 755 ;
+}
+
+if $(HAVE_X11)
+{
+	Main x11pdf : test/x11pdf.c test/ximage.c ;
+	LinkLibraries x11pdf : libmupdf libfitz ;
+	LINKLIBS on x11pdf$(SUFEXE) = -lX11 -lXext $(LINKLIBS) ;
+}
+
+if $(HAVE_GTK)
+{
+	Main gtkpdf : test/gtkpdf.c ;
+	LinkLibraries x11pdf : libmupdf libfitz ;
+	CCFLAGS += `pkg-config --cflags gtk+ gthread` ;
+	LINKLIBS on gtkpdf$(SUFEXE) = `pkg-config --libs gtk+ gmodule gthread` $(LINKLIBS) ;
+}
 
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
-# Main pdfmerge : test/pdfmerge.c ;
 Main pdfrip : test/pdfrip.c ;
-# Main pdffunction : test/pdffunction.c ;
-
-Main x11pdf : test/x11pdf.c test/ximage.c ;
-
-CCFLAGS += `pkg-config --cflags gtk+ gthread` ;
-LINKLIBS on gtkpdf = $(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
-
-LINKLIBS on carbonpdf = $(LINKLIBS) -framework Carbon ;
-
-Main gtkpdf : test/gtkpdf.c ;
-
-LinkLibraries
-		pdfclean
-		pdfdebug
-		pdfmerge
-		pdfrip
-		pdffunction
-		x11pdf
-		gtkpdf
-	: libmupdf libfonts libfitz ;
+LinkLibraries pdfclean pdfdebug pdfrip : libmupdf libfitz ;
 

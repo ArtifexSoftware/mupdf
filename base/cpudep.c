@@ -7,6 +7,8 @@ Glenn Kennard <d98gk@efd.lth.se>
 
 #include <fitz.h>
 
+#include <setjmp.h>
+
 #ifdef WIN32
 #define sigjmp_buf jmp_buf
 #define sigsetjmp(a,b) setjmp(a)
