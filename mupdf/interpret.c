@@ -2,7 +2,7 @@
 #include <mupdf.h>
 
 fz_error *
-pdf_newcsi(pdf_csi **csip)
+pdf_newcsi(pdf_csi **csip, int maskonly)
 {
 	fz_error *error;
 	pdf_csi *csi;
@@ -37,8 +37,16 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
-	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
-	fz_insertnode(csi->tree->root, node);
+	if (maskonly)
+	{
+		csi->gstate[0].fill.kind = PDF_MNONE;
+		csi->gstate[0].stroke.kind = PDF_MNONE;
+	}
+	else
+	{
+		error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
+		fz_insertnode(csi->tree->root, node);
+	}
 
 	csi->clip = nil;
 
@@ -463,7 +471,7 @@ Lsetcolorspace:
 			for (i = 0; i < csi->top; i++)
 				v[i] = fz_toreal(csi->stack[i]);
 
-			error = pdf_setcolor(csi, PDF_MFILL, v);
+			error = pdf_setcolor(csi, PDF_MSTROKE, v);
 			if (error) return error;
 		}
 
@@ -685,6 +693,16 @@ fz_debugobj(rdb);
 				if (error)
 					return error;
 			}
+		}
+
+		else if (!strcmp(buf, "d0"))
+		{
+			fz_warn("unimplemented: d0 charprocs");
+		}
+
+		else if (!strcmp(buf, "d1"))
+		{
+printf("%g %g d0\n", fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
 		}
 
 		else
@@ -1036,9 +1054,14 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 			if (!strcmp(buf, "BI"))
 			{
 				fz_obj *obj;
+
 				error = pdf_parsedict(&obj, file, buf, sizeof buf);
 				if (error)
 					return error;
+
+				/* read whitespace after ID keyword */
+				fz_readbyte(file);
+
 				error = runinlineimage(csi, xref, file, obj);
 				fz_dropobj(obj);
 				if (error)

@@ -78,11 +78,11 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 		tm.f = y;
 		trm = fz_concat(tm, ctm);
 
-		ix = floor(trm.e);
-		iy = floor(trm.f);
+		ix = fz_floor(trm.e);
+		iy = fz_floor(trm.f);
 
-		trm.e = (trm.e - floor(trm.e));
-		trm.f = (trm.f - floor(trm.f));
+		trm.e = (trm.e - fz_floor(trm.e));
+		trm.f = (trm.f - fz_floor(trm.f));
 
 		error = fz_renderglyph(gc->cache, &gl, text->font, g, trm);
 		if (error)
@@ -121,11 +121,11 @@ fz_rendercolortext(fz_renderer *gc, fz_textnode *text, fz_colornode *color, fz_m
 		tm.f = y;
 		trm = fz_concat(tm, ctm);
 
-		ix = floor(trm.e);
-		iy = floor(trm.f);
+		ix = fz_floor(trm.e);
+		iy = fz_floor(trm.f);
 
-		trm.e = (trm.e - floor(trm.e));
-		trm.f = (trm.f - floor(trm.f));
+		trm.e = (trm.e - fz_floor(trm.e));
+		trm.f = (trm.f - fz_floor(trm.f));
 
 		error = fz_renderglyph(gc->cache, &gl, text->font, g, trm);
 		if (error)

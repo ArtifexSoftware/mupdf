@@ -77,6 +77,8 @@ fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 
 printf("render color\n");
 
+	assert(gc->model);
+
 	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
 	gc->r = rgb[0] * 255;
 	gc->g = rgb[1] * 255;
@@ -146,7 +148,7 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	{
 printf("begin over accumulator\n");
 		oldacc = gc->acc;
-		error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, 4);
+		error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, gc->model ? 4 : 1);
 		if (error)
 			return error;
 		fz_clearpixmap(gc->acc);
@@ -285,14 +287,14 @@ fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, f
 {
 	fz_error *error;
 
-	gc->x = floor(bbox.min.x);
-	gc->y = floor(bbox.min.y);
-	gc->w = ceil(bbox.max.x) - floor(bbox.min.x);
-	gc->h = ceil(bbox.max.y) - floor(bbox.min.y);
+	gc->x = fz_floor(bbox.min.x);
+	gc->y = fz_floor(bbox.min.y);
+	gc->w = fz_ceil(bbox.max.x) - fz_floor(bbox.min.x);
+	gc->h = fz_ceil(bbox.max.y) - fz_floor(bbox.min.y);
 
 	/* compensate for rounding */
-	ctm.e -= bbox.min.x - floor(bbox.min.x);
-	ctm.f -= bbox.min.y - floor(bbox.min.y);
+	ctm.e -= bbox.min.x - gc->x;
+	ctm.f -= bbox.min.y - gc->y;
 
 printf("render tree\n");
 

@@ -310,8 +310,8 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	key.b = ctm.b * 65536;
 	key.c = ctm.c * 65536;
 	key.d = ctm.d * 65536;
-	key.e = (ctm.e - floor(ctm.e)) * HSUBPIX;
-	key.f = (ctm.f - floor(ctm.f)) * VSUBPIX;
+	key.e = (ctm.e - fz_floor(ctm.e)) * HSUBPIX;
+	key.f = (ctm.f - fz_floor(ctm.f)) * VSUBPIX;
 
 	val = hashfind(arena, &key);
 	if (val)
@@ -328,8 +328,8 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 		return nil;
 	}
 
-	ctm.e = floor(ctm.e) + key.e / HSUBPIX;
-	ctm.f = floor(ctm.f) + key.f / HSUBPIX;
+	ctm.e = fz_floor(ctm.e) + key.e / HSUBPIX;
+	ctm.f = fz_floor(ctm.f) + key.f / HSUBPIX;
 
 	error = font->render(glyph, font, cid, ctm);
 	if (error)

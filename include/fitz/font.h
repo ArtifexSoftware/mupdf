@@ -8,7 +8,7 @@ struct fz_hmtx_s
 {
 	unsigned short lo;
 	unsigned short hi;
-	short w;
+	int w;	/* type3 fonts can be big! */
 };
 
 struct fz_vmtx_s

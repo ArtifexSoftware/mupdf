@@ -237,6 +237,8 @@ printf("  find cid font %s (%d)\n", collection, isserif);
 		}
 	}
 
+printf("  loading substitute font %s\n", name);
+
 	return pdf_loadbuiltinfont(font, name);
 }
 

@@ -9,10 +9,10 @@ void fz_gammapixmap(fz_pixmap *pix, float gamma);
 
 static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
 {
-//	if (u < 0 || u >= pix->w)
-//		return 0;
-//	if (v < 0 || v >= pix->h)
-//		return 0;
+	if (u < 0 || u >= pix->w)
+		return 0;
+	if (v < 0 || v >= pix->h)
+		return 0;
 	u = CLAMP(u, 0, pix->w - 1);
 	v = CLAMP(v, 0, pix->h - 1);
 	return pix->samples[ (v * pix->w + u) * pix->n + k ];
@@ -38,18 +38,21 @@ static inline int sampleimage(fz_pixmap *pix, int u, int v, int k)
 static inline void
 drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
 {
-	int x, k;
+	unsigned char *d;
+	int k, n;
 
 	int u = (invmat->a * x0 + invmat->c * y + invmat->e) * 65536;
 	int v = (invmat->b * x0 + invmat->d * y + invmat->f) * 65536;
 	int du = invmat->a * 65536;
 	int dv = invmat->b * 65536;
 
-	for (x = x0; x < x1; x++)
+	n = x1 - x0;
+	d = dst->samples + ((y - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
+
+	while (n--)
 	{
 		for (k = 0; k < src->n; k++)
-			dst->samples[ (y * dst->w + x) * dst->n + k ]
-				= sampleimage(src, u, v, k);
+			*d++ = sampleimage(src, u, v, k);
 		u += du;
 		v += dv;
 	}
@@ -98,13 +101,11 @@ static fz_error *
 drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int over)
 {
 	static const fz_point rect[4] = { {0, 0}, {0, 1}, {1, 1}, {1, 0} };
-	fz_error *error;
-	fz_gel *gel = gc->gel;
-	fz_ael *ael = gc->ael;
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	fz_point v[4];
-	int i, e, y, x0, x1;
+	int top, bot, x0, x1, y;
+	int i;
 
 	imgmat.a = 1.0 / tile->w;
 	imgmat.b = 0.0;
@@ -116,41 +117,23 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 
 	for (i = 0; i < 4; i++)
 		v[i] = fz_transformpoint(ctm, rect[i]);
-	fz_resetgel(gel, 1, 1);
-	fz_insertgel(gel, v[0].x, v[0].y, v[1].x, v[1].y);
-	fz_insertgel(gel, v[1].x, v[1].y, v[2].x, v[2].y);
-	fz_insertgel(gel, v[2].x, v[2].y, v[3].x, v[3].y);
-	fz_insertgel(gel, v[3].x, v[3].y, v[0].x, v[0].y);
-	fz_sortgel(gel);
 
-	e = 0;
-	y = gel->edges[0].y;
+	top = fz_floor(MIN4(v[0].y, v[1].y, v[2].y, v[3].y)) - 1;
+	bot = fz_ceil(MAX4(v[0].y, v[1].y, v[2].y, v[3].y)) + 1;
+	x0 = fz_floor(MIN4(v[0].x, v[1].x, v[2].x, v[3].x)) - 1;
+	x1 = fz_ceil(MAX4(v[0].x, v[1].x, v[2].x, v[3].x)) + 1;
 
-	while (ael->len > 0 || e < gel->len)
+	top = CLAMP(top, out->y, out->y + out->h - 1);
+	bot = CLAMP(bot, out->y, out->y + out->h - 1);
+	x0 = CLAMP(x0, out->x, out->x + out->w - 1);
+	x1 = CLAMP(x1, out->x, out->x + out->w - 1);
+
+	for (y = top; y <= bot; y++)
 	{
-		error = fz_insertael(ael, gel, y, &e);
-		if (error)
-			return error;
-
-		x0 = ael->edges[0]->x;
-		x1 = ael->edges[ael->len - 1]->x;
-
-		if (y >= out->y && y < out->y + out->h)
-		{
-			x0 = CLAMP(x0, out->x, out->x + out->w - 1);
-			x1 = CLAMP(x1, out->x, out->x + out->w - 1);
-			if (over && tile->n == 4)
-				overscanrgb(&invmat, out, tile, y, x0, x1);
-			else
-				drawscan(&invmat, out, tile, y, x0, x1);
-		}
-
-		fz_advanceael(ael);
-
-		if (ael->len > 0)
-			y ++;
-		else if (e < gel->len)
-			y = gel->edges[e].y;
+		if (over && tile->n == 4)
+			overscanrgb(&invmat, out, tile, y, x0, x1);
+		else
+			drawscan(&invmat, out, tile, y, x0, x1);
 	}
 
 	return nil;

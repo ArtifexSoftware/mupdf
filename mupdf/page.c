@@ -25,7 +25,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 	pdf_csi *csi;
 	int i;
 
-	error = pdf_newcsi(&csi);
+	error = pdf_newcsi(&csi, 0);
 	if (error)
 		return error;
 

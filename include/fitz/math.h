@@ -4,6 +4,21 @@ static inline unsigned char fz_mul255(unsigned char a, unsigned char b)
 	return ((a + 1) * b) >> 8;
 }
 
+/* floor / ceil towards/from +/- inf */
+static inline float fz_floor(float x)
+{
+	if (x > 0)
+		return floor(x);
+	return ceil(x);
+}
+
+static inline float fz_ceil(float x)
+{
+	if (x > 0)
+		return ceil(x);
+	return floor(x);
+}
+
 /* divide and floor towards -inf */
 static inline int fz_idiv(int a, int b)
 {

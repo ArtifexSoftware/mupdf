@@ -205,6 +205,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_file *fil
 	fz_error *error;
 	pdf_image *img;
 	fz_filter *filter;
+	fz_obj *f;
 	fz_obj *cs;
 	fz_obj *d;
 	int ismask;
@@ -221,6 +222,7 @@ printf("inline image ");fz_debugobj(dict);printf("\n");
 	img->super.n = 0;
 	img->super.a = 0;
 	img->indexed = nil;
+	img->mask = nil;
 
 	img->super.w = fz_toint(fz_dictgetsa(dict, "Width", "W"));
 	img->super.h = fz_toint(fz_dictgetsa(dict, "Height", "H"));
@@ -277,19 +279,41 @@ printf("  decode array!\n");
 		img->stride = (img->super.w * (img->super.n + img->super.a) * img->bpc + 7) / 8;
 
 	/* load image data */
-	error = pdf_decodefilter(&filter, dict);
-	if (error)
-		return error;
 
-	error = fz_pushfilter(file, filter);
-	if (error)
-		return error;
+	f = fz_dictgetsa(dict, "Filter", "F");
+	if (f)
+	{
+		error = pdf_decodefilter(&filter, dict);
+		if (error)
+			return error;
 
-	error = fz_readfile(&img->samples, file);
-	if (error)
-		return error;
+		error = fz_pushfilter(file, filter);
+		if (error)
+			return error;
 
-	fz_popfilter(file);
+		error = fz_readfile(&img->samples, file);
+		if (error)
+			return error;
+
+		fz_popfilter(file);
+	}
+	else
+	{
+		error = fz_newbuffer(&img->samples, img->super.h * img->stride);
+		if (error)
+			return error;
+
+printf("  nullfilter %d\n", img->super.h * img->stride);
+
+		i = fz_read(file, img->samples->bp, img->super.h * img->stride);
+		error = fz_ferror(file);
+		if (error)
+			return error;
+
+printf("  read %d\n", i);
+
+		img->samples->wp += img->super.h * img->stride;
+	}
 
 	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
 	if (ismask)

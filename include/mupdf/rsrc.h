@@ -17,7 +17,6 @@ void *pdf_findresource(pdf_rsrc *list, fz_obj *ref);
  * Functions
  */
 
-
 typedef struct pdf_function_s pdf_function;
 
 fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj);
@@ -91,9 +90,6 @@ struct pdf_font_s
 {
 	fz_font super;
 
-	void *ftface;
-	int substitute;
-
 	/* FontDescriptor */
 	int flags;
 	float italicangle;
@@ -108,18 +104,16 @@ struct pdf_font_s
 	int ncidtogid;
 	unsigned short *cidtogid;
 
-	/* Raw data for freetype */
+	/* Freetype */
+	int substitute;
+	void *ftface;
 	char *filename;
 	fz_buffer *fontdata;
-};
 
-struct pdf_type3_s
-{
+	/* Type3 data */
 	fz_rect bbox;
 	fz_matrix matrix;
-	int widths[256];
 	fz_tree *charprocs[256];
-	int tounicode[256];
 };
 
 /* cmap.c */
@@ -133,6 +127,9 @@ fz_error *pdf_loadbuiltinfont(pdf_font *font, char *basefont);
 fz_error *pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref);
 fz_error *pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection);
 fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
+
+/* type3.c */
+fz_error *pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
 
 /* font.c */
 fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);

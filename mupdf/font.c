@@ -13,23 +13,41 @@
 #include "fontenc.h"
 #include "fontagl.h"
 
+static char *basefontnames[14][7] =
+{
+	{ "Courier", "CourierNew", "CourierNewPSMT", 0 },
+	{ "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
+		"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
+	{ "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
+		"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
+	{ "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
+		"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
+	{ "Helvetica", "ArialMT", "Arial", 0 },
+	{ "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
+		"Helvetica,Bold", 0 },
+	{ "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
+		"Helvetica,Italic", "Helvetica-Italic", 0 },
+	{ "Helvetica-BoldOblique", "Arial-BoldItalicMT",
+		"Arial,BoldItalic", "Arial-BoldItalic",
+		"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
+	{ "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
+		"TimesNewRomanPS", 0 },
+	{ "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
+		"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
+	{ "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
+		"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
+	{ "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
+		"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
+		"TimesNewRoman-BoldItalic", 0 },
+	{ "Symbol", 0 },
+	{ "ZapfDingbats", 0 }
+};
+
 /*
  * FreeType and Rendering glue
  */
 
 enum { UNKNOWN, TYPE1, CFF, TRUETYPE, CID };
-
-enum
-{
-	FD_FIXED = 1 << 0,
-	FD_SERIF = 1 << 1,
-	FD_SYMBOLIC = 1 << 2,
-	FD_SCRIPT = 1 << 3,
-	FD_NONSYMBOLIC = 1 << 5,
-	FD_ITALIC = 1 << 6,
-	FD_ALLCAP = 1 << 16,
-	FD_SMALLCAP = 1 << 17,
-};
 
 static int ftkind(FT_Face face)
 {
@@ -210,10 +228,11 @@ static void ftdropfont(fz_font *font)
 	// XXX free freetype face
 }
 
-static pdf_font *
-newfont(char *name)
+pdf_font *
+pdf_newfont(char *name)
 {
 	pdf_font *font;
+	int i;
 
 	font = fz_malloc(sizeof (pdf_font));
 	if (!font)
@@ -240,6 +259,9 @@ newfont(char *name)
 
 	font->filename = nil;
 	font->fontdata = nil;
+
+	for (i = 0; i < 256; i++)
+		font->charprocs[i] = nil;
 
 	return font;
 }
@@ -275,7 +297,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 
 printf("loading simple font %s\n", basefont);
 
-	font = *fontp = newfont(basefont);
+	font = *fontp = pdf_newfont(basefont);
 	if (!font)
 		return fz_outofmem;
 
@@ -363,7 +385,6 @@ printf("loading simple font %s\n", basefont);
 			base = fz_dictgets(encoding, "BaseEncoding");
 			if (fz_isname(base))
 				loadencoding(estrings, fz_toname(base));
-
 
 			diff = fz_dictgets(encoding, "Differences");
 			if (fz_isarray(diff))
@@ -578,7 +599,7 @@ printf("  collection %s\n", collection);
 	 * Load font file
 	 */
 
-	font = *fontp = newfont(basefont);
+	font = *fontp = pdf_newfont(basefont);
 	if (!font)
 		return fz_outofmem;
 
@@ -902,6 +923,8 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 		return loadsimplefont(fontp, xref, dict);
 	else if (!strcmp(subtype, "TrueType"))
 		return loadsimplefont(fontp, xref, dict);
+	else if (!strcmp(subtype, "Type3"))
+		return pdf_loadtype3font(fontp, xref, dict);
 	else
 		return fz_throw("unimplemented: %s fonts", subtype);
 }
