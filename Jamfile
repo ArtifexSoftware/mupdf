@@ -127,11 +127,23 @@ LINKLIBS =
 	-lm
 	;
 
+LINKLIBS on x11pdf = -lX11 -lXext $(LINKLIBS) ;
+
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
 Main pdfmerge : test/pdfmerge.c ;
 Main pdfrip : test/pdfrip.c ;
 Main pdffunction : test/pdffunction.c ;
 
-LinkLibraries pdfclean pdfdebug pdfmerge pdfrip pdffunction : libmupdf libfitz ;
+Main x11pdf : test/x11pdf.c test/ximage.c ;
+
+LinkLibraries
+		pdfclean
+		pdfdebug
+		pdfmerge
+		pdfrip
+		pdffunction
+		x11pdf
+	: libmupdf libfitz ;
+
 
