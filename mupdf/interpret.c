@@ -303,6 +303,9 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (csi->top != 1)
 				goto syntaxerror;
 
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			obj = csi->stack[0];
 
 			if (!strcmp(fz_toname(obj), "DeviceGray"))
@@ -336,6 +339,9 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (csi->top != 1)
 				goto syntaxerror;
 
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			obj = csi->stack[0];
 
 			if (!strcmp(fz_toname(obj), "DeviceGray"))
@@ -365,6 +371,10 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != gstate->fillcs->n)
 				goto syntaxerror;
+
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			for (i = 0; i < csi->top; i++)
 				gstate->fill[i] = fz_toreal(csi->stack[i]);
 		}
@@ -373,6 +383,10 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != gstate->strokecs->n)
 				goto syntaxerror;
+
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			for (i = 0; i < csi->top; i++)
 				gstate->stroke[i] = fz_toreal(csi->stack[i]);
 		}
@@ -381,6 +395,10 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != 3)
 				goto syntaxerror;
+
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			gstate->fillcs = pdf_devicergb;
 			gstate->fill[0] = fz_toreal(csi->stack[0]);
 			gstate->fill[1] = fz_toreal(csi->stack[1]);
@@ -391,6 +409,10 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != 3)
 				goto syntaxerror;
+
+			error = pdf_flushtext(csi);
+			if (error) return error;
+
 			gstate->strokecs = pdf_devicergb;
 			gstate->stroke[0] = fz_toreal(csi->stack[0]);
 			gstate->stroke[1] = fz_toreal(csi->stack[1]);
@@ -749,6 +771,10 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 	case 'g':	
 		if (csi->top != 1)
 			goto syntaxerror;
+
+		error = pdf_flushtext(csi);
+		if (error) return error;
+
 		gstate->fillcs = pdf_devicegray;
 		gstate->fill[0] = fz_toreal(csi->stack[0]);
 		break;
@@ -756,6 +782,10 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 	case 'G':
 		if (csi->top != 1)
 			goto syntaxerror;
+
+		error = pdf_flushtext(csi);
+		if (error) return error;
+
 		gstate->strokecs = pdf_devicegray;
 		gstate->stroke[0] = fz_toreal(csi->stack[0]);
 		break;
@@ -763,6 +793,10 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 	case 'k':
 		if (csi->top != 4)
 			goto syntaxerror;
+
+		error = pdf_flushtext(csi);
+		if (error) return error;
+
 		gstate->fillcs = pdf_devicecmyk;
 		gstate->fill[0] = fz_toreal(csi->stack[0]);
 		gstate->fill[1] = fz_toreal(csi->stack[1]);
@@ -773,6 +807,10 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 	case 'K':
 		if (csi->top != 4)
 			goto syntaxerror;
+
+		error = pdf_flushtext(csi);
+		if (error) return error;
+
 		gstate->strokecs = pdf_devicecmyk;
 		gstate->stroke[0] = fz_toreal(csi->stack[0]);
 		gstate->stroke[1] = fz_toreal(csi->stack[1]);
