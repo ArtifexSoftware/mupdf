@@ -762,6 +762,13 @@ printf("\n");
 
 			if (!strcmp(fz_toname(name), "DeviceN"))
 				return loadseparation(csp, xref, obj);
+
+			/* pretend this never happened... */
+			if (!strcmp(fz_toname(name), "Pattern"))
+			{
+printf("oopsie, got a pattern colorspace\n");
+				return pdf_loadcolorspace(csp, xref, fz_arrayget(obj, 1));
+			}
 		}
 	}
 

@@ -18,8 +18,7 @@ enum
 	PDF_MCOLOR,
 	PDF_MLAB,
 	PDF_MINDEXED,
-	PDF_MTILE,
-	PDF_MSHADE
+	PDF_MPATTERN
 };
 
 struct pdf_material_s
@@ -28,9 +27,7 @@ struct pdf_material_s
 	fz_colorspace *cs;
 	float v[32];
 	pdf_indexed *indexed;
-	// lookup
-	// tile
-	// shade
+	pdf_pattern *pattern;
 };
 
 struct pdf_gstate_s
@@ -86,6 +83,7 @@ struct pdf_csi_s
 void pdf_initgstate(pdf_gstate *gs);
 fz_error *pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
 fz_error *pdf_setcolor(pdf_csi *csi, int what, float *v);
+fz_error *pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
 
 fz_error *pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path);
 fz_error *pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int evenodd);

@@ -53,4 +53,5 @@ fz_irect fz_intersectirects(fz_irect a, fz_irect b);
 fz_irect fz_mergeirects(fz_irect a, fz_irect b);
 
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
+fz_rect fz_transformaabb(fz_matrix m, fz_rect r);
 

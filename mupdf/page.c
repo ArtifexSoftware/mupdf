@@ -23,11 +23,21 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 	fz_error *error;
 	fz_obj *obj;
 	pdf_csi *csi;
+	fz_node *node;
+	float white = 1.0;
 	int i;
 
 	error = pdf_newcsi(&csi, 0);
 	if (error)
 		return error;
+
+	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
+	if (error)
+	{
+		pdf_dropcsi(csi);
+		return error;
+	}
+	fz_insertnode(csi->tree->root, node);
 
 	if (fz_isindirect(ref))
 	{

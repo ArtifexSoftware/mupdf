@@ -277,6 +277,8 @@ fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return fz_rendertext(gc, (fz_textnode*)node, ctm);
 	case FZ_NIMAGE:
 		return fz_renderimage(gc, (fz_imagenode*)node, ctm);
+	case FZ_NLINK:
+		return fz_rendernode(gc, ((fz_linknode*)node)->tree->root, ctm);
 	default:
 		return nil;
 	}

@@ -85,3 +85,22 @@ fz_transformpoint(fz_matrix m, fz_point p)
 	return t;
 }
 
+fz_rect
+fz_transformaabb(fz_matrix m, fz_rect r)
+{
+	fz_point s, t, u, v;
+	s.x = r.min.x; s.y = r.min.y;
+	t.x = r.min.x; t.y = r.max.y;
+	u.x = r.max.x; u.y = r.max.y;
+	v.x = r.max.x; v.y = r.min.y;
+	s = fz_transformpoint(m, s);
+	t = fz_transformpoint(m, t);
+	u = fz_transformpoint(m, u);
+	v = fz_transformpoint(m, v);
+	r.min.x = MIN4(s.x, t.x, u.x, v.x);
+	r.min.y = MIN4(s.y, t.y, u.y, v.y);
+	r.max.x = MAX4(s.x, t.x, u.x, v.x);
+	r.max.y = MAX4(s.y, t.y, u.y, v.y);
+	return r;
+}
+

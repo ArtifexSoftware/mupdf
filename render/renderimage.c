@@ -5,7 +5,6 @@
 void fz_gammapixmap(fz_pixmap *pix, float gamma);
 
 #define LERP(a,b,t) (a + (((b - a) * t) >> 16))
-#define OUTSIDE(x,a,b) (x < a || x >= b)
 
 static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
 {
@@ -13,8 +12,8 @@ static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
 		return 0;
 	if (v < 0 || v >= pix->h)
 		return 0;
-	u = CLAMP(u, 0, pix->w - 1);
-	v = CLAMP(v, 0, pix->h - 1);
+//	u = CLAMP(u, 0, pix->w - 1);
+//	v = CLAMP(v, 0, pix->h - 1);
 	return pix->samples[ (v * pix->w + u) * pix->n + k ];
 }
 
@@ -75,10 +74,10 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 		int sg = sampleimage(src, u, v, 2);
 		int sb = sampleimage(src, u, v, 3);
 
-		int da = dst->samples[ (y * dst->w + x) * dst->n + 0 ];
-		int dr = dst->samples[ (y * dst->w + x) * dst->n + 1 ];
-		int dg = dst->samples[ (y * dst->w + x) * dst->n + 2 ];
-		int db = dst->samples[ (y * dst->w + x) * dst->n + 3 ];
+		int da = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 0 ];
+		int dr = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 1 ];
+		int dg = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 2 ];
+		int db = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 3 ];
 
 		int ssa = 255 - sa;
 
@@ -87,10 +86,10 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 		dg = sg + fz_mul255(dg, ssa);
 		db = sb + fz_mul255(db, ssa);
 
-		dst->samples[ (y * dst->w + x) * dst->n + 0 ] = sa;
-		dst->samples[ (y * dst->w + x) * dst->n + 1 ] = sr;
-		dst->samples[ (y * dst->w + x) * dst->n + 2 ] = sg;
-		dst->samples[ (y * dst->w + x) * dst->n + 3 ] = sb;
+		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 0 ] = da;
+		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 1 ] = dr;
+		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 2 ] = dg;
+		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 3 ] = db;
 
 		u += du;
 		v += dv;
@@ -131,9 +130,9 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 	for (y = top; y <= bot; y++)
 	{
 		if (over && tile->n == 4)
-			overscanrgb(&invmat, out, tile, y, x0, x1);
+			overscanrgb(&invmat, out, tile, y, x0, x1 + 1);
 		else
-			drawscan(&invmat, out, tile, y, x0, x1);
+			drawscan(&invmat, out, tile, y, x0, x1 + 1);
 	}
 
 	return nil;

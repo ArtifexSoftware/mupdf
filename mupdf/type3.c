@@ -62,22 +62,10 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	ctm = fz_concat(font->matrix, trm);
 	bbox = fz_boundtree(tree, ctm);
 
-printf("glyph bbox %g %g %g %g\n",
-	bbox.min.x,
-	bbox.min.y,
-	bbox.max.x,
-	bbox.max.y);
-
-	bbox.min.x = fz_floor(bbox.min.x - 5.5);
-	bbox.min.y = fz_floor(bbox.min.y - 5.5);
-	bbox.max.x = fz_ceil(bbox.max.x + 5.5);
-	bbox.max.y = fz_ceil(bbox.max.y + 5.5);
-
-printf("glyph bbox %g %g %g %g\n",
-	bbox.min.x,
-	bbox.min.y,
-	bbox.max.x,
-	bbox.max.y);
+	bbox.min.x = fz_floor(bbox.min.x - 0.5);
+	bbox.min.y = fz_floor(bbox.min.y - 0.5);
+	bbox.max.x = fz_ceil(bbox.max.x + 0.5);
+	bbox.max.y = fz_ceil(bbox.max.y + 0.5);
 
 	error = fz_newrenderer(&gc, nil);
 	if (error)
@@ -88,8 +76,6 @@ printf("glyph bbox %g %g %g %g\n",
 		return error;
 
 	assert(pixmap->n == 1);
-
-printf("pixmap %d %d\n", pixmap->x, pixmap->y);
 
 	glyph->lsb = pixmap->x;
 	glyph->top = pixmap->h + pixmap->y;

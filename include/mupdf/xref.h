@@ -23,6 +23,7 @@ struct pdf_xref_s
 	pdf_rsrc *rfont;
 	pdf_rsrc *rimage;
 	pdf_rsrc *rxobject;
+	pdf_rsrc *rpattern;
 	pdf_rsrc *rcolorspace;
 };
 

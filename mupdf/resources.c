@@ -33,6 +33,10 @@ indirect references so we end up with a stylized structure:
 		/Cs0 5 0 R
 		/Cs1 [ /ICCBased 5 0 R ]		% /Cs1 -1 0 R ???
 		/Cs2 [ /CalRGB << ... >> ]		% /Cs2 -2 0 R ???
+		/CsX [ /Pattern /DeviceRGB ]	% eep!
+	>>
+	/Pattern <<
+		/Pat0 20 0 R
 	>>
 	/XObject <<
 		/Im0 10 0 R
@@ -80,6 +84,60 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	rsrc->next = xref->rcolorspace;
 	xref->rcolorspace = rsrc;
 	return nil;
+}
+
+static fz_error *
+preloadpattern(pdf_xref *xref, fz_obj *ref)
+{
+	fz_error *error;
+	pdf_rsrc *rsrc;
+	fz_obj *obj;
+	fz_obj *type;
+
+	if (pdf_findresource(xref->rpattern, ref))
+		return nil;
+//	if (pdf_findresource(xref->rshading, ref))
+//		return nil;
+
+	rsrc = fz_malloc(sizeof(pdf_rsrc));
+	if (!rsrc)
+		return fz_outofmem;
+	rsrc->oid = fz_tonum(ref);
+	rsrc->gen = fz_togen(ref);
+
+	error = pdf_loadindirect(&obj, xref, ref);
+	if (error)
+		return error;
+
+	type = fz_dictgets(obj, "PatternType");
+
+	if (fz_toint(type) == 1)
+	{
+		error = pdf_loadpattern((pdf_pattern**)&rsrc->val, xref, obj, ref);
+		fz_dropobj(obj);
+		if (error) {
+			fz_free(rsrc);
+			return error;
+		}
+		rsrc->next = xref->rpattern;
+		xref->rpattern = rsrc;
+		return nil;
+	}
+
+	else if (fz_toint(type) == 2)
+	{
+		// load shading
+		fz_dropobj(obj);
+		fz_free(rsrc);
+		return fz_throw("jeong was not here...");
+	}
+
+	else
+	{
+		fz_dropobj(obj);
+		fz_free(rsrc);
+		return fz_throw("syntaxerror: unknown Pattern type");
+	}
 }
 
 static fz_error *
@@ -300,6 +358,25 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 			if (fz_isindirect(obj))
 			{
 				error = preloadcolorspace(xref, obj);
+				if (error)
+					return error;
+			}
+		}
+	}
+
+	/*
+	 * Load Patterns (and Shadings)
+	 */
+
+	dict = fz_dictgets(copy, "Pattern");
+	if (dict)
+	{
+		for (i = 0; i < fz_dictlen(dict); i++)
+		{
+			obj = fz_dictgetval(dict, i);
+			if (fz_isindirect(obj))
+			{
+				error = preloadpattern(xref, obj);
 				if (error)
 					return error;
 			}

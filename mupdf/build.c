@@ -83,18 +83,27 @@ pdf_setcolor(pdf_csi *csi, int what, float *v)
 
 	switch (mat->kind)
 	{
+	case PDF_MPATTERN:
+		if (!strcmp(mat->cs->name, "Lab"))
+			goto Llab;
+		if (!strcmp(mat->cs->name, "Indexed"))
+			goto Lindexed;
+		/* fall through */
+
 	case PDF_MCOLOR:
 		for (i = 0; i < mat->cs->n; i++)
 			mat->v[i] = v[i];
 		break;
 
 	case PDF_MLAB:
+Llab:
 		mat->v[0] = v[0] / 100.0;
 		mat->v[1] = (v[1] + 100) / 200.0;
 		mat->v[2] = (v[2] + 100) / 200.0;
 		break;
 
 	case PDF_MINDEXED:
+Lindexed:
 		ind = mat->indexed;
 		i = CLAMP(v[0], 0, ind->high);
 		for (k = 0; k < ind->base->n; k++)
@@ -108,6 +117,27 @@ pdf_setcolor(pdf_csi *csi, int what, float *v)
 	return nil;
 }
 
+fz_error *
+pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
+{
+	pdf_gstate *gs = csi->gstate + csi->gtop;
+	fz_error *error;
+	pdf_material *mat;
+
+	error = pdf_flushtext(csi);
+	if (error)
+		return error;
+
+	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
+
+	mat->kind = PDF_MPATTERN;
+	mat->pattern = pat;
+
+	if (v)
+		return pdf_setcolor(csi, what, v);
+
+	return nil;
+}
 
 fz_error *
 pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
@@ -165,6 +195,96 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	return nil;
 }
 
+static fz_matrix getmatrix(fz_node *node)
+{
+	if (node->parent)
+	{
+		fz_matrix ptm = getmatrix(node->parent);
+		if (fz_istransformnode(node))
+			return fz_concat(((fz_transformnode*)node)->m, ptm);
+		return ptm;
+	}
+	if (fz_istransformnode(node))
+		return ((fz_transformnode*)node)->m;
+	return fz_identity();
+}
+
+static fz_error *
+addpatternshape(pdf_gstate *gs, fz_node *shape,
+	pdf_pattern *pat, fz_colorspace *cs, float *v)
+{
+	fz_error *error;
+	fz_node *xform;
+	fz_node *over;
+	fz_node *mask;
+	fz_node *link;
+	fz_matrix ctm;
+	fz_matrix inv;
+	fz_matrix ptm;
+	fz_rect bbox;
+	int x, y, x0, y0, x1, y1;
+
+	/* patterns are painted in user space */
+	ctm = getmatrix(gs->head);
+	inv = fz_invertmatrix(ctm);
+
+	error = fz_newmasknode(&mask);
+	if (error) return error;
+
+	ptm = fz_concat(pat->matrix, fz_invertmatrix(ctm));
+	error = fz_newtransformnode(&xform, ptm);
+	if (error) return error;
+
+	error = fz_newovernode(&over);
+	if (error) return error;
+
+	fz_insertnode(mask, shape);
+	fz_insertnode(mask, xform);
+	fz_insertnode(xform, over);
+
+	/* get bbox of shape in pattern space for stamping */
+	ptm = fz_concat(ctm, fz_invertmatrix(pat->matrix));
+	bbox = fz_boundnode(shape, ptm);
+
+	/* expand bbox by pattern bbox */
+	bbox.min.x += pat->bbox.min.x;
+	bbox.min.y += pat->bbox.min.y;
+	bbox.max.x += pat->bbox.max.x;
+	bbox.max.y += pat->bbox.max.y;
+
+printf("stamping pattern [%g %g] over [%g %g %g %g]\n",
+	pat->xstep, pat->ystep,
+	bbox.min.x, bbox.min.y,
+	bbox.max.x, bbox.max.y);
+
+	x0 = fz_floor(bbox.min.x / pat->xstep);
+	y0 = fz_floor(bbox.min.y / pat->ystep);
+	x1 = fz_ceil(bbox.max.x / pat->xstep);
+	y1 = fz_ceil(bbox.max.y / pat->ystep);
+
+printf("  %d,%d to %d,%d\n", x0, y0, x1, y1);
+
+	for (y = y0; y <= y1; y++)
+	{
+		for (x = x0; x <= x1; x++)
+		{
+			ptm = fz_translate(x * pat->xstep, y * pat->ystep);
+			error = fz_newtransformnode(&xform, ptm);
+			if (error) return error;
+			error = fz_newlinknode(&link, pat->tree);
+			if (error) return error;
+			fz_insertnode(xform, link);
+			fz_insertnode(over, xform);
+		}
+	}
+
+	if (pat->ismask)
+		return addcolorshape(gs, mask, cs, v);
+
+	fz_insertnode(gs->head, mask);
+	return nil;
+}
+
 fz_error *
 pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 {
@@ -174,7 +294,11 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 		fz_insertnode(gs->head, shape);
 		return nil;
 	case PDF_MCOLOR:
+	case PDF_MLAB:
+	case PDF_MINDEXED:
 		return addcolorshape(gs, shape, gs->fill.cs, gs->fill.v);
+	case PDF_MPATTERN:
+		return addpatternshape(gs, shape, gs->fill.pattern, gs->fill.cs, gs->fill.v);
 	default:
 		return fz_throw("unimplemented material");
 	}
@@ -189,7 +313,11 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 		fz_insertnode(gs->head, shape);
 		return nil;
 	case PDF_MCOLOR:
+	case PDF_MLAB:
+	case PDF_MINDEXED:
 		return addcolorshape(gs, shape, gs->stroke.cs, gs->stroke.v);
+	case PDF_MPATTERN:
+		return addpatternshape(gs, shape, gs->stroke.pattern, gs->stroke.cs, gs->stroke.v);
 	default:
 		return fz_throw("unimplemented material");
 	}
@@ -396,6 +524,9 @@ pdf_flushtext(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
+
+if (gstate->render != 0)
+fz_warn("unimplemented text render mode: %d", gstate->render);
 
 	if (csi->text)
 	{

@@ -7,7 +7,6 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 	fz_error *error;
 	pdf_csi *csi;
 	fz_node *node;
-	float white = 1.0;
 
 	csi = *csip = fz_malloc(sizeof(pdf_csi));
 	if (!csi)
@@ -41,11 +40,6 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 	{
 		csi->gstate[0].fill.kind = PDF_MNONE;
 		csi->gstate[0].stroke.kind = PDF_MNONE;
-	}
-	else
-	{
-		error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
-		fz_insertnode(csi->tree->root, node);
 	}
 
 	csi->clip = nil;
@@ -421,58 +415,105 @@ Lsetcolorspace:
 
 			obj = csi->stack[0];
 
-			if (!strcmp(fz_toname(obj), "DeviceGray"))
-				cs = pdf_devicegray;
-			else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-				cs = pdf_devicergb;
-			else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-				cs = pdf_devicecmyk;
-			else
+			if (!strcmp(fz_toname(obj), "Pattern"))
 			{
-				fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
-				if (!dict)
-					return fz_throw("syntaxerror: missing colorspace resource");
-				obj = fz_dictget(dict, obj);
-				if (!obj)
-					return fz_throw("syntaxerror: missing colorspace resource");
-				if (fz_isindirect(obj))
-					cs = pdf_findresource(xref->rcolorspace, obj);
-				else
-					return fz_throw("syntaxerror: inline colorspace in dict");
-				if (!cs)
-					return fz_throw("syntaxerror: missing colorspace resource");
+				error = pdf_setpattern(csi, what, nil, nil);
+				if (error) return error;
 			}
 
-			error = pdf_setcolorspace(csi, what, cs);
-			if (error) return error;
+			else 
+			{
+				if (!strcmp(fz_toname(obj), "DeviceGray"))
+					cs = pdf_devicegray;
+				else if (!strcmp(fz_toname(obj), "DeviceRGB"))
+					cs = pdf_devicergb;
+				else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
+					cs = pdf_devicecmyk;
+				else
+				{
+					fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
+					if (!dict)
+						return fz_throw("syntaxerror: missing colorspace resource");
+					obj = fz_dictget(dict, obj);
+					if (!obj)
+						return fz_throw("syntaxerror: missing colorspace resource");
+					if (fz_isindirect(obj))
+						cs = pdf_findresource(xref->rcolorspace, obj);
+					else
+						return fz_throw("syntaxerror: inline colorspace in dict");
+					if (!cs)
+						return fz_throw("syntaxerror: missing colorspace resource");
+				}
+
+				error = pdf_setcolorspace(csi, what, cs);
+				if (error) return error;
+			}
 		}
 
 		else if (!strcmp(buf, "sc") || !strcmp(buf, "scn"))
 		{
-			if (gstate->fill.kind == PDF_MINDEXED && csi->top != 1)
-				goto syntaxerror;
-			else if (csi->top != gstate->fill.cs->n)
-				goto syntaxerror;
-
-			for (i = 0; i < csi->top; i++)
-				v[i] = fz_toreal(csi->stack[i]);
-
-			error = pdf_setcolor(csi, PDF_MFILL, v);
-			if (error) return error;
+			what = PDF_MFILL;
+			goto Lsetcolor;
 		}
 
 		else if (!strcmp(buf, "SC") || !strcmp(buf, "SCN"))
 		{
-			if (gstate->stroke.kind == PDF_MINDEXED && csi->top != 1)
-				goto syntaxerror;
-			else if (csi->top != gstate->stroke.cs->n)
-				goto syntaxerror;
+			pdf_material *mat;
+			pdf_pattern *pat;
+			fz_obj *dict;
+			fz_obj *obj;
 
-			for (i = 0; i < csi->top; i++)
-				v[i] = fz_toreal(csi->stack[i]);
+			what = PDF_MSTROKE;
 
-			error = pdf_setcolor(csi, PDF_MSTROKE, v);
-			if (error) return error;
+Lsetcolor:
+			mat = what == PDF_MSTROKE ? &gstate->stroke : &gstate->fill;
+
+			if (fz_isname(csi->stack[csi->top - 1]))
+				mat->kind = PDF_MPATTERN;
+
+			switch (mat->kind)
+			{
+			case PDF_MNONE:
+				return fz_throw("syntaxerror: cannot set color in mask objects");
+
+			case PDF_MINDEXED:
+				if (csi->top != 1)
+					goto syntaxerror;
+				v[0] = fz_toreal(csi->stack[0]);
+				error = pdf_setcolor(csi, what, v);
+				if (error) return error;
+				break;
+
+			case PDF_MCOLOR:
+			case PDF_MLAB:
+				if (csi->top != mat->cs->n)
+					goto syntaxerror;
+				for (i = 0; i < csi->top; i++)
+					v[i] = fz_toreal(csi->stack[i]);
+				error = pdf_setcolor(csi, what, v);
+				if (error) return error;
+				break;
+
+			case PDF_MPATTERN:
+				for (i = 0; i < csi->top - 1; i++)
+					v[i] = fz_toreal(csi->stack[i]);
+
+				dict = fz_dictgets(rdb, "Pattern");
+				if (!dict)
+					return fz_throw("syntaxerror: missing pattern resource");
+
+				obj = fz_dictget(dict, csi->stack[csi->top - 1]);
+				if (!obj)
+					return fz_throw("syntaxerror: missing pattern resource");
+
+				pat = pdf_findresource(xref->rpattern, obj);
+				if (!pat)
+					return fz_throw("syntaxerror: missing pattern resource");
+
+				error = pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
+				if (error) return error;
+				break;
+			}
 		}
 
 		else if (!strcmp(buf, "rg"))

@@ -82,25 +82,46 @@ fz_blendover(fz_pixmap *src, fz_pixmap *dst)
 {
 	int x, y, k;
 
-	assert(dst->n == src->n);
+	assert(dst->n == src->n || src->n == 1);
 	assert(dst->w == src->w);
 	assert(dst->h == src->h);
 
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 
-	for (y = 0; y < dst->h; y++)
+	if (dst->n == src->n)
 	{
-		for (x = 0; x < dst->w; x++)
+		for (y = 0; y < dst->h; y++)
 		{
-			int sa = s[0];
-			int ssa = 255 - sa;
+			for (x = 0; x < dst->w; x++)
+			{
+				int sa = s[0];
+				int ssa = 255 - sa;
 
-			for (k = 0; k < dst->n; k++)
-				d[k] = s[k] + fz_mul255(d[k], ssa);
+				for (k = 0; k < dst->n; k++)
+					d[k] = s[k] + fz_mul255(d[k], ssa);
 
-			s += src->n;
-			d += dst->n;
+				s += src->n;
+				d += dst->n;
+			}
+		}
+	}
+	else if (src->n == 1)
+	{
+		for (y = 0; y < dst->h; y++)
+		{
+			for (x = 0; x < dst->w; x++)
+			{
+				int sa = s[0];
+				int ssa = 255 - sa;
+
+				d[0] = s[0] + fz_mul255(d[0], ssa);
+				for (k = 1; k < dst->n; k++)
+					d[k] = 0 + fz_mul255(d[k], ssa);
+
+				s += src->n;
+				d += dst->n;
+			}
 		}
 	}
 }
@@ -111,7 +132,6 @@ fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 	int x, y, k;
 
 	assert(src->n == dst->n);
-	assert(msk->n == 1);
 
 	unsigned char *d = dst->samples;
 	unsigned char *s = src->samples;
@@ -125,7 +145,7 @@ fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 			{
 				*d++ = fz_mul255(*s++, *m);
 			}
-			m++;
+			m += msk->n;
 		}
 	}
 }

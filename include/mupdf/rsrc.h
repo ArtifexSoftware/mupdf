@@ -44,6 +44,25 @@ extern fz_colorspace *pdf_devicecmyk;
 fz_error *pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj);
 
 /*
+ * Pattern
+ */
+
+typedef struct pdf_pattern_s pdf_pattern;
+
+struct pdf_pattern_s
+{
+	int ismask;
+	float xstep;
+	float ystep;
+	fz_matrix matrix;
+	fz_rect bbox;
+	fz_tree *tree;
+};
+
+fz_error *pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+void pdf_droppattern(pdf_pattern *pat);
+
+/*
  * XObject
  */
 
