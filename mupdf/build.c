@@ -13,12 +13,18 @@ pdf_initgstate(pdf_gstate *gs)
 	memset(gs->dashlist, 0, sizeof(gs->dashlist));
 
 	gs->stroke.kind = PDF_MCOLOR;
-	gs->stroke.cs = pdf_devicegray;
+	gs->stroke.cs = fz_keepcolorspace(pdf_devicegray);
 	gs->stroke.v[0] = 0;
+	gs->stroke.indexed = nil;
+	gs->stroke.pattern = nil;
+	gs->stroke.shade = nil;
 
 	gs->fill.kind = PDF_MCOLOR;
-	gs->fill.cs = pdf_devicegray;
+	gs->fill.cs = fz_keepcolorspace(pdf_devicegray);
 	gs->fill.v[0] = 0;
+	gs->fill.indexed = nil;
+	gs->fill.pattern = nil;
+	gs->fill.shade = nil;
 
 	gs->charspace = 0;
 	gs->wordspace = 0;
@@ -45,8 +51,10 @@ pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 
 	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
 
+	fz_dropcolorspace(mat->cs);
+
 	mat->kind = PDF_MCOLOR;
-	mat->cs = cs;
+	mat->cs = fz_keepcolorspace(cs);
 
 	mat->v[0] = 0;	/* FIXME: default color */
 	mat->v[1] = 0;	/* FIXME: default color */
@@ -130,8 +138,14 @@ pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 
 	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
 
+	if (mat->pattern)
+		pdf_droppattern(mat->pattern);
+
 	mat->kind = PDF_MPATTERN;
-	mat->pattern = pat;
+	if (pat)
+		mat->pattern = pdf_keeppattern(pat);
+	else
+		mat->pattern = nil;
 
 	if (v)
 		return pdf_setcolor(csi, what, v);
@@ -152,8 +166,11 @@ pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 
 	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
 
+	if (mat->shade)
+		fz_dropshade(mat->shade);
+
 	mat->kind = PDF_MSHADE;
-	mat->shade = shade;
+	mat->shade = fz_keepshade(shade);
 
 	return nil;
 }
@@ -342,21 +359,11 @@ pdf_addshade(pdf_gstate *gs, fz_shade *shade)
 {
 	fz_error *error;
 	fz_node *node;
-	fz_node *xform;
-	fz_matrix ctm;
-	fz_matrix inv;
-
-	ctm = getmatrix(gs->head);
-	inv = fz_invertmatrix(ctm);
-
-	error = fz_newtransformnode(&xform, inv);
-	if (error) return error;
 
 	error = fz_newshadenode(&node, shade);
 	if (error) return error;
 
-	fz_insertnodelast(xform, node);
-	fz_insertnodelast(gs->head, xform);
+	fz_insertnodelast(gs->head, node);
 
 	return nil;
 }

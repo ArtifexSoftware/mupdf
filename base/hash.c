@@ -73,6 +73,13 @@ fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 	return nil;
 }
 
+void
+fz_emptyhash(fz_hashtable *table)
+{
+	table->load = 0;
+	memset(table->ents, 0, sizeof(fz_hashentry) * table->size);
+}
+
 int
 fz_hashlen(fz_hashtable *table)
 {

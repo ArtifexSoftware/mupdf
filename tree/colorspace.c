@@ -15,6 +15,8 @@ fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *ds
 fz_colorspace *
 fz_keepcolorspace(fz_colorspace *cs)
 {
+	if (cs->refs < 0)
+		return cs;
 	cs->refs ++;
 	return cs;
 }

@@ -1,14 +1,22 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+pdf_pattern *
+pdf_keeppattern(pdf_pattern *pat)
+{
+	pat->refs ++;
+	return pat;
+}
+
 void
 pdf_droppattern(pdf_pattern *pat)
 {
-	pdf_logrsrc("drop pattern %p\n", pat);
-
-	if (pat->tree)
-		fz_droptree(pat->tree);
-	fz_free(pat);
+	if (--pat->refs == 0)
+	{
+		if (pat->tree)
+			fz_droptree(pat->tree);
+		fz_free(pat);
+	}
 }
 
 fz_error *
@@ -19,6 +27,9 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	fz_obj *resources;
 	fz_obj *obj;
 	pdf_csi *csi;
+
+	if ((*patp = pdf_finditem(xref->store, PDF_KPATTERN, stmref)))
+		return nil;
 
 	pdf_logrsrc("load pattern %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 
@@ -106,6 +117,10 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	fz_optimizetree(pat->tree);
 
 	pdf_logrsrc("}\n");
+
+	error = pdf_storeitem(xref->store, PDF_KPATTERN, stmref, pat);
+	if (error)
+		goto cleanup;
 
 	*patp = pat;
 	return nil;

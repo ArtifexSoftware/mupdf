@@ -15,6 +15,10 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (!form)
 		return fz_outofmem;
 
+	form->refs = 1;
+	form->resources = nil;
+	form->contents = nil;
+
 	pdf_logrsrc("load xobject %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), form);
 
 	obj = fz_dictgets(dict, "BBox");
@@ -35,34 +39,28 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		form->matrix.c, form->matrix.d,
 		form->matrix.e, form->matrix.f);
 
-	form->resources = nil;
 	obj = fz_dictgets(dict, "Resources");
 	if (obj)
 	{
 		error = pdf_resolve(&obj, xref);
 		if (error)
 		{
-			fz_free(form);
+			pdf_dropxobject(form);
 			return error;
 		}
-
 		error = pdf_loadresources(&form->resources, xref, obj);
+		fz_dropobj(obj);
 		if (error)
 		{
-			fz_dropobj(obj);
-			fz_free(form);
+			pdf_dropxobject(form);
 			return error;
 		}
-
-		fz_dropobj(obj);
 	}
 
-	form->contents = nil;
 	error = pdf_loadstream(&form->contents, xref, fz_tonum(ref), fz_togen(ref));
 	if (error)
 	{
-		fz_dropobj(form->resources);
-		fz_free(form);
+		pdf_dropxobject(form);
 		return error;
 	}
 
@@ -73,13 +71,29 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	error = pdf_storeitem(xref->store, PDF_KXOBJECT, ref, form);
 	if (error)
 	{
-		fz_dropbuffer(form->contents);
-		fz_dropobj(form->resources);
-		fz_free(form);
+		pdf_dropxobject(form);
 		return error;
 	}
 
 	*formp = form;
 	return nil;
+}
+
+pdf_xobject *
+pdf_keepxobject(pdf_xobject *xobj)
+{
+	xobj->refs ++;
+	return xobj;
+}
+
+void
+pdf_dropxobject(pdf_xobject *xobj)
+{
+	if (--xobj->refs == 0)
+	{
+		if (xobj->contents) fz_dropbuffer(xobj->contents);
+		if (xobj->resources) fz_dropobj(xobj->resources);
+		fz_free(xobj);
+	}
 }
 

@@ -65,6 +65,7 @@ clearstack(pdf_csi *csi)
 void
 pdf_dropcsi(pdf_csi *csi)
 {
+	/* TODO: drop gstates */
 	if (csi->path) fz_dropnode((fz_node*)csi->path);
 	if (csi->clip) fz_dropnode((fz_node*)csi->clip);
 	if (csi->textclip) fz_dropnode((fz_node*)csi->textclip);

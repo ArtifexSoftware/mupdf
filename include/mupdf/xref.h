@@ -42,6 +42,7 @@ fz_error *pdf_updatepdf(pdf_xref *, char *filename);
 fz_error *pdf_savepdf(pdf_xref *, char *filename, pdf_crypt *encrypt);
 
 void pdf_debugpdf(pdf_xref *);
+void pdf_flushpdf(pdf_xref *, int force);
 void pdf_closepdf(pdf_xref *);
 
 fz_error *pdf_allocobject(pdf_xref *, int *oidp, int *genp);

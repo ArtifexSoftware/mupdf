@@ -11,7 +11,7 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 
 	fz_initnode((fz_node*)text, FZ_NTEXT);
 
-	text->font = font;
+	text->font = fz_keepfont(font);
 	text->trm = fz_identity();
 	text->len = 0;
 	text->cap = 0;
@@ -23,6 +23,7 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 void
 fz_droptextnode(fz_textnode *text)
 {
+	fz_dropfont(text->font);
 	fz_free(text->els);
 }
 

@@ -7,7 +7,8 @@ typedef struct psobj_s psobj;
 
 struct pdf_function_s
 {
-	unsigned short type;	/* 0=sample 2=exponential 3=stitching 4=postscript */
+	int refs;
+	int type;				/* 0=sample 2=exponential 3=stitching 4=postscript */
 	int m;					/* number of input values */
 	int n;					/* number of output values */
 	float *domain;			/* even index : min value, odd index : max value */
@@ -1396,50 +1397,60 @@ cleanup:
   return error;
 }
 
+pdf_function *
+pdf_keepfunction(pdf_function *func)
+{
+	func->refs ++;
+	return func;
+}
+
 void
 pdf_dropfunction(pdf_function *func)
 {
-	int i;
+	if (--func->refs == 0)
+	{
+		int i;
 
-	if(func->domain)
-		fz_free(func->domain);
+		if(func->domain)
+			fz_free(func->domain);
 
-	if(func->range)
-		fz_free(func->range);
+		if(func->range)
+			fz_free(func->range);
 
-	switch(func->type) {
-	case PDF_FUNC_SAMPLE:
-		if(func->u.sa.decode)
-			fz_free(func->u.sa.decode);
-		if(func->u.sa.encode)
-			fz_free(func->u.sa.encode);
-		if(func->u.sa.samples)
-			fz_free(func->u.sa.samples);
-		break;
-	case PDF_FUNC_EXPONENTIAL:
-		if(func->u.e.c0)
-			fz_free(func->u.e.c0);
-		if(func->u.e.c1)
-			fz_free(func->u.e.c1);
-		break;
-	case PDF_FUNC_STITCHING:
-		if(func->u.st.bounds)
-			fz_free(func->u.st.bounds);
-		if(func->u.st.encode)
-			fz_free(func->u.st.encode);
-		if(func->u.st.funcs) {
-			for(i = 0; i < func->u.st.k; ++i)
-				pdf_dropfunction(func->u.st.funcs[i]);
+		switch(func->type) {
+		case PDF_FUNC_SAMPLE:
+			if(func->u.sa.decode)
+				fz_free(func->u.sa.decode);
+			if(func->u.sa.encode)
+				fz_free(func->u.sa.encode);
+			if(func->u.sa.samples)
+				fz_free(func->u.sa.samples);
+			break;
+		case PDF_FUNC_EXPONENTIAL:
+			if(func->u.e.c0)
+				fz_free(func->u.e.c0);
+			if(func->u.e.c1)
+				fz_free(func->u.e.c1);
+			break;
+		case PDF_FUNC_STITCHING:
+			if(func->u.st.bounds)
+				fz_free(func->u.st.bounds);
+			if(func->u.st.encode)
+				fz_free(func->u.st.encode);
+			if(func->u.st.funcs) {
+				for(i = 0; i < func->u.st.k; ++i)
+					pdf_dropfunction(func->u.st.funcs[i]);
 
-			fz_free(func->u.st.funcs);
+				fz_free(func->u.st.funcs);
+			}
+			break;
+		case PDF_FUNC_POSTSCRIPT:
+			if(func->u.p.code)
+				fz_free(func->u.p.code);
+			break;
 		}
-		break;
-	case PDF_FUNC_POSTSCRIPT:
-		if(func->u.p.code)
-			fz_free(func->u.p.code);
-		break;
+		fz_free(func);
 	}
-	fz_free(func);
 }
 
 fz_error *
@@ -1459,6 +1470,8 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *ref)
 	newfunc = fz_malloc(sizeof(pdf_function));
 	if(!newfunc) return fz_outofmem;
 	memset(newfunc,0,sizeof(pdf_function));
+
+	newfunc->refs = 1;
 	
 	objfunc = ref;
 	error = pdf_resolve(&objfunc,xref);

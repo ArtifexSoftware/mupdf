@@ -1,12 +1,7 @@
 immediate plan:
-	- fast parsed object store (scrap r* cache)
 	- global font/cmap cache
-	- image color key transparency
 	- text fill + clip mode
-	- pdf logging
-	- refcount resources
 	- altivec optimize
-	- gtk+pdf
 	- page labels + dests + outline + annots
 	- design gui for editor
 	- go through spec and check all features!

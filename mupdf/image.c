@@ -32,6 +32,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 	img->super.n = 0;
 	img->super.a = 0;
 	img->indexed = nil;
+	img->usecolorkey = 0;
 	img->mask = nil;
 
 	img->super.w = fz_toint(fz_dictgetsa(dict, "Width", "W"));
@@ -159,6 +160,29 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 	return nil;
 }
 
+static void
+loadcolorkey(int *colorkey, int bpc, int indexed, fz_obj *obj)
+{
+	int scale = 1;
+	int i;
+
+	pdf_logimage("keyed mask\n");
+
+	if (!indexed)
+	{
+		switch (bpc)
+		{
+		case 1: scale = 255; break;
+		case 2: scale = 85; break;
+		case 4: scale = 17; break;
+		case 8: scale = 1; break;
+		}
+	}
+
+	for (i = 0; i < fz_arraylen(obj); i++)
+		colorkey[i] = fz_toint(fz_arrayget(obj, i)) * scale;
+}
+
 /* TODO error cleanup */
 fz_error *
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
@@ -174,6 +198,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	int w, h, bpc;
 	int n = 0;
 	int a = 0;
+	int usecolorkey = 0;
 	fz_colorspace *cs = nil;
 	pdf_indexed *indexed = nil;
 	int stride;
@@ -273,8 +298,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			return error;
 		if (fz_isarray(sub))
 		{
-			pdf_logimage("color keyed transparency\n");
-			/* FIXME */
+			usecolorkey = 1;
+			loadcolorkey(img->colorkey, bpc, indexed != nil, sub);
 		}
 		else
 		{
@@ -287,8 +312,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	}
 	else if (fz_isarray(obj))
 	{
-		pdf_logimage("color keyed transparency\n");
-		/* FIXME */
+		usecolorkey = 1;
+		loadcolorkey(img->colorkey, bpc, indexed != nil, obj);
 	}
 
 	/*
@@ -364,6 +389,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	img->stride = stride;
 	img->bpc = bpc;
 	img->mask = (fz_image*)mask;
+	img->usecolorkey = usecolorkey;
 
 	pdf_logimage("}\n");
 
@@ -376,6 +402,41 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	*imgp = img;
 	return nil;
+}
+
+static void
+maskcolorkey(fz_pixmap *pix, int *colorkey)
+{
+	unsigned char *p = pix->samples;
+	int i, k, t;
+	for (i = 0; i < pix->w * pix->h; i++)
+	{
+		t = 1;
+		for (k = 1; k < pix->n; k++)
+			if (p[k] < colorkey[k * 2 - 2] || p[k] > colorkey[k * 2 - 1])
+				t = 0;
+		if (t)
+			for (k = 0; k < pix->n; k++)
+				p[k] = 0;
+		p += pix->n;
+	}
+}
+
+static void
+maskcolorkeyindexed(fz_pixmap *ind, fz_pixmap *pix, int *colorkey)
+{
+	unsigned char *s = ind->samples;
+	unsigned char *d = pix->samples;
+	int i, k;
+	for (i = 0; i < pix->w * pix->h; i++)
+	{
+		if (s[0] >= colorkey[0] && s[0] <= colorkey[1])
+			for (k = 0; k < pix->n; k++)
+				d[k] = 0;
+		d[0] = 255;
+		s += ind->n;
+		d += pix->n;
+	}
 }
 
 fz_error *
@@ -438,6 +499,9 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 			}
 		}
 
+		if (src->usecolorkey)
+			maskcolorkeyindexed(tmp, tile, src->colorkey);
+
 		fz_droppixmap(tmp);
 	}
 
@@ -446,6 +510,8 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		tilefunc(src->samples->rp, src->stride,
 				tile->samples, tile->w * tile->n,
 				img->w * (img->n + img->a), img->h, img->a ? 0 : img->n);
+		if (src->usecolorkey)
+			maskcolorkey(tile, src->colorkey);
 		fz_decodetile(tile, !img->a, src->decode);
 	}
 

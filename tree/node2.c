@@ -90,7 +90,7 @@ fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NBLEND);
-	node->cs = cs;
+	node->cs = fz_keepcolorspace(cs);
 	node->mode = b;
 	node->knockout = k;
 	node->isolated = i;
@@ -101,7 +101,31 @@ fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i
 fz_rect
 fz_boundblendnode(fz_blendnode *node, fz_matrix ctm)
 {
-	return fz_emptyrect;
+	fz_node *child;
+	fz_rect bbox;
+	fz_rect temp;
+
+	child = node->super.first;
+	if (!child)
+		return fz_emptyrect;
+
+	bbox = fz_boundnode(child, ctm);
+
+	child = child->next;
+	while (child)
+	{
+		temp = fz_boundnode(child, ctm);
+		bbox = fz_mergerects(temp, bbox);
+		child = child->next;
+	}
+
+	return bbox;
+}
+
+void
+fz_dropblendnode(fz_blendnode *node)
+{
+	fz_dropcolorspace(node->cs);
 }
 
 /*
@@ -223,7 +247,7 @@ fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NCOLOR);
-	node->cs = cs;
+	node->cs = fz_keepcolorspace(cs);
 	node->n = n;
 	for (i = 0; i < n; i++)
 		node->samples[i] = v[i];
@@ -235,6 +259,12 @@ fz_rect
 fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
 {
 	return fz_infiniterect;
+}
+
+void
+fz_dropcolornode(fz_colornode *node)
+{
+	fz_dropcolorspace(node->cs);
 }
 
 /*
@@ -252,7 +282,7 @@ fz_newimagenode(fz_node **nodep, fz_image *image)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NIMAGE);
-	node->image = image;
+	node->image = fz_keepimage(image);
 
 	return nil;
 }
@@ -289,7 +319,7 @@ fz_newshadenode(fz_node **nodep, fz_shade *shade)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NSHADE);
-	node->shade = shade;
+	node->shade = fz_keepshade(shade);
 
 	return nil;
 }

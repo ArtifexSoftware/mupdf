@@ -15,9 +15,11 @@ typedef enum pdf_itemkind_e
 } pdf_itemkind;
 
 fz_error *pdf_newstore(pdf_store **storep);
+void pdf_emptystore(pdf_store *store);
+void pdf_dropstore(pdf_store *store);
+
 fz_error *pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
 void *pdf_finditem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
-void pdf_dropstore(pdf_store *store);
 
 fz_error *pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
 
@@ -29,6 +31,7 @@ typedef struct pdf_function_s pdf_function;
 
 fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *ref);
 fz_error *pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
+pdf_function *pdf_keepfunction(pdf_function *func);
 void pdf_dropfunction(pdf_function *func);
 
 /*
@@ -64,6 +67,7 @@ typedef struct pdf_pattern_s pdf_pattern;
 
 struct pdf_pattern_s
 {
+	int refs;
 	int ismask;
 	float xstep;
 	float ystep;
@@ -73,6 +77,7 @@ struct pdf_pattern_s
 };
 
 fz_error *pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+pdf_pattern *pdf_keeppattern(pdf_pattern *pat);
 void pdf_droppattern(pdf_pattern *pat);
 
 fz_error *pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
@@ -85,6 +90,7 @@ typedef struct pdf_xobject_s pdf_xobject;
 
 struct pdf_xobject_s
 {
+	int refs;
 	fz_matrix matrix;
 	fz_rect bbox;
 	fz_obj *resources;
@@ -92,6 +98,7 @@ struct pdf_xobject_s
 };
 
 fz_error *pdf_loadxobject(pdf_xobject **xobjp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+pdf_xobject *pdf_keepxobject(pdf_xobject *xobj);
 void pdf_dropxobject(pdf_xobject *xobj);
 
 /*
@@ -104,6 +111,8 @@ struct pdf_image_s
 {
 	fz_image super;
 	fz_image *mask;			/* explicit mask with subimage */
+	int usecolorkey;		/* explicit color-keyed masking */
+	int colorkey[FZ_MAXCOLORS * 2];
 	pdf_indexed *indexed;
 	float decode[32];
 	int bpc;

@@ -292,6 +292,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	fz_obj *widths = nil;
 	unsigned short *etable = nil;
 	pdf_font *font;
+	fz_irect bbox;
 	FT_Face face;
 	FT_CharMap cmap;
 	int kind;
@@ -330,16 +331,17 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_logfont("ft name '%s' '%s'\n", face->family_name, face->style_name);
 
-	pdf_logfont("ft bbox [%d %d %d %d]\n",
-		face->bbox.xMin, face->bbox.yMin,
-		face->bbox.xMax, face->bbox.yMax);
+	bbox.min.x = (face->bbox.xMin * 1000) / face->units_per_EM;
+	bbox.min.y = (face->bbox.yMin * 1000) / face->units_per_EM;
+	bbox.max.x = (face->bbox.xMax * 1000) / face->units_per_EM;
+	bbox.max.y = (face->bbox.yMax * 1000) / face->units_per_EM;
 
-	if (face->bbox.xMax == face->bbox.xMin)
+	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+
+	if (bbox.min.x == bbox.max.x)
 		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
 	else
-		fz_setfontbbox((fz_font*)font,
-			face->bbox.xMin, face->bbox.yMin,
-			face->bbox.xMax, face->bbox.yMax);
+		fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 
 	/*
 	 * Encoding
@@ -577,6 +579,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	fz_obj *descriptor;
 	pdf_font *font;
 	FT_Face face;
+	fz_irect bbox;
 	int kind;
 	char collection[256];
 	char *basefont;
@@ -640,16 +643,17 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	face = font->ftface;
 	kind = ftkind(face);
 
-	if (face->bbox.xMax == face->bbox.xMin)
+	bbox.min.x = (face->bbox.xMin * 1000) / face->units_per_EM;
+	bbox.min.y = (face->bbox.yMin * 1000) / face->units_per_EM;
+	bbox.max.x = (face->bbox.xMax * 1000) / face->units_per_EM;
+	bbox.max.y = (face->bbox.yMax * 1000) / face->units_per_EM;
+
+	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+
+	if (bbox.min.x == bbox.max.x)
 		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
 	else
-		fz_setfontbbox((fz_font*)font,
-			face->bbox.xMin, face->bbox.yMin,
-			face->bbox.xMax, face->bbox.yMax);
-
-	pdf_logfont("ft bbox [%d %d %d %d]\n",
-		face->bbox.xMin, face->bbox.yMin,
-		face->bbox.xMax, face->bbox.yMax);
+		fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 
 	/*
 	 * Encoding
@@ -926,6 +930,7 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 {
 	fz_error *error;
 	fz_obj *obj1, *obj2, *obj3, *obj;
+	fz_rect bbox;
 	char *fontname;
 
 	error = pdf_resolve(&desc, xref);
@@ -945,6 +950,11 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 	font->capheight = fz_toreal(fz_dictgets(desc, "CapHeight"));
 	font->xheight = fz_toreal(fz_dictgets(desc, "XHeight"));
 	font->missingwidth = fz_toreal(fz_dictgets(desc, "MissingWidth"));
+
+	bbox = pdf_torect(fz_dictgets(desc, "FontBBox"));
+	pdf_logfont("bbox [%g %g %g %g]\n",
+		bbox.min.x, bbox.min.y,
+		bbox.max.x, bbox.max.y);
 
 	pdf_logfont("flags %d\n", font->flags);
 
@@ -989,7 +999,7 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	subtype = fz_toname(fz_dictgets(dict, "Subtype"));
 	if (!strcmp(subtype, "Type0"))
 		error = loadtype0(fontp, xref, dict, ref);
-	if (!strcmp(subtype, "Type1") || !strcmp(subtype, "MMType1"))
+	else if (!strcmp(subtype, "Type1") || !strcmp(subtype, "MMType1"))
 		error = loadsimplefont(fontp, xref, dict, ref);
 	else if (!strcmp(subtype, "TrueType"))
 		error = loadsimplefont(fontp, xref, dict, ref);

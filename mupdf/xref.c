@@ -84,10 +84,46 @@ pdf_decryptpdf(pdf_xref *xref)
 }
 
 void
-pdf_closepdf(pdf_xref *xref)
+pdf_flushpdf(pdf_xref *xref, int force)
 {
 	int i;
 
+	pdf_logxref("flushxref %p (%d)\n", xref, force);
+
+	for (i = 0; i < xref->len; i++)
+	{
+		if (force)
+		{
+			if (xref->table[i].stmbuf)
+			{
+				fz_dropbuffer(xref->table[i].stmbuf);
+				xref->table[i].stmbuf = nil;
+			}
+			if (xref->table[i].obj)
+			{
+				fz_dropobj(xref->table[i].obj);
+				xref->table[i].obj = nil;
+			}
+		}
+		else
+		{
+			if (xref->table[i].stmbuf && xref->table[i].stmbuf->refs == 1)
+			{
+				fz_dropbuffer(xref->table[i].stmbuf);
+				xref->table[i].stmbuf = nil;
+			}
+			if (xref->table[i].obj && xref->table[i].stmbuf->refs == 1)
+			{
+				fz_dropobj(xref->table[i].obj);
+				xref->table[i].obj = nil;
+			}
+		}
+	}
+}
+
+void
+pdf_closepdf(pdf_xref *xref)
+{
 	pdf_logxref("closexref %p\n", xref);
 
 	if (xref->store)
@@ -95,13 +131,7 @@ pdf_closepdf(pdf_xref *xref)
 
 	if (xref->table)
 	{
-		for (i = 0; i < xref->len; i++)
-		{
-			if (xref->table[i].stmbuf)
-				fz_dropbuffer(xref->table[i].stmbuf);
-			if (xref->table[i].obj)
-				fz_dropobj(xref->table[i].obj);
-		}
+		pdf_flushpdf(xref, 1);
 		fz_free(xref->table);
 	}
 
