@@ -9,7 +9,7 @@ fz_error *fz_renderimageover(fz_renderer*, fz_imagenode*, fz_matrix);
 fz_error *fz_renderimage(fz_renderer*, fz_imagenode*, fz_matrix);
 
 fz_error *
-fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
+fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel, int gcmem)
 {
 	fz_error *error;
 	fz_renderer *gc;
@@ -26,7 +26,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
 	gc->tmp = nil;
 	gc->acc = nil;
 
-	error = fz_newglyphcache(&gc->cache, 4096, 256 * 1024);
+	error = fz_newglyphcache(&gc->cache, gcmem / 32, gcmem);
 	if (error)
 		goto cleanup;
 
@@ -191,6 +191,8 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 	fz_node *color;
 	fz_node *shape;
 	int oldmode;
+	fz_rect bbox;
+	int ox, oy, ow, oh;
 
 	color = mask->super.child;
 	shape = color->next;
@@ -201,6 +203,8 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			return fz_rendercolorpath(gc, (fz_pathnode*)shape, (fz_colornode*)color, ctm);
 		if (fz_istextnode(shape) && fz_iscolornode(color))
 			return fz_rendercolortext(gc, (fz_textnode*)shape, (fz_colornode*)color, ctm);
+		if (fz_isimagenode(shape) && fz_iscolornode(color))
+			puts("could optimize image mask!");
 	}
 
 printf("begin mask\n");
@@ -209,6 +213,23 @@ printf("begin mask\n");
 	oldmode = gc->mode;
 	gc->acc = nil;
 	gc->mode = FZ_RMASK;
+
+	// TODO: set clip bbox to that of shape
+
+	bbox = fz_boundnode(shape, ctm);
+	bbox = fz_intersectrects(bbox, (fz_rect){{gc->x,gc->y},{gc->x+gc->w,gc->y+gc->h}});
+	printf("mask bbox [%g %g %g %g]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+	ox = gc->x;
+	oy = gc->y;
+	ow = gc->w;
+	oh = gc->h;
+
+	gc->x = fz_floor(bbox.min.x) - 1;
+	gc->y = fz_floor(bbox.min.y) - 1;
+	gc->w = fz_ceil(bbox.max.x) - fz_floor(bbox.min.x) + 1;
+	gc->h = fz_ceil(bbox.max.y) - fz_floor(bbox.min.y) + 1;
+	ctm.e -= bbox.min.x - fz_floor(bbox.min.x);
+	ctm.f -= bbox.min.y - fz_floor(bbox.min.y);
 
 	gc->tmp = nil;
 	error = fz_rendernode(gc, color, ctm);
@@ -239,6 +260,11 @@ if (!shapepix) return nil;
 
 	gc->acc = oldacc;
 	gc->mode = oldmode;
+
+	gc->x = ox;
+	gc->y = oy;
+	gc->w = ow;
+	gc->h = oh;
 
 printf("end mask\n");
 

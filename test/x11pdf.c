@@ -200,7 +200,7 @@ static void pdfopen(char *filename, char *password)
 
 	count = pdf_getpagecount(pages);
 
-	error = fz_newrenderer(&rast, pdf_devicergb);
+	error = fz_newrenderer(&rast, pdf_devicergb, 1024 * 512);
 	if (error) fz_abort(error);
 
 	image = nil;

@@ -15,7 +15,7 @@ struct fz_renderer_s
     unsigned char r, g, b;
 };
 
-fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm);
+fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int gcmem);
 void fz_droprenderer(fz_renderer *gc);
 
 fz_error *fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm);

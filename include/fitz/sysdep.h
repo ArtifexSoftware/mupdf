@@ -14,6 +14,13 @@
 #include <errno.h>
 #include <fcntl.h>	/* O_RDONLY & co */
 
+#ifdef _ISOC99_SOURCE
+#elif __GNUC__
+#define restrict __restrict__
+#else
+#define restrict
+#endif
+
 #ifdef WIN32
 
 #define NEED_STRLCPY

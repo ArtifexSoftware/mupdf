@@ -1,6 +1,8 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+static void fastpixmap(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixmap *dp);
+
 static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*to)(fz_colorspace*,float*,float*),
 	void(*from)(fz_colorspace*,float*,float*),
@@ -8,10 +10,12 @@ static void initcs(fz_colorspace *cs, char *name, int n,
 {
 	strlcpy(cs->name, name, sizeof cs->name);
 	cs->refs = 1;
-	cs->n = n;
+	cs->convpixmap = fastpixmap;
+	cs->convcolor = fz_stdconvcolor;
 	cs->toxyz = to;
 	cs->fromxyz = from;
 	cs->drop = drop;
+	cs->n = n;
 }
 
 static void mat3x3inv(float *dst, float *m)
@@ -80,7 +84,7 @@ static void xyztogray(fz_colorspace *fzcs, float *xyz, float *gray)
 
 static struct calgray kdevicegray =
 {
-	{ -1, "DeviceGray", 1, graytoxyz, xyztogray, nil },
+	{ -1, "DeviceGray", 1, fastpixmap, fz_stdconvcolor, graytoxyz, xyztogray, nil },
 	{ 1.0000, 1.0000, 1.0000 },
 	{ 0.0000, 0.0000, 0.0000 },
 	2.2000
@@ -189,7 +193,7 @@ static void xyztorgb(fz_colorspace *fzcs, float *xyz, float *rgb)
 
 static struct calrgb kdevicergb =
 {
-	{ -1, "DeviceRGB", 3, rgbtoxyz, xyztorgb, nil },
+	{ -1, "DeviceRGB", 3, fastpixmap, fz_stdconvcolor, rgbtoxyz, xyztorgb, nil },
 	{ 1.0000, 1.0000, 1.0000 },
 	{ 0.0000, 0.0000, 0.0000 },
 	{ 2.2000, 2.2000, 2.2000 },
@@ -322,7 +326,7 @@ static void xyztodevicecmyk(fz_colorspace *cs, float *xyz, float *cmyk)
 
 static fz_colorspace kdevicecmyk =
 {
-	-1, "DeviceCMYK", 4, devicecmyktoxyz, xyztodevicecmyk, nil
+	-1, "DeviceCMYK", 4, fastpixmap, fz_stdconvcolor, devicecmyktoxyz, xyztodevicecmyk, nil
 };
 
 fz_colorspace *pdf_devicecmyk = &kdevicecmyk;
@@ -781,5 +785,137 @@ printf("oopsie, got a pattern colorspace\n");
 	}
 
 	return fz_throw("syntaxerror: could not parse color space");
+}
+
+/*
+ * Optimized color conversions for device*
+ */
+
+static void fastgraytorgb(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		d[0] = s[0];
+		d[1] = s[1];
+		d[2] = s[1];
+		d[3] = s[1];
+		s += 2;
+		d += 4;
+	}
+}
+
+static void fastgraytocmyk(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		d[0] = s[0];
+		d[1] = 0;
+		d[2] = 0;
+		d[3] = 0;
+		d[3] = s[1];
+		s += 2;
+		d += 5;
+	}
+}
+
+static void fastrgbtogray(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		d[0] = s[0];
+		d[1] = ((s[1]+1) * 77 + (s[2]+1) * 150 + (s[3]+1) * 28) >> 8;
+		s += 4;
+		d += 2;
+	}
+}
+
+static void fastrgbtocmyk(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		unsigned char c = 255 - s[1];
+		unsigned char m = 255 - s[2];
+		unsigned char y = 255 - s[3];
+		unsigned char k = MIN(c, MIN(y, k));
+		d[0] = s[0];
+		d[1] = c - k;
+		d[2] = m - k;
+		d[3] = y - k;
+		d[4] = k;
+		s += 4;
+		d += 5;
+	}
+}
+
+static void fastcmyktogray(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		unsigned char c = fz_mul255(s[1], 66);
+		unsigned char m = fz_mul255(s[2], 150);
+		unsigned char y = fz_mul255(s[3], 28);
+		d[0] = s[0];
+		d[1] = 255 - MIN(c + m + y + s[4], 255);
+		s += 5;
+		d += 2;
+	}
+}
+
+static void fastcmyktorgb(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+	int n = src->w * src->h;
+	while (n--)
+	{
+		d[0] = s[0];
+		d[1] = 255 - MIN(s[1] + s[4], 255);
+		d[2] = 255 - MIN(s[2] + s[4], 255);
+		d[3] = 255 - MIN(s[3] + s[4], 255);
+		s += 5;
+		d += 4;
+	}
+}
+
+static void fastpixmap(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixmap *dp)
+{
+	if (ss == pdf_devicegray)
+	{
+		if (ds == pdf_devicergb) fastgraytorgb(sp, dp);
+		else if (ds == pdf_devicecmyk) fastgraytocmyk(sp, dp);
+		else fz_stdconvpixmap(ss, sp, ds, dp);
+	}
+
+	else if (ss == pdf_devicergb)
+	{
+		if (ds == pdf_devicegray) fastrgbtogray(sp, dp);
+		else if (ds == pdf_devicecmyk) fastrgbtocmyk(sp, dp);
+		else fz_stdconvpixmap(ss, sp, ds, dp);
+
+	}
+
+	else if (ss == pdf_devicecmyk)
+	{
+		if (ds == pdf_devicegray) fastcmyktogray(sp, dp);
+		else if (ds == pdf_devicergb) fastcmyktorgb(sp, dp);
+		else fz_stdconvpixmap(ss, sp, ds, dp);
+	}
+
+	else fz_stdconvpixmap(ss, sp, ds, dp);
 }
 

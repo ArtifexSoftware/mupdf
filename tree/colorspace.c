@@ -1,5 +1,17 @@
 #include <fitz.h>
 
+void
+fz_convertpixmap(fz_colorspace *srcs, fz_pixmap *src, fz_colorspace *dsts, fz_pixmap *dst)
+{
+	srcs->convpixmap(srcs, src, dsts, dst);
+}
+
+void
+fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv)
+{
+	srcs->convcolor(srcs, srcv, dsts, dstv);
+}
+
 fz_colorspace *
 fz_keepcolorspace(fz_colorspace *cs)
 {
@@ -21,7 +33,7 @@ fz_dropcolorspace(fz_colorspace *cs)
 }
 
 void
-fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv)
+fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv)
 {
 	float xyz[3];
 	int i;
@@ -40,6 +52,39 @@ fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *ds
 	{
 		for (i = 0; i < srcs->n; i++)
 			dstv[i] = srcv[i];
+	}
+}
+
+void
+fz_stdconvpixmap(fz_colorspace *srcs, fz_pixmap *src, fz_colorspace *dsts, fz_pixmap *dst)
+{
+	float srcv[32];
+	float dstv[32];
+	int y, x, k;
+
+	unsigned char *s = src->samples;
+	unsigned char *d = dst->samples;
+
+	assert(src->w == dst->w && src->h == dst->h);
+	assert(src->n == srcs->n + 1);
+	assert(dst->n == dsts->n + 1);
+
+	printf("convert pixmap from %s to %s\n", srcs->name, dsts->name);
+
+	for (y = 0; y < src->h; y++)
+	{
+		for (x = 0; x < src->w; x++)
+		{
+			*d++ = *s++;
+
+			for (k = 0; k < src->n - 1; k++)
+				srcv[k] = *s++ / 255.0;
+
+			fz_convertcolor(srcs, srcv, dsts, dstv);
+
+			for (k = 0; k < dst->n - 1; k++)
+				*d++ = dstv[k] * 255;
+		}
 	}
 }
 

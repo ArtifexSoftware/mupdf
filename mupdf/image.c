@@ -78,10 +78,10 @@ static void
 decodetile(fz_pixmap *pix, int bpc, int skip, float *decode)
 {
 	unsigned char table[32][256];
-	float twon = (1 << bpc) - 1;
+	float invtwon = 1.0 / ((1 << bpc) - 1);
 	int x, y, k, i;
 
-printf("  decode bpc=%d skip=%d n=%d twon=%g\n", bpc, skip, pix->n, twon);
+printf("  decode bpc=%d skip=%d n=%d invtwon=%g\n", bpc, skip, pix->n, invtwon);
 
 	for (k = skip; k < pix->n; k++)
 	{
@@ -93,12 +93,12 @@ printf("  decode bpc=%d skip=%d n=%d twon=%g\n", bpc, skip, pix->n, twon);
 	for (i = 0; i < (1 << bpc); i++)
 	{
 		if (skip)
-			table[0][i] = (i * 255) / twon;
+			table[0][i] = (i * 255) * invtwon;
 		for (k = skip; k < pix->n; k++)
 		{
 			float min = decode[(k - skip) * 2 + 0];
 			float max = decode[(k - skip) * 2 + 1];
-			float f = min + i * (max - min) / twon;
+			float f = min + i * (max - min) * invtwon;
 			table[k][i] = f * 255;
 		}
 	}

@@ -1,6 +1,8 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+#define GCMEM (4 * 1024)
+
 extern pdf_font *pdf_newfont(char *name);
 
 /* TODO: factor out loadencoding which is common with simple fonts */
@@ -67,7 +69,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	bbox.max.x = fz_ceil(bbox.max.x + 0.5);
 	bbox.max.y = fz_ceil(bbox.max.y + 0.5);
 
-	error = fz_newrenderer(&gc, nil);
+	error = fz_newrenderer(&gc, nil, GCMEM);
 	if (error)
 		return error;
 	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox);

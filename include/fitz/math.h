@@ -1,24 +1,18 @@
 /* multiply 8-bit fixpoint (0..1) so that 0*0==0 and 255*255==255 */
 static inline unsigned char fz_mul255(unsigned char a, unsigned char b)
 {
-	return ((a + 1) * b) >> 8;
+	return (a * ((unsigned int)b + 1)) >> 8;
 }
 
 /* floor / ceil towards/from +/- inf */
 static inline float fz_floor(float x)
 {
 	return floor(x);
-//	if (x > 0)
-//		return floor(x);
-//	return ceil(x);
 }
 
 static inline float fz_ceil(float x)
 {
 	return ceil(x);
-//	if (x > 0)
-//		return ceil(x);
-//	return floor(x);
 }
 
 /* divide and floor towards -inf */
