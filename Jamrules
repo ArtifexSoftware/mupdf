@@ -1,0 +1,100 @@
+# -------------------------------------------------------------------------
+#
+# Jamrules -- the build flags for Fitz and GhostPDF
+# This file is sourced by Jamfile when making
+# Put all configuration stuff here
+#
+
+FREETYPE ?= -Ih:/package/include ;
+
+# Optional modules:
+
+HAVE_JBIG2DEC = no ;
+HAVE_JASPER = no ;
+
+# Select one of these for the GhostPDF GUI application if you are on unix
+
+HAVE_X11 = no ;
+HAVE_GTK = no ;
+
+# -------------------------------------------------------------------------
+
+# Default optimize/profile/debug compiler/linker switches
+# Basic system should be mostly SUSv3 compliant
+# These are good for GCC
+
+FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPE) ;
+FLAG_CCDEBUG = -g ;
+FLAG_CCRELEASE = -O3 ;
+FLAG_CCPROFILE = -g -pg ;
+FLAG_LDPROFILE = -pg ;
+
+# Now it gets hairy...
+
+switch $(OS)
+{
+	case LINUX :
+		NEED_STRLCPY = yes ;
+		NEED_STRLCAT = yes ;
+		FLAG_LDALL += -L/usr/X11R6/lib ;
+
+		switch $(CC)-$(OSPLAT)
+		{
+		case icc-X86 :
+			FLAG_CCRELEASE = -DARCH_X86 -O3 -ip -tpp6 -xM ;
+			FLAG_CCPROFILE = -g -qp ;
+		case gcc-X86 :
+			# add -msse -msse2 when such functions exist...
+			FLAG_CCRELEASE = -DARCH_X86 -O3 -march=pentium -mmmx ;
+		}
+
+	case MACOSX :
+		FLAG_CCALL += -std=gnu99 -DHAVE_C99 ;
+		FLAG_CCRELEASE = -DARCH_PPC -faltivec -fast ;
+
+	case MINGW :
+		NEED_GETOPT = yes ;
+		NEED_STRSEP = yes ;
+		NEED_STRLCAT = yes ;
+		NEED_STRLCPY = yes ;
+		FLAG_CCALL += -std=gnu99 -DHAVE_C99 -DWIN32 ;
+		NOARSCAN = yes ;
+
+	case SOLARIS :
+		NEED_STRSEP = yes ;
+		FLAG_CCALL += -std=c89 ;
+		FLAG_CCRELEASE += -DARCH_SPARC ;
+
+	# Additional platforms go here
+
+	case * :
+		Echo "OS '$(OS)' not known by build system." ;
+		Echo "If you get errors, please edit Jamrules." ;
+		FLAG_CCALL += -std=c89 ;
+}
+
+# -------------------------------------------------------------------------
+#
+# Switch on BUILD type (profile, debug or release)
+#
+
+BUILD ?= debug ;
+
+switch $(BUILD)
+{
+	case debug :
+		Echo "Building DEBUG target" ;
+		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCDEBUG) ;
+		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDDEBUG) ;
+	case release :
+		Echo "Building RELEASE target" ;
+		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCRELEASE) ;
+		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDRELEASE) ;
+	case profile :
+		Echo "Building PROFILE target" ;
+		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCPROFILE) ;
+		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDPROFILE) ;
+	case * :
+		Exit "Unknown BUILD target:" $(BUILD) ;
+}
+

@@ -1,7 +1,7 @@
 #include <fitz.h>
 
-#include "faxe.h"
-#include "faxc.h"
+#include "filt_faxe.h"
+#include "filt_faxc.h"
 
 /* TODO: honor Rows param */
 

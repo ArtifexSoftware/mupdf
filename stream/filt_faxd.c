@@ -1,7 +1,7 @@
 #include <fitz.h>
 
-#include "faxd.h"
-#include "faxc.h"
+#include "filt_faxd.h"
+#include "filt_faxc.h"
 
 enum
 {

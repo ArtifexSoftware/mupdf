@@ -5,17 +5,10 @@
 
 #include "fitz/sysdep.h"
 #include "fitz/cpudep.h"
-
 #include "fitz/base.h"
 #include "fitz/math.h"
 #include "fitz/geometry.h"
 #include "fitz/hash.h"
-#include "fitz/crypt.h"
-
-#include "fitz/object.h"
-
-#include "fitz/filter.h"
-#include "fitz/file.h"
 
 #include "fitz/cmap.h"
 #include "fitz/font.h"
@@ -31,4 +24,9 @@
 
 #include "fitz/pathscan.h"
 #include "fitz/render.h"
+
+#include "stream/crypt.h"
+#include "stream/object.h"
+#include "stream/filter.h"
+#include "stream/file.h"
 

@@ -1,6 +1,6 @@
 /* Tables for CCITTFaxEncode filter */
 
-#include "faxe.h"
+#include "filt_faxe.h"
 
 /* Define the end-of-line code. */
 const cfe_code cf_run_eol = {1, 12};

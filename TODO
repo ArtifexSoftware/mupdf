@@ -57,12 +57,16 @@ fz_optimizetree()
 	- concatenate chained transforms
 	- remove identity transforms
 
-validate ahxd pushback
-go through eof responsibility
-be more defensive of api user errors
-flate needin/needout
+---
 
-jbig2 rewrite
-dctencode params
-dctdecode app marker
+for filters:
+
+	validate ahxd pushback
+	go through eof responsibility
+	be more defensive of api user errors
+	flate needin/needout
+
+	jbig2 rewrite
+	dctencode params
+	dctdecode app marker
 

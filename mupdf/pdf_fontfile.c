@@ -44,21 +44,21 @@ static void loadfontdata(int i, unsigned char **d, unsigned int *l)
 {
 	switch (i)
 	{
-	case  0: *d=NimbusMonL_Regu_cff;*l=NimbusMonL_Regu_cff_len;break;
-	case  1: *d=NimbusMonL_Bold_cff;*l=NimbusMonL_Bold_cff_len;break;
-	case  2: *d=NimbusMonL_ReguObli_cff;*l=NimbusMonL_ReguObli_cff_len;break;
-	case  3: *d=NimbusMonL_BoldObli_cff;*l=NimbusMonL_BoldObli_cff_len;break;
-	case  4: *d=NimbusSanL_Regu_cff;*l=NimbusSanL_Regu_cff_len;break;
-	case  5: *d=NimbusSanL_Bold_cff;*l=NimbusSanL_Bold_cff_len;break;
-	case  6: *d=NimbusSanL_ReguItal_cff;*l=NimbusSanL_ReguItal_cff_len;break;
-	case  7: *d=NimbusSanL_BoldItal_cff;*l=NimbusSanL_BoldItal_cff_len;break;
-	case  8: *d=NimbusRomNo9L_Regu_cff;*l=NimbusRomNo9L_Regu_cff_len;break;
-	case  9: *d=NimbusRomNo9L_Medi_cff;*l=NimbusRomNo9L_Medi_cff_len;break;
-	case 10: *d=NimbusRomNo9L_ReguItal_cff;*l=NimbusRomNo9L_ReguItal_cff_len;break;
-	case 11: *d=NimbusRomNo9L_MediItal_cff;*l=NimbusRomNo9L_MediItal_cff_len;break;
-	case 12: *d=StandardSymL_cff;*l=StandardSymL_cff_len;break;
-	case 13: *d=Dingbats_cff;*l=Dingbats_cff_len;break;
-	default: *d=URWChanceryL_MediItal_cff;*l=URWChanceryL_MediItal_cff_len;break;
+	case  0: *d=fonts_NimbusMonL_Regu_cff;*l=fonts_NimbusMonL_Regu_cff_len;break;
+	case  1: *d=fonts_NimbusMonL_Bold_cff;*l=fonts_NimbusMonL_Bold_cff_len;break;
+	case  2: *d=fonts_NimbusMonL_ReguObli_cff;*l=fonts_NimbusMonL_ReguObli_cff_len;break;
+	case  3: *d=fonts_NimbusMonL_BoldObli_cff;*l=fonts_NimbusMonL_BoldObli_cff_len;break;
+	case  4: *d=fonts_NimbusSanL_Regu_cff;*l=fonts_NimbusSanL_Regu_cff_len;break;
+	case  5: *d=fonts_NimbusSanL_Bold_cff;*l=fonts_NimbusSanL_Bold_cff_len;break;
+	case  6: *d=fonts_NimbusSanL_ReguItal_cff;*l=fonts_NimbusSanL_ReguItal_cff_len;break;
+	case  7: *d=fonts_NimbusSanL_BoldItal_cff;*l=fonts_NimbusSanL_BoldItal_cff_len;break;
+	case  8: *d=fonts_NimbusRomNo9L_Regu_cff;*l=fonts_NimbusRomNo9L_Regu_cff_len;break;
+	case  9: *d=fonts_NimbusRomNo9L_Medi_cff;*l=fonts_NimbusRomNo9L_Medi_cff_len;break;
+	case 10: *d=fonts_NimbusRomNo9L_ReguItal_cff;*l=fonts_NimbusRomNo9L_ReguItal_cff_len;break;
+	case 11: *d=fonts_NimbusRomNo9L_MediItal_cff;*l=fonts_NimbusRomNo9L_MediItal_cff_len;break;
+	case 12: *d=fonts_StandardSymL_cff;*l=fonts_StandardSymL_cff_len;break;
+	case 13: *d=fonts_Dingbats_cff;*l=fonts_Dingbats_cff_len;break;
+	default: *d=fonts_URWChanceryL_MediItal_cff;*l=fonts_URWChanceryL_MediItal_cff_len;break;
 	}
 }
 

@@ -1,265 +1,323 @@
+# --------------------------------------------------------------------------
 #
-# Build flags
+# This is the Jamfile used for building Fitz and MuPDF.
+# Put compiler options and other tweaks in Jamrules, not here.
+#
+#   http://public.perforce.com/public/jam/src/Jam.html
+#
+# Set environment variable BUILD to one of: debug release profile
+#
+#   jam -sBUILD=release
 #
 
-include Jamconfig ;
-include $(HOME)/.jamconfig ;
+SubDir TOP ;
 
-HDRS = include filter ;
+ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 
-#
-# Libraries
-#
+BINDIR = [ FDirName $(TOP) dist ] ;
 
-if -DNEED_GETOPT  in $(CCFLAGS) { Library libfitz : util/getopt.c ; }
-if -DNEED_STRSEP  in $(CCFLAGS) { Library libfitz : util/strsep.c ; }
-if -DNEED_STRLCPY in $(CCFLAGS) { Library libfitz : util/strlcpy.c ; }
-if -DNEED_STRLCAT in $(CCFLAGS) { Library libfitz : util/strlcat.c ; }
+LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+FITZLIBS = libmupdf libstream libfitz librender libfonts ;
 
-if $(HAVE_JASPER)
+if $(HAVE_JASPER) = yes
 {
 	CCFLAGS += -DHAVE_JASPER ;
 	LINKLIBS += -ljasper ;
-	Library libfitz : filter/jpxd.c ;
 }
 
-if $(HAVE_JBIG2DEC)
+if $(HAVE_JBIG2DEC) = yes
 {
 	CCFLAGS += -DHAVE_JBIG2DEC ;
 	LINKLIBS += -ljbig2dec ;
-	Library libfitz : filter/jbig2d.c ;
 }
 
-Library libfitz :
-	base/cpudep.c
-	base/error.c
-	base/memory.c
-	base/md5.c
-	base/arc4.c
-	base/rect.c
-	base/matrix.c
-	base/hash.c
-	base/rune.c
+if $(NEED_GETOPT)  = yes { CCFLAGS += -DNEED_GETOPT ; }
+if $(NEED_STRLCAT) = yes { CCFLAGS += -DNEED_STRLCAT ; }
+if $(NEED_STRLCPY) = yes { CCFLAGS += -DNEED_STRLCPY ; }
+if $(NEED_STRSEP)  = yes { CCFLAGS += -DNEED_STRSEP ; }
+
+HDRS =
+	[ FDirName $(TOP) include ]
+	[ FDirName $(TOP) stream ]
 	;
 
-Library libfitz :
-	object/simple.c
-	object/array.c
-	object/dict.c
-	object/print.c
-	object/parse.c
-	;
+# --------------------------------------------------------------------------
 
-Library libfitz :
-	filter/buffer.c
-	filter/filter.c
-	filter/filec.c		# unistd.h
-	filter/filer.c		# unistd.h
-	filter/filew.c		# unistd.h
-	filter/null.c
-	filter/arc4filter.c
-	filter/pipeline.c
-	filter/ahxd.c
-	filter/ahxe.c
-	filter/a85d.c
-	filter/a85e.c
-	filter/rld.c
-	filter/rle.c
-	filter/predict.c
-	filter/lzwd.c
-	filter/lzwe.c
-	filter/faxd.c
-	filter/faxdtab.c
-	filter/faxe.c
-	filter/faxetab.c
-	filter/flate.c		# libz
-	filter/dctd.c		# libjpeg
-	filter/dcte.c		# libjpeg
-	;
+rule UserObject
+{
+	switch $(>)
+	{
+	case *.rc :
+		WindRes $(<) : $(>) ;
 
-Library libfitz :
-	tree/cmap.c
-	tree/font.c
-	tree/colorspace.c
-	tree/image.c
-	tree/shade.c
-	tree/tree.c
-	tree/node1.c
-	tree/node2.c
-	tree/text.c
-	tree/path.c
-	tree/debug.c
-	tree/optimize.c
-	;
+	case *.cff :
+		Cc $(<) : $(<:S=.c) ;
+		HexDump $(<:S=.c) : $(>) ;
 
-Library libfitz :
-	render/glyphcache.c
-	render/pixmap.c
-	render/porterduff.c
-	render/meshdraw.c
-	render/imagedraw.c
-	render/imageunpack.c
-	render/imagescale.c
-	render/pathscan.c
-	render/pathfill.c
-	render/pathstroke.c
-	render/render.c
-	;
-
-if $(OSPLAT) = PPC     { Library libfitz : render/archppc.c ; }
-if $(OSPLAT) = SPARC   { Library libfitz : render/archsparc.c ; }
-if $(OSPLAT) = X86     { Library libfitz : render/archx86.c ; }
-
-Library libmupdf :
-	mupdf/debug.c
-	mupdf/lex.c
-	mupdf/parse.c
-	mupdf/crypt.c
-
-	mupdf/open.c
-	mupdf/repair.c
-	mupdf/save.c
-	mupdf/xref.c
-	mupdf/stream.c
-	mupdf/doctor.c
-
-	mupdf/nametree.c
-	mupdf/outline.c
-	mupdf/annot.c
-	mupdf/pagetree.c
-
-	mupdf/store.c
-	mupdf/resources.c
-	mupdf/function.c
-	mupdf/colorspace1.c
-	mupdf/colorspace2.c
-	mupdf/xobject.c
-	mupdf/image.c
-	mupdf/pattern.c
-	mupdf/cmap.c
-	mupdf/unicode.c
-	mupdf/fontagl.c
-	mupdf/fontenc.c
-	mupdf/fontfile.c
-	mupdf/font.c
-	mupdf/type3.c
-
-	mupdf/page.c
-	mupdf/build.c
-	mupdf/interpret.c
-
-	mupdf/shade.c
-	mupdf/shade1.c
-	mupdf/shade2.c
-	mupdf/shade3.c
-	mupdf/shade4.c
-	;
-
-# Library libmupdf : mupdf/fontfilefc.c ;
-# Library libmupdf : mupdf/fontfilems.c ;
+	case * :
+		Echo "unknown suffix on" $(>) ;
+	}
+}
 
 rule HexDump
 {
-	DEPENDS $(<) : $(>) ;
+	Depends $(<) : $(>) ;
+	MakeLocate $(<) : $(LOCATE_SOURCE) ;
 	Clean clean : $(<) ;
 }
 
-actions HexDump
+rule WindRes
 {
-	xxd -i $(>) | sed -e 's/data_//g;s/, /,/g' > $(<)
+	Depends $(<) : $(>) ;
+	Clean clean : $(<) ;
 }
 
-HexDump data/Dingbats.c : data/Dingbats.cff ;
-HexDump data/NimbusMonL-Bold.c : data/NimbusMonL-Bold.cff ;
-HexDump data/NimbusMonL-BoldObli.c : data/NimbusMonL-BoldObli.cff ;
-HexDump data/NimbusMonL-Regu.c : data/NimbusMonL-Regu.cff ;
-HexDump data/NimbusMonL-ReguObli.c : data/NimbusMonL-ReguObli.cff ;
-HexDump data/NimbusRomNo9L-Medi.c : data/NimbusRomNo9L-Medi.cff ;
-HexDump data/NimbusRomNo9L-MediItal.c : data/NimbusRomNo9L-MediItal.cff ;
-HexDump data/NimbusRomNo9L-Regu.c : data/NimbusRomNo9L-Regu.cff ;
-HexDump data/NimbusRomNo9L-ReguItal.c : data/NimbusRomNo9L-ReguItal.cff ;
-HexDump data/NimbusSanL-Bold.c : data/NimbusSanL-Bold.cff ;
-HexDump data/NimbusSanL-BoldItal.c : data/NimbusSanL-BoldItal.cff ;
-HexDump data/NimbusSanL-Regu.c : data/NimbusSanL-Regu.cff ;
-HexDump data/NimbusSanL-ReguItal.c : data/NimbusSanL-ReguItal.cff ;
-HexDump data/StandardSymL.c : data/StandardSymL.cff ;
-HexDump data/URWChanceryL-MediItal.c : data/URWChanceryL-MediItal.cff ;
+actions HexDump { xxd -i $(>) > $(<) }
+actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
 
-Library libmupdf :
-	data/Dingbats.c
-	data/NimbusMonL-Bold.c
-	data/NimbusMonL-BoldObli.c
-	data/NimbusMonL-Regu.c
-	data/NimbusMonL-ReguObli.c
-	data/NimbusRomNo9L-Medi.c
-	data/NimbusRomNo9L-MediItal.c
-	data/NimbusRomNo9L-Regu.c
-	data/NimbusRomNo9L-ReguItal.c
-	data/NimbusSanL-Bold.c
-	data/NimbusSanL-BoldItal.c
-	data/NimbusSanL-Regu.c
-	data/NimbusSanL-ReguItal.c
-	data/StandardSymL.c
-	data/URWChanceryL-MediItal.c
+
+# --------------------------------------------------------------------------
+
+SubDir TOP fitz ;
+
+Library libfitz :
+
+	base_cpudep.c
+	base_error.c
+	base_hash.c
+	base_matrix.c
+	base_memory.c
+	base_rect.c
+	base_rune.c
+
+	node_debug.c
+	node_misc1.c
+	node_misc2.c
+	node_optimize.c
+	node_path.c
+	node_text.c
+	node_tree.c
+
+	res_cmap.c
+	res_colorspace.c
+	res_font.c
+	res_image.c
+	res_shade.c
+
 	;
 
+if $(NEED_GETOPT)  = yes { Library libfitz : util_getopt.c ; }
+if $(NEED_STRLCAT) = yes { Library libfitz : util_strlcat.c ; }
+if $(NEED_STRLCPY) = yes { Library libfitz : util_strlcpy.c ; }
+if $(NEED_STRSEP)  = yes { Library libfitz : util_strsep.c ; }
+
+# --------------------------------------------------------------------------
+
+SubDir TOP stream ;
+
+Library libstream :
+
+	crypt_arc4.c
+	crypt_md5.c
+
+	obj_array.c
+	obj_dict.c
+	obj_parse.c
+	obj_print.c
+	obj_simple.c
+
+	filt_a85d.c
+	filt_a85e.c
+	filt_ahxd.c
+	filt_ahxe.c
+	filt_arc4.c
+	filt_buffer.c
+	filt_dctd.c
+	filt_dcte.c
+	filt_faxd.c
+	filt_faxdtab.c
+	filt_faxe.c
+	filt_faxetab.c
+	filt_filec.c
+	filt_filer.c
+	filt_filew.c
+	filt_flate.c
+	filt_lzwd.c
+	filt_lzwe.c
+	filt_null.c
+	filt_pipeline.c
+	filt_predict.c
+	filt_process.c
+	filt_rld.c
+	filt_rle.c
+
+	;
+
+if $(HAVE_JASPER)   = yes { Library libstream : filt_jpxd.c ; }
+if $(HAVE_JBIG2DEC) = yes { Library libstream : filt_jbig2d.c ; }
+
+# --------------------------------------------------------------------------
+
+SubDir TOP render ;
+
+Library librender :
+	glyphcache.c
+	pixmap.c
+	porterduff.c
+	meshdraw.c
+	imagedraw.c
+	imageunpack.c
+	imagescale.c
+	pathscan.c
+	pathfill.c
+	pathstroke.c
+	render.c
+	;
+
+if $(OSPLAT) = PPC     { Library librender : archppc.c ; }
+if $(OSPLAT) = SPARC   { Library librender : archsparc.c ; }
+if $(OSPLAT) = X86     { Library librender : archx86.c ; }
+
+# --------------------------------------------------------------------------
+
+SubDir TOP fonts ;
+
+Library libfonts :
+	Dingbats.cff
+	StandardSymL.cff
+	URWChanceryL-MediItal.cff
+	NimbusMonL-Bold.cff
+	NimbusMonL-BoldObli.cff
+	NimbusMonL-Regu.cff
+	NimbusMonL-ReguObli.cff
+	NimbusRomNo9L-Medi.cff
+	NimbusRomNo9L-MediItal.cff
+	NimbusRomNo9L-Regu.cff
+	NimbusRomNo9L-ReguItal.cff
+	NimbusSanL-Bold.cff
+	NimbusSanL-BoldItal.cff
+	NimbusSanL-Regu.cff
+	NimbusSanL-ReguItal.cff
+	;
+
+# --------------------------------------------------------------------------
+
+SubDir TOP mupdf ;
+
+Library libmupdf :
+	pdf_annot.c
+	pdf_build.c
+	pdf_cmap.c
+	pdf_colorspace1.c
+	pdf_colorspace2.c
+	pdf_crypt.c
+	pdf_debug.c
+	pdf_doctor.c
+	pdf_font.c
+	pdf_fontagl.c
+	pdf_fontenc.c
+	pdf_fontfile.c		# use builtin fonts
+	# pdf_fontfilefc.c	# use fontconfig
+	# pdf_fontfilems.c	# scan $WINDIR/Fonts
+	pdf_function.c
+	pdf_image.c
+	pdf_interpret.c
+	pdf_lex.c
+	pdf_nametree.c
+	pdf_open.c
+	pdf_outline.c
+	pdf_page.c
+	pdf_pagetree.c
+	pdf_parse.c
+	pdf_pattern.c
+	pdf_repair.c
+	pdf_resources.c
+	pdf_save.c
+	pdf_shade.c
+	pdf_shade1.c
+	pdf_shade2.c
+	pdf_shade3.c
+	pdf_shade4.c
+	pdf_store.c
+	pdf_stream.c
+	pdf_type3.c
+	pdf_unicode.c
+	pdf_xobject.c
+	pdf_xref.c
+	;
+
+
+# --------------------------------------------------------------------------
 #
-# Applications
+# Build simple portable apps
 #
 
-LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+SubDir TOP apps ;
+
+APPLIST =
+	pdfrip
+	pdfclean
+	pdfdebug
+	pdfmerge
+	pdfselect
+	;
+
+for APP in $(APPLIST)
+{
+	Main $(APP) : $(APP).c ;
+	LinkLibraries $(APP) : $(FITZLIBS) ;
+	InstallBin $(BINDIR) : $(APP)$(SUFEXE) ;
+}
+
+# --------------------------------------------------------------------------
+#
+# Build non-portable GUI frontend apps
+#
 
 if $(OS) = MINGW
 {
-	rule UserObject
-	{
-		Res $(<) : $(>) ;
-	}
+	SubDir TOP apps windows ;
 
-	rule Res
-	{
-		Depends $(<) : $(>) ;
-	}
+	Main ghostpdf :
+		win_main.c
+		win_res.rc
+	;
 
-	actions Res
-	{
-		windres -i $(>) -o $(<)
-	}
+	LinkLibraries ghostpdf : $(FITZLIBS) ;
 
-	Main w32pdf : apps/w32pdf.c apps/w32res.rc ;
-	LinkLibraries w32pdf : libmupdf libfitz ;
-	LINKLIBS on w32pdf$(SUFEXE) = $(LINKLIBS) -lgdi32 -lcomdlg32 -mwindows ;
+	LINKLIBS on ghostpdf$(SUFEXE) =
+		$(LINKLIBS)
+		-lgdi32 -lcomdlg32 -mwindows
+		;
+
+	InstallBin $(BINDIR) : ghostpdf$(SUFEXE) ;
 }
 
-if $(OS) = MACOSX
+if $(HAVE_X11) = yes
 {
-	MACPDF = apps/macpdf.app/Contents/MacOS/macpdf ;
-	Main $(MACPDF) : apps/macpdf.c ;
-	LinkLibraries $(MACPDF) : libmupdf libfitz ;
-	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
+	SubDir TOP apps unix ;
+	Main ghostpdf : x11pdf.c ximage.c ;
+	LinkLibraries ghostpdf : $(FITZLIBS) ;
+	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
-if $(HAVE_X11)
-{
-	Main x11pdf : apps/x11pdf.c apps/ximage.c ;
-	LinkLibraries x11pdf : libmupdf libfitz ;
-	LINKLIBS on x11pdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
-}
-
-if $(HAVE_GTK)
-{
-	Main gtkpdf : apps/gtkpdf.c ;
-	CCFLAGS on apps/gtkpdf$(SUFOBJ) =
-		$(CCFLAGS) `pkg-config --cflags gtk+ gthread` ;
-	LinkLibraries gtkpdf : libmupdf libfitz ;
-	LINKLIBS on gtkpdf$(SUFEXE) =
-		$(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
-}
-
-Main pdfclean : apps/pdfclean.c ;
-Main pdfdebug : apps/pdfdebug.c ;
-Main pdfrip : apps/pdfrip.c ;
-Main pdfmerge : apps/pdfmerge.c ;
-Main pdfselect : apps/pdfselect.c ;
-LinkLibraries pdfclean pdfdebug pdfrip pdfmerge pdfselect : libmupdf libfitz ;
+# if $(OS) = MACOSX
+# {
+# 	SubDir TOP apps macosx ;
+# 	MACPDF = macpdf.app/Contents/MacOS/macpdf ;
+# 	Main $(MACPDF) : apps/macpdf.c ;
+# 	LinkLibraries $(MACPDF) : libmupdf libfitz ;
+# 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
+# }
+#
+# if $(HAVE_GTK) = yes
+# {
+#	SubDir TOP apps gnome ;
+#	Main gtkpdf : apps/gtkpdf.c ;
+#	CCFLAGS on apps/gtkpdf$(SUFOBJ) =
+#		$(CCFLAGS) `pkg-config --cflags gtk+ gthread` ;
+#	LinkLibraries gtkpdf : libmupdf libfitz ;
+#	LINKLIBS on gtkpdf$(SUFEXE) =
+#		$(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
+# }
 

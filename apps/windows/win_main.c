@@ -49,7 +49,7 @@ int getfilename(char *buf, int len)
     ofn.lpstrFile = buf;
     ofn.nMaxFile = len;
     ofn.lpstrInitialDir = NULL;
-    ofn.lpstrTitle = "MuPDF: Open PDF file";
+    ofn.lpstrTitle = "GhostPDF: Open PDF file";
 	ofn.lpstrFilter = "PDF Files (*.pdf)\0*.pdf\0All Files\0*\0\0";
     ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
     return GetOpenFileName(&ofn);
@@ -104,8 +104,8 @@ char *getpassword(void)
 void help()
 {
 	char *msg = \
-		"w32pdf [-b] [-pzr page/zoom/rotate] [-u password] file.pdf\n\n"
-		"key commands:\n"
+		"ghostpdf [-b] [-pzr page/zoom/rotate] [-u password] file.pdf\n\n"
+		/*"key commands:\n" */
 		"    h\tdisplay this help\n"
 		"    <\trotate left\n"
 		"    >\trotate right\n"
@@ -119,9 +119,9 @@ void help()
 		"    m\tmark page for pop-back\n"
 		"    t\tpop back to last mark\n"
 		"    123g\tgo to page 123\n"
-		"\nMuPDF is Copyright (C) 2005 artofcode\n"
+		"\nGhostPDF is Copyright (C) 2005 artofcode LLC\n"
 		;
-	MessageBoxA(hwnd, msg, "MuPDF: Usage", MB_ICONINFORMATION);
+	MessageBoxA(hwnd, msg, "GhostPDF: Usage", MB_ICONINFORMATION);
 }
 
 void usage()
@@ -137,7 +137,7 @@ void winwarn(const char *fmt, ...)
 	va_start(ap, fmt);
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
-	MessageBoxA(hwnd, buf, "MuPDF: Warning", MB_ICONWARNING);
+	MessageBoxA(hwnd, buf, "GhostPDF: Warning", MB_ICONWARNING);
 }
 
 void winerror(const char *fmt, ...)
@@ -147,7 +147,7 @@ void winerror(const char *fmt, ...)
 	va_start(ap, fmt);
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
-	MessageBoxA(hwnd, buf, "MuPDF: Error", MB_ICONERROR);
+	MessageBoxA(hwnd, buf, "GhostPDF: Error", MB_ICONERROR);
 	exit(1);
 }
 
@@ -207,7 +207,7 @@ void winopen()
 
 	hdc = NULL;
 
-	SetWindowTextA(hwnd, "MuPDF");
+	SetWindowTextA(hwnd, "GhostPDF");
 
 	SetCursor(arrowcurs);
 }

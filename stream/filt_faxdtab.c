@@ -4,7 +4,7 @@
 /* as the files scfetab.c and scfdgen.c from which it was derived. */
 /* Consult those files for the licensing terms and conditions. */
 
-#include "faxd.h"
+#include "filt_faxd.h"
 
 /* White decoding table. */
 const cfd_node cf_white_decode[] = {

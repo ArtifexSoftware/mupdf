@@ -1,6 +1,6 @@
 #include <fitz.h>
 
-#include "dctc.h"
+#include "filt_dctc.h"
 
 typedef struct fz_dctd_s fz_dctd;
 

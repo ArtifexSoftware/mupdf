@@ -161,7 +161,7 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newmetanode(fz_node **nodep, fz_obj *name, fz_obj *dict)
+fz_newmetanode(fz_node **nodep, void *name, void *dict)
 {
 	fz_metanode *node;
 
