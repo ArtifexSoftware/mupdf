@@ -39,7 +39,6 @@ fz_setfontwmode(fz_font *font, int wmode)
 void
 fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
 {
-printf("  bbox [%d %d %d %d]\n", xmin, ymin, xmax, ymax);
     font->bbox.min.x = xmin;
     font->bbox.min.y = ymin;
     font->bbox.max.x = xmax;

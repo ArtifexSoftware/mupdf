@@ -123,6 +123,11 @@ struct pdf_font_s
 	int ncidtogid;
 	unsigned short *cidtogid;
 
+	/* ToUnicode */
+	fz_cmap *tounicode;
+	int ncidtoucs;
+	unsigned short *cidtoucs;
+
 	/* Freetype */
 	int substitute;
 	void *ftface;

@@ -161,7 +161,6 @@ Library libfonts :
 	;
 
 LINKLIBS =
-	-lfontconfig
 	-lfreetype
 	-ljbig2dec
 	-ljasper

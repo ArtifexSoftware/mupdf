@@ -170,6 +170,8 @@ fz_toint(fz_obj *obj)
 {
 	if (fz_isint(obj))
 		return obj->u.i;
+	if (fz_isreal(obj))
+		return obj->u.f;
 	return 0;
 }
 

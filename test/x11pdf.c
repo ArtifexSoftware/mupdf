@@ -222,6 +222,10 @@ static void handlekey(int c)
 
     switch (c)
     {
+	case '8':
+		fz_debugglyphcache(rast->cache);
+		break;
+
     case 'b':
 		pageno--;
 		if (pageno < 1)

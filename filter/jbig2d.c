@@ -72,6 +72,7 @@ fz_processjbig2d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_jbig2d *d = (fz_jbig2d*)filter;
 	int len;
+	int i;
 
 	while (1)
 	{
@@ -90,7 +91,11 @@ fz_processjbig2d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 			len = out->ep - out->wp;
 			if (d->idx + len > d->page->height * d->page->stride)
 				len = d->page->height * d->page->stride - d->idx;
-			memcpy(out->wp, d->page->data + d->idx, len);
+
+			// memcpy(out->wp, d->page->data + d->idx, len);
+			for (i = 0; i < len; i++)
+				out->wp[i] = ~ d->page->data[d->idx + i];
+
 			out->wp += len;
 			d->idx += len;
 

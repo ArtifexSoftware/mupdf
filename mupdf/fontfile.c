@@ -138,6 +138,9 @@ printf("  load system cid font '%s'\n", filename);
 	strlcat(path, filename, sizeof path);
 	strlcat(path, ".cid.cff", sizeof path);
 
+	if (access(path, R_OK))
+		return fz_throw("ioerror: could not access file '%s'", path);
+
 	e = FT_New_Face(ftlib, path, 0, (FT_Face*)&font->ftface);
 	if (e)
 		return fz_throw("freetype: could not load font: 0x%x", e);

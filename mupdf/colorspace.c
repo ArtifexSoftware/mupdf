@@ -734,10 +734,18 @@ printf("\n");
 		if (fz_isname(name))
 		{
 			if (!strcmp(fz_toname(name), "CalGray"))
+			{
+				*csp = pdf_devicegray;
+				return nil;
 				return loadcalgray(csp, xref, fz_arrayget(obj, 1));
+			}
 
 			if (!strcmp(fz_toname(name), "CalRGB"))
+			{
+				*csp = pdf_devicergb;
+				return nil;
 				return loadcalrgb(csp, xref, fz_arrayget(obj, 1));
+			}
 
 			if (!strcmp(fz_toname(name), "CalCMYK"))
 			{

@@ -38,7 +38,7 @@ static void loadtile1a(pdf_image *src, fz_pixmap *dst, int n)
 		unsigned char *d = dst->samples + y * dst->w * dst->n;
 		for (x = dst->x; x < dst->x + dst->w; x++)
 		{
-			d[x * (n+1) + 0] = 255;
+			d[x * (n+1) + 0] = 1;
 			for (k = 0; k < n; k++)
 				d[x * (n+1) + k + 1] = getbit(s, x * n + k);
 		}

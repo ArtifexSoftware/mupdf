@@ -21,8 +21,6 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 		return fz_outofmem;
 	}
 
-	memset(pix->samples, 0, pix->w * pix->h * pix->n * sizeof(fz_sample));
-
 	return nil;
 }
 
@@ -192,6 +190,20 @@ fz_debugpixmap(fz_pixmap *pix)
 				// putc(((b * a) / 255) + (255 - a), ppm);
 			}
 		fclose(ppm);
+		fclose(pgm);
+	}
+
+	else if (pix->n == 2)
+	{
+		int x, y;
+		FILE *pgm = fopen("out.pgm", "w");
+		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
+
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				putc(pix->samples[y * pix->w * 2 + x * 2 + 1], pgm);
+			}
 		fclose(pgm);
 	}
 

@@ -26,7 +26,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
 	gc->tmp = nil;
 	gc->acc = nil;
 
-	error = fz_newglyphcache(&gc->cache, 1024, 65536);
+	error = fz_newglyphcache(&gc->cache, 4096, 256 * 1024);
 	if (error)
 		goto cleanup;
 

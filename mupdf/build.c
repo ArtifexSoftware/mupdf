@@ -525,8 +525,12 @@ pdf_flushtext(pdf_csi *csi)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
 
-if (gstate->render != 0)
-fz_warn("unimplemented text render mode: %d", gstate->render);
+	/* invisible */
+	if (gstate->render == 3)
+		return nil;
+
+	else if (gstate->render != 0)
+		fz_warn("unimplemented text render mode: %d", gstate->render);
 
 	if (csi->text)
 	{
@@ -545,7 +549,7 @@ showglyph(pdf_csi *csi, int cid)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_font *font = gstate->font;
 	fz_error *error;
-	fz_matrix tsm, trm, tm;
+	fz_matrix tsm, trm;
 	float w0, w1, tx, ty;
 	fz_hmtx h;
 	fz_vmtx v;
@@ -557,8 +561,6 @@ showglyph(pdf_csi *csi, int cid)
 	tsm.e = 0;
 	tsm.f = gstate->rise;
 
-	tm = csi->tm;
-
 	if (font->super.wmode == 1)
 	{
 		v = fz_getvmtx((fz_font*)font, cid);
@@ -566,7 +568,7 @@ showglyph(pdf_csi *csi, int cid)
 		tsm.f -= v.y * gstate->size / 1000.0;
 	}
 
-	trm = fz_concat(tsm, tm);
+	trm = fz_concat(tsm, csi->tm);
 
 	/* flush buffered text if face or matrix has changed */
 	if (!csi->text ||
