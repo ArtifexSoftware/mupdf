@@ -65,44 +65,19 @@ evenodd(fz_ael *ael, short *list, int xofs, int hs)
 	}
 }
 
-/* XXX */
-
-unsigned char pixmap[1000 * 1000];
-
+/*
 void
-fz_emitdeltas(short *list, int y, int x, int n)
-{
-	short a = 0;
-	short d = 0;
-	while (n--) {
-		d = *list++;
-		a += d;
-		pixmap[y * 1000 + x] = 0xff - a;
-		x ++;
-	}
-}
-
-void
-savestuff(void)
-{
-	FILE *f = fopen("out.pgm", "w");
-	fprintf(f, "P5\n1000 1000\n255\n");
-	fwrite(pixmap, 1, 1000 * 1000, f);
-	fclose(f);
-}
-
-/* XXX */
-
-void
-fz_emitdeltas0(short *list, int y, int xofs, int n)
+fz_emitdeltas(short *list, int y, int xofs, int n)
 {
 	int d = 0;
 	while (n--)
 		d += *list++;
 }
+*/
 
 fz_error *
-fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill)
+fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
+	void (*blitfunc)(int,int,int,short*,void*), void *blitdata)
 {
 	fz_error *error;
 	short *deltas;
@@ -121,11 +96,6 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill)
 	if (gel->len == 0)
 		return nil;
 
-memset(pixmap, 0xff, sizeof pixmap);
-
-printf("bbox [%d %d %d %d] samp %d/%d edges %d\n",
-	xmin, ymin, xmax, ymax, hs, vs, gel->len);
-
 	deltas = fz_malloc(sizeof(short) * (xmax - xmin));
 	if (!deltas)
 		return fz_outofmem;
@@ -140,7 +110,7 @@ printf("bbox [%d %d %d %d] samp %d/%d edges %d\n",
 	{
 		yc = fz_idiv(y, vs);
 		if (yc != yd) {
-			fz_emitdeltas(deltas, yd, xmin, xmax - xmin);
+			blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
 			memset(deltas, 0, sizeof(short) * (xmax - xmin));
 		}
 		yd = yc;
@@ -150,9 +120,6 @@ printf("bbox [%d %d %d %d] samp %d/%d edges %d\n",
 			fz_free(deltas);
 			return error;
 		}
-
-// { int i; for (i = 0; i < ael->len; i++)
-// pixmap[yd * 1000 + (ael->edges[i]->x / hs)] = 0; }
 
 		if (eofill)
 			evenodd(ael, deltas, xofs, hs);
@@ -167,9 +134,7 @@ printf("bbox [%d %d %d %d] samp %d/%d edges %d\n",
 			y = gel->edges[e].y;
 	}
 
-	fz_emitdeltas(deltas, yd, xmin, xmax - xmin);
-
-	savestuff();
+	blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
 
 	return nil;
 }

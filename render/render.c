@@ -11,6 +11,7 @@ struct fz_renderer_s
 	int x, y, w, h;
 	fz_pixmap *tmp;
 	fz_pixmap *acc;
+	short r, g, b;
 };
 
 fz_error *
@@ -66,114 +67,10 @@ fz_freerenderer(fz_renderer *gc)
 	if (gc->ael)
 		fz_freeael(gc->ael);
 	if (gc->tmp)
-		fz_droppixmap(gc->tmp);
+		fz_freepixmap(gc->tmp);
 	if (gc->acc)
-		fz_droppixmap(gc->acc);
+		fz_freepixmap(gc->acc);
 	fz_free(gc);
-}
-
-fz_error *
-fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
-{
-	fz_error *error;
-	fz_node *node;
-	int oldmode;
-
-	oldmode = gc->mode;
-	gc->mode = OVER;
-
-printf("renderover ; acc=3,1\n");
-
-	error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, 3, 1);
-	if (error)
-		return error;
-
-	fz_clearpixmap(gc->acc);
-
-	for (node = over->super.child; node; node = node->next)
-	{
-		gc->tmp = nil;
-		error = fz_rendernode(gc, node, ctm);
-		if (error)
-			return error;
-		if (gc->tmp)
-		{
-printf("  over -> %d,%d\n", gc->tmp->n, gc->tmp->a);
-			fz_blendover(gc->acc, gc->tmp, gc->acc);
-			fz_droppixmap(gc->tmp);
-		}
-else printf("  -> nil\n");
-	}
-
-	gc->tmp = gc->acc;
-	gc->acc = nil;
-
-	gc->mode = oldmode;
-
-	return nil;
-}
-
-fz_error *
-fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
-{
-	fz_error *error;
-	fz_pixmap *colorpix;
-	fz_pixmap *shapepix;
-	fz_node *color;
-	fz_node *shape;
-	int oldmode;
-
-	color = mask->super.child;
-	shape = color->next;
-
-//	if (fz_ispathnode(shape) && fz_iscolornode(color))
-//		return rcolorpath(gc, shape, color, ctm);
-//	if (fz_istextnode(shape) && fz_iscolornode(color))
-//		return rcolortext(gc, shape, color, ctm);
-
-	oldmode = gc->mode;
-	gc->mode = MASK;
-
-printf("rendermask\n");
-
-	gc->tmp = nil;
-	error = fz_rendernode(gc, color, ctm);
-	if (error)
-		return error;
-	colorpix = gc->tmp;
-
-printf("  -> color %d,%d\n", colorpix->n, colorpix->a);
-
-	gc->tmp = nil;
-	error = fz_rendernode(gc, shape, ctm);
-	if (error)
-		return error;
-	shapepix = gc->tmp;
-
-printf("  -> shape %d,%d\n", shapepix->n, shapepix->a);
-
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, colorpix->n, 1);
-	if (error)
-		return error;
-
-printf("  -> blend %d,%d\n", gc->tmp->n, gc->tmp->a);
-
-	fz_blendmask(gc->tmp, colorpix, shapepix);
-
-	fz_droppixmap(shapepix);
-	fz_droppixmap(colorpix);
-
-	gc->mode = oldmode;
-
-	return nil;
-}
-
-fz_error *
-fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
-{
-printf("rendertransform\n");
-	ctm = fz_concat(ctm, transform->m);
-	return fz_rendernode(gc, transform->super.child, ctm);
 }
 
 static void blitglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo)
@@ -192,10 +89,39 @@ static void blitglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo)
 			if (dx >= out->w) continue;
 			if (dy >= out->h) continue;
 
-			a = gl->bitmap[sx + sy * gl->w];
+			a = gl->bitmap[sx + sy * gl->w] * 64;
 			b = out->samples[dx + dy * out->stride];
 			c = MAX(a, b);
 			out->samples[dx + dy * out->stride] = c;
+		}
+	}
+}
+
+static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, short r, short g, short b)
+{
+	int sx, sy, dx, dy, sa, ssa;
+	short *p;
+
+	for (sy = 0; sy < gl->h; sy++)
+	{
+		for (sx = 0; sx < gl->w; sx++)
+		{
+			dx = xo + sx + gl->lsb - out->x;
+			dy = yo - sy + gl->top - out->y;
+
+			if (dx < 0) continue;
+			if (dy < 0) continue;
+			if (dx >= out->w) continue;
+			if (dy >= out->h) continue;
+
+			sa = gl->bitmap[sx + sy * gl->w] * 64;
+			ssa = (1 << 14) - sa;
+
+			p = out->samples + dx * 4 + dy * out->stride;
+			p[0] = ((r * sa) >> 14) + ((p[0] * ssa) >> 14);
+			p[1] = ((g * sa) >> 14) + ((p[1] * ssa) >> 14);
+			p[2] = ((b * sa) >> 14) + ((p[2] * ssa) >> 14);
+			p[3] = sa + ((ssa * p[3]) >> 14);
 		}
 	}
 }
@@ -209,7 +135,7 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	int g, i, ix, iy;
 	fz_matrix tm, trm;
 
-printf("rendertext ; tmp=0,1\n");
+puts("render text");
 
 	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 0, 1);
 	if (error)
@@ -243,10 +169,158 @@ printf("rendertext ; tmp=0,1\n");
 	return nil;
 }
 
+static fz_error *
+rcolortext(fz_renderer *gc, fz_textnode *text, fz_colornode *color, fz_matrix ctm)
+{
+	fz_error *error;
+	fz_glyph gl;
+	float x, y;
+	int g, i, ix, iy;
+	fz_matrix tm, trm;
+
+puts("render (mask color text)");
+
+	gc->r = color->r * (1 << 14);
+	gc->g = color->g * (1 << 14);
+	gc->b = color->b * (1 << 14);
+
+	tm = text->trm;
+
+	for (i = 0; i < text->len; i++)
+	{
+		g = text->els[i].g;
+		x = text->els[i].x;
+		y = text->els[i].y;
+
+		tm.e = x;
+		tm.f = y;
+		trm = fz_concat(tm, ctm);
+
+		ix = floor(trm.e);
+		iy = floor(trm.f);
+
+		trm.e = (trm.e - floor(trm.e));
+		trm.f = (trm.f - floor(trm.f));
+
+		error = fz_renderglyph(gc->cache, &gl, text->font, g, trm);
+		if (error)
+			return error;
+
+		blitcolorglyph(gc->acc, &gl, ix, iy, gc->r, gc->g, gc->b);
+	}
+
+	return nil;
+}
+
+static void blitspan(int y, int x, int n, short *list, void *userdata)
+{
+	fz_pixmap *pix = (fz_pixmap*)userdata;
+
+	if (y < 0) return;
+	if (y >= pix->h) return;
+	short d = 0;
+	while (x < 0 && n) {
+		d += *list++; n--; x ++;
+	}
+	if (x + n >= pix->w)
+		n = pix->w - x;
+	short *p = pix->samples + (y - pix->y) * pix->stride + (x - pix->x);
+	while (n--)
+	{
+		d += *list++;
+		*p++ = d * 64;
+	}
+}
+
 fz_error *
 fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 {
-printf("renderpath ; tmp=nil\n");
+	fz_error *error;
+
+puts("render path");
+
+	fz_resetgel(gc->gel, 17, 15);
+
+	if (path->paint == FZ_STROKE)
+	{
+		if (path->dash)
+			fz_dashpath(gc->gel, path, ctm, 0.2);
+		else
+			fz_strokepath(gc->gel, path, ctm, 0.2);
+	}
+	else
+		fz_fillpath(gc->gel, path, ctm, 0.2);
+
+	fz_sortgel(gc->gel);
+
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 0, 1);
+	if (error)
+		return error;
+
+	fz_clearpixmap(gc->tmp);
+
+	fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL, blitspan, gc->tmp);
+
+	return nil;
+}
+
+static void blitcolorspan(int y, int x, int n, short *list, void *userdata)
+{
+	fz_renderer *gc = userdata;
+	fz_pixmap *pix = gc->acc;
+	short r = gc->r;
+	short g = gc->g;
+	short b = gc->b;
+	short *p;
+	short d, sa, ssa;
+
+	assert(pix->n == 3);
+	assert(pix->a == 1);
+
+	p = pix->samples + (y - pix->y) * pix->stride + (x - pix->x) * 4;
+	d = 0;
+
+	while (n --)
+	{
+		d += *list++;
+
+		sa = d * 64;
+		ssa = (1 << 14) - sa;
+
+		p[0] = ((r * sa) >> 14) + ((p[0] * ssa) >> 14);
+		p[1] = ((g * sa) >> 14) + ((p[1] * ssa) >> 14);
+		p[2] = ((b * sa) >> 14) + ((p[2] * ssa) >> 14);
+		p[3] = sa + ((ssa * p[3]) >> 14);
+
+		p += 4;
+	}
+}
+
+static fz_error *
+rcolorpath(fz_renderer *gc, fz_pathnode *path, fz_colornode *color, fz_matrix ctm)
+{
+puts("render (mask color path)");
+
+	fz_resetgel(gc->gel, 17, 15);
+
+	if (path->paint == FZ_STROKE)
+	{
+		if (path->dash)
+			fz_dashpath(gc->gel, path, ctm, 0.2);
+		else
+			fz_strokepath(gc->gel, path, ctm, 0.2);
+	}
+	else
+		fz_fillpath(gc->gel, path, ctm, 0.2);
+
+	fz_sortgel(gc->gel);
+
+	gc->r = color->r * (1 << 14);
+	gc->g = color->g * (1 << 14);
+	gc->b = color->b * (1 << 14);
+
+	fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL, blitcolorspan, gc);
+
 	return nil;
 }
 
@@ -259,9 +333,9 @@ fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	short b = color->b * (1 << 14);
 	int x, y;
 
-printf("rendercolor %d %d %d ; tmp=3,0\n", r, g, b);
+puts("render color");
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 3, 0);
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 3, 1);
 	if (error)
 		return error;
 
@@ -273,10 +347,140 @@ printf("rendercolor %d %d %d ; tmp=3,0\n", r, g, b);
 			*p++ = r;
 			*p++ = g;
 			*p++ = b;
+			*p++ = 1 << 14;
 		}
 	}
 
 	return nil;
+}
+
+static fz_error *
+fz_renderoverchild(fz_renderer *gc, fz_node *node, fz_matrix ctm)
+{
+	fz_error *error;
+
+	if (node->next)
+	{
+		error = fz_renderoverchild(gc, node->next, ctm);
+		if (error)
+			return error;
+	}
+
+	gc->tmp = nil;
+	error = fz_rendernode(gc, node, ctm);
+	if (error)
+		return error;
+
+	if (gc->tmp)
+	{
+		fz_blendover(gc->tmp, gc->acc);
+		fz_freepixmap(gc->tmp);
+		gc->tmp = nil;
+	}
+
+	return nil;
+}
+
+fz_error *
+fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
+{
+	fz_error *error;
+	fz_pixmap *oldacc = nil;
+	int oldmode;
+
+
+	/* uh-oh! we have a new over cluster */
+	if (gc->mode != OVER)
+	{
+puts("render over");
+		oldacc = gc->acc;
+		error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, 3, 1);
+		if (error)
+			return error;
+		fz_clearpixmap(gc->acc);
+	}
+
+	oldmode = gc->mode;
+	gc->mode = OVER;
+
+	gc->tmp = nil;
+
+	if (over->super.child)
+	{
+		error = fz_renderoverchild(gc, over->super.child, ctm);
+		if (error)
+			return error;
+	}
+
+	gc->mode = oldmode;
+
+	/* uh-oh! end of over cluster */
+	if (gc->mode != OVER)
+	{
+printf("end over\n");
+		gc->tmp = gc->acc;
+		gc->acc = oldacc;
+	}
+
+	return nil;
+}
+
+fz_error *
+fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
+{
+	fz_error *error;
+	fz_pixmap *colorpix;
+	fz_pixmap *shapepix;
+	fz_node *color;
+	fz_node *shape;
+	int oldmode;
+
+	color = mask->super.child;
+	shape = color->next;
+
+	if (gc->mode == OVER)
+	{
+		if (fz_ispathnode(shape) && fz_iscolornode(color))
+			return rcolorpath(gc, (fz_pathnode*)shape, (fz_colornode*)color, ctm);
+		if (fz_istextnode(shape) && fz_iscolornode(color))
+			return rcolortext(gc, (fz_textnode*)shape, (fz_colornode*)color, ctm);
+	}
+
+	oldmode = gc->mode;
+	gc->mode = MASK;
+
+	gc->tmp = nil;
+	error = fz_rendernode(gc, color, ctm);
+	if (error)
+		return error;
+	colorpix = gc->tmp;
+
+	gc->tmp = nil;
+	error = fz_rendernode(gc, shape, ctm);
+	if (error)
+		return error;
+	shapepix = gc->tmp;
+
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, colorpix->n, 1);
+	if (error)
+		return error;
+
+	fz_blendmask(gc->tmp, colorpix, shapepix);
+
+	fz_freepixmap(shapepix);
+	fz_freepixmap(colorpix);
+
+	gc->mode = oldmode;
+
+	return nil;
+}
+
+fz_error *
+fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
+{
+puts("render transform");
+	ctm = fz_concat(transform->m, ctm);
+	return fz_rendernode(gc, transform->super.child, ctm);
 }
 
 fz_error *
@@ -321,6 +525,7 @@ fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, f
 		return error;
 
 	*outp = gc->tmp;
+	gc->tmp = nil;
 
 	return nil;
 }

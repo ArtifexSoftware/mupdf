@@ -1,9 +1,11 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+int showtree = 0;
+
 void usage()
 {
-	fprintf(stderr, "usage: pdfrip [-r] [-p password] file.pdf [pages...]\n");
+	fprintf(stderr, "usage: pdfrip [-d] [-p password] file.pdf [pages...]\n");
 	exit(1);
 }
 
@@ -56,7 +58,6 @@ printf("  font:\n");
 fz_debugobj(rdb->font);
 printf("\n  extgstate:\n");
 fz_debugobj(rdb->extgstate);
-printf("\nfitz tree:\n");
 
 	error = pdf_newcsi(&csi);
 	if (error) fz_abort(error);
@@ -78,7 +79,12 @@ printf("\nfitz tree:\n");
 		}
 	}
 
-	fz_debugtree(csi->tree);
+
+	if (showtree)
+	{
+		printf("\nfitz tree:\n");
+		fz_debugtree(csi->tree);
+	}
 
 	{
 		fz_pixmap *pix;
@@ -86,24 +92,26 @@ printf("\nfitz tree:\n");
 		fz_matrix ctm;
 		fz_rect bbox;
 
-#define W 612
-#define H 792
+#define SCALE 1.0
+#define W 700
+#define H 900
 
 		fz_newrenderer(&gc);
 
 		bbox.min.x = 0;
 		bbox.min.y = 0;
-		bbox.max.x = W;
-		bbox.max.y = H;
+		bbox.max.x = W  * SCALE;
+		bbox.max.y = H  * SCALE;
 
-		ctm = fz_concat(fz_translate(0, -H), fz_scale(1,-1));
+		//ctm = fz_scale(SCALE,SCALE);
+		ctm = fz_concat(fz_translate(0, -H), fz_scale(SCALE,-SCALE));
 
 printf("rendering!\n");
 		fz_rendertree(&pix, gc, csi->tree, ctm, bbox);
 printf("done!\n");
 
 		fz_debugpixmap(pix);
-		fz_droppixmap(pix);
+		fz_freepixmap(pix);
 
 		fz_freerenderer(gc);
 	}
@@ -117,15 +125,17 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
+	int d;
 	int c;
 
 	char *password = "";
 
-	while ((c = getopt(argc, argv, "p:")) != -1)
+	while ((c = getopt(argc, argv, "dp:")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = optarg; break;
+		case 'd': ++showtree; break;
 		default: usage();
 		}
 	}

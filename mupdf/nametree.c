@@ -164,12 +164,11 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 	fz_obj *trailer;
 	fz_obj *ref;
 	fz_obj *root = nil;
-	int count;
 
 	trailer = xref->trailer;
 
 	ref = fz_dictgets(trailer, "Root");
-	error = pdf_loadobject(&catalog, xref, ref, nil);
+	error = pdf_loadindirect(&catalog, xref, ref);
 	if (error) goto cleanup;
 
 	names = fz_dictgets(catalog, "Names");

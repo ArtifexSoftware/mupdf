@@ -114,8 +114,17 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 			error = line(gel, &ctm, cx, cy, bx, by);
 			if (error)
 				return error;
+			cx = bx;
+			cy = by;
 			break;
 		}
+	}
+
+	if (i && (cx != bx || cy != by))
+	{
+		error = line(gel, &ctm, cx, cy, bx, by);
+		if (error)
+			return error;
 	}
 
 	return nil;

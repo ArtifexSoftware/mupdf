@@ -50,6 +50,9 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
+	error = fz_newcolornode(&node, 1, 1, 1);
+	fz_insertnode(csi->tree->root, node);
+
 	csi->clip = nil;
 
 	csi->text = nil;

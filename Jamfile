@@ -95,6 +95,7 @@ Library libmupdf :
 	mupdf/stream.c
 	mupdf/doctor.c
 
+	mupdf/nametree.c
 	mupdf/cmap.c
 	mupdf/font.c
 	mupdf/fontfile.c

@@ -163,6 +163,12 @@ static void lispnode(fz_node *node, int level)
 }
 
 void
+fz_debugnode(fz_node *node)
+{
+	lispnode(node, 0);
+}
+
+void
 fz_debugtree(fz_tree *tree)
 {
 	lispnode(tree->root, 0);
