@@ -85,8 +85,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 			shade->bbox.max.x, shade->bbox.max.y);
 	}
 
-	switch(type)
-	{
+	switch(type) {
 	case 1:
 //		error = pdf_loadtype1shade(shade, xref, shading, ref, mat);
 		if (error) goto cleanup;
@@ -105,13 +104,10 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 		break;
 	};
 
-	pdf_logshade("}\n");
-
 	*shadep = shade;
 	return nil;
 
 cleanup:
-	pdf_logshade("have an error: %s\n", error->msg);
 	return error;
 }
 
