@@ -562,8 +562,8 @@ showglyph(pdf_csi *csi, int cid)
 	if (font->super.wmode == 1)
 	{
 		v = fz_getvmtx((fz_font*)font, cid);
-		tm.e -= v.x * gstate->size / 1000.0;
-		tm.f -= v.y * gstate->size / 1000.0;
+		tsm.e -= v.x * gstate->size / 1000.0;
+		tsm.f -= v.y * gstate->size / 1000.0;
 	}
 
 	trm = fz_concat(tsm, tm);
