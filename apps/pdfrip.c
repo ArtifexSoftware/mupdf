@@ -69,7 +69,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	h = bbox.max.y - bbox.min.y;
 	bh = h / nbands;
 
-	fd = open(namebuf, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC);
+	fd = open(namebuf, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
 	if (fd < 0)
 		fz_abort(fz_throw("open %s failed: %s", namebuf, strerror(errno)));
 	sprintf(buf, "P6\n%d %d\n255\n", w, bh * nbands);

@@ -66,9 +66,13 @@ int main(int argc, char **argv)
 	 * Create new blank xref table
 	 */
 
-	error = pdf_newpdf(&dst);
+	error = pdf_newxref(&dst);
 	if (error)
 		fz_abort(error);
+
+	error = pdf_initxref(dst);
+	if (error)
+		fz_abort(error);	
 
 	error = fz_newarray(&dstrefs, 100);
 	if (error)
@@ -80,11 +84,15 @@ int main(int argc, char **argv)
 
 	for (i = optind; i < argc; i++)
 	{
-		error = pdf_openpdf(&src, argv[i]);
+		error = pdf_newxref(&src);
 		if (error)
 			fz_abort(error);
 
-		error = pdf_decryptpdf(src);
+		error = pdf_loadxref(src, argv[i]);
+		if (error)
+			fz_abort(error);
+
+		error = pdf_decryptxref(src);
 		if (error)
 			fz_abort(error);
 
@@ -137,7 +145,7 @@ int main(int argc, char **argv)
 
 		pdf_droppagetree(srcpages);
 
-		pdf_closepdf(src);
+		pdf_closexref(src);
 	}
 
 	/*
@@ -218,12 +226,12 @@ int main(int argc, char **argv)
 		fz_dropobj(id);
 	}
 
-	error = pdf_savepdf(dst, savename, encrypt);
+	error = pdf_savexref(dst, savename, encrypt);
 	if (error)
 		fz_abort(error);
 
 	fz_dropobj(dstrefs);
-	pdf_closepdf(dst);
+	pdf_closexref(dst);
 
 	return 0;
 }

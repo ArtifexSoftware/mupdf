@@ -244,5 +244,6 @@ if $(HAVE_GTK)
 Main pdfclean : apps/pdfclean.c ;
 Main pdfdebug : apps/pdfdebug.c ;
 Main pdfrip : apps/pdfrip.c ;
-LinkLibraries pdfclean pdfdebug pdfrip : libmupdf libfitz ;
+Main pdfmerge : apps/pdfmerge.c ;
+LinkLibraries pdfclean pdfdebug pdfrip pdfmerge : libmupdf libfitz ;
 
