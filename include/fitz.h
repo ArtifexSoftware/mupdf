@@ -4,6 +4,7 @@
 #define _FITZ_H_
 
 #include "fitz/sysdep.h"
+#include "fitz/cpudep.h"
 
 #include "fitz/base.h"
 #include "fitz/math.h"

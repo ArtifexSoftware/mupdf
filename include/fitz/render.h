@@ -3,6 +3,7 @@ typedef struct fz_rastfuncs_s fz_rastfuncs;
 
 #define FZ_BYTE unsigned char
 
+/* TODO: use 'restrict' on pointers - they never alias, do they? */
 #define FZ_PSRC \
 	unsigned char *src, int srcw, int srch
 #define FZ_PDST \
@@ -57,7 +58,8 @@ struct fz_renderer_s
 	int flag;
 };
 
-void fz_defaultrastfuncs(fz_rastfuncs *);
+extern void fz_loadrastfuncs(fz_rastfuncs *);
+extern void fz_accelrastfuncs(fz_rastfuncs *);
 
 fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem);
 void fz_droprenderer(fz_renderer *gc);

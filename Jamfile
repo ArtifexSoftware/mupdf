@@ -26,6 +26,7 @@ Library libfitz :
 	base/rect.c
 	base/matrix.c
 	base/hash.c
+	base/cpudep.c
 
 	# object
 	object/simple.c
@@ -92,6 +93,9 @@ Library libfitz :
 	render/scale.c
 	render/rastshade.c
 	render/rastport.c
+	render/rastppc.c
+	render/rastsparc.c
+	render/rastx86.c
 	render/render.c
 ;
 

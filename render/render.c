@@ -37,7 +37,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	if (error)
 		goto cleanup;
 
-	fz_defaultrastfuncs(&gc->rast);
+	fz_loadrastfuncs(&gc->rast);
 
 	gc->dest = nil;
 	gc->over = nil;

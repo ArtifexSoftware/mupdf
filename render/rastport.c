@@ -442,8 +442,11 @@ static fz_rastfuncs deftab =
 };
 
 void
-fz_defaultrastfuncs(fz_rastfuncs *tab)
+fz_loadrastfuncs(fz_rastfuncs *tab)
 {
 	*tab = deftab;
+#ifdef HAVE_CPUDEP
+	fz_accelrastfuncs(tab);
+#endif
 }
 

@@ -362,6 +362,8 @@ int main(int argc, char **argv)
 	if (argc - optind == 0)
 		usage();
 
+	fz_cpudetect();
+
 	filename = argv[optind++];
 
 	xopen();
