@@ -443,6 +443,8 @@ static void handlekey(int c)
 		break;
 	case 'q':
 		exit(0);
+	case '\r':
+	case '\n':
 	case 'g':
 	case 'G':
 		if (pagebufidx > 0)

@@ -42,7 +42,7 @@ switch $(OS)
 		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -faltivec -DARCH_PPC ;
 		OPTIM = -fast ;
 
-	case NT :
+	case MINGW :
 		NOARSCAN = true ; # compatibility for old jamrules
 		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -DWIN32 ;
 		CCFLAGS += -DNEED_GETOPT -DNEED_STRSEP -DNEED_STRLCPY -DNEED_STRLCAT ;

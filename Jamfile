@@ -209,11 +209,26 @@ Library libmupdf :
 
 LINKLIBS = -lfreetype -ljpeg -lz -lm ;
 
-if $(OS) = NT
+if $(OS) = MINGW
 {
-	Main w32pdf : apps/w32pdf.c ;
+	rule UserObject
+	{
+		Res $(<) : $(>) ;
+	}
+
+	rule Res
+	{
+		Depends $(<) : $(>) ;
+	}
+
+	actions Res
+	{
+		windres -i $(>) -o $(<)
+	}
+
+	Main w32pdf : apps/w32pdf.c apps/w32res.rc ;
 	LinkLibraries w32pdf : libmupdf libfitz ;
-	LINKLIBS on w32pdf$(SUFEXE) = $(LINKLIBS) -lgdi32 ;
+	LINKLIBS on w32pdf$(SUFEXE) = $(LINKLIBS) -lgdi32 -lcomdlg32 -mwindows ;
 }
 
 if $(OS) = MACOSX
