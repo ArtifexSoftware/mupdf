@@ -21,11 +21,11 @@ fz_openfile(fz_file **filep, char *path, int mode)
 
 	realmode = 0;
 	if (mode == FZ_READ)
-		realmode = O_RDONLY;
+		realmode = O_BINARY | O_RDONLY;
 	if (mode == FZ_WRITE)
-		realmode = O_WRONLY | O_CREAT | O_TRUNC;
+		realmode = O_BINARY | O_WRONLY | O_CREAT | O_TRUNC;
 	if (mode == FZ_APPEND)
-		realmode = O_WRONLY;
+		realmode = O_BINARY | O_WRONLY;
 
 	fd = open(path, realmode, 0644);
 	if (fd == -1)

@@ -50,6 +50,9 @@ fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 	eo->msg[sizeof(eo->msg) - 1] = '\0';
 	va_end(ap);
 
+	if (getenv("BOMB"))
+		fz_abort(eo);
+
 	return eo;
 }
 

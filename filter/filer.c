@@ -11,7 +11,7 @@ static int doread(fz_buffer *b, int fd)
 	return n;
 }
 
-static int producedata(fz_file *f)
+int fz_producedata(fz_file *f)
 {
 	fz_error *reason;
 	int produced;
@@ -99,7 +99,7 @@ fz_peekbyte(fz_file *f)
 	if (f->out->rp == f->out->wp)
 	{
 		if (f->out->eof) return EOF;
-		if (producedata(f)) return EOF;
+		if (fz_producedata(f)) return EOF;
 	}
 
 	if (f->out->rp < f->out->wp)
@@ -114,7 +114,7 @@ fz_readbyte(fz_file *f)
 	if (f->out->rp == f->out->wp)
 	{
 		if (f->out->eof) return EOF;
-		if (producedata(f)) return EOF;
+		if (fz_producedata(f)) return EOF;
 	}
 
 	if (f->out->rp < f->out->wp)
@@ -136,7 +136,7 @@ fz_read(fz_file *f, char *buf, int n)
 		if (f->out->rp == f->out->wp)
 		{
 			if (f->out->eof) return i;
-			if (producedata(f) < 0) return -1;
+			if (fz_producedata(f) < 0) return -1;
 		}
 	}
 

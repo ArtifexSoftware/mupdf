@@ -176,9 +176,9 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 			if (!xref->table[ofs + i].type)
 			{
 				s = buf;
-				xref->table[ofs + i].ofs = atoi(strsep(&s, " "));
-				xref->table[ofs + i].gen = atoi(strsep(&s, " "));
-				xref->table[ofs + i].type = strsep(&s, " ")[0];
+				xref->table[ofs + i].ofs = atoi(s);
+				xref->table[ofs + i].gen = atoi(s + 11);
+				xref->table[ofs + i].type = s[17];
 			}
 		}
 	}
