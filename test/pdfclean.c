@@ -122,10 +122,12 @@ int main(int argc, char **argv)
 		if (error) fz_abort(error);
 	}
 
+	if (dogc)
+		pdf_garbagecollect(xref);
+
 	if (doexpand)
 		expandstreams(xref);
 
-printf("saving %s...\n", outfile);
 	error = pdf_savepdf(xref, outfile);
 	if (error)
 		fz_abort(error);

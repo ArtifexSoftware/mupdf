@@ -93,6 +93,7 @@ Library libmupdf :
 	mupdf/repair.c
 	mupdf/save.c
 	mupdf/xref.c
+	mupdf/doctor.c
 
 	mupdf/cmap.c
 	mupdf/font.c

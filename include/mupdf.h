@@ -122,6 +122,9 @@ fz_error *pdf_resolve(fz_obj **, pdf_xref*);
 fz_error *pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *buf);
 fz_error *pdf_deletestream(pdf_xref *xref, int oid, int gid);
 
+/* doctor.c */
+fz_error *pdf_garbagecollect(pdf_xref *xref);
+
 /* save.c */
 fz_error *pdf_saveincrementalpdf(pdf_xref *xref, char *path);
 fz_error *pdf_savepdf(pdf_xref *xref, char *path);
