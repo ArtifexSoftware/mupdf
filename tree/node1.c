@@ -23,15 +23,16 @@ fz_initnode(fz_node *node, fz_nodekind kind)
 {
 	node->kind = kind;
 	node->parent = nil;
-	node->child = nil;
+	node->first = nil;
+	node->last = nil;
 	node->next = nil;
 }
 
 void
 fz_dropnode(fz_node *node)
 {
-	if (node->child)
-		fz_dropnode(node->child);
+	if (node->first)
+		fz_dropnode(node->first);
 	if (node->next)
 		fz_dropnode(node->next);
 

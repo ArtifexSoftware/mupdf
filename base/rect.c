@@ -44,10 +44,10 @@ fz_irect
 fz_roundrect(fz_rect f)
 {
 	fz_irect i;
-	i.min.x = fz_floor(f.min.x);// - 1;
-	i.min.y = fz_floor(f.min.y);// - 1;
-	i.max.x = fz_ceil(f.max.x);// + 1;
-	i.max.y = fz_ceil(f.max.y);// + 1;
+	i.min.x = fz_floor(f.min.x);
+	i.min.y = fz_floor(f.min.y);
+	i.max.x = fz_ceil(f.max.x);
+	i.max.y = fz_ceil(f.max.y);
 	return i;
 }
 

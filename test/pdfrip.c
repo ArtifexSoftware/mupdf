@@ -81,7 +81,7 @@ void dumptext(fz_node *node)
 			dy = old.y - p.y;
 			old = p;
 
-			if (fabs(dy) > 1.3)
+			if (fabs(dy) > 1.6)
 				puts("\n");
 			else if (fabs(dy) > 0.1)
 				putchar('\n');
@@ -91,7 +91,9 @@ void dumptext(fz_node *node)
 			h = fz_gethmtx(text->font, cid);
 			old.x += h.w / 1000.0;
 
-			if (font->ncidtoucs)
+			if (font->tounicode)
+				ucs = fz_lookupcid(font->tounicode, cid);
+			else if (font->ncidtoucs)
 				ucs = font->cidtoucs[cid];
 			else
 				ucs = cid;
@@ -100,7 +102,7 @@ void dumptext(fz_node *node)
 		}
 	}
 
-	for (node = node->child; node; node = node->next)
+	for (node = node->first; node; node = node->next)
 		dumptext(node);
 }
 

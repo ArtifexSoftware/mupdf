@@ -22,7 +22,6 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel, int gcmem)
 	gc->cache = nil;
 	gc->gel = nil;
 	gc->ael = nil;
-	gc->mode = FZ_RNONE;
 	gc->tmp = nil;
 	gc->acc = nil;
 
@@ -76,8 +75,6 @@ fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	float rgb[3];
 	unsigned char *p;
 
-printf("render color\n");
-
 	assert(gc->model);
 
 	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
@@ -110,76 +107,47 @@ printf("render color\n");
 	return nil;
 }
 
-static fz_error *
-fz_renderoverchild(fz_renderer *gc, fz_node *node, fz_matrix ctm)
-{
-	fz_error *error;
-
-	if (node->next)
-	{
-		error = fz_renderoverchild(gc, node->next, ctm);
-		if (error)
-			return error;
-	}
-
-	gc->tmp = nil;
-	error = fz_rendernode(gc, node, ctm);
-	if (error)
-		return error;
-
-	if (gc->tmp)
-	{
-		fz_blendover(gc->tmp, gc->acc);
-		fz_droppixmap(gc->tmp);
-		gc->tmp = nil;
-	}
-
-	return nil;
-}
-
 fz_error *
 fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 {
 	fz_error *error;
-	fz_pixmap *oldacc = nil;
-	int oldmode;
+	fz_node *child;
+	int cluster = 0;;
 
-	int x = gc->clip.min.x;
-	int y = gc->clip.min.y;
-	int w = gc->clip.max.x - gc->clip.min.x;
-	int h = gc->clip.max.y - gc->clip.min.y;
-
-	/* uh-oh! we have a new over cluster */
-	if (gc->mode != FZ_ROVER)
+	if (!gc->acc)
 	{
-printf("begin over accumulator\n");
-		oldacc = gc->acc;
+		int x = gc->clip.min.x;
+		int y = gc->clip.min.y;
+		int w = gc->clip.max.x - gc->clip.min.x;
+		int h = gc->clip.max.y - gc->clip.min.y;
+
 		error = fz_newpixmap(&gc->acc, x, y, w, h, gc->model ? 4 : 1);
 		if (error)
 			return error;
+
 		fz_clearpixmap(gc->acc);
+
+		cluster = 1;
 	}
 
-	oldmode = gc->mode;
-	gc->mode = FZ_ROVER;
-
-	gc->tmp = nil;
-
-	if (over->super.child)
+	for (child = over->super.first; child; child = child->next)
 	{
-		error = fz_renderoverchild(gc, over->super.child, ctm);
+		error = fz_rendernode(gc, child, ctm);
 		if (error)
 			return error;
+
+		if (gc->tmp)
+		{
+			fz_blendover(gc->tmp, gc->acc);
+			fz_droppixmap(gc->tmp);
+			gc->tmp = nil;
+		}
 	}
 
-	gc->mode = oldmode;
-
-	/* uh-oh! end of over cluster */
-	if (gc->mode != FZ_ROVER)
+	if (cluster)
 	{
-printf("end over accumulator\n");
 		gc->tmp = gc->acc;
-		gc->acc = oldacc;
+		gc->acc = nil;
 	}
 
 	return nil;
@@ -194,15 +162,14 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 	fz_pixmap *shapepix;
 	fz_node *color;
 	fz_node *shape;
-	int oldmode;
 	fz_irect newclip;
 	fz_irect oldclip;
 	int x, y, w, h;
 
-	color = mask->super.child;
-	shape = color->next;
+	shape = mask->super.first;
+	color = shape->next;
 
-	if (gc->mode == FZ_ROVER)
+	if (gc->acc)
 	{
 		if (fz_ispathnode(shape) && fz_iscolornode(color))
 			return fz_rendercolorpath(gc, (fz_pathnode*)shape, (fz_colornode*)color, ctm);
@@ -212,18 +179,12 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			puts("could optimize image mask!");
 	}
 
-printf("begin mask\n");
-
 	oldacc = gc->acc;
-	oldmode = gc->mode;
 	oldclip = gc->clip;
-
 	newclip = fz_roundrect(fz_boundnode(shape, ctm));
 	newclip = fz_intersectirects(newclip, gc->clip);
-	printf("mask bbox [%d %d %d %d]\n", newclip.min.x, newclip.min.y, newclip.max.x, newclip.max.y);
 
 	gc->acc = nil;
-	gc->mode = FZ_RMASK;
 	gc->clip = newclip;
 
 	gc->tmp = nil;
@@ -238,8 +199,6 @@ printf("begin mask\n");
 		return error;
 	shapepix = gc->tmp;
 
-if (!shapepix) return nil;
-
 	x = gc->clip.min.x;
 	y = gc->clip.min.y;
 	w = gc->clip.max.x - gc->clip.min.x;
@@ -249,16 +208,15 @@ if (!shapepix) return nil;
 	if (error)
 		return error;
 
+	fz_clearpixmap(gc->tmp);
+
 	fz_blendmask(gc->tmp, colorpix, shapepix);
 
 	fz_droppixmap(shapepix);
 	fz_droppixmap(colorpix);
 
 	gc->acc = oldacc;
-	gc->mode = oldmode;
 	gc->clip = oldclip;
-
-printf("end mask\n");
 
 	return nil;
 }
@@ -267,7 +225,7 @@ fz_error *
 fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
 	ctm = fz_concat(transform->m, ctm);
-	return fz_rendernode(gc, transform->super.child, ctm);
+	return fz_rendernode(gc, transform->super.first, ctm);
 }
 
 fz_error *
@@ -307,8 +265,6 @@ fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, f
 	fz_error *error;
 
 	gc->clip = bbox;
-
-printf("render tree\n");
 
 	error = fz_rendernode(gc, tree->root, ctm);
 	if (error)

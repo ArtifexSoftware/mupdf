@@ -37,7 +37,7 @@ extern fz_error fz_koutofmem;
 
 #ifdef WIN32
 #define fz_throw(...) fz_throw0(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#elif _ISOC99_SOURCE
+#elif HAVE_C99
 #define fz_throw(...) fz_throw0(__func__, __FILE__, __LINE__, __VA_ARGS__)
 #else
 #define fz_throw fz_throw1

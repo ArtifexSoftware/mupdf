@@ -19,12 +19,17 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	form->bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
 
 	obj = fz_dictgets(dict, "Matrix");
-	form->matrix.a = fz_toreal(fz_arrayget(obj, 0));
-	form->matrix.b = fz_toreal(fz_arrayget(obj, 1));
-	form->matrix.c = fz_toreal(fz_arrayget(obj, 2));
-	form->matrix.d = fz_toreal(fz_arrayget(obj, 3));
-	form->matrix.e = fz_toreal(fz_arrayget(obj, 4));
-	form->matrix.f = fz_toreal(fz_arrayget(obj, 5));
+	if (obj)
+	{
+		form->matrix.a = fz_toreal(fz_arrayget(obj, 0));
+		form->matrix.b = fz_toreal(fz_arrayget(obj, 1));
+		form->matrix.c = fz_toreal(fz_arrayget(obj, 2));
+		form->matrix.d = fz_toreal(fz_arrayget(obj, 3));
+		form->matrix.e = fz_toreal(fz_arrayget(obj, 4));
+		form->matrix.f = fz_toreal(fz_arrayget(obj, 5));
+	}
+	else
+		form->matrix = fz_identity();
 
 	form->resources = nil;
 	obj = fz_dictgets(dict, "Resources");

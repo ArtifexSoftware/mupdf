@@ -72,6 +72,8 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	if (error)
 		return error;
 
+	fz_clearpixmap(gc->tmp);
+
 	tm = text->trm;
 
 	for (i = 0; i < text->len; i++)

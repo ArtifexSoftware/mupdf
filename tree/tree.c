@@ -52,7 +52,10 @@ fz_insertnode(fz_node *parent, fz_node *child)
 		fz_ismetanode(parent));
 
 	child->parent = parent;
-	child->next = parent->child;
-	parent->child = child;
+	if (!parent->first)
+		parent->first = child;
+	else
+		parent->last->next = child;
+	parent->last = child;
 }
 

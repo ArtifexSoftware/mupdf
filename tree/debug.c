@@ -16,7 +16,7 @@ static void lispmeta(fz_metanode *node, int level)
 	if (node->name) { fz_debugobj(node->name); }
 	if (node->dict) { printf("\n"); fz_debugobj(node->dict); }
 	printf("\n");
-	for (child = node->super.child; child; child = child->next)
+	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
@@ -27,7 +27,7 @@ static void lispover(fz_overnode *node, int level)
 	fz_node *child;
 	indent(level);
 	printf("(over\n");
-	for (child = node->super.child; child; child = child->next)
+	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
@@ -38,7 +38,7 @@ static void lispmask(fz_masknode *node, int level)
 	fz_node *child;
 	indent(level);
 	printf("(mask\n");
-	for (child = node->super.child; child; child = child->next)
+	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
@@ -49,7 +49,7 @@ static void lispblend(fz_blendnode *node, int level)
 	fz_node *child;
 	indent(level);
 	printf("(blend-%d\n", node->mode);
-	for (child = node->super.child; child; child = child->next)
+	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
@@ -62,7 +62,7 @@ static void lisptransform(fz_transformnode *node, int level)
 		node->m.a, node->m.b,
 		node->m.c, node->m.d,
 		node->m.e, node->m.f);
-	lispnode(node->super.child, level + 1);
+	lispnode(node->super.first, level + 1);
 	indent(level);
 	printf(")\n");
 }

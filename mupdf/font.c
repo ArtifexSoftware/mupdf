@@ -725,6 +725,31 @@ printf("  cidtogidmap %d\n", len / 2);
 	}
 
 	/*
+	 * ToUnicode
+	 */
+
+	if (fz_dictgets(dict, "ToUnicode"))
+		printf("  load tounicode for cid-font");
+
+	if (!strcmp(collection, "Adobe-CNS1"))
+		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
+	else if (!strcmp(collection, "Adobe-GB1"))
+		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-GB1-UCS2");
+	else if (!strcmp(collection, "Adobe-Japan1"))
+		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
+	else if (!strcmp(collection, "Adobe-Japan2"))
+		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2");
+	else if (!strcmp(collection, "Adobe-Korea1"))
+		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
+	else
+	{
+		printf("  unknown character collection\n");
+		error = nil;
+	}
+	if (error)
+		goto cleanup;
+
+	/*
 	 * Horizontal
 	 */
 

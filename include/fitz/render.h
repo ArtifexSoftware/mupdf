@@ -1,14 +1,11 @@
 typedef struct fz_renderer_s fz_renderer;
 
-enum { FZ_RNONE, FZ_ROVER, FZ_RMASK };
-
 struct fz_renderer_s
 {
     fz_colorspace *model;
     fz_glyphcache *cache;
     fz_gel *gel;
     fz_ael *ael;
-    int mode;
     fz_irect clip;
     fz_pixmap *tmp;
     fz_pixmap *acc;

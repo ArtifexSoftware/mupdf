@@ -76,7 +76,8 @@ struct fz_node_s
 {
 	fz_nodekind kind;
 	fz_node *parent;
-	fz_node *child;
+	fz_node *first;
+	fz_node *last;
 	fz_node *next;
 };
 
