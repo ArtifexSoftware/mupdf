@@ -1,6 +1,11 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+/*
+ * TODO: substitution fonts when no exact match is found.
+ * base on a) cid system info and b) fontdescriptor flags
+ */
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <freetype/internal/ftobjs.h>
@@ -8,7 +13,23 @@
 #include "fontenc.h"
 #include "fontagl.h"
 
+/*
+ * FreeType and Rendering glue
+ */
+
 enum { UNKNOWN, TYPE1, CFF, TRUETYPE, CID };
+
+enum
+{
+	FD_FIXED = 1 << 0,
+	FD_SERIF = 1 << 1,
+	FD_SYMBOLIC = 1 << 2,
+	FD_SCRIPT = 1 << 3,
+	FD_NONSYMBOLIC = 1 << 5,
+	FD_ITALIC = 1 << 6,
+	FD_ALLCAP = 1 << 16,
+	FD_SMALLCAP = 1 << 17,
+};
 
 static int ftkind(FT_Face face)
 {
@@ -111,6 +132,10 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	return nil;
 }
 
+/*
+ * Basic encoding tables
+ */
+
 static char *cleanfontname(char *fontname)
 {
 	int i, k;
@@ -173,6 +198,10 @@ static int mrecode(char *name)
 	return -1;
 }
 
+/*
+ * Create and destroy
+ */
+
 static void ftfreefont(fz_font *font)
 {
 	pdf_font *pfont = (pdf_font*)font;
@@ -213,6 +242,10 @@ newfont(char *name)
 
 	return font;
 }
+
+/*
+ * Simple fonts (Type1 and TrueType)
+ */
 
 static fz_error *
 loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
@@ -484,6 +517,10 @@ cleanup:
 	*fontp = nil;
 	return error;
 }
+
+/*
+ * CID Fonts
+ */
 
 static fz_error *
 loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding)
@@ -801,6 +838,58 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 		return error;
 
 	return nil;
+}
+
+/*
+ * FontDescriptor
+ */
+
+fz_error *
+pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection)
+{
+	fz_error *error;
+	fz_obj *obj1, *obj2, *obj3, *obj;
+	char *fontname;
+
+	error = pdf_resolve(&desc, xref);
+	if (error)
+		return error;
+
+	fontname = fz_toname(fz_dictgets(desc, "FontName"));
+
+	font->flags = fz_toint(fz_dictgets(desc, "Flags"));
+	font->italicangle = fz_toreal(fz_dictgets(desc, "ItalicAngle"));
+	font->ascent = fz_toreal(fz_dictgets(desc, "Ascent"));
+	font->descent = fz_toreal(fz_dictgets(desc, "Descent"));
+	font->capheight = fz_toreal(fz_dictgets(desc, "CapHeight"));
+	font->xheight = fz_toreal(fz_dictgets(desc, "XHeight"));
+	font->missingwidth = fz_toreal(fz_dictgets(desc, "MissingWidth"));
+
+	obj1 = fz_dictgets(desc, "FontFile");
+	obj2 = fz_dictgets(desc, "FontFile2");
+	obj3 = fz_dictgets(desc, "FontFile3");
+	obj = obj1 ? obj1 : obj2 ? obj2 : obj3;
+
+	if (fz_isindirect(obj))
+	{
+		error = pdf_loadembeddedfont(font, xref, obj);
+		if (error)
+			goto cleanup;
+	}
+	else
+	{
+		error = pdf_loadsystemfont(font, fontname, collection);
+		if (error)
+			goto cleanup;
+	}
+
+	fz_dropobj(desc);
+
+	return nil;
+
+cleanup:
+	fz_dropobj(desc);
+	return error;
 }
 
 fz_error *

@@ -106,11 +106,12 @@ fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
 
 /* fontfile.c */
 fz_error *pdf_loadbuiltinfont(pdf_font *font, char *basefont);
+fz_error *pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref);
 fz_error *pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection);
 fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
-fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
 
 /* font.c */
+fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
 fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
 void pdf_freefont(pdf_font *font);
 

@@ -1,6 +1,10 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+#ifdef WIN32
+#error Compile "fontfilems.c" instead
+#endif
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <fontconfig/fontconfig.h>
@@ -264,53 +268,5 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 	font->fontdata = buf;
 
 	return nil;
-}
-
-fz_error *
-pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection)
-{
-	fz_error *error;
-	fz_obj *obj1, *obj2, *obj3, *obj;
-	char *fontname;
-
-	error = pdf_resolve(&desc, xref);
-	if (error)
-		return error;
-
-	fontname = fz_toname(fz_dictgets(desc, "FontName"));
-
-	font->flags = fz_toint(fz_dictgets(desc, "Flags"));
-	font->italicangle = fz_toreal(fz_dictgets(desc, "ItalicAngle"));
-	font->ascent = fz_toreal(fz_dictgets(desc, "Ascent"));
-	font->descent = fz_toreal(fz_dictgets(desc, "Descent"));
-	font->capheight = fz_toreal(fz_dictgets(desc, "CapHeight"));
-	font->xheight = fz_toreal(fz_dictgets(desc, "XHeight"));
-	font->missingwidth = fz_toreal(fz_dictgets(desc, "MissingWidth"));
-
-	obj1 = fz_dictgets(desc, "FontFile");
-	obj2 = fz_dictgets(desc, "FontFile2");
-	obj3 = fz_dictgets(desc, "FontFile3");
-	obj = obj1 ? obj1 : obj2 ? obj2 : obj3;
-
-	if (fz_isindirect(obj))
-	{
-		error = pdf_loadembeddedfont(font, xref, obj);
-		if (error)
-			goto cleanup;
-	}
-	else
-	{
-		error = pdf_loadsystemfont(font, fontname, collection);
-		if (error)
-			goto cleanup;
-	}
-
-	fz_dropobj(desc);
-
-	return nil;
-
-cleanup:
-	fz_dropobj(desc);
-	return error;
 }
 
