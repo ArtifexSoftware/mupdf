@@ -131,11 +131,19 @@ fz_error *pdf_decryptpdf(pdf_xref *xref);
  * high-level semantic objects for resources and pages
  */
 
+typedef struct pdf_nametree_s pdf_nametree;
 typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_font_s pdf_font;
 typedef struct pdf_resources_s pdf_resources;
 typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_csi_s pdf_csi;
+
+struct pdf_nametree_s
+{
+	int len;
+	int cap;
+	struct fz_keyval_s *items;
+};
 
 struct pdf_pagetree_s
 {
@@ -225,6 +233,13 @@ struct pdf_csi_s
 
 	fz_tree *tree;
 };
+
+/* nametree.c */
+fz_error *pdf_loadnametree(pdf_nametree **ntp, pdf_xref *xref, char *key);
+void pdf_freenametree(pdf_nametree *nt);
+void pdf_debugnametree(pdf_nametree *nt);
+fz_obj *pdf_lookupname(pdf_nametree *nt, fz_obj *name);
+fz_obj *pdf_lookupnames(pdf_nametree *nt, char *name);
 
 /* pagetree.c */
 fz_error *pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
