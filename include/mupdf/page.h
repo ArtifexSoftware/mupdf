@@ -21,7 +21,6 @@ struct pdf_page_s
 	int rotate;
 	fz_obj *resources;
 	fz_tree *tree;
-	pdf_textline *text;
 	pdf_comment *comments;
 	pdf_link *links;
 };
@@ -50,7 +49,7 @@ fz_error *pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
 void pdf_droppage(pdf_page *page);
 
 /* unicode.c */
-fz_error *pdf_loadtextfromtree(pdf_textline **linep, fz_tree *tree);
+fz_error *pdf_loadtextfromtree(pdf_textline **linep, fz_tree *tree, fz_matrix ctm);
 void pdf_debugtextline(pdf_textline *line);
 fz_error *pdf_newtextline(pdf_textline **linep);
 void pdf_droptextline(pdf_textline *line);

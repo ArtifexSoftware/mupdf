@@ -7,6 +7,7 @@ char *namefmt = nil;
 fz_renderer *gc;
 int nbands = 1;
 int verbose = 0;
+int textonly = 0;
 
 void usage()
 {
@@ -14,8 +15,9 @@ void usage()
 "usage: pdfrip [options] file.pdf pageranges\n"
 "  -b -\trender page in N bands (default 1)\n"
 "  -d -\tpassword for decryption\n"
+"  -g  \tshow display tree -- debug\n"
 "  -o -\toutput filename format (default out-%%03d.ppm)\n"
-"  -t  \tshow display tree\n"
+"  -t  \tprint text on stdout instead of rendering\n"
 "  -v  \tverbose\n"
 "  -z -\tzoom factor (default 1.0 = 72 dpi)\n"
 	);
@@ -72,6 +74,22 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	ctm = fz_concat(fz_translate(0, -page->mediabox.max.y),
 					fz_scale(zoom, -zoom));
 
+	if (textonly)
+	{
+		pdf_textline *line;
+
+		error = pdf_loadtextfromtree(&line, page->tree, ctm);
+		if (error)
+			fz_abort(error);
+		pdf_debugtextline(line);
+		pdf_droptextline(line);
+		pdf_droppage(page);
+
+		printf("\n\f\n");
+
+		return;
+	}
+
 	bbox = fz_roundrect(page->mediabox);
 	bbox.min.x = bbox.min.x * zoom;
 	bbox.min.y = bbox.min.y * zoom;
@@ -123,6 +141,8 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	fz_droppixmap(pix);
 
 	close(fd);
+
+	pdf_droppage(page);
 }
 
 int main(int argc, char **argv)
@@ -138,11 +158,12 @@ int main(int argc, char **argv)
 	fz_cpudetect();
 	fz_accelerate();
 
-	while ((c = getopt(argc, argv, "Vtvz:d:o:b:")) != -1)
+	while ((c = getopt(argc, argv, "Vgtvz:d:o:b:")) != -1)
 	{
 		switch (c)
 		{
-		case 't': ++showtree; break;
+		case 'g': ++showtree; break;
+		case 't': ++textonly; break;
 		case 'v': ++verbose; break;
 		case 'd': password = optarg; break;
 		case 'z': zoom = atof(optarg); break;
@@ -209,7 +230,16 @@ int main(int argc, char **argv)
 		pdf_debugpagetree(pages);
 
 	if (optind == argc)
+	{
 		printf("%d pages\n", pdf_getpagecount(pages));
+		return 0;
+	}
+
+	if (textonly)
+	{
+		puts("Content-Type: text/plain; charset=UTF-8");
+		puts("");
+	}
 
 	error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
 	if (error)
@@ -249,6 +279,9 @@ int main(int argc, char **argv)
 	}
 
 	fz_droprenderer(gc);
+
+	pdf_dropstore(xref->store);
+	xref->store = nil;
 
 	pdf_closexref(xref);
 

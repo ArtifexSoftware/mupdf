@@ -233,7 +233,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 }
 
 fz_error *
-pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree)
+pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 {
 	pdf_textline *root;
 	pdf_textline *line;
@@ -248,7 +248,7 @@ pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree)
 
 	line = root;
 
-	error = extracttext(&line, tree->root, fz_identity());
+	error = extracttext(&line, tree->root, ctm);
 	if (error)
 	{
 		pdf_droptextline(root);

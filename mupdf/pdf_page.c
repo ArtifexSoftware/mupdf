@@ -245,18 +245,6 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	page->comments = comments;
 	page->links = links;
-	page->text = nil;
-
-	/*
-	 * Extract unicode text lines
-	 */
-
-	error = pdf_loadtextfromtree(&page->text, page->tree);
-	if (error)
-	{
-		pdf_droppage(page);
-		return error;
-	}
 
 	pdf_logpage("} %p\n", page);
 
@@ -273,8 +261,6 @@ pdf_droppage(pdf_page *page)
 */
 	if (page->links)
 		pdf_droplink(page->links);
-	if (page->text)
-		pdf_droptextline(page->text);
 	fz_dropobj(page->resources);
 	fz_droptree(page->tree);
 	fz_free(page);

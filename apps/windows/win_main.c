@@ -21,9 +21,11 @@ static LRESULT CALLBACK windproc(HWND, UINT, WPARAM, LPARAM);
 static int winwidth = 0;
 static int winheight = 0;
 
-static int isdown = 0;
+static int ispanning = 0;
 static int oldx = 0, oldy = 0;
-
+static int iscopying = 0;
+static RECT copyrect;
+static int firstx = 0, firsty = 0;
 
 static int bmpstride = 0;
 static char *bmpdata = NULL;
@@ -225,22 +227,27 @@ void help()
 {
 	char msg[1024];
 	sprintf(msg,
-		"GhostPDF v%0.2f -- %s\n\n"
-		"    h\t-- display this help\n"
-		"    <\t-- rotate left\n"
-		"    >\t-- rotate right\n"
-		"    +\t-- zoom in\n"
-		"    -\t-- zoom out\n"
-		"    w\t-- shrinkwrap window\n"
-		"    b\t-- go back one page\n"
-		"    B\t-- go back ten pages\n"
-		"    f\t-- go forward one page\n"
-		"    F\t-- go forward ten pages\n"
-		"    G\t-- go to last page\n"
-		"    m\t-- mark page\n"
-		"    t\t-- pop back to last marked page\n"
-		"    123g\t-- go to page 123\n",
-		PDF_VERSION / 100.0, PDF_COPYRIGHT);
+"GhostPDF v%0.2f -- %s\n\n"
+"   l <\t\t-- rotate left\n"
+"   r >\t\t-- rotate right\n"
+"   u up\t\t-- scroll up\n"
+"   d down\t\t-- scroll down\n"
+"   = +\t\t-- zoom in\n"
+"   -\t\t-- zoom out\n"
+"   w\t\t-- shrinkwrap\n"
+"\n"
+"   n pgdn space\t-- next page\n"
+"   b pgup back\t-- previous page\n"
+"   right\t\t-- next page\n"
+"   left\t\t-- previous page\n"
+"   N F\t\t-- next 10\n"
+"   B\t\t-- back 10\n"
+"   m\t\t-- mark page for snap back\n"
+"   t\t\t-- pop back to last mark\n"
+"   123g\t\t-- go to page\n"
+"\n"
+"   left drag to pan, right drag to copy text\n"
+	    , PDF_VERSION / 100.0, PDF_COPYRIGHT);
 	MessageBoxA(hwnd, msg, "GhostPDF: Usage", MB_ICONINFORMATION);
 }
 
@@ -344,6 +351,33 @@ void winconvertimage()
 	}
 }
 
+void invertcopyrect()
+{
+	int x0 = copyrect.left - panx;
+	int x1 = copyrect.right - panx;
+	int y0 = copyrect.top - pany;
+	int y1 = copyrect.bottom - pany;
+	int x, y;
+
+	x0 = CLAMP(x0, 0, image->w - 1);
+	x1 = CLAMP(x1, 0, image->w - 1);
+	y0 = CLAMP(y0, 0, image->h - 1);
+	y1 = CLAMP(y1, 0, image->h - 1);
+
+	unsigned char *p;
+	for (y = y0; y < y1; y++)
+	{
+		p = bmpdata + y * bmpstride + x0 * 3;
+		for (x = x0; x < x1; x++)
+		{
+			p[0] = 255 - p[0];
+			p[1] = 255 - p[1];
+			p[2] = 255 - p[2];
+			p += 3;
+		}
+	}
+}
+
 void winblit()
 {
 	int x0 = panx;
@@ -354,6 +388,8 @@ void winblit()
 
 	if (bmpdata)
 	{
+		if (iscopying)
+			invertcopyrect();
 		dibinf->bmiHeader.biWidth = image->w;
 		dibinf->bmiHeader.biHeight = -image->h;
 		dibinf->bmiHeader.biSizeImage = image->h * bmpstride;
@@ -370,21 +406,23 @@ void winblit()
 				dibinf, /* pInfo */
 				DIB_RGB_COLORS /* color use flag */
 				);
+		if (iscopying)
+			invertcopyrect();
 	}
 
-	
+	/* Grey background */
 	r.top = 0; r.bottom = winheight;
 	r.left = 0; r.right = x0;
 	FillRect(hdc, &r, bgbrush);
 	r.left = x1; r.right = winwidth;
 	FillRect(hdc, &r, bgbrush);
-
 	r.left = 0; r.right = winwidth;
 	r.top = 0; r.bottom = y0;
 	FillRect(hdc, &r, bgbrush);
 	r.top = y1; r.bottom = winheight;
 	FillRect(hdc, &r, bgbrush);
 
+	/* Drop shadow */
 	r.left = x0 + 2;
 	r.right = x1 + 2;
 	r.top = y1;
@@ -425,6 +463,16 @@ void dragndrop()
  * Event handling
  */
 
+fz_matrix makectm(void)
+{
+	fz_matrix ctm;
+	ctm = fz_identity();
+	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
+	ctm = fz_concat(ctm, fz_rotate(rotate + page->rotate));
+	return ctm;
+}
+
 void constrainpan(int *panx, int *pany)
 {
 	int newx = *panx;
@@ -447,15 +495,72 @@ void constrainpan(int *panx, int *pany)
 	*pany = newy;
 }
 
-void dumptext()
+void handlecopy()
 {
+#define BUFLEN 4096
+	HGLOBAL handle;
+	unsigned short *ucsbuf;
 	fz_error *error;
-	pdf_textline *line;
-	error = pdf_loadtextfromtree(&line, page->tree);
+	pdf_textline *line, *ln;
+	int x, y, c;
+	int i, p;
+
+	int x0 = image->x + copyrect.left - panx;
+	int x1 = image->x + copyrect.right - panx;
+	int y0 = image->y + copyrect.top - pany;
+	int y1 = image->y + copyrect.bottom - pany;
+
+	if (!OpenClipboard(hwnd))
+		return;
+	EmptyClipboard();
+
+	handle = GlobalAlloc(GMEM_MOVEABLE, BUFLEN * sizeof(unsigned short));
+	if (!handle)
+	{
+		CloseClipboard();
+		return;
+	}
+
+	ucsbuf = GlobalLock(handle);
+
+	error = pdf_loadtextfromtree(&line, page->tree, makectm());
 	if (error)
 		fz_abort(error);
-	pdf_debugtextline(line);
+
+	p = 0;
+	for (ln = line; ln; ln = ln->next)
+	{
+		y = y0 - 1;
+		for (i = 0; i < ln->len; i++)
+		{
+			x = ln->text[i].x;
+			y = ln->text[i].y;
+			c = ln->text[i].c;
+			if (c < 32)
+				c = '?';
+			if (x >= x0 && x <= x1 && y >= y0 && y <= y1)
+				if (p < BUFLEN - 1)
+					ucsbuf[p++] = c;
+		}
+
+		if (y >= y0 && y <= y1)
+		{
+			if (p < BUFLEN - 1)
+				ucsbuf[p++] = '\r';
+			if (p < BUFLEN - 1)
+				ucsbuf[p++] = '\n';
+		}
+	}
+
+	ucsbuf[p] = 0;
+
 	pdf_droptextline(line);
+
+	GlobalUnlock(handle);
+
+	SetClipboardData(CF_UNICODETEXT, handle);
+
+	CloseClipboard();
 }
 
 void gotouri(fz_obj *uri)
@@ -495,6 +600,11 @@ void handlekey(int c)
 	int oldpage = pageno;
 	float oldzoom = zoom;
 	int oldrotate = rotate;
+	int panto = 0; /* 0 = top, 1 = bottom, 2 = leave alone */
+
+	/*
+	 * Save numbers typed for later
+	 */
 
 	if (c >= '0' && c <= '9')
 		pagebuf[pagebufidx++] = c;
@@ -504,85 +614,40 @@ void handlekey(int c)
 
 	switch (c)
 	{
+
+	/*
+	 * Help and quit
+	 */
+
 	case VK_F1:
 	case 'h':
+	case '?':
 		help();
 		break;
 
-	case 'd': fz_debugglyphcache(rast->cache); break;
-	case 'a': rotate -= 5; break;
-	case 's': rotate += 5; break;
-//	case 'x': dumptext(); break;
-//	case 'o': drawlinks(); break;
-
-	case VK_LEFT:
-	case '\b':
-	case 'b':
-		pageno--;
-		if (pageno < 1)
-			pageno = 1;
-		break;
-	case 'B':
-		pageno -= 10;
-		if (pageno < 1)
-			pageno = 1;
+	case VK_ESCAPE:
+	case 'q':
+		exit(0);
 		break;
 
-	case VK_PRIOR:
-		pany += image->h;
-	case VK_UP:
-		pany += image->h / 10;
-		constrainpan(&panx, &pany);
-		winrepaint();
-		break;
+	/*
+	 * Zoom and rotate
+	 */
 
-	case VK_NEXT:
-		pany -= image->h;
-	case VK_DOWN:
-		pany -= image->h / 10;
-		constrainpan(&panx, &pany);
-		winrepaint();
-		break;
-
-	case VK_RIGHT:
-	case ' ':
-	case 'f':
-		pageno++;
-		if (pageno > count)
-			pageno = count;
-		break;
-	case 'F':
-		pageno += 10;
-		if (pageno > count)
-			pageno = count;
-		break;
-	case 'm':
-		if (histlen + 1 == 256)
-		{
-			memmove(hist, hist + 1, sizeof(int) * 255);
-			histlen --;
-		}
-		hist[histlen++] = pageno;
-		break;
-	case 't':
-	case 'T':
-		if (histlen > 0)
-			pageno = hist[--histlen];
+	case '+': case '=':
+		zoom += 0.1;
+		if (zoom > 3.0)
+			zoom = 3.0;
 		break;
 	case '-':
 		zoom -= 0.1;
 		if (zoom < 0.1)
 			zoom = 0.1;
 		break;
-	case '+':
-		zoom += 0.1;
-		if (zoom > 3.0)
-			zoom = 3.0;
-		break;
-	case '<':
+	case 'l': case '<':
 		rotate -= 90;
 		break;
-	case '>':
+	case 'r': case '>':
 		rotate += 90;
 		break;
 
@@ -592,11 +657,41 @@ void handlekey(int c)
 		winresize(image->w, image->h);
 		break;
 
-	case VK_ESCAPE:
-	case 'q':
-		exit(0);
+	/*
+	 * Pan view, but dont change page
+	 */
+
+	case 'd': case VK_DOWN:
+		pany -= image->h / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
+	case 'u': case VK_UP:
+		pany += image->h / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
+	case ',':
+		panx += image->w / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
+	case '.':
+		panx -= image->w / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
+	/*
+	 * Page navigation
+	 */
+
 	case 'g':
-	case 'G':
+	case '\n':
+	case '\r':
 		if (pagebufidx > 0)
 		{
 			pagebuf[pagebufidx] = '\0';
@@ -607,18 +702,76 @@ void handlekey(int c)
 			if (pageno > count)
 				pageno = count;
 		}
-		else
+		break;
+
+	case 'G':
+		pageno = count;
+		break;
+
+	case 'm':
+		if (histlen + 1 == 256)
 		{
-			if (c == 'G')
-			{
-				pageno = count;
-			}
+			memmove(hist, hist + 1, sizeof(int) * 255);
+			histlen --;
 		}
+		hist[histlen++] = pageno;
+		break;
+
+	case 't':
+		if (histlen > 0)
+			pageno = hist[--histlen];
+		break;
+
+	/*
+	 * Back and forth ...
+	 */
+
+	case VK_LEFT:
+		panto = 2;
+		pageno--;
+		if (pageno < 1)
+			pageno = 1;
+		break;
+
+	case VK_PRIOR: case '\b': case 'b':
+		panto = 1;
+		pageno--;
+		if (pageno < 1)
+			pageno = 1;
+		break;
+
+	case VK_RIGHT:
+		panto = 2;
+	case VK_NEXT: case ' ': case 'f': case 'n':
+		pageno++;
+		if (pageno > count)
+			pageno = count;
+		break;
+
+	case 'B':
+		pageno -= 10;
+		if (pageno < 1)
+			pageno = 1;
+		break;
+
+	case 'F': case 'N':
+		pageno += 10;
+		if (pageno > count)
+			pageno = count;
 		break;
 	}
 
 	if (pageno != oldpage || zoom != oldzoom || rotate != oldrotate)
+	{
+		switch (panto)
+		{
+		case 0: pany = 0; break;
+		case 1: pany = -2000; break;
+		case 2: break;
+		}
 		showpage();
+		constrainpan(&panx, &pany);
+	}
 }
 
 void handlemouse(int x, int y, int btn, int state)
@@ -630,10 +783,7 @@ void handlemouse(int x, int y, int btn, int state)
 	p.x = x - panx + image->x;
 	p.y = y - pany + image->y;
 
-	ctm = fz_identity();
-	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
-	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
-	ctm = fz_concat(ctm, fz_rotate(rotate + page->rotate));
+	ctm = makectm();
 	ctm = fz_invertmatrix(ctm);
 
 	p = fz_transformpoint(ctm, p);
@@ -664,15 +814,38 @@ void handlemouse(int x, int y, int btn, int state)
 
 	if (state == 1)
 	{
-		isdown = 1;
 		SetCapture(hwnd);
+		if (btn == 1 && !iscopying)
+			ispanning = 1;
+		if (btn == 3 && !ispanning)
+		{
+			iscopying = 1;
+			firstx = x;
+			firsty = y;
+			copyrect.left = x;
+			copyrect.right = x;
+			copyrect.top = y;
+			copyrect.bottom = y;
+		}
 	}
+
 	else if (state == -1)
 	{
-		isdown = 0;
 		ReleaseCapture();
+		if (iscopying)
+		{
+			copyrect.left = MIN(firstx, x);
+			copyrect.right = MAX(firstx, x);
+			copyrect.top = MIN(firsty, y);
+			copyrect.bottom = MAX(firsty, y);
+			handlecopy();
+			winrepaint();
+		}
+		ispanning = 0;
+		iscopying = 0;
 	}
-	else if (isdown)
+
+	else if (ispanning)
 	{
 		int newx = panx + x - oldx;
 		int newy = pany + y - oldy;
@@ -685,6 +858,15 @@ void handlemouse(int x, int y, int btn, int state)
 			pany = newy;
 			winrepaint();
 		}
+	}
+
+	else if (iscopying)
+	{
+		copyrect.left = MIN(firstx, x);
+		copyrect.right = MAX(firstx, x);
+		copyrect.top = MIN(firsty, y);
+		copyrect.bottom = MAX(firsty, y);
+		winrepaint();
 	}
 
 	oldx = x;
@@ -781,34 +963,15 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	/* Mouse wheel */
 	case WM_MOUSEWHEEL:
-		if ((signed short)HIWORD(wParam) > 0) {
-			// wheel-up
-			handlekey('+');
-		}
-		else {
-			// wheel-down
-			handlekey('-');
-		}
+		if ((signed short)HIWORD(wParam) > 0)
+			handlekey('u');
+		else
+			handlekey('d');
 		return 0;
 
 	/* Keyboard events */
 
-	/* Only deal with key-down */
-	case WM_KEYUP:
-		return 0;
-	case WM_SYSKEYUP:
-		return 0;
-
-	case WM_SYSCHAR:
-		//printf("WM_SYSCHAR: %d '%c'\n", wParam, wParam);
-		return 0;
-
-	case WM_SYSKEYDOWN:
-		//printf("WM_SYSKEYDOWN: %d '%c'\n", wParam, wParam);
-		return 0;
-
 	case WM_KEYDOWN:
-		//printf("WM_KEYDOWN: %d '%c'\n", wParam, wParam); 
 		/* only handle special keys */
 		switch (wParam)
 		{
@@ -828,7 +991,6 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	/* unicode encoded chars, including escape, backspace etc... */
 	case WM_CHAR:
-		//printf("WM_CHAR: %d '%c'\n", wParam, wParam);
 		handlekey(wParam);
 		handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 		return 0;
@@ -1005,7 +1167,7 @@ int main(int argc, char **argv)
 
 	associateme(argv[0]);
 
-	while ((c = getopt(argc, argv, "hbz:r:p:u:")) != -1)
+	while ((c = getopt(argc, argv, "bz:r:p:u:")) != -1)
 	{
 		switch (c)
 		{
@@ -1014,7 +1176,6 @@ int main(int argc, char **argv)
 		case 'p': pageno = atoi(optarg); break;
 		case 'z': zoom = atof(optarg); break;
 		case 'r': rotate = atoi(optarg); break;
-		case 'h': help(); break;
 		default: help(); exit(1); break;
 		}
 	}
@@ -1053,6 +1214,9 @@ int main(int argc, char **argv)
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	pdf_dropstore(xref->store);
+	xref->store = nil;
 
 	pdf_closexref(xref);
 
