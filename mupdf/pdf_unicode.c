@@ -99,6 +99,8 @@ pdf_newtextline(pdf_textline **linep)
 	line = *linep = fz_malloc(sizeof(pdf_textline));
 	if (!line)
 		return fz_outofmem;
+	line->height.x = 0;	/* bad default value... */
+	line->height.y = 10;
 	line->len = 0;
 	line->cap = 0;
 	line->text = nil;
@@ -160,6 +162,14 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 		fz_hmtx h;
 		int i, g, x, y;
 		int c;
+
+		/* get line height */
+		trm = fz_concat(tm, ctm);
+		trm.e = 0;
+		trm.f = 0;
+		p.x = 0;
+		p.y = 1;
+		(*line)->height = fz_transformpoint(trm, p);
 
 		for (i = 0; i < text->len; i++)
 		{

@@ -32,6 +32,7 @@ struct pdf_textchar_s
 
 struct pdf_textline_s
 {
+	fz_point height;
 	int len, cap;
 	pdf_textchar *text;
 	pdf_textline *next;

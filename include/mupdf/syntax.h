@@ -28,6 +28,7 @@ fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, char *buf, int cap, int *oid,
 fz_rect pdf_torect(fz_obj *array);
 fz_matrix pdf_tomatrix(fz_obj *array);
 fz_error *pdf_toutf8(char **dstp, fz_obj *src);
+fz_error *pdf_toucs2(unsigned short **dstp, fz_obj *src);
 
 /*
  * Encryption
