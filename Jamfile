@@ -283,12 +283,12 @@ if $(OS) = MINGW
 		win_res.rc
 	;
 
+	WINLIBS = -lgdi32 -lcomdlg32 ;
+	if $(BUILD) = release { WINLIBS += -mwindows ; }
+
 	LinkLibraries ghostpdf : $(FITZLIBS) ;
 
-	LINKLIBS on ghostpdf$(SUFEXE) =
-		$(LINKLIBS)
-		-lgdi32 -lcomdlg32 -mwindows
-		;
+	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
 
 	InstallBin $(BINDIR) : ghostpdf$(SUFEXE) ;
 }
