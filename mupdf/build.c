@@ -536,7 +536,7 @@ pdf_showpath(pdf_csi *csi,
 	if (dofill && dostroke)
 	{
 		fpath = csi->path;
-		error = fz_clonepath(&spath, fpath);
+		error = fz_clonepathnode(&spath, fpath);
 		if (error) return error;
 	}
 	else
@@ -588,8 +588,6 @@ pdf_flushtext(pdf_csi *csi)
 
 	if (csi->text)
 	{
-
-		/* invisible */
 		switch (csi->textmode)
 		{
 		case 0:	/* fill */
@@ -609,6 +607,17 @@ pdf_flushtext(pdf_csi *csi)
 		case 4: /* fill + clip */
 		case 5: /* stroke + clip */
 		case 6: /* stroke + fill + clip */
+			{
+				fz_textnode *temp;
+				error = fz_clonetextnode(&temp, csi->text);
+				if (error)
+					return error;
+				error = pdf_addfillshape(gstate, (fz_node*)temp);
+				if (error)
+					return error;
+			}
+			/* fall through */
+
 		case 7: /* invisible clip */
 			if (!csi->textclip)
 			{

@@ -1,14 +1,19 @@
 immediate plan:
-	- global font/cmap cache
-	- text fill + clip mode
 	- altivec optimize
 	- page labels + dests + outline + annots
 	- design gui for editor
 	- go through spec and check all features!
-	- font and cmap config (where to load cmap and which cid fonts)
 	- talk to keithp about fontconfig cid-font + cmap support
 
+	- unify handling of mallocing fonts and images
+	- font and cmap config (where to load cmap and which cid fonts)
+	- global font/cmap cache
+	- split type3 and ftfont malloc (dont waste t3 charprocs on ft fonts)
+	- make ftfontfile separate struct w/ refcounting
+
 ---
+
+std rsrc fmt
 
 transparency (v2)
 	- everything!
@@ -34,19 +39,13 @@ rendering
 	- font focus
 
 parser
-	- stick objects automatically into xref resource cache, not in preloadres
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 
 fz_optimizetree()
+	- error & memory
 	- concatenate chained transforms
 	- remove identity transforms
-
-clean up
-	- reference count everything
-	- design by contract
-	- split into private and public
-	- comments and documentation
 
 cache
 	global cache for cmaps and fontfiles (emb+sys)

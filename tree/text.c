@@ -5,7 +5,7 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 {
 	fz_textnode *text;
 
-	text = *textp = fz_malloc(sizeof(fz_textnode));
+	text = fz_malloc(sizeof(fz_textnode));
 	if (!text)
 		return fz_outofmem;
 
@@ -17,6 +17,38 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 	text->cap = 0;
 	text->els = nil;
 
+	*textp = text;
+	return nil;
+}
+
+fz_error *
+fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext)
+{
+	fz_textnode *text;
+
+	text = *textp = fz_malloc(sizeof(fz_textnode));
+	if (!text)
+		return fz_outofmem;
+
+	fz_initnode((fz_node*)text, FZ_NTEXT);
+
+	text->font = fz_keepfont(oldtext->font);
+	text->trm = oldtext->trm;
+	text->len = oldtext->len;
+	text->cap = oldtext->len;
+	text->els = nil;
+
+	text->els = fz_malloc(sizeof(fz_textel) * text->len);
+	if (!text->els)
+	{
+		fz_dropfont(text->font);
+		fz_free(text);
+		return fz_outofmem;
+	}
+
+	memcpy(text->els, oldtext->els, sizeof(fz_textel) * text->len);
+
+	*textp = text;
 	return nil;
 }
 

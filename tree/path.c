@@ -25,7 +25,7 @@ fz_newpathnode(fz_pathnode **pathp)
 }
 
 fz_error *
-fz_clonepath(fz_pathnode **pathp, fz_pathnode *oldpath)
+fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath)
 {
 	fz_pathnode *path;
 

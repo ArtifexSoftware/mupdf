@@ -52,7 +52,7 @@ struct fz_pathnode_s
 };
 
 fz_error *fz_newpathnode(fz_pathnode **pathp);
-fz_error *fz_clonepath(fz_pathnode **pathp, fz_pathnode *oldpath);
+fz_error *fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath);
 fz_error *fz_moveto(fz_pathnode*, float x, float y);
 fz_error *fz_lineto(fz_pathnode*, float x, float y);
 fz_error *fz_curveto(fz_pathnode*, float, float, float, float, float, float);
