@@ -718,8 +718,9 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 	while (buf < end)
 	{
 		buf = fz_decodecpt(font->encoding, buf, &cpt);
-
 		cid = fz_lookupcid(font->encoding, cpt);
+		if (cid == -1)
+			cid = 0;
 
 		error = showglyph(csi, cid);
 		if (error)

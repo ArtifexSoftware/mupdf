@@ -139,7 +139,9 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	fz_rect bbox;
 	int rotate;
 
-	obj = fz_dictgets(dict, "MediaBox");
+	obj = fz_dictgets(dict, "CropBox");
+	if (!obj)
+		obj = fz_dictgets(dict, "MediaBox");
 	if (!fz_isarray(obj))
 		return fz_throw("syntaxerror: Page missing MediaBox");
 	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));

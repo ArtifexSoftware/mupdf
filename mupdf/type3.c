@@ -129,9 +129,9 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
 	bbox = fz_transformaabb(font->matrix, bbox);
 	bbox.min.x = fz_floor(bbox.min.x * 1000);
-	bbox.min.y = fz_floor(bbox.min.x * 1000);
+	bbox.min.y = fz_floor(bbox.min.y * 1000);
 	bbox.max.x = fz_ceil(bbox.max.x * 1000);
-	bbox.max.y = fz_ceil(bbox.max.x * 1000);
+	bbox.max.y = fz_ceil(bbox.max.y * 1000);
 	fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 
 	/*

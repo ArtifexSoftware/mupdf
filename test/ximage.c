@@ -246,7 +246,7 @@ select_mode(void)
 			info.mode = byteorder == MSBFirst ? RGBA8888 : ABGR8888;
 	}
 
-	printf("rgba:8888 -> %s\n", modename[info.mode]);
+	printf("argb:8888 -> %s\n", modename[info.mode]);
 
 	/* select conversion function */
 	info.convert_func = ximage_convert_funcs[info.mode];
@@ -414,6 +414,7 @@ ximage_blit(Drawable d, GC gc,
 /*
  *
  */
+
 #ifndef _C99
 #ifdef __GNUC__
 #define restrict __restrict__
@@ -455,16 +456,20 @@ ximage_convert_bgra8888(PARAMS)
 	int x, y;
 	unsigned *s = (unsigned *)src;
 	unsigned *d = (unsigned *)dst;
-	unsigned val;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
-			val = s[x];
+			unsigned val = s[x];
+			unsigned a0g0 = val & 0xff00ff00;
+			unsigned gb00 = val << 16;
+			unsigned zzar = val >> 16;
+			unsigned gbar = gb00 | zzar;
+			d[x] = (gbar & 0x00ff00ff) | a0g0;
+/*
 			d[x] =
 				(val >> 24) |
 				((val >> 8) & 0xff) |
 				((val << 8) & 0xff0000) |
 				(val << 24);
-/*
 			d[x] =
 				(((val >> 24) & 0xff) <<  0) |
 				(((val >> 16) & 0xff) <<  8) |
@@ -482,6 +487,23 @@ ximage_convert_bgra8888(PARAMS)
 static void
 ximage_convert_abgr8888(PARAMS)
 {
+#if 1
+	int x, y;
+	unsigned *s = (unsigned *)src;
+	unsigned *d = (unsigned *)dst;
+	unsigned val;
+
+	for (y = 0; y < h; y++) {
+		for (x = 0; x < w; x++) {
+			val = s[x];
+			/* bigendian... */
+			d[x] = (val & 0xff00ff00) |
+				(((val << 16) | (val >> 16)) & 0x00ff00ff);
+		}
+		d += dststride>>2;
+		s += srcstride>>2;
+	}
+#else
 	int x, y;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
@@ -493,6 +515,7 @@ ximage_convert_abgr8888(PARAMS)
 		dst += dststride;
 		src += srcstride;
 	}
+#endif
 }
 
 static void

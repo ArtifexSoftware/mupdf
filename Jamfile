@@ -136,7 +136,12 @@ Library libmupdf :
 	mupdf/interpret.c
 	;
 
-rule HexDump { DEPENDS $(<) : $(>) ; }
+rule HexDump
+{
+	DEPENDS $(<) : $(>) ;
+	Clean clean : $(<) ;
+}
+
 actions HexDump
 {
 	xxd -i $(>) | sed -e 's/data_//g;s/, /,/g' > $(<) ;

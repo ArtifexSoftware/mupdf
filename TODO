@@ -20,7 +20,6 @@ rendering
 	- cpu-specific optims
 
 parser
-	- join content streams arrays (for split dicts)
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 
