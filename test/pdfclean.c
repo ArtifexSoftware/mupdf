@@ -163,6 +163,7 @@ int main(int argc, char **argv)
 	}
 
 	error = pdf_savepdf(xref, outfile, encrypt);
+//	error = pdf_saveincrementalpdf(xref, infile);
 	if (error)
 		fz_abort(error);
 

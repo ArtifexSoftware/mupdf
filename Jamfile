@@ -116,7 +116,8 @@ LINKLIBS =
 
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
+Main pdfmerge : test/pdfmerge.c ;
 Main pdfrip : test/pdfrip.c ;
 
-LinkLibraries pdfclean pdfdebug pdfrip : libmupdf libfitz ;
+LinkLibraries pdfclean pdfdebug pdfmerge pdfrip : libmupdf libfitz ;
 

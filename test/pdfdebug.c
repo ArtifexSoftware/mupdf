@@ -5,7 +5,6 @@ static char *password = "";
 static int dodecode = 0;
 static int dorepair = 0;
 static int doprintxref = 0;
-static int dosave = 0;
 
 void usage()
 {
@@ -44,12 +43,8 @@ void printsafe(unsigned char *buf, int n)
 
 void decodestream(pdf_xref *xref, fz_obj *stream, int oid, int gid, int ofs)
 {
-	FILE *copy;
 	fz_error *error;
 	unsigned char buf[512];
-
-	if (dosave)
-		copy = fopen("/tmp/dump.stm", "wb");
 
 	safecol = 0;
 
@@ -64,13 +59,7 @@ void decodestream(pdf_xref *xref, fz_obj *stream, int oid, int gid, int ofs)
 		if (n < 0)
 			fz_abort(fz_ferror(xref->file));
 		printsafe(buf, n);
-
-		if (dosave)
-			fwrite(buf, 1, n, copy);
 	}
-
-	if (dosave)
-		fclose(copy);
 
 	pdf_closestream(xref);
 }
@@ -144,13 +133,10 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	int c;
 
-	while ((c = getopt(argc, argv, "drxsopu:")) != -1)
+	while ((c = getopt(argc, argv, "drxopu:")) != -1)
 	{
 		switch (c)
 		{
-		case 's':
-			dodecode ++;
-			dosave ++;
 		case 'd':
 			dodecode ++;
 			break;

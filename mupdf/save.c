@@ -68,12 +68,8 @@ writecopy(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
-	fz_obj *length;
 	fz_obj *obj;
 	int stmofs;
-	fz_filter *cf;
-	fz_filter *nf;
-	fz_filter *pipe;
 	fz_filter *ef;
 	int gid;
 	int n;
@@ -98,32 +94,9 @@ writecopy(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 	{
 		fz_print(out, "stream\n");
 
-		length = fz_dictgets(obj, "Length");
-		error = pdf_resolve(&length, xref);
+		error = pdf_openrawstream0(xref, obj, oid, gid, stmofs);
 		if (error)
 			goto cleanup;
-
-		if (xref->crypt)
-		{
-			error = fz_newnullfilter(&nf, fz_toint(length));
-			if (error)
-				goto cleanup;
-			error = pdf_cryptstm(&cf, xref->crypt, oid, gid);
-			if (error)
-				goto cleanup;
-			error = fz_newpipeline(&pipe, nf, cf);
-			if (error)
-				goto cleanup;
-		}
-		else
-		{
-			error = fz_newnullfilter(&pipe, fz_toint(length));
-			if (error)
-				goto cleanup;
-		}
-
-		fz_seek(xref->file, stmofs, 0);
-		fz_pushfilter(xref->file, pipe);
 
 		if (encrypt)
 		{
@@ -156,7 +129,7 @@ writecopy(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 		if (encrypt)
 			fz_popfilter(out);
 
-		fz_popfilter(xref->file);
+		pdf_closestream(xref);
 
 		fz_print(out, "endstream\n");
 	}

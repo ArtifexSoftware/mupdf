@@ -35,6 +35,26 @@ pdf_newxref(pdf_xref **xrefp)
 }
 
 fz_error *
+pdf_emptyxref(pdf_xref *xref, float version)
+{
+	assert(xref->table == nil);
+
+	xref->version = version;
+	xref->capacity = 256;
+	xref->size = 1;
+	xref->table = fz_malloc(xref->capacity * sizeof(pdf_xrefentry));
+	if (!xref->table)
+		return fz_outofmem;
+
+	xref->table[0].type = 'f';
+    xref->table[0].mark = 0;
+    xref->table[0].ofs = 0;
+    xref->table[0].gen = 65535;
+
+	return nil;
+}
+
+fz_error *
 pdf_decryptxref(pdf_xref *xref)
 {
 	fz_error *error;
@@ -255,7 +275,7 @@ fz_error *
 pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 {
 	pdf_xrefentry *x;
-	int prev;
+	int prev, next;
 	int oid = 0;
 
 	while (1)
@@ -268,6 +288,15 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 			{
 				*oidp = oid;
 				*gidp = x->gen;
+
+				x->type = 'a';
+				x->ofs = 0;
+
+				prev = findprev(xref, oid);
+				next = findnext(xref, oid);
+				xref->table[prev].type = 'd';
+				xref->table[prev].ofs = next;
+
 				return nil;
 			}
 		}
@@ -293,17 +322,18 @@ pdf_createobject(pdf_xref *xref, int *oidp, int *gidp)
 
 	oid = xref->size ++;
 
-	xref->table[oid].type = 'd';
+	xref->table[oid].type = 'a';
 	xref->table[oid].mark = 0;
 	xref->table[oid].ofs = 0;
 	xref->table[oid].gen = 0;
 
-	prev = findprev(xref, oid);
-	xref->table[prev].type = 'd';
-	xref->table[prev].ofs = oid;
-
 	*oidp = oid;
 	*gidp = 0;
+
+	prev = findprev(xref, oid);
+	next = findnext(xref, oid);
+	xref->table[prev].type = 'd';
+	xref->table[prev].ofs = next;
 
 	return nil;
 }

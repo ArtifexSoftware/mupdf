@@ -189,6 +189,64 @@ pdf_buildfilter(fz_filter **fp, pdf_xref *xref, fz_obj *stmobj, int oid, int gid
 }
 
 fz_error *
+pdf_openrawstream0(pdf_xref *xref, fz_obj *stmobj, int oid, int gid, int ofs)
+{
+	fz_error *error;
+	fz_filter *nf = nil;
+	fz_filter *cf = nil;
+	fz_filter *pipe = nil;
+	fz_obj *obj;
+	int length;
+	int n;
+
+	obj = fz_dictgets(stmobj, "Length");
+	error = pdf_resolve(&obj, xref);
+	if (error)
+		return error;
+	length = fz_toint(obj);
+	fz_dropobj(obj);
+
+	n = fz_seek(xref->file, ofs, 0);
+	if (n < 0)
+		return fz_ferror(xref->file);
+
+	if (xref->crypt)
+	{
+		error = fz_newnullfilter(&nf, length);
+		if (error)
+			return error;
+
+		error = pdf_cryptstm(&cf, xref->crypt, oid, gid);
+		if (error) {
+			fz_freefilter(nf);
+			return error;
+		}
+
+		error = fz_newpipeline(&pipe, nf, cf);
+		if (error) {
+			fz_freefilter(nf);
+			fz_freefilter(cf);
+			return error;
+		}
+	}
+
+	else
+	{
+		error = fz_newnullfilter(&pipe, length);
+		if (error)
+			return error;
+	}
+
+	error = fz_pushfilter(xref->file, pipe);
+	if (error) {
+		fz_freefilter(pipe);
+		return error;
+	}
+
+	return nil;
+}
+
+fz_error *
 pdf_openstream0(pdf_xref *xref, fz_obj *stmobj, int oid, int gid, int ofs)
 {
 	fz_error *error;
@@ -242,6 +300,22 @@ void
 pdf_closestream(pdf_xref *xref)
 {
 	fz_popfilter(xref->file);
+}
+
+fz_error *
+pdf_readrawstream0(fz_buffer **bufp, pdf_xref *xref, fz_obj *stmobj, int oid, int gid, int ofs)
+{
+	fz_error *error;
+
+	error = pdf_openrawstream0(xref, stmobj, oid, gid, ofs);
+	if (error)
+		return error;
+
+	error = fz_readfile(bufp, xref->file);
+
+	pdf_closestream(xref);
+
+	return error;
 }
 
 fz_error *
