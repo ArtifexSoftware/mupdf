@@ -78,4 +78,6 @@ extern void fz_accelerate();
 fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem);
 void fz_droprenderer(fz_renderer *gc);
 fz_error *fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox, int white);
+fz_error *fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm);
+
 

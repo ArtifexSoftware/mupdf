@@ -838,3 +838,37 @@ DEBUG("}\n");
 	return nil;
 }
 
+fz_error *
+fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm)
+{
+	fz_error *error;
+
+	assert(!gc->maskonly);
+	assert(dest->n == 4);
+
+	gc->clip.min.x = dest->x;
+	gc->clip.min.y = dest->y;
+	gc->clip.max.x = dest->x + dest->w;
+	gc->clip.max.y = dest->y + dest->h;
+
+	gc->over = dest;
+
+	error = rendernode(gc, tree->root, ctm);
+	if (error)
+	{
+		gc->over = nil;
+		return error;
+	}
+
+	if (gc->dest)
+	{
+		blendover(gc, gc->dest, gc->over);
+		fz_droppixmap(gc->dest);
+		gc->dest = nil;
+	}
+
+	gc->over = nil;
+
+	return nil;
+}
+
