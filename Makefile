@@ -136,6 +136,23 @@ data/NimbusSanL-ReguItal.c: data/NimbusSanL-ReguItal.cff
 data/StandardSymL.c: data/StandardSymL.cff
 data/URWChanceryL-MediItal.c: data/URWChanceryL-MediItal.cff
 
+.FONTS: \
+	data/Dingbats.c \
+	data/NimbusMonL-Bold.c \
+	data/NimbusMonL-BoldObli.c \
+	data/NimbusMonL-Regu.c \
+	data/NimbusMonL-ReguObli.c \
+	data/NimbusRomNo9L-Medi.c \
+	data/NimbusRomNo9L-MediItal.c \
+	data/NimbusRomNo9L-Regu.c \
+	data/NimbusRomNo9L-ReguItal.c \
+	data/NimbusSanL-Bold.c \
+	data/NimbusSanL-BoldItal.c \
+	data/NimbusSanL-Regu.c \
+	data/NimbusSanL-ReguItal.c \
+	data/StandardSymL.c \
+	data/URWChanceryL-MediItal.c
+
 libfonts.a: \
 	data/Dingbats.o \
 	data/NimbusMonL-Bold.o \
