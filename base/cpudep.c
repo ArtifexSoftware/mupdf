@@ -7,7 +7,8 @@ Glenn Kennard <d98gk@efd.lth.se>
 
 #include <fitz.h>
 
-#include <setjmp.h>
+#include <signal.h> /* signal/sigaction */
+#include <setjmp.h> /* sigsetjmp/siglongjmp */
 
 #ifdef WIN32
 #define sigjmp_buf jmp_buf
@@ -94,9 +95,6 @@ static const featuretest features[1] = {
 	{ dummy, 0, "dummy" }
 };
 #endif
-
-#include <signal.h> /* signal/sigaction */
-#include <setjmp.h> /* sigsetjmp/siglongjmp */
 
 /* global run-time constant */
 unsigned fz_cpuflags = 0;

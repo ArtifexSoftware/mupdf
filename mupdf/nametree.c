@@ -85,7 +85,7 @@ pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root)
 		return error;
 	}
 
-//	fz_sortdict(tree);
+	fz_sortdict(tree);
 
 	*dictp = tree;
 	return nil;

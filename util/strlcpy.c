@@ -3,8 +3,6 @@
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
 
-#ifdef NEED_STRLCPY
-
 #include <string.h>
 
 int strlcpy(char *dst, const char *src, int siz)
@@ -31,6 +29,4 @@ int strlcpy(char *dst, const char *src, int siz)
 
 	return(s - src - 1);	/* count does not include NUL */
 }
-
-#endif
 

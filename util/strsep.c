@@ -1,5 +1,3 @@
-#ifdef NEED_STRSEP
-
 #include <string.h>
 
 char *strsep(char **stringp, const char *delim)
@@ -10,6 +8,4 @@ char *strsep(char **stringp, const char *delim)
 		*((*stringp)++) = '\0';
 	return ret;
 }
-
-#endif
 

@@ -11,56 +11,63 @@ HDRS = include filter ;
 # HAVE_X11 = yes ;
 # HAVE_GTK = yes ;
 
-if $(RELEASE)
+# CCFLAGS += -DARCH_$(OSPLAT) ;
+
+switch $(BUILD)
 {
-	Echo Release build for $(OS) $(OSPLAT) ;
-	CCFLAGS += -DARCH_$(OSPLAT) ;
-	OPTIM = -O3 ;
-}
-else if $(PROFILE)
-{
-	Echo Profiling build for $(OS) $(OSPLAT) ;
-	OPTIM = -g -pg ;
-}
-else
-{
-	Echo Debug build for $(OS) $(OSPLAT) ;
-	OPTIM = -g ;
+	case RELEASE :
+		Echo Release build for $(OS) $(OSPLAT) ;
+		OPTIM = -O3 ;
+	case PROFILE :
+		Echo Profiling build for $(OS) $(OSPLAT) ;
+		OPTIM = -g -pg ;
+	case * :
+		Echo Debug build for $(OS) $(OSPLAT) ;
+		OPTIM = -g ;
 }
 
-if $(OS) = LINUX
+switch $(OS)
 {
-	CCFLAGS += -std=c99 -DHAVE_C99 -Wall ;
-	CCFLAGS += -DNEED_STRLCPY -DNEED_GETOPT -DNEED_MATH ;
+	case LINUX :
+		CCFLAGS += -std=c89 -Wall ;
+		CCFLAGS += -DNEED_GETOPT ;
+		CCFLAGS += -DNEED_STRLCPY ;
+		CCFLAGS += -DNEED_STRLCAT ;
+	case MACOSX :
+		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -faltivec ;
+	case NT :
+		NOARSCAN = true ;
+		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -DWIN32 ;
+		CCFLAGS += -DNEED_GETOPT ;
+		CCFLAGS += -DNEED_STRSEP ;
+		CCFLAGS += -DNEED_STRLCPY ;
+		CCFLAGS += -DNEED_STRLCAT ;
+	case SOLARIS :
+		CCFLAGS += -std=c89 -Wall ;
 }
-
-if $(OS) = MACOSX
-{
-	CCFLAGS += -std=c99 -DHAVE_C99 -Wall -faltivec ;
-}
-
-if $(OS) = NT
-{
-	NOARSCAN = true ;
-	CCFLAGS += -std=c99 -DHAVE_C99 -Wall ;
-	CCFLAGS += -DNEED_STRLCPY -DNEED_STRSEP -DNEED_GETOPT ;
-}
-
-LINKLIBS = -lfreetype -ljpeg -lz -lm ;
-
-if $(HAVE_JBIG2DEC) { CCFLAGS += -DHAVE_JBIG2DEC ; LINKLIBS += -ljbig2dec ; }
-if $(HAVE_JASPER)   { CCFLAGS += -DHAVE_JASPER ; LINKLIBS += -ljasper ; }
 
 #
 # Libraries
 #
 
-Library libfitz :
-	util/getopt.c
-	util/strsep.c
-	util/strlcpy.c
-	util/strlcat.c
-	;
+if -DNEED_GETOPT  in $(CCFLAGS) { Library libfitz : util/getopt.c ; }
+if -DNEED_STRSEP  in $(CCFLAGS) { Library libfitz : util/strsep.c ; }
+if -DNEED_STRLCPY in $(CCFLAGS) { Library libfitz : util/strlcpy.c ; }
+if -DNEED_STRLCAT in $(CCFLAGS) { Library libfitz : util/strlcat.c ; }
+
+if $(HAVE_JASPER)
+{
+	CCFLAGS += -DHAVE_JASPER ;
+	LINKLIBS += -ljasper ;
+	Library libfitz : filter/jpxd.c ;
+}
+
+if $(HAVE_JBIG2DEC)
+{
+	CCFLAGS += -DHAVE_JBIG2DEC ;
+	LINKLIBS += -ljbig2dec ;
+	Library libfitz : filter/jbig2d.c ;
+}
 
 Library libfitz :
 	base/cpudep.c
@@ -137,9 +144,6 @@ Library libfitz :
 	render/pathstroke.c
 	render/render.c
 	;
-
-if $(HAVE_JBIG2DEC)    { Library libfitz : filter/jbig2d.c ; }
-if $(HAVE_JASPER)      { Library libfitz : filter/jpxd.c ; }
 
 if $(OSPLAT) = PPC     { Library libfitz : render/archppc.c ; }
 if $(OSPLAT) = SPARC   { Library libfitz : render/archsparc.c ; }
@@ -242,11 +246,13 @@ Library libmupdf :
 # Applications
 #
 
+LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+
 if $(OS) = NT
 {
 	Main w32pdf : apps/w32pdf.c ;
 	LinkLibraries w32pdf : libmupdf libfitz ;
-	LINKLIBS on w32pdf$(SUFEXE) = -lgdi32 $(LINKLIBS) ;
+	LINKLIBS on w32pdf$(SUFEXE) = $(LINKLIBS) -lgdi32 ;
 }
 
 if $(OS) = MACOSX
@@ -254,22 +260,24 @@ if $(OS) = MACOSX
 	MACPDF = apps/macpdf.app/Contents/MacOS/macpdf ;
 	Main $(MACPDF) : apps/macpdf.app/macpdf.c apps/macpdf.app/view.c ;
 	LinkLibraries $(MACPDF) : libmupdf libfitz ;
-	LINKLIBS on $(MACPDF) = -framework Carbon $(LINKLIBS) ;
+	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
 }
 
 if $(HAVE_X11)
 {
 	Main x11pdf : apps/x11pdf.c apps/ximage.c ;
 	LinkLibraries x11pdf : libmupdf libfitz ;
-	LINKLIBS on x11pdf$(SUFEXE) = -lX11 -lXext $(LINKLIBS) ;
+	LINKLIBS on x11pdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
 if $(HAVE_GTK)
 {
 	Main gtkpdf : apps/gtkpdf.c ;
-	LinkLibraries x11pdf : libmupdf libfitz ;
-	CCFLAGS += `pkg-config --cflags gtk+ gthread` ;
-	LINKLIBS on gtkpdf$(SUFEXE) = `pkg-config --libs gtk+ gmodule gthread` $(LINKLIBS) ;
+	CCFLAGS on apps/gtkpdf.c =
+		$(CCFLAGS) `pkg-config --cflags gtk+ gthread` ;
+	LinkLibraries gtkpdf : libmupdf libfitz ;
+	LINKLIBS on gtkpdf$(SUFEXE) =
+		$(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
 }
 
 Main pdfclean : apps/pdfclean.c ;
