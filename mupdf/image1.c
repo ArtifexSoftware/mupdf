@@ -67,13 +67,14 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 				return error;
 		}
 
-		img->super.n = img->super.cs->n;
-		img->super.a = 0;
 		if (!strcmp(img->super.cs->name, "Indexed"))
 		{
 			img->indexed = (pdf_indexed*)img->super.cs;
 			img->super.cs = img->indexed->base;
 		}
+
+		img->super.n = img->super.cs->n;
+		img->super.a = 0;
 	}
 
 	if (fz_isarray(d))

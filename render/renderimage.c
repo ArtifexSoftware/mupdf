@@ -220,7 +220,7 @@ fz_renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	while ( ( (h + dy - 1) / dy ) / sy > 2.0 && (h+dy-1)/dy > 1)
 		dy++;
 
-printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);
+printf("renderimage n=%d a=%d s=%gx%g/%dx%d d=%d,%d\n", n, a, sx, sy, w, h, dx, dy);
 
 	error = fz_newpixmap(&tile1, 0, 0, w, h, n + 1);
 
@@ -235,7 +235,6 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 	}
 	else
 		tile2 = tile1;
-
 
 	bbox.min.x = 0;
 	bbox.min.y = 0;

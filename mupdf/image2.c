@@ -6,6 +6,16 @@ static inline int getbit(const unsigned char *buf, int x)
 	return ( buf[x >> 3] >> ( 7 - (x & 7) ) ) & 1;
 }
 
+static inline int gettwo(const unsigned char *buf, int x)
+{
+	return ( buf[x >> 2] >> ( ( 3 - (x & 3) ) << 1 ) ) & 3;
+}
+
+static inline int getnib(const unsigned char *buf, int x)
+{
+	return ( buf[x >> 1] >> ( ( 1 - (x & 1) ) << 2 ) ) & 0xf;
+}
+
 static void loadtile1(pdf_image *src, fz_pixmap *dst, int n)
 {
 	int x, y, k;
@@ -33,6 +43,68 @@ static void loadtile1a(pdf_image *src, fz_pixmap *dst, int n)
 			d[x * (n+1) + 0] = 1;
 			for (k = 0; k < n; k++)
 				d[x * (n+1) + k + 1] = getbit(s, x * n + k);
+		}
+	}
+}
+
+static void loadtile2(pdf_image *src, fz_pixmap *dst, int n)
+{
+	int x, y, k;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			for (k = 0; k < n; k++)
+				d[x * n + k] = gettwo(s, x * n + k);
+		}
+	}
+}
+
+static void loadtile2a(pdf_image *src, fz_pixmap *dst, int n)
+{
+	int x, y, k;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			d[x * (n+1) + 0] = 1;
+			for (k = 0; k < n; k++)
+				d[x * (n+1) + k + 1] = gettwo(s, x * n + k);
+		}
+	}
+}
+
+static void loadtile4(pdf_image *src, fz_pixmap *dst, int n)
+{
+	int x, y, k;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			for (k = 0; k < n; k++)
+				d[x * n + k] = getnib(s, x * n + k);
+		}
+	}
+}
+
+static void loadtile4a(pdf_image *src, fz_pixmap *dst, int n)
+{
+	int x, y, k;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			d[x * (n+1) + 0] = 1;
+			for (k = 0; k < n; k++)
+				d[x * (n+1) + k + 1] = getnib(s, x * n + k);
 		}
 	}
 }
@@ -123,8 +195,8 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		switch (src->bpc)
 		{
 		case 1: loadtile1(src, tmp, 1); break;
-	/*	case 2: loadtile2(src, tmp, 1); break; */
-	/*	case 4: loadtile4(src, tmp, 1); break; */
+		case 2: loadtile2(src, tmp, 1); break;
+		case 4: loadtile4(src, tmp, 1); break;
 		case 8: loadtile8(src, tmp, 1); break;
 		default:
 			return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -156,8 +228,8 @@ printf("  unpack n=%d\n", tile->n);
 			switch (src->bpc)
 			{
 			case 1: loadtile1(src, tile, img->n + img->a); break;
-		/*	case 2: loadtile2(src, tile, img->n + img->a); break; */
-		/*	case 4: loadtile4(src, tile, img->n + img->a); break; */
+			case 2: loadtile2(src, tile, img->n + img->a); break;
+			case 4: loadtile4(src, tile, img->n + img->a); break;
 			case 8: loadtile8(src, tile, img->n + img->a); break;
 			default:
 				return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -168,8 +240,8 @@ printf("  unpack n=%d\n", tile->n);
 			switch (src->bpc)
 			{
 			case 1: loadtile1a(src, tile, img->n); break;
-		/*	case 2: loadtile2a(src, tile, img->n); break; */
-		/*	case 4: loadtile4a(src, tile, img->n); break; */
+			case 2: loadtile2a(src, tile, img->n); break;
+			case 4: loadtile4a(src, tile, img->n); break;
 			case 8: loadtile8a(src, tile, img->n); break;
 			default:
 				return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);

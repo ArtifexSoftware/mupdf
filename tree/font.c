@@ -185,7 +185,7 @@ fz_hmtx
 fz_gethmtx(fz_font *font, int cid)
 {
 	int l = 0;
-	int r = font->nhmtx;
+	int r = font->nhmtx - 1;
 	int m;
 
 	if (!font->hmtx)
@@ -212,7 +212,7 @@ fz_getvmtx(fz_font *font, int cid)
 	fz_hmtx h;
 	fz_vmtx v;
 	int l = 0;
-	int r = font->nvmtx;
+	int r = font->nvmtx - 1;
 	int m;
 
 	if (!font->vmtx)
