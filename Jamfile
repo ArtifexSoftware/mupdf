@@ -87,10 +87,8 @@ Library libfitz :
 	render/fill.c
 	render/stroke.c
 	render/scale.c
+	render/rastnone.c
 	render/render.c
-	render/rendertext.c
-	render/renderpath.c
-	render/renderimage.c
 ;
 
 Library libmupdf :

@@ -141,7 +141,7 @@ static void loadtile8a(pdf_image *src, fz_pixmap *dst, int n)
 static void
 decodetile(fz_pixmap *pix, int bpc, int skip, float *decode)
 {
-	unsigned char table[32][256];
+	unsigned char table[FZ_MAXCOLORS][256];
 	float invtwon = 1.0 / ((1 << bpc) - 1);
 	int x, y, k, i;
 

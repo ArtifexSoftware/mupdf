@@ -49,7 +49,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 		fz_matrix ctm;
 		fz_rect bbox;
 
-		error = fz_newrenderer(&gc, pdf_devicergb, 1024 * 512);
+		error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
 		if (error) fz_abort(error);
 
 		ctm = fz_concat(fz_translate(0, -page->mediabox.max.y), fz_scale(zoom, -zoom));

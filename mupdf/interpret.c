@@ -228,7 +228,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 	float a, b, c, d, e, f;
 	float x, y, w, h;
 	fz_matrix m;
-	float v[32];
+	float v[FZ_MAXCOLORS];
 	int what;
 	int i;
 

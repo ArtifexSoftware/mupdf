@@ -231,7 +231,7 @@ static void pdfopen(char *filename, char *password)
 		}
 	}
 
-	error = fz_newrenderer(&rast, pdf_devicergb, 1024 * 512);
+	error = fz_newrenderer(&rast, pdf_devicergb, 0, 1024 * 512);
 	if (error) fz_abort(error);
 
 	image = nil;

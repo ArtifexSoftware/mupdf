@@ -42,7 +42,7 @@ struct fz_font_s
 
 struct fz_glyph_s
 {
-	int w, h, lsb, top;
+	int x, y, w, h;
 	unsigned char *bitmap;
 };
 

@@ -430,7 +430,7 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 {
 	struct separation *cs = (struct separation *)fzcs;
 	fz_error *error;
-	float alt[32];
+	float alt[FZ_MAXCOLORS];
 
 	error = pdf_evalfunction(cs->tint, sep, fzcs->n, alt, cs->base->n);
 	if (error)
@@ -513,7 +513,7 @@ static void
 indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
 {
 	pdf_indexed *cs = (pdf_indexed *)fzcs;
-	float alt[32];
+	float alt[FZ_MAXCOLORS];
 	int i, k;
 	i = ind[0] * 255;
 	i = CLAMP(i, 0, cs->high);

@@ -4,7 +4,7 @@ static void
 scalerow(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 {
 	int x, left, k;
-	int sum[32];
+	int sum[FZ_MAXCOLORS];
 
 	left = 0;
 	for (k = 0; k < ncomp; k++)
@@ -37,7 +37,7 @@ scalecols(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 {
 	int x, y, k;
 	unsigned char *s;
-	int sum[32];
+	int sum[FZ_MAXCOLORS];
 
 	for (x = 0; x < w; x++)
 	{

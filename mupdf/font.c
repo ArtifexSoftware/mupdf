@@ -110,8 +110,8 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	glyph->w = 0;
 	glyph->h = 0;
-	glyph->lsb = 0;
-	glyph->top = 0;
+	glyph->x = 0;
+	glyph->y = 0;
 	glyph->bitmap = nil;
 
 	/* freetype mutilates complex glyphs if they are loaded
@@ -161,9 +161,20 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	glyph->w = face->glyph->bitmap.width;
 	glyph->h = face->glyph->bitmap.rows;
-	glyph->lsb = face->glyph->bitmap_left;
-	glyph->top = face->glyph->bitmap_top;
+	glyph->x = face->glyph->bitmap_left;
+	glyph->y = face->glyph->bitmap_top - glyph->h;
 	glyph->bitmap = face->glyph->bitmap.buffer;
+
+	int i;
+    unsigned char tmp[glyph->w * glyph->h];
+    memcpy(tmp, glyph->bitmap, glyph->w * glyph->h);
+
+    for (i = 0; i < glyph->h; i++)
+    {
+        memcpy( glyph->bitmap + i * glyph->w,
+                tmp + (glyph->h - i - 1) * glyph->w,
+                glyph->w );
+    }
 
 	return nil;
 }

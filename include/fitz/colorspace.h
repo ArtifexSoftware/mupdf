@@ -4,6 +4,8 @@ typedef struct fz_colorcube1_s fz_colorcube1;
 typedef struct fz_colorcube3_s fz_colorcube3;
 typedef struct fz_colorcube4_s fz_colorcube4;
 
+enum { FZ_MAXCOLORS = 32 };
+
 struct fz_colorspace_s
 {
 	int refs;

@@ -37,7 +37,7 @@ struct fz_val_s
 {
 	fz_hash *ent;
 	unsigned char *data;
-	short w, h, lsb, top;
+	short w, h, x, y;
 	int uses;
 };
 
@@ -239,7 +239,7 @@ fz_debugglyphcache(fz_glyphcache *arena)
 				k->c / 65536.0,
 				k->d / 65536.0,
 				k->e, k->f,
-				b->w, b->h, b->lsb, b->top);
+				b->w, b->h, b->x, b->y);
 		}
 	}
 
@@ -319,8 +319,8 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 		val->uses ++;
 		glyph->w = val->w;
 		glyph->h = val->h;
-		glyph->lsb = val->lsb;
-		glyph->top = val->top;
+		glyph->x = val->x;
+		glyph->y = val->y;
 		glyph->bitmap = val->data;
 
 		bubble(arena, val - arena->lru);
@@ -354,8 +354,8 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	val->uses = 0;
 	val->w = glyph->w;
 	val->h = glyph->h;
-	val->lsb = glyph->lsb;
-	val->top = glyph->top;
+	val->x = glyph->x;
+	val->y = glyph->y;
 	val->data = arena->buffer + arena->used;
 
 	arena->used += size;

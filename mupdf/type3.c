@@ -27,7 +27,6 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	fz_pixmap *pixmap;
 	fz_matrix ctm;
 	fz_irect bbox;
-	int i;
 
 	if (cid < 0 || cid > 255)
 		return fz_throw("rangecheck: glyph out of range");
@@ -43,7 +42,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	ctm = fz_concat(font->matrix, trm);
 	bbox = fz_roundrect(fz_boundtree(tree, ctm));
 
-	error = fz_newrenderer(&gc, nil, GCMEM);
+	error = fz_newrenderer(&gc, pdf_devicegray, 1, GCMEM);
 	if (error)
 		return error;
 	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
@@ -53,23 +52,11 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	assert(pixmap->n == 1);
 
-	glyph->lsb = pixmap->x;
-	glyph->top = pixmap->h + pixmap->y;
+	glyph->x = pixmap->x;
+	glyph->y = pixmap->y;
 	glyph->w = pixmap->w;
 	glyph->h = pixmap->h;
 	glyph->bitmap = pixmap->samples;
-
-	unsigned char tmp[pixmap->w * pixmap->h];
-	memcpy(tmp, pixmap->samples, pixmap->w * pixmap->h);
-
-	for (i = 0; i < pixmap->h; i++)
-	{
-		memcpy(	pixmap->samples + i * pixmap->w,
-				tmp + (pixmap->h - i - 1) * pixmap->w,
-				pixmap->w );
-	}
-
-	/* XXX flip bitmap in ftrender instead; free pixmap */
 
 	return nil;
 }

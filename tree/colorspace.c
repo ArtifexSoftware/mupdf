@@ -55,8 +55,8 @@ fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *ds
 void
 fz_stdconvpixmap(fz_colorspace *srcs, fz_pixmap *src, fz_colorspace *dsts, fz_pixmap *dst)
 {
-	float srcv[32];
-	float dstv[32];
+	float srcv[FZ_MAXCOLORS];
+	float dstv[FZ_MAXCOLORS];
 	int y, x, k;
 
 	unsigned char *s = src->samples;

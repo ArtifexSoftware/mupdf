@@ -13,6 +13,7 @@ struct fz_pixmap_s
 	fz_sample *samples;
 };
 
+fz_error *fz_newpixmapwithrect(fz_pixmap **mapp, fz_irect bbox, int n);
 fz_error *fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
 void fz_debugpixmap(fz_pixmap *map);
 void fz_clearpixmap(fz_pixmap *map);

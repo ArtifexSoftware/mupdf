@@ -24,6 +24,15 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 	return nil;
 }
 
+fz_error *
+fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
+{
+	return fz_newpixmap(pixp,
+				r.min.x, r.min.y,
+				r.max.x - r.min.x,
+				r.max.y - r.min.y, n);
+}
+
 void
 fz_droppixmap(fz_pixmap *pix)
 {
