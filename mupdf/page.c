@@ -2,7 +2,7 @@
 #include <mupdf.h>
 
 static fz_error *
-runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
+runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error *error;
 
@@ -17,13 +17,74 @@ runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	return error;
 }
 
+/* we need to combine all sub-streams into one for pdf_runcsi
+ * to deal with split dictionaries etc.
+ */
+static fz_error *
+runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
+{
+	fz_error *error;
+	fz_file *file;
+	fz_buffer *big;
+	fz_buffer *one;
+	fz_obj *stm;
+	int n;
+	int i;
+
+printf("joining content stream\n");
+
+	error = fz_newbuffer(&big, 32 * 1024);
+	if (error)
+		return error;
+
+	error = fz_openbuffer(&file, big, FZ_WRITE);
+	if (error)
+		goto cleanup0;
+
+	for (i = 0; i < fz_arraylen(list); i++)
+	{
+		stm = fz_arrayget(list, i);
+		error = pdf_loadstream(&one, xref, fz_tonum(stm), fz_togen(stm));
+		if (error)
+			goto cleanup1;
+
+		n = fz_write(file, one->rp, one->wp - one->rp);
+
+		fz_dropbuffer(one);
+
+		if (n == -1)
+		{
+			error = fz_ferror(file);
+			goto cleanup1;
+		}
+	}
+
+	fz_closefile(file);
+
+	error = fz_openbuffer(&file, big, FZ_READ);
+	if (error)
+		goto cleanup0;
+
+	error = pdf_runcsi(csi, xref, rdb, file);
+
+	fz_closefile(file);
+	fz_dropbuffer(big);
+
+	return error;
+
+cleanup1:
+	fz_closefile(file);
+cleanup0:
+	fz_dropbuffer(big);
+	return error;
+}
+
 static fz_error *
 loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 {
 	fz_error *error;
 	fz_obj *obj;
 	pdf_csi *csi;
-	int i;
 
 	error = pdf_newcsi(&csi, 0);
 	if (error)
@@ -37,35 +98,25 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 
 		if (fz_isarray(obj))
 		{
-			for (i = 0; i < fz_arraylen(obj); i++)
-			{
-				error = runcsi(csi, xref, rdb, fz_arrayget(obj, i));
-				if (error) {
-					fz_dropobj(obj);
-					goto cleanup;
-				}
-			}
+			if (fz_arraylen(obj) == 1)
+				error = runone(csi, xref, rdb, fz_arrayget(obj, 0));
+			else
+				error = runmany(csi, xref, rdb, obj);
 		}
 		else
-		{
-			error = runcsi(csi, xref, rdb, ref);
-			if (error) {
-				fz_dropobj(obj);
-				goto cleanup;
-			}
-		}
+			error = runone(csi, xref, rdb, ref);
 
 		fz_dropobj(obj);
+		if (error)
+			goto cleanup;
 	}
 
 	else if (fz_isarray(ref))
 	{
-		for (i = 0; i < fz_arraylen(ref); i++)
-		{
-			error = runcsi(csi, xref, rdb, fz_arrayget(ref, i));
-			if (error)
-				goto cleanup;
-		}
+		if (fz_arraylen(ref) == 1)
+			error = runone(csi, xref, rdb, fz_arrayget(ref, 0));
+		else
+			error = runmany(csi, xref, rdb, ref);
 	}
 
 	*treep = csi->tree;

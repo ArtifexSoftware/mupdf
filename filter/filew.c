@@ -93,10 +93,13 @@ fz_write(fz_file *f, unsigned char *buf, int n)
 
 			if (f->in->wp == f->in->ep)
 			{
-				x = dowrite(f->in, f->fd);
-				if (x < 0) {
-					f->error = fz_throw("ioerror in write: %s", strerror(errno));
-					return -1;
+				if (f->fd != -1)
+				{
+					x = dowrite(f->in, f->fd);
+					if (x < 0) {
+						f->error = fz_throw("ioerror in write: %s", strerror(errno));
+						return -1;
+					}
 				}
 
 				if (f->in->rp > f->in->bp)
@@ -134,10 +137,13 @@ fz_write(fz_file *f, unsigned char *buf, int n)
 
 			else if (reason == fz_ioneedout)
 			{
-				x = dowrite(f->out, f->fd);
-				if (x < 0) {
-					f->error = fz_throw("ioerror in write: %s", strerror(errno));
-					return -1;
+				if (f->fd != -1)
+				{
+					x = dowrite(f->out, f->fd);
+					if (x < 0) {
+						f->error = fz_throw("ioerror in write: %s", strerror(errno));
+						return -1;
+					}
 				}
 
 				if (f->out->rp > f->out->bp)
@@ -150,12 +156,15 @@ fz_write(fz_file *f, unsigned char *buf, int n)
 
 			else if (reason == fz_iodone)
 			{
-				while (f->out->rp < f->out->wp)
+				if (f->fd != -1)
 				{
-					x = dowrite(f->out, f->fd);
-					if (x < 0) {
-						f->error = fz_throw("ioerror in write: %s", strerror(errno));
-						return -1;
+					while (f->out->rp < f->out->wp)
+					{
+						x = dowrite(f->out, f->fd);
+						if (x < 0) {
+							f->error = fz_throw("ioerror in write: %s", strerror(errno));
+							return -1;
+						}
 					}
 				}
 				break;
@@ -184,12 +193,15 @@ fz_flush(fz_file *f)
 
 	if (!f->filter)
 	{
-		while (f->in->rp < f->in->wp)
+		if (f->fd != -1)
 		{
-			n = dowrite(f->in, f->fd);
-			if (n < 0) {
-				f->error = fz_throw("ioerror in write: %s", strerror(errno));
-				return -1;
+			while (f->in->rp < f->in->wp)
+			{
+				n = dowrite(f->in, f->fd);
+				if (n < 0) {
+					f->error = fz_throw("ioerror in write: %s", strerror(errno));
+					return -1;
+				}
 			}
 		}
 		return 0;
@@ -206,10 +218,13 @@ fz_flush(fz_file *f)
 
 		else if (reason == fz_ioneedout)
 		{
-			n = dowrite(f->out, f->fd);
-			if (n < 0) {
-				f->error = fz_throw("ioerror in write: %s", strerror(errno));
-				return -1;
+			if (f->fd != -1)
+			{
+				n = dowrite(f->out, f->fd);
+				if (n < 0) {
+					f->error = fz_throw("ioerror in write: %s", strerror(errno));
+					return -1;
+				}
 			}
 
 			if (f->out->rp > f->out->bp)
@@ -222,15 +237,19 @@ fz_flush(fz_file *f)
 
 		else if (reason == fz_iodone)
 		{
-			n = dowrite(f->out, f->fd);
-			if (n < 0) {
-				f->error = fz_throw("ioerror in write: %s", strerror(errno));
-				return -1;
+			if (f->fd != -1)
+			{
+				n = dowrite(f->out, f->fd);
+				if (n < 0) {
+					f->error = fz_throw("ioerror in write: %s", strerror(errno));
+					return -1;
+				}
 			}
 			break;
 		}
 
-		else {
+		else
+		{
 			f->error = reason;
 			return -1;
 		}

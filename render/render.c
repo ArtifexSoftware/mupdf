@@ -1,7 +1,7 @@
 #include <fitz.h>
 
-#define DEBUG(args...) printf(args)
-#define noDEBUG(args...)
+#define noDEBUG(args...) printf(args)
+#define DEBUG(args...)
 
 #define FNONE 0
 #define FOVER 1

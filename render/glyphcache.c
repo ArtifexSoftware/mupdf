@@ -285,7 +285,7 @@ evictlast(fz_glyphcache *arena)
 	arena->used -= e - s;
 
 	/* update lru pointers */
-	for (i = 0; i < k; i++)
+	for (i = 0; i < k; i++)	/* XXX this is DOG slow! XXX */
 		if (lru[i].samples >= e)
 			lru[i].samples -= e - s;
 
@@ -294,6 +294,17 @@ evictlast(fz_glyphcache *arena)
 	hashremove(arena, &key);
 
 	arena->load --;
+}
+
+static void
+evictall(fz_glyphcache *arena)
+{
+printf("zap!\n");
+	memset(arena->hash, 0, sizeof(fz_hash) * arena->slots);
+	memset(arena->lru, 0, sizeof(fz_val) * arena->slots);
+	memset(arena->buffer, 0, arena->size);
+	arena->load = 0;
+	arena->used = 0;
 }
 
 fz_error *
@@ -342,20 +353,16 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 	while (arena->load > arena->slots * 75 / 100)
 	{
-		while (arena->load > arena->slots * 60 / 100)
-		{
-			covf ++;
-			evictlast(arena);
-		}
+		covf ++;
+//		evictlast(arena);
+		evictall(arena);
 	}
 
-	if (arena->used + size >= arena->size)
+	while (arena->used + size >= arena->size)
 	{
-		while (arena->used + size >= arena->size * 80 / 100)
-		{
-			coos ++;
-			evictlast(arena);
-		}
+		coos ++;
+//		evictlast(arena);
+		evictall(arena);
 	}
 
 	val = &arena->lru[arena->load++];

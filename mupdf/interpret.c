@@ -1101,19 +1101,12 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 		case PDF_TEOF:
 			return nil;
 
-		/* we need to make array parsing be able to span files for
-		   those stupid pdf files that split TJ arrays across content
-		   streams...
-		*/
+		/* optimize text-object array parsing */
 		case PDF_TOARRAY:
 			error = fz_newarray(&csi->array, 8);
 			if (error) return error;
 			break;
 
-		/* drop down to normal pdf object parsing for dictionaries,
-		   and pray that they are not split in the middle with the beginning
-		   and end in different streams
-		*/
 		case PDF_TODICT:
 			error = pdf_parsedict(&csi->stack[csi->top], file, buf, sizeof buf);
 			if (error) return error;

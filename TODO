@@ -20,7 +20,7 @@ rendering
 	- cpu-specific optims
 
 parser
-	- resource dict generate fake ids
+	- join content streams arrays (for split dicts)
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 
@@ -30,9 +30,7 @@ fz_optimizetree()
 	- remove identity transforms
 
 clean up
-	- make source ansi c89 / pedantic
 	- reference count everything
-	- standard cleanup mechanism
 	- design by contract
 	- split into private and public
 	- comments and documentation
