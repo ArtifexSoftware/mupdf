@@ -102,8 +102,10 @@ libmupdf.a: \
 		mupdf/image.o \
 		mupdf/pattern.o \
 		mupdf/shade.o \
+		mupdf/shade1.o \
 		mupdf/shade2.o \
 		mupdf/shade3.o \
+		mupdf/shade4.o \
 		mupdf/cmap.o \
 		mupdf/unicode.o \
 		mupdf/fontagl.o \

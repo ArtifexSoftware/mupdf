@@ -14,6 +14,7 @@ fz_dropshade(fz_shade *shade)
 	{
 		if (shade->cs)
 			fz_dropcolorspace(shade->cs);
+		fz_free(shade->mesh);
 		fz_free(shade);
 	}
 }
@@ -21,6 +22,7 @@ fz_dropshade(fz_shade *shade)
 fz_rect
 fz_boundshade(fz_shade *shade, fz_matrix ctm)
 {
-	return fz_infiniterect;
+	ctm = fz_concat(shade->matrix, ctm);
+	return fz_transformaabb(ctm, shade->bbox);
 }
 

@@ -130,6 +130,12 @@ fz_rect
 fz_transformaabb(fz_matrix m, fz_rect r)
 {
 	fz_point s, t, u, v;
+
+	if (fz_isinfiniterect(r))
+		return r;
+	if (fz_isemptyrect(r))
+		return r;
+
 	s.x = r.min.x; s.y = r.min.y;
 	t.x = r.min.x; t.y = r.max.y;
 	u.x = r.max.x; u.y = r.max.y;

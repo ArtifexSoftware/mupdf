@@ -63,6 +63,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	shade->usebackground = 0;
 	shade->usefunction = 0;
 	shade->matrix = matrix;
+	shade->bbox = fz_infiniterect;
 
 	obj = fz_dictgets(dict, "ShadingType");
 	type = fz_toint(obj);
@@ -118,6 +119,10 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 		break;
 	case 3:
 		error = pdf_loadtype3shade(shade, xref, dict, ref);
+		if (error) goto cleanup;
+		break;
+	case 4:
+		error = pdf_loadtype4shade(shade, xref, dict, ref);
 		if (error) goto cleanup;
 		break;
 	default:

@@ -46,7 +46,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	float t;
 	int n;
 
-	pdf_logshade("type1 shade {\n");
+	pdf_logshade("load type1 shade {\n");
 
 	obj = fz_dictgets(dict, "Domain");
 	x0 = fz_toreal(fz_arrayget(obj, 0));
@@ -93,6 +93,8 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			pdf_setmeshvalue(shade->mesh, n++, x, yn, t);
 		}
 	}
+
+	pdf_logshade("}\n");
 
 	return nil;
 }
