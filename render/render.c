@@ -261,18 +261,37 @@ fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 }
 
 fz_error *
-fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox)
+fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox, int white)
 {
 	fz_error *error;
 
 	gc->clip = bbox;
 
+	if (white)
+	{
+		error = fz_newpixmap(&gc->acc,
+			bbox.min.x, bbox.min.y,
+			bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 4);
+		if (error)
+			return error;
+		memset(gc->acc->samples, 0xff, gc->acc->w * gc->acc->h * gc->acc->n);
+	}
+
 	error = fz_rendernode(gc, tree->root, ctm);
 	if (error)
 		return error;
 
-	*outp = gc->tmp;
-	gc->tmp = nil;
+	if (white)
+	{
+		*outp = gc->acc;
+		gc->acc = nil;
+	}
+	else
+	{
+		*outp = gc->tmp;
+		gc->tmp = nil;
+	}
+
 	return nil;
 }
 

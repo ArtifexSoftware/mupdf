@@ -21,5 +21,5 @@ fz_error *fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm);
 fz_error *fz_rendertransform(fz_renderer *gc, fz_transformnode *xform, fz_matrix ctm);
 fz_error *fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm);
 fz_error *fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm);
-fz_error *fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox);
+fz_error *fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox, int white);
 

@@ -46,7 +46,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	error = fz_newrenderer(&gc, nil, GCMEM);
 	if (error)
 		return error;
-	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox);
+	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
 	fz_droprenderer(gc);
 	if (error)
 		return error;

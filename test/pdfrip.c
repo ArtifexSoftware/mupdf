@@ -65,7 +65,7 @@ printf("rendering!\n");
 		bbox.min.y = bbox.min.y * zoom;
 		bbox.max.x = bbox.max.x * zoom;
 		bbox.max.y = bbox.max.y * zoom;
-		error = fz_rendertree(&pix, gc, page->tree, ctm, fz_roundrect(bbox));
+		error = fz_rendertree(&pix, gc, page->tree, ctm, fz_roundrect(bbox), 1);
 		if (error) fz_abort(error);
 printf("done!\n");
 

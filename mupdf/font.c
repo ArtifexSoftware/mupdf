@@ -244,27 +244,28 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	int symbolic;
 
 	char *basefont;
+	char *fontname;
 	char *estrings[256];
 	int i, k, n, e;
 
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
-	basefont = cleanfontname(basefont);
+	fontname = cleanfontname(basefont);
 
 	/*
 	 * Load font file
 	 */
 
-printf("loading simple font %s\n", basefont);
+printf("loading simple font %s -> %s\n", basefont, fontname);
 
-	font = *fontp = pdf_newfont(basefont);
+	font = *fontp = pdf_newfont(fontname);
 	if (!font)
 		return fz_outofmem;
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
-	if (descriptor)
+	if (descriptor && basefont == fontname)
 		error = pdf_loadfontdescriptor(font, xref, descriptor, nil);
 	else
-		error = pdf_loadbuiltinfont(font, basefont);
+		error = pdf_loadbuiltinfont(font, fontname);
 	if (error)
 		goto cleanup;
 

@@ -174,7 +174,7 @@ Lskipload:
 
 	bbox = fz_transformaabb(ctm, page->mediabox);
 
-	error = fz_rendertree(&image, rast, page->tree, ctm, fz_roundrect(bbox));
+	error = fz_rendertree(&image, rast, page->tree, ctm, fz_roundrect(bbox), 1);
 	if (error)
 		fz_abort(error);
 

@@ -26,6 +26,7 @@ rendering
 parser
 	- resource dict generate fake ids
 	- try to clean up colorspace/material handling in interpreter
+	- annotations and destinations (for links and outline)
 
 clean up
 	- make source ansi c89 / pedantic
