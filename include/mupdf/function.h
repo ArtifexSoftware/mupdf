@@ -40,14 +40,15 @@ struct psobj_s
 {
 	unsigned short type;
 	union {
-		int booln;			// boolean (stack only)
-		int intg;			// integer (stack and code)
-		float real;			// real (stack and code)
-		int op;			// operator (code only)
-		int blk;			// if/ifelse block pointer (code only)
+		int booln;			/* boolean (stack only) */
+		int intg;			/* integer (stack and code) */
+		float real;			/* real (stack and code) */
+		int op;				/* operator (code only) */
+		int blk;			/* if/ifelse block pointer (code only) */
 	};
 };
 
 fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj);
-fz_error *pdf_execfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
+fz_error *pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
 void pdf_freefunc(pdf_function *func);
+

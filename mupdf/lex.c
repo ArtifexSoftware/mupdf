@@ -319,6 +319,18 @@ pdf_lex(fz_file *f, unsigned char *buf, int n, int *sl)
 			return PDF_TCARRAY;
 		}
 
+		else if (c == '{')
+		{
+			fz_readbyte(f);
+			return PDF_TOBRACE;
+		}
+
+		else if (c ==  '}')
+		{
+			fz_readbyte(f);
+			return PDF_TCBRACE;
+		}
+
 		else if (isnumber(c))
 		{
 			lexnumber(f, buf, n);
@@ -340,54 +352,3 @@ pdf_lex(fz_file *f, unsigned char *buf, int n, int *sl)
 	}
 }
 
-int
-pdf_pslex(fz_file *f, unsigned char *buf, int n, int *sl)
-{
-	int c;
-
-	while (1)
-	{
-		c = fz_peekbyte(f);
-
-		if (c == EOF)
-			return PDF_TEOF;
-
-		else if (iswhite(c))
-			lexwhite(f);
-
-		else if (isnumber(c))
-		{
-			lexnumber(f, buf, n);
-			*sl = strlen(buf);
-			if (strchr(buf, '.'))
-				return PDF_TREAL;
-			return PDF_TINT;
-		}
-
-		else if (isregular(c))
-		{
-			lexname(f, buf, n);
-			*sl = strlen(buf);
-			return PDF_TPSOPERATION;
-		}
-
-		else if (c == '{')
-		{
-			buf[0] = fz_readbyte(f);
-			buf[1] = 0;
-			return PDF_TPSOPENBRACE;
-		}
-
-		else if (c ==  '}')
-		{
-			buf[0] = fz_readbyte(f);
-			buf[1] = 0;
-			return PDF_TPSCLOSEBRACE;
-		}
-
-		else
-		{
-			return PDF_TERROR;
-		}
-	}
-}

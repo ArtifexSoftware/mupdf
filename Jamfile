@@ -102,6 +102,10 @@ Library libmupdf :
 	mupdf/doctor.c
 
 	mupdf/nametree.c
+	mupdf/outline.c
+	mupdf/pagetree.c
+
+	mupdf/function.c
 	mupdf/cmap.c
 	mupdf/font.c
 	mupdf/fontfile.c
@@ -109,7 +113,6 @@ Library libmupdf :
 	mupdf/image.c
 	mupdf/resources.c
 	mupdf/page.c
-	mupdf/pagetree.c
 	mupdf/build.c
 	mupdf/interpret.c
 	;

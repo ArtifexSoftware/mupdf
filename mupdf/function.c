@@ -609,7 +609,7 @@ cleanup:
 }
 
 static fz_error *
-execsamplefunc(pdf_function *func, float *in, float *out)
+evalsamplefunc(pdf_function *func, float *in, float *out)
 {
 	int i , j, k, idx;
 	int e[2][func->m];
@@ -756,7 +756,7 @@ cleanup:
 }
 
 static fz_error *
-execexponentialfunc(pdf_function *func, float in, float *out)
+evalexponentialfunc(pdf_function *func, float in, float *out)
 {
 	fz_error *err = nil;
 	float x = in;
@@ -873,7 +873,7 @@ cleanup:
 }
 
 static fz_error*
-execstitchinigfunc(pdf_function *func, float in, float *out)
+evalstitchingfunc(pdf_function *func, float in, float *out)
 {
 	fz_error *err = nil;
 	float low,high;
@@ -903,7 +903,7 @@ execstitchinigfunc(pdf_function *func, float in, float *out)
 	in = INTERPOLATE(in,low,high,
 		func->u.st.encode[i*2],func->u.st.encode[i*2 + 1]);
 	
-	err = pdf_execfunction(func->u.st.funcs[i],&in,1,out,func->n);
+	err = pdf_evalfunction(func->u.st.funcs[i],&in,1,out,func->n);
 	if(err) return err;
 	
 	return nil;
@@ -939,7 +939,7 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 	memset(buf,0,sizeof(buf));
 	
 	while (1) {
-		token = pdf_pslex(stream,buf,buflen,&len);
+		token = pdf_lex(stream,buf,buflen,&len);
 		if(token == PDF_TERROR || token == PDF_TEOF)
 			goto cleanup;
 		
@@ -957,30 +957,30 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 			func->u.p.code[*codeptr].real = atof(buf);
 			++*codeptr;
 			break;
-		case PDF_TPSOPENBRACE:
+		case PDF_TOBRACE:
 			opPtr = *codeptr;
 			*codeptr += 3;
 			resizecode(func,opPtr + 2);
 			err = parsecode(func, stream, codeptr);
 			if(err) goto cleanup;
 			
-			token = pdf_pslex(stream,buf,buflen,&len);
+			token = pdf_lex(stream,buf,buflen,&len);
 			
 			if(token == PDF_TEOF || token == PDF_TERROR)
 				goto cleanup;
 			
-			if(token == PDF_TPSOPENBRACE) {
+			if(token == PDF_TOBRACE) {
 				elsePtr = *codeptr;
 				err = parsecode(func, stream, codeptr);
 				if(err)	goto cleanup;
-				token = pdf_pslex(stream,buf,buflen,&len);
+				token = pdf_lex(stream,buf,buflen,&len);
 				if(token == PDF_TERROR || token == PDF_TEOF)
 					goto cleanup;
 			}
 			else 
 				elsePtr = -1;
 			
-			if(token == PDF_TPSOPERATION) {
+			if(token == PDF_TKEYWORD) {
 				if(!strcmp(buf,"if")) {
 					if (elsePtr >= 0)
 						goto cleanup;
@@ -1005,13 +1005,13 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 			else
 				goto cleanup;
 			break;
-		case PDF_TPSCLOSEBRACE:
+		case PDF_TCBRACE:
 			resizecode(func,*codeptr);
 			func->u.p.code[*codeptr].type = psOperator;
 			func->u.p.code[*codeptr].op = psOpReturn;
 			++*codeptr;
 			return nil;
-		case PDF_TPSOPERATION:
+		case PDF_TKEYWORD:
 			a = -1;
 			b = sizeof(psOpNames) / sizeof(psOpNames[0]);
 			// invariant: psOpNames[a] < op < psOpNames[b]
@@ -1073,7 +1073,7 @@ cleanup:
 }
 
 static fz_error *
-execpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
+evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 {
 	fz_error *err = nil;
 	int i1, i2;
@@ -1381,16 +1381,16 @@ execpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 			case psOpIf:
 				SAFE_POPBOOL(st, &b1);
 				if (b1) {
-					execpostscriptfunc(func, st, codeptr + 2);
+					evalpostscriptfunc(func, st, codeptr + 2);
 				}
 				codeptr = func->u.p.code[codeptr + 1].blk;
 				break;
 			case psOpIfelse:
 				SAFE_POPBOOL(st, &b1);
 				if (b1) {
-					execpostscriptfunc(func, st, codeptr + 2);
+					evalpostscriptfunc(func, st, codeptr + 2);
 				} else {
-					execpostscriptfunc(func, st, func->u.p.code[codeptr].blk);
+					evalpostscriptfunc(func, st, func->u.p.code[codeptr].blk);
 				}
 				codeptr = func->u.p.code[codeptr + 1].blk;
 				break;
@@ -1573,7 +1573,7 @@ cleanup:
 }
 
 fz_error *
-pdf_execfunction(pdf_function *func, float *in, int inlen, float *out, int outlen)
+pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen)
 {
 	fz_error *err = nil;
 	int i;
@@ -1583,13 +1583,13 @@ pdf_execfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 
 	switch(func->type) {
 	case PDF_FUNC_SAMPLE:
-		err = execsamplefunc(func, in, out);
+		err = evalsamplefunc(func, in, out);
 		break;
 	case PDF_FUNC_EXPONENTIAL:
-		err = execexponentialfunc(func, *in, out);
+		err = evalexponentialfunc(func, *in, out);
 		break;
 	case PDF_FUNC_STITCHING:
-		err = execstitchinigfunc(func, *in, out);
+		err = evalstitchingfunc(func, *in, out);
 		break;
 	case PDF_FUNC_POSTSCRIPT:
 		{
@@ -1598,7 +1598,7 @@ pdf_execfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 			for (i = 0; i < func->m; ++i)
 				SAFE_PUSHREAL(&st,in[i]);
 
-			err = execpostscriptfunc(func, &st, 0);
+			err = evalpostscriptfunc(func, &st, 0);
 			if(err) goto cleanup;
 
 			for (i = func->n - 1; i >= 0; --i) {
