@@ -4,6 +4,12 @@ typedef struct fz_rect_s fz_rect;
 typedef struct fz_ipoint_s fz_ipoint;
 typedef struct fz_irect_s fz_irect;
 
+extern fz_rect fz_emptyrect;
+extern fz_rect fz_infiniterect;
+
+#define fz_isemptyrect(r) ((r).min.x == (r).max.x)
+#define fz_isinfiniterect(r) ((r).min.x > (r).max.x)
+
 /*
 	/ a b 0 \
 	| c d 0 |
@@ -37,8 +43,6 @@ struct fz_irect_s
 };
 
 void fz_invert3x3(float *dst, float *m);
-
-fz_rect fz_infiniterect(void);
 
 fz_matrix fz_concat(fz_matrix one, fz_matrix two);
 fz_matrix fz_identity(void);

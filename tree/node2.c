@@ -23,20 +23,20 @@ fz_boundovernode(fz_overnode *node, fz_matrix ctm)
 {
 	fz_node *child;
 	fz_rect bbox;
-	fz_rect r;
+	fz_rect temp;
 
-	bbox = fz_infiniterect();
+	child = node->super.first;
+	if (!child)
+		return fz_emptyrect;
 
-	for (child = node->super.first; child; child = child->next)
+	bbox = fz_boundnode(child, ctm);
+
+	child = child->next;
+	while (child)
 	{
-		r = fz_boundnode(child, ctm);
-		if (r.max.x >= r.min.x)
-		{
-			if (bbox.max.x >= bbox.min.x)
-				bbox = fz_mergerects(r, bbox);
-			else
-				bbox = r;
-		}
+		temp = fz_boundnode(child, ctm);
+		bbox = fz_mergerects(temp, bbox);
+		child = child->next;
 	}
 
 	return bbox;
@@ -63,25 +63,16 @@ fz_newmasknode(fz_node **nodep)
 fz_rect
 fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
 {
-	fz_node *child;
-	fz_rect bbox;
-	fz_rect r;
+	fz_node *shape;
+	fz_node *color;
+	fz_rect one, two;
 
-	bbox = fz_infiniterect();
+	shape = node->super.first;
+	color = shape->next;
 
-	for (child = node->super.first; child; child = child->next)
-	{
-		r = fz_boundnode(child, ctm);
-		if (r.max.x >= r.min.x)
-		{
-			if (bbox.max.x >= bbox.min.x)
-				bbox = fz_intersectrects(r, bbox);
-			else
-				bbox = r;
-		}
-	}
-
-	return bbox;
+	one = fz_boundnode(shape, ctm);
+	two = fz_boundnode(color, ctm);
+	return fz_intersectrects(one, two);
 }
 
 /*
@@ -110,25 +101,7 @@ fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i
 fz_rect
 fz_boundblendnode(fz_blendnode *node, fz_matrix ctm)
 {
-	fz_node *child;
-	fz_rect bbox;
-	fz_rect r;
-
-	bbox = fz_infiniterect();
-
-	for (child = node->super.first; child; child = child->next)
-	{
-		r = fz_boundnode(child, ctm);
-		if (r.max.x >= r.min.x)
-		{
-			if (bbox.max.x >= bbox.min.x)
-				bbox = fz_mergerects(r, bbox);
-			else
-				bbox = r;
-		}   
-	}
-
-	return bbox;
+	return fz_emptyrect;
 }
 
 /*
@@ -155,7 +128,7 @@ fz_rect
 fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
 {
 	if (!node->super.first)
-		return fz_infiniterect();
+		return fz_emptyrect;
 	return fz_boundnode(node->super.first, fz_concat(node->m, ctm));
 }
 
@@ -198,7 +171,7 @@ fz_rect
 fz_boundmetanode(fz_metanode *node, fz_matrix ctm)
 {
 	if (!node->super.first)
-		return fz_infiniterect();
+		return fz_emptyrect;
 	return fz_boundnode(node->super.first, ctm);
 }
 
@@ -261,7 +234,7 @@ fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 fz_rect
 fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
 {
-	return fz_infiniterect();
+	return fz_infiniterect;
 }
 
 /*

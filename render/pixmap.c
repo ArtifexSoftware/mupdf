@@ -33,6 +33,17 @@ fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 				r.max.y - r.min.y, n);
 }
 
+fz_error *
+fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old)
+{
+	fz_error *error;
+	error = fz_newpixmap(pixp, old->x, old->y, old->w, old->h, old->n);
+	if (error)
+		return error;
+	memcpy((*pixp)->samples, old->samples, old->w * old->h * old->n);
+	return nil;
+}
+
 void
 fz_droppixmap(fz_pixmap *pix)
 {
@@ -44,112 +55,6 @@ void
 fz_clearpixmap(fz_pixmap *pix)
 {
 	memset(pix->samples, 0, pix->w * pix->h * pix->n * sizeof(fz_sample));
-}
-
-void
-fz_blendover(fz_pixmap *src, fz_pixmap *dst)
-{
-	int x, y, k;
-	fz_irect sr, dr, rect;
-	unsigned char *s;
-	unsigned char *d;
-
-	assert(dst->n == src->n || src->n == 1);
-
-	sr.min.x = src->x;
-	sr.min.y = src->y;
-	sr.max.x = src->x + src->w;
-	sr.max.y = src->y + src->h;
-
-	dr.min.x = dst->x;
-	dr.min.y = dst->y;
-	dr.max.x = dst->x + dst->w;
-	dr.max.y = dst->y + dst->h;
-
-	rect = fz_intersectirects(sr, dr);
-
-	if (dst->n == src->n)
-	{
-		for (y = rect.min.y; y < rect.max.y; y++)
-		{
-			s = src->samples + ((rect.min.x - src->x) + (y - src->y) * src->w) * src->n;
-			d = dst->samples + ((rect.min.x - dst->x) + (y - dst->y) * dst->w) * dst->n;
-			for (x = rect.min.x; x < rect.max.x; x++)
-			{
-				int sa = s[0];
-				int ssa = 255 - sa;
-
-				for (k = 0; k < dst->n; k++)
-					d[k] = s[k] + fz_mul255(d[k], ssa);
-
-				s += src->n;
-				d += dst->n;
-			}
-		}
-	}
-	else if (src->n == 1)
-	{
-		for (y = rect.min.y; y < rect.max.y; y++)
-		{
-			s = src->samples + ((rect.min.x - src->x) + (y - src->y) * src->w) * src->n;
-			d = dst->samples + ((rect.min.x - dst->x) + (y - dst->y) * dst->w) * dst->n;
-			for (x = rect.min.x; x < rect.max.x; x++)
-			{
-				int sa = s[0];
-				int ssa = 255 - sa;
-
-				d[0] = s[0] + fz_mul255(d[0], ssa);
-				for (k = 1; k < dst->n; k++)
-					d[k] = 0 + fz_mul255(d[k], ssa);
-
-				s += src->n;
-				d += dst->n;
-			}
-		}
-	}
-}
-
-void
-fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
-{
-	unsigned char *d;
-	unsigned char *s;
-	unsigned char *m;
-	fz_irect sr, dr, mr, rect;
-	int x, y, k;
-
-	assert(src->n == dst->n);
-
-	sr.min.x = src->x;
-	sr.min.y = src->y;
-	sr.max.x = src->x + src->w;
-	sr.max.y = src->y + src->h;
-
-	dr.min.x = dst->x;
-	dr.min.y = dst->y;
-	dr.max.x = dst->x + dst->w;
-	dr.max.y = dst->y + dst->h;
-
-	mr.min.x = msk->x;
-	mr.min.y = msk->y;
-	mr.max.x = msk->x + msk->w;
-	mr.max.y = msk->y + msk->h;
-
-	rect = fz_intersectirects(sr, dr);
-	rect = fz_intersectirects(rect, mr);
-
-	for (y = rect.min.y; y < rect.max.y; y++)
-	{
-		s = src->samples + ((rect.min.x - src->x) + (y - src->y) * src->w) * src->n;
-		d = dst->samples + ((rect.min.x - dst->x) + (y - dst->y) * dst->w) * dst->n;
-		m = msk->samples + ((rect.min.x - msk->x) + (y - msk->y) * msk->w) * msk->n;
-		for (x = rect.min.x; x < rect.max.x; x++)
-		{
-			for (k = 0; k < dst->n; k++)
-				*d++ = fz_mul255(*s++, *m);
-			m += msk->n;
-		}
-	}
 }
 
 void

@@ -15,12 +15,11 @@ struct fz_pixmap_s
 
 fz_error *fz_newpixmapwithrect(fz_pixmap **mapp, fz_irect bbox, int n);
 fz_error *fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
+fz_error *fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old);
+
 void fz_debugpixmap(fz_pixmap *map);
 void fz_clearpixmap(fz_pixmap *map);
 void fz_droppixmap(fz_pixmap *map);
 
 fz_error *fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom);
-
-void fz_blendover(fz_pixmap *src, fz_pixmap *dst);
-void fz_blendmask(fz_pixmap *dst, fz_pixmap *color, fz_pixmap *shape);
 

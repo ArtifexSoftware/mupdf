@@ -168,18 +168,10 @@ fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *das
 
 static inline fz_rect boundexpand(fz_rect r, fz_point p)
 {
-	if (r.min.x > r.max.x)
-	{
-		r.min.x = r.max.x = p.x;
-		r.min.y = r.max.y = p.y;
-	}
-	else
-	{
-		if (p.x < r.min.x) r.min.x = p.x;
-		if (p.y < r.min.y) r.min.y = p.y;
-		if (p.x > r.max.x) r.max.x = p.x;
-		if (p.y > r.max.y) r.max.y = p.y;
-	}
+	if (p.x < r.min.x) r.min.x = p.x;
+	if (p.y < r.min.y) r.min.y = p.y;
+	if (p.x > r.max.x) r.max.x = p.x;
+	if (p.y > r.max.y) r.max.y = p.y;
 	return r;
 }
 
@@ -187,8 +179,17 @@ fz_rect
 fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 {
 	fz_point p;
-	fz_rect r = fz_infiniterect();
+	fz_rect r = fz_emptyrect;
 	int i = 0;
+
+	if (path->len)
+	{
+		p.x = path->els[1].v;
+		p.y = path->els[2].v;
+		p = fz_transformpoint(ctm, p);
+		r.min.x = r.max.x = p.x;
+		r.min.y = r.max.y = p.y;
+	}
 
 	while (i < path->len)
 	{

@@ -99,6 +99,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *obj;
 	int first, last;
 	int i, k, n;
+	fz_rect bbox;
 
 	obj = fz_dictgets(dict, "Name");
 	if (obj)
@@ -128,13 +129,18 @@ printf("  matrix [%g %g %g %g %g %g]\n",
 	font->matrix.c, font->matrix.d,
 	font->matrix.e, font->matrix.f);
 
-	/* TODO: scale bbox by fontmatrix * 1000 */
 	obj = fz_dictgets(dict, "FontBBox");
-	fz_setfontbbox((fz_font*)font,
-		fz_toreal(fz_arrayget(obj, 0)),
-		fz_toreal(fz_arrayget(obj, 1)),
-		fz_toreal(fz_arrayget(obj, 2)),
-		fz_toreal(fz_arrayget(obj, 3)));
+	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
+	bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
+	bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
+	bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
+	bbox = fz_transformaabb(font->matrix, bbox);
+	bbox.min.x = fz_floor(bbox.min.x * 1000);
+	bbox.min.y = fz_floor(bbox.min.x * 1000);
+	bbox.max.x = fz_ceil(bbox.max.x * 1000);
+	bbox.max.y = fz_ceil(bbox.max.x * 1000);
+	fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+printf("  bbox [%g %g %g %g]\n", bbox.min.x,bbox.min.y,bbox.max.x,bbox.max.y);
 
 	/*
 	 * Encoding

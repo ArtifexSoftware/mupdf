@@ -6,6 +6,16 @@ static void indent(int level)
 		putchar(' ');
 }
 
+static void showbbox(void *node0)
+{
+	fz_node *node = node0;
+	fz_irect bbox;
+	bbox = fz_roundrect(fz_boundnode(node, fz_identity()));
+	printf("[%d %d %d %d]",
+		bbox.min.x, bbox.min.y,
+		bbox.max.x, bbox.max.y);
+}
+
 static void lispnode(fz_node *node, int level);
 
 static void lispmeta(fz_metanode *node, int level)
@@ -26,7 +36,7 @@ static void lispover(fz_overnode *node, int level)
 {
 	fz_node *child;
 	indent(level);
-	printf("(over\n");
+	printf("(over "); showbbox(node); printf("\n");
 	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
@@ -37,7 +47,7 @@ static void lispmask(fz_masknode *node, int level)
 {
 	fz_node *child;
 	indent(level);
-	printf("(mask\n");
+	printf("(mask "); showbbox(node); printf("\n");
 	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);

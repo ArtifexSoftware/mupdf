@@ -155,7 +155,6 @@ struct pdf_font_s
 	fz_buffer *fontdata;
 
 	/* Type3 data */
-	fz_rect bbox;
 	fz_matrix matrix;
 	fz_tree *charprocs[256];
 };

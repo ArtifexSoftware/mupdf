@@ -2,39 +2,42 @@ typedef struct fz_renderer_s fz_renderer;
 typedef struct fz_rastfuncs_s fz_rastfuncs;
 
 #define FZ_BYTE unsigned char
-#define FZ_PID \
-	FZ_BYTE *src, int w, int h, int nx, int ny, \
-	FZ_BYTE *dst0, int dstw, \
-	int u0, int v0, int fa, int fb, int fc, int fd
-#define FZ_PIM \
-	FZ_BYTE *src, int w, int h, int nx, int ny, \
-	FZ_BYTE *dst0, int dstw, \
-	FZ_BYTE *msk0, int mskw, \
-	int u0, int v0, int fa, int fb, int fc, int fd
+
+#define FZ_PSRC \
+	unsigned char *src, int srcw, int srch
+#define FZ_PDST \
+	unsigned char *dst0, int dstw
+#define FZ_PCTM \
+	int u0, int v0, int fa, int fb, int fc, int fd, int w0, int h
 
 struct fz_rastfuncs_s
 {
-	void (*mask_g)(int, FZ_BYTE*, FZ_BYTE*);
-	void (*mask_i1)(int, FZ_BYTE*, FZ_BYTE*);
-	void (*mask_o1)(int, FZ_BYTE*, FZ_BYTE*);
-	void (*mask_i1o1)(int, FZ_BYTE*, FZ_BYTE*, FZ_BYTE*);
-	void (*mask_o4w3)(int, FZ_BYTE*, FZ_BYTE*, FZ_BYTE*);
-	void (*mask_i1o4w3)(int, FZ_BYTE*, FZ_BYTE*, FZ_BYTE*, FZ_BYTE*);
+	void (*duff_NoN)(FZ_BYTE*,int,int,FZ_BYTE*,int,int,int);
+	void (*duff_NiMcN)(FZ_BYTE*,int,int,FZ_BYTE*,int,int,FZ_BYTE*,int,int,int);
+	void (*duff_NiMoN)(FZ_BYTE*,int,int,FZ_BYTE*,int,int,FZ_BYTE*,int,int,int);
+	void (*duff_1o1)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*duff_4o4)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*duff_1i1c1)(FZ_BYTE*,int,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*duff_4i1c4)(FZ_BYTE*,int,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*duff_1i1o1)(FZ_BYTE*,int,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*duff_4i1o4)(FZ_BYTE*,int,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
 
-	void (*img1_g)(FZ_PID);
-	void (*img1_i1)(FZ_PID);
-	void (*img1_o1)(FZ_PID);
-	void (*img1_i1o1)(FZ_PIM);
-	void (*img1_o4w3)(FZ_PID, FZ_BYTE*);
-	void (*img1_i1o4w3)(FZ_PIM, FZ_BYTE*);
+	void (*msk_1c1)(FZ_BYTE*,FZ_BYTE*,int);
+	void (*msk_1o1)(FZ_BYTE*,FZ_BYTE*,int);
+	void (*msk_w3i1o4)(FZ_BYTE*,FZ_BYTE*,FZ_BYTE*,int);
 
-	void (*img4_g)(FZ_PID);
-	void (*img4_o4)(FZ_PID);
-	void (*img4_i1o4)(FZ_PIM);
+	void (*glf_1c1)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*glf_1o1)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+	void (*glf_w3i1o4)(FZ_BYTE*,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+
+	void (*img_NcN)(FZ_PSRC, int sn, FZ_PDST, FZ_PCTM);
+	void (*img_1c1)(FZ_PSRC, FZ_PDST, FZ_PCTM);
+	void (*img_4c4)(FZ_PSRC, FZ_PDST, FZ_PCTM);
+	void (*img_1o1)(FZ_PSRC, FZ_PDST, FZ_PCTM);
+	void (*img_4o4)(FZ_PSRC, FZ_PDST, FZ_PCTM);
+	void (*img_w3i1o4)(FZ_BYTE*,FZ_PSRC,FZ_PDST,FZ_PCTM);
 };
 
-#undef FZ_PIM
-#undef FZ_PID
 #undef FZ_BYTE
 
 struct fz_renderer_s
@@ -50,7 +53,6 @@ struct fz_renderer_s
 	fz_irect clip;
 	fz_pixmap *dest;
 	fz_pixmap *over;
-	fz_pixmap *mask;
 	unsigned char rgb[3];
 	int flag;
 };

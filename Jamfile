@@ -87,7 +87,7 @@ Library libfitz :
 	render/fill.c
 	render/stroke.c
 	render/scale.c
-	render/rastnone.c
+	render/rastport.c
 	render/render.c
 ;
 

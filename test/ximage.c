@@ -460,10 +460,17 @@ ximage_convert_bgra8888(PARAMS)
 		for (x = 0; x < w; x++) {
 			val = s[x];
 			d[x] =
+				(val >> 24) |
+				((val >> 8) & 0xff) |
+				((val << 8) & 0xff0000) |
+				(val << 24);
+/*
+			d[x] =
 				(((val >> 24) & 0xff) <<  0) |
 				(((val >> 16) & 0xff) <<  8) |
 				(((val >>  8) & 0xff) << 16) |
 				(((val >>  0) & 0xff) << 24);
+*/
 		}
 		d += dststride>>2;
 		s += srcstride>>2;

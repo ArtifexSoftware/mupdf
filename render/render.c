@@ -1,8 +1,9 @@
 #include <fitz.h>
 
+#define DEBUG(args...) printf(args)
+
 #define FNONE 0
 #define FOVER 1
-#define FMASK 2
 #define FRGB 4
 
 static fz_error *rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm);
@@ -38,7 +39,6 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	fz_defaultrastfuncs(&gc->rast);
 
 	gc->dest = nil;
-	gc->mask = nil;
 	gc->over = nil;
 	gc->rgb[0] = 0;
 	gc->rgb[1] = 0;
@@ -61,7 +61,6 @@ void
 fz_droprenderer(fz_renderer *gc)
 {
 	if (gc->dest) fz_droppixmap(gc->dest);
-	if (gc->mask) fz_droppixmap(gc->mask);
 	if (gc->over) fz_droppixmap(gc->over);
 
 	if (gc->model) fz_dropcolorspace(gc->model);
@@ -79,14 +78,14 @@ static fz_error *
 rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
 	fz_error *error;
-//printf("transform [%g %g %g %g %g %g]\n",
-//transform->m.a, transform->m.b,
-//transform->m.c, transform->m.d,
-//transform->m.e, transform->m.f);
-//puts("{");
+DEBUG("transform [%g %g %g %g %g %g]\n",
+transform->m.a, transform->m.b,
+transform->m.c, transform->m.d,
+transform->m.e, transform->m.f);
+DEBUG("{\n");
 	ctm = fz_concat(transform->m, ctm);
 	error = rendernode(gc, transform->super.first, ctm);
-//puts("}");
+DEBUG("}\n");
 	return error;
 }
 
@@ -112,14 +111,21 @@ rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	gc->rgb[1] = rgb[1] * 255;
 	gc->rgb[2] = rgb[2] * 255;
 
-printf("color %s [%d %d %d]\n", color->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb[2]);
+DEBUG("color %s [%d %d %d];\n", color->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb[2]);
 
-	error = fz_newpixmapwithrect(&gc->dest, gc->clip, 4);
-	if (error)
-		return error;
-
-	p = gc->dest->samples;
-	n = gc->dest->w * gc->dest->h;
+	if (gc->flag == FOVER)
+	{
+		p = gc->over->samples;
+		n = gc->over->w * gc->over->h;
+	}
+	else
+	{
+		error = fz_newpixmapwithrect(&gc->dest, gc->clip, 4);
+		if (error)
+			return error;
+		p = gc->dest->samples;
+		n = gc->dest->w * gc->dest->h;
+	}
 
 	while (n--)
 	{
@@ -144,7 +150,6 @@ struct spandata
 	fz_rastfuncs *rast;
 	int x, n;
 	fz_pixmap *dst;
-	fz_pixmap *msk;
 	unsigned char *rgb;
 	int flag;
 };
@@ -154,28 +159,24 @@ static void spanfunc(int y, int x, int n, unsigned char *path, void *userdata)
 	struct spandata *user = userdata;
 	fz_rastfuncs *rast = user->rast;
 	fz_pixmap *dst = user->dst;
-	fz_pixmap *msk = user->msk;
-	unsigned char *d;
-	unsigned char *m = nil;
+	unsigned char *dstp;
 
 	path += user->x;
+	x += user->x;
 
-	d = dst->samples + ( (y - dst->y) * dst->w + (x - dst->x) ) * dst->n;
-	if (msk)
-		m = msk->samples + ( (y - msk->y) * msk->w + (x - msk->x) ) * msk->n;
+	dstp = dst->samples + ( (y - dst->y) * dst->w + (x - dst->x) ) * dst->n;
 
 	switch (user->flag)
 	{
 	case FNONE:
-		rast->mask_g(user->n, path, d); break;
+		assert(dst->n == 1);
+		rast->msk_1c1(path, dstp, user->n); break;
 	case FOVER:
-		rast->mask_o1(user->n, path, d); break;
-	case FOVER | FMASK:
-		rast->mask_i1o1(user->n, path, m, d); break;
+		assert(dst->n == 1);
+		rast->msk_1o1(path, dstp, user->n); break;
 	case FOVER | FRGB:
-		rast->mask_o4w3(user->n, path, d, user->rgb); break;
-	case FOVER | FMASK | FRGB:
-		rast->mask_i1o4w3(user->n, path, m, d, user->rgb); break;
+		assert(dst->n == 4);
+		rast->msk_w3i1o4(user->rgb, path, dstp, user->n); break;
 	default:
 		assert(!"impossible flag in path span function");
 	}
@@ -213,33 +214,28 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	gbox = fz_boundgel(gc->gel);
 	clip = fz_intersectirects(gc->clip, gbox);
 
-	if (clip.max.x <= clip.min.x)
-		return nil;
-	if (clip.max.y <= clip.min.y)
+	if (fz_isemptyrect(clip))
 		return nil;
 
-//printf("path clip[%d %d %d %d]\n", clip.min.x, clip.min.y, clip.max.x, clip.max.y);
+DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 
 	user.rast = &gc->rast;
 	user.x = clip.min.x - gbox.min.x;
 	user.n = clip.max.x - clip.min.x;
 	user.flag = gc->flag;
+	user.rgb = gc->rgb;
 
-	if (gc->flag == FNONE)
+	if (gc->flag & FOVER)
+	{
+		user.dst = gc->over;
+	}
+	else
 	{
 		error = fz_newpixmapwithrect(&gc->dest, clip, 1);
 		if (error)
 			return error;
 		fz_clearpixmap(gc->dest);
 		user.dst = gc->dest;
-		user.msk = nil;
-		user.rgb = gc->rgb;
-	}
-	else
-	{
-		user.dst = gc->over;
-		user.msk = gc->mask;
-		user.rgb = gc->rgb;
 	}
 
 	error = fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
@@ -259,6 +255,8 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	unsigned char *dp, *sp;
 	int w, h;
 
+	int dx0 = dst->x;
+	int dy0 = dst->y;
 	int dx1 = dst->x + dst->w;
 	int dy1 = dst->y + dst->h;
 
@@ -272,14 +270,12 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	int sx1 = src->w;
 	int sy1 = src->h;
 
-	if (x1 < dst->x || x0 >= dx1) return;
-	if (y1 < dst->y || y0 >= dy1) return;
-
-	if (x0 < dst->x) { sx0 += dst->x - x0; x0 = dst->x; }
-	if (y0 < dst->y) { sy0 += dst->y - y0; y0 = dst->y; }
-
-	if (x1 >= dx1) { sx1 -= dx1 - x1; x1 = dx1; }
-	if (y1 >= dy1) { sy1 -= dy1 - y1; y1 = dy1; }
+	if (x1 < dx0 || x0 >= dx1) return;
+	if (y1 < dy0 || y0 >= dy1) return;
+	if (x0 < dx0) { sx0 += dx0 - x0; x0 = dx0; }
+	if (y0 < dy0) { sy0 += dy0 - y0; y0 = dy0; }
+	if (x1 >= dx1) { sx1 += dx1 - x1; x1 = dx1; }
+	if (y1 >= dy1) { sy1 += dy1 - y1; y1 = dy1; }
 
 	sp = src->samples + (sy0 * src->w + sx0);
 	dp = dst->samples + ((y0 - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
@@ -290,29 +286,32 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	switch (gc->flag)
 	{
 	case FNONE:
+		assert(dst->n == 1);
 		while (h--)
 		{
-			gc->rast.mask_g(w, sp, dp);
+			gc->rast.msk_1c1(sp, dp, w);
 			sp += src->w;
-			dp += dst->w * dst->n;
+			dp += dst->w;
 		}
 		break;
 
 	case FOVER:
+		assert(dst->n == 1);
 		while (h--)
 		{
-			gc->rast.mask_o1(w, sp, dp);
+			gc->rast.msk_1o1(sp, dp, w);
 			sp += src->w;
-			dp += dst->w * dst->n;
+			dp += dst->w;
 		}
 		break;
 
 	case FOVER | FRGB:
+		assert(dst->n == 4);
 		while (h--)
 		{
-			gc->rast.mask_o4w3(w, sp, dp, gc->rgb);
+			gc->rast.msk_w3i1o4(gc->rgb, sp, dp, w);
 			sp += src->w;
-			dp += dst->w * dst->n;
+			dp += dst->w * 4;
 		}
 		break;
 
@@ -334,14 +333,11 @@ rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	tbox = fz_roundrect(fz_boundnode((fz_node*)text, ctm));
 	clip = fz_intersectirects(gc->clip, tbox);
 
-//printf("text %s n=%d [%g %g %g %g] clip[%d %d %d %d]\n",
-//text->font->name, text->len,
-//text->trm.a, text->trm.b, text->trm.c, text->trm.d,
-//clip.min.x, clip.min.y, clip.max.x, clip.max.y);
+DEBUG("text %s n=%d [%g %g %g %g];\n",
+text->font->name, text->len,
+text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 
-	if (clip.max.x <= clip.min.x)
-		return nil;
-	if (clip.max.y <= clip.min.y)
+	if (fz_isemptyrect(clip))
 		return nil;
 
 	clip.min.x ++;
@@ -349,7 +345,7 @@ rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	clip.max.x ++;
 	clip.max.y ++;
 
-	if (gc->flag == FNONE)
+	if (!(gc->flag & FOVER))
 	{
 		error = fz_newpixmapwithrect(&gc->dest, clip, 1);
 		if (error)
@@ -374,7 +370,7 @@ rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 		if (error)
 			return error;
 
-		if (gc->flag == FNONE)
+		if (!(gc->flag & FOVER))
 			drawglyph(gc, gc->dest, &glyph, x, y);
 		else
 			drawglyph(gc, gc->over, &glyph, x, y);
@@ -423,19 +419,17 @@ renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	int x0, y0;
 	int w, h;
 
-printf("renderimage %dx%d %d+%d %s\n", image->w, image->h, image->n, image->a, image->cs?image->cs->name:"(nil)");
+DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image->cs?image->cs->name:"(nil)");
 
     bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
     clip = fz_intersectirects(gc->clip, bbox);
 
-	if (clip.max.x <= clip.min.x)
-		return nil;
-	if (clip.max.y <= clip.min.y)
+	if (fz_isemptyrect(clip))
 		return nil;
 
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
-printf("  load image\n");
+DEBUG("  load image\n");
 	error = fz_newpixmap(&tile, 0, 0, image->w, image->h, image->n + 1);
 	if (error)
 		return error;
@@ -446,7 +440,7 @@ printf("  load image\n");
 
 	if (dx != 1 || dy != 1)
 	{
-printf("  scale image 1/%d 1/%d\n", dx, dy);
+DEBUG("  scale image 1/%d 1/%d\n", dx, dy);
 		fz_pixmap *temp;
 		error = fz_scalepixmap(&temp, tile, dx, dy);
 		if (error)
@@ -458,7 +452,7 @@ printf("  scale image 1/%d 1/%d\n", dx, dy);
 	if (image->cs && image->cs != gc->model)
 	{
 		fz_pixmap *temp;
-printf("  convert from %s to %s\n", image->cs->name, gc->model->name);
+DEBUG("  convert from %s to %s\n", image->cs->name, gc->model->name);
 		error = fz_newpixmap(&temp, tile->x, tile->y, tile->w, tile->h, gc->model->n + 1);
 		if (error)
 			goto cleanup;
@@ -486,11 +480,15 @@ printf("  convert from %s to %s\n", image->cs->name, gc->model->name);
 	fc = invmat.c * 65536;
 	fd = invmat.d * 65536;
 
+#define PSRC tile->samples, tile->w, tile->h
+#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
+#define PCTM u0, v0, fa, fb, fc, fd, w, h
+
 	switch (gc->flag)
 	{
 	case FNONE:
 		{
-printf("  fnone %d x %d\n", w, h);
+DEBUG("  fnone %d x %d\n", w, h);
 			if (image->cs)
 				error = fz_newpixmapwithrect(&gc->dest, clip, gc->model->n + 1);
 			else
@@ -499,49 +497,32 @@ printf("  fnone %d x %d\n", w, h);
 				goto cleanup;
 
 			if (image->cs)
-				gc->rast.img4_g(
-					tile->samples, tile->w, tile->h, w, h,
-					gc->dest->samples, gc->dest->w * gc->dest->n,
-					u0, v0, fa, fb, fc, fd);
+				gc->rast.img_4c4(PSRC, PDST(gc->dest), PCTM);
 			else
-				gc->rast.img1_g(
-					tile->samples, tile->w, tile->h, w, h,
-					gc->dest->samples, gc->dest->w * gc->dest->n,
-					u0, v0, fa, fb, fc, fd);
+				gc->rast.img_1c1(PSRC, PDST(gc->dest), PCTM);
 		}
 		break;
 
 	case FOVER:
 		{
-printf("  fover %d x %d\n", w, h);
+DEBUG("  fover %d x %d\n", w, h);
 			if (image->cs)
-				gc->rast.img4_o4(
-					tile->samples, tile->w, tile->h, w, h,
-					gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)) * 4,
-					gc->over->w * gc->over->n,
-					u0, v0, fa, fb, fc, fd);
+				gc->rast.img_4o4(PSRC, PDST(gc->over), PCTM);
 			else
-				gc->rast.img1_o1(
-					tile->samples, tile->w, tile->h, w, h,
-					gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)),
-					gc->over->w * gc->over->n,
-					u0, v0, fa, fb, fc, fd);
+				gc->rast.img_1o1(PSRC, PDST(gc->over), PCTM);
 		}
 		break;
 
 	case FOVER | FRGB:
-		{
-printf("  fover+rgb %d x %d\n", w, h);
-			gc->rast.img1_o4w3(
-				tile->samples, tile->w, tile->h, w, h,
-				gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)) * 4,
-				gc->over->w * gc->over->n,
-				u0, v0, fa, fb, fc, fd, gc->rgb);
-		}
+DEBUG("  fover+rgb %d x %d\n", w, h);
+		gc->rast.img_w3i1o4(gc->rgb, PSRC, PDST(gc->over), PCTM);
 		break;
+
 	default:
 		assert(!"impossible flag in image span function");
 	}
+
+DEBUG("}\n");
 
 	fz_droppixmap(tile);
 	return nil;
@@ -555,24 +536,119 @@ cleanup:
  * Over, Mask and Blend
  */
 
+static void
+blendover(fz_renderer *gc, fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *sp, *dp;
+	fz_irect sr, dr;
+	int x, y, w, h;
+
+	sr.min.x = src->x;
+	sr.min.y = src->y;
+	sr.max.x = src->x + src->w;
+	sr.max.y = src->y + src->h;
+
+	dr.min.x = dst->x;
+	dr.min.y = dst->y;
+	dr.max.x = dst->x + dst->w;
+	dr.max.y = dst->y + dst->h;
+
+	dr = fz_intersectirects(sr, dr);
+	x = dr.min.x;
+	y = dr.min.y;
+	w = dr.max.x - dr.min.x;
+	h = dr.max.y - dr.min.y;
+
+	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
+	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
+
+	if (src->n == 1 && dst->n == 1)
+		gc->rast.duff_1o1(sp, src->w, dp, dst->w, w, h);
+	else if (src->n == 4 && dst->n == 4)
+		gc->rast.duff_4o4(sp, src->w * 4, dp, dst->w * 4, w, h);
+	else if (src->n == dst->n)
+		gc->rast.duff_NoN(sp, src->w * src->n, src->n, dp, dst->w * dst->n, w, h);
+	else
+		assert(!"blendover src and dst mismatch");
+}
+
+static void
+blendmask(fz_renderer *gc, fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst, int over)
+{
+	unsigned char *sp, *dp, *mp;
+	fz_irect sr, dr, mr;
+	int x, y, w, h;
+
+	sr.min.x = src->x;
+	sr.min.y = src->y;
+	sr.max.x = src->x + src->w;
+	sr.max.y = src->y + src->h;
+
+	dr.min.x = dst->x;
+	dr.min.y = dst->y;
+	dr.max.x = dst->x + dst->w;
+	dr.max.y = dst->y + dst->h;
+
+	mr.min.x = msk->x;
+	mr.min.y = msk->y;
+	mr.max.x = msk->x + msk->w;
+	mr.max.y = msk->y + msk->h;
+
+	dr = fz_intersectirects(sr, dr);
+	dr = fz_intersectirects(dr, mr);
+	x = dr.min.x;
+	y = dr.min.y;
+	w = dr.max.x - dr.min.x;
+	h = dr.max.y - dr.min.y;
+
+	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
+	mp = msk->samples + ((y - msk->y) * msk->w + (x - msk->x)) * msk->n;
+	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
+
+	if (over)
+	{
+		if (src->n == 1 && msk->n == 1 && dst->n == 1)
+			gc->rast.duff_1i1o1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
+		else if (src->n == 4 && msk->n == 1 && dst->n == 4)
+			gc->rast.duff_4i1o4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
+		else if (src->n == dst->n)
+			gc->rast.duff_NiMoN(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
+		else
+			assert(!"blendmaskover src and msk and dst mismatch");
+	}
+	else
+	{
+		if (src->n == 1 && msk->n == 1 && dst->n == 1)
+			gc->rast.duff_1i1c1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
+		else if (src->n == 4 && msk->n == 1 && dst->n == 4)
+			gc->rast.duff_4i1c4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
+		else if (src->n == dst->n)
+			gc->rast.duff_NiMcN(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
+		else
+			assert(!"blendmask src and msk and dst mismatch");
+	}
+}
+
 static fz_error *
 renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 {
 	fz_error *error;
 	fz_node *child;
-	int cluster = 0;;
-
-//printf("over\n{\n");
+	int cluster = 0;
 
 	if (!gc->over)
 	{
-//printf("  alloc dest!\n");
-		error = fz_newpixmapwithrect(&gc->over, gc->clip, gc->maskonly ? 1 : 4);
+DEBUG("over cluster %d\n{\n", gc->maskonly ? 1 : 4);
+		cluster = 1;
+		if (gc->maskonly)
+			error = fz_newpixmapwithrect(&gc->over, gc->clip, 1);
+		else
+			error = fz_newpixmapwithrect(&gc->over, gc->clip, 4);
 		if (error)
 			return error;
 		fz_clearpixmap(gc->over);
-		cluster = 1;
 	}
+else DEBUG("over\n{\n");
 
 	for (child = over->super.first; child; child = child->next)
 	{
@@ -581,7 +657,7 @@ renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 			return error;
 		if (gc->dest)
 		{
-			fz_blendover(gc->dest, gc->over);
+			blendover(gc, gc->dest, gc->over);
 			fz_droppixmap(gc->dest);
 			gc->dest = nil;
 		}
@@ -593,7 +669,7 @@ renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 		gc->over = nil;
 	}
 
-//printf("}\n");
+DEBUG("}\n");
 
 	return nil;
 }
@@ -602,12 +678,13 @@ static fz_error *
 rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 {
 	fz_error *error;
+	int oldmaskonly;
 	fz_pixmap *oldover;
-	fz_pixmap *oldmask;
 	fz_irect oldclip;
-	fz_irect newclip;
-	fz_pixmap *shapepix;
-	fz_pixmap *colorpix;
+	fz_irect bbox;
+	fz_irect clip;
+	fz_pixmap *shapepix = nil;
+	fz_pixmap *colorpix = nil;
 	fz_node *shape;
 	fz_node *color;
 	float rgb[3];
@@ -628,7 +705,7 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			gc->rgb[2] = rgb[2] * 255;
 			gc->flag |= FRGB;
 
-			/* we know these handle FOVER | FRGB */
+			/* we know these can handle the FRGB shortcut */
 			if (fz_ispathnode(shape))
 				return renderpath(gc, (fz_pathnode*)shape, ctm);
 			if (fz_istextnode(shape))
@@ -640,50 +717,77 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 
 	oldclip = gc->clip;
 	oldover = gc->over;
-	oldmask = gc->mask;
 
-	newclip = fz_roundrect(fz_boundnode(shape, ctm));
-	newclip = fz_intersectirects(newclip, gc->clip);
+	bbox = fz_roundrect(fz_boundnode(shape, ctm));
+	clip = fz_intersectirects(bbox, gc->clip);
+	bbox = fz_roundrect(fz_boundnode(color, ctm));
+	clip = fz_intersectirects(bbox, clip);
 
-	gc->clip = newclip;
+	if (fz_isemptyrect(clip))
+		return nil;
+
+DEBUG("mask [%d %d %d %d]\n{\n", clip.min.x, clip.min.y, clip.max.x, clip.max.y);
+
+{
+fz_irect sbox = fz_roundrect(fz_boundnode(shape, ctm));
+fz_irect cbox = fz_roundrect(fz_boundnode(color, ctm));
+if (cbox.min.x >= sbox.min.x && cbox.max.x <= sbox.max.x)
+if (cbox.min.y >= sbox.min.y && cbox.max.y <= sbox.max.y)
+DEBUG("potentially useless mask\n");
+}
+
+	gc->clip = clip;
 	gc->over = nil;
-	gc->mask = nil;
 
-printf("mask\n{\n");
-
-	error = rendernode(gc, color, ctm);
-	if (error)
-		return error;
-	colorpix = gc->dest;
-	gc->dest = nil;
+	oldmaskonly = gc->maskonly;
+	gc->maskonly = 1;
 
 	error = rendernode(gc, shape, ctm);
 	if (error)
-		return error;
+		goto cleanup;
 	shapepix = gc->dest;
 	gc->dest = nil;
 
-	if (colorpix && shapepix)
+	gc->maskonly = oldmaskonly;
+
+	error = rendernode(gc, color, ctm);
+	if (error)
+		goto cleanup;
+	colorpix = gc->dest;
+	gc->dest = nil;
+
+	gc->clip = oldclip;
+	gc->over = oldover;
+
+	if (shapepix && colorpix)
 	{
-		error = fz_newpixmapwithrect(&gc->dest, gc->clip, colorpix->n);
-		if (error)
-			return error;
-
-		fz_clearpixmap(gc->dest);
-
-		fz_blendmask(gc->dest, colorpix, shapepix);
+		if (gc->over)
+		{
+			blendmask(gc, colorpix, shapepix, gc->over, 1);
+		}
+		else
+		{
+			clip.min.x = MAX(colorpix->x, shapepix->x);
+			clip.min.y = MAX(colorpix->y, shapepix->y);
+			clip.max.x = MIN(colorpix->x+colorpix->w, shapepix->x+shapepix->w);
+			clip.max.y = MIN(colorpix->y+colorpix->h, shapepix->y+shapepix->h);
+			error = fz_newpixmapwithrect(&gc->dest, clip, colorpix->n);
+			if (error)
+				goto cleanup;
+			blendmask(gc, colorpix, shapepix, gc->dest, 0);
+		}
 	}
+
+DEBUG("}\n");
 
 	if (shapepix) fz_droppixmap(shapepix);
 	if (colorpix) fz_droppixmap(colorpix);
-
-	gc->over = oldover;
-	gc->mask = oldmask;
-	gc->clip = oldclip;
-
-printf("}\n");
-
 	return nil;
+
+cleanup:
+	if (shapepix) fz_droppixmap(shapepix);
+	if (colorpix) fz_droppixmap(colorpix);
+	return error;
 }
 
 /*
@@ -697,8 +801,8 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return nil;
 
 	gc->flag = FNONE;
-	if (gc->over) gc->flag |= FOVER;
-	if (gc->mask) gc->flag |= FMASK;
+	if (gc->over)
+		gc->flag |= FOVER;
 
 	switch (node->kind)
 	{
@@ -718,6 +822,8 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return renderimage(gc, (fz_imagenode*)node, ctm);
 	case FZ_NLINK:
 		return rendernode(gc, ((fz_linknode*)node)->tree->root, ctm);
+	case FZ_NMETA:
+		return rendernode(gc, node->first, ctm);
 	}
 
 	return nil;
@@ -731,32 +837,39 @@ fz_rendertree(fz_pixmap **outp,
 	fz_error *error;
 
 	gc->clip = bbox;
+	gc->over = nil;
+
+	if (gc->maskonly)
+		error = fz_newpixmapwithrect(&gc->over, bbox, 1);
+	else
+		error = fz_newpixmapwithrect(&gc->over, bbox, 4);
+	if (error)
+		return error;
 
 	if (white)
-	{
-		assert(gc->maskonly == 0);
-
-		error = fz_newpixmapwithrect(&gc->over, bbox, 4);
-		if (error)
-			return error;
-
 		memset(gc->over->samples, 0xff, gc->over->w * gc->over->h * gc->over->n);
-	}
+	else
+		memset(gc->over->samples, 0x00, gc->over->w * gc->over->h * gc->over->n);
+
+DEBUG("tree %d [%d %d %d %d]\n{\n",
+gc->maskonly ? 1 : 4,
+bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 
 	error = rendernode(gc, tree->root, ctm);
 	if (error)
 		return error;
 
-	if (white)
+DEBUG("}\n");
+
+	if (gc->dest)
 	{
-		*outp = gc->over;
-		gc->over = nil;
-	}
-	else
-	{
-		*outp = gc->dest;
+		blendover(gc, gc->dest, gc->over);
+		fz_droppixmap(gc->dest);
 		gc->dest = nil;
 	}
+
+	*outp = gc->over;
+	gc->over = nil;
 
 	return nil;
 }

@@ -35,7 +35,7 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 	int i;
 
 	if (text->len == 0)
-		return fz_infiniterect();
+		return fz_emptyrect;
 
 	/* find bbox of glyph origins in ctm space */
 

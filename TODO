@@ -16,7 +16,6 @@ shadings
 
 rendering
 	- bbox culling (cache bbox in over node?)
-	- image mask + color case
 	- merge gka optims
 	- optimize inner rendering loops
 	- optimize image load/decode/scale
@@ -27,7 +26,12 @@ parser
 	- resource dict generate fake ids
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
-	- BPC 2, 4
+
+fz_optimizetree()
+	- remove rectangular clip nodes whose children fit
+	- remove white fills at beginning of page
+	- remove overs with only one child
+	- concatenate chained transforms
 
 clean up
 	- make source ansi c89 / pedantic
