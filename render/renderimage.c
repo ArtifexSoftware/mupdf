@@ -1,8 +1,5 @@
 #include <fitz.h>
 
-fz_error *
-fz_scalepixmap(fz_pixmap *src, fz_pixmap *dst, int xdenom, int ydenom);
-
 static int getcomp(fz_pixmap *pix, float u, float v, int k)
 {
 	float fu = floor(u);
@@ -20,10 +17,10 @@ static int getcomp(fz_pixmap *pix, float u, float v, int k)
 	y0 = CLAMP(y0, 0, pix->h - 1);
 	y1 = CLAMP(y1, 0, pix->h - 1);
 
-	float a = pix->samples[ y0 * pix->stride + x0 * (pix->n + pix->a) + k ];
-	float b = pix->samples[ y0 * pix->stride + x1 * (pix->n + pix->a) + k ];
-	float c = pix->samples[ y1 * pix->stride + x0 * (pix->n + pix->a) + k ];
-	float d = pix->samples[ y1 * pix->stride + x1 * (pix->n + pix->a) + k ];
+	float a = pix->samples[ (y0 * pix->w + x0) * pix->n + k ];
+	float b = pix->samples[ (y0 * pix->w + x1) * pix->n + k ];
+	float c = pix->samples[ (y1 * pix->w + x0) * pix->n + k ];
+	float d = pix->samples[ (y1 * pix->w + x1) * pix->n + k ];
 
 	float ab = a * (1.0 - su) + b * su;
 	float cd = c * (1.0 - su) + d * su;
@@ -42,11 +39,8 @@ drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x
 
 	for (x = x0; x < x1; x++)
 	{
-		for (k = 0; k < src->n + src->a; k++)
-			dst->samples[ y * dst->stride + x * (dst->n+dst->a) + k ] = getcomp(src, u, v, k);
-		if (!src->a && dst->a)
-			dst->samples[ y * dst->stride + x * (dst->n + dst->a) + dst->n ] = 0xFF;
-
+		for (k = 0; k < src->n; k++)
+			dst->samples[ (y * dst->w + x) * dst->n + k ] = getcomp(src, u, v, k);
 		u += invmat->a;
 		v += invmat->c;
 	}
@@ -62,35 +56,27 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 
 	for (x = x0; x < x1; x++)
 	{
-		float a = 1.0;
-		if (u < 0)
-			a *= 1.0 - (u - floor(u));
-		if (u > src->w - 1)
-			a *= u - floor(u);
-		if (v < 0)
-			a *= 1.0 - (v - floor(v));
-		if (v > src->h - 1)
-			a *= v - floor(v);
+		int sa = getcomp(src, u, v, 0);
+		int sr = getcomp(src, u, v, 1);
+		int sg = getcomp(src, u, v, 2);
+		int sb = getcomp(src, u, v, 3);
 
-		int sr = getcomp(src, u, v, 0);
-		int sg = getcomp(src, u, v, 1);
-		int sb = getcomp(src, u, v, 2);
+		int da = dst->samples[ (y * dst->w + x) * dst->n + 0 ];
+		int dr = dst->samples[ (y * dst->w + x) * dst->n + 1 ];
+		int dg = dst->samples[ (y * dst->w + x) * dst->n + 2 ];
+		int db = dst->samples[ (y * dst->w + x) * dst->n + 3 ];
 
-		int dr = dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 0 ];
-		int dg = dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 1 ];
-		int db = dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 2 ];
-
-		int sa = a * 255;
 		int ssa = 255 - sa;
 
-		dr = fz_mul255(sr, sa) + fz_mul255(dr, ssa);
-		dg = fz_mul255(sg, sa) + fz_mul255(dg, ssa);
-		db = fz_mul255(sb, sa) + fz_mul255(db, ssa);
+		da = sa + fz_mul255(da, ssa);
+		dr = sr + fz_mul255(dr, ssa);
+		dg = sg + fz_mul255(dg, ssa);
+		db = sb + fz_mul255(db, ssa);
 
-		dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 0 ] = dr;
-		dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 1 ] = dg;
-		dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 2 ] = db;
-		dst->samples[ y * dst->stride + x * (dst->n+dst->a) + 3 ] = sa;
+		dst->samples[ (y * dst->w + x) * dst->n + 0 ] = sa;
+		dst->samples[ (y * dst->w + x) * dst->n + 1 ] = sr;
+		dst->samples[ (y * dst->w + x) * dst->n + 2 ] = sg;
+		dst->samples[ (y * dst->w + x) * dst->n + 3 ] = sb;
 
 		u += invmat->a;
 		v += invmat->c;
@@ -142,7 +128,7 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 		{
 			x0 = CLAMP(x0, out->x, out->x + out->w - 1);
 			x1 = CLAMP(x1, out->x, out->x + out->w - 1);
-			if (over && tile->cs && tile->cs->n == 3)
+			if (over && tile->n == 4)
 				overscanrgb(&invmat, out, tile, y, x0, x1);
 			else
 				drawscan(&invmat, out, tile, y, x0, x1);
@@ -172,50 +158,46 @@ fz_renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	int h = image->h;
 	int n = image->n;
 	int a = image->a;
-	int sw = w;
-	int sh = h;
 
-	float s = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	float sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	float sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
 
-	int d = 1;
-	while ((w + d - 1) / d > s)
-		d++;
-	if (d > 1)
-		d --;
+	int dx = 1;
+	while ((w + dx - 1) / dx > sx) dx++;
+	if (dx > 1) dx --;
 
-printf("renderimage s=%g d=%d\n", s, d);
+	int dy = 1;
+	while ((h + dy - 1) / dy > sy) dy++;
+	if (dy > 1) dy --;
 
-	error = fz_newpixmap(&tile1, cs, 0, 0, w, h, n, a);
+	if (dx > 1) dx --;
+	if (dy > 1) dy --;
+
+printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);
+
+	error = fz_newpixmap(&tile1, 0, 0, w, h, n + 1);
 
 printf("  load tile\n");
 	error = image->loadtile(image, tile1);
+//fz_debugpixmap(tile1);getchar();
 
-	if (d != 1)
+	if (dx != 1 || dy != 1)
 	{
-		sw = (w + d - 1) / d;
-		sh = (h + d - 1) / d;
-
-printf("  new pixmap\n");
-		error = fz_newpixmap(&tile2, cs, 0, 0, sw, sh, n, a);
-printf("  scale tile to %d %d\n", sw, sh);
-		error = fz_scalepixmap(tile1, tile2, d, d);
-
-printf("  free loaded tile\n");
+printf("  scale tile 1/%d x 1/%d\n", dx, dy);
+		error = fz_scalepixmap(&tile2, tile1, dx, dy);
+//fz_debugpixmap(tile2);getchar();
 		fz_freepixmap(tile1);
 	}
 	else
 		tile2 = tile1;
 
-printf("  swtich render mode\n");
-
 	/* render image mask */
 	if (n == 0 && a == 1)
 	{
 printf("draw image mask\n");
-		error = fz_newpixmap(&gc->tmp, nil, gc->x, gc->y, gc->w, gc->h, 0, 1);
+		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile2, ctm, 0);
-fz_debugpixmap(gc->tmp);getchar();
 	}
 
 	/* render rgb over */
@@ -229,9 +211,8 @@ printf("draw image rgb over\n");
 	else
 	{
 printf("draw generic image\n");
-		error = fz_newpixmap(&tile3, gc->model, 0, 0, sw, sh, gc->model->n, a);
-		fz_convertpixmap(tile2, tile3);
-		error = fz_newpixmap(&gc->tmp, gc->model, gc->x, gc->y, gc->w, gc->h, gc->model->n, 1);
+		error = fz_convertpixmap(&tile3, tile2, cs, gc->model);
+		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, gc->model->n + 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile3, ctm, 0);
 		fz_freepixmap(tile3);

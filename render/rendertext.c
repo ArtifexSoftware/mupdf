@@ -17,9 +17,9 @@ static void blitalphaglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo)
 			if (dy >= out->h) continue;
 
 			a = gl->bitmap[sx + sy * gl->w];
-			b = out->samples[dx + dy * out->stride];
-			c = MAX(a, b);
-			out->samples[dx + dy * out->stride] = c;
+			b = out->samples[dx + dy * out->w];
+			c = a + fz_mul255(b, 255 - a);
+			out->samples[dx + dy * out->w] = c;
 		}
 	}
 }
@@ -44,11 +44,11 @@ static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, fz_rend
 			sa = gl->bitmap[sx + sy * gl->w];
 			ssa = 255 - sa;
 
-			p = out->samples + dx * 4 + dy * out->stride;
-			p[0] = fz_mul255(gc->r, sa) + fz_mul255(p[0], ssa);
-			p[1] = fz_mul255(gc->g, sa) + fz_mul255(p[1], ssa);
-			p[2] = fz_mul255(gc->b, sa) + fz_mul255(p[2], ssa);
-			p[3] = sa + fz_mul255(ssa, p[3]);
+			p = out->samples + dx * 4 + dy * out->w * out->n;
+			p[0] = sa + fz_mul255(ssa, p[0]);
+			p[1] = fz_mul255(gc->r, sa) + fz_mul255(p[1], ssa);
+			p[2] = fz_mul255(gc->g, sa) + fz_mul255(p[2], ssa);
+			p[3] = fz_mul255(gc->b, sa) + fz_mul255(p[3], ssa);
 		}
 	}
 }
@@ -62,7 +62,7 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	int g, i, ix, iy;
 	fz_matrix tm, trm;
 
-	error = fz_newpixmap(&gc->tmp, nil, gc->x, gc->y, gc->w, gc->h, 0, 1);
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
 	if (error)
 		return error;
 

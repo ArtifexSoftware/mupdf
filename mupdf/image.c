@@ -9,15 +9,33 @@ static inline int getbit(const unsigned char *buf, int x)
 static void loadtile1(pdf_image *src, fz_pixmap *dst)
 {
 	int x, y, k;
-	int n = dst->n + dst->a;
-	for (y = 0; y < dst->h; y++)
+	int n = dst->n;
+	for (y = dst->y; y < dst->y + dst->h; y++)
 	{
-		unsigned char *srcp = src->samples->bp + (dst->y + y) * src->stride;
-		unsigned char *dstp = dst->samples + (dst->y + y) * dst->stride;
-		for (x = 0; x < dst->w; x++)
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
 		{
 			for (k = 0; k < n; k++)
-				dstp[(dst->x + x) * n + k] = getbit(srcp, (dst->x + x) * n + k) * 255;
+				d[x * n + k] = getbit(s, x * n + k) * 255;
+		}
+	}
+}
+
+static void loadtile1a(pdf_image *src, fz_pixmap *dst)
+{
+	int x, y, k;
+	int sn = src->super.n;
+	int dn = dst->n;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			d[0] = 255;
+			for (k = 0; k < sn; k++)
+				d[x * dn + k + 1] = getbit(s, x * sn + k) * 255;
 		}
 	}
 }
@@ -25,15 +43,30 @@ static void loadtile1(pdf_image *src, fz_pixmap *dst)
 static void loadtile8(pdf_image *src, fz_pixmap *dst)
 {
 	int x, y, k;
-	int n = dst->n + dst->a;
-	for (y = 0; y < dst->h; y++)
+	int n = src->super.n;
+	for (y = dst->y; y < dst->y + dst->h; y++)
 	{
-		unsigned char *srcp = src->samples->bp + (dst->y + y) * src->stride;
-		unsigned char *dstp = dst->samples + (dst->y + y) * dst->stride;
-		for (x = 0; x < dst->w; x++)
-		{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
 			for (k = 0; k < n; k++)
-				dstp[(dst->x + x) * n + k] = srcp[(dst->x + x) * n + k];
+				*d++ = *s++;
+	}
+}
+
+static void loadtile8a(pdf_image *src, fz_pixmap *dst)
+{
+	int x, y, k;
+	int n = dst->n;
+	for (y = dst->y; y < dst->y + dst->h; y++)
+	{
+		unsigned char *s = src->samples->bp + y * src->stride;
+		unsigned char *d = dst->samples + y * dst->w * dst->n;
+		for (x = dst->x; x < dst->x + dst->w; x++)
+		{
+			*d++ = 255;
+			for (k = 1; k < n; k++)
+				*d++ = *s++;
 		}
 	}
 }
@@ -42,19 +75,31 @@ static fz_error *loadtile(fz_image *img, fz_pixmap *tile)
 {
 	pdf_image *src = (pdf_image*)img;
 
-	assert(tile->n == img->n);
-	assert(tile->a == img->a);
+	assert(tile->n == img->n + 1);
 	assert(tile->x >= 0);
 	assert(tile->y >= 0);
 	assert(tile->x + tile->w <= img->w);
 	assert(tile->y + tile->h <= img->h);
 
-	switch (src->bpc)
+	if (img->a)
 	{
-	case 1: loadtile1(src, tile); return nil;
-//	case 2: loadtile2(src, tile); return nil;
-//	case 4: loadtile4(src, tile); return nil;
-	case 8: loadtile8(src, tile); return nil;
+		switch (src->bpc)
+		{
+		case 1: loadtile1(src, tile); return nil;
+	//	case 2: loadtile2(src, tile); return nil;
+	//	case 4: loadtile4(src, tile); return nil;
+		case 8: loadtile8(src, tile); return nil;
+		}
+	}
+	else
+	{
+		switch (src->bpc)
+		{
+		case 1: loadtile1a(src, tile); return nil;
+	//	case 2: loadtile2a(src, tile); return nil;
+	//	case 4: loadtile4a(src, tile); return nil;
+		case 8: loadtile8a(src, tile); return nil;
+		}
 	}
 
 	return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -123,7 +168,7 @@ printf("load image %d x %d @ %d\n", img->super.w, img->super.h, img->bpc);
 		for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
 			img->decode[i] = i & 1;
 
-printf("  cs %s\n", cs ? cs->name : "(null)");
+printf("  colorspace %s\n", cs ? cs->name : "(null)");
 printf("  mask %d\n", ismask);
 printf("  decode [ ");
 for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
@@ -138,8 +183,6 @@ printf("]\n");
 		return error;
 	}
 
-printf("  stride = %d -> %d bytes\n", img->stride, img->stride * img->super.h);
-printf("  samples = %d bytes\n", img->samples->wp - img->samples->bp);
 	if (img->samples->wp - img->samples->bp != img->stride * img->super.h)
 	{
 		/* TODO: colorspace? */

@@ -82,19 +82,20 @@ printf("render color\n");
 	gc->g = rgb[1] * 255;
 	gc->b = rgb[2] * 255;
 
-	error = fz_newpixmap(&gc->tmp, color->cs, gc->x, gc->y, gc->w, gc->h, 3, 1);
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 4);
 	if (error)
 		return error;
 
+	unsigned char *p = gc->tmp->samples;
+
 	for (y = 0; y < gc->tmp->h; y++)
 	{
-		unsigned char *p = &gc->tmp->samples[y * gc->tmp->stride];
 		for (x = 0; x < gc->tmp->w; x++)
 		{
+			*p++ = 255;
 			*p++ = gc->r;
 			*p++ = gc->g;
 			*p++ = gc->b;
-			*p++ = 255;
 		}
 	}
 
@@ -120,10 +121,10 @@ fz_renderoverchild(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 
 	if (gc->tmp)
 	{
-printf("over src ");fz_debugpixmap(gc->tmp);getchar();
-printf("over dst ");fz_debugpixmap(gc->acc);getchar();
+//printf("over src ");fz_debugpixmap(gc->tmp);getchar();
+//printf("over dst ");fz_debugpixmap(gc->acc);getchar();
 		fz_blendover(gc->tmp, gc->acc);
-printf("over res ");fz_debugpixmap(gc->acc);getchar();
+//printf("over res ");fz_debugpixmap(gc->acc);getchar();
 		fz_freepixmap(gc->tmp);
 		gc->tmp = nil;
 	}
@@ -138,14 +139,14 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	fz_pixmap *oldacc = nil;
 	int oldmode;
 
-printf("begin over\n");
+//printf("begin over\n");
 
 	/* uh-oh! we have a new over cluster */
 	if (gc->mode != FZ_ROVER)
 	{
 printf("begin over accumulator\n");
 		oldacc = gc->acc;
-		error = fz_newpixmap(&gc->acc, gc->model, gc->x, gc->y, gc->w, gc->h, 3, 1);
+		error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, 4);
 		if (error)
 			return error;
 		fz_clearpixmap(gc->acc);
@@ -173,7 +174,7 @@ printf("end over accumulator\n");
 		gc->acc = oldacc;
 	}
 
-printf("end over\n");
+//printf("end over\n");
 
 	return nil;
 }
@@ -216,15 +217,17 @@ printf("begin mask\n");
 		return error;
 	shapepix = gc->tmp;
 
-	error = fz_newpixmap(&gc->tmp, colorpix->cs, gc->x, gc->y, gc->w, gc->h, colorpix->n, 1);
+if (!shapepix) return nil;
+
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, colorpix->n);
 	if (error)
 		return error;
 
 	fz_blendmask(gc->tmp, colorpix, shapepix);
 
-printf("mask color");fz_debugpixmap(colorpix);getchar();
-printf("mask shape");fz_debugpixmap(shapepix);getchar();
-printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
+//printf("mask color");fz_debugpixmap(colorpix);getchar();
+//printf("mask shape");fz_debugpixmap(shapepix);getchar();
+//printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
 
 	fz_freepixmap(shapepix);
 	fz_freepixmap(colorpix);
@@ -239,7 +242,7 @@ printf("end mask\n");
 fz_error *
 fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
-printf("render transform\n");
+//printf("render transform\n");
 	ctm = fz_concat(transform->m, ctm);
 	return fz_rendernode(gc, transform->super.child, ctm);
 }

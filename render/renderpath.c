@@ -1,7 +1,6 @@
 #include <fitz.h>
 
 // enum { HS = 1, VS = 1, SF = 255 };
-// enum { HS = 5, VS = 3, SF = 17 };
 enum { HS = 17, VS = 15, SF = 1 };
 
 static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
@@ -9,7 +8,6 @@ static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
 	float flatness = 0.3 / ctm.a;
 	if (flatness < 0.1)
 		flatness = 0.1;
-
 	if (path->paint == FZ_STROKE)
 	{
 		if (path->dash)
@@ -43,17 +41,17 @@ static void blitcolorspan(int y, int x, int n, unsigned char *alpha, void *userd
 	if (n < 0)
 		return;
 
-	p = &pix->samples[(y - pix->y) * pix->stride + (x - pix->x) * 4];
+	p = pix->samples + ((y - pix->y) * pix->w + (x - pix->x)) * pix->n;
 
 	while (n--)
 	{
 		sa = *alpha++ * SF;
 		ssa = 255 - sa;
 
-		p[0] = fz_mul255(r, sa) + fz_mul255(p[0], ssa);
-		p[1] = fz_mul255(g, sa) + fz_mul255(p[1], ssa);
-		p[2] = fz_mul255(b, sa) + fz_mul255(p[2], ssa);
-		p[3] = sa + fz_mul255(p[3], ssa);
+		p[0] = sa + fz_mul255(p[0], ssa);
+		p[1] = fz_mul255(r, sa) + fz_mul255(p[1], ssa);
+		p[2] = fz_mul255(g, sa) + fz_mul255(p[2], ssa);
+		p[3] = fz_mul255(b, sa) + fz_mul255(p[3], ssa);
 
 		p += 4;
 	}
@@ -77,7 +75,7 @@ static void blitalphaspan(int y, int x, int n, unsigned char *alpha, void *userd
 	if (n < 0)
 		return;
 
-	p = &pix->samples[(y - pix->y) * pix->stride + (x - pix->x)];
+	p = pix->samples + (y - pix->y) * pix->w + (x - pix->x);
 	while (n--)
 		*p++ = *alpha++ * SF;
 }
@@ -122,7 +120,7 @@ fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 	fz_sortgel(gc->gel);
 
-	error = fz_newpixmap(&gc->tmp, nil, gc->x, gc->y, gc->w, gc->h, 0, 1);
+	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
 	if (error)
 		return error;
 
