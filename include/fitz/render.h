@@ -1,6 +1,6 @@
 typedef struct fz_renderer_s fz_renderer;
 
-fz_error *fz_newrenderer(fz_renderer **gcp);
+fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm);
 void fz_freerenderer(fz_renderer *gc);
 
 fz_error *fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm);

@@ -50,8 +50,8 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
-	error = fz_newcolornode(&node, 1, 1, 1);
-	fz_insertnode(csi->tree->root, node);
+//	error = fz_newcolornode(&node, pdf_devicegray, 1);
+//	fz_insertnode(csi->tree->root, node);
 
 	csi->clip = nil;
 
@@ -145,6 +145,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 	float a, b, c, d, e, f;
 	float x, y, w, h;
 	fz_matrix m;
+	int i;
 
 	if (strlen(buf) > 1)
 	{
@@ -282,22 +283,88 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 			if (error) return error;
 		}
 
+		else if (!strcmp(buf, "cs"))
+		{
+			fz_obj *obj;
+
+			if (csi->top != 1)
+				goto syntaxerror;
+
+			obj = csi->stack[0];
+
+			if (!strcmp(fz_toname(obj), "DeviceGray"))
+				gstate->fillcs = pdf_devicegray;
+			else if (!strcmp(fz_toname(obj), "DeviceRGB"))
+				gstate->fillcs = pdf_devicergb;
+			else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
+				gstate->fillcs = pdf_devicecmyk;
+			else
+			{
+				obj = fz_dictget(rdb->colorspace, obj);
+				if (!obj)
+					return fz_throw("syntaxerror: missing resource");
+				gstate->fillcs = fz_topointer(obj);
+			}
+		}
+
+		else if (!strcmp(buf, "CS"))
+		{
+			fz_obj *obj;
+
+			if (csi->top != 1)
+				goto syntaxerror;
+
+			obj = csi->stack[0];
+
+			if (!strcmp(fz_toname(obj), "DeviceGray"))
+				gstate->strokecs = pdf_devicegray;
+			else if (!strcmp(fz_toname(obj), "DeviceRGB"))
+				gstate->strokecs = pdf_devicergb;
+			else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
+				gstate->strokecs = pdf_devicecmyk;
+			else
+			{
+				obj = fz_dictget(rdb->colorspace, obj);
+				if (!obj)
+					return fz_throw("syntaxerror: missing resource");
+				gstate->strokecs = fz_topointer(obj);
+			}
+		}
+
+		else if (!strcmp(buf, "sc"))
+		{
+			if (csi->top != gstate->fillcs->n)
+				goto syntaxerror;
+			for (i = 0; i < csi->top; i++)
+				gstate->fill[i] = fz_toreal(csi->stack[i]);
+		}
+
+		else if (!strcmp(buf, "SC"))
+		{
+			if (csi->top != gstate->strokecs->n)
+				goto syntaxerror;
+			for (i = 0; i < csi->top; i++)
+				gstate->stroke[i] = fz_toreal(csi->stack[i]);
+		}
+
 		else if (!strcmp(buf, "rg"))
 		{
 			if (csi->top != 3)
 				goto syntaxerror;
-			gstate->fill.r = fz_toreal(csi->stack[0]);
-			gstate->fill.g = fz_toreal(csi->stack[1]);
-			gstate->fill.b = fz_toreal(csi->stack[2]);
+			gstate->fillcs = pdf_devicergb;
+			gstate->fill[0] = fz_toreal(csi->stack[0]);
+			gstate->fill[1] = fz_toreal(csi->stack[1]);
+			gstate->fill[2] = fz_toreal(csi->stack[2]);
 		}
 
 		else if (!strcmp(buf, "RG"))
 		{
 			if (csi->top != 3)
 				goto syntaxerror;
-			gstate->stroke.r = fz_toreal(csi->stack[0]);
-			gstate->stroke.g = fz_toreal(csi->stack[1]);
-			gstate->stroke.b = fz_toreal(csi->stack[2]);
+			gstate->strokecs = pdf_devicergb;
+			gstate->stroke[0] = fz_toreal(csi->stack[0]);
+			gstate->stroke[1] = fz_toreal(csi->stack[1]);
+			gstate->stroke[2] = fz_toreal(csi->stack[2]);
 		}
 
 		else if (!strcmp(buf, "BT"))
@@ -615,43 +682,35 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 	case 'g':	
 		if (csi->top != 1)
 			goto syntaxerror;
-		a = fz_toreal(csi->stack[0]);
-		gstate->fill.r = a;
-		gstate->fill.g = a;
-		gstate->fill.b = a;
+		gstate->fillcs = pdf_devicegray;
+		gstate->fill[0] = fz_toreal(csi->stack[0]);
 		break;
 		
 	case 'G':
 		if (csi->top != 1)
 			goto syntaxerror;
-		a = fz_toreal(csi->stack[0]);
-		gstate->stroke.r = a;
-		gstate->stroke.g = a;
-		gstate->stroke.b = a;
+		gstate->strokecs = pdf_devicegray;
+		gstate->stroke[0] = fz_toreal(csi->stack[0]);
 		break;
 
 	case 'k':
 		if (csi->top != 4)
 			goto syntaxerror;
-		a = fz_toreal(csi->stack[0]);
-		b = fz_toreal(csi->stack[1]);
-		c = fz_toreal(csi->stack[2]);
-		d = fz_toreal(csi->stack[3]);
-		gstate->fill.r = 1.0 - MIN(1.0, a + d);
-		gstate->fill.g = 1.0 - MIN(1.0, b + d);
-		gstate->fill.b = 1.0 - MIN(1.0, c + d);
+		gstate->fillcs = pdf_devicecmyk;
+		gstate->fill[0] = fz_toreal(csi->stack[0]);
+		gstate->fill[1] = fz_toreal(csi->stack[1]);
+		gstate->fill[2] = fz_toreal(csi->stack[2]);
+		gstate->fill[3] = fz_toreal(csi->stack[3]);
 		break;
 
 	case 'K':
 		if (csi->top != 4)
 			goto syntaxerror;
-		a = fz_toreal(csi->stack[0]);
-		b = fz_toreal(csi->stack[1]);
-		c = fz_toreal(csi->stack[2]);
-		d = fz_toreal(csi->stack[3]);
-		gstate->stroke.r = 1.0 - MIN(1.0, a + d);
-		gstate->stroke.g = 1.0 - MIN(1.0, b + d);
-		gstate->stroke.b = 1.0 - MIN(1.0, c + d);
+		gstate->strokecs = pdf_devicecmyk;
+		gstate->stroke[0] = fz_toreal(csi->stack[0]);
+		gstate->stroke[1] = fz_toreal(csi->stack[1]);
+		gstate->stroke[2] = fz_toreal(csi->stack[2]);
+		gstate->stroke[3] = fz_toreal(csi->stack[3]);
 		break;
 
 	case '\'':

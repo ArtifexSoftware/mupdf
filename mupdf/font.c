@@ -28,8 +28,8 @@ printf("  type %s\n", kind);
 static int ftwidth(pdf_font *font, int cid)
 {
 	int e;
-	if (font->super.cidtogid)
-		cid = font->super.cidtogid[cid];
+	if (font->cidtogid)
+		cid = font->cidtogid[cid];
 	e = FT_Load_Glyph(font->ftface, cid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 	if (e)
@@ -47,8 +47,8 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	FT_Error fterr;
 	int gid;
 
-	if (fzfont->cidtogid)
-		gid = fzfont->cidtogid[cid];
+	if (font->cidtogid)
+		gid = font->cidtogid[cid];
 	else
 		gid = cid;
 
@@ -415,7 +415,8 @@ printf("  builtin encoding\n");
 	if (error)
 		goto cleanup;
 
-	fz_setcidtogid((fz_font*)font, 256, etable);
+	font->ncidtogid = 256;
+	font->cidtogid = etable;
 
 	/*
 	 * Widths
@@ -613,7 +614,8 @@ printf("  cidtogidmap %d\n", len / 2);
 			for (i = 0; i < len; i++)
 				map[i] = (buf->rp[i * 2] << 8) + buf->rp[i * 2 + 1];
 
-			fz_setcidtogid((fz_font*)font, len, map);
+			font->ncidtogid = len;
+			font->cidtogid = map;
 
 			fz_freebuffer(buf);
 		}

@@ -14,13 +14,11 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->dashlen = 0;
 	memset(gs->dashlist, 0, sizeof(gs->dashlist));
 
-	gs->stroke.r = 0;
-	gs->stroke.g = 0;
-	gs->stroke.b = 0;
+	gs->strokecs = pdf_devicegray;
+	gs->stroke[0] = 0;
 
-	gs->fill.r = 0;
-	gs->fill.g = 0;
-	gs->fill.b = 0;
+	gs->fillcs = pdf_devicegray;
+	gs->fill[0] = 0;
 
 	gs->charspace = 0;
 	gs->wordspace = 0;
@@ -71,7 +69,7 @@ pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 }
 
 static fz_error *
-addcolorshape(pdf_gstate *gs, fz_node *shape, float r, float g, float b)
+addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 {
 	fz_error *error;
 	fz_node *mask;
@@ -80,7 +78,7 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, float r, float g, float b)
 	error = fz_newmasknode(&mask);
 	if (error) return error;
 
-	error = fz_newcolornode(&solid, r, g, b);
+	error = fz_newcolornode(&solid, cs, cs->n, v);
 	if (error) return error;
 
 	fz_insertnode(mask, shape);
@@ -93,13 +91,13 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, float r, float g, float b)
 fz_error *
 pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 {
-	return addcolorshape(gs, shape, gs->fill.r, gs->fill.g, gs->fill.b);
+	return addcolorshape(gs, shape, gs->fillcs, gs->fill);
 }
 
 fz_error *
 pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 {
-	return addcolorshape(gs, shape, gs->stroke.r, gs->stroke.g, gs->stroke.b);
+	return addcolorshape(gs, shape, gs->strokecs, gs->stroke);
 }
 
 fz_error *

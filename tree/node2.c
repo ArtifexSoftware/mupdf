@@ -89,7 +89,7 @@ fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i)
+fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i)
 {
 	fz_blendnode *node;
 
@@ -99,6 +99,7 @@ fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NBLEND);
+	node->cs = cs;
 	node->mode = b;
 	node->knockout = k;
 	node->isolated = i;
@@ -230,19 +231,21 @@ fz_boundlinknode(fz_linknode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newcolornode(fz_node **nodep, float r, float g, float b)
+fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 {
 	fz_colornode *node;
+	int i;
 
-	node = fz_malloc(sizeof (fz_colornode));
+	node = fz_malloc(sizeof(fz_colornode) + sizeof(float) * n);
 	if (!node)
 		return fz_outofmem;
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NCOLOR);
-	node->r = r;
-	node->g = g;
-	node->b = b;
+	node->cs = cs;
+	node->n = n;
+	for (i = 0; i < n; i++)
+		node->samples[i] = v[i];
 
 	return nil;
 }
@@ -250,8 +253,7 @@ fz_newcolornode(fz_node **nodep, float r, float g, float b)
 fz_rect
 fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
 {
-        /* min > max => no bounds */
-        return (fz_rect) { {1,1}, {-1,-1} };
+	return fz_infiniterect();
 }
 
 /*
@@ -259,7 +261,7 @@ fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newimagenode(fz_node **nodep, int w, int h, int n, int a)
+fz_newimagenode(fz_node **nodep, fz_colorspace *cs, int w, int h, int n, int a)
 {
 	fz_imagenode *node;
 
@@ -269,6 +271,7 @@ fz_newimagenode(fz_node **nodep, int w, int h, int n, int a)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NIMAGE);
+	node->cs = cs;
 	node->w = w;
 	node->h = h;
 	node->n = n;

@@ -68,8 +68,12 @@ static void lisptransform(fz_transformnode *node, int level)
 
 static void lispcolor(fz_colornode *node, int level)
 {
+	int i;
 	indent(level);
-	printf("(color %g %g %g)\n", node->r, node->g, node->b);
+	printf("(color ");
+	for (i = 0; i < node->n; i++)
+		printf("%g ", node->samples[i]);
+	printf(")\n");
 }
 
 static void lisplink(fz_linknode *node, int level)

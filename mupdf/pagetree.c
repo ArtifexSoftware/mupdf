@@ -157,6 +157,20 @@ error:
 	return nil;
 }
 
+int
+pdf_getpagecount(pdf_pagetree *pages)
+{
+	return pages->count;
+}
+
+fz_obj *
+pdf_getpageobject(pdf_pagetree *pages, int p)
+{
+	if (p < 0 || p >= pages->count)
+		return nil;
+	return pages->pobj[p];
+}
+
 void
 pdf_freepagetree(pdf_pagetree *pages)
 {

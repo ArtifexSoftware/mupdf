@@ -4,6 +4,7 @@ enum { NONE, OVER, MASK };
 
 struct fz_renderer_s
 {
+	fz_colorspace *model;
 	fz_glyphcache *cache;
 	fz_gel *gel;
 	fz_ael *ael;
@@ -15,7 +16,7 @@ struct fz_renderer_s
 };
 
 fz_error *
-fz_newrenderer(fz_renderer **gcp)
+fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
 {
 	fz_error *error;
 	fz_renderer *gc;
@@ -24,6 +25,7 @@ fz_newrenderer(fz_renderer **gcp)
 	if (!gc)
 		return fz_outofmem;
 
+	gc->model = processcolormodel;
 	gc->cache = nil;
 	gc->gel = nil;
 	gc->ael = nil;
@@ -97,7 +99,7 @@ static void blitglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo)
 	}
 }
 
-static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, short r, short g, short b)
+static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, fz_renderer *gc)
 {
 	int sx, sy, dx, dy, sa, ssa;
 	short *p;
@@ -118,9 +120,9 @@ static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, short r
 			ssa = (1 << 14) - sa;
 
 			p = out->samples + dx * 4 + dy * out->stride;
-			p[0] = ((r * sa) >> 14) + ((p[0] * ssa) >> 14);
-			p[1] = ((g * sa) >> 14) + ((p[1] * ssa) >> 14);
-			p[2] = ((b * sa) >> 14) + ((p[2] * ssa) >> 14);
+			p[0] = ((gc->r * sa) >> 14) + ((p[0] * ssa) >> 14);
+			p[1] = ((gc->g * sa) >> 14) + ((p[1] * ssa) >> 14);
+			p[2] = ((gc->b * sa) >> 14) + ((p[2] * ssa) >> 14);
 			p[3] = sa + ((ssa * p[3]) >> 14);
 		}
 	}
@@ -137,7 +139,7 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 
 puts("render text");
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 0, 1);
+	error = fz_newpixmap(&gc->tmp, nil, gc->x, gc->y, gc->w, gc->h, 0, 1);
 	if (error)
 		return error;
 
@@ -177,12 +179,14 @@ rcolortext(fz_renderer *gc, fz_textnode *text, fz_colornode *color, fz_matrix ct
 	float x, y;
 	int g, i, ix, iy;
 	fz_matrix tm, trm;
+	float rgb[3];
 
 puts("render (mask color text)");
 
-	gc->r = color->r * (1 << 14);
-	gc->g = color->g * (1 << 14);
-	gc->b = color->b * (1 << 14);
+	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
+	gc->r = rgb[0] * (1 << 14);
+	gc->g = rgb[1] * (1 << 14);
+	gc->b = rgb[2] * (1 << 14);
 
 	tm = text->trm;
 
@@ -206,7 +210,7 @@ puts("render (mask color text)");
 		if (error)
 			return error;
 
-		blitcolorglyph(gc->acc, &gl, ix, iy, gc->r, gc->g, gc->b);
+		blitcolorglyph(gc->acc, &gl, ix, iy, gc);
 	}
 
 	return nil;
@@ -255,7 +259,7 @@ puts("render path");
 
 	fz_sortgel(gc->gel);
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 0, 1);
+	error = fz_newpixmap(&gc->tmp, nil, gc->x, gc->y, gc->w, gc->h, 0, 1);
 	if (error)
 		return error;
 
@@ -270,9 +274,6 @@ static void blitcolorspan(int y, int x, int n, short *list, void *userdata)
 {
 	fz_renderer *gc = userdata;
 	fz_pixmap *pix = gc->acc;
-	short r = gc->r;
-	short g = gc->g;
-	short b = gc->b;
 	short *p;
 	short d, sa, ssa;
 
@@ -289,9 +290,9 @@ static void blitcolorspan(int y, int x, int n, short *list, void *userdata)
 		sa = d * 64;
 		ssa = (1 << 14) - sa;
 
-		p[0] = ((r * sa) >> 14) + ((p[0] * ssa) >> 14);
-		p[1] = ((g * sa) >> 14) + ((p[1] * ssa) >> 14);
-		p[2] = ((b * sa) >> 14) + ((p[2] * ssa) >> 14);
+		p[0] = ((gc->r * sa) >> 14) + ((p[0] * ssa) >> 14);
+		p[1] = ((gc->g * sa) >> 14) + ((p[1] * ssa) >> 14);
+		p[2] = ((gc->b * sa) >> 14) + ((p[2] * ssa) >> 14);
 		p[3] = sa + ((ssa * p[3]) >> 14);
 
 		p += 4;
@@ -301,6 +302,8 @@ static void blitcolorspan(int y, int x, int n, short *list, void *userdata)
 static fz_error *
 rcolorpath(fz_renderer *gc, fz_pathnode *path, fz_colornode *color, fz_matrix ctm)
 {
+	float rgb[3];
+
 puts("render (mask color path)");
 
 	float flatness = 0.3 / ctm.a;
@@ -319,9 +322,10 @@ puts("render (mask color path)");
 
 	fz_sortgel(gc->gel);
 
-	gc->r = color->r * (1 << 14);
-	gc->g = color->g * (1 << 14);
-	gc->b = color->b * (1 << 14);
+	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
+	gc->r = rgb[0] * (1 << 14);
+	gc->g = rgb[1] * (1 << 14);
+	gc->b = rgb[2] * (1 << 14);
 
 	fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL, blitcolorspan, gc);
 
@@ -332,14 +336,17 @@ fz_error *
 fz_rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 {
 	fz_error *error;
-	short r = color->r * (1 << 14);
-	short g = color->g * (1 << 14);
-	short b = color->b * (1 << 14);
 	int x, y;
+	float rgb[3];
+
+	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
+	gc->r = rgb[0] * (1 << 14);
+	gc->g = rgb[1] * (1 << 14);
+	gc->b = rgb[2] * (1 << 14);
 
 puts("render color");
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 3, 1);
+	error = fz_newpixmap(&gc->tmp, color->cs, gc->x, gc->y, gc->w, gc->h, 3, 1);
 	if (error)
 		return error;
 
@@ -348,9 +355,9 @@ puts("render color");
 		short *p = &gc->tmp->samples[y * gc->tmp->stride];
 		for (x = 0; x < gc->tmp->w; x++)
 		{
-			*p++ = r;
-			*p++ = g;
-			*p++ = b;
+			*p++ = gc->r;
+			*p++ = gc->g;
+			*p++ = gc->b;
 			*p++ = 1 << 14;
 		}
 	}
@@ -398,7 +405,7 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	{
 puts("render over");
 		oldacc = gc->acc;
-		error = fz_newpixmap(&gc->acc, gc->x, gc->y, gc->w, gc->h, 3, 1);
+		error = fz_newpixmap(&gc->acc, gc->model, gc->x, gc->y, gc->w, gc->h, 3, 1);
 		if (error)
 			return error;
 		fz_clearpixmap(gc->acc);
@@ -465,7 +472,7 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 		return error;
 	shapepix = gc->tmp;
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, colorpix->n, 1);
+	error = fz_newpixmap(&gc->tmp, colorpix->cs, gc->x, gc->y, gc->w, gc->h, colorpix->n, 1);
 	if (error)
 		return error;
 

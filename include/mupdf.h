@@ -131,10 +131,15 @@ fz_error *pdf_decryptpdf(pdf_xref *xref);
  * high-level semantic objects for resources and pages
  */
 
+extern fz_colorspace *pdf_devicegray;
+extern fz_colorspace *pdf_devicergb;
+extern fz_colorspace *pdf_devicecmyk;
+
 typedef struct pdf_nametree_s pdf_nametree;
 typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_font_s pdf_font;
 typedef struct pdf_resources_s pdf_resources;
+typedef struct pdf_page_s pdf_page;
 typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_csi_s pdf_csi;
 
@@ -171,6 +176,8 @@ struct pdf_font_s
 
 	/* Encoding (CMap) */
 	fz_cmap *encoding;
+	int ncidtogid;
+	unsigned short *cidtogid;
 
 	/* Raw data for freetype */
 	char *filename;
@@ -195,6 +202,14 @@ struct pdf_resources_s
 	fz_obj *xform;
 };
 
+struct pdf_page_s
+{
+	fz_rect mediabox;
+	int rotate;
+	pdf_resources *rdb;
+	fz_tree *tree;
+};
+
 struct pdf_gstate_s
 {
 	/* path stroking */
@@ -206,8 +221,11 @@ struct pdf_gstate_s
 	int dashlen;
 	float dashlist[32];
 
-	/* colors and colorspaces */
-	struct { float r, g, b; } stroke, fill;
+	/* materials */
+	fz_colorspace *strokecs;
+	float stroke[32];
+	fz_colorspace *fillcs;
+	float fill[32];
 
 	/* text state */
 	float charspace;
@@ -252,8 +270,14 @@ fz_obj *pdf_lookupnames(pdf_nametree *nt, char *name);
 
 /* pagetree.c */
 fz_error *pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
+int pdf_getpagecount(pdf_pagetree *pages);
+fz_obj *pdf_getpageobject(pdf_pagetree *pages, int p);
 void pdf_debugpagetree(pdf_pagetree *pages);
 void pdf_freepagetree(pdf_pagetree *pages);
+
+/* page.c */
+fz_error *pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
+void pdf_freepage(pdf_page *page);
 
 /* cmap.c */
 fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_file *file);
@@ -270,6 +294,9 @@ fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, c
 /* font.c */
 fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
 void pdf_freefont(pdf_font *font);
+
+/* colorspace.c */
+fz_error *pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj);
 
 /* resources.c */
 fz_error *pdf_loadresources(pdf_resources **rdbp, pdf_xref *xref, fz_obj *resdict);

@@ -37,9 +37,6 @@ struct fz_font_s
 	int nvmtx, vmtxcap;
 	fz_vmtx dvmtx;
 	fz_vmtx *vmtx;
-
-	int ncidtogid;
-	unsigned short *cidtogid;
 };
 
 struct fz_glyph_s
@@ -53,7 +50,6 @@ void fz_freefont(fz_font *font);
 void fz_debugfont(fz_font *font);
 void fz_setfontwmode(fz_font *font, int wmode);
 void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
-void fz_setcidtogid(fz_font *font, int n, unsigned short *map);
 void fz_setdefaulthmtx(fz_font *font, int w);
 void fz_setdefaultvmtx(fz_font *font, int y, int w);
 fz_error *fz_addhmtx(fz_font *font, int lo, int hi, int w);

@@ -1,7 +1,7 @@
 #include <fitz.h>
 
 fz_error *
-fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n, int a)
+fz_newpixmap(fz_pixmap **pixp, fz_colorspace *cs, int x, int y, int w, int h, int n, int a)
 {
 	fz_pixmap *pix;
 
@@ -9,13 +9,13 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n, int a)
 	if (!pix)
 		return fz_outofmem;
 
+	pix->cs = cs;
 	pix->x = x;
 	pix->y = y;
 	pix->w = w;
 	pix->h = h;
 	pix->n = n;
 	pix->a = a;
-	pix->cs = nil;
 	pix->stride = (pix->n + pix->a) * pix->w;
 
 	pix->samples = fz_malloc(sizeof(short) * pix->stride * pix->h);
@@ -83,7 +83,7 @@ fz_debugpixmap(fz_pixmap *pix)
 void
 fz_blendover(fz_pixmap *src, fz_pixmap *dst)
 {
-	int x, y, k;
+	int x, y;
 
 	assert(dst->n == src->n);
 	assert(dst->a == 1);

@@ -121,6 +121,51 @@ cleanup:
 	return err;
 }
 
+static fz_error *
+loadcolorspaces(pdf_resources *rdb, pdf_xref *xref, fz_obj *dict)
+{
+	fz_error *err;
+	fz_colorspace *colorspace;
+	fz_obj *key, *val;
+	fz_obj *ptr;
+	int i;
+
+	for (i = 0; i < fz_dictlen(dict); i++)
+	{
+		colorspace = nil;
+		ptr = nil;
+
+		key = fz_dictgetkey(dict, i);
+		val = fz_dictgetval(dict, i);
+
+		err = pdf_resolve(&val, xref);
+		if (err) return err;
+
+		err = pdf_loadcolorspace(&colorspace, xref, val);
+		if (err) goto cleanup;
+
+printf("  -> %s\n", colorspace->name);
+
+		err = fz_newpointer(&ptr, colorspace);
+		if (err) goto cleanup;
+
+		err = fz_dictput(rdb->colorspace, key, ptr);
+		if (err) goto cleanup;
+
+		fz_dropobj(ptr);
+		fz_dropobj(val);
+		colorspace = nil;
+	}
+
+	return nil;
+
+cleanup:
+	if (colorspace) fz_freecolorspace(colorspace);
+	if (ptr) fz_dropobj(ptr);
+	fz_dropobj(val);
+	return err;
+}
+
 fz_error *
 pdf_loadresources(pdf_resources **rdbp, pdf_xref *xref, fz_obj *topdict)
 {
@@ -167,13 +212,26 @@ pdf_loadresources(pdf_resources **rdbp, pdf_xref *xref, fz_obj *topdict)
 		if (err) { pdf_freeresources(rdb); return err; }
 	}
 
+	err = fz_newdict(&rdb->colorspace, 5);
+	if (err) { pdf_freeresources(rdb); return err; }
+
+	subdict = fz_dictgets(topdict, "ColorSpace");
+	if (subdict)
+	{
+		err = pdf_resolve(&subdict, xref);
+		if (err) { pdf_freeresources(rdb); return err; }
+		err = loadcolorspaces(rdb, xref, subdict);
+		fz_dropobj(subdict);
+		if (err) { pdf_freeresources(rdb); return err; }
+	}
+
 	return nil;
 }
 
 void
 pdf_freeresources(pdf_resources *rdb)
 {
-	/* TODO freefont */
+	/* TODO freefont and freecolorspace */
 	if (rdb->extgstate) fz_dropobj(rdb->extgstate);
 	if (rdb->colorspace) fz_dropobj(rdb->colorspace);
 	if (rdb->font) fz_dropobj(rdb->font);

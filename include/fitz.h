@@ -18,6 +18,7 @@
 
 #include "fitz/cmap.h"
 #include "fitz/font.h"
+#include "fitz/colorspace.h"
 
 #include "fitz/tree.h"
 #include "fitz/path.h"

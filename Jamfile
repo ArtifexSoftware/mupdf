@@ -65,6 +65,7 @@ Library libfitz :
 	# tree
 	tree/cmap.c
 	tree/font.c
+	tree/colorspace.c
 
 	tree/tree.c
 	tree/node1.c
@@ -99,7 +100,9 @@ Library libmupdf :
 	mupdf/cmap.c
 	mupdf/font.c
 	mupdf/fontfile.c
+	mupdf/colorspace.c
 	mupdf/resources.c
+	mupdf/page.c
 	mupdf/pagetree.c
 	mupdf/build.c
 	mupdf/interpret.c

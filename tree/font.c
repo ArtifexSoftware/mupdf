@@ -28,9 +28,6 @@ fz_initfont(fz_font *font, char *name)
 	font->dvmtx.x = 0;
 	font->dvmtx.y = 880;
 	font->dvmtx.w = -1000;
-
-	font->ncidtogid = 0;
-	font->cidtogid = nil;
 }
 
 void
@@ -46,13 +43,6 @@ fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
     font->bbox.min.y = ymin;
     font->bbox.max.x = xmax;
     font->bbox.max.y = ymax;
-}
-
-void
-fz_setcidtogid(fz_font *font, int n, unsigned short *map)
-{
-	font->ncidtogid = n;
-	font->cidtogid = map;
 }
 
 void
@@ -251,7 +241,6 @@ fz_freefont(fz_font *font)
 {
 	if (font->free)
 		font->free(font);
-	fz_free(font->cidtogid);
 	fz_free(font->hmtx);
 	fz_free(font->vmtx);
 	fz_free(font);
