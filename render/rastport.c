@@ -1,7 +1,5 @@
 #include <fitz.h>
 
-/* XXX: half of these funcs are totally wrong. fix! */
-
 typedef unsigned char byte;
 
 /*
@@ -77,6 +75,7 @@ duff_NiMoN(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int 
 		int w = w0;
 		while (w--)
 		{
+			/* TODO: validate this */
 			byte ma = mp[0];
 			byte sa = fz_mul255(sp[0], ma);
 			byte ssa = 255 - sa;
@@ -96,32 +95,145 @@ duff_NiMoN(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int 
 
 static void duff_1o1(byte *sp0, int sw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NoN(sp0, sw, 1, dp0, dw, w0, h);
+	/* duff_NoN(sp0, sw, 1, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			dp[0] = sp[0] + fz_mul255(dp[0], 255 - sp[0]);
+			sp ++;
+			dp ++;
+		}
+		sp0 += sw;
+		dp0 += dw;
+	}
 }
 
 static void duff_4o4(byte *sp0, int sw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NoN(sp0, sw, 4, dp0, dw, w0, h);
+	/* duff_NoN(sp0, sw, 4, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			byte ssa = 255 - sp[0];
+			dp[0] = sp[0] + fz_mul255(dp[0], ssa);
+			dp[1] = sp[1] + fz_mul255(dp[1], ssa);
+			dp[2] = sp[2] + fz_mul255(dp[2], ssa);
+			dp[3] = sp[3] + fz_mul255(dp[3], ssa);
+			sp += 4;
+			dp += 4;
+		}
+		sp0 += sw;
+		dp0 += dw;
+	}
 }
 
 static void duff_1i1c1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NiMcN(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h);
+	/* duff_NiMcN(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *mp = mp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			dp[0] = fz_mul255(sp[0], mp[0]);
+			sp ++;
+			mp ++;
+			dp ++;
+		}
+		sp0 += sw;
+		mp0 += mw;
+		dp0 += dw;
+	}
 }
 
 static void duff_4i1c4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NiMcN(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h);
+	/* duff_NiMcN(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *mp = mp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			byte ma = mp[0];
+			dp[0] = fz_mul255(sp[0], ma);
+			dp[1] = fz_mul255(sp[1], ma);
+			dp[2] = fz_mul255(sp[2], ma);
+			dp[3] = fz_mul255(sp[3], ma);
+			sp += 4;
+			mp += 1;
+			dp += 4;
+		}
+		sp0 += sw;
+		mp0 += mw;
+		dp0 += dw;
+	}
 }
 
 static void duff_1i1o1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NiMoN(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h);
+	/* duff_NiMoN(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *mp = mp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			byte ma = mp[0];
+			byte sa = fz_mul255(sp[0], ma);
+			byte ssa = 255 - sa;
+			dp[0] = fz_mul255(sp[0], ma) + fz_mul255(dp[0], ssa);
+			sp ++;
+			mp ++;
+			dp ++;
+		}
+		sp0 += sw;
+		mp0 += mw;
+		dp0 += dw;
+	}
 }
 
 static void duff_4i1o4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
 {
-	duff_NiMoN(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h);
+	/* duff_NiMoN(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h); */
+	while (h--)
+	{
+		byte *sp = sp0;
+		byte *mp = mp0;
+		byte *dp = dp0;
+		int w = w0;
+		while (w--)
+		{
+			byte ma = mp[0];
+			byte sa = fz_mul255(sp[0], ma);
+			byte ssa = 255 - sa;
+			dp[0] = fz_mul255(sp[0], ma) + fz_mul255(dp[0], ssa);
+			dp[1] = fz_mul255(sp[1], ma) + fz_mul255(dp[1], ssa);
+			dp[2] = fz_mul255(sp[2], ma) + fz_mul255(dp[2], ssa);
+			dp[3] = fz_mul255(sp[3], ma) + fz_mul255(dp[3], ssa);
+			sp += 4;
+			mp += 1;
+			dp += 4;
+		}
+		sp0 += sw;
+		mp0 += mw;
+		dp0 += dw;
+	}
 }
 
 /*

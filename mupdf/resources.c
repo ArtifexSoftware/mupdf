@@ -6,7 +6,7 @@ pdf_findresource(pdf_rsrc *rsrc, fz_obj *key)
 {
 	while (rsrc)
 	{
-		if (rsrc->key == key)	/* TODO: compare equality not identity */
+		if (!fz_cmpobj(rsrc->key, key))
 			return rsrc->val;
 		rsrc = rsrc->next;
 	}

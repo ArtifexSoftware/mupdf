@@ -18,7 +18,7 @@ Library libfitz :
 	#util/strlcat.c
 
 	# base runtime
-	base/rune.c
+	base/cpudep.c
 	base/error.c
 	base/memory.c
 	base/md5.c
@@ -26,7 +26,7 @@ Library libfitz :
 	base/rect.c
 	base/matrix.c
 	base/hash.c
-	base/cpudep.c
+	base/rune.c
 
 	# object
 	object/simple.c

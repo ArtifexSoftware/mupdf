@@ -1,5 +1,7 @@
 #include <fitz.h>
 
+/* TODO: these should go in fz_rastfuncs */
+
 typedef void (*rowfunc)(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom);
 typedef void (*colfunc)(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom);
 
@@ -119,7 +121,7 @@ scalecols(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 static void
 scalecols1(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 {
-	int x, y, k;
+	int x, y;
 	unsigned char *s;
 	int sum;
 
@@ -136,7 +138,7 @@ scalecols1(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 static void
 scalecols2(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 {
-	int x, y, k;
+	int x, y;
 	unsigned char *s;
 	int sum0, sum1;
 

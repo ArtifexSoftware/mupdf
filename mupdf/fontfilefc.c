@@ -214,7 +214,7 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 		goto cleanup;
 
 file = FcNameUnparse(searchpat);
-printf("  fontconfig %s\n", file);
+printf("  fontconfig %s: %s\n", basefont, file);
 free(file);
 
 	fcerr = FcResultMatch;
@@ -233,6 +233,7 @@ free(file);
 	if (file && style && strcmp(style, file))
 		font->substitute = 1;
 
+if (font->substitute)
 printf("    inexact match\n");
 
 	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);

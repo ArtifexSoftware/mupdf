@@ -232,3 +232,54 @@ fz_topointer(fz_obj *obj)
 	return nil;
 }
 
+int
+fz_cmpobj(fz_obj *a, fz_obj *b)
+{
+	int i;
+
+	if (a == b)
+		return 0;
+	if (a->kind != b->kind)
+		return 1;
+
+	switch (a->kind)
+	{
+	case FZ_NULL: return 0;
+	case FZ_BOOL: return a->u.b - b->u.b;
+	case FZ_INT: return a->u.i - b->u.i;
+	case FZ_REAL: return a->u.f - b->u.f;
+	case FZ_STRING:
+		if (a->u.s.len != b->u.s.len)
+			return a->u.s.len - b->u.s.len;
+		return memcmp(a->u.s.buf, b->u.s.buf, a->u.s.len);
+	case FZ_NAME:
+		return strcmp(a->u.n, b->u.n);
+
+	case FZ_INDIRECT:
+		if (a->u.r.oid == b->u.r.oid)
+			return a->u.r.gid - b->u.r.gid;
+		return a->u.r.oid - b->u.r.oid;
+
+	case FZ_ARRAY:
+		if (a->u.a.len != b->u.a.len)
+			return a->u.a.len - b->u.a.len;
+		for (i = 0; i < a->u.a.len; i++)
+			if (fz_cmpobj(a->u.a.items[i], b->u.a.items[i]))
+				return 1;
+		return 0;
+
+	case FZ_DICT:
+		if (a->u.d.len != b->u.d.len)
+			return a->u.d.len - b->u.d.len;
+		for (i = 0; i < a->u.d.len; i++)
+		{
+			if (fz_cmpobj(a->u.d.items[i].k, b->u.d.items[i].k))
+				return 1;
+			if (fz_cmpobj(a->u.d.items[i].v, b->u.d.items[i].v))
+				return 1;
+		}
+		return 0;
+	}
+	return 1;
+}
+

@@ -144,7 +144,7 @@ fz_optimizetree(fz_tree *tree)
 {
 	if (getenv("DONTOPT"))
 		return nil;
-//	cleanovers(tree->root);
+	cleanovers(tree->root);
 	cleanmasks(tree->root);
 	return nil;
 }

@@ -83,6 +83,8 @@ int fz_isdict(fz_obj *obj);
 int fz_isindirect(fz_obj *obj);
 int fz_ispointer(fz_obj *obj);
 
+int fz_cmpobj(fz_obj *a, fz_obj *b);
+
 /* silent failure, no error reporting */
 int fz_tobool(fz_obj *obj);
 int fz_toint(fz_obj *obj);
