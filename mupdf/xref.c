@@ -2,7 +2,8 @@
 #include <mupdf.h>
 
 /*
- * initialize new empty xref
+ * create xref structure.
+ * needs to be initialized by initxref, openxref or repairxref.
  */
 
 fz_error *
@@ -71,6 +72,27 @@ pdf_closexref(pdf_xref *xref)
 		fz_dropobj(xref->dests);
 
 	fz_free(xref);
+}
+
+fz_error *
+pdf_initxref(pdf_xref *xref)
+{
+	xref->table = fz_malloc(sizeof(pdf_xrefentry) * 128);
+	if (!xref->table)
+		return fz_outofmem;
+
+	xref->cap = 128;
+	xref->len = 1;
+
+	xref->table[0].type = 'f';
+	xref->table[0].mark = 0;
+	xref->table[0].ofs = 0;
+	xref->table[0].gen = 65535;
+	xref->table[0].stmbuf = nil;
+	xref->table[0].stmofs = 0;
+	xref->table[0].obj = nil;
+
+	return nil;
 }
 
 void

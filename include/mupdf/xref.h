@@ -41,6 +41,7 @@ struct pdf_xrefentry_s
 fz_error *pdf_newxref(pdf_xref **);
 fz_error *pdf_repairxref(pdf_xref *, char *filename);
 fz_error *pdf_loadxref(pdf_xref *, char *filename);
+fz_error *pdf_initxref(pdf_xref *);
 
 fz_error *pdf_openpdf(pdf_xref **, char *filename);
 fz_error *pdf_updatexref(pdf_xref *, char *filename);
