@@ -143,7 +143,7 @@ addtextchar(pdf_textline *line, int x, int y, int c)
 static fz_point oldpt = { 0, 0 };
 
 static fz_error *
-findtext(pdf_textline **line, fz_node *node, fz_matrix ctm)
+extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 {
 	fz_error *error;
 
@@ -152,7 +152,8 @@ findtext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 		fz_textnode *text = (fz_textnode*)node;
 		pdf_font *font = (pdf_font*)text->font;
 		fz_matrix inv = fz_invertmatrix(text->trm);
-		fz_matrix trm = fz_concat(text->trm, ctm);
+		fz_matrix tm = text->trm;
+		fz_matrix trm;
 		float dx, dy, t;
 		fz_point p;
 		fz_vmtx v;
@@ -164,11 +165,11 @@ findtext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 		{
 			g = text->els[i].cid;
 
-			p.x = text->els[i].x;
-			p.y = text->els[i].y;
-			p = fz_transformpoint(trm, p);
-			x = p.x;
-			y = p.y;
+			tm.e = text->els[i].x;
+			tm.f = text->els[i].y;
+			trm = fz_concat(tm, ctm);
+			x = fz_floor(trm.e);
+			y = fz_floor(trm.f);
 
 			p.x = text->els[i].x;
 			p.y = text->els[i].y;
@@ -223,7 +224,7 @@ findtext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 
 	for (node = node->first; node; node = node->next)
 	{
-		error = findtext(line, node, ctm);
+		error = extracttext(line, node, ctm);
 		if (error)
 			return error;
 	}
@@ -247,7 +248,7 @@ pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree)
 
 	line = root;
 
-	error = findtext(&line, tree->root, fz_identity());
+	error = extracttext(&line, tree->root, fz_identity());
 	if (error)
 	{
 		pdf_droptextline(root);
