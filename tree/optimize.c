@@ -1,6 +1,77 @@
 #include <fitz.h>
 
 /*
+ * Remove (mask ... white) until we get something not white
+ */
+
+static int iswhitenode(fz_colornode *node)
+{
+	if (!strcmp(node->cs->name, "DeviceGray"))
+		return fabs(node->samples[0] - 1.0) < FLT_EPSILON;
+	if (!strcmp(node->cs->name, "DeviceRGB"))
+		return fabs(node->samples[0] - 1.0) < FLT_EPSILON &&
+				fabs(node->samples[1] - 1.0) < FLT_EPSILON &&
+				fabs(node->samples[2] - 1.0) < FLT_EPSILON;
+	if (!strcmp(node->cs->name, "DeviceCMYK"))
+		return fabs(node->samples[0]) < FLT_EPSILON &&
+				fabs(node->samples[1]) < FLT_EPSILON &&
+				fabs(node->samples[2]) < FLT_EPSILON &&
+				fabs(node->samples[3]) < FLT_EPSILON;
+	return 0;
+}
+
+static int cleanwhite(fz_node *node)
+{
+	fz_node *current;
+	fz_node *next;
+	fz_node *shape;
+	fz_node *color;
+
+	for (current = node->first; current; current = next)
+	{
+		next = current->next;
+
+		if (fz_islinknode(current))
+			return 1;
+		else if (fz_isimagenode(current))
+			return 1;
+		else if (fz_isshadenode(current))
+			return 1;
+		else if (fz_iscolornode(current))
+		{
+			if (!iswhitenode((fz_colornode*)current))
+				return 1;
+		}
+
+		else if (fz_ismasknode(current))
+		{
+			shape = current->first;
+			color = shape->next;
+			if (fz_iscolornode(color))
+			{
+				if (iswhitenode((fz_colornode*)color))
+					fz_removenode(current);
+				else
+					return 1;
+			}
+			else
+			{
+				if (cleanwhite(current))
+					return 1;
+			}
+		}
+
+		else
+		{
+			if (cleanwhite(current))
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+/*
  * Remove useless overs that only have one child.
  */
 
@@ -144,6 +215,7 @@ fz_optimizetree(fz_tree *tree)
 {
 	if (getenv("DONTOPT"))
 		return nil;
+	cleanwhite(tree->root);
 	cleanovers(tree->root);
 	cleanmasks(tree->root);
 	return nil;
