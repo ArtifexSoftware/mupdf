@@ -41,6 +41,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 
 	if (ismask)
 	{
+		img->super.cs = nil;
 		img->super.n = 0;
 		img->super.a = 1;
 		img->bpc = 1;
@@ -48,8 +49,6 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 
 	if (cs)
 	{
-		img->super.cs = nil;
-
 		if (fz_isname(cs))
 		{
 			fz_obj *csd = fz_dictgets(rdb, "ColorSpace");

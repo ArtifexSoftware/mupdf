@@ -15,7 +15,7 @@
 int pdf_lookupagl(char *name)
 {
 	int l = 0;
-	int r = pdf_adobeglyphlen;
+	int r = pdf_adobeglyphlen - 1;
 
 	while (l <= r)
 	{

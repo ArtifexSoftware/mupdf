@@ -1,5 +1,7 @@
 #include <fitz.h>
 
+/* XXX: half of these funcs are totally wrong. fix! */
+
 typedef unsigned char byte;
 
 /*
@@ -111,8 +113,8 @@ static inline int samplemsk(byte *s, int w, int h, int u, int v)
 {
 	int ui = u >> 16;
 	int vi = v >> 16;
-	int ud = u & 0xFF;
-	int vd = v & 0xFF;
+	int ud = u & 0xFFFF;
+	int vd = v & 0xFFFF;
 	int a = getmsk(s, w, h, ui, vi);
 	int b = getmsk(s, w, h, ui+1, vi);
 	int c = getmsk(s, w, h, ui, vi+1);
@@ -144,8 +146,8 @@ static inline void sampleargb(byte *s, int w, int h, int u, int v, byte *abcd)
 	byte cd[4];
 	int ui = u >> 16;
 	int vi = v >> 16;
-	int ud = u & 0xFF;
-	int vd = v & 0xFF;
+	int ud = u & 0xFFFF;
+	int vd = v & 0xFFFF;
 	byte *a = getargb(s, w, h, ui, vi);
 	byte *b = getargb(s, w, h, ui+1, vi);
 	byte *c = getargb(s, w, h, ui, vi+1);
@@ -186,7 +188,7 @@ static void example(PSRC, PDST, PMSK, PCTM)
 }
 #endif
 
-#define BLOOP \
+#define BEGLOOP \
 	while (ny--) \
 	{ \
 		byte *dst = dst0; \
@@ -195,13 +197,13 @@ static void example(PSRC, PDST, PMSK, PCTM)
 		int nx = nx0; \
 		while (nx--)
 
-#define ELOOP \
+#define ENDLOOP \
 		u0 += fc; \
 		v0 += fd; \
 		dst0 += dstw; \
 	}
 
-#define BLOOPM \
+#define BEGLOOPM \
 	while (ny--) \
 	{ \
 		byte *dst = dst0; \
@@ -211,7 +213,7 @@ static void example(PSRC, PDST, PMSK, PCTM)
 		int nx = nx0; \
 		while (nx--)
 
-#define ELOOPM \
+#define ENDLOOPM \
 		u0 += fc; \
 		v0 += fd; \
 		dst0 += dstw; \
@@ -220,31 +222,31 @@ static void example(PSRC, PDST, PMSK, PCTM)
 
 static void img1_g(PSRC, PDST, PCTM)
 {
-	BLOOP
+	BEGLOOP
 	{
 		dst[0] = samplemsk(src, w, h, u, v);
 		dst ++;
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img1_i1(PSRC, PDST, PCTM)
 {
-	BLOOP
+	BEGLOOP
 	{
 		dst[0] = fz_mul255(dst[0], samplemsk(src, w, h, u, v));
 		dst ++;
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img1_o1(PSRC, PDST, PCTM)
 {
-	BLOOP
+	BEGLOOP
 	{
 		byte sa = samplemsk(src, w, h, u, v);
 		dst[0] = sa + fz_mul255(dst[0], 255 - sa);
@@ -252,12 +254,12 @@ static void img1_o1(PSRC, PDST, PCTM)
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img1_i1o1(PSRC, PDST, PMSK, PCTM)
 {
-	BLOOPM
+	BEGLOOPM
 	{
 		byte sa = fz_mul255(msk[0], samplemsk(src, w, h, u, v));
 		dst[0] = sa + fz_mul255(dst[0], 255 - sa);
@@ -266,12 +268,12 @@ static void img1_i1o1(PSRC, PDST, PMSK, PCTM)
 		u += fa;
 		v += fb;
 	}
-	ELOOPM
+	ENDLOOPM
 }
 
 static void img1_o4w3(PSRC, PDST, PCTM, byte *rgb)
 {
-	BLOOP
+	BEGLOOP
 	{
 		byte sa = samplemsk(src, w, h, u, v);
 		byte ssa = 255 - sa;
@@ -283,12 +285,12 @@ static void img1_o4w3(PSRC, PDST, PCTM, byte *rgb)
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img1_i1o4w3(PSRC, PDST, PMSK, PCTM, byte *rgb)
 {
-	BLOOPM
+	BEGLOOPM
 	{
 		byte sa = fz_mul255(msk[0], samplemsk(src, w, h, u, v));
 		byte ssa = 255 - sa;
@@ -301,43 +303,44 @@ static void img1_i1o4w3(PSRC, PDST, PMSK, PCTM, byte *rgb)
 		u += fa;
 		v += fb;
 	}
-	ELOOPM
+	ENDLOOPM
 }
 
 static void img4_g(PSRC, PDST, PCTM)
 {
-	BLOOP
+	BEGLOOP
 	{
 		sampleargb(src, w, h, u, v, dst);
 		dst += 4;
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img4_o4(PSRC, PDST, PCTM)
 {
 	byte argb[4];
-	BLOOP
+	BEGLOOP
 	{
 		sampleargb(src, w, h, u, v, argb);
-		byte ssa = 255 - argb[0];
-		dst[0] = argb[0] + fz_mul255(dst[0], ssa);
-		dst[1] = argb[1] + fz_mul255((short)dst[1] - argb[1], ssa);
-		dst[2] = argb[2] + fz_mul255((short)dst[2] - argb[2], ssa);
-		dst[3] = argb[3] + fz_mul255((short)dst[3] - argb[3], ssa);
+		byte sa = argb[0];
+		byte ssa = 255 - sa;
+		dst[0] = sa + fz_mul255(dst[0], ssa);
+		dst[1] = argb[1] + fz_mul255(dst[1], ssa);
+		dst[2] = argb[2] + fz_mul255(dst[2], ssa);
+		dst[3] = argb[3] + fz_mul255(dst[3], ssa);
 		dst += 4;
 		u += fa;
 		v += fb;
 	}
-	ELOOP
+	ENDLOOP
 }
 
 static void img4_i1o4(PSRC, PDST, PMSK, PCTM)
 {
 	byte argb[4];
-	BLOOPM
+	BEGLOOPM
 	{
 		sampleargb(src, w, h, u, v, argb);
 		byte sa = fz_mul255(msk[0], argb[0]);
@@ -351,7 +354,7 @@ static void img4_i1o4(PSRC, PDST, PMSK, PCTM)
 		u += fa;
 		v += fb;
 	}
-	ELOOPM
+	ENDLOOPM
 }
 
 /*

@@ -79,14 +79,14 @@ static fz_error *
 rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
 	fz_error *error;
-printf("transform [%g %g %g %g %g %g]\n",
-transform->m.a, transform->m.b,
-transform->m.c, transform->m.d,
-transform->m.e, transform->m.f);
-puts("{");
+//printf("transform [%g %g %g %g %g %g]\n",
+//transform->m.a, transform->m.b,
+//transform->m.c, transform->m.d,
+//transform->m.e, transform->m.f);
+//puts("{");
 	ctm = fz_concat(transform->m, ctm);
 	error = rendernode(gc, transform->super.first, ctm);
-puts("}");
+//puts("}");
 	return error;
 }
 
@@ -334,10 +334,10 @@ rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	tbox = fz_roundrect(fz_boundnode((fz_node*)text, ctm));
 	clip = fz_intersectirects(gc->clip, tbox);
 
-printf("text %s n=%d [%g %g %g %g] clip[%d %d %d %d]\n",
-	text->font->name, text->len,
-	text->trm.a, text->trm.b, text->trm.c, text->trm.d,
-	clip.min.x, clip.min.y, clip.max.x, clip.max.y);
+//printf("text %s n=%d [%g %g %g %g] clip[%d %d %d %d]\n",
+//text->font->name, text->len,
+//text->trm.a, text->trm.b, text->trm.c, text->trm.d,
+//clip.min.x, clip.min.y, clip.max.x, clip.max.y);
 
 	if (clip.max.x <= clip.min.x)
 		return nil;
@@ -423,8 +423,6 @@ renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	int x0, y0;
 	int w, h;
 
-	/* TODO: check validity of xxx->n + 1 */
-
 printf("renderimage %dx%d %d+%d %s\n", image->w, image->h, image->n, image->a, image->cs?image->cs->name:"(nil)");
 
     bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
@@ -439,13 +437,20 @@ printf("renderimage %dx%d %d+%d %s\n", image->w, image->h, image->n, image->a, i
 
 printf("  load image\n");
 	error = fz_newpixmap(&tile, 0, 0, image->w, image->h, image->n + 1);
+	if (error)
+		return error;
+
 	error = image->loadtile(image, tile);
+	if (error)
+		goto cleanup;
 
 	if (dx != 1 || dy != 1)
 	{
 printf("  scale image 1/%d 1/%d\n", dx, dy);
 		fz_pixmap *temp;
 		error = fz_scalepixmap(&temp, tile, dx, dy);
+		if (error)
+			goto cleanup;
 		fz_droppixmap(tile);
 		tile = temp;
 	}
@@ -455,6 +460,8 @@ printf("  scale image 1/%d 1/%d\n", dx, dy);
 		fz_pixmap *temp;
 printf("  convert from %s to %s\n", image->cs->name, gc->model->name);
 		error = fz_newpixmap(&temp, tile->x, tile->y, tile->w, tile->h, gc->model->n + 1);
+		if (error)
+			goto cleanup;
 		fz_convertpixmap(image->cs, tile, gc->model, temp);
 		fz_droppixmap(tile);
 		tile = temp;
@@ -488,7 +495,8 @@ printf("  fnone %d x %d\n", w, h);
 				error = fz_newpixmapwithrect(&gc->dest, clip, gc->model->n + 1);
 			else
 				error = fz_newpixmapwithrect(&gc->dest, clip, 1);
-			fz_clearpixmap(gc->dest);
+			if (error)
+				goto cleanup;
 
 			if (image->cs)
 				gc->rast.img4_g(
@@ -536,8 +544,11 @@ printf("  fover+rgb %d x %d\n", w, h);
 	}
 
 	fz_droppixmap(tile);
-
 	return nil;
+
+cleanup:
+	fz_droppixmap(tile);
+	return error;
 }
 
 /*
@@ -551,11 +562,11 @@ renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	fz_node *child;
 	int cluster = 0;;
 
-printf("over\n{\n");
+//printf("over\n{\n");
 
 	if (!gc->over)
 	{
-printf("  alloc dest!\n");
+//printf("  alloc dest!\n");
 		error = fz_newpixmapwithrect(&gc->over, gc->clip, gc->maskonly ? 1 : 4);
 		if (error)
 			return error;
@@ -582,7 +593,7 @@ printf("  alloc dest!\n");
 		gc->over = nil;
 	}
 
-printf("}\n");
+//printf("}\n");
 
 	return nil;
 }
