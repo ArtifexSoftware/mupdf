@@ -258,7 +258,7 @@ if $(OS) = NT
 if $(OS) = MACOSX
 {
 	MACPDF = apps/macpdf.app/Contents/MacOS/macpdf ;
-	Main $(MACPDF) : apps/macpdf.app/macpdf.c apps/macpdf.app/view.c ;
+	Main $(MACPDF) : apps/macpdf.c ;
 	LinkLibraries $(MACPDF) : libmupdf libfitz ;
 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
 }

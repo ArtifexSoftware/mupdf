@@ -20,5 +20,25 @@
 	<string>0.1</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
+
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+					<string>pdf</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>macpdf.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>PDF Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
+
+	<key>NSAppleScriptEnabled</key>
+	<string>YES</string>
+
 </dict>
 </plist>

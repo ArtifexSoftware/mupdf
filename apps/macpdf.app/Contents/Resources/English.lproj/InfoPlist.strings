@@ -1,0 +1,7 @@
+/* Localized versions of Info.plist keys */
+
+CFBundleName = "MuPDF";
+CFBundleShortVersionString = "MuPDF version 1.0.0";
+CFBundleGetInfoString = "Copyright (C) 2005 Tor & Raph.";
+NSHumanReadableCopyright = "Copyright (C) 2005 Tor & Raph.";
+
