@@ -42,11 +42,11 @@ static char *basenames[15] =
 
 static struct { char *collection; char *serif; char *gothic; } cidfonts[5] =
 {
-	{ "Adobe-CNS1", "MOESung-Regular", "MOEKai-Regular" },
-	{ "Adobe-GB1", "gkai00mp", "gbsn00lp" },
-	{ "Adobe-Japan1", "WadaMin-Regular", "WadaMaruGo-Regular" },
-	{ "Adobe-Japan2", "WadaMin-RegularH", "WadaMaruGo-RegularH" },
-	{ "Adobe-Korea1", "Munhwa-Regular", "MunhwaGothic-Regular" },
+	{ "Adobe-CNS1", "bkai00mp.ttf", "bsmi00lp.ttf" },
+	{ "Adobe-GB1", "gkai00mp.ttf", "gbsn00lp.ttf" },
+	{ "Adobe-Japan1", "kochi-mincho.ttf", "kochi-gothic.ttf" },
+	{ "Adobe-Japan2", "kochi-mincho.ttf", "kochi-gothic.ttf" },
+	{ "Adobe-Korea1", "batang.ttf", "dotum.ttf" },
 };
 
 static void loadfontdata(int i, unsigned char **d, unsigned int *l)
@@ -130,12 +130,14 @@ printf("  load system cid font '%s'\n", filename);
 
 	fontdir = getenv("FONTDIR");
 	if (!fontdir)
-		return fz_throw("ioerror: FONTDIR environment not set");
+	{
+		fontdir = "/usr/local/share/font";
+		fz_warn("FONTDIR environment not set");
+	}
 
 	strlcpy(path, fontdir, sizeof path);
 	strlcat(path, "/", sizeof path);
 	strlcat(path, filename, sizeof path);
-	strlcat(path, ".cid.cff", sizeof path);
 
 	if (access(path, R_OK))
 		return fz_throw("ioerror: could not access file '%s'", path);

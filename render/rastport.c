@@ -264,15 +264,18 @@ static void msk_1o1(byte *src, byte *dst, int w)
 
 static void msk_w3i1o4(byte *rgb, byte *src, byte *dst, int n)
 {
+	byte rgb0 = rgb[0];
+	byte rgb1 = rgb[1];
+	byte rgb2 = rgb[2];
 	byte sa, ssa;
 	while (n--)
 	{
 		sa = src[0];
 		ssa = 255 - sa;
 		dst[0] = sa + fz_mul255(dst[0], ssa);
-		dst[1] = rgb[0] + fz_mul255((short)dst[1] - rgb[0], ssa);
-		dst[2] = rgb[1] + fz_mul255((short)dst[2] - rgb[1], ssa);
-		dst[3] = rgb[2] + fz_mul255((short)dst[3] - rgb[2], ssa);
+		dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
+		dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
+		dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
 		src ++;
 		dst += 4;
 	}
@@ -496,6 +499,9 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 
 static void img_w3i1o4(byte *rgb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
+	byte rgb0 = rgb[0];
+	byte rgb1 = rgb[1];
+	byte rgb2 = rgb[2];
 	byte sa, ssa;
 	while (h--)
 	{
@@ -508,9 +514,9 @@ static void img_w3i1o4(byte *rgb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 			sa = samplemask(src, srcw, srch, u, v);
 			ssa = 255 - sa;
 			dstp[0] = sa + fz_mul255(dstp[0], ssa);
-			dstp[1] = rgb[0] + fz_mul255((short)dstp[1] - rgb[0], ssa);
-			dstp[2] = rgb[1] + fz_mul255((short)dstp[2] - rgb[1], ssa);
-			dstp[3] = rgb[2] + fz_mul255((short)dstp[3] - rgb[2], ssa);
+			dstp[1] = rgb0 + fz_mul255((short)dstp[1] - rgb0, ssa);
+			dstp[2] = rgb1 + fz_mul255((short)dstp[2] - rgb1, ssa);
+			dstp[3] = rgb2 + fz_mul255((short)dstp[3] - rgb2, ssa);
 			dstp += 4;
 			u += fa;
 			v += fb;

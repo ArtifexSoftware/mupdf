@@ -1,3 +1,14 @@
+immediate plan:
+	1 - pdf_resolve remake
+	2 - refcount resources
+	3 - put image load/scale into rastfuncs
+	4 - altivec optimize
+	5 - gtk+pdf
+	6 - page labels + dests + outline + annots
+	7 - global font/cmap cache
+
+---
+
 colorspace conversions (v2)
 	- cal*
 	- iccbased

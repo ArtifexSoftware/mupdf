@@ -32,8 +32,8 @@ static void sse(void)
 static void sse2(void)
 { __asm__ ("andpd %xmm0, %xmm0\n\t"); }
 
-static void sse3(void)
-{ __asm__ ("haddps %%xmm0, %%xmm0\n\t" : : : "%xmm0"); }
+/* static void sse3(void) */
+/* { __asm__ ("haddps %%xmm0, %%xmm0\n\t" : : : "%xmm0"); } */
 
 #ifdef ARCH_X86_64
 static void amd64(void)
@@ -47,7 +47,7 @@ static const featuretest features[] = {
 	{ mmxext, HAVE_MMXEXT, "mmxext" },
 	{ sse, HAVE_SSE, "sse" },
 	{ sse2, HAVE_SSE2, "sse2" },
-	{ sse3, HAVE_SSE3, "sse3" },
+/*	{ sse3, HAVE_SSE3, "sse3" }, */
 #ifdef ARCH_X86_64
 	{ amd64, HAVE_AMD64, "amd64" }
 #endif
@@ -105,33 +105,45 @@ sigillhandler(int sig)
 	siglongjmp(jmpbuf, 1);
 }
 
+static int
+enabled(char *env, const char *ext)
+{
+	int len;
+	char *s;
+	if (!env)
+		return 1;
+	len = strlen(ext);
+	while ((s = strstr(env, ext)))
+	{
+		s += len;
+		if (*s == ' ' || *s == ',' || *s == '\0')
+			return 1;
+	}
+	return 0;
+}
+
 static void
 dumpflags(void)
 {
 	unsigned f = fz_cpuflags;
 	int i, n;
 
-	fputs("detected cpu features: ", stdout);
+	fputs("detected cpu features:", stdout);
 	n = 0;
 	for (i = 0; i < sizeof(features) / sizeof(featuretest); i++)
 	{
 		if (f & features[i].flag)
 		{
+			fputc(' ', stdout);
 			fputs(features[i].name, stdout);
 			n ++;
 		}
 	}
 	if (!n)
-		fputs("none", stdout);
+		fputs(" none", stdout);
 	fputc('\n', stdout);
 }
 
-/* called by runtime before main()...
- * TODO:
- * CPUACCEL=0 ./x11pdf disables detection
- * CPUACCEL='mmx sse' enables only mmx and sse
- * not set enables everything
- */
 void fz_cpudetect(void)
 {
 	static int hasrun = 0;
@@ -140,10 +152,13 @@ void fz_cpudetect(void)
 	int i;
 	void (*oldhandler)(int) = NULL;
 	void (*tmphandler)(int);
+	char *env;
 
 	if (hasrun)
 		return;
 	hasrun = 1;
+
+	env = getenv("CPUACCEL");
 
 	for (i = 0; i < sizeof(features) / sizeof(featuretest); i++)
 	{
@@ -165,7 +180,10 @@ void fz_cpudetect(void)
 		features[i].test();
 
 		/* if we got here the test succeeded */
-		flags |= features[i].flag;
+		if (enabled(env, features[i].name))
+			flags |= features[i].flag;
+		else
+			flags &= ~features[i].flag;
 	}
 
 	/* restore previous signal handler */
@@ -176,7 +194,7 @@ void fz_cpudetect(void)
 	dumpflags();
 }
 
-static __attribute__((constructor)) void fzcpudetect(void)
+static __attribute__((constructor, used)) void fzcpudetect(void)
 {
 	fz_cpudetect();
 }
