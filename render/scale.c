@@ -13,7 +13,7 @@ scalerow(unsigned char *src, unsigned char *dst, int w, int ncomp, int denom)
 	for (x = 0; x < w; x++)
 	{
 		for (k = 0; k < ncomp; k++)
-            sum[k] += src[x * ncomp + k];
+			sum[k] += src[x * ncomp + k];
 		if (++left == denom)
 		{
 			left = 0;

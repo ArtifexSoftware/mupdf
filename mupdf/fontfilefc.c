@@ -26,38 +26,38 @@ enum
 
 static char *basenames[14] =
 {
-    "Courier", 
-    "Courier-Bold", 
-    "Courier-Oblique",
-    "Courier-BoldOblique",
-    "Helvetica",
-    "Helvetica-Bold",
-    "Helvetica-Oblique",
-    "Helvetica-BoldOblique",
-    "Times-Roman",
-    "Times-Bold",
-    "Times-Italic",
-    "Times-BoldItalic",
-    "Symbol", 
-    "ZapfDingbats"
+	"Courier", 
+	"Courier-Bold", 
+	"Courier-Oblique",
+	"Courier-BoldOblique",
+	"Helvetica",
+	"Helvetica-Bold",
+	"Helvetica-Oblique",
+	"Helvetica-BoldOblique",
+	"Times-Roman",
+	"Times-Bold",
+	"Times-Italic",
+	"Times-BoldItalic",
+	"Symbol", 
+	"ZapfDingbats"
 };
 
 static char *basepatterns[14] =
 {
-    "Nimbus Mono L,Courier,Courier New:style=Regular,Roman",
-    "Nimbus Mono L,Courier,Courier New:style=Bold",
-    "Nimbus Mono L,Courier,Courier New:style=Oblique,Italic",
-    "Nimbus Mono L,Courier,Courier New:style=BoldOblique,BoldItalic",
-    "Nimbus Sans L,Helvetica,Arial:style=Regular,Roman",
-    "Nimbus Sans L,Helvetica,Arial:style=Bold",
-    "Nimbus Sans L,Helvetica,Arial:style=Oblique,Italic",
-    "Nimbus Sans L,Helvetica,Arial:style=BoldOblique,BoldItalic",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Regular,Roman",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Bold,Medium",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Italic,Regular Italic",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=BoldItalic,Medium Italic",
-    "Standard Symbols L,Symbol",
-    "Zapf Dingbats,Dingbats"
+	"Nimbus Mono L,Courier,Courier New:style=Regular,Roman",
+	"Nimbus Mono L,Courier,Courier New:style=Bold",
+	"Nimbus Mono L,Courier,Courier New:style=Oblique,Italic",
+	"Nimbus Mono L,Courier,Courier New:style=BoldOblique,BoldItalic",
+	"Nimbus Sans L,Helvetica,Arial:style=Regular,Roman",
+	"Nimbus Sans L,Helvetica,Arial:style=Bold",
+	"Nimbus Sans L,Helvetica,Arial:style=Oblique,Italic",
+	"Nimbus Sans L,Helvetica,Arial:style=BoldOblique,BoldItalic",
+	"Nimbus Roman No9 L,Times,Times New Roman:style=Regular,Roman",
+	"Nimbus Roman No9 L,Times,Times New Roman:style=Bold,Medium",
+	"Nimbus Roman No9 L,Times,Times New Roman:style=Italic,Regular Italic",
+	"Nimbus Roman No9 L,Times,Times New Roman:style=BoldItalic,Medium Italic",
+	"Standard Symbols L,Symbol",
+	"Zapf Dingbats,Dingbats"
 };
 
 static fz_error *initfontlibs(void)

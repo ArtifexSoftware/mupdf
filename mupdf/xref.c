@@ -30,12 +30,12 @@ pdf_newpdf(pdf_xref **xrefp)
 	}
 
 	xref->table[0].type = 'f';
-    xref->table[0].mark = 0;
-    xref->table[0].ofs = 0;
-    xref->table[0].gen = 65535;
-    xref->table[0].stmbuf = nil;
-    xref->table[0].stmofs = 0;
-    xref->table[0].obj = nil;
+	xref->table[0].mark = 0;
+	xref->table[0].ofs = 0;
+	xref->table[0].gen = 65535;
+	xref->table[0].stmbuf = nil;
+	xref->table[0].stmofs = 0;
+	xref->table[0].obj = nil;
 
 	*xrefp = xref;
 	return nil;

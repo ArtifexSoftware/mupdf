@@ -4,9 +4,9 @@ typedef struct fz_md5_s fz_md5;
 
 struct fz_md5_s
 {
-        unsigned long state[4];
-        unsigned long count[2];
-        unsigned char buffer[64];
+	unsigned long state[4];
+	unsigned long count[2];
+	unsigned char buffer[64];
 };
 
 void fz_md5init(fz_md5 *state);

@@ -12,18 +12,18 @@ extern fz_error fz_kioneedout;
 extern fz_error fz_kiodone;
 
 #define FZ_NEWFILTER(TYPE,VAR,NAME)                                     \
-    fz_error * fz_process ## NAME (fz_filter*,fz_buffer*,fz_buffer*);   \
-    void fz_drop ## NAME (fz_filter*);                                  \
-    TYPE *VAR;                                                          \
-    *fp = fz_malloc(sizeof(TYPE));                                      \
-    if (!*fp) return fz_outofmem;                                       \
-    (*fp)->refs = 1;                                                   \
-    (*fp)->process = fz_process ## NAME ;                               \
-    (*fp)->drop = fz_drop ## NAME ;                                     \
-    (*fp)->consumed = 0;                                                \
-    (*fp)->produced = 0;                                                \
-    (*fp)->count = 0;                                                   \
-    VAR = (TYPE*) *fp
+	fz_error * fz_process ## NAME (fz_filter*,fz_buffer*,fz_buffer*);   \
+	void fz_drop ## NAME (fz_filter*);                                  \
+	TYPE *VAR;                                                          \
+	*fp = fz_malloc(sizeof(TYPE));                                      \
+	if (!*fp) return fz_outofmem;                                       \
+	(*fp)->refs = 1;                                                    \
+	(*fp)->process = fz_process ## NAME ;                               \
+	(*fp)->drop = fz_drop ## NAME ;                                     \
+	(*fp)->consumed = 0;                                                \
+	(*fp)->produced = 0;                                                \
+	(*fp)->count = 0;                                                   \
+	VAR = (TYPE*) *fp
 
 struct fz_filter_s
 {

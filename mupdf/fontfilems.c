@@ -107,19 +107,19 @@ typedef struct _tagFONT_COLLECTION
 
 static char *basenames[13] =
 {
-    "Courier", 
-    "Courier-Bold", 
-    "Courier-Oblique",
-    "Courier-BoldOblique",
-    "Helvetica",
-    "Helvetica-Bold",
-    "Helvetica-Oblique",
-    "Helvetica-BoldOblique",
-    "Times-Roman",
-    "Times-Bold",
-    "Times-Italic",
-    "Times-BoldItalic",
-    "Symbol", 
+	"Courier", 
+	"Courier-Bold", 
+	"Courier-Oblique",
+	"Courier-BoldOblique",
+	"Helvetica",
+	"Helvetica-Bold",
+	"Helvetica-Oblique",
+	"Helvetica-BoldOblique",
+	"Times-Roman",
+	"Times-Bold",
+	"Times-Italic",
+	"Times-BoldItalic",
+	"Symbol", 
 };
 
 static char *basepatterns[13] =
@@ -181,7 +181,7 @@ localbsearch (const void *key, const void *base, size_t num,
 				hi = mid - width;
 				num = num & 1 ? half : half-1;
 			}
-			else    {
+			else	{
 				lo = mid + width;
 				num = half;
 			}
@@ -191,7 +191,7 @@ localbsearch (const void *key, const void *base, size_t num,
 		else
 			break;
 		
-        return(0);
+		return(0);
 }
 
 static void
@@ -551,11 +551,11 @@ fz_error*
 pdf_createfontlistMS()
 {
 	char szFontDir[MAX_PATH*2];
-    char szSearch[MAX_PATH*2];
+	char szSearch[MAX_PATH*2];
 	char szFile[MAX_PATH*2];
-    BOOL fFinished;
-    HANDLE hList;
-    WIN32_FIND_DATA FileData;
+	BOOL fFinished;
+	HANDLE hList;
+	WIN32_FIND_DATA FileData;
 	fz_error *err;
 
 	if(fontlistMS.len != 0)
@@ -563,25 +563,25 @@ pdf_createfontlistMS()
 
 	GetWindowsDirectory(szFontDir, sizeof(szFontDir));
 
-    // Get the proper directory path
+	// Get the proper directory path
 	strcat(szFontDir,"\\Fonts\\");
 	sprintf(szSearch,"%s*.tt?",szFontDir);
-    // Get the first file
-    hList = FindFirstFile(szSearch, &FileData);
-    if (hList == INVALID_HANDLE_VALUE)
-    {
+	// Get the first file
+	hList = FindFirstFile(szSearch, &FileData);
+	if (hList == INVALID_HANDLE_VALUE)
+	{
 		/* Don't complain about missing directories */
 		if (errno == ENOENT)
 			return fz_throw("fonterror : can't find system fonts dir");
 		return fz_throw("ioerror");
-    }
-    // Traverse through the directory structure
-    fFinished = FALSE;
-    while (!fFinished)
-    {
-        if(!(FileData.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
-        {
-            // Get the full path for sub directory
+	}
+	// Traverse through the directory structure
+	fFinished = FALSE;
+	while (!fFinished)
+	{
+		if(!(FileData.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
+		{
+			// Get the full path for sub directory
 			sprintf(szFile,"%s%s",szFontDir,FileData.cFileName);
 			if( szFile[strlen(szFile)-1] == 'c'||
 				szFile[strlen(szFile)-1] == 'C' )
@@ -597,16 +597,16 @@ pdf_createfontlistMS()
 				if(err)
 					goto cleanup;
 			}
-        }
+		}
 
-        if (!FindNextFile(hList, &FileData))
-        {
-            if (GetLastError() == ERROR_NO_MORE_FILES)
-            {
-                fFinished = TRUE;
-            }
-        }
-    }
+		if (!FindNextFile(hList, &FileData))
+		{
+			if (GetLastError() == ERROR_NO_MORE_FILES)
+			{
+				fFinished = TRUE;
+			}
+		}
+	}
 
 	removeredundancy(&fontlistMS);
 

@@ -56,10 +56,10 @@ fz_irect
 fz_boundgel(fz_gel *gel)
 {
 	fz_irect bbox;
-    bbox.min.x = fz_idiv(gel->xmin, gel->hs);
-    bbox.min.y = fz_idiv(gel->ymin, gel->vs);
-    bbox.max.x = fz_idiv(gel->xmax, gel->hs) + 1;
-    bbox.max.y = fz_idiv(gel->ymax, gel->vs) + 1;
+	bbox.min.x = fz_idiv(gel->xmin, gel->hs);
+	bbox.min.y = fz_idiv(gel->ymin, gel->vs);
+	bbox.max.x = fz_idiv(gel->xmax, gel->hs) + 1;
+	bbox.max.y = fz_idiv(gel->ymax, gel->vs) + 1;
 	return bbox;
 }
 

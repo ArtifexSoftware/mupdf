@@ -31,18 +31,18 @@ struct fz_hashtable_s
 
 static unsigned hash(unsigned char *s, int len)
 {
-    unsigned hash = 0;
-    int i;
-    for (i = 0; i < len; i++)
-    {
-        hash += s[i];
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-    return hash;
+	unsigned hash = 0;
+	int i;
+	for (i = 0; i < len; i++)
+	{
+		hash += s[i];
+		hash += (hash << 10);
+		hash ^= (hash >> 6);
+	}
+	hash += (hash << 3);
+	hash ^= (hash >> 11);
+	hash += (hash << 15);
+	return hash;
 }
 
 fz_error *

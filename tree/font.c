@@ -60,10 +60,10 @@ fz_setfontwmode(fz_font *font, int wmode)
 void
 fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
 {
-    font->bbox.min.x = xmin;
-    font->bbox.min.y = ymin;
-    font->bbox.max.x = xmax;
-    font->bbox.max.y = ymax;
+	font->bbox.min.x = xmin;
+	font->bbox.min.y = ymin;
+	font->bbox.max.x = xmax;
+	font->bbox.max.y = ymax;
 }
 
 void

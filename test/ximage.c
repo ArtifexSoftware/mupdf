@@ -79,8 +79,7 @@ static struct
 } info;
 
 static XImage *
-createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi,
-	     int depth, int w, int h)
+createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi, int depth, int w, int h)
 {
 	XImage *img;
 	Status status;
@@ -95,8 +94,8 @@ createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi,
 	}
 
 	xsi->shmid = shmget(IPC_PRIVATE,
-			    img->bytes_per_line * img->height,
-			    IPC_CREAT | 0777);
+		img->bytes_per_line * img->height,
+		IPC_CREAT | 0777);
 	if (xsi->shmid < 0)
 	{
 		XDestroyImage(img);
@@ -127,7 +126,7 @@ createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi,
 	shmctl(xsi->shmid, IPC_RMID, 0);
 
 	printf("make xshm w=%d h=%d id=%d data=%p\n",
-	       w, h, xsi->shmid, xsi->shmaddr);
+		w, h, xsi->shmid, xsi->shmaddr);
 
 	return img;
 
@@ -266,7 +265,7 @@ create_pool(void)
 
 	for (i = 0; i < POOLSIZE; i++) {
 		info.pool[i] = createximage(info.display,
-                    info.visual.visual, &info.shminfo[i], info.visual.depth,
+					info.visual.visual, &info.shminfo[i], info.visual.depth,
 					WIDTH, HEIGHT);
 		if (info.pool[i] == nil) {
 			return 0;
@@ -402,7 +401,7 @@ ximage_blit(Drawable d, GC gc,
 			}
 			else
 			{
-			    XPutImage(info.display, d, gc, image,
+				XPutImage(info.display, d, gc, image,
 					0, 0,
 					dstx + ax,
 					dsty + ay,

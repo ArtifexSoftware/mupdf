@@ -1374,13 +1374,13 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 				break;
 			case psOpReturn:
 				return nil;
-      }
-      break;
-    default:
-		return fz_throw("syntaxerror : ");
-		break;
-    }
-  }
+			}
+			break;
+		default:
+			return fz_throw("syntaxerror : ");
+			break;
+		}
+	}
 
 cleanup:
   return err;

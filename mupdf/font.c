@@ -203,10 +203,10 @@ pdf_newfont(char *name)
 	font->flags = 0;
 	font->italicangle = 0;
 	font->ascent = 0;
-    font->descent = 0;
-    font->capheight = 0;
-    font->xheight = 0;
-    font->missingwidth = 0;
+	font->descent = 0;
+	font->capheight = 0;
+	font->xheight = 0;
+	font->missingwidth = 0;
 
 	font->encoding = nil;
 	font->ncidtogid = 0;
@@ -648,8 +648,8 @@ printf("  cidtogidmap %d\n", len / 2);
 		/* TODO: if truetype font is external, cidtogidmap should not be identity */
 		/* we should map the cid to another encoding represented by a 'cmap' table */
 		/* cids: Adobe-CNS1 Adobe-GB1 Adobe-Japan1 Adobe-Japan2 Adobe-Korea1 */
-    	/* cmap: Big5 Johab PRC  ShiftJIS Unicode Wansung */
-		/* win:  3,4  3,6   3,3  3,2      3,1     3,5 */
+		/* cmap: Big5 Johab PRC  ShiftJIS Unicode Wansung */
+		/* win:  3,4  3,6   3,3  3,2	  3,1	 3,5 */
 	}
 
 	error = pdf_loadtounicode(font, xref, nil, collection, tounicode);

@@ -57,32 +57,32 @@ void usage()
 static void xopen(void)
 {
 	xdpy = XOpenDisplay(nil);
-    assert(xdpy != nil);
+	assert(xdpy != nil);
 
-    xscr = DefaultScreen(xdpy);
+	xscr = DefaultScreen(xdpy);
 
-    ximage_init(xdpy, xscr, DefaultVisual(xdpy, xscr));
+	ximage_init(xdpy, xscr, DefaultVisual(xdpy, xscr));
 
-    xcarrow = XCreateFontCursor(xdpy, XC_left_ptr);
-    xchand = XCreateFontCursor(xdpy, XC_hand2);
-    xcwait = XCreateFontCursor(xdpy, XC_watch);
+	xcarrow = XCreateFontCursor(xdpy, XC_left_ptr);
+	xchand = XCreateFontCursor(xdpy, XC_hand2);
+	xcwait = XCreateFontCursor(xdpy, XC_watch);
 
-    xwin = XCreateWindow(xdpy, DefaultRootWindow(xdpy),
-            10, 10, 200, 100, 1,
-            ximage_get_depth(),
-            InputOutput,
-            ximage_get_visual(),
-            0,
-            nil);
+	xwin = XCreateWindow(xdpy, DefaultRootWindow(xdpy),
+			10, 10, 200, 100, 1,
+			ximage_get_depth(),
+			InputOutput,
+			ximage_get_visual(),
+			0,
+			nil);
 
-    XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
-    XSelectInput(xdpy, xwin,
-            StructureNotifyMask | ExposureMask | KeyPressMask |
-            PointerMotionMask | ButtonPressMask);
+	XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
+	XSelectInput(xdpy, xwin,
+			StructureNotifyMask | ExposureMask | KeyPressMask |
+			PointerMotionMask | ButtonPressMask);
 
-    mapped = 0;
+	mapped = 0;
 
-    xgc = XCreateGC(xdpy, xwin, 0, nil);
+	xgc = XCreateGC(xdpy, xwin, 0, nil);
 }
 
 static void xresize(void)
@@ -230,88 +230,88 @@ static void dumptext()
 
 static void handlekey(int c)
 {
-    int oldpage = pageno;
-    float oldzoom = zoom;
-    int oldrotate = rotate;
+	int oldpage = pageno;
+	float oldzoom = zoom;
+	int oldrotate = rotate;
 
-    if (c >= '0' && c <= '9')
+	if (c >= '0' && c <= '9')
 		pagebuf[pagebufidx++] = c;
-    else
+	else
 		if (c != 'g' && c != 'G')
-		    pagebufidx = 0;
+			pagebufidx = 0;
 
-    switch (c)
-    {
+	switch (c)
+	{
 	case 'd': fz_debugglyphcache(rast->cache); break;
 	case 'a': rotate -= 5; break;
 	case 's': rotate += 5; break;
 	case 'x': dumptext(); break;
 
-    case 'b':
+	case 'b':
 		pageno--;
 		if (pageno < 1)
-		    pageno = 1;
+			pageno = 1;
 		break;
-    case 'B':
+	case 'B':
 		pageno -= 10;
 		if (pageno < 1)
-		    pageno = 1;
+			pageno = 1;
 		break;
-    case ' ':
-    case 'f':
+	case ' ':
+	case 'f':
 		pageno++;
 		if (pageno > count)
-		    pageno = count;
+			pageno = count;
 		break;
-    case 'F':
+	case 'F':
 		pageno += 10;
 		if (pageno > count)
-		    pageno = count;
+			pageno = count;
 		break;
-    case 't':
-    case 'T':
+	case 't':
+	case 'T':
 		if (histlen > 0)
-		    pageno = hist[--histlen];
+			pageno = hist[--histlen];
 		break;
-    case '-':
+	case '-':
 		zoom -= 0.1;
 		if (zoom < 0.1)
-		    zoom = 0.1;
+			zoom = 0.1;
 		break;
-    case '+':
+	case '+':
 		zoom += 0.1;
 		if (zoom > 3.0)
-		    zoom = 3.0;
+			zoom = 3.0;
 		break;
-    case '<':
+	case '<':
 		rotate -= 90;
 		break;
-    case '>':
+	case '>':
 		rotate += 90;
 		break;
-    case 'q':
+	case 'q':
 		exit(0);
-    case 'g':
-    case 'G':
+	case 'g':
+	case 'G':
 		if (pagebufidx > 0)
 		{
-		    pagebuf[pagebufidx] = '\0';
-		    pageno = atoi(pagebuf);
-		    pagebufidx = 0;
-		    if (pageno < 1)
+			pagebuf[pagebufidx] = '\0';
+			pageno = atoi(pagebuf);
+			pagebufidx = 0;
+			if (pageno < 1)
 				pageno = 1;
-		    if (pageno > count)
+			if (pageno > count)
 				pageno = count;
 		}
 		else
 		{
-		    if (c == 'G')
-		    {
+			if (c == 'G')
+			{
 				pageno = count;
-		    }
+			}
 		}
 		break;
-    }
+	}
 
 	if (pageno != oldpage || zoom != oldzoom || rotate != oldrotate)
 		showpage();

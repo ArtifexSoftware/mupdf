@@ -18,17 +18,17 @@ enum
 
 static int tokenfromkeyword(char *key)
 {
-    if (!strcmp(key, "usecmap")) return TUSECMAP;
-    if (!strcmp(key, "begincodespacerange")) return TBEGINCODESPACERANGE;
-    if (!strcmp(key, "endcodespacerange")) return TENDCODESPACERANGE;
-    if (!strcmp(key, "beginbfchar")) return TBEGINBFCHAR;
-    if (!strcmp(key, "endbfchar")) return TENDBFCHAR;
-    if (!strcmp(key, "beginbfrange")) return TBEGINBFRANGE;
-    if (!strcmp(key, "endbfrange")) return TENDBFRANGE;
-    if (!strcmp(key, "begincidchar")) return TBEGINCIDCHAR;
-    if (!strcmp(key, "endcidchar")) return TENDCIDCHAR;
-    if (!strcmp(key, "begincidrange")) return TBEGINCIDRANGE;
-    if (!strcmp(key, "endcidrange")) return TENDCIDRANGE;
+	if (!strcmp(key, "usecmap")) return TUSECMAP;
+	if (!strcmp(key, "begincodespacerange")) return TBEGINCODESPACERANGE;
+	if (!strcmp(key, "endcodespacerange")) return TENDCODESPACERANGE;
+	if (!strcmp(key, "beginbfchar")) return TBEGINBFCHAR;
+	if (!strcmp(key, "endbfchar")) return TENDBFCHAR;
+	if (!strcmp(key, "beginbfrange")) return TBEGINBFRANGE;
+	if (!strcmp(key, "endbfrange")) return TENDBFRANGE;
+	if (!strcmp(key, "begincidchar")) return TBEGINCIDCHAR;
+	if (!strcmp(key, "endcidchar")) return TENDCIDCHAR;
+	if (!strcmp(key, "begincidrange")) return TBEGINCIDRANGE;
+	if (!strcmp(key, "endcidrange")) return TENDCIDRANGE;
 	return PDF_TKEYWORD;
 }
 

@@ -16,12 +16,12 @@ static void fmtobj(struct fmt *fmt, fz_obj *obj);
 
 static inline int isdelim(int ch)
 {
-        return  ch == '(' || ch == ')' ||
-                ch == '<' || ch == '>' ||
-                ch == '[' || ch == ']' ||
-                ch == '{' || ch == '}' ||
-                ch == '/' ||
-                ch == '%';
+	return  ch == '(' || ch == ')' ||
+			ch == '<' || ch == '>' ||
+			ch == '[' || ch == ']' ||
+			ch == '{' || ch == '}' ||
+			ch == '/' ||
+			ch == '%';
 }
 
 static inline void fmtputc(struct fmt *fmt, int c)

@@ -9,9 +9,9 @@ static void
 t3dropfont(fz_font *font)
 {
 	int i;
-    pdf_font *pfont = (pdf_font*)font;
-    if (pfont->encoding)
-        fz_dropcmap(pfont->encoding);
+	pdf_font *pfont = (pdf_font*)font;
+	if (pfont->encoding)
+		fz_dropcmap(pfont->encoding);
 	for (i = 0; i < 256; i++)
 		if (pfont->charprocs[i])
 			fz_droptree(pfont->charprocs[i]);
@@ -20,7 +20,7 @@ t3dropfont(fz_font *font)
 static fz_error *
 t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 {
-    pdf_font *font = (pdf_font*)fzfont;
+	pdf_font *font = (pdf_font*)fzfont;
 	fz_error *error;
 	fz_renderer *gc;
 	fz_tree *tree;
@@ -125,8 +125,8 @@ printf("loading type3 font %s\n", buf);
 	if (!font)
 		return fz_outofmem;
 
-    font->super.render = t3render;
-    font->super.drop = (void(*)(fz_font*)) t3dropfont;
+	font->super.render = t3render;
+	font->super.drop = (void(*)(fz_font*)) t3dropfont;
 
 	obj = fz_dictgets(dict, "FontMatrix");
 	font->matrix.a = fz_toreal(fz_arrayget(obj, 0));
@@ -197,14 +197,14 @@ printf("  matrix [%g %g %g %g %g %g]\n",
 
 	fz_dropobj(encoding);
 
-    error = pdf_makeidentitycmap(&font->encoding, 0, 1);
-    if (error)
-        goto cleanup;
+	error = pdf_makeidentitycmap(&font->encoding, 0, 1);
+	if (error)
+		goto cleanup;
 
 	error = pdf_loadtounicode(font, xref,
 				estrings, nil, fz_dictgets(dict, "ToUnicode"));
-    if (error)
-        goto cleanup;
+	if (error)
+		goto cleanup;
 
 	/*
 	 * Widths

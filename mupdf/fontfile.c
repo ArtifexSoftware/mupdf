@@ -10,33 +10,33 @@ static FT_Library ftlib = nil;
 
 enum
 {
-    FD_FIXED = 1 << 0,
-    FD_SERIF = 1 << 1,
-    FD_SYMBOLIC = 1 << 2,
-    FD_SCRIPT = 1 << 3,
-    FD_NONSYMBOLIC = 1 << 5,
-    FD_ITALIC = 1 << 6,
-    FD_ALLCAP = 1 << 16,
-    FD_SMALLCAP = 1 << 17,
+	FD_FIXED = 1 << 0,
+	FD_SERIF = 1 << 1,
+	FD_SYMBOLIC = 1 << 2,
+	FD_SCRIPT = 1 << 3,
+	FD_NONSYMBOLIC = 1 << 5,
+	FD_ITALIC = 1 << 6,
+	FD_ALLCAP = 1 << 16,
+	FD_SMALLCAP = 1 << 17,
 	FD_FORCEBOLD = 1 << 18
 };
 
 static char *basenames[15] =
 {
-    "Courier", 
-    "Courier-Bold", 
-    "Courier-Oblique",
-    "Courier-BoldOblique",
-    "Helvetica",
-    "Helvetica-Bold",
-    "Helvetica-Oblique",
-    "Helvetica-BoldOblique",
-    "Times-Roman",
-    "Times-Bold",
-    "Times-Italic",
-    "Times-BoldItalic",
-    "Symbol", 
-    "ZapfDingbats",
+	"Courier", 
+	"Courier-Bold", 
+	"Courier-Oblique",
+	"Courier-BoldOblique",
+	"Helvetica",
+	"Helvetica-Bold",
+	"Helvetica-Oblique",
+	"Helvetica-BoldOblique",
+	"Times-Roman",
+	"Times-Bold",
+	"Times-Italic",
+	"Times-BoldItalic",
+	"Symbol", 
+	"ZapfDingbats",
 	"Chancery"
 };
 

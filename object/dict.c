@@ -128,10 +128,10 @@ fz_obj *
 fz_dictgetkey(fz_obj *obj, int i)
 {
 	if (!fz_isdict(obj))
-                return nil;
+		return nil;
 
-        if (i < 0 || i >= obj->u.d.len)
-                return nil;
+	if (i < 0 || i >= obj->u.d.len)
+		return nil;
 
 	return obj->u.d.items[i].k;
 }
@@ -140,10 +140,10 @@ fz_obj *
 fz_dictgetval(fz_obj *obj, int i)
 {
 	if (!fz_isdict(obj))
-                return nil;
+		return nil;
 
-        if (i < 0 || i >= obj->u.d.len)
-                return nil;
+	if (i < 0 || i >= obj->u.d.len)
+		return nil;
 
 	return obj->u.d.items[i].v;
 }
