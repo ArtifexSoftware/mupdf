@@ -67,42 +67,46 @@ static void loadtile8a(pdf_image *src, fz_pixmap *dst, int n)
 }
 
 static void
-decodetile(fz_pixmap *pix, int bpc, int a, float *decode)
+decodetile(fz_pixmap *pix, int bpc, int skip, float *decode)
 {
 	unsigned char table[32][256];
 	float twon = (1 << bpc) - 1;
 	int x, y, k, i;
 
-	int isdefault = 1;
-	for (k = 0; k < pix->n - a; k++)
+printf("  decode bpc=%d skip=%d n=%d twon=%g\n", bpc, skip, pix->n, twon);
+
+	for (k = skip; k < pix->n; k++)
 	{
-		int min = decode[k * 2 + 0] * 255;
-		int max = decode[k * 2 + 1] * 255;
-		if (min != 0 || max != 255)
-			isdefault = 0;
+		float min = decode[(k - skip) * 2 + 0];
+		float max = decode[(k - skip) * 2 + 1];
+		printf("    k=%d min=%g max=%g\n", k, min, max);
 	}
-	if (isdefault)
-		return;
 
 	for (i = 0; i < (1 << bpc); i++)
 	{
-		for (k = 0; k < pix->n - a; k++)
+		if (skip)
+			table[0][i] = (i * 255) / twon;
+		for (k = skip; k < pix->n; k++)
 		{
-			float min = decode[k * 2 + 0];
-			float max = decode[k * 2 + 1];
+			float min = decode[(k - skip) * 2 + 0];
+			float max = decode[(k - skip) * 2 + 1];
 			float f = min + i * (max - min) / twon;
 			table[k][i] = f * 255;
 		}
 	}
 
+//	for (i = 0; i < 256; i++)
+//		for (k = 0; k < 32; k++)
+//			table[k][i] = i;
+
 	for (y = 0; y < pix->h; y++)
 	{
 		for (x = 0; x < pix->w; x++)
 		{
-			for (k = a; k < pix->n; k++)
+			for (k = 0; k < pix->n; k++)
 			{
 				i = pix->samples[ (y * pix->w + x) * pix->n + k];
-				pix->samples[ (y * pix->w + x) * pix->n + k] = table[k-a][i];
+				pix->samples[ (y * pix->w + x) * pix->n + k] = table[k][i];
 			}
 		}
 	}
@@ -190,6 +194,7 @@ loadtile(fz_image *img, fz_pixmap *tile)
 	return nil;
 }
 
+/* TODO error cleanup */
 fz_error *
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
@@ -197,6 +202,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_image *img;
 	int ismask;
 	fz_obj *obj;
+	fz_obj *sub;
 	int i;
 
 	int w, h, bpc;
@@ -206,15 +212,20 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_indexed *indexed = nil;
 	int stride;
 
+printf("loading image "); fz_debugobj(dict); printf("\n");
+
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
 		return fz_outofmem;
+
+	/*
+	 * Dimensions, BPC and ColorSpace
+	 */
 
 	w = fz_toint(fz_dictgets(dict, "Width"));
 	h = fz_toint(fz_dictgets(dict, "Height"));
 	bpc = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
 
-printf("loading image "); fz_debugobj(dict); printf("\n");
 printf("  geometry %d x %d @ %d\n", w, h, bpc);
 
 	cs = nil;
@@ -242,19 +253,55 @@ printf("  indexed!\n");
 		fz_dropobj(obj);
 	}
 
+	/*
+	 * ImageMask, Mask and SoftMask
+	 */
+
 	ismask = fz_tobool(fz_dictgets(dict, "ImageMask"));
 	if (ismask)
 	{
 printf("  image mask!\n");
+		bpc = 1;
 		n = 0;
 		a = 1;
 	}
+
+	obj = fz_dictgets(dict, "SMask");
+	if (fz_isindirect(obj))
+	{
+		// sub-image mask
+	}
+
+	obj = fz_dictgets(dict, "Mask");
+	if (fz_isindirect(obj))
+	{
+		error = pdf_loadindirect(&sub, xref, obj);
+		if (error)
+			return error;
+		if (fz_isarray(sub))
+		{
+			// color key masking
+		}
+		else
+		{
+			// sub-image mask
+		}
+		fz_dropobj(sub);
+	}
+	else if (fz_isarray(obj))
+	{
+		// color key masking
+	}
+
+	/*
+	 * Decode
+	 */
 
 	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
 printf("  decode array!\n");
-		if (img->indexed)
+		if (indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = fz_toreal(fz_arrayget(obj, i));
 		else
@@ -263,13 +310,17 @@ printf("  decode array!\n");
 	}
 	else
 	{
-		if (img->indexed)
+		if (indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = i & 1 ? (1 << img->bpc) - 1 : 0;
 		else
 			for (i = 0; i < (n + a) * 2; i++)
 				img->decode[i] = i & 1;
 	}
+
+	/*
+	 * Load samples
+	 */
 
 	if (indexed)
 		stride = (w * bpc + 7) / 8;
@@ -305,6 +356,10 @@ for (i = 0; i < (n + a) * 2; i++)
 printf("%g ", img->decode[i]);
 printf("]\n");
 printf("\n");
+
+	/*
+	 * Create image object
+	 */
 
 	img->super.loadtile = loadtile;
 	img->super.drop = nil;

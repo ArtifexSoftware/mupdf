@@ -210,20 +210,32 @@ printf("  draw image mask\n");
 	}
 
 	/* render rgb over */
-	else if (n == 3 && a == 0 && gc->acc)
+	else if (gc->acc)
 	{
+		if (n == 3 && a == 0)
+		{
 printf("  draw image rgb over\n");
-		error = drawtile(gc, gc->acc, tile2, ctm, 1);
+			error = drawtile(gc, gc->acc, tile2, ctm, 1);
+		}
+
+		/* render generic image */
+		else
+		{
+printf("  draw image rgb over after cs transform\n");
+			error = fz_convertpixmap(&tile3, tile2, cs, gc->model);
+			error = drawtile(gc, gc->acc, tile3, ctm, 1);
+			fz_droppixmap(tile3);
+		}
 	}
 
 	/* render generic image */
 	else
 	{
-printf("  draw image rgb over after cs transform\n");
+printf("  draw image after cs transform\n");
 		error = fz_convertpixmap(&tile3, tile2, cs, gc->model);
 		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, gc->model->n + 1);
 		fz_clearpixmap(gc->tmp);
-		error = drawtile(gc, gc->tmp, tile3, ctm, 1);
+		error = drawtile(gc, gc->tmp, tile3, ctm, 0);
 		fz_droppixmap(tile3);
 	}
 
