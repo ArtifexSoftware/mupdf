@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 	fz_cmap *cmap;
 	fz_file *file;
 
-	err = fz_openfile(&file, argv[1], O_RDONLY);
+	err = fz_openfile(&file, argv[1], FZ_READ);
 	if (err)
 		fz_abort(err);
 

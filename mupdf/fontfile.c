@@ -47,6 +47,7 @@ static char *basepatterns[14] =
 static fz_error *initfontlibs(void)
 {
 	int fterr;
+	int maj, min, pat;
 
 	if (ftlib)
 		return nil;
@@ -54,6 +55,10 @@ static fz_error *initfontlibs(void)
 	fterr = FT_Init_FreeType(&ftlib);
 	if (fterr)
 		return fz_throw("freetype failed initialisation: 0x%x", fterr);
+
+	FT_Library_Version(ftlib, &maj, &min, &pat);
+	if (maj == 2 && min == 1 && pat < 7)
+		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
 
 	fclib = FcInitLoadConfigAndFonts();
 	if (!fclib)

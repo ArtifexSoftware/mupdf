@@ -122,7 +122,7 @@ writecopy(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid)
 				goto cleanup;
 		}
 
-		fz_seek(xref->file, stmofs);
+		fz_seek(xref->file, stmofs, 0);
 		fz_pushfilter(xref->file, pipe);
 
 		if (encrypt)
@@ -195,7 +195,7 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 	int startxref;
 	fz_obj *obj;
 
-	error = fz_openfile(&out, path, O_APPEND);
+	error = fz_openfile(&out, path, FZ_APPEND);
 	if (error)
 		return error;
 
@@ -298,7 +298,7 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 	if (!ofsbuf)
 		return fz_outofmem;
 
-	error = fz_openfile(&out, path, O_WRONLY);
+	error = fz_openfile(&out, path, FZ_WRITE);
 	if (error)
 	{
 		fz_free(ofsbuf);

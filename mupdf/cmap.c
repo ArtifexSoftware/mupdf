@@ -456,7 +456,7 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 
 printf("  system cmap loading %s\n", path);
 
-	error = fz_openfile(&file, path, O_RDONLY);
+	error = fz_openfile(&file, path, FZ_READ);
 	if (error)
 		goto cleanup;
 

@@ -17,7 +17,7 @@ static int producedata(fz_file *f)
 	int produced;
 	int n;
 
-	assert(f->mode == O_RDONLY);
+	assert(f->mode == FZ_READ);
 	assert(f->error == nil);
 
 	if (!f->filter)

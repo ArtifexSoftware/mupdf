@@ -15,20 +15,36 @@ fz_openfile(fz_file **filep, char *path, int mode)
 	fz_file *file;
 	int realmode;
 	int fd;
+	int n;
 
-	assert(mode == O_RDONLY || mode == O_WRONLY || mode == O_APPEND);
+	assert(mode == FZ_READ || mode == FZ_WRITE || mode == FZ_APPEND);
 
-	realmode = mode;
-	if (mode == O_WRONLY)
+	realmode = 0;
+	if (mode == FZ_READ)
+		realmode = O_RDONLY;
+	if (mode == FZ_WRITE)
 		realmode = O_WRONLY | O_CREAT | O_TRUNC;
-
-	file = *filep = fz_malloc(sizeof(fz_file));
-	if (!file)
-		return fz_outofmem;
+	if (mode == FZ_APPEND)
+		realmode = O_WRONLY;
 
 	fd = open(path, realmode, 0644);
 	if (fd == -1)
 		return fz_throw("ioerror: open '%s': %s", path, strerror(errno));
+
+	if (mode == FZ_APPEND)
+	{
+		mode = FZ_WRITE;
+		n = lseek(fd, 0, 2);
+		if (n == -1) {
+			error = fz_throw("ioerror: lseek: %s", strerror(errno));
+			close(fd);
+			return error;
+		}
+	}
+
+	file = *filep = fz_malloc(sizeof(fz_file));
+	if (!file)
+		return fz_outofmem;
 
 	file->mode = mode;
 	file->fd = fd;
@@ -63,7 +79,7 @@ fz_openbuffer(fz_file **filep, fz_buffer *buf, int mode)
 	fz_error *error;
 	fz_file *file;
 
-	assert(mode == O_RDONLY || mode == O_WRONLY);
+	assert(mode == FZ_READ || mode == FZ_WRITE);
 
 	file = *filep = fz_malloc(sizeof(fz_file));
 	if (!file)
@@ -75,7 +91,7 @@ fz_openbuffer(fz_file **filep, fz_buffer *buf, int mode)
 	file->error = nil;
 	file->filter = nil;
 
-	if (mode == O_RDONLY)
+	if (mode == FZ_READ)
 	{
 		file->in = buf;
 		error = fz_newbuffer(&file->out, FZ_BUFSIZE);
@@ -104,7 +120,7 @@ fz_closefile(fz_file *file)
 {
 	assert(file->depth == 0);
 
-	if (file->mode != O_RDONLY)
+	if (file->mode == FZ_WRITE)
 		fz_flush(file);
 
 	if (file->error)
@@ -116,7 +132,7 @@ fz_closefile(fz_file *file)
 
 	if (file->fd == -1)	/* open to buffer not file */
 	{
-		if (file->mode == O_RDONLY)
+		if (file->mode == FZ_READ)
 			fz_freebuffer(file->out);
 		else
 			fz_freebuffer(file->in);
@@ -148,7 +164,7 @@ fz_pushfilter(fz_file *file, fz_filter *filter)
 		file->out = file->in;
 		file->in = buf;
 
-		if (file->mode == O_RDONLY)
+		if (file->mode == FZ_READ)
 		{
 			file->out->rp = file->out->bp;
 			file->out->wp = file->out->bp;
@@ -167,7 +183,7 @@ fz_pushfilter(fz_file *file, fz_filter *filter)
 
 	else
 	{
-		if (file->mode == O_RDONLY)
+		if (file->mode == FZ_READ)
 		{
 			error = fz_chainpipeline(&file->filter, file->filter, filter, file->out);
 			if (error)
@@ -208,7 +224,7 @@ fz_popfilter(fz_file *file)
 
 	assert(file->depth > 0);
 
-	if (file->mode != O_RDONLY)
+	if (file->mode == FZ_WRITE)
 		fz_flush(file);
 
 	if (file->error)
@@ -229,7 +245,7 @@ fz_popfilter(fz_file *file)
 	}
 	else
 	{
-		if (file->mode == O_RDONLY)
+		if (file->mode == FZ_READ)
 		{
 			fz_freebuffer(file->out);
 			fz_unchainpipeline(file->filter, &file->filter, &file->out);
@@ -245,15 +261,15 @@ fz_popfilter(fz_file *file)
 }
 
 int
-fz_seek(fz_file *f, int ofs)
+fz_seek(fz_file *f, int ofs, int whence)
 {
 	int t;
 	int c;
 
-	assert(f->mode == O_RDONLY);
-
 	if (f->filter)
 	{
+		assert(f->mode == FZ_READ && whence == 0);
+
 		if (ofs < fz_tell(f))
 		{
 			f->error = fz_throw("ioerror: cannot seek backwards in filter");
@@ -265,10 +281,10 @@ fz_seek(fz_file *f, int ofs)
 			if (c == EOF)
 				return -1;
 		}
-		return 0;
+		return ofs;
 	}
 
-	t = lseek(f->fd, ofs, 0);
+	t = lseek(f->fd, ofs, whence);
 	if (t == -1)
 	{
 		f->error = fz_throw("ioerror: lseek: %s", strerror(errno));
@@ -279,7 +295,7 @@ fz_seek(fz_file *f, int ofs)
 	f->out->wp = f->out->bp;
 	f->out->eof = 0;
 
-	return 0;
+	return t;
 }
 
 int
@@ -289,7 +305,7 @@ fz_tell(fz_file *f)
 
 	if (f->filter)
 	{
-		assert(f->mode == O_RDONLY);
+		assert(f->mode == FZ_READ);
 		return f->filter->count - (f->out->wp - f->out->rp);
 	}
 
@@ -300,7 +316,7 @@ fz_tell(fz_file *f)
 		return -1;
 	}
 
-	if (f->mode == O_RDONLY)
+	if (f->mode == FZ_READ)
 		return t - (f->out->wp - f->out->rp);
 	else
 		return t + (f->in->wp - f->in->rp);

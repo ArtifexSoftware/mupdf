@@ -1,8 +1,10 @@
 typedef struct fz_file_s fz_file;
 
+enum { FZ_READ, FZ_WRITE, FZ_APPEND };
+
 struct fz_file_s
 {
-	int mode;	/* O_RDONLY or O_WRONLY */
+	int mode;	/* FZ_READ or FZ_WRITE */
 	int fd;
 	int depth;
 	fz_filter *filter;
@@ -18,7 +20,7 @@ void fz_popfilter(fz_file *file);
 void fz_closefile(fz_file *file);
 fz_error *fz_ferror(fz_file *f);
 
-int fz_seek(fz_file *f, int ofs);
+int fz_seek(fz_file *f, int ofs, int whence);
 int fz_tell(fz_file *f);
 
 int fz_readbyte(fz_file *f);

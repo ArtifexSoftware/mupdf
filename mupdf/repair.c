@@ -69,11 +69,11 @@ parseobj(fz_file *file, unsigned char *buf, int cap, int *stmlen,
 		length = fz_dictgets(dict, "Length");
 		if (fz_isint(length))
 		{
-			fz_seek(file, stmofs + fz_toint(length));
+			fz_seek(file, stmofs + fz_toint(length), 0);
 			tok = pdf_lex(file, buf, cap, &len);
 			if (tok == PDF_TENDSTREAM)
 				goto atobjend;
-			fz_seek(file, stmofs);
+			fz_seek(file, stmofs, 0);
 		}
 
 		fz_read(file, buf, 9);
@@ -129,13 +129,13 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	if (!list)
 		return fz_outofmem;
 
-	error = fz_openfile(&xref->file, filename, O_RDONLY);
+	error = fz_openfile(&xref->file, filename, FZ_READ);
 	if (error)
 		goto cleanup;
 
 	file = xref->file;
 
-	n = fz_seek(file, 0);
+	n = fz_seek(file, 0, 0);
 	if (n < 0) {
 		error = fz_ferror(file);
 		goto cleanup;

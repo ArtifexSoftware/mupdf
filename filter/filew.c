@@ -81,7 +81,7 @@ fz_write(fz_file *f, char *buf, int n)
 	int i = 0;
 	int x;
 
-	assert(f->mode == O_WRONLY);
+	assert(f->mode == FZ_WRITE);
 	assert(f->error == nil);
 
 	if (!f->filter)
@@ -177,7 +177,7 @@ fz_flush(fz_file *f)
 	fz_error *reason;
 	int n;
 
-	assert(f->mode == O_WRONLY);
+	assert(f->mode == FZ_WRITE);
 	assert(f->error == nil);
 
 	f->in->eof = 1;

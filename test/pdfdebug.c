@@ -94,7 +94,7 @@ void copystream(pdf_xref *xref, fz_obj *stream, int ofs)
 	error = fz_newnullfilter(&filter, len);
 	if (error) fz_abort(error);
 
-	fz_seek(xref->file, ofs);
+	fz_seek(xref->file, ofs, 0);
 
 	error = fz_pushfilter(xref->file, filter);
 	if (error) fz_abort(error);

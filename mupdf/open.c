@@ -17,7 +17,7 @@ loadversion(float *version, fz_file *file)
 	char buf[20];
 	int n;
 
-	n = fz_seek(file, 0);
+	n = fz_seek(file, 0, 0);
 	if (n < 0)
 		return fz_ferror(file);
 
@@ -31,23 +31,23 @@ loadversion(float *version, fz_file *file)
 }
 
 static fz_error *
-readstartxref(int *ofs, int fd)
+readstartxref(int *ofs, fz_file *file)
 {
 	unsigned char buf[1024];
 	int t, n;
 	int i;
 
-	t = lseek(fd, 0, 2);
+	t = fz_seek(file, 0, 2);
 	if (t == -1)
-		return fz_throw("ioerror in startxref: lseek: %s", strerror(errno));
+		return fz_ferror(file);
 
-	t = lseek(fd, MAX(0, t - ((int)sizeof buf)), 0);
+	t = fz_seek(file, MAX(0, t - ((int)sizeof buf)), 0);
 	if (t == -1)
-		return fz_throw("ioerror in startxref: lseek: %s", strerror(errno));
+		return fz_ferror(file);
 
-	n = read(fd, buf, sizeof buf);
+	n = fz_read(file, buf, sizeof buf);
 	if (n == -1)
-		return fz_throw("ioerror in startxref: read: %s", strerror(errno));
+		return fz_ferror(file);
 
 	for (i = n - 9; i >= 0; i--) {
 		if (memcmp(buf + i, "startxref", 9) == 0) {
@@ -95,7 +95,7 @@ readoldtrailer(fz_obj **objp, fz_file *file, unsigned char *buf, int cap)
 		t = fz_tell(file);
 		if (t < 0) return fz_ferror(file);
 
-		n = fz_seek(file, t + 20 * len);
+		n = fz_seek(file, t + 20 * len, 0);
 		if (n < 0) return fz_ferror(file);
 	}
 
@@ -122,7 +122,7 @@ readtrailer(fz_obj **objp, fz_file *file, int ofs, unsigned char *buf, int cap)
 	int n;
 	int c;
 
-	n = fz_seek(file, ofs);
+	n = fz_seek(file, ofs, 0);
 	if (n < 0)
 		return fz_ferror(file);
 
@@ -288,7 +288,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, unsigned char *buf, int cap
 	int n;
 	int c;
 
-	n = fz_seek(xref->file, ofs);
+	n = fz_seek(xref->file, ofs, 0);
 	if (n < 0)
 		return fz_ferror(xref->file);
 
@@ -392,7 +392,7 @@ pdf_readobjstm(pdf_xref *xref, int oid, int gid, unsigned char *buf, int cap)
 		ofsbuf[i] = atoi(buf);
 	}
 
-	n = fz_seek(xref->file, first);
+	n = fz_seek(xref->file, first, 0);
 	if (n < 0)
 	{
 		error = fz_ferror(xref->file);
@@ -448,7 +448,7 @@ pdf_openxref(pdf_xref *xref, char *filename)
 
 	unsigned char buf[65536];	/* yeowch! */
 
-	error = fz_openfile(&xref->file, filename, O_RDONLY);
+	error = fz_openfile(&xref->file, filename, FZ_READ);
 	if (error)
 		return error;
 
@@ -456,7 +456,7 @@ pdf_openxref(pdf_xref *xref, char *filename)
 	if (error)
 		return error;
 
-	error = readstartxref(&xref->startxref, xref->file->fd);
+	error = readstartxref(&xref->startxref, xref->file);
 	if (error)
 		return error;
 

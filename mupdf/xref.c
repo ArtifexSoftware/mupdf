@@ -400,7 +400,7 @@ pdf_loadobject0(fz_obj **objp, pdf_xref *xref, int oid, int gid, int *stmofs)
 
 	else if (x->type == 'n')
 	{
-		n = fz_seek(xref->file, x->ofs);
+		n = fz_seek(xref->file, x->ofs, 0);
 		if (n < 0)
 			return fz_ferror(xref->file);
 

@@ -198,7 +198,7 @@ pdf_openstream0(pdf_xref *xref, fz_obj *stmobj, int oid, int gid, int ofs)
 	if (error)
 		return error;
 
-	ofs = fz_seek(xref->file, ofs);
+	ofs = fz_seek(xref->file, ofs, 0);
 	if (ofs < 0) {
 		fz_freefilter(filter);
 		return fz_ferror(xref->file);
