@@ -10,3 +10,5 @@ struct fz_image_s
 	int w, h, n, a;
 };
 
+void fz_dropimage(fz_image *img);
+

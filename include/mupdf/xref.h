@@ -57,6 +57,7 @@ fz_error *pdf_loadobject(fz_obj **objp, pdf_xref *, int oid, int gen);
 fz_error *pdf_loadindirect(fz_obj **objp, pdf_xref *, fz_obj *ref);
 fz_error *pdf_resolve(fz_obj **reforobj, pdf_xref *);
 
+fz_error *pdf_decodefilter(fz_filter **filterp, fz_obj *stmobj);
 int pdf_isstream(pdf_xref *xref, int oid, int gen);
 fz_error *pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
 fz_error *pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);

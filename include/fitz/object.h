@@ -106,6 +106,7 @@ fz_obj *fz_dictgetkey(fz_obj *dict, int idx);
 fz_obj *fz_dictgetval(fz_obj *dict, int idx);
 fz_obj *fz_dictget(fz_obj *dict, fz_obj *key);
 fz_obj *fz_dictgets(fz_obj *dict, char *key);
+fz_obj *fz_dictgetsa(fz_obj *dict, char *key, char *abbrev);
 fz_error *fz_dictput(fz_obj *dict, fz_obj *key, fz_obj *val);
 fz_error *fz_dictputs(fz_obj *dict, char *key, fz_obj *val);
 fz_error *fz_dictdel(fz_obj *dict, fz_obj *key);

@@ -122,6 +122,10 @@ skip:
 		if (tok == PDF_TCDICT)
 			return nil;
 
+		/* for BI .. ID .. EI in content streams */
+		if (tok == PDF_TKEYWORD && !strcmp(buf, "ID"))
+			return nil;
+
 		if (tok != PDF_TNAME)
 			goto cleanup;
 

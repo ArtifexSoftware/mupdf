@@ -109,7 +109,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 
 	if (!strcmp(fz_toname(subtype), "Form"))
 	{
-//		error = pdf_loadxobject((pdf_xobject**)&rsrc->val, xref, obj);
+		error = pdf_loadxobject((pdf_xobject**)&rsrc->val, xref, obj, ref);
 		fz_dropobj(obj);
 		if (error) {
 			fz_free(rsrc);
@@ -340,115 +340,4 @@ cleanup:
 	fz_dropobj(copy);
 	return error;
 }
-
-#if 0
-
-static fz_error *
-loadcolorspaces(pdf_resources *rdb, pdf_xref *xref, fz_obj *dict)
-{
-	fz_error *err;
-	fz_colorspace *colorspace;
-	fz_obj *key, *val;
-	fz_obj *ptr;
-	int i;
-
-	for (i = 0; i < fz_dictlen(dict); i++)
-	{
-		colorspace = nil;
-		ptr = nil;
-
-		key = fz_dictgetkey(dict, i);
-		val = fz_dictgetval(dict, i);
-
-		err = pdf_resolve(&val, xref);
-		if (err) return err;
-
-		err = pdf_loadcolorspace(&colorspace, xref, val);
-		if (err) goto cleanup;
-
-printf("  -> %s\n", colorspace->name);
-
-		err = fz_newpointer(&ptr, colorspace);
-		if (err) goto cleanup;
-
-		err = fz_dictput(rdb->colorspace, key, ptr);
-		if (err) goto cleanup;
-
-		fz_dropobj(ptr);
-		fz_dropobj(val);
-		colorspace = nil;
-	}
-
-	return nil;
-
-cleanup:
-	if (colorspace) fz_dropcolorspace(colorspace);
-	if (ptr) fz_dropobj(ptr);
-	fz_dropobj(val);
-	return err;
-}
-
-fz_error *
-pdf_loadresources(pdf_resources **rdbp, pdf_xref *xref, fz_obj *topdict)
-{
-	fz_error *err;
-	pdf_resources *rdb;
-	fz_obj *subdict;
-
-	rdb = *rdbp = fz_malloc(sizeof (pdf_resources));
-	if (!rdb)
-		return fz_outofmem;
-
-	rdb->extgstate = nil;
-	rdb->font = nil;
-	rdb->colorspace = nil;
-	rdb->ximage = nil;
-	rdb->xform = nil;
-
-	err = fz_newdict(&rdb->extgstate, 5);
-	if (err) { pdf_dropresources(rdb); return err; }
-
-	subdict = fz_dictgets(topdict, "ExtGState");
-	if (subdict)
-	{
-		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_dropresources(rdb); return err; }
-		err = loadextgstates(rdb, xref, subdict);
-		fz_dropobj(subdict);
-		if (err) { pdf_dropresources(rdb); return err; }
-	}
-
-	err = fz_newdict(&rdb->font, 15);
-	if (err) { pdf_dropresources(rdb); return err; }
-
-	err = loadextgstatefonts(rdb, xref);
-	if (err) { pdf_dropresources(rdb); return err; }
-
-	subdict = fz_dictgets(topdict, "Font");
-	if (subdict)
-	{
-		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_dropresources(rdb); return err; }
-		err = loadfonts(rdb, xref, subdict);
-		fz_dropobj(subdict);
-		if (err) { pdf_dropresources(rdb); return err; }
-	}
-
-	err = fz_newdict(&rdb->colorspace, 5);
-	if (err) { pdf_dropresources(rdb); return err; }
-
-	subdict = fz_dictgets(topdict, "ColorSpace");
-	if (subdict)
-	{
-		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_dropresources(rdb); return err; }
-		err = loadcolorspaces(rdb, xref, subdict);
-		fz_dropobj(subdict);
-		if (err) { pdf_dropresources(rdb); return err; }
-	}
-
-	return nil;
-}
-
-#endif
 

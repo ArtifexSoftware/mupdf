@@ -87,7 +87,10 @@ buildfilters(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
 			p = nil;
 
 		error = buildonefilter(&tail, f, p);
-		error = fz_newpipeline(&head, head, tail);
+		if (head)
+			error = fz_newpipeline(&head, head, tail);
+		else
+			head = tail;
 	}
 
 	*filterp = head;
@@ -118,6 +121,28 @@ makerawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int 
 	return nil;
 }
 
+fz_error *
+pdf_decodefilter(fz_filter **filterp, fz_obj *stmobj)
+{
+	fz_obj *filters;
+	fz_obj *params;
+
+	filters = fz_dictgetsa(stmobj, "Filter", "F");
+	params = fz_dictgetsa(stmobj, "DecodeParms", "DP");
+
+	if (filters)
+	{
+		if (fz_isname(filters))
+			return buildonefilter(filterp, filters, params);
+		else
+			return buildfilters(filterp, nil, filters, params);
+	}
+	else
+		return fz_newnullfilter(filterp, -1);
+
+	return nil;
+}
+
 static fz_error *
 makedecodefilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
 {
@@ -128,8 +153,8 @@ makedecodefilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, i
 
 	error = makerawfilter(&pipe, xref, stmobj, oid, gen);
 
-	filters = fz_dictgets(stmobj, "Filter");
-	params = fz_dictgets(stmobj, "DecodeParms");
+	filters = fz_dictgetsa(stmobj, "Filter", "F");
+	params = fz_dictgetsa(stmobj, "DecodeParms", "DP");
 
 	if (filters)
 	{

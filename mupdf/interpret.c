@@ -68,6 +68,99 @@ pdf_dropcsi(pdf_csi *csi)
 	fz_free(csi);
 }
 
+/*
+ * Do some magic to call the xobject subroutine.
+ * Push gstate, set transform, clip, run, pop gstate.
+ */
+
+static fz_error *
+runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
+{
+	fz_error *error;
+	fz_node *transform;
+	fz_file *file;
+
+puts("run xobject");
+
+	/* gsave */
+	if (csi->gtop == 31)
+		return fz_throw("gstate overflow in content stream");
+	memcpy(&csi->gstate[csi->gtop + 1],
+			&csi->gstate[csi->gtop],
+			sizeof (pdf_gstate));
+	csi->gtop ++;
+
+	/* push transform */
+
+	error = fz_newtransformnode(&transform, xobj->matrix);
+	if (error)
+		return error;
+
+	error = pdf_addtransform(csi->gstate + csi->gtop, transform);
+	if (error)
+	{
+		fz_dropnode(transform);
+		return error;
+	}
+
+	/* run contents */
+
+	xobj->contents->rp = xobj->contents->bp;
+
+	error = fz_openbuffer(&file, xobj->contents, FZ_READ);
+	if (error)
+		return error;
+
+	error = pdf_runcsi(csi, xref, xobj->resources, file);
+
+	fz_closefile(file);
+
+	if (error)
+		return error;
+
+	/* grestore */
+	if (csi->gtop == 0)
+		return fz_throw("gstate underflow in content stream");
+	csi->gtop --;
+
+	return nil;
+}
+
+/*
+ * Decode inline image and insert into page.
+ */
+
+static fz_error *
+runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_file *file, fz_obj *dict)
+{
+	fz_error *error;
+	pdf_image *img;
+	char buf[256];
+	int token;
+	int len;
+
+	error = pdf_loadinlineimage(&img, xref, dict, file);
+	if (error)
+		return error;
+
+	token = pdf_lex(file, buf, sizeof buf, &len);
+	if (token != PDF_TKEYWORD || strcmp("EI", buf))
+		return fz_throw("syntaxerror: corrupt inline image");
+
+	error = pdf_showimage(csi, img);
+	if (error)
+	{
+		fz_dropimage((fz_image*)img);
+		return error;
+	}
+
+	return nil;
+}
+
+/*
+ * Set gstate params from an ExtGState dictionary.
+ */
+
 static fz_error *
 runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 {
@@ -118,6 +211,10 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 
 	return nil;
 }
+
+/*
+ * The meat of the interpreter...
+ */
 
 static fz_error *
 runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
@@ -552,28 +649,42 @@ Lsetcolorspace:
 			fz_obj *dict;
 			fz_obj *obj;
 			pdf_image *img;
+			pdf_xobject *xobj;
 
 			if (csi->top != 1)
 				goto syntaxerror;
 
 			dict = fz_dictgets(rdb, "XObject");
 			if (!dict)
+{
+fz_debugobj(rdb);
 				return fz_throw("syntaxerror: missing xobject resource");
+}
 
 			obj = fz_dictget(dict, csi->stack[0]);
 			if (!obj)
 				return fz_throw("syntaxerror: missing xobject resource");
 
 			img = pdf_findresource(xref->rimage, obj);
-			if (!img)
+			xobj = pdf_findresource(xref->rxobject, obj);
+
+			if (!img && !xobj)
+				return fz_throw("syntaxerror: missing xobject resource");
+
+			if (img)
 			{
-fprintf(stderr, "syntaxerror: missing image resource");
-return nil;
+				error = pdf_showimage(csi, img);
+				if (error)
+					return error;
 			}
 
-			error = pdf_showimage(csi, img);
-			if (error)
-				return error;
+			if (xobj)
+			{
+				clearstack(csi);
+				error = runxobject(csi, xref, xobj);
+				if (error)
+					return error;
+			}
 		}
 
 		else
@@ -922,9 +1033,23 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 			break;
 
 		case PDF_TKEYWORD:
-			error = runkeyword(csi, xref, rdb, buf);
-			if (error) return error;
-			clearstack(csi);
+			if (!strcmp(buf, "BI"))
+			{
+				fz_obj *obj;
+				error = pdf_parsedict(&obj, file, buf, sizeof buf);
+				if (error)
+					return error;
+				error = runinlineimage(csi, xref, file, obj);
+				fz_dropobj(obj);
+				if (error)
+					return error;
+			}
+			else
+			{
+				error = runkeyword(csi, xref, rdb, buf);
+				if (error) return error;
+				clearstack(csi);
+			}
 			break;
 
 		default:

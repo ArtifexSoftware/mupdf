@@ -111,6 +111,7 @@ Library libmupdf :
 	mupdf/fontfile.c
 	mupdf/colorspace.c
 	mupdf/image.c
+	mupdf/xobject.c
 	mupdf/resources.c
 	mupdf/page.c
 	mupdf/build.c

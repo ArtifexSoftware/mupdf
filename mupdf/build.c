@@ -236,24 +236,38 @@ fz_error *
 pdf_showimage(pdf_csi *csi, pdf_image *img)
 {
 	fz_error *error;
-	fz_node *node;
+	fz_node *mask;
+	fz_node *color;
+	fz_node *shape;
 
-	error = fz_newimagenode(&node, (fz_image*)img);
+	error = fz_newimagenode(&color, (fz_image*)img);
 	if (error)
 		return error;
 
 	if (img->super.n == 0 && img->super.a == 1)
 	{
-		error = pdf_addfillshape(csi->gstate + csi->gtop, node);
+		error = pdf_addfillshape(csi->gstate + csi->gtop, color);
 		if (error) {
-			fz_dropnode(node);
+			fz_dropnode(color);
 			return error;
 		}
 	}
 	else
 	{
-		/* TODO image mask sub-image */
-		fz_insertnode(csi->gstate[csi->gtop].head, node);
+		if (img->mask)
+		{
+			error = fz_newimagenode(&shape, (fz_image*)img->mask);
+			if (error) return error;
+			error = fz_newmasknode(&mask);
+			if (error) return error;
+			fz_insertnode(mask, shape);
+			fz_insertnode(mask, color);
+			fz_insertnode(csi->gstate[csi->gtop].head, mask);
+		}
+		else
+		{
+			fz_insertnode(csi->gstate[csi->gtop].head, color);
+		}
 	}
 
 	return nil;

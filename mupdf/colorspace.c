@@ -707,6 +707,24 @@ printf("\n");
 			*csp = pdf_devicecmyk;
 			return nil;
 		}
+
+		if (!strcmp(fz_toname(obj), "G"))
+		{
+			*csp = pdf_devicegray;
+			return nil;
+		}
+
+		if (!strcmp(fz_toname(obj), "RGB"))
+		{
+			*csp = pdf_devicergb;
+			return nil;
+		}
+
+		if (!strcmp(fz_toname(obj), "CMYK"))
+		{
+			*csp = pdf_devicecmyk;
+			return nil;
+		}
 	}
 
 	else if (fz_isarray(obj))
@@ -734,6 +752,9 @@ printf("\n");
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));
 
 			if (!strcmp(fz_toname(name), "Indexed"))
+				return loadindexed(csp, xref, obj);
+
+			if (!strcmp(fz_toname(name), "I"))
 				return loadindexed(csp, xref, obj);
 
 			if (!strcmp(fz_toname(name), "Separation"))

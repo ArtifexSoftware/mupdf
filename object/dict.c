@@ -169,6 +169,16 @@ fz_dictget(fz_obj *obj, fz_obj *key)
 	return fz_dictgets(obj, fz_toname(key));
 }
 
+fz_obj *
+fz_dictgetsa(fz_obj *obj, char *key, char *abbrev)
+{
+	fz_obj *v;
+	v = fz_dictgets(obj, key);
+	if (v)
+		return v;
+	return fz_dictgets(obj, abbrev);
+}
+
 fz_error *
 fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 {

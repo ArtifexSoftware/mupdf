@@ -58,7 +58,7 @@ struct pdf_xobject_s
 	fz_buffer *contents;
 };
 
-fz_error *pdf_loadxobject(pdf_xobject **xobjp, pdf_xref *xref, fz_obj *obj);
+fz_error *pdf_loadxobject(pdf_xobject **xobjp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 void pdf_dropxobject(pdf_xobject *xobj);
 
 /*
@@ -78,6 +78,7 @@ struct pdf_image_s
 	fz_buffer *samples;
 };
 
+fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_file *file);
 fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *stm);
 
 /*

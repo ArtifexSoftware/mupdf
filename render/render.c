@@ -183,6 +183,7 @@ fz_error *
 fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 {
 	fz_error *error;
+	fz_pixmap *oldacc;
 	fz_pixmap *colorpix;
 	fz_pixmap *shapepix;
 	fz_node *color;
@@ -202,7 +203,9 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 
 printf("begin mask\n");
 
+	oldacc = gc->acc;
 	oldmode = gc->mode;
+	gc->acc = nil;
 	gc->mode = FZ_RMASK;
 
 	gc->tmp = nil;
@@ -232,6 +235,7 @@ if (!shapepix) return nil;
 	fz_droppixmap(shapepix);
 	fz_droppixmap(colorpix);
 
+	gc->acc = oldacc;
 	gc->mode = oldmode;
 
 printf("end mask\n");
