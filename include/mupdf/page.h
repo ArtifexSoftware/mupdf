@@ -2,9 +2,30 @@
  * Page tree, pages and related objects
  */
 
+typedef struct pdf_outlines_s pdf_outlines;
+typedef struct pdf_outline_s pdf_outline;
 typedef struct pdf_nametree_s pdf_nametree;
 typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_page_s pdf_page;
+
+struct pdf_outlines_s
+{
+	pdf_outline *first;
+	int count;
+};
+
+struct pdf_outline_s
+{
+	char *title;
+	pdf_outline *next;
+	pdf_outline *first;
+	int count;
+	fz_obj *dest;
+	fz_obj *a;
+	fz_obj *se;
+	float c[3];
+	int f;
+};
 
 struct pdf_nametree_s
 {
@@ -28,6 +49,10 @@ struct pdf_page_s
 	fz_obj *resources;
 	fz_tree *tree;
 };
+
+/* outline.c */
+fz_error *pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref);
+void pdf_freeoutlines(pdf_outlines *outlines);
 
 /* nametree.c */
 fz_error *pdf_loadnametree(pdf_nametree **ntp, pdf_xref *xref, char *key);
