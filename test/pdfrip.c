@@ -2,12 +2,106 @@
 #include <mupdf.h>
 
 int showtree = 0;
+int showtext = 0;
 float zoom = 1.0;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfrip [-d] [-p password] [-z zoom] file.pdf [pages...]\n");
+	fprintf(stderr, "usage: pdfrip [-dt] [-p password] [-z zoom] file.pdf [pages...]\n");
 	exit(1);
+}
+
+enum
+{
+        Bit1    = 7,
+        Bitx    = 6,
+        Bit2    = 5,
+        Bit3    = 4,
+        Bit4    = 3,
+
+        T1      = ((1<<(Bit1+1))-1) ^ 0xFF,     /* 0000 0000 */
+        Tx      = ((1<<(Bitx+1))-1) ^ 0xFF,     /* 1000 0000 */
+        T2      = ((1<<(Bit2+1))-1) ^ 0xFF,     /* 1100 0000 */
+        T3      = ((1<<(Bit3+1))-1) ^ 0xFF,     /* 1110 0000 */
+        T4      = ((1<<(Bit4+1))-1) ^ 0xFF,     /* 1111 0000 */
+
+        Rune1   = (1<<(Bit1+0*Bitx))-1,         /* 0000 0000 0111 1111 */
+        Rune2   = (1<<(Bit2+1*Bitx))-1,         /* 0000 0111 1111 1111 */
+        Rune3   = (1<<(Bit3+2*Bitx))-1,         /* 1111 1111 1111 1111 */
+
+        Maskx   = (1<<Bitx)-1,                  /* 0011 1111 */
+        Testx   = Maskx ^ 0xFF,                 /* 1100 0000 */
+};
+
+void putrune(int c)
+{
+	if (c <= Rune1)
+	{
+		putchar(c);
+		return;
+	}
+
+	if (c <= Rune2)
+	{
+		putchar(T2 | (c >> 1*Bitx));
+		putchar(Tx | (c & Maskx));
+		return;
+	}
+		
+	putchar(T3 | (c >> 2*Bitx));
+	putchar(Tx | ((c >> 1*Bitx) & Maskx));
+	putchar(Tx | (c & Maskx));
+}
+
+/*
+ * Dump text nodes as unicode
+ */
+void dumptext(fz_node *node)
+{
+	int i, cid, ucs;
+	static fz_point old = { 0, 0 };
+	fz_point p;
+	float dx, dy;
+	fz_vmtx v;
+	fz_hmtx h;
+
+	if (fz_istextnode(node))
+	{
+		fz_textnode *text = (fz_textnode*)node;
+		pdf_font *font = (pdf_font*)text->font;
+		fz_matrix invtrm = fz_invertmatrix(text->trm);
+
+		for (i = 0; i < text->len; i++)
+		{
+			cid = text->els[i].cid;
+			p.x = text->els[i].x;
+			p.y = text->els[i].y;
+			p = fz_transformpoint(invtrm, p);
+			dx = old.x - p.x;
+			dy = old.y - p.y;
+			old = p;
+
+			if (fabs(dy) > 1.3)
+				puts("\n");
+			else if (fabs(dy) > 0.1)
+				putchar('\n');
+			else if (fabs(dx) > 0.1)
+				putchar(' ');
+
+			h = fz_gethmtx(text->font, cid);
+			old.x += h.w / 1000.0;
+
+			if (font->ncidtoucs)
+				ucs = font->cidtoucs[cid];
+			else
+				ucs = cid;
+
+			putrune(ucs);
+		}
+	}
+
+	for (node = node->child; node; node = node->next)
+		dumptext(node);
 }
 
 /*
@@ -43,6 +137,14 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 		printf("endtree\n");
 	}
 
+	if (showtext)
+	{
+		printf("---begin text dump---\n");
+		dumptext(page->tree->root);
+		printf("\n---end text dump---\n");
+	}
+
+	else
 	{
 		fz_pixmap *pix;
 		fz_renderer *gc;
@@ -87,13 +189,14 @@ int main(int argc, char **argv)
 
 	char *password = "";
 
-	while ((c = getopt(argc, argv, "dz:p:")) != -1)
+	while ((c = getopt(argc, argv, "dtz:p:")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = optarg; break;
 		case 'z': zoom = atof(optarg); break;
 		case 'd': ++showtree; break;
+		case 't': ++showtext; break;
 		default: usage();
 		}
 	}

@@ -257,6 +257,10 @@ pdf_newfont(char *name)
 	font->ncidtogid = 0;
 	font->cidtogid = nil;
 
+	font->tounicode = nil;
+	font->ncidtoucs = 0;
+	font->cidtoucs = nil;
+
 	font->filename = nil;
 	font->fontdata = nil;
 
@@ -277,7 +281,9 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *descriptor = nil;
 	fz_obj *encoding = nil;
 	fz_obj *widths = nil;
+	fz_obj *tounicode = nil;
 	unsigned short *etable = nil;
+	unsigned short *utable = nil;
 	pdf_font *font;
 	FT_Face face;
 	FT_CharMap cmap;
@@ -476,6 +482,29 @@ printf("  builtin encoding\n");
 	font->cidtogid = etable;
 
 	/*
+	 * ToUnicode
+	 */
+
+	utable = fz_malloc(sizeof(unsigned short) * 256);
+	if (!utable)
+		goto cleanup;
+
+	for (i = 0; i < 256; i++)
+		if (estrings[i])
+			utable[i] = aglcode(estrings[i]);
+		else
+			utable[i] = i;
+
+	tounicode = fz_dictgets(dict, "ToUnicode");
+	if (fz_isindirect(tounicode))
+	{
+printf("  load tounicode cmap for simple font\n");
+	}
+
+	font->ncidtoucs = 256;
+	font->cidtoucs = utable;
+
+	/*
 	 * Widths
 	 */
 
@@ -531,6 +560,7 @@ printf("\n");
 	return nil;
 
 cleanup:
+	fz_free(utable);
 	fz_free(etable);
 	if (widths)
 		fz_dropobj(widths);
