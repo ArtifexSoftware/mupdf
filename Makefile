@@ -175,26 +175,26 @@ libfonts.a: \
 	ranlib $(@)
 
 test/ximage.o: test/ximage.c
-	$(CC) -c $(CFLAGS) -o $(@) $(?) -I$(X11DIR)/include
+	$(CC) -c $(CFLAGS) -o $(@) $(^) -I$(X11DIR)/include
 
 test/x11pdf.o: test/x11pdf.c
-	$(CC) -c $(CFLAGS) -o $(@) $(?) -I$(X11DIR)/include
+	$(CC) -c $(CFLAGS) -o $(@) $(^) -I$(X11DIR)/include
 
 x11pdf: test/x11pdf.o test/ximage.o
-	$(CC) -o $(@) $(?) libmupdf.a libfonts.a libfitz.a $(LDLIBS) -L$(X11DIR)/lib -lX11 -lXext
+	$(CC) -o $(@) $(^) libmupdf.a libfonts.a libfitz.a $(LDLIBS) -L$(X11DIR)/lib -lX11 -lXext
 
 test/gtkpdf.o: test/gtkpdf.c
-	$(CC) -c $(CFLAGS) -o $(@) $(?) `gtk-config --cflags`
+	$(CC) -c $(CFLAGS) -o $(@) $(^) `gtk-config --cflags`
 
 gtkpdf: test/gtkpdf.o
-	$(CC) -o $(@) $(?) libmupdf.a libfonts.a libfitz.a $(LDLIBS) `gtk-config --libs gthread`
+	$(CC) -o $(@) $(^) libmupdf.a libfonts.a libfitz.a $(LDLIBS) `gtk-config --libs gthread`
 
 pdfrip: test/pdfrip.o
-	$(CC) -o $(@) $(?) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
+	$(CC) -o $(@) $(^) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
 
 pdfdebug: test/pdfdebug.o
-	$(CC) -o $(@) $(?) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
+	$(CC) -o $(@) $(^) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
 
 pdfclean: test/pdfclean.o
-	$(CC) -o $(@) $(?) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
+	$(CC) -o $(@) $(^) libmupdf.a libfonts.a libfitz.a $(LDLIBS)
 
