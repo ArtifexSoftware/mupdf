@@ -1107,7 +1107,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 		}
 
 		/* decode output values */
-		out[i] = LERP(out[i], 0, (1 << func->u.sa.bps) - 1,
+		out[i] = LERP(s0[0], 0, (1 << func->u.sa.bps) - 1,
 					func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
 		out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 	}

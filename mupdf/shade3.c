@@ -396,7 +396,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	y1 = fz_toreal(fz_arrayget(obj, 4));
 	r1 = fz_toreal(fz_arrayget(obj, 5));
 
-	pdf_logshade("coords  %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
+	pdf_logshade("coords %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
 
 	obj = fz_dictgets(shading, "Domain");
 	if (obj) {

@@ -13,71 +13,70 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 
 	obj = fz_dictgets(shading, "Function");
 	error = pdf_loadfunction(&func, xref, obj);
-	if (error) return error;
+	if (error)
+		return error;
 
-	for (int i=0; i<256; ++i) {
-		t = t0 + (i / 255.0) * (t1 - t0);
-		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->colorspace->n);
+	for (int i = 0; i < 256; ++i)
+	{
+		t = t0 + (i / 256.0) * (t1 - t0);
+		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
+		if (error)
+			return error;
 	}
-	if (error) return error;
 
 	return nil;
 }
 
-fz_error *
-pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *ref, fz_matrix mat)
+static fz_error *
+loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_matrix mat)
 {
 	fz_error *error;
 	fz_shade *shade;
-	pdf_function *func;
 	fz_obj *obj;
-
-	fz_colorspace *cs = nil;
-
-	fz_obj *sobj;
 	int type;
-
-	shade = fz_malloc(sizeof(fz_shade));
-
-	shade->refs = 1;
-	shade->usefunction = 0;
-	shade->matrix = mat;
+	int i;
 
 	pdf_logshade("load shade dict %d %d {\n", fz_tonum(ref), fz_togen(ref));
 
-	sobj = fz_dictgets(shading, "ShadingType");
-	type = fz_toint(sobj);
+	shade = fz_malloc(sizeof(fz_shade));
+	if (!shade)
+		return fz_outofmem;
 
-	sobj = fz_dictgets(shading, "ColorSpace");
-	if (sobj)
+	shade->refs = 1;
+	shade->usebackground = 0;
+	shade->usefunction = 0;
+	shade->matrix = mat;
+
+	obj = fz_dictgets(dict, "ShadingType");
+	type = fz_toint(obj);
+	pdf_logshade("type %d\n", type);
+
+	/* TODO: use finditem... flatten indexed... */
+	obj = fz_dictgets(dict, "ColorSpace");
+	if (obj)
 	{
-		error = pdf_resolve(&sobj, xref);
+		error = pdf_resolve(&obj, xref);
 		if (error)
 			return error;
 
-		error = pdf_loadcolorspace(&cs, xref, sobj);
+		error = pdf_loadcolorspace(&shade->cs, xref, obj);
 		if (error)
 			return error;
 
-		/*
-		if (!strcmp(cs->name, "Indexed"))
-		{
-			indexed = (pdf_indexed*)cs;
-			cs = indexed->base;
-		}
-		n = cs->n;
-		a = 0;
-		*/
-
-		fz_dropobj(sobj);
+		fz_dropobj(obj);
 	}
-	shade->colorspace = cs;
+	pdf_logshade("colorspace %s\n", shade->cs->name);
 
-	pdf_logshade("colorspace %s\n", shade->colorspace->name);
+	obj = fz_dictgets(dict, "Background");
+	if (obj)
+	{
+		pdf_logshade("background\n");
+		shade->usebackground = 1;
+		for (i = 0; i < shade->cs->n; i++)
+			shade->background[i] = fz_toreal(fz_arrayget(obj, i));
+	}
 
-//	shade->background = fz_dictgets(shading, "Background");
-
-	obj = fz_dictgets(shading, "BBox");
+	obj = fz_dictgets(dict, "BBox");
 	if (fz_isarray(obj))
 	{
 		shade->bbox = pdf_torect(obj);
@@ -86,87 +85,112 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 			shade->bbox.max.x, shade->bbox.max.y);
 	}
 
-	switch(type) {
-	case 1:
-//		error = pdf_loadtype1shade(shade, xref, shading, ref, mat);
-		if (error) goto cleanup;
-		break;
+	switch(type)
+	{
+//	case 1:
+//		error = pdf_loadtype1shade(shade, xref, dict, ref, mat);
+//		if (error) goto cleanup;
+//		break;
 	case 2:
-		error = pdf_loadtype2shade(shade, xref, shading, ref, mat);
+		error = pdf_loadtype2shade(shade, xref, dict, ref, mat);
 		if (error) goto cleanup;
 		break;
 	case 3:
-		error = pdf_loadtype3shade(shade, xref, shading, ref, mat);
+		error = pdf_loadtype3shade(shade, xref, dict, ref, mat);
 		if (error) goto cleanup;
 		break;
-	case 4:
-		break;
 	default:
-		break;
+		error = fz_throw("syntaxerror: unknown shading type: %d", type);
+		goto cleanup;
 	};
+
+	pdf_logshade("}\n");
 
 	*shadep = shade;
 	return nil;
 
 cleanup:
+	fz_dropshade(shade);
 	return error;
 }
 
 fz_error *
-pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref)
+pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error = fz_throw("NYI");
-	
-	fz_obj *shading;
+	fz_error *error;
 	fz_matrix mat;
-	fz_obj *extgstate;
+	fz_obj *obj;
+	fz_obj *shd;
 
 	if ((*shadep = pdf_finditem(xref->store, PDF_KSHADE, ref)))
 		return nil;
 
-	pdf_logshade("load shade %d %d {\n", fz_tonum(ref), fz_togen(ref));
-
-	shading = fz_dictgets(obj, "Shading");
-
-	if (fz_isindirect(shading)) {
-		error = pdf_loadindirect(&shading, xref, shading);
-		if (error) goto cleanup;
-	}
-
-	obj = fz_dictgets(obj, "Matrix");
-	if (obj)
-		mat = pdf_tomatrix(obj);
-	else
-		mat = fz_identity();
-
-	if (fz_isdict(shading)) {
-		pdf_loadshadedict(shadep, xref, shading, ref, mat);
-	} 
-	else if (pdf_isstream(xref, fz_tonum(shading), fz_togen(shading))) {
-	}
-	else {
-	}
-
-	pdf_logshade("}\n");
-
-	if (*shadep)
+	/*
+	 * Type 2 pattern dictionary
+	 */
+	if (fz_dictgets(dict, "PatternType"))
 	{
+		pdf_logshade("load shade pattern %d %d {\n", fz_tonum(ref), fz_togen(ref));
+
+		obj = fz_dictgets(dict, "Matrix");
+		if (obj)
+		{
+			mat = pdf_tomatrix(obj);
+			pdf_logshade("matrix [%g %g %g %g %g %g]\n",
+				mat.a, mat.b, mat.c, mat.d, mat.e, mat.f);
+		}
+		else
+		{
+			mat = fz_identity();
+		}
+
+		obj = fz_dictgets(dict, "ExtGState");
+		if (obj)
+		{
+			pdf_logshade("extgstate ...\n");
+		}
+
+		obj = fz_dictgets(dict, "Shading");
+		if (!obj)
+			return fz_throw("syntaxerror: missing shading dictionary");
+
+		shd = obj;
+		error = pdf_resolve(&shd, xref);
+		if (error)
+			return error;
+		error = loadshadedict(shadep, xref, shd, obj, mat);
+		fz_dropobj(shd);
+		if (error)
+			return error;
+
+		pdf_logshade("}\n");
+	}
+
+	/*
+	 * Naked shading dictionary
+	 */
+	else
+	{
+		error = loadshadedict(shadep, xref, dict, ref, fz_identity());
+		if (error)
+			return error;
+	}
+
 	error = pdf_storeitem(xref->store, PDF_KSHADE, ref, *shadep);
 	if (error)
-		goto cleanup;
+	{
+		fz_dropshade(*shadep);
+		return error;
 	}
 
 	return nil;
-
-cleanup:
-	return error;
 }
 
 void
 pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
 {
-//	pdf_logshade("mesh %d: %g %g %g\n", i, x, y, t);
 	mesh[i*3+0] = x;
 	mesh[i*3+1] = y;
 	mesh[i*3+2] = t;
 }
+

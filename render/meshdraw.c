@@ -333,17 +333,17 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 		if (error)
 			return error;
 	}
-	else if (shade->colorspace != destcs)
+	else if (shade->cs != destcs)
 	{
-		n = 2 + shade->colorspace->n;
+		n = 2 + shade->cs->n;
 		error = fz_newpixmap(&temp, dest->x, dest->y, dest->w, dest->h,
-					shade->colorspace->n + 1);
+					shade->cs->n + 1);
 		if (error)
 			return error;
 	}
 	else
 	{
-		n = 2 + shade->colorspace->n;
+		n = 2 + shade->cs->n;
 		temp = dest;
 	}
 
@@ -368,7 +368,7 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 	{
 		for (i = 0; i < 256; i++)
 		{
-			fz_convertcolor(shade->colorspace, shade->function[i], destcs, rgb);
+			fz_convertcolor(shade->cs, shade->function[i], destcs, rgb);
 			clut[i][0] = rgb[0] * 255;
 			clut[i][1] = rgb[1] * 255;
 			clut[i][2] = rgb[2] * 255;
@@ -391,9 +391,9 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 		fz_droppixmap(temp);
 	}
 
-	else if (shade->colorspace != destcs)
+	else if (shade->cs != destcs)
 	{
-		fz_convertpixmap(shade->colorspace, temp, destcs, dest);
+		fz_convertpixmap(shade->cs, temp, destcs, dest);
 		fz_droppixmap(temp);
 	}
 
