@@ -369,9 +369,9 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 			sampleargb(src, srcw, srch, u, v, argb);
 			ssa = 255 - argb[0];
 			dstp[0] = argb[0] + fz_mul255(dstp[0], ssa);
-			dstp[1] = argb[1] + fz_mul255((short)dstp[1] - argb[1], ssa);
-			dstp[2] = argb[2] + fz_mul255((short)dstp[2] - argb[2], ssa);
-			dstp[3] = argb[3] + fz_mul255((short)dstp[3] - argb[3], ssa);
+			dstp[1] = argb[1] + fz_mul255(dstp[1], ssa);
+			dstp[2] = argb[2] + fz_mul255(dstp[2], ssa);
+			dstp[3] = argb[3] + fz_mul255(dstp[3], ssa);
 			dstp += 4;
 			u += fa;
 			v += fb;
@@ -396,9 +396,9 @@ static void img_w3i1o4(byte *rgb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 			sa = samplemask(src, srcw, srch, u, v);
 			ssa = 255 - sa;
 			dstp[0] = sa + fz_mul255(dstp[0], ssa);
-			dstp[1] = rgb[0] + fz_mul255((short)dstp[1] - rgb[0], ssa);
-			dstp[2] = rgb[1] + fz_mul255((short)dstp[2] - rgb[1], ssa);
-			dstp[3] = rgb[2] + fz_mul255((short)dstp[3] - rgb[2], ssa);
+			dstp[1] = rgb[0] + fz_mul255(dstp[1], ssa);
+			dstp[2] = rgb[1] + fz_mul255(dstp[2], ssa);
+			dstp[3] = rgb[2] + fz_mul255(dstp[3], ssa);
 			dstp += 4;
 			u += fa;
 			v += fb;

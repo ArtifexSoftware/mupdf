@@ -207,10 +207,16 @@ static struct cielab kdevicelab =
 	{ -100, 100, -100, 100 },
 };
 
+static fz_colorspace kdevicepattern =
+{
+	-1, "Pattern", 0, nil, nil, nil, nil, nil
+};
+
 fz_colorspace *pdf_devicegray = &kdevicegray.super;
 fz_colorspace *pdf_devicergb = &kdevicergb.super;
 fz_colorspace *pdf_devicecmyk = &kdevicecmyk;
 fz_colorspace *pdf_devicelab = &kdevicelab.super;
+fz_colorspace *pdf_devicepattern = &kdevicepattern;
 
 /*
  * Colorspace parsing
@@ -622,6 +628,8 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			*csp = pdf_devicergb;
 		else if (!strcmp(fz_toname(obj), "CMYK"))
 			*csp = pdf_devicecmyk;
+		else if (!strcmp(fz_toname(obj), "Pattern"))
+			*csp = pdf_devicepattern;
 		else
 			return fz_throw("unknown colorspace: %s", fz_toname(obj));
 		return nil;
@@ -669,7 +677,14 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 
 			/* load base colorspace instead */
 			else if (!strcmp(fz_toname(name), "Pattern"))
+			{
+				if (!fz_arrayget(obj, 1))
+				{
+					*csp = pdf_devicepattern;
+					return nil;
+				}
 				return pdf_loadcolorspace(csp, xref, fz_arrayget(obj, 1));
+			}
 
 			else
 				return fz_throw("syntaxerror: unknown colorspace %s", fz_toname(name));

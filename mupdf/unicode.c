@@ -78,7 +78,7 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		return nil;
 	}
 
-	fz_warn("font: cannot create unicode conversion\n", collection);
+	fz_warn("font: cannot create unicode conversion", collection);
 	return nil;
 }
 
