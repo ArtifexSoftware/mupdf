@@ -16,7 +16,7 @@ ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 
 BINDIR = [ FDirName $(TOP) dist ] ;
 
-LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+LINKLIBS = $(FREETYPELD) -ljpeg -lz -lm ;
 FITZLIBS = libmupdf libstream libfitz librender libfonts ;
 
 if $(HAVE_JASPER) = yes

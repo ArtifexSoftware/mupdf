@@ -49,7 +49,7 @@ static fz_pixmap *image;
 
 void usage()
 {
-	fprintf(stderr, "usage: x11pdf [-b] [-pzr page/zoom/rotate] [-u password] file.pdf\n");
+	fprintf(stderr, "usage: ghostpdf [-b] [-pzr page/zoom/rotate] [-u password] file.pdf\n");
 	fprintf(stderr,
 "\n"
 	);

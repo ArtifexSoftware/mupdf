@@ -5,17 +5,24 @@
 # Put all configuration stuff here
 #
 
-FREETYPE ?= -Ih:/package/include ;
+if $(OS) = MINGW
+{
+	FREETYPECC ?= -Ih:/package/include ;
+	FREETYPELD ?= -lfreetype ;
+}
+
+FREETYPECC ?= "`freetype-config --cflags`" ;
+FREETYPELD ?= "`freetype-config --libs`" ;
 
 # Optional modules:
 
-HAVE_JBIG2DEC = no ;
-HAVE_JASPER = no ;
+HAVE_JBIG2DEC ?= no ;
+HAVE_JASPER ?= no ;
 
 # Select one of these for the GhostPDF GUI application if you are on unix
 
-HAVE_X11 = no ;
-HAVE_GTK = no ;
+HAVE_X11 ?= no ;
+HAVE_GTK ?= no ;
 
 # -------------------------------------------------------------------------
 
@@ -23,7 +30,7 @@ HAVE_GTK = no ;
 # Basic system should be mostly SUSv3 compliant
 # These are good for GCC
 
-FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPE) ;
+FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPECC) ;
 FLAG_CCDEBUG = -g ;
 FLAG_CCRELEASE = -O3 ;
 FLAG_CCPROFILE = -g -pg ;
