@@ -42,7 +42,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 		for (i = 2; i < srclen; i += 2)
 		{
 			ucs = (srcptr[i] << 8) | srcptr[i+1];
-			dstlen += runelen(srcptr[i]);
+			dstlen += runelen(ucs);
 		}
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
@@ -59,7 +59,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 	else
 	{
 		for (i = 0; i < srclen; i++)
-			dstlen += runelen(srcptr[i]);
+			dstlen += runelen(pdf_docencoding[srcptr[i]]);
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
 		if (!dstptr)
@@ -67,7 +67,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 
 		for (i = 0; i < srclen; i++)
 		{
-			ucs = srcptr[i];
+			ucs = pdf_docencoding[srcptr[i]];
 			dstptr += runetochar(dstptr, &ucs);
 		}
 	}
