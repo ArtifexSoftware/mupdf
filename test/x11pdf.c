@@ -272,6 +272,7 @@ static void handlekey(int c)
 	case 's': rotate += 5; break;
 	case 'x': dumptext(); break;
 
+	case '\b':
 	case 'b':
 		pageno--;
 		if (pageno < 1)

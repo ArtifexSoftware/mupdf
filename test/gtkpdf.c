@@ -306,17 +306,67 @@ static void onfitpage(GtkWidget *widget, void *data)
 {
 }
 
+static int startxpos;
+static int startypos;
+static int dopan = 0;
+guint32 pangrabtime = 0;
+
 static void mousedown(GtkWidget *widget, GdkEventMotion *event, void *data)
 {
+	GdkModifierType mods;
 	gtk_widget_grab_focus(gapp->scroll);
-}
 
-static void mousemove(GtkWidget *widget, GdkEventMotion *event, void *data)
-{
+	gdk_window_get_pointer(gapp->scroll->window, &startxpos, &startypos, &mods);
+	if (mods & GDK_BUTTON2_MASK) {
+		GtkAdjustment *adj;
+		adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		startxpos += adj->value;
+
+		adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		startypos += adj->value;
+
+		gdk_pointer_grab(gapp->scroll->window, TRUE, GDK_POINTER_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, NULL, NULL /* TODO: pan cursor */, event->time);
+
+		dopan = 1;
+	}
+	else {
+		dopan = 0;
+	}
 }
 
 static void mouseup(GtkWidget *widget, GdkEventMotion *event, void *data)
 {
+	dopan = 0;
+	gdk_pointer_ungrab(event->time);
+}
+
+static void mousemove(GtkWidget *widget, GdkEventMotion *event, void *data)
+{
+	int xpos, ypos;
+	GdkModifierType mods;
+	GtkAdjustment *adj;
+
+	if (!dopan) return;
+
+	gdk_window_get_pointer(gapp->scroll->window, &xpos, &ypos, &mods);
+
+	if (mods & GDK_BUTTON2_MASK) {
+		adj = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		adj->value = startxpos - xpos;
+		adj->value = CLAMP(adj->value, adj->lower, adj->upper - adj->page_size);
+
+		gtk_adjustment_value_changed(adj);
+
+		adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(gapp->scroll));
+		adj->value = startypos - ypos;
+		adj->value = CLAMP(adj->value, adj->lower, adj->upper - adj->page_size);
+
+		/* clamp to viewport... */
+
+		gtk_adjustment_value_changed(adj);
+	}
+	else
+		mouseup(widget, event, data); // XXX
 }
 
 static void keypress(GtkWidget *widget, GdkEventKey *event, void *data)
@@ -504,6 +554,10 @@ void makeapp(PDFApp *app)
 	app->canvas = da;
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sv), da);
 	gtk_signal_connect(GTK_OBJECT(da), "expose_event", (GtkSignalFunc)onexpose, data);
+	gtk_widget_set_events (da,
+		GDK_BUTTON_PRESS_MASK
+		| GDK_BUTTON_RELEASE_MASK
+		| GDK_POINTER_MOTION_MASK);
 	gtk_widget_show(da);
 
 	sb = gtk_statusbar_new();
@@ -547,7 +601,7 @@ int main(int argc, char **argv)
 		fz_abort(error);
 
 	if (argc > 1)
-	{	
+	{
 		gapp->filename = argv[1];
 		forkwork(openpdf);
 	}
