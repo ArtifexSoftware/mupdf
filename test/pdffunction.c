@@ -243,7 +243,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "output[%d] : %f\n", i, out[i]);
 
 			fz_dropobj(funcobj);
-			pdf_freefunc(func);
+			pdf_freefunction(func);
 		}
 	}
 

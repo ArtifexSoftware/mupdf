@@ -1385,7 +1385,7 @@ cleanup:
 }
 
 void
-pdf_freefunc(pdf_function *func)
+pdf_freefunction(pdf_function *func)
 {
 	int i;
 
@@ -1417,7 +1417,7 @@ pdf_freefunc(pdf_function *func)
 			fz_free(func->u.st.encode);
 		if(func->u.st.funcs) {
 			for(i = 0; i < func->u.st.k; ++i)
-				pdf_freefunc(func->u.st.funcs[i]);
+				pdf_freefunction(func->u.st.funcs[i]);
 
 			fz_free(func->u.st.funcs);
 		}
@@ -1541,7 +1541,7 @@ cleanup:
 	if(objfunc)
 		fz_dropobj(objfunc);
 	
-	pdf_freefunc(newfunc);
+	pdf_freefunction(newfunc);
 	
 	if(err) return err;
 	return fz_throw("syntaxerror : ");

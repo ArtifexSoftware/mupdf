@@ -329,6 +329,8 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				if (!gstate->fillcs)
 					return fz_throw("syntaxerror: missing colorspace resource");
 			}
+
+			// FIXME set default color
 		}
 
 		else if (!strcmp(buf, "CS"))
@@ -365,6 +367,8 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				if (!gstate->strokecs)
 					return fz_throw("syntaxerror: missing colorspace resource");
 			}
+
+			// FIXME set default color
 		}
 
 		else if (!strcmp(buf, "sc") || !strcmp(buf, "scn"))

@@ -112,6 +112,45 @@ newcalgray(fz_colorspace **csp, float *white, float *black, float gamma)
 	return nil;
 }
 
+static fz_error *
+loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+{
+	fz_obj *tmp;
+
+	float white[3];
+	float black[3];
+	float gamma;
+
+	tmp = fz_dictgets(dict, "WhitePoint");
+	if (!fz_isarray(tmp))
+		return fz_throw("syntaxerror: CalGray missing WhitePoint");
+	white[0] = fz_toreal(fz_arrayget(tmp, 0));
+	white[1] = fz_toreal(fz_arrayget(tmp, 1));
+	white[2] = fz_toreal(fz_arrayget(tmp, 2));
+
+	tmp = fz_dictgets(dict, "BlackPoint");
+	if (fz_isarray(tmp))
+	{
+		black[0] = fz_toreal(fz_arrayget(tmp, 0));
+		black[1] = fz_toreal(fz_arrayget(tmp, 1));
+		black[2] = fz_toreal(fz_arrayget(tmp, 2));
+	}
+	else
+	{
+		black[0] = 0.0;
+		black[1] = 0.0;
+		black[2] = 0.0;
+	}
+
+	tmp = fz_dictgets(dict, "Gamma");
+	if (fz_isreal(tmp))
+		gamma = fz_toreal(tmp);
+	else
+		gamma = 1.0;
+
+	return newcalgray(csp, white, black, gamma);
+}
+
 /*
  * DeviceRGB
  */
@@ -192,6 +231,68 @@ newcalrgb(fz_colorspace **csp, float *white, float *black, float *gamma, float *
 	return nil;
 }
 
+static fz_error *
+loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+{
+	fz_obj *tmp;
+
+	float white[3];
+	float black[3];
+	float gamma[3];
+	float matrix[9];
+
+	tmp = fz_dictgets(dict, "WhitePoint");
+	if (!fz_isarray(tmp))
+		return fz_throw("syntaxerror: CalRGB missing White");
+	white[0] = fz_toreal(fz_arrayget(tmp, 0));
+	white[1] = fz_toreal(fz_arrayget(tmp, 1));
+	white[2] = fz_toreal(fz_arrayget(tmp, 2));
+
+	tmp = fz_dictgets(dict, "BlackPoint");
+	if (fz_isarray(tmp))
+	{
+		black[0] = fz_toreal(fz_arrayget(tmp, 0));
+		black[1] = fz_toreal(fz_arrayget(tmp, 1));
+		black[2] = fz_toreal(fz_arrayget(tmp, 2));
+	}
+	else
+	{
+		black[0] = 0.0;
+		black[1] = 0.0;
+		black[2] = 0.0;
+	}
+
+	tmp = fz_dictgets(dict, "Gamma");
+	if (fz_isarray(tmp))
+	{
+		gamma[0] = fz_toreal(fz_arrayget(tmp, 0));
+		gamma[1] = fz_toreal(fz_arrayget(tmp, 1));
+		gamma[2] = fz_toreal(fz_arrayget(tmp, 2));
+	}
+	else
+	{
+		gamma[0] = 1.0;
+		gamma[1] = 1.0;
+		gamma[2] = 1.0;
+	}
+
+	tmp = fz_dictgets(dict, "Matrix");
+	if (fz_isarray(tmp))
+	{
+		int i;
+		for (i = 0; i < 9; i++)
+			matrix[i] = fz_toreal(fz_arrayget(tmp, i));
+	}
+	else
+	{
+		matrix[0] = 1.0; matrix[1] = 0.0; matrix[2] = 0.0;
+		matrix[3] = 0.0; matrix[4] = 1.0; matrix[5] = 0.0;
+		matrix[6] = 0.0; matrix[7] = 0.0; matrix[8] = 1.0;
+	}
+
+	return newcalrgb(csp, white, black, gamma, matrix);
+}
+
 /*
  * DeviceCMYK
  */
@@ -252,7 +353,7 @@ static inline float cielabinvg(float x)
 	return (7.787 * x) + (16.0 / 116.0);
 }
 
-static void labtoxyz(fz_colorspace *fzcs, float *xyz, float *lab)
+static void labtoxyz(fz_colorspace *fzcs, float *lab, float *xyz)
 {
 	struct cielab *cs = (struct cielab *) fzcs;
 	float lstar = lab[0];
@@ -303,8 +404,57 @@ newlab(fz_colorspace **csp, float *white, float *black, float *range)
 	return nil;
 }
 
+static fz_error *
+loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+{
+	fz_obj *tmp;
+
+	float white[3];
+	float black[3];
+	float range[4];
+
+	tmp = fz_dictgets(dict, "WhitePoint");
+	if (!fz_isarray(tmp))
+		return fz_throw("syntaxerror: Lab missing WhitePoint");
+	white[0] = fz_toreal(fz_arrayget(tmp, 0));
+	white[1] = fz_toreal(fz_arrayget(tmp, 1));
+	white[2] = fz_toreal(fz_arrayget(tmp, 2));
+
+	tmp = fz_dictgets(dict, "BlackPoint");
+	if (fz_isarray(tmp))
+	{
+		black[0] = fz_toreal(fz_arrayget(tmp, 0));
+		black[1] = fz_toreal(fz_arrayget(tmp, 1));
+		black[2] = fz_toreal(fz_arrayget(tmp, 2));
+	}
+	else
+	{
+		black[0] = 0.0;
+		black[1] = 0.0;
+		black[2] = 0.0;
+	}
+
+	tmp = fz_dictgets(dict, "Range");
+	if (fz_isarray(tmp))
+	{
+		range[0] = fz_toreal(fz_arrayget(tmp, 0));
+		range[1] = fz_toreal(fz_arrayget(tmp, 1));
+		range[2] = fz_toreal(fz_arrayget(tmp, 2));
+		range[3] = fz_toreal(fz_arrayget(tmp, 3));
+	}
+	else
+	{
+		range[0] = -100;
+		range[1] = 100;
+		range[2] = -100;
+		range[3] = 100;
+	}
+
+	return newlab(csp, white, black, range);
+}
+
 /*
- * Load from PDF
+ * ICCBased
  */
 
 static fz_error *
@@ -330,6 +480,79 @@ loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
 	}
 
 	return fz_throw("syntaxerror: ICCBased must have 1, 3 or 4 components");
+}
+
+/*
+ * Separation
+ */
+
+struct separation
+{
+	fz_colorspace super;
+	fz_colorspace *base;
+	pdf_function *tint;
+};
+
+static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
+{
+	struct separation *cs = (struct separation *)fzcs;
+	fz_error *error;
+	float alt[32];
+
+	error = pdf_evalfunction(cs->tint, sep, 1, alt, cs->base->n);
+	if (error)
+	{
+		fz_warn("separation: %s", error->msg);
+		fz_freeerror(error);
+		xyz[0] = 0;
+		xyz[1] = 0;
+		xyz[2] = 0;
+		return;
+	}
+
+	cs->base->toxyz(cs->base, alt, xyz);
+}
+
+fz_error *
+loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
+{
+	fz_error *error;
+	struct separation *sep;
+	fz_obj *baseobj = fz_arrayget(array, 2);
+	fz_obj *tintobj = fz_arrayget(array, 3);
+	fz_colorspace *base;
+	pdf_function *tint;
+
+	error = pdf_resolve(&baseobj, xref);
+	if (error)
+		return error;
+	error = pdf_loadcolorspace(&base, xref, baseobj);
+	fz_dropobj(baseobj);
+	if (error)
+		return error;
+
+	error = pdf_loadfunction(&tint, xref, tintobj);
+	if (error)
+	{
+		fz_freecolorspace(base);
+		return error;
+	}
+
+	sep = fz_malloc(sizeof(struct separation));
+	if (!sep)
+	{
+		pdf_freefunction(tint);
+		fz_freecolorspace(base);
+		return fz_outofmem;
+	}
+
+	initcs((fz_colorspace*)sep, "Separation", 1, separationtoxyz, nil, nil);
+
+	sep->base = base;
+	sep->tint = tint;
+
+	*csp = (fz_colorspace*)sep;
+	return nil;
 }
 
 /*
@@ -371,105 +594,10 @@ printf("\n");
 		if (fz_isname(name))
 		{
 			if (!strcmp(fz_toname(name), "CalGray"))
-			{
-				fz_obj *dict = fz_arrayget(obj, 1);
-				fz_obj *tmp;
-
-				float white[3];
-				float black[3];
-				float gamma;
-
-				tmp = fz_dictgets(dict, "WhitePoint");
-				if (!fz_isarray(tmp))
-					return fz_throw("syntaxerror: CalGray missing WhitePoint");
-				white[0] = fz_toreal(fz_arrayget(tmp, 0));
-				white[1] = fz_toreal(fz_arrayget(tmp, 1));
-				white[2] = fz_toreal(fz_arrayget(tmp, 2));
-
-				tmp = fz_dictgets(dict, "BlackPoint");
-				if (fz_isarray(tmp))
-				{
-					black[0] = fz_toreal(fz_arrayget(tmp, 0));
-					black[1] = fz_toreal(fz_arrayget(tmp, 1));
-					black[2] = fz_toreal(fz_arrayget(tmp, 2));
-				}
-				else
-				{
-					black[0] = 0.0;
-					black[1] = 0.0;
-					black[2] = 0.0;
-				}
-
-				tmp = fz_dictgets(dict, "Gamma");
-				if (fz_isreal(tmp))
-					gamma = fz_toreal(tmp);
-				else
-					gamma = 1.0;
-
-				return newcalgray(csp, white, black, gamma);
-			}
+				return loadcalgray(csp, xref, fz_arrayget(obj, 1));
 
 			if (!strcmp(fz_toname(name), "CalRGB"))
-			{
-				fz_obj *dict = fz_arrayget(obj, 1);
-				fz_obj *tmp;
-
-				float white[3];
-				float black[3];
-				float gamma[3];
-				float matrix[9];
-
-				tmp = fz_dictgets(dict, "WhitePoint");
-				if (!fz_isarray(tmp))
-					return fz_throw("syntaxerror: CalRGB missing White");
-				white[0] = fz_toreal(fz_arrayget(tmp, 0));
-				white[1] = fz_toreal(fz_arrayget(tmp, 1));
-				white[2] = fz_toreal(fz_arrayget(tmp, 2));
-
-				tmp = fz_dictgets(dict, "BlackPoint");
-				if (fz_isarray(tmp))
-				{
-					black[0] = fz_toreal(fz_arrayget(tmp, 0));
-					black[1] = fz_toreal(fz_arrayget(tmp, 1));
-					black[2] = fz_toreal(fz_arrayget(tmp, 2));
-				}
-				else
-				{
-					black[0] = 0.0;
-					black[1] = 0.0;
-					black[2] = 0.0;
-				}
-
-				tmp = fz_dictgets(dict, "Gamma");
-				if (fz_isarray(tmp))
-				{
-					gamma[0] = fz_toreal(fz_arrayget(tmp, 0));
-					gamma[1] = fz_toreal(fz_arrayget(tmp, 1));
-					gamma[2] = fz_toreal(fz_arrayget(tmp, 2));
-				}
-				else
-				{
-					gamma[0] = 1.0;
-					gamma[1] = 1.0;
-					gamma[2] = 1.0;
-				}
-
-				tmp = fz_dictgets(dict, "Matrix");
-				if (fz_isarray(tmp))
-				{
-					int i;
-					for (i = 0; i < 9; i++)
-						matrix[i] = fz_toreal(fz_arrayget(tmp, i));
-				}
-				else
-				{
-					matrix[0] = 1.0; matrix[1] = 0.0; matrix[2] = 0.0;
-					matrix[3] = 0.0; matrix[4] = 1.0; matrix[5] = 0.0;
-					matrix[6] = 0.0; matrix[7] = 0.0; matrix[8] = 1.0;
-				}
-
-				return newcalrgb(csp, white, black, gamma, matrix);
-			}
+				return loadcalrgb(csp, xref, fz_arrayget(obj, 1));
 
 			if (!strcmp(fz_toname(name), "CalCMYK"))
 			{
@@ -478,64 +606,13 @@ printf("\n");
 			}
 
 			if (!strcmp(fz_toname(name), "Lab"))
-			{
-				fz_obj *dict = fz_arrayget(obj, 1);
-				fz_obj *tmp;
-
-				float white[3];
-				float black[3];
-				float range[4];
-
-				tmp = fz_dictgets(dict, "WhitePoint");
-				if (!fz_isarray(tmp))
-					return fz_throw("syntaxerror: Lab missing WhitePoint");
-				white[0] = fz_toreal(fz_arrayget(tmp, 0));
-				white[1] = fz_toreal(fz_arrayget(tmp, 1));
-				white[2] = fz_toreal(fz_arrayget(tmp, 2));
-
-				tmp = fz_dictgets(dict, "BlackPoint");
-				if (fz_isarray(tmp))
-				{
-					black[0] = fz_toreal(fz_arrayget(tmp, 0));
-					black[1] = fz_toreal(fz_arrayget(tmp, 1));
-					black[2] = fz_toreal(fz_arrayget(tmp, 2));
-				}
-				else
-				{
-					black[0] = 0.0;
-					black[1] = 0.0;
-					black[2] = 0.0;
-				}
-
-				tmp = fz_dictgets(dict, "Range");
-				if (fz_isarray(tmp))
-				{
-					range[0] = fz_toreal(fz_arrayget(tmp, 0));
-					range[1] = fz_toreal(fz_arrayget(tmp, 1));
-					range[2] = fz_toreal(fz_arrayget(tmp, 2));
-					range[3] = fz_toreal(fz_arrayget(tmp, 3));
-				}
-				else
-				{
-					range[0] = -100;
-					range[1] = 100;
-					range[2] = -100;
-					range[3] = 100;
-				}
-
-				return newlab(csp, white, black, range);
-			}
+				return loadlab(csp, xref, fz_arrayget(obj, 1));
 
 			if (!strcmp(fz_toname(name), "ICCBased"))
-			{
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));
-			}
 
 			if (!strcmp(fz_toname(name), "Separation"))
-			{
-				*csp = pdf_devicegray;
-				return nil;
-			}
+				return loadseparation(csp, xref, obj);
 		}
 	}
 

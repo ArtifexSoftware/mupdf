@@ -5,23 +5,28 @@
 void fz_gammapixmap(fz_pixmap *pix, float gamma);
 
 #define LERP(a,b,t) (a + (((b - a) * t) >> 16))
+#define OUTSIDE(x,a,b) (x < a || x >= b)
 
-static int getcomp(fz_pixmap *pix, int u, int v, int k)
+static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
+{
+	if (u < 0 || u >= pix->w)
+		return 0;
+	if (v < 0 || v >= pix->h)
+		return 0;
+	return pix->samples[ (v * pix->w + u) * pix->n + k ];
+}
+
+static inline int sampleimage(fz_pixmap *pix, int u, int v, int k)
 {
 	int ui = u >> 16;
 	int vi = v >> 16;
 	int ud = u & 0xFFFF;
 	int vd = v & 0xFFFF;
 
-	int x0 = CLAMP(ui, 0, pix->w - 1);
-	int x1 = CLAMP(ui + 1, 0, pix->w - 1);
-	int y0 = CLAMP(vi, 0, pix->h - 1);
-	int y1 = CLAMP(vi + 1, 0, pix->h - 1);
-
-	int a = pix->samples[ (y0 * pix->w + x0) * pix->n + k ];
-	int b = pix->samples[ (y0 * pix->w + x1) * pix->n + k ];
-	int c = pix->samples[ (y1 * pix->w + x0) * pix->n + k ];
-	int d = pix->samples[ (y1 * pix->w + x1) * pix->n + k ];
+	int a = getcomp(pix, ui, vi, k);
+	int b = getcomp(pix, ui + 1, vi, k);
+	int c = getcomp(pix, ui, vi + 1, k);
+	int d = getcomp(pix, ui + 1, vi + 1, k);
 
 	int ab = LERP(a, b, ud);
 	int cd = LERP(c, d, ud);
@@ -41,7 +46,8 @@ drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x
 	for (x = x0; x < x1; x++)
 	{
 		for (k = 0; k < src->n; k++)
-			dst->samples[ (y * dst->w + x) * dst->n + k ] = getcomp(src, u, v, k);
+			dst->samples[ (y * dst->w + x) * dst->n + k ]
+				= sampleimage(src, u, v, k);
 		u += du;
 		v += dv;
 	}
@@ -59,10 +65,10 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 
 	for (x = x0; x < x1; x++)
 	{
-		int sa = getcomp(src, u, v, 0);
-		int sr = getcomp(src, u, v, 1);
-		int sg = getcomp(src, u, v, 2);
-		int sb = getcomp(src, u, v, 3);
+		int sa = sampleimage(src, u, v, 0);
+		int sr = sampleimage(src, u, v, 1);
+		int sg = sampleimage(src, u, v, 2);
+		int sb = sampleimage(src, u, v, 3);
 
 		int da = dst->samples[ (y * dst->w + x) * dst->n + 0 ];
 		int dr = dst->samples[ (y * dst->w + x) * dst->n + 1 ];
