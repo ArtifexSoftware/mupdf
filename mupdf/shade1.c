@@ -74,18 +74,19 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 #define ADD_VERTEX(xx, yy) \
 			{\
 				fz_point p;\
+				float cp[2], cv[FZ_MAXCOLORS];\
+				int c;\
 				p.x = xx;\
 				p.y = yy;\
 				p = fz_transformpoint(matrix, p);\
 				shade->mesh[n++] = p.x;\
 				shade->mesh[n++] = p.y;\
 				\
-				float cp[2], cv[FZ_MAXCOLORS];\
 				cp[0] = xx;\
 				cp[1] = yy;\
 				error = pdf_evalfunction(func, cp, 2, cv, shade->cs->n);\
 				\
-				for (int c = 0; c < shade->cs->n; ++c) {\
+				for (c = 0; c < shade->cs->n; ++c) {\
 					shade->mesh[n++] = cv[c];\
 				}\
 			}\

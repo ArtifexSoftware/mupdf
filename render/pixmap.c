@@ -76,8 +76,8 @@ fz_debugpixmap(fz_pixmap *pix)
 	if (pix->n == 4)
 	{
 		int x, y;
-		FILE *ppm = fopen("out.ppm", "w");
-		FILE *pgm = fopen("out.pgm", "w");
+		FILE *ppm = fopen("out.ppm", "wb");
+		FILE *pgm = fopen("out.pgm", "wb");
 		fprintf(ppm, "P6\n%d %d\n255\n", pix->w, pix->h);
 		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
 
@@ -100,7 +100,7 @@ fz_debugpixmap(fz_pixmap *pix)
 	else if (pix->n == 2)
 	{
 		int x, y;
-		FILE *pgm = fopen("out.pgm", "w");
+		FILE *pgm = fopen("out.pgm", "wb");
 		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
 
 		for (y = 0; y < pix->h; y++)

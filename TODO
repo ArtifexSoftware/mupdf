@@ -5,6 +5,7 @@ immediate plan:
 	* write mupdf hackers guide
 	* clean up and 'freeze' public api
 
+	* get font bbox from fontdescriptor if available
 	* refactor image loading
 	* refactor xref loading/repair
 	* restructure build.c and interpret.c (ftb vs csi)

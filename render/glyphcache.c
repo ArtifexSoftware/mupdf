@@ -114,6 +114,9 @@ static int hdist = 0;
 static int coos = 0;
 static int covf = 0;
 
+static int ghits = 0;
+static int gmisses = 0;
+
 static fz_val *
 hashfind(fz_glyphcache *arena, fz_key *key)
 {
@@ -218,6 +221,7 @@ fz_debugglyphcache(fz_glyphcache *arena)
 	printf("avg dist: %d / %d: %g\n", hdist, hcoll, (double)hdist / hcoll);
 	printf("out-of-space evicts: %d\n", coos);
 	printf("out-of-hash evicts: %d\n", covf);
+	printf("hits = %d misses = %d ratio = %g\n", ghits, gmisses, (float)ghits / (ghits + gmisses));
 /*
 	int i;
 	for (i = 0; i < arena->slots; i++)
@@ -333,8 +337,12 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 		bubble(arena, val - arena->lru);
 
+		ghits++;
+
 		return nil;
 	}
+
+	gmisses++;
 
 	ctm.e = fz_floor(ctm.e) + key.e / 256.0;
 	ctm.f = fz_floor(ctm.f) + key.f / 256.0;

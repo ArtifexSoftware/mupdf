@@ -219,12 +219,16 @@ fz_readfile(fz_buffer **bufp, fz_file *file)
 
 		if (n < CHUNKSIZE)
 		{
-			newbuf = fz_realloc(buf, pos);
-			if (!newbuf)
+			if (pos > 0)
 			{
-				fz_free(buf);
-				return fz_outofmem;
+				newbuf = fz_realloc(buf, pos);
+				if (!newbuf)
+				{
+					fz_free(buf);
+					return fz_outofmem;
+				}
 			}
+			else newbuf = buf;
 
 			real = *bufp = fz_malloc(sizeof(fz_buffer));
 			if (!real)

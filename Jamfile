@@ -201,7 +201,8 @@ LINKLIBS =
 	-lm
 	;
 
-LINKLIBS on x11pdf = -lX11 -lXext $(LINKLIBS) ;
+LINKLIBS on x11pdf$(SUFEXE) = -lX11 -lXext $(LINKLIBS) ;
+LINKLIBS on w32pdf$(SUFEXE) = -lgdi32 $(LINKLIBS) ;
 
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
@@ -209,18 +210,14 @@ Main pdfdebug : test/pdfdebug.c ;
 Main pdfrip : test/pdfrip.c ;
 # Main pdffunction : test/pdffunction.c ;
 
-# Main x11pdf : test/x11pdf.c test/ximage.c ;
-
-Main carbonpdf : macpdf/carbonpdf.c macpdf/view.c ;
-File macpdf/carbonpdf.app/Contents/MacOS/carbonpdf : carbonpdf ;
-MODE on macpdf/carbonpdf.app/Contents/MacOS/carbonpdf = 755 ;
+Main x11pdf : test/x11pdf.c test/ximage.c ;
 
 CCFLAGS += `pkg-config --cflags gtk+ gthread` ;
 LINKLIBS on gtkpdf = $(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
 
 LINKLIBS on carbonpdf = $(LINKLIBS) -framework Carbon ;
 
-# Main gtkpdf : test/gtkpdf.c ;
+Main gtkpdf : test/gtkpdf.c ;
 
 LinkLibraries
 		pdfclean
@@ -229,7 +226,6 @@ LinkLibraries
 		pdfrip
 		pdffunction
 		x11pdf
-		carbonpdf
 		gtkpdf
 	: libmupdf libfonts libfitz ;
 
