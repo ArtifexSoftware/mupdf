@@ -1,14 +1,14 @@
 immediate plan:
+	- pdf logging
 	- refcount resources
-	- put image load/scale into rastfuncs
 	- altivec optimize
 	- gtk+pdf
 	- page labels + dests + outline + annots
-	- global font/cmap cache
 	- design gui for editor
-	- talk to keithp about fontconfig cid-font + cmap support
 	- go through spec and check all features!
+	- global font/cmap cache
 	- font and cmap config (where to load cmap and which cid fonts)
+	- talk to keithp about fontconfig cid-font + cmap support
 
 ---
 

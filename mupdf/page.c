@@ -55,6 +55,13 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 			error = fz_ferror(file);
 			goto cleanup1;
 		}
+
+		n = fz_printstring(file, " ");
+		if (n == -1)
+		{
+			error = fz_ferror(file);
+			goto cleanup1;
+		}
 	}
 
 	fz_closefile(file);

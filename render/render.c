@@ -405,8 +405,8 @@ renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 
 DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image->cs?image->cs->name:"(nil)");
 
-    bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
-    clip = fz_intersectirects(gc->clip, bbox);
+	bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
+	clip = fz_intersectirects(gc->clip, bbox);
 
 	if (fz_isemptyrect(clip))
 		return nil;

@@ -1,6 +1,7 @@
 /*
-x86 specific render optims live here
-*/
+ * x86 specific render optims live here
+ */
+
 #include <fitz.h>
 
 typedef unsigned char byte;
