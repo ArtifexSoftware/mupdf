@@ -31,6 +31,12 @@ typedef signed long long fz_s64;
  * Extras! Extras! Get them while they're hot!
  */
 
+#ifdef __WIN32__
+#define NEED_STRLCPY
+#define NEED_STRSEP
+#define NEED_GETOPT
+#endif
+
 #ifdef NEED_STRLCPY
 extern int strlcpy(char *dst, const char *src, int n);
 extern int strlcat(char *dst, const char *src, int n);

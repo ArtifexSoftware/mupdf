@@ -94,7 +94,7 @@ fz_boundnode(fz_node *node, fz_matrix ctm)
 	case FZ_NMETA:
 		return fz_boundmetanode((fz_metanode *) node, ctm);
 	}
-	return FZ_INFRECT;
+	return fz_infiniterect();
 }
 
 int

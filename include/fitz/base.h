@@ -35,8 +35,14 @@ struct fz_error_s
 #define fz_outofmem (&fz_koutofmem)
 extern fz_error fz_koutofmem;
 
+#ifdef __WIN32__
+#define fz_throw fz_throwMS
+fz_error *fz_throwMS(char *fmt, ...);
+#else
 #define fz_throw(fmt, ...) fz_throw0(__func__, __FILE__, __LINE__, fmt, ## __VA_ARGS__)
 fz_error *fz_throw0(const char *func, const char *file, int line, char *fmt, ...);
+#endif
+
 void fz_warn(char *fmt, ...);
 void fz_abort(fz_error *eo);
 void fz_freeerror(fz_error *eo);

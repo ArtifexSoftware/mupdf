@@ -39,11 +39,11 @@ static fz_memorycontext defmem = { stdmalloc, stdrealloc, stdfree };
 static fz_memorycontext *curmem = &defmem;
 
 fz_error fz_koutofmem = {
-	.msg	= {"out of memory"}, 
-	.func	= {"<malloc>"},
-	.file	= {"memory.c"},
-	.line	= 0,
-	.frozen = 1
+	{"out of memory"}, 
+	{"<malloc>"},
+	{"memory.c"},
+	0,
+	1
 };
 
 fz_memorycontext *

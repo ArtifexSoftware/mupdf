@@ -31,7 +31,7 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 {
 	// FIXME convolve font bbox to all glyph x,y pairs
 	/* fz_rect bounds = fz_boundglyph(text->font, text->els[0], ctm); */
-	return FZ_INFRECT;
+	return fz_infiniterect();
 }
 
 static fz_error *

@@ -25,7 +25,7 @@ fz_boundovernode(fz_overnode *node, fz_matrix ctm)
 	fz_rect bbox;
 	fz_rect r;
 
-	bbox = FZ_INFRECT;
+	bbox = fz_infiniterect();
 
 	for (child = node->super.child; child; child = child->next)
 	{
@@ -67,7 +67,7 @@ fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
 	fz_rect bbox;
 	fz_rect r;
 
-	bbox = FZ_INFRECT;
+	bbox = fz_infiniterect();
 
 	for (child = node->super.child; child; child = child->next)
 	{
@@ -113,7 +113,7 @@ fz_boundblendnode(fz_blendnode *node, fz_matrix ctm)
 	fz_rect bbox;
 	fz_rect r;
 
-	bbox = FZ_INFRECT;
+	bbox = fz_infiniterect();
 
 	for (child = node->super.child; child; child = child->next)
 	{
@@ -154,7 +154,7 @@ fz_rect
 fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
 {
 	if (!node->super.child)
-		return FZ_INFRECT;
+		return fz_infiniterect();
 	return fz_boundnode(node->super.child, fz_concat(node->m, ctm));
 }
 
@@ -189,7 +189,7 @@ fz_rect
 fz_boundmetanode(fz_metanode *node, fz_matrix ctm)
 {
 	if (!node->super.child)
-		return FZ_INFRECT;
+		return fz_infiniterect();
 	return fz_boundnode(node->super.child, ctm);
 }
 

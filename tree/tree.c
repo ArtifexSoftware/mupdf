@@ -41,7 +41,7 @@ fz_boundtree(fz_tree *tree, fz_matrix ctm)
 {
 	if (tree->root)
 		return fz_boundnode(tree->root, ctm);
-	return FZ_INFRECT;
+	return fz_infiniterect();
 }
 
 void

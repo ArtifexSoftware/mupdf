@@ -12,6 +12,27 @@ fz_warn(char *fmt, ...)
 }
 
 fz_error *
+fz_throwMS(char *fmt, ...)
+{
+	va_list ap;
+	fz_error *eo;
+
+	eo = fz_malloc(sizeof(fz_error));
+	if (!eo) return fz_outofmem;
+
+	strlcpy(eo->func, "unknown", sizeof eo->func);
+	strlcpy(eo->file, "unknown", sizeof eo->file);
+	eo->line = -1;
+
+	va_start(ap, fmt);
+	vsnprintf(eo->msg, sizeof eo->msg, fmt, ap);
+	eo->msg[sizeof(eo->msg) - 1] = '\0';
+	va_end(ap);
+
+	return eo;
+}
+
+fz_error *
 fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 {
 	va_list ap;

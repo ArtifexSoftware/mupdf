@@ -1,6 +1,17 @@
 #include <fitz.h>
 
 fz_rect
+fz_infiniterect(void)
+{
+	fz_rect r;
+	r.min.x = 1;
+	r.min.y = 1;
+	r.max.x = -1;
+	r.max.y = -1;
+	return r;
+}
+
+fz_rect
 fz_intersectrects(fz_rect a, fz_rect b)
 {
 	fz_rect r;

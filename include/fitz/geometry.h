@@ -36,7 +36,7 @@ struct fz_irect_s
 	fz_ipoint max;
 };
 
-#define FZ_INFRECT (fz_rect){{1,1},{-1,-1}}
+fz_rect fz_infiniterect(void);
 
 fz_matrix fz_concat(fz_matrix one, fz_matrix two);
 fz_matrix fz_identity(void);

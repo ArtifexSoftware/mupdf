@@ -187,7 +187,7 @@ fz_rect
 fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 {
 	fz_point p;
-	fz_rect r = FZ_INFRECT;
+	fz_rect r = fz_infiniterect();
 	int i = 0;
 
 	while (i < path->len)

@@ -16,27 +16,43 @@ fz_concat(fz_matrix one, fz_matrix two)
 fz_matrix
 fz_identity(void)
 {
-	return (fz_matrix) { 1, 0, 0, 1, 0, 0 };
+	fz_matrix m;
+	m.a =  1;  m.b =  0;
+	m.c =  0;  m.d =  1;
+	m.e =  0;  m.f =  0;
+	return m;
 }
 
 fz_matrix
 fz_scale(float sx, float sy)
 {
-	return (fz_matrix) { sx, 0, 0, sy, 0, 0 };
+	fz_matrix m;
+	m.a = sx;  m.b =  0;
+	m.c =  0;  m.d = sy;
+	m.e =  0;  m.f =  0;
+	return m;
 }
 
 fz_matrix
 fz_rotate(float theta)
 {
+	fz_matrix m;
 	float s = sin(theta * M_PI / 180.0);
 	float c = cos(theta * M_PI / 180.0);
-	return (fz_matrix) { c, s, -s, c, 0 ,0 };
+	m.a =  c;  m.b = s;
+	m.c = -s;  m.d = c;
+	m.e =  0;  m.f = 0;
+	return m;
 }
 
 fz_matrix
 fz_translate(float tx, float ty)
 {
-	return (fz_matrix) { 1, 0, 0, 1, tx, ty };
+	fz_matrix m;
+	m.a =  1;  m.b =  0;
+	m.c =  0;  m.d =  1;
+	m.e = tx;  m.f = ty;
+	return m;
 }
 
 fz_matrix
@@ -63,8 +79,9 @@ fz_isrectilinear(fz_matrix m)
 fz_point
 fz_transformpoint(fz_matrix m, fz_point p)
 {
-	float x = p.x * m.a + p.y * m.c + m.e;
-	float y = p.x * m.b + p.y * m.d + m.f;
-	return (fz_point) { x, y };
+	fz_point t;
+	t.x = p.x * m.a + p.y * m.c + m.e;
+	t.y = p.x * m.b + p.y * m.d + m.f;
+	return t;
 }
 
