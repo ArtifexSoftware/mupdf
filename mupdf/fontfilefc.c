@@ -178,9 +178,28 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	/* pattern from name */
 	if (!FcPatternAddString(searchpat, FC_FAMILY, fontname))
 		goto cleanup;
+
 	if (collection)
+	{
 		if (!FcPatternAddString(searchpat, FC_FAMILY, collection))
 			goto cleanup;
+		if (!strcmp(collection, "Adobe-GB1"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "zh"))
+				goto cleanup;
+		if (!strcmp(collection, "Adobe-CNS1"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "zh"))
+				goto cleanup;
+		if (!strcmp(collection, "Adobe-Japan1"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "ja"))
+				goto cleanup;
+		if (!strcmp(collection, "Adobe-Japan2"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "ja"))
+				goto cleanup;
+		if (!strcmp(collection, "Adobe-Korea1"))
+			if (!FcPatternAddString(searchpat, FC_LANG, "ko"))
+				goto cleanup;
+	}
+
 	if (style)
 		if (!FcPatternAddString(searchpat, FC_STYLE, style))
 			goto cleanup;
