@@ -9,7 +9,6 @@
 fz_error *
 pdf_newxref(pdf_xref **xrefp)
 {
-	fz_error *error;
 	pdf_xref *xref;
 
 	xref = fz_malloc(sizeof(pdf_xref));
@@ -34,12 +33,7 @@ pdf_newxref(pdf_xref **xrefp)
 	xref->len = 0;
 	xref->table = nil;
 
-	error = pdf_newstore(&xref->store);
-	if (error)
-	{
-		pdf_closexref(xref);
-		return error;
-	}
+	xref->store = nil;	/* you need to create this if you want to render */
 
 	*xrefp = xref;
 	return nil;
@@ -51,7 +45,7 @@ pdf_closexref(pdf_xref *xref)
 	pdf_logxref("closexref %p\n", xref);
 
 	if (xref->store)
-		pdf_dropstore(xref->store);
+		fz_warn("someone forgot to empty the store before freeing xref!");
 
 	if (xref->table)
 	{

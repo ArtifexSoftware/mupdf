@@ -267,6 +267,17 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 	fz_obj *obj;
 	int i;
 
+	/*
+	 * We need a store for resources.
+	 */
+
+	if (!xref->store)
+	{
+		error = pdf_newstore(&xref->store);
+		if (error)
+			return error;
+	}
+
 	pdf_logrsrc("load resources {\n");
 
 	/*
