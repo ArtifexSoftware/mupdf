@@ -116,12 +116,7 @@ LINKLIBS =
 
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
+Main pdfrip : test/pdfrip.c ;
 
-LinkLibraries pdfclean pdfdebug : libmupdf libfitz ;
-
-#Main t-filter : tests/t-filter.c ;
-#Main t-parse : tests/t-parse.c ;
-#Main t-scanconv : tests/t-scanconv.c ;
-#Main tiger : tests/tiger.c ;
-#LinkLibraries t-filter t-parse t-scanconv t-fontrast tiger : libfitz ;
+LinkLibraries pdfclean pdfdebug pdfrip : libmupdf libfitz ;
 
