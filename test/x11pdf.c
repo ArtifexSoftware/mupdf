@@ -257,6 +257,54 @@ static void dumptext()
 	pdf_droptextline(line);
 }
 
+static void gotouri(fz_obj *uri)
+{
+	char cmd[2048];
+	char buf[2048];
+
+	printf("goto uri: ");
+	fz_debugobj(uri);
+	printf("\n");
+
+	memcpy(buf, fz_tostringbuf(uri), fz_tostringlen(uri));
+	buf[fz_tostringlen(uri)] = 0;
+
+	if (getenv("BROWSER"))
+		sprintf(cmd, "$BROWSER %s &", buf);
+	else
+#ifdef WIN32
+		sprintf(cmd, "start %s", buf);
+#else
+		sprintf(cmd, "open %s", buf);
+#endif
+	system(cmd);
+}
+
+static void gotopage(fz_obj *obj)
+{
+	int oid = fz_tonum(obj);
+	int gen = fz_togen(obj);
+	int i;
+
+	printf("goto page: %d %d R\n", oid, gen);
+
+	for (i = 0; i < count; i++)
+	{
+		if (fz_tonum(pages->pref[i]) == oid)
+		{
+			if (histlen + 1 == 256)
+			{
+				memmove(hist, hist + 1, sizeof(int) * 255);
+				histlen --;
+			}
+			hist[histlen++] = pageno;
+			pageno = i + 1;
+			showpage();
+			return;
+		}
+	}
+}
+
 static void drawlinks(void)
 {
 	pdf_link *link;
@@ -335,6 +383,14 @@ static void handlekey(int c)
 		if (pageno > count)
 			pageno = count;
 		break;
+	case 'm':
+		if (histlen + 1 == 256)
+		{
+			memmove(hist, hist + 1, sizeof(int) * 255);
+			histlen --;
+		}
+		hist[histlen++] = pageno;
+		break;
 	case 't':
 	case 'T':
 		if (histlen > 0)
@@ -389,8 +445,6 @@ static void handlemouse(float x, int y, int btn)
 	pdf_link *link;
 	fz_matrix ctm;
 	fz_point p;
-	int oid, gen;
-	int i;
 
 	p.x = x + image->x;
 	p.y = y + image->y;
@@ -413,57 +467,17 @@ static void handlemouse(float x, int y, int btn)
 	if (link)
 	{
 		XDefineCursor(xdpy, xwin, xchand);
-
 		if (btn)
 		{
 			if (link->uri)
-			{
-				char cmd[2048];
-				char buf[2048];
-
-				printf("goto uri: ");
-				fz_debugobj(link->uri);
-				printf("\n");
-
-				memcpy(buf, fz_tostringbuf(link->uri), fz_tostringlen(link->uri));
-				buf[fz_tostringlen(link->uri)] = 0;
-
-				if (getenv("BROWSER"))
-				{
-					sprintf(cmd, "%s %s &", getenv("BROWSER"), buf);
-					system(cmd);
-				}
-			}
-
+				gotouri(link->uri);
 			if (link->page)
-			{
-				oid = fz_tonum(link->page);
-				gen = fz_togen(link->page);
-				printf("goto page: %d %d R\n", oid, gen);
-
-				for (i = 0; i < count; i++)
-				{
-					if (fz_tonum(pages->pref[i]) == oid)
-					{
-						if (histlen + 1 == 256)
-						{
-							memmove(hist, hist + 1, sizeof(int) * 255);
-							histlen --;
-						}
-						hist[histlen++] = pageno;
-						pageno = i + 1;
-						showpage();
-						return;
-					}
-				}
-			}
+				gotopage(link->page);
 		}
 	}
 	else
 	{
 		XDefineCursor(xdpy, xwin, xcarrow);
-		if (btn)
-			printf("click empty\n");
 	}
 }
 
