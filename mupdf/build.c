@@ -375,6 +375,8 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 	fz_node *mask;
 	fz_node *color;
 	fz_node *xform;
+	fz_node *over;
+	fz_node *bgnd;
 	fz_matrix ctm;
 	fz_matrix inv;
 
@@ -390,10 +392,28 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 	error = fz_newshadenode(&color, shade);
 	if (error) return error;
 
-	fz_insertnodelast(mask, shape);
-	fz_insertnodelast(xform, color);
-	fz_insertnodelast(mask, xform);
-	fz_insertnodelast(gs->head, mask);
+	if (shade->usebackground)
+	{
+		error = fz_newovernode(&over);
+		if (error) return error;
+
+		error = fz_newcolornode(&bgnd, shade->cs, shade->cs->n, shade->background);
+		if (error) return error;
+
+		fz_insertnodelast(mask, shape);
+		fz_insertnodelast(over, bgnd);
+		fz_insertnodelast(over, color);
+		fz_insertnodelast(xform, over);
+		fz_insertnodelast(mask, xform);
+		fz_insertnodelast(gs->head, mask);
+	}
+	else
+	{
+		fz_insertnodelast(mask, shape);
+		fz_insertnodelast(xform, color);
+		fz_insertnodelast(mask, xform);
+		fz_insertnodelast(gs->head, mask);
+	}
 
 	return nil;
 }
