@@ -232,7 +232,9 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (obj)
 	{
 		cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, obj);
-		if (!cs)
+		if (cs)
+			fz_keepcolorspace(cs);
+		else
 		{
 			error = pdf_resolve(&obj, xref);
 			if (error)

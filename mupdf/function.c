@@ -1086,6 +1086,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 			return fz_outofmem;
 	}
 
+	/* FIXME i think this is wrong... test with 2 samples it gets wrong idxs */
 	for (i = 0; i < func->n; i++)
 	{
 		/* pull 2^m values out of the sample array */

@@ -9,19 +9,27 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	fz_obj *obj;
 	pdf_function *func;
 
-	shade->usefunction = 1;
-
 	obj = fz_dictgets(shading, "Function");
-	error = pdf_loadfunction(&func, xref, obj);
-	if (error)
-		return error;
-
-	for (int i = 0; i < 256; ++i)
+	if (obj)
 	{
-		t = t0 + (i / 256.0) * (t1 - t0);
-		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
+		shade->usefunction = 1;
+
+		error = pdf_loadfunction(&func, xref, obj);
 		if (error)
 			return error;
+
+		for (int i = 0; i < 256; ++i)
+		{
+			t = t0 + (i / 256.0) * (t1 - t0);
+			error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
+			if (error)
+			{
+				pdf_dropfunction(func);
+				return error;
+			}
+		}
+
+		pdf_dropfunction(func);
 	}
 
 	return nil;
@@ -51,19 +59,23 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	type = fz_toint(obj);
 	pdf_logshade("type %d\n", type);
 
-	/* TODO: use finditem... flatten indexed... */
+	/* TODO: flatten indexed... */
 	obj = fz_dictgets(dict, "ColorSpace");
 	if (obj)
 	{
-		error = pdf_resolve(&obj, xref);
-		if (error)
-			return error;
-
-		error = pdf_loadcolorspace(&shade->cs, xref, obj);
-		if (error)
-			return error;
-
-		fz_dropobj(obj);
+		shade->cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, obj);
+		if (shade->cs)
+			fz_keepcolorspace(shade->cs);
+		else
+		{
+			error = pdf_resolve(&obj, xref);
+			if (error)
+				return error;
+			error = pdf_loadcolorspace(&shade->cs, xref, obj);
+			if (error)
+				return error;
+			fz_dropobj(obj);
+		}
 	}
 	pdf_logshade("colorspace %s\n", shade->cs->name);
 
