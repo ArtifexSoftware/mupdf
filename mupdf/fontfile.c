@@ -8,6 +8,18 @@
 static FT_Library ftlib = nil;
 static FcConfig *fclib = nil;
 
+enum
+{
+	FD_FIXED = 1 << 0,
+	FD_SERIF = 1 << 1,
+	FD_SYMBOLIC = 1 << 2,
+	FD_SCRIPT = 1 << 3,
+	FD_NONSYMBOLIC = 1 << 5,
+	FD_ITALIC = 1 << 6,
+	FD_ALLCAP = 1 << 16,
+	FD_SMALLCAP = 1 << 17,
+};
+
 static char *basenames[14] =
 {
     "Courier", 
@@ -159,6 +171,7 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 
 	error = fz_outofmem;
 
+	/* pattern from name */
 	if (!FcPatternAddString(searchpat, FC_FAMILY, fontname))
 		goto cleanup;
 	if (collection)
@@ -169,6 +182,10 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 			goto cleanup;
 	if (!FcPatternAddBool(searchpat, FC_OUTLINE, 1))
 		goto cleanup;
+
+	/* additional pattern from fd flags */
+	FcPatternAddString(searchpat, FC_FAMILY, font->flags & FD_SERIF ? "serif" : "sans-serif");
+	FcPatternAddString(searchpat, FC_STYLE, font->flags & FD_ITALIC ? "Italic" : "Regular");
 
 file = FcNameUnparse(searchpat);
 printf("  system font pattern %s\n", file);
@@ -182,9 +199,15 @@ free(file);
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", basefont);
 
-file = FcNameUnparse(matchpat);
-printf("  system found %s\n", file);
-free(file);
+	fcerr = FcPatternGetString(matchpat, FC_FAMILY, 0, (FcChar8**)&file);
+	if (file && strcmp(fontname, file))
+		font->substitute = 1;
+
+	fcerr = FcPatternGetString(matchpat, FC_STYLE, 0, (FcChar8**)&file);
+	if (file && style && strcmp(style, file))
+		font->substitute = 1;
+
+printf("  is a substituted font\n");
 
 	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
 	if (fcerr != FcResultMatch)

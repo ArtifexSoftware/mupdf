@@ -38,12 +38,44 @@ static int ftwidth(pdf_font *font, int cid)
 }
 
 static fz_error *
-ftrender(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
+ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 {
-	FT_Face face = ((pdf_font*)font)->ftface;
+	pdf_font *font = (pdf_font*)fzfont;
+	FT_Face face = font->ftface;
 	FT_Matrix m;
 	FT_Vector v;
 	FT_Error fterr;
+	int gid;
+
+	if (fzfont->cidtogid)
+		gid = fzfont->cidtogid[cid];
+	else
+		gid = cid;
+
+	if (font->substitute && fzfont->wmode == 0)
+	{
+		fz_hmtx subw;
+		int realw;
+		float scale;
+
+		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+
+		fterr = FT_Load_Glyph(font->ftface, gid,
+					FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
+		if (fterr)
+			return fz_throw("freetype failed to load glyph: 0x%x", fterr);
+
+		realw = ((FT_Face)font->ftface)->glyph->advance.x;
+		subw = fz_gethmtx(fzfont, cid);
+		if (realw)
+			scale = (float) subw.w / realw;
+		else
+			scale = 1.0;
+
+		trm = fz_concat(fz_scale(scale, 1.0), trm);
+
+		FT_Set_Char_Size(face, 64, 64, 72, 72);
+	}
 
 	glyph->w = 0;
 	glyph->h = 0;
@@ -161,6 +193,7 @@ newfont(char *name)
 	font->super.free = (void(*)(fz_font*)) ftfreefont;
 
 	font->ftface = nil;
+	font->substitute = 0;
 
 	font->flags = 0;
 	font->italicangle = 0;

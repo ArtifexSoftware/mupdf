@@ -53,12 +53,6 @@ void showpage(pdf_xref *xref, fz_obj *page)
 	else
 		fz_abort(fz_throw("syntaxerror: missing resource dictionary"));
 
-printf("resources:\n");
-printf("  font:\n");
-fz_debugobj(rdb->font);
-printf("\n  extgstate:\n");
-fz_debugobj(rdb->extgstate);
-
 	error = pdf_newcsi(&csi);
 	if (error) fz_abort(error);
 
@@ -125,7 +119,6 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
-	int d;
 	int c;
 
 	char *password = "";

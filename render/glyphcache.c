@@ -23,7 +23,7 @@ struct fz_key_s
 	void *fid;
 	int a, b;
 	int c, d;
-	unsigned short gid;
+	unsigned short cid;
 	unsigned char e, f;
 };
 
@@ -233,7 +233,7 @@ fz_debugglyphcache(fz_glyphcache *arena)
 			fz_val *b = arena->hash[i].val;
 			printf("glyph % 4d: %p %d [%g %g %g %g + %d %d] "
 					"-> [%dx%d %d,%d]\n", i,
-				k->fid, k->gid,
+				k->fid, k->cid,
 				k->a / 65536.0,
 				k->b / 65536.0,
 				k->c / 65536.0,
@@ -303,15 +303,9 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	fz_key key;
 	fz_val *val;
 	int size;
-	int gid;
-
-	if (font->cidtogid)
-		gid = font->cidtogid[cid];
-	else
-		gid = cid;
 
 	key.fid = font;
-	key.gid = gid;
+	key.cid = cid;
 	key.a = ctm.a * 65536;
 	key.b = ctm.b * 65536;
 	key.c = ctm.c * 65536;
@@ -337,7 +331,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	ctm.e = floor(ctm.e) + key.e / HSUBPIX;
 	ctm.f = floor(ctm.f) + key.f / HSUBPIX;
 
-	error = font->render(glyph, font, gid, ctm);
+	error = font->render(glyph, font, cid, ctm);
 	if (error)
 		return error;
 

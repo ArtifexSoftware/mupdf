@@ -158,6 +158,7 @@ struct pdf_font_s
 	fz_font super;
 
 	void *ftface;
+	int substitute;
 
 	/* FontDescriptor */
 	int flags;
