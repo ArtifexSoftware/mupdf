@@ -13,7 +13,7 @@ struct fz_shade_s
 	float background[FZ_MAXCOLORS];
 
 	int usefunction;
-	float function[512][FZ_MAXCOLORS];
+	float function[256][FZ_MAXCOLORS];
 
 	int meshlen;
 	int meshcap;

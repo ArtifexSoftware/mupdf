@@ -86,14 +86,14 @@ Library libfitz :
 	# render
 	render/glyphcache.c
 	render/pixmap.c
-	render/rastshade.c
+	render/porterduff.c
+	render/meshdraw.c
+	render/imagedraw.c
+	render/imageunpack.c
+	render/imagescale.c
 	render/pathscan.c
 	render/pathfill.c
 	render/pathstroke.c
-	render/optduff.c
-	render/optimage.c
-	render/optunpack.c
-	render/optscale.c
 	render/render.c
 
 	render/archppc.c

@@ -8,13 +8,15 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	float t;
 	fz_obj *obj;
 	pdf_function *func;
-	
+
+	shade->usefunction = 1;
+
 	obj = fz_dictgets(shading, "Function");
 	error = pdf_loadfunction(&func, xref, obj);
 	if (error) return error;
 
-	for (int i=0; i<512; ++i) {
-		t = t0 + (i / 511.) * (t1 - t0);
+	for (int i=0; i<256; ++i) {
+		t = t0 + (i / 255.0) * (t1 - t0);
 		error = pdf_evalfunction(func, &t, 1, shade->function[i], 0);
 	}
 	if (error) return error;
@@ -37,6 +39,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 
 	shade = fz_malloc(sizeof(fz_shade));
 
+	shade->usefunction = 0;
 	shade->matrix = mat;
 
 	pdf_logshade("load shade dict %d %d {\n", fz_tonum(ref), fz_togen(ref));

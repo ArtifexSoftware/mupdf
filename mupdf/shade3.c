@@ -88,7 +88,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	for (int i = 0; i < 10; ++i) {
 		float tx0, ty0, tr0;
 		float tx1, ty1, tr1;
-		int c0, c1;
+		float c0, c1;
 
 		tx0 = x0 + (x1 - x0) * i / 10.;
 		ty0 = y0 + (y1 - y0) * i / 10.;
@@ -96,8 +96,8 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 		tx1 = x0 + (x1 - x0) * (i + 1) / 10.;
 		ty1 = y0 + (y1 - y0) * (i + 1) / 10.;
 		tr1 = r0 + (r1 - r0) * (i + 1) / 10.;
-		c0 = 511. * i / 10;
-		c1 = 511. * (i + 1) / 10.;
+		c0 = i / 10.0;
+		c1 = (i + 1) / 10.0;
 
 		fz_buildannulusmesh(&(shade->mesh[i*36*2*9]), tx0, ty0, tr0, tx1, ty1, tr1, c0, c1, 36);
 	}

@@ -44,14 +44,16 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 
 	fz_point p1, p2, p3, p4;
 
-	p1.x = x0 + 100 * cos(theta);
-	p1.y = y0 + 100 * sin(theta);
-	p2.x = x1 + 100 * cos(theta);
-	p2.y = y1 + 100 * sin(theta);
-	p3.x = x0 - 100 * cos(theta);
-	p3.y = y0 - 100 * sin(theta);
-	p4.x = x1 - 100 * cos(theta);
-	p4.y = y1 - 100 * sin(theta);
+#define BIGNUM 10000
+
+	p1.x = x0 + BIGNUM * cos(theta);
+	p1.y = y0 + BIGNUM * sin(theta);
+	p2.x = x1 + BIGNUM * cos(theta);
+	p2.y = y1 + BIGNUM * sin(theta);
+	p3.x = x0 - BIGNUM * cos(theta);
+	p3.y = y0 - BIGNUM * sin(theta);
+	p4.x = x1 - BIGNUM * cos(theta);
+	p4.y = y1 - BIGNUM * sin(theta);
 
 	pdf_logshade("p1 %g %g\n", p1.x, p1.y);
 	pdf_logshade("p2 %g %g\n", p2.x, p2.y);
@@ -59,12 +61,12 @@ pdf_buildt2shademesh(fz_shade *shade, pdf_xref *xref, fz_obj *shading,
 	pdf_logshade("p4 %g %g\n", p4.x, p4.y);
 
 	pdf_setmeshvalue(shade->mesh, 0, p1.x, p1.y, 0);
-	pdf_setmeshvalue(shade->mesh, 1, p2.x, p2.y, 511);
-	pdf_setmeshvalue(shade->mesh, 2, p4.x, p4.y, 511);
+	pdf_setmeshvalue(shade->mesh, 1, p2.x, p2.y, 1);
+	pdf_setmeshvalue(shade->mesh, 2, p4.x, p4.y, 1);
 	pdf_setmeshvalue(shade->mesh, 3, p1.x, p1.y, 0);
-	pdf_setmeshvalue(shade->mesh, 4, p4.x, p4.y, 511);
+	pdf_setmeshvalue(shade->mesh, 4, p4.x, p4.y, 1);
 	pdf_setmeshvalue(shade->mesh, 5, p3.x, p3.y, 0);
-	
+
 	/*
 	if (shade->extend) {
 		e0 = fz_toint(fz_arrayget(shade->extend, 0));

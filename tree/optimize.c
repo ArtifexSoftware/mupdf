@@ -172,6 +172,9 @@ static void cleanmasks(fz_node *node)
 	fz_node *color;
 	fz_rect bbox;
 
+	for (current = node->first; current; current = current->next)
+		cleanmasks(current);
+
 	prev = nil;
 	for (current = node->first; current; current = current->next)
 	{
@@ -209,9 +212,6 @@ retry:
 
 		prev = current;
 	}
-
-	for (current = node->first; current; current = current->next)
-		cleanmasks(current);
 }
 
 /*
