@@ -2,8 +2,9 @@
 #include <mupdf.h>
 
 static fz_error *
-loadoutlines(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
+loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 {
+// please call this 'error'
 	fz_error *err;
 	fz_obj *first;
 	fz_obj *next;
@@ -13,7 +14,9 @@ loadoutlines(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 	int i;
 
 	t = fz_dictgets(obj, "Title");
+// check for failure after each malloc
 	outline->title = fz_malloc(sizeof(char) * fz_tostringlen(t) + 1);
+// use strlcpy instead. strncpy does not null terminate.
 	strncpy(outline->title, fz_tostringbuf(t), fz_tostringlen(t));
 	outline->title[fz_tostringlen(t)] = 0;
 
@@ -46,9 +49,11 @@ loadoutlines(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 		if (err) return err;
 
 		o = fz_malloc(sizeof(pdf_outline));
+// you leak ref
 		if (!o) { err = fz_outofmem; return err; }
 
-		loadoutlines(xref, o, ref);
+		loadoutlinetree(xref, o, ref);
+// check error return
 		
 		outline->first = o;
 
@@ -63,9 +68,11 @@ loadoutlines(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 		if (err) return err;
 
 		o = fz_malloc(sizeof(pdf_outline));
+// you leak ref
 		if (!o) { err = fz_outofmem; return err; }
 
-		loadoutlines(xref, o, ref);
+		loadoutlinetree(xref, o, ref);
+// check error return?
 		
 		outline->next = o;
 
@@ -77,28 +84,12 @@ loadoutlines(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 	return nil;
 }
 
-void
-pdf_debugoutlines(pdf_outlines *outlines)
-{
-	/*
-	int i;
-	printf("<<\n  /Type /Outlines\n  /Count %d\n  /Kids [\n", outlines->count);
-	for (i = 0; i < pages->count; i++) {
-		printf("    ");
-		fz_debugobj(pages->pref[i]);
-		printf("\t%% page %d\n", i + 1);
-		//fz_debugobj(stdout, pages->pobj[i]);
-		//printf("\n");
-	}
-	printf("  ]\n>>\n");
-	*/
-}
-
 fz_error *
-pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref)
+pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref)
 {
+// please rename to 'error'
 	fz_error *err;
-	pdf_outlines *o = nil;
+	pdf_outlinetree *o = nil;
 	fz_obj *outline = nil;
 	fz_obj *catalog = nil;
 	fz_obj *outlines = nil;
@@ -112,6 +103,7 @@ pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref)
 	err = pdf_loadindirect(&catalog, xref, ref);
 	if (err) goto error;
 
+// create empty tree if no outlines exist instead of failing?
 	ref = fz_dictgets(catalog, "Outlines");
 	if (!ref) goto error;
 	err = pdf_loadindirect(&outlines, xref, ref);
@@ -120,7 +112,7 @@ pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref)
 	ref = fz_dictgets(outlines, "Count");
 	count = fz_toint(ref);
 
-	o = *oo = fz_malloc(sizeof(pdf_outlines));
+	o = *oo = fz_malloc(sizeof(pdf_outlinetree));
 	if (!o) { err = fz_outofmem; goto error; }
 
 	o->count = count;
@@ -129,7 +121,8 @@ pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref)
 
 	ref = fz_dictgets(outlines, "First");
 	err = pdf_loadindirect(&outline, xref, ref);
-	err = loadoutlines(xref, o->first, outline);
+// check error
+	err = loadoutlinetree(xref, o->first, outline);
 	if (err) goto error;
 
 	fz_dropobj(outline);
@@ -140,9 +133,7 @@ pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref)
 error:
 	if (outlines) fz_dropobj(outlines);
 	if (catalog) fz_dropobj(catalog);
-	if (o) {
-		fz_free(o);
-	}
+	if (o) fz_free(o);
 	return nil;
 }
 
@@ -163,10 +154,35 @@ pdf_freeoutline(pdf_outline *outline)
 }
 
 void
-pdf_freeoutlines(pdf_outlines *outlines)
+pdf_freeoutlinetree(pdf_outlinetree *outlinetree)
 {
-	if (outlines->first)
-		pdf_freeoutline(outlines->first);
-	fz_free(outlines);
+	if (outlinetree->first)
+		pdf_freeoutline(outlinetree->first);
+	fz_free(outlinetree);
+}
+
+static void
+debugoutline(pdf_outline *outline, int level)
+{
+	int i;
+	while (outline)
+	{
+		for (i = 0; i < level; i++) putchar(' ');
+		printf("(%s) ", outline->title);
+		if (outline->dest)
+			fz_debugobj(outline->dest);
+		if (outline->a)
+			fz_debugobj(outline->a);
+		printf("\n");
+		if (outline->first)
+			debugoutline(outline->first, level + 2);
+		outline = outline->next;
+	}
+}
+
+void
+pdf_debugoutlinetree(pdf_outlinetree *outlinetree)
+{
+	debugoutline(outlinetree->first, 0);
 }
 

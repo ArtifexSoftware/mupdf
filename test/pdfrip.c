@@ -82,6 +82,7 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
+	pdf_outlinetree *outlines;
 	int c;
 
 	char *password = "";
@@ -119,11 +120,22 @@ int main(int argc, char **argv)
 	error = pdf_loadpagetree(&pages, xref);
 	if (error) fz_abort(error);
 
+	outlines = nil;
+	error = pdf_loadoutlinetree(&outlines, xref);
+	if (error) { fz_warn(error->msg); fz_freeerror(error); }
+
 	if (optind == argc)
 	{
 		printf("pagetree\n");
 		pdf_debugpagetree(pages);
 		printf("\n");
+
+		if (outlines)
+		{
+			printf("outlines\n");
+			pdf_debugoutlinetree(outlines);
+			printf("\n");
+		}
 	}
 
 	for ( ; optind < argc; optind++)

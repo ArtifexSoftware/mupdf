@@ -2,13 +2,13 @@
  * Page tree, pages and related objects
  */
 
-typedef struct pdf_outlines_s pdf_outlines;
+typedef struct pdf_outlinetree_s pdf_outlinetree;
 typedef struct pdf_outline_s pdf_outline;
 typedef struct pdf_nametree_s pdf_nametree;
 typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_page_s pdf_page;
 
-struct pdf_outlines_s
+struct pdf_outlinetree_s
 {
 	pdf_outline *first;
 	int count;
@@ -51,8 +51,9 @@ struct pdf_page_s
 };
 
 /* outline.c */
-fz_error *pdf_loadoutlines(pdf_outlines **oo, pdf_xref *xref);
-void pdf_freeoutlines(pdf_outlines *outlines);
+fz_error *pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref);
+void pdf_debugoutlinetree(pdf_outlinetree *outlinetree);
+void pdf_freeoutlinetree(pdf_outlinetree *outlinetree);
 
 /* nametree.c */
 fz_error *pdf_loadnametree(pdf_nametree **ntp, pdf_xref *xref, char *key);

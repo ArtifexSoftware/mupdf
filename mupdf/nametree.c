@@ -48,6 +48,7 @@ loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
 	fz_obj *names = nil;
 	fz_obj *kids = nil;
 	fz_obj *key = nil;
+// please dont use _ in variable names:
 	fz_obj *ref_val = nil;
 	fz_obj *ref = nil;
 	int i, len;
@@ -71,6 +72,7 @@ loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
 		len = fz_arraylen(names);
 
 		if (len % 2)
+// with null error object?
 			goto cleanup;
 
 		len /= 2;
@@ -88,10 +90,12 @@ loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
 			}
 
 			nametreepush(nt, key, ref_val);
+// check error!
 
 			fz_dropobj(key);
 			key = nil;
 		}
+// you leak names
 	}
 
 	/* Intermediate node */
@@ -112,6 +116,7 @@ loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
 			for (i = 0; i < len; ++i) {
 				ref = fz_arrayget(kids, i);
 				loadnametree(nt, xref, ref);
+// check error!
 			}
 		}
 		else {
@@ -119,11 +124,13 @@ loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
 			error = fz_throw("invalid nametree node: there's no Names and Kids key");
 			goto cleanup;
 		}
+// you leak kids
 	}
 
 	return nil;
 
 cleanup:
+// i dont like BIG_FAT_MACROS, use: if (obj) fz_dropobj(obj)
 	SAFE_FREE_OBJ(localroot);
 	SAFE_FREE_OBJ(names);
 	SAFE_FREE_OBJ(kids);
@@ -171,11 +178,14 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 	error = pdf_loadindirect(&catalog, xref, ref);
 	if (error) goto cleanup;
 
+// create empty nametree instead of failing
 	names = fz_dictgets(catalog, "Names");
+// never resolve something that can be null
 	error = pdf_resolve(&names, xref);
 	if (error) goto cleanup;
 
 	root = fz_dictgets(names, key);
+// never resolve something that can be null
 	error = pdf_resolve(&root, xref);
 	if (error) goto cleanup;
 
@@ -195,9 +205,14 @@ pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
 	error = loadnametree(nt, xref, root);
 	if (error) goto cleanup;
 
+// not necessary. tree is sorted when you load it.
 	sortnametree(nt);
 
+// please have separate cleanup and okay cases...
+//  return nil; here
+
 cleanup:
+// no BIG_FAT_MACROS, please :)
 	SAFE_FREE_OBJ(root);
 	SAFE_FREE_OBJ(names);
 	if (catalog) fz_dropobj(catalog);
@@ -240,6 +255,7 @@ pdf_lookupname(pdf_nametree *nt, fz_obj *name)
 	if (fz_isstring(name)) {
 		item.k = name;
 		item.v = nil;
+// bsearch is non-standard. please dont use it.
 		found = bsearch(&item, nt->items, nt->len, sizeof(nt->items[0]), compare);
 		return found->v;
 	}
@@ -252,8 +268,13 @@ pdf_lookupnames(pdf_nametree *nt, char *name)
 	fz_obj *key;
 	fz_obj *ref;
 	int len = strlen(name);
+// please dont create a new string just to do a lookup.
+// change this to be the "standard" function and call it from
+// pdf_lookupname instead. compare name with the fz_tostringbuf() & co
+// return values.
 	fz_newstring(&key, name, len);
 	ref = pdf_lookupname(nt, key);
 	fz_dropobj(key);
 	return ref;
 }
+
