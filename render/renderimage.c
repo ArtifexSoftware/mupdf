@@ -29,7 +29,7 @@ static inline int sampleimage(fz_pixmap *pix, int u, int v, int k)
 }
 
 static inline void
-drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
+sgeneral(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
 {
 	unsigned char *d;
 	int k, n;
@@ -55,8 +55,9 @@ drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x
 }
 
 static inline void
-overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
+srgbover(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
 {
+	unsigned char *d;
 	int x;
 
 	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
@@ -66,6 +67,8 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 
 	u -= 0.5 * 65536;
 	v -= 0.5 * 65536;
+
+	d = dst->samples + ((y - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
 
 	for (x = x0; x <= x1; x++)
 	{
@@ -73,32 +76,21 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 		int sr = sampleimage(src, u, v, 1);
 		int sg = sampleimage(src, u, v, 2);
 		int sb = sampleimage(src, u, v, 3);
-
-		int da = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 0 ];
-		int dr = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 1 ];
-		int dg = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 2 ];
-		int db = dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 3 ];
-
 		int ssa = 255 - sa;
-
-		da = sa + fz_mul255(da, ssa);
-		dr = sr + fz_mul255(dr, ssa);
-		dg = sg + fz_mul255(dg, ssa);
-		db = sb + fz_mul255(db, ssa);
-
-		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 0 ] = da;
-		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 1 ] = dr;
-		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 2 ] = dg;
-		dst->samples[ ((y-dst->y) * dst->w + x-dst->x) * dst->n + 3 ] = db;
-
+		d[0] = sa + fz_mul255(d[0], ssa);
+		d[1] = sr + fz_mul255(d[1], ssa);
+		d[2] = sg + fz_mul255(d[2], ssa);
+		d[3] = sb + fz_mul255(d[3], ssa);
+		d += 4;
 		u += du;
 		v += dv;
 	}
 }
 
 static inline void
-overscanmask(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
+smaskover(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
 {
+	unsigned char *d;
 	int x;
 
 	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
@@ -109,12 +101,46 @@ overscanmask(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, i
 	u -= 0.5 * 65536;
 	v -= 0.5 * 65536;
 
+	d = dst->samples + ((y - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
+
 	for (x = x0; x <= x1; x++)
 	{
 		int sa = sampleimage(src, u, v, 0);
-		int da = dst->samples[ (y-dst->y) * dst->w + x-dst->x ];
-		da = sa + fz_mul255(da, 255 - sa);
-		dst->samples[ (y-dst->y) * dst->w + x-dst->x ] = da;
+		d[0] = sa + fz_mul255(d[0], 255 - sa);
+		d += 1;
+		u += du;
+		v += dv;
+	}
+}
+
+static inline void
+smaskrgbover(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1, fz_renderer *gc)
+{
+	unsigned char r = gc->r;
+	unsigned char g = gc->g;
+	unsigned char b = gc->b;
+	unsigned char *d;
+	int x;
+
+	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
+	int v = (invmat->b * (x0+0.5) + invmat->d * (y+0.5) + invmat->f) * 65536;
+	int du = invmat->a * 65536;
+	int dv = invmat->b * 65536;
+
+	u -= 0.5 * 65536;
+	v -= 0.5 * 65536;
+
+	d = dst->samples + ((y - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
+
+	for (x = x0; x <= x1; x++)
+	{
+		int sa = sampleimage(src, u, v, 0);
+		int ssa = 255 - sa;
+		d[0] = sa + fz_mul255(d[0], ssa);
+		d[1] = fz_mul255(r, sa) + fz_mul255(d[1], ssa);
+		d[2] = fz_mul255(g, sa) + fz_mul255(d[2], ssa);
+		d[3] = fz_mul255(b, sa) + fz_mul255(d[3], ssa);
+		d += 4;
 		u += du;
 		v += dv;
 	}
@@ -154,11 +180,13 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 	for (y = y0; y <= y1; y++)
 	{
 		if (over && tile->n == 4)
-			overscanrgb(&invmat, out, tile, y, x0, x1);
-		else if (over && tile->n == 1)
-			overscanmask(&invmat, out, tile, y, x0, x1);
+			srgbover(&invmat, out, tile, y, x0, x1);
+		else if (over && tile->n == 1 && gc->hasrgb)
+			smaskrgbover(&invmat, out, tile, y, x0, x1, gc);
+		else if (over && tile->n == 1 && !gc->hasrgb)
+			smaskover(&invmat, out, tile, y, x0, x1);
 		else
-			drawscan(&invmat, out, tile, y, x0, x1);
+			sgeneral(&invmat, out, tile, y, x0, x1);
 	}
 
 	return nil;
@@ -223,6 +251,11 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 printf("  draw image mask over\n");
 			error = drawtile(gc, gc->acc, tile2, ctm, 1);
 		}
+		else if (gc->acc && gc->hasrgb)
+		{
+printf("  draw image mask + color over\n");
+			error = drawtile(gc, gc->acc, tile2, ctm, 1);
+		}
 		else
 		{
 printf("  draw image mask\n");
@@ -267,5 +300,27 @@ printf("  draw image after cs transform\n");
 
 	fz_droppixmap(tile2);
 	return nil;
+}
+
+fz_error *
+fz_rendercolorimage(fz_renderer *gc, fz_imagenode *node, fz_colornode *color, fz_matrix ctm)
+{
+	fz_error *error;
+	float rgb[3];
+
+	assert(gc->model);
+
+	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
+	gc->r = rgb[0] * 255;
+	gc->g = rgb[1] * 255;
+	gc->b = rgb[2] * 255;
+
+	gc->hasrgb = 1;
+
+	error = fz_renderimage(gc, node, ctm);
+
+	gc->hasrgb = 0;
+
+	return error;
 }
 

@@ -10,6 +10,7 @@ struct fz_renderer_s
 	fz_pixmap *tmp;
 	fz_pixmap *acc;
 	unsigned char r, g, b;
+	int hasrgb;
 };
 
 fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int gcmem);

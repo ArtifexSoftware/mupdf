@@ -5,7 +5,7 @@ fz_error *fz_rendercolorpath(fz_renderer*, fz_pathnode*, fz_colornode*, fz_matri
 fz_error *fz_rendertext(fz_renderer*, fz_textnode*, fz_matrix);
 fz_error *fz_renderpath(fz_renderer*, fz_pathnode*, fz_matrix);
 
-fz_error *fz_renderimageover(fz_renderer*, fz_imagenode*, fz_matrix);
+fz_error *fz_rendercolorimage(fz_renderer*, fz_imagenode*, fz_colornode*, fz_matrix);
 fz_error *fz_renderimage(fz_renderer*, fz_imagenode*, fz_matrix);
 
 fz_error *
@@ -24,6 +24,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel, int gcmem)
 	gc->ael = nil;
 	gc->tmp = nil;
 	gc->acc = nil;
+	gc->hasrgb = 0;
 
 	error = fz_newglyphcache(&gc->cache, gcmem / 32, gcmem);
 	if (error)
@@ -176,7 +177,7 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 		if (fz_istextnode(shape) && fz_iscolornode(color))
 			return fz_rendercolortext(gc, (fz_textnode*)shape, (fz_colornode*)color, ctm);
 		if (fz_isimagenode(shape) && fz_iscolornode(color))
-			puts("could optimize image mask!");
+			return fz_rendercolorimage(gc, (fz_imagenode*)shape, (fz_colornode*)color, ctm);
 	}
 
 	oldacc = gc->acc;
