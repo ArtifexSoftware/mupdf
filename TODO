@@ -15,11 +15,8 @@ shadings
 	- ... jeong ...
 
 rendering
-	- bbox culling (cache bbox in over node?)
-	- merge gka optims
-	- optimize inner rendering loops
+	- bbox culling per glyph
 	- optimize image load/decode/scale
-	- special-case optims (1, 2 and 4)
 	- cpu-specific optims
 
 parser
@@ -28,10 +25,9 @@ parser
 	- annotations and destinations (for links and outline)
 
 fz_optimizetree()
-	- remove rectangular clip nodes whose children fit
 	- remove white fills at beginning of page
-	- remove overs with only one child
 	- concatenate chained transforms
+	- remove identity transforms
 
 clean up
 	- make source ansi c89 / pedantic
@@ -43,5 +39,5 @@ clean up
 
 cache
 	global cache for cmaps and fontfiles (emb+sys)
-	render cache (link-nodes and scaled images)
+	render cache (link-nodes and scaled images and shades)
 

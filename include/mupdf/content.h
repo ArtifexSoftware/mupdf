@@ -97,6 +97,7 @@ fz_error *pdf_addfillshape(pdf_gstate *gs, fz_node *shape);
 fz_error *pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape);
 fz_error *pdf_addclipmask(pdf_gstate *gs, fz_node *shape);
 fz_error *pdf_addtransform(pdf_gstate *gs, fz_node *transform);
+fz_error *pdf_addshade(pdf_gstate *gs, fz_shade *shade);
 fz_error *pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
 fz_error *pdf_showtext(pdf_csi*, fz_obj *text);
 fz_error *pdf_flushtext(pdf_csi*);

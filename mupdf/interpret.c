@@ -760,7 +760,6 @@ fz_debugobj(rdb);
 			fz_obj *dict;
 			fz_obj *obj;
 			fz_shade *shd;
-			fz_node *node;
 
 			dict = fz_dictgets(rdb, "Pattern");
 			if (!dict)
@@ -774,10 +773,8 @@ fz_debugobj(rdb);
 			if (!shd)
 				return fz_throw("syntaxerror: missing pattern resource");
 
-			error = fz_newshadenode(&node, shd);
+			error = pdf_addshade(gstate, shd);
 			if (error) return error;
-
-			fz_insertnodelast(gstate->head, node);
 		}
 
 		else if (!strcmp(buf, "d0"))

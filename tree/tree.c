@@ -105,6 +105,9 @@ fz_removenode(fz_node *child)
 	if (parent->first == child)
 	{
 		parent->first = child->next;
+		if (parent->last == child)
+			parent->last = nil;
+		return;
 	}
 
 	prev = parent->first;

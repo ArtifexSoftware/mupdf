@@ -150,8 +150,6 @@ pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 	if (error)
 		return error;
 
-printf("setshade!\n");
-
 	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
 
 	mat->kind = PDF_MSHADE;
@@ -211,28 +209,6 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 
 	fz_insertnodelast(mask, shape);
 	fz_insertnodelast(mask, solid);
-	fz_insertnodelast(gs->head, mask);
-
-	return nil;
-}
-
-static fz_error *
-addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
-{
-	fz_error *error;
-	fz_node *mask;
-	fz_node *color;
-
-printf("addshade!\n");
-
-	error = fz_newmasknode(&mask);
-	if (error) return error;
-
-	error = fz_newshadenode(&color, shade);
-	if (error) return error;
-
-	fz_insertnodelast(mask, shape);
-	fz_insertnodelast(mask, color);
 	fz_insertnodelast(gs->head, mask);
 
 	return nil;
@@ -347,6 +323,60 @@ printf("  %d,%d to %d,%d\n", x0, y0, x1, y1);
 		return addcolorshape(gs, mask, cs, v);
 
 	fz_insertnodelast(gs->head, mask);
+	return nil;
+}
+
+fz_error *
+pdf_addshade(pdf_gstate *gs, fz_shade *shade)
+{
+	fz_error *error;
+	fz_node *node;
+	fz_node *xform;
+	fz_matrix ctm;
+	fz_matrix inv;
+
+	ctm = getmatrix(gs->head);
+	inv = fz_invertmatrix(ctm);
+
+	error = fz_newtransformnode(&xform, inv);
+	if (error) return error;
+
+	error = fz_newshadenode(&node, shade);
+	if (error) return error;
+
+	fz_insertnodelast(xform, node);
+	fz_insertnodelast(gs->head, xform);
+
+	return nil;
+}
+
+static fz_error *
+addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
+{
+	fz_error *error;
+	fz_node *mask;
+	fz_node *color;
+	fz_node *xform;
+	fz_matrix ctm;
+	fz_matrix inv;
+
+	ctm = getmatrix(gs->head);
+	inv = fz_invertmatrix(ctm);
+
+	error = fz_newtransformnode(&xform, inv);
+	if (error) return error;
+
+	error = fz_newmasknode(&mask);
+	if (error) return error;
+
+	error = fz_newshadenode(&color, shade);
+	if (error) return error;
+
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(xform, color);
+	fz_insertnodelast(mask, xform);
+	fz_insertnodelast(gs->head, mask);
+
 	return nil;
 }
 
