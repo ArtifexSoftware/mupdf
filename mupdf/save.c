@@ -216,6 +216,21 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 	int startxref;
 	int *ofsbuf;
 	fz_obj *obj;
+	int eoid, egen;
+
+	/* need to add encryption object for acrobat < 6 */
+	if (encrypt)
+	{
+		error = pdf_allocobject(xref, &eoid, &egen);
+		if (error)
+			return error;
+
+		pdf_cryptobj(encrypt, encrypt->encrypt, eoid, egen);
+
+		error = pdf_updateobject(xref, eoid, egen, encrypt->encrypt);
+		if (error)
+			return error;
+	}
 
 	ofsbuf = fz_malloc(sizeof(int) * xref->len);
 	if (!ofsbuf)
@@ -274,12 +289,13 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 		fz_print(out, "\n  /Info %d %d R", fz_tonum(obj), fz_togen(obj));
 	if (encrypt)
 	{
-		fz_print(out, "\n  /Encrypt ");
-		fz_printobj(out, encrypt->encrypt, 1);
+		fz_print(out, "\n  /Encrypt %d %d R", eoid, egen);
 		fz_print(out, "\n  /ID [");
 		fz_printobj(out, encrypt->id, 1);
 		fz_printobj(out, encrypt->id, 1);
 		fz_print(out, "]");
+
+		pdf_cryptobj(encrypt, encrypt->encrypt, eoid, egen);
 	}
 	fz_print(out, "\n>>\n\n");
 
