@@ -3,7 +3,7 @@ typedef struct fz_node_s fz_node;
 
 struct fz_tree_s
 {
-	int refcount;
+	int nrefs;
 	fz_node *root;
 	fz_node *head;
 };

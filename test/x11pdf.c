@@ -160,7 +160,7 @@ static void showpage(void)
 	ctm = fz_identity();
 	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
 	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
-	ctm = fz_concat(ctm, fz_rotate(rotate));
+	ctm = fz_concat(ctm, fz_rotate(rotate + page->rotate));
 
 	bbox = fz_transformaabb(ctm, page->mediabox);
 

@@ -1,13 +1,23 @@
 #include <fitz.h>
 
+fz_colorspace *
+fz_keepcolorspace(fz_colorspace *cs)
+{
+	cs->nrefs ++;
+	return cs;
+}
+
 void
 fz_dropcolorspace(fz_colorspace *cs)
 {
-	if (cs->frozen)
+	if (cs->nrefs < 0)
 		return;
-	if (cs->drop)
-		cs->drop(cs);
-	fz_free(cs);
+	if (--cs->nrefs == 0)
+	{
+		if (cs->drop)
+			cs->drop(cs);
+		fz_free(cs);
+	}
 }
 
 void

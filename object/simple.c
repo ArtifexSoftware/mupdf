@@ -82,7 +82,7 @@ fz_keepobj(fz_obj *o)
 	return o;
 }
 
-fz_obj *
+void
 fz_dropobj(fz_obj *o)
 {
 	if (--o->nrefs == 0)
@@ -94,7 +94,6 @@ fz_dropobj(fz_obj *o)
 		else
 			fz_free(o);
 	}
-	return nil;
 }
 
 int

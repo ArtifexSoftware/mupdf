@@ -458,7 +458,7 @@ printf("  symbolic cmap\n");
 			}
 		}
 
-		encoding = fz_dropobj(encoding);
+		fz_dropobj(encoding);
 	}
 
 	else
@@ -506,7 +506,7 @@ printf("  widths vector %d to %d\n", first, last);
 				goto cleanup;
 		}
 
-		widths = fz_dropobj(widths);
+		fz_dropobj(widths);
 	}
 	else
 	{
@@ -730,7 +730,7 @@ printf("  cidtogidmap %d\n", len / 2);
 			}
 		}
 
-		widths = fz_dropobj(widths);
+		fz_dropobj(widths);
 	}
 
 	error = fz_endhmtx((fz_font*)font);
@@ -799,7 +799,7 @@ printf("  cidtogidmap %d\n", len / 2);
 				}
 			}
 
-			widths = fz_dropobj(widths);
+			fz_dropobj(widths);
 		}
 
 		error = fz_endvmtx((fz_font*)font);

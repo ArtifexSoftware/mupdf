@@ -71,7 +71,7 @@ fz_error *fz_deepcopyarray(fz_obj **op, fz_obj *array);
 fz_error *fz_deepcopydict(fz_obj **op, fz_obj *dict);
 
 fz_obj *fz_keepobj(fz_obj *obj);
-fz_obj *fz_dropobj(fz_obj *obj);
+void fz_dropobj(fz_obj *obj);
 
 /* type queries */
 int fz_isnull(fz_obj *obj);

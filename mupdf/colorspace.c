@@ -7,7 +7,7 @@ static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*drop)(fz_colorspace*))
 {
 	strlcpy(cs->name, name, sizeof cs->name);
-	cs->frozen = 0;
+	cs->nrefs = 1;
 	cs->n = n;
 	cs->toxyz = to;
 	cs->fromxyz = from;
@@ -80,7 +80,7 @@ static void xyztogray(fz_colorspace *fzcs, float *xyz, float *gray)
 
 static struct calgray kdevicegray =
 {
-	{ "DeviceGray", 1, 1, graytoxyz, xyztogray, nil },
+	{ -1, "DeviceGray", 1, graytoxyz, xyztogray, nil },
 	{ 1.0000, 1.0000, 1.0000 },
 	{ 0.0000, 0.0000, 0.0000 },
 	2.2000
@@ -189,7 +189,7 @@ static void xyztorgb(fz_colorspace *fzcs, float *xyz, float *rgb)
 
 static struct calrgb kdevicergb =
 {
-	{ "DeviceRGB", 1, 3, rgbtoxyz, xyztorgb, nil },
+	{ -1, "DeviceRGB", 3, rgbtoxyz, xyztorgb, nil },
 	{ 1.0000, 1.0000, 1.0000 },
 	{ 0.0000, 0.0000, 0.0000 },
 	{ 2.2000, 2.2000, 2.2000 },
@@ -322,7 +322,7 @@ static void xyztodevicecmyk(fz_colorspace *cs, float *xyz, float *cmyk)
 
 static fz_colorspace kdevicecmyk =
 {
-	"DeviceCMYK", 1, 4, devicecmyktoxyz, xyztodevicecmyk, nil
+	-1, "DeviceCMYK", 4, devicecmyktoxyz, xyztodevicecmyk, nil
 };
 
 fz_colorspace *pdf_devicecmyk = &kdevicecmyk;

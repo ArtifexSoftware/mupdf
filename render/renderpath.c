@@ -5,7 +5,7 @@ enum { HS = 17, VS = 15, SF = 1 };
 
 static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
 {
-	float flatness = 0.3 / ctm.a;
+	float flatness = 0.3 / sqrt(fabs(ctm.a * ctm.d - ctm.b * ctm.c));
 	if (flatness < 0.1)
 		flatness = 0.1;
 	if (path->paint == FZ_STROKE)

@@ -12,7 +12,7 @@ fz_warn(char *fmt, ...)
 }
 
 fz_error *
-fz_throwMS(char *fmt, ...)
+fz_throw1(char *fmt, ...)
 {
 	va_list ap;
 	fz_error *eo;

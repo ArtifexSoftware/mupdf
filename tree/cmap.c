@@ -15,6 +15,7 @@ struct fz_range_s
 
 struct fz_cmap_s
 {
+	int nrefs;
 	char cmapname[32];
 
 	char usecmapname[32];
@@ -45,6 +46,7 @@ fz_newcmap(fz_cmap **cmapp)
 	if (!cmap)
 		return fz_outofmem;
 
+	cmap->nrefs = 1;
 	strcpy(cmap->cmapname, "");
 
 	strcpy(cmap->usecmapname, "");
@@ -65,14 +67,24 @@ fz_newcmap(fz_cmap **cmapp)
 	return nil;
 }
 
+fz_cmap *
+fz_keepcmap(fz_cmap *cmap)
+{
+	cmap->nrefs ++;
+	return cmap;
+}
+
 void
 fz_dropcmap(fz_cmap *cmap)
 {
-	if (cmap->usecmap)
-		fz_dropcmap(cmap->usecmap);
-	fz_free(cmap->ranges);
-	fz_free(cmap->lookup);
-	fz_free(cmap);
+	if (--cmap->nrefs == 0)
+	{
+		if (cmap->usecmap)
+			fz_dropcmap(cmap->usecmap);
+		fz_free(cmap->ranges);
+		fz_free(cmap->lookup);
+		fz_free(cmap);
+	}
 }
 
 char *
@@ -114,7 +126,9 @@ fz_setusecmap(fz_cmap *cmap, fz_cmap *usecmap)
 {
 	int i;
 
-	cmap->usecmap = usecmap;
+	if (cmap->usecmap)
+		fz_dropcmap(cmap->usecmap);
+	cmap->usecmap = fz_keepcmap(usecmap);
 
 	if (cmap->ncspace == 0)
 	{

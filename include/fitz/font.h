@@ -22,6 +22,7 @@ struct fz_vmtx_s
 
 struct fz_font_s
 {
+	int nrefs;
 	char name[32];
 
 	fz_error* (*render)(fz_glyph*, fz_font*, int, fz_matrix);
@@ -46,6 +47,7 @@ struct fz_glyph_s
 };
 
 void fz_initfont(fz_font *font, char *name);
+fz_font *fz_keepfont(fz_font *font);
 void fz_dropfont(fz_font *font);
 void fz_debugfont(fz_font *font);
 void fz_setfontwmode(fz_font *font, int wmode);
