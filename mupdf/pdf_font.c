@@ -301,6 +301,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	char *basefont;
 	char *fontname;
 	char *estrings[256];
+	char ebuffer[256][32];
 	int i, k, n, e;
 
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
@@ -482,7 +483,12 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			{
 				pdf_logfont("encode truetype symbolic\n");
 				for (i = 0; i < 256; i++)
+				{
 					etable[i] = FT_Get_Char_Index(face, i);
+					FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+					if (ebuffer[i][0])
+						estrings[i] = ebuffer[i];
+				}
 			}
 		}
 
@@ -493,7 +499,12 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	{
 		pdf_logfont("encode builtin\n");
 		for (i = 0; i < 256; i++)
+		{
 			etable[i] = FT_Get_Char_Index(face, i);
+			FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+			if (ebuffer[i][0])
+				estrings[i] = ebuffer[i];
+		}
 	}
 
 	error = pdf_makeidentitycmap(&font->encoding, 0, 1);

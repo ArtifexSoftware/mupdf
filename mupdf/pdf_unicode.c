@@ -78,7 +78,7 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 			if (strings[i])
 				font->cidtoucs[i] = pdf_lookupagl(strings[i]);
 			else
-				font->cidtoucs[i] = 0;
+				font->cidtoucs[i] = '?';
 		}
 
 		return nil;
