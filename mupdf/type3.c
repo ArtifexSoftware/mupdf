@@ -56,7 +56,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->y = pixmap->y;
 	glyph->w = pixmap->w;
 	glyph->h = pixmap->h;
-	glyph->bitmap = pixmap->samples;
+	glyph->samples = pixmap->samples;
 
 	return nil;
 }

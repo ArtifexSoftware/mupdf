@@ -202,7 +202,6 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 			return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
 		}
 
-printf("  unpack n=%d\n", tile->n);
 		for (y = 0; y < tile->h; y++)
 		{
 			for (x = 0; x < tile->w; x++)

@@ -213,6 +213,11 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	gbox = fz_boundgel(gc->gel);
 	clip = fz_intersectirects(gc->clip, gbox);
 
+	if (clip.max.x <= clip.min.x)
+		return nil;
+	if (clip.max.y <= clip.min.y)
+		return nil;
+
 //printf("path clip[%d %d %d %d]\n", clip.min.x, clip.min.y, clip.max.x, clip.max.y);
 
 	user.rast = &gc->rast;
@@ -249,29 +254,71 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
  * Text
  */
 
-static void copyglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig, int yorig)
+static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig, int yorig)
 {
-	int x, y;
+	unsigned char *dp, *sp;
+	int w, h;
 
-	xorig += src->x;
-	yorig += src->y;
+	int dx1 = dst->x + dst->w;
+	int dy1 = dst->y + dst->h;
 
-	for (y = 0; y < src->h; y++)
-		for (x = 0; x < src->w; x++)
+	int x0 = xorig + src->x;
+	int y0 = yorig + src->y;
+	int x1 = x0 + src->w;
+	int y1 = y0 + src->h;
+
+	int sx0 = 0;
+	int sy0 = 0;
+	int sx1 = src->w;
+	int sy1 = src->h;
+
+	if (x1 < dst->x || x0 >= dx1) return;
+	if (y1 < dst->y || y0 >= dy1) return;
+
+	if (x0 < dst->x) { sx0 += dst->x - x0; x0 = dst->x; }
+	if (y0 < dst->y) { sy0 += dst->y - y0; y0 = dst->y; }
+
+	if (x1 >= dx1) { sx1 -= dx1 - x1; x1 = dx1; }
+	if (y1 >= dy1) { sy1 -= dy1 - y1; y1 = dy1; }
+
+	sp = src->samples + (sy0 * src->w + sx0);
+	dp = dst->samples + ((y0 - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
+
+	w = sx1 - sx0;
+	h = sy1 - sy0;
+
+	switch (gc->flag)
+	{
+	case FNONE:
+		while (h--)
 		{
-			int dx = xorig + x - dst->x;
-			int dy = yorig + y - dst->y;
-
-			if (dx < 0) {puts("dx<0");continue;}
-			if (dy < 0) {puts("dy<0");continue;}
-			if (dx >= dst->w) {puts("dx>w");continue;}
-			if (dy >= dst->h) {puts("dy>h");continue;}
-
-			int a = src->bitmap[x + y * src->w];
-			int b = dst->samples[dx + dy * dst->w];
-			int c = a + fz_mul255(b, 255 - a);
-			dst->samples[dx + dy * dst->w] = a;
+			gc->rast.mask_g(w, sp, dp);
+			sp += src->w;
+			dp += dst->w * dst->n;
 		}
+		break;
+
+	case FOVER:
+		while (h--)
+		{
+			gc->rast.mask_o1(w, sp, dp);
+			sp += src->w;
+			dp += dst->w * dst->n;
+		}
+		break;
+
+	case FOVER | FRGB:
+		while (h--)
+		{
+			gc->rast.mask_o4w3(w, sp, dp, gc->rgb);
+			sp += src->w;
+			dp += dst->w * dst->n;
+		}
+		break;
+
+	default:
+		assert(!"impossible flag in text span function");
+	}
 }
 
 static fz_error *
@@ -291,18 +338,24 @@ printf("text %s n=%d [%g %g %g %g] clip[%d %d %d %d]\n",
 	text->font->name, text->len,
 	text->trm.a, text->trm.b, text->trm.c, text->trm.d,
 	clip.min.x, clip.min.y, clip.max.x, clip.max.y);
-fflush(stdout);
+
+	if (clip.max.x <= clip.min.x)
+		return nil;
+	if (clip.max.y <= clip.min.y)
+		return nil;
 
 	clip.min.x ++;
 	clip.min.y ++;
 	clip.max.x ++;
 	clip.max.y ++;
 
-	error = fz_newpixmapwithrect(&gc->dest, clip, 1);
-	if (error)
-		return error;
-
-	fz_clearpixmap(gc->dest);
+	if (gc->flag == FNONE)
+	{
+		error = fz_newpixmapwithrect(&gc->dest, clip, 1);
+		if (error)
+			return error;
+		fz_clearpixmap(gc->dest);
+	}
 
 	tm = text->trm;
 
@@ -321,7 +374,10 @@ fflush(stdout);
 		if (error)
 			return error;
 
-		copyglyph(gc, gc->dest, &glyph, x, y);
+		if (gc->flag == FNONE)
+			drawglyph(gc, gc->dest, &glyph, x, y);
+		else
+			drawglyph(gc, gc->over, &glyph, x, y);
 	}
 
 	return nil;
@@ -331,9 +387,156 @@ fflush(stdout);
  * Image
  */
 
-static fz_error *
-renderimage(fz_renderer *gc, fz_imagenode *image, fz_matrix ctm)
+static inline void
+calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
 {
+	float sx, sy;
+	int dx, dy;
+
+	sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	dx = 1;
+	while (((w+dx-1)/dx)/sx > 2.0 && (w+dx-1)/dx > 1)
+		dx++;
+
+	sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
+	dy = 1;
+	while (((h+dy-1)/dy)/sy > 2.0 && (h+dy-1)/dy > 1)
+		dy++;
+
+	*odx = dx;
+	*ody = dy;
+}
+
+static fz_error *
+renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
+{
+	fz_error *error;
+	fz_image *image = node->image;
+	fz_irect bbox;
+	fz_irect clip;
+	int dx, dy;
+	fz_pixmap *tile;
+	fz_matrix imgmat;
+	fz_matrix invmat;
+	int fa, fb, fc, fd;
+	int u0, v0;
+	int x0, y0;
+	int w, h;
+
+	/* TODO: check validity of xxx->n + 1 */
+
+printf("renderimage %dx%d %d+%d %s\n", image->w, image->h, image->n, image->a, image->cs?image->cs->name:"(nil)");
+
+    bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
+    clip = fz_intersectirects(gc->clip, bbox);
+
+	if (clip.max.x <= clip.min.x)
+		return nil;
+	if (clip.max.y <= clip.min.y)
+		return nil;
+
+	calcimagescale(ctm, image->w, image->h, &dx, &dy);
+
+printf("  load image\n");
+	error = fz_newpixmap(&tile, 0, 0, image->w, image->h, image->n + 1);
+	error = image->loadtile(image, tile);
+
+	if (dx != 1 || dy != 1)
+	{
+printf("  scale image 1/%d 1/%d\n", dx, dy);
+		fz_pixmap *temp;
+		error = fz_scalepixmap(&temp, tile, dx, dy);
+		fz_droppixmap(tile);
+		tile = temp;
+	}
+
+	if (image->cs && image->cs != gc->model)
+	{
+		fz_pixmap *temp;
+printf("  convert from %s to %s\n", image->cs->name, gc->model->name);
+		error = fz_newpixmap(&temp, tile->x, tile->y, tile->w, tile->h, gc->model->n + 1);
+		fz_convertpixmap(image->cs, tile, gc->model, temp);
+		fz_droppixmap(tile);
+		tile = temp;
+	}
+
+	imgmat.a = 1.0 / tile->w;
+	imgmat.b = 0.0;
+	imgmat.c = 0.0;
+	imgmat.d = -1.0 / tile->h;
+	imgmat.e = 0.0;
+	imgmat.f = 1.0;
+	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
+
+	w = clip.max.x - clip.min.x;
+	h = clip.max.y - clip.min.y;
+	x0 = clip.min.x;
+	y0 = clip.min.y;
+	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
+	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
+	fa = invmat.a * 65536;
+	fb = invmat.b * 65536;
+	fc = invmat.c * 65536;
+	fd = invmat.d * 65536;
+
+	switch (gc->flag)
+	{
+	case FNONE:
+		{
+printf("  fnone %d x %d\n", w, h);
+			if (image->cs)
+				error = fz_newpixmapwithrect(&gc->dest, clip, gc->model->n + 1);
+			else
+				error = fz_newpixmapwithrect(&gc->dest, clip, 1);
+			fz_clearpixmap(gc->dest);
+
+			if (image->cs)
+				gc->rast.img4_g(
+					tile->samples, tile->w, tile->h, w, h,
+					gc->dest->samples, gc->dest->w * gc->dest->n,
+					u0, v0, fa, fb, fc, fd);
+			else
+				gc->rast.img1_g(
+					tile->samples, tile->w, tile->h, w, h,
+					gc->dest->samples, gc->dest->w * gc->dest->n,
+					u0, v0, fa, fb, fc, fd);
+		}
+		break;
+
+	case FOVER:
+		{
+printf("  fover %d x %d\n", w, h);
+			if (image->cs)
+				gc->rast.img4_o4(
+					tile->samples, tile->w, tile->h, w, h,
+					gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)) * 4,
+					gc->over->w * gc->over->n,
+					u0, v0, fa, fb, fc, fd);
+			else
+				gc->rast.img1_o1(
+					tile->samples, tile->w, tile->h, w, h,
+					gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)),
+					gc->over->w * gc->over->n,
+					u0, v0, fa, fb, fc, fd);
+		}
+		break;
+
+	case FOVER | FRGB:
+		{
+printf("  fover+rgb %d x %d\n", w, h);
+			gc->rast.img1_o4w3(
+				tile->samples, tile->w, tile->h, w, h,
+				gc->over->samples + ((y0 - gc->over->y) * gc->over->w + (x0 - gc->over->x)) * 4,
+				gc->over->w * gc->over->n,
+				u0, v0, fa, fb, fc, fd, gc->rgb);
+		}
+		break;
+	default:
+		assert(!"impossible flag in image span function");
+	}
+
+	fz_droppixmap(tile);
+
 	return nil;
 }
 
@@ -449,18 +652,19 @@ printf("mask\n{\n");
 	shapepix = gc->dest;
 	gc->dest = nil;
 
-	error = fz_newpixmapwithrect(&gc->dest, gc->clip, colorpix->n);
-	if (error)
-		return error;
+	if (colorpix && shapepix)
+	{
+		error = fz_newpixmapwithrect(&gc->dest, gc->clip, colorpix->n);
+		if (error)
+			return error;
 
-	fz_clearpixmap(gc->dest);
+		fz_clearpixmap(gc->dest);
 
-	fz_blendmask(gc->dest, colorpix, shapepix);
+		fz_blendmask(gc->dest, colorpix, shapepix);
+	}
 
-//fz_debugpixmap(gc->dest);getchar();
-
-	fz_droppixmap(shapepix);
-	fz_droppixmap(colorpix);
+	if (shapepix) fz_droppixmap(shapepix);
+	if (colorpix) fz_droppixmap(colorpix);
 
 	gc->over = oldover;
 	gc->mask = oldmask;

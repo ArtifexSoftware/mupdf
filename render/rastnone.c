@@ -155,7 +155,7 @@ static inline void sampleargb(byte *s, int w, int h, int u, int v, byte *abcd)
 	lerpargb(abcd, ab, cd, vd);
 }
 
-#define PSRC byte *src, int w, int h, int nx, int ny
+#define PSRC byte *src, int w, int h, int nx0, int ny
 #define PDST byte *dst0, int dstw
 #define PMSK byte *msk0, int mskw
 #define PCTM int u0, int v0, int fa, int fb, int fc, int fd
@@ -169,6 +169,7 @@ static void example(PSRC, PDST, PMSK, PCTM)
 		byte *msk = msk0;
 		int u = u0;
 		int v = v0;
+		int nx = nx0;
 		while (nx--)
 		{
 			// dst[0] = ... msk[0] ... sample(s, w, h, u, v);
@@ -191,7 +192,8 @@ static void example(PSRC, PDST, PMSK, PCTM)
 		byte *dst = dst0; \
 		int u = u0; \
 		int v = v0; \
-		while (nx--) \
+		int nx = nx0; \
+		while (nx--)
 
 #define ELOOP \
 		u0 += fc; \
@@ -206,7 +208,8 @@ static void example(PSRC, PDST, PMSK, PCTM)
 		byte *msk = msk0; \
 		int u = u0; \
 		int v = v0; \
-		while (nx--) \
+		int nx = nx0; \
+		while (nx--)
 
 #define ELOOPM \
 		u0 += fc; \

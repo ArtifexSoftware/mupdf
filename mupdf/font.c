@@ -112,7 +112,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->h = 0;
 	glyph->x = 0;
 	glyph->y = 0;
-	glyph->bitmap = nil;
+	glyph->samples = nil;
 
 	/* freetype mutilates complex glyphs if they are loaded
 	 * with FT_Set_Char_Size 1.0. it rounds the coordinates
@@ -163,15 +163,15 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->h = face->glyph->bitmap.rows;
 	glyph->x = face->glyph->bitmap_left;
 	glyph->y = face->glyph->bitmap_top - glyph->h;
-	glyph->bitmap = face->glyph->bitmap.buffer;
+	glyph->samples = face->glyph->bitmap.buffer;
 
 	int i;
     unsigned char tmp[glyph->w * glyph->h];
-    memcpy(tmp, glyph->bitmap, glyph->w * glyph->h);
+    memcpy(tmp, glyph->samples, glyph->w * glyph->h);
 
     for (i = 0; i < glyph->h; i++)
     {
-        memcpy( glyph->bitmap + i * glyph->w,
+        memcpy( glyph->samples + i * glyph->w,
                 tmp + (glyph->h - i - 1) * glyph->w,
                 glyph->w );
     }
@@ -312,9 +312,12 @@ printf("loading simple font %s -> %s\n", basefont, fontname);
 
 	symbolic = font->flags & 4;
 
-	fz_setfontbbox((fz_font*)font,
-		face->bbox.xMin, face->bbox.yMin,
-		face->bbox.xMax, face->bbox.yMax);
+	if (face->bbox.xMax == face->bbox.xMin)
+		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
+	else
+		fz_setfontbbox((fz_font*)font,
+			face->bbox.xMin, face->bbox.yMin,
+			face->bbox.xMax, face->bbox.yMax);
 
 	/*
 	 * Encoding
@@ -615,9 +618,12 @@ printf("  collection %s\n", collection);
 	face = font->ftface;
 	kind = ftkind(face);
 
-	fz_setfontbbox((fz_font*)font,
-		face->bbox.xMin, face->bbox.yMin,
-		face->bbox.xMax, face->bbox.yMax);
+	if (face->bbox.xMax == face->bbox.xMin)
+		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
+	else
+		fz_setfontbbox((fz_font*)font,
+			face->bbox.xMin, face->bbox.yMin,
+			face->bbox.xMax, face->bbox.yMax);
 
 	/*
 	 * Encoding

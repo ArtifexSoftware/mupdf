@@ -36,7 +36,7 @@ struct fz_hash_s
 struct fz_val_s
 {
 	fz_hash *ent;
-	unsigned char *data;
+	unsigned char *samples;
 	short w, h, x, y;
 	int uses;
 };
@@ -276,7 +276,7 @@ evictlast(fz_glyphcache *arena)
 		return;
 
 	k = arena->load - 1;
-	s = lru[k].data;
+	s = lru[k].samples;
 	e = s + lru[k].w * lru[k].h;
 
 	/* pack buffer to fill hole */
@@ -286,8 +286,8 @@ evictlast(fz_glyphcache *arena)
 
 	/* update lru pointers */
 	for (i = 0; i < k; i++)
-		if (lru[i].data >= e)
-			lru[i].data -= e - s;
+		if (lru[i].samples >= e)
+			lru[i].samples -= e - s;
 
 	/* remove hash entry */
 	key = lru[k].ent->key;
@@ -321,7 +321,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 		glyph->h = val->h;
 		glyph->x = val->x;
 		glyph->y = val->y;
-		glyph->bitmap = val->data;
+		glyph->samples = val->samples;
 
 		bubble(arena, val - arena->lru);
 
@@ -356,12 +356,12 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	val->h = glyph->h;
 	val->x = glyph->x;
 	val->y = glyph->y;
-	val->data = arena->buffer + arena->used;
+	val->samples = arena->buffer + arena->used;
 
 	arena->used += size;
 
-	memcpy(val->data, glyph->bitmap, glyph->w * glyph->h);
-	glyph->bitmap = val->data;
+	memcpy(val->samples, glyph->samples, glyph->w * glyph->h);
+	glyph->samples = val->samples;
 
 	hashinsert(arena, &key, val);
 

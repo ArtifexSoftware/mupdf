@@ -43,7 +43,7 @@ struct fz_font_s
 struct fz_glyph_s
 {
 	int x, y, w, h;
-	unsigned char *bitmap;
+	unsigned char *samples;
 };
 
 void fz_initfont(fz_font *font, char *name);
