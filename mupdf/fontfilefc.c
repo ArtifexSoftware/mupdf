@@ -22,6 +22,7 @@ enum
 	FD_ITALIC = 1 << 6,
 	FD_ALLCAP = 1 << 16,
 	FD_SMALLCAP = 1 << 17,
+	FD_FORCEBOLD = 1 << 18
 };
 
 static char *basenames[14] =
@@ -123,7 +124,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 	index = 0;
 	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
 
-printf("  builtin font %s idx %d\n", file, index);
+printf("  builtin %s from %s idx %d\n", basefont, file, index);
 
 	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr)
@@ -158,7 +159,6 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 
 	/* parse windows-style font name descriptors Font,Style or Font-Style */
 	strlcpy(fontname, basefont, sizeof fontname);
-
 	style = strchr(fontname, ',');
 	if (style) {
 		*style++ = 0;
@@ -175,14 +175,11 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 
 	error = fz_outofmem;
 
-	/* pattern from name */
 	if (!FcPatternAddString(searchpat, FC_FAMILY, fontname))
 		goto cleanup;
 
 	if (collection)
 	{
-		if (!FcPatternAddString(searchpat, FC_FAMILY, collection))
-			goto cleanup;
 		if (!strcmp(collection, "Adobe-GB1"))
 			if (!FcPatternAddString(searchpat, FC_LANG, "zh"))
 				goto cleanup;
@@ -203,15 +200,21 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	if (style)
 		if (!FcPatternAddString(searchpat, FC_STYLE, style))
 			goto cleanup;
+
+	if (font->flags & FD_SERIF)
+		FcPatternAddString(searchpat, FC_FAMILY, "serif");
+	else
+		FcPatternAddString(searchpat, FC_FAMILY, "sans-serif");
+	if (font->flags & FD_ITALIC)
+		FcPatternAddString(searchpat, FC_STYLE, "Italic");
+	if (font->flags & FD_FORCEBOLD)
+		FcPatternAddString(searchpat, FC_STYLE, "Bold");
+
 	if (!FcPatternAddBool(searchpat, FC_OUTLINE, 1))
 		goto cleanup;
 
-	/* additional pattern from fd flags */
-	FcPatternAddString(searchpat, FC_FAMILY, font->flags & FD_SERIF ? "serif" : "sans-serif");
-	FcPatternAddString(searchpat, FC_STYLE, font->flags & FD_ITALIC ? "Italic" : "Regular");
-
 file = FcNameUnparse(searchpat);
-printf("  system font pattern %s\n", file);
+printf("  fontconfig %s\n", file);
 free(file);
 
 	fcerr = FcResultMatch;
@@ -230,7 +233,7 @@ free(file);
 	if (file && style && strcmp(style, file))
 		font->substitute = 1;
 
-printf("  is a substituted font\n");
+printf("    inexact match\n");
 
 	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
 	if (fcerr != FcResultMatch)
@@ -239,7 +242,7 @@ printf("  is a substituted font\n");
 	index = 0;
 	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
 
-printf("  system font file %s idx %d\n", file, index);
+printf("    file %s idx %d\n", file, index);
 
 	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr) {

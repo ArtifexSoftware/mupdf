@@ -57,11 +57,26 @@ static int ftkind(FT_Face face)
 	return UNKNOWN;
 }
 
+static inline int ftcidtogid(pdf_font *font, int cid)
+{
+	if (font->tottfcmap)
+	{
+		cid = fz_lookupcid(font->tottfcmap, cid);
+		return FT_Get_Char_Index(font->ftface, cid);
+	}
+
+	if (font->cidtogid)
+		return font->cidtogid[cid];
+
+	return cid;
+}
+
 static int ftwidth(pdf_font *font, int cid)
 {
 	int e;
-	if (font->cidtogid)
-		cid = font->cidtogid[cid];
+
+	cid = ftcidtogid(font, cid);
+
 	e = FT_Load_Glyph(font->ftface, cid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 	if (e)
@@ -81,10 +96,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	int gid;
 	int x, y;
 
-	if (font->cidtogid)
-		gid = font->cidtogid[cid];
-	else
-		gid = cid;
+	gid = ftcidtogid(font, cid);
 
 	if (font->substitute && fzfont->wmode == 0)
 	{
@@ -211,6 +223,8 @@ static void ftdropfont(fz_font *font)
 	pdf_font *pfont = (pdf_font*)font;
 	if (pfont->encoding)
 		fz_dropcmap(pfont->encoding);
+	if (pfont->tottfcmap)
+		fz_dropcmap(pfont->tottfcmap);
 	if (pfont->tounicode)
 		fz_dropcmap(pfont->tounicode);
 	fz_free(pfont->cidtogid);
@@ -247,6 +261,7 @@ pdf_newfont(char *name)
 	font->missingwidth = 0;
 
 	font->encoding = nil;
+	font->tottfcmap = 0;
 	font->ncidtogid = 0;
 	font->cidtogid = nil;
 
@@ -669,11 +684,33 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 			fz_dropbuffer(buf);
 		}
 
-		/* TODO: if truetype font is external, cidtogidmap should not be identity */
-		/* we should map the cid to another encoding represented by a 'cmap' table */
-		/* cids: Adobe-CNS1 Adobe-GB1 Adobe-Japan1 Adobe-Japan2 Adobe-Korea1 */
-		/* cmap: Big5 Johab PRC  ShiftJIS Unicode Wansung */
-		/* win:  3,4  3,6   3,3  3,2	  3,1	 3,5 */
+		/* if truetype font is external, cidtogidmap should not be identity */
+		/* so we map from cid to unicode and then map that through the (3 1) */
+		/* unicode cmap to get a glyph id */
+		else if (font->substitute)
+		{
+			int e;
+
+			e = FT_Select_Charmap(face, ft_encoding_unicode);
+			if (e)
+				return fz_throw("fonterror: no unicode cmap when emulating CID font");
+
+			if (!strcmp(collection, "Adobe-CNS1"))
+				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-CNS1-UCS2");
+			else if (!strcmp(collection, "Adobe-GB1"))
+				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-GB1-UCS2");
+			else if (!strcmp(collection, "Adobe-Japan1"))
+				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-Japan1-UCS2");
+			else if (!strcmp(collection, "Adobe-Japan2"))
+				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-Japan2-UCS2");
+			else if (!strcmp(collection, "Adobe-Korea1"))
+				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-Korea1-UCS2");
+			else
+				error = nil;
+
+			if (error)
+				return error;
+		}
 	}
 
 	error = pdf_loadtounicode(font, xref, nil, collection, tounicode);

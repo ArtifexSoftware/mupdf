@@ -142,6 +142,7 @@ struct pdf_font_s
 
 	/* Encoding (CMap) */
 	fz_cmap *encoding;
+	fz_cmap *tottfcmap;
 	int ncidtogid;
 	unsigned short *cidtogid;
 
