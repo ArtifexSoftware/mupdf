@@ -58,6 +58,78 @@ static fz_renderer *rast;
 static fz_pixmap *image;
 
 /*
+ * Associate GhostPDF with PDF files.
+ */
+
+void associateme(char *argv0)
+{
+	char tmp[256];
+	char *name = "Adobe PDF Document";
+	HKEY key, kicon, kshell, kopen, kcmd;
+	DWORD disp;
+
+	/* HKEY_CLASSES_ROOT\.pdf */
+
+	if (RegCreateKeyEx(HKEY_CLASSES_ROOT,
+				".pdf", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &key, &disp))
+		return;
+
+	if (RegSetValueEx(key, "", 0, REG_SZ, "GhostPDF", strlen("GhostPDF")+1))
+		return;
+
+	RegCloseKey(key);
+
+	/* HKEY_CLASSES_ROOT\GhostPDF */
+
+	if (RegCreateKeyEx(HKEY_CLASSES_ROOT,
+				"GhostPDF", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &key, &disp))
+		return;
+
+	if (RegSetValueEx(key, "", 0, REG_SZ, name, strlen(name)+1))
+		return;
+
+	/* HKEY_CLASSES_ROOT\GhostPDF\DefaultIcon */
+
+	if (RegCreateKeyEx(key,
+				"DefaultIcon", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &kicon, &disp))
+		return;
+
+	sprintf(tmp, "%s,1", argv0);
+	if (RegSetValueEx(kicon, "", 0, REG_SZ, tmp, strlen(tmp)+1))
+		return;
+
+	RegCloseKey(kicon);
+
+	/* HKEY_CLASSES_ROOT\GhostPDF\Shell\Open\Command */
+
+	if (RegCreateKeyEx(key,
+				"shell", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &kshell, &disp))
+		return;
+	if (RegCreateKeyEx(kshell,
+				"open", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &kopen, &disp))
+		return;
+	if (RegCreateKeyEx(kopen,
+				"command", 0, NULL, REG_OPTION_NON_VOLATILE,
+				KEY_WRITE, NULL, &kcmd, &disp))
+		return;
+
+	sprintf(tmp, "\"%s\" \"%%1\"", argv0);
+	if (RegSetValueEx(kcmd, "", 0, REG_SZ, tmp, strlen(tmp)+1))
+		return;
+
+	RegCloseKey(kcmd);
+	RegCloseKey(kopen);
+	RegCloseKey(kshell);
+
+	RegCloseKey(key);
+}
+
+/*
  * Dialog boxes
  */
 
@@ -193,7 +265,7 @@ void winopen()
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(NULL);
-	wc.hIcon = LoadIcon(wc.hInstance, "IDI_ICONGHOST");
+	wc.hIcon = LoadIcon(wc.hInstance, "IDI_ICONAPPL");
 	wc.hCursor = NULL; //LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;//(HBRUSH) GetStockObject(BLACK_BRUSH);
 	wc.lpszMenuName = NULL;
@@ -444,8 +516,6 @@ void handlekey(int c)
 //	case 'o': drawlinks(); break;
 
 	case VK_LEFT:
-	case VK_UP:
-	case VK_PRIOR:
 	case '\b':
 	case 'b':
 		pageno--;
@@ -457,9 +527,24 @@ void handlekey(int c)
 		if (pageno < 1)
 			pageno = 1;
 		break;
-	case VK_RIGHT:
-	case VK_DOWN:
+
+	case VK_PRIOR:
+		pany += image->h;
+	case VK_UP:
+		pany += image->h / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
 	case VK_NEXT:
+		pany -= image->h;
+	case VK_DOWN:
+		pany -= image->h / 10;
+		constrainpan(&panx, &pany);
+		winrepaint();
+		break;
+
+	case VK_RIGHT:
 	case ' ':
 	case 'f':
 		pageno++;
@@ -917,6 +1002,8 @@ int main(int argc, char **argv)
 	int c;
 
 	int benchmark = 0;
+
+	associateme(argv[0]);
 
 	while ((c = getopt(argc, argv, "hbz:r:p:u:")) != -1)
 	{
