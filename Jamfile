@@ -33,7 +33,9 @@ Library libfitz :
 	# filter
 	filter/buffer.c
 	filter/filter.c
-	filter/file.c		# unistd.h
+	filter/filec.c		# unistd.h
+	filter/filer.c		# unistd.h
+	filter/filew.c		# unistd.h
 
 	filter/null.c
 	filter/arc4filter.c
@@ -118,8 +120,10 @@ LINKLIBS =
 	-lm
 	;
 
-Main t-mupdf : test/mupdf.c ;
-LinkLibraries t-mupdf : libmupdf libfitz ;
+Main pdfclean : test/pdfclean.c ;
+Main pdfdebug : test/pdfdebug.c ;
+
+LinkLibraries pdfclean pdfdebug : libmupdf libfitz ;
 
 #Main t-filter : tests/t-filter.c ;
 #Main t-parse : tests/t-parse.c ;

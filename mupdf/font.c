@@ -674,7 +674,7 @@ printf("  cidtogidmap %d\n", len / 2);
 				goto cleanup;
 
 printf("  W2 ");
-fz_fprintobj(stdout, widths);
+fz_debugobj(widths);
 printf("\n");
 
 			for (i = 0; i < fz_arraylen(widths); )

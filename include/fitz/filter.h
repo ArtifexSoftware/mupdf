@@ -35,6 +35,7 @@ struct fz_filter_s
 
 struct fz_buffer_s
 {
+	int ownsdata;
 	unsigned char *bp;
 	unsigned char *rp;
 	unsigned char *wp;
@@ -53,6 +54,7 @@ fz_error *fz_chainpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail, fz_
 void fz_unchainpipeline(fz_filter *pipe, fz_filter **oldfp, fz_buffer **oldbp);
 
 fz_error *fz_newbuffer(fz_buffer **bufp, int size);
+fz_error *fz_newbufferwithdata(fz_buffer **bufp, unsigned char *data, int size);
 fz_error *fz_rewindbuffer(fz_buffer *buf);
 fz_error *fz_growbuffer(fz_buffer *buf);
 void fz_freebuffer(fz_buffer *buf);

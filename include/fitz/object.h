@@ -113,10 +113,8 @@ fz_error *fz_dictdel(fz_obj *dict, fz_obj *key);
 fz_error *fz_dictdels(fz_obj *dict, char *key);
 void fz_freedict(fz_obj *dict);
 
-int fz_sprintobj(char *s, fz_obj *obj);
-int fz_sprintcobj(char *s, fz_obj *obj);
-int fz_fprintobj(FILE *f, fz_obj *obj);
-int fz_fprintcobj(FILE *f, fz_obj *obj);
+int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
+void fz_debugobj(fz_obj *obj);
 
 fz_error *fz_parseobj(fz_obj **objp, char *s);
 fz_error *fz_packobj(fz_obj **objp, char *fmt, ...);

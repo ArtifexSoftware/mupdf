@@ -2,10 +2,9 @@
 
 struct fmt
 {
-	FILE *file;
 	char *buf;
+	int cap;
 	int len;
-
 	int indent;
 	int tight;
 	int col;
@@ -33,9 +32,7 @@ static inline void fmtputc(struct fmt *fmt, int c)
 	}
 	fmt->sep = 0;
 
-	if (fmt->file)
-		putc(c, fmt->file);
-	if (fmt->buf)
+	if (fmt->buf && fmt->len < fmt->cap)
 		fmt->buf[fmt->len] = c;
 
 	if (c == '\n')
@@ -259,74 +256,48 @@ static void fmtobj(struct fmt *fmt, fz_obj *obj)
 }
 
 int
-fz_sprintobj(char *s, fz_obj *obj)
+fz_sprintobj(char *s, int n, fz_obj *obj, int tight)
 {
 	struct fmt fmt;
 
 	fmt.indent = 0;
-	fmt.tight = 0;
 	fmt.col = 0;
 	fmt.sep = 0;
 	fmt.last = 0;
 
-	fmt.file = nil;
+	fmt.tight = tight;
 	fmt.buf = s;
+	fmt.cap = n;
 	fmt.len = 0;
 	fmtobj(&fmt, obj);
+
+	if (fmt.buf && fmt.len < fmt.cap)
+		fmt.buf[fmt.len] = '\0';
+
 	return fmt.len;
 }
 
-int
-fz_sprintcobj(char *s, fz_obj *obj)
+void
+fz_debugobj(fz_obj *obj)
 {
-	struct fmt fmt;
+	char buf[1024];
+	char *ptr;
+	int n;
 
-	fmt.indent = 0;
-	fmt.tight = 1;
-	fmt.col = 0;
-	fmt.sep = 0;
-	fmt.last = 0;
-
-	fmt.file = nil;
-	fmt.buf = s;
-	fmt.len = 0;
-	fmtobj(&fmt, obj);
-	return fmt.len;
-}
-
-int
-fz_fprintobj(FILE *file, fz_obj *obj)
-{
-	struct fmt fmt;
-
-	fmt.indent = 0;
-	fmt.tight = 0;
-	fmt.col = 0;
-	fmt.sep = 0;
-	fmt.last = 0;
-
-	fmt.file = file;
-	fmt.buf = nil;
-	fmt.len = 0;
-	fmtobj(&fmt, obj);
-	return fmt.len;
-}
-
-int
-fz_fprintcobj(FILE *file, fz_obj *obj)
-{
-	struct fmt fmt;
-
-	fmt.indent = 0;
-	fmt.tight = 1;
-	fmt.col = 0;
-	fmt.sep = 0;
-	fmt.last = 0;
-
-	fmt.file = file;
-	fmt.buf = nil;
-	fmt.len = 0;
-	fmtobj(&fmt, obj);
-	return fmt.len;
+	n = fz_sprintobj(nil, 0, obj, 0);
+	if (n < sizeof buf)
+	{
+		fz_sprintobj(buf, sizeof buf, obj, 0);
+		fwrite(buf, 1, n, stdout);
+	}
+	else
+	{
+		ptr = fz_malloc(n);
+		if (!ptr)
+			return;
+		fz_sprintobj(ptr, n, obj, 0);
+		fwrite(ptr, 1, n, stdout);
+		fz_free(ptr);
+	}
 }
 

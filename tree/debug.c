@@ -13,7 +13,7 @@ static void lispmeta(fz_meta *node, int level)
 	fz_node *child;
 	indent(level);
 	printf("(meta ");
-	fz_fprintcobj(stdout, node->info);
+	fz_debugobj(node->info);
 	printf("\n");
 	for (child = node->child; child; child = child->next)
 		lispnode(child, level + 1);

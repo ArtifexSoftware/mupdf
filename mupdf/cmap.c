@@ -385,7 +385,7 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 		return error;
 
 printf("  embedded cmap: ");
-fz_fprintcobj(stdout, stmobj);
+fz_debugobj(stmobj);
 printf("\n");
 fflush(stdout);
 

@@ -117,7 +117,7 @@ pdf_debugxref(pdf_xref *xref)
 			xref->table[i].type);
 	}
 	printf("trailer\n");
-	fz_fprintobj(stdout, xref->trailer);
+	fz_debugobj(xref->trailer);
 	printf("\n");
 }
 

@@ -87,9 +87,9 @@ pdf_debugpagetree(pdf_pagetree *pages)
 	printf("<<\n  /Type /Pages\n  /Count %d\n  /Kids [\n", pages->count);
 	for (i = 0; i < pages->count; i++) {
 		printf("    ");
-		fz_fprintobj(stdout, pages->pref[i]);
+		fz_debugobj(pages->pref[i]);
 		printf("\t%% page %d\n", i + 1);
-		//fz_fprintobj(stdout, pages->pobj[i]);
+		//fz_debugobj(stdout, pages->pobj[i]);
 		//printf("\n");
 	}
 	printf("  ]\n>>\n");

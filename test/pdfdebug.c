@@ -112,7 +112,7 @@ void printobject(pdf_xref *xref, int oid, int gid)
 	if (error) fz_abort(error);
 
 	printf("%d %d obj\n", oid, gid);
-	fz_fprintobj(stdout, obj);
+	fz_debugobj(obj);
 	printf("\n");
 	if (stmofs != -1) {
 		printf("stream\n");
@@ -153,7 +153,7 @@ void showpage(pdf_xref *xref, fz_obj *page)
 	fz_obj *contents;
 	int i;
 
-	fz_fprintobj(stdout, page);
+	fz_debugobj(page);
 	printf("\n");
 
 	resources = fz_dictgets(page, "Resources");
@@ -173,9 +173,9 @@ void showpage(pdf_xref *xref, fz_obj *page)
 
 printf("resources:\n");
 printf("  font:\n");
-fz_fprintobj(stdout, rdb->font);
+fz_debugobj(rdb->font);
 printf("\n  extgstate:\n");
-fz_fprintobj(stdout, rdb->extgstate);
+fz_debugobj(rdb->extgstate);
 printf("\nfitz tree:\n");
 
 	error = pdf_newcsi(&csi);
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 		if (optind == argc)
 		{
 			printf("trailer\n");
-			fz_fprintobj(stdout, xref->trailer);
+			fz_debugobj(xref->trailer);
 			printf("\n");
 		}
 
@@ -329,6 +329,8 @@ int main(int argc, char **argv)
 			printf("\n");
 		}
 	}
+
+printf("done.\n");
 
 	pdf_closexref(xref);
 

@@ -4,7 +4,6 @@
 static fz_error *writestored(FILE *out, pdf_xref *xref, int oid)
 {
 	pdf_xrefentry *x = xref->table + oid;
-	fz_error *error;
 	fz_obj *obj;
 	fz_buffer *stm;
 
@@ -18,7 +17,7 @@ static fz_error *writestored(FILE *out, pdf_xref *xref, int oid)
 		pdf_cryptobj(xref->crypt, obj, oid, x->gen);
 
 	fprintf(out, "%d %d obj\n", oid, x->gen);
-	fz_fprintobj(out, obj);
+	fz_debugobj(obj);
 	fprintf(out, "\n");
 
 	if (stm)
@@ -54,7 +53,7 @@ static fz_error *writecopy(FILE *out, pdf_xref *xref, int oid)
 		return error;
 
 	fprintf(out, "%d %d obj\n", oid, x->gen);
-    fz_fprintobj(out, obj);
+    fz_debugobj(obj);
     fprintf(out, "\n");
 
 	if (stmofs != -1)
@@ -203,13 +202,13 @@ pdf_saveincrementalpdf(pdf_xref *xref, char *path)
 	obj = fz_dictgets(xref->trailer, "Encrypt");
 	if (obj) {
 		fprintf(out,"\n  /Encrypt ");
-		fz_fprintobj(out, obj);
+		fz_debugobj(obj);
 	}
 
 	obj = fz_dictgets(xref->trailer, "ID");
 	if (obj) {
 		fprintf(out,"\n  /ID ");
-		fz_fprintobj(out, obj);
+		fz_debugobj(obj);
 	}
 
 	fprintf(out, "\n>>\n\n");
