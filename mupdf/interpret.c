@@ -255,7 +255,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], nil);
 			if (error) return error;
-			fz_insertnode(gstate->head, meta);
+			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "DP"))
@@ -265,7 +265,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
 			if (error) return error;
-			fz_insertnode(gstate->head, meta);
+			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "BMC"))
@@ -275,7 +275,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], nil);
 			if (error) return error;
-			fz_insertnode(gstate->head, meta);
+			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "BDC"))
@@ -285,7 +285,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
 			if (error) return error;
-			fz_insertnode(gstate->head, meta);
+			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "EMC"))
@@ -456,6 +456,7 @@ Lsetcolorspace:
 		{
 			pdf_material *mat;
 			pdf_pattern *pat;
+			fz_shade *shd;
 			fz_obj *dict;
 			fz_obj *obj;
 
@@ -503,12 +504,26 @@ Lsetcolor:
 					return fz_throw("syntaxerror: missing pattern resource");
 
 				pat = pdf_findresource(xref->rpattern, obj);
-				if (!pat)
+				if (pat)
+				{
+					error = pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
+					if (error) return error;
+				}
+
+				shd = pdf_findresource(xref->rshade, obj);
+				if (shd)
+				{
+					error = pdf_setshade(csi, what, shd);
+					if (error) return error;
+				}
+
+				if (!pat && !shd)
 					return fz_throw("syntaxerror: missing pattern resource");
 
-				error = pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
-				if (error) return error;
 				break;
+
+			case PDF_MSHADE:
+				return fz_throw("syntaxerror: cannot set color in shade objects");
 			}
 		}
 
@@ -738,6 +753,31 @@ fz_debugobj(rdb);
 				if (error)
 					return error;
 			}
+		}
+
+		else if (!strcmp(buf, "sh"))
+		{
+			fz_obj *dict;
+			fz_obj *obj;
+			fz_shade *shd;
+			fz_node *node;
+
+			dict = fz_dictgets(rdb, "Pattern");
+			if (!dict)
+				return fz_throw("syntaxerror: missing pattern resource");
+
+			obj = fz_dictget(dict, csi->stack[csi->top - 1]);
+			if (!obj)
+				return fz_throw("syntaxerror: missing pattern resource");
+
+			shd = pdf_findresource(xref->rshade, obj);
+			if (!shd)
+				return fz_throw("syntaxerror: missing pattern resource");
+
+			error = fz_newshadenode(&node, shd);
+			if (error) return error;
+
+			fz_insertnodelast(gstate->head, node);
 		}
 
 		else if (!strcmp(buf, "d0"))

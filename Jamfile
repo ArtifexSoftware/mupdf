@@ -71,13 +71,16 @@ Library libfitz :
 	tree/font.c
 	tree/colorspace.c
 	tree/image.c
+	tree/shade.c
 
 	tree/tree.c
 	tree/node1.c
 	tree/node2.c
 	tree/text.c
 	tree/path.c
+
 	tree/debug.c
+	tree/optimize.c
 
 	# render
 	render/glyphcache.c
@@ -87,6 +90,7 @@ Library libfitz :
 	render/fill.c
 	render/stroke.c
 	render/scale.c
+	render/shade.c
 	render/rastport.c
 	render/render.c
 ;
@@ -121,6 +125,7 @@ Library libmupdf :
 	mupdf/image2.c
 	mupdf/xobject.c
 	mupdf/pattern.c
+	mupdf/shade.c
 	mupdf/resources.c
 	mupdf/page.c
 	mupdf/build.c

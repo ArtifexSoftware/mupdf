@@ -281,6 +281,10 @@ printf("  bbox [%g %g %g %g]\n", bbox.min.x,bbox.min.y,bbox.max.x,bbox.max.y);
 				error = loadcharproc(&font->charprocs[i], xref, resources, obj);
 				if (error)
 					goto cleanup2;
+
+				error = fz_optimizetree(font->charprocs[i]);
+				if (error)
+					goto cleanup2;
 			}
 		}
 	}

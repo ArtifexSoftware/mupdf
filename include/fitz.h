@@ -22,6 +22,7 @@
 #include "fitz/pixmap.h"
 #include "fitz/colorspace.h"
 #include "fitz/image.h"
+#include "fitz/shade.h"
 
 #include "fitz/tree.h"
 #include "fitz/path.h"

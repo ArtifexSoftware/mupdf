@@ -155,6 +155,12 @@ static void lispimage(fz_imagenode *node, int level)
 	printf("(image)\n");
 }
 
+static void lispshade(fz_shadenode *node, int level)
+{
+	indent(level);
+	printf("(shade)\n");
+}
+
 static void lispnode(fz_node *node, int level)
 {
 	if (!node)
@@ -175,6 +181,7 @@ static void lispnode(fz_node *node, int level)
 	case FZ_NPATH: lisppath((fz_pathnode*)node, level); break;
 	case FZ_NTEXT: lisptext((fz_textnode*)node, level); break;
 	case FZ_NIMAGE: lispimage((fz_imagenode*)node, level); break;
+	case FZ_NSHADE: lispshade((fz_shadenode*)node, level); break;
 	case FZ_NLINK: lisplink((fz_linknode*)node, level); break;
 	}
 }

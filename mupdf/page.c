@@ -127,6 +127,12 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return error;
 	}
 
+	error = fz_optimizetree(tree);
+	if (error) {
+		fz_dropobj(rdb);
+		return error;
+	}
+
 	/*
 	 * Create page object
 	 */

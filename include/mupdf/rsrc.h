@@ -66,6 +66,8 @@ struct pdf_pattern_s
 fz_error *pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 void pdf_droppattern(pdf_pattern *pat);
 
+fz_error *pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+
 /*
  * XObject
  */

@@ -140,6 +140,27 @@ pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 }
 
 fz_error *
+pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
+{
+	pdf_gstate *gs = csi->gstate + csi->gtop;
+	fz_error *error;
+	pdf_material *mat;
+
+	error = pdf_flushtext(csi);
+	if (error)
+		return error;
+
+printf("setshade!\n");
+
+	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
+
+	mat->kind = PDF_MSHADE;
+	mat->shade = shade;
+
+	return nil;
+}
+
+fz_error *
 pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
 {
 	fz_error *error;
@@ -188,9 +209,31 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	error = fz_newcolornode(&solid, cs, cs->n, v);
 	if (error) return error;
 
-	fz_insertnode(mask, shape);
-	fz_insertnode(mask, solid);
-	fz_insertnode(gs->head, mask);
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(mask, solid);
+	fz_insertnodelast(gs->head, mask);
+
+	return nil;
+}
+
+static fz_error *
+addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
+{
+	fz_error *error;
+	fz_node *mask;
+	fz_node *color;
+
+printf("addshade!\n");
+
+	error = fz_newmasknode(&mask);
+	if (error) return error;
+
+	error = fz_newshadenode(&color, shade);
+	if (error) return error;
+
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(mask, color);
+	fz_insertnodelast(gs->head, mask);
 
 	return nil;
 }
@@ -210,9 +253,9 @@ addinvisibleshape(pdf_gstate *gs, fz_node *shape)
 	error = fz_endpath(path, FZ_FILL, nil, nil);
 	if (error) return error;
 
-	fz_insertnode(mask, (fz_node*)path);
-	fz_insertnode(mask, shape);
-	fz_insertnode(gs->head, mask);
+	fz_insertnodelast(mask, (fz_node*)path);
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(gs->head, mask);
 
 	return nil;
 }
@@ -260,9 +303,9 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	error = fz_newovernode(&over);
 	if (error) return error;
 
-	fz_insertnode(mask, shape);
-	fz_insertnode(mask, xform);
-	fz_insertnode(xform, over);
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(mask, xform);
+	fz_insertnodelast(xform, over);
 
 	/* get bbox of shape in pattern space for stamping */
 	ptm = fz_concat(ctm, fz_invertmatrix(pat->matrix));
@@ -295,15 +338,15 @@ printf("  %d,%d to %d,%d\n", x0, y0, x1, y1);
 			if (error) return error;
 			error = fz_newlinknode(&link, pat->tree);
 			if (error) return error;
-			fz_insertnode(xform, link);
-			fz_insertnode(over, xform);
+			fz_insertnodelast(xform, link);
+			fz_insertnodelast(over, xform);
 		}
 	}
 
 	if (pat->ismask)
 		return addcolorshape(gs, mask, cs, v);
 
-	fz_insertnode(gs->head, mask);
+	fz_insertnodelast(gs->head, mask);
 	return nil;
 }
 
@@ -313,7 +356,7 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 	switch (gs->fill.kind)
 	{
 	case PDF_MNONE:
-		fz_insertnode(gs->head, shape);
+		fz_insertnodelast(gs->head, shape);
 		return nil;
 	case PDF_MCOLOR:
 	case PDF_MLAB:
@@ -321,6 +364,8 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 		return addcolorshape(gs, shape, gs->fill.cs, gs->fill.v);
 	case PDF_MPATTERN:
 		return addpatternshape(gs, shape, gs->fill.pattern, gs->fill.cs, gs->fill.v);
+	case PDF_MSHADE:
+		return addshadeshape(gs, shape, gs->fill.shade);
 	default:
 		return fz_throw("unimplemented material");
 	}
@@ -332,7 +377,7 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 	switch (gs->stroke.kind)
 	{
 	case PDF_MNONE:
-		fz_insertnode(gs->head, shape);
+		fz_insertnodelast(gs->head, shape);
 		return nil;
 	case PDF_MCOLOR:
 	case PDF_MLAB:
@@ -340,6 +385,8 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 		return addcolorshape(gs, shape, gs->stroke.cs, gs->stroke.v);
 	case PDF_MPATTERN:
 		return addpatternshape(gs, shape, gs->stroke.pattern, gs->stroke.cs, gs->stroke.v);
+	case PDF_MSHADE:
+		return addshadeshape(gs, shape, gs->stroke.shade);
 	default:
 		return fz_throw("unimplemented material");
 	}
@@ -358,9 +405,9 @@ pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 	error = fz_newovernode(&over);
 	if (error) return error;
 
-	fz_insertnode(mask, shape);
-	fz_insertnode(mask, over);
-	fz_insertnode(gs->head, mask);
+	fz_insertnodelast(mask, shape);
+	fz_insertnodelast(mask, over);
+	fz_insertnodelast(gs->head, mask);
 	gs->head = over;
 
 	return nil;
@@ -375,8 +422,8 @@ pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 	error = fz_newovernode(&over);
 	if (error) return error;
 
-	fz_insertnode(gs->head, transform);
-	fz_insertnode(transform, over);
+	fz_insertnodelast(gs->head, transform);
+	fz_insertnodelast(transform, over);
 	gs->head = over;
 
 	return nil;
@@ -410,13 +457,13 @@ pdf_showimage(pdf_csi *csi, pdf_image *img)
 			if (error) return error;
 			error = fz_newmasknode(&mask);
 			if (error) return error;
-			fz_insertnode(mask, shape);
-			fz_insertnode(mask, color);
-			fz_insertnode(csi->gstate[csi->gtop].head, mask);
+			fz_insertnodelast(mask, shape);
+			fz_insertnodelast(mask, color);
+			fz_insertnodelast(csi->gstate[csi->gtop].head, mask);
 		}
 		else
 		{
-			fz_insertnode(csi->gstate[csi->gtop].head, color);
+			fz_insertnodelast(csi->gstate[csi->gtop].head, color);
 		}
 	}
 
@@ -521,7 +568,7 @@ pdf_flushtext(pdf_csi *csi)
 				if (error)
 					return error;
 			}
-			fz_insertnode(csi->textclip, (fz_node*)csi->text);
+			fz_insertnodelast(csi->textclip, (fz_node*)csi->text);
 			break;
 		}
 

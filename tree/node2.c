@@ -274,3 +274,35 @@ fz_boundimagenode(fz_imagenode *node, fz_matrix ctm)
 	return fz_transformaabb(ctm, bbox);
 }
 
+/*
+ * Shade node
+ */
+
+fz_error *
+fz_newshadenode(fz_node **nodep, fz_shade *shade)
+{
+	fz_shadenode *node;
+
+	node = fz_malloc(sizeof (fz_shadenode));
+	if (!node)
+		return fz_outofmem;
+	*nodep = (fz_node*)node;
+
+	fz_initnode((fz_node*)node, FZ_NSHADE);
+	node->shade = shade;
+
+	return nil;
+}
+
+void
+fz_dropshadenode(fz_shadenode *node)
+{
+	fz_dropshade(node->shade);
+}
+
+fz_rect
+fz_boundshadenode(fz_shadenode *node, fz_matrix ctm)
+{
+	return fz_boundshade(node->shade, ctm);
+}
+

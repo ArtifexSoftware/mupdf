@@ -96,10 +96,8 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 
 	if (pdf_findresource(xref->rpattern, ref))
 		return nil;
-/*
-	if (pdf_findresource(xref->rshading, ref))
+	if (pdf_findresource(xref->rshade, ref))
 		return nil;
-*/
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -128,10 +126,15 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 
 	else if (fz_toint(type) == 2)
 	{
-		/* load shading */
+		error = pdf_loadshade((fz_shade**)&rsrc->val, xref, obj, ref);
 		fz_dropobj(obj);
-		fz_free(rsrc);
-		return fz_throw("jeong was not here...");
+		if (error) {
+			fz_free(rsrc);
+			return error;
+		}
+		rsrc->next = xref->rshade;
+		xref->rshade = rsrc;
+		return nil;
 	}
 
 	else

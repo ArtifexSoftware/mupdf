@@ -1,6 +1,7 @@
 #include <fitz.h>
 
-#define DEBUG(args...) printf(args)
+#define noDEBUG(args...) printf(args)
+#define DEBUG(args...)
 
 #define FNONE 0
 #define FOVER 1
@@ -533,6 +534,31 @@ cleanup:
 }
 
 /*
+ * Shade
+ */
+
+static fz_error *
+rendershade(fz_renderer *gc, fz_shadenode *node, fz_matrix ctm)
+{
+	fz_error *error;
+	fz_irect bbox;
+
+	assert(!gc->maskonly);
+
+	if (gc->flag & FOVER)
+		return fz_rendershade(node->shade, ctm, gc->model, gc->over, 1);
+
+	bbox = fz_roundrect(fz_boundnode((fz_node*)node, ctm));
+	bbox = fz_intersectirects(gc->clip, bbox);
+
+	error = fz_newpixmapwithrect(&gc->dest, bbox, gc->model->n + 1);
+	if (error)
+		return error;
+
+	return fz_rendershade(node->shade, ctm, gc->model, gc->dest, 0);
+}
+
+/*
  * Over, Mask and Blend
  */
 
@@ -820,6 +846,8 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return rendertext(gc, (fz_textnode*)node, ctm);
 	case FZ_NIMAGE:
 		return renderimage(gc, (fz_imagenode*)node, ctm);
+	case FZ_NSHADE:
+		return rendershade(gc, (fz_shadenode*)node, ctm);
 	case FZ_NLINK:
 		return rendernode(gc, ((fz_linknode*)node)->tree->root, ctm);
 	case FZ_NMETA:

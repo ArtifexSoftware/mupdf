@@ -5,6 +5,7 @@ void fz_droplinknode(fz_linknode* node);
 void fz_droppathnode(fz_pathnode* node);
 void fz_droptextnode(fz_textnode* node);
 void fz_dropimagenode(fz_imagenode* node);
+void fz_dropshadenode(fz_shadenode* node);
 
 fz_rect fz_boundtransformnode(fz_transformnode* node, fz_matrix ctm);
 fz_rect fz_boundovernode(fz_overnode* node, fz_matrix ctm);
@@ -53,6 +54,9 @@ fz_dropnode(fz_node *node)
 	case FZ_NIMAGE:
 		fz_dropimagenode((fz_imagenode *) node);
 		break;
+	case FZ_NSHADE:
+		fz_dropshadenode((fz_shadenode *) node);
+		break;
 	case FZ_NLINK:
 		fz_droplinknode((fz_linknode *) node);
 		break;
@@ -85,6 +89,8 @@ fz_boundnode(fz_node *node, fz_matrix ctm)
 		return fz_boundtextnode((fz_textnode *) node, ctm);
 	case FZ_NIMAGE:
 		return fz_boundimagenode((fz_imagenode *) node, ctm);
+	case FZ_NSHADE:
+		return fz_boundshadenode((fz_shadenode *) node, ctm);
 	case FZ_NLINK:
 		return fz_boundlinknode((fz_linknode *) node, ctm);
 	case FZ_NMETA:

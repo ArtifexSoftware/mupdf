@@ -15,7 +15,12 @@ void fz_droptree(fz_tree *tree);
 
 fz_rect fz_boundtree(fz_tree *tree, fz_matrix ctm);
 void fz_debugtree(fz_tree *tree);
-void fz_insertnode(fz_node *parent, fz_node *child);
+void fz_insertnodefirst(fz_node *parent, fz_node *child);
+void fz_insertnodelast(fz_node *parent, fz_node *child);
+void fz_insertnodeafter(fz_node *prev, fz_node *child);
+void fz_removenode(fz_node *child);
+
+fz_error *fz_optimizetree(fz_tree *tree);
 
 /* node types */
 
@@ -133,6 +138,12 @@ struct fz_imagenode_s
 	fz_image *image;
 };
 
+struct fz_shadenode_s
+{
+	fz_node super;
+	fz_shade *shade;
+};
+
 /* common to all nodes */
 void fz_initnode(fz_node *node, fz_nodekind kind);
 fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
@@ -155,6 +166,7 @@ int fz_ismetanode(fz_node *node);
 fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);
 fz_error *fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v);
 fz_error *fz_newimagenode(fz_node **nodep, fz_image *image);
+fz_error *fz_newshadenode(fz_node **nodep, fz_shade *shade);
 
 int fz_islinknode(fz_node *node);
 int fz_iscolornode(fz_node *node);
