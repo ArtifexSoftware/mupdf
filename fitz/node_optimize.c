@@ -143,10 +143,10 @@ static int getrect(fz_pathnode *path, fz_rect *bboxp)
 
 	if (path->els[12].k != FZ_CLOSEPATH) return 0;
 
-	bboxp->min.x = MIN(x, x + w);
-	bboxp->min.y = MIN(y, y + h);
-	bboxp->max.x = MAX(x, x + w);
-	bboxp->max.y = MAX(y, y + h);
+	bboxp->x0 = MIN(x, x + w);
+	bboxp->y0 = MIN(y, y + h);
+	bboxp->x1 = MAX(x, x + w);
+	bboxp->y1 = MAX(y, y + h);
 
 	return 1;
 }
@@ -157,10 +157,10 @@ static int fitsinside(fz_node *node, fz_rect clip)
 	bbox = fz_boundnode(node, fz_identity());
 	if (fz_isinfiniterect(bbox)) return 0;
 	if (fz_isemptyrect(bbox)) return 1;
-	if (bbox.min.x < clip.min.x) return 0;
-	if (bbox.max.x > clip.max.x) return 0;
-	if (bbox.min.y < clip.min.y) return 0;
-	if (bbox.max.y > clip.max.y) return 0;
+	if (bbox.x0 < clip.x0) return 0;
+	if (bbox.x1 > clip.x1) return 0;
+	if (bbox.y0 < clip.y0) return 0;
+	if (bbox.y1 > clip.y1) return 0;
 	return 1;
 }
 

@@ -28,8 +28,8 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	form->bbox = pdf_torect(obj);
 
 	pdf_logrsrc("bbox [%g %g %g %g]\n",
-		form->bbox.min.x, form->bbox.min.y,
-		form->bbox.max.x, form->bbox.max.y);
+		form->bbox.x0, form->bbox.y0,
+		form->bbox.x1, form->bbox.y1);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)

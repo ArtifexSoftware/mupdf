@@ -7,8 +7,8 @@ typedef struct fz_irect_s fz_irect;
 extern fz_rect fz_emptyrect;
 extern fz_rect fz_infiniterect;
 
-#define fz_isemptyrect(r) ((r).min.x == (r).max.x)
-#define fz_isinfiniterect(r) ((r).min.x > (r).max.x)
+#define fz_isemptyrect(r) ((r).x0 == (r).x1)
+#define fz_isinfiniterect(r) ((r).x0 > (r).x1)
 
 /*
 	/ a b 0 \
@@ -27,8 +27,8 @@ struct fz_point_s
 
 struct fz_rect_s
 {
-	fz_point min;
-	fz_point max;
+	float x0, y0;
+	float x1, y1;
 };
 
 struct fz_ipoint_s
@@ -38,8 +38,8 @@ struct fz_ipoint_s
 
 struct fz_irect_s
 {
-	fz_ipoint min;
-	fz_ipoint max;
+	int x0, y0;
+	int x1, y1;
 };
 
 void fz_invert3x3(float *dst, float *m);

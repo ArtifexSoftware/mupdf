@@ -8,10 +8,10 @@ fz_rect pdf_torect(fz_obj *array)
 	float b = fz_toreal(fz_arrayget(array, 1));
 	float c = fz_toreal(fz_arrayget(array, 2));
 	float d = fz_toreal(fz_arrayget(array, 3));
-	r.min.x = MIN(a, c);
-	r.min.y = MIN(b, d);
-	r.max.x = MAX(a, c);
-	r.max.y = MAX(b, d);
+	r.x0 = MIN(a, c);
+	r.y0 = MIN(b, d);
+	r.x1 = MAX(a, c);
+	r.y1 = MAX(b, d);
 	return r;
 }
 

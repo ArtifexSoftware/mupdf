@@ -409,10 +409,10 @@ DEBUG("  convert from %s to %s\n", image->cs->name, gc->model->name);
 	imgmat.f = 1.0;
 	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
 
-	w = clip.max.x - clip.min.x;
-	h = clip.max.y - clip.min.y;
-	x0 = clip.min.x;
-	y0 = clip.min.y;
+	w = clip.x1 - clip.x0;
+	h = clip.y1 - clip.y0;
+	x0 = clip.x0;
+	y0 = clip.y0;
 	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
 	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
 	fa = invmat.a * 65536;
@@ -507,21 +507,21 @@ blendover(fz_renderer *gc, fz_pixmap *src, fz_pixmap *dst)
 	fz_irect sr, dr;
 	int x, y, w, h;
 
-	sr.min.x = src->x;
-	sr.min.y = src->y;
-	sr.max.x = src->x + src->w;
-	sr.max.y = src->y + src->h;
+	sr.x0 = src->x;
+	sr.y0 = src->y;
+	sr.x1 = src->x + src->w;
+	sr.y1 = src->y + src->h;
 
-	dr.min.x = dst->x;
-	dr.min.y = dst->y;
-	dr.max.x = dst->x + dst->w;
-	dr.max.y = dst->y + dst->h;
+	dr.x0 = dst->x;
+	dr.y0 = dst->y;
+	dr.x1 = dst->x + dst->w;
+	dr.y1 = dst->y + dst->h;
 
 	dr = fz_intersectirects(sr, dr);
-	x = dr.min.x;
-	y = dr.min.y;
-	w = dr.max.x - dr.min.x;
-	h = dr.max.y - dr.min.y;
+	x = dr.x0;
+	y = dr.y0;
+	w = dr.x1 - dr.x0;
+	h = dr.y1 - dr.y0;
 
 	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
 	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
@@ -543,27 +543,27 @@ blendmask(fz_renderer *gc, fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst, int o
 	fz_irect sr, dr, mr;
 	int x, y, w, h;
 
-	sr.min.x = src->x;
-	sr.min.y = src->y;
-	sr.max.x = src->x + src->w;
-	sr.max.y = src->y + src->h;
+	sr.x0 = src->x;
+	sr.y0 = src->y;
+	sr.x1 = src->x + src->w;
+	sr.y1 = src->y + src->h;
 
-	dr.min.x = dst->x;
-	dr.min.y = dst->y;
-	dr.max.x = dst->x + dst->w;
-	dr.max.y = dst->y + dst->h;
+	dr.x0 = dst->x;
+	dr.y0 = dst->y;
+	dr.x1 = dst->x + dst->w;
+	dr.y1 = dst->y + dst->h;
 
-	mr.min.x = msk->x;
-	mr.min.y = msk->y;
-	mr.max.x = msk->x + msk->w;
-	mr.max.y = msk->y + msk->h;
+	mr.x0 = msk->x;
+	mr.y0 = msk->y;
+	mr.x1 = msk->x + msk->w;
+	mr.y1 = msk->y + msk->h;
 
 	dr = fz_intersectirects(sr, dr);
 	dr = fz_intersectirects(dr, mr);
-	x = dr.min.x;
-	y = dr.min.y;
-	w = dr.max.x - dr.min.x;
-	h = dr.max.y - dr.min.y;
+	x = dr.x0;
+	y = dr.y0;
+	w = dr.x1 - dr.x0;
+	h = dr.y1 - dr.y0;
 
 	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
 	mp = msk->samples + ((y - msk->y) * msk->w + (x - msk->x)) * msk->n;
@@ -690,13 +690,13 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 	if (fz_isemptyrect(clip))
 		return nil;
 
-DEBUG("mask [%d %d %d %d]\n{\n", clip.min.x, clip.min.y, clip.max.x, clip.max.y);
+DEBUG("mask [%d %d %d %d]\n{\n", clip.x0, clip.y0, clip.x1, clip.y1);
 
 {
 fz_irect sbox = fz_roundrect(fz_boundnode(shape, ctm));
 fz_irect cbox = fz_roundrect(fz_boundnode(color, ctm));
-if (cbox.min.x >= sbox.min.x && cbox.max.x <= sbox.max.x)
-if (cbox.min.y >= sbox.min.y && cbox.max.y <= sbox.max.y)
+if (cbox.x0 >= sbox.x0 && cbox.x1 <= sbox.x1)
+if (cbox.y0 >= sbox.y0 && cbox.y1 <= sbox.y1)
 DEBUG("potentially useless mask\n");
 }
 
@@ -731,10 +731,10 @@ DEBUG("potentially useless mask\n");
 		}
 		else
 		{
-			clip.min.x = MAX(colorpix->x, shapepix->x);
-			clip.min.y = MAX(colorpix->y, shapepix->y);
-			clip.max.x = MIN(colorpix->x+colorpix->w, shapepix->x+shapepix->w);
-			clip.max.y = MIN(colorpix->y+colorpix->h, shapepix->y+shapepix->h);
+			clip.x0 = MAX(colorpix->x, shapepix->x);
+			clip.y0 = MAX(colorpix->y, shapepix->y);
+			clip.x1 = MIN(colorpix->x+colorpix->w, shapepix->x+shapepix->w);
+			clip.y1 = MIN(colorpix->y+colorpix->h, shapepix->y+shapepix->h);
 			error = fz_newpixmapwithrect(&gc->dest, clip, colorpix->n);
 			if (error)
 				goto cleanup;
@@ -819,7 +819,7 @@ fz_rendertree(fz_pixmap **outp,
 
 DEBUG("tree %d [%d %d %d %d]\n{\n",
 gc->maskonly ? 1 : 4,
-bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	error = rendernode(gc, tree->root, ctm);
 	if (error)
@@ -848,10 +848,10 @@ fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm
 	assert(!gc->maskonly);
 	assert(dest->n == 4);
 
-	gc->clip.min.x = dest->x;
-	gc->clip.min.y = dest->y;
-	gc->clip.max.x = dest->x + dest->w;
-	gc->clip.max.y = dest->y + dest->h;
+	gc->clip.x0 = dest->x;
+	gc->clip.y0 = dest->y;
+	gc->clip.x1 = dest->x + dest->w;
+	gc->clip.y1 = dest->y + dest->h;
 
 	gc->over = dest;
 

@@ -164,7 +164,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	bbox = pdf_torect(obj);
 
 	pdf_logpage("bbox [%g %g %g %g]\n",
-		bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+		bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	obj = fz_dictgets(dict, "Rotate");
 	if (fz_isint(obj))
@@ -235,10 +235,10 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return fz_outofmem;
 	}
 
-	page->mediabox.min.x = MIN(bbox.min.x, bbox.max.x);
-	page->mediabox.min.y = MIN(bbox.min.y, bbox.max.y);
-	page->mediabox.max.x = MAX(bbox.min.x, bbox.max.x);
-	page->mediabox.max.y = MAX(bbox.min.y, bbox.max.y);
+	page->mediabox.x0 = MIN(bbox.x0, bbox.x1);
+	page->mediabox.y0 = MIN(bbox.y0, bbox.y1);
+	page->mediabox.x1 = MAX(bbox.x0, bbox.x1);
+	page->mediabox.y1 = MAX(bbox.y0, bbox.y1);
 	page->rotate = rotate;
 	page->resources = rdb;
 	page->tree = tree;

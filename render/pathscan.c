@@ -56,10 +56,10 @@ fz_irect
 fz_boundgel(fz_gel *gel)
 {
 	fz_irect bbox;
-	bbox.min.x = fz_idiv(gel->xmin, gel->hs);
-	bbox.min.y = fz_idiv(gel->ymin, gel->vs);
-	bbox.max.x = fz_idiv(gel->xmax, gel->hs) + 1;
-	bbox.max.y = fz_idiv(gel->ymax, gel->vs) + 1;
+	bbox.x0 = fz_idiv(gel->xmin, gel->hs);
+	bbox.y0 = fz_idiv(gel->ymin, gel->vs);
+	bbox.x1 = fz_idiv(gel->xmax, gel->hs) + 1;
+	bbox.y1 = fz_idiv(gel->ymax, gel->vs) + 1;
 	return bbox;
 }
 
@@ -418,11 +418,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	int hs = gel->hs;
 	int vs = gel->vs;
 
-	int skipx = clip.min.x - xmin;
-	int clipn = clip.max.x - clip.min.x;
+	int skipx = clip.x0 - xmin;
+	int clipn = clip.x1 - clip.x0;
 
-	assert(clip.min.x >= xmin);
-	assert(clip.max.x <= xmax);
+	assert(clip.x0 >= xmin);
+	assert(clip.x1 <= xmax);
 
 	if (gel->len == 0)
 		return nil;
@@ -443,7 +443,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 		yc = fz_idiv(y, vs);
 		if (yc != yd)
 		{
-			if (yd >= clip.min.y && yd < clip.max.y)
+			if (yd >= clip.y0 && yd < clip.y1)
 			{
 				blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
 			}
@@ -456,7 +456,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 			return error;
 		}
 
-		if (yd >= clip.min.y && yd < clip.max.y)
+		if (yd >= clip.y0 && yd < clip.y1)
 		{
 			if (eofill)
 				evenodd(ael, deltas, xofs, hs);
@@ -472,7 +472,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 			y = gel->edges[e].y;
 	}
 
-	if (yd >= clip.min.y && yd < clip.max.y)
+	if (yd >= clip.y0 && yd < clip.y1)
 	{
 		blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
 	}

@@ -134,18 +134,18 @@ fz_transformaabb(fz_matrix m, fz_rect r)
 	if (fz_isinfiniterect(r))
 		return r;
 
-	s.x = r.min.x; s.y = r.min.y;
-	t.x = r.min.x; t.y = r.max.y;
-	u.x = r.max.x; u.y = r.max.y;
-	v.x = r.max.x; v.y = r.min.y;
+	s.x = r.x0; s.y = r.y0;
+	t.x = r.x0; t.y = r.y1;
+	u.x = r.x1; u.y = r.y1;
+	v.x = r.x1; v.y = r.y0;
 	s = fz_transformpoint(m, s);
 	t = fz_transformpoint(m, t);
 	u = fz_transformpoint(m, u);
 	v = fz_transformpoint(m, v);
-	r.min.x = MIN4(s.x, t.x, u.x, v.x);
-	r.min.y = MIN4(s.y, t.y, u.y, v.y);
-	r.max.x = MAX4(s.x, t.x, u.x, v.x);
-	r.max.y = MAX4(s.y, t.y, u.y, v.y);
+	r.x0 = MIN4(s.x, t.x, u.x, v.x);
+	r.y0 = MIN4(s.y, t.y, u.y, v.y);
+	r.x1 = MAX4(s.x, t.x, u.x, v.x);
+	r.y1 = MAX4(s.y, t.y, u.y, v.y);
 	return r;
 }
 

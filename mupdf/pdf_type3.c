@@ -129,15 +129,15 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	bbox = pdf_torect(obj);
 
 	pdf_logfont("bbox [%g %g %g %g]\n",
-		bbox.min.x, bbox.min.y,
-		bbox.max.x, bbox.max.y);
+		bbox.x0, bbox.y0,
+		bbox.x1, bbox.y1);
 
 	bbox = fz_transformaabb(font->matrix, bbox);
-	bbox.min.x = fz_floor(bbox.min.x * 1000);
-	bbox.min.y = fz_floor(bbox.min.y * 1000);
-	bbox.max.x = fz_ceil(bbox.max.x * 1000);
-	bbox.max.y = fz_ceil(bbox.max.y * 1000);
-	fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+	bbox.x0 = fz_floor(bbox.x0 * 1000);
+	bbox.y0 = fz_floor(bbox.y0 * 1000);
+	bbox.x1 = fz_ceil(bbox.x1 * 1000);
+	bbox.y1 = fz_ceil(bbox.y1 * 1000);
+	fz_setfontbbox((fz_font*)font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/*
 	 * Encoding

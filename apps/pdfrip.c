@@ -58,8 +58,8 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 
 		printf("page\n");
 		printf("  mediabox [ %g %g %g %g ]\n",
-			page->mediabox.min.x, page->mediabox.min.y,
-			page->mediabox.max.x, page->mediabox.max.y);
+			page->mediabox.x0, page->mediabox.y0,
+			page->mediabox.x1, page->mediabox.y1);
 		printf("  rotate %d\n", page->rotate);
 
 		printf("  resources\n");
@@ -71,7 +71,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 		printf("endtree\n");
 	}
 
-	ctm = fz_concat(fz_translate(0, -page->mediabox.max.y),
+	ctm = fz_concat(fz_translate(0, -page->mediabox.y1),
 					fz_scale(zoom, -zoom));
 
 	if (textonly)
@@ -91,12 +91,12 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	}
 
 	bbox = fz_roundrect(page->mediabox);
-	bbox.min.x = bbox.min.x * zoom;
-	bbox.min.y = bbox.min.y * zoom;
-	bbox.max.x = bbox.max.x * zoom;
-	bbox.max.y = bbox.max.y * zoom;
-	w = bbox.max.x - bbox.min.x;
-	h = bbox.max.y - bbox.min.y;
+	bbox.x0 = bbox.x0 * zoom;
+	bbox.y0 = bbox.y0 * zoom;
+	bbox.x1 = bbox.x1 * zoom;
+	bbox.y1 = bbox.y1 * zoom;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
 	bh = h / nbands;
 
 	fd = open(namebuf, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
@@ -105,7 +105,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	sprintf(buf, "P6\n%d %d\n255\n", w, bh * nbands);
 	write(fd, buf, strlen(buf));
 
-	error = fz_newpixmap(&pix, bbox.min.x, bbox.min.y, w, bh, 4);
+	error = fz_newpixmap(&pix, bbox.x0, bbox.y0, w, bh, 4);
 	if (error)
 		fz_abort(error);
 

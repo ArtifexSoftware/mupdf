@@ -323,15 +323,15 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	bbox = fz_boundnode(shape, ptm);
 
 	/* expand bbox by pattern bbox */
-	bbox.min.x += pat->bbox.min.x;
-	bbox.min.y += pat->bbox.min.y;
-	bbox.max.x += pat->bbox.max.x;
-	bbox.max.y += pat->bbox.max.y;
+	bbox.x0 += pat->bbox.x0;
+	bbox.y0 += pat->bbox.y0;
+	bbox.x1 += pat->bbox.x1;
+	bbox.y1 += pat->bbox.y1;
 
-	x0 = fz_floor(bbox.min.x / pat->xstep);
-	y0 = fz_floor(bbox.min.y / pat->ystep);
-	x1 = fz_ceil(bbox.max.x / pat->xstep);
-	y1 = fz_ceil(bbox.max.y / pat->ystep);
+	x0 = fz_floor(bbox.x0 / pat->xstep);
+	y0 = fz_floor(bbox.y0 / pat->ystep);
+	x1 = fz_ceil(bbox.x1 / pat->xstep);
+	y1 = fz_ceil(bbox.y1 / pat->ystep);
 
 	for (y = y0; y <= y1; y++)
 	{

@@ -331,17 +331,17 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_logfont("ft name '%s' '%s'\n", face->family_name, face->style_name);
 
-	bbox.min.x = (face->bbox.xMin * 1000) / face->units_per_EM;
-	bbox.min.y = (face->bbox.yMin * 1000) / face->units_per_EM;
-	bbox.max.x = (face->bbox.xMax * 1000) / face->units_per_EM;
-	bbox.max.y = (face->bbox.yMax * 1000) / face->units_per_EM;
+	bbox.x0 = (face->bbox.xMin * 1000) / face->units_per_EM;
+	bbox.y0 = (face->bbox.yMin * 1000) / face->units_per_EM;
+	bbox.x1 = (face->bbox.xMax * 1000) / face->units_per_EM;
+	bbox.y1 = (face->bbox.yMax * 1000) / face->units_per_EM;
 
-	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
-	if (bbox.min.x == bbox.max.x)
+	if (bbox.x0 == bbox.x1)
 		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
 	else
-		fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+		fz_setfontbbox((fz_font*)font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/*
 	 * Encoding
@@ -643,17 +643,17 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	face = font->ftface;
 	kind = ftkind(face);
 
-	bbox.min.x = (face->bbox.xMin * 1000) / face->units_per_EM;
-	bbox.min.y = (face->bbox.yMin * 1000) / face->units_per_EM;
-	bbox.max.x = (face->bbox.xMax * 1000) / face->units_per_EM;
-	bbox.max.y = (face->bbox.yMax * 1000) / face->units_per_EM;
+	bbox.x0 = (face->bbox.xMin * 1000) / face->units_per_EM;
+	bbox.y0 = (face->bbox.yMin * 1000) / face->units_per_EM;
+	bbox.x1 = (face->bbox.xMax * 1000) / face->units_per_EM;
+	bbox.y1 = (face->bbox.yMax * 1000) / face->units_per_EM;
 
-	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
-	if (bbox.min.x == bbox.max.x)
+	if (bbox.x0 == bbox.x1)
 		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
 	else
-		fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+		fz_setfontbbox((fz_font*)font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/*
 	 * Encoding
@@ -953,8 +953,8 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 
 	bbox = pdf_torect(fz_dictgets(desc, "FontBBox"));
 	pdf_logfont("bbox [%g %g %g %g]\n",
-		bbox.min.x, bbox.min.y,
-		bbox.max.x, bbox.max.y);
+		bbox.x0, bbox.y0,
+		bbox.x1, bbox.y1);
 
 	pdf_logfont("flags %d\n", font->flags);
 

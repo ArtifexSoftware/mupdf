@@ -53,8 +53,8 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	pat->bbox = pdf_torect(obj);
 
 	pdf_logrsrc("bbox [%g %g %g %g]\n",
-		pat->bbox.min.x, pat->bbox.min.y,
-		pat->bbox.max.x, pat->bbox.max.y);
+		pat->bbox.x0, pat->bbox.y0,
+		pat->bbox.x1, pat->bbox.y1);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)

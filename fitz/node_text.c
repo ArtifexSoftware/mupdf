@@ -72,15 +72,15 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 
 	/* find bbox of glyph origins in ctm space */
 
-	bbox.min.x = bbox.max.x = text->els[0].x;
-	bbox.min.y = bbox.max.y = text->els[0].y;
+	bbox.x0 = bbox.x1 = text->els[0].x;
+	bbox.y0 = bbox.y1 = text->els[0].y;
 
 	for (i = 1; i < text->len; i++)
 	{
-		bbox.min.x = MIN(bbox.min.x, text->els[i].x);
-		bbox.min.y = MIN(bbox.min.y, text->els[i].y);
-		bbox.max.x = MAX(bbox.max.x, text->els[i].x);
-		bbox.max.y = MAX(bbox.max.y, text->els[i].y);
+		bbox.x0 = MIN(bbox.x0, text->els[i].x);
+		bbox.y0 = MIN(bbox.y0, text->els[i].y);
+		bbox.x1 = MAX(bbox.x1, text->els[i].x);
+		bbox.y1 = MAX(bbox.y1, text->els[i].y);
 	}
 
 	bbox = fz_transformaabb(ctm, bbox);
@@ -91,19 +91,19 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 	trm.e = 0;
 	trm.f = 0;
 
-	fbox.min.x = text->font->bbox.min.x * 0.001;
-	fbox.min.y = text->font->bbox.min.y * 0.001;
-	fbox.max.x = text->font->bbox.max.x * 0.001;
-	fbox.max.y = text->font->bbox.max.y * 0.001;
+	fbox.x0 = text->font->bbox.x0 * 0.001;
+	fbox.y0 = text->font->bbox.y0 * 0.001;
+	fbox.x1 = text->font->bbox.x1 * 0.001;
+	fbox.y1 = text->font->bbox.y1 * 0.001;
 
 	fbox = fz_transformaabb(trm, fbox);
 
 	/* expand glyph origin bbox by font bbox */
 
-	bbox.min.x += fbox.min.x;
-	bbox.min.y += fbox.min.y;
-	bbox.max.x += fbox.max.x;
-	bbox.max.y += fbox.max.y;
+	bbox.x0 += fbox.x0;
+	bbox.y0 += fbox.y0;
+	bbox.x1 += fbox.x1;
+	bbox.y1 += fbox.y1;
 
 	return bbox;
 }

@@ -171,10 +171,10 @@ fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *das
 
 static inline fz_rect boundexpand(fz_rect r, fz_point p)
 {
-	if (p.x < r.min.x) r.min.x = p.x;
-	if (p.y < r.min.y) r.min.y = p.y;
-	if (p.x > r.max.x) r.max.x = p.x;
-	if (p.y > r.max.y) r.max.y = p.y;
+	if (p.x < r.x0) r.x0 = p.x;
+	if (p.y < r.y0) r.y0 = p.y;
+	if (p.x > r.x1) r.x1 = p.x;
+	if (p.y > r.y1) r.y1 = p.y;
 	return r;
 }
 
@@ -190,8 +190,8 @@ fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 		p.x = path->els[1].v;
 		p.y = path->els[2].v;
 		p = fz_transformpoint(ctm, p);
-		r.min.x = r.max.x = p.x;
-		r.min.y = r.max.y = p.y;
+		r.x0 = r.x1 = p.x;
+		r.y0 = r.y1 = p.y;
 	}
 
 	while (i < path->len)
@@ -221,10 +221,10 @@ fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 		float miterlength = sin(path->miterlimit / 2.0);
 		float linewidth = path->linewidth;
 		float expand = MAX(miterlength, linewidth) / 2.0;
-		r.min.x -= expand;
-		r.min.y -= expand;
-		r.max.x += expand;
-		r.max.y += expand;
+		r.x0 -= expand;
+		r.y0 -= expand;
+		r.x1 += expand;
+		r.y1 += expand;
 	}
 
 	return r;

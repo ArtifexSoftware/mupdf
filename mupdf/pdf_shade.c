@@ -107,8 +107,8 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	{
 		shade->bbox = pdf_torect(obj);
 		pdf_logshade("bbox [%g %g %g %g]\n",
-			shade->bbox.min.x, shade->bbox.min.y,
-			shade->bbox.max.x, shade->bbox.max.y);
+			shade->bbox.x0, shade->bbox.y0,
+			shade->bbox.x1, shade->bbox.y1);
 	}
 
 	switch(type)

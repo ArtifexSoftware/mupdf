@@ -8,10 +8,10 @@ fz_initfont(fz_font *font, char *name)
 
 	font->wmode = 0;
 
-	font->bbox.min.x = 0;
-	font->bbox.min.y = 0;
-	font->bbox.max.x = 1000;
-	font->bbox.max.y = 1000;
+	font->bbox.x0 = 0;
+	font->bbox.y0 = 0;
+	font->bbox.x1 = 1000;
+	font->bbox.y1 = 1000;
 
 	font->hmtxcap = 0;
 	font->vmtxcap = 0;
@@ -60,10 +60,10 @@ fz_setfontwmode(fz_font *font, int wmode)
 void
 fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
 {
-	font->bbox.min.x = xmin;
-	font->bbox.min.y = ymin;
-	font->bbox.max.x = xmax;
-	font->bbox.max.y = ymax;
+	font->bbox.x0 = xmin;
+	font->bbox.y0 = ymin;
+	font->bbox.x1 = xmax;
+	font->bbox.y1 = ymax;
 }
 
 void
@@ -244,8 +244,8 @@ fz_debugfont(fz_font *font)
 	printf("font '%s' {\n", font->name);
 	printf("  wmode %d\n", font->wmode);
 	printf("  bbox [%d %d %d %d]\n",
-		font->bbox.min.x, font->bbox.min.y,
-		font->bbox.max.x, font->bbox.max.y);
+		font->bbox.x0, font->bbox.y0,
+		font->bbox.x1, font->bbox.y1);
 	printf("  DW %d\n", font->dhmtx.w);
 
 	printf("  W {\n");

@@ -297,10 +297,10 @@ fz_rect
 fz_boundimagenode(fz_imagenode *node, fz_matrix ctm)
 {
 	fz_rect bbox;
-	bbox.min.x = 0;
-	bbox.min.y = 0;
-	bbox.max.x = 1;
-	bbox.max.y = 1;
+	bbox.x0 = 0;
+	bbox.y0 = 0;
+	bbox.x1 = 1;
+	bbox.y1 = 1;
 	return fz_transformaabb(ctm, bbox);
 }
 
