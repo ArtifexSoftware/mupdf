@@ -15,6 +15,8 @@ pdf_newpdf(pdf_xref **xrefp)
 		return fz_outofmem;
 	memset(xref, 0, sizeof(pdf_xref));
 
+	pdf_logxref("newxref %p\n", xref);
+
 	xref->file = nil;
 	xref->version = 1.3;
 	xref->startxref = 0;
@@ -77,6 +79,8 @@ void
 pdf_closepdf(pdf_xref *xref)
 {
 	int i;
+
+	pdf_logxref("closexref %p\n", xref);
 
 	if (xref->table)
 	{
@@ -145,6 +149,8 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 	int prev, next;
 	int oid = 0;
 
+	pdf_logxref("allocobj");
+
 	while (1)
 	{
 		x = xref->table + oid;
@@ -155,6 +161,8 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 			{
 				*oidp = oid;
 				*genp = x->gen;
+
+				pdf_logxref(" reuse %d %d\n", *oidp, *genp);
 
 				x->type = 'a';
 				x->ofs = 0;
@@ -200,6 +208,8 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 	*oidp = oid;
 	*genp = 0;
 
+	pdf_logxref(" %d %d\n", *oidp, *genp);
+
 	prev = findprev(xref, oid);
 	next = findnext(xref, oid);
 	xref->table[prev].type = 'd';
@@ -216,6 +226,8 @@ pdf_deleteobject(pdf_xref *xref, int oid, int gen)
 
 	if (oid < 0 || oid >= xref->len)
 		return fz_throw("rangecheck: object number out of range: %d", oid);
+
+	pdf_logxref("deleteobj %d %d\n", oid, gen);
 
 	x = xref->table + oid;
 
@@ -246,6 +258,8 @@ pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
 	if (oid < 0 || oid >= xref->len)
 		return fz_throw("rangecheck: object number out of range: %d", oid);
 
+	pdf_logxref("updateobj %d %d (%p)\n", oid, gen, obj);
+
 	x = xref->table + oid;
 
 	if (x->obj)
@@ -272,6 +286,8 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 
 	if (oid < 0 || oid >= xref->len)
 		return fz_throw("rangecheck: object number out of range: %d", oid);
+
+	pdf_logxref("updatestm %d %d (%p)\n", oid, gen, stm);
 
 	x = xref->table + oid;
 
@@ -305,7 +321,12 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 		return nil;
 
 	if (x->type == 'f' || x->type == 'd')
-		return fz_throw("rangecheck: tried to load free object");
+	{
+		error = fz_newnull(&x->obj);
+		if (error)
+			return error;
+		return nil;
+	}
 
 	if (x->type == 'n')
 	{

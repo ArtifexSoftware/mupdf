@@ -113,6 +113,8 @@ pdf_updatepdf(pdf_xref *xref, char *path)
 	int startxref;
 	fz_obj *obj;
 
+	pdf_logxref("updatexref '%s' %p\n", path, xref);
+
 	error = fz_openfile(&out, path, FZ_APPEND);
 	if (error)
 		return error;
@@ -140,6 +142,8 @@ pdf_updatepdf(pdf_xref *xref, char *path)
 	while (oid < xref->len)
 	{
 		n = countmodified(xref, oid);
+
+		pdf_logxref("  section %d +%d\n", oid, n);
 
 		fz_print(out, "%d %d\n", oid, n);
 
@@ -213,9 +217,13 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 	fz_obj *obj;
 	int eoid, egen;
 
+	pdf_logxref("savexref '%s' %p\n", path, xref);
+
 	/* need to add encryption object for acrobat < 6 */
 	if (encrypt)
 	{
+		pdf_logxref("make encryption dict\n");
+
 		error = pdf_allocobject(xref, &eoid, &egen);
 		if (error)
 			return error;

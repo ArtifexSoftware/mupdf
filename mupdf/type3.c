@@ -111,14 +111,26 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	if (!font)
 		return fz_outofmem;
 
+	pdf_logfont("load type3 font %p {\n", font);
+	pdf_logfont("name %s\n", buf);
+
 	font->super.render = t3render;
 	font->super.drop = (void(*)(fz_font*)) t3dropfont;
 
 	obj = fz_dictgets(dict, "FontMatrix");
 	font->matrix = pdf_tomatrix(obj);
 
+	pdf_logfont("matrix [%g %g %g %g %g %g]\n",
+		font->matrix.a, font->matrix.b,
+		font->matrix.c, font->matrix.d,
+		font->matrix.e, font->matrix.f);
+
 	obj = fz_dictgets(dict, "FontBBox");
 	bbox = pdf_torect(obj);
+
+	pdf_logfont("bbox [%g %g %g %g]\n",
+		bbox.min.x, bbox.min.y,
+		bbox.max.x, bbox.max.y);
 
 	bbox = fz_transformaabb(font->matrix, bbox);
 	bbox.min.x = fz_floor(bbox.min.x * 1000);
@@ -240,6 +252,8 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 			goto cleanup;
 	}
+	else
+		pdf_logfont("no resource dict!\n");
 
 	/*
 	 * CharProcs
@@ -263,6 +277,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 			obj = fz_dictgets(charprocs, estrings[i]);
 			if (obj)
 			{
+				pdf_logfont("load charproc %s {\n", estrings[i]);
 				error = loadcharproc(&font->charprocs[i], xref, resources, obj);
 				if (error)
 					goto cleanup2;
@@ -270,6 +285,8 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 				error = fz_optimizetree(font->charprocs[i]);
 				if (error)
 					goto cleanup2;
+
+				pdf_logfont("}\n");
 			}
 		}
 	}
@@ -277,6 +294,8 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_dropobj(charprocs);
 	if (resources)
 		fz_dropobj(resources);
+
+	pdf_logfont("}\n");
 
 	*fontp = font;
 	return nil;

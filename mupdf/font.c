@@ -46,6 +46,7 @@ enum { UNKNOWN, TYPE1, CFF, TRUETYPE, CID };
 static int ftkind(FT_Face face)
 {
 	const char *kind = face->driver->clazz->root.module_name;
+	pdf_logfont("ft driver %s\n", kind);
 	if (!strcmp(kind, "type1"))
 		return TYPE1;
 	if (!strcmp(kind, "cff"))
@@ -308,9 +309,13 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	 * Load font file
 	 */
 
-	font = *fontp = pdf_newfont(fontname);
+	font = pdf_newfont(fontname);
 	if (!font)
 		return fz_outofmem;
+
+	pdf_logfont("load simple font %p {\n", font);
+	pdf_logfont("basefont0 %s\n", basefont);
+	pdf_logfont("basefont1 %s\n", fontname);
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
 	if (descriptor && basefont == fontname)
@@ -323,7 +328,11 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	face = font->ftface;
 	kind = ftkind(face);
 
-	symbolic = font->flags & 4;
+	pdf_logfont("ft name '%s' '%s'\n", face->family_name, face->style_name);
+
+	pdf_logfont("ft bbox [%d %d %d %d]\n",
+		face->bbox.xMin, face->bbox.yMin,
+		face->bbox.xMax, face->bbox.yMax);
 
 	if (face->bbox.xMax == face->bbox.xMin)
 		fz_setfontbbox((fz_font*)font, -1000, -1000, 2000, 2000);
@@ -335,6 +344,8 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	/*
 	 * Encoding
 	 */
+
+	symbolic = font->flags & 4;
 
 	if (face->num_charmaps > 0)
 		cmap = face->charmaps[0];
@@ -420,6 +431,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 
 		if (kind == TYPE1 || kind == CFF)
 		{
+			pdf_logfont("encode type1/cff by strings\n");
 			for (i = 0; i < 256; i++)
 				if (estrings[i])
 					etable[i] = FT_Get_Name_Index(face, estrings[i]);
@@ -432,6 +444,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 			/* Unicode cmap */
 			if (face->charmap->platform_id == 3)
 			{
+				pdf_logfont("encode truetype via unicode\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -448,6 +461,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 			/* MacRoman cmap */
 			else if (face->charmap->platform_id == 1)
 			{
+				pdf_logfont("encode truetype via macroman\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -464,6 +478,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 			/* Symbolic cmap */
 			else
 			{
+				pdf_logfont("encode truetype symbolic\n");
 				for (i = 0; i < 256; i++)
 					etable[i] = FT_Get_Char_Index(face, i);
 			}
@@ -474,6 +489,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 
 	else
 	{
+		pdf_logfont("encode builtin\n");
 		for (i = 0; i < 256; i++)
 			etable[i] = FT_Get_Char_Index(face, i);
 	}
@@ -536,6 +552,9 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		goto cleanup;
 
+	pdf_logfont("}\n");
+
+	*fontp = font;
 	return nil;
 
 cleanup:
@@ -543,7 +562,6 @@ cleanup:
 	if (widths)
 		fz_dropobj(widths);
 	fz_dropfont((fz_font*)font);
-	*fontp = nil;
 	return error;
 }
 
@@ -603,9 +621,13 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 	 * Load font file
 	 */
 
-	font = *fontp = pdf_newfont(basefont);
+	font = pdf_newfont(basefont);
 	if (!font)
 		return fz_outofmem;
+
+	pdf_logfont("load cid font %p {\n", font);
+	pdf_logfont("basefont %s\n", basefont);
+	pdf_logfont("collection %s\n", collection);
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
 	if (descriptor)
@@ -625,12 +647,17 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 			face->bbox.xMin, face->bbox.yMin,
 			face->bbox.xMax, face->bbox.yMax);
 
+	pdf_logfont("ft bbox [%d %d %d %d]\n",
+		face->bbox.xMin, face->bbox.yMin,
+		face->bbox.xMax, face->bbox.yMax);
+
 	/*
 	 * Encoding
 	 */
 
 	if (fz_isname(encoding))
 	{
+		pdf_logfont("encoding /%s\n", fz_toname(encoding));
 		if (!strcmp(fz_toname(encoding), "Identity-H"))
 			error = pdf_makeidentitycmap(&font->encoding, 0, 2);
 		else if (!strcmp(fz_toname(encoding), "Identity-V"))
@@ -640,6 +667,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 	}
 	else if (fz_isindirect(encoding))
 	{
+		pdf_logfont("encoding %d %d R\n", fz_tonum(encoding), fz_togen(encoding));
 		error = pdf_loadembeddedcmap(&font->encoding, xref, encoding);
 	}
 	else
@@ -650,6 +678,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 		goto cleanup;
 
 	fz_setfontwmode((fz_font*)font, fz_getwmode(font->encoding));
+	pdf_logfont("wmode %d\n", fz_getwmode(font->encoding));
 
 	if (kind == TRUETYPE)
 	{
@@ -661,6 +690,8 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 			unsigned short *map;
 			fz_buffer *buf;
 			int len;
+
+			pdf_logfont("cidtogidmap stream\n");
 
 			error = pdf_loadstream(&buf, xref, fz_tonum(cidtogidmap), fz_togen(cidtogidmap));
 			if (error)
@@ -690,6 +721,8 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 		else if (font->substitute)
 		{
 			int e;
+
+			pdf_logfont("emulate ttf cidfont\n");
 
 			e = FT_Select_Charmap(face, ft_encoding_unicode);
 			if (e)
@@ -832,13 +865,15 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 			goto cleanup;
 	}
 
+	pdf_logfont("}\n");
+
+	*fontp = font;
 	return nil;
 
 cleanup:
 	if (widths)
 		fz_dropobj(widths);
 	fz_dropfont((fz_font*)font);
-	*fontp = nil;
 	return error;
 }
 
@@ -897,7 +932,11 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 	if (error)
 		return error;
 
+	pdf_logfont("load fontdescriptor {\n");
+
 	fontname = fz_toname(fz_dictgets(desc, "FontName"));
+
+	pdf_logfont("fontname %s\n", fontname);
 
 	font->flags = fz_toint(fz_dictgets(desc, "Flags"));
 	font->italicangle = fz_toreal(fz_dictgets(desc, "ItalicAngle"));
@@ -906,6 +945,8 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 	font->capheight = fz_toreal(fz_dictgets(desc, "CapHeight"));
 	font->xheight = fz_toreal(fz_dictgets(desc, "XHeight"));
 	font->missingwidth = fz_toreal(fz_dictgets(desc, "MissingWidth"));
+
+	pdf_logfont("flags %d\n", font->flags);
 
 	obj1 = fz_dictgets(desc, "FontFile");
 	obj2 = fz_dictgets(desc, "FontFile2");
@@ -926,6 +967,8 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 	}
 
 	fz_dropobj(desc);
+
+	pdf_logfont("}\n");
 
 	return nil;
 

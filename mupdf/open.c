@@ -27,6 +27,8 @@ loadversion(pdf_xref *xref)
 
 	xref->version = atof(buf + 5);
 
+	pdf_logxref("version %g\n", xref->version);
+
 	return nil;
 }
 
@@ -77,6 +79,8 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	int t;
 	int c;
 
+	pdf_logxref("load old xref format trailer\n");
+
 	fz_readline(xref->file, buf, cap);
 	if (strcmp(buf, "xref") != 0)
 		return fz_throw("syntaxerror: missing xref");
@@ -115,6 +119,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 static fz_error *
 readnewtrailer(pdf_xref *xref, char *buf, int cap)
 {
+	pdf_logxref("load new xref format trailer\n");
 	return pdf_parseindobj(&xref->trailer, xref->file, buf, cap, nil, nil, nil);
 }
 
@@ -150,6 +155,8 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	int t;
 	int i;
 	int c;
+
+	pdf_logxref("load old xref format\n");
 
 	fz_readline(xref->file, buf, cap);
 	if (strcmp(buf, "xref") != 0)
@@ -202,6 +209,8 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	int oid, gen, stmofs;
 	int size, w0, w1, w2, i0, i1;
 	int i, n;
+
+	pdf_logxref("load new xref format\n");
 
 	error = pdf_parseindobj(&trailer, xref->file, buf, cap, &oid, &gen, &stmofs);
 	if (error)
@@ -329,6 +338,7 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 	xrefstm = fz_dictgets(trailer, "XrefStm");
 	if (xrefstm)
 	{
+		pdf_logxref("load xrefstm\n");
 		error = readxrefsections(xref, fz_toint(xrefstm), buf, cap);
 		if (error)
 			goto cleanup;
@@ -337,6 +347,7 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 	prev = fz_dictgets(trailer, "Prev");
 	if (prev)
 	{
+		pdf_logxref("load prev\n");
 		error = readxrefsections(xref, fz_toint(prev), buf, cap);
 		if (error)
 			goto cleanup;
@@ -367,12 +378,16 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	int count;
 	int i, n, t;
 
+	pdf_logxref("loadobjstm %d %d\n", oid, gen);
+
 	error = pdf_loadobject(&objstm, xref, oid, gen);
 	if (error)
 		return error;
 
 	count = fz_toint(fz_dictgets(objstm, "N"));
 	first = fz_toint(fz_dictgets(objstm, "First"));
+
+	pdf_logxref("  count %d\n", count);
 
 	oidbuf = fz_malloc(count * sizeof(int));
 	if (!oidbuf) { error = fz_outofmem; goto cleanup1; }
@@ -475,6 +490,8 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 	xref->cap = 0;
 	xref->table = nil;
 
+	pdf_logxref("openxref '%s' %p\n", filename, xref);
+
 	error = fz_openfile(&xref->file, filename, FZ_READ);
 	if (error)
 		goto cleanup;
@@ -494,6 +511,8 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 	size = fz_dictgets(xref->trailer, "Size");
 	if (!size)
 		return fz_throw("syntaxerror: trailer missing Size entry");
+
+	pdf_logxref("  size %d\n", fz_toint(size));
 
 	xref->cap = fz_toint(size);
 	xref->len = fz_toint(size);

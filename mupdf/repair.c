@@ -135,11 +135,15 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	xref->trailer = nil;
 	xref->crypt = nil;
 
+	pdf_logxref("repairxref '%s' %p\n", filename, xref);
+
 	error = fz_openfile(&file, filename, FZ_READ);
 	if (error)
 		goto cleanup;
 
 	xref->file = file;
+
+	/* TODO: extract version */
 
 	listlen = 0;
 	listcap = 1024;
@@ -167,11 +171,13 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 				goto cleanup;
 
 			if (isroot) {
+				pdf_logxref("found catalog: %d %d\n", oid, gen);
 				rootoid = oid;
 				rootgen = gen;
 			}
 
 			if (isinfo) {
+				pdf_logxref("found info: %d %d\n", oid, gen);
 				infooid = oid;
 				infogen = gen;
 			}
@@ -253,6 +259,9 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 		if (list[i].stmlen >= 0)
 		{
 			fz_obj *dict, *length;
+
+			pdf_logxref("correct stream length %d %d = %d\n",
+				list[i].oid, list[i].gen, list[i].stmlen);
 
 			error = pdf_loadobject(&dict, xref, list[i].oid, list[i].gen);
 			if (error)

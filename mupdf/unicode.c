@@ -17,6 +17,8 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 
 	if (fz_isindirect(cmapstm))
 	{
+		pdf_logfont("tounicode embedded cmap\n");
+
 		error = pdf_loadembeddedcmap(&cmap, xref, cmapstm);
 		if (error)
 			return error;
@@ -46,8 +48,10 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		return error;
 	}
 
-	if (collection)
+	else if (collection)
 	{
+		pdf_logfont("tounicode cid collection\n");
+
 		if (!strcmp(collection, "Adobe-CNS1"))
 			return pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
 		else if (!strcmp(collection, "Adobe-GB1"))
@@ -62,6 +66,8 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 
 	if (strings)
 	{
+		pdf_logfont("tounicode strings\n");
+
 		font->ncidtoucs = 256;
 		font->cidtoucs = fz_malloc(256 * sizeof(unsigned short));
 		if (!font->cidtoucs)
@@ -78,7 +84,7 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		return nil;
 	}
 
-	fz_warn("font: cannot create unicode conversion", collection);
+	pdf_logfont("tounicode impossible");
 	return nil;
 }
 

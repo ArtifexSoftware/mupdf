@@ -4,6 +4,8 @@
 void
 pdf_droppattern(pdf_pattern *pat)
 {
+	pdf_logrsrc("drop pattern %p\n", pat);
+
 	if (pat->tree)
 		fz_droptree(pat->tree);
 	fz_free(pat);
@@ -18,7 +20,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	fz_obj *obj;
 	pdf_csi *csi;
 
-printf("loading pattern %d %d\n", fz_tonum(stmref), fz_togen(stmref));
+	pdf_logrsrc("load pattern %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 
 	pat = fz_malloc(sizeof(pdf_pattern));
 	if (!pat)
@@ -29,8 +31,16 @@ printf("loading pattern %d %d\n", fz_tonum(stmref), fz_togen(stmref));
 	pat->xstep = fz_toreal(fz_dictgets(dict, "XStep"));
 	pat->ystep = fz_toreal(fz_dictgets(dict, "YStep"));
 
+	pdf_logrsrc("mask %d\n", pat->ismask);
+	pdf_logrsrc("xstep %g\n", pat->xstep);
+	pdf_logrsrc("ystep %g\n", pat->ystep);
+
 	obj = fz_dictgets(dict, "BBox");
 	pat->bbox = pdf_torect(obj);
+
+	pdf_logrsrc("bbox [%g %g %g %g]\n",
+		pat->bbox.min.x, pat->bbox.min.y,
+		pat->bbox.max.x, pat->bbox.max.y);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
@@ -38,9 +48,10 @@ printf("loading pattern %d %d\n", fz_tonum(stmref), fz_togen(stmref));
 	else
 		pat->matrix = fz_identity();
 
-printf("  mask %d\n", pat->ismask);
-printf("  xstep %g\n", pat->xstep);
-printf("  ystep %g\n", pat->ystep);
+	pdf_logrsrc("matrix [%g %g %g %g %g %g]\n",
+		pat->matrix.a, pat->matrix.b,
+		pat->matrix.c, pat->matrix.d,
+		pat->matrix.e, pat->matrix.f);
 
 	/*
 	 * Resources
@@ -67,6 +78,8 @@ printf("  ystep %g\n", pat->ystep);
 	 * Content stream
 	 */
 
+	pdf_logrsrc("content stream\n");
+
 	error = pdf_newcsi(&csi, pat->ismask);
 	if (error)
 		goto cleanup;
@@ -88,6 +101,11 @@ printf("  ystep %g\n", pat->ystep);
 	pdf_dropcsi(csi);
 
 	fz_dropobj(resources);
+
+	pdf_logrsrc("optimize tree\n");
+	fz_optimizetree(pat->tree);
+
+	pdf_logrsrc("}\n");
 
 	*patp = pat;
 	return nil;

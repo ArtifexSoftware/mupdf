@@ -1,6 +1,8 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+/* TODO: use binary search ... realizm.pdf */
+
 void *
 pdf_findresource(pdf_rsrc *rsrc, fz_obj *key)
 {
@@ -62,11 +64,11 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	pdf_rsrc *rsrc;
 	fz_obj *obj = ref;
 
-	if (!fz_isindirect(ref))
-		fz_warn("inline colorspace resource");
-
 	if (pdf_findresource(xref->rcolorspace, ref))
 		return nil;
+
+	if (!fz_isindirect(ref))
+		pdf_logrsrc("inline colorspace resource\n");
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -97,13 +99,13 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	fz_obj *type;
 	fz_obj *obj = ref;
 
-	if (!fz_isindirect(ref))
-		fz_warn("inline pattern resource");
-
 	if (pdf_findresource(xref->rpattern, ref))
 		return nil;
 	if (pdf_findresource(xref->rshade, ref))
 		return nil;
+
+	if (!fz_isindirect(ref))
+		pdf_logrsrc("inline pattern resource\n");
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -158,11 +160,11 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 	pdf_rsrc *rsrc;
 	fz_obj *obj = ref;
 
-	if (!fz_isindirect(ref))
-		fz_warn("inline shading resource");
-
 	if (pdf_findresource(xref->rshade, ref))
 		return nil;
+
+	if (!fz_isindirect(ref))
+		pdf_logrsrc("inline shading resource\n");
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -193,13 +195,13 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	fz_obj *obj = ref;
 	fz_obj *subtype;
 
-	if (!fz_isindirect(ref))
-		fz_warn("inline xobject resource");
-
 	if (pdf_findresource(xref->rxobject, ref))
 		return nil;
 	if (pdf_findresource(xref->rimage, ref))
 		return nil;
+
+	if (!fz_isindirect(ref))
+		pdf_logrsrc("inline xobject resource\n");
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -255,11 +257,11 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	pdf_rsrc *rsrc;
 	fz_obj *obj = ref;
 
-	if (!fz_isindirect(ref))
-		fz_warn("inline font resource");
-
 	if (pdf_findresource(xref->rfont, ref))
 		return nil;
+
+	if (!fz_isindirect(ref))
+		pdf_logrsrc("inline font resource\n");
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -299,6 +301,7 @@ scanfonts(pdf_xref *xref, fz_obj *rdb)
 			obj = fz_dictgets(obj, "Font");
 			if (obj)
 			{
+				pdf_logrsrc("extgstate font\n");
 				error = preloadfont(xref, fz_arrayget(obj, 0));
 				if (error)
 					return error;
@@ -374,6 +377,8 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 	fz_obj *dict;
 	fz_obj *obj;
 	int i;
+
+	pdf_logrsrc("load resources {\n");
 
 	/*
 	 * Resolve indirect objects
@@ -462,6 +467,8 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 	error = scanfonts(xref, copy);
 	if (error)
 		goto cleanup;
+
+	pdf_logrsrc("}\n");
 
 	*rdbp = copy;
 	return nil;

@@ -82,6 +82,8 @@ pdf_garbagecollect(pdf_xref *xref)
 	fz_error *error;
 	int i, g;
 
+	pdf_logxref("garbage collect {\n");
+
 	for (i = 0; i < xref->len; i++)
 		xref->table[i].mark = 0;
 
@@ -98,6 +100,8 @@ pdf_garbagecollect(pdf_xref *xref)
 		if (!x->mark && x->type != 'f' && x->type != 'd')
 			pdf_deleteobject(xref, i, g);
 	}
+
+	pdf_logxref("}\n");
 
 	return nil;
 }
@@ -191,6 +195,8 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	fz_buffer *stm;
 	int i, n;
 
+	pdf_logxref("transplant {\n");
+
 	for (i = 0; i < src->len; i++)
 		src->table[i].mark = 0;
 
@@ -201,6 +207,8 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	for (n = 0, i = 0; i < src->len; i++)	
 		if (src->table[i].mark)
 			n++;
+
+	pdf_logxref("marked %d\n", n);
 
 	map = fz_malloc(sizeof(struct pair) * n);
 	if (!map)
@@ -227,6 +235,10 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 
 	for (i = 0; i < n; i++)	
 	{
+		pdf_logxref("copyfrom %d %d to %d %d\n",
+			map[i].soid, map[i].sgen,
+			map[i].doid, map[i].dgen);
+
 		error = pdf_loadobject(&old, src, map[i].soid, map[i].sgen);
 		if (error)
 			goto cleanup;
@@ -248,6 +260,8 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 		pdf_updateobject(dst, map[i].doid, map[i].dgen, new);
 		fz_dropobj(new);
 	}
+
+	pdf_logxref("}\n");
 
 	fz_free(map);
 	return nil;

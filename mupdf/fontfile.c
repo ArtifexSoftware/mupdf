@@ -110,6 +110,8 @@ pdf_loadbuiltinfont(pdf_font *font, char *fontname)
 	return fz_throw("font not found: %s", fontname);
 
 found:
+	pdf_logfont("load builtin font %s\n", fontname);
+
 	loadfontdata(i, &data, &len);
 
 	e = FT_New_Memory_Face(ftlib, data, len, 0, (FT_Face*)&font->ftface);
@@ -126,7 +128,7 @@ loadcidfont(pdf_font *font, char *filename)
 	char *fontdir;
 	int e;
 
-printf("  load system cid font '%s'\n", filename);
+	pdf_logfont("load system font '%s'\n", filename);
 
 	fontdir = getenv("FONTDIR");
 	if (!fontdir)
@@ -186,11 +188,13 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 	if (font->flags & FD_FORCEBOLD)
 		isbold = 1;
 
+	pdf_logfont("fixed-%d serif-%d italic-%d script-%d bold-%d\n",
+		isfixed, isserif, isitalic, isscript, isbold);
+
 	if (collection)
 	{
 		char buf[256];
 		char *env;
-printf("  find cid font %s (%d)\n", collection, isserif);
 
 		snprintf(buf, sizeof buf, "%s_%s", strstr(collection, "-") + 1, isserif ? "S" : "G");
 		env = getenv(buf);
@@ -250,8 +254,6 @@ printf("  find cid font %s (%d)\n", collection, isserif);
 		}
 	}
 
-printf("  loading substitute font %s\n", name);
-
 	return pdf_loadbuiltinfont(font, name);
 }
 
@@ -266,6 +268,8 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 	error = initfontlibs();
 	if (error)
 		return error;
+
+	pdf_logfont("load embedded font\n");
 
 	error = pdf_loadstream(&buf, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)

@@ -6,6 +6,8 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error *error;
 
+	pdf_logpage("simple content stream\n");
+
 	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		return error;
@@ -30,6 +32,8 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 	fz_obj *stm;
 	int n;
 	int i;
+
+	pdf_logpage("multiple content streams: %d\n", fz_arraylen(list));
 
 	error = fz_newbuffer(&big, 32 * 1024);
 	if (error)
@@ -144,6 +148,8 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	fz_rect bbox;
 	int rotate;
 
+	pdf_logpage("load page {\n");
+
 	obj = fz_dictgets(dict, "CropBox");
 	if (!obj)
 		obj = fz_dictgets(dict, "MediaBox");
@@ -151,11 +157,16 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return fz_throw("syntaxerror: Page missing MediaBox");
 	bbox = pdf_torect(obj);
 
+	pdf_logpage("bbox [%g %g %g %g]\n",
+		bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+
 	obj = fz_dictgets(dict, "Rotate");
 	if (fz_isint(obj))
 		rotate = fz_toint(obj);
 	else
 		rotate = 0;
+
+	pdf_logpage("rotate %d\n", rotate);
 
 	/*
 	 * Load resources
@@ -182,6 +193,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return error;
 	}
 
+	pdf_logpage("optimize tree\n");
 	error = fz_optimizetree(tree);
 	if (error) {
 		fz_dropobj(rdb);
@@ -207,12 +219,15 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page->resources = rdb;
 	page->tree = tree;
 
+	pdf_logpage("} %p\n", page);
+
 	return nil;
 }
 
 void
 pdf_droppage(pdf_page *page)
 {
+	pdf_logpage("drop page %p\n", page);
 	fz_dropobj(page->resources);
 	fz_droptree(page->tree);
 	fz_free(page);

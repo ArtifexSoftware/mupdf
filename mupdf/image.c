@@ -21,9 +21,11 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 	int ismask;
 	int i;
 
-	img = *imgp = fz_malloc(sizeof(pdf_image));
+	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
 		return fz_outofmem;
+
+	pdf_logimage("load inline image %p {\n", img);
 
 	img->super.loadtile = pdf_loadtile;
 	img->super.drop = pdf_dropimage;
@@ -39,8 +41,11 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 	d = fz_dictgetsa(dict, "Decode", "D");
 	cs = fz_dictgetsa(dict, "ColorSpace", "CS");
 
+	pdf_logimage("size %dx%d %d\n", img->super.w, img->super.h, img->bpc);
+
 	if (ismask)
 	{
+		pdf_logimage("is mask\n");
 		img->super.cs = nil;
 		img->super.n = 0;
 		img->super.a = 1;
@@ -70,9 +75,12 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 
 		if (!strcmp(img->super.cs->name, "Indexed"))
 		{
+			pdf_logimage("indexed\n");
 			img->indexed = (pdf_indexed*)img->super.cs;
 			img->super.cs = img->indexed->base;
 		}
+
+		pdf_logimage("colorspace %s\n", img->super.cs->name);
 
 		img->super.n = img->super.cs->n;
 		img->super.a = 0;
@@ -80,6 +88,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 
 	if (fz_isarray(d))
 	{
+		pdf_logimage("decode array\n");
 		if (img->indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = fz_toreal(fz_arrayget(d, i));
@@ -143,6 +152,9 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 			*p = ~*p;
 	}
 
+	pdf_logimage("}\n");
+
+	*imgp = img;
 	return nil;
 }
 
@@ -169,6 +181,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (!img)
 		return fz_outofmem;
 
+	pdf_logimage("load image %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), img);
+
 	/*
 	 * Dimensions, BPC and ColorSpace
 	 */
@@ -176,6 +190,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	w = fz_toint(fz_dictgets(dict, "Width"));
 	h = fz_toint(fz_dictgets(dict, "Height"));
 	bpc = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+
+	pdf_logimage("size %dx%d %d\n", w, h, bpc);
 
 	cs = nil;
 	obj = fz_dictgets(dict, "ColorSpace");
@@ -191,11 +207,14 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 		if (!strcmp(cs->name, "Indexed"))
 		{
+			pdf_logimage("indexed\n");
 			indexed = (pdf_indexed*)cs;
 			cs = indexed->base;
 		}
 		n = cs->n;
 		a = 0;
+
+		pdf_logimage("colorspace %s\n", cs->name);
 
 		fz_dropobj(obj);
 	}
@@ -209,6 +228,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	ismask = fz_tobool(fz_dictgets(dict, "ImageMask"));
 	if (ismask)
 	{
+		pdf_logimage("is mask\n");
 		bpc = 1;
 		n = 0;
 		a = 1;
@@ -217,6 +237,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "SMask");
 	if (fz_isindirect(obj))
 	{
+		pdf_logimage("has soft mask\n");
+
 		error = pdf_loadindirect(&sub, xref, obj);
 		if (error)
 			return error;
@@ -243,10 +265,12 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			return error;
 		if (fz_isarray(sub))
 		{
-			puts("  mask / color key");
+			pdf_logimage("color keyed transparency\n");
+			// FIXME
 		}
 		else
 		{
+			pdf_logimage("has mask\n");
 			error = pdf_loadimage(&mask, xref, sub, obj);
 			if (error)
 				return error;
@@ -255,7 +279,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	}
 	else if (fz_isarray(obj))
 	{
-		puts("  mask / color key");
+		pdf_logimage("color keyed transparency\n");
+		// FIXME
 	}
 
 	/*
@@ -265,6 +290,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
+		pdf_logimage("decode array\n");
 		if (indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = fz_toreal(fz_arrayget(obj, i));
@@ -331,8 +357,9 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	img->bpc = bpc;
 	img->mask = (fz_image*)mask;
 
-	*imgp = img;
+	pdf_logimage("}\n");
 
+	*imgp = img;
 	return nil;
 }
 

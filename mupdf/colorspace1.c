@@ -234,6 +234,8 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	if (!cs)
 		return fz_outofmem;
 
+	pdf_logrsrc("load CalGray\n");
+
 	initcs((fz_colorspace*)cs, "CalGray", 1, graytoxyz, xyztogray, nil);
 
 	cs->white[0] = 1.0;
@@ -280,6 +282,8 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	cs = fz_malloc(sizeof(struct calrgb));
 	if (!cs)
 		return fz_outofmem;
+
+	pdf_logrsrc("load CalRGB\n");
 
 	initcs((fz_colorspace*)cs, "CalRGB", 3, rgbtoxyz, xyztorgb, nil);
 
@@ -346,6 +350,8 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	if (!cs)
 		return fz_outofmem;
 
+	pdf_logrsrc("load Lab\n");
+
 	initcs((fz_colorspace*)cs, "Lab", 3, labtoxyz, xyztolab, nil);
 
 	cs->white[0] = 1.0;
@@ -402,6 +408,8 @@ loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
 	fz_error *error;
 	fz_obj *dict;
 	int n;
+
+	pdf_logrsrc("load ICCBased\n");
 
 	error = pdf_loadindirect(&dict, xref, ref);
 	if (error)
@@ -472,10 +480,14 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	pdf_function *tint;
 	int n;
 
+	pdf_logrsrc("load Separation {\n");
+
 	if (fz_isarray(nameobj))
 		n = fz_arraylen(nameobj);
 	else
 		n = 1;
+
+	pdf_logrsrc("n = %d\n", n);
 
 	error = pdf_resolve(&baseobj, xref);
 	if (error)
@@ -506,6 +518,8 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	cs->base = base;
 	cs->tint = tint;
+
+	pdf_logrsrc("}\n");
 
 	*csp = (fz_colorspace*)cs;
 	return nil;
@@ -549,6 +563,8 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_colorspace *base;
 	int n;
 
+	pdf_logrsrc("load Indexed {\n");
+
 	error = pdf_resolve(&baseobj, xref);
 	if (error)
 		return error;
@@ -556,6 +572,8 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_dropobj(baseobj);
 	if (error)
 		return error;
+
+	pdf_logrsrc("base %s\n", base->name);
 
 	cs = fz_malloc(sizeof(pdf_indexed));
 	if (!cs)
@@ -580,8 +598,12 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	if (fz_isstring(lookup) && fz_tostringlen(lookup) == n)
 	{
-		unsigned char *buf = fz_tostringbuf(lookup);
+		unsigned char *buf;
 		int i;
+
+		pdf_logrsrc("string lookup\n");
+
+		buf = fz_tostringbuf(lookup);
 		for (i = 0; i < n; i++)
 			cs->lookup[i] = buf[i];
 	}
@@ -590,6 +612,8 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	{
 		fz_buffer *buf;
 		int i;
+
+		pdf_logrsrc("stream lookup\n");
 
 		error = pdf_loadstream(&buf, xref, fz_tonum(lookup), fz_togen(lookup));
 		if (error)
@@ -603,6 +627,8 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 		fz_dropbuffer(buf);
 	}
+
+	pdf_logrsrc("}\n");
 
 	*csp = (fz_colorspace*)cs;
 	return nil;

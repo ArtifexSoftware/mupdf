@@ -108,6 +108,8 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 		if (!strcmp(basefont, basenames[i]))
 			pattern = basepatterns[i];
 
+	pdf_logfont("load builtin %s\n", pattern);
+
 	fcerr = FcResultMatch;
 	searchpat = FcNameParse(pattern);
 	FcDefaultSubstitute(searchpat);
@@ -124,7 +126,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 	index = 0;
 	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
 
-printf("  builtin %s from %s idx %d\n", basefont, file, index);
+	pdf_logfont("load font file %s %d\n", file, index);
 
 	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr)
@@ -213,9 +215,9 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	if (!FcPatternAddBool(searchpat, FC_OUTLINE, 1))
 		goto cleanup;
 
-file = FcNameUnparse(searchpat);
-printf("  fontconfig %s: %s\n", basefont, file);
-free(file);
+	file = FcNameUnparse(searchpat);
+	pdf_logfont("fontconfig %s\n", file);
+	free(file);
 
 	fcerr = FcResultMatch;
 	FcDefaultSubstitute(searchpat);
@@ -233,9 +235,6 @@ free(file);
 	if (file && style && strcmp(style, file))
 		font->substitute = 1;
 
-if (font->substitute)
-printf("    inexact match\n");
-
 	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", basefont);
@@ -243,7 +242,7 @@ printf("    inexact match\n");
 	index = 0;
 	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
 
-printf("    file %s idx %d\n", file, index);
+	pdf_logfont("load font file %s %d\n", file, index);
 
 	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr) {
@@ -275,6 +274,8 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 	error = initfontlibs();
 	if (error)
 		return error;
+
+	pdf_logfont("load embedded font\n");
 
 	error = pdf_loadstream(&buf, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)

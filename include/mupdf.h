@@ -7,6 +7,13 @@
 #error "fitz.h must be included before mupdf.h"
 #endif
 
+void pdf_logxref(char *fmt, ...);
+void pdf_logrsrc(char *fmt, ...);
+void pdf_logfont(char *fmt, ...);
+void pdf_logimage(char *fmt, ...);
+void pdf_logshade(char *fmt, ...);
+void pdf_logpage(char *fmt, ...);
+
 #include "mupdf/syntax.h"
 #include "mupdf/xref.h"
 #include "mupdf/rsrc.h"

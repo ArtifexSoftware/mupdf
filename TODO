@@ -38,6 +38,7 @@ rendering
 	- font focus
 
 parser
+	- stick objects automatically into xref resource cache, not in preloadres
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 

@@ -382,6 +382,8 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	fz_obj *wmode;
 	fz_obj *obj;
 
+	pdf_logfont("load embedded cmap %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
+
 	error = pdf_resolve(&stmobj, xref);
 	if (error)
 		return error;
@@ -398,11 +400,15 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 
 	wmode = fz_dictgets(stmobj, "WMode");
 	if (fz_isint(wmode))
+	{
+		pdf_logfont("wmode %d\n", wmode);
 		fz_setwmode(cmap, fz_toint(wmode));
+	}
 
 	obj = fz_dictgets(stmobj, "UseCMap");
 	if (fz_isname(obj))
 	{
+		pdf_logfont("usecmap /%s\n", fz_toname(obj));
 		error = pdf_loadsystemcmap(&usecmap, fz_toname(obj));
 		if (error)
 			goto cleanup;
@@ -411,6 +417,7 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	}
 	else if (fz_isindirect(obj))
 	{
+		pdf_logfont("usecmap %d %d R\n", fz_tonum(obj), fz_togen(obj));
 		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
 		if (error)
 			goto cleanup;
@@ -419,6 +426,8 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	}
 
 	fz_dropobj(stmobj);
+
+	pdf_logfont("}\n");
 
 	*cmapp = cmap;
 	return nil;
@@ -444,6 +453,8 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	fz_cmap *cmap;
 	char path[1024];
 
+	pdf_logfont("load system cmap %s {\n", name);
+
 	cmapdir = getenv("CMAPDIR");
 	if (!cmapdir)
 		return fz_throw("ioerror: CMAPDIR environment not set");
@@ -465,12 +476,15 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	usecmapname = fz_getusecmapname(cmap);
 	if (usecmapname)
 	{
+		pdf_logfont("usecmap %s\n", usecmapname);
 		error = pdf_loadsystemcmap(&usecmap, usecmapname);
 		if (error)
 			goto cleanup;
 		fz_setusecmap(cmap, usecmap);
 		fz_dropcmap(usecmap);
 	}
+
+	pdf_logfont("}\n");
 
 	*cmapp = cmap;
 	return nil;

@@ -102,6 +102,7 @@ Library libfitz :
 ;
 
 Library libmupdf :
+	mupdf/debug.c
 	mupdf/lex.c
 	mupdf/parse.c
 	mupdf/crypt.c

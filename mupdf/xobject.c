@@ -12,14 +12,25 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (!form)
 		return fz_outofmem;
 
+	pdf_logrsrc("load xobject %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), form);
+
 	obj = fz_dictgets(dict, "BBox");
 	form->bbox = pdf_torect(obj);
+
+	pdf_logrsrc("bbox [%g %g %g %g]\n",
+		form->bbox.min.x, form->bbox.min.y,
+		form->bbox.max.x, form->bbox.max.y);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
 		form->matrix = pdf_tomatrix(obj);
 	else
 		form->matrix = fz_identity();
+
+	pdf_logrsrc("matrix [%g %g %g %g %g %g]\n",
+		form->matrix.a, form->matrix.b,
+		form->matrix.c, form->matrix.d,
+		form->matrix.e, form->matrix.f);
 
 	form->resources = nil;
 	obj = fz_dictgets(dict, "Resources");
@@ -50,6 +61,10 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		fz_free(form);
 		return error;
 	}
+
+	pdf_logrsrc("stream %d bytes\n", form->contents->wp - form->contents->rp);
+
+	pdf_logrsrc("}\n");
 
 	*formp = form;
 	return nil;
