@@ -203,8 +203,14 @@ printf("load image %d x %d @ %d\n", img->super.w, img->super.h, img->bpc);
 		for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
 			img->decode[i] = fz_toreal(fz_arrayget(obj, i));
 	else
-		for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
-			img->decode[i] = i & 1;
+	{
+		if (cs && !strcmp(cs->name, "IndexedXXX"))
+			for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
+				img->decode[i] = i & 1 ? (1 << img->bpc) - 1 : 0;
+		else
+			for (i = 0; i < (img->super.n + img->super.a) * 2; i++)
+				img->decode[i] = i & 1;
+	}
 
 printf("  colorspace %s\n", cs ? cs->name : "(null)");
 printf("  mask %d\n", ismask);

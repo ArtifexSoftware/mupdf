@@ -513,7 +513,15 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 	cs->base->toxyz(cs->base, alt, xyz);
 }
 
-fz_error *
+static void
+freeseparation(fz_colorspace *fzcs)
+{
+	struct separation *cs = (struct separation *)fzcs;
+	fz_freecolorspace(cs->base);
+	pdf_freefunction(cs->tint);
+}
+
+static fz_error *
 loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {
 	fz_error *error;
@@ -546,12 +554,111 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		return fz_outofmem;
 	}
 
-	initcs((fz_colorspace*)sep, "Separation", 1, separationtoxyz, nil, nil);
+	initcs((fz_colorspace*)sep, "Separation", 1, separationtoxyz, nil, freeseparation);
 
 	sep->base = base;
 	sep->tint = tint;
 
 	*csp = (fz_colorspace*)sep;
+	return nil;
+}
+
+/*
+ * Indexed
+ */
+
+struct indexed
+{
+	fz_colorspace super;
+	fz_colorspace *base;
+	int high;
+	float *lookup;
+};
+
+static void
+indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
+{
+	struct indexed *cs = (struct indexed *)fzcs;
+	int i = ind[0] * 255; // FIXME
+	i = CLAMP(i, 0, cs->high);
+	cs->base->toxyz(cs->base, cs->lookup + i * cs->base->n, xyz);
+}
+
+static void
+freeindexed(fz_colorspace *fzcs)
+{
+	struct indexed *cs = (struct indexed *)fzcs;
+	fz_freecolorspace(cs->base);
+	fz_free(cs->lookup);
+}
+
+static fz_error *
+loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
+{
+	fz_error *error;
+	struct indexed *cs;
+	fz_obj *baseobj = fz_arrayget(array, 1);
+	fz_obj *highobj = fz_arrayget(array, 2);
+	fz_obj *lookup = fz_arrayget(array, 3);
+	fz_colorspace *base;
+	int n;
+
+	error = pdf_resolve(&baseobj, xref);
+	if (error)
+		return error;
+	error = pdf_loadcolorspace(&base, xref, baseobj);
+	fz_dropobj(baseobj);
+	if (error)
+		return error;
+
+	cs = fz_malloc(sizeof(struct indexed));
+	if (!cs)
+	{
+		fz_freecolorspace(base);
+		return fz_outofmem;
+	}
+
+	initcs((fz_colorspace*)cs, "Indexed", 1, indexedtoxyz, nil, freeindexed);
+
+	cs->base = base;
+	cs->high = fz_toint(highobj);
+
+	n = base->n * (cs->high + 1);
+
+	cs->lookup = fz_malloc(n * sizeof(float));
+	if (!cs->lookup)
+	{
+		freeindexed((fz_colorspace*)cs);
+		return fz_outofmem;
+	}
+
+	if (fz_isstring(lookup) && fz_tostringlen(lookup) == n)
+	{
+		unsigned char *buf = fz_tostringbuf(lookup);
+		int i;
+		for (i = 0; i < n; i++)
+			cs->lookup[i] = buf[i] / 255.0;	// FIXME base range
+	}
+
+	if (fz_isindirect(lookup))
+	{
+		fz_buffer *buf;
+		int i;
+
+		error = pdf_loadstream(&buf, xref, fz_tonum(lookup), fz_togen(lookup));
+		if (error)
+		{
+			freeindexed((fz_colorspace*)cs);
+			return error;
+		}
+
+		for (i = 0; i < n && i < (buf->wp - buf->rp); i++)
+			cs->lookup[i] = buf->rp[i] / 255.0;	// FIXME base range
+
+		fz_freebuffer(buf);
+	}
+
+	*csp = (fz_colorspace*)cs;
 	return nil;
 }
 
@@ -610,6 +717,9 @@ printf("\n");
 
 			if (!strcmp(fz_toname(name), "ICCBased"))
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));
+
+			if (!strcmp(fz_toname(name), "Indexed"))
+				return loadindexed(csp, xref, obj);
 
 			if (!strcmp(fz_toname(name), "Separation"))
 				return loadseparation(csp, xref, obj);

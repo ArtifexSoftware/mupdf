@@ -9,10 +9,12 @@ void fz_gammapixmap(fz_pixmap *pix, float gamma);
 
 static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
 {
-	if (u < 0 || u >= pix->w)
-		return 0;
-	if (v < 0 || v >= pix->h)
-		return 0;
+//	if (u < 0 || u >= pix->w)
+//		return 0;
+//	if (v < 0 || v >= pix->h)
+//		return 0;
+	u = CLAMP(u, 0, pix->w - 1);
+	v = CLAMP(v, 0, pix->h - 1);
 	return pix->samples[ (v * pix->w + u) * pix->n + k ];
 }
 
@@ -172,11 +174,11 @@ fz_renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	float sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
 
 	int dx = 1;
-	while ( ( (w + dx - 1) / dx ) / sx > 2.0 )
+	while ( ( (w + dx - 1) / dx ) / sx > 2.0 && (w+dx-1)/dx > 1)
 		dx++;
 
 	int dy = 1;
-	while ( ( (h + dy - 1) / dy ) / sy > 2.0 )
+	while ( ( (h + dy - 1) / dy ) / sy > 2.0 && (h+dy-1)/dy > 1)
 		dy++;
 
 printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);

@@ -601,7 +601,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 	float *range = func->range;
 	float *decode = func->u.sa.decode;
 	int *size = func->u.sa.size;
-	float byterange = 1<<func->u.sa.bps-1;
+	float byterange = (1<<func->u.sa.bps)-1;
 	
 	if(func->type != PDF_FUNC_SAMPLE)
 		goto cleanup;
