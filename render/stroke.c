@@ -8,7 +8,10 @@ struct sctx
 	fz_matrix *ctm;
 	float flatness;
 
-	fz_stroke *stroke;
+	int linecap;
+	int linejoin;
+	float linewidth;
+	float miterlimit;
 	fz_point beg[2];
 	fz_point seg[2];
 	int sn, bn;
@@ -43,7 +46,7 @@ arc(struct sctx *s,
 	float ox, oy, nx, ny;
 	int n, i;
 
-	r = fabs(s->stroke->linewidth);
+	r = fabs(s->linewidth);
 	theta = 2 * M_SQRT2 * sqrt(s->flatness / r);
 	th0 = atan2(y0, x0);
 	th1 = atan2(y1, x1);
@@ -87,7 +90,7 @@ linestroke(struct sctx *s, fz_point a, fz_point b)
 
 	float dx = b.x - a.x;
 	float dy = b.y - a.y;
-	float scale = s->stroke->linewidth / sqrt(dx * dx + dy * dy);
+	float scale = s->linewidth / sqrt(dx * dx + dy * dy);
 	float dlx = dy * scale;
 	float dly = -dx * scale;
 
@@ -104,9 +107,9 @@ static fz_error *
 linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 {
 	fz_error *error;
-	float miterlimit = s->stroke->miterlimit;
-	float linewidth = s->stroke->linewidth;
-	int linejoin = s->stroke->linejoin;
+	float miterlimit = s->miterlimit;
+	float linewidth = s->linewidth;
+	int linejoin = s->linejoin;
 	float dx0, dy0;
 	float dx1, dy1;
 	float dlx0, dly0;
@@ -208,8 +211,8 @@ linecap(struct sctx *s, fz_point a, fz_point b)
 {
 	fz_error *error;
 	float flatness = s->flatness;
-	float linewidth = s->stroke->linewidth;
-	int linecap = s->stroke->linecap;
+	float linewidth = s->linewidth;
+	int linecap = s->linecap;
 
 	float dx = b.x - a.x;
 	float dy = b.y - a.y;
@@ -268,7 +271,7 @@ linedot(struct sctx *s, fz_point a)
 {
 	fz_error *error;
 	float flatness = s->flatness;
-	float linewidth = s->stroke->linewidth;
+	float linewidth = s->linewidth;
 	int n = ceil(M_PI / (M_SQRT2 * sqrt(flatness / linewidth)));
 	float ox = a.x - linewidth;
 	float oy = a.y;
@@ -453,7 +456,7 @@ strokebezier(struct sctx *s,
 }
 
 fz_error *
-fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
+fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 {
 	fz_error *error;
 	struct sctx s;
@@ -464,7 +467,10 @@ fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
 	s.ctm = &ctm;
 	s.flatness = flatness;
 
-	s.stroke = path->stroke;
+	s.linecap = path->linecap;
+	s.linejoin = path->linejoin;
+	s.linewidth = path->linewidth;
+	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
 	s.dot = 0;
@@ -645,7 +651,7 @@ dashbezier(struct sctx *s,
 }
 
 fz_error *
-fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
+fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 {
 	fz_error *error;
 	struct sctx s;
@@ -656,7 +662,10 @@ fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
 	s.ctm = &ctm;
 	s.flatness = flatness;
 
-	s.stroke = path->stroke;
+	s.linecap = path->linecap;
+	s.linejoin = path->linejoin;
+	s.linewidth = path->linewidth;
+	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
 	s.dot = 0;

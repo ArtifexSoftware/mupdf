@@ -8,77 +8,77 @@ static void indent(int level)
 
 static void lispnode(fz_node *node, int level);
 
-static void lispmeta(fz_meta *node, int level)
+static void lispmeta(fz_metanode *node, int level)
 {
 	fz_node *child;
 	indent(level);
 	printf("(meta ");
 	fz_debugobj(node->info);
 	printf("\n");
-	for (child = node->child; child; child = child->next)
+	for (child = node->super.child; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
 }
 
-static void lispover(fz_over *node, int level)
+static void lispover(fz_overnode *node, int level)
 {
 	fz_node *child;
 	indent(level);
 	printf("(over\n");
-	for (child = node->child; child; child = child->next)
+	for (child = node->super.child; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
 }
 
-static void lispmask(fz_mask *node, int level)
+static void lispmask(fz_masknode *node, int level)
 {
 	fz_node *child;
 	indent(level);
 	printf("(mask\n");
-	for (child = node->child; child; child = child->next)
+	for (child = node->super.child; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
 }
 
-static void lispblend(fz_blend *node, int level)
+static void lispblend(fz_blendnode *node, int level)
 {
 	fz_node *child;
 	indent(level);
 	printf("(blend-%d\n", node->mode);
-	for (child = node->child; child; child = child->next)
+	for (child = node->super.child; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
 	printf(")\n");
 }
 
-static void lisptransform(fz_transform *node, int level)
+static void lisptransform(fz_transformnode *node, int level)
 {
 	indent(level);
 	printf("(transform %g %g %g %g %g %g\n",
 		node->m.a, node->m.b,
 		node->m.c, node->m.d,
 		node->m.e, node->m.f);
-	lispnode(node->child, level + 1);
+	lispnode(node->super.child, level + 1);
 	indent(level);
 	printf(")\n");
 }
 
-static void lispsolid(fz_solid *node, int level)
+static void lispcolor(fz_colornode *node, int level)
 {
 	indent(level);
-	printf("(solid %g %g %g)\n", node->r, node->g, node->b);
+	printf("(color %g %g %g)\n", node->r, node->g, node->b);
 }
 
-static void lispform(fz_form *node, int level)
+static void lisplink(fz_linknode *node, int level)
 {
 	indent(level);
-	printf("(form %p)\n", node->tree);
+	printf("(link %p)\n", node->tree);
 }
 
-static void lisppath(fz_path *node, int level)
+static void lisppath(fz_pathnode *node, int level)
 {
 	int i;
 
@@ -87,10 +87,10 @@ static void lisppath(fz_path *node, int level)
 	if (node->paint == FZ_STROKE)
 	{
 		printf("(path 'stroke %d %d %g %g ",
-			node->stroke->linecap,
-			node->stroke->linejoin,
-			node->stroke->linewidth,
-			node->stroke->miterlimit);
+			node->linecap,
+			node->linejoin,
+			node->linewidth,
+			node->miterlimit);
 		if (node->dash)
 		{
 			printf("%g '( ", node->dash->phase);
@@ -107,13 +107,13 @@ static void lisppath(fz_path *node, int level)
 	}
 
 	printf("\n");
-	fz_debugpath(node);
+	fz_debugpathnode(node);
 
 	indent(level);
 	printf(")\n");
 }
 
-static void lisptext(fz_text *node, int level)
+static void lisptext(fz_textnode *node, int level)
 {
 	int i;
 
@@ -131,18 +131,10 @@ static void lisptext(fz_text *node, int level)
 	printf(")\n");
 }
 
-static void lispimage(fz_image *node, int level)
+static void lispimage(fz_imagenode *node, int level)
 {
 	indent(level);
-	printf("(image %d %d %d %d '", node->w, node->h, node->n, node->bpc);
-	switch (node->cs)
-	{
-	case FZ_CSGRAY: printf("gray"); break;
-	case FZ_CSRGB: printf("rgb"); break;
-	case FZ_CSCMYK: printf("cmyk"); break;
-	default: printf("unknown"); break;
-	}
-	printf(")\n");
+	printf("(image %d %d %d %d)\n", node->w, node->h, node->n, node->a);
 }
 
 static void lispnode(fz_node *node, int level)
@@ -156,16 +148,16 @@ static void lispnode(fz_node *node, int level)
 
 	switch (node->kind)
 	{
-	case FZ_NMETA: lispmeta((fz_meta*)node, level); break;
-	case FZ_NOVER: lispover((fz_over*)node, level); break;
-	case FZ_NMASK: lispmask((fz_mask*)node, level); break;
-	case FZ_NBLEND: lispblend((fz_blend*)node, level); break;
-	case FZ_NTRANSFORM: lisptransform((fz_transform*)node, level); break;
-	case FZ_NSOLID: lispsolid((fz_solid*)node, level); break;
-	case FZ_NPATH: lisppath((fz_path*)node, level); break;
-	case FZ_NTEXT: lisptext((fz_text*)node, level); break;
-	case FZ_NIMAGE: lispimage((fz_image*)node, level); break;
-	case FZ_NFORM: lispform((fz_form*)node, level); break;
+	case FZ_NMETA: lispmeta((fz_metanode*)node, level); break;
+	case FZ_NOVER: lispover((fz_overnode*)node, level); break;
+	case FZ_NMASK: lispmask((fz_masknode*)node, level); break;
+	case FZ_NBLEND: lispblend((fz_blendnode*)node, level); break;
+	case FZ_NTRANSFORM: lisptransform((fz_transformnode*)node, level); break;
+	case FZ_NCOLOR: lispcolor((fz_colornode*)node, level); break;
+	case FZ_NPATH: lisppath((fz_pathnode*)node, level); break;
+	case FZ_NTEXT: lisptext((fz_textnode*)node, level); break;
+	case FZ_NIMAGE: lispimage((fz_imagenode*)node, level); break;
+	case FZ_NLINK: lisplink((fz_linknode*)node, level); break;
 	}
 }
 

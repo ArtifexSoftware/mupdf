@@ -65,7 +65,7 @@ bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 }
 
 fz_error *
-fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
+fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 {
 	fz_error *error;
 	float x1, y1, x2, y2, x3, y3;

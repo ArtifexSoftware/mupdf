@@ -28,29 +28,31 @@ union fz_pathel_s
 	float v;
 };
 
-struct fz_path_s
+struct fz_pathnode_s
 {
 	fz_node super;
 	fz_pathkind paint;
-	fz_stroke *stroke;
 	fz_dash *dash;
+	int linecap;
+	int linejoin;
+	float linewidth;
+	float miterlimit;
 	int len, cap;
 	fz_pathel *els;
 };
 
-fz_error *fz_newpath(fz_path **pathp);
-fz_error *fz_clonepath(fz_path **pathp, fz_path *oldpath);
-fz_error *fz_moveto(fz_path*, float x, float y);
-fz_error *fz_lineto(fz_path*, float x, float y);
-fz_error *fz_curveto(fz_path*, float, float, float, float, float, float);
-fz_error *fz_curvetov(fz_path*, float, float, float, float);
-fz_error *fz_curvetoy(fz_path*, float, float, float, float);
-fz_error *fz_closepath(fz_path*);
-fz_error *fz_endpath(fz_path*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
-void fz_freepath(fz_path *path);
+fz_error *fz_newpathnode(fz_pathnode **pathp);
+fz_error *fz_clonepath(fz_pathnode **pathp, fz_pathnode *oldpath);
+fz_error *fz_moveto(fz_pathnode*, float x, float y);
+fz_error *fz_lineto(fz_pathnode*, float x, float y);
+fz_error *fz_curveto(fz_pathnode*, float, float, float, float, float, float);
+fz_error *fz_curvetov(fz_pathnode*, float, float, float, float);
+fz_error *fz_curvetoy(fz_pathnode*, float, float, float, float);
+fz_error *fz_closepath(fz_pathnode*);
+fz_error *fz_endpath(fz_pathnode*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
 
-fz_rect fz_boundpath(fz_path *node, fz_matrix ctm);
-void fz_debugpath(fz_path *node);
+fz_rect fz_boundpathnode(fz_pathnode *node, fz_matrix ctm);
+void fz_debugpathnode(fz_pathnode *node);
 
 fz_error *fz_newdash(fz_dash **dashp, float phase, int len, float *array);
 void fz_freedash(fz_dash *dash);

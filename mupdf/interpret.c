@@ -3,13 +3,13 @@
 
 void pdf_initgstate(pdf_gstate *gs);
 
-fz_error *pdf_buildstrokepath(pdf_gstate *gs, fz_path *path);
-fz_error *pdf_buildfillpath(pdf_gstate *gs, fz_path *path, int evenodd);
+fz_error *pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path);
+fz_error *pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int evenodd);
 
 fz_error *pdf_addfillshape(pdf_gstate *gs, fz_node *shape);
 fz_error *pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape);
 fz_error *pdf_addclipmask(pdf_gstate *gs, fz_node *shape);
-fz_error *pdf_addtransform(pdf_gstate *gs, fz_node *affine);
+fz_error *pdf_addtransform(pdf_gstate *gs, fz_node *transform);
 
 fz_error *pdf_showpath(pdf_csi *, int doclose, int dofill, int dostroke, int evenodd);
 fz_error *pdf_showtext(pdf_csi *, fz_obj *text);
@@ -33,7 +33,7 @@ pdf_newcsi(pdf_csi **csip)
 
 	csi->xbalance = 0;
 
-	error = fz_newpath(&csi->path);
+	error = fz_newpathnode(&csi->path);
 	if (error) {
 		fz_free(csi);
 		return error;
@@ -41,12 +41,12 @@ pdf_newcsi(pdf_csi **csip)
 
 	error = fz_newtree(&csi->tree);
 	if (error) {
-		fz_freepath(csi->path);
+		fz_freenode((fz_node*)csi->path);
 		fz_free(csi);
 		return error;
 	}
 
-	error = fz_newover(&node);
+	error = fz_newovernode(&node);
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
@@ -71,9 +71,9 @@ clearstack(pdf_csi *csi)
 void
 pdf_freecsi(pdf_csi *csi)
 {
-	if (csi->path) fz_freepath(csi->path);
-	if (csi->clip) fz_freepath(csi->clip);
-	if (csi->text) fz_freetext(csi->text);
+	if (csi->path) fz_freenode((fz_node*)csi->path);
+	if (csi->clip) fz_freenode((fz_node*)csi->clip);
+	if (csi->text) fz_freenode((fz_node*)csi->text);
 	clearstack(csi);
 	fz_free(csi);
 }
@@ -164,7 +164,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 			fz_node *meta;
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = fz_newmeta(&meta, csi->stack[0]);
+			error = fz_newmetanode(&meta, csi->stack[0]);
 			if (error) return error;
 			fz_insertnode(gstate->head, meta);
 		}
@@ -178,7 +178,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 			error = fz_packobj(&info, "<< %o %o >>",
 						csi->stack[0], csi->stack[1]);
 			if (error) return error;
-			error = fz_newmeta(&meta, info);
+			error = fz_newmetanode(&meta, info);
 			fz_dropobj(info);
 			if (error) return error;
 			fz_insertnode(gstate->head, meta);
@@ -187,7 +187,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 		else if (!strcmp(buf, "cm"))
 		{
 			fz_matrix m;
-			fz_node *affine;
+			fz_node *transform;
 
 			if (csi->top != 6)
 				goto syntaxerror;
@@ -199,9 +199,9 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 			m.e = fz_toreal(csi->stack[4]);
 			m.f = fz_toreal(csi->stack[5]);
 
-			error = fz_newtransform(&affine, m);
+			error = fz_newtransformnode(&transform, m);
 			if (error) return error;
-			error = pdf_addtransform(gstate, affine);
+			error = pdf_addtransform(gstate, transform);
 			if (error) return error;
 		}
 

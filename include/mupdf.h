@@ -210,11 +210,11 @@ struct pdf_csi_s
 	int xbalance;
 
 	/* path object state */
-	fz_path *path;
-	fz_path *clip;
+	fz_pathnode *path;
+	fz_pathnode *clip;
 
 	/* text object state */
-	fz_text *text;
+	fz_textnode *text;
 	fz_matrix tlm;
 	fz_matrix tm;
 

@@ -35,37 +35,29 @@ pdf_initgstate(pdf_gstate *gs)
 }
 
 fz_error *
-pdf_buildstrokepath(pdf_gstate *gs, fz_path *path)
+pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
 {
 	fz_error *error;
-	fz_stroke *stroke;
+	fz_stroke stroke;
 	fz_dash *dash;
 
-	stroke = fz_malloc(sizeof(fz_stroke));
-	if (!stroke)
-		return fz_outofmem;
-	stroke->linecap = gs->linecap;
-	stroke->linejoin = gs->linejoin;
-	stroke->linewidth = gs->linewidth;
-	stroke->miterlimit = gs->miterlimit;
+	stroke.linecap = gs->linecap;
+	stroke.linejoin = gs->linejoin;
+	stroke.linewidth = gs->linewidth;
+	stroke.miterlimit = gs->miterlimit;
 
 	if (gs->dashlen)
 	{
 		error = fz_newdash(&dash, gs->dashphase, gs->dashlen, gs->dashlist);
-		if (error) {
-			fz_free(stroke);
+		if (error)
 			return error;
-		}
 	}
 	else
-	{
 		dash = nil;
-	}
 
-	error = fz_endpath(path, FZ_STROKE, stroke, dash);
+	error = fz_endpath(path, FZ_STROKE, &stroke, dash);
 	if (error) {
 		fz_freedash(dash);
-		fz_free(stroke);
 		return error;
 	}
 
@@ -73,7 +65,7 @@ pdf_buildstrokepath(pdf_gstate *gs, fz_path *path)
 }
 
 fz_error *
-pdf_buildfillpath(pdf_gstate *gs, fz_path *path, int eofill)
+pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 {
 	return fz_endpath(path, eofill ? FZ_EOFILL : FZ_FILL, nil, nil);
 }
@@ -85,10 +77,10 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, float r, float g, float b)
 	fz_node *mask;
 	fz_node *solid;
 
-	error = fz_newmask(&mask);
+	error = fz_newmasknode(&mask);
 	if (error) return error;
 
-	error = fz_newsolid(&solid, r, g, b);
+	error = fz_newcolornode(&solid, r, g, b);
 	if (error) return error;
 
 	fz_insertnode(mask, shape);
@@ -117,10 +109,10 @@ pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 	fz_node *mask;
 	fz_node *over;
 
-	error = fz_newmask(&mask);
+	error = fz_newmasknode(&mask);
 	if (error) return error;
 
-	error = fz_newover(&over);
+	error = fz_newovernode(&over);
 	if (error) return error;
 
 	fz_insertnode(mask, shape);
@@ -132,16 +124,16 @@ pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 }
 
 fz_error *
-pdf_addtransform(pdf_gstate *gs, fz_node *affine)
+pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 {
 	fz_error *error;
 	fz_node *over;
 
-	error = fz_newover(&over);
+	error = fz_newovernode(&over);
 	if (error) return error;
 
-	fz_insertnode(gs->head, affine);
-	fz_insertnode(affine, over);
+	fz_insertnode(gs->head, transform);
+	fz_insertnode(transform, over);
 	gs->head = over;
 
 	return nil;
@@ -153,8 +145,8 @@ pdf_showpath(pdf_csi *csi,
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
-	fz_path *spath;
-	fz_path *fpath;
+	fz_pathnode *spath;
+	fz_pathnode *fpath;
 
 	if (doclose)
 	{
@@ -203,7 +195,7 @@ pdf_showpath(pdf_csi *csi,
 
 	csi->path = nil;
 
-	error = fz_newpath(&csi->path);
+	error = fz_newpathnode(&csi->path);
 	if (error) return error;
 
 	return nil;
@@ -266,7 +258,7 @@ showglyph(pdf_csi *csi, int g)
 		error = pdf_flushtext(csi);
 		if (error) return error;
 
-		error = fz_newtext(&csi->text, (fz_font*)font);
+		error = fz_newtextnode(&csi->text, (fz_font*)font);
 		if (error) return error;
 
 		csi->text->trm = trm;

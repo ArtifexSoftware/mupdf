@@ -22,7 +22,6 @@
 #include "fitz/tree.h"
 #include "fitz/path.h"
 #include "fitz/text.h"
-#include "fitz/image.h"
 
 #include "fitz/pixmap.h"
 #include "fitz/scanconv.h"

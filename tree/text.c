@@ -1,11 +1,11 @@
 #include <fitz.h>
 
 fz_error *
-fz_newtext(fz_text **textp, fz_font *font)
+fz_newtextnode(fz_textnode **textp, fz_font *font)
 {
-	fz_text *text;
+	fz_textnode *text;
 
-	text = *textp = fz_malloc(sizeof(fz_text));
+	text = *textp = fz_malloc(sizeof(fz_textnode));
 	if (!text)
 		return fz_outofmem;
 
@@ -21,21 +21,21 @@ fz_newtext(fz_text **textp, fz_font *font)
 }
 
 void
-fz_freetext(fz_text *text)
+fz_freetextnode(fz_textnode *text)
 {
 	fz_free(text->els);
-	fz_free(text);
-};
+}
 
 fz_rect
-fz_boundtext(fz_text *text, fz_matrix ctm)
+fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 {
+	// FIXME convolve font bbox to all glyph x,y pairs
 	/* fz_rect bounds = fz_boundglyph(text->font, text->els[0], ctm); */
 	return FZ_INFRECT;
 }
 
 static fz_error *
-growtext(fz_text *text, int n)
+growtext(fz_textnode *text, int n)
 {
 	int newcap;
 	fz_textel *newels;
@@ -54,7 +54,7 @@ growtext(fz_text *text, int n)
 }
 
 fz_error *
-fz_addtext(fz_text *text, int g, float x, float y)
+fz_addtext(fz_textnode *text, int g, float x, float y)
 {
 	if (growtext(text, 1) != nil)
 		return fz_outofmem;

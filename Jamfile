@@ -63,22 +63,15 @@ Library libfitz :
 	filter/jpxd.c		# jasper
 
 	# tree
-	tree/tree.c
-	tree/debug.c
 	tree/cmap.c
 	tree/font.c
 
-	tree/node.c
-	tree/meta.c
-	tree/over.c
-	tree/mask.c
-	tree/blend.c
-	tree/form.c
-	tree/transform.c
-	tree/solid.c
-	tree/image.c
+	tree/tree.c
+	tree/node1.c
+	tree/node2.c
 	tree/text.c
 	tree/path.c
+	tree/debug.c
 
 	# render
 	render/glyphcache.c

@@ -60,12 +60,12 @@ fz_freerenderer(fz_renderer *gc)
 }
 
 fz_error *
-fz_renderover(fz_renderer *gc, fz_over *over, fz_matrix ctm, fz_pixmap *out)
+fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm, fz_pixmap *out)
 {
 	fz_error *error;
 	fz_node *node;
 
-	for (node = over->child; node; node = node->next)
+	for (node = over->super.child; node; node = node->next)
 	{
 		error = fz_rendernode(gc, node, ctm, out);
 		if (error)
@@ -76,12 +76,12 @@ fz_renderover(fz_renderer *gc, fz_over *over, fz_matrix ctm, fz_pixmap *out)
 }
 
 fz_error *
-fz_rendermask(fz_renderer *gc, fz_mask *mask, fz_matrix ctm, fz_pixmap *out)
+fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm, fz_pixmap *out)
 {
 	fz_error *error;
 	fz_node *node;
 
-	for (node = mask->child; node; node = node->next)
+	for (node = mask->super.child; node; node = node->next)
 	{
 		error = fz_rendernode(gc, node, ctm, out);
 		if (error)
@@ -92,10 +92,10 @@ fz_rendermask(fz_renderer *gc, fz_mask *mask, fz_matrix ctm, fz_pixmap *out)
 }
 
 fz_error *
-fz_rendertransform(fz_renderer *gc, fz_transform *xform, fz_matrix ctm, fz_pixmap *out)
+fz_rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm, fz_pixmap *out)
 {
-	ctm = fz_concat(ctm, xform->m);
-	return fz_rendernode(gc, xform->child, ctm, out);
+	ctm = fz_concat(ctm, transform->m);
+	return fz_rendernode(gc, transform->super.child, ctm, out);
 }
 
 
@@ -124,7 +124,7 @@ void composite(fz_pixmap *out, fz_glyph *gl, int xo, int yo)
 }
 
 fz_error *
-fz_rendertext(fz_renderer *gc, fz_text *text, fz_matrix ctm, fz_pixmap *out)
+fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm, fz_pixmap *out)
 {
 	fz_error *error;
 	fz_glyph gl;
@@ -169,13 +169,13 @@ fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm, fz_pixmap *out)
 	switch (node->kind)
 	{
 	case FZ_NOVER:
-		return fz_renderover(gc, (fz_over*)node, ctm, out);
+		return fz_renderover(gc, (fz_overnode*)node, ctm, out);
 	case FZ_NMASK:
-		return fz_rendermask(gc, (fz_mask*)node, ctm, out);
+		return fz_rendermask(gc, (fz_masknode*)node, ctm, out);
 	case FZ_NTRANSFORM:
-		return fz_rendertransform(gc, (fz_transform*)node, ctm, out);
+		return fz_rendertransform(gc, (fz_transformnode*)node, ctm, out);
 	case FZ_NTEXT:
-		return fz_rendertext(gc, (fz_text*)node, ctm, out);
+		return fz_rendertext(gc, (fz_textnode*)node, ctm, out);
 	default:
 		return nil;
 	}

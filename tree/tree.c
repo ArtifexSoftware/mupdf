@@ -9,18 +9,31 @@ fz_newtree(fz_tree **treep)
 	if (!tree)
 		return fz_outofmem;
 
+	tree->refcount = 1;
 	tree->root = nil;
 	tree->head = nil;
 
 	return nil;
 }
 
-void
-fz_freetree(fz_tree *tree)
+fz_tree *
+fz_keeptree(fz_tree *tree)
 {
-	if (tree->root)
-		fz_freenode(tree->root);
-	fz_free(tree);
+	tree->refcount ++;
+	return tree;
+}
+
+void
+fz_droptree(fz_tree *tree)
+{
+	tree->refcount --;
+
+	if (tree->refcount == 0)
+	{
+		if (tree->root)
+			fz_freenode(tree->root);
+		fz_free(tree);
+	}
 }
 
 fz_rect
@@ -32,32 +45,16 @@ fz_boundtree(fz_tree *tree, fz_matrix ctm)
 }
 
 void
-fz_insertnode(fz_node *node, fz_node *child)
+fz_insertnode(fz_node *parent, fz_node *child)
 {
-	child->parent = node;
+	assert(fz_istransformnode(parent) ||
+		fz_isovernode(parent) ||
+		fz_ismasknode(parent) ||
+		fz_isblendnode(parent) ||
+		fz_ismetanode(parent));
 
-	if (fz_isover(node))
-	{
-		child->next = ((fz_over*)node)->child;
-		((fz_over*)node)->child = child;
-	}
-
-	if (fz_ismask(node))
-	{
-		child->next = ((fz_mask*)node)->child;
-		((fz_mask*)node)->child = child;
-	}
-
-	if (fz_isblend(node))
-	{
-		child->next = ((fz_blend*)node)->child;
-		((fz_blend*)node)->child = child;
-	}
-
-	if (fz_istransform(node))
-	{
-		child->next = ((fz_transform*)node)->child;
-		((fz_transform*)node)->child = child;
-	}
+	child->parent = parent;
+	child->next = parent->child;
+	parent->child = child;
 }
 

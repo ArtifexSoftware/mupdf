@@ -1,18 +1,21 @@
 #include <fitz.h>
 
 fz_error *
-fz_newpath(fz_path **pathp)
+fz_newpathnode(fz_pathnode **pathp)
 {
-	fz_path *path;
+	fz_pathnode *path;
 
-	path = *pathp = fz_malloc(sizeof(fz_path));
+	path = *pathp = fz_malloc(sizeof(fz_pathnode));
 	if (!path)
 		return fz_outofmem;
 
 	fz_initnode((fz_node*)path, FZ_NPATH);
 
 	path->paint = FZ_FILL;
-	path->stroke = nil;
+	path->linecap = 0;
+	path->linejoin = 0;
+	path->linewidth = 1.0;
+	path->miterlimit = 10.0;
 	path->dash = nil;
 	path->len = 0;
 	path->cap = 0;
@@ -22,18 +25,21 @@ fz_newpath(fz_path **pathp)
 }
 
 fz_error *
-fz_clonepath(fz_path **pathp, fz_path *oldpath)
+fz_clonepath(fz_pathnode **pathp, fz_pathnode *oldpath)
 {
-	fz_path *path;
+	fz_pathnode *path;
 
-	path = *pathp = fz_malloc(sizeof(fz_path));
+	path = *pathp = fz_malloc(sizeof(fz_pathnode));
 	if (!path)
 		return fz_outofmem;
 
 	fz_initnode((fz_node*)path, FZ_NPATH);
 
 	path->paint = FZ_FILL;
-	path->stroke = nil;
+	path->linecap = 0;
+	path->linejoin = 0;
+	path->linewidth = 1.0;
+	path->miterlimit = 10.0;
 	path->dash = nil;
 	path->len = oldpath->len;
 	path->cap = oldpath->len;
@@ -49,16 +55,14 @@ fz_clonepath(fz_path **pathp, fz_path *oldpath)
 }
 
 void
-fz_freepath(fz_path *node)
+fz_freepathnode(fz_pathnode *node)
 {
-	fz_free(node->stroke);
 	fz_free(node->dash);
 	fz_free(node->els);
-	fz_free(node);
 }
 
 static fz_error *
-growpath(fz_path *path, int n)
+growpath(fz_pathnode *path, int n)
 {
 	int newcap;
 	fz_pathel *newels;
@@ -77,7 +81,7 @@ growpath(fz_path *path, int n)
 }
 
 fz_error *
-fz_moveto(fz_path *path, float x, float y)
+fz_moveto(fz_pathnode *path, float x, float y)
 {
 	if (growpath(path, 3) != nil)
 		return fz_outofmem;
@@ -88,7 +92,7 @@ fz_moveto(fz_path *path, float x, float y)
 }
 
 fz_error *
-fz_lineto(fz_path *path, float x, float y)
+fz_lineto(fz_pathnode *path, float x, float y)
 {
 	if (growpath(path, 3) != nil)
 		return fz_outofmem;
@@ -99,7 +103,7 @@ fz_lineto(fz_path *path, float x, float y)
 }
 
 fz_error *
-fz_curveto(fz_path *path,
+fz_curveto(fz_pathnode *path,
 		float x1, float y1,
 		float x2, float y2,
 		float x3, float y3)
@@ -117,7 +121,7 @@ fz_curveto(fz_path *path,
 }
 
 fz_error *
-fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
+fz_curvetov(fz_pathnode *path, float x2, float y2, float x3, float y3)
 {
 	float x1 = path->els[path->len-2].v;
 	float y1 = path->els[path->len-1].v;
@@ -125,13 +129,13 @@ fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
 }
 
 fz_error *
-fz_curvetoy(fz_path *path, float x1, float y1, float x3, float y3)
+fz_curvetoy(fz_pathnode *path, float x1, float y1, float x3, float y3)
 {
 	return fz_curveto(path, x1, y1, x3, y3, x3, y3);
 }
 
 fz_error *
-fz_closepath(fz_path *path)
+fz_closepath(fz_pathnode *path)
 {
 	if (growpath(path, 1) != nil)
 		return fz_outofmem;
@@ -140,7 +144,7 @@ fz_closepath(fz_path *path)
 }
 
 fz_error *
-fz_endpath(fz_path *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
+fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
 {
 	fz_pathel *newels;
 
@@ -150,8 +154,14 @@ fz_endpath(fz_path *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
 	path->els = newels;
 
 	path->paint = paint;
-	path->stroke = stroke;
 	path->dash = dash;
+	if (stroke)
+	{
+		path->linecap = stroke->linecap;
+		path->linejoin = stroke->linejoin;
+		path->linewidth = stroke->linewidth;
+		path->miterlimit = stroke->miterlimit;
+	}
 
 	return nil;
 }
@@ -174,7 +184,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpath(fz_path *path, fz_matrix ctm)
+fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 {
 	fz_point p;
 	fz_rect r = FZ_INFRECT;
@@ -204,8 +214,8 @@ fz_boundpath(fz_path *path, fz_matrix ctm)
 
 	if (path->paint == FZ_STROKE)
 	{
-		float miterlength = sin(path->stroke->miterlimit / 2.0);
-		float linewidth = path->stroke->linewidth;
+		float miterlength = sin(path->miterlimit / 2.0);
+		float linewidth = path->linewidth;
 		float expand = MAX(miterlength, linewidth) / 2.0;
 		r.min.x -= expand;
 		r.min.y -= expand;
@@ -217,7 +227,7 @@ fz_boundpath(fz_path *path, fz_matrix ctm)
 }
 
 void
-fz_debugpath(fz_path *path)
+fz_debugpathnode(fz_pathnode *path)
 {
 	float x, y;
 	int i = 0;
