@@ -17,7 +17,7 @@ extern fz_error fz_kiodone;
     TYPE *VAR;                                                          \
     *fp = fz_malloc(sizeof(TYPE));                                      \
     if (!*fp) return fz_outofmem;                                       \
-    (*fp)->nrefs = 1;                                                   \
+    (*fp)->refs = 1;                                                   \
     (*fp)->process = fz_process ## NAME ;                               \
     (*fp)->drop = fz_drop ## NAME ;                                     \
     (*fp)->consumed = 0;                                                \
@@ -27,7 +27,7 @@ extern fz_error fz_kiodone;
 
 struct fz_filter_s
 {
-	int nrefs;
+	int refs;
 	fz_error* (*process)(fz_filter *filter, fz_buffer *in, fz_buffer *out);
 	void (*drop)(fz_filter *filter);
 	int consumed;
@@ -37,7 +37,7 @@ struct fz_filter_s
 
 struct fz_buffer_s
 {
-	int nrefs;
+	int refs;
 	int ownsdata;
 	unsigned char *bp;
 	unsigned char *rp;

@@ -25,7 +25,7 @@ typedef struct fz_error_s fz_error;
 
 struct fz_error_s
 {
-	int nrefs;
+	int refs;
 	char msg[184];
 	char file[32];
 	char func[32];

@@ -97,14 +97,14 @@ static fz_error *parsenumber(fz_obj **obj, char **sp)
 
 static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	fz_obj *dict = nil;
 	fz_obj *key = nil;
 	fz_obj *val = nil;
 	char *s = *sp;
 
-	err = fz_newdict(&dict, 8);
-	if (err) return err;
+	error = fz_newdict(&dict, 8);
+	if (error) return error;
 	*obj = dict;
 
 	s += 2;	/* skip "<<" */
@@ -120,26 +120,26 @@ static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
 				s ++;
 				break;
 			}
-			err = fz_throw("syntaxerror in parsedict");
-			goto error;
+			error = fz_throw("syntaxerror in parsedict");
+			goto cleanup;
 		}
 
 		/* non-name as key, bail */
 		if (*s != '/') {
-			err = fz_throw("syntaxerror in parsedict");
-			goto error;
+			error = fz_throw("syntaxerror in parsedict");
+			goto cleanup;
 		}
 
-		err = parsename(&key, &s);
-		if (err) goto error;
+		error = parsename(&key, &s);
+		if (error) goto cleanup;
 
 		skipwhite(&s);
 
-		err = parseobj(&val, &s, v);
-		if (err) goto error;
+		error = parseobj(&val, &s, v);
+		if (error) goto cleanup;
 
-		err = fz_dictput(dict, key, val);
-		if (err) goto error;
+		error = fz_dictput(dict, key, val);
+		if (error) goto cleanup;
 
 		fz_dropobj(val); val = nil;
 		fz_dropobj(key); key = nil;
@@ -148,24 +148,24 @@ static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
 	*sp = s;
 	return nil;
 
-error:
+cleanup:
 	if (val) fz_dropobj(val);
 	if (key) fz_dropobj(key);
 	if (dict) fz_dropobj(dict);
 	*obj = nil;
 	*sp = s;
-	return err;
+	return error;
 }
 
 static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *a;
 	fz_obj *o;
 	char *s = *sp;
 
-	err = fz_newarray(&a, 8);
-	if (err) return err;
+	error = fz_newarray(&a, 8);
+	if (error) return error;
 	*obj = a;
 
 	s ++;	/* skip '[' */
@@ -179,11 +179,11 @@ static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
 			break;
 		}
 
-		err = parseobj(&o, &s, v);
-		if (err) { *obj = nil; fz_dropobj(a); return err; }
+		error = parseobj(&o, &s, v);
+		if (error) { *obj = nil; fz_dropobj(a); return error; }
 
-		err = fz_arraypush(a, o);
-		if (err) { fz_dropobj(o); *obj = nil; fz_dropobj(a); return err; }
+		error = fz_arraypush(a, o);
+		if (error) { fz_dropobj(o); *obj = nil; fz_dropobj(a); return error; }
 
 		fz_dropobj(o);
 	}
@@ -291,7 +291,7 @@ static fz_error *parsehexstring(fz_obj **obj, char **sp)
 
 static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *err;
+	fz_error *error;
 	char buf[32];
 	int oid, gid, len;
 	char *tmp;
@@ -302,7 +302,7 @@ static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 
 	skipwhite(&s);
 
-	err = nil;
+	error = nil;
 
 	if (v != nil && *s == '%')
 	{
@@ -310,86 +310,86 @@ static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 		switch (*s)
 		{
 		case 'o': *obj = fz_keepobj(va_arg(v->ap, fz_obj*)); break;
-		case 'b': err = fz_newbool(obj, va_arg(v->ap, int)); break;
-		case 'i': err = fz_newint(obj, va_arg(v->ap, int)); break;
-		case 'f': err = fz_newreal(obj, (float)va_arg(v->ap, double)); break;
-		case 'n': err = fz_newname(obj, va_arg(v->ap, char*)); break;
+		case 'b': error = fz_newbool(obj, va_arg(v->ap, int)); break;
+		case 'i': error = fz_newint(obj, va_arg(v->ap, int)); break;
+		case 'f': error = fz_newreal(obj, (float)va_arg(v->ap, double)); break;
+		case 'n': error = fz_newname(obj, va_arg(v->ap, char*)); break;
 		case 'r':
 			oid = va_arg(v->ap, int);
 			gid = va_arg(v->ap, int);
-			err = fz_newindirect(obj, oid, gid);
+			error = fz_newindirect(obj, oid, gid);
 			break;
 		case 's':
 			tmp = va_arg(v->ap, char*);
-			err = fz_newstring(obj, tmp, strlen(tmp));
+			error = fz_newstring(obj, tmp, strlen(tmp));
 			break;
 		case '#':
 			tmp = va_arg(v->ap, char*);
 			len = va_arg(v->ap, int);
-			err = fz_newstring(obj, tmp, len);
+			error = fz_newstring(obj, tmp, len);
 			break;
 		default:
-			err = fz_throw("unknown format specifier in packobj: '%c'", *s);
+			error = fz_throw("unknown format specifier in packobj: '%c'", *s);
 			break;
 		}
 		s ++;
 	}
 
 	else if (*s == '/')
-		err = parsename(obj, &s);
+		error = parsename(obj, &s);
 
 	else if (*s == '(')
-		err = parsestring(obj, &s);
+		error = parsestring(obj, &s);
 
 	else if (*s == '<') {
 		if (s[1] == '<')
-			err = parsedict(obj, &s, v);
+			error = parsedict(obj, &s, v);
 		else
-			err = parsehexstring(obj, &s);
+			error = parsehexstring(obj, &s);
 	}
 
 	else if (*s == '[')
-		err = parsearray(obj, &s, v);
+		error = parsearray(obj, &s, v);
 
 	else if (*s == '-' || *s == '.' || (*s >= '0' && *s <= '9'))
-		err = parsenumber(obj, &s);
+		error = parsenumber(obj, &s);
 
 	else if (isregular(*s))
 	{
 		parsekeyword(&s, buf, buf + sizeof buf);
 
 		if (strcmp("true", buf) == 0)
-			err = fz_newbool(obj, 1);
+			error = fz_newbool(obj, 1);
 		else if (strcmp("false", buf) == 0)
-			err = fz_newbool(obj, 0);
+			error = fz_newbool(obj, 0);
 		else if (strcmp("null", buf) == 0)
-			err = fz_newnull(obj);
+			error = fz_newnull(obj);
 		else
-			err = fz_throw("syntaxerror in parseobj: undefined keyword %s", buf);
+			error = fz_throw("syntaxerror in parseobj: undefined keyword %s", buf);
 	}
 
 	else
-		err = fz_throw("syntaxerror in parseobj");
+		error = fz_throw("syntaxerror in parseobj");
 
 	*sp = s;
-	return err;
+	return error;
 }
 
 fz_error *
 fz_packobj(fz_obj **op, char *fmt, ...)
 {
-	fz_error *err;
+	fz_error *error;
 	struct vap v;
 	va_list ap;
 
 	va_start(ap, fmt);
 	va_copy(v.ap, ap);
 
-	err = parseobj(op, &fmt, &v);
+	error = parseobj(op, &fmt, &v);
 
 	va_end(ap);
 
-	return err;
+	return error;
 }
 
 fz_error *

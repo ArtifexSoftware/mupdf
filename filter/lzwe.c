@@ -241,16 +241,16 @@ fz_error *
 fz_processlzwe(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_lzwe *lzw = (fz_lzwe*)filter;
-	fz_error *err;
+	fz_error *error;
 
 	/* restore partial bits */
 	*out->wp = lzw->bsave;
 
-	err = compress(lzw, in, out);
+	error = compress(lzw, in, out);
 
 	/* save partial bits */
 	lzw->bsave = *out->wp;
 
-	return err;
+	return error;
 }
 

@@ -11,7 +11,7 @@ fz_newdict(fz_obj **op, int initialcap)
 	obj = *op = fz_malloc(sizeof (fz_obj));
 	if (!obj) return fz_outofmem;
 
-	obj->nrefs = 1;  
+	obj->refs = 1;  
 	obj->kind = FZ_DICT;
 
 	obj->u.d.len = 0;
@@ -31,20 +31,20 @@ fz_newdict(fz_obj **op, int initialcap)
 fz_error *
 fz_copydict(fz_obj **op, fz_obj *obj)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *new;
 	int i;
 
 	if (!fz_isdict(obj))
 		return fz_throw("typecheck in copydict");
 
-	err = fz_newdict(&new, obj->u.d.cap);
-	if (err) return err;
+	error = fz_newdict(&new, obj->u.d.cap);
+	if (error) return error;
 	*op = new;
 
 	for (i = 0; i < fz_dictlen(obj); i++) {
-		err = fz_dictput(new, fz_dictgetkey(obj, i), fz_dictgetval(obj, i));
-		if (err) { fz_dropdict(new); return err; }
+		error = fz_dictput(new, fz_dictgetkey(obj, i), fz_dictgetval(obj, i));
+		if (error) { fz_dropdict(new); return error; }
 	}
 
 	return nil;
@@ -53,7 +53,7 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 fz_error *
 fz_deepcopydict(fz_obj **op, fz_obj *obj)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *new;
 	fz_obj *val;
 	int i;
@@ -61,8 +61,8 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 	if (!fz_isdict(obj))
 		return fz_throw("typecheck in deepcopydict");
 
-	err = fz_newdict(&new, obj->u.d.cap);
-	if (err) return err;
+	error = fz_newdict(&new, obj->u.d.cap);
+	if (error) return error;
 	*op = new;
 
 	for (i = 0; i < fz_dictlen(obj); i++)
@@ -70,24 +70,24 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 		val = fz_dictgetval(obj, i);
 
 		if (fz_isarray(val)) {
-			err = fz_deepcopyarray(&val, val);
-			if (err) { fz_dropdict(new); return err; }
-			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_dropobj(val); fz_dropdict(new); return err; }
+			error = fz_deepcopyarray(&val, val);
+			if (error) { fz_dropdict(new); return error; }
+			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
+			if (error) { fz_dropobj(val); fz_dropdict(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else if (fz_isdict(val)) {
-			err = fz_deepcopydict(&val, val);
-			if (err) { fz_dropdict(new); return err; }
-			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_dropobj(val); fz_dropdict(new); return err; }
+			error = fz_deepcopydict(&val, val);
+			if (error) { fz_dropdict(new); return error; }
+			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
+			if (error) { fz_dropobj(val); fz_dropdict(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else {
-			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_dropdict(new); return err; }
+			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
+			if (error) { fz_dropdict(new); return error; }
 		}
 	}
 
@@ -182,7 +182,7 @@ fz_dictgetsa(fz_obj *obj, char *key, char *abbrev)
 fz_error *
 fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
-	fz_error *err;
+	fz_error *error;
 	int i;
 	char *s;
 
@@ -202,8 +202,8 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	}
 
 	if (obj->u.d.len + 1 > obj->u.d.cap) {
-		err = growdict(obj);
-		if (err) return err;
+		error = growdict(obj);
+		if (error) return error;
 	}
 
 	obj->u.d.items[obj->u.d.len].k = fz_keepobj(key);
@@ -216,13 +216,13 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 fz_error *
 fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *keyobj;
-	err = fz_newname(&keyobj, key);
-	if (err) return err;
-	err = fz_dictput(obj, keyobj, val);
+	error = fz_newname(&keyobj, key);
+	if (error) return error;
+	error = fz_dictput(obj, keyobj, val);
 	fz_dropobj(keyobj);
-	return err;
+	return error;
 }
 
 fz_error *

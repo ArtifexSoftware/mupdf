@@ -298,7 +298,7 @@ if (fax->a0 < 0)
 static fz_error *
 process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 {
-	fz_error *err;
+	fz_error *error;
 	int i, n;
 
 	while (1)
@@ -380,24 +380,24 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 			fax->stage ++;
 			
 		case 3:
-			err = 0; /* to silence compiler */
+			error = 0; /* to silence compiler */
 
 			if (fax->k < 0) {
-				err = enc2d(fax, fax->ref, fax->src, out);
+				error = enc2d(fax, fax->ref, fax->src, out);
 			}
 			else if (fax->k == 0) {
-				err = enc1d(fax, fax->src, out);
+				error = enc1d(fax, fax->src, out);
 			}
 			else if (fax->k > 0) {
 				if (fax->ridx % fax->k == 0) {
-					err = enc1d(fax, fax->src, out);
+					error = enc1d(fax, fax->src, out);
 				}
 				else {
-					err = enc2d(fax, fax->ref, fax->src, out);
+					error = enc2d(fax, fax->ref, fax->src, out);
 				}
 			}
 
-			if (err) return err;
+			if (error) return error;
 
 			fax->ridx ++;
 
@@ -432,16 +432,16 @@ fz_error *
 fz_processfaxe(fz_filter *p, fz_buffer *in, fz_buffer *out)
 {
 	fz_faxe *fax = (fz_faxe*) p;
-	fz_error *err;
+	fz_error *error;
 
 	/* restore partial bits */
 	*out->wp = fax->bsave;
 
-	err = process(fax, in, out);
+	error = process(fax, in, out);
 
 	/* save partial bits */
 	fax->bsave = *out->wp;
 
-	return err;
+	return error;
 }
 

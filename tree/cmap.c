@@ -15,7 +15,7 @@ struct fz_range_s
 
 struct fz_cmap_s
 {
-	int nrefs;
+	int refs;
 	char cmapname[32];
 
 	char usecmapname[32];
@@ -46,7 +46,7 @@ fz_newcmap(fz_cmap **cmapp)
 	if (!cmap)
 		return fz_outofmem;
 
-	cmap->nrefs = 1;
+	cmap->refs = 1;
 	strcpy(cmap->cmapname, "");
 
 	strcpy(cmap->usecmapname, "");
@@ -70,14 +70,14 @@ fz_newcmap(fz_cmap **cmapp)
 fz_cmap *
 fz_keepcmap(fz_cmap *cmap)
 {
-	cmap->nrefs ++;
+	cmap->refs ++;
 	return cmap;
 }
 
 void
 fz_dropcmap(fz_cmap *cmap)
 {
-	if (--cmap->nrefs == 0)
+	if (--cmap->refs == 0)
 	{
 		if (cmap->usecmap)
 			fz_dropcmap(cmap->usecmap);
@@ -221,7 +221,7 @@ static int compare(const void *va, const void *vb)
 fz_error *
 fz_endcidrange(fz_cmap *cmap)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_range *newranges;
 	int *newlookup;
 	fz_range *a;			/* last written range on output */
@@ -251,9 +251,9 @@ fz_endcidrange(fz_cmap *cmap)
 				else if (a->flag == LOOKUP && b->flag == SINGLE)
 				{
 					a->high = b->high;
-					err = addlookup(cmap, b->offset);
-					if (err)
-						return err;
+					error = addlookup(cmap, b->offset);
+					if (error)
+						return error;
 				}
 
 				/* LR -> LR */
@@ -272,13 +272,13 @@ fz_endcidrange(fz_cmap *cmap)
 					a->flag = LOOKUP;
 					a->high = b->high;
 
-					err = addlookup(cmap, a->offset);
-					if (err)
-						return err;
+					error = addlookup(cmap, a->offset);
+					if (error)
+						return error;
 
-					err = addlookup(cmap, b->offset);
-					if (err)
-						return err;
+					error = addlookup(cmap, b->offset);
+					if (error)
+						return error;
 
 					a->offset = cmap->tlen - 2;
 				}
@@ -287,9 +287,9 @@ fz_endcidrange(fz_cmap *cmap)
 				else if (a->flag == LOOKUP && b->flag == SINGLE)
 				{
 					a->high = b->high;
-					err = addlookup(cmap, b->offset);
-					if (err)
-						return err;
+					error = addlookup(cmap, b->offset);
+					if (error)
+						return error;
 				}
 
 				/* XX -> XX */

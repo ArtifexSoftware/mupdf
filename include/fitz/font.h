@@ -22,7 +22,7 @@ struct fz_vmtx_s
 
 struct fz_font_s
 {
-	int nrefs;
+	int refs;
 	char name[32];
 
 	fz_error* (*render)(fz_glyph*, fz_font*, int, fz_matrix);

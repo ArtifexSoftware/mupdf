@@ -13,7 +13,7 @@ static fz_error *
 loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 	struct stuff inherit, fz_obj *obj, fz_obj *ref)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *type;
 	fz_obj *kids;
 	fz_obj *kref, *kobj;
@@ -25,23 +25,23 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 	if (strcmp(fz_toname(type), "Page") == 0)
 	{
 		if (inherit.resources && !fz_dictgets(obj, "Resources")) {
-			err = fz_dictputs(obj, "Resources", inherit.resources);
-			if (err) return err;
+			error = fz_dictputs(obj, "Resources", inherit.resources);
+			if (error) return error;
 		}
 
 		if (inherit.mediabox && !fz_dictgets(obj, "MediaBox")) {
-			err = fz_dictputs(obj, "MediaBox", inherit.mediabox);
-			if (err) return err;
+			error = fz_dictputs(obj, "MediaBox", inherit.mediabox);
+			if (error) return error;
 		}
 
 		if (inherit.cropbox && !fz_dictgets(obj, "CropBox")) {
-			err = fz_dictputs(obj, "CropBox", inherit.cropbox);
-			if (err) return err;
+			error = fz_dictputs(obj, "CropBox", inherit.cropbox);
+			if (error) return error;
 		}
 
 		if (inherit.rotate && !fz_dictgets(obj, "Rotate")) {
-			err = fz_dictputs(obj, "Rotate", inherit.rotate);
-			if (err) return err;
+			error = fz_dictputs(obj, "Rotate", inherit.rotate);
+			if (error) return error;
 		}
 
 		pages->pref[pages->cursor] = fz_keepobj(ref);
@@ -68,12 +68,12 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		{
 			kref = fz_arrayget(kids, i);
 
-			err = pdf_loadindirect(&kobj, xref, kref);
-			if (err) return err;
+			error = pdf_loadindirect(&kobj, xref, kref);
+			if (error) return error;
 
-			err = loadpagetree(xref, pages, inherit, kobj, kref);
+			error = loadpagetree(xref, pages, inherit, kobj, kref);
 			fz_dropobj(kobj);
-			if (err) return err;
+			if (error) return error;
 		}
 	}
 
@@ -98,7 +98,7 @@ pdf_debugpagetree(pdf_pagetree *pages)
 fz_error *
 pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 {
-	fz_error *err;
+	fz_error *error;
 	struct stuff inherit;
 	pdf_pagetree *p = nil;
 	fz_obj *catalog = nil;
@@ -115,18 +115,18 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	trailer = xref->trailer;
 
 	ref = fz_dictgets(trailer, "Root");
-	err = pdf_loadindirect(&catalog, xref, ref);
-	if (err) goto error;
+	error = pdf_loadindirect(&catalog, xref, ref);
+	if (error) goto cleanup;
 
 	ref = fz_dictgets(catalog, "Pages");
-	err = pdf_loadindirect(&pages, xref, ref);
-	if (err) goto error;
+	error = pdf_loadindirect(&pages, xref, ref);
+	if (error) goto cleanup;
 
 	ref = fz_dictgets(pages, "Count");
 	count = fz_toint(ref);
 
 	p = *pp = fz_malloc(sizeof(pdf_pagetree));
-	if (!p) { err = fz_outofmem; goto error; }
+	if (!p) { error = fz_outofmem; goto cleanup; }
 
 	p->pref = nil;
 	p->pobj = nil;
@@ -134,19 +134,19 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	p->cursor = 0;
 
 	p->pref = fz_malloc(sizeof(fz_obj*) * count);
-	if (!p->pref) { err = fz_outofmem; goto error; }
+	if (!p->pref) { error = fz_outofmem; goto cleanup; }
 
 	p->pobj = fz_malloc(sizeof(fz_obj*) * count);
-	if (!p->pobj) { err = fz_outofmem; goto error; }
+	if (!p->pobj) { error = fz_outofmem; goto cleanup; }
 
-	err = loadpagetree(xref, p, inherit, pages, ref);
-	if (err) goto error;
+	error = loadpagetree(xref, p, inherit, pages, ref);
+	if (error) goto cleanup;
 
 	fz_dropobj(pages);
 	fz_dropobj(catalog);
 	return nil;
 
-error:
+cleanup:
 	if (pages) fz_dropobj(pages);
 	if (catalog) fz_dropobj(catalog);
 	if (p) {

@@ -20,7 +20,7 @@ fz_throw1(char *fmt, ...)
 	eo = fz_malloc(sizeof(fz_error));
 	if (!eo) return fz_outofmem;
 
-	eo->nrefs = 1;
+	eo->refs = 1;
 	strlcpy(eo->func, "unknown", sizeof eo->func);
 	strlcpy(eo->file, "unknown", sizeof eo->file);
 	eo->line = 0;
@@ -42,7 +42,7 @@ fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 	eo = fz_malloc(sizeof(fz_error));
 	if (!eo) return fz_outofmem;
 
-	eo->nrefs = 1;
+	eo->refs = 1;
 	strlcpy(eo->func, func, sizeof eo->func);
 	strlcpy(eo->file, file, sizeof eo->file);
 	eo->line = line;
@@ -61,9 +61,9 @@ fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 void
 fz_droperror(fz_error *eo)
 {
-	if (eo->nrefs > 0)
-		eo->nrefs--;
-	if (eo->nrefs == 0)
+	if (eo->refs > 0)
+		eo->refs--;
+	if (eo->refs == 0)
 		fz_free(eo);
 }
 

@@ -7,7 +7,7 @@ extern void fz_dropdict(fz_obj *dict);
 	fz_obj *o;                       \
 	o = *op = fz_malloc(SIZE);       \
 	if (!o) return fz_outofmem;      \
-	o->nrefs = 1;                    \
+	o->refs = 1;                    \
 	o->kind = KIND;                  \
 
 fz_error *
@@ -78,14 +78,14 @@ fz_newpointer(fz_obj **op, void *p)
 fz_obj *
 fz_keepobj(fz_obj *o)
 {
-	o->nrefs ++;
+	o->refs ++;
 	return o;
 }
 
 void
 fz_dropobj(fz_obj *o)
 {
-	if (--o->nrefs == 0)
+	if (--o->refs == 0)
 	{
 		if (o->kind == FZ_ARRAY)
 			fz_droparray(o);

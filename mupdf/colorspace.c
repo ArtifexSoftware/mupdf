@@ -7,7 +7,7 @@ static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*drop)(fz_colorspace*))
 {
 	strlcpy(cs->name, name, sizeof cs->name);
-	cs->nrefs = 1;
+	cs->refs = 1;
 	cs->n = n;
 	cs->toxyz = to;
 	cs->fromxyz = from;

@@ -3,16 +3,16 @@
 fz_colorspace *
 fz_keepcolorspace(fz_colorspace *cs)
 {
-	cs->nrefs ++;
+	cs->refs ++;
 	return cs;
 }
 
 void
 fz_dropcolorspace(fz_colorspace *cs)
 {
-	if (cs->nrefs < 0)
+	if (cs->refs < 0)
 		return;
-	if (--cs->nrefs == 0)
+	if (--cs->refs == 0)
 	{
 		if (cs->drop)
 			cs->drop(cs);

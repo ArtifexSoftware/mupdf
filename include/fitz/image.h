@@ -4,7 +4,7 @@ typedef struct fz_image_s fz_image;
 
 struct fz_image_s
 {
-	int nrefs;
+	int refs;
 	fz_error* (*loadtile)(fz_image*,fz_pixmap*);
 	void (*drop)(fz_image*);
 	fz_colorspace *cs;

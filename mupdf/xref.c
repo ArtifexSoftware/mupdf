@@ -114,7 +114,7 @@ pdf_debugpdf(pdf_xref *xref)
 			xref->table[i].ofs,
 			xref->table[i].gen,
 			xref->table[i].type,
-			xref->table[i].obj ? xref->table[i].obj->nrefs : 0,
+			xref->table[i].obj ? xref->table[i].obj->refs : 0,
 			xref->table[i].stmofs);
 	}
 }

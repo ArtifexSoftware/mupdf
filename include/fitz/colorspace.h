@@ -6,7 +6,7 @@ typedef struct fz_colorcube4_s fz_colorcube4;
 
 struct fz_colorspace_s
 {
-	int nrefs;
+	int refs;
 	char name[16];
 	int n;
 	void (*toxyz)(fz_colorspace *, float *src, float *xyz);

@@ -3,7 +3,7 @@
 void
 fz_initfont(fz_font *font, char *name)
 {
-	font->nrefs = 1;
+	font->refs = 1;
 	strlcpy(font->name, name, sizeof font->name);
 
 	font->wmode = 0;
@@ -34,14 +34,14 @@ fz_initfont(fz_font *font, char *name)
 fz_font *
 fz_keepfont(fz_font *font)
 {
-	font->nrefs ++;
+	font->refs ++;
 	return font;
 }
 
 void
 fz_dropfont(fz_font *font)
 {
-	if (--font->nrefs == 0)
+	if (--font->refs == 0)
 	{
 		if (font->drop)
 			font->drop(font);

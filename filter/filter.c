@@ -34,14 +34,14 @@ fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
 fz_filter *
 fz_keepfilter(fz_filter *f)
 {
-	f->nrefs ++;
+	f->refs ++;
 	return f;
 }
 
 void
 fz_dropfilter(fz_filter *f)
 {
-	if (--f->nrefs == 0)
+	if (--f->refs == 0)
 	{
 		if (f->drop)
 			f->drop(f);

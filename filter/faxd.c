@@ -336,7 +336,7 @@ fz_error *
 fz_processfaxd(fz_filter *f, fz_buffer *in, fz_buffer *out)
 {
 	fz_faxd *fax = (fz_faxd*)f;
-	fz_error * err;
+	fz_error *error;
 	int i;
 
 	if (fax->stage == SEOL)
@@ -382,15 +382,15 @@ loop:
 	else if (fax->dim == 1)
 	{
 		fax->eolc = 0;
-		err = dec1d(fax);
-		if (err) return err;
+		error = dec1d(fax);
+		if (error) return error;
 
 	}
 	else if (fax->dim == 2)
 	{
 		fax->eolc = 0;
-		err = dec2d(fax);
-		if (err) return err;
+		error = dec2d(fax);
+		if (error) return error;
 	}
 
 	/* no eol check after makeup codes nor in the middle of an H code */

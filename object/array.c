@@ -11,7 +11,7 @@ fz_newarray(fz_obj **op, int initialcap)
 	obj = *op = fz_malloc(sizeof (fz_obj));
 	if (!obj) return fz_outofmem;
 
-	obj->nrefs = 1;	
+	obj->refs = 1;	
 	obj->kind = FZ_ARRAY;
 
 	obj->u.a.len = 0;
@@ -29,20 +29,20 @@ fz_newarray(fz_obj **op, int initialcap)
 fz_error *
 fz_copyarray(fz_obj **op, fz_obj *obj)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *new;
 	int i;
 
 	if (!fz_isarray(obj))
 		return fz_throw("typecheck in copyarray");
 
-	err = fz_newarray(&new, fz_arraylen(obj));
-	if (err) return err;
+	error = fz_newarray(&new, fz_arraylen(obj));
+	if (error) return error;
 	*op = new;
 
 	for (i = 0; i < fz_arraylen(obj); i++) {
-		err = fz_arraypush(new, fz_arrayget(obj, i));
-		if (err) { fz_droparray(new); return err; }
+		error = fz_arraypush(new, fz_arrayget(obj, i));
+		if (error) { fz_droparray(new); return error; }
 	}
 
 	return nil;
@@ -51,7 +51,7 @@ fz_copyarray(fz_obj **op, fz_obj *obj)
 fz_error *
 fz_deepcopyarray(fz_obj **op, fz_obj *obj)
 {
-	fz_error *err;
+	fz_error *error;
 	fz_obj *new;
 	fz_obj *val;
 	int i;
@@ -59,8 +59,8 @@ fz_deepcopyarray(fz_obj **op, fz_obj *obj)
 	if (!fz_isarray(obj))
 		return fz_throw("typecheck in deepcopyarray");
 
-	err = fz_newarray(&new, fz_arraylen(obj));
-	if (err) return err;
+	error = fz_newarray(&new, fz_arraylen(obj));
+	if (error) return error;
 	*op = new;
 
 	for (i = 0; i < fz_arraylen(obj); i++)
@@ -68,24 +68,24 @@ fz_deepcopyarray(fz_obj **op, fz_obj *obj)
 		val = fz_arrayget(obj, i);
 
 		if (fz_isarray(val)) {
-			err = fz_deepcopyarray(&val, val);
-			if (err) { fz_droparray(new); return err; }
-			err = fz_arraypush(new, val);
-			if (err) { fz_dropobj(val); fz_droparray(new); return err; }
+			error = fz_deepcopyarray(&val, val);
+			if (error) { fz_droparray(new); return error; }
+			error = fz_arraypush(new, val);
+			if (error) { fz_dropobj(val); fz_droparray(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else if (fz_isdict(val)) {
-			err = fz_deepcopydict(&val, val);
-			if (err) { fz_droparray(new); return err; }
-			err = fz_arraypush(new, val);
-			if (err) { fz_dropobj(val); fz_droparray(new); return err; }
+			error = fz_deepcopydict(&val, val);
+			if (error) { fz_droparray(new); return error; }
+			error = fz_arraypush(new, val);
+			if (error) { fz_dropobj(val); fz_droparray(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else {
-			err = fz_arraypush(new, val);
-			if (err) { fz_droparray(new); return err; }
+			error = fz_arraypush(new, val);
+			if (error) { fz_droparray(new); return error; }
 		}
 	}
 
@@ -151,14 +151,14 @@ growarray(fz_obj *obj)
 fz_error *
 fz_arraypush(fz_obj *obj, fz_obj *item)
 {
-	fz_error *err;
+	fz_error *error;
 
 	if (!fz_isarray(obj))
 		return fz_throw("typecheck in arraypush");
 
 	if (obj->u.a.len + 1 > obj->u.a.cap) {
-		err = growarray(obj);
-		if (err) return err;
+		error = growarray(obj);
+		if (error) return error;
 	}
 
 	obj->u.a.items[obj->u.a.len] = fz_keepobj(item);

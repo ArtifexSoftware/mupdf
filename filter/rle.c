@@ -129,15 +129,15 @@ fz_error *
 fz_processrle(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_rle *enc = (fz_rle*)filter;
-	fz_error *err;
+	fz_error *error;
 	unsigned char c;
 
 	while (1)
 	{
 
 		if (enc->reclen && enc->curlen == enc->reclen) {
-			err = savebuf(enc, in, out);
-			if (err) return err;
+			error = savebuf(enc, in, out);
+			if (error) return error;
 #ifdef DEBUG
 fprintf(stderr, "--record--\n");
 #endif
@@ -148,8 +148,8 @@ fprintf(stderr, "--record--\n");
 		if (in->rp == in->wp) {
 			if (in->eof) {
 				if (enc->state != END) {
-					err = savebuf(enc, in, out);
-					if (err) return err;
+					error = savebuf(enc, in, out);
+					if (error) return error;
 				}
 				enc->state = END;
 			}
@@ -176,8 +176,8 @@ fprintf(stderr, "--record--\n");
 		case DIFF:
 			/* out of space */
 			if (enc->run == 128) {
-				err = putdiff(enc, in, out);
-				if (err) return err;
+				error = putdiff(enc, in, out);
+				if (error) return error;
 
 				enc->state = ONE;
 				enc->run = 1;
@@ -191,8 +191,8 @@ fprintf(stderr, "--record--\n");
 			{
 				if (enc->run >= 3) {
 					enc->run -= 2;	/* skip prev two for diff run */
-					err = putdiff(enc, in, out);
-					if (err) return err;
+					error = putdiff(enc, in, out);
+					if (error) return error;
 				}
 
 				enc->state = SAME;
@@ -208,8 +208,8 @@ fprintf(stderr, "--record--\n");
 
 		case SAME:
 			if (enc->run == 128 || c != enc->buf[0]) {
-				err = putsame(enc, in, out);
-				if (err) return err;
+				error = putsame(enc, in, out);
+				if (error) return error;
 
 				enc->state = ONE;
 				enc->run = 1;
@@ -221,8 +221,8 @@ fprintf(stderr, "--record--\n");
 			break;
 
 		case END:
-			err = puteod(enc, in, out);
-			if (err) return err;
+			error = puteod(enc, in, out);
+			if (error) return error;
 			
 			out->eof = 1;
 			return fz_iodone;

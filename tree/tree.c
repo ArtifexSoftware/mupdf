@@ -9,7 +9,7 @@ fz_newtree(fz_tree **treep)
 	if (!tree)
 		return fz_outofmem;
 
-	tree->nrefs = 1;
+	tree->refs = 1;
 	tree->root = nil;
 	tree->head = nil;
 
@@ -19,14 +19,14 @@ fz_newtree(fz_tree **treep)
 fz_tree *
 fz_keeptree(fz_tree *tree)
 {
-	tree->nrefs ++;
+	tree->refs ++;
 	return tree;
 }
 
 void
 fz_droptree(fz_tree *tree)
 {
-	if (--tree->nrefs == 0)
+	if (--tree->refs == 0)
 	{
 		if (tree->root)
 			fz_dropnode(tree->root);
