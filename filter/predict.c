@@ -64,11 +64,10 @@ fz_newpredict(fz_filter **fp, fz_obj *params, int encode)
 }
 
 void
-fz_freepredict(fz_filter *filter)
+fz_droppredict(fz_filter *filter)
 {
 	fz_predict *p = (fz_predict*)filter;
 	fz_free(p->ref);
-	fz_free(p);
 }
 
 static inline int

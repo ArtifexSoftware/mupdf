@@ -138,7 +138,7 @@ struct fz_imagenode_s
 /* common to all nodes */
 void fz_initnode(fz_node *node, fz_nodekind kind);
 fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
-void fz_freenode(fz_node *node);
+void fz_dropnode(fz_node *node);
 
 /* branch nodes */
 fz_error *fz_newmetanode(fz_node **nodep, fz_obj *name, fz_obj *dict);

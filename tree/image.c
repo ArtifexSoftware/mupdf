@@ -1,9 +1,9 @@
 #include <fitz.h>
 
-void fz_freeimage(fz_image *image)
+void fz_dropimage(fz_image *image)
 {
-	if (image->free)
-		image->free(image);
+	if (image->drop)
+		image->drop(image);
 	fz_free(image);
 }
 

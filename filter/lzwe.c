@@ -91,9 +91,8 @@ fz_newlzwe(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freelzwe(fz_filter *filter)
+fz_droplzwe(fz_filter *filter)
 {
-	fz_free(filter);
 }
 
 static void

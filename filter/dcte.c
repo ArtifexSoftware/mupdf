@@ -122,7 +122,7 @@ fz_newdcte(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freedcte(fz_filter *filter)
+fz_dropdcte(fz_filter *filter)
 {
 	fz_dcte *e = (fz_dcte*)filter;
 
@@ -132,8 +132,6 @@ fz_freedcte(fz_filter *filter)
 	}
 
 	jpeg_destroy_compress(&e->cinfo);
-
-	fz_free(e);
 }
 
 /* Adobe says zigzag order. IJG > v6a says natural order. */

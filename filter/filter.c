@@ -32,8 +32,10 @@ fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
 }
 
 void
-fz_freefilter(fz_filter *f)
+fz_dropfilter(fz_filter *f)
 {
-	f->free(f);
+	if (f->drop)
+		f->drop(f);
+	fz_free(f);
 }
 

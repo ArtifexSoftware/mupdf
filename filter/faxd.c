@@ -114,12 +114,11 @@ fz_newfaxd(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freefaxd(fz_filter *p)
+fz_dropfaxd(fz_filter *p)
 {
 	fz_faxd *fax = (fz_faxd*) p;
 	fz_free(fax->ref);
 	fz_free(fax->dst);
-	fz_free(fax);
 }
 
 static inline void eatbits(fz_faxd *fax, int nbits)

@@ -31,7 +31,7 @@ fz_droptree(fz_tree *tree)
 	if (tree->refcount == 0)
 	{
 		if (tree->root)
-			fz_freenode(tree->root);
+			fz_dropnode(tree->root);
 		fz_free(tree);
 	}
 }

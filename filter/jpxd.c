@@ -60,12 +60,11 @@ fz_newjpxd(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freejpxd(fz_filter *filter)
+fz_dropjpxd(fz_filter *filter)
 {
 	fz_jpxd *d = (fz_jpxd*)filter;
 	if (d->stream) jas_stream_close(d->stream);
 	if (d->image) jas_image_destroy(d->image);
-	fz_free(d);
 }
 
 fz_error *

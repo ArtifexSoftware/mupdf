@@ -185,7 +185,7 @@ printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);
 
 	error = fz_newpixmap(&tile1, 0, 0, w, h, n + 1);
 
-printf("  load tile\n");
+printf("  load tile %d x %d\n", w, h);
 	error = image->loadtile(image, tile1);
 //fz_debugpixmap(tile1);getchar();
 
@@ -195,7 +195,7 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 //		fz_gammapixmap(tile1, 1.0 / GAMMA);
 		error = fz_scalepixmap(&tile2, tile1, dx, dy);
 //		fz_gammapixmap(tile2, GAMMA);
-		fz_freepixmap(tile1);
+		fz_droppixmap(tile1);
 	}
 	else
 		tile2 = tile1;
@@ -203,7 +203,7 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 	/* render image mask */
 	if (n == 0 && a == 1)
 	{
-printf("draw image mask\n");
+printf("  draw image mask\n");
 		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile2, ctm, 0);
@@ -212,23 +212,22 @@ printf("draw image mask\n");
 	/* render rgb over */
 	else if (n == 3 && a == 0 && gc->acc)
 	{
-printf("draw image rgb over\n");
+printf("  draw image rgb over\n");
 		error = drawtile(gc, gc->acc, tile2, ctm, 1);
 	}
 
 	/* render generic image */
 	else
 	{
-printf("draw generic image\n");
+printf("  draw image rgb over after cs transform\n");
 		error = fz_convertpixmap(&tile3, tile2, cs, gc->model);
 		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, gc->model->n + 1);
 		fz_clearpixmap(gc->tmp);
-		error = drawtile(gc, gc->tmp, tile3, ctm, 0);
-//fz_debugpixmap(gc->tmp);getchar();
-		fz_freepixmap(tile3);
+		error = drawtile(gc, gc->tmp, tile3, ctm, 1);
+		fz_droppixmap(tile3);
 	}
 
-	fz_freepixmap(tile2);
+	fz_droppixmap(tile2);
 	return nil;
 }
 

@@ -52,5 +52,5 @@ fz_error *pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int
 fz_error *pdf_setpassword(pdf_crypt *crypt, char *pw);
 fz_error *pdf_cryptstm(fz_filter **fp, pdf_crypt *crypt, int oid, int gid);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid);
-void pdf_freecrypt(pdf_crypt *crypt);
+void pdf_dropcrypt(pdf_crypt *crypt);
 

@@ -186,7 +186,7 @@ fz_newmetanode(fz_node **nodep, fz_obj *name, fz_obj *dict)
 }
 
 void
-fz_freemetanode(fz_metanode *node)
+fz_dropmetanode(fz_metanode *node)
 {
 	if (node->name)
 		fz_dropobj(node->name);
@@ -223,7 +223,7 @@ fz_newlinknode(fz_node **nodep, fz_tree *subtree)
 }
 
 void
-fz_freelinknode(fz_linknode *node)
+fz_droplinknode(fz_linknode *node)
 {
 	fz_droptree(node->tree);
 }
@@ -285,7 +285,7 @@ fz_newimagenode(fz_node **nodep, fz_image *image)
 }
 
 void
-fz_freeimagenode(fz_imagenode *node)
+fz_dropimagenode(fz_imagenode *node)
 {
 	// XXX fz_dropimage(node->image);
 }

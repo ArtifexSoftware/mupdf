@@ -95,12 +95,11 @@ fz_newfaxe(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freefaxe(fz_filter *p)
+fz_dropfaxe(fz_filter *p)
 {
 	fz_faxe *fax = (fz_faxe*) p;
 	fz_free(fax->src);
 	fz_free(fax->ref);
-	fz_free(fax);
 }
 
 enum { codebytes = 2 };

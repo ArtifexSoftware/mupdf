@@ -103,7 +103,7 @@ cleanup:
 }
 
 void
-fz_freeglyphcache(fz_glyphcache *arena)
+fz_dropglyphcache(fz_glyphcache *arena)
 {
 	fz_free(arena->hash);
 	fz_free(arena->lru);	

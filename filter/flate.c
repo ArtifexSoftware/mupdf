@@ -42,7 +42,7 @@ fz_newflated(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freeflated(fz_filter *f)
+fz_dropflated(fz_filter *f)
 {
 	z_streamp zp = &((fz_flate*)f)->z;
 	int err;
@@ -50,8 +50,6 @@ fz_freeflated(fz_filter *f)
 	err = inflateEnd(zp);
 	if (err != Z_OK)
 		fprintf(stderr, "inflateEnd: %s", zp->msg);
-
-	fz_free(f);
 }
 
 fz_error *
@@ -126,7 +124,7 @@ fz_newflatee(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freeflatee(fz_filter *f)
+fz_dropflatee(fz_filter *f)
 {
 	z_streamp zp = &((fz_flate*)f)->z;
 	int err;

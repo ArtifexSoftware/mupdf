@@ -202,11 +202,12 @@ static int mrecode(char *name)
  * Create and destroy
  */
 
-static void ftfreefont(fz_font *font)
+static void ftdropfont(fz_font *font)
 {
 	pdf_font *pfont = (pdf_font*)font;
 	if (pfont->encoding)
-		fz_freecmap(pfont->encoding);
+		fz_dropcmap(pfont->encoding);
+	// XXX free freetype face
 }
 
 static pdf_font *
@@ -220,7 +221,7 @@ newfont(char *name)
 
 	fz_initfont((fz_font*)font, name);
 	font->super.render = ftrender;
-	font->super.free = (void(*)(fz_font*)) ftfreefont;
+	font->super.drop = (void(*)(fz_font*)) ftdropfont;
 
 	font->ftface = nil;
 	font->substitute = 0;
@@ -513,7 +514,7 @@ cleanup:
 	fz_free(etable);
 	if (widths)
 		fz_dropobj(widths);
-	fz_freefont((fz_font*)font);
+	fz_dropfont((fz_font*)font);
 	*fontp = nil;
 	return error;
 }
@@ -644,7 +645,7 @@ printf("  embedded CMap\n");
 
 			map = fz_malloc(len * sizeof(unsigned short));
 			if (!map) {
-				fz_freebuffer(buf);
+				fz_dropbuffer(buf);
 				error = fz_outofmem;
 				goto cleanup;
 			}
@@ -657,7 +658,7 @@ printf("  cidtogidmap %d\n", len / 2);
 			font->ncidtogid = len;
 			font->cidtogid = map;
 
-			fz_freebuffer(buf);
+			fz_dropbuffer(buf);
 		}
 
 		/* TODO: if truetype font is external, cidtogidmap should not be identity */
@@ -797,7 +798,7 @@ printf("\n");
 cleanup:
 	if (widths)
 		fz_dropobj(widths);
-	fz_freefont((fz_font*)font);
+	fz_dropfont((fz_font*)font);
 	*fontp = nil;
 	return error;
 }

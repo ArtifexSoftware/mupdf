@@ -126,26 +126,26 @@ fz_closefile(fz_file *file)
 	if (file->error)
 	{
 		fz_warn("%s", file->error->msg);
-		fz_freeerror(file->error);
+		fz_droperror(file->error);
 		file->error = nil;
 	}
 
 	if (file->fd == -1)	/* open to buffer not file */
 	{
 		if (file->mode == FZ_READ)
-			fz_freebuffer(file->in);
+			fz_dropbuffer(file->in);
 		else
-			fz_freebuffer(file->out);
+			fz_dropbuffer(file->out);
 	}
 	else
 	{
-		fz_freebuffer(file->in);
-		fz_freebuffer(file->out);
+		fz_dropbuffer(file->in);
+		fz_dropbuffer(file->out);
 		close(file->fd);
 	}
 
 	if (file->filter)
-		fz_freefilter(file->filter);
+		fz_dropfilter(file->filter);
 
 	fz_free(file);
 }
@@ -230,13 +230,13 @@ fz_popfilter(fz_file *file)
 	if (file->error)
 	{
 		fz_warn("%s", file->error->msg);
-		fz_freeerror(file->error);
+		fz_droperror(file->error);
 		file->error = nil;
 	}
 
 	if (file->depth == 1)
 	{
-		fz_freefilter(file->filter);
+		fz_dropfilter(file->filter);
 		file->filter = nil;
 
 		buf = file->out;
@@ -247,12 +247,12 @@ fz_popfilter(fz_file *file)
 	{
 		if (file->mode == FZ_READ)
 		{
-			fz_freebuffer(file->out);
+			fz_dropbuffer(file->out);
 			fz_unchainpipeline(file->filter, &file->filter, &file->out);
 		}
 		else
 		{
-			fz_freebuffer(file->in);
+			fz_dropbuffer(file->in);
 			fz_unchainpipeline(file->filter, &file->filter, &file->in);
 		}
 	}

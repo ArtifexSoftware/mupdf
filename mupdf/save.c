@@ -21,7 +21,7 @@ writestm(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 
 		error = fz_pushfilter(out, ef);
 		if (error) {
-			fz_freefilter(ef);
+			fz_dropfilter(ef);
 			return error;
 		}
 	}

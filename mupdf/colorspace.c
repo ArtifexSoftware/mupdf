@@ -4,14 +4,14 @@
 static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*to)(fz_colorspace*,float*,float*),
 	void(*from)(fz_colorspace*,float*,float*),
-	void(*free)(fz_colorspace*))
+	void(*drop)(fz_colorspace*))
 {
 	strlcpy(cs->name, name, sizeof cs->name);
 	cs->frozen = 0;
 	cs->n = n;
 	cs->toxyz = to;
 	cs->fromxyz = from;
-	cs->free = free;
+	cs->drop = drop;
 }
 
 static void mat3x3inv(float *dst, float *m)
@@ -511,7 +511,7 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 	if (error)
 	{
 		fz_warn("separation: %s", error->msg);
-		fz_freeerror(error);
+		fz_droperror(error);
 		xyz[0] = 0;
 		xyz[1] = 0;
 		xyz[2] = 0;
@@ -522,11 +522,11 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 }
 
 static void
-freeseparation(fz_colorspace *fzcs)
+dropseparation(fz_colorspace *fzcs)
 {
 	struct separation *cs = (struct separation *)fzcs;
-	fz_freecolorspace(cs->base);
-	pdf_freefunction(cs->tint);
+	fz_dropcolorspace(cs->base);
+	pdf_dropfunction(cs->tint);
 }
 
 static fz_error *
@@ -557,21 +557,21 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	error = pdf_loadfunction(&tint, xref, tintobj);
 	if (error)
 	{
-		fz_freecolorspace(base);
+		fz_dropcolorspace(base);
 		return error;
 	}
 
 	cs = fz_malloc(sizeof(struct separation));
 	if (!cs)
 	{
-		pdf_freefunction(tint);
-		fz_freecolorspace(base);
+		pdf_dropfunction(tint);
+		fz_dropcolorspace(base);
 		return fz_outofmem;
 	}
 
 	initcs((fz_colorspace*)cs,
 		n == 1 ? "Separation" : "DeviceN", n,
-		separationtoxyz, nil, freeseparation);
+		separationtoxyz, nil, dropseparation);
 
 	cs->base = base;
 	cs->tint = tint;
@@ -600,10 +600,10 @@ printf("indexedtoxyz: %d\n", i);
 }
 
 static void
-freeindexed(fz_colorspace *fzcs)
+dropindexed(fz_colorspace *fzcs)
 {
 	pdf_indexed *cs = (pdf_indexed *)fzcs;
-	fz_freecolorspace(cs->base);
+	fz_dropcolorspace(cs->base);
 	fz_free(cs->lookup);
 }
 
@@ -629,11 +629,11 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs = fz_malloc(sizeof(pdf_indexed));
 	if (!cs)
 	{
-		fz_freecolorspace(base);
+		fz_dropcolorspace(base);
 		return fz_outofmem;
 	}
 
-	initcs((fz_colorspace*)cs, "Indexed", 1, indexedtoxyz, nil, freeindexed);
+	initcs((fz_colorspace*)cs, "Indexed", 1, indexedtoxyz, nil, dropindexed);
 
 	cs->base = base;
 	cs->high = fz_toint(highobj);
@@ -643,7 +643,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs->lookup = fz_malloc(n);
 	if (!cs->lookup)
 	{
-		freeindexed((fz_colorspace*)cs);
+		dropindexed((fz_colorspace*)cs);
 		return fz_outofmem;
 	}
 
@@ -663,14 +663,14 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		error = pdf_loadstream(&buf, xref, fz_tonum(lookup), fz_togen(lookup));
 		if (error)
 		{
-			freeindexed((fz_colorspace*)cs);
+			dropindexed((fz_colorspace*)cs);
 			return error;
 		}
 
 		for (i = 0; i < n && i < (buf->wp - buf->rp); i++)
 			cs->lookup[i] = buf->rp[i];
 
-		fz_freebuffer(buf);
+		fz_dropbuffer(buf);
 	}
 
 	*csp = (fz_colorspace*)cs;

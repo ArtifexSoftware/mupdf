@@ -55,5 +55,5 @@ fz_rect fz_boundpathnode(fz_pathnode *node, fz_matrix ctm);
 void fz_debugpathnode(fz_pathnode *node);
 
 fz_error *fz_newdash(fz_dash **dashp, float phase, int len, float *array);
-void fz_freedash(fz_dash *dash);
+void fz_dropdash(fz_dash *dash);
 

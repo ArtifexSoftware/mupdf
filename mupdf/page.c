@@ -73,7 +73,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 	error = nil;
 
 cleanup:
-	pdf_freecsi(csi);
+	pdf_dropcsi(csi);
 	return error;
 }
 
@@ -150,7 +150,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 }
 
 void
-pdf_freepage(pdf_page *page)
+pdf_droppage(pdf_page *page)
 {
 	fz_dropobj(page->resources);
 	fz_droptree(page->tree);

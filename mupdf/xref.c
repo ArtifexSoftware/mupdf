@@ -87,7 +87,7 @@ pdf_closepdf(pdf_xref *xref)
 		for (i = 0; i < xref->len; i++)
 		{
 			if (xref->table[i].stmbuf)
-				fz_freebuffer(xref->table[i].stmbuf);
+				fz_dropbuffer(xref->table[i].stmbuf);
 			if (xref->table[i].obj)
 				fz_dropobj(xref->table[i].obj);
 		}
@@ -227,7 +227,7 @@ pdf_deleteobject(pdf_xref *xref, int oid, int gen)
 	x->gen ++;
 
 	if (x->stmbuf)
-		fz_freebuffer(x->stmbuf);
+		fz_dropbuffer(x->stmbuf);
 	x->stmbuf = nil;
 
 	if (x->obj)
@@ -280,7 +280,7 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 	x = xref->table + oid;
 
 	if (x->stmbuf)
-		fz_freebuffer(x->stmbuf);
+		fz_dropbuffer(x->stmbuf);
 	x->stmbuf = stm;
 
 	return nil;

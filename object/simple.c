@@ -1,5 +1,8 @@
 #include <fitz.h>
 
+extern void fz_droparray(fz_obj *array);
+extern void fz_dropdict(fz_obj *dict);
+
 #define NEWOBJ(KIND,SIZE)		\
 	fz_obj *o;			\
 	o = *op = fz_malloc(SIZE);	\
@@ -85,9 +88,9 @@ fz_dropobj(fz_obj *o)
 	o->refcount --;
 	if (o->refcount == 0) {
 		if (o->kind == FZ_ARRAY)
-			fz_freearray(o);
+			fz_droparray(o);
 		else if (o->kind == FZ_DICT)
-			fz_freedict(o);
+			fz_dropdict(o);
 		else
 			fz_free(o);
 	}

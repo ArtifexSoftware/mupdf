@@ -117,7 +117,7 @@ cleanup:
 }
 
 void
-pdf_freecrypt(pdf_crypt *crypt)
+pdf_dropcrypt(pdf_crypt *crypt)
 {
 	if (crypt->encrypt) fz_dropobj(crypt->encrypt);
 	if (crypt->id) fz_dropobj(crypt->id);
@@ -300,7 +300,7 @@ pdf_newencrypt(pdf_crypt **cp,
 			crypt->n * 8);
 	if (error)
 	{
-		pdf_freecrypt(crypt);
+		pdf_dropcrypt(crypt);
 		return error;
 	}
 

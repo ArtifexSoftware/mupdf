@@ -91,9 +91,8 @@ fz_newlzwd(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freelzwd(fz_filter *filter)
+fz_droplzwd(fz_filter *filter)
 {
-	fz_free(filter);
 }
 
 static inline void eatbits(fz_lzwd *lzw, int nbits)

@@ -1,12 +1,12 @@
 #include <fitz.h>
 
 void
-fz_freecolorspace(fz_colorspace *cs)
+fz_dropcolorspace(fz_colorspace *cs)
 {
 	if (cs->frozen)
 		return;
-	if (cs->free)
-		cs->free(cs);
+	if (cs->drop)
+		cs->drop(cs);
 	fz_free(cs);
 }
 

@@ -92,7 +92,7 @@ fz_hashgetval(fz_hashtable *table, int idx)
 }
 
 void
-fz_freehash(fz_hashtable *table)
+fz_drophash(fz_hashtable *table)
 {
 	fz_free(table->ents);
 	fz_free(table);

@@ -138,12 +138,12 @@ error:
 }
 
 void
-pdf_freeoutline(pdf_outline *outline)
+pdf_dropoutline(pdf_outline *outline)
 {
 	if (outline->first)
-		pdf_freeoutline(outline->first);
+		pdf_dropoutline(outline->first);
 	if (outline->next)
-		pdf_freeoutline(outline->next);
+		pdf_dropoutline(outline->next);
 
 	fz_free(outline->title);
 	if (outline->dest) fz_dropobj(outline->dest);
@@ -154,10 +154,10 @@ pdf_freeoutline(pdf_outline *outline)
 }
 
 void
-pdf_freeoutlinetree(pdf_outlinetree *outlinetree)
+pdf_dropoutlinetree(pdf_outlinetree *outlinetree)
 {
 	if (outlinetree->first)
-		pdf_freeoutline(outlinetree->first);
+		pdf_dropoutline(outlinetree->first);
 	fz_free(outlinetree);
 }
 

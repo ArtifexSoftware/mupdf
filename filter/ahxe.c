@@ -19,9 +19,8 @@ fz_newahxe(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freeahxe(fz_filter *f)
+fz_dropahxe(fz_filter *f)
 {
-	fz_free(f);
 }
 
 fz_error *

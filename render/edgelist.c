@@ -46,7 +46,7 @@ fz_resetgel(fz_gel *gel, int hs, int vs)
 }
 
 void
-fz_freegel(fz_gel *gel)
+fz_dropgel(fz_gel *gel)
 {
 	fz_free(gel->edges);
 	fz_free(gel);
@@ -196,7 +196,7 @@ fz_newael(fz_ael **aelp)
 }
 
 void
-fz_freeael(fz_ael *ael)
+fz_dropael(fz_ael *ael)
 {
 	fz_free(ael->edges);
 	fz_free(ael);

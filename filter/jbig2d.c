@@ -51,11 +51,10 @@ fz_newjbig2d(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freejbig2d(fz_filter *filter)
+fz_dropjbig2d(fz_filter *filter)
 {
 	fz_jbig2d *d = (fz_jbig2d*)filter;
 	jbig2_ctx_free(d->ctx);
-	fz_free(d);
 }
 
 fz_error *

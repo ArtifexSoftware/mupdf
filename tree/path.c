@@ -55,7 +55,7 @@ fz_clonepath(fz_pathnode **pathp, fz_pathnode *oldpath)
 }
 
 void
-fz_freepathnode(fz_pathnode *node)
+fz_droppathnode(fz_pathnode *node)
 {
 	fz_free(node->dash);
 	fz_free(node->els);
@@ -294,7 +294,7 @@ fz_newdash(fz_dash **dashp, float phase, int len, float *array)
 }
 
 void
-fz_freedash(fz_dash *dash)
+fz_dropdash(fz_dash *dash)
 {
 	fz_free(dash);
 }

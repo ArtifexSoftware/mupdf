@@ -100,7 +100,6 @@ int fz_arraylen(fz_obj *array);
 fz_obj *fz_arrayget(fz_obj *array, int i);
 fz_error *fz_arrayput(fz_obj *array, int i, fz_obj *obj);
 fz_error *fz_arraypush(fz_obj *array, fz_obj *obj);
-void fz_freearray(fz_obj *array);
 
 int fz_dictlen(fz_obj *dict);
 fz_obj *fz_dictgetkey(fz_obj *dict, int idx);
@@ -111,7 +110,6 @@ fz_error *fz_dictput(fz_obj *dict, fz_obj *key, fz_obj *val);
 fz_error *fz_dictputs(fz_obj *dict, char *key, fz_obj *val);
 fz_error *fz_dictdel(fz_obj *dict, fz_obj *key);
 fz_error *fz_dictdels(fz_obj *dict, char *key);
-void fz_freedict(fz_obj *dict);
 
 int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);

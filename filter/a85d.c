@@ -29,9 +29,8 @@ fz_newa85d(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freea85d(fz_filter *f)
+fz_dropa85d(fz_filter *f)
 {
-	fz_free(f);
 }
 
 fz_error *

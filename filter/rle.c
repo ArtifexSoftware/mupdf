@@ -45,9 +45,8 @@ fz_newrle(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freerle(fz_filter *enc)
+fz_droprle(fz_filter *enc)
 {
-	fz_free(enc);
 }
 
 static fz_error *

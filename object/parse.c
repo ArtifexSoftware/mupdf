@@ -151,7 +151,7 @@ static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
 error:
 	if (val) fz_dropobj(val);
 	if (key) fz_dropobj(key);
-	if (dict) fz_freedict(dict);
+	if (dict) fz_dropobj(dict);
 	*obj = nil;
 	*sp = s;
 	return err;
@@ -180,10 +180,10 @@ static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
 		}
 
 		err = parseobj(&o, &s, v);
-		if (err) { *obj = nil; fz_freearray(a); return err; }
+		if (err) { *obj = nil; fz_dropobj(a); return err; }
 
 		err = fz_arraypush(a, o);
-		if (err) { fz_dropobj(o); *obj = nil; fz_freearray(a); return err; }
+		if (err) { fz_dropobj(o); *obj = nil; fz_dropobj(a); return err; }
 
 		fz_dropobj(o);
 	}

@@ -132,7 +132,7 @@ pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
 
 	error = fz_endpath(path, FZ_STROKE, &stroke, dash);
 	if (error) {
-		fz_freedash(dash);
+		fz_dropdash(dash);
 		return error;
 	}
 
@@ -246,7 +246,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *img)
 	{
 		error = pdf_addfillshape(csi->gstate + csi->gtop, node);
 		if (error) {
-			fz_freenode(node);
+			fz_dropnode(node);
 			return error;
 		}
 	}

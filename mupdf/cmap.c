@@ -365,7 +365,7 @@ pdf_parsecmap(fz_cmap **cmapp, fz_file *file)
 	return nil;
 
 cleanup:
-	fz_freecmap(cmap);
+	fz_dropcmap(cmap);
 	*cmapp = nil;
 	return error;
 }
@@ -428,7 +428,7 @@ fflush(stdout);
 
 cleanup:
 	if (cmap)
-		fz_freecmap(cmap);
+		fz_dropcmap(cmap);
 	fz_dropobj(stmobj);
 	*cmapp = nil;
 	return error;
@@ -480,7 +480,7 @@ printf("  system cmap: usecmap %s\n", usecmapname);
 
 cleanup:
 	if (*cmapp)
-		fz_freecmap(*cmapp);
+		fz_dropcmap(*cmapp);
 	if (file)
 		fz_closefile(file);
 	*cmapp = nil;
@@ -498,19 +498,19 @@ pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes)
 
 	error = fz_addcodespacerange(*cmapp, 0x0000, 0xffff, bytes);
 	if (error) {
-		fz_freecmap(*cmapp);
+		fz_dropcmap(*cmapp);
 		return error;
 	}
 
 	error = fz_addcidrange(*cmapp, 0x0000, 0xffff, 0);
 	if (error) {
-		fz_freecmap(*cmapp);
+		fz_dropcmap(*cmapp);
 		return error;
 	}
 
 	error = fz_endcidrange(*cmapp);
 	if (error) {
-		fz_freecmap(*cmapp);
+		fz_dropcmap(*cmapp);
 		return error;
 	}
 

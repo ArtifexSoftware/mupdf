@@ -70,9 +70,9 @@ printf("rendering!\n");
 printf("done!\n");
 
 		fz_debugpixmap(pix);
-		fz_freepixmap(pix);
+		fz_droppixmap(pix);
 
-		fz_freerenderer(gc);
+		fz_droprenderer(gc);
 	}
 }
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 
 	outlines = nil;
 	error = pdf_loadoutlinetree(&outlines, xref);
-	if (error) { fz_warn(error->msg); fz_freeerror(error); }
+	if (error) { fz_warn(error->msg); fz_droperror(error); }
 
 	if (optind == argc)
 	{

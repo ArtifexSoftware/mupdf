@@ -32,7 +32,7 @@ fz_unchainpipeline(fz_filter *filter, fz_filter **oldfp, fz_buffer **oldbp)
 	fz_pipeline *p = (fz_pipeline*)filter;
 	*oldfp = p->head;
 	*oldbp = p->buffer;
-	fz_freefilter(p->tail);
+	fz_dropfilter(p->tail);
 	fz_free(p);
 }
 
@@ -53,13 +53,12 @@ fz_newpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail)
 }
 
 void
-fz_freepipeline(fz_filter *filter)
+fz_droppipeline(fz_filter *filter)
 {
 	fz_pipeline *p = (fz_pipeline*)filter;
-	fz_freefilter(p->head);
-	fz_freefilter(p->tail);
-	fz_freebuffer(p->buffer);
-	fz_free(p);
+	fz_dropfilter(p->head);
+	fz_dropfilter(p->tail);
+	fz_dropbuffer(p->buffer);
 }
 
 fz_error *

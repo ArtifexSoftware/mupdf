@@ -166,7 +166,7 @@ pdf_isstream(pdf_xref *xref, int oid, int gen)
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error) {
 		fz_warn("%s", error);
-		fz_freeerror(error);
+		fz_droperror(error);
 		return 0;
 	}
 

@@ -172,7 +172,7 @@ pdf_getpageobject(pdf_pagetree *pages, int p)
 }
 
 void
-pdf_freepagetree(pdf_pagetree *pages)
+pdf_droppagetree(pdf_pagetree *pages)
 {
 	int i;
 	for (i = 0; i < pages->count; i++) {

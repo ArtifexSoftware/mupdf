@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 				fz_abort(error);
 		}
 
-		pdf_freepagetree(srcpages);
+		pdf_droppagetree(srcpages);
 
 		pdf_closepdf(src);
 	}

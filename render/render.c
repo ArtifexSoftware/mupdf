@@ -42,29 +42,29 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
 
 cleanup:
 	if (gc->cache)
-		fz_freeglyphcache(gc->cache);
+		fz_dropglyphcache(gc->cache);
 	if (gc->gel)
-		fz_freegel(gc->gel);
+		fz_dropgel(gc->gel);
 	if (gc->ael)
-		fz_freeael(gc->ael);
+		fz_dropael(gc->ael);
 	fz_free(gc);
 
 	return error;
 }
 
 void
-fz_freerenderer(fz_renderer *gc)
+fz_droprenderer(fz_renderer *gc)
 {
 	if (gc->cache)
-		fz_freeglyphcache(gc->cache);
+		fz_dropglyphcache(gc->cache);
 	if (gc->gel)
-		fz_freegel(gc->gel);
+		fz_dropgel(gc->gel);
 	if (gc->ael)
-		fz_freeael(gc->ael);
+		fz_dropael(gc->ael);
 	if (gc->tmp)
-		fz_freepixmap(gc->tmp);
+		fz_droppixmap(gc->tmp);
 	if (gc->acc)
-		fz_freepixmap(gc->acc);
+		fz_droppixmap(gc->acc);
 	fz_free(gc);
 }
 
@@ -125,7 +125,7 @@ fz_renderoverchild(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 //printf("over dst ");fz_debugpixmap(gc->acc);getchar();
 		fz_blendover(gc->tmp, gc->acc);
 //printf("over res ");fz_debugpixmap(gc->acc);getchar();
-		fz_freepixmap(gc->tmp);
+		fz_droppixmap(gc->tmp);
 		gc->tmp = nil;
 	}
 
@@ -229,8 +229,8 @@ if (!shapepix) return nil;
 //printf("mask shape");fz_debugpixmap(shapepix);getchar();
 //printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
 
-	fz_freepixmap(shapepix);
-	fz_freepixmap(colorpix);
+	fz_droppixmap(shapepix);
+	fz_droppixmap(colorpix);
 
 	gc->mode = oldmode;
 

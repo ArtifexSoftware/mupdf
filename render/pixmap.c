@@ -27,7 +27,7 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 }
 
 void
-fz_freepixmap(fz_pixmap *pix)
+fz_droppixmap(fz_pixmap *pix)
 {
 	fz_free(pix->samples);
 	fz_free(pix);

@@ -154,7 +154,7 @@ loadtile(fz_image *img, fz_pixmap *tile)
 			}
 		}
 
-		fz_freepixmap(tmp);
+		fz_droppixmap(tmp);
 	}
 
 	else
@@ -287,7 +287,7 @@ printf("  decode array!\n");
 	if (img->samples->wp - img->samples->bp < stride * h)
 	{
 		/* TODO: colorspace? */
-		fz_freebuffer(img->samples);
+		fz_dropbuffer(img->samples);
 		fz_free(img);
 		return fz_throw("syntaxerror: truncated image data");
 	}
@@ -307,7 +307,7 @@ printf("]\n");
 printf("\n");
 
 	img->super.loadtile = loadtile;
-	img->super.free = nil;
+	img->super.drop = nil;
 	img->super.cs = cs;
 	img->super.w = w;
 	img->super.h = h;

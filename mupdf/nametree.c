@@ -223,7 +223,7 @@ cleanup:
 }
 
 void
-pdf_freenametree(pdf_nametree *nt)
+pdf_dropnametree(pdf_nametree *nt)
 {
 	int i;
 	for (i = 0; i < nt->len; i++) {

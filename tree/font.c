@@ -217,10 +217,10 @@ notfound:
 }
 
 void
-fz_freefont(fz_font *font)
+fz_dropfont(fz_font *font)
 {
-	if (font->free)
-		font->free(font);
+	if (font->drop)
+		font->drop(font);
 	fz_free(font->hmtx);
 	fz_free(font->vmtx);
 	fz_free(font);

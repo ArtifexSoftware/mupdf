@@ -21,7 +21,7 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 }
 
 void
-fz_freetextnode(fz_textnode *text)
+fz_droptextnode(fz_textnode *text)
 {
 	fz_free(text->els);
 }

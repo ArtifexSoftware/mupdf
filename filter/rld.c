@@ -8,9 +8,8 @@ fz_newrld(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freerld(fz_filter *rld)
+fz_droprld(fz_filter *rld)
 {
-	fz_free(rld);
 }
 
 fz_error *

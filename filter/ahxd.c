@@ -47,9 +47,8 @@ fz_newahxd(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freeahxd(fz_filter *f)
+fz_dropahxd(fz_filter *f)
 {
-	fz_free(f);
 }
 
 fz_error *

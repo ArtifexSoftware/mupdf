@@ -31,12 +31,12 @@ fz_error *fz_newgel(fz_gel **gelp);
 fz_error *fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
 void fz_resetgel(fz_gel *gel, int hs, int vs);
 void fz_sortgel(fz_gel *gel);
-void fz_freegel(fz_gel *gel);
+void fz_dropgel(fz_gel *gel);
 
 fz_error *fz_newael(fz_ael **aelp);
 fz_error *fz_insertael(fz_ael *ael, fz_gel *gel, int y, int *e);
 void fz_advanceael(fz_ael *ael);
-void fz_freeael(fz_ael *ael);
+void fz_dropael(fz_ael *ael);
 
 fz_error *fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	void (*blitfunc)(int,int,int,unsigned char*,void*), void *blitdata);

@@ -140,7 +140,7 @@ static void showpage(void)
 	XFlush(xdpy);
 
 	if (image)
-		fz_freepixmap(image);
+		fz_droppixmap(image);
 	image = nil;
 
 	sprintf(s, "Loading page %d", pageno);
@@ -170,7 +170,7 @@ static void showpage(void)
 	if (error)
 		fz_abort(error);
 
-	pdf_freepage(page);
+	pdf_droppage(page);
 
 	XDefineCursor(xdpy, xwin, xcarrow);
 	XFlush(xdpy);

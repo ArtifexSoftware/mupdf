@@ -57,7 +57,7 @@ fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 }
 
 void
-fz_freeerror(fz_error *eo)
+fz_droperror(fz_error *eo)
 {
 	if (!eo->frozen)
 		fz_free(eo);

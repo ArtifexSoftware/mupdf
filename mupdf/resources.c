@@ -382,7 +382,7 @@ printf("  -> %s\n", colorspace->name);
 	return nil;
 
 cleanup:
-	if (colorspace) fz_freecolorspace(colorspace);
+	if (colorspace) fz_dropcolorspace(colorspace);
 	if (ptr) fz_dropobj(ptr);
 	fz_dropobj(val);
 	return err;
@@ -406,45 +406,45 @@ pdf_loadresources(pdf_resources **rdbp, pdf_xref *xref, fz_obj *topdict)
 	rdb->xform = nil;
 
 	err = fz_newdict(&rdb->extgstate, 5);
-	if (err) { pdf_freeresources(rdb); return err; }
+	if (err) { pdf_dropresources(rdb); return err; }
 
 	subdict = fz_dictgets(topdict, "ExtGState");
 	if (subdict)
 	{
 		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 		err = loadextgstates(rdb, xref, subdict);
 		fz_dropobj(subdict);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 	}
 
 	err = fz_newdict(&rdb->font, 15);
-	if (err) { pdf_freeresources(rdb); return err; }
+	if (err) { pdf_dropresources(rdb); return err; }
 
 	err = loadextgstatefonts(rdb, xref);
-	if (err) { pdf_freeresources(rdb); return err; }
+	if (err) { pdf_dropresources(rdb); return err; }
 
 	subdict = fz_dictgets(topdict, "Font");
 	if (subdict)
 	{
 		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 		err = loadfonts(rdb, xref, subdict);
 		fz_dropobj(subdict);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 	}
 
 	err = fz_newdict(&rdb->colorspace, 5);
-	if (err) { pdf_freeresources(rdb); return err; }
+	if (err) { pdf_dropresources(rdb); return err; }
 
 	subdict = fz_dictgets(topdict, "ColorSpace");
 	if (subdict)
 	{
 		err = pdf_resolve(&subdict, xref);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 		err = loadcolorspaces(rdb, xref, subdict);
 		fz_dropobj(subdict);
-		if (err) { pdf_freeresources(rdb); return err; }
+		if (err) { pdf_dropresources(rdb); return err; }
 	}
 
 	return nil;

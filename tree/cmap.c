@@ -66,10 +66,10 @@ fz_newcmap(fz_cmap **cmapp)
 }
 
 void
-fz_freecmap(fz_cmap *cmap)
+fz_dropcmap(fz_cmap *cmap)
 {
 	if (cmap->usecmap)
-		fz_freecmap(cmap->usecmap);
+		fz_dropcmap(cmap->usecmap);
 	fz_free(cmap->ranges);
 	fz_free(cmap->lookup);
 	fz_free(cmap);

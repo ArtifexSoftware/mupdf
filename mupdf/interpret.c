@@ -28,7 +28,7 @@ pdf_newcsi(pdf_csi **csip)
 
 	error = fz_newtree(&csi->tree);
 	if (error) {
-		fz_freenode((fz_node*)csi->path);
+		fz_dropnode((fz_node*)csi->path);
 		fz_free(csi);
 		return error;
 	}
@@ -59,11 +59,11 @@ clearstack(pdf_csi *csi)
 }
 
 void
-pdf_freecsi(pdf_csi *csi)
+pdf_dropcsi(pdf_csi *csi)
 {
-	if (csi->path) fz_freenode((fz_node*)csi->path);
-	if (csi->clip) fz_freenode((fz_node*)csi->clip);
-	if (csi->text) fz_freenode((fz_node*)csi->text);
+	if (csi->path) fz_dropnode((fz_node*)csi->path);
+	if (csi->clip) fz_dropnode((fz_node*)csi->clip);
+	if (csi->text) fz_dropnode((fz_node*)csi->text);
 	clearstack(csi);
 	fz_free(csi);
 }
@@ -175,7 +175,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			error = fz_newmetanode(&meta, csi->stack[0], nil);
 			if (error) return error;
 			// error = pdf_beginmarkedcontent(gstate, meta);
-			// if (error) { fz_freenode(meta); return error; };
+			// if (error) { fz_dropnode(meta); return error; };
 			fz_insertnode(gstate->head, meta);
 		}
 
@@ -187,7 +187,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
 			if (error) return error;
 			// error = pdf_beginmarkedcontent(gstate, meta);
-			// if (error) { fz_freenode(meta); return error; };
+			// if (error) { fz_dropnode(meta); return error; };
 			fz_insertnode(gstate->head, meta);
 		}
 

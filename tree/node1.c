@@ -1,10 +1,10 @@
 #include <fitz.h>
 
-void fz_freemetanode(fz_metanode* node);
-void fz_freelinknode(fz_linknode* node);
-void fz_freepathnode(fz_pathnode* node);
-void fz_freetextnode(fz_textnode* node);
-void fz_freeimagenode(fz_imagenode* node);
+void fz_dropmetanode(fz_metanode* node);
+void fz_droplinknode(fz_linknode* node);
+void fz_droppathnode(fz_pathnode* node);
+void fz_droptextnode(fz_textnode* node);
+void fz_dropimagenode(fz_imagenode* node);
 
 fz_rect fz_boundtransformnode(fz_transformnode* node, fz_matrix ctm);
 fz_rect fz_boundovernode(fz_overnode* node, fz_matrix ctm);
@@ -28,12 +28,12 @@ fz_initnode(fz_node *node, fz_nodekind kind)
 }
 
 void
-fz_freenode(fz_node *node)
+fz_dropnode(fz_node *node)
 {
 	if (node->child)
-		fz_freenode(node->child);
+		fz_dropnode(node->child);
 	if (node->next)
-		fz_freenode(node->next);
+		fz_dropnode(node->next);
 
 	switch (node->kind)
 	{
@@ -44,22 +44,22 @@ fz_freenode(fz_node *node)
 	case FZ_NCOLOR:
 		break;
 	case FZ_NPATH:
-		fz_freepathnode((fz_pathnode *) node);
+		fz_droppathnode((fz_pathnode *) node);
 		break;
 	case FZ_NTEXT:
-		fz_freetextnode((fz_textnode *) node);
+		fz_droptextnode((fz_textnode *) node);
 		break;
 	case FZ_NIMAGE:
-		fz_freeimagenode((fz_imagenode *) node);
+		fz_dropimagenode((fz_imagenode *) node);
 		break;
 	case FZ_NSHADE:
-		// XXX fz_freeshadenode((fz_shadenode *) node);
+		// XXX fz_dropshadenode((fz_shadenode *) node);
 		break;
 	case FZ_NLINK:
-		fz_freelinknode((fz_linknode *) node);
+		fz_droplinknode((fz_linknode *) node);
 		break;
 	case FZ_NMETA:
-		fz_freemetanode((fz_metanode *) node);
+		fz_dropmetanode((fz_metanode *) node);
 		break;
 	}
 

@@ -40,7 +40,7 @@ fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
 }
 
 void
-fz_freebuffer(fz_buffer *buf)
+fz_dropbuffer(fz_buffer *buf)
 {
 	if (buf->ownsdata)
 		fz_free(buf->bp);

@@ -16,7 +16,7 @@ struct fz_pixmap_s
 fz_error *fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
 void fz_debugpixmap(fz_pixmap *map);
 void fz_clearpixmap(fz_pixmap *map);
-void fz_freepixmap(fz_pixmap *map);
+void fz_droppixmap(fz_pixmap *map);
 
 fz_error *fz_convertpixmap(fz_pixmap **dstp, fz_pixmap *src, fz_colorspace *srcs, fz_colorspace *dsts);
 fz_error *fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom);

@@ -1,5 +1,7 @@
 #include <fitz.h>
 
+void fz_dropdict(fz_obj *obj);
+
 fz_error *
 fz_newdict(fz_obj **op, int initialcap)
 {
@@ -42,7 +44,7 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 
 	for (i = 0; i < fz_dictlen(obj); i++) {
 		err = fz_dictput(new, fz_dictgetkey(obj, i), fz_dictgetval(obj, i));
-		if (err) { fz_freedict(new); return err; }
+		if (err) { fz_dropdict(new); return err; }
 	}
 
 	return nil;
@@ -69,23 +71,23 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 
 		if (fz_isarray(val)) {
 			err = fz_deepcopyarray(&val, val);
-			if (err) { fz_freedict(new); return err; }
+			if (err) { fz_dropdict(new); return err; }
 			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_dropobj(val); fz_freedict(new); return err; }
+			if (err) { fz_dropobj(val); fz_dropdict(new); return err; }
 			fz_dropobj(val);
 		}
 
 		else if (fz_isdict(val)) {
 			err = fz_deepcopydict(&val, val);
-			if (err) { fz_freedict(new); return err; }
+			if (err) { fz_dropdict(new); return err; }
 			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_dropobj(val); fz_freedict(new); return err; }
+			if (err) { fz_dropobj(val); fz_dropdict(new); return err; }
 			fz_dropobj(val);
 		}
 
 		else {
 			err = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (err) { fz_freedict(new); return err; }
+			if (err) { fz_dropdict(new); return err; }
 		}
 	}
 
@@ -240,7 +242,7 @@ fz_dictdel(fz_obj *obj, fz_obj *key)
 }
 
 void
-fz_freedict(fz_obj *obj)
+fz_dropdict(fz_obj *obj)
 {
 	int i;
 

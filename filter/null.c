@@ -19,9 +19,8 @@ fz_newnullfilter(fz_filter **fp, int len)
 }
 
 void
-fz_freenullfilter(fz_filter *f)
+fz_dropnullfilter(fz_filter *f)
 {
-	fz_free(f);
 }
 
 fz_error *

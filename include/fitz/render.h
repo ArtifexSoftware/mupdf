@@ -16,7 +16,7 @@ struct fz_renderer_s
 };
 
 fz_error *fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm);
-void fz_freerenderer(fz_renderer *gc);
+void fz_droprenderer(fz_renderer *gc);
 
 fz_error *fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm);
 fz_error *fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm);

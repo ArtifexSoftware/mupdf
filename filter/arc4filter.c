@@ -17,9 +17,8 @@ fz_newarc4filter(fz_filter **fp, unsigned char *key, unsigned keylen)
 }
 
 void
-fz_freearc4filter(fz_filter *f)
+fz_droparc4filter(fz_filter *f)
 {
-	fz_free(f);
 }
 
 fz_error *

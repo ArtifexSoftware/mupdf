@@ -53,11 +53,11 @@ struct pdf_page_s
 /* outline.c */
 fz_error *pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref);
 void pdf_debugoutlinetree(pdf_outlinetree *outlinetree);
-void pdf_freeoutlinetree(pdf_outlinetree *outlinetree);
+void pdf_dropoutlinetree(pdf_outlinetree *outlinetree);
 
 /* nametree.c */
 fz_error *pdf_loadnametree(pdf_nametree **ntp, pdf_xref *xref, char *key);
-void pdf_freenametree(pdf_nametree *nt);
+void pdf_dropnametree(pdf_nametree *nt);
 void pdf_debugnametree(pdf_nametree *nt);
 fz_obj *pdf_lookupname(pdf_nametree *nt, fz_obj *name);
 fz_obj *pdf_lookupnames(pdf_nametree *nt, char *name);
@@ -67,9 +67,9 @@ fz_error *pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
 int pdf_getpagecount(pdf_pagetree *pages);
 fz_obj *pdf_getpageobject(pdf_pagetree *pages, int p);
 void pdf_debugpagetree(pdf_pagetree *pages);
-void pdf_freepagetree(pdf_pagetree *pages);
+void pdf_droppagetree(pdf_pagetree *pages);
 
 /* page.c */
 fz_error *pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
-void pdf_freepage(pdf_page *page);
+void pdf_droppage(pdf_page *page);
 

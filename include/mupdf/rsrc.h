@@ -22,7 +22,7 @@ typedef struct pdf_function_s pdf_function;
 
 fz_error *pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj);
 fz_error *pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen);
-void pdf_freefunction(pdf_function *func);
+void pdf_dropfunction(pdf_function *func);
 
 /*
  * ColorSpace
@@ -59,7 +59,7 @@ struct pdf_xobject_s
 };
 
 fz_error *pdf_loadxobject(pdf_xobject **xobjp, pdf_xref *xref, fz_obj *obj);
-void pdf_freexobject(pdf_xobject *xobj);
+void pdf_dropxobject(pdf_xobject *xobj);
 
 /*
  * Image
@@ -136,5 +136,5 @@ fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
 /* font.c */
 fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
 fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *font);
-void pdf_freefont(pdf_font *font);
+void pdf_dropfont(pdf_font *font);
 

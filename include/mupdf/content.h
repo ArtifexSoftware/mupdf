@@ -101,5 +101,5 @@ fz_error *pdf_showimage(pdf_csi*, pdf_image *img);
 /* interpret.c */
 fz_error *pdf_newcsi(pdf_csi **csip);
 fz_error *pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *rdb, fz_file *);
-void pdf_freecsi(pdf_csi *csi);
+void pdf_dropcsi(pdf_csi *csi);
 

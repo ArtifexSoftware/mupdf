@@ -95,7 +95,7 @@ fz_newdctd(fz_filter **fp, fz_obj *params)
 }
 
 void
-fz_freedctd(fz_filter *filter)
+fz_dropdctd(fz_filter *filter)
 {
 	fz_dctd *d = (fz_dctd*)filter;
 	if (setjmp(d->err.jb)) {

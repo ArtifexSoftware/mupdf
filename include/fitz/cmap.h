@@ -2,7 +2,7 @@ typedef struct fz_cmap_s fz_cmap;
 
 fz_error *fz_newcmap(fz_cmap **cmapp);
 void fz_debugcmap(fz_cmap *cmap);
-void fz_freecmap(fz_cmap *cmap);
+void fz_dropcmap(fz_cmap *cmap);
 
 char *fz_getcmapname(fz_cmap *cmap);
 void fz_setcmapname(fz_cmap *cmap, char *name);
