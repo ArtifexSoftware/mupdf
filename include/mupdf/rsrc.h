@@ -80,6 +80,11 @@ fz_error *pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj, fz_ob
 pdf_pattern *pdf_keeppattern(pdf_pattern *pat);
 void pdf_droppattern(pdf_pattern *pat);
 
+/*
+ * Shading
+ */
+
+void pdf_setmeshvalue(float *mesh, int i, float x, float y, float t);
 fz_error *pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 
 /*

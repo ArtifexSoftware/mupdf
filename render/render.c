@@ -492,7 +492,7 @@ rendershade(fz_renderer *gc, fz_shadenode *node, fz_matrix ctm)
 	if (error)
 		return error;
 
-	return fz_rendershade(node->shade, ctm, gc->model, gc->dest, 0);
+	return fz_rendershade(node->shade, ctm, gc->model, gc->dest);
 }
 
 /*
