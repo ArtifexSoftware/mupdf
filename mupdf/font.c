@@ -204,6 +204,8 @@ newfont(char *name)
     font->missingwidth = 0;
 
 	font->encoding = nil;
+	font->ncidtogid = 0;
+	font->cidtogid = nil;
 
 	font->filename = nil;
 	font->fontdata = nil;

@@ -122,25 +122,6 @@ static int cmpv(const void *a0, const void *b0)
 	return a->lo - b->lo;
 }
 
-static int uniq(void *ptr, int count, int size)
-{
-	char *a = ptr;
-	char *b = ((char*)ptr) + size;
-
-	while (count--)
-	{
-		if (memcmp(a, b, sizeof(short)) != 0)
-		{
-			a += size;
-			if (a != b)
-				memcpy(a, b, size);
-		}
-		b += size;
-	}
-
-	return (a - ((char*)ptr)) / size;
-}
-
 fz_error *
 fz_endhmtx(fz_font *font)
 {
@@ -150,7 +131,6 @@ fz_endhmtx(fz_font *font)
 		return nil;
 
 	qsort(font->hmtx, font->nhmtx, sizeof(fz_hmtx), cmph);
-	font->nhmtx = uniq(font->hmtx, font->nhmtx, sizeof(fz_hmtx));
 
 	newmtx = fz_realloc(font->hmtx, sizeof(fz_hmtx) * font->nhmtx);
 	if (!newmtx)
@@ -170,7 +150,6 @@ fz_endvmtx(fz_font *font)
 		return nil;
 
 	qsort(font->vmtx, font->nvmtx, sizeof(fz_vmtx), cmpv);
-	font->nvmtx = uniq(font->vmtx, font->nvmtx, sizeof(fz_vmtx));
 
 	newmtx = fz_realloc(font->vmtx, sizeof(fz_vmtx) * font->nvmtx);
 	if (!newmtx)
