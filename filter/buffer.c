@@ -39,7 +39,6 @@ fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
 	return nil;
 }
 
-
 void
 fz_freebuffer(fz_buffer *buf)
 {

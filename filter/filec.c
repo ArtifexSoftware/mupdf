@@ -133,9 +133,9 @@ fz_closefile(fz_file *file)
 	if (file->fd == -1)	/* open to buffer not file */
 	{
 		if (file->mode == FZ_READ)
-			fz_freebuffer(file->out);
-		else
 			fz_freebuffer(file->in);
+		else
+			fz_freebuffer(file->out);
 	}
 	else
 	{
