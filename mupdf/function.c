@@ -62,40 +62,40 @@ else if(a > (max)) a = (max);
 (ymin) + ((x)-(xmin)) * ((ymax)-(ymin)) / ((xmax) - (xmin));
 
 #define SAFE_PUSHINT(st,a)\
-	{err = pushint(st,a);\
-	if(err) goto cleanup;}
+	{error = pushint(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_PUSHREAL(st,a)\
-	{err = pushreal(st,a);\
-	if(err) goto cleanup;}
+	{error = pushreal(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_PUSHBOOL(st,a)\
-	{err = pushbool(st,a);\
-	if(err) goto cleanup;}
+	{error = pushbool(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_POPINT(st,a)\
-	{err = popint(st,a);\
-	if(err) goto cleanup;}
+	{error = popint(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_POPNUM(st,a)\
-	{err = popnum(st,a);\
-	if(err) goto cleanup;}
+	{error = popnum(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_POPBOOL(st,a)\
-	{err = popbool(st,a);\
-	if(err) goto cleanup;}
+	{error = popbool(st,a);\
+	if(error) goto cleanup;}
 
 #define SAFE_POP(st)\
-	{err = pop(st);\
-	if(err) goto cleanup;}
+	{error = pop(st);\
+	if(error) goto cleanup;}
 
 #define SAFE_INDEX(st,i)\
-	{err = index(st,i);\
-	if(err) goto cleanup;}
+	{error = index(st,i);\
+	if(error) goto cleanup;}
 
 #define SAFE_COPY(st,n)\
-	{err = copy(st,n);\
-	if(err) goto cleanup;}
+	{error = copy(st,n);\
+	if(error) goto cleanup;}
 
 #define RADIAN 57.2957795
 
@@ -434,7 +434,7 @@ pop(psstack *st)
 static fz_error *
 loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gid)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	fz_obj *tmpobj;
 	int i;
 	int bps;
@@ -526,8 +526,8 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 	}
 	
 	/* read samples from stream */
-	err = pdf_openstream(xref, oid, gid);
-	if (err) goto cleanup;
+	error = pdf_openstream(xref, oid, gid);
+	if (error) goto cleanup;
 	
 	for(i = 0, samplecount = func->n; i < func->m; ++i)
 		samplecount *= size[i];
@@ -536,7 +536,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 	streamsamples = fz_malloc(bytetoread);
 	samples = fz_malloc(samplecount * sizeof(int));
 	func->u.sa.samples = samples;
-	if(!streamsamples || !samples) { err = fz_outofmem; goto cleanup2; }
+	if(!streamsamples || !samples) { error = fz_outofmem; goto cleanup2; }
 	
 	/* read samples */
 	{
@@ -551,7 +551,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 		
 		if(readbyte != bytetoread)
 		{
-			err = fz_throw("syntaxerror : ");
+			error = fz_throw("syntaxerror : ");
 			goto cleanup2;
 		}
 		
@@ -583,10 +583,10 @@ cleanup2:
 		fz_free(streamsamples);
 	
 	pdf_closestream(xref);
-	return err;
+	return error;
 		
 cleanup:
-	if(err)	return err;
+	if(error)	return error;
 	return fz_throw("syntaxerror : ");
 }
 
@@ -663,7 +663,7 @@ cleanup:
 static fz_error *
 loadexponentialfunc(pdf_function *func, fz_obj *dict)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	fz_obj *tmpobj;
 	int i;
 	float *c0, *c1;
@@ -688,7 +688,7 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 
 		func->n = fz_arraylen(tmpobj);
 		func->u.e.c0 = c0 = fz_malloc(func->n * sizeof(float));
-		if(!c0) { err = fz_outofmem; goto cleanup; }
+		if(!c0) { error = fz_outofmem; goto cleanup; }
 
 		for(i = 0; i < func->n; ++i) {
 			objnum = fz_arrayget(tmpobj,i);
@@ -704,7 +704,7 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 
 		func->n = 1;
 		func->u.e.c0 = c0 = fz_malloc(func->n * sizeof(float));
-		if(!c0) { err = fz_outofmem; goto cleanup; }
+		if(!c0) { error = fz_outofmem; goto cleanup; }
 		
 		c0[0] = 0;
 	}
@@ -712,7 +712,7 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 	/* optional */
 	tmpobj = fz_dictgets(dict,"C1");
 	func->u.e.c1 = c1 = fz_malloc(func->n * sizeof(float));
-	if(!c1) { err = fz_outofmem; goto cleanup; }
+	if(!c1) { error = fz_outofmem; goto cleanup; }
 	if(fz_isarray(tmpobj)) {
 		fz_obj *objnum;
 
@@ -736,14 +736,14 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 	
 	return nil;
 cleanup:
-	if(err) return err;
+	if(error) return error;
 	return fz_throw("syntaxerror : ");
 }
 
 static fz_error *
 evalexponentialfunc(pdf_function *func, float in, float *out)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	float x = in;
 	float tmp;
 	int i;
@@ -771,14 +771,14 @@ evalexponentialfunc(pdf_function *func, float in, float *out)
 	
 	return nil;
 cleanup:
-	if(err) return err;
+	if(error) return error;
 	return fz_throw("syntaxerror : ");
 }
 
 static fz_error *
 loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	fz_obj *tmpobj;
 	fz_obj *funcobj;
 	fz_obj *numobj;
@@ -792,18 +792,21 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	
 	/* required */
 	tmpobj = fz_dictgets(dict,"Functions");
+	error = pdf_resolve(&tmpobj,xref);
+	if (error) goto cleanup;
+
 	if(!fz_isarray(tmpobj))
 		goto cleanup;
 	k = fz_arraylen(tmpobj);
 	
 	func->u.st.funcs = funcs = fz_malloc(k*sizeof(pdf_function*));
-	if(!funcs) { err = fz_outofmem;	goto cleanup; }
+	if(!funcs) { error = fz_outofmem;	goto cleanup; }
 	memset(funcs, 0, k * sizeof(pdf_function*));
 	
 	for(i = 0; i < k; ++i) {
 		funcobj = fz_arrayget(tmpobj,i);
-		err = pdf_loadfunction(funcs+i,xref,funcobj);
-		if(err) goto cleanup;
+		error = pdf_loadfunction(funcs+i,xref,funcobj);
+		if(error) goto cleanup;
 		if(funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
 			goto cleanup;
 	}
@@ -815,11 +818,14 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	
 	/* required */
 	tmpobj = fz_dictgets(dict,"Bounds");
+	error = pdf_resolve(&tmpobj,xref);
+	if (error) goto cleanup;
+
 	if(!fz_isarray(tmpobj) || fz_arraylen(tmpobj) != k-1)
 		goto cleanup;
 	
 	func->u.st.bounds = bounds = fz_malloc((k-1) * sizeof(float));
-	if(!bounds) { err = fz_outofmem; goto cleanup; }
+	if(!bounds) { error = fz_outofmem; goto cleanup; }
 	
 	for(i = 0; i < k-1; ++i) {
 		numobj = fz_arrayget(tmpobj,i);
@@ -835,11 +841,12 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	
 	/* required */
 	tmpobj = fz_dictgets(dict,"Encode");
+	error = pdf_resolve(&tmpobj,xref);
 	if(!fz_isarray(tmpobj) || fz_arraylen(tmpobj) != k*2)
 		goto cleanup;
 	
 	func->u.st.encode = encode = fz_malloc((k*2) * sizeof(float));
-	if(!encode) { err = fz_outofmem; goto cleanup; }
+	if(!encode) { error = fz_outofmem; goto cleanup; }
 	
 	for(i = 0; i < k*2; ++i) {
 		numobj = fz_arrayget(tmpobj,i);
@@ -853,14 +860,14 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	return nil;
 	
 cleanup:
-	if(err) return err;
+	if(error) return error;
 	return fz_throw("syntaxerror : ");
 }
 
 static fz_error*
 evalstitchingfunc(pdf_function *func, float in, float *out)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	float low,high;
 	int k = func->u.st.k;
 	float *bounds = func->u.st.bounds;
@@ -874,7 +881,7 @@ evalstitchingfunc(pdf_function *func, float in, float *out)
 	}
 	if(i == 0) {
 		low = func->domain[0];
-		high = bounds[0];
+		high = func->domain[1];
 	}
 	else if(i == k - 1)	{
 		low = bounds[k-2];
@@ -888,8 +895,8 @@ evalstitchingfunc(pdf_function *func, float in, float *out)
 	in = INTERPOLATE(in,low,high,
 		func->u.st.encode[i*2],func->u.st.encode[i*2 + 1]);
 	
-	err = pdf_evalfunction(func->u.st.funcs[i],&in,1,out,func->n);
-	if(err) return err;
+	error = pdf_evalfunction(func->u.st.funcs[i],&in,1,out,func->n);
+	if(error) return error;
 	
 	return nil;
 }
@@ -911,7 +918,7 @@ resizecode(pdf_function *func, int newsize) {
 static fz_error *
 parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	char buf[64];
 	int buflen = sizeof(buf) / sizeof(buf[0]);
 	int len;
@@ -944,8 +951,8 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 			opPtr = *codeptr;
 			*codeptr += 3;
 			resizecode(func,opPtr + 2);
-			err = parsecode(func, stream, codeptr);
-			if(err) goto cleanup;
+			error = parsecode(func, stream, codeptr);
+			if(error) goto cleanup;
 			
 			token = pdf_lex(stream,buf,buflen,&len);
 			
@@ -954,8 +961,8 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 			
 			if(token == PDF_TOBRACE) {
 				elsePtr = *codeptr;
-				err = parsecode(func, stream, codeptr);
-				if(err)	goto cleanup;
+				error = parsecode(func, stream, codeptr);
+				if(error)	goto cleanup;
 				token = pdf_lex(stream,buf,buflen,&len);
 				if(token == PDF_TERROR || token == PDF_TEOF)
 					goto cleanup;
@@ -1023,7 +1030,7 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 	}
 	return nil;
 cleanup:
-	if(err) return err;
+	if(error) return error;
 	return fz_throw("syntaxerror : postscript code");
 }
 
@@ -1031,32 +1038,32 @@ static fz_error *
 loadpostscriptfunc(pdf_function *func, pdf_xref *xref, 
 				   fz_obj *dict, int oid, int gid)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	int codeptr;
 	
 	/* read postcript from stream */
-	err = pdf_openstream(xref, oid, gid);
-	if (err) goto cleanup;
+	error = pdf_openstream(xref, oid, gid);
+	if (error) goto cleanup;
 	codeptr = 0;
 	if(fz_readbyte(xref->stream) != '{')
 		goto cleanup;
 
-	err = parsecode(func, xref->stream, &codeptr);
-	if(err) goto cleanup;
+	error = parsecode(func, xref->stream, &codeptr);
+	if(error) goto cleanup;
 
 	pdf_closestream(xref);
 	return nil;
 	
 cleanup:
 	pdf_closestream(xref);
-	if(err)	return err;
+	if(error)	return error;
 	return fz_throw("syntaxerror : ");
 }
 
 static fz_error *
 evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	int i1, i2;
 	float r1, r2;
 	int b1, b2;
@@ -1386,7 +1393,7 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 	}
 
 cleanup:
-  return err;
+  return error;
 }
 
 void
@@ -1438,7 +1445,7 @@ pdf_dropfunction(pdf_function *func)
 fz_error *
 pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	fz_obj *objfunc = nil;
 	fz_obj *tmpobj;
 	pdf_function *newfunc = nil;
@@ -1451,8 +1458,8 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 	memset(newfunc,0,sizeof(pdf_function));
 	
 	objfunc = obj;
-	err = pdf_resolve(&objfunc,xref);
-	if(err) { objfunc = nil; goto cleanup; }
+	error = pdf_resolve(&objfunc,xref);
+	if(error) { objfunc = nil; goto cleanup; }
 	
 	if(!fz_isdict(objfunc))
 		goto cleanup;
@@ -1511,26 +1518,26 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 			goto cleanup;
 		if(!pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 			goto cleanup;
-		err = loadsamplefunc(newfunc, xref, objfunc,
+		error = loadsamplefunc(newfunc, xref, objfunc,
 			fz_tonum(obj), fz_togen(obj));
-		if(err) goto cleanup;
+		if(error) goto cleanup;
 		break;
 	case PDF_FUNC_EXPONENTIAL:
-		err = loadexponentialfunc(newfunc, objfunc);
-		if(err) goto cleanup;
+		error = loadexponentialfunc(newfunc, objfunc);
+		if(error) goto cleanup;
 		break;
 	case PDF_FUNC_STITCHING:
-		err = loadstitchingfunc(newfunc, xref, objfunc);
-		if(err) goto cleanup;
+		error = loadstitchingfunc(newfunc, xref, objfunc);
+		if(error) goto cleanup;
 		break;
 	case PDF_FUNC_POSTSCRIPT:
 		if(!fz_isindirect(obj))
 			goto cleanup;
 		if(!pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 			goto cleanup;
-		err = loadpostscriptfunc(newfunc, xref, objfunc,
+		error = loadpostscriptfunc(newfunc, xref, objfunc,
 			fz_tonum(obj), fz_togen(obj));		
-		if(err) goto cleanup;
+		if(error) goto cleanup;
 		break;
 	default:
 		goto cleanup;
@@ -1548,28 +1555,28 @@ cleanup:
 	
 	pdf_dropfunction(newfunc);
 	
-	if(err) return err;
+	if(error) return error;
 	return fz_throw("syntaxerror : ");
 }
 
 fz_error *
 pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen)
 {
-	fz_error *err = nil;
+	fz_error *error = nil;
 	int i;
 
-	if(func->m != inlen || func->n != outlen)
-		return fz_throw("syntaxerror : input lenth or output length mismatch");
+//	if(func->m != inlen || func->n != outlen)
+//		return fz_throw("syntaxerror : input lenth or output length mismatch");
 
 	switch(func->type) {
 	case PDF_FUNC_SAMPLE:
-		err = evalsamplefunc(func, in, out);
+		error = evalsamplefunc(func, in, out);
 		break;
 	case PDF_FUNC_EXPONENTIAL:
-		err = evalexponentialfunc(func, *in, out);
+		error = evalexponentialfunc(func, *in, out);
 		break;
 	case PDF_FUNC_STITCHING:
-		err = evalstitchingfunc(func, *in, out);
+		error = evalstitchingfunc(func, *in, out);
 		break;
 	case PDF_FUNC_POSTSCRIPT:
 		{
@@ -1578,8 +1585,8 @@ pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 			for (i = 0; i < func->m; ++i)
 				SAFE_PUSHREAL(&st,in[i]);
 
-			err = evalpostscriptfunc(func, &st, 0);
-			if(err) goto cleanup;
+			error = evalpostscriptfunc(func, &st, 0);
+			if(error) goto cleanup;
 
 			for (i = func->n - 1; i >= 0; --i) {
 				SAFE_POPNUM(&st,out+i);
@@ -1589,5 +1596,5 @@ pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 		break;
 	}
 cleanup:
-	return err;
+	return error;
 }

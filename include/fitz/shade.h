@@ -4,6 +4,18 @@ struct fz_shade_s
 {
 	int refs;
 	fz_colorspace *cs;
+	fz_obj *background;
+	fz_rect *bbox;
+	int antialias;
+
+	int type;
+	fz_obj *coords;
+	fz_obj *domain;
+	fz_matrix matrix;
+	fz_matrix matrix2;
+	void *function;
+	fz_obj *extend;
+
 	/* ... */
 };
 
