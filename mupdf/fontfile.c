@@ -1,30 +1,28 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-#ifdef WIN32
-#error Compile "fontfilems.c" instead
-#endif
+#include <mupdf/base14.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <fontconfig/fontconfig.h>
 
 static FT_Library ftlib = nil;
-static FcConfig *fclib = nil;
 
 enum
 {
-	FD_FIXED = 1 << 0,
-	FD_SERIF = 1 << 1,
-	FD_SYMBOLIC = 1 << 2,
-	FD_SCRIPT = 1 << 3,
-	FD_NONSYMBOLIC = 1 << 5,
-	FD_ITALIC = 1 << 6,
-	FD_ALLCAP = 1 << 16,
-	FD_SMALLCAP = 1 << 17,
+    FD_FIXED = 1 << 0,
+    FD_SERIF = 1 << 1,
+    FD_SYMBOLIC = 1 << 2,
+    FD_SCRIPT = 1 << 3,
+    FD_NONSYMBOLIC = 1 << 5,
+    FD_ITALIC = 1 << 6,
+    FD_ALLCAP = 1 << 16,
+    FD_SMALLCAP = 1 << 17,
+	FD_FORCEBOLD = 1 << 18
 };
 
-static char *basenames[14] =
+static char *basenames[15] =
 {
     "Courier", 
     "Courier-Bold", 
@@ -39,26 +37,40 @@ static char *basenames[14] =
     "Times-Italic",
     "Times-BoldItalic",
     "Symbol", 
-    "ZapfDingbats"
+    "ZapfDingbats",
+	"Chancery"
 };
 
-static char *basepatterns[14] =
+static struct { char *collection; char *serif; char *gothic; } cidfonts[5] =
 {
-    "Nimbus Mono L,Courier,Courier New:style=Regular,Roman",
-    "Nimbus Mono L,Courier,Courier New:style=Bold",
-    "Nimbus Mono L,Courier,Courier New:style=Oblique,Italic",
-    "Nimbus Mono L,Courier,Courier New:style=BoldOblique,BoldItalic",
-    "Nimbus Sans L,Helvetica,Arial:style=Regular,Roman",
-    "Nimbus Sans L,Helvetica,Arial:style=Bold",
-    "Nimbus Sans L,Helvetica,Arial:style=Oblique,Italic",
-    "Nimbus Sans L,Helvetica,Arial:style=BoldOblique,BoldItalic",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Regular,Roman",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Bold,Medium",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=Italic,Regular Italic",
-    "Nimbus Roman No9 L,Times,Times New Roman:style=BoldItalic,Medium Italic",
-    "Standard Symbols L,Symbol",
-    "Zapf Dingbats,Dingbats"
+	{ "Adobe-CNS1", "MOESung-Regular", "MOEKai-Regular" },
+	{ "Adobe-GB1", "GB1-Serif", "GB1-Gothic" },
+	{ "Adobe-Japan1", "WadaMin-Regular", "WadaMaruGo-Regular" },
+	{ "Adobe-Japan2", "WadaMin-RegularH", "WadaMaruGo-RegularH" },
+	{ "Adobe-Korea1", "Munhwa-Regular", "MunhwaGothic-Regular" },
 };
+
+static void loadfontdata(int i, unsigned char **d, unsigned int *l)
+{
+	switch (i)
+	{
+	case  0: *d=NimbusMonL_Regu_cff;*l=NimbusMonL_Regu_cff_len;break;
+	case  1: *d=NimbusMonL_Bold_cff;*l=NimbusMonL_Bold_cff_len;break;
+	case  2: *d=NimbusMonL_ReguObli_cff;*l=NimbusMonL_ReguObli_cff_len;break;
+	case  3: *d=NimbusMonL_BoldObli_cff;*l=NimbusMonL_BoldObli_cff_len;break;
+	case  4: *d=NimbusSanL_Regu_cff;*l=NimbusSanL_Regu_cff_len;break;
+	case  5: *d=NimbusSanL_Bold_cff;*l=NimbusSanL_Bold_cff_len;break;
+	case  6: *d=NimbusSanL_ReguItal_cff;*l=NimbusSanL_ReguItal_cff_len;break;
+	case  7: *d=NimbusSanL_BoldItal_cff;*l=NimbusSanL_BoldItal_cff_len;break;
+	case  8: *d=NimbusRomNo9L_Regu_cff;*l=NimbusRomNo9L_Regu_cff_len;break;
+	case  9: *d=NimbusRomNo9L_Medi_cff;*l=NimbusRomNo9L_Medi_cff_len;break;
+	case 10: *d=NimbusRomNo9L_ReguItal_cff;*l=NimbusRomNo9L_ReguItal_cff_len;break;
+	case 11: *d=NimbusRomNo9L_MediItal_cff;*l=NimbusRomNo9L_MediItal_cff_len;break;
+	case 12: *d=StandardSymL_cff;*l=StandardSymL_cff_len;break;
+	case 13: *d=Dingbats_cff;*l=Dingbats_cff_len;break;
+	default: *d=URWChanceryL_MediItal_cff;*l=URWChanceryL_MediItal_cff_len;break;
+	}
+}
 
 static fz_error *initfontlibs(void)
 {
@@ -76,169 +88,156 @@ static fz_error *initfontlibs(void)
 	if (maj == 2 && min == 1 && pat < 7)
 		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
 
-	fclib = FcInitLoadConfigAndFonts();
-	if (!fclib)
-		return fz_throw("fontconfig failed initialisation");
-
 	return nil;
 }
 
 fz_error *
-pdf_loadbuiltinfont(pdf_font *font, char *basefont)
+pdf_loadbuiltinfont(pdf_font *font, char *fontname)
 {
 	fz_error *error;
-	FcResult fcerr;
-	int fterr;
-
-	FcPattern *searchpat;
-	FcPattern *matchpat;
-	FT_Face face;
-	char *pattern;
-	char *file;
-	int index;
+	unsigned char *data;
+	unsigned int len;
+	FT_Error e;
 	int i;
 
 	error = initfontlibs();
 	if (error)
 		return error;
 
-	pattern = basefont;
-	for (i = 0; i < 14; i++)
-		if (!strcmp(basefont, basenames[i]))
-			pattern = basepatterns[i];
+	for (i = 0; i < 15; i++)
+		if (!strcmp(fontname, basenames[i]))
+			goto found;
 
-	fcerr = FcResultMatch;
-	searchpat = FcNameParse(pattern);
-	FcDefaultSubstitute(searchpat);
-	FcConfigSubstitute(fclib, searchpat, FcMatchPattern);
+	return fz_throw("font not found: %s", fontname);
 
-	matchpat = FcFontMatch(fclib, searchpat, &fcerr);
-	if (fcerr != FcResultMatch)
-		return fz_throw("fontconfig could not find font %s", pattern);
+found:
+	loadfontdata(i, &data, &len);
 
-	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
-	if (fcerr != FcResultMatch)
-		return fz_throw("fontconfig could not find font %s", pattern);
+	e = FT_New_Memory_Face(ftlib, data, len, 0, (FT_Face*)&font->ftface);
+	if (e)
+		return fz_throw("freetype: could not load font: 0x%x", e);
 
-	index = 0;
-	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
+	return nil;
+}
 
-printf("  builtin font %s idx %d\n", file, index);
+static fz_error *
+loadcidfont(pdf_font *font, char *filename)
+{
+	char path[1024];
+	char *fontdir;
+	int e;
 
-	fterr = FT_New_Face(ftlib, file, index, &face);
-	if (fterr)
-		return fz_throw("freetype could not load font file '%s': 0x%x", file, fterr);
+printf("  load system cid font '%s'\n", filename);
 
-	FcPatternDestroy(matchpat);
-	FcPatternDestroy(searchpat);
+	fontdir = getenv("FONTDIR");
+	if (!fontdir)
+		return fz_throw("ioerror: FONTDIR environment not set");
 
-	font->ftface = face;
+	strlcpy(path, fontdir, sizeof path);
+	strlcat(path, "/", sizeof path);
+	strlcat(path, filename, sizeof path);
+	strlcat(path, ".cid.cff", sizeof path);
+
+	e = FT_New_Face(ftlib, path, 0, (FT_Face*)&font->ftface);
+	if (e)
+		return fz_throw("freetype: could not load font: 0x%x", e);
 
 	return nil;
 }
 
 fz_error *
-pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
+pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 {
 	fz_error *error;
-	FcResult fcerr;
-	int fterr;
+	char *name;
+	int i;
 
-	char fontname[200];
-	FcPattern *searchpat;
-	FcPattern *matchpat;
-	FT_Face face;
-	char *style;
-	char *file;
-	int index;
+	int isbold = 0;
+	int isitalic = 0;
+	int isserif = 0;
+	int isscript = 0;
+	int isfixed = 0;
 
 	error = initfontlibs();
 	if (error)
 		return error;
 
-	/* parse windows-style font name descriptors Font,Style or Font-Style */
-	strlcpy(fontname, basefont, sizeof fontname);
+	font->substitute = 1;
 
-	style = strchr(fontname, ',');
-	if (style) {
-		*style++ = 0;
-	}
-	else {
-		style = strchr(fontname, '-');
-		if (style)
-			*style++ = 0;
-	}
+	if (strstr(fontname, "Bold"))
+		isbold = 1;
+	if (strstr(fontname, "Italic"))
+		isitalic = 1;
+	if (strstr(fontname, "Oblique"))
+		isitalic = 1;
 
-	searchpat = FcPatternCreate();
-	if (!searchpat)
-		return fz_outofmem;
+	if (font->flags & FD_FIXED)
+		isfixed = 1;
+	if (font->flags & FD_SERIF)
+		isserif = 1;
+	if (font->flags & FD_ITALIC)
+		isitalic = 1;
+	if (font->flags & FD_SCRIPT)
+		isscript = 1;
+	if (font->flags & FD_FORCEBOLD)
+		isbold = 1;
 
-	error = fz_outofmem;
-
-	/* pattern from name */
-	if (!FcPatternAddString(searchpat, FC_FAMILY, fontname))
-		goto cleanup;
 	if (collection)
-		if (!FcPatternAddString(searchpat, FC_FAMILY, collection))
-			goto cleanup;
-	if (style)
-		if (!FcPatternAddString(searchpat, FC_STYLE, style))
-			goto cleanup;
-	if (!FcPatternAddBool(searchpat, FC_OUTLINE, 1))
-		goto cleanup;
-
-	/* additional pattern from fd flags */
-	FcPatternAddString(searchpat, FC_FAMILY, font->flags & FD_SERIF ? "serif" : "sans-serif");
-	FcPatternAddString(searchpat, FC_STYLE, font->flags & FD_ITALIC ? "Italic" : "Regular");
-
-file = FcNameUnparse(searchpat);
-printf("  system font pattern %s\n", file);
-free(file);
-
-	fcerr = FcResultMatch;
-	FcDefaultSubstitute(searchpat);
-	FcConfigSubstitute(fclib, searchpat, FcMatchPattern);
-
-	matchpat = FcFontMatch(fclib, searchpat, &fcerr);
-	if (fcerr != FcResultMatch)
-		return fz_throw("fontconfig could not find font %s", basefont);
-
-	fcerr = FcPatternGetString(matchpat, FC_FAMILY, 0, (FcChar8**)&file);
-	if (file && strcmp(fontname, file))
-		font->substitute = 1;
-
-	fcerr = FcPatternGetString(matchpat, FC_STYLE, 0, (FcChar8**)&file);
-	if (file && style && strcmp(style, file))
-		font->substitute = 1;
-
-printf("  is a substituted font\n");
-
-	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
-	if (fcerr != FcResultMatch)
-		return fz_throw("fontconfig could not find font %s", basefont);
-
-	index = 0;
-	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
-
-printf("  system font file %s idx %d\n", file, index);
-
-	fterr = FT_New_Face(ftlib, file, index, &face);
-	if (fterr) {
-		FcPatternDestroy(matchpat);
-		FcPatternDestroy(searchpat);
-		return fz_throw("freetype could not load font file '%s': 0x%x", file, fterr);
+	{
+printf("  find cid font %s (%d)\n", collection, isserif);
+		for (i = 0; i < 5; i++)
+		{
+			if (!strcmp(collection, cidfonts[i].collection))
+			{
+				if (isserif)
+					return loadcidfont(font, cidfonts[i].serif);
+				else
+					return loadcidfont(font, cidfonts[i].gothic);
+			}
+		}
+		fz_warn("unknown cid collection: %s", collection);
 	}
 
-	FcPatternDestroy(matchpat);
-	FcPatternDestroy(searchpat);
+	if (isscript)
+		name = "Chancery";
 
-	font->ftface = face;
+	else if (isfixed)
+	{
+		if (isitalic) {
+			if (isbold) name = "Courier-BoldOblique";
+			else name = "Courier-Oblique";
+		}
+		else {
+			if (isbold) name = "Courier-Bold";
+			else name = "Courier";
+		}
+	}
 
-	return nil;
+	else if (isserif)
+	{
+		if (isitalic) {
+			if (isbold) name = "Times-BoldItalic";
+			else name = "Times-Italic";
+		}
+		else {
+			if (isbold) name = "Times-Bold";
+			else name = "Times-Roman";
+		}
+	}
 
-cleanup:
-	FcPatternDestroy(searchpat);
-	return error;
+	else
+	{
+		if (isitalic) {
+			if (isbold) name = "Helvetica-BoldOblique";
+			else name = "Helvetica-Oblique";
+		}
+		else {
+			if (isbold) name = "Helvetica-Bold";
+			else name = "Helvetica";
+		}
+	}
+
+	return pdf_loadbuiltinfont(font, name);
 }
 
 fz_error *

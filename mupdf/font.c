@@ -324,18 +324,17 @@ printf("loading simple font %s\n", basefont);
 		}
 	}
 
-	if (!cmap)
+	if (cmap)
 	{
-		error = fz_throw("freetype could not find any cmaps");
-		goto cleanup;
+		e = FT_Set_Charmap(face, cmap);
+		if (e)
+		{
+			error = fz_throw("freetype could not set cmap: 0x%x", e);
+			goto cleanup;
+		}
 	}
-
-	e = FT_Set_Charmap(face, cmap);
-	if (e)
-	{
-		error = fz_throw("freetype could not set cmap: 0x%x", e);
-		goto cleanup;
-	}
+	else
+		fz_warn("freetype could not find any cmaps");
 
 	etable = fz_malloc(sizeof(unsigned short) * 256);
 	if (!etable)

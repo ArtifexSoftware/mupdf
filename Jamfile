@@ -118,6 +118,46 @@ Library libmupdf :
 	mupdf/interpret.c
 	;
 
+rule HexDump { DEPENDS $(<) : $(>) ; }
+actions HexDump
+{
+	xxd -i $(>) | sed -e 's/data_//g;s/, /,/g' > $(<) ;
+}
+
+HexDump data/Dingbats.c : data/Dingbats.cff ;
+HexDump data/NimbusMonL-Bold.c : data/NimbusMonL-Bold.cff ;
+HexDump data/NimbusMonL-BoldObli.c : data/NimbusMonL-BoldObli.cff ;
+HexDump data/NimbusMonL-Regu.c : data/NimbusMonL-Regu.cff ;
+HexDump data/NimbusMonL-ReguObli.c : data/NimbusMonL-ReguObli.cff ;
+HexDump data/NimbusRomNo9L-Medi.c : data/NimbusRomNo9L-Medi.cff ;
+HexDump data/NimbusRomNo9L-MediItal.c : data/NimbusRomNo9L-MediItal.cff ;
+HexDump data/NimbusRomNo9L-Regu.c : data/NimbusRomNo9L-Regu.cff ;
+HexDump data/NimbusRomNo9L-ReguItal.c : data/NimbusRomNo9L-ReguItal.cff ;
+HexDump data/NimbusSanL-Bold.c : data/NimbusSanL-Bold.cff ;
+HexDump data/NimbusSanL-BoldItal.c : data/NimbusSanL-BoldItal.cff ;
+HexDump data/NimbusSanL-Regu.c : data/NimbusSanL-Regu.cff ;
+HexDump data/NimbusSanL-ReguItal.c : data/NimbusSanL-ReguItal.cff ;
+HexDump data/StandardSymL.c : data/StandardSymL.cff ;
+HexDump data/URWChanceryL-MediItal.c : data/URWChanceryL-MediItal.cff ;
+
+Library libfonts :
+	data/Dingbats.c
+	data/NimbusMonL-Bold.c
+	data/NimbusMonL-BoldObli.c
+	data/NimbusMonL-Regu.c
+	data/NimbusMonL-ReguObli.c
+	data/NimbusRomNo9L-Medi.c
+	data/NimbusRomNo9L-MediItal.c
+	data/NimbusRomNo9L-Regu.c
+	data/NimbusRomNo9L-ReguItal.c
+	data/NimbusSanL-Bold.c
+	data/NimbusSanL-BoldItal.c
+	data/NimbusSanL-Regu.c
+	data/NimbusSanL-ReguItal.c
+	data/StandardSymL.c
+	data/URWChanceryL-MediItal.c
+	;
+
 LINKLIBS =
 	-lfontconfig
 	-lfreetype
@@ -145,6 +185,5 @@ LinkLibraries
 		pdfrip
 		pdffunction
 		x11pdf
-	: libmupdf libfitz ;
-
+	: libmupdf libfonts libfitz ;
 
