@@ -499,7 +499,7 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 	fz_error *error;
 	float alt[32];
 
-	error = pdf_evalfunction(cs->tint, sep, 1, alt, cs->base->n);
+	error = pdf_evalfunction(cs->tint, sep, fzcs->n, alt, cs->base->n);
 	if (error)
 	{
 		fz_warn("separation: %s", error->msg);
@@ -525,11 +525,18 @@ static fz_error *
 loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {
 	fz_error *error;
-	struct separation *sep;
+	struct separation *cs;
+	fz_obj *nameobj = fz_arrayget(array, 1);
 	fz_obj *baseobj = fz_arrayget(array, 2);
 	fz_obj *tintobj = fz_arrayget(array, 3);
 	fz_colorspace *base;
 	pdf_function *tint;
+	int n;
+
+	if (fz_isarray(nameobj))
+		n = fz_arraylen(nameobj);
+	else
+		n = 1;
 
 	error = pdf_resolve(&baseobj, xref);
 	if (error)
@@ -546,20 +553,22 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		return error;
 	}
 
-	sep = fz_malloc(sizeof(struct separation));
-	if (!sep)
+	cs = fz_malloc(sizeof(struct separation));
+	if (!cs)
 	{
 		pdf_freefunction(tint);
 		fz_freecolorspace(base);
 		return fz_outofmem;
 	}
 
-	initcs((fz_colorspace*)sep, "Separation", 1, separationtoxyz, nil, freeseparation);
+	initcs((fz_colorspace*)cs,
+		n == 1 ? "Separation" : "DeviceN", n,
+		separationtoxyz, nil, freeseparation);
 
-	sep->base = base;
-	sep->tint = tint;
+	cs->base = base;
+	cs->tint = tint;
 
-	*csp = (fz_colorspace*)sep;
+	*csp = (fz_colorspace*)cs;
 	return nil;
 }
 
@@ -722,6 +731,9 @@ printf("\n");
 				return loadindexed(csp, xref, obj);
 
 			if (!strcmp(fz_toname(name), "Separation"))
+				return loadseparation(csp, xref, obj);
+
+			if (!strcmp(fz_toname(name), "DeviceN"))
 				return loadseparation(csp, xref, obj);
 		}
 	}

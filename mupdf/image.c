@@ -72,7 +72,7 @@ static void loadtile8a(pdf_image *src, fz_pixmap *dst)
 }
 
 static void
-decodetile(fz_pixmap *pix, int bpc, int a, float *decode)
+decodetile(fz_pixmap *pix, int bpc, int a, float *decode, int scale)
 {
 	unsigned char table[32][256];
 	float twon = (1 << bpc) - 1;
@@ -85,7 +85,7 @@ decodetile(fz_pixmap *pix, int bpc, int a, float *decode)
 			float min = decode[k * 2 + 0];
 			float max = decode[k * 2 + 1];
 			float f = min + i * (max - min) / twon;
-			table[k][i] = f * 255;
+			table[k][i] = f * scale;
 		}
 	}
 
@@ -138,7 +138,10 @@ loadtile(fz_image *img, fz_pixmap *tile)
 		}
 	}
 
-	decodetile(tile, src->bpc, src->super.n, src->decode);
+	if (img->cs && !strcmp(img->cs->name, "Indexed"))
+		decodetile(tile, src->bpc, !src->super.a, src->decode, 1);
+	else
+		decodetile(tile, src->bpc, !src->super.a, src->decode, 255);
 
 	return nil;
 }
