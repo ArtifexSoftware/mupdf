@@ -72,7 +72,7 @@ struct pdf_csi_s
 
 	/* path object state */
 	fz_pathnode *path;
-	fz_pathnode *clip;
+	int clip;
 
 	/* text object state */
 	fz_node *textclip;

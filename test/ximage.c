@@ -125,9 +125,6 @@ createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi, int depth, int w, 
 
 	shmctl(xsi->shmid, IPC_RMID, 0);
 
-	printf("make xshm w=%d h=%d id=%d data=%p\n",
-		w, h, xsi->shmid, xsi->shmaddr);
-
 	return img;
 
 fallback:
@@ -211,7 +208,7 @@ select_mode(void)
 	gs = ffs(gm) - 1;
 	bs = ffs(bm) - 1;
 
-	printf("mode %d/%d %08lx %08lx %08lx (%ld,%ld,%ld) %s%s\n",
+	printf("ximage: mode %d/%d %08lx %08lx %08lx (%ld,%ld,%ld) %s%s\n",
 			info.visual.depth,
 			info.bitsperpixel,
 			rm, gm, bm, rs, gs, bs,
@@ -246,7 +243,7 @@ select_mode(void)
 			info.mode = byteorder == MSBFirst ? RGBA8888 : ABGR8888;
 	}
 
-	printf("convert ARGB8888 to %s\n", modename[info.mode]);
+	printf("ximage: ARGB8888 to %s\n", modename[info.mode]);
 
 	/* select conversion function */
 	info.convert_func = ximage_convert_funcs[info.mode];
@@ -340,7 +337,7 @@ ximage_init(Display *display, int screen, Visual *visual)
 	if (!ok)
 		return 0;
 
-	printf("Using %sPutImage\n", info.useshm ? "XShm" : "X");
+	printf("ximage: %sPutImage\n", info.useshm ? "XShm" : "X");
 
 	return 1;
 }

@@ -48,7 +48,10 @@ static fz_pixmap *image;
 
 void usage()
 {
-	fprintf(stderr, "usage: x11pdf [-u password] file.pdf\n");
+	fprintf(stderr, "usage: x11pdf [-b] [-pzr page/zoom/rotate] [-u password] file.pdf\n");
+	fprintf(stderr,
+"\n"
+	);
 	exit(1);
 }
 
@@ -200,7 +203,13 @@ static void pdfopen(char *filename, char *password)
 
 	error = pdf_openpdf(&xref, filename);
 	if (error)
-		fz_abort(error);
+	{
+		fz_warn(error->msg);
+		printf("trying to repair...\n");
+		error = pdf_repairpdf(&xref, filename);
+		if (error)
+			fz_abort(error);
+	}
 
 	error = pdf_decryptpdf(xref);
 	if (error)
@@ -486,12 +495,14 @@ int main(int argc, char **argv)
 	char *filename;
 	int c;
 
+	int benchmark = 0;
 	char *password = "";
 
-	while ((c = getopt(argc, argv, "z:r:p:u:")) != -1)
+	while ((c = getopt(argc, argv, "bz:r:p:u:")) != -1)
 	{
 		switch (c)
 		{
+		case 'b': ++benchmark; break;
 		case 'u': password = optarg; break;
 		case 'p': pageno = atoi(optarg); break;
 		case 'z': zoom = atof(optarg); break;
@@ -512,13 +523,16 @@ int main(int argc, char **argv)
 	pdfopen(filename, password);
 	showpage();
 
-#ifdef RUNFAST
-	while (pageno < count)
+	if (benchmark)
 	{
-		pageno ++;
-		showpage();
+		while (pageno < count)
+		{
+			pageno ++;
+			showpage();
+		}
+		return 0;
 	}
-#else
+
 	while (1)
 	{
 		int len;
@@ -548,7 +562,6 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-#endif
 
 	pdf_closepdf(xref);
 

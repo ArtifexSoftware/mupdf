@@ -580,16 +580,21 @@ pdf_showpath(pdf_csi *csi,
 		if (error) return error;
 	}
 
-	if (!dofill && !dostroke)
-	{
-		fz_free(csi->path);
-	}
-
 	if (csi->clip)
 	{
-		error = pdf_addclipmask(gstate, (fz_node*)csi->clip);
+		fz_pathnode *clip;
+		error = fz_clonepathnode(&clip, csi->path);
 		if (error) return error;
-		csi->clip = nil;
+		error = fz_endpath(clip, FZ_FILL, nil, nil);
+		if (error) return error;
+		error = pdf_addclipmask(gstate, (fz_node*)clip);
+		if (error) return error;
+		csi->clip = 0;
+	}
+
+	if (!dofill && !dostroke)
+	{
+		fz_dropnode((fz_node*)csi->path);
 	}
 
 	csi->path = nil;

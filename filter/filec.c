@@ -282,6 +282,25 @@ fz_seek(fz_file *f, int ofs, int whence)
 		whence = 0;
 	}
 
+	if (f->fd == -1)
+	{
+		if (whence == 0)
+		{
+			if (f->mode == FZ_READ)
+				f->out->rp = CLAMP(f->out->bp + ofs, f->out->bp, f->in->ep);
+			else
+				f->in->wp = CLAMP(f->in->bp + ofs, f->in->bp, f->in->ep);
+		}
+		else
+		{
+			if (f->mode == FZ_READ)
+				f->out->rp = CLAMP(f->out->ep + ofs, f->out->bp, f->in->ep);
+			else
+				f->in->wp = CLAMP(f->in->ep + ofs, f->in->bp, f->in->ep);
+		}
+		return fz_tell(f);
+	}
+
 	t = lseek(f->fd, ofs, whence);
 	if (t == -1)
 	{
@@ -305,6 +324,14 @@ fz_tell(fz_file *f)
 	{
 		assert(f->mode == FZ_READ);
 		return f->filter->count - (f->out->wp - f->out->rp);
+	}
+
+	if (f->fd == -1)
+	{
+		if (f->mode == FZ_READ)
+			return f->out->rp - f->out->bp;
+		else
+			return f->in->wp - f->in->bp;
 	}
 
 	t = lseek(f->fd, 0, 1);

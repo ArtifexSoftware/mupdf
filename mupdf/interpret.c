@@ -42,7 +42,7 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 		csi->gstate[0].stroke.kind = PDF_MNONE;
 	}
 
-	csi->clip = nil;
+	csi->clip = 0;
 
 	csi->textclip = nil;
 	csi->textmode = 0;
@@ -427,10 +427,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			error = fz_clonepathnode(&csi->clip, csi->path);
-			if (error) return error;
-			error = fz_endpath(csi->clip, FZ_EOFILL, nil, nil);
-			if (error) return error;
+			csi->clip = 1;
 		}
 
 		else if (!strcmp(buf, "cs"))
@@ -990,10 +987,7 @@ fz_debugobj(rdb);
 	case 'W':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = fz_clonepathnode(&csi->clip, csi->path);
-		if (error) return error;
-		error = fz_endpath(csi->clip, FZ_FILL, nil, nil);
-		if (error) return error;
+		csi->clip = 1;
 		break;
 
 	case 'g':	
