@@ -49,7 +49,7 @@ static inline int fromhex(int ch)
 	return 0;
 }
 
-static void
+static inline void
 lexwhite(fz_file *f)
 {
 	int c;
@@ -62,7 +62,7 @@ lexwhite(fz_file *f)
 	}
 }
 
-static void
+static inline void
 lexcomment(fz_file *f)
 {
 	int c;

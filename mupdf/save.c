@@ -20,10 +20,9 @@ writestream(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 			return error;
 
 		error = fz_pushfilter(out, ef);
-		if (error) {
-			fz_dropfilter(ef);
+		fz_dropfilter(ef);
+		if (error)
 			return error;
-		}
 	}
 
 	error = pdf_openrawstream(xref, oid, gen);
@@ -79,7 +78,7 @@ writeobject(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 	if (encrypt)
 		pdf_cryptobj(encrypt, x->obj, oid, gen);
 
-	if (x->stmbuf || x->stmofs)
+	if (pdf_isstream(xref, oid, gen))
 	{
 		error = writestream(out, xref, encrypt, oid, gen);
 		if (error)

@@ -55,26 +55,22 @@ pdf_decryptpdf(pdf_xref *xref)
 	{
 		error = pdf_resolve(&encrypt, xref);
 		if (error)
-			goto cleanup;
+			return error;
 
 		error = pdf_resolve(&id, xref);
 		if (error)
-			goto cleanup;
+		{
+			fz_dropobj(encrypt);
+			return error;
+		}
 
 		error = pdf_newdecrypt(&xref->crypt, encrypt, id);
-		if (error)
-			goto cleanup;
-
 		fz_dropobj(encrypt);
 		fz_dropobj(id);
+		return error;
 	}
 
 	return nil;
-
-cleanup:
-	if (encrypt) fz_dropobj(encrypt);
-	if (id) fz_dropobj(id);
-	return error;
 }
 
 void
@@ -110,12 +106,13 @@ pdf_debugpdf(pdf_xref *xref)
 	printf("xref\n0 %d\n", xref->len);
 	for (i = 0; i < xref->len; i++)
 	{
-		printf("%010d %05d %c | %d %d\n",
+		printf("%010d %05d %c | %d %c%c\n",
 			xref->table[i].ofs,
 			xref->table[i].gen,
 			xref->table[i].type,
 			xref->table[i].obj ? xref->table[i].obj->refs : 0,
-			xref->table[i].stmofs);
+			xref->table[i].stmofs ? 'f' : '-',
+			xref->table[i].stmbuf ? 'b' : '-');
 	}
 }
 
@@ -253,7 +250,6 @@ pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
 
 	if (x->obj)
 		fz_dropobj(x->obj);
-
 	x->obj = fz_keepobj(obj);
 
 	if (x->type == 'f' || x->type == 'd')

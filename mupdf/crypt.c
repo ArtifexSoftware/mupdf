@@ -44,6 +44,10 @@ static void padpassword(unsigned char *buf, char *pw)
 	memcpy(buf + len, padding, 32 - len);
 }
 
+/*
+ * Create crypt object for decrypting given the
+ * Encoding dictionary and file ID
+ */
 fz_error *
 pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 {
@@ -58,8 +62,9 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	if (m != 1 && m != 2)
 		return fz_throw("unsupported encryption: %d", m);
 
-	crypt = *cp = fz_malloc(sizeof(pdf_crypt));	
-	if (!crypt) return fz_outofmem;
+	crypt = fz_malloc(sizeof(pdf_crypt));	
+	if (!crypt)
+		return fz_outofmem;
 
 	crypt->encrypt = fz_keepobj(enc);
 	crypt->id = nil;
@@ -109,10 +114,11 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 
 	memset(crypt->key, 0, 16);
 
+	*cp = crypt;
 	return nil;
 
 cleanup:
-	if (crypt) fz_free(crypt);
+	pdf_dropcrypt(crypt);
 	return fz_throw("corrupt encryption dictionary");
 }
 
@@ -265,14 +271,17 @@ createuser(pdf_crypt *crypt, char *userpw)
 	}
 }
 
+/*
+ * Create crypt object for encrypting, given passwords,
+ * permissions, and file ID
+ */
 fz_error *
-pdf_newencrypt(pdf_crypt **cp, 
-	char *userpw, char *ownerpw, int p, int n, fz_obj *id)
+pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id)
 {
 	fz_error *error;
 	pdf_crypt *crypt;
 
-	crypt = *cp = fz_malloc(sizeof(pdf_crypt));
+	crypt = fz_malloc(sizeof(pdf_crypt));
 	if (!crypt)
 		return fz_outofmem;
 
@@ -328,6 +337,9 @@ pdf_setpassword(pdf_crypt *crypt, char *userpw)
 	return nil;
 }
 
+/*
+ * Recursively (and destructively!) de/encrypt all strings in obj
+ */
 void
 pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 {
@@ -359,6 +371,9 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 	}
 }
 
+/*
+ * Create filter suitable for de/encrypting a stream
+ */
 fz_error *
 pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gid)
 {

@@ -283,8 +283,9 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 		}
 	}
 
-	*xrefp = xref;
 	fz_free(list);
+
+	*xrefp = xref;
 	return nil;
 
 cleanup:

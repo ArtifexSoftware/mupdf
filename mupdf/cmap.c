@@ -280,7 +280,6 @@ pdf_parsecmap(fz_cmap **cmapp, fz_file *file)
 	error = fz_newcmap(&cmap);
 	if (error)
 		return error;
-	*cmapp = cmap;
 
 	strcpy(key, ".notdef");
 
@@ -362,14 +361,17 @@ pdf_parsecmap(fz_cmap **cmapp, fz_file *file)
 	if (error)
 		goto cleanup;
 
+	*cmapp = cmap;
 	return nil;
 
 cleanup:
 	fz_dropcmap(cmap);
-	*cmapp = nil;
 	return error;
 }
 
+/*
+ * Load CMap stream in PDF file
+ */
 fz_error *
 pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 {
@@ -383,11 +385,6 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	error = pdf_resolve(&stmobj, xref);
 	if (error)
 		return error;
-
-printf("  embedded cmap: ");
-fz_debugobj(stmobj);
-printf("\n");
-fflush(stdout);
 
 	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
@@ -406,34 +403,36 @@ fflush(stdout);
 	obj = fz_dictgets(stmobj, "UseCMap");
 	if (fz_isname(obj))
 	{
-		printf("  usecmap predefined: %s\n", fz_toname(obj));
 		error = pdf_loadsystemcmap(&usecmap, fz_toname(obj));
 		if (error)
 			goto cleanup;
 		fz_setusecmap(cmap, usecmap);
+		fz_dropcmap(usecmap);
 	}
 	else if (fz_isindirect(obj))
 	{
-		printf("  usecmap recursive pdf obj\n");
 		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
 		if (error)
 			goto cleanup;
 		fz_setusecmap(cmap, usecmap);
+		fz_dropcmap(usecmap);
 	}
 
-	*cmapp = cmap;
-
 	fz_dropobj(stmobj);
+
+	*cmapp = cmap;
 	return nil;
 
 cleanup:
 	if (cmap)
 		fz_dropcmap(cmap);
 	fz_dropobj(stmobj);
-	*cmapp = nil;
 	return error;
 }
 
+/*
+ * Load predefined CMap from system
+ */
 fz_error *
 pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 {
@@ -442,9 +441,8 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	char *cmapdir;
 	char *usecmapname;
 	fz_cmap *usecmap;
+	fz_cmap *cmap;
 	char path[1024];
-
-	*cmapp = nil;
 
 	cmapdir = getenv("CMAPDIR");
 	if (!cmapdir)
@@ -454,68 +452,71 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	strlcat(path, "/", sizeof path);
 	strlcat(path, name, sizeof path);
 
-printf("  system cmap loading %s\n", path);
-
 	error = fz_openfile(&file, path, FZ_READ);
 	if (error)
 		goto cleanup;
 
-	error = pdf_parsecmap(cmapp, file);
+	error = pdf_parsecmap(&cmap, file);
 	if (error)
 		goto cleanup;
 
 	fz_closefile(file);
 
-	usecmapname = fz_getusecmapname(*cmapp);
+	usecmapname = fz_getusecmapname(cmap);
 	if (usecmapname)
 	{
-printf("  system cmap: usecmap %s\n", usecmapname);
 		error = pdf_loadsystemcmap(&usecmap, usecmapname);
 		if (error)
 			goto cleanup;
-		fz_setusecmap(*cmapp, usecmap);
+		fz_setusecmap(cmap, usecmap);
+		fz_dropcmap(usecmap);
 	}
 
+	*cmapp = cmap;
 	return nil;
 
 cleanup:
-	if (*cmapp)
-		fz_dropcmap(*cmapp);
+	if (cmap)
+		fz_dropcmap(cmap);
 	if (file)
 		fz_closefile(file);
-	*cmapp = nil;
 	return error;
 }
 
+/*
+ * Create an Identity-* CMap (for both 1 and 2-byte encodings)
+ */
 fz_error *
 pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes)
 {
-	fz_error *error = nil;
+	fz_error *error;
+	fz_cmap *cmap;
 
-	error = fz_newcmap(cmapp);
+	error = fz_newcmap(&cmap);
 	if (error)
 		return error;
 
-	error = fz_addcodespacerange(*cmapp, 0x0000, 0xffff, bytes);
+	error = fz_addcodespacerange(cmap, 0x0000, 0xffff, bytes);
 	if (error) {
-		fz_dropcmap(*cmapp);
+		fz_dropcmap(cmap);
 		return error;
 	}
 
-	error = fz_addcidrange(*cmapp, 0x0000, 0xffff, 0);
+	error = fz_addcidrange(cmap, 0x0000, 0xffff, 0);
 	if (error) {
-		fz_dropcmap(*cmapp);
+		fz_dropcmap(cmap);
 		return error;
 	}
 
-	error = fz_endcidrange(*cmapp);
+	error = fz_endcidrange(cmap);
 	if (error) {
-		fz_dropcmap(*cmapp);
+		fz_dropcmap(cmap);
 		return error;
 	}
 
-	fz_setwmode(*cmapp, wmode);
+	fz_setwmode(cmap, wmode);
 
+	*cmapp = cmap;
 	return nil;
 }
 

@@ -1,6 +1,10 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+/*
+ * Sweep and mark reachable objects
+ */
+
 static fz_error *sweepref(pdf_xref *xref, fz_obj *ref);
 
 static fz_error *
@@ -68,7 +72,8 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 }
 
 /*
- * Garbage collection
+ * Garbage collect objects not reachable from
+ * the trailer dictionary
  */
 
 fz_error *
@@ -172,6 +177,11 @@ cleanup:
 	return error;
 }
 
+/*
+ * Recursively copy objects from src to dst xref.
+ * Start with root object in src xref.
+ * Put the dst copy of root into newp.
+ */
 fz_error *
 pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 {
@@ -227,6 +237,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 			if (error)
 				goto cleanup;
 			pdf_updatestream(dst, map[i].doid, map[i].dgen, stm);
+			fz_dropbuffer(stm);
 		}
 
 		error = remaprefs(&new, old, map, n);
