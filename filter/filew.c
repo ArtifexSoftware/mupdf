@@ -9,28 +9,28 @@ fz_printstring(fz_file *f, char *s)
 int
 fz_printobj(fz_file *file, fz_obj *obj, int tight)
 {
-    char buf[1024];
-    char *ptr;
-    int n;
+	char buf[1024];
+	char *ptr;
+	int n;
 
-    n = fz_sprintobj(nil, 0, obj, tight);
-    if (n < sizeof buf)
-    {
-        fz_sprintobj(buf, sizeof buf, obj, tight);
-        return fz_write(file, buf, n);
-    }
-    else
-    {
-        ptr = fz_malloc(n);
-        if (!ptr) {
+	n = fz_sprintobj(nil, 0, obj, tight);
+	if (n < sizeof buf)
+	{
+		fz_sprintobj(buf, sizeof buf, obj, tight);
+		return fz_write(file, buf, n);
+	}
+	else
+	{
+		ptr = fz_malloc(n);
+		if (!ptr) {
 			file->error = fz_outofmem;
-            return -1;
+			return -1;
 		}
-        fz_sprintobj(ptr, n, obj, tight);
-        n = fz_write(file, buf, n);
-        fz_free(ptr);
+		fz_sprintobj(ptr, n, obj, tight);
+		n = fz_write(file, ptr, n);
+		fz_free(ptr);
 		return n;
-    }
+	}
 }
 
 int
@@ -113,12 +113,10 @@ fz_write(fz_file *f, char *buf, int n)
 
 	while (i < n)
 	{
-		while (f->in->rp < f->in->wp && i < n)
-		{
-			*f->in->rp++ = buf[i++];
-		}
+		while (f->in->wp < f->in->ep && i < n)
+			*f->in->wp++ = buf[i++];
 
-		if (f->in->rp == f->in->wp)
+		if (f->in->wp == f->in->ep)
 		{
 			reason = fz_process(f->filter, f->in, f->out);
 
@@ -152,10 +150,13 @@ fz_write(fz_file *f, char *buf, int n)
 
 			else if (reason == fz_iodone)
 			{
-				x = dowrite(f->out, f->fd);
-				if (x < 0) {
-					f->error = fz_throw("ioerror in write: %s", strerror(errno));
-					return -1;
+				while (f->out->rp < f->out->wp)
+				{
+					x = dowrite(f->out, f->fd);
+					if (x < 0) {
+						f->error = fz_throw("ioerror in write: %s", strerror(errno));
+						return -1;
+					}
 				}
 				break;
 			}
