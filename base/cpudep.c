@@ -7,6 +7,21 @@ Glenn Kennard <d98gk@efd.lth.se>
 
 #include <fitz.h>
 
+/* global run-time constant */
+unsigned fz_cpuflags = 0;
+
+#ifndef HAVE_CPUDEP
+
+void fz_accelerate(void)
+{
+}
+
+void fz_cpudetect(void)
+{
+}
+
+#else
+
 #include <signal.h> /* signal/sigaction */
 #include <setjmp.h> /* sigsetjmp/siglongjmp */
 
@@ -88,16 +103,6 @@ static const featuretest features[] = {
 };
 
 #endif
-
-#ifndef HAVE_CPUDEP
-static void dummy(void) {}
-static const featuretest features[1] = {
-	{ dummy, 0, "dummy" }
-};
-#endif
-
-/* global run-time constant */
-unsigned fz_cpuflags = 0;
 
 static sigjmp_buf jmpbuf;
 static volatile sig_atomic_t canjump;
@@ -208,21 +213,5 @@ static __attribute__((constructor, used)) void fzcpudetect(void)
 	fz_cpudetect();
 }
 
-#ifndef HAVE_CPUDEP
-void fz_accelerate(void)
-{
-}
-#endif
-
-#ifdef TEST
-#include <stdio.h>
-
-/* compile: gcc -DARCH_SPARC -DTEST cpudep.c -o cpudep */
-int
-main(int n, char **a)
-{
-	dumpflags();
-	return 0;
-}
 #endif
 
