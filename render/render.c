@@ -39,8 +39,6 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	if (error)
 		goto cleanup;
 
-	fz_loadrastfuncs(&gc->rast);
-
 	gc->dest = nil;
 	gc->over = nil;
 	gc->rgb[0] = 0;
@@ -150,7 +148,6 @@ enum { HS = 17, VS = 15, SF = 1 };
 
 struct spandata
 {
-	fz_rastfuncs *rast;
 	int x, n;
 	fz_pixmap *dst;
 	unsigned char *rgb;
@@ -160,7 +157,6 @@ struct spandata
 static void spanfunc(int y, int x, int n, unsigned char *path, void *userdata)
 {
 	struct spandata *user = userdata;
-	fz_rastfuncs *rast = user->rast;
 	fz_pixmap *dst = user->dst;
 	unsigned char *dstp;
 
@@ -173,13 +169,13 @@ static void spanfunc(int y, int x, int n, unsigned char *path, void *userdata)
 	{
 	case FNONE:
 		assert(dst->n == 1);
-		rast->msk_1c1(path, dstp, user->n); break;
+		fz_path_1c1(path, dstp, user->n); break;
 	case FOVER:
 		assert(dst->n == 1);
-		rast->msk_1o1(path, dstp, user->n); break;
+		fz_path_1o1(path, dstp, user->n); break;
 	case FOVER | FRGB:
 		assert(dst->n == 4);
-		rast->msk_w3i1o4(user->rgb, path, dstp, user->n); break;
+		fz_path_w3i1o4(user->rgb, path, dstp, user->n); break;
 	default:
 		assert(!"impossible flag in path span function");
 	}
@@ -222,7 +218,6 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 
-	user.rast = &gc->rast;
 	user.x = clip.min.x - gbox.min.x;
 	user.n = clip.max.x - clip.min.x;
 	user.flag = gc->flag;
@@ -290,32 +285,17 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	{
 	case FNONE:
 		assert(dst->n == 1);
-		while (h--)
-		{
-			gc->rast.msk_1c1(sp, dp, w);
-			sp += src->w;
-			dp += dst->w;
-		}
+		fz_text_1c1(sp, src->w, dp, dst->w, w, h);
 		break;
 
 	case FOVER:
 		assert(dst->n == 1);
-		while (h--)
-		{
-			gc->rast.msk_1o1(sp, dp, w);
-			sp += src->w;
-			dp += dst->w;
-		}
+		fz_text_1o1(sp, src->w, dp, dst->w, w, h);
 		break;
 
 	case FOVER | FRGB:
 		assert(dst->n == 4);
-		while (h--)
-		{
-			gc->rast.msk_w3i1o4(gc->rgb, sp, dp, w);
-			sp += src->w;
-			dp += dst->w * 4;
-		}
+		fz_text_w3i1o4(gc->rgb, sp, src->w, dp, dst->w * 4, w, h);
 		break;
 
 	default:
@@ -499,9 +479,9 @@ DEBUG("  fnone %d x %d\n", w, h);
 				goto cleanup;
 
 			if (image->cs)
-				gc->rast.img_4c4(PSRC, PDST(gc->dest), PCTM);
+				fz_img_4c4(PSRC, PDST(gc->dest), PCTM);
 			else
-				gc->rast.img_1c1(PSRC, PDST(gc->dest), PCTM);
+				fz_img_1c1(PSRC, PDST(gc->dest), PCTM);
 		}
 		break;
 
@@ -509,15 +489,15 @@ DEBUG("  fnone %d x %d\n", w, h);
 		{
 DEBUG("  fover %d x %d\n", w, h);
 			if (image->cs)
-				gc->rast.img_4o4(PSRC, PDST(gc->over), PCTM);
+				fz_img_4o4(PSRC, PDST(gc->over), PCTM);
 			else
-				gc->rast.img_1o1(PSRC, PDST(gc->over), PCTM);
+				fz_img_1o1(PSRC, PDST(gc->over), PCTM);
 		}
 		break;
 
 	case FOVER | FRGB:
 DEBUG("  fover+rgb %d x %d\n", w, h);
-		gc->rast.img_w3i1o4(gc->rgb, PSRC, PDST(gc->over), PCTM);
+		fz_img_w3i1o4(gc->rgb, PSRC, PDST(gc->over), PCTM);
 		break;
 
 	default:
@@ -590,11 +570,11 @@ blendover(fz_renderer *gc, fz_pixmap *src, fz_pixmap *dst)
 	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
 
 	if (src->n == 1 && dst->n == 1)
-		gc->rast.duff_1o1(sp, src->w, dp, dst->w, w, h);
+		fz_duff_1o1(sp, src->w, dp, dst->w, w, h);
 	else if (src->n == 4 && dst->n == 4)
-		gc->rast.duff_4o4(sp, src->w * 4, dp, dst->w * 4, w, h);
+		fz_duff_4o4(sp, src->w * 4, dp, dst->w * 4, w, h);
 	else if (src->n == dst->n)
-		gc->rast.duff_NoN(sp, src->w * src->n, src->n, dp, dst->w * dst->n, w, h);
+		fz_duff_non(sp, src->w * src->n, src->n, dp, dst->w * dst->n, w, h);
 	else
 		assert(!"blendover src and dst mismatch");
 }
@@ -635,22 +615,22 @@ blendmask(fz_renderer *gc, fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst, int o
 	if (over)
 	{
 		if (src->n == 1 && msk->n == 1 && dst->n == 1)
-			gc->rast.duff_1i1o1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
+			fz_duff_1i1o1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
 		else if (src->n == 4 && msk->n == 1 && dst->n == 4)
-			gc->rast.duff_4i1o4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
+			fz_duff_4i1o4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
 		else if (src->n == dst->n)
-			gc->rast.duff_NiMoN(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
+			fz_duff_nimon(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
 		else
 			assert(!"blendmaskover src and msk and dst mismatch");
 	}
 	else
 	{
 		if (src->n == 1 && msk->n == 1 && dst->n == 1)
-			gc->rast.duff_1i1c1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
+			fz_duff_1i1c1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
 		else if (src->n == 4 && msk->n == 1 && dst->n == 4)
-			gc->rast.duff_4i1c4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
+			fz_duff_4i1c4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
 		else if (src->n == dst->n)
-			gc->rast.duff_NiMcN(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
+			fz_duff_nimcn(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
 		else
 			assert(!"blendmask src and msk and dst mismatch");
 	}

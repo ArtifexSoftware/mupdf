@@ -87,6 +87,9 @@ int main(int argc, char **argv)
 
 	char *password = "";
 
+	fz_cpudetect();
+	fz_accelerate();
+
 	while ((c = getopt(argc, argv, "dz:p:")) != -1)
 	{
 		switch (c)

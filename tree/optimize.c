@@ -181,6 +181,14 @@ retry:
 			shape = current->first;
 			color = shape->next;
 
+			if (color == nil)
+			{
+				fz_removenode(current);
+				prev = nil;
+				current = node->first;
+				goto retry;
+			}
+
 			if (fz_ispathnode(shape))
 			{
 				if (getrect((fz_pathnode*)shape, &bbox))

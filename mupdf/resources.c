@@ -4,6 +4,8 @@
 void *
 pdf_findresource(pdf_rsrc *rsrc, fz_obj *key)
 {
+	if (key == nil)
+		return nil;
 	while (rsrc)
 	{
 		if (!fz_cmpobj(rsrc->key, key))

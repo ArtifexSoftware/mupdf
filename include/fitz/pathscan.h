@@ -35,8 +35,6 @@ void fz_sortgel(fz_gel *gel);
 void fz_dropgel(fz_gel *gel);
 
 fz_error *fz_newael(fz_ael **aelp);
-fz_error *fz_insertael(fz_ael *ael, fz_gel *gel, int y, int *e);
-void fz_advanceael(fz_ael *ael);
 void fz_dropael(fz_ael *ael);
 
 fz_error *fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,

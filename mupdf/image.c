@@ -217,7 +217,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "SMask");
 	if (fz_isindirect(obj))
 	{
-		puts("  smask");
 		error = pdf_loadindirect(&sub, xref, obj);
 		if (error)
 			return error;
@@ -248,7 +247,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		}
 		else
 		{
-			puts("  mask");
 			error = pdf_loadimage(&mask, xref, sub, obj);
 			if (error)
 				return error;
@@ -334,6 +332,80 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	img->mask = (fz_image*)mask;
 
 	*imgp = img;
+
+	return nil;
+}
+
+fz_error *
+pdf_loadtile(fz_image *img, fz_pixmap *tile)
+{
+	pdf_image *src = (pdf_image*)img;
+	void (*tilefunc)(unsigned char*,int,unsigned char*, int, int, int, int);
+	fz_error *error;
+
+	assert(tile->n == img->n + 1);
+	assert(tile->x >= 0);
+	assert(tile->y >= 0);
+	assert(tile->x + tile->w <= img->w);
+	assert(tile->y + tile->h <= img->h);
+
+	switch (src->bpc)
+	{
+	case 1: tilefunc = fz_loadtile1; break;
+	case 2: tilefunc = fz_loadtile2; break;
+	case 4: tilefunc = fz_loadtile4; break;
+	case 8: tilefunc = fz_loadtile8; break;
+	default:
+		return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
+	}
+
+	if (src->indexed)
+	{
+		fz_pixmap *tmp;
+		int x, y, k, i;
+		int bpcfact = 1;
+
+		error = fz_newpixmap(&tmp, tile->x, tile->y, tile->w, tile->h, 1);
+		if (error)
+			return error;
+
+		switch (src->bpc)
+		{
+		case 1: bpcfact = 255; break;
+		case 2: bpcfact = 85; break;
+		case 4: bpcfact = 17; break;
+		case 8: bpcfact = 1; break;
+		}
+
+		tilefunc(src->samples->rp, src->stride,
+				tmp->samples, tmp->w,
+				tmp->w, tmp->h, 0);
+
+		for (y = 0; y < tile->h; y++)
+		{
+			for (x = 0; x < tile->w; x++)
+			{
+				tile->samples[(y * tile->w + x) * tile->n] = 255;
+				i = tmp->samples[y * tile->w + x] / bpcfact;
+				i = CLAMP(i, 0, src->indexed->high);
+				for (k = 0; k < src->indexed->base->n; k++)
+				{
+					tile->samples[(y * tile->w + x) * tile->n + k + 1] =
+						src->indexed->lookup[i * src->indexed->base->n + k];
+				}
+			}
+		}
+
+		fz_droppixmap(tmp);
+	}
+
+	else
+	{
+		tilefunc(src->samples->rp, src->stride,
+				tile->samples, tile->w * tile->n,
+				img->w * (img->n + img->a), img->h, img->a ? 0 : img->n);
+		fz_decodetile(tile, !img->a, src->decode);
+	}
 
 	return nil;
 }

@@ -20,9 +20,9 @@ typedef void (*ximage_convert_func_t)
 	 int h
 	);
 
-#define POOLSIZE 6
+#define POOLSIZE 4
 #define WIDTH 256
-#define HEIGHT 64
+#define HEIGHT 256
 
 enum {
 	ARGB8888,

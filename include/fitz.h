@@ -29,6 +29,6 @@
 #include "fitz/path.h"
 #include "fitz/text.h"
 
-#include "fitz/scanconv.h"
+#include "fitz/pathscan.h"
 #include "fitz/render.h"
 

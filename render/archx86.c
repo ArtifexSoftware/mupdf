@@ -40,7 +40,7 @@ static void duff_4i1o4mmx(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int d
 			int ts = *s++;
 			int ma = *mp++ + 1;
 			int sa = ((ts & 0xff) * ma) >> 8;
-			int ssa = 254 - sa;
+			int ssa = 256 - sa;
 
 			__m64 d0 = _mm_cvtsi32_si64(*d);
 			__m64 s0 = _mm_cvtsi32_si64(ts);
@@ -212,14 +212,15 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 
 #if defined (ARCH_X86) || defined(ARCH_X86_64)
 void
-fz_accelrastfuncs(fz_rastfuncs *tab)
+fz_accelerate(void)
 {
 #  ifdef HAVE_MMX
 	if (fz_cpuflags & HAVE_MMX)
 	{
-		tab->duff_4i1o4 = duff_4i1o4mmx;
-		tab->img_4o4 = img_4o4mmx;
+		fz_duff_4i1o4 = duff_4i1o4mmx;
+		fz_img_4o4 = img_4o4mmx;
 	}
 #  endif
 }
 #endif
+

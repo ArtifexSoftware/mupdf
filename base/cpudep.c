@@ -7,6 +7,12 @@ Glenn Kennard <d98gk@efd.lth.se>
 
 #include <fitz.h>
 
+#ifdef WIN32
+#define sigjmp_buf jmp_buf
+#define sigsetjmp setjmp
+#define siglongjmp longjmp
+#endif
+
 typedef struct {
 	void (*test)(void);
 	const unsigned flag;

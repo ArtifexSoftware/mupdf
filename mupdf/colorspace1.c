@@ -515,6 +515,7 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
  * Indexed
  */
 
+#if 0
 static void
 indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
 {
@@ -523,11 +524,11 @@ indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
 	int i, k;
 	i = ind[0] * 255;
 	i = CLAMP(i, 0, cs->high);
-printf("indexedtoxyz: %d\n", i);
 	for (k = 0; k < cs->base->n; k++)
 		alt[k] = cs->lookup[i * cs->base->n + k] / 255.0;
 	cs->base->toxyz(cs->base, alt, xyz);
 }
+#endif
 
 static void
 dropindexed(fz_colorspace *fzcs)
@@ -563,7 +564,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		return fz_outofmem;
 	}
 
-	initcs((fz_colorspace*)cs, "Indexed", 1, indexedtoxyz, nil, dropindexed);
+	initcs((fz_colorspace*)cs, "Indexed", 1, nil, nil, dropindexed);
 
 	cs->base = base;
 	cs->high = fz_toint(highobj);

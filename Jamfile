@@ -86,17 +86,19 @@ Library libfitz :
 	# render
 	render/glyphcache.c
 	render/pixmap.c
-	render/edgelist.c
-	render/scanconv.c
-	render/fill.c
-	render/stroke.c
-	render/scale.c
 	render/rastshade.c
-	render/rastport.c
-	render/rastppc.c
-	render/rastsparc.c
-	render/rastx86.c
+	render/pathscan.c
+	render/pathfill.c
+	render/pathstroke.c
+	render/optduff.c
+	render/optimage.c
+	render/optunpack.c
+	render/optscale.c
 	render/render.c
+
+	render/archppc.c
+	render/archsparc.c
+	render/archx86.c
 ;
 
 Library libmupdf :
@@ -120,13 +122,14 @@ Library libmupdf :
 	mupdf/fontagl.c
 	mupdf/fontenc.c
 	mupdf/fontfile.c
+#	mupdf/fontfilefc.c
+#	mupdf/fontfilems.c
 	mupdf/unicode.c
 	mupdf/font.c
 	mupdf/type3.c
 	mupdf/colorspace1.c
 	mupdf/colorspace2.c
-	mupdf/image1.c
-	mupdf/image2.c
+	mupdf/image.c
 	mupdf/xobject.c
 	mupdf/pattern.c
 	mupdf/shade.c

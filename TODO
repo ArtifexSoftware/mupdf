@@ -28,16 +28,19 @@ shadings
 	- ... jeong ...
 
 rendering
+	- fix glyphcache evictlast
 	- bbox culling per glyph
 	- optimize image load/decode/scale
 	- cpu-specific optims
+	- font focus
 
 parser
+	- image color key transparency
+	- rewrite 1x1 images as fillrect
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 
 fz_optimizetree()
-	- remove white fills at beginning of page
 	- concatenate chained transforms
 	- remove identity transforms
 

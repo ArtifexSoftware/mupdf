@@ -242,6 +242,8 @@ static void dumptext()
 	fz_error *error;
 	pdf_textline *line;
 
+	printf("----");
+
 	error = pdf_loadtextfromtree(&line, page->tree);
 	if (error)
 		fz_abort(error);
@@ -363,6 +365,7 @@ int main(int argc, char **argv)
 		usage();
 
 	fz_cpudetect();
+	fz_accelerate();
 
 	filename = argv[optind++];
 

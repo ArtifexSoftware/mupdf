@@ -9,7 +9,7 @@ SPARC specific render optims live here
 
 #if defined (ARCH_SPARC)
 void
-fz_accelrastfuncs(fz_rastfuncs *tab)
+fz_accelerate(void)
 {
 #  ifdef HAVE_VIS
 	if (fz_cpuflags & HAVE_VIS)

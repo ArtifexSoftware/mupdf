@@ -91,6 +91,10 @@ fz_newdctd(fz_filter **fp, fz_obj *params)
 	d->src.super.next_input_byte = nil;
 	d->src.skip = 0;
 
+	/* speed up jpeg decoding a bit */
+	d->cinfo.dct_method = JDCT_FASTEST;
+	d->cinfo.do_fancy_upsampling = FALSE;
+
 	return nil;
 }
 
