@@ -121,8 +121,8 @@ int main(int argc, char **argv)
 	if (error) fz_abort(error);
 
 	outlines = nil;
-//	error = pdf_loadoutlinetree(&outlines, xref);
-//	if (error) { fz_warn(error->msg); fz_droperror(error); }
+/*	error = pdf_loadoutlinetree(&outlines, xref); */
+/*	if (error) { fz_warn(error->msg); fz_droperror(error); } */
 
 	if (optind == argc)
 	{

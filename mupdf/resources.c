@@ -38,6 +38,9 @@ indirect references so we end up with a stylized structure:
 	/Pattern <<
 		/Pat0 20 0 R
 	>>
+	/Shading << 
+		/Sh0 30 0 R
+	>>
 	/XObject <<
 		/Im0 10 0 R
 		/Fm0 11 0 R
@@ -146,6 +149,38 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 }
 
 static fz_error *
+preloadshading(pdf_xref *xref, fz_obj *ref)
+{
+	fz_error *error;
+	pdf_rsrc *rsrc;
+	fz_obj *obj;
+
+	if (pdf_findresource(xref->rshade, ref))
+		return nil;
+
+	rsrc = fz_malloc(sizeof(pdf_rsrc));
+	if (!rsrc)
+		return fz_outofmem;
+	rsrc->oid = fz_tonum(ref);
+	rsrc->gen = fz_togen(ref);
+
+	error = pdf_loadindirect(&obj, xref, ref);
+	if (error)
+		return error;
+
+	error = pdf_loadshade((fz_shade**)&rsrc->val, xref, obj, ref);
+	fz_dropobj(obj);
+	if (error) {
+		fz_free(rsrc);
+		return error;
+	}
+
+	rsrc->next = xref->rshade;
+	xref->rshade = rsrc;
+	return nil;
+}
+
+static fz_error *
 preloadxobject(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error;
@@ -211,6 +246,9 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	pdf_font *font;
 	pdf_rsrc *rsrc;
 	fz_obj *obj;
+
+if (!fz_isindirect(ref))
+	fz_warn("inline font resource");
 
 	if (pdf_findresource(xref->rfont, ref))
 		return nil;
@@ -366,6 +404,7 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 				if (error)
 					return error;
 			}
+else fz_warn("inline colorspace resource");
 		}
 	}
 
@@ -385,6 +424,23 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 				if (error)
 					return error;
 			}
+else fz_warn("inline pattern resource");
+		}
+	}
+
+	dict = fz_dictgets(copy, "Shading");
+	if (dict)
+	{
+		for (i = 0; i < fz_dictlen(dict); i++)
+		{
+			obj = fz_dictgetval(dict, i);
+			if (fz_isindirect(obj))
+			{
+				error = preloadshading(xref, obj);
+				if (error)
+					return error;
+			}
+else fz_warn("inline shading resource");
 		}
 	}
 
@@ -404,6 +460,7 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 				if (error)
 					return error;
 			}
+else fz_warn("inline xobject resource");
 		}
 	}
 

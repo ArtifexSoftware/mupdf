@@ -20,7 +20,7 @@
 
 #else
 
-#define FZ_FLEX 0
+#define FZ_FLEX 1
 #define restrict
 #define inline __inline__
 #define va_copy(a,b) (a) = (b)

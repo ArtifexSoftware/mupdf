@@ -90,7 +90,7 @@ Library libfitz :
 	render/fill.c
 	render/stroke.c
 	render/scale.c
-	render/shade.c
+	render/rastshade.c
 	render/rastport.c
 	render/render.c
 ;

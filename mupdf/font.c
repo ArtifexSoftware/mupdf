@@ -80,6 +80,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	FT_Error fterr;
 	float scale;
 	int gid;
+	int x, y;
 
 	if (font->cidtogid)
 		gid = font->cidtogid[cid];
@@ -165,16 +166,16 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->y = face->glyph->bitmap_top - glyph->h;
 	glyph->samples = face->glyph->bitmap.buffer;
 
-	int i;
-    unsigned char tmp[glyph->w * glyph->h];
-    memcpy(tmp, glyph->samples, glyph->w * glyph->h);
-
-    for (i = 0; i < glyph->h; i++)
-    {
-        memcpy( glyph->samples + i * glyph->w,
-                tmp + (glyph->h - i - 1) * glyph->w,
-                glyph->w );
-    }
+	for (y = 0; y < glyph->h / 2; y++)
+	{
+		for (x = 0; x < glyph->w; x++)
+		{
+			unsigned char a = glyph->samples[y * glyph->w + x ];
+			unsigned char b = glyph->samples[(glyph->h - y - 1) * glyph->w + x];
+			glyph->samples[y * glyph->w + x ] = b;
+			glyph->samples[(glyph->h - y - 1) * glyph->w + x] = a;
+		}
+	}
 
 	return nil;
 }

@@ -1,6 +1,8 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+#define index psindex		/* collide with string.h index() */
+
 typedef struct psobj_s psobj;
 
 struct pdf_function_s
@@ -42,12 +44,12 @@ struct psobj_s
 {
 	unsigned short type;
 	union {
-		int booln;			/* boolean (stack only) */
-		int intg;			/* integer (stack and code) */
-		float real;			/* real (stack and code) */
+		int b;			/* boolean (stack only) */
+		int i;			/* integer (stack and code) */
+		float f;			/* real (stack and code) */
 		int op;				/* operator (code only) */
 		int blk;			/* if/ifelse block pointer (code only) */
-	};
+	} u;
 };
 
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
@@ -254,7 +256,7 @@ pushbool(psstack *st, int booln)
 {
 	if (checkoverflow(st, 1)) {
 		st->stack[--st->sp].type = psBool;
-		st->stack[st->sp].booln = booln;
+		st->stack[st->sp].u.b = booln;
 	}
 	else
 		return fz_stackoverflow;
@@ -267,7 +269,7 @@ pushint(psstack *st, int intg)
 {
 	if (checkoverflow(st, 1)) {
 		st->stack[--st->sp].type = psInt;
-		st->stack[st->sp].intg = intg;
+		st->stack[st->sp].u.i = intg;
 	}
 	else
 		return fz_stackoverflow;
@@ -280,7 +282,7 @@ pushreal(psstack *st, float real)
 {
 	if (checkoverflow(st, 1)) {
 		st->stack[--st->sp].type = psReal;
-		st->stack[st->sp].real = real;
+		st->stack[st->sp].u.f = real;
 	}
 	else
 		return fz_stackoverflow;
@@ -292,7 +294,7 @@ static fz_error *
 popbool(psstack *st, int *booln)
 {
 	if (checkunderflow(st) && checktype(st, psBool, psBool)) {
-		*booln = st->stack[st->sp++].booln;
+		*booln = st->stack[st->sp++].u.b;
 	}
 	else if(checkunderflow(st))
 		return fz_stackunderflow;
@@ -306,7 +308,7 @@ static fz_error *
 popint(psstack *st, int *intg)
 {
 	if (checkunderflow(st) && checktype(st, psInt, psInt)) {
-		*intg = st->stack[st->sp++].intg;
+		*intg = st->stack[st->sp++].u.i;
 	}
 	else if(checkunderflow(st))
 		return fz_stackunderflow;
@@ -322,7 +324,7 @@ popnum(psstack *st, float *real)
 	if (checkunderflow(st) && checktype(st, psInt, psReal)) {
 		float ret;
 		ret = (st->stack[st->sp].type == psInt) ? 
-			(float)st->stack[st->sp].intg : st->stack[st->sp].real;
+			(float)st->stack[st->sp].u.i : st->stack[st->sp].u.f;
 		++st->sp;
 		*real = ret;
 	}
@@ -679,6 +681,8 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 	/* optional */
 	tmpobj = fz_dictgets(dict,"C0");
 	if(fz_isarray(tmpobj)) {
+		fz_obj *objnum;
+
 		if(func->range && fz_arraylen(tmpobj) != func->n)
 			goto cleanup;
 
@@ -686,7 +690,6 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 		func->u.e.c0 = c0 = fz_malloc(func->n * sizeof(float));
 		if(!c0) { err = fz_outofmem; goto cleanup; }
 
-		fz_obj *objnum;
 		for(i = 0; i < func->n; ++i) {
 			objnum = fz_arrayget(tmpobj,i);
 			if(!fz_isint(objnum) && !fz_isreal(objnum))
@@ -928,13 +931,13 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 		case PDF_TINT:
 			resizecode(func,*codeptr);
 			func->u.p.code[*codeptr].type = psInt;
-			func->u.p.code[*codeptr].intg = atoi(buf);
+			func->u.p.code[*codeptr].u.i = atoi(buf);
 			++*codeptr;
 			break;
 		case PDF_TREAL:
 			resizecode(func,*codeptr);
 			func->u.p.code[*codeptr].type = psReal;
-			func->u.p.code[*codeptr].real = atof(buf);
+			func->u.p.code[*codeptr].u.f = atof(buf);
 			++*codeptr;
 			break;
 		case PDF_TOBRACE:
@@ -965,19 +968,19 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 					if (elsePtr >= 0)
 						goto cleanup;
 					func->u.p.code[opPtr].type = psOperator;
-					func->u.p.code[opPtr].op = psOpIf;
+					func->u.p.code[opPtr].u.op = psOpIf;
 					func->u.p.code[opPtr+2].type = psBlock;
-					func->u.p.code[opPtr+2].blk = *codeptr;
+					func->u.p.code[opPtr+2].u.blk = *codeptr;
 				}
 				else if(!strcmp(buf,"ifelse")) {
 					if (elsePtr < 0)
 						goto cleanup;
 					func->u.p.code[opPtr].type = psOperator;
-					func->u.p.code[opPtr].op = psOpIfelse;
+					func->u.p.code[opPtr].u.op = psOpIfelse;
 					func->u.p.code[opPtr+1].type = psBlock;
-					func->u.p.code[opPtr+1].blk = elsePtr;
+					func->u.p.code[opPtr+1].u.blk = elsePtr;
 					func->u.p.code[opPtr+2].type = psBlock;
-					func->u.p.code[opPtr+2].blk = *codeptr;
+					func->u.p.code[opPtr+2].u.blk = *codeptr;
 				}
 				else
 					goto cleanup;
@@ -988,7 +991,7 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 		case PDF_TCBRACE:
 			resizecode(func,*codeptr);
 			func->u.p.code[*codeptr].type = psOperator;
-			func->u.p.code[*codeptr].op = psOpReturn;
+			func->u.p.code[*codeptr].u.op = psOpReturn;
 			++*codeptr;
 			return nil;
 		case PDF_TKEYWORD:
@@ -1011,7 +1014,7 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 			
 			resizecode(func,*codeptr);
 			func->u.p.code[*codeptr].type = psOperator;
-			func->u.p.code[*codeptr].op = a;
+			func->u.p.code[*codeptr].u.op = a;
 			++*codeptr;
 			break;
 		default:
@@ -1061,13 +1064,13 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 	while (1) {
 		switch (func->u.p.code[codeptr].type) {
 		case psInt:
-			SAFE_PUSHINT(st,func->u.p.code[codeptr++].intg);
+			SAFE_PUSHINT(st,func->u.p.code[codeptr++].u.i);
 			break;
 		case psReal:
-			SAFE_PUSHREAL(st,func->u.p.code[codeptr++].real);
+			SAFE_PUSHREAL(st,func->u.p.code[codeptr++].u.f);
 			break;
 		case psOperator:
-			switch (func->u.p.code[codeptr++].op) {
+			switch (func->u.p.code[codeptr++].u.op) {
 			case psOpAbs:
 				if (topisint(st)) {
 					SAFE_POPINT(st,&i1);
@@ -1361,16 +1364,16 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 				if (b1) {
 					evalpostscriptfunc(func, st, codeptr + 2);
 				}
-				codeptr = func->u.p.code[codeptr + 1].blk;
+				codeptr = func->u.p.code[codeptr + 1].u.blk;
 				break;
 			case psOpIfelse:
 				SAFE_POPBOOL(st, &b1);
 				if (b1) {
 					evalpostscriptfunc(func, st, codeptr + 2);
 				} else {
-					evalpostscriptfunc(func, st, func->u.p.code[codeptr].blk);
+					evalpostscriptfunc(func, st, func->u.p.code[codeptr].u.blk);
 				}
-				codeptr = func->u.p.code[codeptr + 1].blk;
+				codeptr = func->u.p.code[codeptr + 1].u.blk;
 				break;
 			case psOpReturn:
 				return nil;

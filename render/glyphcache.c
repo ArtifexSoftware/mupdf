@@ -340,14 +340,22 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	if (size > arena->size / 6)
 		return nil;
 
-	while (arena->load > arena->slots * 75 / 100) {
-		covf ++;
-		evictlast(arena);
+	while (arena->load > arena->slots * 75 / 100)
+	{
+		while (arena->load > arena->slots * 60 / 100)
+		{
+			covf ++;
+			evictlast(arena);
+		}
 	}
 
-	while (arena->used + size >= arena->size) {
-		coos ++;
-		evictlast(arena);
+	if (arena->used + size >= arena->size)
+	{
+		while (arena->used + size >= arena->size * 80 / 100)
+		{
+			coos ++;
+			evictlast(arena);
+		}
 	}
 
 	val = &arena->lru[arena->load++];

@@ -13,7 +13,7 @@ enum
 	TBEGINCIDCHAR,
 	TENDCIDCHAR,
 	TBEGINCIDRANGE,
-	TENDCIDRANGE,
+	TENDCIDRANGE
 };
 
 static int tokenfromkeyword(char *key)
@@ -32,7 +32,7 @@ static int tokenfromkeyword(char *key)
 	return PDF_TKEYWORD;
 }
 
-static int codefromstring(unsigned char *buf, int len)
+static int codefromstring(char *buf, int len)
 {
 	int a = 0;
 	while (len--)

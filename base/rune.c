@@ -27,7 +27,7 @@ enum
 	Maskx	= (1<<Bitx)-1,			/* 0011 1111 */
 	Testx	= Maskx ^ 0xFF,			/* 1100 0000 */
 
-	Bad	= Runeerror,
+	Bad	= Runeerror
 };
 
 int

@@ -25,7 +25,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	gc->gel = nil;
 	gc->ael = nil;
 
-	error = fz_newglyphcache(&gc->cache, gcmem / 32, gcmem);
+	error = fz_newglyphcache(&gc->cache, gcmem / 24, gcmem);
 	if (error)
 		goto cleanup;
 
@@ -413,6 +413,7 @@ renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	fz_irect clip;
 	int dx, dy;
 	fz_pixmap *tile;
+	fz_pixmap *temp;
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	int fa, fb, fc, fd;
@@ -442,7 +443,6 @@ DEBUG("  load image\n");
 	if (dx != 1 || dy != 1)
 	{
 DEBUG("  scale image 1/%d 1/%d\n", dx, dy);
-		fz_pixmap *temp;
 		error = fz_scalepixmap(&temp, tile, dx, dy);
 		if (error)
 			goto cleanup;
@@ -452,7 +452,6 @@ DEBUG("  scale image 1/%d 1/%d\n", dx, dy);
 
 	if (image->cs && image->cs != gc->model)
 	{
-		fz_pixmap *temp;
 DEBUG("  convert from %s to %s\n", image->cs->name, gc->model->name);
 		error = fz_newpixmap(&temp, tile->x, tile->y, tile->w, tile->h, gc->model->n + 1);
 		if (error)

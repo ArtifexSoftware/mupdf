@@ -761,17 +761,20 @@ fz_debugobj(rdb);
 			fz_obj *obj;
 			fz_shade *shd;
 
-			dict = fz_dictgets(rdb, "Pattern");
+			if (csi->top != 1)
+				goto syntaxerror;
+
+			dict = fz_dictgets(rdb, "Shading");
 			if (!dict)
-				return fz_throw("syntaxerror: missing pattern resource");
+				return fz_throw("syntaxerror: missing shading resource");
 
 			obj = fz_dictget(dict, csi->stack[csi->top - 1]);
 			if (!obj)
-				return fz_throw("syntaxerror: missing pattern resource");
+				return fz_throw("syntaxerror: missing shading resource");
 
 			shd = pdf_findresource(xref->rshade, obj);
 			if (!shd)
-				return fz_throw("syntaxerror: missing pattern resource");
+				return fz_throw("syntaxerror: missing shading resource");
 
 			error = pdf_addshade(gstate, shd);
 			if (error) return error;

@@ -16,8 +16,6 @@ static void cleanovers(fz_node *node)
 	{
 		next = current->next;
 
-		cleanovers(current);
-
 		if (fz_isovernode(current))
 		{
 			if (current->first == current->last)
@@ -31,13 +29,16 @@ static void cleanovers(fz_node *node)
 					else
 						fz_insertnodefirst(node, child);
 				}
-				current = nil;
+				current = child;
 			}
 		}
 
 		if (current)
 			prev = current;
 	}
+
+	for (current = node->first; current; current = current->next)
+		cleanovers(current);
 }
 
 /*
@@ -95,19 +96,15 @@ static int fitsinside(fz_node *node, fz_rect clip)
 static void cleanmasks(fz_node *node)
 {
 	fz_node *prev;
-	fz_node *next;
 	fz_node *current;
 	fz_node *shape;
 	fz_node *color;
 	fz_rect bbox;
 
 	prev = nil;
-	for (current = node->first; current; current = next)
+	for (current = node->first; current; current = current->next)
 	{
-		next = current->next;
-
-		cleanmasks(current);
-
+retry:
 		if (fz_ismasknode(current))
 		{
 			shape = current->first;
@@ -119,21 +116,23 @@ static void cleanmasks(fz_node *node)
 				{
 					if (fitsinside(color, bbox))
 					{
-						printf("removed useless mask\n");
 						fz_removenode(current);
 						if (prev)
 							fz_insertnodeafter(prev, color);
 						else
 							fz_insertnodefirst(node, color);
-						current = nil;
+						current = color;
+						goto retry;
 					}
 				}
 			}
 		}
 
-		if (current)
-			prev = current;
+		prev = current;
 	}
+
+	for (current = node->first; current; current = current->next)
+		cleanmasks(current);
 }
 
 /*
@@ -143,7 +142,9 @@ static void cleanmasks(fz_node *node)
 fz_error *
 fz_optimizetree(fz_tree *tree)
 {
-	cleanovers(tree->root);
+	if (getenv("DONTOPT"))
+		return nil;
+//	cleanovers(tree->root);
 	cleanmasks(tree->root);
 	return nil;
 }

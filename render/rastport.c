@@ -357,6 +357,7 @@ static void img_1o1(FZ_PSRC, FZ_PDST, FZ_PCTM)
 static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
 	byte argb[4];
+	byte ssa;
 	while (h--)
 	{
 		byte *dstp = dst0;
@@ -366,7 +367,7 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 		while (w--)
 		{
 			sampleargb(src, srcw, srch, u, v, argb);
-			byte ssa = 255 - argb[0];
+			ssa = 255 - argb[0];
 			dstp[0] = argb[0] + fz_mul255(dstp[0], ssa);
 			dstp[1] = argb[1] + fz_mul255((short)dstp[1] - argb[1], ssa);
 			dstp[2] = argb[2] + fz_mul255((short)dstp[2] - argb[2], ssa);

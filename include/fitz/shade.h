@@ -4,7 +4,7 @@ struct fz_shade_s
 {
 	int refs;
 	fz_colorspace *cs;
-	// ...
+	/* ... */
 };
 
 fz_shade *fz_keepshade(fz_shade *shade);

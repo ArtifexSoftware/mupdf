@@ -13,7 +13,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *obj, fz_obj *ref)
 
 printf("loading shade pattern\n");
 
-	// ...
+	/* ... */
 
 	*shadep = shade;
 	return nil;
