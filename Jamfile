@@ -203,6 +203,11 @@ Main pdffunction : test/pdffunction.c ;
 
 Main x11pdf : test/x11pdf.c test/ximage.c ;
 
+CCFLAGS += `gtk-config --cflags` ;
+LINKLIBS on gtkpdf = $(LINKLIBS) `gtk-config --libs` -lgthread ;
+
+Main gtkpdf : test/gtkpdf.c ;
+
 LinkLibraries
 		pdfclean
 		pdfdebug
@@ -210,5 +215,6 @@ LinkLibraries
 		pdfrip
 		pdffunction
 		x11pdf
+		gtkpdf
 	: libmupdf libfonts libfitz ;
 
