@@ -460,9 +460,10 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 
 	unsigned char buf[65536];	/* yeowch! */
 
-	xref = fz_malloc(sizeof (pdf_xref));
+	xref = fz_malloc(sizeof(pdf_xref));
 	if (!xref)
 		return fz_outofmem;
+	memset(xref, 0, sizeof(pdf_xref));
 
 	xref->file = nil;
 	xref->version = 1.0;

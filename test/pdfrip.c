@@ -33,23 +33,20 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 			page->mediabox.max.x, page->mediabox.max.y);
 		printf("  rotate %d\n", page->rotate);
 
-		printf("  fonts\n");
-		fz_debugobj(page->rdb->font);
-		printf("\n");
-
-		printf("  colorspaces\n");
-		fz_debugobj(page->rdb->colorspace);
+		printf("  resources\n");
+		fz_debugobj(page->resources);
 		printf("\n");
 
 		printf("tree\n");
 		fz_debugtree(page->tree);
-		printf("endtree");
+		printf("endtree\n");
 	}
 
 	{
 		fz_pixmap *pix;
 		fz_renderer *gc;
 		fz_matrix ctm;
+		fz_rect bbox;
 
 		error = fz_newrenderer(&gc, pdf_devicergb);
 		if (error) fz_abort(error);
@@ -58,8 +55,12 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 printf("ctm %g %g %g %g %g %g\n",
 	ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
 
+printf("bounding!\n");
+		bbox = fz_boundtree(page->tree, ctm);
+printf("  [%g %g %g %g]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 printf("rendering!\n");
 		error = fz_rendertree(&pix, gc, page->tree, ctm, page->mediabox);
+		//error = fz_rendertree(&pix, gc, page->tree, ctm, bbox);
 		if (error) fz_abort(error);
 printf("done!\n");
 

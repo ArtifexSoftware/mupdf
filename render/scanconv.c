@@ -1,7 +1,7 @@
 #include <fitz.h>
 
 static inline void
-addspan(short *list, int x0, int x1, int xofs, int hs)
+addspan(unsigned char *list, int x0, int x1, int xofs, int hs)
 {
 	int x0pix, x0sub;
 	int x1pix, x1sub;
@@ -34,7 +34,7 @@ addspan(short *list, int x0, int x1, int xofs, int hs)
 }
 
 static inline void
-nonzerowinding(fz_ael *ael, short *list, int xofs, int hs)
+nonzerowinding(fz_ael *ael, unsigned char *list, int xofs, int hs)
 {
 	int winding = 0;
 	int x = 0;
@@ -50,7 +50,7 @@ nonzerowinding(fz_ael *ael, short *list, int xofs, int hs)
 }
 
 static inline void
-evenodd(fz_ael *ael, short *list, int xofs, int hs)
+evenodd(fz_ael *ael, unsigned char *list, int xofs, int hs)
 {
 	int even = 0;
 	int x = 0;
@@ -65,22 +65,22 @@ evenodd(fz_ael *ael, short *list, int xofs, int hs)
 	}
 }
 
-/*
-void
-fz_emitdeltas(short *list, int y, int xofs, int n)
+static void toalpha(unsigned char *list, int n)
 {
 	int d = 0;
 	while (n--)
-		d += *list++;
+	{
+		d += *list;
+		*list++ = d;
+	}
 }
-*/
 
 fz_error *
 fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
-	void (*blitfunc)(int,int,int,short*,void*), void *blitdata)
+	void (*blitfunc)(int,int,int,unsigned char*,void*), void *blitdata)
 {
 	fz_error *error;
-	short *deltas;
+	unsigned char *deltas;
 	int y, e;
 	int yd, yc;
 
@@ -96,11 +96,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	if (gel->len == 0)
 		return nil;
 
-	deltas = fz_malloc(sizeof(short) * (xmax - xmin + 1));
+	deltas = fz_malloc(xmax - xmin + 1);
 	if (!deltas)
 		return fz_outofmem;
 
-	memset(deltas, 0, sizeof(short) * (xmax - xmin + 1));
+	memset(deltas, 0, xmax - xmin + 1);
 
 	e = 0;
 	y = gel->edges[0].y;
@@ -113,8 +113,9 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 		if (yc != yd) {
 			if (yd >= y0 && yd < y1)
 			{
+				toalpha(deltas, xmax - xmin);
 				blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
-				memset(deltas, 0, sizeof(short) * (xmax - xmin + 1));
+				memset(deltas, 0, xmax - xmin + 1);
 			}
 		}
 		yd = yc;
@@ -142,7 +143,10 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	}
 
 	if (yd >= y0 && yd < y1)
+	{
+		toalpha(deltas, xmax - xmin);
 		blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
+	}
 
 	fz_free(deltas);
 	return nil;

@@ -94,6 +94,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	FT_Set_Transform(face, &m, &v);
 
 	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
+	//fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
 	if (fterr)
 		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
 

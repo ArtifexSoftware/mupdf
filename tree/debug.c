@@ -13,7 +13,8 @@ static void lispmeta(fz_metanode *node, int level)
 	fz_node *child;
 	indent(level);
 	printf("(meta ");
-	fz_debugobj(node->info);
+	if (node->name) { fz_debugobj(node->name); }
+	if (node->dict) { printf("\n"); fz_debugobj(node->dict); }
 	printf("\n");
 	for (child = node->super.child; child; child = child->next)
 		lispnode(child, level + 1);
@@ -141,7 +142,7 @@ static void lisptext(fz_textnode *node, int level)
 static void lispimage(fz_imagenode *node, int level)
 {
 	indent(level);
-	printf("(image %d %d %d %d)\n", node->w, node->h, node->n, node->a);
+	printf("(image)\n");
 }
 
 static void lispnode(fz_node *node, int level)

@@ -10,9 +10,10 @@ pdf_newpdf(pdf_xref **xrefp)
 {
 	pdf_xref *xref;
 
-	xref = fz_malloc(sizeof (pdf_xref));
+	xref = fz_malloc(sizeof(pdf_xref));
 	if (!xref)
 		return fz_outofmem;
+	memset(xref, 0, sizeof(pdf_xref));
 
 	xref->file = nil;
 	xref->version = 1.3;

@@ -33,13 +33,13 @@ static void blitcolorglyph(fz_pixmap *out, fz_glyph *gl, int xo, int yo, fz_rend
 	{
 		for (sx = 0; sx < gl->w; sx++)
 		{
-			dx = xo + sx + gl->lsb - out->x;
 			dy = yo - sy + gl->top - out->y;
-
-			if (dx < 0) continue;
 			if (dy < 0) continue;
-			if (dx >= out->w) continue;
-			if (dy >= out->h) continue;
+			if (dy >= out->h) break;
+
+			dx = xo + sx + gl->lsb - out->x;
+			if (dx < 0) continue;
+			if (dx >= out->w) break;
 
 			sa = gl->bitmap[sx + sy * gl->w];
 			ssa = 255 - sa;

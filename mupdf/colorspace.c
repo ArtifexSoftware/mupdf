@@ -530,6 +530,12 @@ printf("\n");
 			{
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));
 			}
+
+			if (!strcmp(fz_toname(name), "Separation"))
+			{
+				*csp = pdf_devicegray;
+				return nil;
+			}
 		}
 	}
 

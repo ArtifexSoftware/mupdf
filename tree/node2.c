@@ -164,7 +164,7 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newmetanode(fz_node **nodep, fz_obj *info)
+fz_newmetanode(fz_node **nodep, fz_obj *name, fz_obj *dict)
 {
 	fz_metanode *node;
 
@@ -174,7 +174,13 @@ fz_newmetanode(fz_node **nodep, fz_obj *info)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NMETA);
-	node->info = fz_keepobj(info);
+	node->name = nil;
+	node->dict = nil;
+
+	if (name)
+		node->name = fz_keepobj(name);
+	if (dict)
+		node->dict = fz_keepobj(dict);
 
 	return nil;
 }
@@ -182,8 +188,10 @@ fz_newmetanode(fz_node **nodep, fz_obj *info)
 void
 fz_freemetanode(fz_metanode *node)
 {
-	if (node->info)
-		fz_dropobj(node->info);
+	if (node->name)
+		fz_dropobj(node->name);
+	if (node->dict)
+		fz_dropobj(node->dict);
 }
 
 fz_rect
@@ -261,7 +269,7 @@ fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newimagenode(fz_node **nodep, fz_colorspace *cs, int w, int h, int n, int a)
+fz_newimagenode(fz_node **nodep, fz_image *image)
 {
 	fz_imagenode *node;
 
@@ -271,11 +279,7 @@ fz_newimagenode(fz_node **nodep, fz_colorspace *cs, int w, int h, int n, int a)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NIMAGE);
-	node->cs = cs;
-	node->w = w;
-	node->h = h;
-	node->n = n;
-	node->a = a;
+	node->image = image;
 
 	return nil;
 }

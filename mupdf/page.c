@@ -2,7 +2,7 @@
 #include <mupdf.h>
 
 static fz_error *
-runcsi(pdf_xref *xref, pdf_csi *csi, pdf_resources *rdb, fz_obj *stmref)
+runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error *error;
 
@@ -10,7 +10,7 @@ runcsi(pdf_xref *xref, pdf_csi *csi, pdf_resources *rdb, fz_obj *stmref)
 	if (error)
 		return error;
 
-	error = pdf_runcsi(csi, rdb, xref->stream);
+	error = pdf_runcsi(csi, xref, rdb, xref->stream);
 
 	pdf_closestream(xref);
 
@@ -18,7 +18,7 @@ runcsi(pdf_xref *xref, pdf_csi *csi, pdf_resources *rdb, fz_obj *stmref)
 }
 
 static fz_error *
-loadpagecontents(fz_tree **treep, pdf_xref *xref, pdf_resources *rdb, fz_obj *ref)
+loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 {
 	fz_error *error;
 	fz_obj *obj;
@@ -39,7 +39,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, pdf_resources *rdb, fz_obj *re
 		{
 			for (i = 0; i < fz_arraylen(obj); i++)
 			{
-				error = runcsi(xref, csi, rdb, fz_arrayget(obj, i));
+				error = runcsi(csi, xref, rdb, fz_arrayget(obj, i));
 				if (error) {
 					fz_dropobj(obj);
 					goto cleanup;
@@ -48,7 +48,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, pdf_resources *rdb, fz_obj *re
 		}
 		else
 		{
-			error = runcsi(xref, csi, rdb, ref);
+			error = runcsi(csi, xref, rdb, ref);
 			if (error) {
 				fz_dropobj(obj);
 				goto cleanup;
@@ -62,7 +62,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, pdf_resources *rdb, fz_obj *re
 	{
 		for (i = 0; i < fz_arraylen(ref); i++)
 		{
-			error = runcsi(xref, csi, rdb, fz_arrayget(ref, i));
+			error = runcsi(csi, xref, rdb, fz_arrayget(ref, i));
 			if (error)
 				goto cleanup;
 		}
@@ -83,7 +83,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	fz_error *error;
 	fz_obj *obj;
 	pdf_page *page;
-	pdf_resources *rdb;
+	fz_obj *rdb;
 	fz_tree *tree;
 	fz_rect bbox;
 	int rotate;
@@ -123,7 +123,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	error = loadpagecontents(&tree, xref, rdb, obj);
 	if (error) {
-		pdf_freeresources(rdb);
+		fz_dropobj(rdb);
 		return error;
 	}
 
@@ -134,7 +134,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page = *pagep = fz_malloc(sizeof(pdf_page));
 	if (!page) {
 		fz_droptree(tree);
-		pdf_freeresources(rdb);
+		fz_dropobj(rdb);
 		return fz_outofmem;
 	}
 
@@ -143,7 +143,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page->mediabox.max.x = MAX(bbox.min.x, bbox.max.x);
 	page->mediabox.max.y = MAX(bbox.min.y, bbox.max.y);
 	page->rotate = rotate;
-	page->rdb = rdb;
+	page->resources = rdb;
 	page->tree = tree;
 
 	return nil;
@@ -152,7 +152,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 void
 pdf_freepage(pdf_page *page)
 {
-	pdf_freeresources(page->rdb);
+	fz_dropobj(page->resources);
 	fz_droptree(page->tree);
 	fz_free(page);
 }

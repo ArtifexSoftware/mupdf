@@ -1,8 +1,6 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-extern int FT_Get_Char_Index(void*, int);
-
 void
 pdf_initgstate(pdf_gstate *gs)
 {
@@ -136,6 +134,62 @@ pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 
 	return nil;
 }
+
+#if 0
+
+BMC ... EMC object nesting can be completely fucked up
+and out of sync with graphics object nesting.
+
+fz_error *
+pdf_beginmarkedcontent(pdf_gstate *gs, fz_node *meta)
+{
+	fz_error *error;
+	fz_node *over;
+
+	error = fz_newovernode(&over);
+	if (error) return error;
+
+	fz_insertnode(gs->head, meta);
+	fz_insertnode(meta, over);
+	gs->head = over;
+
+printf("begin mc meta=%p over=%p\n", meta, over);
+{
+fz_node *node = gs->head;
+	while (node)
+	{
+printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
+		node = node->parent;
+	}
+printf("okay.\n");
+}
+
+	return nil;
+}
+
+fz_error *
+pdf_endmarkedcontent(pdf_gstate *gs)
+{
+	fz_node *node = gs->head;
+
+printf("end mc\n");
+printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
+
+	while (node && !fz_ismetanode(node))
+	{
+printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
+		node = node->parent;
+	}
+
+	if (node == nil)
+		return fz_throw("syntaxerror: unbalanced marked content");
+
+	gs->head = node->parent;
+
+	return nil;
+}
+
+#endif
 
 fz_error *
 pdf_showpath(pdf_csi *csi,

@@ -5,6 +5,9 @@ fz_error *fz_rendercolorpath(fz_renderer*, fz_pathnode*, fz_colornode*, fz_matri
 fz_error *fz_rendertext(fz_renderer*, fz_textnode*, fz_matrix);
 fz_error *fz_renderpath(fz_renderer*, fz_pathnode*, fz_matrix);
 
+fz_error *fz_renderimageover(fz_renderer*, fz_imagenode*, fz_matrix);
+fz_error *fz_renderimage(fz_renderer*, fz_imagenode*, fz_matrix);
+
 fz_error *
 fz_newrenderer(fz_renderer **gcp, fz_colorspace *processcolormodel)
 {
@@ -131,7 +134,6 @@ fz_renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 	fz_error *error;
 	fz_pixmap *oldacc = nil;
 	int oldmode;
-int i;
 
 	/* uh-oh! we have a new over cluster */
 	if (gc->mode != FZ_ROVER)
@@ -209,6 +211,10 @@ fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 
 	fz_blendmask(gc->tmp, colorpix, shapepix);
 
+//printf("mask color");fz_debugpixmap(colorpix);getchar();
+//printf("mask shape");fz_debugpixmap(shapepix);getchar();
+//printf("mask blend");fz_debugpixmap(gc->tmp);getchar();
+
 	fz_freepixmap(shapepix);
 	fz_freepixmap(colorpix);
 
@@ -246,6 +252,8 @@ fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return fz_renderpath(gc, (fz_pathnode*)node, ctm);
 	case FZ_NTEXT:
 		return fz_rendertext(gc, (fz_textnode*)node, ctm);
+	case FZ_NIMAGE:
+		return fz_renderimage(gc, (fz_imagenode*)node, ctm);
 	default:
 		return nil;
 	}
@@ -260,6 +268,10 @@ fz_rendertree(fz_pixmap **outp, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, f
 	gc->y = floor(bbox.min.y);
 	gc->w = ceil(bbox.max.x) - floor(bbox.min.x);
 	gc->h = ceil(bbox.max.y) - floor(bbox.min.y);
+
+	/* compensate for rounding */
+	ctm.e -= bbox.min.x - floor(bbox.min.x);
+	ctm.f -= bbox.min.y - floor(bbox.min.y);
 
 	error = fz_rendernode(gc, tree->root, ctm);
 	if (error)

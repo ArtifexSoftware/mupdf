@@ -1,20 +1,6 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-void pdf_initgstate(pdf_gstate *gs);
-
-fz_error *pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path);
-fz_error *pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int evenodd);
-
-fz_error *pdf_addfillshape(pdf_gstate *gs, fz_node *shape);
-fz_error *pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape);
-fz_error *pdf_addclipmask(pdf_gstate *gs, fz_node *shape);
-fz_error *pdf_addtransform(pdf_gstate *gs, fz_node *transform);
-
-fz_error *pdf_showpath(pdf_csi *, int doclose, int dofill, int dostroke, int evenodd);
-fz_error *pdf_showtext(pdf_csi *, fz_obj *text);
-fz_error *pdf_flushtext(pdf_csi *);
-
 fz_error *
 pdf_newcsi(pdf_csi **csip)
 {
@@ -51,8 +37,8 @@ pdf_newcsi(pdf_csi **csip)
 	csi->tree->root = node;
 	csi->gstate[0].head = node;
 
-	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
-	fz_insertnode(csi->tree->root, node);
+//	error = fz_newcolornode(&node, pdf_devicegray, 1, &white);
+//	fz_insertnode(csi->tree->root, node);
 
 	csi->clip = nil;
 
@@ -83,9 +69,8 @@ pdf_freecsi(pdf_csi *csi)
 }
 
 static fz_error *
-runextgstate(pdf_gstate *gstate, pdf_resources *rdb, fz_obj *extgstate)
+runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 {
-	char name[64];
 	int i, k;
 
 	for (i = 0; i < fz_dictlen(extgstate); i++)
@@ -98,13 +83,9 @@ runextgstate(pdf_gstate *gstate, pdf_resources *rdb, fz_obj *extgstate)
 		{
 			if (fz_isarray(val) && fz_arraylen(val) == 2)
 			{
-				fz_obj *ref, *obj;
-				ref = fz_arrayget(val, 0);
-				sprintf(name, "$f.%d.%d", fz_tonum(ref), fz_togen(ref));
-				obj = fz_dictgets(rdb->font, name);
-				if (!obj)
-					return fz_throw("syntaxerror: missing resource");
-				gstate->font = fz_topointer(obj);
+				gstate->font = pdf_findresource(xref->rfont, fz_arrayget(val, 0));
+				if (!gstate->font)
+					return fz_throw("syntaxerror: missing font resource");
 				gstate->size = fz_toreal(fz_arrayget(val, 1));
 			}
 			else
@@ -139,7 +120,7 @@ runextgstate(pdf_gstate *gstate, pdf_resources *rdb, fz_obj *extgstate)
 }
 
 static fz_error *
-runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
+runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
@@ -169,7 +150,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 			fz_node *meta;
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = fz_newmetanode(&meta, csi->stack[0]);
+			error = fz_newmetanode(&meta, csi->stack[0], nil);
 			if (error) return error;
 			fz_insertnode(gstate->head, meta);
 		}
@@ -177,16 +158,41 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 		else if (!strcmp(buf, "DP"))
 		{
 			fz_node *meta;
-			fz_obj *info;
 			if (csi->top != 2)
 				goto syntaxerror;
-			error = fz_packobj(&info, "<< %o %o >>",
-						csi->stack[0], csi->stack[1]);
-			if (error) return error;
-			error = fz_newmetanode(&meta, info);
-			fz_dropobj(info);
+			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
 			if (error) return error;
 			fz_insertnode(gstate->head, meta);
+		}
+
+		else if (!strcmp(buf, "BMC"))
+		{
+			fz_node *meta;
+			if (csi->top != 1)
+				goto syntaxerror;
+			error = fz_newmetanode(&meta, csi->stack[0], nil);
+			if (error) return error;
+			// error = pdf_beginmarkedcontent(gstate, meta);
+			// if (error) { fz_freenode(meta); return error; };
+			fz_insertnode(gstate->head, meta);
+		}
+
+		else if (!strcmp(buf, "BDC"))
+		{
+			fz_node *meta;
+			if (csi->top != 2)
+				goto syntaxerror;
+			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
+			if (error) return error;
+			// error = pdf_beginmarkedcontent(gstate, meta);
+			// if (error) { fz_freenode(meta); return error; };
+			fz_insertnode(gstate->head, meta);
+		}
+
+		else if (!strcmp(buf, "EMC"))
+		{
+			// error = pdf_endmarkedcontent(gstate);
+			// if (error) return error;
 		}
 
 		else if (!strcmp(buf, "cm"))
@@ -218,16 +224,21 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 
 		else if (!strcmp(buf, "gs"))
 		{
+			fz_obj *dict;
 			fz_obj *obj;
 
 			if (csi->top != 1)
 				goto syntaxerror;
 
-			obj = fz_dictget(rdb->extgstate, csi->stack[0]);
+			dict = fz_dictgets(rdb, "ExtGState");
+			if (!dict)
+				return fz_throw("syntaxerror: missing extgstate resource");
+
+			obj = fz_dictget(dict, csi->stack[0]);
 			if (!obj)
-				return fz_throw("syntaxerror: missing resource");
-			
-			runextgstate(gstate, rdb, obj);
+				return fz_throw("syntaxerror: missing extgstate resource");
+
+			runextgstate(gstate, xref, obj);
 		}
 
 		else if (!strcmp(buf, "re"))
@@ -286,6 +297,7 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 
 		else if (!strcmp(buf, "cs"))
 		{
+			fz_obj *dict;
 			fz_obj *obj;
 
 			if (csi->top != 1)
@@ -301,15 +313,24 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 				gstate->fillcs = pdf_devicecmyk;
 			else
 			{
-				obj = fz_dictget(rdb->colorspace, obj);
+				dict = fz_dictgets(rdb, "ColorSpace");
+				if (!dict)
+					return fz_throw("syntaxerror: missing colorspace resource");
+				obj = fz_dictget(dict, obj);
 				if (!obj)
-					return fz_throw("syntaxerror: missing resource");
-				gstate->fillcs = fz_topointer(obj);
+					return fz_throw("syntaxerror: missing colorspace resource");
+				if (fz_isindirect(obj))
+					gstate->fillcs = pdf_findresource(xref->rcolorspace, obj);
+				else
+					return fz_throw("syntaxerror: inline colorspace in dict");
+				if (!gstate->fillcs)
+					return fz_throw("syntaxerror: missing colorspace resource");
 			}
 		}
 
 		else if (!strcmp(buf, "CS"))
 		{
+			fz_obj *dict;
 			fz_obj *obj;
 
 			if (csi->top != 1)
@@ -325,10 +346,18 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 				gstate->strokecs = pdf_devicecmyk;
 			else
 			{
-				obj = fz_dictget(rdb->colorspace, obj);
+				dict = fz_dictgets(rdb, "ColorSpace");
+				if (!dict)
+					return fz_throw("syntaxerror: missing colorspace resource");
+				obj = fz_dictget(dict, obj);
 				if (!obj)
-					return fz_throw("syntaxerror: missing resource");
-				gstate->strokecs = fz_topointer(obj);
+					return fz_throw("syntaxerror: missing colorspace resource");
+				if (fz_isindirect(obj))
+					gstate->strokecs = pdf_findresource(xref->rcolorspace, obj);
+				else
+					return fz_throw("syntaxerror: inline colorspace in dict");
+				if (!gstate->strokecs)
+					return fz_throw("syntaxerror: missing colorspace resource");
 			}
 		}
 
@@ -419,16 +448,24 @@ runkeyword(pdf_csi *csi, pdf_resources *rdb, char *buf)
 
 		else if (!strcmp(buf, "Tf"))
 		{
+			fz_obj *dict;
 			fz_obj *obj;
 
 			if (csi->top != 2)
 				goto syntaxerror;
 
-			obj = fz_dictget(rdb->font, csi->stack[0]);
-			if (!obj)
-				return fz_throw("syntaxerror: missing resource");
+			dict = fz_dictgets(rdb, "Font");
+			if (!dict)
+				return fz_throw("syntaxerror: missing font resource");
 
-			gstate->font = fz_topointer(obj);
+			obj = fz_dictget(dict, csi->stack[0]);
+			if (!obj)
+				return fz_throw("syntaxerror: missing font resource");
+
+			gstate->font = pdf_findresource(xref->rfont, obj);
+			if (!gstate->font)
+				return fz_throw("syntaxerror: missing font resource");
+
 			gstate->size = fz_toreal(csi->stack[1]);
 		}
 
@@ -754,7 +791,7 @@ syntaxerror:
 }
 
 fz_error *
-pdf_runcsi(pdf_csi *csi, pdf_resources *rdb, fz_file *file)
+pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 {
 	fz_error *error;
 	unsigned char buf[65536];
@@ -835,7 +872,7 @@ pdf_runcsi(pdf_csi *csi, pdf_resources *rdb, fz_file *file)
 			break;
 
 		case PDF_TKEYWORD:
-			error = runkeyword(csi, rdb, buf);
+			error = runkeyword(csi, xref, rdb, buf);
 			if (error) return error;
 			clearstack(csi);
 			break;

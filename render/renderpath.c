@@ -1,6 +1,8 @@
 #include <fitz.h>
 
-enum { HS = 17, VS = 15 };
+// enum { HS = 1, VS = 1, SF = 255 };
+// enum { HS = 5, VS = 3, SF = 17 };
+enum { HS = 17, VS = 15, SF = 1 };
 
 static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
 {
@@ -17,7 +19,7 @@ static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
 	return fz_fillpath(gel, path, ctm, flatness);
 }
 
-static void blitcolorspan(int y, int x0, int n, short *list, void *userdata)
+static void blitcolorspan(int y, int x, int n, unsigned char *alpha, void *userdata)
 {
 	fz_renderer *gc = userdata;
 	fz_pixmap *pix = gc->acc;
@@ -28,23 +30,24 @@ static void blitcolorspan(int y, int x0, int n, short *list, void *userdata)
 	unsigned char g = gc->g;
 	unsigned char b = gc->b;
 
-	sa = 0;
-
-	while (x0 < pix->x)
+	if (x < pix->x)
 	{
-		sa += *list++;
-		x0 ++;
-		n --;
+		alpha += pix->x - x;
+		n -= pix->x - x;
+		x = pix->x;
 	}
 
-	if (n > pix->w)
-		n = pix->w;
+	if (x + n > pix->x + pix->w)
+		n = pix->x + pix->w - x;
 
-	p = &pix->samples[(y - pix->y) * pix->stride + (x0 - pix->x) * 4];
+	if (n < 0)
+		return;
+
+	p = &pix->samples[(y - pix->y) * pix->stride + (x - pix->x) * 4];
 
 	while (n--)
 	{
-		sa += *list++;
+		sa = *alpha++ * SF;
 		ssa = 255 - sa;
 
 		p[0] = fz_mul255(r, sa) + fz_mul255(p[0], ssa);
@@ -56,31 +59,27 @@ static void blitcolorspan(int y, int x0, int n, short *list, void *userdata)
 	}
 }
 
-static void blitalphaspan(int y, int x0, int n, short *list, void *userdata)
+static void blitalphaspan(int y, int x, int n, unsigned char *alpha, void *userdata)
 {
 	fz_pixmap *pix = userdata;
-	unsigned char a;
 	unsigned char *p;
 
-	a = 0;
-
-	while (x0 < pix->x)
+	if (x < pix->x)
 	{
-		a += *list++;
-		x0 ++;
-		n --;
+		alpha += pix->x - x;
+		n -= pix->x - x;
+		x = pix->x;
 	}
 
-	if (n > pix->w)
-		n = pix->w;
+	if (x + n > pix->x + pix->w)
+		n = pix->x + pix->w - x;
 
-	p = &pix->samples[(y - pix->y) * pix->stride + (x0 - pix->x) * 4];
+	if (n < 0)
+		return;
 
+	p = &pix->samples[(y - pix->y) * pix->stride + (x - pix->x)];
 	while (n--)
-	{
-		a += *list++;
-		*p++ = a;
-	}
+		*p++ = *alpha++ * SF;
 }
 
 fz_error *

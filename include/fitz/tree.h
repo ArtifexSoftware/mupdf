@@ -125,15 +125,14 @@ struct fz_linknode_s
 struct fz_metanode_s
 {
 	fz_node super;
-	fz_obj *info;
+	fz_obj *name;
+	fz_obj *dict;
 };
 
 struct fz_imagenode_s
 {
 	fz_node super;
-	fz_colorspace *cs;
-	int w, h, n, a;
-	// XXX fz_image *image;
+	fz_image *image;
 };
 
 /* common to all nodes */
@@ -142,7 +141,7 @@ fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
 void fz_freenode(fz_node *node);
 
 /* branch nodes */
-fz_error *fz_newmetanode(fz_node **nodep, fz_obj *info);
+fz_error *fz_newmetanode(fz_node **nodep, fz_obj *name, fz_obj *dict);
 fz_error *fz_newovernode(fz_node **nodep);
 fz_error *fz_newmasknode(fz_node **nodep);
 fz_error *fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i);
@@ -157,7 +156,7 @@ int fz_ismetanode(fz_node *node);
 /* leaf nodes */
 fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);
 fz_error *fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v);
-fz_error *fz_newimagenode(fz_node **nodep, fz_colorspace *cs, int w, int h, int n, int a);
+fz_error *fz_newimagenode(fz_node **nodep, fz_image *image);
 
 int fz_islinknode(fz_node *node);
 int fz_iscolornode(fz_node *node);

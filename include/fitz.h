@@ -18,13 +18,15 @@
 
 #include "fitz/cmap.h"
 #include "fitz/font.h"
+
 #include "fitz/colorspace.h"
+#include "fitz/pixmap.h"
+#include "fitz/image.h"
 
 #include "fitz/tree.h"
 #include "fitz/path.h"
 #include "fitz/text.h"
 
-#include "fitz/pixmap.h"
 #include "fitz/scanconv.h"
 #include "fitz/render.h"
 
