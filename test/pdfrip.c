@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	char *filename;
 	pdf_xref *xref;
 	pdf_pagetree *pages;
-	pdf_outlinetree *outlines;
+	pdf_outline *outlines;
 	int c;
 
 	char *password = "";
@@ -106,11 +106,15 @@ int main(int argc, char **argv)
 
 	filename = argv[optind++];
 
-	error = pdf_openpdf(&xref, filename);
+	error = pdf_newxref(&xref);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptpdf(xref);
+	error = pdf_loadxref(xref, filename);
+	if (error)
+		fz_abort(error);
+
+	error = pdf_decryptxref(xref);
 	if (error)
 		fz_abort(error);
 
@@ -136,7 +140,7 @@ int main(int argc, char **argv)
 		if (outlines)
 		{
 			printf("outlines\n");
-			pdf_debugoutlinetree(outlines);
+			pdf_debugoutline(outlines, 0);
 			printf("\n");
 		}
 	}
@@ -150,7 +154,7 @@ int main(int argc, char **argv)
 		showpage(xref, pdf_getpageobject(pages, page - 1));
 	}
 
-	pdf_closepdf(xref);
+	pdf_closexref(xref);
 
 	return 0;
 }

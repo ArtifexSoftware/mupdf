@@ -9,7 +9,7 @@ Glenn Kennard <d98gk@efd.lth.se>
 
 #ifdef WIN32
 #define sigjmp_buf jmp_buf
-#define sigsetjmp setjmp
+#define sigsetjmp(a,b) setjmp(a)
 #define siglongjmp longjmp
 #endif
 
