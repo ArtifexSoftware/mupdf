@@ -21,10 +21,6 @@
 /* call this before using fitz */
 extern void fz_cpudetect();
 
-#ifndef HAVE_CPUDEP
-#define fz_accelerate()
-#endif
-
 /* treat as constant! */
 extern unsigned fz_cpuflags;
 

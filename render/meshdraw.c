@@ -8,55 +8,61 @@ enum { IN, OUT, ENTER, LEAVE };
 enum { MAXV = 3 + 4 };
 enum { MAXN = 2 + FZ_MAXCOLORS };
 
-typedef struct { float v[MAXV][MAXN]; } polygon;
-
-static inline float winding(float *a, float *b, float *c)
+static int clipx(float val, int ismax, float *v1, float *v2, int n)
 {
-	return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-}
-
-static inline float sideline(float *v, float *a, float *b)
-{
-	return (a[1] - v[1]) * (b[0] - a[0]) - (a[0] - v[0]) * (b[1] - a[1]);
-}
-
-static int clipline(float *c1, float *c2, float *v1, float *v2, int n)
-{
-	float a, b, c, d1, d2, t;
-	int v1o, v2o;
+	float t;
 	int i;
-
-	/* cross */
-	v1o = sideline(v1, c1, c2) > 1.0;
-	v2o = sideline(v2, c1, c2) > 1.0;
-
+	int v1o = ismax ? v1[0] > val : v1[0] < val;
+	int v2o = ismax ? v2[0] > val : v2[0] < val;
 	if (v1o + v2o == 0)
 		return IN;
-
 	if (v1o + v2o == 2)
 		return OUT;
-
-	/* ax + by + c = 0 */
-	a = (c2[1] - c1[1]);
-	b = (c1[0] - c2[0]);
-	c = (c2[0] * c1[1]) - (c1[0] * c2[1]);
-
-	/* distance */
-	d1 = fabs(a * v1[0] + b * v1[1] + c);
-	d2 = fabs(a * v2[0] + b * v2[1] + c);
-
 	if (v2o)
 	{
-		t = d1 / (d1 + d2);
-		for (i = 0; i < n; i++)
+		t = (val - v1[0]) / (v2[0] - v1[0]);
+		v2[0] = val;
+		v2[1] = v1[1] + t * (v2[1] - v1[1]);
+		for (i = 2; i < n; i++)
 			v2[i] = v1[i] + t * (v2[i] - v1[i]);
 		return LEAVE;
 	}
-
 	else
 	{
-		t = d2 / (d1 + d2);
-		for (i = 0; i < n; i++)
+		t = (val - v2[0]) / (v1[0] - v2[0]);
+		v1[0] = val;
+		v1[1] = v2[1] + t * (v1[1] - v2[1]);
+		for (i = 2; i < n; i++)
+			v1[i] = v2[i] + t * (v1[i] - v2[i]);
+		return ENTER;
+	}
+}
+
+static int clipy(float val, int ismax, float *v1, float *v2, int n)
+{
+	float t;
+	int i;
+	int v1o = ismax ? v1[1] > val : v1[1] < val;
+	int v2o = ismax ? v2[1] > val : v2[1] < val;
+	if (v1o + v2o == 0)
+		return IN;
+	if (v1o + v2o == 2)
+		return OUT;
+	if (v2o)
+	{
+		t = (val - v1[1]) / (v2[1] - v1[1]);
+		v2[0] = v1[0] + t * (v2[0] - v1[0]);
+		v2[1] = val;
+		for (i = 2; i < n; i++)
+			v2[i] = v1[i] + t * (v2[i] - v1[i]);
+		return LEAVE;
+	}
+	else
+	{
+		t = (val - v2[1]) / (v1[1] - v2[1]);
+		v1[0] = v2[0] + t * (v1[0] - v2[0]);
+		v1[1] = val;
+		for (i = 2; i < n; i++)
 			v1[i] = v2[i] + t * (v1[i] - v2[i]);
 		return ENTER;
 	}
@@ -68,32 +74,41 @@ static inline void copyvert(float *dst, float *src, int n)
 		*dst++ = *src++;
 }
 
-static int clippoly(float *c1, float *c2, polygon *src, polygon *dst, int len, int n)
+static int clippoly(float src[MAXV][MAXN],
+					float dst[MAXV][MAXN], int len, int n,
+					float val, int isy, int ismax)
 {
 	float cv1[MAXN];
 	float cv2[MAXN];
 	int v1, v2, cp;
+	int r;
 
 	v1 = len - 1;
 	cp = 0;
 
 	for (v2 = 0; v2 < len; v2++)
 	{
-		copyvert(cv1, src->v[v1], n);
-		copyvert(cv2, src->v[v2], n);
-		switch (clipline(c1, c2, cv1, cv2, n))
+		copyvert(cv1, src[v1], n);
+		copyvert(cv2, src[v2], n);
+
+		if (isy)
+			r = clipy(val, ismax, cv1, cv2, n);
+		else
+			r = clipx(val, ismax, cv1, cv2, n);
+
+		switch (r)
 		{
 			case IN:
-				copyvert(dst->v[cp++], cv2, n);
+				copyvert(dst[cp++], cv2, n);
 				break;
 			case OUT:
 				break;
 			case LEAVE:
-				copyvert(dst->v[cp++], cv2, n);
+				copyvert(dst[cp++], cv2, n);
 				break;
 			case ENTER:
-				copyvert(dst->v[cp++], cv1, n);
-				copyvert(dst->v[cp++], cv2, n);
+				copyvert(dst[cp++], cv1, n);
+				copyvert(dst[cp++], cv2, n);
 				break;
 		}
 		v1 = v2;
@@ -115,6 +130,15 @@ drawscan(fz_pixmap *pix, int y, int x1, int x2, int *v1, int *v2, int n)
 	int w = x2 - x1;
 	int k;
 
+	assert(w >= 0);
+	assert(y >= pix->y);
+	assert(y < pix->y + pix->h);
+	assert(x1 >= pix->x);
+	assert(x2 <= pix->x + pix->w);
+
+	if (w == 0)
+		return;
+
 	for (k = 0; k < n; k++)
 	{
 		v[k] = v1[k];
@@ -132,159 +156,155 @@ drawscan(fz_pixmap *pix, int y, int x1, int x2, int *v1, int *v2, int n)
 	}
 }
 
+static inline int
+findnext(int gel[MAXV][MAXN], int len, int a, int *s, int *e, int d)
+{
+	int b;
+
+	while (1)
+	{
+		b = a + d;
+		if (b == len)
+			b = 0;
+		if (b == -1)
+			b = len - 1;
+
+		if (gel[b][1] == gel[a][1])
+		{
+			a = b;
+			continue;
+		}
+
+		if (gel[b][1] > gel[a][1])
+		{
+			*s = a;
+			*e = b;
+			return 0;
+		}
+
+		return 1;
+	}
+}
+
+static inline void
+loadedge(int gel[MAXV][MAXN], int s, int e, int *ael, int *del, int n)
+{
+	int swp, k, dy;
+
+	if (gel[s][1] > gel[s][1])
+	{
+		swp = s; s = e; e = swp;
+	}
+
+	dy = gel[e][1] - gel[s][1];
+
+	ael[0] = gel[s][0];
+	del[0] = (gel[e][0] - gel[s][0]) / dy;
+	for (k = 2; k < n; k++)
+	{
+		ael[k] = gel[s][k];
+		del[k] = (gel[e][k] - gel[s][k]) / dy;
+	}
+}
+
+static inline void
+stepedge(int *ael, int *del, int n)
+{
+	int k;
+	ael[0] += del[0];
+	for (k = 2; k < n; k++)
+		ael[k] += del[k];
+}
+
 void
 fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
 {
+	float poly[MAXV][MAXN];
+	float temp[MAXV][MAXN];
+	float cx0 = pix->x;
+	float cy0 = pix->y;
+	float cx1 = pix->x + pix->w;
+	float cy1 = pix->y + pix->h;
+
+	int gel[MAXV][MAXN];
+	int ael[2][MAXN];
+	int del[2][MAXN];
+	int y, s0, s1, e0, e1;
+	int top, bot, len;
+
 	int i, k;
-	polygon poly;
-	polygon temp;
-	float clip[4][2];
-	int vert[MAXV][MAXN];
-	int len;
 
-	int top, bot;
-	int sv1, sv2;
-	int ev1, ev2;
+	for (i = 0; i < n; i++)
+	{
+		poly[0][i] = av[i];
+		poly[1][i] = bv[i];
+		poly[2][i] = cv[i];
+	}
 
-	int y, diffy1, diffy2;
-	int x1, x2, dx1, dx2;
-	int v1[MAXN], d1[MAXN];
-	int v2[MAXN], d2[MAXN];
-
-	/*
-	 * Round coords and correct winding order
-	 */
-
-	av[0] = fz_floor(av[0]);
-	av[1] = fz_floor(av[1]);
-	bv[0] = fz_floor(bv[0]);
-	bv[1] = fz_floor(bv[1]);
-	cv[0] = fz_floor(cv[0]);
-	cv[1] = fz_floor(cv[1]);
-
-	if (winding(av, bv, cv) > 0)
-		for (i = 0; i < n; i++)
-		{
-			poly.v[0][i] = av[i];
-			poly.v[1][i] = bv[i];
-			poly.v[2][i] = cv[i];
-		}
-	else
-		for (i = 0; i < n; i++)
-		{
-			poly.v[0][i] = av[i];
-			poly.v[1][i] = cv[i];
-			poly.v[2][i] = bv[i];
-		}
-
-	/*
-	 * Clip triangle
-	 */
-
-	clip[0][0] = pix->x;
-	clip[0][1] = pix->y;
-
-	clip[1][0] = pix->x + pix->w;
-	clip[1][1] = pix->y;
-
-	clip[2][0] = pix->x + pix->w;
-	clip[2][1] = pix->y + pix->h;
-
-	clip[3][0] = pix->x;
-	clip[3][1] = pix->y + pix->h;
-
-	len = clippoly(clip[0], clip[1], &poly, &temp, 3, n);
-	len = clippoly(clip[1], clip[2], &temp, &poly, len, n);
-	len = clippoly(clip[2], clip[3], &poly, &temp, len, n);
-	len = clippoly(clip[3], clip[0], &temp, &poly, len, n);
+	len = clippoly(poly, temp,   3, n, cx0, 0, 0);
+	len = clippoly(temp, poly, len, n, cx1, 0, 1);
+	len = clippoly(poly, temp, len, n, cy0, 1, 0);
+	len = clippoly(temp, poly, len, n, cy1, 1, 1);
 
 	if (len < 3)
 		return;
 
-	/*
-	 * Init scan conversion
-	 */
-
 	for (i = 0; i < len; i++)
 	{
-		vert[i][0] = poly.v[i][0];
-		vert[i][1] = poly.v[i][1];
+		gel[i][0] = fz_floor(poly[i][0]) * 65536; /* trunc and fix */
+		gel[i][1] = fz_floor(poly[i][1]);	/* y is not fixpoint */
 		for (k = 2; k < n; k++)
-			vert[i][k] = poly.v[i][k] * 65536;
+			gel[i][k] = poly[i][k] * 65536;	/* fix with precision */
 	}
 
 	top = bot = 0;
 	for (i = 0; i < len; i++)
 	{
-		if (vert[i][1] < vert[top][1])
-			 top = i;
-		if (vert[i][1] > vert[bot][1])
-			 bot = i;
+		if (gel[i][1] < gel[top][1])
+			top = i;
+		if (gel[i][1] > gel[bot][1])
+			bot = i;
 	}
 
-	y = vert[top][1];
-	sv1 = ev1 = top;
-	sv2 = ev2 = top;
+	if (gel[bot][1] - gel[top][1] == 0)
+		return;
 
-	x1 = x2 = dx1 = dx2 = 0;	/* silence compiler */
+	y = gel[top][1];
 
-	goto start;
+	if (findnext(gel, len, top, &s0, &e0,  1))
+		return;
+	if (findnext(gel, len, top, &s1, &e1, -1))
+		return;
 
-	/*
-	 * Loopetyloop
-	 */
+	loadedge(gel, s0, e0, ael[0], del[0], n);
+	loadedge(gel, s1, e1, ael[1], del[1], n);
 
-	while (sv1 != bot && sv2 != bot)
+	while (1)
 	{
-		drawscan(pix, y, x1 >> 16, x2 >> 16, v1+2, v2+2, n-2);
+		int x0 = ael[0][0] >> 16;
+		int x1 = ael[1][0] >> 16;
 
-		y += 1;
-		x1 += dx1;
-		x2 += dx2;
-		for (k = 2; k < n; k++)
+		if (ael[0][0] < ael[1][0])
+			drawscan(pix, y, x0, x1, ael[0]+2, ael[1]+2, n-2);
+		else
+			drawscan(pix, y, x1, x0, ael[1]+2, ael[0]+2, n-2);
+
+		stepedge(ael[0], del[0], n);
+		stepedge(ael[1], del[1], n);
+		y ++;
+
+		if (y >= gel[e0][1])
 		{
-			v1[k] += d1[k];
-			v2[k] += d2[k];
+			if (findnext(gel, len, e0, &s0, &e0, 1))
+				return;
+			loadedge(gel, s0, e0, ael[0], del[0], n);
 		}
 
-start:
-
-		while (y >= vert[ev1][1] && sv1 != bot)
+		if (y >= gel[e1][1])
 		{
-			sv1 = ev1;
-			ev1 = sv1 == 0 ? len - 1 : sv1 - 1;
-
-			diffy1 = vert[ev1][1] - vert[sv1][1];
-			if (diffy1 == 0)
-				continue;
-
-			x1 = vert[sv1][0] << 16;
-			dx1 = ((vert[ev1][0] - vert[sv1][0]) << 16) / diffy1;
-
-			for (k = 2; k < n; k++)
-			{
-				v1[k] = vert[sv1][k];
-				d1[k] = (vert[ev1][k] - vert[sv1][k]) / diffy1;
-			}
-		}
-
-		while (y >= vert[ev2][1] && sv2 != bot)
-		{
-			sv2 = ev2;
-			ev2 = sv2 == len - 1 ? 0 : sv2 + 1;
-
-			diffy2 = vert[ev2][1] - vert[sv2][1];
-			if (diffy2 == 0)
-				continue;
-
-			x2 = vert[sv2][0] << 16;
-			dx2 = ((vert[ev2][0] - vert[sv2][0]) << 16) / diffy2;
-
-			for (k = 2; k < n; k++)
-			{
-				v2[k] = vert[sv2][k];
-				d2[k] = (vert[ev2][k] - vert[sv2][k]) / diffy2;
-			}
+			if (findnext(gel, len, e1, &s1, &e1, -1))
+				return;
+			loadedge(gel, s1, e1, ael[1], del[1], n);
 		}
 	}
 }
@@ -311,7 +331,6 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 
 	if (shade->usefunction)
 	{
-printf("draw function mesh\n");
 		n = 3;
 		error = fz_newpixmap(&temp, dest->x, dest->y, dest->w, dest->h, 2);
 		if (error)
@@ -319,7 +338,6 @@ printf("draw function mesh\n");
 	}
 	else if (shade->colorspace != destcs)
 	{
-printf("draw colorspace mesh\n");
 		n = 2 + shade->colorspace->n;
 		error = fz_newpixmap(&temp, dest->x, dest->y, dest->w, dest->h,
 					shade->colorspace->n + 1);
@@ -328,7 +346,6 @@ printf("draw colorspace mesh\n");
 	}
 	else
 	{
-printf("draw direct mesh\n");
 		n = 2 + shade->colorspace->n;
 		temp = dest;
 	}
@@ -352,7 +369,7 @@ printf("draw direct mesh\n");
 
 	if (shade->usefunction)
 	{
-		for (int i = 0; i < 256; i++)
+		for (i = 0; i < 256; i++)
 		{
 			fz_convertcolor(shade->colorspace, shade->function[i], destcs, rgb);
 			clut[i][0] = rgb[0] * 255;

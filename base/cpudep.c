@@ -205,6 +205,12 @@ static __attribute__((constructor, used)) void fzcpudetect(void)
 	fz_cpudetect();
 }
 
+#ifndef HAVE_CPUDEP
+void fz_accelerate(void)
+{
+}
+#endif
+
 #ifdef TEST
 #include <stdio.h>
 
