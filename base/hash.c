@@ -23,9 +23,9 @@ struct fz_hashentry_s
 
 struct fz_hashtable_s
 {
-	unsigned keylen;
-	unsigned size;
-	unsigned load;
+	int keylen;
+	int size;
+	int load;
 	fz_hashentry *ents;
 };
 
@@ -80,13 +80,13 @@ fz_hashlen(fz_hashtable *table)
 }
 
 void *
-fz_gethashkey(fz_hashtable *table, int idx)
+fz_hashgetkey(fz_hashtable *table, int idx)
 {
 	return table->ents[idx].key;
 }
 
 void *
-fz_gethashval(fz_hashtable *table, int idx)
+fz_hashgetval(fz_hashtable *table, int idx)
 {
 	return table->ents[idx].val;
 }
@@ -104,9 +104,9 @@ fz_resizehash(fz_hashtable *table, int newsize)
 	fz_error *error;
 	fz_hashentry *newents;
 	fz_hashentry *oldents;
-	unsigned oldload;
-	unsigned oldsize;
-	unsigned i;
+	int oldload;
+	int oldsize;
+	int i;
 
 	oldsize = table->size;
 	oldload = table->load;
@@ -115,7 +115,7 @@ fz_resizehash(fz_hashtable *table, int newsize)
 	if (newsize < oldload * 8 / 10)
 		return fz_throw("rangecheck: resize hash too small");
 
-	newents = fz_realloc(table->ents, sizeof(fz_hashentry) * newsize);
+	newents = fz_malloc(sizeof(fz_hashentry) * newsize);
 	if (!newents)
 		return fz_outofmem;
 
@@ -167,9 +167,9 @@ fz_error *
 fz_hashinsert(fz_hashtable *table, void *key, void *val)
 {
 	fz_error *error;
-	fz_hashentry *ents = table->ents;
-	unsigned size = table->size;
-	unsigned pos = hash(key, table->keylen) % size;
+	fz_hashentry *ents;
+	unsigned size;
+	unsigned pos;
 
 	if (table->load > table->size * 8 / 10)
 	{
@@ -177,6 +177,10 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 		if (error)
 			return error;
 	}
+
+	ents = table->ents;
+	size = table->size;
+	pos = hash(key, table->keylen) % size;
 
 	while (1)
 	{

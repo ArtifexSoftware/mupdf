@@ -18,6 +18,23 @@ void usage()
 	exit(1);
 }
 
+void preloadobjstms(pdf_xref *xref)
+{
+	fz_error *error;
+	fz_obj *obj;
+	int i;
+
+	for (i = 0; i < xref->size; i++)
+	{
+		if (xref->table[i].type == 'o')
+		{
+			error = pdf_loadobject0(&obj, xref, i, 0, nil);
+			if (error) fz_abort(error);
+			fz_dropobj(obj);
+		}
+	}
+}
+
 void expandstreams(pdf_xref *xref)
 {
 	fz_error *error;
@@ -140,7 +157,10 @@ int main(int argc, char **argv)
 		expandstreams(xref);
 
 	if (dogc)
+	{
+		preloadobjstms(xref);
 		pdf_garbagecollect(xref);
+	}
 
 	error = pdf_savepdf(xref, outfile, encrypt);
 	if (error)

@@ -336,12 +336,15 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 
 	for (oid = 0; oid < xref->size; oid++)
 	{
+		int gid = xref->table[oid].gen;
 		int type = xref->table[oid].type;
+		if (type == 'o')
+			gid = 0;
 		if (type == 'a' || type == 'o')
 			type = 'n';
 		if (type == 'd')
 			type = 'f';
-		fz_print(out, "%010d %05d %c \n", ofsbuf[oid], xref->table[oid].gen, type);
+		fz_print(out, "%010d %05d %c \n", ofsbuf[oid], gid, type);
 	}
 
 	fz_print(out, "\n");

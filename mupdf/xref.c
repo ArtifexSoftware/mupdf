@@ -84,8 +84,8 @@ pdf_closexref(pdf_xref *xref)
 	{
 		for (i = 0; i < fz_hashlen(xref->store); i++)
 		{
-			key = fz_gethashkey(xref->store, i);
-			val = fz_gethashval(xref->store, i);
+			key = fz_hashgetkey(xref->store, i);
+			val = fz_hashgetval(xref->store, i);
 			if (val && key[2] == 0)
 				fz_dropobj((fz_obj*)val);
 			if (val && key[2] == 1)
@@ -124,6 +124,30 @@ pdf_debugxref(pdf_xref *xref)
 /*
  * object and stream store (cached from objstm and saved for mutation)
  */
+
+void
+pdf_debugstore(fz_hashtable *store)
+{
+	int *key;
+	void *val;
+	int i;
+
+	printf("object store (%d)\n", fz_hashlen(store));
+	for (i = 0; i < fz_hashlen(store); i++)
+	{
+		key = fz_hashgetkey(store, i);
+		val = fz_hashgetval(store, i);
+		if (val)
+		{
+			printf("slot %d: %d %d ", i, key[0], key[1]);
+			if (key[2] == 0)
+				printf("obj[%d] ", ((fz_obj*)val)->refcount), fz_debugobj(val);
+			if (key[2] == 1)
+				printf("stream %d", ((fz_buffer*)val)->wp - ((fz_buffer*)val)->rp);
+			printf("\n");
+		}
+	}
+}
 
 fz_obj *
 pdf_findstoredobject(fz_hashtable *store, int oid, int gid)
@@ -177,20 +201,32 @@ fz_error *
 pdf_storeobject(fz_hashtable *store, int oid, int gid, fz_obj *obj)
 {
 	int key[3];	
+	fz_obj *old;
 	key[0] = oid;
 	key[1] = gid;
 	key[2] = 0;
-	return fz_hashinsert(store, key, obj);
+	old = fz_hashfind(store, key);
+	if (old) {
+		fz_hashremove(store, key);
+		fz_dropobj(old);
+	}
+	return fz_hashinsert(store, key, fz_keepobj(obj));
 }
 
 fz_error *
-pdf_storestream(fz_hashtable *store, int oid, int gid, fz_buffer *buf)
+pdf_storestream(fz_hashtable *store, int oid, int gid, fz_buffer *stm)
 {
 	int key[3];	
+	fz_buffer *old;
 	key[0] = oid;
 	key[1] = gid;
 	key[2] = 1;
-	return fz_hashinsert(store, key, buf);
+	old = fz_hashfind(store, key);
+	if (old) {
+		fz_hashremove(store, key);
+		fz_freebuffer(old);
+	}
+	return fz_hashinsert(store, key, stm);
 }
 
 /*
@@ -326,9 +362,9 @@ pdf_saveobject(pdf_xref *xref, int oid, int gid, fz_obj *obj)
 }
 
 fz_error *
-pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *buf)
+pdf_savestream(pdf_xref *xref, int oid, int gid, fz_buffer *stm)
 {
-	return pdf_storestream(xref->store, oid, gid, buf);
+	return pdf_storestream(xref->store, oid, gid, stm);
 }
 
 fz_error *
@@ -380,8 +416,10 @@ pdf_loadobject0(fz_obj **objp, pdf_xref *xref, int oid, int gid, int *stmofs)
 	else if (x->type == 'o')
 	{
 		*objp = pdf_findstoredobject(xref->store, oid, gid);
-		if (*objp)
+		if (*objp) {
+			fz_keepobj(*objp);
 			return nil;
+		}
 
 		error = pdf_readobjstm(xref, x->ofs, 0, buf, sizeof buf);
 		if (error)
@@ -390,6 +428,7 @@ pdf_loadobject0(fz_obj **objp, pdf_xref *xref, int oid, int gid, int *stmofs)
 		*objp = pdf_findstoredobject(xref->store, oid, gid);
 		if (!*objp)
 			return fz_throw("rangecheck: could not find object");
+		fz_keepobj(*objp);
 	}
 
 	else if (x->type == 'a')
@@ -397,6 +436,7 @@ pdf_loadobject0(fz_obj **objp, pdf_xref *xref, int oid, int gid, int *stmofs)
 		*objp = pdf_findstoredobject(xref->store, oid, gid);
 		if (!*objp)
 			return fz_throw("rangecheck: could not find object");
+		fz_keepobj(*objp);
 	}
 
 	else
