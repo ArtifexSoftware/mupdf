@@ -1,310 +1,219 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-#define SAFE_FREE_OBJ(obj) if ( (obj) && !fz_isindirect(obj) ) fz_dropobj(obj); obj = nil;
-
 static fz_error *
-grownametree(pdf_nametree *nt)
+grownametree(pdf_nametree *tree, int amount)
 {
-	int newcap;
 	struct fz_keyval_s *newitems;
+	int newcap;
 
-	newcap = nt->cap * 2;
-
-	newitems = fz_realloc(nt->items, sizeof(struct fz_keyval_s) * newcap);
+	newcap = tree->cap + amount;
+	newitems = fz_realloc(tree->items, sizeof(struct fz_keyval_s) * newcap);
 	if (!newitems)
 		return fz_outofmem;
 
-	nt->items = newitems;
-	nt->cap = newcap;
-
-	memset(nt->items + nt->cap, 0, sizeof(struct fz_keyval_s) * (newcap - nt->cap));
+	tree->items = newitems;
+	tree->cap = newcap;
 
 	return nil;
 }
 
 static fz_error *
-nametreepush(pdf_nametree *nt, fz_obj *key, fz_obj *val)
+loadnametreenode(pdf_nametree *tree, pdf_xref *xref, fz_obj *node)
 {
-	fz_error *error = nil;
-
-	if (nt->len + 1 > nt->cap) {
-		error = grownametree(nt);
-		if (error) return error;
-	}
-
-	nt->items[nt->len].k = fz_keepobj(key);
-	nt->items[nt->len].v = fz_keepobj(val);
-	++nt->len;
-
-	return nil;
-}
-
-static fz_error *
-loadnametree(pdf_nametree *nt, pdf_xref *xref, fz_obj *root)
-{
-	fz_obj *localroot = root;
-	fz_error *error = nil;
-	fz_obj *names = nil;
-	fz_obj *kids = nil;
-	fz_obj *key = nil;
-/*XXX please dont use _ in variable names: */
-	fz_obj *ref_val = nil;
-	fz_obj *ref = nil;
+	fz_error *error;
+	fz_obj *names;
+	fz_obj *kids;
+	fz_obj *key;
+	fz_obj *val;
 	int i, len;
 
-	error = pdf_resolve(&localroot, xref);
-	if (error) goto cleanup;
+	error = pdf_resolve(&node, xref);
+	if (error)
+		return error;
 
-	names = fz_dictgets(localroot, "Names");
-
-	/* Leaf node */
+	names = fz_dictgets(node, "Names");
 	if (names)
 	{
 		error = pdf_resolve(&names, xref);
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 
-		if (!fz_isarray(names)) {
-			error = fz_throw("type check in nametree");
+		len = fz_arraylen(names) / 2;
+
+		error = grownametree(tree, len);
+		if (error)
+		{
+			fz_dropobj(names);
 			goto cleanup;
 		}
 
-		len = fz_arraylen(names);
+		for (i = 0; i < len; ++i)
+		{
+			key = fz_arrayget(names, i * 2 + 0);
+			val = fz_arrayget(names, i * 2 + 1);
 
-		if (len % 2)
-/*XXX with null error object? */
-			goto cleanup;
-
-		len /= 2;
-
-		for (i = 0; i < len; ++i) {
-			key = fz_arrayget(names, i*2);
-			ref_val = fz_arrayget(names, i*2 + 1);
-
-			error = pdf_resolve(&key, xref);
-			if (error) goto cleanup;
-
-			if (!fz_isstring(key)) {
-				error = fz_throw("type check in nametree");
-				goto cleanup;
-			}
-
-			nametreepush(nt, key, ref_val);
-/*XXX check error! */
-
-			fz_dropobj(key);
-			key = nil;
+			tree->items[tree->len].k = fz_keepobj(key);
+			tree->items[tree->len].v = fz_keepobj(val);
+			tree->len ++;
 		}
-/*XXX you leak names */
+
+		fz_dropobj(names);
 	}
 
-	/* Intermediate node */
-	else
+	kids = fz_dictgets(node, "Kids");
+	if (kids)
 	{
-		kids = fz_dictgets(localroot, "Kids");
+		error = pdf_resolve(&kids, xref);
+		if (error)
+			goto cleanup;
 
-		if (kids) {
-			error = pdf_resolve(&kids, xref);
-			if (error) goto cleanup;
-
-			if (!fz_isarray(kids)) {
-				error = fz_throw("type check in nametree");
+		len = fz_arraylen(kids);
+		for (i = 0; i < len; ++i)
+		{
+			error = loadnametreenode(tree, xref, fz_arrayget(kids, i));
+			if (error)
+			{
+				fz_dropobj(kids);
 				goto cleanup;
 			}
+		}
 
-			len = fz_arraylen(kids);
-			for (i = 0; i < len; ++i) {
-				ref = fz_arrayget(kids, i);
-				loadnametree(nt, xref, ref);
-/*XXX check error! */
-			}
-		}
-		else {
-			/* Invalid name tree dict node */
-			error = fz_throw("invalid nametree node: there's no Names and Kids key");
-			goto cleanup;
-		}
-/*XXX you leak kids */
+		fz_dropobj(kids);
 	}
 
+	fz_dropobj(node);
 	return nil;
 
 cleanup:
-/*XXX i dont like BIG_FAT_MACROS, use: if (obj) fz_dropobj(obj) */
-	SAFE_FREE_OBJ(localroot);
-	SAFE_FREE_OBJ(names);
-	SAFE_FREE_OBJ(kids);
-	SAFE_FREE_OBJ(key);
+	fz_dropobj(node);
 	return error;
 }
 
-static int
-compare(const void *elem1, const void *elem2)
+void
+pdf_dropnametree(pdf_nametree *tree)
 {
-	struct fz_keyval_s *keyval1 = (struct fz_keyval_s *)elem1;
-	struct fz_keyval_s	*keyval2 = (struct fz_keyval_s *)elem2;
-	int strlen1 = fz_tostringlen(keyval1->k);
-	int strlen2 = fz_tostringlen(keyval2->k);
-	int memcmpval = memcmp(fz_tostringbuf(keyval1->k),
-		fz_tostringbuf(keyval2->k), MIN(strlen1, strlen2));
-
-	if (memcmpval != 0)
-		return memcmpval;
-
-	return strlen1 - strlen2;
-}
-
-static fz_error *
-sortnametree(pdf_nametree *nt)
-{
-	qsort(nt->items, nt->len, sizeof(nt->items[0]), compare);
-	return nil;
+	int i;
+	for (i = 0; i < tree->len; i++)
+	{
+		fz_dropobj(tree->items[i].k);
+		fz_dropobj(tree->items[i].v);
+	}
+	fz_free(tree->items);
+	fz_free(tree);
 }
 
 fz_error *
-pdf_loadnametree(pdf_nametree **pnt, pdf_xref *xref, char* key)
+pdf_loadnametree(pdf_nametree **treep, pdf_xref *xref, fz_obj *root)
 {
 	fz_error *error;
-	pdf_nametree *nt = nil;
-	fz_obj *catalog = nil;
-	fz_obj *names = nil;
-	fz_obj *trailer;
-	fz_obj *ref;
-	fz_obj *root = nil;
+	pdf_nametree *tree;
 
-	trailer = xref->trailer;
+	tree = fz_malloc(sizeof(pdf_nametree));
+	if (!tree)
+		return fz_outofmem;
 
-	ref = fz_dictgets(trailer, "Root");
-	error = pdf_loadindirect(&catalog, xref, ref);
-	if (error) goto cleanup;
+	tree->len = 0;
+	tree->cap = 0;
+	tree->items = nil;
 
-#if 1
-	names = fz_dictgets(catalog, "Names");
-	if (!names)
+	error = loadnametreenode(tree, xref, root);
+	if (error)
 	{
-		nt = *pnt = fz_malloc(sizeof(pdf_nametree));
-		if (!nt) { error = fz_outofmem; goto cleanup; }
-		nt->cap = 0;
-		nt->len = 0;
-		nt->items = 0;
-		return nil;
+		pdf_dropnametree(tree);
+		return error;
 	}
 
-	error = pdf_resolve(&names, xref);
-	if (error) goto cleanup;
-
-	root = fz_dictgets(names, key);
-	if (!root)
-	{
-		nt = *pnt = fz_malloc(sizeof(pdf_nametree));
-		if (!nt) { error = fz_outofmem; goto cleanup; }
-		nt->cap = 0;
-		nt->len = 0;
-		nt->items = 0;
-		return nil;
-	}
-	error = pdf_resolve(&root, xref);
-	if (error) goto cleanup;
-
-#else
-/*XXX create empty nametree instead of failing */
-	names = fz_dictgets(catalog, "Names");
-/*XXX never resolve something that can be null */
-	error = pdf_resolve(&names, xref);
-	if (error) goto cleanup;
-
-	root = fz_dictgets(names, key);
-/*XXX never resolve something that can be null */
-	error = pdf_resolve(&root, xref);
-	if (error) goto cleanup;
-#endif
-
-	nt = *pnt = fz_malloc(sizeof(pdf_nametree));
-	if (!nt) { error = fz_outofmem; goto cleanup; }
-	nt->cap = 8;
-	nt->len = 0;
-	nt->items = 0;
-
-	nt->items = fz_malloc(sizeof(struct fz_keyval_s) * nt->cap);
-
-	if (!nt->items) {
-		error = fz_outofmem;
-		goto cleanup;
-	}
-
-	error = loadnametree(nt, xref, root);
-	if (error) goto cleanup;
-
-/*XXX not necessary. tree is sorted when you load it. */
-	sortnametree(nt);
-
-/*XXX please have separate cleanup and okay cases... */
-/*XXX  return nil; here */
-
-cleanup:
-/*XXX no BIG_FAT_MACROS, please :) */
-	SAFE_FREE_OBJ(root);
-	SAFE_FREE_OBJ(names);
-	if (catalog) fz_dropobj(catalog);
-	if (error && nt) {
-		fz_free(nt);
-	}
-	return error;
+	*treep = tree;
+	return nil;
 }
 
 void
-pdf_dropnametree(pdf_nametree *nt)
+pdf_debugnametree(pdf_nametree *tree)
 {
 	int i;
-	for (i = 0; i < nt->len; i++) {
-			fz_dropobj(nt->items[i].k);
-			fz_dropobj(nt->items[i].v);
-	}
-	if (nt->items) fz_free(nt->items);
-	fz_free(nt);
-}
-
-void
-pdf_debugnametree(pdf_nametree *nt)
-{
-	int i;
-	for (i = 0; i < nt->len; i++) {
+	for (i = 0; i < tree->len; i++) {
 		printf("   ");
-		fz_debugobj(nt->items[i].k);
+		fz_debugobj(tree->items[i].k);
 		printf("   ");
-		fz_debugobj(nt->items[i].v);
+		fz_debugobj(tree->items[i].v);
 		printf("\n");
 	}
 }
 
-fz_obj *
-pdf_lookupname(pdf_nametree *nt, fz_obj *name)
+static fz_obj *
+lookup(pdf_nametree *tree, char *namestr, int namelen)
 {
-	struct fz_keyval_s item;
-	struct fz_keyval_s *found;
-	if (fz_isstring(name)) {
-		item.k = name;
-		item.v = nil;
-/*XXX bsearch is non-standard. please dont use it. */
-		found = bsearch(&item, nt->items, nt->len, sizeof(nt->items[0]), compare);
-		return found->v;
+	int l = 0;
+	int r = tree->len - 1;
+
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		char *keystr = fz_tostringbuf(tree->items[m].k);
+		int keylen = fz_tostringlen(tree->items[m].k);
+		int cmplen = MIN(namelen, keylen);
+		int c = strncmp(namestr, keystr, cmplen);
+		if (c < 0)
+			r = m - 1;
+		else if (c > 0)
+			l = m + 1;
+		else
+			return tree->items[m].v;
 	}
+
 	return nil;
 }
 
 fz_obj *
-pdf_lookupnames(pdf_nametree *nt, char *name)
+pdf_lookupname(pdf_nametree *tree, fz_obj *name)
 {
-	fz_obj *key;
-	fz_obj *ref;
-	int len = strlen(name);
-/*XXX please dont create a new string just to do a lookup. */
-/*XXX change this to be the "standard" function and call it from */
-/*XXX pdf_lookupname instead. compare name with the fz_tostringbuf() & co */
-/*XXX return values. */
-	fz_newstring(&key, name, len);
-	ref = pdf_lookupname(nt, key);
-	fz_dropobj(key);
-	return ref;
+	return lookup(tree, fz_tostringbuf(name), fz_tostringlen(name));
+}
+
+fz_obj *
+pdf_lookupnames(pdf_nametree *tree, char *name)
+{
+	return lookup(tree, name, strlen(name));
+}
+
+fz_error *
+pdf_loadnametrees(pdf_xref *xref)
+{
+	fz_error *error;
+	fz_obj *catalog;
+	fz_obj *names;
+	fz_obj *dests;
+
+	catalog = fz_dictgets(xref->trailer, "Root");
+	error = pdf_resolve(&catalog, xref);
+	if (error)
+		return error;
+
+	names = fz_dictgets(catalog, "Names");
+	if (names)
+	{
+		error = pdf_resolve(&names, xref);
+		if (error)
+		{
+			fz_dropobj(names);
+			fz_dropobj(catalog);
+			return error;
+		}
+
+		dests = fz_dictgets(names, "Dests");
+		error = pdf_loadnametree(&xref->dests, xref, dests);
+		if (error)
+		{
+			fz_dropobj(names);
+			fz_dropobj(catalog);
+			return error;
+		}
+
+		fz_dropobj(names);
+	}
+
+	fz_dropobj(catalog);
+	return nil;
 }
 

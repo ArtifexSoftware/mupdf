@@ -221,14 +221,13 @@ static void pdfopen(char *filename, char *password)
 		if (error) fz_abort(error);
 	}
 
+	error = pdf_loadnametrees(xref);
+	if (error) fz_abort(error);
+
 	error = pdf_loadpagetree(&pages, xref);
 	if (error) fz_abort(error);
 
 	count = pdf_getpagecount(pages);
-
-	error = pdf_loadnametree(&xref->dests, xref, "Dests");
-	if (error)
-		fz_abort(error);
 
 	strlcpy(doctitle, filename, sizeof doctitle);
 	obj = fz_dictgets(xref->trailer, "Info");

@@ -73,11 +73,12 @@ void pdf_debugoutlinetree(pdf_outlinetree *outlinetree);
 void pdf_dropoutlinetree(pdf_outlinetree *outlinetree);
 
 /* nametree.c */
-fz_error *pdf_loadnametree(pdf_nametree **ntp, pdf_xref *xref, char *key);
-void pdf_dropnametree(pdf_nametree *nt);
-void pdf_debugnametree(pdf_nametree *nt);
-fz_obj *pdf_lookupname(pdf_nametree *nt, fz_obj *name);
-fz_obj *pdf_lookupnames(pdf_nametree *nt, char *name);
+fz_error *pdf_loadnametrees(pdf_xref *xref);
+fz_error *pdf_loadnametree(pdf_nametree **treep, pdf_xref *xref, fz_obj *root);
+void pdf_dropnametree(pdf_nametree *tree);
+void pdf_debugnametree(pdf_nametree *tree);
+fz_obj *pdf_lookupname(pdf_nametree *tree, fz_obj *name);
+fz_obj *pdf_lookupnames(pdf_nametree *tree, char *name);
 
 /* pagetree.c */
 fz_error *pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
