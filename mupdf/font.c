@@ -1,6 +1,8 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+#define noHINT
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <freetype/internal/ftobjs.h>
@@ -76,6 +78,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	FT_Matrix m;
 	FT_Vector v;
 	FT_Error fterr;
+	float scale;
 	int gid;
 
 	if (font->cidtogid)
@@ -87,7 +90,6 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	{
 		fz_hmtx subw;
 		int realw;
-		float scale;
 
 		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 
@@ -104,8 +106,6 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 			scale = 1.0;
 
 		trm = fz_concat(fz_scale(scale, 1.0), trm);
-
-		FT_Set_Char_Size(face, 64, 64, 72, 72);
 	}
 
 	glyph->w = 0;
@@ -114,19 +114,46 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->top = 0;
 	glyph->bitmap = nil;
 
-	m.xx = trm.a * 65536;
-	m.yx = trm.b * 65536;
-	m.xy = trm.c * 65536;
-	m.yy = trm.d * 65536;
+	/* freetype mutilates complex glyphs if they are loaded
+	 * with FT_Set_Char_Size 1.0. it rounds the coordinates
+	 * before applying transformation. to get more precision in
+	 * freetype, we shift part of the scale in the matrix
+	 * into FT_Set_Char_Size instead
+	 */
+
+#ifdef HINT
+	scale = fz_matrixexpansion(trm);
+	m.xx = trm.a * 65536 / scale;
+	m.yx = trm.b * 65536 / scale;
+	m.xy = trm.c * 65536 / scale;
+	m.yy = trm.d * 65536 / scale;
+	v.x = 0;
+	v.y = 0;
+
+	FT_Set_Char_Size(face, 64 * scale, 64 * scale, 72, 72);
+	FT_Set_Transform(face, &m, &v);
+
+	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
+	if (fterr)
+		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
+
+#else
+
+	m.xx = trm.a * 64;	/* should be 65536 */
+	m.yx = trm.b * 64;
+	m.xy = trm.c * 64;
+	m.yy = trm.d * 64;
 	v.x = trm.e * 64;
 	v.y = trm.f * 64;
 
-	FT_Set_Char_Size(face, 64, 64, 72, 72);
+	FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
 	FT_Set_Transform(face, &m, &v);
 
 	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 	if (fterr)
 		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
+
+#endif
 
 	fterr = FT_Render_Glyph(face->glyph, ft_render_mode_normal);
 	if (fterr)
@@ -489,8 +516,6 @@ printf("  builtin widths\n");
 	if (error)
 		goto cleanup;
 
-	FT_Set_Char_Size(face, 64, 64, 72, 72);
-
 printf("\n");
 
 	return nil;
@@ -771,8 +796,6 @@ printf("  cidtogidmap %d\n", len / 2);
 		if (error)
 			goto cleanup;
 	}
-
-	FT_Set_Char_Size(face, 64, 64, 72, 72);
 
 printf("\n");
 

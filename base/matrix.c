@@ -76,6 +76,12 @@ fz_isrectilinear(fz_matrix m)
 			(fabs(m.a) < FLT_EPSILON && fabs(m.d) < FLT_EPSILON);
 }
 
+float
+fz_matrixexpansion(fz_matrix m)
+{
+	return sqrt(fabs(m.a * m.d - m.b * m.c));
+}
+
 fz_point
 fz_transformpoint(fz_matrix m, fz_point p)
 {

@@ -299,9 +299,14 @@ makedecodefilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, i
 			fz_dropobj(params);
 
 		fz_dropobj(filters);
+
+		*filterp = pipe;
+	}
+	else
+	{
+		*filterp = base;
 	}
 
-	*filterp = pipe;
 	return nil;
 
 cleanup2:
