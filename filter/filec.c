@@ -302,6 +302,6 @@ fz_tell(fz_file *f)
 	if (f->mode == O_RDONLY)
 		return t - (f->out->wp - f->out->rp);
 	else
-		return t - (f->in->wp - f->in->rp);
+		return t + (f->in->wp - f->in->rp);
 }
 
