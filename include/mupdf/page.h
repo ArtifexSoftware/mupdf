@@ -7,6 +7,8 @@ typedef struct pdf_outline_s pdf_outline;
 typedef struct pdf_nametree_s pdf_nametree;
 typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_page_s pdf_page;
+typedef struct pdf_textline_s pdf_textline;
+typedef struct pdf_textchar_s pdf_textchar;
 
 struct pdf_outlinetree_s
 {
@@ -48,6 +50,19 @@ struct pdf_page_s
 	int rotate;
 	fz_obj *resources;
 	fz_tree *tree;
+	pdf_textline *text;
+};
+
+struct pdf_textchar_s
+{
+	int x, y, c;
+};
+
+struct pdf_textline_s
+{
+	int len, cap;
+	pdf_textchar *text;
+	pdf_textline *next;
 };
 
 /* outline.c */
@@ -72,4 +87,10 @@ void pdf_droppagetree(pdf_pagetree *pages);
 /* page.c */
 fz_error *pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
 void pdf_droppage(pdf_page *page);
+
+/* unicode.c */
+fz_error *pdf_loadtextfromtree(pdf_textline **linep, fz_tree *tree);
+void pdf_debugtextline(pdf_textline *line);
+fz_error *pdf_newtextline(pdf_textline **linep);
+void pdf_droptextline(pdf_textline *line);
 

@@ -103,7 +103,6 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error *error;
 	char buf[256];
-	unsigned short *utable;
 	char *estrings[256];
 	pdf_font *font;
 	fz_obj *encoding;
@@ -202,27 +201,10 @@ printf("  matrix [%g %g %g %g %g %g]\n",
     if (error)
         goto cleanup;
 
-	/*
-	 * ToUnicode
-	 */
-
-	utable = fz_malloc(sizeof(unsigned short) * 256);
-	if (!utable)
-		goto cleanup;
-
-	for (i = 0; i < 256; i++)
-		if (estrings[i])
-			utable[i] = pdf_lookupagl(estrings[i]);
-		else
-			utable[i] = i;
-
-	if (fz_dictgets(dict, "ToUnicode"))
-	{
-printf("  load tounicode cmap for type3 font\n");
-	}
-
-	font->ncidtoucs = 256;
-	font->cidtoucs = utable;
+	error = pdf_loadtounicode(font, xref,
+				estrings, nil, fz_dictgets(dict, "ToUnicode"));
+    if (error)
+        goto cleanup;
 
 	/*
 	 * Widths
@@ -264,22 +246,22 @@ printf("  load tounicode cmap for type3 font\n");
 	 * Resources
 	 */
 
+	resources = nil;
+
 	obj = fz_dictgets(dict, "Resources");
-	if (!obj) {
-		error = fz_throw("syntaxerror: Type3 font missing Resources");
-		goto cleanup;
+	if (obj)
+	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			goto cleanup;
+
+		error = pdf_loadresources(&resources, xref, obj);
+
+		fz_dropobj(obj);
+
+		if (error)
+			goto cleanup;
 	}
-
-	error = pdf_resolve(&obj, xref);
-	if (error)
-		goto cleanup;
-
-	error = pdf_loadresources(&resources, xref, obj);
-
-	fz_dropobj(obj);
-
-	if (error)
-		goto cleanup;
 
 	/*
 	 * CharProcs
@@ -311,7 +293,8 @@ printf("  load tounicode cmap for type3 font\n");
 	}
 
 	fz_dropobj(charprocs);
-	fz_dropobj(resources);
+	if (resources)
+		fz_dropobj(resources);
 
 	*fontp = font;
 	return nil;

@@ -1,37 +1,36 @@
-colorspace conversions
+colorspace conversions (v2)
 	- cal*
 	- iccbased
 	- how to normalize Lab components to 0..1
 	- fast color cubes
 	- how to cache colorspace cubes (what key?)
 
-image rendering
+image rendering (v2)
 	- tiles
 	- dct case
 	- better filter than box
+	- lazy decoding
 
 shadings
 	- ... jeong ...
 
 rendering
-	- save non-transformed bbox in nodes
-	- explicit mask field in fz_renderer .. general cleanup
+	- bbox culling (cache bbox in over node?)
+	- image mask + color case
 	- merge gka optims
-	- optimize! optimize! optimize! (special case 1 and 4 channel cases)
+	- optimize inner rendering loops
+	- optimize image load/decode/scale
+	- special-case optims (1, 2 and 4)
+	- cpu-specific optims
 
 parser
-	- text clip mode
-	- split content streams (TJ objects)
 	- resource dict generate fake ids
 	- try to clean up colorspace/material handling in interpreter
-	- tounicode
 
 clean up
 	- make source ansi c89 / pedantic
 	- reference count everything
 	- standard cleanup mechanism
-	- naming conventions (fz_new/renew)
-
 	- design by contract
 	- split into private and public
 	- comments and documentation
@@ -39,5 +38,4 @@ clean up
 cache
 	global cache for cmaps and fontfiles (emb+sys)
 	render cache (link-nodes and scaled images)
-	profile font cache (esp with t3 fonts)
 

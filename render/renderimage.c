@@ -1,9 +1,5 @@
 #include <fitz.h>
 
-#define GAMMA 1.8
-
-void fz_gammapixmap(fz_pixmap *pix, float gamma);
-
 #define LERP(a,b,t) (a + (((b - a) * t) >> 16))
 
 static inline int getcomp(fz_pixmap *pix, int u, int v, int k)
@@ -100,6 +96,30 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 	}
 }
 
+static inline void
+overscanmask(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x1)
+{
+	int x;
+
+	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
+	int v = (invmat->b * (x0+0.5) + invmat->d * (y+0.5) + invmat->f) * 65536;
+	int du = invmat->a * 65536;
+	int dv = invmat->b * 65536;
+
+	u -= 0.5 * 65536;
+	v -= 0.5 * 65536;
+
+	for (x = x0; x <= x1; x++)
+	{
+		int sa = sampleimage(src, u, v, 0);
+		int da = dst->samples[ (y-dst->y) * dst->w + x-dst->x ];
+		da = sa + fz_mul255(da, 255 - sa);
+		dst->samples[ (y-dst->y) * dst->w + x-dst->x ] = da;
+		u += du;
+		v += dv;
+	}
+}
+
 static fz_error *
 drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int over)
 {
@@ -135,6 +155,8 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 	{
 		if (over && tile->n == 4)
 			overscanrgb(&invmat, out, tile, y, x0, x1);
+		else if (over && tile->n == 1)
+			overscanmask(&invmat, out, tile, y, x0, x1);
 		else
 			drawscan(&invmat, out, tile, y, x0, x1);
 	}
@@ -180,9 +202,7 @@ printf("  load tile %d x %d\n", w, h);
 	if (dx != 1 || dy != 1)
 	{
 printf("  scale tile 1/%d x 1/%d\n", dx, dy);
-/*		fz_gammapixmap(tile1, 1.0 / GAMMA); */
 		error = fz_scalepixmap(&tile2, tile1, dx, dy);
-/*		fz_gammapixmap(tile2, GAMMA); */
 		fz_droppixmap(tile1);
 	}
 	else
@@ -198,10 +218,18 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 	/* render image mask */
 	if (n == 0 && a == 1)
 	{
+		if (gc->acc && !gc->model)
+		{
+printf("  draw image mask over\n");
+			error = drawtile(gc, gc->acc, tile2, ctm, 1);
+		}
+		else
+		{
 printf("  draw image mask\n");
-		error = fz_newpixmap(&gc->tmp, r.min.x, r.min.y, r.max.x - r.min.x, r.max.y - r.min.y, 1);
-		fz_clearpixmap(gc->tmp);
-		error = drawtile(gc, gc->tmp, tile2, ctm, 0);
+			error = fz_newpixmap(&gc->tmp, r.min.x, r.min.y, r.max.x - r.min.x, r.max.y - r.min.y, 1);
+			fz_clearpixmap(gc->tmp);
+			error = drawtile(gc, gc->tmp, tile2, ctm, 0);
+		}
 	}
 
 	/* render rgb over */

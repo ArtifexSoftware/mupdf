@@ -1,11 +1,6 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-/*
- * TODO: substitution fonts when no exact match is found.
- * base on a) cid system info and b) fontdescriptor flags
- */
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <freetype/internal/ftobjs.h>
@@ -241,9 +236,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *descriptor = nil;
 	fz_obj *encoding = nil;
 	fz_obj *widths = nil;
-	fz_obj *tounicode = nil;
 	unsigned short *etable = nil;
-	unsigned short *utable = nil;
 	pdf_font *font;
 	FT_Face face;
 	FT_CharMap cmap;
@@ -441,28 +434,10 @@ printf("  builtin encoding\n");
 	font->ncidtogid = 256;
 	font->cidtogid = etable;
 
-	/*
-	 * ToUnicode
-	 */
-
-	utable = fz_malloc(sizeof(unsigned short) * 256);
-	if (!utable)
+	error = pdf_loadtounicode(font, xref,
+				estrings, nil, fz_dictgets(dict, "ToUnicode"));
+	if (error)
 		goto cleanup;
-
-	for (i = 0; i < 256; i++)
-		if (estrings[i])
-			utable[i] = pdf_lookupagl(estrings[i]);
-		else
-			utable[i] = i;
-
-	tounicode = fz_dictgets(dict, "ToUnicode");
-	if (fz_isindirect(tounicode))
-	{
-printf("  load tounicode cmap for simple font\n");
-	}
-
-	font->ncidtoucs = 256;
-	font->cidtoucs = utable;
 
 	/*
 	 * Widths
@@ -520,7 +495,6 @@ printf("\n");
 	return nil;
 
 cleanup:
-	fz_free(utable);
 	fz_free(etable);
 	if (widths)
 		fz_dropobj(widths);
@@ -534,7 +508,7 @@ cleanup:
  */
 
 static fz_error *
-loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding)
+loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *tounicode)
 {
 	fz_error *error;
 	fz_obj *widths = nil;
@@ -678,28 +652,7 @@ printf("  cidtogidmap %d\n", len / 2);
 		/* win:  3,4  3,6   3,3  3,2      3,1     3,5 */
 	}
 
-	/*
-	 * ToUnicode
-	 */
-
-	if (fz_dictgets(dict, "ToUnicode"))
-		printf("  load tounicode for cid-font");
-
-	if (!strcmp(collection, "Adobe-CNS1"))
-		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
-	else if (!strcmp(collection, "Adobe-GB1"))
-		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-GB1-UCS2");
-	else if (!strcmp(collection, "Adobe-Japan1"))
-		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
-	else if (!strcmp(collection, "Adobe-Japan2"))
-		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2");
-	else if (!strcmp(collection, "Adobe-Korea1"))
-		error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
-	else
-	{
-		printf("  unknown character collection\n");
-		error = nil;
-	}
+	error = pdf_loadtounicode(font, xref, nil, collection, tounicode);
 	if (error)
 		goto cleanup;
 
@@ -840,6 +793,7 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *dfont;
 	fz_obj *subtype;
 	fz_obj *encoding;
+	fz_obj *tounicode;
 
 	dfonts = fz_dictgets(dict, "DescendantFonts");
 	error = pdf_resolve(&dfonts, xref);
@@ -851,13 +805,14 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		return fz_dropobj(dfonts), error;
 
-	encoding = fz_dictgets(dict, "Encoding");
 	subtype = fz_dictgets(dfont, "Subtype");
+	encoding = fz_dictgets(dict, "Encoding");
+	tounicode = fz_dictgets(dict, "ToUnicode");
 
 	if (!strcmp(fz_toname(subtype), "CIDFontType0"))
-		error = loadcidfont(fontp, xref, dfont, encoding);
+		error = loadcidfont(fontp, xref, dfont, encoding, tounicode);
 	else if (!strcmp(fz_toname(subtype), "CIDFontType2"))
-		error = loadcidfont(fontp, xref, dfont, encoding);
+		error = loadcidfont(fontp, xref, dfont, encoding, tounicode);
 	else
 		error = fz_throw("syntaxerror: unknown cid font type");
 

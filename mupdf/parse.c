@@ -147,7 +147,8 @@ skip:
 		case PDF_TINT:
 			a = atoi(buf);
 			tok = pdf_lex(file, buf, cap, &len);
-			if (tok == PDF_TCDICT || tok == PDF_TNAME)
+			if (tok == PDF_TCDICT || tok == PDF_TNAME ||
+				(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
 			{
 				error = fz_newint(&val, a);
 				if (error) goto cleanup;

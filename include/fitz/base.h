@@ -21,6 +21,12 @@
 
 #define STRIDE(n, bcp) (((bpc) * (n) + 7) / 8)
 
+int chartorune(int *rune, char *str);
+int runetochar(char *str, int *rune);
+int runelen(long c);
+int runenlen(int *r, int nrune);
+int fullrune(char *str, int n);
+
 typedef struct fz_error_s fz_error;
 
 struct fz_error_s

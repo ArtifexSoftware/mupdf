@@ -431,6 +431,10 @@ eol:
 	goto loop;
 
 rtc:
+	i = (32 - fax->bidx) / 8;
+	while (i-- && in->rp > in->bp)
+		in->rp --;
+
 	out->eof = 1;
 	return fz_iodone;
 }

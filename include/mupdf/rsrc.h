@@ -161,6 +161,9 @@ fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref);
 fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
 fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
 
+/* unicode.c */
+fz_error *pdf_loadtounicode(pdf_font *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);
+
 /* fontfile.c */
 fz_error *pdf_loadbuiltinfont(pdf_font *font, char *basefont);
 fz_error *pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref);

@@ -66,15 +66,18 @@ struct pdf_csi_s
 	fz_obj *stack[32];
 	int top;
 	int xbalance;
+	fz_obj *array;
 
 	/* path object state */
 	fz_pathnode *path;
 	fz_pathnode *clip;
 
 	/* text object state */
+	fz_node *textclip;
 	fz_textnode *text;
 	fz_matrix tlm;
 	fz_matrix tm;
+	int textmode;
 
 	fz_tree *tree;
 };

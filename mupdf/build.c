@@ -195,6 +195,28 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	return nil;
 }
 
+static fz_error *
+addinvisibleshape(pdf_gstate *gs, fz_node *shape)
+{
+	fz_error *error;
+	fz_node *mask;
+	fz_pathnode *path;
+
+	error = fz_newmasknode(&mask);
+	if (error) return error;
+
+	error = fz_newpathnode(&path);
+	if (error) return error;
+	error = fz_endpath(path, FZ_FILL, nil, nil);
+	if (error) return error;
+
+	fz_insertnode(mask, (fz_node*)path);
+	fz_insertnode(mask, shape);
+	fz_insertnode(gs->head, mask);
+
+	return nil;
+}
+
 static fz_matrix getmatrix(fz_node *node)
 {
 	if (node->parent)
@@ -401,62 +423,6 @@ pdf_showimage(pdf_csi *csi, pdf_image *img)
 	return nil;
 }
 
-#if 0
-
-BMC ... EMC object nesting can be completely fucked up
-and out of sync with graphics object nesting.
-
-fz_error *
-pdf_beginmarkedcontent(pdf_gstate *gs, fz_node *meta)
-{
-	fz_error *error;
-	fz_node *over;
-
-	error = fz_newovernode(&over);
-	if (error) return error;
-
-	fz_insertnode(gs->head, meta);
-	fz_insertnode(meta, over);
-	gs->head = over;
-
-printf("begin mc meta=%p over=%p\n", meta, over);
-{
-fz_node *node = gs->head;
-	while (node)
-	{
-printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
-		node = node->parent;
-	}
-printf("okay.\n");
-}
-
-	return nil;
-}
-
-fz_error *
-pdf_endmarkedcontent(pdf_gstate *gs)
-{
-	fz_node *node = gs->head;
-
-printf("end mc\n");
-printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
-
-	while (node && !fz_ismetanode(node))
-	{
-printf("  node=%p ismeta=%d\n", node, fz_ismetanode(node));
-		node = node->parent;
-	}
-
-	if (node == nil)
-		return fz_throw("syntaxerror: unbalanced marked content");
-
-	gs->head = node->parent;
-
-	return nil;
-}
-
-#endif
-
 fz_error *
 pdf_showpath(pdf_csi *csi,
 	int doclose, int dofill, int dostroke, int evenodd)
@@ -525,18 +491,40 @@ pdf_flushtext(pdf_csi *csi)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
 
-	/* invisible */
-	if (gstate->render == 3)
-		return nil;
-
-	else if (gstate->render != 0)
-		fz_warn("unimplemented text render mode: %d", gstate->render);
-
 	if (csi->text)
 	{
-		error = pdf_addfillshape(gstate, (fz_node*)csi->text);
-		if (error)
-			return error;
+
+		/* invisible */
+		switch (csi->textmode)
+		{
+		case 0:	/* fill */
+		case 1:	/* stroke */
+		case 2:	/* stroke + fill */
+			error = pdf_addfillshape(gstate, (fz_node*)csi->text);
+			if (error)
+				return error;
+			break;
+
+		case 3:	/* invisible */
+			error = addinvisibleshape(gstate, (fz_node*)csi->text);
+			if (error)
+				return error;
+			break;
+
+		case 4: /* fill + clip */
+		case 5: /* stroke + clip */
+		case 6: /* stroke + fill + clip */
+		case 7: /* invisible clip */
+			if (!csi->textclip)
+			{
+				error = fz_newovernode(&csi->textclip);
+				if (error)
+					return error;
+			}
+			fz_insertnode(csi->textclip, (fz_node*)csi->text);
+			break;
+		}
+
 		csi->text = nil;
 	}
 
@@ -570,13 +558,14 @@ showglyph(pdf_csi *csi, int cid)
 
 	trm = fz_concat(tsm, csi->tm);
 
-	/* flush buffered text if face or matrix has changed */
+	/* flush buffered text if face or matrix or rendermode has changed */
 	if (!csi->text ||
 		((fz_font*)font) != csi->text->font ||
 		fabs(trm.a - csi->text->trm.a) > FLT_EPSILON ||
 		fabs(trm.b - csi->text->trm.b) > FLT_EPSILON ||
 		fabs(trm.c - csi->text->trm.c) > FLT_EPSILON ||
-		fabs(trm.d - csi->text->trm.d) > FLT_EPSILON)
+		fabs(trm.d - csi->text->trm.d) > FLT_EPSILON ||
+		gstate->render != csi->textmode)
 	{
 		error = pdf_flushtext(csi);
 		if (error) return error;
@@ -587,6 +576,7 @@ showglyph(pdf_csi *csi, int cid)
 		csi->text->trm = trm;
 		csi->text->trm.e = 0;
 		csi->text->trm.f = 0;
+		csi->textmode = gstate->render;
 	}
 
 	/* add glyph to textobject */

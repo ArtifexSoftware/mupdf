@@ -18,6 +18,7 @@ Library libfitz :
 	#util/strlcat.c
 
 	# base runtime
+	base/rune.c
 	base/error.c
 	base/memory.c
 	base/md5.c
@@ -113,6 +114,7 @@ Library libmupdf :
 	mupdf/fontagl.c
 	mupdf/fontenc.c
 	mupdf/fontfile.c
+	mupdf/unicode.c
 	mupdf/font.c
 	mupdf/type3.c
 	mupdf/colorspace.c

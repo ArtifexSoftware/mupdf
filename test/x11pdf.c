@@ -29,6 +29,9 @@ static int rotate = 0;
 static int pageno = 1;
 static int count = 0;
 
+static pdf_page *page = nil;
+static fz_obj *pageobj = nil;
+
 static int hist[256];
 static int histlen = 0;
 
@@ -126,15 +129,12 @@ static void xtitle(char *s)
 static void showpage(void)
 {
 	fz_error *error;
-	pdf_page *page;
 	fz_matrix ctm;
 	fz_rect bbox;
+	fz_obj *obj;
 	char s[256];
-	fz_obj *pageobj;
 
 	assert(pageno > 0 && pageno <= pdf_getpagecount(pages));
-
-	pageobj = pdf_getpageobject(pages, pageno - 1);
 
 	XDefineCursor(xdpy, xwin, xcwait);
 	XFlush(xdpy);
@@ -142,6 +142,14 @@ static void showpage(void)
 	if (image)
 		fz_droppixmap(image);
 	image = nil;
+
+	obj = pdf_getpageobject(pages, pageno - 1);
+	if (obj == pageobj)
+		goto Lskipload;
+	pageobj = obj;
+
+	if (page)
+		pdf_droppage(page);
 
 	sprintf(s, "Loading page %d", pageno);
 	XSetForeground(xdpy, xgc, BlackPixel(xdpy, xscr));
@@ -151,6 +159,8 @@ static void showpage(void)
 	error = pdf_loadpage(&page, xref, pageobj);
 	if (error)
 		fz_abort(error);
+
+Lskipload:
 
 	sprintf(s, "Rendering...");
 	XSetForeground(xdpy, xgc, BlackPixel(xdpy, xscr));
@@ -167,8 +177,6 @@ static void showpage(void)
 	error = fz_rendertree(&image, rast, page->tree, ctm, fz_roundrect(bbox));
 	if (error)
 		fz_abort(error);
-
-	pdf_droppage(page);
 
 	XDefineCursor(xdpy, xwin, xcarrow);
 	XFlush(xdpy);
@@ -206,6 +214,20 @@ static void pdfopen(char *filename, char *password)
 	image = nil;
 }
 
+static void dumptext()
+{
+	fz_error *error;
+	pdf_textline *line;
+
+	error = pdf_loadtextfromtree(&line, page->tree);
+	if (error)
+		fz_abort(error);
+
+	pdf_debugtextline(line);
+
+	pdf_droptextline(line);
+}
+
 static void handlekey(int c)
 {
     int oldpage = pageno;
@@ -223,6 +245,7 @@ static void handlekey(int c)
 	case 'd': fz_debugglyphcache(rast->cache); break;
 	case 'a': rotate -= 5; break;
 	case 's': rotate += 5; break;
+	case 'x': dumptext(); break;
 
     case 'b':
 		pageno--;

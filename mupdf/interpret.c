@@ -16,7 +16,7 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 
 	csi->gtop = 0;
 	csi->top = 0;
-
+	csi->array = nil;
 	csi->xbalance = 0;
 
 	error = fz_newpathnode(&csi->path);
@@ -44,6 +44,8 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 
 	csi->clip = nil;
 
+	csi->textclip = nil;
+	csi->textmode = 0;
 	csi->text = nil;
 	csi->tm = fz_identity();
 	csi->tlm = fz_identity();
@@ -65,7 +67,9 @@ pdf_dropcsi(pdf_csi *csi)
 {
 	if (csi->path) fz_dropnode((fz_node*)csi->path);
 	if (csi->clip) fz_dropnode((fz_node*)csi->clip);
+	if (csi->textclip) fz_dropnode((fz_node*)csi->textclip);
 	if (csi->text) fz_dropnode((fz_node*)csi->text);
+	if (csi->array) fz_dropobj(csi->array);
 	clearstack(csi);
 	fz_free(csi);
 }
@@ -145,7 +149,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_file *file, fz_obj *dict)
 
 	token = pdf_lex(file, buf, sizeof buf, &len);
 	if (token != PDF_TKEYWORD || strcmp("EI", buf))
-		return fz_throw("syntaxerror: corrupt inline image");
+		fz_warn("syntaxerror: corrupt inline image");
 
 	error = pdf_showimage(csi, img);
 	if (error)
@@ -550,9 +554,17 @@ Lsetcolor:
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
+
 			error = pdf_flushtext(csi);
 			if (error)
 				return error;
+
+			if (csi->textclip)
+			{
+				error = pdf_addclipmask(gstate, csi->textclip);
+				if (error) return error;
+				csi->textclip = nil;
+			}
 		}
 
 		else if (!strcmp(buf, "Tc"))
@@ -1003,6 +1015,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 	fz_error *error;
 	char buf[65536];
 	int token, len;
+	fz_obj *obj;
 
 	while (1)
 	{
@@ -1011,19 +1024,53 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 
 		token = pdf_lex(file, buf, sizeof buf, &len);
 
-		switch (token)
+		if (csi->array)
+		{
+			if (token == PDF_TCARRAY)
+			{
+				csi->stack[csi->top] = csi->array;
+				csi->array = nil;
+				csi->top ++;
+			}
+			else if (token == PDF_TINT || token == PDF_TREAL)
+			{
+				error = fz_newreal(&obj, atof(buf));
+				if (error) return error;
+				error = fz_arraypush(csi->array, obj);
+				fz_dropobj(obj);
+				if (error) return error;
+			}
+			else if (token == PDF_TSTRING)
+			{
+				error = fz_newstring(&obj, buf, len);
+				if (error) return error;
+				error = fz_arraypush(csi->array, obj);
+				fz_dropobj(obj);
+				if (error) return error;
+			}
+			else if (token == PDF_TEOF)
+			{
+				return nil;
+			}
+			else
+			{
+				clearstack(csi);
+				return fz_throw("syntaxerror in content stream");
+			}
+		}
+
+		else switch (token)
 		{
 		case PDF_TEOF:
 			return nil;
 
-		/* FIXME: need to make array parsing be able to span files for
+		/* we need to make array parsing be able to span files for
 		   those stupid pdf files that split TJ arrays across content
 		   streams...
 		*/
 		case PDF_TOARRAY:
-			error = pdf_parsearray(&csi->stack[csi->top], file, buf, sizeof buf);
+			error = fz_newarray(&csi->array, 8);
 			if (error) return error;
-			csi->top ++;
 			break;
 
 		/* drop down to normal pdf object parsing for dictionaries,
