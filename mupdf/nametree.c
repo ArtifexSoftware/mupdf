@@ -117,10 +117,16 @@ pdf_loadnametrees(pdf_xref *xref)
 		if (error)
 			return error;
 		dests = fz_dictgets(names, "Dests");
-		error = pdf_loadnametree(&xref->dests, xref, dests);
+		if (dests)
+		{
+			error = pdf_loadnametree(&xref->dests, xref, dests);
+			if (error)
+			{
+				fz_dropobj(names);
+				return error;
+			}
+		}
 		fz_dropobj(names);
-		if (error)
-			return error;
 	}
 
 	return nil;

@@ -68,6 +68,8 @@ static inline void pdflog(int tag, char *name, char *fmt, va_list ap)
 		level ++;
 
 	push = strchr(fmt, '\n') != 0;
+
+	fflush(stdout);
 }
 
 void pdf_logxref(char *fmt, ...)
