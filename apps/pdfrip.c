@@ -3,7 +3,7 @@
 
 int showtree = 0;
 float zoom = 1.0;
-char *namefmt = "out-%02d.ppm";
+char *namefmt = nil;
 fz_renderer *gc;
 int nbands = 1;
 
@@ -25,11 +25,10 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	fz_pixmap *pix;
 	fz_matrix ctm;
 	fz_irect bbox;
-	fz_irect band;
 	FILE *f;
 	int x, y;
 	int w, h;
-	int b;
+	int b, bh;
 
 	sprintf(namebuf, namefmt, pagenum);
 
@@ -67,35 +66,45 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	bbox.max.y = bbox.max.y * zoom;
 	w = bbox.max.x - bbox.min.x;
 	h = bbox.max.y - bbox.min.y;
+	bh = h / nbands;
 
 	f = fopen(namebuf, "wb");
-	fprintf(f, "P6\n%d %d\n255\n", w, h);
+	fprintf(f, "P6\n%d %d\n255\n", w, bh * nbands);
+	fflush(f);
+
+	error = fz_newpixmap(&pix, bbox.min.x, bbox.min.y, w, bh, 4);
+	if (error)
+		fz_abort(error);
 
 	for (b = 0; b < nbands; b++)
 	{
 		printf("band %d / %d\n", b, nbands);
 
-		band.min.x = bbox.min.x;
-		band.max.x = bbox.max.x;
-		band.min.y = bbox.min.y + (h * b) / nbands;
-		band.max.y = bbox.min.y + (h * (b + 1)) / nbands;
+		memset(pix->samples, 0xff, pix->w * pix->h * 4);
 
-		error = fz_rendertree(&pix, gc, page->tree, ctm, band, 1);
+		error = fz_rendertreeover(gc, pix, page->tree, ctm);
 		if (error)
 			fz_abort(error);
 
 		for (y = 0; y < pix->h; y++)
 		{
+			unsigned char *src = pix->samples + y * pix->w * 4;
+			unsigned char *dst = src;
+
 			for (x = 0; x < pix->w; x++)
 			{
-				putc(pix->samples[y * pix->w * 4 + x * 4 + 1], f);
-				putc(pix->samples[y * pix->w * 4 + x * 4 + 2], f);
-				putc(pix->samples[y * pix->w * 4 + x * 4 + 3], f);
+				dst[x * 3 + 0] = src[x * 4 + 1];
+				dst[x * 3 + 1] = src[x * 4 + 2];
+				dst[x * 3 + 2] = src[x * 4 + 3];
 			}
+
+			write(fileno(f), dst, pix->w * 3);
 		}
 
-		fz_droppixmap(pix);
+		pix->y += bh;
 	}
+
+	fz_droppixmap(pix);
 
 	fclose(f);
 
@@ -108,6 +117,7 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	pdf_pagetree *pages;
 	int c;
+	static char namebuf[256];
 
 	char *password = "";
 
@@ -131,7 +141,24 @@ int main(int argc, char **argv)
 		usage();
 
 	filename = argv[optind++];
-	
+
+	if (!namefmt)
+	{
+		char *s;
+		s = strrchr(filename, '/');
+		if (!s)
+			s = filename;
+		else
+			s ++;
+		strcpy(namebuf, s);
+		s = strrchr(namebuf, '.');
+		if (s)
+			strcpy(s, "-%03d.ppm");
+		else
+			strcat(namebuf, "-%03d.ppm");
+		namefmt = namebuf;
+	}
+
 	error = pdf_newxref(&xref);
 	if (error)
 		fz_abort(error);
