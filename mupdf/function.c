@@ -485,7 +485,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 		
 	/* optional */
 	tmpobj = fz_dictgets(dict, "Encode");
-	encode = fz_malloc(func->m*2 * sizeof(float));
+	func->u.sa.encode = encode = fz_malloc(func->m*2 * sizeof(float));
 	if(!encode) return fz_outofmem;
 	if(fz_isarray(tmpobj)) {
 		if(fz_arraylen(tmpobj) != func->m*2)
@@ -495,7 +495,6 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 			encode[i*2] = fz_toreal(fz_arrayget(tmpobj, i*2));
 			encode[i*2+1] = fz_toreal(fz_arrayget(tmpobj, i*2+1));
 		}
-		func->u.sa.encode = encode;
 	}
 	else {
 		for(i = 0; i < func->m; ++i) {
@@ -506,7 +505,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 	
 	/* optional */
 	tmpobj = fz_dictgets(dict, "Decode");
-	decode = fz_malloc(func->n*2 * sizeof(float));
+	func->u.sa.decode = decode = fz_malloc(func->n*2 * sizeof(float));
 	if(!decode) return fz_outofmem;
 	if(fz_isarray(tmpobj)) {
 		if(fz_arraylen(tmpobj) != func->n*2)
@@ -516,7 +515,6 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gi
 			decode[i*2] = fz_toreal(fz_arrayget(tmpobj, i*2));
 			decode[i*2+1] = fz_toreal(fz_arrayget(tmpobj, i*2+1));
 		}
-		func->u.sa.decode = decode;
 	}
 	else {
 		for(i = 0; i < func->n; ++i) {
