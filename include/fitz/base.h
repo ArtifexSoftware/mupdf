@@ -35,7 +35,7 @@ struct fz_error_s
 #define fz_outofmem (&fz_koutofmem)
 extern fz_error fz_koutofmem;
 
-#ifdef __WIN32__
+#ifdef WIN32
 #define fz_throw fz_throwMS
 fz_error *fz_throwMS(char *fmt, ...);
 #else

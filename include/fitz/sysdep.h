@@ -11,31 +11,27 @@
 #include <float.h>	/* DBL_EPSILON */
 #include <math.h>
 
+#ifdef WIN32
+#define NEED_STRLCPY
+#define NEED_STRSEP
+#define NEED_GETOPT
+#define M_PI 3.14159265358979323846
+#define inline __inline
+#define vsnprintf _vsnprintf
+#endif
+
 #include <errno.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <fcntl.h>	/* O_RDONLY & co */
 
 /* not supposed to be here, but printf debugging sorta needs it */
 #include <stdio.h>
 
-typedef unsigned char fz_u8;
-typedef signed char fz_s8;
-typedef unsigned short fz_u16;
-typedef signed short fz_s16;
-typedef unsigned long fz_u32;
-typedef signed long fz_s32;
-typedef unsigned long long fz_u64;
-typedef signed long long fz_s64;
-
 /*
  * Extras! Extras! Get them while they're hot!
  */
-
-#ifdef __WIN32__
-#define NEED_STRLCPY
-#define NEED_STRSEP
-#define NEED_GETOPT
-#endif
 
 #ifdef NEED_STRLCPY
 extern int strlcpy(char *dst, const char *src, int n);

@@ -32,7 +32,7 @@ struct fz_hashtable_s
 static unsigned hash(unsigned char *s, int len)
 {
     unsigned hash = 0;
-    unsigned i;
+    int i;
     for (i = 0; i < len; i++)
     {
         hash += s[i];
