@@ -1,6 +1,32 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+fz_rect pdf_torect(fz_obj *array)
+{
+	fz_rect r;
+	float a = fz_toreal(fz_arrayget(array, 0));
+	float b = fz_toreal(fz_arrayget(array, 1));
+	float c = fz_toreal(fz_arrayget(array, 2));
+	float d = fz_toreal(fz_arrayget(array, 3));
+	r.min.x = MIN(a, c);
+	r.min.y = MIN(b, d);
+	r.max.x = MAX(a, c);
+	r.max.y = MAX(b, d);
+	return r;
+}
+
+fz_matrix pdf_tomatrix(fz_obj *array)
+{
+	fz_matrix m;
+	m.a = fz_toreal(fz_arrayget(array, 0));
+	m.b = fz_toreal(fz_arrayget(array, 1));
+	m.c = fz_toreal(fz_arrayget(array, 2));
+	m.d = fz_toreal(fz_arrayget(array, 3));
+	m.e = fz_toreal(fz_arrayget(array, 4));
+	m.f = fz_toreal(fz_arrayget(array, 5));
+	return m;
+}
+
 fz_error *
 pdf_parsearray(fz_obj **op, fz_file *file, char *buf, int cap)
 {

@@ -31,8 +31,6 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 	int n;
 	int i;
 
-printf("joining content stream\n");
-
 	error = fz_newbuffer(&big, 32 * 1024);
 	if (error)
 		return error;
@@ -144,10 +142,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		obj = fz_dictgets(dict, "MediaBox");
 	if (!fz_isarray(obj))
 		return fz_throw("syntaxerror: Page missing MediaBox");
-	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
-	bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
-	bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
-	bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
+	bbox = pdf_torect(obj);
 
 	obj = fz_dictgets(dict, "Rotate");
 	if (fz_isint(obj))

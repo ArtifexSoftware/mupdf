@@ -115,18 +115,11 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	font->super.drop = (void(*)(fz_font*)) t3dropfont;
 
 	obj = fz_dictgets(dict, "FontMatrix");
-	font->matrix.a = fz_toreal(fz_arrayget(obj, 0));
-	font->matrix.b = fz_toreal(fz_arrayget(obj, 1));
-	font->matrix.c = fz_toreal(fz_arrayget(obj, 2));
-	font->matrix.d = fz_toreal(fz_arrayget(obj, 3));
-	font->matrix.e = fz_toreal(fz_arrayget(obj, 4));
-	font->matrix.f = fz_toreal(fz_arrayget(obj, 5));
+	font->matrix = pdf_tomatrix(obj);
 
 	obj = fz_dictgets(dict, "FontBBox");
-	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
-	bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
-	bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
-	bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
+	bbox = pdf_torect(obj);
+
 	bbox = fz_transformaabb(font->matrix, bbox);
 	bbox.min.x = fz_floor(bbox.min.x * 1000);
 	bbox.min.y = fz_floor(bbox.min.y * 1000);

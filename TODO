@@ -1,20 +1,22 @@
 immediate plan:
-	1 - pdf_resolve remake
-	2 - refcount resources
-	3 - put image load/scale into rastfuncs
-	4 - altivec optimize
-	5 - gtk+pdf
-	6 - page labels + dests + outline + annots
-	7 - global font/cmap cache
+	- refcount resources
+	- put image load/scale into rastfuncs
+	- altivec optimize
+	- gtk+pdf
+	- page labels + dests + outline + annots
+	- global font/cmap cache
+	- design gui for editor
+	- talk to keithp about fontconfig cid-font + cmap support
+	- go through spec and check all features!
+	- font and cmap config (where to load cmap and which cid fonts)
 
 ---
 
 colorspace conversions (v2)
-	- cal*
-	- iccbased
-	- how to normalize Lab components to 0..1
 	- fast color cubes
-	- how to cache colorspace cubes (what key?)
+	- proper colorspace conversions
+	- gamut compression
+	- extended render intents
 
 image rendering (v2)
 	- tiles

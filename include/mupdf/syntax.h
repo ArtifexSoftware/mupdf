@@ -25,6 +25,9 @@ fz_error *pdf_parsedict(fz_obj **op, fz_file *f, char *buf, int cap);
 fz_error *pdf_parsestmobj(fz_obj **op, fz_file *f, char *buf, int cap);
 fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, char *buf, int cap, int *oid, int *gid, int *stmofs);
 
+fz_rect pdf_torect(fz_obj *array);
+fz_matrix pdf_tomatrix(fz_obj *array);
+
 /*
  * Encryption
  */

@@ -30,25 +30,13 @@ printf("loading pattern %d %d\n", fz_tonum(stmref), fz_togen(stmref));
 	pat->ystep = fz_toreal(fz_dictgets(dict, "YStep"));
 
 	obj = fz_dictgets(dict, "BBox");
-	pat->bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
-	pat->bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
-	pat->bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
-	pat->bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
+	pat->bbox = pdf_torect(obj);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
-	{
-		pat->matrix.a = fz_toreal(fz_arrayget(obj, 0));
-		pat->matrix.b = fz_toreal(fz_arrayget(obj, 1));
-		pat->matrix.c = fz_toreal(fz_arrayget(obj, 2));
-		pat->matrix.d = fz_toreal(fz_arrayget(obj, 3));
-		pat->matrix.e = fz_toreal(fz_arrayget(obj, 4));
-		pat->matrix.f = fz_toreal(fz_arrayget(obj, 5));
-	}
+		pat->matrix = pdf_tomatrix(obj);
 	else
-	{
 		pat->matrix = fz_identity();
-	}
 
 printf("  mask %d\n", pat->ismask);
 printf("  xstep %g\n", pat->xstep);

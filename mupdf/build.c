@@ -258,11 +258,14 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	fz_node *xform;
 	fz_node *over;
 	fz_node *mask;
+	fz_node *meta;
 	fz_node *link;
 	fz_matrix ctm;
 	fz_matrix inv;
 	fz_matrix ptm;
 	fz_rect bbox;
+	fz_obj *name;
+	fz_obj *dict;
 	int x, y, x0, y0, x1, y1;
 
 	/* patterns are painted in user space */
@@ -276,11 +279,26 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	error = fz_newtransformnode(&xform, ptm);
 	if (error) return error;
 
+	error = fz_newname(&name, "Pattern");
+	if (error) return error;
+
+	error = fz_packobj(&dict, "<< /Tree %p /XStep %f /YStep %f "
+								" /Matrix[%f %f %f %f %f %f] >>",
+				pat->tree, pat->xstep, pat->ystep,
+				pat->matrix.a, pat->matrix.b,
+				pat->matrix.c, pat->matrix.d,
+				pat->matrix.e, pat->matrix.f);
+	if (error) return error;
+
+	error = fz_newmetanode(&meta, name, dict);
+	if (error) return error;
+
 	error = fz_newovernode(&over);
 	if (error) return error;
 
 	fz_insertnodelast(mask, shape);
-	fz_insertnodelast(mask, xform);
+	fz_insertnodelast(mask, meta);
+	fz_insertnodelast(meta, xform);
 	fz_insertnodelast(xform, over);
 
 	/* get bbox of shape in pattern space for stamping */

@@ -13,21 +13,11 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		return fz_outofmem;
 
 	obj = fz_dictgets(dict, "BBox");
-	form->bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
-	form->bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
-	form->bbox.max.x = fz_toreal(fz_arrayget(obj, 2));
-	form->bbox.max.y = fz_toreal(fz_arrayget(obj, 3));
+	form->bbox = pdf_torect(obj);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
-	{
-		form->matrix.a = fz_toreal(fz_arrayget(obj, 0));
-		form->matrix.b = fz_toreal(fz_arrayget(obj, 1));
-		form->matrix.c = fz_toreal(fz_arrayget(obj, 2));
-		form->matrix.d = fz_toreal(fz_arrayget(obj, 3));
-		form->matrix.e = fz_toreal(fz_arrayget(obj, 4));
-		form->matrix.f = fz_toreal(fz_arrayget(obj, 5));
-	}
+		form->matrix = pdf_tomatrix(obj);
 	else
 		form->matrix = fz_identity();
 

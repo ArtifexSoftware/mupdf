@@ -15,7 +15,7 @@ fz_accelrastfuncs(fz_rastfuncs *tab)
 #  ifdef HAVE_ALTIVEC
 	if (fz_cpuflags & HAVE_ALTIVEC)
 	{
-		puts("installed altivec rastfuncs");
+		/* ... */
 	}
 #  endif
 }
