@@ -65,6 +65,10 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	shade->matrix = matrix;
 	shade->bbox = fz_infiniterect;
 
+	shade->meshlen = 0;
+	shade->meshcap = 0;
+	shade->mesh = nil;
+
 	obj = fz_dictgets(dict, "ShadingType");
 	type = fz_toint(obj);
 	pdf_logshade("type %d\n", type);
@@ -126,8 +130,8 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 		if (error) goto cleanup;
 		break;
 	default:
-		error = fz_throw("syntaxerror: unknown shading type: %d", type);
-		goto cleanup;
+		fz_warn("syntaxerror: unknown shading type: %d", type);
+		break;
 	};
 
 	pdf_logshade("}\n");
