@@ -367,7 +367,7 @@ evenodd(fz_ael *ael, unsigned char *list, int xofs, int hs)
 	}
 }
 
-static void toalpha(unsigned char *list, int n)
+static inline void toalpha(unsigned char *list, int n)
 {
 	int d = 0;
 	while (n--)
@@ -377,9 +377,34 @@ static void toalpha(unsigned char *list, int n)
 	}
 }
 
+static inline void blit(fz_pixmap *pix, int x, int y,
+						unsigned char *list, int skipx, int len,
+						unsigned char *rgb, int over)
+{
+	unsigned char *dst;
+	int cov;
+
+	dst = pix->samples + ( (y - pix->y) * pix->w + (x - pix->x) ) * pix->n;
+	cov = 0;
+
+	while (skipx--)
+	{
+		cov += *list;
+		*list = 0;
+		++list;
+	}
+
+	if (rgb)
+		fz_path_w3i1o4(rgb, list, cov, len, dst);
+	else if (over)
+		fz_path_1o1(list, cov, len, dst);
+	else
+		fz_path_1c1(list, cov, len, dst);
+}
+
 fz_error *
-fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
-	void (*blitfunc)(int,int,int,unsigned char*,void*), void *blitdata)
+fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
+	fz_pixmap *pix, unsigned char *rgb, int over)
 {
 	fz_error *error;
 	unsigned char *deltas;
@@ -392,6 +417,12 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	int xofs = xmin * gel->hs;
 	int hs = gel->hs;
 	int vs = gel->vs;
+
+	int skipx = clip.min.x - xmin;
+	int clipn = clip.max.x - clip.min.x;
+
+	assert(clip.min.x >= xmin);
+	assert(clip.max.x <= xmax);
 
 	if (gel->len == 0)
 		return nil;
@@ -410,12 +441,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 	while (ael->len > 0 || e < gel->len)
 	{
 		yc = fz_idiv(y, vs);
-		if (yc != yd) {
-			if (yd >= y0 && yd < y1)
+		if (yc != yd)
+		{
+			if (yd >= clip.min.y && yd < clip.max.y)
 			{
-				toalpha(deltas, xmax - xmin);
-				blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
-				memset(deltas, 0, xmax - xmin + 1);
+				blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
 			}
 		}
 		yd = yc;
@@ -426,7 +456,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 			return error;
 		}
 
-		if (yd >= y0 && yd < y1)
+		if (yd >= clip.min.y && yd < clip.max.y)
 		{
 			if (eofill)
 				evenodd(ael, deltas, xofs, hs);
@@ -442,10 +472,9 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 			y = gel->edges[e].y;
 	}
 
-	if (yd >= y0 && yd < y1)
+	if (yd >= clip.min.y && yd < clip.max.y)
 	{
-		toalpha(deltas, xmax - xmin);
-		blitfunc(yd, xmin, xmax - xmin, deltas, blitdata);
+		blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
 	}
 
 	fz_free(deltas);

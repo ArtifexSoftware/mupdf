@@ -146,45 +146,9 @@ DEBUG("color %s [%d %d %d];\n", color->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb
 
 enum { HS = 17, VS = 15, SF = 1 };
 
-struct spandata
-{
-	int x, n;
-	fz_pixmap *dst;
-	unsigned char *rgb;
-	int flag;
-};
-
-static void spanfunc(int y, int x, int n, unsigned char *path, void *userdata)
-{
-	struct spandata *user = userdata;
-	fz_pixmap *dst = user->dst;
-	unsigned char *dstp;
-
-	path += user->x;
-	x += user->x;
-
-	dstp = dst->samples + ( (y - dst->y) * dst->w + (x - dst->x) ) * dst->n;
-
-	switch (user->flag)
-	{
-	case FNONE:
-		assert(dst->n == 1);
-		fz_path_1c1(path, dstp, user->n); break;
-	case FOVER:
-		assert(dst->n == 1);
-		fz_path_1o1(path, dstp, user->n); break;
-	case FOVER | FRGB:
-		assert(dst->n == 4);
-		fz_path_w3i1o4(user->rgb, path, dstp, user->n); break;
-	default:
-		assert(!"impossible flag in path span function");
-	}
-}
-
 static fz_error *
 renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 {
-	struct spandata user;
 	fz_error *error;
 	float flatness;
 	fz_irect gbox;
@@ -218,14 +182,15 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 
-	user.x = clip.min.x - gbox.min.x;
-	user.n = clip.max.x - clip.min.x;
-	user.flag = gc->flag;
-	user.rgb = gc->rgb;
-
-	if (gc->flag & FOVER)
+	if (gc->flag & FRGB)
 	{
-		user.dst = gc->over;
+		return fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
+					clip, gc->over, gc->rgb, 1);
+	}
+	else if (gc->flag & FOVER)
+	{
+		return fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
+					clip, gc->over, nil, 1);
 	}
 	else
 	{
@@ -233,15 +198,9 @@ DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 		if (error)
 			return error;
 		fz_clearpixmap(gc->dest);
-		user.dst = gc->dest;
+		return fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
+					clip, gc->dest, nil, 0);
 	}
-
-	error = fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
-				clip.min.y, clip.max.y, spanfunc, &user);
-	if (error)
-		return error;
-
-	return nil;
 }
 
 /*

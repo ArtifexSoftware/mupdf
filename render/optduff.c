@@ -236,67 +236,100 @@ static void duff_4i1o4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, 
  * Path and text masks
  */
 
-static void path_1c1(byte *src, byte *dst, int w)
+static void path_1c1(byte *src, int cov, int len, byte *dst)
 {
-	memcpy(dst, src, w);
+	while (len--)
+	{
+		cov += *src; *src = 0; src++;
+		*dst++ = cov;
+	}
 }
 
-static void path_1o1(byte *src, byte *dst, int w)
+static void path_1o1(byte *src, int cov, int len, byte *dst)
 {
-	while (w--)
+	while (len--)
 	{
-		dst[0] = src[0] + fz_mul255(dst[0], 255 - src[0]);
-		src++;
+		cov += *src; *src = 0; src++;
+		dst[0] = cov + fz_mul255(dst[0], 255 - cov);
 		dst++;
 	}
 }
 
-static void path_w3i1o4(byte *rgb, byte *src, byte *dst, int n)
+static void path_w3i1o4(byte *rgb, byte *src, int cov, int len, byte *dst)
 {
 	byte rgb0 = rgb[0];
 	byte rgb1 = rgb[1];
 	byte rgb2 = rgb[2];
-	byte sa, ssa;
-	while (n--)
+	byte ssa;
+	while (len--)
 	{
-		sa = src[0];
-		ssa = 255 - sa;
-		dst[0] = sa + fz_mul255(dst[0], ssa);
+		cov += *src; *src = 0; src++;
+		ssa = 255 - cov;
+		dst[0] = cov + fz_mul255(dst[0], ssa);
 		dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
 		dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
 		dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
-		src ++;
 		dst += 4;
 	}
 }
 
-static void text_1c1(byte *src, int srcw, byte *dst, int dstw, int w0, int h)
+static void text_1c1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
 {
 	while (h--)
 	{
-		path_1c1(src, dst, w0);
-		src += srcw;
-		dst += dstw;
+		byte *src = src0;
+		byte *dst = dst0;
+		int w = w0;
+		while (w--)
+		{
+			*dst++ = *src++;
+		}
+		src0 += srcw;
+		dst0 += dstw;
 	}
 }
 
-static void text_1o1(byte *src, int srcw, byte *dst, int dstw, int w0, int h)
+static void text_1o1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
 {
 	while (h--)
 	{
-		path_1o1(src, dst, w0);
-		src += srcw;
-		dst += dstw;
+		byte *src = src0;
+		byte *dst = dst0;
+		int w = w0;
+		while (w--)
+		{
+			dst[0] = src[0] + fz_mul255(dst[0], 255 - src[0]);
+			src++;
+			dst++;
+		}
+		src0 += srcw;
+		dst0 += dstw;
 	}
 }
 
-static void text_w3i1o4(byte *rgb, byte *src, int srcw, byte *dst, int dstw, int w0, int h)
+static void text_w3i1o4(byte *rgb, byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
 {
+	unsigned char rgb0 = rgb[0];
+	unsigned char rgb1 = rgb[1];
+	unsigned char rgb2 = rgb[2];
 	while (h--)
 	{
-		path_w3i1o4(rgb, src, dst, w0);
-		src += srcw;
-		dst += dstw;
+		byte *src = src0;
+		byte *dst = dst0;
+		int w = w0;
+		while (w--)
+		{
+			byte sa = src[0];
+			byte ssa = 255 - sa;
+			dst[0] = sa + fz_mul255(dst[0], ssa);
+			dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
+			dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
+			dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
+			src ++;
+			dst += 4;
+		}
+		src0 += srcw;
+		dst0 += dstw;
 	}
 }
 
@@ -314,9 +347,9 @@ void (*fz_duff_4i1c4)(byte*,int,byte*,int,byte*,int,int,int) = duff_4i1c4;
 void (*fz_duff_1i1o1)(byte*,int,byte*,int,byte*,int,int,int) = duff_1i1o1;
 void (*fz_duff_4i1o4)(byte*,int,byte*,int,byte*,int,int,int) = duff_4i1o4;
 
-void (*fz_path_1c1)(byte*,byte*,int) = path_1c1;
-void (*fz_path_1o1)(byte*,byte*,int) = path_1o1;
-void (*fz_path_w3i1o4)(byte*,byte*,byte*,int) = path_w3i1o4;
+void (*fz_path_1c1)(byte*,int,int,byte*) = path_1c1;
+void (*fz_path_1o1)(byte*,int,int,byte*) = path_1o1;
+void (*fz_path_w3i1o4)(byte*,byte*,int,int,byte*) = path_w3i1o4;
 
 void (*fz_text_1c1)(byte*,int,byte*,int,int,int) = text_1c1;
 void (*fz_text_1o1)(byte*,int,byte*,int,int,int) = text_1o1;
