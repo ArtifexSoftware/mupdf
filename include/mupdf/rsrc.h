@@ -28,6 +28,16 @@ void pdf_freefunction(pdf_function *func);
  * ColorSpace
  */
 
+typedef struct pdf_indexed_s pdf_indexed;
+
+struct pdf_indexed_s
+{
+	fz_colorspace super;	/* hmmm... */
+	fz_colorspace *base;
+	int high;
+	unsigned char *lookup;
+};
+
 extern fz_colorspace *pdf_devicegray;
 extern fz_colorspace *pdf_devicergb;
 extern fz_colorspace *pdf_devicecmyk;
@@ -61,6 +71,7 @@ struct pdf_image_s
 {
 	fz_image super;
 	fz_image *mask;			/* explicit mask with subimage */
+	pdf_indexed *indexed;
 	float decode[32];
 	int bpc;
 	int stride;

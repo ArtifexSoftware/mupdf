@@ -127,6 +127,8 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 	float a, b, c, d, e, f;
 	float x, y, w, h;
 	fz_matrix m;
+	float v[32];
+	int what;
 	int i;
 
 	if (strlen(buf) > 1)
@@ -297,102 +299,75 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 
 		else if (!strcmp(buf, "cs"))
 		{
-			fz_obj *dict;
-			fz_obj *obj;
-
-			if (csi->top != 1)
-				goto syntaxerror;
-
-			error = pdf_flushtext(csi);
-			if (error) return error;
-
-			obj = csi->stack[0];
-
-			if (!strcmp(fz_toname(obj), "DeviceGray"))
-				gstate->fillcs = pdf_devicegray;
-			else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-				gstate->fillcs = pdf_devicergb;
-			else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-				gstate->fillcs = pdf_devicecmyk;
-			else
-			{
-				dict = fz_dictgets(rdb, "ColorSpace");
-				if (!dict)
-					return fz_throw("syntaxerror: missing colorspace resource");
-				obj = fz_dictget(dict, obj);
-				if (!obj)
-					return fz_throw("syntaxerror: missing colorspace resource");
-				if (fz_isindirect(obj))
-					gstate->fillcs = pdf_findresource(xref->rcolorspace, obj);
-				else
-					return fz_throw("syntaxerror: inline colorspace in dict");
-				if (!gstate->fillcs)
-					return fz_throw("syntaxerror: missing colorspace resource");
-			}
-
-			// FIXME set default color
+			what = PDF_MFILL;
+			goto Lsetcolorspace;
 		}
 
 		else if (!strcmp(buf, "CS"))
 		{
-			fz_obj *dict;
+			fz_colorspace *cs;
 			fz_obj *obj;
 
+			what = PDF_MSTROKE;
+
+Lsetcolorspace:
 			if (csi->top != 1)
 				goto syntaxerror;
-
-			error = pdf_flushtext(csi);
-			if (error) return error;
 
 			obj = csi->stack[0];
 
 			if (!strcmp(fz_toname(obj), "DeviceGray"))
-				gstate->strokecs = pdf_devicegray;
+				cs = pdf_devicegray;
 			else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-				gstate->strokecs = pdf_devicergb;
+				cs = pdf_devicergb;
 			else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-				gstate->strokecs = pdf_devicecmyk;
+				cs = pdf_devicecmyk;
 			else
 			{
-				dict = fz_dictgets(rdb, "ColorSpace");
+				fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
 				if (!dict)
 					return fz_throw("syntaxerror: missing colorspace resource");
 				obj = fz_dictget(dict, obj);
 				if (!obj)
 					return fz_throw("syntaxerror: missing colorspace resource");
 				if (fz_isindirect(obj))
-					gstate->strokecs = pdf_findresource(xref->rcolorspace, obj);
+					cs = pdf_findresource(xref->rcolorspace, obj);
 				else
 					return fz_throw("syntaxerror: inline colorspace in dict");
-				if (!gstate->strokecs)
+				if (!cs)
 					return fz_throw("syntaxerror: missing colorspace resource");
 			}
 
-			// FIXME set default color
+			error = pdf_setcolorspace(csi, what, cs);
+			if (error) return error;
 		}
 
 		else if (!strcmp(buf, "sc") || !strcmp(buf, "scn"))
 		{
-			if (csi->top != gstate->fillcs->n)
+			if (gstate->fill.kind == PDF_MINDEXED && csi->top != 1)
+				goto syntaxerror;
+			else if (csi->top != gstate->fill.cs->n)
 				goto syntaxerror;
 
-			error = pdf_flushtext(csi);
-			if (error) return error;
-
 			for (i = 0; i < csi->top; i++)
-				gstate->fill[i] = fz_toreal(csi->stack[i]);
+				v[i] = fz_toreal(csi->stack[i]);
+
+			error = pdf_setcolor(csi, PDF_MFILL, v);
+			if (error) return error;
 		}
 
 		else if (!strcmp(buf, "SC") || !strcmp(buf, "SCN"))
 		{
-			if (csi->top != gstate->strokecs->n)
+			if (gstate->stroke.kind == PDF_MINDEXED && csi->top != 1)
+				goto syntaxerror;
+			else if (csi->top != gstate->stroke.cs->n)
 				goto syntaxerror;
 
-			error = pdf_flushtext(csi);
-			if (error) return error;
-
 			for (i = 0; i < csi->top; i++)
-				gstate->stroke[i] = fz_toreal(csi->stack[i]);
+				v[i] = fz_toreal(csi->stack[i]);
+
+			error = pdf_setcolor(csi, PDF_MFILL, v);
+			if (error) return error;
 		}
 
 		else if (!strcmp(buf, "rg"))
@@ -400,13 +375,14 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (csi->top != 3)
 				goto syntaxerror;
 
-			error = pdf_flushtext(csi);
-			if (error) return error;
+			v[0] = fz_toreal(csi->stack[0]);
+			v[1] = fz_toreal(csi->stack[1]);
+			v[2] = fz_toreal(csi->stack[2]);
 
-			gstate->fillcs = pdf_devicergb;
-			gstate->fill[0] = fz_toreal(csi->stack[0]);
-			gstate->fill[1] = fz_toreal(csi->stack[1]);
-			gstate->fill[2] = fz_toreal(csi->stack[2]);
+			error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicergb);
+			if (error) return error;
+			error = pdf_setcolor(csi, PDF_MFILL, v);
+			if (error) return error;
 		}
 
 		else if (!strcmp(buf, "RG"))
@@ -414,13 +390,14 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (csi->top != 3)
 				goto syntaxerror;
 
-			error = pdf_flushtext(csi);
-			if (error) return error;
+			v[0] = fz_toreal(csi->stack[0]);
+			v[1] = fz_toreal(csi->stack[1]);
+			v[2] = fz_toreal(csi->stack[2]);
 
-			gstate->strokecs = pdf_devicergb;
-			gstate->stroke[0] = fz_toreal(csi->stack[0]);
-			gstate->stroke[1] = fz_toreal(csi->stack[1]);
-			gstate->stroke[2] = fz_toreal(csi->stack[2]);
+			error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicergb);
+			if (error) return error;
+			error = pdf_setcolor(csi, PDF_MSTROKE, v);
+			if (error) return error;
 		}
 
 		else if (!strcmp(buf, "BT"))
@@ -776,50 +753,52 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 		if (csi->top != 1)
 			goto syntaxerror;
 
-		error = pdf_flushtext(csi);
+		v[0] = fz_toreal(csi->stack[0]);
+		error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicegray);
 		if (error) return error;
-
-		gstate->fillcs = pdf_devicegray;
-		gstate->fill[0] = fz_toreal(csi->stack[0]);
+		error = pdf_setcolor(csi, PDF_MFILL, v);
+		if (error) return error;
 		break;
 		
 	case 'G':
 		if (csi->top != 1)
 			goto syntaxerror;
 
-		error = pdf_flushtext(csi);
+		v[0] = fz_toreal(csi->stack[0]);
+		error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicegray);
 		if (error) return error;
-
-		gstate->strokecs = pdf_devicegray;
-		gstate->stroke[0] = fz_toreal(csi->stack[0]);
+		error = pdf_setcolor(csi, PDF_MSTROKE, v);
+		if (error) return error;
 		break;
 
 	case 'k':
 		if (csi->top != 4)
 			goto syntaxerror;
 
-		error = pdf_flushtext(csi);
-		if (error) return error;
+		v[0] = fz_toreal(csi->stack[0]);
+		v[1] = fz_toreal(csi->stack[1]);
+		v[2] = fz_toreal(csi->stack[2]);
+		v[3] = fz_toreal(csi->stack[3]);
 
-		gstate->fillcs = pdf_devicecmyk;
-		gstate->fill[0] = fz_toreal(csi->stack[0]);
-		gstate->fill[1] = fz_toreal(csi->stack[1]);
-		gstate->fill[2] = fz_toreal(csi->stack[2]);
-		gstate->fill[3] = fz_toreal(csi->stack[3]);
+		error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicecmyk);
+		if (error) return error;
+		error = pdf_setcolor(csi, PDF_MFILL, v);
+		if (error) return error;
 		break;
 
 	case 'K':
 		if (csi->top != 4)
 			goto syntaxerror;
 
-		error = pdf_flushtext(csi);
-		if (error) return error;
+		v[0] = fz_toreal(csi->stack[0]);
+		v[1] = fz_toreal(csi->stack[1]);
+		v[2] = fz_toreal(csi->stack[2]);
+		v[3] = fz_toreal(csi->stack[3]);
 
-		gstate->strokecs = pdf_devicecmyk;
-		gstate->stroke[0] = fz_toreal(csi->stack[0]);
-		gstate->stroke[1] = fz_toreal(csi->stack[1]);
-		gstate->stroke[2] = fz_toreal(csi->stack[2]);
-		gstate->stroke[3] = fz_toreal(csi->stack[3]);
+		error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicecmyk);
+		if (error) return error;
+		error = pdf_setcolor(csi, PDF_MSTROKE, v);
+		if (error) return error;
 		break;
 
 	case '\'':

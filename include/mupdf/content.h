@@ -2,8 +2,36 @@
  * content stream parsing
  */
 
+typedef struct pdf_material_s pdf_material;
 typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_csi_s pdf_csi;
+
+enum
+{
+	PDF_MFILL,
+	PDF_MSTROKE
+};
+
+enum
+{
+	PDF_MNONE,
+	PDF_MCOLOR,
+	PDF_MLAB,
+	PDF_MINDEXED,
+	PDF_MTILE,
+	PDF_MSHADE
+};
+
+struct pdf_material_s
+{
+	int kind;
+	fz_colorspace *cs;
+	float v[32];
+	pdf_indexed *indexed;
+	// lookup
+	// tile
+	// shade
+};
 
 struct pdf_gstate_s
 {
@@ -17,10 +45,8 @@ struct pdf_gstate_s
 	float dashlist[32];
 
 	/* materials */
-	fz_colorspace *strokecs;
-	float stroke[32];
-	fz_colorspace *fillcs;
-	float fill[32];
+	pdf_material stroke;
+	pdf_material fill;
 
 	/* text state */
 	float charspace;
@@ -58,6 +84,9 @@ struct pdf_csi_s
 
 /* build.c */
 void pdf_initgstate(pdf_gstate *gs);
+fz_error *pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
+fz_error *pdf_setcolor(pdf_csi *csi, int what, float *v);
+
 fz_error *pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path);
 fz_error *pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int evenodd);
 fz_error *pdf_addfillshape(pdf_gstate *gs, fz_node *shape);

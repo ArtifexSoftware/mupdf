@@ -12,11 +12,13 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->dashlen = 0;
 	memset(gs->dashlist, 0, sizeof(gs->dashlist));
 
-	gs->strokecs = pdf_devicegray;
-	gs->stroke[0] = 0;
+	gs->stroke.kind = PDF_MCOLOR;
+	gs->stroke.cs = pdf_devicegray;
+	gs->stroke.v[0] = 0;
 
-	gs->fillcs = pdf_devicegray;
-	gs->fill[0] = 0;
+	gs->fill.kind = PDF_MCOLOR;
+	gs->fill.cs = pdf_devicegray;
+	gs->fill.v[0] = 0;
 
 	gs->charspace = 0;
 	gs->wordspace = 0;
@@ -29,6 +31,83 @@ pdf_initgstate(pdf_gstate *gs)
 
 	gs->head = nil;
 }
+
+fz_error *
+pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
+{
+	pdf_gstate *gs = csi->gstate + csi->gtop;
+	fz_error *error;
+	pdf_material *mat;
+
+	error = pdf_flushtext(csi);
+	if (error)
+		return error;
+
+	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
+
+	mat->kind = PDF_MCOLOR;
+	mat->cs = cs;
+
+	mat->v[0] = 0;	// FIXME: default color
+	mat->v[1] = 0;	// FIXME: default color
+	mat->v[2] = 0;	// FIXME: default color
+	mat->v[3] = 1;	// FIXME: default color
+
+	if (!strcmp(cs->name, "Indexed"))
+	{
+		mat->kind = PDF_MINDEXED;
+		mat->indexed = (pdf_indexed*)cs;
+		mat->cs = mat->indexed->base;
+	}
+
+	if (!strcmp(cs->name, "Lab"))
+		mat->kind = PDF_MLAB;
+
+	return nil;
+}
+
+fz_error *
+pdf_setcolor(pdf_csi *csi, int what, float *v)
+{
+	pdf_gstate *gs = csi->gstate + csi->gtop;
+	fz_error *error;
+	pdf_indexed *ind;
+	pdf_material *mat;
+	int i, k;
+
+	error = pdf_flushtext(csi);
+	if (error)
+		return error;
+
+	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
+
+	switch (mat->kind)
+	{
+	case PDF_MCOLOR:
+		for (i = 0; i < mat->cs->n; i++)
+			mat->v[i] = v[i];
+		break;
+
+	case PDF_MLAB:
+		mat->v[0] = v[0] / 100.0;
+		mat->v[1] = (v[1] + 100) / 200.0;
+		mat->v[2] = (v[2] + 100) / 200.0;
+		break;
+
+	case PDF_MINDEXED:
+		ind = mat->indexed;
+		i = CLAMP(v[0], 0, ind->high);
+		for (k = 0; k < ind->base->n; k++)
+			mat->v[k] = ind->lookup[ind->base->n * i + k] / 255.0;
+		break;
+
+	default:
+		return fz_throw("syntaxerror: color not compatible with material");
+	}
+
+	return nil;
+}
+
 
 fz_error *
 pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
@@ -89,13 +168,31 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 fz_error *
 pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 {
-	return addcolorshape(gs, shape, gs->fillcs, gs->fill);
+	switch (gs->fill.kind)
+	{
+	case PDF_MNONE:
+		fz_insertnode(gs->head, shape);
+		return nil;
+	case PDF_MCOLOR:
+		return addcolorshape(gs, shape, gs->fill.cs, gs->fill.v);
+	default:
+		return fz_throw("unimplemented material");
+	}
 }
 
 fz_error *
 pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 {
-	return addcolorshape(gs, shape, gs->strokecs, gs->stroke);
+	switch (gs->stroke.kind)
+	{
+	case PDF_MNONE:
+		fz_insertnode(gs->head, shape);
+		return nil;
+	case PDF_MCOLOR:
+		return addcolorshape(gs, shape, gs->stroke.cs, gs->stroke.v);
+	default:
+		return fz_throw("unimplemented material");
+	}
 }
 
 fz_error *

@@ -356,9 +356,13 @@ static inline float cielabinvg(float x)
 static void labtoxyz(fz_colorspace *fzcs, float *lab, float *xyz)
 {
 	struct cielab *cs = (struct cielab *) fzcs;
-	float lstar = lab[0];
-	float astar = MAX(MIN(lab[1], cs->range[1]), cs->range[0]);
-	float bstar = MAX(MIN(lab[2], cs->range[3]), cs->range[2]);
+	float tmp[3];
+	tmp[0] = lab[0] * 100;
+	tmp[1] = lab[1] * 200 - 100;
+	tmp[2] = lab[2] * 200 - 100;
+	float lstar = tmp[0];
+	float astar = MAX(MIN(tmp[1], cs->range[1]), cs->range[0]);
+	float bstar = MAX(MIN(tmp[2], cs->range[3]), cs->range[2]);
 	float l = ((lstar * 16.0) / 116.0) + (astar / 500.0);
 	float m = (lstar * 16.0) / 116.0;
 	float n = ((lstar * 16.0) / 116.0) - (bstar / 200.0);
@@ -370,13 +374,17 @@ static void labtoxyz(fz_colorspace *fzcs, float *lab, float *xyz)
 static void xyztolab(fz_colorspace *fzcs, float *xyz, float *lab)
 {
 	struct cielab *cs = (struct cielab *) fzcs;
+	float tmp[3];
 	float yyn = xyz[1] / cs->white[1];
 	if (yyn < 0.008856)
-		lab[0] = 116.0 * yyn * (1.0 / 3.0) - 16.0;
+		tmp[0] = 116.0 * yyn * (1.0 / 3.0) - 16.0;
 	else
-		lab[0] = 903.3 * yyn;
-	lab[1] = 500 * (cielabinvg(xyz[0]/cs->white[0]) - cielabinvg(xyz[1]/cs->white[1]));
-	lab[2] = 200 * (cielabinvg(xyz[1]/cs->white[1]) - cielabinvg(xyz[2]/cs->white[2]));
+		tmp[0] = 903.3 * yyn;
+	tmp[1] = 500 * (cielabinvg(xyz[0]/cs->white[0]) - cielabinvg(xyz[1]/cs->white[1]));
+	tmp[2] = 200 * (cielabinvg(xyz[1]/cs->white[1]) - cielabinvg(xyz[2]/cs->white[2]));
+	lab[0] = tmp[0] / 100.0;
+	lab[1] = (tmp[1] + 100) / 200.0;
+	lab[2] = (tmp[2] + 100) / 200.0;
 }
 
 static fz_error *
@@ -576,27 +584,25 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
  * Indexed
  */
 
-struct indexed
-{
-	fz_colorspace super;
-	fz_colorspace *base;
-	int high;
-	float *lookup;
-};
-
+/* only called for images... */
 static void
 indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
 {
-	struct indexed *cs = (struct indexed *)fzcs;
-	int i = ind[0] * 255; // FIXME
+	pdf_indexed *cs = (pdf_indexed *)fzcs;
+	float alt[32];
+	int i, k;
+	i = ind[0] * 255;
 	i = CLAMP(i, 0, cs->high);
-	cs->base->toxyz(cs->base, cs->lookup + i * cs->base->n, xyz);
+printf("indexedtoxyz: %d\n", i);
+	for (k = 0; k < cs->base->n; k++)
+		alt[k] = cs->lookup[i * cs->base->n + k] / 255.0;
+	cs->base->toxyz(cs->base, alt, xyz);
 }
 
 static void
 freeindexed(fz_colorspace *fzcs)
 {
-	struct indexed *cs = (struct indexed *)fzcs;
+	pdf_indexed *cs = (pdf_indexed *)fzcs;
 	fz_freecolorspace(cs->base);
 	fz_free(cs->lookup);
 }
@@ -605,7 +611,7 @@ static fz_error *
 loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {
 	fz_error *error;
-	struct indexed *cs;
+	pdf_indexed *cs;
 	fz_obj *baseobj = fz_arrayget(array, 1);
 	fz_obj *highobj = fz_arrayget(array, 2);
 	fz_obj *lookup = fz_arrayget(array, 3);
@@ -620,7 +626,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	if (error)
 		return error;
 
-	cs = fz_malloc(sizeof(struct indexed));
+	cs = fz_malloc(sizeof(pdf_indexed));
 	if (!cs)
 	{
 		fz_freecolorspace(base);
@@ -634,7 +640,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	n = base->n * (cs->high + 1);
 
-	cs->lookup = fz_malloc(n * sizeof(float));
+	cs->lookup = fz_malloc(n);
 	if (!cs->lookup)
 	{
 		freeindexed((fz_colorspace*)cs);
@@ -646,7 +652,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		unsigned char *buf = fz_tostringbuf(lookup);
 		int i;
 		for (i = 0; i < n; i++)
-			cs->lookup[i] = buf[i] / 255.0;	// FIXME base range
+			cs->lookup[i] = buf[i];
 	}
 
 	if (fz_isindirect(lookup))
@@ -662,7 +668,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		}
 
 		for (i = 0; i < n && i < (buf->wp - buf->rp); i++)
-			cs->lookup[i] = buf->rp[i] / 255.0;	// FIXME base range
+			cs->lookup[i] = buf->rp[i];
 
 		fz_freebuffer(buf);
 	}
