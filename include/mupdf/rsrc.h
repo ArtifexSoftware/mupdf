@@ -96,8 +96,9 @@ struct pdf_image_s
 	fz_buffer *samples;
 };
 
-fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_file *file);
+fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_file *file);
 fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *stm);
+fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
 
 /*
  * CMap and Font

@@ -135,7 +135,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
  */
 
 static fz_error *
-runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_file *file, fz_obj *dict)
+runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file, fz_obj *dict)
 {
 	fz_error *error;
 	pdf_image *img;
@@ -143,7 +143,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_file *file, fz_obj *dict)
 	int token;
 	int len;
 
-	error = pdf_loadinlineimage(&img, xref, dict, file);
+	error = pdf_loadinlineimage(&img, xref, rdb, dict, file);
 	if (error)
 		return error;
 
@@ -1137,7 +1137,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 				/* read whitespace after ID keyword */
 				fz_readbyte(file);
 
-				error = runinlineimage(csi, xref, file, obj);
+				error = runinlineimage(csi, xref, rdb, file, obj);
 				fz_dropobj(obj);
 				if (error)
 					return error;

@@ -236,6 +236,7 @@ printf("  scale tile 1/%d x 1/%d\n", dx, dy);
 	else
 		tile2 = tile1;
 
+
 	bbox.min.x = 0;
 	bbox.min.y = 0;
 	bbox.max.x = 1;

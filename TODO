@@ -27,6 +27,7 @@ parser
 	- resource dict generate fake ids
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
+	- BPC 2, 4
 
 clean up
 	- make source ansi c89 / pedantic
