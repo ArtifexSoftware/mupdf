@@ -9,7 +9,10 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	fz_obj *obj;
 
 	if ((*formp = pdf_finditem(xref->store, PDF_KXOBJECT, ref)))
+	{
+		pdf_keepxobject(*formp);
 		return nil;
+	}
 
 	form = fz_malloc(sizeof(pdf_xobject));
 	if (!form)

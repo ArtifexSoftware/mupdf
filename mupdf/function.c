@@ -1385,9 +1385,8 @@ pdf_dropfunction(pdf_function *func)
 		case EXPONENTIAL:
 			break;
 		case STITCHING:
-			if (func->u.st.funcs)
-				for (i = 0; i < func->u.st.k; ++i)
-					pdf_dropfunction(func->u.st.funcs[i]);
+			for (i = 0; i < func->u.st.k; ++i)
+				pdf_dropfunction(func->u.st.funcs[i]);
 			break;
 		case POSTSCRIPT:
 			fz_free(func->u.p.code);

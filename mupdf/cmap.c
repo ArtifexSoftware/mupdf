@@ -383,7 +383,10 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	fz_obj *obj;
 
 	if ((*cmapp = pdf_finditem(xref->store, PDF_KCMAP, stmref)))
+	{
+		fz_keepcmap(*cmapp);
 		return nil;
+	}
 
 	pdf_logfont("load embedded cmap %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 

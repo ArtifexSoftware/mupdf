@@ -997,7 +997,10 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	char *subtype;
 
 	if ((*fontp = pdf_finditem(xref->store, PDF_KFONT, ref)))
+	{
+		fz_keepfont((fz_font*)*fontp);
 		return nil;
+	}
 
 	subtype = fz_toname(fz_dictgets(dict, "Subtype"));
 	if (!strcmp(subtype, "Type0"))

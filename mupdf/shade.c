@@ -39,6 +39,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *shading, fz_obj *re
 
 	shade = fz_malloc(sizeof(fz_shade));
 
+	shade->refs = 1;
 	shade->usefunction = 0;
 	shade->matrix = mat;
 

@@ -64,6 +64,8 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 			{
 				fz_obj *cso = fz_dictget(csd, cs);
 				img->super.cs = pdf_finditem(xref->store, PDF_KCOLORSPACE, cso);
+				if (img->super.cs)
+					fz_keepcolorspace(img->super.cs);
 			}
 		}
 
@@ -204,7 +206,10 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	int stride;
 
 	if ((*imgp = pdf_finditem(xref->store, PDF_KIMAGE, ref)))
+	{
+		fz_keepimage((fz_image*)*imgp);
 		return nil;
+	}
 
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)

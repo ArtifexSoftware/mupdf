@@ -62,16 +62,59 @@ clearstack(pdf_csi *csi)
 	csi->top = 0;
 }
 
+static fz_error *
+gsave(pdf_csi *csi)
+{
+	if (csi->gtop == 31)
+		return fz_throw("gstate overflow in content stream");
+
+	memcpy(&csi->gstate[csi->gtop + 1], &csi->gstate[csi->gtop], sizeof(pdf_gstate));
+
+	csi->gtop ++;
+
+	if (csi->gstate[csi->gtop].fill.cs)
+		fz_keepcolorspace(csi->gstate[csi->gtop].fill.cs);
+	if (csi->gstate[csi->gtop].stroke.cs)
+		fz_keepcolorspace(csi->gstate[csi->gtop].stroke.cs);
+
+	return nil;
+}
+
+static fz_error *
+grestore(pdf_csi *csi)
+{
+	if (csi->gtop == 0)
+		return fz_throw("gstate underflow in content stream");
+
+	if (csi->gstate[csi->gtop].fill.cs)
+		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
+	if (csi->gstate[csi->gtop].stroke.cs)
+		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
+
+	csi->gtop --;
+
+	return nil;
+}
+
 void
 pdf_dropcsi(pdf_csi *csi)
 {
-	/* TODO: drop gstates */
+	while (csi->gtop)
+		grestore(csi);
+
+	if (csi->gstate[csi->gtop].fill.cs)
+		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
+	if (csi->gstate[csi->gtop].stroke.cs)
+		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
+
 	if (csi->path) fz_dropnode((fz_node*)csi->path);
 	if (csi->clip) fz_dropnode((fz_node*)csi->clip);
 	if (csi->textclip) fz_dropnode((fz_node*)csi->textclip);
 	if (csi->text) fz_dropnode((fz_node*)csi->text);
 	if (csi->array) fz_dropobj(csi->array);
+
 	clearstack(csi);
+
 	fz_free(csi);
 }
 
@@ -88,12 +131,9 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 	fz_file *file;
 
 	/* gsave */
-	if (csi->gtop == 31)
-		return fz_throw("gstate overflow in content stream");
-	memcpy(&csi->gstate[csi->gtop + 1],
-			&csi->gstate[csi->gtop],
-			sizeof (pdf_gstate));
-	csi->gtop ++;
+	error = gsave(csi);
+	if (error)
+		return error;
 
 	/* push transform */
 
@@ -124,9 +164,9 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 		return error;
 
 	/* grestore */
-	if (csi->gtop == 0)
-		return fz_throw("gstate underflow in content stream");
-	csi->gtop --;
+	error = grestore(csi);
+	if (error)
+		return error;
 
 	return nil;
 }
@@ -798,20 +838,17 @@ fz_debugobj(rdb);
 	case 'q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		if (csi->gtop == 31)
-			return fz_throw("gstate overflow in content stream");
-		memcpy(&csi->gstate[csi->gtop + 1],
-				&csi->gstate[csi->gtop],
-				sizeof (pdf_gstate));
-		csi->gtop ++;
+		error = gsave(csi);
+		if (error)
+			return error;
 		break;
 
 	case 'Q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		if (csi->gtop == 0)
-			return fz_throw("gstate underflow in content stream");
-		csi->gtop --;
+		error = grestore(csi);
+		if (error)
+			return error;
 		break;
 
 	case 'w':

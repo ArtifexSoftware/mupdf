@@ -29,7 +29,10 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	pdf_csi *csi;
 
 	if ((*patp = pdf_finditem(xref->store, PDF_KPATTERN, stmref)))
+	{
+		pdf_keeppattern(*patp);
 		return nil;
+	}
 
 	pdf_logrsrc("load pattern %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 
