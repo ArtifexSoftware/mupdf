@@ -5,9 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>carbonpdf</string>
+	<string>macpdf</string>
 	<key>CFBundleIconFile</key>
-	<string>carbonpdf.icns</string>
+	<string>macpdf.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.artofcode.MuPDF</string>
 	<key>CFBundleInfoDictionaryVersion</key>

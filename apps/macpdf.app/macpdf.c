@@ -1,4 +1,4 @@
-#include "carbonpdf.h"
+#include "macpdf.h"
 
 static void
 init_window(viewctx *ctx)
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     err = CreateWindowFromNib(nibRef, CFSTR("MainWindow"), &window);
     require_noerr(err, CantCreateWindow);
 
-    openpdf(window, "/Users/raph/golf/fitz/tiger.pdf");
+    openpdf(window, "tiger.pdf");
 
     DisposeNibReference(nibRef);
 

@@ -1,7 +1,7 @@
 /* This module implements a Carbon HIView object for a pattern plate
    editor. */
 
-#include "carbonpdf.h"
+#include "macpdf.h"
 
 #define kViewClassID CFSTR("com.artofcode.mupdf.View")
 #define kViewPrivate 'MU_v'

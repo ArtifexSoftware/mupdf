@@ -4,6 +4,8 @@
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
 
+#ifdef NEED_STRLCAT
+
 #include <string.h>
 
 int strlcat(char *dst, const char *src, int siz)
@@ -32,3 +34,6 @@ int strlcat(char *dst, const char *src, int siz)
 
 	return dlen + (s - src);	/* count does not include NUL */
 }
+
+#endif
+
