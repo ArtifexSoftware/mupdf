@@ -1,32 +1,31 @@
 #include <fitz.h>
 
-static int getcomp(fz_pixmap *pix, float u, float v, int k)
+#define GAMMA 1.8
+
+void fz_gammapixmap(fz_pixmap *pix, float gamma);
+
+#define LERP(a,b,t) (a + (((b - a) * t) >> 16))
+
+static int getcomp(fz_pixmap *pix, int u, int v, int k)
 {
-	float fu = floor(u);
-	float fv = floor(v);
-	float su = u - fu;
-	float sv = v - fv;
+	int ui = u >> 16;
+	int vi = v >> 16;
+	int ud = u & 0xFFFF;
+	int vd = v & 0xFFFF;
 
-	int x0 = fu;
-	int x1 = x0 + 1;
-	int y0 = fv;
-	int y1 = y0 + 1;
+	int x0 = CLAMP(ui, 0, pix->w - 1);
+	int x1 = CLAMP(ui + 1, 0, pix->w - 1);
+	int y0 = CLAMP(vi, 0, pix->h - 1);
+	int y1 = CLAMP(vi + 1, 0, pix->h - 1);
 
-	x0 = CLAMP(x0, 0, pix->w - 1);
-	x1 = CLAMP(x1, 0, pix->w - 1);
-	y0 = CLAMP(y0, 0, pix->h - 1);
-	y1 = CLAMP(y1, 0, pix->h - 1);
+	int a = pix->samples[ (y0 * pix->w + x0) * pix->n + k ];
+	int b = pix->samples[ (y0 * pix->w + x1) * pix->n + k ];
+	int c = pix->samples[ (y1 * pix->w + x0) * pix->n + k ];
+	int d = pix->samples[ (y1 * pix->w + x1) * pix->n + k ];
 
-	float a = pix->samples[ (y0 * pix->w + x0) * pix->n + k ];
-	float b = pix->samples[ (y0 * pix->w + x1) * pix->n + k ];
-	float c = pix->samples[ (y1 * pix->w + x0) * pix->n + k ];
-	float d = pix->samples[ (y1 * pix->w + x1) * pix->n + k ];
-
-	float ab = a * (1.0 - su) + b * su;
-	float cd = c * (1.0 - su) + d * su;
-	float abcd = ab * (1.0 - sv) + cd * sv;
-
-	return (int)abcd;
+	int ab = LERP(a, b, ud);
+	int cd = LERP(c, d, ud);
+	return LERP(ab, cd, vd);
 }
 
 static inline void
@@ -34,15 +33,17 @@ drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x
 {
 	int x, k;
 
-	float u = invmat->a * x0 + invmat->c * y + invmat->e;
-	float v = invmat->b * x0 + invmat->d * y + invmat->f;
+	int u = (invmat->a * x0 + invmat->c * y + invmat->e) * 65536;
+	int v = (invmat->b * x0 + invmat->d * y + invmat->f) * 65536;
+	int du = invmat->a * 65536;
+	int dv = invmat->b * 65536;
 
 	for (x = x0; x < x1; x++)
 	{
 		for (k = 0; k < src->n; k++)
 			dst->samples[ (y * dst->w + x) * dst->n + k ] = getcomp(src, u, v, k);
-		u += invmat->a;
-		v += invmat->c;
+		u += du;
+		v += dv;
 	}
 }
 
@@ -51,8 +52,10 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 {
 	int x;
 
-	float u = invmat->a * x0 + invmat->c * y + invmat->e;
-	float v = invmat->b * x0 + invmat->d * y + invmat->f;
+	int u = (invmat->a * x0 + invmat->c * y + invmat->e) * 65536;
+	int v = (invmat->b * x0 + invmat->d * y + invmat->f) * 65536;
+	int du = invmat->a * 65536;
+	int dv = invmat->b * 65536;
 
 	for (x = x0; x < x1; x++)
 	{
@@ -78,8 +81,8 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 		dst->samples[ (y * dst->w + x) * dst->n + 2 ] = sg;
 		dst->samples[ (y * dst->w + x) * dst->n + 3 ] = sb;
 
-		u += invmat->a;
-		v += invmat->c;
+		u += du;
+		v += dv;
 	}
 }
 
@@ -163,15 +166,12 @@ fz_renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	float sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
 
 	int dx = 1;
-	while ((w + dx - 1) / dx > sx) dx++;
-	if (dx > 1) dx --;
+	while ( ( (w + dx - 1) / dx ) / sx > 2.0 )
+		dx++;
 
 	int dy = 1;
-	while ((h + dy - 1) / dy > sy) dy++;
-	if (dy > 1) dy --;
-
-	if (dx > 1) dx --;
-	if (dy > 1) dy --;
+	while ( ( (h + dy - 1) / dy ) / sy > 2.0 )
+		dy++;
 
 printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);
 
@@ -184,8 +184,9 @@ printf("  load tile\n");
 	if (dx != 1 || dy != 1)
 	{
 printf("  scale tile 1/%d x 1/%d\n", dx, dy);
+//		fz_gammapixmap(tile1, 1.0 / GAMMA);
 		error = fz_scalepixmap(&tile2, tile1, dx, dy);
-//fz_debugpixmap(tile2);getchar();
+//		fz_gammapixmap(tile2, GAMMA);
 		fz_freepixmap(tile1);
 	}
 	else
@@ -215,6 +216,7 @@ printf("draw generic image\n");
 		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, gc->model->n + 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile3, ctm, 0);
+//fz_debugpixmap(gc->tmp);getchar();
 		fz_freepixmap(tile3);
 	}
 

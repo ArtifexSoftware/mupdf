@@ -257,5 +257,7 @@ int main(int argc, char **argv)
 		pdf_debugpdf(xref);
 
 	pdf_closepdf(xref);
+
+	return 0;
 }
 

@@ -335,12 +335,6 @@ popnum(psstack *st, float *real)
 }
 
 static int 
-empty(psstack *st)
-{
-	return st->sp == PSSTACKSIZE;
-}
-
-static int 
 topisint(psstack *st)
 {
 	return st->sp < PSSTACKSIZE && st->stack[st->sp].type == psInt;

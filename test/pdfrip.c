@@ -2,10 +2,11 @@
 #include <mupdf.h>
 
 int showtree = 0;
+float zoom = 1.0;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfrip [-d] [-p password] file.pdf [pages...]\n");
+	fprintf(stderr, "usage: pdfrip [-d] [-p password] [-z zoom] file.pdf [pages...]\n");
 	exit(1);
 }
 
@@ -51,7 +52,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj)
 		error = fz_newrenderer(&gc, pdf_devicergb);
 		if (error) fz_abort(error);
 
-		ctm = fz_concat(fz_translate(0, -page->mediabox.max.y), fz_scale(1.0, -1.0));
+		ctm = fz_concat(fz_translate(0, -page->mediabox.max.y), fz_scale(zoom, -zoom));
 printf("ctm %g %g %g %g %g %g\n",
 	ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
 
@@ -59,8 +60,12 @@ printf("bounding!\n");
 		bbox = fz_boundtree(page->tree, ctm);
 printf("  [%g %g %g %g]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
 printf("rendering!\n");
-		error = fz_rendertree(&pix, gc, page->tree, ctm, page->mediabox);
-		//error = fz_rendertree(&pix, gc, page->tree, ctm, bbox);
+		bbox = page->mediabox;
+		bbox.min.x = bbox.min.x * zoom;
+		bbox.min.y = bbox.min.y * zoom;
+		bbox.max.x = bbox.max.x * zoom;
+		bbox.max.y = bbox.max.y * zoom;
+		error = fz_rendertree(&pix, gc, page->tree, ctm, bbox);
 		if (error) fz_abort(error);
 printf("done!\n");
 
@@ -81,11 +86,12 @@ int main(int argc, char **argv)
 
 	char *password = "";
 
-	while ((c = getopt(argc, argv, "dp:")) != -1)
+	while ((c = getopt(argc, argv, "dz:p:")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = optarg; break;
+		case 'z': zoom = atof(optarg); break;
 		case 'd': ++showtree; break;
 		default: usage();
 		}

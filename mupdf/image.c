@@ -17,7 +17,7 @@ static void loadtile1(pdf_image *src, fz_pixmap *dst)
 		for (x = dst->x; x < dst->x + dst->w; x++)
 		{
 			for (k = 0; k < n; k++)
-				d[x * n + k] = getbit(s, x * n + k) * 255;
+				d[x * n + k] = getbit(s, x * n + k);
 		}
 	}
 }
@@ -33,9 +33,9 @@ static void loadtile1a(pdf_image *src, fz_pixmap *dst)
 		unsigned char *d = dst->samples + y * dst->w * dst->n;
 		for (x = dst->x; x < dst->x + dst->w; x++)
 		{
-			d[0] = 255;
+			d[x * dn + 0] = 255;
 			for (k = 0; k < sn; k++)
-				d[x * dn + k + 1] = getbit(s, x * sn + k) * 255;
+				d[x * dn + k + 1] = getbit(s, x * sn + k);
 		}
 	}
 }
@@ -71,7 +71,39 @@ static void loadtile8a(pdf_image *src, fz_pixmap *dst)
 	}
 }
 
-static fz_error *loadtile(fz_image *img, fz_pixmap *tile)
+static void
+decodetile(fz_pixmap *pix, int bpc, int a, float *decode)
+{
+	unsigned char table[32][256];
+	float twon = (1 << bpc) - 1;
+	int x, y, k, i;
+
+	for (i = 0; i < (1 << bpc); i++)
+	{
+		for (k = 0; k < pix->n - a; k++)
+		{
+			float min = decode[k * 2 + 0];
+			float max = decode[k * 2 + 1];
+			float f = min + i * (max - min) / twon;
+			table[k][i] = f * 255;
+		}
+	}
+
+	for (y = 0; y < pix->h; y++)
+	{
+		for (x = 0; x < pix->w; x++)
+		{
+			for (k = a; k < pix->n; k++)
+			{
+				i = pix->samples[ (y * pix->w + x) * pix->n + k];
+				pix->samples[ (y * pix->w + x) * pix->n + k] = table[k-a][i];
+			}
+		}
+	}
+}
+
+static fz_error *
+loadtile(fz_image *img, fz_pixmap *tile)
 {
 	pdf_image *src = (pdf_image*)img;
 
@@ -85,24 +117,30 @@ static fz_error *loadtile(fz_image *img, fz_pixmap *tile)
 	{
 		switch (src->bpc)
 		{
-		case 1: loadtile1(src, tile); return nil;
-	//	case 2: loadtile2(src, tile); return nil;
-	//	case 4: loadtile4(src, tile); return nil;
-		case 8: loadtile8(src, tile); return nil;
+		case 1: loadtile1(src, tile); break;
+	//	case 2: loadtile2(src, tile); break;
+	//	case 4: loadtile4(src, tile); break;
+		case 8: loadtile8(src, tile); break;
+		default:
+			return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
 		}
 	}
 	else
 	{
 		switch (src->bpc)
 		{
-		case 1: loadtile1a(src, tile); return nil;
-	//	case 2: loadtile2a(src, tile); return nil;
-	//	case 4: loadtile4a(src, tile); return nil;
-		case 8: loadtile8a(src, tile); return nil;
+		case 1: loadtile1a(src, tile); break;
+	//	case 2: loadtile2a(src, tile); break;
+	//	case 4: loadtile4a(src, tile); break;
+		case 8: loadtile8a(src, tile); break;
+		default:
+			return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
 		}
 	}
 
-	return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
+	decodetile(tile, src->bpc, src->super.n, src->decode);
+
+	return nil;
 }
 
 fz_error *

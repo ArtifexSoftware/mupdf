@@ -61,7 +61,7 @@ fz_convertpixmap(fz_pixmap **dstp, fz_pixmap *src, fz_colorspace *srcs, fz_color
 	{
 		for (x = 0; x < src->w; x++)
 		{
-			*s++ = *d++;
+			*d++ = *s++;
 
 			for (k = 0; k < src->n - 1; k++)
 				srcv[k] = *s++ / 255.0;
@@ -69,7 +69,7 @@ fz_convertpixmap(fz_pixmap **dstp, fz_pixmap *src, fz_colorspace *srcs, fz_color
 			fz_convertcolor(srcs, srcv, dsts, dstv);
 
 			for (k = 0; k < dst->n - 1; k++)
-				*d++ = dstv[k] * 255 + 0.5;
+				*d++ = dstv[k] * 255;
 		}
 	}
 
@@ -127,6 +127,21 @@ fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 			}
 			m++;
 		}
+	}
+}
+
+void
+fz_gammapixmap(fz_pixmap *pix, float gamma)
+{
+	int i;
+	unsigned char table[255];
+	for (i = 0; i < 256; i++)
+		table[i] = CLAMP(pow(i / 255.0, gamma) * 255.0, 0, 255);
+	int n = pix->w * pix->h * pix->n;
+	unsigned char *p = pix->samples;
+	while (n--)
+	{
+		*p = table[*p]; p++;
 	}
 }
 

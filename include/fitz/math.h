@@ -1,7 +1,7 @@
 /* multiply 8-bit fixpoint (0..1) so that 0*0==0 and 255*255==255 */
 static inline unsigned char fz_mul255(unsigned char a, unsigned char b)
 {
-    return ((a + 1) * b) >> 8;
+	return ((a + 1) * b) >> 8;
 }
 
 /* divide and floor towards -inf */
