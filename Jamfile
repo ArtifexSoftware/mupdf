@@ -2,49 +2,10 @@
 # Build flags
 #
 
-include $(HOME)/.jamrules ;
+include Jamconfig ;
+include $(HOME)/.jamconfig ;
 
 HDRS = include filter ;
-
-# HAVE_JBIG2DEC = yes ;
-# HAVE_JASPER = yes ;
-# HAVE_X11 = yes ;
-# HAVE_GTK = yes ;
-
-# CCFLAGS += -DARCH_$(OSPLAT) ;
-
-switch $(BUILD)
-{
-	case RELEASE :
-		Echo Release build for $(OS) $(OSPLAT) ;
-		OPTIM = -O3 ;
-	case PROFILE :
-		Echo Profiling build for $(OS) $(OSPLAT) ;
-		OPTIM = -g -pg ;
-	case * :
-		Echo Debug build for $(OS) $(OSPLAT) ;
-		OPTIM = -g ;
-}
-
-switch $(OS)
-{
-	case LINUX :
-		CCFLAGS += -std=c89 -Wall ;
-		CCFLAGS += -DNEED_GETOPT ;
-		CCFLAGS += -DNEED_STRLCPY ;
-		CCFLAGS += -DNEED_STRLCAT ;
-	case MACOSX :
-		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -faltivec ;
-	case NT :
-		NOARSCAN = true ;
-		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -DWIN32 ;
-		CCFLAGS += -DNEED_GETOPT ;
-		CCFLAGS += -DNEED_STRSEP ;
-		CCFLAGS += -DNEED_STRLCPY ;
-		CCFLAGS += -DNEED_STRLCAT ;
-	case SOLARIS :
-		CCFLAGS += -std=c89 -Wall ;
-}
 
 #
 # Libraries
@@ -273,7 +234,7 @@ if $(HAVE_X11)
 if $(HAVE_GTK)
 {
 	Main gtkpdf : apps/gtkpdf.c ;
-	CCFLAGS on apps/gtkpdf.c =
+	CCFLAGS on apps/gtkpdf$(SUFOBJ) =
 		$(CCFLAGS) `pkg-config --cflags gtk+ gthread` ;
 	LinkLibraries gtkpdf : libmupdf libfitz ;
 	LINKLIBS on gtkpdf$(SUFEXE) =

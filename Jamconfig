@@ -1,0 +1,59 @@
+# Customize to your liking
+# Shortcut for developers: you can override the settings here with ~/.jamconfig
+
+# Comment out to disable
+# HAVE_JBIG2DEC = yes ;
+# HAVE_JASPER = yes ;
+# HAVE_X11 = yes ;
+# HAVE_GTK = yes ;
+
+# Add any non-standard header/library (-I/-L) search paths here
+# In particular add paths needed by above mentioned libraries here
+EXTRA_INCLUDES = ;
+EXTRA_LIBRARIES = ;
+
+# Basic system should be mostly SUSv3 compliant
+CCFLAGS += -D_XOPEN_SOURCE=600 ;
+
+# Default optimize/profile/debug compiler/linker switches
+OPTIM = -O3 ;
+PROF = -g -pg ;
+DEBUG = -g ;
+
+switch $(OS)
+{
+	case LINUX :
+		LINKFLAGS += -L/usr/X11R6/lib ;
+		CCFLAGS += -DNEED_STRLCPY -DNEED_STRLCAT ;
+
+		switch $(CC)-$(OSPLAT)
+		{
+		case icc-X86 :
+			CCFLAGS += -DARCH_X86 ;
+			OPTIM = -O3 -ip -tpp6 -xM ;
+			PROF = -g -qp ;
+		case gcc-X86 :
+			CCFLAGS += -DARCH_X86 ;
+			# add -msse -msse2 when such functions exist...
+			OPTIM = -O3 -march=pentium -mmmx ;
+		}
+
+	case MACOSX :
+		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -faltivec -DARCH_PPC ;
+		OPTIM = -fast ;
+
+	case NT :
+		NOARSCAN = true ; # compatibility for old jamrules
+		CCFLAGS += -std=gnu99 -DHAVE_C99 -Wall -DWIN32 ;
+		CCFLAGS += -DNEED_GETOPT -DNEED_STRSEP -DNEED_STRLCPY -DNEED_STRLCAT ;
+
+	case SOLARIS :
+		CCFLAGS += -std=c89 -Wall -DNEED_STRSEP ;
+
+	# Additional platforms go here
+
+	# Bail on unknown platforms
+	case * :
+		Exit "OS '$(OS)' not known by build system" ;
+}
+
