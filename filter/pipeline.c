@@ -19,10 +19,10 @@ fz_error *
 fz_chainpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail, fz_buffer *buf)
 {
 	FZ_NEWFILTER(fz_pipeline, p, pipeline);
-	p->head = head;
-	p->tail = tail;
+	p->head = fz_keepfilter(head);
+	p->tail = fz_keepfilter(tail);
 	p->tailneedsin = 1;
-	p->buffer = buf;
+	p->buffer = fz_keepbuffer(buf);
 	return nil;
 }
 
@@ -30,24 +30,25 @@ void
 fz_unchainpipeline(fz_filter *filter, fz_filter **oldfp, fz_buffer **oldbp)
 {
 	fz_pipeline *p = (fz_pipeline*)filter;
-	*oldfp = p->head;
-	*oldbp = p->buffer;
-	fz_dropfilter(p->tail);
-	fz_free(p);
+
+	*oldfp = fz_keepfilter(p->head);
+	*oldbp = fz_keepbuffer(p->buffer);
+
+	fz_dropfilter(filter);
 }
 
 fz_error *
 fz_newpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail)
 {
-	fz_error *err;
+	fz_error *error;
 
 	FZ_NEWFILTER(fz_pipeline, p, pipeline);
-	p->head = head;
-	p->tail = tail;
+	p->head = fz_keepfilter(head);
+	p->tail = fz_keepfilter(tail);
 	p->tailneedsin = 1;
 
-	err = fz_newbuffer(&p->buffer, FZ_BUFSIZE);
-	if (err) { fz_free(p); return err; }
+	error = fz_newbuffer(&p->buffer, FZ_BUFSIZE);
+	if (error) { fz_free(p); return error; }
 
 	return nil;
 }

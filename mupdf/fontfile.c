@@ -44,7 +44,7 @@ static char *basenames[15] =
 static struct { char *collection; char *serif; char *gothic; } cidfonts[5] =
 {
 	{ "Adobe-CNS1", "MOESung-Regular", "MOEKai-Regular" },
-	{ "Adobe-GB1", "GB1-Serif", "GB1-Gothic" },
+	{ "Adobe-GB1", "gkai00mp", "gbsn00lp" },
 	{ "Adobe-Japan1", "WadaMin-Regular", "WadaMaruGo-Regular" },
 	{ "Adobe-Japan2", "WadaMin-RegularH", "WadaMaruGo-RegularH" },
 	{ "Adobe-Korea1", "Munhwa-Regular", "MunhwaGothic-Regular" },
@@ -187,7 +187,15 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 
 	if (collection)
 	{
+		char buf[256];
+		char *env;
 printf("  find cid font %s (%d)\n", collection, isserif);
+
+		snprintf(buf, sizeof buf, "%s_%s", strstr(collection, "-") + 1, isserif ? "S" : "G");
+		env = getenv(buf);
+		if (env)
+			return loadcidfont(font, env);
+
 		for (i = 0; i < 5; i++)
 		{
 			if (!strcmp(collection, cidfonts[i].collection))
@@ -198,6 +206,7 @@ printf("  find cid font %s (%d)\n", collection, isserif);
 					return loadcidfont(font, cidfonts[i].gothic);
 			}
 		}
+
 		fz_warn("unknown cid collection: %s", collection);
 	}
 

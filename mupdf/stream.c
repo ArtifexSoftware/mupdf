@@ -111,7 +111,7 @@ makerawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int 
 
 	if (xref->crypt)
 	{
-		error = pdf_cryptstm(&cf, xref->crypt, oid, gen);
+		error = pdf_cryptstream(&cf, xref->crypt, oid, gen);
 		error = fz_newpipeline(&pipe, pipe, cf);
 	}
 

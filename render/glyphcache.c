@@ -329,7 +329,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	}
 
 	ctm.e = fz_floor(ctm.e) + key.e / HSUBPIX;
-	ctm.f = fz_floor(ctm.f) + key.f / HSUBPIX;
+	ctm.f = fz_floor(ctm.f) + key.f / VSUBPIX;
 
 	error = font->render(glyph, font, cid, ctm);
 	if (error)

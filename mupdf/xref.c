@@ -114,7 +114,7 @@ pdf_debugpdf(pdf_xref *xref)
 			xref->table[i].ofs,
 			xref->table[i].gen,
 			xref->table[i].type,
-			xref->table[i].obj ? xref->table[i].obj->refcount : 0,
+			xref->table[i].obj ? xref->table[i].obj->nrefs : 0,
 			xref->table[i].stmofs);
 	}
 }
@@ -281,7 +281,7 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 
 	if (x->stmbuf)
 		fz_dropbuffer(x->stmbuf);
-	x->stmbuf = stm;
+	x->stmbuf = fz_keepbuffer(stm);
 
 	return nil;
 }

@@ -157,14 +157,12 @@ static void showpage(void)
 	XDrawString(xdpy, xwin, xgc, 10, 30, s, strlen(s));
 	XFlush(xdpy);
 
-	ctm = fz_concat(fz_translate(0, -page->mediabox.max.y),
-					fz_scale(zoom, -zoom));
+	ctm = fz_identity();
+	ctm = fz_concat(ctm, fz_translate(0, -page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
+	ctm = fz_concat(ctm, fz_rotate(rotate));
 
-	bbox = page->mediabox;
-	bbox.min.x = bbox.min.x * zoom;
-	bbox.min.y = bbox.min.y * zoom;
-	bbox.max.x = bbox.max.x * zoom;
-	bbox.max.y = bbox.max.y * zoom;
+	bbox = fz_transformaabb(ctm, page->mediabox);
 
 	error = fz_rendertree(&image, rast, page->tree, ctm, bbox);
 	if (error)
@@ -222,9 +220,9 @@ static void handlekey(int c)
 
     switch (c)
     {
-	case '8':
-		fz_debugglyphcache(rast->cache);
-		break;
+	case 'd': fz_debugglyphcache(rast->cache); break;
+	case 'a': rotate -= 5; break;
+	case 's': rotate += 5; break;
 
     case 'b':
 		pageno--;

@@ -11,8 +11,8 @@ fz_newdict(fz_obj **op, int initialcap)
 	obj = *op = fz_malloc(sizeof (fz_obj));
 	if (!obj) return fz_outofmem;
 
+	obj->nrefs = 1;  
 	obj->kind = FZ_DICT;
-	obj->refcount = 1;  
 
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 0 ? initialcap : 10;

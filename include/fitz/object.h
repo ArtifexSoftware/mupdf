@@ -24,8 +24,8 @@ struct fz_keyval_s
 
 struct fz_obj_s
 {
+	unsigned short nrefs;
 	unsigned short kind;		/* fz_objkind takes 4 bytes :( */
-	unsigned short refcount;
 	union
 	{
 		int b;

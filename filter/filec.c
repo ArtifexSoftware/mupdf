@@ -67,8 +67,8 @@ fz_openfile(fz_file **filep, char *path, int mode)
 cleanup:
 	*filep = nil;
 	close(fd);
-	fz_free(file->out);
-	fz_free(file->in);
+	fz_dropbuffer(file->out);
+	fz_dropbuffer(file->in);
 	fz_free(file);
 	return error;
 }
@@ -93,7 +93,7 @@ fz_openbuffer(fz_file **filep, fz_buffer *buf, int mode)
 
 	if (mode == FZ_READ)
 	{
-		file->out = buf;
+		file->out = fz_keepbuffer(buf);
 		error = fz_newbuffer(&file->in, FZ_BUFSIZE);
 		if (error)
 			goto cleanup;
@@ -104,7 +104,7 @@ fz_openbuffer(fz_file **filep, fz_buffer *buf, int mode)
 		error = fz_newbuffer(&file->out, FZ_BUFSIZE);
 		if (error)
 			goto cleanup;
-		file->in = buf;
+		file->in = fz_keepbuffer(buf);
 	}
 
 	return nil;
@@ -130,19 +130,11 @@ fz_closefile(fz_file *file)
 		file->error = nil;
 	}
 
-	if (file->fd == -1)	/* open to buffer not file */
-	{
-		if (file->mode == FZ_READ)
-			fz_dropbuffer(file->in);
-		else
-			fz_dropbuffer(file->out);
-	}
-	else
-	{
-		fz_dropbuffer(file->in);
-		fz_dropbuffer(file->out);
+	if (file->fd != -1)	/* open to real file */
 		close(file->fd);
-	}
+
+	fz_dropbuffer(file->in);
+	fz_dropbuffer(file->out);
 
 	if (file->filter)
 		fz_dropfilter(file->filter);
@@ -178,7 +170,7 @@ fz_pushfilter(fz_file *file, fz_filter *filter)
 			file->in->eof = 0;
 		}
 
-		file->filter = filter;
+		file->filter = fz_keepfilter(filter);
 	}
 
 	else

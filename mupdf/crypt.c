@@ -360,7 +360,7 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 }
 
 fz_error *
-pdf_cryptstm(fz_filter **fp, pdf_crypt *crypt, int oid, int gid)
+pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gid)
 {
 	unsigned char key[16];
 	createobjkey(crypt, oid, gid, key);

@@ -8,6 +8,7 @@ fz_newbuffer(fz_buffer **bp, int size)
 	b = *bp = fz_malloc(sizeof(fz_buffer));
 	if (!b) return fz_outofmem;
 
+	b->nrefs = 1;
 	b->ownsdata = 1;
 	b->bp = fz_malloc(size);
 	if (!b->bp) { fz_free(b); return fz_outofmem; }
@@ -28,6 +29,7 @@ fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
 	b = *bp = fz_malloc(sizeof(fz_buffer));
 	if (!b) return fz_outofmem;
 
+	b->nrefs = 1;
 	b->ownsdata = 0;
 	b->bp = data;
 
@@ -39,12 +41,22 @@ fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
 	return nil;
 }
 
+fz_buffer *
+fz_keepbuffer(fz_buffer *buf)
+{
+	buf->nrefs ++;
+	return buf;
+}
+
 void
 fz_dropbuffer(fz_buffer *buf)
 {
-	if (buf->ownsdata)
-		fz_free(buf->bp);
-	fz_free(buf);
+	if (--buf->nrefs == 0)
+	{
+		if (buf->ownsdata)
+			fz_free(buf->bp);
+		fz_free(buf);
+	}
 }
 
 fz_error *

@@ -17,6 +17,7 @@ extern fz_error fz_kiodone;
     TYPE *VAR;                                                          \
     *fp = fz_malloc(sizeof(TYPE));                                      \
     if (!*fp) return fz_outofmem;                                       \
+    (*fp)->nrefs = 1;                                                   \
     (*fp)->process = fz_process ## NAME ;                               \
     (*fp)->drop = fz_drop ## NAME ;                                     \
     (*fp)->consumed = 0;                                                \
@@ -26,6 +27,7 @@ extern fz_error fz_kiodone;
 
 struct fz_filter_s
 {
+	int nrefs;
 	fz_error* (*process)(fz_filter *filter, fz_buffer *in, fz_buffer *out);
 	void (*drop)(fz_filter *filter);
 	int consumed;
@@ -35,6 +37,7 @@ struct fz_filter_s
 
 struct fz_buffer_s
 {
+	int nrefs;
 	int ownsdata;
 	unsigned char *bp;
 	unsigned char *rp;
@@ -44,6 +47,7 @@ struct fz_buffer_s
 };
 
 fz_error *fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out);
+fz_filter *fz_keepfilter(fz_filter *f);
 void fz_dropfilter(fz_filter *f);
 
 fz_error *fz_newnullfilter(fz_filter **fp, int len);
@@ -57,6 +61,7 @@ fz_error *fz_newbuffer(fz_buffer **bufp, int size);
 fz_error *fz_newbufferwithdata(fz_buffer **bufp, unsigned char *data, int size);
 fz_error *fz_rewindbuffer(fz_buffer *buf);
 fz_error *fz_growbuffer(fz_buffer *buf);
+fz_buffer *fz_keepbuffer(fz_buffer *buf);
 void fz_dropbuffer(fz_buffer *buf);
 
 fz_error *fz_newa85d(fz_filter **filterp, fz_obj *param);

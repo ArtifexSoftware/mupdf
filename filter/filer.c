@@ -233,6 +233,7 @@ fz_readfile(fz_buffer **bufp, fz_file *file)
 				return fz_outofmem;
 			}
 
+			real->nrefs = 1;
 			real->ownsdata = 1;
 			real->bp = buf;
 			real->rp = buf;

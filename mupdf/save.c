@@ -4,7 +4,7 @@
 #define TIGHT 0
 
 static fz_error *
-writestm(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
+writestream(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 {
 	fz_error *error;
 	unsigned char buf[4096];
@@ -15,7 +15,7 @@ writestm(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 
 	if (encrypt)
 	{
-		error = pdf_cryptstm(&ef, encrypt, oid, gen);
+		error = pdf_cryptstream(&ef, encrypt, oid, gen);
 		if (error)
 			return error;
 
@@ -60,7 +60,7 @@ cleanup:
 }
 
 static fz_error *
-writeobj(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
+writeobject(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
@@ -81,7 +81,7 @@ writeobj(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 
 	if (x->stmbuf || x->stmofs)
 	{
-		error = writestm(out, xref, encrypt, oid, gen);
+		error = writestream(out, xref, encrypt, oid, gen);
 		if (error)
 			return error;
 	}
@@ -94,8 +94,6 @@ writeobj(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 
 	return nil;
 }
-
-#if 0
 
 static int countmodified(pdf_xref *xref, int oid)
 {
@@ -127,7 +125,7 @@ pdf_updatepdf(pdf_xref *xref, char *path)
 		if (xref->table[oid].type == 'a')
 		{
 			xref->table[oid].ofs = fz_tell(out);
-			error = writestoredobj(out, xref, xref->crypt, oid, xref->table[oid].gen);
+			error = writeobject(out, xref, xref->crypt, oid, xref->table[oid].gen);
 			if (error)
 				goto cleanup;
 		}
@@ -171,11 +169,11 @@ pdf_updatepdf(pdf_xref *xref, char *path)
 	fz_print(out, "trailer\n<<\n  /Size %d\n  /Prev %d", xref->len, xref->startxref);
 
 	obj = fz_dictgets(xref->trailer, "Root");
-	fz_print(out,"\n  /Root %d %d R", fz_toobjid(obj), fz_togenid(obj));
+	fz_print(out,"\n  /Root %d %d R", fz_tonum(obj), fz_togen(obj));
 
 	obj = fz_dictgets(xref->trailer, "Info");
 	if (obj)
-		fz_print(out,"\n  /Info %d %d R", fz_toobjid(obj), fz_togenid(obj));
+		fz_print(out,"\n  /Info %d %d R", fz_tonum(obj), fz_togen(obj));
 
 	obj = fz_dictgets(xref->trailer, "Encrypt");
 	if (obj) {
@@ -204,8 +202,6 @@ cleanup:
 	fz_closefile(out);
 	return error;
 }
-
-#endif
 
 fz_error *
 pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
@@ -252,7 +248,7 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 		if (x->type == 'n' || x->type == 'o' || x->type == 'a')
 		{
 			ofsbuf[oid] = fz_tell(out);
-			error = writeobj(out, xref, encrypt, oid, x->type == 'o' ? 0 : x->gen);
+			error = writeobject(out, xref, encrypt, oid, x->type == 'o' ? 0 : x->gen);
 			if (error)
 				goto cleanup;
 		}

@@ -25,11 +25,11 @@ typedef struct fz_error_s fz_error;
 
 struct fz_error_s
 {
+	int nrefs;
 	char msg[184];
 	char file[32];
 	char func[32];
 	int line;
-	int frozen;
 };
 
 #define fz_outofmem (&fz_koutofmem)

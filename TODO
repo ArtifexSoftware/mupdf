@@ -1,0 +1,43 @@
+colorspace conversions
+	- cal*
+	- iccbased
+	- how to normalize Lab components to 0..1
+	- fast color cubes
+	- how to cache colorspace cubes (what key?)
+
+image rendering
+	- tiles
+	- dct case
+	- better filter than box
+
+shadings
+	- ... jeong ...
+
+rendering
+	- aabb-bounded temp buffers
+	- save non-transformed bbox in nodes
+	- explicit mask field in fz_renderer .. general cleanup
+	- merge gka optims
+	- optimize! optimize! optimize! (special case 1 and 4 channel cases)
+
+parser
+	- text clip mode
+	- split content streams (TJ objects)
+	- resource dict generate fake ids
+	- try to clean up colorspace/material handling in interpreter
+	- tounicode
+
+clean up
+	- reference count everything
+	- standard cleanup mechanism
+	- naming conventions (fz_new/renew)
+
+	- design by contract
+	- split into private and public
+	- comments and documentation
+
+cache
+	global cache for cmaps and fontfiles (emb+sys)
+	render cache (link-nodes and scaled images)
+	profile font cache (esp with t3 fonts)
+

@@ -1,8 +1,8 @@
 #include <fitz.h>
 
-fz_error fz_kioneedin = { "<ioneedin>", "<process>", "filter.c", 0, 1 };
-fz_error fz_kioneedout = { "<ioneedout>", "<process>", "filter.c", 0, 1 };
-fz_error fz_kiodone = { "<iodone>", "<process>", "filter.c", 0, 1 };
+fz_error fz_kioneedin = { -1, "<ioneedin>", "<process>", "filter.c", 0 };
+fz_error fz_kioneedout = { -1, "<ioneedout>", "<process>", "filter.c", 0 };
+fz_error fz_kiodone = { -1, "<iodone>", "<process>", "filter.c", 0 };
 
 fz_error *
 fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
@@ -31,11 +31,21 @@ fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	return reason;
 }
 
+fz_filter *
+fz_keepfilter(fz_filter *f)
+{
+	f->nrefs ++;
+	return f;
+}
+
 void
 fz_dropfilter(fz_filter *f)
 {
-	if (f->drop)
-		f->drop(f);
-	fz_free(f);
+	if (--f->nrefs == 0)
+	{
+		if (f->drop)
+			f->drop(f);
+		fz_free(f);
+	}
 }
 

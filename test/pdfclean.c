@@ -162,6 +162,9 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
+	if (encrypt)
+		pdf_dropcrypt(encrypt);
+
 	pdf_closepdf(xref);
 
 	return 0;

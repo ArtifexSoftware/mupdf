@@ -225,6 +225,9 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	xref->table[0].mark = 0;
 	xref->table[0].ofs = 0;
 	xref->table[0].gen = 65535;
+	xref->table[0].stmbuf = nil;
+	xref->table[0].stmofs = 0;
+	xref->table[0].obj = nil;
 
 	for (i = 1; i < xref->len; i++)
 	{
