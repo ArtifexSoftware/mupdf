@@ -131,6 +131,7 @@ Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
 Main pdfmerge : test/pdfmerge.c ;
 Main pdfrip : test/pdfrip.c ;
+Main pdffunction : test/pdffunction.c ;
 
-LinkLibraries pdfclean pdfdebug pdfmerge pdfrip : libmupdf libfitz ;
+LinkLibraries pdfclean pdfdebug pdfmerge pdfrip pdffunction : libmupdf libfitz ;
 

@@ -435,67 +435,6 @@ pop(psstack *st)
 /* End Stack Impl                                                       */
 /************************************************************************/
 
-/* From Numerial recipes */
-static fz_error *
-spline(float x[], float y[], int n, float yp1, float ypn, float y2[])
-{
-	int i,k;
-	float p,qn,sig,un,*u;
-
-	u = fz_malloc(n*sizeof(float));
-	if(!u)
-		return fz_outofmem;
-	
-	if (yp1 > 0.99e30)
-		y2[0]=u[0]=0.0;
-	else {
-		y2[0] = -0.5;
-		u[0]=(3.0/(x[1]-x[0]))*((y[1]-y[0])/(x[1]-x[0])-yp1);
-	}
-	for (i=1;i<n-1;i++) {
-		sig=(x[i]-x[i-1])/(x[i+1]-x[i-1]);
-		p=sig*y2[i-1]+2.0;
-		y2[i]=(sig-1.0)/p;
-		u[i]=(y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1]);
-		u[i]=(6.0*u[i]/(x[i+1]-x[i-1])-sig*u[i-1])/p;
-	}
-	if (ypn > 0.99e30)
-		qn=un=0.0;
-	else {
-		qn=0.5;
-		un=(3.0/(x[n-1]-x[n-2]))*(ypn-(y[n-1]-y[n-2])/(x[n-1]-x[n-2]));
-	}
-	y2[n-1]=(un-qn*u[n-2])/(qn*y2[n-2]+1.0);
-	for (k=n-2;k>=0;k--)
-		y2[k]=y2[k]*y2[k+1]+u[k];
-
-	fz_free(u);
-	return nil;
-}
-
-static fz_error *
-splint(float xa[], float ya[], float y2a[], int n, float x, float *y)
-{
-	int k;
-	int klo=0;
-	int khi=n-1;
-	float h,b,a;
-
-	while (khi-klo > 1) {
-		k=(khi+klo) >> 1;
-		if (xa[k] > x) khi=k;
-		else klo=k;
-	}
-	h=xa[khi]-xa[klo];
-	if (h == 0.0) return fz_throw("Bad xa input to routine splint");
-	a=(xa[khi]-x)/h;
-	b=(x-xa[klo])/h;
-	*y=a*ya[klo]+b*ya[khi]+((a*a*a-a)*y2a[klo]
-		+(b*b*b-b)*y2a[khi])*(h*h)/6.0;
-
-	return nil;
-}
-
 static fz_error *
 loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gid)
 {
@@ -842,7 +781,7 @@ cleanup:
 static fz_error *
 loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *err;
+	fz_error *err = nil;
 	fz_obj *tmpobj;
 	fz_obj *funcobj;
 	fz_obj *numobj;
@@ -980,8 +919,6 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 	int buflen = sizeof(buf) / sizeof(buf[0]);
 	int len;
 	int token;
-	char *p;
-	int isReal;
 	int opPtr, elsePtr;
 	int a, b, mid, cmp;
 	
@@ -1098,8 +1035,6 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref,
 				   fz_obj *dict, int oid, int gid)
 {
 	fz_error *err = nil;
-	fz_obj *tmpobj;
-	unsigned char *streamsamples = nil;
 	int codeptr;
 	
 	/* read postcript from stream */
@@ -1509,7 +1444,6 @@ pdf_loadfunction(pdf_function **func, pdf_xref *xref, fz_obj *obj)
 	fz_error *err = nil;
 	fz_obj *objfunc = nil;
 	fz_obj *tmpobj;
-	fz_obj *functype;
 	pdf_function *newfunc = nil;
 	int tmp;
 	int i;
