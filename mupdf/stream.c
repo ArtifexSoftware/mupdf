@@ -360,11 +360,9 @@ pdf_openrawstream(pdf_xref *xref, int oid, int gen)
 		}
 
 		error = fz_pushfilter(xref->file, filter);
+		fz_dropfilter(filter);
 		if (error)
-		{
-			fz_dropfilter(filter);
 			return error;
-		}
 
 		xref->stream = xref->file;
 		return nil;

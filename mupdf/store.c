@@ -95,6 +95,8 @@ void
 pdf_dropstore(pdf_store *store)
 {
 	pdf_emptystore(store);
+	fz_drophash(store->hash);
+	fz_free(store);
 }
 
 fz_error *

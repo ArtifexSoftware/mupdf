@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 	char *savename = "out.pdf";
 	pdf_pagetree *srcpages;
 	fz_obj *srcrefs;
+	fz_obj *newsrcrefs;
 	fz_obj *dstrefs;
 	pdf_xref *dst;
 	pdf_xref *src;
@@ -120,16 +121,19 @@ int main(int argc, char **argv)
 				fz_abort(error);
 		}
 
-		error = pdf_transplant(dst, src, &srcrefs, srcrefs);
+		error = pdf_transplant(dst, src, &newsrcrefs, srcrefs);
 		if (error)
 			fz_abort(error);
 
-		for (k = 0; k < fz_arraylen(srcrefs); k++)
+		for (k = 0; k < fz_arraylen(newsrcrefs); k++)
 		{
-			error = fz_arraypush(dstrefs, fz_arrayget(srcrefs, k));
+			error = fz_arraypush(dstrefs, fz_arrayget(newsrcrefs, k));
 			if (error)
 				fz_abort(error);
 		}
+
+		fz_dropobj(srcrefs);
+		fz_dropobj(newsrcrefs);
 
 		pdf_droppagetree(srcpages);
 
@@ -217,6 +221,9 @@ int main(int argc, char **argv)
 	error = pdf_savepdf(dst, savename, encrypt);
 	if (error)
 		fz_abort(error);
+
+	fz_dropobj(dstrefs);
+	pdf_closepdf(dst);
 
 	return 0;
 }

@@ -308,10 +308,12 @@ pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 
 	xref->startxref = startxref;
 
+	if(ofsbuf) fz_free(ofsbuf);
 	fz_closefile(out);
 	return nil;
 
 cleanup:
+	if(ofsbuf) fz_free(ofsbuf);
 	fz_closefile(out);
 	return error;
 }
