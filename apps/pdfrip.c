@@ -22,10 +22,11 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	fz_error *error;
 	pdf_page *page;
 	char namebuf[256];
+	char buf[128];
 	fz_pixmap *pix;
 	fz_matrix ctm;
 	fz_irect bbox;
-	FILE *f;
+	int fd;
 	int x, y;
 	int w, h;
 	int b, bh;
@@ -68,9 +69,11 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	h = bbox.max.y - bbox.min.y;
 	bh = h / nbands;
 
-	f = fopen(namebuf, "wb");
-	fprintf(f, "P6\n%d %d\n255\n", w, bh * nbands);
-	fflush(f);
+	fd = open(namebuf, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC);
+	if (fd < 0)
+		fz_abort(fz_throw("open %s failed: %s", namebuf, strerror(errno)));
+	sprintf(buf, "P6\n%d %d\n255\n", w, bh * nbands);
+	write(fd, buf, strlen(buf));
 
 	error = fz_newpixmap(&pix, bbox.min.x, bbox.min.y, w, bh, 4);
 	if (error)
@@ -98,7 +101,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 				dst[x * 3 + 2] = src[x * 4 + 3];
 			}
 
-			write(fileno(f), dst, pix->w * 3);
+			write(fd, dst, pix->w * 3);
 		}
 
 		pix->y += bh;
@@ -106,8 +109,7 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 
 	fz_droppixmap(pix);
 
-	fclose(f);
-
+	close(fd);
 }
 
 int main(int argc, char **argv)
