@@ -815,7 +815,7 @@ static void fastgraytocmyk(fz_pixmap *src, fz_pixmap *dst)
 		d[1] = 0;
 		d[2] = 0;
 		d[3] = 0;
-		d[3] = s[1];
+		d[4] = s[1];
 		s += 2;
 		d += 5;
 	}

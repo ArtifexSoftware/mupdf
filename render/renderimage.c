@@ -38,12 +38,15 @@ drawscan(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, int x
 	unsigned char *d;
 	int k, n;
 
-	int u = (invmat->a * x0 + invmat->c * y + invmat->e) * 65536;
-	int v = (invmat->b * x0 + invmat->d * y + invmat->f) * 65536;
+	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
+	int v = (invmat->b * (x0+0.5) + invmat->d * (y+0.5) + invmat->f) * 65536;
 	int du = invmat->a * 65536;
 	int dv = invmat->b * 65536;
 
-	n = x1 - x0;
+	u -= 0.5 * 65536;
+	v -= 0.5 * 65536;
+
+	n = x1 - x0 + 1;
 	d = dst->samples + ((y - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
 
 	while (n--)
@@ -60,12 +63,15 @@ overscanrgb(fz_matrix *invmat, fz_pixmap *dst, fz_pixmap *src, int y, int x0, in
 {
 	int x;
 
-	int u = (invmat->a * x0 + invmat->c * y + invmat->e) * 65536;
-	int v = (invmat->b * x0 + invmat->d * y + invmat->f) * 65536;
+	int u = (invmat->a * (x0+0.5) + invmat->c * (y+0.5) + invmat->e) * 65536;
+	int v = (invmat->b * (x0+0.5) + invmat->d * (y+0.5) + invmat->f) * 65536;
 	int du = invmat->a * 65536;
 	int dv = invmat->b * 65536;
 
-	for (x = x0; x < x1; x++)
+	u -= 0.5 * 65536;
+	v -= 0.5 * 65536;
+
+	for (x = x0; x <= x1; x++)
 	{
 		int sa = sampleimage(src, u, v, 0);
 		int sr = sampleimage(src, u, v, 1);
@@ -101,7 +107,7 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	fz_point v[4];
-	int top, bot, x0, x1, y;
+	int y0, y1, x0, x1, y;
 	int i;
 
 	imgmat.a = 1.0 / tile->w;
@@ -115,22 +121,22 @@ drawtile(fz_renderer *gc, fz_pixmap *out, fz_pixmap *tile, fz_matrix ctm, int ov
 	for (i = 0; i < 4; i++)
 		v[i] = fz_transformpoint(ctm, rect[i]);
 
-	top = fz_floor(MIN4(v[0].y, v[1].y, v[2].y, v[3].y)) - 1;
-	bot = fz_ceil(MAX4(v[0].y, v[1].y, v[2].y, v[3].y)) + 1;
-	x0 = fz_floor(MIN4(v[0].x, v[1].x, v[2].x, v[3].x)) - 1;
-	x1 = fz_ceil(MAX4(v[0].x, v[1].x, v[2].x, v[3].x)) + 1;
+	y0 = fz_floor(MIN4(v[0].y, v[1].y, v[2].y, v[3].y));
+	y1 = fz_ceil(MAX4(v[0].y, v[1].y, v[2].y, v[3].y));
+	x0 = fz_floor(MIN4(v[0].x, v[1].x, v[2].x, v[3].x));
+	x1 = fz_ceil(MAX4(v[0].x, v[1].x, v[2].x, v[3].x));
 
-	top = CLAMP(top, out->y, out->y + out->h - 1);
-	bot = CLAMP(bot, out->y, out->y + out->h - 1);
+	y0 = CLAMP(y0, out->y, out->y + out->h - 1);
+	y1 = CLAMP(y1, out->y, out->y + out->h - 1);
 	x0 = CLAMP(x0, out->x, out->x + out->w - 1);
 	x1 = CLAMP(x1, out->x, out->x + out->w - 1);
 
-	for (y = top; y <= bot; y++)
+	for (y = y0; y <= y1; y++)
 	{
 		if (over && tile->n == 4)
-			overscanrgb(&invmat, out, tile, y, x0, x1 + 1);
+			overscanrgb(&invmat, out, tile, y, x0, x1);
 		else
-			drawscan(&invmat, out, tile, y, x0, x1 + 1);
+			drawscan(&invmat, out, tile, y, x0, x1);
 	}
 
 	return nil;
