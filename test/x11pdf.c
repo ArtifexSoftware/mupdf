@@ -24,7 +24,7 @@ static XEvent xevt;
 static int mapped = 0;
 static Cursor xcarrow, xchand, xcwait;
 
-static char doctitle[256];
+static char *doctitle = "<untitled>";
 
 static float zoom = 1.0;
 static int rotate = 0;
@@ -43,6 +43,7 @@ static int pagebufidx = 0;
 
 static pdf_xref *xref;
 static pdf_pagetree *pages;
+static pdf_outline *outline;
 static fz_renderer *rast;
 static fz_pixmap *image;
 
@@ -201,17 +202,21 @@ static void pdfopen(char *filename, char *password)
 	fz_error *error;
 	fz_obj *obj;
 
-	error = pdf_openpdf(&xref, filename);
+	error = pdf_newxref(&xref);
+	if (error)
+		fz_abort(error);
+
+	error = pdf_loadxref(xref, filename);
 	if (error)
 	{
 		fz_warn(error->msg);
 		printf("trying to repair...\n");
-		error = pdf_repairpdf(&xref, filename);
+		error = pdf_repairxref(xref, filename);
 		if (error)
 			fz_abort(error);
 	}
 
-	error = pdf_decryptpdf(xref);
+	error = pdf_decryptxref(xref);
 	if (error)
 		fz_abort(error);
 
@@ -221,27 +226,43 @@ static void pdfopen(char *filename, char *password)
 		if (error) fz_abort(error);
 	}
 
+	obj = fz_dictgets(xref->trailer, "Root");
+	if (!obj)
+		fz_abort(fz_throw("syntaxerror: missing Root object"));
+	error = pdf_loadindirect(&xref->root, xref, obj);
+	if (error) fz_abort(error);
+
+	obj = fz_dictgets(xref->trailer, "Info");
+	if (obj)
+	{
+		error = pdf_loadindirect(&xref->info, xref, obj);
+		if (error) fz_abort(error);
+	}
+
 	error = pdf_loadnametrees(xref);
 	if (error) fz_abort(error);
+
+	error = pdf_loadoutline(&outline, xref);
+	if (error) fz_abort(error);
+
+	doctitle = filename;
+	if (xref->info)
+	{
+		obj = fz_dictgets(xref->info, "Title");
+		if (obj)
+		{
+			error = pdf_toutf8(&doctitle, obj);
+			if (error) fz_abort(error);
+		}
+	}
+
+	if (outline)
+		pdf_debugoutline(outline, 0);
 
 	error = pdf_loadpagetree(&pages, xref);
 	if (error) fz_abort(error);
 
 	count = pdf_getpagecount(pages);
-
-	strlcpy(doctitle, filename, sizeof doctitle);
-	obj = fz_dictgets(xref->trailer, "Info");
-	if (fz_isindirect(obj))
-	{
-		pdf_resolve(&obj, xref);
-		obj = fz_dictgets(obj, "Title");
-		if (obj)
-		{
-			int n = MIN(fz_tostringlen(obj) + 1, sizeof doctitle);
-			if (obj)
-				strlcpy(doctitle, fz_tostringbuf(obj), n);
-		}
-	}
 
 	error = fz_newrenderer(&rast, pdf_devicergb, 0, 1024 * 512);
 	if (error) fz_abort(error);
@@ -274,8 +295,8 @@ static void gotouri(fz_obj *uri)
 	fz_debugobj(uri);
 	printf("\n");
 
-	memcpy(buf, fz_tostringbuf(uri), fz_tostringlen(uri));
-	buf[fz_tostringlen(uri)] = 0;
+	memcpy(buf, fz_tostrbuf(uri), fz_tostrlen(uri));
+	buf[fz_tostrlen(uri)] = 0;
 
 	if (getenv("BROWSER"))
 		sprintf(cmd, "$BROWSER %s &", buf);
@@ -477,10 +498,10 @@ static void handlemouse(float x, int y, int btn)
 		XDefineCursor(xdpy, xwin, xchand);
 		if (btn)
 		{
-			if (link->uri)
-				gotouri(link->uri);
-			if (link->page)
-				gotopage(link->page);
+			if (fz_isstring(link->dest))
+				gotouri(link->dest);
+			if (fz_isindirect(link->dest))
+				gotopage(link->dest);
 		}
 	}
 	else
@@ -562,7 +583,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	pdf_closepdf(xref);
+	pdf_closexref(xref);
 
 	return 0;
 }

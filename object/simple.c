@@ -44,9 +44,10 @@ fz_newreal(fz_obj **op, float f)
 fz_error *
 fz_newstring(fz_obj **op, char *str, int len)
 {
-	NEWOBJ(FZ_STRING, offsetof(fz_obj, u.s.buf) + len);
+	NEWOBJ(FZ_STRING, offsetof(fz_obj, u.s.buf) + len + 1);
 	o->u.s.len = len;
 	memcpy(o->u.s.buf, str, len);
+	o->u.s.buf[len] = '\0';
 	return nil;
 }
 
@@ -78,6 +79,7 @@ fz_newpointer(fz_obj **op, void *p)
 fz_obj *
 fz_keepobj(fz_obj *o)
 {
+	assert(o != nil);
 	o->refs ++;
 	return o;
 }
@@ -85,6 +87,7 @@ fz_keepobj(fz_obj *o)
 void
 fz_dropobj(fz_obj *o)
 {
+	assert(o != nil);
 	if (--o->refs == 0)
 	{
 		if (o->kind == FZ_ARRAY)
@@ -193,7 +196,7 @@ fz_toname(fz_obj *obj)
 }
 
 char *
-fz_tostringbuf(fz_obj *obj)
+fz_tostrbuf(fz_obj *obj)
 {
 	if (fz_isstring(obj))
 		return obj->u.s.buf;
@@ -201,7 +204,7 @@ fz_tostringbuf(fz_obj *obj)
 }
 
 int
-fz_tostringlen(fz_obj *obj)
+fz_tostrlen(fz_obj *obj)
 {
 	if (fz_isstring(obj))
 		return obj->u.s.len;
@@ -232,8 +235,17 @@ fz_topointer(fz_obj *obj)
 	return nil;
 }
 
+fz_error *
+fz_newnamefromstring(fz_obj **op, fz_obj *str)
+{
+	NEWOBJ(FZ_NAME, offsetof(fz_obj, u.n) + fz_tostrlen(str) + 1);
+	memcpy(o->u.n, fz_tostrbuf(str), fz_tostrlen(str));
+	o->u.n[fz_tostrlen(str)] = '\0';
+	return nil;
+}
+
 int
-fz_cmpobj(fz_obj *a, fz_obj *b)
+fz_objcmp(fz_obj *a, fz_obj *b)
 {
 	int i;
 
@@ -264,7 +276,7 @@ fz_cmpobj(fz_obj *a, fz_obj *b)
 		if (a->u.a.len != b->u.a.len)
 			return a->u.a.len - b->u.a.len;
 		for (i = 0; i < a->u.a.len; i++)
-			if (fz_cmpobj(a->u.a.items[i], b->u.a.items[i]))
+			if (fz_objcmp(a->u.a.items[i], b->u.a.items[i]))
 				return 1;
 		return 0;
 
@@ -273,9 +285,9 @@ fz_cmpobj(fz_obj *a, fz_obj *b)
 			return a->u.d.len - b->u.d.len;
 		for (i = 0; i < a->u.d.len; i++)
 		{
-			if (fz_cmpobj(a->u.d.items[i].k, b->u.d.items[i].k))
+			if (fz_objcmp(a->u.d.items[i].k, b->u.d.items[i].k))
 				return 1;
-			if (fz_cmpobj(a->u.d.items[i].v, b->u.d.items[i].v))
+			if (fz_objcmp(a->u.d.items[i].v, b->u.d.items[i].v))
 				return 1;
 		}
 		return 0;

@@ -172,7 +172,7 @@ pdf_finditem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 	else
 	{
 		for (item = store->root; item; item = item->next)
-			if (item->kind == kind && !fz_cmpobj(item->key, key))
+			if (item->kind == kind && !fz_objcmp(item->key, key))
 				return item->val;
 	}
 

@@ -473,51 +473,35 @@ cleanup1:
 }
 
 /*
- * open xref in normal mode (as opposed to repair mode)
+ * open and load xref tables from pdf
  */
 
 fz_error *
-pdf_openpdf(pdf_xref **xrefp, char *filename)
+pdf_loadxref(pdf_xref *xref, char *filename)
 {
 	fz_error *error;
-	pdf_xref *xref;
 	fz_obj *size;
 	int i;
 
 	char buf[65536];	/* yeowch! */
 
-	xref = fz_malloc(sizeof(pdf_xref));
-	if (!xref)
-		return fz_outofmem;
-	memset(xref, 0, sizeof(pdf_xref));
-
-	xref->file = nil;
-	xref->version = 1.0;
-	xref->startxref = 0;
-	xref->trailer = nil;
-	xref->crypt = nil;
-
-	xref->len = 0;
-	xref->cap = 0;
-	xref->table = nil;
-
-	pdf_logxref("openxref '%s' %p\n", filename, xref);
+	pdf_logxref("loadxref '%s' %p\n", filename, xref);
 
 	error = fz_openfile(&xref->file, filename, FZ_READ);
 	if (error)
-		goto cleanup;
+		return error;
 
 	error = loadversion(xref);
 	if (error)
-		goto cleanup;
+		return error;
 
 	error = readstartxref(xref);
 	if (error)
-		goto cleanup;
+		return error;
 
 	error = readtrailer(xref, buf, sizeof buf);
 	if (error)
-		goto cleanup;
+		return error;
 
 	size = fz_dictgets(xref->trailer, "Size");
 	if (!size)
@@ -525,9 +509,10 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 
 	pdf_logxref("  size %d\n", fz_toint(size));
 
+	assert(xref->table == nil);
+
 	xref->cap = fz_toint(size);
 	xref->len = fz_toint(size);
-
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 		return fz_outofmem;
@@ -545,19 +530,8 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 
 	error = readxrefsections(xref, xref->startxref, buf, sizeof buf);
 	if (error)
-		goto cleanup;
+		return error;
 
-	error = pdf_newstore(&xref->store);
-	if (error)
-		goto cleanup;
-
-	xref->dests = nil;
-
-	*xrefp = xref;
 	return nil;
-
-cleanup:
-	pdf_closepdf(xref);
-	return error;
 }
 

@@ -3,12 +3,11 @@
 
 static char *password = "";
 static int dodecode = 0;
-static int dorepair = 0;
 static int doprintxref = 0;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfdebug [-drxs] [-u password] file.pdf [oid ...]\n");
+	fprintf(stderr, "usage: pdfdebug [-dxs] [-u password] file.pdf [oid ...]\n");
 	exit(1);
 }
 
@@ -127,9 +126,6 @@ int main(int argc, char **argv)
 		case 'd':
 			dodecode ++;
 			break;
-		case 'r':
-			dorepair ++;
-			break;
 		case 'x':
 			doprintxref ++;
 			break;
@@ -146,14 +142,20 @@ int main(int argc, char **argv)
 
 	filename = argv[optind++];
 
-	if (dorepair)
-		error = pdf_repairpdf(&xref, filename);
-	else
-		error = pdf_openpdf(&xref, filename);
+	error = pdf_newxref(&xref);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptpdf(xref);
+	error = pdf_loadxref(xref, filename);
+	if (error)
+	{
+		fz_warn("trying to repair");
+		error = pdf_repairxref(xref, filename);
+		if (error)
+			fz_abort(error);
+	}
+
+	error = pdf_decryptxref(xref);
 	if (error)
 		fz_abort(error);
 
@@ -177,9 +179,9 @@ int main(int argc, char **argv)
 	}
 
 	if (doprintxref)
-		pdf_debugpdf(xref);
+		pdf_debugxref(xref);
 
-	pdf_closepdf(xref);
+	pdf_closexref(xref);
 
 	return 0;
 }

@@ -617,14 +617,14 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		return fz_outofmem;
 	}
 
-	if (fz_isstring(lookup) && fz_tostringlen(lookup) == n)
+	if (fz_isstring(lookup) && fz_tostrlen(lookup) == n)
 	{
 		unsigned char *buf;
 		int i;
 
 		pdf_logrsrc("string lookup\n");
 
-		buf = fz_tostringbuf(lookup);
+		buf = fz_tostrbuf(lookup);
 		for (i = 0; i < n; i++)
 			cs->lookup[i] = buf[i];
 	}

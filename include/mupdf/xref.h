@@ -11,15 +11,20 @@ struct pdf_xref_s
 	fz_file *stream;
 	float version;
 	int startxref;
-	fz_obj *trailer;		/* TODO split this into root/info/encrypt/id */
 	pdf_crypt *crypt;
+
+	fz_obj *trailer;		/* TODO split this into root/info/encrypt/id */
+	fz_obj *root;			/* resolved catalog dict */
+	fz_obj *info;			/* resolved info dict */
+	fz_obj *dests;			/* flattened dests nametree */
 
 	int len;
 	int cap;
 	pdf_xrefentry *table;
 
-	struct pdf_nametree_s *dests;
 	struct pdf_store_s *store;
+	struct pdf_pagetree_s *pages;
+	struct pdf_outline_s *outlines;
 };
 
 struct pdf_xrefentry_s
@@ -33,16 +38,17 @@ struct pdf_xrefentry_s
 	fz_obj *obj;			/* stored/cached object */
 };
 
-fz_error *pdf_repairpdf(pdf_xref **, char *filename);
+fz_error *pdf_newxref(pdf_xref **);
+fz_error *pdf_repairxref(pdf_xref *, char *filename);
+fz_error *pdf_loadxref(pdf_xref *, char *filename);
+
 fz_error *pdf_openpdf(pdf_xref **, char *filename);
-fz_error *pdf_newpdf(pdf_xref **);
+fz_error *pdf_updatexref(pdf_xref *, char *filename);
+fz_error *pdf_savexref(pdf_xref *, char *filename, pdf_crypt *encrypt);
 
-fz_error *pdf_updatepdf(pdf_xref *, char *filename);
-fz_error *pdf_savepdf(pdf_xref *, char *filename, pdf_crypt *encrypt);
-
-void pdf_debugpdf(pdf_xref *);
-void pdf_flushpdf(pdf_xref *, int force);
-void pdf_closepdf(pdf_xref *);
+void pdf_debugxref(pdf_xref *);
+void pdf_flushxref(pdf_xref *, int force);
+void pdf_closexref(pdf_xref *);
 
 fz_error *pdf_allocobject(pdf_xref *, int *oidp, int *genp);
 fz_error *pdf_deleteobject(pdf_xref *, int oid, int gen);
@@ -67,5 +73,5 @@ fz_error *pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *ol
 
 /* private */
 fz_error *pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap);
-fz_error *pdf_decryptpdf(pdf_xref *xref);
+fz_error *pdf_decryptxref(pdf_xref *xref);
 

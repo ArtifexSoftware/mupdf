@@ -83,10 +83,10 @@ static struct subent fontsubs[] =
 	{ GB, MINCHO, "mingliu.ttc" },
 	{ GB, GOTHIC, "mingliu.ttc" },
 
-	{ Japan, MINCHO, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\346\230\216\346\234\235 Pro W3.otf" },
-	{ Japan, GOTHIC, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\350\247\222\343\202\263\343\202\231 Pro W3.otf" },
 	{ Japan, MINCHO, "kochi-mincho.ttf" },
 	{ Japan, GOTHIC, "kochi-gothic.ttf" },
+	{ Japan, MINCHO, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\346\230\216\346\234\235 Pro W3.otf" },
+	{ Japan, GOTHIC, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\350\247\222\343\202\263\343\202\231 Pro W3.otf" },
 	{ Japan, MINCHO, "msmincho.ttc" },
 	{ Japan, GOTHIC, "msgothic.ttc" },
 

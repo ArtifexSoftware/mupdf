@@ -205,9 +205,9 @@ LINKLIBS on x11pdf = -lX11 -lXext $(LINKLIBS) ;
 
 Main pdfclean : test/pdfclean.c ;
 Main pdfdebug : test/pdfdebug.c ;
-Main pdfmerge : test/pdfmerge.c ;
-Main pdfrip : test/pdfrip.c ;
-Main pdffunction : test/pdffunction.c ;
+# Main pdfmerge : test/pdfmerge.c ;
+# Main pdfrip : test/pdfrip.c ;
+# Main pdffunction : test/pdffunction.c ;
 
 Main x11pdf : test/x11pdf.c test/ximage.c ;
 

@@ -70,14 +70,14 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	crypt->id = nil;
 
 	obj = fz_dictgets(enc, "O");
-	if (!fz_isstring(obj) || fz_tostringlen(obj) != 32)
+	if (!fz_isstring(obj) || fz_tostrlen(obj) != 32)
 		goto cleanup;
-	memcpy(crypt->o, fz_tostringbuf(obj), 32);
+	memcpy(crypt->o, fz_tostrbuf(obj), 32);
 
 	obj = fz_dictgets(enc, "U");
-	if (!fz_isstring(obj) || fz_tostringlen(obj) != 32)
+	if (!fz_isstring(obj) || fz_tostrlen(obj) != 32)
 		goto cleanup;
-	memcpy(crypt->u, fz_tostringbuf(obj), 32);
+	memcpy(crypt->u, fz_tostrbuf(obj), 32);
 
 	obj = fz_dictgets(enc, "P");
 	if (!fz_isint(obj))
@@ -179,7 +179,7 @@ createkey(pdf_crypt *crypt, char *userpw)
 	fz_md5update(&md5, buf, 4);
 
 	/* Step 5 */
-	fz_md5update(&md5, fz_tostringbuf(crypt->id), fz_tostringlen(crypt->id));
+	fz_md5update(&md5, fz_tostrbuf(crypt->id), fz_tostrlen(crypt->id));
 	fz_md5final(&md5, crypt->key);
 
 	/* Step 6 (rev 3 only) */
@@ -255,7 +255,7 @@ createuser(pdf_crypt *crypt, char *userpw)
 		fz_md5update(&md5, padding, 32);
 
 		/* Step 3 */
-		fz_md5update(&md5, fz_tostringbuf(crypt->id), fz_tostringlen(crypt->id));
+		fz_md5update(&md5, fz_tostrbuf(crypt->id), fz_tostrlen(crypt->id));
 		fz_md5final(&md5, key);
 
 		/* Step 4 */
@@ -349,8 +349,8 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 	int i, n;
 
 	if (fz_isstring(obj)) {
-		s = fz_tostringbuf(obj);
-		n = fz_tostringlen(obj);
+		s = fz_tostrbuf(obj);
+		n = fz_tostrlen(obj);
 		createobjkey(crypt, oid, gid, key);
 		fz_arc4init(&arc4, key, crypt->keylen);
 		fz_arc4encrypt(&arc4, s, s, n);

@@ -5,6 +5,7 @@
 typedef struct pdf_link_s pdf_link;
 typedef struct pdf_comment_s pdf_comment;
 typedef struct pdf_widget_s pdf_widget;
+typedef struct pdf_outline_s pdf_outline;
 
 typedef enum pdf_linkkind_e
 {
@@ -16,9 +17,7 @@ struct pdf_link_s
 {
 	pdf_linkkind kind;
 	fz_rect rect;
-	fz_obj *page;
-	fz_obj *uri;
-	int ismap;
+	fz_obj *dest;
 	pdf_link *next;
 };
 
@@ -46,8 +45,24 @@ struct pdf_comment_s
 	pdf_comment *next;
 };
 
-fz_error * pdf_newlink(pdf_link**, fz_rect rect, int ismap, fz_obj *page, fz_obj *uri);
+struct pdf_outline_s
+{
+	char *title;
+	pdf_link *link;
+	pdf_outline *child;
+	pdf_outline *next;
+};
+
+fz_error *pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root);
+fz_error *pdf_loadnametrees(pdf_xref *xref);
+
+fz_error *pdf_newlink(pdf_link**, fz_rect rect, fz_obj *dest);
+fz_error *pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict);
 void pdf_droplink(pdf_link *link);
+
+fz_error *pdf_loadoutline(pdf_outline **outlinep, pdf_xref *xref);
+void pdf_debugoutline(pdf_outline *outline, int level);
+void pdf_dropoutline(pdf_outline *outline);
 
 fz_error *pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots);
 

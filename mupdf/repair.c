@@ -1,6 +1,10 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+/*
+ * open pdf and scan objects to reconstruct xref table
+ */
+
 struct entry
 {
 	int oid;
@@ -101,10 +105,9 @@ atobjend:
 }
 
 fz_error *
-pdf_repairpdf(pdf_xref **xrefp, char *filename)
+pdf_repairxref(pdf_xref *xref, char *filename)
 {
 	fz_error *error;
-	pdf_xref *xref;
 	fz_file *file;
 
 	struct entry *list = nil;
@@ -124,22 +127,11 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	int next;
 	int i;
 
-	xref = fz_malloc(sizeof(pdf_xref));
-	if (!xref)
-		return fz_outofmem;
-	memset(xref, 0, sizeof(pdf_xref));
-
-	xref->file = nil;
-	xref->version = 0.0;
-	xref->startxref = 0;
-	xref->trailer = nil;
-	xref->crypt = nil;
-
-	pdf_logxref("repairxref '%s' %p\n", filename, xref);
-
 	error = fz_openfile(&file, filename, FZ_READ);
 	if (error)
-		goto cleanup;
+		return error;
+
+	pdf_logxref("repairxref '%s' %p\n", filename, xref);
 
 	xref->file = file;
 
@@ -224,11 +216,11 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	if (error)
 		goto cleanup;
 
-	xref->version = 1.3;	/* FIXME */
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
-	if (!xref->table) {
+	if (!xref->table)
+	{
 		error = fz_outofmem;
 		goto cleanup;
 	}
@@ -300,18 +292,10 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 
 	fz_free(list);
 
-	error = pdf_newstore(&xref->store);
-	if (error)
-		goto cleanup;
-
-	xref->dests = nil;
-
-	*xrefp = xref;
 	return nil;
 
 cleanup:
 	fz_closefile(file);
-	fz_free(xref);
 	fz_free(list);
 	return error;
 }

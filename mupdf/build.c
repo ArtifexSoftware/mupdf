@@ -770,8 +770,8 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 		return nil;
 	}
 
-	buf = fz_tostringbuf(text);
-	len = fz_tostringlen(text);
+	buf = fz_tostrbuf(text);
+	len = fz_tostrlen(text);
 	end = buf + len;
 
 	while (buf < end)

@@ -104,7 +104,7 @@ static int countmodified(pdf_xref *xref, int oid)
 }
 
 fz_error *
-pdf_updatepdf(pdf_xref *xref, char *path)
+pdf_updatexref(pdf_xref *xref, char *path)
 {
 	fz_error *error;
 	fz_file *out;
@@ -207,7 +207,7 @@ cleanup:
 }
 
 fz_error *
-pdf_savepdf(pdf_xref *xref, char *path, pdf_crypt *encrypt)
+pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 {
 	fz_error *error;
 	fz_file *out;

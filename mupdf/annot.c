@@ -8,7 +8,7 @@ loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
 }
 
 fz_error *
-pdf_newlink(pdf_link **linkp, fz_rect bbox, int ismap, fz_obj *page, fz_obj *uri)
+pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
 {
 	pdf_link *link;
 
@@ -17,9 +17,7 @@ pdf_newlink(pdf_link **linkp, fz_rect bbox, int ismap, fz_obj *page, fz_obj *uri
 		return fz_outofmem;
 
 	link->rect = bbox;
-	link->ismap = ismap;
-	link->page = page ? fz_keepobj(page) : nil;
-	link->uri = uri ? fz_keepobj(uri) : nil;
+	link->dest = fz_keepobj(dest);
 	link->next = nil;
 
 	*linkp = link;
@@ -31,27 +29,27 @@ pdf_droplink(pdf_link *link)
 {
 	if (link->next)
 		pdf_droplink(link->next);
-	if (link->page)
-		fz_dropobj(link->page);
-	if (link->uri)
-		fz_dropobj(link->uri);
+	if (link->dest)
+		fz_dropobj(link->dest);
 	fz_free(link);
 }
 
 static fz_obj *
 resolvedest(pdf_xref *xref, fz_obj *dest)
 {
-	if (fz_isname(dest) && xref->dests)
+	if (fz_isname(dest))
 	{
-		dest = pdf_lookupname(xref->dests, dest);
-		pdf_resolve(&dest, xref); /* XXX */
+		dest = fz_dictget(xref->dests, dest);
+		if (dest)
+			pdf_resolve(&dest, xref); /* XXX */
 		return resolvedest(xref, dest);
 	}
 
-	else if (fz_isstring(dest) && xref->dests)
+	else if (fz_isstring(dest))
 	{
-		dest = pdf_lookupname(xref->dests, dest);
-		pdf_resolve(&dest, xref); /* XXX */
+		dest = fz_dictget(xref->dests, dest);
+		if (dest)
+			pdf_resolve(&dest, xref); /* XXX */
 		return resolvedest(xref, dest);
 	}
 
@@ -72,30 +70,31 @@ resolvedest(pdf_xref *xref, fz_obj *dest)
 	return nil;
 }
 
-static fz_error *
-loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
+fz_error *
+pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error *error;
 	pdf_link *link;
-	fz_obj *page;
-	fz_obj *uri;
+	fz_obj *dest;
 	fz_obj *action;
 	fz_obj *obj;
 	fz_rect bbox;
-	int ismap;
 
 	pdf_logpage("load link {\n");
 
 	link = nil;
-	page = nil;
-	uri = nil;
-	ismap = 0;
+	dest = nil;
 
 	obj = fz_dictgets(dict, "Rect");
-	bbox = pdf_torect(obj);
-	pdf_logpage("rect [%g %g %g %g]\n",
-		bbox.min.x, bbox.min.y,
-		bbox.max.x, bbox.max.y);
+	if (obj)
+	{
+		bbox = pdf_torect(obj);
+		pdf_logpage("rect [%g %g %g %g]\n",
+			bbox.min.x, bbox.min.y,
+			bbox.max.x, bbox.max.y);
+	}
+	else
+		bbox = fz_emptyrect;
 
 	obj = fz_dictgets(dict, "Dest");
 	if (obj)
@@ -103,8 +102,8 @@ loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		error = pdf_resolve(&obj, xref);
 		if (error)
 			return error;
-		page = resolvedest(xref, obj);
-		pdf_logpage("dest %d %d R\n", fz_tonum(page), fz_togen(page));
+		dest = resolvedest(xref, obj);
+		pdf_logpage("dest %d %d R\n", fz_tonum(dest), fz_togen(dest));
 		fz_dropobj(obj);
 	}
 
@@ -118,14 +117,13 @@ loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		obj = fz_dictgets(action, "S");
 		if (!strcmp(fz_toname(obj), "GoTo"))
 		{
-			page = resolvedest(xref, fz_dictgets(action, "D"));
-			pdf_logpage("action goto %d %d R\n", fz_tonum(page), fz_togen(page));
+			dest = resolvedest(xref, fz_dictgets(action, "D"));
+			pdf_logpage("action goto %d %d R\n", fz_tonum(dest), fz_togen(dest));
 		}
 		else if (!strcmp(fz_toname(obj), "URI"))
 		{
-			uri = fz_dictgets(action, "URI");
-			ismap = fz_tobool(fz_dictgets(action, "IsMap"));
-			pdf_logpage("action uri ismap=%d\n", ismap);
+			dest = fz_dictgets(action, "URI");
+			pdf_logpage("action uri %s\n", fz_tostrbuf(dest));
 		}
 		else
 			pdf_logpage("action ... ?\n");
@@ -135,12 +133,11 @@ loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logpage("}\n");
 
-	if (page || uri)
+	if (dest)
 	{
-		error = pdf_newlink(&link, bbox, ismap, page, uri);
+		error = pdf_newlink(&link, bbox, dest);
 		if (error)
 			return error;
-		link->next = *linkp;
 		*linkp = link;
 	}
 
@@ -171,14 +168,27 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 
 		subtype = fz_dictgets(obj, "Subtype");
 		if (!strcmp(fz_toname(subtype), "Link"))
-			error = loadlink(&link, xref, obj);
-		else
-			error = loadcomment(&comment, xref, obj);
-			
-		fz_dropobj(obj);
+		{
+			pdf_link *temp = nil;
 
-		if (error)
-			goto cleanup;
+			error = pdf_loadlink(&temp, xref, obj);
+			fz_dropobj(obj);
+			if (error)
+				goto cleanup;
+
+			if (temp)
+			{
+				temp->next = link;
+				link = temp;
+			}
+		}
+		else
+		{
+			error = loadcomment(&comment, xref, obj);
+			fz_dropobj(obj);
+			if (error)
+				goto cleanup;
+		}
 	}
 
 	pdf_logpage("}\n");

@@ -604,16 +604,16 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 			return error;
 
 		obj = fz_dictgets(cidinfo, "Registry");
-		tmplen = MIN(sizeof tmpstr - 1, fz_tostringlen(obj));
-		memcpy(tmpstr, fz_tostringbuf(obj), tmplen);
+		tmplen = MIN(sizeof tmpstr - 1, fz_tostrlen(obj));
+		memcpy(tmpstr, fz_tostrbuf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
 		strlcpy(collection, tmpstr, sizeof collection);
 
 		strlcat(collection, "-", sizeof collection);
 
 		obj = fz_dictgets(cidinfo, "Ordering");
-		tmplen = MIN(sizeof tmpstr - 1, fz_tostringlen(obj));
-		memcpy(tmpstr, fz_tostringbuf(obj), tmplen);
+		tmplen = MIN(sizeof tmpstr - 1, fz_tostrlen(obj));
+		memcpy(tmpstr, fz_tostrbuf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
 		strlcat(collection, tmpstr, sizeof collection);
 

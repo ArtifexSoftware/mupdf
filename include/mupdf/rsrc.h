@@ -150,6 +150,7 @@ extern int pdf_adobeglyphlen;
 void pdf_loadencoding(char **estrings, char *encoding);
 int pdf_lookupagl(char *name);
 
+extern unsigned short pdf_docencoding[256];
 extern char *pdf_macroman[256];
 extern char *pdf_macexpert[256];
 extern char *pdf_winansi[256];

@@ -133,8 +133,6 @@ fz_transformaabb(fz_matrix m, fz_rect r)
 
 	if (fz_isinfiniterect(r))
 		return r;
-	if (fz_isemptyrect(r))
-		return r;
 
 	s.x = r.min.x; s.y = r.min.y;
 	t.x = r.min.x; t.y = r.max.y;

@@ -1,36 +1,34 @@
 immediate plan:
 
-	+ refactor xref init
-	+ loadlowlevel
-	+ loadhighlevel
-		- load name trees 
-		- load page tree
-		- load outline
-
-	- altivec optimize
-	- design gui for editor
-	- go through spec and check all features!
-	- talk to keithp about fontconfig cid-font + cmap support
-
-	* page labels + dests + outline + annots
-
+	* design gui for editor
 	* libfontfocus
-
-	* font and cmap config (where to load cmap and which cid fonts)
-	- global fontfile/cmap cache
-	- unify handling of mallocing fonts and images
-	- split type3 and ftfont malloc (dont waste t3 charprocs on ft fonts)
-	- make ftfontfile separate struct w/ refcounting
-	- refactor font loading more. simple/cid/type3 have too much in common.
-		fix default .fonts.conf for base14 fonts
-		fix default .fonts.conf for asian fonts
-		maybe add CMap directory entry to fontconfig?
-
+	* write mupdf hackers guide
 	* clean up and 'freeze' public api
+
+	* refactor image loading
+	* refactor xref loading/repair
+	* restructure build.c and interpret.c (ftb vs csi)
+	* fix the colorspace/pattern/shading material mess
+	* font loading:
+		- configuration... where to find system files (asian font archive?)
+		- system fontfile + cmap store
+		- embedded fontfile store
+		- split type3 and ftfont malloc (dont waste t3 charprocs on ft fonts)
+		- make ftfontfile separate struct w/ refcounting
+		- refactor font loading more. simple/cid/type3 have too much in common.
+
+	* structure low/high level stuff
+		- rewrite outline parser
+		- implement comments
+
+	* clean high-level api
+
+	- go through spec and check all features!
+	- altivec optimize
 
 ---
 
-std rsrc fmt
+std rsrc fmt (v3)
 
 transparency (v2)
 	- everything!
@@ -47,24 +45,14 @@ image rendering (v2)
 	- better filter than box
 	- lazy decoding
 
-shadings
-	- ... jeong ...
-
 rendering
 	- fix glyphcache evictlast
 	- bbox culling per glyph
 	- font focus
-
-parser
-	- try to clean up colorspace/material handling in interpreter
-	- annotations and destinations (for links and outline)
+	- render cache (link-nodes and scaled images and colorspaced shades)
 
 fz_optimizetree()
 	- error & memory
 	- concatenate chained transforms
 	- remove identity transforms
-
-cache
-	global cache for cmaps and fontfiles (emb+sys)
-	render cache (link-nodes and scaled images and shades)
 

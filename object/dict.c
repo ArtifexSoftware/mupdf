@@ -1,6 +1,26 @@
 #include <fitz.h>
 
-void fz_dropdict(fz_obj *obj);
+/* keep either names or strings in the dict. don't mix & match. */
+
+static int keyvalcmp(const void *ap, const void *bp)
+{
+	const fz_keyval *a = ap;
+	const fz_keyval *b = bp;
+	if (fz_isname(a->k))
+		return strcmp(fz_toname(a->k), fz_toname(b->k));
+	if (fz_isstring(a->k))
+		return strcmp(fz_tostrbuf(a->k), fz_tostrbuf(b->k));
+	return -1;
+}
+
+static inline int keystrcmp(fz_obj *key, char *s)
+{
+	if (fz_isname(key))
+		return strcmp(fz_toname(key), s);
+	if (fz_isstring(key))
+		return strcmp(fz_tostrbuf(key), s);
+	return -1;
+}
 
 fz_error *
 fz_newdict(fz_obj **op, int initialcap)
@@ -14,10 +34,11 @@ fz_newdict(fz_obj **op, int initialcap)
 	obj->refs = 1;  
 	obj->kind = FZ_DICT;
 
+	obj->u.d.sorted = 1;
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 0 ? initialcap : 10;
 
-	obj->u.d.items = fz_malloc(sizeof(struct fz_keyval_s) * obj->u.d.cap);
+	obj->u.d.items = fz_malloc(sizeof(fz_keyval) * obj->u.d.cap);
 	if (!obj->u.d.items) { fz_free(obj); return fz_outofmem; }
 
 	for (i = 0; i < obj->u.d.cap; i++) {
@@ -44,7 +65,7 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 
 	for (i = 0; i < fz_dictlen(obj); i++) {
 		error = fz_dictput(new, fz_dictgetkey(obj, i), fz_dictgetval(obj, i));
-		if (error) { fz_dropdict(new); return error; }
+		if (error) { fz_dropobj(new); return error; }
 	}
 
 	return nil;
@@ -71,23 +92,23 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 
 		if (fz_isarray(val)) {
 			error = fz_deepcopyarray(&val, val);
-			if (error) { fz_dropdict(new); return error; }
+			if (error) { fz_dropobj(new); return error; }
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropobj(val); fz_dropdict(new); return error; }
+			if (error) { fz_dropobj(val); fz_dropobj(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else if (fz_isdict(val)) {
 			error = fz_deepcopydict(&val, val);
-			if (error) { fz_dropdict(new); return error; }
+			if (error) { fz_dropobj(new); return error; }
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropobj(val); fz_dropdict(new); return error; }
+			if (error) { fz_dropobj(val); fz_dropobj(new); return error; }
 			fz_dropobj(val);
 		}
 
 		else {
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropdict(new); return error; }
+			if (error) { fz_dropobj(new); return error; }
 		}
 	}
 
@@ -97,13 +118,13 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 static fz_error *
 growdict(fz_obj *obj)
 {
-	struct fz_keyval_s *newitems;
+	fz_keyval *newitems;
 	int newcap;
 	int i;
 
 	newcap = obj->u.d.cap * 2;
 
-	newitems = fz_realloc(obj->u.d.items, sizeof(struct fz_keyval_s) * newcap);
+	newitems = fz_realloc(obj->u.d.items, sizeof(fz_keyval) * newcap);
 	if (!newitems) return fz_outofmem;
 
 	obj->u.d.items = newitems;
@@ -148,6 +169,36 @@ fz_dictgetval(fz_obj *obj, int i)
 	return obj->u.d.items[i].v;
 }
 
+static inline int dictfinds(fz_obj *obj, char *key)
+{
+	if (obj->u.d.sorted)
+	{
+		int l = 0;
+		int r = obj->u.d.len - 1;
+		while (l <= r)
+		{
+			int m = (l + r) >> 1;
+			int c = -keystrcmp(obj->u.d.items[m].k, key);
+			if (c < 0)
+				r = m - 1;
+			else if (c > 0)
+				l = m + 1;
+			else
+				return m;
+		}
+	}
+
+	else
+	{
+		int i;
+		for (i = 0; i < obj->u.d.len; i++)
+			if (keystrcmp(obj->u.d.items[i].k, key) == 0)
+				return i;
+	}
+
+	return -1;
+}
+
 fz_obj *
 fz_dictgets(fz_obj *obj, char *key)
 {
@@ -156,9 +207,9 @@ fz_dictgets(fz_obj *obj, char *key)
 	if (!fz_isdict(obj))
 		return nil;
 
-	for (i = 0; i < obj->u.d.len; i++)
-		if (strcmp(fz_toname(obj->u.d.items[i].k), key) == 0)
-			return obj->u.d.items[i].v;
+	i = dictfinds(obj, key);
+	if (i >= 0)
+		return obj->u.d.items[i].v;
 
 	return nil;
 }
@@ -166,7 +217,11 @@ fz_dictgets(fz_obj *obj, char *key)
 fz_obj *
 fz_dictget(fz_obj *obj, fz_obj *key)
 {
-	return fz_dictgets(obj, fz_toname(key));
+	if (fz_isname(key))
+		return fz_dictgets(obj, fz_toname(key));
+	if (fz_isstring(key))
+		return fz_dictgets(obj, fz_tostrbuf(key));
+	return nil;
 }
 
 fz_obj *
@@ -183,28 +238,38 @@ fz_error *
 fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
 	fz_error *error;
-	int i;
 	char *s;
+	int i;
 
 	if (!fz_isdict(obj))
 		return fz_throw("typecheck in dictput");
-	if (!fz_isname(key))
+
+	if (fz_isname(key))
+		s = fz_toname(key);
+	else if (fz_isstring(key))
+		s = fz_tostrbuf(key);
+	else
 		return fz_throw("typecheck in dictput");
 
-	s = fz_toname(key);
-
-	for (i = 0; i < obj->u.d.len; i++) {
-		if (strcmp(fz_toname(obj->u.d.items[i].k), s) == 0) {
-			fz_dropobj(obj->u.d.items[i].v);
-			obj->u.d.items[i].v = fz_keepobj(val);
-			return nil;
-		}
+	i = dictfinds(obj, s);
+	if (i >= 0)
+	{
+		fz_dropobj(obj->u.d.items[i].v);
+		obj->u.d.items[i].v = fz_keepobj(val);
+		return nil;
 	}
 
-	if (obj->u.d.len + 1 > obj->u.d.cap) {
+	if (obj->u.d.len + 1 > obj->u.d.cap)
+	{
 		error = growdict(obj);
-		if (error) return error;
+		if (error)
+			return error;
 	}
+
+	/* borked! */
+	if (obj->u.d.len)
+		if (keystrcmp(obj->u.d.items[obj->u.d.len - 1].k, s) > 0)
+			obj->u.d.sorted = 0;
 
 	obj->u.d.items[obj->u.d.len].k = fz_keepobj(key);
 	obj->u.d.items[obj->u.d.len].v = fz_keepobj(val);
@@ -233,13 +298,14 @@ fz_dictdels(fz_obj *obj, char *key)
 	if (!fz_isdict(obj))
 		return fz_throw("typecheck in dictdel");
 
-	for (i = 0; i < obj->u.d.len; i++) {
-		if (strcmp(fz_toname(obj->u.d.items[i].k), key) == 0) {
-			fz_dropobj(obj->u.d.items[i].k);
-			fz_dropobj(obj->u.d.items[i].v);
-			obj->u.d.items[i] = obj->u.d.items[obj->u.d.len-1];
-			obj->u.d.len --;
-		}
+	i = dictfinds(obj, key);
+	if (i >= 0)
+	{
+		fz_dropobj(obj->u.d.items[i].k);
+		fz_dropobj(obj->u.d.items[i].v);
+		obj->u.d.sorted = 0;
+		obj->u.d.items[i] = obj->u.d.items[obj->u.d.len-1];
+		obj->u.d.len --;
 	}
 
 	return nil;
@@ -248,7 +314,12 @@ fz_dictdels(fz_obj *obj, char *key)
 fz_error *
 fz_dictdel(fz_obj *obj, fz_obj *key)
 {
-	return fz_dictdels(obj, fz_toname(key));
+	if (fz_isname(key))
+		return fz_dictdels(obj, fz_toname(key));
+	else if (fz_isstring(key))
+		return fz_dictdels(obj, fz_tostrbuf(key));
+	else
+		return fz_throw("typecheck in dictdel");
 }
 
 void
@@ -268,5 +339,17 @@ fz_dropdict(fz_obj *obj)
 
 	fz_free(obj->u.d.items);
 	fz_free(obj);
+}
+
+void
+fz_sortdict(fz_obj *obj)
+{
+	if (!fz_isdict(obj))
+		return;
+	if (!obj->u.d.sorted)
+	{
+		qsort(obj->u.d.items, obj->u.d.len, sizeof(fz_keyval), keyvalcmp);
+		obj->u.d.sorted = 1;
+	}
 }
 

@@ -6,7 +6,7 @@
  */
 
 fz_error *
-pdf_newpdf(pdf_xref **xrefp)
+pdf_newxref(pdf_xref **xrefp)
 {
 	fz_error *error;
 	pdf_xref *xref;
@@ -19,31 +19,24 @@ pdf_newpdf(pdf_xref **xrefp)
 	pdf_logxref("newxref %p\n", xref);
 
 	xref->file = nil;
-	xref->version = 1.3;
+	xref->version = 1.0;
 	xref->startxref = 0;
-	xref->trailer = nil;
 	xref->crypt = nil;
 
-	xref->cap = 256;
-	xref->len = 1;
-	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
-	if (!xref->table) {
-		fz_free(xref);
-		return fz_outofmem;
-	}
+	xref->trailer = nil;
+	xref->root = nil;
+	xref->info = nil;
+	xref->dests = nil;
+	xref->store = nil;
 
-	xref->table[0].type = 'f';
-	xref->table[0].mark = 0;
-	xref->table[0].ofs = 0;
-	xref->table[0].gen = 65535;
-	xref->table[0].stmbuf = nil;
-	xref->table[0].stmofs = 0;
-	xref->table[0].obj = nil;
+	xref->cap = 0;
+	xref->len = 0;
+	xref->table = nil;
 
 	error = pdf_newstore(&xref->store);
 	if (error)
 	{
-		pdf_closepdf(xref);
+		pdf_closexref(xref);
 		return error;
 	}
 
@@ -51,8 +44,93 @@ pdf_newpdf(pdf_xref **xrefp)
 	return nil;
 }
 
+void
+pdf_closexref(pdf_xref *xref)
+{
+	pdf_logxref("closexref %p\n", xref);
+
+	if (xref->store)
+		pdf_dropstore(xref->store);
+
+	if (xref->table)
+	{
+		pdf_flushxref(xref, 1);
+		fz_free(xref->table);
+	}
+
+	if (xref->file)
+		fz_closefile(xref->file);
+
+	if (xref->trailer)
+		fz_dropobj(xref->trailer);
+	if (xref->root)
+		fz_dropobj(xref->root);
+	if (xref->info)
+		fz_dropobj(xref->info);
+	if (xref->dests)
+		fz_dropobj(xref->dests);
+
+	fz_free(xref);
+}
+
+void
+pdf_flushxref(pdf_xref *xref, int force)
+{
+	int i;
+
+	pdf_logxref("flushxref %p (%d)\n", xref, force);
+
+	for (i = 0; i < xref->len; i++)
+	{
+		if (force)
+		{
+			if (xref->table[i].stmbuf)
+			{
+				fz_dropbuffer(xref->table[i].stmbuf);
+				xref->table[i].stmbuf = nil;
+			}
+			if (xref->table[i].obj)
+			{
+				fz_dropobj(xref->table[i].obj);
+				xref->table[i].obj = nil;
+			}
+		}
+		else
+		{
+			if (xref->table[i].stmbuf && xref->table[i].stmbuf->refs == 1)
+			{
+				fz_dropbuffer(xref->table[i].stmbuf);
+				xref->table[i].stmbuf = nil;
+			}
+			if (xref->table[i].obj && xref->table[i].obj->refs == 1)
+			{
+				fz_dropobj(xref->table[i].obj);
+				xref->table[i].obj = nil;
+			}
+		}
+	}
+}
+
+void
+pdf_debugxref(pdf_xref *xref)
+{
+	int i;
+	printf("xref\n0 %d\n", xref->len);
+	for (i = 0; i < xref->len; i++)
+	{
+		printf("%010d %05d %c | %d %c%c\n",
+			xref->table[i].ofs,
+			xref->table[i].gen,
+			xref->table[i].type,
+			xref->table[i].obj ? xref->table[i].obj->refs : 0,
+			xref->table[i].stmofs ? 'f' : '-',
+			xref->table[i].stmbuf ? 'b' : '-');
+	}
+}
+
+/* ICKY! */
 fz_error *
-pdf_decryptpdf(pdf_xref *xref)
+pdf_decryptxref(pdf_xref *xref)
 {
 	fz_error *error;
 	fz_obj *encrypt;
@@ -81,84 +159,6 @@ pdf_decryptpdf(pdf_xref *xref)
 	}
 
 	return nil;
-}
-
-void
-pdf_flushpdf(pdf_xref *xref, int force)
-{
-	int i;
-
-	pdf_logxref("flushxref %p (%d)\n", xref, force);
-
-	for (i = 0; i < xref->len; i++)
-	{
-		if (force)
-		{
-			if (xref->table[i].stmbuf)
-			{
-				fz_dropbuffer(xref->table[i].stmbuf);
-				xref->table[i].stmbuf = nil;
-			}
-			if (xref->table[i].obj)
-			{
-				fz_dropobj(xref->table[i].obj);
-				xref->table[i].obj = nil;
-			}
-		}
-		else
-		{
-			if (xref->table[i].stmbuf && xref->table[i].stmbuf->refs == 1)
-			{
-				fz_dropbuffer(xref->table[i].stmbuf);
-				xref->table[i].stmbuf = nil;
-			}
-			if (xref->table[i].obj && xref->table[i].stmbuf->refs == 1)
-			{
-				fz_dropobj(xref->table[i].obj);
-				xref->table[i].obj = nil;
-			}
-		}
-	}
-}
-
-void
-pdf_closepdf(pdf_xref *xref)
-{
-	pdf_logxref("closexref %p\n", xref);
-
-	if (xref->store)
-		pdf_dropstore(xref->store);
-
-	if (xref->table)
-	{
-		pdf_flushpdf(xref, 1);
-		fz_free(xref->table);
-	}
-
-	if (xref->file)
-		fz_closefile(xref->file);
-
-	if (xref->trailer)
-		fz_dropobj(xref->trailer);
-
-	fz_free(xref);
-}
-
-void
-pdf_debugpdf(pdf_xref *xref)
-{
-	int i;
-	printf("xref\n0 %d\n", xref->len);
-	for (i = 0; i < xref->len; i++)
-	{
-		printf("%010d %05d %c | %d %c%c\n",
-			xref->table[i].ofs,
-			xref->table[i].gen,
-			xref->table[i].type,
-			xref->table[i].obj ? xref->table[i].obj->refs : 0,
-			xref->table[i].stmofs ? 'f' : '-',
-			xref->table[i].stmbuf ? 'b' : '-');
-	}
 }
 
 /*

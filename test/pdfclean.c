@@ -5,7 +5,7 @@ void usage()
 {
 	fprintf(stderr,
 		"usage: pdfclean [options] infile.pdf outfile.pdf\n"
-		"  -r\treconstruct broken xref table\n"
+		"  -r\trebuild xref table\n"
 		"  -g\tgarbage collect unused objects\n"
 		"  -x\texpand compressed streams\n"
 		"  -d -\tset user password for decryption\n"
@@ -118,14 +118,16 @@ int main(int argc, char **argv)
 	infile = argv[optind++];
 	outfile = argv[optind++];
 
+	error = pdf_newxref(&xref);
+
 	if (dorepair)
-		error = pdf_repairpdf(&xref, infile);
+		error = pdf_repairxref(xref, infile);
 	else
-		error = pdf_openpdf(&xref, infile);
+		error = pdf_loadxref(xref, infile);
 	if (error)
 		fz_abort(error);
 
-	error = pdf_decryptpdf(xref);
+	error = pdf_decryptxref(xref);
 	if (error)
 		fz_abort(error);
 
@@ -157,14 +159,14 @@ int main(int argc, char **argv)
 		pdf_garbagecollect(xref);
 	}
 
-	error = pdf_savepdf(xref, outfile, encrypt);
+	error = pdf_savexref(xref, outfile, encrypt);
 	if (error)
 		fz_abort(error);
 
 	if (encrypt)
 		pdf_dropcrypt(encrypt);
 
-	pdf_closepdf(xref);
+	pdf_closexref(xref);
 
 	return 0;
 }

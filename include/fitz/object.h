@@ -1,4 +1,5 @@
 typedef struct fz_obj_s fz_obj;
+typedef struct fz_keyval_s fz_keyval;
 
 typedef enum fz_objkind_e
 {
@@ -23,7 +24,7 @@ struct fz_keyval_s
 struct fz_obj_s
 {
 	unsigned short refs;
-	unsigned short kind;		/* fz_objkind takes 4 bytes :( */
+	char kind;				/* fz_objkind takes 4 bytes :( */
 	union
 	{
 		int b;
@@ -40,9 +41,10 @@ struct fz_obj_s
 			fz_obj **items;
 		} a;
 		struct {
+			char sorted;
 			int len;
 			int cap;
-			struct fz_keyval_s *items;
+			fz_keyval *items;
 		} d;
 		struct {
 			int oid;
@@ -83,18 +85,20 @@ int fz_isdict(fz_obj *obj);
 int fz_isindirect(fz_obj *obj);
 int fz_ispointer(fz_obj *obj);
 
-int fz_cmpobj(fz_obj *a, fz_obj *b);
+int fz_objcmp(fz_obj *a, fz_obj *b);
 
 /* silent failure, no error reporting */
 int fz_tobool(fz_obj *obj);
 int fz_toint(fz_obj *obj);
 float fz_toreal(fz_obj *obj);
 char *fz_toname(fz_obj *obj);
-char *fz_tostringbuf(fz_obj *obj);
-int fz_tostringlen(fz_obj *obj);
+char *fz_tostrbuf(fz_obj *obj);
+int fz_tostrlen(fz_obj *obj);
 int fz_tonum(fz_obj *obj);
 int fz_togen(fz_obj *obj);
 void *fz_topointer(fz_obj *obj);
+
+fz_error *fz_newnamefromstring(fz_obj **op, fz_obj *str);
 
 int fz_arraylen(fz_obj *array);
 fz_obj *fz_arrayget(fz_obj *array, int i);
@@ -111,6 +115,7 @@ fz_error *fz_dictput(fz_obj *dict, fz_obj *key, fz_obj *val);
 fz_error *fz_dictputs(fz_obj *dict, char *key, fz_obj *val);
 fz_error *fz_dictdel(fz_obj *dict, fz_obj *key);
 fz_error *fz_dictdels(fz_obj *dict, char *key);
+void fz_sortdict(fz_obj *dict);
 
 int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);

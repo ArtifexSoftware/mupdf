@@ -28,6 +28,55 @@ fz_matrix pdf_tomatrix(fz_obj *array)
 }
 
 fz_error *
+pdf_toutf8(char **dstp, fz_obj *src)
+{
+	unsigned char *srcptr = fz_tostrbuf(src);
+	char *dstptr;
+	int srclen = fz_tostrlen(src);
+	int dstlen = 0;
+	int ucs;
+	int i;
+
+	if (srclen > 2 && srcptr[0] == 254 && srcptr[1] == 255)
+	{
+		for (i = 2; i < srclen; i += 2)
+		{
+			ucs = (srcptr[i] << 8) | srcptr[i+1];
+			dstlen += runelen(srcptr[i]);
+		}
+
+		dstptr = *dstp = fz_malloc(dstlen + 1);
+		if (!dstptr)
+			return fz_outofmem;
+
+		for (i = 2; i < srclen; i += 2)
+		{
+			ucs = (srcptr[i] << 8) | srcptr[i+1];
+			dstptr += runetochar(dstptr, &ucs);
+		}
+	}
+
+	else
+	{
+		for (i = 0; i < srclen; i++)
+			dstlen += runelen(srcptr[i]);
+
+		dstptr = *dstp = fz_malloc(dstlen + 1);
+		if (!dstptr)
+			return fz_outofmem;
+
+		for (i = 0; i < srclen; i++)
+		{
+			ucs = srcptr[i];
+			dstptr += runetochar(dstptr, &ucs);
+		}
+	}
+
+	*dstptr = '\0';
+	return nil;
+}
+
+fz_error *
 pdf_parsearray(fz_obj **op, fz_file *file, char *buf, int cap)
 {
 	fz_error *error = nil;
