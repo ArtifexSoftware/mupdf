@@ -159,13 +159,21 @@ struct pdf_font_s
 
 	void *ftface;
 
-	fz_cmap *encoding;
-	int cidtogidlen;
-	int *cidtogidmap;
+	/* FontDescriptor */
+	int flags;
+	float italicangle;
+	float ascent;
+	float descent;
+	float capheight;
+	float xheight;
+	float missingwidth;
 
+	/* Encoding (CMap) */
+	fz_cmap *encoding;
+
+	/* Raw data for freetype */
 	char *filename;
-	char *fontdata;
-	int fontlen;
+	fz_buffer *fontdata;
 };
 
 struct pdf_type3_s
@@ -250,13 +258,13 @@ void pdf_freepagetree(pdf_pagetree *pages);
 fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_file *file);
 fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref);
 fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
-fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode);
+fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
 
 /* fontfile.c */
-fz_error *pdf_loadbuiltinfont(void **fontp, char *pattern);
-fz_error *pdf_loadsystemfont(void **fontp, char *basefont, char *collection);
-fz_error *pdf_loadembeddedfont(void **fontp, pdf_xref *xref, fz_obj *stmref);
-fz_error *pdf_loadfontdescriptor(void **fontp, pdf_xref *xref, fz_obj *desc, char *collection);
+fz_error *pdf_loadbuiltinfont(pdf_font *font, char *basefont);
+fz_error *pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection);
+fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
+fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
 
 /* font.c */
 fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *font);

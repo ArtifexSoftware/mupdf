@@ -488,7 +488,7 @@ cleanup:
 }
 
 fz_error *
-pdf_makeidentitycmap(fz_cmap **cmapp, int wmode)
+pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes)
 {
 	fz_error *error = nil;
 
@@ -496,7 +496,7 @@ pdf_makeidentitycmap(fz_cmap **cmapp, int wmode)
 	if (error)
 		return error;
 
-	error = fz_addcodespacerange(*cmapp, 0x0000, 0xffff, 2);
+	error = fz_addcodespacerange(*cmapp, 0x0000, 0xffff, bytes);
 	if (error) {
 		fz_freecmap(*cmapp);
 		return error;

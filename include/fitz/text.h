@@ -3,7 +3,7 @@ typedef struct fz_textel_s fz_textel;
 struct fz_textel_s
 {
 	float x, y;
-	int g;
+	int cid;
 };
 
 struct fz_textnode_s

@@ -25,14 +25,16 @@ printf("  type %s\n", kind);
 	return UNKNOWN;
 }
 
-static int ftwidth(FT_Face face, int gid)
+static int ftwidth(pdf_font *font, int cid)
 {
 	int e;
-	e = FT_Load_Glyph(face, gid,
+	if (font->super.cidtogid)
+		cid = font->super.cidtogid[cid];
+	e = FT_Load_Glyph(font->ftface, cid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 	if (e)
 		return 0;
-	return face->glyph->advance.x;
+	return ((FT_Face)font->ftface)->glyph->advance.x;
 }
 
 static fz_error *
@@ -138,17 +140,6 @@ static int mrecode(char *name)
 	return -1;
 }
 
-static int cidtogid(pdf_font *font, int cid)
-{
-	if (font->cidtogidmap)
-	{
-		if (cid >= 0 && cid < font->cidtogidlen)
-			return font->cidtogidmap[cid];
-		return 0;
-	}
-	return cid;
-}
-
 static void ftfreefont(fz_font *font)
 {
 	pdf_font *pfont = (pdf_font*)font;
@@ -170,9 +161,19 @@ newfont(char *name)
 	font->super.free = (void(*)(fz_font*)) ftfreefont;
 
 	font->ftface = nil;
+
+	font->flags = 0;
+	font->italicangle = 0;
+	font->ascent = 0;
+    font->descent = 0;
+    font->capheight = 0;
+    font->xheight = 0;
+    font->missingwidth = 0;
+
 	font->encoding = nil;
-	font->cidtogidlen = 0;
-	font->cidtogidmap = nil;
+
+	font->filename = nil;
+	font->fontdata = nil;
 
 	return font;
 }
@@ -184,14 +185,15 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *descriptor = nil;
 	fz_obj *encoding = nil;
 	fz_obj *widths = nil;
+	unsigned short *etable = nil;
 	pdf_font *font;
 	FT_Face face;
 	FT_CharMap cmap;
 	int kind;
+	int symbolic;
 
 	char *basefont;
 	char *estrings[256];
-	int etable[256];
 	int i, k, n, e;
 
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
@@ -209,14 +211,16 @@ printf("loading simple font %s\n", basefont);
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
 	if (descriptor)
-		error = pdf_loadfontdescriptor(&font->ftface, xref, descriptor, nil);
+		error = pdf_loadfontdescriptor(font, xref, descriptor, nil);
 	else
-		error = pdf_loadsystemfont(&font->ftface, basefont, nil);
+		error = pdf_loadbuiltinfont(font, basefont);
 	if (error)
 		goto cleanup;
 
 	face = font->ftface;
 	kind = ftkind(face);
+
+	symbolic = font->flags & 4;
 
 	fz_setfontbbox((fz_font*)font,
 		face->bbox.xMin, face->bbox.yMin,
@@ -263,6 +267,10 @@ printf("loading simple font %s\n", basefont);
 		goto cleanup;
 	}
 
+	etable = fz_malloc(sizeof(unsigned short) * 256);
+	if (!etable)
+		goto cleanup;
+
 	for (i = 0; i < 256; i++)
 	{
 		estrings[i] = _notdef;
@@ -270,12 +278,11 @@ printf("loading simple font %s\n", basefont);
 	}
 
 	encoding = fz_dictgets(dict, "Encoding");
-	if (encoding)
+	if (encoding && !(kind == TRUETYPE && symbolic))
 	{
 		error = pdf_resolve(&encoding, xref);
 		if (error)
 			goto cleanup;
-
 
 		if (fz_isname(encoding))
 			loadencoding(estrings, fz_toname(encoding));
@@ -321,6 +328,7 @@ printf("loading simple font %s\n", basefont);
 			/* Unicode cmap */
 			if (face->charmap->platform_id == 3)
 			{
+printf("  winansi cmap\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -337,6 +345,7 @@ printf("loading simple font %s\n", basefont);
 			/* MacRoman cmap */
 			else if (face->charmap->platform_id == 1)
 			{
+printf("  macroman cmap\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -353,6 +362,7 @@ printf("loading simple font %s\n", basefont);
 			/* Symbolic cmap */
 			else
 			{
+printf("  symbolic cmap\n");
 				for (i = 0; i < 256; i++)
 					etable[i] = FT_Get_Char_Index(face, i);
 			}
@@ -363,27 +373,22 @@ printf("loading simple font %s\n", basefont);
 
 	else
 	{
+printf("  builtin encoding\n");
 		for (i = 0; i < 256; i++)
 			etable[i] = FT_Get_Char_Index(face, i);
 	}
 
-	error = fz_newcmap(&font->encoding);
+	error = pdf_makeidentitycmap(&font->encoding, 0, 1);
 	if (error)
 		goto cleanup;
 
-	error = fz_addcodespacerange(font->encoding, 0x00, 0xff, 1);
-	if (error)
-		goto cleanup;
-
-	error = fz_setcidlookup(font->encoding, etable);
-	if (error)
-		goto cleanup;
+	fz_setcidtogid((fz_font*)font, 256, etable);
 
 	/*
 	 * Widths
 	 */
 
-	/* FIXME should set defaulthmtx to MissingWidth in FontDescriptor */
+	fz_setdefaulthmtx((fz_font*)font, font->missingwidth);
 
 	widths = fz_dictgets(dict, "Widths");
 	if (widths)
@@ -404,14 +409,10 @@ printf("  widths vector %d to %d\n", first, last);
 
 		for (i = 0; i < last - first + 1; i++)
 		{
-			int gid = etable[i + first];
 			int wid = fz_toint(fz_arrayget(widths, i));
-			if (gid >= 0)
-			{
-				error = fz_addhmtx((fz_font*)font, gid, wid);
-				if (error)
-					goto cleanup;
-			}
+			error = fz_addhmtx((fz_font*)font, i + first, i + first, wid);
+			if (error)
+				goto cleanup;
 		}
 
 		widths = fz_dropobj(widths);
@@ -422,13 +423,9 @@ printf("  builtin widths\n");
 		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 		for (i = 0; i < 256; i++)
 		{
-			int gid = etable[i];
-			if (gid >= 0)
-			{
-				error = fz_addhmtx((fz_font*)font, gid, ftwidth(face, gid));
-				if (error)
-					goto cleanup;
-			}
+			error = fz_addhmtx((fz_font*)font, i, i, ftwidth(font, i));
+			if (error)
+				goto cleanup;
 		}
 	}
 
@@ -440,11 +437,10 @@ printf("  builtin widths\n");
 
 printf("\n");
 
-fz_debugfont((fz_font*)font);
-
 	return nil;
 
 cleanup:
+	fz_free(etable);
 	if (widths)
 		fz_dropobj(widths);
 	fz_freefont((fz_font*)font);
@@ -514,7 +510,7 @@ printf("  collection %s\n", collection);
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
 	if (descriptor)
-		error = pdf_loadfontdescriptor(&font->ftface, xref, descriptor, collection);
+		error = pdf_loadfontdescriptor(font, xref, descriptor, collection);
 	else
 		error = fz_throw("syntaxerror: missing font descriptor");
 	if (error)
@@ -535,9 +531,9 @@ printf("  collection %s\n", collection);
 	{
 printf("  external CMap %s\n", fz_toname(encoding));
 		if (!strcmp(fz_toname(encoding), "Identity-H"))
-			error = pdf_makeidentitycmap(&font->encoding, 0);
+			error = pdf_makeidentitycmap(&font->encoding, 0, 2);
 		else if (!strcmp(fz_toname(encoding), "Identity-V"))
-			error = pdf_makeidentitycmap(&font->encoding, 1);
+			error = pdf_makeidentitycmap(&font->encoding, 1, 2);
 		else
 			error = pdf_loadsystemcmap(&font->encoding, fz_toname(encoding));
 	}
@@ -562,6 +558,7 @@ printf("  embedded CMap\n");
 		cidtogidmap = fz_dictgets(dict, "CIDToGIDMap");
 		if (fz_isindirect(cidtogidmap))
 		{
+			unsigned short *map;
 			fz_buffer *buf;
 			int len;
 
@@ -569,11 +566,10 @@ printf("  embedded CMap\n");
 			if (error)
 				goto cleanup;
 
-			len = buf->wp - buf->rp;
+			len = (buf->wp - buf->rp) / 2;
 
-			font->cidtogidlen = len / 2;
-			font->cidtogidmap = fz_malloc((len / 2) * sizeof(int));
-			if (!font->cidtogidmap) {
+			map = fz_malloc(len * sizeof(unsigned short));
+			if (!map) {
 				fz_freebuffer(buf);
 				error = fz_outofmem;
 				goto cleanup;
@@ -581,15 +577,16 @@ printf("  embedded CMap\n");
 
 printf("  cidtogidmap %d\n", len / 2);
 
-			for (i = 0; i < len / 2; i++)
-				font->cidtogidmap[i] = (buf->rp[i * 2] << 8) + buf->rp[i * 2 + 1];
+			for (i = 0; i < len; i++)
+				map[i] = (buf->rp[i * 2] << 8) + buf->rp[i * 2 + 1];
+
+			fz_setcidtogid((fz_font*)font, len, map);
 
 			fz_freebuffer(buf);
 		}
 
 		/* TODO: if truetype font is external, cidtogidmap should not be identity */
 		/* we should map the cid to another encoding represented by a 'cmap' table */
-		/* and then through that to a gid */
 		/* cids: Adobe-CNS1 Adobe-GB1 Adobe-Japan1 Adobe-Japan2 Adobe-Korea1 */
     	/* cmap: Big5 Johab PRC  ShiftJIS Unicode Wansung */
 		/* win:  3,4  3,6   3,3  3,2      3,1     3,5 */
@@ -604,7 +601,7 @@ printf("  cidtogidmap %d\n", len / 2);
 	widths = fz_dictgets(dict, "W");
 	if (widths)
 	{
-		int c0, c1, w, gid;
+		int c0, c1, w;
 		fz_obj *obj;
 
 		error = pdf_resolve(&widths, xref);
@@ -620,8 +617,7 @@ printf("  cidtogidmap %d\n", len / 2);
 				for (k = 0; k < fz_arraylen(obj); k++)
 				{
 					w = fz_toint(fz_arrayget(obj, k));
-					gid = cidtogid(font, c0 + k);
-					error = fz_addhmtx((fz_font*)font, gid, w);
+					error = fz_addhmtx((fz_font*)font, c0 + k, c0 + k, w);
 					if (error)
 						goto cleanup;
 				}
@@ -631,13 +627,9 @@ printf("  cidtogidmap %d\n", len / 2);
 			{
 				c1 = fz_toint(obj);
 				w = fz_toint(fz_arrayget(widths, i + 2));
-				for (k = c0; k <= c1; k++)
-				{
-					gid = cidtogid(font, k);
-					error = fz_addhmtx((fz_font*)font, gid, w);
-					if (error)
-						goto cleanup;
-				}
+				error = fz_addhmtx((fz_font*)font, c0, c1, w);
+				if (error)
+					goto cleanup;
 				i += 3;
 			}
 		}
@@ -671,15 +663,15 @@ printf("  cidtogidmap %d\n", len / 2);
 		widths = fz_dictgets(dict, "W2");
 		if (widths)
 		{
-			int c0, c1, w, x, y, k, gid;
+			int c0, c1, w, x, y, k;
 
 			error = pdf_resolve(&widths, xref);
 			if (error)
 				goto cleanup;
 
-printf("  W2 ");
-fz_debugobj(widths);
-printf("\n");
+//printf("  W2 ");
+//fz_debugobj(widths);
+//printf("\n");
 
 			for (i = 0; i < fz_arraylen(widths); )
 			{
@@ -692,8 +684,7 @@ printf("\n");
 						w = fz_toint(fz_arrayget(obj, k + 0));
 						x = fz_toint(fz_arrayget(obj, k + 1));
 						y = fz_toint(fz_arrayget(obj, k + 2));
-						gid = cidtogid(font, c0 + k);
-						error = fz_addvmtx((fz_font*)font, gid, x, y, w);
+						error = fz_addvmtx((fz_font*)font, c0 + k, c0 + k, x, y, w);
 						if (error)
 							goto cleanup;
 					}
@@ -705,13 +696,9 @@ printf("\n");
 					w = fz_toint(fz_arrayget(widths, i + 2));
 					x = fz_toint(fz_arrayget(widths, i + 3));
 					y = fz_toint(fz_arrayget(widths, i + 4));
-					for (k = c0; k <= c1; k++)
-					{
-						gid = cidtogid(font, c0);
-						error = fz_addvmtx((fz_font*)font, gid, x, y, w);
-						if (error)
-							goto cleanup;
-					}
+					error = fz_addvmtx((fz_font*)font, c0, c1, x, y, w);
+					if (error)
+						goto cleanup;
 					i += 5;
 				}
 			}
@@ -728,7 +715,7 @@ printf("\n");
 
 printf("\n");
 
-fz_debugfont((fz_font*)font);
+//fz_debugfont((fz_font*)font);
 
 	return nil;
 

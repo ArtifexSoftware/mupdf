@@ -145,7 +145,7 @@ puts("render text");
 
 	for (i = 0; i < text->len; i++)
 	{
-		g = text->els[i].g;
+		g = text->els[i].cid;
 		x = text->els[i].x;
 		y = text->els[i].y;
 
@@ -188,7 +188,7 @@ puts("render (mask color text)");
 
 	for (i = 0; i < text->len; i++)
 	{
-		g = text->els[i].g;
+		g = text->els[i].cid;
 		x = text->els[i].x;
 		y = text->els[i].y;
 
@@ -239,17 +239,19 @@ fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 puts("render path");
 
-	fz_resetgel(gc->gel, 17, 15);
+	float flatness = 0.3 / ctm.a;
+
+	fz_resetgel(gc->gel, 16, 16);
 
 	if (path->paint == FZ_STROKE)
 	{
 		if (path->dash)
-			fz_dashpath(gc->gel, path, ctm, 0.2);
+			fz_dashpath(gc->gel, path, ctm, flatness);
 		else
-			fz_strokepath(gc->gel, path, ctm, 0.2);
+			fz_strokepath(gc->gel, path, ctm, flatness);
 	}
 	else
-		fz_fillpath(gc->gel, path, ctm, 0.2);
+		fz_fillpath(gc->gel, path, ctm, flatness);
 
 	fz_sortgel(gc->gel);
 
@@ -301,17 +303,19 @@ rcolorpath(fz_renderer *gc, fz_pathnode *path, fz_colornode *color, fz_matrix ct
 {
 puts("render (mask color path)");
 
+	float flatness = 0.3 / ctm.a;
+
 	fz_resetgel(gc->gel, 17, 15);
 
 	if (path->paint == FZ_STROKE)
 	{
 		if (path->dash)
-			fz_dashpath(gc->gel, path, ctm, 0.2);
+			fz_dashpath(gc->gel, path, ctm, flatness);
 		else
-			fz_strokepath(gc->gel, path, ctm, 0.2);
+			fz_strokepath(gc->gel, path, ctm, flatness);
 	}
 	else
-		fz_fillpath(gc->gel, path, ctm, 0.2);
+		fz_fillpath(gc->gel, path, ctm, flatness);
 
 	fz_sortgel(gc->gel);
 

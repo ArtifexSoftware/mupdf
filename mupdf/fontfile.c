@@ -28,18 +28,18 @@ static char *basenames[14] =
 
 static char *basepatterns[14] =
 {
-    "Courier,Nimbus Mono L,Courier New:style=Regular,Roman",
-    "Courier,Nimbus Mono L,Courier New:style=Bold",
-    "Courier,Nimbus Mono L,Courier New:style=Oblique,Italic",
-    "Courier,Nimbus Mono L,Courier New:style=BoldOblique,BoldItalic",
-    "Helvetica,Nimbus Sans L,Arial:style=Regular,Roman",
-    "Helvetica,Nimbus Sans L,Arial:style=Bold",
-    "Helvetica,Nimbus Sans L,Arial:style=Oblique,Italic",
-    "Helvetica,Nimbus Sans L,Arial:style=BoldOblique,BoldItalic",
-    "Times,Nimbus Roman No9 L,Times New Roman:style=Regular,Roman",
-    "Times,Nimbus Roman No9 L,Times New Roman:style=Bold,Medium",
-    "Times,Nimbus Roman No9 L,Times New Roman:style=Italic,Regular Italic",
-    "Times,Nimbus Roman No9 L,Times New Roman:style=BoldItalic,Medium Italic",
+    "Nimbus Mono L,Courier,Courier New:style=Regular,Roman",
+    "Nimbus Mono L,Courier,Courier New:style=Bold",
+    "Nimbus Mono L,Courier,Courier New:style=Oblique,Italic",
+    "Nimbus Mono L,Courier,Courier New:style=BoldOblique,BoldItalic",
+    "Nimbus Sans L,Helvetica,Arial:style=Regular,Roman",
+    "Nimbus Sans L,Helvetica,Arial:style=Bold",
+    "Nimbus Sans L,Helvetica,Arial:style=Oblique,Italic",
+    "Nimbus Sans L,Helvetica,Arial:style=BoldOblique,BoldItalic",
+    "Nimbus Roman No9 L,Times,Times New Roman:style=Regular,Roman",
+    "Nimbus Roman No9 L,Times,Times New Roman:style=Bold,Medium",
+    "Nimbus Roman No9 L,Times,Times New Roman:style=Italic,Regular Italic",
+    "Nimbus Roman No9 L,Times,Times New Roman:style=BoldItalic,Medium Italic",
     "Standard Symbols L,Symbol",
     "Zapf Dingbats,Dingbats"
 };
@@ -68,7 +68,7 @@ static fz_error *initfontlibs(void)
 }
 
 fz_error *
-pdf_loadbuiltinfont(void **fontp, char *pattern)
+pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 {
 	fz_error *error;
 	FcResult fcerr;
@@ -77,11 +77,19 @@ pdf_loadbuiltinfont(void **fontp, char *pattern)
 	FcPattern *searchpat;
 	FcPattern *matchpat;
 	FT_Face face;
+	char *pattern;
 	char *file;
+	int index;
+	int i;
 
 	error = initfontlibs();
 	if (error)
 		return error;
+
+	pattern = basefont;
+	for (i = 0; i < 14; i++)
+		if (!strcmp(basefont, basenames[i]))
+			pattern = basepatterns[i];
 
 	fcerr = FcResultMatch;
 	searchpat = FcNameParse(pattern);
@@ -92,24 +100,29 @@ pdf_loadbuiltinfont(void **fontp, char *pattern)
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", pattern);
 
-	fcerr = FcPatternGetString(matchpat, "file", 0, (FcChar8**)&file);
+	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", pattern);
 
-	fterr = FT_New_Face(ftlib, file, 0, &face);
+	index = 0;
+	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
+
+printf("  builtin font %s idx %d\n", file, index);
+
+	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr)
 		return fz_throw("freetype could not load font file '%s': 0x%x", file, fterr);
 
 	FcPatternDestroy(matchpat);
 	FcPatternDestroy(searchpat);
 
-	*fontp = face;
+	font->ftface = face;
 
 	return nil;
 }
 
 fz_error *
-pdf_loadsystemfont(void **fontp, char *basefont, char *collection)
+pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 {
 	fz_error *error;
 	FcResult fcerr;
@@ -121,6 +134,7 @@ pdf_loadsystemfont(void **fontp, char *basefont, char *collection)
 	FT_Face face;
 	char *style;
 	char *file;
+	int index;
 
 	error = initfontlibs();
 	if (error)
@@ -168,13 +182,20 @@ free(file);
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", basefont);
 
-	fcerr = FcPatternGetString(matchpat, "file", 0, (FcChar8**)&file);
+file = FcNameUnparse(matchpat);
+printf("  system found %s\n", file);
+free(file);
+
+	fcerr = FcPatternGetString(matchpat, FC_FILE, 0, (FcChar8**)&file);
 	if (fcerr != FcResultMatch)
 		return fz_throw("fontconfig could not find font %s", basefont);
 
-printf("  system font file %s\n", file);
+	index = 0;
+	fcerr = FcPatternGetInteger(matchpat, FC_INDEX, 0, &index);
 
-	fterr = FT_New_Face(ftlib, file, 0, &face);
+printf("  system font file %s idx %d\n", file, index);
+
+	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr) {
 		FcPatternDestroy(matchpat);
 		FcPatternDestroy(searchpat);
@@ -184,7 +205,7 @@ printf("  system font file %s\n", file);
 	FcPatternDestroy(matchpat);
 	FcPatternDestroy(searchpat);
 
-	*fontp = face;
+	font->ftface = face;
 
 	return nil;
 
@@ -194,7 +215,7 @@ cleanup:
 }
 
 fz_error *
-pdf_loadembeddedfont(void **fontp, pdf_xref *xref, fz_obj *stmref)
+pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_error *error;
 	int fterr;
@@ -216,15 +237,14 @@ pdf_loadembeddedfont(void **fontp, pdf_xref *xref, fz_obj *stmref)
 		return fz_throw("freetype could not load embedded font: 0x%x", fterr);
 	}
 
-	*fontp = face;
-
-	/* TODO: figure out how to free 'buf' when the FT_Face is freed */
+	font->ftface = face;
+	font->fontdata = buf;
 
 	return nil;
 }
 
 fz_error *
-pdf_loadfontdescriptor(void **facep, pdf_xref *xref, fz_obj *desc, char *collection)
+pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection)
 {
 	fz_error *error;
 	fz_obj *obj1, *obj2, *obj3, *obj;
@@ -236,6 +256,14 @@ pdf_loadfontdescriptor(void **facep, pdf_xref *xref, fz_obj *desc, char *collect
 
 	fontname = fz_toname(fz_dictgets(desc, "FontName"));
 
+	font->flags = fz_toint(fz_dictgets(desc, "Flags"));
+	font->italicangle = fz_toreal(fz_dictgets(desc, "ItalicAngle"));
+	font->ascent = fz_toreal(fz_dictgets(desc, "Ascent"));
+	font->descent = fz_toreal(fz_dictgets(desc, "Descent"));
+	font->capheight = fz_toreal(fz_dictgets(desc, "CapHeight"));
+	font->xheight = fz_toreal(fz_dictgets(desc, "XHeight"));
+	font->missingwidth = fz_toreal(fz_dictgets(desc, "MissingWidth"));
+
 	obj1 = fz_dictgets(desc, "FontFile");
 	obj2 = fz_dictgets(desc, "FontFile2");
 	obj3 = fz_dictgets(desc, "FontFile3");
@@ -243,13 +271,13 @@ pdf_loadfontdescriptor(void **facep, pdf_xref *xref, fz_obj *desc, char *collect
 
 	if (fz_isindirect(obj))
 	{
-		error = pdf_loadembeddedfont(facep, xref, obj);
+		error = pdf_loadembeddedfont(font, xref, obj);
 		if (error)
 			goto cleanup;
 	}
 	else
 	{
-		error = pdf_loadsystemfont(facep, fontname, collection);
+		error = pdf_loadsystemfont(font, fontname, collection);
 		if (error)
 			goto cleanup;
 	}

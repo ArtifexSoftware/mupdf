@@ -6,13 +6,15 @@ typedef struct fz_glyphcache_s fz_glyphcache;
 
 struct fz_hmtx_s
 {
-	unsigned short c;
+	unsigned short lo;
+	unsigned short hi;
 	short w;
 };
 
 struct fz_vmtx_s
 {
-	unsigned short c;
+	unsigned short lo;
+	unsigned short hi;
 	short x;
 	short y;
 	short w;
@@ -35,6 +37,9 @@ struct fz_font_s
 	int nvmtx, vmtxcap;
 	fz_vmtx dvmtx;
 	fz_vmtx *vmtx;
+
+	int ncidtogid;
+	unsigned short *cidtogid;
 };
 
 struct fz_glyph_s
@@ -48,14 +53,15 @@ void fz_freefont(fz_font *font);
 void fz_debugfont(fz_font *font);
 void fz_setfontwmode(fz_font *font, int wmode);
 void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
+void fz_setcidtogid(fz_font *font, int n, unsigned short *map);
 void fz_setdefaulthmtx(fz_font *font, int w);
 void fz_setdefaultvmtx(fz_font *font, int y, int w);
-fz_error *fz_addhmtx(fz_font *font, int gid, int w);
-fz_error *fz_addvmtx(fz_font *font, int gid, int x, int y, int w);
+fz_error *fz_addhmtx(fz_font *font, int lo, int hi, int w);
+fz_error *fz_addvmtx(fz_font *font, int lo, int hi, int x, int y, int w);
 fz_error *fz_endhmtx(fz_font *font);
 fz_error *fz_endvmtx(fz_font *font);
-fz_hmtx fz_gethmtx(fz_font *font, int gid);
-fz_vmtx fz_getvmtx(fz_font *font, int gid);
+fz_hmtx fz_gethmtx(fz_font *font, int cid);
+fz_vmtx fz_getvmtx(fz_font *font, int cid);
 
 fz_error *fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
 fz_error *fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);

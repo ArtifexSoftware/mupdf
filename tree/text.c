@@ -54,11 +54,11 @@ growtext(fz_textnode *text, int n)
 }
 
 fz_error *
-fz_addtext(fz_textnode *text, int g, float x, float y)
+fz_addtext(fz_textnode *text, int cid, float x, float y)
 {
 	if (growtext(text, 1) != nil)
 		return fz_outofmem;
-	text->els[text->len].g = g;
+	text->els[text->len].cid = cid;
 	text->els[text->len].x = x;
 	text->els[text->len].y = y;
 	text->len++;

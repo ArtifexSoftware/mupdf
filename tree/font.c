@@ -19,13 +19,18 @@ fz_initfont(fz_font *font, char *name)
 	font->hmtx = nil;
 	font->vmtx = nil;
 
-	font->dhmtx.c = 0x0000;
+	font->dhmtx.lo = 0x0000;
+	font->dhmtx.hi = 0xFFFF;
 	font->dhmtx.w = 0;
 
-	font->dvmtx.c = 0x0000;
+	font->dvmtx.lo = 0x0000;
+	font->dvmtx.hi = 0xFFFF;
 	font->dvmtx.x = 0;
 	font->dvmtx.y = 880;
 	font->dvmtx.w = -1000;
+
+	font->ncidtogid = 0;
+	font->cidtogid = nil;
 }
 
 void
@@ -44,6 +49,13 @@ fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
 }
 
 void
+fz_setcidtogid(fz_font *font, int n, unsigned short *map)
+{
+	font->ncidtogid = n;
+	font->cidtogid = map;
+}
+
+void
 fz_setdefaulthmtx(fz_font *font, int w)
 {
 	font->dhmtx.w = w;
@@ -57,7 +69,7 @@ fz_setdefaultvmtx(fz_font *font, int y, int w)
 }
 
 fz_error *
-fz_addhmtx(fz_font *font, int c, int w)
+fz_addhmtx(fz_font *font, int lo, int hi, int w)
 {
 	int newcap;
 	fz_hmtx *newmtx;
@@ -72,7 +84,8 @@ fz_addhmtx(fz_font *font, int c, int w)
 		font->hmtx = newmtx;
 	}
 
-	font->hmtx[font->nhmtx].c = c;
+	font->hmtx[font->nhmtx].lo = lo;
+	font->hmtx[font->nhmtx].hi = hi;
 	font->hmtx[font->nhmtx].w = w;
 	font->nhmtx++;
 
@@ -80,7 +93,7 @@ fz_addhmtx(fz_font *font, int c, int w)
 }
 
 fz_error *
-fz_addvmtx(fz_font *font, int c, int x, int y, int w)
+fz_addvmtx(fz_font *font, int lo, int hi, int x, int y, int w)
 {
 	int newcap;
 	fz_vmtx *newmtx;
@@ -95,7 +108,8 @@ fz_addvmtx(fz_font *font, int c, int x, int y, int w)
 		font->vmtx = newmtx;
 	}
 
-	font->vmtx[font->nvmtx].c = c;
+	font->vmtx[font->nvmtx].lo = lo;
+	font->vmtx[font->nvmtx].hi = hi;
 	font->vmtx[font->nvmtx].x = x;
 	font->vmtx[font->nvmtx].y = y;
 	font->vmtx[font->nvmtx].w = w;
@@ -108,14 +122,14 @@ static int cmph(const void *a0, const void *b0)
 {
 	fz_hmtx *a = (fz_hmtx*)a0;
 	fz_hmtx *b = (fz_hmtx*)b0;
-	return a->c - b->c;
+	return a->lo - b->lo;
 }
 
 static int cmpv(const void *a0, const void *b0)
 {
 	fz_vmtx *a = (fz_vmtx*)a0;
 	fz_vmtx *b = (fz_vmtx*)b0;
-	return a->c - b->c;
+	return a->lo - b->lo;
 }
 
 static int uniq(void *ptr, int count, int size)
@@ -178,7 +192,7 @@ fz_endvmtx(fz_font *font)
 }
 
 fz_hmtx
-fz_gethmtx(fz_font *font, int gid)
+fz_gethmtx(fz_font *font, int cid)
 {
 	int l = 0;
 	int r = font->nhmtx;
@@ -190,9 +204,9 @@ fz_gethmtx(fz_font *font, int gid)
 	while (l <= r)
 	{
 		m = (l + r) >> 1;
-		if (gid < font->hmtx[m].c)
+		if (cid < font->hmtx[m].lo)
 			r = m - 1;
-		else if (gid > font->hmtx[m].c)
+		else if (cid > font->hmtx[m].hi)
 			l = m + 1;
 		else
 			return font->hmtx[m];
@@ -203,7 +217,7 @@ notfound:
 }
 
 fz_vmtx
-fz_getvmtx(fz_font *font, int gid)
+fz_getvmtx(fz_font *font, int cid)
 {
 	fz_hmtx h;
 	fz_vmtx v;
@@ -217,16 +231,16 @@ fz_getvmtx(fz_font *font, int gid)
 	while (l <= r)
 	{
 		m = (l + r) >> 1;
-		if (gid < font->vmtx[m].c)
+		if (cid < font->vmtx[m].lo)
 			r = m - 1;
-		else if (gid > font->vmtx[m].c)
+		else if (cid > font->vmtx[m].hi)
 			l = m + 1;
 		else
 			return font->vmtx[m];
 	}
 
 notfound:
-	h = fz_gethmtx(font, gid);
+	h = fz_gethmtx(font, cid);
 	v = font->dvmtx;
 	v.x = h.w / 2;
 	return v;
@@ -237,6 +251,7 @@ fz_freefont(fz_font *font)
 {
 	if (font->free)
 		font->free(font);
+	fz_free(font->cidtogid);
 	fz_free(font->hmtx);
 	fz_free(font->vmtx);
 	fz_free(font);
@@ -256,8 +271,8 @@ fz_debugfont(fz_font *font)
 
 	printf("  W {\n");
 	for (i = 0; i < font->nhmtx; i++)
-		printf("    <%04x> %d\n",
-			font->hmtx[i].c, font->hmtx[i].w);
+		printf("    <%04x> <%04x> %d\n",
+			font->hmtx[i].lo, font->hmtx[i].hi, font->hmtx[i].w);
 	printf("  }\n");
 
 	if (font->wmode)
@@ -265,7 +280,7 @@ fz_debugfont(fz_font *font)
 		printf("  DW2 [%d %d]\n", font->dvmtx.y, font->dvmtx.w);
 		printf("  W2 {\n");
 		for (i = 0; i < font->nvmtx; i++)
-			printf("    <%04x> %d %d %d\n", font->vmtx[i].c,
+			printf("    <%04x> <%04x> %d %d %d\n", font->vmtx[i].lo, font->vmtx[i].hi,
 				font->vmtx[i].x, font->vmtx[i].y, font->vmtx[i].w);
 		printf("  }\n");
 	}

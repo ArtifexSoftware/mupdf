@@ -219,7 +219,7 @@ pdf_flushtext(pdf_csi *csi)
 }
 
 fz_error *
-showglyph(pdf_csi *csi, int g)
+showglyph(pdf_csi *csi, int cid)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_font *font = gstate->font;
@@ -240,7 +240,7 @@ showglyph(pdf_csi *csi, int g)
 
 	if (font->super.wmode == 1)
 	{
-		v = fz_getvmtx((fz_font*)font, g);
+		v = fz_getvmtx((fz_font*)font, cid);
 		tm.e -= v.x * gstate->size / 1000.0;
 		tm.f += v.y * gstate->size / 1000.0;
 	}
@@ -267,13 +267,13 @@ showglyph(pdf_csi *csi, int g)
 	}
 
 	/* add glyph to textobject */
-	error = fz_addtext(csi->text, g, trm.e, trm.f);
+	error = fz_addtext(csi->text, cid, trm.e, trm.f);
 	if (error)
 		return error;
 
 	if (font->super.wmode == 0)
 	{
-		h = fz_gethmtx((fz_font*)font, g);
+		h = fz_gethmtx((fz_font*)font, cid);
 		w0 = h.w / 1000.0;
 		tx = (w0 * gstate->size + gstate->charspace) * gstate->scale;
 		csi->tm = fz_concat(fz_translate(tx, 0), csi->tm);
@@ -308,7 +308,7 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 	unsigned char *buf;
 	unsigned char *end;
 	int i, len;
-	int cpt, cid, gid;
+	int cpt, cid;
 
 	if (fz_isarray(text))
 	{
@@ -338,24 +338,12 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 
 		cid = fz_lookupcid(font->encoding, cpt);
 
-		if (font->cidtogidmap)
-		{
-			if (cid >= 0 && cid < font->cidtogidlen)
-				gid = font->cidtogidmap[cid];
-			else
-				gid = 0;
-		}
-		else
-		{
-			gid = cid;
-		}
-
-//printf("gl %s %g [%g %g %g %g %g %g] cpt<%02x> cid %d gid %d h %d\n",
+//printf("gl %s %g [%g %g %g %g %g %g] cpt<%02x> cid %d h %d\n",
 //	font->super.name, size,
 //	csi->tm.a, csi->tm.b, csi->tm.c, csi->tm.d, csi->tm.e, csi->tm.f,
-//	cpt, cid, gid, font->super.hadv[gid]);
+//	cpt, cid, font->super.hadv[gid]);
 
-		error = showglyph(csi, gid);
+		error = showglyph(csi, cid);
 		if (error)
 			return error;
 

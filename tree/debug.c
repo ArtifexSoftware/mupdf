@@ -124,7 +124,10 @@ static void lisptext(fz_textnode *node, int level)
 	for (i = 0; i < node->len; i++)
 	{
 		indent(level + 1);
-		printf("(g %d %g %g)\n", node->els[i].g, node->els[i].x, node->els[i].y);
+		if (node->els[i].cid >= 32 && node->els[i].cid < 128)
+			printf("(cid '%c' %g %g)\n", node->els[i].cid, node->els[i].x, node->els[i].y);
+		else
+			printf("(cid <%04x> %g %g)\n", node->els[i].cid, node->els[i].x, node->els[i].y);
 	}
 
 	indent(level);
