@@ -433,10 +433,7 @@ Lsetcolorspace:
 					obj = fz_dictget(dict, obj);
 					if (!obj)
 						return fz_throw("syntaxerror: missing colorspace resource");
-					if (fz_isindirect(obj))
-						cs = pdf_findresource(xref->rcolorspace, obj);
-					else
-						return fz_throw("syntaxerror: inline colorspace in dict");
+					cs = pdf_findresource(xref->rcolorspace, obj);
 					if (!cs)
 						return fz_throw("syntaxerror: missing colorspace resource");
 				}

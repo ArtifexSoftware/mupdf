@@ -4,14 +4,13 @@
 
 struct pdf_rsrc_s
 {
-	int oid;
-	int gen;
+	fz_obj *key;
 	void *val;
 	pdf_rsrc *next;
 };
 
 fz_error *pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
-void *pdf_findresource(pdf_rsrc *list, fz_obj *ref);
+void *pdf_findresource(pdf_rsrc *list, fz_obj *key);
 
 /*
  * Functions

@@ -2,11 +2,11 @@
 #include <mupdf.h>
 
 void *
-pdf_findresource(pdf_rsrc *rsrc, fz_obj *ref)
+pdf_findresource(pdf_rsrc *rsrc, fz_obj *key)
 {
 	while (rsrc)
 	{
-		if (rsrc->oid == fz_tonum(ref) && rsrc->gen == fz_togen(ref))
+		if (rsrc->key == key)	/* TODO: compare equality not identity */
 			return rsrc->val;
 		rsrc = rsrc->next;
 	}
@@ -31,9 +31,9 @@ indirect references so we end up with a stylized structure:
 	>>
 	/ColorSpace <<
 		/Cs0 5 0 R
-		/Cs1 [ /ICCBased 5 0 R ]		% /Cs1 -1 0 R ???
-		/Cs2 [ /CalRGB << ... >> ]		% /Cs2 -2 0 R ???
-		/CsX [ /Pattern /DeviceRGB ]	% eep!
+		/Cs1 [ /ICCBased 5 0 R ]
+		/Cs2 [ /CalRGB << ... >> ]
+		/CsX [ /Pattern /DeviceRGB ]
 	>>
 	/Pattern <<
 		/Pat0 20 0 R
@@ -48,11 +48,7 @@ indirect references so we end up with a stylized structure:
 >>
 
 Then all references to actual resources will get
-parsed and inserted into the pdf_xref resource
-lists, indexed by their object number.
-
-TODO: inline colorspaces -> fake objects || refcount ?
-TODO: inline images -> fake objects || refcount?
+parsed and inserted into the pdf_xref resource lists.
 
 */
 
@@ -62,7 +58,10 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	fz_error *error;
 	fz_colorspace *colorspace;
 	pdf_rsrc *rsrc;
-	fz_obj *obj;
+	fz_obj *obj = ref;
+
+	if (!fz_isindirect(ref))
+		fz_warn("inline colorspace resource");
 
 	if (pdf_findresource(xref->rcolorspace, ref))
 		return nil;
@@ -70,10 +69,8 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
 		return fz_outofmem;
-	rsrc->oid = fz_tonum(ref);
-	rsrc->gen = fz_togen(ref);
 
-	error = pdf_loadindirect(&obj, xref, ref);
+	error = pdf_resolve(&obj, xref);
 	if (error)
 		return error;
 	error = pdf_loadcolorspace(&colorspace, xref, obj);
@@ -83,6 +80,7 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 		return error;
 	}
 
+	rsrc->key = fz_keepobj(ref);
 	rsrc->val = colorspace;
 	rsrc->next = xref->rcolorspace;
 	xref->rcolorspace = rsrc;
@@ -94,8 +92,11 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error;
 	pdf_rsrc *rsrc;
-	fz_obj *obj;
 	fz_obj *type;
+	fz_obj *obj = ref;
+
+	if (!fz_isindirect(ref))
+		fz_warn("inline pattern resource");
 
 	if (pdf_findresource(xref->rpattern, ref))
 		return nil;
@@ -105,10 +106,8 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
 		return fz_outofmem;
-	rsrc->oid = fz_tonum(ref);
-	rsrc->gen = fz_togen(ref);
 
-	error = pdf_loadindirect(&obj, xref, ref);
+	error = pdf_resolve(&obj, xref);
 	if (error)
 		return error;
 
@@ -122,6 +121,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 			fz_free(rsrc);
 			return error;
 		}
+		rsrc->key = fz_keepobj(ref);
 		rsrc->next = xref->rpattern;
 		xref->rpattern = rsrc;
 		return nil;
@@ -135,6 +135,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 			fz_free(rsrc);
 			return error;
 		}
+		rsrc->key = fz_keepobj(ref);
 		rsrc->next = xref->rshade;
 		xref->rshade = rsrc;
 		return nil;
@@ -153,7 +154,10 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error;
 	pdf_rsrc *rsrc;
-	fz_obj *obj;
+	fz_obj *obj = ref;
+
+	if (!fz_isindirect(ref))
+		fz_warn("inline shading resource");
 
 	if (pdf_findresource(xref->rshade, ref))
 		return nil;
@@ -161,10 +165,8 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
 		return fz_outofmem;
-	rsrc->oid = fz_tonum(ref);
-	rsrc->gen = fz_togen(ref);
 
-	error = pdf_loadindirect(&obj, xref, ref);
+	error = pdf_resolve(&obj, xref);
 	if (error)
 		return error;
 
@@ -175,6 +177,7 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 		return error;
 	}
 
+	rsrc->key = fz_keepobj(ref);
 	rsrc->next = xref->rshade;
 	xref->rshade = rsrc;
 	return nil;
@@ -185,8 +188,11 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error;
 	pdf_rsrc *rsrc;
-	fz_obj *obj;
+	fz_obj *obj = ref;
 	fz_obj *subtype;
+
+	if (!fz_isindirect(ref))
+		fz_warn("inline xobject resource");
 
 	if (pdf_findresource(xref->rxobject, ref))
 		return nil;
@@ -196,10 +202,8 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
 		return fz_outofmem;
-	rsrc->oid = fz_tonum(ref);
-	rsrc->gen = fz_togen(ref);
 
-	error = pdf_loadindirect(&obj, xref, ref);
+	error = pdf_resolve(&obj, xref);
 	if (error)
 		return error;
 
@@ -213,6 +217,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 			fz_free(rsrc);
 			return error;
 		}
+		rsrc->key = fz_keepobj(ref);
 		rsrc->next = xref->rxobject;
 		xref->rxobject = rsrc;
 		return nil;
@@ -226,6 +231,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 			fz_free(rsrc);
 			return error;
 		}
+		rsrc->key = fz_keepobj(ref);
 		rsrc->next = xref->rimage;
 		xref->rimage = rsrc;
 		return nil;
@@ -245,10 +251,10 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	fz_error *error;
 	pdf_font *font;
 	pdf_rsrc *rsrc;
-	fz_obj *obj;
+	fz_obj *obj = ref;
 
-if (!fz_isindirect(ref))
-	fz_warn("inline font resource");
+	if (!fz_isindirect(ref))
+		fz_warn("inline font resource");
 
 	if (pdf_findresource(xref->rfont, ref))
 		return nil;
@@ -256,10 +262,8 @@ if (!fz_isindirect(ref))
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
 		return fz_outofmem;
-	rsrc->oid = fz_tonum(ref);
-	rsrc->gen = fz_togen(ref);
 
-	error = pdf_loadindirect(&obj, xref, ref);
+	error = pdf_resolve(&obj, xref);
 	if (error)
 		return error;
 	error = pdf_loadfont(&font, xref, obj);
@@ -269,6 +273,7 @@ if (!fz_isindirect(ref))
 		return error;
 	}
 
+	rsrc->key = fz_keepobj(ref);
 	rsrc->val = font;
 	rsrc->next = xref->rfont;
 	xref->rfont = rsrc;
@@ -398,13 +403,9 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 		for (i = 0; i < fz_dictlen(dict); i++)
 		{
 			obj = fz_dictgetval(dict, i);
-			if (fz_isindirect(obj))
-			{
 				error = preloadcolorspace(xref, obj);
 				if (error)
 					return error;
-			}
-else fz_warn("inline colorspace resource");
 		}
 	}
 
@@ -418,13 +419,9 @@ else fz_warn("inline colorspace resource");
 		for (i = 0; i < fz_dictlen(dict); i++)
 		{
 			obj = fz_dictgetval(dict, i);
-			if (fz_isindirect(obj))
-			{
 				error = preloadpattern(xref, obj);
 				if (error)
 					return error;
-			}
-else fz_warn("inline pattern resource");
 		}
 	}
 
@@ -434,13 +431,9 @@ else fz_warn("inline pattern resource");
 		for (i = 0; i < fz_dictlen(dict); i++)
 		{
 			obj = fz_dictgetval(dict, i);
-			if (fz_isindirect(obj))
-			{
 				error = preloadshading(xref, obj);
 				if (error)
 					return error;
-			}
-else fz_warn("inline shading resource");
 		}
 	}
 
@@ -454,13 +447,9 @@ else fz_warn("inline shading resource");
 		for (i = 0; i < fz_dictlen(dict); i++)
 		{
 			obj = fz_dictgetval(dict, i);
-			if (fz_isindirect(obj))
-			{
 				error = preloadxobject(xref, obj);
 				if (error)
 					return error;
-			}
-else fz_warn("inline xobject resource");
 		}
 	}
 

@@ -46,7 +46,6 @@ enum { UNKNOWN, TYPE1, CFF, TRUETYPE, CID };
 static int ftkind(FT_Face face)
 {
 	const char *kind = face->driver->clazz->root.module_name;
-printf("  type %s\n", kind);
 	if (!strcmp(kind, "type1"))
 		return TYPE1;
 	if (!strcmp(kind, "cff"))
@@ -294,8 +293,6 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	 * Load font file
 	 */
 
-printf("loading simple font %s -> %s\n", basefont, fontname);
-
 	font = *fontp = pdf_newfont(fontname);
 	if (!font)
 		return fz_outofmem;
@@ -420,7 +417,6 @@ printf("loading simple font %s -> %s\n", basefont, fontname);
 			/* Unicode cmap */
 			if (face->charmap->platform_id == 3)
 			{
-printf("  winansi cmap\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -437,7 +433,6 @@ printf("  winansi cmap\n");
 			/* MacRoman cmap */
 			else if (face->charmap->platform_id == 1)
 			{
-printf("  macroman cmap\n");
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
@@ -454,7 +449,6 @@ printf("  macroman cmap\n");
 			/* Symbolic cmap */
 			else
 			{
-printf("  symbolic cmap\n");
 				for (i = 0; i < 256; i++)
 					etable[i] = FT_Get_Char_Index(face, i);
 			}
@@ -465,7 +459,6 @@ printf("  symbolic cmap\n");
 
 	else
 	{
-printf("  builtin encoding\n");
 		for (i = 0; i < 256; i++)
 			etable[i] = FT_Get_Char_Index(face, i);
 	}
@@ -500,8 +493,6 @@ printf("  builtin encoding\n");
 		first = fz_toint(fz_dictgets(dict, "FirstChar"));
 		last = fz_toint(fz_dictgets(dict, "LastChar"));
 
-printf("  widths vector %d to %d\n", first, last);
-
 		if (first < 0 || last > 255 || first > last)
 			first = last = 0;
 
@@ -517,7 +508,6 @@ printf("  widths vector %d to %d\n", first, last);
 	}
 	else
 	{
-printf("  builtin widths\n");
 		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 		for (i = 0; i < 256; i++)
 		{
@@ -530,8 +520,6 @@ printf("  builtin widths\n");
 	error = fz_endhmtx((fz_font*)font);
 	if (error)
 		goto cleanup;
-
-printf("\n");
 
 	return nil;
 
@@ -567,8 +555,6 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz
 
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
 
-printf("loading cid font %s\n", basefont);
-
 	{
 		fz_obj *cidinfo;
 		fz_obj *obj;
@@ -597,8 +583,6 @@ printf("loading cid font %s\n", basefont);
 
 		fz_dropobj(cidinfo);
 	}
-
-printf("  collection %s\n", collection);
 
 	/*
 	 * Load font file
@@ -632,7 +616,6 @@ printf("  collection %s\n", collection);
 
 	if (fz_isname(encoding))
 	{
-printf("  external CMap %s\n", fz_toname(encoding));
 		if (!strcmp(fz_toname(encoding), "Identity-H"))
 			error = pdf_makeidentitycmap(&font->encoding, 0, 2);
 		else if (!strcmp(fz_toname(encoding), "Identity-V"))
@@ -642,7 +625,6 @@ printf("  external CMap %s\n", fz_toname(encoding));
 	}
 	else if (fz_isindirect(encoding))
 	{
-printf("  embedded CMap\n");
 		error = pdf_loadembeddedcmap(&font->encoding, xref, encoding);
 	}
 	else
@@ -677,8 +659,6 @@ printf("  embedded CMap\n");
 				error = fz_outofmem;
 				goto cleanup;
 			}
-
-printf("  cidtogidmap %d\n", len / 2);
 
 			for (i = 0; i < len; i++)
 				map[i] = (buf->rp[i * 2] << 8) + buf->rp[i * 2 + 1];
@@ -814,8 +794,6 @@ printf("  cidtogidmap %d\n", len / 2);
 		if (error)
 			goto cleanup;
 	}
-
-printf("\n");
 
 	return nil;
 

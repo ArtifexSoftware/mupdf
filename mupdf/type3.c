@@ -107,8 +107,6 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict)
 	else
 		sprintf(buf, "Unnamed-T3");
 
-printf("loading type3 font %s\n", buf);
-
 	font = pdf_newfont(buf);
 	if (!font)
 		return fz_outofmem;
@@ -124,11 +122,6 @@ printf("loading type3 font %s\n", buf);
 	font->matrix.e = fz_toreal(fz_arrayget(obj, 4));
 	font->matrix.f = fz_toreal(fz_arrayget(obj, 5));
 
-printf("  matrix [%g %g %g %g %g %g]\n",
-	font->matrix.a, font->matrix.b,
-	font->matrix.c, font->matrix.d,
-	font->matrix.e, font->matrix.f);
-
 	obj = fz_dictgets(dict, "FontBBox");
 	bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
 	bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
@@ -140,7 +133,6 @@ printf("  matrix [%g %g %g %g %g %g]\n",
 	bbox.max.x = fz_ceil(bbox.max.x * 1000);
 	bbox.max.y = fz_ceil(bbox.max.x * 1000);
 	fz_setfontbbox((fz_font*)font, bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
-printf("  bbox [%g %g %g %g]\n", bbox.min.x,bbox.min.y,bbox.max.x,bbox.max.y);
 
 	/*
 	 * Encoding

@@ -215,15 +215,14 @@ hashremove(fz_glyphcache *arena, fz_key *key)
 void
 fz_debugglyphcache(fz_glyphcache *arena)
 {
-	int i;
-
 	printf("cache load %d / %d (%d / %d bytes)\n",
 		arena->load, arena->slots, arena->used, arena->size);
 	printf("no-colliders: %d colliders: %d\n", hokay, hcoll);
 	printf("avg dist: %d / %d: %g\n", hdist, hcoll, (double)hdist / hcoll);
 	printf("out-of-space evicts: %d\n", coos);
 	printf("out-of-hash evicts: %d\n", covf);
-
+/*
+	int i;
 	for (i = 0; i < arena->slots; i++)
 	{
 		if (!arena->hash[i].val)
@@ -246,6 +245,7 @@ fz_debugglyphcache(fz_glyphcache *arena)
 	for (i = 0; i < arena->load; i++)
 		printf("lru %04d: glyph %d (%d)\n", i,
 			arena->lru[i].ent - arena->hash, arena->lru[i].uses);
+*/
 }
 
 static void

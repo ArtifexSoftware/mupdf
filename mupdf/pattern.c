@@ -94,9 +94,6 @@ printf("  ystep %g\n", pat->ystep);
 	if (error)
 		goto cleanup2;
 
-	if (csi->tree)
-		fz_debugtree(csi->tree);
-
 	pat->tree = csi->tree;
 	csi->tree = nil;
 

@@ -293,17 +293,10 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	bbox.max.x += pat->bbox.max.x;
 	bbox.max.y += pat->bbox.max.y;
 
-printf("stamping pattern [%g %g] over [%g %g %g %g]\n",
-	pat->xstep, pat->ystep,
-	bbox.min.x, bbox.min.y,
-	bbox.max.x, bbox.max.y);
-
 	x0 = fz_floor(bbox.min.x / pat->xstep);
 	y0 = fz_floor(bbox.min.y / pat->ystep);
 	x1 = fz_ceil(bbox.max.x / pat->xstep);
 	y1 = fz_ceil(bbox.max.y / pat->ystep);
-
-printf("  %d,%d to %d,%d\n", x0, y0, x1, y1);
 
 	for (y = y0; y <= y1; y++)
 	{
