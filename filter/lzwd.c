@@ -109,6 +109,13 @@ static inline fz_error * fillbits(fz_lzwd *lzw, fz_buffer *in)
 	return nil;
 }
 
+static inline void unstuff(fz_lzwd *lzw, fz_buffer *in)
+{
+	int i = (32 - lzw->bidx) / 8;
+	while (i-- && in->rp > in->bp)
+		in->rp --;
+}
+
 fz_error *
 fz_processlzwd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
@@ -131,6 +138,7 @@ fz_processlzwd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 				if (lzw->bidx > 32 - lzw->codebits)
 				{
 					out->eof = 1;
+					unstuff(lzw, in);
 					return fz_iodone;
 				}
 			}
@@ -146,6 +154,7 @@ fz_processlzwd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 		{
 			eatbits(lzw, lzw->codebits);
 			out->eof = 1;
+			unstuff(lzw, in);
 			return fz_iodone;
 		}
 
@@ -162,6 +171,7 @@ fz_processlzwd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 			{
 				eatbits(lzw, oldcodebits + MINBITS);
 				out->eof = 1;
+				unstuff(lzw, in);
 				return fz_iodone;
 			}
 

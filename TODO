@@ -1,4 +1,6 @@
 immediate plan:
+	- image color key transparency
+	- text fill + clip mode
 	- pdf logging
 	- refcount resources
 	- altivec optimize
@@ -11,6 +13,9 @@ immediate plan:
 	- talk to keithp about fontconfig cid-font + cmap support
 
 ---
+
+transparency (v2)
+	- everything!
 
 colorspace conversions (v2)
 	- fast color cubes
@@ -30,13 +35,9 @@ shadings
 rendering
 	- fix glyphcache evictlast
 	- bbox culling per glyph
-	- optimize image load/decode/scale
-	- cpu-specific optims
 	- font focus
 
 parser
-	- image color key transparency
-	- rewrite 1x1 images as fillrect
 	- try to clean up colorspace/material handling in interpreter
 	- annotations and destinations (for links and outline)
 

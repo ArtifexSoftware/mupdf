@@ -141,8 +141,9 @@ static void lisptext(fz_textnode *node, int level)
 
 static void lispimage(fz_imagenode *node, int level)
 {
+	fz_image *image = node->image;
 	indent(level);
-	printf("(image)\n");
+	printf("(image %dx%d %d+%d)\n", image->w, image->h, image->n, image->a);
 }
 
 static void lispshade(fz_shadenode *node, int level)

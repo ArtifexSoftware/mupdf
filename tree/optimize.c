@@ -267,11 +267,11 @@ static fz_error *clean1x1(fz_node *node)
 					if (error)
 						return error;
 
-					fz_insertnodeafter(mask, (fz_node*)rect);
-					fz_insertnodeafter(mask, color);
 					fz_insertnodeafter(current, mask);
+					fz_insertnodelast(mask, (fz_node*)rect);
+					fz_insertnodelast(mask, color);
 					fz_removenode(current);
-					current = color;
+					current = mask;
 				}
 
 				else

@@ -45,12 +45,6 @@ fz_boundtree(fz_tree *tree, fz_matrix ctm)
 void
 fz_insertnodefirst(fz_node *parent, fz_node *child)
 {
-	assert(fz_istransformnode(parent) ||
-		fz_isovernode(parent) ||
-		fz_ismasknode(parent) ||
-		fz_isblendnode(parent) ||
-		fz_ismetanode(parent));
-
 	child->parent = parent;
 	child->next = parent->first;
 	parent->first = child;
@@ -61,12 +55,6 @@ fz_insertnodefirst(fz_node *parent, fz_node *child)
 void
 fz_insertnodelast(fz_node *parent, fz_node *child)
 {
-	assert(fz_istransformnode(parent) ||
-		fz_isovernode(parent) ||
-		fz_ismasknode(parent) ||
-		fz_isblendnode(parent) ||
-		fz_ismetanode(parent));
-
 	child->parent = parent;
 	if (!parent->first)
 		parent->first = child;
@@ -79,18 +67,9 @@ void
 fz_insertnodeafter(fz_node *prev, fz_node *child)
 {
 	fz_node *parent = prev->parent;
-
-	assert(fz_istransformnode(parent) ||
-		fz_isovernode(parent) ||
-		fz_ismasknode(parent) ||
-		fz_isblendnode(parent) ||
-		fz_ismetanode(parent));
-
 	child->parent = parent;
-
 	if (parent->last == prev)
 		parent->last = child;
-
 	child->next = prev->next;
 	prev->next = child;
 }
