@@ -1,0 +1,11 @@
+# test ghostscript filters
+#
+# usage: rc gsfilter.rc CCITTFaxDecode '<< ... >>' < in > out
+#
+
+builtin gs -q -dBATCH '-sDEVICE=nullpage' -c \
+	'/myout (%stdout) (w) file ' ^ $2 ^ ' /' ^ $1 ^ ' filter def
+	/myin (%stdin) (r) file def
+	/s 1024 string def
+	{ myin s readstring { myout s writestring } { myout s writestring myout closefile exit } ifelse } loop'
+

@@ -1,0 +1,23 @@
+# test fax codec
+
+FILE=oscar
+
+ARGS='<< /Predictor 15 /Columns 80 /Colors 3 /BitsPerComponent 8 >>'
+
+gs -q -dBATCH -sDEVICE'='nullpage -c '
+/runfilt { /fo exch def /fi exch def
+  { fi read not { exit } if fo exch write } loop
+  fo closefile
+} def
+(' ^ $FILE ^ '.raw) (r) file
+(' ^ $FILE ^ '.pz-gs) (w) file ' ^ $ARGS ^ ' /FlateEncode filter runfilt'
+
+./t-filter.exe FlateDecode '<< >>' < $FILE.pz-gs > $FILE.p-gs
+./t-filter.exe PredictDecode $ARGS < $FILE.p-gs > $FILE.d-gs
+
+./t-filter.exe PredictEncode $ARGS < $FILE.raw > $FILE.p-fz
+./t-filter.exe FlateEncode '<< >>' < $FILE.p-fz > $FILE.pz-fz
+
+./t-filter.exe FlateDecode '<< >>' < $FILE.pz-fz > $FILE.p-fz2
+./t-filter.exe PredictDecode $ARGS < $FILE.p-fz2 > $FILE.d-fz2
+

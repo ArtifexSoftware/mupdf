@@ -1,0 +1,291 @@
+#include <fitz.h>
+
+fz_error *
+fz_newpath(fz_path **pathp)
+{
+	fz_path *path;
+
+	path = *pathp = fz_malloc(sizeof(fz_path));
+	if (!path)
+		return fz_outofmem;
+
+	fz_initnode((fz_node*)path, FZ_NPATH);
+
+	path->paint = FZ_FILL;
+	path->stroke = nil;
+	path->dash = nil;
+	path->len = 0;
+	path->cap = 0;
+	path->els = nil;
+
+	return nil;
+}
+
+fz_error *
+fz_clonepath(fz_path **pathp, fz_path *oldpath)
+{
+	fz_path *path;
+
+	path = *pathp = fz_malloc(sizeof(fz_path));
+	if (!path)
+		return fz_outofmem;
+
+	fz_initnode((fz_node*)path, FZ_NPATH);
+
+	path->paint = FZ_FILL;
+	path->stroke = nil;
+	path->dash = nil;
+	path->len = oldpath->len;
+	path->cap = oldpath->len;
+
+	path->els = fz_malloc(sizeof (fz_pathel) * path->len);
+	if (!path->els) {
+		fz_free(path);
+		return fz_outofmem;
+	}
+	memcpy(path->els, oldpath->els, sizeof(fz_pathel) * path->len);
+
+	return nil;
+}
+
+void
+fz_freepath(fz_path *node)
+{
+	fz_free(node->stroke);
+	fz_free(node->dash);
+	fz_free(node->els);
+	fz_free(node);
+}
+
+static fz_error *
+growpath(fz_path *path, int n)
+{
+	int newcap;
+	fz_pathel *newels;
+
+	while (path->len + n > path->cap)
+	{
+		newcap = path->cap + 36;
+		newels = fz_realloc(path->els, sizeof (fz_pathel) * newcap);
+		if (!newels)
+			return fz_outofmem;
+		path->cap = newcap;
+		path->els = newels;
+	}
+
+	return nil;
+}
+
+fz_error *
+fz_moveto(fz_path *path, float x, float y)
+{
+	if (growpath(path, 3) != nil)
+		return fz_outofmem;
+	path->els[path->len++].k = FZ_MOVETO;
+	path->els[path->len++].v = x;
+	path->els[path->len++].v = y;
+	return nil;
+}
+
+fz_error *
+fz_lineto(fz_path *path, float x, float y)
+{
+	if (growpath(path, 3) != nil)
+		return fz_outofmem;
+	path->els[path->len++].k = FZ_LINETO;
+	path->els[path->len++].v = x;
+	path->els[path->len++].v = y;
+	return nil;
+}
+
+fz_error *
+fz_curveto(fz_path *path,
+		float x1, float y1,
+		float x2, float y2,
+		float x3, float y3)
+{
+	if (growpath(path, 7) != nil)
+		return fz_outofmem;
+	path->els[path->len++].k = FZ_CURVETO;
+	path->els[path->len++].v = x1;
+	path->els[path->len++].v = y1;
+	path->els[path->len++].v = x2;
+	path->els[path->len++].v = y2;
+	path->els[path->len++].v = x3;
+	path->els[path->len++].v = y3;
+	return nil;
+}
+
+fz_error *
+fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
+{
+	float x1 = path->els[path->len-2].v;
+	float y1 = path->els[path->len-1].v;
+	return fz_curveto(path, x1, y1, x2, y2, x3, y3);
+}
+
+fz_error *
+fz_curvetoy(fz_path *path, float x1, float y1, float x3, float y3)
+{
+	return fz_curveto(path, x1, y1, x3, y3, x3, y3);
+}
+
+fz_error *
+fz_closepath(fz_path *path)
+{
+	if (growpath(path, 1) != nil)
+		return fz_outofmem;
+	path->els[path->len++].k = FZ_CLOSEPATH;
+	return nil;
+}
+
+fz_error *
+fz_endpath(fz_path *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
+{
+	fz_pathel *newels;
+
+	newels = fz_realloc(path->els, path->len * sizeof(fz_pathel));
+	if (!newels)
+		return fz_outofmem;
+	path->els = newels;
+
+	path->paint = paint;
+	path->stroke = stroke;
+	path->dash = dash;
+
+	return nil;
+}
+
+static inline fz_rect boundexpand(fz_rect r, fz_point p)
+{
+	if (r.min.x > r.max.x)
+	{
+		r.min.x = r.max.x = p.x;
+		r.min.y = r.max.y = p.y;
+	}
+	else
+	{
+		if (p.x < r.min.x) r.min.x = p.x;
+		if (p.y < r.min.y) r.min.y = p.y;
+		if (p.x > r.max.x) r.max.x = p.x;
+		if (p.y > r.max.y) r.max.y = p.y;
+	}
+	return r;
+}
+
+fz_rect
+fz_boundpath(fz_path *path, fz_matrix ctm)
+{
+	fz_point p;
+	fz_rect r = FZ_INFRECT;
+	int i = 0;
+
+	while (i < path->len)
+	{
+		switch (path->els[i++].k)
+		{
+		case FZ_CURVETO:
+			p.x = path->els[i++].v;
+			p.y = path->els[i++].v;
+			r = boundexpand(r, fz_transformpoint(ctm, p));
+			p.x = path->els[i++].v;
+			p.y = path->els[i++].v;
+			r = boundexpand(r, fz_transformpoint(ctm, p));
+		case FZ_MOVETO:
+		case FZ_LINETO:
+			p.x = path->els[i++].v;
+			p.y = path->els[i++].v;
+			r = boundexpand(r, fz_transformpoint(ctm, p));
+			break;
+		case FZ_CLOSEPATH:
+			break;
+		}
+	}
+
+	if (path->paint == FZ_STROKE)
+	{
+		float miterlength = sin(path->stroke->miterlimit / 2.0);
+		float linewidth = path->stroke->linewidth;
+		float expand = MAX(miterlength, linewidth) / 2.0;
+		r.min.x -= expand;
+		r.min.y -= expand;
+		r.max.x += expand;
+		r.max.y += expand;
+	}
+
+	return r;
+}
+
+void
+fz_debugpath(fz_path *path)
+{
+	float x, y;
+	int i = 0;
+	while (i < path->len)
+	{
+		switch (path->els[i++].k)
+		{
+		case FZ_MOVETO:
+			x = path->els[i++].v;
+			y = path->els[i++].v;
+			printf("%g %g m\n", x, y);
+			break;
+		case FZ_LINETO:
+			x = path->els[i++].v;
+			y = path->els[i++].v;
+			printf("%g %g l\n", x, y);
+			break;
+		case FZ_CURVETO:
+			x = path->els[i++].v;
+			y = path->els[i++].v;
+			printf("%g %g ", x, y);
+			x = path->els[i++].v;
+			y = path->els[i++].v;
+			printf("%g %g ", x, y);
+			x = path->els[i++].v;
+			y = path->els[i++].v;
+			printf("%g %g c\n", x, y);
+			break;
+		case FZ_CLOSEPATH:
+			printf("h\n");
+		}
+	}
+
+	switch (path->paint)
+	{
+	case FZ_STROKE:
+		printf("S\n");
+		break;
+	case FZ_FILL:
+		printf("f\n");
+		break;
+	case FZ_EOFILL:
+		printf("f*\n");
+		break;
+	}
+}
+
+fz_error *
+fz_newdash(fz_dash **dashp, float phase, int len, float *array)
+{
+	fz_dash *dash;
+	int i;
+
+	dash = *dashp = fz_malloc(sizeof(fz_dash) + sizeof(float) * len);
+	if (!dash)
+		return fz_outofmem;
+
+	dash->len = len;
+	dash->phase = phase;
+	for (i = 0; i < len; i++)
+		dash->array[i] = array[i];
+
+	return nil;
+}
+
+void
+fz_freedash(fz_dash *dash)
+{
+	fz_free(dash);
+}
+

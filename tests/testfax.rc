@@ -1,0 +1,40 @@
+#!/usr/local/bin/rc
+
+head = 'P4
+1728 2376'
+
+params = '<< /XRows 2376 /Columns 1728 /K 0 /EndOfLine true >>'
+
+echo Encoding with GS
+rc gswfilt.rc CCITTFaxEncode $params < ptt3.raw > /tmp/e-gs
+
+echo Encoding with Fz
+../t-filter   CCITTFaxEncode $params < ptt3.raw > /tmp/e-fz >[2] /tmp/e-fz.trace
+
+od -t x1 /tmp/e-gs > /tmp/e-gs.hx
+od -t x1 /tmp/e-fz > /tmp/e-fz.hx
+
+echo HEXDUMP
+diff -u /tmp/e-gs.hx /tmp/e-fz.hx | head -20
+echo
+
+echo $head > /tmp/e-gs,d-gs.pbm
+echo $head > /tmp/e-fz,d-gs.pbm
+echo $head > /tmp/e-gs,d-fz.pbm
+echo $head > /tmp/e-fz,d-fz.pbm
+
+echo Decoding GS output with GS
+rc gsrfilt.rc CCITTFaxDecode $params < /tmp/e-gs >> /tmp/e-gs,d-gs.pbm
+
+echo Decoding Fz output with GS
+rc gsrfilt.rc CCITTFaxDecode $params < /tmp/e-fz >> /tmp/e-fz,d-gs.pbm
+
+echo Decoding GS output with Fz
+../t-filter CCITTFaxDecode $params </tmp/e-gs >>/tmp/e-gs,d-fz.pbm >[2]/tmp/d-gs.tr
+
+echo Decoding Fz output with Fz
+../t-filter CCITTFaxDecode $params </tmp/e-fz >>/tmp/e-fz,d-fz.pbm >[2]/tmp/d-fz.tr
+
+echo TRACE
+diff -uw /tmp/d-gs.tr /tmp/d-fz.tr | head -200
+

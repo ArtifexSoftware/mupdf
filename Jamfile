@@ -1,0 +1,129 @@
+#
+# Jamfile for Fitz
+#
+
+include $(HOME)/.jamrules ;
+
+HDRS = include ;
+
+Library libfitz :
+	# util stuff
+	#util/cleanname.c
+	#util/getopt.c
+	#util/strsep.c
+	#util/strlcpy.c
+	#util/strlcat.c
+
+	# base runtime
+	base/error.c
+	base/memory.c
+	base/md5.c
+	base/arc4.c
+	base/rect.c
+	base/matrix.c
+	base/hash.c
+
+	# object
+	object/simple.c
+	object/array.c
+	object/dict.c
+	object/print.c
+	object/parse.c
+
+	# filter
+	filter/buffer.c
+	filter/filter.c
+	filter/file.c		# unistd.h
+
+	filter/null.c
+	filter/arc4filter.c
+	filter/pipeline.c
+
+	filter/ahxd.c
+	filter/ahxe.c
+	filter/a85d.c
+	filter/a85e.c
+	filter/rld.c
+	filter/rle.c
+	filter/predict.c
+	filter/lzwd.c
+	filter/lzwe.c
+
+	filter/faxd.c
+	filter/faxdtab.c
+	filter/faxe.c
+	filter/faxetab.c
+
+	filter/flate.c		# libz
+	filter/dctd.c		# libjpeg
+	filter/dcte.c		# libjpeg
+	filter/jbig2d.c		# jbig2dec
+	filter/jpxd.c		# jasper
+
+	# tree
+	tree/tree.c
+	tree/debug.c
+	tree/cmap.c
+	tree/font.c
+
+	tree/node.c
+	tree/meta.c
+	tree/over.c
+	tree/mask.c
+	tree/blend.c
+	tree/form.c
+	tree/transform.c
+	tree/solid.c
+	tree/image.c
+	tree/text.c
+	tree/path.c
+
+	# render
+	render/glyphcache.c
+	render/pixmap.c
+	render/edgelist.c
+	render/scanconv.c
+	render/fill.c
+	render/stroke.c
+	render/render.c
+;
+
+Library libmupdf :
+	mupdf/lex.c
+	mupdf/parse.c
+	mupdf/crypt.c
+	mupdf/stream.c
+
+	mupdf/open.c
+	mupdf/repair.c
+	mupdf/save.c
+	mupdf/xref.c
+
+	mupdf/cmap.c
+	mupdf/font.c
+	mupdf/fontfile.c
+	mupdf/resources.c
+	mupdf/pagetree.c
+	mupdf/build.c
+	mupdf/interpret.c
+	;
+
+LINKLIBS =
+	-lfontconfig
+	-lfreetype
+	-ljbig2dec
+	-ljasper
+	-ljpeg
+	-lz 
+	-lm
+	;
+
+Main t-mupdf : test/mupdf.c ;
+LinkLibraries t-mupdf : libmupdf libfitz ;
+
+#Main t-filter : tests/t-filter.c ;
+#Main t-parse : tests/t-parse.c ;
+#Main t-scanconv : tests/t-scanconv.c ;
+#Main tiger : tests/tiger.c ;
+#LinkLibraries t-filter t-parse t-scanconv t-fontrast tiger : libfitz ;
+
