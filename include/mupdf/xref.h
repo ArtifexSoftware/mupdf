@@ -34,7 +34,7 @@ struct pdf_xrefentry_s
 	char type;				/* 0=unset (f)ree i(n)use (o)bjstm (d)elete (a)dd */
 	char mark;				/* for garbage collection etc */
 	fz_buffer *stmbuf;		/* in-memory stream */
-	unsigned int stmofs;	/* on-disk stream */
+	int stmofs;				/* on-disk stream */
 	fz_obj *obj;			/* stored/cached object */
 };
 
@@ -70,6 +70,6 @@ fz_error *pdf_garbagecollect(pdf_xref *xref);
 fz_error *pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *old);
 
 /* private */
-fz_error *pdf_loadobjstm(pdf_xref *xref, int oid, int gen, unsigned char *buf, int cap);
+fz_error *pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap);
 fz_error *pdf_decryptpdf(pdf_xref *xref);
 

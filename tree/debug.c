@@ -165,7 +165,6 @@ static void lispnode(fz_node *node, int level)
 	case FZ_NPATH: lisppath((fz_pathnode*)node, level); break;
 	case FZ_NTEXT: lisptext((fz_textnode*)node, level); break;
 	case FZ_NIMAGE: lispimage((fz_imagenode*)node, level); break;
-	case FZ_NSHADE: break;//lispshade((fz_shadenode*)node, level); break;
 	case FZ_NLINK: lisplink((fz_linknode*)node, level); break;
 	}
 }

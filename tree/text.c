@@ -30,7 +30,6 @@ fz_rect
 fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 {
 	fz_matrix trm;
-	fz_point ul, ur, ll, lr;
 	fz_rect bbox;
 	fz_rect fbox;
 	int i;
@@ -51,15 +50,7 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 		bbox.max.y = MAX(bbox.max.y, text->els[i].y);
 	}
 
-	ll.x = bbox.min.x; ll.y = bbox.min.y; ll = fz_transformpoint(ctm, ll);
-	ul.x = bbox.min.x; ul.y = bbox.max.y; ul = fz_transformpoint(ctm, ul);
-	ur.x = bbox.max.x; ur.y = bbox.max.y; ur = fz_transformpoint(ctm, ur);
-	lr.x = bbox.max.x; lr.y = bbox.min.y; lr = fz_transformpoint(ctm, lr);
-
-	bbox.min.x = MIN4(ll.x, ul.x, ur.x, lr.x);
-	bbox.min.y = MIN4(ll.y, ul.y, ur.y, lr.y);
-	bbox.max.x = MAX4(ll.x, ul.x, ur.x, lr.x);
-	bbox.max.y = MAX4(ll.y, ul.y, ur.y, lr.y);
+	bbox = fz_transformaabb(ctm, bbox);
 
 	/* find bbox of font in trm * ctm space */
 
@@ -72,22 +63,14 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 	fbox.max.x = text->font->bbox.max.x * 0.001;
 	fbox.max.y = text->font->bbox.max.y * 0.001;
 
-	ll.x = fbox.min.x; ll.y = fbox.min.y; ll = fz_transformpoint(trm, ll);
-	ul.x = fbox.min.x; ul.y = fbox.max.y; ul = fz_transformpoint(trm, ul);
-	ur.x = fbox.max.x; ur.y = fbox.max.y; ur = fz_transformpoint(trm, ur);
-	lr.x = fbox.max.x; lr.y = fbox.min.y; lr = fz_transformpoint(trm, lr);
+	fbox = fz_transformaabb(trm, fbox);
 
-	fbox.min.x = MIN4(ll.x, ul.x, ur.x, lr.x);
-	fbox.min.y = MIN4(ll.y, ul.y, ur.y, lr.y);
-	fbox.max.x = MAX4(ll.x, ul.x, ur.x, lr.x);
-	fbox.max.y = MAX4(ll.y, ul.y, ur.y, lr.y);
+	/* expand glyph origin bbox by font bbox */
 
-	bbox.min.x += MIN4(ll.x, ul.x, ur.x, lr.x);
-	bbox.min.y += MIN4(ll.y, ul.y, ur.y, lr.y);
-	bbox.max.x += MAX4(ll.x, ul.x, ur.x, lr.x);
-	bbox.max.y += MAX4(ll.y, ul.y, ur.y, lr.y);
-
-//	printf("text [ %g %g %g %g ]\n", bbox.min.x, bbox.min.y, bbox.max.x, bbox.max.y);
+	bbox.min.x += fbox.min.x;
+	bbox.min.y += fbox.min.y;
+	bbox.max.x += fbox.max.x;
+	bbox.max.y += fbox.max.y;
 
 	return bbox;
 }

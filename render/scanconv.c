@@ -86,8 +86,6 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, int y0, int y1,
 
 	int xmin = fz_idiv(gel->xmin, gel->hs);
 	int xmax = fz_idiv(gel->xmax, gel->hs) + 1;
-	// int ymin = fz_idiv(gel->ymin, gel->vs);
-	// int ymax = fz_idiv(gel->ymax, gel->vs) + 1;
 
 	int xofs = xmin * gel->hs;
 	int hs = gel->hs;

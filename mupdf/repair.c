@@ -11,7 +11,7 @@ struct entry
 };
 
 static fz_error *
-parseobj(fz_file *file, unsigned char *buf, int cap, int *stmofs, int *stmlen,
+parseobj(fz_file *file, char *buf, int cap, int *stmofs, int *stmlen,
 	int *isroot, int *isinfo)
 {
 	fz_error *error;
@@ -112,7 +112,7 @@ pdf_repairpdf(pdf_xref **xrefp, char *filename)
 	int listcap;
 	int maxoid = 0;
 
-	unsigned char buf[65536];
+	char buf[65536];
 
 	int oid = 0;
 	int gen = 0;

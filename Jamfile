@@ -1,6 +1,9 @@
 #
 # Jamfile for Fitz
 #
+# mpage -s4 -f -2 -c -H -W110 include/*/*.h */*.c > listing.ps
+# ps2pdf -sPAPERSIZE'='a4 listing.ps
+#
 
 include $(HOME)/.jamrules ;
 

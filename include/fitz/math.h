@@ -1,19 +1,7 @@
 /* multiply 8-bit fixpoint (0..1) so that 0*0==0 and 255*255==255 */
-static inline unsigned char fz_mul255(unsigned char a, unsigned char b)
-{
-	return (a * ((unsigned int)b + 1)) >> 8;
-}
-
-/* floor / ceil towards/from +/- inf */
-static inline float fz_floor(float x)
-{
-	return floor(x);
-}
-
-static inline float fz_ceil(float x)
-{
-	return ceil(x);
-}
+#define fz_mul255(a,b) (((a) * ((b) + 1)) >> 8)
+#define fz_floor(x) floor(x)
+#define fz_ceil(x) ceil(x)
 
 /* divide and floor towards -inf */
 static inline int fz_idiv(int a, int b)

@@ -49,6 +49,7 @@ int fz_isrectilinear(fz_matrix m);
 fz_rect fz_intersectrects(fz_rect a, fz_rect b);
 fz_rect fz_mergerects(fz_rect a, fz_rect b);
 
+fz_irect fz_roundrect(fz_rect r);
 fz_irect fz_intersectirects(fz_irect a, fz_irect b);
 fz_irect fz_mergeirects(fz_irect a, fz_irect b);
 

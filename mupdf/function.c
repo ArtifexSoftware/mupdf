@@ -151,9 +151,9 @@ enum psop_e {
 	psOpReturn
 };
 
-// Note: 'if' and 'ifelse' are parsed separately.
-// The rest are listed here in alphabetical order.
-// The index in this table is equivalent to the entry in PSOp.
+/* Note: 'if' and 'ifelse' are parsed separately.
+ * The rest are listed here in alphabetical order.
+ * The index in this table is equivalent to the entry in PSOp. */
 char *psOpNames[] = {
 	"abs",
 	"add",
@@ -608,7 +608,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 	
 	switch(func->u.sa.order) {
 	case 3:
-		//cubic spline interpolation
+		/* cubic spline interpolation */
 	case 1:
 		for (i = 0; i < func->m; ++i) {
 			x = in[i];
@@ -625,9 +625,9 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 			efrac[i] = x - e[0][i];
 		}
 
-		// for each output, do m-linear interpolation
+		/* for each output, do m-linear interpolation */
 		for (i = 0; i < func->n; ++i) {		
-			// pull 2^m values out of the sample array
+			/* pull 2^m values out of the sample array */
 			for (j = 0; j < (1 << func->m); ++j) {
 				idx = 0;
 				for (k = func->m - 1; k >= 0; --k) {
@@ -637,7 +637,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 				s0[j] = func->u.sa.samples[idx];
 			}
 			
-			// do m sets of interpolations
+			/* do m sets of interpolations */
 			for (j = 0; j < func->m; ++j) {
 				for (k = 0; k < (1 << (func->m - j)); k += 2) {
 					s1[k >> 1] = (1 - efrac[j]) * s0[k] + efrac[j] * s0[k+1];
@@ -645,8 +645,8 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 				memcpy(s0, s1, (1 << (func->m - j - 1)) * sizeof(float));
 			}
 			
-			// map output value to range
-			//out[i] = s0[0] * (decode[i*2+1] - decode[i*2]) + decode[i*2];
+			/* map output value to range */
+			/*out[i] = s0[0] * (decode[i*2+1] - decode[i*2]) + decode[i*2]; */
 			out[i] = INTERPOLATE(s0[0],0,byterange,decode[i*2],decode[i*2+1]);
 			MIN_MAX(out[i],range[i*2],range[i*2+1]);
 		}
@@ -994,7 +994,7 @@ parsecode(pdf_function *func, fz_file *stream, int *codeptr)
 		case PDF_TKEYWORD:
 			a = -1;
 			b = sizeof(psOpNames) / sizeof(psOpNames[0]);
-			// invariant: psOpNames[a] < op < psOpNames[b]
+			/* invariant: psOpNames[a] < op < psOpNames[b] */
 			while (b - a > 1) {
 				mid = (a + b) / 2;
 				cmp = strcmp(buf,psOpNames[mid]);
@@ -1251,7 +1251,7 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 				if (toptwoareints(st)) {
 					SAFE_POPINT(st,&i2);
 					SAFE_POPINT(st,&i1);
-					//~ should check for out-of-range, and push a real instead
+					/*~ should check for out-of-range, and push a real instead */
 					SAFE_PUSHINT(st,i1 * i2);
 				} else {
 					SAFE_POPNUM(st, &r2);

@@ -52,10 +52,22 @@ fz_dropgel(fz_gel *gel)
 	fz_free(gel);
 }
 
+fz_irect
+fz_boundgel(fz_gel *gel)
+{
+	fz_irect bbox;
+    bbox.min.x = fz_idiv(gel->xmin, gel->hs);
+    bbox.min.y = fz_idiv(gel->ymin, gel->vs);
+    bbox.max.x = fz_idiv(gel->xmax, gel->hs) + 1;
+    bbox.max.y = fz_idiv(gel->ymax, gel->vs) + 1;
+	return bbox;
+}
+
 fz_error *
 fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	fz_edge *edge;
+	int x0, y0, x1, y1;
 	int dx, dy;
 	int winding;
 	int width;
@@ -67,10 +79,10 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	fy1 *= gel->vs;
 
 	/* TODO: should we round or truncate? */
-	int x0 = fx0 < 0 ? fx0 - 0.5 : fx0 + 0.5;
-	int y0 = fy0 < 0 ? fy0 - 0.5 : fy0 + 0.5;
-	int x1 = fx1 < 0 ? fx1 - 0.5 : fx1 + 0.5;
-	int y1 = fy1 < 0 ? fy1 - 0.5 : fy1 + 0.5;
+	x0 = fx0 < 0 ? fx0 - 0.5 : fx0 + 0.5;
+	y0 = fy0 < 0 ? fy0 - 0.5 : fy0 + 0.5;
+	x1 = fx1 < 0 ? fx1 - 0.5 : fx1 + 0.5;
+	y1 = fy1 < 0 ? fy1 - 0.5 : fy1 + 0.5;
 
 	if (y0 == y1)
 		return nil;

@@ -2,12 +2,6 @@
 
 #define noDEBUG 1
 
-#ifdef DEBUG
-#define DPRINT(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DPRINT(...)
-#endif
-
 enum
 {
 	MINBITS = 9,
@@ -18,7 +12,7 @@ enum
 	LZW_EOD = 257,
 	LZW_FIRST = 258,
 	HSIZE = 9001,		/* 91% occupancy (???) */
-	HSHIFT = (13 - 8),
+	HSHIFT = (13 - 8)
 };
 
 typedef struct lzw_hash_s lzw_hash;
@@ -67,7 +61,8 @@ fz_newlzwe(fz_filter **fp, fz_obj *params)
 
 	lzw->earlychange = 0;
 
-	if (params) {
+	if (params)
+	{
 		fz_obj *obj;
 		obj = fz_dictgets(params, "EarlyChange");
 		if (obj) lzw->earlychange = fz_toint(obj) != 0;
@@ -100,16 +95,16 @@ putcode(fz_lzwe *lzw, fz_buffer *out, int code)
 {
 	int nbits = lzw->codebits;
 
-	DPRINT("CODE[%d] %d\n", nbits, code);
-
 	while (nbits > 0)
 	{
-		if (lzw->bidx == 0) {
+		if (lzw->bidx == 0)
+		{
 			*out->wp = 0;
 		}
 
 		/* code does not fit: shift right */
-		if (nbits > (8 - lzw->bidx)) {
+		if (nbits > (8 - lzw->bidx))
+		{
 			*out->wp |= code >> (nbits - (8 - lzw->bidx));
 			nbits = nbits - (8 - lzw->bidx);
 			lzw->bidx = 0;
@@ -117,10 +112,12 @@ putcode(fz_lzwe *lzw, fz_buffer *out, int code)
 		}
 
 		/* shift left */
-		else {
+		else
+		{
 			*out->wp |= code << ((8 - lzw->bidx) - nbits);
 			lzw->bidx += nbits;
-			if (lzw->bidx == 8) {
+			if (lzw->bidx == 8)
+			{
 				lzw->bidx = 0;
 				out->wp ++;
 			}
@@ -133,7 +130,8 @@ putcode(fz_lzwe *lzw, fz_buffer *out, int code)
 static fz_error *
 compress(fz_lzwe *lzw, fz_buffer *in, fz_buffer *out)
 {
-	if (lzw->resume) {
+	if (lzw->resume)
+	{
 		lzw->resume = 0;
 		goto resume;
 	}
@@ -144,7 +142,8 @@ compress(fz_lzwe *lzw, fz_buffer *in, fz_buffer *out)
 		if (out->wp + 3 > out->ep)
 			return fz_ioneedout;
 
-		if (in->rp + 1 > in->wp) {
+		if (in->rp + 1 > in->wp)
+		{
 			if (in->eof)
 				goto eof;
 			return fz_ioneedin;
@@ -158,7 +157,8 @@ compress(fz_lzwe *lzw, fz_buffer *in, fz_buffer *out)
 begin:
 	while (1)
 	{
-		if (in->rp + 1 > in->wp) {
+		if (in->rp + 1 > in->wp)
+		{
 			if (in->eof)
 				goto eof;
 			return fz_ioneedin;
@@ -167,28 +167,30 @@ begin:
 		/* read character */
 		lzw->code = *in->rp++;
 
-		DPRINT("READ %d\n", lzw->code);
-
 		/* hash string + character */
 		lzw->fcode = (lzw->code << MAXBITS) + lzw->oldcode;
 		lzw->hcode = (lzw->code << HSHIFT) ^ lzw->oldcode;
 
 		/* primary hash */
-		if (lzw->table[lzw->hcode].hash == lzw->fcode) {
+		if (lzw->table[lzw->hcode].hash == lzw->fcode)
+		{
 			lzw->oldcode = lzw->table[lzw->hcode].code;
 			continue;
 		}
 
 		/* secondary hash */
-		if (lzw->table[lzw->hcode].hash != -1) {
+		if (lzw->table[lzw->hcode].hash != -1)
+		{
 			int disp = HSIZE - lzw->hcode;
 			if (lzw->hcode == 0)
 				disp = 1;
-			do {
+			do
+			{
 				lzw->hcode = lzw->hcode - disp;
 				if (lzw->hcode < 0)
 					lzw->hcode += HSIZE;
-				if (lzw->table[lzw->hcode].hash == lzw->fcode) {
+				if (lzw->table[lzw->hcode].hash == lzw->fcode)
+				{
 					lzw->oldcode = lzw->table[lzw->hcode].code;
 					goto begin;
 				}
@@ -199,7 +201,8 @@ resume:
 		/* new entry: emit code and add to table */
 
 		/* reserve space for this code and an eventual CLEAR code */
-		if (out->wp + 5 > out->ep) {	
+		if (out->wp + 5 > out->ep)
+		{	
 			lzw->resume = 1;
 			return fz_ioneedout;
 		}
@@ -213,7 +216,8 @@ resume:
 		lzw->nextcode ++;
 
 		/* table is full: emit clear code and reset */
-		if (lzw->nextcode == NUMCODES - 1) {
+		if (lzw->nextcode == NUMCODES - 1)
+		{
 			putcode(lzw, out, LZW_CLEAR);
 			clearhash(lzw);
 			lzw->nextcode = LZW_FIRST;
@@ -221,7 +225,8 @@ resume:
 		}
 
 		/* check if next entry will be too big for the code size */
-		else if (lzw->nextcode >= (1 << lzw->codebits) - lzw->earlychange) {
+		else if (lzw->nextcode >= (1 << lzw->codebits) - lzw->earlychange)
+		{
 			lzw->codebits ++;
 		}
 	}

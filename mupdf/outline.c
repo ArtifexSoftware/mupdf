@@ -4,7 +4,7 @@
 static fz_error *
 loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 {
-// please call this 'error'
+/*XXX please call this 'error' */
 	fz_error *err;
 	fz_obj *first;
 	fz_obj *next;
@@ -14,9 +14,9 @@ loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 	int i;
 
 	t = fz_dictgets(obj, "Title");
-// check for failure after each malloc
+/*XXX check for failure after each malloc */
 	outline->title = fz_malloc(sizeof(char) * fz_tostringlen(t) + 1);
-// use strlcpy instead. strncpy does not null terminate.
+/*XXX use strlcpy instead. strncpy does not null terminate. */
 	strncpy(outline->title, fz_tostringbuf(t), fz_tostringlen(t));
 	outline->title[fz_tostringlen(t)] = 0;
 
@@ -49,11 +49,11 @@ loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 		if (err) return err;
 
 		o = fz_malloc(sizeof(pdf_outline));
-// you leak ref
+/*XXX you leak ref */
 		if (!o) { err = fz_outofmem; return err; }
 
 		loadoutlinetree(xref, o, ref);
-// check error return
+/*XXX check error return */
 		
 		outline->first = o;
 
@@ -68,11 +68,11 @@ loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 		if (err) return err;
 
 		o = fz_malloc(sizeof(pdf_outline));
-// you leak ref
+/*XXX you leak ref */
 		if (!o) { err = fz_outofmem; return err; }
 
 		loadoutlinetree(xref, o, ref);
-// check error return?
+/*XXX check error return? */
 		
 		outline->next = o;
 
@@ -87,7 +87,7 @@ loadoutlinetree(pdf_xref *xref, pdf_outline *outline, fz_obj *obj)
 fz_error *
 pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref)
 {
-// please rename to 'error'
+/*XXX please rename to 'error' */
 	fz_error *err;
 	pdf_outlinetree *o = nil;
 	fz_obj *outline = nil;
@@ -103,7 +103,7 @@ pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref)
 	err = pdf_loadindirect(&catalog, xref, ref);
 	if (err) goto error;
 
-// create empty tree if no outlines exist instead of failing?
+/*XXX create empty tree if no outlines exist instead of failing? */
 	ref = fz_dictgets(catalog, "Outlines");
 	if (!ref) goto error;
 	err = pdf_loadindirect(&outlines, xref, ref);
@@ -121,7 +121,7 @@ pdf_loadoutlinetree(pdf_outlinetree **oo, pdf_xref *xref)
 
 	ref = fz_dictgets(outlines, "First");
 	err = pdf_loadindirect(&outline, xref, ref);
-// check error
+/*XXX check error */
 	err = loadoutlinetree(xref, o->first, outline);
 	if (err) goto error;
 

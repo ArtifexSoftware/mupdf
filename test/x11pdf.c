@@ -164,7 +164,7 @@ static void showpage(void)
 
 	bbox = fz_transformaabb(ctm, page->mediabox);
 
-	error = fz_rendertree(&image, rast, page->tree, ctm, bbox);
+	error = fz_rendertree(&image, rast, page->tree, ctm, fz_roundrect(bbox));
 	if (error)
 		fz_abort(error);
 

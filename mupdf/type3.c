@@ -47,7 +47,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	fz_tree *tree;
 	fz_pixmap *pixmap;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_irect bbox;
 	int i;
 
 	if (cid < 0 || cid > 255)
@@ -62,12 +62,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	}
 
 	ctm = fz_concat(font->matrix, trm);
-	bbox = fz_boundtree(tree, ctm);
-
-	bbox.min.x = fz_floor(bbox.min.x - 0.5);
-	bbox.min.y = fz_floor(bbox.min.y - 0.5);
-	bbox.max.x = fz_ceil(bbox.max.x + 0.5);
-	bbox.max.y = fz_ceil(bbox.max.y + 0.5);
+	bbox = fz_roundrect(fz_boundtree(tree, ctm));
 
 	error = fz_newrenderer(&gc, nil, GCMEM);
 	if (error)
@@ -95,7 +90,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 				pixmap->w );
 	}
 
-	// XXX flip bitmap in ftrender instead; free pixmap
+	/* XXX flip bitmap in ftrender instead; free pixmap */
 
 	return nil;
 }
@@ -106,9 +101,6 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	fz_error *error;
 	pdf_csi *csi;
 
-	printf("  loading charproc %d %d obj\n",
-		fz_tonum(stmref), fz_togen(stmref));
-
 	error = pdf_newcsi(&csi, 1);
 
 	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
@@ -118,9 +110,6 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	error = pdf_runcsi(csi, xref, rdb, xref->stream);
 
 	pdf_closestream(xref);
-
-	if (csi->tree)
-		fz_debugtree(csi->tree);
 
 	*treep = csi->tree;
 	csi->tree = nil;

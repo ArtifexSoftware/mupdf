@@ -5,15 +5,6 @@
 
 /* TODO: honor Rows param */
 
-#define noDEBUGBITS 1
-#define noDEBUG 1
-
-#ifdef DEBUG
-#define DPRINT(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DPRINT(...)
-#endif
-
 typedef struct fz_faxe_s fz_faxe;
 
 struct fz_faxe_s
@@ -104,8 +95,7 @@ fz_dropfaxe(fz_filter *p)
 
 enum { codebytes = 2 };
 
-static inline int
-runbytes(int run)
+static inline int runbytes(int run)
 {
 	int m = (run / 64) / 40 + 1;	/* number of makeup codes */
 	return codebytes * (m + 1); /* bytes for makeup + term codes */
@@ -114,20 +104,14 @@ runbytes(int run)
 static void
 putbits(fz_faxe *fax, fz_buffer *out, int code, int nbits)
 {
-#ifdef DEBUGBITS
-	fprintf(stderr, "BITS ");
-	printbits(stderr, code, nbits);
-	fprintf(stderr, "\n");
-#endif
-
 	while (nbits > 0)
 	{
-		if (fax->bidx == 0) {
+		if (fax->bidx == 0)
 			*out->wp = 0;
-		}
 
 		/* code does not fit: shift right */
-		if (nbits > (8 - fax->bidx)) {
+		if (nbits > (8 - fax->bidx))
+		{
 			*out->wp |= code >> (nbits - (8 - fax->bidx));
 			nbits = nbits - (8 - fax->bidx);
 			fax->bidx = 0;
@@ -135,10 +119,12 @@ putbits(fz_faxe *fax, fz_buffer *out, int code, int nbits)
 		}
 
 		/* shift left */
-		else {
+		else
+		{
 			*out->wp |= code << ((8 - fax->bidx) - nbits);
 			fax->bidx += nbits;
-			if (fax->bidx == 8) {
+			if (fax->bidx == 8)
+			{
 				fax->bidx = 0;
 				out->wp ++;
 			}
@@ -160,22 +146,22 @@ putrun(fz_faxe *fax, fz_buffer *out, int run, int c)
 
 	const cf_runs *codetable = c ? &cf_black_runs : &cf_white_runs;
 
-	if (run > 63) {
+	if (run > 63)
+	{
 		m = run / 64;
-		while (m > 40) {
-			DPRINT("%c %d\n", c?'b':'w', 40 * 64);
+		while (m > 40)
+		{
 			putcode(fax, out, &codetable->makeup[40]);
 			m -= 40;
 		}
-		if (m > 0) {
-			DPRINT("%c %d\n", c?'b':'w', m * 64);
+		if (m > 0)
+		{
 			putcode(fax, out, &codetable->makeup[m]);
 		}
-		DPRINT("%c %d\n", c?'b':'w', run % 64);
 		putcode(fax, out, &codetable->termination[run % 64]);
 	}
-	else {
-		DPRINT("%c %d\n", c?'b':'w', run);
+	else
+	{
 		putcode(fax, out, &codetable->termination[run]);
 	}
 }
@@ -184,13 +170,6 @@ static fz_error *
 enc1d(fz_faxe *fax, unsigned char *line, fz_buffer *out)
 {
 	int run;
-
-#ifdef DEBUG
-if (fax->a0 < 0) {
-	DPRINT("1d scanline %d\n", fax->ridx + 1);
-	DPRINT("color = %d\n", fax->c);
-}
-#endif
 
 	if (fax->a0 < 0)
 		fax->a0 = 0;
@@ -217,33 +196,17 @@ enc2d(fz_faxe *fax, unsigned char *ref, unsigned char *src, fz_buffer *out)
 	int a1, a2, b1, b2;
 	int run1, run2, n;
 
-
-#ifdef DEBUG
-if (fax->a0 < 0)
-{
-	DPRINT("2d scanline %d\n", fax->ridx + 1);
-}
-#endif
-
-	DPRINT("color = %d\n", fax->c);
-
 	while (fax->a0 < fax->columns)
 	{
 		a1 = findchanging(src, fax->a0, fax->columns);
 		b1 = findchangingcolor(ref, fax->a0, fax->columns, !fax->c);
 		b2 = findchanging(ref, b1, fax->columns);
 
-#ifdef DEBUGBITS
-		DPRINT("twod a0=%d a1=%d b1=%d b2=%d\n", fax->a0, a1, b1, b2);
-#endif
-
 		/* pass */
 		if (b2 < a1)
 		{
 			if (out->wp + 1 + codebytes > out->ep)
 				return fz_ioneedout;
-
-			DPRINT("P\n");
 
 			putcode(fax, out, &cf2_run_pass);
 
@@ -255,15 +218,6 @@ if (fax->a0 < 0)
 		{
 			if (out->wp + 1 + codebytes > out->ep)
 				return fz_ioneedout;
-
-#ifdef DEBUG
-			if (b1 - a1 == 0)
-				DPRINT("V0\n");
-			else if (b1 - a1 < 0)
-				DPRINT("VR%d\n", a1 - b1);
-			else
-				DPRINT("VL%d\n", b1 - a1);
-#endif
 
 			putcode(fax, out, &cf2_run_vertical[b1 - a1 + 3]);
 
@@ -281,8 +235,6 @@ if (fax->a0 < 0)
 
 			if (out->wp + 1 + n > out->ep)
 				return fz_ioneedout;
-
-			DPRINT("H\n");
 
 			putcode(fax, out, &cf2_run_horizontal);
 			putrun(fax, out, run1, fax->c);
@@ -311,15 +263,18 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 		case 0:
 			if (fax->encodedbytealign)
 			{
-				if (fax->endofline) {
+				if (fax->endofline)
+				{
 					if (out->wp + 1 + 1 > out->ep)
 						return fz_ioneedout;
 
 					/* make sure that EOL ends on a byte border */
 					putbits(fax, out, 0, (12 - fax->bidx) & 7);
 				}
-				else {
-					if (fax->bidx) {
+				else
+				{
+					if (fax->bidx)
+					{
 						if (out->wp + 1 > out->ep)
 							return fz_ioneedout;
 						fax->bidx = 0;
@@ -336,14 +291,15 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 				if (out->wp + 1 + codebytes + 1 > out->ep)
 					return fz_ioneedout;
 
-				DPRINT("EOL\n");
-				if (fax->k > 0) {
+				if (fax->k > 0)
+				{
 					if (fax->ridx % fax->k == 0)
 						putcode(fax, out, &cf2_run_eol_1d);
 					else
 						putcode(fax, out, &cf2_run_eol_2d);
 				}
-				else {
+				else
+				{
 					putcode(fax, out, &cf_run_eol);
 				}
 			}
@@ -351,7 +307,8 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 			fax->stage ++;
 
 		case 2:
-			if (in->rp + fax->stride > in->wp) {
+			if (in->rp + fax->stride > in->wp)
+			{
 				if (in->eof) /* XXX barf here? */
 					goto rtc;
 				return fz_ioneedin;
@@ -371,33 +328,27 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 			fax->c = 0;
 			fax->a0 = -1;
 
-#ifdef DEBUGBITS
-			DPRINT("LINE %d\n", fax->ridx);
-			printline(stderr, fax->ref, fax->columns);
-			printline(stderr, fax->src, fax->columns);
-#endif
-
 			fax->stage ++;
 			
 		case 3:
 			error = 0; /* to silence compiler */
 
-			if (fax->k < 0) {
+			if (fax->k < 0)
 				error = enc2d(fax, fax->ref, fax->src, out);
-			}
-			else if (fax->k == 0) {
+
+			else if (fax->k == 0)
 				error = enc1d(fax, fax->src, out);
-			}
-			else if (fax->k > 0) {
-				if (fax->ridx % fax->k == 0) {
+
+			else if (fax->k > 0)
+			{
+				if (fax->ridx % fax->k == 0)
 					error = enc1d(fax, fax->src, out);
-				}
-				else {
+				else
 					error = enc2d(fax, fax->ref, fax->src, out);
-				}
 			}
 
-			if (error) return error;
+			if (error)
+				return error;
 
 			fax->ridx ++;
 
@@ -413,12 +364,12 @@ rtc:
 		if (out->wp + 1 + codebytes * n > out->ep)
 			return fz_ioneedout;
 
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++)
+		{
 			putcode(fax, out, &cf_run_eol);
 			if (fax->k > 0)
 				putbits(fax, out, 1, 1);
 		}
-		DPRINT("RTC\n");
 	}
 
 	if (fax->bidx)

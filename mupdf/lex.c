@@ -229,7 +229,7 @@ lexhexstring(fz_file *f, unsigned char *buf, int n)
 }
 
 static int
-tokenfromkeyword(unsigned char *key)
+tokenfromkeyword(char *key)
 {
 	if (!strcmp(key, "R")) return PDF_TR;
 	if (!strcmp(key, "true")) return PDF_TTRUE;

@@ -313,11 +313,12 @@ static void devicecmyktoxyz(fz_colorspace *cs, float *cmyk, float *xyz)
 static void xyztodevicecmyk(fz_colorspace *cs, float *xyz, float *cmyk)
 {
 	float rgb[3];
+	float c, m, y, k;
 	xyztorgb(pdf_devicergb, xyz, rgb);
-	float c = 1.0 - rgb[0];
-	float m = 1.0 - rgb[0];
-	float y = 1.0 - rgb[0];
-	float k = MIN(c, MIN(y, k));
+	c = 1.0 - rgb[0];
+	m = 1.0 - rgb[0];
+	y = 1.0 - rgb[0];
+	k = MIN(c, MIN(m, y));
 	cmyk[0] = c - k;
 	cmyk[1] = m - k;
 	cmyk[2] = y - k;
@@ -360,16 +361,17 @@ static inline float cielabinvg(float x)
 static void labtoxyz(fz_colorspace *fzcs, float *lab, float *xyz)
 {
 	struct cielab *cs = (struct cielab *) fzcs;
+	float lstar, astar, bstar, l, m, n;
 	float tmp[3];
 	tmp[0] = lab[0] * 100;
 	tmp[1] = lab[1] * 200 - 100;
 	tmp[2] = lab[2] * 200 - 100;
-	float lstar = tmp[0];
-	float astar = MAX(MIN(tmp[1], cs->range[1]), cs->range[0]);
-	float bstar = MAX(MIN(tmp[2], cs->range[3]), cs->range[2]);
-	float l = ((lstar * 16.0) / 116.0) + (astar / 500.0);
-	float m = (lstar * 16.0) / 116.0;
-	float n = ((lstar * 16.0) / 116.0) - (bstar / 200.0);
+	lstar = tmp[0];
+	astar = MAX(MIN(tmp[1], cs->range[1]), cs->range[0]);
+	bstar = MAX(MIN(tmp[2], cs->range[3]), cs->range[2]);
+	l = ((lstar * 16.0) / 116.0) + (astar / 500.0);
+	m = (lstar * 16.0) / 116.0;
+	n = ((lstar * 16.0) / 116.0) - (bstar / 200.0);
 	xyz[0] = cs->white[0] * cielabg(l);
 	xyz[1] = cs->white[1] * cielabg(m);
 	xyz[2] = cs->white[2] * cielabg(n);
@@ -688,10 +690,6 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 fz_error *
 pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 {
-printf("loading colorspace: ");
-fz_debugobj(obj);
-printf("\n");
-
 	if (fz_isname(obj))
 	{
 		if (!strcmp(fz_toname(obj), "DeviceGray"))
@@ -778,7 +776,6 @@ printf("\n");
 			/* pretend this never happened... */
 			if (!strcmp(fz_toname(name), "Pattern"))
 			{
-printf("oopsie, got a pattern colorspace\n");
 				return pdf_loadcolorspace(csp, xref, fz_arrayget(obj, 1));
 			}
 		}

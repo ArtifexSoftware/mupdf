@@ -9,7 +9,7 @@ struct fz_renderer_s
     fz_gel *gel;
     fz_ael *ael;
     int mode;
-    int x, y, w, h;
+    fz_irect clip;
     fz_pixmap *tmp;
     fz_pixmap *acc;
     unsigned char r, g, b;
@@ -23,5 +23,5 @@ fz_error *fz_rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm);
 fz_error *fz_rendertransform(fz_renderer *gc, fz_transformnode *xform, fz_matrix ctm);
 fz_error *fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm);
 fz_error *fz_rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm);
-fz_error *fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_rect bbox);
+fz_error *fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox);
 

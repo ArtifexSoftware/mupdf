@@ -1,11 +1,21 @@
-typedef enum fz_pathkind_e fz_pathkind;
-typedef enum fz_pathelkind_e fz_pathelkind;
 typedef struct fz_stroke_s fz_stroke;
 typedef struct fz_dash_s fz_dash;
 typedef union fz_pathel_s fz_pathel;
 
-enum fz_pathkind_e { FZ_STROKE, FZ_FILL, FZ_EOFILL };
-enum fz_pathelkind_e { FZ_MOVETO, FZ_LINETO, FZ_CURVETO, FZ_CLOSEPATH };
+typedef enum fz_pathkind_e
+{
+	FZ_STROKE,
+	FZ_FILL,
+	FZ_EOFILL
+} fz_pathkind;
+
+typedef enum fz_pathelkind_e
+{
+	FZ_MOVETO,
+	FZ_LINETO,
+	FZ_CURVETO,
+	FZ_CLOSEPATH
+} fz_pathelkind;
 
 struct fz_stroke_s
 {
@@ -19,7 +29,7 @@ struct fz_dash_s
 {
 	int len;
 	float phase;
-	float array[];
+	float array[FZ_FLEX];
 };
 
 union fz_pathel_s

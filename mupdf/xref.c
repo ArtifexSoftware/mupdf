@@ -293,7 +293,7 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 fz_error *
 pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 {
-	unsigned char buf[65536];	/* yeowch! */
+	char buf[65536];	/* yeowch! */
 
 	fz_error *error;
 	pdf_xrefentry *x;
@@ -317,8 +317,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 		if (n < 0)
 			return fz_ferror(xref->file);
 
-		error = pdf_parseindobj(&x->obj, xref->file, buf, sizeof buf,
-					&roid, &rgen, &x->stmofs);
+		error = pdf_parseindobj(&x->obj, xref->file, buf, sizeof buf, &roid, &rgen, &x->stmofs);
 		if (error)
 			return error;
 

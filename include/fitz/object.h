@@ -1,8 +1,6 @@
 typedef struct fz_obj_s fz_obj;
 
-typedef enum fz_objkind_e fz_objkind;
-
-enum fz_objkind_e
+typedef enum fz_objkind_e
 {
 	FZ_NULL,
 	FZ_BOOL,
@@ -13,8 +11,8 @@ enum fz_objkind_e
 	FZ_ARRAY,
 	FZ_DICT,
 	FZ_INDIRECT,
-	FZ_POINTER,
-};
+	FZ_POINTER
+} fz_objkind;
 
 struct fz_keyval_s
 {
@@ -33,9 +31,9 @@ struct fz_obj_s
 		float f;
 		struct {
 			unsigned short len;
-			unsigned char buf[];
+			char buf[1];
 		} s;
-		unsigned char n[1];
+		char n[1];
 		struct {
 			int len;
 			int cap;

@@ -389,7 +389,7 @@ fz_lookupcid(fz_cmap *cmap, int cpt)
 	return -1;
 }
 
-char *
+unsigned char *
 fz_decodecpt(fz_cmap *cmap, unsigned char *buf, int *cpt)
 {
 	int i, k;

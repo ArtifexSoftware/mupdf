@@ -124,7 +124,7 @@ fz_readbyte(fz_file *f)
 }
 
 int
-fz_read(fz_file *f, char *buf, int n)
+fz_read(fz_file *f, unsigned char *buf, int n)
 {
 	int i = 0;
 

@@ -22,5 +22,5 @@ fz_error *fz_addcidrange(fz_cmap *cmap, int srclo, int srchi, int dstlo);
 fz_error *fz_endcidrange(fz_cmap *cmap);
 
 int fz_lookupcid(fz_cmap *cmap, int cpt);
-char *fz_decodecpt(fz_cmap *cmap, unsigned char *s, int *cpt);
+unsigned char *fz_decodecpt(fz_cmap *cmap, unsigned char *s, int *cpt);
 

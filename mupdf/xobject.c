@@ -12,8 +12,6 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (!form)
 		return fz_outofmem;
 
-printf("loading xobject ");fz_debugobj(dict);printf("\n");
-
 	obj = fz_dictgets(dict, "BBox");
 	form->bbox.min.x = fz_toreal(fz_arrayget(obj, 0));
 	form->bbox.min.y = fz_toreal(fz_arrayget(obj, 1));
@@ -61,5 +59,4 @@ printf("loading xobject ");fz_debugobj(dict);printf("\n");
 	*formp = form;
 	return nil;
 }
-
 

@@ -48,10 +48,10 @@ pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 	mat->kind = PDF_MCOLOR;
 	mat->cs = cs;
 
-	mat->v[0] = 0;	// FIXME: default color
-	mat->v[1] = 0;	// FIXME: default color
-	mat->v[2] = 0;	// FIXME: default color
-	mat->v[3] = 1;	// FIXME: default color
+	mat->v[0] = 0;	/* FIXME: default color */
+	mat->v[1] = 0;	/* FIXME: default color */
+	mat->v[2] = 0;	/* FIXME: default color */
+	mat->v[3] = 1;	/* FIXME: default color */
 
 	if (!strcmp(cs->name, "Indexed"))
 	{
@@ -660,11 +660,6 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 		buf = fz_decodecpt(font->encoding, buf, &cpt);
 
 		cid = fz_lookupcid(font->encoding, cpt);
-
-//printf("gl %s %g [%g %g %g %g %g %g] cpt<%02x> cid %d h %d\n",
-//	font->super.name, size,
-//	csi->tm.a, csi->tm.b, csi->tm.c, csi->tm.d, csi->tm.e, csi->tm.f,
-//	cpt, cid, font->super.hadv[gid]);
 
 		error = showglyph(csi, cid);
 		if (error)

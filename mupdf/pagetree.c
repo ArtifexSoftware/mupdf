@@ -89,8 +89,6 @@ pdf_debugpagetree(pdf_pagetree *pages)
 		printf("    ");
 		fz_debugobj(pages->pref[i]);
 		printf("\t%% page %d\n", i + 1);
-		//fz_debugobj(stdout, pages->pobj[i]);
-		//printf("\n");
 	}
 	printf("  ]\n>>\n");
 }

@@ -96,8 +96,10 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 
 	if (pdf_findresource(xref->rpattern, ref))
 		return nil;
-//	if (pdf_findresource(xref->rshading, ref))
-//		return nil;
+/*
+	if (pdf_findresource(xref->rshading, ref))
+		return nil;
+*/
 
 	rsrc = fz_malloc(sizeof(pdf_rsrc));
 	if (!rsrc)
@@ -126,7 +128,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 
 	else if (fz_toint(type) == 2)
 	{
-		// load shading
+		/* load shading */
 		fz_dropobj(obj);
 		fz_free(rsrc);
 		return fz_throw("jeong was not here...");

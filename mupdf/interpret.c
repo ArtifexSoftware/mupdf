@@ -273,8 +273,6 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], nil);
 			if (error) return error;
-			// error = pdf_beginmarkedcontent(gstate, meta);
-			// if (error) { fz_dropnode(meta); return error; };
 			fz_insertnode(gstate->head, meta);
 		}
 
@@ -285,15 +283,11 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 				goto syntaxerror;
 			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
 			if (error) return error;
-			// error = pdf_beginmarkedcontent(gstate, meta);
-			// if (error) { fz_dropnode(meta); return error; };
 			fz_insertnode(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "EMC"))
 		{
-			// error = pdf_endmarkedcontent(gstate);
-			// if (error) return error;
 		}
 
 		else if (!strcmp(buf, "cm"))
@@ -743,13 +737,10 @@ fz_debugobj(rdb);
 
 		else if (!strcmp(buf, "d1"))
 		{
-printf("%g %g d0\n", fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
 		}
 
 		else
-fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
-			//return fz_throw("syntaxerror: unknown keyword '%s'", buf);
-			//if (!csi->xbalance) goto syntaxerror;
+			if (!csi->xbalance) goto syntaxerror;
 	}
 
 	else switch (buf[0])
@@ -999,9 +990,7 @@ fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
 		break;
 
 	default:
-fprintf(stderr, "syntaxerror: unknown keyword '%s'\n", buf);
-		//return fz_throw("syntaxerror: unknown keyword '%s'", buf);
-		//if (!csi->xbalance) goto syntaxerror;
+		if (!csi->xbalance) goto syntaxerror;
 	}
 
 	return nil;
@@ -1014,7 +1003,7 @@ fz_error *
 pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
 {
 	fz_error *error;
-	unsigned char buf[65536];
+	char buf[65536];
 	int token, len;
 
 	while (1)

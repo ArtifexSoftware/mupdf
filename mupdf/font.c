@@ -133,7 +133,6 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	FT_Set_Transform(face, &m, &v);
 
 	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
-	//fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
 	if (fterr)
 		return fz_throw("freetype failed to load glyph: 0x%x", fterr);
 
@@ -225,7 +224,14 @@ static void ftdropfont(fz_font *font)
 	pdf_font *pfont = (pdf_font*)font;
 	if (pfont->encoding)
 		fz_dropcmap(pfont->encoding);
-	// XXX free freetype face
+	if (pfont->tounicode)
+		fz_dropcmap(pfont->tounicode);
+	fz_free(pfont->cidtogid);
+	fz_free(pfont->cidtoucs);
+	if (pfont->ftface)
+		FT_Done_Face((FT_Face)pfont->ftface);
+	if (pfont->fontdata)
+		fz_dropbuffer(pfont->fontdata);
 }
 
 pdf_font *
@@ -795,10 +801,6 @@ printf("  cidtogidmap %d\n", len / 2);
 			if (error)
 				goto cleanup;
 
-//printf("  W2 ");
-//fz_debugobj(widths);
-//printf("\n");
-
 			for (i = 0; i < fz_arraylen(widths); )
 			{
 				c0 = fz_toint(fz_arrayget(widths, i));
@@ -840,8 +842,6 @@ printf("  cidtogidmap %d\n", len / 2);
 	FT_Set_Char_Size(face, 64, 64, 72, 72);
 
 printf("\n");
-
-//fz_debugfont((fz_font*)font);
 
 	return nil;
 

@@ -96,9 +96,6 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		scalecols(buf, dst->samples + oy * dst->w * n, dst->w, n, ydenom);
 	}
 
-//printf("unscaled image ");fz_debugpixmap(src);getchar();
-//printf("scaled image ");fz_debugpixmap(dst);getchar();
-
 	fz_free(buf);
 	*dstp = dst;
 	return nil;

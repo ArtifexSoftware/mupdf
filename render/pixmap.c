@@ -146,16 +146,14 @@ fz_blendmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 void
 fz_gammapixmap(fz_pixmap *pix, float gamma)
 {
-	int i;
 	unsigned char table[255];
-	for (i = 0; i < 256; i++)
-		table[i] = CLAMP(pow(i / 255.0, gamma) * 255.0, 0, 255);
 	int n = pix->w * pix->h * pix->n;
 	unsigned char *p = pix->samples;
+	int i;
+	for (i = 0; i < 256; i++)
+		table[i] = CLAMP(pow(i / 255.0, gamma) * 255.0, 0, 255);
 	while (n--)
-	{
 		*p = table[*p]; p++;
-	}
 }
 
 void
@@ -180,9 +178,6 @@ fz_debugpixmap(fz_pixmap *pix)
 				putc(r, ppm);
 				putc(g, ppm);
 				putc(b, ppm);
-				// putc(((r * a) / 255) + (255 - a), ppm);
-				// putc(((g * a) / 255) + (255 - a), ppm);
-				// putc(((b * a) / 255) + (255 - a), ppm);
 			}
 		fclose(ppm);
 		fclose(pgm);

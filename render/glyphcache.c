@@ -43,7 +43,7 @@ struct fz_val_s
 
 static unsigned int hashkey(fz_key *key)
 {
-	unsigned char *s = (char*)key;
+	unsigned char *s = (unsigned char*)key;
 	unsigned int hash = 0;
 	unsigned int i;
 	for (i = 0; i < sizeof(fz_key); i++)

@@ -19,9 +19,6 @@ void fz_insertnode(fz_node *parent, fz_node *child);
 
 /* node types */
 
-typedef enum fz_nodekind_e fz_nodekind;
-typedef enum fz_blendkind_e fz_blendkind;
-
 typedef struct fz_transformnode_s fz_transformnode;
 typedef struct fz_overnode_s fz_overnode;
 typedef struct fz_masknode_s fz_masknode;
@@ -34,7 +31,7 @@ typedef struct fz_shadenode_s fz_shadenode;
 typedef struct fz_linknode_s fz_linknode;
 typedef struct fz_metanode_s fz_metanode;
 
-enum fz_nodekind_e
+typedef enum fz_nodekind_e
 {
 	FZ_NTRANSFORM,
 	FZ_NOVER,
@@ -47,9 +44,9 @@ enum fz_nodekind_e
 	FZ_NSHADE,
 	FZ_NLINK,
 	FZ_NMETA
-};
+} fz_nodekind;
 
-enum fz_blendkind_e
+typedef enum fz_blendkind_e
 {
 	/* PDF 1.4 -- standard separable */
 	FZ_BNORMAL,
@@ -72,8 +69,8 @@ enum fz_blendkind_e
 	FZ_BLUMINOSITY,
 
 	FZ_BOVERPRINT,
-	FZ_BRASTEROP,
-};
+	FZ_BRASTEROP
+} fz_blendkind;
 
 struct fz_node_s
 {
@@ -113,7 +110,7 @@ struct fz_colornode_s
 	fz_node super;
 	fz_colorspace *cs;
 	int n;
-	float samples[];
+	float samples[FZ_FLEX];
 };
 
 struct fz_linknode_s

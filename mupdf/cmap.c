@@ -16,7 +16,7 @@ enum
 	TENDCIDRANGE,
 };
 
-static int tokenfromkeyword(unsigned char *key)
+static int tokenfromkeyword(char *key)
 {
     if (!strcmp(key, "usecmap")) return TUSECMAP;
     if (!strcmp(key, "begincodespacerange")) return TBEGINCODESPACERANGE;
@@ -40,7 +40,7 @@ static int codefromstring(unsigned char *buf, int len)
 	return a;
 }
 
-static int mylex(fz_file *file, unsigned char *buf, int n, int *sl)
+static int mylex(fz_file *file, char *buf, int n, int *sl)
 {
 	int token = pdf_lex(file, buf, n, sl);
 	if (token == PDF_TKEYWORD)
@@ -50,7 +50,7 @@ static int mylex(fz_file *file, unsigned char *buf, int n, int *sl)
 
 static fz_error *parsecmapname(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 
@@ -65,7 +65,7 @@ static fz_error *parsecmapname(fz_cmap *cmap, fz_file *file)
 
 static fz_error *parsewmode(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 
@@ -80,7 +80,7 @@ static fz_error *parsewmode(fz_cmap *cmap, fz_file *file)
 
 static fz_error *parsecodespacerange(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -115,7 +115,7 @@ static fz_error *parsecodespacerange(fz_cmap *cmap, fz_file *file)
 
 static fz_error *parsecidrange(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -156,7 +156,7 @@ cleanup:
 
 static fz_error *parsecidchar(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -191,7 +191,7 @@ cleanup:
 
 static fz_error *parsebfrange(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -233,7 +233,7 @@ cleanup:
 
 static fz_error *parsebfchar(fz_cmap *cmap, fz_file *file)
 {
-	unsigned char buf[256];
+	char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -272,8 +272,8 @@ pdf_parsecmap(fz_cmap **cmapp, fz_file *file)
 {
 	fz_error *error;
 	fz_cmap *cmap;
-	unsigned char key[64];
-	unsigned char buf[256];
+	char key[64];
+	char buf[256];
 	int token;
 	int len;
 

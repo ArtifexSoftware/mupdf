@@ -11,14 +11,6 @@ enum
 	SH1, SH2	/* in H part 1 and 2 (both makeup and terminating codes) */
 };
 
-#define DEBUG 1
-
-#ifdef noDEBUG
-#define DPRINT(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define DPRINT(...)
-#endif
-
 /* TODO: uncompressed */
 
 typedef struct fz_faxd_s fz_faxd;
@@ -105,11 +97,6 @@ fz_newfaxd(fz_filter **fp, fz_obj *params)
 	memset(fax->ref, 0, fax->stride);
 	memset(fax->dst, 0, fax->stride);
 
-	DPRINT("FAXD k=%d eol=%d eba=%d cols=%d rows=%d eob=%d black1=%d stride=%d\n",
-		fax->k, fax->endofline, fax->encodedbytealign,
-		fax->columns, fax->rows, fax->endofblock, fax->blackis1,
-		fax->stride);
-
 	return nil;
 }
 
@@ -175,8 +162,6 @@ dec1d(fz_faxd *fax)
 	else
 		code = getcode(fax, cf_white_decode, cfd_white_initial_bits);
 
-	DPRINT("%c %d\n", fax->c?'b':'w', code);
-
 	if (code == UNCOMPRESSED)
 		return fz_throw("ioerror: uncompressed data in faxd");
 
@@ -218,8 +203,6 @@ dec2d(fz_faxd *fax)
 		else
 			code = getcode(fax, cf_white_decode, cfd_white_initial_bits);
 
-		DPRINT("%c %d\n", fax->c ? 'b' : 'w', code);
-
 		if (code == UNCOMPRESSED)
 			return fz_throw("ioerror: uncompressed data in faxd");
 
@@ -252,20 +235,17 @@ dec2d(fz_faxd *fax)
 	{
 		case H:
 			fax->stage = SH1;
-			DPRINT("H\n");
 			break;
 
 		case P:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
 			b2 = findchanging(fax->ref, b1, fax->columns);
-			DPRINT("P\n");
 			if (fax->c) setbits(fax->dst, fax->a, b2);
 			fax->a = b2;
 			break;
 
 		case V0:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("V0\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1);
 			fax->a = b1;
 			fax->c = !fax->c;
@@ -273,7 +253,6 @@ dec2d(fz_faxd *fax)
 
 		case VR1:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VR1\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 + 1);
 			fax->a = b1 + 1;
 			fax->c = !fax->c;
@@ -281,7 +260,6 @@ dec2d(fz_faxd *fax)
 
 		case VR2:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VR2\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 + 2);
 			fax->a = b1 + 2;
 			fax->c = !fax->c;
@@ -289,7 +267,6 @@ dec2d(fz_faxd *fax)
 
 		case VR3:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VR3\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 + 3);
 			fax->a = b1 + 3;
 			fax->c = !fax->c;
@@ -297,7 +274,6 @@ dec2d(fz_faxd *fax)
 
 		case VL1:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VL1\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 - 1);
 			fax->a = b1 - 1;
 			fax->c = !fax->c;
@@ -305,7 +281,6 @@ dec2d(fz_faxd *fax)
 
 		case VL2:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VL2\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 - 2);
 			fax->a = b1 - 2;
 			fax->c = !fax->c;
@@ -313,7 +288,6 @@ dec2d(fz_faxd *fax)
 
 		case VL3:
 			b1 = findchangingcolor(fax->ref, fax->a, fax->columns, !fax->c);
-			DPRINT("VL3\n");
 			if (fax->c) setbits(fax->dst, fax->a, b1 - 3);
 			fax->a = b1 - 3;
 			fax->c = !fax->c;
@@ -346,14 +320,17 @@ loop:
 
 	if (fillbits(fax, in))
 	{
-		if (in->eof) {
-			if (fax->bidx > 31) {
+		if (in->eof)
+		{
+			if (fax->bidx > 31)
+			{
 				if (fax->a > 0)
 					goto eol;
 				goto rtc;
 			}
 		}
-		else {
+		else
+		{
 			return fz_ioneedin;
 		}
 	}
@@ -366,17 +343,16 @@ loop:
 
 	if ((fax->word >> (32 - 12)) == 1)
 	{
-		DPRINT("EOL\n");
 		eatbits(fax, 12);
 		fax->eolc ++;
 
-		if (fax->k > 0) {
+		if (fax->k > 0)
+		{
 			if ((fax->word >> (32 - 1)) == 1)
 				fax->dim = 1;
 			else
 				fax->dim = 2;
 			eatbits(fax, 1);
-			DPRINT("DIM %d\n", fax->dim);
 		}
 	}
 	else if (fax->dim == 1)
@@ -428,7 +404,8 @@ eol:
 	fax->a = -1;
 	fax->ridx ++;
 
-	if (!fax->endofblock && fax->rows) {
+	if (!fax->endofblock && fax->rows)
+	{
 		if (fax->ridx >= fax->rows)
 			goto rtc;
 	}
@@ -442,10 +419,9 @@ eol:
 			fax->dim = 2;
 	}
 
-	DPRINT("%dd scanline %d\n", fax->dim, fax->ridx + 1);
-
 	/* if endofline & encodedbytealign, EOLs are *not* optional */
-	if (fax->encodedbytealign) {
+	if (fax->encodedbytealign)
+	{
 		if (fax->endofline)
 			eatbits(fax, (12 - fax->bidx) & 7);
 		else
@@ -455,7 +431,6 @@ eol:
 	goto loop;
 
 rtc:
-	DPRINT("RTC\n");
 	out->eof = 1;
 	return fz_iodone;
 }

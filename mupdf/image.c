@@ -81,15 +81,6 @@ decodetile(fz_pixmap *pix, int bpc, int skip, float *decode)
 	float invtwon = 1.0 / ((1 << bpc) - 1);
 	int x, y, k, i;
 
-printf("  decode bpc=%d skip=%d n=%d invtwon=%g\n", bpc, skip, pix->n, invtwon);
-
-	for (k = skip; k < pix->n; k++)
-	{
-		float min = decode[(k - skip) * 2 + 0];
-		float max = decode[(k - skip) * 2 + 1];
-		printf("    k=%d min=%g max=%g\n", k, min, max);
-	}
-
 	for (i = 0; i < (1 << bpc); i++)
 	{
 		if (skip)
@@ -140,8 +131,8 @@ loadtile(fz_image *img, fz_pixmap *tile)
 		switch (src->bpc)
 		{
 		case 1: loadtile1(src, tmp, 1); break;
-	//	case 2: loadtile2(src, tmp, 1); break;
-	//	case 4: loadtile4(src, tmp, 1); break;
+	/*	case 2: loadtile2(src, tmp, 1); break; */
+	/*	case 4: loadtile4(src, tmp, 1); break; */
 		case 8: loadtile8(src, tmp, 1); break;
 		default:
 			return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -173,8 +164,8 @@ printf("  unpack n=%d\n", tile->n);
 			switch (src->bpc)
 			{
 			case 1: loadtile1(src, tile, img->n + img->a); break;
-		//	case 2: loadtile2(src, tile, img->n + img->a); break;
-		//	case 4: loadtile4(src, tile, img->n + img->a); break;
+		/*	case 2: loadtile2(src, tile, img->n + img->a); break; */
+		/*	case 4: loadtile4(src, tile, img->n + img->a); break; */
 			case 8: loadtile8(src, tile, img->n + img->a); break;
 			default:
 				return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -185,8 +176,8 @@ printf("  unpack n=%d\n", tile->n);
 			switch (src->bpc)
 			{
 			case 1: loadtile1a(src, tile, img->n); break;
-		//	case 2: loadtile2a(src, tile, img->n); break;
-		//	case 4: loadtile4a(src, tile, img->n); break;
+		/*	case 2: loadtile2a(src, tile, img->n); break; */
+		/*	case 4: loadtile4a(src, tile, img->n); break; */
 			case 8: loadtile8a(src, tile, img->n); break;
 			default:
 				return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
@@ -214,8 +205,6 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_file *fil
 	img = *imgp = fz_malloc(sizeof(pdf_image));
 	if (!img)
 		return fz_outofmem;
-
-printf("inline image ");fz_debugobj(dict);printf("\n");
 
 	img->super.loadtile = loadtile;
 	img->super.drop = pdf_dropimage;
@@ -247,7 +236,6 @@ printf("inline image ");fz_debugobj(dict);printf("\n");
 		img->super.a = 0;
 		if (!strcmp(img->super.cs->name, "Indexed"))
 		{
-printf("  indexed!\n");
 			img->indexed = (pdf_indexed*)img->super.cs;
 			img->super.cs = img->indexed->base;
 		}
@@ -255,7 +243,6 @@ printf("  indexed!\n");
 
 	if (fz_isarray(d))
 	{
-printf("  decode array!\n");
 		if (img->indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = fz_toreal(fz_arrayget(d, i));
@@ -303,14 +290,10 @@ printf("  decode array!\n");
 		if (error)
 			return error;
 
-printf("  nullfilter %d\n", img->super.h * img->stride);
-
 		i = fz_read(file, img->samples->bp, img->super.h * img->stride);
 		error = fz_ferror(file);
 		if (error)
 			return error;
-
-printf("  read %d\n", i);
 
 		img->samples->wp += img->super.h * img->stride;
 	}
@@ -345,8 +328,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_indexed *indexed = nil;
 	int stride;
 
-printf("loading image "); fz_debugobj(dict); printf("\n");
-
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
 		return fz_outofmem;
@@ -358,8 +339,6 @@ printf("loading image "); fz_debugobj(dict); printf("\n");
 	w = fz_toint(fz_dictgets(dict, "Width"));
 	h = fz_toint(fz_dictgets(dict, "Height"));
 	bpc = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
-
-printf("  geometry %d x %d @ %d\n", w, h, bpc);
 
 	cs = nil;
 	obj = fz_dictgets(dict, "ColorSpace");
@@ -375,7 +354,6 @@ printf("  geometry %d x %d @ %d\n", w, h, bpc);
 
 		if (!strcmp(cs->name, "Indexed"))
 		{
-printf("  indexed!\n");
 			indexed = (pdf_indexed*)cs;
 			cs = indexed->base;
 		}
@@ -394,7 +372,6 @@ printf("  indexed!\n");
 	ismask = fz_tobool(fz_dictgets(dict, "ImageMask"));
 	if (ismask)
 	{
-printf("  image mask!\n");
 		bpc = 1;
 		n = 0;
 		a = 1;
@@ -453,7 +430,6 @@ printf("  image mask!\n");
 	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
-printf("  decode array!\n");
 		if (indexed)
 			for (i = 0; i < 2; i++)
 				img->decode[i] = fz_toreal(fz_arrayget(obj, i));
@@ -503,17 +479,6 @@ printf("  decode array!\n");
 		for (p = img->samples->bp; p < img->samples->ep; p++)
 			*p = ~*p;
 	}
-
-if (indexed)
-printf("  decode [ %g %g ]\n", img->decode[0], img->decode[1]);
-else
-{
-printf("  decode [ ");
-for (i = 0; i < (n + a) * 2; i++)
-printf("%g ", img->decode[i]);
-printf("]\n");
-printf("\n");
-}
 
 	/*
 	 * Create image object

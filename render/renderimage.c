@@ -149,15 +149,18 @@ fz_renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 	int h = image->h;
 	int n = image->n;
 	int a = image->a;
+	int dx, dy;
+	fz_rect bbox;
+	fz_irect r;
 
 	float sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
 	float sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
 
-	int dx = 1;
+	dx = 1;
 	while ( ( (w + dx - 1) / dx ) / sx > 2.0 && (w+dx-1)/dx > 1)
 		dx++;
 
-	int dy = 1;
+	dy = 1;
 	while ( ( (h + dy - 1) / dy ) / sy > 2.0 && (h+dy-1)/dy > 1)
 		dy++;
 
@@ -167,24 +170,30 @@ printf("renderimage s=%gx%g/%dx%d d=%d,%d\n", sx, sy, w, h, dx, dy);
 
 printf("  load tile %d x %d\n", w, h);
 	error = image->loadtile(image, tile1);
-//fz_debugpixmap(tile1);getchar();
 
 	if (dx != 1 || dy != 1)
 	{
 printf("  scale tile 1/%d x 1/%d\n", dx, dy);
-//		fz_gammapixmap(tile1, 1.0 / GAMMA);
+/*		fz_gammapixmap(tile1, 1.0 / GAMMA); */
 		error = fz_scalepixmap(&tile2, tile1, dx, dy);
-//		fz_gammapixmap(tile2, GAMMA);
+/*		fz_gammapixmap(tile2, GAMMA); */
 		fz_droppixmap(tile1);
 	}
 	else
 		tile2 = tile1;
 
+	bbox.min.x = 0;
+	bbox.min.y = 0;
+	bbox.max.x = 1;
+	bbox.max.y = 1;
+	bbox = fz_transformaabb(ctm, bbox);
+	r = fz_intersectirects(fz_roundrect(bbox), gc->clip);
+
 	/* render image mask */
 	if (n == 0 && a == 1)
 	{
 printf("  draw image mask\n");
-		error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
+		error = fz_newpixmap(&gc->tmp, r.min.x, r.min.y, r.max.x - r.min.x, r.max.y - r.min.y, 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile2, ctm, 0);
 	}
@@ -215,17 +224,8 @@ printf("  draw image rgb over after cs transform\n");
 printf("  draw image after cs transform\n");
 		error = fz_newpixmap(&tile3, tile2->x, tile2->y, tile2->w, tile2->h, gc->model->n + 1);
 		fz_convertpixmap(cs, tile2, gc->model, tile3);
-		fz_rect bbox = fz_boundnode((fz_node*)node, ctm);
-		fz_irect aabb;
-		aabb.min.x = fz_floor(bbox.min.x) - 1;
-		aabb.min.y = fz_floor(bbox.min.y) - 1;
-		aabb.max.x = fz_ceil(bbox.max.x) + 1;
-		aabb.max.y = fz_ceil(bbox.max.y) + 1;
-		aabb = fz_intersectirects(aabb, (fz_irect){{gc->x,gc->y},{gc->x+gc->w,gc->y+gc->h}});
-		error = fz_newpixmap(&gc->tmp,
-					aabb.min.x, aabb.min.y, 
-					aabb.max.x - aabb.min.x, aabb.max.y - aabb.min.y,
-					gc->model->n + 1);
+		error = fz_newpixmap(&gc->tmp, r.min.x, r.min.y,
+					r.max.x - r.min.x, r.max.y - r.min.y, gc->model->n + 1);
 		fz_clearpixmap(gc->tmp);
 		error = drawtile(gc, gc->tmp, tile3, ctm, 0);
 		fz_droppixmap(tile3);

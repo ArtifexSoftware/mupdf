@@ -35,7 +35,7 @@ enum
 {
 	ERROR = -1,
 	ZEROS = -2, /* EOL follows, possibly with more padding first */
-	UNCOMPRESSED = -3,
+	UNCOMPRESSED = -3
 };
 
 /* semantic codes for cf_2d_decode */
@@ -49,7 +49,7 @@ enum
 	V0 = 3,
 	VL1 = 4,
 	VL2 = 5,
-	VL3 = 6,
+	VL3 = 6
 };
 
 /* Decoding tables */

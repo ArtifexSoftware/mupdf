@@ -1,6 +1,5 @@
 #include <fitz.h>
 
-// enum { HS = 1, VS = 1, SF = 255 };
 enum { HS = 17, VS = 15, SF = 1 };
 
 static fz_error *pathtogel(fz_gel *gel, fz_pathnode *path, fz_matrix ctm)
@@ -101,7 +100,7 @@ fz_rendercolorpath(fz_renderer *gc, fz_pathnode *path, fz_colornode *color, fz_m
 
 	fz_scanconvert(gc->gel, gc->ael,
 		path->paint == FZ_EOFILL,
-		gc->y, gc->y + gc->h,
+		gc->clip.min.y, gc->clip.max.y,
 		blitcolorspan, gc);
 
 	return nil;
@@ -111,6 +110,7 @@ fz_error *
 fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 {
 	fz_error *error;
+	fz_irect bbox;
 
 	fz_resetgel(gc->gel, HS, VS);
 
@@ -120,7 +120,13 @@ fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 	fz_sortgel(gc->gel);
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
+	bbox = fz_boundgel(gc->gel);
+	bbox = fz_intersectirects(bbox, gc->clip);
+
+	error = fz_newpixmap(&gc->tmp,
+		bbox.min.x, bbox.min.y,
+		bbox.max.x - bbox.min.x,
+		bbox.max.y - bbox.min.y, 1);
 	if (error)
 		return error;
 
@@ -128,7 +134,7 @@ fz_renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 	fz_scanconvert(gc->gel, gc->ael,
 		path->paint == FZ_EOFILL,
-		gc->y, gc->y + gc->h,
+		gc->clip.min.y, gc->clip.max.y,
 		blitalphaspan, gc->tmp);
 
 	return nil;

@@ -52,9 +52,6 @@ fz_dropnode(fz_node *node)
 	case FZ_NIMAGE:
 		fz_dropimagenode((fz_imagenode *) node);
 		break;
-	case FZ_NSHADE:
-		// XXX fz_dropshadenode((fz_shadenode *) node);
-		break;
 	case FZ_NLINK:
 		fz_droplinknode((fz_linknode *) node);
 		break;
@@ -87,8 +84,6 @@ fz_boundnode(fz_node *node, fz_matrix ctm)
 		return fz_boundtextnode((fz_textnode *) node, ctm);
 	case FZ_NIMAGE:
 		return fz_boundimagenode((fz_imagenode *) node, ctm);
-	case FZ_NSHADE:
-		// XXX return fz_boundshadenode((fz_shadenode *) node, ctm);
 	case FZ_NLINK:
 		return fz_boundlinknode((fz_linknode *) node, ctm);
 	case FZ_NMETA:

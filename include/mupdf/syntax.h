@@ -20,10 +20,10 @@ enum
 int pdf_lex(fz_file *f, unsigned char *buf, int n, int *len);
 
 /* parse.c */
-fz_error *pdf_parsearray(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
-fz_error *pdf_parsedict(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
-fz_error *pdf_parsestmobj(fz_obj **op, fz_file *f, unsigned char *buf, int cap);
-fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, unsigned char *buf, int cap, int *oid, int *gid, int *stmofs);
+fz_error *pdf_parsearray(fz_obj **op, fz_file *f, char *buf, int cap);
+fz_error *pdf_parsedict(fz_obj **op, fz_file *f, char *buf, int cap);
+fz_error *pdf_parsestmobj(fz_obj **op, fz_file *f, char *buf, int cap);
+fz_error *pdf_parseindobj(fz_obj **op, fz_file *f, char *buf, int cap, int *oid, int *gid, int *stmofs);
 
 /*
  * Encryption

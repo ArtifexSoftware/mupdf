@@ -14,7 +14,6 @@ shadings
 	- ... jeong ...
 
 rendering
-	- aabb-bounded temp buffers
 	- save non-transformed bbox in nodes
 	- explicit mask field in fz_renderer .. general cleanup
 	- merge gka optims
@@ -28,6 +27,7 @@ parser
 	- tounicode
 
 clean up
+	- make source ansi c89 / pedantic
 	- reference count everything
 	- standard cleanup mechanism
 	- naming conventions (fz_new/renew)

@@ -33,7 +33,7 @@ loadversion(pdf_xref *xref)
 static fz_error *
 readstartxref(pdf_xref *xref)
 {
-	unsigned char buf[1024];
+	char buf[1024];
 	int t, n;
 	int i;
 
@@ -69,7 +69,7 @@ readstartxref(pdf_xref *xref)
  */
 
 static fz_error *
-readoldtrailer(pdf_xref *xref, unsigned char *buf, int cap)
+readoldtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	int ofs, len;
 	char *s;
@@ -113,13 +113,13 @@ readoldtrailer(pdf_xref *xref, unsigned char *buf, int cap)
 }
 
 static fz_error *
-readnewtrailer(pdf_xref *xref, unsigned char *buf, int cap)
+readnewtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	return pdf_parseindobj(&xref->trailer, xref->file, buf, cap, nil, nil, nil);
 }
 
 static fz_error *
-readtrailer(pdf_xref *xref, unsigned char *buf, int cap)
+readtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	int n;
 	int c;
@@ -142,7 +142,7 @@ readtrailer(pdf_xref *xref, unsigned char *buf, int cap)
  */
 
 static fz_error *
-readoldxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
+readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
 	int ofs, len;
 	char *s;
@@ -194,7 +194,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
 }
 
 static fz_error *
-readnewxref(fz_obj **trailerp, pdf_xref *xref, unsigned char *buf, int cap)
+readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
 	fz_error *error;
 	fz_obj *trailer;
@@ -295,7 +295,7 @@ cleanup:
 }
 
 static fz_error *
-readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, unsigned char *buf, int cap)
+readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 {
 	int n;
 	int c;
@@ -314,7 +314,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, unsigned char *buf, int cap
 }
 
 static fz_error *
-readxrefsections(pdf_xref *xref, int ofs, unsigned char *buf, int cap)
+readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 {
 	fz_error *error;
 	fz_obj *trailer;
@@ -355,7 +355,7 @@ cleanup:
  */
 
 fz_error *
-pdf_loadobjstm(pdf_xref *xref, int oid, int gen, unsigned char *buf, int cap)
+pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 {
 	fz_error *error;
 	fz_obj *objstm;
@@ -458,7 +458,7 @@ pdf_openpdf(pdf_xref **xrefp, char *filename)
 	fz_obj *size;
 	int i;
 
-	unsigned char buf[65536];	/* yeowch! */
+	char buf[65536];	/* yeowch! */
 
 	xref = fz_malloc(sizeof(pdf_xref));
 	if (!xref)

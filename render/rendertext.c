@@ -61,8 +61,14 @@ fz_rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	float x, y;
 	int g, i, ix, iy;
 	fz_matrix tm, trm;
+	fz_irect bbox;
 
-	error = fz_newpixmap(&gc->tmp, gc->x, gc->y, gc->w, gc->h, 1);
+	bbox = fz_roundrect(fz_boundnode((fz_node*)text, ctm));
+	bbox = fz_intersectirects(gc->clip, bbox);
+
+	error = fz_newpixmap(&gc->tmp,
+				bbox.min.x, bbox.min.y,
+				bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, 1);
 	if (error)
 		return error;
 

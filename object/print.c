@@ -73,7 +73,7 @@ static void fmtstr(struct fmt *fmt, fz_obj *obj)
 	fmtputc(fmt, '(');
 	for (i = 0; i < obj->u.s.len; i++)
 	{
-		c = obj->u.s.buf[i];
+		c = (unsigned char) obj->u.s.buf[i];
 		if (c == '\n')
 			fmtputs(fmt, "\\n");
 		else if (c == '\r')
@@ -93,9 +93,6 @@ static void fmtstr(struct fmt *fmt, fz_obj *obj)
 			fmtputc(fmt, '\\');
 			sprintf(buf, "%o", c);
 			fmtputs(fmt, buf);
-			//fmtputc(fmt, ((c >> 6) & 7) + '0');
-			//fmtputc(fmt, ((c >> 3) & 7) + '0');
-			//fmtputc(fmt, ((c) & 7) + '0');
 		}
 		else
 			fmtputc(fmt, c);
@@ -106,13 +103,15 @@ static void fmtstr(struct fmt *fmt, fz_obj *obj)
 static void fmthex(struct fmt *fmt, fz_obj *obj)
 {
 	int i;
+	int b;
 	int c;
 
 	fmtputc(fmt, '<');
 	for (i = 0; i < obj->u.s.len; i++) {
-		c = (obj->u.s.buf[i] >> 4) & 0x0f;
+		b = (unsigned char) obj->u.s.buf[i];
+		c = (b >> 4) & 0x0f;
 		fmtputc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
-		c = (obj->u.s.buf[i]) & 0x0f;
+		c = (b) & 0x0f;
 		fmtputc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
 	}
 	fmtputc(fmt, '>');

@@ -75,7 +75,7 @@ static int dowrite(fz_buffer *b, int fd)
 }
 
 int
-fz_write(fz_file *f, char *buf, int n)
+fz_write(fz_file *f, unsigned char *buf, int n)
 {
 	fz_error *reason;
 	int i = 0;

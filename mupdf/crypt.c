@@ -152,7 +152,7 @@ createobjkey(pdf_crypt *crypt, unsigned oid, unsigned gid, unsigned char *key)
  * Algorithm 3.2 Computing an encryption key
  */
 static void
-createkey(pdf_crypt *crypt, unsigned char *userpw)
+createkey(pdf_crypt *crypt, char *userpw)
 {
 	unsigned char buf[32];
 	fz_md5 md5;

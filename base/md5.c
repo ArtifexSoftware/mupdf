@@ -31,7 +31,7 @@ enum
 	S11 = 7, S12 = 12, S13 = 17, S14 = 22,
 	S21 = 5, S22 = 9,  S23 = 14, S24 = 20,
 	S31 = 4, S32 = 11, S33 = 16, S34 = 23,
-	S41 = 6, S42 = 10, S43 = 15, S44 = 21,
+	S41 = 6, S42 = 10, S43 = 15, S44 = 21
 };
 
 static void encode(unsigned char *, unsigned long *, unsigned);

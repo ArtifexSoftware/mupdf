@@ -14,11 +14,17 @@
 #include <errno.h>
 #include <fcntl.h>	/* O_RDONLY & co */
 
-#ifdef _ISOC99_SOURCE
-#elif __GNUC__
-#define restrict __restrict__
+#ifdef HAVE_C99
+
+#define FZ_FLEX
+
 #else
+
+#define FZ_FLEX 0
 #define restrict
+#define inline __inline__
+#define va_copy(a,b) (a) = (b)
+
 #endif
 
 #ifdef WIN32
@@ -50,7 +56,10 @@
 
 #else
 
+#ifndef O_BINARY
 #define O_BINARY 0
+#endif
+
 #include <unistd.h>
 
 #endif
