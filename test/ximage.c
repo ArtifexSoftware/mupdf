@@ -72,56 +72,62 @@ static struct
 
 	int useshm;
 	XImage *pool[POOLSIZE];
+	/* MUST exist during the lifetime of the shared ximage according to the
+	   xc/doc/hardcopy/Xext/mit-shm.PS.gz */
+	XShmSegmentInfo shminfo[POOLSIZE];
 	int lastused;
 } info;
 
 static XImage *
-createximage(Display *dpy, Visual *vis, int depth, int w, int h)
+createximage(Display *dpy, Visual *vis, XShmSegmentInfo *xsi,
+	     int depth, int w, int h)
 {
 	XImage *img;
-	XShmSegmentInfo xsi;
 	Status status;
 
-// XXX
-goto fallback;
+	if (!XShmQueryExtension(dpy)) goto fallback;
 
-	img = XShmCreateImage(dpy, vis, depth, ZPixmap, 0, &xsi, w, h);
+	img = XShmCreateImage(dpy, vis, depth, ZPixmap, nil, xsi, w, h);
 	if (!img)
 	{
 		fprintf(stderr, "warn: could not XShmCreateImage\n");
 		goto fallback;
 	}
 
-	xsi.shmid = shmget(IPC_PRIVATE,
-						img->bytes_per_line * img->height,
-						IPC_CREAT | 0777);
-	if (xsi.shmid < 0)
+	xsi->shmid = shmget(IPC_PRIVATE,
+			    img->bytes_per_line * img->height,
+			    IPC_CREAT | 0777);
+	if (xsi->shmid < 0)
 	{
+		XDestroyImage(img);
 		fprintf(stderr, "warn: could not shmget\n");
 		goto fallback;
 	}
 
-	img->data = xsi.shmaddr = shmat(xsi.shmid, 0, 0);
+	img->data = xsi->shmaddr = shmat(xsi->shmid, 0, 0);
 	if (img->data == (char*)-1)
 	{
+		XDestroyImage(img);
 		fprintf(stderr, "warn: could not shmat\n");
 		goto fallback;
 	}
 
-	xsi.readOnly = False;
-	status = XShmAttach(dpy, &xsi);
+	xsi->readOnly = False;
+	status = XShmAttach(dpy, xsi);
 	if (!status)
 	{
+		shmdt(xsi->shmaddr);
+		XDestroyImage(img);
 		fprintf(stderr, "warn: could not XShmAttach\n");
 		goto fallback;
 	}
 
 	XSync(dpy, False);
 
-	shmctl(xsi.shmid, IPC_RMID, 0);
+	shmctl(xsi->shmid, IPC_RMID, 0);
 
-printf("make xshm w=%d h=%d id=%d data=%p\n",
-	w, h, xsi.shmid, xsi.shmaddr);
+	printf("make xshm w=%d h=%d id=%d data=%p\n",
+	       w, h, xsi->shmid, xsi->shmaddr);
 
 	return img;
 
@@ -192,7 +198,7 @@ select_mode(void)
 	unsigned long rs, gs, bs;
 
 	byteorder = ImageByteOrder(info.display);
-#if BYTE_ORDER == BIG_ENDIAN 
+#if BYTE_ORDER == BIG_ENDIAN
 	byterev = byteorder != MSBFirst;
 #else
 	byterev = byteorder != LSBFirst;
@@ -260,7 +266,7 @@ create_pool(void)
 
 	for (i = 0; i < POOLSIZE; i++) {
 		info.pool[i] = createximage(info.display,
-                    info.visual.visual, info.visual.depth,
+                    info.visual.visual, &info.shminfo[i], info.visual.depth,
 					WIDTH, HEIGHT);
 		if (info.pool[i] == nil) {
 			return 0;
@@ -409,11 +415,18 @@ ximage_blit(Drawable d, GC gc,
 /*
  *
  */
+#ifndef _C99
+#ifdef __GNUC__
+#define restrict __restrict__
+#else
+#define restrict
+#endif
+#endif
 
 #define PARAMS \
-	 const unsigned char * src, \
+	 const unsigned char * restrict src, \
 	 int srcstride, \
-	 unsigned char * dst, \
+	 unsigned char * restrict dst, \
 	 int dststride, \
 	 int w, \
 	 int h
@@ -426,15 +439,14 @@ static void
 ximage_convert_argb8888(PARAMS)
 {
 	int x, y;
+	unsigned *s = (unsigned *)src;
+	unsigned *d = (unsigned *)dst;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
-			dst[x * 4 + 0] = src[x * 4 + 0];
-			dst[x * 4 + 1] = src[x * 4 + 1];
-			dst[x * 4 + 2] = src[x * 4 + 2];
-			dst[x * 4 + 3] = src[x * 4 + 3];
+			d[x] = s[x];
 		}
-		dst += dststride;
-		src += srcstride;
+		d += dststride>>2;
+		s += srcstride>>2;
 	}
 }
 
@@ -442,17 +454,24 @@ static void
 ximage_convert_bgra8888(PARAMS)
 {
 	int x, y;
+	unsigned *s = (unsigned *)src;
+	unsigned *d = (unsigned *)dst;
+	unsigned val;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
-			dst[x * 4 + 0] = src[x * 4 + 3];
-			dst[x * 4 + 1] = src[x * 4 + 2];
-			dst[x * 4 + 2] = src[x * 4 + 1];
-			dst[x * 4 + 3] = src[x * 4 + 0];
+			val = s[x];
+			d[x] =
+				(((val >> 24) & 0xff) <<  0) |
+				(((val >> 16) & 0xff) <<  8) |
+				(((val >>  8) & 0xff) << 16) |
+				(((val >>  0) & 0xff) << 24);
 		}
-		dst += dststride;
-		src += srcstride;
+		d += dststride>>2;
+		s += srcstride>>2;
 	}
 }
+
+/* following have yet to recieve some MMX love ;-) */
 
 static void
 ximage_convert_abgr8888(PARAMS)
@@ -485,8 +504,6 @@ ximage_convert_rgba8888(PARAMS)
 		src += srcstride;
 	}
 }
-
-/* bgr/rgb have yet to recieve some MMX love ;-) */
 
 static void
 ximage_convert_bgr888(PARAMS)
@@ -551,7 +568,7 @@ ximage_convert_rgb565_br(PARAMS)
 			/* final word is:
 			   g4 g3 g2 b7 b6 b5 b4 b3  r7 r6 r5 r4 r3 g7 g6 g5
 			 */
-			((unsigned short *)dst)[x] = 
+			((unsigned short *)dst)[x] =
 				(r & 0xF8) |
 				((g & 0xE0) >> 5) |
 				((g & 0x1C) << 11) |
@@ -572,7 +589,7 @@ ximage_convert_rgb555(PARAMS)
 			r = src[4*x + 1];
 			g = src[4*x + 2];
 			b = src[4*x + 3];
-			((unsigned short *)dst)[x] = 
+			((unsigned short *)dst)[x] =
 				((r & 0xF8) << 7) |
 				((g & 0xF8) << 2) |
 				(b >> 3);
@@ -595,7 +612,7 @@ ximage_convert_rgb555_br(PARAMS)
 			/* final word is:
 			   g5 g4 g3 b7 b6 b5 b4 b3  0 r7 r6 r5 r4 r3 g7 g6
 			 */
-			((unsigned short *)dst)[x] = 
+			((unsigned short *)dst)[x] =
 				((r & 0xF8) >> 1) |
 				((g & 0xC0) >> 6) |
 				((g & 0x38) << 10) |
@@ -637,4 +654,3 @@ ximage_convert_func_t ximage_convert_funcs[] = {
 	ximage_convert_rgb555_br,
 	ximage_convert_bgr233,
 };
-
