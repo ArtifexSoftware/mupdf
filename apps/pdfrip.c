@@ -6,10 +6,19 @@ float zoom = 1.0;
 char *namefmt = nil;
 fz_renderer *gc;
 int nbands = 1;
+int verbose = 0;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfrip [-d] [-b bands] [-o out-%%02d.ppm] [-p password] [-z zoom] file.pdf pages...\n");
+	fprintf(stderr,
+"usage: pdfrip [options] file.pdf pageranges\n"
+"  -b -\trender page in N bands (default 1)\n"
+"  -d -\tpassword for decryption\n"
+"  -o -\toutput filename format (default out-%%03d.ppm)\n"
+"  -t  \tshow display tree\n"
+"  -v  \tverbose\n"
+"  -z -\tzoom factor (default 1.0 = 72 dpi)\n"
+	);
 	exit(1);
 }
 
@@ -30,6 +39,9 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 	int x, y;
 	int w, h;
 	int b, bh;
+
+	if (verbose)
+		printf("page %d\n", pagenum);
 
 	sprintf(namebuf, namefmt, pagenum);
 
@@ -81,7 +93,8 @@ void showpage(pdf_xref *xref, fz_obj *pageobj, int pagenum)
 
 	for (b = 0; b < nbands; b++)
 	{
-		printf("band %d / %d\n", b, nbands);
+		if (verbose)
+			printf("render band %d of %d\n", b + 1, nbands);
 
 		memset(pix->samples, 0xff, pix->w * pix->h * 4);
 
@@ -119,20 +132,20 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	pdf_pagetree *pages;
 	int c;
-	static char namebuf[256];
 
 	char *password = "";
 
 	fz_cpudetect();
 	fz_accelerate();
 
-	while ((c = getopt(argc, argv, "dz:p:o:b:")) != -1)
+	while ((c = getopt(argc, argv, "Vtvz:d:o:b:")) != -1)
 	{
 		switch (c)
 		{
-		case 'p': password = optarg; break;
+		case 't': ++showtree; break;
+		case 'v': ++verbose; break;
+		case 'd': password = optarg; break;
 		case 'z': zoom = atof(optarg); break;
-		case 'd': ++showtree; break;
 		case 'o': namefmt = optarg; break;
 		case 'b': nbands = atoi(optarg); break;
 		default: usage();
@@ -146,6 +159,10 @@ int main(int argc, char **argv)
 
 	if (!namefmt)
 	{
+#if 1
+		namefmt = "out-%03d.ppm";
+#else
+		char namebuf[256];
 		char *s;
 		s = strrchr(filename, '/');
 		if (!s)
@@ -159,7 +176,11 @@ int main(int argc, char **argv)
 		else
 			strcat(namebuf, "-%03d.ppm");
 		namefmt = namebuf;
+#endif
 	}
+
+	if (verbose)
+		printf("loading pdf: '%s'\n", filename);
 
 	error = pdf_newxref(&xref);
 	if (error)
@@ -184,10 +205,11 @@ int main(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 
+	if (verbose)
+		pdf_debugpagetree(pages);
+
 	if (optind == argc)
-	{
-		printf("number of pages: %d\n", pdf_getpagecount(pages));
-	}
+		printf("%d pages\n", pdf_getpagecount(pages));
 
 	error = fz_newrenderer(&gc, pdf_devicergb, 0, 1024 * 512);
 	if (error)
@@ -195,11 +217,35 @@ int main(int argc, char **argv)
 
 	for ( ; optind < argc; optind++)
 	{
-		int page = atoi(argv[optind]);
-		if (page < 1 || page > pdf_getpagecount(pages))
-			fprintf(stderr, "page out of bounds: %d\n", page);
-		printf("page %d\n", page);
-		showpage(xref, pdf_getpageobject(pages, page - 1), page);
+		int spage, epage, page;
+		char *spec = argv[optind];
+		char *dash = strchr(spec, '-');
+
+		if (dash == spec)
+			spage = epage = 1;
+		else
+			spage = epage = atoi(spec);
+
+		if (dash)
+		{
+			if (strlen(dash) > 1)
+				epage = atoi(dash+1);
+			else
+				epage = pdf_getpagecount(pages);
+		}
+
+		if (spage > epage)
+			page = spage, spage = epage, epage = page;
+
+		for (page = spage; page <= epage; page++)
+		{
+			if (page < 1 || page > pdf_getpagecount(pages))
+				fprintf(stderr, "page out of bounds: %d\n", page);
+			else
+			{
+				showpage(xref, pdf_getpageobject(pages, page - 1), page);
+			}
+		}
 	}
 
 	fz_droprenderer(gc);

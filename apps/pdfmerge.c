@@ -4,14 +4,10 @@
 void usage()
 {
 	fprintf(stderr,
-		"usage: pdfmerge [options] file.pdf pages ...\n"
+		"usage: pdfmerge [options] file1.pdf file2.pdf ...\n"
+		"  -d -\tpassword for decryption\n"
 		"  -o -\toutput file name (default out.pdf)\n"
-		"  -d -\tset user password for decryption\n"
-		"  -e\tencrypt outfile\n"
-		"    -U -\tset user password for encryption\n"
-		"    -O -\tset owner password\n"
-		"    -P -\tset permissions\n"
-		"    -N -\tkey length in bits: 40 <= n <= 128\n"
+		"  -v  \tverbose\n"
 		);
 	exit(1);
 }
@@ -35,25 +31,15 @@ int main(int argc, char **argv)
 	int i, k;
 	int c;
 
-	pdf_crypt *encrypt = 0;
-	int doencrypt = 0;
-
-	char *userpw = "";
-	char *ownerpw = "";
-	int perms = -4; /* 0xfffffffc */
-	int keylen = 40;
+	int verbose = 0;
 	char *password = "";
 
-	while ((c = getopt(argc, argv, "reo:U:O:P:N:")) != -1)
+	while ((c = getopt(argc, argv, "vo:d:")) != -1)
 	{
 		switch (c)
 		{
-		case 'e': ++ doencrypt; break;
+		case 'v': ++ verbose; break;
 		case 'o': savename = optarg; break;
-		case 'U': userpw = optarg; break;
-		case 'O': ownerpw = optarg; break;
-		case 'P': perms = atoi(optarg); break;
-		case 'N': keylen = atoi(optarg); break;
 		case 'd': password = optarg; break;
 		default: usage();
 		}
@@ -84,6 +70,12 @@ int main(int argc, char **argv)
 
 	for (i = optind; i < argc; i++)
 	{
+		if (verbose)
+		{
+			printf("loading pdf '%s' ", argv[i]);
+			fflush(stdout);
+		}
+
 		error = pdf_newxref(&src);
 		if (error)
 			fz_abort(error);
@@ -110,6 +102,9 @@ int main(int argc, char **argv)
 		error = fz_newarray(&srcrefs, 100);
 		if (error)
 			fz_abort(error);
+
+		if (verbose)
+			printf("(%d pages)\n", srcpages->count);
 
 		for (k = 0; k < srcpages->count; k++)
 		{
@@ -151,6 +146,10 @@ int main(int argc, char **argv)
 	/*
 	 * Create and relink Pages object
 	 */
+
+	if (verbose)
+		printf("creating pdf '%s' (%d pages)\n",
+				savename, fz_arraylen(dstrefs));
 
 	error = pdf_allocobject(dst, &pagesoid, &pagesgid);
 	if (error)
@@ -213,20 +212,7 @@ int main(int argc, char **argv)
 	 * Write out the new PDF
 	 */
 
-	if (doencrypt)
-	{
-		fz_obj *id = fz_dictgets(dst->trailer, "ID");
-		if (!id)
-			fz_packobj(&id, "[(ABCDEFGHIJKLMNOP)(ABCDEFGHIJKLMNOP)]");
-		else
-			fz_keepobj(id);
-		error = pdf_newencrypt(&encrypt, userpw, ownerpw, perms, keylen, id);
-		if (error)
-			fz_abort(error);
-		fz_dropobj(id);
-	}
-
-	error = pdf_savexref(dst, savename, encrypt);
+	error = pdf_savexref(dst, savename, nil);
 	if (error)
 		fz_abort(error);
 

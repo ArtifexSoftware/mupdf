@@ -260,5 +260,6 @@ Main pdfclean : apps/pdfclean.c ;
 Main pdfdebug : apps/pdfdebug.c ;
 Main pdfrip : apps/pdfrip.c ;
 Main pdfmerge : apps/pdfmerge.c ;
-LinkLibraries pdfclean pdfdebug pdfrip pdfmerge : libmupdf libfitz ;
+Main pdfselect : apps/pdfselect.c ;
+LinkLibraries pdfclean pdfdebug pdfrip pdfmerge pdfselect : libmupdf libfitz ;
 

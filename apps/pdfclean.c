@@ -5,14 +5,14 @@ void usage()
 {
 	fprintf(stderr,
 		"usage: pdfclean [options] infile.pdf outfile.pdf\n"
-		"  -r\trebuild xref table\n"
-		"  -g\tgarbage collect unused objects\n"
-		"  -x\texpand compressed streams\n"
-		"  -d -\tset user password for decryption\n"
-		"  -e\tencrypt outfile\n"
+		"  -d -\tpassword for decryption\n"
+		"  -g  \tgarbage collect unused objects\n"
+		"  -r  \trebuild xref table\n"
+		"  -x  \texpand compressed streams\n"
+		"  -e  \tencrypt outfile\n"
 		"    -u -\tset user password for encryption\n"
 		"    -o -\tset owner password\n"
-		"    -p -\tset permissions\n"
+		"    -p -\tset permissions (combine letters 'pmca')\n"
 		"    -n -\tkey length in bits: 40 <= n <= 128\n"
 		);
 	exit(1);
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 
 	char *userpw = "";
 	char *ownerpw = "";
-	int perms = -4; /* 0xfffffffc */
+	unsigned perms = 0xfffff0c0;	/* nothing allowed */
 	int keylen = 40;
 	char *password = "";
 
@@ -105,7 +105,18 @@ int main(int argc, char **argv)
 		case 'e': ++ doencrypt; break;
 		case 'u': userpw = optarg; break;
 		case 'o': ownerpw = optarg; break;
-		case 'p': perms = atoi(optarg); break;
+		case 'p':
+			/* see TABLE 3.15 User access permissions */
+			perms = 0xfffff0c0;
+			if (strchr(optarg, 'p')) /* print */
+				perms |= (1 << 2) | (1 << 11);
+			if (strchr(optarg, 'm')) /* modify */
+				perms |= (1 << 3) | (1 << 10);
+			if (strchr(optarg, 'c')) /* copy */
+				perms |= (1 << 4) | (1 << 9);
+			if (strchr(optarg, 'a')) /* annotate / forms */
+				perms |= (1 << 5) | (1 << 8);
+			break;
 		case 'n': keylen = atoi(optarg); break;
 		case 'd': password = optarg; break;
 		default: usage();

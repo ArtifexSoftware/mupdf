@@ -72,6 +72,9 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		if (inh) inherit.rotate = inh;
 
 		kids = fz_dictgets(obj, "Kids");
+		error = pdf_resolve(&kids, xref);
+		if (error)
+			return error;
 
 		pdf_logpage("subtree %d {\n", fz_arraylen(kids));
 
@@ -80,12 +83,14 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 			kref = fz_arrayget(kids, i);
 
 			error = pdf_loadindirect(&kobj, xref, kref);
-			if (error) return error;
+			if (error) { fz_dropobj(kids); return error; }
 
 			error = loadpagetree(xref, pages, inherit, kobj, kref);
 			fz_dropobj(kobj);
-			if (error) return error;
+			if (error) { fz_dropobj(kids); return error; }
 		}
+
+		fz_dropobj(kids);
 
 		pdf_logpage("}\n");
 	}
