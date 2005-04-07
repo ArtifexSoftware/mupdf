@@ -290,8 +290,9 @@ if $(OS) = MINGW
 	SubDir TOP apps windows ;
 
 	Main ghostpdf :
-		win_main.c
-		win_res.rc
+		pdfapp.c
+		winmain.c
+		winres.rc
 	;
 
 	WINLIBS = -lgdi32 -lcomdlg32 ;
@@ -331,4 +332,12 @@ if $(HAVE_X11) = yes
 #	LINKLIBS on gtkpdf$(SUFEXE) =
 #		$(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
 # }
+
+# --------------------------------------------------------------------------
+#
+# Documenatation
+#
+
+InstallFile $(BINDIR) : PUBLIC ;
+InstallFile $(BINDIR) : CHANGES ;
 
