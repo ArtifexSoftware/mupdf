@@ -25,8 +25,8 @@
 #include "fitz/pathscan.h"
 #include "fitz/render.h"
 
-#include "stream/crypt.h"
-#include "stream/object.h"
-#include "stream/filter.h"
-#include "stream/file.h"
+#include "fitz/crypt.h"
+#include "fitz/object.h"
+#include "fitz/filter.h"
+#include "fitz/file.h"
 
