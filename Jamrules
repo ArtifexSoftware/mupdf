@@ -57,6 +57,7 @@ switch $(OS)
 		}
 
 	case MACOSX :
+		FLAG_LDALL += -L/usr/X11R6/lib ;
 		FLAG_CCALL += -std=gnu99 -DHAVE_C99 ;
 		FLAG_CCRELEASE = -DARCH_PPC -faltivec -fast ;
 

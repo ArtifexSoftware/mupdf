@@ -40,14 +40,14 @@ BEGIN
 	LTEXT "Created:"			-1,		10,115,50,10, 0
 	LTEXT "Modified:"			-1,		10,125,50,10, 0
 
-	LTEXT "(unknown)"			0x20,	60,55,230,10, 0
-	LTEXT "(unknown)"			0x21,	60,65,230,10, 0
-	LTEXT "(unknown)"			0x22,	60,75,230,10, 0
-	LTEXT "(unknown)"			0x23,	60,85,230,10, 0
-	LTEXT "(unknown)"			0x24,	60,95,230,10, 0
-	LTEXT "(unknown)"			0x25,	60,105,230,10, 0
-	LTEXT "(unknown)"			0x26,	60,115,100,10, 0
-	LTEXT "(unknown)"			0x27,	60,125,100,10, 0
+	LTEXT ""			0x20,	60,55,230,10, 0
+	LTEXT ""			0x21,	60,65,230,10, 0
+	LTEXT ""			0x22,	60,75,230,10, 0
+	LTEXT ""			0x23,	60,85,230,10, 0
+	LTEXT ""			0x24,	60,95,230,10, 0
+	LTEXT ""			0x25,	60,105,230,10, 0
+	LTEXT ""			0x26,	60,115,100,10, 0
+	LTEXT ""			0x27,	60,125,100,10, 0
 END
 
 IDD_DLOGABOUT DIALOG 50, 50, 200, 210

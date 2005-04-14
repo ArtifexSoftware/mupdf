@@ -20,6 +20,9 @@ extern void ximage_blit(Drawable d, GC gc, int dstx, int dsty,
 	int srcx, int srcy, int srcw, int srch, int srcstride);
 
 static Display *xdpy;
+static Atom XA_TARGETS;
+static Atom XA_TIMESTAMP;
+static Atom XA_UTF8_STRING;
 static int xscr;
 static Window xwin;
 static GC xgc;
@@ -31,6 +34,11 @@ static int dirty = 0;
 static char *password = "";
 static XColor xbgcolor;
 static XColor xshcolor;
+static int reqw = 0;
+static int reqh = 0;
+static char copylatin1[1024 * 16] = "";
+static char copyutf8[1024 * 48] = "";
+static Time copytime;
 
 static pdfapp_t gapp;
 
@@ -65,7 +73,12 @@ void winopen(void)
 	XWMHints *hints;
 
 	xdpy = XOpenDisplay(nil);
-	assert(xdpy != nil);
+	if (!xdpy)
+		winerror(&gapp, "could not open display.");
+
+	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
+	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);
+	XA_UTF8_STRING = XInternAtom(xdpy, "UTF8_STRING", False);
 
 	xscr = DefaultScreen(xdpy);
 
@@ -149,6 +162,9 @@ void winresize(pdfapp_t *app, int w, int h)
 	values.height = h;
 	XConfigureWindow(xdpy, xwin, mask, &values);
 
+	reqw = w;
+	reqh = h;
+
 	if (!mapped)
 	{
 		XMapWindow(xdpy, xwin);
@@ -169,6 +185,43 @@ void winresize(pdfapp_t *app, int w, int h)
 	}
 }
 
+static void fillrect(int x, int y, int w, int h)
+{
+	if (w > 0 && h > 0)
+		XFillRectangle(xdpy, xwin, xgc, x, y, w, h);
+}
+
+static void invertcopyrect()
+{
+	unsigned char *p;
+	int x, y;
+
+	int x0 = gapp.selr.x0 - gapp.panx;
+	int x1 = gapp.selr.x1 - gapp.panx;
+	int y0 = gapp.selr.y0 - gapp.pany;
+	int y1 = gapp.selr.y1 - gapp.pany;
+
+	x0 = CLAMP(x0, 0, gapp.image->w - 1);
+	x1 = CLAMP(x1, 0, gapp.image->w - 1);
+	y0 = CLAMP(y0, 0, gapp.image->h - 1);
+	y1 = CLAMP(y1, 0, gapp.image->h - 1);
+
+	for (y = y0; y < y1; y++)
+	{
+		p = gapp.image->samples + (y * gapp.image->w + x0) * 4;
+		for (x = x0; x < x1; x++)
+		{
+			p[0] = 255 - p[0];
+			p[1] = 255 - p[1];
+			p[2] = 255 - p[2];
+			p[3] = 255 - p[3];
+			p += 4;
+		}
+	}
+
+	justcopied = 1;
+}
+
 void winblit(pdfapp_t *app)
 {
 	int x0 = gapp.panx;
@@ -177,32 +230,28 @@ void winblit(pdfapp_t *app)
 	int y1 = gapp.pany + gapp.image->h;
 
 	XSetForeground(xdpy, xgc, xbgcolor.pixel);
-	XFillRectangle(xdpy, xwin, xgc, 0, 0, x0, gapp.winh);
-	XFillRectangle(xdpy, xwin, xgc, x1, 0, gapp.winw - x1, gapp.winh);
-	XFillRectangle(xdpy, xwin, xgc, 0, 0, gapp.winw, y0);
-	XFillRectangle(xdpy, xwin, xgc, 0, y1, gapp.winw, gapp.winh - y1);
+	fillrect(0, 0, x0, gapp.winh);
+	fillrect(x1, 0, gapp.winw - x1, gapp.winh);
+	fillrect(0, 0, gapp.winw, y0);
+	fillrect(0, y1, gapp.winw, gapp.winh - y1);
 
 	XSetForeground(xdpy, xgc, xshcolor.pixel);
-	XFillRectangle(xdpy, xwin, xgc, x0+2, y1, gapp.image->w, 2);
-	XFillRectangle(xdpy, xwin, xgc, x1, y0+2, 2, gapp.image->h);
+	fillrect(x0+2, y1, gapp.image->w, 2);
+	fillrect(x1, y0+2, 2, gapp.image->h);
 
-	if (0)
-	{
-		ximage_blit(xwin, xgc,
-				x0, y0,
-				gapp.image->samples,
-				0, 0,
-				gapp.image->w,
-				gapp.image->h,
-				gapp.image->w * gapp.image->n);
-	}
-	else
-	{
-		XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
-		XFillRectangle(xdpy, xwin, xgc,
-				x0, y0, x1 - x0, y1 - y0);
-	}
+	if (gapp.iscopying || justcopied)
+		invertcopyrect();
 
+	ximage_blit(xwin, xgc,
+			x0, y0,
+			gapp.image->samples,
+			0, 0,
+			gapp.image->w,
+			gapp.image->h,
+			gapp.image->w * gapp.image->n);
+
+	if (gapp.iscopying || justcopied)
+		invertcopyrect();
 }
 
 void winrepaint(pdfapp_t *app)
@@ -212,7 +261,90 @@ void winrepaint(pdfapp_t *app)
 
 void windocopy(pdfapp_t *app)
 {
-	/* yeah, right. not right now. */
+	unsigned short copyucs2[16 * 1024];
+	char *latin1 = copylatin1;
+	char *utf8 = copyutf8;
+	unsigned short *ucs2;
+	int ucs;
+
+	pdfapp_oncopy(&gapp, copyucs2, 16 * 1024);
+
+	for (ucs2 = copyucs2; ucs2[0] != 0; ucs2++)
+	{
+		ucs = ucs2[0];
+
+		utf8 += runetochar(utf8, &ucs);
+
+		if (ucs < 256)
+			*latin1++ = ucs;
+		else
+			*latin1++ = '?';
+	}
+
+	*utf8 = 0;
+	*latin1 = 0;
+
+printf("oncopy utf8=%d latin1=%d\n", strlen(copyutf8), strlen(copylatin1));
+
+	XSetSelectionOwner(xdpy, XA_PRIMARY, xwin, copytime);
+
+	justcopied = 1;
+}
+
+void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time time)
+{
+	XEvent nevt;
+
+printf("onselreq\n");
+
+	if (property == None)
+		property = target;
+
+	nevt.xselection.type = SelectionNotify;
+	nevt.xselection.send_event = True;
+	nevt.xselection.display = xdpy;
+	nevt.xselection.requestor = requestor;
+	nevt.xselection.selection = selection;
+	nevt.xselection.target = target;
+	nevt.xselection.property = property;
+	nevt.xselection.time = time;
+
+	if (target == XA_TARGETS)
+	{
+		Atom atomlist[4];
+		atomlist[0] = XA_TARGETS;
+		atomlist[1] = XA_TIMESTAMP;
+		atomlist[2] = XA_STRING;
+		atomlist[3] = XA_UTF8_STRING;
+printf(" -> targets\n");
+		XChangeProperty(xdpy, requestor, property, target,
+				32, PropModeReplace,
+				(unsigned char *)atomlist, sizeof(atomlist)/sizeof(Atom));
+	}
+
+	else if (target == XA_STRING)
+	{
+printf(" -> string %d\n", strlen(copylatin1));
+		XChangeProperty(xdpy, requestor, property, target,
+				8, PropModeReplace,
+				(unsigned char *)copylatin1, strlen(copylatin1));
+	}
+
+	else if (target == XA_UTF8_STRING)
+	{
+printf(" -> utf8string\n");
+		XChangeProperty(xdpy, requestor, property, target,
+				8, PropModeReplace,
+				(unsigned char *)copyutf8, strlen(copyutf8));
+	}
+
+	else
+	{
+printf(" -> unknown\n");
+		nevt.xselection.property = None;
+	}
+
+	XSendEvent(xdpy, requestor, False, SelectionNotify, &nevt);
 }
 
 void winopenuri(pdfapp_t *app, char *buf)
@@ -304,8 +436,8 @@ int main(int argc, char **argv)
 			case ConfigureNotify:
 				if (gapp.image)
 				{
-					if (xevt.xconfigure.width != gapp.image->w ||
-						xevt.xconfigure.height != gapp.image->h)
+					if (xevt.xconfigure.width != reqw ||
+						xevt.xconfigure.height != reqh)
 						gapp.shrinkwrap = 0;
 				}
 				pdfapp_onresize(&gapp,
@@ -328,7 +460,16 @@ int main(int argc, char **argv)
 				break;
 
 			case ButtonRelease:
+				copytime = xevt.xbutton.time;
 				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, -1);
+				break;
+
+			case SelectionRequest:
+				onselreq(xevt.xselectionrequest.requestor,
+						xevt.xselectionrequest.selection,
+						xevt.xselectionrequest.target,
+						xevt.xselectionrequest.property,
+						xevt.xselectionrequest.time);
 				break;
 			}
 		}

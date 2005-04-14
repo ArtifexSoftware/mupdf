@@ -294,10 +294,10 @@ void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 			app->panx = 0;
 		if (app->winh == h)
 			app->pany = 0;
-		if (w > app->scrw * 95 / 100)
-			w = app->scrw * 95 / 100;
-		if (h > app->scrh * 95 / 100)
-			h = app->scrh * 95 / 100;
+		if (w > app->scrw * 90 / 100)
+			w = app->scrw * 90 / 100;
+		if (h > app->scrh * 90 / 100)
+			h = app->scrh * 90 / 100;
 		if (w != app->winw || h != app->winh)
 			winresize(app, w, h);
 	}
@@ -628,12 +628,12 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 
 		if (y >= y0 && y <= y1)
 		{
-			if (p < ucslen - 1)
-				ucsbuf[p++] = '\r';
 #ifdef WIN32
 			if (p < ucslen - 1)
-				ucsbuf[p++] = '\n';
+				ucsbuf[p++] = '\r';
 #endif
+			if (p < ucslen - 1)
+				ucsbuf[p++] = '\n';
 		}
 	}
 
