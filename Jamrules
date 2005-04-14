@@ -19,11 +19,6 @@ FREETYPELD ?= "`freetype-config --libs`" ;
 HAVE_JBIG2DEC ?= no ;
 HAVE_JASPER ?= no ;
 
-# Select one of these for the GhostPDF GUI application if you are on unix
-
-HAVE_X11 ?= no ;
-HAVE_GTK ?= no ;
-
 # -------------------------------------------------------------------------
 
 # Default optimize/profile/debug compiler/linker switches
@@ -41,6 +36,7 @@ FLAG_LDPROFILE = -pg ;
 switch $(OS)
 {
 	case LINUX :
+		HAVE_X11 = yes ;
 		NEED_STRLCPY = yes ;
 		NEED_STRLCAT = yes ;
 		NEED_STRSEP = yes ;
@@ -70,6 +66,7 @@ switch $(OS)
 		NOARSCAN = yes ;
 
 	case SOLARIS :
+		HAVE_X11 = yes ;
 		NEED_STRSEP = yes ;
 		FLAG_CCALL += -std=c89 ;
 		FLAG_CCRELEASE += -DARCH_SPARC ;

@@ -323,17 +323,6 @@ if $(HAVE_X11) = yes
 # 	LinkLibraries $(MACPDF) : libmupdf libfitz ;
 # 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
 # }
-#
-# if $(HAVE_GTK) = yes
-# {
-#	SubDir TOP apps gnome ;
-#	Main gtkpdf : apps/gtkpdf.c ;
-#	CCFLAGS on apps/gtkpdf$(SUFOBJ) =
-#		$(CCFLAGS) `pkg-config --cflags gtk+ gthread` ;
-#	LinkLibraries gtkpdf : libmupdf libfitz ;
-#	LINKLIBS on gtkpdf$(SUFEXE) =
-#		$(LINKLIBS) `pkg-config --libs gtk+ gmodule gthread` ;
-# }
 
 # --------------------------------------------------------------------------
 #
