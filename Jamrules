@@ -43,6 +43,7 @@ switch $(OS)
 	case LINUX :
 		NEED_STRLCPY = yes ;
 		NEED_STRLCAT = yes ;
+		NEED_STRSEP = yes ;
 		FLAG_LDALL += -L/usr/X11R6/lib ;
 
 		switch $(CC)-$(OSPLAT)

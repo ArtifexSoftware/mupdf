@@ -338,10 +338,13 @@ void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 
 void pdfapp_onresize(pdfapp_t *app, int w, int h)
 {
-	app->winw = w;
-	app->winh = h;
-	pdfapp_panview(app, app->panx, app->pany);
-	winrepaint(app);
+	if (app->winw != w || app->winh != h)
+	{
+		app->winw = w;
+		app->winh = h;
+		pdfapp_panview(app, app->panx, app->pany);
+		winrepaint(app);
+	}
 }
 
 void pdfapp_onkey(pdfapp_t *app, int c)

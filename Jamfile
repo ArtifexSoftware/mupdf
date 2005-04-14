@@ -255,6 +255,9 @@ Library libmupdf :
 	pdf_resources.c
 	pdf_store.c
 
+	# ahem. how did this get here?
+	pdfapp.c
+
 	;
 
 
@@ -290,7 +293,6 @@ if $(OS) = MINGW
 	SubDir TOP apps windows ;
 
 	Main ghostpdf :
-		pdfapp.c
 		winmain.c
 		winres.rc
 	;
