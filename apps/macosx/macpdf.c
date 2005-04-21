@@ -519,7 +519,7 @@ OSStatus view_showpage(HIViewRef view)
 Lskipload:
 
 	ctm = fz_identity();
-	ctm = fz_concat(ctm, fz_translate(0, -ctx->page->mediabox.max.y));
+	ctm = fz_concat(ctm, fz_translate(0, -ctx->page->mediabox.y1));
 	ctm = fz_concat(ctm, fz_scale(ctx->zoom, -ctx->zoom));
 	ctm = fz_concat(ctm, fz_rotate(ctx->rotate + ctx->page->rotate));
 

@@ -326,14 +326,17 @@ if $(HAVE_X11) = yes
 	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
-# if $(OS) = MACOSX
-# {
-# 	SubDir TOP apps macosx ;
-# 	MACPDF = macpdf.app/Contents/MacOS/macpdf ;
-# 	Main $(MACPDF) : apps/macpdf.c ;
-# 	LinkLibraries $(MACPDF) : libmupdf libfitz ;
-# 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
-# }
+if $(OS) = MACOSX
+{
+	SubDir TOP apps macosx ;
+	MACBUNDLE = macpdf.app ;
+	MACPDF = $(MACBUNDLE)/Contents/MacOS/macpdf ;
+	File $(MACBUNDLE) : $(MACBUNDLE) ;
+	LOCATE on $(MACBUNDLE) = $(LOCATE_SOURCE) ;
+	Main $(MACPDF) : macpdf.c ;
+	LinkLibraries $(MACPDF) : $(FITZLIBS) ;
+	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
+}
 
 # --------------------------------------------------------------------------
 #
