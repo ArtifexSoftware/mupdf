@@ -21,20 +21,20 @@ FITZLIBS = libmupdf libstream libfitz librender libfonts ;
 
 if $(HAVE_JASPER) = yes
 {
-	CCFLAGS += -DHAVE_JASPER ;
+	DEFINES += HAVE_JASPER ;
 	LINKLIBS += -ljasper ;
 }
 
 if $(HAVE_JBIG2DEC) = yes
 {
-	CCFLAGS += -DHAVE_JBIG2DEC ;
+	DEFINES += HAVE_JBIG2DEC ;
 	LINKLIBS += -ljbig2dec ;
 }
 
-if $(NEED_GETOPT)  = yes { CCFLAGS += -DNEED_GETOPT ; }
-if $(NEED_STRLCAT) = yes { CCFLAGS += -DNEED_STRLCAT ; }
-if $(NEED_STRLCPY) = yes { CCFLAGS += -DNEED_STRLCPY ; }
-if $(NEED_STRSEP)  = yes { CCFLAGS += -DNEED_STRSEP ; }
+if $(NEED_GETOPT)  = yes { DEFINES += NEED_GETOPT ; }
+if $(NEED_STRLCAT) = yes { DEFINES += NEED_STRLCAT ; }
+if $(NEED_STRLCPY) = yes { DEFINES += NEED_STRLCPY ; }
+if $(NEED_STRSEP)  = yes { DEFINES += NEED_STRSEP ; }
 
 HDRS =
 	[ FDirName $(TOP) include ]
@@ -75,6 +75,17 @@ rule WindRes
 actions HexDump { xxd -i $(>) > $(<) }
 actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
 
+rule XCopy
+{
+	for i in $(<)
+	{
+		local d = [ FDirName $(LOCATE_TARGET) $(i:D) ] ;
+		LOCATE on $(i:G=xcopy) = $(LOCATE_TARGET) ;
+		Depends $(i:G=xcopy) : $(d:G=dir) ;
+		MkDir $(d:G=dir) ;
+		File $(i:G=xcopy) : $(i) ;
+	}
+}
 
 # --------------------------------------------------------------------------
 
