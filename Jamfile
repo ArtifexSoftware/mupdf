@@ -79,8 +79,8 @@ rule XCopy
 {
 	for i in $(<)
 	{
-		local d = [ FDirName $(LOCATE_TARGET) $(i:D) ] ;
-		LOCATE on $(i:G=xcopy) = $(LOCATE_TARGET) ;
+		local d = [ FDirName $(ALL_LOCATE_TARGET) $(i:D) ] ;
+		LOCATE on $(i:G=xcopy) = $(ALL_LOCATE_TARGET) ;
 		Depends $(i:G=xcopy) : $(d:G=dir) ;
 		MkDir $(d:G=dir) ;
 		File $(i:G=xcopy) : $(i) ;
@@ -343,6 +343,8 @@ if $(OS) = MACOSX
 		;
 	
 	MACPDF = $(MACBUNDLE)/Contents/MacOS/ghostpdf ;
+	MkDir $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
+	Depends $(MACPDF) : $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
 	Main $(MACPDF) : macpdf.c ;
 	LinkLibraries $(MACPDF) : $(FITZLIBS) ;
 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
