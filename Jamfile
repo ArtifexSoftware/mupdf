@@ -329,10 +329,20 @@ if $(HAVE_X11) = yes
 if $(OS) = MACOSX
 {
 	SubDir TOP apps macosx ;
-	MACBUNDLE = macpdf.app ;
-	MACPDF = $(MACBUNDLE)/Contents/MacOS/macpdf ;
-	File $(MACBUNDLE) : $(MACBUNDLE) ;
-	LOCATE on $(MACBUNDLE) = $(LOCATE_SOURCE) ;
+
+	MACBUNDLE = GhostPDF.app ;
+
+	XCopy $(MACBUNDLE)/Contents/Info.plist ;
+	XCopy $(MACBUNDLE)/Contents/PkgInfo ;
+	XCopy 
+		$(MACBUNDLE)/Contents/Resources/English.lproj/InfoPlist.strings
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/classes.nib
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/info.nib
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/objects.xib
+		$(MACBUNDLE)/Contents/Resources/macpdf.icns
+		;
+	
+	MACPDF = $(MACBUNDLE)/Contents/MacOS/ghostpdf ;
 	Main $(MACPDF) : macpdf.c ;
 	LinkLibraries $(MACPDF) : $(FITZLIBS) ;
 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
