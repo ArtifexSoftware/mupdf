@@ -6,16 +6,16 @@
   </object>
   <array count="58" name="allObjects">
     <object class="IBCarbonMenu" id="29">
-      <string name="title">MuPDF</string>
+      <string name="title">GhostPDF</string>
       <array count="4" name="items">
         <object class="IBCarbonMenuItem" id="185">
-          <string name="title">MuPDF</string>
+          <string name="title">GhostPDF</string>
           <object name="submenu" class="IBCarbonMenu" id="184">
-            <string name="title">MuPDF</string>
+            <string name="title">GhostPDF</string>
             <array count="1" name="items">
               <object class="IBCarbonMenuItem" id="187">
                 <boolean name="updateSingleItem">TRUE</boolean>
-                <string name="title">About MuPDF</string>
+                <string name="title">About GhostPDF</string>
                 <int name="keyEquivalentModifier">0</int>
                 <ostype name="command">abou</ostype>
               </object>

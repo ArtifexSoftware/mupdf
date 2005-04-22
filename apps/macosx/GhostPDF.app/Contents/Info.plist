@@ -5,11 +5,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>macpdf</string>
+	<string>ghostpdf</string>
 	<key>CFBundleIconFile</key>
 	<string>macpdf.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.artofcode.MuPDF</string>
+	<string>com.artofcode.GhostPDF</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
