@@ -395,6 +395,8 @@ int main(int argc, char **argv)
 	int len;
 	unsigned char buf[128];
 	KeySym keysym;
+	int oldx = 0;
+	int oldy = 0;
 
 	while ((c = getopt(argc, argv, "d:")) != -1)
 	{
@@ -449,9 +451,12 @@ int main(int argc, char **argv)
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, 0);
 				if (len)
 					onkey(buf[0]);
+				onmouse(oldx, oldy, 0, 0);
 				break;
 
 			case MotionNotify:
+				oldx = xevt.xbutton.x;
+				oldy = xevt.xbutton.y;
 				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, 0);
 				break;
 

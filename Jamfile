@@ -36,10 +36,7 @@ if $(NEED_STRLCAT) = yes { DEFINES += NEED_STRLCAT ; }
 if $(NEED_STRLCPY) = yes { DEFINES += NEED_STRLCPY ; }
 if $(NEED_STRSEP)  = yes { DEFINES += NEED_STRSEP ; }
 
-HDRS =
-	[ FDirName $(TOP) include ]
-	[ FDirName $(TOP) stream ]
-	;
+HDRS = [ FDirName $(TOP) include ] ;
 
 # --------------------------------------------------------------------------
 
