@@ -61,7 +61,6 @@ view_initialize(EventHandlerCallRef inCallRef, EventRef inEvent,
 		   viewctx *ctx)
 {
     OSStatus err;
-    HIRect bounds;
 
     err = CallNextEventHandler(inCallRef, inEvent);
     require_noerr(err, TroubleInSuperClass);
@@ -71,14 +70,9 @@ view_initialize(EventHandlerCallRef inCallRef, EventRef inEvent,
     ctx->pageno = 1;
     ctx->window = nil;
 
- ParameterMissing:
  TroubleInSuperClass:
     return err;
 }
-
-#ifndef M_PI
-#define M_PI            3.14159265358979323846  /* pi */
-#endif
 
 static void
 cgcontext_set_rgba(CGContextRef ctx, unsigned int rgba)
@@ -92,19 +86,7 @@ cgcontext_set_rgba(CGContextRef ctx, unsigned int rgba)
 }
 
 static void
-draw_dot(CGContextRef ctx, double x, double y, double r,
-	 unsigned int rgba)
-{
-    cgcontext_set_rgba(ctx, rgba);
-    CGMutablePathRef path = CGPathCreateMutable();
-    CGPathAddArc(path, NULL, x, y, r, 0, 2 * M_PI, false);
-    CGContextAddPath(ctx, path);
-    CGPathRelease(path);
-    CGContextFillPath(ctx);
-}
-
-static void
-draw_raw_rect(CGContextRef ctx, double x0, double y0, double x1, double y1,
+draw_rect(CGContextRef ctx, double x0, double y0, double x1, double y1,
 	      unsigned int rgba)
 {
     HIRect rect;
@@ -115,13 +97,6 @@ draw_raw_rect(CGContextRef ctx, double x0, double y0, double x1, double y1,
     rect.size.width = x1 - x0;
     rect.size.height = y1 - y0;
     CGContextFillRect(ctx, rect);
-}
-
-static void
-draw_rect(CGContextRef ctx, double x, double y, double r,
-	 unsigned int rgba)
-{
-    draw_raw_rect(ctx, x - r, y - r, x + r, y + r, rgba);
 }
 
 static OSStatus
@@ -259,20 +234,6 @@ view_motion(viewctx *pe, double x, double y)
     //else if (pe->p->motmode == MOTION_MODE_SELECT)
     //plate_motion_select(pe->p, x, y);
     view_queue_draw(pe);
-    return 1;
-}
-
-static int
-view_button_release(viewctx *pe)
-{
-    int need_redraw;
-    
-    //need_redraw = (pe->p->motmode == MOTION_MODE_SELECT);
-
-    //plate_unpress(pe->p);
-
-    if (need_redraw)
-	view_queue_draw(pe);
     return 1;
 }
 
@@ -494,7 +455,6 @@ OSStatus view_showpage(HIViewRef view)
 	fz_matrix ctm;
 	fz_rect bbox;
 	fz_obj *obj;
-	char s[256];
 
 	assert(ctx->pageno > 0 && ctx->pageno <= pdf_getpagecount(ctx->pages));
 
@@ -544,20 +504,8 @@ Lskipload:
 	return err;
 }
 
-static void
-init_window(viewctx *ctx)
-{
-    WindowRef window = ctx->window;
-    HIViewRef viewPane;
-    static const HIViewID viewPaneID = { 'Poof', 666 };
-    OSStatus err;
-
-    err = HIViewFindByID(HIViewGetRoot(window), viewPaneID, &viewPane);
-    printf("err from findbyid: %d\n", err);
-}
-
 int
-openpdf(WindowRef window, const char *filename)
+openpdf(WindowRef window, char *filename)
 {
     HIViewRef viewPane;
     static const HIViewID viewPaneID = { 'Poof', 666 };
@@ -588,7 +536,7 @@ int main(int argc, char *argv[])
     require_noerr(err, CantRegisterView);
 
     err = CreateNibReference(CFSTR("main"), &nibRef);
-    printf("err = %d\n", err);
+    printf("err = %d\n", (int)err);
     require_noerr(err, CantGetNibRef);
 
     err = SetMenuBarFromNib(nibRef, CFSTR("MenuBar"));
