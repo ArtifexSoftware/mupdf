@@ -329,8 +329,10 @@ if $(OS) = MACOSX
 
 	MACBUNDLE = GhostPDF.app ;
 
-	XCopy $(MACBUNDLE)/Contents/Info.plist ;
-	XCopy $(MACBUNDLE)/Contents/PkgInfo ;
+	XCopy 
+		$(MACBUNDLE)/Contents/Info.plist
+		$(MACBUNDLE)/Contents/PkgInfo
+		;
 	XCopy 
 		$(MACBUNDLE)/Contents/Resources/English.lproj/InfoPlist.strings
 		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/classes.nib
