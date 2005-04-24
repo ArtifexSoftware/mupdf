@@ -167,6 +167,9 @@ void winresize(pdfapp_t *app, int w, int h)
 
 	if (!mapped)
 	{
+		gapp.winw = w;
+		gapp.winh = h;
+
 		XMapWindow(xdpy, xwin);
 		XFlush(xdpy);
 
