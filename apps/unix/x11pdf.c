@@ -452,6 +452,13 @@ int main(int argc, char **argv)
 				if (len)
 					onkey(buf[0]);
 				onmouse(oldx, oldy, 0, 0);
+
+				if (dirty)
+				{
+					winblit(&gapp);
+					dirty = 0;
+				}
+
 				break;
 
 			case MotionNotify:
