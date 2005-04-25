@@ -2,74 +2,127 @@
 
 #include <fitz.h>
 #include <mupdf.h>
+#include "pdfapp.h"
 
-#define kViewClassID CFSTR("com.artofcode.mupdf.View")
+#define gDefaultFilename "/Users/giles/projects/ghostscript/tiger.pdf"
+
+#define kViewClassID CFSTR("com.artofcode.ghostpdf.View")
 #define kViewPrivate 'MU_v'
 
-typedef struct viewctx
+/* the pdfapp abstraction currently uses magic callbacks, so we have
+   to use a a global state for our own data, or subclass pdfapp_t and
+   do a lot of casting */
+
+/* pdfapp callbacks - error handling */
+void winwarn(pdfapp_t *pdf, char *msg)
 {
-    WindowRef window;
-    HIViewRef view;
-    char *doctitle;
-	
-    float zoom;
-    int rotate;
-    int pageno;
+	fprintf(stderr, "ghostpdf warning: %s\n", msg);
+}
 
-    pdf_page *page;
-    fz_obj *pageobj;
+void winerror(pdfapp_t *pdf, char *msg)
+{
+	fprintf(stderr, "ghostpdf error: %s\n", msg);
+	exit(1);
+}
 
-    pdf_xref *xref;
-    pdf_pagetree *pages;
-    pdf_outline *outline;
-    fz_renderer *rast;
-    fz_pixmap *image;
-} viewctx;
+/* pdfapp callbacks - drawing */
+
+void wintitle(pdfapp_t *pdf, char *title)
+{
+    /* set new document title */
+}
+
+void winresize(pdfapp_t *pdf, int w, int h)
+{
+    /* pdfapp as been asked to shrinkwrap the document image;
+       we're called to actually apply the new window size. */
+}
+
+void winconvert(pdfapp_t *pdf, fz_pixmap *image)
+{
+    /* notification that page drawing is complete */
+    /* do nothing */
+}
+
+void winrepaint(pdfapp_t *pdf)
+{
+    /* image needs repainting */
+    HIViewSetNeedsDisplay((HIViewRef)pdf->userdata, true);
+}
+
+char* winpassword(pdfapp_t *pdf, char *filename)
+{
+    /* prompt user for document password */
+    return NULL;
+}
+
+void winopenuri(pdfapp_t *pdf, char *s)
+{
+    /* user clicked on an external uri */
+    /* todo: launch browser and/or open a new window if it's a PDF */
+}
+
+void wincursor(pdfapp_t *pdf, int curs)
+{
+    /* cursor status change notification */
+}
+
+void windocopy(pdfapp_t *pdf)
+{
+    /* user selected some text; copy it to the clipboard */
+}
 
 static OSStatus
 view_construct(EventRef inEvent)
 {
     OSStatus err;
-    viewctx *ctx;
+    pdfapp_t *pdf;
 
-    ctx = (viewctx *)malloc(sizeof(viewctx));
-    require_action(ctx != NULL, CantMalloc, err = memFullErr);
+    pdf = (pdfapp_t *)malloc(sizeof(pdfapp_t));
+    require_action(pdf != NULL, CantMalloc, err = memFullErr);
+    
+    pdfapp_init(pdf);
+
     err = GetEventParameter(inEvent, kEventParamHIObjectInstance,
 			    typeHIObjectRef, NULL, sizeof(HIObjectRef), NULL,
-			    (HIObjectRef *)&ctx->view);
+			    (HIObjectRef *)&pdf->userdata);
     require_noerr(err, ParameterMissing);
     err = SetEventParameter(inEvent, kEventParamHIObjectInstance,
-			    typeVoidPtr, sizeof(viewctx *), &ctx);
+			    typeVoidPtr, sizeof(pdfapp_t *), &pdf);
 
  ParameterMissing:
     if (err != noErr)
-	free(ctx);
+	free(pdf);
 
  CantMalloc:
     return err;
 }
 
 static OSStatus
-view_destruct(EventRef inEvent, viewctx *inData)
+view_destruct(EventRef inEvent, pdfapp_t *pdf)
 {
-    free(inData);
+    pdfapp_close(pdf);
+    free(pdf);
     return noErr;
 }
 
 static OSStatus
 view_initialize(EventHandlerCallRef inCallRef, EventRef inEvent,
-		   viewctx *ctx)
+		   pdfapp_t *pdf)
 {
     OSStatus err;
-
+    HIRect bounds;
+    HIViewRef view = (HIViewRef)pdf->userdata;
+    
     err = CallNextEventHandler(inCallRef, inEvent);
     require_noerr(err, TroubleInSuperClass);
 
-    ctx->zoom = 1.0;
-    ctx->rotate = 0;
-    ctx->pageno = 1;
-    ctx->window = nil;
-
+    HIViewGetBounds (view, &bounds);
+    pdf->scrw = bounds.size.width;
+    pdf->scrh = bounds.size.height;
+    
+    pdfapp_open(pdf, gDefaultFilename);
+    
  TroubleInSuperClass:
     return err;
 }
@@ -100,7 +153,7 @@ draw_rect(CGContextRef ctx, double x0, double y0, double x1, double y1,
 }
 
 static OSStatus
-view_draw(EventRef inEvent, viewctx *ctx)
+view_draw(EventRef inEvent, pdfapp_t *pdf)
 {
     OSStatus err;
     CGContextRef gc;
@@ -114,18 +167,18 @@ view_draw(EventRef inEvent, viewctx *ctx)
     require_noerr(err, cleanup);
 
     colorspace = CGColorSpaceCreateDeviceRGB();
-    provider = CGDataProviderCreateWithData(NULL, ctx->image->samples,
-					    ctx->image->w * ctx->image->h * 4,
+    provider = CGDataProviderCreateWithData(NULL, pdf->image->samples,
+					    pdf->image->w * pdf->image->h * 4,
 					    NULL);
-    image = CGImageCreate(ctx->image->w, ctx->image->h,
-			  8, 32, ctx->image->w * 4,
+    image = CGImageCreate(pdf->image->w, pdf->image->h,
+			  8, 32, pdf->image->w * 4,
 			  colorspace, kCGImageAlphaNoneSkipFirst, provider,
 			  NULL, 0, kCGRenderingIntentDefault);
 
     rect.origin.x = 0;
     rect.origin.y = 0;
-    rect.size.width = ctx->image->w;
-    rect.size.height = ctx->image->h;
+    rect.size.width = pdf->image->w;
+    rect.size.height = pdf->image->h;
     HIViewDrawCGImage(gc, &rect, image);
 
     CGColorSpaceRelease(colorspace);
@@ -136,7 +189,7 @@ view_draw(EventRef inEvent, viewctx *ctx)
 }
 
 static OSStatus
-view_get_data(EventRef inEvent, viewctx *inData)
+view_get_data(EventRef inEvent, pdfapp_t *pdf)
 {
     OSStatus err;
     OSType tag;
@@ -154,8 +207,8 @@ view_get_data(EventRef inEvent, viewctx *inData)
 			    NULL, sizeof(Ptr), NULL, &ptr);
 
     if (tag == kViewPrivate) {
-	*((viewctx **)ptr) = inData;
-	outSize = sizeof(viewctx *);
+	*((pdfapp_t **)ptr) = pdf;
+	outSize = sizeof(pdfapp_t *);
     } else
 	err = errDataNotSupported;
 
@@ -168,7 +221,7 @@ view_get_data(EventRef inEvent, viewctx *inData)
 }
 
 static OSStatus
-view_set_data(EventRef inEvent, viewctx *inData)
+view_set_data(EventRef inEvent, pdfapp_t *pdf)
 {
     OSStatus err;
     Ptr ptr;
@@ -182,17 +235,15 @@ view_set_data(EventRef inEvent, viewctx *inData)
 			    NULL, sizeof(Ptr), NULL, &ptr);
     require_noerr(err, ParameterMissing);
 
-    if (tag == 'Plat') {
-	//inData->p = *(plate **)ptr;
-    } else
-	err = errDataNotSupported;
+    /* we think we don't use this */
+    err = errDataNotSupported;
 
  ParameterMissing:
     return err;
 }
 
 static OSStatus
-view_hittest(EventRef inEvent, viewctx *inData)
+view_hittest(EventRef inEvent, pdfapp_t *pdf)
 {
     OSStatus err;
     HIPoint where;
@@ -203,7 +254,7 @@ view_hittest(EventRef inEvent, viewctx *inData)
 			    NULL, sizeof(HIPoint), NULL, &where);
     require_noerr(err, ParameterMissing);
 
-    err = HIViewGetBounds(inData->view, &bounds);
+    err = HIViewGetBounds(pdf->userdata, &bounds);
     require_noerr(err, ParameterMissing);
 
     if (CGRectContainsPoint(bounds, where))
@@ -219,23 +270,6 @@ view_hittest(EventRef inEvent, viewctx *inData)
     return err;
 }
 
-static void
-view_queue_draw(viewctx *pe)
-{
-    HIViewSetNeedsDisplay(pe->view, true);
-}
-
-
-static int
-view_motion(viewctx *pe, double x, double y)
-{
-    //if (pe->p->motmode == MOTION_MODE_MOVE)
-    //plate_motion_move(pe->p, x, y);
-    //else if (pe->p->motmode == MOTION_MODE_SELECT)
-    //plate_motion_select(pe->p, x, y);
-    view_queue_draw(pe);
-    return 1;
-}
 
 pascal OSStatus
 view_handler(EventHandlerCallRef inCallRef,
@@ -245,7 +279,7 @@ view_handler(EventHandlerCallRef inCallRef,
     OSStatus err = eventNotHandledErr;
     UInt32 eventClass = GetEventClass(inEvent);
     UInt32 eventKind = GetEventKind(inEvent);
-    viewctx *data = (viewctx *)inUserData;
+    pdfapp_t *pdf = (pdfapp_t *)inUserData;
 
     switch (eventClass) {
     case kEventClassHIObject:
@@ -254,10 +288,10 @@ view_handler(EventHandlerCallRef inCallRef,
 	    err = view_construct(inEvent);
 	    break;
 	case kEventHIObjectInitialize:
-	    err = view_initialize(inCallRef, inEvent, data);
+	    err = view_initialize(inCallRef, inEvent, pdf);
 	    break;
 	case kEventHIObjectDestruct:
-	    err = view_destruct(inEvent, data);
+	    err = view_destruct(inEvent, pdf);
 	    break;
 	}
 	break;
@@ -267,16 +301,16 @@ view_handler(EventHandlerCallRef inCallRef,
 	    err = noErr;
 	    break;
 	case kEventControlDraw:
-	    err = view_draw(inEvent, data);
+	    err = view_draw(inEvent, pdf);
 	    break;
 	case kEventControlGetData:
-	    err = view_get_data(inEvent, data);
+	    err = view_get_data(inEvent, pdf);
 	    break;
 	case kEventControlSetData:
-	    err = view_set_data(inEvent, data);
+	    err = view_set_data(inEvent, pdf);
 	    break;
 	case kEventControlHitTest:
-	    err = view_hittest(inEvent, data);
+	    err = view_hittest(inEvent, pdf);
 	    break;
 	    /*...*/
 	}
@@ -357,171 +391,7 @@ OSStatus view_create(
     return err;
 }
 
-OSStatus
-view_openpdf(HIViewRef view, char *filename)
-{
-    OSStatus err;
-    viewctx *ctx;
 
-    err = GetControlData(view, 1, kViewPrivate, 4, &ctx, NULL);
-    require_noerr(err, CantGetPrivate);
-
-	fz_error *error;
-	fz_obj *obj;
-	pdf_xref *xref;
-
-	error = pdf_newxref(&xref);
-	if (error)
-		fz_abort(error);
-	ctx->xref = xref;
-
-	error = pdf_loadxref(xref, filename);
-	if (error)
-	{
-		fz_warn(error->msg);
-		printf("trying to repair...\n");
-		error = pdf_repairxref(xref, filename);
-		if (error)
-			fz_abort(error);
-	}
-
-	error = pdf_decryptxref(xref);
-	if (error)
-		fz_abort(error);
-
-#if 0
-	if (xref->crypt)
-	{
-		error = pdf_setpassword(xref->crypt, password);
-		if (error) fz_abort(error);
-	}
-#endif
-
-	obj = fz_dictgets(xref->trailer, "Root");
-	if (!obj)
-		fz_abort(fz_throw("syntaxerror: missing Root object"));
-	error = pdf_loadindirect(&xref->root, xref, obj);
-	if (error) fz_abort(error);
-
-	obj = fz_dictgets(xref->trailer, "Info");
-	if (obj)
-	{
-		error = pdf_loadindirect(&xref->info, xref, obj);
-		if (error) fz_abort(error);
-	}
-
-	error = pdf_loadnametrees(xref);
-	if (error) fz_abort(error);
-
-	error = pdf_loadoutline(&ctx->outline, xref);
-	if (error) fz_abort(error);
-
-	ctx->doctitle = filename;
-	if (xref->info)
-	{
-		obj = fz_dictgets(xref->info, "Title");
-		if (obj)
-		{
-			error = pdf_toutf8(&ctx->doctitle, obj);
-			if (error) fz_abort(error);
-		}
-	}
-
-	error = pdf_loadpagetree(&ctx->pages, xref);
-	if (error) fz_abort(error);
-
-	//count = pdf_getpagecount(ctx->pages);
-
-	error = fz_newrenderer(&ctx->rast, pdf_devicergb, 0, 1024 * 512);
-	if (error) fz_abort(error);
-
-	ctx->image = nil;
-	printf("hit bottom\n");
-
-
- CantGetPrivate:
-    return err;
-}
-
-OSStatus view_showpage(HIViewRef view)
-{
-    OSStatus err;
-    viewctx *ctx;
-
-    err = GetControlData(view, 1, kViewPrivate, 4, &ctx, NULL);
-    require_noerr(err, CantGetPrivate);
-
-	fz_error *error;
-	fz_matrix ctm;
-	fz_rect bbox;
-	fz_obj *obj;
-
-	assert(ctx->pageno > 0 && ctx->pageno <= pdf_getpagecount(ctx->pages));
-
-	//XDefineCursor(xdpy, xwin, xcwait);
-
-	if (ctx->image)
-		fz_droppixmap(ctx->image);
-	ctx->image = nil;
-
-	obj = pdf_getpageobject(ctx->pages, ctx->pageno - 1);
-	if (obj == ctx->pageobj)
-		goto Lskipload;
-	ctx->pageobj = obj;
-
-	if (ctx->page)
-		pdf_droppage(ctx->page);
-
-	error = pdf_loadpage(&ctx->page, ctx->xref, ctx->pageobj);
-	if (error)
-		fz_abort(error);
-
-Lskipload:
-
-	ctm = fz_identity();
-	ctm = fz_concat(ctm, fz_translate(0, -ctx->page->mediabox.y1));
-	ctm = fz_concat(ctm, fz_scale(ctx->zoom, -ctx->zoom));
-	ctm = fz_concat(ctm, fz_rotate(ctx->rotate + ctx->page->rotate));
-
-	bbox = fz_transformaabb(ctm, ctx->page->mediabox);
-
-	error = fz_rendertree(&ctx->image, ctx->rast, ctx->page->tree, ctm, fz_roundrect(bbox), 1);
-	if (error)
-		fz_abort(error);
-
-	//XDefineCursor(xdpy, xwin, xcarrow);
-
-	{
-		char buf[512];
-		int count = pdf_getpagecount(ctx->pages);
-		sprintf(buf, "%s - %d/%d", ctx->doctitle, ctx->pageno, count);
-		//xtitle(buf);
-	}
-
-	//xresize();
-	//xblit();
- CantGetPrivate:
-	return err;
-}
-
-int
-openpdf(WindowRef window, char *filename)
-{
-    HIViewRef viewPane;
-    static const HIViewID viewPaneID = { 'Poof', 666 };
-    OSStatus err;
-
-    err = HIViewFindByID(HIViewGetRoot(window), viewPaneID, &viewPane);
-    require_noerr(err, cleanup);
-
-    err = view_openpdf(viewPane, filename);
-    require_noerr(err, cleanup);
-
-    err = view_showpage(viewPane);
-
- cleanup:
-    return err;
-}
 
 int main(int argc, char *argv[])
 {
@@ -529,6 +399,8 @@ int main(int argc, char *argv[])
     OSStatus err;
     WindowRef window;
 
+    pdfapp_t pdf;
+    
     fz_cpudetect();
     fz_accelerate();
 
@@ -545,12 +417,17 @@ int main(int argc, char *argv[])
     err = CreateWindowFromNib(nibRef, CFSTR("MainWindow"), &window);
     require_noerr(err, CantCreateWindow);
 
-    openpdf(window, "/Users/tor/src/pdf/tiger.pdf");
+    //openpdf(window, gDefaultFilename);
 
     DisposeNibReference(nibRef);
 
+    pdfapp_init(&pdf);
+    pdfapp_open(&pdf, gDefaultFilename);
+    
     ShowWindow(window);
     RunApplicationEventLoop();
+
+    pdfapp_close(&pdf);
 
  CantGetNibRef:
  CantSetMenuBar:

@@ -358,7 +358,7 @@
               <int name="bindingBottomKind">2</int>
               <int name="bindingRightKind">2</int>
             </object>
-            <string name="classID">com.artofcode.mupdf.View</string>
+            <string name="classID">com.artofcode.ghostpdf.View</string>
           </object>
         </array>
       </object>

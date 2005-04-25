@@ -48,7 +48,6 @@ struct pdfapp_s
 	int shrinkwrap;
 
 	/* event handling state */
-
 	char number[256];
 	int numberlen;
 
@@ -58,6 +57,9 @@ struct pdfapp_s
 	int iscopying;
 	int selx, sely;
 	fz_irect selr;
+        
+        /* client context storage */
+        void *userdata;
 };
 
 void pdfapp_init(pdfapp_t *app);
