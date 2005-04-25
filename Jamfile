@@ -263,9 +263,15 @@ Library libmupdf :
 	pdf_resources.c
 	pdf_store.c
 
-	# ahem. how did this get here?
-	pdfapp.c
+	;
 
+
+# --------------------------------------------------------------------------
+
+SubDir TOP apps common ;
+
+Library libpdfapp :
+	pdfapp.c
 	;
 
 
@@ -308,7 +314,7 @@ if $(OS) = MINGW
 	WINLIBS = -lgdi32 -lcomdlg32 ;
 	if $(BUILD) = release { WINLIBS += -mwindows ; }
 
-	LinkLibraries ghostpdf : $(FITZLIBS) ;
+	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
 
 	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
 
@@ -319,7 +325,7 @@ if $(HAVE_X11) = yes
 {
 	SubDir TOP apps unix ;
 	Main ghostpdf : x11pdf.c ximage.c ;
-	LinkLibraries ghostpdf : $(FITZLIBS) ;
+	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
 	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
@@ -345,7 +351,7 @@ if $(OS) = MACOSX
 	MkDir $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
 	Depends $(MACPDF) : $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
 	Main $(MACPDF) : macpdf.c ;
-	LinkLibraries $(MACPDF) : $(FITZLIBS) ;
+	LinkLibraries $(MACPDF) : libpdfapp $(FITZLIBS) ;
 	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
 }
 
