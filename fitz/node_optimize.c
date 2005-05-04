@@ -179,6 +179,9 @@ static void cleanmasks(fz_node *node)
 	for (current = node->first; current; current = current->next)
 	{
 retry:
+		if (!current)
+			break;
+
 		if (fz_ismasknode(current))
 		{
 			shape = current->first;
