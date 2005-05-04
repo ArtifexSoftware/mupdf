@@ -248,7 +248,7 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	{
 	case FNONE:
 		assert(dst->n == 1);
-		fz_text_1c1(sp, src->w, dp, dst->w, w, h);
+		fz_text_1o1(sp, src->w, dp, dst->w, w, h);
 		break;
 
 	case FOVER:
