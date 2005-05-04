@@ -7,7 +7,7 @@ static int doprintxref = 0;
 
 void usage()
 {
-	fprintf(stderr, "usage: pdfdebug [-dxs] [-u password] file.pdf [oid ...]\n");
+	fprintf(stderr, "usage: pdfdebug [-dx] [-u password] file.pdf [oid ...]\n");
 	exit(1);
 }
 
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	int c;
 
-	while ((c = getopt(argc, argv, "drxopu:")) != -1)
+	while ((c = getopt(argc, argv, "dxu:")) != -1)
 	{
 		switch (c)
 		{
