@@ -303,6 +303,8 @@ void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 	}
 
 	winrepaint(app);
+
+	wincursor(app, ARROW);
 }
 
 

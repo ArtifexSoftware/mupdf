@@ -140,11 +140,16 @@ void wincursor(pdfapp_t *app, int curs)
 		XDefineCursor(xdpy, xwin, xchand);
 	if (curs == WAIT)
 		XDefineCursor(xdpy, xwin, xcwait);
+	XFlush(xdpy);
 }
 
 void wintitle(pdfapp_t *app, char *s)
 {
+#ifdef X_HAVE_UTF8_STRING
+	Xutf8SetWMProperties(xdpy, xwin, s, s, 0, 0, 0, 0, 0);
+#else
 	XmbSetWMProperties(xdpy, xwin, s, s, 0, 0, 0, 0, 0);
+#endif
 }
 
 void winconvert(pdfapp_t *app, fz_pixmap *image)
