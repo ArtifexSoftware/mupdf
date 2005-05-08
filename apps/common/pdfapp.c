@@ -512,7 +512,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	}
 }
 
-void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int state)
+void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
 	pdf_link *link;
 	fz_matrix ctm;
@@ -567,6 +567,30 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int state)
 			app->selr.x1 = x;
 			app->selr.y0 = y;
 			app->selr.y1 = y;
+		}
+		if (btn == 4 || btn == 5) /* scroll wheel */
+		{
+			int dir = btn == 4 ? 1 : -1;
+			app->ispanning = app->iscopying = 0;
+			if (modifiers & (1<<2))
+			{
+				/* zoom in/out if ctrl is pressed */
+				app->zoom += 0.1 * dir;
+				if (app->zoom > 3.0)
+					app->zoom = 3.0;
+				if (app->zoom < 0.1)
+					app->zoom = 0.1;
+				pdfapp_showpage(app, 0, 1);
+			}
+			else
+			{
+				/* scroll up/down, or left/right if
+				   shift is pressed */
+				int isx = (modifiers & (1<<0));
+				int xstep = isx ? 20 * dir : 0;
+				int ystep = !isx ? 20 * dir : 0;
+				pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
+			}
 		}
 	}
 

@@ -379,7 +379,7 @@ void onkey(int c)
 	pdfapp_onkey(&gapp, c);
 }
 
-void onmouse(int x, int y, int btn, int state)
+void onmouse(int x, int y, int btn, int modifiers, int state)
 {
 	if (state != 0 && justcopied)
 	{
@@ -387,7 +387,7 @@ void onmouse(int x, int y, int btn, int state)
 		winrepaint(&gapp);
 	}
 
-	pdfapp_onmouse(&gapp, x, y, btn, state);
+	pdfapp_onmouse(&gapp, x, y, btn, modifiers, state);
 }
 
 void usage(void)
@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, 0);
 				if (len)
 					onkey(buf[0]);
-				onmouse(oldx, oldy, 0, 0);
+				onmouse(oldx, oldy, 0, 0, 0);
 
 				if (dirty)
 				{
@@ -478,16 +478,16 @@ int main(int argc, char **argv)
 			case MotionNotify:
 				oldx = xevt.xbutton.x;
 				oldy = xevt.xbutton.y;
-				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, 0);
+				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, xevt.xbutton.state, 0);
 				break;
 
 			case ButtonPress:
-				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, 1);
+				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, xevt.xbutton.state, 1);
 				break;
 
 			case ButtonRelease:
 				copytime = xevt.xbutton.time;
-				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, -1);
+				onmouse(xevt.xbutton.x, xevt.xbutton.y, xevt.xbutton.button, xevt.xbutton.state, -1);
 				break;
 
 			case SelectionRequest:
