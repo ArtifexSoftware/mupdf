@@ -392,7 +392,7 @@ void onmouse(int x, int y, int btn, int state)
 
 void usage(void)
 {
-	fprintf(stderr, "usage: ghostpdf [-d password] file.pdf\n");
+	fprintf(stderr, "usage: ghostpdf [-d password] [-z zoom] [-p pagenumber] file.pdf\n");
 	exit(1);
 }
 
@@ -405,12 +405,16 @@ int main(int argc, char **argv)
 	KeySym keysym;
 	int oldx = 0;
 	int oldy = 0;
+	double zoom = 1.0;
+	int pageno = 1;
 
-	while ((c = getopt(argc, argv, "d:")) != -1)
+	while ((c = getopt(argc, argv, "dzp:")) != -1)
 	{
 		switch (c)
 		{
 		case 'd': password = optarg; break;
+		case 'z': zoom = atof(optarg); break;
+		case 'p': pageno = atoi(optarg); break;
 		default: usage();
 		}
 	}
@@ -428,6 +432,8 @@ int main(int argc, char **argv)
 	pdfapp_init(&gapp);
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
+	gapp.zoom = zoom;
+	gapp.pageno = pageno;
 
 	pdfapp_open(&gapp, filename);
 
