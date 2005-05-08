@@ -4,7 +4,7 @@
 # This file is sourced by Jamfile when making
 # Put all configuration stuff here
 #
-
+OPTIM = ; # disable jam's built-in optimization flags 
 if $(OS) = MINGW
 {
 	FREETYPECC ?= -Ih:/package/include ;
