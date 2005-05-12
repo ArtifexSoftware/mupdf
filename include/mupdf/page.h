@@ -27,12 +27,12 @@ struct pdf_page_s
 
 struct pdf_textchar_s
 {
-	int x, y, c;
+	fz_irect bbox;
+	int c;
 };
 
 struct pdf_textline_s
 {
-	fz_point height;
 	int len, cap;
 	pdf_textchar *text;
 	pdf_textline *next;

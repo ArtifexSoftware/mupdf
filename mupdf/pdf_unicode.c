@@ -99,8 +99,6 @@ pdf_newtextline(pdf_textline **linep)
 	line = *linep = fz_malloc(sizeof(pdf_textline));
 	if (!line)
 		return fz_outofmem;
-	line->height.x = 0;	/* bad default value... */
-	line->height.y = 10;
 	line->len = 0;
 	line->cap = 0;
 	line->text = nil;
@@ -118,7 +116,7 @@ pdf_droptextline(pdf_textline *line)
 }
 
 static fz_error *
-addtextchar(pdf_textline *line, int x, int y, int c)
+addtextchar(pdf_textline *line, fz_irect bbox, int c)
 {
 	pdf_textchar *newtext;
 	int newcap;
@@ -133,8 +131,7 @@ addtextchar(pdf_textline *line, int x, int y, int c)
 		line->text = newtext;
 	}
 
-	line->text[line->len].x = x;
-	line->text[line->len].y = y;
+	line->text[line->len].bbox = bbox;
 	line->text[line->len].c = c;
 	line->len ++;
 
@@ -158,18 +155,14 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 		fz_matrix trm;
 		float dx, dy, t;
 		fz_point p;
+		fz_point vx;
+		fz_point vy;
 		fz_vmtx v;
 		fz_hmtx h;
-		int i, g, x, y;
+		int i, g;
+		int x, y;
+		fz_irect box;
 		int c;
-
-		/* get line height */
-		trm = fz_concat(tm, ctm);
-		trm.e = 0;
-		trm.f = 0;
-		p.x = 0;
-		p.y = 1;
-		(*line)->height = fz_transformpoint(trm, p);
 
 		for (i = 0; i < text->len; i++)
 		{
@@ -178,8 +171,10 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			tm.e = text->els[i].x;
 			tm.f = text->els[i].y;
 			trm = fz_concat(tm, ctm);
-			x = fz_floor(trm.e);
-			y = fz_floor(trm.f);
+			x = trm.e;
+			y = trm.f;
+			trm.e = 0;
+			trm.f = 0;
 
 			p.x = text->els[i].x;
 			p.y = text->els[i].y;
@@ -192,12 +187,18 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			{
 				h = fz_gethmtx(text->font, g);
 				oldpt.x += h.w * 0.001;
+				
+				vx.x = h.w * 0.001; vx.y = 0;
+				vy.x = 0; vy.y = 1;
 			}
 			else
 			{
 				v = fz_getvmtx(text->font, g);
-				oldpt.y += v.w;
+				oldpt.y += v.w * 0.001;
 				t = dy; dy = dx; dx = t;
+
+				vx.x = 0.5; vx.y = 0;
+				vy.x = 0; vy.y = v.w * 0.001;
 			}
 
 			if (fabs(dy) > 0.2)
@@ -211,10 +212,19 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			}
 			else if (fabs(dx) > 0.2)
 			{
-				error = addtextchar(*line, x, y, ' ');
+				box.x0 = x; box.x1 = x;
+				box.y0 = y; box.y1 = y;
+				error = addtextchar(*line, box, ' ');
 				if (error)
 					return error;
 			}
+
+			vx = fz_transformpoint(trm, vx);
+			vy = fz_transformpoint(trm, vy);
+			box.x0 = MIN(0, MIN(vx.x, vy.x)) + x;
+			box.x1 = MAX(0, MAX(vx.x, vy.x)) + x;
+			box.y0 = MIN(0, MIN(vx.y, vy.y)) + y;
+			box.y1 = MAX(0, MAX(vx.y, vy.y)) + y;
 
 			if (font->tounicode)
 				c = fz_lookupcid(font->tounicode, g);
@@ -223,7 +233,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			else
 				c = g;
 
-			error = addtextchar(*line, x, y, c);
+			error = addtextchar(*line, box, c);
 			if (error)
 				return error;
 		}

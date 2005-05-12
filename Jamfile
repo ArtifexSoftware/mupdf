@@ -98,7 +98,7 @@ Library libfitz :
 	base_rect.c
 	base_rune.c
 
-	node_debug.c
+	node_toxml.c
 	node_misc1.c
 	node_misc2.c
 	node_optimize.c

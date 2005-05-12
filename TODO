@@ -1,10 +1,24 @@
 cmap one-to-many mapping
+builtin standard cmap files
+put unicode strings in text object, not font
+
+xml parser
+unicode normaliser
+
+path stroke/dash/flatten work on real path struct
+turn into gel as second step after stroke/flatten
+add intersector for metro union/xor/difference stuff
+
+image rescale to exact size instead of by integer quantas
+
+public / private api
+
+top-level "driver" architecture (metro/pdf/whatever input)
+
+---
 
 immediate plan:
 
-	* design gui for editor
-	* libfontfocus
-	* write mupdf hackers guide
 	* clean up and 'freeze' public api
 
 	* get font bbox from fontdescriptor if available

@@ -394,6 +394,15 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		pdfapp_showpage(app, 0, 1);
 		break;
 
+	case 'a':
+		app->rotate -= 15;
+		pdfapp_showpage(app, 0, 1);
+		break;
+	case 's':
+		app->rotate += 15;
+		pdfapp_showpage(app, 0, 1);
+		break;
+
 	/*
 	 * Pan view, but dont need to repaint image
 	 */
@@ -602,8 +611,10 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	fz_error *error;
 	pdf_textline *line, *ln;
-	int x, y, c;
+	int y, c;
 	int i, p;
+
+	int bx0, bx1, by0, by1;
 
 	int x0 = app->image->x + app->selr.x0 - app->panx;
 	int x1 = app->image->x + app->selr.x1 - app->panx;
@@ -620,17 +631,19 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 		y = y0 - 1;
 		for (i = 0; i < ln->len; i++)
 		{
-			x = ln->text[i].x;
-			y = ln->text[i].y;
+			bx0 = ln->text[i].bbox.x0;
+			bx1 = ln->text[i].bbox.x1;
+			by0 = ln->text[i].bbox.y0;
+			by1 = ln->text[i].bbox.y1;
 			c = ln->text[i].c;
 			if (c < 32)
 				c = '?';
-			if (x >= x0 && x <= x1 && y >= y0 && y <= y1)
+			if (bx1 >= x0 && bx0 <= x1 && by1 >= y0 && by0 <= y1)
 				if (p < ucslen - 1)
 					ucsbuf[p++] = c;
 		}
 
-		if (y >= y0 && y <= y1)
+		if (by1 >= y0 && by0 <= y1)
 		{
 #ifdef WIN32
 			if (p < ucslen - 1)
