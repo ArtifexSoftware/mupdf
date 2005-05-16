@@ -129,6 +129,18 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 		error = pdf_loadtype4shade(shade, xref, dict, ref);
 		if (error) goto cleanup;
 		break;
+	case 5:
+		error = pdf_loadtype5shade(shade, xref, dict, ref);
+		if (error) goto cleanup;
+		break;
+	case 6:
+		error = pdf_loadtype6shade(shade, xref, dict, ref);
+		if (error) goto cleanup;
+		break;
+	case 7:
+		error = pdf_loadtype7shade(shade, xref, dict, ref);
+		if (error) goto cleanup;
+		break;
 	default:
 		fz_warn("syntaxerror: unknown shading type: %d", type);
 		break;

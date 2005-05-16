@@ -5,6 +5,7 @@
 typedef struct pdf_material_s pdf_material;
 typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_csi_s pdf_csi;
+typedef struct pdf_tensorpatch_s pdf_tensorpatch;
 
 enum
 {
@@ -82,6 +83,11 @@ struct pdf_csi_s
 	int textmode;
 
 	fz_tree *tree;
+};
+
+struct pdf_tensorpatch_s {
+    fz_point pole[4][4];
+	float color[4][FZ_MAXCOLORS];
 };
 
 /* build.c */
