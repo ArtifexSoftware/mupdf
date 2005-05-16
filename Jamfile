@@ -357,6 +357,29 @@ if $(OS) = MACOSX
 
 # --------------------------------------------------------------------------
 #
+# Mozilla plugins
+#
+
+SubDir TOP apps mozilla ;
+
+if $(OS) = MINGW
+{
+	SUFEXE on npmupdf.dll = ;
+	LINKFLAGS on npmupdf.dll = -shared -Wl,--kill-at ;
+	LINKLIBS on npmupdf.dll = $(LINKLIBS) -lgdi32 ;
+
+	Main npmupdf.dll :
+		npwin.c
+		moz_winres.rc
+		moz_main.c
+		;
+
+	LinkLibraries npmupdf.dll : $(FITZLIBS) ;
+	InstallBin $(BINDIR) : npmupdf.dll ;
+}
+
+# --------------------------------------------------------------------------
+#
 # Documenatation
 #
 

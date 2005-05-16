@@ -588,7 +588,7 @@ void handlemouse(int x, int y, int btn, int state)
 	if (state == -1)
 		ReleaseCapture();
 
-	pdfapp_onmouse(&gapp, x, y, btn, state);
+	pdfapp_onmouse(&gapp, x, y, btn, 0, state);
 }
 
 LRESULT CALLBACK

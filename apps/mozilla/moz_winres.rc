@@ -1,0 +1,21 @@
+//
+// GhostPDF Plugin description
+//
+
+1 VERSIONINFO
+
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+			VALUE "ProductName", "GhostPDF Plug-in\0"
+			VALUE "OriginalFilename", "npmupdf.dll\0"
+			VALUE "FileDescription", "The GhostPDF plugin allows you to browse PDF files with a slightly less insane user interface than the Adobe Reader :)\0"
+            VALUE "MIMEType", "application/pdf|application/mupdf\0"
+			VALUE "FileExtents", "pdf|foo"
+			VALUE "FileOpenName", "Acrobat PDF File|Acrobat PDF File"
+        END
+    END
+END
+
