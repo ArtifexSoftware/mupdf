@@ -21,7 +21,14 @@ fz_processrld(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	while (1)
 	{
 		if (in->rp == in->wp)
+		{
+			if (in->eof)
+			{
+				out->eof = 1;
+				return fz_iodone;
+			}
 			return fz_ioneedin;
+		}
 
 		if (out->wp == out->ep)
 			return fz_ioneedout;
