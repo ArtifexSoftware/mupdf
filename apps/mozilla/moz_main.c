@@ -621,8 +621,8 @@ MozWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 		case SB_BOTTOM: si.nPos = si.nMax; break;
 		case SB_TOP: si.nPos = 0; break;
-		case SB_LINEUP: si.nPos -= 30; break;
-		case SB_LINEDOWN: si.nPos += 30; break;
+		case SB_LINEUP: si.nPos -= 50; break;
+		case SB_LINEDOWN: si.nPos += 50; break;
 		case SB_PAGEUP: si.nPos -= si.nPage; break;
 		case SB_PAGEDOWN: si.nPos += si.nPage; break;
 		case SB_THUMBTRACK: si.nPos = si.nTrackPos; break;
@@ -640,6 +640,13 @@ MozWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		NPN_Status(moz->inst, buf);
 
 		return 0;
+
+	case WM_MOUSEWHEEL:
+		if ((signed short)HIWORD(wParam) > 0)
+			SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_LINEUP, 0), 0);
+		else
+			SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_LINEDOWN, 0), 0);
+		break;
 
 	case WM_KEYDOWN:
 		sendmsg = 0xFFFF;
