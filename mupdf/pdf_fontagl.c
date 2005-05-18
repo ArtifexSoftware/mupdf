@@ -38,7 +38,7 @@ int pdf_lookupagl(char *name)
 	return -1;
 }
 
-struct pdf_aglpair pdf_adobeglyphlist[] =
+const struct pdf_aglpair pdf_adobeglyphlist[] =
 {
 
 {"A",0x0041},
@@ -4328,5 +4328,5 @@ struct pdf_aglpair pdf_adobeglyphlist[] =
 */
 };
 
-int pdf_adobeglyphlen = (sizeof(pdf_adobeglyphlist) / sizeof(struct pdf_aglpair));
+const int pdf_adobeglyphlen = (sizeof(pdf_adobeglyphlist) / sizeof(struct pdf_aglpair));
 

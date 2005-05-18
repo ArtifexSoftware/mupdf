@@ -1,3 +1,6 @@
+lazy nametree
+lazy pagetree
+
 cmap one-to-many mapping
 builtin standard cmap files
 put unicode strings in text object, not font

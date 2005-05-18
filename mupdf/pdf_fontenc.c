@@ -13,18 +13,18 @@ void pdf_loadencoding(char **estrings, char *encoding)
 	int i;
 
 	if (!strcmp(encoding, "MacRomanEncoding"))
-		bstrings = pdf_macroman;
+		bstrings = (char**) pdf_macroman;
 	if (!strcmp(encoding, "MacExpertEncoding"))
-		bstrings = pdf_macexpert;
+		bstrings = (char**) pdf_macexpert;
 	if (!strcmp(encoding, "WinAnsiEncoding"))
-		bstrings = pdf_winansi;
+		bstrings = (char**) pdf_winansi;
 
 	if (bstrings)
 		for (i = 0; i < 256; i++)
 			estrings[i] = bstrings[i];
 }
 
-unsigned short pdf_docencoding[256] =
+const unsigned short pdf_docencoding[256] =
 {
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -60,7 +60,7 @@ unsigned short pdf_docencoding[256] =
 	0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00fd, 0x00fe, 0x00ff
 };
 
-char *pdf_macroman[256] = { _notdef, _notdef,
+const char * const pdf_macroman[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -100,7 +100,7 @@ char *pdf_macroman[256] = { _notdef, _notdef,
 	"Ugrave", "dotlessi", "circumflex", "tilde", "macron", "breve",
 	"dotaccent", "ring", "cedilla", "hungarumlaut", "ogonek", "caron" };
 
-char *pdf_macexpert[256] = { _notdef, _notdef,
+const char * const pdf_macexpert[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -153,7 +153,7 @@ char *pdf_macexpert[256] = { _notdef, _notdef,
 	"msuperior", "commasuperior", "periodsuperior", "Dotaccentsmall",
 	"Ringsmall", _notdef, _notdef, _notdef, _notdef };
 
-char *pdf_winansi[256] = { _notdef, _notdef, _notdef,
+const char * const pdf_winansi[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -196,7 +196,7 @@ char *pdf_winansi[256] = { _notdef, _notdef, _notdef,
 
 #if 0
 
-char *pdf_standard[256] = { _notdef, _notdef,
+const char * const pdf_standard[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -236,7 +236,7 @@ char *pdf_standard[256] = { _notdef, _notdef,
 	_notdef, "dotlessi", _notdef, _notdef, "lslash", "oslash",
 	"oe", "germandbls", _notdef, _notdef, _notdef, _notdef };
 
-char *pdf_expert[256] = { _notdef, _notdef, _notdef,
+const char * const pdf_expert[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -289,7 +289,7 @@ char *pdf_expert[256] = { _notdef, _notdef, _notdef,
 	"Uacutesmall", "Ucircumflexsmall", "Udieresissmall", "Yacutesmall",
 	"Thornsmall", "Ydieresissmall" };
 
-char *pdf_symbol[256] = { _notdef, _notdef, _notdef,
+const char * const pdf_symbol[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -336,7 +336,7 @@ char *pdf_symbol[256] = { _notdef, _notdef, _notdef,
 	"bracketrightex", "bracketrightbt", "bracerighttp", "bracerightmid",
 	"bracerightbt", _notdef };
 
-char *pdf_zapfdingbats[256] = { _notdef, _notdef,
+const char * const pdf_zapfdingbats[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,

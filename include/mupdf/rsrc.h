@@ -144,20 +144,20 @@ fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
  */
 
 struct pdf_aglpair { char *name; unsigned short code; };
-extern struct pdf_aglpair pdf_adobeglyphlist[];
-extern int pdf_adobeglyphlen;
+extern const struct pdf_aglpair pdf_adobeglyphlist[];
+extern const int pdf_adobeglyphlen;
 
 void pdf_loadencoding(char **estrings, char *encoding);
 int pdf_lookupagl(char *name);
 
-extern unsigned short pdf_docencoding[256];
-extern char *pdf_macroman[256];
-extern char *pdf_macexpert[256];
-extern char *pdf_winansi[256];
-extern char *pdf_standard[256];
-extern char *pdf_expert[256];
-extern char *pdf_symbol[256];
-extern char *pdf_zapfdingbats[256];
+extern const unsigned short pdf_docencoding[256];
+extern const char * const pdf_macroman[256];
+extern const char * const pdf_macexpert[256];
+extern const char * const pdf_winansi[256];
+extern const char * const pdf_standard[256];
+extern const char * const pdf_expert[256];
+extern const char * const pdf_symbol[256];
+extern const char * const pdf_zapfdingbats[256];
 
 typedef struct pdf_font_s pdf_font;
 

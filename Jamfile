@@ -69,7 +69,7 @@ rule WindRes
 	Clean clean : $(<) ;
 }
 
-actions HexDump { xxd -i $(>) > $(<) }
+actions HexDump { xxd -i $(>) | sed -e 's/unsigned/const unsigned/' > $(<) }
 actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
 
 rule XCopy
@@ -263,16 +263,6 @@ Library libmupdf :
 
 	;
 
-
-# --------------------------------------------------------------------------
-
-SubDir TOP apps common ;
-
-Library libpdfapp :
-	pdfapp.c
-	;
-
-
 # --------------------------------------------------------------------------
 #
 # Build simple portable apps
@@ -299,6 +289,12 @@ for APP in $(APPLIST)
 #
 # Build non-portable GUI frontend apps
 #
+
+SubDir TOP apps common ;
+
+Library libpdfapp :
+	pdfapp.c
+	;
 
 if $(OS) = MINGW
 {
@@ -380,6 +376,8 @@ if $(OS) = MINGW
 #
 # Documenatation
 #
+
+SubDir TOP ;
 
 InstallFile $(BINDIR) : PUBLIC ;
 InstallFile $(BINDIR) : CHANGES ;

@@ -21,53 +21,66 @@ enum
 	FD_FORCEBOLD = 1 << 18
 };
 
-static char *basenames[15] =
+static const struct
 {
-	"Courier", 
-	"Courier-Bold", 
-	"Courier-Oblique",
-	"Courier-BoldOblique",
-	"Helvetica",
-	"Helvetica-Bold",
-	"Helvetica-Oblique",
-	"Helvetica-BoldOblique",
-	"Times-Roman",
-	"Times-Bold",
-	"Times-Italic",
-	"Times-BoldItalic",
-	"Symbol", 
-	"ZapfDingbats",
-	"Chancery"
+	const char *name;
+	const unsigned char *cff;
+	const unsigned int *len;
+} basefonts[15] =
+{
+	{ "Courier",
+		fonts_NimbusMonL_Regu_cff,
+		&fonts_NimbusMonL_Regu_cff_len },
+	{ "Courier-Bold",
+		fonts_NimbusMonL_Bold_cff,
+		&fonts_NimbusMonL_Bold_cff_len },
+	{ "Courier-Oblique",
+		fonts_NimbusMonL_ReguObli_cff,
+		&fonts_NimbusMonL_ReguObli_cff_len },
+	{ "Courier-BoldOblique",
+		fonts_NimbusMonL_BoldObli_cff,
+		&fonts_NimbusMonL_BoldObli_cff_len },
+	{ "Helvetica",
+		fonts_NimbusSanL_Regu_cff,
+		&fonts_NimbusSanL_Regu_cff_len },
+	{ "Helvetica-Bold",
+		fonts_NimbusSanL_Bold_cff,
+		&fonts_NimbusSanL_Bold_cff_len },
+	{ "Helvetica-Oblique",
+		fonts_NimbusSanL_ReguItal_cff,
+		&fonts_NimbusSanL_ReguItal_cff_len },
+	{ "Helvetica-BoldOblique",
+		fonts_NimbusSanL_BoldItal_cff,
+		&fonts_NimbusSanL_BoldItal_cff_len },
+	{ "Times-Roman",
+		fonts_NimbusRomNo9L_Regu_cff,
+		&fonts_NimbusRomNo9L_Regu_cff_len },
+	{ "Times-Bold",
+		fonts_NimbusRomNo9L_Medi_cff,
+		&fonts_NimbusRomNo9L_Medi_cff_len },
+	{ "Times-Italic",
+		fonts_NimbusRomNo9L_ReguItal_cff,
+		&fonts_NimbusRomNo9L_ReguItal_cff_len },
+	{ "Times-BoldItalic",
+		fonts_NimbusRomNo9L_MediItal_cff,
+		&fonts_NimbusRomNo9L_MediItal_cff_len },
+	{ "Symbol",
+		fonts_StandardSymL_cff,
+		&fonts_StandardSymL_cff_len },
+	{ "ZapfDingbats",
+		fonts_Dingbats_cff,
+		&fonts_Dingbats_cff_len },
+	{ "Chancery",
+		fonts_URWChanceryL_MediItal_cff,
+		&fonts_URWChanceryL_MediItal_cff_len }
 };
-
-static void loadfontdata(int i, unsigned char **d, unsigned int *l)
-{
-	switch (i)
-	{
-	case  0: *d=fonts_NimbusMonL_Regu_cff;*l=fonts_NimbusMonL_Regu_cff_len;break;
-	case  1: *d=fonts_NimbusMonL_Bold_cff;*l=fonts_NimbusMonL_Bold_cff_len;break;
-	case  2: *d=fonts_NimbusMonL_ReguObli_cff;*l=fonts_NimbusMonL_ReguObli_cff_len;break;
-	case  3: *d=fonts_NimbusMonL_BoldObli_cff;*l=fonts_NimbusMonL_BoldObli_cff_len;break;
-	case  4: *d=fonts_NimbusSanL_Regu_cff;*l=fonts_NimbusSanL_Regu_cff_len;break;
-	case  5: *d=fonts_NimbusSanL_Bold_cff;*l=fonts_NimbusSanL_Bold_cff_len;break;
-	case  6: *d=fonts_NimbusSanL_ReguItal_cff;*l=fonts_NimbusSanL_ReguItal_cff_len;break;
-	case  7: *d=fonts_NimbusSanL_BoldItal_cff;*l=fonts_NimbusSanL_BoldItal_cff_len;break;
-	case  8: *d=fonts_NimbusRomNo9L_Regu_cff;*l=fonts_NimbusRomNo9L_Regu_cff_len;break;
-	case  9: *d=fonts_NimbusRomNo9L_Medi_cff;*l=fonts_NimbusRomNo9L_Medi_cff_len;break;
-	case 10: *d=fonts_NimbusRomNo9L_ReguItal_cff;*l=fonts_NimbusRomNo9L_ReguItal_cff_len;break;
-	case 11: *d=fonts_NimbusRomNo9L_MediItal_cff;*l=fonts_NimbusRomNo9L_MediItal_cff_len;break;
-	case 12: *d=fonts_StandardSymL_cff;*l=fonts_StandardSymL_cff_len;break;
-	case 13: *d=fonts_Dingbats_cff;*l=fonts_Dingbats_cff_len;break;
-	default: *d=fonts_URWChanceryL_MediItal_cff;*l=fonts_URWChanceryL_MediItal_cff_len;break;
-	}
-}
 
 enum { CNS, GB, Japan, Korea };
 enum { MINCHO, GOTHIC };
 
 struct subent { int csi; int kind; char *name; };
 
-static struct subent fontsubs[] =
+static const struct subent fontsubs[] =
 {
 	{ CNS, MINCHO, "bkai00mp.ttf" },
 	{ CNS, GOTHIC, "bsmi00lp.ttf" },
@@ -131,7 +144,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *fontname)
 		return error;
 
 	for (i = 0; i < 15; i++)
-		if (!strcmp(fontname, basenames[i]))
+		if (!strcmp(fontname, basefonts[i].name))
 			goto found;
 
 	return fz_throw("font not found: %s", fontname);
@@ -139,7 +152,8 @@ pdf_loadbuiltinfont(pdf_font *font, char *fontname)
 found:
 	pdf_logfont("load builtin font %s\n", fontname);
 
-	loadfontdata(i, &data, &len);
+	data = (unsigned char *) basefonts[i].cff;
+	len = *basefonts[i].len;
 
 	e = FT_New_Memory_Face(ftlib, data, len, 0, (FT_Face*)&font->ftface);
 	if (e)
@@ -151,7 +165,7 @@ found:
 static int
 findcidfont(char *filename, char *path, int pathlen)
 {
-	static char *dirs[] =
+	static const char *dirs[] =
 	{
 		"$/.fonts",
 		"$/Library/Fonts",
@@ -193,7 +207,7 @@ findcidfont(char *filename, char *path, int pathlen)
 	if (!home)
 		home = "/";
 
-	for (dirp = dirs; *dirp; dirp++)
+	for (dirp = (char**)dirs; *dirp; dirp++)
 	{
 		dir = *dirp;
 		if (dir[0] == '$')
