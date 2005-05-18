@@ -250,12 +250,7 @@ Library libmupdf :
 	pdf_pattern.c
 	pdf_shade.c
 	pdf_shade1.c
-	pdf_shade2.c
-	pdf_shade3.c
 	pdf_shade4.c
-	pdf_shade5.c
-	pdf_shade6.c
-	pdf_shade7.c
 	pdf_xobject.c
 
 	# pages, resource dictionaries, ...

@@ -1,7 +1,7 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-/* author: seokgyo@gmail.com */
+/* this mess is seokgyo's */
 
 enum
 {
