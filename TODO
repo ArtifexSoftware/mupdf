@@ -2,8 +2,8 @@ lazy nametree
 lazy pagetree
 
 cmap one-to-many mapping
-builtin standard cmap files
-put unicode strings in text object, not font
+builtin standard cmap files (?)
+put unicode strings in text object, not font (a la metro)
 
 xml parser
 unicode normaliser
@@ -17,6 +17,13 @@ image rescale to exact size instead of by integer quantas
 public / private api
 
 top-level "driver" architecture (metro/pdf/whatever input)
+
+fix the shading code:
+	3 levels of detail patch mesh (quad, patch, tensor)
+	subdivide to triangles on the fly
+	draw tris as before
+	reuse more code in the parsing
+	error cleanup
 
 ---
 

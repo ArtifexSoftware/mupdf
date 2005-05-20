@@ -264,6 +264,19 @@ Library libmupdf :
 	;
 
 # --------------------------------------------------------------------------
+
+SubDir TOP samus ;
+
+Library libsamus :
+	# sa_zip.c
+	# sa_xml.c
+
+	;
+
+Main foo : sa_zip.c ;
+LinkLibraries foo : $(FITZLIBS) ;
+
+# --------------------------------------------------------------------------
 #
 # Build simple portable apps
 #
