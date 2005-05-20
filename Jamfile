@@ -16,8 +16,8 @@ ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 
 BINDIR = [ FDirName $(TOP) dist ] ;
 
-LINKLIBS = $(FREETYPELD) -ljpeg -lz -lm ;
-FITZLIBS = libmupdf libstream libfitz librender libfonts ;
+LINKLIBS = $(FREETYPELD) -lexpat -ljpeg -lz -lm ;
+FITZLIBS = libsamus libmupdf libstream libfitz librender libfonts ;
 
 if $(HAVE_JASPER) = yes
 {
@@ -268,13 +268,10 @@ Library libmupdf :
 SubDir TOP samus ;
 
 Library libsamus :
-	# sa_zip.c
+	sa_zip.c
 	# sa_xml.c
 
 	;
-
-Main foo : sa_zip.c ;
-LinkLibraries foo : $(FITZLIBS) ;
 
 # --------------------------------------------------------------------------
 #
@@ -289,6 +286,7 @@ APPLIST =
 	pdfdebug
 	pdfmerge
 	pdfselect
+	samzip
 	;
 
 for APP in $(APPLIST)
