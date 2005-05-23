@@ -272,6 +272,7 @@ SubDir TOP samus ;
 Library libsamus :
 	sa_zip.c
 	sa_xml.c
+	sa_tiff.c
 	;
 
 # --------------------------------------------------------------------------
@@ -289,6 +290,7 @@ APPLIST =
 	pdfselect
 	samzip
 	samxml
+	samtiff
 	;
 
 for APP in $(APPLIST)
