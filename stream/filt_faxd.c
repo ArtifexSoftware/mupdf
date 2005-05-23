@@ -166,10 +166,10 @@ dec1d(fz_faxd *fax)
 		return fz_throw("ioerror: uncompressed data in faxd");
 
 	if (code < 0)
-		return fz_throw("ioerror: invalid 1d code in faxd");
+		return fz_throw("ioerror: negative code in 1d faxd");
 
 	if (fax->a + code > fax->columns)
-		return fz_throw("ioerror: invalid 1d data in faxd");
+		return fz_throw("ioerror: overflow in 1d faxd");
 
 	if (fax->c)
 		setbits(fax->dst, fax->a, fax->a + code);
@@ -207,10 +207,10 @@ dec2d(fz_faxd *fax)
 			return fz_throw("ioerror: uncompressed data in faxd");
 
 		if (code < 0)
-			return fz_throw("ioerror: invalid 2d code in faxd");
+			return fz_throw("ioerror: negative code in 2d faxd");
 
 		if (fax->a + code > fax->columns)
-			return fz_throw("ioerror: invalid 2d data in faxd");
+			return fz_throw("ioerror: overflow in 2d faxd");
 
 		if (fax->c)
 			setbits(fax->dst, fax->a, fax->a + code);
@@ -297,10 +297,10 @@ dec2d(fz_faxd *fax)
 			return fz_throw("ioerror: uncompressed data in faxd");
 
 		case ERROR:
-			return fz_throw("ioerror: invalid 2d code in faxd");
+			return fz_throw("ioerror: invalid code in 2d faxd");
 
 		default:
-			return fz_throw("ioerror: invalid 2d code in faxd (%d)", code);
+			return fz_throw("ioerror: invalid code in 2d faxd (%d)", code);
 	}
 
 	return 0;
