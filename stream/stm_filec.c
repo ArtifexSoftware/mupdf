@@ -287,14 +287,14 @@ fz_seek(fz_file *f, int ofs, int whence)
 		if (whence == 0)
 		{
 			if (f->mode == FZ_READ)
-				f->out->rp = CLAMP(f->out->bp + ofs, f->out->bp, f->in->ep);
+				f->out->rp = CLAMP(f->out->bp + ofs, f->out->bp, f->out->ep);
 			else
 				f->in->wp = CLAMP(f->in->bp + ofs, f->in->bp, f->in->ep);
 		}
 		else
 		{
 			if (f->mode == FZ_READ)
-				f->out->rp = CLAMP(f->out->ep + ofs, f->out->bp, f->in->ep);
+				f->out->rp = CLAMP(f->out->ep + ofs, f->out->bp, f->out->ep);
 			else
 				f->in->wp = CLAMP(f->in->ep + ofs, f->in->bp, f->in->ep);
 		}

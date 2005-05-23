@@ -408,7 +408,7 @@ int main(int argc, char **argv)
 	double zoom = 1.0;
 	int pageno = 1;
 
-	while ((c = getopt(argc, argv, "dzp:")) != -1)
+	while ((c = getopt(argc, argv, "d:z:p:")) != -1)
 	{
 		switch (c)
 		{
