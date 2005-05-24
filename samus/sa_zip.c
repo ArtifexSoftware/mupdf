@@ -4,6 +4,9 @@
  *   - no multi-disk
  *   - only Store and Deflate
  *   - ZIP64 format (long long sizes and offsets) [TODO]
+ *
+ * TODO for Metro compliance: compare file names by unescaping %XX
+ * and then converting to upper-case NFC.
  */
 
 #include "fitz.h"
@@ -196,11 +199,20 @@ sa_debugzip(sa_zip *zip)
 	}
 }
 
+int
+sa_accesszipentry(sa_zip *zip, char *name)
+{
+	int i;
+	for (i = 0; i < zip->len; i++)
+		if (!strcmp(name, zip->table[i].name))
+			return 1;
+	return 0;
+}
+
 /*
  * Seek and push decoding filter to read an individual file in the zip archive.
  */
-fz_error *
-sa_openzipstream(sa_zip *zip, char *name)
+static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
 {
 	fz_error *error;
 	fz_filter *filter;
@@ -209,70 +221,73 @@ sa_openzipstream(sa_zip *zip, char *name)
 	unsigned csize, usize;
 	unsigned namesize, metasize;
 	int t;
+
+	t = fz_seek(zip->file, zip->table[idx].offset, 0);
+	if (t < 0)
+		return fz_ferror(zip->file);
+
+	sign = read4(zip->file);
+	if (sign != 0x04034b50)
+		return fz_throw("ioerror: unknown zip signature");
+
+	version = read2(zip->file);
+	general = read2(zip->file);
+	method = read2(zip->file);
+	(void) read2(zip->file);	/* time */
+	(void) read2(zip->file);	/* date */
+	(void) read4(zip->file);	/* crc-32 */
+	csize = read4(zip->file);
+	usize = read4(zip->file);
+	namesize = read2(zip->file);
+	metasize = read2(zip->file);
+
+	if ((version & 0xff) > 45)
+		return fz_throw("ioerror: unsupported zip version");
+
+	if (general & 0x0001)
+		return fz_throw("ioerror: encrypted zip entry");
+
+	fz_seek(zip->file, namesize + metasize, 1);
+
+	switch (method)
+	{	
+	case 0:
+		error = fz_newnullfilter(&filter, csize);
+		if (error)
+			return error;
+		break;
+
+	case 8:
+		error = fz_packobj(&obj, "<</ZIP true>>");
+		if (error)
+			return error;
+		error = fz_newflated(&filter, obj);
+		fz_dropobj(obj);
+		if (error)
+			return error;
+		break;
+
+	default:
+		return fz_throw("ioerror: unsupported compression method");
+		break;
+	}
+
+	error = fz_pushfilter(zip->file, filter);
+	fz_dropfilter(filter);
+	if (error)
+		return error;
+
+	return nil;
+}
+
+fz_error *
+sa_openzipentry(sa_zip *zip, char *name)
+{
 	int i;
 
 	for (i = 0; i < zip->len; i++)
-	{
 		if (!strcmp(name, zip->table[i].name))
-		{
-			t = fz_seek(zip->file, zip->table[i].offset, 0);
-			if (t < 0)
-				return fz_ferror(zip->file);
-
-			sign = read4(zip->file);
-			if (sign != 0x04034b50)
-				return fz_throw("ioerror: unknown zip signature");
-
-			version = read2(zip->file);
-			general = read2(zip->file);
-			method = read2(zip->file);
-			(void) read2(zip->file);	/* time */
-			(void) read2(zip->file);	/* date */
-			(void) read4(zip->file);	/* crc-32 */
-			csize = read4(zip->file);
-			usize = read4(zip->file);
-			namesize = read2(zip->file);
-			metasize = read2(zip->file);
-
-			if ((version & 0xff) > 45)
-				return fz_throw("ioerror: unsupported zip version");
-
-			if (general & 0x0001)
-				return fz_throw("ioerror: encrypted zip entry");
-
-			fz_seek(zip->file, namesize + metasize, 1);
-
-			switch (method)
-			{	
-			case 0:
-				error = fz_newnullfilter(&filter, csize);
-				if (error)
-					return error;
-				break;
-
-			case 8:
-				error = fz_packobj(&obj, "<</ZIP true>>");
-				if (error)
-					return error;
-				error = fz_newflated(&filter, obj);
-				fz_dropobj(obj);
-				if (error)
-					return error;
-				break;
-
-			default:
-				return fz_throw("ioerror: unsupported compression method");
-				break;
-			}
-
-			error = fz_pushfilter(zip->file, filter);
-			fz_dropfilter(filter);
-			if (error)
-				return error;
-
-			return nil;
-		}
-	}
+			return reallyopenzipentry(zip, i);
 
 	return fz_throw("ioerror: file not found in zip: '%s'", name);
 }
@@ -281,7 +296,7 @@ sa_openzipstream(sa_zip *zip, char *name)
  * Pop decompression filter and clean up after reading a file in the archive.
  */
 void
-sa_closezipstream(sa_zip *zip)
+sa_closezipentry(sa_zip *zip)
 {
 	fz_popfilter(zip->file);
 }

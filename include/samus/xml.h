@@ -19,8 +19,8 @@ int sa_isxmlerror(sa_xmlitem *item);
 int sa_isxmltext(sa_xmlitem *item);
 int sa_isxmltag(sa_xmlitem *item);
 
-char *sa_getxmlerror(sa_xmlitem *item);
-char *sa_getxmlname(sa_xmlitem *item);
-char *sa_getxmlatt(sa_xmlitem *item, char *att);
-char *sa_getxmltext(sa_xmlitem *item);
+char *sa_xmlerror(sa_xmlitem *item);
+char *sa_xmlname(sa_xmlitem *item);
+char *sa_xmlatt(sa_xmlitem *item, char *att);
+char *sa_xmltext(sa_xmlitem *item);
 

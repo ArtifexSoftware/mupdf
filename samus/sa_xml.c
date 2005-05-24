@@ -255,7 +255,7 @@ sa_debugxml(sa_xmlitem *item, int level)
 		indent(level);
 
 		if (sa_isxmltext(item))
-			printf("%s\n", sa_getxmltext(item));
+			printf("%s\n", sa_xmltext(item));
 		else
 		{
 			printf("<%s", item->name);
@@ -320,23 +320,23 @@ sa_xmlup(sa_xmlparser *sp)
 int
 sa_isxmlerror(sa_xmlitem *item)
 {
-	return item->name[0] == '!';
+	return item && item->name[0] == '!';
 }
 
 int
 sa_isxmltext(sa_xmlitem *item)
 {
-	return item->name[0] == '\0';
+	return item && item->name[0] == '\0';
 }
 
 int
 sa_isxmltag(sa_xmlitem *item)
 {
-	return item->name[0] != '\0' && item->name[0] != '!';
+	return item && item->name[0] != '\0' && item->name[0] != '!';
 }
 
 char *
-sa_getxmlname(sa_xmlitem *item)
+sa_xmlname(sa_xmlitem *item)
 {
 	if (sa_isxmltag(item))
 		return item->name;
@@ -344,7 +344,7 @@ sa_getxmlname(sa_xmlitem *item)
 }
 
 char *
-sa_getxmlatt(sa_xmlitem *item, char *att)
+sa_xmlatt(sa_xmlitem *item, char *att)
 {
 	int i;
 	if (sa_isxmltag(item))
@@ -357,7 +357,7 @@ sa_getxmlatt(sa_xmlitem *item, char *att)
 }
 
 char *
-sa_getxmltext(sa_xmlitem *item)
+sa_xmltext(sa_xmlitem *item)
 {
 	if (sa_isxmltext(item))
 		return item->atts[1];
