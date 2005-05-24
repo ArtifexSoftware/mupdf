@@ -25,6 +25,13 @@ fix the shading code:
 	reuse more code in the parsing
 	error cleanup
 
+think about rewriting file stream api (as the ultimate STDIO replacement):
+	use function pointers?
+	dont use pipeline filter?
+		memoryfile
+		diskfile
+		filterfile -> (filters data from another file)
+
 ---
 
 immediate plan:

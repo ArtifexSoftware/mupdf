@@ -5,27 +5,41 @@
 
 #define XMLBUFLEN 4096
 
-struct sa_xmlnode_s
+struct sa_xmlitem_s
 {
 	char *name;
 	char **atts;
-	sa_xmlnode *up;
-	sa_xmlnode *down;
-	sa_xmlnode *next;
+	sa_xmlitem *up;
+	sa_xmlitem *down;
+	sa_xmlitem *next;
 };
 
 struct sa_xmlparser_s
 {
 	fz_error *error;
-	sa_xmlnode *root;
-	sa_xmlnode *head;
+	sa_xmlitem *root;
+	sa_xmlitem *head;
+	int downed;
 };
+
+static void dropitem(sa_xmlitem *item)
+{
+	sa_xmlitem *next;
+	while (item)
+	{
+		next = item->next;
+		if (item->down)
+			dropitem(item->down);
+		fz_free(item);
+		item = next;
+	}
+}
 
 static void onopentag(void *zp, const char *name, const char **atts)
 {
 	struct sa_xmlparser_s *sp = zp;
-	sa_xmlnode *node;
-	sa_xmlnode *tail;
+	sa_xmlitem *item;
+	sa_xmlitem *tail;
 	int namelen;
 	int attslen;
 	int textlen;
@@ -46,8 +60,8 @@ static void onopentag(void *zp, const char *name, const char **atts)
 		textlen += strlen(atts[i]) + 1;
 	}
 
-	node = fz_malloc(sizeof(sa_xmlnode) + attslen + namelen + textlen);
-	if (!node)
+	item = fz_malloc(sizeof(sa_xmlitem) + attslen + namelen + textlen);
+	if (!item)
 	{
 		sp->error = fz_outofmem;
 		return;
@@ -55,45 +69,45 @@ static void onopentag(void *zp, const char *name, const char **atts)
 
 	/* copy strings to new memory */
 
-	node->atts = (char**) (((char*)node) + sizeof(sa_xmlnode));
-	node->name = ((char*)node) + sizeof(sa_xmlnode) + attslen;
-	p = ((char*)node) + sizeof(sa_xmlnode) + attslen + namelen;
+	item->atts = (char**) (((char*)item) + sizeof(sa_xmlitem));
+	item->name = ((char*)item) + sizeof(sa_xmlitem) + attslen;
+	p = ((char*)item) + sizeof(sa_xmlitem) + attslen + namelen;
 
-	strcpy(node->name, name);
+	strcpy(item->name, name);
 	for (i = 0; atts[i]; i++)
 	{
-		node->atts[i] = p;
-		strcpy(node->atts[i], atts[i]);
+		item->atts[i] = p;
+		strcpy(item->atts[i], atts[i]);
 		p += strlen(p) + 1;
 	}
 
-	node->atts[i] = 0;
+	item->atts[i] = 0;
 
-	/* link node into tree */
+	/* link item into tree */
 
-	node->up = sp->head;
-	node->down = nil;
-	node->next = nil;
+	item->up = sp->head;
+	item->down = nil;
+	item->next = nil;
 
 	if (!sp->head)
 	{
-		sp->root = node;
-		sp->head = node;
+		sp->root = item;
+		sp->head = item;
 		return;
 	}
 
 	if (!sp->head->down)
 	{
-		sp->head->down = node;
-		sp->head = node;
+		sp->head->down = item;
+		sp->head = item;
 		return;
 	}
 
 	tail = sp->head->down;
 	while (tail->next)
 		tail = tail->next;
-	tail->next = node;
-	sp->head = node;
+	tail->next = item;
+	sp->head = item;
 }
 
 static void onclosetag(void *zp, const char *name)
@@ -142,26 +156,34 @@ static void ontext(void *zp, const char *buf, int len)
 }
 
 fz_error *
-sa_parsexml(sa_xmlnode **nodep, fz_file *file, int ns)
+sa_openxml(sa_xmlparser **spp, fz_file *file, int ns)
 {
 	fz_error *error = nil;
-	struct sa_xmlparser_s sp;
+	sa_xmlparser *sp;
 	XML_Parser xp;
 	char *buf;
 	int len;
 
-	sp.error = nil;
-	sp.root = nil;
-	sp.head = nil;
+	sp = fz_malloc(sizeof(sa_xmlparser));
+	if (!sp)
+		return fz_outofmem;
+
+	sp->error = nil;
+	sp->root = nil;
+	sp->head = nil;
+	sp->downed = 0;
 
 	if (ns)
 		xp = XML_ParserCreateNS(nil, ns);
 	else
 		xp = XML_ParserCreate(nil);
 	if (!xp)
+	{
+		fz_free(sp);
 		return fz_outofmem;
+	}
 
-	XML_SetUserData(xp, &sp);
+	XML_SetUserData(xp, sp);
 	XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
 
 	XML_SetStartElementHandler(xp, onopentag);
@@ -186,9 +208,10 @@ sa_parsexml(sa_xmlnode **nodep, fz_file *file, int ns)
 			goto cleanup;
 		}
 
-		if (sp.error)
+		if (sp->error)
 		{
-			error = sp.error;
+			error = sp->error;
+			sp->error = nil;
 			goto cleanup;
 		}
 
@@ -196,28 +219,24 @@ sa_parsexml(sa_xmlnode **nodep, fz_file *file, int ns)
 			break;
 	}
 
-	*nodep = sp.root;
+	sp->head = nil;
+	*spp = sp;
 	return nil;
 
 cleanup:
-	if (sp.root)
-		sa_dropxml(sp.root);
+	if (sp->root)
+		dropitem(sp->root);
+	fz_free(sp);
 	XML_ParserFree(xp);
 	return error;
 }
 
 void
-sa_dropxml(sa_xmlnode *node)
+sa_closexml(sa_xmlparser *sp)
 {
-	sa_xmlnode *next;
-	while (node)
-	{
-		next = node->next;
-		if (node->down)
-			sa_dropxml(node->down);
-		fz_free(node);
-		node = next;
-	}
+	if (sp->root)
+		dropitem(sp->root);
+	fz_free(sp);
 }
 
 static void indent(int n)
@@ -227,92 +246,121 @@ static void indent(int n)
 }
 
 void
-sa_debugxml(sa_xmlnode *node, int level)
+sa_debugxml(sa_xmlitem *item, int level)
 {
 	int i;
 
-	while (node)
+	while (item)
 	{
 		indent(level);
 
-		if (sa_isxmltext(node))
-			printf("%s\n", sa_getxmltext(node));
+		if (sa_isxmltext(item))
+			printf("%s\n", sa_getxmltext(item));
 		else
 		{
-			printf("<%s", node->name);
+			printf("<%s", item->name);
 
-			for (i = 0; node->atts[i]; i += 2)
-				printf(" %s=\"%s\"", node->atts[i], node->atts[i+1]);
+			for (i = 0; item->atts[i]; i += 2)
+				printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
 
-			if (node->down)
+			if (item->down)
 			{
 				printf(">\n");
-				sa_debugxml(node->down, level + 1);
+				sa_debugxml(item->down, level + 1);
 				indent(level);
-				printf("</%s>\n", node->name);
+				printf("</%s>\n", item->name);
 			}
 			else
 				printf(" />\n");
 		}
 
-		node = node->next;
+		item = item->next;
 	}
 }
 
-sa_xmlnode *
-sa_xmlup(sa_xmlnode *node)
+sa_xmlitem *
+sa_xmlnext(sa_xmlparser *sp)
 {
-	return node->up;
+	if (sp->downed)
+		return nil;
+
+	if (!sp->head)
+	{
+		sp->head = sp->root;
+		return sp->head;
+	}
+
+	if (sp->head->next)
+	{
+		sp->head = sp->head->next;
+		return sp->head;
+	}
+
+	return nil;
 }
 
-sa_xmlnode *
-sa_xmlnext(sa_xmlnode *node)
+void
+sa_xmldown(sa_xmlparser *sp)
 {
-	return node->next;
+	if (!sp->downed && sp->head && sp->head->down)
+		sp->head = sp->head->down;
+	else
+		sp->downed ++;
 }
 
-sa_xmlnode *
-sa_xmldown(sa_xmlnode *node)
+void
+sa_xmlup(sa_xmlparser *sp)
 {
-	return node->down;
+	if (!sp->downed && sp->head && sp->head->up)
+		sp->head = sp->head->up;
+	else
+		sp->downed --;
 }
 
 int
-sa_isxmltext(sa_xmlnode *node)
+sa_isxmlerror(sa_xmlitem *item)
 {
-	return node->name[0] == 0;
+	return item->name[0] == '!';
 }
 
 int
-sa_isxmltag(sa_xmlnode *node)
+sa_isxmltext(sa_xmlitem *item)
 {
-	return node->name[0] != 0;
+	return item->name[0] == '\0';
+}
+
+int
+sa_isxmltag(sa_xmlitem *item)
+{
+	return item->name[0] != '\0' && item->name[0] != '!';
 }
 
 char *
-sa_getxmlname(sa_xmlnode *node)
+sa_getxmlname(sa_xmlitem *item)
 {
-	if (sa_isxmltag(node))
-		return node->name;
+	if (sa_isxmltag(item))
+		return item->name;
 	return nil;
 }
 
 char *
-sa_getxmlatt(sa_xmlnode *node, char *att)
+sa_getxmlatt(sa_xmlitem *item, char *att)
 {
 	int i;
-	for (i = 0; node->atts[i]; i += 2)
-		if (!strcmp(node->atts[i], att))
-			return node->atts[i + 1];
+	if (sa_isxmltag(item))
+	{
+		for (i = 0; item->atts[i]; i += 2)
+			if (!strcmp(item->atts[i], att))
+				return item->atts[i + 1];
+	}
 	return nil;
 }
 
 char *
-sa_getxmltext(sa_xmlnode *node)
+sa_getxmltext(sa_xmlitem *item)
 {
-	if (sa_isxmltext(node))
-		return node->atts[1];
+	if (sa_isxmltext(item))
+		return item->atts[1];
 	return nil;
 }
-
 
