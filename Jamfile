@@ -134,14 +134,13 @@ Library libstream :
 	obj_print.c
 	obj_simple.c
 
+	stm_filter.c
 	stm_buffer.c
 	stm_filec.c
 	stm_filer.c
 	stm_filew.c
 
-	filt_process.c
 	filt_pipeline.c
-
 	filt_a85d.c
 	filt_a85e.c
 	filt_ahxd.c

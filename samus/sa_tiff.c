@@ -1,6 +1,6 @@
 /*
- * Minimal TIFF image loader. Baseline TIFF 6.0 with a few extensions,
- * as specified in the Metro specification.
+ * Minimal TIFF image loader. Baseline TIFF 6.0 with CMYK support.
+ * Limited bit depth and extra samples support, as per Metro.
  */
 
 #include "fitz.h"
@@ -100,7 +100,6 @@ static const unsigned char bitrev[256] =
     0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
-
 
 static inline unsigned readshort(sa_tiff *tiff)
 {
@@ -234,15 +233,8 @@ printf("w=%d h=%d n=%d bpc=%d ",
 	case 2:
 		printf("CCITT ");
 
-		if (tiff->photometric != 0 && tiff->photometric != 1)
-			return fz_throw("ioerror: ccitt encoding on color TIFF");
-		if (tiff->samplesperpixel != 1)
-			return fz_throw("ioerror: ccitt encoding on multi-component TIFF");
-		if (tiff->bitspersample != 1)
-			return fz_throw("ioerror: ccitt encoding on multi-bit TIFF");
-
 		error = fz_packobj(&params, "<<"
-			"/K 1 /EncodedByteAlign true /EndOfLine false /EndOfBlock false"
+			"/K 0 /EncodedByteAlign true /EndOfLine false /EndOfBlock false"
 			"/Columns %i /Rows %i /BlackIs1 %b"
 			">>",
 			tiff->imagewidth,
@@ -270,6 +262,7 @@ printf("w=%d h=%d n=%d bpc=%d ",
 
 	printf("\n");
 
+	/* TODO: scrap write-file and decode with filter directly to final destination */
 	error = fz_newbuffer(&buf, 4096);
 	error = fz_openbuffer(&file, buf, FZ_WRITE);
 
