@@ -256,14 +256,11 @@ void info()
 INT CALLBACK
 dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	char msg[256];
 	switch(message)
 	{
 	case WM_INITDIALOG:
 		SetDlgItemTextA(hwnd, 0x10, gapp.filename);
-		sprintf(msg, "GhostPDF v%0.2f is %s",
-				PDF_VERSION / 100.0, PDF_COPYRIGHT);
-		SetDlgItemTextA(hwnd, 2, msg);
+		SetDlgItemTextA(hwnd, 2, "GhostPDF is Copyright (C) 2005 artofcode, LLC");
 		SetDlgItemTextA(hwnd, 3, pdfapp_usage(&gapp));
 		return TRUE;
 	case WM_COMMAND:

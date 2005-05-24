@@ -14,7 +14,6 @@ void pdf_logimage(char *fmt, ...);
 void pdf_logshade(char *fmt, ...);
 void pdf_logpage(char *fmt, ...);
 
-#include "mupdf/version.h"
 #include "mupdf/syntax.h"
 #include "mupdf/xref.h"
 #include "mupdf/rsrc.h"
