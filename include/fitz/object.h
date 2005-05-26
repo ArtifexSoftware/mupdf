@@ -1,3 +1,9 @@
+/*
+ * Dynamic objects.
+ * The same type of objects as found in PDF and PostScript.
+ * Used by the filter library and the mupdf parser.
+ */
+
 typedef struct fz_obj_s fz_obj;
 typedef struct fz_keyval_s fz_keyval;
 

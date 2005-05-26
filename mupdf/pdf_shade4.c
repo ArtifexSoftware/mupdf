@@ -164,7 +164,7 @@ cleanup:
 }
 
 static int
-getdata(fz_file *stream, int bps)
+getdata(fz_stream *stream, int bps)
 {
 	unsigned int bitmask = (1 << bps) - 1;
 	unsigned int buf = 0;
@@ -188,6 +188,7 @@ fz_error *
 pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error *error;
+	fz_stream *stream;
 	fz_obj *obj;
 
 	int bpcoord;
@@ -256,31 +257,29 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	}
 	q = 0;
 
-	error = pdf_openstream(xref, fz_tonum(ref), fz_togen(ref));
+	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
 	if (error) goto cleanup;
 
-	while (fz_peekbyte(xref->stream) != EOF)
+	while (fz_peekbyte(stream) != EOF)
 	{
 		for (p = 0; p < vpr; ++p) {
 			int idx;
 			idx = q * vpr + p;
 
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			x[idx] = x0 + (t * (x1 - x0) / ((float)pow(2, bpcoord) - 1));
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			y[idx] = y0 + (t * (y1 - y0) / ((float)pow(2, bpcoord) - 1));
 
 			for (i=0; i < ncomp; ++i) {
-				t = getdata(xref->stream, bpcomp);
+				t = getdata(stream, bpcomp);
 				c[i][idx] = c0[i] + (t * (c1[i] - c0[i]) / (float)(pow(2, bpcomp) - 1));
 			}
 		}
 		q++;
 	}
-	if ((error = fz_ferror(xref->stream)))
-		goto cleanup;
 
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 
 #define ADD_VERTEX(idx) \
 			{\
@@ -564,6 +563,7 @@ fz_error *
 pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error *error;
+	fz_stream *stream;
 	fz_obj *obj;
 
 	int bpcoord;
@@ -626,24 +626,24 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	n = 2 + shade->cs->n;
 	j = 0;
 
-	error = pdf_openstream(xref, fz_tonum(ref), fz_togen(ref));
+	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
 	if (error) goto cleanup;
 
-	while (fz_peekbyte(xref->stream) != EOF)
+	while (fz_peekbyte(stream) != EOF)
 	{
-		flag = getdata(xref->stream, bpflag);
+		flag = getdata(stream, bpflag);
 
 		for (i = 0; i < 12; ++i) {
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			p[i].x = (float)(p0.x + (t * (p1.x - p0.x) / (pow(2, bpcoord) - 1.)));
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			p[i].y = (float)(p0.y + (t * (p1.y - p0.y) / (pow(2, bpcoord) - 1.)));
 		}
 
 		for (i = 0; i < 4; ++i) {
 			int k;
 			for (k=0; k < ncomp; ++k) {
-				t = getdata(xref->stream, bpcomp);
+				t = getdata(stream, bpcomp);
 				patch.color[i][k] = 
 					c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
 			}
@@ -665,10 +665,8 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 		j = drawpatch(patch, shade, j, ncomp, 0);
 	}
-	if ((error = fz_ferror(xref->stream)) )
-		goto cleanup;
 
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 
 	shade->meshlen = j / n / 3;
 
@@ -681,6 +679,7 @@ fz_error *
 pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error *error;
+	fz_stream *stream;
 	fz_obj *obj;
 
 	int bpcoord;
@@ -742,24 +741,24 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	n = 2 + shade->cs->n;
 	j = 0;
 
-	error = pdf_openstream(xref, fz_tonum(ref), fz_togen(ref));
+	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
 	if (error) goto cleanup;
 
-	while (fz_peekbyte(xref->stream) != EOF)
+	while (fz_peekbyte(stream) != EOF)
 	{
-		flag = getdata(xref->stream, bpflag);
+		flag = getdata(stream, bpflag);
 
 		for (i = 0; i < 16; ++i) {
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			p[i].x = x0 + (t * (x1 - x0) / (pow(2, bpcoord) - 1.));
-			t = getdata(xref->stream, bpcoord);
+			t = getdata(stream, bpcoord);
 			p[i].y = y0 + (t * (y1 - y0) / (pow(2, bpcoord) - 1.));
 		}
 
 		for (i = 0; i < 4; ++i) {
 			int k;
 			for (k=0; k < ncomp; ++k) {
-				t = getdata(xref->stream, bpcomp);
+				t = getdata(stream, bpcomp);
 				patch.color[i][k] = 
 					c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
 			}
@@ -784,10 +783,8 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 		j = drawpatch(patch, shade, j, ncomp, 0);
 	}
-	if ((error = fz_ferror(xref->stream)) )
-		goto cleanup;
 
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 
 	shade->meshlen = j / n / 3;
 

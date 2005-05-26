@@ -54,7 +54,7 @@ pdf_closexref(pdf_xref *xref)
 	}
 
 	if (xref->file)
-		fz_closefile(xref->file);
+		fz_dropstream(xref->file);
 
 	if (xref->trailer)
 		fz_dropobj(xref->trailer);
@@ -389,7 +389,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	{
 		n = fz_seek(xref->file, x->ofs, 0);
 		if (n < 0)
-			return fz_ferror(xref->file);
+			return fz_throw("ioerror: seek failed");
 
 		error = pdf_parseindobj(&x->obj, xref->file, buf, sizeof buf, &roid, &rgen, &x->stmofs);
 		if (error)

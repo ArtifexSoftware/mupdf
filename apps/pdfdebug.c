@@ -43,47 +43,49 @@ void printsafe(unsigned char *buf, int n)
 void decodestream(pdf_xref *xref, int oid, int gid)
 {
 	fz_error *error;
+	fz_stream *stm;
 	unsigned char buf[512];
 
 	safecol = 0;
 
-	error = pdf_openstream(xref, oid, gid);
+	error = pdf_openstream(&stm, xref, oid, gid);
 	if (error) fz_abort(error);
 
 	while (1)
 	{
-		int n = fz_read(xref->stream, buf, sizeof buf);
+		int n = fz_read(stm, buf, sizeof buf);
 		if (n == 0)
 			break;
 		if (n < 0)
-			fz_abort(fz_ferror(xref->stream));
+			fz_abort(fz_throw("ioerror: read failed"));
 		printsafe(buf, n);
 	}
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 }
 
 void copystream(pdf_xref *xref, int oid, int gid)
 {
 	fz_error *error;
+	fz_stream *stm;
 	unsigned char buf[512];
 
 	safecol = 0;
 
-	error = pdf_openrawstream(xref, oid, gid);
+	error = pdf_openrawstream(&stm, xref, oid, gid);
 	if (error) fz_abort(error);
 
 	while (1)
 	{
-		int n = fz_read(xref->stream, buf, sizeof buf);
+		int n = fz_read(stm, buf, sizeof buf);
 		if (n == 0)
 			break;
 		if (n < 0)
-			fz_abort(fz_ferror(xref->stream));
+			fz_abort(fz_throw("ioerror: read failed"));
 		printsafe(buf, n);
 	}
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 }
 
 void printobject(pdf_xref *xref, int oid, int gid)

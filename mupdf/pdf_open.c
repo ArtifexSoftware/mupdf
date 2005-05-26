@@ -19,7 +19,7 @@ loadversion(pdf_xref *xref)
 
 	n = fz_seek(xref->file, 0, 0);
 	if (n < 0)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: seek failed");
 
 	fz_readline(xref->file, buf, sizeof buf);
 	if (memcmp(buf, "%PDF-", 5) != 0)
@@ -41,15 +41,15 @@ readstartxref(pdf_xref *xref)
 
 	t = fz_seek(xref->file, 0, 2);
 	if (t == -1)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: seek failed");
 
 	t = fz_seek(xref->file, MAX(0, t - ((int)sizeof buf)), 0);
 	if (t == -1)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: seek failed");
 
 	n = fz_read(xref->file, buf, sizeof buf);
 	if (n == -1)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: read failed");
 
 	for (i = n - 9; i >= 0; i--)
 	{
@@ -83,7 +83,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 
 	fz_readline(xref->file, buf, cap);
 	if (strcmp(buf, "xref") != 0)
-		return fz_throw("syntaxerror: missing xref");
+		return fz_throw("ioerror: missing xref");
 
 	while (1)
 	{
@@ -92,7 +92,8 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 			break;
 
 		n = fz_readline(xref->file, buf, cap);
-		if (n < 0) return fz_ferror(xref->file);
+		if (n < 0)
+			return fz_throw("ioerror: read failed");
 
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
@@ -103,10 +104,12 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 			fz_seek(xref->file, -(n + buf - s + 2), 1);
 
 		t = fz_tell(xref->file);
-		if (t < 0) return fz_ferror(xref->file);
+		if (t < 0)
+			return fz_throw("ioerror: tell failed");
 
 		n = fz_seek(xref->file, t + 20 * len, 0);
-		if (n < 0) return fz_ferror(xref->file);
+		if (n < 0)
+			return fz_throw("ioerror: seek failed");
 	}
 
 	t = pdf_lex(xref->file, buf, cap, &n);
@@ -135,7 +138,7 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
 
 	n = fz_seek(xref->file, xref->startxref, 0);
 	if (n < 0)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: seek failed");
 
 	c = fz_peekbyte(xref->file);
 	if (c == 'x')
@@ -173,7 +176,8 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 			break;
 
 		n = fz_readline(xref->file, buf, cap);
-		if (n < 0) return fz_ferror(xref->file);
+		if (n < 0)
+			return fz_throw("ioerror: read failed");
 		
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
@@ -189,8 +193,10 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		for (i = 0; i < len; i++)
 		{
 			n = fz_read(xref->file, buf, 20);
-			if (n < 0) return fz_ferror(xref->file);
-			if (n != 20) return fz_throw("syntaxerror: truncated xref table");
+			if (n < 0)
+				return fz_throw("ioerror: read failed");
+			if (n != 20)
+				return fz_throw("syntaxerror: truncated xref table");
 			if (!xref->table[ofs + i].type)
 			{
 				s = buf;
@@ -215,6 +221,7 @@ static fz_error *
 readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
 	fz_error *error;
+	fz_stream *stm;
 	fz_obj *trailer;
 	fz_obj *obj;
 	int oid, gen, stmofs;
@@ -268,7 +275,7 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		goto cleanup;
 	}
 
-	error = pdf_openstream(xref, oid, gen);
+	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
 		goto cleanup;
 
@@ -278,21 +285,19 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		int b = 0;
 		int c = 0;
 
-		if (fz_peekbyte(xref->stream) == EOF)
+		if (fz_peekbyte(stm) == EOF)
 		{
-			error = fz_ferror(xref->stream);
-			if (!error)
-				error = fz_throw("syntaxerror: truncated xref stream");
-			pdf_closestream(xref);
+			error = fz_throw("syntaxerror: truncated xref stream");
+			fz_dropstream(stm);
 			goto cleanup;
 		}
 
 		for (n = 0; n < w0; n++)
-			a = (a << 8) + fz_readbyte(xref->stream);
+			a = (a << 8) + fz_readbyte(stm);
 		for (n = 0; n < w1; n++)
-			b = (b << 8) + fz_readbyte(xref->stream);
+			b = (b << 8) + fz_readbyte(stm);
 		for (n = 0; n < w2; n++)
-			c = (c << 8) + fz_readbyte(xref->stream);
+			c = (c << 8) + fz_readbyte(stm);
 
 		if (!xref->table[i].type)
 		{
@@ -303,7 +308,7 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		}
 	}
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
 	*trailerp = trailer;
 
@@ -322,7 +327,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 
 	n = fz_seek(xref->file, ofs, 0);
 	if (n < 0)
-		return fz_ferror(xref->file);
+		return fz_throw("ioerror: seek failed");
 
 	c = fz_peekbyte(xref->file);
 	if (c == 'x')
@@ -380,6 +385,7 @@ fz_error *
 pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 {
 	fz_error *error;
+	fz_stream *stm;
 	fz_obj *objstm;
 	int *oidbuf;
 	int *ofsbuf;
@@ -401,53 +407,53 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	pdf_logxref("  count %d\n", count);
 
 	oidbuf = fz_malloc(count * sizeof(int));
-	if (!oidbuf) { error = fz_outofmem; goto cleanup1; }
+	if (!oidbuf) { error = fz_outofmem; goto cleanupobj; }
 
 	ofsbuf = fz_malloc(count * sizeof(int));
-	if (!ofsbuf) { error = fz_outofmem; goto cleanup2; }
+	if (!ofsbuf) { error = fz_outofmem; goto cleanupoid; }
 
-	error = pdf_openstream(xref, oid, gen);
+	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
-		goto cleanup3;
+		goto cleanupofs;
 
 	for (i = 0; i < count; i++)
 	{
-		t = pdf_lex(xref->stream, buf, cap, &n);
+		t = pdf_lex(stm, buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");
-			goto cleanup4;
+			goto cleanupstm;
 		}
 		oidbuf[i] = atoi(buf);
 
-		t = pdf_lex(xref->stream, buf, cap, &n);
+		t = pdf_lex(stm, buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");
-			goto cleanup4;
+			goto cleanupstm;
 		}
 		ofsbuf[i] = atoi(buf);
 	}
 
-	n = fz_seek(xref->stream, first, 0);
+	n = fz_seek(stm, first, 0);
 	if (n < 0)
 	{
-		error = fz_ferror(xref->stream);
-		goto cleanup4;
+		error = fz_throw("ioerror: seek failed");
+		goto cleanupstm;
 	}
 
 	for (i = 0; i < count; i++)
 	{
 		/* FIXME: seek to first + ofsbuf[i] */
 
-		error = pdf_parsestmobj(&obj, xref->stream, buf, cap);
+		error = pdf_parsestmobj(&obj, stm, buf, cap);
 		if (error)
-			goto cleanup4;
+			goto cleanupstm;
 
 		if (oidbuf[i] < 1 || oidbuf[i] >= xref->len)
 		{
 			error = fz_throw("rangecheck: object number out of range");
-			goto cleanup4;
+			goto cleanupstm;
 		}
 
 		if (xref->table[oidbuf[i]].obj)
@@ -455,19 +461,19 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 		xref->table[oidbuf[i]].obj = obj;
 	}
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 	fz_free(ofsbuf);
 	fz_free(oidbuf);
 	fz_dropobj(objstm);
 	return nil;
 
-cleanup4:
-	pdf_closestream(xref);
-cleanup3:
+cleanupstm:
+	fz_dropstream(stm);
+cleanupofs:
 	fz_free(ofsbuf);
-cleanup2:
+cleanupoid:
 	fz_free(oidbuf);
-cleanup1:
+cleanupobj:
 	fz_dropobj(objstm);
 	return error;
 }
@@ -487,7 +493,7 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 
 	pdf_logxref("loadxref '%s' %p\n", filename, xref);
 
-	error = fz_openfile(&xref->file, filename, FZ_READ);
+	error = fz_openrfile(&xref->file, filename);
 	if (error)
 		return error;
 

@@ -107,7 +107,7 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 }
 
 fz_error *
-pdf_parsearray(fz_obj **op, fz_file *file, char *buf, int cap)
+pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error *error = nil;
 	fz_obj *ary = nil;
@@ -206,7 +206,7 @@ cleanup:
 }
 
 fz_error *
-pdf_parsedict(fz_obj **op, fz_file *file, char *buf, int cap)
+pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error *error = nil;
 	fz_obj *dict = nil;
@@ -298,7 +298,7 @@ cleanup:
 }
 
 fz_error *
-pdf_parsestmobj(fz_obj **op, fz_file *file, char *buf, int cap)
+pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	int tok, len;
 
@@ -321,7 +321,7 @@ pdf_parsestmobj(fz_obj **op, fz_file *file, char *buf, int cap)
 }
 
 fz_error *
-pdf_parseindobj(fz_obj **op, fz_file *file, char *buf, int cap,
+pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 		int *ooid, int *ogid, int *ostmofs)
 {
 	fz_error *error = nil;

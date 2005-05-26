@@ -5,8 +5,9 @@ int runzip(int argc, char **argv)
 {
 	fz_error *error;
 	fz_buffer *buf;
+	fz_stream *stm;
 	sa_zip *zip;
-	int i;
+	int i, n;
 
 	error = sa_openzip(&zip, argv[1]);
 	if (error)
@@ -17,13 +18,13 @@ int runzip(int argc, char **argv)
 
 	for (i = 2; i < argc; i++)
 	{
-		error = sa_openzipentry(zip, argv[i]);
+		error = sa_openzipentry(&stm, zip, argv[i]);
 		if (error)
 			fz_abort(error);
-		error = fz_readfile(&buf, zip->file);
-		if (error)
-			fz_abort(error);
-		sa_closezipentry(zip);
+		n = fz_readall(&buf, stm);
+		if (n < 0)
+			fz_abort(fz_throw("ioerror: readall failed"));
+		fz_dropstream(stm);
 
 		fwrite(buf->rp, 1, buf->wp - buf->rp, stdout);
 
@@ -38,11 +39,11 @@ int runzip(int argc, char **argv)
 int runxml(int argc, char **argv)
 {
 	fz_error *error;
-	fz_file *file;
+	fz_stream *file;
 	sa_xmlparser *parser;
 	sa_xmlitem *item;
 
-	error = fz_openfile(&file, argv[1], FZ_READ);
+	error = fz_openrfile(&file, argv[1]);
 	if (error)
 		fz_abort(error);
 
@@ -55,19 +56,19 @@ int runxml(int argc, char **argv)
 		sa_debugxml(item, 0);
 
 	sa_closexml(parser);
-	fz_closefile(file);
+	fz_dropstream(file);
 
 	return 0;
 }
 
-extern fz_error *sa_readtiff(fz_file *);
+extern fz_error *sa_readtiff(fz_stream *);
 
 int runtiff(int argc, char **argv)
 {
 	fz_error *error;
-	fz_file *file;
+	fz_stream *file;
 
-	error = fz_openfile(&file, argv[1], FZ_READ);
+	error = fz_openrfile(&file, argv[1]);
 	if (error)
 		fz_abort(error);
 
@@ -75,7 +76,7 @@ int runtiff(int argc, char **argv)
 	if (error)
 		fz_abort(error);
 	
-	fz_closefile(file);
+	fz_dropstream(file);
 
 	return 0;
 }

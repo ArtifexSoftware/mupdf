@@ -1,3 +1,9 @@
+/*
+ * Basic crypto functions.
+ * Independent of the rest of fitz.
+ * For further encapsulation in filters, or not.
+ */
+
 /* md5 digests */
 
 typedef struct fz_md5_s fz_md5;
@@ -27,4 +33,7 @@ struct fz_arc4_s
 void fz_arc4init(fz_arc4 *state, unsigned char *key, unsigned len);
 unsigned char fz_arc4next(fz_arc4 *state);
 void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, unsigned char *src, unsigned len);
+
+/* TODO: sha1 */
+/* TODO: aes */
 

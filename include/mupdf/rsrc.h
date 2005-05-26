@@ -135,7 +135,7 @@ struct pdf_image_s
 	fz_buffer *samples;
 };
 
-fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_file *file);
+fz_error *pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
 
@@ -197,7 +197,7 @@ struct pdf_font_s
 };
 
 /* cmap.c */
-fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_file *file);
+fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_stream *file);
 fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
 fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
 fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);

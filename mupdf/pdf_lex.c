@@ -50,7 +50,7 @@ static inline int fromhex(int ch)
 }
 
 static inline void
-lexwhite(fz_file *f)
+lexwhite(fz_stream *f)
 {
 	int c;
 	while (1)
@@ -63,7 +63,7 @@ lexwhite(fz_file *f)
 }
 
 static inline void
-lexcomment(fz_file *f)
+lexcomment(fz_stream *f)
 {
 	int c;
 	while (1)
@@ -76,7 +76,7 @@ lexcomment(fz_file *f)
 }
 
 static void
-lexnumber(fz_file *f, unsigned char *s, int n)
+lexnumber(fz_stream *f, unsigned char *s, int n)
 {
 	while (n > 1)
 	{
@@ -89,7 +89,7 @@ lexnumber(fz_file *f, unsigned char *s, int n)
 }
 
 static void
-lexname(fz_file *f, unsigned char *s, int n)
+lexname(fz_stream *f, unsigned char *s, int n)
 {
 #if 0
 	unsigned char *p = s;
@@ -121,7 +121,7 @@ lexname(fz_file *f, unsigned char *s, int n)
 }
 
 static int
-lexstring(fz_file *f, unsigned char *buf, int n)
+lexstring(fz_stream *f, unsigned char *buf, int n)
 {
 	unsigned char *s = buf;
 	unsigned char *e = buf + n;
@@ -194,7 +194,7 @@ lexstring(fz_file *f, unsigned char *buf, int n)
 }
 
 static int
-lexhexstring(fz_file *f, unsigned char *buf, int n)
+lexhexstring(fz_stream *f, unsigned char *buf, int n)
 {
 	unsigned char *s = buf;
 	unsigned char *e = buf + n;
@@ -249,7 +249,7 @@ tokenfromkeyword(char *key)
 }
 
 int
-pdf_lex(fz_file *f, unsigned char *buf, int n, int *sl)
+pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 {
 	int c;
 

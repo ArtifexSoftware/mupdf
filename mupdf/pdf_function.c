@@ -358,7 +358,7 @@ resizecode(pdf_function *func, int newsize)
 }
 
 static fz_error *
-parsecode(pdf_function *func, fz_file *stream, int *codeptr)
+parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 {
 	fz_error *error = nil;
 	char buf[64];
@@ -488,14 +488,15 @@ static fz_error *
 loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
 {
 	fz_error *error = nil;
+	fz_stream *stream;
 	int codeptr;
 
 	pdf_logrsrc("load postscript function %d %d\n", oid, gen);
 
-	error = pdf_openstream(xref, oid, gen);
+	error = pdf_openstream(&stream, xref, oid, gen);
 	if (error) goto cleanup;
 
-	if (fz_readbyte(xref->stream) != '{')
+	if (fz_readbyte(stream) != '{')
 		goto cleanup;
 
 	func->u.p.code = nil;
@@ -503,15 +504,15 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, in
 
 
 	codeptr = 0;
-	error = parsecode(func, xref->stream, &codeptr);
+	error = parsecode(func, stream, &codeptr);
 	if (error) goto cleanup;
 
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 
 	return nil;
 
 cleanup:
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 	if (error) return error;
 	return fz_throw("syntaxerror: postscript calculator");
 }
@@ -910,6 +911,7 @@ static fz_error *
 loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
 {
 	fz_error *error = nil;
+	fz_stream *stream;
 	fz_obj *obj;
 	int samplecount;
 	int bps;
@@ -990,7 +992,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 		goto cleanup0;
 	}
 
-	error = pdf_openstream(xref, oid, gen);
+	error = pdf_openstream(&stream, xref, oid, gen);
 	if (error)
 		goto cleanup0;
 
@@ -1003,29 +1005,29 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 
 		for (i = 0; i < samplecount; ++i)
 		{
-			if (fz_peekbyte(xref->stream) == EOF)
+			if (fz_peekbyte(stream) == EOF)
 			{
 				error = fz_throw("syntaxerror: too few samples in function");
 				goto cleanup1;
 			}
 
 			if (bps == 8) {
-				s = fz_readbyte(xref->stream);
+				s = fz_readbyte(stream);
 			}
 			else if (samplecount == 16) {
-				s = fz_readbyte(xref->stream);
-				s = (s << 8) + fz_readbyte(xref->stream);
+				s = fz_readbyte(stream);
+				s = (s << 8) + fz_readbyte(stream);
 			}
 			else if (samplecount == 32) {
-				s = fz_readbyte(xref->stream);
-				s = (s << 8) + fz_readbyte(xref->stream);
-				s = (s << 8) + fz_readbyte(xref->stream);
-				s = (s << 8) + fz_readbyte(xref->stream);
+				s = fz_readbyte(stream);
+				s = (s << 8) + fz_readbyte(stream);
+				s = (s << 8) + fz_readbyte(stream);
+				s = (s << 8) + fz_readbyte(stream);
 			}
 			else {
 				while (bits < bps)
 				{
-					buf = (buf << 8) | (fz_readbyte(xref->stream) & 0xff);
+					buf = (buf << 8) | (fz_readbyte(stream) & 0xff);
 					bits += 8;
 				}
 				s = (buf >> (bits - bps)) & bitmask;
@@ -1033,21 +1035,17 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 			}
 
 			func->u.sa.samples[i] = s;
-
-			error = fz_ferror(xref->stream);
-			if (error)
-				goto cleanup1;
 		}
 	}
 
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 
 	pdf_logrsrc("}\n");
 
 	return nil;
 
 cleanup1:
-	pdf_closestream(xref);
+	fz_dropstream(stream);
 cleanup0:
 	if (error) return error;
 	return fz_throw("syntaxerror: sample function");

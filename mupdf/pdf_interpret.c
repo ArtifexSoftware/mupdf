@@ -128,7 +128,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 {
 	fz_error *error;
 	fz_node *transform;
-	fz_file *file;
+	fz_stream *file;
 
 	/* gsave */
 	error = gsave(csi);
@@ -152,13 +152,13 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 
 	xobj->contents->rp = xobj->contents->bp;
 
-	error = fz_openbuffer(&file, xobj->contents, FZ_READ);
+	error = fz_openrbuffer(&file, xobj->contents);
 	if (error)
 		return error;
 
 	error = pdf_runcsi(csi, xref, xobj->resources, file);
 
-	fz_closefile(file);
+	fz_dropstream(file);
 
 	if (error)
 		return error;
@@ -176,7 +176,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
  */
 
 static fz_error *
-runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file, fz_obj *dict)
+runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
 	fz_error *error;
 	pdf_image *img;
@@ -1080,7 +1080,7 @@ syntaxerror:
 }
 
 fz_error *
-pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_file *file)
+pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
 	fz_error *error;
 	char buf[65536];

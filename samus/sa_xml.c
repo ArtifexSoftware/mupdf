@@ -156,7 +156,7 @@ static void ontext(void *zp, const char *buf, int len)
 }
 
 fz_error *
-sa_openxml(sa_xmlparser **spp, fz_file *file, int ns)
+sa_openxml(sa_xmlparser **spp, fz_stream *file, int ns)
 {
 	fz_error *error = nil;
 	sa_xmlparser *sp;
@@ -197,7 +197,7 @@ sa_openxml(sa_xmlparser **spp, fz_file *file, int ns)
 		len = fz_read(file, buf, XMLBUFLEN);
 		if (len < 0)
 		{
-			error = fz_ferror(file);
+			error = fz_throw("ioerror: read failed");
 			goto cleanup;
 		}
 
@@ -254,8 +254,8 @@ sa_debugxml(sa_xmlitem *item, int level)
 	{
 		indent(level);
 
-		if (sa_isxmltext(item))
-			printf("%s\n", sa_xmltext(item));
+		if (strlen(item->name) == 0)
+			printf("%s\n", item->atts[1]);
 		else
 		{
 			printf("<%s", item->name);
@@ -317,50 +317,19 @@ sa_xmlup(sa_xmlparser *sp)
 		sp->downed --;
 }
 
-int
-sa_isxmlerror(sa_xmlitem *item)
-{
-	return item && item->name[0] == '!';
-}
-
-int
-sa_isxmltext(sa_xmlitem *item)
-{
-	return item && item->name[0] == '\0';
-}
-
-int
-sa_isxmltag(sa_xmlitem *item)
-{
-	return item && item->name[0] != '\0' && item->name[0] != '!';
-}
-
 char *
 sa_xmlname(sa_xmlitem *item)
 {
-	if (sa_isxmltag(item))
-		return item->name;
-	return nil;
+	return item->name;
 }
 
 char *
 sa_xmlatt(sa_xmlitem *item, char *att)
 {
 	int i;
-	if (sa_isxmltag(item))
-	{
-		for (i = 0; item->atts[i]; i += 2)
-			if (!strcmp(item->atts[i], att))
-				return item->atts[i + 1];
-	}
-	return nil;
-}
-
-char *
-sa_xmltext(sa_xmlitem *item)
-{
-	if (sa_isxmltext(item))
-		return item->atts[1];
+	for (i = 0; item->atts[i]; i += 2)
+		if (!strcmp(item->atts[i], att))
+			return item->atts[i + 1];
 	return nil;
 }
 

@@ -2,7 +2,7 @@
 
 /* TODO: check if this works with 16bpp images */
 
-enum { MAXC = 16 };
+enum { MAXC = 32 };
 
 typedef struct fz_predict_s fz_predict;
 

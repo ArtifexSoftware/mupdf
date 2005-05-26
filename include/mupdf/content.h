@@ -105,6 +105,6 @@ fz_error *pdf_showimage(pdf_csi*, pdf_image *img);
 
 /* interpret.c */
 fz_error *pdf_newcsi(pdf_csi **csip, int maskonly);
-fz_error *pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *rdb, fz_file *);
+fz_error *pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *rdb, fz_stream *);
 void pdf_dropcsi(pdf_csi *csi);
 

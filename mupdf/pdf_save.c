@@ -1,12 +1,14 @@
 #include <fitz.h>
 #include <mupdf.h>
 
-#define TIGHT 0
+#define TIGHT 1
 
 static fz_error *
-writestream(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
+writestream(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 {
 	fz_error *error;
+	fz_stream *dststm;
+	fz_stream *srcstm;
 	unsigned char buf[4096];
 	fz_filter *ef;
 	int n;
@@ -19,47 +21,55 @@ writestream(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 		if (error)
 			return error;
 
-		error = fz_pushfilter(out, ef);
+		error = fz_openrfilter(&dststm, ef, out);
 		fz_dropfilter(ef);
 		if (error)
 			return error;
 	}
+	else
+	{
+		dststm = fz_keepstream(out);
+	}
 
-	error = pdf_openrawstream(xref, oid, gen);
+	error = pdf_openrawstream(&srcstm, xref, oid, gen);
 	if (error)
-		goto cleanup;
+		goto cleanupdst;
 
 	while (1)
 	{
-		n = fz_read(xref->stream, buf, sizeof buf);
+		n = fz_read(srcstm, buf, sizeof buf);
 		if (n == 0)
 			break;
 		if (n < 0)
 		{
-			error = fz_ferror(xref->stream);
-			pdf_closestream(xref);
-			goto cleanup;
+			error = fz_throw("ioerror: read failed");
+			goto cleanupsrc;
 		}
-		fz_write(out, buf, n);
+
+		n = fz_write(dststm, buf, n);
+		if (n < 0)
+		{
+			error = fz_throw("ioerror: write failed");
+			goto cleanupsrc;
+		}
 	}
 
-	pdf_closestream(xref);
-
-	if (encrypt)
-		fz_popfilter(out);
+	fz_dropstream(srcstm);
+	fz_dropstream(dststm);
 
 	fz_print(out, "endstream\n");
 
 	return nil;
 
-cleanup:
-	if (encrypt)
-		fz_popfilter(out);
+cleanupsrc:
+	fz_dropstream(srcstm);
+cleanupdst:
+	fz_dropstream(dststm);
 	return error;
 }
 
 static fz_error *
-writeobject(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
+writeobject(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 {
 	pdf_xrefentry *x = xref->table + oid;
 	fz_error *error;
@@ -87,10 +97,6 @@ writeobject(fz_file *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen)
 
 	fz_print(out, "endobj\n\n");
 
-	error = fz_ferror(out);
-	if (error)
-		return error;
-
 	return nil;
 }
 
@@ -107,7 +113,7 @@ fz_error *
 pdf_updatexref(pdf_xref *xref, char *path)
 {
 	fz_error *error;
-	fz_file *out;
+	fz_stream *out;
 	int oid;
 	int i, n;
 	int startxref;
@@ -115,7 +121,7 @@ pdf_updatexref(pdf_xref *xref, char *path)
 
 	pdf_logxref("updatexref '%s' %p\n", path, xref);
 
-	error = fz_openfile(&out, path, FZ_APPEND);
+	error = fz_openafile(&out, path);
 	if (error)
 		return error;
 
@@ -198,11 +204,11 @@ pdf_updatexref(pdf_xref *xref, char *path)
 
 	xref->startxref = startxref;
 
-	fz_closefile(out);
+	fz_dropstream(out);
 	return nil;
 
 cleanup:
-	fz_closefile(out);
+	fz_dropstream(out);
 	return error;
 }
 
@@ -210,7 +216,7 @@ fz_error *
 pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 {
 	fz_error *error;
-	fz_file *out;
+	fz_stream *out;
 	int oid;
 	int startxref;
 	int *ofsbuf;
@@ -239,7 +245,7 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 	if (!ofsbuf)
 		return fz_outofmem;
 
-	error = fz_openfile(&out, path, FZ_WRITE);
+	error = fz_openwfile(&out, path);
 	if (error)
 	{
 		fz_free(ofsbuf);
@@ -309,12 +315,12 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 	xref->startxref = startxref;
 
 	if(ofsbuf) fz_free(ofsbuf);
-	fz_closefile(out);
+	fz_dropstream(out);
 	return nil;
 
 cleanup:
 	if(ofsbuf) fz_free(ofsbuf);
-	fz_closefile(out);
+	fz_dropstream(out);
 	return error;
 }
 

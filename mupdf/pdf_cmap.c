@@ -40,7 +40,7 @@ static int codefromstring(unsigned char *buf, int len)
 	return a;
 }
 
-static int mylex(fz_file *file, char *buf, int n, int *sl)
+static int mylex(fz_stream *file, char *buf, int n, int *sl)
 {
 	int token = pdf_lex(file, buf, n, sl);
 	if (token == PDF_TKEYWORD)
@@ -48,7 +48,7 @@ static int mylex(fz_file *file, char *buf, int n, int *sl)
 	return token;
 }
 
-static fz_error *parsecmapname(fz_cmap *cmap, fz_file *file)
+static fz_error *parsecmapname(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -63,7 +63,7 @@ static fz_error *parsecmapname(fz_cmap *cmap, fz_file *file)
 	return fz_throw("syntaxerror in CMap after /CMapName");
 }
 
-static fz_error *parsewmode(fz_cmap *cmap, fz_file *file)
+static fz_error *parsewmode(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -78,7 +78,7 @@ static fz_error *parsewmode(fz_cmap *cmap, fz_file *file)
 	return fz_throw("syntaxerror in CMap after /WMode");
 }
 
-static fz_error *parsecodespacerange(fz_cmap *cmap, fz_file *file)
+static fz_error *parsecodespacerange(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -113,7 +113,7 @@ static fz_error *parsecodespacerange(fz_cmap *cmap, fz_file *file)
 	return fz_throw("syntaxerror in CMap codespacerange section");
 }
 
-static fz_error *parsecidrange(fz_cmap *cmap, fz_file *file)
+static fz_error *parsecidrange(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -154,7 +154,7 @@ cleanup:
 	return fz_throw("syntaxerror in CMap cidrange section");
 }
 
-static fz_error *parsecidchar(fz_cmap *cmap, fz_file *file)
+static fz_error *parsecidchar(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -189,7 +189,7 @@ cleanup:
 	return fz_throw("syntaxerror in CMap cidchar section");
 }
 
-static fz_error *parsebfrange(fz_cmap *cmap, fz_file *file)
+static fz_error *parsebfrange(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -231,7 +231,7 @@ cleanup:
 	return fz_throw("syntaxerror in CMap bfrange section");
 }
 
-static fz_error *parsebfchar(fz_cmap *cmap, fz_file *file)
+static fz_error *parsebfchar(fz_cmap *cmap, fz_stream *file)
 {
 	char buf[256];
 	int token;
@@ -268,7 +268,7 @@ cleanup:
 }
 
 fz_error *
-pdf_parsecmap(fz_cmap **cmapp, fz_file *file)
+pdf_parsecmap(fz_cmap **cmapp, fz_stream *file)
 {
 	fz_error *error;
 	fz_cmap *cmap;
@@ -377,6 +377,7 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_obj *stmobj = stmref;
 	fz_error *error = nil;
+	fz_stream *file;
 	fz_cmap *cmap = nil;
 	fz_cmap *usecmap;
 	fz_obj *wmode;
@@ -394,15 +395,15 @@ pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	if (error)
 		return error;
 
-	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
+	error = pdf_openstream(&file, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		goto cleanup;
 
-	error = pdf_parsecmap(&cmap, xref->file);
+	error = pdf_parsecmap(&cmap, file);
 	if (error)
 		goto cleanup;
 
-	pdf_closestream(xref);
+	fz_dropstream(file);
 
 	wmode = fz_dictgets(stmobj, "WMode");
 	if (fz_isint(wmode))
@@ -456,7 +457,7 @@ fz_error *
 pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 {
 	fz_error *error = nil;
-	fz_file *file;
+	fz_stream *file;
 	char *cmapdir;
 	char *usecmapname;
 	fz_cmap *usecmap;
@@ -473,7 +474,7 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	strlcat(path, "/", sizeof path);
 	strlcat(path, name, sizeof path);
 
-	error = fz_openfile(&file, path, FZ_READ);
+	error = fz_openrfile(&file, path);
 	if (error)
 		goto cleanup;
 
@@ -481,7 +482,7 @@ pdf_loadsystemcmap(fz_cmap **cmapp, char *name)
 	if (error)
 		goto cleanup;
 
-	fz_closefile(file);
+	fz_dropstream(file);
 
 	usecmapname = fz_getusecmapname(cmap);
 	if (usecmapname)
@@ -503,7 +504,7 @@ cleanup:
 	if (cmap)
 		fz_dropcmap(cmap);
 	if (file)
-		fz_closefile(file);
+		fz_dropstream(file);
 	return error;
 }
 

@@ -12,14 +12,31 @@
 #include "fitz.h"
 #include "samus.h"
 
-static inline unsigned int read2(fz_file *f)
+typedef struct sa_zipent_s sa_zipent;
+
+struct sa_zipent_s
+{
+	unsigned offset;
+	unsigned csize;
+	unsigned usize;
+	char *name;
+};
+
+struct sa_zip_s
+{
+	fz_stream *file;
+	int len;
+	sa_zipent *table;
+};
+
+static inline unsigned int read2(fz_stream *f)
 {
 	unsigned char a = fz_readbyte(f);
 	unsigned char b = fz_readbyte(f);
 	return (b << 8) | a;
 }
 
-static inline unsigned int read4(fz_file *f)
+static inline unsigned int read4(fz_stream *f)
 {
 	unsigned char a = fz_readbyte(f);
 	unsigned char b = fz_readbyte(f);
@@ -75,7 +92,7 @@ static fz_error *readzipdir(sa_zip *zip, int startoffset)
 		fz_seek(zip->file, comsize, 1);
 	}
 
-	return fz_ferror(zip->file);
+	return nil;
 }
 
 static fz_error *readzipendofdir(sa_zip *zip, int startoffset)
@@ -115,7 +132,7 @@ static fz_error *findzipendofdir(sa_zip *zip)
 
 	filesize = fz_seek(zip->file, 0, 2);
 	if (filesize == -1)
-		return fz_ferror(zip->file);
+		return fz_throw("ioerror: seek failed");
 
 	maxback = MIN(filesize, 0xFFFF + sizeof buf);
 	back = MIN(maxback, sizeof buf);
@@ -125,7 +142,7 @@ static fz_error *findzipendofdir(sa_zip *zip)
 		fz_seek(zip->file, filesize - back, 0);
 		n = fz_read(zip->file, buf, sizeof buf);
 		if (n < 0)
-			return fz_ferror(zip->file);
+			return fz_throw("ioerror: read failed");
 
 		for (i = n - 4; i > 0; i--)
 			if (!memcmp(buf + i, "\120\113\5\6", 4))
@@ -155,7 +172,7 @@ sa_openzip(sa_zip **zipp, char *filename)
 	zip->len = 0;
 	zip->table = nil;
 
-	error = fz_openfile(&zip->file, filename, FZ_READ);
+	error = fz_openrfile(&zip->file, filename);
 	if (error)
 		return error;
 
@@ -171,7 +188,7 @@ sa_closezip(sa_zip *zip)
 	int i;
 
 	if (zip->file)
-		fz_closefile(zip->file);
+		fz_dropstream(zip->file);
 
 	for (i = 0; i < zip->len; i++)
 		if (zip->table[i].name)
@@ -212,7 +229,7 @@ sa_accesszipentry(sa_zip *zip, char *name)
 /*
  * Seek and push decoding filter to read an individual file in the zip archive.
  */
-static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
+static fz_error *reallyopenzipentry(fz_stream **stmp, sa_zip *zip, int idx)
 {
 	fz_error *error;
 	fz_filter *filter;
@@ -224,7 +241,7 @@ static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
 
 	t = fz_seek(zip->file, zip->table[idx].offset, 0);
 	if (t < 0)
-		return fz_ferror(zip->file);
+		return fz_throw("ioerror: seek failed");
 
 	sign = read4(zip->file);
 	if (sign != 0x04034b50)
@@ -247,7 +264,9 @@ static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
 	if (general & 0x0001)
 		return fz_throw("ioerror: encrypted zip entry");
 
-	fz_seek(zip->file, namesize + metasize, 1);
+	t = fz_seek(zip->file, namesize + metasize, 1);
+	if (t < 0)
+		return fz_throw("ioerror: seek failed");
 
 	switch (method)
 	{	
@@ -272,7 +291,7 @@ static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
 		break;
 	}
 
-	error = fz_pushfilter(zip->file, filter);
+	error = fz_openrfilter(stmp, filter, zip->file);
 	fz_dropfilter(filter);
 	if (error)
 		return error;
@@ -281,23 +300,14 @@ static fz_error *reallyopenzipentry(sa_zip *zip, int idx)
 }
 
 fz_error *
-sa_openzipentry(sa_zip *zip, char *name)
+sa_openzipentry(fz_stream **stmp, sa_zip *zip, char *name)
 {
 	int i;
 
 	for (i = 0; i < zip->len; i++)
 		if (!strcmp(name, zip->table[i].name))
-			return reallyopenzipentry(zip, i);
+			return reallyopenzipentry(stmp, zip, i);
 
 	return fz_throw("ioerror: file not found in zip: '%s'", name);
-}
-
-/*
- * Pop decompression filter and clean up after reading a file in the archive.
- */
-void
-sa_closezipentry(sa_zip *zip)
-{
-	fz_popfilter(zip->file);
 }
 

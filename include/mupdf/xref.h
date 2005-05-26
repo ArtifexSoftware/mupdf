@@ -7,8 +7,7 @@ typedef struct pdf_xref_s pdf_xref;
 
 struct pdf_xref_s
 {
-	fz_file *file;
-	fz_file *stream;
+	fz_stream *file;
 	float version;
 	int startxref;
 	pdf_crypt *crypt;
@@ -61,13 +60,12 @@ fz_error *pdf_loadobject(fz_obj **objp, pdf_xref *, int oid, int gen);
 fz_error *pdf_loadindirect(fz_obj **objp, pdf_xref *, fz_obj *ref);
 fz_error *pdf_resolve(fz_obj **reforobj, pdf_xref *);
 
-fz_error *pdf_decodefilter(fz_filter **filterp, fz_obj *stmobj);
 int pdf_isstream(pdf_xref *xref, int oid, int gen);
+fz_error *pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj);
 fz_error *pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
 fz_error *pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
-fz_error *pdf_openrawstream(pdf_xref *, int oid, int gen);
-fz_error *pdf_openstream(pdf_xref *, int oid, int gen);
-void pdf_closestream(pdf_xref *);
+fz_error *pdf_openrawstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
+fz_error *pdf_openstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
 
 fz_error *pdf_garbagecollect(pdf_xref *xref);
 fz_error *pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *old);

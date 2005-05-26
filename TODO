@@ -1,3 +1,5 @@
+heh. bug in pdfselect on compressed object streams. gc takes forever, no objects remain...
+
 lazy nametree
 lazy pagetree
 

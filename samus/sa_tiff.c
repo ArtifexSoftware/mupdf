@@ -11,7 +11,7 @@ typedef struct sa_tiff_s sa_tiff;
 struct sa_tiff_s
 {
 	/* file and byte order */
-	fz_file *file;
+	fz_stream *file;
 	unsigned order;
 
 	/* where we can find the strips of image data */
@@ -199,7 +199,7 @@ tiffreadstrips(sa_tiff *tiff)
 	fz_error *error;
 	fz_obj *params;
 	fz_buffer *buf;
-	fz_file *file;
+	fz_stream *file;
 	fz_filter *filter;
 	unsigned char tmp[512];
 
@@ -264,17 +264,20 @@ printf("w=%d h=%d n=%d bpc=%d ",
 
 	/* TODO: scrap write-file and decode with filter directly to final destination */
 	error = fz_newbuffer(&buf, 4096);
-	error = fz_openbuffer(&file, buf, FZ_WRITE);
+	error = fz_openwbuffer(&file, buf);
 
 	if (filter)
 	{
-		error = fz_pushfilter(file, filter);
+		fz_stream *temp;
+		error = fz_openwfilter(&temp, filter, file);
 		if (error)
 		{
 			fz_dropfilter(filter);
-			fz_closefile(file);
+			fz_dropstream(file);
 			return error;
 		}
+		fz_dropstream(file);
+		file = temp;
 	}
 
 	strip = 0;
@@ -289,7 +292,7 @@ printf("w=%d h=%d n=%d bpc=%d ",
 		{
 			len = fz_read(tiff->file, tmp, MIN(bytecount, sizeof tmp));
 			if (len < 0)
-				return fz_ferror(tiff->file);
+				return fz_throw("ioerror: read failed");
 			bytecount -= len;
 
 			if (tiff->fillorder == 2)
@@ -300,23 +303,16 @@ printf("w=%d h=%d n=%d bpc=%d ",
 
 			len = fz_write(file, tmp, len);
 			if (len < 0)
-				return fz_ferror(file);
+				return fz_throw("ioerror: write failed");
 		}
 
 		strip ++;
 	}
 
-	len = fz_flush(file);
-	if (len < 0)
-		return fz_ferror(file);
-
 	if (filter)
-	{
-		fz_popfilter(file);
 		fz_dropfilter(filter);
-	}
 
-	fz_closefile(file);
+	fz_dropstream(file);
 
 	if (tiff->photometric == 3 && tiff->colormap)
 	{
@@ -453,7 +449,7 @@ tiffreadifd(sa_tiff *tiff, unsigned offset)
 }
 
 static fz_error *
-tiffreadifh(sa_tiff *tiff, fz_file *file)
+tiffreadifh(sa_tiff *tiff, fz_stream *file)
 {
 	unsigned version;
 	unsigned offset;
@@ -488,23 +484,24 @@ tiffreadifh(sa_tiff *tiff, fz_file *file)
 }
 
 fz_error *
-sa_readtiff(fz_file *file)
+sa_readtiff(fz_stream *file)
 {
 	fz_error *error;
 	fz_buffer *buf;
-	fz_file *newfile;
+	fz_stream *newfile;
 	sa_tiff tiff;
+	int n;
 
 	/* TIFF requires random access. In Metro TIFFs are embedded in ZIP files.
 	 * Compressed streams are not seekable, so we copy the data to an
 	 * in-memory data buffer instead of reading from the original stream.
 	 */
 
-	error = fz_readfile(&buf, file);
-	if (error)
-		return error;
+	n = fz_readall(&buf, file);
+	if (n < 0)
+		return fz_throw("ioerror: readall failed");
 
-	error = fz_openbuffer(&newfile, buf, FZ_READ);
+	error = fz_openrbuffer(&newfile, buf);
 	if (error)
 	{
 		fz_dropbuffer(buf);
@@ -517,7 +514,7 @@ sa_readtiff(fz_file *file)
 	fz_free(tiff.stripoffsets);
 	fz_free(tiff.stripbytecounts);
 
-	fz_closefile(newfile);
+	fz_dropstream(newfile);
 	fz_dropbuffer(buf);
 
 	return error;

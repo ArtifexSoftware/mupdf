@@ -22,7 +22,7 @@ fz_newbuffer(fz_buffer **bp, int size)
 }
 
 fz_error *
-fz_newbufferwithdata(fz_buffer **bp, unsigned char *data, int size)
+fz_newbufferwithmemory(fz_buffer **bp, unsigned char *data, int size)
 {
 	fz_buffer *b;
 

@@ -24,6 +24,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 {
 	fz_error *error;
 	pdf_pattern *pat;
+	fz_stream *stm;
 	fz_obj *resources;
 	fz_obj *obj;
 	pdf_csi *csi;
@@ -98,13 +99,13 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	if (error)
 		goto cleanup;
 
-	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
+	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		goto cleanup2;
 
-	error = pdf_runcsi(csi, xref, resources, xref->stream);
+	error = pdf_runcsi(csi, xref, resources, stm);
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
 	if (error)
 		goto cleanup2;

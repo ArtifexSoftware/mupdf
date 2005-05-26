@@ -1,3 +1,17 @@
+/*
+ * Vector path nodes in the display tree.
+ * They can be stroked and dashed, or be filled.
+ * They have a fill rule (nonzero or evenodd).
+ *
+ * When rendering, they are flattened, stroked and dashed straight
+ * into the Global Edge List.
+ *
+ * TODO flatten, stroke and dash into another path
+ * TODO set operations on flat paths (union, intersect, difference)
+ * TODO decide whether dashing should be part of the tree and renderer,
+ *      or if it is something the client has to do (with a util function).
+ */
+
 typedef struct fz_stroke_s fz_stroke;
 typedef struct fz_dash_s fz_dash;
 typedef union fz_pathel_s fz_pathel;

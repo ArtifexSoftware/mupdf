@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * Check if an object is a stream or not.
@@ -173,7 +173,7 @@ buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
  * stream length, followed by a decryption filter.
  */
 static fz_error *
-makerawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
+buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
 {
 	fz_error *error;
 	fz_filter *base;
@@ -224,7 +224,7 @@ makerawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int 
  * constraining to stream length, and without decryption.
  */
 fz_error *
-pdf_decodefilter(fz_filter **filterp, fz_obj *stmobj)
+pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj)
 {
 	fz_obj *filters;
 	fz_obj *params;
@@ -250,14 +250,14 @@ pdf_decodefilter(fz_filter **filterp, fz_obj *stmobj)
  * to stream length and decrypting.
  */
 static fz_error *
-makedecodefilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
+pdf_buildfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
 {
 	fz_error *error;
 	fz_filter *base, *pipe, *tmp;
 	fz_obj *filters;
 	fz_obj *params;
 
-	error = makerawfilter(&base, xref, stmobj, oid, gen);
+	error = buildrawfilter(&base, xref, stmobj, oid, gen);
 	if (error)
 		return error;
 
@@ -321,11 +321,10 @@ cleanup0:
 
 /*
  * Open a stream for reading the raw (compressed but decrypted) data. 
- * Put the opened file in xref->stream. Using xref->file while this
- * is open is a bad idea.
+ * Using xref->file while this is open is a bad idea.
  */
 fz_error *
-pdf_openrawstream(pdf_xref *xref, int oid, int gen)
+pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
 	fz_error *error;
@@ -343,12 +342,12 @@ pdf_openrawstream(pdf_xref *xref, int oid, int gen)
 
 	if (x->stmbuf)
 	{
-		return fz_openbuffer(&xref->stream, x->stmbuf, FZ_READ);
+		return fz_openrbuffer(stmp, x->stmbuf);
 	}
 
 	if (x->stmofs)
 	{
-		error = makerawfilter(&filter, xref, x->obj, oid, gen);
+		error = buildrawfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
 			return error;
 
@@ -356,15 +355,16 @@ pdf_openrawstream(pdf_xref *xref, int oid, int gen)
 		if (n == -1)
 		{
 			fz_dropfilter(filter);
-			return fz_ferror(xref->file);
+			return fz_throw("ioerror: seek failed");
 		}
 
-		error = fz_pushfilter(xref->file, filter);
+		error = fz_openrfilter(stmp, filter, xref->file);
+
 		fz_dropfilter(filter);
+
 		if (error)
 			return error;
 
-		xref->stream = xref->file;
 		return nil;
 	}
 
@@ -377,10 +377,11 @@ pdf_openrawstream(pdf_xref *xref, int oid, int gen)
  * Using xref->file while a stream is open is a Bad idea.
  */
 fz_error *
-pdf_openstream(pdf_xref *xref, int oid, int gen)
+pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
 	fz_error *error;
+	fz_stream *rawstm;
 	fz_filter *filter;
 	int n;
 
@@ -395,25 +396,26 @@ pdf_openstream(pdf_xref *xref, int oid, int gen)
 
 	if (x->stmbuf)
 	{
-		error = makedecodefilter(&filter, xref, x->obj, oid, gen);
+		error = pdf_buildfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
 			return error;
 
-		error = fz_openbuffer(&xref->stream, x->stmbuf, FZ_READ);
+		error = fz_openrbuffer(&rawstm, x->stmbuf);
 		if (error)
 		{
 			fz_dropfilter(filter);
 			return error;
 		}
 
-		error = fz_pushfilter(xref->stream, filter);
+		error = fz_openrfilter(stmp, filter, rawstm);
 		fz_dropfilter(filter);
+		fz_dropstream(rawstm);
 		return error;
 	}
 
 	if (x->stmofs)
 	{
-		error = makedecodefilter(&filter, xref, x->obj, oid, gen);
+		error = pdf_buildfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
 			return error;
 
@@ -421,33 +423,18 @@ pdf_openstream(pdf_xref *xref, int oid, int gen)
 		if (n == -1)
 		{
 			fz_dropfilter(filter);
-			return fz_ferror(xref->file);
+			return fz_throw("ioerror: seek failed");
 		}
 
-		error = fz_pushfilter(xref->file, filter);
+		error = fz_openrfilter(stmp, filter, xref->file);
 		fz_dropfilter(filter);
 		if (error)
 			return error;
 
-		xref->stream = xref->file;
 		return nil;
 	}
 
 	return fz_throw("syntaxerror: object is not a stream");
-}
-
-/*
- * Close the xref->stream file opened by either
- * pdf_openrawstream or pdf_openstream.
- */
-void
-pdf_closestream(pdf_xref *xref)
-{
-	if (xref->stream == xref->file)
-		fz_popfilter(xref->file);
-	else
-		fz_closefile(xref->stream);
-	xref->stream = nil;
 }
 
 /*
@@ -457,16 +444,20 @@ fz_error *
 pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error *error;
+	fz_stream *stm;
+	int n;
 
-	error = pdf_openrawstream(xref, oid, gen);
+	error = pdf_openrawstream(&stm, xref, oid, gen);
 	if (error)
 		return error;
 
-	error = fz_readfile(bufp, xref->stream);
+	n = fz_readall(bufp, stm);
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
-	return error;
+	if (n < 0)
+		return fz_throw("ioerror: readall failed");
+	return nil;
 }
 
 /*
@@ -476,15 +467,19 @@ fz_error *
 pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error *error;
+	fz_stream *stm;
+	int n;
 
-	error = pdf_openstream(xref, oid, gen);
+	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
 		return error;
 
-	error = fz_readfile(bufp, xref->stream);
+	n = fz_readall(bufp, stm);
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
-	return error;
+	if (n < 0)
+		return fz_throw("ioerror: readall failed");
+	return nil;
 }
 

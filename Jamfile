@@ -134,18 +134,21 @@ Library libstream :
 	obj_print.c
 	obj_simple.c
 
-	stm_filter.c
 	stm_buffer.c
-	stm_filec.c
-	stm_filer.c
-	stm_filew.c
+	stm_filter.c
+	stm_open.c
+	stm_read.c
+	stm_write.c
+	stm_misc.c
 
 	filt_pipeline.c
+	filt_arc4.c
+	filt_null.c
+
 	filt_a85d.c
 	filt_a85e.c
 	filt_ahxd.c
 	filt_ahxe.c
-	filt_arc4.c
 	filt_dctd.c
 	filt_dcte.c
 	filt_faxd.c
@@ -155,7 +158,6 @@ Library libstream :
 	filt_flate.c
 	filt_lzwd.c
 	filt_lzwe.c
-	filt_null.c
 	filt_predict.c
 	filt_rld.c
 	filt_rle.c

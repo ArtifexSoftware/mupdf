@@ -15,7 +15,7 @@ struct entry
 };
 
 static fz_error *
-parseobj(fz_file *file, char *buf, int cap, int *stmofs, int *stmlen,
+parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 	int *isroot, int *isinfo)
 {
 	fz_error *error;
@@ -108,7 +108,7 @@ fz_error *
 pdf_repairxref(pdf_xref *xref, char *filename)
 {
 	fz_error *error;
-	fz_file *file;
+	fz_stream *file;
 
 	struct entry *list = nil;
 	int listlen;
@@ -127,7 +127,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	int next;
 	int i;
 
-	error = fz_openfile(&file, filename, FZ_READ);
+	error = fz_openrfile(&file, filename);
 	if (error)
 		return error;
 
@@ -295,7 +295,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	return nil;
 
 cleanup:
-	fz_closefile(file);
+	fz_dropstream(file);
 	fz_free(list);
 	return error;
 }

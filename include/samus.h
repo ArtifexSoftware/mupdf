@@ -9,4 +9,5 @@
 
 #include "samus/zip.h"
 #include "samus/xml.h"
+#include "samus/pack.h"
 

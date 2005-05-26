@@ -5,16 +5,17 @@ static fz_error *
 runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error *error;
+	fz_stream *stm;
 
 	pdf_logpage("simple content stream\n");
 
-	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
+	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		return error;
 
-	error = pdf_runcsi(csi, xref, rdb, xref->stream);
+	error = pdf_runcsi(csi, xref, rdb, stm);
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
 	return error;
 }
@@ -26,7 +27,7 @@ static fz_error *
 runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 {
 	fz_error *error;
-	fz_file *file;
+	fz_stream *file;
 	fz_buffer *big;
 	fz_buffer *one;
 	fz_obj *stm;
@@ -39,12 +40,14 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 	if (error)
 		return error;
 
-	error = fz_openbuffer(&file, big, FZ_WRITE);
+	error = fz_openwbuffer(&file, big);
 	if (error)
 		goto cleanup0;
 
 	for (i = 0; i < fz_arraylen(list); i++)
 	{
+		/* TODO dont use loadstream here */
+
 		stm = fz_arrayget(list, i);
 		error = pdf_loadstream(&one, xref, fz_tonum(stm), fz_togen(stm));
 		if (error)
@@ -56,33 +59,28 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 
 		if (n == -1)
 		{
-			error = fz_ferror(file);
+			error = fz_throw("ioerror: write failed");
 			goto cleanup1;
 		}
 
-		n = fz_printstring(file, " ");
-		if (n == -1)
-		{
-			error = fz_ferror(file);
-			goto cleanup1;
-		}
+		fz_printstr(file, " ");
 	}
 
-	fz_closefile(file);
+	fz_dropstream(file);
 
-	error = fz_openbuffer(&file, big, FZ_READ);
+	error = fz_openrbuffer(&file, big);
 	if (error)
 		goto cleanup0;
 
 	error = pdf_runcsi(csi, xref, rdb, file);
 
-	fz_closefile(file);
+	fz_dropstream(file);
 	fz_dropbuffer(big);
 
 	return error;
 
 cleanup1:
-	fz_closefile(file);
+	fz_dropstream(file);
 cleanup0:
 	fz_dropbuffer(big);
 	return error;

@@ -66,16 +66,17 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error *error;
 	pdf_csi *csi;
+	fz_stream *stm;
 
 	error = pdf_newcsi(&csi, 1);
 
-	error = pdf_openstream(xref, fz_tonum(stmref), fz_togen(stmref));
+	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
 		return error;
 
-	error = pdf_runcsi(csi, xref, rdb, xref->stream);
+	error = pdf_runcsi(csi, xref, rdb, stm);
 
-	pdf_closestream(xref);
+	fz_dropstream(stm);
 
 	*treep = csi->tree;
 	csi->tree = nil;

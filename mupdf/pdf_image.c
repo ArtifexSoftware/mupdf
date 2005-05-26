@@ -1,5 +1,9 @@
-#include <fitz.h>
-#include <mupdf.h>
+/*
+ * TODO: this needs serious cleaning up, and error checking.
+ */
+
+#include "fitz.h"
+#include "mupdf.h"
 
 void pdf_dropimage(fz_image *fzimg)
 {
@@ -10,7 +14,8 @@ void pdf_dropimage(fz_image *fzimg)
 }
 
 fz_error *
-pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_file *file)
+pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
+		fz_obj *rdb, fz_obj *dict, fz_stream *file)
 {
 	fz_error *error;
 	pdf_image *img;
@@ -120,19 +125,22 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 	f = fz_dictgetsa(dict, "Filter", "F");
 	if (f)
 	{
-		error = pdf_decodefilter(&filter, dict);
+		fz_stream *tempfile;
+
+		error = pdf_buildinlinefilter(&filter, dict);
 		if (error)
 			return error;
 
-		error = fz_pushfilter(file, filter);
+		error = fz_openrfilter(&tempfile, filter, file);
 		if (error)
 			return error;
 
-		error = fz_readfile(&img->samples, file);
-		if (error)
-			return error;
+		i = fz_readall(&img->samples, tempfile);
+		if (i < 0)
+			return fz_throw("ioerror: readall failed");
 
-		fz_popfilter(file);
+		fz_dropfilter(filter);
+		fz_dropstream(tempfile);
 	}
 	else
 	{
@@ -141,9 +149,8 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 			return error;
 
 		i = fz_read(file, img->samples->bp, img->super.h * img->stride);
-		error = fz_ferror(file);
-		if (error)
-			return error;
+		if (i < 0)
+			return fz_throw("ioerror: read failed");
 
 		img->samples->wp += img->super.h * img->stride;
 	}

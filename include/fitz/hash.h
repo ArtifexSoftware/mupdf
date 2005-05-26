@@ -1,3 +1,7 @@
+/*
+ * Generic hash-table with fixed-length keys.
+ */
+
 typedef struct fz_hashtable_s fz_hashtable;
 
 fz_error *fz_newhash(fz_hashtable **tablep, int initialsize, int keylen);
