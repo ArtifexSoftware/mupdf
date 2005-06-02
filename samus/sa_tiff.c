@@ -187,6 +187,137 @@ tiffdebug(sa_tiff *tiff)
 }
 
 static fz_error *
+tiffreaduncompressed(sa_tiff *tiff, unsigned char *mem, unsigned len)
+{
+	printf("uncompressed %d bytes\n", len);
+	return nil;
+}
+
+static fz_error *
+tiffreadfiltered(sa_tiff *tiff,
+		unsigned char *mem, unsigned len, fz_filter *filter)
+{
+	fz_error *error;
+	fz_buffer *buf;
+	fz_buffer *out;
+
+	printf("compressed %d bytes\n", len);
+
+	error = fz_newbufferwithmemory(&buf, mem, len);
+	if (error)
+		return error;
+
+	error = fz_newbuffer(&out, FZ_BUFSIZE);
+	if (error)
+	{
+		fz_dropbuffer(buf);
+		return error;
+	}
+
+	buf->eof = 1;
+
+	while (1)
+	{
+		error = fz_process(filter, buf, out);
+
+		printf("  + %d bytes\n", out->wp - out->rp);
+
+		if (error == fz_ioneedin)
+		{
+			error = fz_throw("ioerror: premature eof in filter");
+			goto cleanup;
+		}
+		else if (error == fz_ioneedout)
+		{
+			if (out->wp - out->rp == 0)	
+			{
+				error = fz_growbuffer(out);
+				if (error)
+					goto cleanup;
+			}
+			out->rp = out->bp;
+			out->wp = out->bp;
+		}
+		else if (error == fz_iodone)
+		{
+			break;
+		}
+		else
+			goto cleanup;
+	}
+
+	return nil;
+
+cleanup:
+	fz_dropbuffer(out);
+	fz_dropbuffer(buf);
+	return error;
+}
+
+static fz_error *
+tiffreadpackbits(sa_tiff *tiff, unsigned char *mem, unsigned len)
+{
+	fz_error *error;
+	fz_filter *filter;
+
+	error = fz_newrld(&filter, 0);
+	if (error)
+		return error;
+
+	error = tiffreadfiltered(tiff, mem, len, filter);
+	fz_dropfilter(filter);
+	return error;
+}
+
+static fz_error *
+tiffreadcrle(sa_tiff *tiff, unsigned char *mem, unsigned len)
+{
+	fz_error *error;
+	fz_filter *filter;
+	fz_obj *params;
+
+	error = fz_packobj(&params, "<<"
+			"/K 0 /EncodedByteAlign true /EndOfLine false /EndOfBlock false"
+			"/Columns %i /Rows %i /BlackIs1 %b"
+			">>",
+			tiff->imagewidth,
+			tiff->imagelength,
+			tiff->photometric == 0);
+	if (error)
+		return error;
+
+	error = fz_newfaxd(&filter, params);
+	fz_dropobj(params);
+	if (error)
+		return error;
+
+	error = tiffreadfiltered(tiff, mem, len, filter);
+	fz_dropfilter(filter);
+	return error;
+}
+
+static fz_error *
+tiffreadlzw(sa_tiff *tiff, unsigned char *mem, unsigned len)
+{
+	fz_error *error;
+	fz_filter *filter;
+	fz_obj *params;
+
+	error = fz_packobj(&params, "<</EarlyChange 0>>");
+	if (error)
+		return error;
+
+	error = fz_newlzwd(&filter, params);
+	fz_dropobj(params);
+	if (error)
+		return error;
+
+	error = tiffreadfiltered(tiff, mem, len, filter);
+	fz_dropfilter(filter);
+	return error;
+}
+
+static fz_error *
 tiffreadstrips(sa_tiff *tiff)
 {
 	/* switch on compression to create a filter */
@@ -195,13 +326,11 @@ tiffreadstrips(sa_tiff *tiff)
 
 	/* packbits -- nothing special (same row-padding as PDF) */
 	/* ccitt type 2 -- no EOL, no RTC, rows are byte-aligned */
+	/* lzw -- each strip is handled separately */
+	/* g3 and g4 -- each strip starts new section -- maybe can avoid? */
 
 	fz_error *error;
-	fz_obj *params;
-	fz_buffer *buf;
-	fz_stream *file;
-	fz_filter *filter;
-	unsigned char tmp[512];
+	unsigned char *mem;
 
 	int row;
 	int strip;
@@ -225,60 +354,17 @@ printf("w=%d h=%d n=%d bpc=%d ",
 
 	switch (tiff->compression)
 	{
-	case 1:
-		printf("Uncompressed ");
-		filter = nil;
-		break;
-
-	case 2:
-		printf("CCITT ");
-
-		error = fz_packobj(&params, "<<"
-			"/K 0 /EncodedByteAlign true /EndOfLine false /EndOfBlock false"
-			"/Columns %i /Rows %i /BlackIs1 %b"
-			">>",
-			tiff->imagewidth,
-			tiff->imagelength,
-			tiff->photometric == 0);
-		if (error)
-			return error;
-
-		error = fz_newfaxd(&filter, params);
-		fz_dropobj(params);
-		if (error)
-			return error;
-		break;
-
-	case 32773:
-		printf("PackBits ");
-		error = fz_newrld(&filter, 0);
-		if (error)
-			return error;
-		break;
-
+	case 1: printf("Uncompressed "); break;
+	case 2: printf("CCITT "); break;
+	case 3: printf("FaxG3"); break;
+	case 4: printf("FaxG4"); break;
+	case 5: printf("LZW "); break;
+	case 32773: printf("PackBits "); break;
 	default:
 		return fz_throw("ioerror: unknown TIFF compression: %d", tiff->compression);
 	}
 
 	printf("\n");
-
-	/* TODO: scrap write-file and decode with filter directly to final destination */
-	error = fz_newbuffer(&buf, 4096);
-	error = fz_openwbuffer(&file, buf);
-
-	if (filter)
-	{
-		fz_stream *temp;
-		error = fz_openwfilter(&temp, filter, file);
-		if (error)
-		{
-			fz_dropfilter(filter);
-			fz_dropstream(file);
-			return error;
-		}
-		fz_dropstream(file);
-		file = temp;
-	}
 
 	strip = 0;
 	for (row = 0; row < tiff->imagelength; row += tiff->rowsperstrip)
@@ -286,46 +372,45 @@ printf("w=%d h=%d n=%d bpc=%d ",
 		unsigned offset = tiff->stripoffsets[strip];
 		unsigned bytecount = tiff->stripbytecounts[strip];
 
+		mem = fz_malloc(bytecount);
+		if (!mem)
+			return fz_outofmem;
+
 		fz_seek(tiff->file, offset, 0);
-
-		while (bytecount)
+		len = fz_read(tiff->file, mem, bytecount);
+		if (len < 0)
 		{
-			len = fz_read(tiff->file, tmp, MIN(bytecount, sizeof tmp));
-			if (len < 0)
-				return fz_throw("ioerror: read failed");
-			bytecount -= len;
-
-			if (tiff->fillorder == 2)
-			{
-				for (i = 0; i < len; i++)
-					tmp[i] = bitrev[tmp[i]];
-			}
-
-			len = fz_write(file, tmp, len);
-			if (len < 0)
-				return fz_throw("ioerror: write failed");
+			fz_free(mem);
+			return fz_ioerror(tiff->file);
 		}
+
+		if (tiff->fillorder == 2)
+			for (i = 0; i < len; i++)
+				mem[i] = bitrev[mem[i]];
+
+		switch (tiff->compression)
+		{
+		case 1: error = tiffreaduncompressed(tiff, mem, len); break;
+		case 2: error = tiffreadcrle(tiff, mem, len); break;
+		//case 3: error = tiffreadg3(tiff, mem, len); break;
+		//case 4: error = tiffreadg4(tiff, mem, len); break;
+		case 5: error = tiffreadlzw(tiff, mem, len); break;
+		case 32773: error = tiffreadpackbits(tiff, mem, len); break;
+		}
+
+		fz_free(mem);
 
 		strip ++;
 	}
 
-	if (filter)
-		fz_dropfilter(filter);
-
-	fz_dropstream(file);
-
 	if (tiff->photometric == 3 && tiff->colormap)
 	{
 		/* TODO expand RGBPal datain buf via colormap to output */
-		printf("  read %d bytes (indexed)\n", buf->wp - buf->rp);
 	}
 	else
 	{
 		/* TODO copy buf to output */
-		printf("  read %d bytes\n", buf->wp - buf->rp);
 	}
-
-	fz_dropbuffer(buf);
 
 	return nil;
 }
@@ -499,7 +584,9 @@ sa_readtiff(fz_stream *file)
 
 	n = fz_readall(&buf, file);
 	if (n < 0)
-		return fz_throw("ioerror: readall failed");
+		return fz_ioerror(file);
+
+printf("readall -> %d\n", n);
 
 	error = fz_openrbuffer(&newfile, buf);
 	if (error)
