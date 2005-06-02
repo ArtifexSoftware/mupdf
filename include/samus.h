@@ -7,6 +7,7 @@
 #error "fitz.h must be included before samus.h"
 #endif
 
+#include "samus/misc.h"
 #include "samus/zip.h"
 #include "samus/xml.h"
 #include "samus/pack.h"

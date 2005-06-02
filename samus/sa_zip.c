@@ -221,7 +221,7 @@ sa_accesszipentry(sa_zip *zip, char *name)
 {
 	int i;
 	for (i = 0; i < zip->len; i++)
-		if (!strcmp(name, zip->table[i].name))
+		if (!sa_strcmp(name, zip->table[i].name))
 			return 1;
 	return 0;
 }
@@ -305,7 +305,7 @@ sa_openzipentry(fz_stream **stmp, sa_zip *zip, char *name)
 	int i;
 
 	for (i = 0; i < zip->len; i++)
-		if (!strcmp(name, zip->table[i].name))
+		if (!sa_strcmp(name, zip->table[i].name))
 			return reallyopenzipentry(stmp, zip, i);
 
 	return fz_throw("ioerror: file not found in zip: '%s'", name);

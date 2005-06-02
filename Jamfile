@@ -271,9 +271,11 @@ Library libmupdf :
 SubDir TOP samus ;
 
 Library libsamus :
+	sa_misc.c
 	sa_zip.c
 	sa_xml.c
 	sa_tiff.c
+	sa_pack.c
 	;
 
 # --------------------------------------------------------------------------

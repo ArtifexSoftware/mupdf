@@ -1,6 +1,52 @@
 #include "fitz.h"
 #include "samus.h"
 
+int runpack(int argc, char **argv)
+{
+	fz_error *error;
+	sa_package *pack;
+	sa_relation *rels;
+	char *s;
+	int i;
+
+	error = sa_openpackage(&pack, argv[1]);
+	if (error)
+		fz_abort(error);
+
+	sa_debugpackage(pack);
+
+	printf("--- root ---\n");
+	error = sa_loadrelations(&rels, pack, "/");
+	if (error)
+		fz_abort(error);
+	sa_debugrelations(rels);
+	sa_droprelations(rels);
+	printf("\n");
+
+	for (i = 2; i < argc; i++)
+	{
+		printf("--- %s ---\n", argv[i]);
+
+		s = sa_typepart(pack, argv[i]);
+		if (!s)
+			printf("has no type!\n");
+		else
+			printf("type %s\n", s);
+
+		error = sa_loadrelations(&rels, pack, argv[i]);
+		if (error)
+			fz_abort(error);
+		sa_debugrelations(rels);
+		sa_droprelations(rels);
+
+		printf("\n");
+	}
+
+	sa_closepackage(pack);
+
+	return 0;
+}
+
 int runzip(int argc, char **argv)
 {
 	fz_error *error;
@@ -91,10 +137,12 @@ int main(int argc, char **argv)
 			return runxml(argc, argv);
 		if (strstr(argv[1], "tif"))
 			return runtiff(argc, argv);
+		return runpack(argc, argv);
 	}
 
 	fprintf(stderr, "usage: samshow <file>\n");
 	fprintf(stderr, "usage: samshow <zipfile> <partname>\n");
+	fprintf(stderr, "usage: samshow <package> <partname>\n");
 	return 1;
 }
 

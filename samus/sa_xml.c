@@ -19,6 +19,7 @@ struct sa_xmlparser_s
 	fz_error *error;
 	sa_xmlitem *root;
 	sa_xmlitem *head;
+	int nexted;
 	int downed;
 };
 
@@ -172,6 +173,7 @@ sa_openxml(sa_xmlparser **spp, fz_stream *file, int ns)
 	sp->root = nil;
 	sp->head = nil;
 	sp->downed = 0;
+	sp->nexted = 0;
 
 	if (ns)
 		xp = XML_ParserCreateNS(nil, ns);
@@ -290,6 +292,12 @@ sa_xmlnext(sa_xmlparser *sp)
 		return sp->head;
 	}
 
+	if (!sp->nexted)
+	{
+		sp->nexted = 1;
+		return sp->head;
+	}
+
 	if (sp->head->next)
 	{
 		sp->head = sp->head->next;
@@ -306,6 +314,7 @@ sa_xmldown(sa_xmlparser *sp)
 		sp->head = sp->head->down;
 	else
 		sp->downed ++;
+	sp->nexted = 0;
 }
 
 void

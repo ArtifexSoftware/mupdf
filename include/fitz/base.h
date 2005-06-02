@@ -74,3 +74,5 @@ void *fz_malloc(int n);
 void *fz_realloc(void *p, int n);
 void fz_free(void *p);
 
+char *fz_strdup(char *s);
+

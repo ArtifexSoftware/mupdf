@@ -79,3 +79,13 @@ fz_free(void *p)
 	mem->free(mem, p);
 }
 
+char *
+fz_strdup(char *s)
+{
+	int len = strlen(s);
+	char *ns = fz_malloc(len + 1);
+	if (ns)
+		strcpy(ns, s);
+	return ns;
+}
+
