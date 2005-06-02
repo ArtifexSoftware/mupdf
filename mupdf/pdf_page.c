@@ -59,7 +59,7 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 
 		if (n == -1)
 		{
-			error = fz_throw("ioerror: write failed");
+			error = fz_ioerror(file);
 			goto cleanup1;
 		}
 

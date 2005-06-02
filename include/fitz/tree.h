@@ -2,7 +2,6 @@
  * The display tree is at the center of attention in Fitz.
  * The tree and most of its minor nodes.
  * Paths and text nodes are found elsewhere.
- * Resources used are also found elsewhere.
  */
 
 typedef struct fz_tree_s fz_tree;

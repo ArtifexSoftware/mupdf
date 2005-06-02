@@ -137,7 +137,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 
 		i = fz_readall(&img->samples, tempfile);
 		if (i < 0)
-			return fz_throw("ioerror: readall failed");
+			return fz_ioerror(tempfile);
 
 		fz_dropfilter(filter);
 		fz_dropstream(tempfile);
@@ -150,7 +150,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 
 		i = fz_read(file, img->samples->bp, img->super.h * img->stride);
 		if (i < 0)
-			return fz_throw("ioerror: read failed");
+			return fz_ioerror(file);
 
 		img->samples->wp += img->super.h * img->stride;
 	}

@@ -23,7 +23,7 @@ int runzip(int argc, char **argv)
 			fz_abort(error);
 		n = fz_readall(&buf, stm);
 		if (n < 0)
-			fz_abort(fz_throw("ioerror: readall failed"));
+			fz_abort(fz_ioerror(stm));
 		fz_dropstream(stm);
 
 		fwrite(buf->rp, 1, buf->wp - buf->rp, stdout);

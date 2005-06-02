@@ -19,7 +19,7 @@ loadversion(pdf_xref *xref)
 
 	n = fz_seek(xref->file, 0, 0);
 	if (n < 0)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(xref->file);
 
 	fz_readline(xref->file, buf, sizeof buf);
 	if (memcmp(buf, "%PDF-", 5) != 0)
@@ -41,15 +41,15 @@ readstartxref(pdf_xref *xref)
 
 	t = fz_seek(xref->file, 0, 2);
 	if (t == -1)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(xref->file);
 
 	t = fz_seek(xref->file, MAX(0, t - ((int)sizeof buf)), 0);
 	if (t == -1)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(xref->file);
 
 	n = fz_read(xref->file, buf, sizeof buf);
 	if (n == -1)
-		return fz_throw("ioerror: read failed");
+		return fz_ioerror(xref->file);
 
 	for (i = n - 9; i >= 0; i--)
 	{
@@ -93,7 +93,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 
 		n = fz_readline(xref->file, buf, cap);
 		if (n < 0)
-			return fz_throw("ioerror: read failed");
+			return fz_ioerror(xref->file);
 
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
@@ -105,11 +105,11 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 
 		t = fz_tell(xref->file);
 		if (t < 0)
-			return fz_throw("ioerror: tell failed");
+			return fz_ioerror(xref->file);
 
 		n = fz_seek(xref->file, t + 20 * len, 0);
 		if (n < 0)
-			return fz_throw("ioerror: seek failed");
+			return fz_ioerror(xref->file);
 	}
 
 	t = pdf_lex(xref->file, buf, cap, &n);
@@ -138,7 +138,7 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
 
 	n = fz_seek(xref->file, xref->startxref, 0);
 	if (n < 0)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(xref->file);
 
 	c = fz_peekbyte(xref->file);
 	if (c == 'x')
@@ -177,7 +177,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 		n = fz_readline(xref->file, buf, cap);
 		if (n < 0)
-			return fz_throw("ioerror: read failed");
+			return fz_ioerror(xref->file);
 		
 		s = buf;
 		ofs = atoi(strsep(&s, " "));
@@ -194,7 +194,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		{
 			n = fz_read(xref->file, buf, 20);
 			if (n < 0)
-				return fz_throw("ioerror: read failed");
+				return fz_ioerror(xref->file);
 			if (n != 20)
 				return fz_throw("syntaxerror: truncated xref table");
 			if (!xref->table[ofs + i].type)
@@ -327,7 +327,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 
 	n = fz_seek(xref->file, ofs, 0);
 	if (n < 0)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(xref->file);
 
 	c = fz_peekbyte(xref->file);
 	if (c == 'x')
@@ -438,7 +438,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	n = fz_seek(stm, first, 0);
 	if (n < 0)
 	{
-		error = fz_throw("ioerror: seek failed");
+		error = fz_ioerror(stm);
 		goto cleanupstm;
 	}
 

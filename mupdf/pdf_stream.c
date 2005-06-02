@@ -355,7 +355,7 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 		if (n == -1)
 		{
 			fz_dropfilter(filter);
-			return fz_throw("ioerror: seek failed");
+			return fz_ioerror(xref->file);
 		}
 
 		error = fz_openrfilter(stmp, filter, xref->file);
@@ -423,7 +423,7 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 		if (n == -1)
 		{
 			fz_dropfilter(filter);
-			return fz_throw("ioerror: seek failed");
+			return fz_ioerror(xref->file);
 		}
 
 		error = fz_openrfilter(stmp, filter, xref->file);
@@ -456,7 +456,7 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 	fz_dropstream(stm);
 
 	if (n < 0)
-		return fz_throw("ioerror: readall failed");
+		return fz_ioerror(stm);
 	return nil;
 }
 
@@ -479,7 +479,7 @@ pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 	fz_dropstream(stm);
 
 	if (n < 0)
-		return fz_throw("ioerror: readall failed");
+		return fz_ioerror(stm);
 	return nil;
 }
 

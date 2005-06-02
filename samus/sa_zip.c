@@ -131,8 +131,8 @@ static fz_error *findzipendofdir(sa_zip *zip)
 	int n, i;
 
 	filesize = fz_seek(zip->file, 0, 2);
-	if (filesize == -1)
-		return fz_throw("ioerror: seek failed");
+	if (filesize < 0)
+		return fz_ioerror(zip->file);
 
 	maxback = MIN(filesize, 0xFFFF + sizeof buf);
 	back = MIN(maxback, sizeof buf);
@@ -142,7 +142,7 @@ static fz_error *findzipendofdir(sa_zip *zip)
 		fz_seek(zip->file, filesize - back, 0);
 		n = fz_read(zip->file, buf, sizeof buf);
 		if (n < 0)
-			return fz_throw("ioerror: read failed");
+			return fz_ioerror(zip->file);
 
 		for (i = n - 4; i > 0; i--)
 			if (!memcmp(buf + i, "\120\113\5\6", 4))
@@ -241,7 +241,7 @@ static fz_error *reallyopenzipentry(fz_stream **stmp, sa_zip *zip, int idx)
 
 	t = fz_seek(zip->file, zip->table[idx].offset, 0);
 	if (t < 0)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(zip->file);
 
 	sign = read4(zip->file);
 	if (sign != 0x04034b50)
@@ -266,7 +266,7 @@ static fz_error *reallyopenzipentry(fz_stream **stmp, sa_zip *zip, int idx)
 
 	t = fz_seek(zip->file, namesize + metasize, 1);
 	if (t < 0)
-		return fz_throw("ioerror: seek failed");
+		return fz_ioerror(zip->file);
 
 	switch (method)
 	{	

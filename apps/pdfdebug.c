@@ -57,7 +57,7 @@ void decodestream(pdf_xref *xref, int oid, int gid)
 		if (n == 0)
 			break;
 		if (n < 0)
-			fz_abort(fz_throw("ioerror: read failed"));
+			fz_abort(fz_ioerror(stm));
 		printsafe(buf, n);
 	}
 
@@ -81,7 +81,7 @@ void copystream(pdf_xref *xref, int oid, int gid)
 		if (n == 0)
 			break;
 		if (n < 0)
-			fz_abort(fz_throw("ioerror: read failed"));
+			fz_abort(fz_ioerror(stm));
 		printsafe(buf, n);
 	}
 

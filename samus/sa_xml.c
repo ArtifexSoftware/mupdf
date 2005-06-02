@@ -197,7 +197,7 @@ sa_openxml(sa_xmlparser **spp, fz_stream *file, int ns)
 		len = fz_read(file, buf, XMLBUFLEN);
 		if (len < 0)
 		{
-			error = fz_throw("ioerror: read failed");
+			error = fz_ioerror(file);
 			goto cleanup;
 		}
 

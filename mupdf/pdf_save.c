@@ -42,14 +42,14 @@ writestream(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 			break;
 		if (n < 0)
 		{
-			error = fz_throw("ioerror: read failed");
+			error = fz_ioerror(srcstm);
 			goto cleanupsrc;
 		}
 
 		n = fz_write(dststm, buf, n);
 		if (n < 0)
 		{
-			error = fz_throw("ioerror: write failed");
+			error = fz_ioerror(dststm);
 			goto cleanupsrc;
 		}
 	}

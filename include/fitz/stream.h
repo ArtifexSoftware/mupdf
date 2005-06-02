@@ -17,6 +17,7 @@ struct fz_stream_s
 	fz_buffer *buffer;
 	fz_filter *filter;
 	fz_stream *chain;
+	fz_error *error;
 	int file;
 };
 
@@ -42,10 +43,9 @@ fz_error *fz_openwfilter(fz_stream **stmp, fz_filter *flt, fz_stream *chain);
  * Functions that are common to both input and output streams.
  */
 
-/* behave like dup() */
-fz_stream *fz_keepstream(fz_stream *stm);
+fz_error *fz_ioerror(fz_stream *stm);
 
-/* essentially your close() */
+fz_stream *fz_keepstream(fz_stream *stm);
 void fz_dropstream(fz_stream *stm);
 
 int fz_tell(fz_stream *stm);
@@ -68,7 +68,7 @@ int fz_readline(fz_stream *stm, char *buf, int max);
 int fz_readbytex(fz_stream *stm);
 int fz_peekbytex(fz_stream *stm);
 
-#if 1
+#ifdef DEBUG
 #define fz_readbyte fz_readbytex
 #define fz_peekbyte fz_peekbytex
 #else
