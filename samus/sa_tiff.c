@@ -35,6 +35,8 @@ struct sa_tiff_s
 	unsigned yresolution;
 	unsigned resolutionunit;
 	unsigned fillorder;
+	unsigned g3opts;
+	unsigned g4opts;
 };
 
 enum
@@ -62,6 +64,8 @@ enum
 #define XResolution					282
 #define YResolution					283
 #define PlanarConfiguration			284
+#define T4Options					292
+#define T6Options					293
 #define ResolutionUnit				296
 #define ColorMap					320
 
@@ -160,6 +164,8 @@ tiffdebug(sa_tiff *tiff)
 	printf("\t/YResolution %u\n", tiff->yresolution);
 	printf("\t/ResolutionUnit %u\n", tiff->resolutionunit);
 	printf("\t/FillOrder %u\n", tiff->fillorder);
+	printf("\t/T4Options %u\n", tiff->g3opts);
+	printf("\t/T6Options %u\n", tiff->g4opts);
 
 	printf("\t/ColorMap $%p\n", tiff->colormap);
 
@@ -200,6 +206,7 @@ tiffreadfiltered(sa_tiff *tiff,
 	fz_error *error;
 	fz_buffer *buf;
 	fz_buffer *out;
+	int count = 0;
 
 	printf("compressed %d bytes\n", len);
 
@@ -221,6 +228,8 @@ tiffreadfiltered(sa_tiff *tiff,
 		error = fz_process(filter, buf, out);
 
 		printf("  + %d bytes\n", out->wp - out->rp);
+
+		count += out->wp - out->rp;
 
 		if (error == fz_ioneedin)
 		{
@@ -246,9 +255,12 @@ tiffreadfiltered(sa_tiff *tiff,
 			goto cleanup;
 	}
 
+	printf("  = %d bytes\n", count);
+
 	return nil;
 
 cleanup:
+printf("cleanup\n");
 	fz_dropbuffer(out);
 	fz_dropbuffer(buf);
 	return error;
@@ -270,19 +282,42 @@ tiffreadpackbits(sa_tiff *tiff, unsigned char *mem, unsigned len)
 }
 
 static fz_error *
-tiffreadcrle(sa_tiff *tiff, unsigned char *mem, unsigned len)
+tiffreadfax(sa_tiff *tiff, unsigned char *mem, unsigned len, int comp)
 {
 	fz_error *error;
 	fz_filter *filter;
 	fz_obj *params;
 
-	error = fz_packobj(&params, "<<"
-			"/K 0 /EncodedByteAlign true /EndOfLine false /EndOfBlock false"
-			"/Columns %i /Rows %i /BlackIs1 %b"
-			">>",
-			tiff->imagewidth,
-			tiff->imagelength,
-			tiff->photometric == 0);
+	switch (comp)
+	{
+	default:
+	case 2:
+		error = fz_packobj(&params,
+				"<< /EncodedByteAlign true /EndOfLine false /EndOfBlock false "
+				"/K 0 /Columns %i /Rows %i /BlackIs1 %b >>",
+				tiff->imagewidth,
+				tiff->imagelength,
+				tiff->photometric == 0);
+		break;
+	case 3:
+		error = fz_packobj(&params,
+				"<< /EndOfLine false /EndOfBlock false "
+				"/K %i /Columns %i /Rows %i /BlackIs1 %b >>",
+				(tiff->g3opts & 1) ? tiff->rowsperstrip : 0,
+				tiff->imagewidth,
+				tiff->imagelength,
+				tiff->photometric == 0);
+		break;
+	case 4:
+		error = fz_packobj(&params,
+				"<< /EndOfLine false /EndOfBlock false "
+				"/K -1 /Columns %i /Rows %i /BlackIs1 %b >>",
+				tiff->imagewidth,
+				tiff->imagelength,
+				tiff->photometric == 0);
+		break;
+	}
+
 	if (error)
 		return error;
 
@@ -324,10 +359,10 @@ tiffreadstrips(sa_tiff *tiff)
 	/* feed each strip to the filter */
 	/* read out the data and pack the samples into an sa_image */
 
-	/* packbits -- nothing special (same row-padding as PDF) */
-	/* ccitt type 2 -- no EOL, no RTC, rows are byte-aligned */
-	/* lzw -- each strip is handled separately */
-	/* g3 and g4 -- each strip starts new section -- maybe can avoid? */
+	/* type 32773 / packbits -- nothing special (same row-padding as PDF) */
+	/* type 2 / ccitt rle -- no EOL, no RTC, rows are byte-aligned */
+	/* type 3 and 4 / g3 and g4 -- each strip starts new section */
+	/* type 5 / lzw -- each strip is handled separately */
 
 	fz_error *error;
 	unsigned char *mem;
@@ -391,14 +426,17 @@ printf("w=%d h=%d n=%d bpc=%d ",
 		switch (tiff->compression)
 		{
 		case 1: error = tiffreaduncompressed(tiff, mem, len); break;
-		case 2: error = tiffreadcrle(tiff, mem, len); break;
-		//case 3: error = tiffreadg3(tiff, mem, len); break;
-		//case 4: error = tiffreadg4(tiff, mem, len); break;
+		case 2: error = tiffreadfax(tiff, mem, len, 2); break;
+		case 3: error = tiffreadfax(tiff, mem, len, 3); break;
+		case 4: error = tiffreadfax(tiff, mem, len, 4); break;
 		case 5: error = tiffreadlzw(tiff, mem, len); break;
 		case 32773: error = tiffreadpackbits(tiff, mem, len); break;
 		}
 
 		fz_free(mem);
+
+		if (error)
+			return error;
 
 		strip ++;
 	}
@@ -472,6 +510,12 @@ tiffreadtag(sa_tiff *tiff, unsigned offset)
 		break;
 	case PlanarConfiguration:
 		readtagval(&tiff->planar, tiff, type, value, 1);
+		break;
+	case T4Options:
+		readtagval(&tiff->g3opts, tiff, type, value, 1);
+		break;
+	case T6Options:
+		readtagval(&tiff->g4opts, tiff, type, value, 1);
 		break;
 	case ResolutionUnit:
 		readtagval(&tiff->resolutionunit, tiff, type, value, 1);
