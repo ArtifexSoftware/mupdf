@@ -17,7 +17,13 @@ ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 BINDIR = [ FDirName $(TOP) dist ] ;
 
 LINKLIBS = $(FREETYPELD) -lexpat -ljpeg -lz -lm ;
-FITZLIBS = libsamus libmupdf libstream libfitz librender libfonts ;
+FITZLIBS =
+	libsamus libmupdf libfonts
+	libraster
+	libworld
+	libstream
+	libbase
+;
 
 if $(HAVE_JASPER) = yes
 {
@@ -86,10 +92,9 @@ rule XCopy
 
 # --------------------------------------------------------------------------
 
-SubDir TOP fitz ;
+SubDir TOP base ;
 
-Library libfitz :
-
+Library libbase :
 	base_cpudep.c
 	base_error.c
 	base_hash.c
@@ -97,27 +102,12 @@ Library libfitz :
 	base_memory.c
 	base_rect.c
 	base_rune.c
-
-	node_toxml.c
-	node_misc1.c
-	node_misc2.c
-	node_optimize.c
-	node_path.c
-	node_text.c
-	node_tree.c
-
-	res_cmap.c
-	res_colorspace.c
-	res_font.c
-	res_image.c
-	res_shade.c
-
 	;
 
-if $(NEED_GETOPT)  = yes { Library libfitz : util_getopt.c ; }
-if $(NEED_STRLCAT) = yes { Library libfitz : util_strlcat.c ; }
-if $(NEED_STRLCPY) = yes { Library libfitz : util_strlcpy.c ; }
-if $(NEED_STRSEP)  = yes { Library libfitz : util_strsep.c ; }
+if $(NEED_GETOPT)  = yes { Library libbase : util_getopt.c ; }
+if $(NEED_STRLCAT) = yes { Library libbase : util_strlcat.c ; }
+if $(NEED_STRLCPY) = yes { Library libbase : util_strlcpy.c ; }
+if $(NEED_STRSEP)  = yes { Library libbase : util_strsep.c ; }
 
 # --------------------------------------------------------------------------
 
@@ -169,9 +159,31 @@ if $(HAVE_JBIG2DEC) = yes { Library libstream : filt_jbig2d.c ; }
 
 # --------------------------------------------------------------------------
 
-SubDir TOP render ;
+SubDir TOP world ;
 
-Library librender :
+Library libworld :
+
+	node_toxml.c
+	node_misc1.c
+	node_misc2.c
+	node_optimize.c
+	node_path.c
+	node_text.c
+	node_tree.c
+
+	res_cmap.c
+	res_colorspace.c
+	res_font.c
+	res_image.c
+	res_shade.c
+
+	;
+
+# --------------------------------------------------------------------------
+
+SubDir TOP raster ;
+
+Library libraster :
 	glyphcache.c
 	pixmap.c
 	porterduff.c
@@ -185,9 +197,9 @@ Library librender :
 	render.c
 	;
 
-if $(OSPLAT) = PPC     { Library librender : archppc.c ; }
-if $(OSPLAT) = SPARC   { Library librender : archsparc.c ; }
-if $(OSPLAT) = X86     { Library librender : archx86.c ; }
+if $(OSPLAT) = PPC     { Library libraster : archppc.c ; }
+if $(OSPLAT) = SPARC   { Library libraster : archsparc.c ; }
+if $(OSPLAT) = X86     { Library libraster : archx86.c ; }
 
 # --------------------------------------------------------------------------
 
