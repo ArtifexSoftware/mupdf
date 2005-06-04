@@ -5,7 +5,7 @@ mm, alphabet soup...
 Glenn Kennard <d98gk@efd.lth.se>
 */
 
-#include <fitz.h>
+#include "fitz-base.h"
 
 /* global run-time constant */
 unsigned fz_cpuflags = 0;

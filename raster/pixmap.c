@@ -1,4 +1,6 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
+#include "fitz-draw.h"
 
 fz_error *
 fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)

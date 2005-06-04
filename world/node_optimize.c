@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 /*
  * Remove (mask ... white) until we get something not white

@@ -1,4 +1,4 @@
-#include <fitz.h>
+#include "fitz-base.h"
 
 void
 fz_warn(char *fmt, ...)

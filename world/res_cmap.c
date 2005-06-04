@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 typedef struct fz_range_s fz_range;
 

@@ -3,8 +3,16 @@
 #endif
 #define _SAMUS_H_
 
-#ifndef _FITZ_H_
-#error "fitz.h must be included before samus.h"
+#ifndef _FITZ_BASE_H_
+#error "fitz-base.h must be included before mupdf.h"
+#endif
+
+#ifndef _FITZ_STREAM_H_
+#error "fitz-stream.h must be included before mupdf.h"
+#endif
+
+#ifndef _FITZ_WORLD_H_
+#error "fitz-world.h must be included before mupdf.h"
 #endif
 
 #include "samus/misc.h"

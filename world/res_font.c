@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 void
 fz_initfont(fz_font *font, char *name)

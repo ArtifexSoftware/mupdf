@@ -1,4 +1,6 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
+#include "fitz-draw.h"
 
 /*
  * Global Edge List -- list of straight path segments for scan conversion

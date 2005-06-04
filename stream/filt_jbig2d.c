@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 /* TODO: complete rewrite with error checking and use fitz memctx */
 

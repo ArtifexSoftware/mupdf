@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 fz_error fz_kioneedin = { -1, "<ioneedin>", "<process>", "filter.c", 0 };
 fz_error fz_kioneedout = { -1, "<ioneedout>", "<process>", "filter.c", 0 };

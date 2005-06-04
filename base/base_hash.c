@@ -9,7 +9,7 @@
  * and removed frequently.
  */ 
 
-#include <fitz.h>
+#include "fitz-base.h"
 
 enum { MAXKEYLEN = 16 };
 

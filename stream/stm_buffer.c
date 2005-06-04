@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 fz_error *
 fz_newbuffer(fz_buffer **bp, int size)

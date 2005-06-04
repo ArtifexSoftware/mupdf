@@ -2,7 +2,8 @@
  * Input streams.
  */
 
-#include "fitz.h"
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 int
 fz_makedata(fz_stream *stm)

@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 /*
  * Over
@@ -175,9 +176,9 @@ fz_newmetanode(fz_node **nodep, void *name, void *dict)
 	node->dict = nil;
 
 	if (name)
-		node->name = fz_keepobj(name);
+		node->name = name;
 	if (dict)
-		node->dict = fz_keepobj(dict);
+		node->dict = dict;
 
 	return nil;
 }
@@ -186,9 +187,9 @@ void
 fz_dropmetanode(fz_metanode *node)
 {
 	if (node->name)
-		fz_dropobj(node->name);
+		fz_warn("leaking meta node name");
 	if (node->dict)
-		fz_dropobj(node->dict);
+		fz_warn("leaking meta node dict");
 }
 
 fz_rect

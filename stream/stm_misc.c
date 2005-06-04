@@ -2,7 +2,8 @@
  * Miscellaneous I/O functions
  */
 
-#include "fitz.h"
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 int fz_tell(fz_stream *stm)
 {

@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 static void indent(int level)
 {
@@ -13,14 +14,7 @@ static void xmlmeta(fz_metanode *node, int level)
 	fz_node *child;
 
 	indent(level);
-	printf("<meta");
-	if (node->name)
-	{
-		printf(" name=\"");
-		fz_debugobj(node->name);
-		printf("\" ");
-	}
-	printf(">\n");
+	printf("<meta>\n");
 
 	for (child = node->super.first; child; child = child->next)
 		xmlnode(child, level + 1);

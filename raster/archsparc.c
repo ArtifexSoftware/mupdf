@@ -1,7 +1,9 @@
 /*
 SPARC specific render optims live here
 */
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
+#include "fitz-draw.h"
 
 #ifdef HAVE_VIS
 

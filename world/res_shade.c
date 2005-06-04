@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-world.h"
 
 fz_shade *
 fz_keepshade(fz_shade *shade)

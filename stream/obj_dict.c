@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 /* keep either names or strings in the dict. don't mix & match. */
 

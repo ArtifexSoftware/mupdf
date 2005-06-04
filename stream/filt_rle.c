@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 /* TODO: rewrite!
  * make it non-optimal or something,

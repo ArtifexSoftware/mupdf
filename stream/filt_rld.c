@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 fz_error *
 fz_newrld(fz_filter **fp, fz_obj *params)

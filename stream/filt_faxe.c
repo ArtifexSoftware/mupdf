@@ -1,4 +1,5 @@
-#include <fitz.h>
+#include "fitz-base.h"
+#include "fitz-stream.h"
 
 #include "filt_faxe.h"
 #include "filt_faxc.h"
