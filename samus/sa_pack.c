@@ -215,16 +215,20 @@ sa_debugpackage(sa_package *pack)
 	sa_default *def;
 	sa_override *ovr;
 
-	printf("package {\n");
+	printf("package\n{\n");
 
 	if (pack->zip)
 		sa_debugzip(pack->zip);
 
+	printf("  defaults\n  {\n");
 	for (def = pack->defaults; def; def = def->next)
-		printf("default %s %s ;\n", def->extension, def->mimetype);
+		printf("    %-8s %s\n", def->extension, def->mimetype);
+	printf("  }\n");
 
+	printf("  overrides\n  {\n");
 	for (ovr = pack->overrides; ovr; ovr = ovr->next)
-		printf("override %s %s ;\n", ovr->partname, ovr->mimetype);
+		printf("    %s\n        %s\n", ovr->partname, ovr->mimetype);
+	printf("  }\n");
 
 	printf("}\n");
 }
@@ -256,6 +260,7 @@ sa_loadrelations(sa_relation **relsp, sa_package *pack, char *partname)
 	int len;
 	char *sep;
 	char *relsname;
+	char buf[1024];
 
 	if (partname[0] != '/')
 		return fz_throw("ioerror: invalid part name: %s", partname);
@@ -318,9 +323,15 @@ sa_loadrelations(sa_relation **relsp, sa_package *pack, char *partname)
 						if (!newrel) { error = fz_outofmem; goto cleanupxml; }
 						newrel->external = !strcmp(mode, "External");
 						newrel->id = fz_strdup(id);
-						newrel->target = fz_strdup(target);
 						newrel->type = fz_strdup(type);
 						newrel->next = rels;
+						if (newrel->external)
+							newrel->target = fz_strdup(target);
+						else
+						{
+							sa_resolvepath(buf, partname, target, sizeof buf);
+							newrel->target = fz_strdup(buf);
+						}
 						rels = newrel;
 					}
 				}
@@ -349,12 +360,14 @@ cleanupname:
 void
 sa_debugrelations(sa_relation *rel)
 {
+	printf("relations\n{\n");
 	while (rel)
 	{
-		printf("relation %s\n", rel->type);
-		printf("    %s%s\n", rel->external ? "external " : "", rel->target);
+		printf("  %s\n", rel->type);
+		printf("      %s%s\n", rel->external ? "external " : "", rel->target);
 		rel = rel->next;
 	}
+	printf("}\n");
 }
 
 void

@@ -20,3 +20,6 @@
 #include "samus/xml.h"
 #include "samus/pack.h"
 
+#include "samus/names.h"
+#include "samus/fixdoc.h"
+

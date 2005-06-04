@@ -8,6 +8,7 @@ Library libbase :
 	base_memory.c
 	base_rect.c
 	base_rune.c
+	base_cleanname.c
 	;
 
 if $(NEED_GETOPT)  = yes { Library libbase : util_getopt.c ; }

@@ -24,11 +24,13 @@
 
 #define STRIDE(n, bcp) (((bpc) * (n) + 7) / 8)
 
+/* plan9 stuff for utf-8 and path munging */
 int chartorune(int *rune, char *str);
 int runetochar(char *str, int *rune);
 int runelen(long c);
 int runenlen(int *r, int nrune);
 int fullrune(char *str, int n);
+char *cleanname(char *name);
 
 typedef struct fz_error_s fz_error;
 

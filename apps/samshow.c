@@ -1,6 +1,33 @@
 #include "fitz.h"
 #include "samus.h"
 
+void showfixdocseq(sa_package *pack, char *part)
+{
+	fz_error *error;
+	sa_fixdocseq *seq;
+
+	error = sa_loadfixdocseq(&seq, pack, part);
+	if (error)
+		fz_abort(error);
+
+	sa_debugfixdocseq(seq);
+
+	sa_dropfixdocseq(seq);
+}
+
+void showreach(sa_package *pack, sa_relation *rels)
+{
+	while (rels)
+	{
+		if (!strcmp(rels->type, SA_REL_FIXEDREPRESENTATION))
+		{
+			if (!rels->external)
+				showfixdocseq(pack, rels->target);
+		}
+		rels = rels->next;
+	}
+}
+
 int runpack(int argc, char **argv)
 {
 	fz_error *error;
@@ -14,18 +41,23 @@ int runpack(int argc, char **argv)
 		fz_abort(error);
 
 	sa_debugpackage(pack);
+	printf("\n");
 
-	printf("--- root ---\n");
 	error = sa_loadrelations(&rels, pack, "/");
 	if (error)
 		fz_abort(error);
 	sa_debugrelations(rels);
-	sa_droprelations(rels);
 	printf("\n");
+
+	if (argc == 2)
+	{
+		showreach(pack, rels);
+		return 0;
+	}
 
 	for (i = 2; i < argc; i++)
 	{
-		printf("--- %s ---\n", argv[i]);
+		printf("part %s\n", argv[i]);
 
 		s = sa_typepart(pack, argv[i]);
 		if (!s)
@@ -121,7 +153,7 @@ int runtiff(int argc, char **argv)
 	error = sa_readtiff(file);
 	if (error)
 		fz_abort(error);
-	
+
 	fz_dropstream(file);
 
 	return 0;

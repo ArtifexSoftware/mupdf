@@ -2,6 +2,32 @@
 #include "samus.h"
 
 /*
+ * Create a new canonical absolute path given both
+ * a base url (current directory) and a relative or absolute name.
+ */
+char *
+sa_resolvepath(char *dst, char *baseurl, char *parturl, int dstlen)
+{
+	char *end;
+
+	if (parturl[0] == '/')
+	{
+		strlcpy(dst, parturl, dstlen);
+	}
+	else
+	{
+		strlcpy(dst, baseurl, dstlen);
+		end = strrchr(dst, '/');
+		if (end)
+			end[1] = 0;
+		strlcat(dst, parturl, dstlen);
+		cleanname(dst);
+	}
+
+	return dst;
+}
+
+/*
  * Test part names for equivalence.
  *
  * What we *should* do here (according to the spec) is...
