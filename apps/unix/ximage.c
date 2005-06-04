@@ -10,6 +10,8 @@
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
+extern int ffs(int);
+
 typedef void (*ximage_convert_func_t)
 	(
 	 const unsigned char *src,
@@ -409,13 +411,16 @@ ximage_blit(Drawable d, GC gc,
 }
 
 /*
- *
+ * Primitive conversion functions
  */
+
+#ifndef restrict
 #ifndef _C99
 #ifdef __GNUC__
 #define restrict __restrict__
 #else
 #define restrict
+#endif
 #endif
 #endif
 
@@ -664,3 +669,4 @@ ximage_convert_func_t ximage_convert_funcs[] = {
 	ximage_convert_rgb555_br,
 	ximage_convert_bgr233,
 };
+
