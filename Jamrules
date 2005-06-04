@@ -4,6 +4,7 @@
 # This file is sourced by Jamfile when making
 # Put all configuration stuff here
 #
+
 OPTIM = ; # disable jam's built-in optimization flags 
 if $(OS) = MINGW
 {
@@ -102,5 +103,86 @@ switch $(BUILD)
 		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDPROFILE) ;
 	case * :
 		Exit "Unknown BUILD target:" $(BUILD) ;
+}
+
+# -------------------------------------------------------------------------
+#
+# Fitz specific rules
+#
+
+ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
+
+HDRS = [ FDirName $(TOP) include ] ;
+
+BINDIR = [ FDirName $(TOP) dist ] ;
+
+LINKLIBS = $(FREETYPELD) -lexpat -ljpeg -lz -lm ;
+FITZLIBS =
+	libsamus libmupdf libfonts
+	libraster
+	libworld
+	libstream
+	libbase
+;
+
+if $(HAVE_JASPER) = yes
+{
+	DEFINES += HAVE_JASPER ;
+	LINKLIBS += -ljasper ;
+}
+
+if $(HAVE_JBIG2DEC) = yes
+{
+	DEFINES += HAVE_JBIG2DEC ;
+	LINKLIBS += -ljbig2dec ;
+}
+
+if $(NEED_GETOPT)  = yes { DEFINES += NEED_GETOPT ; }
+if $(NEED_STRLCAT) = yes { DEFINES += NEED_STRLCAT ; }
+if $(NEED_STRLCPY) = yes { DEFINES += NEED_STRLCPY ; }
+if $(NEED_STRSEP)  = yes { DEFINES += NEED_STRSEP ; }
+
+rule UserObject
+{
+	switch $(>)
+	{
+	case *.rc :
+		WindRes $(<) : $(>) ;
+
+	case *.cff :
+		Cc $(<) : $(<:S=.c) ;
+		HexDump $(<:S=.c) : $(>) ;
+
+	case * :
+		Echo "unknown suffix on" $(>) ;
+	}
+}
+
+rule HexDump
+{
+	Depends $(<) : $(>) ;
+	MakeLocate $(<) : $(LOCATE_SOURCE) ;
+	Clean clean : $(<) ;
+}
+
+rule WindRes
+{
+	Depends $(<) : $(>) ;
+	Clean clean : $(<) ;
+}
+
+actions HexDump { xxd -i $(>) | sed -e 's/unsigned/const unsigned/' > $(<) }
+actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
+
+rule XCopy
+{
+	for i in $(<)
+	{
+		local d = [ FDirName $(ALL_LOCATE_TARGET) $(i:D) ] ;
+		LOCATE on $(i:G=xcopy) = $(ALL_LOCATE_TARGET) ;
+		Depends $(i:G=xcopy) : $(d:G=dir) ;
+		MkDir $(d:G=dir) ;
+		File $(i:G=xcopy) : $(i) ;
+	}
 }
 

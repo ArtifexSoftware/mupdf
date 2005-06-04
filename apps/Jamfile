@@ -1,0 +1,110 @@
+# --------------------------------------------------------------------------
+#
+# Build simple portable apps
+#
+
+SubDir TOP apps ;
+
+APPLIST =
+	pdfrip
+	pdfclean
+	pdfdebug
+	pdfmerge
+	pdfselect
+	samshow
+	;
+
+for APP in $(APPLIST)
+{
+	Main $(APP) : $(APP).c ;
+	LinkLibraries $(APP) : $(FITZLIBS) ;
+	InstallBin $(BINDIR) : $(APP)$(SUFEXE) ;
+}
+
+# --------------------------------------------------------------------------
+#
+# Build non-portable GUI frontend apps
+#
+
+SubDir TOP apps common ;
+
+Library libpdfapp :
+	pdfapp.c
+	;
+
+if $(OS) = MINGW
+{
+	SubDir TOP apps windows ;
+
+	Main ghostpdf :
+		winmain.c
+		winres.rc
+	;
+
+	WINLIBS = -lgdi32 -lcomdlg32 ;
+	if $(BUILD) = release { WINLIBS += -mwindows ; }
+
+	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
+
+	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
+
+	InstallBin $(BINDIR) : ghostpdf$(SUFEXE) ;
+}
+
+if $(HAVE_X11) = yes
+{
+	SubDir TOP apps unix ;
+	Main ghostpdf : x11pdf.c ximage.c ;
+	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
+	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
+}
+
+if $(OS) = MACOSX
+{
+	SubDir TOP apps macosx ;
+
+	MACBUNDLE = GhostPDF.app ;
+
+	XCopy 
+		$(MACBUNDLE)/Contents/Info.plist
+		$(MACBUNDLE)/Contents/PkgInfo
+		;
+	XCopy 
+		$(MACBUNDLE)/Contents/Resources/English.lproj/InfoPlist.strings
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/classes.nib
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/info.nib
+		$(MACBUNDLE)/Contents/Resources/English.lproj/main.nib/objects.xib
+		$(MACBUNDLE)/Contents/Resources/macpdf.icns
+		;
+	
+	MACPDF = $(MACBUNDLE)/Contents/MacOS/ghostpdf ;
+	MkDir $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
+	Depends $(MACPDF) : $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
+	Main $(MACPDF) : macpdf.c ;
+	LinkLibraries $(MACPDF) : libpdfapp $(FITZLIBS) ;
+	LINKLIBS on $(MACPDF) = $(LINKLIBS) -framework Carbon ;
+}
+
+# --------------------------------------------------------------------------
+#
+# Mozilla plugins
+#
+
+SubDir TOP apps mozilla ;
+
+if $(OS) = MINGW
+{
+	SUFEXE on npmupdf.dll = ;
+	LINKFLAGS on npmupdf.dll = -shared -Wl,--kill-at ;
+	LINKLIBS on npmupdf.dll = $(LINKLIBS) -lgdi32 ;
+
+	Main npmupdf.dll :
+		npwin.c
+		moz_winres.rc
+		moz_main.c
+		;
+
+	LinkLibraries npmupdf.dll : $(FITZLIBS) ;
+	InstallBin $(BINDIR) : npmupdf.dll ;
+}
+
