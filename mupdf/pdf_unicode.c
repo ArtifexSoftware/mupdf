@@ -76,7 +76,15 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		for (i = 0; i < 256; i++)
 		{
 			if (strings[i])
-				font->cidtoucs[i] = pdf_lookupagl(strings[i]);
+			{
+				int aglbuf[256];
+				int aglnum;
+				aglnum = pdf_lookupagl(strings[i], aglbuf, nelem(aglbuf));
+				if (aglnum > 0)
+					font->cidtoucs[i] = aglbuf[0];
+				else
+					font->cidtoucs[i] = '?';
+			}
 			else
 				font->cidtoucs[i] = '?';
 		}

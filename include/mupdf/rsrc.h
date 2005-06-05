@@ -143,12 +143,8 @@ fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
  * CMap and Font
  */
 
-struct pdf_aglpair { char *name; unsigned short code; };
-extern const struct pdf_aglpair pdf_adobeglyphlist[];
-extern const int pdf_adobeglyphlen;
-
 void pdf_loadencoding(char **estrings, char *encoding);
-int pdf_lookupagl(char *name);
+int pdf_lookupagl(char *name, int *ucsbuf, int ucscap);
 
 extern const unsigned short pdf_docencoding[256];
 extern const char * const pdf_macroman[256];

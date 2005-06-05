@@ -451,11 +451,13 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 				for (i = 0; i < 256; i++)
 					if (estrings[i])
 					{
-						k = pdf_lookupagl(estrings[i]);
-						if (k == -1)
+						int aglbuf[256];
+						int aglnum;
+						aglnum = pdf_lookupagl(estrings[i], aglbuf, nelem(aglbuf));
+						if (aglnum != 1)
 							etable[i] = FT_Get_Name_Index(face, estrings[i]);
 						else
-							etable[i] = FT_Get_Char_Index(face, k);
+							etable[i] = FT_Get_Char_Index(face, aglbuf[0]);
 					}
 					else
 						etable[i] = FT_Get_Char_Index(face, i);
