@@ -10,7 +10,6 @@ Library libworld :
 	node_text.c
 	node_tree.c
 
-	res_cmap.c
 	res_colorspace.c
 	res_font.c
 	res_image.c

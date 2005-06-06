@@ -11,7 +11,7 @@ t3dropfont(fz_font *font)
 	int i;
 	pdf_font *pfont = (pdf_font*)font;
 	if (pfont->encoding)
-		fz_dropcmap(pfont->encoding);
+		pdf_dropcmap(pfont->encoding);
 	for (i = 0; i < 256; i++)
 		if (pfont->charprocs[i])
 			fz_droptree(pfont->charprocs[i]);
@@ -188,7 +188,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	fz_dropobj(encoding);
 
-	error = pdf_makeidentitycmap(&font->encoding, 0, 1);
+	error = pdf_newidentitycmap(&font->encoding, 0, 1);
 	if (error)
 		goto cleanup;
 

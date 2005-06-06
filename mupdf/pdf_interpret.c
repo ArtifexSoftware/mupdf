@@ -291,46 +291,32 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 
 		else if (!strcmp(buf, "MP"))
 		{
-			fz_node *meta;
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = fz_newmetanode(&meta, csi->stack[0], nil);
-			if (error) return error;
-			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "DP"))
 		{
-			fz_node *meta;
 			if (csi->top != 2)
 				goto syntaxerror;
-			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
-			if (error) return error;
-			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "BMC"))
 		{
-			fz_node *meta;
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = fz_newmetanode(&meta, csi->stack[0], nil);
-			if (error) return error;
-			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "BDC"))
 		{
-			fz_node *meta;
 			if (csi->top != 2)
 				goto syntaxerror;
-			error = fz_newmetanode(&meta, csi->stack[0], csi->stack[1]);
-			if (error) return error;
-			fz_insertnodelast(gstate->head, meta);
 		}
 
 		else if (!strcmp(buf, "EMC"))
 		{
+			if (csi->top != 0)
+				goto syntaxerror;
 		}
 
 		else if (!strcmp(buf, "cm"))

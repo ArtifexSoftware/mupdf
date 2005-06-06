@@ -140,7 +140,38 @@ fz_error *pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *r
 fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
 
 /*
- * CMap and Font
+ * CMap
+ */
+
+typedef struct pdf_cmap_s pdf_cmap;
+
+fz_error *pdf_newcmap(pdf_cmap **cmapp);
+pdf_cmap *pdf_keepcmap(pdf_cmap *cmap);
+void pdf_dropcmap(pdf_cmap *cmap);
+
+void pdf_debugcmap(pdf_cmap *cmap);
+int pdf_getwmode(pdf_cmap *cmap);
+pdf_cmap *fz_getusecmap(pdf_cmap *cmap);
+void fz_setwmode(pdf_cmap *cmap, int wmode);
+void fz_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
+
+fz_error *pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n);
+
+fz_error *pdf_maprangetotable(pdf_cmap *cmap, int low, int *map, int len);
+fz_error *pdf_maprangetorange(pdf_cmap *cmap, int srclo, int srchi, int dstlo);
+fz_error *pdf_maponetomany(pdf_cmap *cmap, int one, int *many, int len);
+fz_error *pdf_sortcmap(pdf_cmap *cmap);
+
+int pdf_lookupcmap(pdf_cmap *cmap, int cpt);
+unsigned char *pdf_decodecmap(pdf_cmap *cmap, unsigned char *s, int *cpt);
+
+fz_error *pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file);
+fz_error *pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
+fz_error *pdf_loadsystemcmap(pdf_cmap **cmapp, char *name);
+fz_error *pdf_newidentitycmap(pdf_cmap **cmapp, int wmode, int bytes);
+
+/*
+ * Font
  */
 
 void pdf_loadencoding(char **estrings, char *encoding);
@@ -171,13 +202,13 @@ struct pdf_font_s
 	float missingwidth;
 
 	/* Encoding (CMap) */
-	fz_cmap *encoding;
-	fz_cmap *tottfcmap;
+	pdf_cmap *encoding;
+	pdf_cmap *tottfcmap;
 	int ncidtogid;
 	unsigned short *cidtogid;
 
 	/* ToUnicode */
-	fz_cmap *tounicode;
+	pdf_cmap *tounicode;
 	int ncidtoucs;
 	unsigned short *cidtoucs;
 
@@ -191,12 +222,6 @@ struct pdf_font_s
 	fz_matrix matrix;
 	fz_tree *charprocs[256];
 };
-
-/* cmap.c */
-fz_error *pdf_parsecmap(fz_cmap **cmapp, fz_stream *file);
-fz_error *pdf_loadembeddedcmap(fz_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
-fz_error *pdf_loadsystemcmap(fz_cmap **cmapp, char *name);
-fz_error *pdf_makeidentitycmap(fz_cmap **cmapp, int wmode, int bytes);
 
 /* unicode.c */
 fz_error *pdf_loadtounicode(pdf_font *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);

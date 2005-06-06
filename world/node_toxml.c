@@ -14,7 +14,7 @@ static void xmlmeta(fz_metanode *node, int level)
 	fz_node *child;
 
 	indent(level);
-	printf("<meta>\n");
+	printf("<meta name=\"%s\">\n", node->name);
 
 	for (child = node->super.first; child; child = child->next)
 		xmlnode(child, level + 1);

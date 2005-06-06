@@ -134,7 +134,7 @@ struct fz_linknode_s
 struct fz_metanode_s
 {
 	fz_node super;
-	void *name;
+	char *name;
 	void *dict;
 };
 
@@ -156,7 +156,7 @@ fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
 void fz_dropnode(fz_node *node);
 
 /* branch nodes */
-fz_error *fz_newmetanode(fz_node **nodep, void *name, void *dict);
+fz_error *fz_newmetanode(fz_node **nodep, char *name, void *dict);
 fz_error *fz_newovernode(fz_node **nodep);
 fz_error *fz_newmasknode(fz_node **nodep);
 fz_error *fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i);

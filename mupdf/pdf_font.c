@@ -62,7 +62,7 @@ static inline int ftcidtogid(pdf_font *font, int cid)
 {
 	if (font->tottfcmap)
 	{
-		cid = fz_lookupcid(font->tottfcmap, cid);
+		cid = pdf_lookupcmap(font->tottfcmap, cid);
 		return FT_Get_Char_Index(font->ftface, cid);
 	}
 
@@ -223,11 +223,11 @@ static void ftdropfont(fz_font *font)
 {
 	pdf_font *pfont = (pdf_font*)font;
 	if (pfont->encoding)
-		fz_dropcmap(pfont->encoding);
+		pdf_dropcmap(pfont->encoding);
 	if (pfont->tottfcmap)
-		fz_dropcmap(pfont->tottfcmap);
+		pdf_dropcmap(pfont->tottfcmap);
 	if (pfont->tounicode)
-		fz_dropcmap(pfont->tounicode);
+		pdf_dropcmap(pfont->tounicode);
 	fz_free(pfont->cidtogid);
 	fz_free(pfont->cidtoucs);
 	if (pfont->ftface)
@@ -509,7 +509,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		}
 	}
 
-	error = pdf_makeidentitycmap(&font->encoding, 0, 1);
+	error = pdf_newidentitycmap(&font->encoding, 0, 1);
 	if (error)
 		goto cleanup;
 
@@ -676,9 +676,9 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	{
 		pdf_logfont("encoding /%s\n", fz_toname(encoding));
 		if (!strcmp(fz_toname(encoding), "Identity-H"))
-			error = pdf_makeidentitycmap(&font->encoding, 0, 2);
+			error = pdf_newidentitycmap(&font->encoding, 0, 2);
 		else if (!strcmp(fz_toname(encoding), "Identity-V"))
-			error = pdf_makeidentitycmap(&font->encoding, 1, 2);
+			error = pdf_newidentitycmap(&font->encoding, 1, 2);
 		else
 			error = pdf_loadsystemcmap(&font->encoding, fz_toname(encoding));
 	}
@@ -694,8 +694,8 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	if (error)
 		goto cleanup;
 
-	fz_setfontwmode((fz_font*)font, fz_getwmode(font->encoding));
-	pdf_logfont("wmode %d\n", fz_getwmode(font->encoding));
+	fz_setfontwmode((fz_font*)font, pdf_getwmode(font->encoding));
+	pdf_logfont("wmode %d\n", pdf_getwmode(font->encoding));
 
 	if (kind == TRUETYPE)
 	{
@@ -820,7 +820,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	 * Vertical
 	 */
 
-	if (fz_getwmode(font->encoding) == 1)
+	if (pdf_getwmode(font->encoding) == 1)
 	{
 		fz_obj *obj;
 		int dw2y = 880;

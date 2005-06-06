@@ -57,7 +57,7 @@ static void dropitem(pdf_itemkind kind, void *val)
 	case PDF_KIMAGE: fz_dropimage(val); break;
 	case PDF_KPATTERN: pdf_droppattern(val); break;
 	case PDF_KSHADE: fz_dropshade(val); break;
-	case PDF_KCMAP: fz_dropcmap(val); break;
+	case PDF_KCMAP: pdf_dropcmap(val); break;
 	case PDF_KFONT: fz_dropfont(val); break;
 	}
 }
@@ -112,7 +112,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 	case PDF_KIMAGE: fz_keepimage(val); break;
 	case PDF_KPATTERN: pdf_keeppattern(val); break;
 	case PDF_KSHADE: fz_keepshade(val); break;
-	case PDF_KCMAP: fz_keepcmap(val); break;
+	case PDF_KCMAP: pdf_keepcmap(val); break;
 	case PDF_KFONT: fz_keepfont(val); break;
 	}
 

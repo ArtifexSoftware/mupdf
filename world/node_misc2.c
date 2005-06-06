@@ -162,7 +162,7 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newmetanode(fz_node **nodep, void *name, void *dict)
+fz_newmetanode(fz_node **nodep, char *name, void *dict)
 {
 	fz_metanode *node;
 
@@ -172,13 +172,8 @@ fz_newmetanode(fz_node **nodep, void *name, void *dict)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NMETA);
-	node->name = nil;
-	node->dict = nil;
-
-	if (name)
-		node->name = name;
-	if (dict)
-		node->dict = dict;
+	node->name = name;
+	node->dict = dict;
 
 	return nil;
 }
@@ -186,10 +181,8 @@ fz_newmetanode(fz_node **nodep, void *name, void *dict)
 void
 fz_dropmetanode(fz_metanode *node)
 {
-	if (node->name)
-		fz_warn("leaking meta node name");
 	if (node->dict)
-		fz_warn("leaking meta node dict");
+		fz_warn("leaking meta node '%s'", node->name);
 }
 
 fz_rect

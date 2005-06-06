@@ -11,7 +11,6 @@
 #error "fitz-base.h must be included before fitz-world.h"
 #endif
 
-#include "fitz/cmap.h"
 #include "fitz/font.h"
 #include "fitz/pixmap.h"
 #include "fitz/colorspace.h"

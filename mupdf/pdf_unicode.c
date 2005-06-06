@@ -10,7 +10,7 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
 	fz_error *error;
-	fz_cmap *cmap;
+	pdf_cmap *cmap;
 	int cid;
 	int ucs;
 	int i;
@@ -23,28 +23,31 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		if (error)
 			return error;
 
-		error = fz_newcmap(&font->tounicode);
+		error = pdf_newcmap(&font->tounicode);
 		if (error)
 			goto cleanup;
 
 		for (i = 0; i < (strings ? 256 : 65536); i++)
 		{
-			cid = fz_lookupcid(font->encoding, i);
+			cid = pdf_lookupcmap(font->encoding, i);
 			if (cid > 0)
 			{
-				ucs = fz_lookupcid(cmap, i);
-				error = fz_addcidrange(font->tounicode, cid, cid, ucs);
-				if (error)
-					goto cleanup;
+				ucs = pdf_lookupcmap(cmap, i);
+				if (ucs > 0)
+				{
+					error = pdf_maprangetorange(font->tounicode, cid, cid, ucs);
+					if (error)
+						goto cleanup;
+				}
 			}
 		}
 
-		error = fz_endcidrange(font->tounicode);
+		error = pdf_sortcmap(font->tounicode);
 		if (error)
 			goto cleanup;
 
 	cleanup:
-		fz_dropcmap(cmap);
+		pdf_dropcmap(cmap);
 		return error;
 	}
 
@@ -67,6 +70,8 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 	if (strings)
 	{
 		pdf_logfont("tounicode strings\n");
+
+		/* TODO use tounicode cmap here ... for one-to-many mappings */
 
 		font->ncidtoucs = 256;
 		font->cidtoucs = fz_malloc(256 * sizeof(unsigned short));
@@ -235,7 +240,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			box.y1 = MAX(0, MAX(vx.y, vy.y)) + y;
 
 			if (font->tounicode)
-				c = fz_lookupcid(font->tounicode, g);
+				c = pdf_lookupcmap(font->tounicode, g);
 			else if (g < font->ncidtoucs)
 				c = font->cidtoucs[g];
 			else

@@ -281,7 +281,6 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	fz_matrix inv;
 	fz_matrix ptm;
 	fz_rect bbox;
-	fz_obj *name;
 	fz_obj *dict;
 	int x, y, x0, y0, x1, y1;
 
@@ -296,9 +295,6 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	error = fz_newtransformnode(&xform, ptm);
 	if (error) return error;
 
-	error = fz_newname(&name, "Pattern");
-	if (error) return error;
-
 	error = fz_packobj(&dict, "<< /Tree %p /XStep %f /YStep %f "
 								" /Matrix[%f %f %f %f %f %f] >>",
 				pat->tree, pat->xstep, pat->ystep,
@@ -307,7 +303,7 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 				pat->matrix.e, pat->matrix.f);
 	if (error) return error;
 
-	error = fz_newmetanode(&meta, name, dict);
+	error = fz_newmetanode(&meta, "Pattern", dict);
 	if (error) return error;
 
 	error = fz_newovernode(&over);
@@ -776,8 +772,8 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 
 	while (buf < end)
 	{
-		buf = fz_decodecpt(font->encoding, buf, &cpt);
-		cid = fz_lookupcid(font->encoding, cpt);
+		buf = pdf_decodecmap(font->encoding, buf, &cpt);
+		cid = pdf_lookupcmap(font->encoding, cpt);
 		if (cid == -1)
 			cid = 0;
 
