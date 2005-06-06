@@ -230,12 +230,12 @@ fz_boundlinknode(fz_linknode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
+fz_newsolidnode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 {
-	fz_colornode *node;
+	fz_solidnode *node;
 	int i;
 
-	node = fz_malloc(sizeof(fz_colornode) + sizeof(float) * n);
+	node = fz_malloc(sizeof(fz_solidnode) + sizeof(float) * n);
 	if (!node)
 		return fz_outofmem;
 	*nodep = (fz_node*)node;
@@ -250,13 +250,13 @@ fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 }
 
 fz_rect
-fz_boundcolornode(fz_colornode *node, fz_matrix ctm)
+fz_boundsolidnode(fz_solidnode *node, fz_matrix ctm)
 {
 	return fz_infiniterect;
 }
 
 void
-fz_dropcolornode(fz_colornode *node)
+fz_dropsolidnode(fz_solidnode *node)
 {
 	fz_dropcolorspace(node->cs);
 }

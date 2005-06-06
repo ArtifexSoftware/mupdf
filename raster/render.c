@@ -101,7 +101,7 @@ DEBUG("}\n");
  */
 
 static fz_error *
-rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
+rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 {
 	fz_error *error;
 	float rgb[3];
@@ -113,12 +113,12 @@ rendercolor(fz_renderer *gc, fz_colornode *color, fz_matrix ctm)
 	if (gc->model->n != 3)
 		return fz_throw("assert: non-rgb renderer");
 
-	fz_convertcolor(color->cs, color->samples, gc->model, rgb);
+	fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
 	gc->rgb[0] = rgb[0] * 255;
 	gc->rgb[1] = rgb[1] * 255;
 	gc->rgb[2] = rgb[2] * 255;
 
-DEBUG("color %s [%d %d %d];\n", color->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb[2]);
+DEBUG("solid %s [%d %d %d];\n", solid->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb[2]);
 
 	if (gc->flag == FOVER)
 	{
@@ -661,11 +661,11 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 	/* special case black voodo */
 	if (gc->flag & FOVER)
 	{
-		if (fz_iscolornode(color))
+		if (fz_issolidnode(color))
 		{
-			fz_colornode *colorn = (fz_colornode*)color;
+			fz_solidnode *solid = (fz_solidnode*)color;
 
-			fz_convertcolor(colorn->cs, colorn->samples, gc->model, rgb);
+			fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
 			gc->rgb[0] = rgb[0] * 255;
 			gc->rgb[1] = rgb[1] * 255;
 			gc->rgb[2] = rgb[2] * 255;
@@ -779,7 +779,7 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 	case FZ_NTRANSFORM:
 		return rendertransform(gc, (fz_transformnode*)node, ctm);
 	case FZ_NCOLOR:
-		return rendercolor(gc, (fz_colornode*)node, ctm);
+		return rendersolid(gc, (fz_solidnode*)node, ctm);
 	case FZ_NPATH:
 		return renderpath(gc, (fz_pathnode*)node, ctm);
 	case FZ_NTEXT:

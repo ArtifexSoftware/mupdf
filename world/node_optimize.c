@@ -5,7 +5,7 @@
  * Remove (mask ... white) until we get something not white
  */
 
-static int iswhitenode(fz_colornode *node)
+static int iswhitenode(fz_solidnode *node)
 {
 	if (!strcmp(node->cs->name, "DeviceGray"))
 		return fabs(node->samples[0] - 1.0) < FLT_EPSILON;
@@ -38,9 +38,9 @@ static int cleanwhite(fz_node *node)
 			return 1;
 		else if (fz_isshadenode(current))
 			return 1;
-		else if (fz_iscolornode(current))
+		else if (fz_issolidnode(current))
 		{
-			if (!iswhitenode((fz_colornode*)current))
+			if (!iswhitenode((fz_solidnode*)current))
 				return 1;
 		}
 
@@ -48,9 +48,9 @@ static int cleanwhite(fz_node *node)
 		{
 			shape = current->first;
 			color = shape->next;
-			if (fz_iscolornode(color))
+			if (fz_issolidnode(color))
 			{
-				if (iswhitenode((fz_colornode*)color))
+				if (iswhitenode((fz_solidnode*)color))
 					fz_removenode(current);
 				else
 					return 1;
@@ -264,7 +264,7 @@ static fz_error *clean1x1(fz_node *node)
 
 					fz_droppixmap(pix);
 
-					error = fz_newcolornode(&color, image->cs, image->n, v);
+					error = fz_newsolidnode(&color, image->cs, image->n, v);
 					if (error)
 						return error;
 					error = fz_newmasknode(&mask);

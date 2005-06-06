@@ -221,7 +221,7 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	error = fz_newmasknode(&mask);
 	if (error) return error;
 
-	error = fz_newcolornode(&solid, cs, cs->n, v);
+	error = fz_newsolidnode(&solid, cs, cs->n, v);
 	if (error) return error;
 
 	fz_insertnodelast(mask, shape);
@@ -393,7 +393,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 		error = fz_newovernode(&over);
 		if (error) return error;
 
-		error = fz_newcolornode(&bgnd, shade->cs, shade->cs->n, shade->background);
+		error = fz_newsolidnode(&bgnd, shade->cs, shade->cs->n, shade->background);
 		if (error) return error;
 
 		fz_insertnodelast(mask, shape);

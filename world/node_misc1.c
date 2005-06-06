@@ -12,7 +12,7 @@ fz_rect fz_boundtransformnode(fz_transformnode* node, fz_matrix ctm);
 fz_rect fz_boundovernode(fz_overnode* node, fz_matrix ctm);
 fz_rect fz_boundmasknode(fz_masknode* node, fz_matrix ctm);
 fz_rect fz_boundblendnode(fz_blendnode* node, fz_matrix ctm);
-fz_rect fz_boundcolornode(fz_colornode* node, fz_matrix ctm);
+fz_rect fz_boundsolidnode(fz_solidnode* node, fz_matrix ctm);
 fz_rect fz_boundpathnode(fz_pathnode* node, fz_matrix ctm);
 fz_rect fz_boundtextnode(fz_textnode* node, fz_matrix ctm);
 fz_rect fz_boundimagenode(fz_imagenode* node, fz_matrix ctm);
@@ -83,7 +83,7 @@ fz_boundnode(fz_node *node, fz_matrix ctm)
 	case FZ_NBLEND:
 		return fz_boundblendnode((fz_blendnode *) node, ctm);
 	case FZ_NCOLOR:
-		return fz_boundcolornode((fz_colornode *) node, ctm);
+		return fz_boundsolidnode((fz_solidnode *) node, ctm);
 	case FZ_NPATH:
 		return fz_boundpathnode((fz_pathnode *) node, ctm);
 	case FZ_NTEXT:
@@ -125,7 +125,7 @@ fz_isblendnode(fz_node *node)
 }
 
 int
-fz_iscolornode(fz_node *node)
+fz_issolidnode(fz_node *node)
 {
 	return node ? node->kind == FZ_NCOLOR : 0;
 }

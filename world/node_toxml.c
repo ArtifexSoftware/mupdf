@@ -68,7 +68,7 @@ static void xmltransform(fz_transformnode *node, int level)
 	printf("</transform>\n");
 }
 
-static void xmlcolor(fz_colornode *node, int level)
+static void xmlsolid(fz_solidnode *node, int level)
 {
 	int i;
 	indent(level);
@@ -175,7 +175,7 @@ static void xmlnode(fz_node *node, int level)
 	case FZ_NMASK: xmlmask((fz_masknode*)node, level); break;
 	case FZ_NBLEND: xmlblend((fz_blendnode*)node, level); break;
 	case FZ_NTRANSFORM: xmltransform((fz_transformnode*)node, level); break;
-	case FZ_NCOLOR: xmlcolor((fz_colornode*)node, level); break;
+	case FZ_NCOLOR: xmlsolid((fz_solidnode*)node, level); break;
 	case FZ_NPATH: xmlpath((fz_pathnode*)node, level); break;
 	case FZ_NTEXT: xmltext((fz_textnode*)node, level); break;
 	case FZ_NIMAGE: xmlimage((fz_imagenode*)node, level); break;

@@ -36,7 +36,7 @@ typedef struct fz_masknode_s fz_masknode;
 typedef struct fz_blendnode_s fz_blendnode;
 typedef struct fz_pathnode_s fz_pathnode;
 typedef struct fz_textnode_s fz_textnode;
-typedef struct fz_colornode_s fz_colornode;
+typedef struct fz_solidnode_s fz_solidnode;
 typedef struct fz_imagenode_s fz_imagenode;
 typedef struct fz_shadenode_s fz_shadenode;
 typedef struct fz_linknode_s fz_linknode;
@@ -117,7 +117,7 @@ struct fz_blendnode_s
 	int knockout;
 };
 
-struct fz_colornode_s
+struct fz_solidnode_s
 {
 	fz_node super;
 	fz_colorspace *cs;
@@ -170,12 +170,12 @@ int fz_ismetanode(fz_node *node);
 
 /* leaf nodes */
 fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);
-fz_error *fz_newcolornode(fz_node **nodep, fz_colorspace *cs, int n, float *v);
+fz_error *fz_newsolidnode(fz_node **nodep, fz_colorspace *cs, int n, float *v);
 fz_error *fz_newimagenode(fz_node **nodep, fz_image *image);
 fz_error *fz_newshadenode(fz_node **nodep, fz_shade *shade);
 
 int fz_islinknode(fz_node *node);
-int fz_iscolornode(fz_node *node);
+int fz_issolidnode(fz_node *node);
 int fz_ispathnode(fz_node *node);
 int fz_istextnode(fz_node *node);
 int fz_isimagenode(fz_node *node);
