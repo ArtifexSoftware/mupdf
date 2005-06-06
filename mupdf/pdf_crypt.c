@@ -1,12 +1,12 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
-static unsigned char padding[32] =
+static const unsigned char padding[32] =
 {
 	0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41,
 	0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
 	0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
-	0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
+	0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a
 };
 
 static void voodoo50(unsigned char *buf, int n)
@@ -14,7 +14,8 @@ static void voodoo50(unsigned char *buf, int n)
 	fz_md5 md5;
 	int i;
 
-	for (i = 0; i < 50; i++) {
+	for (i = 0; i < 50; i++)
+	{
 		fz_md5init(&md5);
 		fz_md5update(&md5, buf, n);
 		fz_md5final(&md5, buf);
@@ -27,7 +28,8 @@ static void voodoo19(unsigned char *data, int ndata, unsigned char *key, int nke
 	unsigned char keybuf[16];
 	int i, k;
 
-	for (i = 1; i <= 19; i++) {
+	for (i = 1; i <= 19; i++)
+	{
 		for (k = 0; k < nkey; k++)
 			keybuf[k] = key[k] ^ (unsigned char)i;
 		fz_arc4init(&arc4, keybuf, nkey);
@@ -239,13 +241,15 @@ createuser(pdf_crypt *crypt, char *userpw, int pwlen)
 	fz_arc4 arc4;
 	fz_md5 md5;
 
-	if (crypt->r == 2) {
+	if (crypt->r == 2)
+	{
 		createkey(crypt, userpw, pwlen);
 		fz_arc4init(&arc4, crypt->key, crypt->n);
 		fz_arc4encrypt(&arc4, crypt->u, padding, 32);
 	}
 
-	if (crypt->r == 3) {
+	if (crypt->r == 3)
+	{
 		/* Step 1 */
 		createkey(crypt, userpw, pwlen);
 
@@ -370,18 +374,21 @@ pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 	/* Step 4 */
 	fz_arc4init(&arc4, key, crypt->n);
 
-	if (crypt->r == 2) {
+	if (crypt->r == 2)
+	{
 		fz_arc4encrypt(&arc4, buf, crypt->o, 32);
 	}
 
-	if (crypt->r == 3) {
+	if (crypt->r == 3)
+	{
 		unsigned char keyxor[16];
 		int i;
 		int k;
 
 		memcpy(buf, crypt->o, 32);
 
-		for(i = 19; i >= 0; --i) {
+		for(i = 19; i >= 0; --i)
+		{
 			for(k = 0; k < crypt->keylen; ++k)
 				keyxor[k] = key[k] ^ i;
 			fz_arc4init(&arc4, keyxor, crypt->keylen);
@@ -403,7 +410,8 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 	unsigned char *s;
 	int i, n;
 
-	if (fz_isstring(obj)) {
+	if (fz_isstring(obj))
+	{
 		s = fz_tostrbuf(obj);
 		n = fz_tostrlen(obj);
 		createobjkey(crypt, oid, gid, key);
@@ -411,16 +419,20 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 		fz_arc4encrypt(&arc4, s, s, n);
 	}
 
-	else if (fz_isarray(obj)) {
+	else if (fz_isarray(obj))
+	{
 		n = fz_arraylen(obj);
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++)
+		{
 			pdf_cryptobj(crypt, fz_arrayget(obj, i), oid, gid);
 		}
 	}
 
-	else if (fz_isdict(obj)) {
+	else if (fz_isdict(obj))
+	{
 		n = fz_dictlen(obj);
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n; i++)
+		{
 			pdf_cryptobj(crypt, fz_dictgetval(obj, i), oid, gid);
 		}
 	}
