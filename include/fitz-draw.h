@@ -15,6 +15,6 @@
 #error "fitz-world.h must be included before fitz-draw.h"
 #endif
 
-#include "fitz/pathscan.h"
-#include "fitz/render.h"
+#include "fitz/draw_path.h"
+#include "fitz/draw_misc.h"
 

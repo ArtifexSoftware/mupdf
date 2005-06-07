@@ -11,9 +11,9 @@
 #error "fitz-base.h must be included before fitz-stream.h"
 #endif
 
-#include "fitz/crypt.h"
-#include "fitz/object.h"
-#include "fitz/buffer.h"
-#include "fitz/filter.h"
-#include "fitz/stream.h"
+#include "fitz/stm_crypt.h"
+#include "fitz/stm_object.h"
+#include "fitz/stm_buffer.h"
+#include "fitz/stm_filter.h"
+#include "fitz/stm_stream.h"
 

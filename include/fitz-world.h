@@ -11,13 +11,11 @@
 #error "fitz-base.h must be included before fitz-world.h"
 #endif
 
-#include "fitz/font.h"
-#include "fitz/pixmap.h"
-#include "fitz/colorspace.h"
-#include "fitz/image.h"
-#include "fitz/shade.h"
-
-#include "fitz/tree.h"
-#include "fitz/path.h"
-#include "fitz/text.h"
+#include "fitz/wld_font.h"
+#include "fitz/wld_color.h"
+#include "fitz/wld_image.h"
+#include "fitz/wld_shade.h"
+#include "fitz/wld_tree.h"
+#include "fitz/wld_path.h"
+#include "fitz/wld_text.h"
 

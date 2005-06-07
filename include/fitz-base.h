@@ -3,10 +3,11 @@
 #endif
 #define _FITZ_BASE_H_
 
-#include "fitz/sysdep.h"
-#include "fitz/cpudep.h"
-#include "fitz/runtime.h"
-#include "fitz/math.h"
-#include "fitz/geometry.h"
-#include "fitz/hash.h"
+#include "fitz/base_sysdep.h"
+#include "fitz/base_cpudep.h"
+#include "fitz/base_runtime.h"
+#include "fitz/base_math.h"
+#include "fitz/base_geom.h"
+#include "fitz/base_hash.h"
+#include "fitz/base_pixmap.h"
 

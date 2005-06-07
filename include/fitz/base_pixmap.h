@@ -1,3 +1,4 @@
+/* TODO: move this into draw module */
 /*
 pixmaps have n components per pixel. the first is always alpha.
 premultiplied alpha when rendering, but non-premultiplied for colorspace
