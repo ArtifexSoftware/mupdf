@@ -107,6 +107,7 @@ Shades:
 
 Fonts:
 	fz_font
+		fz_fakefont	# substitute fonts
 		fz_t3font	# sub-trees define glyphs
 		fz_psfont	# cff postscript font
 		fz_ttfont	# truetype font
