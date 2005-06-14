@@ -3,6 +3,7 @@ SubDir TOP stream ;
 Library libstream :
 
 	crypt_arc4.c
+	crypt_crc32.c
 	crypt_md5.c
 
 	obj_array.c

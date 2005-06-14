@@ -4,6 +4,10 @@
  * For further encapsulation in filters, or not.
  */
 
+/* crc-32 checksum */
+
+unsigned long fz_crc32(unsigned long crc, unsigned char *buf, int len);
+
 /* md5 digests */
 
 typedef struct fz_md5_s fz_md5;
