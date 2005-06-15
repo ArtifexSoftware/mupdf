@@ -36,7 +36,7 @@ if $(OS) = MINGW
 {
 	SubDir TOP apps windows ;
 
-	Main ghostpdf :
+	Main fzview :
 		winmain.c
 		winres.rc
 	;
@@ -44,26 +44,26 @@ if $(OS) = MINGW
 	WINLIBS = -lgdi32 -lcomdlg32 ;
 	if $(BUILD) = release { WINLIBS += -mwindows ; }
 
-	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
+	LinkLibraries fzview : libpdfapp $(FITZLIBS) ;
 
-	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
+	LINKLIBS on fzview$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
 
-	InstallBin $(BINDIR) : ghostpdf$(SUFEXE) ;
+	InstallBin $(BINDIR) : fzview$(SUFEXE) ;
 }
 
 if $(HAVE_X11) = yes
 {
 	SubDir TOP apps unix ;
-	Main ghostpdf : x11pdf.c ximage.c ;
-	LinkLibraries ghostpdf : libpdfapp $(FITZLIBS) ;
-	LINKLIBS on ghostpdf$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
+	Main fzview : x11pdf.c ximage.c ;
+	LinkLibraries fzview : libpdfapp $(FITZLIBS) ;
+	LINKLIBS on fzview$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
-if $(OS) = MACOSX
+if $(OS) = noMACOSX
 {
 	SubDir TOP apps macosx ;
 
-	MACBUNDLE = GhostPDF.app ;
+	MACBUNDLE = FzView.app ;
 
 	XCopy 
 		$(MACBUNDLE)/Contents/Info.plist
@@ -77,7 +77,7 @@ if $(OS) = MACOSX
 		$(MACBUNDLE)/Contents/Resources/macpdf.icns
 		;
 	
-	MACPDF = $(MACBUNDLE)/Contents/MacOS/ghostpdf ;
+	MACPDF = $(MACBUNDLE)/Contents/MacOS/fzview ;
 	MkDir $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
 	Depends $(MACPDF) : $(ALL_LOCATE_TARGET)/$(MACPDF:D) ;
 	Main $(MACPDF) : macpdf.c ;

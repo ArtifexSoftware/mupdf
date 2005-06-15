@@ -15,7 +15,7 @@ static HDC hdc;
 static HBRUSH bgbrush;
 static HBRUSH shbrush;
 static BITMAPINFO *dibinf;
-static TCHAR szAppName[] = TEXT("ghostpdf");
+static TCHAR szAppName[] = TEXT("fzview");
 static HCURSOR arrowcurs, handcurs, waitcurs;
 static LRESULT CALLBACK windproc(HWND, UINT, WPARAM, LPARAM);
 
@@ -26,7 +26,7 @@ static int justcopied = 0;
 static pdfapp_t gapp;
 
 /*
- * Associate GhostPDF with PDF files.
+ * Associate FzView with PDF files.
  */
 
 void associate(char *argv0)
@@ -43,22 +43,22 @@ void associate(char *argv0)
 				KEY_WRITE, NULL, &key, &disp))
 		return;
 
-	if (RegSetValueEx(key, "", 0, REG_SZ, "GhostPDF", strlen("GhostPDF")+1))
+	if (RegSetValueEx(key, "", 0, REG_SZ, "FzView", strlen("FzView")+1))
 		return;
 
 	RegCloseKey(key);
 
-	/* HKEY_CLASSES_ROOT\GhostPDF */
+	/* HKEY_CLASSES_ROOT\FzView */
 
 	if (RegCreateKeyEx(HKEY_CLASSES_ROOT,
-				"GhostPDF", 0, NULL, REG_OPTION_NON_VOLATILE,
+				"FzView", 0, NULL, REG_OPTION_NON_VOLATILE,
 				KEY_WRITE, NULL, &key, &disp))
 		return;
 
 	if (RegSetValueEx(key, "", 0, REG_SZ, name, strlen(name)+1))
 		return;
 
-	/* HKEY_CLASSES_ROOT\GhostPDF\DefaultIcon */
+	/* HKEY_CLASSES_ROOT\FzView\DefaultIcon */
 
 	if (RegCreateKeyEx(key,
 				"DefaultIcon", 0, NULL, REG_OPTION_NON_VOLATILE,
@@ -71,7 +71,7 @@ void associate(char *argv0)
 
 	RegCloseKey(kicon);
 
-	/* HKEY_CLASSES_ROOT\GhostPDF\Shell\Open\Command */
+	/* HKEY_CLASSES_ROOT\FzView\Shell\Open\Command */
 
 	if (RegCreateKeyEx(key,
 				"shell", 0, NULL, REG_OPTION_NON_VOLATILE,
@@ -103,12 +103,12 @@ void associate(char *argv0)
 
 void winwarn(pdfapp_t *app, char *msg)
 {
-	MessageBoxA(hwnd, msg, "GhostPDF: Warning", MB_ICONWARNING);
+	MessageBoxA(hwnd, msg, "FzView: Warning", MB_ICONWARNING);
 }
 
 void winerror(pdfapp_t *app, char *msg)
 {
-	MessageBoxA(hwnd, msg, "GhostPDF: Error", MB_ICONERROR);
+	MessageBoxA(hwnd, msg, "FzView: Error", MB_ICONERROR);
 	exit(1);
 }
 
@@ -122,7 +122,7 @@ int winfilename(char *buf, int len)
     ofn.lpstrFile = buf;
     ofn.nMaxFile = len;
     ofn.lpstrInitialDir = NULL;
-    ofn.lpstrTitle = "GhostPDF: Open PDF file";
+    ofn.lpstrTitle = "FzView: Open PDF file";
 	ofn.lpstrFilter = "PDF Files (*.pdf)\0*.pdf\0All Files\0*\0\0";
     ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
     return GetOpenFileName(&ofn);
@@ -260,7 +260,7 @@ dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG:
 		SetDlgItemTextA(hwnd, 0x10, gapp.filename);
-		SetDlgItemTextA(hwnd, 2, "GhostPDF is Copyright (C) 2005 artofcode, LLC");
+		SetDlgItemTextA(hwnd, 2, "FzView is Copyright (C) 2005 artofcode, LLC");
 		SetDlgItemTextA(hwnd, 3, pdfapp_usage(&gapp));
 		return TRUE;
 	case WM_COMMAND:
@@ -340,11 +340,11 @@ void winopen()
 
 	hdc = NULL;
 
-	SetWindowTextA(hwnd, "GhostPDF");
+	SetWindowTextA(hwnd, "FzView");
 
 	menu = GetSystemMenu(hwnd, 0);
 	AppendMenu(menu, MF_SEPARATOR, 0, NULL);
-	AppendMenu(menu, MF_STRING, ID_ABOUT, "About GhostPDF...");
+	AppendMenu(menu, MF_STRING, ID_ABOUT, "About FzView...");
 	AppendMenu(menu, MF_STRING, ID_DOCINFO, "Document Properties...");
 
 	SetCursor(arrowcurs);

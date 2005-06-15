@@ -9,13 +9,13 @@
       <string name="title">GhostPDF</string>
       <array count="4" name="items">
         <object class="IBCarbonMenuItem" id="185">
-          <string name="title">GhostPDF</string>
+          <string name="title">MuView</string>
           <object name="submenu" class="IBCarbonMenu" id="184">
-            <string name="title">GhostPDF</string>
+            <string name="title">MuView</string>
             <array count="1" name="items">
               <object class="IBCarbonMenuItem" id="187">
                 <boolean name="updateSingleItem">TRUE</boolean>
-                <string name="title">About GhostPDF</string>
+                <string name="title">About MuView</string>
                 <int name="keyEquivalentModifier">0</int>
                 <ostype name="command">abou</ostype>
               </object>
@@ -399,7 +399,7 @@
           <object class="IBCarbonStaticText" id="233">
             <string name="bounds">20 20 36 234 </string>
             <string name="viewFrame">20 20 214 16 </string>
-            <string name="title">This PDF document is encrypted.</string>
+            <string name="title">This document is encrypted.</string>
           </object>
           <object class="IBCarbonStaticText" id="234">
             <string name="bounds">50 32 66 146 </string>

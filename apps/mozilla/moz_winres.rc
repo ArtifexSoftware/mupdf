@@ -1,5 +1,5 @@
 //
-// GhostPDF Plugin description
+// MuPDF Plugin description
 //
 
 1 VERSIONINFO
@@ -9,9 +9,9 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-			VALUE "ProductName", "GhostPDF Plug-in\0"
+			VALUE "ProductName", "MuPDF Plug-in\0"
 			VALUE "OriginalFilename", "npmupdf.dll\0"
-			VALUE "FileDescription", "The GhostPDF plugin allows you to browse PDF files with a simple light-weight scrolling interface.<br>See <a href=""http://ghostpdf.com/new.html"">ghostpdf.com</a> for more information.\0"
+			VALUE "FileDescription", "The MuPDF plugin allows you to browse PDF files with a simple light-weight scrolling interface.<br>See <a href=""http://ghostscript.com/~tor/software/fitz.html">ghostscript.com</a> for more information.\0"
             VALUE "MIMEType", "application/pdf|application/x-mupdf\0"
 			VALUE "FileExtents", "pdf|foo"
 			VALUE "FileOpenName", "Acrobat PDF File|Acrobat PDF File"

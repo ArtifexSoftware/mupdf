@@ -3,11 +3,11 @@ README for the Fitz distribution.
 Fitz is a graphics library.
 MuPDF is a PDF parsing and manipulation library.
 Samus is a Metro parser.
-GhostPDF is a PDF viewer using MuPDF and Fitz.
+FzView is a PDF and Metro viewer application.
 For Windows, there is also a Mozilla plugin version of the viewer.
 
-GhostPDF has three ports: X11, Windows and Carbon.
-The Carbon port is broken, so don't bother trying it.
+The Viewer has three ports: X11, Windows and Carbon.
+The Carbon port is rotting, so don't bother trying it.
 
 This code is under the same licensing scheme as Ghostscript.
 AFPL and one year or major release later GPL.
