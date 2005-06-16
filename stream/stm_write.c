@@ -26,10 +26,10 @@ int fz_wtell(fz_stream *stm)
 			stm->dead = 1;
 			return -1;
 		}
-		return t - (buf->wp - buf->rp);
+		return t + (buf->wp - buf->rp);
 
 	case FZ_SFILTER:
-		return stm->filter->count - (buf->wp - buf->rp);
+		return stm->filter->count + (buf->wp - buf->rp);
 
 	case FZ_SBUFFER:
 		return buf->wp - buf->bp;
