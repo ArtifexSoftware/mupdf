@@ -91,10 +91,8 @@ lexnumber(fz_stream *f, unsigned char *s, int n)
 static void
 lexname(fz_stream *f, unsigned char *s, int n)
 {
-#if 0
 	unsigned char *p = s;
 	unsigned char *q = s;
-#endif
 
 	while (n > 1)
 	{
@@ -105,7 +103,6 @@ lexname(fz_stream *f, unsigned char *s, int n)
 	}
 	*s = '\0';
 
-#if 0
 	while (*p)
 	{
 		if (p[0] == '#' && p[1] != 0 && p[2] != 0)
@@ -117,7 +114,6 @@ lexname(fz_stream *f, unsigned char *s, int n)
 			*q++ = *p++;
 	}
 	*q = '\0';
-#endif
 }
 
 static int
