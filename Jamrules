@@ -26,7 +26,8 @@ HAVE_JASPER ?= no ;
 # Basic system should be mostly SUSv3 compliant
 # These are good for GCC
 
-FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPECC) ;
+# FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPECC) ;
+FLAG_CCALL = -Wall $(FREETYPECC) ;
 FLAG_CCDEBUG = -g ;
 FLAG_CCRELEASE = -O3 ;
 FLAG_CCPROFILE = -g -pg ;
@@ -55,8 +56,8 @@ switch $(OS)
 		}
 
 	case MACOSX :
-		FLAG_LDALL += -L/usr/X11R6/lib ;
-		FLAG_CCALL += -I/usr/X11R6/include -std=gnu99 -DHAVE_C99 ;
+		FLAG_LDALL += -L/opt/local/lib -L/usr/X11R6/lib ;
+		FLAG_CCALL += -I/usr/X11R6/include -std=gnu99 -DHAVE_C99 -Wno-pointer-sign ;
 		FLAG_CCRELEASE = -DARCH_PPC -faltivec -fast ;
 
 	case MINGW :
