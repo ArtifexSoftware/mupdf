@@ -19,6 +19,7 @@
  * Select pages.
  */
 
+char *srcname = "(null)";
 pdf_xref *src = nil;
 pdf_pagetree *srcpages = nil;
 
@@ -48,6 +49,8 @@ void closesrc(void)
 		pdf_closexref(src);
 		src = nil;
 	}
+
+	srcname = nil;
 }
 
 void opensrc(char *filename, char *password, int loadpages)
@@ -55,6 +58,8 @@ void opensrc(char *filename, char *password, int loadpages)
 	fz_error *error;
 
 	closesrc();
+
+	srcname = filename;
 
 	error = pdf_newxref(&src);
 	if (error)
@@ -464,8 +469,8 @@ drawloadpage(int pagenum)
 	if (error)
 		die(error);
 
-	fprintf(stderr, "page %d mediabox [ %g %g %g %g ] rotate %d\n",
-			pagenum,
+	fprintf(stderr, "draw %s page %d mediabox [ %g %g %g %g ] rotate %d\n",
+			srcname, pagenum,
 			drawpage->mediabox.x0, drawpage->mediabox.y0,
 			drawpage->mediabox.x1, drawpage->mediabox.y1,
 			drawpage->rotate);
@@ -699,7 +704,9 @@ drawmain(int argc, char **argv)
 enum { COPY, OVER, NUP2, NUP4, NUP8 };
 
 pdf_xref *editxref = nil;
-fz_obj *editkids = nil;
+fz_obj *editpagelist = nil;
+fz_obj *editmodelist = nil;
+fz_obj *editobjects = nil;
 int editmode = COPY;
 
 void
@@ -716,13 +723,138 @@ editusage(void)
 void
 editcopy(int pagenum)
 {
-	printf("copy page %d\n", pagenum);
+	fz_error *error;
+	fz_obj *obj;
+	fz_obj *ref;
+	fz_obj *num;
+
+	printf("copy %s page %d\n", srcname, pagenum);
+
+	ref = srcpages->pref[pagenum - 1];
+	obj = pdf_getpageobject(srcpages, pagenum - 1);
+
+	fz_dictdels(obj, "Parent");
+	// fz_dictdels(obj, "B");
+	// fz_dictdels(obj, "PieceInfo");
+	// fz_dictdels(obj, "Metadata");
+	// fz_dictdels(obj, "Annots");
+	// fz_dictdels(obj, "Tabs");
+
+	pdf_updateobject(src, fz_tonum(ref), fz_togen(ref), obj);
+
+	error = fz_arraypush(editobjects, ref);
+	if (error)
+		die(error);
+
+	error = fz_newint(&num, editmode);
+	if (error)
+		die(error);
+
+	error = fz_arraypush(editmodelist, num);
+	if (error)
+		die(error);
+
+	fz_dropobj(num);
 }
 
-void editover(int pagenum) { }
-void edit2up(int pagenum) { }
-void edit4up(int pagenum) { }
-void edit8up(int pagenum) { }
+void
+editflushobjects(void)
+{
+	fz_error *error;
+	fz_obj *results;
+	int i;
+
+	error = pdf_transplant(editxref, src, &results, editobjects);
+	if (error)
+		die(error);
+
+	for (i = 0; i < fz_arraylen(results); i++)
+	{
+		error = fz_arraypush(editpagelist, fz_arrayget(results, i));
+		if (error)
+			die(error);
+	}
+
+	fz_dropobj(results);
+}
+
+void
+editflushpagetree(void)
+{
+
+	/* TODO: merge pages where editmode != COPY by turning them into XObjects
+	   and creating a new page object with resource dictionary and content
+	   stream placing the xobjects on the page. */
+}
+
+void
+editflushcatalog(void)
+{
+	fz_error *error;
+	int rootnum, rootgen;
+	int listnum, listgen;
+	fz_obj *listref;
+	fz_obj *obj;
+	int i;
+
+	/* Create page tree and add back-links */
+
+	error = pdf_allocobject(editxref, &listnum, &listgen);
+	if (error)
+		die(error);
+
+	error = fz_packobj(&obj, "<</Type/Pages/Count %i/Kids %o>>",
+			fz_arraylen(editpagelist),
+			editpagelist);
+	if (error)
+		die(error);
+
+	pdf_updateobject(editxref, listnum, listgen, obj);
+
+	fz_dropobj(obj);
+
+	error = fz_newindirect(&listref, listnum, listgen);
+	if (error)
+		die(error);
+
+	for (i = 0; i < fz_arraylen(editpagelist); i++)
+	{
+		int num = fz_tonum(fz_arrayget(editpagelist, i));
+		int gen = fz_togen(fz_arrayget(editpagelist, i));
+
+		error = pdf_loadobject(&obj, editxref, num, gen);
+		if (error)
+			die(error);
+
+		error = fz_dictputs(obj, "Parent", listref);
+		if (error)
+			die(error);
+
+		pdf_updateobject(editxref, num, gen, obj);
+
+		fz_dropobj(obj);
+	}
+
+	/* Create catalog */
+
+	error = pdf_allocobject(editxref, &rootnum, &rootgen);
+	if (error)
+		die(error);
+
+	error = fz_packobj(&obj, "<</Type/Catalog/Pages %r>>", listnum, listgen);
+	if (error)
+		die(error);
+
+	pdf_updateobject(editxref, rootnum, rootgen, obj);
+
+	fz_dropobj(obj);
+
+	/* Create trailer */
+
+	error = fz_packobj(&editxref->trailer, "<</Root %r>>", rootnum, rootgen);
+	if (error)
+		die(error);
+}
 
 void
 editpages(char *pagelist)
@@ -758,14 +890,7 @@ editpages(char *pagelist)
 		{
 			if (page < 1 || page > pdf_getpagecount(srcpages))
 				continue;
-			switch (editmode)
-			{
-			case COPY: editcopy(page); break;
-			case OVER: editover(page); break;
-			case NUP2: edit2up(page); break;
-			case NUP4: edit4up(page); break;
-			case NUP8: edit8up(page); break;
-			}
+			editcopy(page);
 		}
 
 		spec = strsep(&pagelist, ",");
@@ -795,9 +920,6 @@ editmain(int argc, char **argv)
 	if (optind == argc)
 		editusage();
 
-	fprintf(stderr, "edit tool is not implemented yet\n");
-	exit(1);
-
 	error = pdf_newxref(&editxref);
 	if (error)
 		die(error);
@@ -806,11 +928,26 @@ editmain(int argc, char **argv)
 	if (error)
 		die(error);
 
+	error = fz_newarray(&editpagelist, 100);
+	if (error)
+		die(error);
+
+	error = fz_newarray(&editmodelist, 100);
+	if (error)
+		die(error);
+
 	while (optind < argc)
 	{
 		if (strstr(argv[optind], ".pdf"))
 		{
+			if (editobjects)
+				editflushobjects();
+
 			opensrc(argv[optind], "", 1);
+
+			error = fz_newarray(&editobjects, 100);
+			if (error)
+				die(error);
 		}
 		else if (!strcmp(argv[optind], "copy"))
 			editmode = COPY;
@@ -827,7 +964,13 @@ editmain(int argc, char **argv)
 		optind++;
 	}
 
+	if (editobjects)
+		editflushobjects();
+
 	closesrc();
+
+	editflushpagetree();
+	editflushcatalog();
 
 	error = pdf_savexref(editxref, outfile, nil);
 	if (error)
