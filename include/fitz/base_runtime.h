@@ -57,7 +57,6 @@ fz_error *fz_throw0(const char *func, const char *file, int line, char *fmt, ...
 fz_error *fz_throw1(char *fmt, ...);
 
 void fz_warn(char *fmt, ...);
-void fz_abort(fz_error *eo);
 void fz_droperror(fz_error *eo);
 
 typedef struct fz_memorycontext_s fz_memorycontext;

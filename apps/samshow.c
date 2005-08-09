@@ -1,6 +1,14 @@
 #include "fitz.h"
 #include "samus.h"
 
+void die(fz_error *eo)
+{
+    fflush(stdout);
+    fprintf(stderr, "%s:%d: %s(): %s\n", eo->file, eo->line, eo->func, eo->msg);
+    fflush(stderr);
+    abort();
+}
+
 void showfixdocseq(sa_package *pack, char *part)
 {
 	fz_error *error;
@@ -8,7 +16,7 @@ void showfixdocseq(sa_package *pack, char *part)
 
 	error = sa_loadfixdocseq(&seq, pack, part);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	sa_debugfixdocseq(seq);
 
@@ -38,14 +46,14 @@ int runpack(int argc, char **argv)
 
 	error = sa_openpackage(&pack, argv[1]);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	sa_debugpackage(pack);
 	printf("\n");
 
 	error = sa_loadrelations(&rels, pack, "/");
 	if (error)
-		fz_abort(error);
+		die(error);
 	sa_debugrelations(rels);
 	printf("\n");
 
@@ -67,7 +75,7 @@ int runpack(int argc, char **argv)
 
 		error = sa_loadrelations(&rels, pack, argv[i]);
 		if (error)
-			fz_abort(error);
+			die(error);
 		sa_debugrelations(rels);
 		sa_droprelations(rels);
 
@@ -89,7 +97,7 @@ int runzip(int argc, char **argv)
 
 	error = sa_openzip(&zip, argv[1]);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	if (argc == 2)
 		sa_debugzip(zip);
@@ -98,10 +106,10 @@ int runzip(int argc, char **argv)
 	{
 		error = sa_openzipentry(&stm, zip, argv[i]);
 		if (error)
-			fz_abort(error);
+			die(error);
 		n = fz_readall(&buf, stm);
 		if (n < 0)
-			fz_abort(fz_ioerror(stm));
+			die(fz_ioerror(stm));
 		fz_dropstream(stm);
 
 		fwrite(buf->rp, 1, buf->wp - buf->rp, stdout);
@@ -123,11 +131,11 @@ int runxml(int argc, char **argv)
 
 	error = fz_openrfile(&file, argv[1]);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	error = sa_openxml(&parser, file, 0);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	item = sa_xmlnext(parser);
 	if (item)
@@ -148,11 +156,11 @@ int runtiff(int argc, char **argv)
 
 	error = fz_openrfile(&file, argv[1]);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	error = sa_readtiff(file);
 	if (error)
-		fz_abort(error);
+		die(error);
 
 	fz_dropstream(file);
 

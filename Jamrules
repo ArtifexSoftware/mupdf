@@ -43,7 +43,7 @@ switch $(OS)
 		NEED_STRLCAT = yes ;
 		NEED_STRSEP = yes ;
 		FLAG_CCALL += -std=gnu99 -DHAVE_C99 ;
-		FLAG_LDALL += -L/usr/X11R6/lib ;
+		FLAG_LDALL += -L/opt/local/lib -L/usr/X11R6/lib ;
 
 		switch $(CC)-$(OSPLAT)
 		{

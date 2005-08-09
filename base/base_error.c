@@ -53,7 +53,12 @@ fz_throw0(const char *func, const char *file, int line, char *fmt, ...)
 	va_end(ap);
 
 	if (getenv("BOMB"))
-		fz_abort(eo);
+	{
+		fflush(stdout);
+		fprintf(stderr, "%s:%d: %s(): %s\n", eo->file, eo->line, eo->func, eo->msg);
+		fflush(stderr);
+		abort();
+	}
 
 	return eo;
 }
@@ -65,14 +70,5 @@ fz_droperror(fz_error *eo)
 		eo->refs--;
 	if (eo->refs == 0)
 		fz_free(eo);
-}
-
-void
-fz_abort(fz_error *eo)
-{
-	fflush(stdout);
-	fprintf(stderr, "%s:%d: %s(): %s\n", eo->file, eo->line, eo->func, eo->msg);
-	fflush(stderr);
-	abort();
 }
 
