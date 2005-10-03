@@ -41,7 +41,6 @@ switch $(OS)
 		HAVE_X11 = yes ;
 		NEED_STRLCPY = yes ;
 		NEED_STRLCAT = yes ;
-		NEED_STRSEP = yes ;
 		FLAG_CCALL += -std=gnu99 -DHAVE_C99 ;
 		FLAG_LDALL += -L/opt/local/lib -L/usr/X11R6/lib ;
 
@@ -52,7 +51,7 @@ switch $(OS)
 			FLAG_CCPROFILE = -g -qp ;
 		case gcc-X86 :
 			# add -msse -msse2 when such functions exist...
-			FLAG_CCRELEASE = -DARCH_X86 -O3 -march=pentium -mmmx ;
+			FLAG_CCRELEASE = -DARCH_X86 -O3 -g -march=k8 -mmmx -std=gnu99 -ftree-vectorize -ftree-vectorizer-verbose=2 ;
 		}
 
 	case MACOSX :

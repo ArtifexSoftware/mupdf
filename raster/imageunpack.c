@@ -13,7 +13,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 	int min[FZ_MAXCOLORS];
 	int max[FZ_MAXCOLORS];
 	int sub[FZ_MAXCOLORS];
-	int useless = 1;
+	int needed = 0;
 	byte *p = pix->samples;
 	int n = pix->n;
 	int wh = pix->w * pix->h;
@@ -28,11 +28,10 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		min[i] = decode[(i - skip) * 2] * 255;
 		max[i] = decode[(i - skip) * 2 + 1] * 255;
 		sub[i] = max[i] - min[i];
-		if (min[i] != 0 || max[i] != 255)
-			useless = 0;
+                needed |= (min[i] != 0) |  (max[i] != 255);
 	}
 
-	if (useless)
+	if (!needed)
 		return;
 
 	while (wh--)
@@ -170,11 +169,11 @@ static void loadtile1(byte *src, int sw, byte *dst, int dw, int w, int h, int pa
 		} \
 }
 
-static void loadtile2(byte *src, int sw, byte *dst, int dw, int w, int h, int pad)
+static void loadtile2(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
 	TILE(ttwo)
-static void loadtile4(byte *src, int sw, byte *dst, int dw, int w, int h, int pad)
+static void loadtile4(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
 	TILE(tnib)
-static void loadtile8(byte *src, int sw, byte *dst, int dw, int w, int h, int pad)
+static void loadtile8(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
 	TILE(toct)
 
 void (*fz_decodetile)(fz_pixmap *pix, int skip, float *decode) = decodetile;

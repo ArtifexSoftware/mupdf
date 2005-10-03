@@ -10,7 +10,7 @@ typedef unsigned char byte;
 
 /* dst = src over dst */
 static void
-duff_non(byte *sp0, int sw, int sn, byte *dp0, int dw, int w0, int h)
+duff_non(byte * restrict sp0, int sw, int sn, byte * restrict dp0, int dw, int w0, int h)
 {
 	int k;
 	while (h--)
@@ -36,7 +36,7 @@ duff_non(byte *sp0, int sw, int sn, byte *dp0, int dw, int w0, int h)
 
 /* dst = src in msk */
 static void
-duff_nimcn(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int dw, int w0, int h)
+duff_nimcn(byte * restrict sp0, int sw, int sn, byte * restrict mp0, int mw, int mn, byte * restrict dp0, int dw, int w0, int h)
 {
 	int k;
 	while (h--)
@@ -62,7 +62,7 @@ duff_nimcn(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int 
 
 /* dst = src in msk over dst */
 static void
-duff_nimon(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int dw, int w0, int h)
+duff_nimon(byte * restrict sp0, int sw, int sn, byte * restrict mp0, int mw, int mn, byte * restrict dp0, int dw, int w0, int h)
 {
 	int k;
 	while (h--)
@@ -91,7 +91,7 @@ duff_nimon(byte *sp0, int sw, int sn, byte *mp0, int mw, int mn, byte *dp0, int 
 	}
 }
 
-static void duff_1o1(byte *sp0, int sw, byte *dp0, int dw, int w0, int h)
+static void duff_1o1(byte * restrict sp0, int sw, byte * restrict dp0, int dw, int w0, int h)
 {
 	/* duff_non(sp0, sw, 1, dp0, dw, w0, h); */
 	while (h--)
@@ -133,7 +133,7 @@ static void duff_4o4(byte *sp0, int sw, byte *dp0, int dw, int w0, int h)
 	}
 }
 
-static void duff_1i1c1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
+static void duff_1i1c1(byte * restrict sp0, int sw, byte * restrict mp0, int mw, byte * restrict dp0, int dw, int w0, int h)
 {
 	/* duff_nimcn(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h); */
 	while (h--)
@@ -155,7 +155,7 @@ static void duff_1i1c1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, 
 	}
 }
 
-static void duff_4i1c4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
+static void duff_4i1c4(byte * restrict sp0, int sw, byte * restrict mp0, int mw, byte * restrict dp0, int dw, int w0, int h)
 {
 	/* duff_nimcn(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h); */
 	while (h--)
@@ -181,7 +181,7 @@ static void duff_4i1c4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, 
 	}
 }
 
-static void duff_1i1o1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
+static void duff_1i1o1(byte * restrict sp0, int sw, byte * restrict mp0, int mw, byte * restrict dp0, int dw, int w0, int h)
 {
 	/* duff_nimon(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h); */
 	while (h--)
@@ -206,7 +206,7 @@ static void duff_1i1o1(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, 
 	}
 }
 
-static void duff_4i1o4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
+static void duff_4i1o4(byte * restrict sp0, int sw, byte * restrict mp0, int mw, byte * restrict dp0, int dw, int w0, int h)
 {
 	/* duff_nimon(sp0, sw, 4, mp0, mw, 1, dp0, dw, w0, h); */
 	while (h--)
@@ -238,7 +238,7 @@ static void duff_4i1o4(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, 
  * Path and text masks
  */
 
-static void path_1c1(byte *src, int cov, int len, byte *dst)
+static void path_1c1(byte * restrict src, int cov, int len, byte * restrict dst)
 {
 	while (len--)
 	{
@@ -247,7 +247,7 @@ static void path_1c1(byte *src, int cov, int len, byte *dst)
 	}
 }
 
-static void path_1o1(byte *src, int cov, int len, byte *dst)
+static void path_1o1(byte * restrict src, int cov, int len, byte * restrict dst)
 {
 	while (len--)
 	{
@@ -257,7 +257,7 @@ static void path_1o1(byte *src, int cov, int len, byte *dst)
 	}
 }
 
-static void path_w3i1o4(byte *rgb, byte *src, int cov, int len, byte *dst)
+static void path_w3i1o4(byte * restrict rgb, byte * restrict src, int cov, int len, byte * restrict dst)
 {
 	byte rgb0 = rgb[0];
 	byte rgb1 = rgb[1];
@@ -275,7 +275,7 @@ static void path_w3i1o4(byte *rgb, byte *src, int cov, int len, byte *dst)
 	}
 }
 
-static void text_1c1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
+static void text_1c1(byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
 	while (h--)
 	{
@@ -291,7 +291,7 @@ static void text_1c1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
 	}
 }
 
-static void text_1o1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
+static void text_1o1(byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
 	while (h--)
 	{
@@ -309,7 +309,7 @@ static void text_1o1(byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
 	}
 }
 
-static void text_w3i1o4(byte *rgb, byte *src0, int srcw, byte *dst0, int dstw, int w0, int h)
+static void text_w3i1o4(byte * restrict rgb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
 	unsigned char rgb0 = rgb[0];
 	unsigned char rgb1 = rgb[1];

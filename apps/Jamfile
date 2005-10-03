@@ -54,6 +54,14 @@ if $(HAVE_X11) = yes
 	LINKLIBS on apparition$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
+if $(HAVE_GLX) = yes
+{
+        SubDir TOP apps unix ;
+        Main glxview : glxpdf.c ;
+        LinkLibraries glxview : libpdfapp $(FITZLIBS) ;
+        LINKLIBS on glxview$(SUFEXE) = $(LINKLIBS) -lX11 -lGL ;
+}
+
 if $(OS) = noMACOSX
 {
 	SubDir TOP apps macosx ;

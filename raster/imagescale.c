@@ -4,10 +4,10 @@
 
 typedef unsigned char byte;
 
-static void srown(byte *src, byte *dst, int w, int denom, int n)
+static inline void srown(byte * restrict src, byte * restrict dst, unsigned w, unsigned denom, unsigned n)
 {
-	int x, left, k;
-	int sum[FZ_MAXCOLORS];
+	unsigned x, left, k;
+	unsigned sum[FZ_MAXCOLORS];
 
 	left = 0;
 	for (k = 0; k < n; k++)
@@ -23,6 +23,37 @@ static void srown(byte *src, byte *dst, int w, int denom, int n)
 			for (k = 0; k < n; k++)
 			{
 				dst[k] = sum[k] / denom;
+				sum[k] = 0;
+			}
+			dst += n;
+		}
+	}
+
+	/* left overs */
+	if (left)
+		for (k = 0; k < n; k++)
+			dst[k] = sum[k] / left;
+}
+
+static inline void srownp2(byte * restrict src, byte * restrict dst, unsigned w, unsigned log2denom, unsigned n)
+{
+	unsigned x, left, k;
+	unsigned sum[FZ_MAXCOLORS];
+
+	left = 0;
+	for (k = 0; k < n; k++)
+		sum[k] = 0;
+
+	for (x = 0; x < w; x++)
+	{
+		for (k = 0; k < n; k++)
+			sum[k] += src[x * n + k];
+		if (++left == (1<<log2denom))
+		{
+			left = 0;
+			for (k = 0; k < n; k++)
+			{
+				dst[k] = sum[k] >> log2denom;
 				sum[k] = 0;
 			}
 			dst += n;
@@ -55,7 +86,12 @@ static void srow5(byte *src, byte *dst, int w, int denom)
 	srown(src, dst, w, denom, 5);
 }
 
-static void scoln(byte *src, byte *dst, int w, int denom, int n)
+static void srow5p2(byte * restrict src, byte * restrict dst, int w, int log2denom)
+{
+       	srownp2(src, dst, w, log2denom, 5);        
+}
+
+static inline void scoln(byte * restrict src, byte * restrict dst, int w, int denom, int n)
 {
 	int x, y, k;
 	byte *s;
@@ -71,6 +107,26 @@ static void scoln(byte *src, byte *dst, int w, int denom, int n)
 				sum[k] += s[y * w * n + k];
 		for (k = 0; k < n; k++)
 			dst[k] = sum[k] / denom;
+		dst += n;
+	}
+}
+
+static inline void scolnp2(byte *src, byte *dst, int w, int log2denom, int n)
+{
+	int x, y, k;
+	byte *s;
+	int sum[FZ_MAXCOLORS];
+
+	for (x = 0; x < w; x++)
+	{
+		s = src + (x * n);
+		for (k = 0; k < n; k++)
+			sum[k] = 0;
+		for (y = 0; y < (1<<log2denom); y++)
+			for (k = 0; k < n; k++)
+				sum[k] += s[y * w * n + k];
+		for (k = 0; k < n; k++)
+			dst[k] = sum[k] >> log2denom;
 		dst += n;
 	}
 }
@@ -95,6 +151,11 @@ static void scol5(byte *src, byte *dst, int w, int denom)
 	scoln(src, dst, w, denom, 5);
 }
 
+static void scol5p2(byte *src, byte *dst, int w, int denom)
+{
+	scolnp2(src, dst, w, denom, 5);
+}
+
 void (*fz_srown)(byte *src, byte *dst, int w, int denom, int n) = srown;
 void (*fz_srow1)(byte *src, byte *dst, int w, int denom) = srow1;
 void (*fz_srow2)(byte *src, byte *dst, int w, int denom) = srow2;
@@ -115,6 +176,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	unsigned char *buf;
 	int y, iy, oy;
 	int ow, oh, n;
+        int ydenom2 = ydenom;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -139,7 +201,23 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	case 1: srowx = fz_srow1; scolx = fz_scol1; break;
 	case 2: srowx = fz_srow2; scolx = fz_scol2; break;
 	case 4: srowx = fz_srow4; scolx = fz_scol4; break;
-	case 5: srowx = fz_srow5; scolx = fz_scol5; break;
+	case 5: srowx = fz_srow5; scolx = fz_scol5;
+                if (!(xdenom & (xdenom - 1)))
+                {
+                        unsigned v = xdenom;
+                        xdenom = 0;
+                        while ((v >>= 1)) xdenom++;
+                        srowx = srow5p2;
+                }
+                if (!(ydenom & (ydenom - 1)))
+                {
+                        unsigned v = ydenom2;
+                        ydenom2 = 0;
+                        while ((v >>= 1)) ydenom2++;
+                        scolx = scol5p2;
+                }
+                
+                break;
 	}
 
 	if (srowx && scolx)
@@ -150,7 +228,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom);
+			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2);
 		}
 
 		ydenom = src->h - y;
@@ -160,7 +238,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom);
+			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2);
 		}
 	}
 
@@ -172,7 +250,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom, n);
+			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2, n);
 		}
 
 		ydenom = src->h - y;
@@ -182,7 +260,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom, n);
+			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2, n);
 		}
 	}
 

@@ -200,7 +200,7 @@ static void fillrect(int x, int y, int w, int h)
 
 static void invertcopyrect()
 {
-	unsigned char *p;
+	unsigned t, *p;
 	int x, y;
 
 	int x0 = gapp.selr.x0 - gapp.panx;
@@ -215,14 +215,11 @@ static void invertcopyrect()
 
 	for (y = y0; y < y1; y++)
 	{
-		p = gapp.image->samples + (y * gapp.image->w + x0) * 4;
+		p = (unsigned *)(gapp.image->samples + (y * gapp.image->w + x0) * 4);
 		for (x = x0; x < x1; x++)
 		{
-			p[0] = 255 - p[0];
-			p[1] = 255 - p[1];
-			p[2] = 255 - p[2];
-			p[3] = 255 - p[3];
-			p += 4;
+                        *p = ~0 - *p;
+			p ++;
 		}
 	}
 
