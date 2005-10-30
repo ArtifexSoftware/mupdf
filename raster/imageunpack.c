@@ -154,19 +154,24 @@ static void loadtile1(byte *src, int sw, byte *dst, int dw, int w, int h, int pa
 			src += sw; \
 			dst += dw; \
 		} \
-	else \
+	else { \
+                int tpad; \
 		while (h--) \
 		{ \
 			byte *dp = dst; \
+                        tpad = 0; \
 			for (x = 0; x < w; x++) \
 			{ \
-				if ((x % pad) == 0) \
-					*dp++ = 255; \
+                                if (!tpad--) { \
+                                        tpad = pad-1; \
+                                        *dp++ = 255; \
+                                } \
 				*dp++ = getf(src, x); \
 			} \
 			src += sw; \
 			dst += dw; \
 		} \
+        } \
 }
 
 static void loadtile2(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
