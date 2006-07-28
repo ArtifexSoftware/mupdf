@@ -22,7 +22,6 @@ SubInclude TOP raster ;
 
 SubInclude TOP fonts ;
 SubInclude TOP mupdf ;
-SubInclude TOP samus ;
 
 SubInclude TOP apps ;
 

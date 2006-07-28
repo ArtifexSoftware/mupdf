@@ -118,9 +118,9 @@ HDRS = [ FDirName $(TOP) include ] ;
 
 BINDIR = [ FDirName $(TOP) dist ] ;
 
-LINKLIBS = $(FREETYPELD) -lexpat -ljpeg -lz -lm ;
+LINKLIBS = $(FREETYPELD) -ljpeg -lz -lm ;
 FITZLIBS =
-	libsamus libmupdf libfonts
+	libmupdf libfonts
 	libraster
 	libworld
 	libstream

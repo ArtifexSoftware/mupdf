@@ -7,7 +7,6 @@ SubDir TOP apps ;
 
 APPLIST =
 	pdftool
-	samshow
 	;
 
 for APP in $(APPLIST)
