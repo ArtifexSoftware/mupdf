@@ -8,8 +8,8 @@
 OPTIM = ; # disable jam's built-in optimization flags 
 if $(OS) = MINGW
 {
-	FREETYPECC ?= -Ih:/package/include ;
-	FREETYPELD ?= -Lh:/package/lib -lfreetype ;
+	FREETYPECC ?= -Ic:/msys/1.0/local/include -Ic:/msys/1.0/local/include/freetype2 ;
+	FREETYPELD ?= -Lc:/msys/1.0/local/lib -lfreetype ;
 }
 
 FREETYPECC ?= "`freetype-config --cflags`" ;

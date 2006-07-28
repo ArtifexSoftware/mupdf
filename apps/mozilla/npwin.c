@@ -38,8 +38,8 @@ Private_GetJavaClass(void)
 {
     jref clazz = NPP_GetJavaClass();
     if (clazz) {
-		JRIEnv* env = NPN_GetJavaEnv();
-		return JRI_NewGlobalRef(env, clazz);
+	JRIEnv* env = NPN_GetJavaEnv();
+	return JRI_NewGlobalRef(env, clazz);
     }
     return NULL;
 }
@@ -70,7 +70,7 @@ NP_GetEntryPoints(NPPluginFuncs* pFuncs)
 {
     // trap a NULL ptr 
     if(pFuncs == NULL)
-        return NPERR_INVALID_FUNCTABLE_ERROR;
+	return NPERR_INVALID_FUNCTABLE_ERROR;
 
     // if the plugin's function table is smaller than the plugin expects,
     // then they are incompatible, and should return an error 
@@ -87,7 +87,7 @@ NP_GetEntryPoints(NPPluginFuncs* pFuncs)
     pFuncs->print         = NPP_Print;
     pFuncs->event         = 0;       /// reserved 
 
-	g_pluginFuncs		  = pFuncs;
+    g_pluginFuncs		  = pFuncs;
 
     return NPERR_NO_ERROR;
 }
@@ -103,31 +103,31 @@ NP_Initialize(NPNetscapeFuncs* pFuncs)
 {
     // trap a NULL ptr 
     if(pFuncs == NULL)
-        return NPERR_INVALID_FUNCTABLE_ERROR;
+	return NPERR_INVALID_FUNCTABLE_ERROR;
 
     g_pNavigatorFuncs = pFuncs; // save it for future reference 
 
     // if the plugin's major ver level is lower than the Navigator's,
     // then they are incompatible, and should return an error 
     if(HIBYTE(pFuncs->version) > NP_VERSION_MAJOR)
-        return NPERR_INCOMPATIBLE_VERSION_ERROR;
+	return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
-	// We have to defer these assignments until g_pNavigatorFuncs is set
+    // We have to defer these assignments until g_pNavigatorFuncs is set
     int navMinorVers = g_pNavigatorFuncs->version & 0xFF;
 
-	if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
-		g_pluginFuncs->urlnotify = NPP_URLNotify;
-	}
-	
-#ifdef WIN32 // An ugly hack, because Win16 lags behind in Java
-	if( navMinorVers >= NPVERS_HAS_LIVECONNECT ) {
-#else
-	if( navMinorVers >= NPVERS_WIN16_HAS_LIVECONNECT )
-#endif // WIN32
-		g_pluginFuncs->javaClass = Private_GetJavaClass();
-	}
+    if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
+	g_pluginFuncs->urlnotify = NPP_URLNotify;
+    }
 
-	// NPP_Initialize is a standard (cross-platform) initialize function.
+#ifdef WIN32 // An ugly hack, because Win16 lags behind in Java
+    if( navMinorVers >= NPVERS_HAS_LIVECONNECT ) {
+#else
+    if( navMinorVers >= NPVERS_WIN16_HAS_LIVECONNECT ) {
+#endif // WIN32
+	g_pluginFuncs->javaClass = Private_GetJavaClass();
+    }
+
+    // NPP_Initialize is a standard (cross-platform) initialize function.
     return NPP_Initialize();
 }
 
@@ -180,17 +180,16 @@ void NPN_Version(int* plugin_major, int* plugin_minor, int* netscape_major, int*
 /* causes the specified URL to be fetched and streamed in
 */
 NPError NPN_GetURLNotify(NPP instance, const char *url, const char *target, void* notifyData)
-
 {
-	int navMinorVers = g_pNavigatorFuncs->version & 0xFF;
-	NPError err;
-	if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
-		err = g_pNavigatorFuncs->geturlnotify(instance, url, target, notifyData);
-	}
-	else {
-		err = NPERR_INCOMPATIBLE_VERSION_ERROR;
-	}
-	return err;
+    int navMinorVers = g_pNavigatorFuncs->version & 0xFF;
+    NPError err;
+    if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
+	err = g_pNavigatorFuncs->geturlnotify(instance, url, target, notifyData);
+    }
+    else {
+	err = NPERR_INCOMPATIBLE_VERSION_ERROR;
+    }
+    return err;
 }
 
 
@@ -201,15 +200,15 @@ NPError NPN_GetURL(NPP instance, const char *url, const char *target)
 
 NPError NPN_PostURLNotify(NPP instance, const char* url, const char* window, uint32 len, const char* buf, NPBool file, void* notifyData)
 {
-	int navMinorVers = g_pNavigatorFuncs->version & 0xFF;
-	NPError err;
-	if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
-		err = g_pNavigatorFuncs->posturlnotify(instance, url, window, len, buf, file, notifyData);
-	}
-	else {
-		err = NPERR_INCOMPATIBLE_VERSION_ERROR;
-	}
-	return err;
+    int navMinorVers = g_pNavigatorFuncs->version & 0xFF;
+    NPError err;
+    if( navMinorVers >= NPVERS_HAS_NOTIFICATION ) {
+	err = g_pNavigatorFuncs->posturlnotify(instance, url, window, len, buf, file, notifyData);
+    }
+    else {
+	err = NPERR_INCOMPATIBLE_VERSION_ERROR;
+    }
+    return err;
 }
 
 
@@ -229,37 +228,36 @@ NPError NPN_RequestRead(NPStream* stream, NPByteRange* rangeList)
 
 /* Creates a new stream of data from the plug-in to be interpreted
    by Netscape in the current window.
-*/
+ */
 NPError NPN_NewStream(NPP instance, NPMIMEType type, 
-								const char* target, NPStream** stream)
+	const char* target, NPStream** stream)
 {
-	int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
-	NPError err;
+    int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
+    NPError err;
 
-	if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
-		err = g_pNavigatorFuncs->newstream(instance, type, target, stream);
-	}
-	else {
-		err = NPERR_INCOMPATIBLE_VERSION_ERROR;
-	}
-	return err;
+    if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
+	err = g_pNavigatorFuncs->newstream(instance, type, target, stream);
+    }
+    else {
+	err = NPERR_INCOMPATIBLE_VERSION_ERROR;
+    }
+    return err;
 }
 
 /* Provides len bytes of data.
 */
-int32 NPN_Write(NPP instance, NPStream *stream,
-                int32 len, void *buffer)
+int32 NPN_Write(NPP instance, NPStream *stream, int32 len, void *buffer)
 {
-	int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
-	int32 result;
+    int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
+    int32 result;
 
-	if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
-		result = g_pNavigatorFuncs->write(instance, stream, len, buffer);
-	}
-	else {
-		result = -1;
-	}
-	return result;
+    if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
+	result = g_pNavigatorFuncs->write(instance, stream, len, buffer);
+    }
+    else {
+	result = -1;
+    }
+    return result;
 }
 
 /* Closes a stream object.  
@@ -267,16 +265,16 @@ reason indicates why the stream was closed.
 */
 NPError NPN_DestroyStream(NPP instance, NPStream* stream, NPError reason)
 {
-	int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
-	NPError err;
+    int navMinorVersion = g_pNavigatorFuncs->version & 0xFF;
+    NPError err;
 
-	if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
-		err = g_pNavigatorFuncs->destroystream(instance, stream, reason);
-	}
-	else {
-		err = NPERR_INCOMPATIBLE_VERSION_ERROR;
-	}
-	return err;
+    if( navMinorVersion >= NPVERS_HAS_STREAMOUTPUT ) {
+	err = g_pNavigatorFuncs->destroystream(instance, stream, reason);
+    }
+    else {
+	err = NPERR_INCOMPATIBLE_VERSION_ERROR;
+    }
+    return err;
 }
 
 /* Provides a text status message in the Netscape client user interface
@@ -311,7 +309,7 @@ void NPN_MemFree(void* ptr)
 }
 
 /* private function to Netscape.  do not use!
-*/
+ */
 void NPN_ReloadPlugins(NPBool reloadPages)
 {
     g_pNavigatorFuncs->reloadplugins(reloadPages);
@@ -319,11 +317,11 @@ void NPN_ReloadPlugins(NPBool reloadPages)
 
 JRIEnv* NPN_GetJavaEnv(void)
 {
-	return g_pNavigatorFuncs->getJavaEnv();
+    return g_pNavigatorFuncs->getJavaEnv();
 }
 
 jref NPN_GetJavaPeer(NPP instance)
 {
-	return g_pNavigatorFuncs->getJavaPeer(instance);
+    return g_pNavigatorFuncs->getJavaPeer(instance);
 }
 

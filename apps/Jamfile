@@ -31,7 +31,7 @@ if $(OS) = MINGW
 {
 	SubDir TOP apps windows ;
 
-	Main fzview :
+	Main apparition :
 		winmain.c
 		winres.rc
 	;
@@ -39,19 +39,19 @@ if $(OS) = MINGW
 	WINLIBS = -lgdi32 -lcomdlg32 ;
 	if $(BUILD) = release { WINLIBS += -mwindows ; }
 
-	LinkLibraries fzview : libpdfapp $(FITZLIBS) ;
+	LinkLibraries apparition : libpdfapp $(FITZLIBS) ;
 
-	LINKLIBS on fzview$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
+	LINKLIBS on apparition$(SUFEXE) = $(LINKLIBS) $(WINLIBS) ;
 
-	InstallBin $(BINDIR) : fzview$(SUFEXE) ;
+	InstallBin $(BINDIR) : apparition$(SUFEXE) ;
 }
 
 if $(HAVE_X11) = yes
 {
 	SubDir TOP apps unix ;
-	Main fzview : x11pdf.c ximage.c ;
-	LinkLibraries fzview : libpdfapp $(FITZLIBS) ;
-	LINKLIBS on fzview$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
+	Main apparition : x11pdf.c ximage.c ;
+	LinkLibraries apparition : libpdfapp $(FITZLIBS) ;
+	LINKLIBS on apparition$(SUFEXE) = $(LINKLIBS) -lX11 -lXext ;
 }
 
 if $(OS) = noMACOSX
