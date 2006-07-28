@@ -5,57 +5,63 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <freetype/internal/ftobjs.h>
 
 static char *basefontnames[14][7] =
 {
-	{ "Courier", "CourierNew", "CourierNewPSMT", 0 },
-	{ "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
-		"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
-	{ "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
-		"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
-	{ "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
-		"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
-	{ "Helvetica", "ArialMT", "Arial", 0 },
-	{ "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
-		"Helvetica,Bold", 0 },
-	{ "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
-		"Helvetica,Italic", "Helvetica-Italic", 0 },
-	{ "Helvetica-BoldOblique", "Arial-BoldItalicMT",
-		"Arial,BoldItalic", "Arial-BoldItalic",
-		"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
-	{ "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
-		"TimesNewRomanPS", 0 },
-	{ "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
-		"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
-	{ "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
-		"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
-	{ "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
-		"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
-		"TimesNewRoman-BoldItalic", 0 },
-	{ "Symbol", 0 },
-	{ "ZapfDingbats", 0 }
+    { "Courier", "CourierNew", "CourierNewPSMT", 0 },
+    { "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
+	"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
+    { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
+	"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
+    { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
+	"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
+    { "Helvetica", "ArialMT", "Arial", 0 },
+    { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
+	"Helvetica,Bold", 0 },
+    { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
+	"Helvetica,Italic", "Helvetica-Italic", 0 },
+    { "Helvetica-BoldOblique", "Arial-BoldItalicMT",
+	"Arial,BoldItalic", "Arial-BoldItalic",
+	"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
+    { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
+	"TimesNewRomanPS", 0 },
+    { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
+	"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
+    { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
+	"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
+    { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
+	"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
+	"TimesNewRoman-BoldItalic", 0 },
+    { "Symbol", 0 },
+    { "ZapfDingbats", 0 }
 };
 
 /*
  * FreeType and Rendering glue
  */
 
-enum { UNKNOWN, TYPE1, CFF, TRUETYPE, CID };
+enum { UNKNOWN, TYPE1, TRUETYPE, CID };
 
 static int ftkind(FT_Face face)
 {
+    /* how to test for CID fonts? */
+    if (FT_IS_SFNT(face))
+	return TRUETYPE; /* or OpenType */
+    return TYPE1;
+
+#if 0
 	const char *kind = face->driver->clazz->root.module_name;
 	pdf_logfont("ft driver %s\n", kind);
 	if (!strcmp(kind, "type1"))
 		return TYPE1;
 	if (!strcmp(kind, "cff"))
-		return CFF;
+		return TYPE1;
 	if (!strcmp(kind, "truetype"))
 		return TRUETYPE;
 	if (!strcmp(kind, "t1cid"))
 		return CID;
 	return UNKNOWN;
+#endif
 }
 
 static inline int ftcidtogid(pdf_font *font, int cid)
@@ -359,7 +365,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	{
 		FT_CharMap test = face->charmaps[i];
 
-		if (kind == CFF || kind == TYPE1)
+		if (kind == TYPE1)
 		{
 			if (test->platform_id == 7)
 				cmap = test;
@@ -432,7 +438,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			}
 		}
 
-		if (kind == TYPE1 || kind == CFF)
+		if (kind == TYPE1)
 		{
 			pdf_logfont("encode type1/cff by strings\n");
 			for (i = 0; i < 256; i++)
