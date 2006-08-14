@@ -44,24 +44,17 @@ enum { UNKNOWN, TYPE1, TRUETYPE, CID };
 
 static int ftkind(FT_Face face)
 {
-    /* how to test for CID fonts? */
-    if (FT_IS_SFNT(face))
-	return TRUETYPE; /* or OpenType */
-    return TYPE1;
-
-#if 0
-	const char *kind = face->driver->clazz->root.module_name;
-	pdf_logfont("ft driver %s\n", kind);
-	if (!strcmp(kind, "type1"))
-		return TYPE1;
-	if (!strcmp(kind, "cff"))
-		return TYPE1;
-	if (!strcmp(kind, "truetype"))
-		return TRUETYPE;
-	if (!strcmp(kind, "t1cid"))
-		return CID;
-	return UNKNOWN;
-#endif
+    const char *kind = FT_Get_X11_Font_Format(face);
+    pdf_logfont("ft font format %s\n", kind);
+    if (!strcmp(kind, "TrueType"))
+	return TRUETYPE;
+    if (!strcmp(kind, "Type 1"))
+	return TYPE1;
+    if (!strcmp(kind, "CFF"))
+	return TYPE1;
+    if (!strcmp(kind, "CID Type 1"))
+	return TYPE1;
+    return UNKNOWN;
 }
 
 static inline int ftcidtogid(pdf_font *font, int cid)
