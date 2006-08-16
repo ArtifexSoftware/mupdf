@@ -22,14 +22,16 @@ void fz_cpudetect(void)
 
 #else
 
+#ifndef WIN32
 #include <signal.h> /* signal/sigaction */
 #include <setjmp.h> /* sigsetjmp/siglongjmp */
-
-#ifdef WIN32
-#define sigjmp_buf jmp_buf
-#define sigsetjmp(a,b) setjmp(a)
-#define siglongjmp longjmp
 #endif
+
+//#ifdef WIN32
+//#define sigjmp_buf jmp_buf
+//#define sigsetjmp(a,b) setjmp(a)
+//#define siglongjmp longjmp
+//#endif
 
 typedef struct {
 	void (*test)(void);
@@ -40,7 +42,7 @@ typedef struct {
 
 #if defined(ARCH_X86) || defined(ARCH_X86_64)
 
-/* need emms?? */
+#ifdef __GNUC__
 static void mmx(void)
 { __asm__ ("pand %mm0, %mm0\n\t"); }
 
@@ -56,12 +58,35 @@ static void sse(void)
 static void sse2(void)
 { __asm__ ("andpd %xmm0, %xmm0\n\t"); }
 
-/* static void sse3(void) */
-/* { __asm__ ("haddps %%xmm0, %%xmm0\n\t" : : : "%xmm0"); } */
+/*
+static void sse3(void)
+{ __asm__ ("haddps %%xmm0, %%xmm0\n\t" : : : "%xmm0"); }
+*/
+#else
+static void mmx(void)
+{ __asm pand mm0, mm0; }
+
+static void m3dnow(void)
+{ __asm pavgusb mm0, mm0; }
+
+static void mmxext(void) /* aka  Extended 3DNow! */
+{ __asm pmaxsw mm0, mm0; }
+
+static void sse(void)
+{ __asm andps xmm0, xmm0; }
+
+static void sse2(void)
+{ __asm andpd xmm0, xmm0; }
+#endif
+
 
 #ifdef ARCH_X86_64
 static void amd64(void)
+#ifdef __GNUC__
 { __asm__ ("and %rax, %rax\n\t"); }
+#else
+{ __asm and rax, rax; }
+#endif
 #endif
 
 
@@ -81,9 +106,21 @@ static const featuretest features[] = {
 
 
 #if defined(ARCH_SPARC)
-/* assembler must have -xarch=v8plusa passed to it (v9a for 64 bit binaries) */
 static void vis(void)
+/*
+Stupidly Sun assembler decides to mark anything using VIS instructions in the
+ELF header, which causes link errors if using the following (which also
+requires passing -xarch=v8plusa|v9a passed to the assembler so it accepts the
+instruction in the first place, v9a for 64 bit binaries):
+
 { __asm__ ("fand %f8, %f8, %f8\n\t"); }
+
+so instead we just emit the opcode directly, bypassing that check.
+*/
+{ __asm__ (".word 0x91B20E08"); }
+
+/* static void vis2(void)
+{ __asm__ ("edge8n %%l0, %%l0, %%l0\n\t" : : : "%l0"); } */
 
 static const featuretest features[] = {
 	{ vis, HAVE_VIS, "vis" }
@@ -103,21 +140,6 @@ static const featuretest features[] = {
 };
 
 #endif
-
-static sigjmp_buf jmpbuf;
-static volatile sig_atomic_t canjump;
-
-static void
-sigillhandler(int sig)
-{
-	if (!canjump) {
-		signal(sig, SIG_DFL);
-		raise(sig);
-	}
-
-	canjump = 0;
-	siglongjmp(jmpbuf, 1);
-}
 
 static int
 enabled(char *env, const char *ext)
@@ -156,6 +178,23 @@ dumpflags(void)
 	if (!n)
 		fputs(" none", stdout);
 	fputc('\n', stdout);
+}
+
+#ifndef WIN32
+
+static sigjmp_buf jmpbuf;
+static volatile sig_atomic_t canjump;
+
+static void
+sigillhandler(int sig)
+{
+	if (!canjump) {
+		signal(sig, SIG_DFL);
+		raise(sig);
+	}
+
+	canjump = 0;
+	siglongjmp(jmpbuf, 1);
 }
 
 void fz_cpudetect(void)
@@ -205,17 +244,70 @@ void fz_cpudetect(void)
 
 	fz_cpuflags = flags;
 
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
-        __asm__ __volatile__ ("emms\n\t");
+#if defined(ARCH_X86) || defined(ARCH_X86_64) 
+        __asm__ __volatile__ ("emms\n\t"); 
 #endif
 
 	dumpflags();
 }
 
+/*
 static __attribute__((constructor, used)) void fzcpudetect(void)
 {
 	fz_cpudetect();
 }
+*/
+
+
+#else /* WIN32 */
+
+void fz_cpudetect(void)
+{
+	static int hasrun = 0;
+
+	unsigned flags = 0;
+	int i;
+	char *env;
+
+	if (hasrun)
+		return;
+	hasrun = 1;
+
+	env = getenv("CPUACCEL");
+
+	for (i = 0; i < sizeof(features) / sizeof(featuretest); i++)
+	{
+		__try
+		{
+			features[i].test();
+		}
+		__except(EXCEPTION_EXECUTE_HANDLER)
+		{
+			/* test failed - disable feature */
+			flags &= ~features[i].flag;
+			continue;
+		}
+
+
+		/* if we got here the test succeeded */
+		if (enabled(env, features[i].name))
+			flags |= features[i].flag;
+		else
+			flags &= ~features[i].flag;
+	}
+
+	fz_cpuflags = flags;
+
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
+	if (flags & HAVE_MMX) {
+		__asm emms;
+	}
+#endif
+
+	dumpflags();
+}
+
 
 #endif
 
+#endif
