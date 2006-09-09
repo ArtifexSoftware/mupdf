@@ -10,14 +10,15 @@
 #define ID_ABOUT	0x1000
 #define ID_DOCINFO	0x1001
 
-static HWND hwnd = NULL;
+static HWND hwndframe = NULL;
+static HWND hwndview = NULL;
 static HDC hdc;
 static HBRUSH bgbrush;
 static HBRUSH shbrush;
 static BITMAPINFO *dibinf;
-static TCHAR szAppName[] = TEXT("Apparition");
 static HCURSOR arrowcurs, handcurs, waitcurs;
-static LRESULT CALLBACK windproc(HWND, UINT, WPARAM, LPARAM);
+static LRESULT CALLBACK frameproc(HWND, UINT, WPARAM, LPARAM);
+static LRESULT CALLBACK viewproc(HWND, UINT, WPARAM, LPARAM);
 
 static int bmpstride = 0;
 static char *bmpdata = NULL;
@@ -103,12 +104,12 @@ void associate(char *argv0)
 
 void winwarn(pdfapp_t *app, char *msg)
 {
-    MessageBoxA(hwnd, msg, "Apparition: Warning", MB_ICONWARNING);
+    MessageBoxA(hwndframe, msg, "Apparition: Warning", MB_ICONWARNING);
 }
 
 void winerror(pdfapp_t *app, char *msg)
 {
-    MessageBoxA(hwnd, msg, "Apparition: Error", MB_ICONERROR);
+    MessageBoxA(hwndframe, msg, "Apparition: Error", MB_ICONERROR);
     exit(1);
 }
 
@@ -118,7 +119,7 @@ int winfilename(char *buf, int len)
     strcpy(buf, "");
     memset(&ofn, 0, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner = hwnd;
+    ofn.hwndOwner = hwndframe;
     ofn.lpstrFile = buf;
     ofn.nMaxFile = len;
     ofn.lpstrInitialDir = NULL;
@@ -168,7 +169,7 @@ char *winpassword(pdfapp_t *app, char *filename)
     if (strlen(s) > 32)
 	strcpy(s + 30, "...");
     sprintf(pd_filename, "The file \"%s\" is encrypted.", s);
-    DialogBox(NULL, "IDD_DLOGPASS", hwnd, dlogpassproc);
+    DialogBox(NULL, "IDD_DLOGPASS", hwndframe, dlogpassproc);
     if (pd_okay)
 	return pd_password;
     return NULL;
@@ -250,7 +251,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void info()
 {
-    DialogBox(NULL, "IDD_DLOGINFO", hwnd, dloginfoproc);
+    DialogBox(NULL, "IDD_DLOGINFO", hwndframe, dloginfoproc);
 }
 
 INT CALLBACK
@@ -272,7 +273,7 @@ dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void help()
 {
-    DialogBox(NULL, "IDD_DLOGABOUT", hwnd, dlogaboutproc);
+    DialogBox(NULL, "IDD_DLOGABOUT", hwndframe, dlogaboutproc);
 }
 
 /*
@@ -285,17 +286,30 @@ void winopen()
     HMENU menu;
     RECT r;
 
-    /* Create and register window class */
-    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    wc.lpfnWndProc = windproc;
+    /* Create and register window frame class */
+    wc.style = 0;
+    wc.lpfnWndProc = frameproc;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = GetModuleHandle(NULL);
     wc.hIcon = LoadIcon(wc.hInstance, "IDI_ICONAPP");
     wc.hCursor = NULL; //LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = NULL;//(HBRUSH) GetStockObject(BLACK_BRUSH);
+    wc.hbrBackground = NULL;
     wc.lpszMenuName = NULL;
-    wc.lpszClassName = szAppName;
+    wc.lpszClassName = "FrameWindow";
+    assert(RegisterClass(&wc) && "Register window class");
+
+    /* Create and register window view class */
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = viewproc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hIcon = NULL;
+    wc.hCursor = NULL;
+    wc.hbrBackground = NULL;
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = "ViewWindow";
     assert(RegisterClass(&wc) && "Register window class");
 
     /* Get screen size */
@@ -326,11 +340,10 @@ void winopen()
     dibinf->bmiHeader.biClrUsed = 0;
 
     /* Create window */
-    hwnd = CreateWindow(szAppName, // window class name
+    hwndframe = CreateWindow("FrameWindow", // window class name
 	    NULL, // window caption
-	    WS_OVERLAPPEDWINDOW,
-	    5, //CW_USEDEFAULT, // initial x position
-	    5, //CW_USEDEFAULT, // initial y position
+	    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+	    CW_USEDEFAULT, CW_USEDEFAULT, // initial position
 	    300, // initial x size
 	    300, // initial y size
 	    NULL, // parent window handle
@@ -338,11 +351,21 @@ void winopen()
 	    0,//hInstance, // program instance handle
 	    NULL); // creation parameters
 
+    hwndview = CreateWindow("ViewWindow", // window class name
+	    NULL, // window caption
+	    WS_VISIBLE | WS_CHILD,
+	    CW_USEDEFAULT, CW_USEDEFAULT,
+	    CW_USEDEFAULT, CW_USEDEFAULT,
+	    hwndframe, // parent window handle
+	    NULL, // window menu handle
+	    0,//hInstance, // program instance handle
+	    NULL); // creation parameters
+
     hdc = NULL;
 
-    SetWindowTextA(hwnd, "Apparition");
+    SetWindowTextA(hwndframe, "Apparition");
 
-    menu = GetSystemMenu(hwnd, 0);
+    menu = GetSystemMenu(hwndframe, 0);
     AppendMenu(menu, MF_SEPARATOR, 0, NULL);
     AppendMenu(menu, MF_STRING, ID_ABOUT, "About Apparition...");
     AppendMenu(menu, MF_STRING, ID_DOCINFO, "Document Properties...");
@@ -375,7 +398,7 @@ void wintitle(pdfapp_t *app, char *title)
     }
     *dp = 0;
 
-    SetWindowTextW(hwnd, wide);
+    SetWindowTextW(hwndframe, wide);
 }
 
 void winconvert(pdfapp_t *app, fz_pixmap *image)
@@ -493,16 +516,16 @@ void winblit()
 
 void winresize(pdfapp_t *app, int w, int h)
 {
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    ShowWindow(hwndframe, SW_SHOWDEFAULT);
     w += GetSystemMetrics(SM_CXFRAME) * 2;
     h += GetSystemMetrics(SM_CYFRAME) * 2;
     h += GetSystemMetrics(SM_CYCAPTION);
-    SetWindowPos(hwnd, 0, 0, 0, w, h, SWP_NOZORDER | SWP_NOMOVE);
+    SetWindowPos(hwndframe, 0, 0, 0, w, h, SWP_NOZORDER | SWP_NOMOVE);
 }
 
 void winrepaint(pdfapp_t *app)
 {
-    InvalidateRect(hwnd, NULL, 0);
+    InvalidateRect(hwndview, NULL, 0);
 }
 
 /*
@@ -514,7 +537,7 @@ void windocopy(pdfapp_t *app)
     HGLOBAL handle;
     unsigned short *ucsbuf;
 
-    if (!OpenClipboard(hwnd))
+    if (!OpenClipboard(hwndframe))
 	return;
     EmptyClipboard();
 
@@ -537,12 +560,12 @@ void windocopy(pdfapp_t *app)
 
 void winopenuri(pdfapp_t *app, char *buf)
 {
-    ShellExecute(hwnd, "open", buf, 0, 0, SW_SHOWNORMAL);
+    ShellExecute(hwndframe, "open", buf, 0, 0, SW_SHOWNORMAL);
 }
 
 void handlekey(int c)
 {
-    if (GetCapture() == hwnd)
+    if (GetCapture() == hwndview)
 	return;
 
     if (justcopied)
@@ -581,7 +604,7 @@ void handlemouse(int x, int y, int btn, int state)
     }
 
     if (state == 1)
-	SetCapture(hwnd);
+	SetCapture(hwndview);
     if (state == -1)
 	ReleaseCapture();
 
@@ -589,7 +612,38 @@ void handlemouse(int x, int y, int btn, int state)
 }
 
 LRESULT CALLBACK
-windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch(message)
+    {
+    case WM_SETFOCUS:
+	PostMessage(hwnd, WM_APP+5, 0, 0);
+	return 0;
+    case WM_APP+5:
+	SetFocus(hwndview);
+	return 0;
+
+    case WM_SIZE:
+	{
+	    // More generally, you should use GetEffectiveClientRect
+	    // if you have a toolbar etc.
+	    RECT rect;
+	    GetClientRect(hwnd, &rect);
+	    MoveWindow(hwndview, rect.left, rect.top,
+		    rect.right-rect.left, rect.bottom-rect.top, TRUE);
+	}
+	return 0;
+
+    case WM_NOTIFY:
+    case WM_COMMAND:
+    case WM_SYSCOMMAND:
+	return SendMessage(hwndview, message, wParam, lParam);
+    }
+    return DefWindowProc(hwnd, message, wParam, lParam); 
+}
+
+LRESULT CALLBACK
+viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static int oldx = 0;
     static int oldy = 0;
@@ -598,11 +652,7 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-    case WM_CREATE:
-	return 0;
-
     case WM_DESTROY:
-    case WM_CLOSE:
 	PostQuitMessage(0);
 	return 0;
 
@@ -631,9 +681,9 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	gapp.shrinkwrap = 0;
 	return 0;
 
-	/* Paint events are low priority and automagically catenated
-	 * so we don't need to do any fancy waiting to defer repainting.
-	 */
+    /* Paint events are low priority and automagically catenated
+     * so we don't need to do any fancy waiting to defer repainting.
+     */
     case WM_PAINT:
 	{
 	    //puts("WM_PAINT");
@@ -645,20 +695,23 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    return 0;
 	}
 
-	/* Mouse events */
+    case WM_ERASEBKGND:
+	return 1; // well, we don't need to erase to redraw cleanly
+
+    /* Mouse events */
 
     case WM_LBUTTONDOWN:
-	SetFocus(hwnd);
+	SetFocus(hwndview);
 	oldx = x; oldy = y;
 	handlemouse(x, y, 1, 1);
 	return 0;
     case WM_MBUTTONDOWN:
-	SetFocus(hwnd);
+	SetFocus(hwndview);
 	oldx = x; oldy = y;
 	handlemouse(x, y, 2, 1);
 	return 0;
     case WM_RBUTTONDOWN:
-	SetFocus(hwnd);
+	SetFocus(hwndview);
 	oldx = x; oldy = y;
 	handlemouse(x, y, 3, 1);
 	return 0;
@@ -681,7 +734,7 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	handlemouse(x, y, 0, 0);
 	return 0;
 
-	/* Mouse wheel */
+    /* Mouse wheel */
     case WM_MOUSEWHEEL:
 	if ((signed short)HIWORD(wParam) > 0)
 	    handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'u');
@@ -689,7 +742,7 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'd');
 	return 0;
 
-	/* Keyboard events */
+    /* Keyboard events */
 
     case WM_KEYDOWN:
 	/* only handle special keys */
@@ -709,7 +762,7 @@ windproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return 1;
 
-	/* unicode encoded chars, including escape, backspace etc... */
+    /* unicode encoded chars, including escape, backspace etc... */
     case WM_CHAR:
 	handlekey(wParam);
 	handlemouse(oldx, oldy, 0, 0);	/* update cursor */
