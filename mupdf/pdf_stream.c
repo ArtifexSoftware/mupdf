@@ -232,15 +232,17 @@ pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj)
 	filters = fz_dictgetsa(stmobj, "Filter", "F");
 	params = fz_dictgetsa(stmobj, "DecodeParms", "DP");
 
+	*filterp = nil;
+
 	if (filters)
 	{
 		if (fz_isname(filters))
 			return buildonefilter(filterp, filters, params);
-		else
+		else if (fz_arraylen(filters) > 0)
 			return buildfilterchain(filterp, nil, filters, params);
 	}
-	else
-		return fz_newnullfilter(filterp, -1);
+
+	/* uh oh, no filter */
 
 	return nil;
 }

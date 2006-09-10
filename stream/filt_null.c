@@ -30,7 +30,9 @@ fz_processnullfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	fz_nullfilter *f = (fz_nullfilter*)filter;
 	int n;
 
-	n = MIN(MIN(in->wp - in->rp, out->ep - out->wp), f->len - f->cur);
+	n = MIN(in->wp - in->rp, out->ep - out->wp);
+	if (f->len >= 0)
+	    n = MIN(n, f->len - f->cur);
 
 	if (n) {
 		memcpy(out->wp, in->rp, n);

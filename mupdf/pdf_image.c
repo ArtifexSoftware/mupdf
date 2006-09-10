@@ -131,6 +131,9 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		if (error)
 			return error;
 
+		if (filter == nil)
+		    goto thereisnofilter;
+
 		error = fz_openrfilter(&tempfile, filter, file);
 		if (error)
 			return error;
@@ -144,6 +147,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	}
 	else
 	{
+thereisnofilter:
 		error = fz_newbuffer(&img->samples, img->super.h * img->stride);
 		if (error)
 			return error;
