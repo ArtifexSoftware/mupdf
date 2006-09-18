@@ -346,20 +346,17 @@ void winopen()
 	    CW_USEDEFAULT, CW_USEDEFAULT, // initial position
 	    300, // initial x size
 	    300, // initial y size
-	    NULL, // parent window handle
-	    NULL, // window menu handle
-	    0,//hInstance, // program instance handle
-	    NULL); // creation parameters
+	    0, // parent window handle
+	    0, // window menu handle
+	    0, // program instance handle
+	    0); // creation parameters
 
     hwndview = CreateWindow("ViewWindow", // window class name
-	    NULL, // window caption
+	    NULL,
 	    WS_VISIBLE | WS_CHILD,
 	    CW_USEDEFAULT, CW_USEDEFAULT,
 	    CW_USEDEFAULT, CW_USEDEFAULT,
-	    hwndframe, // parent window handle
-	    NULL, // window menu handle
-	    0,//hInstance, // program instance handle
-	    NULL); // creation parameters
+	    hwndframe, 0, 0, 0);
 
     hdc = NULL;
 
@@ -623,35 +620,6 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	SetFocus(hwndview);
 	return 0;
 
-    case WM_SIZE:
-	{
-	    // More generally, you should use GetEffectiveClientRect
-	    // if you have a toolbar etc.
-	    RECT rect;
-	    GetClientRect(hwnd, &rect);
-	    MoveWindow(hwndview, rect.left, rect.top,
-		    rect.right-rect.left, rect.bottom-rect.top, TRUE);
-	}
-	return 0;
-
-    case WM_NOTIFY:
-    case WM_COMMAND:
-    case WM_SYSCOMMAND:
-	return SendMessage(hwndview, message, wParam, lParam);
-    }
-    return DefWindowProc(hwnd, message, wParam, lParam); 
-}
-
-LRESULT CALLBACK
-viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    static int oldx = 0;
-    static int oldy = 0;
-    int x = (signed short) LOWORD(lParam);
-    int y = (signed short) HIWORD(lParam);
-
-    switch (message)
-    {
     case WM_DESTROY:
 	PostQuitMessage(0);
 	return 0;
@@ -670,16 +638,45 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	break;
 
     case WM_SIZE:
+	{
+	    // More generally, you should use GetEffectiveClientRect
+	    // if you have a toolbar etc.
+	    RECT rect;
+	    GetClientRect(hwnd, &rect);
+	    MoveWindow(hwndview, rect.left, rect.top,
+		    rect.right-rect.left, rect.bottom-rect.top, TRUE);
+	}
+	return 0;
+
+    case WM_SIZING:
+	gapp.shrinkwrap = 0;
+	break;
+
+    case WM_NOTIFY:
+    case WM_COMMAND:
+	return SendMessage(hwndview, message, wParam, lParam);
+    }
+
+    return DefWindowProc(hwnd, message, wParam, lParam); 
+}
+
+LRESULT CALLBACK
+viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static int oldx = 0;
+    static int oldy = 0;
+    int x = (signed short) LOWORD(lParam);
+    int y = (signed short) HIWORD(lParam);
+
+    switch (message)
+    {
+    case WM_SIZE:
 	if (wParam == SIZE_MINIMIZED)
 	    return 0;
 	if (wParam == SIZE_MAXIMIZED)
 	    gapp.shrinkwrap = 0;
 	pdfapp_onresize(&gapp, LOWORD(lParam), HIWORD(lParam));
-	return 0;
-
-    case WM_SIZING:
-	gapp.shrinkwrap = 0;
-	return 0;
+	break;
 
     /* Paint events are low priority and automagically catenated
      * so we don't need to do any fancy waiting to defer repainting.
