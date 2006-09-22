@@ -15,6 +15,17 @@ struct fmt
 
 static void fmtobj(struct fmt *fmt, fz_obj *obj);
 
+static inline int iswhite(int ch)
+{
+	return
+		ch == '\000' ||
+		ch == '\011' ||
+		ch == '\012' ||
+		ch == '\014' ||
+		ch == '\015' ||
+		ch == '\040';
+}
+
 static inline int isdelim(int ch)
 {
 	return  ch == '(' || ch == ')' ||
@@ -116,6 +127,30 @@ static void fmthex(struct fmt *fmt, fz_obj *obj)
 		fmtputc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
 	}
 	fmtputc(fmt, '>');
+}
+
+static void fmtname(struct fmt *fmt, fz_obj *obj)
+{
+	char *s = fz_toname(obj);
+	int i, c;
+
+	fmtputc(fmt, '/');
+
+	for (i = 0; s[i]; i++)
+	{
+		if (isdelim(s[i]) || iswhite(s[i]))
+		{
+			fmtputc(fmt, '#');
+			c = (s[i] >> 4) & 0xf;
+			fmtputc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+			c = s[i] & 0xf;
+			fmtputc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+		}
+		else
+		{
+			fmtputc(fmt, s[i]);
+		}
+	}
 }
 
 static void fmtarray(struct fmt *fmt, fz_obj *obj)
@@ -231,8 +266,7 @@ static void fmtobj(struct fmt *fmt, fz_obj *obj)
 		}
 		break;
 	case FZ_NAME:
-		sprintf(buf, "/%s", fz_toname(obj));
-		fmtputs(fmt, buf);
+		fmtname(fmt, obj);
 		break;
 	case FZ_ARRAY:
 		fmtarray(fmt, obj);
