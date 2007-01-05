@@ -161,6 +161,12 @@ pdf_decryptxref(pdf_xref *xref)
 		if (error)
 			return error;
 
+		if (fz_isnull(encrypt))
+		{
+			fz_dropobj(encrypt);
+			return nil;
+		}
+
 		error = pdf_resolve(&id, xref);
 		if (error)
 		{
