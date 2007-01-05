@@ -454,12 +454,14 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 		return error;
 
 	n = fz_readall(bufp, stm);
+	if (n < 0)
+		error = fz_ioerror(stm);
+	else
+		error = nil;
 
 	fz_dropstream(stm);
 
-	if (n < 0)
-		return fz_ioerror(stm);
-	return nil;
+	return error;
 }
 
 /*
@@ -477,11 +479,13 @@ pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 		return error;
 
 	n = fz_readall(bufp, stm);
+	if (n < 0)
+		error = fz_ioerror(stm);
+	else
+		error = nil;
 
 	fz_dropstream(stm);
 
-	if (n < 0)
-		return fz_ioerror(stm);
-	return nil;
+	return error;
 }
 
