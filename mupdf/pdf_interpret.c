@@ -481,16 +481,18 @@ Lsetcolorspace:
 			fz_shade *shd;
 			fz_obj *dict;
 			fz_obj *obj;
+			int kind;
 
 			what = PDF_MSTROKE;
 
 Lsetcolor:
 			mat = what == PDF_MSTROKE ? &gstate->stroke : &gstate->fill;
 
+			kind = mat->kind;
 			if (fz_isname(csi->stack[csi->top - 1]))
-				mat->kind = PDF_MPATTERN;
+				kind = PDF_MPATTERN;
 
-			switch (mat->kind)
+			switch (kind)
 			{
 			case PDF_MNONE:
 				return fz_throw("syntaxerror: cannot set color in mask objects");
