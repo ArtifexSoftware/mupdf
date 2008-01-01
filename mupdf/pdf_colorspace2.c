@@ -166,7 +166,7 @@ void pdf_convcolor(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv)
 			float c = 1.0 - sv[1];
 			float m = 1.0 - sv[2];
 			float y = 1.0 - sv[3];
-			float k = MIN(c, MIN(y, k));
+			float k = MIN(c, MIN(m, y));
 			dv[0] = c - k;
 			dv[1] = m - k;
 			dv[2] = y - k;
