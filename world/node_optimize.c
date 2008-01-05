@@ -303,8 +303,6 @@ static fz_error *clean1x1(fz_node *node)
 fz_error *
 fz_optimizetree(fz_tree *tree)
 {
-	if (getenv("DONTOPT"))
-		return nil;
 	cleanwhite(tree->root);
 	cleanovers(tree->root);
 	cleanmasks(tree->root);
