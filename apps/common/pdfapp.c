@@ -2,6 +2,13 @@
 #include <mupdf.h>
 #include "pdfapp.h"
 
+enum panning
+{
+	DONT_PAN = 0,
+	PAN_TO_TOP,
+	PAN_TO_BOTTOM,
+};
+
 void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage);
 
 void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
@@ -354,7 +361,7 @@ void pdfapp_onresize(pdfapp_t *app, int w, int h)
 void pdfapp_onkey(pdfapp_t *app, int c)
 {
 	int oldpage = app->pageno;
-	int panto = 0; /* 0 = top, 1 = bottom, 2 = leave alone */
+	enum panning panto = PAN_TO_TOP;
 
 	/*
 	 * Save numbers typed for later
@@ -471,17 +478,17 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 */
 
 	case 'p':
-		panto = 2;
+		panto = DONT_PAN;
 		app->pageno--;
 		break;
 
 	case 'b': case '\b':
-		panto = 1;
+		panto = PAN_TO_BOTTOM;
 		app->pageno--;
 		break;
 
 	case 'n':
-		panto = 2;
+		panto = DONT_PAN;
 	case 'f': case ' ':
 		app->pageno++;
 		break;
@@ -504,9 +511,9 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	{
 		switch (panto)
 		{
-		case 0: app->pany = 0; break;
-		case 1: app->pany = -2000; break;
-		case 2: break;
+		case PAN_TO_TOP:	app->pany = 0; break;
+		case PAN_TO_BOTTOM:	app->pany = -2000; break;
+		case DONT_PAN:		break;
 		}
 		pdfapp_showpage(app, 1, 1);
 	}
