@@ -478,28 +478,21 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 */
 
 	case 'p':
-		panto = DONT_PAN;
-		app->pageno--;
-		break;
-
-	case 'b': case '\b':
-		panto = PAN_TO_BOTTOM;
-		app->pageno--;
-		break;
-
+		panto = DONT_PAN;	app->pageno--; break;
 	case 'n':
-		panto = DONT_PAN;
-	case 'f': case ' ':
-		app->pageno++;
-		break;
+		panto = DONT_PAN;	app->pageno++; break;
+
+	case 'b':
+	case '\b':
+		panto = PAN_TO_BOTTOM;	app->pageno--; break;
+	case 'f':
+	case ' ':
+		panto = PAN_TO_TOP;	app->pageno++; break;
 
 	case 'B':
-		app->pageno -= 10;
-		break;
-
+		panto = PAN_TO_TOP;	app->pageno -= 10; break;
 	case 'F':
-		app->pageno += 10;
-		break;
+		panto = PAN_TO_TOP;	app->pageno += 10; break;
 	}
 
 	if (app->pageno < 1)
