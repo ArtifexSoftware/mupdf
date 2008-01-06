@@ -129,7 +129,7 @@ void winopen(void)
 	{
 		hints->flags = IconPixmapHint;
 		hints->icon_pixmap = XCreateBitmapFromData(xdpy, xwin,
-				gs_l_xbm_bits, gs_l_xbm_width, gs_l_xbm_height);
+				(char *) gs_l_xbm_bits, gs_l_xbm_width, gs_l_xbm_height);
 		if (hints->icon_pixmap)
 		{
 			XSetWMHints(xdpy, xwin, hints);
@@ -209,7 +209,7 @@ static void fillrect(int x, int y, int w, int h)
 
 static void invertcopyrect()
 {
-	unsigned t, *p;
+	unsigned *p;
 	int x, y;
 
 	int x0 = gapp.selr.x0 - gapp.panx;
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
 	char *filename;
 	int c;
 	int len;
-	unsigned char buf[128];
+	char buf[128];
 	KeySym keysym;
 	int oldx = 0;
 	int oldy = 0;
