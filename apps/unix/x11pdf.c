@@ -10,6 +10,11 @@
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
 
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 extern int ximage_init(Display *display, int screen, Visual *visual);
 extern int ximage_get_depth(void);
 extern Visual *ximage_get_visual(void);
@@ -22,6 +27,7 @@ static Display *xdpy;
 static Atom XA_TARGETS;
 static Atom XA_TIMESTAMP;
 static Atom XA_UTF8_STRING;
+static int x11fd;
 static int xscr;
 static Window xwin;
 static GC xgc;
@@ -29,6 +35,7 @@ static XEvent xevt;
 static int mapped = 0;
 static Cursor xcarrow, xchand, xcwait;
 static int justcopied = 0;
+static int isshowingpage = 0;
 static int dirty = 0;
 static char *password = "";
 static XColor xbgcolor;
@@ -129,6 +136,8 @@ void winopen(void)
 		}
 		XFree(hints);
 	}
+
+	x11fd = ConnectionNumber(xdpy);
 }
 
 void wincursor(pdfapp_t *app, int curs)
@@ -263,6 +272,26 @@ void winrepaint(pdfapp_t *app)
 	dirty = 1;
 }
 
+void windrawstring(pdfapp_t *app, char *s, int x, int y)
+{
+	int prevfunction;
+	XGCValues xgcv;
+
+	XGetGCValues(xdpy, xgc, GCFunction, &xgcv);
+	prevfunction = xgcv.function;
+	xgcv.function = GXxor;
+	XChangeGC(xdpy, xgc, GCFunction, &xgcv);
+
+	XSetForeground(xdpy, xgc, WhitePixel(xdpy, DefaultScreen(xdpy)));
+
+	XDrawString(xdpy, xwin, xgc, x, y, s, strlen(s));
+	XFlush(xdpy);
+
+	XGetGCValues(xdpy, xgc, GCFunction, &xgcv);
+	xgcv.function = prevfunction;
+	XChangeGC(xdpy, xgc, GCFunction, &xgcv);
+}
+
 void windocopy(pdfapp_t *app)
 {
 	unsigned short copyucs2[16 * 1024];
@@ -369,10 +398,22 @@ void onkey(int c)
 		winrepaint(&gapp);
 	}
 
-	if (c == 'q')
-		exit(0);
+	if (c == 'P')
+	{
+		char s[100];
 
-	pdfapp_onkey(&gapp, c);
+		int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno,
+				pdf_getpagecount(gapp.pages));
+		if (ret >= 0)
+		{
+			isshowingpage = 1;
+			windrawstring(&gapp, s, 10, 20);
+		}
+	}
+	else if (c == 'q')
+		exit(0);
+	else
+		pdfapp_onkey(&gapp, c);
 }
 
 void onmouse(int x, int y, int btn, int modifiers, int state)
@@ -392,6 +433,48 @@ void usage(void)
 	exit(1);
 }
 
+void winawaitevent(struct timeval *tmo, struct timeval *tmo_at)
+{
+	if (tmo_at->tv_sec == 0 && tmo_at->tv_usec == 0 &&
+		tmo->tv_sec == 0 && tmo->tv_usec == 0)
+		XNextEvent(xdpy, &xevt);
+	else
+	{
+		fd_set fds;
+		struct timeval now;
+
+		FD_ZERO(&fds);
+		FD_SET(x11fd, &fds);
+
+		if (select(x11fd + 1, &fds, 0, 0, tmo))
+		{
+			gettimeofday(&now, 0);
+			timersub(tmo_at, &now, tmo);
+			XNextEvent(xdpy, &xevt);
+		}
+	}
+}
+
+void winsettmo(struct timeval *tmo, struct timeval *tmo_at)
+{
+	struct timeval now;
+
+	tmo->tv_sec = 2;
+	tmo->tv_usec = 0;
+
+	gettimeofday(&now, 0);
+	timeradd(&now, tmo, tmo_at);
+}
+
+void winresettmo(struct timeval *tmo, struct timeval *tmo_at)
+{
+	tmo->tv_sec = 0;
+	tmo->tv_usec = 0;
+
+	tmo_at->tv_sec = 0;
+	tmo_at->tv_usec = 0;
+}
+
 int main(int argc, char **argv)
 {
 	char *filename;
@@ -403,6 +486,8 @@ int main(int argc, char **argv)
 	int oldy = 0;
 	double zoom = 1.0;
 	int pageno = 1;
+	int wasshowingpage;
+	struct timeval tmo, tmo_at;
 
 	while ((c = getopt(argc, argv, "d:z:p:")) != -1)
 	{
@@ -433,11 +518,23 @@ int main(int argc, char **argv)
 
 	pdfapp_open(&gapp, filename);
 
+	winresettmo(&tmo, &tmo_at);
+
 	while (1)
 	{
 		do
 		{
-			XNextEvent(xdpy, &xevt);
+			winawaitevent(&tmo, &tmo_at);
+
+			if (tmo_at.tv_sec != 0 && tmo_at.tv_usec != 0 &&
+				tmo.tv_sec == 0 && tmo.tv_usec == 0)
+			{
+				// redraw page
+                                winblit(&gapp);
+				isshowingpage = 0;
+				winresettmo(&tmo, &tmo_at);
+				continue;
+			}
 
 			switch (xevt.type)
 			{
@@ -458,6 +555,8 @@ int main(int argc, char **argv)
 				break;
 
 			case KeyPress:
+				wasshowingpage = isshowingpage;
+
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, 0);
 				if (len)
 					onkey(buf[0]);
@@ -467,7 +566,15 @@ int main(int argc, char **argv)
 				{
 					winblit(&gapp);
 					dirty = 0;
+					if (isshowingpage)
+					{
+						isshowingpage = 0;
+						winresettmo(&tmo, &tmo_at);
+					}
 				}
+
+				if (!wasshowingpage && isshowingpage)
+					winsettmo(&tmo, &tmo_at);
 
 				break;
 
@@ -501,6 +608,11 @@ int main(int argc, char **argv)
 		{
 			winblit(&gapp);
 			dirty = 0;
+			if (isshowingpage)
+			{
+				isshowingpage = 0;
+				winresettmo(&tmo, &tmo_at);
+			}
 		}
 	}
 
