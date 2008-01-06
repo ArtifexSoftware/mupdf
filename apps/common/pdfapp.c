@@ -380,7 +380,8 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 * Zoom and rotate
 	 */
 
-	case '+': case '=':
+	case '+':
+	case '=':
 		app->zoom += 0.1;
 		if (app->zoom > 3.0)
 			app->zoom = 3.0;
@@ -392,11 +393,13 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->zoom = 0.1;
 		pdfapp_showpage(app, 0, 1);
 		break;
-	case 'l': case '<':
+	case 'l':
+	case '<':
 		app->rotate -= 90;
 		pdfapp_showpage(app, 0, 1);
 		break;
-	case 'r': case '>':
+	case 'r':
+	case '>':
 		app->rotate += 90;
 		pdfapp_showpage(app, 0, 1);
 		break;
