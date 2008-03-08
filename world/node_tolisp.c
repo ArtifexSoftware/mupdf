@@ -49,7 +49,7 @@ static void lispblend(fz_blendnode *node, int level)
 {
 	fz_node *child;
 	indent(level);
-	printf("(blend-%d\n", node->mode);
+	printf("(blend-%d %d\n", node->mode, node->cs->refs);
 	for (child = node->super.first; child; child = child->next)
 		lispnode(child, level + 1);
 	indent(level);
@@ -75,13 +75,13 @@ static void lispcolor(fz_colornode *node, int level)
 	printf("(color %s ", node->cs->name);
 	for (i = 0; i < node->n; i++)
 		printf("%g ", node->samples[i]);
-	printf(")\n");
+	printf(" %d)\n", node->cs->refs);
 }
 
 static void lisplink(fz_linknode *node, int level)
 {
 	indent(level);
-	printf("(link %p)\n", node->tree);
+	printf("(link %p %d)\n", node->tree, node->tree->refs);
 }
 
 static void lisppath(fz_pathnode *node, int level)
@@ -144,13 +144,13 @@ static void lispimage(fz_imagenode *node, int level)
 {
 	fz_image *image = node->image;
 	indent(level);
-	printf("(image %dx%d %d+%d)\n", image->w, image->h, image->n, image->a);
+	printf("(image %dx%d %d+%d %d)\n", image->w, image->h, image->n, image->a, image->refs);
 }
 
 static void lispshade(fz_shadenode *node, int level)
 {
 	indent(level);
-	printf("(shade)\n");
+	printf("(shade %d)\n", node->shade->refs);
 }
 
 static void lispnode(fz_node *node, int level)
