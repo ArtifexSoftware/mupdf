@@ -389,7 +389,7 @@ ximage_blit(Drawable d, GC gc,
 				(ax + srcx) * 4;
 
 			info.convert_func(srcptr, srcstride,
-					  image->data,
+					  (unsigned char *) image->data,
 					  image->bytes_per_line, w, h);
 
 			if (info.useshm)

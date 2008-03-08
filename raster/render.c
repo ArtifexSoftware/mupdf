@@ -792,6 +792,8 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 		return rendernode(gc, ((fz_linknode*)node)->tree->root, ctm);
 	case FZ_NMETA:
 		return rendernode(gc, node->first, ctm);
+        case FZ_NBLEND:
+                return nil;
 	}
 
 	return nil;

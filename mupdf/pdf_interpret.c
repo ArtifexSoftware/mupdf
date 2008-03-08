@@ -210,7 +210,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 {
 	fz_error *error;
 	pdf_image *img;
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 
@@ -219,7 +219,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 		return error;
 
 	token = pdf_lex(file, buf, sizeof buf, &len);
-	if (token != PDF_TKEYWORD || strcmp("EI", buf))
+	if (token != PDF_TKEYWORD || memcmp("EI", buf, 2))
 		fz_warn("syntaxerror: corrupt inline image");
 
 	error = pdf_showimage(csi, img);
@@ -1101,7 +1101,7 @@ fz_error *
 pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
 	fz_error *error;
-	char buf[65536];
+	unsigned char buf[65536];
 	int token, len;
 	fz_obj *obj;
 
@@ -1122,7 +1122,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			}
 			else if (token == PDF_TINT || token == PDF_TREAL)
 			{
-				error = fz_newreal(&obj, atof(buf));
+				error = fz_newreal(&obj, atof((char *) buf));
 				if (error) return error;
 				error = fz_arraypush(csi->array, obj);
 				fz_dropobj(obj);
@@ -1130,7 +1130,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			}
 			else if (token == PDF_TSTRING)
 			{
-				error = fz_newstring(&obj, buf, len);
+				error = fz_newstring(&obj, (char *) buf, len);
 				if (error) return error;
 				error = fz_arraypush(csi->array, obj);
 				fz_dropobj(obj);
@@ -1159,31 +1159,31 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			break;
 
 		case PDF_TODICT:
-			error = pdf_parsedict(&csi->stack[csi->top], file, buf, sizeof buf);
+			error = pdf_parsedict(&csi->stack[csi->top], file, (char *) buf, sizeof buf);
 			if (error) return error;
 			csi->top ++;
 			break;
 
 		case PDF_TNAME:
-			error = fz_newname(&csi->stack[csi->top], buf);
+			error = fz_newname(&csi->stack[csi->top], (char *) buf);
 			if (error) return error;
 			csi->top ++;
 			break;
 
 		case PDF_TINT:
-			error = fz_newint(&csi->stack[csi->top], atoi(buf));
+			error = fz_newint(&csi->stack[csi->top], atoi((char *) buf));
 			if (error) return error;
 			csi->top ++;
 			break;
 
 		case PDF_TREAL:
-			error = fz_newreal(&csi->stack[csi->top], atof(buf));
+			error = fz_newreal(&csi->stack[csi->top], atof((char *) buf));
 			if (error) return error;
 			csi->top ++;
 			break;
 
 		case PDF_TSTRING:
-			error = fz_newstring(&csi->stack[csi->top], buf, len);
+			error = fz_newstring(&csi->stack[csi->top], (char *) buf, len);
 			if (error) return error;
 			csi->top ++;
 			break;
@@ -1207,11 +1207,11 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			break;
 
 		case PDF_TKEYWORD:
-			if (!strcmp(buf, "BI"))
+			if (!strcmp((char *) buf, "BI"))
 			{
 				fz_obj *obj;
 
-				error = pdf_parsedict(&obj, file, buf, sizeof buf);
+				error = pdf_parsedict(&obj, file, (char *) buf, sizeof buf);
 				if (error)
 					return error;
 
@@ -1225,7 +1225,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			}
 			else
 			{
-				error = runkeyword(csi, xref, rdb, buf);
+				error = runkeyword(csi, xref, rdb, (char *) buf);
 				if (error) return error;
 				clearstack(csi);
 			}

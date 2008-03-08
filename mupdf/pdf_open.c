@@ -47,7 +47,7 @@ readstartxref(pdf_xref *xref)
 	if (t == -1)
 		return fz_ioerror(xref->file);
 
-	n = fz_read(xref->file, buf, sizeof buf);
+	n = fz_read(xref->file, (unsigned char *) buf, sizeof buf);
 	if (n == -1)
 		return fz_ioerror(xref->file);
 
@@ -112,11 +112,11 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 			return fz_ioerror(xref->file);
 	}
 
-	t = pdf_lex(xref->file, buf, cap, &n);
+	t = pdf_lex(xref->file, (unsigned char *) buf, cap, &n);
 	if (t != PDF_TTRAILER)
 		return fz_throw("syntaxerror: expected trailer");
 
-	t = pdf_lex(xref->file, buf, cap, &n);
+	t = pdf_lex(xref->file, (unsigned char *) buf, cap, &n);
 	if (t != PDF_TODICT)
 		return fz_throw("syntaxerror: expected trailer dictionary");
 
@@ -192,7 +192,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 		for (i = 0; i < len; i++)
 		{
-			n = fz_read(xref->file, buf, 20);
+			n = fz_read(xref->file, (unsigned char *) buf, 20);
 			if (n < 0)
 				return fz_ioerror(xref->file);
 			if (n != 20)
@@ -207,10 +207,10 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		}
 	}
 
-	t = pdf_lex(xref->file, buf, cap, &n);
+	t = pdf_lex(xref->file, (unsigned char *) buf, cap, &n);
 	if (t != PDF_TTRAILER)
 		return fz_throw("syntaxerror: expected trailer");
-	t = pdf_lex(xref->file, buf, cap, &n);
+	t = pdf_lex(xref->file, (unsigned char *) buf, cap, &n);
 	if (t != PDF_TODICT)
 		return fz_throw("syntaxerror: expected trailer dictionary");
 
@@ -418,7 +418,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 
 	for (i = 0; i < count; i++)
 	{
-		t = pdf_lex(stm, buf, cap, &n);
+		t = pdf_lex(stm, (unsigned char *) buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");
@@ -426,7 +426,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 		}
 		oidbuf[i] = atoi(buf);
 
-		t = pdf_lex(stm, buf, cap, &n);
+		t = pdf_lex(stm, (unsigned char *) buf, cap, &n);
 		if (t != PDF_TINT)
 		{
 			error = fz_throw("syntaxerror: corrupt object stream");

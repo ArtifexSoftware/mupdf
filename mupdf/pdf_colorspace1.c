@@ -624,7 +624,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 		pdf_logrsrc("string lookup\n");
 
-		buf = fz_tostrbuf(lookup);
+		buf = (unsigned char *) fz_tostrbuf(lookup);
 		for (i = 0; i < n; i++)
 			cs->lookup[i] = buf[i];
 	}

@@ -29,7 +29,7 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 	*isroot = 0;
 	*isinfo = 0;
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 	if (tok == PDF_TODICT)
 	{
 		error = pdf_parsedict(&dict, file, buf, cap);
@@ -57,7 +57,7 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 			tok != PDF_TENDOBJ &&
 			tok != PDF_TERROR &&
 			tok != PDF_TEOF )
-		tok = pdf_lex(file, buf, cap, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 	if (tok == PDF_TSTREAM)
 	{
@@ -74,13 +74,13 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 		if (fz_isint(length))
 		{
 			fz_seek(file, *stmofs + fz_toint(length), 0);
-			tok = pdf_lex(file, buf, cap, &len);
+			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 			if (tok == PDF_TENDSTREAM)
 				goto atobjend;
 			fz_seek(file, *stmofs, 0);
 		}
 
-		fz_read(file, buf, 9);
+		fz_read(file, (unsigned char *) buf, 9);
 		while (memcmp(buf, "endstream", 9) != 0)
 		{
 			c = fz_readbyte(file);
@@ -93,7 +93,7 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 		*stmlen = fz_tell(file) - *stmofs - 9;
 
 atobjend:
-		tok = pdf_lex(file, buf, cap, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 		if (tok == PDF_TENDOBJ)
 			;
 	}
@@ -147,7 +147,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	{
 		tmpofs = fz_tell(file);
 
-		tok = pdf_lex(file, buf, sizeof buf, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, sizeof buf, &len);
 		if (tok == PDF_TINT)
 		{
 			oidofs = genofs;

@@ -229,7 +229,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 		}
 	}
 
-	error == remaprefs(newp, root, map, n);
+	error = remaprefs(newp, root, map, n);
 	if (error)
 		goto cleanup;
 

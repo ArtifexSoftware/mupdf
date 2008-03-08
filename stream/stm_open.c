@@ -205,7 +205,7 @@ fz_error * fz_openwbuffer(fz_stream **stmp, fz_buffer *buf)
 	return openbuffer(stmp, buf, FZ_SWRITE);
 }
 
-fz_error * fz_openrmemory(fz_stream **stmp, char *mem, int len)
+fz_error * fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len)
 {
 	fz_error *error;
 	fz_buffer *buf;

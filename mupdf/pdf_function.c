@@ -361,7 +361,7 @@ static fz_error *
 parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 {
 	fz_error *error = nil;
-	char buf[64];
+	unsigned char buf[64];
 	int buflen = sizeof(buf) / sizeof(buf[0]);
 	int len;
 	int token;
@@ -382,14 +382,14 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 		case PDF_TINT:
 			resizecode(func, *codeptr);
 			func->u.p.code[*codeptr].type = PSINT;
-			func->u.p.code[*codeptr].u.i = atoi(buf);
+			func->u.p.code[*codeptr].u.i = atoi((char *) buf);
 			++*codeptr;
 			break;
 
 		case PDF_TREAL:
 			resizecode(func, *codeptr);
 			func->u.p.code[*codeptr].type = PSREAL;
-			func->u.p.code[*codeptr].u.f = atof(buf);
+			func->u.p.code[*codeptr].u.f = atof((char *) buf);
 			++*codeptr;
 			break;
 
@@ -417,7 +417,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 				elseptr = -1;
 
 			if (token == PDF_TKEYWORD) {
-				if (!strcmp(buf, "if")) {
+				if (!strcmp((char *) buf, "if")) {
 					if (elseptr >= 0)
 						goto cleanup;
 					func->u.p.code[opptr].type = PSOPERATOR;
@@ -425,7 +425,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 					func->u.p.code[opptr+2].type = PSBLOCK;
 					func->u.p.code[opptr+2].u.block = *codeptr;
 				}
-				else if (!strcmp(buf, "ifelse")) {
+				else if (!strcmp((char *) buf, "ifelse")) {
 					if (elseptr < 0)
 						goto cleanup;
 					func->u.p.code[opptr].type = PSOPERATOR;
@@ -455,7 +455,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 			/* invariant: psopnames[a] < op < psopnames[b] */
 			while (b - a > 1) {
 				mid = (a + b) / 2;
-				cmp = strcmp(buf, psopnames[mid]);
+				cmp = strcmp((char *) buf, psopnames[mid]);
 				if (cmp > 0) {
 					a = mid;
 				} else if (cmp < 0) {

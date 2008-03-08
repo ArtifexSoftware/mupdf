@@ -580,23 +580,23 @@ static int codefromstring(unsigned char *buf, int len)
 	return a;
 }
 
-static int mylex(fz_stream *file, char *buf, int n, int *sl)
+static int mylex(fz_stream *file, unsigned char *buf, int n, int *sl)
 {
-	int token = pdf_lex(file, buf, n, sl);
+	int token = pdf_lex(file, (unsigned char *) buf, n, sl);
 	if (token == PDF_TKEYWORD)
-		token = tokenfromkeyword(buf);
+		token = tokenfromkeyword((char *) buf);
 	return token;
 }
 
 static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 
 	token = mylex(file, buf, sizeof buf, &len);
 	if (token == PDF_TNAME) {
-		strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
+		strlcpy(cmap->cmapname, (char *) buf, sizeof(cmap->cmapname));
 		return nil;
 	}
 
@@ -605,13 +605,13 @@ static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
 
 static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 
 	token = mylex(file, buf, sizeof buf, &len);
 	if (token == PDF_TINT) {
-		pdf_setwmode(cmap, atoi(buf));
+		pdf_setwmode(cmap, atoi((char *) buf));
 		return nil;
 	}
 
@@ -620,7 +620,7 @@ static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
 
 static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -655,7 +655,7 @@ static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 
 static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -683,7 +683,7 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 		if (token != PDF_TINT)
 			goto cleanup;
 
-		dst = atoi(buf);
+		dst = atoi((char *) buf);
 
 		error = pdf_maprangetorange(cmap, lo, hi, dst);
 		if (error)
@@ -696,7 +696,7 @@ cleanup:
 
 static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -718,7 +718,7 @@ static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
 		if (token != PDF_TINT)
 			goto cleanup;
 
-		dst = atoi(buf);
+		dst = atoi((char *) buf);
 
 		error = pdf_maprangetorange(cmap, src, src, dst);
 		if (error)
@@ -731,7 +731,7 @@ cleanup:
 
 static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -765,7 +765,7 @@ static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int 
 
 static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -841,7 +841,7 @@ cleanup:
 
 static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
 {
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 	fz_error *error;
@@ -887,7 +887,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 	fz_error *error;
 	pdf_cmap *cmap;
 	char key[64];
-	char buf[256];
+	unsigned char buf[256];
 	int token;
 	int len;
 
@@ -912,20 +912,20 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 
 		else if (token == PDF_TNAME)
 		{
-			if (!strcmp(buf, "CMapName"))
+			if (!strcmp((char *) buf, "CMapName"))
 			{
 				error = parsecmapname(cmap, file);
 				if (error)
 					goto cleanup;
 			}
-			else if (!strcmp(buf, "WMode"))
+			else if (!strcmp((char *) buf, "WMode"))
 			{
 				error = parsewmode(cmap, file);
 				if (error)
 					goto cleanup;
 			}
 			else
-				strlcpy(key, buf, sizeof key);
+				strlcpy(key, (char *) buf, sizeof key);
 		}
 
 		else if (token == TUSECMAP)

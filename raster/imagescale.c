@@ -4,9 +4,9 @@
 
 typedef unsigned char byte;
 
-static inline void srown(byte * restrict src, byte * restrict dst, unsigned w, unsigned denom, unsigned n)
+static inline void srown(byte * restrict src, byte * restrict dst, int w, int denom, int n)
 {
-	unsigned x, left, k;
+	int x, left, k;
 	unsigned sum[FZ_MAXCOLORS];
 
 	left = 0;
@@ -35,9 +35,9 @@ static inline void srown(byte * restrict src, byte * restrict dst, unsigned w, u
 			dst[k] = sum[k] / left;
 }
 
-static inline void srownp2(byte * restrict src, byte * restrict dst, unsigned w, unsigned log2denom, unsigned n)
+static inline void srownp2(byte * restrict src, byte * restrict dst, int w, int log2denom, int n)
 {
-	unsigned x, left, k;
+	int x, left, k;
 	unsigned sum[FZ_MAXCOLORS];
 
 	left = 0;

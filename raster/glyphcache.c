@@ -164,6 +164,7 @@ didcoll ++;
 	}
 }
 
+/*
 static void
 hashremove(fz_glyphcache *arena, fz_key *key)
 {
@@ -176,7 +177,7 @@ hashremove(fz_glyphcache *arena, fz_key *key)
 	while (1)
 	{
 		if (!tab[pos].val)
-			return; /* boo hoo! tried to remove non-existant key */
+			return; // boo hoo! tried to remove non-existant key
 
 		if (memcmp(key, &tab[pos].key, sizeof (fz_key)) == 0)
 		{
@@ -213,6 +214,7 @@ hashremove(fz_glyphcache *arena, fz_key *key)
 			pos = 0;
 	}
 }
+*/
 
 void
 fz_debugglyphcache(fz_glyphcache *arena)
@@ -267,6 +269,7 @@ bubble(fz_glyphcache *arena, int i)
 	arena->lru[i].ent->val = &arena->lru[i];
 }
 
+/*
 static void
 evictlast(fz_glyphcache *arena)
 {
@@ -282,22 +285,23 @@ evictlast(fz_glyphcache *arena)
 	s = lru[k].samples;
 	e = s + lru[k].w * lru[k].h;
 
-	/* pack buffer to fill hole */
+	// pack buffer to fill hole
 	memmove(s, e, arena->buffer + arena->used - e);
 	memset(arena->buffer + arena->used - (e - s), 0, e - s);
 	arena->used -= e - s;
 
-	/* update lru pointers */
-	for (i = 0; i < k; i++)	/* XXX this is DOG slow! XXX */
+	// update lru pointers
+	for (i = 0; i < k; i++)	// XXX this is DOG slow! XXX
 		if (lru[i].samples >= e)
 			lru[i].samples -= e - s;
 
-	/* remove hash entry */
+	// remove hash entry
 	key = lru[k].ent->key;
 	hashremove(arena, &key);
 
 	arena->load --;
 }
+*/
 
 static void
 evictall(fz_glyphcache *arena)

@@ -222,7 +222,7 @@ int fz_write(fz_stream *stm, unsigned char *mem, int n)
 
 int fz_printstr(fz_stream *stm, char *s)
 {
-	return fz_write(stm, s, strlen(s));
+	return fz_write(stm, (unsigned char *) s, strlen(s));
 }
 
 int fz_printobj(fz_stream *file, fz_obj *obj, int tight)
@@ -235,7 +235,7 @@ int fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 	if (n < sizeof buf)
 	{
 		fz_sprintobj(buf, sizeof buf, obj, tight);
-		return fz_write(file, buf, n);
+		return fz_write(file, (unsigned char *) buf, n);
 	}
 	else
 	{
@@ -243,7 +243,7 @@ int fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 		if (!ptr)
 			return -1;
 		fz_sprintobj(ptr, n, obj, tight);
-		n = fz_write(file, ptr, n);
+		n = fz_write(file, (unsigned char *) ptr, n);
 		fz_free(ptr);
 		return n;
 	}
@@ -261,7 +261,7 @@ int fz_print(fz_stream *stm, char *fmt, ...)
 	va_end(ap);
 
 	if (n < sizeof buf)
-		return fz_write(stm, buf, n);
+		return fz_write(stm, (unsigned char *) buf, n);
 
 	p = fz_malloc(n);
 	if (!p)
@@ -271,7 +271,7 @@ int fz_print(fz_stream *stm, char *fmt, ...)
 	vsnprintf(p, n, fmt, ap);
 	va_end(ap);
 
-	n = fz_write(stm, p, n);
+	n = fz_write(stm, (unsigned char *) p, n);
 
 	fz_free(p);
 

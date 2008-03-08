@@ -267,7 +267,7 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 		{
 			fz_readbyte(f);
 			lexname(f, buf, n);
-			*sl = strlen(buf);
+			*sl = strlen((char *) buf);
 			return PDF_TNAME;
 		}
 
@@ -330,8 +330,8 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 		else if (isnumber(c))
 		{
 			lexnumber(f, buf, n);
-			*sl = strlen(buf);
-			if (strchr(buf, '.'))
+			*sl = strlen((char *) buf);
+			if (strchr((char *) buf, '.'))
 				return PDF_TREAL;
 			return PDF_TINT;
 		}
@@ -339,8 +339,8 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 		else if (isregular(c))
 		{
 			lexname(f, buf, n);
-			*sl = strlen(buf);
-			return tokenfromkeyword(buf);
+			*sl = strlen((char *) buf);
+			return tokenfromkeyword((char *) buf);
 		}
 
 		else

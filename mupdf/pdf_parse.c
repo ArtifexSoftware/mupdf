@@ -30,7 +30,7 @@ fz_matrix pdf_tomatrix(fz_obj *array)
 fz_error *
 pdf_toutf8(char **dstp, fz_obj *src)
 {
-	unsigned char *srcptr = fz_tostrbuf(src);
+	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
 	char *dstptr;
 	int srclen = fz_tostrlen(src);
 	int dstlen = 0;
@@ -79,7 +79,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 fz_error *
 pdf_toucs2(unsigned short **dstp, fz_obj *src)
 {
-	unsigned char *srcptr = fz_tostrbuf(src);
+	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
 	unsigned short *dstptr;
 	int srclen = fz_tostrlen(src);
 	int i;
@@ -121,7 +121,7 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf, cap, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 		if (tok != PDF_TINT && tok != PDF_TR)
 		{
@@ -221,7 +221,7 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf, cap, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 skip:
 		if (tok == PDF_TCDICT)
@@ -237,7 +237,7 @@ skip:
 		error = fz_newname(&key, buf);
 		if (error) goto cleanup;
 
-		tok = pdf_lex(file, buf, cap, &len);
+		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 		switch (tok)
 		{
@@ -251,7 +251,7 @@ skip:
 		case PDF_TNULL:		error = fz_newnull(&val); break;
 		case PDF_TINT:
 			a = atoi(buf);
-			tok = pdf_lex(file, buf, cap, &len);
+			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 			if (tok == PDF_TCDICT || tok == PDF_TNAME ||
 				(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
 			{
@@ -267,7 +267,7 @@ skip:
 			if (tok == PDF_TINT)
 			{
 				b = atoi(buf);
-				tok = pdf_lex(file, buf, cap, &len);
+				tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 				if (tok == PDF_TR)
 				{
 					error = fz_newindirect(&val, a, b);
@@ -302,7 +302,7 @@ pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	int tok, len;
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 	switch (tok)
 	{
@@ -330,21 +330,21 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 	int tok, len;
 	int a, b;
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 	if (tok != PDF_TINT)
 		goto cleanup;
 	oid = atoi(buf);
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 	if (tok != PDF_TINT)
 		goto cleanup;
 	gid = atoi(buf);
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 	if (tok != PDF_TOBJ)
 		goto cleanup;
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 	switch (tok)
 	{
 		case PDF_TOARRAY:	error = pdf_parsearray(&obj, file, buf, cap); break;
@@ -357,7 +357,7 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 		case PDF_TNULL:		error = fz_newnull(&obj); break;
 		case PDF_TINT:
 			a = atoi(buf);
-			tok = pdf_lex(file, buf, cap, &len);
+			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 			if (tok == PDF_TSTREAM || tok == PDF_TENDOBJ)
 			{
 				error = fz_newint(&obj, a);
@@ -367,7 +367,7 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 			if (tok == PDF_TINT)
 			{
 				b = atoi(buf);
-				tok = pdf_lex(file, buf, cap, &len);
+				tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 				if (tok == PDF_TR)
 				{
 					error = fz_newindirect(&obj, a, b);
@@ -380,7 +380,7 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 	}
 	if (error) goto cleanup;
 
-	tok = pdf_lex(file, buf, cap, &len);
+	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
 
 skip:
 	if (tok == PDF_TSTREAM)
