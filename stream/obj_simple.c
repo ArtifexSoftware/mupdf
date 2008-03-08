@@ -292,6 +292,9 @@ fz_objcmp(fz_obj *a, fz_obj *b)
 				return 1;
 		}
 		return 0;
+
+	case FZ_POINTER:
+                return (char *) a->u.p - (char *) b->u.p;
 	}
 	return 1;
 }
