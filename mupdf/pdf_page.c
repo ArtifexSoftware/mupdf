@@ -174,7 +174,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	/*
 	 * Load annotations
- 	 */
+	 */
 
 	obj = fz_dictgets(dict, "Annots");
 	if (obj)
@@ -205,7 +205,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	/*
 	 * Interpret content stream to build display tree
- 	 */
+	 */
 
 	obj = fz_dictgets(dict, "Contents");
 
@@ -263,7 +263,7 @@ pdf_droppage(pdf_page *page)
 {
 	pdf_logpage("drop page %p\n", page);
 /*
-	if (page->comments) 
+	if (page->comments)
 		pdf_dropcomment(page->comments);
 */
 	if (page->links)

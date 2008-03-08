@@ -268,7 +268,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 			gstate->linejoin = fz_toint(val);
 		else if (!strcmp(s, "ML"))
 			gstate->miterlimit = fz_toreal(val);
-	
+
 		else if (!strcmp(s, "D"))
 		{
 			if (fz_isarray(val) && fz_arraylen(val) == 2)
@@ -471,7 +471,7 @@ Lsetcolorspace:
 				if (error) return error;
 			}
 
-			else 
+			else
 			{
 				if (!strcmp(fz_toname(obj), "DeviceGray"))
 					cs = pdf_devicegray;
@@ -1008,7 +1008,7 @@ fz_debugobj(rdb);
 		csi->clip = 1;
 		break;
 
-	case 'g':	
+	case 'g':
 		if (csi->top != 1)
 			goto syntaxerror;
 
@@ -1018,7 +1018,7 @@ fz_debugobj(rdb);
 		error = pdf_setcolor(csi, PDF_MFILL, v);
 		if (error) return error;
 		break;
-		
+
 	case 'G':
 		if (csi->top != 1)
 			goto syntaxerror;

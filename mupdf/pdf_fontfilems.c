@@ -60,7 +60,7 @@ struct pdf_fontlistMS_s
 {
 	pdf_fontmapMS *fontmap;
 	int len;
-	int cap;	
+	int cap;
 };
 
 typedef struct _tagTT_OFFSET_TABLE
@@ -107,8 +107,8 @@ typedef struct _tagFONT_COLLECTION
 
 static char *basenames[13] =
 {
-	"Courier", 
-	"Courier-Bold", 
+	"Courier",
+	"Courier-Bold",
 	"Courier-Oblique",
 	"Courier-BoldOblique",
 	"Helvetica",
@@ -119,7 +119,7 @@ static char *basenames[13] =
 	"Times-Bold",
 	"Times-Italic",
 	"Times-BoldItalic",
-	"Symbol", 
+	"Symbol",
 };
 
 static char *basepatterns[13] =
@@ -160,7 +160,7 @@ compare(const void *elem1, const void *elem2)
 	return stricmp(val1->fontface, val2->fontface);
 }
 
-static void * 
+static void *
 localbsearch (const void *key, const void *base, size_t num,
 		 size_t width, int (*compare)(const void *, const void *))
 {
@@ -169,7 +169,7 @@ localbsearch (const void *key, const void *base, size_t num,
 	char *mid;
 	unsigned int half;
 	int result;
-	
+
 	while (lo <= hi)
 		if (half = num / 2)
 		{
@@ -190,7 +190,7 @@ localbsearch (const void *key, const void *base, size_t num,
 			return((*compare)(key,lo) ? 0 : lo);
 		else
 			break;
-		
+
 		return(0);
 }
 
@@ -217,7 +217,7 @@ removeredundancy(pdf_fontlistMS *fl)
 			fl->fontmap[i].fontpath,fl->fontmap[i].index);
 }
 
-static fz_error * 
+static fz_error *
 swapword(char* pbyte, int nLen)
 {
 	int i;
@@ -237,7 +237,7 @@ swapword(char* pbyte, int nLen)
 }
 
 /* pSouce and PDest can be same */
-static fz_error * 
+static fz_error *
 decodeunicodeBMP(char* source, int sourcelen,char* dest, int destlen)
 {
 	wchar_t tmp[1024*2];
@@ -329,7 +329,7 @@ growfontlist(pdf_fontlistMS *fl)
 	if (!newitems)
 		return fz_outofmem;
 
-	memset(newitems + fl->cap, 0, 
+	memset(newitems + fl->cap, 0,
 		sizeof(struct fz_keyval_s) * (newcap - fl->cap));
 
 	fl->fontmap = newitems;
@@ -390,7 +390,7 @@ parseTTF(fz_file *file, int offset, int index, char *path)
 		return fz_throw("fonterror : invalid font version");
 
 	found = 0;
-	
+
 	for(i = 0; i< ttOffsetTable.uNumOfTables; i++)
 	{
 		SAFE_FZ_READ(file,&tblDir,sizeof(TT_TABLE_DIRECTORY));
@@ -444,11 +444,11 @@ parseTTF(fz_file *file, int offset, int index, char *path)
 				switch(ttRecord.uPlatformID)
 				{
 				case PLATFORM_UNICODE:
-					err = decodeunicodeplatform(szTemp, ttRecord.uStringLength, 
+					err = decodeunicodeplatform(szTemp, ttRecord.uStringLength,
 						szTemp, sizeof(szTemp), ttRecord.uEncodingID);
 					break;
 				case PLATFORM_MACINTOSH:
-					err = decodemacintoshplatform(szTemp, ttRecord.uStringLength, 
+					err = decodemacintoshplatform(szTemp, ttRecord.uStringLength,
 						szTemp, sizeof(szTemp), ttRecord.uEncodingID);
 					break;
 				case PLATFORM_ISO:
@@ -483,7 +483,7 @@ parseTTFs(char *path)
 	err = parseTTF(file,0,0,path);
 	if(err)
 		goto cleanup;
-		
+
 cleanup:
 	if(file)
 		fz_closefile(file);
@@ -523,7 +523,7 @@ parseTTCs(char *path)
 			for(i = 0; i < fontcollectioin.NumFonts; ++i)
 			{
 				offsettable[i] = SWAPLONG(offsettable[i]);
-				parseTTF(file,offsettable[i],i,path);				
+				parseTTF(file,offsettable[i],i,path);
 			}
 			fz_free(offsettable);
 		}
@@ -538,8 +538,8 @@ parseTTCs(char *path)
 		err = fz_throw("fonterror: wrong format");
 		goto cleanup;
 	}
-	
-		
+
+
 cleanup:
 	if(file)
 		fz_closefile(file);
@@ -641,7 +641,7 @@ pdf_lookupfontMS(char *fontname, char **fontpath, int *index)
 	for (i = 0; i < ARRAY_SIZE(basenames); i++)
 		if (!strcmp(fontname, basenames[i]))
 			pattern = basepatterns[i];
-	
+
 	strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
 	found = localbsearch(&fontmap,fontlistMS.fontmap,fontlistMS.len,
 		sizeof(pdf_fontmapMS),compare);

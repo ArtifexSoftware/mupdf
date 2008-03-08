@@ -204,7 +204,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	if (error)
 		return error;
 
-	for (n = 0, i = 0; i < src->len; i++)	
+	for (n = 0, i = 0; i < src->len; i++)
 		if (src->table[i].mark)
 			n++;
 
@@ -214,7 +214,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	if (!map)
 		return fz_outofmem;
 
-	for (n = 0, i = 0; i < src->len; i++)	
+	for (n = 0, i = 0; i < src->len; i++)
 	{
 		if (src->table[i].mark)
 		{
@@ -233,7 +233,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	if (error)
 		goto cleanup;
 
-	for (i = 0; i < n; i++)	
+	for (i = 0; i < n; i++)
 	{
 		pdf_logxref("copyfrom %d %d to %d %d\n",
 			map[i].soid, map[i].sgen,
