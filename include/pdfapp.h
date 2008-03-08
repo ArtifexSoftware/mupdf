@@ -58,8 +58,8 @@ struct pdfapp_s
 	int selx, sely;
 	fz_irect selr;
 
-        /* client context storage */
-        void *userdata;
+	/* client context storage */
+	void *userdata;
 };
 
 void pdfapp_init(pdfapp_t *app);

@@ -20,10 +20,10 @@
 
 /******************************************************************************************
    plug-in function table macros
-          for each function in and out of the plugin API we define
-                    typedef NPP_FooUPP
-          #define NewNPP_FooProc
-          #define CallNPP_FooProc
+	    for each function in and out of the plugin API we define
+		    typedef NPP_FooUPP
+	    #define NewNPP_FooProc
+	    #define CallNPP_FooProc
       for mac, define the UPP magic for PPC/68K calling
  *******************************************************************************************/
 
@@ -103,7 +103,7 @@ enum {
     (NPP_NewUPP) NewRoutineDescriptor((ProcPtr)(FUNC), uppNPP_NewProcInfo, GetCurrentArchitecture())
 #define CallNPP_NewProc(FUNC, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7) \
     (NPError)CallUniversalProc((UniversalProcPtr)(FUNC), uppNPP_NewProcInfo, \
-                   (ARG1), (ARG2), (ARG3), (ARG4), (ARG5), (ARG6), (ARG7))
+		    (ARG1), (ARG2), (ARG3), (ARG4), (ARG5), (ARG6), (ARG7))
 #else
 
 typedef NPError (*NPP_NewUPP)(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc, char* argn[], char* argv[], NPSavedData* saved);
@@ -759,23 +759,23 @@ typedef void (*NPN_StatusUPP)(NPP instance, const char* message);
 
 typedef UniversalProcPtr NPN_UserAgentUPP;
 enum {
-        uppNPN_UserAgentProcInfo = kThinkCStackBased
-                | STACK_ROUTINE_PARAMETER(1, SIZE_CODE(sizeof(NPP)))
-                | RESULT_SIZE(SIZE_CODE(sizeof(const char *)))
+	uppNPN_UserAgentProcInfo = kThinkCStackBased
+		| STACK_ROUTINE_PARAMETER(1, SIZE_CODE(sizeof(NPP)))
+		| RESULT_SIZE(SIZE_CODE(sizeof(const char *)))
 };
 
 #define NewNPN_UserAgentProc(FUNC)              \
-                (NPN_UserAgentUPP) NewRoutineDescriptor((ProcPtr)(FUNC), uppNPN_UserAgentProcInfo, GetCurrentArchitecture())
+		(NPN_UserAgentUPP) NewRoutineDescriptor((ProcPtr)(FUNC), uppNPN_UserAgentProcInfo, GetCurrentArchitecture())
 #define CallNPN_UserAgentProc(FUNC, ARG1)               \
-                (const char*)CallUniversalProc((UniversalProcPtr)(FUNC), uppNPN_UserAgentProcInfo, (ARG1))
+		(const char*)CallUniversalProc((UniversalProcPtr)(FUNC), uppNPN_UserAgentProcInfo, (ARG1))
 
 #else
 
 typedef const char* (*NPN_UserAgentUPP)(NPP instance);
 #define NewNPN_UserAgentProc(FUNC)              \
-                ((NPN_UserAgentUPP) (FUNC))
+		((NPN_UserAgentUPP) (FUNC))
 #define CallNPN_UserAgentProc(FUNC, ARG1)               \
-                (*(FUNC))((ARG1))
+		(*(FUNC))((ARG1))
 
 #endif
 

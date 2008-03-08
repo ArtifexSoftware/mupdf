@@ -212,7 +212,23 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	case 1: srowx = fz_srow1; scolx = fz_scol1; break;
 	case 2: srowx = fz_srow2; scolx = fz_scol2; break;
 	case 4: srowx = fz_srow4; scolx = fz_scol4; break;
-	case 5: srowx = fz_srow5; scolx = fz_scol5; break;
+	case 5: srowx = fz_srow5; scolx = fz_scol5;
+                if (!(xdenom & (xdenom - 1)))
+                {
+                        unsigned v = xdenom;
+                        xdenom = 0;
+                        while ((v >>= 1)) xdenom++;
+                        srowx = srow5p2;
+                }
+                if (!(ydenom & (ydenom - 1)))
+                {
+                        unsigned v = ydenom2;
+                        ydenom2 = 0;
+                        while ((v >>= 1)) ydenom2++;
+                        scolx = scol5p2;
+                }
+
+                break;
 	}
 
 	if (srowx && scolx)

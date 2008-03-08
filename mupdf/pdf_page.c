@@ -216,18 +216,18 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	}
 
 	if (!getenv("DONTOPT"))
-        {
-            if (getenv("SHOWTREE"))
-                fz_debugtree(tree);
+	{
+		if (getenv("SHOWTREE"))
+			fz_debugtree(tree);
 
-            pdf_logpage("optimize tree\n");
+		pdf_logpage("optimize tree\n");
 
-            error = fz_optimizetree(tree);
-            if (error) {
-                    fz_dropobj(rdb);
-                    return error;
-            }
-        }
+		error = fz_optimizetree(tree);
+		if (error) {
+			fz_dropobj(rdb);
+			return error;
+		}
+	}
 	/*
 	 * Create page object
 	 */
@@ -252,8 +252,8 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logpage("} %p\n", page);
 
-        if (getenv("SHOWTREE"))
-            fz_debugtree(tree);
+	if (getenv("SHOWTREE"))
+		fz_debugtree(tree);
 
 	return nil;
 }

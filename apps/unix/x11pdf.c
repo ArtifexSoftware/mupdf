@@ -227,7 +227,7 @@ static void invertcopyrect()
 		p = (unsigned *)(gapp.image->samples + (y * gapp.image->w + x0) * 4);
 		for (x = x0; x < x1; x++)
 		{
-                        *p = ~0 - *p;
+			*p = ~0 - *p;
 			p ++;
 		}
 	}
@@ -530,7 +530,7 @@ int main(int argc, char **argv)
 				tmo.tv_sec == 0 && tmo.tv_usec == 0)
 			{
 				// redraw page
-                                winblit(&gapp);
+				winblit(&gapp);
 				isshowingpage = 0;
 				winresettmo(&tmo, &tmo_at);
 				continue;

@@ -180,8 +180,8 @@ createkey(pdf_crypt *crypt, char *userpw, int pwlen)
 	fz_md5update(&md5, buf, 4);
 
 	/* Step 5 */
-	fz_md5update(&md5, (unsigned char *) fz_tostrbuf(crypt->id), 
-                fz_tostrlen(crypt->id));
+	fz_md5update(&md5, (unsigned char *) fz_tostrbuf(crypt->id),
+		fz_tostrlen(crypt->id));
 	fz_md5final(&md5, crypt->key);
 
 	/* Step 6 (rev 3 only) */
@@ -259,8 +259,8 @@ createuser(pdf_crypt *crypt, char *userpw, int pwlen)
 		fz_md5update(&md5, (unsigned char *)padding, 32);
 
 		/* Step 3 */
-		fz_md5update(&md5, (unsigned char *) fz_tostrbuf(crypt->id), 
-                        fz_tostrlen(crypt->id));
+		fz_md5update(&md5, (unsigned char *) fz_tostrbuf(crypt->id),
+			fz_tostrlen(crypt->id));
 		fz_md5final(&md5, key);
 
 		/* Step 4 */

@@ -223,7 +223,7 @@ typedef struct _NPWindow
     uint32  width;    /* Maximum window size */
     uint32  height;
     NPRect  clipRect; /* Clipping rectangle in port coordinates */
-            /* Used by MAC only.        */
+	    /* Used by MAC only.        */
 #ifdef XP_UNIX
     void *  ws_info;  /* Platform-dependent additonal data */
 #endif /* XP_UNIX */
@@ -234,9 +234,9 @@ typedef struct _NPWindow
 typedef struct _NPFullPrint
 {
     NPBool  pluginPrinted;  /* Set TRUE if plugin handled fullscreen */
-              /*  printing               */
+			    /*  printing               */
     NPBool  printOne;   /* TRUE if plugin should print one copy  */
-              /*  to default printer           */
+			/*  to default printer           */
     void* platformPrint;  /* Platform-specific printing info */
 } NPFullPrint;
 
@@ -398,54 +398,54 @@ char*         NPP_GetMIMEDescription(void);
 NPError    NPP_Initialize(void);
 void       NPP_Shutdown(void);
 NPError     NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance,
-                uint16 mode, int16 argc, char* argn[],
-                char* argv[], NPSavedData* saved);
+		uint16 mode, int16 argc, char* argn[],
+		char* argv[], NPSavedData* saved);
 NPError     NP_LOADDS NPP_Destroy(NPP instance, NPSavedData** save);
 NPError     NP_LOADDS NPP_SetWindow(NPP instance, NPWindow* window);
 NPError     NP_LOADDS NPP_NewStream(NPP instance, NPMIMEType type,
-                    NPStream* stream, NPBool seekable,
-                    uint16* stype);
+		NPStream* stream, NPBool seekable,
+		uint16* stype);
 NPError     NP_LOADDS NPP_DestroyStream(NPP instance, NPStream* stream,
-                      NPReason reason);
+		NPReason reason);
 int32     NP_LOADDS NPP_WriteReady(NPP instance, NPStream* stream);
 int32     NP_LOADDS NPP_Write(NPP instance, NPStream* stream, int32 offset,
-                  int32 len, void* buffer);
+		int32 len, void* buffer);
 void      NP_LOADDS NPP_StreamAsFile(NPP instance, NPStream* stream,
-                     const char* fname);
+		const char* fname);
 void      NP_LOADDS NPP_Print(NPP instance, NPPrint* platformPrint);
 int16     NPP_HandleEvent(NPP instance, void* event);
 void      NP_LOADDS NPP_URLNotify(NPP instance, const char* url,
-                    NPReason reason, void* notifyData);
+		NPReason reason, void* notifyData);
 jref      NP_LOADDS     NPP_GetJavaClass(void);
 NPError         NPP_GetValue(void *instance, NPPVariable variable,
-                   void *value);
+		void *value);
 NPError         NPP_SetValue(void *instance, NPNVariable variable,
-                   void *value);
+		void *value);
 
 /*
  * NPN_* functions are provided by the navigator and called by the plugin.
  */
 
 void    NPN_Version(int* plugin_major, int* plugin_minor,
-              int* netscape_major, int* netscape_minor);
+		int* netscape_major, int* netscape_minor);
 NPError   NPN_GetURLNotify(NPP instance, const char* url,
-                 const char* target, void* notifyData);
+		const char* target, void* notifyData);
 NPError   NPN_GetURL(NPP instance, const char* url,
-               const char* target);
+		const char* target);
 NPError   NPN_PostURLNotify(NPP instance, const char* url,
-                  const char* target, uint32 len,
-                  const char* buf, NPBool file,
-                  void* notifyData);
+		const char* target, uint32 len,
+		const char* buf, NPBool file,
+		void* notifyData);
 NPError   NPN_PostURL(NPP instance, const char* url,
-              const char* target, uint32 len,
-              const char* buf, NPBool file);
+		const char* target, uint32 len,
+		const char* buf, NPBool file);
 NPError   NPN_RequestRead(NPStream* stream, NPByteRange* rangeList);
 NPError   NPN_NewStream(NPP instance, NPMIMEType type,
-                const char* target, NPStream** stream);
+		const char* target, NPStream** stream);
 int32   NPN_Write(NPP instance, NPStream* stream, int32 len,
-              void* buffer);
+		void* buffer);
 NPError     NPN_DestroyStream(NPP instance, NPStream* stream,
-                  NPReason reason);
+		NPReason reason);
 void    NPN_Status(NPP instance, const char* message);
 const char* NPN_UserAgent(NPP instance);
 void*   NPN_MemAlloc(uint32 size);
@@ -455,9 +455,9 @@ void      NPN_ReloadPlugins(NPBool reloadPages);
 JRIEnv*     NPN_GetJavaEnv(void);
 jref      NPN_GetJavaPeer(NPP instance);
 NPError     NPN_GetValue(NPP instance, NPNVariable variable,
-               void *value);
+		void *value);
 NPError     NPN_SetValue(NPP instance, NPPVariable variable,
-               void *value);
+		void *value);
 void    NPN_InvalidateRect(NPP instance, NPRect *invalidRect);
 void    NPN_InvalidateRegion(NPP instance, NPRegion invalidRegion);
 void    NPN_ForceRedraw(NPP instance);

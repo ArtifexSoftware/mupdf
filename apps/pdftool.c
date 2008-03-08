@@ -95,19 +95,19 @@ void opensrc(char *filename, char *password, int loadpages)
 
 void preloadobjstms(void)
 {
-        fz_error *error;
-        fz_obj *obj;
-        int i;
+	fz_error *error;
+	fz_obj *obj;
+	int i;
 
-        for (i = 0; i < src->len; i++)
-        {
-                if (src->table[i].type == 'o')
-                {
-                        error = pdf_loadobject(&obj, src, i, 0);
-                        if (error) die(error);
-                        fz_dropobj(obj);
-                }
-        }
+	for (i = 0; i < src->len; i++)
+	{
+		if (src->table[i].type == 'o')
+		{
+			error = pdf_loadobject(&obj, src, i, 0);
+			if (error) die(error);
+			fz_dropobj(obj);
+		}
+	}
 }
 
 /* --------------------------------------------------------------------- */
