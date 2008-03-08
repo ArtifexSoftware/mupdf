@@ -62,9 +62,41 @@ clearstack(pdf_csi *csi)
 	csi->top = 0;
 }
 
+static pdf_material *
+pdf_keepmaterial(pdf_material *mat)
+{
+        if (mat->cs)
+                fz_keepcolorspace(mat->cs);
+        if (mat->indexed)
+                fz_keepcolorspace(&mat->indexed->super);
+        if (mat->pattern)
+                pdf_keeppattern(mat->pattern);
+        if (mat->shade)
+                fz_keepshade(mat->shade);
+
+        return mat;
+}
+
+static pdf_material *
+pdf_dropmaterial(pdf_material *mat)
+{
+        if (mat->cs)
+                fz_dropcolorspace(mat->cs);
+        if (mat->indexed)
+                fz_dropcolorspace(&mat->indexed->super);
+        if (mat->pattern)
+                pdf_droppattern(mat->pattern);
+        if (mat->shade)
+                fz_dropshade(mat->shade);
+
+        return mat;
+}
+
 static fz_error *
 gsave(pdf_csi *csi)
 {
+        pdf_gstate *gs = csi->gstate + csi->gtop;
+
 	if (csi->gtop == 31)
 		return fz_throw("gstate overflow in content stream");
 
@@ -72,10 +104,8 @@ gsave(pdf_csi *csi)
 
 	csi->gtop ++;
 
-	if (csi->gstate[csi->gtop].fill.cs)
-		fz_keepcolorspace(csi->gstate[csi->gtop].fill.cs);
-	if (csi->gstate[csi->gtop].stroke.cs)
-		fz_keepcolorspace(csi->gstate[csi->gtop].stroke.cs);
+        pdf_keepmaterial(&gs->stroke);
+        pdf_keepmaterial(&gs->fill);
 
 	return nil;
 }
@@ -83,13 +113,13 @@ gsave(pdf_csi *csi)
 static fz_error *
 grestore(pdf_csi *csi)
 {
+        pdf_gstate *gs = csi->gstate + csi->gtop;
+
 	if (csi->gtop == 0)
 		return fz_throw("gstate underflow in content stream");
 
-	if (csi->gstate[csi->gtop].fill.cs)
-		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
-	if (csi->gstate[csi->gtop].stroke.cs)
-		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
+        pdf_dropmaterial(&gs->stroke);
+        pdf_dropmaterial(&gs->fill);
 
 	csi->gtop --;
 
