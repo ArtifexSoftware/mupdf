@@ -72,8 +72,40 @@ fz_matrix
 fz_rotate(float theta)
 {
 	fz_matrix m;
-	float s = sin(theta * M_PI / 180.0);
-	float c = cos(theta * M_PI / 180.0);
+	float s;
+	float c;
+
+	while (theta < 0.0f)
+		theta += 360.0f;
+	while (theta >= 360.0f)
+		theta -= 360.0f;
+
+	if (fabs(0.0f - theta) < FLT_EPSILON)
+	{
+		s = 0.0f;
+		c = 1.0f;
+	}
+	else if (fabs(90.0f - theta) < FLT_EPSILON)
+	{
+		s = 1.0f;
+		c = 0.0f;
+	}
+	else if (fabs(180.0f - theta) < FLT_EPSILON)
+	{
+		s = 0.0f;
+		c = -1.0f;
+	}
+	else if (fabs(270.0f - theta) < FLT_EPSILON)
+	{
+		s = -1.0f;
+		c = 0.0f;
+	}
+	else
+	{
+		s = sin(theta * M_PI / 180.0);
+		c = cos(theta * M_PI / 180.0);
+	}
+
 	m.a =  c;  m.b = s;
 	m.c = -s;  m.d = c;
 	m.e =  0;  m.f = 0;
