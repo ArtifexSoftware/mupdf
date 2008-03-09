@@ -177,7 +177,7 @@ cleanup:
 		fz_free(p->pobj);
 		fz_free(p);
 	}
-	return nil;
+	return error;
 }
 
 int
