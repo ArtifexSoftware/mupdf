@@ -155,12 +155,12 @@ pdf_debugcmap(pdf_cmap *cmap)
 {
 	int i, k, n;
 
-	printf("cmap $%p /%s {\n", cmap, cmap->cmapname);
+	printf("cmap $%p /%s {\n", (void *) cmap, cmap->cmapname);
 
 	if (cmap->usecmapname[0])
 		printf("  usecmap /%s\n", cmap->usecmapname);
 	if (cmap->usecmap)
-		printf("  usecmap $%p\n", cmap->usecmap);
+		printf("  usecmap $%p\n", (void *) cmap->usecmap);
 
 	printf("  wmode %d\n", cmap->wmode);
 
