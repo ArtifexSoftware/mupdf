@@ -158,9 +158,10 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	fz_dropbuffer(buf);
 
-cleanup:
-
 	return nil;
+
+cleanup:
+	return error;
 }
 
 static int
@@ -321,10 +322,10 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 		fz_free(c[i]);
 	}
 
+	return nil;
 
 cleanup:
-
-	return nil;
+	return error;
 }
 
 #define SEGMENTATION_DEPTH 2
@@ -670,9 +671,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	shade->meshlen = j / n / 3;
 
-cleanup:
-
 	return nil;
+
+cleanup:
+	return error;
 }
 
 fz_error *
@@ -788,8 +790,9 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	shade->meshlen = j / n / 3;
 
-cleanup:
-
 	return nil;
+
+cleanup:
+	return error;
 }
 

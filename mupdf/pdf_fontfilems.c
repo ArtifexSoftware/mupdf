@@ -610,10 +610,10 @@ pdf_createfontlistMS()
 
 	removeredundancy(&fontlistMS);
 
-cleanup:
-	if(err)
-		fz_abort(err);
 	return nil;
+
+cleanup:
+	fz_abort(err);
 }
 
 void
