@@ -76,6 +76,11 @@ static void srow2(byte *src, byte *dst, int w, int denom)
 	srown(src, dst, w, denom, 2);
 }
 
+static void srow2p2(byte * restrict src, byte * restrict dst, int w, int log2denom)
+{
+	srownp2(src, dst, w, log2denom, 2);
+}
+
 static void srow4(byte *src, byte *dst, int w, int denom)
 {
 	srown(src, dst, w, denom, 4);
@@ -141,6 +146,11 @@ static void scol2(byte *src, byte *dst, int w, int denom)
 	scoln(src, dst, w, denom, 2);
 }
 
+static void scol2p2(byte *src, byte *dst, int w, int denom)
+{
+	scolnp2(src, dst, w, denom, 2);
+}
+
 static void scol4(byte *src, byte *dst, int w, int denom)
 {
 	scoln(src, dst, w, denom, 4);
@@ -177,6 +187,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	int y, iy, oy;
 	int ow, oh, n;
         int ydenom2 = ydenom;
+	int xispow2 = 0;
+	int yispow2 = 0;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -196,27 +208,36 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		return error;
 	}
 
+	xispow2 = !(xdenom & (xdenom - 1));
+	if (xispow2)
+	{
+		unsigned v = xdenom;
+		xdenom = 0;
+		while ((v >>= 1)) xdenom++;
+	}
+	yispow2 = !(ydenom & (ydenom - 1));
+	if (ydenom)
+	{
+		unsigned v = ydenom2;
+		ydenom2 = 0;
+		while ((v >>= 1)) ydenom2++;
+	}
+
 	switch (n)
 	{
 	case 1: srowx = fz_srow1; scolx = fz_scol1; break;
-	case 2: srowx = fz_srow2; scolx = fz_scol2; break;
+	case 2: srowx = fz_srow2; scolx = fz_scol2;
+	        if (xispow2)
+			srowx = srow2p2;
+	        if (yispow2)
+			scolx = scol2p2;	        
+	        break;
 	case 4: srowx = fz_srow4; scolx = fz_scol4; break;
 	case 5: srowx = fz_srow5; scolx = fz_scol5;
-                if (!(xdenom & (xdenom - 1)))
-                {
-                        unsigned v = xdenom;
-                        xdenom = 0;
-                        while ((v >>= 1)) xdenom++;
-                        srowx = srow5p2;
-                }
-                if (!(ydenom & (ydenom - 1)))
-                {
-                        unsigned v = ydenom2;
-                        ydenom2 = 0;
-                        while ((v >>= 1)) ydenom2++;
-                        scolx = scol5p2;
-                }
-
+	        if (xispow2)
+			srowx = srow5p2;
+	        if (yispow2)
+			scolx = scol5p2;
                 break;
 	}
 
