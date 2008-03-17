@@ -149,11 +149,14 @@ enabled(char *env, const char *ext)
 	if (!env)
 		return 1;
 	len = strlen(ext);
-	while ((s = strstr(env, ext)))
+	s = env;
+	while ((s = strstr(s, ext)))
 	{
+		int atstart = s == env || *(s-1) == ',' || *(s-1) == ' ';
 		s += len;
-		if (*s == ' ' || *s == ',' || *s == '\0')
+		if (atstart && (*s == ' ' || *s == ',' || *s == '\0')) {
 			return 1;
+		}
 	}
 	return 0;
 }
@@ -232,6 +235,13 @@ void fz_cpudetect(void)
 
 		features[i].test();
 
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
+		// reset mmx/x87 pipeline state
+		if (features[i].flag & (HAVE_MMX | HAVE_3DNOW | HAVE_MMXEXT)) {
+			__asm__ __volatile__ ("emms\n\t");
+		}
+#endif
+
 		/* if we got here the test succeeded */
 		if (enabled(env, features[i].name))
 			flags |= features[i].flag;
@@ -243,12 +253,6 @@ void fz_cpudetect(void)
 	signal(SIGILL, oldhandler);
 
 	fz_cpuflags = flags;
-
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
-	if (flags & HAVE_MMX) {
-		__asm__ __volatile__ ("emms\n\t");
-	}
-#endif
 
 	dumpflags();
 }
@@ -290,6 +294,12 @@ void fz_cpudetect(void)
 			continue;
 		}
 
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
+		if (features[i].flag & (HAVE_MMX | HAVE_3DNOW | HAVE_MMXEXT)) {
+			// reset mmx/x87 pipeline state
+			__asm emms;
+		}
+#endif
 
 		/* if we got here the test succeeded */
 		if (enabled(env, features[i].name))
@@ -299,12 +309,6 @@ void fz_cpudetect(void)
 	}
 
 	fz_cpuflags = flags;
-
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
-	if (flags & HAVE_MMX) {
-		__asm emms;
-	}
-#endif
 
 	dumpflags();
 }
