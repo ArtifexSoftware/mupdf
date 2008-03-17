@@ -6,6 +6,7 @@ typedef unsigned char byte;
 
 static inline void srown(byte * restrict src, byte * restrict dst, int w, int denom, int n)
 {
+	int invdenom = (1<<16) / denom;
 	int x, left, k;
 	unsigned sum[FZ_MAXCOLORS];
 
@@ -22,38 +23,7 @@ static inline void srown(byte * restrict src, byte * restrict dst, int w, int de
 			left = 0;
 			for (k = 0; k < n; k++)
 			{
-				dst[k] = sum[k] / denom;
-				sum[k] = 0;
-			}
-			dst += n;
-		}
-	}
-
-	/* left overs */
-	if (left)
-		for (k = 0; k < n; k++)
-			dst[k] = sum[k] / left;
-}
-
-static inline void srownp2(byte * restrict src, byte * restrict dst, int w, int log2denom, int n)
-{
-	int x, left, k;
-	unsigned sum[FZ_MAXCOLORS];
-
-	left = 0;
-	for (k = 0; k < n; k++)
-		sum[k] = 0;
-
-	for (x = 0; x < w; x++)
-	{
-		for (k = 0; k < n; k++)
-			sum[k] += src[x * n + k];
-		if (++left == (1<<log2denom))
-		{
-			left = 0;
-			for (k = 0; k < n; k++)
-			{
-				dst[k] = sum[k] >> log2denom;
+				dst[k] = (sum[k] * invdenom) >> 16;
 				sum[k] = 0;
 			}
 			dst += n;
@@ -76,11 +46,6 @@ static void srow2(byte *src, byte *dst, int w, int denom)
 	srown(src, dst, w, denom, 2);
 }
 
-static void srow2p2(byte * restrict src, byte * restrict dst, int w, int log2denom)
-{
-	srownp2(src, dst, w, log2denom, 2);
-}
-
 static void srow4(byte *src, byte *dst, int w, int denom)
 {
 	srown(src, dst, w, denom, 4);
@@ -91,13 +56,9 @@ static void srow5(byte *src, byte *dst, int w, int denom)
 	srown(src, dst, w, denom, 5);
 }
 
-static void srow5p2(byte * restrict src, byte * restrict dst, int w, int log2denom)
-{
-	srownp2(src, dst, w, log2denom, 5);
-}
-
 static inline void scoln(byte * restrict src, byte * restrict dst, int w, int denom, int n)
 {
+	int invdenom = (1<<16) / denom;
 	int x, y, k;
 	byte *s;
 	int sum[FZ_MAXCOLORS];
@@ -111,27 +72,7 @@ static inline void scoln(byte * restrict src, byte * restrict dst, int w, int de
 			for (k = 0; k < n; k++)
 				sum[k] += s[y * w * n + k];
 		for (k = 0; k < n; k++)
-			dst[k] = sum[k] / denom;
-		dst += n;
-	}
-}
-
-static inline void scolnp2(byte *src, byte *dst, int w, int log2denom, int n)
-{
-	int x, y, k;
-	byte *s;
-	int sum[FZ_MAXCOLORS];
-
-	for (x = 0; x < w; x++)
-	{
-		s = src + (x * n);
-		for (k = 0; k < n; k++)
-			sum[k] = 0;
-		for (y = 0; y < (1<<log2denom); y++)
-			for (k = 0; k < n; k++)
-				sum[k] += s[y * w * n + k];
-		for (k = 0; k < n; k++)
-			dst[k] = sum[k] >> log2denom;
+			dst[k] = (sum[k] * invdenom) >> 16;
 		dst += n;
 	}
 }
@@ -146,11 +87,6 @@ static void scol2(byte *src, byte *dst, int w, int denom)
 	scoln(src, dst, w, denom, 2);
 }
 
-static void scol2p2(byte *src, byte *dst, int w, int denom)
-{
-	scolnp2(src, dst, w, denom, 2);
-}
-
 static void scol4(byte *src, byte *dst, int w, int denom)
 {
 	scoln(src, dst, w, denom, 4);
@@ -159,11 +95,6 @@ static void scol4(byte *src, byte *dst, int w, int denom)
 static void scol5(byte *src, byte *dst, int w, int denom)
 {
 	scoln(src, dst, w, denom, 5);
-}
-
-static void scol5p2(byte *src, byte *dst, int w, int denom)
-{
-	scolnp2(src, dst, w, denom, 5);
 }
 
 void (*fz_srown)(byte *src, byte *dst, int w, int denom, int n) = srown;
@@ -187,8 +118,6 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	int y, iy, oy;
 	int ow, oh, n;
         int ydenom2 = ydenom;
-	int xispow2 = 0;
-	int yispow2 = 0;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -208,37 +137,12 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		return error;
 	}
 
-	xispow2 = !(xdenom & (xdenom - 1));
-	if (xispow2)
-	{
-		unsigned v = xdenom;
-		xdenom = 0;
-		while ((v >>= 1)) xdenom++;
-	}
-	yispow2 = !(ydenom & (ydenom - 1));
-	if (ydenom)
-	{
-		unsigned v = ydenom2;
-		ydenom2 = 0;
-		while ((v >>= 1)) ydenom2++;
-	}
-
 	switch (n)
 	{
 	case 1: srowx = fz_srow1; scolx = fz_scol1; break;
-	case 2: srowx = fz_srow2; scolx = fz_scol2;
-	        if (xispow2)
-			srowx = srow2p2;
-	        if (yispow2)
-			scolx = scol2p2;	        
-	        break;
+	case 2: srowx = fz_srow2; scolx = fz_scol2; break;
 	case 4: srowx = fz_srow4; scolx = fz_scol4; break;
-	case 5: srowx = fz_srow5; scolx = fz_scol5;
-	        if (xispow2)
-			srowx = srow5p2;
-	        if (yispow2)
-			scolx = scol5p2;
-                break;
+	case 5: srowx = fz_srow5; scolx = fz_scol5; break;
 	}
 
 	if (srowx && scolx)
