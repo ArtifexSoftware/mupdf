@@ -12,9 +12,8 @@ struct fz_edge_s
 
 struct fz_gel_s
 {
-	int hs, vs;
-	int xmin, xmax;
-	int ymin, ymax;
+	fz_irect clip;
+	fz_irect bbox;
 	int cap;
 	int len;
 	fz_edge *edges;
@@ -30,7 +29,7 @@ struct fz_ael_s
 fz_error *fz_newgel(fz_gel **gelp);
 fz_error *fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
 fz_irect fz_boundgel(fz_gel *gel);
-void fz_resetgel(fz_gel *gel, int hs, int vs);
+void fz_resetgel(fz_gel *gel, fz_irect clip);
 void fz_sortgel(fz_gel *gel);
 void fz_dropgel(fz_gel *gel);
 

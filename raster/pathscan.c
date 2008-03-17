@@ -2,6 +2,8 @@
 #include "fitz-world.h"
 #include "fitz-draw.h"
 
+enum { HSCALE = 17, VSCALE = 15, SF = 1 };
+
 /*
  * Global Edge List -- list of straight path segments for scan conversion
  *
@@ -29,21 +31,33 @@ fz_newgel(fz_gel **gelp)
 		return fz_outofmem;
 	}
 
-	gel->xmin = gel->ymin = INT_MAX;
-	gel->xmax = gel->ymax = INT_MIN;
-	gel->hs = 1;
-	gel->vs = 1;
+	gel->clip.x0 = gel->clip.y0 = INT_MAX;
+	gel->clip.x1 = gel->clip.y1 = INT_MIN;
+
+	gel->bbox.x0 = gel->bbox.y0 = INT_MAX;
+	gel->bbox.x1 = gel->bbox.y1 = INT_MIN;
 
 	return nil;
 }
 
 void
-fz_resetgel(fz_gel *gel, int hs, int vs)
+fz_resetgel(fz_gel *gel, fz_irect clip)
 {
-	gel->xmin = gel->ymin = INT_MAX;
-	gel->xmax = gel->ymax = INT_MIN;
-	gel->hs = hs;
-	gel->vs = vs;
+	if (fz_isinfiniterect(clip))
+	{
+		gel->clip.x0 = gel->clip.y0 = INT_MAX;
+		gel->clip.x1 = gel->clip.y1 = INT_MIN;
+	}
+	else {
+		gel->clip.x0 = clip.x0 * HSCALE;
+		gel->clip.x1 = clip.x1 * HSCALE;
+		gel->clip.y0 = clip.y0 * VSCALE;
+		gel->clip.y1 = clip.y1 * VSCALE;
+	}
+
+	gel->bbox.x0 = gel->bbox.y0 = INT_MAX;
+	gel->bbox.x1 = gel->bbox.y1 = INT_MIN;
+
 	gel->len = 0;
 }
 
@@ -58,33 +72,67 @@ fz_irect
 fz_boundgel(fz_gel *gel)
 {
 	fz_irect bbox;
-	bbox.x0 = fz_idiv(gel->xmin, gel->hs);
-	bbox.y0 = fz_idiv(gel->ymin, gel->vs);
-	bbox.x1 = fz_idiv(gel->xmax, gel->hs) + 1;
-	bbox.y1 = fz_idiv(gel->ymax, gel->vs) + 1;
+	bbox.x0 = fz_idiv(gel->bbox.x0, HSCALE);
+	bbox.y0 = fz_idiv(gel->bbox.y0, VSCALE);
+	bbox.x1 = fz_idiv(gel->bbox.x1, HSCALE) + 1;
+	bbox.y1 = fz_idiv(gel->bbox.y1, VSCALE) + 1;
 	return bbox;
+}
+
+enum { INSIDE, OUTSIDE, LEAVE, ENTER };
+
+#define cliplerpy(v,m,x0,y0,x1,y1,t) cliplerpx(v,m,y0,x0,y1,x1,t)
+
+static int
+cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
+{
+	int v0out = m ? x0 > val : x0 < val;
+	int v1out = m ? x1 > val : x1 < val;
+
+	if (v0out + v1out == 0)
+		return INSIDE;
+
+	if (v0out + v1out == 2)
+		return OUTSIDE;
+
+	if (v1out)
+	{
+		*out = y0 + (y1 - y0) * (val - x0) / (x1 - x0);
+		return LEAVE;
+	}
+
+	else
+	{
+		*out = y1 + (y0 - y1) * (val - x1) / (x0 - x1);
+		return ENTER;
+	}
 }
 
 fz_error *
 fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	fz_edge *edge;
-	int x0, y0, x1, y1;
 	int dx, dy;
 	int winding;
 	int width;
 	int tmp;
+	int v;
+	int d;
 
-	fx0 *= gel->hs;
-	fy0 *= gel->vs;
-	fx1 *= gel->hs;
-	fy1 *= gel->vs;
+	int x0 = fz_floor(fx0 * HSCALE);
+	int y0 = fz_floor(fy0 * VSCALE);
+	int x1 = fz_floor(fx1 * HSCALE);
+	int y1 = fz_floor(fy1 * VSCALE);
 
-	/* TODO: should we round or truncate? */
-	x0 = fx0 < 0 ? fx0 - 0.5 : fx0 + 0.5;
-	y0 = fy0 < 0 ? fy0 - 0.5 : fy0 + 0.5;
-	x1 = fx1 < 0 ? fx1 - 0.5 : fx1 + 0.5;
-	y1 = fy1 < 0 ? fy1 - 0.5 : fy1 + 0.5;
+	d = cliplerpy(gel->clip.y0, 0, x0, y0, x1, y1, &v);
+	if (d == OUTSIDE) return nil;
+	if (d == LEAVE) { y1 = gel->clip.y0; x1 = v; }
+	if (d == ENTER) { y0 = gel->clip.y0; x0 = v; }
+
+	d = cliplerpy(gel->clip.y1, 1, x0, y0, x1, y1, &v);
+	if (d == OUTSIDE) return nil;
+	if (d == LEAVE) { y1 = gel->clip.y1; x1 = v; }
+	if (d == ENTER) { y0 = gel->clip.y1; x0 = v; }
 
 	if (y0 == y1)
 		return nil;
@@ -97,13 +145,13 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	else
 		winding = 1;
 
-	if (x0 < gel->xmin) gel->xmin = x0;
-	if (x0 > gel->xmax) gel->xmax = x0;
-	if (x1 < gel->xmin) gel->xmin = x1;
-	if (x1 > gel->xmax) gel->xmax = x1;
+	if (x0 < gel->bbox.x0) gel->bbox.x0 = x0;
+	if (x0 > gel->bbox.x1) gel->bbox.x1 = x0;
+	if (x1 < gel->bbox.x0) gel->bbox.x0 = x1;
+	if (x1 > gel->bbox.x1) gel->bbox.x1 = x1;
 
-	if (y0 < gel->ymin) gel->ymin = y0;
-	if (y1 > gel->ymax) gel->ymax = y1;
+	if (y0 < gel->bbox.y0) gel->bbox.y0 = y0;
+	if (y1 > gel->bbox.y1) gel->bbox.y1 = y1;
 
 	if (gel->len + 1 == gel->cap) {
 		int newcap = gel->cap + 512;
@@ -305,7 +353,7 @@ advanceael(fz_ael *ael)
  */
 
 static inline void
-addspan(unsigned char *list, int x0, int x1, int xofs, int hs)
+addspan(unsigned char *list, int x0, int x1, int xofs)
 {
 	int x0pix, x0sub;
 	int x1pix, x1sub;
@@ -317,10 +365,10 @@ addspan(unsigned char *list, int x0, int x1, int xofs, int hs)
 	x0 -= xofs;
 	x1 -= xofs;
 
-	x0pix = x0 / hs;
-	x0sub = x0 % hs;
-	x1pix = x1 / hs;
-	x1sub = x1 % hs;
+	x0pix = x0 / HSCALE;
+	x0sub = x0 % HSCALE;
+	x1pix = x1 / HSCALE;
+	x1sub = x1 % HSCALE;
 
 	if (x0pix == x1pix)
 	{
@@ -330,15 +378,15 @@ addspan(unsigned char *list, int x0, int x1, int xofs, int hs)
 
 	else
 	{
-		list[x0pix] += hs - x0sub;
+		list[x0pix] += HSCALE - x0sub;
 		list[x0pix+1] += x0sub;
-		list[x1pix] += x1sub - hs;
+		list[x1pix] += x1sub - HSCALE;
 		list[x1pix+1] += -x1sub;
 	}
 }
 
 static inline void
-nonzerowinding(fz_ael *ael, unsigned char *list, int xofs, int hs)
+nonzerowinding(fz_ael *ael, unsigned char *list, int xofs)
 {
 	int winding = 0;
 	int x = 0;
@@ -348,13 +396,13 @@ nonzerowinding(fz_ael *ael, unsigned char *list, int xofs, int hs)
 		if (!winding && (winding + ael->edges[i]->ydir))
 			x = ael->edges[i]->x;
 		if (winding && !(winding + ael->edges[i]->ydir))
-			addspan(list, x, ael->edges[i]->x, xofs, hs);
+			addspan(list, x, ael->edges[i]->x, xofs);
 		winding += ael->edges[i]->ydir;
 	}
 }
 
 static inline void
-evenodd(fz_ael *ael, unsigned char *list, int xofs, int hs)
+evenodd(fz_ael *ael, unsigned char *list, int xofs)
 {
 	int even = 0;
 	int x = 0;
@@ -364,7 +412,7 @@ evenodd(fz_ael *ael, unsigned char *list, int xofs, int hs)
 		if (!even)
 			x = ael->edges[i]->x;
 		else
-			addspan(list, x, ael->edges[i]->x, xofs, hs);
+			addspan(list, x, ael->edges[i]->x, xofs);
 		even = !even;
 	}
 }
@@ -413,12 +461,10 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	int y, e;
 	int yd, yc;
 
-	int xmin = fz_idiv(gel->xmin, gel->hs);
-	int xmax = fz_idiv(gel->xmax, gel->hs) + 1;
+	int xmin = fz_idiv(gel->bbox.x0, HSCALE);
+	int xmax = fz_idiv(gel->bbox.x1, HSCALE) + 1;
 
-	int xofs = xmin * gel->hs;
-	int hs = gel->hs;
-	int vs = gel->vs;
+	int xofs = xmin * HSCALE;
 
 	int skipx = clip.x0 - xmin;
 	int clipn = clip.x1 - clip.x0;
@@ -437,12 +483,12 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 
 	e = 0;
 	y = gel->edges[0].y;
-	yc = fz_idiv(y, vs);
+	yc = fz_idiv(y, VSCALE);
 	yd = yc;
 
 	while (ael->len > 0 || e < gel->len)
 	{
-		yc = fz_idiv(y, vs);
+		yc = fz_idiv(y, VSCALE);
 		if (yc != yd)
 		{
 			if (yd >= clip.y0 && yd < clip.y1)
@@ -461,9 +507,9 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 		if (yd >= clip.y0 && yd < clip.y1)
 		{
 			if (eofill)
-				evenodd(ael, deltas, xofs, hs);
+				evenodd(ael, deltas, xofs);
 			else
-				nonzerowinding(ael, deltas, xofs, hs);
+				nonzerowinding(ael, deltas, xofs);
 		}
 
 		advanceael(ael);

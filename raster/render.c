@@ -164,7 +164,7 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	if (flatness < 0.1)
 		flatness = 0.1;
 
-	fz_resetgel(gc->gel, HS, VS);
+	fz_resetgel(gc->gel, gc->clip);
 
 	if (path->paint == FZ_STROKE)
 	{
