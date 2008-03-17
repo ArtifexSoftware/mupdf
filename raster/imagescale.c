@@ -36,24 +36,94 @@ static inline void srown(byte * restrict src, byte * restrict dst, int w, int de
 			dst[k] = sum[k] / left;
 }
 
+// special-case common 1-5 components - the compiler optimizes this
+static inline void srowc(byte * restrict src, byte * restrict dst, int w, int denom, int n)
+{
+	int invdenom = (1<<16) / denom;
+	int x, left;
+	unsigned sum1 = 0;
+	unsigned sum2 = 0;
+	unsigned sum3 = 0;
+	unsigned sum4 = 0;
+	unsigned sum5 = 0;
+
+	assert(n <= 5);
+
+	left = 0;
+
+	for (x = 0; x < w; x++)
+	{
+		sum1 += src[x * n + 0];
+		// the compiler eliminates these if-tests
+		if (n >= 2)
+			sum2 += src[x * n + 1];
+		if (n >= 3)
+			sum3 += src[x * n + 2];
+		if (n >= 4)
+			sum4 += src[x * n + 3];
+		if (n >= 5)
+			sum5 += src[x * n + 4];
+
+		if (++left == denom)
+		{
+			left = 0;
+			
+			dst[0] = (sum1 * invdenom) >> 16;
+			sum1 = 0;
+			if (n >= 2) {
+				dst[1] = (sum2 * invdenom) >> 16;
+				sum2 = 0;
+			}
+			if (n >= 3) {
+				dst[2] = (sum3 * invdenom) >> 16;
+				sum3 = 0;
+			}
+			if (n >= 4) {
+				dst[3] = (sum4 * invdenom) >> 16;
+				sum4 = 0;
+			}
+			if (n >= 5) {
+				dst[4] = (sum5 * invdenom) >> 16;
+				sum5 = 0;
+			}
+
+
+			dst += n;
+		}
+	}
+
+	/* left overs */
+	if (left) {
+		dst[0] = sum1 / left;
+		if (n >=2)
+			dst[1] = sum2 / left;
+		if (n >=3)
+			dst[2] = sum3 / left;
+		if (n >=4)
+			dst[3] = sum4 / left;
+		if (n >=5)
+			dst[4] = sum5 / left;
+	}
+}
+
 static void srow1(byte *src, byte *dst, int w, int denom)
 {
-	srown(src, dst, w, denom, 1);
+	srowc(src, dst, w, denom, 1);
 }
 
 static void srow2(byte *src, byte *dst, int w, int denom)
 {
-	srown(src, dst, w, denom, 2);
+	srowc(src, dst, w, denom, 2);
 }
 
 static void srow4(byte *src, byte *dst, int w, int denom)
 {
-	srown(src, dst, w, denom, 4);
+	srowc(src, dst, w, denom, 4);
 }
 
 static void srow5(byte *src, byte *dst, int w, int denom)
 {
-	srown(src, dst, w, denom, 5);
+	srowc(src, dst, w, denom, 5);
 }
 
 static inline void scoln(byte * restrict src, byte * restrict dst, int w, int denom, int n)
