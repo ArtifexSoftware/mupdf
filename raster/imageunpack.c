@@ -33,12 +33,29 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 
 	if (!needed)
 		return;
-
-	while (wh--)
-	{
-		for (i = 0; i < n; i++)
-			p[i] = min[i] + fz_mul255(sub[i], p[i]);
-		p += n;
+	switch (n) {
+	    case 1:
+		while (wh--)
+		{
+			p[0] = min[0] + fz_mul255(sub[0], p[0]);
+			p ++;
+		}
+		break;
+	    case 2:
+		while (wh--)
+		{
+			p[0] = min[0] + fz_mul255(sub[0], p[0]);
+			p[1] = min[1] + fz_mul255(sub[1], p[1]);
+			p += 2;
+		}
+		break;
+	    default:
+		while (wh--)
+		{
+			for (i = 0; i < n; i++)
+				p[i] = min[i] + fz_mul255(sub[i], p[i]);
+			p += n;
+		}
 	}
 }
 
