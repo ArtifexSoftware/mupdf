@@ -242,15 +242,26 @@ int fz_peekbytex(fz_stream *stm)
 	return EOF;
 }
 
-int fz_read(fz_stream *stm, unsigned char *mem, int n)
+int fz_read(fz_stream *stm, unsigned char * restrict mem, int n)
 {
 	fz_buffer *buf = stm->buffer;
 	int i = 0;
 
 	while (i < n)
 	{
+#if 0
 		while (buf->rp < buf->wp && i < n)
 			mem[i++] = *buf->rp++;
+#else
+		int l = buf->wp - buf->rp;
+		int ln = n;
+		unsigned char * restrict src = buf->rp;
+		ln = MIN(n - i, l) + i;
+		while (i < ln) {
+			mem[i++] = *src++;
+		}
+		buf->rp = src;
+#endif
 		if (buf->rp == buf->wp)
 		{
 			if (buf->eof) return i;
