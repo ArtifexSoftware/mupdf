@@ -486,7 +486,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 	{
 		fz_pixmap *tmp;
 		int x, y, k, i;
-		int bpcfact = 1;
+		int invbpcfact = 1<<16;
 
 		error = fz_newpixmap(&tmp, tile->x, tile->y, tile->w, tile->h, 1);
 		if (error)
@@ -494,10 +494,10 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 
 		switch (src->bpc)
 		{
-		case 1: bpcfact = 255; break;
-		case 2: bpcfact = 85; break;
-		case 4: bpcfact = 17; break;
-		case 8: bpcfact = 1; break;
+		case 1: invbpcfact = (1<<16) / 255; break;
+		case 2: invbpcfact = (1<<16) / 85; break;
+		case 4: invbpcfact = (1<<16) / 17; break;
+		case 8: invbpcfact = (1<<16) / 1; break;
 		}
 
 		tilefunc(src->samples->rp + (tile->y * src->stride), src->stride,
@@ -506,15 +506,20 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 
 		for (y = 0; y < tile->h; y++)
 		{
+			int dn = tile->n;
+			unsigned char *dst = tile->samples + y * tile->w * dn;
+			unsigned char *st = tmp->samples + y * tmp->w;
+			unsigned char *index = src->indexed->lookup;
+			int high = src->indexed->high;
+			int sn = src->indexed->base->n;
 			for (x = 0; x < tile->w; x++)
 			{
-				tile->samples[(y * tile->w + x) * tile->n] = 255;
-				i = tmp->samples[y * tmp->w + x] / bpcfact;
-				i = CLAMP(i, 0, src->indexed->high);
-				for (k = 0; k < src->indexed->base->n; k++)
+				dst[x * dn] = 255; // alpha
+				i = st[x] * invbpcfact >> 16;
+				i = CLAMP(i, 0, high);
+				for (k = 0; k < sn; k++)
 				{
-					tile->samples[(y * tile->w + x) * tile->n + k + 1] =
-						src->indexed->lookup[i * src->indexed->base->n + k];
+					dst[x * dn + k + 1] = index[i * sn + k];
 				}
 			}
 		}

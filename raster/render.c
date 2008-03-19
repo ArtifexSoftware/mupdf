@@ -375,7 +375,7 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
 	/* y-banded loading/scaling of image, more cache-friendly */
-	tileheight = MAX(512*1024/(image->w * image->n), dy);
+	int tileheight = MAX(512*1024/(image->w * image->n), dy);
 	if ((dx != 1 || dy != 1) && image->h > tileheight) {
 		int y = 0;
 
@@ -386,6 +386,8 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 			return error;
 
 		error = fz_newscaledpixmap(&temp, image->w, image->h, image->n + 1, dx, dy);
+		if (error)
+			goto cleanup;
 
 		do {
 			if (y + tileheight > image->h)
@@ -396,14 +398,11 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 			      0, y, image->w, tileheight, dx, dy);
 			error = image->loadtile(image, tile);
 			if (error)
-				goto cleanup;
+				goto cleanup1;
 
 			error = fz_scalepixmaptile(temp, 0, y, tile, dx, dy);
-			if (error) {
-				if (temp)
-					fz_droppixmap(temp);
-				goto cleanup;
-			}
+			if (error)
+				goto cleanup1;
 			
 			y += tileheight;
 		} while (y < image->h);
@@ -511,6 +510,8 @@ DEBUG("}\n");
 	fz_droppixmap(tile);
 	return nil;
 
+cleanup1:
+	fz_droppixmap(temp);
 cleanup:
 	fz_droppixmap(tile);
 	return error;
