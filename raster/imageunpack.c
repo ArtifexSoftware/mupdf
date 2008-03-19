@@ -18,6 +18,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 	int n = pix->n;
 	int wh = pix->w * pix->h;
 	int i;
+	int justinvert = 1;
 
 	min[0] = 0;
 	max[0] = 255;
@@ -28,7 +29,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		min[i] = decode[(i - skip) * 2] * 255;
 		max[i] = decode[(i - skip) * 2 + 1] * 255;
 		sub[i] = max[i] - min[i];
-		needed |= (min[i] != 0) |  (max[i] != 255);
+                needed |= (min[i] != 0) |  (max[i] != 255);
 	}
 
 	if (!needed)
@@ -42,6 +43,26 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		}
 		break;
 	    case 2:
+		if (justinvert) {
+			int hwh = wh / 2;
+			unsigned *wp = (unsigned *)p;
+
+			assert((((unsigned)wp) & 3) == 0);
+
+			wh = hwh * 2 - wh;
+			while(hwh--) {
+				unsigned in = *wp;
+				unsigned out = in ^ 0xff00ff00;
+				*wp++ = out;
+			}
+			p = (byte *)wp;
+			while(wh--) {
+				p[0] = p[0];
+				p[1] = 255 - p[1];
+				p += 2;
+			}
+		}
+		else
 		while (wh--)
 		{
 			p[0] = min[0] + fz_mul255(sub[0], p[0]);
