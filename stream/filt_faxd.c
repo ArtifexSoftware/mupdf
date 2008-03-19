@@ -313,6 +313,7 @@ fz_processfaxd(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	fz_faxd *fax = (fz_faxd*)f;
 	fz_error *error;
 	int i;
+	unsigned char *tmp;
 
 	if (fax->stage == SEOL)
 		goto eol;
@@ -392,11 +393,17 @@ eol:
 
 	if (fax->blackis1)
 		memcpy(out->wp, fax->dst, fax->stride);
-	else
-		for (i = 0; i < fax->stride; i++)
-			out->wp[i] = ~fax->dst[i];
+	else {
+		unsigned char * restrict d = out->wp;
+		unsigned char * restrict s = fax->dst;
+		unsigned w = fax->stride;
+		for (i = 0; i < w; i++)
+			*d++ = *s++ ^ 0xff;
+	}
 
-	memcpy(fax->ref, fax->dst, fax->stride);
+	tmp = fax->ref;
+	fax->ref = fax->dst;
+	fax->dst = tmp;
 	memset(fax->dst, 0, fax->stride);
 	out->wp += fax->stride;
 
