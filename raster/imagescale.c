@@ -180,6 +180,98 @@ void (*fz_scol4)(byte *src, byte *dst, int w, int denom) = scol4;
 void (*fz_scol5)(byte *src, byte *dst, int w, int denom) = scol5;
 
 fz_error *
+fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom)
+{
+	int ow = (w + xdenom - 1) / xdenom;
+	int oh = (h + ydenom - 1) / ydenom;
+	return fz_newpixmap(dstp, 0, 0, ow, oh, n);
+}
+
+// TODO: refactor
+fz_error *
+fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xdenom, int ydenom)
+{
+	unsigned char *buf;
+	unsigned char *dstsamples;
+	int y, iy, oy;
+	int ow, oh, n;
+        int ydenom2 = ydenom;
+
+	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
+	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
+
+	ow = (src->w + xdenom - 1) / xdenom;
+	oh = (src->h + ydenom - 1) / ydenom;
+	xoffs /= xdenom;
+	yoffs /= ydenom;
+	n = src->n;
+
+	assert(xoffs == 0); // don't handle stride properly yet
+	assert(dst->n == n);
+	assert(dst->w >= xoffs + ow && dst->h >= yoffs + oh);
+
+	buf = fz_malloc(ow * n * ydenom);
+	if (!buf)
+		return fz_outofmem;
+
+	switch (n)
+	{
+	case 1: srowx = fz_srow1; scolx = fz_scol1; break;
+	case 2: srowx = fz_srow2; scolx = fz_scol2; break;
+	case 4: srowx = fz_srow4; scolx = fz_scol4; break;
+	case 5: srowx = fz_srow5; scolx = fz_scol5; break;
+	}
+
+	dstsamples = dst->samples + (yoffs * dst->w + xoffs)*dst->n;
+	if (srowx && scolx)
+	{
+		for (y = 0, oy = 0; y < (src->h / ydenom) * ydenom; y += ydenom, oy++)
+		{
+			for (iy = 0; iy < ydenom; iy++)
+				srowx(src->samples + (y + iy) * src->w * n,
+						 buf + iy * ow * n,
+						 src->w, xdenom);
+			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom2);
+		}
+
+		ydenom = src->h - y;
+		if (ydenom)
+		{
+			for (iy = 0; iy < ydenom; iy++)
+				srowx(src->samples + (y + iy) * src->w * n,
+						 buf + iy * ow * n,
+						 src->w, xdenom);
+			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom2);
+		}
+	}
+
+	else
+	{
+		for (y = 0, oy = 0; y < (src->h / ydenom) * ydenom; y += ydenom, oy++)
+		{
+			for (iy = 0; iy < ydenom; iy++)
+				fz_srown(src->samples + (y + iy) * src->w * n,
+						 buf + iy * ow * n,
+						 src->w, xdenom, n);
+			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom2, n);
+		}
+
+		ydenom = src->h - y;
+		if (ydenom)
+		{
+			for (iy = 0; iy < ydenom; iy++)
+				fz_srown(src->samples + (y + iy) * src->w * n,
+						 buf + iy * ow * n,
+						 src->w, xdenom, n);
+			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom2, n);
+		}
+	}
+
+	fz_free(buf);
+	return nil;
+}
+
+fz_error *
 fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 {
 	fz_error *error;

@@ -14,8 +14,8 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 	int max[FZ_MAXCOLORS];
 	int sub[FZ_MAXCOLORS];
 	int needed = 0;
-	byte *p = pix->samples;
 	int n = pix->n;
+	byte *p = pix->samples;
 	int wh = pix->w * pix->h;
 	int i;
 	int justinvert = 1;
@@ -35,6 +35,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 
 	if (!needed)
 		return;
+
 	switch (n) {
 	    case 1:
 		while (wh--)
@@ -45,18 +46,22 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		break;
 	    case 2:
 		if (justinvert) {
-			int hwh = wh / 2;
 			unsigned *wp = (unsigned *)p;
 
-			assert((((unsigned)wp) & 3) == 0);
-
-			wh = hwh * 2 - wh;
-			while(hwh--) {
-				unsigned in = *wp;
-				unsigned out = in ^ 0xff00ff00;
-				*wp++ = out;
+			if ((((unsigned)wp) & 3) == 0) {
+				int hwh = wh / 2;
+				wh = hwh * 2 - wh;
+				while(hwh--) {
+					unsigned in = *wp;
+#if BYTE_ORDER == LITTLE_ENDIAN
+					unsigned out = in ^ 0xff00ff00;
+#else
+					unsigned out = in ^ 0x00ff00ff;
+#endif
+					*wp++ = out;
+				}
+				p = (byte *)wp;
 			}
-			p = (byte *)wp;
 			while(wh--) {
 				p[0] = p[0];
 				p[1] = 255 - p[1];
@@ -117,7 +122,7 @@ static void init1()
 	inited = 1;
 }
 
-static void loadtile1(byte *src, int sw, byte *dst, int dw, int w, int h, int pad)
+static void loadtile1(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
 {
 	byte *sp;
 	byte *dp;

@@ -464,6 +464,8 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 	void (*tilefunc)(unsigned char*,int,unsigned char*, int, int, int, int);
 	fz_error *error;
 
+	assert(tile->x == 0); // can't handle general tile yet, only y-banding
+
 	assert(tile->n == img->n + 1);
 	assert(tile->x >= 0);
 	assert(tile->y >= 0);
@@ -498,7 +500,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		case 8: bpcfact = 1; break;
 		}
 
-		tilefunc(src->samples->rp, src->stride,
+		tilefunc(src->samples->rp + (tile->y * src->stride), src->stride,
 				tmp->samples, tmp->w,
 				tmp->w, tmp->h, 0);
 
@@ -507,7 +509,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 			for (x = 0; x < tile->w; x++)
 			{
 				tile->samples[(y * tile->w + x) * tile->n] = 255;
-				i = tmp->samples[y * tile->w + x] / bpcfact;
+				i = tmp->samples[y * tmp->w + x] / bpcfact;
 				i = CLAMP(i, 0, src->indexed->high);
 				for (k = 0; k < src->indexed->base->n; k++)
 				{
@@ -525,9 +527,9 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 
 	else
 	{
-		tilefunc(src->samples->rp, src->stride,
+		tilefunc(src->samples->rp + (tile->y * src->stride), src->stride,
 				tile->samples, tile->w * tile->n,
-				img->w * (img->n + img->a), img->h, img->a ? 0 : img->n);
+				tile->w * (img->n + img->a), tile->h, img->a ? 0 : img->n);
 		if (src->usecolorkey)
 			maskcolorkey(tile, src->colorkey);
 		fz_decodetile(tile, !img->a, src->decode);
