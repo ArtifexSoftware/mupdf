@@ -50,7 +50,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 
 			if ((((unsigned)wp) & 3) == 0) {
 				int hwh = wh / 2;
-				wh = hwh * 2 - wh;
+				wh = wh - 2 * hwh;
 				while(hwh--) {
 					unsigned in = *wp;
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -62,7 +62,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 				}
 				p = (byte *)wp;
 			}
-			while(wh--) {
+			if (wh--) {
 				p[0] = p[0];
 				p[1] = 255 - p[1];
 				p += 2;
