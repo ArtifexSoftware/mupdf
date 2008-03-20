@@ -162,7 +162,7 @@ void wintitle(pdfapp_t *app, char *s)
 
 void winconvert(pdfapp_t *app, fz_pixmap *image)
 {
-	// never mind
+	/* never mind */
 }
 
 void winresize(pdfapp_t *app, int w, int h)
@@ -529,7 +529,7 @@ int main(int argc, char **argv)
 			if (tmo_at.tv_sec != 0 && tmo_at.tv_usec != 0 &&
 				tmo.tv_sec == 0 && tmo.tv_usec == 0)
 			{
-				// redraw page
+				/* redraw page */
 				winblit(&gapp);
 				isshowingpage = 0;
 				winresettmo(&tmo, &tmo_at);

@@ -403,7 +403,7 @@ static void
 split_curve_s(const fz_point *pole, fz_point *q0, fz_point *q1, int pole_step)
 {
 #define midpoint(a,b)\
-	((a)/2.0f + (b)/2.0f) // to avoid overflow
+	((a)/2.0f + (b)/2.0f) /* to avoid overflow */
     float x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
     float y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
 
@@ -513,7 +513,7 @@ triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ptr, int ncomp)
 	return ptr;
 
 cleanup:
-	// error handling
+	/* error handling */
 	return -1;
 }
 

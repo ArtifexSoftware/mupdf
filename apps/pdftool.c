@@ -734,11 +734,13 @@ editcopy(int pagenum)
 	obj = pdf_getpageobject(srcpages, pagenum - 1);
 
 	fz_dictdels(obj, "Parent");
-	// fz_dictdels(obj, "B");
-	// fz_dictdels(obj, "PieceInfo");
-	// fz_dictdels(obj, "Metadata");
-	// fz_dictdels(obj, "Annots");
-	// fz_dictdels(obj, "Tabs");
+	/*
+	fz_dictdels(obj, "B");
+	fz_dictdels(obj, "PieceInfo");
+	fz_dictdels(obj, "Metadata");
+	fz_dictdels(obj, "Annots");
+	fz_dictdels(obj, "Tabs");
+	*/
 
 	pdf_updateobject(src, fz_tonum(ref), fz_togen(ref), obj);
 
