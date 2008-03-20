@@ -403,7 +403,7 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 			error = fz_scalepixmaptile(temp, 0, y, tile, dx, dy);
 			if (error)
 				goto cleanup1;
-			
+
 			y += tileheight;
 		} while (y < image->h);
 

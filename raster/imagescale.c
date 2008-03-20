@@ -67,7 +67,7 @@ static inline void srowc(byte * restrict src, byte * restrict dst, int w, int de
 		if (++left == denom)
 		{
 			left = 0;
-			
+
 			dst[0] = (sum1 * invdenom) >> 16;
 			sum1 = 0;
 			if (n >= 2) {
@@ -195,7 +195,7 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	unsigned char *dstsamples;
 	int y, iy, oy;
 	int ow, oh, n;
-        int ydenom2 = ydenom;
+	int ydenom2 = ydenom;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -279,7 +279,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	unsigned char *buf;
 	int y, iy, oy;
 	int ow, oh, n;
-        int ydenom2 = ydenom;
+	int ydenom2 = ydenom;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
