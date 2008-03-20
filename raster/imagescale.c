@@ -36,7 +36,7 @@ static inline void srown(byte * restrict src, byte * restrict dst, int w, int de
 			dst[k] = sum[k] / left;
 }
 
-// special-case common 1-5 components - the compiler optimizes this
+/* special-case common 1-5 components - the compiler optimizes this */
 static inline void srowc(byte * restrict src, byte * restrict dst, int w, int denom, int n)
 {
 	int invdenom = (1<<16) / denom;
@@ -54,7 +54,7 @@ static inline void srowc(byte * restrict src, byte * restrict dst, int w, int de
 	for (x = 0; x < w; x++)
 	{
 		sum1 += src[x * n + 0];
-		// the compiler eliminates these if-tests
+		/* the compiler eliminates these if-tests */
 		if (n >= 2)
 			sum2 += src[x * n + 1];
 		if (n >= 3)

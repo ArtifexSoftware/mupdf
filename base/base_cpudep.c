@@ -27,11 +27,13 @@ void fz_cpudetect(void)
 #include <setjmp.h> /* sigsetjmp/siglongjmp */
 #endif
 
-//#ifdef WIN32
-//#define sigjmp_buf jmp_buf
-//#define sigsetjmp(a,b) setjmp(a)
-//#define siglongjmp longjmp
-//#endif
+/*
+#ifdef WIN32
+#define sigjmp_buf jmp_buf
+#define sigsetjmp(a,b) setjmp(a)
+#define siglongjmp longjmp
+#endif
+*/
 
 typedef struct {
 	void (*test)(void);
@@ -236,7 +238,7 @@ void fz_cpudetect(void)
 		features[i].test();
 
 #if defined(ARCH_X86) || defined(ARCH_X86_64)
-		// reset mmx/x87 pipeline state
+		/* reset mmx/x87 pipeline state */
 		if (features[i].flag & (HAVE_MMX | HAVE_3DNOW | HAVE_MMXEXT)) {
 			__asm__ __volatile__ ("emms\n\t");
 		}
@@ -300,7 +302,7 @@ void fz_cpudetect(void)
 
 #if defined(ARCH_X86) || defined(ARCH_X86_64)
 		if (features[i].flag & (HAVE_MMX | HAVE_3DNOW | HAVE_MMXEXT)) {
-			// reset mmx/x87 pipeline state
+			/* reset mmx/x87 pipeline state */
 			__asm emms;
 		}
 #endif
