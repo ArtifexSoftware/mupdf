@@ -317,7 +317,7 @@ void windocopy(pdfapp_t *app)
 	*utf8 = 0;
 	*latin1 = 0;
 
-printf("oncopy utf8=%d latin1=%d\n", strlen(copyutf8), strlen(copylatin1));
+printf("oncopy utf8=%zd latin1=%zd\n", strlen(copyutf8), strlen(copylatin1));
 
 	XSetSelectionOwner(xdpy, XA_PRIMARY, xwin, copytime);
 
@@ -357,7 +357,7 @@ printf(" -> targets\n");
 
 	else if (target == XA_STRING)
 	{
-printf(" -> string %d\n", strlen(copylatin1));
+printf(" -> string %zd\n", strlen(copylatin1));
 		XChangeProperty(xdpy, requestor, property, target,
 				8, PropModeReplace,
 				(unsigned char *)copylatin1, strlen(copylatin1));
