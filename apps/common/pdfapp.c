@@ -6,7 +6,7 @@ enum panning
 {
 	DONT_PAN = 0,
 	PAN_TO_TOP,
-	PAN_TO_BOTTOM,
+	PAN_TO_BOTTOM
 };
 
 void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage);
