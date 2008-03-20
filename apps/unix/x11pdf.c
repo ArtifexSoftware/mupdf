@@ -292,6 +292,19 @@ void windrawstring(pdfapp_t *app, char *s, int x, int y)
 	XChangeGC(xdpy, xgc, GCFunction, &xgcv);
 }
 
+void windrawpageno(pdfapp_t *app)
+{
+	char s[100];
+
+	int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno,
+			pdf_getpagecount(gapp.pages));
+	if (ret >= 0)
+	{
+		isshowingpage = 1;
+		windrawstring(&gapp, s, 10, 20);
+	}
+}
+
 void windocopy(pdfapp_t *app)
 {
 	unsigned short copyucs2[16 * 1024];
@@ -399,17 +412,7 @@ void onkey(int c)
 	}
 
 	if (c == 'P')
-	{
-		char s[100];
-
-		int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno,
-				pdf_getpagecount(gapp.pages));
-		if (ret >= 0)
-		{
-			isshowingpage = 1;
-			windrawstring(&gapp, s, 10, 20);
-		}
-	}
+		windrawpageno(&gapp);
 	else if (c == 'q')
 		exit(0);
 	else
