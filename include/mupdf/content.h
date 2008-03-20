@@ -26,10 +26,11 @@ struct pdf_material_s
 {
 	int kind;
 	fz_colorspace *cs;
-	float v[32];
 	pdf_indexed *indexed;
 	pdf_pattern *pattern;
 	fz_shade *shade;
+	float alpha;
+	float v[32];
 };
 
 struct pdf_gstate_s

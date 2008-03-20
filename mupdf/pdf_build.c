@@ -18,6 +18,7 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->stroke.indexed = nil;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
+	gs->stroke.alpha = 1.0;
 
 	gs->fill.kind = PDF_MCOLOR;
 	gs->fill.cs = fz_keepcolorspace(pdf_devicegray);
@@ -25,6 +26,7 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->fill.indexed = nil;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;
+	gs->fill.alpha = 1.0;
 
 	gs->charspace = 0;
 	gs->wordspace = 0;
@@ -212,7 +214,7 @@ pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 }
 
 static fz_error *
-addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
+addcolorshape(pdf_gstate *gs, fz_node *shape, float alpha, fz_colorspace *cs, float *v)
 {
 	fz_error *error;
 	fz_node *mask;
@@ -221,7 +223,7 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	error = fz_newmasknode(&mask);
 	if (error) return error;
 
-	error = fz_newsolidnode(&solid, cs, cs->n, v);
+	error = fz_newsolidnode(&solid, alpha, cs, cs->n, v);
 	if (error) return error;
 
 	fz_insertnodelast(mask, shape);
@@ -344,7 +346,7 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	}
 
 	if (pat->ismask)
-		return addcolorshape(gs, mask, cs, v);
+		return addcolorshape(gs, mask, 1.0, cs, v);
 
 	fz_insertnodelast(gs->head, mask);
 	return nil;
@@ -393,7 +395,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 		error = fz_newovernode(&over);
 		if (error) return error;
 
-		error = fz_newsolidnode(&bgnd, shade->cs, shade->cs->n, shade->background);
+		error = fz_newsolidnode(&bgnd, 1.0, shade->cs, shade->cs->n, shade->background);
 		if (error) return error;
 
 		fz_insertnodelast(mask, shape);
@@ -425,7 +427,7 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 	case PDF_MCOLOR:
 	case PDF_MLAB:
 	case PDF_MINDEXED:
-		return addcolorshape(gs, shape, gs->fill.cs, gs->fill.v);
+		return addcolorshape(gs, shape, gs->fill.alpha, gs->fill.cs, gs->fill.v);
 	case PDF_MPATTERN:
 		return addpatternshape(gs, shape, gs->fill.pattern, gs->fill.cs, gs->fill.v);
 	case PDF_MSHADE:
@@ -446,7 +448,7 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 	case PDF_MCOLOR:
 	case PDF_MLAB:
 	case PDF_MINDEXED:
-		return addcolorshape(gs, shape, gs->stroke.cs, gs->stroke.v);
+		return addcolorshape(gs, shape, gs->stroke.alpha, gs->stroke.cs, gs->stroke.v);
 	case PDF_MPATTERN:
 		return addpatternshape(gs, shape, gs->stroke.pattern, gs->stroke.cs, gs->stroke.v);
 	case PDF_MSHADE:

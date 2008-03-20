@@ -69,6 +69,7 @@ struct fz_renderer_s
 	fz_irect clip;
 	fz_pixmap *dest;
 	fz_pixmap *over;
+	unsigned char a;
 	unsigned char rgb[3];
 	int flag;
 };

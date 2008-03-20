@@ -264,7 +264,7 @@ static fz_error *clean1x1(fz_node *node)
 
 					fz_droppixmap(pix);
 
-					error = fz_newsolidnode(&color, image->cs, image->n, v);
+					error = fz_newsolidnode(&color, 1.0, image->cs, image->n, v);
 					if (error)
 						return error;
 					error = fz_newmasknode(&mask);

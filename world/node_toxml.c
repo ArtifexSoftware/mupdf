@@ -72,7 +72,7 @@ static void xmlsolid(fz_solidnode *node, int level)
 {
 	int i;
 	indent(level);
-	printf("<solid colorspace=\"%s\" v=\"", node->cs->name);
+	printf("<solid colorspace=\"%s\" alpha=\"%g\" v=\"", node->cs->name, node->a);
 	for (i = 0; i < node->n; i++)
 	{
 		printf("%g", node->samples[i]);

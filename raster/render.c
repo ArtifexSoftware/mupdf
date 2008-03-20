@@ -113,6 +113,8 @@ rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 	if (gc->model->n != 3)
 		return fz_throw("assert: non-rgb renderer");
 
+	gc->a = solid->a * 255;
+
 	fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
 	gc->rgb[0] = rgb[0] * 255;
 	gc->rgb[1] = rgb[1] * 255;
@@ -136,7 +138,7 @@ DEBUG("solid %s [%d %d %d];\n", solid->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb
 
 	while (n--)
 	{
-		p[0] = 255;
+		p[0] = gc->a;
 		p[1] = gc->rgb[0];
 		p[2] = gc->rgb[1];
 		p[3] = gc->rgb[2];

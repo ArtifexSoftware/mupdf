@@ -165,6 +165,13 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj)
 	if (error)
 		return error;
 
+	/* reset alpha to 1.0 when starting a new group */
+	{
+	    pdf_gstate *gstate = csi->gstate + csi->gtop;
+	    gstate->stroke.alpha = 1.0;
+	    gstate->fill.alpha = 1.0;
+	}
+
 	/* push transform */
 
 	error = fz_newtransformnode(&transform, xobj->matrix);
@@ -282,6 +289,11 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 			else
 				return fz_throw("syntaxerror in ExtGState/D");
 		}
+
+		else if (!strcmp(s, "CA"))
+			gstate->stroke.alpha = fz_toreal(val);
+		else if (!strcmp(s, "ca"))
+			gstate->fill.alpha = fz_toreal(val);
 	}
 
 	return nil;

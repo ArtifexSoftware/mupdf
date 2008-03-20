@@ -122,6 +122,7 @@ struct fz_solidnode_s
 	fz_node super;
 	fz_colorspace *cs;
 	int n;
+	float a;
 	float samples[FZ_FLEX];
 };
 
@@ -170,7 +171,7 @@ int fz_ismetanode(fz_node *node);
 
 /* leaf nodes */
 fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);
-fz_error *fz_newsolidnode(fz_node **nodep, fz_colorspace *cs, int n, float *v);
+fz_error *fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v);
 fz_error *fz_newimagenode(fz_node **nodep, fz_image *image);
 fz_error *fz_newshadenode(fz_node **nodep, fz_shade *shade);
 

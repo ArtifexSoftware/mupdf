@@ -230,7 +230,7 @@ fz_boundlinknode(fz_linknode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newsolidnode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
+fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v)
 {
 	fz_solidnode *node;
 	int i;
@@ -241,6 +241,7 @@ fz_newsolidnode(fz_node **nodep, fz_colorspace *cs, int n, float *v)
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NCOLOR);
+	node->a = a;
 	node->cs = fz_keepcolorspace(cs);
 	node->n = n;
 	for (i = 0; i < n; i++)
