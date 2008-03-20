@@ -375,7 +375,7 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
 	/* y-banded loading/scaling of image, more cache-friendly */
-	int tileheight = MAX(512*1024/(image->w * image->n), dy);
+	tileheight = MAX(512*1024/(image->w * (image->n + image->a)), dy);
 	if ((dx != 1 || dy != 1) && image->h > tileheight) {
 		int y = 0;
 
