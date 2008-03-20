@@ -514,7 +514,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 			int sn = src->indexed->base->n;
 			for (x = 0; x < tile->w; x++)
 			{
-				dst[x * dn] = 255; // alpha
+				dst[x * dn] = 255; /* alpha */
 				i = st[x] * invbpcfact >> 16;
 				i = CLAMP(i, 0, high);
 				for (k = 0; k < sn; k++)
