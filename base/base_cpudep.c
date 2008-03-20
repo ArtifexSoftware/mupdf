@@ -256,8 +256,8 @@ void fz_cpudetect(void)
 
 	fz_cpuflags = flags;
 
-#if defined(ARCH_X86) || defined(ARCH_X86_64) 
-        __asm__ __volatile__ ("emms\n\t"); 
+#if defined(ARCH_X86) || defined(ARCH_X86_64)
+        __asm__ __volatile__ ("emms\n\t");
 #endif
 
 	dumpflags();
@@ -323,3 +323,4 @@ void fz_cpudetect(void)
 #endif
 
 #endif
+
