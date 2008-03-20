@@ -187,7 +187,7 @@ fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom
 	return fz_newpixmap(dstp, 0, 0, ow, oh, n);
 }
 
-// TODO: refactor
+/* TODO: refactor */
 fz_error *
 fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xdenom, int ydenom)
 {
@@ -206,7 +206,7 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	yoffs /= ydenom;
 	n = src->n;
 
-	assert(xoffs == 0); // don't handle stride properly yet
+	assert(xoffs == 0); /* don't handle stride properly yet */
 	assert(dst->n == n);
 	assert(dst->w >= xoffs + ow && dst->h >= yoffs + oh);
 

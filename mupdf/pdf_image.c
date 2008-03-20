@@ -464,7 +464,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 	void (*tilefunc)(unsigned char*,int,unsigned char*, int, int, int, int);
 	fz_error *error;
 
-	assert(tile->x == 0); // can't handle general tile yet, only y-banding
+	assert(tile->x == 0); /* can't handle general tile yet, only y-banding */
 
 	assert(tile->n == img->n + 1);
 	assert(tile->x >= 0);
