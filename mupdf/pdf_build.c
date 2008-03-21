@@ -337,7 +337,6 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	fz_insertnodelast(mask, xform);
 	fz_insertnodelast(xform, over);
 	xform = nil;
-	mask = nil;
 
 	/* over, xform, mask are now owned by the tree */
 
