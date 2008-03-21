@@ -741,11 +741,11 @@ drawpages(char *pagelist)
 			loadtimes.avg /= loadtimes.pages;
 			drawtimes.avg /= drawtimes.pages;
 
-			printf("benchmark[load]: min: %6.3fs (page % 4d), avg: %6.3fs, max: %6.3f (page % 4d)\n",
+			printf("benchmark[load]: min: %6.3fs (page % 4d), avg: %6.3fs, max: %6.3fs (page % 4d)\n",
 				loadtimes.min / 1000000.0, loadtimes.minpage,
 				loadtimes.avg / 1000000.0,
 				loadtimes.max / 1000000.0, loadtimes.maxpage);
-			printf("benchmark[draw]: min: %6.3fs (page % 4d), avg: %6.3fs, max: %6.3f (page % 4d)\n",
+			printf("benchmark[draw]: min: %6.3fs (page % 4d), avg: %6.3fs, max: %6.3fs (page % 4d)\n",
 				drawtimes.min / 1000000.0, drawtimes.minpage,
 				drawtimes.avg / 1000000.0,
 				drawtimes.max / 1000000.0, drawtimes.maxpage);
