@@ -83,9 +83,9 @@ void opensrc(char *filename, char *password, int loadpages)
 
 	if (src->crypt)
 	{
-		int okay = pdf_setpassword(src->crypt, password);
-		if (!okay)
-			die(fz_throw("invalid password"));
+		error = pdf_setpassword(src->crypt, password);
+		if (error)
+			die(fz_rethrow(error, "invalid password"));
 	}
 
 	if (loadpages)

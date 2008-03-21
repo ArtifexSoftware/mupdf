@@ -328,16 +328,24 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
  * Return true if the password is valid.
  */
 
-int
+fz_error *
 pdf_setpassword(pdf_crypt *crypt, char *pw)
 {
-	int okay = pdf_setuserpassword(crypt, pw, strlen(pw));
-	if (!okay)
-		okay = pdf_setownerpassword(crypt, pw, strlen(pw));
-	return okay;
+	fz_error *error;
+
+	error = pdf_setuserpassword(crypt, pw, strlen(pw));
+	if (error)
+	{
+		fz_droperror(error);
+		error = pdf_setownerpassword(crypt, pw, strlen(pw));
+		if (error)
+			return fz_rethrow(error, "Invalid password");
+	}
+
+	return fz_okay;
 }
 
-int
+fz_error *
 pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 {
 	unsigned char saved[32];
@@ -349,11 +357,12 @@ pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 	memcpy(crypt->u, saved, 32);
 
 	if (memcmp(test, saved, crypt->r == 3 ? 16 : 32) != 0)
-		return 0;
-	return 1;
+		return fz_throw("Invalid password");
+
+	return fz_okay;
 }
 
-int
+fz_error *
 pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 {
 	unsigned char buf[32];
