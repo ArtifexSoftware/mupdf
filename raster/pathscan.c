@@ -445,7 +445,7 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 	}
 
 	if (argb)
-		fz_path_w3i1o4(argb, list, cov, len, dst);
+		fz_path_w4i1o4(argb, list, cov, len, dst);
 	else if (over)
 		fz_path_1o1(list, cov, len, dst);
 	else

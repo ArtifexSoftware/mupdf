@@ -25,18 +25,18 @@ extern void (*fz_duff_4i1o4)(FZ_BYTE*,int,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
 
 extern void (*fz_path_1c1)(FZ_BYTE*,int,int,FZ_BYTE*);
 extern void (*fz_path_1o1)(FZ_BYTE*,int,int,FZ_BYTE*);
-extern void (*fz_path_w3i1o4)(FZ_BYTE*,FZ_BYTE*,int,int,FZ_BYTE*);
+extern void (*fz_path_w4i1o4)(FZ_BYTE*,FZ_BYTE*,int,int,FZ_BYTE*);
 
 extern void (*fz_text_1c1)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
 extern void (*fz_text_1o1)(FZ_BYTE*,int,FZ_BYTE*,int,int,int);
-extern void (*fz_text_w3i1o4)(FZ_BYTE*,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
+extern void (*fz_text_w4i1o4)(FZ_BYTE*,FZ_BYTE*,int,FZ_BYTE*,int,int,int);
 
 extern void (*fz_img_ncn)(FZ_PSRC, int sn, FZ_PDST, FZ_PCTM);
 extern void (*fz_img_1c1)(FZ_PSRC, FZ_PDST, FZ_PCTM);
 extern void (*fz_img_4c4)(FZ_PSRC, FZ_PDST, FZ_PCTM);
 extern void (*fz_img_1o1)(FZ_PSRC, FZ_PDST, FZ_PCTM);
 extern void (*fz_img_4o4)(FZ_PSRC, FZ_PDST, FZ_PCTM);
-extern void (*fz_img_w3i1o4)(FZ_BYTE*,FZ_PSRC,FZ_PDST,FZ_PCTM);
+extern void (*fz_img_w4i1o4)(FZ_BYTE*,FZ_PSRC,FZ_PDST,FZ_PCTM);
 
 extern void (*fz_decodetile)(fz_pixmap *pix, int skip, float *decode);
 extern void (*fz_loadtile1)(FZ_BYTE*, int sw, FZ_BYTE*, int dw, int w, int h, int pad);
@@ -69,7 +69,7 @@ struct fz_renderer_s
 	fz_irect clip;
 	fz_pixmap *dest;
 	fz_pixmap *over;
-	unsigned char argb[4];
+	unsigned char argb[7]; /* alpha, a*r, a*g, a*b, r, g, b */
 	int flag;
 };
 

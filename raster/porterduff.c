@@ -257,23 +257,22 @@ static void path_1o1(byte * restrict src, int cov, int len, byte * restrict dst)
 	}
 }
 
-static void path_w3i1o4(byte * restrict argb, byte * restrict src, int cov, int len, byte * restrict dst)
+// With 4 In 1 Over 4
+static void path_w4i1o4(byte * restrict argb, byte * restrict src, int cov, int len, byte * restrict dst)
 {
-	byte ca = argb[0];
-	byte rgb0 = argb[1];
-	byte rgb1 = argb[2];
-	byte rgb2 = argb[3];
-	byte ssa;
+	byte alpha = argb[0];
+	byte r = argb[4];
+	byte g = argb[5];
+	byte b = argb[6];
 	while (len--)
 	{
-		byte a;
+		byte ca;
 		cov += *src; *src = 0; src++;
-		a = fz_mul255(cov, ca);
-		ssa = 255 - a;
-		dst[0] = a + fz_mul255(dst[0], ssa);
-		dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
-		dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
-		dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
+		ca = fz_mul255(cov, alpha);
+		dst[0] = ca + fz_mul255(dst[0], 255 - ca);
+		dst[1] = fz_mul255((short)r - dst[1], ca) + dst[1];
+		dst[2] = fz_mul255((short)g - dst[2], ca) + dst[2];
+		dst[3] = fz_mul255((short)b - dst[3], ca) + dst[3];
 		dst += 4;
 	}
 }
@@ -312,12 +311,12 @@ static void text_1o1(byte * restrict src0, int srcw, byte * restrict dst0, int d
 	}
 }
 
-static void text_w3i1o4(byte * restrict argb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
+static void text_w4i1o4(byte * restrict argb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
-	unsigned char ca = argb[0];
-	unsigned char rgb0 = argb[1];
-	unsigned char rgb1 = argb[2];
-	unsigned char rgb2 = argb[3];
+	unsigned char alpha = argb[0];
+	unsigned char r = argb[4];
+	unsigned char g = argb[5];
+	unsigned char b = argb[6];
 	while (h--)
 	{
 		byte *src = src0;
@@ -325,12 +324,11 @@ static void text_w3i1o4(byte * restrict argb, byte * restrict src0, int srcw, by
 		int w = w0;
 		while (w--)
 		{
-			byte sa = fz_mul255(src[0], ca);
-			byte ssa = 255 - sa;
-			dst[0] = sa + fz_mul255(dst[0], ssa);
-			dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
-			dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
-			dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
+			byte ca = fz_mul255(src[0], alpha);
+			dst[0] = ca + fz_mul255(dst[0], 255 - ca);
+			dst[1] = fz_mul255((short)r - dst[1], ca);
+			dst[2] = fz_mul255((short)g - dst[2], ca);
+			dst[3] = fz_mul255((short)b - dst[3], ca);
 			src ++;
 			dst += 4;
 		}
@@ -355,9 +353,9 @@ void (*fz_duff_4i1o4)(byte*,int,byte*,int,byte*,int,int,int) = duff_4i1o4;
 
 void (*fz_path_1c1)(byte*,int,int,byte*) = path_1c1;
 void (*fz_path_1o1)(byte*,int,int,byte*) = path_1o1;
-void (*fz_path_w3i1o4)(byte*,byte*,int,int,byte*) = path_w3i1o4;
+void (*fz_path_w4i1o4)(byte*,byte*,int,int,byte*) = path_w4i1o4;
 
 void (*fz_text_1c1)(byte*,int,byte*,int,int,int) = text_1c1;
 void (*fz_text_1o1)(byte*,int,byte*,int,int,int) = text_1o1;
-void (*fz_text_w3i1o4)(byte*,byte*,int,byte*,int,int,int) = text_w3i1o4;
+void (*fz_text_w4i1o4)(byte*,byte*,int,byte*,int,int,int) = text_w4i1o4;
 

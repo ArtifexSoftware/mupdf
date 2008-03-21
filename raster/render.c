@@ -51,6 +51,9 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	gc->argb[1] = 0;
 	gc->argb[2] = 0;
 	gc->argb[3] = 0;
+	gc->argb[4] = 0;
+	gc->argb[5] = 0;
+	gc->argb[6] = 0;
 	gc->flag = 0;
 
 	*gcp = gc;
@@ -120,6 +123,9 @@ rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 	gc->argb[1] = rgb[0] * solid->a * 255;
 	gc->argb[2] = rgb[1] * solid->a * 255;
 	gc->argb[3] = rgb[2] * solid->a * 255;
+	gc->argb[4] = rgb[0] * 255;
+	gc->argb[5] = rgb[1] * 255;
+	gc->argb[6] = rgb[2] * 255;
 
 DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc->argb[2], gc->argb[3]);
 
@@ -278,7 +284,7 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 
 	case FOVER | FRGB:
 		assert(dst->n == 4);
-		fz_text_w3i1o4(gc->argb, sp, src->w, dp, dst->w * 4, w, h);
+		fz_text_w4i1o4(gc->argb, sp, src->w, dp, dst->w * 4, w, h);
 		break;
 
 	default:
@@ -516,7 +522,7 @@ DEBUG("  fover %d x %d\n", w, h);
 
 	case FOVER | FRGB:
 DEBUG("  fover+rgb %d x %d\n", w, h);
-		fz_img_w3i1o4(gc->argb, PSRC, PDST(gc->over), PCTM);
+		fz_img_w4i1o4(gc->argb, PSRC, PDST(gc->over), PCTM);
 		break;
 
 	default:
@@ -731,6 +737,9 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			gc->argb[1] = rgb[0] * solid->a * 255;
 			gc->argb[2] = rgb[1] * solid->a * 255;
 			gc->argb[3] = rgb[2] * solid->a * 255;
+			gc->argb[4] = rgb[0] * 255;
+			gc->argb[5] = rgb[1] * 255;
+			gc->argb[6] = rgb[2] * 255;
 			gc->flag |= FRGB;
 
 			/* we know these can handle the FRGB shortcut */

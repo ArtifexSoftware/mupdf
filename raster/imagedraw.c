@@ -201,13 +201,14 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 	}
 }
 
-static void img_w3i1o4(byte *argb, FZ_PSRC, FZ_PDST, FZ_PCTM)
+static void img_w4i1o4(byte *argb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
-	byte ca = argb[0];
-	byte rgb0 = argb[1];
-	byte rgb1 = argb[2];
-	byte rgb2 = argb[3];
-	byte sa, ssa;
+	byte alpha = argb[0];
+	byte r = argb[4];
+	byte g = argb[5];
+	byte b = argb[6];
+	byte cov;
+	byte ca;
 	while (h--)
 	{
 		byte *dstp = dst0;
@@ -216,13 +217,12 @@ static void img_w3i1o4(byte *argb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 		int w = w0;
 		while (w--)
 		{
-			sa = samplemask(src, srcw, srch, u, v);
-			sa = fz_mul255(sa, ca);
-			ssa = 255 - sa;
-			dstp[0] = sa + fz_mul255(dstp[0], ssa);
-			dstp[1] = rgb0 + fz_mul255((short)dstp[1] - rgb0, ssa);
-			dstp[2] = rgb1 + fz_mul255((short)dstp[2] - rgb1, ssa);
-			dstp[3] = rgb2 + fz_mul255((short)dstp[3] - rgb2, ssa);
+			cov = samplemask(src, srcw, srch, u, v);
+			ca = fz_mul255(cov, alpha);
+			dstp[0] = ca + fz_mul255(dstp[0], 255 - ca);
+			dstp[1] = fz_mul255((short)r - dstp[1], ca) + dstp[1];
+			dstp[2] = fz_mul255((short)g - dstp[2], ca) + dstp[2];
+			dstp[3] = fz_mul255((short)b - dstp[3], ca) + dstp[3];
 			dstp += 4;
 			u += fa;
 			v += fb;
@@ -238,5 +238,5 @@ void (*fz_img_1c1)(FZ_PSRC, FZ_PDST, FZ_PCTM) = img_1c1;
 void (*fz_img_4c4)(FZ_PSRC, FZ_PDST, FZ_PCTM) = img_4c4;
 void (*fz_img_1o1)(FZ_PSRC, FZ_PDST, FZ_PCTM) = img_1o1;
 void (*fz_img_4o4)(FZ_PSRC, FZ_PDST, FZ_PCTM) = img_4o4;
-void (*fz_img_w3i1o4)(byte*,FZ_PSRC,FZ_PDST,FZ_PCTM) = img_w3i1o4;
+void (*fz_img_w4i1o4)(byte*,FZ_PSRC,FZ_PDST,FZ_PCTM) = img_w4i1o4;
 
