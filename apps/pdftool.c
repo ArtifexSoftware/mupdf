@@ -759,6 +759,7 @@ drawmain(int argc, char **argv)
 	fz_error *error;
 	char *password = "";
 	int c;
+	enum { NO_FILE_OPENED, NO_PAGES_DRAWN, DREW_PAGES } state;
 
 	while ((c = getopt(argc, argv, "b:d:o:r:txm")) != -1)
 	{
@@ -784,14 +785,27 @@ drawmain(int argc, char **argv)
 	if (error)
 		die(error);
 
+	state = NO_FILE_OPENED;
 	while (optind < argc)
 	{
 		if (strstr(argv[optind], ".pdf"))
+		{
+			if (state == NO_PAGES_DRAWN)
+				drawpages("1-");
+
 			opensrc(argv[optind], password, 1);
+			state = NO_PAGES_DRAWN;
+		}
 		else
+		{
 			drawpages(argv[optind]);
+			state = DREW_PAGES;
+		}
 		optind++;
 	}
+
+	if (state == NO_PAGES_DRAWN)
+		drawpages("1-");
 
 	closesrc();
 
