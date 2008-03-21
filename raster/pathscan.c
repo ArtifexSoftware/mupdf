@@ -429,7 +429,7 @@ static inline void toalpha(unsigned char *list, int n)
 
 static inline void blit(fz_pixmap *pix, int x, int y,
 						unsigned char *list, int skipx, int len,
-						unsigned char *rgb, int over)
+						unsigned char *argb, int over)
 {
 	unsigned char *dst;
 	int cov;
@@ -444,8 +444,8 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 		++list;
 	}
 
-	if (rgb)
-		fz_path_w3i1o4(rgb, list, cov, len, dst);
+	if (argb)
+		fz_path_w3i1o4(argb, list, cov, len, dst);
 	else if (over)
 		fz_path_1o1(list, cov, len, dst);
 	else
@@ -454,7 +454,7 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 
 fz_error *
 fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
-	fz_pixmap *pix, unsigned char *rgb, int over)
+	fz_pixmap *pix, unsigned char *argb, int over)
 {
 	fz_error *error;
 	unsigned char *deltas;
@@ -493,7 +493,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 		{
 			if (yd >= clip.y0 && yd < clip.y1)
 			{
-				blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
+				blit(pix, xmin + skipx, yd, deltas, skipx, clipn, argb, over);
 			}
 		}
 		yd = yc;
@@ -522,7 +522,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 
 	if (yd >= clip.y0 && yd < clip.y1)
 	{
-		blit(pix, xmin + skipx, yd, deltas, skipx, clipn, rgb, over);
+		blit(pix, xmin + skipx, yd, deltas, skipx, clipn, argb, over);
 	}
 
 	fz_free(deltas);
