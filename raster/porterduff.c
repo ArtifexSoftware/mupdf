@@ -257,16 +257,19 @@ static void path_1o1(byte * restrict src, int cov, int len, byte * restrict dst)
 	}
 }
 
-static void path_w3i1o4(byte * restrict rgb, byte * restrict src, int cov, int len, byte * restrict dst)
+static void path_w3i1o4(byte * restrict argb, byte * restrict src, int cov, int len, byte * restrict dst)
 {
-	byte rgb0 = rgb[0];
-	byte rgb1 = rgb[1];
-	byte rgb2 = rgb[2];
+	byte ca = argb[0];
+	byte rgb0 = argb[1];
+	byte rgb1 = argb[2];
+	byte rgb2 = argb[3];
 	byte ssa;
 	while (len--)
 	{
+		byte a;
 		cov += *src; *src = 0; src++;
-		ssa = 255 - cov;
+		a = fz_mul255(cov, ca);
+		ssa = 255 - a;
 		dst[0] = cov + fz_mul255(dst[0], ssa);
 		dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
 		dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
@@ -279,8 +282,8 @@ static void text_1c1(byte * restrict src0, int srcw, byte * restrict dst0, int d
 {
 	while (h--)
 	{
-		byte *src = src0;
-		byte *dst = dst0;
+		byte * restrict src = src0;
+		byte * restrict dst = dst0;
 		int w = w0;
 		while (w--)
 		{
@@ -309,11 +312,12 @@ static void text_1o1(byte * restrict src0, int srcw, byte * restrict dst0, int d
 	}
 }
 
-static void text_w3i1o4(byte * restrict rgb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
+static void text_w3i1o4(byte * restrict argb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
-	unsigned char rgb0 = rgb[0];
-	unsigned char rgb1 = rgb[1];
-	unsigned char rgb2 = rgb[2];
+	unsigned char ca = argb[0];
+	unsigned char rgb0 = argb[1];
+	unsigned char rgb1 = argb[2];
+	unsigned char rgb2 = argb[3];
 	while (h--)
 	{
 		byte *src = src0;
@@ -321,7 +325,7 @@ static void text_w3i1o4(byte * restrict rgb, byte * restrict src0, int srcw, byt
 		int w = w0;
 		while (w--)
 		{
-			byte sa = src[0];
+			byte sa = fz_mul255(src[0], ca);
 			byte ssa = 255 - sa;
 			dst[0] = sa + fz_mul255(dst[0], ssa);
 			dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);

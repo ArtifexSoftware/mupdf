@@ -115,8 +115,8 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 			int fv = v & 0x7fff;
 
 			int atedge =
-				iu < 0 | iu >= (srcw - 1) |
-				iv < 0 | iv >= (srch - 1);
+				(iu < 0) | (iu >= (srcw - 1)) |
+				(iv < 0) | (iv >= (srch - 1));
 
 			__m64 ms0s1;
 			__m64 ms2s3;

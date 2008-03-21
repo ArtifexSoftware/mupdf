@@ -47,9 +47,10 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 
 	gc->dest = nil;
 	gc->over = nil;
-	gc->rgb[0] = 0;
-	gc->rgb[1] = 0;
-	gc->rgb[2] = 0;
+	gc->argb[0] = 255;
+	gc->argb[1] = 0;
+	gc->argb[2] = 0;
+	gc->argb[3] = 0;
 	gc->flag = 0;
 
 	*gcp = gc;
@@ -105,6 +106,7 @@ rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 {
 	fz_error *error;
 	float rgb[3];
+	unsigned char a, r, g, b;
 	unsigned char *p;
 	int n;
 
@@ -113,14 +115,13 @@ rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 	if (gc->model->n != 3)
 		return fz_throw("assert: non-rgb renderer");
 
-	gc->a = solid->a * 255;
-
 	fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
-	gc->rgb[0] = rgb[0] * 255;
-	gc->rgb[1] = rgb[1] * 255;
-	gc->rgb[2] = rgb[2] * 255;
+	gc->argb[0] = solid->a * 255;
+	gc->argb[1] = rgb[0] * 255;
+	gc->argb[2] = rgb[1] * 255;
+	gc->argb[3] = rgb[2] * 255;
 
-DEBUG("solid %s [%d %d %d];\n", solid->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb[2]);
+DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc->argb[2], gc->argb[3]);
 
 	if (gc->flag == FOVER)
 	{
@@ -135,13 +136,17 @@ DEBUG("solid %s [%d %d %d];\n", solid->cs->name, gc->rgb[0], gc->rgb[1], gc->rgb
 		p = gc->dest->samples;
 		n = gc->dest->w * gc->dest->h;
 	}
-
+	
+	a = gc->argb[0];
+	r = gc->argb[1];
+	g = gc->argb[2];
+	b = gc->argb[3];
 	while (n--)
 	{
-		p[0] = gc->a;
-		p[1] = gc->rgb[0];
-		p[2] = gc->rgb[1];
-		p[3] = gc->rgb[2];
+		p[0] = a;
+		p[1] = r;
+		p[2] = g;
+		p[3] = b;
 		p += 4;
 	}
 
@@ -193,7 +198,7 @@ DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 	if (gc->flag & FRGB)
 	{
 		return fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
-					clip, gc->over, gc->rgb, 1);
+					clip, gc->over, gc->argb, 1);
 	}
 	else if (gc->flag & FOVER)
 	{
@@ -262,7 +267,7 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 
 	case FOVER | FRGB:
 		assert(dst->n == 4);
-		fz_text_w3i1o4(gc->rgb, sp, src->w, dp, dst->w * 4, w, h);
+		fz_text_w3i1o4(gc->argb, sp, src->w, dp, dst->w * 4, w, h);
 		break;
 
 	default:
@@ -500,7 +505,7 @@ DEBUG("  fover %d x %d\n", w, h);
 
 	case FOVER | FRGB:
 DEBUG("  fover+rgb %d x %d\n", w, h);
-		fz_img_w3i1o4(gc->rgb, PSRC, PDST(gc->over), PCTM);
+		fz_img_w3i1o4(gc->argb, PSRC, PDST(gc->over), PCTM);
 		break;
 
 	default:
@@ -711,9 +716,10 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 			fz_solidnode *solid = (fz_solidnode*)color;
 
 			fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
-			gc->rgb[0] = rgb[0] * 255;
-			gc->rgb[1] = rgb[1] * 255;
-			gc->rgb[2] = rgb[2] * 255;
+			gc->argb[0] = solid->a * 255;
+			gc->argb[1] = rgb[0] * 255;
+			gc->argb[2] = rgb[1] * 255;
+			gc->argb[3] = rgb[2] * 255;
 			gc->flag |= FRGB;
 
 			/* we know these can handle the FRGB shortcut */

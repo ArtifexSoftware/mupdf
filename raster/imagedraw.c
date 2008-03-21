@@ -201,11 +201,12 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 	}
 }
 
-static void img_w3i1o4(byte *rgb, FZ_PSRC, FZ_PDST, FZ_PCTM)
+static void img_w3i1o4(byte *argb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
-	byte rgb0 = rgb[0];
-	byte rgb1 = rgb[1];
-	byte rgb2 = rgb[2];
+	byte ca = argb[0];
+	byte rgb0 = argb[1];
+	byte rgb1 = argb[2];
+	byte rgb2 = argb[3];
 	byte sa, ssa;
 	while (h--)
 	{
@@ -216,6 +217,7 @@ static void img_w3i1o4(byte *rgb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 		while (w--)
 		{
 			sa = samplemask(src, srcw, srch, u, v);
+			sa = fz_mul255(sa, ca);
 			ssa = 255 - sa;
 			dstp[0] = sa + fz_mul255(dstp[0], ssa);
 			dstp[1] = rgb0 + fz_mul255((short)dstp[1] - rgb0, ssa);
