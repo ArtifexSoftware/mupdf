@@ -117,9 +117,9 @@ rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 
 	fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
 	gc->argb[0] = solid->a * 255;
-	gc->argb[1] = rgb[0] * 255;
-	gc->argb[2] = rgb[1] * 255;
-	gc->argb[3] = rgb[2] * 255;
+	gc->argb[1] = rgb[0] * solid->a * 255;
+	gc->argb[2] = rgb[1] * solid->a * 255;
+	gc->argb[3] = rgb[2] * solid->a * 255;
 
 DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc->argb[2], gc->argb[3]);
 
@@ -141,6 +141,7 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
 	r = gc->argb[1];
 	g = gc->argb[2];
 	b = gc->argb[3];
+	if (((unsigned)p & 3)) {
 	while (n--)
 	{
 		p[0] = a;
@@ -148,6 +149,16 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
 		p[2] = g;
 		p[3] = b;
 		p += 4;
+	}
+	}
+	else
+	{
+		unsigned *pw = (unsigned *)p;
+		unsigned argb = (a << 24) | (r << 16) | (g << 8) | b;
+		while (n--)
+		{
+			*pw++ = argb;
+		}
 	}
 
 	return nil;
@@ -717,9 +728,9 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 
 			fz_convertcolor(solid->cs, solid->samples, gc->model, rgb);
 			gc->argb[0] = solid->a * 255;
-			gc->argb[1] = rgb[0] * 255;
-			gc->argb[2] = rgb[1] * 255;
-			gc->argb[3] = rgb[2] * 255;
+			gc->argb[1] = rgb[0] * solid->a * 255;
+			gc->argb[2] = rgb[1] * solid->a * 255;
+			gc->argb[3] = rgb[2] * solid->a * 255;
 			gc->flag |= FRGB;
 
 			/* we know these can handle the FRGB shortcut */

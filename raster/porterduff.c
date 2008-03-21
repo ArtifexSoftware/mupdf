@@ -270,7 +270,7 @@ static void path_w3i1o4(byte * restrict argb, byte * restrict src, int cov, int 
 		cov += *src; *src = 0; src++;
 		a = fz_mul255(cov, ca);
 		ssa = 255 - a;
-		dst[0] = cov + fz_mul255(dst[0], ssa);
+		dst[0] = a + fz_mul255(dst[0], ssa);
 		dst[1] = rgb0 + fz_mul255((short)dst[1] - rgb0, ssa);
 		dst[2] = rgb1 + fz_mul255((short)dst[2] - rgb1, ssa);
 		dst[3] = rgb2 + fz_mul255((short)dst[3] - rgb2, ssa);
