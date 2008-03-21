@@ -1,9 +1,9 @@
 #include "fitz-base.h"
 #include "fitz-stream.h"
 
-fz_error fz_kioneedin = { -1, "<ioneedin>", "<process>", "filter.c", 0 };
-fz_error fz_kioneedout = { -1, "<ioneedout>", "<process>", "filter.c", 0 };
-fz_error fz_kiodone = { -1, "<iodone>", "<process>", "filter.c", 0 };
+fz_error fz_kioneedin = { -1, "<ioneedin>", "<internal>", "<internal>", 0, 0 };
+fz_error fz_kioneedout = { -1, "<ioneedout>", "<internal>", "<internal>", 0, 0 };
+fz_error fz_kiodone = { -1, "<iodone>", "<internal>", "<internal>", 0, 0 };
 
 fz_error *
 fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
@@ -27,7 +27,11 @@ fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	f->count += out->wp - oldwp;
 
 	if (reason != fz_ioneedin && reason != fz_ioneedout)
+	{
+		if (reason != fz_iodone)
+			reason = fz_rethrow(reason, "cannot process filter");
 		out->eof = 1;
+	}
 
 	return reason;
 }

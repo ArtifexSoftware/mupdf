@@ -37,12 +37,12 @@ extern fz_error fz_kiodone;
  * Evil looking macro to create an initialize a filter struct.
  */
 
-#define FZ_NEWFILTER(TYPE,VAR,NAME)                                     \
+#define FZ_NEWFILTER(TYPE,VAR,NAME)                                         \
 	fz_error * fz_process ## NAME (fz_filter*,fz_buffer*,fz_buffer*);   \
 	void fz_drop ## NAME (fz_filter*);                                  \
 	TYPE *VAR;                                                          \
 	*fp = fz_malloc(sizeof(TYPE));                                      \
-	if (!*fp) return fz_outofmem;                                       \
+	if (!*fp) return fz_throw("outofmem: %s filter struct", #NAME);     \
 	(*fp)->refs = 1;                                                    \
 	(*fp)->process = fz_process ## NAME ;                               \
 	(*fp)->drop = fz_drop ## NAME ;                                     \

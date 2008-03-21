@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * Optimized color conversions for Device colorspaces

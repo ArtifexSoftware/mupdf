@@ -14,7 +14,7 @@ fz_newa85e(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_a85e, f, a85e);
 	f->c = 0;
-	return nil;
+	return fz_okay;
 }
 
 void

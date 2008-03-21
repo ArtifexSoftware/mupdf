@@ -26,7 +26,7 @@ fz_newa85d(fz_filter **fp, fz_obj *params)
 	FZ_NEWFILTER(fz_a85d, f, a85d);
 	f->word = 0;
 	f->count = 0;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -90,7 +90,7 @@ fz_processa85d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 			c = *in->rp++;
 
 			if (c != '>') {
-				return fz_throw("ioerror: bad eod marker in a85d");
+				return fz_throw("bad eod marker in a85d");
 			}
 
 			if (out->wp + f->count - 1 > out->ep) {
@@ -102,7 +102,7 @@ fz_processa85d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 			case 0:
 				break;
 			case 1:
-				return fz_throw("ioerror: partial final byte in a85d");
+				return fz_throw("partial final byte in a85d");
 			case 2:
 				f->word = f->word * (85L * 85 * 85) + 0xffffffL;
 				goto o1;
@@ -122,7 +122,7 @@ o1:				*(out->wp+0) = f->word >> 24;
 		}
 
 		else if (!iswhite(c)) {
-			return fz_throw("ioerror: bad data in a85d: '%c'", c);
+			return fz_throw("bad data in a85d: '%c'", c);
 		}
 	}
 }

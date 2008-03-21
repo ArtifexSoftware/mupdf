@@ -9,32 +9,32 @@
 
 static char *basefontnames[14][7] =
 {
-    { "Courier", "CourierNew", "CourierNewPSMT", 0 },
-    { "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
-	"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
-    { "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
-	"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
-    { "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
-	"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
-    { "Helvetica", "ArialMT", "Arial", 0 },
-    { "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
-	"Helvetica,Bold", 0 },
-    { "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
-	"Helvetica,Italic", "Helvetica-Italic", 0 },
-    { "Helvetica-BoldOblique", "Arial-BoldItalicMT",
-	"Arial,BoldItalic", "Arial-BoldItalic",
-	"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
-    { "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
-	"TimesNewRomanPS", 0 },
-    { "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
-	"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
-    { "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
-	"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
-    { "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
-	"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
-	"TimesNewRoman-BoldItalic", 0 },
-    { "Symbol", 0 },
-    { "ZapfDingbats", 0 }
+	{ "Courier", "CourierNew", "CourierNewPSMT", 0 },
+	{ "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
+		"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
+	{ "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
+		"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
+	{ "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
+		"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
+	{ "Helvetica", "ArialMT", "Arial", 0 },
+	{ "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
+		"Helvetica,Bold", 0 },
+	{ "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
+		"Helvetica,Italic", "Helvetica-Italic", 0 },
+	{ "Helvetica-BoldOblique", "Arial-BoldItalicMT",
+		"Arial,BoldItalic", "Arial-BoldItalic",
+		"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
+	{ "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
+		"TimesNewRomanPS", 0 },
+	{ "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
+		"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
+	{ "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
+		"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
+	{ "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
+		"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
+		"TimesNewRoman-BoldItalic", 0 },
+	{ "Symbol", 0 },
+	{ "ZapfDingbats", 0 }
 };
 
 /*
@@ -107,7 +107,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 
 		fterr = FT_Load_Glyph(font->ftface, gid,
-					FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
+				FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 		if (fterr)
 			return fz_throw("freetype failed to load glyph: 0x%x", fterr);
 
@@ -517,7 +517,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	font->cidtogid = etable;
 
 	error = pdf_loadtounicode(font, xref,
-				estrings, nil, fz_dictgets(dict, "ToUnicode"));
+			estrings, nil, fz_dictgets(dict, "ToUnicode"));
 	if (error)
 		goto cleanup;
 
@@ -966,8 +966,8 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 
 	bbox = pdf_torect(fz_dictgets(desc, "FontBBox"));
 	pdf_logfont("bbox [%g %g %g %g]\n",
-		bbox.x0, bbox.y0,
-		bbox.x1, bbox.y1);
+			bbox.x0, bbox.y0,
+			bbox.x1, bbox.y1);
 
 	pdf_logfont("flags %d\n", font->flags);
 

@@ -76,7 +76,8 @@ fz_error *fz_closepath(fz_pathnode*);
 fz_error *fz_endpath(fz_pathnode*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
 
 fz_rect fz_boundpathnode(fz_pathnode *node, fz_matrix ctm);
-void fz_debugpathnode(fz_pathnode *node);
+void fz_debugpathnode(fz_pathnode *node, int indent);
+void fz_printpathnode(fz_pathnode *node, int indent);
 
 fz_error *fz_newdash(fz_dash **dashp, float phase, int len, float *array);
 void fz_dropdash(fz_dash *dash);

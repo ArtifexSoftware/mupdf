@@ -534,8 +534,8 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	}
 
 	initcs((fz_colorspace*)cs,
-		n == 1 ? "Separation" : "DeviceN", n,
-		separationtoxyz, nil, dropseparation);
+			n == 1 ? "Separation" : "DeviceN", n,
+			separationtoxyz, nil, dropseparation);
 
 	cs->base = base;
 	cs->tint = tint;

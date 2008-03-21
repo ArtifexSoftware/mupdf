@@ -610,10 +610,10 @@ pdf_createfontlistMS()
 
 	removeredundancy(&fontlistMS);
 
-	return nil;
-
 cleanup:
-	fz_abort(err);
+	if(err)
+		fz_abort(err);
+	return nil;
 }
 
 void
@@ -644,7 +644,7 @@ pdf_lookupfontMS(char *fontname, char **fontpath, int *index)
 
 	strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
 	found = localbsearch(&fontmap,fontlistMS.fontmap,fontlistMS.len,
-		sizeof(pdf_fontmapMS),compare);
+			sizeof(pdf_fontmapMS),compare);
 
 	if(found)
 	{

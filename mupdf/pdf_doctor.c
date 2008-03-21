@@ -1,8 +1,10 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * Sweep and mark reachable objects
+ *
+ * Don't bother chaining errors for this deep recursion
  */
 
 static fz_error *sweepref(pdf_xref *xref, fz_obj *ref);
@@ -36,7 +38,7 @@ sweepobj(pdf_xref *xref, fz_obj *obj)
 	if (fz_isindirect(obj))
 		return sweepref(xref, obj);
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -49,16 +51,16 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 	oid = fz_tonum(ref);
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object number out of range");
+		return fz_throw("object out of range %d", oid);
 
 	if (xref->table[oid].mark)
-		return nil;
+		return fz_okay;
 
 	xref->table[oid].mark = 1;
 
 	error = pdf_loadindirect(&obj, xref, ref);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load indirect object");
 
 	error = sweepobj(xref, obj);
 	if (error)
@@ -68,7 +70,7 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 	}
 
 	fz_dropobj(obj);
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -89,7 +91,7 @@ pdf_garbagecollect(pdf_xref *xref)
 
 	error = sweepobj(xref, xref->trailer);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot mark used objects");
 
 	for (i = 0; i < xref->len; i++)
 	{
@@ -98,12 +100,16 @@ pdf_garbagecollect(pdf_xref *xref)
 		if (x->type == 'o')
 			g = 0;
 		if (!x->mark && x->type != 'f' && x->type != 'd')
-			pdf_deleteobject(xref, i, g);
+		{
+			error = pdf_deleteobject(xref, i, g);
+			if (error)
+				return fz_rethrow(error, "cannot delete unmarked object %d", i);
+		}
 	}
 
 	pdf_logxref("}\n");
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -129,14 +135,18 @@ remaprefs(fz_obj **newp, fz_obj *old, struct pair *map, int n)
 		g = fz_togen(old);
 		for (i = 0; i < n; i++)
 			if (map[i].soid == o && map[i].sgen == g)
-				return fz_newindirect(newp, map[i].doid, map[i].dgen);
+			{
+				error = fz_newindirect(newp, map[i].doid, map[i].dgen);
+				if (error)
+					return fz_rethrow(error, "cannot remap indirect reference");
+			}
 	}
 
 	else if (fz_isarray(old))
 	{
 		error = fz_newarray(newp, fz_arraylen(old));
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot remap array");
 		for (i = 0; i < fz_arraylen(old); i++)
 		{
 			tmp = fz_arrayget(old, i);
@@ -154,7 +164,7 @@ remaprefs(fz_obj **newp, fz_obj *old, struct pair *map, int n)
 	{
 		error = fz_newdict(newp, fz_dictlen(old));
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot remap dictionary");
 		for (i = 0; i < fz_dictlen(old); i++)
 		{
 			key = fz_dictgetkey(old, i);
@@ -174,11 +184,11 @@ remaprefs(fz_obj **newp, fz_obj *old, struct pair *map, int n)
 		*newp = fz_keepobj(old);
 	}
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_dropobj(*newp);
-	return error;
+	return fz_rethrow(error, "cannot remap object");
 }
 
 /*
@@ -202,9 +212,9 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 
 	error = sweepobj(src, root);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot mark used objects");
 
-	for (n = 0, i = 0; i < src->len; i++)
+	for (n = 0, i = 0; i < src->len; i++)	
 		if (src->table[i].mark)
 			n++;
 
@@ -212,9 +222,9 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 
 	map = fz_malloc(sizeof(struct pair) * n);
 	if (!map)
-		return fz_outofmem;
+		return fz_throw("outofmem: remapping table");
 
-	for (n = 0, i = 0; i < src->len; i++)
+	for (n = 0, i = 0; i < src->len; i++)	
 	{
 		if (src->table[i].mark)
 		{
@@ -229,15 +239,15 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 		}
 	}
 
-	error = remaprefs(newp, root, map, n);
+	error == remaprefs(newp, root, map, n);
 	if (error)
 		goto cleanup;
 
-	for (i = 0; i < n; i++)
+	for (i = 0; i < n; i++)	
 	{
 		pdf_logxref("copyfrom %d %d to %d %d\n",
-			map[i].soid, map[i].sgen,
-			map[i].doid, map[i].dgen);
+				map[i].soid, map[i].sgen,
+				map[i].doid, map[i].dgen);
 
 		error = pdf_loadobject(&old, src, map[i].soid, map[i].sgen);
 		if (error)
@@ -257,8 +267,10 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 		if (error)
 			goto cleanup;
 
-		pdf_updateobject(dst, map[i].doid, map[i].dgen, new);
+		error = pdf_updateobject(dst, map[i].doid, map[i].dgen, new);
 		fz_dropobj(new);
+		if (error)
+			goto cleanup;
 	}
 
 	pdf_logxref("}\n");
@@ -268,6 +280,6 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 
 cleanup:
 	fz_free(map);
-	return error;
+	return fz_rethrow(error, "cannot transplant objects");
 }
 

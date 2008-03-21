@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * Enable logging by setting environment variable MULOG to:

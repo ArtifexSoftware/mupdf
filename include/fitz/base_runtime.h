@@ -1,3 +1,17 @@
+/*
+ * Base Fitz runtime.
+ * Contains: errors, memory manager, utf-8 strings, "standard" macros
+ */
+
+#ifndef __printflike
+#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#define __printflike(fmtarg, firstvararg) \
+        __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#else
+#define __printflike(fmtarg, firstvararg)
+#endif
+#endif
+
 #undef nil
 #define nil ((void*)0)
 
@@ -41,23 +55,22 @@ struct fz_error_s
 	char file[32];
 	char func[32];
 	int line;
+	fz_error *cause;
 };
 
 #define fz_outofmem (&fz_koutofmem)
 extern fz_error fz_koutofmem;
 
-#ifdef WIN32
-#define fz_throw(...) fz_throw0(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__)
-#elif HAVE_C99
-#define fz_throw(...) fz_throw0(__func__, __FILE__, __LINE__, __VA_ARGS__)
-#else
-#define fz_throw fz_throw1
-#endif
-fz_error *fz_throw0(const char *func, const char *file, int line, char *fmt, ...);
-fz_error *fz_throw1(char *fmt, ...);
-
-void fz_warn(char *fmt, ...);
+void fz_printerror(fz_error *eo);
+fz_error *fz_keeperror(fz_error *eo);
 void fz_droperror(fz_error *eo);
+void fz_warn(char *fmt, ...) __printflike(1,2);
+
+#define fz_throw(...) fz_throwimp(nil, __func__, __FILE__, __LINE__, __VA_ARGS__)
+#define fz_rethrow(cause, ...) fz_throwimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
+#define fz_okay ((fz_error*)0)
+
+fz_error *fz_throwimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
 
 typedef struct fz_memorycontext_s fz_memorycontext;
 

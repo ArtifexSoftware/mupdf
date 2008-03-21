@@ -52,7 +52,7 @@ static void padpassword(unsigned char *buf, char *pw, int pwlen)
 fz_error *
 pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 {
-	pdf_crypt *crypt = nil;
+	pdf_crypt *crypt;
 	fz_obj *obj;
 	int m;
 
@@ -65,7 +65,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 
 	crypt = fz_malloc(sizeof(pdf_crypt));
 	if (!crypt)
-		return fz_outofmem;
+		return fz_throw("outofmem: crypt struct");
 
 	crypt->encrypt = fz_keepobj(enc);
 	crypt->id = nil;
@@ -116,7 +116,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	memset(crypt->key, 0, 16);
 
 	*cp = crypt;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	pdf_dropcrypt(crypt);
@@ -288,7 +288,7 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 
 	crypt = fz_malloc(sizeof(pdf_crypt));
 	if (!crypt)
-		return fz_outofmem;
+		return fz_throw("outofmem: crypt struct");
 
 	crypt->encrypt = nil;
 	crypt->id = fz_keepobj(fz_arrayget(id, 0));
@@ -302,10 +302,10 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 
 	error = fz_packobj(&crypt->encrypt,
 			"<< /Filter /Standard "
-				"/V %i /R %i "
-				"/O %# /U %# "
-				"/P %i "
-				"/Length %i >>",
+			"/V %i /R %i "
+			"/O %# /U %# "
+			"/P %i "
+			"/Length %i >>",
 			crypt->r == 2 ? 1 : 2,
 			crypt->r,
 			crypt->o, 32,
@@ -315,30 +315,29 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 	if (error)
 	{
 		pdf_dropcrypt(crypt);
-		return error;
+		return fz_rethrow(error, "cannot create encryption dictionary");
 	}
 
 	*cp = crypt;
-	return nil;
+	return fz_okay;
 }
 
 /*
  * Algorithm 3.6 Checking the user password
+ *
+ * Return true if the password is valid.
  */
 
-fz_error *
+int
 pdf_setpassword(pdf_crypt *crypt, char *pw)
 {
-	fz_error *error = pdf_setuserpassword(crypt, pw, strlen(pw));
-	if (error)
-	{
-		fz_droperror(error);
-		error = pdf_setownerpassword(crypt, pw, strlen(pw));
-	}
-	return error;
+	int okay = pdf_setuserpassword(crypt, pw, strlen(pw));
+	if (!okay)
+		okay = pdf_setownerpassword(crypt, pw, strlen(pw));
+	return okay;
 }
 
-fz_error *
+int
 pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 {
 	unsigned char saved[32];
@@ -350,12 +349,11 @@ pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 	memcpy(crypt->u, saved, 32);
 
 	if (memcmp(test, saved, crypt->r == 3 ? 16 : 32) != 0)
-		return fz_throw("invalid password");
-
-	return nil;
+		return 0;
+	return 1;
 }
 
-fz_error *
+int
 pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 {
 	unsigned char buf[32];
@@ -398,7 +396,7 @@ pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 		}
 	}
 
-	return pdf_setuserpassword(crypt, (char *) buf, 32);
+	return pdf_setuserpassword(crypt, buf, 32);
 }
 
 /*
@@ -414,7 +412,7 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 
 	if (fz_isstring(obj))
 	{
-		s = (unsigned char *) fz_tostrbuf(obj);
+		s = fz_tostrbuf(obj);
 		n = fz_tostrlen(obj);
 		createobjkey(crypt, oid, gid, key);
 		fz_arc4init(&arc4, key, crypt->keylen);
@@ -446,8 +444,12 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 fz_error *
 pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gid)
 {
+	fz_error *error;
 	unsigned char key[16];
 	createobjkey(crypt, oid, gid, key);
-	return fz_newarc4filter(fp, key, crypt->keylen);
+	error = fz_newarc4filter(fp, key, crypt->keylen);
+	if (error)
+	    return fz_rethrow(error, "cannot create crypt filter");
+	return fz_okay;
 }
 

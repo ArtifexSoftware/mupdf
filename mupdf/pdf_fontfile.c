@@ -1,7 +1,7 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
-#include <mupdf/base14.h>
+#include "mupdf/base14.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -26,8 +26,7 @@ static const struct
 	const char *name;
 	const unsigned char *cff;
 	const unsigned int *len;
-} basefonts[15] =
-{
+} basefonts[15] = {
 	{ "Courier",
 		fonts_NimbusMonL_Regu_cff,
 		&fonts_NimbusMonL_Regu_cff_len },
@@ -127,7 +126,7 @@ static fz_error *initfontlibs(void)
 	if (maj == 2 && min == 1 && pat < 7)
 		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -141,13 +140,13 @@ pdf_loadbuiltinfont(pdf_font *font, char *fontname)
 
 	error = initfontlibs();
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot init font libraries");
 
 	for (i = 0; i < 15; i++)
 		if (!strcmp(fontname, basefonts[i].name))
 			goto found;
 
-	return fz_throw("font not found: %s", fontname);
+	return fz_throw("cannot find font: %s", fontname);
 
 found:
 	pdf_logfont("load builtin font %s\n", fontname);
@@ -157,9 +156,9 @@ found:
 
 	e = FT_New_Memory_Face(ftlib, data, len, 0, (FT_Face*)&font->ftface);
 	if (e)
-		return fz_throw("freetype: could not load font: 0x%x", e);
+		return fz_throw("freetype: cannot load font: 0x%x", e);
 
-	return nil;
+	return fz_okay;
 }
 
 static int
@@ -245,13 +244,13 @@ loadcidfont(pdf_font *font, int csi, int kind)
 				pdf_logfont("load system font '%s'\n", fontsubs[i].name);
 				e = FT_New_Face(ftlib, path, 0, (FT_Face*)&font->ftface);
 				if (e)
-					return fz_throw("freetype: could not load font: 0x%x", e);
-				return nil;
+					return fz_throw("freetype: cannot load font: 0x%x", e);
+				return fz_okay;
 			}
 		}
 	}
 
-	return fz_throw("could not find cid font file");
+	return fz_throw("cannot find cid font file");
 }
 
 fz_error *
@@ -268,7 +267,7 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 
 	error = initfontlibs();
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot init font libraries");
 
 	font->substitute = 1;
 
@@ -291,7 +290,7 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 		isbold = 1;
 
 	pdf_logfont("fixed-%d serif-%d italic-%d script-%d bold-%d\n",
-		isfixed, isserif, isitalic, isscript, isbold);
+			isfixed, isserif, isitalic, isscript, isbold);
 
 	if (collection)
 	{
@@ -355,7 +354,11 @@ pdf_loadsystemfont(pdf_font *font, char *fontname, char *collection)
 		}
 	}
 
-	return pdf_loadbuiltinfont(font, name);
+	error = pdf_loadbuiltinfont(font, name);
+	if (error)
+		return fz_throw("cannot load builtin substitute font: %s", name);
+
+	return fz_okay;
 }
 
 fz_error *
@@ -368,24 +371,24 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 
 	error = initfontlibs();
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot init font libraries");
 
 	pdf_logfont("load embedded font\n");
 
 	error = pdf_loadstream(&buf, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load font stream");
 
 	fterr = FT_New_Memory_Face(ftlib, buf->rp, buf->wp - buf->rp, 0, &face);
-
-	if (fterr) {
-		fz_free(buf);
-		return fz_throw("freetype could not load embedded font: 0x%x", fterr);
+	if (fterr)
+	{
+		fz_dropbuffer(buf);
+		return fz_throw("freetype: cannot load embedded font: 0x%x", fterr);
 	}
 
 	font->ftface = face;
 	font->fontdata = buf;
 
-	return nil;
+	return fz_okay;
 }
 

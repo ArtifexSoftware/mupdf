@@ -42,22 +42,24 @@ fz_newjpxd(fz_filter **fp, fz_obj *params)
 	FZ_NEWFILTER(fz_jpxd, d, jpxd);
 
 	err = jas_init();
-	if (err) {
+	if (err)
+	{
 		fz_free(d);
-		return fz_throw("ioerror in jpxd: jas_init()");
+		return fz_throw("jasper error: jas_init()");
 	}
 
 	d->stream = jas_stream_memopen(nil, 0);
-	if (!d->stream) {
+	if (!d->stream)
+	{
 		fz_free(d);
-		return fz_throw("ioerror in jpxd: jas_stream_memopen()");
+		return fz_throw("jasper error: jas_stream_memopen()");
 	}
 
 	d->image = nil;
 	d->offset = 0;
 	d->stage = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -83,7 +85,8 @@ fz_processjpxd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	}
 
 input:
-	while (in->rp < in->wp) {
+	while (in->rp < in->wp)
+	{
 		n = jas_stream_write(d->stream, in->rp, in->wp - in->rp);
 		in->rp += n;
 	}
@@ -98,7 +101,7 @@ decode:
 
 	d->image = jas_image_decode(d->stream, -1, 0);
 	if (!d->image)
-		return fz_throw("ioerror in jpxd: unable to decode image data");
+		return fz_throw("jasper error: jas_image_decode()");
 
 	fprintf(stderr, "P%c\n# JPX %d x %d n=%d bpc=%d colorspace=%04x %s\n%d %d\n%d\n",
 		jas_image_numcmpts(d->image) == 1 ? '5' : '6',

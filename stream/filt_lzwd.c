@@ -83,7 +83,7 @@ fz_newlzwd(fz_filter **fp, fz_obj *params)
 	lzw->oldcode = -1;
 	lzw->resume = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -107,7 +107,7 @@ static inline fz_error * fillbits(fz_lzwd *lzw, fz_buffer *in)
 		lzw->word |= *in->rp << lzw->bidx;
 		in->rp ++;
 	}
-	return nil;
+	return fz_okay;
 }
 
 static inline void unstuff(fz_lzwd *lzw, fz_buffer *in)

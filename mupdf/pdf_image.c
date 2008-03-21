@@ -28,7 +28,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
-		return fz_outofmem;
+		return fz_throw("outofmem: image struct");
 
 	pdf_logimage("load inline image %p {\n", img);
 
@@ -132,30 +132,26 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		if (error)
 			return error;
 
-		if (filter == nil)
-		    goto thereisnofilter;
-
 		error = fz_openrfilter(&tempfile, filter, file);
 		if (error)
 			return error;
 
-		i = fz_readall(&img->samples, tempfile);
-		if (i < 0)
-			return fz_ioerror(tempfile);
+		error = fz_readall(&img->samples, tempfile);
+		if (error)
+			return error;
 
 		fz_dropfilter(filter);
 		fz_dropstream(tempfile);
 	}
 	else
 	{
-thereisnofilter:
 		error = fz_newbuffer(&img->samples, img->super.h * img->stride);
 		if (error)
 			return error;
 
-		i = fz_read(file, img->samples->bp, img->super.h * img->stride);
-		if (i < 0)
-			return fz_ioerror(file);
+		error = fz_read(&i, file, img->samples->bp, img->super.h * img->stride);
+		if (error)
+			return error;
 
 		img->samples->wp += img->super.h * img->stride;
 	}
@@ -225,7 +221,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
-		return fz_outofmem;
+		return fz_throw("outofmem: image struct");
 
 	pdf_logimage("load image %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), img);
 

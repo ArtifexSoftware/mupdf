@@ -1,24 +1,31 @@
 #include <fitz.h>
 #include <mupdf.h>
 
+/*
+ * pdf_lex will use fz_peekbyte and fz_readbyte.
+ * have to check for file errors with fz_readerror() after lexing.
+ */
+
 static inline int iswhite(int ch)
 {
-	return	ch == '\000' ||
-			ch == '\011' ||
-			ch == '\012' ||
-			ch == '\014' ||
-			ch == '\015' ||
-			ch == '\040';
+	return
+		ch == '\000' ||
+		ch == '\011' ||
+		ch == '\012' ||
+		ch == '\014' ||
+		ch == '\015' ||
+		ch == '\040';
 }
 
 static inline int isdelim(int ch)
 {
-	return	ch == '(' || ch == ')' ||
-			ch == '<' || ch == '>' ||
-			ch == '[' || ch == ']' ||
-			ch == '{' || ch == '}' ||
-			ch == '/' ||
-			ch == '%';
+	return
+		ch == '(' || ch == ')' ||
+		ch == '<' || ch == '>' ||
+		ch == '[' || ch == ']' ||
+		ch == '{' || ch == '}' ||
+		ch == '/' ||
+		ch == '%';
 }
 
 static inline int isregular(int ch)
@@ -28,14 +35,15 @@ static inline int isregular(int ch)
 
 static inline int isnumber(int ch)
 {
-	return	ch == '+' || ch == '-' || ch == '.' || (ch >= '0' && ch <= '9');
+	return ch == '+' || ch == '-' || ch == '.' || (ch >= '0' && ch <= '9');
 }
 
 static inline int ishex(int ch)
 {
-	return	(ch >= '0' && ch <= '9') ||
-			(ch >= 'A' && ch <= 'F') ||
-			(ch >= 'a' && ch <= 'f');
+	return
+		(ch >= '0' && ch <= '9') ||
+		(ch >= 'A' && ch <= 'F') ||
+		(ch >= 'a' && ch <= 'f');
 }
 
 static inline int fromhex(int ch)
@@ -244,9 +252,10 @@ tokenfromkeyword(char *key)
 	return PDF_TKEYWORD;
 }
 
-int
-pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
+fz_error *
+pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 {
+	fz_error *error;
 	int c;
 
 	while (1)
@@ -254,7 +263,10 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 		c = fz_peekbyte(f);
 
 		if (c == EOF)
-			return PDF_TEOF;
+		{
+			*ret = PDF_TEOF;
+			goto cleanupokay;
+		}
 
 		else if (iswhite(c))
 			lexwhite(f);
@@ -262,20 +274,21 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 		else if (c == '%')
 			lexcomment(f);
 
-
 		else if (c == '/')
 		{
 			fz_readbyte(f);
 			lexname(f, buf, n);
-			*sl = strlen((char *) buf);
-			return PDF_TNAME;
+			*sl = strlen(buf);
+			*ret = PDF_TNAME;
+			goto cleanupokay;
 		}
 
 		else if (c == '(')
 		{
 			fz_readbyte(f);
 			*sl = lexstring(f, buf, n);
-			return PDF_TSTRING;
+			*ret = PDF_TSTRING;
+			goto cleanupokay;
 		}
 
 		else if (c == '<')
@@ -285,12 +298,14 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 			if (c == '<')
 			{
 				fz_readbyte(f);
-				return PDF_TODICT;
+				*ret = PDF_TODICT;
+				goto cleanupokay;
 			}
 			else
 			{
 				*sl = lexhexstring(f, buf, n);
-				return PDF_TSTRING;
+				*ret = PDF_TSTRING;
+				goto cleanupokay;
 			}
 		}
 
@@ -299,52 +314,87 @@ pdf_lex(fz_stream *f, unsigned char *buf, int n, int *sl)
 			fz_readbyte(f);
 			c = fz_readbyte(f);
 			if (c == '>')
-				return PDF_TCDICT;
-			return PDF_TERROR;
+			{
+				*ret = PDF_TCDICT;
+				goto cleanupokay;
+			}
+			*ret = PDF_TERROR;
+			goto cleanuperror;
 		}
 
 		else if (c == '[')
 		{
 			fz_readbyte(f);
-			return PDF_TOARRAY;
+			*ret = PDF_TOARRAY;
+			goto cleanupokay;
 		}
 
 		else if (c == ']')
 		{
 			fz_readbyte(f);
-			return PDF_TCARRAY;
+			*ret = PDF_TCARRAY;
+			goto cleanupokay;
 		}
 
 		else if (c == '{')
 		{
 			fz_readbyte(f);
-			return PDF_TOBRACE;
+			*ret = PDF_TOBRACE;
+			goto cleanupokay;
 		}
 
 		else if (c ==  '}')
 		{
 			fz_readbyte(f);
-			return PDF_TCBRACE;
+			*ret = PDF_TCBRACE;
+			goto cleanupokay;
 		}
 
 		else if (isnumber(c))
 		{
 			lexnumber(f, buf, n);
-			*sl = strlen((char *) buf);
-			if (strchr((char *) buf, '.'))
-				return PDF_TREAL;
-			return PDF_TINT;
+			*sl = strlen(buf);
+			if (strchr(buf, '.'))
+			{
+				*ret = PDF_TREAL;
+				goto cleanupokay;
+			}
+			*ret = PDF_TINT;
+			goto cleanupokay;
 		}
 
 		else if (isregular(c))
 		{
 			lexname(f, buf, n);
-			*sl = strlen((char *) buf);
-			return tokenfromkeyword((char *) buf);
+			*sl = strlen(buf);
+			*ret = tokenfromkeyword(buf);
+			goto cleanupokay;
 		}
 
 		else
-			return PDF_TERROR;
+		{
+			*ret = PDF_TERROR;
+			goto cleanuperror;
+		}
 	}
+
+cleanupokay:
+	error = fz_readerror(f);
+	if (error)
+	{
+		*ret = PDF_TERROR;
+		return fz_rethrow(error, "cannot read token");
+	}
+	return fz_okay;
+
+cleanuperror:
+	error = fz_readerror(f);
+	if (error)
+	{
+		*ret = PDF_TERROR;
+		return fz_rethrow(error, "cannot read token");
+	}
+	*ret = PDF_TERROR;
+	return fz_throw("lexical error");
 }
 

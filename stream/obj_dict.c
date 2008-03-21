@@ -30,7 +30,8 @@ fz_newdict(fz_obj **op, int initialcap)
 	int i;
 
 	obj = *op = fz_malloc(sizeof (fz_obj));
-	if (!obj) return fz_outofmem;
+	if (!obj)
+	    return fz_throw("outofmem: dict struct");
 
 	obj->refs = 1;
 	obj->kind = FZ_DICT;
@@ -40,9 +41,14 @@ fz_newdict(fz_obj **op, int initialcap)
 	obj->u.d.cap = initialcap > 0 ? initialcap : 10;
 
 	obj->u.d.items = fz_malloc(sizeof(fz_keyval) * obj->u.d.cap);
-	if (!obj->u.d.items) { fz_free(obj); return fz_outofmem; }
+	if (!obj->u.d.items)
+	{
+	    fz_free(obj);
+	    return fz_throw("outofmem: dict item buffer");
+	}
 
-	for (i = 0; i < obj->u.d.cap; i++) {
+	for (i = 0; i < obj->u.d.cap; i++)
+	{
 		obj->u.d.items[i].k = nil;
 		obj->u.d.items[i].v = nil;
 	}
@@ -58,18 +64,24 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 	int i;
 
 	if (!fz_isdict(obj))
-		return fz_throw("typecheck in copydict");
+		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
 
 	error = fz_newdict(&new, obj->u.d.cap);
-	if (error) return error;
-	*op = new;
+	if (error)
+	    return fz_rethrow(error, "cannot create new dict");
 
-	for (i = 0; i < fz_dictlen(obj); i++) {
+	for (i = 0; i < fz_dictlen(obj); i++)
+	{
 		error = fz_dictput(new, fz_dictgetkey(obj, i), fz_dictgetval(obj, i));
-		if (error) { fz_dropobj(new); return error; }
+		if (error)
+		{
+			fz_dropobj(new);
+			return fz_rethrow(error, "cannot copy dict entry");
+		}
 	}
 
-	return nil;
+	*op = new;
+	return fz_okay;
 }
 
 fz_error *
@@ -81,39 +93,65 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 	int i;
 
 	if (!fz_isdict(obj))
-		return fz_throw("typecheck in deepcopydict");
+		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
 
 	error = fz_newdict(&new, obj->u.d.cap);
-	if (error) return error;
-	*op = new;
+	if (error)
+	    return fz_rethrow(error, "cannot create new dict");
 
 	for (i = 0; i < fz_dictlen(obj); i++)
 	{
 		val = fz_dictgetval(obj, i);
 
-		if (fz_isarray(val)) {
+		if (fz_isarray(val))
+		{
 			error = fz_deepcopyarray(&val, val);
-			if (error) { fz_dropobj(new); return error; }
+			if (error)
+			{
+				fz_dropobj(new);
+				return fz_rethrow(error, "cannot deep copy item");
+			}
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropobj(val); fz_dropobj(new); return error; }
+			if (error)
+			{
+				fz_dropobj(val);
+				fz_dropobj(new);
+				return fz_rethrow(error, "cannot add copied dict entry");
+			}
 			fz_dropobj(val);
 		}
 
-		else if (fz_isdict(val)) {
+		else if (fz_isdict(val))
+		{
 			error = fz_deepcopydict(&val, val);
-			if (error) { fz_dropobj(new); return error; }
+			if (error)
+			{
+				fz_dropobj(new);
+				return fz_rethrow(error, "cannot deep copy item");
+			}
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropobj(val); fz_dropobj(new); return error; }
+			if (error)
+			{
+				fz_dropobj(val);
+				fz_dropobj(new);
+				return fz_rethrow(error, "cannot add copied dict entry");
+			}
 			fz_dropobj(val);
 		}
 
-		else {
+		else
+		{
 			error = fz_dictput(new, fz_dictgetkey(obj, i), val);
-			if (error) { fz_dropobj(new); return error; }
+			if (error)
+			{
+				fz_dropobj(new);
+				return fz_rethrow(error, "cannot copy dict entry");
+			}
 		}
 	}
 
-	return nil;
+	*op = new;
+	return fz_okay;
 }
 
 static fz_error *
@@ -126,16 +164,18 @@ growdict(fz_obj *obj)
 	newcap = obj->u.d.cap * 2;
 
 	newitems = fz_realloc(obj->u.d.items, sizeof(fz_keyval) * newcap);
-	if (!newitems) return fz_outofmem;
+	if (!newitems)
+	    return fz_throw("outofmem: resize item buffer");
 
 	obj->u.d.items = newitems;
-	for (i = obj->u.d.cap; i < newcap; i++) {
+	for (i = obj->u.d.cap; i < newcap; i++)
+	{
 		obj->u.d.items[i].k = nil;
 		obj->u.d.items[i].v = nil;
 	}
 	obj->u.d.cap = newcap;
 
-	return nil;
+	return fz_okay;
 }
 
 int
@@ -243,28 +283,28 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	int i;
 
 	if (!fz_isdict(obj))
-		return fz_throw("typecheck in dictput");
+		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
 
 	if (fz_isname(key))
 		s = fz_toname(key);
 	else if (fz_isstring(key))
 		s = fz_tostrbuf(key);
 	else
-		return fz_throw("typecheck in dictput");
+		return fz_throw("assert: key is not string or name (%s)", fz_objkindstr(obj));
 
 	i = dictfinds(obj, s);
 	if (i >= 0)
 	{
 		fz_dropobj(obj->u.d.items[i].v);
 		obj->u.d.items[i].v = fz_keepobj(val);
-		return nil;
+		return fz_okay;
 	}
 
 	if (obj->u.d.len + 1 > obj->u.d.cap)
 	{
 		error = growdict(obj);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot grow dict item buffer");
 	}
 
 	/* borked! */
@@ -276,7 +316,7 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	obj->u.d.items[obj->u.d.len].v = fz_keepobj(val);
 	obj->u.d.len ++;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -297,7 +337,7 @@ fz_dictdels(fz_obj *obj, char *key)
 	int i;
 
 	if (!fz_isdict(obj))
-		return fz_throw("typecheck in dictdel");
+		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
 
 	i = dictfinds(obj, key);
 	if (i >= 0)
@@ -309,7 +349,7 @@ fz_dictdels(fz_obj *obj, char *key)
 		obj->u.d.len --;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -320,7 +360,7 @@ fz_dictdel(fz_obj *obj, fz_obj *key)
 	else if (fz_isstring(key))
 		return fz_dictdels(obj, fz_tostrbuf(key));
 	else
-		return fz_throw("typecheck in dictdel");
+		return fz_throw("assert: key is not string or name (%s)", fz_objkindstr(obj));
 }
 
 void

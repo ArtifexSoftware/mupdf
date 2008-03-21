@@ -5,14 +5,16 @@
 #include "fitz-base.h"
 #include "fitz-stream.h"
 
-int fz_tell(fz_stream *stm)
+int
+fz_tell(fz_stream *stm)
 {
 	if (stm->mode == FZ_SREAD)
 		return fz_rtell(stm);
 	return fz_wtell(stm);
 }
 
-int fz_seek(fz_stream *stm, int offset, int whence)
+fz_error *
+fz_seek(fz_stream *stm, int offset, int whence)
 {
 	if (stm->mode == FZ_SREAD)
 		return fz_rseek(stm, offset, whence);
@@ -23,8 +25,11 @@ int fz_seek(fz_stream *stm, int offset, int whence)
  * Read a line terminated by LF or CR or CRLF.
  */
 
-int fz_readline(fz_stream *stm, char *mem, int n)
+fz_error *
+fz_readline(fz_stream *stm, char *mem, int n)
 {
+	fz_error *error;
+
 	char *s = mem;
 	int c = EOF;
 	while (n > 1)
@@ -45,7 +50,11 @@ int fz_readline(fz_stream *stm, char *mem, int n)
 	}
 	if (n)
 		*s = '\0';
-	return s - mem;
+
+	error = fz_readerror(stm);
+	if (error)
+		return fz_rethrow(error, "cannot read line");
+	return fz_okay;
 }
 
 /*
@@ -55,16 +64,16 @@ int fz_readline(fz_stream *stm, char *mem, int n)
 
 enum { CHUNKSIZE = 1024 * 4 };
 
-int fz_readall(fz_buffer **bufp, fz_stream *stm)
+fz_error *
+fz_readall(fz_buffer **bufp, fz_stream *stm)
 {
+	fz_error *error;
 	fz_buffer *real;
 	unsigned char *newbuf;
 	unsigned char *buf;
 	int len;
 	int pos;
 	int n;
-
-	*bufp = nil;
 
 	len = 0;
 	pos = 0;
@@ -79,17 +88,16 @@ int fz_readall(fz_buffer **bufp, fz_stream *stm)
 			if (!newbuf)
 			{
 				fz_free(buf);
-				return -1;
+				return fz_throw("outofmem: scratch buffer");
 			}
 			buf = newbuf;
 		}
 
-		n = fz_read(stm, buf + pos, len - pos);
-
-		if (n < 0)
+		error = fz_read(&n, stm, buf + pos, len - pos);
+		if (error)
 		{
 			fz_free(buf);
-			return -1;
+			return fz_rethrow(error, "cannot read data");
 		}
 
 		pos += n;
@@ -102,16 +110,16 @@ int fz_readall(fz_buffer **bufp, fz_stream *stm)
 				if (!newbuf)
 				{
 					fz_free(buf);
-					return -1;
+					return fz_throw("outofmem: scratch buffer");
 				}
 			}
 			else newbuf = buf;
 
-			real = *bufp = fz_malloc(sizeof(fz_buffer));
+			real = fz_malloc(sizeof(fz_buffer));
 			if (!real)
 			{
 				fz_free(newbuf);
-				return -1;
+				return fz_throw("outofmem: buffer struct");
 			}
 
 			real->refs = 1;
@@ -122,7 +130,8 @@ int fz_readall(fz_buffer **bufp, fz_stream *stm)
 			real->ep = buf + pos;
 			real->eof = 1;
 
-			return real->wp - real->rp;
+			*bufp = real;
+			return fz_okay;
 		}
 	}
 }

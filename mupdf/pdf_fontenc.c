@@ -2,8 +2,8 @@
  * Built-in font tables
  */
 
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 #define _notdef 0
 

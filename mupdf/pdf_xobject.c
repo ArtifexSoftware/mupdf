@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 fz_error *
 pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
@@ -11,12 +11,12 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if ((*formp = pdf_finditem(xref->store, PDF_KXOBJECT, ref)))
 	{
 		pdf_keepxobject(*formp);
-		return nil;
+		return fz_okay;
 	}
 
 	form = fz_malloc(sizeof(pdf_xobject));
 	if (!form)
-		return fz_outofmem;
+		return fz_throw("outofmem: xobject struct");
 
 	form->refs = 1;
 	form->resources = nil;
@@ -28,8 +28,8 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	form->bbox = pdf_torect(obj);
 
 	pdf_logrsrc("bbox [%g %g %g %g]\n",
-		form->bbox.x0, form->bbox.y0,
-		form->bbox.x1, form->bbox.y1);
+			form->bbox.x0, form->bbox.y0,
+			form->bbox.x1, form->bbox.y1);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
@@ -38,9 +38,9 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		form->matrix = fz_identity();
 
 	pdf_logrsrc("matrix [%g %g %g %g %g %g]\n",
-		form->matrix.a, form->matrix.b,
-		form->matrix.c, form->matrix.d,
-		form->matrix.e, form->matrix.f);
+			form->matrix.a, form->matrix.b,
+			form->matrix.c, form->matrix.d,
+			form->matrix.e, form->matrix.f);
 
 	obj = fz_dictgets(dict, "Resources");
 	if (obj)
@@ -49,14 +49,14 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		if (error)
 		{
 			pdf_dropxobject(form);
-			return error;
+			return fz_rethrow(error, "cannot resolve xobject resources");
 		}
 		error = pdf_loadresources(&form->resources, xref, obj);
 		fz_dropobj(obj);
 		if (error)
 		{
 			pdf_dropxobject(form);
-			return error;
+			return fz_rethrow(error, "cannot load xobject resources");
 		}
 	}
 
@@ -64,7 +64,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (error)
 	{
 		pdf_dropxobject(form);
-		return error;
+		return fz_rethrow(error, "cannot load xobject content stream");
 	}
 
 	pdf_logrsrc("stream %d bytes\n", form->contents->wp - form->contents->rp);
@@ -75,7 +75,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (error)
 	{
 		pdf_dropxobject(form);
-		return error;
+		return fz_rethrow(error, "cannot store xobject resource");
 	}
 
 	*formp = form;

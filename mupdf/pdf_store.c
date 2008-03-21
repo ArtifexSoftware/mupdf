@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 typedef struct pdf_item_s pdf_item;
 
@@ -32,19 +32,19 @@ pdf_newstore(pdf_store **storep)
 
 	store = fz_malloc(sizeof(pdf_store));
 	if (!store)
-		return fz_outofmem;
+		return fz_throw("outofmem: store struct");;
 
 	error = fz_newhash(&store->hash, 4096, sizeof(struct refkey));
 	if (error)
 	{
 		fz_free(store);
-		return error;
+		return fz_rethrow(error, "cannot create hash");
 	}
 
 	store->root = nil;
 
 	*storep = store;
-	return nil;
+	return fz_okay;
 }
 
 static void dropitem(pdf_itemkind kind, void *val)
@@ -78,6 +78,7 @@ pdf_emptystore(pdf_store *store)
 		if (val)
 			dropitem(key->kind, val);
 	}
+
 	fz_emptyhash(store->hash);
 
 	for (item = store->root; item; item = next)
@@ -104,18 +105,6 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 {
 	fz_error *error;
 
-	switch (kind)
-	{
-	case PDF_KCOLORSPACE: fz_keepcolorspace(val); break;
-	case PDF_KFUNCTION: pdf_keepfunction(val); break;
-	case PDF_KXOBJECT: pdf_keepxobject(val); break;
-	case PDF_KIMAGE: fz_keepimage(val); break;
-	case PDF_KPATTERN: pdf_keeppattern(val); break;
-	case PDF_KSHADE: fz_keepshade(val); break;
-	case PDF_KCMAP: pdf_keepcmap(val); break;
-	case PDF_KFONT: fz_keepfont(val); break;
-	}
-
 	if (fz_isindirect(key))
 	{
 		struct refkey item;
@@ -128,7 +117,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 
 		error = fz_hashinsert(store->hash, &item, val);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot insert object into hash");
 	}
 
 	else
@@ -137,7 +126,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 
 		item = fz_malloc(sizeof(pdf_item));
 		if (!item)
-			return fz_outofmem;
+			return fz_throw("outofmem: store list node");
 
 		pdf_logrsrc("store item %d: ... = %p\n", kind, val);
 
@@ -149,7 +138,19 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 		store->root = item;
 	}
 
-	return nil;
+	switch (kind)
+	{
+	case PDF_KCOLORSPACE: fz_keepcolorspace(val); break;
+	case PDF_KFUNCTION: pdf_keepfunction(val); break;
+	case PDF_KXOBJECT: pdf_keepxobject(val); break;
+	case PDF_KIMAGE: fz_keepimage(val); break;
+	case PDF_KPATTERN: pdf_keeppattern(val); break;
+	case PDF_KSHADE: fz_keepshade(val); break;
+	case PDF_KCMAP: pdf_keepcmap(val); break;
+	case PDF_KFONT: fz_keepfont(val); break;
+	}
+
+	return fz_okay;
 }
 
 void *

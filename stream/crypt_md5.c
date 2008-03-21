@@ -83,7 +83,8 @@ static void encode(unsigned char *output, unsigned long *input, unsigned len)
 {
 	unsigned i, j;
 
-	for (i = 0, j = 0; j < len; i++, j += 4) {
+	for (i = 0, j = 0; j < len; i++, j += 4)
+	{
 		output[j] = (unsigned char)(input[i] & 0xff);
 		output[j+1] = (unsigned char)((input[i] >> 8) & 0xff);
 		output[j+2] = (unsigned char)((input[i] >> 16) & 0xff);
@@ -95,7 +96,8 @@ static void decode(unsigned long *output, unsigned char *input, unsigned len)
 {
 	unsigned i, j;
 
-	for (i = 0, j = 0; j < len; i++, j += 4) {
+	for (i = 0, j = 0; j < len; i++, j += 4)
+	{
 		output[i] = ((unsigned long)input[j]) |
 			(((unsigned long)input[j+1]) << 8) |
 			(((unsigned long)input[j+2]) << 16) |
@@ -225,7 +227,8 @@ void fz_md5update(fz_md5 *context, unsigned char *input, unsigned inlen)
 	partlen = 64 - index;
 
 	/* Transform as many times as possible.  */
-	if (inlen >= partlen) {
+	if (inlen >= partlen)
+	{
 		memcpy(context->buffer + index, input, partlen);
 		transform(context->state, context->buffer);
 
@@ -234,7 +237,8 @@ void fz_md5update(fz_md5 *context, unsigned char *input, unsigned inlen)
 
 		index = 0;
 	}
-	else {
+	else
+	{
 		i = 0;
 	}
 

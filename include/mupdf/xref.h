@@ -8,7 +8,7 @@ typedef struct pdf_xref_s pdf_xref;
 struct pdf_xref_s
 {
 	fz_stream *file;
-	float version;
+	int version;
 	int startxref;
 	pdf_crypt *crypt;
 

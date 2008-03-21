@@ -24,7 +24,7 @@ fz_chainpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail, fz_buffer *bu
 	p->tail = fz_keepfilter(tail);
 	p->tailneedsin = 1;
 	p->buffer = fz_keepbuffer(buf);
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -49,9 +49,13 @@ fz_newpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail)
 	p->tailneedsin = 1;
 
 	error = fz_newbuffer(&p->buffer, FZ_BUFSIZE);
-	if (error) { fz_free(p); return error; }
+	if (error)
+	{
+	    fz_free(p);
+	    return fz_rethrow(error, "cannot create buffer");
+	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -100,8 +104,11 @@ head:
 	else if (e == fz_iodone)
 		goto tail;
 
+	else if (e)
+		return fz_rethrow(e, "cannot process head filter");
+
 	else
-		return e;
+		return fz_okay;
 
 tail:
 	e = fz_process(p->tail, p->buffer, out);
@@ -123,7 +130,10 @@ tail:
 	else if (e == fz_iodone)
 		return fz_iodone;
 
+	else if (e)
+		return fz_rethrow(e, "cannot process tail filter");
+
 	else
-		return e;
+		return fz_okay;
 }
 

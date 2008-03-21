@@ -17,7 +17,7 @@ struct fz_stream_s
 	fz_buffer *buffer;
 	fz_filter *filter;
 	fz_stream *chain;
-	fz_error *error;
+	fz_error *error; /* delayed error from readbyte and peekbyte */
 	int file;
 };
 
@@ -31,7 +31,7 @@ fz_error *fz_openwfile(fz_stream **stmp, char *filename);
 fz_error *fz_openafile(fz_stream **stmp, char *filename);
 
 /* write to memory buffers! */
-fz_error * fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len);
+fz_error *fz_openrmemory(fz_stream **stmp, char *mem, int len);
 fz_error *fz_openrbuffer(fz_stream **stmp, fz_buffer *buf);
 fz_error *fz_openwbuffer(fz_stream **stmp, fz_buffer *buf);
 
@@ -43,61 +43,71 @@ fz_error *fz_openwfilter(fz_stream **stmp, fz_filter *flt, fz_stream *chain);
  * Functions that are common to both input and output streams.
  */
 
-fz_error *fz_ioerror(fz_stream *stm);
-
 fz_stream *fz_keepstream(fz_stream *stm);
 void fz_dropstream(fz_stream *stm);
 
 int fz_tell(fz_stream *stm);
-int fz_seek(fz_stream *stm, int offset, int whence);
+fz_error * fz_seek(fz_stream *stm, int offset, int whence);
 
 /*
  * Input stream functions.
- * Return EOF (-1) on errors.
  */
 
 int fz_rtell(fz_stream *stm);
-int fz_rseek(fz_stream *stm, int offset, int whence);
+fz_error * fz_rseek(fz_stream *stm, int offset, int whence);
 
-int fz_makedata(fz_stream *stm);
-int fz_read(fz_stream *stm, unsigned char *buf, int len);
+fz_error * fz_readimp(fz_stream *stm);
+fz_error * fz_read(int *np, fz_stream *stm, unsigned char *buf, int len);
+fz_error * fz_readall(fz_buffer **bufp, fz_stream *stm);
+fz_error * fz_readline(fz_stream *stm, char *buf, int max);
 
-int fz_readall(fz_buffer **bufp, fz_stream *stm);
-int fz_readline(fz_stream *stm, char *buf, int max);
+/*
+ * Error handling when reading with readbyte/peekbyte is non-standard.
+ * The cause of an error is stuck into the stream struct,
+ * and EOF is returned. Not good, but any other way is too painful.
+ * So we have to be careful to check the error status eventually.
+ */
 
+fz_error *fz_readerror(fz_stream *stm);
 int fz_readbytex(fz_stream *stm);
 int fz_peekbytex(fz_stream *stm);
 
 #ifdef DEBUG
+
 #define fz_readbyte fz_readbytex
 #define fz_peekbyte fz_peekbytex
+
 #else
 
-#define FZ_READBYTE(XXX) { \
-	fz_buffer *buf = stm->buffer; \
-	if (buf->rp == buf->wp) \
-		if (fz_makedata(stm) < 0) \
-			return EOF; \
-	return buf->rp < buf->wp ? XXX : EOF ; \
+static inline int fz_readbyte(fz_stream *stm)
+{
+    fz_buffer *buf = stm->buffer;
+    if (buf->rp < buf->wp)
+	return *buf->rp++;
+    return fz_readbytex(stm);
 }
 
-static inline int fz_readbyte(fz_stream *stm) FZ_READBYTE(*buf->rp++)
-static inline int fz_peekbyte(fz_stream *stm) FZ_READBYTE(*buf->rp)
+static inline int fz_peekbyte(fz_stream *stm)
+{
+    fz_buffer *buf = stm->buffer;
+    if (buf->rp < buf->wp)
+	return *buf->rp;
+    return fz_peekbytex(stm);
+}
 
 #endif
 
 /*
  * Output stream functions.
- * Return N or 0 on success, -1 on failure.
  */
 
 int fz_wtell(fz_stream *stm);
-int fz_wseek(fz_stream *stm, int offset, int whence);
+fz_error * fz_wseek(fz_stream *stm, int offset, int whence);
 
-int fz_write(fz_stream *stm, unsigned char *buf, int n);
-int fz_flush(fz_stream *stm);
+fz_error * fz_write(fz_stream *stm, unsigned char *buf, int n);
+fz_error * fz_flush(fz_stream *stm);
 
-int fz_printstr(fz_stream *stm, char *s);
-int fz_printobj(fz_stream *stm, fz_obj *obj, int tight);
-int fz_print(fz_stream *stm, char *fmt, ...);
+fz_error * fz_printstr(fz_stream *stm, char *s);
+fz_error * fz_printobj(fz_stream *stm, fz_obj *obj, int tight);
+fz_error * fz_print(fz_stream *stm, char *fmt, ...);
 

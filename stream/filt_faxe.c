@@ -75,15 +75,24 @@ fz_newfaxe(fz_filter **fp, fz_obj *params)
 	fax->c = 0;
 
 	fax->ref = fz_malloc(fax->stride);
-	if (!fax->ref) { fz_free(fax); return fz_outofmem; }
+	if (!fax->ref)
+	{
+	    fz_free(fax);
+	    return fz_throw("outofmemory: scanline buffer one");
+	}
 
 	fax->src = fz_malloc(fax->stride);
-	if (!fax->src) { fz_free(fax); fz_free(fax->ref); return fz_outofmem; }
+	if (!fax->src)
+	{
+	    fz_free(fax);
+	    fz_free(fax->ref);
+	    return fz_throw("outofmemory: scanline buffer two");
+	}
 
 	memset(fax->ref, 0, fax->stride);
 	memset(fax->src, 0, fax->stride);
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -188,7 +197,7 @@ enc1d(fz_faxe *fax, unsigned char *line, fz_buffer *out)
 		fax->c = !fax->c;
 	}
 
-	return 0;
+	return fz_okay;
 }
 
 static fz_error *
@@ -245,7 +254,7 @@ enc2d(fz_faxe *fax, unsigned char *ref, unsigned char *src, fz_buffer *out)
 		}
 	}
 
-	return 0;
+	return fz_okay;
 }
 
 static fz_error *
@@ -349,7 +358,7 @@ process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 			}
 
 			if (error)
-				return error;
+				return error; /* one of fz_io* */
 
 			fax->ridx ++;
 

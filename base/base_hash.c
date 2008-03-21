@@ -54,7 +54,7 @@ fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 
 	table = *tablep = fz_malloc(sizeof(fz_hashtable));
 	if (!table)
-		return fz_outofmem;
+		return fz_throw("outofmem: hash table struct");
 
 	table->keylen = keylen;
 	table->size = initialsize;
@@ -65,12 +65,12 @@ fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 	{
 		fz_free(table);
 		*tablep = nil;
-		return fz_outofmem;
+		return fz_throw("outofmem: hash table entries (size=%d)", initialsize);
 	}
 
 	memset(table->ents, 0, sizeof(fz_hashentry) * table->size);
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -120,11 +120,11 @@ fz_resizehash(fz_hashtable *table, int newsize)
 	oldents = table->ents;
 
 	if (newsize < oldload * 8 / 10)
-		return fz_throw("rangecheck: resize hash too small");
+		return fz_throw("assert: resize hash too small");
 
 	newents = fz_malloc(sizeof(fz_hashentry) * newsize);
 	if (!newents)
-		return fz_outofmem;
+		return fz_throw("outofmem: hash table (size=%d)", newsize);
 
 	table->size = newsize;
 	table->load = 0;
@@ -142,13 +142,14 @@ fz_resizehash(fz_hashtable *table, int newsize)
 				table->load = oldload;
 				table->ents = oldents;
 				fz_free(newents);
-				return error;
+				return fz_rethrow(error, "cannot re-insert old entries");
 			}
 		}
 	}
 
 	fz_free(oldents);
-	return nil;
+
+	return fz_okay;
 }
 
 void *
@@ -182,7 +183,7 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 	{
 		error = fz_resizehash(table, table->size * 2);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot resize hash table");
 	}
 
 	ents = table->ents;
@@ -200,12 +201,12 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 		}
 
 		if (memcmp(key, &ents[pos].key, table->keylen) == 0)
-			return fz_throw("rangecheck: overwrite hash slot");
+			return fz_throw("assert: overwrite hash slot");
 
 		pos = (pos + 1) % size;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -219,7 +220,7 @@ fz_hashremove(fz_hashtable *table, void *key)
 	while (1)
 	{
 		if (!ents[pos].val)
-			return fz_throw("rangecheck: remove inexistant hash entry");
+			return fz_throw("assert: remove inexistant hash entry");
 
 		if (memcmp(key, &ents[pos].key, table->keylen) == 0)
 		{
@@ -244,7 +245,8 @@ fz_hashremove(fz_hashtable *table, void *key)
 			}
 
 			table->load --;
-			return nil;
+
+			return fz_okay;
 		}
 
 		pos = (pos + 1) % size;

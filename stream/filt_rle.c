@@ -42,7 +42,7 @@ fz_newrle(fz_filter **fp, fz_obj *params)
 	enc->state = ZERO;
 	enc->run = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 void

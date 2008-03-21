@@ -72,7 +72,7 @@ fz_newdctd(fz_filter **fp, fz_obj *params)
 	d->cinfo.err = (struct jpeg_error_mgr*) &d->err;
 
 	if (setjmp(d->err.jb)) {
-		err = fz_throw("ioerror in dctd: %s", d->err.msg);
+		err = fz_throw("cannot decode jpeg: %s", d->err.msg);
 		fz_free(d);
 		return err;
 	}
@@ -96,7 +96,7 @@ fz_newdctd(fz_filter **fp, fz_obj *params)
 	d->cinfo.dct_method = JDCT_FASTEST;
 	d->cinfo.do_fancy_upsampling = FALSE;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -104,7 +104,7 @@ fz_dropdctd(fz_filter *filter)
 {
 	fz_dctd *d = (fz_dctd*)filter;
 	if (setjmp(d->err.jb)) {
-		fprintf(stderr, "ioerror in dct: jpeg_destroy_decompress: %s", d->err.msg);
+		fz_warn("jpeg error: jpeg_destroy_decompress: %s", d->err.msg);
 		return;
 	}
 	jpeg_destroy_decompress(&d->cinfo);
@@ -137,8 +137,9 @@ fz_processdctd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	d->src.super.bytes_in_buffer = in->wp - in->rp;
 	d->src.super.next_input_byte = in->rp;
 
-	if (setjmp(d->err.jb)) {
-		return fz_throw("ioerror in dctd: %s", d->err.msg);
+	if (setjmp(d->err.jb))
+	{
+		return fz_throw("cannot decode jpeg: %s", d->err.msg);
 	}
 
 	switch (d->stage)

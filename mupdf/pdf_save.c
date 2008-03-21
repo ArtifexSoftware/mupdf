@@ -1,5 +1,7 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
+
+/* TODO: error check prints */
 
 #define TIGHT 1
 
@@ -19,12 +21,12 @@ writestream(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 	{
 		error = pdf_cryptstream(&ef, encrypt, oid, gen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create encryption filter");
 
-		error = fz_openrfilter(&dststm, ef, out);
+		error = fz_openwfilter(&dststm, ef, out);
 		fz_dropfilter(ef);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot open encryption stream");
 	}
 	else
 	{
@@ -33,23 +35,26 @@ writestream(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 
 	error = pdf_openrawstream(&srcstm, xref, oid, gen);
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot open raw stream");
 		goto cleanupdst;
+	}
 
 	while (1)
 	{
-		n = fz_read(srcstm, buf, sizeof buf);
-		if (n == 0)
-			break;
-		if (n < 0)
+		error = fz_read(&n, srcstm, buf, sizeof buf);
+		if (error)
 		{
-			error = fz_ioerror(srcstm);
+			error = fz_rethrow(error, "cannot read stream");
 			goto cleanupsrc;
 		}
+		if (n == 0)
+			break;
 
-		n = fz_write(dststm, buf, n);
-		if (n < 0)
+		error = fz_write(dststm, buf, n);
+		if (error)
 		{
-			error = fz_ioerror(dststm);
+			error = fz_rethrow(error, "cannot write stream");
 			goto cleanupsrc;
 		}
 	}
@@ -59,7 +64,7 @@ writestream(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 
 	fz_print(out, "endstream\n");
 
-	return nil;
+	return fz_okay;
 
 cleanupsrc:
 	fz_dropstream(srcstm);
@@ -76,7 +81,7 @@ writeobject(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load object");
 
 	if (encrypt)
 		pdf_cryptobj(encrypt, x->obj, oid, gen);
@@ -92,12 +97,12 @@ writeobject(fz_stream *out, pdf_xref *xref, pdf_crypt *encrypt, int oid, int gen
 	{
 		error = writestream(out, xref, encrypt, oid, gen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot write stream");
 	}
 
 	fz_print(out, "endobj\n\n");
 
-	return nil;
+	return fz_okay;
 }
 
 static int countmodified(pdf_xref *xref, int oid)
@@ -123,7 +128,7 @@ pdf_updatexref(pdf_xref *xref, char *path)
 
 	error = fz_openafile(&out, path);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot open output file");
 
 	fz_print(out, "\n");
 
@@ -134,7 +139,10 @@ pdf_updatexref(pdf_xref *xref, char *path)
 			xref->table[oid].ofs = fz_tell(out);
 			error = writeobject(out, xref, xref->crypt, oid, xref->table[oid].gen);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot write object (oid=%d)", oid);
 				goto cleanup;
+			}
 		}
 	}
 
@@ -161,9 +169,9 @@ pdf_updatexref(pdf_xref *xref, char *path)
 				xref->table[oid + i].type = 'n';
 
 			fz_print(out, "%010d %05d %c \n",
-				xref->table[oid + i].ofs,
-				xref->table[oid + i].gen,
-				xref->table[oid + i].type);
+					xref->table[oid + i].ofs,
+					xref->table[oid + i].gen,
+					xref->table[oid + i].type);
 		}
 
 		oid += n;
@@ -205,7 +213,7 @@ pdf_updatexref(pdf_xref *xref, char *path)
 	xref->startxref = startxref;
 
 	fz_dropstream(out);
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_dropstream(out);
@@ -232,27 +240,27 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 
 		error = pdf_allocobject(xref, &eoid, &egen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot allocate encryption object");
 
 		pdf_cryptobj(encrypt, encrypt->encrypt, eoid, egen);
 
 		error = pdf_updateobject(xref, eoid, egen, encrypt->encrypt);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot update encryption object");
 	}
 
 	ofsbuf = fz_malloc(sizeof(int) * xref->len);
 	if (!ofsbuf)
-		return fz_outofmem;
+		return fz_throw("outofmem: offset buffer");
 
 	error = fz_openwfile(&out, path);
 	if (error)
 	{
 		fz_free(ofsbuf);
-		return error;
+		return fz_rethrow(error, "cannot open output file");
 	}
 
-	fz_print(out, "%%PDF-%1.1f\n", xref->version);
+	fz_print(out, "%%PDF-%d.%df\n", xref->version / 10, xref->version % 10);
 	fz_print(out, "%%\342\343\317\323\n\n");
 
 	for (oid = 0; oid < xref->len; oid++)
@@ -263,7 +271,10 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 			ofsbuf[oid] = fz_tell(out);
 			error = writeobject(out, xref, encrypt, oid, x->type == 'o' ? 0 : x->gen);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot write object (oid=%d)", oid);
 				goto cleanup;
+			}
 		}
 		else
 		{
@@ -316,10 +327,10 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 
 	if(ofsbuf) fz_free(ofsbuf);
 	fz_dropstream(out);
-	return nil;
+	return fz_okay;
 
 cleanup:
-	if(ofsbuf) fz_free(ofsbuf);
+	if (ofsbuf) fz_free(ofsbuf);
 	fz_dropstream(out);
 	return error;
 }

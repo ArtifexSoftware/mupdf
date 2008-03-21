@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * create xref structure.
@@ -13,13 +13,14 @@ pdf_newxref(pdf_xref **xrefp)
 
 	xref = fz_malloc(sizeof(pdf_xref));
 	if (!xref)
-		return fz_outofmem;
+		return fz_throw("outofmem: xref struct");
+
 	memset(xref, 0, sizeof(pdf_xref));
 
 	pdf_logxref("newxref %p\n", xref);
 
 	xref->file = nil;
-	xref->version = 1.3;
+	xref->version = 13;
 	xref->startxref = 0;
 	xref->crypt = nil;
 
@@ -36,7 +37,7 @@ pdf_newxref(pdf_xref **xrefp)
 	xref->store = nil;	/* you need to create this if you want to render */
 
 	*xrefp = xref;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -44,6 +45,7 @@ pdf_closexref(pdf_xref *xref)
 {
 	pdf_logxref("closexref %p\n", xref);
 
+	/* don't touch the pdf_store module ... we don't want that dependency here */
 	if (xref->store)
 		fz_warn("someone forgot to empty the store before freeing xref!");
 
@@ -73,7 +75,7 @@ pdf_initxref(pdf_xref *xref)
 {
 	xref->table = fz_malloc(sizeof(pdf_xrefentry) * 128);
 	if (!xref->table)
-		return fz_outofmem;
+		return fz_throw("outofmem: xref table");
 
 	xref->cap = 128;
 	xref->len = 1;
@@ -86,7 +88,7 @@ pdf_initxref(pdf_xref *xref)
 	xref->table[0].stmofs = 0;
 	xref->table[0].obj = nil;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -135,12 +137,12 @@ pdf_debugxref(pdf_xref *xref)
 	for (i = 0; i < xref->len; i++)
 	{
 		printf("%010d %05d %c | %d %c%c\n",
-			xref->table[i].ofs,
-			xref->table[i].gen,
-			xref->table[i].type,
-			xref->table[i].obj ? xref->table[i].obj->refs : 0,
-			xref->table[i].stmofs ? 'f' : '-',
-			xref->table[i].stmbuf ? 'b' : '-');
+				xref->table[i].ofs,
+				xref->table[i].gen,
+				xref->table[i].type,
+				xref->table[i].obj ? xref->table[i].obj->refs : 0,
+				xref->table[i].stmofs ? 'f' : '-',
+				xref->table[i].stmbuf ? 'b' : '-');
 	}
 }
 
@@ -171,16 +173,17 @@ pdf_decryptxref(pdf_xref *xref)
 		if (error)
 		{
 			fz_dropobj(encrypt);
-			return error;
+			return fz_rethrow(error, "cannot resolve /ID object");
 		}
 
 		error = pdf_newdecrypt(&xref->crypt, encrypt, id);
 		fz_dropobj(encrypt);
 		fz_dropobj(id);
-		return error;
+		if (error)
+			return fz_rethrow(error, "cannot create decrypter");
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -252,7 +255,7 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 
 		newtable = fz_realloc(xref->table, sizeof(pdf_xrefentry) * newcap);
 		if (!newtable)
-			return fz_outofmem;
+			return fz_throw("outofmem: xref table resize");
 
 		xref->table = newtable;
 		xref->cap = newcap;
@@ -278,7 +281,7 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 	xref->table[prev].type = 'd';
 	xref->table[prev].ofs = next;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -288,7 +291,7 @@ pdf_deleteobject(pdf_xref *xref, int oid, int gen)
 	int prev;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object number out of range: %d", oid);
+		return fz_throw("assert: object out of range: %d", oid);
 
 	pdf_logxref("deleteobj %d %d\n", oid, gen);
 
@@ -310,7 +313,7 @@ pdf_deleteobject(pdf_xref *xref, int oid, int gen)
 	xref->table[prev].type = 'd';
 	xref->table[prev].ofs = oid;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -319,7 +322,7 @@ pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
 	pdf_xrefentry *x;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object number out of range: %d", oid);
+		return fz_throw("assert: object out of range: %d", oid);
 
 	pdf_logxref("updateobj %d %d (%p)\n", oid, gen, obj);
 
@@ -339,7 +342,7 @@ pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
 
 	x->type = 'a';
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -348,7 +351,7 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 	pdf_xrefentry *x;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object number out of range: %d", oid);
+		return fz_throw("assert: object out of range: %d", oid);
 
 	pdf_logxref("updatestm %d %d (%p)\n", oid, gen, stm);
 
@@ -358,7 +361,7 @@ pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
 		fz_dropbuffer(x->stmbuf);
 	x->stmbuf = fz_keepbuffer(stm);
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -373,10 +376,9 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	fz_error *error;
 	pdf_xrefentry *x;
 	int roid, rgen;
-	int n;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object number out of range: %d", oid);
+		return fz_throw("object out of range: %d", oid);
 
 	x = &xref->table[oid];
 
@@ -387,22 +389,22 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	{
 		error = fz_newnull(&x->obj);
 		if (error)
-			return error;
-		return nil;
+			return fz_rethrow(error, "cannot create null for empty object slot");
+		return fz_okay;
 	}
 
 	if (x->type == 'n')
 	{
-		n = fz_seek(xref->file, x->ofs, 0);
-		if (n < 0)
-			return fz_ioerror(xref->file);
+		error = fz_seek(xref->file, x->ofs, 0);
+		if (error)
+			return fz_rethrow(error, "cannot seek to object %d (ofs=%d)", oid, x->ofs);
 
 		error = pdf_parseindobj(&x->obj, xref->file, buf, sizeof buf, &roid, &rgen, &x->stmofs);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot parse object %d", oid);;
 
 		if (roid != oid || rgen != gen)
-			return fz_throw("syntaxerror: found wrong object");
+			return fz_throw("found object %d instead of %d", roid, oid);
 
 		if (xref->crypt)
 			pdf_cryptobj(xref->crypt, x->obj, oid, gen);
@@ -414,11 +416,11 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 		{
 			error = pdf_loadobjstm(xref, x->ofs, 0, buf, sizeof buf);
 			if (error)
-				return error;
+				return fz_rethrow(error, "cannot load object stream containing object %d", oid);
 		}
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -428,26 +430,42 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load object %d into cache", oid);
 
 	*objp = fz_keepobj(xref->table[oid].obj);
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
 pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
 {
-	assert(ref != nil);
-	return pdf_loadobject(objp, xref, fz_tonum(ref), fz_togen(ref));
+	fz_error *error;
+
+	if (ref == nil)
+		return fz_throw("assert: dereference null indirect reference");
+
+	error = pdf_loadobject(objp, xref, fz_tonum(ref), fz_togen(ref));
+	if (error)
+		return fz_rethrow(error, "cannot load indirect object %d", fz_tonum(ref));
+
+	return fz_okay;
 }
 
 fz_error *
 pdf_resolve(fz_obj **objp, pdf_xref *xref)
 {
+	fz_error *error;
+
 	if (fz_isindirect(*objp))
-		return pdf_loadindirect(objp, xref, *objp);
+	{
+		error = pdf_loadindirect(objp, xref, *objp);
+		if (error)
+			return fz_rethrow(error, "cannot load indirect object %d", fz_tonum(*objp));
+		return fz_okay;
+	}
+
 	fz_keepobj(*objp);
-	return nil;
+	return fz_okay;
 }
 

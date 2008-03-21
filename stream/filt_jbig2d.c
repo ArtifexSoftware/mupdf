@@ -48,7 +48,7 @@ fz_newjbig2d(fz_filter **fp, fz_obj *params)
 	d->ctx = jbig2_ctx_new(nil, JBIG2_OPTIONS_EMBEDDED, nil, nil, nil);
 	d->page = nil;
 	d->idx = 0;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -65,7 +65,7 @@ fz_setjbig2dglobalstream(fz_filter *filter, unsigned char *buf, int len)
 	jbig2_data_in(d->ctx, buf, len);
 	d->gctx = jbig2_make_global_ctx(d->ctx);
 	d->ctx = jbig2_ctx_new(nil, JBIG2_OPTIONS_EMBEDDED, d->gctx, nil, nil);
-	return nil;
+	return fz_okay;
 }
 
 fz_error *

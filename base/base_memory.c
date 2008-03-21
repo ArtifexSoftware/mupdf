@@ -4,30 +4,12 @@
 
 static void *stdmalloc(fz_memorycontext *mem, int n)
 {
-#if 0
-	void *p = malloc(n);
-	if (!p)
-		fprintf(stderr, "failed to malloc %d bytes\n", n);
-	return p;
-#else
 	return malloc(n);
-#endif
 }
 
 static void *stdrealloc(fz_memorycontext *mem, void *p, int n)
 {
-#if 0
-	void *np = realloc(p, n);
-	if (np == nil)
-		fprintf(stderr, "realloc failed %d nytes", n);
-	else if (np == p)
-		fprintf(stderr, "realloc kept %d\n", n);
-	else
-		fprintf(stderr, "realloc moved %d\n", n);
-	return np;
-#else
 	return realloc(p, n);
-#endif
 }
 
 static void stdfree(fz_memorycontext *mem, void *p)
@@ -41,9 +23,9 @@ static fz_memorycontext *curmem = &defmem;
 fz_error fz_koutofmem = {
 	-1,
 	{"out of memory"},
-	{"<malloc>"},
-	{"memory.c"},
-	0
+	{"<internal>"},
+	{"<internal>"},
+	0, 0
 };
 
 fz_memorycontext *
@@ -61,15 +43,21 @@ fz_setmemorycontext(fz_memorycontext *mem)
 void *
 fz_malloc(int n)
 {
-	fz_memorycontext *mem = fz_currentmemorycontext();
-	return mem->malloc(mem, n);
+    fz_memorycontext *mem = fz_currentmemorycontext();
+    void *p = mem->malloc(mem, n);
+    if (!p)
+	fz_warn("cannot malloc %d bytes", n);
+    return p;
 }
 
 void *
 fz_realloc(void *p, int n)
 {
-	fz_memorycontext *mem = fz_currentmemorycontext();
-	return mem->realloc(mem, p, n);
+    fz_memorycontext *mem = fz_currentmemorycontext();
+    void *np = mem->realloc(mem, p, n);
+    if (np == nil)
+	fz_warn("cannot realloc %d bytes", n);
+    return np;
 }
 
 void

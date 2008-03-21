@@ -16,7 +16,7 @@ fz_newnullfilter(fz_filter **fp, int len)
 	FZ_NEWFILTER(fz_nullfilter, f, nullfilter);
 	f->len = len;
 	f->cur = 0;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -34,7 +34,8 @@ fz_processnullfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	if (f->len >= 0)
 	    n = MIN(n, f->len - f->cur);
 
-	if (n) {
+	if (n)
+	{
 		memcpy(out->wp, in->rp, n);
 		in->rp += n;
 		out->wp += n;
@@ -48,6 +49,6 @@ fz_processnullfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	if (out->wp == out->ep)
 		return fz_ioneedout;
 
-	return fz_throw("braindead programmer in nullfilter");
+	return fz_throw("braindead programmer trapped in nullfilter");
 }
 

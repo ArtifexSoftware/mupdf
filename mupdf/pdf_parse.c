@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 fz_rect pdf_torect(fz_obj *array)
 {
@@ -30,7 +30,7 @@ fz_matrix pdf_tomatrix(fz_obj *array)
 fz_error *
 pdf_toutf8(char **dstp, fz_obj *src)
 {
-	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
+	unsigned char *srcptr = fz_tostrbuf(src);
 	char *dstptr;
 	int srclen = fz_tostrlen(src);
 	int dstlen = 0;
@@ -47,7 +47,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
 		if (!dstptr)
-			return fz_outofmem;
+			return fz_throw("outofmem: utf-8 string");
 
 		for (i = 2; i < srclen; i += 2)
 		{
@@ -63,7 +63,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
 		if (!dstptr)
-			return fz_outofmem;
+			return fz_throw("outofmem: utf-8 string");
 
 		for (i = 0; i < srclen; i++)
 		{
@@ -73,13 +73,13 @@ pdf_toutf8(char **dstp, fz_obj *src)
 	}
 
 	*dstptr = '\0';
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
 pdf_toucs2(unsigned short **dstp, fz_obj *src)
 {
-	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
+	unsigned char *srcptr = fz_tostrbuf(src);
 	unsigned short *dstptr;
 	int srclen = fz_tostrlen(src);
 	int i;
@@ -88,7 +88,7 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	{
 		dstptr = *dstp = fz_malloc(((srclen - 2) / 2 + 1) * sizeof(short));
 		if (!dstptr)
-			return fz_outofmem;
+			return fz_throw("outofmem: ucs-2 string");
 		for (i = 2; i < srclen; i += 2)
 			*dstptr++ = (srcptr[i] << 8) | srcptr[i+1];
 	}
@@ -97,13 +97,13 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	{
 		dstptr = *dstp = fz_malloc((srclen + 1) * sizeof(short));
 		if (!dstptr)
-			return fz_outofmem;
+			return fz_throw("outofmem: ucs-2 string");
 		for (i = 0; i < srclen; i++)
 			*dstptr++ = pdf_docencoding[srcptr[i]];
 	}
 
 	*dstptr = '\0';
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -116,30 +116,37 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 	int tok, len;
 
 	error = fz_newarray(op, 4);
-	if (error) return error;
+	if (error)
+		return fz_rethrow(error, "cannot create array");
 	ary = *op;
 
 	while (1)
 	{
-		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+		error = pdf_lex(&tok, file, buf, cap, &len);
+		if (error)
+			goto cleanup;
 
 		if (tok != PDF_TINT && tok != PDF_TR)
 		{
 			if (n > 0)
 			{
 				error = fz_newint(&obj, a);
-				if (error) goto cleanup;
+				if (error)
+					goto cleanup;
 				error = fz_arraypush(ary, obj);
-				if (error) goto cleanup;
+				if (error)
+					goto cleanup;
 				fz_dropobj(obj);
 				obj = nil;
 			}
 			if (n > 1)
 			{
 				error = fz_newint(&obj, b);
-				if (error) goto cleanup;
+				if (error) 
+					goto cleanup;
 				error = fz_arraypush(ary, obj);
-				if (error) goto cleanup;
+				if (error) 
+					goto cleanup;
 				fz_dropobj(obj);
 				obj = nil;
 			}
@@ -149,9 +156,11 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 		if (tok == PDF_TINT && n == 2)
 		{
 			error = fz_newint(&obj, a);
-			if (error) goto cleanup;
+			if (error) 
+				goto cleanup;
 			error = fz_arraypush(ary, obj);
-			if (error) goto cleanup;
+			if (error) 
+				goto cleanup;
 			fz_dropobj(obj);
 			obj = nil;
 			a = b;
@@ -186,12 +195,14 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 		case PDF_TNULL:		error = fz_newnull(&obj); break;
 		default:		goto cleanup;
 		}
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 
 		if (obj)
 		{
 			error = fz_arraypush(ary, obj);
-			if (error) goto cleanup;
+			if (error)
+				goto cleanup;
 			fz_dropobj(obj);
 		}
 
@@ -201,8 +212,7 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 cleanup:
 	if (obj) fz_dropobj(obj);
 	if (ary) fz_dropobj(ary);
-	if (error) return error;
-	return fz_throw("syntaxerror: corrupt array");
+	return fz_rethrow(error, "cannot parse array");
 }
 
 fz_error *
@@ -216,12 +226,15 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 	int a, b;
 
 	error = fz_newdict(op, 8);
-	if (error) return error;
+	if (error)
+		return fz_rethrow(error, "cannot create dict");
 	dict = *op;
 
 	while (1)
 	{
-		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+		error = pdf_lex(&tok, file, buf, cap, &len);
+		if (error)
+			goto cleanup;
 
 skip:
 		if (tok == PDF_TCDICT)
@@ -235,9 +248,12 @@ skip:
 			goto cleanup;
 
 		error = fz_newname(&key, buf);
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 
-		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+		error = pdf_lex(&tok, file, buf, cap, &len);
+		if (error)
+			goto cleanup;
 
 		switch (tok)
 		{
@@ -250,33 +266,35 @@ skip:
 		case PDF_TFALSE:	error = fz_newbool(&val, 0); break;
 		case PDF_TNULL:		error = fz_newnull(&val); break;
 		case PDF_TINT:
-			a = atoi(buf);
-			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
-			if (tok == PDF_TCDICT || tok == PDF_TNAME ||
-				(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
-			{
-				error = fz_newint(&val, a);
-				if (error) goto cleanup;
-				error = fz_dictput(dict, key, val);
-				if (error) goto cleanup;
-				fz_dropobj(val);
-				fz_dropobj(key);
-				key = val = nil;
-				goto skip;
-			}
-			if (tok == PDF_TINT)
-			{
-				b = atoi(buf);
-				tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
-				if (tok == PDF_TR)
-				{
-					error = fz_newindirect(&val, a, b);
-					break;
-				}
-			}
-			goto cleanup;
+					a = atoi(buf);
+					error = pdf_lex(&tok, file, buf, cap, &len);
+					if (error) goto cleanup;
+					if (tok == PDF_TCDICT || tok == PDF_TNAME ||
+							(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
+					{
+						error = fz_newint(&val, a);
+						if (error) goto cleanup;
+						error = fz_dictput(dict, key, val);
+						if (error) goto cleanup;
+						fz_dropobj(val);
+						fz_dropobj(key);
+						key = val = nil;
+						goto skip;
+					}
+					if (tok == PDF_TINT)
+					{
+						b = atoi(buf);
+						error = pdf_lex(&tok, file, buf, cap, &len);
+						if (error) goto cleanup;
+						if (tok == PDF_TR)
+						{
+							error = fz_newindirect(&val, a, b);
+							break;
+						}
+					}
+					goto cleanup;
 		default:
-			goto cleanup;
+					goto cleanup;
 		}
 
 		if (error) goto cleanup;
@@ -293,31 +311,36 @@ cleanup:
 	if (key) fz_dropobj(key);
 	if (val) fz_dropobj(val);
 	if (dict) fz_dropobj(dict);
-	if (error) return error;
-	return fz_throw("syntaxerror: corrupt dictionary");
+	return fz_rethrow(error, "cannot parse dict");
 }
 
 fz_error *
 pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
+	fz_error *error;
 	int tok, len;
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error)
+		return fz_rethrow(error, "cannot parse token in object stream");
 
 	switch (tok)
 	{
-		case PDF_TOARRAY:	return pdf_parsearray(op, file, buf, cap);
-		case PDF_TODICT:	return pdf_parsedict(op, file, buf, cap);
-		case PDF_TNAME:		return fz_newname(op, buf);
-		case PDF_TREAL:		return fz_newreal(op, atof(buf));
-		case PDF_TSTRING:	return fz_newstring(op, buf, len);
-		case PDF_TTRUE:		return fz_newbool(op, 1);
-		case PDF_TFALSE:	return fz_newbool(op, 0);
-		case PDF_TNULL:		return fz_newnull(op);
-		case PDF_TINT:		return fz_newint(op, atoi(buf));
+	case PDF_TOARRAY:	error = pdf_parsearray(op, file, buf, cap); break;
+	case PDF_TODICT:	error = pdf_parsedict(op, file, buf, cap); break;
+	case PDF_TNAME:	error = fz_newname(op, buf); break;
+	case PDF_TREAL:	error = fz_newreal(op, atof(buf)); break;
+	case PDF_TSTRING:	error = fz_newstring(op, buf, len); break;
+	case PDF_TTRUE:	error = fz_newbool(op, 1); break;
+	case PDF_TFALSE:	error = fz_newbool(op, 0); break;
+	case PDF_TNULL:	error = fz_newnull(op); break;
+	case PDF_TINT:	error = fz_newint(op, atoi(buf)); break;
+	default: return fz_throw("unknown token in object stream");
 	}
 
-	return fz_throw("syntaxerror: corrupt object stream");
+	if (error)
+		return fz_rethrow(error, "cannot parse object stream");
+	return fz_okay;
 }
 
 fz_error *
@@ -330,34 +353,38 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 	int tok, len;
 	int a, b;
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
-	if (tok != PDF_TINT)
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error || tok != PDF_TINT)
 		goto cleanup;
 	oid = atoi(buf);
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
-	if (tok != PDF_TINT)
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error || tok != PDF_TINT)
 		goto cleanup;
 	gid = atoi(buf);
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
-	if (tok != PDF_TOBJ)
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error || tok != PDF_TOBJ)
 		goto cleanup;
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error)
+		goto cleanup;
+
 	switch (tok)
 	{
-		case PDF_TOARRAY:	error = pdf_parsearray(&obj, file, buf, cap); break;
-		case PDF_TODICT:	error = pdf_parsedict(&obj, file, buf, cap); break;
-		case PDF_TNAME:		error = fz_newname(&obj, buf); break;
-		case PDF_TREAL:		error = fz_newreal(&obj, atof(buf)); break;
-		case PDF_TSTRING:	error = fz_newstring(&obj, buf, len); break;
-		case PDF_TTRUE:		error = fz_newbool(&obj, 1); break;
-		case PDF_TFALSE:	error = fz_newbool(&obj, 0); break;
-		case PDF_TNULL:		error = fz_newnull(&obj); break;
-		case PDF_TINT:
+	case PDF_TOARRAY:	error = pdf_parsearray(&obj, file, buf, cap); break;
+	case PDF_TODICT:	error = pdf_parsedict(&obj, file, buf, cap); break;
+	case PDF_TNAME:	error = fz_newname(&obj, buf); break;
+	case PDF_TREAL:	error = fz_newreal(&obj, atof(buf)); break;
+	case PDF_TSTRING:	error = fz_newstring(&obj, buf, len); break;
+	case PDF_TTRUE:	error = fz_newbool(&obj, 1); break;
+	case PDF_TFALSE:	error = fz_newbool(&obj, 0); break;
+	case PDF_TNULL:	error = fz_newnull(&obj); break;
+	case PDF_TINT:
 			a = atoi(buf);
-			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+			error = pdf_lex(&tok, file, buf, cap, &len);
+			if (error) goto cleanup;
 			if (tok == PDF_TSTREAM || tok == PDF_TENDOBJ)
 			{
 				error = fz_newint(&obj, a);
@@ -367,7 +394,8 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 			if (tok == PDF_TINT)
 			{
 				b = atoi(buf);
-				tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+				error = pdf_lex(&tok, file, buf, cap, &len);
+				if (error) goto cleanup;
 				if (tok == PDF_TR)
 				{
 					error = fz_newindirect(&obj, a, b);
@@ -375,12 +403,13 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 				}
 			}
 			goto cleanup;
-		default:
+	default:
 			goto cleanup;
 	}
 	if (error) goto cleanup;
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+	error = pdf_lex(&tok, file, buf, cap, &len);
+	if (error) goto cleanup;
 
 skip:
 	if (tok == PDF_TSTREAM)
@@ -390,10 +419,13 @@ skip:
 		{
 			c = fz_peekbyte(file);
 			if (c != '\n')
-				fz_warn("syntaxerror: DOS format line ending after stream keyword (%d %d)\n", oid, gid);
+				fz_warn("syntaxerror: corrupt pdf stream (%d %d)\n", oid, gid);
 			else
 				c = fz_readbyte(file);
 		}
+		error = fz_readerror(file);
+		if (error)
+			goto cleanup;
 		stmofs = fz_tell(file);
 	}
 	else if (tok == PDF_TENDOBJ)
@@ -408,8 +440,10 @@ skip:
 	return nil;
 
 cleanup:
-	if (obj) fz_dropobj(obj);
-	if (error) return error;
-	return fz_throw("syntaxerror: corrupt indirect object (%d %d)", oid, gid);
+	if (obj)
+		fz_dropobj(obj);
+	if (error)
+		return fz_rethrow(error, "cannot parse indirect object (%d %d)", oid, gid);
+	return fz_throw("cannot parse indirect object (%d %d)", oid, gid);
 }
 

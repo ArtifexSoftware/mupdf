@@ -44,7 +44,7 @@ fz_newahxd(fz_filter **fp, fz_obj *params)
 	FZ_NEWFILTER(fz_ahxd, f, ahxd);
 	f->odd = 0;
 	f->a = 0;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -88,7 +88,7 @@ fz_processahxd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 		}
 
 		else if (!iswhite(c)) {
-			return fz_throw("ioerror: bad data in ahxd: '%c'", c);
+			return fz_throw("bad data in ahxd: '%c'", c);
 		}
 	}
 }

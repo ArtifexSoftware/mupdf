@@ -83,7 +83,7 @@ fz_newlzwe(fz_filter **fp, fz_obj *params)
 
 	clearhash(lzw);
 
-	return nil;
+	return fz_okay;
 }
 
 void

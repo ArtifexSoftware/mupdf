@@ -13,7 +13,8 @@ pdf_isstream(pdf_xref *xref, int oid, int gen)
 		return 0;
 
 	error = pdf_cacheobject(xref, oid, gen);
-	if (error) {
+	if (error)
+	{
 		fz_warn("%s", error->msg);
 		fz_droperror(error);
 		return 0;
@@ -36,21 +37,21 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 	s = fz_toname(f);
 
 	if (!strcmp(s, "ASCIIHexDecode") || !strcmp(s, "AHx"))
-		return fz_newahxd(fp, p);
+		error =  fz_newahxd(fp, p);
 
-	if (!strcmp(s, "ASCII85Decode") || !strcmp(s, "A85"))
-		return fz_newa85d(fp, p);
+	else if (!strcmp(s, "ASCII85Decode") || !strcmp(s, "A85"))
+		error =  fz_newa85d(fp, p);
 
-	if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF"))
-		return fz_newfaxd(fp, p);
+	else if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF"))
+		error =  fz_newfaxd(fp, p);
 
-	if (!strcmp(s, "DCTDecode") || !strcmp(s, "DCT"))
-		return fz_newdctd(fp, p);
+	else if (!strcmp(s, "DCTDecode") || !strcmp(s, "DCT"))
+		error =  fz_newdctd(fp, p);
 
-	if (!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL"))
-		return fz_newrld(fp, p);
+	else if (!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL"))
+		error =  fz_newrld(fp, p);
 
-	if (!strcmp(s, "FlateDecode") || !strcmp(s, "Fl"))
+	else if (!strcmp(s, "FlateDecode") || !strcmp(s, "Fl"))
 	{
 		if (fz_isdict(p))
 		{
@@ -59,25 +60,27 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 			{
 				error = fz_newflated(&decompress, p);
 				if (error)
-					return error;
+					return fz_rethrow(error, "cannot create deflate filter");
 
 				error = fz_newpredictd(&predict, p);
 				if (error)
 				{
 					fz_dropfilter(decompress);
-					return error;
+					return fz_rethrow(error, "cannot create predictor filter");
 				}
 
 				error = fz_newpipeline(fp, decompress, predict);
 				fz_dropfilter(decompress);
 				fz_dropfilter(predict);
-				return error;
+				if (error)
+					return fz_rethrow(error, "cannot create pipeline filter");
+				return fz_okay;
 			}
 		}
-		return fz_newflated(fp, p);
+		error = fz_newflated(fp, p);
 	}
 
-	if (!strcmp(s, "LZWDecode") || !strcmp(s, "LZW"))
+	else if (!strcmp(s, "LZWDecode") || !strcmp(s, "LZW"))
 	{
 		if (fz_isdict(p))
 		{
@@ -86,38 +89,47 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 			{
 				error = fz_newlzwd(&decompress, p);
 				if (error)
-					return error;
+					return fz_rethrow(error, "cannot create lzwd filter");
 
 				error = fz_newpredictd(&predict, p);
 				if (error)
 				{
 					fz_dropfilter(decompress);
-					return error;
+					return fz_rethrow(error, "cannot create predictor filter");
 				}
 
 				error = fz_newpipeline(fp, decompress, predict);
 				fz_dropfilter(decompress);
 				fz_dropfilter(predict);
-				return error;
+				if (error)
+					return fz_rethrow(error, "cannot create pipeline filter");
+				return fz_okay;
 			}
 		}
-		return fz_newlzwd(fp, p);
+		error = fz_newlzwd(fp, p);
 	}
 
 #ifdef HAVE_JBIG2DEC
-	if (!strcmp(s, "JBIG2Decode"))
+	else if (!strcmp(s, "JBIG2Decode"))
 	{
 		/* TODO: extract and feed JBIG2Global */
-		return fz_newjbig2d(fp, p);
+		error = fz_newjbig2d(fp, p);
 	}
 #endif
 
 #ifdef HAVE_JASPER
-	if (!strcmp(s, "JPXDecode"))
-		return fz_newjpxd(fp, p);
+	else if (!strcmp(s, "JPXDecode"))
+		error = fz_newjpxd(fp, p);
 #endif
 
-	return fz_throw("syntaxerror: unknown filter: %s", s);
+	else
+	{
+		return fz_throw("unknown filter name (%s)", s);
+	}
+
+	if (error)
+		return fz_rethrow(error, "cannot create filter");
+	return fz_okay;
 }
 
 /*
@@ -145,7 +157,7 @@ buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
 
 		error = buildonefilter(&tail, f, p);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create filter");
 
 		if (head)
 		{
@@ -155,7 +167,7 @@ buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
 			if (error)
 			{
 				fz_dropfilter(newhead);
-				return error;
+				return fz_rethrow(error, "cannot create pipeline filter");
 			}
 			head = newhead;
 		}
@@ -164,7 +176,7 @@ buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
 	}
 
 	*filterp = head;
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -183,13 +195,13 @@ buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int
 	stmlen = fz_dictgets(stmobj, "Length");
 	error = pdf_resolve(&stmlen, xref);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot resolve stream /Length");
 	len = fz_toint(stmlen);
 	fz_dropobj(stmlen);
 
 	error = fz_newnullfilter(&base, len);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create null filter");
 
 	if (xref->crypt)
 	{
@@ -200,14 +212,14 @@ buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int
 		if (error)
 		{
 			fz_dropfilter(base);
-			return error;
+			return fz_rethrow(error, "cannot create decryption filter");
 		}
 
 		error = fz_newpipeline(&pipe, base, crypt);
 		fz_dropfilter(base);
 		fz_dropfilter(crypt);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create pipeline filter");
 
 		*filterp = pipe;
 	}
@@ -216,7 +228,7 @@ buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int
 		*filterp = base;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -226,25 +238,26 @@ buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int
 fz_error *
 pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj)
 {
+	fz_error *error;
 	fz_obj *filters;
 	fz_obj *params;
 
 	filters = fz_dictgetsa(stmobj, "Filter", "F");
 	params = fz_dictgetsa(stmobj, "DecodeParms", "DP");
 
-	*filterp = nil;
-
 	if (filters)
 	{
 		if (fz_isname(filters))
-			return buildonefilter(filterp, filters, params);
-		else if (fz_arraylen(filters) > 0)
-			return buildfilterchain(filterp, nil, filters, params);
+			error = buildonefilter(filterp, filters, params);
+		else
+			error = buildfilterchain(filterp, nil, filters, params);
 	}
+	else
+		error = fz_newnullfilter(filterp, -1);
 
-	/* uh oh, no filter */
-
-	return nil;
+	if (error)
+		return fz_rethrow(error, "cannot create inline filter chain");
+	return fz_okay;
 }
 
 /*
@@ -261,7 +274,7 @@ pdf_buildfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, in
 
 	error = buildrawfilter(&base, xref, stmobj, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create raw filter chain");
 
 	filters = fz_dictgetsa(stmobj, "Filter", "F");
 	params = fz_dictgetsa(stmobj, "DecodeParms", "DP");
@@ -270,31 +283,46 @@ pdf_buildfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, in
 	{
 		error = pdf_resolve(&filters, xref);
 		if (error)
+		{
+			error = fz_rethrow(error, "cannot resolve stream /Filter");
 			goto cleanup0;
+		}
 
 		if (params)
 		{
 			error = pdf_resolve(&params, xref);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot resolve stream /DecodeParms");
 				goto cleanup1;
+			}
 		}
 
 		if (fz_isname(filters))
 		{
 			error = buildonefilter(&tmp, filters, params);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot create filter");
 				goto cleanup2;
+			}
 
 			error = fz_newpipeline(&pipe, base, tmp);
 			fz_dropfilter(tmp);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot create filter pipeline");
 				goto cleanup2;
+			}
 		}
 		else
 		{
 			error = buildfilterchain(&pipe, base, filters, params);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot create filter chain");
 				goto cleanup2;
+			}
 		}
 
 		if (params)
@@ -309,7 +337,7 @@ pdf_buildfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, in
 		*filterp = base;
 	}
 
-	return nil;
+	return fz_okay;
 
 cleanup2:
 	if (params)
@@ -322,7 +350,7 @@ cleanup0:
 }
 
 /*
- * Open a stream for reading the raw (compressed but decrypted) data.
+ * Open a stream for reading the raw (compressed but decrypted) data. 
  * Using xref->file while this is open is a bad idea.
  */
 fz_error *
@@ -331,33 +359,35 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 	pdf_xrefentry *x;
 	fz_error *error;
 	fz_filter *filter;
-	int n;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object id out of range");
+		return fz_throw("object id out of range (%d)", oid);
 
 	x = xref->table + oid;
 
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load stream object (%d)", oid);
 
 	if (x->stmbuf)
 	{
-		return fz_openrbuffer(stmp, x->stmbuf);
+		error = fz_openrbuffer(stmp, x->stmbuf);
+		if (error)
+			return fz_rethrow(error, "cannot open stream from buffer");
+		return fz_okay;
 	}
 
 	if (x->stmofs)
 	{
 		error = buildrawfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create raw filter");
 
-		n = fz_seek(xref->file, x->stmofs, 0);
-		if (n == -1)
+		error = fz_seek(xref->file, x->stmofs, 0);
+		if (error)
 		{
 			fz_dropfilter(filter);
-			return fz_ioerror(xref->file);
+			return fz_rethrow(error, "cannot seek to stream");
 		}
 
 		error = fz_openrfilter(stmp, filter, xref->file);
@@ -365,16 +395,16 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 		fz_dropfilter(filter);
 
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot open filter stream");
 
-		return nil;
+		return fz_okay;
 	}
 
-	return fz_throw("syntaxerror: object is not a stream");
+	return fz_throw("object is not a stream");
 }
 
 /*
- * Open a stream for reading uncompressed data.
+ * Open a stream for reading uncompressed data. 
  * Put the opened file in xref->stream.
  * Using xref->file while a stream is open is a Bad idea.
  */
@@ -385,58 +415,59 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 	fz_error *error;
 	fz_stream *rawstm;
 	fz_filter *filter;
-	int n;
 
 	if (oid < 0 || oid >= xref->len)
-		return fz_throw("rangecheck: object id out of range");
+		return fz_throw("object id out of range (%d)", oid);
 
 	x = xref->table + oid;
 
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load stream object (%d)", oid);
 
 	if (x->stmbuf)
 	{
 		error = pdf_buildfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create filter");
 
 		error = fz_openrbuffer(&rawstm, x->stmbuf);
 		if (error)
 		{
 			fz_dropfilter(filter);
-			return error;
+			return fz_rethrow(error, "cannot open stream from buffer");
 		}
 
 		error = fz_openrfilter(stmp, filter, rawstm);
 		fz_dropfilter(filter);
 		fz_dropstream(rawstm);
-		return error;
+		if (error)
+			return fz_rethrow(error, "cannot open filter stream");
+		return fz_okay;
 	}
 
 	if (x->stmofs)
 	{
 		error = pdf_buildfilter(&filter, xref, x->obj, oid, gen);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create filter");
 
-		n = fz_seek(xref->file, x->stmofs, 0);
-		if (n == -1)
+		error = fz_seek(xref->file, x->stmofs, 0);
+		if (error)
 		{
 			fz_dropfilter(filter);
-			return fz_ioerror(xref->file);
+			return fz_rethrow(error, "cannot seek to stream");
 		}
 
 		error = fz_openrfilter(stmp, filter, xref->file);
 		fz_dropfilter(filter);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot open filter stream");
 
-		return nil;
+		return fz_okay;
 	}
 
-	return fz_throw("syntaxerror: object is not a stream");
+	return fz_throw("object is not a stream");
 }
 
 /*
@@ -447,21 +478,16 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error *error;
 	fz_stream *stm;
-	int n;
 
 	error = pdf_openrawstream(&stm, xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot open raw stream (%d)", oid);
 
-	n = fz_readall(bufp, stm);
-	if (n < 0)
-		error = fz_ioerror(stm);
-	else
-		error = nil;
-
+	error = fz_readall(bufp, stm);
 	fz_dropstream(stm);
-
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot load stream into buffer (%d)", oid);
+	return fz_okay;
 }
 
 /*
@@ -472,20 +498,15 @@ pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error *error;
 	fz_stream *stm;
-	int n;
 
 	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot open stream (%d)", oid);
 
-	n = fz_readall(bufp, stm);
-	if (n < 0)
-		error = fz_ioerror(stm);
-	else
-		error = nil;
-
+	error = fz_readall(bufp, stm);
 	fz_dropstream(stm);
-
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot load stream into buffer (%d)", oid);
+	return fz_okay;
 }
 

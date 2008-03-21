@@ -1,5 +1,7 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
+
+/* TODO: we leak the pixmap buffer. not good. we should render into the glyph cache directly or keep it in the font struct.. */
 
 #define GCMEM (4 * 1024)
 
@@ -29,14 +31,14 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	fz_irect bbox;
 
 	if (cid < 0 || cid > 255)
-		return fz_throw("rangecheck: glyph out of range");
+		return fz_throw("assert: glyph out of range");
 
 	tree = font->charprocs[cid];
 	if (!tree)
 	{
 		glyph->w = 0;
 		glyph->h = 0;
-		return nil;
+		return fz_okay;
 	}
 
 	ctm = fz_concat(font->matrix, trm);
@@ -69,21 +71,30 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	fz_stream *stm;
 
 	error = pdf_newcsi(&csi, 1);
+	if (error)
+		return fz_rethrow(error, "cannot create interpreter");
 
 	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
-		return error;
+	{
+		pdf_dropcsi(csi);
+		return fz_rethrow(error, "cannot open glyph content stream");
+	}
 
 	error = pdf_runcsi(csi, xref, rdb, stm);
-
-	fz_dropstream(stm);
+	if (error)
+	{
+		fz_dropstream(stm);
+		pdf_dropcsi(csi);
+		return fz_rethrow(error, "cannot interpret glyph content stream");
+	}
 
 	*treep = csi->tree;
 	csi->tree = nil;
 
+	fz_dropstream(stm);
 	pdf_dropcsi(csi);
-
-	return error;
+	return fz_okay;
 }
 
 fz_error *
@@ -110,7 +121,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	font = pdf_newfont(buf);
 	if (!font)
-		return fz_outofmem;
+		return fz_throw("outofmem: font struct");
 
 	pdf_logfont("load type3 font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("name %s\n", buf);
@@ -122,16 +133,16 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	font->matrix = pdf_tomatrix(obj);
 
 	pdf_logfont("matrix [%g %g %g %g %g %g]\n",
-		font->matrix.a, font->matrix.b,
-		font->matrix.c, font->matrix.d,
-		font->matrix.e, font->matrix.f);
+			font->matrix.a, font->matrix.b,
+			font->matrix.c, font->matrix.d,
+			font->matrix.e, font->matrix.f);
 
 	obj = fz_dictgets(dict, "FontBBox");
 	bbox = pdf_torect(obj);
 
 	pdf_logfont("bbox [%g %g %g %g]\n",
-		bbox.x0, bbox.y0,
-		bbox.x1, bbox.y1);
+			bbox.x0, bbox.y0,
+			bbox.x1, bbox.y1);
 
 	bbox = fz_transformaabb(font->matrix, bbox);
 	bbox.x0 = fz_floor(bbox.x0 * 1000);
@@ -193,7 +204,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		goto cleanup;
 
 	error = pdf_loadtounicode(font, xref,
-				estrings, nil, fz_dictgets(dict, "ToUnicode"));
+			estrings, nil, fz_dictgets(dict, "ToUnicode"));
 	if (error)
 		goto cleanup;
 

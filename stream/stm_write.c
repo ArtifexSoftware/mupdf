@@ -5,16 +5,17 @@
 #include "fitz-base.h"
 #include "fitz-stream.h"
 
-int fz_wtell(fz_stream *stm)
+int
+fz_wtell(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
 	int t;
 
 	if (stm->dead)
-		return -1;
+		return EOF;
 
 	if (stm->mode != FZ_SWRITE)
-		return -1;
+		return EOF;
 
 	switch (stm->kind)
 	{
@@ -22,9 +23,9 @@ int fz_wtell(fz_stream *stm)
 		t = lseek(stm->file, 0, 1);
 		if (t < 0)
 		{
-			stm->error = fz_throw("ioerror: lseek: %s", strerror(errno));
+			fz_warn("syserr: lseek: %s", strerror(errno));
 			stm->dead = 1;
-			return -1;
+			return EOF;
 		}
 		return t + (buf->wp - buf->rp);
 
@@ -33,46 +34,47 @@ int fz_wtell(fz_stream *stm)
 
 	case FZ_SBUFFER:
 		return buf->wp - buf->bp;
-	}
 
-	return -1;
+	default:
+		return EOF;
+	}
 }
 
-int fz_wseek(fz_stream *stm, int offset, int whence)
+fz_error *
+fz_wseek(fz_stream *stm, int offset, int whence)
 {
 	fz_buffer *buf = stm->buffer;
 	int t;
 
 	if (stm->dead)
-		return -1;
+		return fz_throw("assert: seek in dead stream");
 
 	if (stm->mode != FZ_SWRITE)
-		return -1;
+		return fz_throw("assert: write operation on reading stream");
 
 	if (stm->kind != FZ_SFILE)
-		return -1;
+		return fz_throw("assert: write seek on non-file stream");
 
 	t = lseek(stm->file, offset, whence);
 	if (t < 0)
 	{
-		stm->error = fz_throw("ioerror: lseek: %s", strerror(errno));
 		stm->dead = 1;
-		return -1;
+		return fz_throw("syserr: lseek: %s", strerror(errno));
 	}
 
 	buf->rp = buf->bp;
 	buf->wp = buf->bp;
 	buf->eof = 0;
 
-	return t;
+	return fz_okay;
 }
 
-static int flushfilter(fz_stream *stm)
+static fz_error *
+fz_flushfilterimp(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
 	fz_error *error;
 	fz_error *reason;
-	int t;
 
 loop:
 
@@ -81,20 +83,30 @@ loop:
 	if (reason == fz_ioneedin)
 	{
 		if (buf->rp > buf->ep)
-			fz_rewindbuffer(buf);
+		{
+			error = fz_rewindbuffer(buf);
+			if (error)
+			{
+				stm->dead = 1;
+				return fz_rethrow(error, "cannot rewind buffer");
+			}
+		}
 		else
 		{
 			error = fz_growbuffer(buf);
 			if (error)
-				goto cleanup;
+			{
+				stm->dead = 1;
+				return fz_rethrow(error, "cannot grow buffer");
+			}
 		}
 	}
 
 	else if (reason == fz_ioneedout)
 	{
-		t = fz_flush(stm->chain);
-		if (t < 0)
-			return -1;
+		error = fz_flush(stm->chain);
+		if (error)
+			return fz_rethrow(error, "cannot flush chain buffer");
 	}
 
 	else if (reason == fz_iodone)
@@ -104,20 +116,15 @@ loop:
 
 	else
 	{
-		error = reason;
-		goto cleanup;
+		stm->dead = 1;
+		return fz_rethrow(reason, "cannot process filter");
 	}
 
 	/* if we are at eof, repeat until other filter sets otherside to eof */
 	if (buf->eof && !stm->chain->buffer->eof)
 		goto loop;
 
-	return 0;
-
-cleanup:
-	stm->error = error;
-	stm->dead = 1;
-	return -1;
+	return fz_okay;
 }
 
 /*
@@ -126,20 +133,21 @@ cleanup:
  * Called by fz_write and fz_dropstream.
  * If buffer is eof, then all data must be flushed.
  */
-int fz_flush(fz_stream *stm)
+fz_error *
+fz_flush(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
 	fz_error *error;
 	int t;
 
-	if (stm->dead == 2)
-		return 0;
+	if (stm->dead == 2) /* eod flag */
+		return fz_okay;
 
 	if (stm->dead)
-		return -1;
+		return fz_throw("assert: flush on dead stream");
 
 	if (stm->mode != FZ_SWRITE)
-		return -1;
+		return fz_throw("assert: write operation on reading stream");
 
 	switch (stm->kind)
 	{
@@ -149,21 +157,30 @@ int fz_flush(fz_stream *stm)
 			t = write(stm->file, buf->rp, buf->wp - buf->rp);
 			if (t < 0)
 			{
-				stm->error = fz_throw("ioerror: write: %s", strerror(errno));
 				stm->dead = 1;
-				return -1;
+				return fz_throw("syserr: write: %s", strerror(errno));
 			}
 
 			buf->rp += t;
 		}
 
 		if (buf->rp > buf->bp)
-			fz_rewindbuffer(buf);
+		{
+			error = fz_rewindbuffer(buf);
+			if (error)
+			{
+				stm->dead = 1;
+				return fz_rethrow(error, "cannot rewind buffer");
+			}
+		}
 
-		return 0;
+		return fz_okay;
 
 	case FZ_SFILTER:
-		return flushfilter(stm);
+		error = fz_flushfilterimp(stm);
+		if (error)
+			return fz_rethrow(error, "cannot flush through filter");
+		return fz_okay;
 
 	case FZ_SBUFFER:
 		if (!buf->eof && buf->wp == buf->ep)
@@ -171,36 +188,35 @@ int fz_flush(fz_stream *stm)
 			error = fz_growbuffer(buf);
 			if (error)
 			{
-				stm->error = error;
 				stm->dead = 1;
-				return -1;
+				return fz_rethrow(error, "cannot grow buffer");
 			}
 		}
-		return 0;
-	}
+		return fz_okay;
 
-	return -1;
+	default:
+		return fz_throw("unknown stream type");
+	}
 }
 
 /*
  * Write data to stream.
  * Buffer until internal buffer is full.
  * When full, call fz_flush to make more space available.
+ * Return error if all the data could not be written.
  */
-int fz_write(fz_stream *stm, unsigned char *mem, int n)
+fz_error *
+fz_write(fz_stream *stm, unsigned char *mem, int n)
 {
 	fz_buffer *buf = stm->buffer;
+	fz_error *error;
 	int i = 0;
-	int t;
-
-	if (stm->dead == 2)
-		return 0;
 
 	if (stm->dead)
-		return -1;
+		return fz_throw("assert: write on dead stream");
 
 	if (stm->mode != FZ_SWRITE)
-		return -1;
+		return fz_throw("assert: write on reading stream");
 
 	while (i < n)
 	{
@@ -209,24 +225,27 @@ int fz_write(fz_stream *stm, unsigned char *mem, int n)
 
 		if (buf->wp == buf->ep && i < n)
 		{
-			t = fz_flush(stm);
-			if (t < 0)
-				return -1;
+			error = fz_flush(stm);
+			if (error)
+				return fz_rethrow(error, "cannot flush buffer");
 			if (stm->dead)
-				return i;
+				return fz_throw("assert: write on dead stream");
 		}
 	}
 
-	return n;
+	return fz_okay;
 }
 
-int fz_printstr(fz_stream *stm, char *s)
+fz_error *
+fz_printstr(fz_stream *stm, char *s)
 {
-	return fz_write(stm, (unsigned char *) s, strlen(s));
+	return fz_write(stm, s, strlen(s));
 }
 
-int fz_printobj(fz_stream *file, fz_obj *obj, int tight)
+fz_error *
+fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 {
+	fz_error *error;
 	char buf[1024];
 	char *ptr;
 	int n;
@@ -235,22 +254,29 @@ int fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 	if (n < sizeof buf)
 	{
 		fz_sprintobj(buf, sizeof buf, obj, tight);
-		return fz_write(file, (unsigned char *) buf, n);
+		error = fz_write(file, buf, n);
+		if (error)
+			return fz_rethrow(error, "cannot write buffer");
+		return fz_okay;
 	}
 	else
 	{
 		ptr = fz_malloc(n);
 		if (!ptr)
-			return -1;
+			return fz_throw("outofmem: scratch buffer");
 		fz_sprintobj(ptr, n, obj, tight);
-		n = fz_write(file, (unsigned char *) ptr, n);
+		error = fz_write(file, ptr, n);
+		if (error)
+			error = fz_rethrow(error, "cannot write buffer");
 		fz_free(ptr);
-		return n;
+		return error;
 	}
 }
 
-int fz_print(fz_stream *stm, char *fmt, ...)
+fz_error *
+fz_print(fz_stream *stm, char *fmt, ...)
 {
+	fz_error *error;
 	va_list ap;
 	char buf[1024];
 	char *p;
@@ -261,20 +287,27 @@ int fz_print(fz_stream *stm, char *fmt, ...)
 	va_end(ap);
 
 	if (n < sizeof buf)
-		return fz_write(stm, (unsigned char *) buf, n);
+	{
+		error = fz_write(stm, buf, n);
+		if (error)
+			return fz_rethrow(error, "cannot write buffer");
+		return fz_okay;
+	}
 
 	p = fz_malloc(n);
 	if (!p)
-		return -1;
+		return fz_throw("outofmem: scratch buffer");
 
 	va_start(ap, fmt);
 	vsnprintf(p, n, fmt, ap);
 	va_end(ap);
 
-	n = fz_write(stm, (unsigned char *) p, n);
+	error = fz_write(stm, p, n);
+	if (error)
+		error = fz_rethrow(error, "cannot write buffer");
 
 	fz_free(p);
 
-	return n;
+	return error;
 }
 

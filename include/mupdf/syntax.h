@@ -17,7 +17,7 @@ enum
 };
 
 /* lex.c */
-int pdf_lex(fz_stream *f, unsigned char *buf, int n, int *len);
+fz_error *pdf_lex(int *token, fz_stream *f, unsigned char *buf, int n, int *len);
 
 /* parse.c */
 fz_error *pdf_parsearray(fz_obj **op, fz_stream *f, char *buf, int cap);
@@ -54,9 +54,11 @@ struct pdf_crypt_s
 /* crypt.c */
 fz_error *pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
 fz_error *pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id);
-fz_error *pdf_setpassword(pdf_crypt *crypt, char *pw);
-fz_error *pdf_setuserpassword(pdf_crypt *crypt, char *pw, int pwlen);
-fz_error *pdf_setownerpassword(pdf_crypt *crypt, char *pw, int pwlen);
+
+int pdf_setpassword(pdf_crypt *crypt, char *pw);
+int pdf_setuserpassword(pdf_crypt *crypt, char *pw, int pwlen);
+int pdf_setownerpassword(pdf_crypt *crypt, char *pw, int pwlen);
+
 fz_error *pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gid);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid);
 void pdf_dropcrypt(pdf_crypt *crypt);

@@ -52,16 +52,22 @@ fz_newpredict(fz_filter **fp, fz_obj *params, int encode)
 	p->stride = (p->bpc * p->colors * p->columns + 7) / 8;
 	p->bpp = (p->bpc * p->colors + 7) / 8;
 
-	if (p->predictor >= 10) {
+	if (p->predictor >= 10)
+	{
 		p->ref = fz_malloc(p->stride);
-		if (!p->ref) { fz_free(p); return fz_outofmem; }
+		if (!p->ref)
+		{
+			fz_free(p);
+			return fz_throw("outofmem: scanline buffer");
+		}
 		memset(p->ref, 0, p->stride);
 	}
-	else {
+	else
+	{
 		p->ref = nil;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -122,8 +128,10 @@ tiff(fz_predict *p, unsigned char *in, unsigned char *out)
 	for (k = 0; k < p->colors; k++)
 		left[k] = 0;
 
-	for (i = 0; i < p->columns; i++) {
-		for (k = 0; k < p->colors; k++) {
+	for (i = 0; i < p->columns; i++)
+	{
+		for (k = 0; k < p->colors; k++)
+		{
 			int a = getcomponent(in, i * p->colors + k, p->bpc);
 			int b = p->encode ? a - left[k] : a + left[k];
 			int c = b % (1 << p->bpc);
@@ -138,7 +146,8 @@ png(fz_predict *p, unsigned char *in, unsigned char *out, int predictor)
 {
 	int upleft[MAXC], left[MAXC], i, k;
 
-	for (k = 0; k < p->bpp; k++) {
+	for (k = 0; k < p->bpp; k++)
+	{
 		left[k] = 0;
 		upleft[k] = 0;
 	}
@@ -187,7 +196,8 @@ fz_processpredict(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 
 	while (1)
 	{
-		if (in->rp + dec->stride + (!dec->encode && ispng) > in->wp) {
+		if (in->rp + dec->stride + (!dec->encode && ispng) > in->wp)
+		{
 			if (in->eof)
 				return fz_iodone;
 			return fz_ioneedin;
@@ -196,22 +206,27 @@ fz_processpredict(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 		if (out->wp + dec->stride + (dec->encode && ispng) > out->ep)
 			return fz_ioneedout;
 
-		if (dec->predictor == 1) {
+		if (dec->predictor == 1)
+		{
 			none(dec, in->rp, out->wp);
 		}
-		else if (dec->predictor == 2) {
+		else if (dec->predictor == 2)
+		{
 			if (dec->bpc != 8)
 				memset(out->wp, 0, dec->stride);
 			tiff(dec, in->rp, out->wp);
 		}
-		else {
-			if (dec->encode) {
+		else
+		{
+			if (dec->encode)
+			{
 				predictor = dec->predictor - 10;
 				if (predictor < 0 || predictor > 4)
 					predictor = 1;
 				*out->wp ++ = predictor;
 			}
-			else {
+			else
+			{
 				predictor = *in->rp++;
 			}
 			png(dec, in->rp, out->wp, predictor);

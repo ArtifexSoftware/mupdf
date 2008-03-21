@@ -7,19 +7,24 @@ fz_newbuffer(fz_buffer **bp, int size)
 	fz_buffer *b;
 
 	b = *bp = fz_malloc(sizeof(fz_buffer));
-	if (!b) return fz_outofmem;
+	if (!b)
+		return fz_throw("outofmem: buffer struct");
 
 	b->refs = 1;
 	b->ownsdata = 1;
 	b->bp = fz_malloc(size);
-	if (!b->bp) { fz_free(b); return fz_outofmem; }
+	if (!b->bp)
+	{
+		fz_free(b);
+		return fz_throw("outofmem: buffer memory");
+	}
 
 	b->rp = b->bp;
 	b->wp = b->bp;
 	b->ep = b->bp + size;
 	b->eof = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -28,7 +33,8 @@ fz_newbufferwithmemory(fz_buffer **bp, unsigned char *data, int size)
 	fz_buffer *b;
 
 	b = *bp = fz_malloc(sizeof(fz_buffer));
-	if (!b) return fz_outofmem;
+	if (!b)
+		return fz_throw("outofmem: buffer struct");
 
 	b->refs = 1;
 	b->ownsdata = 0;
@@ -39,7 +45,7 @@ fz_newbufferwithmemory(fz_buffer **bp, unsigned char *data, int size)
 	b->ep = b->bp + size;
 	b->eof = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_buffer *
@@ -69,26 +75,31 @@ fz_growbuffer(fz_buffer *buf)
 	int wp = buf->wp - buf->bp;
 	int ep = buf->ep - buf->bp;
 
-	assert(buf->ownsdata);
+	if (!buf->ownsdata)
+		return fz_throw("assert: grow borrowed memory");
 
 	newbp = fz_realloc(buf->bp, ep * 2);
-	if (!newbp) return fz_outofmem;
+	if (!newbp)
+		return fz_throw("outofmem: resize buffer memory");
 
 	buf->bp = newbp;
 	buf->rp = buf->bp + rp;
 	buf->wp = buf->bp + wp;
 	buf->ep = buf->bp + ep * 2;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
 fz_rewindbuffer(fz_buffer *buf)
 {
-	assert(buf->ownsdata);
+	if (!buf->ownsdata)
+		return fz_throw("assert: rewind borrowed memory");
+
 	memmove(buf->bp, buf->rp, buf->wp - buf->rp);
 	buf->wp = buf->bp + (buf->wp - buf->rp);
 	buf->rp = buf->bp;
-	return nil;
+
+	return fz_okay;
 }
 

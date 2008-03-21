@@ -5,7 +5,7 @@ fz_error *
 fz_newrld(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_filter, f, rld);
-	return nil;
+	return fz_okay;
 }
 
 void

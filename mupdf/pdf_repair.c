@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 /*
  * open pdf and scan objects to reconstruct xref table
@@ -16,7 +16,7 @@ struct entry
 
 static fz_error *
 parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
-	int *isroot, int *isinfo)
+		int *isroot, int *isinfo)
 {
 	fz_error *error;
 	fz_obj *dict = nil;
@@ -24,17 +24,18 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 	fz_obj *filter;
 	fz_obj *type;
 	int tok, len;
+	int n;
 
 	*stmlen = -1;
 	*isroot = 0;
 	*isinfo = 0;
 
-	tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (tok == PDF_TODICT)
 	{
 		error = pdf_parsedict(&dict, file, buf, cap);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot parse object");
 	}
 
 	if (fz_isdict(dict))
@@ -45,7 +46,10 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 
 		filter = fz_dictgets(dict, "Filter");
 		if (fz_isname(filter) && !strcmp(fz_toname(filter), "Standard"))
+		{
+			fz_dropobj(dict);
 			return fz_throw("cannot repair encrypted files");
+		}
 
 		if (fz_dictgets(dict, "Producer"))
 			if (fz_dictgets(dict, "Creator"))
@@ -53,11 +57,15 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 					*isinfo = 1;
 	}
 
-	while (	tok != PDF_TSTREAM &&
+	while ( tok != PDF_TSTREAM &&
 			tok != PDF_TENDOBJ &&
 			tok != PDF_TERROR &&
 			tok != PDF_TEOF )
-		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+	{
+		error = pdf_lex(&tok, file, buf, cap, &len);
+		if (error)
+			return fz_rethrow(error, "cannot scan for endobj or stream token");
+	}
 
 	if (tok == PDF_TSTREAM)
 	{
@@ -68,19 +76,34 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 				fz_readbyte(file);
 		}
 
+		error = fz_readerror(file);
+		if (error)
+			return fz_rethrow(error, "cannot read from file");
+
 		*stmofs = fz_tell(file);
+		if (*stmofs < 0)
+			return fz_throw("cannot seek in file");
 
 		length = fz_dictgets(dict, "Length");
 		if (fz_isint(length))
 		{
-			fz_seek(file, *stmofs + fz_toint(length), 0);
-			tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+			error = fz_seek(file, *stmofs + fz_toint(length), 0);
+			if (error)
+				return fz_rethrow(error, "cannot seek in file");
+			error = pdf_lex(&tok, file, buf, cap, &len);
+			if (error)
+				return fz_rethrow(error, "cannot scan for endstream token");
 			if (tok == PDF_TENDSTREAM)
 				goto atobjend;
-			fz_seek(file, *stmofs, 0);
+			error = fz_seek(file, *stmofs, 0);
+			if (error)
+				return fz_rethrow(error, "cannot seek in file");
 		}
 
-		fz_read(file, (unsigned char *) buf, 9);
+		error = fz_read(&n, file, buf, 9);
+		if (error)
+			return fz_rethrow(error, "cannot read from file");
+
 		while (memcmp(buf, "endstream", 9) != 0)
 		{
 			c = fz_readbyte(file);
@@ -90,10 +113,16 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 			buf[8] = c;
 		}
 
+		error = fz_readerror(file);
+		if (error)
+			return fz_rethrow(error, "cannot read from file");
+
 		*stmlen = fz_tell(file) - *stmofs - 9;
 
 atobjend:
-		tok = pdf_lex(file, (unsigned char *) buf, cap, &len);
+		error = pdf_lex(&tok, file, buf, cap, &len);
+		if (error)
+			return fz_rethrow(error, "cannot scan for endobj token");
 		if (tok == PDF_TENDOBJ)
 			;
 	}
@@ -101,7 +130,7 @@ atobjend:
 	if (dict)
 		fz_dropobj(dict);
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -129,7 +158,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 	error = fz_openrfile(&file, filename);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot open file '%s'", filename);
 
 	pdf_logxref("repairxref '%s' %p\n", filename, xref);
 
@@ -141,13 +170,27 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	listcap = 1024;
 	list = fz_malloc(listcap * sizeof(struct entry));
 	if (!list)
+	{
+		error = fz_throw("outofmem: reparation object list");
 		goto cleanup;
+	}
 
 	while (1)
 	{
 		tmpofs = fz_tell(file);
+		if (tmpofs < 0)
+		{
+			error = fz_throw("cannot tell in file");
+			goto cleanup;
+		}
 
-		tok = pdf_lex(file, (unsigned char *) buf, sizeof buf, &len);
+		error = pdf_lex(&tok, file, buf, sizeof buf, &len);
+		if (error)
+		{
+			error = fz_rethrow(error, "cannot scan for objects");
+			goto cleanup;
+		}
+
 		if (tok == PDF_TINT)
 		{
 			oidofs = genofs;
@@ -160,7 +203,10 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		{
 			error = parseobj(file, buf, sizeof buf, &stmofs, &stmlen, &isroot, &isinfo);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot parse object");
 				goto cleanup;
+			}
 
 			if (isroot) {
 				pdf_logxref("found catalog: %d %d\n", oid, gen);
@@ -180,7 +226,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				listcap = listcap * 2;
 				newlist = fz_realloc(list, listcap * sizeof(struct entry));
 				if (!newlist) {
-					error = fz_outofmem;
+					error = fz_throw("outofmem: resize reparation object list");
 					goto cleanup;
 				}
 				list = newlist;
@@ -206,22 +252,25 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 	if (rootoid == 0)
 	{
-		error = fz_throw("syntaxerror: could not find catalog");
+		error = fz_throw("cannot find catalog object");
 		goto cleanup;
 	}
 
 	error = fz_packobj(&xref->trailer,
-					"<< /Size %i /Root %r >>",
-					maxoid + 1, rootoid, rootgen);
+			"<< /Size %i /Root %r >>",
+			maxoid + 1, rootoid, rootgen);
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot create new trailer");
 		goto cleanup;
+	}
 
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 	{
-		error = fz_outofmem;
+		error = fz_throw("outofmem: xref table");
 		goto cleanup;
 	}
 
@@ -259,21 +308,42 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 			fz_obj *dict, *length;
 
 			pdf_logxref("correct stream length %d %d = %d\n",
-				list[i].oid, list[i].gen, list[i].stmlen);
+					list[i].oid, list[i].gen, list[i].stmlen);
 
 			error = pdf_loadobject(&dict, xref, list[i].oid, list[i].gen);
 			if (error)
+			{
+				error = fz_rethrow(error, "cannot load stream object");
 				goto cleanup;
+			}
 
 			error = fz_newint(&length, list[i].stmlen);
 			if (error)
+			{
+				fz_dropobj(dict);
+				error = fz_rethrow(error, "cannot create integer object");
 				goto cleanup;
+			}
+
 			error = fz_dictputs(dict, "Length", length);
 			if (error)
+			{
+				fz_dropobj(length);
+				fz_dropobj(dict);
+				error = fz_rethrow(error, "cannot update stream length");
 				goto cleanup;
+			}
 
-			pdf_updateobject(xref, list[i].oid, list[i].gen, dict);
+			error = pdf_updateobject(xref, list[i].oid, list[i].gen, dict);
+			if (error)
+			{
+				fz_dropobj(length);
+				fz_dropobj(dict);
+				error = fz_rethrow(error, "cannot update stream object");
+				goto cleanup;
+			}
 
+			fz_dropobj(length);
 			fz_dropobj(dict);
 		}
 	}
@@ -291,8 +361,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	}
 
 	fz_free(list);
-
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_dropstream(file);

@@ -4585,62 +4585,63 @@ static const unsigned short agldat[4368] = {
 
 int pdf_lookupagl(char *name, int *ucsbuf, int ucscap)
 {
-	char buf[256];
-	int ucslen = 0;
-	char *p;
-	char *s;
-	int i;
+    char buf[256];
+    int ucslen = 0;
+    char *p;
+    char *s;
+    int i;
 
-	strlcpy(buf, name, sizeof buf);
+    strlcpy(buf, name, sizeof buf);
 
-	/* kill anything after first period */
-	p = strchr(buf, '.');
-	if (p)
-		p[0] = 0;
+    /* kill anything after first period */
+    p = strchr(buf, '.');
+    if (p)
+        p[0] = 0;
 
-	/* split into components separated by underscore */
-	p = buf;
-	s = strsep(&p, "_");
-	while (s)
-	{
-		int l = 0;
-		int r = nelem(aglidx) - 1;
+    /* split into components separated by underscore */
+    p = buf;
+    s = strsep(&p, "_");
+    while (s)
+    {
+        int l = 0;
+        int r = nelem(aglidx) - 1;
 
-		while (l <= r)
-		{
-			int m = (l + r) >> 1;
-			int c = strcmp(s, aglidx[m].name);
-			if (c < 0)
-				r = m - 1;
-			else if (c > 0)
-				l = m + 1;
-			else
-			{
-				for (i = 0; i < aglidx[m].num; i++)
-					ucsbuf[ucslen++] = agldat[aglidx[m].ofs + i];
-				goto next;
-			}
-		}
+        while (l <= r)
+        {
+            int m = (l + r) >> 1;
+            int c = strcmp(s, aglidx[m].name);
+            if (c < 0)
+                r = m - 1;
+            else if (c > 0)
+                l = m + 1;
+            else
+            {
+                for (i = 0; i < aglidx[m].num; i++)
+                    ucsbuf[ucslen++] = agldat[aglidx[m].ofs + i];
+                goto next;
+            }
+        }
 
-		if (strstr(s, "uni") == s)
-		{
-			char tmp[5];
-			s += 3;
-			while (s[0])
-			{
-				strlcpy(tmp, s, 5);
-				ucsbuf[ucslen++] = strtol(tmp, 0, 16);
-				s += MIN(strlen(s), 4);
-			}
-		}
+        if (strstr(s, "uni") == s)
+        {
+            char tmp[5];
+            s += 3;
+            while (s[0])
+            {
+                strlcpy(tmp, s, 5);
+                ucsbuf[ucslen++] = strtol(tmp, 0, 16);
+                s += MIN(strlen(s), 4);
+            }
+        }
 
-		else if (strstr(s, "u") == s)
-			ucsbuf[ucslen++] = strtol(s + 1, 0, 16);
+        else if (strstr(s, "u") == s)
+            ucsbuf[ucslen++] = strtol(s + 1, 0, 16);
 
 next:
-		s = strsep(&p, "_");
-	}
+        s = strsep(&p, "_");
+    }
 
-	return ucslen;
+    return ucslen;
 }
+
 

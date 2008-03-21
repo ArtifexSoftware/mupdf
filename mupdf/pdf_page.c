@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 static fz_error *
 runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
@@ -11,13 +11,16 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 
 	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot open content stream %d", fz_tonum(stmref));
 
 	error = pdf_runcsi(csi, xref, rdb, stm);
 
 	fz_dropstream(stm);
 
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot interpret content stream %d", fz_tonum(stmref));
+
+	return fz_okay;
 }
 
 /* we need to combine all sub-streams into one for pdf_runcsi
@@ -31,18 +34,20 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 	fz_buffer *big;
 	fz_buffer *one;
 	fz_obj *stm;
-	int n;
 	int i;
 
 	pdf_logpage("multiple content streams: %d\n", fz_arraylen(list));
 
 	error = fz_newbuffer(&big, 32 * 1024);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create content buffer");
 
 	error = fz_openwbuffer(&file, big);
 	if (error)
-		goto cleanup0;
+	{
+		error = fz_rethrow(error, "cannot open content buffer (write)");
+		goto cleanupbuf;
+	}
 
 	for (i = 0; i < fz_arraylen(list); i++)
 	{
@@ -51,37 +56,52 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 		stm = fz_arrayget(list, i);
 		error = pdf_loadstream(&one, xref, fz_tonum(stm), fz_togen(stm));
 		if (error)
-			goto cleanup1;
+		{
+			error = fz_rethrow(error, "cannot load content stream");
+			goto cleanupstm;
+		}
 
-		n = fz_write(file, one->rp, one->wp - one->rp);
+		error = fz_write(file, one->rp, one->wp - one->rp);
+		if (error)
+		{
+			fz_dropbuffer(one);
+			error = fz_rethrow(error, "cannot write to content buffer");
+			goto cleanupstm;
+		}
 
 		fz_dropbuffer(one);
 
-		if (n == -1)
-		{
-			error = fz_ioerror(file);
-			goto cleanup1;
-		}
-
 		fz_printstr(file, " ");
+		if (error)
+		{
+			error = fz_rethrow(error, "cannot write to content buffer");
+			goto cleanupstm;
+		}
 	}
 
 	fz_dropstream(file);
 
 	error = fz_openrbuffer(&file, big);
 	if (error)
-		goto cleanup0;
+	{
+		error = fz_rethrow(error, "cannot open content buffer (read)");
+		goto cleanupbuf;
+	}
 
 	error = pdf_runcsi(csi, xref, rdb, file);
+	if (error)
+	{
+		error = fz_rethrow(error, "cannot interpret content buffer");
+		goto cleanupstm;
+	}
 
 	fz_dropstream(file);
 	fz_dropbuffer(big);
+	return fz_okay;
 
-	return error;
-
-cleanup1:
+cleanupstm:
 	fz_dropstream(file);
-cleanup0:
+cleanupbuf:
 	fz_dropbuffer(big);
 	return error;
 }
@@ -95,13 +115,13 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 
 	error = pdf_newcsi(&csi, 0);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create interpreter");
 
 	if (fz_isindirect(ref))
 	{
 		error = pdf_loadindirect(&obj, xref, ref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot load page contents (%d)", fz_tonum(ref));
 
 		if (fz_isarray(obj))
 		{
@@ -114,8 +134,12 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 			error = runone(csi, xref, rdb, ref);
 
 		fz_dropobj(obj);
+
 		if (error)
-			goto cleanup;
+		{
+			pdf_dropcsi(csi);
+			return fz_rethrow(error, "cannot interpret page contents (%d)", fz_tonum(ref));
+		}
 	}
 
 	else if (fz_isarray(ref))
@@ -124,15 +148,20 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 			error = runone(csi, xref, rdb, fz_arrayget(ref, 0));
 		else
 			error = runmany(csi, xref, rdb, ref);
+
+		if (error)
+		{
+			pdf_dropcsi(csi);
+			return fz_rethrow(error, "cannot interpret page contents (%d)", fz_tonum(ref));
+		}
 	}
 
 	*treep = csi->tree;
 	csi->tree = nil;
-	error = nil;
 
-cleanup:
 	pdf_dropcsi(csi);
-	return error;
+
+	return fz_okay;
 }
 
 fz_error *
@@ -158,11 +187,11 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	if (!obj)
 		obj = fz_dictgets(dict, "MediaBox");
 	if (!fz_isarray(obj))
-		return fz_throw("syntaxerror: Page missing MediaBox");
+		return fz_throw("cannot find page bounds");
 	bbox = pdf_torect(obj);
 
 	pdf_logpage("bbox [%g %g %g %g]\n",
-		bbox.x0, bbox.y0, bbox.x1, bbox.y1);
+			bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	obj = fz_dictgets(dict, "Rotate");
 	if (fz_isint(obj))
@@ -181,11 +210,11 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_resolve(&obj, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot resolve annotations");
 		error = pdf_loadannots(&comments, &links, xref, obj);
 		fz_dropobj(obj);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot load annotations");
 	}
 
 	/*
@@ -194,14 +223,14 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	obj = fz_dictgets(dict, "Resources");
 	if (!obj)
-		return fz_throw("syntaxerror: Page missing Resources");
+		return fz_throw("cannot find page resources");
 	error = pdf_resolve(&obj, xref);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot resolve page resources");
 	error = pdf_loadresources(&rdb, xref, obj);
 	fz_dropobj(obj);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load page resources");
 
 	/*
 	 * Interpret content stream to build display tree
@@ -210,33 +239,30 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "Contents");
 
 	error = loadpagecontents(&tree, xref, rdb, obj);
-	if (error) {
-		fz_dropobj(rdb);
-		return error;
-	}
-
-	if (!getenv("DONTOPT"))
+	if (error)
 	{
-		if (getenv("SHOWTREE"))
-			fz_debugtree(tree);
-
-		pdf_logpage("optimize tree\n");
-
-		error = fz_optimizetree(tree);
-		if (error) {
-			fz_dropobj(rdb);
-			return error;
-		}
+		fz_dropobj(rdb);
+		return fz_rethrow(error, "cannot load page contents");
 	}
+
+	pdf_logpage("optimize tree\n");
+	error = fz_optimizetree(tree);
+	if (error)
+	{
+		fz_dropobj(rdb);
+		return fz_rethrow(error, "cannot optimize page display tree");
+	}
+
 	/*
 	 * Create page object
 	 */
 
-	page = *pagep = fz_malloc(sizeof(pdf_page));
-	if (!page) {
+	page = fz_malloc(sizeof(pdf_page));
+	if (!page)
+	{
 		fz_droptree(tree);
 		fz_dropobj(rdb);
-		return fz_outofmem;
+		return fz_throw("outofmem: page struct");
 	}
 
 	page->mediabox.x0 = MIN(bbox.x0, bbox.x1);
@@ -252,20 +278,15 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logpage("} %p\n", page);
 
-	if (getenv("SHOWTREE"))
-		fz_debugtree(tree);
-
-	return nil;
+	*pagep = page;
+	return fz_okay;
 }
 
 void
 pdf_droppage(pdf_page *page)
 {
 	pdf_logpage("drop page %p\n", page);
-/*
-	if (page->comments)
-		pdf_dropcomment(page->comments);
-*/
+	/* if (page->comments) pdf_dropcomment(page->comments); */
 	if (page->links)
 		pdf_droplink(page->links);
 	fz_dropobj(page->resources);

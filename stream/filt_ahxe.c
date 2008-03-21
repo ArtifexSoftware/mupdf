@@ -16,7 +16,7 @@ fz_newahxe(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_ahxe, f, ahxe);
 	f->c = 0;
-	return nil;
+	return fz_okay;
 }
 
 void

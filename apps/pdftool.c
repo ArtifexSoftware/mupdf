@@ -27,10 +27,10 @@ pdf_pagetree *srcpages = nil;
 
 void die(fz_error *eo)
 {
-    fflush(stdout);
-    fprintf(stderr, "%s:%d: %s(): %s\n", eo->file, eo->line, eo->func, eo->msg);
-    fflush(stderr);
-    abort();
+	fflush(stdout);
+	fz_printerror(eo);
+	fflush(stderr);
+	abort();
 }
 
 void closesrc(void)
@@ -70,6 +70,7 @@ void opensrc(char *filename, char *password, int loadpages)
 	error = pdf_loadxref(src, filename);
 	if (error)
 	{
+		fz_printerror(error);
 		fz_warn("trying to repair");
 		error = pdf_repairxref(src, filename);
 		if (error)
@@ -82,9 +83,9 @@ void opensrc(char *filename, char *password, int loadpages)
 
 	if (src->crypt)
 	{
-		error = pdf_setpassword(src->crypt, password);
-		if (error)
-			die(error);
+		int okay = pdf_setpassword(src->crypt, password);
+		if (!okay)
+			die(fz_throw("invalid password"));
 	}
 
 	if (loadpages)
@@ -188,12 +189,11 @@ void showstream(int num, int gen)
 
 	while (1)
 	{
-		n = fz_read(stm, buf, sizeof buf);
+		error = fz_read(&n, stm, buf, sizeof buf);
+		if (error)
+			die (error);
 		if (n == 0)
 			break;
-		if (n < 0)
-			die(fz_ioerror(stm));
-
 		if (showbinary)
 			fwrite(buf, 1, n, stdout);
 		else
@@ -243,8 +243,8 @@ showmain(int argc, char **argv)
 		case 'b': showbinary ++; break;
 		case 'd': showdecode ++; break;
 		default:
-			showusage();
-			break;
+			  showusage();
+			  break;
 		}
 	}
 
@@ -459,7 +459,7 @@ void
 drawusage(void)
 {
 	fprintf(stderr,
-		"usage: pdftool draw [options] [file.pdf pages ... ]\n"
+			"usage: pdftool draw [options] [file.pdf pages ... ]\n"
 			"  -b -\tdraw page in N bands\n"
 			"  -d -\tpassword for decryption\n"
 			"  -o -\tpattern (%%d for page number) for output file\n"
@@ -468,7 +468,7 @@ drawusage(void)
 			"  -x  \txml dump of display tree\n"
 			"  -m  \tprint benchmark results\n"
 			"  example:\n"
-			"    pdftool draw -o out%%0.3d.pnm a.pdf 1-3,5,9-\n");
+			"    pdftool draw -o out%%03d.pnm a.pdf 1-3,5,9-\n");
 	exit(1);
 }
 
@@ -772,8 +772,8 @@ drawmain(int argc, char **argv)
 		case 'x': drawmode = DRAWXML; break;
 		case 'm': benchmark = 1; break;
 		default:
-			drawusage();
-			break;
+			  drawusage();
+			  break;
 		}
 	}
 

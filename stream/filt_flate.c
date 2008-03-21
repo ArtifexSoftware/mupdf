@@ -52,12 +52,12 @@ fz_newflated(fz_filter **fp, fz_obj *params)
 
 	if (ei != Z_OK)
 	{
-		eo = fz_throw("ioerror: inflateInit: %s", f->z.msg);
+		eo = fz_throw("zlib error: inflateInit: %s", f->z.msg);
 		fz_free(f);
 		return eo;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -108,7 +108,7 @@ fz_processflated(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	}
 	else
 	{
-		return fz_throw("ioerror: inflate: %s", zp->msg);
+		return fz_throw("zlib error: inflate: %s", zp->msg);
 	}
 }
 
@@ -147,12 +147,12 @@ fz_newflatee(fz_filter **fp, fz_obj *params)
 
 	if (ei != Z_OK)
 	{
-		eo = fz_throw("ioerror: deflateInit: %s", f->z.msg);
+		eo = fz_throw("zlib error: deflateInit: %s", f->z.msg);
 		fz_free(f);
 		return eo;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -205,7 +205,7 @@ fz_processflatee(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	}
 	else
 	{
-		return fz_throw("ioerror: deflate: %s", zp->msg);
+		return fz_throw("zlib error: deflate: %s", zp->msg);
 	}
 }
 

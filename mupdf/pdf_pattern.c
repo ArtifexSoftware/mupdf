@@ -1,5 +1,5 @@
-#include <fitz.h>
-#include <mupdf.h>
+#include "fitz.h"
+#include "mupdf.h"
 
 pdf_pattern *
 pdf_keeppattern(pdf_pattern *pat)
@@ -32,14 +32,14 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	if ((*patp = pdf_finditem(xref->store, PDF_KPATTERN, stmref)))
 	{
 		pdf_keeppattern(*patp);
-		return nil;
+		return fz_okay;
 	}
 
 	pdf_logrsrc("load pattern %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
 
 	pat = fz_malloc(sizeof(pdf_pattern));
 	if (!pat)
-		return fz_outofmem;
+		return fz_throw("outofmem: pattern struct");
 
 	pat->tree = nil;
 	pat->ismask = fz_toint(fz_dictgets(dict, "PaintType")) == 2;
@@ -54,8 +54,8 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	pat->bbox = pdf_torect(obj);
 
 	pdf_logrsrc("bbox [%g %g %g %g]\n",
-		pat->bbox.x0, pat->bbox.y0,
-		pat->bbox.x1, pat->bbox.y1);
+			pat->bbox.x0, pat->bbox.y0,
+			pat->bbox.x1, pat->bbox.y1);
 
 	obj = fz_dictgets(dict, "Matrix");
 	if (obj)
@@ -64,9 +64,9 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 		pat->matrix = fz_identity();
 
 	pdf_logrsrc("matrix [%g %g %g %g %g %g]\n",
-		pat->matrix.a, pat->matrix.b,
-		pat->matrix.c, pat->matrix.d,
-		pat->matrix.e, pat->matrix.f);
+			pat->matrix.a, pat->matrix.b,
+			pat->matrix.c, pat->matrix.d,
+			pat->matrix.e, pat->matrix.f);
 
 	/*
 	 * Resources
@@ -74,20 +74,26 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 
 	obj = fz_dictgets(dict, "Resources");
 	if (!obj) {
-		error = fz_throw("syntaxerror: Pattern missing Resources");
+		error = fz_throw("cannot find Resources dictionary");
 		goto cleanup;
 	}
 
 	error = pdf_resolve(&obj, xref);
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot resolve resource dictionary");
 		goto cleanup;
+	}
 
 	error = pdf_loadresources(&resources, xref, obj);
 
 	fz_dropobj(obj);
 
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot load resources");
 		goto cleanup;
+	}
 
 	/*
 	 * Content stream
@@ -97,18 +103,27 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 
 	error = pdf_newcsi(&csi, pat->ismask);
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot create interpreter");
 		goto cleanup;
+	}
 
 	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
-		goto cleanup2;
+	{
+		error = fz_rethrow(error, "cannot open pattern stream %d", fz_tonum(stmref));
+		goto cleanupcsi;
+	}
 
 	error = pdf_runcsi(csi, xref, resources, stm);
 
 	fz_dropstream(stm);
 
 	if (error)
-		goto cleanup2;
+	{
+		error = fz_rethrow(error, "cannot interpret pattern stream %d", fz_tonum(stmref));
+		goto cleanupcsi;
+	}
 
 	pat->tree = csi->tree;
 	csi->tree = nil;
@@ -118,18 +133,26 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	fz_dropobj(resources);
 
 	pdf_logrsrc("optimize tree\n");
-	fz_optimizetree(pat->tree);
+	error = fz_optimizetree(pat->tree);
+	if (error)
+	{
+		error = fz_rethrow(error, "cannot optimize pattern tree");
+		goto cleanup;
+	}
 
 	pdf_logrsrc("}\n");
 
 	error = pdf_storeitem(xref->store, PDF_KPATTERN, stmref, pat);
 	if (error)
+	{
+		error = fz_rethrow(error, "cannot store pattern resource");
 		goto cleanup;
+	}
 
 	*patp = pat;
-	return nil;
+	return fz_okay;
 
-cleanup2:
+cleanupcsi:
 	pdf_dropcsi(csi);
 cleanup:
 	pdf_droppattern(pat);

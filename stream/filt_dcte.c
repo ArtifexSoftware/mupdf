@@ -41,23 +41,24 @@ fz_newdcte(fz_filter **fp, fz_obj *params)
 	e->stage = 0;
 
 	obj = fz_dictgets(params, "Columns");
-	if (!obj) { fz_free(e); return fz_throw("ioerror in dcte: missing Columns parameter"); }
+	if (!obj) { fz_free(e); return fz_throw("missing Columns parameter"); }
 	e->columns = fz_toint(obj);
 
 	obj = fz_dictgets(params, "Rows");
-	if (!obj) { fz_free(e); return fz_throw("ioerror in dcte: missing Rows parameter"); }
+	if (!obj) { fz_free(e); return fz_throw("missing Rows parameter"); }
 	e->rows = fz_toint(obj);
 
 	obj = fz_dictgets(params, "Colors");
-	if (!obj) { fz_free(e); return fz_throw("ioerror in dcte: missing Colors parameter"); }
+	if (!obj) { fz_free(e); return fz_throw("missing Colors parameter"); }
 	e->colors = fz_toint(obj);
 
 	/* setup error callback first thing */
 	myiniterr(&e->err);
 	e->cinfo.err = (struct jpeg_error_mgr*) &e->err;
 
-	if (setjmp(e->err.jb)) {
-		err = fz_throw("ioerror in dcte: %s", e->err.msg);
+	if (setjmp(e->err.jb))
+	{
+		err = fz_throw("cannot encode jpeg: %s", e->err.msg);
 		fz_free(e);
 		return err;
 	}
@@ -119,7 +120,7 @@ fz_newdcte(fz_filter **fp, fz_obj *params)
 
 	/* TODO: quant-tables and huffman-tables */
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -128,7 +129,7 @@ fz_dropdcte(fz_filter *filter)
 	fz_dcte *e = (fz_dcte*)filter;
 
 	if (setjmp(e->err.jb)) {
-		fprintf(stderr, "ioerror in dcte: jpeg_destroy_compress: %s", e->err.msg);
+		fz_warn("jpeg error: jpeg_destroy_compress: %s", e->err.msg);
 		return;
 	}
 
@@ -161,7 +162,7 @@ fz_setquanttables(fz_dcte *e, unsigned int **qtables, int qfactor)
 	unsigned int table[64];
 
 	if (setjmp(e->err.jb)) {
-		return fz_throw("ioerror in dcte: %s", e->err.msg);
+		return fz_throw("jpeg error: jpeg_add_quant_table: %s", e->err.msg);
 	}
 
 	/* TODO: check for duplicate tables */
@@ -174,7 +175,7 @@ fz_setquanttables(fz_dcte *e, unsigned int **qtables, int qfactor)
 		e->cinfo.comp_info[i].quant_tbl_no = i;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -189,8 +190,9 @@ fz_processdcte(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	e->dst.super.free_in_buffer = out->ep - out->wp;
 	e->dst.super.next_output_byte = out->wp;
 
-	if (setjmp(e->err.jb)) {
-		return fz_throw("ioerror in dcte: %s", e->err.msg);
+	if (setjmp(e->err.jb))
+	{
+		return fz_throw("cannot encode jpeg: %s", e->err.msg);
 	}
 
 	switch (e->stage)

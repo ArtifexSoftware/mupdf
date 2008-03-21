@@ -14,7 +14,7 @@ fz_newarc4filter(fz_filter **fp, unsigned char *key, unsigned keylen)
 {
 	FZ_NEWFILTER(fz_arc4c, f, arc4filter);
 	fz_arc4init(&f->arc4, key, keylen);
-	return nil;
+	return fz_okay;
 }
 
 void

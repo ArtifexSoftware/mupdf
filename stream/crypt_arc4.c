@@ -38,14 +38,16 @@ fz_arc4init(fz_arc4 *arc4, unsigned char *key, unsigned keylen)
 	arc4->x = 0;
 	arc4->y = 0;
 
-	for (counter = 0; counter < 256; counter++) {
+	for (counter = 0; counter < 256; counter++)
+	{
 		state[counter] = counter;
 	}
 
 	keyindex = 0;
 	stateindex = 0;
 
-	for (counter = 0; counter < 256; counter++) {
+	for (counter = 0; counter < 256; counter++)
+	{
 		t = state[counter];
 		stateindex = (stateindex + key[keyindex] + t) & 0xff;
 		u = state[stateindex];
@@ -53,7 +55,8 @@ fz_arc4init(fz_arc4 *arc4, unsigned char *key, unsigned keylen)
 		state[stateindex] = t;
 		state[counter] = u;
 
-		if (++keyindex >= keylen) {
+		if (++keyindex >= keylen)
+		{
 			keyindex = 0;
 		}
 	}
@@ -87,7 +90,8 @@ void
 fz_arc4encrypt(fz_arc4 *arc4, unsigned char *dest, unsigned char *src, unsigned len)
 {
 	unsigned int i;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len; i++)
+	{
 		unsigned char x;
 		x = fz_arc4next(arc4);
 		dest[i] = src[i] ^ x;

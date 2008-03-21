@@ -130,3 +130,5 @@ fz_error *fz_parseobj(fz_obj **objp, char *s);
 fz_error *fz_packobj(fz_obj **objp, char *fmt, ...);
 fz_error *fz_unpackobj(fz_obj *obj, char *fmt, ...);
 
+char *fz_objkindstr(fz_obj *obj);
+
