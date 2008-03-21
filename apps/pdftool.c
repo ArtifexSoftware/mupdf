@@ -191,7 +191,7 @@ void showstream(int num, int gen)
 	{
 		error = fz_read(&n, stm, buf, sizeof buf);
 		if (error)
-			die (error);
+			die(error);
 		if (n == 0)
 			break;
 		if (showbinary)
