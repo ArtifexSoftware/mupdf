@@ -90,9 +90,9 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
 	/* since mmx does not have an unsigned multiply instruction we use
 	   17.15 fixed point */
-	u0 <<= 1;	v0 <<= 1;
-	fa <<= 1;	fb <<= 1;
-	fc <<= 1;	fd <<= 1;
+	u0 >>= 1;	v0 >>= 1;
+	fa >>= 1;	fb >>= 1;
+	fc >>= 1;	fd >>= 1;
 
 	while (h--)
 	{
@@ -108,8 +108,8 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 
 		while (w--)
 		{
-			int iu = u >> 17;
-			int iv = v >> 17;
+			int iu = u >> 15;
+			int iv = v >> 15;
 
 			int fu = u & 0x7fff;
 			int fv = v & 0x7fff;
@@ -146,10 +146,10 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 			}
 
 			/* unpack src into 4x16bit vectors */
-			__m64 ms0 = _mm_unpackhi_pi8(ms0s1, mzero);
-			__m64 ms1 = _mm_unpacklo_pi8(ms0s1, mzero);
-			__m64 ms2 = _mm_unpackhi_pi8(ms2s3, mzero);
-			__m64 ms3 = _mm_unpacklo_pi8(ms2s3, mzero);
+			__m64 ms0 = _mm_unpacklo_pi8(ms0s1, mzero);
+			__m64 ms1 = _mm_unpackhi_pi8(ms0s1, mzero);
+			__m64 ms2 = _mm_unpacklo_pi8(ms2s3, mzero);
+			__m64 ms3 = _mm_unpackhi_pi8(ms2s3, mzero);
 
 			/* lerp fu */
 
