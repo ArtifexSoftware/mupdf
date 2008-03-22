@@ -82,7 +82,7 @@ static void duff_4i1o4mmx(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int d
 static inline unsigned
 getargb(unsigned *s, int w, int h, int u, int v)
 {
-	if (u < 0 | u >= w | v < 0 | v >= h) return 0;
+	if ((u < 0) | (u >= w) | (v < 0) | (v >= h)) return 0;
 	return s[w * v + u];
 }
 
@@ -132,8 +132,8 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 				s3 = getargb(s, srcw, srch, iu + 1, iv + 1);
 
 				/* move to mmx registers */
-				ms0s1 = _mm_set_pi32(s0, s1);
-				ms2s3 = _mm_set_pi32(s2, s3);
+				ms0s1 = _mm_set_pi32(s1, s0);
+				ms2s3 = _mm_set_pi32(s3, s2);
 			}
 			else
 			{
@@ -158,11 +158,13 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 			/* t2 = (s1 - s0) * fu + s0 */
 			__m64 t0 = _mm_sub_pi16(ms1, ms0);
 			__m64 t1 = _mm_mulhi_pi16(t0, mfu);
+			t1 = _mm_adds_pi16(t1, t1);
 			__m64 t2 = _mm_add_pi16(t1, ms0);
 
 			/* t3 = (s3 - s2) * fu + s2 */
 			__m64 t3 = _mm_sub_pi16(ms3, ms2);
 			__m64 t4 = _mm_mulhi_pi16(t3, mfu);
+			t4 = _mm_adds_pi16(t4, t4);
 			__m64 t5 = _mm_add_pi16(t4, ms2);
 
 			/* lerp fv */
@@ -172,6 +174,7 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 			/* t8 = (t5 - t2) * fv + t2 */
 			__m64 t6 = _mm_sub_pi16(t5, t2);
 			__m64 t7 = _mm_mulhi_pi16(t6, mfv);
+			t7 = _mm_adds_pi16(t7, t7);
 			__m64 t8 = _mm_add_pi16(t7, t2);
 
 			/* load and prepare dst */
