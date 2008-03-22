@@ -20,7 +20,6 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	float x, y;
 	float xn, yn;
 	float x0, y0, x1, y1;
-	float t;
 	int n;
 
 	pdf_logshade("load type1 shade {\n");
