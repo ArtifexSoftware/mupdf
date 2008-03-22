@@ -37,7 +37,7 @@ static void voodoo19(unsigned char *data, int ndata, unsigned char *key, int nke
 	}
 }
 
-static void padpassword(unsigned char *buf, char *pw, int pwlen)
+static void padpassword(unsigned char *buf, unsigned char *pw, int pwlen)
 {
 	if (pwlen > 32)
 		pwlen = 32;
@@ -159,7 +159,7 @@ createobjkey(pdf_crypt *crypt, unsigned oid, unsigned gid, unsigned char *key)
  * Algorithm 3.2 Computing an encryption key
  */
 static void
-createkey(pdf_crypt *crypt, char *userpw, int pwlen)
+createkey(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 {
 	unsigned char buf[32];
 	fz_md5 md5;
@@ -195,7 +195,7 @@ createkey(pdf_crypt *crypt, char *userpw, int pwlen)
  * Algorithm 3.3 Computing the O value
  */
 static void
-createowner(pdf_crypt *crypt, char *userpw, char *ownerpw)
+createowner(pdf_crypt *crypt, unsigned char *userpw, int userpwlen, unsigned char *ownerpw, int ownerpwlen)
 {
 	unsigned char buf[32];
 	unsigned char key[16];
@@ -203,9 +203,12 @@ createowner(pdf_crypt *crypt, char *userpw, char *ownerpw)
 	fz_md5 md5;
 
 	/* Step 1 + 2 */
-	if (strlen(ownerpw) == 0)
+	if (ownerpwlen == 0)
+	{
 		ownerpw = userpw;
-	padpassword(buf, ownerpw, strlen(ownerpw));
+		ownerpwlen = userpwlen;
+	}
+	padpassword(buf, ownerpw, ownerpwlen);
 	fz_md5init(&md5);
 	fz_md5update(&md5, buf, 32);
 	fz_md5final(&md5, key);
@@ -218,7 +221,7 @@ createowner(pdf_crypt *crypt, char *userpw, char *ownerpw)
 	fz_arc4init(&arc4, key, crypt->n);
 
 	/* Step 5 */
-	padpassword(buf, userpw, strlen(ownerpw));
+	padpassword(buf, userpw, ownerpwlen);
 
 	/* Step 6 */
 	fz_arc4encrypt(&arc4, buf, buf, 32);
@@ -236,7 +239,7 @@ createowner(pdf_crypt *crypt, char *userpw, char *ownerpw)
  * Algorithm 3.5 Computing the U value (rev 3)
  */
 static void
-createuser(pdf_crypt *crypt, char *userpw, int pwlen)
+createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 {
 	unsigned char key[16];
 	fz_arc4 arc4;
@@ -297,8 +300,11 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 	crypt->keylen = MIN(crypt->n + 5, 16);
 	crypt->r = crypt->n == 5 ? 2 : 3;
 
-	createowner(crypt, userpw, ownerpw);
-	createuser(crypt, userpw, strlen(userpw));
+	createowner(crypt,
+		(unsigned char *) userpw, strlen(userpw),
+		(unsigned char *) ownerpw, strlen(ownerpw));
+	createuser(crypt,
+		(unsigned char *) userpw, strlen(userpw));
 
 	error = fz_packobj(&crypt->encrypt,
 			"<< /Filter /Standard "
@@ -349,7 +355,7 @@ pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 	unsigned char test[32];
 
 	memcpy(saved, crypt->u, 32);
-	createuser(crypt, userpw, pwlen);
+	createuser(crypt, (unsigned char *) userpw, pwlen);
 	memcpy(test, crypt->u, 32);
 	memcpy(crypt->u, saved, 32);
 
@@ -362,13 +368,15 @@ pdf_setuserpassword(pdf_crypt *crypt, char *userpw, int pwlen)
 int
 pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 {
+	unsigned char saved[32];
+	unsigned char test[32];
 	unsigned char buf[32];
 	unsigned char key[16];
 	fz_arc4 arc4;
 	fz_md5 md5;
 
 	/* Step 1 + 2 */
-	padpassword(buf, ownerpw, pwlen);
+	padpassword(buf, (unsigned char *) ownerpw, pwlen);
 	fz_md5init(&md5);
 	fz_md5update(&md5, buf, 32);
 	fz_md5final(&md5, key);
@@ -402,7 +410,15 @@ pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
 		}
 	}
 
-	return pdf_setuserpassword(crypt, buf, 32);
+	memcpy(saved, crypt->u, 32);
+	createuser(crypt, buf, 32);
+	memcpy(test, crypt->u, 32);
+	memcpy(crypt->u, saved, 32);
+
+	if (memcmp(test, saved, crypt->r == 3 ? 16 : 32) != 0)
+		return 0;
+
+	return 1;
 }
 
 /*
@@ -418,7 +434,7 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 
 	if (fz_isstring(obj))
 	{
-		s = fz_tostrbuf(obj);
+		s = (unsigned char *) fz_tostrbuf(obj);
 		n = fz_tostrlen(obj);
 		createobjkey(crypt, oid, gid, key);
 		fz_arc4init(&arc4, key, crypt->keylen);
