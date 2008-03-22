@@ -249,7 +249,7 @@ createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 	{
 		createkey(crypt, userpw, pwlen);
 		fz_arc4init(&arc4, crypt->key, crypt->n);
-		fz_arc4encrypt(&arc4, crypt->u, (unsigned char *)padding, 32);
+		fz_arc4encrypt(&arc4, crypt->u, (unsigned char *) padding, 32);
 	}
 
 	if (crypt->r == 3)
@@ -259,7 +259,7 @@ createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 
 		/* Step 2 */
 		fz_md5init(&md5);
-		fz_md5update(&md5, (unsigned char *)padding, 32);
+		fz_md5update(&md5, (unsigned char *) padding, 32);
 
 		/* Step 3 */
 		fz_md5update(&md5, (unsigned char *) fz_tostrbuf(crypt->id),
