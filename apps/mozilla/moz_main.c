@@ -115,17 +115,9 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
 
     if (moz->xref->crypt)
     {
-	error = pdf_setpassword(moz->xref->crypt, password);
-	//	while (error)
-	//	{
-	//		fz_droperror(error);
-	//		password = winpassword(moz, filename);
-	//		if (!password)
-	//			exit(1);
-	//		error = pdf_setpassword(moz->xref->crypt, password);
-	if (error)
+	int okay = pdf_setpassword(moz->xref->crypt, password);
+	if (!okay)
 	    pdfmoz_warn(moz, "Invalid password.");
-	//	}
     }
 
     /*

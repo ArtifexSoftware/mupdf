@@ -105,15 +105,14 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 
 	if (app->xref->crypt)
 	{
-		error = pdf_setpassword(app->xref->crypt, password);
-		while (error)
+		int okay = pdf_setpassword(app->xref->crypt, password);
+		while (!okay)
 		{
-			fz_droperror(error);
 			password = winpassword(app, filename);
 			if (!password)
 				exit(1);
-			error = pdf_setpassword(app->xref->crypt, password);
-			if (error)
+			okay = pdf_setpassword(app->xref->crypt, password);
+			if (!okay)
 				pdfapp_warn(app, "Invalid password.");
 		}
 	}
