@@ -160,7 +160,11 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
 	else
 	{
 		unsigned *pw = (unsigned *)p;
+#if BYTE_ORDER == LITTLE_ENDIAN
+		unsigned argb = a | (r << 8) | (g << 16) | (b << 24);
+#else
 		unsigned argb = (a << 24) | (r << 16) | (g << 8) | b;
+#endif
 		while (n--)
 		{
 			*pw++ = argb;
@@ -214,6 +218,7 @@ DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 
 	if (gc->flag & FRGB)
 	{
+DEBUG(" path rgb %d %d %d %d, %d %d %d\n", gc->argb[0], gc->argb[1], gc->argb[2], gc->argb[3], gc->argb[4], gc->argb[5], gc->argb[6]);
 		return fz_scanconvert(gc->gel, gc->ael, path->paint == FZ_EOFILL,
 					clip, gc->over, gc->argb, 1);
 	}
