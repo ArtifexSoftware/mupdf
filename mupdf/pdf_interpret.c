@@ -43,6 +43,7 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 	}
 
 	csi->clip = 0;
+	csi->clipevenodd = 0;
 
 	csi->textclip = nil;
 	csi->textmode = 0;
@@ -226,7 +227,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
-	error = pdf_lex(&token, file, buf, sizeof buf, &len);
+	error = pdf_lex(&token, file, (unsigned char *)buf, sizeof buf, &len);
 	if (error)
 	{
 		fz_dropimage((fz_image*)img);
@@ -474,6 +475,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (csi->top != 0)
 				goto syntaxerror;
 			csi->clip = 1;
+			csi->clipevenodd = 1;
 		}
 
 		else if (!strcmp(buf, "cs"))
@@ -1053,7 +1055,7 @@ Lsetcolor:
 	case 'n':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 0, 0, 0, 0);
+		error = pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
 		if (error) return fz_rethrow(error, "cannot draw path");
 		break;
 
@@ -1061,6 +1063,7 @@ Lsetcolor:
 		if (csi->top != 0)
 			goto syntaxerror;
 		csi->clip = 1;
+		csi->clipevenodd = 0;
 		break;
 
 	case 'g':	
@@ -1167,7 +1170,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 		if (csi->top == 31)
 			return fz_throw("stack overflow");
 
-		error = pdf_lex(&token, file, buf, sizeof buf, &len);
+		error = pdf_lex(&token, file, (unsigned char *)buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "lexical error in content stream");
 

@@ -738,7 +738,7 @@ pdf_showpath(pdf_csi *csi,
 
 	if (csi->clip)
 	{
-		error = fz_endpath(clip, FZ_FILL, nil, nil);
+		error = fz_endpath(clip, evenodd ? FZ_EOFILL : FZ_FILL, nil, nil);
 		if (error)
 		{
 			reason = "cannot finish clip path";
@@ -949,7 +949,7 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 		return nil;
 	}
 
-	buf = fz_tostrbuf(text);
+	buf = (unsigned char *)fz_tostrbuf(text);
 	len = fz_tostrlen(text);
 	end = buf + len;
 
