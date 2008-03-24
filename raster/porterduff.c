@@ -326,9 +326,9 @@ static void text_w4i1o4(byte * restrict argb, byte * restrict src0, int srcw, by
 		{
 			byte ca = fz_mul255(src[0], alpha);
 			dst[0] = ca + fz_mul255(dst[0], 255 - ca);
-			dst[1] = fz_mul255((short)r - dst[1], ca);
-			dst[2] = fz_mul255((short)g - dst[2], ca);
-			dst[3] = fz_mul255((short)b - dst[3], ca);
+			dst[1] = fz_mul255((short)r - dst[1], ca) + dst[1];
+			dst[2] = fz_mul255((short)g - dst[2], ca) + dst[2];
+			dst[3] = fz_mul255((short)b - dst[3], ca) + dst[3];
 			src ++;
 			dst += 4;
 		}
