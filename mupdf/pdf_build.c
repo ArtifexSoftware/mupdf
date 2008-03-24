@@ -651,11 +651,12 @@ pdf_showpath(pdf_csi *csi,
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error *error;
-	fz_pathnode *spath;
-	fz_pathnode *fpath;
-	fz_pathnode *clip;
+	char *reason;
+	fz_pathnode *spath = nil;
+	fz_pathnode *fpath = nil;
+	fz_pathnode *clip = nil;
 
-	/* TODO this is too messy and hairy with memory cleanups */
+	/* TODO review memory cleanup code cleanup... */
 
 	if (doclose)
 	{
@@ -685,18 +686,14 @@ pdf_showpath(pdf_csi *csi,
 	else if (dofill)
 	{
 		fpath = csi->path;
-		spath = nil;
 	}
 	else if (dostroke)
 	{
-		fpath = nil;
 		spath = csi->path;
 	}
 	else
 	{
 		fz_dropnode((fz_node*)csi->path);
-		spath = nil;
-		fpath = nil;
 	}
 
 	csi->path = nil;
@@ -710,19 +707,15 @@ pdf_showpath(pdf_csi *csi,
 		error = pdf_buildfillpath(gstate, fpath, evenodd);
 		if (error)
 		{
-			if (fpath) fz_dropnode((fz_node*)fpath);
-			if (spath) fz_dropnode((fz_node*)spath);
-			if (clip) fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot finish fill path");
+			reason = "cannot finish fill path";
+			goto cleanup;
 		}
 
 		error = pdf_addfillshape(gstate, (fz_node*)fpath);
 		if (error)
 		{
-			if (fpath) fz_dropnode((fz_node*)fpath);
-			if (spath) fz_dropnode((fz_node*)spath);
-			if (clip) fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot add filled path");
+			reason = "cannot add filled path";
+			goto cleanup;
 		}
 	}
 
@@ -731,19 +724,15 @@ pdf_showpath(pdf_csi *csi,
 		error = pdf_buildstrokepath(gstate, spath);
 		if (error)
 		{
-			if (fpath) fz_dropnode((fz_node*)fpath);
-			if (spath) fz_dropnode((fz_node*)spath);
-			if (clip) fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot finish stroke path");
+			reason = "cannot finish stroke path";
+			goto cleanup;
 		}
 
 		error = pdf_addstrokeshape(gstate, (fz_node*)spath);
 		if (error)
 		{
-			if (fpath) fz_dropnode((fz_node*)fpath);
-			if (spath) fz_dropnode((fz_node*)spath);
-			if (clip) fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot add stroked path");
+			reason = "cannot add stroked path";
+			goto cleanup;
 		}
 	}
 
@@ -752,15 +741,15 @@ pdf_showpath(pdf_csi *csi,
 		error = fz_endpath(clip, FZ_FILL, nil, nil);
 		if (error)
 		{
-			fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot finish clip path");
+			reason = "cannot finish clip path";
+			goto cleanupclip;
 		}
 
 		error = pdf_addclipmask(gstate, (fz_node*)clip);
 		if (error)
 		{
-			fz_dropnode((fz_node*)clip);
-			return fz_rethrow(error, "cannot add clip mask");
+			reason = "cannot add clip mask";
+			goto cleanupclip;
 		}
 
 		csi->clip = 0;
@@ -771,6 +760,14 @@ pdf_showpath(pdf_csi *csi,
 		return fz_rethrow(error, "cannot create path node");;
 
 	return fz_okay;
+
+cleanup:
+	if (spath) fz_dropnode((fz_node *)spath);
+	if (fpath) fz_dropnode((fz_node *)fpath);
+cleanupclip:
+	if (clip) fz_dropnode((fz_node *)clip);
+
+	return fz_rethrow(error, reason);
 }
 
 /*
