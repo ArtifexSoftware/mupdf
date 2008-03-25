@@ -120,12 +120,17 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error *error;
 	fz_shade *shade;
+
 	fz_obj *obj = ref;
 	error = pdf_resolve(&obj, xref);
-	if (error) return fz_rethrow(error, "cannot resolve shade resource %d", fz_tonum(ref));
+	if (error)
+		return fz_rethrow(error, "cannot resolve shade resource %d", fz_tonum(ref));
+
 	error = pdf_loadshade(&shade, xref, obj, ref);
 	fz_dropobj(obj);
-	return fz_rethrow(error, "cannot load shade resource %d", fz_tonum(ref));
+	if (error)
+		return fz_rethrow(error, "cannot load shade resource %d", fz_tonum(ref));
+	return fz_okay;
 }
 
 static fz_error *
