@@ -34,7 +34,7 @@ cc-option = $(shell if $(CC) $(OP_CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
 CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wno-pointer-sign, "")
 
-ifeq ($(CFG),debug)
+ifeq ($(CFG),dbg)
 CFLAGS += -O0  ${INCS}
 else
 CFLAGS += -O2 ${INCS}
