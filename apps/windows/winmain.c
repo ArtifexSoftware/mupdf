@@ -107,9 +107,9 @@ void winwarn(pdfapp_t *app, char *msg)
     MessageBoxA(hwndframe, msg, "Apparition: Warning", MB_ICONWARNING);
 }
 
-void winerror(pdfapp_t *app, char *msg)
+void winerror(pdfapp_t *app, fz_error *error)
 {
-    MessageBoxA(hwndframe, msg, "Apparition: Error", MB_ICONERROR);
+    MessageBoxA(hwndframe, error->msg, "Apparition: Error", MB_ICONERROR);
     exit(1);
 }
 

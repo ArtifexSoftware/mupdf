@@ -57,9 +57,9 @@ void winwarn(pdfapp_t *app, char *msg)
 	fprintf(stderr, "apparition: %s\n", msg);
 }
 
-void winerror(pdfapp_t *app, char *msg)
+void winerror(pdfapp_t *app, fz_error *error)
 {
-	fprintf(stderr, "apparition: %s\n", msg);
+	fz_printerror(error);
 	exit(1);
 }
 
@@ -80,7 +80,7 @@ void winopen(void)
 
 	xdpy = XOpenDisplay(nil);
 	if (!xdpy)
-		winerror(&gapp, "could not open display.");
+		winerror(&gapp, fz_throw("could not open display"));
 
 	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
 	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);

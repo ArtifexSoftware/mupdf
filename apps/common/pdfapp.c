@@ -23,7 +23,7 @@ void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 
 void pdfapp_error(pdfapp_t *app, fz_error *error)
 {
-	winerror(app, error->msg);
+	winerror(app, error);
 }
 
 char *pdfapp_usage(pdfapp_t *app)
