@@ -577,7 +577,7 @@ cleanup:
 	if (widths)
 		fz_dropobj(widths);
 	fz_dropfont((fz_font*)font);
-	return error;
+	return fz_rethrow(error, "cannot load simple font");
 }
 
 /*
@@ -614,7 +614,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 
 		error = pdf_resolve(&cidinfo, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot find CIDSystemInfo");
 
 		obj = fz_dictgets(cidinfo, "Registry");
 		tmplen = MIN(sizeof tmpstr - 1, fz_tostrlen(obj));
@@ -759,7 +759,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 				error = nil;
 
 			if (error)
-				return error;
+				return fz_rethrow(error, "cannot load system cmap %s", collection);
 		}
 	}
 
@@ -891,7 +891,7 @@ cleanup:
 	if (widths)
 		fz_dropobj(widths);
 	fz_dropfont((fz_font*)font);
-	return error;
+	return fz_rethrow(error, "cannot load cid font");
 }
 
 static fz_error *
@@ -907,12 +907,15 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	dfonts = fz_dictgets(dict, "DescendantFonts");
 	error = pdf_resolve(&dfonts, xref);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot find DescendantFonts");
 
 	dfont = fz_arrayget(dfonts, 0);
 	error = pdf_resolve(&dfont, xref);
 	if (error)
-		return fz_dropobj(dfonts), error;
+	{
+		fz_dropobj(dfonts);
+		return fz_rethrow(error, "cannot find descendant font");
+	}
 
 	subtype = fz_dictgets(dfont, "Subtype");
 	encoding = fz_dictgets(dict, "Encoding");
@@ -929,7 +932,7 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	fz_dropobj(dfonts);
 
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load descendant font");
 
 	return nil;
 }
@@ -948,7 +951,7 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 
 	error = pdf_resolve(&desc, xref);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot find font descriptor");
 
 	pdf_logfont("load fontdescriptor {\n");
 
@@ -1000,7 +1003,7 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 
 cleanup:
 	fz_dropobj(desc);
-	return error;
+	return fz_rethrow(error, "cannot load font descriptor");
 }
 
 fz_error *
@@ -1025,14 +1028,14 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	else if (!strcmp(subtype, "Type3"))
 		error = pdf_loadtype3font(fontp, xref, dict, ref);
 	else
-		error = fz_throw("unimplemented: %s fonts", subtype);
+		return fz_throw("cannot recognize font format %s", subtype);
 
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot load font");
 
 	error = pdf_storeitem(xref->store, PDF_KFONT, ref, *fontp);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot store font resource");
 
 	return nil;
 }

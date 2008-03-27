@@ -325,10 +325,13 @@ fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 	fz_error *error;
 	fz_obj *keyobj;
 	error = fz_newname(&keyobj, key);
-	if (error) return error;
+	if (error)
+		return fz_rethrow(error, "cannot create dict key");
 	error = fz_dictput(obj, keyobj, val);
 	fz_dropobj(keyobj);
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot insert dict entry");
+	return nil;
 }
 
 fz_error *

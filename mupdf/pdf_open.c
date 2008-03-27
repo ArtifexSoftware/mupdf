@@ -292,8 +292,8 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 	if (oid < 0 || oid >= xref->len)
 	{
-		error = fz_throw("object id out of range");
-		goto cleanup;
+		fz_dropobj(trailer);
+		return fz_throw("object id out of range");
 	}
 
 	xref->table[oid].type = 'n';
@@ -304,15 +304,15 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	obj = fz_dictgets(trailer, "Size");
 	if (!obj)
 	{
-		error = fz_throw("xref stream missing Size entry");
-		goto cleanup;
+		fz_dropobj(trailer);
+		return fz_throw("xref stream missing Size entry");
 	}
 	size = fz_toint(obj);
 
 	obj = fz_dictgets(trailer, "W");
 	if (!obj) {
-		error = fz_throw("xref stream missing W entry");
-		goto cleanup;
+		fz_dropobj(trailer);
+		return fz_throw("xref stream missing W entry");
 	}
 	w0 = fz_toint(fz_arrayget(obj, 0));
 	w1 = fz_toint(fz_arrayget(obj, 1));
@@ -329,15 +329,15 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	}
 
 	if (i0 < 0 || i1 > xref->len) {
-		error = fz_throw("xref stream has too many entries");
-		goto cleanup;
+		fz_dropobj(trailer);
+		return fz_throw("xref stream has too many entries");
 	}
 
 	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot open compressed xref stream");
-		goto cleanup;
+		fz_dropobj(trailer);
+		return fz_rethrow(error, "cannot open compressed xref stream");
 	}
 
 	for (i = i0; i < i0 + i1; i++)
@@ -348,13 +348,12 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 		if (fz_peekbyte(stm) == EOF)
 		{
+			fz_dropstream(stm);
+			fz_dropobj(trailer);
 			error = fz_readerror(stm);
 			if (error)
-				error = fz_rethrow(error, "truncated xref stream");
-			else
-				error = fz_throw("truncated xref stream");
-			fz_dropstream(stm);
-			goto cleanup;
+				return fz_rethrow(error, "truncated xref stream");
+			return fz_throw("truncated xref stream");
 		}
 
 		for (n = 0; n < w0; n++)
@@ -367,9 +366,9 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		error = fz_readerror(stm);
 		if (error)
 		{
-			error = fz_rethrow(error, "truncated xref stream");
 			fz_dropstream(stm);
-			goto cleanup;
+			fz_dropobj(trailer);
+			return fz_rethrow(error, "truncated xref stream");
 		}
 
 		if (!xref->table[i].type)
@@ -386,10 +385,6 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	*trailerp = trailer;
 
 	return nil;
-
-cleanup:
-	fz_dropobj(trailer);
-	return error;
 }
 
 static fz_error *
@@ -447,8 +442,8 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 		error = readxrefsections(xref, fz_toint(xrefstm), buf, cap);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot read /XrefStm xref section");
-			goto cleanup;
+			fz_dropobj(trailer);
+			return fz_rethrow(error, "cannot read /XrefStm xref section");
 		}
 	}
 
@@ -459,17 +454,13 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 		error = readxrefsections(xref, fz_toint(prev), buf, cap);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot read /Prev xref section");
-			goto cleanup;
+			fz_dropobj(trailer);
+			return fz_rethrow(error, "cannot read /Prev xref section");
 		}
 	}
 
 	fz_dropobj(trailer);
 	return nil;
-
-cleanup:
-	fz_dropobj(trailer);
-	return error;
 }
 
 /*
@@ -584,7 +575,7 @@ cleanupoid:
 	fz_free(oidbuf);
 cleanupobj:
 	fz_dropobj(objstm);
-	return error;
+	return error; /* already rethrown */
 }
 
 /*

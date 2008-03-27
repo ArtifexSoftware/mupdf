@@ -253,11 +253,11 @@ static fz_error *clean1x1(fz_node *node)
 				{
 					error = fz_newpixmap(&pix, 0, 0, 1, 1, image->n + 1);
 					if (error)
-						return error;
+						return fz_rethrow(error, "cannot create 1x1 pixmap");
 
 					error = image->loadtile(image, pix);
 					if (error)
-						return error;
+						return fz_rethrow(error, "cannot load pixmap tile");
 
 					for (i = 0; i < image->n; i++)
 						v[i] = pix->samples[i + 1] / 255.0;
@@ -266,10 +266,10 @@ static fz_error *clean1x1(fz_node *node)
 
 					error = fz_newsolidnode(&color, 1.0, image->cs, image->n, v);
 					if (error)
-						return error;
+						return fz_rethrow(error, "cannot create color node");
 					error = fz_newmasknode(&mask);
 					if (error)
-						return error;
+						return fz_rethrow(error, "cannot create mask node");
 
 					fz_insertnodeafter(current, mask);
 					fz_insertnodelast(mask, (fz_node*)rect);
@@ -290,7 +290,7 @@ static fz_error *clean1x1(fz_node *node)
 
 		error = clean1x1(current);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot perform clean1x1 optimization");
 	}
 
 	return nil;

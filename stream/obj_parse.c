@@ -181,7 +181,7 @@ cleanup:
 	if (dict) fz_dropobj(dict);
 	*obj = nil;
 	*sp = s;
-	return error;
+	return error; /* already rethrown */
 }
 
 static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
@@ -462,7 +462,7 @@ static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 		error = fz_throw("syntax error: unknown byte 0x%d", *s);
 
 	*sp = s;
-	return error;
+	return error; /* already rethrown */
 }
 
 fz_error *
@@ -476,12 +476,12 @@ fz_packobj(fz_obj **op, char *fmt, ...)
 	va_copy(v.ap, ap);
 
 	error = parseobj(op, &fmt, &v);
-	if (error)
-		error = fz_rethrow(error, "cannot parse object");
 
 	va_end(ap);
 
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot parse object");
+	return nil;
 }
 
 fz_error *

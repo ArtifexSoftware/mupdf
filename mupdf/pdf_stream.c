@@ -346,7 +346,7 @@ cleanup1:
 	fz_dropobj(filters);
 cleanup0:
 	fz_dropfilter(base);
-	return error;
+	return error; /* already rethrown */
 }
 
 /*

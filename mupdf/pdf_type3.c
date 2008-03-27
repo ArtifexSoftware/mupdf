@@ -46,11 +46,11 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 
 	error = fz_newrenderer(&gc, pdf_devicegray, 1, GCMEM);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create renderer");
 	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
 	fz_droprenderer(gc);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot render glyph");
 
 	assert(pixmap->n == 1);
 
@@ -316,6 +316,6 @@ cleanup2:
 	fz_dropobj(resources);
 cleanup:
 	fz_dropfont((fz_font*)font);
-	return error;
+	return fz_rethrow(error, "cannot load type3 font");
 }
 

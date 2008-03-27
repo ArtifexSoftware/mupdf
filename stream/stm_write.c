@@ -266,10 +266,10 @@ fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 			return fz_throw("outofmem: scratch buffer");
 		fz_sprintobj(ptr, n, obj, tight);
 		error = fz_write(file, ptr, n);
-		if (error)
-			error = fz_rethrow(error, "cannot write buffer");
 		fz_free(ptr);
-		return error;
+		if (error)
+			return fz_rethrow(error, "cannot write buffer");
+		return fz_okay;
 	}
 }
 
@@ -303,11 +303,11 @@ fz_print(fz_stream *stm, char *fmt, ...)
 	va_end(ap);
 
 	error = fz_write(stm, p, n);
-	if (error)
-		error = fz_rethrow(error, "cannot write buffer");
 
 	fz_free(p);
 
-	return error;
+	if (error)
+		return fz_rethrow(error, "cannot write buffer");
+	return fz_okay;
 }
 

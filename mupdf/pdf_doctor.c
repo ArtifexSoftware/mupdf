@@ -21,7 +21,7 @@ sweepobj(pdf_xref *xref, fz_obj *obj)
 		{
 			error = sweepobj(xref, fz_dictgetval(obj, i));
 			if (error)
-				return error;
+				return error; /* too deeply nested for rethrow */
 		}
 	}
 
@@ -31,7 +31,7 @@ sweepobj(pdf_xref *xref, fz_obj *obj)
 		{
 			error = sweepobj(xref, fz_arrayget(obj, i));
 			if (error)
-				return error;
+				return error; /* too deeply nested for rethrow */
 		}
 	}
 
@@ -66,7 +66,7 @@ sweepref(pdf_xref *xref, fz_obj *ref)
 	if (error)
 	{
 		fz_dropobj(obj);
-		return error;
+		return error; /* too deeply nested for rethrow */
 	}
 
 	fz_dropobj(obj);

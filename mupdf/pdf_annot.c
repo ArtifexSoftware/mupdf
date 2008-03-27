@@ -101,7 +101,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_resolve(&obj, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot resolve /Dest");
 		dest = resolvedest(xref, obj);
 		pdf_logpage("dest %d %d R\n", fz_tonum(dest), fz_togen(dest));
 		fz_dropobj(obj);
@@ -112,7 +112,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_resolve(&action, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot resolve /A");
 
 		obj = fz_dictgets(action, "S");
 		if (!strcmp(fz_toname(obj), "GoTo"))
@@ -137,7 +137,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_newlink(&link, bbox, dest);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot create link");
 		*linkp = link;
 	}
 
@@ -164,7 +164,10 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 		obj = fz_arrayget(annots, i);
 		error = pdf_resolve(&obj, xref);
 		if (error)
-			goto cleanup;
+		{
+			pdf_droplink(link);
+			return fz_rethrow(error, "cannot resolve annotation");
+		}
 
 		subtype = fz_dictgets(obj, "Subtype");
 		if (!strcmp(fz_toname(subtype), "Link"))
@@ -174,7 +177,10 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 			error = pdf_loadlink(&temp, xref, obj);
 			fz_dropobj(obj);
 			if (error)
-				goto cleanup;
+			{
+				pdf_droplink(link);
+				return fz_rethrow(error, "cannot load annotation link");
+			}
 
 			if (temp)
 			{
@@ -187,7 +193,10 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 			error = loadcomment(&comment, xref, obj);
 			fz_dropobj(obj);
 			if (error)
-				goto cleanup;
+			{
+				pdf_droplink(link);
+				return fz_rethrow(error, "cannot load annotation comment");
+			}
 		}
 	}
 
@@ -196,9 +205,5 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 	*cp = comment;
 	*lp = link;
 	return nil;
-
-cleanup:
-	pdf_droplink(link);
-	return error;
 }
 

@@ -70,7 +70,7 @@ cleanupsrc:
 	fz_dropstream(srcstm);
 cleanupdst:
 	fz_dropstream(dststm);
-	return error;
+	return error; /* already rethrown */
 }
 
 static fz_error *
@@ -140,8 +140,8 @@ pdf_updatexref(pdf_xref *xref, char *path)
 			error = writeobject(out, xref, xref->crypt, oid, xref->table[oid].gen);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot write object (oid=%d)", oid);
-				goto cleanup;
+				fz_dropstream(out);
+				return fz_rethrow(error, "cannot write object (oid=%d)", oid);
 			}
 		}
 	}
@@ -212,12 +212,10 @@ pdf_updatexref(pdf_xref *xref, char *path)
 
 	xref->startxref = startxref;
 
+	/* TODO: check for write errors */
+
 	fz_dropstream(out);
 	return fz_okay;
-
-cleanup:
-	fz_dropstream(out);
-	return error;
 }
 
 fz_error *
@@ -272,8 +270,9 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 			error = writeobject(out, xref, encrypt, oid, x->type == 'o' ? 0 : x->gen);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot write object (oid=%d)", oid);
-				goto cleanup;
+				if (ofsbuf) fz_free(ofsbuf);
+				fz_dropstream(out);
+				return fz_rethrow(error, "cannot write object (oid=%d)", oid);
 			}
 		}
 		else
@@ -325,13 +324,10 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 
 	xref->startxref = startxref;
 
+	/* TODO: check for write errors */
+
 	if(ofsbuf) fz_free(ofsbuf);
 	fz_dropstream(out);
 	return fz_okay;
-
-cleanup:
-	if (ofsbuf) fz_free(ofsbuf);
-	fz_dropstream(out);
-	return error;
 }
 

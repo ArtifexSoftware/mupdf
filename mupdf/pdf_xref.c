@@ -161,7 +161,7 @@ pdf_decryptxref(pdf_xref *xref)
 	{
 		error = pdf_resolve(&encrypt, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot resolve /Encrypt object");
 
 		if (fz_isnull(encrypt))
 		{

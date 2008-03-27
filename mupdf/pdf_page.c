@@ -103,7 +103,7 @@ cleanupstm:
 	fz_dropstream(file);
 cleanupbuf:
 	fz_dropbuffer(big);
-	return error;
+	return error; /* already rethrown */
 }
 
 static fz_error *

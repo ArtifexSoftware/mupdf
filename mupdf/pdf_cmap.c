@@ -597,13 +597,13 @@ static int codefromstring(unsigned char *buf, int len)
 	return a;
 }
 
-static fz_error *mylex(int *token, fz_stream *file, char *buf, int n, int *sl)
+static fz_error *lexcmap(int *token, fz_stream *file, char *buf, int n, int *sl)
 {
 	fz_error *error;
 	error = pdf_lex(token, file, buf, n, sl);
 	if (!error && *token == PDF_TKEYWORD)
 		*token = tokenfromkeyword(buf);
-	return error;
+	return fz_rethrow(error, "cannot parse cmap token");
 }
 
 static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
@@ -613,7 +613,7 @@ static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
 	int token;
 	int len;
 
-	error = mylex(&token, file, buf, sizeof buf, &len);
+	error = lexcmap(&token, file, buf, sizeof buf, &len);
 	if (error)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -633,7 +633,7 @@ static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
 	int token;
 	int len;
 
-	error = mylex(&token, file, buf, sizeof buf, &len);
+	error = lexcmap(&token, file, buf, sizeof buf, &len);
 	if (error)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -656,7 +656,7 @@ static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -666,7 +666,7 @@ static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 		else if (token == PDF_TSTRING)
 		{
 			lo = codefromstring(buf, len);
-			error = mylex(&token, file, buf, sizeof buf, &len);
+			error = lexcmap(&token, file, buf, sizeof buf, &len);
 			if (error)
 				return fz_rethrow(error, "syntaxerror in cmap");
 			if (token == PDF_TSTRING)
@@ -695,7 +695,7 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -707,7 +707,7 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 
 		lo = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		if (token != PDF_TSTRING)
@@ -715,7 +715,7 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 
 		hi = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		if (token != PDF_TINT)
@@ -739,7 +739,7 @@ static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -751,7 +751,7 @@ static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
 
 		src = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		if (token != PDF_TINT)
@@ -776,7 +776,7 @@ static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int 
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -811,7 +811,7 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -823,7 +823,7 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 
 		lo = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		if (token != PDF_TSTRING)
@@ -831,7 +831,7 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 
 		hi = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -892,7 +892,7 @@ static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
@@ -904,7 +904,7 @@ static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
 
 		src = codefromstring(buf, len);
 
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		/* Note: does not handle /dstName */
@@ -941,7 +941,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 
 	while (1)
 	{
-		error = mylex(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&token, file, buf, sizeof buf, &len);
 		if (error)
 		{
 			error = fz_rethrow(error, "syntaxerror in cmap");
@@ -1045,7 +1045,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 
 cleanup:
 	pdf_dropcmap(cmap);
-	return error;
+	return error; /* already rethrown */
 }
 
 /*
@@ -1141,7 +1141,7 @@ cleanup:
 	if (cmap)
 		pdf_dropcmap(cmap);
 	fz_dropobj(stmobj);
-	return error;
+	return error; /* already rethrown */
 }
 
 /*
@@ -1211,7 +1211,7 @@ cleanup:
 		pdf_dropcmap(cmap);
 	if (file)
 		fz_dropstream(file);
-	return error;
+	return error; /* already rethrown */
 }
 
 /*

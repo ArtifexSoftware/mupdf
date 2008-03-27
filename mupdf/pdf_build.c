@@ -673,7 +673,7 @@ pdf_showpath(pdf_csi *csi,
 	{
 		error = fz_clonepathnode(&clip, csi->path);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot copy path node for clip mask");
 	}
 
 	if (dofill && dostroke)

@@ -21,11 +21,14 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 
 		error = pdf_loadembeddedcmap(&cmap, xref, cmapstm);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot load embedded cmap");
 
 		error = pdf_newcmap(&font->tounicode);
 		if (error)
-			goto cleanup;
+		{
+			pdf_dropcmap(cmap);
+			return fz_rethrow(error, "cannot create tounicode cmap");
+		}
 
 		for (i = 0; i < (strings ? 256 : 65536); i++)
 		{
@@ -37,18 +40,23 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 				{
 					error = pdf_maprangetorange(font->tounicode, cid, cid, ucs);
 					if (error)
-						goto cleanup;
+					{
+						pdf_dropcmap(cmap);
+						return fz_rethrow(error, "cannot create tounicode mapping");
+					}
 				}
 			}
 		}
 
 		error = pdf_sortcmap(font->tounicode);
 		if (error)
-			goto cleanup;
+		{
+			pdf_dropcmap(cmap);
+			return fz_rethrow(error, "cannot sort tounicode mappings");
+		}
 
-	cleanup:
 		pdf_dropcmap(cmap);
-		return error;
+		return nil;
 	}
 
 	else if (collection)
@@ -56,15 +64,18 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		pdf_logfont("tounicode cid collection\n");
 
 		if (!strcmp(collection, "Adobe-CNS1"))
-			return pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
 		else if (!strcmp(collection, "Adobe-GB1"))
-			return pdf_loadsystemcmap(&font->tounicode, "Adobe-GB1-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-GB1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan1"))
-			return pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan2"))
-			return pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2");
 		else if (!strcmp(collection, "Adobe-Korea1"))
-			return pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
+
+		if (error)
+			return fz_rethrow(error, "cannot load tounicode system cmap %s-UCS2", collection);
 	}
 
 	if (strings)
@@ -76,7 +87,7 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		font->ncidtoucs = 256;
 		font->cidtoucs = fz_malloc(256 * sizeof(unsigned short));
 		if (!font->cidtoucs)
-			return fz_outofmem;
+			return fz_throw("outofmem: tounicode cidtoucs table");
 
 		for (i = 0; i < 256; i++)
 		{
@@ -111,7 +122,7 @@ pdf_newtextline(pdf_textline **linep)
 	pdf_textline *line;
 	line = *linep = fz_malloc(sizeof(pdf_textline));
 	if (!line)
-		return fz_outofmem;
+		return fz_throw("outofmem: textline struct");
 	line->len = 0;
 	line->cap = 0;
 	line->text = nil;
@@ -139,7 +150,7 @@ addtextchar(pdf_textline *line, fz_irect bbox, int c)
 		newcap = line->cap ? line->cap * 2 : 80;
 		newtext = fz_realloc(line->text, sizeof(pdf_textchar) * newcap);
 		if (!newtext)
-			return fz_outofmem;
+			return fz_throw("outofmem: textline buffer resize");
 		line->cap = newcap;
 		line->text = newtext;
 	}
@@ -219,7 +230,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 				pdf_textline *newline;
 				error = pdf_newtextline(&newline);
 				if (error)
-					return error;
+					return fz_rethrow(error, "cannot create new text line");
 				(*line)->next = newline;
 				*line = newline;
 			}
@@ -229,7 +240,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 				box.y0 = y; box.y1 = y;
 				error = addtextchar(*line, box, ' ');
 				if (error)
-					return error;
+					return fz_rethrow(error, "cannot add character to text line");
 			}
 
 			vx = fz_transformpoint(trm, vx);
@@ -248,7 +259,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 
 			error = addtextchar(*line, box, c);
 			if (error)
-				return error;
+				return fz_rethrow(error, "cannot add character to text line");
 		}
 	}
 
@@ -259,7 +270,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 	{
 		error = extracttext(line, node, ctm);
 		if (error)
-			return error;
+			return fz_rethrow(error, "cannot extract text from display node");
 	}
 
 	return nil;
@@ -277,7 +288,7 @@ pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 
 	error = pdf_newtextline(&root);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot create new text line");
 
 	line = root;
 
@@ -285,7 +296,7 @@ pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 	if (error)
 	{
 		pdf_droptextline(root);
-		return error;
+		return fz_rethrow(error, "cannot extract text from display tree");
 	}
 
 	*outp = root;

@@ -165,7 +165,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 	/* gsave */
 	error = gsave(csi);
 	if (error)
-		return error;
+		return fz_rethrow(error, "cannot push graphics state");
 
 	/* reset alpha to 1.0 when starting a new Transparency group */
 	if (istransparency) {
@@ -205,7 +205,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 	/* grestore */
 	error = grestore(csi);
 	if (error)
-		return fz_rethrow(error, "cannot grestore");
+		return fz_rethrow(error, "cannot pop graphics state");
 
 	return fz_okay;
 }

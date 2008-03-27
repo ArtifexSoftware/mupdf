@@ -156,6 +156,6 @@ cleanupcsi:
 	pdf_dropcsi(csi);
 cleanup:
 	pdf_droppattern(pat);
-	return error;
+	return error; /* already rethrown */
 }
 

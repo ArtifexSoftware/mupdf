@@ -177,7 +177,7 @@ cleanup:
 		fz_free(p->pobj);
 		fz_free(p);
 	}
-	return error;
+	return error; /* already rethrown */
 }
 
 int
