@@ -603,7 +603,9 @@ static fz_error *lexcmap(int *token, fz_stream *file, char *buf, int n, int *sl)
 	error = pdf_lex(token, file, buf, n, sl);
 	if (!error && *token == PDF_TKEYWORD)
 		*token = tokenfromkeyword(buf);
-	return fz_rethrow(error, "cannot parse cmap token");
+	if (error)
+		return fz_rethrow(error, "cannot parse cmap token");
+	return nil;
 }
 
 static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
