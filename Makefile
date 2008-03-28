@@ -1,6 +1,7 @@
 # Makefile for building mupdf and related stuff
 # Valid option to make:
 # CFG=[rel|dbg] - dbg if not given
+# WITH_JASPER=[yes|no] -default: yes
 
 # Symbolic names for HOST variable
 HOST_LINUX := Linux
@@ -15,6 +16,10 @@ VPATH=base:raster:world:stream:mupdf:apps
 # make dbg default target if none provided
 ifeq ($(CFG),)
 CFG=dbg
+endif
+
+ifeq ($(WITH_JASPER),)
+WITH_JASPER=yes
 endif
 
 INCS = -I include
@@ -51,6 +56,11 @@ endif
 CFLAGS += ${FREETYPE_CFLAGS} ${FONTCONFIG_CFLAGS}
 
 LDFLAGS += ${FREETYPE_LDFLAGS} ${FONTCONFIG_LDFLAGS} -lm -ljpeg
+
+ifeq ($(WITH_JASPER),yes)
+CFLAGS += -DHAVE_JASPER
+LDFLAGS += -ljasper
+endif
 
 OUTDIR=obj-$(CFG)
 
@@ -112,8 +122,11 @@ STREAM_SRC = \
 	filt_dctd.c \
 	filt_dcte.c \
 
+ifeq ($(WITH_JASPER),yes)
+STREAM_SRC += filt_jpxd.c
+endif
+
 #filt_jbig2d.c \
-#filt_jpxd.c \
 
 RASTER_SRC = \
 	archx86.c \
