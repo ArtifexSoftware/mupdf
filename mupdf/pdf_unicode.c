@@ -9,7 +9,7 @@ fz_error *
 pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
-	fz_error *error;
+	fz_error *error = nil;
 	pdf_cmap *cmap;
 	int cid;
 	int ucs;
