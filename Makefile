@@ -73,13 +73,11 @@ BASE_SRC = \
 	base_rune.c \
 
 ifeq ($(HOST),$(HOST_LINUX))
-
 BASE_SRC += \
 	util_strlcat.c \
-	util_strlcpy.c \
+	util_strlcpy.c
 
-CCFLAGS += -DNEED_STRLCAT -DNEED_STRLCPY
-
+CFLAGS += -DNEED_STRLCPY
 endif
 
 # ./base/util_strsep.c \
