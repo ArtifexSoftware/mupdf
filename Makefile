@@ -35,13 +35,13 @@ CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wno-pointer-sign, "")
 
 ifeq ($(CFG),dbg)
-CFLAGS += -O0  ${INCS} -DDEBUG
+CFLAGS += -O0  ${INCS}
 else
 CFLAGS += -O2 ${INCS} -DNDEBUG
 endif
 
 ifeq ($(HOST),$(HOST_LINUX))
-CCFLAGS += -std=gnu99 -DHAVE_C99
+CFLAGS += -std=gnu99 -DHAVE_C99
 endif
 
 ifeq ($(HOST),$(HOST_MAC))
@@ -219,11 +219,13 @@ ifneq ($(CFG),dbg)
 endif
 endif
 
-clean:
-	@rm -rf obj-$(CFG)
+clean: inform
+	rm -rf obj-$(CFG)
+
+cleanall:
+	rm -rf obj-*
 
 #./apps/common/pdfapp.c
-#./apps/macosx/macpdf.c
 #./apps/mozilla/moz_main.c
 #./apps/mozilla/npunix.c
 #./apps/mozilla/npwin.c
