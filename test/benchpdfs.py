@@ -18,6 +18,11 @@ import sys, os, os.path, urllib2, gzip, bz2, traceback
 # The script doesn't redownload the file if it has been downloaded before.
 #
 # Missing files are ignored
+#
+# By convetion names of PDF files are sha1 hash over the uncompressed content.
+# They have a nice property of being unique for each file.
+# To generate the name run sha1sum on an (uncompressed) pdf, rename
+# the file to a result of that + .pdf and optionally compress with gzip or bzip2
 
 pdfs_to_test = [
     "http://darcs.kowalczyk.info/testpdfs/293bcd6b00e006d66fdc62ea436508f3ebb30219.pdf.gz"
