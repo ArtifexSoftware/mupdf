@@ -180,3 +180,64 @@ pdf_finditem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 	return nil;
 }
 
+fz_error *
+pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
+{
+	fz_error *error;
+	pdf_item *item, *prev;
+	struct refkey refkey;
+	void *val;
+
+	if (key == nil)
+		return nil;
+
+	val = nil;
+
+	if (fz_isindirect(key))
+	{
+		refkey.kind = kind;
+		refkey.oid = fz_tonum(key);
+		refkey.gen = fz_togen(key);
+		val = fz_hashfind(store->hash, &refkey);
+		error = fz_hashremove(store->hash, &refkey);
+		if (error)
+			return error;
+	}
+
+	else
+	{
+		prev = nil;
+		for (item = store->root; item; item = item->next)
+		{
+			if (item->kind == kind && !fz_objcmp(item->key, key))
+			{
+				if (!prev)
+					store->root = item->next;
+				else
+					prev->next = item->next;
+				val = item->val;
+				fz_free(item);
+				break;
+			}
+			prev = item;
+		}
+	}
+
+	if (val)
+	{
+		switch (kind)
+		{
+			case PDF_KCOLORSPACE: fz_dropcolorspace(val); break;
+			case PDF_KFUNCTION: pdf_dropfunction(val); break;
+			case PDF_KXOBJECT: pdf_dropxobject(val); break;
+			case PDF_KIMAGE: fz_dropimage(val); break;
+			case PDF_KPATTERN: pdf_droppattern(val); break;
+			case PDF_KSHADE: fz_dropshade(val); break;
+			case PDF_KCMAP: pdf_dropcmap(val); break;
+			case PDF_KFONT: fz_dropfont(val); break;
+		}
+	}
+
+	return nil;
+}
+

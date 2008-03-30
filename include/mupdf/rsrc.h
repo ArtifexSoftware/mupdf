@@ -22,6 +22,7 @@ void pdf_dropstore(pdf_store *store);
 
 fz_error *pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
 void *pdf_finditem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
+fz_error *pdf_removeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
 
 fz_error *pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
 
