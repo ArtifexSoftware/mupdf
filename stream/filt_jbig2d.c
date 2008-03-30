@@ -94,8 +94,12 @@ fz_processjbig2d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 				len = d->page->height * d->page->stride - d->idx;
 
 			/* XXX memcpy(out->wp, d->page->data + d->idx, len); */
-			for (i = 0; i < len; i++)
-				out->wp[i] = ~ d->page->data[d->idx + i];
+			{
+				unsigned char * restrict in = &d->page->data[d->idx];
+				unsigned char * restrict o = out->wp;
+				for (i = 0; i < len; i++)
+					*o++ = 0xff ^ *in++;
+			}
 
 			out->wp += len;
 			d->idx += len;
