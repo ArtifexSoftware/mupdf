@@ -359,12 +359,23 @@ loop:
 
 		if (fax->k > 0)
 		{
+			if (fax->a == -1)
+				fax->a = 0;
 			if ((fax->word >> (32 - 1)) == 1)
 				fax->dim = 1;
 			else
 				fax->dim = 2;
 			eatbits(fax, 1);
 		}
+	}
+	else if (fax->k > 0 && fax->a == -1)
+	{
+		fax->a = 0;
+		if ((fax->word >> (32 - 1)) == 1)
+			fax->dim = 1;
+		else
+			fax->dim = 2;
+		eatbits(fax, 1);
 	}
 	else if (fax->dim == 1)
 	{
@@ -428,7 +439,7 @@ eol:
 	}
 
 	/* we have not read dim from eol, make a guess */
-	if (fax->k > 0 && !fax->eolc)
+	if (fax->k > 0 && !fax->eolc && fax->a == -1)
 	{
 		if (fax->ridx % fax->k == 0)
 			fax->dim = 1;
