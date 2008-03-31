@@ -202,15 +202,13 @@ LIBS_SRC = \
 	${WORLD_SRC} \
 	${MUPDF_SRC} \
 
-PDFTOOL_APP = $(OUTDIR)/pdftool
-
 PDFTOOL_SRC = \
 	${LIBS_SRC} \
 	pdftool.c
 PDFTOOL_OBJ = $(patsubst %.c, $(OUTDIR)/FITZ_%.o, ${PDFTOOL_SRC})
 PDFTOOL_APP = ${OUTDIR}/pdftool
 
-all: inform ${OUTDIR} ${PDFTOOL_APP} ${PDFRIP_APP}
+all: inform ${OUTDIR} ${PDFTOOL_APP}
 
 $(OUTDIR):
 	@mkdir -p $(OUTDIR)

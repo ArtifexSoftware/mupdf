@@ -2,11 +2,17 @@
 #include "fitz-world.h"
 #include "fitz-draw.h"
 
+#ifdef _MSC_VER
+#define noDebug printf
+#ifndef DEBUG
+#define DEBUG
+#endif
+#else
 #define noDEBUG(args...) printf(args)
 #ifndef DEBUG
 #define DEBUG(args...)
 #endif
-
+#endif
 #define QUANT(x,a) (((int)((x) * (a))) / (a))
 #define HSUBPIX 5.0
 #define VSUBPIX 5.0

@@ -19,7 +19,11 @@
 #else
 #	define FZ_FLEX 1
 #	define restrict
+#ifdef _MSC_VER
+#	define inline __inline
+#else
 #	define inline __inline__
+#endif
 #endif
 
 #ifdef WIN32
@@ -76,3 +80,6 @@ extern int opterr, optind, optopt;
 extern char *optarg;
 #endif
 
+#ifdef NEED_GETTIMEOFDAY
+extern int gettimeofday(struct timeval *tv, struct timezone *tz);
+#endif

@@ -7,10 +7,10 @@
 #include FT_FREETYPE_H
 
 #define SAFE_FZ_READ(file, buf, size)\
-	byteread = fz_read((file), (char*)(buf), (size));\
-	if(byteread<0) err = fz_ferror(file);\
-	if(byteread != (size)) err = fz_throw("ioerror");\
-	if(err) goto cleanup;
+	err = fz_read(&byteread, (file), (char*)(buf), (size)); \
+	if (err) goto cleanup; \
+	if (byteread != (size)) err = fz_throw("ioerror");\
+	if (err) goto cleanup;
 
 #define ARRAY_SIZE(a) sizeof(a) / sizeof(a[0])
 
@@ -141,9 +141,9 @@ static char *basepatterns[13] =
 
 static pdf_fontlistMS fontlistMS =
 {
-	.fontmap = nil,
-	.cap = 0,
-	.len = 0,
+	NULL,
+	0,
+	0,
 };
 
 static int
@@ -212,9 +212,11 @@ removeredundancy(pdf_fontlistMS *fl)
 	}
 	qsort(fl->fontmap,fl->len,sizeof(pdf_fontmapMS),compare);
 	fl->len -= redundancy_count;
+#if 0
 	for(i = 0; i < fl->len; ++i)
 		fprintf(stdout,"%s , %s , %d\n",fl->fontmap[i].fontface,
 			fl->fontmap[i].fontpath,fl->fontmap[i].index);
+#endif
 }
 
 static fz_error *
@@ -363,7 +365,7 @@ insertmapping(pdf_fontlistMS *fl, char *facename, char *path, int index)
 }
 
 static fz_error *
-parseTTF(fz_file *file, int offset, int index, char *path)
+parseTTF(fz_stream *file, int offset, int index, char *path)
 {
 	fz_error *err = nil;
 	int byteread;
@@ -375,7 +377,6 @@ parseTTF(fz_file *file, int offset, int index, char *path)
 
 	char szTemp[4096];
 	int found;
-	int pos;
 	int i;
 
 	fz_seek(file,offset,0);
@@ -474,9 +475,9 @@ static fz_error *
 parseTTFs(char *path)
 {
 	fz_error *err = nil;
-	fz_file *file = nil;
+	fz_stream *file = nil;
 
-	err = fz_openfile(&file, path, FZ_READ);
+	err = fz_openrfile(&file, path);
 	if(err)
 		goto cleanup;
 
@@ -486,7 +487,7 @@ parseTTFs(char *path)
 
 cleanup:
 	if(file)
-		fz_closefile(file);
+		fz_dropstream(file);
 
 	return err;
 }
@@ -496,11 +497,11 @@ parseTTCs(char *path)
 {
 	fz_error *err = nil;
 	int byteread;
-	fz_file *file = nil;
+	fz_stream *file = nil;
 	FONT_COLLECTION fontcollectioin;
-	int i;
+	ULONG i;
 
-	err = fz_openfile(&file, path, FZ_READ);
+	err = fz_openrfile(&file, path);
 	if(err)
 		goto cleanup;
 
@@ -542,12 +543,12 @@ parseTTCs(char *path)
 
 cleanup:
 	if(file)
-		fz_closefile(file);
+		fz_dropstream(file);
 
 	return err;
 }
 
-fz_error*
+static fz_error*
 pdf_createfontlistMS()
 {
 	char szFontDir[MAX_PATH*2];
@@ -558,7 +559,7 @@ pdf_createfontlistMS()
 	WIN32_FIND_DATA FileData;
 	fz_error *err;
 
-	if(fontlistMS.len != 0)
+	if (fontlistMS.len != 0)
 		return fz_okay;
 
 	GetWindowsDirectory(szFontDir, sizeof(szFontDir));
@@ -579,23 +580,19 @@ pdf_createfontlistMS()
 	fFinished = FALSE;
 	while (!fFinished)
 	{
-		if(!(FileData.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
+		if (!(FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 		{
 			// Get the full path for sub directory
-			sprintf(szFile,"%s%s",szFontDir,FileData.cFileName);
-			if( szFile[strlen(szFile)-1] == 'c'||
-				szFile[strlen(szFile)-1] == 'C' )
+			sprintf(szFile,"%s%s", szFontDir, FileData.cFileName);
+			if (szFile[strlen(szFile)-1] == 'c' || szFile[strlen(szFile)-1] == 'C')
 			{
 				err = parseTTCs(szFile);
-				if(err)
-					goto cleanup;
+                // ignore error parsing a given font file
 			}
-			else if( szFile[strlen(szFile)-1] == 'f'||
-				szFile[strlen(szFile)-1] == 'F' )
+			else if (szFile[strlen(szFile)-1] == 'f'|| szFile[strlen(szFile)-1] == 'F')
 			{
 				err = parseTTFs(szFile);
-				if(err)
-					goto cleanup;
+                // ignore error parsing a given font file
 			}
 		}
 
@@ -613,13 +610,13 @@ pdf_createfontlistMS()
 cleanup:
 	if(err)
 		fz_abort(err);
-	return fz_okay;
+	return nil;
 }
 
 void
 pdf_destoryfontlistMS()
 {
-	if(fontlistMS.fontmap != nil)
+	if (fontlistMS.fontmap != nil)
 		fz_free(fontlistMS.fontmap);
 
 	fontlistMS.len = 0;
@@ -629,33 +626,42 @@ pdf_destoryfontlistMS()
 fz_error *
 pdf_lookupfontMS(char *fontname, char **fontpath, int *index)
 {
-	pdf_fontmapMS fontmap;
-	pdf_fontmapMS *found = nil;
-	char *pattern;
-	int i;
+    pdf_fontmapMS fontmap;
+    pdf_fontmapMS *found = nil;
+    char *pattern;
+    int i;
 
-	if(fontlistMS.len == 0)
-		return fz_throw("fonterror : no fonts in the system");
+    if (fontlistMS.len == 0)
+        return fz_throw("fonterror : no fonts in the system");
 
-	pattern = fontname;
-	for (i = 0; i < ARRAY_SIZE(basenames); i++)
-		if (!strcmp(fontname, basenames[i]))
-			pattern = basepatterns[i];
+    pattern = fontname;
+    for (i = 0; i < ARRAY_SIZE(basenames); i++)
+    {
+        if (0 == strcmp(fontname, basenames[i]))
+        {
+            pattern = basepatterns[i];
+            break;
+        }
+    }
 
-	strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
-	found = localbsearch(&fontmap,fontlistMS.fontmap,fontlistMS.len,
-			sizeof(pdf_fontmapMS),compare);
+    strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
+    found = localbsearch(&fontmap, fontlistMS.fontmap, fontlistMS.len, sizeof(pdf_fontmapMS),compare);
 
-	if(found)
-	{
-		*fontpath = found->fontpath;
-		*index = found->index;
-	}
-	else
-	{
-		*fontpath = fontlistMS.fontmap[0].fontpath;
-		*index = fontlistMS.fontmap[0].index;
-	}
+#if 0
+    if (!found)
+        found = findlinear(&fontlistMS, &fontmap);
+#endif
+
+    if (found)
+    {
+        *fontpath = found->fontpath;
+        *index = found->index;
+    }
+    else
+    {
+        *fontpath = fontlistMS.fontmap[0].fontpath;
+        *index = fontlistMS.fontmap[0].index;
+    }
 
 	return fz_okay;
 }
@@ -693,10 +699,8 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 	int fterr;
 
 	FT_Face face;
-	char *pattern;
 	char *file;
 	int index;
-	int i;
 
 	error = initfontlibs();
 	if (error)
@@ -721,8 +725,6 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	fz_error *error;
 	int fterr;
 	FT_Face face;
-	char fontname[200];
-	char *style;
 	char *file;
 	int index;
 
