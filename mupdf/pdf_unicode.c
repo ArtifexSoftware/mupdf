@@ -63,6 +63,8 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 	{
 		pdf_logfont("tounicode cid collection\n");
 
+		error = nil;
+
 		if (!strcmp(collection, "Adobe-CNS1"))
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
 		else if (!strcmp(collection, "Adobe-GB1"))
