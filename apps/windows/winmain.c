@@ -425,6 +425,7 @@ void winconvert(pdfapp_t *app, fz_pixmap *image)
 
 void invertcopyrect(void)
 {
+    unsigned char *p;
     int x0 = gapp.selr.x0 - gapp.panx;
     int x1 = gapp.selr.x1 - gapp.panx;
     int y0 = gapp.selr.y0 - gapp.pany;
@@ -436,7 +437,6 @@ void invertcopyrect(void)
     y0 = CLAMP(y0, 0, gapp.image->h - 1);
     y1 = CLAMP(y1, 0, gapp.image->h - 1);
 
-    unsigned char *p;
     for (y = y0; y < y1; y++)
     {
 	p = bmpdata + y * bmpstride + x0 * 3;
@@ -774,6 +774,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 int main(int argc, char **argv)
 {
+    MSG msg;
     char buf[1024];
     char *filename;
 
@@ -796,7 +797,6 @@ int main(int argc, char **argv)
 
     pdfapp_open(&gapp, filename);
 
-    MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
 	TranslateMessage(&msg);
