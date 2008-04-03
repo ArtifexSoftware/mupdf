@@ -15,20 +15,21 @@ CC = cl.exe
 CFLAGS = $(CFLAGS) /nologo /c
 # standard windows defines
 CFLAGS = $(CFLAGS) /D "WIN32" /D "_WIN32_WINNT=0x0500"
-CFLAGS = $(CFLAGS) /D "WIN32_LEAN_AND_MEAN"
+#CFLAGS = $(CFLAGS) /D "WIN32_LEAN_AND_MEAN"
 CFLAGS = $(CFLAGS) /D "_SCL_SECURE_NO_DEPRECATE" /D "_CRT_SECURE_NO_DEPRECATE"
 CFLAGS = $(CFLAGS) /D "NEED_STRLCPY" /D "NEED_STRSEP" /D "NEED_MATH" /D "NEED_GETOPT" /D "NEED_GETTIMEOFDAY"
 CFLAGS = $(CFLAGS) /D "__func__=\"\""
 
 # disable "warning C4244: 'argument' : conversion from 'foo' to 'bar', possible loss of data"
-CFLAGS = $(CFLAGS) /wd4244
+CFLAGS = $(CFLAGS) /wd4244 /wd4996
 
-CFLAGS = $(CFLAGS) /W3 /GR- /EHs-c- /Zi /TC
+CFLAGS = $(CFLAGS) /W3 /GR- /EHs-c- /Zi /TC /GS /RTCu /RTCs
 CFLAGS = $(CFLAGS) /Iinclude /I$(FREETYPE_DIR)\include /I$(JPEG_DIR) /I$(ZLIB_DIR)
 
 #CFLAGS = $(CFLAGS) /showIncludes
+#CFLAGS = $(CFLAGS) /analyze
 
-LIBS = $(LIBS) advapi32.lib kernel32.lib user32.lib gdi32.lib 
+LIBS = $(LIBS) advapi32.lib kernel32.lib user32.lib gdi32.lib comdlg32.lib shell32.lib
 
 LD = link.exe
 LDFLAGS = $(LDFLAGS) /nologo /DEBUG
@@ -47,7 +48,8 @@ LDFLAGS = $(LDFLAGS) /opt:ref /opt:icf
 BASE_OBJS = \
 	$(O)\base_memory.obj $(O)\base_error.obj $(O)\base_hash.obj $(O)\base_matrix.obj \
 	$(O)\base_rect.obj $(O)\base_rune.obj $(O)\util_strlcat.obj $(O)\util_strlcpy.obj \
-	$(O)\util_strsep.obj $(O)\util_getopt.obj $(O)\util_gettimeofday.obj
+	$(O)\util_strsep.obj $(O)\util_getopt.obj $(O)\util_gettimeofday.obj \
+	$(O)\base_cpudep.obj
 
 STREAM_OBJS = \
 	$(O)\crypt_arc4.obj $(O)\crypt_crc32.obj $(O)\crypt_md5.obj $(O)\filt_a85d.obj \
@@ -93,7 +95,13 @@ PDFTOOL_APP = $(O)\pdftool.exe
 PDFTOOL_PDB = $(O)\pdftool.pdb
 PDFTOOL_MAP = $(O)\pdftool.map
 
-all: $(O) $(PDFTOOL_APP)
+PDFAPP_OBJS = $(LIBS_OBJS) $(O)\pdfapp.obj $(O)\winmain.obj
+
+PDFAPP_APP = $(O)\pdfapp.exe
+PDFAPP_PDB = $(O)\pdfapp.pdb
+PDFAPP_MAP = $(O)\pdfapp.map
+
+all: $(O) $(PDFTOOL_APP) $(PDFAPP_APP)
 
 clean: force
 	-rmdir /S /Q $(O)
@@ -105,9 +113,21 @@ $(PDFTOOL_APP): $(PDFTOOL_OBJS)
 	$(LD) $(LDFLAGS) /OUT:$(PDFTOOL_APP) /PDB:$(PDFTOOL_PDB) \
 	$(PDFTOOL_OBJS) $(LIBS) \
 	/MAP:$(PDFTOOL_MAP) \
-	/SUBSYSTEM:CONSOLE /MACHINE:X86
+	/SUBSYSTEM:CONSOLE
+
+$(PDFAPP_APP): $(PDFAPP_OBJS)
+	$(LD) $(LDFLAGS) /OUT:$(PDFAPP_APP) /PDB:$(PDFAPP_PDB) \
+	$(PDFAPP_OBJS) $(LIBS) \
+	/MAP:$(PDFAPP_MAP) \
+	/SUBSYSTEM:CONSOLE
 
 {apps\}.c{$(O)}.obj::
+	$(CC) $(CFLAGS) /Fo$(O)\ /Fd$(O)\vc80.pdb  $<
+
+{apps\common\}.c{$(O)}.obj::
+	$(CC) $(CFLAGS) /Fo$(O)\ /Fd$(O)\vc80.pdb  $<
+
+{apps\windows\}.c{$(O)}.obj::
 	$(CC) $(CFLAGS) /Fo$(O)\ /Fd$(O)\vc80.pdb  $<
 
 {base\}.c{$(O)}.obj::
