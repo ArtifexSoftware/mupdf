@@ -694,7 +694,9 @@ drawpages(char *pagelist)
 	if (benchmark)
 	{
 		memset(&loadtimes, 0x00, sizeof (loadtimes));
+		loadtimes.min = LONG_MAX;
 		memset(&drawtimes, 0x00, sizeof (drawtimes));
+		drawtimes.min = LONG_MAX;
 	}
 
 	spec = strsep(&pagelist, ",");
