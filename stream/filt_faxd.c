@@ -94,16 +94,16 @@ fz_newfaxd(fz_filter **fp, fz_obj *params)
 	fax->ref = fz_malloc(fax->stride);
 	if (!fax->ref)
 	{
-	    fz_free(fax);
-	    return fz_throw("outofmem: scanline buffer one");
+		fz_free(fax);
+		return fz_throw("outofmem: scanline buffer one");
 	}
 
 	fax->dst = fz_malloc(fax->stride);
 	if (!fax->dst)
 	{
-	    fz_free(fax);
-	    fz_free(fax->ref);
-	    return fz_throw("outofmem: scanline buffer two");
+		fz_free(fax);
+		fz_free(fax->ref);
+		return fz_throw("outofmem: scanline buffer two");
 	}
 
 	memset(fax->ref, 0, fax->stride);
