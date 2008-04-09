@@ -220,21 +220,21 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 	fz_error *error;
 	pdf_image *img;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 
 	error = pdf_loadinlineimage(&img, xref, rdb, dict, file);
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
-	error = pdf_lex(&token, file, (unsigned char *)buf, sizeof buf, &len);
+	error = pdf_lex(&tok, file, (unsigned char *)buf, sizeof buf, &len);
 	if (error)
 	{
 		fz_dropimage((fz_image*)img);
 		return fz_rethrow(error, "syntax error after inline image");
 	}
 
-	if (token != PDF_TKEYWORD || strcmp("EI", buf))
+	if (tok != PDF_TKEYWORD || strcmp("EI", buf))
 	{
 		fz_dropimage((fz_image*)img);
 		return fz_throw("syntax error after inline image");
@@ -1162,7 +1162,8 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
 	fz_error *error;
 	char buf[65536];
-	int token, len;
+	pdf_token_e tok;
+	int len;
 	fz_obj *obj;
 
 	while (1)
@@ -1170,19 +1171,19 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 		if (csi->top == 31)
 			return fz_throw("stack overflow");
 
-		error = pdf_lex(&token, file, (unsigned char *)buf, sizeof buf, &len);
+		error = pdf_lex(&tok, file, (unsigned char *)buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "lexical error in content stream");
 
 		if (csi->array)
 		{
-			if (token == PDF_TCARRAY)
+			if (tok == PDF_TCARRAY)
 			{
 				csi->stack[csi->top] = csi->array;
 				csi->array = nil;
 				csi->top ++;
 			}
-			else if (token == PDF_TINT || token == PDF_TREAL)
+			else if (tok == PDF_TINT || tok == PDF_TREAL)
 			{
 				error = fz_newreal(&obj, atof(buf));
 				if (error) return fz_rethrow(error, "cannot create number");
@@ -1190,7 +1191,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 				fz_dropobj(obj);
 				if (error) return fz_rethrow(error, "cannot add number to array");
 			}
-			else if (token == PDF_TSTRING)
+			else if (tok == PDF_TSTRING)
 			{
 				error = fz_newstring(&obj, buf, len);
 				if (error) return fz_rethrow(error, "cannot create string");
@@ -1198,7 +1199,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 				fz_dropobj(obj);
 				if (error) return fz_rethrow(error, "cannot add string to array");
 			}
-			else if (token == PDF_TEOF)
+			else if (tok == PDF_TEOF)
 			{
 				return fz_okay;
 			}
@@ -1209,7 +1210,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			}
 		}
 
-		else switch (token)
+		else switch (tok)
 		{
 		case PDF_TEOF:
 			return fz_okay;

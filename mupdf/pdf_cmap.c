@@ -573,7 +573,7 @@ enum
 	TENDCIDRANGE
 };
 
-static int tokenfromkeyword(char *key)
+static pdf_token_e tokenfromkeyword(char *key)
 {
 	if (!strcmp(key, "usecmap")) return TUSECMAP;
 	if (!strcmp(key, "begincodespacerange")) return TBEGINCODESPACERANGE;
@@ -597,12 +597,12 @@ static int codefromstring(unsigned char *buf, int len)
 	return a;
 }
 
-static fz_error *lexcmap(int *token, fz_stream *file, char *buf, int n, int *sl)
+static fz_error *lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, int *sl)
 {
 	fz_error *error;
-	error = pdf_lex(token, file, buf, n, sl);
-	if (!error && *token == PDF_TKEYWORD)
-		*token = tokenfromkeyword(buf);
+	error = pdf_lex(tok, file, buf, n, sl);
+	if (!error && *tok == PDF_TKEYWORD)
+		*tok = tokenfromkeyword(buf);
 	if (error)
 		return fz_rethrow(error, "cannot parse cmap token");
 	return nil;
@@ -612,14 +612,14 @@ static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 
-	error = lexcmap(&token, file, buf, sizeof buf, &len);
+	error = lexcmap(&tok, file, buf, sizeof buf, &len);
 	if (error)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
-	if (token == PDF_TNAME)
+	if (tok == PDF_TNAME)
 	{
 		strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
 		return fz_okay;
@@ -632,14 +632,14 @@ static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 
-	error = lexcmap(&token, file, buf, sizeof buf, &len);
+	error = lexcmap(&tok, file, buf, sizeof buf, &len);
 	if (error)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
-	if (token == PDF_TINT)
+	if (tok == PDF_TINT)
 	{
 		pdf_setwmode(cmap, atoi(buf));
 		return fz_okay;
@@ -652,26 +652,26 @@ static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int lo, hi;
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == TENDCODESPACERANGE)
+		if (tok == TENDCODESPACERANGE)
 			return fz_okay;
 
-		else if (token == PDF_TSTRING)
+		else if (tok == PDF_TSTRING)
 		{
 			lo = codefromstring(buf, len);
-			error = lexcmap(&token, file, buf, sizeof buf, &len);
+			error = lexcmap(&tok, file, buf, sizeof buf, &len);
 			if (error)
 				return fz_rethrow(error, "syntaxerror in cmap");
-			if (token == PDF_TSTRING)
+			if (tok == PDF_TSTRING)
 			{
 				hi = codefromstring(buf, len);
 				error = pdf_addcodespace(cmap, lo, hi, len);
@@ -691,36 +691,36 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int lo, hi, dst;
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == TENDCIDRANGE)
+		if (tok == TENDCIDRANGE)
 			return fz_okay;
 
-		else if (token != PDF_TSTRING)
+		else if (tok != PDF_TSTRING)
 			return fz_throw("expected string or endcidrange");
 
 		lo = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
-		if (token != PDF_TSTRING)
+		if (tok != PDF_TSTRING)
 			return fz_throw("expected string");
 
 		hi = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
-		if (token != PDF_TINT)
+		if (tok != PDF_TINT)
 			return fz_throw("expected integer");
 
 		dst = atoi(buf);
@@ -735,28 +735,28 @@ static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int src, dst;
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == TENDCIDCHAR)
+		if (tok == TENDCIDCHAR)
 			return fz_okay;
 
-		else if (token != PDF_TSTRING)
+		else if (tok != PDF_TSTRING)
 			return fz_throw("expected string or endcidchar");
 
 		src = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
-		if (token != PDF_TINT)
+		if (tok != PDF_TINT)
 			return fz_throw("expected integer");
 
 		dst = atoi(buf);
@@ -771,22 +771,22 @@ static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int 
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int dst[256];
 	int i;
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == PDF_TCARRAY)
+		if (tok == PDF_TCARRAY)
 			return fz_okay;
 
 		/* Note: does not handle [ /Name /Name ... ] */
-		else if (token != PDF_TSTRING)
+		else if (tok != PDF_TSTRING)
 			return fz_throw("expected string or ]");
 
 		if (len / 2)
@@ -807,37 +807,37 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int lo, hi, dst;
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == TENDBFRANGE)
+		if (tok == TENDBFRANGE)
 			return fz_okay;
 
-		else if (token != PDF_TSTRING)
+		else if (tok != PDF_TSTRING)
 			return fz_throw("expected string or endbfrange");
 
 		lo = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
-		if (token != PDF_TSTRING)
+		if (tok != PDF_TSTRING)
 			return fz_throw("expected string");
 
 		hi = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == PDF_TSTRING)
+		if (tok == PDF_TSTRING)
 		{
 			if (len == 2)
 			{
@@ -868,7 +868,7 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
 			}
 		}
 
-		else if (token == PDF_TOARRAY)
+		else if (tok == PDF_TOARRAY)
 		{
 			error = parsebfrangearray(cmap, file, lo, hi);
 			if (error)
@@ -886,7 +886,7 @@ static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
 {
 	fz_error *error;
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 	int dst[256];
 	int src;
@@ -894,23 +894,23 @@ static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 
-		if (token == TENDBFCHAR)
+		if (tok == TENDBFCHAR)
 			return fz_okay;
 
-		else if (token != PDF_TSTRING)
+		else if (tok != PDF_TSTRING)
 			return fz_throw("expected string or endbfchar");
 
 		src = codefromstring(buf, len);
 
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "syntaxerror in cmap");
 		/* Note: does not handle /dstName */
-		if (token != PDF_TSTRING)
+		if (tok != PDF_TSTRING)
 			return fz_throw("expected string");
 
 		if (len / 2)
@@ -932,7 +932,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 	pdf_cmap *cmap;
 	char key[64];
 	char buf[256];
-	int token;
+	pdf_token_e tok;
 	int len;
 
 	error = pdf_newcmap(&cmap);
@@ -943,17 +943,17 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 
 	while (1)
 	{
-		error = lexcmap(&token, file, buf, sizeof buf, &len);
+		error = lexcmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 		{
 			error = fz_rethrow(error, "syntaxerror in cmap");
 			goto cleanup;
 		}
 
-		if (token == PDF_TEOF)
+		if (tok == PDF_TEOF)
 			break;
 
-		else if (token == PDF_TNAME)
+		else if (tok == PDF_TNAME)
 		{
 			if (!strcmp(buf, "CMapName"))
 			{
@@ -977,12 +977,12 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 				strlcpy(key, buf, sizeof key);
 		}
 
-		else if (token == TUSECMAP)
+		else if (tok == TUSECMAP)
 		{
 			strlcpy(cmap->usecmapname, key, sizeof(cmap->usecmapname));
 		}
 
-		else if (token == TBEGINCODESPACERANGE)
+		else if (tok == TBEGINCODESPACERANGE)
 		{
 			error = parsecodespacerange(cmap, file);
 			if (error)
@@ -992,7 +992,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 			}
 		}
 
-		else if (token == TBEGINBFCHAR)
+		else if (tok == TBEGINBFCHAR)
 		{
 			error = parsebfchar(cmap, file);
 			if (error)
@@ -1002,7 +1002,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 			}
 		}
 
-		else if (token == TBEGINCIDCHAR)
+		else if (tok == TBEGINCIDCHAR)
 		{
 			error = parsecidchar(cmap, file);
 			if (error)
@@ -1012,7 +1012,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 			}
 		}
 
-		else if (token == TBEGINBFRANGE)
+		else if (tok == TBEGINBFRANGE)
 		{
 			error = parsebfrange(cmap, file);
 			if (error)
@@ -1022,7 +1022,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 			}
 		}
 
-		else if (token == TBEGINCIDRANGE)
+		else if (tok == TBEGINCIDRANGE)
 		{
 			error = parsecidrange(cmap, file);
 			if (error)

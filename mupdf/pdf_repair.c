@@ -23,7 +23,8 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 	fz_obj *length;
 	fz_obj *filter;
 	fz_obj *type;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 	int n;
 
 	*stmlen = -1;
@@ -152,7 +153,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	int isroot, rootoid = 0, rootgen = 0;
 	int isinfo, infooid = 0, infogen = 0;
 	int stmofs, stmlen;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 	int next;
 	int i;
 

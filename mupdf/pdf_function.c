@@ -329,7 +329,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 	fz_error *error;
 	char buf[64];
 	int len;
-	int token;
+	pdf_token_e tok;
 	int opptr, elseptr;
 	int a, b, mid, cmp;
 
@@ -337,11 +337,11 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 
 	while (1)
 	{
-		error = pdf_lex(&token, stream, buf, sizeof buf, &len);
+		error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "calculator function lexical error");
 
-		switch(token)
+		switch(tok)
 		{
 		case PDF_TEOF:
 			return fz_throw("truncated calculator function");
@@ -376,18 +376,18 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 			if (error)
 				return fz_rethrow(error, "error in 'if' branch");
 
-			error = pdf_lex(&token, stream, buf, sizeof buf, &len);
+			error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 			if (error)
 				return fz_rethrow(error, "calculator function syntax error");
 
-			if (token == PDF_TOBRACE)
+			if (tok == PDF_TOBRACE)
 			{
 				elseptr = *codeptr;
 				error = parsecode(func, stream, codeptr);
 				if (error)
 					return fz_rethrow(error, "error in 'else' branch");
 
-				error = pdf_lex(&token, stream, buf, sizeof buf, &len);
+				error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 				if (error)
 					return fz_rethrow(error, "calculator function syntax error");
 			}
@@ -396,7 +396,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 				elseptr = -1;
 			}
 
-			if (token == PDF_TKEYWORD)
+			if (tok == PDF_TKEYWORD)
 			{
 				if (!strcmp(buf, "if"))
 				{

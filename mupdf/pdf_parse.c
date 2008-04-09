@@ -113,7 +113,8 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 	fz_obj *ary = nil;
 	fz_obj *obj = nil;
 	int a = 0, b = 0, n = 0;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 
 	error = fz_newarray(op, 4);
 	if (error)
@@ -222,7 +223,8 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 	fz_obj *dict = nil;
 	fz_obj *key = nil;
 	fz_obj *val = nil;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 	int a, b;
 
 	error = fz_newdict(op, 8);
@@ -318,7 +320,8 @@ fz_error *
 pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error *error;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
@@ -350,7 +353,8 @@ pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 	fz_error *error = nil;
 	fz_obj *obj = nil;
 	int oid = 0, gid = 0, stmofs;
-	int tok, len;
+	pdf_token_e tok;
+	int len;
 	int a, b;
 
 	error = pdf_lex(&tok, file, buf, cap, &len);

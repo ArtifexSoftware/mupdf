@@ -83,6 +83,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	char *s;
 	int n;
 	int t;
+	pdf_token_e tok;
 	int c;
 
 	pdf_logxref("load old xref format trailer\n");
@@ -128,16 +129,16 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	if (error)
 		return fz_rethrow(error, "cannot read from file");
 
-	error = pdf_lex(&t, xref->file, buf, cap, &n);
+	error = pdf_lex(&tok, xref->file, buf, cap, &n);
 	if (error)
 		return fz_rethrow(error, "cannot parse trailer");
-	if (t != PDF_TTRAILER)
+	if (tok != PDF_TTRAILER)
 		return fz_throw("expected trailer marker");
 
-	error = pdf_lex(&t, xref->file, buf, cap, &n);
+	error = pdf_lex(&tok, xref->file, buf, cap, &n);
 	if (error)
 		return fz_rethrow(error, "cannot parse trailer");
-	if (t != PDF_TODICT)
+	if (tok != PDF_TODICT)
 		return fz_throw("expected trailer dictionary");
 
 	error = pdf_parsedict(&xref->trailer, xref->file, buf, cap);
@@ -205,7 +206,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	int ofs, len;
 	char *s;
 	int n;
-	int t;
+	pdf_token_e tok;
 	int i;
 	int c;
 
@@ -255,16 +256,16 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		}
 	}
 
-	error = pdf_lex(&t, xref->file, buf, cap, &n);
+	error = pdf_lex(&tok, xref->file, buf, cap, &n);
 	if (error)
 		return fz_rethrow(error, "cannot parse trailer");
-	if (t != PDF_TTRAILER)
+	if (tok != PDF_TTRAILER)
 		return fz_throw("expected trailer marker");
 
-	error = pdf_lex(&t, xref->file, buf, cap, &n);
+	error = pdf_lex(&tok, xref->file, buf, cap, &n);
 	if (error)
 		return fz_rethrow(error, "cannot parse trailer");
-	if (t != PDF_TODICT)
+	if (tok != PDF_TODICT)
 		return fz_throw("expected trailer dictionary");
 
 	error = pdf_parsedict(trailerp, xref->file, buf, cap);
@@ -479,7 +480,8 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	fz_obj *obj;
 	int first;
 	int count;
-	int i, n, t;
+	int i, n;
+	pdf_token_e tok;
 
 	pdf_logxref("loadobjstm %d %d\n", oid, gen);
 
@@ -515,16 +517,16 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 
 	for (i = 0; i < count; i++)
 	{
-		error = pdf_lex(&t, stm, buf, cap, &n);
-		if (error || t != PDF_TINT)
+		error = pdf_lex(&tok, stm, buf, cap, &n);
+		if (error || tok != PDF_TINT)
 		{
 			error = fz_rethrow(error, "corrupt object stream");
 			goto cleanupstm;
 		}
 		oidbuf[i] = atoi(buf);
 
-		error = pdf_lex(&t, stm, buf, cap, &n);
-		if (error || t != PDF_TINT)
+		error = pdf_lex(&tok, stm, buf, cap, &n);
+		if (error || tok != PDF_TINT)
 		{
 			error = fz_rethrow(error, "corrupt object stream");
 			goto cleanupstm;

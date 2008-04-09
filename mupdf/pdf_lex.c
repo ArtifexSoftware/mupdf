@@ -232,7 +232,7 @@ lexhexstring(fz_stream *f, unsigned char *buf, int n)
 	return s - buf;
 }
 
-static int
+static pdf_token_e
 tokenfromkeyword(char *key)
 {
 	if (!strcmp(key, "R")) return PDF_TR;
@@ -253,7 +253,7 @@ tokenfromkeyword(char *key)
 }
 
 fz_error *
-pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
+pdf_lex(pdf_token_e *tok, fz_stream *f, unsigned char *buf, int n, int *sl)
 {
 	fz_error *error;
 	int c;
@@ -264,7 +264,7 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 
 		if (c == EOF)
 		{
-			*ret = PDF_TEOF;
+			*tok = PDF_TEOF;
 			goto cleanupokay;
 		}
 
@@ -279,7 +279,7 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 			fz_readbyte(f);
 			lexname(f, buf, n);
 			*sl = strlen(buf);
-			*ret = PDF_TNAME;
+			*tok = PDF_TNAME;
 			goto cleanupokay;
 		}
 
@@ -287,7 +287,7 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 		{
 			fz_readbyte(f);
 			*sl = lexstring(f, buf, n);
-			*ret = PDF_TSTRING;
+			*tok = PDF_TSTRING;
 			goto cleanupokay;
 		}
 
@@ -298,13 +298,13 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 			if (c == '<')
 			{
 				fz_readbyte(f);
-				*ret = PDF_TODICT;
+				*tok = PDF_TODICT;
 				goto cleanupokay;
 			}
 			else
 			{
 				*sl = lexhexstring(f, buf, n);
-				*ret = PDF_TSTRING;
+				*tok = PDF_TSTRING;
 				goto cleanupokay;
 			}
 		}
@@ -315,38 +315,38 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 			c = fz_readbyte(f);
 			if (c == '>')
 			{
-				*ret = PDF_TCDICT;
+				*tok = PDF_TCDICT;
 				goto cleanupokay;
 			}
-			*ret = PDF_TERROR;
+			*tok = PDF_TERROR;
 			goto cleanuperror;
 		}
 
 		else if (c == '[')
 		{
 			fz_readbyte(f);
-			*ret = PDF_TOARRAY;
+			*tok = PDF_TOARRAY;
 			goto cleanupokay;
 		}
 
 		else if (c == ']')
 		{
 			fz_readbyte(f);
-			*ret = PDF_TCARRAY;
+			*tok = PDF_TCARRAY;
 			goto cleanupokay;
 		}
 
 		else if (c == '{')
 		{
 			fz_readbyte(f);
-			*ret = PDF_TOBRACE;
+			*tok = PDF_TOBRACE;
 			goto cleanupokay;
 		}
 
 		else if (c ==  '}')
 		{
 			fz_readbyte(f);
-			*ret = PDF_TCBRACE;
+			*tok = PDF_TCBRACE;
 			goto cleanupokay;
 		}
 
@@ -356,10 +356,10 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 			*sl = strlen(buf);
 			if (strchr(buf, '.'))
 			{
-				*ret = PDF_TREAL;
+				*tok = PDF_TREAL;
 				goto cleanupokay;
 			}
-			*ret = PDF_TINT;
+			*tok = PDF_TINT;
 			goto cleanupokay;
 		}
 
@@ -367,13 +367,13 @@ pdf_lex(int *ret, fz_stream *f, unsigned char *buf, int n, int *sl)
 		{
 			lexname(f, buf, n);
 			*sl = strlen(buf);
-			*ret = tokenfromkeyword(buf);
+			*tok = tokenfromkeyword(buf);
 			goto cleanupokay;
 		}
 
 		else
 		{
-			*ret = PDF_TERROR;
+			*tok = PDF_TERROR;
 			goto cleanuperror;
 		}
 	}
@@ -382,7 +382,7 @@ cleanupokay:
 	error = fz_readerror(f);
 	if (error)
 	{
-		*ret = PDF_TERROR;
+		*tok = PDF_TERROR;
 		return fz_rethrow(error, "cannot read token");
 	}
 	return fz_okay;
@@ -391,10 +391,10 @@ cleanuperror:
 	error = fz_readerror(f);
 	if (error)
 	{
-		*ret = PDF_TERROR;
+		*tok = PDF_TERROR;
 		return fz_rethrow(error, "cannot read token");
 	}
-	*ret = PDF_TERROR;
+	*tok = PDF_TERROR;
 	return fz_throw("lexical error");
 }
 

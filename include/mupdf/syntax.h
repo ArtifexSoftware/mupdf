@@ -2,7 +2,7 @@
  * tokenizer and low-level object parser
  */
 
-enum
+typedef enum pdf_token_e
 {
 	PDF_TERROR, PDF_TEOF,
 	PDF_TOARRAY, PDF_TCARRAY,
@@ -14,10 +14,10 @@ enum
 	PDF_TSTREAM, PDF_TENDSTREAM,
 	PDF_TXREF, PDF_TTRAILER, PDF_TSTARTXREF,
 	PDF_NTOKENS
-};
+} pdf_token_e;
 
 /* lex.c */
-fz_error *pdf_lex(int *token, fz_stream *f, unsigned char *buf, int n, int *len);
+fz_error *pdf_lex(pdf_token_e *tok, fz_stream *f, unsigned char *buf, int n, int *len);
 
 /* parse.c */
 fz_error *pdf_parsearray(fz_obj **op, fz_stream *f, char *buf, int cap);
