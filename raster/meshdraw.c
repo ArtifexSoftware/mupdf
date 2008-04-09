@@ -358,12 +358,16 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 			p.x = shade->mesh[(i * 3 + k) * n + 0];
 			p.y = shade->mesh[(i * 3 + k) * n + 1];
 			p = fz_transformpoint(ctm, p);
+			if (isnan(p.y) || isnan(p.x)) // How is this happening?
+				goto baddata;
 			tri[k][0] = p.x;
 			tri[k][1] = p.y;
 			for (j = 2; j < n; j++)
 				tri[k][j] = shade->mesh[( i * 3 + k) * n + j] * 255;
 		}
 		fz_drawtriangle(temp, tri[0], tri[1], tri[2], n);
+	    baddata:
+		;
 	}
 
 	if (shade->usefunction)
