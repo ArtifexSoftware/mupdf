@@ -4,13 +4,13 @@
 #include "filt_faxd.h"
 #include "filt_faxc.h"
 
-enum
+typedef enum fax_stage_e
 {
 	SNORMAL,	/* neutral state, waiting for any code */
 	SMAKEUP,	/* got a 1d makeup code, waiting for terminating code */
 	SEOL,		/* at eol, needs output buffer space */
 	SH1, SH2	/* in H part 1 and 2 (both makeup and terminating codes) */
-};
+} fax_stage_e;
 
 /* TODO: uncompressed */
 
@@ -34,7 +34,9 @@ struct fz_faxd_s
 	int bidx;
 	unsigned int word;
 
-	int stage, a, c, dim, eolc;
+	fax_stage_e stage;
+
+	int a, c, dim, eolc;
 	unsigned char *ref;
 	unsigned char *dst;
 };
