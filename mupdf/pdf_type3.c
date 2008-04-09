@@ -313,7 +313,8 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	return nil;
 
 cleanup2:
-	fz_dropobj(resources);
+	if (resources)
+		fz_dropobj(resources);
 cleanup:
 	fz_dropfont((fz_font*)font);
 	return fz_rethrow(error, "cannot load type3 font");
