@@ -41,8 +41,15 @@ struct pdf_crypt_s
 	unsigned char o[32];
 	unsigned char u[32];
 	unsigned int p;
+	int v;
 	int r;
-	int n;
+	int len;
+	char *handler;
+	char *stmmethod;
+	int stmlength;
+	char *strmethod;
+	int strlength;
+	int encryptedmeta;
 
 	fz_obj *encrypt;
 	fz_obj *id;
