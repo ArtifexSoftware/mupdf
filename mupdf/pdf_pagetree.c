@@ -121,6 +121,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	fz_obj *pages = nil;
 	fz_obj *trailer;
 	fz_obj *ref;
+	fz_obj *treeref;
 	int count;
 
 	inherit.resources = nil;
@@ -134,8 +135,8 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	error = pdf_loadindirect(&catalog, xref, ref);
 	if (error) { error = fz_rethrow(error, "cannot load Root object"); goto cleanup; }
 
-	ref = fz_dictgets(catalog, "Pages");
-	error = pdf_loadindirect(&pages, xref, ref);
+	treeref = fz_dictgets(catalog, "Pages");
+	error = pdf_loadindirect(&pages, xref, treeref);
 	if (error) { error = fz_rethrow(error, "cannot load Pages object"); goto cleanup; }
 
 	ref = fz_dictgets(pages, "Count");
@@ -158,7 +159,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	p->pobj = fz_malloc(sizeof(fz_obj*) * count);
 	if (!p->pobj) { error = fz_throw("outofmem: page tree object array"); goto cleanup; }
 
-	error = loadpagetree(xref, p, inherit, pages, ref);
+	error = loadpagetree(xref, p, inherit, pages, treeref);
 	if (error) { error = fz_rethrow(error, "cannot load page tree"); goto cleanup; }
 
 	fz_dropobj(pages);
