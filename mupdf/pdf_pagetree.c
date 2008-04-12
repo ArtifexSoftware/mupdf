@@ -24,6 +24,8 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 
 	if (strcmp(fz_toname(type), "Page") == 0)
 	{
+		pdf_logpage("page %d %d\n", ref->u.r.oid, ref->u.r.gid);
+
 		if (inherit.resources && !fz_dictgets(obj, "Resources"))
 		{
 			pdf_logpage("inherit resources (%d)\n", pages->cursor);
@@ -76,7 +78,8 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		if (error)
 			return fz_rethrow(error, "cannot resolve /Kids");
 
-		pdf_logpage("subtree %d {\n", fz_arraylen(kids));
+		pdf_logpage("subtree %d pages %d %d {\n",
+				fz_arraylen(kids), ref->u.r.oid, ref->u.r.gid);
 
 		for (i = 0; i < fz_arraylen(kids); i++)
 		{
@@ -145,8 +148,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	p = fz_malloc(sizeof(pdf_pagetree));
 	if (!p) { error = fz_throw("outofmem: page tree struct"); goto cleanup; }
 
-	pdf_logpage("load pagetree %p {\n", p);
-	pdf_logpage("count %d\n", count);
+	pdf_logpage("load pagetree %d pages %d %d (%p) {\n", count, ref->u.r.oid, ref->u.r.gid, p);
 
 	p->pref = nil;
 	p->pobj = nil;
