@@ -12,6 +12,7 @@ Library libraster :
 	pathfill.c
 	pathstroke.c
 	render.c
+	blendmodes.c
 	;
 
 if $(OSPLAT) = PPC     { Library libraster : archppc.c ; }
