@@ -385,7 +385,7 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 	*trailerp = trailer;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -461,7 +461,7 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 	}
 
 	fz_dropobj(trailer);
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -567,7 +567,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	fz_free(ofsbuf);
 	fz_free(oidbuf);
 	fz_dropobj(objstm);
-	return nil;
+	return fz_okay;
 
 cleanupstm:
 	fz_dropstream(stm);
