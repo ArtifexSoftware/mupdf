@@ -111,7 +111,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
 		{
-			error = fz_seek(xref->file, -(n + buf - s + 2), 1);
+			error = fz_seek(xref->file, -(2 + strlen(s)), 1);
 			if (error)
 				return fz_rethrow(error, "cannot seek in file");
 		}
@@ -236,7 +236,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		if (s && *s != '\0')
 		{
 			fz_warn("broken xref section. proceeding anyway.");
-			error = fz_seek(xref->file, -(n + buf - s + 2), 1);
+			error = fz_seek(xref->file, -(2 + strlen(s)), 1);
 			if (error)
 				return fz_rethrow(error, "cannot seek to xref");
 		}
