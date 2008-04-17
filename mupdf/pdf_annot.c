@@ -165,7 +165,8 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 		error = pdf_resolve(&obj, xref);
 		if (error)
 		{
-			pdf_droplink(link);
+			if (link)
+				pdf_droplink(link);
 			return fz_rethrow(error, "cannot resolve annotation");
 		}
 
@@ -178,7 +179,8 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 			fz_dropobj(obj);
 			if (error)
 			{
-				pdf_droplink(link);
+				if (link)
+					pdf_droplink(link);
 				return fz_rethrow(error, "cannot load annotation link");
 			}
 
