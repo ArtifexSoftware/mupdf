@@ -213,6 +213,7 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 cleanup:
 	if (obj) fz_dropobj(obj);
 	if (ary) fz_dropobj(ary);
+	*op = nil;
 	return fz_rethrow(error, "cannot parse array");
 }
 
@@ -313,6 +314,7 @@ cleanup:
 	if (key) fz_dropobj(key);
 	if (val) fz_dropobj(val);
 	if (dict) fz_dropobj(dict);
+	*op = nil;
 	return fz_rethrow(error, "cannot parse dict");
 }
 
