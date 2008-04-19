@@ -241,6 +241,32 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 				return fz_rethrow(error, "cannot seek to xref");
 		}
 
+		/* broken pdfs where size in trailer undershoots
+		   entries in xref sections */
+		if ((ofs + len) > xref->cap)
+		{
+			fz_warn("broken xref section, proceeding anyway.");
+			xref->cap = ofs + len;
+			xref->table = fz_realloc(xref->table, xref->cap * sizeof(pdf_xrefentry));
+			if (!xref->table)
+				return fz_throw("outofmem: xref table");
+		}
+
+		if ((ofs + len) > xref->len)
+		{
+			for (i = xref->len; i < (ofs + len); i++)
+			{
+				xref->table[i].ofs = 0;
+				xref->table[i].gen = 0;
+				xref->table[i].type = 0;
+				xref->table[i].mark = 0;
+				xref->table[i].stmbuf = nil;
+				xref->table[i].stmofs = 0;
+				xref->table[i].obj = nil;
+			}
+			xref->len = ofs + len;
+		}
+
 		for (i = 0; i < len; i++)
 		{
 			error = fz_read(&n, xref->file, buf, 20);
