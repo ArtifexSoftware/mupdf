@@ -150,7 +150,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	p = fz_malloc(sizeof(pdf_pagetree));
 	if (!p) { error = fz_throw("outofmem: page tree struct"); goto cleanup; }
 
-	pdf_logpage("load pagetree %d pages, %d %d (%p) {\n", count, ref->u.r.oid, ref->u.r.gid, p);
+	pdf_logpage("load pagetree %d pages, %d %d (%p) {\n", count, treeref->u.r.oid, treeref->u.r.gid, p);
 
 	p->pref = nil;
 	p->pobj = nil;
