@@ -187,8 +187,9 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	float flatness;
 	fz_irect gbox;
 	fz_irect clip;
+	float expansion = fz_matrixexpansion(ctm);
 
-	flatness = 0.3 / fz_matrixexpansion(ctm);
+	flatness = 0.3 / expansion;
 	if (flatness < 0.1)
 		flatness = 0.1;
 
@@ -196,10 +197,15 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 
 	if (path->paint == FZ_STROKE)
 	{
+		float lw = path->linewidth;
+		// Check for hairline
+		if (lw * expansion < 0.2) {
+			lw = 1.0f / expansion;
+		}
 		if (path->dash)
-			error = fz_dashpath(gc->gel, path, ctm, flatness);
+			error = fz_dashpath(gc->gel, path, ctm, flatness, lw);
 		else
-			error = fz_strokepath(gc->gel, path, ctm, flatness);
+			error = fz_strokepath(gc->gel, path, ctm, flatness, lw);
 	}
 	else
 		error = fz_fillpath(gc->gel, path, ctm, flatness);

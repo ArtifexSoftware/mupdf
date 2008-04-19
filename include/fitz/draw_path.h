@@ -40,6 +40,6 @@ fz_error *fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	fz_irect clip, fz_pixmap *pix, unsigned char *argb, int over);
 
 fz_error *fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness);
-fz_error *fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness);
-fz_error *fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness);
+fz_error *fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth);
+fz_error *fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth);
 

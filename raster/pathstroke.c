@@ -458,7 +458,7 @@ strokebezier(struct sctx *s,
 }
 
 fz_error *
-fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
+fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth)
 {
 	fz_error *error;
 	struct sctx s;
@@ -471,7 +471,7 @@ fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 
 	s.linecap = path->linecap;
 	s.linejoin = path->linejoin;
-	s.linewidth = path->linewidth * 0.5;
+	s.linewidth = linewidth * 0.5; /* hairlines use a different value from the path value */
 	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
@@ -653,7 +653,7 @@ dashbezier(struct sctx *s,
 }
 
 fz_error *
-fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
+fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth)
 {
 	fz_error *error;
 	struct sctx s;
@@ -666,7 +666,7 @@ fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 
 	s.linecap = path->linecap;
 	s.linejoin = path->linejoin;
-	s.linewidth = path->linewidth * 0.5;
+	s.linewidth = linewidth * 0.5;
 	s.miterlimit = path->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
