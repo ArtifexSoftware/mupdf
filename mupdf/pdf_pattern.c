@@ -41,6 +41,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	if (!pat)
 		return fz_throw("outofmem: pattern struct");
 
+	pat->refs = 1;
 	pat->tree = nil;
 	pat->ismask = fz_toint(fz_dictgets(dict, "PaintType")) == 2;
 	pat->xstep = fz_toreal(fz_dictgets(dict, "XStep"));
