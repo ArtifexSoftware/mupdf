@@ -23,6 +23,7 @@
 
 char *srcname = "(null)";
 pdf_xref *src = nil;
+pdf_outline *srcoutline = nil;
 pdf_pagetree *srcpages = nil;
 
 void die(fz_error *eo)
@@ -58,6 +59,7 @@ void closesrc(void)
 void opensrc(char *filename, char *password, int loadpages)
 {
 	fz_error *error;
+        fz_obj *obj;
 
 	closesrc();
 
@@ -94,6 +96,31 @@ void opensrc(char *filename, char *password, int loadpages)
 		if (error)
 			die(error);
 	}
+
+	/* TODO: move into mupdf lib, see pdfapp_open in pdfapp.c */
+	obj = fz_dictgets(src->trailer, "Root");
+	if (!obj)
+		die(error);
+
+	error = pdf_loadindirect(&src->root, src, obj);
+	if (error)
+		die(error);
+
+	obj = fz_dictgets(src->trailer, "Info");
+	if (obj)
+	{
+		error = pdf_loadindirect(&src->info, src, obj);
+		if (error)
+			die(error);
+	}
+
+	error = pdf_loadnametrees(src);
+	if (error)
+		die(error);
+
+	error = pdf_loadoutline(&srcoutline, src);
+	if (error)
+                die(error);
 }
 
 void preloadobjstms(void)
