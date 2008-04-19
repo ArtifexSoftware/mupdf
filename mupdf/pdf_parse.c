@@ -171,7 +171,7 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 		switch (tok)
 		{
 		case PDF_TCARRAY:
-			return nil;
+			return fz_okay;
 		case PDF_TINT:
 			if (n == 0)
 				a = atoi(buf);
@@ -241,11 +241,11 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 
 skip:
 		if (tok == PDF_TCDICT)
-			return nil;
+			return fz_okay;
 
 		/* for BI .. ID .. EI in content streams */
 		if (tok == PDF_TKEYWORD && !strcmp(buf, "ID"))
-			return nil;
+			return fz_okay;
 
 		if (tok != PDF_TNAME)
 			goto cleanup;
@@ -443,7 +443,7 @@ skip:
 	if (ogid) *ogid = gid;
 	if (ostmofs) *ostmofs = stmofs;
 	*op = obj;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	if (obj)
