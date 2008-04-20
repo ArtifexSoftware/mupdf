@@ -124,6 +124,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	float theta;
 	float dist;
 	int n;
+	fz_error *error;
 
 	pdf_logshade("load type2 shade {\n");
 
@@ -156,7 +157,9 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_logshade("domain %g %g\n", t0, t1);
 	pdf_logshade("extend %d %d\n", e0, e1);
 
-	pdf_loadshadefunction(shade, xref, dict, t0, t1);
+	error = pdf_loadshadefunction(shade, xref, dict, t0, t1);
+	if (error)
+		return fz_rethrow(error, "unable to load shading function");
 
 	theta = atan2(y1 - y0, x1 - x0);
 	theta += M_PI / 2.0;
@@ -317,6 +320,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	float ex1, ey1, er1;
 	float rs;
 	int i;
+	fz_error *error;
 
 	pdf_logshade("load type3 shade {\n");
 
@@ -351,7 +355,9 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	pdf_logshade("domain %g %g\n", t0, t1);
 	pdf_logshade("extend %d %d\n", e0, e1);
 
-	pdf_loadshadefunction(shade, xref, shading, t0, t1);
+	error = pdf_loadshadefunction(shade, xref, shading, t0, t1);
+	if (error)
+		return fz_rethrow(error, "unable to load shading function");
 
 	if (r0 < r1)
 		rs = r0 / (r0 - r1);
