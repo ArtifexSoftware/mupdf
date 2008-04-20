@@ -358,7 +358,7 @@ pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
 
 /*
  * Sort the input ranges.
- * Merge contiguous input ranges to range-to-range if the output is contiguos.
+ * Merge contiguous input ranges to range-to-range if the output is contiguous.
  * Merge contiguous input ranges to range-to-table if the output is random.
  */
 fz_error *

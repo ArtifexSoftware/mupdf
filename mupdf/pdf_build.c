@@ -223,7 +223,7 @@ pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 }
 
 static fz_error *
-addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
+addcolorshape(pdf_gstate *gs, fz_node *shape, float alpha, fz_colorspace *cs, float *v)
 {
 	fz_error *error;
 	fz_node *mask;
@@ -233,7 +233,7 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, fz_colorspace *cs, float *v)
 	if (error)
 		return fz_rethrow(error, "cannot create mask node");
 
-	error = fz_newsolidnode(&solid, 1.0, cs, cs->n, v);
+	error = fz_newsolidnode(&solid, alpha, cs, cs->n, v);
 	if (error)
 	{
 		fz_dropnode(mask);
@@ -376,7 +376,7 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 
 	if (pat->ismask)
 	{
-		error = addcolorshape(gs, mask, cs, v);
+		error = addcolorshape(gs, mask, 1.0, cs, v);
 		if (error)
 			return fz_rethrow(error, "cannot add colored shape");
 		return fz_okay;
@@ -488,7 +488,7 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 	case PDF_MCOLOR:
 	case PDF_MLAB:
 	case PDF_MINDEXED:
-		error = addcolorshape(gs, shape, gs->fill.cs, gs->fill.v);
+		error = addcolorshape(gs, shape, gs->fill.alpha, gs->fill.cs, gs->fill.v);
 		if (error)
 			return fz_rethrow(error, "cannot add colored shape");
 		break;
@@ -526,7 +526,7 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 	case PDF_MCOLOR:
 	case PDF_MLAB:
 	case PDF_MINDEXED:
-		error = addcolorshape(gs, shape, gs->stroke.cs, gs->stroke.v);
+		error = addcolorshape(gs, shape, gs->stroke.alpha, gs->stroke.cs, gs->stroke.v);
 		if (error)
 			return fz_rethrow(error, "cannot add colored shape");
 		break;
