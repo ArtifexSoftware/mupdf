@@ -306,6 +306,36 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 			gstate->stroke.alpha = fz_toreal(val);
 		else if (!strcmp(s, "ca"))
 			gstate->fill.alpha = fz_toreal(val);
+
+		else if (!strcmp(s, "BM")) {
+			static const struct { const char *name; fz_blendkind mode; } bm[] = {
+				{ "Normal", FZ_BNORMAL },
+				{ "Multiply", FZ_BMULTIPLY },
+				{ "Screen", FZ_BSCREEN },
+				{ "Overlay", FZ_BOVERLAY },
+				{ "Darken", FZ_BDARKEN },
+				{ "Lighten", FZ_BLIGHTEN },
+				{ "Colordodge", FZ_BCOLORDODGE },
+				{ "Hardlight", FZ_BHARDLIGHT },
+				{ "Softlight", FZ_BSOFTLIGHT },
+				{ "Difference", FZ_BDIFFERENCE },
+				{ "Exclusion", FZ_BEXCLUSION },
+				{ "Hue", FZ_BHUE },
+				{ "Saturation", FZ_BSATURATION },
+				{ "Color", FZ_BCOLOR },
+				{ "Luminosity", FZ_BLUMINOSITY }
+			};
+			char *n = fz_toname(val);
+
+			gstate->blendmode = FZ_BNORMAL;
+			for (k = 0; k < nelem(bm); k++) {
+				if (!strcmp(bm[k].name, n)) {
+					gstate->blendmode = bm[k].mode;
+					/* printf("blend mode %s:%d\n", n, gstate->blendmode); */
+					break;
+				}
+			}
+		}
 	}
 
 	return fz_okay;
