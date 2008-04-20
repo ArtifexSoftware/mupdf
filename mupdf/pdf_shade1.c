@@ -197,7 +197,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	n = 0;
 
-	/* if the axis has virtually length 0 (a point), use the same axis 
+	/* if the axis has virtually length 0 (a point), use the same axis
 	   position t = 0 for all triangle vertices */
 	if (dist < FLT_EPSILON)
 	{

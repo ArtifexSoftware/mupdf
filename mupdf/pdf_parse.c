@@ -143,10 +143,10 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 			if (n > 1)
 			{
 				error = fz_newint(&obj, b);
-				if (error) 
+				if (error)
 					goto cleanup;
 				error = fz_arraypush(ary, obj);
-				if (error) 
+				if (error)
 					goto cleanup;
 				fz_dropobj(obj);
 				obj = nil;
@@ -157,10 +157,10 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 		if (tok == PDF_TINT && n == 2)
 		{
 			error = fz_newint(&obj, a);
-			if (error) 
+			if (error)
 				goto cleanup;
 			error = fz_arraypush(ary, obj);
-			if (error) 
+			if (error)
 				goto cleanup;
 			fz_dropobj(obj);
 			obj = nil;

@@ -59,7 +59,7 @@ void closesrc(void)
 void opensrc(char *filename, char *password, int loadpages)
 {
 	fz_error *error;
-        fz_obj *obj;
+	fz_obj *obj;
 
 	closesrc();
 
@@ -120,7 +120,7 @@ void opensrc(char *filename, char *password, int loadpages)
 
 	error = pdf_loadoutline(&srcoutline, src);
 	if (error)
-                die(error);
+		die(error);
 }
 
 void preloadobjstms(void)
