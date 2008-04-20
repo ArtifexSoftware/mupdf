@@ -198,7 +198,7 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	if (path->paint == FZ_STROKE)
 	{
 		float lw = path->linewidth;
-		// Check for hairline
+		/* Check for hairline */
 		if (lw * expansion < 0.2) {
 			lw = 1.0f / expansion;
 		}
