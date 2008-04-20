@@ -76,7 +76,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	shade->usefunction = 0;
 
-
 	n = 2 + shade->cs->n;
 	j = 0;
 	for (z = 0; z < (buf->ep - buf->bp) / bytepervertex; ++z)
