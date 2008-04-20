@@ -93,7 +93,7 @@ fz_processflated(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	in->rp = in->wp - zp->avail_in;
 	out->wp = out->ep - zp->avail_out;
 
-	if (err == Z_STREAM_END)
+	if (err == Z_STREAM_END || err == Z_BUF_ERROR)
 	{
 		out->eof = 1;
 		return fz_iodone;
