@@ -17,7 +17,7 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 
 		error = pdf_loadfunction(&func, xref, obj);
 		if (error)
-			return error;
+			return fz_rethrow(error, "unable to evaluate shading function");
 
 		for (i = 0; i < 256; ++i)
 		{
@@ -26,7 +26,7 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 			if (error)
 			{
 				pdf_dropfunction(func);
-				return error;
+				return fz_rethrow(error, "unable to evaluate shading function at point");
 			}
 		}
 
@@ -84,10 +84,10 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 		{
 			error = pdf_resolve(&obj, xref);
 			if (error)
-				return error;
+				return fz_rethrow(error, "couldn't resolve colorspace");
 			error = pdf_loadcolorspace(&shade->cs, xref, obj);
 			if (error)
-				return error;
+				return fz_rethrow(error, "could not load colorspace");
 			fz_dropobj(obj);
 		}
 	}
@@ -153,7 +153,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 
 cleanup:
 	fz_dropshade(shade);
-	return error;
+	return fz_rethrow(error, "could not load shading");
 }
 
 fz_error *
@@ -199,11 +199,11 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		shd = obj;
 		error = pdf_resolve(&shd, xref);
 		if (error)
-			return error;
+			return fz_rethrow(error, "could not resolve shading dictionary");
 		error = loadshadedict(shadep, xref, shd, obj, mat);
 		fz_dropobj(shd);
 		if (error)
-			return error;
+			return fz_rethrow(error, "could not load shading dictionary");
 
 		pdf_logshade("}\n");
 	}
@@ -215,14 +215,14 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	{
 		error = loadshadedict(shadep, xref, dict, ref, fz_identity());
 		if (error)
-			return error;
+			return fz_rethrow(error, "could not load shading dictionary");
 	}
 
 	error = pdf_storeitem(xref->store, PDF_KSHADE, ref, *shadep);
 	if (error)
 	{
 		fz_dropshade(*shadep);
-		return error;
+		return fz_rethrow(error, "could not put shading dictionary in store");
 	}
 
 	return fz_okay;

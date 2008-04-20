@@ -53,7 +53,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "Function");
 	error = pdf_loadfunction(&func, xref, obj);
 	if (error)
-		return error;
+		return fz_rethrow(error, "could not load shading function");
 
 	shade->usefunction = 0;
 
@@ -89,6 +89,8 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 				cp[0] = xx;\
 				cp[1] = yy;\
 				error = pdf_evalfunction(func, cp, 2, cv, shade->cs->n);\
+				if (error) \
+					return fz_rethrow(error, "unable to evaluate shading function"); \
 				\
 				for (c = 0; c < shade->cs->n; ++c) {\
 					shade->mesh[n++] = cv[c];\

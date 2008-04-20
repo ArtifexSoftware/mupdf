@@ -68,7 +68,11 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	bytepervertex = (bitspervertex+7) / 8;
 
 	error = pdf_loadstream(&buf, xref, fz_tonum(ref), fz_togen(ref));
-	if (error) goto cleanup;
+	if (error)
+	{
+		error = fz_rethrow(error, "unable to load shading stream");
+		goto cleanup;
+	}
 
 	shade->usefunction = 0;
 
@@ -259,7 +263,11 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	q = 0;
 
 	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
-	if (error) goto cleanup;
+	if (error)
+	{
+		error = fz_rethrow(error, "unable to open shading stream");
+		goto cleanup;
+	}
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -628,7 +636,11 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	j = 0;
 
 	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
-	if (error) goto cleanup;
+	if (error)
+	{
+		error = fz_rethrow(error, "unable to open shading stream");
+		goto cleanup;
+	}
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -744,7 +756,11 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	j = 0;
 
 	error = pdf_openstream(&stream, xref, fz_tonum(ref), fz_togen(ref));
-	if (error) goto cleanup;
+	if (error)
+	{
+		error = fz_rethrow(error, "unable to open shading stream");
+		goto cleanup;
+	}
 
 	while (fz_peekbyte(stream) != EOF)
 	{
