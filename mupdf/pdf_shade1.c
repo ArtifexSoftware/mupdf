@@ -156,17 +156,25 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_loadshadefunction(shade, xref, dict, t0, t1);
 
-	shade->meshlen = 2 + e0 * 2 + e1 * 2;
-	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
-	if (!shade->mesh)
-		return fz_outofmem;
-
 	theta = atan2(y1 - y0, x1 - x0);
 	theta += M_PI / 2.0;
 
 	pdf_logshade("theta=%g\n", theta);
 
 	dist = hypot(x1 - x0, y1 - y0);
+
+	/* if the axis has virtually length 0 (a point),
+	   do not extend as there is nothing to extend beyond */
+	if (dist < FLT_EPSILON)
+	{
+		e0 = 0;
+		e1 = 0;
+	}
+
+	shade->meshlen = 2 + e0 * 2 + e1 * 2;
+	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
+	if (!shade->mesh)
+		return fz_outofmem;
 
 	p1.x = x0 + BIGNUM * cos(theta);
 	p1.y = y0 + BIGNUM * sin(theta);
@@ -177,15 +185,6 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	p4.x = x1 - BIGNUM * cos(theta);
 	p4.y = y1 - BIGNUM * sin(theta);
 
-	ep1.x = p1.x - (x1 - x0) / dist * BIGNUM;
-	ep1.y = p1.y - (y1 - y0) / dist * BIGNUM;
-	ep2.x = p2.x + (x1 - x0) / dist * BIGNUM;
-	ep2.y = p2.y + (y1 - y0) / dist * BIGNUM;
-	ep3.x = p3.x - (x1 - x0) / dist * BIGNUM;
-	ep3.y = p3.y - (y1 - y0) / dist * BIGNUM;
-	ep4.x = p4.x + (x1 - x0) / dist * BIGNUM;
-	ep4.y = p4.y + (y1 - y0) / dist * BIGNUM;
-
 	pdf_logshade("p1 %g %g\n", p1.x, p1.y);
 	pdf_logshade("p2 %g %g\n", p2.x, p2.y);
 	pdf_logshade("p3 %g %g\n", p3.x, p3.y);
@@ -193,14 +192,34 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	n = 0;
 
-	pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-	pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
-	pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
-	pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-	pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
-	pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
+	/* if the axis has virtually length 0 (a point), use the same axis 
+	   position t = 0 for all triangle vertices */
+	if (dist < FLT_EPSILON)
+	{
+		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
+	}
+	else
+	{
+		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
+		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
+		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
+		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
+		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
+	}
 
-	if (e0) {
+	if (e0)
+	{
+		ep1.x = p1.x - (x1 - x0) / dist * BIGNUM;
+		ep1.y = p1.y - (y1 - y0) / dist * BIGNUM;
+		ep3.x = p3.x - (x1 - x0) / dist * BIGNUM;
+		ep3.y = p3.y - (y1 - y0) / dist * BIGNUM;
+
 		pdf_setmeshvalue(shade->mesh, n++, ep1.x, ep1.y, 0);
 		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
 		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
@@ -209,7 +228,13 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		pdf_setmeshvalue(shade->mesh, n++, ep3.x, ep3.y, 0);
 	}
 
-	if (e1) {
+	if (e1)
+	{
+		ep2.x = p2.x + (x1 - x0) / dist * BIGNUM;
+		ep2.y = p2.y + (y1 - y0) / dist * BIGNUM;
+		ep4.x = p4.x + (x1 - x0) / dist * BIGNUM;
+		ep4.y = p4.y + (y1 - y0) / dist * BIGNUM;
+
 		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
 		pdf_setmeshvalue(shade->mesh, n++, ep2.x, ep2.y, 1);
 		pdf_setmeshvalue(shade->mesh, n++, ep4.x, ep4.y, 1);
