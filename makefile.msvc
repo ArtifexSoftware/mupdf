@@ -4,7 +4,7 @@ CFG=dbg
 !endif
 
 # O is directory where object and binary files go
-O = obj-$(CFG)
+O = obj-$(CFG)-win
 
 ZLIB_DIR=ext\zlib
 FREETYPE_DIR=ext\freetype231
@@ -19,6 +19,7 @@ CFLAGS = $(CFLAGS) /D "WIN32" /D "_WIN32_WINNT=0x0500"
 CFLAGS = $(CFLAGS) /D "_SCL_SECURE_NO_DEPRECATE" /D "_CRT_SECURE_NO_DEPRECATE"
 CFLAGS = $(CFLAGS) /D "NEED_STRLCPY" /D "NEED_STRSEP" /D "NEED_MATH" /D "NEED_GETOPT" /D "NEED_GETTIMEOFDAY"
 CFLAGS = $(CFLAGS) /D "__func__=\"\""
+CFLAGS = $(CFLAGS) /D "isnan=_isnan"
 
 # disable "warning C4244: 'argument' : conversion from 'foo' to 'bar', possible loss of data"
 CFLAGS = $(CFLAGS) /wd4244 /wd4996
@@ -105,6 +106,9 @@ all: $(O) $(PDFTOOL_APP) $(PDFAPP_APP)
 
 clean: force
 	-rmdir /S /Q $(O)
+
+cleanall: force
+	-rmdir /S /Q obj-*-win
 
 $(O): force
 	@if not exist $(O) mkdir $(O)
