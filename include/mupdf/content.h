@@ -47,6 +47,7 @@ struct pdf_gstate_s
 	/* materials */
 	pdf_material stroke;
 	pdf_material fill;
+	fz_blendkind blendmode;
 
 	/* text state */
 	float charspace;
