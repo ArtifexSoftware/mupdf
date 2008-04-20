@@ -128,6 +128,7 @@ endif
 
 RASTER_SRC = \
 	archx86.c \
+	blendmodes.c \
 	imagescale.c \
 	pathfill.c \
 	pixmap.c \
@@ -237,7 +238,6 @@ cleanall:
 #./apps/common/pdfapp.c
 #./apps/mozilla/moz_main.c
 #./apps/mozilla/npunix.c
-#./apps/mozilla/npwin.c
 #./apps/unix/x11pdf.c
 #./apps/unix/ximage.c
 #./apps/windows/winmain.c
