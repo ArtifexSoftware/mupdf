@@ -57,9 +57,6 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	shade->usefunction = 0;
 
-	if (error)
-		return error;
-
 	shade->meshlen = NSEGS * NSEGS * 2;
 	shade->mesh = fz_malloc(sizeof(float) * (2 + shade->cs->n) * 3 * shade->meshlen);
 	if (!shade->mesh)
