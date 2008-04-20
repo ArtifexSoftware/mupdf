@@ -874,6 +874,8 @@ Lsetcolor:
 					if (!strcmp(fz_toname(obj), "Transparency"))
 						istransparency = 1;
 				}
+				if (!xobj->resources)
+					xobj->resources = rdb;
 				error = runxobject(csi, xref, xobj, istransparency);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");
