@@ -189,7 +189,7 @@ ftrender(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 		}
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -570,7 +570,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_logfont("}\n");
 
 	*fontp = font;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_free(etable);
@@ -756,7 +756,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 			else if (!strcmp(collection, "Adobe-Korea1"))
 				error = pdf_loadsystemcmap(&font->tottfcmap, "Adobe-Korea1-UCS2");
 			else
-				error = nil;
+				error = fz_okay;
 
 			if (error)
 				return fz_rethrow(error, "cannot load system cmap %s", collection);
@@ -885,7 +885,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	pdf_logfont("}\n");
 
 	*fontp = font;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	if (widths)
@@ -934,7 +934,7 @@ loadtype0(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (error)
 		return fz_rethrow(error, "cannot load descendant font");
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -999,7 +999,7 @@ pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *colle
 
 	pdf_logfont("}\n");
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_dropobj(desc);
@@ -1015,7 +1015,7 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if ((*fontp = pdf_finditem(xref->store, PDF_KFONT, ref)))
 	{
 		fz_keepfont((fz_font*)*fontp);
-		return nil;
+		return fz_okay;
 	}
 
 	subtype = fz_toname(fz_dictgets(dict, "Subtype"));
@@ -1037,6 +1037,6 @@ pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (error)
 		return fz_rethrow(error, "cannot store font resource");
 
-	return nil;
+	return fz_okay;
 }
 

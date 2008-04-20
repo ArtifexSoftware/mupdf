@@ -82,7 +82,7 @@ arc(struct sctx *s,
 	error = line(s, xc + ox, yc + oy, xc + x1, yc + y1);
 	if (error) return error;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -102,7 +102,7 @@ linestroke(struct sctx *s, fz_point a, fz_point b)
 	error = line(s, b.x + dlx, b.y + dly, a.x + dlx, a.y + dly);
 	if (error) return error;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -128,9 +128,9 @@ linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 	dy1 = c.y - b.y;
 
 	if (dx0 * dx0 + dy0 * dy0 < FLT_EPSILON)
-		return nil;
+		return fz_okay;
 	if (dx1 * dx1 + dy1 * dy1 < FLT_EPSILON)
-		return nil;
+		return fz_okay;
 
 	scale = linewidth / sqrt(dx0 * dx0 + dy0 * dy0);
 	dlx0 = dy0 * scale;
@@ -205,7 +205,7 @@ linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 		}
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -265,7 +265,7 @@ linecap(struct sctx *s, fz_point a, fz_point b)
 		if (error) return error;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -292,7 +292,7 @@ linedot(struct sctx *s, fz_point a)
 	}
 	error = line(s, ox, oy, a.x - linewidth, a.y);
 	if (error) return error;
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -315,7 +315,7 @@ strokeflush(struct sctx *s)
 
 	s->dot = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -331,7 +331,7 @@ strokemoveto(struct sctx *s, fz_point cur)
 	s->sn = 1;
 	s->bn = 1;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -345,7 +345,7 @@ strokelineto(struct sctx *s, fz_point cur)
 	if (dx * dx + dy * dy < s->flatness * s->flatness * 0.25)
 	{
 		s->dot = 1;
-		return nil;
+		return fz_okay;
 	}
 
 	error = linestroke(s, s->seg[s->sn-1], cur);
@@ -365,7 +365,7 @@ strokelineto(struct sctx *s, fz_point cur)
 	if (s->bn == 1)
 		s->beg[s->bn++] = cur;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -395,7 +395,7 @@ strokeclosepath(struct sctx *s)
 	s->sn = 0;
 	s->dot = 0;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -546,7 +546,7 @@ dashmoveto(struct sctx *s, fz_point a)
 	if (s->toggle)
 		return strokemoveto(s, a);
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -592,7 +592,7 @@ dashlineto(struct sctx *s, fz_point b)
 	if (s->toggle)
 		return strokelineto(s, b);
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *

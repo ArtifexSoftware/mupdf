@@ -403,6 +403,6 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 		fz_droppixmap(temp);
 	}
 
-	return nil;
+	return fz_okay;
 }
 

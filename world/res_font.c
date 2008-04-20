@@ -101,7 +101,7 @@ fz_addhmtx(fz_font *font, int lo, int hi, int w)
 	font->hmtx[font->nhmtx].w = w;
 	font->nhmtx++;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -127,7 +127,7 @@ fz_addvmtx(fz_font *font, int lo, int hi, int x, int y, int w)
 	font->vmtx[font->nvmtx].w = w;
 	font->nvmtx++;
 
-	return nil;
+	return fz_okay;
 }
 
 static int cmph(const void *a0, const void *b0)
@@ -150,7 +150,7 @@ fz_endhmtx(fz_font *font)
 	fz_hmtx *newmtx;
 
 	if (!font->hmtx)
-		return nil;
+		return fz_okay;
 
 	qsort(font->hmtx, font->nhmtx, sizeof(fz_hmtx), cmph);
 
@@ -160,7 +160,7 @@ fz_endhmtx(fz_font *font)
 	font->hmtxcap = font->nhmtx;
 	font->hmtx = newmtx;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -169,7 +169,7 @@ fz_endvmtx(fz_font *font)
 	fz_vmtx *newmtx;
 
 	if (!font->vmtx)
-		return nil;
+		return fz_okay;
 
 	qsort(font->vmtx, font->nvmtx, sizeof(fz_vmtx), cmpv);
 
@@ -179,7 +179,7 @@ fz_endvmtx(fz_font *font)
 	font->vmtxcap = font->nvmtx;
 	font->vmtx = newmtx;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_hmtx

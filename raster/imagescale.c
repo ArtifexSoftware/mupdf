@@ -268,7 +268,7 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	}
 
 	fz_free(buf);
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -353,6 +353,6 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 
 	fz_free(buf);
 	*dstp = dst;
-	return nil;
+	return fz_okay;
 }
 

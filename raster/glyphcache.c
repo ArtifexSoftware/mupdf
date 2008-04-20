@@ -91,7 +91,7 @@ fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
 	arena->load = 0;
 	arena->used = 0;
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_free(arena->hash);
@@ -344,7 +344,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 		ghits++;
 
-		return nil;
+		return fz_okay;
 	}
 
 	gmisses++;
@@ -359,7 +359,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	size = glyph->w * glyph->h;
 
 	if (size > arena->size / 6)
-		return nil;
+		return fz_okay;
 
 	while (arena->load > arena->slots * 75 / 100)
 	{
@@ -388,6 +388,6 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 	hashinsert(arena, &key, val);
 
-	return nil;
+	return fz_okay;
 }
 

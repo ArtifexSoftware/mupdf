@@ -269,7 +269,7 @@ fz_readerror(fz_stream *stm)
 	if (stm->error)
 	{
 		error = stm->error;
-		stm->error = nil;
+		stm->error = fz_okay;
 		return fz_rethrow(error, "delayed read error");
 	}
 	return fz_okay;

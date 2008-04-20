@@ -276,7 +276,7 @@ pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *root)
 	pdf_logxref("}\n");
 
 	fz_free(map);
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_free(map);

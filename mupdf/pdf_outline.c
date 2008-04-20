@@ -59,7 +59,7 @@ loadoutline(pdf_outline **nodep, pdf_xref *xref, fz_obj *dict)
 	}
 
 	*nodep = node;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -100,7 +100,7 @@ pdf_loadoutline(pdf_outline **nodep, pdf_xref *xref)
 	pdf_logpage("}\n");
 
 	*nodep = node;
-	return nil;
+	return fz_okay;
 }
 
 void

@@ -4,7 +4,7 @@
 static fz_error *
 loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
 {
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -21,7 +21,7 @@ pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
 	link->next = nil;
 
 	*linkp = link;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -141,7 +141,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		*linkp = link;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -204,6 +204,6 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 
 	*cp = comment;
 	*lp = link;
-	return nil;
+	return fz_okay;
 }
 

@@ -60,7 +60,7 @@ t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
 	glyph->h = pixmap->h;
 	glyph->samples = pixmap->samples;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -310,7 +310,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_logfont("}\n");
 
 	*fontp = font;
-	return nil;
+	return fz_okay;
 
 cleanup2:
 	if (resources)

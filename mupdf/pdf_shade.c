@@ -33,7 +33,7 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 		pdf_dropfunction(func);
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -149,7 +149,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	pdf_logshade("}\n");
 
 	*shadep = shade;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	fz_dropshade(shade);
@@ -165,7 +165,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	fz_obj *shd;
 
 	if ((*shadep = pdf_finditem(xref->store, PDF_KSHADE, ref)))
-		return nil;
+		return fz_okay;
 
 	/*
 	 * Type 2 pattern dictionary
@@ -225,6 +225,6 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		return error;
 	}
 
-	return nil;
+	return fz_okay;
 }
 

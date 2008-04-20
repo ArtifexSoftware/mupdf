@@ -166,7 +166,7 @@ pdf_decryptxref(pdf_xref *xref)
 		if (fz_isnull(encrypt))
 		{
 			fz_dropobj(encrypt);
-			return nil;
+			return fz_okay;
 		}
 
 		error = pdf_resolve(&id, xref);
@@ -238,7 +238,7 @@ pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
 				xref->table[prev].type = 'd';
 				xref->table[prev].ofs = next;
 
-				return nil;
+				return fz_okay;
 			}
 		}
 
@@ -383,7 +383,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	x = &xref->table[oid];
 
 	if (x->obj)
-		return nil;
+		return fz_okay;
 
 	if (x->type == 'f' || x->type == 'd')
 	{

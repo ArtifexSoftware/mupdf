@@ -108,7 +108,7 @@ static fz_error *parsenumber(fz_obj **obj, char **sp)
 
 static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *error = nil;
+	fz_error *error = fz_okay;
 	fz_obj *dict = nil;
 	fz_obj *key = nil;
 	fz_obj *val = nil;
@@ -349,7 +349,7 @@ static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 
 	skipwhite(&s);
 
-	error = nil;
+	error = fz_okay;
 
 	if (v != nil && *s == '%')
 	{
@@ -481,7 +481,7 @@ fz_packobj(fz_obj **op, char *fmt, ...)
 
 	if (error)
 		return fz_rethrow(error, "cannot parse object");
-	return nil;
+	return fz_okay;
 }
 
 fz_error *

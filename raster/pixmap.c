@@ -23,7 +23,7 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 		return fz_outofmem;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -43,7 +43,7 @@ fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old)
 	if (error)
 		return error;
 	memcpy((*pixp)->samples, old->samples, old->w * old->h * old->n);
-	return nil;
+	return fz_okay;
 }
 
 void

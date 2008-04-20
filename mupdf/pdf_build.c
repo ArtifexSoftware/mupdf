@@ -946,7 +946,7 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 				showspace(csi, - fz_toreal(item) * gstate->size / 1000.0);
 			}
 		}
-		return nil;
+		return fz_okay;
 	}
 
 	buf = (unsigned char *)fz_tostrbuf(text);

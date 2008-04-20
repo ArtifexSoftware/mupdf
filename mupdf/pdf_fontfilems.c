@@ -335,7 +335,7 @@ growfontlist(pdf_fontlistMS *fl)
 	fl->fontmap = newitems;
 	fl->cap = newcap;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -359,7 +359,7 @@ insertmapping(pdf_fontlistMS *fl, char *facename, char *path, int index)
 
 	++fl->len;
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -559,7 +559,7 @@ pdf_createfontlistMS()
 	fz_error *err;
 
 	if(fontlistMS.len != 0)
-		return nil;
+		return fz_okay;
 
 	GetWindowsDirectory(szFontDir, sizeof(szFontDir));
 
@@ -613,7 +613,7 @@ pdf_createfontlistMS()
 cleanup:
 	if(err)
 		fz_abort(err);
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -657,7 +657,7 @@ pdf_lookupfontMS(char *fontname, char **fontpath, int *index)
 		*index = fontlistMS.fontmap[0].index;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 static FT_Library ftlib = nil;
@@ -669,7 +669,7 @@ static fz_error *initfontlibs(void)
 	fz_error  *err;
 
 	if (ftlib)
-		return nil;
+		return fz_okay;
 
 	fterr = FT_Init_FreeType(&ftlib);
 	if (fterr)
@@ -683,7 +683,7 @@ static fz_error *initfontlibs(void)
 	if(err)
 		return err;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -712,7 +712,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 
 	font->ftface = face;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -741,7 +741,7 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 
 	font->ftface = face;
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	return error;
@@ -773,6 +773,6 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 	font->ftface = face;
 	font->fontdata = buf;
 
-	return nil;
+	return fz_okay;
 }
 

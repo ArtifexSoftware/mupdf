@@ -63,7 +63,7 @@ fprintf(stderr, "one '%c'\n", enc->buf[0]);
 	*out->wp++ = 0;
 	*out->wp++ = enc->buf[0];
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -78,7 +78,7 @@ fprintf(stderr, "same %d x '%c'\n", enc->run, enc->buf[0]);
 
 	*out->wp++ = 257 - enc->run;
 	*out->wp++ = enc->buf[0];
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -95,7 +95,7 @@ fprintf(stderr, "diff %d\n", enc->run);
 	*out->wp++ = enc->run - 1;
 	for (i = 0; i < enc->run; i++)
 		*out->wp++ = enc->buf[i];
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -109,7 +109,7 @@ fprintf(stderr, "eod\n");
 #endif
 
 	*out->wp++ = 128;
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -117,12 +117,12 @@ savebuf(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	switch (enc->state)
 	{
-		case ZERO: return nil;
+		case ZERO: return fz_okay;
 		case ONE: return putone(enc, in, out);
 		case SAME: return putsame(enc, in, out);
 		case DIFF: return putdiff(enc, in, out);
 		case END: return puteod(enc, in, out);
-		default: assert(!"invalid state in rle"); return nil;
+		default: assert(!"invalid state in rle"); return fz_okay;
 	}
 }
 

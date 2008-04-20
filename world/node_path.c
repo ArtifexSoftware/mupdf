@@ -22,7 +22,7 @@ fz_newpathnode(fz_pathnode **pathp)
 	path->cap = 0;
 	path->els = nil;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -52,7 +52,7 @@ fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath)
 	}
 	memcpy(path->els, oldpath->els, sizeof(fz_pathel) * path->len);
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -78,7 +78,7 @@ growpath(fz_pathnode *path, int n)
 		path->els = newels;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -89,7 +89,7 @@ fz_moveto(fz_pathnode *path, float x, float y)
 	path->els[path->len++].k = FZ_MOVETO;
 	path->els[path->len++].v = x;
 	path->els[path->len++].v = y;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -100,7 +100,7 @@ fz_lineto(fz_pathnode *path, float x, float y)
 	path->els[path->len++].k = FZ_LINETO;
 	path->els[path->len++].v = x;
 	path->els[path->len++].v = y;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -118,7 +118,7 @@ fz_curveto(fz_pathnode *path,
 	path->els[path->len++].v = y2;
 	path->els[path->len++].v = x3;
 	path->els[path->len++].v = y3;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -141,7 +141,7 @@ fz_closepath(fz_pathnode *path)
 	if (growpath(path, 1) != nil)
 		return fz_outofmem;
 	path->els[path->len++].k = FZ_CLOSEPATH;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -167,7 +167,7 @@ fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *das
 	if (path->linewidth < 0.01)
 		path->linewidth = 0.01;
 
-	return nil;
+	return fz_okay;
 }
 
 static inline fz_rect boundexpand(fz_rect r, fz_point p)
@@ -340,7 +340,7 @@ fz_newdash(fz_dash **dashp, float phase, int len, float *array)
 	for (i = 0; i < len; i++)
 		dash->array[i] = array[i];
 
-	return nil;
+	return fz_okay;
 }
 
 void

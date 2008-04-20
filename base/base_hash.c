@@ -197,7 +197,7 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 			memcpy(ents[pos].key, key, table->keylen);
 			ents[pos].val = val;
 			table->load ++;
-			return nil;
+			return fz_okay;
 		}
 
 		if (memcmp(key, &ents[pos].key, table->keylen) == 0)

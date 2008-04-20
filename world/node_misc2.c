@@ -16,7 +16,7 @@ fz_newovernode(fz_node **nodep)
 
 	fz_initnode(node, FZ_NOVER);
 
-	return nil;
+	return fz_okay;
 }
 
 fz_rect
@@ -58,7 +58,7 @@ fz_newmasknode(fz_node **nodep)
 
 	fz_initnode(node, FZ_NMASK);
 
-	return nil;
+	return fz_okay;
 }
 
 fz_rect
@@ -96,7 +96,7 @@ fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i
 	node->knockout = k;
 	node->isolated = i;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_rect
@@ -146,7 +146,7 @@ fz_newtransformnode(fz_node **nodep, fz_matrix m)
 	fz_initnode((fz_node*)node, FZ_NTRANSFORM);
 	node->m = m;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_rect
@@ -175,7 +175,7 @@ fz_newmetanode(fz_node **nodep, char *name, void *dict)
 	node->name = name;
 	node->dict = dict;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -210,7 +210,7 @@ fz_newlinknode(fz_node **nodep, fz_tree *subtree)
 	fz_initnode((fz_node*)node, FZ_NLINK);
 	node->tree = fz_keeptree(subtree);
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -247,7 +247,7 @@ fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v)
 	for (i = 0; i < n; i++)
 		node->samples[i] = v[i];
 
-	return nil;
+	return fz_okay;
 }
 
 fz_rect
@@ -279,7 +279,7 @@ fz_newimagenode(fz_node **nodep, fz_image *image)
 	fz_initnode((fz_node*)node, FZ_NIMAGE);
 	node->image = fz_keepimage(image);
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -316,7 +316,7 @@ fz_newshadenode(fz_node **nodep, fz_shade *shade)
 	fz_initnode((fz_node*)node, FZ_NSHADE);
 	node->shade = fz_keepshade(shade);
 
-	return nil;
+	return fz_okay;
 }
 
 void

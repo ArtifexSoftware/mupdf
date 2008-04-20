@@ -81,7 +81,7 @@ static fz_error *
 pdf_parseencdict(pdf_crypt *crypt, fz_obj *enc)
 {
 	fz_obj *obj;
-	fz_error *error = nil;
+	fz_error *error = fz_okay;
 
 	obj = fz_dictgets(enc, "Filter");
 	if (!fz_isname(obj))

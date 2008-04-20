@@ -69,7 +69,7 @@ loadnametreenode(fz_obj *tree, pdf_xref *xref, fz_obj *node)
 	}
 
 	fz_dropobj(node);
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -92,7 +92,7 @@ pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root)
 	fz_sortdict(tree);
 
 	*dictp = tree;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -110,7 +110,7 @@ pdf_loadnametrees(pdf_xref *xref)
 		if (error)
 			return fz_rethrow(error, "cannot resolve /Dests");
 		xref->dests = dests;
-		return nil;
+		return fz_okay;
 	}
 
 	/* PDF 1.2 */
@@ -133,6 +133,6 @@ pdf_loadnametrees(pdf_xref *xref)
 		fz_dropobj(names);
 	}
 
-	return nil;
+	return fz_okay;
 }
 

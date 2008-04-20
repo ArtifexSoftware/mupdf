@@ -129,6 +129,6 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 			return error;
 	}
 
-	return nil;
+	return fz_okay;
 }
 

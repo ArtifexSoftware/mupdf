@@ -19,7 +19,7 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 	text->els = nil;
 
 	*textp = text;
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -50,7 +50,7 @@ fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext)
 	memcpy(text->els, oldtext->els, sizeof(fz_textel) * text->len);
 
 	*textp = text;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -125,7 +125,7 @@ growtext(fz_textnode *text, int n)
 		text->els = newels;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -137,6 +137,6 @@ fz_addtext(fz_textnode *text, int cid, float x, float y)
 	text->els[text->len].x = x;
 	text->els[text->len].y = y;
 	text->len++;
-	return nil;
+	return fz_okay;
 }
 

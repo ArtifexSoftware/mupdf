@@ -83,7 +83,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	pdf_logrsrc("}\n");
 
 	*formp = form;
-	return nil;
+	return fz_okay;
 cleanup:
 	pdf_removeitem(xref->store, PDF_KXOBJECT, ref);
 	pdf_dropxobject(form);

@@ -189,7 +189,7 @@ pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 	void *val;
 
 	if (key == nil)
-		return nil;
+		return fz_okay;
 
 	val = nil;
 
@@ -238,6 +238,6 @@ pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 		}
 	}
 
-	return nil;
+	return fz_okay;
 }
 

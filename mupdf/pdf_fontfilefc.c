@@ -67,7 +67,7 @@ static fz_error *initfontlibs(void)
 	int maj, min, pat;
 
 	if (ftlib)
-		return nil;
+		return fz_okay;
 
 	fterr = FT_Init_FreeType(&ftlib);
 	if (fterr)
@@ -81,7 +81,7 @@ static fz_error *initfontlibs(void)
 	if (!fclib)
 		return fz_throw("fontconfig failed initialisation");
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -137,7 +137,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 
 	font->ftface = face;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -255,7 +255,7 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 
 	font->ftface = face;
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	FcPatternDestroy(searchpat);
@@ -290,6 +290,6 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 	font->ftface = face;
 	font->fontdata = buf;
 
-	return nil;
+	return fz_okay;
 }
 

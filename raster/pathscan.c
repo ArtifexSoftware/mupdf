@@ -37,7 +37,7 @@ fz_newgel(fz_gel **gelp)
 	gel->bbox.x0 = gel->bbox.y0 = INT_MAX;
 	gel->bbox.x1 = gel->bbox.y1 = INT_MIN;
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -125,17 +125,17 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	int y1 = fz_floor(fy1 * VSCALE);
 
 	d = cliplerpy(gel->clip.y0, 0, x0, y0, x1, y1, &v);
-	if (d == OUTSIDE) return nil;
+	if (d == OUTSIDE) return fz_okay;
 	if (d == LEAVE) { y1 = gel->clip.y0; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y0; x0 = v; }
 
 	d = cliplerpy(gel->clip.y1, 1, x0, y0, x1, y1, &v);
-	if (d == OUTSIDE) return nil;
+	if (d == OUTSIDE) return fz_okay;
 	if (d == LEAVE) { y1 = gel->clip.y1; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y1; x0 = v; }
 
 	if (y0 == y1)
-		return nil;
+		return fz_okay;
 
 	if (y0 > y1) {
 		winding = -1;
@@ -193,7 +193,7 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 		edge->adjup = width % dy;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -254,7 +254,7 @@ fz_newael(fz_ael **aelp)
 		return fz_outofmem;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -316,7 +316,7 @@ insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
 	/* shell-sort the edges by increasing x */
 	sortael(ael->edges, ael->len);
 
-	return nil;
+	return fz_okay;
 }
 
 static void
@@ -473,7 +473,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	assert(clip.x1 <= xmax);
 
 	if (gel->len == 0)
-		return nil;
+		return fz_okay;
 
 	deltas = fz_malloc(xmax - xmin + 1);
 	if (!deltas)
@@ -526,6 +526,6 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	}
 
 	fz_free(deltas);
-	return nil;
+	return fz_okay;
 }
 

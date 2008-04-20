@@ -116,7 +116,7 @@ static fz_error *initfontlibs(void)
 	int maj, min, pat;
 
 	if (ftlib)
-		return nil;
+		return fz_okay;
 
 	fterr = FT_Init_FreeType(&ftlib);
 	if (fterr)

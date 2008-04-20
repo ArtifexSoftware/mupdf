@@ -9,7 +9,7 @@ fz_error *
 pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
-	fz_error *error = nil;
+	fz_error *error = fz_okay;
 	pdf_cmap *cmap;
 	int cid;
 	int ucs;
@@ -56,14 +56,14 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 		}
 
 		pdf_dropcmap(cmap);
-		return nil;
+		return fz_okay;
 	}
 
 	else if (collection)
 	{
 		pdf_logfont("tounicode cid collection\n");
 
-		error = nil;
+		error = fz_okay;
 
 		if (!strcmp(collection, "Adobe-CNS1"))
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
@@ -107,11 +107,11 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 				font->cidtoucs[i] = '?';
 		}
 
-		return nil;
+		return fz_okay;
 	}
 
 	pdf_logfont("tounicode impossible");
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -129,7 +129,7 @@ pdf_newtextline(pdf_textline **linep)
 	line->cap = 0;
 	line->text = nil;
 	line->next = nil;
-	return nil;
+	return fz_okay;
 }
 
 void
@@ -161,7 +161,7 @@ addtextchar(pdf_textline *line, fz_irect bbox, int c)
 	line->text[line->len].c = c;
 	line->len ++;
 
-	return nil;
+	return fz_okay;
 }
 
 /* XXX global! not reentrant! */
@@ -275,7 +275,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 			return fz_rethrow(error, "cannot extract text from display node");
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -302,7 +302,7 @@ pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 	}
 
 	*outp = root;
-	return nil;
+	return fz_okay;
 }
 
 void

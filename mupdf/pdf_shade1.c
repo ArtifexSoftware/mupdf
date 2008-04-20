@@ -107,7 +107,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_logshade("}\n");
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -245,7 +245,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_logshade("}\n");
 
-	return nil;
+	return fz_okay;
 }
 
 static int
@@ -389,6 +389,6 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	pdf_logshade("}\n");
 
-	return nil;
+	return fz_okay;
 }
 

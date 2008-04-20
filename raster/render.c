@@ -57,7 +57,7 @@ fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 	gc->flag = 0;
 
 	*gcp = gc;
-	return nil;
+	return fz_okay;
 
 cleanup:
 	if (gc->model) fz_dropcolorspace(gc->model);
@@ -171,7 +171,7 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
 		}
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -218,7 +218,7 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	clip = fz_intersectirects(gc->clip, gbox);
 
 	if (fz_isemptyrect(clip))
-		return nil;
+		return fz_okay;
 
 DEBUG("path %s;\n", path->paint == FZ_STROKE ? "stroke" : "fill");
 
@@ -321,7 +321,7 @@ text->font->name, text->len,
 text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 
 	if (fz_isemptyrect(clip))
-		return nil;
+		return fz_okay;
 
 	if (!(gc->flag & FOVER))
 	{
@@ -354,7 +354,7 @@ text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 			drawglyph(gc, gc->over, &glyph, x, y);
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -405,7 +405,7 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 	clip = fz_intersectirects(gc->clip, bbox);
 
 	if (fz_isemptyrect(clip))
-		return nil;
+		return fz_okay;
 
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
@@ -543,7 +543,7 @@ DEBUG("  fover+rgb %d x %d\n", w, h);
 DEBUG("}\n");
 
 	fz_droppixmap(tile);
-	return nil;
+	return fz_okay;
 
 cleanup1:
 	fz_droppixmap(temp);
@@ -715,7 +715,7 @@ else DEBUG("over\n{\n");
 
 DEBUG("}\n");
 
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -772,7 +772,7 @@ rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 	clip = fz_intersectirects(bbox, clip);
 
 	if (fz_isemptyrect(clip))
-		return nil;
+		return fz_okay;
 
 DEBUG("mask [%d %d %d %d]\n{\n", clip.x0, clip.y0, clip.x1, clip.y1);
 
@@ -830,7 +830,7 @@ DEBUG("}\n");
 
 	if (shapepix) fz_droppixmap(shapepix);
 	if (colorpix) fz_droppixmap(colorpix);
-	return nil;
+	return fz_okay;
 
 cleanup:
 	if (shapepix) fz_droppixmap(shapepix);
@@ -846,7 +846,7 @@ static fz_error *
 rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 {
 	if (!node)
-		return nil;
+		return fz_okay;
 
 	gc->flag = FNONE;
 	if (gc->over)
@@ -875,10 +875,10 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 	case FZ_NMETA:
 		return rendernode(gc, node->first, ctm);
 	case FZ_NBLEND:
-		return nil;
+		return fz_okay;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -923,7 +923,7 @@ DEBUG("}\n");
 	*outp = gc->over;
 	gc->over = nil;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -957,6 +957,6 @@ fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm
 
 	gc->over = nil;
 
-	return nil;
+	return fz_okay;
 }
 

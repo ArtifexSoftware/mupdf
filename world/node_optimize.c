@@ -293,7 +293,7 @@ static fz_error *clean1x1(fz_node *node)
 			return fz_rethrow(error, "cannot perform clean1x1 optimization");
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -304,11 +304,11 @@ fz_error *
 fz_optimizetree(fz_tree *tree)
 {
 	if (getenv("DONTOPT"))
-		return nil;
+		return fz_okay;
 	cleanwhite(tree->root);
 	cleanovers(tree->root);
 	cleanmasks(tree->root);
 	clean1x1(tree->root);
-	return nil;
+	return fz_okay;
 }
 

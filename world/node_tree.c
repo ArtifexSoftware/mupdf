@@ -14,7 +14,7 @@ fz_newtree(fz_tree **treep)
 	tree->root = nil;
 	tree->head = nil;
 
-	return nil;
+	return fz_okay;
 }
 
 fz_tree *

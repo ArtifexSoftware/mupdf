@@ -167,7 +167,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	pdf_logimage("}\n");
 
 	*imgp = img;
-	return nil;
+	return fz_okay;
 }
 
 static void
@@ -216,7 +216,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if ((*imgp = pdf_finditem(xref->store, PDF_KIMAGE, ref)))
 	{
 		fz_keepimage((fz_image*)*imgp);
-		return nil;
+		return fz_okay;
 	}
 
 	img = fz_malloc(sizeof(pdf_image));
@@ -417,7 +417,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	}
 
 	*imgp = img;
-	return nil;
+	return fz_okay;
 }
 
 static void
@@ -538,6 +538,6 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		fz_decodetile(tile, !img->a, src->decode);
 	}
 
-	return nil;
+	return fz_okay;
 }
 

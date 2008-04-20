@@ -276,7 +276,7 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	fz_dropobj(dict);
 
 	*csp = (fz_colorspace*) cs;
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -351,7 +351,7 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	fz_dropobj(dict);
 
 	*csp = (fz_colorspace*) cs;
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *
@@ -414,7 +414,7 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	fz_dropobj(dict);
 
 	*csp = (fz_colorspace*) cs;
-	return nil;
+	return fz_okay;
 }
 
 #endif
@@ -442,9 +442,9 @@ loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
 
 	switch (n)
 	{
-	case 1: *csp = pdf_devicegray; return nil;
-	case 3: *csp = pdf_devicergb; return nil;
-	case 4: *csp = pdf_devicecmyk; return nil;
+	case 1: *csp = pdf_devicegray; return fz_okay;
+	case 3: *csp = pdf_devicergb; return fz_okay;
+	case 4: *csp = pdf_devicecmyk; return fz_okay;
 	}
 
 	return fz_throw("syntaxerror: ICCBased must have 1, 3 or 4 components");
@@ -544,7 +544,7 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	pdf_logrsrc("}\n");
 
 	*csp = (fz_colorspace*)cs;
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -654,7 +654,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	pdf_logrsrc("}\n");
 
 	*csp = (fz_colorspace*)cs;
-	return nil;
+	return fz_okay;
 }
 
 /*
@@ -682,7 +682,7 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			*csp = pdf_devicepattern;
 		else
 			return fz_throw("unknown colorspace: %s", fz_toname(obj));
-		return nil;
+		return fz_okay;
 	}
 
 	else if (fz_isarray(obj))
@@ -734,7 +734,7 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 				if (!obj)
 				{
 					*csp = pdf_devicepattern;
-					return nil;
+					return fz_okay;
 				}
 
 				error = pdf_resolve(&obj, xref);
@@ -750,7 +750,7 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			else
 				return fz_throw("syntaxerror: unknown colorspace %s", fz_toname(name));
 
-			return nil;
+			return fz_okay;
 		}
 	}
 

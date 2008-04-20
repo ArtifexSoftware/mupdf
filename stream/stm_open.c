@@ -18,7 +18,7 @@ newstm(int kind, int mode)
 	stm->kind = kind;
 	stm->mode = mode;
 	stm->dead = 0;
-	stm->error = nil;
+	stm->error = fz_okay;
 	stm->buffer = nil;
 
 	stm->chain = nil;

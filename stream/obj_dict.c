@@ -53,7 +53,7 @@ fz_newdict(fz_obj **op, int initialcap)
 		obj->u.d.items[i].v = nil;
 	}
 
-	return nil;
+	return fz_okay;
 }
 
 fz_error *
@@ -331,7 +331,7 @@ fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 	fz_dropobj(keyobj);
 	if (error)
 		return fz_rethrow(error, "cannot insert dict entry");
-	return nil;
+	return fz_okay;
 }
 
 fz_error *

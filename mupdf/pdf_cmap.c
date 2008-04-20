@@ -605,7 +605,7 @@ static fz_error *lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, in
 		*tok = tokenfromkeyword(buf);
 	if (error)
 		return fz_rethrow(error, "cannot parse cmap token");
-	return nil;
+	return fz_okay;
 }
 
 static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
@@ -1056,7 +1056,7 @@ cleanup:
 fz_error *
 pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 {
-	fz_error *error = nil;
+	fz_error *error = fz_okay;
 	fz_obj *stmobj = stmref;
 	fz_stream *file;
 	pdf_cmap *cmap = nil;
@@ -1067,7 +1067,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	if ((*cmapp = pdf_finditem(xref->store, PDF_KCMAP, stmref)))
 	{
 		pdf_keepcmap(*cmapp);
-		return nil;
+		return fz_okay;
 	}
 
 	pdf_logfont("load embedded cmap %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
@@ -1152,7 +1152,7 @@ cleanup:
 fz_error *
 pdf_loadsystemcmap(pdf_cmap **cmapp, char *name)
 {
-	fz_error *error = nil;
+	fz_error *error = fz_okay;
 	fz_stream *file;
 	char *cmapdir;
 	char *usecmapname;

@@ -33,7 +33,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	unsigned int t;
 	float x, y;
 
-	error = nil;
+	error = fz_okay;
 
 	ncomp = shade->cs->n;
 	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
@@ -158,7 +158,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	fz_dropbuffer(buf);
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	return error;
@@ -208,7 +208,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	float *x, *y, *c[FZ_MAXCOLORS];
 
-	error = nil;
+	error = fz_okay;
 
 	ncomp = shade->cs->n;
 	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
@@ -322,7 +322,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 		fz_free(c[i]);
 	}
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	return error;
@@ -477,7 +477,7 @@ growshademesh(fz_shade *shade, int amount)
 	shade->mesh = newmesh;
 	shade->meshcap = newcap;
 
-	return nil;
+	return fz_okay;
 }
 
 static inline int setvertex(float *mesh, fz_point pt, float *color, int ptr, int ncomp)
@@ -585,7 +585,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	pdf_tensorpatch patch;
 
-	error = nil;
+	error = fz_okay;
 
 	ncomp = shade->cs->n;
 	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
@@ -671,7 +671,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	shade->meshlen = j / n / 3;
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	return error;
@@ -701,7 +701,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	fz_point p[16];
 	pdf_tensorpatch patch;
 
-	error = nil;
+	error = fz_okay;
 
 	ncomp = shade->cs->n;
 	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
@@ -790,7 +790,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	shade->meshlen = j / n / 3;
 
-	return nil;
+	return fz_okay;
 
 cleanup:
 	return error;
