@@ -74,7 +74,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	if (error)
 	{
 		error = fz_rethrow(error, "cannot store pattern resource");
-		goto cleanup;
+		goto cleanupstore;
 	}
 
 	/*
@@ -157,6 +157,8 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 cleanupcsi:
 	pdf_dropcsi(csi);
 cleanup:
+	pdf_removeitem(xref->store, PDF_KPATTERN, stmref);
+cleanupstore:
 	pdf_droppattern(pat);
 	return error; /* already rethrown */
 }

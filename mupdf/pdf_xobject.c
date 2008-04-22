@@ -5,7 +5,6 @@ fz_error *
 pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error *error;
-	char *reason;
 	pdf_xobject *form;
 	fz_obj *obj;
 
@@ -59,14 +58,14 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		if (error)
 		{
 			fz_dropobj(obj);
-			reason = "cannot resolve xobject resources";
+			error = fz_rethrow(error, "cannot resolve xobject resources");
 			goto cleanup;
 		}
 		error = pdf_loadresources(&form->resources, xref, obj);
 		fz_dropobj(obj);
 		if (error)
 		{
-			reason = "cannot load xobject resources";
+			error = fz_rethrow(error, "cannot load xobject resources");
 			goto cleanup;
 		}
 	}
@@ -74,7 +73,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	error = pdf_loadstream(&form->contents, xref, fz_tonum(ref), fz_togen(ref));
 	if (error)
 	{
-		reason = "cannot load xobject content stream";
+		error = fz_rethrow(error, "cannot load xobject content stream");
 		goto cleanup;
 	}
 
@@ -87,7 +86,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 cleanup:
 	pdf_removeitem(xref->store, PDF_KXOBJECT, ref);
 	pdf_dropxobject(form);
-	return fz_rethrow(error, reason);
+	return error;
 }
 
 pdf_xobject *
