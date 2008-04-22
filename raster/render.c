@@ -184,8 +184,6 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
  * Path
  */
 
-enum { HS = 17, VS = 15, SF = 1 };
-
 static fz_error *
 renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 {
@@ -205,7 +203,7 @@ renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 	{
 		float lw = path->linewidth;
 		/* Check for hairline */
-		if (lw * expansion < 0.2) {
+		if (lw * expansion < 0.1) {
 			lw = 1.0f / expansion;
 		}
 		if (path->dash)

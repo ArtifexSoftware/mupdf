@@ -865,6 +865,11 @@ Lsetcolor:
 			if (xobj)
 			{
 				int istransparency = 0;
+
+				/* Inherit parent resources, in case this one was empty */
+				if (!xobj->resources)
+					xobj->resources = fz_keepobj(rdb);
+
 				clearstack(csi);
 				/* check if it is a Transparency group */
 				obj = fz_dictgets(dict, "Group");
@@ -874,8 +879,7 @@ Lsetcolor:
 					if (!strcmp(fz_toname(obj), "Transparency"))
 						istransparency = 1;
 				}
-				if (!xobj->resources)
-					xobj->resources = rdb;
+
 				error = runxobject(csi, xref, xobj, istransparency);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");

@@ -604,13 +604,12 @@ pdf_createfontlistMS()
 			}
 		}
 	}
+	// Let go of find handle
+	FindClose(hList);
 
 	removeredundancy(&fontlistMS);
 
-cleanup:
-	if(err)
-		fz_abort(err);
-	return nil;
+	return fz_okay;
 }
 
 void

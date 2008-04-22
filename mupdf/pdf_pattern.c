@@ -69,6 +69,14 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 			pat->matrix.c, pat->matrix.d,
 			pat->matrix.e, pat->matrix.f);
 
+	/* Store pattern now, to avoid possible recursion if objects refer back to this one */ 
+	error = pdf_storeitem(xref->store, PDF_KPATTERN, stmref, pat);
+	if (error)
+	{
+		error = fz_rethrow(error, "cannot store pattern resource");
+		goto cleanup;
+	}
+
 	/*
 	 * Resources
 	 */
@@ -142,13 +150,6 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 	}
 
 	pdf_logrsrc("}\n");
-
-	error = pdf_storeitem(xref->store, PDF_KPATTERN, stmref, pat);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot store pattern resource");
-		goto cleanup;
-	}
 
 	*patp = pat;
 	return fz_okay;

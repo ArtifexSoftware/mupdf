@@ -65,7 +65,7 @@ fz_stdconvpixmap(fz_colorspace *srcs, fz_pixmap *src, fz_colorspace *dsts, fz_pi
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 
-	printf("convert pixmap from %s to %s\n", srcs->name, dsts->name);
+	pdf_logimage("convert pixmap from %s to %s\n", srcs->name, dsts->name);
 
 	assert(src->w == dst->w && src->h == dst->h);
 	assert(src->n == srcs->n + 1);

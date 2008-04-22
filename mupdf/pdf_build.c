@@ -446,7 +446,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 			return fz_rethrow(error, "cannot create over node for background color");
 		}
 
-		error = fz_newsolidnode(&bgnd, 1.0, shade->cs, shade->cs->n, shade->background);
+		error = fz_newsolidnode(&bgnd, 1.0f, shade->cs, shade->cs->n, shade->background);
 		if (error)
 		{
 			fz_dropnode(over);
