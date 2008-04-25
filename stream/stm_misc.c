@@ -124,10 +124,10 @@ fz_readall(fz_buffer **bufp, fz_stream *stm)
 
 			real->refs = 1;
 			real->ownsdata = 1;
-			real->bp = buf;
-			real->rp = buf;
-			real->wp = buf + pos;
-			real->ep = buf + pos;
+			real->bp = newbuf;
+			real->rp = newbuf;
+			real->wp = newbuf + pos;
+			real->ep = newbuf + pos;
 			real->eof = 1;
 
 			*bufp = real;
