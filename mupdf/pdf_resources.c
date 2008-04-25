@@ -189,7 +189,31 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 }
 
 static fz_error *
-scanfonts(pdf_xref *xref, fz_obj *rdb)
+preloadmask(pdf_xref *xref, fz_obj *ref)
+{
+	fz_error *error;
+	fz_obj *obj = ref;
+	fz_obj *grp;
+	error = pdf_resolve(&obj, xref);
+	if (error)
+		return fz_rethrow(error, "cannot resolve mask dictionary %d", fz_tonum(ref));
+
+	if (fz_isdict(obj))
+	{
+		grp = fz_dictgets(obj, "G");
+		if (grp)
+		{
+		    error = preloadxobject(xref, grp);
+		    if (error)
+			return fz_rethrow(error, "cannot resolve mask xobject");
+		}
+	}
+
+	return fz_okay;
+}
+
+static fz_error *
+scanfontsandmasks(pdf_xref *xref, fz_obj *rdb)
 {
 	fz_error *error;
 	fz_obj *dict;
@@ -209,6 +233,16 @@ scanfonts(pdf_xref *xref, fz_obj *rdb)
 				error = preloadfont(xref, fz_arrayget(obj, 0));
 				if (error)
 					return fz_rethrow(error, "cannot preload font listed in ExtGState");
+			}
+
+			obj = fz_dictgetval(dict, i);
+			obj = fz_dictgets(obj, "SMask");
+			if (obj)
+			{
+				pdf_logrsrc("extgstate smask\n");
+				error = preloadmask(xref, obj);
+				if (error)
+					return fz_rethrow(error, "cannot preload mask listed in ExtGState");
 			}
 		}
 	}
@@ -402,7 +436,7 @@ pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 	 * Load Font objects
 	 */
 
-	error = scanfonts(xref, copy);
+	error = scanfontsandmasks(xref, copy);
 	if (error)
 	{
 		fz_dropobj(copy);
