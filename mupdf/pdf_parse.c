@@ -274,41 +274,43 @@ skip:
 		case PDF_TFALSE:	error = fz_newbool(&val, 0); break;
 		case PDF_TNULL:		error = fz_newnull(&val); break;
 		case PDF_TINT:
-					a = atoi(buf);
-					error = pdf_lex(&tok, file, buf, cap, &len);
-					if (error) goto cleanup;
-					if (tok == PDF_TCDICT || tok == PDF_TNAME ||
-							(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
-					{
-						error = fz_newint(&val, a);
-						if (error) goto cleanup;
-						error = fz_dictput(dict, key, val);
-						if (error) goto cleanup;
-						fz_dropobj(val);
-						fz_dropobj(key);
-						key = val = nil;
-						goto skip;
-					}
-					if (tok == PDF_TINT)
-					{
-						b = atoi(buf);
-						error = pdf_lex(&tok, file, buf, cap, &len);
-						if (error) goto cleanup;
-						if (tok == PDF_TR)
-						{
-							error = fz_newindirect(&val, a, b);
-							break;
-						}
-					}
-					goto cleanup;
+			a = atoi(buf);
+			error = pdf_lex(&tok, file, buf, cap, &len);
+			if (error) goto cleanup;
+			if (tok == PDF_TCDICT || tok == PDF_TNAME ||
+					(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
+			{
+				error = fz_newint(&val, a);
+				if (error) goto cleanup;
+				error = fz_dictput(dict, key, val);
+				if (error) goto cleanup;
+				fz_dropobj(val);
+				fz_dropobj(key);
+				key = val = nil;
+				goto skip;
+			}
+			if (tok == PDF_TINT)
+			{
+				b = atoi(buf);
+				error = pdf_lex(&tok, file, buf, cap, &len);
+				if (error) goto cleanup;
+				if (tok == PDF_TR)
+				{
+					error = fz_newindirect(&val, a, b);
+					break;
+				}
+			}
+			goto cleanup;
 		default:
-					goto cleanup;
+			goto cleanup;
 		}
 
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 
 		error = fz_dictput(dict, key, val);
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 
 		fz_dropobj(val);
 		fz_dropobj(key);
