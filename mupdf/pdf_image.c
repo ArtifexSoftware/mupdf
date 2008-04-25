@@ -394,6 +394,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		buf->wp = buf->bp + expectedsize;
 		fz_dropbuffer(img->samples);
 		img->samples = buf;
+		fz_warn("truncated image; proceeding anyway");
 	}
 
 	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
