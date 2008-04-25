@@ -51,6 +51,14 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			form->matrix.c, form->matrix.d,
 			form->matrix.e, form->matrix.f);
 
+	obj = fz_dictgets(dict, "I");
+	form->isolated = fz_tobool(obj);
+	obj = fz_dictgets(dict, "K");
+	form->knockout = fz_tobool(obj);
+
+	pdf_logrsrc("isolated %d\n", form->isolated);
+	pdf_logrsrc("knockout %d\n", form->knockout);
+
 	obj = fz_dictgets(dict, "Resources");
 	if (obj)
 	{

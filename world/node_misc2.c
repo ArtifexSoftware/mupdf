@@ -81,7 +81,7 @@ fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
  */
 
 fz_error *
-fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i)
+fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i)
 {
 	fz_blendnode *node;
 
@@ -91,7 +91,6 @@ fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NBLEND);
-	node->cs = fz_keepcolorspace(cs);
 	node->mode = b;
 	node->knockout = k;
 	node->isolated = i;

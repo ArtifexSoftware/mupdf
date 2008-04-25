@@ -109,6 +109,8 @@ struct pdf_xobject_s
 	int refs;
 	fz_matrix matrix;
 	fz_rect bbox;
+	int isolated;
+	int knockout;
 	fz_obj *resources;
 	fz_buffer *contents;
 };

@@ -160,16 +160,19 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 {
 	fz_error *error;
 	fz_node *transform;
+	fz_node *blend;
 	fz_stream *file;
+	pdf_gstate *gstate;
 
 	/* gsave */
 	error = gsave(csi);
 	if (error)
 		return fz_rethrow(error, "cannot push graphics state");
 
+	gstate = csi->gstate + csi->gtop;
+
 	/* reset alpha to 1.0 when starting a new Transparency group */
 	if (istransparency) {
-	    pdf_gstate *gstate = csi->gstate + csi->gtop;
 	    gstate->stroke.alpha = 1.0;
 	    gstate->fill.alpha = 1.0;
 	}
@@ -180,11 +183,20 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 	if (error)
 		return fz_rethrow(error, "cannot create transform node");
 
-	error = pdf_addtransform(csi->gstate + csi->gtop, transform);
+	error = pdf_addtransform(gstate, transform);
 	if (error)
 	{
 		fz_dropnode(transform);
 		return fz_rethrow(error, "cannot add transform node");
+	}
+
+	if (xobj->isolated || xobj->knockout)
+	{
+	    error = fz_newblendnode(&blend, FZ_BNORMAL, xobj->isolated, xobj->knockout);
+	    if (error)
+		return fz_rethrow(error, "cannot create blend node");
+	    fz_insertnodelast(gstate->head, blend);
+	    gstate->head = blend;
 	}
 
 	/* run contents */

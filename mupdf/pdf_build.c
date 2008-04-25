@@ -28,6 +28,8 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->fill.shade = nil;
 	gs->fill.alpha = 1.0;
 
+	gs->blendmode = FZ_BNORMAL;
+
 	gs->charspace = 0;
 	gs->wordspace = 0;
 	gs->scale = 1;
@@ -38,6 +40,15 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->rise = 0;
 
 	gs->head = nil;
+}
+
+fz_error *
+pdf_newovernode(fz_node **nodep, pdf_gstate *gs)
+{
+    if (gs->blendmode == FZ_BNORMAL)
+	return fz_newovernode(nodep);
+    else
+	return fz_newblendnode(nodep, gs->blendmode, 0, 0);
 }
 
 fz_error *
@@ -325,7 +336,7 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 		return fz_rethrow(error, "cannot create transform node");
 	}
 
-	error = fz_newovernode(&over);
+	error = pdf_newovernode(&over, gs);
 	if (error)
 	{
 		fz_dropnode(xform);
@@ -437,7 +448,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 
 	if (shade->usebackground)
 	{
-		error = fz_newovernode(&over);
+		error = pdf_newovernode(&over, gs);
 		if (error)
 		{
 			fz_dropnode(color);
@@ -561,7 +572,7 @@ pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 	if (error)
 		return fz_rethrow(error, "cannot create mask node");
 
-	error = fz_newovernode(&over);
+	error = pdf_newovernode(&over, gs);
 	if (error)
 	{
 		fz_dropnode(mask);
@@ -582,7 +593,7 @@ pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 	fz_error *error;
 	fz_node *over;
 
-	error = fz_newovernode(&over);
+	error = pdf_newovernode(&over, gs);
 	if (error)
 		return fz_rethrow(error, "cannot create over node");
 
@@ -822,7 +833,7 @@ pdf_flushtext(pdf_csi *csi)
 		case 7: /* invisible clip ( + fallthrough clips ) */
 			if (!csi->textclip)
 			{
-				error = fz_newovernode(&csi->textclip);
+				error = pdf_newovernode(&csi->textclip, gstate);
 				if (error)
 					return fz_rethrow(error, "cannot create over node");
 			}
