@@ -321,6 +321,8 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 
 		else if (!strcmp(s, "BM"))
 		{
+			fz_error *error;
+			fz_node *blend;
 			static const struct { const char *name; fz_blendkind mode; } bm[] = {
 				{ "Normal", FZ_BNORMAL },
 				{ "Multiply", FZ_BMULTIPLY },
@@ -348,6 +350,16 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 					break;
 				}
 			}
+
+			puts("we encountered a blend mode");
+			if (gstate->blendmode == FZ_BNORMAL)
+			    error = fz_newovernode(&blend);
+			else
+			    error = fz_newblendnode(&blend, gstate->blendmode, 0, 0);
+			if (error)
+				return fz_rethrow(error, "cannot create blend node");
+			fz_insertnodelast(gstate->head, blend);
+			gstate->head = blend;
 		}
 
 		else if (!strcmp(s, "SMask"))
@@ -364,6 +376,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 				return error;
 			    /* TODO: we should do something here, like inserting a mask node */
 			    /* TODO: how to deal with the non-recursive nature of pdf soft masks? */
+			    puts("we encountered a soft mask");
 			}
 			fz_dropobj(val);
 		}
