@@ -9,20 +9,6 @@ static void indent(int level)
 
 static void xmlnode(fz_node *node, int level);
 
-static void xmlmeta(fz_metanode *node, int level)
-{
-	fz_node *child;
-
-	indent(level);
-	printf("<meta name=\"%s\">\n", node->name);
-
-	for (child = node->super.first; child; child = child->next)
-		xmlnode(child, level + 1);
-
-	indent(level);
-	printf("</meta>\n");
-}
-
 static void xmlover(fz_overnode *node, int level)
 {
 	fz_node *child;
@@ -170,7 +156,6 @@ static void xmlnode(fz_node *node, int level)
 
 	switch (node->kind)
 	{
-	case FZ_NMETA: xmlmeta((fz_metanode*)node, level); break;
 	case FZ_NOVER: xmlover((fz_overnode*)node, level); break;
 	case FZ_NMASK: xmlmask((fz_masknode*)node, level); break;
 	case FZ_NBLEND: xmlblend((fz_blendnode*)node, level); break;

@@ -1,7 +1,6 @@
 #include "fitz-base.h"
 #include "fitz-world.h"
 
-void fz_dropmetanode(fz_metanode* node);
 void fz_droplinknode(fz_linknode* node);
 void fz_droppathnode(fz_pathnode* node);
 void fz_droptextnode(fz_textnode* node);
@@ -18,7 +17,6 @@ fz_rect fz_boundtextnode(fz_textnode* node, fz_matrix ctm);
 fz_rect fz_boundimagenode(fz_imagenode* node, fz_matrix ctm);
 fz_rect fz_boundshadenode(fz_shadenode* node, fz_matrix ctm);
 fz_rect fz_boundlinknode(fz_linknode* node, fz_matrix ctm);
-fz_rect fz_boundmetanode(fz_metanode* node, fz_matrix ctm);
 
 void
 fz_initnode(fz_node *node, fz_nodekind kind)
@@ -61,9 +59,6 @@ fz_dropnode(fz_node *node)
 	case FZ_NLINK:
 		fz_droplinknode((fz_linknode *) node);
 		break;
-	case FZ_NMETA:
-		fz_dropmetanode((fz_metanode *) node);
-		break;
 	}
 
 	fz_free(node);
@@ -94,8 +89,6 @@ fz_boundnode(fz_node *node, fz_matrix ctm)
 		return fz_boundshadenode((fz_shadenode *) node, ctm);
 	case FZ_NLINK:
 		return fz_boundlinknode((fz_linknode *) node, ctm);
-	case FZ_NMETA:
-		return fz_boundmetanode((fz_metanode *) node, ctm);
 	}
 	return fz_emptyrect;
 }
@@ -158,11 +151,5 @@ int
 fz_islinknode(fz_node *node)
 {
 	return node ? node->kind == FZ_NLINK : 0;
-}
-
-int
-fz_ismetanode(fz_node *node)
-{
-	return node ? node->kind == FZ_NMETA : 0;
 }
 

@@ -40,7 +40,6 @@ typedef struct fz_solidnode_s fz_solidnode;
 typedef struct fz_imagenode_s fz_imagenode;
 typedef struct fz_shadenode_s fz_shadenode;
 typedef struct fz_linknode_s fz_linknode;
-typedef struct fz_metanode_s fz_metanode;
 
 typedef enum fz_nodekind_e
 {
@@ -54,7 +53,6 @@ typedef enum fz_nodekind_e
 	FZ_NIMAGE,
 	FZ_NSHADE,
 	FZ_NLINK,
-	FZ_NMETA
 } fz_nodekind;
 
 typedef enum fz_blendkind_e
@@ -132,13 +130,6 @@ struct fz_linknode_s
 	fz_tree *tree;
 };
 
-struct fz_metanode_s
-{
-	fz_node super;
-	char *name;
-	void *dict;
-};
-
 struct fz_imagenode_s
 {
 	fz_node super;
@@ -157,7 +148,6 @@ fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
 void fz_dropnode(fz_node *node);
 
 /* branch nodes */
-fz_error *fz_newmetanode(fz_node **nodep, char *name, void *dict);
 fz_error *fz_newovernode(fz_node **nodep);
 fz_error *fz_newmasknode(fz_node **nodep);
 fz_error *fz_newblendnode(fz_node **nodep, fz_colorspace *cs, fz_blendkind b, int k, int i);
@@ -167,7 +157,6 @@ int fz_istransformnode(fz_node *node);
 int fz_isovernode(fz_node *node);
 int fz_ismasknode(fz_node *node);
 int fz_isblendnode(fz_node *node);
-int fz_ismetanode(fz_node *node);
 
 /* leaf nodes */
 fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);

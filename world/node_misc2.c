@@ -158,42 +158,6 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
 }
 
 /*
- * Meta info
- */
-
-fz_error *
-fz_newmetanode(fz_node **nodep, char *name, void *dict)
-{
-	fz_metanode *node;
-
-	node = fz_malloc(sizeof (fz_metanode));
-	if (!node)
-		return fz_outofmem;
-	*nodep = (fz_node*)node;
-
-	fz_initnode((fz_node*)node, FZ_NMETA);
-	node->name = name;
-	node->dict = dict;
-
-	return fz_okay;
-}
-
-void
-fz_dropmetanode(fz_metanode *node)
-{
-	if (node->dict)
-		fz_warn("leaking meta node '%s'", node->name);
-}
-
-fz_rect
-fz_boundmetanode(fz_metanode *node, fz_matrix ctm)
-{
-	if (!node->super.first)
-		return fz_emptyrect;
-	return fz_boundnode(node->super.first, ctm);
-}
-
-/*
  * Link to tree
  */
 
