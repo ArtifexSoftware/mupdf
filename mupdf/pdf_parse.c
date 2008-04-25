@@ -116,10 +116,9 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 	pdf_token_e tok;
 	int len;
 
-	error = fz_newarray(op, 4);
+	error = fz_newarray(&ary, 4);
 	if (error)
 		return fz_rethrow(error, "cannot create array");
-	ary = *op;
 
 	while (1)
 	{
@@ -171,6 +170,7 @@ pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 		switch (tok)
 		{
 		case PDF_TCARRAY:
+			*op = ary;
 			return fz_okay;
 		case PDF_TINT:
 			if (n == 0)
@@ -228,10 +228,9 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 	int len;
 	int a, b;
 
-	error = fz_newdict(op, 8);
+	error = fz_newdict(&dict, 8);
 	if (error)
 		return fz_rethrow(error, "cannot create dict");
-	dict = *op;
 
 	while (1)
 	{
@@ -241,11 +240,17 @@ pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 
 skip:
 		if (tok == PDF_TCDICT)
+		{
+			*op = dict;
 			return fz_okay;
+		}
 
 		/* for BI .. ID .. EI in content streams */
 		if (tok == PDF_TKEYWORD && !strcmp(buf, "ID"))
+		{
+			*op = dict;
 			return fz_okay;
+		}
 
 		if (tok != PDF_TNAME)
 			goto cleanup;
