@@ -37,19 +37,19 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 	s = fz_toname(f);
 
 	if (!strcmp(s, "ASCIIHexDecode") || !strcmp(s, "AHx"))
-		error =  fz_newahxd(fp, p);
+		error = fz_newahxd(fp, p);
 
 	else if (!strcmp(s, "ASCII85Decode") || !strcmp(s, "A85"))
-		error =  fz_newa85d(fp, p);
+		error = fz_newa85d(fp, p);
 
 	else if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF"))
-		error =  fz_newfaxd(fp, p);
+		error = fz_newfaxd(fp, p);
 
 	else if (!strcmp(s, "DCTDecode") || !strcmp(s, "DCT"))
-		error =  fz_newdctd(fp, p);
+		error = fz_newdctd(fp, p);
 
 	else if (!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL"))
-		error =  fz_newrld(fp, p);
+		error = fz_newrld(fp, p);
 
 	else if (!strcmp(s, "FlateDecode") || !strcmp(s, "Fl"))
 	{
