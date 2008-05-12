@@ -14,8 +14,7 @@ struct fz_flate_s
 static void *
 zmalloc(void *opaque, unsigned int items, unsigned int size)
 {
-	fz_memorycontext *mctx = (fz_memorycontext*)opaque;
-	return mctx->malloc(mctx, items * size);
+	return fz_malloc(items * size);
 }
 
 fz_error *
