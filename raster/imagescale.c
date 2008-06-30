@@ -23,7 +23,7 @@ static inline void srown(byte * restrict src, byte * restrict dst, int w, int de
 			left = 0;
 			for (k = 0; k < n; k++)
 			{
-				dst[k] = (sum[k] * invdenom) >> 16;
+				dst[k] = (sum[k] * invdenom + (1<<15)) >> 16;
 				sum[k] = 0;
 			}
 			dst += n;
@@ -68,22 +68,22 @@ static inline void srowc(byte * restrict src, byte * restrict dst, int w, int de
 		{
 			left = 0;
 
-			dst[0] = (sum1 * invdenom) >> 16;
+			dst[0] = (sum1 * invdenom + (1<<15)) >> 16;
 			sum1 = 0;
 			if (n >= 2) {
-				dst[1] = (sum2 * invdenom) >> 16;
+				dst[1] = (sum2 * invdenom + (1<<15)) >> 16;
 				sum2 = 0;
 			}
 			if (n >= 3) {
-				dst[2] = (sum3 * invdenom) >> 16;
+				dst[2] = (sum3 * invdenom + (1<<15)) >> 16;
 				sum3 = 0;
 			}
 			if (n >= 4) {
-				dst[3] = (sum4 * invdenom) >> 16;
+				dst[3] = (sum4 * invdenom + (1<<15)) >> 16;
 				sum4 = 0;
 			}
 			if (n >= 5) {
-				dst[4] = (sum5 * invdenom) >> 16;
+				dst[4] = (sum5 * invdenom + (1<<15)) >> 16;
 				sum5 = 0;
 			}
 
@@ -142,7 +142,7 @@ static inline void scoln(byte * restrict src, byte * restrict dst, int w, int de
 			for (k = 0; k < n; k++)
 				sum[k] += s[y * w * n + k];
 		for (k = 0; k < n; k++)
-			dst[k] = (sum[k] * invdenom) >> 16;
+			dst[k] = (sum[k] * invdenom + (1<<15)) >> 16;
 		dst += n;
 	}
 }
