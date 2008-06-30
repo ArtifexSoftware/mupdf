@@ -453,23 +453,23 @@ DEBUG("image %dx%d %d+%d %s\n{\n", image->w, image->h, image->n, image->a, image
 
 
 DEBUG("  load image\n");
-	error = fz_newpixmap(&tile, 0, 0, image->w, image->h, image->n + 1);
-	if (error)
-		return error;
+		error = fz_newpixmap(&tile, 0, 0, image->w, image->h, image->n + 1);
+		if (error)
+			return error;
 
-	error = image->loadtile(image, tile);
-	if (error)
-		goto cleanup;
-
-	if (dx != 1 || dy != 1)
-	{
-DEBUG("  scale image 1/%d 1/%d\n", dx, dy);
-		error = fz_scalepixmap(&temp, tile, dx, dy);
+		error = image->loadtile(image, tile);
 		if (error)
 			goto cleanup;
-		fz_droppixmap(tile);
-		tile = temp;
-	}
+
+		if (dx != 1 || dy != 1)
+		{
+DEBUG("  scale image 1/%d 1/%d\n", dx, dy);
+			error = fz_scalepixmap(&temp, tile, dx, dy);
+			if (error)
+				goto cleanup;
+			fz_droppixmap(tile);
+			tile = temp;
+		}
 	}
 
 	if (image->cs && image->cs != gc->model)
