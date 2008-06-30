@@ -195,7 +195,7 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	unsigned char *dstsamples;
 	int y, iy, oy;
 	int ow, oh, n;
-	int ydenom2 = ydenom;
+	int remaining;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -231,17 +231,17 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom2);
+			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom);
 		}
 
-		ydenom = src->h - y;
-		if (ydenom)
+		remaining = src->h - y;
+		if (remaining)
 		{
-			for (iy = 0; iy < ydenom; iy++)
+			for (iy = 0; iy < remaining; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom2);
+			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom);
 		}
 	}
 
@@ -253,17 +253,17 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom2, n);
+			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom, n);
 		}
 
-		ydenom = src->h - y;
-		if (ydenom)
+		remaining = src->h - y;
+		if (remaining)
 		{
-			for (iy = 0; iy < ydenom; iy++)
+			for (iy = 0; iy < remaining; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom2, n);
+			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom, n);
 		}
 	}
 
@@ -279,7 +279,7 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	unsigned char *buf;
 	int y, iy, oy;
 	int ow, oh, n;
-	int ydenom2 = ydenom;
+	int remaining;
 
 	void (*srowx)(byte *src, byte *dst, int w, int denom) = nil;
 	void (*scolx)(byte *src, byte *dst, int w, int denom) = nil;
@@ -315,17 +315,17 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2);
+			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom);
 		}
 
-		ydenom = src->h - y;
-		if (ydenom)
+		remaining = src->h - y;
+		if (remaining)
 		{
-			for (iy = 0; iy < ydenom; iy++)
+			for (iy = 0; iy < remaining; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom);
-			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2);
+			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom);
 		}
 	}
 
@@ -337,17 +337,17 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2, n);
+			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom, n);
 		}
 
-		ydenom = src->h - y;
-		if (ydenom)
+		remaining = src->h - y;
+		if (remaining)
 		{
-			for (iy = 0; iy < ydenom; iy++)
+			for (iy = 0; iy < remaining; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
 						 buf + iy * ow * n,
 						 src->w, xdenom, n);
-			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom2, n);
+			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom, n);
 		}
 	}
 
