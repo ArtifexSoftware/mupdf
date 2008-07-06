@@ -94,10 +94,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				int r = 255 - MIN(cc + kk, 255);
 				int g = 255 - MIN(mm + kk, 255);
 				int b = 255 - MIN(yy + kk, 255);
-				putc(a, pgm);
-				putc(r, ppm);
-				putc(g, ppm);
-				putc(b, ppm);
+				fputc(a, pgm);
+				fputc(r, ppm);
+				fputc(g, ppm);
+				fputc(b, ppm);
 			}
 		fclose(ppm);
 		fclose(pgm);
@@ -118,10 +118,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				int r = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
 				int g = pix->samples[x * pix->n + y * pix->w * pix->n + 2];
 				int b = pix->samples[x * pix->n + y * pix->w * pix->n + 3];
-				putc(a, pgm);
-				putc(r, ppm);
-				putc(g, ppm);
-				putc(b, ppm);
+				fputc(a, pgm);
+				fputc(r, ppm);
+				fputc(g, ppm);
+				fputc(b, ppm);
 			}
 		fclose(ppm);
 		fclose(pgm);
@@ -136,16 +136,24 @@ fz_debugpixmap(fz_pixmap *pix)
 		for (y = 0; y < pix->h; y++)
 			for (x = 0; x < pix->w; x++)
 			{
-				putc(pix->samples[y * pix->w * 2 + x * 2 + 1], pgm);
+				int g = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
+				fputc(g, pgm);
 			}
 		fclose(pgm);
 	}
 
 	else if (pix->n == 1)
 	{
+		int x, y;
 		FILE *pgm = fopen("out.pgm", "w");
 		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
-		fwrite(pix->samples, 1, pix->w * pix->h, pgm);
+
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				int g = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
+				fputc(g, pgm);
+			}
 		fclose(pgm);
 	}
 }
