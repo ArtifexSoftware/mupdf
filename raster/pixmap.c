@@ -75,7 +75,35 @@ fz_gammapixmap(fz_pixmap *pix, float gamma)
 void
 fz_debugpixmap(fz_pixmap *pix)
 {
-	if (pix->n == 4)
+	if (pix->n == 5)
+	{
+		int x, y;
+		FILE *ppm = fopen("out.ppm", "wb");
+		FILE *pgm = fopen("out.pgm", "wb");
+		fprintf(ppm, "P6\n%d %d\n255\n", pix->w, pix->h);
+		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
+
+		for (y = 0; y < pix->h; y++)
+			for (x = 0; x < pix->w; x++)
+			{
+				int a = pix->samples[x * pix->n + y * pix->w * pix->n + 0];
+				int cc = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
+				int mm = pix->samples[x * pix->n + y * pix->w * pix->n + 2];
+				int yy = pix->samples[x * pix->n + y * pix->w * pix->n + 3];
+				int kk = pix->samples[x * pix->n + y * pix->w * pix->n + 4];
+				int r = 255 - MIN(cc + kk, 255);
+				int g = 255 - MIN(mm + kk, 255);
+				int b = 255 - MIN(yy + kk, 255);
+				putc(a, pgm);
+				putc(r, ppm);
+				putc(g, ppm);
+				putc(b, ppm);
+			}
+		fclose(ppm);
+		fclose(pgm);
+	}
+
+	else if (pix->n == 4)
 	{
 		int x, y;
 		FILE *ppm = fopen("out.ppm", "wb");
