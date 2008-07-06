@@ -73,7 +73,7 @@ fz_gammapixmap(fz_pixmap *pix, float gamma)
 }
 
 void
-fz_debugpixmap(fz_pixmap *pix)
+fz_debugpixmap(fz_pixmap *pix, char *prefix)
 {
 	int hasalpha = pix->n > 1;
 	FILE *image = NULL;
@@ -88,11 +88,11 @@ fz_debugpixmap(fz_pixmap *pix)
 		char alphaname[40];
 
 		if (pix->n == 1 || pix->n == 2)
-			sprintf(imagename, "%04d-image.pgm", i);
+			sprintf(imagename, "%s-%04d-image.pgm", prefix, i);
 		else
-			sprintf(imagename, "%04d-image.ppm", i);
+			sprintf(imagename, "%s-%04d-image.ppm", prefix, i);
 		if (hasalpha)
-			sprintf(alphaname, "%04d-alpha.pgm", i);
+			sprintf(alphaname, "%s-%04d-alpha.pgm", prefix, i);
 
 		if (access(imagename, F_OK) == 0 ||
 				(hasalpha && access(alphaname, F_OK) == 0))
