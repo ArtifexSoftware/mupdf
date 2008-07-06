@@ -75,11 +75,39 @@ fz_gammapixmap(fz_pixmap *pix, float gamma)
 void
 fz_debugpixmap(fz_pixmap *pix)
 {
+	int hasalpha = pix->n > 1;
+	FILE *image = NULL;
+	FILE *alpha = NULL;
+	int i = 0;
+	int x;
+	int y;
+
+	do
+	{
+		char imagename[40];
+		char alphaname[40];
+
+		if (pix->n == 1 || pix->n == 2)
+			sprintf(imagename, "%04d-image.pgm", i);
+		else
+			sprintf(imagename, "%04d-image.ppm", i);
+		if (hasalpha)
+			sprintf(alphaname, "%04d-alpha.pgm", i);
+
+		if (access(imagename, F_OK) == 0 ||
+				(hasalpha && access(alphaname, F_OK) == 0))
+		{
+			i++;
+			continue;
+		}
+
+		image = fopen(imagename, "wb");
+		if (hasalpha)
+			alpha = fopen(alphaname, "wb");
+	} while (image == NULL || (hasalpha && alpha == NULL));
+
 	if (pix->n == 5)
 	{
-		int x, y;
-		FILE *image = fopen("out.ppm", "wb");
-		FILE *alpha = fopen("out.pgm", "wb");
 		fprintf(image, "P6\n%d %d\n255\n", pix->w, pix->h);
 		fprintf(alpha, "P5\n%d %d\n255\n", pix->w, pix->h);
 
@@ -99,15 +127,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				fputc(g, image);
 				fputc(b, image);
 			}
-		fclose(image);
-		fclose(alpha);
 	}
 
 	else if (pix->n == 4)
 	{
-		int x, y;
-		FILE *image = fopen("out.ppm", "wb");
-		FILE *alpha = fopen("out.pgm", "wb");
 		fprintf(image, "P6\n%d %d\n255\n", pix->w, pix->h);
 		fprintf(alpha, "P5\n%d %d\n255\n", pix->w, pix->h);
 
@@ -123,15 +146,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				fputc(g, image);
 				fputc(b, image);
 			}
-		fclose(image);
-		fclose(alpha);
 	}
 
 	else if (pix->n == 2)
 	{
-		int x, y;
-		FILE *image = fopen("out.pgm", "wb");
-		FILE *alpha = fopen("out2.pgm", "wb");
 		fprintf(image, "P5\n%d %d\n255\n", pix->w, pix->h);
 		fprintf(alpha, "P5\n%d %d\n255\n", pix->w, pix->h);
 
@@ -143,14 +161,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				fputc(a, alpha);
 				fputc(g, image);
 			}
-		fclose(image);
-		fclose(alpha);
 	}
 
 	else if (pix->n == 1)
 	{
-		int x, y;
-		FILE *image = fopen("out.pgm", "w");
 		fprintf(image, "P5\n%d %d\n255\n", pix->w, pix->h);
 
 		for (y = 0; y < pix->h; y++)
@@ -159,7 +173,10 @@ fz_debugpixmap(fz_pixmap *pix)
 				int g = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
 				fputc(g, image);
 			}
-		fclose(image);
 	}
+
+	if (hasalpha)
+		fclose(alpha);
+	fclose(image);
 }
 
