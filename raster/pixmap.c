@@ -131,15 +131,20 @@ fz_debugpixmap(fz_pixmap *pix)
 	{
 		int x, y;
 		FILE *pgm = fopen("out.pgm", "wb");
+		FILE *pgm2 = fopen("out2.pgm", "wb");
 		fprintf(pgm, "P5\n%d %d\n255\n", pix->w, pix->h);
+		fprintf(pgm2, "P5\n%d %d\n255\n", pix->w, pix->h);
 
 		for (y = 0; y < pix->h; y++)
 			for (x = 0; x < pix->w; x++)
 			{
+				int a = pix->samples[x * pix->n + y * pix->w * pix->n + 0];
 				int g = pix->samples[x * pix->n + y * pix->w * pix->n + 1];
+				fputc(a, pgm2);
 				fputc(g, pgm);
 			}
 		fclose(pgm);
+		fclose(pgm2);
 	}
 
 	else if (pix->n == 1)
