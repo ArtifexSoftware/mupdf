@@ -91,7 +91,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	error = fz_readline(xref->file, buf, cap);
 	if (error)
 		return fz_rethrow(error, "cannot read xref marker");
-	if (strcmp(buf, "xref") != 0)
+	if (strncmp(buf, "xref", 4) != 0)
 		return fz_throw("cannot find xref marker");
 
 	while (1)
@@ -215,7 +215,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	error = fz_readline(xref->file, buf, cap);
 	if (error)
 		return fz_rethrow(error, "cannot read xref marker");
-	if (strcmp(buf, "xref") != 0)
+	if (strncmp(buf, "xref", 4) != 0)
 		return fz_throw("cannot find xref marker");
 
 	while (1)
