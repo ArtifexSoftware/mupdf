@@ -61,12 +61,9 @@ pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_
 		error = pdf_loadfunction(&func[i], xref, obj);
 		if (error)
 		{
-			fz_dropobj(obj);
 			error = fz_rethrow(error, "unable to evaluate shading function");
 			goto cleanup;
 		}
-
-		fz_dropobj(obj);
 	}
 
 	for (i = 0; i < 256; ++i)
