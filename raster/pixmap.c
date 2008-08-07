@@ -62,7 +62,7 @@ fz_clearpixmap(fz_pixmap *pix)
 void
 fz_gammapixmap(fz_pixmap *pix, float gamma)
 {
-	unsigned char table[255];
+	unsigned char table[256];
 	int n = pix->w * pix->h * pix->n;
 	unsigned char *p = pix->samples;
 	int i;
