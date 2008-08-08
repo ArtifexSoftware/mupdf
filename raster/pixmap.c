@@ -94,16 +94,13 @@ fz_debugpixmap(fz_pixmap *pix, char *prefix)
 		if (hasalpha)
 			sprintf(alphaname, "%s-%04d-alpha.pgm", prefix, i);
 
-		if (access(imagename, F_OK) == 0 ||
-				(hasalpha && access(alphaname, F_OK) == 0))
-		{
-			i++;
-			continue;
-		}
-
 		image = fopen(imagename, "wb");
 		if (hasalpha)
 			alpha = fopen(alphaname, "wb");
+
+		if (image && (hasalpha && !alpha))
+			fclose(image);
+
 	} while (image == NULL || (hasalpha && alpha == NULL));
 
 	if (pix->n == 5)
