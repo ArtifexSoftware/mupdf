@@ -69,7 +69,10 @@ fz_gammapixmap(fz_pixmap *pix, float gamma)
 	for (i = 0; i < 256; i++)
 		table[i] = CLAMP(pow(i / 255.0, gamma) * 255.0, 0, 255);
 	while (n--)
-		*p = table[*p]; p++;
+	{
+		*p = table[*p];
+		p++;
+	}
 }
 
 void
