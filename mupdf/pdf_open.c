@@ -679,8 +679,8 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 
 	assert(xref->table == nil);
 
-	xref->cap = fz_toint(size);
-	xref->len = fz_toint(size);
+	xref->len = fz_toint(size) + 1; /* + 1 because of lots of broken pdf generators with off-by-one errors */
+	xref->cap = xref->len;
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 	{
