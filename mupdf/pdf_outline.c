@@ -9,7 +9,7 @@ loadoutline(pdf_outline **nodep, pdf_xref *xref, fz_obj *dict)
 	fz_obj *obj;
 
 	node = fz_malloc(sizeof(pdf_outline));
-	node->title = "<unknown>";
+	node->title = nil;
 	node->link = nil;
 	node->child = nil;
 	node->next = nil;
@@ -19,6 +19,9 @@ loadoutline(pdf_outline **nodep, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "Title");
 	if (obj)
 	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return fz_rethrow(error, "cannot resolve /Title");
 		error = pdf_toutf8(&node->title, obj);
 		if (error)
 			return fz_rethrow(error, "cannot convert Title to UTF-8");
@@ -124,7 +127,10 @@ pdf_debugoutline(pdf_outline *outline, int level)
 		for (i = 0; i < level; i++)
 			putchar(' ');
 
-		printf("%s ", outline->title);
+		if (outline->title)
+		    printf("%s ", outline->title);
+		else
+		    printf("<nil> ");
 
 		if (outline->link)
 			fz_debugobj(outline->link->dest);
