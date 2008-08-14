@@ -18,6 +18,10 @@
 #include <sys/time.h>
 #endif
 
+/* put these up here so we can clean up in die() */
+fz_renderer *drawgc = nil;
+void closesrc(void);
+
 /*
  * Common operations.
  * Parse page selectors.
@@ -36,6 +40,9 @@ void die(fz_error *eo)
 	fz_printerror(eo);
 	fz_droperror(eo);
 	fflush(stderr);
+	if (drawgc)
+		fz_droprenderer(drawgc);
+	closesrc();
 	abort();
 }
 
@@ -478,7 +485,6 @@ struct benchmark
     int maxpage;
 };
 
-fz_renderer *drawgc = nil;
 int drawmode = DRAWPNM;
 char *drawpattern = nil;
 pdf_page *drawpage = nil;
