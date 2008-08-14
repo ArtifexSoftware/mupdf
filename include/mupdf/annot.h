@@ -7,15 +7,8 @@ typedef struct pdf_comment_s pdf_comment;
 typedef struct pdf_widget_s pdf_widget;
 typedef struct pdf_outline_s pdf_outline;
 
-typedef enum pdf_linkkind_e
-{
-	PDF_LGOTO,
-	PDF_LURI
-} pdf_linkkind;
-
 struct pdf_link_s
 {
-	pdf_linkkind kind;
 	fz_rect rect;
 	fz_obj *dest;
 	pdf_link *next;
