@@ -34,6 +34,7 @@ void die(fz_error *eo)
 {
 	fflush(stdout);
 	fz_printerror(eo);
+	fz_droperror(eo);
 	fflush(stderr);
 	abort();
 }
@@ -77,6 +78,7 @@ void opensrc(char *filename, char *password, int loadpages)
 	if (error)
 	{
 		fz_printerror(error);
+		fz_droperror(error);
 		fz_warn("trying to repair");
 		error = pdf_repairxref(src, filename);
 		if (error)
