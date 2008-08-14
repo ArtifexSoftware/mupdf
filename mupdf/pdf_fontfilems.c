@@ -587,12 +587,12 @@ pdf_createfontlistMS()
 			if (szFile[strlen(szFile)-1] == 'c' || szFile[strlen(szFile)-1] == 'C')
 			{
 				err = parseTTCs(szFile);
-                // ignore error parsing a given font file
+				// ignore error parsing a given font file
 			}
 			else if (szFile[strlen(szFile)-1] == 'f'|| szFile[strlen(szFile)-1] == 'F')
 			{
 				err = parseTTFs(szFile);
-                // ignore error parsing a given font file
+				// ignore error parsing a given font file
 			}
 		}
 
@@ -625,42 +625,42 @@ pdf_destoryfontlistMS()
 fz_error *
 pdf_lookupfontMS(char *fontname, char **fontpath, int *index)
 {
-    pdf_fontmapMS fontmap;
-    pdf_fontmapMS *found = nil;
-    char *pattern;
-    int i;
+	pdf_fontmapMS fontmap;
+	pdf_fontmapMS *found = nil;
+	char *pattern;
+	int i;
 
-    if (fontlistMS.len == 0)
-        return fz_throw("fonterror : no fonts in the system");
+	if (fontlistMS.len == 0)
+		return fz_throw("fonterror : no fonts in the system");
 
-    pattern = fontname;
-    for (i = 0; i < ARRAY_SIZE(basenames); i++)
-    {
-        if (0 == strcmp(fontname, basenames[i]))
-        {
-            pattern = basepatterns[i];
-            break;
-        }
-    }
+	pattern = fontname;
+	for (i = 0; i < ARRAY_SIZE(basenames); i++)
+	{
+		if (0 == strcmp(fontname, basenames[i]))
+		{
+			pattern = basepatterns[i];
+			break;
+		}
+	}
 
-    strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
-    found = localbsearch(&fontmap, fontlistMS.fontmap, fontlistMS.len, sizeof(pdf_fontmapMS),compare);
+	strlcpy(fontmap.fontface,pattern,sizeof(fontmap.fontface));
+	found = localbsearch(&fontmap, fontlistMS.fontmap, fontlistMS.len, sizeof(pdf_fontmapMS),compare);
 
 #if 0
-    if (!found)
-        found = findlinear(&fontlistMS, &fontmap);
+	if (!found)
+		found = findlinear(&fontlistMS, &fontmap);
 #endif
 
-    if (found)
-    {
-        *fontpath = found->fontpath;
-        *index = found->index;
-    }
-    else
-    {
-        *fontpath = fontlistMS.fontmap[0].fontpath;
-        *index = fontlistMS.fontmap[0].index;
-    }
+	if (found)
+	{
+		*fontpath = found->fontpath;
+		*index = found->index;
+	}
+	else
+	{
+		*fontpath = fontlistMS.fontmap[0].fontpath;
+		*index = fontlistMS.fontmap[0].index;
+	}
 
 	return fz_okay;
 }
@@ -671,7 +671,7 @@ static fz_error *initfontlibs(void)
 {
 	int fterr;
 	int maj, min, pat;
-	fz_error  *err;
+	fz_error *err;
 
 	if (ftlib)
 		return fz_okay;
