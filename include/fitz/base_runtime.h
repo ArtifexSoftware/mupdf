@@ -50,19 +50,17 @@ typedef struct fz_error_s fz_error;
 
 struct fz_error_s
 {
-	int refs;
+	fz_error *cause;
 	char msg[184];
 	char file[32];
 	char func[32];
 	int line;
-	fz_error *cause;
 };
 
 #define fz_outofmem (&fz_koutofmem)
 extern fz_error fz_koutofmem;
 
 void fz_printerror(fz_error *eo);
-fz_error *fz_keeperror(fz_error *eo);
 void fz_droperror(fz_error *eo);
 void fz_warn(char *fmt, ...) __printflike(1,2);
 

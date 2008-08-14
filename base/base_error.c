@@ -1,23 +1,11 @@
 #include "fitz-base.h"
 
-fz_error *
-fz_keeperror(fz_error *eo)
-{
-    eo->refs++;
-    return eo;
-}
-
 void
 fz_droperror(fz_error *eo)
 {
-    if (eo->refs > 0)
-        eo->refs--;
-    if (eo->refs == 0)
-    {
-        if (eo->cause)
-            fz_droperror(eo->cause);
-        fz_free(eo);
-    }
+    if (eo->cause)
+	fz_droperror(eo->cause);
+    fz_free(eo);
 }
 
 void
@@ -67,8 +55,6 @@ fz_throwimp(fz_error *cause, const char *func, const char *file, int line, char 
     if (!eo)
         return fz_outofmem; /* oops. we're *really* out of memory here. */
 
-    eo->refs = 1;
-
     va_start(ap, fmt);
     vsnprintf(eo->msg, sizeof eo->msg, fmt, ap);
     eo->msg[sizeof(eo->msg) - 1] = '\0';
@@ -78,10 +64,7 @@ fz_throwimp(fz_error *cause, const char *func, const char *file, int line, char 
     strlcpy(eo->file, file, sizeof eo->file);
     eo->line = line;
 
-    if (cause)
-        eo->cause = fz_keeperror(cause);
-    else
-        eo->cause = nil;
+    eo->cause = cause;
 
     return eo;
 }
