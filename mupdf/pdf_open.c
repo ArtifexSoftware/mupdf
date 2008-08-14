@@ -366,8 +366,17 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 	if (oid < 0 || oid >= xref->len)
 	{
-		fz_dropobj(trailer);
-		return fz_throw("object id (%d) out of range (0..%d)", oid, xref->len - 1);
+		if (oid == xref->len && oid < xref->cap)
+		{
+		    /* allow broken pdf files that have off-by-one errors in the xref */
+		    fz_warn("object id (%d) out of range (0..%d)", oid, xref->len - 1);
+		    xref->len ++;
+		}
+		else
+		{
+		    fz_dropobj(trailer);
+		    return fz_throw("object id (%d) out of range (0..%d)", oid, xref->len - 1);
+		}
 	}
 
 	xref->table[oid].type = 'n';
@@ -679,8 +688,8 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 
 	assert(xref->table == nil);
 
-	xref->len = fz_toint(size) + 1; /* + 1 because of lots of broken pdf generators with off-by-one errors */
-	xref->cap = xref->len;
+	xref->len = fz_toint(size);
+	xref->cap = xref->len + 1; /* for hack to allow broken pdf generators with off-by-one errors */
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 	{
