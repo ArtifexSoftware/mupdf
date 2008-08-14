@@ -2,7 +2,7 @@
 #include <mupdf.h>
 
 static fz_error *
-pdf_loadcompsiteshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcdict, float t0, float t1)
+pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcdict, float t0, float t1)
 {
 	fz_error *error;
 	pdf_function *func;
@@ -121,7 +121,7 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0
 	shade->usefunction = 1;
 
 	if (fz_isdict(obj))
-		error = pdf_loadcompsiteshadefunc(shade, xref, shading, obj, t0, t1);
+		error = pdf_loadcompositeshadefunc(shade, xref, shading, obj, t0, t1);
 	else if (fz_isarray(obj))
 		error = pdf_loadcomponentshadefunc(shade, xref, shading, obj, t0, t1);
 
