@@ -315,6 +315,7 @@ void
 fz_debugobj(fz_obj *obj)
 {
 	char buf[1024];
+	char newline = '\n';
 	char *ptr;
 	int n;
 
@@ -333,5 +334,8 @@ fz_debugobj(fz_obj *obj)
 		fwrite(ptr, 1, n, stdout);
 		fz_free(ptr);
 	}
+
+	fwrite(&newline, 1, 1, stdout);
+	fflush(stdout);
 }
 
