@@ -106,6 +106,9 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		pdf_logpage("}\n");
 	}
 
+	else
+		return fz_throw("pagetree node has unexpected type %s", fz_toname(type));
+
 	return fz_okay;
 }
 
