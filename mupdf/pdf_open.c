@@ -697,7 +697,7 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
-	for (i = 0; i < xref->len; i++)
+	for (i = 0; i < xref->cap; i++)
 	{
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
