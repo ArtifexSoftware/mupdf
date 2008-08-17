@@ -315,7 +315,6 @@ void
 fz_debugobj(fz_obj *obj)
 {
 	char buf[1024];
-	char newline = '\n';
 	char *ptr;
 	int n;
 
@@ -323,7 +322,8 @@ fz_debugobj(fz_obj *obj)
 	if (n < sizeof buf)
 	{
 		fz_sprintobj(buf, sizeof buf, obj, 0);
-		fwrite(buf, 1, n, stdout);
+		fputs(buf, stdout);
+		fputc('\n', stdout);
 	}
 	else
 	{
@@ -331,11 +331,9 @@ fz_debugobj(fz_obj *obj)
 		if (!ptr)
 			return;
 		fz_sprintobj(ptr, n, obj, 0);
-		fwrite(ptr, 1, n, stdout);
+		fputs(buf, stdout);
+		fputc('\n', stdout);
 		fz_free(ptr);
 	}
-
-	fwrite(&newline, 1, 1, stdout);
-	fflush(stdout);
 }
 
