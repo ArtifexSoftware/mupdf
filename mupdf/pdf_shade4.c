@@ -83,18 +83,18 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 		flag = *buf->rp++;
 
 		t = *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		t = (t << 8) + *buf->rp++;
+		t = (t << 8) | *buf->rp++;
+		t = (t << 8) | *buf->rp++;
 		x = x0 + (t * (x1 - x0) / (pow(2, 24) - 1));
 
 		t = *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		t = (t << 8) + *buf->rp++;
+		t = (t << 8) | *buf->rp++;
+		t = (t << 8) | *buf->rp++;
 		y = y0 + (t * (y1 - y0) / (pow(2, 24) - 1));
 
 		for (i=0; i < ncomp; ++i) {
 			t = *buf->rp++;
-			t = (t << 8) + *buf->rp++;
+			t = (t << 8) | *buf->rp++;
 		}
 
 		if (flag == 0) {
