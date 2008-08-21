@@ -78,7 +78,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 
 	n = 2 + shade->cs->n;
 	j = 0;
-	for (z = 0; z < (buf->ep - buf->bp) / bytepervertex; ++z)
+	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
 	{
 		flag = *buf->rp++;
 
@@ -109,7 +109,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	shade->mesh = (float*) malloc(sizeof(float) * j);
 	/* 8, 24, 16 only */
 	j = 0;
-	for (z = 0; z < (buf->ep - buf->bp) / bytepervertex; ++z)
+	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
 	{
 		flag = *buf->rp++;
 
