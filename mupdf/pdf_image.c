@@ -33,7 +33,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	pdf_logimage("load inline image %p {\n", img);
 
 	img->super.refs = 1;
-        img->super.cs = nil;
+	img->super.cs = nil;
 	img->super.loadtile = pdf_loadtile;
 	img->super.drop = pdf_dropimage;
 	img->super.n = 0;
@@ -240,14 +240,14 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "Width");
 	error = pdf_resolve(&obj, xref);
 	if (error)
-	    return fz_rethrow(error, "cannot parse image dictionary");
+		return fz_rethrow(error, "cannot parse image dictionary");
 	w = fz_toint(obj);
 	fz_dropobj(obj);
 
 	obj = fz_dictgets(dict, "Height");
 	error = pdf_resolve(&obj, xref);
 	if (error)
-	    return fz_rethrow(error, "cannot parse image dictionary");
+		return fz_rethrow(error, "cannot parse image dictionary");
 	h = fz_toint(obj);
 	fz_dropobj(obj);
 
@@ -255,11 +255,11 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	obj = fz_dictgets(dict, "BitsPerComponent");
 	if (obj)
 	{
-	    error = pdf_resolve(&obj, xref);
-	    if (error)
-		return fz_rethrow(error, "cannot parse image dictionary");
-	    bpc = fz_toint(obj);
-	    fz_dropobj(obj);
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return fz_rethrow(error, "cannot parse image dictionary");
+		bpc = fz_toint(obj);
+		fz_dropobj(obj);
 	}
 
 	pdf_logimage("size %dx%d %d\n", w, h, bpc);
