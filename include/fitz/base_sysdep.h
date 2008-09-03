@@ -39,6 +39,10 @@
 #define va_copy(a,b) (a) = (b)
 #endif
 
+#ifndef R_OK
+#define R_OK 4
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -65,6 +69,9 @@
 #define M_2_SQRTPI 1.12837916709551257390
 #define M_SQRT2 1.41421356237309504880
 #define M_SQRT_2 0.707106781186547524401
+#ifndef isnan
+#define isnan _isnan
+#endif
 #endif
 
 #ifdef NEED_STRLCPY

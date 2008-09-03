@@ -54,7 +54,7 @@ static pdfapp_t gapp;
 
 void winwarn(pdfapp_t *app, char *msg)
 {
-	fprintf(stderr, "apparition: %s\n", msg);
+	fprintf(stderr, "pdfview: %s\n", msg);
 }
 
 void winerror(pdfapp_t *app, fz_error *error)
@@ -432,7 +432,7 @@ void onmouse(int x, int y, int btn, int modifiers, int state)
 
 void usage(void)
 {
-	fprintf(stderr, "usage: apparition [-d password] [-z zoom] [-p pagenumber] file.pdf\n");
+	fprintf(stderr, "usage: pdfview [-d password] [-z zoom] [-p pagenumber] file.pdf\n");
 	exit(1);
 }
 

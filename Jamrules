@@ -1,190 +1,112 @@
 # -------------------------------------------------------------------------
 #
-# Jamrules -- the build flags for Fitz and GhostPDF
-# This file is sourced by Jamfile when making
-# Put all configuration stuff here
+# Jamrules -- the build flags for Fitz and MuPDF.
+# This file is sourced by Jamfile when building.
+# Put all system configuration stuff here.
 #
-
-OPTIM = ; # disable jam's built-in optimization flags 
-if $(OS) = MINGW
-{
-	FREETYPECC ?= -Ic:/msys/1.0/local/include -Ic:/msys/1.0/local/include/freetype2 ;
-	FREETYPELD ?= -Lc:/msys/1.0/local/lib -lfreetype ;
-}
-
-FREETYPECC ?= "`freetype-config --cflags`" ;
-FREETYPELD ?= "`freetype-config --libs`" ;
-
-# Optional modules:
-
-HAVE_JBIG2DEC ?= no ;
-HAVE_JASPER ?= no ;
-
-# -------------------------------------------------------------------------
-
-# Default optimize/profile/debug compiler/linker switches
-# Basic system should be mostly SUSv3 compliant
-# These are good for GCC
-
-# FLAG_CCALL = -Wall -D_XOPEN_SOURCE=600 $(FREETYPECC) ;
-FLAG_CCALL = -Wall $(FREETYPECC) ;
-FLAG_CCDEBUG = -g ;
-FLAG_CCRELEASE = -O3 ;
-FLAG_CCPROFILE = -g -pg ;
-FLAG_LDPROFILE = -pg ;
-
-# Now it gets hairy...
-
-switch $(OS)
-{
-	case LINUX :
-		HAVE_X11 = yes ;
-		NEED_STRLCPY = yes ;
-		NEED_STRLCAT = yes ;
-		FLAG_CCALL += -std=gnu99 -DHAVE_C99 ;
-		FLAG_LDALL += -L/opt/local/lib -L/usr/X11R6/lib ;
-
-		switch $(CC)-$(OSPLAT)
-		{
-		case icc-X86 :
-			FLAG_CCRELEASE = -DARCH_X86 -O3 -ip -tpp6 -xM ;
-			FLAG_CCPROFILE = -g -qp ;
-		case gcc-X86 :
-			# add -msse -msse2 when such functions exist...
-			FLAG_CCRELEASE = -DARCH_X86 -O3 -g -march=k8 -mmmx -std=gnu99 -ftree-vectorize -ftree-vectorizer-verbose=2 ;
-		}
-
-	case MACOSX :
-		FLAG_LDALL += -L/opt/local/lib -L/usr/X11R6/lib ;
-		FLAG_CCALL += -I/opt/local/include -I/usr/X11R6/include -std=gnu99 -DHAVE_C99 -Wno-pointer-sign ;
-		# FLAG_CCRELEASE = -DARCH_PPC -faltivec -fast ; # not true on intel macs
-		FLAG_CCRELEASE = -fast ;
-
-	case MINGW :
-		NEED_GETOPT = yes ;
-		NEED_STRSEP = yes ;
-		NEED_STRLCAT = yes ;
-		NEED_STRLCPY = yes ;
-		FLAG_CCALL += -std=gnu99 -DHAVE_C99 -DWIN32 ;
-		NOARSCAN = yes ;
-
-	case SOLARIS :
-		HAVE_X11 = yes ;
-		NEED_STRSEP = yes ;
-		FLAG_CCALL += -std=c89 ;
-		FLAG_CCRELEASE += -DARCH_SPARC ;
-
-	# Additional platforms go here
-
-	case * :
-		Echo "OS '$(OS)' not known by build system." ;
-		Echo "If you get errors, please edit Jamrules." ;
-		FLAG_CCALL += -std=c89 ;
-}
-
-# -------------------------------------------------------------------------
-#
-# Switch on BUILD type (profile, debug or release)
-#
-
-BUILD ?= debug ;
-
-switch $(BUILD)
-{
-	case debug :
-		Echo "Building DEBUG target" ;
-		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCDEBUG) ;
-		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDDEBUG) ;
-	case release :
-		Echo "Building RELEASE target" ;
-		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCRELEASE) ;
-		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDRELEASE) ;
-	case profile :
-		Echo "Building PROFILE target" ;
-		CCFLAGS = $(FLAG_CCALL) $(FLAG_CCPROFILE) ;
-		LINKFLAGS = $(FLAG_LDALL) $(FLAG_LDPROFILE) ;
-	case * :
-		Exit "Unknown BUILD target:" $(BUILD) ;
-}
-
-# -------------------------------------------------------------------------
-#
-# Fitz specific rules
-#
-
-ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 
 HDRS = [ FDirName $(TOP) include ] ;
 
-BINDIR = [ FDirName $(TOP) dist ] ;
+ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
 
-LINKLIBS = $(FREETYPELD) -ljpeg -lz -lm ;
-FITZLIBS =
-	libmupdf libfonts
-	libraster
-	libworld
-	libstream
-	libbase
-;
+HAVE_JBIG2DEC ?= yes ; # set to "yes" to include JBIG2 support
+HAVE_JASPER   ?= no  ; # set to "yes" to include JPEG2000 support
 
-if $(HAVE_JASPER) = yes
+BUILD_X11APP  ?= no  ; # set to "yes" to build unix/x11 viewer
+BUILD_WINAPP  ?= no  ; # set to "yes" to build windows viewer
+BUILD_PLUGIN  ?= no  ; # set to "yes" to build mozilla plugin
+
+# -------------------------------------------------------------------------
+
+CCFLAGS ?= "`freetype-config --cflags`" -Wall -std=c99 -DHAVE_C99 ;
+LINKFLAGS ?= "`freetype-config --libs`" ;
+LINKLIBS ?= -lfreetype -ljpeg -lz -lm ;
+
+if $(JAM_TOOLSET) = MINGW
 {
-	DEFINES += HAVE_JASPER ;
-	LINKLIBS += -ljasper ;
+    BUILD_WINAPP = yes ;
+    BUILD_PLUGIN = yes ;
+    CCFLAGS =
+	-Ic:/local/include -Wall -std=c99 -DHAVE_C99 -DWIN32 ;
+    LINKFLAGS = -Lc:/local/lib ;
+    LINKLIBS = -lfreetype -ljpeg -lz -ljbig2dec ;
+    WINLIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 ;
 }
 
-if $(HAVE_JBIG2DEC) = yes
+if $(JAM_TOOLSET) = VISUALC
 {
-	DEFINES += HAVE_JBIG2DEC ;
-	LINKLIBS += -ljbig2dec ;
+    BUILD_WINAPP = yes ;
+    CCFLAGS = /Ic:/local/include /DWIN32 ;
+    LINKFLAGS = /LIBPATH:c:/local/lib ;
+    LINKLIBS = freetype.lib jpeg.lib z.lib jbig2dec.lib ;
+    WINLIBS = gdi32.lib comdlg32.lib user32.lib advapi32.lib shell32.lib ;
+    NEED_GETTIMEOFDAY = yes ;
 }
 
-if $(NEED_GETOPT)  = yes { DEFINES += NEED_GETOPT ; }
-if $(NEED_STRLCAT) = yes { DEFINES += NEED_STRLCAT ; }
-if $(NEED_STRLCPY) = yes { DEFINES += NEED_STRLCPY ; }
-if $(NEED_STRSEP)  = yes { DEFINES += NEED_STRSEP ; }
+switch $(OS)
+{
+    case LINUX :
+	BUILD_X11APP = yes ;
+	X11LIBS = -lX11 -lXext ;
+	NEED_STRLCPY = yes ;
+	NEED_STRLCAT = yes ;
+
+    case MACOSX :
+	BUILD_X11APP = yes ;
+	CCFLAGS += -I/opt/local/include -I/usr/X11R6/include ;
+	LINKFLAGS += -L/opt/local/lib -L/usr/X11R6/lib ;
+	X11LIBS = -lX11 -lXext ;
+
+    case NT :
+	NEED_GETOPT = yes ;
+	NEED_STRSEP = yes ;
+	NEED_STRLCAT = yes ;
+	NEED_STRLCPY = yes ;
+	NEED_MATH = yes ;
+
+    case * :
+	Echo "OS '$(OS)' not known by build system." ;
+	Echo "If you get errors, please edit Jamrules." ;
+}
+
+# -------------------------------------------------------------------------
+
+if $(HAVE_JASPER)   = yes { DEFINES += HAVE_JASPER ; }
+if $(HAVE_JBIG2DEC) = yes { DEFINES += HAVE_JBIG2DEC ; }
+
+if $(NEED_GETOPT)   = yes { DEFINES += NEED_GETOPT ; }
+if $(NEED_STRLCAT)  = yes { DEFINES += NEED_STRLCAT ; }
+if $(NEED_STRLCPY)  = yes { DEFINES += NEED_STRLCPY ; }
+if $(NEED_STRSEP)   = yes { DEFINES += NEED_STRSEP ; }
+if $(NEED_MATH)     = yes { DEFINES += NEED_MATH ; }
+
+# -------------------------------------------------------------------------
+#
+# WindRes rule for compiling the windows viewer and plugin
+#
 
 rule UserObject
 {
-	switch $(>)
-	{
-	case *.rc :
-		WindRes $(<) : $(>) ;
-
-	case *.cff :
-		Cc $(<) : $(<:S=.c) ;
-		HexDump $(<:S=.c) : $(>) ;
-
-	case * :
-		Echo "unknown suffix on" $(>) ;
-	}
-}
-
-rule HexDump
-{
-	Depends $(<) : $(>) ;
-	MakeLocate $(<) : $(LOCATE_SOURCE) ;
-	Clean clean : $(<) ;
+    switch $(>)
+    {
+	case *.rc : WindRes $(<) : $(>) ;
+	case * : Echo "unknown suffix on" $(>) ;
+    }
 }
 
 rule WindRes
 {
-	Depends $(<) : $(>) ;
-	Clean clean : $(<) ;
+    Depends $(<) : $(>) ;
+    Clean clean : $(<) ;
 }
 
-actions HexDump { xxd -i $(>) | sed -e 's/unsigned/const unsigned/' > $(<) }
-actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
-
-rule XCopy
+if $(JAM_TOOLSET) = MINGW
 {
-	for i in $(<)
-	{
-		local d = [ FDirName $(ALL_LOCATE_TARGET) $(i:D) ] ;
-		LOCATE on $(i:G=xcopy) = $(ALL_LOCATE_TARGET) ;
-		Depends $(i:G=xcopy) : $(d:G=dir) ;
-		MkDir $(d:G=dir) ;
-		File $(i:G=xcopy) : $(i) ;
-	}
+    actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
+}
+
+if $(JAM_TOOLSET) = VISUALC
+{
+    actions WindRes { rc /fo $(<) $(>) }
 }
 

@@ -5,15 +5,10 @@
 #
 #   http://public.perforce.com/public/jam/src/Jam.html
 #
-# Set environment variable BUILD to one of: debug release profile
-#
-#   jam -sBUILD=release
-#
 
 SubDir TOP ;
 
-InstallFile $(BINDIR) : PUBLIC ;
-InstallFile $(BINDIR) : CHANGES ;
+Main hexdump : hexdump.c ;
 
 SubInclude TOP base ;
 SubInclude TOP stream ;
