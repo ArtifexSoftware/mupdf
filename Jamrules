@@ -66,7 +66,7 @@ if $(OS) = MACOSX
 
     BUILD_X11APP = true ;
 
-    THIRDPARTYINC ?= -I/opt/local/include -I/usr/X11R6/include ;
+    THIRDPARTYINC ?= -I/opt/local/include -I/opt/local/include/freetype2 -I/usr/X11R6/include ;
     THIRDPARTYLIB ?= -L/opt/local/lib -L/usr/X11R6/lib ;
 
     CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
