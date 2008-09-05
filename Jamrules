@@ -34,10 +34,9 @@ ALL_LOCATE_TARGET ?= [ FDirName $(TOP) build $(OS)-$(OSPLAT) ] ;
 if $(HAVE_JBIG2DEC) { DEFINES += HAVE_JBIG2DEC ; }
 if $(HAVE_JASPER)   { DEFINES += HAVE_JASPER ; }
 
-#    NEED_GETOPT = true ;
-#    NEED_STRLCAT = true ;
-#    NEED_STRLCPY = true ;
-#    NEED_STRSEP = true ;
+# NEED_STRLCPY = true ;
+# NEED_STRSEP = true ;
+# NEED_GETOPT = true ;
 
 if $(OS) = LINUX
 {
@@ -45,6 +44,9 @@ if $(OS) = LINUX
 
     THIRDPARTYINC ?= "`freetype-config --cflags`" ;
     THIRDPARTYLIB ?= "`freetype-config --libs`" ;
+
+    NEED_STRLCPY = true ;
+    NEED_STRSEP = true ;
 
     BUILD_X11APP = true ;
 
@@ -87,6 +89,10 @@ if $(OS) = MINGW
     THIRDPARTYINC ?= -Ic:/local/include ;
     THIRDPARTYLIB ?= -Lc:/local/lib ;
 
+    NEED_STRLCPY = true ;
+    NEED_STRSEP = true ;
+    NEED_GETOPT = true ;
+
     CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
     LINKFLAGS = $(THIRDPARTYLIB) ;
     LINKLIBS = -lfreetype -ljpeg -lz ;
@@ -108,6 +114,10 @@ if $(OS) = NT
 
     THIRDPARTYINC ?= /Ic:/local/include ;
     THIRDPARTYLIB ?= /LIBPATH:c:/local/lib ;
+
+    NEED_STRLCPY = true ;
+    NEED_STRSEP = true ;
+    NEED_GETOPT = true ;
 
     CCFLAGS = $(THIRDPARTYINC) ;
     LINKFLAGS = $(THIRDPARTYLIB) ;
