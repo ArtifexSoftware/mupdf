@@ -1,12 +1,14 @@
 # --------------------------------------------------------------------------
 #
 # This is the Jamfile used for building Fitz and MuPDF.
-# Put compiler options and other tweaks in Jamrules, not here.
+# Put paths and other options in Jamrules, not here.
 #
 #   http://public.perforce.com/public/jam/src/Jam.html
 #
 
 SubDir TOP ;
+
+HDRS = [ FDirName $(TOP) include ] ;
 
 Main hexdump : hexdump.c ;
 

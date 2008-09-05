@@ -787,7 +787,7 @@ int main(int argc, char **argv)
     winopen();
 
     if (argc == 2)
-	filename = strdup(argv[1]);
+	filename = fz_strdup(argv[1]);
     else
     {
 	if (!winfilename(buf, sizeof buf))

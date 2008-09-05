@@ -1,89 +1,133 @@
-# -------------------------------------------------------------------------
 #
-# Jamrules -- the build flags for Fitz and MuPDF.
-# This file is sourced by Jamfile when building.
-# Put all system configuration stuff here.
+# Jamrules -- build configurations
+#
+# JBIG2 and JPEG2000 support is optional. To compile with this,
+# add the following to the jam command line:
+#
+#   -sHAVE_JBIG2DEC=true
+#   -sHAVE_JASPER=true
+#
+# Windows builds assume that third party headers and
+# libraries are in c:/local/include and c:/local/lib.
+#
+# MacOS X builds assume that you have third party libraries installed
+# from MacPorts in /opt/local.
+#
+# Linux builds assume that you have freetype-config to find the paths
+# to the freetype library.
+#
+# To override these defaults, please supply the paths on the jam
+# command line with -sTHIRDPARTINC and -sTHIRDPARTYLIB.
+#
+#   -sTHIRDPARTYINC="-Ic:/wherever/include"
+#   -sTHIRDPARTYLIB="-Lc:/wherever/lib"
 #
 
-HDRS = [ FDirName $(TOP) include ] ;
+# Workaround for different OS/OSPLAT settings on FTJam and plain jam
+if $(JAM_TOOLSET) = MINGW   { OS = MINGW ; }
+if $(JAM_TOOLSET) = VISUALC { OS = NT ; }
 
-ALL_LOCATE_TARGET = [ FDirName $(TOP) build $(BUILD) ] ;
+# Place all build products here:
+ALL_LOCATE_TARGET ?= [ FDirName $(TOP) build $(OS)-$(OSPLAT) ] ;
 
-HAVE_JBIG2DEC ?= yes ; # set to "yes" to include JBIG2 support
-HAVE_JASPER   ?= no  ; # set to "yes" to include JPEG2000 support
+# Add compile time defines for JBIG2 and JPEG2000 support.
+if $(HAVE_JBIG2DEC) { DEFINES += HAVE_JBIG2DEC ; }
+if $(HAVE_JASPER)   { DEFINES += HAVE_JASPER ; }
 
-BUILD_X11APP  ?= no  ; # set to "yes" to build unix/x11 viewer
-BUILD_WINAPP  ?= no  ; # set to "yes" to build windows viewer
-BUILD_PLUGIN  ?= no  ; # set to "yes" to build mozilla plugin
+#    NEED_GETOPT = true ;
+#    NEED_STRLCAT = true ;
+#    NEED_STRLCPY = true ;
+#    NEED_STRSEP = true ;
 
-# -------------------------------------------------------------------------
-
-CCFLAGS ?= "`freetype-config --cflags`" -Wall -std=c99 -DHAVE_C99 ;
-LINKFLAGS ?= "`freetype-config --libs`" ;
-LINKLIBS ?= -lfreetype -ljpeg -lz -lm ;
-
-if $(JAM_TOOLSET) = MINGW
+if $(OS) = LINUX
 {
-    BUILD_WINAPP = yes ;
-    BUILD_PLUGIN = yes ;
-    CCFLAGS =
-	-Ic:/local/include -Wall -std=c99 -DHAVE_C99 -DWIN32 ;
-    LINKFLAGS = -Lc:/local/lib ;
-    LINKLIBS = -lfreetype -ljpeg -lz -ljbig2dec ;
-    WINLIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 ;
+    Echo Building for LINUX ;
+
+    THIRDPARTYINC ?= "`freetype-config --cflags`" ;
+    THIRDPARTYLIB ?= "`freetype-config --libs`" ;
+
+    BUILD_X11APP = true ;
+
+    CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
+    LINKFLAGS = $(THIRDPARTYLIB) ;
+    LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+    APPLINKLIBS = -lX11 -lXext ;
+
+    if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
+    if $(HAVE_JASPER)	{ LINKLIBS += -ljasper ; }
 }
 
-if $(JAM_TOOLSET) = VISUALC
+if $(OS) = MACOSX
 {
-    BUILD_WINAPP = yes ;
-    CCFLAGS = /Ic:/local/include /DWIN32 ;
-    LINKFLAGS = /LIBPATH:c:/local/lib ;
-    LINKLIBS = freetype.lib jpeg.lib z.lib jbig2dec.lib ;
-    WINLIBS = gdi32.lib comdlg32.lib user32.lib advapi32.lib shell32.lib ;
-    NEED_GETTIMEOFDAY = yes ;
+    Echo Building for MACOSX ;
+
+    BUILD_X11APP = true ;
+
+    THIRDPARTYINC ?= -I/opt/local/include -I/usr/X11R6/include ;
+    THIRDPARTYLIB ?= -L/opt/local/lib -L/usr/X11R6/lib ;
+
+    CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
+    LINKFLAGS = $(THIRDPARTYLIB) ;
+    LINKLIBS = -lfreetype -ljpeg -lz -lm ;
+    APPLINKLIBS = -lX11 -lXext ;
+
+    if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
+    if $(HAVE_JASPER)	{ LINKLIBS += -ljasper ; }
 }
 
-switch $(OS)
+if $(OS) = MINGW
 {
-    case LINUX :
-	BUILD_X11APP = yes ;
-	X11LIBS = -lX11 -lXext ;
-	NEED_STRLCPY = yes ;
-	NEED_STRLCAT = yes ;
+    Echo Building for MINGW ;
 
-    case MACOSX :
-	BUILD_X11APP = yes ;
-	CCFLAGS += -I/opt/local/include -I/usr/X11R6/include ;
-	LINKFLAGS += -L/opt/local/lib -L/usr/X11R6/lib ;
-	X11LIBS = -lX11 -lXext ;
+    NOARSCAN = true ;
 
-    case NT :
-	NEED_GETOPT = yes ;
-	NEED_STRSEP = yes ;
-	NEED_STRLCAT = yes ;
-	NEED_STRLCPY = yes ;
-	NEED_MATH = yes ;
+    BUILD_WINAPP = true ;
+    BUILD_PLUGIN = true ;
 
-    case * :
-	Echo "OS '$(OS)' not known by build system." ;
-	Echo "If you get errors, please edit Jamrules." ;
+    THIRDPARTYINC ?= -Ic:/local/include ;
+    THIRDPARTYLIB ?= -Lc:/local/lib ;
+
+    CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
+    LINKFLAGS = $(THIRDPARTYLIB) ;
+    LINKLIBS = -lfreetype -ljpeg -lz ;
+    APPLINKLIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows ;
+
+    if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
+    if $(HAVE_JASPER)	{ LINKLIBS += -ljasper ; }
+
+    actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
 }
 
-# -------------------------------------------------------------------------
+if $(OS) = NT
+{
+    Echo Building for MSVC ;
 
-if $(HAVE_JASPER)   = yes { DEFINES += HAVE_JASPER ; }
-if $(HAVE_JBIG2DEC) = yes { DEFINES += HAVE_JBIG2DEC ; }
+    DEFINES += MSVC ;
 
-if $(NEED_GETOPT)   = yes { DEFINES += NEED_GETOPT ; }
-if $(NEED_STRLCAT)  = yes { DEFINES += NEED_STRLCAT ; }
-if $(NEED_STRLCPY)  = yes { DEFINES += NEED_STRLCPY ; }
-if $(NEED_STRSEP)   = yes { DEFINES += NEED_STRSEP ; }
-if $(NEED_MATH)     = yes { DEFINES += NEED_MATH ; }
+    BUILD_WINAPP = true ;
 
-# -------------------------------------------------------------------------
-#
+    THIRDPARTYINC ?= /Ic:/local/include ;
+    THIRDPARTYLIB ?= /LIBPATH:c:/local/lib ;
+
+    CCFLAGS = $(THIRDPARTYINC) ;
+    LINKFLAGS = $(THIRDPARTYLIB) ;
+    LINKLIBS = freetype.lib jpeg.lib z.lib ;
+    APPLINKLIBS = gdi32.lib comdlg32.lib user32.lib advapi32.lib shell32.lib ;
+
+    if $(HAVE_JBIG2DEC) { LINKLIBS += jbig2dec.lib ; }
+    if $(HAVE_JASPER)	{ LINKLIBS += jasper.lib ; }
+
+    actions WindRes { rc /fo $(<) $(>) }
+}
+
+# Set some DEFINES based on missing platform features
+
+if $(NEED_GETOPT)   { DEFINES += NEED_GETOPT ; }
+if $(NEED_STRLCAT)  { DEFINES += NEED_STRLCAT ; }
+if $(NEED_STRLCPY)  { DEFINES += NEED_STRLCPY ; }
+if $(NEED_STRSEP)   { DEFINES += NEED_STRSEP ; }
+
 # WindRes rule for compiling the windows viewer and plugin
-#
 
 rule UserObject
 {
@@ -98,15 +142,5 @@ rule WindRes
 {
     Depends $(<) : $(>) ;
     Clean clean : $(<) ;
-}
-
-if $(JAM_TOOLSET) = MINGW
-{
-    actions WindRes { windres -i $(>) -o $(<) --include-dir=$(>:D) }
-}
-
-if $(JAM_TOOLSET) = VISUALC
-{
-    actions WindRes { rc /fo $(<) $(>) }
 }
 

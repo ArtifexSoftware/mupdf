@@ -12,26 +12,33 @@
 #endif
 #endif
 
-#undef nil
+#ifndef nil
 #define nil ((void*)0)
+#endif
 
-#undef offsetof
+#ifndef offsetof
 #define offsetof(s, m) (unsigned long)(&(((s*)0)->m))
+#endif
 
-#undef nelem
+#ifndef nelem
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
+#endif
 
-#undef ABS
+#ifndef ABS
 #define ABS(x) ( (x) < 0 ? -(x) : (x) )
+#endif
 
-#undef MAX
+#ifndef MAX
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
+#endif
 
-#undef MIN
+#ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+#endif
 
-#undef CLAMP
+#ifndef CLAMP
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
+#endif
 
 #define MAX4(a,b,c,d) MAX(MAX(a,b), MAX(c,d))
 #define MIN4(a,b,c,d) MIN(MIN(a,b), MIN(c,d))
@@ -63,10 +70,6 @@ extern fz_error fz_koutofmem;
 void fz_printerror(fz_error *eo);
 void fz_droperror(fz_error *eo);
 void fz_warn(char *fmt, ...) __printflike(1,2);
-
-#ifdef WIN32
-#define __func__ __FUNCTION__
-#endif
 
 #define fz_throw(...) fz_throwimp(nil, __func__, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_rethrow(cause, ...) fz_throwimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
