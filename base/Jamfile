@@ -11,10 +11,9 @@ Library libbase :
 	base_cleanname.c
 	;
 
-Library libbase : util_getopt.c ;
-Library libbase : util_strlcat.c ;
-Library libbase : util_strlcpy.c ;
-Library libbase : util_strsep.c ;
+if $(NEED_STRLCPY) { Library libbase : util_strlcpy.c ; }
+if $(NEED_STRSEP) { Library libbase : util_strsep.c ; }
+if $(NEED_GETOPT) { Library libbase : util_getopt.c ; }
 
 # MSVC does not have gettimeofday()
 if $(OS) = NT
