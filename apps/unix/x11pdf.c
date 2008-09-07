@@ -15,6 +15,31 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifndef timeradd
+#define timeradd(a, b, result) \
+    do { \
+	(result)->tv_sec = (a)->tv_sec + (b)->tv_sec; \
+	(result)->tv_usec = (a)->tv_usec + (b)->tv_usec; \
+	if ((result)->tv_usec >= 1000000) \
+	{ \
+	    ++(result)->tv_sec; \
+	    (result)->tv_usec -= 1000000; \
+	} \
+    } while (0)
+#endif
+
+#ifndef timersub
+#define timersub(a, b, result) \
+    do { \
+	(result)->tv_sec = (a)->tv_sec - (b)->tv_sec; \
+	(result)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
+	if ((result)->tv_usec < 0) { \
+	    --(result)->tv_sec; \
+	    (result)->tv_usec += 1000000; \
+	} \
+    } while (0)
+#endif
+
 extern int ximage_init(Display *display, int screen, Visual *visual);
 extern int ximage_get_depth(void);
 extern Visual *ximage_get_visual(void);
