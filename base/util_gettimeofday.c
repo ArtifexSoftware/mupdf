@@ -1,5 +1,5 @@
 #include <time.h>
-#include <Winsock2.h>
+#include <winsock2.h>
 #include <windows.h>
 
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)

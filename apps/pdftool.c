@@ -13,7 +13,7 @@
 #include "mupdf.h"
 
 #ifdef _MSC_VER
-#include <Winsock2.h>
+#include <winsock2.h>
 #else
 #include <sys/time.h>
 #endif
