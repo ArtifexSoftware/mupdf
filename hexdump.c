@@ -1,6 +1,7 @@
 /* hexdump.c -- an "xxd -i" workalike */
 
 #include <stdio.h>
+#include <string.h>
 
 int
 hexdump(FILE *fo, FILE *fi)
@@ -28,7 +29,7 @@ main(int argc, char **argv)
     FILE *fi;
     unsigned char name[256];
     unsigned char *p;
-    int i, n, len;
+    int i, len;
 
     if (argc < 3)
     {
