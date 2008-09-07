@@ -43,10 +43,11 @@ if $(OS) = LINUX
     Echo Building for LINUX ;
 
     THIRDPARTYINC ?= "`freetype-config --cflags`" ;
-    THIRDPARTYLIB ?= "`freetype-config --libs`" ;
+    THIRDPARTYLIB ?= "`freetype-config --libs`" -L/usr/X11R6/lib ;
 
     NEED_STRLCPY = true ;
     NEED_STRSEP = true ;
+    NEED_GETOPT = true ;
 
     BUILD_X11APP = true ;
 
@@ -132,10 +133,9 @@ if $(OS) = NT
 
 # Set some DEFINES based on missing platform features
 
-if $(NEED_GETOPT)   { DEFINES += NEED_GETOPT ; }
-if $(NEED_STRLCAT)  { DEFINES += NEED_STRLCAT ; }
 if $(NEED_STRLCPY)  { DEFINES += NEED_STRLCPY ; }
 if $(NEED_STRSEP)   { DEFINES += NEED_STRSEP ; }
+if $(NEED_GETOPT)   { DEFINES += NEED_GETOPT ; }
 
 # WindRes rule for compiling the windows viewer and plugin
 
