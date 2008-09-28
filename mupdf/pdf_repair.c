@@ -152,7 +152,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	int tmpofs, oidofs = 0, genofs = 0;
 	int isroot, rootoid = 0, rootgen = 0;
 	int isinfo, infooid = 0, infogen = 0;
-	int stmofs, stmlen;
+	int stmlen, stmofs = 0;
 	pdf_token_e tok;
 	int len;
 	int next;
