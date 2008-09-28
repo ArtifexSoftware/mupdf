@@ -584,8 +584,8 @@ drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *drawtimes)
 	fz_matrix ctm;
 	fz_irect bbox;
 	fz_pixmap *pix;
-	char namebuf[256];
-	char buf[256];
+	char name[256];
+	char pnmhdr[256];
 	int x, y, w, h, b, bh;
 	int fd = -1;
 	long start;
@@ -609,13 +609,13 @@ drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *drawtimes)
 
 	if (drawpattern)
 	{
-		sprintf(namebuf, drawpattern, drawcount++);
-		fd = open(namebuf, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
+		sprintf(name, drawpattern, drawcount++);
+		fd = open(name, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
 		if (fd < 0)
-			die(fz_throw("ioerror: could not open file '%s'", namebuf));
+			die(fz_throw("ioerror: could not open file '%s'", name));
 
-		sprintf(buf, "P6\n%d %d\n255\n", w, h);
-		write(fd, buf, strlen(buf));
+		sprintf(pnmhdr, "P6\n%d %d\n255\n", w, h);
+		write(fd, pnmhdr, strlen(pnmhdr));
 	}
 
 	error = fz_newpixmap(&pix, bbox.x0, bbox.y0, w, bh, 4);
