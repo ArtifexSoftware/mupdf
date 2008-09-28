@@ -239,7 +239,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
-	error = pdf_lex(&tok, file, (unsigned char *)buf, sizeof buf, &len);
+	error = pdf_lex(&tok, file, buf, sizeof buf, &len);
 	if (error)
 	{
 		fz_dropimage((fz_image*)img);
@@ -1251,7 +1251,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 		if (csi->top == 31)
 			return fz_throw("stack overflow");
 
-		error = pdf_lex(&tok, file, (unsigned char *)buf, sizeof buf, &len);
+		error = pdf_lex(&tok, file, buf, sizeof buf, &len);
 		if (error)
 			return fz_rethrow(error, "lexical error in content stream");
 

@@ -101,7 +101,7 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 				return fz_rethrow(error, "cannot seek in file");
 		}
 
-		error = fz_read(&n, file, buf, 9);
+		error = fz_read(&n, file, (unsigned char *) buf, 9);
 		if (error)
 			return fz_rethrow(error, "cannot read from file");
 

@@ -27,8 +27,8 @@ main(int argc, char **argv)
 {
     FILE *fo;
     FILE *fi;
-    unsigned char name[256];
-    unsigned char *p;
+    char name[256];
+    char *p;
     int i, len;
 
     if (argc < 3)

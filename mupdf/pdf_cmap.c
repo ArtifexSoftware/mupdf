@@ -590,7 +590,7 @@ static pdf_token_e tokenfromkeyword(char *key)
 	return PDF_TKEYWORD;
 }
 
-static int codefromstring(unsigned char *buf, int len)
+static int codefromstring(char *buf, int len)
 {
 	int a = 0;
 	while (len--)

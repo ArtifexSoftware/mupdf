@@ -31,7 +31,7 @@ fz_error *fz_openwfile(fz_stream **stmp, char *filename);
 fz_error *fz_openafile(fz_stream **stmp, char *filename);
 
 /* write to memory buffers! */
-fz_error *fz_openrmemory(fz_stream **stmp, char *mem, int len);
+fz_error *fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len);
 fz_error *fz_openrbuffer(fz_stream **stmp, fz_buffer *buf);
 fz_error *fz_openwbuffer(fz_stream **stmp, fz_buffer *buf);
 
