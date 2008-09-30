@@ -140,7 +140,6 @@ pdf_dropcsi(pdf_csi *csi)
 		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
 
 	if (csi->path) fz_dropnode((fz_node*)csi->path);
-	if (csi->clip) fz_dropnode((fz_node*)csi->clip);
 	if (csi->textclip) fz_dropnode((fz_node*)csi->textclip);
 	if (csi->text) fz_dropnode((fz_node*)csi->text);
 	if (csi->array) fz_dropobj(csi->array);
