@@ -242,8 +242,6 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 		}
 
 		crypt->len = crypt->stmlength;
-
-		crypt->v = 2;
 	}
 
 	if (crypt->len % 8 != 0)
@@ -255,7 +253,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	if (crypt->v == 3 && (crypt->len < 5 || crypt->len > 16)) goto cleanup;
 	if (crypt->v == 4 && (crypt->len < 5 || crypt->len > 16)) goto cleanup;
 
-	if (crypt->v != 1 && crypt->v != 2)
+	if (crypt->v < 1 || crypt->v > 4)
 	{
 		pdf_dropcrypt(crypt);
 		return fz_throw("unsupported encryption algorithm: %d", crypt->v);
