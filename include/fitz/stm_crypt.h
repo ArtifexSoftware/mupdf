@@ -34,9 +34,9 @@ struct fz_arc4_s
 	unsigned char state[256];
 };
 
-void fz_arc4init(fz_arc4 *state, unsigned char *key, unsigned len);
+void fz_arc4init(fz_arc4 *state, const unsigned char *key, const unsigned len);
 unsigned char fz_arc4next(fz_arc4 *state);
-void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, unsigned char *src, unsigned len);
+void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, const unsigned len);
 
 /* TODO: sha1 */
 /* TODO: aes */

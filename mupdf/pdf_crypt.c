@@ -415,7 +415,7 @@ createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 	{
 		createkey(crypt, userpw, pwlen);
 		fz_arc4init(&arc4, crypt->key, crypt->len);
-		fz_arc4encrypt(&arc4, crypt->u, (unsigned char *) padding, 32);
+		fz_arc4encrypt(&arc4, crypt->u, padding, 32);
 	}
 
 	if (crypt->r >= 3)
