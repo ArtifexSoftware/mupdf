@@ -368,12 +368,11 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 				return error;
 			if (fz_isdict(val))
 			{
-			    fz_obj *s = fz_dictgets(val, "S");
 			    fz_obj *g = fz_dictgets(val, "G");
 			    error = pdf_resolve(&g, xref);
 			    if (error)
 				return error;
-			    /* TODO: we should do something here, like inserting a mask node */
+			    /* TODO: we should do something here, like inserting a mask node for the S key in val */
 			    /* TODO: how to deal with the non-recursive nature of pdf soft masks? */
 			    puts("we encountered a soft mask");
 			}
