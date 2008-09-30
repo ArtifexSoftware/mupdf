@@ -246,7 +246,7 @@ fz_error *
 fz_printobj(fz_stream *file, fz_obj *obj, int tight)
 {
 	fz_error *error;
-	char buf[1024];
+	unsigned char buf[1024];
 	char *ptr;
 	int n;
 
