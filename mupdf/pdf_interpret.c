@@ -966,7 +966,7 @@ Lsetcolor:
 		{
 			/* don't fail on unknown keywords if braced by BX/EX */
 			if (!csi->xbalance)
-				goto syntaxerror;
+				fz_warn("unknown keyword: %s", buf);
 		}
 	}
 
@@ -1226,7 +1226,7 @@ Lsetcolor:
 	default:
 		/* don't fail on unknown keywords if braced by BX/EX */
 		if (!csi->xbalance)
-			goto syntaxerror;
+			fz_warn("unknown keyword: %s", buf);
 	}
 
 	return fz_okay;
