@@ -350,7 +350,6 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 				}
 			}
 
-			puts("we encountered a blend mode");
 			if (gstate->blendmode == FZ_BNORMAL)
 			    error = fz_newovernode(&blend);
 			else
