@@ -776,11 +776,14 @@ drawpages(char *pagelist)
 		if (spage > epage)
 			page = spage, spage = epage, epage = page;
 
+		if (spage < 1)
+			spage = 1;
+		if (epage > pdf_getpagecount(srcpages))
+			epage = pdf_getpagecount(srcpages);
+
+		printf("Drawing pages %d-%d...\n", spage, epage);
 		for (page = spage; page <= epage; page++)
 		{
-			if (page < 1 || page > pdf_getpagecount(srcpages))
-				continue;
-
 			switch (drawmode)
 			{
 			case DRAWPNM: drawpnm(page, &loadtimes, &drawtimes); break;
