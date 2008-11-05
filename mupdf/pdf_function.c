@@ -1310,7 +1310,7 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 				return fz_throw("malformed /Bounds (item not number)");
 			}
 			func->u.st.bounds[i] = fz_toreal(num);
-			if (i && func->u.st.bounds[i-1] >= func->u.st.bounds[i])
+			if (i && func->u.st.bounds[i-1] > func->u.st.bounds[i])
 			{
 				fz_dropobj(obj);
 				return fz_throw("malformed /Bounds (item not monotonic)");
@@ -1318,8 +1318,8 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 		}
 
 		if (k != 1 &&
-				(func->domain[0][0] >= func->u.st.bounds[0] ||
-				 func->domain[0][1] <= func->u.st.bounds[k-2]))
+				(func->domain[0][0] > func->u.st.bounds[0] ||
+				 func->domain[0][1] < func->u.st.bounds[k-2]))
 			fz_warn("malformed shading function bounds (domain mismatch), proceeding anyway.");
 
 		fz_dropobj(obj);
