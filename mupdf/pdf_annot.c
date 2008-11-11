@@ -103,7 +103,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 			return fz_rethrow(error, "cannot resolve /Dest");
 		dest = resolvedest(xref, obj);
-		pdf_logpage("dest %d %d R\n", fz_tonum(dest), fz_togen(dest));
+		pdf_logpage("dest (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
 		fz_dropobj(obj);
 	}
 
@@ -118,7 +118,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		if (!strcmp(fz_toname(obj), "GoTo"))
 		{
 			dest = resolvedest(xref, fz_dictgets(action, "D"));
-			pdf_logpage("action goto %d %d R\n", fz_tonum(dest), fz_togen(dest));
+			pdf_logpage("action goto (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
 		}
 		else if (!strcmp(fz_toname(obj), "URI"))
 		{

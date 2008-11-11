@@ -109,7 +109,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 	{
 		struct refkey item;
 
-		pdf_logrsrc("store item %d: %d %d R = %p\n", kind, fz_tonum(key), fz_togen(key), val);
+		pdf_logrsrc("store item %d (%d %d R) ptr=%p\n", kind, fz_tonum(key), fz_togen(key), val);
 
 		item.kind = kind;
 		item.oid = fz_tonum(key);

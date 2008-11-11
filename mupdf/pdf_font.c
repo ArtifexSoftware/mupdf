@@ -351,7 +351,7 @@ loadsimplefont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	if (!font)
 		return fz_outofmem;
 
-	pdf_logfont("load simple font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
+	pdf_logfont("load simple font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("basefont0 %s\n", basefont);
 	pdf_logfont("basefont1 %s\n", fontname);
 
@@ -677,7 +677,7 @@ loadcidfont(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj 
 	if (!font)
 		return fz_outofmem;
 
-	pdf_logfont("load cid font %d %d (%p) {\n", fz_tonum(ref), fz_togen(ref), font);
+	pdf_logfont("load cid font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), font);
 	pdf_logfont("basefont %s\n", basefont);
 	pdf_logfont("collection %s\n", collection);
 

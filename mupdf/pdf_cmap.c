@@ -1074,7 +1074,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 		return fz_okay;
 	}
 
-	pdf_logfont("load embedded cmap %d %d {\n", fz_tonum(stmref), fz_togen(stmref));
+	pdf_logfont("load embedded cmap (%d %d R) {\n", fz_tonum(stmref), fz_togen(stmref));
 
 	error = pdf_resolve(&stmobj, xref);
 	if (error)
@@ -1118,7 +1118,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	}
 	else if (fz_isindirect(obj))
 	{
-		pdf_logfont("usecmap %d %d R\n", fz_tonum(obj), fz_togen(obj));
+		pdf_logfont("usecmap (%d %d R)\n", fz_tonum(obj), fz_togen(obj));
 		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
 		if (error)
 		{

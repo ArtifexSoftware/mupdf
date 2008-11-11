@@ -153,7 +153,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 	int type;
 	int i;
 
-	pdf_logshade("load shade dict %d %d {\n", fz_tonum(ref), fz_togen(ref));
+	pdf_logshade("load shade dict (%d %d R) {\n", fz_tonum(ref), fz_togen(ref));
 
 	shade = fz_malloc(sizeof(fz_shade));
 	if (!shade)
@@ -272,7 +272,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	 */
 	if (fz_dictgets(dict, "PatternType"))
 	{
-		pdf_logshade("load shade pattern %d %d {\n", fz_tonum(ref), fz_togen(ref));
+		pdf_logshade("load shade pattern (%d %d R) {\n", fz_tonum(ref), fz_togen(ref));
 
 		obj = fz_dictgets(dict, "Matrix");
 		if (obj)
