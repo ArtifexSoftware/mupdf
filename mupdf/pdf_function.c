@@ -245,9 +245,9 @@ pscopy(psstack *st, int n)
 	if (!pscheckoverflow(st, n))
 		return fz_stackoverflow;
 
-	for (i = st->sp + n - 1; i <= st->sp; ++i)
+	for (i = 0; i < n; i++)
 	{
-		st->stack[i - n] = st->stack[i];
+		st->stack[st->sp - n + i] = st->stack[st->sp + i];
 	}
 	st->sp -= n;
 
