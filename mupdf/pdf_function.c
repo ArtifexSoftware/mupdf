@@ -89,7 +89,7 @@ static char *psopnames[] =
 	"false", "floor", "ge", "gt", "idiv", "index", "le", "ln",
 	"log", "lt", "mod", "mul", "ne", "neg", "not", "or", "pop",
 	"roll", "round", "sin", "sqrt", "sub", "true", "truncate",
-	"xor", /* "if", "ifelse", "return" */
+	"xor", "if", "ifelse", "return"
 };
 
 struct psobj_s
