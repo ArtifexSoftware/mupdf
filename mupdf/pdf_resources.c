@@ -66,11 +66,9 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	pdf_logrsrc("rsrc colorspace %s\n", colorspace->name);
 
 	error = pdf_storeitem(xref->store, PDF_KCOLORSPACE, ref, colorspace);
+	fz_dropcolorspace(colorspace); /* we did this just to fill the store, no need to hold on to it */
 	if (error)
-	{
-		fz_dropcolorspace(colorspace);
 		return fz_rethrow(error, "cannot store colorspace resource");
-	}
 
 	return fz_okay;
 }
@@ -93,6 +91,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	if (fz_toint(type) == 1)
 	{
 		error = pdf_loadpattern(&pattern, xref, obj, ref);
+		pdf_droppattern(pattern); /* we did this just to fill the store, no need to hold on to it */
 		fz_dropobj(obj);
 		if (error)
 			return fz_rethrow(error, "cannot load pattern resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
@@ -102,6 +101,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	else if (fz_toint(type) == 2)
 	{
 		error = pdf_loadshade(&shade, xref, obj, ref);
+		fz_dropshade(shade); /* we did this just to fill the store, no need to hold on to it */
 		fz_dropobj(obj);
 		if (error)
 			return fz_rethrow(error, "cannot load shade resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
@@ -127,6 +127,7 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 		return fz_rethrow(error, "cannot resolve shade resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 	error = pdf_loadshade(&shade, xref, obj, ref);
+	fz_dropshade(shade); /* we did this just to fill the store, no need to hold on to it */
 	fz_dropobj(obj);
 	if (error)
 		return fz_rethrow(error, "cannot load shade resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
@@ -151,6 +152,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	if (!strcmp(fz_toname(subtype), "Form"))
 	{
 		error = pdf_loadxobject(&xobject, xref, obj, ref);
+		pdf_dropxobject(xobject); /* we did this just to fill the store, no need to hold on to it */
 		fz_dropobj(obj);
 		if (error)
 			return fz_rethrow(error, "cannot load xobject resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
@@ -160,6 +162,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	else if (!strcmp(fz_toname(subtype), "Image"))
 	{
 		error = pdf_loadimage(&image, xref, obj, ref);
+		fz_dropimage((fz_image*)image); /* we did this just to fill the store, no need to hold on to it */
 		fz_dropobj(obj);
 		if (error)
 			return fz_rethrow(error, "cannot load image resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
@@ -183,6 +186,7 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	if (error)
 		return fz_rethrow(error, "cannot resolve font resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
 	error = pdf_loadfont(&font, xref, obj, ref);
+	fz_dropfont((fz_font*)font); /* we did this just to fill the store, no need to hold on to it */
 	if (error)
 		return fz_rethrow(error, "cannot load font resource (%d %d R)", fz_tonum(ref), fz_togen(ref));
 	return fz_okay;

@@ -578,6 +578,16 @@ drawfreepage(void)
 {
 	pdf_droppage(drawpage);
 	drawpage = nil;
+
+	/* Flush resources between pages.
+	 * TODO: should check memory usage before deciding to do this.
+	 */
+	if (src && src->store)
+	{
+		fflush(stderr);
+		/* pdf_debugstore(src->store); */
+		pdf_emptystore(src->store);
+	}
 }
 
 void
