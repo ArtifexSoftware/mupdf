@@ -98,7 +98,7 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 
 			error = loadpagetree(xref, pages, inherit, kobj, kref, pagenum);
 			fz_dropobj(kobj);
-			if (error) { fz_dropobj(kids); return fz_rethrow(error, "cannot load subtree"); }
+			if (error) { fz_dropobj(kids); return fz_rethrow(error, "cannot load pagesubtree (%d %d R)", fz_tonum(kref), fz_togen(kref)); }
 		}
 
 		fz_dropobj(kids);
@@ -107,7 +107,7 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 	}
 
 	else
-		return fz_throw("pagetree node has unexpected type %s", fz_toname(type));
+		return fz_throw("pagetree node has unexpected type (%s)", fz_toname(type));
 
 	return fz_okay;
 }
@@ -174,7 +174,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	if (!p->pobj) { error = fz_throw("outofmem: page tree object array"); goto cleanup; }
 
 	error = loadpagetree(xref, p, inherit, pages, treeref, &pagenum);
-	if (error) { error = fz_rethrow(error, "cannot load pagetree"); goto cleanup; }
+	if (error) { error = fz_rethrow(error, "cannot load pagetree (%d %d R)", fz_tonum(treeref), fz_togen(treeref)); goto cleanup; }
 
 	fz_dropobj(pages);
 	fz_dropobj(catalog);
