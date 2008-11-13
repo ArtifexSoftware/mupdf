@@ -18,11 +18,30 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 	fz_obj *kids;
 	fz_obj *kref, *kobj;
 	fz_obj *inh;
+	char *typestr;
 	int i;
 
 	type = fz_dictgets(obj, "Type");
+	if (!type)
+	{
+		fz_warn("pagetree node (%d %d R) lacks required type", fz_tonum(ref), fz_togen(ref));
 
-	if (strcmp(fz_toname(type), "Page") == 0)
+		kids = fz_dictgets(obj, "Kids");
+		if (kids)
+		{
+			fz_warn("guessing it may be a pagetree node, continuing...");
+			typestr = "Pages";
+		}
+		else
+		{
+			fz_warn("guessing it may be a page, continuing...");
+			typestr = "Page";
+		}
+	}
+	else
+		typestr = fz_toname(type);
+
+	if (strcmp(typestr, "Page") == 0)
 	{
 		pdf_logpage("page %d (%d %d R)\n", *pagenum, ref->u.r.oid, ref->u.r.gid);
 		(*pagenum)++;
@@ -60,7 +79,7 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		pages->cursor ++;
 	}
 
-	else if (strcmp(fz_toname(type), "Pages") == 0)
+	else if (strcmp(typestr, "Pages") == 0)
 	{
 		inh = fz_dictgets(obj, "Resources");
 		if (inh) inherit.resources = inh;
@@ -105,9 +124,6 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 
 		pdf_logpage("}\n");
 	}
-
-	else
-		return fz_throw("pagetree node has unexpected type (%s)", fz_toname(type));
 
 	return fz_okay;
 }
