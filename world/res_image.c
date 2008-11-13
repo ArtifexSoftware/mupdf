@@ -11,7 +11,7 @@ fz_keepimage(fz_image *image)
 void
 fz_dropimage(fz_image *image)
 {
-	if (--image->refs == 0)
+	if (image && --image->refs == 0)
 	{
 		if (image->drop)
 			image->drop(image);

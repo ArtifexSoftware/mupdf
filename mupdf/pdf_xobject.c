@@ -107,7 +107,7 @@ pdf_keepxobject(pdf_xobject *xobj)
 void
 pdf_dropxobject(pdf_xobject *xobj)
 {
-	if (--xobj->refs == 0)
+	if (xobj && --xobj->refs == 0)
 	{
 		if (xobj->contents) fz_dropbuffer(xobj->contents);
 		if (xobj->resources) fz_dropobj(xobj->resources);

@@ -11,7 +11,7 @@ fz_keepshade(fz_shade *shade)
 void
 fz_dropshade(fz_shade *shade)
 {
-	if (--shade->refs == 0)
+	if (shade && --shade->refs == 0)
 	{
 		if (shade->cs)
 			fz_dropcolorspace(shade->cs);

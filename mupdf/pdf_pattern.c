@@ -11,7 +11,7 @@ pdf_keeppattern(pdf_pattern *pat)
 void
 pdf_droppattern(pdf_pattern *pat)
 {
-	if (--pat->refs == 0)
+	if (pat && --pat->refs == 0)
 	{
 		if (pat->tree)
 			fz_droptree(pat->tree);

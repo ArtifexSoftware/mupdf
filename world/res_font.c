@@ -42,7 +42,7 @@ fz_keepfont(fz_font *font)
 void
 fz_dropfont(fz_font *font)
 {
-	if (--font->refs == 0)
+	if (font && --font->refs == 0)
 	{
 		if (font->drop)
 			font->drop(font);
