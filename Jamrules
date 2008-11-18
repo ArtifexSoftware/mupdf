@@ -63,7 +63,7 @@ if $(OS) = LINUX
     LINKLIBS = -lfreetype -ljpeg -lz -lm ;
     APPLINKLIBS = -lX11 -lXext ;
 
-    if $(BUILD) = debug   { OPTIM = -g -O0 ; }
+    if $(BUILD) = debug   { OPTIM = -g -O0 -fno-inline ; }
     if $(BUILD) = release { OPTIM = -O3 ; }
 
     if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
@@ -84,7 +84,7 @@ if $(OS) = MACOSX
     LINKLIBS = -lfreetype -ljpeg -lz -lm ;
     APPLINKLIBS = -lX11 -lXext ;
 
-    if $(BUILD) = debug   { OPTIM = -g -O0 ; }
+    if $(BUILD) = debug   { OPTIM = -g -O0 -fno-inline ; }
     if $(BUILD) = release { OPTIM = -O3 ; }
 
     if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
@@ -112,7 +112,7 @@ if $(OS) = MINGW
     LINKLIBS = -lfreetype -ljpeg -lz ;
     APPLINKLIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows ;
 
-    if $(BUILD) = debug   { OPTIM = -g -O0 ; }
+    if $(BUILD) = debug   { OPTIM = -g -O0 -fno-inline ; }
     if $(BUILD) = release { OPTIM = -O3 ; }
 
     if $(HAVE_JBIG2DEC) { LINKLIBS += -ljbig2dec ; }
