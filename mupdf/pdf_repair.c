@@ -206,7 +206,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 			error = parseobj(file, buf, sizeof buf, &stmofs, &stmlen, &isroot, &isinfo);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot parse object");
+				error = fz_rethrow(error, "cannot parse object (%d %d R)", oid, gen);
 				goto cleanup;
 			}
 
