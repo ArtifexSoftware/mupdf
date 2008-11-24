@@ -172,7 +172,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	else
 	{
 		fz_dropobj(obj);
-		return fz_throw("unknown xobject resource type");
+		return fz_throw("unknown type '%s' for xobject resource (%d %d R)", fz_toname(subtype), fz_tonum(ref), fz_togen(ref));
 	}
 }
 
