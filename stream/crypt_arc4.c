@@ -25,7 +25,7 @@
 #include "fitz-stream.h"
 
 void
-fz_arc4init(fz_arc4 *arc4, unsigned char *key, unsigned keylen)
+fz_arc4init(fz_arc4 *arc4, const unsigned char *key, const unsigned keylen)
 {
 	unsigned int t, u;
 	unsigned int keyindex;
@@ -87,7 +87,7 @@ fz_arc4next(fz_arc4 *arc4)
 }
 
 void
-fz_arc4encrypt(fz_arc4 *arc4, unsigned char *dest, unsigned char *src, unsigned len)
+fz_arc4encrypt(fz_arc4 *arc4, unsigned char *dest, const unsigned char *src, const unsigned len)
 {
 	unsigned int i;
 	for (i = 0; i < len; i++)
