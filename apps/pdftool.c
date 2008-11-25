@@ -859,7 +859,8 @@ drawmain(int argc, char **argv)
 	state = NO_FILE_OPENED;
 	while (optind < argc)
 	{
-		if (strstr(argv[optind], ".pdf"))
+		if (strstr(argv[optind], ".pdf") ||
+		    strstr(argv[optind], ".PDF"))
 		{
 			if (state == NO_PAGES_DRAWN)
 				drawpages("1-");
