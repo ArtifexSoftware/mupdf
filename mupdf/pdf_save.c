@@ -259,7 +259,7 @@ pdf_savexref(pdf_xref *xref, char *path, pdf_crypt *encrypt)
 		return fz_rethrow(error, "cannot open output file");
 	}
 
-	fz_print(out, "%%PDF-%d.%df\n", xref->version / 10, xref->version % 10);
+	fz_print(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
 	fz_print(out, "%%\342\343\317\323\n\n");
 
 	for (oid = 0; oid < xref->len; oid++)
