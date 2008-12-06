@@ -21,6 +21,9 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 	char *typestr;
 	int i;
 
+	if (fz_isnull(obj))
+		return fz_throw("pagetree node is missing");
+
 	type = fz_dictgets(obj, "Type");
 	if (!type)
 	{
