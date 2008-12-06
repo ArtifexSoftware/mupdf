@@ -228,6 +228,14 @@ pdf_getpageobject(pdf_pagetree *pages, int p)
 	return pages->pobj[p];
 }
 
+fz_obj *
+pdf_getpagereference(pdf_pagetree *pages, int p)
+{
+	if (p < 0 || p >= pages->count)
+		return nil;
+	return pages->pref[p];
+}
+
 void
 pdf_droppagetree(pdf_pagetree *pages)
 {

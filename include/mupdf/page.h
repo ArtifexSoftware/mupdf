@@ -42,6 +42,7 @@ struct pdf_textline_s
 fz_error *pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
 int pdf_getpagecount(pdf_pagetree *pages);
 fz_obj *pdf_getpageobject(pdf_pagetree *pages, int p);
+fz_obj *pdf_getpagereference(pdf_pagetree *pages, int p);
 void pdf_debugpagetree(pdf_pagetree *pages);
 void pdf_droppagetree(pdf_pagetree *pages);
 
