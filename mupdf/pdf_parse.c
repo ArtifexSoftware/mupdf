@@ -445,8 +445,7 @@ skip:
 		stmofs = 0;
 	else
 	{
-		error = fz_throw("expected endobj or stream keyword");
-		goto cleanup;
+		fz_warn("expected endobj or stream keyword (%d %d R)", oid, gid);
 	}
 
 	if (ooid) *ooid = oid;
