@@ -74,7 +74,6 @@ BASE_SRC = \
 
 ifeq ($(HOST),$(HOST_LINUX))
 BASE_SRC += \
-	util_strlcat.c \
 	util_strlcpy.c
 
 CFLAGS += -DNEED_STRLCPY
