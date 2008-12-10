@@ -969,6 +969,7 @@ Lsetcolor:
 
 		else if (!strcmp(buf, "d1"))
 		{
+			fz_warn("unimplemented: d1 charprocs");
 		}
 
 		else
