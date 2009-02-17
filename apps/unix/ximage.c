@@ -463,8 +463,8 @@ static void
 ximage_convert_bgra8888(PARAMS)
 {
 	int x, y;
-	unsigned *s = (unsigned *)src;
-	unsigned *d = (unsigned *)dst;
+	unsigned * restrict s = (unsigned *)src;
+	unsigned * restrict d = (unsigned *)dst;
 	unsigned val;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
@@ -493,8 +493,8 @@ static void
 ximage_convert_abgr8888(PARAMS)
 {
 	int x, y;
-	unsigned *s = (unsigned *)src;
-	unsigned *d = (unsigned *)dst;
+	unsigned * restrict s = (unsigned *)src;
+	unsigned * restrict d = (unsigned *)dst;
 	unsigned val;
 
 	for (y = 0; y < h; y++) {
