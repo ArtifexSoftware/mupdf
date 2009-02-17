@@ -448,8 +448,8 @@ static void
 ximage_convert_argb8888(PARAMS)
 {
 	int x, y;
-	unsigned * restrict s = (unsigned * restrict )src;
-	unsigned * restrict d = (unsigned * restrict )dst;
+	unsigned * restrict s = (unsigned *)src;
+	unsigned * restrict d = (unsigned *)dst;
 	for (y = 0; y < h; y++) {
 		for (x = 0; x < w; x++) {
 			d[x] = s[x];
