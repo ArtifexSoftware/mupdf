@@ -487,7 +487,7 @@ ximage_convert_bgra8888(PARAMS)
 	}
 }
 
-/* following have yet to recieve some MMX love ;-) */
+/* following have yet to receive some MMX love ;-) */
 
 static void
 ximage_convert_abgr8888(PARAMS)
