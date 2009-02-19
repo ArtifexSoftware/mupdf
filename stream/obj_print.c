@@ -331,7 +331,7 @@ fz_debugobj(fz_obj *obj)
 		if (!ptr)
 			return;
 		fz_sprintobj(ptr, n, obj, 0);
-		fputs(buf, stdout);
+		fputs(ptr, stdout);
 		fputc('\n', stdout);
 		fz_free(ptr);
 	}
