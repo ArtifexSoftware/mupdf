@@ -219,84 +219,6 @@ retry:
 }
 
 /*
- * Turn 1x1 images into rectangle fills
- */
-
-static fz_error *clean1x1(fz_node *node)
-{
-	fz_error *error;
-	fz_node *current;
-	fz_node *color;
-	fz_pathnode *rect;
-	fz_node *mask;
-	fz_image *image;
-	fz_pixmap *pix;
-	float v[FZ_MAXCOLORS];
-	int i;
-
-	for (current = node->first; current; current = current->next)
-	{
-		if (fz_isimagenode(current))
-		{
-			image = ((fz_imagenode*)current)->image;
-			if (image->w == 1 && image->h == 1)
-			{
-				error = fz_newpathnode(&rect);
-				fz_moveto(rect, 0, 0);
-				fz_lineto(rect, 1, 0);
-				fz_lineto(rect, 1, 1);
-				fz_lineto(rect, 0, 1);
-				fz_closepath(rect);
-				fz_endpath(rect, FZ_FILL, nil, nil);
-
-				if (image->cs)
-				{
-					error = fz_newpixmap(&pix, 0, 0, 1, 1, image->n + 1);
-					if (error)
-						return fz_rethrow(error, "cannot create 1x1 pixmap");
-
-					error = image->loadtile(image, pix);
-					if (error)
-						return fz_rethrow(error, "cannot load pixmap tile");
-
-					for (i = 0; i < image->n; i++)
-						v[i] = pix->samples[i + 1] / 255.0;
-
-					fz_droppixmap(pix);
-
-					error = fz_newsolidnode(&color, 1.0, image->cs, image->n, v);
-					if (error)
-						return fz_rethrow(error, "cannot create color node");
-					error = fz_newmasknode(&mask);
-					if (error)
-						return fz_rethrow(error, "cannot create mask node");
-
-					fz_insertnodeafter(current, mask);
-					fz_insertnodelast(mask, (fz_node*)rect);
-					fz_insertnodelast(mask, color);
-					fz_removenode(current);
-					current = mask;
-				}
-
-				else
-				{
-					/* pray that the 1x1 image mask is all opaque */
-					fz_insertnodeafter(current, (fz_node*)rect);
-					fz_removenode(current);
-					current = (fz_node*)rect;
-				}
-			}
-		}
-
-		error = clean1x1(current);
-		if (error)
-			return fz_rethrow(error, "cannot perform clean1x1 optimization");
-	}
-
-	return fz_okay;
-}
-
-/*
  *
  */
 
@@ -308,7 +230,6 @@ fz_optimizetree(fz_tree *tree)
 	cleanwhite(tree->root);
 	cleanovers(tree->root);
 	cleanmasks(tree->root);
-	clean1x1(tree->root);
 	return fz_okay;
 }
 

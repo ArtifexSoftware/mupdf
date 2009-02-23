@@ -499,12 +499,12 @@ maskcolorkeyindexed(fz_pixmap *ind, fz_pixmap *pix, int *colorkey)
 	unsigned char *s = ind->samples;
 	unsigned char *d = pix->samples;
 	int i, k;
+
 	for (i = 0; i < pix->w * pix->h; i++)
 	{
 		if (s[0] >= colorkey[0] && s[0] <= colorkey[1])
 			for (k = 0; k < pix->n; k++)
 				d[k] = 0;
-		d[0] = 255;
 		s += ind->n;
 		d += pix->n;
 	}
