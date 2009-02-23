@@ -1145,7 +1145,7 @@ fz_error *gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		if (!fz_isname(type))
 			return fz_throw("not a image subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "Image"))
-			return fz_okay;
+			continue;
 
 		filter = fz_dictgets(imagedict, "Filter");
 		if (filter)
@@ -1181,18 +1181,21 @@ fz_error *gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 		if (fz_isarray(cs))
 		{
-			altcs = fz_arrayget(cs, 2);
-			if (altcs)
-			{
-				error = pdf_resolve(&altcs, src);
-				if (error)
-					return fz_rethrow(error, "cannot resolve indirect image alternate colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
-			}
-
 			cs = fz_arrayget(cs, 0);
 			error = pdf_resolve(&cs, src);
 			if (error)
 				return fz_rethrow(error, "cannot resolve indirect image colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+
+			if (fz_isname(cs) && (!strcmp(fz_toname(cs), "DeviceN") || !strcmp(fz_toname(cs), "Separation")))
+			{
+			    altcs = fz_arrayget(cs, 2);
+			    if (altcs)
+			    {
+				    error = pdf_resolve(&altcs, src);
+				    if (error)
+					    return fz_rethrow(error, "cannot resolve indirect image alternate colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			    }
+			}
 		}
 
 		if (fz_isbool(mask) && fz_tobool(mask))
@@ -1243,7 +1246,7 @@ fz_error *gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < images)
-			return fz_okay;
+			continue;
 
 		images++;
 
@@ -1600,7 +1603,9 @@ void collectinfo()
 			if (error)
 				die(fz_rethrow(error, "resolving font dict at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 
-			gatherfonts(i, pageref, pageobj, font);
+			error = gatherfonts(i, pageref, pageobj, font);
+			if (error)
+			    die(fz_rethrow(error, "gathering fonts at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 		}
 
 		if (xobj)
@@ -1609,9 +1614,15 @@ void collectinfo()
 			if (error)
 				die(fz_rethrow(error, "resolving xobject dict at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 
-			gatherimages(i, pageref, pageobj, xobj);
-			gatherforms(i, pageref, pageobj, xobj);
-			gatherpsobjs(i, pageref, pageobj, xobj);
+			error = gatherimages(i, pageref, pageobj, xobj);
+			if (error)
+			    die(fz_rethrow(error, "gathering images at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
+			error = gatherforms(i, pageref, pageobj, xobj);
+			if (error)
+			    die(fz_rethrow(error, "gathering forms at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
+			error = gatherpsobjs(i, pageref, pageobj, xobj);
+			if (error)
+			    die(fz_rethrow(error, "gathering postscript objects at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 		}
 
 		if (shade)
@@ -1620,7 +1631,9 @@ void collectinfo()
 			if (error)
 				die(fz_rethrow(error, "resolving shading dict at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 
-			gathershadings(i, pageref, pageobj, shade);
+			error = gathershadings(i, pageref, pageobj, shade);
+			if (error)
+			    die(fz_rethrow(error, "gathering shadings at page %d (%d %d R)", i, fz_tonum(pageref), fz_togen(pageref)));
 		}
 	}
 }
