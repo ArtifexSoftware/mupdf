@@ -594,7 +594,7 @@ static int codefromstring(char *buf, int len)
 {
 	int a = 0;
 	while (len--)
-		a = (a << 8) | *buf++;
+		a = (a << 8) | *(unsigned char *)buf++;
 	return a;
 }
 
