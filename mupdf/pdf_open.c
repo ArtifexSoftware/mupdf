@@ -338,8 +338,8 @@ readnewxrefsection(pdf_xref *xref, fz_stream *stm, int i0, int i1, int w0, int w
 		{
 			int t = w0 ? a : 1;
 			xref->table[i].type = t == 0 ? 'f' : t == 1 ? 'n' : t == 2 ? 'o' : 0;
-			xref->table[i].ofs = w2 ? b : 0;
-			xref->table[i].gen = w1 ? c : 0;
+			xref->table[i].ofs = w1 ? b : 0;
+			xref->table[i].gen = w2 ? c : 0;
 		}
 	}
 
