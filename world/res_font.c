@@ -1,35 +1,34 @@
 #include "fitz-base.h"
 #include "fitz-world.h"
+#include "fitz-draw.h" /* for type3 font rendering */
 
-void
-fz_initfont(fz_font *font, char *name)
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+static fz_font *
+fz_newfont(void)
 {
-	font->refs = 1;
-	strlcpy(font->name, name, sizeof font->name);
+	fz_font *font;
 
-	font->wmode = 0;
+	font = fz_malloc(sizeof(fz_font));
+	if (!font)
+		return nil;
+
+	font->refs = 1;
+	strcpy(font->name, "<unknown>");
+
+	font->ftsubstitute = 0;
+	font->ftface = nil;
+
+	font->t3matrix = fz_identity();
+	font->t3procs = nil;
 
 	font->bbox.x0 = 0;
 	font->bbox.y0 = 0;
 	font->bbox.x1 = 1000;
 	font->bbox.y1 = 1000;
 
-	font->hmtxcap = 0;
-	font->vmtxcap = 0;
-	font->nhmtx = 0;
-	font->nvmtx = 0;
-	font->hmtx = nil;
-	font->vmtx = nil;
-
-	font->dhmtx.lo = 0x0000;
-	font->dhmtx.hi = 0xFFFF;
-	font->dhmtx.w = 0;
-
-	font->dvmtx.lo = 0x0000;
-	font->dvmtx.hi = 0xFFFF;
-	font->dvmtx.x = 0;
-	font->dvmtx.y = 880;
-	font->dvmtx.w = -1000;
+	return font;
 }
 
 fz_font *
@@ -42,20 +41,25 @@ fz_keepfont(fz_font *font)
 void
 fz_dropfont(fz_font *font)
 {
+	int i;
+
 	if (font && --font->refs == 0)
 	{
-		if (font->drop)
-			font->drop(font);
-		fz_free(font->hmtx);
-		fz_free(font->vmtx);
+		if (font->t3procs)
+		{
+			for (i = 0; i < 256; i++)
+				if (font->t3procs[i])
+					fz_droptree(font->t3procs[i]);
+			fz_free(font->t3procs);
+		}
+
+		if (font->ftface)
+		{
+			FT_Done_Face((FT_Face)font->ftface);
+		}
+
 		fz_free(font);
 	}
-}
-
-void
-fz_setfontwmode(fz_font *font, int wmode)
-{
-	font->wmode = wmode;
 }
 
 void
@@ -67,203 +71,309 @@ fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
 	font->bbox.y1 = ymax;
 }
 
-void
-fz_setdefaulthmtx(fz_font *font, int w)
+/*
+ * Freetype hooks
+ */
+
+static FT_Library fz_ftlib = nil;
+
+#undef __FTERRORS_H__
+#define FT_ERRORDEF(e, v, s)	{ (e), (s) },
+#define FT_ERROR_START_LIST
+#define FT_ERROR_END_LIST	{ 0, NULL }
+
+struct ft_error
 {
-	font->dhmtx.w = w;
+	int err;
+	char *str;
+};
+
+const struct ft_error ft_errors[] =
+{
+#include FT_ERRORS_H
+};
+
+char *ft_errorstring(int err)
+{
+	const struct ft_error *e;
+
+	for (e = ft_errors; e->str != NULL; e++)
+		if (e->err == err)
+			return e->str;
+
+	return "Unknown error";
 }
 
-void
-fz_setdefaultvmtx(fz_font *font, int y, int w)
+static fz_error *
+fz_initfreetype(void)
 {
-	font->dvmtx.y = y;
-	font->dvmtx.w = w;
-}
+	int code;
+	int maj, min, pat;
 
-fz_error *
-fz_addhmtx(fz_font *font, int lo, int hi, int w)
-{
-	int newcap;
-	fz_hmtx *newmtx;
-
-	if (font->nhmtx + 1 >= font->hmtxcap)
-	{
-		newcap = font->hmtxcap + 16;
-		newmtx = fz_realloc(font->hmtx, sizeof(fz_hmtx) * newcap);
-		if (!newmtx)
-			return fz_outofmem;
-		font->hmtxcap = newcap;
-		font->hmtx = newmtx;
-	}
-
-	font->hmtx[font->nhmtx].lo = lo;
-	font->hmtx[font->nhmtx].hi = hi;
-	font->hmtx[font->nhmtx].w = w;
-	font->nhmtx++;
-
-	return fz_okay;
-}
-
-fz_error *
-fz_addvmtx(fz_font *font, int lo, int hi, int x, int y, int w)
-{
-	int newcap;
-	fz_vmtx *newmtx;
-
-	if (font->nvmtx + 1 >= font->vmtxcap)
-	{
-		newcap = font->vmtxcap + 16;
-		newmtx = fz_realloc(font->vmtx, sizeof(fz_vmtx) * newcap);
-		if (!newmtx)
-			return fz_outofmem;
-		font->vmtxcap = newcap;
-		font->vmtx = newmtx;
-	}
-
-	font->vmtx[font->nvmtx].lo = lo;
-	font->vmtx[font->nvmtx].hi = hi;
-	font->vmtx[font->nvmtx].x = x;
-	font->vmtx[font->nvmtx].y = y;
-	font->vmtx[font->nvmtx].w = w;
-	font->nvmtx++;
-
-	return fz_okay;
-}
-
-static int cmph(const void *a0, const void *b0)
-{
-	fz_hmtx *a = (fz_hmtx*)a0;
-	fz_hmtx *b = (fz_hmtx*)b0;
-	return a->lo - b->lo;
-}
-
-static int cmpv(const void *a0, const void *b0)
-{
-	fz_vmtx *a = (fz_vmtx*)a0;
-	fz_vmtx *b = (fz_vmtx*)b0;
-	return a->lo - b->lo;
-}
-
-fz_error *
-fz_endhmtx(fz_font *font)
-{
-	fz_hmtx *newmtx;
-
-	if (!font->hmtx)
+	if (fz_ftlib)
 		return fz_okay;
 
-	qsort(font->hmtx, font->nhmtx, sizeof(fz_hmtx), cmph);
+	code = FT_Init_FreeType(&fz_ftlib);
+	if (code)
+		return fz_throw("cannot init freetype: %s", ft_errorstring(code));
 
-	newmtx = fz_realloc(font->hmtx, sizeof(fz_hmtx) * font->nhmtx);
-	if (!newmtx)
-		return fz_outofmem;
-	font->hmtxcap = font->nhmtx;
-	font->hmtx = newmtx;
+	FT_Library_Version(fz_ftlib, &maj, &min, &pat);
+	if (maj == 2 && min == 1 && pat < 7)
+		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
 
 	return fz_okay;
 }
 
 fz_error *
-fz_endvmtx(fz_font *font)
+fz_newfontfromfile(fz_font **fontp, char *path, int index)
 {
-	fz_vmtx *newmtx;
+	fz_error *error;
+	fz_font *font;
+	int code;
 
-	if (!font->vmtx)
-		return fz_okay;
+	error = fz_initfreetype();
+	if (error)
+		return fz_rethrow(error, "cannot init freetype library");
 
-	qsort(font->vmtx, font->nvmtx, sizeof(fz_vmtx), cmpv);
+	font = fz_newfont();
+	if (!font)
+		return fz_throw("outofmem: font struct");
 
-	newmtx = fz_realloc(font->vmtx, sizeof(fz_vmtx) * font->nvmtx);
-	if (!newmtx)
-		return fz_outofmem;
-	font->vmtxcap = font->nvmtx;
-	font->vmtx = newmtx;
+	code = FT_New_Face(fz_ftlib, path, index, (FT_Face*)&font->ftface);
+	if (code)
+	{
+		fz_free(font);
+		return fz_throw("freetype: cannot load font: %s", ft_errorstring(code));
+	}
+
+	*fontp = font;
+	return fz_okay;
+}
+
+fz_error *
+fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
+{
+	fz_error *error;
+	fz_font *font;
+	int code;
+
+	error = fz_initfreetype();
+	if (error)
+		return fz_rethrow(error, "cannot init freetype library");
+
+	font = fz_newfont();
+	if (!font)
+		return fz_throw("outofmem: font struct");
+
+	code = FT_New_Memory_Face(fz_ftlib, data, len, index, (FT_Face*)&font->ftface);
+	if (code)
+	{
+		fz_free(font);
+		return fz_throw("freetype: cannot load font: %s", ft_errorstring(code));
+	}
+
+	*fontp = font;
+	return fz_okay;
+}
+
+fz_error *
+fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
+{
+	FT_Face face = font->ftface;
+	FT_Matrix m;
+	FT_Vector v;
+	FT_Error fterr;
+	int x, y;
+
+#if 0
+	/* We lost this feature in refactoring.
+	 * We can't access pdf_fontdesc metrics from fz_font.
+	 * The pdf_fontdesc metrics are character based (cid),
+	 * where the glyph being rendered is given by glyph (gid).
+	 */
+	if (font->ftsubstitute && font->wmode == 0)
+	{
+		fz_hmtx subw;
+		int realw;
+		float scale;
+
+		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+
+		fterr = FT_Load_Glyph(font->ftface, gid,
+				FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
+		if (fterr)
+			return fz_throw("freetype failed to load glyph: %s", ft_errorstring(fterr));
+
+		realw = ((FT_Face)font->ftface)->glyph->advance.x;
+		subw = fz_gethmtx(font, cid); // <-- this is the offender
+		if (realw)
+			scale = (float) subw.w / realw;
+		else
+			scale = 1.0;
+
+		trm = fz_concat(fz_scale(scale, 1.0), trm);
+	}
+#endif
+
+	glyph->w = 0;
+	glyph->h = 0;
+	glyph->x = 0;
+	glyph->y = 0;
+	glyph->samples = nil;
+
+	/* freetype mutilates complex glyphs if they are loaded
+	 * with FT_Set_Char_Size 1.0. it rounds the coordinates
+	 * before applying transformation. to get more precision in
+	 * freetype, we shift part of the scale in the matrix
+	 * into FT_Set_Char_Size instead
+	 */
+
+	m.xx = trm.a * 64;      /* should be 65536 */
+	m.yx = trm.b * 64;
+	m.xy = trm.c * 64;
+	m.yy = trm.d * 64;
+	v.x = trm.e * 64;
+	v.y = trm.f * 64;
+
+	FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
+	FT_Set_Transform(face, &m, &v);
+
+	fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
+	if (fterr)
+		fz_warn("freetype load glyph: %s", ft_errorstring(fterr));
+	fterr = FT_Render_Glyph(face->glyph, ft_render_mode_normal);
+
+	if (fterr)
+		fz_warn("freetype render glyph: %s", ft_errorstring(fterr));
+
+	glyph->w = face->glyph->bitmap.width;
+	glyph->h = face->glyph->bitmap.rows;
+	glyph->x = face->glyph->bitmap_left;
+	glyph->y = face->glyph->bitmap_top - glyph->h;
+	glyph->samples = face->glyph->bitmap.buffer;
+
+	for (y = 0; y < glyph->h / 2; y++)
+	{
+		for (x = 0; x < glyph->w; x++)
+		{
+			unsigned char a = glyph->samples[y * glyph->w + x ];
+			unsigned char b = glyph->samples[(glyph->h - y - 1) * glyph->w + x];
+			glyph->samples[y * glyph->w + x ] = b;
+			glyph->samples[(glyph->h - y - 1) * glyph->w + x] = a;
+		}
+	}
 
 	return fz_okay;
 }
 
-fz_hmtx
-fz_gethmtx(fz_font *font, int cid)
+
+/*
+ * Type 3 fonts...
+ */
+
+fz_error *
+fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix, void **procs0)
 {
-	int l = 0;
-	int r = font->nhmtx - 1;
-	int m;
+	fz_font *font;
+	fz_tree **procs = (fz_tree**)procs0;
+	int i;
 
-	if (!font->hmtx)
-		goto notfound;
+	font = fz_newfont();
+	if (!font)
+		return fz_throw("outofmem: font struct");
 
-	while (l <= r)
+	font->t3procs = fz_malloc(sizeof(fz_tree*) * 256);
+	if (!font->t3procs)
 	{
-		m = (l + r) >> 1;
-		if (cid < font->hmtx[m].lo)
-			r = m - 1;
-		else if (cid > font->hmtx[m].hi)
-			l = m + 1;
-		else
-			return font->hmtx[m];
+		fz_free(font);
+		return fz_throw("outofmem: type3 font charproc array");
 	}
 
-notfound:
-	return font->dhmtx;
+	font->t3matrix = matrix;
+	for (i = 0; i < 256; i++)
+		font->t3procs[i] = procs[i];
+
+	strlcpy(font->name, name, sizeof(font->name));
+
+	*fontp = font;
+	return fz_okay;
 }
 
-fz_vmtx
-fz_getvmtx(fz_font *font, int cid)
+fz_error *
+fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
-	fz_hmtx h;
-	fz_vmtx v;
-	int l = 0;
-	int r = font->nvmtx - 1;
-	int m;
+    fz_error *error;
+    fz_renderer *gc;
+    fz_tree *tree;
+    fz_matrix ctm;
+    fz_irect bbox;
 
-	if (!font->vmtx)
-		goto notfound;
+    /* TODO: make it reentrant */
+    static fz_pixmap *pixmap = nil;
+    if (pixmap)
+    {
+	fz_droppixmap(pixmap);
+	pixmap = nil;
+    }
 
-	while (l <= r)
-	{
-		m = (l + r) >> 1;
-		if (cid < font->vmtx[m].lo)
-			r = m - 1;
-		else if (cid > font->vmtx[m].hi)
-			l = m + 1;
-		else
-			return font->vmtx[m];
-	}
+    if (gid < 0 || gid > 255)
+	return fz_throw("assert: glyph out of range");
 
-notfound:
-	h = fz_gethmtx(font, cid);
-	v = font->dvmtx;
-	v.x = h.w / 2;
-	return v;
+    tree = font->t3procs[gid];
+    if (!tree)
+    {
+	glyph->w = 0;
+	glyph->h = 0;
+	return fz_okay;
+    }
+
+    /* XXX UGLY HACK XXX */
+    extern fz_colorspace *pdf_devicegray;
+
+    ctm = fz_concat(font->t3matrix, trm);
+    bbox = fz_roundrect(fz_boundtree(tree, ctm));
+
+    error = fz_newrenderer(&gc, pdf_devicegray, 1, 4096);
+    if (error)
+	return fz_rethrow(error, "cannot create renderer");
+    error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
+    fz_droprenderer(gc);
+    if (error)
+	return fz_rethrow(error, "cannot render glyph");
+
+    assert(pixmap->n == 1);
+
+    glyph->x = pixmap->x;
+    glyph->y = pixmap->y;
+    glyph->w = pixmap->w;
+    glyph->h = pixmap->h;
+    glyph->samples = pixmap->samples;
+
+    return fz_okay;
 }
 
 void
 fz_debugfont(fz_font *font)
 {
-	int i;
-
 	printf("font '%s' {\n", font->name);
-	printf("  wmode %d\n", font->wmode);
-	printf("  bbox [%d %d %d %d]\n",
-		font->bbox.x0, font->bbox.y0,
-		font->bbox.x1, font->bbox.y1);
-	printf("  DW %d\n", font->dhmtx.w);
 
-	printf("  W {\n");
-	for (i = 0; i < font->nhmtx; i++)
-		printf("    <%04x> <%04x> %d\n",
-			font->hmtx[i].lo, font->hmtx[i].hi, font->hmtx[i].w);
-	printf("  }\n");
-
-	if (font->wmode)
+	if (font->ftface)
 	{
-		printf("  DW2 [%d %d]\n", font->dvmtx.y, font->dvmtx.w);
-		printf("  W2 {\n");
-		for (i = 0; i < font->nvmtx; i++)
-			printf("    <%04x> <%04x> %d %d %d\n", font->vmtx[i].lo, font->vmtx[i].hi,
-				font->vmtx[i].x, font->vmtx[i].y, font->vmtx[i].w);
-		printf("  }\n");
+		printf("  freetype face %p\n", font->ftface);
+		if (font->ftsubstitute)
+			printf("  substitute metrics\n");
 	}
+
+	if (font->t3procs)
+	{
+		printf("  type3 matrix [%g %g %g %g]\n",
+				font->t3matrix.a, font->t3matrix.b,
+				font->t3matrix.c, font->t3matrix.d);
+	}
+
+	printf("  bbox [%d %d %d %d]\n",
+			font->bbox.x0, font->bbox.y0,
+			font->bbox.x1, font->bbox.y1);
 
 	printf("}\n");
 }

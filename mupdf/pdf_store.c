@@ -58,7 +58,7 @@ static void dropitem(pdf_itemkind kind, void *val)
 	case PDF_KPATTERN: pdf_droppattern(val); break;
 	case PDF_KSHADE: fz_dropshade(val); break;
 	case PDF_KCMAP: pdf_dropcmap(val); break;
-	case PDF_KFONT: fz_dropfont(val); break;
+	case PDF_KFONT: pdf_dropfont(val); break;
 	}
 }
 
@@ -234,7 +234,7 @@ pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 			case PDF_KPATTERN: pdf_droppattern(val); break;
 			case PDF_KSHADE: fz_dropshade(val); break;
 			case PDF_KCMAP: pdf_dropcmap(val); break;
-			case PDF_KFONT: fz_dropfont(val); break;
+			case PDF_KFONT: pdf_dropfont(val); break;
 		}
 	}
 

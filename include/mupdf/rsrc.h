@@ -189,11 +189,31 @@ extern const char * const pdf_expert[256];
 extern const char * const pdf_symbol[256];
 extern const char * const pdf_zapfdingbats[256];
 
-typedef struct pdf_font_s pdf_font;
+typedef struct pdf_hmtx_s pdf_hmtx;
+typedef struct pdf_vmtx_s pdf_vmtx;
+typedef struct pdf_fontdesc_s pdf_fontdesc;
 
-struct pdf_font_s
+struct pdf_hmtx_s
 {
-	fz_font super;
+	unsigned short lo;
+	unsigned short hi;
+	int w;	/* type3 fonts can be big! */
+};
+
+struct pdf_vmtx_s
+{
+	unsigned short lo;
+	unsigned short hi;
+	short x;
+	short y;
+	short w;
+};
+
+struct pdf_fontdesc_s
+{
+	int refs;
+
+	fz_font *font;
 
 	/* FontDescriptor */
 	int flags;
@@ -215,32 +235,47 @@ struct pdf_font_s
 	int ncidtoucs;
 	unsigned short *cidtoucs;
 
-	/* Freetype */
-	int substitute;
-	void *ftface;
-	char *filename;
-	fz_buffer *fontdata;
+	/* Metrics (given in the PDF file) */
+	int wmode;
 
-	/* Type3 data */
-	fz_matrix matrix;
-	fz_tree *charprocs[256];
+	int nhmtx, hmtxcap;
+	pdf_hmtx dhmtx;
+	pdf_hmtx *hmtx;
+
+	int nvmtx, vmtxcap;
+	pdf_vmtx dvmtx;
+	pdf_vmtx *vmtx;
 };
 
+/* fontmtx.c */
+void pdf_setfontwmode(pdf_fontdesc *font, int wmode);
+void pdf_setdefaulthmtx(pdf_fontdesc *font, int w);
+void pdf_setdefaultvmtx(pdf_fontdesc *font, int y, int w);
+fz_error *pdf_addhmtx(pdf_fontdesc *font, int lo, int hi, int w);
+fz_error *pdf_addvmtx(pdf_fontdesc *font, int lo, int hi, int x, int y, int w);
+fz_error *pdf_endhmtx(pdf_fontdesc *font);
+fz_error *pdf_endvmtx(pdf_fontdesc *font);
+pdf_hmtx pdf_gethmtx(pdf_fontdesc *font, int cid);
+pdf_vmtx pdf_getvmtx(pdf_fontdesc *font, int cid);
+
 /* unicode.c */
-fz_error *pdf_loadtounicode(pdf_font *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);
+fz_error *pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref, char **strings, char *collection, fz_obj *cmapstm);
 
 /* fontfile.c */
-fz_error *pdf_loadbuiltinfont(pdf_font *font, char *basefont);
-fz_error *pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref);
-fz_error *pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection);
-fz_error *pdf_loadsubstitutefont(pdf_font *font, int fdflags, char *collection);
+fz_error *pdf_loadbuiltinfont(pdf_fontdesc *font, char *basefont);
+fz_error *pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref);
+fz_error *pdf_loadsystemfont(pdf_fontdesc *font, char *basefont, char *collection);
+fz_error *pdf_loadsubstitutefont(pdf_fontdesc *font, int fdflags, char *collection);
 
 /* type3.c */
-fz_error *pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+fz_error *pdf_loadtype3font(pdf_fontdesc **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 
 /* font.c */
-char *ft_errstr(int err);
-fz_error *pdf_loadfontdescriptor(pdf_font *font, pdf_xref *xref, fz_obj *desc, char *collection);
-fz_error *pdf_loadfont(pdf_font **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
-void pdf_dropfont(pdf_font *font);
+int pdf_fontcidtogid(pdf_fontdesc *fontdesc, int cid);
+fz_error *pdf_loadfontdescriptor(pdf_fontdesc *font, pdf_xref *xref, fz_obj *desc, char *collection);
+fz_error *pdf_loadfont(pdf_fontdesc **fontp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
+pdf_fontdesc * pdf_newfontdesc(void);
+pdf_fontdesc * pdf_keepfont(pdf_fontdesc *fontdesc);
+void pdf_dropfont(pdf_fontdesc *font);
+void pdf_debugfont(pdf_fontdesc *fontdesc);
 

@@ -1,68 +1,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-/* TODO: we leak the pixmap buffer. not good. we should render into the glyph cache directly or keep it in the font struct.. */
-
-#define GCMEM (4 * 1024)
-
-extern pdf_font *pdf_newfont(char *name);
-
-static void
-t3dropfont(fz_font *font)
-{
-	int i;
-	pdf_font *pfont = (pdf_font*)font;
-	if (pfont->encoding)
-		pdf_dropcmap(pfont->encoding);
-	for (i = 0; i < 256; i++)
-		if (pfont->charprocs[i])
-			fz_droptree(pfont->charprocs[i]);
-}
-
-static fz_error *
-t3render(fz_glyph *glyph, fz_font *fzfont, int cid, fz_matrix trm)
-{
-	pdf_font *font = (pdf_font*)fzfont;
-	fz_error *error;
-	fz_renderer *gc;
-	fz_tree *tree;
-	fz_pixmap *pixmap;
-	fz_matrix ctm;
-	fz_irect bbox;
-
-	if (cid < 0 || cid > 255)
-		return fz_throw("assert: glyph out of range");
-
-	tree = font->charprocs[cid];
-	if (!tree)
-	{
-		glyph->w = 0;
-		glyph->h = 0;
-		return fz_okay;
-	}
-
-	ctm = fz_concat(font->matrix, trm);
-	bbox = fz_roundrect(fz_boundtree(tree, ctm));
-
-	error = fz_newrenderer(&gc, pdf_devicegray, 1, GCMEM);
-	if (error)
-		return fz_rethrow(error, "cannot create renderer");
-	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
-	fz_droprenderer(gc);
-	if (error)
-		return fz_rethrow(error, "cannot render glyph");
-
-	assert(pixmap->n == 1);
-
-	glyph->x = pixmap->x;
-	glyph->y = pixmap->y;
-	glyph->w = pixmap->w;
-	glyph->h = pixmap->h;
-	glyph->samples = pixmap->samples;
-
-	return fz_okay;
-}
-
 static fz_error *
 loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
@@ -98,12 +36,12 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 }
 
 fz_error *
-pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
+pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error *error;
 	char buf[256];
 	char *estrings[256];
-	pdf_font *font;
+	pdf_fontdesc *fontdesc;
 	fz_obj *encoding;
 	fz_obj *widths;
 	fz_obj *resources;
@@ -119,23 +57,20 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	else
 		sprintf(buf, "Unnamed-T3");
 
-	font = pdf_newfont(buf);
-	if (!font)
+	fontdesc = pdf_newfontdesc();
+	if (!fontdesc)
 		return fz_throw("outofmem: font struct");
 
-	pdf_logfont("load type3 font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), font);
+	pdf_logfont("load type3 font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), fontdesc);
 	pdf_logfont("name %s\n", buf);
 
-	font->super.render = t3render;
-	font->super.drop = (void(*)(fz_font*)) t3dropfont;
-
 	obj = fz_dictgets(dict, "FontMatrix");
-	font->matrix = pdf_tomatrix(obj);
+	fontdesc->font->t3matrix = pdf_tomatrix(obj);
 
 	pdf_logfont("matrix [%g %g %g %g %g %g]\n",
-			font->matrix.a, font->matrix.b,
-			font->matrix.c, font->matrix.d,
-			font->matrix.e, font->matrix.f);
+			fontdesc->font->t3matrix.a, fontdesc->font->t3matrix.b,
+			fontdesc->font->t3matrix.c, fontdesc->font->t3matrix.d,
+			fontdesc->font->t3matrix.e, fontdesc->font->t3matrix.f);
 
 	obj = fz_dictgets(dict, "FontBBox");
 	bbox = pdf_torect(obj);
@@ -144,12 +79,12 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			bbox.x0, bbox.y0,
 			bbox.x1, bbox.y1);
 
-	bbox = fz_transformaabb(font->matrix, bbox);
+	bbox = fz_transformaabb(fontdesc->font->t3matrix, bbox);
 	bbox.x0 = fz_floor(bbox.x0 * 1000);
 	bbox.y0 = fz_floor(bbox.y0 * 1000);
 	bbox.x1 = fz_ceil(bbox.x1 * 1000);
 	bbox.y1 = fz_ceil(bbox.y1 * 1000);
-	fz_setfontbbox((fz_font*)font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
+	fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/*
 	 * Encoding
@@ -199,11 +134,11 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	fz_dropobj(encoding);
 
-	error = pdf_newidentitycmap(&font->encoding, 0, 1);
+	error = pdf_newidentitycmap(&fontdesc->encoding, 0, 1);
 	if (error)
 		goto cleanup;
 
-	error = pdf_loadtounicode(font, xref,
+	error = pdf_loadtounicode(fontdesc, xref,
 			estrings, nil, fz_dictgets(dict, "ToUnicode"));
 	if (error)
 		goto cleanup;
@@ -212,7 +147,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	 * Widths
 	 */
 
-	fz_setdefaulthmtx((fz_font*)font, 0);
+	pdf_setdefaulthmtx(fontdesc, 0);
 
 	first = fz_toint(fz_dictgets(dict, "FirstChar"));
 	last = fz_toint(fz_dictgets(dict, "LastChar"));
@@ -230,8 +165,8 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	for (i = first; i <= last; i++)
 	{
 		float w = fz_toreal(fz_arrayget(widths, i - first));
-		w = font->matrix.a * w * 1000.0;
-		error = fz_addhmtx((fz_font*)font, i, i, w);
+		w = fontdesc->font->t3matrix.a * w * 1000.0;
+		error = pdf_addhmtx(fontdesc, i, i, w);
 		if (error) {
 			fz_dropobj(widths);
 			goto cleanup;
@@ -240,7 +175,7 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	fz_dropobj(widths);
 
-	error = fz_endhmtx((fz_font*)font);
+	error = pdf_endhmtx(fontdesc);
 	if (error)
 		goto cleanup;
 
@@ -290,11 +225,11 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			if (obj)
 			{
 				pdf_logfont("load charproc %s {\n", estrings[i]);
-				error = loadcharproc(&font->charprocs[i], xref, resources, obj);
+				error = loadcharproc(&fontdesc->font->t3procs[i], xref, resources, obj);
 				if (error)
 					goto cleanup2;
 
-				error = fz_optimizetree(font->charprocs[i]);
+				error = fz_optimizetree(fontdesc->font->t3procs[i]);
 				if (error)
 					goto cleanup2;
 
@@ -309,14 +244,15 @@ pdf_loadtype3font(pdf_font **fontp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	pdf_logfont("}\n");
 
-	*fontp = font;
+	*fontdescp = fontdesc;
 	return fz_okay;
 
 cleanup2:
 	if (resources)
 		fz_dropobj(resources);
 cleanup:
-	fz_dropfont((fz_font*)font);
+	fz_dropfont(fontdesc->font);
+	fz_free(fontdesc);
 	return fz_rethrow(error, "cannot load type3 font");
 }
 

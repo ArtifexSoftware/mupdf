@@ -71,7 +71,7 @@ static fz_error *initfontlibs(void)
 
 	fterr = FT_Init_FreeType(&ftlib);
 	if (fterr)
-		return fz_throw("freetype failed initialisation: %s", ft_errstr(fterr));
+		return fz_throw("freetype failed initialisation: %s", ft_errorstring(fterr));
 
 	FT_Library_Version(ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
@@ -130,7 +130,7 @@ pdf_loadbuiltinfont(pdf_font *font, char *basefont)
 
 	fterr = FT_New_Face(ftlib, file, index, &face);
 	if (fterr)
-		return fz_throw("freetype could not load font file '%s': %s", file, ft_errstr(fterr));
+		return fz_throw("freetype could not load font file '%s': %s", file, ft_errorstring(fterr));
 
 	FcPatternDestroy(matchpat);
 	FcPatternDestroy(searchpat);
@@ -247,7 +247,7 @@ pdf_loadsystemfont(pdf_font *font, char *basefont, char *collection)
 	if (fterr) {
 		FcPatternDestroy(matchpat);
 		FcPatternDestroy(searchpat);
-		return fz_throw("freetype could not load font file '%s': %s", file, ft_errstr(fterr));
+		return fz_throw("freetype could not load font file '%s': %s", file, ft_errorstring(fterr));
 	}
 
 	FcPatternDestroy(matchpat);
@@ -284,7 +284,7 @@ pdf_loadembeddedfont(pdf_font *font, pdf_xref *xref, fz_obj *stmref)
 
 	if (fterr) {
 		fz_free(buf);
-		return fz_throw("freetype could not load embedded font: %s", ft_errstr(fterr));
+		return fz_throw("freetype could not load embedded font: %s", ft_errorstring(fterr));
 	}
 
 	font->ftface = face;

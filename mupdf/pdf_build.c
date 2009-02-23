@@ -851,12 +851,14 @@ fz_error *
 showglyph(pdf_csi *csi, int cid)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_font *font = gstate->font;
+	pdf_fontdesc *fontdesc = gstate->font;
 	fz_error *error;
 	fz_matrix tsm, trm;
 	float w0, w1, tx, ty;
-	fz_hmtx h;
-	fz_vmtx v;
+	pdf_hmtx h;
+	pdf_vmtx v;
+	int gid;
+	int ucs;
 
 	tsm.a = gstate->size * gstate->scale;
 	tsm.b = 0;
@@ -865,9 +867,18 @@ showglyph(pdf_csi *csi, int cid)
 	tsm.e = 0;
 	tsm.f = gstate->rise;
 
-	if (font->super.wmode == 1)
+	if (fontdesc->tounicode)
+	    ucs = pdf_lookupcmap(fontdesc->tounicode, cid);
+	else if (cid < fontdesc->ncidtoucs)
+	    ucs = fontdesc->cidtoucs[cid];
+	else
+	    ucs = '?';
+
+	gid = pdf_fontcidtogid(fontdesc, cid);
+
+	if (fontdesc->wmode == 1)
 	{
-		v = fz_getvmtx((fz_font*)font, cid);
+		v = pdf_getvmtx(fontdesc, cid);
 		tsm.e -= v.x * gstate->size / 1000.0;
 		tsm.f -= v.y * gstate->size / 1000.0;
 	}
@@ -876,7 +887,7 @@ showglyph(pdf_csi *csi, int cid)
 
 	/* flush buffered text if face or matrix or rendermode has changed */
 	if (!csi->text ||
-			((fz_font*)font) != csi->text->font ||
+			(fontdesc->font) != csi->text->font ||
 			fabs(trm.a - csi->text->trm.a) > FLT_EPSILON ||
 			fabs(trm.b - csi->text->trm.b) > FLT_EPSILON ||
 			fabs(trm.c - csi->text->trm.c) > FLT_EPSILON ||
@@ -887,7 +898,7 @@ showglyph(pdf_csi *csi, int cid)
 		if (error)
 			return fz_rethrow(error, "cannot finish text node (face/matrix change)");
 
-		error = fz_newtextnode(&csi->text, (fz_font*)font);
+		error = fz_newtextnode(&csi->text, fontdesc->font);
 		if (error)
 			return fz_rethrow(error, "cannot create text node");
 
@@ -898,13 +909,13 @@ showglyph(pdf_csi *csi, int cid)
 	}
 
 	/* add glyph to textobject */
-	error = fz_addtext(csi->text, cid, trm.e, trm.f);
+	error = fz_addtext(csi->text, gid, ucs, trm.e, trm.f);
 	if (error)
 		return fz_rethrow(error, "cannot add glyph to text node");
 
-	if (font->super.wmode == 0)
+	if (fontdesc->wmode == 0)
 	{
-		h = fz_gethmtx((fz_font*)font, cid);
+		h = pdf_gethmtx(fontdesc, cid);
 		w0 = h.w / 1000.0;
 		tx = (w0 * gstate->size + gstate->charspace) * gstate->scale;
 		csi->tm = fz_concat(fz_translate(tx, 0), csi->tm);
@@ -923,8 +934,8 @@ void
 showspace(pdf_csi *csi, float tadj)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_font *font = gstate->font;
-	if (font->super.wmode == 0)
+	pdf_fontdesc *fontdesc = gstate->font;
+	if (fontdesc->wmode == 0)
 		csi->tm = fz_concat(fz_translate(tadj * gstate->scale, 0), csi->tm);
 	else
 		csi->tm = fz_concat(fz_translate(0, tadj), csi->tm);
@@ -934,7 +945,7 @@ fz_error *
 pdf_showtext(pdf_csi *csi, fz_obj *text)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_font *font = gstate->font;
+	pdf_fontdesc *fontdesc = gstate->font;
 	fz_error *error;
 	unsigned char *buf;
 	unsigned char *end;
@@ -966,8 +977,8 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 
 	while (buf < end)
 	{
-		buf = pdf_decodecmap(font->encoding, buf, &cpt);
-		cid = pdf_lookupcmap(font->encoding, cpt);
+		buf = pdf_decodecmap(fontdesc->encoding, buf, &cpt);
+		cid = pdf_lookupcmap(fontdesc->encoding, cpt);
 		if (cid == -1)
 			cid = 0;
 

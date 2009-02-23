@@ -54,7 +54,7 @@ struct pdf_gstate_s
 	float wordspace;
 	float scale;
 	float leading;
-	pdf_font *font;
+	pdf_fontdesc *font;
 	float size;
 	int render;
 	float rise;

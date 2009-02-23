@@ -15,6 +15,7 @@
 #include "fitz/wld_color.h"
 #include "fitz/wld_image.h"
 #include "fitz/wld_shade.h"
+
 #include "fitz/wld_tree.h"
 #include "fitz/wld_path.h"
 #include "fitz/wld_text.h"

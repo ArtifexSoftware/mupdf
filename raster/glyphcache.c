@@ -352,9 +352,22 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	ctm.e = fz_floor(ctm.e) + key.e / 256.0;
 	ctm.f = fz_floor(ctm.f) + key.f / 256.0;
 
-	error = font->render(glyph, font, cid, ctm);
-	if (error)
+	if (font->ftface)
+	{
+	    error = fz_renderftglyph(glyph, font, cid, ctm);
+	    if (error)
 		return error;
+	}
+	else if (font->t3procs)
+	{
+	    error = fz_rendert3glyph(glyph, font, cid, ctm);
+	    if (error)
+		return error;
+	}
+	else
+	{
+	    return fz_throw("uninitialized font structure");
+	}
 
 	size = glyph->w * glyph->h;
 

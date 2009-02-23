@@ -315,7 +315,7 @@ rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 	fz_irect clip;
 	fz_matrix tm, trm;
 	fz_glyph glyph;
-	int i, x, y, cid;
+	int i, x, y, gid;
 
 	tbox = fz_roundrect(fz_boundnode((fz_node*)text, ctm));
 	clip = fz_intersectirects(gc->clip, tbox);
@@ -339,7 +339,7 @@ text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 
 	for (i = 0; i < text->len; i++)
 	{
-		cid = text->els[i].cid;
+		gid = text->els[i].gid;
 		tm.e = text->els[i].x;
 		tm.f = text->els[i].y;
 		trm = fz_concat(tm, ctm);
@@ -348,7 +348,7 @@ text->trm.a, text->trm.b, text->trm.c, text->trm.d);
 		trm.e = QUANT(trm.e - fz_floor(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - fz_floor(trm.f), VSUBPIX);
 
-		error = fz_renderglyph(gc->cache, &glyph, text->font, cid, trm);
+		error = fz_renderglyph(gc->cache, &glyph, text->font, gid, trm);
 		if (error)
 			return error;
 

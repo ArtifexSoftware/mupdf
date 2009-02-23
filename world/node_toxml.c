@@ -119,12 +119,12 @@ static void xmltext(fz_textnode *node, int level)
 	for (i = 0; i < node->len; i++)
 	{
 		indent(level + 1);
-		if (node->els[i].cid >= 32 && node->els[i].cid < 128)
-			printf("<g c=\"%c\" x=\"%g\" y=\"%g\" />\n",
-					node->els[i].cid, node->els[i].x, node->els[i].y);
+		if (node->els[i].ucs >= 32 && node->els[i].ucs < 128)
+			printf("<g ucs=\"%c\" gid=%d x=\"%g\" y=\"%g\" />\n",
+					node->els[i].ucs, node->els[i].gid, node->els[i].x, node->els[i].y);
 		else
-			printf("<g c=\"<%04x>\" x=\"%g\" y=\"%g\" />\n",
-					node->els[i].cid, node->els[i].x, node->els[i].y);
+			printf("<g ucs=\"U+%04X\" gid=%d x=\"%g\" y=\"%g\" />\n",
+					node->els[i].ucs, node->els[i].gid, node->els[i].x, node->els[i].y);
 	}
 
 	indent(level);

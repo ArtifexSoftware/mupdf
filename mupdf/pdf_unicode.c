@@ -6,7 +6,7 @@
  */
 
 fz_error *
-pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
+pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
 	fz_error *error = fz_okay;
@@ -115,8 +115,14 @@ pdf_loadtounicode(pdf_font *font, pdf_xref *xref,
 }
 
 /*
- * Extract lines of text from display tree
+ * Extract lines of text from display tree.
+ *
+ * This extraction needs to be rewritten for the new tree
+ * architecture where glyph index and unicode characters are both stored
+ * in the text objects.
  */
+
+#if 0
 
 fz_error *
 pdf_newtextline(pdf_textline **linep)
@@ -175,7 +181,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 	if (fz_istextnode(node))
 	{
 		fz_textnode *text = (fz_textnode*)node;
-		pdf_font *font = (pdf_font*)text->font;
+		pdf_fontdesc *font = (pdf_fontdesc*)text->font;
 		fz_matrix inv = fz_invertmatrix(text->trm);
 		fz_matrix tm = text->trm;
 		fz_matrix trm;
@@ -183,7 +189,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 		fz_point p;
 		fz_point vx;
 		fz_point vy;
-		fz_vmtx v;
+		_vmtx v;
 		fz_hmtx h;
 		int i, g;
 		int x, y;
@@ -328,4 +334,6 @@ pdf_debugtextline(pdf_textline *line)
 	if (line->next)
 		pdf_debugtextline(line->next);
 }
+
+#endif
 

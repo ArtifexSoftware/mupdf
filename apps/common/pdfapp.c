@@ -635,6 +635,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
+	ucsbuf[0] = 0;
+#if 0 /* pdf_loadtextfromtree needs rewriting, so removing this temporarily */
 	fz_error *error;
 	pdf_textline *line, *ln;
 	int y, c;
@@ -687,5 +689,6 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	ucsbuf[p] = 0;
 
 	pdf_droptextline(line);
+#endif
 }
 
