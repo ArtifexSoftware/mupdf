@@ -147,7 +147,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 	case PDF_KPATTERN: pdf_keeppattern(val); break;
 	case PDF_KSHADE: fz_keepshade(val); break;
 	case PDF_KCMAP: pdf_keepcmap(val); break;
-	case PDF_KFONT: fz_keepfont(val); break;
+	case PDF_KFONT: pdf_keepfont(val); break;
 	}
 
 	return fz_okay;

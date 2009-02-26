@@ -1,8 +1,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#define noHINT
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_XFREE86_H
@@ -944,7 +942,7 @@ pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref
 
 	if ((*fontdescp = pdf_finditem(xref->store, PDF_KFONT, ref)))
 	{
-		// XXX pdf_keepfontdesc(*fontdescp);
+		pdf_keepfont(*fontdescp);
 		return fz_okay;
 	}
 
