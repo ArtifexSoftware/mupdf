@@ -885,7 +885,7 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 
 	fontname = fz_toname(fz_dictgets(dict, "FontName"));
 
-	pdf_logfont("fontname %s\n", fontname);
+	pdf_logfont("fontname '%s'\n", fontname);
 
 	fontdesc->flags = fz_toint(fz_dictgets(dict, "Flags"));
 	fontdesc->italicangle = fz_toreal(fz_dictgets(dict, "ItalicAngle"));
