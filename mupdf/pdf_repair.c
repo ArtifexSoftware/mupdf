@@ -234,6 +234,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				list = newlist;
 			}
 
+                        pdf_logxref("found object: (%d %d R)\n", oid, gen);
+
 			list[listlen].oid = oid;
 			list[listlen].gen = gen;
 			list[listlen].ofs = oidofs;
