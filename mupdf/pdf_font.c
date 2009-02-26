@@ -912,7 +912,7 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 
 	if (fz_isindirect(obj))
 	{
-		error = pdf_loadembeddedfont(fontdesc, xref, obj);
+		error = pdf_loadembeddedfont(font, xref, obj);
 		if (error)
 			goto cleanup;
 	}
