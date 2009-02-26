@@ -200,7 +200,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 			goto cleanup;
 	}
 	else
-		pdf_logfont("no resource dict!\n");
+		fz_warn("no resource dictionary for type 3 font!\n");
 
 	/*
 	 * CharProcs
