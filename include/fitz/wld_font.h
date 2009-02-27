@@ -11,6 +11,7 @@ struct fz_font_s
 
 	void *ftface; /* has an FT_Face if used */
 	int ftsubstitute; /* ... substitute metrics */
+	int fthint; /* ... force hinting for DynaLab fonts */
 
 	struct fz_tree_s **t3procs; /* has 256 entries if used */
 	fz_matrix t3matrix;

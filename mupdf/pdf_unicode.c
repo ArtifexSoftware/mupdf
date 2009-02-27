@@ -61,7 +61,7 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 
 	else if (collection)
 	{
-		pdf_logfont("tounicode cid collection\n");
+		pdf_logfont("tounicode cid collection (%s)\n", collection);
 
 		error = fz_okay;
 
@@ -110,7 +110,13 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 		return fz_okay;
 	}
 
-	pdf_logfont("tounicode impossible");
+	if (!font->tounicode && !font->cidtoucs)
+	{
+	    pdf_logfont("tounicode could not be loaded\n");
+	    /* TODO: synthesize a ToUnicode if it's a freetype font with
+	     * cmap and/or post tables or if it has glyph names. */
+	}
+
 	return fz_okay;
 }
 

@@ -694,6 +694,10 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 	if (error)
 		goto cleanup;
 
+	/* Rudimentary check for DynaLab fonts */
+	if (kind == TRUETYPE && collection && strstr(collection, "Adobe-"))
+	    fontdesc->font->fthint = 1;
+
 	/*
 	 * Horizontal
 	 */
