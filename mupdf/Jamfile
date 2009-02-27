@@ -28,9 +28,7 @@ Library libmupdf :
 	pdf_font.c
 	pdf_type3.c
 	pdf_fontmtx.c
-	pdf_fontfile.c		# use builtin fonts
-	# pdf_fontfilefc.c	# use fontconfig
-	# pdf_fontfilems.c	# scan $WINDIR/Fonts
+	pdf_fontfile.c
 
 	# other resources
 	pdf_function.c
