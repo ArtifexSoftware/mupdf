@@ -148,6 +148,16 @@ fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
 
 typedef struct pdf_cmap_s pdf_cmap;
 
+struct pdf_cmapentry_s
+{
+    const char *name;
+    const char *buf;
+    const int *len;
+    pdf_cmap *cmap;
+};
+
+extern struct pdf_cmapentry_s pdf_cmaptable[]; /* list of builtin system cmaps */
+
 fz_error *pdf_newcmap(pdf_cmap **cmapp);
 pdf_cmap *pdf_keepcmap(pdf_cmap *cmap);
 void pdf_dropcmap(pdf_cmap *cmap);

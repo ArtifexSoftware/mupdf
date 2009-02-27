@@ -1151,73 +1151,65 @@ cleanup:
 }
 
 /*
- * Load predefined CMap from system
+ * Load predefined CMap from system. We keep these files
+ * embedded in the executable, and parse them when needed,
+ * and cache the parsed copy for later reuse.
  */
 fz_error *
-pdf_loadsystemcmap(pdf_cmap **cmapp, char *name)
+pdf_loadsystemcmap(pdf_cmap **cmapp, char *cmapname)
 {
-	fz_error *error = fz_okay;
-	fz_stream *file;
-	char *cmapdir;
-	char *usecmapname;
-	pdf_cmap *usecmap;
-	pdf_cmap *cmap;
-	char path[1024];
+    fz_error *error;
+    fz_stream *file;
+    pdf_cmap *usecmap;
+    pdf_cmap *cmap;
+    int i;
 
-	cmap = nil;
-	file = nil;
+    for (i = 0; pdf_cmaptable[i].name; i++)
+	if (!strcmp(cmapname, pdf_cmaptable[i].name))
+	    goto found;
 
-	pdf_logfont("load system cmap %s {\n", name);
+    return fz_throw("cannot find cmap: %s", cmapname);
 
-	cmapdir = getenv("CMAPDIR");
-	if (!cmapdir)
-		return fz_throw("ioerror: CMAPDIR environment not set");
-
-	strlcpy(path, cmapdir, sizeof path);
-	strlcat(path, "/", sizeof path);
-	strlcat(path, name, sizeof path);
-
-	error = fz_openrfile(&file, path);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot open cmap file '%s'", name);
-		goto cleanup;
-	}
-
-	error = pdf_parsecmap(&cmap, file);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot parse cmap file");
-		goto cleanup;
-	}
-
-	fz_dropstream(file);
-
-	usecmapname = cmap->usecmapname;
-	if (usecmapname[0])
-	{
-		pdf_logfont("usecmap %s\n", usecmapname);
-		error = pdf_loadsystemcmap(&usecmap, usecmapname);
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot load system usecmap '%s'", usecmapname);
-			goto cleanup;
-		}
-		pdf_setusecmap(cmap, usecmap);
-		pdf_dropcmap(usecmap);
-	}
-
-	pdf_logfont("}\n");
-
-	*cmapp = cmap;
+found:
+    if (pdf_cmaptable[i].cmap)
+    {
+	pdf_logfont("reuse system cmap %s\n", cmapname);
+	pdf_keepcmap(pdf_cmaptable[i].cmap);
+	*cmapp = pdf_cmaptable[i].cmap;
 	return fz_okay;
+    }
 
-cleanup:
-	if (cmap)
-		pdf_dropcmap(cmap);
-	if (file)
-		fz_dropstream(file);
-	return error; /* already rethrown */
+    pdf_logfont("load system cmap %s\n", cmapname);
+
+    error = fz_openrmemory(&file, pdf_cmaptable[i].buf, *pdf_cmaptable[i].len);
+    if (error)
+	return fz_rethrow(error, "cannot create stream to read cmap from memory");
+
+    error = pdf_parsecmap(&pdf_cmaptable[i].cmap, file);
+    if (error)
+    {
+	fz_dropstream(file);
+	return fz_rethrow(error, "cannot parse system cmap '%s'", cmapname);
+    }
+
+    fz_dropstream(file);
+
+    /* Keep an extra reference, since we have it cached */
+    pdf_keepcmap(pdf_cmaptable[i].cmap);
+
+    if (pdf_cmaptable[i].cmap->usecmapname[0])
+    {
+	pdf_logfont("usecmap %s\n", pdf_cmaptable[i].cmap->usecmapname);
+	error = pdf_loadsystemcmap(&usecmap, pdf_cmaptable[i].cmap->usecmapname);
+	if (error)
+	    return fz_rethrow(error, "cannot load usecmap '%s'", pdf_cmaptable[i].cmap->usecmapname);
+	pdf_setusecmap(pdf_cmaptable[i].cmap, usecmap);
+	pdf_dropcmap(usecmap);
+    }
+
+    pdf_keepcmap(pdf_cmaptable[i].cmap);
+    *cmapp = pdf_cmaptable[i].cmap;
+    return fz_okay;
 }
 
 /*

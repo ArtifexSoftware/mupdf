@@ -22,6 +22,7 @@ Library libmupdf :
 	# fonts
 	pdf_fontagl.c
 	pdf_fontenc.c
+	pdf_cmapfile.c
 	pdf_cmap.c
 	pdf_unicode.c
 	pdf_font.c
