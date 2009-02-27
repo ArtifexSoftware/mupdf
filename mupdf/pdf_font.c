@@ -921,7 +921,7 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
                         fflush(stderr);
                         fz_warn("ignored error when loading embedded font, attempting to load system font");
 
-                        error = pdf_loadsystemfont(font, fontname, collection);
+                        error = pdf_loadsystemfont(fontdesc, fontname, collection);
                         if (error)
                                 goto cleanup;
                 }
