@@ -1,13 +1,10 @@
 README for the Fitz distribution.
 
 Fitz is a graphics library.
-MuPDF is a PDF parsing and manipulation library.
-Samus is a Metro parser.
-FzView is a PDF and Metro viewer application.
+MuPDF is a PDF parsing library and viewer.
 For Windows, there is also a Mozilla plugin version of the viewer.
 
-The Viewer has three ports: X11, Windows and Carbon.
-The Carbon port is rotting, so don't bother trying it.
+The Viewer has two ports: X11 and Windows.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,9 +17,7 @@ Before compiling Fitz you need to install thirdy party dependencies.
 
 	zlib
 	libjpeg
-	libpng
 	freetype2
-	expat
 
 There are a few optional dependencies that you don't strictly need.
 You will probably want the versions that Ghostscript maintains.
@@ -31,11 +26,11 @@ You will probably want the versions that Ghostscript maintains.
 	jasper
 
 Fitz uses the Perforce Jam build tool. You need the Perforce version 2.5
-or later. Earlier versions (including the FTJam fork) have crippling bugs.
-Boost Jam is not backwards compatible. If you do not have a compiled
-binary for your system, you can find the Jam homepage here:
+or later. FTJam will also work. If you do not have a compiled
+binary for your system, you can find the Jam and FTJam web sites here:
 
 	http://www.perforce.com/jam/jam.html
+	http://www.freetype.org/jam/index.html
 
 I use Mingw and MSYS to compile for Windows. If you use anything
 else, you are on your own.
@@ -62,17 +57,22 @@ To build the X11 version under MacOS X, add:
 
 	$ jam '-sHAVE_X11=yes'
 
+If you want a crippled version without the builtin CJK fonts and data files,
+to shave a few megabytes off the binary size, add:
+
+	$ jam '-sDEFINES=NOCJK'
+
 INSTALLING
 
-There is no install. The command "jam install" will copy the
-compiled binaries (for the specified build -- debug, release or profile)
-into a "dist/" directory.
-
-There is no support for building a shared library.
+There is no install. Just copy the resulting binary from the build
+directory to a directory in your path.
 
 REPORTING BUGS AND PROBLEMS
 
-Send reports to tor@ghostscript.com.
+Report bugs on the ghostscript bugzilla, with MuPDF as the
+selected component.
+
+	http://bugs.ghostscript.com/
 
 If you are reporting a problem with PDF parsing,
 please include the problematic file as an attachment.
