@@ -1,5 +1,11 @@
 SubDir TOP fonts ;
 
+SubDir TOP fonts droid ;
+GenFile font_cjk.c : hexdump DroidSansFallback.ttf ;
+Library libfonts : font_cjk.c ;
+
+SubDir TOP fonts ;
+
 GenFile font_dingbats.c	: hexdump Dingbats.cff ;
 GenFile font_symbol.c	: hexdump StandardSymL.cff ;
 GenFile font_script.c	: hexdump URWChanceryL-MediItal.cff ;

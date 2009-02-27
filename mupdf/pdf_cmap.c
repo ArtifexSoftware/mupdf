@@ -1168,7 +1168,7 @@ pdf_loadsystemcmap(pdf_cmap **cmapp, char *cmapname)
 	if (!strcmp(cmapname, pdf_cmaptable[i].name))
 	    goto found;
 
-    return fz_throw("cannot find cmap: %s", cmapname);
+    return fz_throw("no builtin cmap file: %s", cmapname);
 
 found:
     if (pdf_cmaptable[i].cmap)

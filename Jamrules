@@ -27,6 +27,11 @@
 #   -sTHIRDPARTYINC="-Ic:/wherever/include"
 #   -sTHIRDPARTYLIB="-Lc:/wherever/lib"
 #
+# To compile without builtin CJK CMap and font support, and save a few
+# megabytes of executable space:
+#
+#   -sDEFINES=NOCJK 
+#
 
 # Workaround for different OS/OSPLAT settings on FTJam and plain jam
 if $(JAM_TOOLSET) = MINGW   { OS = MINGW ; }

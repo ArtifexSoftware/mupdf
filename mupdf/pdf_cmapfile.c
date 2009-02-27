@@ -221,6 +221,7 @@ extern const int cmaps_korean_UniKS_UCS2_V_len;
 
 struct pdf_cmapentry_s pdf_cmaptable[] =
 {
+#ifndef NOCJK
 
     { cmaps_chinese_s_Adobe_GB1_4_name,
 	cmaps_chinese_s_Adobe_GB1_4_buf,
@@ -436,6 +437,7 @@ struct pdf_cmapentry_s pdf_cmaptable[] =
 	cmaps_korean_UniKS_UCS2_V_buf,
 	&cmaps_korean_UniKS_UCS2_V_len, 0 },
 
+#endif
     { 0, 0, 0, 0 }
 };
 

@@ -16,6 +16,14 @@ enum
 	FD_FORCEBOLD = 1 << 18
 };
 
+enum { CNS, GB, Japan, Korea };
+enum { MINCHO, GOTHIC };
+
+#ifndef NOCJK
+extern const unsigned char fonts_droid_DroidSansFallback_ttf[];
+extern const unsigned int fonts_droid_DroidSansFallback_ttf_len;
+#endif
+
 static const struct
 {
 	const char *name;
@@ -70,42 +78,6 @@ static const struct
 	{ 0, 0, 0 }
 };
 
-enum { CNS, GB, Japan, Korea };
-enum { MINCHO, GOTHIC };
-
-struct subent { int csi; int kind; char *name; };
-
-static const struct subent fontsubs[] =
-{
-	{ CNS, MINCHO, "bkai00mp.ttf" },
-	{ CNS, GOTHIC, "bsmi00lp.ttf" },
-	{ CNS, MINCHO, "\345\204\267\345\256\213 Pro.ttf" }, /* LiSong Pro */
-	{ CNS, GOTHIC, "\345\204\267\351\273\221 Pro.ttf" }, /* LiHei Pro */
-	{ CNS, MINCHO, "simsun.ttc" },
-	{ CNS, GOTHIC, "simhei.ttf" },
-
-	{ GB, MINCHO, "gkai00mp.ttf" },
-	{ GB, GOTHIC, "gbsn00lp.ttf" },
-	{ GB, MINCHO, "\345\215\216\346\226\207\345\256\213\344\275\223.ttf" }, /* STSong */
-	{ GB, GOTHIC, "\345\215\216\346\226\207\346\245\267\344\275\223.ttf" }, /* STHeiti */
-	{ GB, MINCHO, "mingliu.ttc" },
-	{ GB, GOTHIC, "mingliu.ttc" },
-
-	{ Japan, MINCHO, "kochi-mincho.ttf" },
-	{ Japan, GOTHIC, "kochi-gothic.ttf" },
-	{ Japan, MINCHO, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\346\230\216\346\234\235 Pro W3.otf" },
-	{ Japan, GOTHIC, "\343\203\222\343\203\251\343\202\255\343\202\231\343\203\216\350\247\222\343\202\263\343\202\231 Pro W3.otf" },
-	{ Japan, MINCHO, "msmincho.ttc" },
-	{ Japan, GOTHIC, "msgothic.ttc" },
-
-	{ Korea, MINCHO, "batang.ttf" },
-	{ Korea, GOTHIC, "dotum.ttf" },
-	{ Korea, MINCHO, "AppleMyungjo.dfont" },
-	{ Korea, GOTHIC, "AppleGothic.dfont" },
-	{ Korea, MINCHO, "batang.ttc" },
-	{ Korea, GOTHIC, "dotum.ttc" },
-};
-
 fz_error *
 pdf_loadbuiltinfont(pdf_fontdesc *font, char *fontname)
 {
@@ -133,98 +105,23 @@ found:
 	return fz_okay;
 }
 
-static int
-findcidfont(char *filename, char *path, int pathlen)
-{
-	static const char *dirs[] =
-	{
-		"$/.fonts",
-		"$/Library/Fonts",
-		"/usr/X11R6/lib/X11/fonts/TTF",
-		"/usr/X11R6/lib/X11/fonts/TrueType",
-		"/usr/share/fonts/arphic",
-		"/usr/share/fonts/baekmuk",
-		"/usr/share/fonts/kochi",
-		"/System/Library/Fonts",
-		"/Library/Fonts",
-		nil
-	};
-
-	char **dirp;
-	char *home;
-	char *dir;
-
-	dir = getenv("FONTDIR");
-	if (dir)
-	{
-		strlcpy(path, dir, pathlen);
-		strlcat(path, "/", pathlen);
-		strlcat(path, filename, pathlen);
-		if (access(path, R_OK) == 0)
-			return 1;
-	}
-
-	dir = getenv("WINDIR");
-	if (dir)
-	{
-		strlcpy(path, dir, pathlen);
-		strlcat(path, "/Fonts/", pathlen);
-		strlcat(path, filename, pathlen);
-		if (access(path, R_OK) == 0)
-			return 1;
-	}
-
-	home = getenv("HOME");
-	if (!home)
-		home = "/";
-
-	for (dirp = (char**)dirs; *dirp; dirp++)
-	{
-		dir = *dirp;
-		if (dir[0] == '$')
-		{
-			strlcpy(path, home, pathlen);
-			strlcat(path, "/", pathlen);
-			strlcat(path, dir + 1, pathlen);
-		}
-		else
-		{
-			strlcpy(path, dir, pathlen);
-		}
-		strlcat(path, "/", pathlen);
-		strlcat(path, filename, pathlen);
-		if (access(path, R_OK) == 0)
-			return 1;
-	}
-
-	return 0;
-}
-
 static fz_error *
 loadcidfont(pdf_fontdesc *font, int csi, int kind)
 {
-	char path[1024];
+#ifndef NOCJK
 	fz_error *error;
-	int i;
-
-	for (i = 0; i < nelem(fontsubs); i++)
-	{
-		if (fontsubs[i].csi == csi && fontsubs[i].kind == kind)
-		{
-			if (findcidfont(fontsubs[i].name, path, sizeof path))
-			{
-				pdf_logfont("load system font '%s'\n", fontsubs[i].name);
-
-				error = fz_newfontfromfile(&font->font, path, 0);
-				if (error)
-					return fz_rethrow(error, "cannot load freetype font from file: %s", path);
-
-				return fz_okay;
-			}
-		}
-	}
-
-	return fz_throw("cannot find cid font file");
+	/* We only have one builtin fallback font, we'd really like
+	 * to have one for each combination of CSI and Kind
+	 */
+	error = fz_newfontfrombuffer(&font->font,
+		fonts_droid_DroidSansFallback_ttf,
+		fonts_droid_DroidSansFallback_ttf_len, 0);
+	if (error)
+	    return fz_rethrow(error, "cannot load builtin CJK font");
+	return fz_okay;
+#else
+	return fz_throw("no builtin CJK font file");
+#endif
 }
 
 fz_error *
@@ -238,10 +135,6 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 	int isserif = 0;
 	int isscript = 0;
 	int isfixed = 0;
-
-//XXX	error = initfontlibs();
-//	if (error)
-//		return fz_rethrow(error, "cannot init font libraries");
 
 	if (strstr(fontname, "Bold"))
 		isbold = 1;
@@ -341,10 +234,6 @@ pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_error *error;
 	fz_buffer *buf;
-
-//XXX	error = initfontlibs();
-//	if (error)
-//		return fz_rethrow(error, "cannot init font libraries");
 
 	pdf_logfont("load embedded font\n");
 
