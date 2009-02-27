@@ -72,7 +72,7 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 		else if (!strcmp(collection, "Adobe-Japan1"))
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan2"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2");
+			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2"); /* where's this? */
 		else if (!strcmp(collection, "Adobe-Korea1"))
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
 

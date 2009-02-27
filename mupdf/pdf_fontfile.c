@@ -106,18 +106,20 @@ found:
 }
 
 static fz_error *
-loadcidfont(pdf_fontdesc *font, int csi, int kind)
+loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
 {
 #ifndef NOCJK
 	fz_error *error;
 	/* We only have one builtin fallback font, we'd really like
 	 * to have one for each combination of CSI and Kind
 	 */
+	pdf_logfont("loading builtin CJK font\n");
 	error = fz_newfontfrombuffer(&font->font,
 		fonts_droid_DroidSansFallback_ttf,
 		fonts_droid_DroidSansFallback_ttf_len, 0);
 	if (error)
 	    return fz_rethrow(error, "cannot load builtin CJK font");
+	font->font->ftsubstitute = 1; /* substitute font */
 	return fz_okay;
 #else
 	return fz_throw("no builtin CJK font file");
@@ -167,15 +169,15 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 			kind = GOTHIC;
 
 		if (!strcmp(collection, "Adobe-CNS1"))
-			return loadcidfont(font, CNS, kind);
+			return loadsystemcidfont(font, CNS, kind);
 		else if (!strcmp(collection, "Adobe-GB1"))
-			return loadcidfont(font, GB, kind);
+			return loadsystemcidfont(font, GB, kind);
 		else if (!strcmp(collection, "Adobe-Japan1"))
-			return loadcidfont(font, Japan, kind);
+			return loadsystemcidfont(font, Japan, kind);
 		else if (!strcmp(collection, "Adobe-Japan2"))
-			return loadcidfont(font, Japan, kind);
+			return loadsystemcidfont(font, Japan, kind);
 		else if (!strcmp(collection, "Adobe-Korea1"))
-			return loadcidfont(font, Korea, kind);
+			return loadsystemcidfont(font, Korea, kind);
 
 		fz_warn("unknown cid collection: %s", collection);
 	}

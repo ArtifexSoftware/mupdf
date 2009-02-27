@@ -389,7 +389,7 @@ fz_debugfont(fz_font *font)
 	{
 		printf("  freetype face %p\n", font->ftface);
 		if (font->ftsubstitute)
-			printf("  substitute metrics\n");
+			printf("  substitute font\n");
 	}
 
 	if (font->t3procs)

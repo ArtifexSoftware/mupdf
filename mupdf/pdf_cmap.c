@@ -50,8 +50,8 @@ struct pdf_cmap_s
 	int ncspace;
 	struct {
 		int n;
-		unsigned char lo[4];
-		unsigned char hi[4];
+		unsigned lo;
+		unsigned hi;
 	} cspace[MAXCODESPACE];
 
 	int rlen, rcap;
@@ -167,13 +167,7 @@ pdf_debugcmap(pdf_cmap *cmap)
 	printf("  codespaces {\n");
 	for (i = 0; i < cmap->ncspace; i++)
 	{
-		printf("    <");
-		for (k = 0; k < cmap->cspace[i].n; k++)
-			printf("%02x", cmap->cspace[i].lo[k]);
-		printf("> <");
-		for (k = 0; k < cmap->cspace[i].n; k++)
-			printf("%02x", cmap->cspace[i].hi[k]);
-		printf(">\n");
+		printf("    <%x> <%x>\n", cmap->cspace[i].lo, cmap->cspace[i].hi);
 	}
 	printf("  }\n");
 
@@ -211,19 +205,12 @@ pdf_debugcmap(pdf_cmap *cmap)
 fz_error *
 pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n)
 {
-	int i;
-
 	if (cmap->ncspace + 1 == MAXCODESPACE)
 		return fz_throw("assert: too many code space ranges");
 
 	cmap->cspace[cmap->ncspace].n = n;
-
-	for (i = 0; i < n; i++)
-	{
-		int o = (n - i - 1) * 8;
-		cmap->cspace[cmap->ncspace].lo[i] = (lo >> o) & 0xFF;
-		cmap->cspace[cmap->ncspace].hi[i] = (hi >> o) & 0xFF;
-	}
+	cmap->cspace[cmap->ncspace].lo = lo;
+	cmap->cspace[cmap->ncspace].hi = hi;
 
 	cmap->ncspace ++;
 
@@ -528,31 +515,27 @@ pdf_lookupcmap(pdf_cmap *cmap, int cpt)
 unsigned char *
 pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 {
-	int i, k;
+    int i, k, n, c;
 
+    c = 0;
+    for (n = 0; n < 4; n++)
+    {
+	c = (c << 8) | buf[n];
 	for (k = 0; k < cmap->ncspace; k++)
 	{
-		unsigned char *lo = cmap->cspace[k].lo;
-		unsigned char *hi = cmap->cspace[k].hi;
-		int n = cmap->cspace[k].n;
-		int c = 0;
-
-		for (i = 0; i < n; i++)
+	    if (cmap->cspace[k].n == n + 1)
+	    {
+		if (c >= cmap->cspace[k].lo && c <= cmap->cspace[k].hi)
 		{
-			if (lo[i] <= buf[i] && buf[i] <= hi[i])
-				c = (c << 8) | buf[i];
-			else
-				break;
+		    *cpt = c;
+		    return buf + n + 1;
 		}
-
-		if (i == n) {
-			*cpt = c;
-			return buf + n;
-		}
+	    }
 	}
+    }
 
-	*cpt = 0;
-	return buf + 1;
+    *cpt = 0;
+    return buf + 1;
 }
 
 /*
