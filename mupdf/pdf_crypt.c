@@ -214,7 +214,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	{
 		char *handler = crypt->handler;
 		pdf_dropcrypt(crypt);
-		return fz_throw("unsupported security handler: %s\n", handler);
+		return fz_throw("unsupported security handler: %s", handler);
 	}
 
 	if (crypt->v == 4)
@@ -223,14 +223,14 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 		{
 			char *method = crypt->stmmethod;
 			pdf_dropcrypt(crypt);
-			return fz_throw("unsupported stream encryption method: %s\n", method);
+			return fz_throw("unsupported stream encryption method: %s", method);
 		}
 
 		if (crypt->strmethod && strcmp(crypt->strmethod, "V2") != 0)
 		{
 			char *method = crypt->strmethod;
 			pdf_dropcrypt(crypt);
-			return fz_throw("unsupported string encryption: %s\n", method);
+			return fz_throw("unsupported string encryption: %s", method);
 		}
 
 		if (crypt->stmlength != crypt->strlength)
@@ -238,7 +238,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 			int stmlength = crypt->stmlength;
 			int strlength = crypt->strlength;
 			pdf_dropcrypt(crypt);
-			return fz_throw("unsupport encryption key lengths: %d vs. %d\n", stmlength, strlength);
+			return fz_throw("unsupport encryption key lengths: %d vs. %d", stmlength, strlength);
 		}
 
 		crypt->len = crypt->stmlength;
