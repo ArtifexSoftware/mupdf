@@ -20,10 +20,13 @@ Library libmupdf :
 	pdf_outline.c
 
 	# fonts
+	pdf_cmap.c
+	pdf_cmap_parse.c
+	pdf_cmap_load.c
+	pdf_cmap_table.c
+
 	pdf_fontagl.c
 	pdf_fontenc.c
-	pdf_cmapfile.c
-	pdf_cmap.c
 	pdf_unicode.c
 	pdf_font.c
 	pdf_type3.c

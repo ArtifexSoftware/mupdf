@@ -3,7 +3,7 @@
 #
 
 SubDir TOP cmaps chinese_s ;
-GenFile cmap_chinese_s.c : strdump
+GenFile cmap_chinese_s.c : cmapdump
     Adobe-GB1-4
     Adobe-GB1-UCS2
     GB-EUC-H
@@ -27,7 +27,7 @@ GenFile cmap_chinese_s.c : strdump
 Library libcmaps : cmap_chinese_s.c ;
 
 SubDir TOP cmaps chinese_t ;
-GenFile cmap_chinese_t.c : strdump
+GenFile cmap_chinese_t.c : cmapdump
     Adobe-CNS1-3
     Adobe-CNS1-UCS2
     B5pc-H
@@ -47,7 +47,7 @@ GenFile cmap_chinese_t.c : strdump
 Library libcmaps : cmap_chinese_t.c ;
 
 SubDir TOP cmaps japanese ;
-GenFile cmap_japanese.c : strdump 
+GenFile cmap_japanese.c : cmapdump
     83pv-RKSJ-H
     90ms-RKSJ-H
     90ms-RKSJ-UCS2
@@ -75,7 +75,7 @@ GenFile cmap_japanese.c : strdump
 Library libcmaps : cmap_japanese.c ;
 
 SubDir TOP cmaps korean ;
-GenFile cmap_korean.c : strdump 
+GenFile cmap_korean.c : cmapdump
     Adobe-Korea1-2
     Adobe-Korea1-UCS2
     KSC-EUC-H

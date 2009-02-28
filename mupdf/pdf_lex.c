@@ -233,7 +233,7 @@ lexhexstring(fz_stream *f, char *buf, int n)
 }
 
 static pdf_token_e
-tokenfromkeyword(char *key)
+pdf_tokenfromkeyword(char *key)
 {
 	if (!strcmp(key, "R")) return PDF_TR;
 	if (!strcmp(key, "true")) return PDF_TTRUE;
@@ -367,7 +367,7 @@ pdf_lex(pdf_token_e *tok, fz_stream *f, char *buf, int n, int *sl)
 		{
 			lexname(f, buf, n);
 			*sl = strlen(buf);
-			*tok = tokenfromkeyword(buf);
+			*tok = pdf_tokenfromkeyword(buf);
 			goto cleanupokay;
 		}
 

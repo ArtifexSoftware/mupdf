@@ -147,16 +147,43 @@ fz_error *pdf_loadtile(fz_image *image, fz_pixmap *tile);
  */
 
 typedef struct pdf_cmap_s pdf_cmap;
+typedef struct pdf_range_s pdf_range;
 
-struct pdf_cmapentry_s
+enum { PDF_CMAP_SINGLE, PDF_CMAP_RANGE, PDF_CMAP_TABLE, PDF_CMAP_MULTI };
+
+struct pdf_range_s
 {
-    const char *name;
-    const char *buf;
-    const int *len;
-    pdf_cmap *cmap;
+	int low;
+	int high;
+	int flag;	/* what kind of lookup is this (single, range, table, multi) */
+	int offset;	/* either range-delta or table-index */
 };
 
-extern struct pdf_cmapentry_s pdf_cmaptable[]; /* list of builtin system cmaps */
+struct pdf_cmap_s
+{
+	int refs;
+	char cmapname[32];
+
+	char usecmapname[32];
+	pdf_cmap *usecmap;
+
+	int wmode;
+
+	int ncspace;
+	struct {
+		int n;
+		unsigned lo;
+		unsigned hi;
+	} cspace[40];
+
+	int rlen, rcap;
+	pdf_range *ranges;
+
+	int tlen, tcap;
+	int *table;
+};
+
+extern pdf_cmap *pdf_cmaptable[]; /* list of builtin system cmaps */
 
 fz_error *pdf_newcmap(pdf_cmap **cmapp);
 pdf_cmap *pdf_keepcmap(pdf_cmap *cmap);
@@ -164,12 +191,11 @@ void pdf_dropcmap(pdf_cmap *cmap);
 
 void pdf_debugcmap(pdf_cmap *cmap);
 int pdf_getwmode(pdf_cmap *cmap);
-pdf_cmap *fz_getusecmap(pdf_cmap *cmap);
-void fz_setwmode(pdf_cmap *cmap, int wmode);
-void fz_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
+pdf_cmap *pdf_getusecmap(pdf_cmap *cmap);
+void pdf_setwmode(pdf_cmap *cmap, int wmode);
+void pdf_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
 
 fz_error *pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n);
-
 fz_error *pdf_maprangetotable(pdf_cmap *cmap, int low, int *map, int len);
 fz_error *pdf_maprangetorange(pdf_cmap *cmap, int srclo, int srchi, int dstlo);
 fz_error *pdf_maponetomany(pdf_cmap *cmap, int one, int *many, int len);

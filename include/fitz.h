@@ -1,6 +1,4 @@
-#ifdef _FITZ_H_
-#error "fitz.h must only be included once"
-#endif
+#ifndef _FITZ_H_
 #define _FITZ_H_
 
 #include "fitz-base.h"
@@ -8,3 +6,4 @@
 #include "fitz-world.h"
 #include "fitz-draw.h"
 
+#endif

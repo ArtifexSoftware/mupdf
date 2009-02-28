@@ -115,7 +115,7 @@ loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
 	 */
 	pdf_logfont("loading builtin CJK font\n");
 	error = fz_newfontfrombuffer(&font->font,
-		fonts_droid_DroidSansFallback_ttf,
+		(unsigned char *)fonts_droid_DroidSansFallback_ttf,
 		fonts_droid_DroidSansFallback_ttf_len, 0);
 	if (error)
 	    return fz_rethrow(error, "cannot load builtin CJK font");

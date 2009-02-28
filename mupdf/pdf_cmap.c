@@ -18,49 +18,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-typedef struct pdf_range_s pdf_range;
-
-enum { MAXCODESPACE = 10 };
-enum { SINGLE, RANGE, TABLE, MULTI };
-
-struct pdf_range_s
-{
-	int low;
-	int high;
-	int flag;	/* what kind of lookup is this */
-	int offset;	/* either range-delta or table-index */
-};
-
-static int
-cmprange(const void *va, const void *vb)
-{
-	return ((const pdf_range*)va)->low - ((const pdf_range*)vb)->low;
-}
-
-struct pdf_cmap_s
-{
-	int refs;
-	char cmapname[32];
-
-	char usecmapname[32];
-	pdf_cmap *usecmap;
-
-	int wmode;
-
-	int ncspace;
-	struct {
-		int n;
-		unsigned lo;
-		unsigned hi;
-	} cspace[MAXCODESPACE];
-
-	int rlen, rcap;
-	pdf_range *ranges;
-
-	int tlen, tcap;
-	int *table;
-};
-
 /*
  * Allocate, destroy and simple parameters.
  */
@@ -68,133 +25,137 @@ struct pdf_cmap_s
 fz_error *
 pdf_newcmap(pdf_cmap **cmapp)
 {
-	pdf_cmap *cmap;
+    pdf_cmap *cmap;
 
-	cmap = *cmapp = fz_malloc(sizeof(pdf_cmap));
-	if (!cmap)
-		return fz_throw("outofmem: cmap struct");
+    cmap = *cmapp = fz_malloc(sizeof(pdf_cmap));
+    if (!cmap)
+	return fz_throw("outofmem: cmap struct");
 
-	cmap->refs = 1;
-	strcpy(cmap->cmapname, "");
+    cmap->refs = 1;
+    strcpy(cmap->cmapname, "");
 
-	strcpy(cmap->usecmapname, "");
-	cmap->usecmap = nil;
+    strcpy(cmap->usecmapname, "");
+    cmap->usecmap = nil;
 
-	cmap->wmode = 0;
+    cmap->wmode = 0;
 
-	cmap->ncspace = 0;
+    cmap->ncspace = 0;
 
-	cmap->rlen = 0;
-	cmap->rcap = 0;
-	cmap->ranges = nil;
+    cmap->rlen = 0;
+    cmap->rcap = 0;
+    cmap->ranges = nil;
 
-	cmap->tlen = 0;
-	cmap->tcap = 0;
-	cmap->table = nil;
+    cmap->tlen = 0;
+    cmap->tcap = 0;
+    cmap->table = nil;
 
-	return fz_okay;
+    return fz_okay;
 }
 
 pdf_cmap *
 pdf_keepcmap(pdf_cmap *cmap)
 {
+    if (cmap->refs >= 0)
 	cmap->refs ++;
-	return cmap;
+    return cmap;
 }
 
 void
 pdf_dropcmap(pdf_cmap *cmap)
 {
+    if (cmap->refs >= 0)
+    {
 	if (--cmap->refs == 0)
 	{
-		if (cmap->usecmap)
-			pdf_dropcmap(cmap->usecmap);
-		fz_free(cmap->ranges);
-		fz_free(cmap->table);
-		fz_free(cmap);
+	    if (cmap->usecmap)
+		pdf_dropcmap(cmap->usecmap);
+	    fz_free(cmap->ranges);
+	    fz_free(cmap->table);
+	    fz_free(cmap);
 	}
+    }
 }
 
 pdf_cmap *
 pdf_getusecmap(pdf_cmap *cmap)
 {
-	return cmap->usecmap;
+    return cmap->usecmap;
 }
 
 void
 pdf_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap)
 {
-	int i;
+    int i;
 
-	if (cmap->usecmap)
-		pdf_dropcmap(cmap->usecmap);
-	cmap->usecmap = pdf_keepcmap(usecmap);
+    if (cmap->usecmap)
+	pdf_dropcmap(cmap->usecmap);
+    cmap->usecmap = pdf_keepcmap(usecmap);
 
-	if (cmap->ncspace == 0)
-	{
-		cmap->ncspace = usecmap->ncspace;
-		for (i = 0; i < usecmap->ncspace; i++)
-			cmap->cspace[i] = usecmap->cspace[i];
-	}
+    if (cmap->ncspace == 0)
+    {
+	cmap->ncspace = usecmap->ncspace;
+	for (i = 0; i < usecmap->ncspace; i++)
+	    cmap->cspace[i] = usecmap->cspace[i];
+    }
 }
 
 int
 pdf_getwmode(pdf_cmap *cmap)
 {
-	return cmap->wmode;
+    return cmap->wmode;
 }
 
 void
 pdf_setwmode(pdf_cmap *cmap, int wmode)
 {
-	cmap->wmode = wmode;
+    cmap->wmode = wmode;
 }
 
 void
 pdf_debugcmap(pdf_cmap *cmap)
 {
-	int i, k, n;
+    int i, k, n;
 
-	printf("cmap $%p /%s {\n", (void *) cmap, cmap->cmapname);
+    printf("cmap $%p /%s {\n", (void *) cmap, cmap->cmapname);
 
-	if (cmap->usecmapname[0])
-		printf("  usecmap /%s\n", cmap->usecmapname);
-	if (cmap->usecmap)
-		printf("  usecmap $%p\n", (void *) cmap->usecmap);
+    if (cmap->usecmapname[0])
+	printf("  usecmap /%s\n", cmap->usecmapname);
+    if (cmap->usecmap)
+	printf("  usecmap $%p\n", (void *) cmap->usecmap);
 
-	printf("  wmode %d\n", cmap->wmode);
+    printf("  wmode %d\n", cmap->wmode);
 
-	printf("  codespaces {\n");
-	for (i = 0; i < cmap->ncspace; i++)
+    printf("  codespaces {\n");
+    for (i = 0; i < cmap->ncspace; i++)
+    {
+	printf("    <%x> <%x>\n", cmap->cspace[i].lo, cmap->cspace[i].hi);
+    }
+    printf("  }\n");
+
+    printf("  ranges (%d,%d) {\n", cmap->rlen, cmap->tlen);
+    for (i = 0; i < cmap->rlen; i++)
+    {
+	pdf_range *r = &cmap->ranges[i];
+	printf("    <%04x> <%04x> ", r->low, r->high);
+	if (r->flag == PDF_CMAP_TABLE)
 	{
-		printf("    <%x> <%x>\n", cmap->cspace[i].lo, cmap->cspace[i].hi);
+	    printf("[ ");
+	    for (k = 0; k < r->high - r->low + 1; k++)
+		printf("%d ", cmap->table[r->offset + k]);
+	    printf("]\n");
 	}
-	printf("  }\n");
-
-	printf("  ranges (%d,%d) {\n", cmap->rlen, cmap->tlen);
-	for (i = 0; i < cmap->rlen; i++)
+	else if (r->flag == PDF_CMAP_MULTI)
 	{
-		pdf_range *r = &cmap->ranges[i];
-		printf("    <%04x> <%04x> ", r->low, r->high);
-		if (r->flag == TABLE)
-		{
-			printf("[ ");
-			for (k = 0; k < r->high - r->low + 1; k++)
-				printf("%d ", cmap->table[r->offset + k]);
-			printf("]\n");
-		}
-		else if (r->flag == MULTI)
-		{
-			printf("< ");
-			n = cmap->table[r->offset];
-			for (k = 0; k < n; k++)
-				printf("%04x ", cmap->table[r->offset + 1 + k]);
-			printf(">\n");
-		}
-		else
-			printf("%d\n", r->offset);
+	    printf("< ");
+	    n = cmap->table[r->offset];
+	    for (k = 0; k < n; k++)
+		printf("%04x ", cmap->table[r->offset + 1 + k]);
+	    printf(">\n");
 	}
-	printf("  }\n}\n");
+	else
+	    printf("%d\n", r->offset);
+    }
+    printf("  }\n}\n");
 }
 
 /*
@@ -205,16 +166,16 @@ pdf_debugcmap(pdf_cmap *cmap)
 fz_error *
 pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n)
 {
-	if (cmap->ncspace + 1 == MAXCODESPACE)
-		return fz_throw("assert: too many code space ranges");
+    if (cmap->ncspace + 1 == nelem(cmap->cspace))
+	return fz_throw("assert: too many code space ranges");
 
-	cmap->cspace[cmap->ncspace].n = n;
-	cmap->cspace[cmap->ncspace].lo = lo;
-	cmap->cspace[cmap->ncspace].hi = hi;
+    cmap->cspace[cmap->ncspace].n = n;
+    cmap->cspace[cmap->ncspace].lo = lo;
+    cmap->cspace[cmap->ncspace].hi = hi;
 
-	cmap->ncspace ++;
+    cmap->ncspace ++;
 
-	return fz_okay;
+    return fz_okay;
 }
 
 /*
@@ -223,19 +184,19 @@ pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n)
 static fz_error *
 addtable(pdf_cmap *cmap, int value)
 {
-	if (cmap->tlen + 1 > cmap->tcap)
-	{
-		int newcap = cmap->tcap == 0 ? 256 : cmap->tcap * 2;
-		int *newtable = fz_realloc(cmap->table, newcap * sizeof(int));
-		if (!newtable)
-			return fz_throw("outofmem: cmap table");
-		cmap->tcap = newcap;
-		cmap->table = newtable;
-	}
+    if (cmap->tlen + 1 > cmap->tcap)
+    {
+	int newcap = cmap->tcap == 0 ? 256 : cmap->tcap * 2;
+	int *newtable = fz_realloc(cmap->table, newcap * sizeof(int));
+	if (!newtable)
+	    return fz_throw("outofmem: cmap table");
+	cmap->tcap = newcap;
+	cmap->table = newtable;
+    }
 
-	cmap->table[cmap->tlen++] = value;
+    cmap->table[cmap->tlen++] = value;
 
-	return fz_okay;
+    return fz_okay;
 }
 
 /*
@@ -244,24 +205,24 @@ addtable(pdf_cmap *cmap, int value)
 static fz_error *
 addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
-	if (cmap->rlen + 1 > cmap->rcap)
-	{
-		pdf_range *newranges;
-		int newcap = cmap->rcap == 0 ? 256 : cmap->rcap * 2;
-		newranges = fz_realloc(cmap->ranges, newcap * sizeof(pdf_range));
-		if (!newranges)
-			return fz_throw("outofmem: cmap ranges");
-		cmap->rcap = newcap;
-		cmap->ranges = newranges;
-	}
+    if (cmap->rlen + 1 > cmap->rcap)
+    {
+	pdf_range *newranges;
+	int newcap = cmap->rcap == 0 ? 256 : cmap->rcap * 2;
+	newranges = fz_realloc(cmap->ranges, newcap * sizeof(pdf_range));
+	if (!newranges)
+	    return fz_throw("outofmem: cmap ranges");
+	cmap->rcap = newcap;
+	cmap->ranges = newranges;
+    }
 
-	cmap->ranges[cmap->rlen].low = low;
-	cmap->ranges[cmap->rlen].high = high;
-	cmap->ranges[cmap->rlen].flag = flag;
-	cmap->ranges[cmap->rlen].offset = offset;
-	cmap->rlen ++;
+    cmap->ranges[cmap->rlen].low = low;
+    cmap->ranges[cmap->rlen].high = high;
+    cmap->ranges[cmap->rlen].flag = flag;
+    cmap->ranges[cmap->rlen].offset = offset;
+    cmap->rlen ++;
 
-	return fz_okay;
+    return fz_okay;
 }
 
 /*
@@ -270,26 +231,26 @@ addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
 fz_error *
 pdf_maprangetotable(pdf_cmap *cmap, int low, int *table, int len)
 {
-	fz_error *error;
-	int offset;
-	int high;
-	int i;
+    fz_error *error;
+    int offset;
+    int high;
+    int i;
 
-	high = low + len;
-	offset = cmap->tlen;
+    high = low + len;
+    offset = cmap->tlen;
 
-	for (i = 0; i < len; i++)
-	{
-		error = addtable(cmap, table[i]);
-		if (error)
-			return fz_rethrow(error, "cannot add range-to-table index");
-	}
-
-	error = addrange(cmap, low, high, TABLE, offset);
+    for (i = 0; i < len; i++)
+    {
+	error = addtable(cmap, table[i]);
 	if (error)
-		return fz_rethrow(error, "cannot add range-to-table range");
+	    return fz_rethrow(error, "cannot add range-to-table index");
+    }
 
-	return fz_okay;
+    error = addrange(cmap, low, high, PDF_CMAP_TABLE, offset);
+    if (error)
+	return fz_rethrow(error, "cannot add range-to-table range");
+
+    return fz_okay;
 }
 
 /*
@@ -298,11 +259,11 @@ pdf_maprangetotable(pdf_cmap *cmap, int low, int *table, int len)
 fz_error *
 pdf_maprangetorange(pdf_cmap *cmap, int low, int high, int offset)
 {
-	fz_error *error;
-	error = addrange(cmap, low, high, high - low == 0 ? SINGLE : RANGE, offset);
-	if (error)
-		return fz_rethrow(error, "cannot add range-to-range mapping");
-	return fz_okay;
+    fz_error *error;
+    error = addrange(cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
+    if (error)
+	return fz_rethrow(error, "cannot add range-to-range mapping");
+    return fz_okay;
 }
 
 /*
@@ -311,36 +272,36 @@ pdf_maprangetorange(pdf_cmap *cmap, int low, int high, int offset)
 fz_error *
 pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
 {
-	fz_error *error;
-	int offset;
-	int i;
+    fz_error *error;
+    int offset;
+    int i;
 
-	if (len == 1)
-	{
-		error = addrange(cmap, low, low, SINGLE, values[0]);
-		if (error)
-			return fz_rethrow(error, "cannot add one-to-one mapping");
-		return fz_okay;
-	}
-
-	offset = cmap->tlen;
-
-	error = addtable(cmap, len);
+    if (len == 1)
+    {
+	error = addrange(cmap, low, low, PDF_CMAP_SINGLE, values[0]);
 	if (error)
-		return fz_rethrow(error, "cannot add one-to-many table length");
-
-	for (i = 0; i < len; i++)
-	{
-		error = addtable(cmap, values[i]);
-		if (error)
-			return fz_rethrow(error, "cannot add one-to-many table index");
-	}
-
-	error = addrange(cmap, low, low, MULTI, offset);
-	if (error)
-		return fz_rethrow(error, "cannot add one-to-many mapping");
-
+	    return fz_rethrow(error, "cannot add one-to-one mapping");
 	return fz_okay;
+    }
+
+    offset = cmap->tlen;
+
+    error = addtable(cmap, len);
+    if (error)
+	return fz_rethrow(error, "cannot add one-to-many table length");
+
+    for (i = 0; i < len; i++)
+    {
+	error = addtable(cmap, values[i]);
+	if (error)
+	    return fz_rethrow(error, "cannot add one-to-many table index");
+    }
+
+    error = addrange(cmap, low, low, PDF_CMAP_MULTI, offset);
+    if (error)
+	return fz_rethrow(error, "cannot add one-to-many mapping");
+
+    return fz_okay;
 }
 
 /*
@@ -348,130 +309,137 @@ pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
  * Merge contiguous input ranges to range-to-range if the output is contiguous.
  * Merge contiguous input ranges to range-to-table if the output is random.
  */
+
+static int cmprange(const void *va, const void *vb)
+{
+    return ((const pdf_range*)va)->low - ((const pdf_range*)vb)->low;
+}
+
 fz_error *
 pdf_sortcmap(pdf_cmap *cmap)
 {
-	fz_error *error;
-	pdf_range *newranges;
-	int *newtable;
-	pdf_range *a;			/* last written range on output */
-	pdf_range *b;			/* current range examined on input */
+    fz_error *error;
+    pdf_range *newranges;
+    int *newtable;
+    pdf_range *a;			/* last written range on output */
+    pdf_range *b;			/* current range examined on input */
 
-	if (cmap->rlen == 0)
-		return fz_okay;
+    if (cmap->rlen == 0)
+	return fz_okay;
 
-	qsort(cmap->ranges, cmap->rlen, sizeof(pdf_range), cmprange);
+    qsort(cmap->ranges, cmap->rlen, sizeof(pdf_range), cmprange);
 
-	a = cmap->ranges;
-	b = cmap->ranges + 1;
+    a = cmap->ranges;
+    b = cmap->ranges + 1;
 
-	while (b < cmap->ranges + cmap->rlen)
+    while (b < cmap->ranges + cmap->rlen)
+    {
+	/* ignore one-to-many mappings */
+	if (b->flag == PDF_CMAP_MULTI)
 	{
-		/* ignore one-to-many mappings */
-		if (b->flag == MULTI)
+	    *(++a) = *b;
+	}
+
+	/* input contiguous */
+	else if (a->high + 1 == b->low)
+	{
+	    /* output contiguous */
+	    if (a->high - a->low + a->offset + 1 == b->offset)
+	    {
+		/* SR -> R and SS -> R and RR -> R and RS -> R */
+		if (a->flag == PDF_CMAP_SINGLE || a->flag == PDF_CMAP_RANGE)
 		{
-			*(++a) = *b;
+		    a->flag = PDF_CMAP_RANGE;
+		    a->high = b->high;
 		}
 
-		/* input contiguous */
-		else if (a->high + 1 == b->low)
+		/* LS -> L */
+		else if (a->flag == PDF_CMAP_TABLE && b->flag == PDF_CMAP_SINGLE)
 		{
-			/* output contiguous */
-			if (a->high - a->low + a->offset + 1 == b->offset)
-			{
-				/* SR -> R and SS -> R and RR -> R and RS -> R */
-				if (a->flag == SINGLE || a->flag == RANGE)
-				{
-					a->flag = RANGE;
-					a->high = b->high;
-				}
-
-				/* LS -> L */
-				else if (a->flag == TABLE && b->flag == SINGLE)
-				{
-					a->high = b->high;
-					error = addtable(cmap, b->offset);
-					if (error)
-						return fz_rethrow(error, "cannot convert LS -> L");
-				}
-
-				/* LR -> LR */
-				else if (a->flag == TABLE && b->flag == RANGE)
-				{
-					*(++a) = *b;
-				}
-
-				/* XX -> XX */
-				else
-				{
-					*(++a) = *b;
-				}
-			}
-
-			/* output separated */
-			else
-			{
-				/* SS -> L */
-				if (a->flag == SINGLE && b->flag == SINGLE)
-				{
-					a->flag = TABLE;
-					a->high = b->high;
-
-					error = addtable(cmap, a->offset);
-					if (error)
-						return fz_rethrow(error, "cannot convert SS -> L");
-
-					error = addtable(cmap, b->offset);
-					if (error)
-						return fz_rethrow(error, "cannot convert SS -> L");
-
-					a->offset = cmap->tlen - 2;
-				}
-
-				/* LS -> L */
-				else if (a->flag == TABLE && b->flag == SINGLE)
-				{
-					a->high = b->high;
-					error = addtable(cmap, b->offset);
-					if (error)
-						return fz_rethrow(error, "cannot convert LS -> L");
-				}
-
-				/* XX -> XX */
-				else
-				{
-					*(++a) = *b;
-				}
-			}
+		    a->high = b->high;
+		    error = addtable(cmap, b->offset);
+		    if (error)
+			return fz_rethrow(error, "cannot convert LS -> L");
 		}
 
-		/* input separated: XX -> XX */
+		/* LR -> LR */
+		else if (a->flag == PDF_CMAP_TABLE && b->flag == PDF_CMAP_RANGE)
+		{
+		    *(++a) = *b;
+		}
+
+		/* XX -> XX */
 		else
 		{
-			*(++a) = *b;
+		    *(++a) = *b;
+		}
+	    }
+
+	    /* output separated */
+	    else
+	    {
+		/* SS -> L */
+		if (a->flag == PDF_CMAP_SINGLE && b->flag == PDF_CMAP_SINGLE)
+		{
+		    a->flag = PDF_CMAP_TABLE;
+		    a->high = b->high;
+
+		    error = addtable(cmap, a->offset);
+		    if (error)
+			return fz_rethrow(error, "cannot convert SS -> L");
+
+		    error = addtable(cmap, b->offset);
+		    if (error)
+			return fz_rethrow(error, "cannot convert SS -> L");
+
+		    a->offset = cmap->tlen - 2;
 		}
 
-		b ++;
+		/* LS -> L */
+		else if (a->flag == PDF_CMAP_TABLE && b->flag == PDF_CMAP_SINGLE)
+		{
+		    a->high = b->high;
+		    error = addtable(cmap, b->offset);
+		    if (error)
+			return fz_rethrow(error, "cannot convert LS -> L");
+		}
+
+		/* XX -> XX */
+		else
+		{
+		    *(++a) = *b;
+		}
+	    }
 	}
 
-	cmap->rlen = a - cmap->ranges + 1;
+	/* input separated: XX -> XX */
+	else
+	{
+	    *(++a) = *b;
+	}
 
-	newranges = fz_realloc(cmap->ranges, cmap->rlen * sizeof(pdf_range));
-	if (!newranges)
-		return fz_throw("outofmem: cmap ranges");
-	cmap->rcap = cmap->rlen;
+	b ++;
+    }
+
+    cmap->rlen = a - cmap->ranges + 1;
+
+    newranges = fz_realloc(cmap->ranges, cmap->rlen * sizeof(pdf_range));
+    if (!newranges)
+	return fz_throw("outofmem: cmap ranges");
+    cmap->rcap = cmap->rlen;
+    if (cmap->refs >= 0)
 	cmap->ranges = newranges;
 
-	if (cmap->tlen)
-	{
-		newtable = fz_realloc(cmap->table, cmap->tlen * sizeof(int));
-		if (!newtable)
-			return fz_throw("outofmem: cmap table");
-		cmap->tcap = cmap->tlen;
-		cmap->table = newtable;
-	}
+    if (cmap->tlen)
+    {
+	newtable = fz_realloc(cmap->table, cmap->tlen * sizeof(int));
+	if (!newtable)
+	    return fz_throw("outofmem: cmap table");
+	cmap->tcap = cmap->tlen;
+	cmap->table = newtable;
+    }
 
-	return fz_okay;
+    return fz_okay;
 }
 
 /*
@@ -480,32 +448,32 @@ pdf_sortcmap(pdf_cmap *cmap)
 int
 pdf_lookupcmap(pdf_cmap *cmap, int cpt)
 {
-	int l = 0;
-	int r = cmap->rlen - 1;
-	int m;
+    int l = 0;
+    int r = cmap->rlen - 1;
+    int m;
 
-	while (l <= r)
+    while (l <= r)
+    {
+	m = (l + r) >> 1;
+	if (cpt < cmap->ranges[m].low)
+	    r = m - 1;
+	else if (cpt > cmap->ranges[m].high)
+	    l = m + 1;
+	else
 	{
-		m = (l + r) >> 1;
-		if (cpt < cmap->ranges[m].low)
-			r = m - 1;
-		else if (cpt > cmap->ranges[m].high)
-			l = m + 1;
-		else
-		{
-			int i = cpt - cmap->ranges[m].low + cmap->ranges[m].offset;
-			if (cmap->ranges[m].flag == TABLE)
-				return cmap->table[i];
-			if (cmap->ranges[m].flag == MULTI)
-				return -1;
-			return i;
-		}
+	    int i = cpt - cmap->ranges[m].low + cmap->ranges[m].offset;
+	    if (cmap->ranges[m].flag == PDF_CMAP_TABLE)
+		return cmap->table[i];
+	    if (cmap->ranges[m].flag == PDF_CMAP_MULTI)
+		return -1;
+	    return i;
 	}
+    }
 
-	if (cmap->usecmap)
-		return pdf_lookupcmap(cmap->usecmap, cpt);
+    if (cmap->usecmap)
+	return pdf_lookupcmap(cmap->usecmap, cpt);
 
-	return -1;
+    return -1;
 }
 
 /*
@@ -515,7 +483,7 @@ pdf_lookupcmap(pdf_cmap *cmap, int cpt)
 unsigned char *
 pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 {
-    int i, k, n, c;
+    int k, n, c;
 
     c = 0;
     for (n = 0; n < 4; n++)
@@ -536,701 +504,5 @@ pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 
     *cpt = 0;
     return buf + 1;
-}
-
-/*
- * CMap parser
- */
-
-enum
-{
-	TUSECMAP = PDF_NTOKENS,
-	TBEGINCODESPACERANGE,
-	TENDCODESPACERANGE,
-	TBEGINBFCHAR,
-	TENDBFCHAR,
-	TBEGINBFRANGE,
-	TENDBFRANGE,
-	TBEGINCIDCHAR,
-	TENDCIDCHAR,
-	TBEGINCIDRANGE,
-	TENDCIDRANGE
-};
-
-static pdf_token_e tokenfromkeyword(char *key)
-{
-	if (!strcmp(key, "usecmap")) return TUSECMAP;
-	if (!strcmp(key, "begincodespacerange")) return TBEGINCODESPACERANGE;
-	if (!strcmp(key, "endcodespacerange")) return TENDCODESPACERANGE;
-	if (!strcmp(key, "beginbfchar")) return TBEGINBFCHAR;
-	if (!strcmp(key, "endbfchar")) return TENDBFCHAR;
-	if (!strcmp(key, "beginbfrange")) return TBEGINBFRANGE;
-	if (!strcmp(key, "endbfrange")) return TENDBFRANGE;
-	if (!strcmp(key, "begincidchar")) return TBEGINCIDCHAR;
-	if (!strcmp(key, "endcidchar")) return TENDCIDCHAR;
-	if (!strcmp(key, "begincidrange")) return TBEGINCIDRANGE;
-	if (!strcmp(key, "endcidrange")) return TENDCIDRANGE;
-	return PDF_TKEYWORD;
-}
-
-static int codefromstring(char *buf, int len)
-{
-	int a = 0;
-	while (len--)
-		a = (a << 8) | *(unsigned char *)buf++;
-	return a;
-}
-
-static fz_error *lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, int *sl)
-{
-	fz_error *error;
-
-	error = pdf_lex(tok, file, buf, n, sl);
-	if (error)
-		return fz_rethrow(error, "cannot parse cmap token");
-
-	if (*tok == PDF_TKEYWORD)
-		*tok = tokenfromkeyword(buf);
-
-	return fz_okay;
-}
-
-static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-
-	error = lexcmap(&tok, file, buf, sizeof buf, &len);
-	if (error)
-		return fz_rethrow(error, "syntaxerror in cmap");
-
-	if (tok == PDF_TNAME)
-	{
-		strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
-		return fz_okay;
-	}
-
-	return fz_throw("expected name");
-}
-
-static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-
-	error = lexcmap(&tok, file, buf, sizeof buf, &len);
-	if (error)
-		return fz_rethrow(error, "syntaxerror in cmap");
-
-	if (tok == PDF_TINT)
-	{
-		pdf_setwmode(cmap, atoi(buf));
-		return fz_okay;
-	}
-
-	return fz_throw("expected integer");
-}
-
-static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int lo, hi;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == TENDCODESPACERANGE)
-			return fz_okay;
-
-		else if (tok == PDF_TSTRING)
-		{
-			lo = codefromstring(buf, len);
-			error = lexcmap(&tok, file, buf, sizeof buf, &len);
-			if (error)
-				return fz_rethrow(error, "syntaxerror in cmap");
-			if (tok == PDF_TSTRING)
-			{
-				hi = codefromstring(buf, len);
-				error = pdf_addcodespace(cmap, lo, hi, len);
-				if (error)
-					return fz_rethrow(error, "cannot add code space");
-			}
-			else break;
-		}
-
-		else break;
-	}
-
-	return fz_throw("expected string or endcodespacerange");
-}
-
-static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int lo, hi, dst;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == TENDCIDRANGE)
-			return fz_okay;
-
-		else if (tok != PDF_TSTRING)
-			return fz_throw("expected string or endcidrange");
-
-		lo = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-		if (tok != PDF_TSTRING)
-			return fz_throw("expected string");
-
-		hi = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-		if (tok != PDF_TINT)
-			return fz_throw("expected integer");
-
-		dst = atoi(buf);
-
-		error = pdf_maprangetorange(cmap, lo, hi, dst);
-		if (error)
-			return fz_rethrow(error, "cannot map cidrange");
-	}
-}
-
-static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int src, dst;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == TENDCIDCHAR)
-			return fz_okay;
-
-		else if (tok != PDF_TSTRING)
-			return fz_throw("expected string or endcidchar");
-
-		src = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-		if (tok != PDF_TINT)
-			return fz_throw("expected integer");
-
-		dst = atoi(buf);
-
-		error = pdf_maprangetorange(cmap, src, src, dst);
-		if (error)
-			return fz_rethrow(error, "cannot map cidchar");
-	}
-}
-
-static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int dst[256];
-	int i;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == PDF_TCARRAY)
-			return fz_okay;
-
-		/* Note: does not handle [ /Name /Name ... ] */
-		else if (tok != PDF_TSTRING)
-			return fz_throw("expected string or ]");
-
-		if (len / 2)
-		{
-			for (i = 0; i < len / 2; i++)
-				dst[i] = codefromstring(buf + i * 2, 2);
-
-			error = pdf_maponetomany(cmap, lo, dst, len / 2);
-			if (error)
-				return fz_rethrow(error, "cannot map bfrange array");
-		}
-
-		lo ++;
-	}
-}
-
-static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int lo, hi, dst;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == TENDBFRANGE)
-			return fz_okay;
-
-		else if (tok != PDF_TSTRING)
-			return fz_throw("expected string or endbfrange");
-
-		lo = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-		if (tok != PDF_TSTRING)
-			return fz_throw("expected string");
-
-		hi = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == PDF_TSTRING)
-		{
-			if (len == 2)
-			{
-				dst = codefromstring(buf, len);
-				error = pdf_maprangetorange(cmap, lo, hi, dst);
-				if (error)
-					return fz_rethrow(error, "cannot map bfrange");
-			}
-			else
-			{
-				int dststr[256];
-				int i;
-
-				if (len / 2)
-				{
-					for (i = 0; i < len / 2; i++)
-						dststr[i] = codefromstring(buf + i * 2, 2);
-
-					while (lo <= hi)
-					{
-						dststr[i-1] ++;
-						error = pdf_maponetomany(cmap, lo, dststr, i);
-						if (error)
-							return fz_rethrow(error, "cannot map bfrange");
-						lo ++;
-					}
-				}
-			}
-		}
-
-		else if (tok == PDF_TOARRAY)
-		{
-			error = parsebfrangearray(cmap, file, lo, hi);
-			if (error)
-				return fz_rethrow(error, "cannot map bfrange");
-		}
-
-		else
-		{
-			return fz_throw("expected string or array or endbfrange");
-		}
-	}
-}
-
-static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
-{
-	fz_error *error;
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-	int dst[256];
-	int src;
-	int i;
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-
-		if (tok == TENDBFCHAR)
-			return fz_okay;
-
-		else if (tok != PDF_TSTRING)
-			return fz_throw("expected string or endbfchar");
-
-		src = codefromstring(buf, len);
-
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
-		/* Note: does not handle /dstName */
-		if (tok != PDF_TSTRING)
-			return fz_throw("expected string");
-
-		if (len / 2)
-		{
-			for (i = 0; i < len / 2; i++)
-				dst[i] = codefromstring(buf + i * 2, 2);
-
-			error = pdf_maponetomany(cmap, src, dst, i);
-			if (error)
-				return fz_rethrow(error, "cannot map bfchar");
-		}
-	}
-}
-
-fz_error *
-pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
-{
-	fz_error *error;
-	pdf_cmap *cmap;
-	char key[64];
-	char buf[256];
-	pdf_token_e tok;
-	int len;
-
-	error = pdf_newcmap(&cmap);
-	if (error)
-		return fz_rethrow(error, "cannot create cmap");
-
-	strcpy(key, ".notdef");
-
-	while (1)
-	{
-		error = lexcmap(&tok, file, buf, sizeof buf, &len);
-		if (error)
-		{
-			error = fz_rethrow(error, "syntaxerror in cmap");
-			goto cleanup;
-		}
-
-		if (tok == PDF_TEOF)
-			break;
-
-		else if (tok == PDF_TNAME)
-		{
-			if (!strcmp(buf, "CMapName"))
-			{
-				error = parsecmapname(cmap, file);
-				if (error)
-				{
-					error = fz_rethrow(error, "syntaxerror in cmap after /CMapName");
-					goto cleanup;
-				}
-			}
-			else if (!strcmp(buf, "WMode"))
-			{
-				error = parsewmode(cmap, file);
-				if (error)
-				{
-					error = fz_rethrow(error, "syntaxerror in cmap after /WMode");
-					goto cleanup;
-				}
-			}
-			else
-				strlcpy(key, buf, sizeof key);
-		}
-
-		else if (tok == TUSECMAP)
-		{
-			strlcpy(cmap->usecmapname, key, sizeof(cmap->usecmapname));
-		}
-
-		else if (tok == TBEGINCODESPACERANGE)
-		{
-			error = parsecodespacerange(cmap, file);
-			if (error)
-			{
-				error = fz_rethrow(error, "syntaxerror in cmap codespacerange");
-				goto cleanup;
-			}
-		}
-
-		else if (tok == TBEGINBFCHAR)
-		{
-			error = parsebfchar(cmap, file);
-			if (error)
-			{
-				error = fz_rethrow(error, "syntaxerror in cmap bfchar");
-				goto cleanup;
-			}
-		}
-
-		else if (tok == TBEGINCIDCHAR)
-		{
-			error = parsecidchar(cmap, file);
-			if (error)
-			{
-				error = fz_rethrow(error, "syntaxerror in cmap cidchar");
-				goto cleanup;
-			}
-		}
-
-		else if (tok == TBEGINBFRANGE)
-		{
-			error = parsebfrange(cmap, file);
-			if (error)
-			{
-				error = fz_rethrow(error, "syntaxerror in cmap bfrange");
-				goto cleanup;
-			}
-		}
-
-		else if (tok == TBEGINCIDRANGE)
-		{
-			error = parsecidrange(cmap, file);
-			if (error)
-			{
-				error = fz_rethrow(error, "syntaxerror in cmap cidrange");
-				goto cleanup;
-			}
-		}
-
-		/* ignore everything else */
-	}
-
-	error = pdf_sortcmap(cmap);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot sort cmap");
-		goto cleanup;
-	}
-
-	*cmapp = cmap;
-	return fz_okay;
-
-cleanup:
-	pdf_dropcmap(cmap);
-	return error; /* already rethrown */
-}
-
-/*
- * Load CMap stream in PDF file
- */
-fz_error *
-pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
-{
-	fz_error *error = fz_okay;
-	fz_obj *stmobj = stmref;
-	fz_stream *file;
-	pdf_cmap *cmap = nil;
-	pdf_cmap *usecmap;
-	fz_obj *wmode;
-	fz_obj *obj;
-
-	if ((*cmapp = pdf_finditem(xref->store, PDF_KCMAP, stmref)))
-	{
-		pdf_keepcmap(*cmapp);
-		return fz_okay;
-	}
-
-	pdf_logfont("load embedded cmap (%d %d R) {\n", fz_tonum(stmref), fz_togen(stmref));
-
-	error = pdf_resolve(&stmobj, xref);
-	if (error)
-		return fz_rethrow(error, "cannot resolve cmap object");
-
-	error = pdf_openstream(&file, xref, fz_tonum(stmref), fz_togen(stmref));
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot open cmap stream");
-		goto cleanup;
-	}
-
-	error = pdf_parsecmap(&cmap, file);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot parse cmap stream");
-		goto cleanup;
-	}
-
-	fz_dropstream(file);
-
-	wmode = fz_dictgets(stmobj, "WMode");
-	if (fz_isint(wmode))
-	{
-		pdf_logfont("wmode %d\n", wmode);
-		pdf_setwmode(cmap, fz_toint(wmode));
-	}
-
-	obj = fz_dictgets(stmobj, "UseCMap");
-	if (fz_isname(obj))
-	{
-		pdf_logfont("usecmap /%s\n", fz_toname(obj));
-		error = pdf_loadsystemcmap(&usecmap, fz_toname(obj));
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot load system usecmap '%s'", fz_toname(obj));
-			goto cleanup;
-		}
-		pdf_setusecmap(cmap, usecmap);
-		pdf_dropcmap(usecmap);
-	}
-	else if (fz_isindirect(obj))
-	{
-		pdf_logfont("usecmap (%d %d R)\n", fz_tonum(obj), fz_togen(obj));
-		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot load embedded usecmap");
-			goto cleanup;
-		}
-		pdf_setusecmap(cmap, usecmap);
-		pdf_dropcmap(usecmap);
-	}
-
-	pdf_logfont("}\n");
-
-	error = pdf_storeitem(xref->store, PDF_KCMAP, stmref, cmap);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot store cmap resource");
-		goto cleanup;
-	}
-
-	fz_dropobj(stmobj);
-
-	*cmapp = cmap;
-	return fz_okay;
-
-cleanup:
-	if (cmap)
-		pdf_dropcmap(cmap);
-	fz_dropobj(stmobj);
-	return error; /* already rethrown */
-}
-
-/*
- * Load predefined CMap from system. We keep these files
- * embedded in the executable, and parse them when needed,
- * and cache the parsed copy for later reuse.
- */
-fz_error *
-pdf_loadsystemcmap(pdf_cmap **cmapp, char *cmapname)
-{
-    fz_error *error;
-    fz_stream *file;
-    pdf_cmap *usecmap;
-    pdf_cmap *cmap;
-    int i;
-
-    for (i = 0; pdf_cmaptable[i].name; i++)
-	if (!strcmp(cmapname, pdf_cmaptable[i].name))
-	    goto found;
-
-    return fz_throw("no builtin cmap file: %s", cmapname);
-
-found:
-    if (pdf_cmaptable[i].cmap)
-    {
-	pdf_logfont("reuse system cmap %s\n", cmapname);
-	pdf_keepcmap(pdf_cmaptable[i].cmap);
-	*cmapp = pdf_cmaptable[i].cmap;
-	return fz_okay;
-    }
-
-    pdf_logfont("load system cmap %s\n", cmapname);
-
-    error = fz_openrmemory(&file, pdf_cmaptable[i].buf, *pdf_cmaptable[i].len);
-    if (error)
-	return fz_rethrow(error, "cannot create stream to read cmap from memory");
-
-    error = pdf_parsecmap(&pdf_cmaptable[i].cmap, file);
-    if (error)
-    {
-	fz_dropstream(file);
-	return fz_rethrow(error, "cannot parse system cmap '%s'", cmapname);
-    }
-
-    fz_dropstream(file);
-
-    /* Keep an extra reference, since we have it cached */
-    pdf_keepcmap(pdf_cmaptable[i].cmap);
-
-    if (pdf_cmaptable[i].cmap->usecmapname[0])
-    {
-	pdf_logfont("usecmap %s\n", pdf_cmaptable[i].cmap->usecmapname);
-	error = pdf_loadsystemcmap(&usecmap, pdf_cmaptable[i].cmap->usecmapname);
-	if (error)
-	    return fz_rethrow(error, "cannot load usecmap '%s'", pdf_cmaptable[i].cmap->usecmapname);
-	pdf_setusecmap(pdf_cmaptable[i].cmap, usecmap);
-	pdf_dropcmap(usecmap);
-    }
-
-    pdf_keepcmap(pdf_cmaptable[i].cmap);
-    *cmapp = pdf_cmaptable[i].cmap;
-    return fz_okay;
-}
-
-/*
- * Create an Identity-* CMap (for both 1 and 2-byte encodings)
- */
-fz_error *
-pdf_newidentitycmap(pdf_cmap **cmapp, int wmode, int bytes)
-{
-	fz_error *error;
-	pdf_cmap *cmap;
-
-	error = pdf_newcmap(&cmap);
-	if (error)
-		return fz_rethrow(error, "cannot create cmap");
-
-	sprintf(cmap->cmapname, "Identity-%c", wmode ? 'V' : 'H');
-
-	error = pdf_addcodespace(cmap, 0x0000, 0xffff, bytes);
-	if (error) {
-		pdf_dropcmap(cmap);
-		return fz_rethrow(error, "cannot add code space");
-	}
-
-	error = pdf_maprangetorange(cmap, 0x0000, 0xffff, 0);
-	if (error) {
-		pdf_dropcmap(cmap);
-		return fz_rethrow(error, "cannot map <0000> to <ffff>");
-	}
-
-	error = pdf_sortcmap(cmap);
-	if (error) {
-		pdf_dropcmap(cmap);
-		return fz_rethrow(error, "cannot sort cmap");
-	}
-
-	pdf_setwmode(cmap, wmode);
-
-	*cmapp = cmap;
-	return fz_okay;
 }
 
