@@ -1989,16 +1989,18 @@ showinfo(char *filename, int show, char *pagelist)
 
 		if (allpages)
 			printf("Retrieving info from pages %d-%d...\n", spage, epage);
-		for (page = spage; page <= epage; page++)
+		if (spage >= 1)
 		{
+		    for (page = spage; page <= epage; page++)
+		    {
 			gatherinfo(show, page);
 			if (!allpages)
 			{
-				printf("Page %05d:\n", page);
-				printinfo(filename, show, page);
-				printf("\n");
+			    printf("Page %05d:\n", page);
+			    printinfo(filename, show, page);
+			    printf("\n");
 			}
-
+		    }
 		}
 
 		spec = strsep(&pagelist, ",");
