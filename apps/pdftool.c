@@ -918,7 +918,7 @@ struct info
 		} dim;
 		struct {
 			fz_obj *subtype;
-			fz_obj *basefont;
+			fz_obj *name;
 		} font;
 		struct {
 			fz_obj *width;
@@ -1060,6 +1060,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		fz_obj *fontdict;
 		fz_obj *subtype;
 		fz_obj *basefont;
+		fz_obj *name;
 		int k;
 
 		fontdict = ref = fz_dictgetval(dict, i);
@@ -1084,13 +1085,25 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		basefont = fz_dictgets(fontdict, "BaseFont");
 		if (basefont)
+		{
 		    error = pdf_resolve(&basefont, src);
-                else
-                    error = fz_newnull(&basefont);
-                if (error)
-                    return fz_rethrow(error, "cannot find font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
-                if (!fz_isnull(basefont) && !fz_isname(basefont))
-                    return fz_throw("not a font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		    if (error)
+			return fz_rethrow(error, "cannot find font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		    if (!fz_isname(basefont))
+			return fz_throw("not a font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
+		else
+		{
+		    name = fz_dictgets(fontdict, "Name");
+		    if (name)
+			error = pdf_resolve(&name, src);
+		    else
+			error = fz_newnull(&name);
+		    if (error)
+			return fz_rethrow(error, "cannot find font dict name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		    if (!fz_isnull(name) && !fz_isname(name))
+			return fz_throw("not a font dict name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 
 		for (k = 0; k < fonts; k++)
 			if (fz_tonum(font[k]->ref) == fz_tonum(ref) &&
@@ -1114,7 +1127,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		font[fonts - 1]->pageref = pageref;
 		font[fonts - 1]->ref = ref;
 		font[fonts - 1]->u.font.subtype = subtype;
-		font[fonts - 1]->u.font.basefont = basefont;
+		font[fonts - 1]->u.font.name = basefont ? basefont : name;
 	}
 
 	return fz_okay;
@@ -1786,7 +1799,7 @@ printinfo(char *filename, int show, int page)
 					font[i]->page,
 					fz_tonum(font[i]->pageref), fz_togen(font[i]->pageref),
 					fz_toname(font[i]->u.font.subtype),
-					fz_toname(font[i]->u.font.basefont),
+					fz_toname(font[i]->u.font.name),
 					fz_tonum(font[i]->ref), fz_togen(font[i]->ref));
 		}
 		printf("\n");
