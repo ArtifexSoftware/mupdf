@@ -1221,13 +1221,24 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 			if (fz_isname(cs) && (!strcmp(fz_toname(cs), "DeviceN") || !strcmp(fz_toname(cs), "Separation")))
 			{
-			    altcs = fz_arrayget(cses, 2);
-			    if (altcs)
-			    {
-				    error = pdf_resolve(&altcs, src);
-				    if (error)
-					    return fz_rethrow(error, "cannot resolve indirect image alternate colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
-			    }
+				altcs = fz_arrayget(cses, 2);
+				if (altcs)
+				{
+					error = pdf_resolve(&altcs, src);
+					if (error)
+						return fz_rethrow(error, "cannot resolve indirect image alternate colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+				}
+
+				if (fz_isarray(altcs))
+				{
+					altcs = fz_arrayget(altcs, 0);
+					if (altcs)
+					{
+						error = pdf_resolve(&altcs, src);
+						if (error)
+							return fz_rethrow(error, "cannot resolve indirect image alternate colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+					}
+				}
 			}
 		}
 
