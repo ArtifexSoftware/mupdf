@@ -1,6 +1,6 @@
-#include "fitz-base.h"
-#include "fitz-world.h"
-#include "fitz-draw.h"
+#include "fitz_base.h"
+#include "fitz_tree.h"
+#include "fitz_draw.h"
 
 enum { HSCALE = 17, VSCALE = 15, SF = 1 };
 

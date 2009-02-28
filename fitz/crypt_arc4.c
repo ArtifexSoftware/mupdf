@@ -21,8 +21,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fitz-base.h"
-#include "fitz-stream.h"
+#include "fitz_base.h"
+#include "fitz_stream.h"
 
 void
 fz_arc4init(fz_arc4 *arc4, const unsigned char *key, const unsigned keylen)

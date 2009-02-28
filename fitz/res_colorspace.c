@@ -1,5 +1,5 @@
-#include "fitz-base.h"
-#include "fitz-world.h"
+#include "fitz_base.h"
+#include "fitz_tree.h"
 
 void
 fz_convertpixmap(fz_colorspace *srcs, fz_pixmap *src, fz_colorspace *dsts, fz_pixmap *dst)

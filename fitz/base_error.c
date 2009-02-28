@@ -1,4 +1,4 @@
-#include "fitz-base.h"
+#include "fitz_base.h"
 
 void
 fz_droperror(fz_error *eo)

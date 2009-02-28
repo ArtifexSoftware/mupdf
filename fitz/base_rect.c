@@ -1,4 +1,4 @@
-#include "fitz-base.h"
+#include "fitz_base.h"
 
 fz_rect fz_infiniterect = { 1, 1, -1, -1 };
 fz_rect fz_emptyrect = { 0, 0, 0, 0 };

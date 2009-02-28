@@ -2,8 +2,8 @@
  * Output streams.
  */
 
-#include "fitz-base.h"
-#include "fitz-stream.h"
+#include "fitz_base.h"
+#include "fitz_stream.h"
 
 int
 fz_wtell(fz_stream *stm)

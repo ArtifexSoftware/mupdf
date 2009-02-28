@@ -1,6 +1,6 @@
-#include "fitz-base.h"
-#include "fitz-world.h"
-#include "fitz-draw.h"
+#include "fitz_base.h"
+#include "fitz_tree.h"
+#include "fitz_draw.h"
 
 static fz_error *
 line(fz_gel *gel, fz_matrix *ctm, float x0, float y0, float x1, float y1)

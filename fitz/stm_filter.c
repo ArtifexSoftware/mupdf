@@ -1,5 +1,5 @@
-#include "fitz-base.h"
-#include "fitz-stream.h"
+#include "fitz_base.h"
+#include "fitz_stream.h"
 
 fz_error fz_kioneedin = { "<ioneedin>", "<internal>", "<internal>", 0, nil };
 fz_error fz_kioneedout = { "<ioneedout>", "<internal>", "<internal>", 0, nil };

@@ -1,5 +1,5 @@
-#include "fitz-base.h"
-#include "fitz-world.h"
+#include "fitz_base.h"
+#include "fitz_tree.h"
 
 void fz_droplinknode(fz_linknode* node);
 void fz_droppathnode(fz_pathnode* node);

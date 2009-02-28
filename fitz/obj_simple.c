@@ -1,5 +1,5 @@
-#include "fitz-base.h"
-#include "fitz-stream.h"
+#include "fitz_base.h"
+#include "fitz_stream.h"
 
 extern void fz_droparray(fz_obj *array);
 extern void fz_dropdict(fz_obj *dict);

@@ -1,4 +1,4 @@
-#include "fitz-base.h"
+#include "fitz_base.h"
 
 void fz_invert3x3(float *dst, float *m)
 {

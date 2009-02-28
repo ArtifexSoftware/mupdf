@@ -1,4 +1,4 @@
-#include "fitz-base.h"
+#include "fitz_base.h"
 
 /* Make this thread local storage if you wish.  */
 
