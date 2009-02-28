@@ -2,6 +2,8 @@
 # These CMaps come from http://www.adobe.com/devnet/font/#pcfi
 #
 
+SubDir TOP cmaps ;
+
 SubDir TOP cmaps chinese_s ;
 GenFile cmap_chinese_s.c : cmapdump
     Adobe-GB1-4

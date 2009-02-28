@@ -28,6 +28,7 @@ main(int argc, char **argv)
     FILE *fo;
     FILE *fi;
     char name[256];
+    char *basename;
     char *p;
     int i, len;
 
@@ -53,7 +54,14 @@ main(int argc, char **argv)
 	    return 1;
 	}
 
-	strcpy(name, argv[i]);
+	basename = strrchr(argv[i], '/');
+	if (!basename)
+	    basename = strrchr(argv[i], '\\');
+	if (basename)
+	    basename++;
+	else
+	    basename = argv[i];
+	strcpy(name, basename);
 	p = name;
 	while (*p)
 	{
@@ -62,12 +70,12 @@ main(int argc, char **argv)
 	    p ++;
 	}
 
-	fprintf(fo, "const unsigned char %s[] = {\n", name);
+	fprintf(fo, "const unsigned char pdf_font_%s_buf[] = {\n", name);
 
 	len = hexdump(fo, fi);
 
 	fprintf(fo, "};\n");
-	fprintf(fo, "const unsigned int %s_len = %d;\n", name, len);
+	fprintf(fo, "const unsigned int pdf_font_%s_len = %d;\n", name, len);
 
 	fclose(fi);
     }

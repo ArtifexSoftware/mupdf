@@ -1,7 +1,41 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#include "mupdf/base14.h"
+extern const unsigned char pdf_font_Dingbats_cff_buf[];
+extern const unsigned int  pdf_font_Dingbats_cff_len;
+extern const unsigned char pdf_font_NimbusMonL_Bold_cff_buf[];
+extern const unsigned int  pdf_font_NimbusMonL_Bold_cff_len;
+extern const unsigned char pdf_font_NimbusMonL_BoldObli_cff_buf[];
+extern const unsigned int  pdf_font_NimbusMonL_BoldObli_cff_len;
+extern const unsigned char pdf_font_NimbusMonL_Regu_cff_buf[];
+extern const unsigned int  pdf_font_NimbusMonL_Regu_cff_len;
+extern const unsigned char pdf_font_NimbusMonL_ReguObli_cff_buf[];
+extern const unsigned int  pdf_font_NimbusMonL_ReguObli_cff_len;
+extern const unsigned char pdf_font_NimbusRomNo9L_Medi_cff_buf[];
+extern const unsigned int  pdf_font_NimbusRomNo9L_Medi_cff_len;
+extern const unsigned char pdf_font_NimbusRomNo9L_MediItal_cff_buf[];
+extern const unsigned int  pdf_font_NimbusRomNo9L_MediItal_cff_len;
+extern const unsigned char pdf_font_NimbusRomNo9L_Regu_cff_buf[];
+extern const unsigned int  pdf_font_NimbusRomNo9L_Regu_cff_len;
+extern const unsigned char pdf_font_NimbusRomNo9L_ReguItal_cff_buf[];
+extern const unsigned int  pdf_font_NimbusRomNo9L_ReguItal_cff_len;
+extern const unsigned char pdf_font_NimbusSanL_Bold_cff_buf[];
+extern const unsigned int  pdf_font_NimbusSanL_Bold_cff_len;
+extern const unsigned char pdf_font_NimbusSanL_BoldItal_cff_buf[];
+extern const unsigned int  pdf_font_NimbusSanL_BoldItal_cff_len;
+extern const unsigned char pdf_font_NimbusSanL_Regu_cff_buf[];
+extern const unsigned int  pdf_font_NimbusSanL_Regu_cff_len;
+extern const unsigned char pdf_font_NimbusSanL_ReguItal_cff_buf[];
+extern const unsigned int  pdf_font_NimbusSanL_ReguItal_cff_len;
+extern const unsigned char pdf_font_StandardSymL_cff_buf[];
+extern const unsigned int  pdf_font_StandardSymL_cff_len;
+extern const unsigned char pdf_font_URWChanceryL_MediItal_cff_buf[];
+extern const unsigned int  pdf_font_URWChanceryL_MediItal_cff_len;
+
+#ifndef NOCJK
+extern const unsigned char pdf_font_DroidSansFallback_ttf_buf[];
+extern const unsigned int  pdf_font_DroidSansFallback_ttf_len;
+#endif
 
 enum
 {
@@ -19,63 +53,58 @@ enum
 enum { CNS, GB, Japan, Korea };
 enum { MINCHO, GOTHIC };
 
-#ifndef NOCJK
-extern const unsigned char fonts_droid_DroidSansFallback_ttf[];
-extern const unsigned int fonts_droid_DroidSansFallback_ttf_len;
-#endif
-
 static const struct
 {
 	const char *name;
 	const unsigned char *cff;
 	const unsigned int *len;
 } basefonts[] = {
-	{ "Courier",
-		fonts_NimbusMonL_Regu_cff,
-		&fonts_NimbusMonL_Regu_cff_len },
-	{ "Courier-Bold",
-		fonts_NimbusMonL_Bold_cff,
-		&fonts_NimbusMonL_Bold_cff_len },
-	{ "Courier-Oblique",
-		fonts_NimbusMonL_ReguObli_cff,
-		&fonts_NimbusMonL_ReguObli_cff_len },
-	{ "Courier-BoldOblique",
-		fonts_NimbusMonL_BoldObli_cff,
-		&fonts_NimbusMonL_BoldObli_cff_len },
-	{ "Helvetica",
-		fonts_NimbusSanL_Regu_cff,
-		&fonts_NimbusSanL_Regu_cff_len },
-	{ "Helvetica-Bold",
-		fonts_NimbusSanL_Bold_cff,
-		&fonts_NimbusSanL_Bold_cff_len },
-	{ "Helvetica-Oblique",
-		fonts_NimbusSanL_ReguItal_cff,
-		&fonts_NimbusSanL_ReguItal_cff_len },
-	{ "Helvetica-BoldOblique",
-		fonts_NimbusSanL_BoldItal_cff,
-		&fonts_NimbusSanL_BoldItal_cff_len },
-	{ "Times-Roman",
-		fonts_NimbusRomNo9L_Regu_cff,
-		&fonts_NimbusRomNo9L_Regu_cff_len },
-	{ "Times-Bold",
-		fonts_NimbusRomNo9L_Medi_cff,
-		&fonts_NimbusRomNo9L_Medi_cff_len },
-	{ "Times-Italic",
-		fonts_NimbusRomNo9L_ReguItal_cff,
-		&fonts_NimbusRomNo9L_ReguItal_cff_len },
-	{ "Times-BoldItalic",
-		fonts_NimbusRomNo9L_MediItal_cff,
-		&fonts_NimbusRomNo9L_MediItal_cff_len },
-	{ "Symbol",
-		fonts_StandardSymL_cff,
-		&fonts_StandardSymL_cff_len },
-	{ "ZapfDingbats",
-		fonts_Dingbats_cff,
-		&fonts_Dingbats_cff_len },
-	{ "Chancery",
-		fonts_URWChanceryL_MediItal_cff,
-		&fonts_URWChanceryL_MediItal_cff_len },
-	{ 0, 0, 0 }
+    { "Courier",
+	pdf_font_NimbusMonL_Regu_cff_buf,
+	&pdf_font_NimbusMonL_Regu_cff_len },
+    { "Courier-Bold",
+	pdf_font_NimbusMonL_Bold_cff_buf,
+	&pdf_font_NimbusMonL_Bold_cff_len },
+    { "Courier-Oblique",
+	pdf_font_NimbusMonL_ReguObli_cff_buf,
+	&pdf_font_NimbusMonL_ReguObli_cff_len },
+    { "Courier-BoldOblique",
+	pdf_font_NimbusMonL_BoldObli_cff_buf,
+	&pdf_font_NimbusMonL_BoldObli_cff_len },
+    { "Helvetica",
+	pdf_font_NimbusSanL_Regu_cff_buf,
+	&pdf_font_NimbusSanL_Regu_cff_len },
+    { "Helvetica-Bold",
+	pdf_font_NimbusSanL_Bold_cff_buf,
+	&pdf_font_NimbusSanL_Bold_cff_len },
+    { "Helvetica-Oblique",
+	pdf_font_NimbusSanL_ReguItal_cff_buf,
+	&pdf_font_NimbusSanL_ReguItal_cff_len },
+    { "Helvetica-BoldOblique",
+	pdf_font_NimbusSanL_BoldItal_cff_buf,
+	&pdf_font_NimbusSanL_BoldItal_cff_len },
+    { "Times-Roman",
+	pdf_font_NimbusRomNo9L_Regu_cff_buf,
+	&pdf_font_NimbusRomNo9L_Regu_cff_len },
+    { "Times-Bold",
+	pdf_font_NimbusRomNo9L_Medi_cff_buf,
+	&pdf_font_NimbusRomNo9L_Medi_cff_len },
+    { "Times-Italic",
+	pdf_font_NimbusRomNo9L_ReguItal_cff_buf,
+	&pdf_font_NimbusRomNo9L_ReguItal_cff_len },
+    { "Times-BoldItalic",
+	pdf_font_NimbusRomNo9L_MediItal_cff_buf,
+	&pdf_font_NimbusRomNo9L_MediItal_cff_len },
+    { "Symbol",
+	pdf_font_StandardSymL_cff_buf,
+	&pdf_font_StandardSymL_cff_len },
+    { "ZapfDingbats",
+	pdf_font_Dingbats_cff_buf,
+	&pdf_font_Dingbats_cff_len },
+    { "Chancery",
+	pdf_font_URWChanceryL_MediItal_cff_buf,
+	&pdf_font_URWChanceryL_MediItal_cff_len },
+    { 0, 0, 0 }
 };
 
 fz_error *
@@ -111,12 +140,12 @@ loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
 #ifndef NOCJK
 	fz_error *error;
 	/* We only have one builtin fallback font, we'd really like
-	 * to have one for each combination of CSI and Kind
+	 * to have one for each combination of CSI and Kind.
 	 */
 	pdf_logfont("loading builtin CJK font\n");
 	error = fz_newfontfrombuffer(&font->font,
-		(unsigned char *)fonts_droid_DroidSansFallback_ttf,
-		fonts_droid_DroidSansFallback_ttf_len, 0);
+		(unsigned char *)pdf_font_DroidSansFallback_ttf_buf,
+		pdf_font_DroidSansFallback_ttf_len, 0);
 	if (error)
 	    return fz_rethrow(error, "cannot load builtin CJK font");
 	font->font->ftsubstitute = 1; /* substitute font */

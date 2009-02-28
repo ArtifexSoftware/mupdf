@@ -6,9 +6,9 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#include "mupdf/pdf_lex.c"
-#include "mupdf/pdf_cmap.c"
-#include "mupdf/pdf_cmap_parse.c"
+#include "../mupdf/pdf_lex.c"
+#include "../mupdf/pdf_cmap.c"
+#include "../mupdf/pdf_cmap_parse.c"
 
 char *
 flagtoname(int flag)
