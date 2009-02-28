@@ -1,6 +1,6 @@
 #
 
-FITZLIBS = libmupdf libbase libstream libworld libraster libfonts libcmaps ;
+FITZLIBS = libmupdf libfitz libfitzdraw libfonts libcmaps ;
 
 SubDir TOP apps ;
 Main mupdftool : pdftool.c ;

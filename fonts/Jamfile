@@ -1,8 +1,11 @@
 SubDir TOP fonts ;
 
-SubDir TOP fonts droid ;
-GenFile font_cjk.c : hexdump DroidSansFallback.ttf ;
-Library libfonts : font_cjk.c ;
+if ! ( NOCJK in $(DEFINES) )
+{
+    SubDir TOP fonts droid ;
+    GenFile font_cjk.c : hexdump DroidSansFallback.ttf ;
+    Library libfonts : font_cjk.c ;
+}
 
 SubDir TOP fonts ;
 

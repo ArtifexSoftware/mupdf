@@ -13,10 +13,8 @@ HDRS = [ FDirName $(TOP) include ] ;
 Main hexdump : hexdump.c ;
 Main strdump : strdump.c ;
 
-SubInclude TOP base ;
-SubInclude TOP stream ;
-SubInclude TOP world ;
-SubInclude TOP raster ;
+SubInclude TOP fitz ;
+SubInclude TOP fitzdraw ;
 
 SubInclude TOP fonts ;
 SubInclude TOP cmaps ;
