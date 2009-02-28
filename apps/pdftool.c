@@ -1161,7 +1161,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isdict(imagedict))
-			return fz_throw("not a image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		type = fz_dictgets(imagedict, "Subtype");
 		if (type)
@@ -1171,7 +1171,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot resolve indirect image subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isname(type))
-			return fz_throw("not a image subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "Image"))
 			continue;
 
@@ -1189,7 +1189,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot create fake raw image filter (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isname(filter) && !fz_isarray(filter))
-			return fz_throw("not a image filter (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image filter (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		mask = fz_dictgets(imagedict, "ImageMask");
 		if (mask)
@@ -1251,9 +1251,9 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot create fake image mask colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isname(cs))
-			return fz_throw("not a image colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (altcs && !fz_isname(altcs))
-			return fz_throw("not a image alternate colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image alternate colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		width = fz_dictgets(imagedict, "Width");
 		if (width)
@@ -1263,7 +1263,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot resolve indirect image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isint(width))
-			return fz_throw("not a image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		height = fz_dictgets(imagedict, "Height");
 		error = pdf_resolve(&type, src);
@@ -1273,7 +1273,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot resolve indirect image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_isint(height))
-			return fz_throw("not a image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		bpc = fz_dictgets(imagedict, "BitsPerComponent");
 		if (bpc)
@@ -1283,9 +1283,9 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				return fz_rethrow(error, "cannot resolve indirect image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
 		if (!fz_tobool(mask) && !fz_isint(bpc))
-			return fz_throw("not a image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (fz_tobool(mask) && fz_isint(bpc) && fz_toint(bpc) != 1)
-			return fz_throw("not a image mask bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_throw("not an image mask bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (fz_tobool(mask) && !bpc)
 		{
 			error = fz_newint(&bpc, 1);
