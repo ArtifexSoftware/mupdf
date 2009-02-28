@@ -1008,9 +1008,12 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 	int j;
 
 	obj = ref = fz_dictgets(pageobj, "MediaBox");
-	error = pdf_resolve(&obj, src);
-	if (error)
-		return error;
+	if (obj)
+	{
+		error = pdf_resolve(&obj, src);
+		if (error)
+			return error;
+	}
 	if (!fz_isarray(obj))
 		return fz_throw("cannot find page bounds (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
@@ -1060,28 +1063,34 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		fontdict = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&fontdict, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect font dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (fontdict)
+		{
+			error = pdf_resolve(&fontdict, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect font dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(fontdict))
 			return fz_throw("not a font dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		subtype = fz_dictgets(fontdict, "Subtype");
-		error = pdf_resolve(&subtype, src);
-		if (error)
-			return fz_rethrow(error, "cannot font dict subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (subtype)
+		{
+			error = pdf_resolve(&subtype, src);
+			if (error)
+				return fz_rethrow(error, "cannot find font dict subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isname(subtype))
 			return fz_throw("not a font dict subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		basefont = fz_dictgets(fontdict, "BaseFont");
 		if (basefont)
-			error = pdf_resolve(&basefont, src);
-		else
-			error = fz_newnull(&basefont);
-		if (error)
-			return fz_rethrow(error, "cannot font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
-		if (!fz_isnull(basefont) && !fz_isname(basefont))
-			return fz_throw("not a font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		    error = pdf_resolve(&basefont, src);
+                else
+                    error = fz_newnull(&basefont);
+                if (error)
+                    return fz_rethrow(error, "cannot find font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
+                if (!fz_isnull(basefont) && !fz_isname(basefont))
+                    return fz_throw("not a font dict basefont (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		for (k = 0; k < fonts; k++)
 			if (fz_tonum(font[k]->ref) == fz_tonum(ref) &&
@@ -1132,9 +1141,12 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		imagedict = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&imagedict, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (imagedict)
+		{
+			error = pdf_resolve(&imagedict, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(imagedict))
 			return fz_throw("not a image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
@@ -1184,14 +1196,19 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 		if (fz_isarray(cs))
 		{
-			cs = fz_arrayget(cs, 0);
-			error = pdf_resolve(&cs, src);
-			if (error)
-				return fz_rethrow(error, "cannot resolve indirect image colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			fz_obj *cses = cs;
+
+			cs = fz_arrayget(cses, 0);
+			if (cs)
+			{
+				error = pdf_resolve(&cs, src);
+				if (error)
+					return fz_rethrow(error, "cannot resolve indirect image colorspace name (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			}
 
 			if (fz_isname(cs) && (!strcmp(fz_toname(cs), "DeviceN") || !strcmp(fz_toname(cs), "Separation")))
 			{
-			    altcs = fz_arrayget(cs, 2);
+			    altcs = fz_arrayget(cses, 2);
 			    if (altcs)
 			    {
 				    error = pdf_resolve(&altcs, src);
@@ -1215,23 +1232,32 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			return fz_throw("not a image alternate colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		width = fz_dictgets(imagedict, "Width");
-		error = pdf_resolve(&type, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (width)
+		{
+			error = pdf_resolve(&type, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isint(width))
 			return fz_throw("not a image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		height = fz_dictgets(imagedict, "Height");
 		error = pdf_resolve(&type, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (height)
+		{
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isint(height))
 			return fz_throw("not a image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		bpc = fz_dictgets(imagedict, "BitsPerComponent");
-		error = pdf_resolve(&type, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (bpc)
+		{
+			error = pdf_resolve(&type, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_tobool(mask) && !fz_isint(bpc))
 			return fz_throw("not a image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (fz_tobool(mask) && fz_isint(bpc) && fz_toint(bpc) != 1)
@@ -1292,9 +1318,12 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		xobjdict = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&xobjdict, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (xobjdict)
+		{
+			error = pdf_resolve(&xobjdict, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(xobjdict))
 			return fz_throw("not a xobject dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
@@ -1385,9 +1414,12 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		xobjdict = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&xobjdict, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (xobjdict)
+		{
+			error = pdf_resolve(&xobjdict, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect image dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(xobjdict))
 			return fz_throw("not a xobject dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
@@ -1456,16 +1488,22 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		shade = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&shade, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect shading dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (shade)
+		{
+			error = pdf_resolve(&shade, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect shading dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(shade))
 			return fz_throw("not a shading dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		type = fz_dictgets(shade, "ShadingType");
-		error = pdf_resolve(&type, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect shading type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (type)
+		{
+			error = pdf_resolve(&type, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect shading type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isint(type) || fz_toint(type) < 1 || fz_toint(type) > 7)
 			return fz_throw("not a shading type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
@@ -1512,32 +1550,44 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		int k;
 
 		patterndict = ref = fz_dictgetval(dict, i);
-		error = pdf_resolve(&patterndict, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect pattern dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (patterndict)
+		{
+			error = pdf_resolve(&patterndict, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect pattern dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isdict(patterndict))
 			return fz_throw("not a pattern dict (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		type = fz_dictgets(patterndict, "PatternType");
-		error = pdf_resolve(&type, src);
-		if (error)
-			return fz_rethrow(error, "cannot resolve indirect pattern type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		if (type)
+		{
+			error = pdf_resolve(&type, src);
+			if (error)
+				return fz_rethrow(error, "cannot resolve indirect pattern type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		}
 		if (!fz_isint(type) || fz_toint(type) < 1 || fz_toint(type) > 2)
 			return fz_throw("not a pattern type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		if (fz_toint(type) == 1)
 		{
 			paint = fz_dictgets(patterndict, "PaintType");
-			error = pdf_resolve(&paint, src);
-			if (error)
-				return fz_rethrow(error, "cannot resolve indirect pattern paint type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			if (paint)
+			{
+				error = pdf_resolve(&paint, src);
+				if (error)
+					return fz_rethrow(error, "cannot resolve indirect pattern paint type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			}
 			if (!fz_isint(paint) || fz_toint(paint) < 1 || fz_toint(paint) > 2)
 				return fz_throw("not a pattern paint type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 			tiling = fz_dictgets(patterndict, "TilingType");
-			error = pdf_resolve(&tiling, src);
-			if (error)
-				return fz_rethrow(error, "cannot resolve indirect pattern tiling type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			if (tiling)
+			{
+				error = pdf_resolve(&tiling, src);
+				if (error)
+					return fz_rethrow(error, "cannot resolve indirect pattern tiling type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			}
 			if (!fz_isint(tiling) || fz_toint(tiling) < 1 || fz_toint(tiling) > 3)
 				return fz_throw("not a pattern tiling type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
@@ -1606,9 +1656,12 @@ gatherinfo(int show, int page)
 	}
 
 	rsrc = fz_dictgets(pageobj, "Resources");
-	error = pdf_resolve(&rsrc, src);
-	if (error)
-		die(fz_rethrow(error, "retrieving resources at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
+	if (rsrc)
+	{
+		error = pdf_resolve(&rsrc, src);
+		if (error)
+			die(fz_rethrow(error, "retrieving resources at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
+	}
 
 	if (show & FONTS)
 	{
