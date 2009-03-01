@@ -261,18 +261,18 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 #endif
 	    fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
 	    if (fterr)
-		fz_warn("freetype load glyph: %s", ft_errorstring(fterr));
+		fz_warn("freetype load glyph (gid %d): %s", gid, ft_errorstring(fterr));
 	}
 	else
 	{
 	    fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 	    if (fterr)
-		fz_warn("freetype load glyph: %s", ft_errorstring(fterr));
+		fz_warn("freetype load glyph (gid %d): %s", gid, ft_errorstring(fterr));
 	}
 
 	fterr = FT_Render_Glyph(face->glyph, ft_render_mode_normal);
 	if (fterr)
-		fz_warn("freetype render glyph: %s", ft_errorstring(fterr));
+		fz_warn("freetype render glyph (gid %d): %s", gid, ft_errorstring(fterr));
 
 	glyph->w = face->glyph->bitmap.width;
 	glyph->h = face->glyph->bitmap.rows;
@@ -300,10 +300,9 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
  */
 
 fz_error *
-fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix, void **procs0)
+fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
 {
 	fz_font *font;
-	fz_tree **procs = (fz_tree**)procs0;
 	int i;
 
 	font = fz_newfont();
@@ -319,7 +318,7 @@ fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix, void **procs0)
 
 	font->t3matrix = matrix;
 	for (i = 0; i < 256; i++)
-		font->t3procs[i] = procs[i];
+		font->t3procs[i] = nil;
 
 	strlcpy(font->name, name, sizeof(font->name));
 

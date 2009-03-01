@@ -374,7 +374,7 @@ struct fz_glyph_s
 fz_error * fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
 fz_error * fz_loadfreetypefontfile(fz_font *font, char *path, int index);
 fz_error * fz_loadfreetypefontbuffer(fz_font *font, unsigned char *data, int len, int index);
-fz_error * fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix, void **procs);
+fz_error * fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix);
 
 fz_error * fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index);
 fz_error * fz_newfontfromfile(fz_font **fontp, char *path, int index);

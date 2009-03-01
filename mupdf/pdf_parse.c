@@ -432,7 +432,7 @@ skip:
 		{
 			c = fz_peekbyte(file);
 			if (c != '\n')
-				fz_warn("syntaxerror: corrupt pdf stream (%d %d R)\n", oid, gid);
+				fz_warn("syntaxerror: corrupt pdf stream (%d %d R)", oid, gid);
 			else
 				c = fz_readbyte(file);
 		}

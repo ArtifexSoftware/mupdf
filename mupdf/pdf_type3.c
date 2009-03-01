@@ -50,6 +50,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 	int first, last;
 	int i, k, n;
 	fz_rect bbox;
+	fz_matrix matrix;
 
 	obj = fz_dictgets(dict, "Name");
 	if (obj)
@@ -65,12 +66,12 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 	pdf_logfont("name %s\n", buf);
 
 	obj = fz_dictgets(dict, "FontMatrix");
-	fontdesc->font->t3matrix = pdf_tomatrix(obj);
+	matrix = pdf_tomatrix(obj);
 
 	pdf_logfont("matrix [%g %g %g %g %g %g]\n",
-			fontdesc->font->t3matrix.a, fontdesc->font->t3matrix.b,
-			fontdesc->font->t3matrix.c, fontdesc->font->t3matrix.d,
-			fontdesc->font->t3matrix.e, fontdesc->font->t3matrix.f);
+			matrix.a, matrix.b,
+			matrix.c, matrix.d,
+			matrix.e, matrix.f);
 
 	obj = fz_dictgets(dict, "FontBBox");
 	bbox = pdf_torect(obj);
@@ -79,11 +80,19 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 			bbox.x0, bbox.y0,
 			bbox.x1, bbox.y1);
 
-	bbox = fz_transformaabb(fontdesc->font->t3matrix, bbox);
+	bbox = fz_transformaabb(matrix, bbox);
 	bbox.x0 = fz_floor(bbox.x0 * 1000);
 	bbox.y0 = fz_floor(bbox.y0 * 1000);
 	bbox.x1 = fz_ceil(bbox.x1 * 1000);
 	bbox.y1 = fz_ceil(bbox.y1 * 1000);
+
+	error = fz_newtype3font(&fontdesc->font, buf, matrix);
+	if (error)
+	{
+	    pdf_dropfont(fontdesc);
+	    return fz_rethrow(error, "could not create type3 font");
+	}
+
 	fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/*
@@ -200,7 +209,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 			goto cleanup;
 	}
 	else
-		fz_warn("no resource dictionary for type 3 font!\n");
+		fz_warn("no resource dictionary for type 3 font!");
 
 	/*
 	 * CharProcs
