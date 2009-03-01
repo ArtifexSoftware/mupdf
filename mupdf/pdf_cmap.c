@@ -128,7 +128,7 @@ pdf_debugcmap(pdf_cmap *cmap)
     printf("  codespaces {\n");
     for (i = 0; i < cmap->ncspace; i++)
     {
-	printf("    <%x> <%x>\n", cmap->cspace[i].lo, cmap->cspace[i].hi);
+	printf("    <%x> <%x>\n", cmap->cspace[i].low, cmap->cspace[i].high);
     }
     printf("  }\n");
 
@@ -164,14 +164,14 @@ pdf_debugcmap(pdf_cmap *cmap)
  * multi-byte encoded strings.
  */
 fz_error *
-pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n)
+pdf_addcodespace(pdf_cmap *cmap, int low, int high, int n)
 {
     if (cmap->ncspace + 1 == nelem(cmap->cspace))
 	return fz_throw("assert: too many code space ranges");
 
     cmap->cspace[cmap->ncspace].n = n;
-    cmap->cspace[cmap->ncspace].lo = lo;
-    cmap->cspace[cmap->ncspace].hi = hi;
+    cmap->cspace[cmap->ncspace].low = low;
+    cmap->cspace[cmap->ncspace].high = high;
 
     cmap->ncspace ++;
 
@@ -187,7 +187,7 @@ addtable(pdf_cmap *cmap, int value)
     if (cmap->tlen + 1 > cmap->tcap)
     {
 	int newcap = cmap->tcap == 0 ? 256 : cmap->tcap * 2;
-	int *newtable = fz_realloc(cmap->table, newcap * sizeof(int));
+	unsigned short *newtable = fz_realloc(cmap->table, newcap * sizeof(unsigned short));
 	if (!newtable)
 	    return fz_throw("outofmem: cmap table");
 	cmap->tcap = newcap;
@@ -320,7 +320,7 @@ pdf_sortcmap(pdf_cmap *cmap)
 {
     fz_error *error;
     pdf_range *newranges;
-    int *newtable;
+    unsigned short *newtable;
     pdf_range *a;			/* last written range on output */
     pdf_range *b;			/* current range examined on input */
 
@@ -432,7 +432,7 @@ pdf_sortcmap(pdf_cmap *cmap)
 
     if (cmap->tlen)
     {
-	newtable = fz_realloc(cmap->table, cmap->tlen * sizeof(int));
+	newtable = fz_realloc(cmap->table, cmap->tlen * sizeof(unsigned short));
 	if (!newtable)
 	    return fz_throw("outofmem: cmap table");
 	cmap->tcap = cmap->tlen;
@@ -493,7 +493,7 @@ pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 	{
 	    if (cmap->cspace[k].n == n + 1)
 	    {
-		if (c >= cmap->cspace[k].lo && c <= cmap->cspace[k].hi)
+		if (c >= cmap->cspace[k].low && c <= cmap->cspace[k].high)
 		{
 		    *cpt = c;
 		    return buf + n + 1;

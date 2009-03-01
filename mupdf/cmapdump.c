@@ -113,11 +113,11 @@ main(int argc, char **argv)
 
 	if (cmap->tlen == 0)
 	{
-	    fprintf(fo, "static const int pdf_cmap_%s_table[1] = { 0 };\n\n", name);
+	    fprintf(fo, "static const unsigned short pdf_cmap_%s_table[1] = { 0 };\n\n", name);
 	}
 	else
 	{
-	    fprintf(fo, "static const int pdf_cmap_%s_table[%d] =\n{",
+	    fprintf(fo, "static const unsigned short pdf_cmap_%s_table[%d] =\n{",
 		    name, cmap->tlen);
 	    for (k = 0; k < cmap->tlen; k++)
 	    {
@@ -140,14 +140,14 @@ main(int argc, char **argv)
 	for (k = 0; k < cmap->ncspace; k++)
 	{
 	    fprintf(fo, "\t{ %d, 0x%04x, 0x%04x },\n",
-		    cmap->cspace[k].n, cmap->cspace[k].lo, cmap->cspace[k].hi);
+		    cmap->cspace[k].n, cmap->cspace[k].low, cmap->cspace[k].high);
 	}
 	fprintf(fo, "    },\n");
 
 	fprintf(fo, "    %d, %d, (pdf_range*) pdf_cmap_%s_ranges,\n",
 		cmap->rlen, cmap->rlen, name);
 
-	fprintf(fo, "    %d, %d, (int*) pdf_cmap_%s_table,\n",
+	fprintf(fo, "    %d, %d, (unsigned short*) pdf_cmap_%s_table,\n",
 		cmap->tlen, cmap->tlen, name);
 
 	fprintf(fo, "};\n\n");

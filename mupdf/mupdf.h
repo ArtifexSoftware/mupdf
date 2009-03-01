@@ -326,10 +326,10 @@ enum { PDF_CMAP_SINGLE, PDF_CMAP_RANGE, PDF_CMAP_TABLE, PDF_CMAP_MULTI };
 
 struct pdf_range_s
 {
-	int low;
-	int high;
-	int flag;	/* what kind of lookup is this (single, range, table, multi) */
-	int offset;	/* either range-delta or table-index */
+	unsigned short low;
+	unsigned short high;
+	unsigned short flag;	/* single, range, table, multi */
+	unsigned short offset;	/* range-delta or table-index */
 };
 
 struct pdf_cmap_s
@@ -343,17 +343,18 @@ struct pdf_cmap_s
 	int wmode;
 
 	int ncspace;
-	struct {
-		int n;
-		unsigned lo;
-		unsigned hi;
+	struct
+	{
+		unsigned short n;
+		unsigned short low;
+		unsigned short high;
 	} cspace[40];
 
 	int rlen, rcap;
 	pdf_range *ranges;
 
 	int tlen, tcap;
-	int *table;
+	unsigned short *table;
 };
 
 extern pdf_cmap *pdf_cmaptable[]; /* list of builtin system cmaps */
@@ -368,7 +369,7 @@ pdf_cmap *pdf_getusecmap(pdf_cmap *cmap);
 void pdf_setwmode(pdf_cmap *cmap, int wmode);
 void pdf_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
 
-fz_error *pdf_addcodespace(pdf_cmap *cmap, unsigned lo, unsigned hi, int n);
+fz_error *pdf_addcodespace(pdf_cmap *cmap, int low, int high, int n);
 fz_error *pdf_maprangetotable(pdf_cmap *cmap, int low, int *map, int len);
 fz_error *pdf_maprangetorange(pdf_cmap *cmap, int srclo, int srchi, int dstlo);
 fz_error *pdf_maponetomany(pdf_cmap *cmap, int one, int *many, int len);
