@@ -1245,7 +1245,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		if (fz_isbool(mask) && fz_tobool(mask))
 		{
 			if (cs)
-				return fz_throw("image mask (%d %d R) may not have colorspace", fz_tonum(ref), fz_togen(ref));
+				fz_warn("image mask (%d %d R) may not have colorspace", fz_tonum(ref), fz_togen(ref));
 			error = fz_newname(&cs, "ImageMask");
 			if (error)
 				return fz_rethrow(error, "cannot create fake image mask colorspace (%d %d R)", fz_tonum(ref), fz_togen(ref));
