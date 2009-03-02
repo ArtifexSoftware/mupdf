@@ -1266,9 +1266,9 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			return fz_throw("not an image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
 
 		height = fz_dictgets(imagedict, "Height");
-		error = pdf_resolve(&type, src);
 		if (height)
 		{
+			error = pdf_resolve(&height, src);
 			if (error)
 				return fz_rethrow(error, "cannot resolve indirect image height (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
@@ -1278,7 +1278,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		bpc = fz_dictgets(imagedict, "BitsPerComponent");
 		if (bpc)
 		{
-			error = pdf_resolve(&type, src);
+			error = pdf_resolve(&bpc, src);
 			if (error)
 				return fz_rethrow(error, "cannot resolve indirect image bits per component (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
