@@ -518,6 +518,7 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_dropobj(baseobj);
 	if (error)
 		return fz_rethrow(error, "cannot load base colorspace");
+	fz_keepcolorspace(base);
 
 	error = pdf_loadfunction(&tint, xref, tintobj);
 	if (error)
@@ -595,6 +596,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_dropobj(baseobj);
 	if (error)
 		return fz_rethrow(error, "cannot load base colorspace");
+	fz_keepcolorspace(base);
 
 	pdf_logrsrc("base %s\n", base->name);
 

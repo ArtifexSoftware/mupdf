@@ -78,6 +78,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 			pdf_logimage("indexed\n");
 			img->indexed = (pdf_indexed*)img->super.cs;
 			img->super.cs = img->indexed->base;
+			fz_keepcolorspace(img->super.cs);
 		}
 
 		pdf_logimage("colorspace %s\n", img->super.cs->name);
@@ -289,6 +290,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			pdf_logimage("indexed\n");
 			indexed = (pdf_indexed*)cs;
 			cs = indexed->base;
+			fz_keepcolorspace(cs);
 		}
 		n = cs->n;
 		a = 0;
