@@ -1831,12 +1831,15 @@ printinfo(char *filename, int show, int page)
 					image[i]->page,
 					fz_tonum(image[i]->pageref), fz_togen(image[i]->pageref));
 
-			for (j = 0; j < fz_arraylen(image[i]->u.image.filter); j++)
-			{
-				printf("%s%s",
-						fz_toname(fz_arrayget(image[i]->u.image.filter, j)),
-						j == fz_arraylen(image[i]->u.image.filter) - 1 ? "" : " ");
-			}
+			if (fz_isarray(image[i]->u.image.filter))
+				for (j = 0; j < fz_arraylen(image[i]->u.image.filter); j++)
+				{
+					printf("%s%s",
+							fz_toname(fz_arrayget(image[i]->u.image.filter, j)),
+							j == fz_arraylen(image[i]->u.image.filter) - 1 ? "" : " ");
+				}
+			else
+				printf("%s", fz_toname(image[i]->u.image.filter));
 
 			printf(" ] %dx%d %dbpc %s%s%s (%d %d R)\n",
 					fz_toint(image[i]->u.image.width),
