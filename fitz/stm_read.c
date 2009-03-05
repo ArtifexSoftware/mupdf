@@ -17,9 +17,6 @@ fz_readimp(fz_stream *stm)
 	if (stm->dead)
 		return fz_throw("assert: read from dead stream");
 
-	if (stm->mode != FZ_SREAD)
-		return fz_throw("assert: read from writing stream");
-
 	if (buf->eof)
 		return fz_okay;
 
@@ -123,14 +120,12 @@ fz_readimp(fz_stream *stm)
 }
 
 int
-fz_rtell(fz_stream *stm)
+fz_tell(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
 	int t;
 
 	if (stm->dead)
-		return EOF;
-	if (stm->mode != FZ_SREAD)
 		return EOF;
 
 	switch (stm->kind)
@@ -157,7 +152,7 @@ fz_rtell(fz_stream *stm)
 }
 
 fz_error *
-fz_rseek(fz_stream *stm, int offset, int whence)
+fz_seek(fz_stream *stm, int offset, int whence)
 {
 	fz_error *error;
 	fz_buffer *buf = stm->buffer;
@@ -166,12 +161,9 @@ fz_rseek(fz_stream *stm, int offset, int whence)
 	if (stm->dead)
 		return fz_throw("assert: seek in dead stream");
 
-	if (stm->mode != FZ_SREAD)
-		return fz_throw("assert: read operation on writing stream");
-
 	if (whence == 1)
 	{
-		int cur = fz_rtell(stm);
+		int cur = fz_tell(stm);
 		if (cur < 0)
 			return fz_throw("cannot tell current position");
 		offset = cur + offset;
@@ -198,12 +190,12 @@ fz_rseek(fz_stream *stm, int offset, int whence)
 	case FZ_SFILTER:
 		if (whence == 0)
 		{
-			if (offset < fz_rtell(stm))
+			if (offset < fz_tell(stm))
 			{
 				stm->dead = 1;
 				return fz_throw("assert: seek backwards in filter");
 			}
-			while (fz_rtell(stm) < offset)
+			while (fz_tell(stm) < offset)
 			{
 				c = fz_readbyte(stm);
 				if (c == EOF)

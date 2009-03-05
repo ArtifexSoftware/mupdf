@@ -289,7 +289,7 @@ pdf_dropcrypt(pdf_crypt *crypt)
 }
 
 static void
-createobjkey(pdf_crypt *crypt, unsigned oid, unsigned gid, unsigned char *key)
+createobjkey(pdf_crypt *crypt, unsigned oid, unsigned gen, unsigned char *key)
 {
 	unsigned char message[5];
 	fz_md5 md5;
@@ -304,8 +304,8 @@ createobjkey(pdf_crypt *crypt, unsigned oid, unsigned gid, unsigned char *key)
 	message[1] = (oid >> 8) & 0xFF;
 	message[2] = (oid >> 16) & 0xFF;
 
-	message[3] = gid & 0xFF;
-	message[4] = (gid >> 8) & 0xFF;
+	message[3] = gen & 0xFF;
+	message[4] = (gen >> 8) & 0xFF;
 
 	fz_md5update(&md5, message, 5);
 
@@ -596,7 +596,7 @@ pdf_setownerpassword(pdf_crypt *crypt, char *ownerpw, int pwlen)
  * Recursively (and destructively!) de/encrypt all strings in obj
  */
 void
-pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
+pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gen)
 {
 	fz_arc4 arc4;
 	unsigned char key[16];
@@ -607,7 +607,7 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 	{
 		s = (unsigned char *) fz_tostrbuf(obj);
 		n = fz_tostrlen(obj);
-		createobjkey(crypt, oid, gid, key);
+		createobjkey(crypt, oid, gen, key);
 		fz_arc4init(&arc4, key, crypt->keylen);
 		fz_arc4encrypt(&arc4, s, s, n);
 	}
@@ -617,7 +617,7 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 		n = fz_arraylen(obj);
 		for (i = 0; i < n; i++)
 		{
-			pdf_cryptobj(crypt, fz_arrayget(obj, i), oid, gid);
+			pdf_cryptobj(crypt, fz_arrayget(obj, i), oid, gen);
 		}
 	}
 
@@ -626,20 +626,33 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gid)
 		n = fz_dictlen(obj);
 		for (i = 0; i < n; i++)
 		{
-			pdf_cryptobj(crypt, fz_dictgetval(obj, i), oid, gid);
+			pdf_cryptobj(crypt, fz_dictgetval(obj, i), oid, gen);
 		}
 	}
+}
+
+/*
+ * De/encrypt the contents of a buffer
+ */
+void
+pdf_cryptbuffer(pdf_crypt *crypt, fz_buffer *buf, int oid, int gen)
+{
+    fz_arc4 arc4;
+    unsigned char key[16];
+    createobjkey(crypt, oid, gen, key);
+    fz_arc4init(&arc4, key, crypt->keylen);
+    fz_arc4encrypt(&arc4, buf->rp, buf->rp, buf->wp - buf->rp);
 }
 
 /*
  * Create filter suitable for de/encrypting a stream
  */
 fz_error *
-pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gid)
+pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gen)
 {
 	fz_error *error;
 	unsigned char key[16];
-	createobjkey(crypt, oid, gid, key);
+	createobjkey(crypt, oid, gen, key);
 	error = fz_newarc4filter(fp, key, crypt->keylen);
 	if (error)
 		return fz_rethrow(error, "cannot create crypt filter");

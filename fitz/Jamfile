@@ -50,7 +50,6 @@ Library libfitz :
 	stm_filter.c
 	stm_open.c
 	stm_read.c
-	stm_write.c
 	stm_misc.c
 
 	filt_pipeline.c

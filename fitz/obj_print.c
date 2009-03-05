@@ -311,29 +311,36 @@ fz_sprintobj(char *s, int n, fz_obj *obj, int tight)
 	return fmt.len;
 }
 
-void
-fz_debugobj(fz_obj *obj)
+int
+fz_fprintobj(FILE *fp, fz_obj *obj, int tight)
 {
 	char buf[1024];
 	char *ptr;
 	int n;
 
-	n = fz_sprintobj(nil, 0, obj, 0);
+	n = fz_sprintobj(nil, 0, obj, tight);
 	if (n < sizeof buf)
 	{
-		fz_sprintobj(buf, sizeof buf, obj, 0);
-		fputs(buf, stdout);
-		fputc('\n', stdout);
+		fz_sprintobj(buf, sizeof buf, obj, tight);
+		fputs(buf, fp);
+		fputc('\n', fp);
 	}
 	else
 	{
 		ptr = fz_malloc(n);
 		if (!ptr)
-			return;
-		fz_sprintobj(ptr, n, obj, 0);
-		fputs(ptr, stdout);
-		fputc('\n', stdout);
+			return -1;
+		fz_sprintobj(ptr, n, obj, tight);
+		fputs(ptr, fp);
+		fputc('\n', fp);
 		fz_free(ptr);
 	}
+	return n;
+}
+
+void
+fz_debugobj(fz_obj *obj)
+{
+    fz_fprintobj(stdout, obj, 0);
 }
 

@@ -124,6 +124,7 @@ fz_error *fz_dictdels(fz_obj *dict, char *key);
 void fz_sortdict(fz_obj *dict);
 
 int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
+int fz_fprintobj(FILE *fp, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);
 
 fz_error *fz_parseobj(fz_obj **objp, char *s);
@@ -322,13 +323,11 @@ void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *sr
 typedef struct fz_stream_s fz_stream;
 
 enum { FZ_SFILE, FZ_SBUFFER, FZ_SFILTER };
-enum { FZ_SREAD, FZ_SWRITE };
 
 struct fz_stream_s
 {
 	int refs;
 	int kind;
-	int mode;
 	int dead;
 	fz_buffer *buffer;
 	fz_filter *filter;
@@ -341,19 +340,14 @@ struct fz_stream_s
  * Various stream creation functions.
  */
 
-/* open() and creat() & co */
 fz_error *fz_openrfile(fz_stream **stmp, char *filename);
-fz_error *fz_openwfile(fz_stream **stmp, char *filename);
-fz_error *fz_openafile(fz_stream **stmp, char *filename);
 
 /* write to memory buffers! */
 fz_error *fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len);
 fz_error *fz_openrbuffer(fz_stream **stmp, fz_buffer *buf);
-fz_error *fz_openwbuffer(fz_stream **stmp, fz_buffer *buf);
 
 /* almost like fork() exec() pipe() */
 fz_error *fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *chain);
-fz_error *fz_openwfilter(fz_stream **stmp, fz_filter *flt, fz_stream *chain);
 
 /*
  * Functions that are common to both input and output streams.
@@ -412,18 +406,4 @@ static inline int fz_peekbyte(fz_stream *stm)
 }
 
 #endif
-
-/*
- * Output stream functions.
- */
-
-int fz_wtell(fz_stream *stm);
-fz_error * fz_wseek(fz_stream *stm, int offset, int whence);
-
-fz_error * fz_write(fz_stream *stm, unsigned char *buf, int n);
-fz_error * fz_flush(fz_stream *stm);
-
-fz_error * fz_printstr(fz_stream *stm, char *s);
-fz_error * fz_printobj(fz_stream *stm, fz_obj *obj, int tight);
-fz_error * fz_print(fz_stream *stm, char *fmt, ...);
 

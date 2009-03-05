@@ -279,20 +279,16 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	}
 
 	xref->table[0].type = 'f';
-	xref->table[0].mark = 0;
 	xref->table[0].ofs = 0;
 	xref->table[0].gen = 65535;
-	xref->table[0].stmbuf = nil;
 	xref->table[0].stmofs = 0;
 	xref->table[0].obj = nil;
 
 	for (i = 1; i < xref->len; i++)
 	{
 		xref->table[i].type = 'f';
-		xref->table[i].mark = 0;
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
-		xref->table[i].stmbuf = nil;
 		xref->table[i].stmofs = 0;
 		xref->table[i].obj = nil;
 	}
@@ -302,7 +298,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		xref->table[list[i].oid].type = 'n';
 		xref->table[list[i].oid].ofs = list[i].ofs;
 		xref->table[list[i].oid].gen = list[i].gen;
-		xref->table[list[i].oid].mark = 0;
 
 		xref->table[list[i].oid].stmofs = list[i].stmofs;
 
@@ -338,14 +333,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				goto cleanup;
 			}
 
-			error = pdf_updateobject(xref, list[i].oid, list[i].gen, dict);
-			if (error)
-			{
-				fz_dropobj(length);
-				fz_dropobj(dict);
-				error = fz_rethrow(error, "cannot update stream object");
-				goto cleanup;
-			}
+			xref->table[list[i].oid].obj = fz_keepobj(dict);
 
 			fz_dropobj(length);
 			fz_dropobj(dict);

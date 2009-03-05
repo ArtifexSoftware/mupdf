@@ -14,13 +14,11 @@ Library libmupdf :
 	# syntax layer
 	pdf_crypt.c
 	pdf_debug.c
-	pdf_doctor.c
 	pdf_lex.c
 	pdf_nametree.c
 	pdf_open.c
 	pdf_parse.c
 	pdf_repair.c
-	pdf_save.c
 	pdf_stream.c
 	pdf_xref.c
 

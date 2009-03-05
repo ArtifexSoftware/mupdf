@@ -6,7 +6,7 @@
 #include "fitz_stream.h"
 
 static fz_stream *
-newstm(int kind, int mode)
+newstm(int kind)
 {
 	fz_stream *stm;
 
@@ -16,7 +16,6 @@ newstm(int kind, int mode)
 
 	stm->refs = 1;
 	stm->kind = kind;
-	stm->mode = mode;
 	stm->dead = 0;
 	stm->error = fz_okay;
 	stm->buffer = nil;
@@ -50,12 +49,6 @@ fz_dropstream(fz_stream *stm)
 			fz_warn("dropped unhandled ioerror");
 		}
 
-		if (stm->mode == FZ_SWRITE)
-		{
-			stm->buffer->eof = 1;
-			fz_flush(stm);
-		}
-
 		switch (stm->kind)
 		{
 		case FZ_SFILE:
@@ -74,13 +67,12 @@ fz_dropstream(fz_stream *stm)
 	}
 }
 
-static fz_error *
-openfile(fz_stream **stmp, char *path, int mode, int realmode)
+fz_error * fz_openrfile(fz_stream **stmp, char *path)
 {
 	fz_error *error;
 	fz_stream *stm;
 
-	stm = newstm(FZ_SFILE, mode);
+	stm = newstm(FZ_SFILE);
 	if (!stm)
 		return fz_throw("outofmem: stream struct");
 
@@ -91,7 +83,7 @@ openfile(fz_stream **stmp, char *path, int mode, int realmode)
 		return fz_rethrow(error, "cannot create buffer");
 	}
 
-	stm->file = open(path, realmode, 0666);
+	stm->file = open(path, O_BINARY | O_RDONLY, 0666);
 	if (stm->file < 0)
 	{
 		fz_dropbuffer(stm->buffer);
@@ -103,13 +95,12 @@ openfile(fz_stream **stmp, char *path, int mode, int realmode)
 	return fz_okay;
 }
 
-static fz_error *
-openfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src, int mode)
+fz_error * fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
 {
 	fz_error *error;
 	fz_stream *stm;
 
-	stm = newstm(FZ_SFILTER, mode);
+	stm = newstm(FZ_SFILTER);
 	if (!stm)
 		return fz_throw("outofmem: stream struct");
 
@@ -127,95 +118,19 @@ openfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src, int mode)
 	return fz_okay;
 }
 
-static fz_error *
-openbuffer(fz_stream **stmp, fz_buffer *buf, int mode)
+fz_error * fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
 {
 	fz_stream *stm;
 
-	stm = newstm(FZ_SBUFFER, mode);
+	stm = newstm(FZ_SBUFFER);
 	if (!stm)
 		return fz_throw("outofmem: stream struct");
 
 	stm->buffer = fz_keepbuffer(buf);
 
-	if (mode == FZ_SREAD)
-		stm->buffer->eof = 1;
+	stm->buffer->eof = 1;
 
 	*stmp = stm;
-	return fz_okay;
-}
-
-fz_error * fz_openrfile(fz_stream **stmp, char *path)
-{
-	fz_error *error;
-	error = openfile(stmp, path, FZ_SREAD, O_BINARY | O_RDONLY);
-	if (error)
-		return fz_rethrow(error, "cannot open file for reading: '%s'", path);
-	return fz_okay;
-}
-
-fz_error * fz_openwfile(fz_stream **stmp, char *path)
-{
-	fz_error *error;
-	error = openfile(stmp, path, FZ_SWRITE,
-			O_BINARY | O_WRONLY | O_CREAT | O_TRUNC);
-	if (error)
-		return fz_rethrow(error, "cannot open file for writing: '%s'", path);
-	return fz_okay;
-}
-
-fz_error * fz_openafile(fz_stream **stmp, char *path)
-{
-	fz_error *error;
-	int t;
-
-	error = openfile(stmp, path, FZ_SWRITE, O_BINARY | O_WRONLY);
-	if (error)
-		return fz_rethrow(error, "cannot open file for writing: '%s'", path);
-
-	t = lseek((*stmp)->file, 0, 2);
-	if (t < 0)
-	{
-		(*stmp)->dead = 1;
-		return fz_throw("syserr: lseek '%s': %s", path, strerror(errno));
-	}
-
-	return fz_okay;
-}
-
-fz_error * fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
-{
-	fz_error *error;
-	error = openfilter(stmp, flt, src, FZ_SREAD);
-	if (error)
-		return fz_rethrow(error, "cannot create reading filter stream");
-	return fz_okay;
-}
-
-fz_error * fz_openwfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
-{
-	fz_error *error;
-	error = openfilter(stmp, flt, src, FZ_SWRITE);
-	if (error)
-		return fz_rethrow(error, "cannot create writing filter stream");
-	return fz_okay;
-}
-
-fz_error * fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
-{
-	fz_error *error;
-	error = openbuffer(stmp, buf, FZ_SREAD);
-	if (error)
-		return fz_rethrow(error, "cannot create reading buffer stream");
-	return fz_okay;
-}
-
-fz_error * fz_openwbuffer(fz_stream **stmp, fz_buffer *buf)
-{
-	fz_error *error;
-	error = openbuffer(stmp, buf, FZ_SWRITE);
-	if (error)
-		return fz_rethrow(error, "cannot create writing buffer stream");
 	return fz_okay;
 }
 

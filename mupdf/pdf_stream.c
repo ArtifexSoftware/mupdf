@@ -20,7 +20,7 @@ pdf_isstream(pdf_xref *xref, int oid, int gen)
 		return 0;
 	}
 
-	return xref->table[oid].stmbuf || xref->table[oid].stmofs;
+	return xref->table[oid].stmofs > 0;
 }
 
 /*
@@ -370,14 +370,6 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 	if (error)
 		return fz_rethrow(error, "cannot load stream object (%d %d R)", oid, gen);
 
-	if (x->stmbuf)
-	{
-		error = fz_openrbuffer(stmp, x->stmbuf);
-		if (error)
-			return fz_rethrow(error, "cannot open stream from buffer");
-		return fz_okay;
-	}
-
 	if (x->stmofs)
 	{
 		error = buildrawfilter(&filter, xref, x->obj, oid, gen);
@@ -414,7 +406,6 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
 	fz_error *error;
-	fz_stream *rawstm;
 	fz_filter *filter;
 
 	if (oid < 0 || oid >= xref->len)
@@ -425,27 +416,6 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
 		return fz_rethrow(error, "cannot load stream object (%d %d R)", oid, gen);
-
-	if (x->stmbuf)
-	{
-		error = pdf_buildfilter(&filter, xref, x->obj, oid, gen);
-		if (error)
-			return fz_rethrow(error, "cannot create filter");
-
-		error = fz_openrbuffer(&rawstm, x->stmbuf);
-		if (error)
-		{
-			fz_dropfilter(filter);
-			return fz_rethrow(error, "cannot open stream from buffer");
-		}
-
-		error = fz_openrfilter(stmp, filter, rawstm);
-		fz_dropfilter(filter);
-		fz_dropstream(rawstm);
-		if (error)
-			return fz_rethrow(error, "cannot open filter stream");
-		return fz_okay;
-	}
 
 	if (x->stmofs)
 	{

@@ -258,11 +258,9 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 			{
 				xref->table[i].ofs = 0;
 				xref->table[i].gen = 0;
-				xref->table[i].type = 0;
-				xref->table[i].mark = 0;
-				xref->table[i].stmbuf = nil;
 				xref->table[i].stmofs = 0;
 				xref->table[i].obj = nil;
+				xref->table[i].type = 0;
 			}
 			xref->len = ofs + len;
 		}
@@ -701,11 +699,9 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 	{
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
-		xref->table[i].type = 0;
-		xref->table[i].mark = 0;
-		xref->table[i].stmbuf = nil;
 		xref->table[i].stmofs = 0;
 		xref->table[i].obj = nil;
+		xref->table[i].type = 0;
 	}
 
 	error = readxrefsections(xref, xref->startxref, buf, sizeof buf);

@@ -5,22 +5,6 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-int
-fz_tell(fz_stream *stm)
-{
-	if (stm->mode == FZ_SREAD)
-		return fz_rtell(stm);
-	return fz_wtell(stm);
-}
-
-fz_error *
-fz_seek(fz_stream *stm, int offset, int whence)
-{
-	if (stm->mode == FZ_SREAD)
-		return fz_rseek(stm, offset, whence);
-	return fz_wseek(stm, offset, whence);
-}
-
 /*
  * Read a line terminated by LF or CR or CRLF.
  */

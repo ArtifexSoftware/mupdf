@@ -29,81 +29,67 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 static fz_error *
 runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 {
-	fz_error *error;
-	fz_stream *file;
-	fz_buffer *big;
-	fz_buffer *one;
-	fz_obj *stm;
-	int i;
+    fz_error *error;
+    fz_stream *file;
+    fz_buffer *big;
+    fz_buffer *one;
+    fz_obj *stm;
+    int i, n;
 
-	pdf_logpage("multiple content streams: %d\n", fz_arraylen(list));
+    pdf_logpage("multiple content streams: %d\n", fz_arraylen(list));
 
-	error = fz_newbuffer(&big, 32 * 1024);
-	if (error)
-		return fz_rethrow(error, "cannot create content buffer");
+    error = fz_newbuffer(&big, 32 * 1024);
+    if (error)
+	return fz_rethrow(error, "cannot create content buffer");
 
-	error = fz_openwbuffer(&file, big);
+    for (i = 0; i < fz_arraylen(list); i++)
+    {
+	stm = fz_arrayget(list, i);
+	error = pdf_loadstream(&one, xref, fz_tonum(stm), fz_togen(stm));
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot open content buffer (write)");
-		goto cleanupbuf;
+	    fz_dropbuffer(big);
+	    return fz_rethrow(error, "cannot load content stream part %d/%d", i + 1, fz_arraylen(list));
 	}
 
-	for (i = 0; i < fz_arraylen(list); i++)
+	n = one->wp - one->rp;
+
+	while (big->wp + n + 1 > big->ep)
 	{
-		/* TODO dont use loadstream here */
-
-		stm = fz_arrayget(list, i);
-		error = pdf_loadstream(&one, xref, fz_tonum(stm), fz_togen(stm));
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot load content stream part %d/%d", i + 1, fz_arraylen(list));
-			goto cleanupstm;
-		}
-
-		error = fz_write(file, one->rp, one->wp - one->rp);
-		if (error)
-		{
-			fz_dropbuffer(one);
-			error = fz_rethrow(error, "cannot write to content buffer");
-			goto cleanupstm;
-		}
-
+	    error = fz_growbuffer(big);
+	    if (error)
+	    {
 		fz_dropbuffer(one);
-
-		error = fz_printstr(file, " ");
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot write to content buffer");
-			goto cleanupstm;
-		}
+		fz_dropbuffer(big);
+		return fz_rethrow(error, "cannot load content stream part %d/%d", i + 1, fz_arraylen(list));
+	    }
 	}
 
-	fz_dropstream(file);
+	memcpy(big->wp, one->rp, n);
 
-	error = fz_openrbuffer(&file, big);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot open content buffer (read)");
-		goto cleanupbuf;
-	}
+	*big->wp++ = ' ';
 
-	error = pdf_runcsi(csi, xref, rdb, file);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot interpret content buffer");
-		goto cleanupstm;
-	}
+	fz_dropbuffer(one);
+    }
 
-	fz_dropstream(file);
+    error = fz_openrbuffer(&file, big);
+    if (error)
+    {
 	fz_dropbuffer(big);
-	return fz_okay;
+	return fz_rethrow(error, "cannot open content buffer (read)");
+    }
 
-cleanupstm:
-	fz_dropstream(file);
-cleanupbuf:
+    error = pdf_runcsi(csi, xref, rdb, file);
+    if (error)
+    {
 	fz_dropbuffer(big);
-	return error; /* already rethrown */
+	fz_dropstream(file);
+	return fz_rethrow(error, "cannot interpret content buffer");
+    }
+
+    fz_dropstream(file);
+    fz_dropbuffer(big);
+    return fz_okay;
 }
 
 static fz_error *

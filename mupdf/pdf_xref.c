@@ -85,10 +85,8 @@ pdf_initxref(pdf_xref *xref)
 	xref->crypt = nil;
 
 	xref->table[0].type = 'f';
-	xref->table[0].mark = 0;
 	xref->table[0].ofs = 0;
 	xref->table[0].gen = 65535;
-	xref->table[0].stmbuf = nil;
 	xref->table[0].stmofs = 0;
 	xref->table[0].obj = nil;
 
@@ -106,11 +104,6 @@ pdf_flushxref(pdf_xref *xref, int force)
 	{
 		if (force)
 		{
-			if (xref->table[i].stmbuf)
-			{
-				fz_dropbuffer(xref->table[i].stmbuf);
-				xref->table[i].stmbuf = nil;
-			}
 			if (xref->table[i].obj)
 			{
 				fz_dropobj(xref->table[i].obj);
@@ -119,11 +112,6 @@ pdf_flushxref(pdf_xref *xref, int force)
 		}
 		else
 		{
-			if (xref->table[i].stmbuf && xref->table[i].stmbuf->refs == 1)
-			{
-				fz_dropbuffer(xref->table[i].stmbuf);
-				xref->table[i].stmbuf = nil;
-			}
 			if (xref->table[i].obj && xref->table[i].obj->refs == 1)
 			{
 				fz_dropobj(xref->table[i].obj);
@@ -140,13 +128,12 @@ pdf_debugxref(pdf_xref *xref)
 	printf("xref\n0 %d\n", xref->len);
 	for (i = 0; i < xref->len; i++)
 	{
-		printf("%010d %05d %c | %d %c%c\n",
+		printf("%010d %05d %c (ref=%d, ofs=%d)\n",
 				xref->table[i].ofs,
 				xref->table[i].gen,
 				xref->table[i].type,
 				xref->table[i].obj ? xref->table[i].obj->refs : 0,
-				xref->table[i].stmofs ? 'f' : '-',
-				xref->table[i].stmbuf ? 'b' : '-');
+				xref->table[i].stmofs);
 	}
 }
 
@@ -186,184 +173,6 @@ pdf_decryptxref(pdf_xref *xref)
 		if (error)
 			return fz_rethrow(error, "cannot create decrypter");
 	}
-
-	return fz_okay;
-}
-
-/*
- * mutate objects
- */
-
-static int findprev(pdf_xref *xref, int oid)
-{
-	int prev;
-	for (prev = oid - 1; prev >= 0; prev--)
-		if (xref->table[prev].type == 'f' || xref->table[prev].type == 'd')
-			return prev;
-	return 0;
-}
-
-static int findnext(pdf_xref *xref, int oid)
-{
-	int next;
-	for (next = oid + 1; next < xref->len; next++)
-		if (xref->table[next].type == 'f' || xref->table[next].type == 'd')
-			return next;
-	return 0;
-}
-
-fz_error *
-pdf_allocobject(pdf_xref *xref, int *oidp, int *genp)
-{
-	pdf_xrefentry *x;
-	int prev, next;
-	int oid = 0;
-
-	pdf_logxref("allocobj");
-
-	while (1)
-	{
-		x = xref->table + oid;
-
-		if (x->type == 'f' || x->type == 'd')
-		{
-			if (x->gen < 65535)
-			{
-				*oidp = oid;
-				*genp = x->gen;
-
-				pdf_logxref(" reuse %d %d\n", *oidp, *genp);
-
-				x->type = 'a';
-				x->ofs = 0;
-
-				prev = findprev(xref, oid);
-				next = findnext(xref, oid);
-				xref->table[prev].type = 'd';
-				xref->table[prev].ofs = next;
-
-				return fz_okay;
-			}
-		}
-
-		oid = x->ofs;
-
-		if (oid == 0)
-			break;
-	}
-
-	if (xref->len + 1 >= xref->cap)
-	{
-		int newcap = xref->cap + 256;
-		pdf_xrefentry *newtable;
-
-		newtable = fz_realloc(xref->table, sizeof(pdf_xrefentry) * newcap);
-		if (!newtable)
-			return fz_throw("outofmem: xref table resize");
-
-		xref->table = newtable;
-		xref->cap = newcap;
-	}
-
-	oid = xref->len ++;
-
-	xref->table[oid].type = 'a';
-	xref->table[oid].mark = 0;
-	xref->table[oid].ofs = 0;
-	xref->table[oid].gen = 0;
-	xref->table[oid].stmbuf = nil;
-	xref->table[oid].stmofs = 0;
-	xref->table[oid].obj = nil;
-
-	*oidp = oid;
-	*genp = 0;
-
-	pdf_logxref(" %d %d\n", *oidp, *genp);
-
-	prev = findprev(xref, oid);
-	next = findnext(xref, oid);
-	xref->table[prev].type = 'd';
-	xref->table[prev].ofs = next;
-
-	return fz_okay;
-}
-
-fz_error *
-pdf_deleteobject(pdf_xref *xref, int oid, int gen)
-{
-	pdf_xrefentry *x;
-	int prev;
-
-	if (oid < 0 || oid >= xref->len)
-		return fz_throw("assert: object out of range (%d %d R)", oid, gen);
-
-	pdf_logxref("deleteobj %d %d\n", oid, gen);
-
-	x = xref->table + oid;
-
-	x->type = 'd';
-	x->ofs = findnext(xref, oid);
-	x->gen ++;
-
-	if (x->stmbuf)
-		fz_dropbuffer(x->stmbuf);
-	x->stmbuf = nil;
-
-	if (x->obj)
-		fz_dropobj(x->obj);
-	x->obj = nil;
-
-	prev = findprev(xref, oid);
-	xref->table[prev].type = 'd';
-	xref->table[prev].ofs = oid;
-
-	return fz_okay;
-}
-
-fz_error *
-pdf_updateobject(pdf_xref *xref, int oid, int gen, fz_obj *obj)
-{
-	pdf_xrefentry *x;
-
-	if (oid < 0 || oid >= xref->len)
-		return fz_throw("assert: object out of range (%d %d R)", oid, gen);
-
-	pdf_logxref("updateobj %d %d (%p)\n", oid, gen, obj);
-
-	x = xref->table + oid;
-
-	if (x->obj)
-		fz_dropobj(x->obj);
-	x->obj = fz_keepobj(obj);
-
-	if (x->type == 'f' || x->type == 'd')
-	{
-		int prev = findprev(xref, oid);
-		int next = findnext(xref, oid);
-		xref->table[prev].type = 'd';
-		xref->table[prev].ofs = next;
-	}
-
-	x->type = 'a';
-
-	return fz_okay;
-}
-
-fz_error *
-pdf_updatestream(pdf_xref *xref, int oid, int gen, fz_buffer *stm)
-{
-	pdf_xrefentry *x;
-
-	if (oid < 0 || oid >= xref->len)
-		return fz_throw("assert: object out of range (%d %d R)", oid, gen);
-
-	pdf_logxref("updatestm %d %d (%p)\n", oid, gen, stm);
-
-	x = xref->table + oid;
-
-	if (x->stmbuf)
-		fz_dropbuffer(x->stmbuf);
-	x->stmbuf = fz_keepbuffer(stm);
 
 	return fz_okay;
 }
