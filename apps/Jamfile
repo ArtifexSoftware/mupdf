@@ -3,8 +3,18 @@
 FITZLIBS = libmupdf libfitz libfitzdraw libfonts libcmaps ;
 
 SubDir TOP apps ;
-Main mupdftool : pdftool.c ;
-LinkLibraries mupdftool : $(FITZLIBS) ;
+
+Main pdfshow : pdfshow.c ;
+LinkLibraries pdfshow : $(FITZLIBS) ;
+
+Main pdfclean : pdfclean.c ;
+LinkLibraries pdfclean : $(FITZLIBS) ;
+
+Main pdfdraw : pdfdraw.c ;
+LinkLibraries pdfdraw : $(FITZLIBS) ;
+
+Main pdfinfo : pdfinfo.c ;
+LinkLibraries pdfinfo : $(FITZLIBS) ;
 
 SubDir TOP apps common ;
 Library libpdfapp : pdfapp.c ;
