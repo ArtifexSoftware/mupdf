@@ -14,11 +14,11 @@ struct entry
 	int stmlen;
 };
 
-static fz_error *
+static fz_error 
 parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 		int *isroot, int *isinfo)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *dict = nil;
 	fz_obj *length;
 	fz_obj *filter;
@@ -134,10 +134,10 @@ atobjend:
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_repairxref(pdf_xref *xref, char *filename)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *file;
 
 	struct entry *list = nil;

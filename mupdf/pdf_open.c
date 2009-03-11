@@ -12,10 +12,10 @@ static inline int iswhite(int ch)
  * magic version tag and startxref
  */
 
-static fz_error *
+static fz_error 
 loadversion(pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[20];
 
 	error = fz_seek(xref->file, 0, 0);
@@ -35,10 +35,10 @@ loadversion(pdf_xref *xref)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readstartxref(pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 	unsigned char buf[1024];
 	int t, n;
 	int i;
@@ -75,10 +75,10 @@ readstartxref(pdf_xref *xref)
  * trailer dictionary
  */
 
-static fz_error *
+static fz_error 
 readoldtrailer(pdf_xref *xref, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	int ofs, len;
 	char *s;
 	int n;
@@ -147,10 +147,10 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readnewtrailer(pdf_xref *xref, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 
 	pdf_logxref("load new xref format trailer\n");
 
@@ -160,10 +160,10 @@ readnewtrailer(pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readtrailer(pdf_xref *xref, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	int c;
 
 	error = fz_seek(xref->file, xref->startxref, 0);
@@ -199,10 +199,10 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
  * xref tables
  */
 
-static fz_error *
+static fz_error 
 readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	int ofs, len;
 	char *s;
 	int n;
@@ -298,10 +298,10 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readnewxrefsection(pdf_xref *xref, fz_stream *stm, int i0, int i1, int w0, int w1, int w2)
 {
-	fz_error *error;
+	fz_error error;
 	int i, n;
 
 	if (i0 < 0 || i0 + i1 > xref->len)
@@ -344,10 +344,10 @@ readnewxrefsection(pdf_xref *xref, fz_stream *stm, int i0, int i1, int w0, int w
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stm;
 	fz_obj *trailer;
 	fz_obj *index;
@@ -441,10 +441,10 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	int c;
 
 	error = fz_seek(xref->file, ofs, 0);
@@ -476,10 +476,10 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *trailer;
 	fz_obj *prev;
 	fz_obj *xrefstm;
@@ -521,10 +521,10 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
  * compressed object streams
  */
 
-fz_error *
+fz_error 
 pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stm;
 	fz_obj *objstm;
 	int *oidbuf;
@@ -637,10 +637,10 @@ cleanupobj:
  * open and load xref tables from pdf
  */
 
-fz_error *
+fz_error 
 pdf_loadxref(pdf_xref *xref, char *filename)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *size;
 	int i;
 

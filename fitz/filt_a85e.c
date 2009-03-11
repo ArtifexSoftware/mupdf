@@ -9,7 +9,7 @@ struct fz_a85e_s
 	int c;
 };
 
-fz_error *
+fz_error 
 fz_newa85e(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_a85e, f, a85e);
@@ -22,7 +22,7 @@ fz_dropa85e(fz_filter *f)
 {
 }
 
-fz_error *
+fz_error 
 fz_processa85e(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_a85e *f = (fz_a85e*)filter;

@@ -1,7 +1,7 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error *
+fz_error 
 fz_newrld(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_filter, f, rld);
@@ -13,7 +13,7 @@ fz_droprld(fz_filter *rld)
 {
 }
 
-fz_error *
+fz_error 
 fz_processrld(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	int run, i;

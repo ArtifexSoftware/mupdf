@@ -9,7 +9,7 @@ struct fz_arc4c_s
 	fz_arc4 arc4;
 };
 
-fz_error *
+fz_error 
 fz_newarc4filter(fz_filter **fp, unsigned char *key, unsigned keylen)
 {
 	FZ_NEWFILTER(fz_arc4c, f, arc4filter);
@@ -22,7 +22,7 @@ fz_droparc4filter(fz_filter *f)
 {
 }
 
-fz_error *
+fz_error 
 fz_processarc4filter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_arc4c *f = (fz_arc4c*)filter;

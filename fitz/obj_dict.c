@@ -23,7 +23,7 @@ static inline int keystrcmp(fz_obj *key, char *s)
 	return -1;
 }
 
-fz_error *
+fz_error 
 fz_newdict(fz_obj **op, int initialcap)
 {
 	fz_obj *obj;
@@ -56,10 +56,10 @@ fz_newdict(fz_obj **op, int initialcap)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_copydict(fz_obj **op, fz_obj *obj)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *new;
 	int i;
 
@@ -84,10 +84,10 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_deepcopydict(fz_obj **op, fz_obj *obj)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *new;
 	fz_obj *val;
 	int i;
@@ -154,7 +154,7 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 growdict(fz_obj *obj)
 {
 	fz_keyval *newitems;
@@ -275,10 +275,10 @@ fz_dictgetsa(fz_obj *obj, char *key, char *abbrev)
 	return fz_dictgets(obj, abbrev);
 }
 
-fz_error *
+fz_error 
 fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
-	fz_error *error;
+	fz_error error;
 	char *s;
 	int i;
 
@@ -319,10 +319,10 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *keyobj;
 	error = fz_newname(&keyobj, key);
 	if (error)
@@ -334,7 +334,7 @@ fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_dictdels(fz_obj *obj, char *key)
 {
 	int i;
@@ -355,7 +355,7 @@ fz_dictdels(fz_obj *obj, char *key)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_dictdel(fz_obj *obj, fz_obj *key)
 {
 	if (fz_isname(key))

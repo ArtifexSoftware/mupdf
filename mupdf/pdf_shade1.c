@@ -8,10 +8,10 @@
 #define NSEGS 32
 #define MAX_RAD_SEGS 36
 
-fz_error *
+fz_error 
 pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 	fz_matrix matrix;
 	pdf_function *func;
@@ -109,7 +109,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_point p1, p2, p3, p4;
@@ -121,7 +121,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	float theta;
 	float dist;
 	int n;
-	fz_error *error;
+	fz_error error;
 
 	pdf_logshade("load type2 shade {\n");
 
@@ -306,7 +306,7 @@ buildannulusmesh(float* mesh, int pos,
 	return pos;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_obj *obj;
@@ -317,7 +317,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 	float ex1, ey1, er1;
 	float rs;
 	int i;
-	fz_error *error;
+	fz_error error;
 
 	pdf_logshade("load type3 shade {\n");
 

@@ -177,17 +177,17 @@ char *cleanname(char *name);
 
 typedef int fz_error;
 
-#define fz_outofmem ((fz_error*)-1)
+#define fz_outofmem ((fz_error)-1)
 
 #define fz_throw(...) fz_throwimp(__func__, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_rethrow(cause, ...) fz_rethrowimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_catch(cause, ...) fz_catchimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
-#define fz_okay ((fz_error*)0)
+#define fz_okay ((fz_error)0)
 
 void fz_warn(char *fmt, ...) __printflike(1,2);
-fz_error *fz_throwimp(const char *func, const char *file, int line, char *fmt, ...) __printflike(4, 5);
-fz_error *fz_rethrowimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
-fz_error *fz_catchimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
+fz_error fz_throwimp(const char *func, const char *file, int line, char *fmt, ...) __printflike(4, 5);
+fz_error fz_rethrowimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
+fz_error fz_catchimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
 
 typedef struct fz_memorycontext_s fz_memorycontext;
 
@@ -213,15 +213,15 @@ char *fz_strdup(char *s);
 
 typedef struct fz_hashtable_s fz_hashtable;
 
-fz_error *fz_newhash(fz_hashtable **tablep, int initialsize, int keylen);
-fz_error *fz_resizehash(fz_hashtable *table, int newsize);
+fz_error fz_newhash(fz_hashtable **tablep, int initialsize, int keylen);
+fz_error fz_resizehash(fz_hashtable *table, int newsize);
 void fz_debughash(fz_hashtable *table);
 void fz_emptyhash(fz_hashtable *table);
 void fz_drophash(fz_hashtable *table);
 
 void *fz_hashfind(fz_hashtable *table, void *key);
-fz_error *fz_hashinsert(fz_hashtable *table, void *key, void *val);
-fz_error *fz_hashremove(fz_hashtable *table, void *key);
+fz_error fz_hashinsert(fz_hashtable *table, void *key, void *val);
+fz_error fz_hashremove(fz_hashtable *table, void *key);
 
 int fz_hashlen(fz_hashtable *table);
 void *fz_hashgetkey(fz_hashtable *table, int idx);
@@ -323,18 +323,18 @@ struct fz_pixmap_s
 	fz_sample *samples;
 };
 
-fz_error *fz_newpixmapwithrect(fz_pixmap **mapp, fz_irect bbox, int n);
-fz_error *fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
-fz_error *fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old);
+fz_error fz_newpixmapwithrect(fz_pixmap **mapp, fz_irect bbox, int n);
+fz_error fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
+fz_error fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old);
 
 void fz_debugpixmap(fz_pixmap *map, char *prefix);
 void fz_clearpixmap(fz_pixmap *map);
 void fz_droppixmap(fz_pixmap *map);
 
-fz_error *fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom);
+fz_error fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom);
 
 /* needed for tiled rendering */
-fz_error *fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom);
-fz_error *fz_scalepixmaptile(fz_pixmap *dstp, int xoffs, int yoffs,
+fz_error fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom);
+fz_error fz_scalepixmaptile(fz_pixmap *dstp, int xoffs, int yoffs,
 			     fz_pixmap *tile, int xdenom, int ydenom);
 

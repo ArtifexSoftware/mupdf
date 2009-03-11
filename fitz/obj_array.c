@@ -3,7 +3,7 @@
 
 void fz_droparray(fz_obj *obj);
 
-fz_error *
+fz_error 
 fz_newarray(fz_obj **op, int initialcap)
 {
 	fz_obj *obj;
@@ -32,10 +32,10 @@ fz_newarray(fz_obj **op, int initialcap)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_copyarray(fz_obj **op, fz_obj *obj)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *new;
 	int i;
 
@@ -61,10 +61,10 @@ fz_copyarray(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_deepcopyarray(fz_obj **op, fz_obj *obj)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *new;
 	fz_obj *val;
 	int i;
@@ -155,7 +155,7 @@ fz_arrayget(fz_obj *obj, int i)
 	return obj->u.a.items[i];
 }
 
-fz_error *
+fz_error 
 fz_arrayput(fz_obj *obj, int i, fz_obj *item)
 {
 	if (!fz_isarray(obj))
@@ -172,7 +172,7 @@ fz_arrayput(fz_obj *obj, int i, fz_obj *item)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 growarray(fz_obj *obj)
 {
 	fz_obj **newitems;
@@ -192,10 +192,10 @@ growarray(fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_arraypush(fz_obj *obj, fz_obj *item)
 {
-	fz_error *error;
+	fz_error error;
 
 	if (!fz_isarray(obj))
 		return fz_throw("assert: not an array (%s)", fz_objkindstr(obj));

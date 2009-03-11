@@ -12,7 +12,7 @@ enum { HSCALE = 17, VSCALE = 15, SF = 1 };
  * See Mike Abrash -- Graphics Programming Black Book (notably chapter 40)
  */
 
-fz_error *
+fz_error 
 fz_newgel(fz_gel **gelp)
 {
 	fz_gel *gel;
@@ -108,7 +108,7 @@ cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
 	}
 }
 
-fz_error *
+fz_error 
 fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	fz_edge *edge;
@@ -237,7 +237,7 @@ fz_sortgel(fz_gel *gel)
  * Active Edge List -- keep track of active edges while sweeping
  */
 
-fz_error *
+fz_error 
 fz_newael(fz_ael **aelp)
 {
 	fz_ael *ael;
@@ -297,7 +297,7 @@ sortael(fz_edge **a, int n)
 	}
 }
 
-static fz_error *
+static fz_error 
 insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
 {
 	/* insert edges that start here */
@@ -452,11 +452,11 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 		fz_path_1c1(list, cov, len, dst);
 }
 
-fz_error *
+fz_error 
 fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	fz_pixmap *pix, unsigned char *argb, int over)
 {
-	fz_error *error;
+	fz_error error;
 	unsigned char *deltas;
 	int y, e;
 	int yd, yc;

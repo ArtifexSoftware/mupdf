@@ -9,11 +9,11 @@ struct stuff
 	fz_obj *rotate;
 };
 
-static fz_error *
+static fz_error 
 loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		struct stuff inherit, fz_obj *obj, fz_obj *ref, int *pagenum)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *type;
 	fz_obj *kids;
 	fz_obj *kref, *kobj;
@@ -144,10 +144,10 @@ pdf_debugpagetree(pdf_pagetree *pages)
 	printf("  ]\n>>\n");
 }
 
-fz_error *
+fz_error 
 pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 	struct stuff inherit;
 	pdf_pagetree *p = nil;
 	fz_obj *catalog = nil;

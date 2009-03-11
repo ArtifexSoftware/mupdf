@@ -20,7 +20,7 @@ struct fz_tree_s
 };
 
 /* tree operations */
-fz_error *fz_newtree(fz_tree **treep);
+fz_error fz_newtree(fz_tree **treep);
 fz_tree *fz_keeptree(fz_tree *tree);
 void fz_droptree(fz_tree *tree);
 
@@ -31,7 +31,7 @@ void fz_insertnodelast(fz_node *parent, fz_node *child);
 void fz_insertnodeafter(fz_node *prev, fz_node *child);
 void fz_removenode(fz_node *child);
 
-fz_error *fz_optimizetree(fz_tree *tree);
+fz_error fz_optimizetree(fz_tree *tree);
 
 /* node types */
 
@@ -153,10 +153,10 @@ fz_rect fz_boundnode(fz_node *node, fz_matrix ctm);
 void fz_dropnode(fz_node *node);
 
 /* branch nodes */
-fz_error *fz_newovernode(fz_node **nodep);
-fz_error *fz_newmasknode(fz_node **nodep);
-fz_error *fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i);
-fz_error *fz_newtransformnode(fz_node **nodep, fz_matrix m);
+fz_error fz_newovernode(fz_node **nodep);
+fz_error fz_newmasknode(fz_node **nodep);
+fz_error fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i);
+fz_error fz_newtransformnode(fz_node **nodep, fz_matrix m);
 
 int fz_istransformnode(fz_node *node);
 int fz_isovernode(fz_node *node);
@@ -164,10 +164,10 @@ int fz_ismasknode(fz_node *node);
 int fz_isblendnode(fz_node *node);
 
 /* leaf nodes */
-fz_error *fz_newlinknode(fz_node **nodep, fz_tree *subtree);
-fz_error *fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v);
-fz_error *fz_newimagenode(fz_node **nodep, fz_image *image);
-fz_error *fz_newshadenode(fz_node **nodep, fz_shade *shade);
+fz_error fz_newlinknode(fz_node **nodep, fz_tree *subtree);
+fz_error fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v);
+fz_error fz_newimagenode(fz_node **nodep, fz_image *image);
+fz_error fz_newshadenode(fz_node **nodep, fz_shade *shade);
 
 int fz_islinknode(fz_node *node);
 int fz_issolidnode(fz_node *node);
@@ -243,21 +243,21 @@ struct fz_pathnode_s
 	fz_pathel *els;
 };
 
-fz_error *fz_newpathnode(fz_pathnode **pathp);
-fz_error *fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath);
-fz_error *fz_moveto(fz_pathnode*, float x, float y);
-fz_error *fz_lineto(fz_pathnode*, float x, float y);
-fz_error *fz_curveto(fz_pathnode*, float, float, float, float, float, float);
-fz_error *fz_curvetov(fz_pathnode*, float, float, float, float);
-fz_error *fz_curvetoy(fz_pathnode*, float, float, float, float);
-fz_error *fz_closepath(fz_pathnode*);
-fz_error *fz_endpath(fz_pathnode*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
+fz_error fz_newpathnode(fz_pathnode **pathp);
+fz_error fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath);
+fz_error fz_moveto(fz_pathnode*, float x, float y);
+fz_error fz_lineto(fz_pathnode*, float x, float y);
+fz_error fz_curveto(fz_pathnode*, float, float, float, float, float, float);
+fz_error fz_curvetov(fz_pathnode*, float, float, float, float);
+fz_error fz_curvetoy(fz_pathnode*, float, float, float, float);
+fz_error fz_closepath(fz_pathnode*);
+fz_error fz_endpath(fz_pathnode*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
 
 fz_rect fz_boundpathnode(fz_pathnode *node, fz_matrix ctm);
 void fz_debugpathnode(fz_pathnode *node, int indent);
 void fz_printpathnode(fz_pathnode *node, int indent);
 
-fz_error *fz_newdash(fz_dash **dashp, float phase, int len, float *array);
+fz_error fz_newdash(fz_dash **dashp, float phase, int len, float *array);
 void fz_dropdash(fz_dash *dash);
 
 /*
@@ -300,10 +300,10 @@ struct fz_textnode_s
 	fz_textel *els;
 };
 
-fz_error *fz_newtextnode(fz_textnode **textp, fz_font *face);
-fz_error *fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext);
-fz_error *fz_addtext(fz_textnode *text, int gid, int ucs, float x, float y);
-fz_error *fz_endtext(fz_textnode *text);
+fz_error fz_newtextnode(fz_textnode **textp, fz_font *face);
+fz_error fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext);
+fz_error fz_addtext(fz_textnode *text, int gid, int ucs, float x, float y);
+fz_error fz_endtext(fz_textnode *text);
 
 typedef struct fz_colorcube_s fz_colorcube;
 typedef struct fz_colorcube1_s fz_colorcube1;
@@ -371,13 +371,13 @@ struct fz_glyph_s
 	unsigned char *samples;
 };
 
-fz_error * fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
-fz_error * fz_loadfreetypefontfile(fz_font *font, char *path, int index);
-fz_error * fz_loadfreetypefontbuffer(fz_font *font, unsigned char *data, int len, int index);
-fz_error * fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix);
+fz_error fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
+fz_error fz_loadfreetypefontfile(fz_font *font, char *path, int index);
+fz_error fz_loadfreetypefontbuffer(fz_font *font, unsigned char *data, int len, int index);
+fz_error fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix);
 
-fz_error * fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index);
-fz_error * fz_newfontfromfile(fz_font **fontp, char *path, int index);
+fz_error fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index);
+fz_error fz_newfontfromfile(fz_font **fontp, char *path, int index);
 
 fz_font * fz_keepfont(fz_font *font);
 void fz_dropfont(fz_font *font);
@@ -385,10 +385,10 @@ void fz_dropfont(fz_font *font);
 void fz_debugfont(fz_font *font);
 void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
 
-fz_error * fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error * fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error * fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
-fz_error * fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
+fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+fz_error fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
+fz_error fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
 void fz_debugglyphcache(fz_glyphcache *);
 void fz_dropglyphcache(fz_glyphcache *);
 
@@ -397,7 +397,7 @@ void fz_dropglyphcache(fz_glyphcache *);
 struct fz_image_s
 {
 	int refs;
-	fz_error* (*loadtile)(fz_image*,fz_pixmap*);
+	fz_error (*loadtile)(fz_image*,fz_pixmap*);
 	void (*drop)(fz_image*);
 	fz_colorspace *cs;
 	int w, h, n, a;
@@ -431,5 +431,5 @@ fz_shade *fz_keepshade(fz_shade *shade);
 void fz_dropshade(fz_shade *shade);
 
 fz_rect fz_boundshade(fz_shade *shade, fz_matrix ctm);
-fz_error *fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *dsts, fz_pixmap *dstp);
+fz_error fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *dsts, fz_pixmap *dstp);
 

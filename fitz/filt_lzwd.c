@@ -42,7 +42,7 @@ struct fz_lzwd_s
 	lzw_code table[NUMCODES];
 };
 
-fz_error *
+fz_error 
 fz_newlzwd(fz_filter **fp, fz_obj *params)
 {
 	int i;
@@ -97,7 +97,7 @@ static inline void eatbits(fz_lzwd *lzw, int nbits)
 	lzw->bidx += nbits;
 }
 
-static inline fz_error * fillbits(fz_lzwd *lzw, fz_buffer *in)
+static inline fz_error fillbits(fz_lzwd *lzw, fz_buffer *in)
 {
 	while (lzw->bidx >= 8)
 	{
@@ -117,7 +117,7 @@ static inline void unstuff(fz_lzwd *lzw, fz_buffer *in)
 		in->rp --;
 }
 
-fz_error *
+fz_error 
 fz_processlzwd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_lzwd *lzw = (fz_lzwd*)filter;

@@ -312,12 +312,12 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
  * mesh drawing
  */
 
-fz_error *
+fz_error 
 fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap *dest)
 {
 	unsigned char clut[256][3];
 	unsigned char *s, *d;
-	fz_error *error;
+	fz_error error;
 	fz_pixmap *temp;
 	float rgb[3];
 	float tri[3][MAXN];

@@ -5,7 +5,7 @@
  * Over
  */
 
-fz_error *
+fz_error 
 fz_newovernode(fz_node **nodep)
 {
 	fz_node *node;
@@ -47,7 +47,7 @@ fz_boundovernode(fz_overnode *node, fz_matrix ctm)
  * Mask
  */
 
-fz_error *
+fz_error 
 fz_newmasknode(fz_node **nodep)
 {
 	fz_node *node;
@@ -80,7 +80,7 @@ fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
  * Blend
  */
 
-fz_error *
+fz_error 
 fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i)
 {
 	fz_blendnode *node;
@@ -132,7 +132,7 @@ fz_dropblendnode(fz_blendnode *node)
  * Transform
  */
 
-fz_error *
+fz_error 
 fz_newtransformnode(fz_node **nodep, fz_matrix m)
 {
 	fz_transformnode *node;
@@ -160,7 +160,7 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
  * Link to tree
  */
 
-fz_error *
+fz_error 
 fz_newlinknode(fz_node **nodep, fz_tree *subtree)
 {
 	fz_linknode *node;
@@ -192,7 +192,7 @@ fz_boundlinknode(fz_linknode *node, fz_matrix ctm)
  * Solid color
  */
 
-fz_error *
+fz_error 
 fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v)
 {
 	fz_solidnode *node;
@@ -229,7 +229,7 @@ fz_dropsolidnode(fz_solidnode *node)
  * Image node
  */
 
-fz_error *
+fz_error 
 fz_newimagenode(fz_node **nodep, fz_image *image)
 {
 	fz_imagenode *node;
@@ -266,7 +266,7 @@ fz_boundimagenode(fz_imagenode *node, fz_matrix ctm)
  * Shade node
  */
 
-fz_error *
+fz_error 
 fz_newshadenode(fz_node **nodep, fz_shade *shade)
 {
 	fz_shadenode *node;

@@ -1,7 +1,7 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error *
+fz_error 
 fz_newbuffer(fz_buffer **bp, int size)
 {
 	fz_buffer *b;
@@ -27,7 +27,7 @@ fz_newbuffer(fz_buffer **bp, int size)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_newbufferwithmemory(fz_buffer **bp, unsigned char *data, int size)
 {
 	fz_buffer *b;
@@ -66,7 +66,7 @@ fz_dropbuffer(fz_buffer *buf)
 	}
 }
 
-fz_error *
+fz_error 
 fz_growbuffer(fz_buffer *buf)
 {
 	unsigned char *newbp;
@@ -90,7 +90,7 @@ fz_growbuffer(fz_buffer *buf)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_rewindbuffer(fz_buffer *buf)
 {
 	if (!buf->ownsdata)

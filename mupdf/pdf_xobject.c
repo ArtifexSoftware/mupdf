@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error *
+fz_error 
 pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_xobject *form;
 	fz_obj *obj;
 

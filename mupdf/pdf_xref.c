@@ -6,7 +6,7 @@
  * needs to be initialized by initxref, openxref or repairxref.
  */
 
-fz_error *
+fz_error 
 pdf_newxref(pdf_xref **xrefp)
 {
 	pdf_xref *xref;
@@ -72,7 +72,7 @@ pdf_closexref(pdf_xref *xref)
 	fz_free(xref);
 }
 
-fz_error *
+fz_error 
 pdf_initxref(pdf_xref *xref)
 {
 	xref->table = fz_malloc(sizeof(pdf_xrefentry) * 128);
@@ -138,10 +138,10 @@ pdf_debugxref(pdf_xref *xref)
 }
 
 /* ICKY! */
-fz_error *
+fz_error 
 pdf_decryptxref(pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *encrypt;
 	fz_obj *id;
 
@@ -181,12 +181,12 @@ pdf_decryptxref(pdf_xref *xref)
  * object loading
  */
 
-fz_error *
+fz_error 
 pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 {
 	char buf[65536];	/* yeowch! */
 
-	fz_error *error;
+	fz_error error;
 	pdf_xrefentry *x;
 	int roid, rgen;
 
@@ -236,10 +236,10 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 {
-	fz_error *error;
+	fz_error error;
 
 	error = pdf_cacheobject(xref, oid, gen);
 	if (error)
@@ -250,10 +250,10 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 
 	if (ref == nil)
 		return fz_throw("assert: dereference null indirect reference");
@@ -265,10 +265,10 @@ pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_resolve(fz_obj **objp, pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 
 	if (fz_isindirect(*objp))
 	{

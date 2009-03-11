@@ -48,10 +48,10 @@ static void myskipinput(j_decompress_ptr cinfo, long n)
 	src->super.next_input_byte = in->rp;
 }
 
-fz_error *
+fz_error 
 fz_newdctd(fz_filter **fp, fz_obj *params)
 {
-	fz_error *err;
+	fz_error err;
 	fz_obj *obj;
 	int colortransform;
 
@@ -112,7 +112,7 @@ fz_dropdctd(fz_filter *filter)
 	jpeg_destroy_decompress(&d->cinfo);
 }
 
-fz_error *
+fz_error 
 fz_processdctd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_dctd *d = (fz_dctd*)filter;

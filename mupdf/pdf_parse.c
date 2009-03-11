@@ -27,7 +27,7 @@ fz_matrix pdf_tomatrix(fz_obj *array)
 	return m;
 }
 
-fz_error *
+fz_error 
 pdf_toutf8(char **dstp, fz_obj *src)
 {
 	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
@@ -76,7 +76,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_toucs2(unsigned short **dstp, fz_obj *src)
 {
 	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
@@ -106,10 +106,10 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
-	fz_error *error = fz_okay;
+	fz_error error = fz_okay;
 	fz_obj *ary = nil;
 	fz_obj *obj = nil;
 	int a = 0, b = 0, n = 0;
@@ -217,10 +217,10 @@ cleanup:
 	return fz_rethrow(error, "cannot parse array");
 }
 
-fz_error *
+fz_error 
 pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
-	fz_error *error = fz_okay;
+	fz_error error = fz_okay;
 	fz_obj *dict = nil;
 	fz_obj *key = nil;
 	fz_obj *val = nil;
@@ -325,10 +325,10 @@ cleanup:
 	return fz_rethrow(error, "cannot parse dict");
 }
 
-fz_error *
+fz_error 
 pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_token_e tok;
 	int len;
 
@@ -355,11 +355,11 @@ pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 		int *ooid, int *ogid, int *ostmofs)
 {
-	fz_error *error = fz_okay;
+	fz_error error = fz_okay;
 	fz_obj *obj = nil;
 	int oid = 0, gid = 0, stmofs;
 	pdf_token_e tok;

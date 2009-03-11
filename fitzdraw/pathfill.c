@@ -2,7 +2,7 @@
 #include "fitz_tree.h"
 #include "fitz_draw.h"
 
-static fz_error *
+static fz_error 
 line(fz_gel *gel, fz_matrix *ctm, float x0, float y0, float x1, float y1)
 {
 	float tx0 = ctm->a * x0 + ctm->c * y0 + ctm->e;
@@ -12,14 +12,14 @@ line(fz_gel *gel, fz_matrix *ctm, float x0, float y0, float x1, float y1)
 	return fz_insertgel(gel, tx0, ty0, tx1, ty1);
 }
 
-static fz_error *
+static fz_error 
 bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 	float xa, float ya,
 	float xb, float yb,
 	float xc, float yc,
 	float xd, float yd)
 {
-	fz_error *error;
+	fz_error error;
 	float dmax;
 	float xab, yab;
 	float xbc, ybc;
@@ -66,10 +66,10 @@ bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 	return bezier(gel, ctm, flatness, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd);
 }
 
-fz_error *
+fz_error 
 fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 {
-	fz_error *error;
+	fz_error error;
 	float x1, y1, x2, y2, x3, y3;
 	float cx = 0;
 	float cy = 0;

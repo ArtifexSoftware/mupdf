@@ -19,10 +19,10 @@ pdf_droppattern(pdf_pattern *pat)
 	}
 }
 
-fz_error *
+fz_error 
 pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_pattern *pat;
 	fz_stream *stm;
 	fz_obj *resources;

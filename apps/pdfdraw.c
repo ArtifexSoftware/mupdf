@@ -21,7 +21,7 @@ char *basename;
 pdf_xref *xref = nil;
 pdf_pagetree *pagetree = nil;
 
-void die(fz_error *eo)
+void die(fz_error eo)
 {
     fz_catch(eo, "aborting");
     if (drawgc)
@@ -31,7 +31,7 @@ void die(fz_error *eo)
 
 void openxref(char *filename, char *password)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
 
     basename = strrchr(filename, '/');
@@ -138,7 +138,7 @@ void gettime(long *time_)
 
 void drawloadpage(int pagenum, struct benchmark *loadtimes)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *pageobj;
     long start;
     long end;
@@ -197,7 +197,7 @@ void drawfreepage(void)
 
 void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *drawtimes)
 {
-    fz_error *error;
+    fz_error error;
     fz_matrix ctm;
     fz_irect bbox;
     fz_pixmap *pix;
@@ -323,7 +323,7 @@ void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *drawtim
 void drawtxt(int pagenum)
 {
 #if 0 /* removed temporarily pending rewrite of pdf_loadtextfromtree */
-    fz_error *error;
+    fz_error error;
     pdf_textline *line;
     fz_matrix ctm;
 
@@ -429,7 +429,7 @@ void drawpages(char *pagelist)
 
 int main(int argc, char **argv)
 {
-    fz_error *error;
+    fz_error error;
     char *password = "";
     int c;
     enum { NO_FILE_OPENED, NO_PAGES_DRAWN, DREW_PAGES } state;

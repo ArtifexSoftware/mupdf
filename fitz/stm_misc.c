@@ -9,10 +9,10 @@
  * Read a line terminated by LF or CR or CRLF.
  */
 
-fz_error *
+fz_error 
 fz_readline(fz_stream *stm, char *mem, int n)
 {
-	fz_error *error;
+	fz_error error;
 
 	char *s = mem;
 	int c = EOF;
@@ -46,10 +46,10 @@ fz_readline(fz_stream *stm, char *mem, int n)
  * a freshly allocated buffer.
  */
 
-fz_error *
+fz_error 
 fz_readall(fz_buffer **bufp, fz_stream *stm, int sizehint)
 {
-	fz_error *error;
+	fz_error error;
 	fz_buffer *buf;
 	int c;
 

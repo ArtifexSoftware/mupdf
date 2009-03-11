@@ -21,7 +21,7 @@ void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 	winwarn(app, buf);
 }
 
-void pdfapp_error(pdfapp_t *app, fz_error *error)
+void pdfapp_error(pdfapp_t *app, fz_error error)
 {
 	winerror(app, error);
 }
@@ -52,7 +52,7 @@ char *pdfapp_usage(pdfapp_t *app)
 
 void pdfapp_init(pdfapp_t *app)
 {
-	fz_error *error;
+	fz_error error;
 
 	memset(app, 0, sizeof(pdfapp_t));
 
@@ -66,7 +66,7 @@ void pdfapp_init(pdfapp_t *app)
 
 void pdfapp_open(pdfapp_t *app, char *filename)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 	char *password = "";
 
@@ -244,7 +244,7 @@ void pdfapp_panview(pdfapp_t *app, int newx, int newy)
 void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 {
 	char buf[256];
-	fz_error *error;
+	fz_error error;
 	fz_matrix ctm;
 	fz_rect bbox;
 	fz_obj *obj;
@@ -632,7 +632,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	ucsbuf[0] = 0;
 #if 0 /* pdf_loadtextfromtree needs rewriting, so removing this temporarily */
-	fz_error *error;
+	fz_error error;
 	pdf_textline *line, *ln;
 	int y, c;
 	int i, p;

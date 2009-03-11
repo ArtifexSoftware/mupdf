@@ -82,7 +82,7 @@ void winwarn(pdfapp_t *app, char *msg)
 	fprintf(stderr, "mupdf: %s\n", msg);
 }
 
-void winerror(pdfapp_t *app, fz_error *error)
+void winerror(pdfapp_t *app, fz_error error)
 {
 	fz_catch(error, "aborting");
 	exit(1);

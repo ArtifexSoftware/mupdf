@@ -1,7 +1,7 @@
 #include "fitz_base.h"
 #include "fitz_tree.h"
 
-fz_error *
+fz_error 
 fz_newpathnode(fz_pathnode **pathp)
 {
 	fz_pathnode *path;
@@ -25,7 +25,7 @@ fz_newpathnode(fz_pathnode **pathp)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath)
 {
 	fz_pathnode *path;
@@ -62,7 +62,7 @@ fz_droppathnode(fz_pathnode *node)
 	fz_free(node->els);
 }
 
-static fz_error *
+static fz_error 
 growpath(fz_pathnode *path, int n)
 {
 	int newcap;
@@ -81,7 +81,7 @@ growpath(fz_pathnode *path, int n)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_moveto(fz_pathnode *path, float x, float y)
 {
 	if (growpath(path, 3) != nil)
@@ -92,7 +92,7 @@ fz_moveto(fz_pathnode *path, float x, float y)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_lineto(fz_pathnode *path, float x, float y)
 {
 	if (growpath(path, 3) != nil)
@@ -103,7 +103,7 @@ fz_lineto(fz_pathnode *path, float x, float y)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_curveto(fz_pathnode *path,
 		float x1, float y1,
 		float x2, float y2,
@@ -121,7 +121,7 @@ fz_curveto(fz_pathnode *path,
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_curvetov(fz_pathnode *path, float x2, float y2, float x3, float y3)
 {
 	float x1 = path->els[path->len-2].v;
@@ -129,13 +129,13 @@ fz_curvetov(fz_pathnode *path, float x2, float y2, float x3, float y3)
 	return fz_curveto(path, x1, y1, x2, y2, x3, y3);
 }
 
-fz_error *
+fz_error 
 fz_curvetoy(fz_pathnode *path, float x1, float y1, float x3, float y3)
 {
 	return fz_curveto(path, x1, y1, x3, y3, x3, y3);
 }
 
-fz_error *
+fz_error 
 fz_closepath(fz_pathnode *path)
 {
 	if (growpath(path, 1) != nil)
@@ -144,7 +144,7 @@ fz_closepath(fz_pathnode *path)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
 {
 	if (path->len == 0)
@@ -321,7 +321,7 @@ fz_debugpathnode(fz_pathnode *path, int indent)
 	}
 }
 
-fz_error *
+fz_error 
 fz_newdash(fz_dash **dashp, float phase, int len, float *array)
 {
 	fz_dash *dash;

@@ -11,7 +11,7 @@ struct fz_ahxe_s
 
 static const char tohex[16] = "0123456789ABCDEF";
 
-fz_error *
+fz_error 
 fz_newahxe(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_ahxe, f, ahxe);
@@ -24,7 +24,7 @@ fz_dropahxe(fz_filter *f)
 {
 }
 
-fz_error *
+fz_error 
 fz_processahxe(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_ahxe *f = (fz_ahxe*)filter;

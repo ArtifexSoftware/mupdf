@@ -28,7 +28,7 @@ enum {
 	END
 };
 
-fz_error *
+fz_error 
 fz_newrle(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_rle, enc, rle);
@@ -50,7 +50,7 @@ fz_droprle(fz_filter *enc)
 {
 }
 
-static fz_error *
+static fz_error 
 putone(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	if (out->wp + 2 >= out->ep)
@@ -66,7 +66,7 @@ fprintf(stderr, "one '%c'\n", enc->buf[0]);
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 putsame(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	if (out->wp + enc->run >= out->ep)
@@ -81,7 +81,7 @@ fprintf(stderr, "same %d x '%c'\n", enc->run, enc->buf[0]);
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 putdiff(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	int i;
@@ -98,7 +98,7 @@ fprintf(stderr, "diff %d\n", enc->run);
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 puteod(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	if (out->wp + 1 >= out->ep)
@@ -112,7 +112,7 @@ fprintf(stderr, "eod\n");
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 savebuf(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 {
 	switch (enc->state)
@@ -126,11 +126,11 @@ savebuf(fz_rle *enc, fz_buffer *in, fz_buffer *out)
 	}
 }
 
-fz_error *
+fz_error 
 fz_processrle(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_rle *enc = (fz_rle*)filter;
-	fz_error *error;
+	fz_error error;
 	unsigned char c;
 
 	while (1)

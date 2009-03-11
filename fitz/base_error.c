@@ -10,7 +10,7 @@ void fz_warn(char *fmt, ...)
     fprintf(stderr, "\n");
 }
 
-fz_error * fz_throwimp(const char *func, const char *file, int line, char *fmt, ...)
+fz_error fz_throwimp(const char *func, const char *file, int line, char *fmt, ...)
 {
     va_list ap;
     fprintf(stderr, "+ %s:%d: %s(): ", file, line, func);
@@ -18,10 +18,10 @@ fz_error * fz_throwimp(const char *func, const char *file, int line, char *fmt, 
     vfprintf(stderr, fmt, ap);
     va_end(ap);
     fprintf(stderr, "\n");
-    return ((fz_error*)-1);
+    return ((fz_error)-1);
 }
 
-fz_error * fz_rethrowimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...)
+fz_error fz_rethrowimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...)
 {
     va_list ap;
     fprintf(stderr, "| %s:%d: %s(): ", file, line, func);
@@ -32,7 +32,7 @@ fz_error * fz_rethrowimp(fz_error *cause, const char *func, const char *file, in
     return cause;
 }
 
-fz_error * fz_catchimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...)
+fz_error fz_catchimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...)
 {
     va_list ap;
     fprintf(stderr, "\\ %s:%d: %s(): ", file, line, func);

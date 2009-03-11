@@ -24,10 +24,10 @@ struct pdf_store_s
 	pdf_item *root;		/* linked list for everything else */
 };
 
-fz_error *
+fz_error 
 pdf_newstore(pdf_store **storep)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_store *store;
 
 	store = fz_malloc(sizeof(pdf_store));
@@ -100,10 +100,10 @@ pdf_dropstore(pdf_store *store)
 	fz_free(store);
 }
 
-fz_error *
+fz_error 
 pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 {
-	fz_error *error;
+	fz_error error;
 
 	if (fz_isindirect(key))
 	{
@@ -180,10 +180,10 @@ pdf_finditem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 	return nil;
 }
 
-fz_error *
+fz_error 
 pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_item *item, *prev;
 	struct refkey refkey;
 	void *val;

@@ -13,11 +13,11 @@ void pdf_dropimage(fz_image *fzimg)
 		fz_dropimage(img->mask);
 }
 
-fz_error *
+fz_error 
 pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		fz_obj *rdb, fz_obj *dict, fz_stream *file)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_image *img;
 	fz_filter *filter;
 	fz_obj *f;
@@ -202,10 +202,10 @@ loadcolorkey(int *colorkey, int bpc, int indexed, fz_obj *obj)
 }
 
 /* TODO error cleanup */
-fz_error *
+fz_error 
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_image *img;
 	pdf_image *mask;
 	int ismask;
@@ -512,12 +512,12 @@ maskcolorkeyindexed(fz_pixmap *ind, fz_pixmap *pix, int *colorkey)
 	}
 }
 
-fz_error *
+fz_error 
 pdf_loadtile(fz_image *img, fz_pixmap *tile)
 {
 	pdf_image *src = (pdf_image*)img;
 	void (*tilefunc)(unsigned char*,int,unsigned char*, int, int, int, int);
-	fz_error *error;
+	fz_error error;
 
 	assert(tile->x == 0); /* can't handle general tile yet, only y-banding */
 

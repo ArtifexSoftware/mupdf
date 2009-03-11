@@ -5,7 +5,7 @@
 
 typedef struct fz_pipeline_s fz_pipeline;
 
-fz_error * fz_processpipeline(fz_filter *filter, fz_buffer *in, fz_buffer *out);
+fz_error fz_processpipeline(fz_filter *filter, fz_buffer *in, fz_buffer *out);
 
 struct fz_pipeline_s
 {
@@ -16,7 +16,7 @@ struct fz_pipeline_s
 	int tailneedsin;
 };
 
-fz_error *
+fz_error 
 fz_chainpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail, fz_buffer *buf)
 {
 	FZ_NEWFILTER(fz_pipeline, p, pipeline);
@@ -38,10 +38,10 @@ fz_unchainpipeline(fz_filter *filter, fz_filter **oldfp, fz_buffer **oldbp)
 	fz_dropfilter(filter);
 }
 
-fz_error *
+fz_error 
 fz_newpipeline(fz_filter **fp, fz_filter *head, fz_filter *tail)
 {
-	fz_error *error;
+	fz_error error;
 
 	FZ_NEWFILTER(fz_pipeline, p, pipeline);
 	p->head = fz_keepfilter(head);
@@ -67,11 +67,11 @@ fz_droppipeline(fz_filter *filter)
 	fz_dropbuffer(p->buffer);
 }
 
-fz_error *
+fz_error 
 fz_processpipeline(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_pipeline *p = (fz_pipeline*)filter;
-	fz_error *e;
+	fz_error e;
 
 	if (p->buffer->eof)
 		goto tail;
@@ -89,7 +89,7 @@ head:
 	{
 		if (p->tailneedsin && !p->head->produced)
 		{
-			fz_error *be = nil;
+			fz_error be = nil;
 			if (p->buffer->rp > p->buffer->bp)
 				be = fz_rewindbuffer(p->buffer);
 			else

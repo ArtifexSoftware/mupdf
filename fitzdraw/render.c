@@ -21,12 +21,12 @@
 #define FOVER 1
 #define FRGB 4
 
-static fz_error *rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm);
+static fz_error rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm);
 
-fz_error *
+fz_error 
 fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem)
 {
-	fz_error *error;
+	fz_error error;
 	fz_renderer *gc;
 
 	gc = fz_malloc(sizeof(fz_renderer));
@@ -91,10 +91,10 @@ fz_droprenderer(fz_renderer *gc)
  * Transform
  */
 
-static fz_error *
+static fz_error 
 rendertransform(fz_renderer *gc, fz_transformnode *transform, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 DEBUG("transform [%g %g %g %g %g %g]\n",
 transform->m.a, transform->m.b,
 transform->m.c, transform->m.d,
@@ -110,10 +110,10 @@ DEBUG("}\n");
  * Color
  */
 
-static fz_error *
+static fz_error 
 rendersolid(fz_renderer *gc, fz_solidnode *solid, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	float rgb[3];
 	unsigned char a, r, g, b;
 	unsigned char *p;
@@ -184,10 +184,10 @@ DEBUG("solid %s [%d %d %d %d];\n", solid->cs->name, gc->argb[0], gc->argb[1], gc
  * Path
  */
 
-static fz_error *
+static fz_error 
 renderpath(fz_renderer *gc, fz_pathnode *path, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	float flatness;
 	fz_irect gbox;
 	fz_irect clip;
@@ -307,10 +307,10 @@ static void drawglyph(fz_renderer *gc, fz_pixmap *dst, fz_glyph *src, int xorig,
 	}
 }
 
-static fz_error *
+static fz_error 
 rendertext(fz_renderer *gc, fz_textnode *text, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	fz_irect tbox;
 	fz_irect clip;
 	fz_matrix tm, trm;
@@ -385,10 +385,10 @@ calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
 	*ody = dy;
 }
 
-static fz_error *
+static fz_error 
 renderimage(fz_renderer *gc, fz_imagenode *node, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	fz_image *image = node->image;
 	fz_irect bbox;
 	fz_irect clip;
@@ -565,10 +565,10 @@ cleanup:
  * Shade
  */
 
-static fz_error *
+static fz_error 
 rendershade(fz_renderer *gc, fz_shadenode *node, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	fz_irect bbox;
 
 	assert(!gc->maskonly);
@@ -682,10 +682,10 @@ blendmask(fz_renderer *gc, fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst, int o
 	}
 }
 
-static fz_error *
+static fz_error 
 renderover(fz_renderer *gc, fz_overnode *over, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	fz_node *child;
 	int cluster = 0;
 
@@ -727,10 +727,10 @@ DEBUG("}\n");
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 rendermask(fz_renderer *gc, fz_masknode *mask, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	int oldmaskonly;
 	fz_pixmap *oldover;
 	fz_irect oldclip;
@@ -851,7 +851,7 @@ cleanup:
  * Dispatch
  */
 
-static fz_error *
+static fz_error 
 rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 {
 	if (!node)
@@ -888,12 +888,12 @@ rendernode(fz_renderer *gc, fz_node *node, fz_matrix ctm)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_rendertree(fz_pixmap **outp,
 	fz_renderer *gc, fz_tree *tree, fz_matrix ctm,
 	fz_irect bbox, int white)
 {
-	fz_error *error;
+	fz_error error;
 
 	gc->clip = bbox;
 	gc->over = nil;
@@ -933,10 +933,10 @@ DEBUG("}\n");
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 
 	assert(!gc->maskonly);
 	assert(dest->n == 4);

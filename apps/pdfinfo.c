@@ -28,7 +28,7 @@ pdf_xref *src = nil;
 pdf_outline *srcoutline = nil;
 pdf_pagetree *srcpages = nil;
 
-void die(fz_error *eo)
+void die(fz_error eo)
 {
     fz_catch(eo, "aborting");
     if (drawgc)
@@ -61,7 +61,7 @@ void closesrc(void)
 
 void opensrc(char *filename, char *password, int loadpages)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 
 	closesrc();
@@ -230,10 +230,10 @@ gatherglobalinfo()
 	info->u.info.obj = src->info;
 }
 
-fz_error *
+fz_error 
 gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *ref;
 	fz_rect bbox;
 	fz_obj *obj;
@@ -280,10 +280,10 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -365,10 +365,10 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -557,10 +557,10 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -655,10 +655,10 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -730,10 +730,10 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -790,10 +790,10 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
@@ -889,7 +889,7 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 void
 gatherinfo(int show, int page)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *pageref;
 	fz_obj *pageobj;
 	fz_obj *rsrc;

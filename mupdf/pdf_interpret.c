@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error *
+fz_error 
 pdf_newcsi(pdf_csi **csip, int maskonly)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_csi *csi;
 	fz_node *node;
 
@@ -94,7 +94,7 @@ pdf_dropmaterial(pdf_material *mat)
 	return mat;
 }
 
-static fz_error *
+static fz_error 
 gsave(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -112,7 +112,7 @@ gsave(pdf_csi *csi)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 grestore(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -154,10 +154,10 @@ pdf_dropcsi(pdf_csi *csi)
  * Push gstate, set transform, clip, run, pop gstate.
  */
 
-static fz_error *
+static fz_error 
 runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 {
-	fz_error *error;
+	fz_error error;
 	fz_node *transform;
 	fz_node *blend;
 	fz_stream *file;
@@ -225,10 +225,10 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
  * Decode inline image and insert into page.
  */
 
-static fz_error *
+static fz_error 
 runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_image *img;
 	char buf[256];
 	pdf_token_e tok;
@@ -266,7 +266,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
  * Set gstate params from an ExtGState dictionary.
  */
 
-static fz_error *
+static fz_error 
 runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 {
 	int i, k;
@@ -320,7 +320,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 
 		else if (!strcmp(s, "BM"))
 		{
-			fz_error *error;
+			fz_error error;
 			fz_node *blend;
 			static const struct { const char *name; fz_blendkind mode; } bm[] = {
 				{ "Normal", FZ_BNORMAL },
@@ -362,7 +362,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 
 		else if (!strcmp(s, "SMask"))
 		{
-			fz_error *error = pdf_resolve(&val, xref);
+			fz_error error = pdf_resolve(&val, xref);
 			if (error)
 				return error;
 			if (fz_isdict(val))
@@ -386,11 +386,11 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
  * The meat of the interpreter...
  */
 
-static fz_error *
+static fz_error 
 runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	fz_error *error;
+	fz_error error;
 	float a, b, c, d, e, f;
 	float x, y, w, h;
 	fz_matrix m;
@@ -1245,10 +1245,10 @@ syntaxerror:
 	return fz_throw("syntaxerror near '%s'", buf);
 }
 
-fz_error *
+fz_error 
 pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[65536];
 	pdf_token_e tok;
 	int len;

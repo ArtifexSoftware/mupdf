@@ -61,7 +61,7 @@ void pdfmoz_warn(pdfmoz_t *moz, const char *fmt, ...)
     NPN_Status(moz->inst, moz->error);
 }
 
-void pdfmoz_error(pdfmoz_t *moz, fz_error *error)
+void pdfmoz_error(pdfmoz_t *moz, fz_error error)
 {
     strcpy(moz->error, error->msg);
     InvalidateRect(moz->hwnd, NULL, FALSE);
@@ -71,7 +71,7 @@ void pdfmoz_error(pdfmoz_t *moz, fz_error *error)
 void pdfmoz_open(pdfmoz_t *moz, char *filename)
 {
     SCROLLINFO si;
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
     char *password = "";
     pdf_pagetree *pages;
@@ -256,7 +256,7 @@ fz_matrix pdfmoz_pagectm(pdfmoz_t *moz, int pagenum)
 void pdfmoz_loadpage(pdfmoz_t *moz, int pagenum)
 {
     page_t *page = moz->pages + pagenum;
-    fz_error *error;
+    fz_error error;
 
     if (page->page)
 	return;
@@ -269,7 +269,7 @@ void pdfmoz_loadpage(pdfmoz_t *moz, int pagenum)
 void pdfmoz_drawpage(pdfmoz_t *moz, int pagenum)
 {
     page_t *page = moz->pages + pagenum;
-    fz_error *error;
+    fz_error error;
     fz_matrix ctm;
     fz_rect bbox;
 

@@ -17,10 +17,10 @@ zmalloc(void *opaque, unsigned int items, unsigned int size)
 	return fz_malloc(items * size);
 }
 
-fz_error *
+fz_error 
 fz_newflated(fz_filter **fp, fz_obj *params)
 {
-	fz_error *eo;
+	fz_error eo;
 	fz_obj *obj;
 	int zipfmt;
 	int ei;
@@ -70,7 +70,7 @@ fz_dropflated(fz_filter *f)
 		fprintf(stderr, "inflateEnd: %s", zp->msg);
 }
 
-fz_error *
+fz_error 
 fz_processflated(fz_filter *f, fz_buffer *in, fz_buffer *out)
 {
 	z_streamp zp = &((fz_flate*)f)->z;
@@ -110,11 +110,11 @@ fz_processflated(fz_filter *f, fz_buffer *in, fz_buffer *out)
 	}
 }
 
-fz_error *
+fz_error 
 fz_newflatee(fz_filter **fp, fz_obj *params)
 {
 	fz_obj *obj;
-	fz_error *eo;
+	fz_error eo;
 	int effort;
 	int zipfmt;
 	int ei;
@@ -166,7 +166,7 @@ fz_dropflatee(fz_filter *f)
 	fz_free(f);
 }
 
-fz_error *
+fz_error 
 fz_processflatee(fz_filter *f, fz_buffer *in, fz_buffer *out)
 {
 	z_streamp zp = &((fz_flate*)f)->z;

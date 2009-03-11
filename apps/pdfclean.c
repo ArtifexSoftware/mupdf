@@ -24,7 +24,7 @@ int doencrypt = 0;
 int dogarbage = 0;
 int doexpand = 0;
 
-void die(fz_error *eo)
+void die(fz_error eo)
 {
     fz_catch(eo, "aborting");
     exit(1);
@@ -32,7 +32,7 @@ void die(fz_error *eo)
 
 void openxref(char *filename, char *password)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
 
     error = pdf_newxref(&xref);
@@ -81,11 +81,11 @@ void openxref(char *filename, char *password)
  * Garbage collect objects not reachable from the trailer.
  */
 
-static fz_error *sweepref(pdf_xref *xref, fz_obj *ref);
+static fz_error sweepref(pdf_xref *xref, fz_obj *ref);
 
-static fz_error *sweepobj(pdf_xref *xref, fz_obj *obj)
+static fz_error sweepobj(pdf_xref *xref, fz_obj *obj)
 {
-    fz_error *error;
+    fz_error error;
     int i;
 
     if (fz_isdict(obj))
@@ -114,9 +114,9 @@ static fz_error *sweepobj(pdf_xref *xref, fz_obj *obj)
     return fz_okay;
 }
 
-static fz_error *sweepref(pdf_xref *xref, fz_obj *ref)
+static fz_error sweepref(pdf_xref *xref, fz_obj *ref)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
     fz_obj *len;
     int oid, gen;
@@ -160,7 +160,7 @@ static fz_error *sweepref(pdf_xref *xref, fz_obj *ref)
 
 void preloadobjstms(void)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
     int oid;
 
@@ -178,7 +178,7 @@ void preloadobjstms(void)
 
 void copystream(fz_obj *obj, int oid, int gen)
 {
-    fz_error *error;
+    fz_error error;
     fz_buffer *buf;
 
     error = pdf_loadrawstream(&buf, xref, oid, gen);
@@ -203,7 +203,7 @@ void copystream(fz_obj *obj, int oid, int gen)
 
 void expandstream(fz_obj *obj, int oid, int gen)
 {
-    fz_error *error;
+    fz_error error;
     fz_buffer *buf;
     fz_obj *newdict, *newlen;
 
@@ -239,7 +239,7 @@ void expandstream(fz_obj *obj, int oid, int gen)
 
 void saveobject(int oid, int gen)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
     fz_obj *type;
 
@@ -361,7 +361,7 @@ int main(int argc, char **argv)
     unsigned perms = 0xfffff0c0;	/* nothing allowed */
     int keylen = 40;
     char *password = "";
-    fz_error *error;
+    fz_error error;
     int c, oid;
     int lastfree;
 

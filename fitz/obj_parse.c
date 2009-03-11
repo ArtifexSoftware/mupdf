@@ -30,7 +30,7 @@ static inline int isregular(int ch)
 	return !isdelim(ch) && !iswhite(ch) && ch != EOF;
 }
 
-static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v);
+static fz_error parseobj(fz_obj **obj, char **sp, struct vap *v);
 
 static inline int fromhex(char ch)
 {
@@ -60,9 +60,9 @@ static void parsekeyword(char **sp, char *b, char *eb)
 	*sp = s;
 }
 
-static fz_error *parsename(fz_obj **obj, char **sp)
+static fz_error parsename(fz_obj **obj, char **sp)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[64];
 	char *s = *sp;
 	char *p = buf;
@@ -79,9 +79,9 @@ static fz_error *parsename(fz_obj **obj, char **sp)
 	return fz_okay;
 }
 
-static fz_error *parsenumber(fz_obj **obj, char **sp)
+static fz_error parsenumber(fz_obj **obj, char **sp)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[32];
 	char *s = *sp;
 	char *p = buf;
@@ -106,9 +106,9 @@ static fz_error *parsenumber(fz_obj **obj, char **sp)
 	return fz_okay;
 }
 
-static fz_error *parsedict(fz_obj **obj, char **sp, struct vap *v)
+static fz_error parsedict(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *error = fz_okay;
+	fz_error error = fz_okay;
 	fz_obj *dict = nil;
 	fz_obj *key = nil;
 	fz_obj *val = nil;
@@ -184,9 +184,9 @@ cleanup:
 	return error; /* already rethrown */
 }
 
-static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
+static fz_error parsearray(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *a;
 	fz_obj *o;
 	char *s = *sp;
@@ -230,9 +230,9 @@ static fz_error *parsearray(fz_obj **obj, char **sp, struct vap *v)
 	return fz_okay;
 }
 
-static fz_error *parsestring(fz_obj **obj, char **sp)
+static fz_error parsestring(fz_obj **obj, char **sp)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[512];
 	char *s = *sp;
 	char *p = buf;
@@ -297,9 +297,9 @@ static fz_error *parsestring(fz_obj **obj, char **sp)
 	return fz_okay;
 }
 
-static fz_error *parsehexstring(fz_obj **obj, char **sp)
+static fz_error parsehexstring(fz_obj **obj, char **sp)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[512];
 	char *s = *sp;
 	char *p = buf;
@@ -336,9 +336,9 @@ static fz_error *parsehexstring(fz_obj **obj, char **sp)
 	return fz_okay;
 }
 
-static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
+static fz_error parseobj(fz_obj **obj, char **sp, struct vap *v)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[32];
 	int oid, gid, len;
 	char *tmp;
@@ -465,10 +465,10 @@ static fz_error *parseobj(fz_obj **obj, char **sp, struct vap *v)
 	return error; /* already rethrown */
 }
 
-fz_error *
+fz_error 
 fz_packobj(fz_obj **op, char *fmt, ...)
 {
-	fz_error *error;
+	fz_error error;
 	struct vap v;
 	va_list ap;
 
@@ -484,7 +484,7 @@ fz_packobj(fz_obj **op, char *fmt, ...)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_parseobj(fz_obj **op, char *str)
 {
 	return parseobj(op, &str, nil);

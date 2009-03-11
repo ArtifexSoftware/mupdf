@@ -20,7 +20,7 @@ pdf_setdefaultvmtx(pdf_fontdesc *font, int y, int w)
 	font->dvmtx.w = w;
 }
 
-fz_error *
+fz_error 
 pdf_addhmtx(pdf_fontdesc *font, int lo, int hi, int w)
 {
 	int newcap;
@@ -44,7 +44,7 @@ pdf_addhmtx(pdf_fontdesc *font, int lo, int hi, int w)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_addvmtx(pdf_fontdesc *font, int lo, int hi, int x, int y, int w)
 {
 	int newcap;
@@ -84,7 +84,7 @@ static int cmpv(const void *a0, const void *b0)
 	return a->lo - b->lo;
 }
 
-fz_error *
+fz_error 
 pdf_endhmtx(pdf_fontdesc *font)
 {
 	pdf_hmtx *newmtx;
@@ -103,7 +103,7 @@ pdf_endhmtx(pdf_fontdesc *font)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_endvmtx(pdf_fontdesc *font)
 {
 	pdf_vmtx *newmtx;

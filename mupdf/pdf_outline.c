@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error *
+static fz_error 
 loadoutline(pdf_outline **nodep, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_outline *node;
 	fz_obj *obj;
 
@@ -65,10 +65,10 @@ loadoutline(pdf_outline **nodep, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadoutline(pdf_outline **nodep, pdf_xref *xref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_outline *node;
 	fz_obj *obj;
 	fz_obj *first;

@@ -252,10 +252,10 @@ pdf_tokenfromkeyword(char *key)
 	return PDF_TKEYWORD;
 }
 
-fz_error *
+fz_error 
 pdf_lex(pdf_token_e *tok, fz_stream *f, char *buf, int n, int *sl)
 {
-	fz_error *error;
+	fz_error error;
 	int c;
 
 	while (1)

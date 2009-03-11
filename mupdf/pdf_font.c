@@ -209,10 +209,10 @@ pdf_newfontdesc(void)
  * Simple fonts (Type1 and TrueType)
  */
 
-static fz_error *
+static fz_error 
 loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *descriptor = nil;
 	fz_obj *encoding = nil;
 	fz_obj *widths = nil;
@@ -511,10 +511,10 @@ cleanup:
  * CID Fonts
  */
 
-static fz_error *
+static fz_error 
 loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj *encoding, fz_obj *tounicode)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *widths = nil;
 	fz_obj *descriptor;
 	pdf_fontdesc *fontdesc;
@@ -826,10 +826,10 @@ cleanup:
 	return fz_rethrow(error, "cannot load cid font");
 }
 
-static fz_error *
+static fz_error 
 loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *dfonts;
 	fz_obj *dfont;
 	fz_obj *subtype;
@@ -873,10 +873,10 @@ loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
  * FontDescriptor
  */
 
-fz_error *
+fz_error 
 pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, char *collection)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj1, *obj2, *obj3, *obj;
 	fz_rect bbox;
 	char *fontname;
@@ -943,10 +943,10 @@ cleanup:
 	return fz_rethrow(error, "cannot load font descriptor");
 }
 
-fz_error *
+fz_error 
 pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	char *subtype;
 
 	if ((*fontdescp = pdf_finditem(xref->store, PDF_KFONT, ref)))

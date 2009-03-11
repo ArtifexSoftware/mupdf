@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error *
+static fz_error 
 loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_csi *csi;
 	fz_stream *stm;
 
@@ -35,10 +35,10 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	char buf[256];
 	char *estrings[256];
 	pdf_fontdesc *fontdesc;

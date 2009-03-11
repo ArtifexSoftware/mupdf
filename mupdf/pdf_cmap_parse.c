@@ -44,9 +44,9 @@ static int codefromstring(char *buf, int len)
     return a;
 }
 
-static fz_error *lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, int *sl)
+static fz_error lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, int *sl)
 {
-    fz_error *error;
+    fz_error error;
 
     error = pdf_lex(tok, file, buf, n, sl);
     if (error)
@@ -58,9 +58,9 @@ static fz_error *lexcmap(pdf_token_e *tok, fz_stream *file, char *buf, int n, in
     return fz_okay;
 }
 
-static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsecmapname(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -78,9 +78,9 @@ static fz_error *parsecmapname(pdf_cmap *cmap, fz_stream *file)
     return fz_throw("expected name");
 }
 
-static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsewmode(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -98,9 +98,9 @@ static fz_error *parsewmode(pdf_cmap *cmap, fz_stream *file)
     return fz_throw("expected integer");
 }
 
-static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -137,9 +137,9 @@ static fz_error *parsecodespacerange(pdf_cmap *cmap, fz_stream *file)
     return fz_throw("expected string or endcodespacerange");
 }
 
-static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsecidrange(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -181,9 +181,9 @@ static fz_error *parsecidrange(pdf_cmap *cmap, fz_stream *file)
     }
 }
 
-static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsecidchar(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -217,9 +217,9 @@ static fz_error *parsecidchar(pdf_cmap *cmap, fz_stream *file)
     }
 }
 
-static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
+static fz_error parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -253,9 +253,9 @@ static fz_error *parsebfrangearray(pdf_cmap *cmap, fz_stream *file, int lo, int 
     }
 }
 
-static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsebfrange(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -332,9 +332,9 @@ static fz_error *parsebfrange(pdf_cmap *cmap, fz_stream *file)
     }
 }
 
-static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
+static fz_error parsebfchar(pdf_cmap *cmap, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     char buf[256];
     pdf_token_e tok;
     int len;
@@ -375,10 +375,10 @@ static fz_error *parsebfchar(pdf_cmap *cmap, fz_stream *file)
     }
 }
 
-fz_error *
+fz_error 
 pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 {
-    fz_error *error;
+    fz_error error;
     pdf_cmap *cmap;
     char key[64];
     char buf[256];

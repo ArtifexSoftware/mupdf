@@ -7,7 +7,7 @@
 
 pdf_xref *xref = NULL;
 
-void die(fz_error *eo)
+void die(fz_error eo)
 {
     fz_catch(eo, "aborting");
     exit(1);
@@ -15,7 +15,7 @@ void die(fz_error *eo)
 
 void openxref(char *filename, char *password)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
 
     error = pdf_newxref(&xref);
@@ -115,7 +115,7 @@ void showsafe(unsigned char *buf, int n)
 
 void showstream(int num, int gen)
 {
-    fz_error *error;
+    fz_error error;
     fz_stream *stm;
     unsigned char buf[2048];
     int n;
@@ -147,7 +147,7 @@ void showstream(int num, int gen)
 
 void showobject(int num, int gen)
 {
-    fz_error *error;
+    fz_error error;
     fz_obj *obj;
 
     if (!xref)

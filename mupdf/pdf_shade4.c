@@ -9,7 +9,7 @@ struct pdf_tensorpatch_s {
     float color[4][FZ_MAXCOLORS];
 };
 
-static fz_error *
+static fz_error 
 growshademesh(fz_shade *shade, int amount)
 {
 	float *newmesh;
@@ -26,10 +26,10 @@ growshademesh(fz_shade *shade, int amount)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 	int bpcoord;
 	int bpcomp;
@@ -205,10 +205,10 @@ getdata(fz_stream *stream, int bps)
 	return s;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stream;
 	fz_obj *obj;
 
@@ -509,7 +509,7 @@ static inline int setvertex(float *mesh, fz_point pt, float *color, int ptr, int
 static int
 triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ptr, int ncomp)
 {
-	fz_error* error;
+	fz_error error;
 
 	ptr = setvertex(shade->mesh, p.pole[0][0], p.color[0], ptr, ncomp);
 	ptr = setvertex(shade->mesh, p.pole[3][0], p.color[1], ptr, ncomp);
@@ -573,10 +573,10 @@ drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
 	return ptr;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stream;
 	fz_obj *obj;
 
@@ -694,10 +694,10 @@ cleanup:
 	return error;
 }
 
-fz_error *
+fz_error 
 pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stream;
 	fz_obj *obj;
 

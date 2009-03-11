@@ -224,10 +224,10 @@ fz_colorspace *pdf_devicepattern = &kdevicepattern;
 
 #ifdef USECAL
 
-static fz_error *
+static fz_error 
 loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	struct calgray *cs;
 	fz_obj *tmp;
 
@@ -279,10 +279,10 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	struct calrgb *cs;
 	fz_obj *tmp;
 	int i;
@@ -354,10 +354,10 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	struct cielab *cs;
 	fz_obj *tmp;
 
@@ -423,10 +423,10 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
  * ICCBased
  */
 
-static fz_error *
+static fz_error 
 loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *dict;
 	int n;
 
@@ -464,7 +464,7 @@ struct separation
 static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 {
 	struct separation *cs = (struct separation *)fzcs;
-	fz_error *error;
+	fz_error error;
 	float alt[FZ_MAXCOLORS];
 
 	error = pdf_evalfunction(cs->tint, sep, fzcs->n, alt, cs->base->n);
@@ -488,10 +488,10 @@ dropseparation(fz_colorspace *fzcs)
 	pdf_dropfunction(cs->tint);
 }
 
-static fz_error *
+static fz_error 
 loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {
-	fz_error *error;
+	fz_error error;
 	struct separation *cs;
 	fz_obj *nameobj = fz_arrayget(array, 1);
 	fz_obj *baseobj = fz_arrayget(array, 2);
@@ -574,10 +574,10 @@ dropindexed(fz_colorspace *fzcs)
 	if (cs->lookup) fz_free(cs->lookup);
 }
 
-static fz_error *
+static fz_error 
 loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_indexed *cs;
 	fz_obj *baseobj = fz_arrayget(array, 1);
 	fz_obj *highobj = fz_arrayget(array, 2);
@@ -662,7 +662,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
  * Parse and create colorspace from PDF object.
  */
 
-fz_error *
+fz_error 
 pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 {
 	if (fz_isname(obj))
@@ -729,7 +729,7 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			/* load base colorspace instead */
 			else if (!strcmp(fz_toname(name), "Pattern"))
 			{
-				fz_error *error;
+				fz_error error;
 
 				obj = fz_arrayget(obj, 1);
 				if (!obj)

@@ -45,7 +45,7 @@ static unsigned hash(unsigned char *s, int len)
 	return hash;
 }
 
-fz_error *
+fz_error 
 fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 {
 	fz_hashtable *table;
@@ -105,10 +105,10 @@ fz_drophash(fz_hashtable *table)
 	fz_free(table);
 }
 
-fz_error *
+fz_error 
 fz_resizehash(fz_hashtable *table, int newsize)
 {
-	fz_error *error;
+	fz_error error;
 	fz_hashentry *newents;
 	fz_hashentry *oldents;
 	int oldload;
@@ -171,10 +171,10 @@ fz_hashfind(fz_hashtable *table, void *key)
 	}
 }
 
-fz_error *
+fz_error 
 fz_hashinsert(fz_hashtable *table, void *key, void *val)
 {
-	fz_error *error;
+	fz_error error;
 	fz_hashentry *ents;
 	unsigned size;
 	unsigned pos;
@@ -209,7 +209,7 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_hashremove(fz_hashtable *table, void *key)
 {
 	fz_hashentry *ents = table->ents;

@@ -41,7 +41,7 @@ struct fz_faxd_s
 	unsigned char *dst;
 };
 
-fz_error *
+fz_error 
 fz_newfaxd(fz_filter **fp, fz_obj *params)
 {
 	fz_obj *obj;
@@ -126,7 +126,7 @@ static inline void eatbits(fz_faxd *fax, int nbits)
 	fax->bidx += nbits;
 }
 
-static inline fz_error * fillbits(fz_faxd *fax, fz_buffer *in)
+static inline fz_error fillbits(fz_faxd *fax, fz_buffer *in)
 {
 	while (fax->bidx >= 8)
 	{
@@ -161,7 +161,7 @@ getcode(fz_faxd *fax, const cfd_node *table, int initialbits)
 }
 
 /* decode one 1d code */
-static fz_error *
+static fz_error 
 dec1d(fz_faxd *fax)
 {
 	int code;
@@ -200,7 +200,7 @@ dec1d(fz_faxd *fax)
 }
 
 /* decode one 2d code */
-static fz_error *
+static fz_error 
 dec2d(fz_faxd *fax)
 {
 	int code, b1, b2;
@@ -318,11 +318,11 @@ dec2d(fz_faxd *fax)
 	return 0;
 }
 
-fz_error *
+fz_error 
 fz_processfaxd(fz_filter *f, fz_buffer *in, fz_buffer *out)
 {
 	fz_faxd *fax = (fz_faxd*)f;
-	fz_error *error;
+	fz_error error;
 	int i;
 	unsigned char *tmp;
 

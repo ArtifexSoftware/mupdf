@@ -22,7 +22,7 @@
  * Allocate, destroy and simple parameters.
  */
 
-fz_error *
+fz_error 
 pdf_newcmap(pdf_cmap **cmapp)
 {
     pdf_cmap *cmap;
@@ -163,7 +163,7 @@ pdf_debugcmap(pdf_cmap *cmap)
  * These ranges are used by pdf_decodecmap to decode
  * multi-byte encoded strings.
  */
-fz_error *
+fz_error 
 pdf_addcodespace(pdf_cmap *cmap, int low, int high, int n)
 {
     if (cmap->ncspace + 1 == nelem(cmap->cspace))
@@ -181,7 +181,7 @@ pdf_addcodespace(pdf_cmap *cmap, int low, int high, int n)
 /*
  * Add an integer to the table.
  */
-static fz_error *
+static fz_error 
 addtable(pdf_cmap *cmap, int value)
 {
     if (cmap->tlen + 1 > cmap->tcap)
@@ -202,7 +202,7 @@ addtable(pdf_cmap *cmap, int value)
 /*
  * Add a range.
  */
-static fz_error *
+static fz_error 
 addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
     if (cmap->rlen + 1 > cmap->rcap)
@@ -228,10 +228,10 @@ addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
 /*
  * Add a range-to-table mapping.
  */
-fz_error *
+fz_error 
 pdf_maprangetotable(pdf_cmap *cmap, int low, int *table, int len)
 {
-    fz_error *error;
+    fz_error error;
     int offset;
     int high;
     int i;
@@ -256,10 +256,10 @@ pdf_maprangetotable(pdf_cmap *cmap, int low, int *table, int len)
 /*
  * Add a range of contiguous one-to-one mappings (ie 1..5 maps to 21..25)
  */
-fz_error *
+fz_error 
 pdf_maprangetorange(pdf_cmap *cmap, int low, int high, int offset)
 {
-    fz_error *error;
+    fz_error error;
     error = addrange(cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
     if (error)
 	return fz_rethrow(error, "cannot add range-to-range mapping");
@@ -269,10 +269,10 @@ pdf_maprangetorange(pdf_cmap *cmap, int low, int high, int offset)
 /*
  * Add a single one-to-many mapping.
  */
-fz_error *
+fz_error 
 pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
 {
-    fz_error *error;
+    fz_error error;
     int offset;
     int i;
 
@@ -315,10 +315,10 @@ static int cmprange(const void *va, const void *vb)
     return ((const pdf_range*)va)->low - ((const pdf_range*)vb)->low;
 }
 
-fz_error *
+fz_error 
 pdf_sortcmap(pdf_cmap *cmap)
 {
-    fz_error *error;
+    fz_error error;
     pdf_range *newranges;
     unsigned short *newtable;
     pdf_range *a;			/* last written range on output */

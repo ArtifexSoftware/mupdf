@@ -31,7 +31,7 @@ struct fz_faxe_s
 	unsigned char *src;
 };
 
-fz_error *
+fz_error 
 fz_newfaxe(fz_filter **fp, fz_obj *params)
 {
 	fz_obj *obj;
@@ -176,7 +176,7 @@ putrun(fz_faxe *fax, fz_buffer *out, int run, int c)
 	}
 }
 
-static fz_error *
+static fz_error 
 enc1d(fz_faxe *fax, unsigned char *line, fz_buffer *out)
 {
 	int run;
@@ -200,7 +200,7 @@ enc1d(fz_faxe *fax, unsigned char *line, fz_buffer *out)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 enc2d(fz_faxe *fax, unsigned char *ref, unsigned char *src, fz_buffer *out)
 {
 	int a1, a2, b1, b2;
@@ -257,10 +257,10 @@ enc2d(fz_faxe *fax, unsigned char *ref, unsigned char *src, fz_buffer *out)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 process(fz_faxe *fax, fz_buffer *in, fz_buffer *out)
 {
-	fz_error *error;
+	fz_error error;
 	int i, n;
 
 	while (1)
@@ -388,11 +388,11 @@ rtc:
 	return fz_iodone;
 }
 
-fz_error *
+fz_error 
 fz_processfaxe(fz_filter *p, fz_buffer *in, fz_buffer *out)
 {
 	fz_faxe *fax = (fz_faxe*) p;
-	fz_error *error;
+	fz_error error;
 
 	/* restore partial bits */
 	*out->wp = fax->bsave;

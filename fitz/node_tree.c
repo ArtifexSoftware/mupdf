@@ -1,7 +1,7 @@
 #include "fitz_base.h"
 #include "fitz_tree.h"
 
-fz_error *
+fz_error 
 fz_newtree(fz_tree **treep)
 {
 	fz_tree *tree;

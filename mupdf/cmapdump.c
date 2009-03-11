@@ -38,7 +38,7 @@ int
 main(int argc, char **argv)
 {
     pdf_cmap *cmap;
-    fz_error *error;
+    fz_error error;
     fz_stream *fi;
     FILE *fo;
     char name[256];

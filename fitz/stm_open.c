@@ -64,9 +64,9 @@ fz_dropstream(fz_stream *stm)
 	}
 }
 
-fz_error * fz_openrfile(fz_stream **stmp, char *path)
+fz_error fz_openrfile(fz_stream **stmp, char *path)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stm;
 
 	stm = newstm(FZ_SFILE);
@@ -92,9 +92,9 @@ fz_error * fz_openrfile(fz_stream **stmp, char *path)
 	return fz_okay;
 }
 
-fz_error * fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
+fz_error fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stm;
 
 	stm = newstm(FZ_SFILTER);
@@ -115,7 +115,7 @@ fz_error * fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
 	return fz_okay;
 }
 
-fz_error * fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
+fz_error fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
 {
 	fz_stream *stm;
 
@@ -131,9 +131,9 @@ fz_error * fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
 	return fz_okay;
 }
 
-fz_error * fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len)
+fz_error fz_openrmemory(fz_stream **stmp, unsigned char *mem, int len)
 {
-	fz_error *error;
+	fz_error error;
 	fz_buffer *buf;
 
 	error = fz_newbufferwithmemory(&buf, mem, len);

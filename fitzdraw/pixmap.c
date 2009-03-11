@@ -2,7 +2,7 @@
 #include "fitz_tree.h"
 #include "fitz_draw.h"
 
-fz_error *
+fz_error 
 fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 {
 	fz_pixmap *pix;
@@ -26,7 +26,7 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 {
 	return fz_newpixmap(pixp,
@@ -35,10 +35,10 @@ fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 				r.y1 - r.y0, n);
 }
 
-fz_error *
+fz_error 
 fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old)
 {
-	fz_error *error;
+	fz_error error;
 	error = fz_newpixmap(pixp, old->x, old->y, old->w, old->h, old->n);
 	if (error)
 		return error;

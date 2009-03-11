@@ -5,11 +5,11 @@
  * ToUnicode map for fonts
  */
 
-fz_error *
+fz_error 
 pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
-	fz_error *error = fz_okay;
+	fz_error error = fz_okay;
 	pdf_cmap *cmap;
 	int cid;
 	int ucs;
@@ -130,7 +130,7 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 
 #if 0
 
-fz_error *
+fz_error 
 pdf_newtextline(pdf_textline **linep)
 {
 	pdf_textline *line;
@@ -153,7 +153,7 @@ pdf_droptextline(pdf_textline *line)
 	fz_free(line);
 }
 
-static fz_error *
+static fz_error 
 addtextchar(pdf_textline *line, fz_irect bbox, int c)
 {
 	pdf_textchar *newtext;
@@ -179,10 +179,10 @@ addtextchar(pdf_textline *line, fz_irect bbox, int c)
 /* XXX global! not reentrant! */
 static fz_point oldpt = { 0, 0 };
 
-static fz_error *
+static fz_error 
 extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 
 	if (fz_istextnode(node))
 	{
@@ -290,12 +290,12 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 {
 	pdf_textline *root;
 	pdf_textline *line;
-	fz_error *error;
+	fz_error error;
 
 	oldpt.x = -1;
 	oldpt.y = -1;

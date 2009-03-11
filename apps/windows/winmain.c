@@ -107,7 +107,7 @@ void winwarn(pdfapp_t *app, char *msg)
     MessageBoxA(hwndframe, msg, "MuPDF: Warning", MB_ICONWARNING);
 }
 
-void winerror(pdfapp_t *app, fz_error *error)
+void winerror(pdfapp_t *app, fz_error error)
 {
     char msg[4096];
     char buf[200];
@@ -233,7 +233,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 #define SETUCS(ID) \
 	{ \
-	    fz_error *error; \
+	    fz_error error; \
 		unsigned short *ucs; \
 		error = pdf_toucs2(&ucs, obj); \
 		if (!error) \

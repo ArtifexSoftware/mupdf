@@ -45,10 +45,10 @@ while in the middle of parsing a content stream.
 
 */
 
-static fz_error *
+static fz_error 
 preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_colorspace *colorspace;
 	fz_obj *obj = ref;
 
@@ -73,10 +73,10 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 preloadpattern(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_pattern *pattern;
 	fz_shade *shade;
 	fz_obj *type;
@@ -115,10 +115,10 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	}
 }
 
-static fz_error *
+static fz_error 
 preloadshading(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_shade *shade;
 
 	fz_obj *obj = ref;
@@ -134,10 +134,10 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 preloadxobject(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_xobject *xobject;
 	pdf_image *image;
 	fz_obj *obj = ref;
@@ -176,10 +176,10 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	}
 }
 
-static fz_error *
+static fz_error 
 preloadfont(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_fontdesc *font;
 	fz_obj *obj = ref;
 	error = pdf_resolve(&obj, xref);
@@ -192,10 +192,10 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 preloadmask(pdf_xref *xref, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj = ref;
 	fz_obj *grp;
 	error = pdf_resolve(&obj, xref);
@@ -216,10 +216,10 @@ preloadmask(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 scanfontsandmasks(pdf_xref *xref, fz_obj *rdb)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *dict;
 	fz_obj *obj;
 	int i;
@@ -266,10 +266,10 @@ scanfontsandmasks(pdf_xref *xref, fz_obj *rdb)
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 copyresolved(fz_obj **outp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *key, *val, *obj;
 	fz_obj *copy;
 	int i;
@@ -314,10 +314,10 @@ copyresolved(fz_obj **outp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *copy;
 	fz_obj *old;
 	fz_obj *new;

@@ -1,13 +1,13 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error *
+static fz_error 
 loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
 {
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
 {
 	pdf_link *link;
@@ -70,10 +70,10 @@ resolvedest(pdf_xref *xref, fz_obj *dest)
 	return nil;
 }
 
-fz_error *
+fz_error 
 pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_link *link;
 	fz_obj *dest;
 	fz_obj *action;
@@ -144,10 +144,10 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_comment *comment;
 	pdf_link *link;
 	fz_obj *subtype;

@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error *
+static fz_error 
 runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_stream *stm;
 
 	pdf_logpage("simple content stream\n");
@@ -26,10 +26,10 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 /* we need to combine all sub-streams into one for pdf_runcsi
  * to deal with split dictionaries etc.
  */
-static fz_error *
+static fz_error 
 runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 {
-    fz_error *error;
+    fz_error error;
     fz_stream *file;
     fz_buffer *big;
     fz_buffer *one;
@@ -92,10 +92,10 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
     return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 	pdf_csi *csi;
 
@@ -150,10 +150,10 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *obj;
 	pdf_page *page;
 	fz_obj *rdb;

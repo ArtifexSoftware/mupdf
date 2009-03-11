@@ -57,7 +57,7 @@ static unsigned int hashkey(fz_key *key)
 	return hash;
 }
 
-fz_error *
+fz_error 
 fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
 {
 	fz_glyphcache *arena;
@@ -313,10 +313,10 @@ evictall(fz_glyphcache *arena)
 	arena->used = 0;
 }
 
-fz_error *
+fz_error 
 fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz_matrix ctm)
 {
-	fz_error *error;
+	fz_error error;
 	fz_key key;
 	fz_val *val;
 	int size;

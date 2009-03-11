@@ -5,12 +5,12 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error *
+fz_error 
 fz_readimp(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
-	fz_error *error;
-	fz_error *reason;
+	fz_error error;
+	fz_error reason;
 	int produced;
 	int n;
 
@@ -151,10 +151,10 @@ fz_tell(fz_stream *stm)
 	}
 }
 
-fz_error *
+fz_error 
 fz_seek(fz_stream *stm, int offset, int whence)
 {
-	fz_error *error;
+	fz_error error;
 	fz_buffer *buf = stm->buffer;
 	int t, c;
 
@@ -224,10 +224,10 @@ fz_seek(fz_stream *stm, int offset, int whence)
 	}
 }
 
-fz_error *
+fz_error 
 fz_read(int *np, fz_stream *stm, unsigned char *mem, int n)
 {
-	fz_error *error;
+	fz_error error;
 	fz_buffer *buf = stm->buffer;
 	int i = 0;
 
@@ -254,10 +254,10 @@ fz_read(int *np, fz_stream *stm, unsigned char *mem, int n)
 	return fz_okay;
 }
 
-fz_error *
+fz_error 
 fz_readerror(fz_stream *stm)
 {
-	fz_error *error;
+	fz_error error;
 	if (stm->error)
 	{
 		error = stm->error;
@@ -276,7 +276,7 @@ fz_readbytex(fz_stream *stm)
 	{
 		if (!buf->eof && !stm->error)
 		{
-			fz_error *error = fz_readimp(stm);
+			fz_error error = fz_readimp(stm);
 			if (error)
 				stm->error = fz_rethrow(error, "cannot read data");
 		}
@@ -294,7 +294,7 @@ fz_peekbytex(fz_stream *stm)
 	{
 		if (!buf->eof && !stm->error)
 		{
-			fz_error *error = fz_readimp(stm);
+			fz_error error = fz_readimp(stm);
 			if (error)
 				stm->error = fz_rethrow(error, "cannot read data");
 		}

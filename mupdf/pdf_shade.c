@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error *
+static fz_error 
 pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcref, float t0, float t1)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_function *func;
 	int i;
 
@@ -26,10 +26,10 @@ pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_
 	return fz_okay;
 }
 
-static fz_error *
+static fz_error 
 pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcs, float t0, float t1)
 {
-	fz_error *error;
+	fz_error error;
 	pdf_function **func = nil;
 	int i;
 
@@ -100,10 +100,10 @@ cleanup:
 	return error;
 }
 
-fz_error *
+fz_error 
 pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0, float t1)
 {
-	fz_error *error;
+	fz_error error;
 	fz_obj *ref;
 	fz_obj *obj;
 
@@ -144,10 +144,10 @@ pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
 	mesh[i*3+2] = t;
 }
 
-static fz_error *
+static fz_error 
 loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_matrix matrix)
 {
-	fz_error *error;
+	fz_error error;
 	fz_shade *shade;
 	fz_obj *obj;
 	int type;
@@ -256,10 +256,10 @@ cleanup:
 	return fz_rethrow(error, "could not load shading");
 }
 
-fz_error *
+fz_error 
 pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
-	fz_error *error;
+	fz_error error;
 	fz_matrix mat;
 	fz_obj *obj;
 	fz_obj *shd;
