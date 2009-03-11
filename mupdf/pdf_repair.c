@@ -14,7 +14,7 @@ struct entry
 	int stmlen;
 };
 
-static fz_error 
+static fz_error
 parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 		int *isroot, int *isinfo)
 {
@@ -134,7 +134,7 @@ atobjend:
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_repairxref(pdf_xref *xref, char *filename)
 {
 	fz_error error;
@@ -173,7 +173,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	list = fz_malloc(listcap * sizeof(struct entry));
 	if (!list)
 	{
-		error = fz_throw("outofmem: reparation object list");
+		error = fz_rethrow(-1, "out of memory: reparation object list");
 		goto cleanup;
 	}
 
@@ -228,7 +228,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				listcap = listcap * 2;
 				newlist = fz_realloc(list, listcap * sizeof(struct entry));
 				if (!newlist) {
-					error = fz_throw("outofmem: resize reparation object list");
+					error = fz_rethrow(-1, "out of memory: resize reparation object list");
 					goto cleanup;
 				}
 				list = newlist;
@@ -274,7 +274,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 	{
-		error = fz_throw("outofmem: xref table");
+		error = fz_rethrow(-1, "out of memory: xref table");
 		goto cleanup;
 	}
 

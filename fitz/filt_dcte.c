@@ -29,7 +29,7 @@ static void myinitdest(j_compress_ptr cinfo) { /* empty */ }
 static boolean myemptybuf(j_compress_ptr cinfo) { return FALSE; }
 static void mytermdest(j_compress_ptr cinfo) { /* empty */ }
 
-fz_error 
+fz_error
 fz_newdcte(fz_filter **fp, fz_obj *params)
 {
 	fz_error err;
@@ -155,7 +155,7 @@ static const unsigned char unzigzagorder[] =
 #define unzigzag(x) (x)
 #endif
 
-fz_error 
+fz_error
 fz_setquanttables(fz_dcte *e, unsigned int **qtables, int qfactor)
 {
 	int i, j;
@@ -178,7 +178,7 @@ fz_setquanttables(fz_dcte *e, unsigned int **qtables, int qfactor)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_processdcte(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_dcte *e = (fz_dcte*)filter;

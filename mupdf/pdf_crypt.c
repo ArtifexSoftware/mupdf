@@ -45,7 +45,7 @@ static void padpassword(unsigned char *buf, unsigned char *pw, int pwlen)
 	memcpy(buf + pwlen, padding, 32 - pwlen);
 }
 
-static fz_error 
+static fz_error
 pdf_parsecryptfilt(fz_obj *filters, char *filter, char **method, int *length)
 {
 	fz_obj *cryptfilt;
@@ -77,7 +77,7 @@ cleanup:
 	return fz_throw("corrupt encryption filter dictionary");
 }
 
-static fz_error 
+static fz_error
 pdf_parseencdict(pdf_crypt *crypt, fz_obj *enc)
 {
 	fz_obj *obj;
@@ -173,7 +173,7 @@ cleanup:
  * Create crypt object for decrypting given the
  * Encoding dictionary and file ID
  */
-fz_error 
+fz_error
 pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 {
 	pdf_crypt *crypt;
@@ -182,7 +182,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 
 	crypt = fz_malloc(sizeof(pdf_crypt));
 	if (!crypt)
-		return fz_throw("outofmem: crypt struct");
+		return fz_rethrow(-1, "out of memory: crypt struct");
 
 	memset(crypt->o, 0x00, sizeof(crypt->o));
 	memset(crypt->u, 0x00, sizeof(crypt->u));
@@ -449,7 +449,7 @@ createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
  * Create crypt object for encrypting, given passwords,
  * permissions, and file ID
  */
-fz_error 
+fz_error
 pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id)
 {
 	fz_error error;
@@ -457,7 +457,7 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 
 	crypt = fz_malloc(sizeof(pdf_crypt));
 	if (!crypt)
-		return fz_throw("outofmem: crypt struct");
+		return fz_rethrow(-1, "out of memory: crypt struct");
 
 	crypt->encrypt = nil;
 	crypt->id = fz_keepobj(fz_arrayget(id, 0));
@@ -647,7 +647,7 @@ pdf_cryptbuffer(pdf_crypt *crypt, fz_buffer *buf, int oid, int gen)
 /*
  * Create filter suitable for de/encrypting a stream
  */
-fz_error 
+fz_error
 pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int oid, int gen)
 {
 	fz_error error;

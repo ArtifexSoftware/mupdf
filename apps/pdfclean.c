@@ -24,9 +24,9 @@ int doencrypt = 0;
 int dogarbage = 0;
 int doexpand = 0;
 
-void die(fz_error eo)
+void die(fz_error error)
 {
-    fz_catch(eo, "aborting");
+    fz_catch(error, "aborting");
     exit(1);
 }
 

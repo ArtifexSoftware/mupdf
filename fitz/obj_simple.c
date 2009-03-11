@@ -7,18 +7,18 @@ extern void fz_dropdict(fz_obj *dict);
 #define NEWOBJ(KIND,SIZE) \
 	fz_obj *o; \
 	o = *op = fz_malloc(SIZE); \
-	if (!o) return fz_throw("outofmem: dynamic object"); \
+	if (!o) return fz_rethrow(-1, "out of memory: dynamic object"); \
 	o->refs = 1; \
 	o->kind = KIND;
 
-fz_error 
+fz_error
 fz_newnull(fz_obj **op)
 {
 	NEWOBJ(FZ_NULL, sizeof (fz_obj));
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newbool(fz_obj **op, int b)
 {
 	NEWOBJ(FZ_BOOL, sizeof (fz_obj));
@@ -26,7 +26,7 @@ fz_newbool(fz_obj **op, int b)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newint(fz_obj **op, int i)
 {
 	NEWOBJ(FZ_INT, sizeof (fz_obj));
@@ -34,7 +34,7 @@ fz_newint(fz_obj **op, int i)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newreal(fz_obj **op, float f)
 {
 	NEWOBJ(FZ_REAL, sizeof (fz_obj));
@@ -42,7 +42,7 @@ fz_newreal(fz_obj **op, float f)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newstring(fz_obj **op, char *str, int len)
 {
 	NEWOBJ(FZ_STRING, offsetof(fz_obj, u.s.buf) + len + 1);
@@ -52,7 +52,7 @@ fz_newstring(fz_obj **op, char *str, int len)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newname(fz_obj **op, char *str)
 {
 	NEWOBJ(FZ_NAME, offsetof(fz_obj, u.n) + strlen(str) + 1);
@@ -60,7 +60,7 @@ fz_newname(fz_obj **op, char *str)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newindirect(fz_obj **op, int objid, int genid)
 {
 	NEWOBJ(FZ_INDIRECT, sizeof (fz_obj));
@@ -69,7 +69,7 @@ fz_newindirect(fz_obj **op, int objid, int genid)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newpointer(fz_obj **op, void *p)
 {
 	NEWOBJ(FZ_POINTER, sizeof (fz_obj));
@@ -236,7 +236,7 @@ fz_topointer(fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newnamefromstring(fz_obj **op, fz_obj *str)
 {
 	NEWOBJ(FZ_NAME, offsetof(fz_obj, u.n) + fz_tostrlen(str) + 1);

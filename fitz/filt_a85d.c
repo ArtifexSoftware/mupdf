@@ -20,7 +20,7 @@ static inline int iswhite(int a)
 	return 0;
 }
 
-fz_error 
+fz_error
 fz_newa85d(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_a85d, f, a85d);
@@ -34,7 +34,7 @@ fz_dropa85d(fz_filter *f)
 {
 }
 
-fz_error 
+fz_error
 fz_processa85d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_a85d *f = (fz_a85d*)filter;

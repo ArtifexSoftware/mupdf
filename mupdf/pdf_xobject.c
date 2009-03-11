@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error 
+fz_error
 pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -16,7 +16,7 @@ pdf_loadxobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	form = fz_malloc(sizeof(pdf_xobject));
 	if (!form)
-		return fz_throw("outofmem: xobject struct");
+		return fz_rethrow(-1, "out of memory: xobject struct");
 
 	form->refs = 1;
 	form->resources = nil;

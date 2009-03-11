@@ -34,7 +34,7 @@ struct fz_jpxd_s
 	int stage;
 };
 
-fz_error 
+fz_error
 fz_newjpxd(fz_filter **fp, fz_obj *params)
 {
 	int err;
@@ -70,7 +70,7 @@ fz_dropjpxd(fz_filter *filter)
 	if (d->image) jas_image_destroy(d->image);
 }
 
-fz_error 
+fz_error
 fz_processjpxd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_jpxd *d = (fz_jpxd*)filter;

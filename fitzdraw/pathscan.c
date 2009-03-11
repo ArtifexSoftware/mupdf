@@ -18,14 +18,14 @@ enum { HSCALE = 17, VSCALE = 15, SF = 1 };
  * See Mike Abrash -- Graphics Programming Black Book (notably chapter 40)
  */
 
-fz_error 
+fz_error
 fz_newgel(fz_gel **gelp)
 {
 	fz_gel *gel;
 
 	gel = *gelp = fz_malloc(sizeof(fz_gel));
 	if (!gel)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	gel->edges = nil;
 
@@ -34,7 +34,7 @@ fz_newgel(fz_gel **gelp)
 	gel->edges = fz_malloc(sizeof(fz_edge) * gel->cap);
 	if (!gel->edges) {
 		fz_free(gel);
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	}
 
 	gel->clip.x0 = gel->clip.y0 = INT_MAX;
@@ -114,7 +114,7 @@ cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
 	}
 }
 
-fz_error 
+fz_error
 fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	fz_edge *edge;
@@ -163,7 +163,7 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 		int newcap = gel->cap + 512;
 		fz_edge *newedges = fz_realloc(gel->edges, sizeof(fz_edge) * newcap);
 		if (!newedges)
-			return fz_outofmem;
+			return fz_rethrow(-1, "out of memory");
 		gel->cap = newcap;
 		gel->edges = newedges;
 	}
@@ -243,21 +243,21 @@ fz_sortgel(fz_gel *gel)
  * Active Edge List -- keep track of active edges while sweeping
  */
 
-fz_error 
+fz_error
 fz_newael(fz_ael **aelp)
 {
 	fz_ael *ael;
 
 	ael = *aelp = fz_malloc(sizeof(fz_ael));
 	if (!ael)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	ael->cap = 64;
 	ael->len = 0;
 	ael->edges = fz_malloc(sizeof(fz_edge*) * ael->cap);
 	if (!ael->edges) {
 		fz_free(ael);
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	}
 
 	return fz_okay;
@@ -303,7 +303,7 @@ sortael(fz_edge **a, int n)
 	}
 }
 
-static fz_error 
+static fz_error
 insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
 {
 	/* insert edges that start here */
@@ -312,7 +312,7 @@ insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
 			int newcap = ael->cap + 64;
 			fz_edge **newedges = fz_realloc(ael->edges, sizeof(fz_edge*) * newcap);
 			if (!newedges)
-				return fz_outofmem;
+				return fz_rethrow(-1, "out of memory");
 			ael->edges = newedges;
 			ael->cap = newcap;
 		}
@@ -458,7 +458,7 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 		fz_path_1c1(list, cov, len, dst);
 }
 
-fz_error 
+fz_error
 fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 	fz_pixmap *pix, unsigned char *argb, int over)
 {
@@ -483,7 +483,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
 
 	deltas = fz_malloc(xmax - xmin + 1);
 	if (!deltas)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	memset(deltas, 0, xmax - xmin + 1);
 

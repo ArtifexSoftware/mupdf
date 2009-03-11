@@ -25,7 +25,7 @@ pdf_isstream(pdf_xref *xref, int oid, int gen)
 /*
  * Create a filter given a name and param dictionary.
  */
-static fz_error 
+static fz_error
 buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
 {
 	fz_filter *decompress;
@@ -136,7 +136,7 @@ buildonefilter(fz_filter **fp, fz_obj *f, fz_obj *p)
  * If head is given, start filter chain with it.
  * Assume ownership of head.
  */
-static fz_error 
+static fz_error
 buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
 {
 	fz_error error;
@@ -183,7 +183,7 @@ buildfilterchain(fz_filter **filterp, fz_filter *head, fz_obj *fs, fz_obj *ps)
  * This is a null filter to constrain reading to the
  * stream length, followed by a decryption filter.
  */
-static fz_error 
+static fz_error
 buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
 {
 	fz_error error;
@@ -234,7 +234,7 @@ buildrawfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int
  * Construct a filter to decode a stream, without
  * constraining to stream length, and without decryption.
  */
-fz_error 
+fz_error
 pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj)
 {
 	fz_error error;
@@ -263,7 +263,7 @@ pdf_buildinlinefilter(fz_filter **filterp, fz_obj *stmobj)
  * Construct a filter to decode a stream, constraining
  * to stream length and decrypting.
  */
-static fz_error 
+static fz_error
 pdf_buildfilter(fz_filter **filterp, pdf_xref *xref, fz_obj *stmobj, int oid, int gen)
 {
 	fz_error error;
@@ -350,10 +350,10 @@ cleanup0:
 }
 
 /*
- * Open a stream for reading the raw (compressed but decrypted) data. 
+ * Open a stream for reading the raw (compressed but decrypted) data.
  * Using xref->file while this is open is a bad idea.
  */
-fz_error 
+fz_error
 pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
@@ -396,11 +396,11 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 }
 
 /*
- * Open a stream for reading uncompressed data. 
+ * Open a stream for reading uncompressed data.
  * Put the opened file in xref->stream.
  * Using xref->file while a stream is open is a Bad idea.
  */
-fz_error 
+fz_error
 pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 {
 	pdf_xrefentry *x;
@@ -443,7 +443,7 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int oid, int gen)
 /*
  * Load raw (compressed but decrypted) contents of a stream into buf.
  */
-fz_error 
+fz_error
 pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error error;
@@ -463,7 +463,7 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 /*
  * Load uncompressed contents of a stream into buf.
  */
-fz_error 
+fz_error
 pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error error;

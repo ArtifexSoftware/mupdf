@@ -144,7 +144,7 @@ pschecktype(psstack *st, unsigned short type)
 	return st->stack[st->sp].type == type;
 }
 
-static fz_error 
+static fz_error
 pspushbool(psstack *st, int booln)
 {
 	if (!pscheckoverflow(st, 1))
@@ -154,7 +154,7 @@ pspushbool(psstack *st, int booln)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspushint(psstack *st, int intg)
 {
 	if (!pscheckoverflow(st, 1))
@@ -164,7 +164,7 @@ pspushint(psstack *st, int intg)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspushreal(psstack *st, float real)
 {
 	if (!pscheckoverflow(st, 1))
@@ -174,7 +174,7 @@ pspushreal(psstack *st, float real)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspopbool(psstack *st, int *booln)
 {
 	if (!pscheckunderflow(st))
@@ -185,7 +185,7 @@ pspopbool(psstack *st, int *booln)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspopint(psstack *st, int *intg)
 {
 	if (!pscheckunderflow(st))
@@ -196,7 +196,7 @@ pspopint(psstack *st, int *intg)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspopnum(psstack *st, float *real)
 {
 	if (!pscheckunderflow(st))
@@ -237,7 +237,7 @@ pstoptwoarenums(psstack *st)
 		(st->stack[st->sp + 1].type == PSINT || st->stack[st->sp + 1].type == PSREAL);
 }
 
-static fz_error 
+static fz_error
 pscopy(psstack *st, int n)
 {
 	int i;
@@ -288,7 +288,7 @@ psroll(psstack *st, int n, int j)
 	}
 }
 
-static fz_error 
+static fz_error
 psindex(psstack *st, int i)
 {
 	if (!pscheckoverflow(st, 1))
@@ -298,7 +298,7 @@ psindex(psstack *st, int i)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pspop(psstack *st)
 {
 	if (!pscheckoverflow(st, 1))
@@ -307,7 +307,7 @@ pspop(psstack *st)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 resizecode(pdf_function *func, int newsize)
 {
 	if (newsize >= func->u.p.cap)
@@ -316,14 +316,14 @@ resizecode(pdf_function *func, int newsize)
 		psobj *newcode;
 		newcode = fz_realloc(func->u.p.code, newcodecap * sizeof(psobj));
 		if (!newcode)
-			return fz_throw("outofmem: calculator function code");
+			return fz_rethrow(-1, "out of memory: calculator function code");
 		func->u.p.cap = newcodecap;
 		func->u.p.code = newcode;
 	}
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 {
 	fz_error error;
@@ -391,7 +391,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 				if (error)
 					return fz_rethrow(error, "calculator function syntax error");
 			}
-			else 
+			else
 			{
 				elseptr = -1;
 			}
@@ -471,7 +471,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 	}
 }
 
-static fz_error 
+static fz_error
 loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
 {
 	fz_error error;
@@ -516,7 +516,7 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, in
 #define SAFE_INDEX(st, i)	{ error = psindex(st, i); SAFE_RETHROW; }
 #define SAFE_COPY(st, n)	{ error = pscopy(st, n); SAFE_RETHROW; }
 
-static fz_error 
+static fz_error
 evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 {
 	fz_error error;
@@ -931,7 +931,7 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 
 static int bps_supported[] = { 1, 2, 4, 8, 12, 16, 24, 32 };
 
-static fz_error 
+static fz_error
 loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
 {
 	fz_error error;
@@ -1011,7 +1011,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 
 	func->u.sa.samples = fz_malloc(samplecount * sizeof(int));
 	if (!func->u.sa.samples)
-		return fz_throw("outofmem: samples");
+		return fz_rethrow(-1, "out of memory: samples");
 
 	error = pdf_openstream(&stream, xref, oid, gen);
 	if (error)
@@ -1073,7 +1073,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 evalsamplefunc(pdf_function *func, float *in, float *out)
 {
 	float x;
@@ -1103,7 +1103,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 		s0 = fz_malloc((1 << func->m) * 2 * sizeof(float));
 		s1 = s0 + (1 << func->m);
 		if (!s0)
-			return fz_throw("outofmem: scratch buffer");
+			return fz_rethrow(-1, "out of memory: scratch buffer");
 	}
 
 	/* FIXME i think this is wrong... test with 2 samples it gets wrong idxs */
@@ -1143,7 +1143,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
  * Exponential function
  */
 
-static fz_error 
+static fz_error
 loadexponentialfunc(pdf_function *func, fz_obj *dict)
 {
 	fz_obj *obj;
@@ -1195,7 +1195,7 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 evalexponentialfunc(pdf_function *func, float in, float *out)
 {
 	float x = in;
@@ -1225,7 +1225,7 @@ evalexponentialfunc(pdf_function *func, float in, float *out)
  * Stitching function
  */
 
-static fz_error 
+static fz_error
 loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 {
 	pdf_function **funcs = func->u.st.funcs;
@@ -1434,7 +1434,7 @@ pdf_dropfunction(pdf_function *func)
 	}
 }
 
-fz_error 
+fz_error
 pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -1453,7 +1453,7 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 
 	func = fz_malloc(sizeof(pdf_function));
 	if (!func)
-		return fz_throw("outofmem: function struct");
+		return fz_rethrow(-1, "out of memory: function struct");
 
 	memset(func, 0, sizeof(pdf_function));
 	func->refs = 1;
@@ -1571,7 +1571,7 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen)
 {
 	fz_error error;

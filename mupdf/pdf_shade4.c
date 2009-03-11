@@ -9,7 +9,7 @@ struct pdf_tensorpatch_s {
     float color[4][FZ_MAXCOLORS];
 };
 
-static fz_error 
+static fz_error
 growshademesh(fz_shade *shade, int amount)
 {
 	float *newmesh;
@@ -18,7 +18,7 @@ growshademesh(fz_shade *shade, int amount)
 	newcap = shade->meshcap + amount;
 	newmesh = fz_realloc(shade->mesh, sizeof(float) * newcap);
 	if (!newmesh)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	shade->mesh = newmesh;
 	shade->meshcap = newcap;
@@ -26,7 +26,7 @@ growshademesh(fz_shade *shade, int amount)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error error;
@@ -205,7 +205,7 @@ getdata(fz_stream *stream, int bps)
 	return s;
 }
 
-fz_error 
+fz_error
 pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error error;
@@ -573,7 +573,7 @@ drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
 	return ptr;
 }
 
-fz_error 
+fz_error
 pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error error;
@@ -694,7 +694,7 @@ cleanup:
 	return error;
 }
 
-fz_error 
+fz_error
 pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_error error;

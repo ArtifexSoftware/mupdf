@@ -4,7 +4,7 @@
 /*
  * Load CMap stream in PDF file
  */
-fz_error 
+fz_error
 pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 {
     fz_error error = fz_okay;
@@ -100,7 +100,7 @@ cleanup:
 /*
  * Create an Identity-* CMap (for both 1 and 2-byte encodings)
  */
-fz_error 
+fz_error
 pdf_newidentitycmap(pdf_cmap **cmapp, int wmode, int bytes)
 {
     fz_error error;
@@ -139,7 +139,7 @@ pdf_newidentitycmap(pdf_cmap **cmapp, int wmode, int bytes)
 /*
  * Load predefined CMap from system.
  */
-fz_error 
+fz_error
 pdf_loadsystemcmap(pdf_cmap **cmapp, char *cmapname)
 {
     fz_error error;

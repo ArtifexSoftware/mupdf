@@ -38,7 +38,7 @@ static inline int fromhex(int a)
 	return 0;
 }
 
-fz_error 
+fz_error
 fz_newahxd(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_ahxd, f, ahxd);
@@ -52,7 +52,7 @@ fz_dropahxd(fz_filter *f)
 {
 }
 
-fz_error 
+fz_error
 fz_processahxd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_ahxd *f = (fz_ahxd*)filter;

@@ -5,7 +5,7 @@
  * ToUnicode map for fonts
  */
 
-fz_error 
+fz_error
 pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
@@ -89,7 +89,7 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 		font->ncidtoucs = 256;
 		font->cidtoucs = fz_malloc(256 * sizeof(unsigned short));
 		if (!font->cidtoucs)
-			return fz_throw("outofmem: tounicode cidtoucs table");
+			return fz_rethrow(-1, "out of memory: tounicode cidtoucs table");
 
 		for (i = 0; i < 256; i++)
 		{
@@ -130,13 +130,13 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 
 #if 0
 
-fz_error 
+fz_error
 pdf_newtextline(pdf_textline **linep)
 {
 	pdf_textline *line;
 	line = *linep = fz_malloc(sizeof(pdf_textline));
 	if (!line)
-		return fz_throw("outofmem: textline struct");
+		return fz_rethrow(-1, "out of memory: textline struct");
 	line->len = 0;
 	line->cap = 0;
 	line->text = nil;
@@ -153,7 +153,7 @@ pdf_droptextline(pdf_textline *line)
 	fz_free(line);
 }
 
-static fz_error 
+static fz_error
 addtextchar(pdf_textline *line, fz_irect bbox, int c)
 {
 	pdf_textchar *newtext;
@@ -164,7 +164,7 @@ addtextchar(pdf_textline *line, fz_irect bbox, int c)
 		newcap = line->cap ? line->cap * 2 : 80;
 		newtext = fz_realloc(line->text, sizeof(pdf_textchar) * newcap);
 		if (!newtext)
-			return fz_throw("outofmem: textline buffer resize");
+			return fz_rethrow(-1, "out of memory: textline buffer resize");
 		line->cap = newcap;
 		line->text = newtext;
 	}
@@ -179,7 +179,7 @@ addtextchar(pdf_textline *line, fz_irect bbox, int c)
 /* XXX global! not reentrant! */
 static fz_point oldpt = { 0, 0 };
 
-static fz_error 
+static fz_error
 extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 {
 	fz_error error;
@@ -290,7 +290,7 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
 {
 	pdf_textline *root;

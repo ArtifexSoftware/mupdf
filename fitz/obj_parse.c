@@ -465,7 +465,7 @@ static fz_error parseobj(fz_obj **obj, char **sp, struct vap *v)
 	return error; /* already rethrown */
 }
 
-fz_error 
+fz_error
 fz_packobj(fz_obj **op, char *fmt, ...)
 {
 	fz_error error;
@@ -484,7 +484,7 @@ fz_packobj(fz_obj **op, char *fmt, ...)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_parseobj(fz_obj **op, char *str)
 {
 	return parseobj(op, &str, nil);

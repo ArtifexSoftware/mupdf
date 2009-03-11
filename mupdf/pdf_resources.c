@@ -45,7 +45,7 @@ while in the middle of parsing a content stream.
 
 */
 
-static fz_error 
+static fz_error
 preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -73,7 +73,7 @@ preloadcolorspace(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 preloadpattern(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -115,7 +115,7 @@ preloadpattern(pdf_xref *xref, fz_obj *ref)
 	}
 }
 
-static fz_error 
+static fz_error
 preloadshading(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -134,7 +134,7 @@ preloadshading(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 preloadxobject(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -176,7 +176,7 @@ preloadxobject(pdf_xref *xref, fz_obj *ref)
 	}
 }
 
-static fz_error 
+static fz_error
 preloadfont(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -192,7 +192,7 @@ preloadfont(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 preloadmask(pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -216,7 +216,7 @@ preloadmask(pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 scanfontsandmasks(pdf_xref *xref, fz_obj *rdb)
 {
 	fz_error error;
@@ -266,7 +266,7 @@ scanfontsandmasks(pdf_xref *xref, fz_obj *rdb)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 copyresolved(fz_obj **outp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
@@ -314,7 +314,7 @@ copyresolved(fz_obj **outp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadresources(fz_obj **rdbp, pdf_xref *xref, fz_obj *orig)
 {
 	fz_error error;

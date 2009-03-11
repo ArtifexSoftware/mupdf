@@ -45,7 +45,7 @@ static unsigned hash(unsigned char *s, int len)
 	return hash;
 }
 
-fz_error 
+fz_error
 fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 {
 	fz_hashtable *table;
@@ -54,7 +54,7 @@ fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 
 	table = *tablep = fz_malloc(sizeof(fz_hashtable));
 	if (!table)
-		return fz_throw("outofmem: hash table struct");
+		return fz_rethrow(-1, "out of memory: hash table struct");
 
 	table->keylen = keylen;
 	table->size = initialsize;
@@ -65,7 +65,7 @@ fz_newhash(fz_hashtable **tablep, int initialsize, int keylen)
 	{
 		fz_free(table);
 		*tablep = nil;
-		return fz_throw("outofmem: hash table entries (size=%d)", initialsize);
+		return fz_rethrow(-1, "out of memory: hash table entries (size=%d)", initialsize);
 	}
 
 	memset(table->ents, 0, sizeof(fz_hashentry) * table->size);
@@ -105,7 +105,7 @@ fz_drophash(fz_hashtable *table)
 	fz_free(table);
 }
 
-fz_error 
+fz_error
 fz_resizehash(fz_hashtable *table, int newsize)
 {
 	fz_error error;
@@ -124,7 +124,7 @@ fz_resizehash(fz_hashtable *table, int newsize)
 
 	newents = fz_malloc(sizeof(fz_hashentry) * newsize);
 	if (!newents)
-		return fz_throw("outofmem: hash table (size=%d)", newsize);
+		return fz_rethrow(-1, "out of memory: hash table (size=%d)", newsize);
 
 	table->size = newsize;
 	table->load = 0;
@@ -171,7 +171,7 @@ fz_hashfind(fz_hashtable *table, void *key)
 	}
 }
 
-fz_error 
+fz_error
 fz_hashinsert(fz_hashtable *table, void *key, void *val)
 {
 	fz_error error;
@@ -209,7 +209,7 @@ fz_hashinsert(fz_hashtable *table, void *key, void *val)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_hashremove(fz_hashtable *table, void *key)
 {
 	fz_hashentry *ents = table->ents;

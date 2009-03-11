@@ -209,7 +209,7 @@ pdf_newfontdesc(void)
  * Simple fonts (Type1 and TrueType)
  */
 
-static fz_error 
+static fz_error
 loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -240,7 +240,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 
 	fontdesc = pdf_newfontdesc();
 	if (!fontdesc)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	pdf_logfont("load simple font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), fontdesc);
 	pdf_logfont("basefont0 %s\n", basefont);
@@ -511,7 +511,7 @@ cleanup:
  * CID Fonts
  */
 
-static fz_error 
+static fz_error
 loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_obj *encoding, fz_obj *tounicode)
 {
 	fz_error error;
@@ -566,7 +566,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 
 	fontdesc = pdf_newfontdesc();
 	if (!fontdesc)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	pdf_logfont("load cid font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), fontdesc);
 	pdf_logfont("basefont %s\n", basefont);
@@ -646,7 +646,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 			map = fz_malloc(len * sizeof(unsigned short));
 			if (!map) {
 				fz_dropbuffer(buf);
-				error = fz_outofmem;
+				error = fz_rethrow(-1, "out of memory: cidtogidmap");
 				goto cleanup;
 			}
 
@@ -826,7 +826,7 @@ cleanup:
 	return fz_rethrow(error, "cannot load cid font");
 }
 
-static fz_error 
+static fz_error
 loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -873,7 +873,7 @@ loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
  * FontDescriptor
  */
 
-fz_error 
+fz_error
 pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, char *collection)
 {
 	fz_error error;
@@ -943,7 +943,7 @@ cleanup:
 	return fz_rethrow(error, "cannot load font descriptor");
 }
 
-fz_error 
+fz_error
 pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;

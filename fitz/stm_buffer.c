@@ -1,14 +1,14 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error 
+fz_error
 fz_newbuffer(fz_buffer **bp, int size)
 {
 	fz_buffer *b;
 
 	b = *bp = fz_malloc(sizeof(fz_buffer));
 	if (!b)
-		return fz_throw("outofmem: buffer struct");
+		return fz_rethrow(-1, "out of memory: buffer struct");
 
 	b->refs = 1;
 	b->ownsdata = 1;
@@ -16,7 +16,7 @@ fz_newbuffer(fz_buffer **bp, int size)
 	if (!b->bp)
 	{
 		fz_free(b);
-		return fz_throw("outofmem: buffer memory");
+		return fz_rethrow(-1, "out of memory: buffer memory");
 	}
 
 	b->rp = b->bp;
@@ -27,14 +27,14 @@ fz_newbuffer(fz_buffer **bp, int size)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newbufferwithmemory(fz_buffer **bp, unsigned char *data, int size)
 {
 	fz_buffer *b;
 
 	b = *bp = fz_malloc(sizeof(fz_buffer));
 	if (!b)
-		return fz_throw("outofmem: buffer struct");
+		return fz_rethrow(-1, "out of memory: buffer struct");
 
 	b->refs = 1;
 	b->ownsdata = 0;
@@ -66,7 +66,7 @@ fz_dropbuffer(fz_buffer *buf)
 	}
 }
 
-fz_error 
+fz_error
 fz_growbuffer(fz_buffer *buf)
 {
 	unsigned char *newbp;
@@ -80,7 +80,7 @@ fz_growbuffer(fz_buffer *buf)
 
 	newbp = fz_realloc(buf->bp, ep * 2);
 	if (!newbp)
-		return fz_throw("outofmem: resize buffer memory");
+		return fz_rethrow(-1, "out of memory: resize buffer memory");
 
 	buf->bp = newbp;
 	buf->rp = buf->bp + rp;
@@ -90,7 +90,7 @@ fz_growbuffer(fz_buffer *buf)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_rewindbuffer(fz_buffer *buf)
 {
 	if (!buf->ownsdata)

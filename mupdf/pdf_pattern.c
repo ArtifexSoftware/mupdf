@@ -19,7 +19,7 @@ pdf_droppattern(pdf_pattern *pat)
 	}
 }
 
-fz_error 
+fz_error
 pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref)
 {
 	fz_error error;
@@ -39,7 +39,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 
 	pat = fz_malloc(sizeof(pdf_pattern));
 	if (!pat)
-		return fz_throw("outofmem: pattern struct");
+		return fz_rethrow(-1, "out of memory: pattern struct");
 
 	pat->refs = 1;
 	pat->tree = nil;
@@ -69,7 +69,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 			pat->matrix.c, pat->matrix.d,
 			pat->matrix.e, pat->matrix.f);
 
-	/* Store pattern now, to avoid possible recursion if objects refer back to this one */ 
+	/* Store pattern now, to avoid possible recursion if objects refer back to this one */
 	error = pdf_storeitem(xref->store, PDF_KPATTERN, stmref, pat);
 	if (error)
 	{

@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error 
+static fz_error
 loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error error;
@@ -35,7 +35,7 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -60,7 +60,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj
 
 	fontdesc = pdf_newfontdesc();
 	if (!fontdesc)
-		return fz_throw("outofmem: font struct");
+		return fz_rethrow(-1, "out of memory: font struct");
 
 	pdf_logfont("load type3 font (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), fontdesc);
 	pdf_logfont("name %s\n", buf);

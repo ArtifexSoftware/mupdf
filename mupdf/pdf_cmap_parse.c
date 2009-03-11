@@ -375,7 +375,7 @@ static fz_error parsebfchar(pdf_cmap *cmap, fz_stream *file)
     }
 }
 
-fz_error 
+fz_error
 pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 {
     fz_error error;

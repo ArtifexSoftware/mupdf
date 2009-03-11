@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error 
+static fz_error
 loadnametreenode(fz_obj *tree, pdf_xref *xref, fz_obj *node)
 {
 	fz_error error;
@@ -72,7 +72,7 @@ loadnametreenode(fz_obj *tree, pdf_xref *xref, fz_obj *node)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root)
 {
 	fz_error error;
@@ -95,7 +95,7 @@ pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadnametrees(pdf_xref *xref)
 {
 	fz_error error;

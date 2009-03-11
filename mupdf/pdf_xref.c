@@ -6,14 +6,14 @@
  * needs to be initialized by initxref, openxref or repairxref.
  */
 
-fz_error 
+fz_error
 pdf_newxref(pdf_xref **xrefp)
 {
 	pdf_xref *xref;
 
 	xref = fz_malloc(sizeof(pdf_xref));
 	if (!xref)
-		return fz_throw("outofmem: xref struct");
+		return fz_rethrow(-1, "out of memory: xref struct");
 
 	memset(xref, 0, sizeof(pdf_xref));
 
@@ -72,12 +72,12 @@ pdf_closexref(pdf_xref *xref)
 	fz_free(xref);
 }
 
-fz_error 
+fz_error
 pdf_initxref(pdf_xref *xref)
 {
 	xref->table = fz_malloc(sizeof(pdf_xrefentry) * 128);
 	if (!xref->table)
-		return fz_throw("outofmem: xref table");
+		return fz_rethrow(-1, "out of memory: xref table");
 
 	xref->cap = 128;
 	xref->len = 1;
@@ -138,7 +138,7 @@ pdf_debugxref(pdf_xref *xref)
 }
 
 /* ICKY! */
-fz_error 
+fz_error
 pdf_decryptxref(pdf_xref *xref)
 {
 	fz_error error;
@@ -181,7 +181,7 @@ pdf_decryptxref(pdf_xref *xref)
  * object loading
  */
 
-fz_error 
+fz_error
 pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 {
 	char buf[65536];	/* yeowch! */
@@ -236,7 +236,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 {
 	fz_error error;
@@ -250,7 +250,7 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
 {
 	fz_error error;
@@ -265,7 +265,7 @@ pdf_loadindirect(fz_obj **objp, pdf_xref *xref, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_resolve(fz_obj **objp, pdf_xref *xref)
 {
 	fz_error error;

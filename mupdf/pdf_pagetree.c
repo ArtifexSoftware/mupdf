@@ -9,7 +9,7 @@ struct stuff
 	fz_obj *rotate;
 };
 
-static fz_error 
+static fz_error
 loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		struct stuff inherit, fz_obj *obj, fz_obj *ref, int *pagenum)
 {
@@ -144,7 +144,7 @@ pdf_debugpagetree(pdf_pagetree *pages)
 	printf("  ]\n>>\n");
 }
 
-fz_error 
+fz_error
 pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 {
 	fz_error error;
@@ -177,7 +177,7 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	count = fz_toint(ref);
 
 	p = fz_malloc(sizeof(pdf_pagetree));
-	if (!p) { error = fz_throw("outofmem: page tree struct"); goto cleanup; }
+	if (!p) { error = fz_rethrow(-1, "out of memory: page tree struct"); goto cleanup; }
 
 	pdf_logpage("load pagetree %d pages (%d %d R) ptr=%p {\n", count, treeref->u.r.oid, treeref->u.r.gid, p);
 
@@ -187,10 +187,10 @@ pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref)
 	p->cursor = 0;
 
 	p->pref = fz_malloc(sizeof(fz_obj*) * count);
-	if (!p->pref) { error = fz_throw("outofmem: page tree reference array"); goto cleanup; }
+	if (!p->pref) { error = fz_rethrow(-1, "out of memory: page tree reference array"); goto cleanup; }
 
 	p->pobj = fz_malloc(sizeof(fz_obj*) * count);
-	if (!p->pobj) { error = fz_throw("outofmem: page tree object array"); goto cleanup; }
+	if (!p->pobj) { error = fz_rethrow(-1, "out of memory: page tree object array"); goto cleanup; }
 
 	error = loadpagetree(xref, p, inherit, pages, treeref, &pagenum);
 	if (error) { error = fz_rethrow(error, "cannot load pagetree (%d %d R)", fz_tonum(treeref), fz_togen(treeref)); goto cleanup; }

@@ -3,7 +3,7 @@
 
 void fz_droparray(fz_obj *obj);
 
-fz_error 
+fz_error
 fz_newarray(fz_obj **op, int initialcap)
 {
 	fz_obj *obj;
@@ -11,7 +11,7 @@ fz_newarray(fz_obj **op, int initialcap)
 
 	obj = *op = fz_malloc(sizeof (fz_obj));
 	if (!obj)
-	    return fz_throw("outofmem: array struct");
+	    return fz_rethrow(-1, "out of memory: array struct");
 
 	obj->refs = 1;
 	obj->kind = FZ_ARRAY;
@@ -23,7 +23,7 @@ fz_newarray(fz_obj **op, int initialcap)
 	if (!obj->u.a.items)
 	{
 	    fz_free(obj);
-	    return fz_throw("outofmem: array item buffer");
+	    return fz_rethrow(-1, "out of memory: array item buffer");
 	}
 
 	for (i = 0; i < obj->u.a.cap; i++)
@@ -32,7 +32,7 @@ fz_newarray(fz_obj **op, int initialcap)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_copyarray(fz_obj **op, fz_obj *obj)
 {
 	fz_error error;
@@ -61,7 +61,7 @@ fz_copyarray(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_deepcopyarray(fz_obj **op, fz_obj *obj)
 {
 	fz_error error;
@@ -155,7 +155,7 @@ fz_arrayget(fz_obj *obj, int i)
 	return obj->u.a.items[i];
 }
 
-fz_error 
+fz_error
 fz_arrayput(fz_obj *obj, int i, fz_obj *item)
 {
 	if (!fz_isarray(obj))
@@ -172,7 +172,7 @@ fz_arrayput(fz_obj *obj, int i, fz_obj *item)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 growarray(fz_obj *obj)
 {
 	fz_obj **newitems;
@@ -182,7 +182,7 @@ growarray(fz_obj *obj)
 	newcap = obj->u.a.cap * 2;
 	newitems = fz_realloc(obj->u.a.items, sizeof (fz_obj*) * newcap);
 	if (!newitems)
-	    return fz_throw("outofmem: resize item buffer");
+	    return fz_rethrow(-1, "out of memory: resize item buffer");
 
 	obj->u.a.items = newitems;
 	for (i = obj->u.a.cap ; i < newcap; i++)
@@ -192,7 +192,7 @@ growarray(fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_arraypush(fz_obj *obj, fz_obj *item)
 {
 	fz_error error;

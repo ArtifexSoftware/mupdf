@@ -222,7 +222,7 @@ retry:
  *
  */
 
-fz_error 
+fz_error
 fz_optimizetree(fz_tree *tree)
 {
 	if (getenv("DONTOPT"))

@@ -23,7 +23,7 @@ struct fz_predict_s
 	int encode;
 };
 
-fz_error 
+fz_error
 fz_newpredict(fz_filter **fp, fz_obj *params, int encode)
 {
 	fz_obj *obj;
@@ -58,7 +58,7 @@ fz_newpredict(fz_filter **fp, fz_obj *params, int encode)
 		if (!p->ref)
 		{
 			fz_free(p);
-			return fz_throw("outofmem: scanline buffer");
+			return fz_rethrow(-1, "out of memory: scanline buffer");
 		}
 		memset(p->ref, 0, p->stride);
 	}
@@ -187,7 +187,7 @@ png(fz_predict *p, unsigned char *in, unsigned char *out, int predictor)
 	}
 }
 
-fz_error 
+fz_error
 fz_processpredict(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_predict *dec = (fz_predict*)filter;
@@ -240,13 +240,13 @@ fz_processpredict(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 	}
 }
 
-fz_error 
+fz_error
 fz_newpredictd(fz_filter **fp, fz_obj *params)
 {
 	return fz_newpredict(fp, params, 0);
 }
 
-fz_error 
+fz_error
 fz_newpredicte(fz_filter **fp, fz_obj *params)
 {
 	return fz_newpredict(fp, params, 1);

@@ -26,7 +26,7 @@ struct sctx
 	fz_point cur;
 };
 
-static fz_error 
+static fz_error
 line(struct sctx *s, float x0, float y0, float x1, float y1)
 {
 	float tx0 = s->ctm->a * x0 + s->ctm->c * y0 + s->ctm->e;
@@ -36,7 +36,7 @@ line(struct sctx *s, float x0, float y0, float x1, float y1)
 	return fz_insertgel(s->gel, tx0, ty0, tx1, ty1);
 }
 
-static fz_error 
+static fz_error
 arc(struct sctx *s,
 		float xc, float yc,
 		float x0, float y0,
@@ -85,7 +85,7 @@ arc(struct sctx *s,
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 linestroke(struct sctx *s, fz_point a, fz_point b)
 {
 	fz_error error;
@@ -105,7 +105,7 @@ linestroke(struct sctx *s, fz_point a, fz_point b)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 {
 	fz_error error;
@@ -208,7 +208,7 @@ linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 linecap(struct sctx *s, fz_point a, fz_point b)
 {
 	fz_error error;
@@ -268,7 +268,7 @@ linecap(struct sctx *s, fz_point a, fz_point b)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 linedot(struct sctx *s, fz_point a)
 {
 	fz_error error;
@@ -295,7 +295,7 @@ linedot(struct sctx *s, fz_point a)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 strokeflush(struct sctx *s)
 {
 	fz_error error;
@@ -318,7 +318,7 @@ strokeflush(struct sctx *s)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 strokemoveto(struct sctx *s, fz_point cur)
 {
 	fz_error error;
@@ -334,7 +334,7 @@ strokemoveto(struct sctx *s, fz_point cur)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 strokelineto(struct sctx *s, fz_point cur)
 {
 	fz_error error;
@@ -368,7 +368,7 @@ strokelineto(struct sctx *s, fz_point cur)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 strokeclosepath(struct sctx *s)
 {
 	fz_error error;
@@ -398,7 +398,7 @@ strokeclosepath(struct sctx *s)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 strokebezier(struct sctx *s,
 	float xa, float ya,
 	float xb, float yb,
@@ -457,7 +457,7 @@ strokebezier(struct sctx *s,
 	return strokebezier(s, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd);
 }
 
-fz_error 
+fz_error
 fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth)
 {
 	fz_error error;
@@ -530,7 +530,7 @@ fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, flo
 	return strokeflush(&s);
 }
 
-static fz_error 
+static fz_error
 dashmoveto(struct sctx *s, fz_point a)
 {
 	s->toggle = 1;
@@ -554,7 +554,7 @@ dashmoveto(struct sctx *s, fz_point a)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 dashlineto(struct sctx *s, fz_point b)
 {
 	fz_error error;
@@ -600,7 +600,7 @@ dashlineto(struct sctx *s, fz_point b)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 dashbezier(struct sctx *s,
 	float xa, float ya,
 	float xb, float yb,
@@ -657,7 +657,7 @@ dashbezier(struct sctx *s,
 	return dashbezier(s, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd);
 }
 
-fz_error 
+fz_error
 fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth)
 {
 	fz_error error;

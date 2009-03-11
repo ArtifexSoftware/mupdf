@@ -8,7 +8,7 @@
 #define NSEGS 32
 #define MAX_RAD_SEGS 36
 
-fz_error 
+fz_error
 pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -60,7 +60,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	shade->meshlen = NSEGS * NSEGS * 2;
 	shade->mesh = fz_malloc(sizeof(float) * (2 + shade->cs->n) * 3 * shade->meshlen);
 	if (!shade->mesh)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	n = 0;
 	for (yy = 0; yy < NSEGS; ++yy)
@@ -109,7 +109,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_point p1, p2, p3, p4;
@@ -176,7 +176,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	shade->meshlen = 2 + e0 * 2 + e1 * 2;
 	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
 	if (!shade->mesh)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	p1.x = x0 + BIGNUM * cos(theta);
 	p1.y = y0 + BIGNUM * sin(theta);
@@ -306,7 +306,7 @@ buildannulusmesh(float* mesh, int pos,
 	return pos;
 }
 
-fz_error 
+fz_error
 pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref)
 {
 	fz_obj *obj;
@@ -388,7 +388,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *ref
 			shade->meshlen = pos;
 			shade->mesh = fz_malloc(sizeof(float) * 9 * shade->meshlen);
 			if (!shade->mesh)
-				return fz_outofmem;
+				return fz_rethrow(-1, "out of memory");
 		}
 	}
 

@@ -42,7 +42,7 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->head = nil;
 }
 
-fz_error 
+fz_error
 pdf_newovernode(fz_node **nodep, pdf_gstate *gs)
 {
     if (gs->blendmode == FZ_BNORMAL)
@@ -51,7 +51,7 @@ pdf_newovernode(fz_node **nodep, pdf_gstate *gs)
 	return fz_newblendnode(nodep, gs->blendmode, 0, 0);
 }
 
-fz_error 
+fz_error
 pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -87,7 +87,7 @@ pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_setcolor(pdf_csi *csi, int what, float *v)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -138,7 +138,7 @@ Lindexed:
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -170,7 +170,7 @@ pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -192,7 +192,7 @@ pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
 {
 	fz_error error;
@@ -223,7 +223,7 @@ pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 {
 	fz_error error;
@@ -233,7 +233,7 @@ pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int eofill)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 addcolorshape(pdf_gstate *gs, fz_node *shape, float alpha, fz_colorspace *cs, float *v)
 {
 	fz_error error;
@@ -258,7 +258,7 @@ addcolorshape(pdf_gstate *gs, fz_node *shape, float alpha, fz_colorspace *cs, fl
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 addinvisibleshape(pdf_gstate *gs, fz_node *shape)
 {
 	fz_error error;
@@ -305,7 +305,7 @@ static fz_matrix getmatrix(fz_node *node)
 	return fz_identity();
 }
 
-static fz_error 
+static fz_error
 addpatternshape(pdf_gstate *gs, fz_node *shape,
 		pdf_pattern *pat, fz_colorspace *cs, float *v)
 {
@@ -397,7 +397,7 @@ addpatternshape(pdf_gstate *gs, fz_node *shape,
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_addshade(pdf_gstate *gs, fz_shade *shade)
 {
 	fz_error error;
@@ -412,7 +412,7 @@ pdf_addshade(pdf_gstate *gs, fz_shade *shade)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 {
 	fz_error error;
@@ -464,7 +464,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 			fz_dropnode(color);
 			fz_dropnode(mask);
 			fz_dropnode(xform);
-			return fz_rethrow(error, "cannot create solid node for background color");;
+			return fz_rethrow(error, "cannot create solid node for background color");
 		}
 
 		fz_insertnodelast(mask, shape);
@@ -485,7 +485,7 @@ addshadeshape(pdf_gstate *gs, fz_node *shape, fz_shade *shade)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 {
 	fz_error error;
@@ -523,7 +523,7 @@ pdf_addfillshape(pdf_gstate *gs, fz_node *shape)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 {
 	fz_error error;
@@ -561,7 +561,7 @@ pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 {
 	fz_error error;
@@ -587,7 +587,7 @@ pdf_addclipmask(pdf_gstate *gs, fz_node *shape)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 {
 	fz_error error;
@@ -604,7 +604,7 @@ pdf_addtransform(pdf_gstate *gs, fz_node *transform)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_showimage(pdf_csi *csi, pdf_image *img)
 {
 	fz_error error;
@@ -656,7 +656,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *img)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_showpath(pdf_csi *csi,
 		int doclose, int dofill, int dostroke, int evenodd)
 {
@@ -768,7 +768,7 @@ pdf_showpath(pdf_csi *csi,
 
 	error = fz_newpathnode(&csi->path);
 	if (error)
-		return fz_rethrow(error, "cannot create path node");;
+		return fz_rethrow(error, "cannot create path node");
 
 	return fz_okay;
 
@@ -785,7 +785,7 @@ cleanupclip:
  * Text
  */
 
-fz_error 
+fz_error
 pdf_flushtext(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
@@ -847,7 +847,7 @@ pdf_flushtext(pdf_csi *csi)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 showglyph(pdf_csi *csi, int cid)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
@@ -941,7 +941,7 @@ showspace(pdf_csi *csi, float tadj)
 		csi->tm = fz_concat(fz_translate(0, tadj), csi->tm);
 }
 
-fz_error 
+fz_error
 pdf_showtext(pdf_csi *csi, fz_obj *text)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;

@@ -27,7 +27,7 @@ fz_matrix pdf_tomatrix(fz_obj *array)
 	return m;
 }
 
-fz_error 
+fz_error
 pdf_toutf8(char **dstp, fz_obj *src)
 {
 	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
@@ -47,7 +47,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
 		if (!dstptr)
-			return fz_throw("outofmem: utf-8 string");
+			return fz_rethrow(-1, "out of memory: utf-8 string");
 
 		for (i = 2; i < srclen; i += 2)
 		{
@@ -63,7 +63,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 
 		dstptr = *dstp = fz_malloc(dstlen + 1);
 		if (!dstptr)
-			return fz_throw("outofmem: utf-8 string");
+			return fz_rethrow(-1, "out of memory: utf-8 string");
 
 		for (i = 0; i < srclen; i++)
 		{
@@ -76,7 +76,7 @@ pdf_toutf8(char **dstp, fz_obj *src)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_toucs2(unsigned short **dstp, fz_obj *src)
 {
 	unsigned char *srcptr = (unsigned char *) fz_tostrbuf(src);
@@ -88,7 +88,7 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	{
 		dstptr = *dstp = fz_malloc(((srclen - 2) / 2 + 1) * sizeof(short));
 		if (!dstptr)
-			return fz_throw("outofmem: ucs-2 string");
+			return fz_rethrow(-1, "out of memory: ucs-2 string");
 		for (i = 2; i < srclen; i += 2)
 			*dstptr++ = (srcptr[i] << 8) | srcptr[i+1];
 	}
@@ -97,7 +97,7 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	{
 		dstptr = *dstp = fz_malloc((srclen + 1) * sizeof(short));
 		if (!dstptr)
-			return fz_throw("outofmem: ucs-2 string");
+			return fz_rethrow(-1, "out of memory: ucs-2 string");
 		for (i = 0; i < srclen; i++)
 			*dstptr++ = pdf_docencoding[srcptr[i]];
 	}
@@ -106,7 +106,7 @@ pdf_toucs2(unsigned short **dstp, fz_obj *src)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_parsearray(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error error = fz_okay;
@@ -217,7 +217,7 @@ cleanup:
 	return fz_rethrow(error, "cannot parse array");
 }
 
-fz_error 
+fz_error
 pdf_parsedict(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error error = fz_okay;
@@ -325,7 +325,7 @@ cleanup:
 	return fz_rethrow(error, "cannot parse dict");
 }
 
-fz_error 
+fz_error
 pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 {
 	fz_error error;
@@ -355,7 +355,7 @@ pdf_parsestmobj(fz_obj **op, fz_stream *file, char *buf, int cap)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_parseindobj(fz_obj **op, fz_stream *file, char *buf, int cap,
 		int *ooid, int *ogid, int *ostmofs)
 {

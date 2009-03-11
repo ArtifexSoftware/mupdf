@@ -1,7 +1,7 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error 
+fz_error
 fz_process(fz_filter *f, fz_buffer *in, fz_buffer *out)
 {
 	fz_error reason;

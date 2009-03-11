@@ -1,20 +1,20 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error 
+static fz_error
 loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
 {
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
 {
 	pdf_link *link;
 
 	link = fz_malloc(sizeof(pdf_link));
 	if (!link)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	link->rect = bbox;
 	link->dest = fz_keepobj(dest);
@@ -70,7 +70,7 @@ resolvedest(pdf_xref *xref, fz_obj *dest)
 	return nil;
 }
 
-fz_error 
+fz_error
 pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
@@ -144,7 +144,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 {
 	fz_error error;

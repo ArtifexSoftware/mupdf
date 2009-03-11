@@ -1,14 +1,14 @@
 #include "fitz_base.h"
 #include "fitz_tree.h"
 
-fz_error 
+fz_error
 fz_newtextnode(fz_textnode **textp, fz_font *font)
 {
 	fz_textnode *text;
 
 	text = fz_malloc(sizeof(fz_textnode));
 	if (!text)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	fz_initnode((fz_node*)text, FZ_NTEXT);
 
@@ -22,14 +22,14 @@ fz_newtextnode(fz_textnode **textp, fz_font *font)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext)
 {
 	fz_textnode *text;
 
 	text = *textp = fz_malloc(sizeof(fz_textnode));
 	if (!text)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	fz_initnode((fz_node*)text, FZ_NTEXT);
 
@@ -44,7 +44,7 @@ fz_clonetextnode(fz_textnode **textp, fz_textnode *oldtext)
 	{
 		fz_dropfont(text->font);
 		fz_free(text);
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	}
 
 	memcpy(text->els, oldtext->els, sizeof(fz_textel) * text->len);
@@ -109,7 +109,7 @@ fz_boundtextnode(fz_textnode *text, fz_matrix ctm)
 	return bbox;
 }
 
-static fz_error 
+static fz_error
 growtext(fz_textnode *text, int n)
 {
 	int newcap;
@@ -120,7 +120,7 @@ growtext(fz_textnode *text, int n)
 		newcap = text->cap + 36;
 		newels = fz_realloc(text->els, sizeof (fz_textel) * newcap);
 		if (!newels)
-			return fz_outofmem;
+			return fz_rethrow(-1, "out of memory");
 		text->cap = newcap;
 		text->els = newels;
 	}
@@ -128,11 +128,11 @@ growtext(fz_textnode *text, int n)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_addtext(fz_textnode *text, int gid, int ucs, float x, float y)
 {
 	if (growtext(text, 1) != nil)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	text->els[text->len].ucs = ucs;
 	text->els[text->len].gid = gid;
 	text->els[text->len].x = x;

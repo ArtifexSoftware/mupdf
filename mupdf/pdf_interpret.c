@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error 
+fz_error
 pdf_newcsi(pdf_csi **csip, int maskonly)
 {
 	fz_error error;
@@ -10,7 +10,7 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 
 	csi = fz_malloc(sizeof(pdf_csi));
 	if (!csi)
-		return fz_throw("outofmem: interpreter struct");
+		return fz_rethrow(-1, "out of memory: interpreter struct");
 
 	pdf_initgstate(&csi->gstate[0]);
 
@@ -94,7 +94,7 @@ pdf_dropmaterial(pdf_material *mat)
 	return mat;
 }
 
-static fz_error 
+static fz_error
 gsave(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -112,7 +112,7 @@ gsave(pdf_csi *csi)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 grestore(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
@@ -154,7 +154,7 @@ pdf_dropcsi(pdf_csi *csi)
  * Push gstate, set transform, clip, run, pop gstate.
  */
 
-static fz_error 
+static fz_error
 runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 {
 	fz_error error;
@@ -225,7 +225,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
  * Decode inline image and insert into page.
  */
 
-static fz_error 
+static fz_error
 runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
 	fz_error error;
@@ -266,7 +266,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
  * Set gstate params from an ExtGState dictionary.
  */
 
-static fz_error 
+static fz_error
 runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 {
 	int i, k;
@@ -386,7 +386,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
  * The meat of the interpreter...
  */
 
-static fz_error 
+static fz_error
 runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
@@ -574,7 +574,7 @@ Lsetcolorspace:
 				if (error) return fz_rethrow(error, "cannot set pattern");
 			}
 
-			else 
+			else
 			{
 				if (!strcmp(fz_toname(obj), "DeviceGray"))
 					cs = pdf_devicegray;
@@ -1245,7 +1245,7 @@ syntaxerror:
 	return fz_throw("syntaxerror near '%s'", buf);
 }
 
-fz_error 
+fz_error
 pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
 	fz_error error;

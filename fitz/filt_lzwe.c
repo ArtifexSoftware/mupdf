@@ -55,7 +55,7 @@ clearhash(fz_lzwe *lzw)
 		lzw->table[i].hash = -1;
 }
 
-fz_error 
+fz_error
 fz_newlzwe(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_lzwe, lzw, lzwe);
@@ -128,7 +128,7 @@ putcode(fz_lzwe *lzw, fz_buffer *out, int code)
 }
 
 
-static fz_error 
+static fz_error
 compress(fz_lzwe *lzw, fz_buffer *in, fz_buffer *out)
 {
 	if (lzw->resume)
@@ -242,7 +242,7 @@ eof:
 	return fz_iodone;
 }
 
-fz_error 
+fz_error
 fz_processlzwe(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_lzwe *lzw = (fz_lzwe*)filter;

@@ -24,7 +24,7 @@ struct pdf_store_s
 	pdf_item *root;		/* linked list for everything else */
 };
 
-fz_error 
+fz_error
 pdf_newstore(pdf_store **storep)
 {
 	fz_error error;
@@ -32,7 +32,7 @@ pdf_newstore(pdf_store **storep)
 
 	store = fz_malloc(sizeof(pdf_store));
 	if (!store)
-		return fz_throw("outofmem: store struct");;
+		return fz_rethrow(-1, "out of memory: store struct");
 
 	error = fz_newhash(&store->hash, 4096, sizeof(struct refkey));
 	if (error)
@@ -100,7 +100,7 @@ pdf_dropstore(pdf_store *store)
 	fz_free(store);
 }
 
-fz_error 
+fz_error
 pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 {
 	fz_error error;
@@ -126,7 +126,7 @@ pdf_storeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key, void *val)
 
 		item = fz_malloc(sizeof(pdf_item));
 		if (!item)
-			return fz_throw("outofmem: store list node");
+			return fz_rethrow(-1, "out of memory: store list node");
 
 		pdf_logrsrc("store item %d: ... = %p\n", kind, val);
 
@@ -180,7 +180,7 @@ pdf_finditem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 	return nil;
 }
 
-fz_error 
+fz_error
 pdf_removeitem(pdf_store *store, pdf_itemkind kind, fz_obj *key)
 {
 	fz_error error;

@@ -105,7 +105,7 @@ char *ft_errorstring(int err)
 	return "Unknown error";
 }
 
-static fz_error 
+static fz_error
 fz_initfreetype(void)
 {
 	int code;
@@ -125,7 +125,7 @@ fz_initfreetype(void)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newfontfromfile(fz_font **fontp, char *path, int index)
 {
 	fz_error error;
@@ -138,7 +138,7 @@ fz_newfontfromfile(fz_font **fontp, char *path, int index)
 
 	font = fz_newfont();
 	if (!font)
-		return fz_throw("outofmem: font struct");
+		return fz_rethrow(-1, "out of memory: font struct");
 
 	code = FT_New_Face(fz_ftlib, path, index, (FT_Face*)&font->ftface);
 	if (code)
@@ -151,7 +151,7 @@ fz_newfontfromfile(fz_font **fontp, char *path, int index)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 {
 	fz_error error;
@@ -164,7 +164,7 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 
 	font = fz_newfont();
 	if (!font)
-		return fz_throw("outofmem: font struct");
+		return fz_rethrow(-1, "out of memory: font struct");
 
 	code = FT_New_Memory_Face(fz_ftlib, data, len, index, (FT_Face*)&font->ftface);
 	if (code)
@@ -177,7 +177,7 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
 	FT_Face face = font->ftface;
@@ -299,7 +299,7 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
  * Type 3 fonts...
  */
 
-fz_error 
+fz_error
 fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
 {
 	fz_font *font;
@@ -307,13 +307,13 @@ fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
 
 	font = fz_newfont();
 	if (!font)
-		return fz_throw("outofmem: font struct");
+		return fz_rethrow(-1, "out of memory: font struct");
 
 	font->t3procs = fz_malloc(sizeof(fz_tree*) * 256);
 	if (!font->t3procs)
 	{
 		fz_free(font);
-		return fz_throw("outofmem: type3 font charproc array");
+		return fz_rethrow(-1, "out of memory: type3 font charproc array");
 	}
 
 	font->t3matrix = matrix;
@@ -326,7 +326,7 @@ fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
     fz_error error;

@@ -23,7 +23,7 @@ static inline int keystrcmp(fz_obj *key, char *s)
 	return -1;
 }
 
-fz_error 
+fz_error
 fz_newdict(fz_obj **op, int initialcap)
 {
 	fz_obj *obj;
@@ -31,7 +31,7 @@ fz_newdict(fz_obj **op, int initialcap)
 
 	obj = *op = fz_malloc(sizeof (fz_obj));
 	if (!obj)
-	    return fz_throw("outofmem: dict struct");
+	    return fz_rethrow(-1, "out of memory: dict struct");
 
 	obj->refs = 1;
 	obj->kind = FZ_DICT;
@@ -44,7 +44,7 @@ fz_newdict(fz_obj **op, int initialcap)
 	if (!obj->u.d.items)
 	{
 	    fz_free(obj);
-	    return fz_throw("outofmem: dict item buffer");
+	    return fz_rethrow(-1, "out of memory: dict item buffer");
 	}
 
 	for (i = 0; i < obj->u.d.cap; i++)
@@ -56,7 +56,7 @@ fz_newdict(fz_obj **op, int initialcap)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_copydict(fz_obj **op, fz_obj *obj)
 {
 	fz_error error;
@@ -84,7 +84,7 @@ fz_copydict(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_deepcopydict(fz_obj **op, fz_obj *obj)
 {
 	fz_error error;
@@ -154,7 +154,7 @@ fz_deepcopydict(fz_obj **op, fz_obj *obj)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 growdict(fz_obj *obj)
 {
 	fz_keyval *newitems;
@@ -165,7 +165,7 @@ growdict(fz_obj *obj)
 
 	newitems = fz_realloc(obj->u.d.items, sizeof(fz_keyval) * newcap);
 	if (!newitems)
-	    return fz_throw("outofmem: resize item buffer");
+	    return fz_rethrow(-1, "out of memory: resize item buffer");
 
 	obj->u.d.items = newitems;
 	for (i = obj->u.d.cap; i < newcap; i++)
@@ -275,7 +275,7 @@ fz_dictgetsa(fz_obj *obj, char *key, char *abbrev)
 	return fz_dictgets(obj, abbrev);
 }
 
-fz_error 
+fz_error
 fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
 	fz_error error;
@@ -319,7 +319,7 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 {
 	fz_error error;
@@ -334,7 +334,7 @@ fz_dictputs(fz_obj *obj, char *key, fz_obj *val)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_dictdels(fz_obj *obj, char *key)
 {
 	int i;
@@ -355,7 +355,7 @@ fz_dictdels(fz_obj *obj, char *key)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_dictdel(fz_obj *obj, fz_obj *key)
 {
 	if (fz_isname(key))

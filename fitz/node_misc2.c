@@ -5,14 +5,14 @@
  * Over
  */
 
-fz_error 
+fz_error
 fz_newovernode(fz_node **nodep)
 {
 	fz_node *node;
 
 	node = *nodep = fz_malloc(sizeof (fz_overnode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	fz_initnode(node, FZ_NOVER);
 
@@ -47,14 +47,14 @@ fz_boundovernode(fz_overnode *node, fz_matrix ctm)
  * Mask
  */
 
-fz_error 
+fz_error
 fz_newmasknode(fz_node **nodep)
 {
 	fz_node *node;
 
 	node = *nodep = fz_malloc(sizeof (fz_masknode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	fz_initnode(node, FZ_NMASK);
 
@@ -80,14 +80,14 @@ fz_boundmasknode(fz_masknode *node, fz_matrix ctm)
  * Blend
  */
 
-fz_error 
+fz_error
 fz_newblendnode(fz_node **nodep, fz_blendkind b, int k, int i)
 {
 	fz_blendnode *node;
 
 	node = fz_malloc(sizeof (fz_blendnode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NBLEND);
@@ -132,14 +132,14 @@ fz_dropblendnode(fz_blendnode *node)
  * Transform
  */
 
-fz_error 
+fz_error
 fz_newtransformnode(fz_node **nodep, fz_matrix m)
 {
 	fz_transformnode *node;
 
 	node = fz_malloc(sizeof (fz_transformnode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NTRANSFORM);
@@ -160,14 +160,14 @@ fz_boundtransformnode(fz_transformnode *node, fz_matrix ctm)
  * Link to tree
  */
 
-fz_error 
+fz_error
 fz_newlinknode(fz_node **nodep, fz_tree *subtree)
 {
 	fz_linknode *node;
 
 	node = fz_malloc(sizeof (fz_linknode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NLINK);
@@ -192,7 +192,7 @@ fz_boundlinknode(fz_linknode *node, fz_matrix ctm)
  * Solid color
  */
 
-fz_error 
+fz_error
 fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v)
 {
 	fz_solidnode *node;
@@ -200,7 +200,7 @@ fz_newsolidnode(fz_node **nodep, float a, fz_colorspace *cs, int n, float *v)
 
 	node = fz_malloc(sizeof(fz_solidnode) + sizeof(float) * n);
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NCOLOR);
@@ -229,14 +229,14 @@ fz_dropsolidnode(fz_solidnode *node)
  * Image node
  */
 
-fz_error 
+fz_error
 fz_newimagenode(fz_node **nodep, fz_image *image)
 {
 	fz_imagenode *node;
 
 	node = fz_malloc(sizeof (fz_imagenode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NIMAGE);
@@ -266,14 +266,14 @@ fz_boundimagenode(fz_imagenode *node, fz_matrix ctm)
  * Shade node
  */
 
-fz_error 
+fz_error
 fz_newshadenode(fz_node **nodep, fz_shade *shade)
 {
 	fz_shadenode *node;
 
 	node = fz_malloc(sizeof (fz_shadenode));
 	if (!node)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	*nodep = (fz_node*)node;
 
 	fz_initnode((fz_node*)node, FZ_NSHADE);

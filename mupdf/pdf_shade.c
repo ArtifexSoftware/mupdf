@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error 
+static fz_error
 pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcref, float t0, float t1)
 {
 	fz_error error;
@@ -26,7 +26,7 @@ pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_obj *funcs, float t0, float t1)
 {
 	fz_error error;
@@ -42,7 +42,7 @@ pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *shading, fz_
 	func = fz_malloc(fz_arraylen(funcs) * sizeof(pdf_function *));
 	if (!func)
 	{
-		error = fz_throw("outofmem: shading function"); 
+		error = fz_rethrow(-1, "out of memory: shading function");
 		goto cleanup;
 	}
 	memset(func, 0x00, fz_arraylen(funcs) * sizeof(pdf_function *));
@@ -100,7 +100,7 @@ cleanup:
 	return error;
 }
 
-fz_error 
+fz_error
 pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0, float t1)
 {
 	fz_error error;
@@ -144,7 +144,7 @@ pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
 	mesh[i*3+2] = t;
 }
 
-static fz_error 
+static fz_error
 loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_matrix matrix)
 {
 	fz_error error;
@@ -157,7 +157,7 @@ loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref, fz_m
 
 	shade = fz_malloc(sizeof(fz_shade));
 	if (!shade)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	shade->refs = 1;
 	shade->usebackground = 0;
@@ -256,7 +256,7 @@ cleanup:
 	return fz_rethrow(error, "could not load shading");
 }
 
-fz_error 
+fz_error
 pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;

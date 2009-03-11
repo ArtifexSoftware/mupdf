@@ -1,14 +1,14 @@
 #include "fitz_base.h"
 #include "fitz_tree.h"
 
-fz_error 
+fz_error
 fz_newtree(fz_tree **treep)
 {
 	fz_tree *tree;
 
 	tree = *treep = fz_malloc(sizeof (fz_tree));
 	if (!tree)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	tree->refs = 1;
 	tree->root = nil;

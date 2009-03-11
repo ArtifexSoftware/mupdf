@@ -2,14 +2,14 @@
 #include "fitz_tree.h"
 #include "fitz_draw.h"
 
-fz_error 
+fz_error
 fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 {
 	fz_pixmap *pix;
 
 	pix = *pixp = fz_malloc(sizeof(fz_pixmap));
 	if (!pix)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	pix->x = x;
 	pix->y = y;
@@ -20,13 +20,13 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 	pix->samples = fz_malloc(pix->w * pix->h * pix->n * sizeof(fz_sample));
 	if (!pix->samples) {
 		fz_free(pix);
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 	}
 
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 {
 	return fz_newpixmap(pixp,
@@ -35,7 +35,7 @@ fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 				r.y1 - r.y0, n);
 }
 
-fz_error 
+fz_error
 fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old)
 {
 	fz_error error;

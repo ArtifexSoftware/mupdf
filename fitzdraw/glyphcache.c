@@ -57,14 +57,14 @@ static unsigned int hashkey(fz_key *key)
 	return hash;
 }
 
-fz_error 
+fz_error
 fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
 {
 	fz_glyphcache *arena;
 
 	arena = *arenap = fz_malloc(sizeof(fz_glyphcache));
 	if (!arena)
-		return fz_outofmem;
+		return fz_rethrow(-1, "out of memory");
 
 	arena->slots = slots;
 	arena->size = size;
@@ -98,7 +98,7 @@ cleanup:
 	fz_free(arena->lru);
 	fz_free(arena->buffer);
 	fz_free(arena);
-	return fz_outofmem;
+	return fz_rethrow(-1, "out of memory");
 }
 
 void
@@ -313,7 +313,7 @@ evictall(fz_glyphcache *arena)
 	arena->used = 0;
 }
 
-fz_error 
+fz_error
 fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz_matrix ctm)
 {
 	fz_error error;

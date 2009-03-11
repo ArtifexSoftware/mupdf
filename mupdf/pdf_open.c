@@ -12,7 +12,7 @@ static inline int iswhite(int ch)
  * magic version tag and startxref
  */
 
-static fz_error 
+static fz_error
 loadversion(pdf_xref *xref)
 {
 	fz_error error;
@@ -35,7 +35,7 @@ loadversion(pdf_xref *xref)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readstartxref(pdf_xref *xref)
 {
 	fz_error error;
@@ -75,7 +75,7 @@ readstartxref(pdf_xref *xref)
  * trailer dictionary
  */
 
-static fz_error 
+static fz_error
 readoldtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	fz_error error;
@@ -147,7 +147,7 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readnewtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	fz_error error;
@@ -160,7 +160,7 @@ readnewtrailer(pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readtrailer(pdf_xref *xref, char *buf, int cap)
 {
 	fz_error error;
@@ -199,7 +199,7 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
  * xref tables
  */
 
-static fz_error 
+static fz_error
 readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
 	fz_error error;
@@ -249,7 +249,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 			xref->cap = ofs + len;
 			xref->table = fz_realloc(xref->table, xref->cap * sizeof(pdf_xrefentry));
 			if (!xref->table)
-				return fz_throw("outofmem: xref table");
+				return fz_rethrow(-1, "out of memory: xref table");
 		}
 
 		if ((ofs + len) > xref->len)
@@ -298,7 +298,7 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readnewxrefsection(pdf_xref *xref, fz_stream *stm, int i0, int i1, int w0, int w1, int w2)
 {
 	fz_error error;
@@ -344,7 +344,7 @@ readnewxrefsection(pdf_xref *xref, fz_stream *stm, int i0, int i1, int w0, int w
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 {
 	fz_error error;
@@ -441,7 +441,7 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 {
 	fz_error error;
@@ -476,7 +476,7 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 {
 	fz_error error;
@@ -521,7 +521,7 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
  * compressed object streams
  */
 
-fz_error 
+fz_error
 pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 {
 	fz_error error;
@@ -550,14 +550,14 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	oidbuf = fz_malloc(count * sizeof(int));
 	if (!oidbuf)
 	{
-		error = fz_throw("outofmem: object id buffer");
+		error = fz_rethrow(-1, "out of memory: object id buffer");
 		goto cleanupobj;
 	}
 
 	ofsbuf = fz_malloc(count * sizeof(int));
 	if (!ofsbuf)
 	{
-		error = fz_throw("outofmem: offset buffer");
+		error = fz_rethrow(-1, "out of memory: offset buffer");
 		goto cleanupoid;
 	}
 
@@ -637,7 +637,7 @@ cleanupobj:
  * open and load xref tables from pdf
  */
 
-fz_error 
+fz_error
 pdf_loadxref(pdf_xref *xref, char *filename)
 {
 	fz_error error;
@@ -691,7 +691,7 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
 	if (!xref->table)
 	{
-		error = fz_throw("outofmem: xref table");
+		error = fz_rethrow(-1, "out of memory: xref table");
 		goto cleanup;
 	}
 

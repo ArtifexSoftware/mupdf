@@ -71,7 +71,7 @@ fz_error fz_openrfile(fz_stream **stmp, char *path)
 
 	stm = newstm(FZ_SFILE);
 	if (!stm)
-		return fz_throw("outofmem: stream struct");
+		return fz_rethrow(-1, "out of memory: stream struct");
 
 	error = fz_newbuffer(&stm->buffer, FZ_BUFSIZE);
 	if (error)
@@ -99,7 +99,7 @@ fz_error fz_openrfilter(fz_stream **stmp, fz_filter *flt, fz_stream *src)
 
 	stm = newstm(FZ_SFILTER);
 	if (!stm)
-		return fz_throw("outofmem: stream struct");
+		return fz_rethrow(-1, "out of memory: stream struct");
 
 	error = fz_newbuffer(&stm->buffer, FZ_BUFSIZE);
 	if (error)
@@ -121,7 +121,7 @@ fz_error fz_openrbuffer(fz_stream **stmp, fz_buffer *buf)
 
 	stm = newstm(FZ_SBUFFER);
 	if (!stm)
-		return fz_throw("outofmem: stream struct");
+		return fz_rethrow(-1, "out of memory: stream struct");
 
 	stm->buffer = fz_keepbuffer(buf);
 

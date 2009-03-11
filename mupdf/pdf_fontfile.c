@@ -107,7 +107,7 @@ static const struct
     { 0, 0, 0 }
 };
 
-fz_error 
+fz_error
 pdf_loadbuiltinfont(pdf_fontdesc *font, char *fontname)
 {
 	fz_error error;
@@ -134,7 +134,7 @@ found:
 	return fz_okay;
 }
 
-static fz_error 
+static fz_error
 loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
 {
 #ifndef NOCJK
@@ -155,7 +155,7 @@ loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
 #endif
 }
 
-fz_error 
+fz_error
 pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 {
 	fz_error error;
@@ -260,7 +260,7 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_error error;

@@ -10,7 +10,7 @@ struct fz_nullfilter_s
 	int cur;
 };
 
-fz_error 
+fz_error
 fz_newnullfilter(fz_filter **fp, int len)
 {
 	FZ_NEWFILTER(fz_nullfilter, f, nullfilter);
@@ -24,7 +24,7 @@ fz_dropnullfilter(fz_filter *f)
 {
 }
 
-fz_error 
+fz_error
 fz_processnullfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_nullfilter *f = (fz_nullfilter*)filter;

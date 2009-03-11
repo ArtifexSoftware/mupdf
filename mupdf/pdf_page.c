@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error 
+static fz_error
 runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error error;
@@ -26,7 +26,7 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 /* we need to combine all sub-streams into one for pdf_runcsi
  * to deal with split dictionaries etc.
  */
-static fz_error 
+static fz_error
 runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 {
     fz_error error;
@@ -92,7 +92,7 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
     return fz_okay;
 }
 
-static fz_error 
+static fz_error
 loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 {
 	fz_error error;
@@ -150,7 +150,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *ref)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
@@ -256,7 +256,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	{
 		fz_droptree(tree);
 		fz_dropobj(rdb);
-		return fz_throw("outofmem: page struct");
+		return fz_rethrow(-1, "out of memory: page struct");
 	}
 
 	page->mediabox.x0 = MIN(bbox.x0, bbox.x1);

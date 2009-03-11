@@ -41,7 +41,7 @@ struct fz_jbig2d_s
 	int idx;
 };
 
-fz_error 
+fz_error
 fz_newjbig2d(fz_filter **fp, fz_obj *params)
 {
 	FZ_NEWFILTER(fz_jbig2d, d, jbig2d);
@@ -58,7 +58,7 @@ fz_dropjbig2d(fz_filter *filter)
 	jbig2_ctx_free(d->ctx);
 }
 
-fz_error 
+fz_error
 fz_setjbig2dglobalstream(fz_filter *filter, unsigned char *buf, int len)
 {
 	fz_jbig2d *d = (fz_jbig2d*)filter;
@@ -68,7 +68,7 @@ fz_setjbig2dglobalstream(fz_filter *filter, unsigned char *buf, int len)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_processjbig2d(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_jbig2d *d = (fz_jbig2d*)filter;

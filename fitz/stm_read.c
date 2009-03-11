@@ -5,7 +5,7 @@
 #include "fitz_base.h"
 #include "fitz_stream.h"
 
-fz_error 
+fz_error
 fz_readimp(fz_stream *stm)
 {
 	fz_buffer *buf = stm->buffer;
@@ -93,7 +93,7 @@ fz_readimp(fz_stream *stm)
 					error = fz_growbuffer(buf);
 					if (error)
 					{
-						stm->dead = 1; 
+						stm->dead = 1;
 						return fz_rethrow(error, "cannot grow buffer");
 					}
 				}
@@ -151,7 +151,7 @@ fz_tell(fz_stream *stm)
 	}
 }
 
-fz_error 
+fz_error
 fz_seek(fz_stream *stm, int offset, int whence)
 {
 	fz_error error;
@@ -224,7 +224,7 @@ fz_seek(fz_stream *stm, int offset, int whence)
 	}
 }
 
-fz_error 
+fz_error
 fz_read(int *np, fz_stream *stm, unsigned char *mem, int n)
 {
 	fz_error error;
@@ -254,7 +254,7 @@ fz_read(int *np, fz_stream *stm, unsigned char *mem, int n)
 	return fz_okay;
 }
 
-fz_error 
+fz_error
 fz_readerror(fz_stream *stm)
 {
 	fz_error error;

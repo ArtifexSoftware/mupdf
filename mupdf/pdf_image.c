@@ -13,7 +13,7 @@ void pdf_dropimage(fz_image *fzimg)
 		fz_dropimage(img->mask);
 }
 
-fz_error 
+fz_error
 pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		fz_obj *rdb, fz_obj *dict, fz_stream *file)
 {
@@ -28,7 +28,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
-		return fz_throw("outofmem: image struct");
+		return fz_rethrow(-1, "out of memory: image struct");
 
 	pdf_logimage("load inline image %p {\n", img);
 
@@ -202,7 +202,7 @@ loadcolorkey(int *colorkey, int bpc, int indexed, fz_obj *obj)
 }
 
 /* TODO error cleanup */
-fz_error 
+fz_error
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 {
 	fz_error error;
@@ -230,7 +230,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 
 	img = fz_malloc(sizeof(pdf_image));
 	if (!img)
-		return fz_throw("outofmem: image struct");
+		return fz_rethrow(-1, "out of memory: image struct");
 
 	pdf_logimage("load image (%d %d R) ptr=%p {\n", fz_tonum(ref), fz_togen(ref), img);
 
@@ -512,7 +512,7 @@ maskcolorkeyindexed(fz_pixmap *ind, fz_pixmap *pix, int *colorkey)
 	}
 }
 
-fz_error 
+fz_error
 pdf_loadtile(fz_image *img, fz_pixmap *tile)
 {
 	pdf_image *src = (pdf_image*)img;
