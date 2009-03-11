@@ -81,8 +81,8 @@ if $(OS) = MACOSX
 
     BUILD_X11APP = true ;
 
-    THIRDPARTYINC ?= -I/usr/X11/include ;
-    THIRDPARTYLIB ?= -L/usr/X11/lib ;
+    THIRDPARTYINC ?= -I/usr/X11R6/include ;
+    THIRDPARTYLIB ?= -L/usr/X11R6/lib ;
 
     CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
     LINKFLAGS = $(THIRDPARTYLIB) ;
