@@ -30,14 +30,11 @@ pdf_pagetree *srcpages = nil;
 
 void die(fz_error *eo)
 {
-	fflush(stdout);
-	fz_printerror(eo);
-	fz_droperror(eo);
-	fflush(stderr);
-	if (drawgc)
-		fz_droprenderer(drawgc);
-	closesrc();
-	abort();
+    fz_catch(eo, "aborting");
+    if (drawgc)
+	fz_droprenderer(drawgc);
+    closesrc();
+    exit(-1);
 }
 
 void closesrc(void)
@@ -78,9 +75,7 @@ void opensrc(char *filename, char *password, int loadpages)
 	error = pdf_loadxref(src, filename);
 	if (error)
 	{
-		fz_printerror(error);
-		fz_droperror(error);
-		fz_warn("trying to repair");
+		fz_catch(error, "trying to repair");
 		error = pdf_repairxref(src, filename);
 		if (error)
 			die(error);

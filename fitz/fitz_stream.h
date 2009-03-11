@@ -202,13 +202,9 @@ void fz_dropbuffer(fz_buffer *buf);
 
 typedef struct fz_filter_s fz_filter;
 
-#define fz_ioneedin (&fz_kioneedin)
-#define fz_ioneedout (&fz_kioneedout)
-#define fz_iodone (&fz_kiodone)
-
-extern fz_error fz_kioneedin;
-extern fz_error fz_kioneedout;
-extern fz_error fz_kiodone;
+#define fz_ioneedin ((fz_error*)1)
+#define fz_ioneedout ((fz_error*)2)
+#define fz_iodone ((fz_error*)3)
 
 /*
  * Evil looking macro to create an initialize a filter struct.

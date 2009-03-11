@@ -470,8 +470,7 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 	error = pdf_evalfunction(cs->tint, sep, fzcs->n, alt, cs->base->n);
 	if (error)
 	{
-		fz_warn("separation: %s", error->msg);
-		fz_droperror(error);
+		fz_catch(error, "cannot evaluate separation function");
 		xyz[0] = 0;
 		xyz[1] = 0;
 		xyz[2] = 0;

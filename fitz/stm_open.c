@@ -42,11 +42,8 @@ fz_dropstream(fz_stream *stm)
 	{
 		if (stm->error)
 		{
-			fflush(stdout);
-			fz_printerror(stm->error);
-			fz_droperror(stm->error);
-			fflush(stderr);
-			fz_warn("dropped unhandled ioerror");
+			fz_catch(stm->error, "dropped unhandled ioerror");
+			stm->error = fz_okay;
 		}
 
 		switch (stm->kind)

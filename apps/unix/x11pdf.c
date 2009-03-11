@@ -84,7 +84,7 @@ void winwarn(pdfapp_t *app, char *msg)
 
 void winerror(pdfapp_t *app, fz_error *error)
 {
-	fz_printerror(error);
+	fz_catch(error, "aborting");
 	exit(1);
 }
 

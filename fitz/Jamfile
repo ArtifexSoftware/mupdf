@@ -17,11 +17,10 @@ Library libfitz :
 	base_memory.c
 	base_rect.c
 	base_rune.c
+	base_string.c
 	base_cleanname.c
 	;
 
-if $(NEED_STRLCPY) { Library libfitz : util_strlcpy.c ; }
-if $(NEED_STRSEP) { Library libfitz : util_strsep.c ; }
 if $(NEED_GETOPT) { Library libfitz : util_getopt.c ; }
 
 # MSVC does not have gettimeofday()

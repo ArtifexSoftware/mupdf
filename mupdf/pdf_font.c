@@ -919,12 +919,7 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
                 error = pdf_loadembeddedfont(fontdesc, xref, obj);
                 if (error)
                 {
-                        fflush(stdout);
-                        fz_printerror(error);
-                        fz_droperror(error);
-                        fflush(stderr);
-                        fz_warn("ignored error when loading embedded font, attempting to load system font");
-
+			fz_catch(error, "ignored error when loading embedded font, attempting to load system font");
                         error = pdf_loadsystemfont(fontdesc, fontname, collection);
                         if (error)
                                 goto cleanup;

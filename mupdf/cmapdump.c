@@ -85,16 +85,14 @@ main(int argc, char **argv)
 	error = fz_openrfile(&fi, argv[i]);
 	if (error)
 	{
-	    fprintf(stderr, "cmapdump: could not open input file %s\n", argv[i]);
-	    fz_printerror(error);
+	    fz_catch(error, "cmapdump: could not open input file %s\n", argv[i]);
 	    return 1;
 	}
 
 	error = pdf_parsecmap(&cmap, fi);
 	if (error)
 	{
-	    fprintf(stderr, "cmapdump: could not parse input cmap %s\n", argv[i]);
-	    fz_printerror(error);
+	    fz_catch(error, "cmapdump: could not parse input cmap %s\n", argv[i]);
 	    return 1;
 	}
 

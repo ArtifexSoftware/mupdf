@@ -32,13 +32,17 @@
 
 /* Some useful semi-standard functions */
 
-#ifdef NEED_STRLCPY
-extern int strlcpy(char *dst, const char *src, int n);
-extern int strlcat(char *dst, const char *src, int n);
-#endif
+extern char *fz_strsep(char **stringp, const char *delim);
+extern int fz_strlcpy(char *dst, const char *src, int n);
+extern int fz_strlcat(char *dst, const char *src, int n);
 
 #ifdef NEED_STRSEP
-extern char *strsep(char **stringp, const char *delim);
+#define strsep fz_strsep
+#endif
+
+#ifdef NEED_STRLCPY
+#define strlcpy fz_strlcpy
+#define strlcat fz_strlcat
 #endif
 
 #ifdef NEED_GETOPT
@@ -171,29 +175,19 @@ int runenlen(int *r, int nrune);
 int fullrune(char *str, int n);
 char *cleanname(char *name);
 
-typedef struct fz_error_s fz_error;
+typedef int fz_error;
 
-struct fz_error_s
-{
-	char msg[184];
-	char file[32];
-	char func[32];
-	int line;
-	fz_error *cause;
-};
+#define fz_outofmem ((fz_error*)-1)
 
-#define fz_outofmem (&fz_koutofmem)
-extern fz_error fz_koutofmem;
-
-void fz_printerror(fz_error *eo);
-void fz_droperror(fz_error *eo);
-void fz_warn(char *fmt, ...) __printflike(1,2);
-
-#define fz_throw(...) fz_throwimp(nil, __func__, __FILE__, __LINE__, __VA_ARGS__)
-#define fz_rethrow(cause, ...) fz_throwimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
+#define fz_throw(...) fz_throwimp(__func__, __FILE__, __LINE__, __VA_ARGS__)
+#define fz_rethrow(cause, ...) fz_rethrowimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
+#define fz_catch(cause, ...) fz_catchimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_okay ((fz_error*)0)
 
-fz_error *fz_throwimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
+void fz_warn(char *fmt, ...) __printflike(1,2);
+fz_error *fz_throwimp(const char *func, const char *file, int line, char *fmt, ...) __printflike(4, 5);
+fz_error *fz_rethrowimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
+fz_error *fz_catchimp(fz_error *cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
 
 typedef struct fz_memorycontext_s fz_memorycontext;
 
@@ -242,24 +236,6 @@ void *fz_hashgetval(fz_hashtable *table, int idx);
 static inline int fz_idiv(int a, int b)
 {
 	return a < 0 ? (a - b + 1) / b : a / b;
-}
-
-/* from python */
-static inline void fz_idivmod(int x, int y, int *d, int *m)
-{
-	int xdivy = x / y;
-	int xmody = x - xdivy * y;
-	/* If the signs of x and y differ, and the remainder is non-0,
-	 * C89 doesn't define whether xdivy is now the floor or the
-	 * ceiling of the infinitely precise quotient.  We want the floor,
-	 * and we have it iff the remainder's sign matches y's.
-	 */
-	if (xmody && ((y ^ xmody) < 0)) {
-		xmody += y;
-		xdivy --;
-	}
-	*d = xdivy;
-	*m = xmody;
 }
 
 typedef struct fz_matrix_s fz_matrix;

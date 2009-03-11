@@ -9,10 +9,7 @@ pdf_xref *xref = NULL;
 
 void die(fz_error *eo)
 {
-    fflush(stdout);
-    fz_printerror(eo);
-    fz_droperror(eo);
-    fflush(stderr);
+    fz_catch(eo, "aborting");
     exit(1);
 }
 
@@ -28,9 +25,7 @@ void openxref(char *filename, char *password)
     error = pdf_loadxref(xref, filename);
     if (error)
     {
-	fz_printerror(error);
-	fz_droperror(error);
-	fz_warn("trying to repair");
+	fz_catch(error, "trying to repair");
 	error = pdf_repairxref(xref, filename);
 	if (error)
 	    die(error);

@@ -20,14 +20,6 @@ static void stdfree(fz_memorycontext *mem, void *p)
 static fz_memorycontext defmem = { stdmalloc, stdrealloc, stdfree };
 static fz_memorycontext *curmem = &defmem;
 
-fz_error fz_koutofmem = {
-	{"out of memory"},
-	{"<internal>"},
-	{"<internal>"},
-	0,
-	nil
-};
-
 fz_memorycontext *
 fz_currentmemorycontext()
 {
