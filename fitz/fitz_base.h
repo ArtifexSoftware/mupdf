@@ -173,11 +173,8 @@ int runetochar(char *str, int *rune);
 int runelen(long c);
 int runenlen(int *r, int nrune);
 int fullrune(char *str, int n);
-char *cleanname(char *name);
 
 typedef int fz_error;
-
-#define fz_outofmem ((fz_error)-1)
 
 #define fz_throw(...) fz_throwimp(__func__, __FILE__, __LINE__, __VA_ARGS__)
 #define fz_rethrow(cause, ...) fz_rethrowimp(cause, __func__, __FILE__, __LINE__, __VA_ARGS__)
@@ -189,22 +186,9 @@ fz_error fz_throwimp(const char *func, const char *file, int line, char *fmt, ..
 fz_error fz_rethrowimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
 fz_error fz_catchimp(fz_error cause, const char *func, const char *file, int line, char *fmt, ...) __printflike(5, 6);
 
-typedef struct fz_memorycontext_s fz_memorycontext;
-
-struct fz_memorycontext_s
-{
-	void * (*malloc)(fz_memorycontext *, int);
-	void * (*realloc)(fz_memorycontext *, void *, int);
-	void (*free)(fz_memorycontext *, void *);
-};
-
-fz_memorycontext *fz_currentmemorycontext(void);
-void fz_setmemorycontext(fz_memorycontext *memorycontext);
-
 void *fz_malloc(int n);
 void *fz_realloc(void *p, int n);
 void fz_free(void *p);
-
 char *fz_strdup(char *s);
 
 /*
@@ -231,12 +215,6 @@ void *fz_hashgetval(fz_hashtable *table, int idx);
 #define fz_mul255(a,b) (((a) * ((b) + 1)) >> 8)
 #define fz_floor(x) floor(x)
 #define fz_ceil(x) ceil(x)
-
-/* divide and floor towards -inf */
-static inline int fz_idiv(int a, int b)
-{
-	return a < 0 ? (a - b + 1) / b : a / b;
-}
 
 typedef struct fz_matrix_s fz_matrix;
 typedef struct fz_point_s fz_point;

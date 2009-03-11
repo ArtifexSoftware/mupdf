@@ -16,7 +16,7 @@
 # libraries are in c:/local/include and c:/local/lib.
 #
 # MacOS X builds assume that you have third party libraries installed
-# from MacPorts in /opt/local.
+# in /usr/local or some other system known location.
 #
 # Linux builds assume that you have freetype-config to find the paths
 # to the freetype library.
@@ -81,8 +81,8 @@ if $(OS) = MACOSX
 
     BUILD_X11APP = true ;
 
-    THIRDPARTYINC ?= -I/opt/local/include -I/opt/local/include/freetype2 -I/usr/X11R6/include ;
-    THIRDPARTYLIB ?= -L/opt/local/lib -L/usr/X11R6/lib ;
+    THIRDPARTYINC ?= -I/usr/X11/include ;
+    THIRDPARTYLIB ?= -L/usr/X11/lib ;
 
     CCFLAGS = -Wall -std=c99 $(THIRDPARTYINC) ;
     LINKFLAGS = $(THIRDPARTYLIB) ;

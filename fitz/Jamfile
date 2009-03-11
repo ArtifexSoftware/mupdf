@@ -16,9 +16,8 @@ Library libfitz :
 	base_matrix.c
 	base_memory.c
 	base_rect.c
-	base_rune.c
 	base_string.c
-	base_cleanname.c
+	base_unicode.c
 	;
 
 if $(NEED_GETOPT) { Library libfitz : util_getopt.c ; }

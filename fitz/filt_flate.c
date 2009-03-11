@@ -17,6 +17,12 @@ zmalloc(void *opaque, unsigned int items, unsigned int size)
 	return fz_malloc(items * size);
 }
 
+static void
+zfree(void *opaque, void *ptr)
+{
+	fz_free(ptr);
+}
+
 fz_error 
 fz_newflated(fz_filter **fp, fz_obj *params)
 {
@@ -28,8 +34,8 @@ fz_newflated(fz_filter **fp, fz_obj *params)
 	FZ_NEWFILTER(fz_flate, f, flated);
 
 	f->z.zalloc = zmalloc;
-	f->z.zfree = (void(*)(void*,void*))fz_currentmemorycontext()->free;
-	f->z.opaque = fz_currentmemorycontext();
+	f->z.zfree = zfree;
+	f->z.opaque = nil;
 	f->z.next_in = nil;
 	f->z.avail_in = 0;
 
@@ -133,8 +139,8 @@ fz_newflatee(fz_filter **fp, fz_obj *params)
 	}
 
 	f->z.zalloc = zmalloc;
-	f->z.zfree = (void(*)(void*,void*))fz_currentmemorycontext()->free;
-	f->z.opaque = fz_currentmemorycontext();
+	f->z.zfree = zfree;
+	f->z.opaque = nil;
 	f->z.next_in = nil;
 	f->z.avail_in = 0;
 

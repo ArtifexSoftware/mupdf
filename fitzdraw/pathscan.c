@@ -2,6 +2,12 @@
 #include "fitz_tree.h"
 #include "fitz_draw.h"
 
+/* divide and floor towards -inf */
+static inline int fz_idiv(int a, int b)
+{
+	return a < 0 ? (a - b + 1) / b : a / b;
+}
+
 enum { HSCALE = 17, VSCALE = 15, SF = 1 };
 
 /*
