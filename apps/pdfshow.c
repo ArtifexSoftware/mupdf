@@ -177,7 +177,7 @@ int main(int argc, char **argv)
     char *password = "";
     int c;
 
-    while ((c = getopt(argc, argv, "bdp:")) != -1)
+    while ((c = getopt(argc, argv, "d:bx")) != -1)
     {
 	switch (c)
 	{
