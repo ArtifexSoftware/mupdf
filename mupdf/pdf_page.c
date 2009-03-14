@@ -67,6 +67,7 @@ runmany(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *list)
 
 	memcpy(big->wp, one->rp, n);
 
+	big->wp += n;
 	*big->wp++ = ' ';
 
 	fz_dropbuffer(one);
