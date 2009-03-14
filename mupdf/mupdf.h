@@ -629,6 +629,7 @@ struct pdf_material_s
 	pdf_indexed *indexed;
 	pdf_pattern *pattern;
 	fz_shade *shade;
+	float parentalpha;
 	float alpha;
 	float v[32];
 };

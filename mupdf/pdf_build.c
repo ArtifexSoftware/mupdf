@@ -18,6 +18,7 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->stroke.indexed = nil;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
+	gs->stroke.parentalpha = 1.0;
 	gs->stroke.alpha = 1.0;
 
 	gs->fill.kind = PDF_MCOLOR;
@@ -26,6 +27,7 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->fill.indexed = nil;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;
+	gs->fill.parentalpha = 1.0;
 	gs->fill.alpha = 1.0;
 
 	gs->blendmode = FZ_BNORMAL;

@@ -170,10 +170,14 @@ runxobject(pdf_csi *csi, pdf_xref *xref, pdf_xobject *xobj, int istransparency)
 
 	gstate = csi->gstate + csi->gtop;
 
+	gstate->stroke.parentalpha = gstate->stroke.alpha;
+	gstate->fill.parentalpha = gstate->fill.alpha;
+
 	/* reset alpha to 1.0 when starting a new Transparency group */
-	if (istransparency) {
-	    gstate->stroke.alpha = 1.0;
-	    gstate->fill.alpha = 1.0;
+	if (istransparency)
+	{
+	    gstate->stroke.alpha = gstate->stroke.parentalpha;
+	    gstate->fill.alpha = gstate->fill.parentalpha;
 	}
 
 	/* push transform */
@@ -314,9 +318,9 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *extgstate)
 		}
 
 		else if (!strcmp(s, "CA"))
-			gstate->stroke.alpha = fz_toreal(val);
+			gstate->stroke.alpha = gstate->stroke.parentalpha * fz_toreal(val);
 		else if (!strcmp(s, "ca"))
-			gstate->fill.alpha = fz_toreal(val);
+			gstate->fill.alpha = gstate->fill.parentalpha * fz_toreal(val);
 
 		else if (!strcmp(s, "BM"))
 		{
