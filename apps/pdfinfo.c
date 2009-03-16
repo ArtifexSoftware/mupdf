@@ -6,12 +6,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#ifdef _MSC_VER
-#include <winsock2.h>
-#else
-#include <sys/time.h>
-#endif
-
 /* put these up here so we can clean up in die() */
 fz_renderer *drawgc = nil;
 void closesrc(void);

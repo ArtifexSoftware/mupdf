@@ -73,6 +73,12 @@ main(int argc, char **argv)
 	else
 	    realname = argv[i];
 
+	if (strlen(realname) > (sizeof name - 1))
+	{
+	    fprintf(stderr, "cmapdump: file name too long\n");
+	    return 1;
+	}
+
 	strcpy(name, realname);
 	p = name;
 	while (*p)

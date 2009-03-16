@@ -414,6 +414,7 @@ struct pdf_fontdesc_s
 	int refs;
 
 	fz_font *font;
+	char *buffer; /* contains allocated memory that should be freed */
 
 	/* FontDescriptor */
 	int flags;

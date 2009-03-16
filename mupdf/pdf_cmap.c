@@ -427,8 +427,7 @@ pdf_sortcmap(pdf_cmap *cmap)
     if (!newranges)
 	return fz_rethrow(-1, "out of memory: cmap ranges");
     cmap->rcap = cmap->rlen;
-    if (cmap->refs >= 0)
-	cmap->ranges = newranges;
+    cmap->ranges = newranges;
 
     if (cmap->tlen)
     {

@@ -1,6 +1,6 @@
 #include "fitz_base.h"
 #include "fitz_tree.h"
-#include "fitz_draw.h" /* for type3 font rendering */
+#include "fitz_draw.h" /* FIXME -- for glyph rendering callbacks */
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

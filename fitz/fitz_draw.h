@@ -9,6 +9,16 @@ typedef struct fz_renderer_s fz_renderer;
 #define FZ_PCTM \
 	int u0, int v0, int fa, int fb, int fc, int fd, int w0, int h
 
+typedef struct fz_glyph_s fz_glyph;
+typedef struct fz_glyphcache_s fz_glyphcache;
+
+fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+fz_error fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
+fz_error fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
+void fz_debugglyphcache(fz_glyphcache *);
+void fz_dropglyphcache(fz_glyphcache *);
+
 typedef struct fz_edge_s fz_edge;
 typedef struct fz_gel_s fz_gel;
 typedef struct fz_ael_s fz_ael;

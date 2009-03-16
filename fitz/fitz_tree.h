@@ -344,9 +344,6 @@ void fz_convertpixmap(fz_colorspace *srcs, fz_pixmap *srcv, fz_colorspace *dsts,
 void fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_stdconvpixmap(fz_colorspace *srcs, fz_pixmap *srcv, fz_colorspace *dsts, fz_pixmap *dstv);
 
-typedef struct fz_glyph_s fz_glyph;
-typedef struct fz_glyphcache_s fz_glyphcache;
-
 char *ft_errorstring(int err);
 
 struct fz_font_s
@@ -384,13 +381,6 @@ void fz_dropfont(fz_font *font);
 
 void fz_debugfont(fz_font *font);
 void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
-
-fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
-fz_error fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
-void fz_debugglyphcache(fz_glyphcache *);
-void fz_dropglyphcache(fz_glyphcache *);
 
 /* loadtile will fill a pixmap with the pixel samples. non-premultiplied alpha. */
 

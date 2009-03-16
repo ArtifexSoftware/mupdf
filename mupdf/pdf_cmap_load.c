@@ -9,7 +9,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 {
     fz_error error = fz_okay;
     fz_obj *stmobj = stmref;
-    fz_stream *file;
+    fz_stream *file = nil;
     pdf_cmap *cmap = nil;
     pdf_cmap *usecmap;
     fz_obj *wmode;
@@ -91,6 +91,8 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
     return fz_okay;
 
 cleanup:
+    if (file)
+	fz_dropstream(file);
     if (cmap)
 	pdf_dropcmap(cmap);
     fz_dropobj(stmobj);

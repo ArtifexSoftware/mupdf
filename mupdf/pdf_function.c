@@ -1552,7 +1552,7 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 	default:
 		fz_free(func);
 		fz_dropobj(dict);
-		return fz_throw("unknown function type %d (%d %d R)", func->type, fz_tonum(ref), fz_togen(ref));
+		return fz_throw("unknown function type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 	}
 
 	fz_dropobj(dict);

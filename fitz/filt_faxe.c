@@ -84,8 +84,8 @@ fz_newfaxe(fz_filter **fp, fz_obj *params)
 	fax->src = fz_malloc(fax->stride);
 	if (!fax->src)
 	{
-	    fz_free(fax);
 	    fz_free(fax->ref);
+	    fz_free(fax);
 	    return fz_rethrow(-1, "out of memoryory: scanline buffer two");
 	}
 

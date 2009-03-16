@@ -101,8 +101,8 @@ fz_newfaxd(fz_filter **fp, fz_obj *params)
 	fax->dst = fz_malloc(fax->stride);
 	if (!fax->dst)
 	{
-		fz_free(fax);
 		fz_free(fax->ref);
+		fz_free(fax);
 		return fz_rethrow(-1, "out of memory: scanline buffer two");
 	}
 

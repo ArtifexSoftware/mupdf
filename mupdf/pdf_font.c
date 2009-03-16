@@ -139,6 +139,8 @@ pdf_dropfont(pdf_fontdesc *fontdesc)
     {
 	if (fontdesc->font)
 	    fz_dropfont(fontdesc->font);
+	if (fontdesc->buffer)
+	    fz_free(fontdesc->buffer);
 	if (fontdesc->encoding)
 	    pdf_dropcmap(fontdesc->encoding);
 	if (fontdesc->tottfcmap)
@@ -165,6 +167,7 @@ pdf_newfontdesc(void)
 	fontdesc->refs = 1;
 
 	fontdesc->font = nil;
+	fontdesc->buffer = nil;
 
 	fontdesc->flags = 0;
 	fontdesc->italicangle = 0;
@@ -664,13 +667,14 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 		/* unicode cmap to get a glyph id */
 		else if (fontdesc->font->ftsubstitute)
 		{
-			int e;
-
 			pdf_logfont("emulate ttf cidfont\n");
 
-			e = FT_Select_Charmap(face, ft_encoding_unicode);
-			if (e)
-				return fz_throw("fonterror: no unicode cmap when emulating CID font");
+			error = FT_Select_Charmap(face, ft_encoding_unicode);
+			if (error)
+			{
+				error = fz_throw("fonterror: no unicode cmap when emulating CID font");
+				goto cleanup;
+			}
 
 			if (!strcmp(collection, "Adobe-CNS1"))
 				error = pdf_loadsystemcmap(&fontdesc->tottfcmap, "Adobe-CNS1-UCS2");
@@ -686,7 +690,10 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 				error = fz_okay;
 
 			if (error)
-				return fz_rethrow(error, "cannot load system cmap %s", collection);
+			{
+				error = fz_rethrow(error, "cannot load system cmap %s", collection);
+				goto cleanup;
+			}
 		}
 	}
 
@@ -695,7 +702,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 		goto cleanup;
 
 	/* Rudimentary check for DynaLab fonts */
-	if (kind == TRUETYPE && collection && strstr(collection, "Adobe-"))
+	if (kind == TRUETYPE && strstr(collection, "Adobe-"))
 	    fontdesc->font->fthint = 1;
 
 	/*
@@ -972,7 +979,7 @@ pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref
 
 	error = pdf_storeitem(xref->store, PDF_KFONT, ref, *fontdescp);
 	if (error)
-		return fz_rethrow(error, "cannot store font resource");
+	    return fz_rethrow(error, "cannot store font resource");
 
 	return fz_okay;
 }

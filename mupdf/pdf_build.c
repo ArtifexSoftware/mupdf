@@ -922,7 +922,8 @@ showglyph(pdf_csi *csi, int cid)
 		tx = (w0 * gstate->size + gstate->charspace) * gstate->scale;
 		csi->tm = fz_concat(fz_translate(tx, 0), csi->tm);
 	}
-	else
+
+	if (fontdesc->wmode == 1)
 	{
 		w1 = v.w / 1000.0;
 		ty = w1 * gstate->size + gstate->charspace;

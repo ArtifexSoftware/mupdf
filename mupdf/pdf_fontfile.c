@@ -279,8 +279,8 @@ pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref)
 		return fz_rethrow(error, "cannot load embedded font (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
 	}
 
-//XXX	font->ftbuffer = buf->rp; /* save the buffer so we can free it later */
-//	fz_free(buf); /* only free the fz_buffer struct, not the contained data */
+	font->buffer = buf->rp; /* save the buffer so we can free it later */
+	fz_free(buf); /* only free the fz_buffer struct, not the contained data */
 
 	return fz_okay;
 }
