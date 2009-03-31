@@ -284,8 +284,8 @@ typedef struct fz_md5_s fz_md5;
 
 struct fz_md5_s
 {
-	unsigned long state[4];
-	unsigned long count[2];
+	unsigned int state[4];
+	unsigned int count[2];
 	unsigned char buffer[64];
 };
 
