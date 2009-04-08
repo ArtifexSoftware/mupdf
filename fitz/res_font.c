@@ -326,6 +326,9 @@ fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
 	return fz_okay;
 }
 
+/* XXX UGLY HACK XXX */
+extern fz_colorspace *pdf_devicegray;
+
 fz_error
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
@@ -353,9 +356,6 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	glyph->h = 0;
 	return fz_okay;
     }
-
-    /* XXX UGLY HACK XXX */
-    extern fz_colorspace *pdf_devicegray;
 
     ctm = fz_concat(font->t3matrix, trm);
     bbox = fz_roundrect(fz_boundtree(tree, ctm));
