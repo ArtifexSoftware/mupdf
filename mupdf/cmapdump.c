@@ -104,8 +104,12 @@ main(int argc, char **argv)
 
 	fprintf(fo, "/*\n * %s\n */\n\n", cmap->cmapname);
 
-	fprintf(fo, "static const pdf_range pdf_cmap_%s_ranges[%d] =\n{\n",
-		name, cmap->rlen);
+	fprintf(fo, "static const pdf_range pdf_cmap_%s_ranges[] =\n{\n", name);
+	if (cmap->rlen == 0)
+	{
+	    fprintf(fo, "    /* dummy entry for non-c99 compilers */\n");
+	    fprintf(fo, "    { 0x0, 0x0, PDF_CMAP_RANGE, 0 }\n");
+	}
 	for (k = 0; k < cmap->rlen; k++)
 	{
 	    fprintf(fo, "    { 0x%04x, 0x%04x, %s %d },\n",
@@ -141,6 +145,12 @@ main(int argc, char **argv)
 
 	fprintf(fo, "    %d, /* codespace table */\n", cmap->ncspace);
 	fprintf(fo, "    {\n");
+
+	if (cmap->ncspace == 0)
+	{
+	    fprintf(fo, "    /* dummy entry for non-c99 compilers */\n");
+	    fprintf(fo, "    { 0, 0x0, 0x0 },\n");
+	}
 	for (k = 0; k < cmap->ncspace; k++)
 	{
 	    fprintf(fo, "\t{ %d, 0x%04x, 0x%04x },\n",
