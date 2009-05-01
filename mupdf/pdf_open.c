@@ -504,7 +504,7 @@ readxrefsections(pdf_xref *xref, int ofs, char *buf, int cap)
 	prev = fz_dictgets(trailer, "Prev");
 	if (prev)
 	{
-		pdf_logxref("load prev\n");
+		pdf_logxref("load prev at 0x%x\n", fz_toint(prev));
 		error = readxrefsections(xref, fz_toint(prev), buf, cap);
 		if (error)
 		{
@@ -682,7 +682,7 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
-	pdf_logxref("  size %d\n", fz_toint(size));
+	pdf_logxref("  size %d at 0x%x\n", fz_toint(size), xref->startxref);
 
 	assert(xref->table == nil);
 
