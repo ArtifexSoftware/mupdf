@@ -77,6 +77,15 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 			if (error) return fz_rethrow(error, "cannot inherit page tree rotate");
 		}
 
+		if (pages->cursor >= pages->count)
+		{
+			fz_warn("initial page tree size too small, enlarging");
+
+			pages->count = pages->cursor + 1;
+			pages->pref = fz_realloc(pages->pref, sizeof(fz_obj*) * pages->count);
+			pages->pobj = fz_realloc(pages->pobj, sizeof(fz_obj*) * pages->count);
+		}
+
 		pages->pref[pages->cursor] = fz_keepobj(ref);
 		pages->pobj[pages->cursor] = fz_keepobj(obj);
 		pages->cursor ++;
