@@ -240,19 +240,27 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	 * Dimensions, BPC and ColorSpace
 	 */
 
+	w = 0;
 	obj = fz_dictgets(dict, "Width");
-	error = pdf_resolve(&obj, xref);
-	if (error)
-		return fz_rethrow(error, "cannot parse image dictionary");
-	w = fz_toint(obj);
-	fz_dropobj(obj);
+	if (obj)
+	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return fz_rethrow(error, "cannot parse image dictionary");
+		w = fz_toint(obj);
+		fz_dropobj(obj);
+	}
 
+	h = 0;
 	obj = fz_dictgets(dict, "Height");
-	error = pdf_resolve(&obj, xref);
-	if (error)
-		return fz_rethrow(error, "cannot parse image dictionary");
-	h = fz_toint(obj);
-	fz_dropobj(obj);
+	if (obj)
+	{
+		error = pdf_resolve(&obj, xref);
+		if (error)
+			return fz_rethrow(error, "cannot parse image dictionary");
+		h = fz_toint(obj);
+		fz_dropobj(obj);
+	}
 
 	bpc = 1; /* TODO: should check that ImageMask is true before using default */
 	obj = fz_dictgets(dict, "BitsPerComponent");
