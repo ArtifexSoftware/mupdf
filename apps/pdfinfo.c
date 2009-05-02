@@ -484,7 +484,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		width = fz_dictgets(imagedict, "Width");
 		if (width)
 		{
-			error = pdf_resolve(&type, src);
+			error = pdf_resolve(&width, src);
 			if (error)
 				return fz_rethrow(error, "cannot resolve indirect image width (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		}
