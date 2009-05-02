@@ -541,6 +541,8 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 		int tmplen;
 
 		cidinfo = fz_dictgets(dict, "CIDSystemInfo");
+		if (!cidinfo)
+			return fz_throw("cid font is missing info");
 
 		error = pdf_resolve(&cidinfo, xref);
 		if (error)
@@ -844,6 +846,8 @@ loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 	fz_obj *tounicode;
 
 	dfonts = fz_dictgets(dict, "DescendantFonts");
+	if (!dfonts)
+		return fz_throw("cid font is missing descendant fonts");
 	error = pdf_resolve(&dfonts, xref);
 	if (error)
 		return fz_rethrow(error, "cannot find DescendantFonts");
