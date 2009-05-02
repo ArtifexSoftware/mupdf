@@ -106,9 +106,14 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		if (inh) inherit.rotate = inh;
 
 		kids = fz_dictgets(obj, "Kids");
-		error = pdf_resolve(&kids, xref);
-		if (error)
-			return fz_rethrow(error, "cannot resolve /Kids");
+		if (kids)
+		{
+			error = pdf_resolve(&kids, xref);
+			if (error)
+				return fz_rethrow(error, "cannot resolve /Kids");
+		}
+		if (!fz_isarray(kids))
+			return fz_throw("page tree contains no pages");
 
 		pdf_logpage("subtree %d pages (%d %d R) {\n",
 				fz_arraylen(kids), ref->u.r.oid, ref->u.r.gid);
