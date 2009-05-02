@@ -262,7 +262,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		fz_dropobj(obj);
 	}
 
-	bpc = 1; /* TODO: should check that ImageMask is true before using default */
+	bpc = 0;
 	obj = fz_dictgets(dict, "BitsPerComponent");
 	if (obj)
 	{
@@ -324,15 +324,20 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 			fz_dropcolorspace(cs);
 			cs = nil;
 		}
-		if (bpc != 1)
+		if (bpc != 0 && bpc != 1)
 			fz_warn("masks can only have one component, proceeding anyway.");
 
 		bpc = 1;
 		n = 0;
 		a = 1;
 	}
-	else if (!cs)
-		return fz_throw("colorspace missing for image");
+	else
+        {
+		if (!cs)
+			return fz_throw("colorspace missing for image");
+		if (bpc == 0)
+			return fz_throw("image has not bits per component");
+        }
 
 	obj = fz_dictgets(dict, "SMask");
 	if (fz_isindirect(obj))
