@@ -103,6 +103,8 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		img->super.n = 0;
 		img->super.a = 1;
 	}
+        else if (!cs)
+		return fz_throw("image is missing colorspace");
 
 	if (fz_isarray(d))
 	{
