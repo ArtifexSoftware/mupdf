@@ -189,7 +189,7 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
 	}
 	else
 	{
-		return fz_throw("cannot recognize xref format");
+		return fz_throw("cannot recognize xref format: '%c'", c);
 	}
 
 	return fz_okay;
