@@ -170,6 +170,9 @@ readtrailer(pdf_xref *xref, char *buf, int cap)
 	if (error)
 		return fz_rethrow(error, "cannot seek to startxref");
 
+	while (iswhite(fz_peekbyte(xref->file)))
+		fz_readbyte(xref->file);
+
 	c = fz_peekbyte(xref->file);
 	error = fz_readerror(xref->file);
 	if (error)
@@ -450,6 +453,9 @@ readxref(fz_obj **trailerp, pdf_xref *xref, int ofs, char *buf, int cap)
 	error = fz_seek(xref->file, ofs, 0);
 	if (error)
 		return fz_rethrow(error, "cannot seek to xref");
+
+	while (iswhite(fz_peekbyte(xref->file)))
+		fz_readbyte(xref->file);
 
 	c = fz_peekbyte(xref->file);
 	error = fz_readerror(xref->file);
