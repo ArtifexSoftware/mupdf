@@ -48,6 +48,10 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	ismask = fz_tobool(fz_dictgetsa(dict, "ImageMask", "IM"));
 	d = fz_dictgetsa(dict, "Decode", "D");
 	cs = fz_dictgetsa(dict, "ColorSpace", "CS");
+	if (img->super.w == 0)
+		fz_warn("inline image width is zero or undefined");
+	if (img->super.h == 0)
+		fz_warn("inline image height is zero or undefined");
 
 	pdf_logimage("size %dx%d %d\n", img->super.w, img->super.h, img->bpc);
 
@@ -250,6 +254,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		w = fz_toint(obj);
 		fz_dropobj(obj);
 	}
+	if (w == 0)
+		fz_warn("image width is zero or undefined");
 
 	h = 0;
 	obj = fz_dictgets(dict, "Height");
@@ -261,6 +267,8 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		h = fz_toint(obj);
 		fz_dropobj(obj);
 	}
+	if (h == 0)
+		fz_warn("image height is zero or undefined");
 
 	bpc = 0;
 	obj = fz_dictgets(dict, "BitsPerComponent");
