@@ -344,7 +344,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict, fz_obj *ref)
 		if (!cs)
 			return fz_throw("colorspace missing for image");
 		if (bpc == 0)
-			return fz_throw("image has not bits per component");
+			return fz_throw("image has no bits per component");
         }
 
 	obj = fz_dictgets(dict, "SMask");
