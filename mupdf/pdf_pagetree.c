@@ -81,7 +81,7 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 		{
 			fz_warn("initial page tree size too small, enlarging");
 
-			pages->count = pages->cursor + 1;
+			pages->count = pages->cursor + 10;
 			pages->pref = fz_realloc(pages->pref, sizeof(fz_obj*) * pages->count);
 			pages->pobj = fz_realloc(pages->pobj, sizeof(fz_obj*) * pages->count);
 		}
