@@ -84,6 +84,8 @@ loadpagetree(pdf_xref *xref, pdf_pagetree *pages,
 			pages->count = pages->cursor + 10;
 			pages->pref = fz_realloc(pages->pref, sizeof(fz_obj*) * pages->count);
 			pages->pobj = fz_realloc(pages->pobj, sizeof(fz_obj*) * pages->count);
+			if (!pages->pref || !pages->pobj)
+				return fz_throw("error allocating enlarged page tree");
 		}
 
 		pages->pref[pages->cursor] = fz_keepobj(ref);
