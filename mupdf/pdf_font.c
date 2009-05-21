@@ -704,7 +704,8 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 		goto cleanup;
 
 	/* Rudimentary check for DynaLab fonts */
-	if (kind == TRUETYPE && strstr(collection, "Adobe-"))
+	/* ... not really necessary since freetype 2.3.9 */
+	if (kind == TRUETYPE && FT_IS_TRICKY(((FT_Face)fontdesc->font->ftface)))
 	    fontdesc->font->fthint = 1;
 
 	/*
