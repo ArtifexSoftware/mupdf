@@ -72,7 +72,7 @@ int showcolumn;
 
 void showusage(void)
 {
-    fprintf(stderr, "usage: pdfshow [-bd] [-p password] <file> [xref] [trailer] [object numbers]\n");
+    fprintf(stderr, "usage: pdfshow [-bx] [-d password] <file> [xref] [trailer] [object numbers]\n");
     fprintf(stderr, "  -b  \tprint streams as raw binary data\n");
     fprintf(stderr, "  -x  \tdecompress streams\n");
     fprintf(stderr, "  -d  \tdecrypt password\n");
