@@ -277,6 +277,7 @@ struct pdf_xobject_s
 	fz_rect bbox;
 	int isolated;
 	int knockout;
+	int transparency;
 	fz_obj *resources;
 	fz_buffer *contents;
 };
