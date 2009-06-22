@@ -476,6 +476,7 @@ skip:
 	else
 	{
 		fz_warn("expected endobj or stream keyword (%d %d R)", oid, gid);
+		stmofs = 0;
 	}
 
 	if (ooid) *ooid = oid;
