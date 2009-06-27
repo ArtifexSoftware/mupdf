@@ -303,6 +303,7 @@ skip:
 					break;
 				}
 			}
+			error = fz_throw("invalid indirect reference in dict");
 			goto cleanup;
 		default:
 			error = fz_throw("unknown token in dict");
