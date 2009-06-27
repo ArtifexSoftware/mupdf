@@ -253,7 +253,10 @@ skip:
 		}
 
 		if (tok != PDF_TNAME)
+		{
+			error = fz_throw("invalid key in dict");
 			goto cleanup;
+		}
 
 		error = fz_newname(&key, buf);
 		if (error)
