@@ -18,7 +18,6 @@ typedef enum fz_objkind_e
 	FZ_ARRAY,
 	FZ_DICT,
 	FZ_INDIRECT,
-	FZ_POINTER
 } fz_objkind;
 
 struct fz_keyval_s
@@ -56,7 +55,6 @@ struct fz_obj_s
 			int oid;
 			int gid;
 		} r;
-		void *p;
 	} u;
 };
 
@@ -67,7 +65,6 @@ fz_error fz_newreal(fz_obj **op, float f);
 fz_error fz_newname(fz_obj **op, char *str);
 fz_error fz_newstring(fz_obj **op, char *str, int len);
 fz_error fz_newindirect(fz_obj **op, int oid, int gid);
-fz_error fz_newpointer(fz_obj **op, void *p);
 
 fz_error fz_newarray(fz_obj **op, int initialcap);
 fz_error fz_newdict(fz_obj **op, int initialcap);
@@ -89,7 +86,6 @@ int fz_isstring(fz_obj *obj);
 int fz_isarray(fz_obj *obj);
 int fz_isdict(fz_obj *obj);
 int fz_isindirect(fz_obj *obj);
-int fz_ispointer(fz_obj *obj);
 
 int fz_objcmp(fz_obj *a, fz_obj *b);
 
@@ -102,7 +98,6 @@ char *fz_tostrbuf(fz_obj *obj);
 int fz_tostrlen(fz_obj *obj);
 int fz_tonum(fz_obj *obj);
 int fz_togen(fz_obj *obj);
-void *fz_topointer(fz_obj *obj);
 
 fz_error fz_newnamefromstring(fz_obj **op, fz_obj *str);
 
