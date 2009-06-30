@@ -7,10 +7,11 @@ static int keyvalcmp(const void *ap, const void *bp)
 {
 	const fz_keyval *a = ap;
 	const fz_keyval *b = bp;
-	if (fz_isname(a->k))
+	if (fz_isname(a->k) && fz_isname(b->k))
 		return strcmp(fz_toname(a->k), fz_toname(b->k));
-	if (fz_isstring(a->k))
-		return strcmp(fz_tostrbuf(a->k), fz_tostrbuf(b->k));
+	if (fz_isstring(a->k) && fz_isstring(b->k))
+		if (fz_tostrlen(a->k) == fz_tostrlen(b->k))
+			return memcmp(fz_tostrbuf(a->k), fz_tostrbuf(b->k), fz_tostrlen(a->k));
 	return -1;
 }
 
@@ -19,7 +20,8 @@ static inline int keystrcmp(fz_obj *key, char *s)
 	if (fz_isname(key))
 		return strcmp(fz_toname(key), s);
 	if (fz_isstring(key))
-		return strcmp(fz_tostrbuf(key), s);
+		if (strlen(s) == fz_tostrlen(key))
+			return memcmp(fz_tostrbuf(key), s, fz_tostrlen(key));
 	return -1;
 }
 
