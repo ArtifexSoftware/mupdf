@@ -103,12 +103,12 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	if (action)
 	{
 		obj = fz_dictgets(action, "S");
-		if (!strcmp(fz_toname(obj), "GoTo"))
+		if (fz_isname(obj) && !strcmp(fz_toname(obj), "GoTo"))
 		{
 			dest = resolvedest(xref, fz_dictgets(action, "D"));
 			pdf_logpage("action goto (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
 		}
-		else if (!strcmp(fz_toname(obj), "URI"))
+		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "URI"))
 		{
 			dest = fz_dictgets(action, "URI");
 			pdf_logpage("action uri %s\n", fz_tostrbuf(dest));
@@ -150,7 +150,7 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 		obj = fz_arrayget(annots, i);
 
 		subtype = fz_dictgets(obj, "Subtype");
-		if (!strcmp(fz_toname(subtype), "Link"))
+		if (fz_isname(subtype) && !strcmp(fz_toname(subtype), "Link"))
 		{
 			pdf_link *temp = nil;
 
