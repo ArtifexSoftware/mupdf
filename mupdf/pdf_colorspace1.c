@@ -408,7 +408,6 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 static fz_error
 loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
 {
-	fz_error error;
 	fz_obj *dict;
 	int n;
 
