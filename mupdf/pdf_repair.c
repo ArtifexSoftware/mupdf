@@ -14,9 +14,8 @@ struct entry
 	int stmlen;
 };
 
-static fz_error
-parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
-		int *isroot, int *isinfo)
+static fz_error parseobj(fz_stream *file, char *buf, int cap,
+	int *stmofs, int *stmlen, int *isroot, int *isinfo)
 {
 	fz_error error;
 	fz_obj *dict = nil;
@@ -34,7 +33,7 @@ parseobj(fz_stream *file, char *buf, int cap, int *stmofs, int *stmlen,
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (tok == PDF_TODICT)
 	{
-		error = pdf_parsedict(&dict, file, buf, cap);
+		error = pdf_parsedict(&dict, nil, file, buf, cap);
 		if (error)
 			return fz_rethrow(error, "cannot parse object");
 	}
@@ -260,7 +259,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
-	error = fz_packobj(&xref->trailer,
+	error = fz_packobj(&xref->trailer, xref,
 			"<< /Size %i /Root %r >>",
 			maxoid + 1, rootoid, rootgen);
 	if (error)
@@ -268,6 +267,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		error = fz_rethrow(error, "cannot create new trailer");
 		goto cleanup;
 	}
+
+	printf("repair maxnum = %d\n", maxoid);
 
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;

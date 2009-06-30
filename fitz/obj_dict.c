@@ -181,6 +181,7 @@ growdict(fz_obj *obj)
 int
 fz_dictlen(fz_obj *obj)
 {
+	obj = fz_resolveindirect(obj);
 	if (!fz_isdict(obj))
 		return 0;
 	return obj->u.d.len;
@@ -189,6 +190,8 @@ fz_dictlen(fz_obj *obj)
 fz_obj *
 fz_dictgetkey(fz_obj *obj, int i)
 {
+	obj = fz_resolveindirect(obj);
+
 	if (!fz_isdict(obj))
 		return nil;
 
@@ -201,6 +204,8 @@ fz_dictgetkey(fz_obj *obj, int i)
 fz_obj *
 fz_dictgetval(fz_obj *obj, int i)
 {
+	obj = fz_resolveindirect(obj);
+
 	if (!fz_isdict(obj))
 		return nil;
 
@@ -245,6 +250,8 @@ fz_dictgets(fz_obj *obj, char *key)
 {
 	int i;
 
+	obj = fz_resolveindirect(obj);
+
 	if (!fz_isdict(obj))
 		return nil;
 
@@ -281,6 +288,8 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 	fz_error error;
 	char *s;
 	int i;
+
+	obj = fz_resolveindirect(obj);
 
 	if (!fz_isdict(obj))
 		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
@@ -342,6 +351,8 @@ fz_dictdels(fz_obj *obj, char *key)
 {
 	int i;
 
+	obj = fz_resolveindirect(obj);
+
 	if (!fz_isdict(obj))
 		return fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
 
@@ -370,9 +381,11 @@ fz_dictdel(fz_obj *obj, fz_obj *key)
 }
 
 void
-fz_dropdict(fz_obj *obj)
+fz_freedict(fz_obj *obj)
 {
 	int i;
+
+	obj = fz_resolveindirect(obj);
 
 	if (!fz_isdict(obj))
 		return;
@@ -391,6 +404,7 @@ fz_dropdict(fz_obj *obj)
 void
 fz_sortdict(fz_obj *obj)
 {
+	obj = fz_resolveindirect(obj);
 	if (!fz_isdict(obj))
 		return;
 	if (!obj->u.d.sorted)
