@@ -683,11 +683,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 	if (error)
 		goto cleanup;
 
-	/* Rudimentary check for DynaLab fonts */
-	/* ... not really necessary since freetype 2.3.9 */
-	if (kind == TRUETYPE && FT_IS_TRICKY(((FT_Face)fontdesc->font->ftface)))
-	    fontdesc->font->fthint = 1;
-
 	/*
 	 * Horizontal
 	 */
