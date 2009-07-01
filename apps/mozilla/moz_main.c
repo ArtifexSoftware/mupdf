@@ -63,9 +63,9 @@ void pdfmoz_warn(pdfmoz_t *moz, const char *fmt, ...)
 
 void pdfmoz_error(pdfmoz_t *moz, fz_error error)
 {
-    strcpy(moz->error, error->msg);
+    fz_catch(error, "unhandled error");
     InvalidateRect(moz->hwnd, NULL, FALSE);
-    NPN_Status(moz->inst, moz->error);
+    NPN_Status(moz->inst, "mupdf error");
 }
 
 void pdfmoz_open(pdfmoz_t *moz, char *filename)
@@ -98,8 +98,6 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
     error = pdf_loadxref(moz->xref, filename);
     if (error)
     {
-	if (!strncmp(error->msg, "ioerror", 7))
-	    pdfmoz_error(moz, error);
 	error = pdf_repairxref(moz->xref, filename);
 	if (error)
 	    pdfmoz_error(moz, error);
