@@ -391,7 +391,7 @@ void pdfmoz_onmouse(pdfmoz_t *moz, int x, int y, int click)
 static void drawimage(HDC hdc, pdfmoz_t *moz, fz_pixmap *image, int yofs)
 {
     int bmpstride = ((image->w * 3 + 3) / 4) * 4;
-    char *bmpdata = fz_malloc(image->h * bmpstride);
+    unsigned char *bmpdata = fz_malloc(image->h * bmpstride);
     int x, y;
 
     if (!bmpdata)
@@ -399,8 +399,8 @@ static void drawimage(HDC hdc, pdfmoz_t *moz, fz_pixmap *image, int yofs)
 
     for (y = 0; y < image->h; y++)
     {
-	char *p = bmpdata + y * bmpstride;
-	char *s = image->samples + y * image->w * 4;
+	unsigned char *p = bmpdata + y * bmpstride;
+	unsigned char *s = image->samples + y * image->w * 4;
 	for (x = 0; x < image->w; x++)
 	{
 	    p[x * 3 + 0] = s[x * 4 + 3];
