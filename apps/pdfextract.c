@@ -290,30 +290,30 @@ int main(int argc, char **argv)
     char *password = "";
     int c, o;
 
-    while ((c = getopt(argc, argv, "d:")) != -1)
+    while ((c = fz_getopt(argc, argv, "d:")) != -1)
     {
 	switch (c)
 	{
-	    case 'd': password = optarg; break;
+	    case 'd': password = fz_optarg; break;
 	    default:
 		      showusage();
 		      break;
 	}
     }
 
-    if (optind == argc)
+    if (fz_optind == argc)
 	showusage();
 
-    openxref(argv[optind++], password);
+    openxref(argv[fz_optind++], password);
 
-    if (optind == argc)
+    if (fz_optind == argc)
         for (o = 0; o < xref->len; o++)
             showobject(o, 0);
     else
-        while (optind < argc)
+        while (fz_optind < argc)
         {
-            showobject(atoi(argv[optind]), 0);
-            optind++;
+            showobject(atoi(argv[fz_optind]), 0);
+            fz_optind++;
         }
 
     closexref();

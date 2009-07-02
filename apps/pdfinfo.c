@@ -1086,7 +1086,7 @@ int main(int argc, char **argv)
 	int show = ALL;
 	int c;
 
-	while ((c = getopt(argc, argv, "mfispxd:")) != -1)
+	while ((c = fz_getopt(argc, argv, "mfispxd:")) != -1)
 	{
 		switch (c)
 		{
@@ -1096,20 +1096,20 @@ int main(int argc, char **argv)
 			case 's': if (show == ALL) show = SHADINGS; else show |= SHADINGS; break;
 			case 'p': if (show == ALL) show = PATTERNS; else show |= PATTERNS; break;
 			case 'x': if (show == ALL) show = XOBJS; else show |= XOBJS; break;
-			case 'd': password = optarg; break;
+			case 'd': password = fz_optarg; break;
 			default:
 				infousage();
 				break;
 		}
 	}
 
-	if (optind == argc)
+	if (fz_optind == argc)
 		infousage();
 
 	state = NO_FILE_OPENED;
-	while (optind < argc)
+	while (fz_optind < argc)
 	{
-		if (strstr(argv[optind], ".pdf") || strstr(argv[optind], ".PDF"))
+		if (strstr(argv[fz_optind], ".pdf") || strstr(argv[fz_optind], ".PDF"))
 		{
 			if (state == NO_INFO_GATHERED)
 			{
@@ -1117,7 +1117,7 @@ int main(int argc, char **argv)
 				showinfo(filename, show, "1-");
 			}
 
-			filename = argv[optind];
+			filename = argv[fz_optind];
 			opensrc(filename, password, 1);
 			gatherglobalinfo();
 			state = NO_INFO_GATHERED;
@@ -1126,11 +1126,11 @@ int main(int argc, char **argv)
 		{
 			if (state == NO_INFO_GATHERED)
 			printglobalinfo(filename);
-			showinfo(filename, show, argv[optind]);
+			showinfo(filename, show, argv[fz_optind]);
 			state = INFO_SHOWN;
 		}
 
-		optind++;
+		fz_optind++;
 	}
 
 	if (state == NO_INFO_GATHERED)
