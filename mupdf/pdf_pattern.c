@@ -127,16 +127,16 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict, fz_obj *stmref
 		goto cleanup;
 	}
 
-	fz_dropstream(stm);
-	pdf_dropcsi(csi);
-	fz_dropobj(resources);
-
 	/*
 	 *  Move display list to pattern struct
 	 */
 
 	pat->tree = csi->tree;
 	csi->tree = nil;
+
+	fz_dropstream(stm);
+	pdf_dropcsi(csi);
+	fz_dropobj(resources);
 
 	pdf_logrsrc("optimize tree\n");
 	error = fz_optimizetree(pat->tree);
