@@ -62,9 +62,13 @@ void openxref(char *filename, char *password)
     /* TODO: move into mupdf lib, see pdfapp_open in pdfapp.c */
     obj = fz_dictgets(xref->trailer, "Root");
     xref->root = fz_resolveindirect(obj);
+    if (xref->root)
+	fz_keepobj(xref->root);
 
     obj = fz_dictgets(xref->trailer, "Info");
     xref->info = fz_resolveindirect(obj);
+    if (xref->info)
+	fz_keepobj(xref->info);
 }
 
 /*

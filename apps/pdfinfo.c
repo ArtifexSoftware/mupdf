@@ -96,9 +96,13 @@ void opensrc(char *filename, char *password, int loadpages)
 	/* TODO: move into mupdf lib, see pdfapp_open in pdfapp.c */
 	obj = fz_dictgets(src->trailer, "Root");
 	src->root = fz_resolveindirect(obj);
+	if (src->root)
+		fz_keepobj(src->root);
 
 	obj = fz_dictgets(src->trailer, "Info");
 	src->info = fz_resolveindirect(obj);
+	if (src->info)
+		fz_keepobj(src->info);
 
 	error = pdf_loadnametrees(src);
 	if (error)
