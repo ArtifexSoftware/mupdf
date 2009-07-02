@@ -162,13 +162,17 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
      */
 
     obj = fz_dictgets(moz->xref->trailer, "Root");
-    moz->xref->trailer = fz_resolveindirect(obj);
+    moz->xref->root = fz_resolveindirect(obj);
+    if (!moz->xref->root)
+	pdfmoz_error(moz, fz_throw("syntaxerror: missing Root object"));
+    if (moz->xref->root)
+	fz_keepobj(moz->xref->root);
 
     obj = fz_dictgets(moz->xref->trailer, "Info");
     moz->xref->info = fz_resolveindirect(obj);
+    if (moz->xref->info)
+	fz_keepobj(moz->xref->info);
 
-    if (!moz->xref->trailer)
-	pdfmoz_error(moz, fz_throw("syntaxerror: missing Root object"));
 
     error = pdf_loadnametrees(moz->xref);
     if (error)
