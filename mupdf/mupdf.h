@@ -448,6 +448,8 @@ struct pdf_fontdesc_s
 	int nvmtx, vmtxcap;
 	pdf_vmtx dvmtx;
 	pdf_vmtx *vmtx;
+
+	int isembedded;
 };
 
 /* fontmtx.c */
