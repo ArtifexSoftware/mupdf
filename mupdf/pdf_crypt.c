@@ -206,14 +206,14 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	error = pdf_parseencdict(crypt, enc);
 	if (error)
 	{
-		pdf_dropcrypt(crypt);
+		pdf_freecrypt(crypt);
 		return fz_rethrow(error, "unable to to create decryptor");
 	}
 
 	if (strcmp(crypt->handler, "Standard") != 0)
 	{
 		char *handler = crypt->handler;
-		pdf_dropcrypt(crypt);
+		pdf_freecrypt(crypt);
 		return fz_throw("unsupported security handler: %s", handler);
 	}
 
@@ -222,14 +222,14 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 		if (crypt->stmmethod && strcmp(crypt->stmmethod, "V2") != 0)
 		{
 			char *method = crypt->stmmethod;
-			pdf_dropcrypt(crypt);
+			pdf_freecrypt(crypt);
 			return fz_throw("unsupported stream encryption method: %s", method);
 		}
 
 		if (crypt->strmethod && strcmp(crypt->strmethod, "V2") != 0)
 		{
 			char *method = crypt->strmethod;
-			pdf_dropcrypt(crypt);
+			pdf_freecrypt(crypt);
 			return fz_throw("unsupported string encryption: %s", method);
 		}
 
@@ -237,7 +237,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 		{
 			int stmlength = crypt->stmlength;
 			int strlength = crypt->strlength;
-			pdf_dropcrypt(crypt);
+			pdf_freecrypt(crypt);
 			return fz_throw("unsupport encryption key lengths: %d vs. %d", stmlength, strlength);
 		}
 
@@ -255,7 +255,7 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 
 	if (crypt->v < 1 || crypt->v > 4)
 	{
-		pdf_dropcrypt(crypt);
+		pdf_freecrypt(crypt);
 		return fz_throw("unsupported encryption algorithm: %d", crypt->v);
 	}
 
@@ -276,12 +276,12 @@ pdf_newdecrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id)
 	return fz_okay;
 
 cleanup:
-	pdf_dropcrypt(crypt);
+	pdf_freecrypt(crypt);
 	return fz_throw("corrupt encryption dictionary");
 }
 
 void
-pdf_dropcrypt(pdf_crypt *crypt)
+pdf_freecrypt(pdf_crypt *crypt)
 {
 	if (crypt->encrypt) fz_dropobj(crypt->encrypt);
 	if (crypt->id) fz_dropobj(crypt->id);
@@ -486,7 +486,7 @@ pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj
 			crypt->len * 8);
 	if (error)
 	{
-		pdf_dropcrypt(crypt);
+		pdf_freecrypt(crypt);
 		return fz_rethrow(error, "cannot create encryption dictionary");
 	}
 
