@@ -270,8 +270,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
-	printf("repair maxnum = %d\n", maxoid);
-
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
