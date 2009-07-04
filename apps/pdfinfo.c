@@ -8,7 +8,7 @@
 
 /* put these up here so we can clean up in die() */
 fz_renderer *drawgc = nil;
-void closesrc(void);
+void closexref(void);
 
 /*
  * Common operations.
@@ -17,98 +17,98 @@ void closesrc(void);
  * Select pages.
  */
 
-char *srcname;
-pdf_xref *src = nil;
-pdf_pagetree *srcpages = nil;
+char *basename;
+pdf_xref *xref = nil;
+pdf_pagetree *pagetree = nil;
 
 void die(fz_error eo)
 {
     fz_catch(eo, "aborting");
     if (drawgc)
 	fz_droprenderer(drawgc);
-    closesrc();
+    closexref();
     exit(-1);
 }
 
-void closesrc(void)
+void closexref(void)
 {
-	if (srcpages)
+	if (pagetree)
 	{
-		pdf_droppagetree(srcpages);
-		srcpages = nil;
+		pdf_droppagetree(pagetree);
+		pagetree = nil;
 	}
 
-	if (src)
+	if (xref)
 	{
-		if (src->store)
+		if (xref->store)
 		{
-			pdf_dropstore(src->store);
-			src->store = nil;
+			pdf_dropstore(xref->store);
+			xref->store = nil;
 		}
-		pdf_closexref(src);
-		src = nil;
+		pdf_closexref(xref);
+		xref = nil;
 	}
 
-	srcname = nil;
+	basename = nil;
 }
 
-void opensrc(char *filename, char *password, int loadpages)
+void openxref(char *filename, char *password, int loadpages)
 {
 	fz_error error;
 	fz_obj *obj;
 
-	closesrc();
+	closexref();
 
-	srcname = strrchr(filename, '/');
-	if (!srcname)
-		srcname = filename;
+	basename = strrchr(filename, '/');
+	if (!basename)
+		basename = filename;
 	else
-		srcname++;
-	printf("%s:\n", srcname);
+		basename++;
+	printf("%s:\n", basename);
 
-	error = pdf_newxref(&src);
+	error = pdf_newxref(&xref);
 	if (error)
 		die(error);
 
-	error = pdf_loadxref(src, filename);
+	error = pdf_loadxref(xref, filename);
 	if (error)
 	{
 		fz_catch(error, "trying to repair");
-		error = pdf_repairxref(src, filename);
+		error = pdf_repairxref(xref, filename);
 		if (error)
 			die(error);
 	}
 
-	error = pdf_decryptxref(src);
+	error = pdf_decryptxref(xref);
 	if (error)
 		die(error);
 
-	if (src->crypt)
+	if (xref->crypt)
 	{
-		int okay = pdf_setpassword(src->crypt, password);
+		int okay = pdf_setpassword(xref->crypt, password);
 		if (!okay)
 			fz_warn("invalid password, attemping to continue.");
 	}
 
 	if (loadpages)
 	{
-		error = pdf_loadpagetree(&srcpages, src);
+		error = pdf_loadpagetree(&pagetree, xref);
 		if (error)
 			die(error);
 	}
 
 	/* TODO: move into mupdf lib, see pdfapp_open in pdfapp.c */
-	obj = fz_dictgets(src->trailer, "Root");
-	src->root = fz_resolveindirect(obj);
-	if (src->root)
-		fz_keepobj(src->root);
+	obj = fz_dictgets(xref->trailer, "Root");
+	xref->root = fz_resolveindirect(obj);
+	if (xref->root)
+		fz_keepobj(xref->root);
 
-	obj = fz_dictgets(src->trailer, "Info");
-	src->info = fz_resolveindirect(obj);
-	if (src->info)
-		fz_keepobj(src->info);
+	obj = fz_dictgets(xref->trailer, "Info");
+	xref->info = fz_resolveindirect(obj);
+	if (xref->info)
+		fz_keepobj(xref->info);
 
-	error = pdf_loadnametrees(src);
+	error = pdf_loadnametrees(xref);
 	if (error)
 		die(error);
 }
@@ -212,13 +212,13 @@ gatherglobalinfo()
 	info->ref = nil;
 	info->u.info.obj = nil;
 
-	if (src->info)
+	if (xref->info)
 	{
-		info->ref = fz_dictgets(src->trailer, "Info");
+		info->ref = fz_dictgets(xref->trailer, "Info");
 		if (!fz_isdict(info->ref) && !fz_isindirect(info->ref))
 			die(fz_throw("not an indirect info object"));
 
-		info->u.info.obj = src->info;
+		info->u.info.obj = xref->info;
 	}
 
 	cryptinfo = fz_malloc(sizeof (struct info));
@@ -228,13 +228,13 @@ gatherglobalinfo()
 	cryptinfo->ref = nil;
 	cryptinfo->u.crypt.obj = nil;
 
-	if (src->crypt)
+	if (xref->crypt)
 	{
-		cryptinfo->ref = fz_dictgets(src->trailer, "Encrypt");
+		cryptinfo->ref = fz_dictgets(xref->trailer, "Encrypt");
 		if (!fz_isdict(cryptinfo->ref) && !fz_isindirect(cryptinfo->ref))
 			die(fz_throw("not an indirect crypt object"));
 
-		cryptinfo->u.crypt.obj = src->crypt->encrypt;
+		cryptinfo->u.crypt.obj = xref->crypt->encrypt;
 	}
 }
 
@@ -694,8 +694,8 @@ gatherinfo(int show, int page)
 	fz_obj *shade;
 	fz_obj *pattern;
 
-	pageref = pdf_getpagereference(srcpages, page - 1);
-	pageobj = pdf_getpageobject(srcpages, page - 1);
+	pageref = pdf_getpagereference(pagetree, page - 1);
+	pageobj = pdf_getpageobject(pagetree, page - 1);
 
 	if (!pageref || !pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
@@ -763,7 +763,7 @@ gatherinfo(int show, int page)
 void
 printglobalinfo(void)
 {
-	printf("\nPDF-%d.%d\n", src->version / 10, src->version % 10);
+	printf("\nPDF-%d.%d\n", xref->version / 10, xref->version % 10);
 
 	if (info->u.info.obj)
 	{
@@ -777,7 +777,7 @@ printglobalinfo(void)
 		fz_debugobj(cryptinfo->u.crypt.obj);
 	}
 
-	printf("\nPages: %d\n\n", pdf_getpagecount(srcpages));
+	printf("\nPages: %d\n\n", pdf_getpagecount(pagetree));
 }
 
 void
@@ -994,7 +994,7 @@ showinfo(char *filename, int show, char *pagelist)
 	char *spec, *dash;
 	int allpages;
 
-	if (!src)
+	if (!xref)
 		infousage();
 
 	allpages = !strcmp(pagelist, "1-");
@@ -1014,7 +1014,7 @@ showinfo(char *filename, int show, char *pagelist)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = pdf_getpagecount(srcpages);
+				epage = pdf_getpagecount(pagetree);
 		}
 
 		if (spage > epage)
@@ -1022,10 +1022,10 @@ showinfo(char *filename, int show, char *pagelist)
 
 		if (spage < 1)
 			spage = 1;
-		if (epage > pdf_getpagecount(srcpages))
-			epage = pdf_getpagecount(srcpages);
-		if (spage > pdf_getpagecount(srcpages))
-			spage = pdf_getpagecount(srcpages);
+		if (epage > pdf_getpagecount(pagetree))
+			epage = pdf_getpagecount(pagetree);
+		if (spage > pdf_getpagecount(pagetree))
+			spage = pdf_getpagecount(pagetree);
 
 		if (allpages)
 			printf("Retrieving info from pages %d-%d...\n", spage, epage);
@@ -1090,7 +1090,7 @@ int main(int argc, char **argv)
 			}
 
 			filename = argv[fz_optind];
-			opensrc(filename, password, 1);
+			openxref(filename, password, 1);
 			gatherglobalinfo();
 			state = NO_INFO_GATHERED;
 		}
@@ -1111,6 +1111,6 @@ int main(int argc, char **argv)
 		showinfo(filename, show, "1-");
 	}
 
-	closesrc();
+	closexref();
 }
 
