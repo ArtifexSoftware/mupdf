@@ -19,7 +19,6 @@ void closesrc(void);
 
 char *srcname;
 pdf_xref *src = nil;
-pdf_outline *srcoutline = nil;
 pdf_pagetree *srcpages = nil;
 
 void die(fz_error eo)
@@ -110,10 +109,6 @@ void opensrc(char *filename, char *password, int loadpages)
 		fz_keepobj(src->info);
 
 	error = pdf_loadnametrees(src);
-	if (error)
-		die(error);
-
-	error = pdf_loadoutline(&srcoutline, src);
 	if (error)
 		die(error);
 }
