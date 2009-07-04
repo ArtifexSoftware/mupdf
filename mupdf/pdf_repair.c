@@ -334,8 +334,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				goto cleanup;
 			}
 
-			xref->table[list[i].oid].obj = fz_keepobj(dict);
-
 			fz_dropobj(length);
 			fz_dropobj(dict);
 		}
