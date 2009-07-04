@@ -17,7 +17,7 @@ void closesrc(void);
  * Select pages.
  */
 
-char *srcname = "(null)";
+char *srcname;
 pdf_xref *src = nil;
 pdf_outline *srcoutline = nil;
 pdf_pagetree *srcpages = nil;
@@ -60,7 +60,12 @@ void opensrc(char *filename, char *password, int loadpages)
 
 	closesrc();
 
-	srcname = filename;
+	srcname = strrchr(filename, '/');
+	if (!srcname)
+		srcname = filename;
+	else
+		srcname++;
+	printf("%s:\n", srcname);
 
 	error = pdf_newxref(&src);
 	if (error)
@@ -790,10 +795,9 @@ gatherinfo(int show, int page)
 }
 
 void
-printglobalinfo(char *filename)
+printglobalinfo(void)
 {
-	printf("%s:\n\n", filename);
-	printf("PDF-%d.%d\n\n", src->version / 10, src->version % 10);
+	printf("\nPDF-%d.%d\n", src->version / 10, src->version % 10);
 
 	if (info->u.info.obj)
 	{
@@ -1113,7 +1117,7 @@ int main(int argc, char **argv)
 		{
 			if (state == NO_INFO_GATHERED)
 			{
-				printglobalinfo(filename);
+				printglobalinfo();
 				showinfo(filename, show, "1-");
 			}
 
@@ -1125,7 +1129,7 @@ int main(int argc, char **argv)
 		else
 		{
 			if (state == NO_INFO_GATHERED)
-			printglobalinfo(filename);
+			printglobalinfo();
 			showinfo(filename, show, argv[fz_optind]);
 			state = INFO_SHOWN;
 		}
@@ -1135,7 +1139,7 @@ int main(int argc, char **argv)
 
 	if (state == NO_INFO_GATHERED)
 	{
-		printglobalinfo(filename);
+		printglobalinfo();
 		showinfo(filename, show, "1-");
 	}
 
