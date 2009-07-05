@@ -166,7 +166,7 @@ infousage(void)
 }
 
 static void
-gatherglobalinfo()
+gatherglobalinfo(void)
 {
 	info = fz_malloc(sizeof (struct info));
 	if (!info)
