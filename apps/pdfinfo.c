@@ -3,115 +3,7 @@
  * Print information about the input pdf.
  */
 
-#include "fitz.h"
-#include "mupdf.h"
-
-/* put these up here so we can clean up in die() */
-fz_renderer *drawgc = nil;
-void closexref(void);
-
-/*
- * Common operations.
- * Parse page selectors.
- * Load and decrypt a PDF file.
- * Select pages.
- */
-
-char *basename;
-pdf_xref *xref = nil;
-pdf_pagetree *pagetree = nil;
-
-void die(fz_error eo)
-{
-    fz_catch(eo, "aborting");
-    if (drawgc)
-	fz_droprenderer(drawgc);
-    closexref();
-    exit(-1);
-}
-
-void closexref(void)
-{
-	if (pagetree)
-	{
-		pdf_droppagetree(pagetree);
-		pagetree = nil;
-	}
-
-	if (xref)
-	{
-		if (xref->store)
-		{
-			pdf_dropstore(xref->store);
-			xref->store = nil;
-		}
-		pdf_closexref(xref);
-		xref = nil;
-	}
-
-	basename = nil;
-}
-
-void openxref(char *filename, char *password, int loadpages)
-{
-	fz_error error;
-	fz_obj *obj;
-
-	closexref();
-
-	basename = strrchr(filename, '/');
-	if (!basename)
-		basename = filename;
-	else
-		basename++;
-	printf("%s:\n", basename);
-
-	error = pdf_newxref(&xref);
-	if (error)
-		die(error);
-
-	error = pdf_loadxref(xref, filename);
-	if (error)
-	{
-		fz_catch(error, "trying to repair");
-		error = pdf_repairxref(xref, filename);
-		if (error)
-			die(error);
-	}
-
-	error = pdf_decryptxref(xref);
-	if (error)
-		die(error);
-
-	if (xref->crypt)
-	{
-		int okay = pdf_setpassword(xref->crypt, password);
-		if (!okay)
-			fz_warn("invalid password, attemping to continue.");
-	}
-
-	if (loadpages)
-	{
-		error = pdf_loadpagetree(&pagetree, xref);
-		if (error)
-			die(error);
-	}
-
-	/* TODO: move into mupdf lib, see pdfapp_open in pdfapp.c */
-	obj = fz_dictgets(xref->trailer, "Root");
-	xref->root = fz_resolveindirect(obj);
-	if (xref->root)
-		fz_keepobj(xref->root);
-
-	obj = fz_dictgets(xref->trailer, "Info");
-	xref->info = fz_resolveindirect(obj);
-	if (xref->info)
-		fz_keepobj(xref->info);
-
-	error = pdf_loadnametrees(xref);
-	if (error)
-		die(error);
-}
+#include "pdftool.h"
 
 enum
 {
@@ -182,6 +74,79 @@ struct info **form = nil;
 int forms = 0;
 struct info **psobj = nil;
 int psobjs = 0;
+
+void local_cleanup(void)
+{
+	int i;
+
+	if (info)
+	{
+		free(info);
+		info = nil;
+	}
+
+	if (dim)
+	{
+		for (i = 0; i < dims; i++)
+			free(dim[i]);
+		free(dim);
+		dim = nil;
+	}
+
+	if (font)
+	{
+		for (i = 0; i < fonts; i++)
+			free(font[i]);
+		free(font);
+		font = nil;
+	}
+
+	if (image)
+	{
+		for (i = 0; i < images; i++)
+			free(image[i]);
+		free(image);
+		image = nil;
+	}
+
+	if (shading)
+	{
+		for (i = 0; i < shadings; i++)
+			free(shading[i]);
+		free(shading);
+		shading = nil;
+	}
+
+	if (pattern)
+	{
+		for (i = 0; i < patterns; i++)
+			free(pattern[i]);
+		free(pattern);
+		pattern = nil;
+	}
+
+	if (form)
+	{
+		for (i = 0; i < forms; i++)
+			free(form[i]);
+		free(form);
+		form = nil;
+	}
+
+	if (psobj)
+	{
+		for (i = 0; i < psobjs; i++)
+			free(psobj[i]);
+		free(psobj);
+		psobj = nil;
+	}
+
+	if (xref && xref->store)
+	{
+		pdf_dropstore(xref->store);
+		xref->store = nil;
+	}
+}
 
 void
 infousage(void)
@@ -851,8 +816,8 @@ printinfo(char *filename, int show, int page)
 				}
 			else if (image[i]->u.image.filter)
 				printf("%s", fz_toname(image[i]->u.image.filter));
-                        else
-                                printf("Raw");
+			else
+				printf("Raw");
 
 			printf(" ] %dx%d %dbpc %s%s%s (%d %d R)\n",
 					fz_toint(image[i]->u.image.width),
@@ -1078,6 +1043,8 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
+	setcleanup(local_cleanup);
+
 	state = NO_FILE_OPENED;
 	while (fz_optind < argc)
 	{
@@ -1087,17 +1054,20 @@ int main(int argc, char **argv)
 			{
 				printglobalinfo();
 				showinfo(filename, show, "1-");
+				closexref();
 			}
 
+			closexref();
 			filename = argv[fz_optind];
-			openxref(filename, password, 1);
+			openxref(filename, password, 0);
+			loadpagetree();
 			gatherglobalinfo();
 			state = NO_INFO_GATHERED;
 		}
 		else
 		{
 			if (state == NO_INFO_GATHERED)
-			printglobalinfo();
+				printglobalinfo();
 			showinfo(filename, show, argv[fz_optind]);
 			state = INFO_SHOWN;
 		}
