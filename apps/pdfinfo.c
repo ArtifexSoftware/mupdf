@@ -287,7 +287,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < fonts)
-			return fz_okay;
+			continue;
 
 		fonts++;
 
@@ -438,13 +438,13 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		if (!fz_isname(type))
 			return fz_throw("not a xobject type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "Form"))
-			return fz_okay;
+			continue;
 
 		subtype = fz_dictgets(xobjdict, "Subtype2");
 		if (subtype && !fz_isname(subtype))
 			return fz_throw("not a xobject subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(subtype), "PS"))
-			return fz_okay;
+			continue;
 
 		group = fz_dictgets(xobjdict, "Group");
 		if (group && !fz_isdict(group))
@@ -460,7 +460,7 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < forms)
-			return fz_okay;
+			continue;
 
 		forms++;
 
@@ -503,14 +503,14 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		if (!fz_isname(type))
 			return fz_throw("not a xobject type (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "Form"))
-			return fz_okay;
+			continue;
 
 		subtype = fz_dictgets(xobjdict, "Subtype2");
 		if (subtype && !fz_isname(subtype))
 			return fz_throw("not a xobject subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "PS") &&
 				(strcmp(fz_toname(type), "Form") || strcmp(fz_toname(subtype), "PS")))
-			return fz_okay;
+			continue;
 
 		for (k = 0; k < psobjs; k++)
 			if (fz_tonum(psobj[k]->ref) == fz_tonum(ref) &&
@@ -518,7 +518,7 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < psobjs)
-			return fz_okay;
+			continue;
 
 		psobjs++;
 
@@ -564,7 +564,7 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < shadings)
-			return fz_okay;
+			continue;
 
 		shadings++;
 
@@ -624,7 +624,7 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 				break;
 
 		if (k < patterns)
-			return fz_okay;
+			continue;
 
 		patterns++;
 
