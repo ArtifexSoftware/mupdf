@@ -20,8 +20,7 @@ static inline int keystrcmp(fz_obj *key, char *s)
 	if (fz_isname(key))
 		return strcmp(fz_toname(key), s);
 	if (fz_isstring(key))
-		if (strlen(s) == fz_tostrlen(key))
-			return memcmp(fz_tostrbuf(key), s, fz_tostrlen(key));
+		return memcmp(fz_tostrbuf(key), s, 1 + MIN(fz_tostrlen(key), strlen(s)));
 	return -1;
 }
 
