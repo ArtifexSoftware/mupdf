@@ -10,7 +10,7 @@
 #include "../mupdf/pdf_cmap.c"
 #include "../mupdf/pdf_cmap_parse.c"
 
-char *
+static char *
 flagtoname(int flag)
 {
     switch (flag)
@@ -23,7 +23,7 @@ flagtoname(int flag)
     return "-1,";
 }
 
-void
+static void
 clean(char *p)
 {
     while (*p)
