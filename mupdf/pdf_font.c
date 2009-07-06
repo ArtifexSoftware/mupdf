@@ -7,32 +7,32 @@
 
 static char *basefontnames[14][7] =
 {
-	{ "Courier", "CourierNew", "CourierNewPSMT", 0 },
+	{ "Courier", "CourierNew", "CourierNewPSMT", nil },
 	{ "Courier-Bold", "CourierNew,Bold", "Courier,Bold",
-		"CourierNewPS-BoldMT", "CourierNew-Bold", 0 },
+		"CourierNewPS-BoldMT", "CourierNew-Bold", nil },
 	{ "Courier-Oblique", "CourierNew,Italic", "Courier,Italic",
-		"CourierNewPS-ItalicMT", "CourierNew-Italic", 0 },
+		"CourierNewPS-ItalicMT", "CourierNew-Italic", nil },
 	{ "Courier-BoldOblique", "CourierNew,BoldItalic", "Courier,BoldItalic",
-		"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", 0 },
-	{ "Helvetica", "ArialMT", "Arial", 0 },
+		"CourierNewPS-BoldItalicMT", "CourierNew-BoldItalic", nil },
+	{ "Helvetica", "ArialMT", "Arial", nil },
 	{ "Helvetica-Bold", "Arial-BoldMT", "Arial,Bold", "Arial-Bold",
-		"Helvetica,Bold", 0 },
+		"Helvetica,Bold", nil },
 	{ "Helvetica-Oblique", "Arial-ItalicMT", "Arial,Italic", "Arial-Italic",
-		"Helvetica,Italic", "Helvetica-Italic", 0 },
+		"Helvetica,Italic", "Helvetica-Italic", nil },
 	{ "Helvetica-BoldOblique", "Arial-BoldItalicMT",
 		"Arial,BoldItalic", "Arial-BoldItalic",
-		"Helvetica,BoldItalic", "Helvetica-BoldItalic", 0 },
+		"Helvetica,BoldItalic", "Helvetica-BoldItalic", nil },
 	{ "Times-Roman", "TimesNewRomanPSMT", "TimesNewRoman",
-		"TimesNewRomanPS", 0 },
+		"TimesNewRomanPS", nil },
 	{ "Times-Bold", "TimesNewRomanPS-BoldMT", "TimesNewRoman,Bold",
-		"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", 0 },
+		"TimesNewRomanPS-Bold", "TimesNewRoman-Bold", nil },
 	{ "Times-Italic", "TimesNewRomanPS-ItalicMT", "TimesNewRoman,Italic",
-		"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", 0 },
+		"TimesNewRomanPS-Italic", "TimesNewRoman-Italic", nil },
 	{ "Times-BoldItalic", "TimesNewRomanPS-BoldItalicMT",
 		"TimesNewRoman,BoldItalic", "TimesNewRomanPS-BoldItalic",
-		"TimesNewRoman-BoldItalic", 0 },
-	{ "Symbol", 0 },
-	{ "ZapfDingbats", 0 }
+		"TimesNewRoman-BoldItalic", nil },
+	{ "Symbol", nil },
+	{ "ZapfDingbats", nil }
 };
 
 /*
@@ -178,7 +178,7 @@ pdf_newfontdesc(void)
 	fontdesc->missingwidth = 0;
 
 	fontdesc->encoding = nil;
-	fontdesc->tottfcmap = 0;
+	fontdesc->tottfcmap = nil;
 	fontdesc->ncidtogid = 0;
 	fontdesc->cidtogid = nil;
 

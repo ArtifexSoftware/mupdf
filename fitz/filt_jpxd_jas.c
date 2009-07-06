@@ -99,7 +99,7 @@ input:
 decode:
 	jas_stream_seek(d->stream, 0, 0);
 
-	d->image = jas_image_decode(d->stream, -1, 0);
+	d->image = jas_image_decode(d->stream, -1, nil);
 	if (!d->image)
 		return fz_throw("jasper error: jas_image_decode()");
 

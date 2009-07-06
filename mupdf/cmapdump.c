@@ -140,7 +140,7 @@ main(int argc, char **argv)
 	fprintf(fo, "{\n");
 	fprintf(fo, "    -1, ");
 	fprintf(fo, "\"%s\", ", cmap->cmapname);
-	fprintf(fo, "\"%s\", 0, ", cmap->usecmapname);
+	fprintf(fo, "\"%s\", nil, ", cmap->usecmapname);
 	fprintf(fo, "%d,\n", cmap->wmode);
 
 	fprintf(fo, "    %d, /* codespace table */\n", cmap->ncspace);

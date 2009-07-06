@@ -178,9 +178,9 @@ void wincursor(pdfapp_t *app, int curs)
 void wintitle(pdfapp_t *app, char *s)
 {
 #ifdef X_HAVE_UTF8_STRING
-	Xutf8SetWMProperties(xdpy, xwin, s, s, 0, 0, 0, 0, 0);
+	Xutf8SetWMProperties(xdpy, xwin, s, s, nil, 0, nil, nil, nil);
 #else
-	XmbSetWMProperties(xdpy, xwin, s, s, 0, 0, 0, 0, 0);
+	XmbSetWMProperties(xdpy, xwin, s, s, nil, 0, nil, nil, nil);
 #endif
 }
 
@@ -473,9 +473,9 @@ static void winawaitevent(struct timeval *tmo, struct timeval *tmo_at)
 		FD_ZERO(&fds);
 		FD_SET(x11fd, &fds);
 
-		if (select(x11fd + 1, &fds, 0, 0, tmo))
+		if (select(x11fd + 1, &fds, nil, nil, tmo))
 		{
-			gettimeofday(&now, 0);
+			gettimeofday(&now, nil);
 			timersub(tmo_at, &now, tmo);
 			XNextEvent(xdpy, &xevt);
 		}
@@ -489,7 +489,7 @@ static void winsettmo(struct timeval *tmo, struct timeval *tmo_at)
 	tmo->tv_sec = 2;
 	tmo->tv_usec = 0;
 
-	gettimeofday(&now, 0);
+	gettimeofday(&now, nil);
 	timeradd(&now, tmo, tmo_at);
 }
 
@@ -584,7 +584,7 @@ int main(int argc, char **argv)
 			case KeyPress:
 				wasshowingpage = isshowingpage;
 
-				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, 0);
+				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, nil);
 				if (len)
 					onkey(buf[0]);
 				onmouse(oldx, oldy, 0, 0, 0);
