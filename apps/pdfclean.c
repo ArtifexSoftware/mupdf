@@ -33,6 +33,9 @@ static fz_error sweepobj(pdf_xref *xref, fz_obj *obj)
     fz_error error;
     int i;
 
+    if (fz_isindirect(obj))
+	return sweepref(xref, obj);
+
     if (fz_isdict(obj))
     {
 	for (i = 0; i < fz_dictlen(obj); i++)
@@ -52,9 +55,6 @@ static fz_error sweepobj(pdf_xref *xref, fz_obj *obj)
 		return error; /* too deeply nested for rethrow */
 	}
     }
-
-    if (fz_isindirect(obj))
-	return sweepref(xref, obj);
 
     return fz_okay;
 }
