@@ -87,14 +87,17 @@ int pdf_fontcidtogid(pdf_fontdesc *fontdesc, int cid)
 
 static int ftwidth(pdf_fontdesc *fontdesc, int cid)
 {
-	int gid, e;
+	int gid, fterr;
 
 	gid = ftcidtogid(fontdesc, cid);
 
-	e = FT_Load_Glyph(fontdesc->font->ftface, gid,
+	fterr = FT_Load_Glyph(fontdesc->font->ftface, gid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
-	if (e)
+	if (fterr)
+	{
+		fz_warn("freetype load glyph (gid %d): %s", gid, ft_errorstring(fterr));
 		return 0;
+	}
 	return ((FT_Face)fontdesc->font->ftface)->glyph->advance.x;
 }
 
@@ -310,10 +313,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 	{
 		fterr = FT_Set_Charmap(face, cmap);
 		if (fterr)
-		{
-			error = fz_throw("freetype could not set cmap: %s", ft_errorstring(fterr));
-			goto cleanup;
-		}
+			fz_warn("freetype could not set cmap: %s", ft_errorstring(fterr));
 	}
 	else
 		fz_warn("freetype could not find any cmaps");
@@ -417,7 +417,12 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 				for (i = 0; i < 256; i++)
 				{
 					etable[i] = ftcharindex(face, i);
-					FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+					fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+					if (fterr)
+					{
+						error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
+						goto cleanup;
+					}
 					if (ebuffer[i][0])
 						estrings[i] = ebuffer[i];
 				}
@@ -431,7 +436,12 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 		for (i = 0; i < 256; i++)
 		{
 			etable[i] = ftcharindex(face, i);
-			FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+			fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+			if (fterr)
+			{
+				error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
+				goto cleanup;
+			}
 			if (ebuffer[i][0])
 				estrings[i] = ebuffer[i];
 		}
@@ -475,7 +485,9 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 	}
 	else
 	{
-		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+		fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+		if (fterr)
+			fz_warn("freetype set character size: %s", ft_errorstring(fterr));
 		for (i = 0; i < 256; i++)
 		{
 			error = pdf_addhmtx(fontdesc, i, i, ftwidth(fontdesc, i));
@@ -516,7 +528,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 	int kind;
 	char collection[256];
 	char *basefont;
-	int i, k;
+	int i, k, fterr;
 
 	/*
 	 * Get font name and CID collection
@@ -655,10 +667,10 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *ref,
 		{
 			pdf_logfont("emulate ttf cidfont\n");
 
-			error = FT_Select_Charmap(face, ft_encoding_unicode);
-			if (error)
+			fterr = FT_Select_Charmap(face, ft_encoding_unicode);
+			if (fterr)
 			{
-				error = fz_throw("fonterror: no unicode cmap when emulating CID font");
+				error = fz_throw("fonterror: no unicode cmap when emulating CID font: %s", ft_errorstring(fterr));
 				goto cleanup;
 			}
 

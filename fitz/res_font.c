@@ -44,6 +44,7 @@ fz_keepfont(fz_font *font)
 void
 fz_dropfont(fz_font *font)
 {
+	int fterr;
 	int i;
 
 	if (font && --font->refs == 0)
@@ -58,7 +59,9 @@ fz_dropfont(fz_font *font)
 
 		if (font->ftface)
 		{
-			FT_Done_Face((FT_Face)font->ftface);
+			fterr = FT_Done_Face((FT_Face)font->ftface);
+			if (fterr)
+				fz_warn("freetype finalizing face: %s", ft_errorstring(fterr));
 			fz_finalizefreetype();
 		}
 
@@ -112,7 +115,7 @@ char *ft_errorstring(int err)
 static fz_error
 fz_initfreetype(void)
 {
-	int code;
+	int fterr;
 	int maj, min, pat;
 
 	if (fz_ftlib)
@@ -121,14 +124,16 @@ fz_initfreetype(void)
 		return fz_okay;
 	}
 
-	code = FT_Init_FreeType(&fz_ftlib);
-	if (code)
-		return fz_throw("cannot init freetype: %s", ft_errorstring(code));
+	fterr = FT_Init_FreeType(&fz_ftlib);
+	if (fterr)
+		return fz_throw("cannot init freetype: %s", ft_errorstring(fterr));
 
 	FT_Library_Version(fz_ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
 	{
-		FT_Done_FreeType(fz_ftlib);
+		fterr = FT_Done_FreeType(fz_ftlib);
+		if (fterr)
+			fz_warn("freetype finalizing: %s", ft_errorstring(fterr));
 		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
 	}
 
@@ -139,11 +144,15 @@ fz_initfreetype(void)
 static void
 fz_finalizefreetype(void)
 {
-        if (--fz_ftlib_refs == 0)
-        {
-                FT_Done_FreeType(fz_ftlib);
-                fz_ftlib = nil;
-        }
+	int fterr;
+
+	if (--fz_ftlib_refs == 0)
+	{
+		fterr = FT_Done_FreeType(fz_ftlib);
+		if (fterr)
+			fz_warn("freetype finalizing: %s", ft_errorstring(fterr));
+		fz_ftlib = nil;
+	}
 }
 
 fz_error
@@ -151,7 +160,7 @@ fz_newfontfromfile(fz_font **fontp, char *path, int index)
 {
 	fz_error error;
 	fz_font *font;
-	int code;
+	int fterr;
 
 	error = fz_initfreetype();
 	if (error)
@@ -161,11 +170,11 @@ fz_newfontfromfile(fz_font **fontp, char *path, int index)
 	if (!font)
 		return fz_rethrow(-1, "out of memory: font struct");
 
-	code = FT_New_Face(fz_ftlib, path, index, (FT_Face*)&font->ftface);
-	if (code)
+	fterr = FT_New_Face(fz_ftlib, path, index, (FT_Face*)&font->ftface);
+	if (fterr)
 	{
 		fz_free(font);
-		return fz_throw("freetype: cannot load font: %s", ft_errorstring(code));
+		return fz_throw("freetype: cannot load font: %s", ft_errorstring(fterr));
 	}
 
 	*fontp = font;
@@ -177,7 +186,7 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 {
 	fz_error error;
 	fz_font *font;
-	int code;
+	int fterr;
 
 	error = fz_initfreetype();
 	if (error)
@@ -187,11 +196,11 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	if (!font)
 		return fz_rethrow(-1, "out of memory: font struct");
 
-	code = FT_New_Memory_Face(fz_ftlib, data, len, index, (FT_Face*)&font->ftface);
-	if (code)
+	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, (FT_Face*)&font->ftface);
+	if (fterr)
 	{
 		fz_free(font);
-		return fz_throw("freetype: cannot load font: %s", ft_errorstring(code));
+		return fz_throw("freetype: cannot load font: %s", ft_errorstring(fterr));
 	}
 
 	*fontp = font;
@@ -219,7 +228,9 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 		int realw;
 		float scale;
 
-		FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+		fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+		if (fterr)
+			return fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
 
 		fterr = FT_Load_Glyph(font->ftface, gid,
 				FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
@@ -257,7 +268,9 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	v.x = trm.e * 64;
 	v.y = trm.f * 64;
 
-	FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
+	fterr = FT_Set_Char_Size(face, 65536, 65536, 72, 72); /* should be 64, 64 */
+	if (fterr)
+		fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
 	FT_Set_Transform(face, &m, &v);
 
 	if (font->fthint)
@@ -277,7 +290,10 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	    m.yy = trm.d * 65536 / scale;
 	    v.x = 0;
 	    v.y = 0;
-	    FT_Set_Char_Size(face, 64 * scale, 64 * scale, 72, 72);
+
+	    fterr = FT_Set_Char_Size(face, 64 * scale, 64 * scale, 72, 72);
+	    if (fterr)
+		    fz_warn("freetype setting character size: %s", fz_errorstring(fterr));
 	    FT_Set_Transform(face, &m, &v);
 #endif
 	    fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
@@ -286,9 +302,9 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	}
 	else
 	{
-	    fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
-	    if (fterr)
-		fz_warn("freetype load glyph (gid %d): %s", gid, ft_errorstring(fterr));
+		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
+		if (fterr)
+			fz_warn("freetype load glyph (gid %d): %s", gid, ft_errorstring(fterr));
 	}
 
 	fterr = FT_Render_Glyph(face->glyph, ft_render_mode_normal);
