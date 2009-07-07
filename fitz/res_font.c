@@ -380,51 +380,51 @@ extern fz_colorspace *pdf_devicegray;
 fz_error
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
-    fz_error error;
-    fz_renderer *gc;
-    fz_tree *tree;
-    fz_matrix ctm;
-    fz_irect bbox;
+	fz_error error;
+	fz_renderer *gc;
+	fz_tree *tree;
+	fz_matrix ctm;
+	fz_irect bbox;
 
-    /* TODO: make it reentrant */
-    static fz_pixmap *pixmap = nil;
-    if (pixmap)
-    {
-	fz_droppixmap(pixmap);
-	pixmap = nil;
-    }
+	/* TODO: make it reentrant */
+	static fz_pixmap *pixmap = nil;
+	if (pixmap)
+	{
+		fz_droppixmap(pixmap);
+		pixmap = nil;
+	}
 
-    if (gid < 0 || gid > 255)
-	return fz_throw("assert: glyph out of range");
+	if (gid < 0 || gid > 255)
+		return fz_throw("assert: glyph out of range");
 
-    tree = font->t3procs[gid];
-    if (!tree)
-    {
-	glyph->w = 0;
-	glyph->h = 0;
+	tree = font->t3procs[gid];
+	if (!tree)
+	{
+		glyph->w = 0;
+		glyph->h = 0;
+		return fz_okay;
+	}
+
+	ctm = fz_concat(font->t3matrix, trm);
+	bbox = fz_roundrect(fz_boundtree(tree, ctm));
+
+	error = fz_newrenderer(&gc, pdf_devicegray, 1, 4096);
+	if (error)
+		return fz_rethrow(error, "cannot create renderer");
+	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
+	fz_droprenderer(gc);
+	if (error)
+		return fz_rethrow(error, "cannot render glyph");
+
+	assert(pixmap->n == 1);
+
+	glyph->x = pixmap->x;
+	glyph->y = pixmap->y;
+	glyph->w = pixmap->w;
+	glyph->h = pixmap->h;
+	glyph->samples = pixmap->samples;
+
 	return fz_okay;
-    }
-
-    ctm = fz_concat(font->t3matrix, trm);
-    bbox = fz_roundrect(fz_boundtree(tree, ctm));
-
-    error = fz_newrenderer(&gc, pdf_devicegray, 1, 4096);
-    if (error)
-	return fz_rethrow(error, "cannot create renderer");
-    error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
-    fz_droprenderer(gc);
-    if (error)
-	return fz_rethrow(error, "cannot render glyph");
-
-    assert(pixmap->n == 1);
-
-    glyph->x = pixmap->x;
-    glyph->y = pixmap->y;
-    glyph->w = pixmap->w;
-    glyph->h = pixmap->h;
-    glyph->samples = pixmap->samples;
-
-    return fz_okay;
 }
 
 void
