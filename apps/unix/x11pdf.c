@@ -456,7 +456,7 @@ static void onmouse(int x, int y, int btn, int modifiers, int state)
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: mupdf [-d password] [-z zoom] [-p pagenumber] file.pdf\n");
+	fprintf(stderr, "usage: mupdf [-d password] [-z zoom%%] [-p pagenumber] file.pdf\n");
 	exit(1);
 }
 
@@ -511,7 +511,7 @@ int main(int argc, char **argv)
 	KeySym keysym;
 	int oldx = 0;
 	int oldy = 0;
-	double zoom = 1.0;
+	int zoom = 100;
 	int pageno = 1;
 	int wasshowingpage;
 	struct timeval tmo, tmo_at;
@@ -521,11 +521,16 @@ int main(int argc, char **argv)
 		switch (c)
 		{
 		case 'd': password = fz_optarg; break;
-		case 'z': zoom = atof(fz_optarg); break;
+		case 'z': zoom = atoi(fz_optarg); break;
 		case 'p': pageno = atoi(fz_optarg); break;
 		default: usage();
 		}
 	}
+
+	if (zoom < 100)
+		zoom = 100;
+	if (zoom > 300)
+		zoom = 300;
 
 	if (argc - fz_optind == 0)
 		usage();
@@ -540,7 +545,7 @@ int main(int argc, char **argv)
 	pdfapp_init(&gapp);
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
-	gapp.zoom = zoom;
+	gapp.zoom = zoom / 100.0;
 	gapp.pageno = pageno;
 
 	pdfapp_open(&gapp, filename);
