@@ -3,7 +3,7 @@
 char *basename = nil;
 pdf_xref *xref = nil;
 pdf_pagetree *pagetree = nil;
-void (*cleanup)(void) = nil;
+static void (*cleanup)(void) = nil;
 
 void closexref(void);
 

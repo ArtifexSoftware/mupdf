@@ -306,6 +306,7 @@ struct pdf_image_s
 fz_error pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj, fz_obj *ref);
 fz_error pdf_loadtile(fz_image *image, fz_pixmap *tile);
+void pdf_dropimage(fz_image *img);
 
 /*
  * CMap
