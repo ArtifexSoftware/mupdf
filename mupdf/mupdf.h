@@ -120,8 +120,8 @@ struct pdf_xref_s
 	pdf_xrefentry *table;
 
 	struct pdf_store_s *store;
-	struct pdf_pagetree_s *pages;
 	struct pdf_outline_s *outlines;
+	int pagecount;
 };
 
 struct pdf_xrefentry_s
@@ -550,18 +550,9 @@ fz_error pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots)
  * Page tree, pages and related objects
  */
 
-typedef struct pdf_pagetree_s pdf_pagetree;
 typedef struct pdf_page_s pdf_page;
 typedef struct pdf_textline_s pdf_textline;
 typedef struct pdf_textchar_s pdf_textchar;
-
-struct pdf_pagetree_s
-{
-	int cap;
-	int count;
-	int cursor;
-	fz_obj **pobj;
-};
 
 struct pdf_page_s
 {
@@ -587,11 +578,9 @@ struct pdf_textline_s
 };
 
 /* pagetree.c */
-fz_error pdf_loadpagetree(pdf_pagetree **pp, pdf_xref *xref);
-int pdf_getpagecount(pdf_pagetree *pages);
-fz_obj *pdf_getpageobject(pdf_pagetree *pages, int p);
-void pdf_debugpagetree(pdf_pagetree *pages);
-void pdf_droppagetree(pdf_pagetree *pages);
+fz_error pdf_getpagecount(pdf_xref *xref, int *pagesp);
+fz_error pdf_getpageobject(pdf_xref *xref, int p, fz_obj **pagep);
+fz_error pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj, int *page);
 
 /* page.c */
 fz_error pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);

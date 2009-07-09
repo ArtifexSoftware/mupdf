@@ -720,6 +720,13 @@ pdf_loadxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
+	error = pdf_getpagecount(xref, &xref->pagecount);
+	if (error)
+	{
+		error = fz_rethrow(error, "cannot determine page count");
+		goto cleanup;
+	}
+
 	return fz_okay;
 
 cleanup:

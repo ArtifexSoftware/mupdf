@@ -320,8 +320,7 @@ static void windrawpageno(pdfapp_t *app)
 {
 	char s[100];
 
-	int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno,
-			pdf_getpagecount(gapp.pages));
+	int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno, gapp.pagecount);
 	if (ret >= 0)
 	{
 		isshowingpage = 1;

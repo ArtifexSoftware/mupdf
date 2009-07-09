@@ -117,15 +117,7 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
 	    pdfmoz_warn(moz, "Invalid password.");
     }
 
-    /*
-     * Load page tree
-     */
-
-    error = pdf_loadpagetree(&pages, moz->xref);
-    if (error)
-	pdfmoz_error(moz, error);
-
-    moz->pagecount = pdf_getpagecount(pages);
+    moz->pagecount = moz->xrex->pagecount;
     moz->pages = fz_malloc(sizeof(page_t) * moz->pagecount);
 
     for (i = 0; i < moz->pagecount; i++)
@@ -288,28 +280,32 @@ void pdfmoz_gotouri(pdfmoz_t *moz, fz_obj *uri)
 
 int pdfmoz_getpagenum(pdfmoz_t *moz, fz_obj *obj)
 {
-    int oid = fz_tonum(obj);
-    int i;
-    for (i = 0; i < moz->pagecount; i++)
-	if (fz_tonum(moz->pages[i].obj) == oid)
-	    return i;
-    return 0;
+    fz_error error;
+    int page;
+    int i, y = 0;
+
+    error = pdf_findpageobject(moz->xref, obj, &page);
+    if (error)
+	pdfmoz_error(moz, error);
+
+    return page;
 }
 
 void pdfmoz_gotopage(pdfmoz_t *moz, fz_obj *obj)
 {
-    int oid = fz_tonum(obj);
+    fz_error error;
+    int page;
     int i, y = 0;
-    for (i = 0; i < moz->pagecount; i++)
-    {
-	if (fz_tonum(moz->pages[i].obj) == oid)
-	{
-	    SetScrollPos(moz->hwnd, SB_VERT, y, TRUE);
-	    InvalidateRect(moz->hwnd, NULL, FALSE);
-	    return;
-	}
+
+    error = pdf_findpageobject(moz->xref, obj, &page);
+    if (error)
+	pdfmoz_error(moz, error);
+
+    for (i = 0; i < page; i++)
 	y += moz->pages[i].px;
-    }
+
+    SetScrollPos(moz->hwnd, SB_VERT, y, TRUE);
+    InvalidateRect(moz->hwnd, NULL, FALSE);
 }
 
 void pdfmoz_onmouse(pdfmoz_t *moz, int x, int y, int click)

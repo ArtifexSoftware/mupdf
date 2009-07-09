@@ -658,7 +658,9 @@ gatherinfo(int show, int page)
 	fz_obj *shade;
 	fz_obj *pattern;
 
-	pageobj = pdf_getpageobject(pagetree, page - 1);
+	error = pdf_getpageobject(xref, page, &pageobj);
+	if (error)
+		die(error);
 
 	if (!pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
@@ -740,7 +742,7 @@ printglobalinfo(void)
 		fz_debugobj(cryptinfo->u.crypt.obj);
 	}
 
-	printf("\nPages: %d\n\n", pdf_getpagecount(pagetree));
+	printf("\nPages: %d\n\n", xref->pagecount);
 }
 
 static void
@@ -977,7 +979,7 @@ showinfo(char *filename, int show, char *pagelist)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = pdf_getpagecount(pagetree);
+				epage = xref->pagecount;
 		}
 
 		if (spage > epage)
@@ -985,10 +987,10 @@ showinfo(char *filename, int show, char *pagelist)
 
 		if (spage < 1)
 			spage = 1;
-		if (epage > pdf_getpagecount(pagetree))
-			epage = pdf_getpagecount(pagetree);
-		if (spage > pdf_getpagecount(pagetree))
-			spage = pdf_getpagecount(pagetree);
+		if (epage > xref->pagecount)
+			epage = xref->pagecount;
+		if (spage > xref->pagecount)
+			spage = xref->pagecount;
 
 		if (allpages)
 			printf("Retrieving info from pages %d-%d...\n", spage, epage);
@@ -1058,7 +1060,6 @@ int main(int argc, char **argv)
 			closexref();
 			filename = argv[fz_optind];
 			openxref(filename, password, 0);
-			loadpagetree();
 			gatherglobalinfo();
 			state = NO_INFO_GATHERED;
 		}
