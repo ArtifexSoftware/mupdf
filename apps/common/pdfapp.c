@@ -326,7 +326,7 @@ static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 
 	for (i = 0; i < pdf_getpagecount(app->pages); i++)
 	{
-		if (fz_tonum(app->pages->pref[i]) == oid)
+		if (fz_tonum(app->pages->pobj[i]) == oid)
 		{
 			if (app->histlen + 1 == 256)
 			{

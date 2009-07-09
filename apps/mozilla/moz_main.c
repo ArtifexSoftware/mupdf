@@ -16,7 +16,6 @@ typedef struct page_s page_t;
 
 struct page_s
 {
-    fz_obj *ref;
     fz_obj *obj;
     pdf_page *page;
     fz_pixmap *image;
@@ -131,7 +130,6 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
 
     for (i = 0; i < moz->pagecount; i++)
     {
-	moz->pages[i].ref = fz_keepobj(pages->pref[i]);
 	moz->pages[i].obj = fz_keepobj(pdf_getpageobject(pages, i));
 	moz->pages[i].page = nil;
 	moz->pages[i].image = nil;
@@ -293,7 +291,7 @@ int pdfmoz_getpagenum(pdfmoz_t *moz, fz_obj *obj)
     int oid = fz_tonum(obj);
     int i;
     for (i = 0; i < moz->pagecount; i++)
-	if (fz_tonum(moz->pages[i].ref) == oid)
+	if (fz_tonum(moz->pages[i].obj) == oid)
 	    return i;
     return 0;
 }
@@ -304,7 +302,7 @@ void pdfmoz_gotopage(pdfmoz_t *moz, fz_obj *obj)
     int i, y = 0;
     for (i = 0; i < moz->pagecount; i++)
     {
-	if (fz_tonum(moz->pages[i].ref) == oid)
+	if (fz_tonum(moz->pages[i].obj) == oid)
 	{
 	    SetScrollPos(moz->hwnd, SB_VERT, y, TRUE);
 	    InvalidateRect(moz->hwnd, NULL, FALSE);
