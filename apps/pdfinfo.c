@@ -718,7 +718,7 @@ gatherinfo(int show, int page)
 		pattern = fz_dictgets(rsrc, "Pattern");
 		if (pattern)
 		{
-			error = gatherpatterns(page, pageobj, shade);
+			error = gatherpatterns(page, pageobj, pattern);
 			if (error)
 				die(fz_rethrow(error, "gathering shadings at page %d (%d %d R)", page, fz_tonum(pageobj), fz_togen(pageobj)));
 		}
