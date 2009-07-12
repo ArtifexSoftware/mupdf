@@ -436,14 +436,20 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *r
 		for (i = 0; i < 256; i++)
 		{
 			etable[i] = ftcharindex(face, i);
-			fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
-			if (fterr)
+			if (etable[i] == 0)
+				continue;
+
+			if (FT_HAS_GLYPH_NAMES(face))
 			{
-				error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
-				goto cleanup;
+				fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
+				if (fterr)
+				{
+					error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
+					goto cleanup;
+				}
+				if (ebuffer[i][0])
+					estrings[i] = ebuffer[i];
 			}
-			if (ebuffer[i][0])
-				estrings[i] = ebuffer[i];
 		}
 	}
 
