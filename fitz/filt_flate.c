@@ -95,6 +95,10 @@ fz_processflated(fz_filter *f, fz_buffer *in, fz_buffer *out)
 
 	err = inflate(zp, Z_NO_FLUSH);
 
+	/* Make sure we call it with Z_FINISH at the end of input */
+	if (err == Z_OK && in->eof && zp->avail_in == 0 && zp->avail_out > 0)
+		err = inflate(zp, Z_FINISH);
+
 	in->rp = in->wp - zp->avail_in;
 	out->wp = out->ep - zp->avail_out;
 
