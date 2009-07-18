@@ -148,7 +148,7 @@ pdf_decryptxref(pdf_xref *xref)
 	encrypt = fz_dictgets(xref->trailer, "Encrypt");
 	id = fz_dictgets(xref->trailer, "ID");
 
-	if (encrypt && id)
+	if (encrypt)
 	{
 		if (fz_isnull(encrypt))
 			return fz_okay;
