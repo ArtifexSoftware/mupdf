@@ -351,10 +351,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		}
 	}
 
-	error = pdf_getpagecount(xref, &xref->pagecount);
-	if (error)
-		return fz_rethrow(error, "cannot determine page count");
-
 	fz_free(list);
 	return fz_okay;
 

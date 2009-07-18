@@ -159,7 +159,10 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 	 * Start at first page
 	 */
 
-	app->pagecount = app->xref->pagecount;
+	error = pdf_getpagecount(app->xref, &app->pagecount);
+	if (error)
+		pdfapp_error(app, error);
+
 	app->shrinkwrap = 1;
 	if (app->pageno < 1)
 		app->pageno = 1;
@@ -255,7 +258,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 			pdfapp_error(app, error);
 
 		sprintf(buf, "%s - %d/%d", app->doctitle,
-				app->pageno, app->xref->pagecount);
+				app->pageno, app->pagecount);
 		wintitle(app, buf);
 	}
 
@@ -441,7 +444,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case 'G':
-		app->pageno = app->xref->pagecount;
+		app->pageno = app->pagecount;
 		break;
 
 	case 'm':
@@ -482,8 +485,8 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 	if (app->pageno < 1)
 		app->pageno = 1;
-	if (app->pageno > app->xref->pagecount)
-		app->pageno = app->xref->pagecount;
+	if (app->pageno > app->pagecount)
+		app->pageno = app->pagecount;
 
 	if (app->pageno != oldpage)
 	{

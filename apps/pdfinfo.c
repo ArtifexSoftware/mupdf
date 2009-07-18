@@ -742,7 +742,7 @@ printglobalinfo(void)
 		fz_debugobj(cryptinfo->u.crypt.obj);
 	}
 
-	printf("\nPages: %d\n\n", xref->pagecount);
+	printf("\nPages: %d\n\n", pagecount);
 }
 
 static void
@@ -979,7 +979,7 @@ showinfo(char *filename, int show, char *pagelist)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = xref->pagecount;
+				epage = pagecount;
 		}
 
 		if (spage > epage)
@@ -987,10 +987,10 @@ showinfo(char *filename, int show, char *pagelist)
 
 		if (spage < 1)
 			spage = 1;
-		if (epage > xref->pagecount)
-			epage = xref->pagecount;
-		if (spage > xref->pagecount)
-			spage = xref->pagecount;
+		if (epage > pagecount)
+			epage = pagecount;
+		if (spage > pagecount)
+			spage = pagecount;
 
 		if (allpages)
 			printf("Retrieving info from pages %d-%d...\n", spage, epage);
