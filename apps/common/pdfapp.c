@@ -353,10 +353,10 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 */
 
 	if (c >= '0' && c <= '9')
+	{
 		app->number[app->numberlen++] = c;
-	else
-		if (c != 'g' && c != 'G')
-			app->numberlen = 0;
+		app->number[app->numberlen] = '\0';
+	}
 
 	switch (c)
 	{
@@ -436,11 +436,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	case '\n':
 	case '\r':
 		if (app->numberlen > 0)
-		{
-			app->number[app->numberlen] = '\0';
 			app->pageno = atoi(app->number);
-			app->numberlen = 0;
-		}
 		break;
 
 	case 'G':
@@ -466,22 +462,47 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 */
 
 	case 'p':
-		panto = PAN_TO_BOTTOM;	app->pageno--; break;
+		panto = PAN_TO_BOTTOM;
+		if (app->numberlen > 0)
+			app->pageno -= atoi(app->number);
+		else
+			app->pageno--;
+		break;
+
 	case 'n':
-		panto = PAN_TO_TOP;	app->pageno++; break;
+		panto = PAN_TO_TOP;
+		if (app->numberlen > 0)
+			app->pageno += atoi(app->number);
+		else
+			app->pageno++;
+		break;
 
 	case 'b':
 	case '\b':
-		panto = DONT_PAN;	app->pageno--; break;
+		panto = DONT_PAN;
+		if (app->numberlen > 0)
+			app->pageno -= atoi(app->number);
+		else
+			app->pageno--;
+		break;
+
 	case 'f':
 	case ' ':
-		panto = DONT_PAN;	app->pageno++; break;
+		panto = DONT_PAN;
+		if (app->numberlen > 0)
+			app->pageno += atoi(app->number);
+		else
+			app->pageno++;
+		break;
 
 	case 'B':
 		panto = PAN_TO_TOP;	app->pageno -= 10; break;
 	case 'F':
 		panto = PAN_TO_TOP;	app->pageno += 10; break;
 	}
+
+	if (c < '0' || c > '9')
+		app->numberlen = 0;
 
 	if (app->pageno < 1)
 		app->pageno = 1;
