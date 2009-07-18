@@ -386,6 +386,7 @@ readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	xref->table[oid].gen = gen;
 	xref->table[oid].obj = fz_keepobj(trailer);
 	xref->table[oid].stmofs = stmofs;
+	xref->table[oid].ofs = 0;
 
 	obj = fz_dictgets(trailer, "Size");
 	if (!obj)
