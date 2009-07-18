@@ -215,10 +215,13 @@ extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm, fz_point *oldpt)
 		float adv;
 		int i, x, y, fterr;
 
-		FT_Set_Transform(font->ftface, NULL, NULL);
-		fterr = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
-		if (fterr)
-			return fz_throw("freetype set character size: %s", ft_errorstring(fterr));
+		if (font->ftface)
+		{
+			FT_Set_Transform(font->ftface, NULL, NULL);
+			fterr = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+			if (fterr)
+				return fz_throw("freetype set character size: %s", ft_errorstring(fterr));
+		}
 
 		for (i = 0; i < text->len; i++)
 		{
