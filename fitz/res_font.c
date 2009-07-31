@@ -293,7 +293,7 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 
 	    fterr = FT_Set_Char_Size(face, 64 * scale, 64 * scale, 72, 72);
 	    if (fterr)
-		    fz_warn("freetype setting character size: %s", fz_errorstring(fterr));
+		    fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
 	    FT_Set_Transform(face, &m, &v);
 #endif
 	    fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
