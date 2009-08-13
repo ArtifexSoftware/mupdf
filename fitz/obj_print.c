@@ -131,7 +131,7 @@ static void fmthex(struct fmt *fmt, fz_obj *obj)
 
 static void fmtname(struct fmt *fmt, fz_obj *obj)
 {
-	char *s = fz_toname(obj);
+	unsigned char *s = (unsigned char *) fz_toname(obj);
 	int i, c;
 
 	fmtputc(fmt, '/');
