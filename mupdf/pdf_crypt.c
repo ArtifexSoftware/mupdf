@@ -358,49 +358,6 @@ createkey(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 }
 
 /*
- * Algorithm 3.3 Computing the O value
- */
-static void
-createowner(pdf_crypt *crypt, unsigned char *userpw, int userpwlen, unsigned char *ownerpw, int ownerpwlen)
-{
-	unsigned char buf[32];
-	unsigned char key[16];
-	fz_arc4 arc4;
-	fz_md5 md5;
-
-	/* Step 1 + 2 */
-	if (ownerpwlen == 0)
-	{
-		ownerpw = userpw;
-		ownerpwlen = userpwlen;
-	}
-	padpassword(buf, ownerpw, ownerpwlen);
-	fz_md5init(&md5);
-	fz_md5update(&md5, buf, 32);
-	fz_md5final(&md5, key);
-
-	/* Step 3 (rev 3 or later) */
-	if (crypt->r >= 3)
-		voodoo50(key, crypt->len);
-
-	/* Step 4 */
-	fz_arc4init(&arc4, key, crypt->len);
-
-	/* Step 5 */
-	padpassword(buf, userpw, ownerpwlen);
-
-	/* Step 6 */
-	fz_arc4encrypt(&arc4, buf, buf, 32);
-
-	/* Step 7 (rev 3 or later) */
-	if (crypt->r >= 3)
-		voodoo19(buf, 32, key, crypt->len);
-
-	/* Step 8 */
-	memcpy(crypt->o, buf, 32);
-}
-
-/*
  * Algorithm 3.4 Computing the U value (rev 2)
  * Algorithm 3.5 Computing the U value (rev 3 or later)
  */
@@ -443,55 +400,6 @@ createuser(pdf_crypt *crypt, unsigned char *userpw, int pwlen)
 		memcpy(crypt->u, key, 16);
 		memset(crypt->u + 16, 0, 16);
 	}
-}
-
-/*
- * Create crypt object for encrypting, given passwords,
- * permissions, and file ID
- */
-fz_error
-pdf_newencrypt(pdf_crypt **cp, char *userpw, char *ownerpw, int p, int n, fz_obj *id)
-{
-	fz_error error;
-	pdf_crypt *crypt;
-
-	crypt = fz_malloc(sizeof(pdf_crypt));
-	if (!crypt)
-		return fz_rethrow(-1, "out of memory: crypt struct");
-
-	crypt->encrypt = nil;
-	crypt->id = fz_keepobj(fz_arrayget(id, 0));
-	crypt->p = p;
-	crypt->len = MIN(MAX(n / 8, 5), 16);
-	crypt->keylen = MIN(crypt->len + 5, 16);
-	crypt->r = crypt->len == 5 ? 2 : 3;
-
-	createowner(crypt,
-		(unsigned char *) userpw, strlen(userpw),
-		(unsigned char *) ownerpw, strlen(ownerpw));
-	createuser(crypt,
-		(unsigned char *) userpw, strlen(userpw));
-
-	error = fz_packobj(&crypt->encrypt, nil,
-			"<< /Filter /Standard "
-			"/V %i /R %i "
-			"/O %# /U %# "
-			"/P %i "
-			"/Length %i >>",
-			crypt->r == 2 ? 1 : 2,
-			crypt->r,
-			crypt->o, 32,
-			crypt->u, 32,
-			crypt->p,
-			crypt->len * 8);
-	if (error)
-	{
-		pdf_freecrypt(crypt);
-		return fz_rethrow(error, "cannot create encryption dictionary");
-	}
-
-	*cp = crypt;
-	return fz_okay;
 }
 
 int
@@ -632,19 +540,6 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int oid, int gen)
 			pdf_cryptobj(crypt, fz_dictgetval(obj, i), oid, gen);
 		}
 	}
-}
-
-/*
- * De/encrypt the contents of a buffer
- */
-void
-pdf_cryptbuffer(pdf_crypt *crypt, fz_buffer *buf, int oid, int gen)
-{
-    fz_arc4 arc4;
-    unsigned char key[16];
-    createobjkey(crypt, oid, gen, key);
-    fz_arc4init(&arc4, key, crypt->keylen);
-    fz_arc4encrypt(&arc4, buf->rp, buf->rp, buf->wp - buf->rp);
 }
 
 /*
