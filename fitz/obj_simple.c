@@ -253,6 +253,10 @@ fz_objcmp(fz_obj *a, fz_obj *b)
 
 	if (a == b)
 		return 0;
+
+	if (!a || !b)
+		return 1;
+
 	if (a->kind != b->kind)
 		return 1;
 
