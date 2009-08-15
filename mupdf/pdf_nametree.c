@@ -2,21 +2,7 @@
 #include "mupdf.h"
 
 static int
-destcmp(fz_obj *s1, fz_obj *s2)
-{
-	int l1 = fz_tostrlen(s1);
-	int l2 = fz_tostrlen(s2);
-
-	if (l1 < l2)
-		return -1;
-	if (l1 > l2)
-		return 1;
-
-	return memcmp(fz_tostrbuf(s1), fz_tostrbuf(s2), l1);
-}
-
-static int
-nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
+pdf_lookupdestimp(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 {
 	fz_obj *kids, *names, *limits;
 
@@ -26,18 +12,18 @@ nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 
 	*destp = nil;
 
-	if (limits && fz_isarray(limits))
+	if (fz_isarray(limits))
 	{
 		fz_obj *first = fz_arrayget(limits, 0);
 		fz_obj *last = fz_arrayget(limits, 1);
 
-		if (destcmp(first, nameddest) > 0)
+		if (fz_objcmp(first, nameddest) > 0)
 			return 1;
-		if (destcmp(last, nameddest) < 0)
+		if (fz_objcmp(last, nameddest) < 0)
 			return -1;
 	}
 
-	if (kids && fz_isarray(kids))
+	if (fz_isarray(kids))
 	{
 		int l = 0;
 		int r = fz_arraylen(kids) - 1;
@@ -48,7 +34,7 @@ nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 			int c;
 			fz_obj *kid = fz_arrayget(kids, m);
 
-			c = -nametreelookup(kid, nameddest, destp);
+			c = -pdf_lookupdestimp(kid, nameddest, destp);
 			if (c < 0)
 				r = m - 1;
 			else if (c > 0)
@@ -58,7 +44,7 @@ nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 		}
 	}
 
-	if (names && fz_isarray(names))
+	if (fz_isarray(names))
 	{
 		int l = 0;
 		int r = (fz_arraylen(names) / 2) - 1;
@@ -70,7 +56,7 @@ nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 			fz_obj *key = fz_arrayget(names, m * 2);
 			fz_obj *val = fz_arrayget(names, m * 2 + 1);
 
-			c = -destcmp(key, nameddest);
+			c = -fz_objcmp(key, nameddest);
 			if (c < 0)
 				r = m - 1;
 			else if (c > 0)
@@ -107,12 +93,12 @@ pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest)
 	{
 		fz_obj *desttree = fz_dictgets(names, "Dests");
 		if (desttree)
-			nametreelookup(desttree, nameddest, &dest);
+			pdf_lookupdestimp(desttree, nameddest, &dest);
 	}
 
 	if (fz_isdict(dest))
 		return dest;
-	else if (fz_isarray(dest))
+	if (fz_isarray(dest))
 		return dest;
 
 	return nil;
