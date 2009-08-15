@@ -1,100 +1,119 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error
-loadnametreenode(fz_obj *tree, pdf_xref *xref, fz_obj *node)
+static int
+destcmp(fz_obj *s1, fz_obj *s2)
 {
-	fz_error error;
-	fz_obj *names;
-	fz_obj *kids;
-	fz_obj *key;
-	fz_obj *val;
-	int i, len;
+	int l1 = fz_tostrlen(s1);
+	int l2 = fz_tostrlen(s2);
 
-	names = fz_dictgets(node, "Names");
-	if (names)
-	{
-		len = fz_arraylen(names) / 2;
+	if (l1 < l2)
+		return -1;
+	if (l1 > l2)
+		return 1;
 
-		for (i = 0; i < len; ++i)
-		{
-			key = fz_arrayget(names, i * 2 + 0);
-			val = fz_arrayget(names, i * 2 + 1);
+	return memcmp(fz_tostrbuf(s1), fz_tostrbuf(s2), l1);
+}
 
-			error = fz_dictput(tree, key, val);
-			if (error)
-				return fz_rethrow(error, "cannot insert name tree entry");
-
-			fz_sortdict(tree);
-		}
-	}
+static int
+nametreelookup(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
+{
+	fz_obj *kids, *names, *limits;
 
 	kids = fz_dictgets(node, "Kids");
-	if (kids)
+	names = fz_dictgets(node, "Names");
+	limits = fz_dictgets(node, "Limits");
+
+	*destp = nil;
+
+	if (limits && fz_isarray(limits))
 	{
-		len = fz_arraylen(kids);
-		for (i = 0; i < len; ++i)
+		fz_obj *first = fz_arrayget(limits, 0);
+		fz_obj *last = fz_arrayget(limits, 1);
+
+		if (destcmp(first, nameddest) > 0)
+			return 1;
+		if (destcmp(last, nameddest) < 0)
+			return -1;
+	}
+
+	if (kids && fz_isarray(kids))
+	{
+		int l = 0;
+		int r = fz_arraylen(kids) - 1;
+
+		while (l <= r)
 		{
-			error = loadnametreenode(tree, xref, fz_arrayget(kids, i));
-			if (error)
-				return fz_rethrow(error, "cannot load name tree node");
+			int m = (l + r) >> 1;
+			int c;
+			fz_obj *kid = fz_arrayget(kids, m);
+
+			c = -nametreelookup(kid, nameddest, destp);
+			if (c < 0)
+				r = m - 1;
+			else if (c > 0)
+				l = m + 1;
+			else
+				return 0;
 		}
 	}
 
-	return fz_okay;
-}
-
-fz_error
-pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root)
-{
-	fz_error error;
-	fz_obj *tree;
-
-	error = fz_newdict(&tree, 128);
-	if (error)
-		return fz_rethrow(error, "cannot create name tree dictionary");
-
-	error = loadnametreenode(tree, xref, root);
-	if (error)
+	if (names && fz_isarray(names))
 	{
-		fz_dropobj(tree);
-		return fz_rethrow(error, "cannot load name tree");
+		int l = 0;
+		int r = (fz_arraylen(names) / 2) - 1;
+
+		while (l <= r)
+		{
+			int m = (l + r) >> 1;
+			int c;
+			fz_obj *key = fz_arrayget(names, m * 2);
+			fz_obj *val = fz_arrayget(names, m * 2 + 1);
+
+			c = -destcmp(key, nameddest);
+			if (c < 0)
+				r = m - 1;
+			else if (c > 0)
+				l = m + 1;
+			else
+			{
+				*destp = val;
+				return 0;
+			}
+		}
 	}
 
-	fz_sortdict(tree);
-
-	*dictp = tree;
-	return fz_okay;
+	return -1;
 }
 
-fz_error
-pdf_loadnametrees(pdf_xref *xref)
+fz_obj *
+pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest)
 {
-	fz_error error;
-	fz_obj *names;
-	fz_obj *dests;
+	fz_obj *dests = fz_dictgets(xref->root, "Dests");
+	fz_obj *names = fz_dictgets(xref->root, "Names");
+	fz_obj *dest = nil;
 
-	/* PDF 1.1 */
-	dests = fz_dictgets(xref->root, "Dests");
+	/* PDF 1.1 has destinations in a dictionary */
 	if (dests)
 	{
-		xref->dests = fz_keepobj(dests);
-		return fz_okay;
+		if (fz_isname(nameddest))
+			dest = fz_dictget(dests, nameddest);
+		else
+			dest = fz_dictgets(dests, fz_tostrbuf(nameddest));
 	}
 
-	/* PDF 1.2 */
-	names = fz_dictgets(xref->root, "Names");
-	if (names)
+	/* PDF 1.2 has destinations in a name tree */
+	if (names && !dest)
 	{
-		dests = fz_dictgets(names, "Dests");
-		if (dests)
-		{
-			error = pdf_loadnametree(&xref->dests, xref, dests);
-			if (error)
-				return fz_rethrow(error, "cannot load name tree");
-		}
+		fz_obj *desttree = fz_dictgets(names, "Dests");
+		if (desttree)
+			nametreelookup(desttree, nameddest, &dest);
 	}
 
-	return fz_okay;
-}
+	if (fz_isdict(dest))
+		return dest;
+	else if (fz_isarray(dest))
+		return dest;
 
+	return nil;
+}
