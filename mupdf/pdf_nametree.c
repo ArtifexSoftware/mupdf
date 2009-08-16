@@ -1,27 +1,13 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static int
-pdf_lookupdestimp(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
+static fz_obj *
+pdf_lookupdestimp(fz_obj *node, fz_obj *nameddest)
 {
-	fz_obj *kids, *names, *limits;
+	fz_obj *kids, *names;
 
 	kids = fz_dictgets(node, "Kids");
 	names = fz_dictgets(node, "Names");
-	limits = fz_dictgets(node, "Limits");
-
-	*destp = nil;
-
-	if (fz_isarray(limits))
-	{
-		fz_obj *first = fz_arrayget(limits, 0);
-		fz_obj *last = fz_arrayget(limits, 1);
-
-		if (fz_objcmp(first, nameddest) > 0)
-			return 1;
-		if (fz_objcmp(last, nameddest) < 0)
-			return -1;
-	}
 
 	if (fz_isarray(kids))
 	{
@@ -31,16 +17,17 @@ pdf_lookupdestimp(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 		while (l <= r)
 		{
 			int m = (l + r) >> 1;
-			int c;
 			fz_obj *kid = fz_arrayget(kids, m);
+			fz_obj *limits = fz_dictgets(kid, "Limits");
+			fz_obj *first = fz_arrayget(limits, 0);
+			fz_obj *last = fz_arrayget(limits, 1);
 
-			c = -pdf_lookupdestimp(kid, nameddest, destp);
-			if (c < 0)
+			if (fz_objcmp(nameddest, first) < 0)
 				r = m - 1;
-			else if (c > 0)
+			else if (fz_objcmp(nameddest, last) > 0)
 				l = m + 1;
 			else
-				return 0;
+				return pdf_lookupdestimp(kid, nameddest);
 		}
 	}
 
@@ -56,20 +43,17 @@ pdf_lookupdestimp(fz_obj *node, fz_obj *nameddest, fz_obj **destp)
 			fz_obj *key = fz_arrayget(names, m * 2);
 			fz_obj *val = fz_arrayget(names, m * 2 + 1);
 
-			c = -fz_objcmp(key, nameddest);
+			c = fz_objcmp(nameddest, key);
 			if (c < 0)
 				r = m - 1;
 			else if (c > 0)
 				l = m + 1;
 			else
-			{
-				*destp = val;
-				return 0;
-			}
+				return val;
 		}
 	}
 
-	return -1;
+	return nil;
 }
 
 fz_obj *
@@ -93,7 +77,7 @@ pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest)
 	{
 		fz_obj *desttree = fz_dictgets(names, "Dests");
 		if (desttree)
-			pdf_lookupdestimp(desttree, nameddest, &dest);
+			dest = pdf_lookupdestimp(desttree, nameddest);
 	}
 
 	if (fz_isdict(dest))
