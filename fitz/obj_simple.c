@@ -280,9 +280,17 @@ fz_objcmp(fz_obj *a, fz_obj *b)
 
 	case FZ_STRING:
 		if (a->u.s.len < b->u.s.len)
-			return -1;
-		if (a->u.s.len > b->u.s.len)
+		{
+			if (memcmp(a->u.s.buf, b->u.s.buf, a->u.s.len) <= 0)
+				return -1;
 			return 1;
+		}
+		if (a->u.s.len > b->u.s.len)
+		{
+			if (memcmp(a->u.s.buf, b->u.s.buf, b->u.s.len) >= 0)
+				return 1;
+			return -1;
+		}
 		return memcmp(a->u.s.buf, b->u.s.buf, a->u.s.len);
 
 	case FZ_NAME:
