@@ -248,7 +248,9 @@ void fz_unchainpipeline(fz_filter *pipe, fz_filter **oldfp, fz_buffer **oldbp);
 void fz_pushbackahxd(fz_filter *filter, fz_buffer *in, fz_buffer *out, int n);
 
 fz_error fz_newnullfilter(fz_filter **fp, int len);
+fz_error fz_newcopyfilter(fz_filter **fp);
 fz_error fz_newarc4filter(fz_filter **fp, unsigned char *key, unsigned keylen);
+fz_error fz_newaesdfilter(fz_filter **fp, unsigned char *key, unsigned keylen);
 fz_error fz_newa85d(fz_filter **filterp, fz_obj *param);
 fz_error fz_newa85e(fz_filter **filterp, fz_obj *param);
 fz_error fz_newahxd(fz_filter **filterp, fz_obj *param);
@@ -310,7 +312,26 @@ void fz_arc4init(fz_arc4 *state, const unsigned char *key, const unsigned len);
 unsigned char fz_arc4next(fz_arc4 *state);
 void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, const unsigned len);
 
-/* TODO: aes */
+/* AES block cipher implementation from XYSSL */
+
+#define AES_DECRYPT 0
+#define AES_ENCRYPT 1
+
+struct fz_aes_s
+{
+	int nr;                     /* number of rounds */
+	unsigned long *rk;          /* AES round keys */
+	unsigned long buf[68];      /* unaligned data */
+};
+
+typedef struct fz_aes_s fz_aes;
+
+void aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
+void aes_setkey_dec( fz_aes *ctx, const unsigned char *key, int keysize );
+void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
+                    unsigned char iv[16],
+                    const unsigned char *input,
+                    unsigned char *output );
 
 /*
  * Stream API for Fitz.
