@@ -50,10 +50,7 @@ fz_processaesdfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 		return fz_ioneedout;
 
 	    n = MIN(in->wp - in->rp, out->ep - out->wp);
-	    if (n % 16 != 0)
-		return fz_throw("size of data to decrypt not a multiple of 16");
-	    if (n < 16)
-		return fz_throw("size of data to decrypt too small");
+	    n = (n / 16) * 16;
 
 	    aes_crypt_cbc(&f->aes, AES_DECRYPT, n, f->iv, in->rp, out->wp);
 	    in->rp += n;
