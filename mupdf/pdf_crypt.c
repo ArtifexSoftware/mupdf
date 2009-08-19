@@ -603,15 +603,15 @@ pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int num, int gen)
  * Create filter suitable for de/encrypting a stream.
  */
 fz_error
-pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int num, int gen)
+pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, pdf_cryptfilter *stmf, int num, int gen)
 {
     fz_error error;
     unsigned char key[16];
     int len;
 
-    len = pdf_computeobjectkey(crypt, &crypt->stmf, num, gen, key);
+    len = pdf_computeobjectkey(crypt, stmf, num, gen, key);
 
-    if (crypt->stmf.method == PDF_CRYPT_NONE)
+    if (stmf->method == PDF_CRYPT_NONE)
     {
 	error = fz_newcopyfilter(fp);
 	if (error)
@@ -619,7 +619,7 @@ pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int num, int gen)
 	return fz_okay;
     }
 
-    if (crypt->stmf.method == PDF_CRYPT_RC4)
+    if (stmf->method == PDF_CRYPT_RC4)
     {
 	error = fz_newarc4filter(fp, key, len);
 	if (error)
@@ -627,7 +627,7 @@ pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int num, int gen)
 	return fz_okay;
     }
 
-    if (crypt->stmf.method == PDF_CRYPT_AESV2)
+    if (stmf->method == PDF_CRYPT_AESV2)
     {
 	error = fz_newaesdfilter(fp, key, len);
 	if (error)

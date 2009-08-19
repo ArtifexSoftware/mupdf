@@ -103,7 +103,7 @@ fz_error pdf_newcrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
 void pdf_freecrypt(pdf_crypt *crypt);
 
 fz_error pdf_parsecryptfilter(pdf_cryptfilter *cf, fz_obj *dict, int defaultlength);
-fz_error pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, int num, int gen);
+fz_error pdf_cryptstream(fz_filter **fp, pdf_crypt *crypt, pdf_cryptfilter *cf, int num, int gen);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int num, int gen);
 
 int pdf_needspassword(pdf_xref *xref);
