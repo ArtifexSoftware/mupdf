@@ -23,7 +23,6 @@ fz_dropcopyfilter(fz_filter *f)
 fz_error
 fz_processcopyfilter(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
-    fz_copyfilter *f = (fz_copyfilter*)filter;
     int n;
 
     while (1)
