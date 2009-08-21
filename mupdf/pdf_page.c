@@ -211,20 +211,28 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	}
 
 	/*
-	 * Load resources
+	 * Create store for resource objects
 	 */
 
-	obj = fz_dictgets(dict, "Resources");
-	if (!obj)
+	if (!xref->store)
+	{
+		error = pdf_newstore(&xref->store);
+		if (error)
+			return fz_rethrow(error, "cannot create resource store");
+	}
+
+	/*
+	 * Locate resources
+	 */
+
+	rdb = fz_dictgets(dict, "Resources");
+	if (!rdb)
 	{
 		fz_warn("cannot find page resources, proceeding anyway.");
-		error = fz_newdict(&obj, 0);
+		error = fz_newdict(&rdb, 0);
 		if (error)
 			return fz_rethrow(error, "cannot create fake page resources");
 	}
-	error = pdf_loadresources(&rdb, xref, obj);
-	if (error)
-		return fz_rethrow(error, "cannot load page resources");
 
 	/*
 	 * Interpret content stream to build display tree
@@ -284,7 +292,6 @@ pdf_droppage(pdf_page *page)
 	/* if (page->comments) pdf_dropcomment(page->comments); */
 	if (page->links)
 		pdf_droplink(page->links);
-	fz_dropobj(page->resources);
 	if (page->tree)
 		fz_droptree(page->tree);
 	fz_free(page);
