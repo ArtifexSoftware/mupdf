@@ -9,6 +9,8 @@ void pdf_dropimage(fz_image *fzimg)
 {
 	pdf_image *img = (pdf_image*)fzimg;
 	fz_dropbuffer(img->samples);
+	if (img->indexed)
+		fz_dropcolorspace((fz_colorspace *) img->indexed);
 	if (img->mask)
 		fz_dropimage(img->mask);
 }
