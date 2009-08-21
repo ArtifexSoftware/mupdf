@@ -6,16 +6,25 @@ runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
 	fz_error error;
 	fz_stream *stm;
+	fz_buffer *buf;
 
 	pdf_logpage("simple content stream\n");
 
-	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
+	error = pdf_loadstream(&buf, xref, fz_tonum(stmref), fz_togen(stmref));
 	if (error)
-		return fz_rethrow(error, "cannot open content stream (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
+		return fz_rethrow(error, "cannot load content stream (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
+
+	error = fz_openrbuffer(&stm, buf);
+	if (error)
+	{
+		fz_dropbuffer(buf);
+		return fz_rethrow(error, "cannot open content buffer (read)");
+	}
 
 	error = pdf_runcsi(csi, xref, rdb, stm);
 
 	fz_dropstream(stm);
+	fz_dropbuffer(buf);
 
 	if (error)
 		return fz_rethrow(error, "cannot interpret content stream (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
