@@ -176,6 +176,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 	/* reset alpha to 1.0 when starting a new Transparency group */
 	if (xobj->transparency)
 	{
+	    gstate->blendmode = FZ_BNORMAL;
 	    gstate->stroke.alpha = gstate->stroke.parentalpha;
 	    gstate->fill.alpha = gstate->fill.parentalpha;
 	}
@@ -195,7 +196,8 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 
 	if (xobj->isolated || xobj->knockout)
 	{
-	    error = fz_newblendnode(&blend, FZ_BNORMAL, xobj->isolated, xobj->knockout);
+	    error = fz_newblendnode(&blend, gstate->blendmode,
+		    xobj->isolated, xobj->knockout);
 	    if (error)
 		return fz_rethrow(error, "cannot create blend node");
 	    fz_insertnodelast(gstate->head, blend);
