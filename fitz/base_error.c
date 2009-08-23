@@ -10,10 +10,11 @@ fz_printerror(int type, const char *file, int line, const char *func, char *msg)
     char buf[100];
     int len;
 
-    snprintf(buf, sizeof buf, "%c %s:%d: %s(): %s\n", type, file, line, func, msg);
+    snprintf(buf, sizeof buf, "%c %s:%d: %s(): %s", type, file, line, func, msg);
     len = strlen(buf);
 
     fputs(buf, stderr);
+    putc('\n', stderr);
 
     if (fz_errorclear)
     {
