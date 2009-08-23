@@ -8,7 +8,7 @@ loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
 }
 
 fz_error
-pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
+pdf_newlink(pdf_link **linkp, pdf_linkkind kind, fz_rect bbox, fz_obj *dest)
 {
 	pdf_link *link;
 
@@ -16,6 +16,7 @@ pdf_newlink(pdf_link **linkp, fz_rect bbox, fz_obj *dest)
 	if (!link)
 		return fz_rethrow(-1, "out of memory");
 
+	link->kind = kind;
 	link->rect = bbox;
 	link->dest = fz_keepobj(dest);
 	link->next = nil;
@@ -69,6 +70,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *action;
 	fz_obj *obj;
 	fz_rect bbox;
+	pdf_linkkind kind;
 
 	pdf_logpage("load link {\n");
 
@@ -89,6 +91,7 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "Dest");
 	if (obj)
 	{
+		kind = PDF_LGOTO;
 		dest = resolvedest(xref, obj);
 		pdf_logpage("dest (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
 	}
@@ -99,23 +102,28 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 		obj = fz_dictgets(action, "S");
 		if (fz_isname(obj) && !strcmp(fz_toname(obj), "GoTo"))
 		{
+			kind = PDF_LGOTO;
 			dest = resolvedest(xref, fz_dictgets(action, "D"));
 			pdf_logpage("action goto (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
 		}
 		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "URI"))
 		{
+			kind = PDF_LURI;
 			dest = fz_dictgets(action, "URI");
 			pdf_logpage("action uri %s\n", fz_tostrbuf(dest));
 		}
 		else
-			pdf_logpage("action ... ?\n");
+		{
+			pdf_logpage("unhandled link action, ignoring link\n");
+			dest = nil;
+		}
 	}
 
 	pdf_logpage("}\n");
 
 	if (dest)
 	{
-		error = pdf_newlink(&link, bbox, dest);
+		error = pdf_newlink(&link, kind, bbox, dest);
 		if (error)
 			return fz_rethrow(error, "cannot create link");
 		*linkp = link;
