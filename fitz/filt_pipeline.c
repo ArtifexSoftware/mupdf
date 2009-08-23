@@ -129,7 +129,15 @@ tail:
 	}
 
 	else if (e == fz_iodone)
+	{
+		/* Make sure that the head is also done.
+		 * It may still contain end-of-data markers or garbage.
+		 */
+		e = fz_process(p->head, in, p->buffer);
+		if (e != fz_iodone)
+			fz_catch(e, "head filter not done");
 		return fz_iodone;
+	}
 
 	else if (e)
 		return fz_rethrow(e, "cannot process tail filter");
