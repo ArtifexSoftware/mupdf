@@ -598,8 +598,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		for (i = 0; i < n; i++)
 			cs->lookup[i] = buf[i];
 	}
-
-	if (fz_isindirect(lookup))
+	else if (fz_isindirect(lookup))
 	{
 		fz_buffer *buf;
 		int i;
@@ -618,6 +617,8 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 		fz_dropbuffer(buf);
 	}
+	else
+		return fz_throw("cannot parse colorspace lookup table");
 
 	pdf_logrsrc("}\n");
 
