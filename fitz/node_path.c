@@ -157,9 +157,6 @@ fz_closepath(fz_pathnode *path)
 fz_error
 fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
 {
-	if (path->len == 0)
-		fz_warn("creating an empty path");
-
 	path->paint = paint;
 	path->dash = dash;
 	if (stroke)
