@@ -14,7 +14,8 @@ struct entry
 	int stmlen;
 };
 
-static fz_error parseobj(fz_stream *file, char *buf, int cap,
+static fz_error
+fz_repairobj(fz_stream *file, char *buf, int cap,
 	int *stmofsp, int *stmlenp, int *isroot, int *isinfo)
 {
 	fz_error error;
