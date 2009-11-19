@@ -205,7 +205,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 		if (tok == PDF_TOBJ)
 		{
-			error = parseobj(file, buf, sizeof buf, &stmofs, &stmlen, &isroot, &isinfo);
+			error = fz_repairobj(file, buf, sizeof buf, &stmofs, &stmlen, &isroot, &isinfo);
 			if (error)
 			{
 				error = fz_rethrow(error, "cannot parse object (%d %d R)", oid, gen);
