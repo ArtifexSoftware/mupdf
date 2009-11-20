@@ -305,12 +305,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 			return fz_rethrow(error, "could not load shading dictionary");
 	}
 
-	error = pdf_storeitem(xref->store, PDF_KSHADE, dict, *shadep);
-	if (error)
-	{
-		fz_dropshade(*shadep);
-		return fz_rethrow(error, "could not put shading dictionary in store");
-	}
+	pdf_storeitem(xref->store, PDF_KSHADE, dict, *shadep);
 
 	return fz_okay;
 }

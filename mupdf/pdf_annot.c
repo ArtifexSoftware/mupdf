@@ -1,28 +1,19 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error
-loadcomment(pdf_comment **commentp, pdf_xref *xref, fz_obj *dict)
-{
-	return fz_okay;
-}
-
-fz_error
-pdf_newlink(pdf_link **linkp, pdf_linkkind kind, fz_rect bbox, fz_obj *dest)
+pdf_link *
+pdf_newlink(pdf_linkkind kind, fz_rect bbox, fz_obj *dest)
 {
 	pdf_link *link;
 
 	link = fz_malloc(sizeof(pdf_link));
-	if (!link)
-		return fz_rethrow(-1, "out of memory");
 
 	link->kind = kind;
 	link->rect = bbox;
 	link->dest = fz_keepobj(dest);
 	link->next = nil;
 
-	*linkp = link;
-	return fz_okay;
+	return link;
 }
 
 void
@@ -61,11 +52,9 @@ resolvedest(pdf_xref *xref, fz_obj *dest)
 	return nil;
 }
 
-fz_error
-pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
+pdf_link *
+pdf_loadlink(pdf_xref *xref, fz_obj *dict)
 {
-	fz_error error;
-	pdf_link *link;
 	fz_obj *dest;
 	fz_obj *action;
 	fz_obj *obj;
@@ -74,7 +63,6 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logpage("load link {\n");
 
-	link = nil;
 	dest = nil;
 
 	obj = fz_dictgets(dict, "Rect");
@@ -123,19 +111,15 @@ pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict)
 
 	if (dest)
 	{
-		error = pdf_newlink(&link, kind, bbox, dest);
-		if (error)
-			return fz_rethrow(error, "cannot create link");
-		*linkp = link;
+		return pdf_newlink(kind, bbox, dest);
 	}
 
-	return fz_okay;
+	return nil;
 }
 
-fz_error
+void
 pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 {
-	fz_error error;
 	pdf_comment *comment;
 	pdf_link *link;
 	fz_obj *subtype;
@@ -154,30 +138,11 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 		subtype = fz_dictgets(obj, "Subtype");
 		if (fz_isname(subtype) && !strcmp(fz_toname(subtype), "Link"))
 		{
-			pdf_link *temp = nil;
-
-			error = pdf_loadlink(&temp, xref, obj);
-			if (error)
-			{
-				if (link)
-					pdf_droplink(link);
-				return fz_rethrow(error, "cannot load annotation link");
-			}
-
+			pdf_link *temp = pdf_loadlink(xref, obj);
 			if (temp)
 			{
 				temp->next = link;
 				link = temp;
-			}
-		}
-		else
-		{
-			error = loadcomment(&comment, xref, obj);
-			if (error)
-			{
-				if (link)
-					pdf_droplink(link);
-				return fz_rethrow(error, "cannot load annotation comment");
 			}
 		}
 	}
@@ -186,6 +151,5 @@ pdf_loadannots(pdf_comment **cp, pdf_link **lp, pdf_xref *xref, fz_obj *annots)
 
 	*cp = comment;
 	*lp = link;
-	return fz_okay;
 }
 

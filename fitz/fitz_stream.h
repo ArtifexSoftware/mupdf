@@ -62,20 +62,18 @@ struct fz_obj_s
 	} u;
 };
 
-fz_error fz_newnull(fz_obj **op);
-fz_error fz_newbool(fz_obj **op, int b);
-fz_error fz_newint(fz_obj **op, int i);
-fz_error fz_newreal(fz_obj **op, float f);
-fz_error fz_newname(fz_obj **op, char *str);
-fz_error fz_newstring(fz_obj **op, char *str, int len);
-fz_error fz_newindirect(fz_obj **op, int num, int gen, pdf_xref *xref);
+fz_obj * fz_newnull(void);
+fz_obj * fz_newbool(int b);
+fz_obj * fz_newint(int i);
+fz_obj * fz_newreal(float f);
+fz_obj * fz_newname(char *str);
+fz_obj * fz_newstring(char *str, int len);
+fz_obj * fz_newindirect(int num, int gen, pdf_xref *xref);
 
-fz_error fz_newarray(fz_obj **op, int initialcap);
-fz_error fz_newdict(fz_obj **op, int initialcap);
-fz_error fz_copyarray(fz_obj **op, fz_obj *array);
-fz_error fz_copydict(fz_obj **op, fz_obj *dict);
-fz_error fz_deepcopyarray(fz_obj **op, fz_obj *array);
-fz_error fz_deepcopydict(fz_obj **op, fz_obj *dict);
+fz_obj * fz_newarray(int initialcap);
+fz_obj * fz_newdict(int initialcap);
+fz_obj * fz_copyarray(fz_obj *array);
+fz_obj * fz_copydict(fz_obj *dict);
 
 fz_obj *fz_keepobj(fz_obj *obj);
 void fz_dropobj(fz_obj *obj);
@@ -105,12 +103,12 @@ int fz_tostrlen(fz_obj *obj);
 int fz_tonum(fz_obj *obj);
 int fz_togen(fz_obj *obj);
 
-fz_error fz_newnamefromstring(fz_obj **op, fz_obj *str);
+fz_obj * fz_newnamefromstring(fz_obj *str);
 
 int fz_arraylen(fz_obj *array);
 fz_obj *fz_arrayget(fz_obj *array, int i);
-fz_error fz_arrayput(fz_obj *array, int i, fz_obj *obj);
-fz_error fz_arraypush(fz_obj *array, fz_obj *obj);
+void fz_arrayput(fz_obj *array, int i, fz_obj *obj);
+void fz_arraypush(fz_obj *array, fz_obj *obj);
 
 int fz_dictlen(fz_obj *dict);
 fz_obj *fz_dictgetkey(fz_obj *dict, int idx);
@@ -118,18 +116,18 @@ fz_obj *fz_dictgetval(fz_obj *dict, int idx);
 fz_obj *fz_dictget(fz_obj *dict, fz_obj *key);
 fz_obj *fz_dictgets(fz_obj *dict, char *key);
 fz_obj *fz_dictgetsa(fz_obj *dict, char *key, char *abbrev);
-fz_error fz_dictput(fz_obj *dict, fz_obj *key, fz_obj *val);
-fz_error fz_dictputs(fz_obj *dict, char *key, fz_obj *val);
-fz_error fz_dictdel(fz_obj *dict, fz_obj *key);
-fz_error fz_dictdels(fz_obj *dict, char *key);
+void fz_dictput(fz_obj *dict, fz_obj *key, fz_obj *val);
+void fz_dictputs(fz_obj *dict, char *key, fz_obj *val);
+void fz_dictdel(fz_obj *dict, fz_obj *key);
+void fz_dictdels(fz_obj *dict, char *key);
 void fz_sortdict(fz_obj *dict);
 
 int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 int fz_fprintobj(FILE *fp, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);
 
-fz_error fz_parseobj(fz_obj **objp, pdf_xref *xref, char *s);
-fz_error fz_packobj(fz_obj **objp, pdf_xref *xref, char *fmt, ...);
+fz_error fz_parseobj(fz_obj **, pdf_xref *xref, char *s);
+fz_error fz_packobj(fz_obj **, pdf_xref *xref, char *fmt, ...);
 
 char *fz_objkindstr(fz_obj *obj);
 

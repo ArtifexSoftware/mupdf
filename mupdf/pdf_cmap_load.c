@@ -76,12 +76,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 
     pdf_logfont("}\n");
 
-    error = pdf_storeitem(xref->store, PDF_KCMAP, stmref, cmap);
-    if (error)
-    {
-	error = fz_rethrow(error, "cannot store cmap resource");
-	goto cleanup;
-    }
+    pdf_storeitem(xref->store, PDF_KCMAP, stmref, cmap);
 
     *cmapp = cmap;
     return fz_okay;

@@ -41,8 +41,8 @@ fz_error pdf_parseindobj(fz_obj **op, pdf_xref *xref, fz_stream *f, char *buf, i
 
 fz_rect pdf_torect(fz_obj *array);
 fz_matrix pdf_tomatrix(fz_obj *array);
-fz_error pdf_toutf8(char **dstp, fz_obj *src);
-fz_error pdf_toucs2(unsigned short **dstp, fz_obj *src);
+char * pdf_toutf8(fz_obj *src);
+unsigned short * pdf_toucs2(fz_obj *src);
 
 /*
  * Encryption
@@ -188,18 +188,16 @@ typedef enum pdf_itemkind_e
 	PDF_KFONT
 } pdf_itemkind;
 
-fz_error pdf_newstore(pdf_store **storep);
+pdf_store * pdf_newstore(void);
 void pdf_emptystore(pdf_store *store);
 void pdf_dropstore(pdf_store *store);
 
 void pdf_agestoreditems(pdf_store *store);
-fz_error pdf_evictageditems(pdf_store *store);
+void pdf_evictageditems(pdf_store *store);
 
-fz_error pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
+void pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
 void *pdf_finditem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
-fz_error pdf_removeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
-
-fz_error pdf_loadresources(fz_obj **rdb, pdf_xref *xref, fz_obj *orig);
+void pdf_removeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
 
 /*
  * Functions
@@ -554,15 +552,15 @@ struct pdf_outline_s
 fz_error pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root);
 fz_obj *pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest);
 
-fz_error pdf_newlink(pdf_link**, pdf_linkkind kind, fz_rect rect, fz_obj *dest);
-fz_error pdf_loadlink(pdf_link **linkp, pdf_xref *xref, fz_obj *dict);
+pdf_link *pdf_newlink(pdf_linkkind kind, fz_rect rect, fz_obj *dest);
+pdf_link *pdf_loadlink(pdf_xref *xref, fz_obj *dict);
 void pdf_droplink(pdf_link *link);
 
-fz_error pdf_loadoutline(pdf_outline **outlinep, pdf_xref *xref);
+pdf_outline *pdf_loadoutline(pdf_xref *xref);
 void pdf_debugoutline(pdf_outline *outline, int level);
 void pdf_dropoutline(pdf_outline *outline);
 
-fz_error pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots);
+void pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots);
 
 /*
  * Page tree, pages and related objects
@@ -596,9 +594,9 @@ struct pdf_textline_s
 };
 
 /* pagetree.c */
-fz_error pdf_getpagecount(pdf_xref *xref, int *pagesp);
-fz_error pdf_getpageobject(pdf_xref *xref, int p, fz_obj **pagep);
-fz_error pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj, int *page);
+int pdf_getpagecount(pdf_xref *xref);
+fz_obj * pdf_getpageobject(pdf_xref *xref, int p);
+int pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj);
 
 /* page.c */
 fz_error pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);

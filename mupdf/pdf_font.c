@@ -983,9 +983,7 @@ pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict
 	if (error)
 	    return fz_rethrow(error, "cannot load font");
 
-	error = pdf_storeitem(xref->store, PDF_KFONT, dict, *fontdescp);
-	if (error)
-	    return fz_rethrow(error, "cannot store font resource");
+	pdf_storeitem(xref->store, PDF_KFONT, dict, *fontdescp);
 
 	return fz_okay;
 }

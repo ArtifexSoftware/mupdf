@@ -1527,12 +1527,7 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 
 	pdf_logrsrc("}\n");
 
-	error = pdf_storeitem(xref->store, PDF_KFUNCTION, ref, func);
-	if (error)
-	{
-		pdf_dropfunction(func);
-		return fz_rethrow(error, "cannot store function resource");
-	}
+	pdf_storeitem(xref->store, PDF_KFUNCTION, ref, func);
 
 	*funcp = func;
 	return fz_okay;

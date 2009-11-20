@@ -318,24 +318,10 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				goto cleanup;
 			}
 
-			error = fz_newint(&length, list[i].stmlen);
-			if (error)
-			{
-				fz_dropobj(dict);
-				error = fz_rethrow(error, "cannot create integer object");
-				goto cleanup;
-			}
-
-			error = fz_dictputs(dict, "Length", length);
-			if (error)
-			{
-				fz_dropobj(length);
-				fz_dropobj(dict);
-				error = fz_rethrow(error, "cannot update stream length");
-				goto cleanup;
-			}
-
+			length = fz_newint(list[i].stmlen);
+			fz_dictputs(dict, "Length", length);
 			fz_dropobj(length);
+
 			fz_dropobj(dict);
 		}
 	}

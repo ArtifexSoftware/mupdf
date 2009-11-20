@@ -70,12 +70,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict)
 			pat->matrix.e, pat->matrix.f);
 
 	/* Store pattern now, to avoid possible recursion if objects refer back to this one */
-	error = pdf_storeitem(xref->store, PDF_KPATTERN, dict, pat);
-	if (error)
-	{
-		pdf_droppattern(pat);
-		return fz_rethrow(error, "cannot store pattern resource");
-	}
+	pdf_storeitem(xref->store, PDF_KPATTERN, dict, pat);
 
 	/*
 	 * Locate resources

@@ -131,9 +131,7 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 	if (app->xref->info)
 		fz_keepobj(app->xref->info);
 
-	error = pdf_loadoutline(&app->outline, app->xref);
-	if (error)
-		pdfapp_error(app, error);
+	app->outline = pdf_loadoutline(app->xref);
 
 	app->doctitle = filename;
 	if (strrchr(app->doctitle, '\\'))
@@ -145,9 +143,7 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 		obj = fz_dictgets(app->xref->info, "Title");
 		if (obj)
 		{
-			error = pdf_toutf8(&app->doctitle, obj);
-			if (error)
-				pdfapp_error(app, error);
+			app->doctitle = pdf_toutf8(obj);
 		}
 	}
 
@@ -155,9 +151,7 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 	 * Start at first page
 	 */
 
-	error = pdf_getpagecount(app->xref, &app->pagecount);
-	if (error)
-		pdfapp_error(app, error);
+	app->pagecount = pdf_getpagecount(app->xref);
 
 	app->shrinkwrap = 1;
 	if (app->pageno < 1)
@@ -245,10 +239,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 			pdf_droppage(app->page);
 		app->page = nil;
 
-		error = pdf_getpageobject(app->xref, app->pageno, &obj);
-		if (error)
-			pdfapp_error(app, error);
-
+		obj = pdf_getpageobject(app->xref, app->pageno);
 		error = pdf_loadpage(&app->page, app->xref, obj);
 		if (error)
 			pdfapp_error(app, error);
@@ -314,9 +305,7 @@ static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 	fz_error error;
 	int page;
 
-	error = pdf_findpageobject(app->xref, obj, &page);
-	if (error)
-		pdfapp_error(app, error);
+	page = pdf_findpageobject(app->xref, obj);
 
 	if (app->histlen + 1 == 256)
 	{

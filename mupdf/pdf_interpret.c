@@ -1357,19 +1357,15 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			}
 			else if (tok == PDF_TINT || tok == PDF_TREAL)
 			{
-				error = fz_newreal(&obj, atof(buf));
-				if (error) return fz_rethrow(error, "cannot create number");
-				error = fz_arraypush(csi->array, obj);
+				obj = fz_newreal(atof(buf));
+				fz_arraypush(csi->array, obj);
 				fz_dropobj(obj);
-				if (error) return fz_rethrow(error, "cannot add number to array");
 			}
 			else if (tok == PDF_TSTRING)
 			{
-				error = fz_newstring(&obj, buf, len);
-				if (error) return fz_rethrow(error, "cannot create string");
-				error = fz_arraypush(csi->array, obj);
+				obj = fz_newstring(buf, len);
+				fz_arraypush(csi->array, obj);
 				fz_dropobj(obj);
-				if (error) return fz_rethrow(error, "cannot add string to array");
 			}
 			else if (tok == PDF_TEOF)
 			{
@@ -1389,8 +1385,7 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 
 			/* optimize text-object array parsing */
 		case PDF_TOARRAY:
-			error = fz_newarray(&csi->array, 8);
-			if (error) return fz_rethrow(error, "cannot create array");
+			csi->array = fz_newarray(8);
 			break;
 
 		case PDF_TODICT:
@@ -1400,44 +1395,37 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 			break;
 
 		case PDF_TNAME:
-			error = fz_newname(&csi->stack[csi->top], buf);
-			if (error) return fz_rethrow(error, "cannot create name");
+			csi->stack[csi->top] = fz_newname(buf);
 			csi->top ++;
 			break;
 
 		case PDF_TINT:
-			error = fz_newint(&csi->stack[csi->top], atoi(buf));
-			if (error) return fz_rethrow(error, "cannot create integer");
+			csi->stack[csi->top] = fz_newint(atoi(buf));
 			csi->top ++;
 			break;
 
 		case PDF_TREAL:
-			error = fz_newreal(&csi->stack[csi->top], atof(buf));
-			if (error) return fz_rethrow(error, "cannot create real");
+			csi->stack[csi->top] = fz_newreal(atof(buf));
 			csi->top ++;
 			break;
 
 		case PDF_TSTRING:
-			error = fz_newstring(&csi->stack[csi->top], buf, len);
-			if (error) return fz_rethrow(error, "cannot create string");
+			csi->stack[csi->top] = fz_newstring(buf, len);
 			csi->top ++;
 			break;
 
 		case PDF_TTRUE:
-			error = fz_newbool(&csi->stack[csi->top], 1);
-			if (error) return fz_rethrow(error, "cannot create true");
+			csi->stack[csi->top] = fz_newbool(1);
 			csi->top ++;
 			break;
 
 		case PDF_TFALSE:
-			error = fz_newbool(&csi->stack[csi->top], 0);
-			if (error) return fz_rethrow(error, "cannot create false");
+			csi->stack[csi->top] = fz_newbool(0);
 			csi->top ++;
 			break;
 
 		case PDF_TNULL:
-			error = fz_newnull(&csi->stack[csi->top]);
-			if (error) return fz_rethrow(error, "cannot create null");
+			csi->stack[csi->top] = fz_newnull();
 			csi->top ++;
 			break;
 

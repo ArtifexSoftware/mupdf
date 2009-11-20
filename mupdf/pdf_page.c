@@ -205,9 +205,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "Annots");
 	if (obj)
 	{
-		error = pdf_loadannots(&comments, &links, xref, obj);
-		if (error)
-			return fz_rethrow(error, "cannot load annotations");
+		pdf_loadannots(&comments, &links, xref, obj);
 	}
 
 	/*
@@ -216,9 +214,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	if (!xref->store)
 	{
-		error = pdf_newstore(&xref->store);
-		if (error)
-			return fz_rethrow(error, "cannot create resource store");
+		xref->store = pdf_newstore();
 	}
 
 	/*
@@ -231,9 +227,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	else
 	{
 		fz_warn("cannot find page resources, proceeding anyway.");
-		error = fz_newdict(&rdb, 0);
-		if (error)
-			return fz_rethrow(error, "cannot create fake page resources");
+		rdb = fz_newdict(0);
 	}
 
 	/*

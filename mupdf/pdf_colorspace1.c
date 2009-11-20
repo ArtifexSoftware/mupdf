@@ -749,9 +749,7 @@ pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 	if (error)
 		return fz_rethrow(error, "cannot load colorspace");
 
-	error = pdf_storeitem(xref->store, PDF_KCOLORSPACE, obj, *csp);
-	if (error)
-		return fz_rethrow(error, "cannot store colorspace resource");
+	pdf_storeitem(xref->store, PDF_KCOLORSPACE, obj, *csp);
 
 	return fz_okay;
 }

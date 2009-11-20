@@ -180,9 +180,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 
 	if (x->type == 'f' || x->type == 'd')
 	{
-		error = fz_newnull(&x->obj);
-		if (error)
-			return fz_rethrow(error, "cannot create null for empty object slot");
+		x->obj = fz_newnull();
 		return fz_okay;
 	}
 
@@ -230,10 +228,7 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int oid, int gen)
 	else
 	{
 		fz_warn("cannot load missing object (%d %d R), assuming null object", oid, gen);
-
-		error = fz_newnull(&xref->table[oid].obj);
-		if (error)
-			return fz_rethrow(error, "cannot create missing object (%d %d R)", oid, gen);
+		xref->table[oid].obj = fz_newnull();
 	}
 
 	return fz_okay;

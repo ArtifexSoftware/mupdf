@@ -449,12 +449,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logimage("}\n");
 
-	error = pdf_storeitem(xref->store, PDF_KIMAGE, dict, img);
-	if (error)
-	{
-		fz_dropimage((fz_image*)img);
-		return error;
-	}
+	pdf_storeitem(xref->store, PDF_KIMAGE, dict, img);
 
 	*imgp = img;
 	return fz_okay;

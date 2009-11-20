@@ -673,9 +673,7 @@ gatherinfo(int show, int page)
 	fz_obj *shade;
 	fz_obj *pattern;
 
-	error = pdf_getpageobject(xref, page, &pageobj);
-	if (error)
-		die(error);
+	pageobj = pdf_getpageobject(xref, page);
 
 	if (!pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
