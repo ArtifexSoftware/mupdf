@@ -147,9 +147,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	f = fz_dictgetsa(dict, "Filter", "F");
 	if (!f || (fz_isarray(f) && fz_arraylen(f) == 0))
 	{
-		error = fz_newbuffer(&img->samples, img->super.h * img->stride);
-		if (error)
-			return error;
+		img->samples = fz_newbuffer(img->super.h * img->stride);
 
 		error = fz_read(&i, file, img->samples->bp, img->super.h * img->stride);
 		if (error)
@@ -161,20 +159,16 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	{
 		fz_stream *tempfile;
 
-		error = pdf_buildinlinefilter(&filter, xref, dict);
-		if (error)
-			return error;
+		filter = pdf_buildinlinefilter(xref, dict);
 
-		error = fz_openrfilter(&tempfile, filter, file);
-		if (error)
-			return error;
+		tempfile = fz_openrfilter(filter, file);
 
-		error = fz_readall(&img->samples, tempfile, img->stride * img->super.h);
+		img->samples = fz_readall(tempfile, img->stride * img->super.h);
+		fz_dropstream(tempfile);
 		if (error)
 			return error;
 
 		fz_dropfilter(filter);
-		fz_dropstream(tempfile);
 	}
 
 	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
@@ -405,14 +399,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 		/* don't treat truncated image as fatal - get as much as possible and
 		   fill the rest with 0 */
 		fz_buffer *buf;
-		error = fz_newbuffer(&buf, expectedsize);
-		if (error)
-		{
-			/* TODO: colorspace? */
-			fz_dropbuffer(img->samples);
-			fz_free(img);
-			return error;
-		}
+		buf = fz_newbuffer(expectedsize);
 		memset(buf->bp, 0, expectedsize);
 		memmove(buf->bp, img->samples->bp, realsize);
 		buf->wp = buf->bp + expectedsize;

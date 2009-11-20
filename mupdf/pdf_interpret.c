@@ -229,9 +229,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 
 	xobj->contents->rp = xobj->contents->bp;
 
-	error = fz_openrbuffer(&file, xobj->contents);
-	if (error)
-		return fz_rethrow(error, "cannot open XObject stream");
+	file = fz_openrbuffer(xobj->contents);
 
 	if (xobj->resources)
 		rdb = xobj->resources;

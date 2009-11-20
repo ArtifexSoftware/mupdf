@@ -165,8 +165,8 @@ struct fz_faxd_s
 	unsigned char *dst;
 };
 
-fz_error
-fz_newfaxd(fz_filter **fp, fz_obj *params)
+fz_filter *
+fz_newfaxd(fz_obj *params)
 {
 	fz_obj *obj;
 
@@ -216,24 +216,12 @@ fz_newfaxd(fz_filter **fp, fz_obj *params)
 	fax->eolc = 0;
 
 	fax->ref = fz_malloc(fax->stride);
-	if (!fax->ref)
-	{
-		fz_free(fax);
-		return fz_rethrow(-1, "out of memory: scanline buffer one");
-	}
-
 	fax->dst = fz_malloc(fax->stride);
-	if (!fax->dst)
-	{
-		fz_free(fax->ref);
-		fz_free(fax);
-		return fz_rethrow(-1, "out of memory: scanline buffer two");
-	}
 
 	memset(fax->ref, 0, fax->stride);
 	memset(fax->dst, 0, fax->stride);
 
-	return fz_okay;
+	return (fz_filter*)fz_okay;
 }
 
 void

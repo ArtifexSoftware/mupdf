@@ -302,7 +302,6 @@ static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)
 
 static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 {
-	fz_error error;
 	int page;
 
 	page = pdf_findpageobject(app->xref, obj);

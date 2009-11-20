@@ -180,10 +180,8 @@ static void savefont(fz_obj *dict, int num, int gen)
         return;
     }
 
-    error = fz_newbuffer(&buf, 0);
-    if (error)
-        die(error);
-
+    buf = fz_newbuffer(0);
+  
     error = pdf_loadstream(&buf, xref, fz_tonum(stream), fz_togen(stream));
     if (error)
         die(error);
