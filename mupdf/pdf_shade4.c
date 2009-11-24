@@ -261,10 +261,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	if (obj) {
 		ncomp = 1;
 		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
-		shade->usefunction = 1;
 	}
-	else
-		shade->usefunction = 0;
 
 	n = 2 + shade->cs->n;
 	j = 0;
@@ -627,10 +624,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	if (obj) {
 		ncomp = 1;
 		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
-		shade->usefunction = 1;
 	}
-	else
-		shade->usefunction = 0;
 
 	shade->meshcap = 0;
 	shade->mesh = nil;
@@ -747,10 +741,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	if (obj) {
 		ncomp = 1;
 		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
-		shade->usefunction = 1;
 	}
-	else
-		shade->usefunction = 0;
 
 	shade->meshcap = 0;
 	shade->mesh = nil;
