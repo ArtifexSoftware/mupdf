@@ -28,6 +28,30 @@ growshademesh(fz_shade *shade, int amount)
 	return fz_okay;
 }
 
+static fz_error
+parsedecode(fz_obj *decode, int ncomp, 
+	float *x0, float *x1, float *y0, float *y1, float *c0, float *c1)
+{
+	int i;
+
+	pdf_logshade("decode array\n");
+
+	*x0 = fz_toreal(fz_arrayget(decode, 0));
+	*x1 = fz_toreal(fz_arrayget(decode, 1));
+	*y0 = fz_toreal(fz_arrayget(decode, 2));
+	*y1 = fz_toreal(fz_arrayget(decode, 3));
+
+	pdf_logshade("domain %g %g %g %g\n", *x0, *x1, *y0, *y1);
+
+	for (i = 0; i < MIN(fz_arraylen(decode) / 2, ncomp); i++)
+	{
+		c0[i] = fz_toreal(fz_arrayget(decode, i * 2 + 4));
+		c1[i] = fz_toreal(fz_arrayget(decode, i * 2 + 5));
+	}
+
+	return fz_okay;
+}
+
 fz_error
 pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
@@ -60,22 +84,10 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
 	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
-	{
-		pdf_logshade("decode array\n");
-		x0 = fz_toreal(fz_arrayget(obj, 0));
-		x1 = fz_toreal(fz_arrayget(obj, 1));
-		y0 = fz_toreal(fz_arrayget(obj, 2));
-		y1 = fz_toreal(fz_arrayget(obj, 3));
-		for (i=0; i < fz_arraylen(obj) / 2; ++i) {
-			c0[i] = fz_toreal(fz_arrayget(obj, i*2+4));
-			c1[i] = fz_toreal(fz_arrayget(obj, i*2+5));
-		}
-	}
-	else {
-		error = fz_throw("shading is missing vertex color decoding");
-		goto cleanup;
-	}
+	if (!fz_isarray(obj))
+		return fz_throw("shading is missing vertex color decoding");
+
+	parsedecode(obj, ncomp, &x0, &x1, &y0, &y1, c0, c1);
 
 	obj = fz_dictgets(dict, "Function");
 	if (obj)
@@ -252,22 +264,10 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		return fz_throw("VerticesPerRow must be greater than or equal to 2");
 
 	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
-	{
-		pdf_logshade("decode array\n");
-		x0 = fz_toreal(fz_arrayget(obj, 0));
-		x1 = fz_toreal(fz_arrayget(obj, 1));
-		y0 = fz_toreal(fz_arrayget(obj, 2));
-		y1 = fz_toreal(fz_arrayget(obj, 3));
-		for (i=0; i < fz_arraylen(obj) / 2; ++i) {
-			c0[i] = fz_toreal(fz_arrayget(obj, i*2+4));
-			c1[i] = fz_toreal(fz_arrayget(obj, i*2+5));
-		}
-	}
-	else {
-		error = fz_throw("shading is missing vertex color decoding");
-		goto cleanup;
-	}
+	if (!fz_isarray(obj))
+		return fz_throw("shading is missing vertex color decoding");
+
+	parsedecode(obj, ncomp, &x0, &x1, &y0, &y1, c0, c1);
 
 	obj = fz_dictgets(dict, "Function");
 	if (obj)
@@ -631,22 +631,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
 	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
-	{
-		pdf_logshade("decode array\n");
-		p0.x = fz_toreal(fz_arrayget(obj, 0));
-		p1.x = fz_toreal(fz_arrayget(obj, 1));
-		p0.y = fz_toreal(fz_arrayget(obj, 2));
-		p1.y = fz_toreal(fz_arrayget(obj, 3));
-		for (i=0; i < fz_arraylen(obj) / 2; ++i) {
-			c0[i] = fz_toreal(fz_arrayget(obj, i*2+4));
-			c1[i] = fz_toreal(fz_arrayget(obj, i*2+5));
-		}
-	}
-	else {
-		error = fz_throw("shading is missing vertex color decoding");
-		goto cleanup;
-	}
+	if (!fz_isarray(obj))
+		return fz_throw("shading is missing vertex color decoding");
+
+	parsedecode(obj, ncomp, &p0.x, &p1.x, &p0.y, &p1.y, c0, c1);
 
 	obj = fz_dictgets(dict, "Function");
 	if (obj)
@@ -756,22 +744,10 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
 	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
-	{
-		pdf_logshade("decode array\n");
-		x0 = fz_toreal(fz_arrayget(obj, 0));
-		x1 = fz_toreal(fz_arrayget(obj, 1));
-		y0 = fz_toreal(fz_arrayget(obj, 2));
-		y1 = fz_toreal(fz_arrayget(obj, 3));
-		for (i=0; i < fz_arraylen(obj) / 2; ++i) {
-			c0[i] = fz_toreal(fz_arrayget(obj, i*2+4));
-			c1[i] = fz_toreal(fz_arrayget(obj, i*2+5));
-		}
-	}
-	else {
-		error = fz_throw("shading is missing vertex color decoding");
-		goto cleanup;
-	}
+	if (!fz_isarray(obj))
+		return fz_throw("shading is missing vertex color decoding");
+
+	parsedecode(obj, ncomp, &x0, &x1, &y0, &y1, c0, c1);
 
 	obj = fz_dictgets(dict, "Function");
 	if (obj)
