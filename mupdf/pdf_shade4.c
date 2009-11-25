@@ -44,7 +44,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	fz_buffer *buf;
 	int n;
 	int j;
-	float cval[16];
+	float cval[FZ_MAXCOLORS];
 
 	int flag;
 	unsigned int t;
