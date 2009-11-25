@@ -18,7 +18,10 @@ pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj
 
 		error = pdf_evalfunction(func, &t, 1, shade->function[i], shade->cs->n);
 		if (error)
+		{
+			pdf_dropfunction(func);
 			return fz_rethrow(error, "unable to evaluate shading function at %g", t);
+		}
 	}
 
 	pdf_dropfunction(func);
