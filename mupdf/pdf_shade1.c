@@ -28,13 +28,15 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	ncomp = shade->cs->n;
 
 	obj = fz_dictgets(dict, "Domain");
-	if (obj) {
+	if (obj)
+	{
 		x0 = fz_toreal(fz_arrayget(obj, 0));
 		x1 = fz_toreal(fz_arrayget(obj, 1));
 		y0 = fz_toreal(fz_arrayget(obj, 2));
 		y1 = fz_toreal(fz_arrayget(obj, 3));
 	}
-	else {
+	else
+	{
 		x0 = 0;
 		x1 = 1.0;
 		y0 = 0;
@@ -94,7 +96,8 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 				if (error) \
 					return fz_rethrow(error, "unable to evaluate shading function"); \
 				\
-				for (c = 0; c < ncomp; ++c) {\
+				for (c = 0; c < ncomp; ++c)\
+				{\
 					shade->mesh[n++] = cv[c];\
 				}\
 			}\
@@ -139,19 +142,25 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	pdf_logshade("coords %g %g %g %g\n", x0, y0, x1, y1);
 
 	obj = fz_dictgets(dict, "Domain");
-	if (obj) {
+	if (obj)
+	{
 		t0 = fz_toreal(fz_arrayget(obj, 0));
 		t1 = fz_toreal(fz_arrayget(obj, 1));
-	} else {
+	}
+	else
+	{
 		t0 = 0.0;
 		t1 = 1.0;
 	}
 
 	obj = fz_dictgets(dict, "Extend");
-	if (obj) {
+	if (obj)
+	{
 		e0 = fz_tobool(fz_arrayget(obj, 0));
 		e1 = fz_tobool(fz_arrayget(obj, 1));
-	} else {
+	}
+	else
+	{
 		e0 = 0;
 		e1 = 0;
 	}
@@ -289,8 +298,10 @@ buildannulusmesh(float* mesh, int pos,
 		pt4.x = cos (theta+step) * r0 + x0;
 		pt4.y = sin (theta+step) * r0 + y0;
 
-		if (r0 > 0) {
-			if (!nomesh) {
+		if (r0 > 0)
+		{
+			if (!nomesh)
+			{
 				pdf_setmeshvalue(mesh, n++, pt1.x, pt1.y, c1);
 				pdf_setmeshvalue(mesh, n++, pt2.x, pt2.y, c0);
 				pdf_setmeshvalue(mesh, n++, pt4.x, pt4.y, c0);
@@ -298,8 +309,10 @@ buildannulusmesh(float* mesh, int pos,
 			pos++;
 		}
 
-		if (r1 > 0) {
-			if (!nomesh) {
+		if (r1 > 0)
+		{
+			if (!nomesh)
+			{
 				pdf_setmeshvalue(mesh, n++, pt1.x, pt1.y, c1);
 				pdf_setmeshvalue(mesh, n++, pt3.x, pt3.y, c1);
 				pdf_setmeshvalue(mesh, n++, pt4.x, pt4.y, c0);
@@ -337,19 +350,25 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	pdf_logshade("coords %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
 
 	obj = fz_dictgets(dict, "Domain");
-	if (obj) {
+	if (obj)
+	{
 		t0 = fz_toreal(fz_arrayget(obj, 0));
 		t1 = fz_toreal(fz_arrayget(obj, 1));
-	} else {
+	}
+	else
+	{
 		t0 = 0.;
 		t1 = 1.;
 	}
 
 	obj = fz_dictgets(dict, "Extend");
-	if (obj) {
+	if (obj)
+	{
 		e0 = fz_tobool(fz_arrayget(obj, 0));
 		e1 = fz_tobool(fz_arrayget(obj, 1));
-	} else {
+	}
+	else
+	{
 		e0 = 0;
 		e1 = 0;
 	}
