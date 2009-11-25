@@ -50,6 +50,8 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	unsigned int t;
 	float x, y;
 
+	pdf_logshade("load type4 shade {\n");
+
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
@@ -180,6 +182,8 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	fz_dropbuffer(buf);
 
+	pdf_logshade("}\n");
+
 	return fz_okay;
 
 cleanup:
@@ -229,6 +233,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	unsigned int t;
 
 	float *x, *y, *c[FZ_MAXCOLORS];
+
+	pdf_logshade("load type5 shade {\n");
 
 	error = fz_okay;
 
@@ -352,6 +358,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	for (i = 0; i < ncomp; ++i) {
 		fz_free(c[i]);
 	}
+
+	pdf_logshade("}\n");
 
 	return fz_okay;
 
@@ -599,6 +607,8 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	pdf_tensorpatch patch;
 
+	pdf_logshade("load type6 shade {\n");
+
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
@@ -688,6 +698,8 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	shade->meshlen = j / n / 3;
 
+	pdf_logshade("}\n");
+
 	return fz_okay;
 
 cleanup:
@@ -717,6 +729,8 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	int flag;
 	fz_point p[16];
 	pdf_tensorpatch patch;
+
+	pdf_logshade("load type7 shade {\n");
 
 	error = fz_okay;
 
@@ -809,6 +823,8 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	fz_dropstream(stream);
 
 	shade->meshlen = j / n / 3;
+
+	pdf_logshade("}\n");
 
 	return fz_okay;
 
