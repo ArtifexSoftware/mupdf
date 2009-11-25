@@ -54,8 +54,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logshade("load type4 shade {\n");
 
-	error = fz_okay;
-
 	ncomp = shade->cs->n;
 	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
 	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
@@ -85,7 +83,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		ncomp = 1;
 		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
-			goto cleanup;
+			return fz_rethrow(error, "cannot load shading function");
 	}
 
 	bitspervertex = bpflag + bpcoord * 2 + bpcomp * ncomp;
@@ -93,10 +91,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	error = pdf_loadstream(&buf, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
-	{
-		error = fz_rethrow(error, "unable to load shading stream");
-		goto cleanup;
-	}
+		return fz_rethrow(error, "unable to load shading stream");
 
 	shade->usefunction = 0;
 
@@ -191,6 +186,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 			}
 		}
 	}
+
 	shade->meshlen = j / n / 3;
 
 	fz_dropbuffer(buf);
@@ -198,9 +194,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	pdf_logshade("}\n");
 
 	return fz_okay;
-
-cleanup:
-	return error;
 }
 
 static int
@@ -255,10 +248,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
 	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
 	vpr = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
-	if (vpr < 2) {
-		error = fz_throw("VerticesPerRow must be greater than or equal to 2");
-		goto cleanup;
-	}
+	if (vpr < 2)
+		return fz_throw("VerticesPerRow must be greater than or equal to 2");
 
 	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
@@ -284,7 +275,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		ncomp = 1;
 		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
-			goto cleanup;
+			return fz_rethrow(error, "cannot load shading function");
 	}
 
 	n = 2 + ncomp;
@@ -302,10 +293,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
-	{
-		error = fz_rethrow(error, "unable to open shading stream");
-		goto cleanup;
-	}
+		return fz_rethrow(error, "unable to open shading stream");
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -352,7 +340,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	shade->meshcap = 0;
 	shade->mesh = nil;
 	error = growshademesh(shade, 1024);
-	if (error) goto cleanup;
+	if (error)
+		goto cleanup;
 
 	j = 0;
 	for (p = 0; p < vpr-1; ++p)
@@ -551,7 +540,8 @@ triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ptr, int ncomp)
 	if (shade->meshcap - 1024 < ptr)
 	{
 		error = growshademesh(shade, 1024);
-		if (error) goto cleanup;
+		if (error)
+			goto cleanup;
 	}
 
 	return ptr;
@@ -664,23 +654,21 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		ncomp = 1;
 		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
-			goto cleanup;
+			return fz_rethrow(error, "cannot load shading function");
 	}
 
 	shade->meshcap = 0;
 	shade->mesh = nil;
 	error = growshademesh(shade, 1024);
-	if (error) goto cleanup;
+	if (error)
+		goto cleanup;
 
 	n = 2 + ncomp;
 	j = 0;
 
 	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
-	{
-		error = fz_rethrow(error, "unable to open shading stream");
-		goto cleanup;
-	}
+		return fz_rethrow(error, "unable to open shading stream");
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -791,7 +779,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		ncomp = 1;
 		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
-			goto cleanup;
+			return fz_rethrow(error, "cannot load shading function");
 	}
 
 	shade->meshcap = 0;
@@ -804,10 +792,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
-	{
-		error = fz_rethrow(error, "unable to open shading stream");
-		goto cleanup;
-	}
+		return fz_rethrow(error, "unable to open shading stream");
 
 	while (fz_peekbyte(stream) != EOF)
 	{
