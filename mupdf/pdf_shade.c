@@ -104,22 +104,16 @@ fz_error
 pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *shading, float t0, float t1)
 {
 	fz_error error;
-	fz_obj *ref;
 	fz_obj *obj;
 
-	ref = fz_dictgets(shading, "Function");
-	if (!ref)
+	obj = fz_dictgets(shading, "Function");
+	if (!obj)
 		return fz_throw("shading function not found");
-
-	obj = fz_resolveindirect(ref);
 
 	shade->usefunction = 1;
 
 	if (fz_isdict(obj))
-	{
-		/* dictionary is probably a stream, send the reference instead */
-		error = pdf_loadcompositeshadefunc(shade, xref, shading, ref, t0, t1);
-	}
+		error = pdf_loadcompositeshadefunc(shade, xref, shading, obj, t0, t1);
 	else if (fz_isarray(obj))
 		error = pdf_loadcomponentshadefunc(shade, xref, shading, obj, t0, t1);
 	else
