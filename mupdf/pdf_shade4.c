@@ -78,7 +78,9 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	obj = fz_dictgets(shading, "Function");
 	if (obj) {
 		ncomp = 1;
-		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		if (error)
+			goto cleanup;
 	}
 
 	bitspervertex = bpflag + bpcoord * 2 + bpcomp * ncomp;
@@ -260,7 +262,9 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	obj = fz_dictgets(shading, "Function");
 	if (obj) {
 		ncomp = 1;
-		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		if (error)
+			goto cleanup;
 	}
 
 	n = 2 + shade->cs->n;
@@ -623,7 +627,9 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	obj = fz_dictgets(shading, "Function");
 	if (obj) {
 		ncomp = 1;
-		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		if (error)
+			goto cleanup;
 	}
 
 	shade->meshcap = 0;
@@ -740,7 +746,9 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	obj = fz_dictgets(shading, "Function");
 	if (obj) {
 		ncomp = 1;
-		pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		if (error)
+			goto cleanup;
 	}
 
 	shade->meshcap = 0;
