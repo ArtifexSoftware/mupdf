@@ -27,7 +27,7 @@ growshademesh(fz_shade *shade, int amount)
 }
 
 fz_error
-pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
+pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	fz_obj *obj;
@@ -53,11 +53,11 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
-	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
-	bpcomp = fz_toint(fz_dictgets(shading, "BitsPerComponent"));
-	bpflag = fz_toint(fz_dictgets(shading, "BitsPerFlag"));
+	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
+	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
-	obj = fz_dictgets(shading, "Decode");
+	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
 		pdf_logshade("decode array\n");
@@ -75,10 +75,10 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 		goto cleanup;
 	}
 
-	obj = fz_dictgets(shading, "Function");
+	obj = fz_dictgets(dict, "Function");
 	if (obj) {
 		ncomp = 1;
-		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
 			goto cleanup;
 	}
@@ -86,7 +86,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	bitspervertex = bpflag + bpcoord * 2 + bpcomp * ncomp;
 	bytepervertex = (bitspervertex+7) / 8;
 
-	error = pdf_loadstream(&buf, xref, fz_tonum(shading), fz_togen(shading));
+	error = pdf_loadstream(&buf, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 	{
 		error = fz_rethrow(error, "unable to load shading stream");
@@ -95,7 +95,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 
 	shade->usefunction = 0;
 
-	n = 2 + shade->cs->n;
+	n = 2 + ncomp;
 	j = 0;
 	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
 	{
@@ -208,7 +208,7 @@ getdata(fz_stream *stream, int bps)
 }
 
 fz_error
-pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
+pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -233,15 +233,15 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
-	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
-	bpcomp = fz_toint(fz_dictgets(shading, "BitsPerComponent"));
-	vpr = fz_toint(fz_dictgets(shading, "VerticesPerRow"));
+	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
+	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+	vpr = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
 	if (vpr < 2) {
 		error = fz_throw("VerticesPerRow must be greater than or equal to 2");
 		goto cleanup;
 	}
 
-	obj = fz_dictgets(shading, "Decode");
+	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
 		pdf_logshade("decode array\n");
@@ -259,15 +259,15 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 		goto cleanup;
 	}
 
-	obj = fz_dictgets(shading, "Function");
+	obj = fz_dictgets(dict, "Function");
 	if (obj) {
 		ncomp = 1;
-		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
 			goto cleanup;
 	}
 
-	n = 2 + shade->cs->n;
+	n = 2 + ncomp;
 	j = 0;
 
 #define BIGNUM 1024
@@ -279,7 +279,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	}
 	q = 0;
 
-	error = pdf_openstream(&stream, xref, fz_tonum(shading), fz_togen(shading));
+	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 	{
 		error = fz_rethrow(error, "unable to open shading stream");
@@ -310,7 +310,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 #define ADD_VERTEX(idx) \
 			{\
 				int z;\
-				if (shade->meshlen + 2 + shade->cs->n >= shade->meshcap) \
+				if (shade->meshlen + 2 + ncomp >= shade->meshcap) \
 				{ \
 					error = growshademesh(shade, shade->meshcap + 1024); \
 					if (error) \
@@ -318,9 +318,9 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 				} \
 				shade->mesh[j++] = x[idx];\
 				shade->mesh[j++] = y[idx];\
-				for (z = 0; z < shade->cs->n; ++z) \
+				for (z = 0; z < ncomp; ++z) \
 					shade->mesh[j++] = c[z][idx];\
-				shade->meshlen += 2 + shade->cs->n; \
+				shade->meshlen += 2 + ncomp; \
 			}\
 
 	vpc = q;
@@ -575,7 +575,7 @@ drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
 }
 
 fz_error
-pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
+pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -602,11 +602,11 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
-	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
-	bpcomp = fz_toint(fz_dictgets(shading, "BitsPerComponent"));
-	bpflag = fz_toint(fz_dictgets(shading, "BitsPerFlag"));
+	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
+	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
-	obj = fz_dictgets(shading, "Decode");
+	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
 		pdf_logshade("decode array\n");
@@ -624,10 +624,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 		goto cleanup;
 	}
 
-	obj = fz_dictgets(shading, "Function");
+	obj = fz_dictgets(dict, "Function");
 	if (obj) {
 		ncomp = 1;
-		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
 			goto cleanup;
 	}
@@ -637,10 +637,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = growshademesh(shade, 1024);
 	if (error) goto cleanup;
 
-	n = 2 + shade->cs->n;
+	n = 2 + ncomp;
 	j = 0;
 
-	error = pdf_openstream(&stream, xref, fz_tonum(shading), fz_togen(shading));
+	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 	{
 		error = fz_rethrow(error, "unable to open shading stream");
@@ -695,7 +695,7 @@ cleanup:
 }
 
 fz_error
-pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
+pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -721,11 +721,11 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = fz_okay;
 
 	ncomp = shade->cs->n;
-	bpcoord = fz_toint(fz_dictgets(shading, "BitsPerCoordinate"));
-	bpcomp = fz_toint(fz_dictgets(shading, "BitsPerComponent"));
-	bpflag = fz_toint(fz_dictgets(shading, "BitsPerFlag"));
+	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
+	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
 
-	obj = fz_dictgets(shading, "Decode");
+	obj = fz_dictgets(dict, "Decode");
 	if (fz_isarray(obj))
 	{
 		pdf_logshade("decode array\n");
@@ -743,10 +743,10 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 		goto cleanup;
 	}
 
-	obj = fz_dictgets(shading, "Function");
+	obj = fz_dictgets(dict, "Function");
 	if (obj) {
 		ncomp = 1;
-		error = pdf_loadshadefunction(shade, xref, shading, c0[0], c1[0]);
+		error = pdf_loadshadefunction(shade, xref, dict, c0[0], c1[0]);
 		if (error)
 			goto cleanup;
 	}
@@ -756,10 +756,10 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	error = growshademesh(shade, 1024);
 	if (error) goto cleanup;
 
-	n = 2 + shade->cs->n;
+	n = 2 + ncomp;
 	j = 0;
 
-	error = pdf_openstream(&stream, xref, fz_tonum(shading), fz_togen(shading));
+	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 	{
 		error = fz_rethrow(error, "unable to open shading stream");

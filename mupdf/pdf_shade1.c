@@ -21,8 +21,11 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	float xn, yn;
 	float x0, y0, x1, y1;
 	int n;
+	int ncomp;
 
 	pdf_logshade("load type1 shade {\n");
+
+	ncomp = shade->cs->n;
 
 	obj = fz_dictgets(dict, "Domain");
 	if (obj) {
@@ -60,7 +63,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	shade->usefunction = 0;
 
 	shade->meshlen = NSEGS * NSEGS * 2;
-	shade->mesh = fz_malloc(sizeof(float) * (2 + shade->cs->n) * 3 * shade->meshlen);
+	shade->mesh = fz_malloc(sizeof(float) * (2 + ncomp) * 3 * shade->meshlen);
 	if (!shade->mesh)
 		return fz_rethrow(-1, "out of memory");
 
@@ -87,11 +90,11 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 				\
 				cp[0] = xx;\
 				cp[1] = yy;\
-				error = pdf_evalfunction(func, cp, 2, cv, shade->cs->n);\
+				error = pdf_evalfunction(func, cp, 2, cv, ncomp);\
 				if (error) \
 					return fz_rethrow(error, "unable to evaluate shading function"); \
 				\
-				for (c = 0; c < shade->cs->n; ++c) {\
+				for (c = 0; c < ncomp; ++c) {\
 					shade->mesh[n++] = cv[c];\
 				}\
 			}\
@@ -309,7 +312,7 @@ buildannulusmesh(float* mesh, int pos,
 }
 
 fz_error
-pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
+pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
 	fz_obj *obj;
 	float x0, y0, r0, x1, y1, r1;
@@ -323,7 +326,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 
 	pdf_logshade("load type3 shade {\n");
 
-	obj = fz_dictgets(shading, "Coords");
+	obj = fz_dictgets(dict, "Coords");
 	x0 = fz_toreal(fz_arrayget(obj, 0));
 	y0 = fz_toreal(fz_arrayget(obj, 1));
 	r0 = fz_toreal(fz_arrayget(obj, 2));
@@ -333,7 +336,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 
 	pdf_logshade("coords %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
 
-	obj = fz_dictgets(shading, "Domain");
+	obj = fz_dictgets(dict, "Domain");
 	if (obj) {
 		t0 = fz_toreal(fz_arrayget(obj, 0));
 		t1 = fz_toreal(fz_arrayget(obj, 1));
@@ -342,7 +345,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 		t1 = 1.;
 	}
 
-	obj = fz_dictgets(shading, "Extend");
+	obj = fz_dictgets(dict, "Extend");
 	if (obj) {
 		e0 = fz_tobool(fz_arrayget(obj, 0));
 		e1 = fz_tobool(fz_arrayget(obj, 1));
@@ -354,7 +357,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *shading)
 	pdf_logshade("domain %g %g\n", t0, t1);
 	pdf_logshade("extend %d %d\n", e0, e1);
 
-	error = pdf_loadshadefunction(shade, xref, shading, t0, t1);
+	error = pdf_loadshadefunction(shade, xref, dict, t0, t1);
 	if (error)
 		return fz_rethrow(error, "unable to load shading function");
 
