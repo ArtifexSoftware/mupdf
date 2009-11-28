@@ -9,8 +9,6 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 	fz_node *node;
 
 	csi = fz_malloc(sizeof(pdf_csi));
-	if (!csi)
-		return fz_rethrow(-1, "out of memory: interpreter struct");
 
 	pdf_initgstate(&csi->gstate[0]);
 

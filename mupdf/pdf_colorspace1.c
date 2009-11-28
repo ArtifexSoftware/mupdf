@@ -222,17 +222,13 @@ fz_colorspace *pdf_devicepattern = &kdevicepattern;
  * Colorspace parsing
  */
 
-#ifdef USECAL
-
-static fz_error
-loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+static fz_colorspace *
+loadcalgray(pdf_xref *xref, fz_obj *dict)
 {
 	struct calgray *cs;
 	fz_obj *tmp;
 
 	cs = fz_malloc(sizeof(struct calgray));
-	if (!cs)
-		return fz_rethrow(-1, "out of memory: gray colorspace struct");
 
 	pdf_logrsrc("load CalGray\n");
 
@@ -268,20 +264,17 @@ loadcalgray(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	if (fz_isreal(tmp))
 		cs->gamma = fz_toreal(tmp);
 
-	*csp = (fz_colorspace*) cs;
-	return fz_okay;
+	return (fz_colorspace*) cs;
 }
 
-static fz_error
-loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+static fz_colorspace *
+loadcalrgb(pdf_xref *xref, fz_obj *dict)
 {
 	struct calrgb *cs;
 	fz_obj *tmp;
 	int i;
 
 	cs = fz_malloc(sizeof(struct calrgb));
-	if (!cs)
-		return fz_rethrow(-1, "out of memory: RGB colorspace struct");
 
 	pdf_logrsrc("load CalRGB\n");
 
@@ -336,19 +329,16 @@ loadcalrgb(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 
 	fz_invert3x3(cs->invmat, cs->matrix);
 
-	*csp = (fz_colorspace*) cs;
-	return fz_okay;
+	return (fz_colorspace*) cs;
 }
 
-static fz_error
-loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+static fz_colorspace *
+loadlab(pdf_xref *xref, fz_obj *dict)
 {
 	struct cielab *cs;
 	fz_obj *tmp;
 
 	cs = fz_malloc(sizeof(struct cielab));
-	if (!cs)
-		return fz_rethrow(-1, "out of memory: L*a*b colorspace struct");
 
 	pdf_logrsrc("load Lab\n");
 
@@ -392,11 +382,8 @@ loadlab(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 		cs->range[3] = fz_toreal(fz_arrayget(tmp, 3));
 	}
 
-	*csp = (fz_colorspace*) cs;
-	return fz_okay;
+	return (fz_colorspace*) cs;
 }
-
-#endif
 
 /*
  * ICCBased
@@ -567,11 +554,6 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	pdf_logrsrc("base %s\n", base->name);
 
 	cs = fz_malloc(sizeof(pdf_indexed));
-	if (!cs)
-	{
-		fz_dropcolorspace(base);
-		return fz_rethrow(-1, "out of memory: indexed colorspace struct");
-	}
 
 	initcs((fz_colorspace*)cs, "Indexed", 1, nil, nil, dropindexed);
 
@@ -579,13 +561,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs->high = fz_toint(highobj);
 
 	n = base->n * (cs->high + 1);
-
 	cs->lookup = fz_malloc(n);
-	if (!cs->lookup)
-	{
-		fz_dropcolorspace((fz_colorspace*)cs);
-		return fz_rethrow(-1, "out of memory: indexed colorspace lookup table (%d entries)", n);
-	}
 
 	if (fz_isstring(lookup) && fz_tostrlen(lookup) == n)
 	{
@@ -663,21 +639,12 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			if (!strcmp(fz_toname(name), "CalCMYK"))
 				*csp = pdf_devicecmyk;
 
-#ifdef USECAL
 			else if (!strcmp(fz_toname(name), "CalGray"))
-				return loadcalgray(csp, xref, fz_arrayget(obj, 1));
+				*csp = loadcalgray(xref, fz_arrayget(obj, 1));
 			else if (!strcmp(fz_toname(name), "CalRGB"))
-				return loadcalrgb(csp, xref, fz_arrayget(obj, 1));
+				*csp = loadcalrgb(xref, fz_arrayget(obj, 1));
 			else if (!strcmp(fz_toname(name), "Lab"))
-				return loadlab(csp, xref, fz_arrayget(obj, 1));
-#else
-			else if (!strcmp(fz_toname(name), "CalGray"))
-				*csp = pdf_devicegray;
-			else if (!strcmp(fz_toname(name), "CalRGB"))
-				*csp = pdf_devicergb;
-			else if (!strcmp(fz_toname(name), "Lab"))
-				*csp = pdf_devicelab;
-#endif
+				*csp = loadlab(xref, fz_arrayget(obj, 1));
 
 			else if (!strcmp(fz_toname(name), "ICCBased"))
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));

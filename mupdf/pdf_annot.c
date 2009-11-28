@@ -4,15 +4,11 @@
 pdf_link *
 pdf_newlink(pdf_linkkind kind, fz_rect bbox, fz_obj *dest)
 {
-	pdf_link *link;
-
-	link = fz_malloc(sizeof(pdf_link));
-
+	pdf_link *link = fz_malloc(sizeof(pdf_link));
 	link->kind = kind;
 	link->rect = bbox;
 	link->dest = fz_keepobj(dest);
 	link->next = nil;
-
 	return link;
 }
 

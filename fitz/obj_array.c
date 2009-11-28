@@ -96,11 +96,10 @@ fz_arraypush(fz_obj *obj, fz_obj *item)
 		if (obj->u.a.len + 1 > obj->u.a.cap)
 		{
 			int i;
-			int newcap = obj->u.a.cap * 2;
-			obj->u.a.items = fz_realloc(obj->u.a.items, sizeof (fz_obj*) * newcap);
-			for (i = obj->u.a.cap ; i < newcap; i++)
+			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
+			obj->u.a.items = fz_realloc(obj->u.a.items, sizeof (fz_obj*) * obj->u.a.cap);
+			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
 				obj->u.a.items[i] = nil;
-			obj->u.a.cap = newcap;
 		}
 		obj->u.a.items[obj->u.a.len] = fz_keepobj(item);
 		obj->u.a.len++;

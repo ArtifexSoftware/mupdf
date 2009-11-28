@@ -56,8 +56,6 @@ fz_dropbuffer(fz_buffer *buf)
 void
 fz_growbuffer(fz_buffer *buf)
 {
-	unsigned char *newbp;
-
 	int rp = buf->rp - buf->bp;
 	int wp = buf->wp - buf->bp;
 	int ep = buf->ep - buf->bp;
@@ -68,8 +66,7 @@ fz_growbuffer(fz_buffer *buf)
 		return;
 	}
 	
-	newbp = fz_realloc(buf->bp, ep * 2);
-	buf->bp = newbp;
+	buf->bp = fz_realloc(buf->bp, (ep * 3) / 2);
 	buf->rp = buf->bp + rp;
 	buf->wp = buf->bp + wp;
 	buf->ep = buf->bp + ep * 2;

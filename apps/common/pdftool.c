@@ -33,10 +33,7 @@ void openxref(char *filename, char *password, int dieonbadpass)
 	else
 		basename++;
 
-	error = pdf_newxref(&xref);
-	if (error)
-		die(error);
-
+	xref = pdf_newxref();
 	error = pdf_loadxref(xref, filename);
 	if (error)
 	{

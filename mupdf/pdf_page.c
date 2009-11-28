@@ -230,13 +230,6 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	 */
 
 	page = fz_malloc(sizeof(pdf_page));
-	if (!page)
-	{
-		fz_droptree(tree);
-		fz_dropobj(rdb);
-		return fz_rethrow(-1, "out of memory: page struct");
-	}
-
 	page->mediabox.x0 = MIN(bbox.x0, bbox.x1);
 	page->mediabox.y0 = MIN(bbox.y0, bbox.y1);
 	page->mediabox.x1 = MAX(bbox.x0, bbox.x1);

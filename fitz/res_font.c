@@ -13,9 +13,6 @@ fz_newfont(void)
 	fz_font *font;
 
 	font = fz_malloc(sizeof(fz_font));
-	if (!font)
-		return nil;
-
 	font->refs = 1;
 	strcpy(font->name, "<unknown>");
 
@@ -336,42 +333,25 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
  * Type 3 fonts...
  */
 
-fz_error
-fz_newtype3font(fz_font **fontp, char *name, fz_matrix matrix)
+fz_font *
+fz_newtype3font(char *name, fz_matrix matrix)
 {
 	fz_font *font;
 	int i;
 
 	font = fz_newfont();
-	if (!font)
-		return fz_rethrow(-1, "out of memory: font struct");
-
 	font->t3procs = fz_malloc(sizeof(fz_tree*) * 256);
-	if (!font->t3procs)
-	{
-		fz_free(font);
-		return fz_rethrow(-1, "out of memory: type3 font charproc array");
-	}
-
 	font->t3widths = fz_malloc(sizeof(float) * 256);
-	if (!font->t3widths)
-	{
-		fz_free(font->t3procs);
-		fz_free(font);
-		return fz_rethrow(-1, "out of memory: type3 font widths array");
-	}
 
+	strlcpy(font->name, name, sizeof(font->name));
 	font->t3matrix = matrix;
 	for (i = 0; i < 256; i++)
 	{
 		font->t3procs[i] = nil;
 		font->t3widths[i] = 0;
 	}
-
-	strlcpy(font->name, name, sizeof(font->name));
-
-	*fontp = font;
-	return fz_okay;
+	
+	return font;
 }
 
 /* XXX UGLY HACK XXX */

@@ -6,14 +6,12 @@
  * needs to be initialized by initxref, openxref or repairxref.
  */
 
-fz_error
-pdf_newxref(pdf_xref **xrefp)
+pdf_xref *
+pdf_newxref(void)
 {
 	pdf_xref *xref;
 
 	xref = fz_malloc(sizeof(pdf_xref));
-	if (!xref)
-		return fz_rethrow(-1, "out of memory: xref struct");
 
 	memset(xref, 0, sizeof(pdf_xref));
 
@@ -35,8 +33,7 @@ pdf_newxref(pdf_xref **xrefp)
 
 	xref->store = nil;	/* you need to create this if you want to render */
 
-	*xrefp = xref;
-	return fz_okay;
+	return xref;
 }
 
 void
@@ -73,9 +70,6 @@ fz_error
 pdf_initxref(pdf_xref *xref)
 {
 	xref->table = fz_malloc(sizeof(pdf_xrefentry) * 128);
-	if (!xref->table)
-		return fz_rethrow(-1, "out of memory: xref table");
-
 	xref->cap = 128;
 	xref->len = 1;
 

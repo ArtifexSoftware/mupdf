@@ -14,9 +14,6 @@ pdf_newcrypt(pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
     fz_obj *obj;
 
     crypt = fz_malloc(sizeof(pdf_crypt));
-    if (!crypt)
-	return fz_rethrow(-1, "out of memory: crypt struct");
-
     memset(crypt, 0x00, sizeof(pdf_crypt));
     crypt->cf = nil;
 

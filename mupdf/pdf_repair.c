@@ -173,11 +173,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	listlen = 0;
 	listcap = 1024;
 	list = fz_malloc(listcap * sizeof(struct entry));
-	if (!list)
-	{
-		error = fz_rethrow(-1, "out of memory: reparation object list");
-		goto cleanup;
-	}
 
 	while (1)
 	{
@@ -226,14 +221,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 
 			if (listlen + 1 == listcap)
 			{
-				struct entry *newlist;
-				listcap = listcap * 2;
-				newlist = fz_realloc(list, listcap * sizeof(struct entry));
-				if (!newlist) {
-					error = fz_rethrow(-1, "out of memory: resize reparation object list");
-					goto cleanup;
-				}
-				list = newlist;
+				listcap = (listcap * 3) / 2;
+				list = fz_realloc(list, listcap * sizeof(struct entry));
 			}
 
                         pdf_logxref("found object: (%d %d R)\n", oid, gen);
@@ -274,11 +263,6 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;
 	xref->table = fz_malloc(xref->cap * sizeof(pdf_xrefentry));
-	if (!xref->table)
-	{
-		error = fz_rethrow(-1, "out of memory: xref table");
-		goto cleanup;
-	}
 
 	xref->table[0].type = 'f';
 	xref->table[0].ofs = 0;

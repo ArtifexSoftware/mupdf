@@ -93,11 +93,9 @@ pdf_store *
 pdf_newstore(void)
 {
 	pdf_store *store;
-
 	store = fz_malloc(sizeof(pdf_store));
 	store->hash = fz_newhash(4096, sizeof(struct refkey));
 	store->root = nil;
-
 	return store;
 }
 

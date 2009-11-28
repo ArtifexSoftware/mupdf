@@ -200,14 +200,13 @@ fz_dictput(fz_obj *obj, fz_obj *key, fz_obj *val)
 
 	if (obj->u.d.len + 1 > obj->u.d.cap)
 	{
-		int newcap = obj->u.d.cap * 2;
-		obj->u.d.items = fz_realloc(obj->u.d.items, sizeof(fz_keyval) * newcap);
-		for (i = obj->u.d.cap; i < newcap; i++)
+		obj->u.d.cap = (obj->u.d.cap * 3) / 2;
+		obj->u.d.items = fz_realloc(obj->u.d.items, sizeof(fz_keyval) * obj->u.d.cap);
+		for (i = obj->u.d.len; i < obj->u.d.cap; i++)
 		{
 			obj->u.d.items[i].k = nil;
 			obj->u.d.items[i].v = nil;
 		}
-		obj->u.d.cap = newcap;
 	}
 
 	/* borked! */

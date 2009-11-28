@@ -77,10 +77,7 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 
 	app->filename = filename;
 
-	error = pdf_newxref(&app->xref);
-	if (error)
-		pdfapp_error(app, error);
-
+	app->xref = pdf_newxref();
 	error = pdf_loadxref(app->xref, filename);
 	if (error)
 	{

@@ -29,8 +29,6 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	int i;
 
 	img = fz_malloc(sizeof(pdf_image));
-	if (!img)
-		return fz_rethrow(-1, "out of memory: image struct");
 
 	pdf_logimage("load inline image %p {\n", img);
 
@@ -235,8 +233,6 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 	}
 
 	img = fz_malloc(sizeof(pdf_image));
-	if (!img)
-		return fz_rethrow(-1, "out of memory: image struct");
 
 	pdf_logimage("load image (%d %d R) ptr=%p {\n", fz_tonum(dict), fz_togen(dict), img);
 
