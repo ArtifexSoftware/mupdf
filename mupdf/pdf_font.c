@@ -574,8 +574,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	 */
 
 	fontdesc = pdf_newfontdesc();
-	if (!fontdesc)
-		return fz_rethrow(-1, "out of memory");
 
 	pdf_logfont("load cid font (%d %d R) ptr=%p {\n", fz_tonum(dict), fz_togen(dict), fontdesc);
 	pdf_logfont("basefont %s\n", basefont);

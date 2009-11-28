@@ -164,8 +164,6 @@ fz_newfontfromfile(fz_font **fontp, char *path, int index)
 		return fz_rethrow(error, "cannot init freetype library");
 
 	font = fz_newfont();
-	if (!font)
-		return fz_rethrow(-1, "out of memory: font struct");
 
 	fterr = FT_New_Face(fz_ftlib, path, index, (FT_Face*)&font->ftface);
 	if (fterr)
@@ -190,8 +188,6 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 		return fz_rethrow(error, "cannot init freetype library");
 
 	font = fz_newfont();
-	if (!font)
-		return fz_rethrow(-1, "out of memory: font struct");
 
 	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, (FT_Face*)&font->ftface);
 	if (fterr)

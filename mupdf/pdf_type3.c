@@ -59,8 +59,6 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 		sprintf(buf, "Unnamed-T3");
 
 	fontdesc = pdf_newfontdesc();
-	if (!fontdesc)
-		return fz_rethrow(-1, "out of memory: font struct");
 
 	pdf_logfont("load type3 font (%d %d R) ptr=%p {\n", fz_tonum(dict), fz_togen(dict), fontdesc);
 	pdf_logfont("name %s\n", buf);

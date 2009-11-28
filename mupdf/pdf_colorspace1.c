@@ -486,12 +486,6 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	}
 
 	cs = fz_malloc(sizeof(struct separation));
-	if (!cs)
-	{
-		pdf_dropfunction(tint);
-		fz_dropcolorspace(base);
-		return fz_rethrow(-1, "out of memory: separation colorspace struct");
-	}
 
 	initcs((fz_colorspace*)cs,
 			n == 1 ? "Separation" : "DeviceN", n,
