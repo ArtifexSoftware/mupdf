@@ -377,10 +377,12 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 		{
 			pdf_logfont("encode type1/cff by strings\n");
 			for (i = 0; i < 256; i++)
+			{
 				if (estrings[i])
 					etable[i] = FT_Get_Name_Index(face, estrings[i]);
 				else
 					etable[i] = ftcharindex(face, i);
+			}
 		}
 
 		if (kind == TRUETYPE)
@@ -390,6 +392,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 			{
 				pdf_logfont("encode truetype via unicode\n");
 				for (i = 0; i < 256; i++)
+				{
 					if (estrings[i])
 					{
 						int aglbuf[256];
@@ -402,6 +405,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					}
 					else
 						etable[i] = ftcharindex(face, i);
+				}
 			}
 
 			/* MacRoman cmap */
@@ -409,6 +413,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 			{
 				pdf_logfont("encode truetype via macroman\n");
 				for (i = 0; i < 256; i++)
+				{
 					if (estrings[i])
 					{
 						k = mrecode(estrings[i]);
@@ -419,6 +424,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					}
 					else
 						etable[i] = ftcharindex(face, i);
+				}
 			}
 
 			/* Symbolic cmap */
