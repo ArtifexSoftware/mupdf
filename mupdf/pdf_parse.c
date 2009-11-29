@@ -321,7 +321,7 @@ skip:
 				return fz_rethrow(error, "cannot parse dict");
 			}
 			if (tok == PDF_TCDICT || tok == PDF_TNAME ||
-					(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
+				(tok == PDF_TKEYWORD && !strcmp(buf, "ID")))
 			{
 				val = fz_newint(a);
 				fz_dictput(dict, key, val);

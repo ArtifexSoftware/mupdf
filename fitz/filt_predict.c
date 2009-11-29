@@ -38,9 +38,9 @@ fz_newpredictd(fz_obj *params)
 		p->predictor = fz_toint(obj);
 
 	if (p->predictor != 1 && p->predictor != 2 &&
-			p->predictor != 10 && p->predictor != 11 &&
-			p->predictor != 12 && p->predictor != 13 &&
-			p->predictor != 14 && p->predictor != 15)
+		p->predictor != 10 && p->predictor != 11 &&
+		p->predictor != 12 && p->predictor != 13 &&
+		p->predictor != 14 && p->predictor != 15)
 	{
 		fz_warn("invalid predictor: %d", p->predictor);
 		p->predictor = 1;

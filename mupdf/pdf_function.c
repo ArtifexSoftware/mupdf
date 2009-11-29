@@ -1271,7 +1271,7 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 		}
 
 		if (k != 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
-				func->domain[0][1] < func->u.st.bounds[k-2]))
+			func->domain[0][1] < func->u.st.bounds[k-2]))
 			fz_warn("malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 

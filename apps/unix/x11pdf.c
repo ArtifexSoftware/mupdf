@@ -472,7 +472,7 @@ static void usage(void)
 static void winawaitevent(struct timeval *tmo, struct timeval *tmo_at)
 {
 	if (tmo_at->tv_sec == 0 && tmo_at->tv_usec == 0 &&
-			tmo->tv_sec == 0 && tmo->tv_usec == 0)
+		tmo->tv_sec == 0 && tmo->tv_usec == 0)
 		XNextEvent(xdpy, &xevt);
 	else
 	{
@@ -568,7 +568,7 @@ int main(int argc, char **argv)
 			winawaitevent(&tmo, &tmo_at);
 
 			if (tmo_at.tv_sec != 0 && tmo_at.tv_usec != 0 &&
-					tmo.tv_sec == 0 && tmo.tv_usec == 0)
+				tmo.tv_sec == 0 && tmo.tv_usec == 0)
 			{
 				/* redraw page */
 				winblit(&gapp);
@@ -587,7 +587,7 @@ int main(int argc, char **argv)
 				if (gapp.image)
 				{
 					if (xevt.xconfigure.width != reqw ||
-							xevt.xconfigure.height != reqh)
+						xevt.xconfigure.height != reqh)
 						gapp.shrinkwrap = 0;
 				}
 				pdfapp_onresize(&gapp,

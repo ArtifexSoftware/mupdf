@@ -40,8 +40,8 @@ void associate(char *argv0)
 	/* HKEY_CLASSES_ROOT\.pdf */
 
 	if (RegCreateKeyEx(HKEY_CLASSES_ROOT,
-			".pdf", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &key, &disp))
+		".pdf", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &key, &disp))
 		return;
 
 	if (RegSetValueEx(key, "", 0, REG_SZ, "MuPDF", strlen("MuPDF")+1))
@@ -52,8 +52,8 @@ void associate(char *argv0)
 	/* HKEY_CLASSES_ROOT\MuPDF */
 
 	if (RegCreateKeyEx(HKEY_CLASSES_ROOT,
-			"MuPDF", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &key, &disp))
+		"MuPDF", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &key, &disp))
 		return;
 
 	if (RegSetValueEx(key, "", 0, REG_SZ, name, strlen(name)+1))
@@ -62,8 +62,8 @@ void associate(char *argv0)
 	/* HKEY_CLASSES_ROOT\MuPDF\DefaultIcon */
 
 	if (RegCreateKeyEx(key,
-			"DefaultIcon", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &kicon, &disp))
+		"DefaultIcon", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &kicon, &disp))
 		return;
 
 	sprintf(tmp, "%s,1", argv0);
@@ -75,16 +75,16 @@ void associate(char *argv0)
 	/* HKEY_CLASSES_ROOT\MuPDF\Shell\Open\Command */
 
 	if (RegCreateKeyEx(key,
-			"shell", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &kshell, &disp))
+		"shell", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &kshell, &disp))
 		return;
 	if (RegCreateKeyEx(kshell,
-			"open", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &kopen, &disp))
+		"open", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &kopen, &disp))
 		return;
 	if (RegCreateKeyEx(kopen,
-			"command", 0, NULL, REG_OPTION_NON_VOLATILE,
-			KEY_WRITE, NULL, &kcmd, &disp))
+		"command", 0, NULL, REG_OPTION_NON_VOLATILE,
+		KEY_WRITE, NULL, &kcmd, &disp))
 		return;
 
 	sprintf(tmp, "\"%s\" \"%%1\"", argv0);

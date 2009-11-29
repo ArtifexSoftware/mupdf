@@ -364,7 +364,7 @@ ximage_init(Display *display, int screen, Visual *visual)
 
 	/* identify code for MIT-SHM extension */
 	if (XQueryExtension(display, "MIT-SHM", &major, &event, &error) &&
-			XShmQueryExtension(display))
+		XShmQueryExtension(display))
 		info.shmcode = major;
 
 	/* intercept errors looking for SHM code */

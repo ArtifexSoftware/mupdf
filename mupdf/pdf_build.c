@@ -889,12 +889,12 @@ showglyph(pdf_csi *csi, int cid)
 
 	/* flush buffered text if face or matrix or rendermode has changed */
 	if (!csi->text ||
-			(fontdesc->font) != csi->text->font ||
-			fabs(trm.a - csi->text->trm.a) > FLT_EPSILON ||
-			fabs(trm.b - csi->text->trm.b) > FLT_EPSILON ||
-			fabs(trm.c - csi->text->trm.c) > FLT_EPSILON ||
-			fabs(trm.d - csi->text->trm.d) > FLT_EPSILON ||
-			gstate->render != csi->textmode)
+		(fontdesc->font) != csi->text->font ||
+		fabs(trm.a - csi->text->trm.a) > FLT_EPSILON ||
+		fabs(trm.b - csi->text->trm.b) > FLT_EPSILON ||
+		fabs(trm.c - csi->text->trm.c) > FLT_EPSILON ||
+		fabs(trm.d - csi->text->trm.d) > FLT_EPSILON ||
+		gstate->render != csi->textmode)
 	{
 		error = pdf_flushtext(csi);
 		if (error)

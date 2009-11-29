@@ -286,7 +286,7 @@ gatherfonts(int page, fz_obj *pageobj, fz_obj *dict)
 
 		for (k = 0; k < fonts; k++)
 			if (fz_tonum(font[k]->ref) == fz_tonum(ref) &&
-					fz_togen(font[k]->ref) == fz_togen(ref))
+				fz_togen(font[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < fonts)
@@ -388,7 +388,7 @@ gatherimages(int page, fz_obj *pageobj, fz_obj *dict)
 
 		for (k = 0; k < images; k++)
 			if (fz_tonum(image[k]->ref) == fz_tonum(ref) &&
-					fz_togen(image[k]->ref) == fz_togen(ref))
+				fz_togen(image[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < images)
@@ -459,7 +459,7 @@ gatherforms(int page, fz_obj *pageobj, fz_obj *dict)
 
 		for (k = 0; k < forms; k++)
 			if (fz_tonum(form[k]->ref) == fz_tonum(ref) &&
-					fz_togen(form[k]->ref) == fz_togen(ref))
+				fz_togen(form[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < forms)
@@ -512,12 +512,12 @@ gatherpsobjs(int page, fz_obj *pageobj, fz_obj *dict)
 		if (subtype && !fz_isname(subtype))
 			return fz_throw("not a xobject subtype (%d %d R)", fz_tonum(ref), fz_togen(ref));
 		if (strcmp(fz_toname(type), "PS") &&
-				(strcmp(fz_toname(type), "Form") || strcmp(fz_toname(subtype), "PS")))
+			(strcmp(fz_toname(type), "Form") || strcmp(fz_toname(subtype), "PS")))
 			continue;
 
 		for (k = 0; k < psobjs; k++)
 			if (fz_tonum(psobj[k]->ref) == fz_tonum(ref) &&
-					fz_togen(psobj[k]->ref) == fz_togen(ref))
+				fz_togen(psobj[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < psobjs)
@@ -566,7 +566,7 @@ gathershadings(int page, fz_obj *pageobj, fz_obj *dict)
 
 		for (k = 0; k < shadings; k++)
 			if (fz_tonum(shading[k]->ref) == fz_tonum(ref) &&
-					fz_togen(shading[k]->ref) == fz_togen(ref))
+				fz_togen(shading[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < shadings)
@@ -635,7 +635,7 @@ gatherpatterns(int page, fz_obj *pageobj, fz_obj *dict)
 
 		for (k = 0; k < patterns; k++)
 			if (fz_tonum(pattern[k]->ref) == fz_tonum(ref) &&
-					fz_togen(pattern[k]->ref) == fz_togen(ref))
+				fz_togen(pattern[k]->ref) == fz_togen(ref))
 				break;
 
 		if (k < patterns)
@@ -771,6 +771,7 @@ printinfo(char *filename, int show, int page)
 		printf("MediaBox: ");
 		printf("\n");
 		for (i = 0; i < dims; i++)
+		{
 			printf(PAGE_FMT "[ %g %g %g %g ]\n",
 				dim[i]->page,
 				fz_tonum(dim[i]->pageobj), fz_togen(dim[i]->pageobj),
@@ -778,6 +779,7 @@ printinfo(char *filename, int show, int page)
 				dim[i]->u.dim.bbox->y0,
 				dim[i]->u.dim.bbox->x1,
 				dim[i]->u.dim.bbox->y1);
+		}
 		printf("\n");
 
 		for (i = 0; i < dims; i++)

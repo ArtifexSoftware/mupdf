@@ -65,9 +65,9 @@ fz_repairobj(fz_stream *file, char *buf, int cap,
 	}
 
 	while ( tok != PDF_TSTREAM &&
-			tok != PDF_TENDOBJ &&
-			tok != PDF_TERROR &&
-			tok != PDF_TEOF )
+		tok != PDF_TENDOBJ &&
+		tok != PDF_TERROR &&
+		tok != PDF_TEOF )
 	{
 		error = pdf_lex(&tok, file, buf, cap, &len);
 		if (error)
