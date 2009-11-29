@@ -229,8 +229,8 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 		{
 			for (iy = 0; iy < ydenom; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom);
+					buf + iy * ow * n,
+					src->w, xdenom);
 			scolx(buf, dstsamples + oy * dst->w * n, ow, ydenom);
 		}
 
@@ -239,8 +239,8 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 		{
 			for (iy = 0; iy < remaining; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom);
+					buf + iy * ow * n,
+					src->w, xdenom);
 			scolx(buf, dstsamples + oy * dst->w * n, ow, remaining);
 		}
 	}
@@ -251,8 +251,8 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 		{
 			for (iy = 0; iy < ydenom; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom, n);
+					buf + iy * ow * n,
+					src->w, xdenom, n);
 			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, ydenom, n);
 		}
 
@@ -261,8 +261,8 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 		{
 			for (iy = 0; iy < remaining; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom, n);
+					buf + iy * ow * n,
+					src->w, xdenom, n);
 
 			fz_scoln(buf, dstsamples + oy * dst->w * n, ow, remaining, n);
 		}
@@ -314,8 +314,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		{
 			for (iy = 0; iy < ydenom; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom);
+					buf + iy * ow * n,
+					src->w, xdenom);
 			scolx(buf, dst->samples + oy * dst->w * n, dst->w, ydenom);
 		}
 
@@ -324,8 +324,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		{
 			for (iy = 0; iy < remaining; iy++)
 				srowx(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom);
+					buf + iy * ow * n,
+					src->w, xdenom);
 			scolx(buf, dst->samples + oy * dst->w * n, dst->w, remaining);
 		}
 	}
@@ -336,8 +336,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		{
 			for (iy = 0; iy < ydenom; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom, n);
+					buf + iy * ow * n,
+					src->w, xdenom, n);
 			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, ydenom, n);
 		}
 
@@ -346,8 +346,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 		{
 			for (iy = 0; iy < remaining; iy++)
 				fz_srown(src->samples + (y + iy) * src->w * n,
-						 buf + iy * ow * n,
-						 src->w, xdenom, n);
+					buf + iy * ow * n,
+					src->w, xdenom, n);
 			fz_scoln(buf, dst->samples + oy * dst->w * n, dst->w, remaining, n);
 		}
 	}

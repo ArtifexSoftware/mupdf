@@ -48,8 +48,8 @@ static char sccsid[] = "@(#)getopt.c	4.13 (Berkeley) 2/23/91";
  * get option letter from argument vector
  */
 int	opterr = 1,		/* if error message should be printed */
-	optind = 1,		/* index into parent argv vector */
-	optopt;			/* character checked for validity */
+optind = 1,		/* index into parent argv vector */
+optopt;			/* character checked for validity */
 char	*optarg;		/* argument associated with option */
 
 #define	BADCH	(int)'?'
@@ -73,7 +73,7 @@ int fz_getopt(int nargc, char * const * nargv, const char *ostr)
 		}
 	}					/* option letter okay? */
 	if ((optopt = (int)*place++) == (int)':' ||
-	    !(oli = strchr(ostr, optopt))) {
+		!(oli = strchr(ostr, optopt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means EOF.
@@ -88,7 +88,7 @@ int fz_getopt(int nargc, char * const * nargv, const char *ostr)
 			else
 				++p;
 			(void)fprintf(stderr, "%s: illegal option -- %c\n",
-			    p, optopt);
+				p, optopt);
 		}
 		return(BADCH);
 	}
@@ -108,8 +108,8 @@ int fz_getopt(int nargc, char * const * nargv, const char *ostr)
 				++p;
 			if (opterr)
 				(void)fprintf(stderr,
-				    "%s: option requires an argument -- %c\n",
-				    p, optopt);
+					"%s: option requires an argument -- %c\n",
+					p, optopt);
 			return(BADCH);
 		}
 		else				/* white space */

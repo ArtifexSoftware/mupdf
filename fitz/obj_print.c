@@ -336,6 +336,6 @@ fz_fprintobj(FILE *fp, fz_obj *obj, int tight)
 void
 fz_debugobj(fz_obj *obj)
 {
-    fz_fprintobj(stdout, obj, 0);
+	fz_fprintobj(stdout, obj, 0);
 }
 

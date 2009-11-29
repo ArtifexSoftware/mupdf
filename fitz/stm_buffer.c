@@ -65,7 +65,7 @@ fz_growbuffer(fz_buffer *buf)
 		fz_warn("assert: grow borrowed memory");
 		return;
 	}
-	
+
 	buf->bp = fz_realloc(buf->bp, (ep * 3) / 2);
 	buf->rp = buf->bp + rp;
 	buf->wp = buf->bp + wp;
@@ -77,7 +77,7 @@ fz_rewindbuffer(fz_buffer *buf)
 {
 	if (!buf->ownsdata)
 	{
-		 fz_warn("assert: rewind borrowed memory");
+		fz_warn("assert: rewind borrowed memory");
 		return;
 	}
 

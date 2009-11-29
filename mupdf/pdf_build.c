@@ -47,10 +47,10 @@ pdf_initgstate(pdf_gstate *gs)
 static fz_error
 pdf_newovernode(fz_node **nodep, pdf_gstate *gs)
 {
-    if (gs->blendmode == FZ_BNORMAL)
-	return fz_newovernode(nodep);
-    else
-	return fz_newblendnode(nodep, gs->blendmode, 0, 0);
+	if (gs->blendmode == FZ_BNORMAL)
+		return fz_newovernode(nodep);
+	else
+		return fz_newblendnode(nodep, gs->blendmode, 0, 0);
 }
 
 fz_error
@@ -309,7 +309,7 @@ static fz_matrix getmatrix(fz_node *node)
 
 static fz_error
 addpatternshape(pdf_gstate *gs, fz_node *shape,
-		pdf_pattern *pat, fz_colorspace *cs, float *v)
+	pdf_pattern *pat, fz_colorspace *cs, float *v)
 {
 	fz_error error;
 	fz_node *xform;
@@ -660,7 +660,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *img)
 
 fz_error
 pdf_showpath(pdf_csi *csi,
-		int doclose, int dofill, int dostroke, int evenodd)
+	int doclose, int dofill, int dostroke, int evenodd)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error error;
@@ -870,11 +870,11 @@ showglyph(pdf_csi *csi, int cid)
 	tsm.f = gstate->rise;
 
 	if (fontdesc->tounicode)
-	    ucs = pdf_lookupcmap(fontdesc->tounicode, cid);
+		ucs = pdf_lookupcmap(fontdesc->tounicode, cid);
 	else if (cid < fontdesc->ncidtoucs)
-	    ucs = fontdesc->cidtoucs[cid];
+		ucs = fontdesc->cidtoucs[cid];
 	else
-	    ucs = '?';
+		ucs = '?';
 
 	gid = pdf_fontcidtogid(fontdesc, cid);
 

@@ -203,8 +203,8 @@ fz_hashremove(fz_hashtable *table, void *key)
 			{
 				code = hash(ents[look].key, table->keylen) % size;
 				if ((code <= hole && hole < look) ||
-					(look < code && code <= hole) ||
-					(hole < look && look < code))
+						(look < code && code <= hole) ||
+						(hole < look && look < code))
 				{
 					ents[hole] = ents[look];
 					ents[look].val = nil;

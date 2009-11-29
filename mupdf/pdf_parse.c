@@ -181,7 +181,7 @@ pdf_parsearray(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap)
 			fz_arraypush(ary, obj);
 			fz_dropobj(obj);
 			break;
-			
+
 		case PDF_TODICT:
 			error = pdf_parsedict(&obj, xref, file, buf, cap);
 			if (error)
@@ -293,7 +293,7 @@ skip:
 				return fz_rethrow(error, "cannot parse dict");
 			}
 			break;
-			
+
 		case PDF_TODICT:
 			error = pdf_parsedict(&val, xref, file, buf, cap);
 			if (error)
@@ -303,7 +303,7 @@ skip:
 				return fz_rethrow(error, "cannot parse dict");
 			}
 			break;
-			
+
 		case PDF_TNAME: val = fz_newname(buf); break;
 		case PDF_TREAL: val = fz_newreal(atof(buf)); break;
 		case PDF_TSTRING: val = fz_newstring(buf, len); break;
@@ -397,8 +397,8 @@ pdf_parsestmobj(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 
 fz_error
 pdf_parseindobj(fz_obj **op, pdf_xref *xref,
-		fz_stream *file, char *buf, int cap,
-		int *onum, int *ogen, int *ostmofs)
+	fz_stream *file, char *buf, int cap,
+	int *onum, int *ogen, int *ostmofs)
 {
 	fz_error error = fz_okay;
 	fz_obj *obj = nil;
@@ -444,7 +444,7 @@ pdf_parseindobj(fz_obj **op, pdf_xref *xref,
 		if (error)
 			return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
 		break;
-	
+
 	case PDF_TNAME: obj = fz_newname(buf); break;
 	case PDF_TREAL: obj = fz_newreal(atof(buf)); break;
 	case PDF_TSTRING: obj = fz_newstring(buf, len); break;

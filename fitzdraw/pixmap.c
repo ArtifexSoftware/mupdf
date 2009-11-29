@@ -30,9 +30,9 @@ fz_error
 fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
 {
 	return fz_newpixmap(pixp,
-				r.x0, r.y0,
-				r.x1 - r.x0,
-				r.y1 - r.y0, n);
+			r.x0, r.y0,
+			r.x1 - r.x0,
+			r.y1 - r.y0, n);
 }
 
 fz_error

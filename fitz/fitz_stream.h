@@ -317,9 +317,9 @@ typedef struct fz_aes_s fz_aes;
 void aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
 void aes_setkey_dec( fz_aes *ctx, const unsigned char *key, int keysize );
 void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
-                    unsigned char iv[16],
-                    const unsigned char *input,
-                    unsigned char *output );
+	unsigned char iv[16],
+	const unsigned char *input,
+	unsigned char *output );
 
 /*
  * Stream API for Fitz.
@@ -393,18 +393,18 @@ int fz_peekbytex(fz_stream *stm);
 
 static inline int fz_readbyte(fz_stream *stm)
 {
-    fz_buffer *buf = stm->buffer;
-    if (buf->rp < buf->wp)
-	return *buf->rp++;
-    return fz_readbytex(stm);
+	fz_buffer *buf = stm->buffer;
+	if (buf->rp < buf->wp)
+		return *buf->rp++;
+	return fz_readbytex(stm);
 }
 
 static inline int fz_peekbyte(fz_stream *stm)
 {
-    fz_buffer *buf = stm->buffer;
-    if (buf->rp < buf->wp)
-	return *buf->rp;
-    return fz_peekbytex(stm);
+	fz_buffer *buf = stm->buffer;
+	if (buf->rp < buf->wp)
+		return *buf->rp;
+	return fz_peekbytex(stm);
 }
 
 #endif

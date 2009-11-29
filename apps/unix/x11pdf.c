@@ -16,27 +16,27 @@
 
 #ifndef timeradd
 #define timeradd(a, b, result) \
-    do { \
-	(result)->tv_sec = (a)->tv_sec + (b)->tv_sec; \
-	(result)->tv_usec = (a)->tv_usec + (b)->tv_usec; \
-	if ((result)->tv_usec >= 1000000) \
-	{ \
-	    ++(result)->tv_sec; \
-	    (result)->tv_usec -= 1000000; \
-	} \
-    } while (0)
+	do { \
+		(result)->tv_sec = (a)->tv_sec + (b)->tv_sec; \
+		(result)->tv_usec = (a)->tv_usec + (b)->tv_usec; \
+		if ((result)->tv_usec >= 1000000) \
+		{ \
+			++(result)->tv_sec; \
+			(result)->tv_usec -= 1000000; \
+		} \
+	} while (0)
 #endif
 
 #ifndef timersub
 #define timersub(a, b, result) \
-    do { \
-	(result)->tv_sec = (a)->tv_sec - (b)->tv_sec; \
-	(result)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
-	if ((result)->tv_usec < 0) { \
-	    --(result)->tv_sec; \
-	    (result)->tv_usec += 1000000; \
-	} \
-    } while (0)
+	do { \
+		(result)->tv_sec = (a)->tv_sec - (b)->tv_sec; \
+		(result)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
+		if ((result)->tv_usec < 0) { \
+			--(result)->tv_sec; \
+			(result)->tv_usec += 1000000; \
+		} \
+	} while (0)
 #endif
 
 extern int ximage_init(Display *display, int screen, Visual *visual);
@@ -131,17 +131,17 @@ static void winopen(void)
 	XAllocColor(xdpy, DefaultColormap(xdpy, xscr), &xshcolor);
 
 	xwin = XCreateWindow(xdpy, DefaultRootWindow(xdpy),
-			10, 10, 200, 100, 1,
-			ximage_get_depth(),
-			InputOutput,
-			ximage_get_visual(),
-			0,
-			nil);
+		10, 10, 200, 100, 1,
+		ximage_get_depth(),
+		InputOutput,
+		ximage_get_visual(),
+		0,
+		nil);
 
 	XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
 	XSelectInput(xdpy, xwin,
-			StructureNotifyMask | ExposureMask | KeyPressMask |
-			PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+		StructureNotifyMask | ExposureMask | KeyPressMask |
+		PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
 
 	mapped = 0;
 
@@ -154,7 +154,7 @@ static void winopen(void)
 	{
 		wmhints->flags = IconPixmapHint;
 		wmhints->icon_pixmap = XCreateBitmapFromData(xdpy, xwin,
-				(char *) gs_l_xbm_bits, gs_l_xbm_width, gs_l_xbm_height);
+			(char *) gs_l_xbm_bits, gs_l_xbm_width, gs_l_xbm_height);
 		if (wmhints->icon_pixmap)
 		{
 			XSetWMHints(xdpy, xwin, wmhints);
@@ -290,12 +290,12 @@ static void winblit(pdfapp_t *app)
 		invertcopyrect();
 
 	ximage_blit(xwin, xgc,
-			x0, y0,
-			gapp.image->samples,
-			0, 0,
-			gapp.image->w,
-			gapp.image->h,
-			gapp.image->w * gapp.image->n);
+		x0, y0,
+		gapp.image->samples,
+		0, 0,
+		gapp.image->w,
+		gapp.image->h,
+		gapp.image->w * gapp.image->n);
 
 	if (gapp.iscopying || justcopied)
 		invertcopyrect();
@@ -363,7 +363,7 @@ void windocopy(pdfapp_t *app)
 	*utf8 = 0;
 	*latin1 = 0;
 
-printf("oncopy utf8=%zd latin1=%zd\n", strlen(copyutf8), strlen(copylatin1));
+	printf("oncopy utf8=%zd latin1=%zd\n", strlen(copyutf8), strlen(copylatin1));
 
 	XSetSelectionOwner(xdpy, XA_PRIMARY, xwin, copytime);
 
@@ -374,7 +374,7 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 {
 	XEvent nevt;
 
-printf("onselreq\n");
+	printf("onselreq\n");
 
 	if (property == None)
 		property = target;
@@ -395,31 +395,31 @@ printf("onselreq\n");
 		atomlist[1] = XA_TIMESTAMP;
 		atomlist[2] = XA_STRING;
 		atomlist[3] = XA_UTF8_STRING;
-printf(" -> targets\n");
+		printf(" -> targets\n");
 		XChangeProperty(xdpy, requestor, property, target,
-				32, PropModeReplace,
-				(unsigned char *)atomlist, sizeof(atomlist)/sizeof(Atom));
+			32, PropModeReplace,
+			(unsigned char *)atomlist, sizeof(atomlist)/sizeof(Atom));
 	}
 
 	else if (target == XA_STRING)
 	{
-printf(" -> string %zd\n", strlen(copylatin1));
+		printf(" -> string %zd\n", strlen(copylatin1));
 		XChangeProperty(xdpy, requestor, property, target,
-				8, PropModeReplace,
-				(unsigned char *)copylatin1, strlen(copylatin1));
+			8, PropModeReplace,
+			(unsigned char *)copylatin1, strlen(copylatin1));
 	}
 
 	else if (target == XA_UTF8_STRING)
 	{
-printf(" -> utf8string\n");
+		printf(" -> utf8string\n");
 		XChangeProperty(xdpy, requestor, property, target,
-				8, PropModeReplace,
-				(unsigned char *)copyutf8, strlen(copyutf8));
+			8, PropModeReplace,
+			(unsigned char *)copyutf8, strlen(copyutf8));
 	}
 
 	else
 	{
-printf(" -> unknown\n");
+		printf(" -> unknown\n");
 		nevt.xselection.property = None;
 	}
 
@@ -472,7 +472,7 @@ static void usage(void)
 static void winawaitevent(struct timeval *tmo, struct timeval *tmo_at)
 {
 	if (tmo_at->tv_sec == 0 && tmo_at->tv_usec == 0 &&
-		tmo->tv_sec == 0 && tmo->tv_usec == 0)
+			tmo->tv_sec == 0 && tmo->tv_usec == 0)
 		XNextEvent(xdpy, &xevt);
 	else
 	{
@@ -568,7 +568,7 @@ int main(int argc, char **argv)
 			winawaitevent(&tmo, &tmo_at);
 
 			if (tmo_at.tv_sec != 0 && tmo_at.tv_usec != 0 &&
-				tmo.tv_sec == 0 && tmo.tv_usec == 0)
+					tmo.tv_sec == 0 && tmo.tv_usec == 0)
 			{
 				/* redraw page */
 				winblit(&gapp);
@@ -587,12 +587,12 @@ int main(int argc, char **argv)
 				if (gapp.image)
 				{
 					if (xevt.xconfigure.width != reqw ||
-						xevt.xconfigure.height != reqh)
+							xevt.xconfigure.height != reqh)
 						gapp.shrinkwrap = 0;
 				}
 				pdfapp_onresize(&gapp,
-						xevt.xconfigure.width,
-						xevt.xconfigure.height);
+					xevt.xconfigure.width,
+					xevt.xconfigure.height);
 				break;
 
 			case KeyPress:
@@ -636,10 +636,10 @@ int main(int argc, char **argv)
 
 			case SelectionRequest:
 				onselreq(xevt.xselectionrequest.requestor,
-						xevt.xselectionrequest.selection,
-						xevt.xselectionrequest.target,
-						xevt.xselectionrequest.property,
-						xevt.xselectionrequest.time);
+					xevt.xselectionrequest.selection,
+					xevt.xselectionrequest.target,
+					xevt.xselectionrequest.property,
+					xevt.xselectionrequest.time);
 				break;
 			}
 		}

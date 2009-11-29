@@ -144,7 +144,7 @@ hashinsert(fz_glyphcache *arena, fz_key *key, fz_val *val)
 {
 	fz_hash *tab = arena->hash;
 	int pos = hashkey(key) % arena->slots;
-int didcoll = 0;
+	int didcoll = 0;
 
 	while (1)
 	{
@@ -153,14 +153,14 @@ int didcoll = 0;
 			tab[pos].key = *key;
 			tab[pos].val = val;
 			tab[pos].val->ent = &tab[pos];
-if (didcoll) hcoll ++; else hokay ++; hdist += didcoll;
+			if (didcoll) hcoll ++; else hokay ++; hdist += didcoll;
 			return;
 		}
 
 		pos = pos + 1;
 		if (pos == arena->slots)
 			pos = 0;
-didcoll ++;
+		didcoll ++;
 	}
 }
 
@@ -168,51 +168,51 @@ didcoll ++;
 static void
 hashremove(fz_glyphcache *arena, fz_key *key)
 {
-	fz_hash *tab = arena->hash;
-	unsigned int pos = hashkey(key) % arena->slots;
-	unsigned int hole;
-	unsigned int look;
-	unsigned int code;
+fz_hash *tab = arena->hash;
+unsigned int pos = hashkey(key) % arena->slots;
+unsigned int hole;
+unsigned int look;
+unsigned int code;
 
-	while (1)
-	{
-		if (!tab[pos].val)
-			return; // boo hoo! tried to remove non-existant key
+while (1)
+{
+if (!tab[pos].val)
+return; // boo hoo! tried to remove non-existant key
 
-		if (memcmp(key, &tab[pos].key, sizeof (fz_key)) == 0)
-		{
-			tab[pos].val = nil;
+if (memcmp(key, &tab[pos].key, sizeof (fz_key)) == 0)
+{
+tab[pos].val = nil;
 
-			hole = pos;
-			look = hole + 1;
-			if (look == arena->slots)
-				look = 0;
+hole = pos;
+look = hole + 1;
+if (look == arena->slots)
+look = 0;
 
-			while (tab[look].val)
-			{
-				code = (hashkey(&tab[look].key) % arena->slots);
-				if ((code <= hole && hole < look) ||
-					(look < code && code <= hole) ||
-					(hole < look && look < code))
-				{
-					tab[hole] = tab[look];
-					tab[hole].val->ent = &tab[hole];
-					tab[look].val = nil;
-					hole = look;
-				}
+while (tab[look].val)
+{
+code = (hashkey(&tab[look].key) % arena->slots);
+if ((code <= hole && hole < look) ||
+(look < code && code <= hole) ||
+(hole < look && look < code))
+{
+tab[hole] = tab[look];
+tab[hole].val->ent = &tab[hole];
+tab[look].val = nil;
+hole = look;
+}
 
-				look = look + 1;
-				if (look == arena->slots)
-					look = 0;
-			}
+look = look + 1;
+if (look == arena->slots)
+look = 0;
+}
 
-			return;
-		}
+return;
+}
 
-		pos = pos + 1;
-		if (pos == arena->slots)
-			pos = 0;
-	}
+pos = pos + 1;
+if (pos == arena->slots)
+pos = 0;
+}
 }
 */
 
@@ -226,31 +226,31 @@ fz_debugglyphcache(fz_glyphcache *arena)
 	printf("out-of-space evicts: %d\n", coos);
 	printf("out-of-hash evicts: %d\n", covf);
 	printf("hits = %d misses = %d ratio = %g\n", ghits, gmisses, (float)ghits / (ghits + gmisses));
-/*
+	/*
 	int i;
 	for (i = 0; i < arena->slots; i++)
 	{
-		if (!arena->hash[i].val)
-			printf("glyph % 4d: empty\n", i);
-		else {
-			fz_key *k = &arena->hash[i].key;
-			fz_val *b = arena->hash[i].val;
-			printf("glyph % 4d: %p %d [%g %g %g %g + %d %d] "
-					"-> [%dx%d %d,%d]\n", i,
-				k->fid, k->cid,
-				k->a / 65536.0,
-				k->b / 65536.0,
-				k->c / 65536.0,
-				k->d / 65536.0,
-				k->e, k->f,
-				b->w, b->h, b->x, b->y);
-		}
+	if (!arena->hash[i].val)
+	printf("glyph % 4d: empty\n", i);
+	else {
+	fz_key *k = &arena->hash[i].key;
+	fz_val *b = arena->hash[i].val;
+	printf("glyph % 4d: %p %d [%g %g %g %g + %d %d] "
+	"-> [%dx%d %d,%d]\n", i,
+	k->fid, k->cid,
+	k->a / 65536.0,
+	k->b / 65536.0,
+	k->c / 65536.0,
+	k->d / 65536.0,
+	k->e, k->f,
+	b->w, b->h, b->x, b->y);
+	}
 	}
 
 	for (i = 0; i < arena->load; i++)
-		printf("lru %04d: glyph %d (%d)\n", i,
-			arena->lru[i].ent - arena->hash, arena->lru[i].uses);
-*/
+	printf("lru %04d: glyph %d (%d)\n", i,
+	arena->lru[i].ent - arena->hash, arena->lru[i].uses);
+	*/
 }
 
 static void
@@ -273,33 +273,33 @@ bubble(fz_glyphcache *arena, int i)
 static void
 evictlast(fz_glyphcache *arena)
 {
-	fz_val *lru = arena->lru;
-	unsigned char *s, *e;
-	int i, k;
-	fz_key key;
+fz_val *lru = arena->lru;
+unsigned char *s, *e;
+int i, k;
+fz_key key;
 
-	if (arena->load == 0)
-		return;
+if (arena->load == 0)
+return;
 
-	k = arena->load - 1;
-	s = lru[k].samples;
-	e = s + lru[k].w * lru[k].h;
+k = arena->load - 1;
+s = lru[k].samples;
+e = s + lru[k].w * lru[k].h;
 
-	// pack buffer to fill hole
-	memmove(s, e, arena->buffer + arena->used - e);
-	memset(arena->buffer + arena->used - (e - s), 0, e - s);
-	arena->used -= e - s;
+// pack buffer to fill hole
+memmove(s, e, arena->buffer + arena->used - e);
+memset(arena->buffer + arena->used - (e - s), 0, e - s);
+arena->used -= e - s;
 
-	// update lru pointers
-	for (i = 0; i < k; i++)	// XXX this is DOG slow! XXX
-		if (lru[i].samples >= e)
-			lru[i].samples -= e - s;
+// update lru pointers
+for (i = 0; i < k; i++)	// XXX this is DOG slow! XXX
+if (lru[i].samples >= e)
+lru[i].samples -= e - s;
 
-	// remove hash entry
-	key = lru[k].ent->key;
-	hashremove(arena, &key);
+// remove hash entry
+key = lru[k].ent->key;
+hashremove(arena, &key);
 
-	arena->load --;
+arena->load --;
 }
 */
 
@@ -354,19 +354,19 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 	if (font->ftface)
 	{
-	    error = fz_renderftglyph(glyph, font, cid, ctm);
-	    if (error)
-		return error;
+		error = fz_renderftglyph(glyph, font, cid, ctm);
+		if (error)
+			return error;
 	}
 	else if (font->t3procs)
 	{
-	    error = fz_rendert3glyph(glyph, font, cid, ctm);
-	    if (error)
-		return error;
+		error = fz_rendert3glyph(glyph, font, cid, ctm);
+		if (error)
+			return error;
 	}
 	else
 	{
-	    return fz_throw("uninitialized font structure");
+		return fz_throw("uninitialized font structure");
 	}
 
 	size = glyph->w * glyph->h;

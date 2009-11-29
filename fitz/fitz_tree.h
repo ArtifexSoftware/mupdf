@@ -278,7 +278,7 @@ TODO the unicode textels
 struct fz_textgid_s { float e, f; int gid; };
 struct fz_textucs_s { int idx; int ucs; };
 
- */
+*/
 
 typedef struct fz_textel_s fz_textel;
 

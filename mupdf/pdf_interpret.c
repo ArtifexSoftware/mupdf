@@ -136,8 +136,8 @@ pdf_dropcsi(pdf_csi *csi)
 	while (csi->gtop)
 		grestore(csi); /* no need to check for impossible errors */
 
-	if (csi->gstate[csi->gtop].fill.cs)
-		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
+		if (csi->gstate[csi->gtop].fill.cs)
+			fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
 	if (csi->gstate[csi->gtop].stroke.cs)
 		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
 	if (csi->gstate[csi->gtop].font)
@@ -182,9 +182,9 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 	/* reset alpha to 1.0 when starting a new Transparency group */
 	if (xobj->transparency)
 	{
-	    gstate->blendmode = FZ_BNORMAL;
-	    gstate->stroke.alpha = gstate->stroke.parentalpha;
-	    gstate->fill.alpha = gstate->fill.parentalpha;
+		gstate->blendmode = FZ_BNORMAL;
+		gstate->stroke.alpha = gstate->stroke.parentalpha;
+		gstate->fill.alpha = gstate->fill.parentalpha;
 	}
 
 	/* push transform */
@@ -202,25 +202,25 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 
 	if (xobj->isolated || xobj->knockout)
 	{
-	    /* The xobject's contents ought to be blended properly,
-	       but for now, just do over and hope for something
+		/* The xobject's contents ought to be blended properly,
+		but for now, just do over and hope for something
 
-	    error = fz_newblendnode(&blend, gstate->blendmode,
-		    xobj->isolated, xobj->knockout);
-	    */
-	    if (gstate->blendmode != FZ_BNORMAL)
-		fz_warn("ignoring non-normal blendmode (%d)", gstate->blendmode);
-	    if (xobj->isolated && xobj->knockout)
-		fz_warn("ignoring that the group is isolated and knockout");
-	    else if (xobj->isolated)
-		fz_warn("ignoring that the group is isolated");
-	    else if (xobj->knockout)
-		fz_warn("ignoring that the group is knockout");
-	    error = fz_newovernode(&blend);
-	    if (error)
-		return fz_rethrow(error, "cannot create blend node");
-	    fz_insertnodelast(gstate->head, blend);
-	    gstate->head = blend;
+		error = fz_newblendnode(&blend, gstate->blendmode,
+		xobj->isolated, xobj->knockout);
+		*/
+		if (gstate->blendmode != FZ_BNORMAL)
+			fz_warn("ignoring non-normal blendmode (%d)", gstate->blendmode);
+		if (xobj->isolated && xobj->knockout)
+			fz_warn("ignoring that the group is isolated and knockout");
+		else if (xobj->isolated)
+			fz_warn("ignoring that the group is isolated");
+		else if (xobj->knockout)
+			fz_warn("ignoring that the group is knockout");
+		error = fz_newovernode(&blend);
+		if (error)
+			return fz_rethrow(error, "cannot create blend node");
+		fz_insertnodelast(gstate->head, blend);
+		gstate->head = blend;
 	}
 
 	/* run contents */
@@ -387,10 +387,10 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 			}
 
 			/* The content stream ought to be blended properly,
-			   but for now, just do over and hope for something
+			but for now, just do over and hope for something
 
-			   error = fz_newblendnode(&blend, gstate->blendmode, 0, 0);
-			 */
+			error = fz_newblendnode(&blend, gstate->blendmode, 0, 0);
+			*/
 			error = fz_newovernode(&blend);
 			if (error)
 				return fz_rethrow(error, "cannot create blend node");
@@ -416,16 +416,16 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 
 				if (!strcmp(fz_toname(subtype), "Form"))
 				{
-					error = pdf_loadxobject(&xobj, xref, g);
-					if (error)
-						return fz_rethrow(error, "cannot load xobject");
+				error = pdf_loadxobject(&xobj, xref, g);
+				if (error)
+				return fz_rethrow(error, "cannot load xobject");
 				}
 
 				else if (!strcmp(fz_toname(subtype), "Image"))
 				{
-					error = pdf_loadimage(&img, xref, g);
-					if (error)
-						return fz_rethrow(error, "cannot load xobject");
+				error = pdf_loadimage(&img, xref, g);
+				if (error)
+				return fz_rethrow(error, "cannot load xobject");
 				}
 				*/
 				puts("we encountered a soft mask");

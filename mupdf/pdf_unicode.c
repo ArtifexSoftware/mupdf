@@ -5,8 +5,8 @@
 #include FT_FREETYPE_H
 
 #if ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 1)) || \
-    ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 2)) || \
-    ((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 3) && (FREETYPE_PATCH < 8))
+	((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 2)) || \
+	((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 3) && (FREETYPE_PATCH < 8))
 
 int FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 {
@@ -79,8 +79,8 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan2"))
 			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2"); /* where's this? */
-		else if (!strcmp(collection, "Adobe-Korea1"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
+			else if (!strcmp(collection, "Adobe-Korea1"))
+				error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
 
 		if (error)
 			return fz_rethrow(error, "cannot load tounicode system cmap %s-UCS2", collection);
@@ -116,9 +116,9 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 
 	if (!font->tounicode && !font->cidtoucs)
 	{
-	    pdf_logfont("tounicode could not be loaded\n");
-	    /* TODO: synthesize a ToUnicode if it's a freetype font with
-	     * cmap and/or post tables or if it has glyph names. */
+		pdf_logfont("tounicode could not be loaded\n");
+		/* TODO: synthesize a ToUnicode if it's a freetype font with
+		* cmap and/or post tables or if it has glyph names. */
 	}
 
 	return fz_okay;

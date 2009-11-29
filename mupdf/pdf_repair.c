@@ -225,7 +225,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 				list = fz_realloc(list, listcap * sizeof(struct entry));
 			}
 
-                        pdf_logxref("found object: (%d %d R)\n", oid, gen);
+			pdf_logxref("found object: (%d %d R)\n", oid, gen);
 
 			list[listlen].oid = oid;
 			list[listlen].gen = gen;
@@ -252,8 +252,8 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 	}
 
 	error = fz_packobj(&xref->trailer, xref,
-			"<< /Size %i /Root %r >>",
-			maxoid + 1, rootoid, rootgen);
+		"<< /Size %i /Root %r >>",
+		maxoid + 1, rootoid, rootgen);
 	if (error)
 	{
 		error = fz_rethrow(error, "cannot create new trailer");
@@ -293,7 +293,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 			fz_obj *dict, *length;
 
 			pdf_logxref("correct stream length %d %d = %d\n",
-					list[i].oid, list[i].gen, list[i].stmlen);
+				list[i].oid, list[i].gen, list[i].stmlen);
 
 			error = pdf_loadobject(&dict, xref, list[i].oid, list[i].gen);
 			if (error)

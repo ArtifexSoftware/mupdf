@@ -119,7 +119,7 @@ buildonefilter(pdf_xref * xref, fz_obj * f, fz_obj * p, int num, int gen)
 		{
 			fz_buffer *globals;
 			fz_filter *dec;
-			
+
 			dec = fz_newjbig2d(p);
 
 			error = pdf_loadstream(&globals, xref, fz_tonum(obj), fz_togen(obj));
@@ -330,7 +330,7 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 	if (x->stmofs)
 	{
 		filter = buildrawfilter(xref, x->obj, num, gen);
-	
+
 		error = fz_seek(xref->file, x->stmofs, 0);
 		if (error)
 			return fz_rethrow(error, "cannot seek to stream");
