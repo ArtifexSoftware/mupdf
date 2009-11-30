@@ -867,6 +867,9 @@ Lsetcolor:
 			if (!obj)
 				return fz_throw("cannot find font resource: %s", fz_toname(csi->stack[0]));
 
+			if (gstate->font)
+				pdf_dropfont(gstate->font);
+
 			error = pdf_loadfont(&gstate->font, xref, rdb, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load font");
