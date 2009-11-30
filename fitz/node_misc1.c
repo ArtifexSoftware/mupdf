@@ -3,6 +3,7 @@
 
 void fz_droplinknode(fz_linknode* node);
 void fz_droppathnode(fz_pathnode* node);
+void fz_dropsolidnode(fz_solidnode* node);
 void fz_droptextnode(fz_textnode* node);
 void fz_dropimagenode(fz_imagenode* node);
 void fz_dropshadenode(fz_shadenode* node);
@@ -42,7 +43,9 @@ fz_dropnode(fz_node *node)
 	case FZ_NOVER:
 	case FZ_NMASK:
 	case FZ_NBLEND:
+		break;
 	case FZ_NCOLOR:
+		fz_dropsolidnode((fz_solidnode *) node);
 		break;
 	case FZ_NPATH:
 		fz_droppathnode((fz_pathnode *) node);
