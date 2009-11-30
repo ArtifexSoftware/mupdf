@@ -108,6 +108,8 @@ gsave(pdf_csi *csi)
 
 	pdf_keepmaterial(&gs->stroke);
 	pdf_keepmaterial(&gs->fill);
+	if (gs->font)
+		pdf_keepfont(gs->font);
 
 	return fz_okay;
 }
