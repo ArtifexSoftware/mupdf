@@ -644,11 +644,11 @@ Lsetcolorspace:
 			else
 			{
 				if (!strcmp(fz_toname(obj), "DeviceGray"))
-					cs = pdf_devicegray;
+					cs = fz_keepcolorspace(pdf_devicegray);
 				else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-					cs = pdf_devicergb;
+					cs = fz_keepcolorspace(pdf_devicergb);
 				else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-					cs = pdf_devicecmyk;
+					cs = fz_keepcolorspace(pdf_devicecmyk);
 				else
 				{
 					fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
@@ -665,6 +665,8 @@ Lsetcolorspace:
 
 				error = pdf_setcolorspace(csi, what, cs);
 				if (error) return fz_rethrow(error, "cannot set colorspace");
+
+                                fz_dropcolorspace(cs);
 			}
 		}
 
@@ -1236,7 +1238,7 @@ Lsetcolor:
 		csi->clipevenodd = 0;
 		break;
 
-	case 'g':	
+	case 'g':
 		if (csi->top != 1)
 			goto syntaxerror;
 
