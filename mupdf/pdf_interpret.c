@@ -124,6 +124,8 @@ grestore(pdf_csi *csi)
 
 	pdf_dropmaterial(&gs->stroke);
 	pdf_dropmaterial(&gs->fill);
+	if (gs->font)
+		pdf_dropfont(gs->font);
 
 	csi->gtop --;
 
@@ -140,6 +142,8 @@ pdf_dropcsi(pdf_csi *csi)
 		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
 	if (csi->gstate[csi->gtop].stroke.cs)
 		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
+	if (csi->gstate[csi->gtop].font)
+		pdf_dropfont(csi->gstate[csi->gtop].font);
 
 	if (csi->tree) fz_droptree(csi->tree);
 
