@@ -666,7 +666,7 @@ Lsetcolorspace:
 				error = pdf_setcolorspace(csi, what, cs);
 				if (error) return fz_rethrow(error, "cannot set colorspace");
 
-                                fz_dropcolorspace(cs);
+				fz_dropcolorspace(cs);
 			}
 		}
 
