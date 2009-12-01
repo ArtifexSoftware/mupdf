@@ -221,7 +221,7 @@ fz_newfaxd(fz_obj *params)
 	memset(fax->ref, 0, fax->stride);
 	memset(fax->dst, 0, fax->stride);
 
-	return (fz_filter*)fz_okay;
+	return (fz_filter*)fax;
 }
 
 void
