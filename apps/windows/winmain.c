@@ -223,14 +223,10 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 #define SETUCS(ID) \
 		{ \
-			fz_error error; \
 			unsigned short *ucs; \
-			error = pdf_toucs2(&ucs, obj); \
-			if (!error) \
-			{ \
-				SetDlgItemTextW(hwnd, ID, ucs); \
-				fz_free(ucs); \
-			} \
+			ucs = pdf_toucs2(obj); \
+			SetDlgItemTextW(hwnd, ID, ucs); \
+			fz_free(ucs); \
 		}
 
 		if ((obj = fz_dictgets(xref->info, "Title")))		SETUCS(0x20);

@@ -142,7 +142,7 @@ buildonefilter(pdf_xref * xref, fz_obj * f, fz_obj * p, int num, int gen)
 
 #ifdef HAVE_OPENJPEG
 	else if (!strcmp(s, "JPXDecode"))
-		return fz_newjpxd(fp, p);
+		return fz_newjpxd(p);
 #endif
 
 	else if (!strcmp(s, "Crypt"))
