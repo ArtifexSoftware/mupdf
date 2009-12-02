@@ -319,7 +319,7 @@ struct fz_colorspace_s
 	void (*convcolor)(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv);
 	void (*toxyz)(fz_colorspace *, float *src, float *xyz);
 	void (*fromxyz)(fz_colorspace *, float *xyz, float *dst);
-	void (*drop)(fz_colorspace *);
+	void (*freefunc)(fz_colorspace *);
 };
 
 struct fz_colorcube1_s { unsigned char v[17]; };
@@ -386,7 +386,7 @@ struct fz_image_s
 {
 	int refs;
 	fz_error (*loadtile)(fz_image*,fz_pixmap*);
-	void (*drop)(fz_image*);
+	void (*freefunc)(fz_image*);
 	fz_colorspace *cs;
 	int w, h, n, a;
 };

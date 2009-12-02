@@ -6,7 +6,7 @@
 static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*to)(fz_colorspace*,float*,float*),
 	void(*from)(fz_colorspace*,float*,float*),
-	void(*drop)(fz_colorspace*))
+	void(*freefunc)(fz_colorspace*))
 {
 	strlcpy(cs->name, name, sizeof cs->name);
 	cs->refs = 1;
@@ -14,7 +14,7 @@ static void initcs(fz_colorspace *cs, char *name, int n,
 	cs->convcolor = pdf_convcolor;
 	cs->toxyz = to;
 	cs->fromxyz = from;
-	cs->drop = drop;
+	cs->freefunc = freefunc;
 	cs->n = n;
 }
 
@@ -444,7 +444,7 @@ static void separationtoxyz(fz_colorspace *fzcs, float *sep, float *xyz)
 }
 
 static void
-dropseparation(fz_colorspace *fzcs)
+freeseparation(fz_colorspace *fzcs)
 {
 	struct separation *cs = (struct separation *)fzcs;
 	fz_dropcolorspace(cs->base);
@@ -490,7 +490,7 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	initcs((fz_colorspace*)cs,
 		n == 1 ? "Separation" : "DeviceN", n,
-		separationtoxyz, nil, dropseparation);
+		separationtoxyz, nil, freeseparation);
 
 	cs->base = fz_keepcolorspace(base);
 	cs->tint = pdf_keepfunction(tint);
@@ -524,7 +524,7 @@ indexedtoxyz(fz_colorspace *fzcs, float *ind, float *xyz)
 #endif
 
 static void
-dropindexed(fz_colorspace *fzcs)
+freeindexed(fz_colorspace *fzcs)
 {
 	pdf_indexed *cs = (pdf_indexed *)fzcs;
 	if (cs->base) fz_dropcolorspace(cs->base);
@@ -552,7 +552,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	cs = fz_malloc(sizeof(pdf_indexed));
 
-	initcs((fz_colorspace*)cs, "Indexed", 1, nil, nil, dropindexed);
+	initcs((fz_colorspace*)cs, "Indexed", 1, nil, nil, freeindexed);
 
 	cs->base = fz_keepcolorspace(base);
 	cs->high = fz_toint(highobj);

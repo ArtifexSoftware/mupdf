@@ -5,8 +5,8 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-// this should be called from fz_dropimage
-void pdf_dropimage(fz_image *fzimg)
+static void
+pdf_freeimage(fz_image *fzimg)
 {
 	pdf_image *img = (pdf_image*)fzimg;
 	fz_dropbuffer(img->samples);
@@ -36,7 +36,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	img->super.refs = 1;
 	img->super.cs = nil;
 	img->super.loadtile = pdf_loadtile;
-	img->super.drop = pdf_dropimage;
+	img->super.freefunc = pdf_freeimage;
 	img->super.n = 0;
 	img->super.a = 0;
 	img->indexed = nil;
@@ -76,7 +76,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 		error = pdf_loadcolorspace(&img->super.cs, xref, cso);
 		if (error)
 		{
-			pdf_dropimage((fz_image *) img);
+			pdf_freeimage((fz_image *) img);
 			return fz_rethrow(error, "cannot load colorspace");
 		}
 
@@ -339,7 +339,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 			if (mask)
 			{
 				fz_warn("image has both a mask and a soft mask. ignoring the soft mask.");
-				pdf_dropimage((fz_image*)mask);
+				pdf_freeimage((fz_image*)mask);
 				mask = nil;
 			}
 			error = pdf_loadimage(&mask, xref, obj);
@@ -425,7 +425,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 
 	img->super.refs = 1;
 	img->super.loadtile = pdf_loadtile;
-	img->super.drop = pdf_dropimage;
+	img->super.freefunc = pdf_freeimage;
 	img->super.cs = cs;
 	img->super.w = w;
 	img->super.h = h;
