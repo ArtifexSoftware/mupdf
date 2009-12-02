@@ -476,7 +476,6 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	error = pdf_loadcolorspace(&base, xref, baseobj);
 	if (error)
 		return fz_rethrow(error, "cannot load base colorspace");
-	fz_keepcolorspace(base);
 
 	error = pdf_loadfunction(&tint, xref, tintobj);
 	if (error)
@@ -491,8 +490,11 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		n == 1 ? "Separation" : "DeviceN", n,
 		separationtoxyz, nil, dropseparation);
 
-	cs->base = base;
-	cs->tint = tint;
+	cs->base = fz_keepcolorspace(base);
+	cs->tint = pdf_keepfunction(tint);
+
+	fz_dropcolorspace(base);
+	pdf_dropfunction(tint);
 
 	pdf_logrsrc("}\n");
 
@@ -543,7 +545,6 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	error = pdf_loadcolorspace(&base, xref, baseobj);
 	if (error)
 		return fz_rethrow(error, "cannot load base colorspace");
-	fz_keepcolorspace(base);
 
 	pdf_logrsrc("base %s\n", base->name);
 
@@ -551,8 +552,10 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	initcs((fz_colorspace*)cs, "Indexed", 1, nil, nil, dropindexed);
 
-	cs->base = base;
+	cs->base = fz_keepcolorspace(base);
 	cs->high = fz_toint(highobj);
+
+	fz_dropcolorspace(base);
 
 	n = base->n * (cs->high + 1);
 	cs->lookup = fz_malloc(n);
