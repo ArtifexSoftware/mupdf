@@ -311,6 +311,12 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 			{
 				fz_error error;
 
+				if (gstate->font)
+				{
+					pdf_dropfont(gstate->font);
+					gstate->font = nil;
+				}
+
 				error = pdf_loadfont(&gstate->font, xref, rdb, fz_arrayget(val, 0));
 				if (error)
 					return fz_rethrow(error, "cannot load font");
@@ -675,8 +681,6 @@ Lsetcolorspace:
 		else if (!strcmp(buf, "SC") || !strcmp(buf, "SCN"))
 		{
 			pdf_material *mat;
-			pdf_pattern *pat = nil;
-			fz_shade *shd = nil;
 			fz_obj *patterntype;
 			fz_obj *dict;
 			fz_obj *obj;
@@ -731,6 +735,7 @@ Lsetcolor:
 
 				if (fz_toint(patterntype) == 1)
 				{
+					pdf_pattern *pat;
 					error = pdf_loadpattern(&pat, xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load pattern");
@@ -740,10 +745,12 @@ Lsetcolor:
 						if (error)
 							return fz_rethrow(error, "cannot set pattern");
 					}
+					pdf_droppattern(pat);
 				}
 
-				if (fz_toint(patterntype) == 2)
+				else if (fz_toint(patterntype) == 2)
 				{
+					fz_shade *shd;
 					error = pdf_loadshade(&shd, xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load shade");
@@ -753,10 +760,13 @@ Lsetcolor:
 						if (error)
 							return fz_rethrow(error, "cannot set shade");
 					}
+					fz_dropshade(shd);
 				}
 
-				if (!pat && !shd)
-					return fz_throw("cannot load pattern or shade");
+				else
+				{
+					return fz_throw("unknown pattern type: %d", fz_toint(patterntype));
+				}
 
 				break;
 
@@ -870,7 +880,10 @@ Lsetcolor:
 				return fz_throw("cannot find font resource: %s", fz_toname(csi->stack[0]));
 
 			if (gstate->font)
+			{
 				pdf_dropfont(gstate->font);
+				gstate->font = nil;
+			}
 
 			error = pdf_loadfont(&gstate->font, xref, rdb, obj);
 			if (error)
@@ -970,8 +983,6 @@ Lsetcolor:
 			fz_obj *dict;
 			fz_obj *obj;
 			fz_obj *subtype;
-			pdf_image *img = nil;
-			pdf_xobject *xobj = nil;
 
 			if (csi->top != 1)
 				goto syntaxerror;
@@ -985,9 +996,13 @@ Lsetcolor:
 				return fz_throw("cannot find xobject resource: '%s'", fz_toname(csi->stack[0]));
 
 			subtype = fz_dictgets(obj, "Subtype");
+			if (!subtype)
+				return fz_throw("no XObject subtype specified");
 
 			if (!strcmp(fz_toname(subtype), "Form"))
 			{
+				pdf_xobject *xobj;
+
 				error = pdf_loadxobject(&xobj, xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load xobject");
@@ -1000,10 +1015,14 @@ Lsetcolor:
 				error = runxobject(csi, xref, rdb, xobj);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");
+
+				pdf_dropxobject(xobj);
 			}
 
-			if (!strcmp(fz_toname(subtype), "Image"))
+			else if (!strcmp(fz_toname(subtype), "Image"))
 			{
+				pdf_image *img;
+
 				error = pdf_loadimage(&img, xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load image");
@@ -1011,10 +1030,14 @@ Lsetcolor:
 				error = pdf_showimage(csi, img);
 				if (error)
 					return fz_rethrow(error, "cannot draw image");
+
+				fz_dropimage((fz_image*)img);
 			}
 
-			if (!img && !xobj)
-				return fz_throw("cannot load image or xobject");
+			else
+			{
+				return fz_throw("unknown XObject subtype: %s", fz_toname(subtype));
+			}
 		}
 
 		else if (!strcmp(buf, "sh"))
@@ -1039,7 +1062,10 @@ Lsetcolor:
 				return fz_rethrow(error, "cannot load shade");
 
 			error = pdf_addshade(gstate, shd);
-			if (error) return fz_rethrow(error, "cannot draw shade");
+			if (error)
+				return fz_rethrow(error, "cannot draw shade");
+
+			fz_dropshade(shd);
 		}
 
 		else if (!strcmp(buf, "d0"))
@@ -1460,4 +1486,3 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 		}
 	}
 }
-

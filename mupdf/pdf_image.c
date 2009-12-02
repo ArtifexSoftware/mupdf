@@ -5,6 +5,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+// this should be called from fz_dropimage
 void pdf_dropimage(fz_image *fzimg)
 {
 	pdf_image *img = (pdf_image*)fzimg;
@@ -338,7 +339,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 			if (mask)
 			{
 				fz_warn("image has both a mask and a soft mask. ignoring the soft mask.");
-				pdf_dropimage(mask);
+				pdf_dropimage((fz_image*)mask);
 				mask = nil;
 			}
 			error = pdf_loadimage(&mask, xref, obj);
