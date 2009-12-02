@@ -22,6 +22,7 @@ fz_newfont(void)
 
 	font->t3matrix = fz_identity();
 	font->t3procs = nil;
+	font->t3widths = nil;
 
 	font->bbox.x0 = 0;
 	font->bbox.y0 = 0;
@@ -52,6 +53,7 @@ fz_dropfont(fz_font *font)
 				if (font->t3procs[i])
 					fz_droptree(font->t3procs[i]);
 			fz_free(font->t3procs);
+			fz_free(font->t3widths);
 		}
 
 		if (font->ftface)
