@@ -335,6 +335,12 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *dict)
 		else
 		{
 			pdf_logimage("has mask\n");
+			if (mask)
+			{
+				fz_warn("image has both a mask and a soft mask. ignoring the soft mask.");
+				pdf_dropimage(mask);
+				mask = nil;
+			}
 			error = pdf_loadimage(&mask, xref, obj);
 			if (error)
 				return error;
