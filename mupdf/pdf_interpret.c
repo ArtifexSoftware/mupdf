@@ -138,8 +138,8 @@ pdf_dropcsi(pdf_csi *csi)
 	while (csi->gtop)
 		grestore(csi);
 
-		if (csi->gstate[csi->gtop].fill.cs)
-			fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
+	if (csi->gstate[csi->gtop].fill.cs)
+		fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
 	if (csi->gstate[csi->gtop].stroke.cs)
 		fz_dropcolorspace(csi->gstate[csi->gtop].stroke.cs);
 	if (csi->gstate[csi->gtop].font)
