@@ -40,8 +40,6 @@ pdf_initgstate(pdf_gstate *gs)
 	gs->size = -1;
 	gs->render = 0;
 	gs->rise = 0;
-
-	gs->head = nil;
 }
 
 static fz_error

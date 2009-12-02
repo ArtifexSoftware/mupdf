@@ -1,5 +1,5 @@
 #include "fitz_base.h"
-#include "fitz_tree.h"
+#include "fitz_res.h"
 #include "fitz_draw.h"
 
 typedef struct fz_hash_s fz_hash;

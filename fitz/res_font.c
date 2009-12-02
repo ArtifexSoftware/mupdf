@@ -1,5 +1,6 @@
 #include "fitz_base.h"
-#include "fitz_tree.h"
+#include "fitz_stream.h"
+#include "fitz_res.h"
 #include "fitz_draw.h" /* FIXME -- for glyph rendering callbacks */
 
 #include <ft2build.h>
@@ -51,7 +52,7 @@ fz_dropfont(fz_font *font)
 		{
 			for (i = 0; i < 256; i++)
 				if (font->t3procs[i])
-					fz_droptree(font->t3procs[i]);
+					; // XXX fz_droptree(font->t3procs[i]);
 			fz_free(font->t3procs);
 			fz_free(font->t3widths);
 		}
@@ -338,7 +339,7 @@ fz_newtype3font(char *name, fz_matrix matrix)
 	int i;
 
 	font = fz_newfont();
-	font->t3procs = fz_malloc(sizeof(fz_tree*) * 256);
+	font->t3procs = fz_malloc(sizeof(fz_buffer*) * 256);
 	font->t3widths = fz_malloc(sizeof(float) * 256);
 
 	strlcpy(font->name, name, sizeof(font->name));
@@ -358,6 +359,7 @@ extern fz_colorspace *pdf_devicegray;
 fz_error
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
+#if 0 // XXX
 	fz_error error;
 	fz_renderer *gc;
 	fz_tree *tree;
@@ -401,7 +403,7 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	glyph->w = pixmap->w;
 	glyph->h = pixmap->h;
 	glyph->samples = pixmap->samples;
-
+#endif
 	return fz_okay;
 }
 

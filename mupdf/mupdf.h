@@ -249,7 +249,7 @@ struct pdf_pattern_s
 	float ystep;
 	fz_matrix matrix;
 	fz_rect bbox;
-	fz_tree *tree;
+// XXX	fz_tree *tree;
 };
 
 fz_error pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj);
@@ -577,7 +577,7 @@ struct pdf_page_s
 	fz_rect mediabox;
 	int rotate;
 	fz_obj *resources;
-	fz_tree *tree;
+// XXX	fz_tree *tree;
 	pdf_comment *comments;
 	pdf_link *links;
 };
@@ -605,7 +605,6 @@ fz_error pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
 void pdf_droppage(pdf_page *page);
 
 /* unicode.c */
-fz_error pdf_loadtextfromtree(pdf_textline **linep, fz_tree *tree, fz_matrix ctm);
 void pdf_debugtextline(pdf_textline *line);
 pdf_textline * pdf_newtextline(void);
 void pdf_droptextline(pdf_textline *line);
@@ -671,9 +670,6 @@ struct pdf_gstate_s
 	float size;
 	int render;
 	float rise;
-
-	/* tree construction state */
-	fz_node *head;
 };
 
 struct pdf_csi_s
@@ -686,18 +682,15 @@ struct pdf_csi_s
 	fz_obj *array;
 
 	/* path object state */
-	fz_pathnode *path;
+	fz_path *path;
 	int clip;
 	int clipevenodd;
 
 	/* text object state */
-	fz_node *textclip;
-	fz_textnode *text;
+	fz_text *text;
 	fz_matrix tlm;
 	fz_matrix tm;
 	int textmode;
-
-	fz_tree *tree;
 };
 
 /* build.c */
@@ -706,14 +699,6 @@ fz_error pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
 fz_error pdf_setcolor(pdf_csi *csi, int what, float *v);
 fz_error pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
 fz_error pdf_setshade(pdf_csi *csi, int what, fz_shade *shade);
-
-fz_error pdf_buildstrokepath(pdf_gstate *gs, fz_pathnode *path);
-fz_error pdf_buildfillpath(pdf_gstate *gs, fz_pathnode *path, int evenodd);
-fz_error pdf_addfillshape(pdf_gstate *gs, fz_node *shape);
-fz_error pdf_addstrokeshape(pdf_gstate *gs, fz_node *shape);
-fz_error pdf_addclipmask(pdf_gstate *gs, fz_node *shape);
-fz_error pdf_addtransform(pdf_gstate *gs, fz_node *transform);
-fz_error pdf_addshade(pdf_gstate *gs, fz_shade *shade);
 fz_error pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
 fz_error pdf_showtext(pdf_csi*, fz_obj *text);
 fz_error pdf_flushtext(pdf_csi*);

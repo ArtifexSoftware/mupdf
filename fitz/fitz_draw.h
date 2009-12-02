@@ -60,10 +60,9 @@ void fz_dropael(fz_ael *ael);
 fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	fz_irect clip, fz_pixmap *pix, unsigned char *argb, int over);
 
-fz_error fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness);
-fz_error fz_strokepath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth);
-fz_error fz_dashpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness, float linewidth);
-
+fz_error fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
+fz_error fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
+fz_error fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
 
 /*
  * Function pointers -- they can be replaced by cpu-optimized versions
@@ -132,9 +131,5 @@ struct fz_renderer_s
 
 extern void fz_accelerate(void);
 
-fz_error fz_newrenderer(fz_renderer **gcp, fz_colorspace *pcm, int maskonly, int gcmem);
+fz_renderer * fz_newrenderer(fz_colorspace *pcm, int maskonly, int gcmem);
 void fz_droprenderer(fz_renderer *gc);
-fz_error fz_rendertree(fz_pixmap **out, fz_renderer *gc, fz_tree *tree, fz_matrix ctm, fz_irect bbox, int white);
-fz_error fz_rendertreeover(fz_renderer *gc, fz_pixmap *dest, fz_tree *tree, fz_matrix ctm);
-
-

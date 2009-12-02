@@ -1,17 +1,12 @@
 #include "fitz_base.h"
-#include "fitz_tree.h"
+#include "fitz_res.h"
 
-fz_error
-fz_newpathnode(fz_pathnode **pathp)
+fz_path *
+fz_newpath(void)
 {
-	fz_pathnode *path;
+	fz_path *path;
 
-	path = *pathp = fz_malloc(sizeof(fz_pathnode));
-	if (!path)
-		return fz_rethrow(-1, "out of memory");
-
-	fz_initnode((fz_node*)path, FZ_NPATH);
-
+	path = fz_malloc(sizeof(fz_path));
 	path->paint = FZ_FILL;
 	path->linecap = 0;
 	path->linejoin = 0;
@@ -22,99 +17,55 @@ fz_newpathnode(fz_pathnode **pathp)
 	path->cap = 0;
 	path->els = nil;
 
-	return fz_okay;
-}
-
-fz_error
-fz_clonepathnode(fz_pathnode **pathp, fz_pathnode *oldpath)
-{
-	fz_pathnode *path;
-
-	path = *pathp = fz_malloc(sizeof(fz_pathnode));
-	if (!path)
-		return fz_rethrow(-1, "out of memory");
-
-	fz_initnode((fz_node*)path, FZ_NPATH);
-
-	path->paint = FZ_FILL;
-	path->linecap = 0;
-	path->linejoin = 0;
-	path->linewidth = 1.0;
-	path->miterlimit = 10.0;
-	path->dash = nil;
-	path->len = oldpath->len;
-	path->cap = oldpath->len;
-
-	path->els = fz_malloc(sizeof (fz_pathel) * path->len);
-	if (!path->els) {
-		fz_free(path);
-		return fz_rethrow(-1, "out of memory");
-	}
-	memcpy(path->els, oldpath->els, sizeof(fz_pathel) * path->len);
-
-	return fz_okay;
+	return path;
 }
 
 void
-fz_droppathnode(fz_pathnode *node)
+fz_droppath(fz_path *node)
 {
 	fz_free(node->dash);
 	fz_free(node->els);
 }
 
-static fz_error
-growpath(fz_pathnode *path, int n)
+static void
+growpath(fz_path *path, int n)
 {
-	int newcap;
-	fz_pathel *newels;
-
+	if (path->len + n < path->cap)
+		return;
 	while (path->len + n > path->cap)
-	{
-		newcap = path->cap + 36;
-		newels = fz_realloc(path->els, sizeof (fz_pathel) * newcap);
-		if (!newels)
-			return fz_rethrow(-1, "out of memory");
-		path->cap = newcap;
-		path->els = newels;
-	}
-
-	return fz_okay;
+		path->cap = path->cap + 36;
+	path->els = fz_realloc(path->els, sizeof (fz_pathel) * path->cap);
 }
 
-fz_error
-fz_moveto(fz_pathnode *path, float x, float y)
+void
+fz_moveto(fz_path *path, float x, float y)
 {
-	if (growpath(path, 3) != fz_okay)
-		return fz_rethrow(-1, "out of memory");
+	growpath(path, 3);
 	path->els[path->len++].k = FZ_MOVETO;
 	path->els[path->len++].v = x;
 	path->els[path->len++].v = y;
-	return fz_okay;
 }
 
-fz_error
-fz_lineto(fz_pathnode *path, float x, float y)
+void
+fz_lineto(fz_path *path, float x, float y)
 {
 	if (path->len == 0)
-		return fz_throw("no current point");
-	if (growpath(path, 3) != fz_okay)
-		return fz_rethrow(-1, "out of memory");
+		fz_moveto(path, 0, 0);
+	growpath(path, 3);
 	path->els[path->len++].k = FZ_LINETO;
 	path->els[path->len++].v = x;
 	path->els[path->len++].v = y;
-	return fz_okay;
 }
 
-fz_error
-fz_curveto(fz_pathnode *path,
+void
+fz_curveto(fz_path *path,
 	float x1, float y1,
 	float x2, float y2,
 	float x3, float y3)
 {
 	if (path->len == 0)
-		return fz_throw("no current point");
-	if (growpath(path, 7) != fz_okay)
-		return fz_rethrow(-1, "out of memory");
+		fz_moveto(path, 0, 0);
+	growpath(path, 7);
 	path->els[path->len++].k = FZ_CURVETO;
 	path->els[path->len++].v = x1;
 	path->els[path->len++].v = y1;
@@ -122,40 +73,33 @@ fz_curveto(fz_pathnode *path,
 	path->els[path->len++].v = y2;
 	path->els[path->len++].v = x3;
 	path->els[path->len++].v = y3;
-	return fz_okay;
 }
 
-fz_error
-fz_curvetov(fz_pathnode *path, float x2, float y2, float x3, float y3)
+void
+fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
 {
 	float x1 = path->els[path->len-2].v;
 	float y1 = path->els[path->len-1].v;
-	return fz_curveto(path, x1, y1, x2, y2, x3, y3);
+	fz_curveto(path, x1, y1, x2, y2, x3, y3);
 }
 
-fz_error
-fz_curvetoy(fz_pathnode *path, float x1, float y1, float x3, float y3)
+void
+fz_curvetoy(fz_path *path, float x1, float y1, float x3, float y3)
 {
-	return fz_curveto(path, x1, y1, x3, y3, x3, y3);
+	fz_curveto(path, x1, y1, x3, y3, x3, y3);
 }
 
-fz_error
-fz_closepath(fz_pathnode *path)
+void
+fz_closepath(fz_path *path)
 {
 	if (path->len == 0)
-	{
-		fz_warn("tried to close an empty path");
-		return fz_okay;
-	}
-
-	if (growpath(path, 1) != fz_okay)
-		return fz_rethrow(-1, "out of memory");
+		return;
+	growpath(path, 1);
 	path->els[path->len++].k = FZ_CLOSEPATH;
-	return fz_okay;
 }
 
-fz_error
-fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
+void
+fz_setpathstate(fz_path *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
 {
 	path->paint = paint;
 	path->dash = dash;
@@ -166,8 +110,6 @@ fz_endpath(fz_pathnode *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *das
 		path->linewidth = stroke->linewidth;
 		path->miterlimit = stroke->miterlimit;
 	}
-
-	return fz_okay;
 }
 
 static inline fz_rect boundexpand(fz_rect r, fz_point p)
@@ -180,7 +122,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
+fz_boundpath(fz_path *path, fz_matrix ctm)
 {
 	fz_point p;
 	fz_rect r = fz_emptyrect;
@@ -232,7 +174,7 @@ fz_boundpathnode(fz_pathnode *path, fz_matrix ctm)
 }
 
 void
-fz_printpathnode(fz_pathnode *path, int indent)
+fz_printpath(fz_path *path, int indent)
 {
 	float x, y;
 	int i = 0;
@@ -287,7 +229,7 @@ fz_printpathnode(fz_pathnode *path, int indent)
 }
 
 void
-fz_debugpathnode(fz_pathnode *path, int indent)
+fz_debugpath(fz_path *path, int indent)
 {
 	float x, y;
 	int i = 0;
@@ -325,22 +267,19 @@ fz_debugpathnode(fz_pathnode *path, int indent)
 	}
 }
 
-fz_error
-fz_newdash(fz_dash **dashp, float phase, int len, float *array)
+fz_dash *
+fz_newdash(float phase, int len, float *array)
 {
 	fz_dash *dash;
 	int i;
 
-	dash = *dashp = fz_malloc(sizeof(fz_dash) + sizeof(float) * len);
-	if (!dash)
-		return fz_rethrow(-1, "out of memory");
-
+	dash = fz_malloc(sizeof(fz_dash) + sizeof(float) * len);
 	dash->len = len;
 	dash->phase = phase;
 	for (i = 0; i < len; i++)
 		dash->array[i] = array[i];
 
-	return fz_okay;
+	return dash;
 }
 
 void

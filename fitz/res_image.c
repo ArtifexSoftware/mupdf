@@ -1,5 +1,5 @@
 #include "fitz_base.h"
-#include "fitz_tree.h"
+#include "fitz_res.h"
 
 fz_image *
 fz_keepimage(fz_image *image)

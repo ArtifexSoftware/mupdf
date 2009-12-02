@@ -153,125 +153,82 @@ addtextchar(pdf_textline *line, int x, int y, int c)
 		line->cap = line->cap ? (line->cap * 3) / 2 : 80;
 		line->text = fz_realloc(line->text, sizeof(pdf_textchar) * line->cap);
 	}
-
 	line->text[line->len].x = x;
 	line->text[line->len].y = y;
 	line->text[line->len].c = c;
 	line->len ++;
 }
 
-static fz_error
-extracttext(pdf_textline **line, fz_node *node, fz_matrix ctm, fz_point *oldpt)
+void
+pdf_extracttextline(pdf_textline **line, fz_text *text, fz_matrix ctm, fz_point *oldpt)
 {
-	fz_error error;
+	fz_font *font = text->font;
+	fz_matrix tm = text->trm;
+	fz_matrix inv = fz_invertmatrix(text->trm);
+	fz_matrix trm;
+	float dx, dy;
+	fz_point p;
+	float adv;
+	int i, x, y, fterr;
 
-	if (fz_istextnode(node))
+	if (font->ftface)
 	{
-		fz_textnode *text = (fz_textnode*)node;
-		fz_font *font = text->font;
-		fz_matrix tm = text->trm;
-		fz_matrix inv = fz_invertmatrix(text->trm);
-		fz_matrix trm;
-		float dx, dy;
-		fz_point p;
-		float adv;
-		int i, x, y, fterr;
+		FT_Set_Transform(font->ftface, NULL, NULL);
+		fterr = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+		if (fterr)
+			fz_warn("freetype set character size: %s", ft_errorstring(fterr));
+	}
+
+	for (i = 0; i < text->len; i++)
+	{
+		tm.e = text->els[i].x;
+		tm.f = text->els[i].y;
+		trm = fz_concat(tm, ctm);
+		x = trm.e;
+		y = trm.f;
+		trm.e = 0;
+		trm.f = 0;
+
+		p.x = text->els[i].x;
+		p.y = text->els[i].y;
+		p = fz_transformpoint(inv, p);
+		dx = oldpt->x - p.x;
+		dy = oldpt->y - p.y;
+		*oldpt = p;
+
+		/* TODO: flip advance and test for vertical writing */
 
 		if (font->ftface)
 		{
-			FT_Set_Transform(font->ftface, NULL, NULL);
-			fterr = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+			FT_Fixed ftadv;
+			fterr = FT_Get_Advance(font->ftface, text->els[i].gid,
+				FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING,
+				&ftadv);
 			if (fterr)
-				return fz_throw("freetype set character size: %s", ft_errorstring(fterr));
+				fz_warn("freetype get advance (gid %d): %s", text->els[i].gid, ft_errorstring(fterr));
+			adv = ftadv / 65536.0;
+			oldpt->x += adv;
 		}
-
-		for (i = 0; i < text->len; i++)
+		else
 		{
-			tm.e = text->els[i].x;
-			tm.f = text->els[i].y;
-			trm = fz_concat(tm, ctm);
-			x = trm.e;
-			y = trm.f;
-			trm.e = 0;
-			trm.f = 0;
-
-			p.x = text->els[i].x;
-			p.y = text->els[i].y;
-			p = fz_transformpoint(inv, p);
-			dx = oldpt->x - p.x;
-			dy = oldpt->y - p.y;
-			*oldpt = p;
-
-			/* TODO: flip advance and test for vertical writing */
-
-			if (font->ftface)
-			{
-				FT_Fixed ftadv;
-				fterr = FT_Get_Advance(font->ftface, text->els[i].gid,
-					FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING,
-					&ftadv);
-				if (fterr)
-					return fz_throw("freetype get advance (gid %d): %s", text->els[i].gid, ft_errorstring(fterr));
-				adv = ftadv / 65536.0;
-				oldpt->x += adv;
-			}
-			else
-			{
-				adv = font->t3widths[text->els[i].gid];
-				oldpt->x += adv;
-			}
-
-			if (fabs(dy) > 0.2)
-			{
-				pdf_textline *newline = pdf_newtextline();
-				(*line)->next = newline;
-				*line = newline;
-			}
-			else if (fabs(dx) > 0.2)
-			{
-				addtextchar(*line, x, y, ' ');
-			}
-
-			addtextchar(*line, x, y, text->els[i].ucs);
+			adv = font->t3widths[text->els[i].gid];
+			oldpt->x += adv;
 		}
+
+		if (fabs(dy) > 0.2)
+		{
+			pdf_textline *newline;
+			newline = pdf_newtextline();
+			(*line)->next = newline;
+			*line = newline;
+		}
+		else if (fabs(dx) > 0.2)
+		{
+			addtextchar(*line, x, y, ' ');
+		}
+
+		addtextchar(*line, x, y, text->els[i].ucs);
 	}
-
-	if (fz_istransformnode(node))
-		ctm = fz_concat(((fz_transformnode*)node)->m, ctm);
-
-	for (node = node->first; node; node = node->next)
-	{
-		error = extracttext(line, node, ctm, oldpt);
-		if (error)
-			return fz_rethrow(error, "cannot extract text from display node");
-	}
-
-	return fz_okay;
-}
-
-fz_error
-pdf_loadtextfromtree(pdf_textline **outp, fz_tree *tree, fz_matrix ctm)
-{
-	pdf_textline *root;
-	pdf_textline *line;
-	fz_error error;
-	fz_point oldpt;
-
-	oldpt.x = -1;
-	oldpt.y = -1;
-
-	root = pdf_newtextline();
-	line = root;
-
-	error = extracttext(&line, tree->root, ctm, &oldpt);
-	if (error)
-	{
-		pdf_droptextline(root);
-		return fz_rethrow(error, "cannot extract text from display tree");
-	}
-
-	*outp = root;
-	return fz_okay;
 }
 
 void

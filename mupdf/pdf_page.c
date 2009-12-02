@@ -1,6 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+#if 0 // XXX
 static fz_error
 runone(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
@@ -119,6 +120,7 @@ loadpagecontents(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *obj)
 
 	return fz_okay;
 }
+#endif
 
 fz_error
 pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
@@ -129,7 +131,6 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	fz_obj *rdb;
 	pdf_comment *comments = nil;
 	pdf_link *links = nil;
-	fz_tree *tree = nil;
 	fz_rect bbox;
 	int rotate;
 
@@ -197,13 +198,14 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	 */
 
 	obj = fz_dictgets(dict, "Contents");
-
+#if 0 // XXX
 	error = loadpagecontents(&tree, xref, rdb, obj);
 	if (error)
 	{
 		fz_dropobj(rdb);
 		return fz_rethrow(error, "cannot load page contents");
 	}
+#endif
 
 	/*
 	 * Create page object
@@ -216,7 +218,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page->mediabox.y1 = MAX(bbox.y0, bbox.y1);
 	page->rotate = rotate;
 	page->resources = rdb; /* we have already kept or created it */
-	page->tree = tree;
+//	page->tree = tree;
 
 	page->comments = comments;
 	page->links = links;
@@ -236,8 +238,6 @@ pdf_droppage(pdf_page *page)
 		fz_dropobj(page->resources);
 	if (page->links)
 		pdf_droplink(page->links);
-	if (page->tree)
-		fz_droptree(page->tree);
 	fz_free(page);
 }
 

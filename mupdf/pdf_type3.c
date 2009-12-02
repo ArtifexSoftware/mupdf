@@ -1,6 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+#if 0 // XXX
 static fz_error
 loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 {
@@ -34,6 +35,7 @@ loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
 	pdf_dropcsi(csi);
 	return fz_okay;
 }
+#endif
 
 fz_error
 pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
@@ -194,9 +196,9 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 			if (obj)
 			{
 				pdf_logfont("load charproc %s {\n", estrings[i]);
-				error = loadcharproc(&fontdesc->font->t3procs[i], xref, resources, obj);
-				if (error)
-					goto cleanup;
+// XXX				error = loadcharproc(&fontdesc->font->t3procs[i], xref, resources, obj);
+// XXX				if (error)
+// XXX					goto cleanup;
 
 				pdf_logfont("}\n");
 			}

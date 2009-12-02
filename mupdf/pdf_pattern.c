@@ -13,8 +13,8 @@ pdf_droppattern(pdf_pattern *pat)
 {
 	if (pat && --pat->refs == 0)
 	{
-		if (pat->tree)
-			fz_droptree(pat->tree);
+//XXX		if (pat->tree)
+//XXX			fz_droptree(pat->tree);
 		fz_free(pat);
 	}
 }
@@ -39,7 +39,6 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict)
 
 	pat = fz_malloc(sizeof(pdf_pattern));
 	pat->refs = 1;
-	pat->tree = nil;
 	pat->ismask = fz_toint(fz_dictgets(dict, "PaintType")) == 2;
 	pat->xstep = fz_toreal(fz_dictgets(dict, "XStep"));
 	pat->ystep = fz_toreal(fz_dictgets(dict, "YStep"));
@@ -85,6 +84,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict)
 	 */
 
 	pdf_logrsrc("content stream\n");
+#if 0 // XXX
 
 	error = pdf_newcsi(&csi, pat->ismask);
 	if (error)
@@ -119,6 +119,7 @@ pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict)
 
 	fz_dropstream(stm);
 	pdf_dropcsi(csi);
+#endif
 
 	pdf_logrsrc("}\n");
 

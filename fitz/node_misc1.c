@@ -32,44 +32,39 @@ fz_initnode(fz_node *node, fz_nodekind kind)
 void
 fz_dropnode(fz_node *node)
 {
-	fz_node *next;
+	if (node->first)
+		fz_dropnode(node->first);
+	if (node->next)
+		fz_dropnode(node->next);
 
-	while (node)
+	switch (node->kind)
 	{
-		if (node->first)
-			fz_dropnode(node->first);
-
-		switch (node->kind)
-		{
-		case FZ_NTRANSFORM:
-		case FZ_NOVER:
-		case FZ_NMASK:
-		case FZ_NBLEND:
-			break;
-		case FZ_NCOLOR:
-			fz_dropsolidnode((fz_solidnode *) node);
-			break;
-		case FZ_NPATH:
-			fz_droppathnode((fz_pathnode *) node);
-			break;
-		case FZ_NTEXT:
-			fz_droptextnode((fz_textnode *) node);
-			break;
-		case FZ_NIMAGE:
-			fz_dropimagenode((fz_imagenode *) node);
-			break;
-		case FZ_NSHADE:
-			fz_dropshadenode((fz_shadenode *) node);
-			break;
-		case FZ_NLINK:
-			fz_droplinknode((fz_linknode *) node);
-			break;
-		}
-
-		next = node->next;
-		fz_free(node);
-		node = next;
+	case FZ_NTRANSFORM:
+	case FZ_NOVER:
+	case FZ_NMASK:
+	case FZ_NBLEND:
+		break;
+	case FZ_NCOLOR:
+		fz_dropsolidnode((fz_solidnode *) node);
+		break;
+	case FZ_NPATH:
+		fz_droppathnode((fz_pathnode *) node);
+		break;
+	case FZ_NTEXT:
+		fz_droptextnode((fz_textnode *) node);
+		break;
+	case FZ_NIMAGE:
+		fz_dropimagenode((fz_imagenode *) node);
+		break;
+	case FZ_NSHADE:
+		fz_dropshadenode((fz_shadenode *) node);
+		break;
+	case FZ_NLINK:
+		fz_droplinknode((fz_linknode *) node);
+		break;
 	}
+
+	fz_free(node);
 }
 
 fz_rect

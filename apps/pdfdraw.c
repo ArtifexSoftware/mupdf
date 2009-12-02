@@ -47,7 +47,7 @@ static void local_cleanup(void)
 
 	if (drawgc)
 	{
-		fz_droprenderer(drawgc);
+//		fz_droprenderer(drawgc);
 		drawgc = nil;
 	}
 }
@@ -60,8 +60,6 @@ static void drawusage(void)
 		"  -d -\tpassword for decryption\n"
 		"  -o -\tpattern (%%d for page number) for output file\n"
 		"  -r -\tresolution in dpi\n"
-		"  -t  \tutf-8 text output instead of graphics\n"
-		"  -x  \txml dump of display tree\n"
 		"  -m  \tprint benchmark results\n"
 		"  example:\n"
 		"    pdfdraw -o output%%03d.pnm input.pdf 1-3,5,9-\n");
@@ -195,9 +193,9 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		if (drawbands > 1)
 			fprintf(stderr, "drawing band %d / %d\n", b + 1, drawbands);
 
-		error = fz_rendertreeover(drawgc, pix, drawpage->tree, ctm);
-		if (error)
-			die(error);
+//XXX		error = fz_rendertreeover(drawgc, pix, drawpage->tree, ctm);
+//		if (error)
+//			die(error);
 
 		if (drawpattern)
 		{
@@ -266,35 +264,6 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	fprintf(stderr, "\n");
 }
 
-static void drawtxt(int pagenum)
-{
-	fz_error error;
-	pdf_textline *line;
-	fz_matrix ctm;
-
-	drawloadpage(pagenum, NULL);
-
-	ctm = fz_concat(
-		fz_translate(0, -drawpage->mediabox.y1),
-		fz_scale(drawzoom, -drawzoom));
-
-	error = pdf_loadtextfromtree(&line, drawpage->tree, ctm);
-	if (error)
-		die(error);
-
-	pdf_debugtextline(line);
-	pdf_droptextline(line);
-
-	drawfreepage();
-}
-
-static void drawxml(int pagenum)
-{
-	drawloadpage(pagenum, NULL);
-	fz_debugtree(drawpage->tree);
-	drawfreepage();
-}
-
 static void drawpages(char *pagelist)
 {
 	int page, spage, epage;
@@ -344,8 +313,8 @@ static void drawpages(char *pagelist)
 			switch (drawmode)
 			{
 			case DRAWPNM: drawpnm(page, &loadtimes, &drawtimes); break;
-			case DRAWTXT: drawtxt(page); break;
-			case DRAWXML: drawxml(page); break;
+//			case DRAWTXT: drawtxt(page); break;
+//			case DRAWXML: drawxml(page); break;
 			}
 		}
 
@@ -410,9 +379,9 @@ int main(int argc, char **argv)
 
 			closexref();
 
-			error = fz_newrenderer(&drawgc, pdf_devicergb, 0, 1024 * 512);
-			if (error)
-				die(error);
+//XXX			error = fz_newrenderer(&drawgc, pdf_devicergb, 0, 1024 * 512);
+//			if (error)
+//				die(error);
 
 			openxref(argv[fz_optind], password, 0);
 			state = NO_PAGES_DRAWN;
