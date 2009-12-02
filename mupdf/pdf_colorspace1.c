@@ -222,6 +222,7 @@ fz_colorspace *pdf_devicepattern = &kdevicepattern;
  * Colorspace parsing
  */
 
+#ifdef USECAL
 static fz_colorspace *
 loadcalgray(pdf_xref *xref, fz_obj *dict)
 {
@@ -384,6 +385,7 @@ loadlab(pdf_xref *xref, fz_obj *dict)
 
 	return (fz_colorspace*) cs;
 }
+#endif
 
 /*
  * ICCBased
@@ -636,12 +638,21 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			if (!strcmp(fz_toname(name), "CalCMYK"))
 				*csp = pdf_devicecmyk;
 
+#ifdef USECAL
 			else if (!strcmp(fz_toname(name), "CalGray"))
 				*csp = loadcalgray(xref, fz_arrayget(obj, 1));
 			else if (!strcmp(fz_toname(name), "CalRGB"))
 				*csp = loadcalrgb(xref, fz_arrayget(obj, 1));
 			else if (!strcmp(fz_toname(name), "Lab"))
 				*csp = loadlab(xref, fz_arrayget(obj, 1));
+#else
+			else if (!strcmp(fz_toname(name), "CalGray"))
+				*csp = pdf_devicegray;
+			else if (!strcmp(fz_toname(name), "CalRGB"))
+				*csp = pdf_devicergb;
+			else if (!strcmp(fz_toname(name), "Lab"))
+				*csp = pdf_devicelab;
+#endif
 
 			else if (!strcmp(fz_toname(name), "ICCBased"))
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));
