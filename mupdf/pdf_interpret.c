@@ -92,13 +92,16 @@ pdf_dropmaterial(pdf_material *mat)
 	return mat;
 }
 
-static fz_error
+static void
 gsave(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 
 	if (csi->gtop == 31)
-		return fz_throw("gstate overflow in content stream");
+	{
+		fz_warn("gstate overflow in content stream");
+		return;
+	}
 
 	memcpy(&csi->gstate[csi->gtop + 1], &csi->gstate[csi->gtop], sizeof(pdf_gstate));
 
@@ -108,17 +111,18 @@ gsave(pdf_csi *csi)
 	pdf_keepmaterial(&gs->fill);
 	if (gs->font)
 		pdf_keepfont(gs->font);
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 grestore(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 
 	if (csi->gtop == 0)
-		return fz_throw("gstate underflow in content stream");
+	{
+		fz_warn("gstate underflow in content stream");
+		return;
+	}
 
 	pdf_dropmaterial(&gs->stroke);
 	pdf_dropmaterial(&gs->fill);
@@ -126,15 +130,13 @@ grestore(pdf_csi *csi)
 		pdf_dropfont(gs->font);
 
 	csi->gtop --;
-
-	return fz_okay;
 }
 
 void
 pdf_dropcsi(pdf_csi *csi)
 {
 	while (csi->gtop)
-		grestore(csi); /* no need to check for impossible errors */
+		grestore(csi);
 
 		if (csi->gstate[csi->gtop].fill.cs)
 			fz_dropcolorspace(csi->gstate[csi->gtop].fill.cs);
@@ -169,10 +171,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 	fz_stream *file;
 	pdf_gstate *gstate;
 
-	/* gsave */
-	error = gsave(csi);
-	if (error)
-		return fz_rethrow(error, "cannot push graphics state");
+	gsave(csi);
 
 	gstate = csi->gstate + csi->gtop;
 
@@ -239,10 +238,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
 
-	/* grestore */
-	error = grestore(csi);
-	if (error)
-		return fz_rethrow(error, "cannot pop graphics state");
+	grestore(csi);
 
 	return fz_okay;
 }
@@ -1092,17 +1088,13 @@ Lsetcolor:
 	case 'q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = gsave(csi);
-		if (error)
-			return fz_rethrow(error, "cannot gsave");
+		gsave(csi);
 		break;
 
 	case 'Q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = grestore(csi);
-		if (error)
-			return fz_rethrow(error, "cannot grestore");
+		grestore(csi);
 		break;
 
 	case 'w':
