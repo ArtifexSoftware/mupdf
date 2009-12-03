@@ -165,7 +165,6 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 {
 	fz_error error;
 	fz_node *transform;
-	fz_node *blend;
 	fz_stream *file;
 	pdf_gstate *gstate;
 
@@ -360,8 +359,6 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 
 		else if (!strcmp(s, "BM"))
 		{
-			fz_error error;
-			fz_node *blend;
 			static const struct { const char *name; fz_blendkind mode; } bm[] = {
 				{ "Normal", FZ_BNORMAL },
 				{ "Multiply", FZ_BMULTIPLY },
