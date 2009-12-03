@@ -6,24 +6,40 @@ fz_newpath(void)
 	fz_path *path;
 
 	path = fz_malloc(sizeof(fz_path));
-	path->paint = FZ_FILL;
-	path->linecap = 0;
-	path->linejoin = 0;
-	path->linewidth = 1.0;
-	path->miterlimit = 10.0;
 	path->dash = nil;
 	path->len = 0;
 	path->cap = 0;
 	path->els = nil;
 
+	path->paint = FZ_FILL;
+	path->linecap = 0;
+	path->linejoin = 0;
+	path->linewidth = 1.0;
+	path->miterlimit = 10.0;
+
 	return path;
 }
 
 void
-fz_droppath(fz_path *node)
+fz_freepath(fz_path *path)
 {
-	fz_free(node->dash);
-	fz_free(node->els);
+	fz_free(path->dash);
+	fz_free(path->els);
+}
+
+void
+fz_resetpath(fz_path *path)
+{
+	if (path->dash)
+		fz_free(path->dash);
+	path->dash = nil;
+	path->len = 0;
+
+	path->paint = FZ_FILL;
+	path->linecap = 0;
+	path->linejoin = 0;
+	path->linewidth = 1.0;
+	path->miterlimit = 10.0;
 }
 
 static void
@@ -282,7 +298,7 @@ fz_newdash(float phase, int len, float *array)
 }
 
 void
-fz_dropdash(fz_dash *dash)
+fz_freedash(fz_dash *dash)
 {
 	fz_free(dash);
 }

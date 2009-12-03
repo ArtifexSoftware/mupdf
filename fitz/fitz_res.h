@@ -104,13 +104,15 @@ void fz_curvetov(fz_path*, float, float, float, float);
 void fz_curvetoy(fz_path*, float, float, float, float);
 void fz_closepath(fz_path*);
 void fz_setpathstate(fz_path*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
+void fz_resetpath(fz_path *path);
+void fz_freepath(fz_path *path);
 
 fz_rect fz_boundpath(fz_path *, fz_matrix ctm);
 void fz_debugpath(fz_path *, int indent);
 void fz_printpath(fz_path *, int indent);
 
 fz_dash *fz_newdash(float phase, int len, float *array);
-void fz_dropdash(fz_dash *dash);
+void fz_freedash(fz_dash *dash);
 
 /*
  * Text buffer.
@@ -144,6 +146,8 @@ struct fz_text_s
 fz_text * fz_newtextnode(fz_font *face);
 void fz_addtext(fz_text *text, int gid, int ucs, float x, float y);
 void fz_endtext(fz_text *text);
+void fz_resettext(fz_text *text);
+void fz_freetext(fz_text *text);
 
 /*
  * Colorspace resources.

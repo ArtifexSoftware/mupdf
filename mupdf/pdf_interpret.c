@@ -1,38 +1,21 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error
-pdf_newcsi(pdf_csi **csip, int maskonly)
+pdf_csi *
+pdf_newcsi(int maskonly)
 {
-	fz_error error;
 	pdf_csi *csi;
-	fz_node *node;
 
 	csi = fz_malloc(sizeof(pdf_csi));
 
 	pdf_initgstate(&csi->gstate[0]);
-
 	csi->gtop = 0;
 	csi->top = 0;
-	csi->array = nil;
 	csi->xbalance = 0;
+	csi->array = nil;
 
-	error = fz_newpathnode(&csi->path);
-	if (error) {
-		fz_free(csi);
-		return fz_rethrow(error, "cannot create path node");
-	}
-
-	error = fz_newtree(&csi->tree);
-	if (error) {
-		fz_dropnode((fz_node*)csi->path);
-		fz_free(csi);
-		return fz_rethrow(error, "cannot create tree");
-	}
-
-	error = fz_newovernode(&node);
-	csi->tree->root = node;
-	csi->gstate[0].head = node;
+	csi->path = fz_newpath();
+	csi->text = nil;
 
 	if (maskonly)
 	{
@@ -43,14 +26,12 @@ pdf_newcsi(pdf_csi **csip, int maskonly)
 	csi->clip = 0;
 	csi->clipevenodd = 0;
 
-	csi->textclip = nil;
 	csi->textmode = 0;
 	csi->text = nil;
 	csi->tm = fz_identity();
 	csi->tlm = fz_identity();
 
-	*csip = csi;
-	return fz_okay;
+	return csi;
 }
 
 static void
@@ -73,7 +54,6 @@ pdf_keepmaterial(pdf_material *mat)
 		pdf_keeppattern(mat->pattern);
 	if (mat->shade)
 		fz_keepshade(mat->shade);
-
 	return mat;
 }
 
@@ -88,7 +68,6 @@ pdf_dropmaterial(pdf_material *mat)
 		pdf_droppattern(mat->pattern);
 	if (mat->shade)
 		fz_dropshade(mat->shade);
-
 	return mat;
 }
 
@@ -143,11 +122,8 @@ pdf_dropcsi(pdf_csi *csi)
 	if (csi->gstate[csi->gtop].font)
 		pdf_dropfont(csi->gstate[csi->gtop].font);
 
-	if (csi->tree) fz_droptree(csi->tree);
-
-	if (csi->path) fz_dropnode((fz_node*)csi->path);
-	if (csi->textclip) fz_dropnode((fz_node*)csi->textclip);
-	if (csi->text) fz_dropnode((fz_node*)csi->text);
+	if (csi->path) fz_freepath(csi->path);
+	if (csi->text) fz_freetext(csi->text);
 	if (csi->array) fz_dropobj(csi->array);
 
 	clearstack(csi);
@@ -161,12 +137,14 @@ pdf_dropcsi(pdf_csi *csi)
  */
 
 static fz_error
-runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
+pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xobj)
 {
 	fz_error error;
 	fz_node *transform;
+	fz_node *blend;
 	fz_stream *file;
 	pdf_gstate *gstate;
+	fz_stream *file;
 
 	gsave(csi);
 
@@ -184,20 +162,16 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 	}
 
 	/* push transform */
-
-	error = fz_newtransformnode(&transform, xobj->matrix);
-	if (error)
-		return fz_rethrow(error, "cannot create transform node");
-
-	error = pdf_addtransform(gstate, transform);
-	if (error)
-	{
-		fz_dropnode(transform);
-		return fz_rethrow(error, "cannot add transform node");
-	}
+	// xobj->matrix
 
 	if (xobj->isolated || xobj->knockout)
 	{
+		/* The xobject's contents ought to be blended properly,
+		but for now, just do over and hope for something
+
+		error = fz_newblendnode(&blend, gstate->blendmode,
+		xobj->isolated, xobj->knockout);
+		*/
 		if (gstate->blendmode != FZ_BNORMAL)
 			fz_warn("ignoring non-normal blendmode (%d)", gstate->blendmode);
 		if (xobj->isolated && xobj->knockout)
@@ -206,15 +180,11 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 			fz_warn("ignoring that the group is isolated");
 		else if (xobj->knockout)
 			fz_warn("ignoring that the group is knockout");
-		/* The xobject's contents ought to be blended properly, but for now do nothing
-		error = fz_newblendnode(&blend, gstate->blendmode,
-		xobj->isolated, xobj->knockout);
 		error = fz_newovernode(&blend);
 		if (error)
 			return fz_rethrow(error, "cannot create blend node");
 		fz_insertnodelast(gstate->head, blend);
 		gstate->head = blend;
-		*/
 	}
 
 	/* clip to the bounds */
@@ -229,19 +199,19 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 
 	/* run contents */
 
-	xobj->contents->rp = xobj->contents->bp;
+	if (xobj->resources)
+		resources = xobj->resources;
 
+	xobj->contents->rp = xobj->contents->bp;
 	file = fz_openrbuffer(xobj->contents);
 
-	if (xobj->resources)
-		rdb = xobj->resources;
-
-	error = pdf_runcsi(csi, xref, xobj->resources, file);
-
-	fz_dropstream(file);
-
+	error = pdf_runcsi(csi, xref, resources, file);
 	if (error)
+	{
+		fz_dropstream(file);
 		return fz_rethrow(error, "cannot interpret XObject stream");
+	}
+	fz_dropstream(file);
 
 	grestore(csi);
 
@@ -253,7 +223,7 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
  */
 
 static fz_error
-runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
+pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
 	fz_error error;
 	pdf_image *img;
@@ -278,12 +248,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
 		return fz_throw("syntax error after inline image");
 	}
 
-	error = pdf_showimage(csi, img);
-	if (error)
-	{
-		fz_dropimage((fz_image*)img);
-		return fz_rethrow(error, "cannot draw image");
-	}
+	pdf_showimage(csi, img);
 
 	fz_dropimage((fz_image*)img);
 	return fz_okay;
@@ -294,7 +259,7 @@ runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_ob
  */
 
 static fz_error
-runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
+pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 {
 	int i, k;
 
@@ -391,14 +356,16 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
 				}
 			}
 
-			/* The content stream ought to be blended properly, but for now do nothing.
+			/* The content stream ought to be blended properly,
+			but for now, just do over and hope for something
+
 			error = fz_newblendnode(&blend, gstate->blendmode, 0, 0);
+			*/
 			error = fz_newovernode(&blend);
 			if (error)
 				return fz_rethrow(error, "cannot create blend node");
 			fz_insertnodelast(gstate->head, blend);
 			gstate->head = blend;
-			*/
 		}
 
 		else if (!strcmp(s, "SMask"))
@@ -450,7 +417,7 @@ runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
  */
 
 static fz_error
-runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
+pdf_runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error error;
@@ -510,7 +477,6 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		else if (!strcmp(buf, "cm"))
 		{
 			fz_matrix m;
-			fz_node *transform;
 
 			if (csi->top != 6)
 				goto syntaxerror;
@@ -522,13 +488,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			m.e = fz_toreal(csi->stack[4]);
 			m.f = fz_toreal(csi->stack[5]);
 
-			error = fz_newtransformnode(&transform, m);
-			if (error)
-				return fz_rethrow(error, "cannot concatenate matrix");
-
-			error = pdf_addtransform(gstate, transform);
-			if (error)
-				return fz_rethrow(error, "cannot concatenate matrix");
+			gstate->ctm = fz_concat(m, gstate->ctm);
 		}
 
 		else if (!strcmp(buf, "ri"))
@@ -553,7 +513,7 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (!obj)
 				return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->stack[0]));
 
-			error = runextgstate(gstate, xref, rdb, obj);
+			error = pdf_runextgstate(gstate, xref, rdb, obj);
 			if (error)
 				return fz_rethrow(error, "cannot set ExtGState");
 		}
@@ -568,40 +528,32 @@ runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			w = fz_toreal(csi->stack[2]);
 			h = fz_toreal(csi->stack[3]);
 
-			error = fz_moveto(csi->path, x, y);
-			if (error) return fz_rethrow(error, "cannot draw rectangle");
-			error = fz_lineto(csi->path, x + w, y);
-			if (error) return fz_rethrow(error, "cannot draw rectangle");
-			error = fz_lineto(csi->path, x + w, y + h);
-			if (error) return fz_rethrow(error, "cannot draw rectangle");
-			error = fz_lineto(csi->path, x, y + h);
-			if (error) return fz_rethrow(error, "cannot draw rectangle");
-			error = fz_closepath(csi->path);
-			if (error) return fz_rethrow(error, "cannot draw rectangle");
+			fz_moveto(csi->path, x, y);
+			fz_lineto(csi->path, x + w, y);
+			fz_lineto(csi->path, x + w, y + h);
+			fz_lineto(csi->path, x, y + h);
+			fz_closepath(csi->path);
 		}
 
 		else if (!strcmp(buf, "f*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			error = pdf_showpath(csi, 0, 1, 0, 1);
-			if (error) return fz_rethrow(error, "cannot draw path");
+			pdf_showpath(csi, 0, 1, 0, 1);
 		}
 
 		else if (!strcmp(buf, "B*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			error = pdf_showpath(csi, 0, 1, 1, 1);
-			if (error) return fz_rethrow(error, "cannot draw path");
+			pdf_showpath(csi, 0, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "b*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			error = pdf_showpath(csi, 1, 1, 1, 1);
-			if (error) return fz_rethrow(error, "cannot draw path");
+			pdf_showpath(csi, 1, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "W*"))
@@ -636,8 +588,7 @@ Lsetcolorspace:
 
 			if (!strcmp(fz_toname(obj), "Pattern"))
 			{
-				error = pdf_setpattern(csi, what, nil, nil);
-				if (error) return fz_rethrow(error, "cannot set pattern");
+				pdf_setpattern(csi, what, nil, nil);
 			}
 
 			else
@@ -662,8 +613,7 @@ Lsetcolorspace:
 						return fz_rethrow(error, "cannot load colorspace");
 				}
 
-				error = pdf_setcolorspace(csi, what, cs);
-				if (error) return fz_rethrow(error, "cannot set colorspace");
+				pdf_setcolorspace(csi, what, cs);
 
 				fz_dropcolorspace(cs);
 			}
@@ -701,8 +651,7 @@ Lsetcolor:
 				if (csi->top != 1)
 					goto syntaxerror;
 				v[0] = fz_toreal(csi->stack[0]);
-				error = pdf_setcolor(csi, what, v);
-				if (error) return fz_rethrow(error, "cannot set indexed color");
+				pdf_setcolor(csi, what, v);
 				break;
 
 			case PDF_MCOLOR:
@@ -711,8 +660,7 @@ Lsetcolor:
 					goto syntaxerror;
 				for (i = 0; i < csi->top; i++)
 					v[i] = fz_toreal(csi->stack[i]);
-				error = pdf_setcolor(csi, what, v);
-				if (error) return fz_rethrow(error, "cannot set color");
+				pdf_setcolor(csi, what, v);
 				break;
 
 			case PDF_MPATTERN:
@@ -736,12 +684,7 @@ Lsetcolor:
 					error = pdf_loadpattern(&pat, xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load pattern");
-					if (pat)
-					{
-						error = pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
-						if (error)
-							return fz_rethrow(error, "cannot set pattern");
-					}
+					pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
 					pdf_droppattern(pat);
 				}
 
@@ -751,12 +694,7 @@ Lsetcolor:
 					error = pdf_loadshade(&shd, xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load shade");
-					if (shd)
-					{
-						error = pdf_setshade(csi, what, shd);
-						if (error)
-							return fz_rethrow(error, "cannot set shade");
-					}
+					pdf_setshade(csi, what, shd);
 					fz_dropshade(shd);
 				}
 
@@ -781,10 +719,8 @@ Lsetcolor:
 			v[1] = fz_toreal(csi->stack[1]);
 			v[2] = fz_toreal(csi->stack[2]);
 
-			error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicergb);
-			if (error) return fz_rethrow(error, "cannot set rgb colorspace");
-			error = pdf_setcolor(csi, PDF_MFILL, v);
-			if (error) return fz_rethrow(error, "cannot set rgb color");
+			pdf_setcolorspace(csi, PDF_MFILL, pdf_devicergb);
+			pdf_setcolor(csi, PDF_MFILL, v);
 		}
 
 		else if (!strcmp(buf, "RG"))
@@ -796,10 +732,8 @@ Lsetcolor:
 			v[1] = fz_toreal(csi->stack[1]);
 			v[2] = fz_toreal(csi->stack[2]);
 
-			error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicergb);
-			if (error) return fz_rethrow(error, "cannot set rgb colorspace");
-			error = pdf_setcolor(csi, PDF_MSTROKE, v);
-			if (error) return fz_rethrow(error, "cannot set rgb color");
+			pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicergb);
+			pdf_setcolor(csi, PDF_MSTROKE, v);
 		}
 
 		else if (!strcmp(buf, "BT"))
@@ -814,17 +748,7 @@ Lsetcolor:
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-
-			error = pdf_flushtext(csi);
-			if (error)
-				return fz_rethrow(error, "cannot finish text object (ET)");
-
-			if (csi->textclip)
-			{
-				error = pdf_addclipmask(gstate, csi->textclip);
-				if (error) return fz_rethrow(error, "cannot add text clip mask");
-				csi->textclip = nil;
-			}
+			pdf_flushtext(csi);
 		}
 
 		else if (!strcmp(buf, "Tc"))
@@ -845,11 +769,7 @@ Lsetcolor:
 		{
 			if (csi->top != 1)
 				goto syntaxerror;
-
-			error = pdf_flushtext(csi);
-			if (error)
-				return fz_rethrow(error, "cannot finish text object (state change)");
-
+			pdf_flushtext(csi);
 			gstate->scale = fz_toreal(csi->stack[0]) / 100.0;
 		}
 
@@ -937,9 +857,7 @@ Lsetcolor:
 			if (csi->top != 6)
 				goto syntaxerror;
 
-			error = pdf_flushtext(csi);
-			if (error)
-				return fz_rethrow(error, "cannot finish text object (state change)");
+			pdf_flushtext(csi);
 
 			csi->tm.a = fz_toreal(csi->stack[0]);
 			csi->tm.b = fz_toreal(csi->stack[1]);
@@ -963,16 +881,14 @@ Lsetcolor:
 		{
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = pdf_showtext(csi, csi->stack[0]);
-			if (error) return fz_rethrow(error, "cannot draw text");
+			pdf_showtext(csi, csi->stack[0]);
 		}
 
 		else if (!strcmp(buf, "TJ"))
 		{
 			if (csi->top != 1)
 				goto syntaxerror;
-			error = pdf_showtext(csi, csi->stack[0]);
-			if (error) return fz_rethrow(error, "cannot draw text");
+			pdf_showtext(csi, csi->stack[0]);
 		}
 
 		else if (!strcmp(buf, "Do"))
@@ -1004,12 +920,12 @@ Lsetcolor:
 				if (error)
 					return fz_rethrow(error, "cannot load xobject");
 
-				/* Inherit parent resources, in case this one was empty */
+				/* Inherit parent resources, in case this one was empty  XXX check where it's loaded */
 				if (!xobj->resources)
 					xobj->resources = fz_keepobj(rdb);
 
 				clearstack(csi);
-				error = runxobject(csi, xref, rdb, xobj);
+				error = pdf_runxobject(csi, xref, rdb, xobj);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");
 
@@ -1019,15 +935,10 @@ Lsetcolor:
 			else if (!strcmp(fz_toname(subtype), "Image"))
 			{
 				pdf_image *img;
-
 				error = pdf_loadimage(&img, xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load image");
-
-				error = pdf_showimage(csi, img);
-				if (error)
-					return fz_rethrow(error, "cannot draw image");
-
+				pdf_showimage(csi, img);
 				fz_dropimage((fz_image*)img);
 			}
 
@@ -1057,11 +968,7 @@ Lsetcolor:
 			error = pdf_loadshade(&shd, xref, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load shade");
-
-			error = pdf_addshade(gstate, shd);
-			if (error)
-				return fz_rethrow(error, "cannot draw shade");
-
+			pdf_showshade(csi, shd);
 			fz_dropshade(shd);
 		}
 
@@ -1148,8 +1055,7 @@ Lsetcolor:
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
-		error = fz_moveto(csi->path, a, b);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_moveto(csi->path, a, b);
 		break;
 
 	case 'l':
@@ -1157,8 +1063,7 @@ Lsetcolor:
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
-		error = fz_lineto(csi->path, a, b);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_lineto(csi->path, a, b);
 		break;
 
 	case 'c':
@@ -1170,8 +1075,7 @@ Lsetcolor:
 		d = fz_toreal(csi->stack[3]);
 		e = fz_toreal(csi->stack[4]);
 		f = fz_toreal(csi->stack[5]);
-		error = fz_curveto(csi->path, a, b, c, d, e, f);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_curveto(csi->path, a, b, c, d, e, f);
 		break;
 
 	case 'v':
@@ -1181,8 +1085,7 @@ Lsetcolor:
 		b = fz_toreal(csi->stack[1]);
 		c = fz_toreal(csi->stack[2]);
 		d = fz_toreal(csi->stack[3]);
-		error = fz_curvetov(csi->path, a, b, c, d);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_curvetov(csi->path, a, b, c, d);
 		break;
 
 	case 'y':
@@ -1192,58 +1095,50 @@ Lsetcolor:
 		b = fz_toreal(csi->stack[1]);
 		c = fz_toreal(csi->stack[2]);
 		d = fz_toreal(csi->stack[3]);
-		error = fz_curvetoy(csi->path, a, b, c, d);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_curvetoy(csi->path, a, b, c, d);
 		break;
 
 	case 'h':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = fz_closepath(csi->path);
-		if (error) return fz_rethrow(error, "cannot create path node");
+		fz_closepath(csi->path);
 		break;
 
 	case 'S':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 0, 0, 1, 0);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 0, 0, 1, 0);
 		break;
 
 	case 's':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 1, 0, 1, 0);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 1, 0, 1, 0);
 		break;
 
 	case 'F':
 	case 'f':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 0, 1, 0, 0);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 0, 1, 0, 0);
 		break;
 
 	case 'B':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 0, 1, 1, 0);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 0, 1, 1, 0);
 		break;
 
 	case 'b':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 1, 1, 1, 0);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 1, 1, 1, 0);
 		break;
 
 	case 'n':
 		if (csi->top != 0)
 			goto syntaxerror;
-		error = pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
-		if (error) return fz_rethrow(error, "cannot draw path");
+		pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
 		break;
 
 	case 'W':
@@ -1258,10 +1153,8 @@ Lsetcolor:
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
-		error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicegray);
-		if (error) return fz_rethrow(error, "cannot set gray colorspace");
-		error = pdf_setcolor(csi, PDF_MFILL, v);
-		if (error) return fz_rethrow(error, "cannot set gray color");
+		pdf_setcolorspace(csi, PDF_MFILL, pdf_devicegray);
+		pdf_setcolor(csi, PDF_MFILL, v);
 		break;
 
 	case 'G':
@@ -1269,10 +1162,8 @@ Lsetcolor:
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
-		error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicegray);
-		if (error) return fz_rethrow(error, "cannot set gray colorspace");
-		error = pdf_setcolor(csi, PDF_MSTROKE, v);
-		if (error) return fz_rethrow(error, "cannot set gray color");
+		pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicegray);
+		pdf_setcolor(csi, PDF_MSTROKE, v);
 		break;
 
 	case 'k':
@@ -1284,10 +1175,8 @@ Lsetcolor:
 		v[2] = fz_toreal(csi->stack[2]);
 		v[3] = fz_toreal(csi->stack[3]);
 
-		error = pdf_setcolorspace(csi, PDF_MFILL, pdf_devicecmyk);
-		if (error) return fz_rethrow(error, "cannot set cmyk colorspace");
-		error = pdf_setcolor(csi, PDF_MFILL, v);
-		if (error) return fz_rethrow(error, "cannot set cmyk color");
+		pdf_setcolorspace(csi, PDF_MFILL, pdf_devicecmyk);
+		pdf_setcolor(csi, PDF_MFILL, v);
 		break;
 
 	case 'K':
@@ -1299,10 +1188,8 @@ Lsetcolor:
 		v[2] = fz_toreal(csi->stack[2]);
 		v[3] = fz_toreal(csi->stack[3]);
 
-		error = pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicecmyk);
-		if (error) return fz_rethrow(error, "cannot set cmyk colorspace");
-		error = pdf_setcolor(csi, PDF_MSTROKE, v);
-		if (error) return fz_rethrow(error, "cannot set cmyk color");
+		pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicecmyk);
+		pdf_setcolor(csi, PDF_MSTROKE, v);
 		break;
 
 	case '\'':
@@ -1313,8 +1200,7 @@ Lsetcolor:
 		csi->tlm = fz_concat(m, csi->tlm);
 		csi->tm = csi->tlm;
 
-		error = pdf_showtext(csi, csi->stack[0]);
-		if (error) return fz_rethrow(error, "cannot draw text");
+		pdf_showtext(csi, csi->stack[0]);
 		break;
 
 	case '"':
@@ -1328,8 +1214,7 @@ Lsetcolor:
 		csi->tlm = fz_concat(m, csi->tlm);
 		csi->tm = csi->tlm;
 
-		error = pdf_showtext(csi, csi->stack[2]);
-		if (error) return fz_rethrow(error, "cannot draw text");
+		pdf_showtext(csi, csi->stack[2]);
 		break;
 
 	default:
@@ -1348,7 +1233,7 @@ fz_error
 pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 {
 	fz_error error;
-	char buf[65536];
+	char buf[65536]; // XXX: EEP! way to eat up the stack!
 	pdf_token_e tok;
 	int len;
 	fz_obj *obj;
@@ -1405,7 +1290,8 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 
 		case PDF_TODICT:
 			error = pdf_parsedict(&csi->stack[csi->top], xref, file, buf, sizeof buf);
-			if (error) return fz_rethrow(error, "cannot parse dictionary");
+			if (error)
+				return fz_rethrow(error, "cannot parse dictionary");
 			csi->top ++;
 			break;
 
@@ -1463,14 +1349,14 @@ pdf_runcsi(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file)
 				if (error)
 					return fz_rethrow(error, "cannot parse whitespace before inline image");
 
-				error = runinlineimage(csi, xref, rdb, file, obj);
+				error = pdf_runinlineimage(csi, xref, rdb, file, obj);
 				fz_dropobj(obj);
 				if (error)
 					return fz_rethrow(error, "cannot parse inline image");
 			}
 			else
 			{
-				error = runkeyword(csi, xref, rdb, buf);
+				error = pdf_runkeyword(csi, xref, rdb, buf);
 				if (error)
 					return fz_rethrow(error, "cannot run '%s'", buf);
 				clearstack(csi);

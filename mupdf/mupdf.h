@@ -648,6 +648,8 @@ struct pdf_material_s
 
 struct pdf_gstate_s
 {
+	fz_matrix ctm;
+
 	/* path stroking */
 	float linewidth;
 	int linecap;
@@ -696,18 +698,19 @@ struct pdf_csi_s
 
 /* build.c */
 void pdf_initgstate(pdf_gstate *gs);
-fz_error pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
-fz_error pdf_setcolor(pdf_csi *csi, int what, float *v);
-fz_error pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
-fz_error pdf_setshade(pdf_csi *csi, int what, fz_shade *shade);
-fz_error pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
-fz_error pdf_showtext(pdf_csi*, fz_obj *text);
-fz_error pdf_flushtext(pdf_csi*);
-fz_error pdf_showimage(pdf_csi*, pdf_image *img);
+void pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
+void pdf_setcolor(pdf_csi *csi, int what, float *v);
+void pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
+void pdf_setshade(pdf_csi *csi, int what, fz_shade *shade);
+void pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
+void pdf_showtext(pdf_csi*, fz_obj *text);
+void pdf_flushtext(pdf_csi*);
+void pdf_showimage(pdf_csi*, pdf_image *img);
+void pdf_showshade(pdf_csi*, fz_shade *shd);
 
 /* interpret.c */
-fz_error pdf_newcsi(pdf_csi **csip, int maskonly);
-fz_error pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *rdb, fz_stream *);
+pdf_csi *pdf_newcsi(int maskonly);
+fz_error pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *resources, fz_stream *contents);
 void pdf_dropcsi(pdf_csi *csi);
 
 #endif

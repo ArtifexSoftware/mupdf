@@ -14,6 +14,30 @@
 #include <sys/time.h>
 #endif
 
+static void showsafe(unsigned char *buf, int n)
+{
+	int showcolumn = 0;
+	int i;
+	for (i = 0; i < n; i++) {
+		if (buf[i] == '\r' || buf[i] == '\n') {
+			putchar('\n');
+			showcolumn = 0;
+		}
+		else if (buf[i] < 32 || buf[i] > 126) {
+			putchar('.');
+			showcolumn ++;
+		}
+		else {
+			putchar(buf[i]);
+			showcolumn ++;
+		}
+		if (showcolumn == 79) {
+			putchar('\n');
+			showcolumn = 0;
+		}
+	}
+}
+
 enum { DRAWPNM, DRAWTXT, DRAWXML };
 
 struct benchmark
@@ -196,6 +220,12 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 //XXX		error = fz_rendertreeover(drawgc, pix, drawpage->tree, ctm);
 //		if (error)
 //			die(error);
+		printf("\nRESOURCES:\n");
+		fz_debugobj(fz_resolveindirect(drawpage->resources));
+		printf("CONTENTS:\n");
+		showsafe(drawpage->contents->rp,
+			drawpage->contents->wp - drawpage->contents->rp);
+		printf("END.\n");
 
 		if (drawpattern)
 		{

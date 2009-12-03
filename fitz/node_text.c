@@ -16,7 +16,7 @@ fz_newtext(fz_font *font)
 }
 
 void
-fz_droptext(fz_text *text)
+fz_freetext(fz_text *text)
 {
 	fz_dropfont(text->font);
 	fz_free(text->els);

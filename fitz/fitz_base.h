@@ -237,7 +237,7 @@ extern fz_rect fz_infiniterect;
 /*
 	/ a b 0 \
 	| c d 0 |
-\ e f 1 /
+	\ e f 1 /
 */
 
 struct fz_matrix_s

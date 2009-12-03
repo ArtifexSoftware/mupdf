@@ -50,7 +50,8 @@ Library libmupdf :
 	pdf_xobject.c
 
 	# pages, resource dictionaries, ...
-#	pdf_interpret.c
+	pdf_interpret.c
+	pdf_build.c
 	pdf_page.c
 	pdf_pagetree.c
 	pdf_store.c
