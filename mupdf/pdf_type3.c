@@ -1,42 +1,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#if 0 // XXX
-static fz_error
-loadcharproc(fz_tree **treep, pdf_xref *xref, fz_obj *rdb, fz_obj *stmref)
-{
-	fz_error error;
-	pdf_csi *csi;
-	fz_stream *stm;
-
-	error = pdf_newcsi(&csi, 1);
-	if (error)
-		return fz_rethrow(error, "cannot create interpreter");
-
-	error = pdf_openstream(&stm, xref, fz_tonum(stmref), fz_togen(stmref));
-	if (error)
-	{
-		pdf_dropcsi(csi);
-		return fz_rethrow(error, "cannot open glyph content stream");
-	}
-
-	error = pdf_runcsi(csi, xref, rdb, stm);
-	if (error)
-	{
-		fz_dropstream(stm);
-		pdf_dropcsi(csi);
-		return fz_rethrow(error, "cannot interpret glyph content stream (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
-	}
-
-	*treep = csi->tree;
-	csi->tree = nil;
-
-	fz_dropstream(stm);
-	pdf_dropcsi(csi);
-	return fz_okay;
-}
-#endif
-
 fz_error
 pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 {
@@ -46,7 +10,6 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 	pdf_fontdesc *fontdesc;
 	fz_obj *encoding;
 	fz_obj *widths;
-	fz_obj *resources;
 	fz_obj *charprocs;
 	fz_obj *obj;
 	int first, last;
@@ -166,15 +129,15 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 	pdf_endhmtx(fontdesc);
 
 	/*
-	 * Resources
+	 * Resources -- inherit page resources if the font doesn't have its own
 	 */
 
-	resources = fz_dictgets(dict, "Resources");
-
-	/* Inherit page's resource dict if type3 font does not have one */
-	if (!resources && rdb)
-		resources = rdb;
-	else if (!resources && !rdb)
+	fontdesc->font->t3resources = fz_dictgets(dict, "Resources");
+	if (!fontdesc->font->t3resources)
+		fontdesc->font->t3resources = rdb;
+	if (fontdesc->font->t3resources)
+		fz_keepobj(fontdesc->font->t3resources);
+	if (!fontdesc->font->t3resources)
 		fz_warn("no resource dictionary for type 3 font!");
 
 	/*
@@ -195,17 +158,13 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 			obj = fz_dictgets(charprocs, estrings[i]);
 			if (obj)
 			{
-				pdf_logfont("load charproc %s {\n", estrings[i]);
-// XXX				error = loadcharproc(&fontdesc->font->t3procs[i], xref, resources, obj);
-// XXX				if (error)
-// XXX					goto cleanup;
-
+				error = pdf_loadstream(&fontdesc->font->t3procs[i], xref, fz_tonum(obj), fz_togen(obj));
+				if (error)
+					goto cleanup;
 				pdf_logfont("}\n");
 			}
 		}
 	}
-
-	pdf_logfont("}\n");
 
 	*fontdescp = fontdesc;
 	return fz_okay;

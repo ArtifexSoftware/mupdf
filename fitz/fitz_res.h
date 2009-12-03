@@ -195,7 +195,8 @@ struct fz_font_s
 	int fthint; /* ... force hinting for DynaLab fonts */
 
 	fz_matrix t3matrix;
-	struct fz_tree_s **t3procs; /* has 256 entries if used */
+	fz_obj *t3resources;
+	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 
 	fz_irect bbox;

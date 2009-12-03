@@ -249,7 +249,8 @@ struct pdf_pattern_s
 	float ystep;
 	fz_matrix matrix;
 	fz_rect bbox;
-// XXX	fz_tree *tree;
+	fz_obj *resources;
+	fz_buffer *contents;
 };
 
 fz_error pdf_loadpattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj);
@@ -577,7 +578,7 @@ struct pdf_page_s
 	fz_rect mediabox;
 	int rotate;
 	fz_obj *resources;
-// XXX	fz_tree *tree;
+	fz_buffer *contents;
 	pdf_comment *comments;
 	pdf_link *links;
 };
