@@ -2,9 +2,7 @@
  * x86 specific render optims live here
  */
 
-#include "fitz_base.h"
-#include "fitz_res.h"
-#include "fitz_draw.h"
+#include "fitz.h"
 
 typedef unsigned char byte;
 

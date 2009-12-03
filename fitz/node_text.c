@@ -1,5 +1,4 @@
-#include "fitz_base.h"
-#include "fitz_res.h"
+#include "fitz.h"
 
 fz_text *
 fz_newtext(fz_font *font)

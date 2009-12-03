@@ -1,4 +1,4 @@
-#include "fitz_base.h"
+#include "fitz.h"
 
 char fz_errorbuf[100*20] = {0};
 static int fz_errorlen = 0;

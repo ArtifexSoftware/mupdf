@@ -1,6 +1,4 @@
-#include "fitz_base.h"
-#include "fitz_res.h"
-#include "fitz_draw.h"
+#include "fitz.h"
 
 typedef struct fz_hash_s fz_hash;
 typedef struct fz_key_s fz_key;

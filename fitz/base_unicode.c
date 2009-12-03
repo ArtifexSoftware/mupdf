@@ -1,3 +1,5 @@
+#include "fitz.h"
+
 enum
 {
 	UTFmax        = 4,            /* maximum bytes per rune */

@@ -1,6 +1,4 @@
-#include "fitz_base.h"
-#include "fitz_res.h"
-#include "fitz_draw.h"
+#include "fitz.h"
 
 /* divide and floor towards -inf */
 static inline int fz_idiv(int a, int b)

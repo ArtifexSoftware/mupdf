@@ -167,7 +167,7 @@ extern unsigned fz_cpuflags;
 /* plan9 stuff for utf-8 */
 int chartorune(int *rune, char *str);
 int runetochar(char *str, int *rune);
-int runelen(long c);
+int runelen(int c);
 int runenlen(int *r, int nrune);
 int fullrune(char *str, int n);
 

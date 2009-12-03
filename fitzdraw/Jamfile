@@ -8,7 +8,7 @@ Library libfitzdraw :
 	imagedraw.c
 	imageunpack.c
 	imagescale.c
-#	pathscan.c
+	pathscan.c
 #	pathfill.c
 #	pathstroke.c
 #	render.c

@@ -2,8 +2,7 @@
  * Creation and destruction.
  */
 
-#include "fitz_base.h"
-#include "fitz_stream.h"
+#include "fitz.h"
 
 static fz_stream *
 newstm(int kind)

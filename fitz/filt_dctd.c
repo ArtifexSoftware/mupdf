@@ -1,8 +1,6 @@
-#include "fitz_base.h"
-#include "fitz_stream.h"
+#include "fitz.h"
 
 #include <jpeglib.h>
-
 #include <setjmp.h>
 
 typedef struct fz_dctd_s fz_dctd;

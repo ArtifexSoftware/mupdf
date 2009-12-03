@@ -2,8 +2,7 @@
  * Compute the CRC-32 of a data buffer
  */
 
-#include "fitz_base.h"
-#include "fitz_stream.h"
+#include "fitz.h"
 
 static const unsigned long crctab[256] =
 {

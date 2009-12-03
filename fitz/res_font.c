@@ -1,7 +1,4 @@
-#include "fitz_base.h"
-#include "fitz_stream.h"
-#include "fitz_res.h"
-#include "fitz_draw.h" /* FIXME -- for glyph rendering callbacks */
+#include "fitz.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

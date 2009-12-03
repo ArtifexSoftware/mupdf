@@ -1,6 +1,4 @@
-#include "fitz_base.h"
-#include "fitz_res.h"
-#include "fitz_draw.h"
+#include "fitz.h"
 
 enum { BUTT = 0, ROUND = 1, SQUARE = 2, MITER = 0, BEVEL = 2 };
 
