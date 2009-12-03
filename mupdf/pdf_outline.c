@@ -12,6 +12,7 @@ loadoutline(pdf_xref *xref, fz_obj *dict)
 	node->link = nil;
 	node->child = nil;
 	node->next = nil;
+	node->count = 0;
 
 	pdf_logpage("load outline {\n");
 
@@ -20,6 +21,12 @@ loadoutline(pdf_xref *xref, fz_obj *dict)
 	{
 		node->title = pdf_toutf8(obj);
 		pdf_logpage("title %s\n", node->title);
+	}
+
+	obj = fz_dictgets(dict, "Count");
+	if (obj)
+	{
+		node->count = fz_toint(obj);
 	}
 
 	if (fz_dictgets(dict, "Dest") || fz_dictgets(dict, "A"))

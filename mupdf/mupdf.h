@@ -545,6 +545,7 @@ struct pdf_outline_s
 {
 	char *title;
 	pdf_link *link;
+	int count;
 	pdf_outline *child;
 	pdf_outline *next;
 };
