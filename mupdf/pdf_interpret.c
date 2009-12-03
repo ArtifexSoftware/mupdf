@@ -140,9 +140,6 @@ static fz_error
 pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xobj)
 {
 	fz_error error;
-	fz_node *transform;
-	fz_node *blend;
-	fz_stream *file;
 	pdf_gstate *gstate;
 	fz_stream *file;
 
@@ -167,24 +164,8 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	if (xobj->isolated || xobj->knockout)
 	{
 		/* The xobject's contents ought to be blended properly,
-		but for now, just do over and hope for something
-
-		error = fz_newblendnode(&blend, gstate->blendmode,
-		xobj->isolated, xobj->knockout);
-		*/
-		if (gstate->blendmode != FZ_BNORMAL)
-			fz_warn("ignoring non-normal blendmode (%d)", gstate->blendmode);
-		if (xobj->isolated && xobj->knockout)
-			fz_warn("ignoring that the group is isolated and knockout");
-		else if (xobj->isolated)
-			fz_warn("ignoring that the group is isolated");
-		else if (xobj->knockout)
-			fz_warn("ignoring that the group is knockout");
-		error = fz_newovernode(&blend);
-		if (error)
-			return fz_rethrow(error, "cannot create blend node");
-		fz_insertnodelast(gstate->head, blend);
-		gstate->head = blend;
+		but for now, just do over and hope for something */
+		// TODO: push, pop and blend buffers
 	}
 
 	/* clip to the bounds */
@@ -358,14 +339,8 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 
 			/* The content stream ought to be blended properly,
 			but for now, just do over and hope for something
-
-			error = fz_newblendnode(&blend, gstate->blendmode, 0, 0);
 			*/
-			error = fz_newovernode(&blend);
-			if (error)
-				return fz_rethrow(error, "cannot create blend node");
-			fz_insertnodelast(gstate->head, blend);
-			gstate->head = blend;
+			// TODO: push, pop and blend buffers
 		}
 
 		else if (!strcmp(s, "SMask"))
