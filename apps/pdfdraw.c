@@ -217,15 +217,20 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		if (drawbands > 1)
 			fprintf(stderr, "drawing band %d / %d\n", b + 1, drawbands);
 
-//XXX		error = fz_rendertreeover(drawgc, pix, drawpage->tree, ctm);
-//		if (error)
-//			die(error);
 		printf("\nRESOURCES:\n");
 		fz_debugobj(fz_resolveindirect(drawpage->resources));
 		printf("CONTENTS:\n");
 		showsafe(drawpage->contents->rp,
 			drawpage->contents->wp - drawpage->contents->rp);
 		printf("END.\n");
+		
+		drawpage->contents->rp = drawpage->contents->bp;
+		fz_stream *file = fz_openrbuffer(drawpage->contents);
+		pdf_csi *csi = pdf_newcsi(0);
+		error = pdf_runcsi(csi, xref, drawpage->resources, file);
+		fz_dropstream(file);
+		if (error)
+			die(error);
 
 		if (drawpattern)
 		{

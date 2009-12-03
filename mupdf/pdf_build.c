@@ -200,7 +200,7 @@ pdf_showpattern(pdf_gstate *gs, pdf_pattern *pat, fz_colorspace *cs, float *v)
 
 	/* get bbox of shape in pattern space for stamping */
 	ptm = fz_concat(ctm, fz_invertmatrix(pat->matrix));
-//XXX	bbox = fz_boundnode(shape, ptm);
+	//XXX	bbox = fz_boundnode(shape, ptm);
 
 	/* expand bbox by pattern bbox */
 	bbox.x0 += pat->bbox.x0;
@@ -231,21 +231,21 @@ pdf_showpattern(pdf_gstate *gs, pdf_pattern *pat, fz_colorspace *cs, float *v)
 void
 pdf_showshade(pdf_csi *csi, fz_shade *shade)
 {
-//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	printf("draw shade\n");
 }
 
 void
 pdf_showimage(pdf_csi *csi, pdf_image *img)
 {
-//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	printf("draw image\n");
 }
 
 void
 pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 {
-//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
 	if (doclose)
 		fz_closepath(csi->path);
@@ -285,7 +285,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 void
 pdf_flushtext(pdf_csi *csi)
 {
-//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
 	if (csi->text)
 	{
@@ -310,6 +310,8 @@ pdf_flushtext(pdf_csi *csi)
 		case 7: /* invisible clip ( + fallthrough clips ) */
 			break;
 		}
+
+		fz_debugtext(csi->text, 4);
 
 		fz_freetext(csi->text);
 		csi->text = nil;
@@ -364,7 +366,7 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	{
 		pdf_flushtext(csi);
 
-		csi->text = fz_newtextnode(fontdesc->font);
+		csi->text = fz_newtext(fontdesc->font);
 		csi->text->trm = trm;
 		csi->text->trm.e = 0;
 		csi->text->trm.f = 0;

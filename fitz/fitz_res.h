@@ -143,11 +143,12 @@ struct fz_text_s
 	fz_textel *els;
 };
 
-fz_text * fz_newtextnode(fz_font *face);
+fz_text * fz_newtext(fz_font *face);
 void fz_addtext(fz_text *text, int gid, int ucs, float x, float y);
 void fz_endtext(fz_text *text);
 void fz_resettext(fz_text *text);
 void fz_freetext(fz_text *text);
+void fz_debugtext(fz_text*, int indent);
 
 /*
  * Colorspace resources.
