@@ -220,6 +220,16 @@ runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, pdf_xobject *xobj)
 		gstate->head = blend;
 	}
 
+	/* clip to the bounds */
+
+	fz_moveto(csi->path, xobj->bbox.x0, xobj->bbox.y0);
+	fz_lineto(csi->path, xobj->bbox.x1, xobj->bbox.y0);
+	fz_lineto(csi->path, xobj->bbox.x1, xobj->bbox.y1);
+	fz_lineto(csi->path, xobj->bbox.x0, xobj->bbox.y1);
+	fz_closepath(csi->path);
+	csi->clip = 1;
+	pdf_showpath(csi, 0, 0, 0, 0);
+
 	/* run contents */
 
 	xobj->contents->rp = xobj->contents->bp;
