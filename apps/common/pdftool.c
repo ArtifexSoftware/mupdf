@@ -66,6 +66,14 @@ void openxref(char *filename, char *password, int dieonbadpass)
 	pagecount = pdf_getpagecount(xref);
 }
 
+void flushxref(void)
+{
+	if (xref)
+	{
+		pdf_flushxref(xref, 0);
+	}
+}
+
 void closexref(void)
 {
 	if (cleanup)
