@@ -12,6 +12,8 @@ typedef struct fz_renderer_s fz_renderer;
 typedef struct fz_glyph_s fz_glyph;
 typedef struct fz_glyphcache_s fz_glyphcache;
 
+fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest);
+
 fz_glyphcache * fz_newglyphcache(int slots, int size);
 fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
 fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);

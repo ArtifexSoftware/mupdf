@@ -224,7 +224,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			drawpage->contents->wp - drawpage->contents->rp);
 		printf("END.\n");
 
-		fz_device *dev = fz_newtracedevice();
+		fz_device *dev = fz_newdrawdevice(pdf_devicergb, pix);
 		drawpage->contents->rp = drawpage->contents->bp;
 		fz_stream *file = fz_openrbuffer(drawpage->contents);
 		pdf_csi *csi = pdf_newcsi(dev, 0);

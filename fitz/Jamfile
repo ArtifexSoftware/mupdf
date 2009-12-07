@@ -79,7 +79,7 @@ Library libfitz :
 	res_image.c
 	res_shade.c
 	dev_trace.c
+	dev_draw.c
 	# dev_text.c
-	# dev_draw.c
 	# dev_ghost.c
 	;
