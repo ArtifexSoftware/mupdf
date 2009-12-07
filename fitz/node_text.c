@@ -20,6 +20,7 @@ fz_freetext(fz_text *text)
 {
 	fz_dropfont(text->font);
 	fz_free(text->els);
+	fz_free(text);
 }
 
 fz_rect

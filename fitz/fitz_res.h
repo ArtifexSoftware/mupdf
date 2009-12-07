@@ -1,13 +1,36 @@
 /*
  *
  */
- 
+
 typedef struct fz_path_s fz_path;
 typedef struct fz_text_s fz_text;
 typedef struct fz_font_s fz_font;
 typedef struct fz_image_s fz_image;
 typedef struct fz_shade_s fz_shade;
 typedef struct fz_colorspace_s fz_colorspace;
+
+typedef struct fz_device_s fz_device;
+
+struct fz_device_s
+{
+	void *user;
+
+	void (*fillpath)(void *, fz_path *, fz_colorspace *, float *color, float alpha);
+	void (*strokepath)(void *, fz_path *, fz_colorspace *, float *color, float alpha);
+	void (*clippath)(void *, fz_path *);
+
+	void (*filltext)(void *, fz_text *, fz_colorspace *, float *color, float alpha);
+	void (*stroketext)(void *, fz_text *, fz_colorspace *, float *color, float alpha);
+	void (*cliptext)(void *, fz_text *);
+	void (*ignoretext)(void *, fz_text *);
+
+	void (*drawimage)(void *, fz_image *img, fz_matrix *ctm);
+	void (*drawshade)(void *, fz_shade *shd, fz_matrix *ctm);
+
+	void (*popclip)(void *);
+};
+
+fz_device *fz_newtracedevice(void);
 
 typedef enum fz_blendkind_e
 {
@@ -48,12 +71,11 @@ typedef struct fz_stroke_s fz_stroke;
 typedef struct fz_dash_s fz_dash;
 typedef union fz_pathel_s fz_pathel;
 
-typedef enum fz_pathkind_e
+typedef enum fz_pathwinding_e
 {
-	FZ_STROKE,
-	FZ_FILL,
-	FZ_EOFILL
-} fz_pathkind;
+	FZ_EVENODD,
+	FZ_NONZERO,
+} fz_pathwinding;
 
 typedef enum fz_pathelkind_e
 {
@@ -63,21 +85,6 @@ typedef enum fz_pathelkind_e
 	FZ_CLOSEPATH
 } fz_pathelkind;
 
-struct fz_stroke_s
-{
-	int linecap;
-	int linejoin;
-	float linewidth;
-	float miterlimit;
-};
-
-struct fz_dash_s
-{
-	int len;
-	float phase;
-	float array[FZ_FLEX];
-};
-
 union fz_pathel_s
 {
 	fz_pathelkind k;
@@ -86,12 +93,15 @@ union fz_pathel_s
 
 struct fz_path_s
 {
-	fz_pathkind paint;
-	fz_dash *dash;
+	fz_matrix ctm;
+	fz_pathwinding winding;
 	int linecap;
 	int linejoin;
 	float linewidth;
 	float miterlimit;
+	float dashphase;
+	int dashlen;
+	float dashlist[32];
 	int len, cap;
 	fz_pathel *els;
 };
@@ -103,11 +113,10 @@ void fz_curveto(fz_path*, float, float, float, float, float, float);
 void fz_curvetov(fz_path*, float, float, float, float);
 void fz_curvetoy(fz_path*, float, float, float, float);
 void fz_closepath(fz_path*);
-void fz_setpathstate(fz_path*, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash);
 void fz_resetpath(fz_path *path);
 void fz_freepath(fz_path *path);
 
-fz_rect fz_boundpath(fz_path *, fz_matrix ctm);
+fz_rect fz_boundpath(fz_path *, fz_matrix ctm, int dostroke);
 void fz_debugpath(fz_path *, int indent);
 void fz_printpath(fz_path *, int indent);
 

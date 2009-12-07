@@ -162,31 +162,6 @@ pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 }
 
 void
-pdf_buildstrokepath(pdf_gstate *gs, fz_path *path)
-{
-	fz_stroke stroke;
-	fz_dash *dash;
-
-	stroke.linecap = gs->linecap;
-	stroke.linejoin = gs->linejoin;
-	stroke.linewidth = gs->linewidth;
-	stroke.miterlimit = gs->miterlimit;
-
-	if (gs->dashlen)
-		dash = fz_newdash(gs->dashphase, gs->dashlen, gs->dashlist);
-	else
-		dash = nil;
-
-	fz_setpathstate(path, FZ_STROKE, &stroke, dash);
-}
-
-void
-pdf_buildfillpath(pdf_gstate *gs, fz_path *path, int eofill)
-{
-	fz_setpathstate(path, eofill ? FZ_EOFILL : FZ_FILL, nil, nil);
-}
-
-void
 pdf_showpattern(pdf_gstate *gs, pdf_pattern *pat, fz_colorspace *cs, float *v)
 {
 	fz_matrix ctm;
@@ -229,51 +204,56 @@ pdf_showpattern(pdf_gstate *gs, pdf_pattern *pat, fz_colorspace *cs, float *v)
 }
 
 void
-pdf_showshade(pdf_csi *csi, fz_shade *shade)
+pdf_showshade(pdf_csi *csi, fz_shade *shd)
 {
-	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	printf("draw shade\n");
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	csi->dev->drawshade(csi->dev->user, shd, &gstate->ctm);
 }
 
 void
 pdf_showimage(pdf_csi *csi, pdf_image *img)
 {
-	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	printf("draw image\n");
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	csi->dev->drawimage(csi->dev->user, (fz_image*)img, &gstate->ctm);
 }
 
 void
 pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 {
-	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	int i;
 
 	if (doclose)
 		fz_closepath(csi->path);
 
+	csi->path->ctm = gstate->ctm;
+	csi->path->winding = evenodd ? FZ_EVENODD : FZ_NONZERO;
+	csi->path->linewidth = gstate->linewidth;
+	csi->path->linecap = gstate->linecap;
+	csi->path->linejoin = gstate->linejoin;
+	csi->path->miterlimit = gstate->miterlimit;
+	csi->path->dashlen = gstate->dashlen;
+	csi->path->dashphase = gstate->dashphase;
+	for (i = 0; i < csi->path->dashlen; i++)
+		csi->path->dashlist[i] = gstate->dashlist[i];
+
 	if (csi->clip)
 	{
-		printf("clip\n");
+		csi->dev->clippath(csi->dev->user, csi->path);
 		csi->clip = 0;
 	}
-
-	if (dofill && dostroke)
+	if (dofill)
 	{
-		printf("fill-and-stroke\n");
+		// TODO: indexed, pattern, shade materials
+		csi->dev->fillpath(csi->dev->user, csi->path,
+			gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 	}
-	else if (dofill)
+	if (dostroke)
 	{
-		printf("fill\n");
+		// TODO: indexed, pattern, shade materials
+		csi->dev->strokepath(csi->dev->user, csi->path,
+			gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 	}
-	else if (dostroke)
-	{
-		printf("stroke\n");
-	}
-	else
-	{
-		printf("newpath\n");
-	}
-
-	fz_printpath(csi->path, 4);
 
 	fz_resetpath(csi->path);
 }
@@ -285,37 +265,70 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 void
 pdf_flushtext(pdf_csi *csi)
 {
-	//	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	int dofill = 0;
+	int dostroke = 0;
+	int doclip = 0;
+	int doinvisible = 0;
 
-	if (csi->text)
+	if (!csi->text)
+		return;
+
+	switch (csi->textmode)
 	{
-		switch (csi->textmode)
-		{
-		case 0:	/* fill */
-		case 1:	/* stroke */
-		case 2:	/* stroke + fill */
-			puts("fill text");
-			break;
-
-		case 3:	/* invisible */
-			puts("invisible text");
-			break;
-
-		case 4: /* fill + clip */
-		case 5: /* stroke + clip */
-		case 6: /* stroke + fill + clip */
-			puts("clip text");
-			/* fall through */
-
-		case 7: /* invisible clip ( + fallthrough clips ) */
-			break;
-		}
-
-		fz_debugtext(csi->text, 4);
-
-		fz_freetext(csi->text);
-		csi->text = nil;
+	case 0:
+		dofill = 1;
+		break;
+	case 1:
+		dostroke = 1;
+		break;
+	case 2:
+		dofill = 1;
+		dostroke = 1;
+		break;
+	case 3:
+		doinvisible = 1;
+		break;
+	case 4:
+		dofill = 1;
+		doclip = 1;
+		break;
+	case 5:
+		dostroke = 1;
+		doclip = 1;
+		break;
+	case 6:
+		dofill = 1;
+		dostroke = 1;
+		doclip = 1;
+		break;
+	case 7:
+		doclip = 1;
+		break;
 	}
+
+	if (doinvisible)
+		csi->dev->ignoretext(csi->dev->user, csi->text);
+
+	if (doclip)
+		csi->dev->cliptext(csi->dev->user, csi->text);
+
+	if (dofill)
+	{
+		// TODO: indexed, pattern, shade materials
+		csi->dev->filltext(csi->dev->user, csi->text,
+			gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+	}
+
+	if (dostroke)
+	{
+		// TODO: indexed, pattern, shade materials
+		csi->dev->stroketext(csi->dev->user, csi->text,
+			gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+	}
+
+	fz_freetext(csi->text);
+	csi->text = nil;
 }
 
 static void

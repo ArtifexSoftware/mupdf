@@ -677,8 +677,8 @@ struct pdf_gstate_s
 
 struct pdf_csi_s
 {
-	pdf_gstate gstate[32];
-	int gtop;
+	fz_device *dev;
+
 	fz_obj *stack[32];
 	int top;
 	int xbalance;
@@ -694,6 +694,10 @@ struct pdf_csi_s
 	fz_matrix tlm;
 	fz_matrix tm;
 	int textmode;
+
+	/* graphics state */
+	pdf_gstate gstate[32];
+	int gtop;
 };
 
 /* build.c */
@@ -709,7 +713,7 @@ void pdf_showimage(pdf_csi*, pdf_image *img);
 void pdf_showshade(pdf_csi*, fz_shade *shd);
 
 /* interpret.c */
-pdf_csi *pdf_newcsi(int maskonly);
+pdf_csi *pdf_newcsi(fz_device *dev, int maskonly);
 fz_error pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *resources, fz_stream *contents);
 void pdf_dropcsi(pdf_csi *csi);
 

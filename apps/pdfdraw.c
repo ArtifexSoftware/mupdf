@@ -223,14 +223,16 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		showsafe(drawpage->contents->rp,
 			drawpage->contents->wp - drawpage->contents->rp);
 		printf("END.\n");
-		
+
+		fz_device *dev = fz_newtracedevice();
 		drawpage->contents->rp = drawpage->contents->bp;
 		fz_stream *file = fz_openrbuffer(drawpage->contents);
-		pdf_csi *csi = pdf_newcsi(0);
+		pdf_csi *csi = pdf_newcsi(dev, 0);
 		error = pdf_runcsi(csi, xref, drawpage->resources, file);
 		fz_dropstream(file);
 		if (error)
 			die(error);
+		fz_free(dev);
 
 		if (drawpattern)
 		{

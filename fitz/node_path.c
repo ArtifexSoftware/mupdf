@@ -6,16 +6,17 @@ fz_newpath(void)
 	fz_path *path;
 
 	path = fz_malloc(sizeof(fz_path));
-	path->dash = nil;
-	path->len = 0;
-	path->cap = 0;
-	path->els = nil;
-
-	path->paint = FZ_FILL;
+	path->ctm = fz_identity();
+	path->dashlen = 0;
+	path->dashphase = 0;
+	path->winding = FZ_NONZERO;
 	path->linecap = 0;
 	path->linejoin = 0;
 	path->linewidth = 1.0;
 	path->miterlimit = 10.0;
+	path->len = 0;
+	path->cap = 0;
+	path->els = nil;
 
 	return path;
 }
@@ -23,23 +24,22 @@ fz_newpath(void)
 void
 fz_freepath(fz_path *path)
 {
-	fz_free(path->dash);
 	fz_free(path->els);
+	fz_free(path);
 }
 
 void
 fz_resetpath(fz_path *path)
 {
-	if (path->dash)
-		fz_free(path->dash);
-	path->dash = nil;
-	path->len = 0;
-
-	path->paint = FZ_FILL;
+	path->ctm = fz_identity();
+	path->dashlen = 0;
+	path->dashphase = 0;
+	path->winding = FZ_NONZERO;
 	path->linecap = 0;
 	path->linejoin = 0;
 	path->linewidth = 1.0;
 	path->miterlimit = 10.0;
+	path->len = 0;
 }
 
 static void
@@ -113,20 +113,6 @@ fz_closepath(fz_path *path)
 	path->els[path->len++].k = FZ_CLOSEPATH;
 }
 
-void
-fz_setpathstate(fz_path *path, fz_pathkind paint, fz_stroke *stroke, fz_dash *dash)
-{
-	path->paint = paint;
-	path->dash = dash;
-	if (stroke)
-	{
-		path->linecap = stroke->linecap;
-		path->linejoin = stroke->linejoin;
-		path->linewidth = stroke->linewidth;
-		path->miterlimit = stroke->miterlimit;
-	}
-}
-
 static inline fz_rect boundexpand(fz_rect r, fz_point p)
 {
 	if (p.x < r.x0) r.x0 = p.x;
@@ -137,7 +123,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpath(fz_path *path, fz_matrix ctm)
+fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 {
 	fz_point p;
 	fz_rect r = fz_emptyrect;
@@ -174,7 +160,7 @@ fz_boundpath(fz_path *path, fz_matrix ctm)
 		}
 	}
 
-	if (path->paint == FZ_STROKE)
+	if (dostroke)
 	{
 		float miterlength = sin(path->miterlimit / 2.0);
 		float linewidth = path->linewidth;
@@ -225,22 +211,6 @@ fz_printpath(fz_path *path, int indent)
 			printf("h\n");
 		}
 	}
-
-	for (n = 0; n < indent; n++)
-		putchar(' ');
-
-	switch (path->paint)
-	{
-	case FZ_STROKE:
-		printf("S\n");
-		break;
-	case FZ_FILL:
-		printf("f\n");
-		break;
-	case FZ_EOFILL:
-		printf("f*\n");
-		break;
-	}
 }
 
 void
@@ -281,25 +251,3 @@ fz_debugpath(fz_path *path, int indent)
 		}
 	}
 }
-
-fz_dash *
-fz_newdash(float phase, int len, float *array)
-{
-	fz_dash *dash;
-	int i;
-
-	dash = fz_malloc(sizeof(fz_dash) + sizeof(float) * len);
-	dash->len = len;
-	dash->phase = phase;
-	for (i = 0; i < len; i++)
-		dash->array[i] = array[i];
-
-	return dash;
-}
-
-void
-fz_freedash(fz_dash *dash)
-{
-	fz_free(dash);
-}
-

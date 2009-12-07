@@ -2,7 +2,7 @@
 #include "mupdf.h"
 
 pdf_csi *
-pdf_newcsi(int maskonly)
+pdf_newcsi(fz_device *dev, int maskonly)
 {
 	pdf_csi *csi;
 
@@ -30,6 +30,8 @@ pdf_newcsi(int maskonly)
 	csi->text = nil;
 	csi->tm = fz_identity();
 	csi->tlm = fz_identity();
+
+	csi->dev = dev;
 
 	return csi;
 }
