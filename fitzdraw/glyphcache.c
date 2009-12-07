@@ -55,14 +55,12 @@ static unsigned int hashkey(fz_key *key)
 	return hash;
 }
 
-fz_error
-fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
+fz_glyphcache *
+fz_newglyphcache(int slots, int size)
 {
 	fz_glyphcache *arena;
 
-	arena = *arenap = fz_malloc(sizeof(fz_glyphcache));
-	if (!arena)
-		return fz_rethrow(-1, "out of memory");
+	arena = fz_malloc(sizeof(fz_glyphcache));
 
 	arena->slots = slots;
 	arena->size = size;
@@ -72,16 +70,8 @@ fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
 	arena->buffer = nil;
 
 	arena->hash = fz_malloc(sizeof(fz_hash) * slots);
-	if (!arena->hash)
-		goto cleanup;
-
 	arena->lru = fz_malloc(sizeof(fz_val) * slots);
-	if (!arena->lru)
-		goto cleanup;
-
 	arena->buffer = fz_malloc(size);
-	if (!arena->buffer)
-		goto cleanup;
 
 	memset(arena->hash, 0, sizeof(fz_hash) * slots);
 	memset(arena->lru, 0, sizeof(fz_val) * slots);
@@ -89,18 +79,11 @@ fz_newglyphcache(fz_glyphcache **arenap, int slots, int size)
 	arena->load = 0;
 	arena->used = 0;
 
-	return fz_okay;
-
-cleanup:
-	fz_free(arena->hash);
-	fz_free(arena->lru);
-	fz_free(arena->buffer);
-	fz_free(arena);
-	return fz_rethrow(-1, "out of memory");
+	return arena;
 }
 
 void
-fz_dropglyphcache(fz_glyphcache *arena)
+fz_freeglyphcache(fz_glyphcache *arena)
 {
 	fz_free(arena->hash);
 	fz_free(arena->lru);

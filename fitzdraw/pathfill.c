@@ -1,23 +1,22 @@
 #include "fitz.h"
 
-static fz_error
+static void
 line(fz_gel *gel, fz_matrix *ctm, float x0, float y0, float x1, float y1)
 {
 	float tx0 = ctm->a * x0 + ctm->c * y0 + ctm->e;
 	float ty0 = ctm->b * x0 + ctm->d * y0 + ctm->f;
 	float tx1 = ctm->a * x1 + ctm->c * y1 + ctm->e;
 	float ty1 = ctm->b * x1 + ctm->d * y1 + ctm->f;
-	return fz_insertgel(gel, tx0, ty0, tx1, ty1);
+	fz_insertgel(gel, tx0, ty0, tx1, ty1);
 }
 
-static fz_error
+static void
 bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 	float xa, float ya,
 	float xb, float yb,
 	float xc, float yc,
 	float xd, float yd)
 {
-	fz_error error;
 	float dmax;
 	float xab, yab;
 	float xbc, ybc;
@@ -31,8 +30,10 @@ bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 	dmax = MAX(dmax, ABS(ya - yb));
 	dmax = MAX(dmax, ABS(xd - xc));
 	dmax = MAX(dmax, ABS(yd - yc));
-	if (dmax < flatness)
-		return line(gel, ctm, xa, ya, xd, yd);
+	if (dmax < flatness) {
+		line(gel, ctm, xa, ya, xd, yd);
+		return;
+	}
 
 	xab = xa + xb;
 	yab = ya + yb;
@@ -58,16 +59,13 @@ bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 
 	xabcd *= 0.125f; yabcd *= 0.125f;
 
-	error = bezier(gel, ctm, flatness, xa, ya, xab, yab, xabc, yabc, xabcd, yabcd);
-	if (error)
-		return error;
-	return bezier(gel, ctm, flatness, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd);
+	bezier(gel, ctm, flatness, xa, ya, xab, yab, xabc, yabc, xabcd, yabcd);
+	bezier(gel, ctm, flatness, xabcd, yabcd, xbcd, ybcd, xcd, ycd, xd, yd);
 }
 
-fz_error
-fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
+void
+fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
 {
-	fz_error error;
 	float x1, y1, x2, y2, x3, y3;
 	float cx = 0;
 	float cy = 0;
@@ -82,12 +80,7 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 		case FZ_MOVETO:
 			/* implicit closepath before moveto */
 			if (i && (cx != bx || cy != by))
-			{
-				error = line(gel, &ctm, cx, cy, bx, by);
-				if (error)
-					return error;
-			}
-
+				line(gel, &ctm, cx, cy, bx, by);
 			x1 = path->els[i++].v;
 			y1 = path->els[i++].v;
 			cx = bx = x1;
@@ -97,9 +90,7 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 		case FZ_LINETO:
 			x1 = path->els[i++].v;
 			y1 = path->els[i++].v;
-			error = line(gel, &ctm, cx, cy, x1, y1);
-			if (error)
-				return error;
+			line(gel, &ctm, cx, cy, x1, y1);
 			cx = x1;
 			cy = y1;
 			break;
@@ -111,17 +102,13 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 			y2 = path->els[i++].v;
 			x3 = path->els[i++].v;
 			y3 = path->els[i++].v;
-			error = bezier(gel, &ctm, flatness, cx, cy, x1, y1, x2, y2, x3, y3);
-			if (error)
-				return error;
+			bezier(gel, &ctm, flatness, cx, cy, x1, y1, x2, y2, x3, y3);
 			cx = x3;
 			cy = y3;
 			break;
 
 		case FZ_CLOSEPATH:
-			error = line(gel, &ctm, cx, cy, bx, by);
-			if (error)
-				return error;
+			line(gel, &ctm, cx, cy, bx, by);
 			cx = bx;
 			cy = by;
 			break;
@@ -129,12 +116,6 @@ fz_fillpath(fz_gel *gel, fz_pathnode *path, fz_matrix ctm, float flatness)
 	}
 
 	if (i && (cx != bx || cy != by))
-	{
-		error = line(gel, &ctm, cx, cy, bx, by);
-		if (error)
-			return error;
-	}
-
-	return fz_okay;
+		line(gel, &ctm, cx, cy, bx, by);
 }
 

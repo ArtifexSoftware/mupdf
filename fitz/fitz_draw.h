@@ -12,12 +12,12 @@ typedef struct fz_renderer_s fz_renderer;
 typedef struct fz_glyph_s fz_glyph;
 typedef struct fz_glyphcache_s fz_glyphcache;
 
+fz_glyphcache * fz_newglyphcache(int slots, int size);
 fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
 fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error fz_newglyphcache(fz_glyphcache **arenap, int slots, int size);
 fz_error fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
 void fz_debugglyphcache(fz_glyphcache *);
-void fz_dropglyphcache(fz_glyphcache *);
+void fz_freeglyphcache(fz_glyphcache *);
 
 typedef struct fz_edge_s fz_edge;
 typedef struct fz_gel_s fz_gel;
@@ -47,22 +47,22 @@ struct fz_ael_s
 	fz_edge **edges;
 };
 
-fz_error fz_newgel(fz_gel **gelp);
-fz_error fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
+fz_gel * fz_newgel(void);
+void fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
 fz_irect fz_boundgel(fz_gel *gel);
 void fz_resetgel(fz_gel *gel, fz_irect clip);
 void fz_sortgel(fz_gel *gel);
-void fz_dropgel(fz_gel *gel);
+void fz_freegel(fz_gel *gel);
 
-fz_error fz_newael(fz_ael **aelp);
-void fz_dropael(fz_ael *ael);
+fz_ael * fz_newael(void);
+void fz_freeael(fz_ael *ael);
 
 fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	fz_irect clip, fz_pixmap *pix, unsigned char *argb, int over);
 
-fz_error fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
-fz_error fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
-fz_error fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
+void fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
+void fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
+void fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
 
 /*
  * Function pointers -- they can be replaced by cpu-optimized versions

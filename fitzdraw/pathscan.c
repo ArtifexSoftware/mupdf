@@ -16,24 +16,15 @@ enum { HSCALE = 17, VSCALE = 15, SF = 1 };
  * See Mike Abrash -- Graphics Programming Black Book (notably chapter 40)
  */
 
-fz_error
-fz_newgel(fz_gel **gelp)
+fz_gel *
+fz_newgel(void)
 {
 	fz_gel *gel;
 
-	gel = *gelp = fz_malloc(sizeof(fz_gel));
-	if (!gel)
-		return fz_rethrow(-1, "out of memory");
-
-	gel->edges = nil;
-
+	gel = fz_malloc(sizeof(fz_gel));
 	gel->cap = 512;
 	gel->len = 0;
 	gel->edges = fz_malloc(sizeof(fz_edge) * gel->cap);
-	if (!gel->edges) {
-		fz_free(gel);
-		return fz_rethrow(-1, "out of memory");
-	}
 
 	gel->clip.x0 = gel->clip.y0 = INT_MAX;
 	gel->clip.x1 = gel->clip.y1 = INT_MIN;
@@ -41,7 +32,7 @@ fz_newgel(fz_gel **gelp)
 	gel->bbox.x0 = gel->bbox.y0 = INT_MAX;
 	gel->bbox.x1 = gel->bbox.y1 = INT_MIN;
 
-	return fz_okay;
+	return gel;
 }
 
 void
@@ -66,7 +57,7 @@ fz_resetgel(fz_gel *gel, fz_irect clip)
 }
 
 void
-fz_dropgel(fz_gel *gel)
+fz_freegel(fz_gel *gel)
 {
 	fz_free(gel->edges);
 	fz_free(gel);
@@ -112,7 +103,7 @@ cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
 	}
 }
 
-fz_error
+void
 fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	fz_edge *edge;
@@ -129,17 +120,17 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	int y1 = fz_floor(fy1 * VSCALE);
 
 	d = cliplerpy(gel->clip.y0, 0, x0, y0, x1, y1, &v);
-	if (d == OUTSIDE) return fz_okay;
+	if (d == OUTSIDE) return;
 	if (d == LEAVE) { y1 = gel->clip.y0; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y0; x0 = v; }
 
 	d = cliplerpy(gel->clip.y1, 1, x0, y0, x1, y1, &v);
-	if (d == OUTSIDE) return fz_okay;
+	if (d == OUTSIDE) return;
 	if (d == LEAVE) { y1 = gel->clip.y1; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y1; x0 = v; }
 
 	if (y0 == y1)
-		return fz_okay;
+		return;
 
 	if (y0 > y1) {
 		winding = -1;
@@ -158,12 +149,8 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	if (y1 > gel->bbox.y1) gel->bbox.y1 = y1;
 
 	if (gel->len + 1 == gel->cap) {
-		int newcap = gel->cap + 512;
-		fz_edge *newedges = fz_realloc(gel->edges, sizeof(fz_edge) * newcap);
-		if (!newedges)
-			return fz_rethrow(-1, "out of memory");
-		gel->cap = newcap;
-		gel->edges = newedges;
+		gel->cap = gel->cap + 512;
+		gel->edges = fz_realloc(gel->edges, sizeof(fz_edge) * gel->cap);
 	}
 
 	edge = &gel->edges[gel->len++];
@@ -196,8 +183,6 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 		edge->xmove = (width / dy) * edge->xdir;
 		edge->adjup = width % dy;
 	}
-
-	return fz_okay;
 }
 
 void
@@ -241,28 +226,19 @@ fz_sortgel(fz_gel *gel)
  * Active Edge List -- keep track of active edges while sweeping
  */
 
-fz_error
-fz_newael(fz_ael **aelp)
+fz_ael *
+fz_newael(void)
 {
 	fz_ael *ael;
-
-	ael = *aelp = fz_malloc(sizeof(fz_ael));
-	if (!ael)
-		return fz_rethrow(-1, "out of memory");
-
+	ael = fz_malloc(sizeof(fz_ael));
 	ael->cap = 64;
 	ael->len = 0;
 	ael->edges = fz_malloc(sizeof(fz_edge*) * ael->cap);
-	if (!ael->edges) {
-		fz_free(ael);
-		return fz_rethrow(-1, "out of memory");
-	}
-
-	return fz_okay;
+	return ael;
 }
 
 void
-fz_dropael(fz_ael *ael)
+fz_freeael(fz_ael *ael)
 {
 	fz_free(ael->edges);
 	fz_free(ael);

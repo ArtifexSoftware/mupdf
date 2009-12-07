@@ -9,8 +9,8 @@ Library libfitzdraw :
 	imageunpack.c
 	imagescale.c
 	pathscan.c
-#	pathfill.c
-#	pathstroke.c
+	pathfill.c
+	pathstroke.c
 #	render.c
 	blendmodes.c
 	;
