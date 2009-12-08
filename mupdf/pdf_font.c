@@ -237,10 +237,10 @@ static fz_error
 loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
-	fz_obj *descriptor = nil;
-	fz_obj *encoding = nil;
-	fz_obj *widths = nil;
-	unsigned short *etable = nil;
+	fz_obj *descriptor;
+	fz_obj *encoding;
+	fz_obj *widths;
+	unsigned short *etable;
 	pdf_fontdesc *fontdesc;
 	fz_irect bbox;
 	FT_Face face;
@@ -534,7 +534,7 @@ static fz_error
 loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *tounicode)
 {
 	fz_error error;
-	fz_obj *widths = nil;
+	fz_obj *widths;
 	fz_obj *descriptor;
 	pdf_fontdesc *fontdesc;
 	FT_Face face;
