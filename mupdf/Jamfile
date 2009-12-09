@@ -64,29 +64,9 @@ Library libmupdf :
 
 SubDir TOP cmaps ;
 
-SubDir TOP cmaps chinese_s ;
-GenFile cmap_chinese_s.c : cmapdump
-    Adobe-GB1-4
-    Adobe-GB1-UCS2
-    GB-EUC-H
-    GB-EUC-V
-    GBK-EUC-H
-    GBK-EUC-UCS2
-    GBK-EUC-V
-    GBK2K-H
-    GBK2K-V
-    GBKp-EUC-H
-    GBKp-EUC-V
-    GBT-EUC-H
-    GBT-EUC-V
-    GBpc-EUC-H
-    GBpc-EUC-UCS2
-    GBpc-EUC-UCS2C
-    GBpc-EUC-V
-    UniGB-UCS2-H
-    UniGB-UCS2-V
-    ;
-Library libcmaps : cmap_chinese_s.c ;
+GenFile cmap_tounicode.c : cmapdump
+	Adobe-CNS1-UCS2 Adobe-GB1-UCS2
+	Adobe-Japan1-UCS2 Adobe-Korea1-UCS2 ;
 
 SubDir TOP cmaps chinese_t ;
 GenFile cmap_chinese_t.c : cmapdump
@@ -157,37 +137,51 @@ GenFile cmap_korean.c : cmapdump
     ;
 Library libcmaps : cmap_korean.c ;
 
+GenFile cmap_korea.c : cmapdump
+	Adobe-Korea1-0 Adobe-Korea1-1 Adobe-Korea1-2 KSC-EUC-H
+	KSC-EUC-V KSC-H KSC-Johab-H KSC-Johab-V KSC-V KSCms-UHC-H
+	KSCms-UHC-HW-H KSCms-UHC-HW-V KSCms-UHC-V KSCpc-EUC-H
+	KSCpc-EUC-V UniKS-UCS2-H UniKS-UCS2-V ;
+
+Library libcmaps :
+	cmap_tounicode.c
+	cmap_cns.c
+	cmap_gb.c
+	cmap_japan.c
+	cmap_korea.c
+	;
+ 
 # The base 14 fonts are the Type1 URW fonts converted to raw CFF format.
 # DroidSansFallback.ttf is a compact CJK font from Google's Android project.
 
 SubDir TOP fonts ;
 
 GenFile font_misc.c : fontdump
-    Dingbats.cff
-    StandardSymL.cff
-    URWChanceryL-MediItal.cff
-    ;
+	Dingbats.cff
+	StandardSymL.cff
+	URWChanceryL-MediItal.cff
+	;
 
 GenFile font_mono.c : fontdump
-    NimbusMonL-Regu.cff
-    NimbusMonL-ReguObli.cff
-    NimbusMonL-Bold.cff
-    NimbusMonL-BoldObli.cff
-    ;
+	NimbusMonL-Regu.cff
+	NimbusMonL-ReguObli.cff
+	NimbusMonL-Bold.cff
+	NimbusMonL-BoldObli.cff
+	;
 
 GenFile font_serif.c : fontdump
-    NimbusRomNo9L-Regu.cff
-    NimbusRomNo9L-ReguItal.cff
-    NimbusRomNo9L-Medi.cff
-    NimbusRomNo9L-MediItal.cff
-    ;
+	NimbusRomNo9L-Regu.cff
+	NimbusRomNo9L-ReguItal.cff
+	NimbusRomNo9L-Medi.cff
+	NimbusRomNo9L-MediItal.cff
+	;
 
 GenFile font_sans.c : fontdump
-    NimbusSanL-Bold.cff
-    NimbusSanL-BoldItal.cff
-    NimbusSanL-Regu.cff
-    NimbusSanL-ReguItal.cff
-    ;
+	NimbusSanL-Bold.cff
+	NimbusSanL-BoldItal.cff
+	NimbusSanL-Regu.cff
+	NimbusSanL-ReguItal.cff
+	;
 
 Library libfonts :
 	font_misc.c
