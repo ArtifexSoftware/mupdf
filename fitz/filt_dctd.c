@@ -56,7 +56,7 @@ struct fz_dctd_s
 };
 
 static void myinitsource(j_decompress_ptr cinfo) { /* empty */ }
-static boolean myfillinput(j_decompress_ptr cinfo) { return FALSE; }
+static int myfillinput(j_decompress_ptr cinfo) { return FALSE; }
 static void mytermsource(j_decompress_ptr cinfo) { /* empty */ }
 
 static void myskipinput(j_decompress_ptr cinfo, long n)
@@ -145,7 +145,7 @@ fz_error
 fz_processdctd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 {
 	fz_dctd *d = (fz_dctd*)filter;
-	boolean b;
+	int b;
 	int i;
 	int stride;
 	JSAMPROW scanlines[1];
