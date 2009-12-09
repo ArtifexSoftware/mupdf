@@ -135,12 +135,12 @@ found:
 }
 
 static fz_error
-loadsystemcidfont(pdf_fontdesc *font, int csi, int kind)
+loadsystemcidfont(pdf_fontdesc *font, int ros, int kind)
 {
 #ifndef NOCJK
 	fz_error error;
 	/* We only have one builtin fallback font, we'd really like
-	 * to have one for each combination of CSI and Kind.
+	 * to have one for each combination of ROS and Kind.
 	 */
 	pdf_logfont("loading builtin CJK font\n");
 	error = fz_newfontfrombuffer(&font->font,
