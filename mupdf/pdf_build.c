@@ -2,9 +2,9 @@
 #include "mupdf.h"
 
 void
-pdf_initgstate(pdf_gstate *gs)
+pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 {
-	gs->ctm = fz_identity();
+	gs->ctm = ctm;
 
 	gs->linewidth = 1.0;
 	gs->linecap = 0;

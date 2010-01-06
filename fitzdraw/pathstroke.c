@@ -241,6 +241,7 @@ linedot(struct sctx *s, fz_point a)
 	float ox = a.x - linewidth;
 	float oy = a.y;
 	int i;
+
 	for (i = 1; i < n; i++)
 	{
 		float theta = M_PI * 2 * i / n;
@@ -252,6 +253,7 @@ linedot(struct sctx *s, fz_point a)
 		ox = nx;
 		oy = ny;
 	}
+
 	line(s, ox, oy, a.x - linewidth, a.y);
 }
 
@@ -288,7 +290,10 @@ strokelineto(struct sctx *s, fz_point cur)
 	float dy = cur.y - s->seg[s->sn-1].y;
 
 	if (dx * dx + dy * dy < FLT_EPSILON)
+	{
 		s->dot = 1;
+		return;
+	}
 
 	linestroke(s, s->seg[s->sn-1], cur);
 

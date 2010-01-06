@@ -19,14 +19,20 @@ void fz_drawfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float
 	float flatness = 0.3 / expansion;
 	fz_irect bbox;
 	fz_irect clip;
-	unsigned char argb[4];
+	unsigned char argb[7];
+	float rgb[3];
 
 	if (flatness < 0.1)
 		flatness = 0.1;
-	argb[0] = 0xFF;
-	argb[1] = 0xFF;
-	argb[2] = 0x00;
-	argb[3] = 0x00;
+
+	fz_convertcolor(colorspace, color, dev->model, rgb);
+	argb[0] = alpha * 255;
+	argb[1] = rgb[0] * alpha * 255;
+	argb[2] = rgb[1] * alpha * 255;
+	argb[3] = rgb[2] * alpha * 255;
+	argb[4] = rgb[0] * 255;
+	argb[5] = rgb[1] * 255;
+	argb[6] = rgb[2] * 255;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -53,16 +59,22 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 	float linewidth = path->linewidth;
 	fz_irect bbox;
 	fz_irect clip;
-	unsigned char argb[4];
+	unsigned char argb[7];
+	float rgb[3];
 
 	if (flatness < 0.1)
 		flatness = 0.1;
 	if (linewidth < 0.1)
 		linewidth = 1.0 / expansion;
-	argb[0] = 0xFF;
-	argb[1] = 0x00;
-	argb[2] = 0xFF;
-	argb[3] = 0x00;
+
+	fz_convertcolor(colorspace, color, dev->model, rgb);
+	argb[0] = alpha * 255;
+	argb[1] = rgb[0] * alpha * 255;
+	argb[2] = rgb[1] * alpha * 255;
+	argb[3] = rgb[2] * alpha * 255;
+	argb[4] = rgb[0] * 255;
+	argb[5] = rgb[1] * 255;
+	argb[6] = rgb[2] * 255;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -81,16 +93,31 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 	if (fz_isemptyrect(bbox))
 		return;
 
-	fz_scanconvert(dev->gel, dev->ael, FZ_NONZERO, bbox, dev->dest, argb, 1);
+	fz_scanconvert(dev->gel, dev->ael, 0, bbox, dev->dest, argb, 1);
 }
 
 void fz_drawclippath(void *user, fz_path *path)
 {
 	fz_drawdevice *dev = user;
+	fz_printpath(path, 0);
+	printf("clippath\n");
 }
 
 void fz_drawfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
 {
+	fz_drawdevice *dev = user;
+	unsigned char argb[7];
+	float rgb[3];
+
+	fz_convertcolor(colorspace, color, dev->model, rgb);
+	argb[0] = alpha * 255;
+	argb[1] = rgb[0] * alpha * 255;
+	argb[2] = rgb[1] * alpha * 255;
+	argb[3] = rgb[2] * alpha * 255;
+	argb[4] = rgb[0] * 255;
+	argb[5] = rgb[1] * 255;
+	argb[6] = rgb[2] * 255;
+
 	printf("/%s setfont\n", text->font->name);
 	fz_debugtext(text, 0);
 	printf("show\n");

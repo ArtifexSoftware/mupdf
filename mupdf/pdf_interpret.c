@@ -2,13 +2,13 @@
 #include "mupdf.h"
 
 pdf_csi *
-pdf_newcsi(fz_device *dev, int maskonly)
+pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm)
 {
 	pdf_csi *csi;
 
 	csi = fz_malloc(sizeof(pdf_csi));
 
-	pdf_initgstate(&csi->gstate[0]);
+	pdf_initgstate(&csi->gstate[0], ctm);
 	csi->gtop = 0;
 	csi->top = 0;
 	csi->xbalance = 0;

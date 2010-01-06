@@ -217,17 +217,19 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		if (drawbands > 1)
 			fprintf(stderr, "drawing band %d / %d\n", b + 1, drawbands);
 
+#if 0
 		printf("\nRESOURCES:\n");
 		fz_debugobj(fz_resolveindirect(drawpage->resources));
 		printf("CONTENTS:\n");
 		showsafe(drawpage->contents->rp,
 			drawpage->contents->wp - drawpage->contents->rp);
 		printf("END.\n");
+#endif
 
 		fz_device *dev = fz_newdrawdevice(pdf_devicergb, pix);
 		drawpage->contents->rp = drawpage->contents->bp;
 		fz_stream *file = fz_openrbuffer(drawpage->contents);
-		pdf_csi *csi = pdf_newcsi(dev, 0);
+		pdf_csi *csi = pdf_newcsi(dev, 0, ctm);
 		error = pdf_runcsi(csi, xref, drawpage->resources, file);
 		fz_dropstream(file);
 		if (error)

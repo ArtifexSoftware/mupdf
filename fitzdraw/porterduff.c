@@ -259,9 +259,9 @@ static void path_1o1(byte * restrict src, byte cov, int len, byte * restrict dst
 static void path_w4i1o4(byte * restrict argb, byte * restrict src, byte cov, int len, byte * restrict dst)
 {
 	byte alpha = argb[0];
-	byte r = argb[4];
-	byte g = argb[5];
-	byte b = argb[6];
+	byte r = argb[1];
+	byte g = argb[2];
+	byte b = argb[3];
 	while (len--)
 	{
 		byte ca;

@@ -701,7 +701,7 @@ struct pdf_csi_s
 };
 
 /* build.c */
-void pdf_initgstate(pdf_gstate *gs);
+void pdf_initgstate(pdf_gstate *gs, fz_matrix ctm);
 void pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
 void pdf_setcolor(pdf_csi *csi, int what, float *v);
 void pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
@@ -713,7 +713,7 @@ void pdf_showimage(pdf_csi*, pdf_image *img);
 void pdf_showshade(pdf_csi*, fz_shade *shd);
 
 /* interpret.c */
-pdf_csi *pdf_newcsi(fz_device *dev, int maskonly);
+pdf_csi *pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm);
 fz_error pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *resources, fz_stream *contents);
 void pdf_dropcsi(pdf_csi *csi);
 
