@@ -4,6 +4,8 @@
 #define HSUBPIX 5.0
 #define VSUBPIX 5.0
 
+#define MAXCLIP 64
+
 typedef struct fz_drawdevice_s fz_drawdevice;
 
 struct fz_drawdevice_s
@@ -14,6 +16,11 @@ struct fz_drawdevice_s
 	fz_gel *gel;
 	fz_ael *ael;
 	fz_pixmap *dest;
+	struct {
+		fz_pixmap *dest;
+		fz_pixmap *mask;
+	} clipstack[MAXCLIP];
+	int cliptop;
 };
 
 static void
@@ -50,6 +57,49 @@ blendover(fz_pixmap *src, fz_pixmap *dst)
 		fz_duff_non(sp, src->w * src->n, src->n, dp, dst->w * dst->n, w, h);
 	else
 		assert(!"blendover src and dst mismatch");
+}
+
+static void
+blendmaskover(fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst)
+{
+	unsigned char *sp, *dp, *mp;
+	fz_irect sr, dr, mr;
+	int x, y, w, h;
+
+	sr.x0 = src->x;
+	sr.y0 = src->y;
+	sr.x1 = src->x + src->w;
+	sr.y1 = src->y + src->h;
+
+	dr.x0 = dst->x;
+	dr.y0 = dst->y;
+	dr.x1 = dst->x + dst->w;
+	dr.y1 = dst->y + dst->h;
+
+	mr.x0 = msk->x;
+	mr.y0 = msk->y;
+	mr.x1 = msk->x + msk->w;
+	mr.y1 = msk->y + msk->h;
+
+	dr = fz_intersectirects(sr, dr);
+	dr = fz_intersectirects(dr, mr);
+	x = dr.x0;
+	y = dr.y0;
+	w = dr.x1 - dr.x0;
+	h = dr.y1 - dr.y0;
+
+	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
+	mp = msk->samples + ((y - msk->y) * msk->w + (x - msk->x)) * msk->n;
+	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
+
+	if (src->n == 1 && msk->n == 1 && dst->n == 1)
+		fz_duff_1i1o1(sp, src->w, mp, msk->w, dp, dst->w, w, h);
+	else if (src->n == 4 && msk->n == 1 && dst->n == 4)
+		fz_duff_4i1o4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
+	else if (src->n == dst->n)
+		fz_duff_nimon(sp, src->w * src->n, src->n, mp, msk->w * msk->n, msk->n, dp, dst->w * dst->n, w, h);
+	else
+		assert(!"blendmaskover src and msk and dst mismatch");
 }
 
 void fz_drawfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha)
@@ -139,8 +189,46 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 void fz_drawclippath(void *user, fz_path *path)
 {
 	fz_drawdevice *dev = user;
-	fz_printpath(path, 0);
-	printf("clippath\n");
+	float expansion = fz_matrixexpansion(path->ctm);
+	float flatness = 0.3 / expansion;
+	fz_irect clip, bbox;
+	fz_pixmap *mask, *dest;
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	if (flatness < 0.1)
+		flatness = 0.1;
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+
+	fz_resetgel(dev->gel, clip);
+	fz_fillpath(dev->gel, path, path->ctm, flatness);
+	fz_sortgel(dev->gel);
+
+	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectirects(bbox, clip);
+	if (fz_isemptyrect(bbox))
+		return;
+
+	mask = fz_newpixmapwithrect(bbox, 1);
+	dest = fz_newpixmapwithrect(bbox, 4);
+
+	memset(mask->samples, 0, mask->w * mask->h * mask->n);
+	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+	fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, mask, NULL, 1);
+
+	dev->clipstack[dev->cliptop].mask = mask;
+	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->dest = dest;
+	dev->cliptop++;
 }
 
 static void drawglyph(unsigned char *argb, fz_pixmap *dst, fz_glyph *src, int xorig, int yorig)
@@ -238,29 +326,22 @@ void fz_drawcliptext(void *user, fz_text *text)
 
 void fz_drawignoretext(void *user, fz_text *text)
 {
-	printf("/%s setfont\n", text->font->name);
-	fz_debugtext(text, 0);
-	printf("invisibletext\n");
 }
 
-static inline void
-calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
+void fz_drawpopclip(void *user)
 {
-	float sx, sy;
-	int dx, dy;
-
-	sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
-	dx = 1;
-	while (((w+dx-1)/dx)/sx > 2.0 && (w+dx-1)/dx > 1)
-		dx++;
-
-	sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
-	dy = 1;
-	while (((h+dy-1)/dy)/sy > 2.0 && (h+dy-1)/dy > 1)
-		dy++;
-
-	*odx = dx;
-	*ody = dy;
+	fz_drawdevice *dev = user;
+	if (dev->cliptop > 0)
+	{
+		fz_pixmap *mask = dev->clipstack[dev->cliptop-1].mask;
+		fz_pixmap *dest = dev->clipstack[dev->cliptop-1].dest;
+		fz_pixmap *scratch = dev->dest;
+		blendmaskover(scratch, mask, dest);
+		fz_freepixmap(mask);
+		fz_freepixmap(scratch);
+		dev->cliptop--;
+		dev->dest = dest;
+	}
 }
 
 void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
@@ -286,6 +367,26 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 	fz_freepixmap(tmp);
 }
 
+static inline void
+calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
+{
+	float sx, sy;
+	int dx, dy;
+
+	sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	dx = 1;
+	while (((w+dx-1)/dx)/sx > 2.0 && (w+dx-1)/dx > 1)
+		dx++;
+
+	sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
+	dy = 1;
+	while (((h+dy-1)/dy)/sy > 2.0 && (h+dy-1)/dy > 1)
+		dy++;
+
+	*odx = dx;
+	*ody = dy;
+}
+
 void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
@@ -303,15 +404,13 @@ void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
 	int x0, y0;
 	int w, h;
 
-	printf("drawimage\n");
-
 	bounds.x0 = 0;
 	bounds.y0 = 0;
 	bounds.x1 = 1;
 	bounds.y1 = 1;
 	bounds = fz_transformaabb(ctm, bounds);
 	bbox = fz_roundrect(bounds);
-	
+
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
 	clip.x1 = dev->dest->x + dev->dest->w;
@@ -380,11 +479,6 @@ void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
 	fz_freepixmap(tile);
 }
 
-void fz_drawpopclip(void *user)
-{
-	printf("popclip\n");
-}
-
 fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
 {
 	fz_drawdevice *ddev = fz_malloc(sizeof(fz_drawdevice));
@@ -393,6 +487,7 @@ fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
 	ddev->gel = fz_newgel();
 	ddev->ael = fz_newael();
 	ddev->dest = dest;
+	ddev->cliptop = 0;
 
 	fz_device *dev = fz_malloc(sizeof(fz_device));
 	dev->user = ddev;

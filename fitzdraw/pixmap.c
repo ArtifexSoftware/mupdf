@@ -13,7 +13,7 @@ fz_newpixmap(int x, int y, int w, int h, int n)
 	pix->n = n;
 
 	pix->samples = fz_malloc(pix->w * pix->h * pix->n * sizeof(fz_sample));
-	
+
 	return pix;
 }
 
