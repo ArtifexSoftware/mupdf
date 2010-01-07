@@ -203,7 +203,7 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	return fz_okay;
 }
 
-fz_error
+void
 fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
 	FT_Face face = font->ftface;
@@ -323,8 +323,6 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 			glyph->samples[(glyph->h - y - 1) * glyph->w + x] = a;
 		}
 	}
-
-	return fz_okay;
 }
 
 
@@ -356,7 +354,7 @@ fz_newtype3font(char *name, fz_matrix matrix)
 /* XXX UGLY HACK XXX */
 extern fz_colorspace *pdf_devicegray;
 
-fz_error
+void
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
 #if 0 // XXX
@@ -404,7 +402,6 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	glyph->h = pixmap->h;
 	glyph->samples = pixmap->samples;
 #endif
-	return fz_okay;
 }
 
 void

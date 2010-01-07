@@ -294,7 +294,7 @@ evictall(fz_glyphcache *arena)
 	arena->used = 0;
 }
 
-fz_error
+void
 fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz_matrix ctm)
 {
 	fz_error error;
@@ -325,7 +325,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 		ghits++;
 
-		return fz_okay;
+		return;
 	}
 
 	gmisses++;
@@ -335,25 +335,22 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 
 	if (font->ftface)
 	{
-		error = fz_renderftglyph(glyph, font, cid, ctm);
-		if (error)
-			return error;
+		fz_renderftglyph(glyph, font, cid, ctm);
 	}
 	else if (font->t3procs)
 	{
-		error = fz_rendert3glyph(glyph, font, cid, ctm);
-		if (error)
-			return error;
+		fz_rendert3glyph(glyph, font, cid, ctm);
 	}
 	else
 	{
-		return fz_throw("uninitialized font structure");
+		fz_warn("assert: uninitialized font structure");
+		return;
 	}
 
 	size = glyph->w * glyph->h;
 
 	if (size > arena->size / 6)
-		return fz_okay;
+		return;
 
 	while (arena->load > arena->slots * 75 / 100)
 	{
@@ -381,7 +378,5 @@ fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz
 	glyph->samples = val->samples;
 
 	hashinsert(arena, &key, val);
-
-	return fz_okay;
 }
 

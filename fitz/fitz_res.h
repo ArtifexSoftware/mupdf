@@ -148,6 +148,7 @@ struct fz_text_s
 {
 	fz_font *font;
 	fz_matrix trm;
+	fz_matrix ctm;
 	int len, cap;
 	fz_textel *els;
 };

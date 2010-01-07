@@ -8,6 +8,7 @@ fz_newtext(fz_font *font)
 	text = fz_malloc(sizeof(fz_text));
 	text->font = fz_keepfont(font);
 	text->trm = fz_identity();
+	text->ctm = fz_identity();
 	text->len = 0;
 	text->cap = 0;
 	text->els = nil;

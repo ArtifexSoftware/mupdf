@@ -274,6 +274,8 @@ pdf_flushtext(pdf_csi *csi)
 	if (!csi->text)
 		return;
 
+	csi->text->ctm = gstate->ctm;
+
 	switch (csi->textmode)
 	{
 	case 0:

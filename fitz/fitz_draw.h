@@ -15,9 +15,9 @@ typedef struct fz_glyphcache_s fz_glyphcache;
 fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest);
 
 fz_glyphcache * fz_newglyphcache(int slots, int size);
-fz_error fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-fz_error fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
+void fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+void fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
+void fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
 void fz_debugglyphcache(fz_glyphcache *);
 void fz_freeglyphcache(fz_glyphcache *);
 
