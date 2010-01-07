@@ -207,6 +207,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	}
 
 	pix = fz_newpixmap(bbox.x0, bbox.y0, w, bh, 4);
+	fz_clearpixmap(pix, 0xFF);
 
 	memset(pix->samples, 0xff, pix->h * pix->w * pix->n);
 
@@ -229,7 +230,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(error);
-		fz_free(dev);
+		fz_freedrawdevice(dev);
 
 		if (drawpattern)
 		{

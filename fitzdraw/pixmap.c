@@ -39,9 +39,9 @@ fz_freepixmap(fz_pixmap *pix)
 }
 
 void
-fz_clearpixmap(fz_pixmap *pix)
+fz_clearpixmap(fz_pixmap *pix, unsigned char value)
 {
-	memset(pix->samples, 0, pix->w * pix->h * pix->n * sizeof(fz_sample));
+	memset(pix->samples, value, pix->w * pix->h * pix->n * sizeof(fz_sample));
 }
 
 void

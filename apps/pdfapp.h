@@ -26,7 +26,6 @@ struct pdfapp_s
 	char *doctitle;
 	pdf_xref *xref;
 	pdf_outline *outline;
-	fz_renderer *rast;
 	int pagecount;
 
 	/* current view params */

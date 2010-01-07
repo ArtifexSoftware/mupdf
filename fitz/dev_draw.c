@@ -535,12 +535,13 @@ fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
 }
 
 void
-fz_freedrawdevice(void *user)
+fz_freedrawdevice(fz_device *dev)
 {
-	fz_drawdevice *dev = user;
-	fz_dropcolorspace(dev->model);
-	fz_freeglyphcache(dev->cache);
-	fz_freegel(dev->gel);
-	fz_freeael(dev->ael);
+	fz_drawdevice *ddev = dev->user;
+	fz_dropcolorspace(ddev->model);
+	fz_freeglyphcache(ddev->cache);
+	fz_freegel(ddev->gel);
+	fz_freeael(ddev->ael);
+	fz_free(ddev);
 	fz_free(dev);
 }

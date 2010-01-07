@@ -13,6 +13,7 @@ typedef struct fz_glyph_s fz_glyph;
 typedef struct fz_glyphcache_s fz_glyphcache;
 
 fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest);
+void fz_freedrawdevice(fz_device *dev);
 
 fz_glyphcache * fz_newglyphcache(int slots, int size);
 void fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);

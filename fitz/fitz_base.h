@@ -312,7 +312,7 @@ fz_pixmap * fz_newpixmap(int x, int y, int w, int h, int n);
 fz_pixmap * fz_newpixmapcopy(fz_pixmap *old);
 
 void fz_debugpixmap(fz_pixmap *map, char *prefix);
-void fz_clearpixmap(fz_pixmap *map);
+void fz_clearpixmap(fz_pixmap *map, unsigned char value);
 void fz_freepixmap(fz_pixmap *map);
 
 fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);

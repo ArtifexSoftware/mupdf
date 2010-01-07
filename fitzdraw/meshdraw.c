@@ -341,7 +341,7 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 		temp = dest;
 	}
 
-	fz_clearpixmap(temp);
+	fz_clearpixmap(temp, 0);
 
 	for (i = 0; i < shade->meshlen; i++)
 	{

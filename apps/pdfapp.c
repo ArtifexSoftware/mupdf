@@ -52,14 +52,7 @@ char *pdfapp_usage(pdfapp_t *app)
 
 void pdfapp_init(pdfapp_t *app)
 {
-	fz_error error;
-
 	memset(app, 0, sizeof(pdfapp_t));
-
-	error = fz_newrenderer(&app->rast, pdf_devicergb, 0, 1024 * 512);
-	if (error)
-		pdfapp_error(app, error);
-
 	app->scrw = 640;
 	app->scrh = 480;
 	app->zoom = 1.0;
@@ -171,7 +164,7 @@ void pdfapp_close(pdfapp_t *app)
 	app->page = nil;
 
 	if (app->image)
-		fz_droppixmap(app->image);
+		fz_freepixmap(app->image);
 	app->image = nil;
 
 	if (app->outline)
@@ -224,8 +217,9 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 {
 	char buf[256];
 	fz_error error;
+	fz_device *dev;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_irect bbox;
 	fz_obj *obj;
 
 	if (loadpage)
@@ -253,14 +247,17 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		wincursor(app, WAIT);
 
 		if (app->image)
-			fz_droppixmap(app->image);
+			fz_freepixmap(app->image);
 		app->image = nil;
 
 		ctm = pdfapp_viewctm(app);
-		bbox = fz_transformaabb(ctm, app->page->mediabox);
-
-		error = fz_rendertree(&app->image, app->rast, app->page->tree,
-			ctm, fz_roundrect(bbox), 1);
+		bbox = fz_roundrect(fz_transformaabb(ctm, app->page->mediabox));
+		app->image = fz_newpixmapwithrect(bbox, 4);
+		fz_clearpixmap(app->image, 0xFF);
+		app->page->contents->rp = app->page->contents->bp;
+		dev = fz_newdrawdevice(pdf_devicergb, app->image);
+		error = pdf_runcontentstream(dev, ctm, 0, app->xref, app->page->resources, app->page->contents);
+		fz_freedrawdevice(dev);
 		if (error)
 			pdfapp_error(app, error);
 
