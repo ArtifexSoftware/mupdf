@@ -350,7 +350,11 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 	fz_rect bounds;
 	fz_irect bbox;
 	fz_irect clip;
-	fz_pixmap *tmp;
+	fz_pixmap *temp;
+	float rgb[3];
+	unsigned char argb[4];
+	unsigned char *s;
+	int n;
 
 	bounds = fz_transformaabb(fz_concat(shade->matrix, ctm), shade->bbox);
 	bbox = fz_roundrect(bounds);
@@ -361,10 +365,31 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 	clip.y1 = dev->dest->y + dev->dest->h;
 	clip = fz_intersectirects(clip, bbox);
 
-	tmp = fz_newpixmapwithrect(clip, dev->model->n + 1);
-	fz_rendershade(shade, ctm, dev->model, tmp);
-	blendover(tmp, dev->dest);
-	fz_freepixmap(tmp);
+	temp = fz_newpixmapwithrect(clip, dev->model->n + 1);
+
+	if (shade->usebackground)
+	{
+		fz_convertcolor(shade->cs, shade->background, dev->model, rgb);
+		argb[0] = 255;
+		argb[1] = rgb[0] * 255;
+		argb[2] = rgb[1] * 255;
+		argb[3] = rgb[2] * 255;
+		s = temp->samples;
+		n = temp->w * temp->h;
+		while (n--)
+		{
+			*s++ = argb[0];
+			*s++ = argb[1];
+			*s++ = argb[2];
+			*s++ = argb[3];
+		}
+		blendover(temp, dev->dest);
+	}
+
+	fz_rendershade(shade, ctm, dev->model, temp);
+	blendover(temp, dev->dest);
+
+	fz_freepixmap(temp);
 }
 
 static inline void

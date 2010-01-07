@@ -315,7 +315,6 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 {
 	unsigned char clut[256][3];
 	unsigned char *s, *d;
-	fz_error error;
 	fz_pixmap *temp;
 	float rgb[3];
 	float tri[3][MAXN];
