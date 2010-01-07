@@ -228,10 +228,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 		fz_device *dev = fz_newdrawdevice(pdf_devicergb, pix);
 		drawpage->contents->rp = drawpage->contents->bp;
-		fz_stream *file = fz_openrbuffer(drawpage->contents);
-		pdf_csi *csi = pdf_newcsi(dev, 0, ctm);
-		error = pdf_runcsi(csi, xref, drawpage->resources, file);
-		fz_dropstream(file);
+		error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(error);
 		fz_free(dev);

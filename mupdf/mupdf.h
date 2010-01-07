@@ -713,9 +713,6 @@ void pdf_showimage(pdf_csi*, pdf_image *img);
 void pdf_showshade(pdf_csi*, fz_shade *shd);
 
 /* interpret.c */
-pdf_csi *pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm);
-fz_error pdf_runcsi(pdf_csi *, pdf_xref *xref, fz_obj *resources, fz_stream *contents);
-void pdf_dropcsi(pdf_csi *csi);
+fz_error pdf_runcontentstream(fz_device *dev, fz_matrix ctm, int maskonly, pdf_xref *xref, fz_obj *resources, fz_buffer *contents);
 
 #endif
-
