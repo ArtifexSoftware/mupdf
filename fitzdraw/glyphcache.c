@@ -297,7 +297,6 @@ evictall(fz_glyphcache *arena)
 void
 fz_renderglyph(fz_glyphcache *arena, fz_glyph *glyph, fz_font *font, int cid, fz_matrix ctm)
 {
-	fz_error error;
 	fz_key key;
 	fz_val *val;
 	int size;

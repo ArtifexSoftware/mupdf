@@ -649,6 +649,7 @@ struct pdf_material_s
 struct pdf_gstate_s
 {
 	fz_matrix ctm;
+	int clipdepth;
 
 	/* path stroking */
 	float linewidth;

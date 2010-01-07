@@ -206,9 +206,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		write(fd, pnmhdr, strlen(pnmhdr));
 	}
 
-	error = fz_newpixmap(&pix, bbox.x0, bbox.y0, w, bh, 4);
-	if (error)
-		die(error);
+	pix = fz_newpixmap(bbox.x0, bbox.y0, w, bh, 4);
 
 	memset(pix->samples, 0xff, pix->h * pix->w * pix->n);
 
@@ -261,7 +259,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			pix->h = bbox.y1 - pix->y;
 	}
 
-	fz_droppixmap(pix);
+	fz_freepixmap(pix);
 
 	if (!drawpattern) {
 		unsigned char buf[16];
@@ -378,7 +376,6 @@ static void drawpages(char *pagelist)
 
 int main(int argc, char **argv)
 {
-	fz_error error;
 	char *password = "";
 	int c;
 	enum { NO_FILE_OPENED, NO_PAGES_DRAWN, DREW_PAGES } state;
@@ -415,9 +412,7 @@ int main(int argc, char **argv)
 
 			closexref();
 
-//XXX			error = fz_newrenderer(&drawgc, pdf_devicergb, 0, 1024 * 512);
-//			if (error)
-//				die(error);
+//XXX		fz_newrenderer(&drawgc, pdf_devicergb, 0, 1024 * 512);
 
 			openxref(argv[fz_optind], password, 0);
 			state = NO_PAGES_DRAWN;

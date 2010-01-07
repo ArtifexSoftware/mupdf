@@ -310,7 +310,7 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
  * mesh drawing
  */
 
-fz_error
+void
 fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap *dest)
 {
 	unsigned char clut[256][3];
@@ -329,17 +329,12 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 	if (shade->usefunction)
 	{
 		n = 3;
-		error = fz_newpixmap(&temp, dest->x, dest->y, dest->w, dest->h, 2);
-		if (error)
-			return error;
+		temp = fz_newpixmap(dest->x, dest->y, dest->w, dest->h, 2);
 	}
 	else if (shade->cs != destcs)
 	{
 		n = 2 + shade->cs->n;
-		error = fz_newpixmap(&temp, dest->x, dest->y, dest->w, dest->h,
-			shade->cs->n + 1);
-		if (error)
-			return error;
+		temp = fz_newpixmap(dest->x, dest->y, dest->w, dest->h, shade->cs->n + 1);
 	}
 	else
 	{
@@ -357,7 +352,7 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 			p.y = shade->mesh[(i * 3 + k) * n + 1];
 			p = fz_transformpoint(ctm, p);
 			if (isnan(p.y) || isnan(p.x)) // How is this happening?
-			goto baddata;
+				goto baddata;
 			tri[k][0] = p.x;
 			tri[k][1] = p.y;
 			for (j = 2; j < n; j++)
@@ -392,15 +387,13 @@ baddata:
 			d += 4;
 		}
 
-		fz_droppixmap(temp);
+		fz_freepixmap(temp);
 	}
 
 	else if (shade->cs != destcs)
 	{
 		fz_convertpixmap(shade->cs, temp, destcs, dest);
-		fz_droppixmap(temp);
+		fz_freepixmap(temp);
 	}
-
-	return fz_okay;
 }
 

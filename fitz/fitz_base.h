@@ -307,21 +307,18 @@ struct fz_pixmap_s
 	fz_sample *samples;
 };
 
-fz_error fz_newpixmapwithrect(fz_pixmap **mapp, fz_irect bbox, int n);
-fz_error fz_newpixmap(fz_pixmap **mapp, int x, int y, int w, int h, int n);
-fz_error fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old);
+fz_pixmap * fz_newpixmapwithrect(fz_irect bbox, int n);
+fz_pixmap * fz_newpixmap(int x, int y, int w, int h, int n);
+fz_pixmap * fz_newpixmapcopy(fz_pixmap *old);
 
 void fz_debugpixmap(fz_pixmap *map, char *prefix);
 void fz_clearpixmap(fz_pixmap *map);
-void fz_droppixmap(fz_pixmap *map);
+void fz_freepixmap(fz_pixmap *map);
 
-fz_error fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom);
+fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
 
 /* needed for tiled rendering */
 fz_error fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom);
 fz_error fz_scalepixmaptile(fz_pixmap *dstp, int xoffs, int yoffs,
 	fz_pixmap *tile, int xdenom, int ydenom);
-
-#endif
-
 

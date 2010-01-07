@@ -483,7 +483,6 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 {
 	pdf_image *src = (pdf_image*)img;
 	void (*tilefunc)(unsigned char*,int,unsigned char*, int, int, int, int);
-	fz_error error;
 
 	assert(tile->x == 0); /* can't handle general tile yet, only y-banding */
 
@@ -510,9 +509,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		int x, y, k, i;
 		int bpcfact = 1;
 
-		error = fz_newpixmap(&tmp, tile->x, tile->y, tile->w, tile->h, 1);
-		if (error)
-			return error;
+		tmp = fz_newpixmap(tile->x, tile->y, tile->w, tile->h, 1);
 
 		switch (src->bpc)
 		{
@@ -549,7 +546,7 @@ pdf_loadtile(fz_image *img, fz_pixmap *tile)
 		if (src->usecolorkey)
 			maskcolorkeyindexed(tmp, tile, src->colorkey);
 
-		fz_droppixmap(tmp);
+		fz_freepixmap(tmp);
 	}
 
 	else

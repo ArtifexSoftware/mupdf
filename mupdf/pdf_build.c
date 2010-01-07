@@ -5,6 +5,7 @@ void
 pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 {
 	gs->ctm = ctm;
+	gs->clipdepth = 0;
 
 	gs->linewidth = 1.0;
 	gs->linecap = 0;
@@ -207,14 +208,14 @@ void
 pdf_showshade(pdf_csi *csi, fz_shade *shd)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	csi->dev->drawshade(csi->dev->user, shd, &gstate->ctm);
+	csi->dev->drawshade(csi->dev->user, shd, gstate->ctm);
 }
 
 void
 pdf_showimage(pdf_csi *csi, pdf_image *img)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	csi->dev->drawimage(csi->dev->user, (fz_image*)img, &gstate->ctm);
+	csi->dev->drawimage(csi->dev->user, (fz_image*)img, gstate->ctm);
 }
 
 void
@@ -239,15 +240,34 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 
 	if (csi->clip)
 	{
+		gstate->clipdepth++;
 		csi->dev->clippath(csi->dev->user, csi->path);
 		csi->clip = 0;
 	}
+
 	if (dofill)
 	{
-		// TODO: indexed, pattern, shade materials
-		csi->dev->fillpath(csi->dev->user, csi->path,
-			gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+		switch (gstate->fill.kind)
+		{
+		case PDF_MNONE:
+			break;
+		case PDF_MCOLOR:
+		case PDF_MINDEXED:
+		case PDF_MLAB:
+			csi->dev->fillpath(csi->dev->user, csi->path,
+				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+			break;
+		case PDF_MPATTERN:
+			printf("pattern fills not supported yet\n");
+			break;
+		case PDF_MSHADE:
+			csi->dev->clippath(csi->dev->user, csi->path);
+			csi->dev->drawshade(csi->dev->user, gstate->fill.shade, gstate->ctm);
+			csi->dev->popclip(csi->dev->user);
+			break;
+		}
 	}
+
 	if (dostroke)
 	{
 		// TODO: indexed, pattern, shade materials
@@ -313,7 +333,10 @@ pdf_flushtext(pdf_csi *csi)
 		csi->dev->ignoretext(csi->dev->user, csi->text);
 
 	if (doclip)
+	{
+		gstate->clipdepth++;
 		csi->dev->cliptext(csi->dev->user, csi->text);
+	}
 
 	if (dofill)
 	{

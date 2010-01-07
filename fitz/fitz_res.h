@@ -24,8 +24,8 @@ struct fz_device_s
 	void (*cliptext)(void *, fz_text *);
 	void (*ignoretext)(void *, fz_text *);
 
-	void (*drawimage)(void *, fz_image *img, fz_matrix *ctm);
-	void (*drawshade)(void *, fz_shade *shd, fz_matrix *ctm);
+	void (*drawimage)(void *, fz_image *img, fz_matrix ctm);
+	void (*drawshade)(void *, fz_shade *shd, fz_matrix ctm);
 
 	void (*popclip)(void *);
 };
@@ -284,5 +284,5 @@ fz_shade *fz_keepshade(fz_shade *shade);
 void fz_dropshade(fz_shade *shade);
 
 fz_rect fz_boundshade(fz_shade *shade, fz_matrix ctm);
-fz_error fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *dsts, fz_pixmap *dstp);
+void fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *dsts, fz_pixmap *dstp);
 

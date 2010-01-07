@@ -177,16 +177,16 @@ void (*fz_scol2)(byte *src, byte *dst, int w, int denom) = scol2;
 void (*fz_scol4)(byte *src, byte *dst, int w, int denom) = scol4;
 void (*fz_scol5)(byte *src, byte *dst, int w, int denom) = scol5;
 
-fz_error
-fz_newscaledpixmap(fz_pixmap **dstp, int w, int h, int n, int xdenom, int ydenom)
+fz_pixmap *
+fz_newscaledpixmap(int w, int h, int n, int xdenom, int ydenom)
 {
 	int ow = (w + xdenom - 1) / xdenom;
 	int oh = (h + ydenom - 1) / ydenom;
-	return fz_newpixmap(dstp, 0, 0, ow, oh, n);
+	return fz_newpixmap(0, 0, ow, oh, n);
 }
 
 /* TODO: refactor */
-fz_error
+void
 fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xdenom, int ydenom)
 {
 	unsigned char *buf;
@@ -209,8 +209,6 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	assert(dst->w >= xoffs + ow && dst->h >= yoffs + oh);
 
 	buf = fz_malloc(ow * n * ydenom);
-	if (!buf)
-		return fz_rethrow(-1, "out of memory");
 
 	switch (n)
 	{
@@ -274,13 +272,11 @@ fz_scalepixmaptile(fz_pixmap *dst, int xoffs, int yoffs, fz_pixmap *src, int xde
 	}
 
 	fz_free(buf);
-	return fz_okay;
 }
 
-fz_error
-fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
+fz_pixmap *
+fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom)
 {
-	fz_error error;
 	fz_pixmap *dst;
 	unsigned char *buf;
 	int y, iy, oy;
@@ -295,15 +291,8 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	n = src->n;
 
 	buf = fz_malloc(ow * n * ydenom);
-	if (!buf)
-		return fz_rethrow(-1, "out of memory");
 
-	error = fz_newpixmap(&dst, 0, 0, ow, oh, src->n);
-	if (error)
-	{
-		fz_free(buf);
-		return error;
-	}
+	dst = fz_newpixmap(0, 0, ow, oh, src->n);
 
 	switch (n)
 	{
@@ -366,7 +355,5 @@ fz_scalepixmap(fz_pixmap **dstp, fz_pixmap *src, int xdenom, int ydenom)
 	}
 
 	fz_free(buf);
-	*dstp = dst;
-	return fz_okay;
+	return dst;
 }
-

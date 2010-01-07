@@ -1,14 +1,11 @@
 #include "fitz.h"
 
-fz_error
-fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
+fz_pixmap *
+fz_newpixmap(int x, int y, int w, int h, int n)
 {
 	fz_pixmap *pix;
 
-	pix = *pixp = fz_malloc(sizeof(fz_pixmap));
-	if (!pix)
-		return fz_rethrow(-1, "out of memory");
-
+	pix = fz_malloc(sizeof(fz_pixmap));
 	pix->x = x;
 	pix->y = y;
 	pix->w = w;
@@ -16,33 +13,26 @@ fz_newpixmap(fz_pixmap **pixp, int x, int y, int w, int h, int n)
 	pix->n = n;
 
 	pix->samples = fz_malloc(pix->w * pix->h * pix->n * sizeof(fz_sample));
-	if (!pix->samples) {
-		fz_free(pix);
-		return fz_rethrow(-1, "out of memory");
-	}
-
-	return fz_okay;
+	
+	return pix;
 }
 
-fz_error
-fz_newpixmapwithrect(fz_pixmap **pixp, fz_irect r, int n)
+fz_pixmap *
+fz_newpixmapwithrect(fz_irect r, int n)
 {
-	return fz_newpixmap(pixp, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0, n);
+	return fz_newpixmap(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0, n);
 }
 
-fz_error
-fz_newpixmapcopy(fz_pixmap **pixp, fz_pixmap *old)
+fz_pixmap *
+fz_newpixmapcopy(fz_pixmap *old)
 {
-	fz_error error;
-	error = fz_newpixmap(pixp, old->x, old->y, old->w, old->h, old->n);
-	if (error)
-		return error;
-	memcpy((*pixp)->samples, old->samples, old->w * old->h * old->n);
-	return fz_okay;
+	fz_pixmap *pix = fz_newpixmap(old->x, old->y, old->w, old->h, old->n);
+	memcpy(pix->samples, old->samples, old->w * old->h * old->n);
+	return pix;
 }
 
 void
-fz_droppixmap(fz_pixmap *pix)
+fz_freepixmap(fz_pixmap *pix)
 {
 	fz_free(pix->samples);
 	fz_free(pix);

@@ -16,6 +16,42 @@ struct fz_drawdevice_s
 	fz_pixmap *dest;
 };
 
+static void
+blendover(fz_pixmap *src, fz_pixmap *dst)
+{
+	unsigned char *sp, *dp;
+	fz_irect sr, dr;
+	int x, y, w, h;
+
+	sr.x0 = src->x;
+	sr.y0 = src->y;
+	sr.x1 = src->x + src->w;
+	sr.y1 = src->y + src->h;
+
+	dr.x0 = dst->x;
+	dr.y0 = dst->y;
+	dr.x1 = dst->x + dst->w;
+	dr.y1 = dst->y + dst->h;
+
+	dr = fz_intersectirects(sr, dr);
+	x = dr.x0;
+	y = dr.y0;
+	w = dr.x1 - dr.x0;
+	h = dr.y1 - dr.y0;
+
+	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
+	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
+
+	if (src->n == 1 && dst->n == 1)
+		fz_duff_1o1(sp, src->w, dp, dst->w, w, h);
+	else if (src->n == 4 && dst->n == 4)
+		fz_duff_4o4(sp, src->w * 4, dp, dst->w * 4, w, h);
+	else if (src->n == dst->n)
+		fz_duff_non(sp, src->w * src->n, src->n, dp, dst->w * dst->n, w, h);
+	else
+		assert(!"blendover src and dst mismatch");
+}
+
 void fz_drawfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
@@ -207,19 +243,146 @@ void fz_drawignoretext(void *user, fz_text *text)
 	printf("invisibletext\n");
 }
 
-void fz_drawdrawimage(void *user, fz_image *image, fz_matrix *ctm)
+static inline void
+calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
 {
-	printf("drawimage\n");
+	float sx, sy;
+	int dx, dy;
+
+	sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	dx = 1;
+	while (((w+dx-1)/dx)/sx > 2.0 && (w+dx-1)/dx > 1)
+		dx++;
+
+	sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
+	dy = 1;
+	while (((h+dy-1)/dy)/sy > 2.0 && (h+dy-1)/dy > 1)
+		dy++;
+
+	*odx = dx;
+	*ody = dy;
 }
 
-void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix *ctm)
+void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 {
-	printf("drawshade\n");
+	fz_drawdevice *dev = user;
+	fz_rect bounds;
+	fz_irect bbox;
+	fz_irect clip;
+	fz_pixmap *tmp;
+
+	bounds = fz_transformaabb(fz_concat(shade->matrix, ctm), shade->bbox);
+	bbox = fz_roundrect(bounds);
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+	clip = fz_intersectirects(clip, bbox);
+
+	tmp = fz_newpixmapwithrect(clip, dev->model->n + 1);
+	fz_rendershade(shade, ctm, dev->model, tmp);
+	blendover(tmp, dev->dest);
+	fz_freepixmap(tmp);
+}
+
+void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
+{
+	fz_drawdevice *dev = user;
+	fz_error error;
+	fz_rect bounds;
+	fz_irect bbox;
+	fz_irect clip;
+	int dx, dy;
+	fz_pixmap *tile;
+	fz_pixmap *temp;
+	fz_matrix imgmat;
+	fz_matrix invmat;
+	int fa, fb, fc, fd;
+	int u0, v0;
+	int x0, y0;
+	int w, h;
+
+	printf("drawimage\n");
+
+	bounds.x0 = 0;
+	bounds.y0 = 0;
+	bounds.x1 = 1;
+	bounds.y1 = 1;
+	bounds = fz_transformaabb(ctm, bounds);
+	bbox = fz_roundrect(bounds);
+	
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+	clip = fz_intersectirects(clip, bbox);
+
+	if (fz_isemptyrect(clip))
+		return;
+	if (image->w == 0 || image->h == 0)
+		return;
+
+	calcimagescale(ctm, image->w, image->h, &dx, &dy);
+
+	tile = fz_newpixmap(0, 0, image->w, image->h, image->n + 1);
+
+	error = image->loadtile(image, tile);
+	if (error)
+	{
+		fz_catch(error, "cannot load image data");
+		return;
+	}
+
+	if (dx != 1 || dy != 1)
+	{
+		temp = fz_scalepixmap(tile, dx, dy);
+		fz_freepixmap(tile);
+		tile = temp;
+	}
+
+	if (image->cs && image->cs != dev->model)
+	{
+		temp = fz_newpixmap(tile->x, tile->y, tile->w, tile->h, dev->model->n + 1);
+		fz_convertpixmap(image->cs, tile, dev->model, temp);
+		fz_freepixmap(tile);
+		tile = temp;
+	}
+
+	imgmat.a = 1.0 / tile->w;
+	imgmat.b = 0.0;
+	imgmat.c = 0.0;
+	imgmat.d = -1.0 / tile->h;
+	imgmat.e = 0.0;
+	imgmat.f = 1.0;
+	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
+
+	invmat.e -= 0.5;
+	invmat.f -= 0.5;
+
+	w = clip.x1 - clip.x0;
+	h = clip.y1 - clip.y0;
+	x0 = clip.x0;
+	y0 = clip.y0;
+	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
+	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
+	fa = invmat.a * 65536;
+	fb = invmat.b * 65536;
+	fc = invmat.c * 65536;
+	fd = invmat.d * 65536;
+
+#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
+
+	if (image->cs)
+		fz_img_4o4(tile->samples, tile->w, tile->h, PDST(dev->dest),
+			u0, v0, fa, fb, fc, fd, w, h);
+
+	fz_freepixmap(tile);
 }
 
 void fz_drawpopclip(void *user)
 {
-	printf("grestore\n");
+	printf("popclip\n");
 }
 
 fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)

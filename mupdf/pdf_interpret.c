@@ -101,6 +101,7 @@ static void
 grestore(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
+	int clipdepth = gs->clipdepth;
 
 	if (csi->gtop == 0)
 	{
@@ -114,6 +115,13 @@ grestore(pdf_csi *csi)
 		pdf_dropfont(gs->font);
 
 	csi->gtop --;
+
+	gs = csi->gstate + csi->gtop;
+	while (clipdepth > gs->clipdepth)
+	{
+		csi->dev->popclip(csi->dev->user);
+		clipdepth--;
+	}
 }
 
 static void
