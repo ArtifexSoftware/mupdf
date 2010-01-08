@@ -247,8 +247,6 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 				}
 
 				write(fd, dst, pix->w * 3);
-
-				memset(src, 0xff, pix->w * 4);
 			}
 		}
 
