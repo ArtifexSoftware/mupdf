@@ -357,6 +357,12 @@ extern fz_colorspace *pdf_devicegray;
 void
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
+	glyph->x = 0;
+	glyph->y = 0;
+	glyph->w = 0;
+	glyph->h = 0;
+	glyph->samples = nil;
+
 #if 0 // XXX
 	fz_error error;
 	fz_renderer *gc;
