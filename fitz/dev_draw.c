@@ -154,7 +154,7 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 
 	if (flatness < 0.1)
 		flatness = 0.1;
-	if (linewidth < 0.1)
+	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
 
 	fz_convertcolor(colorspace, color, dev->model, rgb);
