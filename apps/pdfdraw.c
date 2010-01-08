@@ -108,10 +108,10 @@ static void drawloadpage(int pagenum, struct benchmark *loadtimes)
 	long end;
 	long elapsed;
 
-	fprintf(stderr, "draw %s:%03d ", basename, pagenum);
+	fprintf(stdout, "draw %s:%03d ", basename, pagenum);
 	if (benchmark && loadtimes)
 	{
-		fflush(stderr);
+		fflush(stdout);
 		gettime(&start);
 	}
 
@@ -140,7 +140,7 @@ static void drawloadpage(int pagenum, struct benchmark *loadtimes)
 	}
 
 	if (benchmark)
-		fflush(stderr);
+		fflush(stdout);
 }
 
 static void drawfreepage(void)
@@ -158,7 +158,7 @@ static void drawfreepage(void)
 		/* pdf_debugstore(xref->store); */
 		pdf_agestoreditems(xref->store);
 		pdf_evictageditems(xref->store);
-		fflush(stderr);
+		fflush(stdout);
 	}
 }
 
@@ -214,7 +214,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	for (b = 0; b < drawbands; b++)
 	{
 		if (drawbands > 1)
-			fprintf(stderr, "drawing band %d / %d\n", b + 1, drawbands);
+			fprintf(stdout, "drawing band %d / %d\n", b + 1, drawbands);
 
 #if 0
 		printf("\nRESOURCES:\n");
@@ -266,7 +266,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		unsigned char buf[16];
 		fz_md5final(&digest, buf);
 		for (i = 0; i < 16; i++)
-			fprintf(stderr, "%02x", buf[i]);
+			fprintf(stdout, "%02x", buf[i]);
 	}
 
 	if (drawpattern)
@@ -292,11 +292,11 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		drawtimes->avg += elapsed;
 		drawtimes->pages++;
 
-		fprintf(stderr, " time %.3fs",
+		fprintf(stdout, " time %.3fs",
 			elapsed / 1000000.0);
 	}
 
-	fprintf(stderr, "\n");
+	fprintf(stdout, "\n");
 }
 
 static void drawpages(char *pagelist)
