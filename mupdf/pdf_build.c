@@ -258,7 +258,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
-			printf("pattern fills not supported yet\n");
+			fz_warn("pattern fills not supported yet");
 			break;
 		case PDF_MSHADE:
 			csi->dev->clippath(csi->dev->user, csi->path);

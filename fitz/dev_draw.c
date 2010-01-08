@@ -311,17 +311,17 @@ void fz_drawfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float
 
 void fz_drawstroketext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
 {
-	printf("/%s setfont\n", text->font->name);
+	fz_warn("/%s setfont", text->font->name);
 	fz_debugtext(text, 0);
-	printf("charpath stroke\n");
+	fz_warn("charpath stroke");
 }
 
 void fz_drawcliptext(void *user, fz_text *text)
 {
-	printf("gsave\n");
-	printf("/%s setfont\n", text->font->name);
+	fz_warn("gsave");
+	fz_warn("/%s setfont", text->font->name);
 	fz_debugtext(text, 0);
-	printf("charpath clip\n");
+	fz_warn("charpath clip");
 }
 
 void fz_drawignoretext(void *user, fz_text *text)
