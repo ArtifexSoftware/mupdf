@@ -240,7 +240,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *descriptor;
 	fz_obj *encoding;
 	fz_obj *widths;
-	unsigned short *etable;
+	unsigned short *etable = nil;
 	pdf_fontdesc *fontdesc;
 	fz_irect bbox;
 	FT_Face face;
