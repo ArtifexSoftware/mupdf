@@ -495,6 +495,8 @@ skip:
 	if (tok == PDF_TSTREAM)
 	{
 		int c = fz_readbyte(file);
+		while (c == ' ')
+			c = fz_readbyte(file);
 		if (c == '\r')
 		{
 			c = fz_peekbyte(file);
