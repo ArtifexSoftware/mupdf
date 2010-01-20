@@ -90,8 +90,8 @@ if $(OS) = MINGW
     BUILD_WINAPP = true ;
     BUILD_PLUGIN = true ;
 
-    CCFLAGS = -Wall -std=gnu99 -Ic:/local/include ;
-    LINKFLAGS = -Lc:/local/lib ;
+    CCFLAGS = -Wall -std=gnu99 -Ic:/msys/1.0/local/include ;
+    LINKFLAGS = -Lc:/msys/1.0/local/lib ;
     LINKLIBS = -lfreetype -ljpeg -lz -lm ;
     APPLINKLIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 ;
 
