@@ -87,7 +87,7 @@ DOWNLOAD
 The latest development source is available directly from the darcs repository.
 Browse the source or use the following command line to check out the source:
 
-    darcs get http://ccxvii.net/repos/mupdf
+    darcs get http://mupdf.com/repos/mupdf
 
 INSTALLING
 
