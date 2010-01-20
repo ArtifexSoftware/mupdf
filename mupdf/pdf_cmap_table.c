@@ -1,9 +1,13 @@
 /*
- * :r !grep '^const.*pdf_cmap_' build/macosx-x86-debug/cmap_*.c
+ * :r !grep -h '^pdf_cmap' build/macosx-x86-debug/cmap_*.c
+ * :.,'as/\(pdf_cmap.*\) =/extern \1;/
+ * :.,'as/pdf_cmap \(pdf_cmap.*\) =/\&\1;/
  */
 
 #include "fitz.h"
 #include "mupdf.h"
+
+extern pdf_cmap pdf_cmap_Adobe_CNS1_0;
 
 extern pdf_cmap pdf_cmap_Adobe_CNS1_0;
 extern pdf_cmap pdf_cmap_Adobe_CNS1_1;
@@ -114,11 +118,9 @@ extern pdf_cmap pdf_cmap_RKSJ_H;
 extern pdf_cmap pdf_cmap_RKSJ_V;
 extern pdf_cmap pdf_cmap_Roman;
 extern pdf_cmap pdf_cmap_UniJIS_UCS2_H;
-extern pdf_cmap pdf_cmap_UniJIS_UCS2_V;
-extern pdf_cmap pdf_cmap_UniJIS_UTF16_H;
-extern pdf_cmap pdf_cmap_UniJIS_UTF16_V;
 extern pdf_cmap pdf_cmap_UniJIS_UCS2_HW_H;
 extern pdf_cmap pdf_cmap_UniJIS_UCS2_HW_V;
+extern pdf_cmap pdf_cmap_UniJIS_UCS2_V;
 extern pdf_cmap pdf_cmap_UniJISPro_UCS2_HW_V;
 extern pdf_cmap pdf_cmap_UniJISPro_UCS2_V;
 extern pdf_cmap pdf_cmap_V;
@@ -132,6 +134,8 @@ extern pdf_cmap pdf_cmap_UniHojo_UCS2_H;
 extern pdf_cmap pdf_cmap_UniHojo_UCS2_V;
 extern pdf_cmap pdf_cmap_UniHojo_UTF16_H;
 extern pdf_cmap pdf_cmap_UniHojo_UTF16_V;
+extern pdf_cmap pdf_cmap_UniJIS_UTF16_H;
+extern pdf_cmap pdf_cmap_UniJIS_UTF16_V;
 extern pdf_cmap pdf_cmap_Adobe_Korea1_0;
 extern pdf_cmap pdf_cmap_Adobe_Korea1_1;
 extern pdf_cmap pdf_cmap_Adobe_Korea1_2;
@@ -196,6 +200,8 @@ pdf_cmap *pdf_cmaptable[] =
 	&pdf_cmap_HKscs_B5_V,
 	&pdf_cmap_UniCNS_UCS2_H,
 	&pdf_cmap_UniCNS_UCS2_V,
+	&pdf_cmap_UniCNS_UTF16_H,
+	&pdf_cmap_UniCNS_UTF16_V,
 	&pdf_cmap_Adobe_GB1_0,
 	&pdf_cmap_Adobe_GB1_1,
 	&pdf_cmap_Adobe_GB1_2,
@@ -222,6 +228,8 @@ pdf_cmap *pdf_cmaptable[] =
 	&pdf_cmap_GBTpc_EUC_V,
 	&pdf_cmap_UniGB_UCS2_H,
 	&pdf_cmap_UniGB_UCS2_V,
+	&pdf_cmap_UniGB_UTF16_H,
+	&pdf_cmap_UniGB_UTF16_V,
 	&pdf_cmap_78_EUC_H,
 	&pdf_cmap_78_EUC_V,
 	&pdf_cmap_78_H,
@@ -278,6 +286,10 @@ pdf_cmap *pdf_cmaptable[] =
 	&pdf_cmap_Hojo_V,
 	&pdf_cmap_UniHojo_UCS2_H,
 	&pdf_cmap_UniHojo_UCS2_V,
+	&pdf_cmap_UniHojo_UTF16_H,
+	&pdf_cmap_UniHojo_UTF16_V,
+	&pdf_cmap_UniJIS_UTF16_H,
+	&pdf_cmap_UniJIS_UTF16_V,
 	&pdf_cmap_Adobe_Korea1_0,
 	&pdf_cmap_Adobe_Korea1_1,
 	&pdf_cmap_Adobe_Korea1_2,
@@ -295,6 +307,8 @@ pdf_cmap *pdf_cmaptable[] =
 	&pdf_cmap_KSCpc_EUC_V,
 	&pdf_cmap_UniKS_UCS2_H,
 	&pdf_cmap_UniKS_UCS2_V,
+	&pdf_cmap_UniKS_UTF16_H,
+	&pdf_cmap_UniKS_UTF16_V,
 	&pdf_cmap_Adobe_CNS1_UCS2,
 	&pdf_cmap_Adobe_GB1_UCS2,
 	&pdf_cmap_Adobe_Japan1_UCS2,
