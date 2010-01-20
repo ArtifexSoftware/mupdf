@@ -813,8 +813,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	return fz_okay;
 
 cleanup:
-	if (widths)
-		fz_dropobj(widths);
 	fz_dropfont(fontdesc->font);
 	fz_free(fontdesc);
 	return fz_rethrow(error, "cannot load cid font");
