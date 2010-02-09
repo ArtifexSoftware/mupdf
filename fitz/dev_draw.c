@@ -214,8 +214,6 @@ void fz_drawclippath(void *user, fz_path *path)
 
 	bbox = fz_boundgel(dev->gel);
 	bbox = fz_intersectirects(bbox, clip);
-	if (fz_isemptyrect(bbox))
-		return;
 
 	mask = fz_newpixmapwithrect(bbox, 1);
 	dest = fz_newpixmapwithrect(bbox, 4);
