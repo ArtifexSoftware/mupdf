@@ -8,7 +8,11 @@ static void fz_tracematrix(fz_matrix ctm)
 
 static void fz_tracecolor(fz_colorspace *colorspace, float *color, float alpha)
 {
-	printf("... setcolor\n");
+	int i;
+	printf("/%s setcolorspace\n", colorspace->name);
+	for (i = 0; i < colorspace->n; i++)
+		printf("%g ", color[i]);
+	printf("setcolor\n");
 	printf("%g setalpha\n", alpha);
 }
 
@@ -91,7 +95,7 @@ void fz_traceignoretext(void *user, fz_text *text)
 	printf("invisibletext\n");
 }
 
-void fz_tracedrawimage(void *user, fz_image *image, fz_matrix ctm)
+void fz_tracedrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_tracematrix(ctm);
 	printf("drawimage\n");
@@ -111,6 +115,8 @@ void fz_tracepopclip(void *user)
 fz_device *fz_newtracedevice(void)
 {
 	fz_device *dev = fz_malloc(sizeof(fz_device));
+	memset(dev, 0, sizeof(dev));
+
 	dev->user = nil;
 
 	dev->fillpath = fz_tracefillpath;

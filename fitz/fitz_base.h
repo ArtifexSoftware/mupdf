@@ -299,17 +299,23 @@ conversions and rescaling.
 */
 
 typedef struct fz_pixmap_s fz_pixmap;
-typedef unsigned char fz_sample;
+typedef struct fz_colorspace_s fz_colorspace;
+
+extern fz_colorspace *pdf_devicegray;
+extern fz_colorspace *pdf_devicergb;
+extern fz_colorspace *pdf_devicecmyk;
+extern fz_colorspace *pdf_devicelab;
+extern fz_colorspace *pdf_devicepattern;
 
 struct fz_pixmap_s
 {
 	int x, y, w, h, n;
-	fz_sample *samples;
+	fz_colorspace *colorspace;
+	unsigned char *samples;
 };
 
-fz_pixmap * fz_newpixmapwithrect(fz_irect bbox, int n);
-fz_pixmap * fz_newpixmap(int x, int y, int w, int h, int n);
-fz_pixmap * fz_newpixmapcopy(fz_pixmap *old);
+fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_irect bbox);
+fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
 
 void fz_debugpixmap(fz_pixmap *map, char *prefix);
 void fz_clearpixmap(fz_pixmap *map, unsigned char value);

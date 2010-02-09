@@ -5,9 +5,7 @@
 typedef struct fz_path_s fz_path;
 typedef struct fz_text_s fz_text;
 typedef struct fz_font_s fz_font;
-typedef struct fz_image_s fz_image;
 typedef struct fz_shade_s fz_shade;
-typedef struct fz_colorspace_s fz_colorspace;
 
 typedef struct fz_device_s fz_device;
 
@@ -24,7 +22,9 @@ struct fz_device_s
 	void (*cliptext)(void *, fz_text *);
 	void (*ignoretext)(void *, fz_text *);
 
-	void (*drawimage)(void *, fz_image *img, fz_matrix ctm);
+	void (*fillimagemask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color);
+	void (*clipimagemask)(void *, fz_pixmap *img, fz_matrix ctm);
+	void (*drawimage)(void *, fz_pixmap *img, fz_matrix ctm);
 	void (*drawshade)(void *, fz_shade *shd, fz_matrix ctm);
 
 	void (*popclip)(void *);
@@ -236,24 +236,6 @@ void fz_dropfont(fz_font *font);
 
 void fz_debugfont(fz_font *font);
 void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
-
-/*
- * Images are a right mess now. Most of the code is in the pdf interpreter.
- */
-
-/* loadtile will fill a pixmap with the pixel samples. non-premultiplied alpha. */
-
-struct fz_image_s
-{
-	int refs;
-	fz_error (*loadtile)(fz_image*,fz_pixmap*);
-	void (*freefunc)(fz_image*);
-	fz_colorspace *cs;
-	int w, h, n, a;
-};
-
-fz_image *fz_keepimage(fz_image *img);
-void fz_dropimage(fz_image *img);
 
 /*
  * The shading code is in rough shape but the general architecture is sound.

@@ -215,8 +215,8 @@ void fz_drawclippath(void *user, fz_path *path)
 	bbox = fz_boundgel(dev->gel);
 	bbox = fz_intersectirects(bbox, clip);
 
-	mask = fz_newpixmapwithrect(bbox, 1);
-	dest = fz_newpixmapwithrect(bbox, 4);
+	mask = fz_newpixmapwithrect(nil, bbox);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
 
 	memset(mask->samples, 0, mask->w * mask->h * mask->n);
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
@@ -362,8 +362,10 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
 	clip = fz_intersectirects(clip, bbox);
+	if (fz_isemptyrect(clip))
+		return;
 
-	temp = fz_newpixmapwithrect(clip, dev->model->n + 1);
+	temp = fz_newpixmapwithrect(dev->model, clip);
 
 	if (shade->usebackground)
 	{
@@ -386,6 +388,8 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 
 	fz_rendershade(shade, ctm, dev->model, temp);
 	blendover(temp, dev->dest);
+
+	fz_debugpixmap(dev->dest, "shade");
 
 	fz_freepixmap(temp);
 }
@@ -410,15 +414,13 @@ calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
 	*ody = dy;
 }
 
-void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
+void fz_drawdrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
-	fz_error error;
 	fz_rect bounds;
 	fz_irect bbox;
 	fz_irect clip;
 	int dx, dy;
-	fz_pixmap *tile;
 	fz_pixmap *temp;
 	fz_matrix imgmat;
 	fz_matrix invmat;
@@ -447,34 +449,23 @@ void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
 
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
-	tile = fz_newpixmap(0, 0, image->w, image->h, image->n + 1);
-
-	error = image->loadtile(image, tile);
-	if (error)
-	{
-		fz_catch(error, "cannot load image data");
-		return;
-	}
-
 	if (dx != 1 || dy != 1)
 	{
-		temp = fz_scalepixmap(tile, dx, dy);
-		fz_freepixmap(tile);
-		tile = temp;
+		temp = fz_scalepixmap(image, dx, dy);
+		image = temp;
 	}
 
-	if (image->cs && image->cs != dev->model)
+	if (image->colorspace && image->colorspace != dev->model)
 	{
-		temp = fz_newpixmap(tile->x, tile->y, tile->w, tile->h, dev->model->n + 1);
-		fz_convertpixmap(image->cs, tile, dev->model, temp);
-		fz_freepixmap(tile);
-		tile = temp;
+		temp = fz_newpixmap(dev->model, image->x, image->y, image->w, image->h);
+		fz_convertpixmap(image->colorspace, image, dev->model, temp);
+		image = temp;
 	}
 
-	imgmat.a = 1.0 / tile->w;
+	imgmat.a = 1.0 / image->w;
 	imgmat.b = 0.0;
 	imgmat.c = 0.0;
-	imgmat.d = -1.0 / tile->h;
+	imgmat.d = -1.0 / image->h;
 	imgmat.e = 0.0;
 	imgmat.f = 1.0;
 	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
@@ -495,11 +486,10 @@ void fz_drawdrawimage(void *user, fz_image *image, fz_matrix ctm)
 
 #define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
-	if (image->cs)
-		fz_img_4o4(tile->samples, tile->w, tile->h, PDST(dev->dest),
+	if (image->colorspace)
+		fz_img_4o4(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
-
-	fz_freepixmap(tile);
+	// else XXX
 }
 
 fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
@@ -513,6 +503,8 @@ fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
 	ddev->cliptop = 0;
 
 	fz_device *dev = fz_malloc(sizeof(fz_device));
+	memset(dev, 0, sizeof(fz_device));
+
 	dev->user = ddev;
 
 	dev->fillpath = fz_drawfillpath;
@@ -524,6 +516,8 @@ fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
 	dev->cliptext = fz_drawcliptext;
 	dev->ignoretext = fz_drawignoretext;
 
+//	dev->fillimagemask = fz_drawfillimagemask;
+//	dev->clipimagemask = fz_drawclipimagemask;
 	dev->drawimage = fz_drawdrawimage;
 	dev->drawshade = fz_drawdrawshade;
 

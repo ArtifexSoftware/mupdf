@@ -328,12 +328,12 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 	if (shade->usefunction)
 	{
 		n = 3;
-		temp = fz_newpixmap(dest->x, dest->y, dest->w, dest->h, 2);
+		temp = fz_newpixmap(pdf_devicegray, dest->x, dest->y, dest->w, dest->h);
 	}
 	else if (shade->cs != destcs)
 	{
 		n = 2 + shade->cs->n;
-		temp = fz_newpixmap(dest->x, dest->y, dest->w, dest->h, shade->cs->n + 1);
+		temp = fz_newpixmap(shade->cs, dest->x, dest->y, dest->w, dest->h);
 	}
 	else
 	{

@@ -252,7 +252,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 
 		ctm = pdfapp_viewctm(app);
 		bbox = fz_roundrect(fz_transformaabb(ctm, app->page->mediabox));
-		app->image = fz_newpixmapwithrect(bbox, 4);
+		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
 		app->page->contents->rp = app->page->contents->bp;
 		dev = fz_newdrawdevice(pdf_devicergb, app->image);

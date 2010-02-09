@@ -66,7 +66,7 @@ static void keepitem(pdf_itemkind kind, void *val)
 	case PDF_KCOLORSPACE: fz_keepcolorspace(val); break;
 	case PDF_KFUNCTION: pdf_keepfunction(val); break;
 	case PDF_KXOBJECT: pdf_keepxobject(val); break;
-	case PDF_KIMAGE: fz_keepimage(val); break;
+	case PDF_KIMAGE: pdf_keepimage(val); break;
 	case PDF_KPATTERN: pdf_keeppattern(val); break;
 	case PDF_KSHADE: fz_keepshade(val); break;
 	case PDF_KCMAP: pdf_keepcmap(val); break;
@@ -81,7 +81,7 @@ static void dropitem(pdf_itemkind kind, void *val)
 	case PDF_KCOLORSPACE: fz_dropcolorspace(val); break;
 	case PDF_KFUNCTION: pdf_dropfunction(val); break;
 	case PDF_KXOBJECT: pdf_dropxobject(val); break;
-	case PDF_KIMAGE: fz_dropimage(val); break;
+	case PDF_KIMAGE: pdf_dropimage(val); break;
 	case PDF_KPATTERN: pdf_droppattern(val); break;
 	case PDF_KSHADE: fz_dropshade(val); break;
 	case PDF_KCMAP: pdf_dropcmap(val); break;

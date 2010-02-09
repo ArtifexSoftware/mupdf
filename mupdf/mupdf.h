@@ -224,12 +224,6 @@ struct pdf_indexed_s
 	unsigned char *lookup;
 };
 
-extern fz_colorspace *pdf_devicegray;
-extern fz_colorspace *pdf_devicergb;
-extern fz_colorspace *pdf_devicecmyk;
-extern fz_colorspace *pdf_devicelab;
-extern fz_colorspace *pdf_devicepattern;
-
 void pdf_convcolor(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv);
 void pdf_convpixmap(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixmap *dp);
 
@@ -302,8 +296,10 @@ typedef struct pdf_image_s pdf_image;
 
 struct pdf_image_s
 {
-	fz_image super;
-	fz_image *mask;			/* explicit mask with subimage */
+	int refs;
+	int w, h, n, a;
+	fz_colorspace *cs;
+	pdf_image *mask;			/* explicit mask with subimage */
 	int usecolorkey;		/* explicit color-keyed masking */
 	int colorkey[FZ_MAXCOLORS * 2];
 	pdf_indexed *indexed;
@@ -315,8 +311,9 @@ struct pdf_image_s
 
 fz_error pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *obj);
-fz_error pdf_loadtile(fz_image *image, fz_pixmap *tile);
-void pdf_dropimage(fz_image *img);
+fz_error pdf_loadtile(pdf_image *image, fz_pixmap *tile);
+pdf_image *pdf_keepimage(pdf_image *img);
+void pdf_dropimage(pdf_image *img);
 
 /*
  * CMap

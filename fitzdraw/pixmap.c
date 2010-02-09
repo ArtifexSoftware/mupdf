@@ -1,7 +1,7 @@
 #include "fitz.h"
 
 fz_pixmap *
-fz_newpixmap(int x, int y, int w, int h, int n)
+fz_newpixmap(fz_colorspace *colorspace, int x, int y, int w, int h)
 {
 	fz_pixmap *pix;
 
@@ -10,30 +10,31 @@ fz_newpixmap(int x, int y, int w, int h, int n)
 	pix->y = y;
 	pix->w = w;
 	pix->h = h;
-	pix->n = n;
+	pix->colorspace = nil;
+	pix->n = 1;
 
-	pix->samples = fz_malloc(pix->w * pix->h * pix->n * sizeof(fz_sample));
+	if (colorspace)
+	{
+		pix->colorspace = fz_keepcolorspace(colorspace);
+		pix->n = 1 + colorspace->n;
+	}
+
+	pix->samples = fz_malloc(pix->w * pix->h * pix->n);
 
 	return pix;
 }
 
 fz_pixmap *
-fz_newpixmapwithrect(fz_irect r, int n)
+fz_newpixmapwithrect(fz_colorspace *colorspace, fz_irect r)
 {
-	return fz_newpixmap(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0, n);
-}
-
-fz_pixmap *
-fz_newpixmapcopy(fz_pixmap *old)
-{
-	fz_pixmap *pix = fz_newpixmap(old->x, old->y, old->w, old->h, old->n);
-	memcpy(pix->samples, old->samples, old->w * old->h * old->n);
-	return pix;
+	return fz_newpixmap(colorspace, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
 }
 
 void
 fz_freepixmap(fz_pixmap *pix)
 {
+	if (pix->colorspace)
+		fz_dropcolorspace(pix->colorspace);
 	fz_free(pix->samples);
 	fz_free(pix);
 }
@@ -41,7 +42,7 @@ fz_freepixmap(fz_pixmap *pix)
 void
 fz_clearpixmap(fz_pixmap *pix, unsigned char value)
 {
-	memset(pix->samples, value, pix->w * pix->h * pix->n * sizeof(fz_sample));
+	memset(pix->samples, value, pix->w * pix->h * pix->n);
 }
 
 void
@@ -74,6 +75,8 @@ fz_debugpixmap(fz_pixmap *pix, char *prefix)
 	alpha = fopen(alphaname, "wb");
 	if (!alpha)
 		goto cleanup;
+
+	fprintf(stderr, "saving debug pixmap %s - %d\n", prefix, counter);
 
 	if (pix->n > 1)
 	{

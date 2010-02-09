@@ -206,7 +206,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		write(fd, pnmhdr, strlen(pnmhdr));
 	}
 
-	pix = fz_newpixmap(bbox.x0, bbox.y0, w, bh, 4);
+	pix = fz_newpixmap(pdf_devicergb, bbox.x0, bbox.y0, w, bh);
 	fz_clearpixmap(pix, 0xFF);
 
 	memset(pix->samples, 0xff, pix->h * pix->w * pix->n);
@@ -225,7 +225,13 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		printf("END.\n");
 #endif
 
-		fz_device *dev = fz_newdrawdevice(pdf_devicergb, pix);
+		fz_device *dev;
+
+//		dev = fz_newtracedevice();
+//		drawpage->contents->rp = drawpage->contents->bp;
+//		pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
+
+		dev = fz_newdrawdevice(pdf_devicergb, pix);
 		drawpage->contents->rp = drawpage->contents->bp;
 		error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
 		if (error)

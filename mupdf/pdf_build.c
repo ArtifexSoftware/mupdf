@@ -212,10 +212,19 @@ pdf_showshade(pdf_csi *csi, fz_shade *shd)
 }
 
 void
-pdf_showimage(pdf_csi *csi, pdf_image *img)
+pdf_showimage(pdf_csi *csi, pdf_image *image)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	csi->dev->drawimage(csi->dev->user, (fz_image*)img, gstate->ctm);
+	fz_pixmap *tile = fz_newpixmap(image->cs, 0, 0, image->w, image->h);
+	fz_error error = pdf_loadtile(image, tile);
+	if (error)
+	{
+		fz_freepixmap(tile);
+		fz_catch(error, "cannot load image data");
+		return;
+	}
+	csi->dev->drawimage(csi->dev->user, tile, gstate->ctm);
+	fz_freepixmap(tile);
 }
 
 void
@@ -270,9 +279,26 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 
 	if (dostroke)
 	{
-		// TODO: indexed, pattern, shade materials
-		csi->dev->strokepath(csi->dev->user, csi->path,
-			gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+		switch (gstate->stroke.kind)
+		{
+		case PDF_MNONE:
+			break;
+		case PDF_MCOLOR:
+		case PDF_MINDEXED:
+		case PDF_MLAB:
+			csi->dev->strokepath(csi->dev->user, csi->path,
+				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+			break;
+		case PDF_MPATTERN:
+			fz_warn("pattern fills not supported yet");
+			break;
+		case PDF_MSHADE:
+//			csi->dev->clipstrokepath(csi->dev->user, csi->path);
+//			csi->dev->clippath(csi->dev->user, csi->path);
+	//		csi->dev->drawshade(csi->dev->user, gstate->stroke.shade, gstate->ctm);
+	//		csi->dev->popclip(csi->dev->user);
+			break;
+		}
 	}
 
 	fz_resetpath(csi->path);

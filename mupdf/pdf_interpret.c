@@ -225,19 +225,19 @@ pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, f
 	error = pdf_lex(&tok, file, buf, sizeof buf, &len);
 	if (error)
 	{
-		fz_dropimage((fz_image*)img);
+		pdf_dropimage(img);
 		return fz_rethrow(error, "syntax error after inline image");
 	}
 
 	if (tok != PDF_TKEYWORD || strcmp("EI", buf))
 	{
-		fz_dropimage((fz_image*)img);
+		pdf_dropimage(img);
 		return fz_throw("syntax error after inline image");
 	}
 
 	pdf_showimage(csi, img);
 
-	fz_dropimage((fz_image*)img);
+	pdf_dropimage(img);
 	return fz_okay;
 }
 
@@ -920,7 +920,7 @@ Lsetcolor:
 				if (error)
 					return fz_rethrow(error, "cannot load image");
 				pdf_showimage(csi, img);
-				fz_dropimage((fz_image*)img);
+				pdf_dropimage(img);
 			}
 
 			else
