@@ -111,7 +111,6 @@ buildonefilter(pdf_xref * xref, fz_obj * f, fz_obj * p, int num, int gen)
 		return fz_newlzwd(p);
 	}
 
-#ifdef HAVE_JBIG2DEC
 	else if (!strcmp(s, "JBIG2Decode"))
 	{
 		fz_obj *obj = fz_dictgets(p, "JBIG2Globals");
@@ -138,12 +137,9 @@ buildonefilter(pdf_xref * xref, fz_obj * f, fz_obj * p, int num, int gen)
 		}
 		return fz_newjbig2d(p);
 	}
-#endif
 
-#ifdef HAVE_OPENJPEG
 	else if (!strcmp(s, "JPXDecode"))
 		return fz_newjpxd(p);
-#endif
 
 	else if (!strcmp(s, "Crypt"))
 	{
