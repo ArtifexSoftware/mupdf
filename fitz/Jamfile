@@ -77,8 +77,9 @@ Library libfitz :
 	res_colorspace.c
 	res_font.c
 	res_shade.c
+	dev_null.c
 	dev_trace.c
 	dev_draw.c
-	# dev_text.c
+	dev_text.c
 	# dev_ghost.c
 	;

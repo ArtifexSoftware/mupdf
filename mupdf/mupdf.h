@@ -567,8 +567,6 @@ void pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots);
  */
 
 typedef struct pdf_page_s pdf_page;
-typedef struct pdf_textline_s pdf_textline;
-typedef struct pdf_textchar_s pdf_textchar;
 
 struct pdf_page_s
 {
@@ -580,19 +578,6 @@ struct pdf_page_s
 	pdf_link *links;
 };
 
-struct pdf_textchar_s
-{
-	int x, y;
-	int c;
-};
-
-struct pdf_textline_s
-{
-	int len, cap;
-	pdf_textchar *text;
-	pdf_textline *next;
-};
-
 /* pagetree.c */
 int pdf_getpagecount(pdf_xref *xref);
 fz_obj * pdf_getpageobject(pdf_xref *xref, int p);
@@ -601,11 +586,6 @@ int pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj);
 /* page.c */
 fz_error pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
 void pdf_droppage(pdf_page *page);
-
-/* unicode.c */
-void pdf_debugtextline(pdf_textline *line);
-pdf_textline * pdf_newtextline(void);
-void pdf_droptextline(pdf_textline *line);
 
 /*
  * content stream parsing

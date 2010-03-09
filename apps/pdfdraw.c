@@ -231,7 +231,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 //		drawpage->contents->rp = drawpage->contents->bp;
 //		pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
 
-		dev = fz_newdrawdevice(pdf_devicergb, pix);
+		dev = fz_newdrawdevice(pix);
 		drawpage->contents->rp = drawpage->contents->bp;
 		error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
 		if (error)
@@ -303,6 +303,37 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	fprintf(stdout, "\n");
 }
 
+static void drawtxt(int pagenum)
+{
+	fz_error error;
+	fz_matrix ctm;
+	fz_obj *pageobj;
+	fz_textline *text;
+	fz_device *dev;
+
+	pageobj = pdf_getpageobject(xref, pagenum);
+	error = pdf_loadpage(&drawpage, xref, pageobj);
+	if (error)
+		die(error);
+
+	ctm = fz_identity();
+
+	text = fz_newtextline();
+	dev = fz_newtextdevice(text);
+
+	drawpage->contents->rp = drawpage->contents->bp;
+	error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
+	if (error)
+		die(error);
+
+	printf("[Page %d]\n", pagenum);
+	fz_debugtextline(text);
+	printf("\n");
+
+	fz_freetextdevice(dev);
+	fz_freetextline(text);
+}
+
 static void drawpages(char *pagelist)
 {
 	int page, spage, epage;
@@ -352,7 +383,7 @@ static void drawpages(char *pagelist)
 			switch (drawmode)
 			{
 			case DRAWPNM: drawpnm(page, &loadtimes, &drawtimes); break;
-//			case DRAWTXT: drawtxt(page); break;
+			case DRAWTXT: drawtxt(page); break;
 //			case DRAWXML: drawxml(page); break;
 			}
 		}
@@ -416,8 +447,6 @@ int main(int argc, char **argv)
 				drawpages("1-");
 
 			closexref();
-
-//XXX		fz_newrenderer(&drawgc, pdf_devicergb, 0, 1024 * 512);
 
 			openxref(argv[fz_optind], password, 0);
 			state = NO_PAGES_DRAWN;

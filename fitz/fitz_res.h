@@ -22,7 +22,7 @@ struct fz_device_s
 	void (*cliptext)(void *, fz_text *);
 	void (*ignoretext)(void *, fz_text *);
 
-	void (*fillimagemask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color);
+	void (*fillimagemask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color, float alpha);
 	void (*clipimagemask)(void *, fz_pixmap *img, fz_matrix ctm);
 	void (*drawimage)(void *, fz_pixmap *img, fz_matrix ctm);
 	void (*drawshade)(void *, fz_shade *shd, fz_matrix ctm);
@@ -30,7 +30,49 @@ struct fz_device_s
 	void (*popclip)(void *);
 };
 
+/* no-op device functions */
+fz_device *fz_newdevice(void *user);
+void fz_initnulldevice(fz_device *dev);
+void fz_nullfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha);
+void fz_nullstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha);
+void fz_nullclippath(void *user, fz_path *path);
+void fz_nullfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha);
+void fz_nullstroketext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha);
+void fz_nullcliptext(void *user, fz_text *text);
+void fz_nullignoretext(void *user, fz_text *text);
+void fz_nullpopclip(void *user);
+void fz_nulldrawshade(void *user, fz_shade *shade, fz_matrix ctm);
+void fz_nulldrawimage(void *user, fz_pixmap *image, fz_matrix ctm);
+void fz_nullfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_nullclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm);
+
 fz_device *fz_newtracedevice(void);
+
+fz_device *fz_newdrawdevice(fz_pixmap *dest);
+void fz_freedrawdevice(fz_device *dev);
+
+typedef struct fz_textline_s fz_textline;
+typedef struct fz_textchar_s fz_textchar;
+
+struct fz_textchar_s
+{
+	int x, y;
+	int c;
+};
+
+struct fz_textline_s
+{
+	int len, cap;
+	fz_textchar *text;
+	fz_textline *next;
+};
+
+fz_textline * fz_newtextline(void);
+void fz_freetextline(fz_textline *line);
+void fz_debugtextline(fz_textline *line);
+
+fz_device *fz_newtextdevice(fz_textline *text);
+void fz_freetextdevice(fz_device *dev);
 
 typedef enum fz_blendkind_e
 {

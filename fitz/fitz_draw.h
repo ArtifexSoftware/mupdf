@@ -12,9 +12,6 @@ typedef struct fz_renderer_s fz_renderer;
 typedef struct fz_glyph_s fz_glyph;
 typedef struct fz_glyphcache_s fz_glyphcache;
 
-fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest);
-void fz_freedrawdevice(fz_device *dev);
-
 fz_glyphcache * fz_newglyphcache(int slots, int size);
 void fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
 void fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
@@ -117,22 +114,4 @@ extern void (*fz_scol5)(FZ_BYTE *src, FZ_BYTE *dst, int w, int denom);
 
 #undef FZ_BYTE
 
-struct fz_renderer_s
-{
-	int maskonly;
-	fz_colorspace *model;
-	fz_glyphcache *cache;
-	fz_gel *gel;
-	fz_ael *ael;
-
-	fz_irect clip;
-	fz_pixmap *dest;
-	fz_pixmap *over;
-	unsigned char argb[7]; /* alpha, a*r, a*g, a*b, r, g, b */
-	int flag;
-};
-
 extern void fz_accelerate(void);
-
-fz_renderer * fz_newrenderer(fz_colorspace *pcm, int maskonly, int gcmem);
-void fz_droprenderer(fz_renderer *gc);

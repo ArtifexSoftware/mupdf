@@ -255,7 +255,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
 		app->page->contents->rp = app->page->contents->bp;
-		dev = fz_newdrawdevice(pdf_devicergb, app->image);
+		dev = fz_newdrawdevice(app->image);
 		error = pdf_runcontentstream(dev, ctm, 0, app->xref, app->page->resources, app->page->contents);
 		fz_freedrawdevice(dev);
 		if (error)

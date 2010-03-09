@@ -290,13 +290,10 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MPATTERN:
-			fz_warn("pattern fills not supported yet");
+			fz_warn("pattern strokes not supported yet");
 			break;
 		case PDF_MSHADE:
-//			csi->dev->clipstrokepath(csi->dev->user, csi->path);
-//			csi->dev->clippath(csi->dev->user, csi->path);
-	//		csi->dev->drawshade(csi->dev->user, gstate->stroke.shade, gstate->ctm);
-	//		csi->dev->popclip(csi->dev->user);
+			fz_warn("shading strokes not supported yet");
 			break;
 		}
 	}

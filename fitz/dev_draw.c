@@ -492,21 +492,17 @@ void fz_drawdrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	// else XXX
 }
 
-fz_device *fz_newdrawdevice(fz_colorspace *colorspace, fz_pixmap *dest)
+fz_device *fz_newdrawdevice(fz_pixmap *dest)
 {
 	fz_drawdevice *ddev = fz_malloc(sizeof(fz_drawdevice));
-	ddev->model = fz_keepcolorspace(colorspace);
+	ddev->model = fz_keepcolorspace(dest->colorspace);
 	ddev->cache = fz_newglyphcache(512, 512 * 512);
 	ddev->gel = fz_newgel();
 	ddev->ael = fz_newael();
 	ddev->dest = dest;
 	ddev->cliptop = 0;
 
-	fz_device *dev = fz_malloc(sizeof(fz_device));
-	memset(dev, 0, sizeof(fz_device));
-
-	dev->user = ddev;
-
+	fz_device *dev = fz_newdevice(ddev);
 	dev->fillpath = fz_drawfillpath;
 	dev->strokepath = fz_drawstrokepath;
 	dev->clippath = fz_drawclippath;
