@@ -108,7 +108,7 @@ static const struct
 };
 
 fz_error
-pdf_loadbuiltinfont(pdf_fontdesc *font, char *fontname)
+pdf_loadbuiltinfont(pdf_fontdesc *fontdesc, char *fontname)
 {
 	fz_error error;
 	unsigned char *data;
@@ -127,15 +127,17 @@ found:
 	data = (unsigned char *) basefonts[i].cff;
 	len = *basefonts[i].len;
 
-	error = fz_newfontfrombuffer(&font->font, data, len, 0);
+	error = fz_newfontfrombuffer(&fontdesc->font, data, len, 0);
 	if (error)
 		return fz_rethrow(error, "cannot load freetype font from buffer");
+
+	fz_strlcpy(fontdesc->font->name, fontname, sizeof fontdesc->font->name);
 
 	return fz_okay;
 }
 
 static fz_error
-loadsystemcidfont(pdf_fontdesc *font, int ros, int kind)
+loadsystemcidfont(pdf_fontdesc *fontdesc, int ros, int kind)
 {
 #ifndef NOCJK
 	fz_error error;
@@ -143,12 +145,12 @@ loadsystemcidfont(pdf_fontdesc *font, int ros, int kind)
 	 * to have one for each combination of ROS and Kind.
 	 */
 	pdf_logfont("loading builtin CJK font\n");
-	error = fz_newfontfrombuffer(&font->font,
+	error = fz_newfontfrombuffer(&fontdesc->font,
 		(unsigned char *)pdf_font_DroidSansFallback_ttf_buf,
 		pdf_font_DroidSansFallback_ttf_len, 0);
 	if (error)
 		return fz_rethrow(error, "cannot load builtin CJK font");
-	font->font->ftsubstitute = 1; /* substitute font */
+	fontdesc->font->ftsubstitute = 1; /* substitute font */
 	return fz_okay;
 #else
 	return fz_throw("no builtin CJK font file");
@@ -156,7 +158,7 @@ loadsystemcidfont(pdf_fontdesc *font, int ros, int kind)
 }
 
 fz_error
-pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
+pdf_loadsystemfont(pdf_fontdesc *fontdesc, char *fontname, char *collection)
 {
 	fz_error error;
 	char *name;
@@ -174,15 +176,15 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 	if (strstr(fontname, "Oblique"))
 		isitalic = 1;
 
-	if (font->flags & FD_FIXED)
+	if (fontdesc->flags & FD_FIXED)
 		isfixed = 1;
-	if (font->flags & FD_SERIF)
+	if (fontdesc->flags & FD_SERIF)
 		isserif = 1;
-	if (font->flags & FD_ITALIC)
+	if (fontdesc->flags & FD_ITALIC)
 		isitalic = 1;
-	if (font->flags & FD_SCRIPT)
+	if (fontdesc->flags & FD_SCRIPT)
 		isscript = 1;
-	if (font->flags & FD_FORCEBOLD)
+	if (fontdesc->flags & FD_FORCEBOLD)
 		isbold = 1;
 
 	pdf_logfont("fixed-%d serif-%d italic-%d script-%d bold-%d\n",
@@ -198,15 +200,15 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 			kind = GOTHIC;
 
 		if (!strcmp(collection, "Adobe-CNS1"))
-			return loadsystemcidfont(font, CNS, kind);
+			return loadsystemcidfont(fontdesc, CNS, kind);
 		else if (!strcmp(collection, "Adobe-GB1"))
-			return loadsystemcidfont(font, GB, kind);
+			return loadsystemcidfont(fontdesc, GB, kind);
 		else if (!strcmp(collection, "Adobe-Japan1"))
-			return loadsystemcidfont(font, Japan, kind);
+			return loadsystemcidfont(fontdesc, Japan, kind);
 		else if (!strcmp(collection, "Adobe-Japan2"))
-			return loadsystemcidfont(font, Japan, kind);
+			return loadsystemcidfont(fontdesc, Japan, kind);
 		else if (!strcmp(collection, "Adobe-Korea1"))
-			return loadsystemcidfont(font, Korea, kind);
+			return loadsystemcidfont(fontdesc, Korea, kind);
 
 		fz_warn("unknown cid collection: %s", collection);
 	}
@@ -250,18 +252,18 @@ pdf_loadsystemfont(pdf_fontdesc *font, char *fontname, char *collection)
 		}
 	}
 
-	error = pdf_loadbuiltinfont(font, name);
+	error = pdf_loadbuiltinfont(fontdesc, name);
 	if (error)
 		return fz_throw("cannot load builtin substitute font: %s", name);
 
 	/* it's a substitute font: override the metrics */
-	font->font->ftsubstitute = 1;
+	fontdesc->font->ftsubstitute = 1;
 
 	return fz_okay;
 }
 
 fz_error
-pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref)
+pdf_loadembeddedfont(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 {
 	fz_error error;
 	fz_buffer *buf;
@@ -272,17 +274,17 @@ pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref)
 	if (error)
 		return fz_rethrow(error, "cannot load font stream");
 
-	error = fz_newfontfrombuffer(&font->font, buf->rp, buf->wp - buf->rp, 0);
+	error = fz_newfontfrombuffer(&fontdesc->font, buf->rp, buf->wp - buf->rp, 0);
 	if (error)
 	{
 		fz_dropbuffer(buf);
 		return fz_rethrow(error, "cannot load embedded font (%d %d R)", fz_tonum(stmref), fz_togen(stmref));
 	}
 
-	font->buffer = buf->rp; /* save the buffer so we can free it later */
+	fontdesc->buffer = buf->rp; /* save the buffer so we can free it later */
 	fz_free(buf); /* only free the fz_buffer struct, not the contained data */
 
-	font->isembedded = 1;
+	fontdesc->isembedded = 1;
 
 	return fz_okay;
 }

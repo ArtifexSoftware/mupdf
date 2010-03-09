@@ -909,6 +909,8 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 			return fz_rethrow(error, "cannot load font descriptor");
 	}
 
+	fz_strlcpy(fontdesc->font->name, fontname, sizeof fontdesc->font->name);
+
 	pdf_logfont("}\n");
 
 	return fz_okay;
