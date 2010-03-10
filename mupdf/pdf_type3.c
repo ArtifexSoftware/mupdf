@@ -43,12 +43,6 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 		bbox.x0, bbox.y0,
 		bbox.x1, bbox.y1);
 
-	bbox = fz_transformaabb(matrix, bbox);
-	bbox.x0 = fz_floor(bbox.x0 * 1000);
-	bbox.y0 = fz_floor(bbox.y0 * 1000);
-	bbox.x1 = fz_ceil(bbox.x1 * 1000);
-	bbox.y1 = fz_ceil(bbox.y1 * 1000);
-
 	fontdesc->font = fz_newtype3font(buf, matrix);
 
 	fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
@@ -139,6 +133,9 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 		fz_keepobj(fontdesc->font->t3resources);
 	if (!fontdesc->font->t3resources)
 		fz_warn("no resource dictionary for type 3 font!");
+
+	fontdesc->font->t3xref = xref;
+	fontdesc->font->t3runcontentstream = pdf_runcontentstream;
 
 	/*
 	 * CharProcs

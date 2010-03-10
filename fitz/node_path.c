@@ -123,7 +123,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
+fz_boundpath(fz_path *path, int dostroke)
 {
 	fz_point p;
 	fz_rect r = fz_emptyrect;
@@ -133,7 +133,7 @@ fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 	{
 		p.x = path->els[1].v;
 		p.y = path->els[2].v;
-		p = fz_transformpoint(ctm, p);
+		p = fz_transformpoint(path->ctm, p);
 		r.x0 = r.x1 = p.x;
 		r.y0 = r.y1 = p.y;
 	}
@@ -145,15 +145,15 @@ fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 		case FZ_CURVETO:
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(ctm, p));
+			r = boundexpand(r, fz_transformpoint(path->ctm, p));
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(ctm, p));
+			r = boundexpand(r, fz_transformpoint(path->ctm, p));
 		case FZ_MOVETO:
 		case FZ_LINETO:
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(ctm, p));
+			r = boundexpand(r, fz_transformpoint(path->ctm, p));
 			break;
 		case FZ_CLOSEPATH:
 			break;

@@ -1,9 +1,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_error
-pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents);
-
 static pdf_csi *
 pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm)
 {
@@ -33,6 +30,8 @@ pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm)
 	csi->text = nil;
 	csi->tm = fz_identity();
 	csi->tlm = fz_identity();
+
+	csi->topctm = ctm;
 
 	csi->dev = dev;
 
@@ -76,8 +75,8 @@ pdf_dropmaterial(pdf_material *mat)
 	return mat;
 }
 
-static void
-gsave(pdf_csi *csi)
+void
+pdf_gsave(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 
@@ -97,8 +96,8 @@ gsave(pdf_csi *csi)
 		pdf_keepfont(gs->font);
 }
 
-static void
-grestore(pdf_csi *csi)
+void
+pdf_grestore(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	int clipdepth = gs->clipdepth;
@@ -128,7 +127,7 @@ static void
 pdf_freecsi(pdf_csi *csi)
 {
 	while (csi->gtop)
-		grestore(csi);
+		pdf_grestore(csi);
 
 	pdf_dropmaterial(&csi->gstate[csi->gtop].fill);
 	pdf_dropmaterial(&csi->gstate[csi->gtop].stroke);
@@ -154,8 +153,9 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 {
 	fz_error error;
 	pdf_gstate *gstate;
+	fz_matrix oldtopctm;
 
-	gsave(csi);
+	pdf_gsave(csi);
 
 	gstate = csi->gstate + csi->gtop;
 
@@ -188,9 +188,12 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	fz_lineto(csi->path, xobj->bbox.x0, xobj->bbox.y1);
 	fz_closepath(csi->path);
 	csi->clip = 1;
-	pdf_showpath(csi, 0, 0, 0, 0);
+	pdf_showpath(csi, xref, 0, 0, 0, 0);
 
 	/* run contents */
+
+	oldtopctm = csi->topctm;
+	csi->topctm = gstate->ctm;
 
 	if (xobj->resources)
 		resources = xobj->resources;
@@ -200,7 +203,9 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
 
-	grestore(csi);
+	csi->topctm = oldtopctm;
+
+	pdf_grestore(csi);
 
 	return fz_okay;
 }
@@ -235,7 +240,7 @@ pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, f
 		return fz_throw("syntax error after inline image");
 	}
 
-	pdf_showimage(csi, img);
+	pdf_showimage(csi, xref, img);
 
 	pdf_dropimage(img);
 	return fz_okay;
@@ -520,21 +525,21 @@ pdf_runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, 0, 1, 0, 1);
+			pdf_showpath(csi, xref, 0, 1, 0, 1);
 		}
 
 		else if (!strcmp(buf, "B*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, 0, 1, 1, 1);
+			pdf_showpath(csi, xref, 0, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "b*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, 1, 1, 1, 1);
+			pdf_showpath(csi, xref, 1, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "W*"))
@@ -919,7 +924,7 @@ Lsetcolor:
 				error = pdf_loadimage(&img, xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load image");
-				pdf_showimage(csi, img);
+				pdf_showimage(csi, xref, img);
 				pdf_dropimage(img);
 			}
 
@@ -977,13 +982,13 @@ Lsetcolor:
 	case 'q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		gsave(csi);
+		pdf_gsave(csi);
 		break;
 
 	case 'Q':
 		if (csi->top != 0)
 			goto syntaxerror;
-		grestore(csi);
+		pdf_grestore(csi);
 		break;
 
 	case 'w':
@@ -1088,38 +1093,38 @@ Lsetcolor:
 	case 'S':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 0, 0, 1, 0);
+		pdf_showpath(csi, xref, 0, 0, 1, 0);
 		break;
 
 	case 's':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 1, 0, 1, 0);
+		pdf_showpath(csi, xref, 1, 0, 1, 0);
 		break;
 
 	case 'F':
 	case 'f':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 0, 1, 0, 0);
+		pdf_showpath(csi, xref, 0, 1, 0, 0);
 		break;
 
 	case 'B':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 0, 1, 1, 0);
+		pdf_showpath(csi, xref, 0, 1, 1, 0);
 		break;
 
 	case 'b':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 1, 1, 1, 0);
+		pdf_showpath(csi, xref, 1, 1, 1, 0);
 		break;
 
 	case 'n':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
+		pdf_showpath(csi, xref, 0, 0, 0, csi->clipevenodd);
 		break;
 
 	case 'W':
@@ -1350,7 +1355,7 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 	}
 }
 
-static fz_error
+fz_error
 pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents)
 {
 	char *buf = fz_malloc(65536);

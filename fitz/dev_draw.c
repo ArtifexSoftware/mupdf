@@ -221,7 +221,8 @@ void fz_drawclippath(void *user, fz_path *path)
 	memset(mask->samples, 0, mask->w * mask->h * mask->n);
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
 
-	fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, mask, NULL, 1);
+	if (!fz_isemptyrect(bbox))
+		fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, mask, NULL, 1);
 
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
@@ -262,7 +263,13 @@ static void drawglyph(unsigned char *argb, fz_pixmap *dst, fz_glyph *src, int xo
 	w = sx1 - sx0;
 	h = sy1 - sy0;
 
-	fz_text_w4i1o4(argb, sp, src->w, dp, dst->w * 4, w, h);
+	if (dst->colorspace)
+		fz_text_w4i1o4(argb, sp, src->w, dp, dst->w * 4, w, h);
+	else
+	{
+		printf("drawing glyph to alpha mask\n");
+		fz_text_1o1(sp, src->w, dp, dst->w, w, h);
+	}
 }
 
 void fz_drawfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
@@ -309,6 +316,7 @@ void fz_drawfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float
 
 void fz_drawstroketext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
 {
+	fz_drawdevice *dev = user;
 	fz_warn("/%s setfont", text->font->name);
 	fz_debugtext(text, 0);
 	fz_warn("charpath stroke");
@@ -388,8 +396,6 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 
 	fz_rendershade(shade, ctm, dev->model, temp);
 	blendover(temp, dev->dest);
-
-	fz_debugpixmap(dev->dest, "shade");
 
 	fz_freepixmap(temp);
 }
@@ -486,16 +492,110 @@ void fz_drawdrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 
 #define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
-	if (image->colorspace)
+	if (dev->dest->colorspace)
 		fz_img_4o4(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
-	// else XXX
+	else
+		fz_img_1o1(image->samples, image->w, image->h, PDST(dev->dest),
+			u0, v0, fa, fb, fc, fd, w, h);
+}
+
+void fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha)
+{
+	fz_drawdevice *dev = user;
+	fz_rect bounds;
+	fz_irect bbox;
+	fz_irect clip;
+	int dx, dy;
+	fz_pixmap *temp;
+	fz_matrix imgmat;
+	fz_matrix invmat;
+	int fa, fb, fc, fd;
+	int u0, v0;
+	int x0, y0;
+	int w, h;
+	unsigned char argb[7];
+	float rgb[3];
+
+	fz_convertcolor(colorspace, color, dev->model, rgb);
+	argb[0] = alpha * 255;
+	argb[1] = rgb[0] * alpha * 255;
+	argb[2] = rgb[1] * alpha * 255;
+	argb[3] = rgb[2] * alpha * 255;
+	argb[4] = rgb[0] * 255;
+	argb[5] = rgb[1] * 255;
+	argb[6] = rgb[2] * 255;
+
+	bounds.x0 = 0;
+	bounds.y0 = 0;
+	bounds.x1 = 1;
+	bounds.y1 = 1;
+	bounds = fz_transformaabb(ctm, bounds);
+	bbox = fz_roundrect(bounds);
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+	clip = fz_intersectirects(clip, bbox);
+
+	if (fz_isemptyrect(clip))
+		return;
+	if (image->w == 0 || image->h == 0)
+		return;
+
+	calcimagescale(ctm, image->w, image->h, &dx, &dy);
+
+	if (dx != 1 || dy != 1)
+	{
+		temp = fz_scalepixmap(image, dx, dy);
+		image = temp;
+	}
+
+	imgmat.a = 1.0 / image->w;
+	imgmat.b = 0.0;
+	imgmat.c = 0.0;
+	imgmat.d = -1.0 / image->h;
+	imgmat.e = 0.0;
+	imgmat.f = 1.0;
+	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
+
+	invmat.e -= 0.5;
+	invmat.f -= 0.5;
+
+	w = clip.x1 - clip.x0;
+	h = clip.y1 - clip.y0;
+	x0 = clip.x0;
+	y0 = clip.y0;
+	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
+	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
+	fa = invmat.a * 65536;
+	fb = invmat.b * 65536;
+	fc = invmat.c * 65536;
+	fd = invmat.d * 65536;
+
+#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
+
+	if (dev->dest->colorspace)
+		fz_img_w4i1o4(argb, image->samples, image->w, image->h, PDST(dev->dest),
+			u0, v0, fa, fb, fc, fd, w, h);
+	else
+		fz_img_1o1(image->samples, image->w, image->h, PDST(dev->dest),
+			u0, v0, fa, fb, fc, fd, w, h);
+}
+
+void fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
+{
+	fz_warn("fz_drawclipimagemask not implemented!");
 }
 
 fz_device *fz_newdrawdevice(fz_pixmap *dest)
 {
 	fz_drawdevice *ddev = fz_malloc(sizeof(fz_drawdevice));
-	ddev->model = fz_keepcolorspace(dest->colorspace);
+	if (dest->colorspace)
+		ddev->model = fz_keepcolorspace(dest->colorspace);
+	else
+		ddev->model = nil;
 	ddev->cache = fz_newglyphcache(512, 512 * 512);
 	ddev->gel = fz_newgel();
 	ddev->ael = fz_newael();
@@ -512,8 +612,8 @@ fz_device *fz_newdrawdevice(fz_pixmap *dest)
 	dev->cliptext = fz_drawcliptext;
 	dev->ignoretext = fz_drawignoretext;
 
-//	dev->fillimagemask = fz_drawfillimagemask;
-//	dev->clipimagemask = fz_drawclipimagemask;
+	dev->fillimagemask = fz_drawfillimagemask;
+	dev->clipimagemask = fz_drawclipimagemask;
 	dev->drawimage = fz_drawdrawimage;
 	dev->drawshade = fz_drawdrawshade;
 
@@ -526,7 +626,8 @@ void
 fz_freedrawdevice(fz_device *dev)
 {
 	fz_drawdevice *ddev = dev->user;
-	fz_dropcolorspace(ddev->model);
+	if (ddev->model)
+		fz_dropcolorspace(ddev->model);
 	fz_freeglyphcache(ddev->cache);
 	fz_freegel(ddev->gel);
 	fz_freeael(ddev->ael);

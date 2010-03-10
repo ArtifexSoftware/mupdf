@@ -22,6 +22,8 @@ fz_newfont(void)
 	font->t3resources = nil;
 	font->t3procs = nil;
 	font->t3widths = nil;
+	font->t3xref = nil;
+	font->t3runcontentstream = nil;
 
 	font->bbox.x0 = 0;
 	font->bbox.y0 = 0;
@@ -70,7 +72,7 @@ fz_dropfont(fz_font *font)
 }
 
 void
-fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax)
+fz_setfontbbox(fz_font *font, float xmin, float ymin, float xmax, float ymax)
 {
 	font->bbox.x0 = xmin;
 	font->bbox.y0 = ymin;
@@ -351,63 +353,57 @@ fz_newtype3font(char *name, fz_matrix matrix)
 	return font;
 }
 
-/* XXX UGLY HACK XXX */
-extern fz_colorspace *pdf_devicegray;
-
 void
 fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 {
+	fz_error error;
+	fz_matrix ctm;
+	fz_buffer *contents;
+	fz_rect bbox;
+	fz_device *dev;
+
 	glyph->x = 0;
 	glyph->y = 0;
 	glyph->w = 0;
 	glyph->h = 0;
 	glyph->samples = nil;
 
-#if 0 // XXX
-	fz_error error;
-	fz_renderer *gc;
-	fz_tree *tree;
-	fz_matrix ctm;
-	fz_irect bbox;
+	printf("render t3 glyph %d\n", gid);
 
 	/* TODO: make it reentrant */
 	static fz_pixmap *pixmap = nil;
 	if (pixmap)
 	{
-		fz_droppixmap(pixmap);
+		fz_freepixmap(pixmap);
 		pixmap = nil;
 	}
 
 	if (gid < 0 || gid > 255)
-		return fz_throw("assert: glyph out of range");
+		return;
 
-	tree = font->t3procs[gid];
-	if (!tree)
-	{
-		glyph->w = 0;
-		glyph->h = 0;
-		return fz_okay;
-	}
+	contents = font->t3procs[gid];
+	if (!contents)
+		return;
 
 	ctm = fz_concat(font->t3matrix, trm);
-	bbox = fz_roundrect(fz_boundtree(tree, ctm));
+	bbox = fz_transformaabb(ctm, font->bbox);
+	pixmap = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+	fz_clearpixmap(pixmap, 0x00);
 
-	error = fz_newrenderer(&gc, pdf_devicegray, 1, 4096);
+	dev = fz_newdrawdevice(pixmap);
+	contents->rp = contents->bp;
+	error = font->t3runcontentstream(dev, ctm, 1, font->t3xref, font->t3resources, contents);
 	if (error)
-		return fz_rethrow(error, "cannot create renderer");
-	error = fz_rendertree(&pixmap, gc, tree, ctm, bbox, 0);
-	fz_droprenderer(gc);
-	if (error)
-		return fz_rethrow(error, "cannot render glyph");
+		fz_catch(error, "cannot draw type3 glyph");
+	fz_freedrawdevice(dev);
 
-	assert(pixmap->n == 1);
+	fz_debugpixmap(pixmap, "g");
 
 	glyph->x = pixmap->x;
 	glyph->y = pixmap->y;
 	glyph->w = pixmap->w;
 	glyph->h = pixmap->h;
 	glyph->samples = pixmap->samples;
-#endif
 }
 
 void
@@ -429,7 +425,7 @@ fz_debugfont(fz_font *font)
 			font->t3matrix.c, font->t3matrix.d);
 	}
 
-	printf("  bbox [%d %d %d %d]\n",
+	printf("  bbox [%g %g %g %g]\n",
 		font->bbox.x0, font->bbox.y0,
 		font->bbox.x1, font->bbox.y1);
 

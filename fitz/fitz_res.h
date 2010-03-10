@@ -158,7 +158,7 @@ void fz_closepath(fz_path*);
 void fz_resetpath(fz_path *path);
 void fz_freepath(fz_path *path);
 
-fz_rect fz_boundpath(fz_path *, fz_matrix ctm, int dostroke);
+fz_rect fz_boundpath(fz_path *, int dostroke);
 void fz_debugpath(fz_path *, int indent);
 void fz_printpath(fz_path *, int indent);
 
@@ -255,8 +255,11 @@ struct fz_font_s
 	fz_obj *t3resources;
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
+	void *t3xref; /* a pdf_xref for the callback */
+	fz_error (*t3runcontentstream)(fz_device *dev, fz_matrix ctm, int maskonly,
+		void *xref, fz_obj *resources, fz_buffer *contents);
 
-	fz_irect bbox;
+	fz_rect bbox;
 };
 
 struct fz_glyph_s
@@ -277,7 +280,7 @@ fz_font * fz_keepfont(fz_font *font);
 void fz_dropfont(fz_font *font);
 
 void fz_debugfont(fz_font *font);
-void fz_setfontbbox(fz_font *font, int xmin, int ymin, int xmax, int ymax);
+void fz_setfontbbox(fz_font *font, float xmin, float ymin, float xmax, float ymax);
 
 /*
  * The shading code is in rough shape but the general architecture is sound.

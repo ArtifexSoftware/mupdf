@@ -122,6 +122,26 @@ Lindexed:
 	}
 }
 
+static void
+pdf_unsetpattern(pdf_csi *csi, int what)
+{
+	pdf_gstate *gs = csi->gstate + csi->gtop;
+	pdf_material *mat;
+	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
+	if (mat->kind == PDF_MPATTERN)
+	{
+		if (mat->pattern)
+			pdf_droppattern(mat->pattern);
+		mat->pattern = nil;
+		if (!strcmp(mat->cs->name, "Lab"))
+			mat->kind = PDF_MLAB;
+		else if (!strcmp(mat->cs->name, "Indexed"))
+			mat->kind = PDF_MINDEXED;
+		else
+			mat->kind = PDF_MCOLOR;
+	}
+}
+
 void
 pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 {
@@ -163,45 +183,63 @@ pdf_setshade(pdf_csi *csi, int what, fz_shade *shade)
 }
 
 void
-pdf_showpattern(pdf_gstate *gs, pdf_pattern *pat, fz_colorspace *cs, float *v)
+pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, int what)
 {
-	fz_matrix ctm;
-	fz_matrix ptm;
-	fz_rect bbox;
+	pdf_gstate *gstate;
+	fz_matrix ptm, invptm;
+	fz_matrix oldtopctm;
+	fz_error error;
 	int x, y, x0, y0, x1, y1;
 
-	/* patterns are painted in user space */
-	ctm = gs->ctm;
-	ptm = fz_concat(pat->matrix, fz_invertmatrix(ctm));
+	pdf_gsave(csi);
+	gstate = csi->gstate + csi->gtop;
 
+	if (pat->ismask)
+	{
+printf("uncolored tiled pattern\n");
+		pdf_unsetpattern(csi, PDF_MFILL);
+		pdf_unsetpattern(csi, PDF_MSTROKE);
+		if (what == PDF_MFILL)
+			gstate->stroke = gstate->fill;	// TODO reference counting
+		if (what == PDF_MSTROKE)
+			gstate->fill = gstate->stroke;
+	}
+	else
+	{
+printf("colored tiled pattern\n");
+		// TODO: unset only the current fill/stroke or both?
+		pdf_unsetpattern(csi, what);
+	}
+
+	ptm = fz_concat(pat->matrix, csi->topctm);
+	invptm = fz_invertmatrix(ptm);
+
+	/* patterns are painted using the ctm in effect at the beginning of the content stream */
 	/* get bbox of shape in pattern space for stamping */
-	ptm = fz_concat(ctm, fz_invertmatrix(pat->matrix));
-	//XXX	bbox = fz_boundnode(shape, ptm);
-
-	/* expand bbox by pattern bbox */
-	bbox.x0 += pat->bbox.x0;
-	bbox.y0 += pat->bbox.y0;
-	bbox.x1 += pat->bbox.x1;
-	bbox.y1 += pat->bbox.y1;
-
+	bbox = fz_transformaabb(invptm, bbox);
 	x0 = fz_floor(bbox.x0 / pat->xstep);
 	y0 = fz_floor(bbox.y0 / pat->ystep);
 	x1 = fz_ceil(bbox.x1 / pat->xstep);
 	y1 = fz_ceil(bbox.y1 / pat->ystep);
 
-	for (y = y0; y <= y1; y++)
+	oldtopctm = csi->topctm;
+
+	for (y = y0; y < y1; y++)
 	{
-		for (x = x0; x <= x1; x++)
+		for (x = x0; x < x1; x++)
 		{
-			ptm = fz_translate(x * pat->xstep, y * pat->ystep);
-			// TODO paint the pattern contents with the ptm
+			gstate->ctm = fz_concat(fz_translate(x * pat->xstep, y * pat->ystep), ptm);
+			csi->topctm = gstate->ctm;
+			pat->contents->rp = pat->contents->bp;
+			error = pdf_runcsibuffer(csi, xref, pat->resources, pat->contents);
+			if (error)
+				fz_catch(error, "cannot render pattern tile");
 		}
 	}
 
-	if (pat->ismask)
-	{
-		// TODO clip
-	}
+	csi->topctm = oldtopctm;
+
+	pdf_grestore(csi);
 }
 
 void
@@ -212,7 +250,7 @@ pdf_showshade(pdf_csi *csi, fz_shade *shd)
 }
 
 void
-pdf_showimage(pdf_csi *csi, pdf_image *image)
+pdf_showimage(pdf_csi *csi, pdf_xref *xref, pdf_image *image)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_pixmap *tile = fz_newpixmap(image->cs, 0, 0, image->w, image->h);
@@ -223,14 +261,51 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 		fz_catch(error, "cannot load image data");
 		return;
 	}
-	csi->dev->drawimage(csi->dev->user, tile, gstate->ctm);
+
+	if (image->n == 0 && image->a == 1)
+	{
+		fz_rect bbox;
+
+		switch (gstate->fill.kind)
+		{
+		case PDF_MNONE:
+			break;
+		case PDF_MCOLOR:
+		case PDF_MINDEXED:
+		case PDF_MLAB:
+			csi->dev->fillimagemask(csi->dev->user, tile, gstate->ctm,
+				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+			break;
+		case PDF_MPATTERN:
+			bbox.x0 = 0;
+			bbox.y0 = 0;
+			bbox.x1 = 1;
+			bbox.y1 = 1;
+			bbox = fz_transformaabb(gstate->ctm, bbox);
+			csi->dev->clipimagemask(csi->dev->user, tile, gstate->ctm);
+			pdf_showpattern(csi, gstate->fill.pattern, xref, bbox, PDF_MFILL);
+			csi->dev->popclip(csi->dev->user);
+			break;
+		case PDF_MSHADE:
+			csi->dev->clipimagemask(csi->dev->user, tile, gstate->ctm);
+			csi->dev->drawshade(csi->dev->user, gstate->fill.shade, gstate->ctm);
+			csi->dev->popclip(csi->dev->user);
+			break;
+		}
+	}
+	else
+	{
+		csi->dev->drawimage(csi->dev->user, tile, gstate->ctm);
+	}
+
 	fz_freepixmap(tile);
 }
 
 void
-pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
+pdf_showpath(pdf_csi *csi, pdf_xref *xref, int doclose, int dofill, int dostroke, int evenodd)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	fz_rect bbox;
 	int i;
 
 	if (doclose)
@@ -267,7 +342,10 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
-			fz_warn("pattern fills not supported yet");
+			bbox = fz_boundpath(csi->path, 0);
+			csi->dev->clippath(csi->dev->user, csi->path);
+			pdf_showpattern(csi, gstate->fill.pattern, xref, bbox, PDF_MFILL);
+			csi->dev->popclip(csi->dev->user);
 			break;
 		case PDF_MSHADE:
 			csi->dev->clippath(csi->dev->user, csi->path);
@@ -363,16 +441,44 @@ pdf_flushtext(pdf_csi *csi)
 
 	if (dofill)
 	{
-		// TODO: indexed, pattern, shade materials
-		csi->dev->filltext(csi->dev->user, csi->text,
-			gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+		switch (gstate->fill.kind)
+		{
+		case PDF_MNONE:
+			break;
+		case PDF_MCOLOR:
+		case PDF_MINDEXED:
+		case PDF_MLAB:
+			csi->dev->filltext(csi->dev->user, csi->text,
+				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+			break;
+		case PDF_MPATTERN:
+			fz_warn("pattern filled text not supported yet");
+			break;
+		case PDF_MSHADE:
+			fz_warn("shading filled text not supported yet");
+			break;
+		}
 	}
 
 	if (dostroke)
 	{
-		// TODO: indexed, pattern, shade materials
-		csi->dev->stroketext(csi->dev->user, csi->text,
-			gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+		switch (gstate->fill.kind)
+		{
+		case PDF_MNONE:
+			break;
+		case PDF_MCOLOR:
+		case PDF_MINDEXED:
+		case PDF_MLAB:
+			csi->dev->stroketext(csi->dev->user, csi->text,
+				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+			break;
+		case PDF_MPATTERN:
+			fz_warn("pattern stroked text not supported yet");
+			break;
+		case PDF_MSHADE:
+			fz_warn("shading stroked text not supported yet");
+			break;
+		}
 	}
 
 	fz_freetext(csi->text);
