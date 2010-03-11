@@ -248,14 +248,14 @@ PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
 
-$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(DRAW_LIB) $(FITZ_LIB)
+$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD)
 
 X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
 X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
-$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(DRAW_LIB) $(FITZ_LIB)
+$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(X11LIBS)
 
 WINVIEW_SRC=apps/win_main.c apps/pdfapp.c
