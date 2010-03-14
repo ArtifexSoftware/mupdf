@@ -94,10 +94,7 @@ typedef enum fz_blendkind_e
 	FZ_BHUE,
 	FZ_BSATURATION,
 	FZ_BCOLOR,
-	FZ_BLUMINOSITY,
-
-	FZ_BOVERPRINT,
-	FZ_BRASTEROP
+	FZ_BLUMINOSITY
 } fz_blendkind;
 
 /*

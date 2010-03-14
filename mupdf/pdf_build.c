@@ -262,6 +262,16 @@ pdf_showimage(pdf_csi *csi, pdf_xref *xref, pdf_image *image)
 		return;
 	}
 
+	if (image->mask)
+	{
+		fz_pixmap *mask = fz_newpixmap(NULL, 0, 0, image->mask->w, image->mask->h);
+		error = pdf_loadtile(image->mask, mask);
+		if (error)
+			fz_catch(error, "cannot load image mask data");
+		csi->dev->clipimagemask(csi->dev->user, mask, gstate->ctm);
+		fz_freepixmap(mask);
+	}
+
 	if (image->n == 0 && image->a == 1)
 	{
 		fz_rect bbox;
@@ -297,6 +307,9 @@ pdf_showimage(pdf_csi *csi, pdf_xref *xref, pdf_image *image)
 	{
 		csi->dev->drawimage(csi->dev->user, tile, gstate->ctm);
 	}
+
+	if (image->mask)
+		csi->dev->popclip(csi->dev->user);
 
 	fz_freepixmap(tile);
 }

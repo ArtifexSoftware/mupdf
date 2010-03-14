@@ -586,7 +586,83 @@ void fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colors
 
 void fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 {
-	fz_warn("fz_drawclipimagemask not implemented!");
+	fz_drawdevice *dev = user;
+	fz_rect bounds;
+	fz_irect clip, bbox;
+	fz_pixmap *mask, *dest;
+	int dx, dy;
+	fz_pixmap *temp;
+	fz_matrix imgmat;
+	fz_matrix invmat;
+	int fa, fb, fc, fd;
+	int u0, v0;
+	int x0, y0;
+	int w, h;
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	bounds.x0 = 0;
+	bounds.y0 = 0;
+	bounds.x1 = 1;
+	bounds.y1 = 1;
+	bounds = fz_transformaabb(ctm, bounds);
+	bbox = fz_roundrect(bounds);
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+	clip = fz_intersectirects(clip, bbox);
+
+	calcimagescale(ctm, image->w, image->h, &dx, &dy);
+
+	if (dx != 1 || dy != 1)
+	{
+		temp = fz_scalepixmap(image, dx, dy);
+		image = temp;
+	}
+
+	imgmat.a = 1.0 / image->w;
+	imgmat.b = 0.0;
+	imgmat.c = 0.0;
+	imgmat.d = -1.0 / image->h;
+	imgmat.e = 0.0;
+	imgmat.f = 1.0;
+	invmat = fz_invertmatrix(fz_concat(imgmat, ctm));
+
+	invmat.e -= 0.5;
+	invmat.f -= 0.5;
+
+	w = clip.x1 - clip.x0;
+	h = clip.y1 - clip.y0;
+	x0 = clip.x0;
+	y0 = clip.y0;
+	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
+	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
+	fa = invmat.a * 65536;
+	fb = invmat.b * 65536;
+	fc = invmat.c * 65536;
+	fd = invmat.d * 65536;
+
+#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
+
+	mask = fz_newpixmapwithrect(nil, clip);
+	dest = fz_newpixmapwithrect(dev->model, clip);
+
+	memset(mask->samples, 0, mask->w * mask->h * mask->n);
+	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+	fz_img_1o1(image->samples, image->w, image->h, PDST(mask),
+			u0, v0, fa, fb, fc, fd, w, h);
+
+	dev->clipstack[dev->cliptop].mask = mask;
+	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->dest = dest;
+	dev->cliptop++;
 }
 
 fz_device *fz_newdrawdevice(fz_pixmap *dest)
