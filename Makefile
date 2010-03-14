@@ -23,7 +23,7 @@ X11LIBS = -lX11 -lXext
 endif
 
 ifeq "$(OS)" "Darwin"
-CFLAGS += -I$(HOME)/include -I/usr/X11R6/lib
+CFLAGS += -I$(HOME)/include -I/usr/X11R6/include -I/usr/X11R6/include/freetype2
 LDFLAGS += -L$(HOME)/lib -L/usr/X11R6/lib
 X11LIBS = -lX11 -lXext
 endif
