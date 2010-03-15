@@ -82,10 +82,10 @@ $(FITZ_OBJ): $(FITZ_HDR)
 $(FITZ_LIB): $(FITZ_OBJ)
 	 $(AR_CMD)
 
-DRAW_SRC=$(addprefix fitzdraw/, \
+DRAW_SRC=$(addprefix draw/, \
 	blendmodes.c glyphcache.c imagedraw.c imagescale.c imageunpack.c meshdraw.c \
 	pathfill.c pathscan.c pathstroke.c pixmap.c porterduff.c )
-DRAW_OBJ=$(DRAW_SRC:fitzdraw/%.c=$(OBJDIR)/%.o)
+DRAW_OBJ=$(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
 DRAW_LIB=$(OBJDIR)/libdraw.a
 
 $(DRAW_OBJ): $(FITZ_HDR)
@@ -110,7 +110,7 @@ $(MUPDF_LIB): $(MUPDF_OBJ)
 
 $(OBJDIR)/%.o: fitz/%.c
 	$(CC_CMD)
-$(OBJDIR)/%.o: fitzdraw/%.c
+$(OBJDIR)/%.o: draw/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: mupdf/%.c
 	$(CC_CMD)
