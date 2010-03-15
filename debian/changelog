@@ -1,0 +1,6 @@
+mupdf (1.0-1) unstable; urgency=low
+
+  * Initial release, thank you debhelper.
+
+ -- Sebastian Rasmussen <sebras@hotmail.com>  Mon, 15 Mar 2010 01:12:20 +0100
+
