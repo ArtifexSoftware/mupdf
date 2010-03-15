@@ -20,18 +20,21 @@ ifeq "$(OS)" "Linux"
 CFLAGS += `pkg-config --cflags freetype2`
 LDFLAGS += `pkg-config --libs freetype2`
 X11LIBS = -lX11 -lXext
+PDFVIEW_EXE = $(X11VIEW_EXE)
 endif
 
 ifeq "$(OS)" "Darwin"
 CFLAGS += -I$(HOME)/include -I/usr/X11R6/include -I/usr/X11R6/include/freetype2
 LDFLAGS += -L$(HOME)/lib -L/usr/X11R6/lib
 X11LIBS = -lX11 -lXext
+PDFVIEW_EXE = $(X11VIEW_EXE)
 endif
 
 ifeq "$(OS)" "MINGW32_NT-6.1"
 CFLAGS += -Ic:/msys/1.0/local/include
 LDFLAGS += -Lc:/msys/1.0/local/lib
 W32LIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
+PDFVIEW_EXE = $(WINVIEW_EXE)
 endif
 
 # Edit these if you are cross compiling:
@@ -287,7 +290,7 @@ $(GENDIR):
 $(HOSTDIR):
 	$(MKDIR) $@
 
-all: $(OBJDIR) $(HOSTDIR) $(GENDIR) $(PDFSHOW_EXE) $(PDFDRAW_EXE) $(X11VIEW_EXE)
+all: $(OBJDIR) $(HOSTDIR) $(GENDIR) $(PDFSHOW_EXE) $(PDFDRAW_EXE) $(PDFVIEW_EXE)
 
 clean:
 	$(RM) $(OBJDIR)/*
