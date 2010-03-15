@@ -298,5 +298,5 @@ clean:
 	$(RM) $(HOSTDIR)/*
 
 nuke:
-	rm -rf build/*
+	rm -rf build
 
