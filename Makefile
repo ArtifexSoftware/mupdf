@@ -276,7 +276,7 @@ $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(DRAW_LIB) 
 # Installation and tarball packaging
 #
 
-dist: $(PDFSHOW_EXE) $(PDFDRAW_EXE)
+dist: $(PDFVIEW_EXE) $(PDFSHOW_EXE) $(PDFDRAW_EXE)
 	tar cvf mupdf-dist.tar README COPYING $^
 
 #
