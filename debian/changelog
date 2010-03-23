@@ -1,3 +1,10 @@
+mupdf (1.0-2) unstable; urgency=low
+
+  * Added mupdf-utils package, including debugging utilities pdfshow and
+    pdfdraw as well as the corresponding manpages.
+
+ -- Sebastian Rasmussen <sebras@hotmail.com>  Sun, 21 Mar 2010 21:49:09 +0100
+
 mupdf (1.0-1) unstable; urgency=low
 
   * Initial release, thank you debhelper.

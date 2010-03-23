@@ -25,3 +25,13 @@ Description: MuPDF is a lightweight PDF viewer written in portable C.
  PDF document. Example code for navigating interactive links and bookmarks,
  encrypting PDF files, extracting fonts, images, and searchable text, and
  rendering pages to image files is provided.
+
+Package: mupdf-utils
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Debugging utils for MuPDF, a lightweight PDF renderer in C.
+ MuPDF is a lightweight PDF viewer and toolkit written in portable C.
+ .
+ These are the utilites used when developing and debugging the MuPDF
+ renderer. Included is pdfdraw that renders and outputs the result to a PNM
+ file and pdfshow that prints the contents of PDF objects.
