@@ -7,7 +7,7 @@ HOSTDIR = build/host
 CFLAGS = -g -O2 -Wall --std=gnu99 -Ifitz -Imupdf
 LDFLAGS = 
 CC = cc
-LD = cc
+LD = $(CC)
 MKDIR = mkdir -p
 RM = rm -f
 AR = ar
@@ -15,6 +15,7 @@ AR = ar
 # Edit your section or add one for your platform:
 
 OS := $(shell uname)
+OS := $(OS:MINGW%=MINGW)
 
 ifeq "$(OS)" "Linux"
 CFLAGS += `pkg-config --cflags freetype2`
@@ -30,17 +31,19 @@ X11LIBS = -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
 endif
 
-ifeq "$(OS)" "MINGW32_NT-6.1"
+ifeq "$(OS)" "MINGW"
+CC = gcc
 CFLAGS += -Ic:/msys/1.0/local/include
 LDFLAGS += -Lc:/msys/1.0/local/lib
 W32LIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
 PDFVIEW_EXE = $(WINVIEW_EXE)
 endif
 
+
 # Edit these if you are cross compiling:
 
 HOSTCC ?= $(CC)
-HOSTLD ?= $(LD)
+HOSTLD ?= $(HOSTCC)
 HOSTCFLAGS ?= $(CFLAGS)
 HOSTLDFLAGS ?= $(LDFLAGS)
 
@@ -274,9 +277,9 @@ WINVIEW_OBJ=$(WINVIEW_SRC:apps/%.c=$(OBJDIR)/%.o) $(WINVIEW_RES:apps/%.rc=$(OBJD
 WINVIEW_EXE=$(OBJDIR)/mupdf.exe
 
 $(OBJDIR)/%.o: apps/%.rc
-	rc /fo $@ $<
+	windres -i $< -o $@ --include-dir=apps
 
-$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(DRAW_LIB) $(FITZ_LIB)
+$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(W32LIBS)
 
 #
