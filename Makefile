@@ -247,6 +247,13 @@ PDFSHOW_EXE=$(OBJDIR)/pdfshow
 $(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
 	$(LD_CMD)
 
+PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
+PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
+PDFCLEAN_EXE=$(OBJDIR)/pdfclean
+
+$(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
+	$(LD_CMD)
+
 PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
@@ -276,7 +283,7 @@ $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(DRAW_LIB) 
 # Installation and tarball packaging
 #
 
-dist: $(PDFVIEW_EXE) $(PDFSHOW_EXE) $(PDFDRAW_EXE)
+dist: $(PDFVIEW_EXE) $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE)
 	tar cvf mupdf-dist.tar README COPYING $^
 
 #
@@ -290,7 +297,7 @@ $(GENDIR):
 $(HOSTDIR):
 	$(MKDIR) $@
 
-all: $(OBJDIR) $(HOSTDIR) $(GENDIR) $(PDFSHOW_EXE) $(PDFDRAW_EXE) $(PDFVIEW_EXE)
+all: $(OBJDIR) $(HOSTDIR) $(GENDIR) $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFVIEW_EXE)
 
 clean:
 	$(RM) $(OBJDIR)/*
