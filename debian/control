@@ -34,4 +34,5 @@ Description: Debugging utils for MuPDF, a lightweight PDF renderer in C
  .
  These are the utilities used when developing and debugging the MuPDF
  renderer. Included is pdfdraw that renders and outputs the result to a PNM
- file and pdfshow that prints the contents of PDF objects.
+ file, pdfshow that prints the contents of PDF objects and pdfclean that
+ garbage collects, decompresses and pretty prints complete PDF files.
