@@ -1,21 +1,34 @@
 # GNU Makefile for MuPDF
+#
+#	make build=release prefix=$HOME install
+#
 
-OBJDIR = build/debug
-GENDIR = build/generated
-HOSTDIR = build/host
+prefix ?= /usr/local
+build ?= debug
 
-CFLAGS = -g -O2 -Wall --std=gnu99 -Ifitz -Imupdf
-LDFLAGS = 
-CC = cc
-LD = $(CC)
-MKDIR = mkdir -p
-RM = rm -f
-AR = ar
+default: all
 
-# Edit your section or add one for your platform:
+#
+# Compiler and configuration
+#
 
 OS := $(shell uname)
 OS := $(OS:MINGW%=MINGW)
+
+LIBS := -ljbig2dec -lopenjpeg -lfreetype -ljpeg -lz
+CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf
+LDFLAGS =
+CC = cc
+LD = $(CC)
+AR = ar
+
+ifeq "$(build)" "debug"
+CFLAGS += -g -O
+endif
+
+ifeq "$(build)" "release"
+CFLAGS += -O2
+endif
 
 ifeq "$(OS)" "Linux"
 CFLAGS += `pkg-config --cflags freetype2`
@@ -39,7 +52,6 @@ W32LIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
 PDFVIEW_EXE = $(WINVIEW_EXE)
 endif
 
-
 # Edit these if you are cross compiling:
 
 HOSTCC ?= $(CC)
@@ -51,8 +63,6 @@ HOSTLDFLAGS ?= $(LDFLAGS)
 # Build commands
 #
 
-LIBS = -ljbig2dec -lopenjpeg -lfreetype -ljpeg -lz 
-
 HOSTCC_CMD = @ echo HOSTCC $@ && $(HOSTCC) -o $@ -c $< $(HOSTCFLAGS)
 HOSTLD_CMD = @ echo HOSTLD $@ && $(HOSTLD) -o $@ $^ $(HOSTLDFLAGS)
 GENFILE_CMD = @ echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
@@ -61,7 +71,18 @@ CC_CMD = @ echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
 LD_CMD = @ echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
 AR_CMD = @ echo AR $@ && $(AR) cru $@ $^
 
-default: all
+#
+# Directories
+#
+
+OBJDIR = build/$(build)
+GENDIR = build/generated
+HOSTDIR = build/host
+
+DIRS = $(OBJDIR) $(GENDIR) $(HOSTDIR)
+
+$(DIRS):
+	mkdir -p $@
 
 #
 # Sources
@@ -240,6 +261,8 @@ $(CMAP_LIB): $(CMAP_OBJ)
 # Apps
 #
 
+APPS = $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFVIEW_EXE)
+
 $(OBJDIR)/%.o: apps/%.c
 	$(CC_CMD)
 
@@ -286,27 +309,26 @@ $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) 
 # Installation and tarball packaging
 #
 
-dist: $(PDFVIEW_EXE) $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE)
-	tar cvf mupdf-dist.tar README COPYING $^
+dist: $(DIRS) $(APPS)
+	mkdir -p mupdf-dist
+	cp README COPYING $(APPS) mupdf-dist
+	tar cvf mupdf-dist.tar mupdf-dist
+	rm -rf mupdf-dist
 
 #
 # Default rules
 #
 
-$(OBJDIR):
-	$(MKDIR) $@
-$(GENDIR):
-	$(MKDIR) $@
-$(HOSTDIR):
-	$(MKDIR) $@
-
-all: $(OBJDIR) $(HOSTDIR) $(GENDIR) $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFVIEW_EXE)
+all: $(DIRS) $(APPS)
 
 clean:
-	$(RM) $(OBJDIR)/*
-	$(RM) $(GENDIR)/*
-	$(RM) $(HOSTDIR)/*
+	rm -rf $(OBJDIR)/*
+	rm -rf $(GENDIR)/*
+	rm -rf $(HOSTDIR)/*
 
 nuke:
 	rm -rf build
+
+install: $(DIRS) $(APPS)
+	install $(APPS) $(prefix)/bin
 
