@@ -28,6 +28,7 @@ binary-indep: build
 	dh_installmenu
 	dh_installmime
 	dh_installman
+	dh_compress
 
 # Build architecture-dependent files here.
 binary-arch: build

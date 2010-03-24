@@ -9,7 +9,7 @@ Icon=mupdf.xpm
 Terminal=false
 Type=Application
 MimeType=application/pdf;pplication/x-pdf;
-Categories=PDFViewer;Viewer;Graphics;
+Categories=Viewer;Graphics;
 
 [Desktop Action View]
 Exec=mupdf %f

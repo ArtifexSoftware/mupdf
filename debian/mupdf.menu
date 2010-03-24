@@ -1,6 +1,6 @@
 ?package(mupdf):\
 	needs="x11" \
-	section="Apps/Viewers" \
+	section="Applications/Viewers" \
 	command="/usr/bin/mupdf" \
 	title="MuPDF" \
 	hints="Documents" \

@@ -8,7 +8,7 @@ Standards-Version: 3.7.2
 Package: mupdf
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: MuPDF is a lightweight PDF viewer written in portable C.
+Description: A lightweight PDF viewer written in portable C
  MuPDF is a lightweight PDF viewer and toolkit written in portable C.
  .
  The renderer in MuPDF is tailored for high quality anti-aliased graphics.
@@ -29,9 +29,9 @@ Description: MuPDF is a lightweight PDF viewer written in portable C.
 Package: mupdf-utils
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Debugging utils for MuPDF, a lightweight PDF renderer in C.
+Description: Debugging utils for MuPDF, a lightweight PDF renderer in C
  MuPDF is a lightweight PDF viewer and toolkit written in portable C.
  .
- These are the utilites used when developing and debugging the MuPDF
+ These are the utilities used when developing and debugging the MuPDF
  renderer. Included is pdfdraw that renders and outputs the result to a PNM
  file and pdfshow that prints the contents of PDF objects.
