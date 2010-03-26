@@ -167,6 +167,10 @@ void pdfapp_close(pdfapp_t *app)
 		fz_freepixmap(app->image);
 	app->image = nil;
 
+	if (app->text)
+		fz_freetextline(app->text);
+	app->text = nil;
+
 	if (app->outline)
 		pdf_dropoutline(app->outline);
 	app->outline = nil;
@@ -217,7 +221,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 {
 	char buf[256];
 	fz_error error;
-	fz_device *dev;
+	fz_device *idev, *tdev, *mdev;
 	fz_matrix ctm;
 	fz_irect bbox;
 	fz_obj *obj;
@@ -246,20 +250,32 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 	{
 		wincursor(app, WAIT);
 
-		if (app->image)
-			fz_freepixmap(app->image);
-		app->image = nil;
-
 		ctm = pdfapp_viewctm(app);
 		bbox = fz_roundrect(fz_transformaabb(ctm, app->page->mediabox));
+
+		if (app->image)
+			fz_freepixmap(app->image);
 		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
+		idev = fz_newdrawdevice(app->image);
+
+		if (app->text)
+			fz_freetextline(app->text);
+		app->text = fz_newtextline();
+		tdev = fz_newtextdevice(app->text);
+
 		app->page->contents->rp = app->page->contents->bp;
-		dev = fz_newdrawdevice(app->image);
-		error = pdf_runcontentstream(dev, ctm, 0, app->xref, app->page->resources, app->page->contents);
-		fz_freedrawdevice(dev);
+		error = pdf_runcontentstream(idev, ctm, 0, app->xref, app->page->resources, app->page->contents);
 		if (error)
 			pdfapp_error(app, error);
+
+		app->page->contents->rp = app->page->contents->bp;
+		error = pdf_runcontentstream(tdev, ctm, 0, app->xref, app->page->resources, app->page->contents);
+		if (error)
+			pdfapp_error(app, error);
+
+		fz_freedrawdevice(idev);
+		fz_freetextdevice(tdev);
 
 		winconvert(app, app->image);
 	}
@@ -624,10 +640,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	ucsbuf[0] = 0;
-#if 0 /* pdf_loadtextfromtree needs rewriting, so removing this temporarily */
 	fz_error error;
-	pdf_textline *line, *ln;
-	int y, c;
+	fz_textline *ln;
+	int x, y, c;
 	int i, p;
 
 	int bx0, bx1, by0, by1;
@@ -637,19 +652,15 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	int y0 = app->image->y + app->selr.y0 - app->pany;
 	int y1 = app->image->y + app->selr.y1 - app->pany;
 
-	error = pdf_loadtextfromtree(&line, app->page->tree, pdfapp_viewctm(app));
-	if (error)
-		pdfapp_error(app, error);
-
 	p = 0;
-	for (ln = line; ln; ln = ln->next)
+	for (ln = app->text; ln; ln = ln->next)
 	{
 		if (ln->len > 0)
 		{
 			y = y0 - 1;
-
 			for (i = 0; i < ln->len; i++)
 			{
+#if 0
 				bx0 = ln->text[i].bbox.x0;
 				bx1 = ln->text[i].bbox.x1;
 				by0 = ln->text[i].bbox.y0;
@@ -660,11 +671,20 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 				if (bx1 >= x0 && bx0 <= x1 && by1 >= y0 && by0 <= y1)
 					if (p < ucslen - 1)
 						ucsbuf[p++] = c;
+#endif
+				c = ln->text[i].c;
+				x = ln->text[i].x;
+				y = ln->text[i].y;
+				if (c < 32)
+					c = '?';
+				if (x >= x0 && x <= x1 && y >= y0 && y <= y1)
+					if (p < ucslen - 1)
+						ucsbuf[p++] = c;
 			}
 
-			if (by1 >= y0 && by0 <= y1)
+			if (y >= y0 && y <= y1)
 			{
-#ifdef WIN32
+#ifdef _WIN32
 				if (p < ucslen - 1)
 					ucsbuf[p++] = '\r';
 #endif
@@ -675,8 +695,4 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	}
 
 	ucsbuf[p] = 0;
-
-	pdf_droptextline(line);
-#endif
 }
-

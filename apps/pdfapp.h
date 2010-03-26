@@ -32,6 +32,7 @@ struct pdfapp_s
 	float zoom;
 	int rotate;
 	fz_pixmap *image;
+	fz_textline *text;
 
 	/* current page params */
 	int pageno;
