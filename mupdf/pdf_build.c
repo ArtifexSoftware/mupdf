@@ -190,6 +190,7 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, in
 	fz_matrix oldtopctm;
 	fz_error error;
 	int x, y, x0, y0, x1, y1;
+	int oldtop;
 
 	pdf_gsave(csi);
 	gstate = csi->gstate + csi->gtop;
@@ -223,6 +224,7 @@ printf("colored tiled pattern\n");
 	y1 = fz_ceil(bbox.y1 / pat->ystep);
 
 	oldtopctm = csi->topctm;
+	oldtop = csi->gtop;
 
 	for (y = y0; y < y1; y++)
 	{
@@ -234,6 +236,8 @@ printf("colored tiled pattern\n");
 			error = pdf_runcsibuffer(csi, xref, pat->resources, pat->contents);
 			if (error)
 				fz_catch(error, "cannot render pattern tile");
+			while (oldtop < csi->gtop)
+				pdf_grestore(csi);
 		}
 	}
 
