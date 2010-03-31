@@ -445,7 +445,14 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 				pdf_logfont("encode truetype symbolic\n");
 				for (i = 0; i < 256; i++)
 				{
-					etable[i] = ftcharindex(face, i);
+					if (estrings[i])
+					{
+						etable[i] = FT_Get_Name_Index(face, estrings[i]);
+						if (etable[i] == 0)
+							etable[i] = ftcharindex(face, i);
+					}
+					else
+						etable[i] = ftcharindex(face, i);
 					fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
 					if (fterr)
 					{
