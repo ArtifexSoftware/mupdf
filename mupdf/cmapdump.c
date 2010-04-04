@@ -170,6 +170,12 @@ main(int argc, char **argv)
 		fz_dropstream(fi);
 	}
 
+	if (fclose(fo))
+	{
+		fprintf(stderr, "cmapdump: could not close output file '%s'\n", argv[1]);
+		return 1;
+	}
+
 	return 0;
 }
 
