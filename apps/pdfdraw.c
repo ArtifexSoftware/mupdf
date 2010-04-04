@@ -60,6 +60,7 @@ static int drawrotate = 0;
 static int drawbands = 1;
 static int drawcount = 0;
 static int benchmark = 0;
+static int checksum = 0;
 
 static void local_cleanup(void)
 {
@@ -85,6 +86,7 @@ static void drawusage(void)
 		"  -o -\tpattern (%%d for page number) for output file\n"
 		"  -r -\tresolution in dpi\n"
 		"  -m  \tprint benchmark results\n"
+		"  -s  \tprint MD5 checksum of page pixel data\n"
 		"  example:\n"
 		"    pdfdraw -o output%%03d.pnm input.pdf 1-3,5,9-\n");
 	exit(1);
@@ -177,7 +179,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	long elapsed;
 	fz_md5 digest;
 
-	if (!drawpattern)
+	if (checksum)
 		fz_md5init(&digest);
 
 	drawloadpage(pagenum, loadtimes);
@@ -256,7 +258,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			}
 		}
 
-		if (!drawpattern)
+		if (checksum)
 			fz_md5update(&digest, pix->samples, pix->h * pix->w * 4);
 
 		pix->y += bh;
@@ -266,11 +268,13 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 	fz_droppixmap(pix);
 
-	if (!drawpattern) {
+	if (checksum)
+	{
 		unsigned char buf[16];
 		fz_md5final(&digest, buf);
 		for (i = 0; i < 16; i++)
 			fprintf(stdout, "%02x", buf[i]);
+		fprintf(stdout, " ");
 	}
 
 	if (drawpattern)
@@ -296,7 +300,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		drawtimes->avg += elapsed;
 		drawtimes->pages++;
 
-		fprintf(stdout, " time %.3fs",
+		fprintf(stdout, "time %.3fs",
 			elapsed / 1000000.0);
 	}
 
@@ -416,17 +420,18 @@ int main(int argc, char **argv)
 	int c;
 	enum { NO_FILE_OPENED, NO_PAGES_DRAWN, DREW_PAGES } state;
 
-	while ((c = fz_getopt(argc, argv, "b:d:o:r:txm")) != -1)
+	while ((c = fz_getopt(argc, argv, "b:d:o:r:txms")) != -1)
 	{
 		switch (c)
 		{
 		case 'b': drawbands = atoi(fz_optarg); break;
 		case 'd': password = fz_optarg; break;
-		case 'o': drawpattern = fz_optarg; break;
+		case 'o': drawpattern = fz_optarg; checksum = 1; break;
 		case 'r': drawzoom = atof(fz_optarg) / 72.0; break;
 		case 't': drawmode = DRAWTXT; break;
 		case 'x': drawmode = DRAWXML; break;
 		case 'm': benchmark = 1; break;
+		case 's': checksum = 1; break;
 		default:
 			drawusage();
 			break;
