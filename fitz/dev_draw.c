@@ -152,8 +152,6 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 	unsigned char argb[7];
 	float rgb[3];
 
-	if (flatness < 0.1)
-		flatness = 0.1;
 	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
 
@@ -199,9 +197,6 @@ void fz_drawclippath(void *user, fz_path *path)
 		fz_warn("assert: too many clip masks on stack");
 		return;
 	}
-
-	if (flatness < 0.1)
-		flatness = 0.1;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
