@@ -2,7 +2,7 @@
 #include "mupdf.h"
 
 static pdf_csi *
-pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm)
+pdf_newcsi(fz_device *dev, fz_matrix ctm)
 {
 	pdf_csi *csi;
 
@@ -16,12 +16,6 @@ pdf_newcsi(fz_device *dev, int maskonly, fz_matrix ctm)
 
 	csi->path = fz_newpath();
 	csi->text = nil;
-
-	if (maskonly)
-	{
-		csi->gstate[0].fill.kind = PDF_MNONE;
-		csi->gstate[0].stroke.kind = PDF_MNONE;
-	}
 
 	csi->clip = 0;
 	csi->clipevenodd = 0;
@@ -1374,10 +1368,10 @@ pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents)
 }
 
 fz_error
-pdf_runcontentstream(fz_device *dev, fz_matrix ctm, int maskonly,
+pdf_runcontentstream(fz_device *dev, fz_matrix ctm,
 	pdf_xref *xref, fz_obj *resources, fz_buffer *contents)
 {
-	pdf_csi *csi = pdf_newcsi(dev, maskonly, ctm);
+	pdf_csi *csi = pdf_newcsi(dev, ctm);
 	fz_error error = pdf_runcsibuffer(csi, xref, resources, contents);
 	pdf_freecsi(csi);
 	if (error)

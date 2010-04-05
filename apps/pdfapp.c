@@ -265,12 +265,12 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		tdev = fz_newtextdevice(app->text);
 
 		app->page->contents->rp = app->page->contents->bp;
-		error = pdf_runcontentstream(idev, ctm, 0, app->xref, app->page->resources, app->page->contents);
+		error = pdf_runcontentstream(idev, ctm, app->xref, app->page->resources, app->page->contents);
 		if (error)
 			pdfapp_error(app, error);
 
 		app->page->contents->rp = app->page->contents->bp;
-		error = pdf_runcontentstream(tdev, ctm, 0, app->xref, app->page->resources, app->page->contents);
+		error = pdf_runcontentstream(tdev, ctm, app->xref, app->page->resources, app->page->contents);
 		if (error)
 			pdfapp_error(app, error);
 

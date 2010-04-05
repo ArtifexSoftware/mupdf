@@ -229,11 +229,11 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 //		dev = fz_newtracedevice();
 //		drawpage->contents->rp = drawpage->contents->bp;
-//		pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
+//		pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 
 		dev = fz_newdrawdevice(pix);
 		drawpage->contents->rp = drawpage->contents->bp;
-		error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
+		error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(error);
 		fz_freedrawdevice(dev);
@@ -322,7 +322,7 @@ static void drawtxt(int pagenum)
 	dev = fz_newtextdevice(text);
 
 	drawpage->contents->rp = drawpage->contents->bp;
-	error = pdf_runcontentstream(dev, ctm, 0, xref, drawpage->resources, drawpage->contents);
+	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 	if (error)
 		die(error);
 

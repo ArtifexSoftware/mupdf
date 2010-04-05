@@ -695,6 +695,6 @@ void pdf_showshade(pdf_csi*, fz_shade *shd);
 void pdf_gsave(pdf_csi *csi);
 void pdf_grestore(pdf_csi *csi);
 fz_error pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents);
-fz_error pdf_runcontentstream(fz_device *dev, fz_matrix ctm, int maskonly, pdf_xref *xref, fz_obj *resources, fz_buffer *contents);
+fz_error pdf_runcontentstream(fz_device *dev, fz_matrix ctm, pdf_xref *xref, fz_obj *resources, fz_buffer *contents);
 
 #endif

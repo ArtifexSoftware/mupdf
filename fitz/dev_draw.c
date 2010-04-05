@@ -109,20 +109,6 @@ void fz_drawfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float
 	float flatness = 0.3 / expansion;
 	fz_irect bbox;
 	fz_irect clip;
-	unsigned char argb[7];
-	float rgb[3];
-
-	if (flatness < 0.1)
-		flatness = 0.1;
-
-	fz_convertcolor(colorspace, color, dev->model, rgb);
-	argb[0] = alpha * 255;
-	argb[1] = rgb[0] * alpha * 255;
-	argb[2] = rgb[1] * alpha * 255;
-	argb[3] = rgb[2] * alpha * 255;
-	argb[4] = rgb[0] * 255;
-	argb[5] = rgb[1] * 255;
-	argb[6] = rgb[2] * 255;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -138,7 +124,24 @@ void fz_drawfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float
 	if (fz_isemptyrect(bbox))
 		return;
 
-	fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, dev->dest, argb, 1);
+	if (dev->model)
+	{
+		unsigned char argb[7];
+		float rgb[3];
+		fz_convertcolor(colorspace, color, dev->model, rgb);
+		argb[0] = alpha * 255;
+		argb[1] = rgb[0] * alpha * 255;
+		argb[2] = rgb[1] * alpha * 255;
+		argb[3] = rgb[2] * alpha * 255;
+		argb[4] = rgb[0] * 255;
+		argb[5] = rgb[1] * 255;
+		argb[6] = rgb[2] * 255;
+		fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, dev->dest, argb, 1);
+	}
+	else
+	{
+		fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, dev->dest, nil, 1);
+	}
 }
 
 void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha)
@@ -149,20 +152,9 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 	float linewidth = path->linewidth;
 	fz_irect bbox;
 	fz_irect clip;
-	unsigned char argb[7];
-	float rgb[3];
 
 	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
-
-	fz_convertcolor(colorspace, color, dev->model, rgb);
-	argb[0] = alpha * 255;
-	argb[1] = rgb[0] * alpha * 255;
-	argb[2] = rgb[1] * alpha * 255;
-	argb[3] = rgb[2] * alpha * 255;
-	argb[4] = rgb[0] * 255;
-	argb[5] = rgb[1] * 255;
-	argb[6] = rgb[2] * 255;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -181,7 +173,24 @@ void fz_drawstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, flo
 	if (fz_isemptyrect(bbox))
 		return;
 
-	fz_scanconvert(dev->gel, dev->ael, 0, bbox, dev->dest, argb, 1);
+	if (dev->model)
+	{
+		unsigned char argb[7];
+		float rgb[3];
+		fz_convertcolor(colorspace, color, dev->model, rgb);
+		argb[0] = alpha * 255;
+		argb[1] = rgb[0] * alpha * 255;
+		argb[2] = rgb[1] * alpha * 255;
+		argb[3] = rgb[2] * alpha * 255;
+		argb[4] = rgb[0] * 255;
+		argb[5] = rgb[1] * 255;
+		argb[6] = rgb[2] * 255;
+		fz_scanconvert(dev->gel, dev->ael, 0, bbox, dev->dest, argb, 1);
+	}
+	else
+	{
+		fz_scanconvert(dev->gel, dev->ael, 0, bbox, dev->dest, nil, 1);
+	}
 }
 
 void fz_drawclippath(void *user, fz_path *path)
@@ -217,7 +226,7 @@ void fz_drawclippath(void *user, fz_path *path)
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
 
 	if (!fz_isemptyrect(bbox))
-		fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, mask, NULL, 1);
+		fz_scanconvert(dev->gel, dev->ael, path->winding == FZ_EVENODD, bbox, mask, nil, 1);
 
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
@@ -261,30 +270,36 @@ static void drawglyph(unsigned char *argb, fz_pixmap *dst, fz_glyph *src, int xo
 	if (dst->colorspace)
 		fz_text_w4i1o4(argb, sp, src->w, dp, dst->w * 4, w, h);
 	else
-	{
-		printf("drawing glyph to alpha mask\n");
 		fz_text_1o1(sp, src->w, dp, dst->w, w, h);
-	}
 }
 
 void fz_drawfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
-	unsigned char argb[7];
-	float rgb[3];
 	fz_irect clip;
 	fz_matrix tm, trm;
 	fz_glyph glyph;
 	int i, x, y, gid;
+	unsigned char tmp[7];
+	unsigned char *argb;
 
-	fz_convertcolor(colorspace, color, dev->model, rgb);
-	argb[0] = alpha * 255;
-	argb[1] = rgb[0] * alpha * 255;
-	argb[2] = rgb[1] * alpha * 255;
-	argb[3] = rgb[2] * alpha * 255;
-	argb[4] = rgb[0] * 255;
-	argb[5] = rgb[1] * 255;
-	argb[6] = rgb[2] * 255;
+	if (dev->model)
+	{
+		float rgb[3];
+		fz_convertcolor(colorspace, color, dev->model, rgb);
+		tmp[0] = alpha * 255;
+		tmp[1] = rgb[0] * alpha * 255;
+		tmp[2] = rgb[1] * alpha * 255;
+		tmp[3] = rgb[2] * alpha * 255;
+		tmp[4] = rgb[0] * 255;
+		tmp[5] = rgb[1] * 255;
+		tmp[6] = rgb[2] * 255;
+		argb = tmp;
+	}
+	else
+	{
+		argb = nil;
+	}
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -368,6 +383,12 @@ void fz_drawdrawshade(void *user, fz_shade *shade, fz_matrix ctm)
 	if (fz_isemptyrect(clip))
 		return;
 
+	if (!dev->model)
+	{
+		fz_warn("cannot render shading directly to an alpha mask");
+		return;
+	}
+
 	temp = fz_newpixmapwithrect(dev->model, clip);
 
 	if (shade->usebackground)
@@ -448,6 +469,12 @@ void fz_drawdrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	if (image->w == 0 || image->h == 0)
 		return;
 
+	if (!dev->model)
+	{
+		fz_warn("cannot render image directly to an alpha mask");
+		return;
+	}
+
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
 	if (dx != 1 || dy != 1)
@@ -456,7 +483,7 @@ void fz_drawdrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
 		image = temp;
 	}
 
-	if (image->colorspace && image->colorspace != dev->model)
+	if (image->colorspace != dev->model)
 	{
 		temp = fz_newpixmap(dev->model, image->x, image->y, image->w, image->h);
 		fz_convertpixmap(image->colorspace, image, dev->model, temp);
@@ -509,17 +536,6 @@ void fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colors
 	int u0, v0;
 	int x0, y0;
 	int w, h;
-	unsigned char argb[7];
-	float rgb[3];
-
-	fz_convertcolor(colorspace, color, dev->model, rgb);
-	argb[0] = alpha * 255;
-	argb[1] = rgb[0] * alpha * 255;
-	argb[2] = rgb[1] * alpha * 255;
-	argb[3] = rgb[2] * alpha * 255;
-	argb[4] = rgb[0] * 255;
-	argb[5] = rgb[1] * 255;
-	argb[6] = rgb[2] * 255;
 
 	bounds.x0 = 0;
 	bounds.y0 = 0;
@@ -572,11 +588,25 @@ void fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colors
 #define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
 	if (dev->dest->colorspace)
+	{
+		unsigned char argb[7];
+		float rgb[3];
+		fz_convertcolor(colorspace, color, dev->model, rgb);
+		argb[0] = alpha * 255;
+		argb[1] = rgb[0] * alpha * 255;
+		argb[2] = rgb[1] * alpha * 255;
+		argb[3] = rgb[2] * alpha * 255;
+		argb[4] = rgb[0] * 255;
+		argb[5] = rgb[1] * 255;
+		argb[6] = rgb[2] * 255;
 		fz_img_w4i1o4(argb, image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
+	}
 	else
+	{
 		fz_img_1o1(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
+	}
 }
 
 void fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)

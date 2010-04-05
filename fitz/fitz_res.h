@@ -253,7 +253,7 @@ struct fz_font_s
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	void *t3xref; /* a pdf_xref for the callback */
-	fz_error (*t3runcontentstream)(fz_device *dev, fz_matrix ctm, int maskonly,
+	fz_error (*t3runcontentstream)(fz_device *dev, fz_matrix ctm,
 		void *xref, fz_obj *resources, fz_buffer *contents);
 
 	fz_rect bbox;

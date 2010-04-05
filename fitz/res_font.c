@@ -368,8 +368,6 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	glyph->h = 0;
 	glyph->samples = nil;
 
-	printf("render t3 glyph %d\n", gid);
-
 	/* TODO: make it reentrant */
 	static fz_pixmap *pixmap = nil;
 	if (pixmap)
@@ -392,12 +390,10 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 
 	dev = fz_newdrawdevice(pixmap);
 	contents->rp = contents->bp;
-	error = font->t3runcontentstream(dev, ctm, 1, font->t3xref, font->t3resources, contents);
+	error = font->t3runcontentstream(dev, ctm, font->t3xref, font->t3resources, contents);
 	if (error)
 		fz_catch(error, "cannot draw type3 glyph");
 	fz_freedrawdevice(dev);
-
-	fz_debugpixmap(pixmap, "g");
 
 	glyph->x = pixmap->x;
 	glyph->y = pixmap->y;
