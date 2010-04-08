@@ -24,9 +24,9 @@ flagtoname(int flag)
 	switch (flag)
 	{
 	case PDF_CMAP_SINGLE: return "PDF_CMAP_SINGLE,";
-	case PDF_CMAP_RANGE: return "PDF_CMAP_RANGE, ";
-	case PDF_CMAP_TABLE: return "PDF_CMAP_TABLE, ";
-	case PDF_CMAP_MULTI: return "PDF_CMAP_MULTI, ";
+	case PDF_CMAP_RANGE: return "PDF_CMAP_RANGE,";
+	case PDF_CMAP_TABLE: return "PDF_CMAP_TABLE,";
+	case PDF_CMAP_MULTI: return "PDF_CMAP_MULTI,";
 	}
 	return "-1,";
 }
@@ -132,7 +132,7 @@ main(int argc, char **argv)
 			{
 				if (k % 8 == 0)
 					fprintf(fo, "\n    ");
-				fprintf(fo, "%d, ", cmap->table[k]);
+				fprintf(fo, "%d,", cmap->table[k]);
 			}
 			fprintf(fo, "\n};\n\n");
 		}
