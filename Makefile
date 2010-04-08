@@ -99,7 +99,7 @@ FITZ_SRC=$(addprefix fitz/, \
 	node_path.c node_text.c \
 	dev_null.c dev_text.c dev_draw.c dev_trace.c \
 	obj_array.c obj_dict.c obj_parse.c obj_print.c obj_simple.c \
-	res_colorspace.c res_font.c res_shade.c \
+	res_colorspace.c res_font.c res_shade.c res_path.c res_text.c \
 	stm_buffer.c stm_filter.c stm_misc.c stm_open.c stm_read.c \
 	util_getopt.c util_gettimeofday.c )
 FITZ_OBJ=$(FITZ_SRC:fitz/%.c=$(OBJDIR)/%.o)
