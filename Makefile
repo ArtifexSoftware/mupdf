@@ -96,8 +96,7 @@ FITZ_SRC=$(addprefix fitz/, \
 	crypt_aes.c crypt_arc4.c crypt_crc32.c crypt_md5.c \
 	filt_aesd.c filt_arc4.c filt_basic.c filt_dctd.c filt_faxd.c filt_faxdtab.c filt_flate.c \
 	filt_jbig2d.c filt_jpxd.c filt_lzwd.c filt_pipeline.c filt_predict.c \
-	node_path.c node_text.c \
-	dev_null.c dev_text.c dev_draw.c dev_trace.c \
+	dev_null.c dev_text.c dev_draw.c dev_list.c dev_trace.c \
 	obj_array.c obj_dict.c obj_parse.c obj_print.c obj_simple.c \
 	res_colorspace.c res_font.c res_shade.c res_path.c res_text.c \
 	stm_buffer.c stm_filter.c stm_misc.c stm_open.c stm_read.c \
@@ -254,6 +253,7 @@ CMAP_SRC=\
 CMAP_OBJ=$(CMAP_SRC:$(GENDIR)/%.c=$(OBJDIR)/%.o)
 CMAP_LIB=$(OBJDIR)/libcmaps.a
 
+$(CMAP_OBJ): $(MUPDF_HDR)
 $(CMAP_LIB): $(CMAP_OBJ)
 	 $(AR_CMD)
 
@@ -270,6 +270,7 @@ PDFSHOW_SRC=apps/pdfshow.c apps/pdftool.c
 PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
 
+$(PDFSHOW_OBJ): $(MUPDF_HDR)
 $(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
 	$(LD_CMD)
 
@@ -277,6 +278,7 @@ PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
 PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
 
+$(PDFCLEAN_OBJ): $(MUPDF_HDR)
 $(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
 	$(LD_CMD)
 
@@ -284,6 +286,7 @@ PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
 
+$(PDFDRAW_OBJ): $(MUPDF_HDR)
 $(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD)
 
@@ -291,6 +294,7 @@ X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
 X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
+$(X11VIEW_OBJ): $(MUPDF_HDR)
 $(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(X11LIBS)
 
@@ -302,6 +306,7 @@ WINVIEW_EXE=$(OBJDIR)/mupdf.exe
 $(OBJDIR)/%.o: apps/%.rc
 	windres -i $< -o $@ --include-dir=apps
 
+$(WINVIEW_OBJ): $(MUPDF_HDR)
 $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(W32LIBS)
 

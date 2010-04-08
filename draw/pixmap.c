@@ -6,6 +6,7 @@ fz_newpixmap(fz_colorspace *colorspace, int x, int y, int w, int h)
 	fz_pixmap *pix;
 
 	pix = fz_malloc(sizeof(fz_pixmap));
+	pix->refs = 1;
 	pix->x = x;
 	pix->y = y;
 	pix->w = w;
@@ -30,13 +31,23 @@ fz_newpixmapwithrect(fz_colorspace *colorspace, fz_irect r)
 	return fz_newpixmap(colorspace, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
 }
 
-void
-fz_freepixmap(fz_pixmap *pix)
+fz_pixmap *
+fz_keeppixmap(fz_pixmap *pix)
 {
-	if (pix->colorspace)
-		fz_dropcolorspace(pix->colorspace);
-	fz_free(pix->samples);
-	fz_free(pix);
+	pix->refs++;
+	return pix;
+}
+
+void
+fz_droppixmap(fz_pixmap *pix)
+{
+	if (pix && --pix->refs == 0)
+	{
+		if (pix->colorspace)
+			fz_dropcolorspace(pix->colorspace);
+		fz_free(pix->samples);
+		fz_free(pix);
+	}
 }
 
 void

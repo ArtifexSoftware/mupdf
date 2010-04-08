@@ -236,7 +236,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(error);
-		fz_freedrawdevice(dev);
+		fz_freedevice(dev);
 
 		if (drawpattern)
 		{
@@ -264,7 +264,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			pix->h = bbox.y1 - pix->y;
 	}
 
-	fz_freepixmap(pix);
+	fz_droppixmap(pix);
 
 	if (!drawpattern) {
 		unsigned char buf[16];
@@ -308,7 +308,7 @@ static void drawtxt(int pagenum)
 	fz_error error;
 	fz_matrix ctm;
 	fz_obj *pageobj;
-	fz_textline *text;
+	fz_textspan *text;
 	fz_device *dev;
 
 	pageobj = pdf_getpageobject(xref, pagenum);
@@ -318,7 +318,7 @@ static void drawtxt(int pagenum)
 
 	ctm = fz_identity();
 
-	text = fz_newtextline();
+	text = fz_newtextspan();
 	dev = fz_newtextdevice(text);
 
 	drawpage->contents->rp = drawpage->contents->bp;
@@ -327,11 +327,11 @@ static void drawtxt(int pagenum)
 		die(error);
 
 	printf("[Page %d]\n", pagenum);
-	fz_debugtextline(text);
+	fz_debugtextspan(text);
 	printf("\n");
 
-	fz_freetextdevice(dev);
-	fz_freetextline(text);
+	fz_freedevice(dev);
+	fz_freetextspan(text);
 }
 
 static void drawpages(char *pagelist)

@@ -7,7 +7,8 @@
 	((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 2)) || \
 	((FREETYPE_MAJOR == 2) && (FREETYPE_MINOR == 3) && (FREETYPE_PATCH < 8))
 
-int FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
+int
+FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 {
 	int fterr;
 	fterr = FT_Load_Glyph(face, gid, masks | FT_LOAD_IGNORE_TRANSFORM);
@@ -28,14 +29,14 @@ typedef struct fz_textdevice_s fz_textdevice;
 struct fz_textdevice_s
 {
 	fz_point point;
-	fz_textline *line;
+	fz_textspan *line;
 };
 
-fz_textline *
-fz_newtextline(void)
+fz_textspan *
+fz_newtextspan(void)
 {
-	fz_textline *line;
-	line = fz_malloc(sizeof(fz_textline));
+	fz_textspan *line;
+	line = fz_malloc(sizeof(fz_textspan));
 	line->len = 0;
 	line->cap = 0;
 	line->text = nil;
@@ -44,16 +45,16 @@ fz_newtextline(void)
 }
 
 void
-fz_freetextline(fz_textline *line)
+fz_freetextspan(fz_textspan *line)
 {
 	if (line->next)
-		fz_freetextline(line->next);
+		fz_freetextspan(line->next);
 	fz_free(line->text);
 	fz_free(line);
 }
 
 static void
-fz_addtextchar(fz_textline *line, int x, int y, int c)
+fz_addtextchar(fz_textspan *line, int x, int y, int c)
 {
 	if (line->len + 1 >= line->cap)
 	{
@@ -67,7 +68,7 @@ fz_addtextchar(fz_textline *line, int x, int y, int c)
 }
 
 void
-fz_debugtextline(fz_textline *line)
+fz_debugtextspan(fz_textspan *line)
 {
 	char buf[10];
 	int c, n, k, i;
@@ -87,14 +88,13 @@ fz_debugtextline(fz_textline *line)
 	putchar('\n');
 
 	if (line->next)
-		fz_debugtextline(line->next);
+		fz_debugtextspan(line->next);
 }
 
 static void
-fz_textextractline(fz_textline **line, fz_text *text, fz_point *oldpt)
+fz_textextractline(fz_textspan **line, fz_text *text, fz_matrix ctm, fz_point *oldpt)
 {
 	fz_font *font = text->font;
-	fz_matrix ctm = text->ctm;
 	fz_matrix tm = text->trm;
 	fz_matrix inv = fz_invertmatrix(text->trm);
 	fz_matrix trm;
@@ -149,8 +149,8 @@ fz_textextractline(fz_textline **line, fz_text *text, fz_point *oldpt)
 
 		if (fabs(dy) > 0.2)
 		{
-			fz_textline *newline;
-			newline = fz_newtextline();
+			fz_textspan *newline;
+			newline = fz_newtextspan();
 			(*line)->next = newline;
 			*line = newline;
 		}
@@ -163,19 +163,30 @@ fz_textextractline(fz_textline **line, fz_text *text, fz_point *oldpt)
 	}
 }
 
-void fz_textfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_textfilltext(void *user, fz_text *text, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_textdevice *tdev = user;
-	fz_textextractline(&tdev->line, text, &tdev->point);
+	fz_textextractline(&tdev->line, text, ctm, &tdev->point);
 }
 
-void fz_textignoretext(void *user, fz_text *text)
+static void
+fz_textignoretext(void *user, fz_text *text, fz_matrix ctm)
 {
 	fz_textdevice *tdev = user;
-	fz_textextractline(&tdev->line, text, &tdev->point);
+	fz_textextractline(&tdev->line, text, ctm, &tdev->point);
 }
 
-fz_device *fz_newtextdevice(fz_textline *root)
+static void
+fz_textfreeuser(void *user)
+{
+	fz_textdevice *tdev = user;
+	fz_free(tdev);
+}
+
+fz_device *
+fz_newtextdevice(fz_textspan *root)
 {
 	fz_textdevice *tdev = fz_malloc(sizeof(fz_textdevice));
 	tdev->line = root;
@@ -183,16 +194,8 @@ fz_device *fz_newtextdevice(fz_textline *root)
 	tdev->point.y = -1;
 
 	fz_device *dev = fz_newdevice(tdev);
-
+	dev->freeuser = fz_textfreeuser;
 	dev->filltext = fz_textfilltext;
 	dev->ignoretext = fz_textignoretext;
-
 	return dev;
-}
-
-void fz_freetextdevice(fz_device *dev)
-{
-	fz_textdevice *tdev = dev->user;
-	fz_free(tdev);
-	fz_free(dev);
 }

@@ -1,78 +1,15 @@
 /*
- *
+ * Resources and other graphics related objects.
  */
 
+typedef struct fz_pixmap_s fz_pixmap;
+typedef struct fz_colorspace_s fz_colorspace;
 typedef struct fz_path_s fz_path;
 typedef struct fz_text_s fz_text;
 typedef struct fz_font_s fz_font;
 typedef struct fz_shade_s fz_shade;
 
-typedef struct fz_device_s fz_device;
-
-struct fz_device_s
-{
-	void *user;
-
-	void (*fillpath)(void *, fz_path *, fz_colorspace *, float *color, float alpha);
-	void (*strokepath)(void *, fz_path *, fz_colorspace *, float *color, float alpha);
-	void (*clippath)(void *, fz_path *);
-
-	void (*filltext)(void *, fz_text *, fz_colorspace *, float *color, float alpha);
-	void (*stroketext)(void *, fz_text *, fz_colorspace *, float *color, float alpha);
-	void (*cliptext)(void *, fz_text *);
-	void (*ignoretext)(void *, fz_text *);
-
-	void (*fillimagemask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color, float alpha);
-	void (*clipimagemask)(void *, fz_pixmap *img, fz_matrix ctm);
-	void (*drawimage)(void *, fz_pixmap *img, fz_matrix ctm);
-	void (*drawshade)(void *, fz_shade *shd, fz_matrix ctm);
-
-	void (*popclip)(void *);
-};
-
-/* no-op device functions */
-fz_device *fz_newdevice(void *user);
-void fz_initnulldevice(fz_device *dev);
-void fz_nullfillpath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha);
-void fz_nullstrokepath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha);
-void fz_nullclippath(void *user, fz_path *path);
-void fz_nullfilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha);
-void fz_nullstroketext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha);
-void fz_nullcliptext(void *user, fz_text *text);
-void fz_nullignoretext(void *user, fz_text *text);
-void fz_nullpopclip(void *user);
-void fz_nulldrawshade(void *user, fz_shade *shade, fz_matrix ctm);
-void fz_nulldrawimage(void *user, fz_pixmap *image, fz_matrix ctm);
-void fz_nullfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
-void fz_nullclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm);
-
-fz_device *fz_newtracedevice(void);
-
-fz_device *fz_newdrawdevice(fz_pixmap *dest);
-void fz_freedrawdevice(fz_device *dev);
-
-typedef struct fz_textline_s fz_textline;
-typedef struct fz_textchar_s fz_textchar;
-
-struct fz_textchar_s
-{
-	int x, y;
-	int c;
-};
-
-struct fz_textline_s
-{
-	int len, cap;
-	fz_textchar *text;
-	fz_textline *next;
-};
-
-fz_textline * fz_newtextline(void);
-void fz_freetextline(fz_textline *line);
-void fz_debugtextline(fz_textline *line);
-
-fz_device *fz_newtextdevice(fz_textline *text);
-void fz_freetextdevice(fz_device *dev);
+enum { FZ_MAXCOLORS = 32 };
 
 typedef enum fz_blendkind_e
 {
@@ -98,23 +35,153 @@ typedef enum fz_blendkind_e
 } fz_blendkind;
 
 /*
- * Vector paths.
- * They can be stroked and dashed, or be filled.
- * They have a fill rule (nonzero or evenodd).
+pixmaps have n components per pixel. the first is always alpha.
+premultiplied alpha when rendering, but non-premultiplied for colorspace
+conversions and rescaling.
+*/
+
+extern fz_colorspace *pdf_devicegray;
+extern fz_colorspace *pdf_devicergb;
+extern fz_colorspace *pdf_devicecmyk;
+extern fz_colorspace *pdf_devicelab;
+extern fz_colorspace *pdf_devicepattern;
+
+struct fz_pixmap_s
+{
+	int refs;
+	int x, y, w, h, n;
+	fz_colorspace *colorspace;
+	unsigned char *samples;
+};
+
+fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_irect bbox);
+fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
+fz_pixmap *fz_keeppixmap(fz_pixmap *map);
+void fz_droppixmap(fz_pixmap *map);
+
+void fz_debugpixmap(fz_pixmap *map, char *prefix);
+void fz_clearpixmap(fz_pixmap *map, unsigned char value);
+
+fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
+
+/*
+ * The device interface.
+ */
+
+typedef struct fz_device_s fz_device;
+
+struct fz_device_s
+{
+	void *user;
+	void (*freeuser)(void *);
+
+	void (*fillpath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*strokepath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*clippath)(void *, fz_path *, fz_matrix);
+
+	void (*filltext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*stroketext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*cliptext)(void *, fz_text *, fz_matrix);
+	void (*ignoretext)(void *, fz_text *, fz_matrix);
+
+	void (*fillshade)(void *, fz_shade *shd, fz_matrix ctm);
+	void (*fillimage)(void *, fz_pixmap *img, fz_matrix ctm);
+	void (*fillimagemask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color, float alpha);
+	void (*clipimagemask)(void *, fz_pixmap *img, fz_matrix ctm);
+
+	void (*popclip)(void *);
+};
+
+fz_device *fz_newdevice(void *user);
+void fz_freedevice(fz_device *dev);
+
+fz_device *fz_newtracedevice(void);
+
+fz_device *fz_newdrawdevice(fz_pixmap *dest);
+
+/* Text extraction device */
+
+typedef struct fz_textspan_s fz_textspan;
+typedef struct fz_textchar_s fz_textchar;
+
+struct fz_textchar_s
+{
+	int c, x, y, w;
+};
+
+struct fz_textspan_s
+{
+	int ascender, descender;
+	int len, cap;
+	fz_textchar *text;
+	fz_textspan *next;
+};
+
+fz_textspan * fz_newtextspan(void);
+void fz_freetextspan(fz_textspan *line);
+void fz_debugtextspan(fz_textspan *line);
+
+fz_device *fz_newtextdevice(fz_textspan *text);
+
+/* Display list device -- record and play back device commands. */
+
+typedef struct fz_displaylist_s fz_displaylist;
+typedef struct fz_displaynode_s fz_displaynode;
+
+typedef enum fz_displaycommand_e
+{
+	FZ_CMDFILLPATH,
+	FZ_CMDSTROKEPATH,
+	FZ_CMDCLIPPATH,
+	FZ_CMDFILLTEXT,
+	FZ_CMDSTROKETEXT,
+	FZ_CMDCLIPTEXT,
+	FZ_CMDIGNORETEXT,
+	FZ_CMDFILLSHADE,
+	FZ_CMDFILLIMAGE,
+	FZ_CMDFILLIMAGEMASK,
+	FZ_CMDCLIPIMAGEMASK,
+	FZ_CMDPOPCLIP,
+} fz_displaycommand;
+
+struct fz_displaylist_s
+{
+	fz_displaynode *first;
+	fz_displaynode *last;
+};
+
+struct fz_displaynode_s
+{
+	fz_displaycommand cmd;
+	fz_displaynode *next;
+	union {
+		fz_path *path;
+		fz_text *text;
+		fz_shade *shade;
+		fz_pixmap *image;
+	} item;
+	fz_matrix ctm;
+	fz_colorspace *colorspace;
+	float alpha;
+	float color[FZ_MAXCOLORS];
+};
+
+fz_displaylist *fz_newdisplaylist(void);
+void fz_freedisplaylist(fz_displaylist *list);
+fz_device *fz_newlistdevice(fz_displaylist *list);
+void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
+
+/*
+ * Vector path buffer.
+ * It can be stroked and dashed, or be filled.
+ * It has a fill rule (nonzero or evenodd).
  *
  * When rendering, they are flattened, stroked and dashed straight
  * into the Global Edge List.
  */
 
 typedef struct fz_stroke_s fz_stroke;
-typedef struct fz_dash_s fz_dash;
 typedef union fz_pathel_s fz_pathel;
-
-typedef enum fz_pathwinding_e
-{
-	FZ_EVENODD,
-	FZ_NONZERO,
-} fz_pathwinding;
 
 typedef enum fz_pathelkind_e
 {
@@ -132,8 +199,7 @@ union fz_pathel_s
 
 struct fz_path_s
 {
-	fz_matrix ctm;
-	fz_pathwinding winding;
+	int evenodd;
 	int linecap;
 	int linejoin;
 	float linewidth;
@@ -155,12 +221,11 @@ void fz_closepath(fz_path*);
 void fz_resetpath(fz_path *path);
 void fz_freepath(fz_path *path);
 
-fz_rect fz_boundpath(fz_path *, int dostroke);
+fz_path *fz_clonepath(fz_path *old);
+
+fz_rect fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke);
 void fz_debugpath(fz_path *, int indent);
 void fz_printpath(fz_path *, int indent);
-
-fz_dash *fz_newdash(float phase, int len, float *array);
-void fz_freedash(fz_dash *dash);
 
 /*
  * Text buffer.
@@ -187,7 +252,6 @@ struct fz_text_s
 {
 	fz_font *font;
 	fz_matrix trm;
-	fz_matrix ctm;
 	int len, cap;
 	fz_textel *els;
 };
@@ -199,13 +263,13 @@ void fz_resettext(fz_text *text);
 void fz_freetext(fz_text *text);
 void fz_debugtext(fz_text*, int indent);
 
+fz_text *fz_clonetext(fz_text *old);
+
 /*
  * Colorspace resources.
  *
  * TODO: use lcms
  */
-
-enum { FZ_MAXCOLORS = 32 };
 
 struct fz_colorspace_s
 {
@@ -254,7 +318,7 @@ struct fz_font_s
 	float *t3widths; /* has 256 entries if used */
 	void *t3xref; /* a pdf_xref for the callback */
 	fz_error (*t3runcontentstream)(fz_device *dev, fz_matrix ctm,
-		void *xref, fz_obj *resources, fz_buffer *contents);
+		struct pdf_xref_s *xref, fz_obj *resources, fz_buffer *contents);
 
 	fz_rect bbox;
 };

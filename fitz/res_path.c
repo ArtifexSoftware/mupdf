@@ -6,10 +6,9 @@ fz_newpath(void)
 	fz_path *path;
 
 	path = fz_malloc(sizeof(fz_path));
-	path->ctm = fz_identity();
 	path->dashlen = 0;
 	path->dashphase = 0;
-	path->winding = FZ_NONZERO;
+	path->evenodd = 0;
 	path->linecap = 0;
 	path->linejoin = 0;
 	path->linewidth = 1.0;
@@ -17,6 +16,22 @@ fz_newpath(void)
 	path->len = 0;
 	path->cap = 0;
 	path->els = nil;
+
+	return path;
+}
+
+fz_path *
+fz_clonepath(fz_path *old)
+{
+	fz_path *path;
+
+	path = fz_malloc(sizeof(fz_path));
+	memcpy(path, old, sizeof(fz_path));
+
+	path->len = old->len;
+	path->cap = path->len;
+	path->els = fz_malloc(path->cap * sizeof(fz_pathel));
+	memcpy(path->els, old->els, sizeof(fz_pathel) * path->len);
 
 	return path;
 }
@@ -31,10 +46,9 @@ fz_freepath(fz_path *path)
 void
 fz_resetpath(fz_path *path)
 {
-	path->ctm = fz_identity();
 	path->dashlen = 0;
 	path->dashphase = 0;
-	path->winding = FZ_NONZERO;
+	path->evenodd = 0;
 	path->linecap = 0;
 	path->linejoin = 0;
 	path->linewidth = 1.0;
@@ -123,7 +137,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpath(fz_path *path, int dostroke)
+fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 {
 	fz_point p;
 	fz_rect r = fz_emptyrect;
@@ -133,7 +147,7 @@ fz_boundpath(fz_path *path, int dostroke)
 	{
 		p.x = path->els[1].v;
 		p.y = path->els[2].v;
-		p = fz_transformpoint(path->ctm, p);
+		p = fz_transformpoint(ctm, p);
 		r.x0 = r.x1 = p.x;
 		r.y0 = r.y1 = p.y;
 	}
@@ -145,15 +159,15 @@ fz_boundpath(fz_path *path, int dostroke)
 		case FZ_CURVETO:
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(path->ctm, p));
+			r = boundexpand(r, fz_transformpoint(ctm, p));
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(path->ctm, p));
+			r = boundexpand(r, fz_transformpoint(ctm, p));
 		case FZ_MOVETO:
 		case FZ_LINETO:
 			p.x = path->els[i++].v;
 			p.y = path->els[i++].v;
-			r = boundexpand(r, fz_transformpoint(path->ctm, p));
+			r = boundexpand(r, fz_transformpoint(ctm, p));
 			break;
 		case FZ_CLOSEPATH:
 			break;

@@ -386,13 +386,13 @@ baddata:
 			d += 4;
 		}
 
-		fz_freepixmap(temp);
+		fz_droppixmap(temp);
 	}
 
 	else if (shade->cs != destcs)
 	{
 		fz_convertpixmap(shade->cs, temp, destcs, dest);
-		fz_freepixmap(temp);
+		fz_droppixmap(temp);
 	}
 }
 

@@ -164,11 +164,11 @@ void pdfapp_close(pdfapp_t *app)
 	app->page = nil;
 
 	if (app->image)
-		fz_freepixmap(app->image);
+		fz_droppixmap(app->image);
 	app->image = nil;
 
 	if (app->text)
-		fz_freetextline(app->text);
+		fz_freetextspan(app->text);
 	app->text = nil;
 
 	if (app->outline)
@@ -222,6 +222,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 	char buf[256];
 	fz_error error;
 	fz_device *idev, *tdev, *mdev;
+	fz_displaylist *list;
 	fz_matrix ctm;
 	fz_irect bbox;
 	fz_obj *obj;
@@ -253,29 +254,31 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		ctm = pdfapp_viewctm(app);
 		bbox = fz_roundrect(fz_transformaabb(ctm, app->page->mediabox));
 
+		list = fz_newdisplaylist();
+
+		mdev = fz_newlistdevice(list);
+		app->page->contents->rp = app->page->contents->bp;
+		error = pdf_runcontentstream(mdev, fz_identity(), app->xref, app->page->resources, app->page->contents);
+		if (error)
+			pdfapp_error(app, error);
+		fz_freedevice(mdev);
+
 		if (app->image)
-			fz_freepixmap(app->image);
+			fz_droppixmap(app->image);
 		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
 		idev = fz_newdrawdevice(app->image);
+		fz_executedisplaylist(list, idev, ctm);
+		fz_freedevice(idev);
 
 		if (app->text)
-			fz_freetextline(app->text);
-		app->text = fz_newtextline();
+			fz_freetextspan(app->text);
+		app->text = fz_newtextspan();
 		tdev = fz_newtextdevice(app->text);
+		fz_executedisplaylist(list, tdev, ctm);
+		fz_freedevice(tdev);
 
-		app->page->contents->rp = app->page->contents->bp;
-		error = pdf_runcontentstream(idev, ctm, app->xref, app->page->resources, app->page->contents);
-		if (error)
-			pdfapp_error(app, error);
-
-		app->page->contents->rp = app->page->contents->bp;
-		error = pdf_runcontentstream(tdev, ctm, app->xref, app->page->resources, app->page->contents);
-		if (error)
-			pdfapp_error(app, error);
-
-		fz_freedrawdevice(idev);
-		fz_freetextdevice(tdev);
+		fz_freedisplaylist(list);
 
 		winconvert(app, app->image);
 	}
@@ -641,7 +644,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	ucsbuf[0] = 0;
 	fz_error error;
-	fz_textline *ln;
+	fz_textspan *ln;
 	int x, y, c;
 	int i, p;
 

@@ -8,7 +8,6 @@ fz_newtext(fz_font *font)
 	text = fz_malloc(sizeof(fz_text));
 	text->font = fz_keepfont(font);
 	text->trm = fz_identity();
-	text->ctm = fz_identity();
 	text->len = 0;
 	text->cap = 0;
 	text->els = nil;
@@ -22,6 +21,22 @@ fz_freetext(fz_text *text)
 	fz_dropfont(text->font);
 	fz_free(text->els);
 	fz_free(text);
+}
+
+fz_text *
+fz_clonetext(fz_text *old)
+{
+	fz_text *text;
+
+	text = fz_malloc(sizeof(fz_text));
+	text->font = fz_keepfont(old->font);
+	text->trm = old->trm;
+	text->len = old->len;
+	text->cap = text->len;
+	text->els = fz_malloc(text->len * sizeof(fz_textel));
+	memcpy(text->els, old->els, text->len * sizeof(fz_textel));
+
+	return text;
 }
 
 fz_rect

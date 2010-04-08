@@ -288,40 +288,5 @@ fz_irect fz_mergeirects(fz_irect a, fz_irect b);
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
 fz_rect fz_transformaabb(fz_matrix m, fz_rect r);
 
-/*
- *TODO: move this into draw module
- */
-
-/*
-pixmaps have n components per pixel. the first is always alpha.
-premultiplied alpha when rendering, but non-premultiplied for colorspace
-conversions and rescaling.
-*/
-
-typedef struct fz_pixmap_s fz_pixmap;
-typedef struct fz_colorspace_s fz_colorspace;
-
-extern fz_colorspace *pdf_devicegray;
-extern fz_colorspace *pdf_devicergb;
-extern fz_colorspace *pdf_devicecmyk;
-extern fz_colorspace *pdf_devicelab;
-extern fz_colorspace *pdf_devicepattern;
-
-struct fz_pixmap_s
-{
-	int x, y, w, h, n;
-	fz_colorspace *colorspace;
-	unsigned char *samples;
-};
-
-fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_irect bbox);
-fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
-
-void fz_debugpixmap(fz_pixmap *map, char *prefix);
-void fz_clearpixmap(fz_pixmap *map, unsigned char value);
-void fz_freepixmap(fz_pixmap *map);
-
-fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
-
 #endif
 

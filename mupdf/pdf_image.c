@@ -553,7 +553,7 @@ pdf_loadtile(pdf_image *src, fz_pixmap *tile)
 		if (src->usecolorkey)
 			maskcolorkeyindexed(tmp, tile, src->colorkey);
 
-		fz_freepixmap(tmp);
+		fz_droppixmap(tmp);
 	}
 
 	else

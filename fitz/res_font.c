@@ -372,7 +372,7 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	static fz_pixmap *pixmap = nil;
 	if (pixmap)
 	{
-		fz_freepixmap(pixmap);
+		fz_droppixmap(pixmap);
 		pixmap = nil;
 	}
 
@@ -393,7 +393,7 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	error = font->t3runcontentstream(dev, ctm, font->t3xref, font->t3resources, contents);
 	if (error)
 		fz_catch(error, "cannot draw type3 glyph");
-	fz_freedrawdevice(dev);
+	fz_freedevice(dev);
 
 	glyph->x = pixmap->x;
 	glyph->y = pixmap->y;

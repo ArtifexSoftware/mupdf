@@ -1,12 +1,14 @@
 #include "fitz.h"
 
-static void fz_tracematrix(fz_matrix ctm)
+static void
+fz_tracematrix(fz_matrix ctm)
 {
 	printf("%g %g %g %g %g %g setmatrix\n",
 		ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f);
 }
 
-static void fz_tracecolor(fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_tracecolor(fz_colorspace *colorspace, float *color, float alpha)
 {
 	int i;
 	printf("/%s setcolorspace\n", colorspace->name);
@@ -16,22 +18,24 @@ static void fz_tracecolor(fz_colorspace *colorspace, float *color, float alpha)
 	printf("%g setalpha\n", alpha);
 }
 
-void fz_tracefillpath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_tracefillpath(void *user, fz_path *path, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_tracematrix(path->ctm);
 	fz_printpath(path, 0);
-	if (path->winding == FZ_EVENODD)
+	if (path->evenodd)
 		printf("eofill\n");
 	else
 		printf("fill\n");
 }
 
-void fz_tracestrokepath(void *user, fz_path *path, fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_tracestrokepath(void *user, fz_path *path, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
 {
 	int i;
 
 	fz_tracecolor(colorspace, color, alpha);
-	fz_tracematrix(path->ctm);
 
 	printf("%g setlinewidth\n", path->linewidth);
 	printf("%g setmiterlimit\n", path->miterlimit);
@@ -51,18 +55,20 @@ void fz_tracestrokepath(void *user, fz_path *path, fz_colorspace *colorspace, fl
 	printf("stroke\n");
 }
 
-void fz_traceclippath(void *user, fz_path *path)
+static void
+fz_traceclippath(void *user, fz_path *path, fz_matrix ctm)
 {
 	printf("gsave\n");
-	fz_tracematrix(path->ctm);
 	fz_printpath(path, 0);
-	if (path->winding == FZ_EVENODD)
+	if (path->evenodd)
 		printf("eoclip\n");
 	else
 		printf("clip\n");
 }
 
-void fz_tracefilltext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_tracefilltext(void *user, fz_text *text, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
 {
 	printf("/%s setfont\n", text->font->name);
 	fz_tracematrix(text->trm);
@@ -70,7 +76,9 @@ void fz_tracefilltext(void *user, fz_text *text, fz_colorspace *colorspace, floa
 	printf("show\n");
 }
 
-void fz_tracestroketext(void *user, fz_text *text, fz_colorspace *colorspace, float *color, float alpha)
+static void
+fz_tracestroketext(void *user, fz_text *text, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
 {
 	printf("/%s setfont\n", text->font->name);
 	fz_tracematrix(text->trm);
@@ -78,7 +86,8 @@ void fz_tracestroketext(void *user, fz_text *text, fz_colorspace *colorspace, fl
 	printf("charpath stroke\n");
 }
 
-void fz_tracecliptext(void *user, fz_text *text)
+static void
+fz_tracecliptext(void *user, fz_text *text, fz_matrix ctm)
 {
 	printf("gsave\n");
 	printf("/%s setfont\n", text->font->name);
@@ -87,7 +96,8 @@ void fz_tracecliptext(void *user, fz_text *text)
 	printf("charpath clip\n");
 }
 
-void fz_traceignoretext(void *user, fz_text *text)
+static void
+fz_traceignoretext(void *user, fz_text *text, fz_matrix ctm)
 {
 	printf("/%s setfont\n", text->font->name);
 	fz_tracematrix(text->trm);
@@ -95,29 +105,29 @@ void fz_traceignoretext(void *user, fz_text *text)
 	printf("invisibletext\n");
 }
 
-void fz_tracedrawimage(void *user, fz_pixmap *image, fz_matrix ctm)
+static void
+fz_tracefillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_tracematrix(ctm);
-	printf("drawimage\n");
+	printf("fillimage\n");
 }
 
-void fz_tracedrawshade(void *user, fz_shade *shade, fz_matrix ctm)
+static void
+fz_tracefillshade(void *user, fz_shade *shade, fz_matrix ctm)
 {
 	fz_tracematrix(ctm);
-	printf("drawshade\n");
+	printf("fillshade\n");
 }
 
-void fz_tracepopclip(void *user)
+static void
+fz_tracepopclip(void *user)
 {
 	printf("grestore\n");
 }
 
 fz_device *fz_newtracedevice(void)
 {
-	fz_device *dev = fz_malloc(sizeof(fz_device));
-	memset(dev, 0, sizeof(dev));
-
-	dev->user = nil;
+	fz_device *dev = fz_newdevice(nil);
 
 	dev->fillpath = fz_tracefillpath;
 	dev->strokepath = fz_tracestrokepath;
@@ -128,8 +138,8 @@ fz_device *fz_newtracedevice(void)
 	dev->cliptext = fz_tracecliptext;
 	dev->ignoretext = fz_traceignoretext;
 
-	dev->drawimage = fz_tracedrawimage;
-	dev->drawshade = fz_tracedrawshade;
+	dev->fillshade = fz_tracefillshade;
+	dev->fillimage = fz_tracefillimage;
 
 	dev->popclip = fz_tracepopclip;
 
