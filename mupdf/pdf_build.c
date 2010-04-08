@@ -197,7 +197,6 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, in
 
 	if (pat->ismask)
 	{
-printf("uncolored tiled pattern\n");
 		pdf_unsetpattern(csi, PDF_MFILL);
 		pdf_unsetpattern(csi, PDF_MSTROKE);
 		if (what == PDF_MFILL)
@@ -207,7 +206,6 @@ printf("uncolored tiled pattern\n");
 	}
 	else
 	{
-printf("colored tiled pattern\n");
 		// TODO: unset only the current fill/stroke or both?
 		pdf_unsetpattern(csi, what);
 	}
