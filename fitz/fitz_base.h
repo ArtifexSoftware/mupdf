@@ -152,8 +152,6 @@ extern unsigned fz_cpuflags;
 int chartorune(int *rune, char *str);
 int runetochar(char *str, int *rune);
 int runelen(int c);
-int runenlen(int *r, int nrune);
-int fullrune(char *str, int n);
 
 /*
  * Error handling.
