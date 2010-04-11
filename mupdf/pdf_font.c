@@ -242,7 +242,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *widths;
 	unsigned short *etable = nil;
 	pdf_fontdesc *fontdesc;
-	fz_irect bbox;
+	fz_bbox bbox;
 	FT_Face face;
 	FT_CharMap cmap;
 	int kind;
@@ -558,7 +558,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	fz_obj *descriptor;
 	pdf_fontdesc *fontdesc;
 	FT_Face face;
-	fz_irect bbox;
+	fz_bbox bbox;
 	int kind;
 	char collection[256];
 	char *basefont;

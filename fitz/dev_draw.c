@@ -27,7 +27,7 @@ static void
 blendover(fz_pixmap *src, fz_pixmap *dst)
 {
 	unsigned char *sp, *dp;
-	fz_irect sr, dr;
+	fz_bbox sr, dr;
 	int x, y, w, h;
 
 	sr.x0 = src->x;
@@ -63,7 +63,7 @@ static void
 blendmaskover(fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst)
 {
 	unsigned char *sp, *dp, *mp;
-	fz_irect sr, dr, mr;
+	fz_bbox sr, dr, mr;
 	int x, y, w, h;
 
 	sr.x0 = src->x;
@@ -111,8 +111,8 @@ fz_drawfillpath(void *user, fz_path *path, fz_matrix ctm,
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
-	fz_irect bbox;
-	fz_irect clip;
+	fz_bbox bbox;
+	fz_bbox clip;
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
@@ -156,8 +156,8 @@ fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
 	float linewidth = path->linewidth;
-	fz_irect bbox;
-	fz_irect clip;
+	fz_bbox bbox;
+	fz_bbox clip;
 
 	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
@@ -205,7 +205,7 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
-	fz_irect clip, bbox;
+	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
 
 	if (dev->cliptop == MAXCLIP)
@@ -286,7 +286,7 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
-	fz_irect clip;
+	fz_bbox clip;
 	fz_matrix tm, trm;
 	fz_glyph glyph;
 	int i, x, y, gid;
@@ -379,8 +379,8 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
-	fz_irect bbox;
-	fz_irect clip;
+	fz_bbox bbox;
+	fz_bbox clip;
 	fz_pixmap *temp;
 	float rgb[3];
 	unsigned char argb[4];
@@ -456,8 +456,8 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
-	fz_irect bbox;
-	fz_irect clip;
+	fz_bbox bbox;
+	fz_bbox clip;
 	int dx, dy;
 	fz_pixmap *temp;
 	fz_matrix imgmat;
@@ -544,8 +544,8 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
-	fz_irect bbox;
-	fz_irect clip;
+	fz_bbox bbox;
+	fz_bbox clip;
 	int dx, dy;
 	fz_pixmap *temp;
 	fz_matrix imgmat;
@@ -632,7 +632,7 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
-	fz_irect clip, bbox;
+	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
 	int dx, dy;
 	fz_pixmap *temp;

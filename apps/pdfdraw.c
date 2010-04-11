@@ -168,7 +168,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 {
 	fz_error error;
 	fz_matrix ctm;
-	fz_irect bbox;
+	fz_bbox bbox;
 	fz_pixmap *pix;
 	char name[256];
 	char pnmhdr[256];

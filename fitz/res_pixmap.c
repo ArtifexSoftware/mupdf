@@ -26,7 +26,7 @@ fz_newpixmap(fz_colorspace *colorspace, int x, int y, int w, int h)
 }
 
 fz_pixmap *
-fz_newpixmapwithrect(fz_colorspace *colorspace, fz_irect r)
+fz_newpixmapwithrect(fz_colorspace *colorspace, fz_bbox r)
 {
 	return fz_newpixmap(colorspace, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
 }

@@ -54,7 +54,7 @@ struct fz_pixmap_s
 	unsigned char *samples;
 };
 
-fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_irect bbox);
+fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
 fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
 fz_pixmap *fz_keeppixmap(fz_pixmap *map);
 void fz_droppixmap(fz_pixmap *map);

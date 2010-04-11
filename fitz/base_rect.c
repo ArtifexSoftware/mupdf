@@ -3,12 +3,12 @@
 fz_rect fz_infiniterect = { 1, 1, -1, -1 };
 fz_rect fz_emptyrect = { 0, 0, 0, 0 };
 
-static fz_irect empty = { 0, 0, 0, 0 };
+static fz_bbox empty = { 0, 0, 0, 0 };
 
-fz_irect
+fz_bbox
 fz_roundrect(fz_rect f)
 {
-	fz_irect i;
+	fz_bbox i;
 	i.x0 = floor(f.x0);
 	i.y0 = floor(f.y0);
 	i.x1 = ceil(f.x1);
@@ -16,10 +16,10 @@ fz_roundrect(fz_rect f)
 	return i;
 }
 
-fz_irect
-fz_intersectirects(fz_irect a, fz_irect b)
+fz_bbox
+fz_intersectirects(fz_bbox a, fz_bbox b)
 {
-	fz_irect r;
+	fz_bbox r;
 	if (fz_isinfiniterect(a)) return b;
 	if (fz_isinfiniterect(b)) return a;
 	r.x0 = MAX(a.x0, b.x0);

@@ -200,7 +200,7 @@ void *fz_hashgetval(fz_hashtable *table, int idx);
 typedef struct fz_matrix_s fz_matrix;
 typedef struct fz_point_s fz_point;
 typedef struct fz_rect_s fz_rect;
-typedef struct fz_irect_s fz_irect;
+typedef struct fz_bbox_s fz_bbox;
 
 extern fz_rect fz_emptyrect;
 extern fz_rect fz_infiniterect;
@@ -230,7 +230,7 @@ struct fz_rect_s
 	float x1, y1;
 };
 
-struct fz_irect_s
+struct fz_bbox_s
 {
 	int x0, y0;
 	int x1, y1;
@@ -247,8 +247,8 @@ fz_matrix fz_invertmatrix(fz_matrix m);
 int fz_isrectilinear(fz_matrix m);
 float fz_matrixexpansion(fz_matrix m);
 
-fz_irect fz_roundrect(fz_rect r);
-fz_irect fz_intersectirects(fz_irect a, fz_irect b);
+fz_bbox fz_roundrect(fz_rect r);
+fz_bbox fz_intersectirects(fz_bbox a, fz_bbox b);
 
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
 fz_rect fz_transformaabb(fz_matrix m, fz_rect r);

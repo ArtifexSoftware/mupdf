@@ -224,7 +224,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 	fz_device *idev, *tdev, *mdev;
 	fz_displaylist *list;
 	fz_matrix ctm;
-	fz_irect bbox;
+	fz_bbox bbox;
 	fz_obj *obj;
 
 	if (loadpage)

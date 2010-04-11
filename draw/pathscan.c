@@ -36,7 +36,7 @@ fz_newgel(void)
 }
 
 void
-fz_resetgel(fz_gel *gel, fz_irect clip)
+fz_resetgel(fz_gel *gel, fz_bbox clip)
 {
 	if (fz_isinfiniterect(clip))
 	{
@@ -63,10 +63,10 @@ fz_freegel(fz_gel *gel)
 	fz_free(gel);
 }
 
-fz_irect
+fz_bbox
 fz_boundgel(fz_gel *gel)
 {
-	fz_irect bbox;
+	fz_bbox bbox;
 	bbox.x0 = fz_idiv(gel->bbox.x0, HSCALE);
 	bbox.y0 = fz_idiv(gel->bbox.y0, VSCALE);
 	bbox.x1 = fz_idiv(gel->bbox.x1, HSCALE) + 1;
@@ -433,7 +433,7 @@ static inline void blit(fz_pixmap *pix, int x, int y,
 }
 
 fz_error
-fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_irect clip,
+fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 	fz_pixmap *pix, unsigned char *argb, int over)
 {
 	fz_error error;

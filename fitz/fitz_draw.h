@@ -33,8 +33,8 @@ struct fz_edge_s
 
 struct fz_gel_s
 {
-	fz_irect clip;
-	fz_irect bbox;
+	fz_bbox clip;
+	fz_bbox bbox;
 	int cap;
 	int len;
 	fz_edge *edges;
@@ -49,8 +49,8 @@ struct fz_ael_s
 
 fz_gel * fz_newgel(void);
 void fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
-fz_irect fz_boundgel(fz_gel *gel);
-void fz_resetgel(fz_gel *gel, fz_irect clip);
+fz_bbox fz_boundgel(fz_gel *gel);
+void fz_resetgel(fz_gel *gel, fz_bbox clip);
 void fz_sortgel(fz_gel *gel);
 void fz_freegel(fz_gel *gel);
 
@@ -58,7 +58,7 @@ fz_ael * fz_newael(void);
 void fz_freeael(fz_ael *ael);
 
 fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
-	fz_irect clip, fz_pixmap *pix, unsigned char *argb, int over);
+	fz_bbox clip, fz_pixmap *pix, unsigned char *argb, int over);
 
 void fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
 void fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);

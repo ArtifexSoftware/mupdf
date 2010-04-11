@@ -56,7 +56,7 @@ struct pdfapp_s
 
 	int iscopying;
 	int selx, sely;
-	fz_irect selr;
+	fz_bbox selr;
 
 	/* client context storage */
 	void *userdata;
