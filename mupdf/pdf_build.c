@@ -216,10 +216,10 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, in
 	/* patterns are painted using the ctm in effect at the beginning of the content stream */
 	/* get bbox of shape in pattern space for stamping */
 	bbox = fz_transformaabb(invptm, bbox);
-	x0 = fz_floor(bbox.x0 / pat->xstep);
-	y0 = fz_floor(bbox.y0 / pat->ystep);
-	x1 = fz_ceil(bbox.x1 / pat->xstep);
-	y1 = fz_ceil(bbox.y1 / pat->ystep);
+	x0 = floor(bbox.x0 / pat->xstep);
+	y0 = floor(bbox.y0 / pat->ystep);
+	x1 = ceil(bbox.x1 / pat->xstep);
+	y1 = ceil(bbox.y1 / pat->ystep);
 
 	oldtopctm = csi->topctm;
 	oldtop = csi->gtop;

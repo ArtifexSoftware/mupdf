@@ -203,13 +203,10 @@ void *fz_hashgetval(fz_hashtable *table, int idx);
 
 /* multiply 8-bit fixpoint (0..1) so that 0*0==0 and 255*255==255 */
 #define fz_mul255(a,b) (((a) * ((b) + ((b) >> 7))) >> 8)
-#define fz_floor(x) floor(x)
-#define fz_ceil(x) ceil(x)
 
 typedef struct fz_matrix_s fz_matrix;
 typedef struct fz_point_s fz_point;
 typedef struct fz_rect_s fz_rect;
-typedef struct fz_ipoint_s fz_ipoint;
 typedef struct fz_irect_s fz_irect;
 
 extern fz_rect fz_emptyrect;
@@ -240,11 +237,6 @@ struct fz_rect_s
 	float x1, y1;
 };
 
-struct fz_ipoint_s
-{
-	int x, y;
-};
-
 struct fz_irect_s
 {
 	int x0, y0;
@@ -262,12 +254,8 @@ fz_matrix fz_invertmatrix(fz_matrix m);
 int fz_isrectilinear(fz_matrix m);
 float fz_matrixexpansion(fz_matrix m);
 
-fz_rect fz_intersectrects(fz_rect a, fz_rect b);
-fz_rect fz_mergerects(fz_rect a, fz_rect b);
-
 fz_irect fz_roundrect(fz_rect r);
 fz_irect fz_intersectirects(fz_irect a, fz_irect b);
-fz_irect fz_mergeirects(fz_irect a, fz_irect b);
 
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
 fz_rect fz_transformaabb(fz_matrix m, fz_rect r);

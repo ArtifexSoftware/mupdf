@@ -114,10 +114,10 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	int v;
 	int d;
 
-	int x0 = fz_floor(fx0 * HSCALE);
-	int y0 = fz_floor(fy0 * VSCALE);
-	int x1 = fz_floor(fx1 * HSCALE);
-	int y1 = fz_floor(fy1 * VSCALE);
+	int x0 = floor(fx0 * HSCALE);
+	int y0 = floor(fy0 * VSCALE);
+	int x1 = floor(fx1 * HSCALE);
+	int y1 = floor(fy1 * VSCALE);
 
 	d = cliplerpy(gel->clip.y0, 0, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) return;

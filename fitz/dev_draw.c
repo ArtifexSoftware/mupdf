@@ -324,10 +324,10 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 		tm.e = text->els[i].x;
 		tm.f = text->els[i].y;
 		trm = fz_concat(tm, ctm);
-		x = fz_floor(trm.e);
-		y = fz_floor(trm.f);
-		trm.e = QUANT(trm.e - fz_floor(trm.e), HSUBPIX);
-		trm.f = QUANT(trm.f - fz_floor(trm.f), VSUBPIX);
+		x = floor(trm.e);
+		y = floor(trm.f);
+		trm.e = QUANT(trm.e - floor(trm.e), HSUBPIX);
+		trm.f = QUANT(trm.f - floor(trm.f), VSUBPIX);
 
 		fz_renderglyph(dev->cache, &glyph, text->font, gid, trm);
 		drawglyph(argb, dev->dest, &glyph, x, y);
