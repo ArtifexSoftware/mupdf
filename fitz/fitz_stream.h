@@ -106,8 +106,6 @@ int fz_tostrlen(fz_obj *obj);
 int fz_tonum(fz_obj *obj);
 int fz_togen(fz_obj *obj);
 
-fz_obj * fz_newnamefromstring(fz_obj *str);
-
 int fz_arraylen(fz_obj *array);
 fz_obj *fz_arrayget(fz_obj *array, int i);
 void fz_arrayput(fz_obj *array, int i, fz_obj *obj);
@@ -364,9 +362,6 @@ fz_error fz_seek(fz_stream *stm, int offset, int whence);
 /*
  * Input stream functions.
  */
-
-int fz_rtell(fz_stream *stm);
-fz_error fz_rseek(fz_stream *stm, int offset, int whence);
 
 fz_error fz_readimp(fz_stream *stm);
 fz_error fz_read(int *np, fz_stream *stm, unsigned char *buf, int len);
