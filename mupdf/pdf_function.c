@@ -426,7 +426,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 		case PDF_TKEYWORD:
 			cmp = -1;
 			a = -1;
-			b = sizeof(psopnames) / sizeof(psopnames[0]);
+			b = nelem(psopnames);
 			while (b - a > 1)
 			{
 				mid = (a + b) / 2;

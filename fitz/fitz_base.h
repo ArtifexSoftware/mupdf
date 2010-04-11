@@ -49,7 +49,6 @@ extern char *fz_optarg;
 
 extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 
-#define FZ_FLEX 1
 #define restrict
 
 #define inline __inline
@@ -69,7 +68,6 @@ extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #else /* C99 or close enough */
 
 #include <unistd.h>
-#define FZ_FLEX
 
 #endif
 
@@ -134,11 +132,6 @@ extern unsigned fz_cpuflags;
 #ifndef CLAMP
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
 #endif
-
-#define MAX4(a,b,c,d) MAX(MAX(a,b), MAX(c,d))
-#define MIN4(a,b,c,d) MIN(MIN(a,b), MIN(c,d))
-
-#define STRIDE(n, bcp) (((bpc) * (n) + 7) / 8)
 
 /* plan9 stuff for utf-8 */
 int chartorune(int *rune, char *str);
