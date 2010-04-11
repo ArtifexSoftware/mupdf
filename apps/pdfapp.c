@@ -643,12 +643,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	ucsbuf[0] = 0;
-	fz_error error;
 	fz_textspan *ln;
 	int x, y, c;
 	int i, p;
-
-	int bx0, bx1, by0, by1;
 
 	int x0 = app->image->x + app->selr.x0 - app->panx;
 	int x1 = app->image->x + app->selr.x1 - app->panx;
@@ -664,6 +661,8 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			for (i = 0; i < ln->len; i++)
 			{
 #if 0
+				int bx0, bx1, by0, by1;
+
 				bx0 = ln->text[i].bbox.x0;
 				bx1 = ln->text[i].bbox.x1;
 				by0 = ln->text[i].bbox.y0;
