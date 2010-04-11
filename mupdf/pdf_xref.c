@@ -138,11 +138,8 @@ pdf_decryptxref(pdf_xref *xref)
 	encrypt = fz_dictgets(xref->trailer, "Encrypt");
 	id = fz_dictgets(xref->trailer, "ID");
 
-	if (encrypt)
+	if (fz_isdict(encrypt))
 	{
-		if (fz_isnull(encrypt))
-			return fz_okay;
-
 		error = pdf_newcrypt(&xref->crypt, encrypt, id);
 		if (error)
 			return fz_rethrow(error, "cannot create decrypter");
