@@ -93,7 +93,7 @@ FITZ_SRC=$(addprefix fitz/, \
 	base_cpudep.c \
 	base_error.c base_memory.c base_string.c base_unicode.c  \
 	base_hash.c base_matrix.c base_rect.c \
-	crypt_aes.c crypt_arc4.c crypt_crc32.c crypt_md5.c \
+	crypt_aes.c crypt_arc4.c crypt_md5.c \
 	filt_aesd.c filt_arc4.c filt_basic.c filt_dctd.c filt_faxd.c filt_faxdtab.c filt_flate.c \
 	filt_jbig2d.c filt_jpxd.c filt_lzwd.c filt_pipeline.c filt_predict.c \
 	dev_null.c dev_text.c dev_draw.c dev_list.c dev_trace.c \
