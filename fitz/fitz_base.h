@@ -66,10 +66,6 @@ extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define isnan _isnan
 #endif
 
-#ifndef va_copy
-#define va_copy(a,b) (a) = (b)
-#endif
-
 #ifndef R_OK
 #define R_OK 4
 #endif

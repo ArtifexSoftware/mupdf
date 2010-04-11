@@ -97,7 +97,7 @@ FITZ_SRC=$(addprefix fitz/, \
 	filt_aesd.c filt_arc4.c filt_basic.c filt_dctd.c filt_faxd.c filt_faxdtab.c filt_flate.c \
 	filt_jbig2d.c filt_jpxd.c filt_lzwd.c filt_pipeline.c filt_predict.c \
 	dev_null.c dev_text.c dev_draw.c dev_list.c dev_trace.c \
-	obj_array.c obj_dict.c obj_parse.c obj_print.c obj_simple.c \
+	obj_array.c obj_dict.c obj_print.c obj_simple.c \
 	res_colorspace.c res_font.c res_shade.c res_pixmap.c \
 	res_path.c res_text.c \
 	stm_buffer.c stm_filter.c stm_misc.c stm_open.c stm_read.c \

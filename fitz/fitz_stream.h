@@ -129,9 +129,6 @@ int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 int fz_fprintobj(FILE *fp, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);
 
-fz_error fz_parseobj(fz_obj **, pdf_xref *xref, char *s);
-fz_error fz_packobj(fz_obj **, pdf_xref *xref, char *fmt, ...);
-
 char *fz_objkindstr(fz_obj *obj);
 
 /*

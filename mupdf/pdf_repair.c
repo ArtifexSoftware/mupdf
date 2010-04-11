@@ -141,6 +141,7 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 {
 	fz_error error;
 	fz_stream *file;
+	fz_obj *obj;
 
 	struct entry *list = nil;
 	int listlen;
@@ -251,14 +252,15 @@ pdf_repairxref(pdf_xref *xref, char *filename)
 		goto cleanup;
 	}
 
-	error = fz_packobj(&xref->trailer, xref,
-		"<< /Size %i /Root %r >>",
-		maxoid + 1, rootoid, rootgen);
-	if (error)
-	{
-		error = fz_rethrow(error, "cannot create new trailer");
-		goto cleanup;
-	}
+	xref->trailer = fz_newdict(2);
+
+	obj = fz_newint(maxoid + 1);
+	fz_dictputs(xref->trailer, "Size", obj);
+	fz_dropobj(obj);
+
+	obj = fz_newindirect(rootoid, rootgen, xref);
+	fz_dictputs(xref->trailer, "Root", obj);
+	fz_dropobj(obj);
 
 	xref->len = maxoid + 1;
 	xref->cap = xref->len;
