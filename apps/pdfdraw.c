@@ -355,7 +355,7 @@ static void drawpages(char *pagelist)
 		drawtimes.min = LONG_MAX;
 	}
 
-	spec = strsep(&pagelist, ",");
+	spec = fz_strsep(&pagelist, ",");
 	while (spec)
 	{
 		dash = strchr(spec, '-');
@@ -392,7 +392,7 @@ static void drawpages(char *pagelist)
 			}
 		}
 
-		spec = strsep(&pagelist, ",");
+		spec = fz_strsep(&pagelist, ",");
 	}
 
 	if (benchmark)

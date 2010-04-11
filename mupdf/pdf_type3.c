@@ -19,7 +19,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 
 	obj = fz_dictgets(dict, "Name");
 	if (fz_isname(obj))
-		strlcpy(buf, fz_toname(obj), sizeof buf);
+		fz_strlcpy(buf, fz_toname(obj), sizeof buf);
 	else
 		sprintf(buf, "Unnamed-T3");
 

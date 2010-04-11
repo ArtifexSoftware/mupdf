@@ -585,15 +585,15 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 		tmplen = MIN(sizeof tmpstr - 1, fz_tostrlen(obj));
 		memcpy(tmpstr, fz_tostrbuf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
-		strlcpy(collection, tmpstr, sizeof collection);
+		fz_strlcpy(collection, tmpstr, sizeof collection);
 
-		strlcat(collection, "-", sizeof collection);
+		fz_strlcat(collection, "-", sizeof collection);
 
 		obj = fz_dictgets(cidinfo, "Ordering");
 		tmplen = MIN(sizeof tmpstr - 1, fz_tostrlen(obj));
 		memcpy(tmpstr, fz_tostrbuf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
-		strlcat(collection, tmpstr, sizeof collection);
+		fz_strlcat(collection, tmpstr, sizeof collection);
 	}
 
 	/*

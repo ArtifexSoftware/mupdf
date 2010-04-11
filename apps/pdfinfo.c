@@ -979,7 +979,7 @@ showinfo(char *filename, int show, char *pagelist)
 
 	allpages = !strcmp(pagelist, "1-");
 
-	spec = strsep(&pagelist, ",");
+	spec = fz_strsep(&pagelist, ",");
 	while (spec)
 	{
 		dash = strchr(spec, '-');
@@ -1023,7 +1023,7 @@ showinfo(char *filename, int show, char *pagelist)
 			}
 		}
 
-		spec = strsep(&pagelist, ",");
+		spec = fz_strsep(&pagelist, ",");
 	}
 
 	if (allpages)

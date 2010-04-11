@@ -105,10 +105,10 @@ readoldtrailer(pdf_xref *xref, char *buf, int cap)
 			return fz_rethrow(error, "cannot read xref count");
 
 		s = buf;
-		ofs = atoi(strsep(&s, " "));
+		ofs = atoi(fz_strsep(&s, " "));
 		if (!s)
 			return fz_throw("invalid range marker in xref");
-		len = atoi(strsep(&s, " "));
+		len = atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
@@ -234,8 +234,8 @@ readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 			return fz_rethrow(error, "cannot read xref count");
 
 		s = buf;
-		ofs = atoi(strsep(&s, " "));
-		len = atoi(strsep(&s, " "));
+		ofs = atoi(fz_strsep(&s, " "));
+		len = atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')

@@ -71,7 +71,7 @@ static fz_error parsecmapname(pdf_cmap *cmap, fz_stream *file)
 
 	if (tok == PDF_TNAME)
 	{
-		strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
+		fz_strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
 		return fz_okay;
 	}
 
@@ -407,12 +407,12 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 				}
 			}
 			else
-				strlcpy(key, buf, sizeof key);
+				fz_strlcpy(key, buf, sizeof key);
 		}
 
 		else if (tok == TUSECMAP)
 		{
-			strlcpy(cmap->usecmapname, key, sizeof(cmap->usecmapname));
+			fz_strlcpy(cmap->usecmapname, key, sizeof(cmap->usecmapname));
 		}
 
 		else if (tok == TBEGINCODESPACERANGE)

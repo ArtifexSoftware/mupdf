@@ -8,7 +8,7 @@ static void initcs(fz_colorspace *cs, char *name, int n,
 	void(*from)(fz_colorspace*,float*,float*),
 	void(*freefunc)(fz_colorspace*))
 {
-	strlcpy(cs->name, name, sizeof cs->name);
+	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->refs = 1;
 	cs->convpixmap = pdf_convpixmap;
 	cs->convcolor = pdf_convcolor;

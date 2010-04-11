@@ -39,13 +39,6 @@ extern char *fz_strsep(char **stringp, const char *delim);
 extern int fz_strlcpy(char *dst, const char *src, int n);
 extern int fz_strlcat(char *dst, const char *src, int n);
 
-#undef strsep
-#define strsep fz_strsep
-#undef strlcpy
-#define strlcpy fz_strlcpy
-#undef strlcat
-#define strlcat fz_strlcat
-
 extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
 extern int fz_opterr, fz_optind, fz_optopt;
 extern char *fz_optarg;
