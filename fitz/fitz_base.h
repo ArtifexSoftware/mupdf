@@ -94,15 +94,6 @@ extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #  define HAVE_SSE3       (1<<4)
 #  define HAVE_3DNOW      (1<<5)
 #  define HAVE_AMD64      (1<<6)
-
-#elif defined (ARCH_PPC)
-#  define HAVE_CPUDEP
-#  define HAVE_ALTIVEC    (1<<7)
-
-#elif defined (ARCH_SPARC)
-#  define HAVE_CPUDEP
-#  define HAVE_VIS        (1<<8)
-
 #endif
 
 /* call this before using fitz */

@@ -12,7 +12,7 @@
 +create the per-page ctx
 */
 
-#ifdef WIN32 /* Microsoft Visual C++ */
+#ifdef _WIN32 /* Microsoft Visual C++ */
 
 typedef signed char             int8_t;
 typedef short int               int16_t;
