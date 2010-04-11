@@ -159,7 +159,7 @@ fz_transformpoint(fz_matrix m, fz_point p)
 }
 
 fz_rect
-fz_transformaabb(fz_matrix m, fz_rect r)
+fz_transformrect(fz_matrix m, fz_rect r)
 {
 	fz_point s, t, u, v;
 

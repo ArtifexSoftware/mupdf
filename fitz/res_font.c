@@ -384,7 +384,7 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 		return;
 
 	ctm = fz_concat(font->t3matrix, trm);
-	bbox = fz_transformaabb(ctm, font->bbox);
+	bbox = fz_transformrect(ctm, font->bbox);
 	pixmap = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
 	fz_clearpixmap(pixmap, 0x00);
 

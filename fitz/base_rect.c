@@ -17,7 +17,7 @@ fz_roundrect(fz_rect f)
 }
 
 fz_bbox
-fz_intersectirects(fz_bbox a, fz_bbox b)
+fz_intersectbbox(fz_bbox a, fz_bbox b)
 {
 	fz_bbox r;
 	if (fz_isinfiniterect(a)) return b;

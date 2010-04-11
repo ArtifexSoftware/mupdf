@@ -215,7 +215,7 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, in
 
 	/* patterns are painted using the ctm in effect at the beginning of the content stream */
 	/* get bbox of shape in pattern space for stamping */
-	bbox = fz_transformaabb(invptm, bbox);
+	bbox = fz_transformrect(invptm, bbox);
 	x0 = floor(bbox.x0 / pat->xstep);
 	y0 = floor(bbox.y0 / pat->ystep);
 	x1 = ceil(bbox.x1 / pat->xstep);
@@ -293,7 +293,7 @@ pdf_showimage(pdf_csi *csi, pdf_xref *xref, pdf_image *image)
 			bbox.y0 = 0;
 			bbox.x1 = 1;
 			bbox.y1 = 1;
-			bbox = fz_transformaabb(gstate->ctm, bbox);
+			bbox = fz_transformrect(gstate->ctm, bbox);
 			csi->dev->clipimagemask(csi->dev->user, tile, gstate->ctm);
 			pdf_showpattern(csi, gstate->fill.pattern, xref, bbox, PDF_MFILL);
 			csi->dev->popclip(csi->dev->user);

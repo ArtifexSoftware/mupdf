@@ -40,7 +40,7 @@ blendover(fz_pixmap *src, fz_pixmap *dst)
 	dr.x1 = dst->x + dst->w;
 	dr.y1 = dst->y + dst->h;
 
-	dr = fz_intersectirects(sr, dr);
+	dr = fz_intersectbbox(sr, dr);
 	x = dr.x0;
 	y = dr.y0;
 	w = dr.x1 - dr.x0;
@@ -81,8 +81,8 @@ blendmaskover(fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst)
 	mr.x1 = msk->x + msk->w;
 	mr.y1 = msk->y + msk->h;
 
-	dr = fz_intersectirects(sr, dr);
-	dr = fz_intersectirects(dr, mr);
+	dr = fz_intersectbbox(sr, dr);
+	dr = fz_intersectbbox(dr, mr);
 	x = dr.x0;
 	y = dr.y0;
 	w = dr.x1 - dr.x0;
@@ -124,7 +124,7 @@ fz_drawfillpath(void *user, fz_path *path, fz_matrix ctm,
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectirects(bbox, clip);
+	bbox = fz_intersectbbox(bbox, clip);
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -175,7 +175,7 @@ fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectirects(bbox, clip);
+	bbox = fz_intersectbbox(bbox, clip);
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -224,7 +224,7 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectirects(bbox, clip);
+	bbox = fz_intersectbbox(bbox, clip);
 
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
@@ -387,14 +387,14 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 	unsigned char *s;
 	int n;
 
-	bounds = fz_transformaabb(fz_concat(shade->matrix, ctm), shade->bbox);
+	bounds = fz_transformrect(fz_concat(shade->matrix, ctm), shade->bbox);
 	bbox = fz_roundrect(bounds);
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectirects(clip, bbox);
+	clip = fz_intersectbbox(clip, bbox);
 	if (fz_isemptyrect(clip))
 		return;
 
@@ -471,14 +471,14 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	bounds.y0 = 0;
 	bounds.x1 = 1;
 	bounds.y1 = 1;
-	bounds = fz_transformaabb(ctm, bounds);
+	bounds = fz_transformrect(ctm, bounds);
 	bbox = fz_roundrect(bounds);
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectirects(clip, bbox);
+	clip = fz_intersectbbox(clip, bbox);
 
 	if (fz_isemptyrect(clip))
 		return;
@@ -559,14 +559,14 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	bounds.y0 = 0;
 	bounds.x1 = 1;
 	bounds.y1 = 1;
-	bounds = fz_transformaabb(ctm, bounds);
+	bounds = fz_transformrect(ctm, bounds);
 	bbox = fz_roundrect(bounds);
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectirects(clip, bbox);
+	clip = fz_intersectbbox(clip, bbox);
 
 	if (fz_isemptyrect(clip))
 		return;
@@ -653,14 +653,14 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	bounds.y0 = 0;
 	bounds.x1 = 1;
 	bounds.y1 = 1;
-	bounds = fz_transformaabb(ctm, bounds);
+	bounds = fz_transformrect(ctm, bounds);
 	bbox = fz_roundrect(bounds);
 
 	clip.x0 = dev->dest->x;
 	clip.y0 = dev->dest->y;
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectirects(clip, bbox);
+	clip = fz_intersectbbox(clip, bbox);
 
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 

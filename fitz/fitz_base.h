@@ -248,10 +248,10 @@ int fz_isrectilinear(fz_matrix m);
 float fz_matrixexpansion(fz_matrix m);
 
 fz_bbox fz_roundrect(fz_rect r);
-fz_bbox fz_intersectirects(fz_bbox a, fz_bbox b);
+fz_bbox fz_intersectbbox(fz_bbox a, fz_bbox b);
 
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
-fz_rect fz_transformaabb(fz_matrix m, fz_rect r);
+fz_rect fz_transformrect(fz_matrix m, fz_rect r);
 
 #endif
 

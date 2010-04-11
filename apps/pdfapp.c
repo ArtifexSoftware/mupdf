@@ -252,7 +252,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		wincursor(app, WAIT);
 
 		ctm = pdfapp_viewctm(app);
-		bbox = fz_roundrect(fz_transformaabb(ctm, app->page->mediabox));
+		bbox = fz_roundrect(fz_transformrect(ctm, app->page->mediabox));
 
 		list = fz_newdisplaylist();
 

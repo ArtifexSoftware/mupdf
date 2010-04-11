@@ -63,7 +63,7 @@ fz_boundtext(fz_text *text, fz_matrix ctm)
 		bbox.y1 = MAX(bbox.y1, text->els[i].y);
 	}
 
-	bbox = fz_transformaabb(ctm, bbox);
+	bbox = fz_transformrect(ctm, bbox);
 
 	/* find bbox of font in trm * ctm space */
 
@@ -76,7 +76,7 @@ fz_boundtext(fz_text *text, fz_matrix ctm)
 	fbox.x1 = text->font->bbox.x1 * 0.001;
 	fbox.y1 = text->font->bbox.y1 * 0.001;
 
-	fbox = fz_transformaabb(trm, fbox);
+	fbox = fz_transformrect(trm, fbox);
 
 	/* expand glyph origin bbox by font bbox */
 

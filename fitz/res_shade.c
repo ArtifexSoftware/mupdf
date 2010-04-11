@@ -23,6 +23,6 @@ fz_rect
 fz_boundshade(fz_shade *shade, fz_matrix ctm)
 {
 	ctm = fz_concat(shade->matrix, ctm);
-	return fz_transformaabb(ctm, shade->bbox);
+	return fz_transformrect(ctm, shade->bbox);
 }
 

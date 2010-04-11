@@ -192,7 +192,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	ctm = fz_concat(ctm, fz_scale(drawzoom, -drawzoom));
 	ctm = fz_concat(ctm, fz_rotate(drawrotate + drawpage->rotate));
 
-	bbox = fz_roundrect(fz_transformaabb(ctm, drawpage->mediabox));
+	bbox = fz_roundrect(fz_transformrect(ctm, drawpage->mediabox));
 	w = bbox.x1 - bbox.x0;
 	h = bbox.y1 - bbox.y0;
 	bh = h / drawbands;
