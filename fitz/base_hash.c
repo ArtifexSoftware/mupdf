@@ -94,7 +94,7 @@ fz_drophash(fz_hashtable *table)
 	fz_free(table);
 }
 
-void
+static void
 fz_resizehash(fz_hashtable *table, int newsize)
 {
 	fz_hashentry *oldents = table->ents;

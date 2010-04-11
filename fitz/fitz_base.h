@@ -184,7 +184,6 @@ char *fz_strdup(char *s);
 typedef struct fz_hashtable_s fz_hashtable;
 
 fz_hashtable * fz_newhash(int initialsize, int keylen);
-void fz_resizehash(fz_hashtable *table, int newsize);
 void fz_debughash(fz_hashtable *table);
 void fz_emptyhash(fz_hashtable *table);
 void fz_drophash(fz_hashtable *table);
