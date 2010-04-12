@@ -164,9 +164,6 @@ fz_error pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int oid, int gen);
 fz_error pdf_openrawstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
 fz_error pdf_openstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
 
-fz_error pdf_garbagecollect(pdf_xref *xref);
-fz_error pdf_transplant(pdf_xref *dst, pdf_xref *src, fz_obj **newp, fz_obj *old);
-
 /* private */
 fz_error pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap);
 
@@ -479,7 +476,6 @@ fz_error pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref, char **strings, c
 fz_error pdf_loadbuiltinfont(pdf_fontdesc *font, char *basefont);
 fz_error pdf_loadembeddedfont(pdf_fontdesc *font, pdf_xref *xref, fz_obj *stmref);
 fz_error pdf_loadsystemfont(pdf_fontdesc *font, char *basefont, char *collection);
-fz_error pdf_loadsubstitutefont(pdf_fontdesc *font, int fdflags, char *collection);
 
 /* type3.c */
 fz_error pdf_loadtype3font(pdf_fontdesc **fontp, pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
@@ -549,7 +545,6 @@ struct pdf_outline_s
 	pdf_outline *next;
 };
 
-fz_error pdf_loadnametree(fz_obj **dictp, pdf_xref *xref, fz_obj *root);
 fz_obj *pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest);
 
 pdf_link *pdf_newlink(pdf_linkkind kind, fz_rect rect, fz_obj *dest);
