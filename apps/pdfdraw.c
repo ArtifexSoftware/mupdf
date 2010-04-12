@@ -166,6 +166,7 @@ static void drawfreepage(void)
 
 static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *drawtimes)
 {
+	static int fd = -1;
 	fz_error error;
 	fz_matrix ctm;
 	fz_bbox bbox;
@@ -173,7 +174,6 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	char name[256];
 	char pnmhdr[256];
 	int i, x, y, w, h, b, bh;
-	int fd = -1;
 	long start;
 	long end;
 	long elapsed;
@@ -199,10 +199,13 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 	if (drawpattern)
 	{
-		sprintf(name, drawpattern, drawcount++);
-		fd = open(name, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
-		if (fd < 0)
-			die(fz_throw("ioerror: could not open file '%s'", name));
+		if (strchr(drawpattern, '%') || fd < 0)
+		{
+			sprintf(name, drawpattern, drawcount++);
+			fd = open(name, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
+			if (fd < 0)
+				die(fz_throw("ioerror: could not open file '%s'", name));
+		}
 
 		sprintf(pnmhdr, "P6\n%d %d\n255\n", w, h);
 		write(fd, pnmhdr, strlen(pnmhdr));
@@ -277,7 +280,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		fprintf(stdout, " ");
 	}
 
-	if (drawpattern)
+	if (drawpattern && strchr(drawpattern, '%'))
 		close(fd);
 
 	drawfreepage();
