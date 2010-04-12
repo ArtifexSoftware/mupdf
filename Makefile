@@ -38,10 +38,11 @@ PDFVIEW_EXE = $(X11VIEW_EXE)
 endif
 
 ifeq "$(OS)" "Darwin"
-CFLAGS += -I$(HOME)/include -I/usr/X11R6/include -I/usr/X11R6/include/freetype2
+CFLAGS += -I$(HOME)/include -I/usr/X11R6/include -I/usr/X11R6/include/freetype2 -DARCH_X86_64
 LDFLAGS += -L$(HOME)/lib -L/usr/X11R6/lib
 X11LIBS = -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
+ARCH_SRC = archx86.c
 endif
 
 ifeq "$(OS)" "MINGW"
@@ -109,7 +110,7 @@ $(FITZ_OBJ): $(FITZ_HDR)
 $(FITZ_LIB): $(FITZ_OBJ)
 	 $(AR_CMD)
 
-DRAW_SRC=$(addprefix draw/, \
+DRAW_SRC=$(addprefix draw/, $(ARCH_SRC) \
 	blendmodes.c glyphcache.c imagedraw.c imagescale.c imageunpack.c meshdraw.c \
 	pathfill.c pathscan.c pathstroke.c porterduff.c )
 DRAW_OBJ=$(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
