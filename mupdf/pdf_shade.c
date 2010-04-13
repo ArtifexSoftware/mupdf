@@ -2,7 +2,7 @@
 #include "mupdf.h"
 
 static fz_error
-pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *funcref, float t0, float t1)
+pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *funcref, float t0, float t1)
 {
 	fz_error error;
 	pdf_function *func;
@@ -30,7 +30,7 @@ pdf_loadcompositeshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj
 }
 
 static fz_error
-pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *dict, fz_obj *funcs, float t0, float t1)
+pdf_loadcomponentshadefunc(fz_shade *shade, pdf_xref *xref, fz_obj *funcs, float t0, float t1)
 {
 	fz_error error;
 	pdf_function **func = nil;
@@ -111,9 +111,9 @@ pdf_loadshadefunction(fz_shade *shade, pdf_xref *xref, fz_obj *dict, float t0, f
 	shade->usefunction = 1;
 
 	if (fz_isdict(obj))
-		error = pdf_loadcompositeshadefunc(shade, xref, dict, obj, t0, t1);
+		error = pdf_loadcompositeshadefunc(shade, xref, obj, t0, t1);
 	else if (fz_isarray(obj))
-		error = pdf_loadcomponentshadefunc(shade, xref, dict, obj, t0, t1);
+		error = pdf_loadcomponentshadefunc(shade, xref, obj, t0, t1);
 	else
 		error = fz_throw("invalid shading function");
 
