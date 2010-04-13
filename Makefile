@@ -123,11 +123,11 @@ $(DRAW_LIB): $(DRAW_OBJ)
 MUPDF_HDR=$(FITZ_HDR) mupdf/mupdf.h
 MUPDF_SRC=$(addprefix mupdf/, \
 	pdf_annot.c pdf_build.c pdf_cmap.c pdf_cmap_load.c pdf_cmap_parse.c \
-	pdf_cmap_table.c pdf_colorspace1.c pdf_colorspace2.c pdf_crypt.c pdf_debug.c \
+	pdf_cmap_table.c pdf_colorspace.c pdf_crypt.c pdf_debug.c \
 	pdf_font.c pdf_fontagl.c pdf_fontenc.c pdf_fontfile.c pdf_fontmtx.c \
 	pdf_function.c pdf_image.c pdf_interpret.c pdf_lex.c pdf_nametree.c pdf_open.c \
 	pdf_outline.c pdf_page.c pdf_pagetree.c pdf_parse.c pdf_pattern.c pdf_repair.c \
-	pdf_shade.c pdf_shade1.c pdf_shade4.c pdf_store.c pdf_stream.c pdf_type3.c \
+	pdf_shade.c pdf_store.c pdf_stream.c pdf_type3.c \
 	pdf_unicode.c pdf_xobject.c pdf_xref.c )
 MUPDF_OBJ=$(MUPDF_SRC:mupdf/%.c=$(OBJDIR)/%.o)
 MUPDF_LIB=$(OBJDIR)/libmupdf.a
