@@ -3,10 +3,13 @@
 
 /* most of this mess is jeong's */
 
-#define BIGNUM 32000
+#define HUGENUM 32000
+#define BIGNUM 1024
 
 #define NSEGS 32
 #define MAX_RAD_SEGS 36
+
+#define SEGMENTATION_DEPTH 2
 
 typedef struct pdf_tensorpatch_s pdf_tensorpatch;
 
@@ -206,16 +209,6 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	shade->meshlen = NSEGS * NSEGS * 2;
 	shade->mesh = fz_malloc(sizeof(float) * (2 + ncomp) * 3 * shade->meshlen);
 
-	n = 0;
-	for (yy = 0; yy < NSEGS; ++yy)
-	{
-		y = y0 + (y1 - y0) * yy / (float)NSEGS;
-		yn = y0 + (y1 - y0) * (yy + 1) / (float)NSEGS;
-		for (xx = 0; xx < NSEGS; ++xx)
-		{
-			x = x0 + (x1 - x0) * (xx / (float)NSEGS);
-			xn = x0 + (x1 - x0) * (xx + 1) / (float)NSEGS;
-
 #define ADD_VERTEX(xx, yy) \
 			{\
 				fz_point p;\
@@ -237,7 +230,17 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 				{\
 					shade->mesh[n++] = cv[c];\
 				}\
-			}\
+			}
+
+	n = 0;
+	for (yy = 0; yy < NSEGS; ++yy)
+	{
+		y = y0 + (y1 - y0) * yy / (float)NSEGS;
+		yn = y0 + (y1 - y0) * (yy + 1) / (float)NSEGS;
+		for (xx = 0; xx < NSEGS; ++xx)
+		{
+			x = x0 + (x1 - x0) * (xx / (float)NSEGS);
+			xn = x0 + (x1 - x0) * (xx + 1) / (float)NSEGS;
 
 			ADD_VERTEX(x, y);
 			ADD_VERTEX(xn, y);
@@ -248,6 +251,8 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 			ADD_VERTEX(x, yn);
 		}
 	}
+
+#undef ADD_VERTEX
 
 	pdf_logshade("}\n");
 
@@ -327,14 +332,14 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	shade->meshlen = 2 + e0 * 2 + e1 * 2;
 	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
 
-	p1.x = x0 + BIGNUM * cos(theta);
-	p1.y = y0 + BIGNUM * sin(theta);
-	p2.x = x1 + BIGNUM * cos(theta);
-	p2.y = y1 + BIGNUM * sin(theta);
-	p3.x = x0 - BIGNUM * cos(theta);
-	p3.y = y0 - BIGNUM * sin(theta);
-	p4.x = x1 - BIGNUM * cos(theta);
-	p4.y = y1 - BIGNUM * sin(theta);
+	p1.x = x0 + HUGENUM * cos(theta);
+	p1.y = y0 + HUGENUM * sin(theta);
+	p2.x = x1 + HUGENUM * cos(theta);
+	p2.y = y1 + HUGENUM * sin(theta);
+	p3.x = x0 - HUGENUM * cos(theta);
+	p3.y = y0 - HUGENUM * sin(theta);
+	p4.x = x1 - HUGENUM * cos(theta);
+	p4.y = y1 - HUGENUM * sin(theta);
 
 	pdf_logshade("p1 %g %g\n", p1.x, p1.y);
 	pdf_logshade("p2 %g %g\n", p2.x, p2.y);
@@ -366,10 +371,10 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	if (e0)
 	{
-		ep1.x = p1.x - (x1 - x0) / dist * BIGNUM;
-		ep1.y = p1.y - (y1 - y0) / dist * BIGNUM;
-		ep3.x = p3.x - (x1 - x0) / dist * BIGNUM;
-		ep3.y = p3.y - (y1 - y0) / dist * BIGNUM;
+		ep1.x = p1.x - (x1 - x0) / dist * HUGENUM;
+		ep1.y = p1.y - (y1 - y0) / dist * HUGENUM;
+		ep3.x = p3.x - (x1 - x0) / dist * HUGENUM;
+		ep3.y = p3.y - (y1 - y0) / dist * HUGENUM;
 
 		pdf_setmeshvalue(shade->mesh, n++, ep1.x, ep1.y, 0);
 		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
@@ -381,10 +386,10 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	if (e1)
 	{
-		ep2.x = p2.x + (x1 - x0) / dist * BIGNUM;
-		ep2.y = p2.y + (y1 - y0) / dist * BIGNUM;
-		ep4.x = p4.x + (x1 - x0) / dist * BIGNUM;
-		ep4.y = p4.y + (y1 - y0) / dist * BIGNUM;
+		ep2.x = p2.x + (x1 - x0) / dist * HUGENUM;
+		ep2.y = p2.y + (y1 - y0) / dist * HUGENUM;
+		ep4.x = p4.x + (x1 - x0) / dist * HUGENUM;
+		ep4.y = p4.y + (y1 - y0) / dist * HUGENUM;
 
 		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
 		pdf_setmeshvalue(shade->mesh, n++, ep2.x, ep2.y, 1);
@@ -518,7 +523,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	if (r0 < r1)
 		rs = r0 / (r0 - r1);
 	else
-		rs = -BIGNUM;
+		rs = -HUGENUM;
 
 	ex0 = x0 + (x1 - x0) * rs;
 	ey0 = y0 + (y1 - y0) * rs;
@@ -527,7 +532,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	if (r0 > r1)
 		rs = r1 / (r1 - r0);
 	else
-		rs = -BIGNUM;
+		rs = -HUGENUM;
 
 	ex1 = x1 + (x0 - x1) * rs;
 	ey1 = y1 + (y0 - y1) * rs;
@@ -814,8 +819,6 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	n = 2 + ncomp;
 	j = 0;
 
-#define BIGNUM 1024
-
 	x = fz_malloc(sizeof(float) * vpr * BIGNUM);
 	y = fz_malloc(sizeof(float) * vpr * BIGNUM);
 	for (i = 0; i < ncomp; ++i)
@@ -851,6 +854,13 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	fz_dropstream(stream);
 
+	vpc = q;
+
+	shade->meshlen = 0;
+	shade->meshcap = 0;
+	shade->mesh = nil;
+	growshademesh(shade, 1024);
+
 #define ADD_VERTEX(idx) \
 			{\
 				int z;\
@@ -861,14 +871,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 				for (z = 0; z < ncomp; ++z) \
 					shade->mesh[j++] = c[z][idx];\
 				shade->meshlen += 2 + ncomp; \
-			}\
-
-	vpc = q;
-
-	shade->meshlen = 0;
-	shade->meshcap = 0;
-	shade->mesh = nil;
-	growshademesh(shade, 1024);
+			}
 
 	j = 0;
 	for (p = 0; p < vpr-1; ++p)
@@ -885,6 +888,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 		}
 	}
 
+#undef ADD_VERTEX
+
 	shade->meshlen /= n;
 	shade->meshlen /= 3;
 
@@ -899,8 +904,6 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 
 	return fz_okay;
 }
-
-#define SEGMENTATION_DEPTH 2
 
 static inline void copyvert(float *dst, float *src, int n)
 {
