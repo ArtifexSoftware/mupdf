@@ -126,7 +126,7 @@ static void
 fz_listcliptext(void *user, fz_text *text, fz_matrix ctm)
 {
 	fz_displaynode *node;
-	node = fz_newdisplaynode(FZ_CMDCLIPPATH, ctm, nil, nil, 0.0);
+	node = fz_newdisplaynode(FZ_CMDCLIPTEXT, ctm, nil, nil, 0.0);
 	node->item.text = fz_clonetext(text);
 	fz_appenddisplaynode(user, node);
 }
@@ -135,7 +135,7 @@ static void
 fz_listignoretext(void *user, fz_text *text, fz_matrix ctm)
 {
 	fz_displaynode *node;
-	node = fz_newdisplaynode(FZ_CMDCLIPPATH, ctm, nil, nil, 0.0);
+	node = fz_newdisplaynode(FZ_CMDIGNORETEXT, ctm, nil, nil, 0.0);
 	node->item.text = fz_clonetext(text);
 	fz_appenddisplaynode(user, node);
 }
@@ -273,6 +273,7 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
 		case FZ_CMDFILLIMAGEMASK:
 			dev->fillimagemask(dev->user, node->item.image, ctm,
 				node->colorspace, node->color, node->alpha);
+			break;
 		case FZ_CMDCLIPIMAGEMASK:
 			dev->clipimagemask(dev->user, node->item.image, ctm);
 			break;
