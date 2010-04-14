@@ -51,10 +51,6 @@ extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define vsnprintf _vsnprintf
 #endif
 
-#ifndef isnan
-#define isnan _isnan
-#endif
-
 #else /* C99 or close enough */
 
 #include <unistd.h>
