@@ -23,7 +23,7 @@ LD = $(CC)
 AR = ar
 
 ifeq "$(build)" "debug"
-CFLAGS += -g -O
+CFLAGS += -g -O0
 endif
 
 ifeq "$(build)" "release"
