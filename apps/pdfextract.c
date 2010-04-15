@@ -6,8 +6,8 @@
 
 static void showusage(void)
 {
-	fprintf(stderr, "usage: pdfextract [-d password] <file> [object numbers]\n");
-	fprintf(stderr, "  -d  \tdecrypt password\n");
+	fprintf(stderr, "usage: pdfextract [-p password] <file> [object numbers]\n");
+	fprintf(stderr, "  -p  \tpassword\n");
 	exit(1);
 }
 
@@ -216,11 +216,11 @@ int main(int argc, char **argv)
 	char *password = "";
 	int c, o;
 
-	while ((c = fz_getopt(argc, argv, "d:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:")) != -1)
 	{
 		switch (c)
 		{
-		case 'd': password = fz_optarg; break;
+		case 'p': password = fz_optarg; break;
 		default:
 			showusage();
 			break;
