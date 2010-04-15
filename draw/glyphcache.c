@@ -1,10 +1,14 @@
 #include "fitz.h"
 
+#define MAXGLYPHSIZE 256
+#define MAXCACHESIZE (1024*1024)
+
 typedef struct fz_glyphkey_s fz_glyphkey;
 
 struct fz_glyphcache_s
 {
 	fz_hashtable *hash;
+	int total;
 };
 
 struct fz_glyphkey_s
@@ -19,40 +23,43 @@ struct fz_glyphkey_s
 fz_glyphcache *
 fz_newglyphcache(void)
 {
-	fz_glyphcache *arena;
-	
-	arena = fz_malloc(sizeof(fz_glyphcache));
-	arena->hash = fz_newhash(509, sizeof(fz_glyphkey));
+	fz_glyphcache *cache;
 
-	return arena;
+	cache = fz_malloc(sizeof(fz_glyphcache));
+	cache->hash = fz_newhash(509, sizeof(fz_glyphkey));
+	cache->total = 0;
+
+	return cache;
 }
 
 void
-fz_evictglyphcache(fz_glyphcache *arena)
+fz_evictglyphcache(fz_glyphcache *cache)
 {
 	fz_pixmap *pixmap;
 	int i;
 
-	for (i = 0; i < fz_hashlen(arena->hash); i++)
+	for (i = 0; i < fz_hashlen(cache->hash); i++)
 	{
-		pixmap = fz_hashgetval(arena->hash, i);
+		pixmap = fz_hashgetval(cache->hash, i);
 		if (pixmap)
 			fz_droppixmap(pixmap);
 	}
 
-	fz_emptyhash(arena->hash);
+	cache->total = 0;
+
+	fz_emptyhash(cache->hash);
 }
 
 void
-fz_freeglyphcache(fz_glyphcache *arena)
+fz_freeglyphcache(fz_glyphcache *cache)
 {
-	fz_evictglyphcache(arena);
-	fz_drophash(arena->hash);
-	fz_free(arena);
+	fz_evictglyphcache(cache);
+	fz_drophash(cache->hash);
+	fz_free(cache);
 }
 
 fz_pixmap *
-fz_renderglyph(fz_glyphcache *arena, fz_font *font, int cid, fz_matrix ctm)
+fz_renderglyph(fz_glyphcache *cache, fz_font *font, int cid, fz_matrix ctm)
 {
 	fz_glyphkey key;
 	fz_pixmap *val;
@@ -66,7 +73,7 @@ fz_renderglyph(fz_glyphcache *arena, fz_font *font, int cid, fz_matrix ctm)
 	key.e = (ctm.e - floor(ctm.e)) * 256;
 	key.f = (ctm.f - floor(ctm.f)) * 256;
 
-	val = fz_hashfind(arena->hash, &key);
+	val = fz_hashfind(cache->hash, &key);
 	if (val)
 		return fz_keeppixmap(val);
 
@@ -89,9 +96,16 @@ fz_renderglyph(fz_glyphcache *arena, fz_font *font, int cid, fz_matrix ctm)
 
 	if (val)
 	{
-		fz_hashinsert(arena->hash, &key, val);
-		return fz_keeppixmap(val);
+		if (val->w < MAXGLYPHSIZE && val->h < MAXGLYPHSIZE)
+		{
+			if (cache->total + val->w * val->h > MAXCACHESIZE)
+				fz_evictglyphcache(cache);
+			fz_hashinsert(cache->hash, &key, val);
+			cache->total += val->w * val->h;
+			return fz_keeppixmap(val);
+		}
+		return val;
 	}
-	
+
 	return NULL;
 }
