@@ -242,7 +242,7 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
-drawglyph(unsigned char *argb, fz_pixmap *dst, fz_glyph *src, int xorig, int yorig)
+drawglyph(unsigned char *argb, fz_pixmap *dst, fz_pixmap *src, int xorig, int yorig)
 {
 	unsigned char *dp, *sp;
 	int w, h;
@@ -288,7 +288,7 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_drawdevice *dev = user;
 	fz_bbox clip;
 	fz_matrix tm, trm;
-	fz_glyph glyph;
+	fz_pixmap *glyph;
 	int i, x, y, gid;
 	unsigned char tmp[7];
 	unsigned char *argb;
@@ -329,8 +329,12 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 		trm.e = QUANT(trm.e - floor(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - floor(trm.f), VSUBPIX);
 
-		fz_renderglyph(dev->cache, &glyph, text->font, gid, trm);
-		drawglyph(argb, dev->dest, &glyph, x, y);
+		glyph = fz_renderglyph(dev->cache, text->font, gid, trm);
+		if (glyph)
+		{
+			drawglyph(argb, dev->dest, glyph, x, y);
+			fz_droppixmap(glyph);
+		}
 	}
 }
 

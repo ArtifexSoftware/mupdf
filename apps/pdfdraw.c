@@ -442,7 +442,7 @@ int main(int argc, char **argv)
 		{
 		case 'b': drawbands = atoi(fz_optarg); break;
 		case 'p': password = fz_optarg; break;
-		case 'o': drawpattern = fz_optarg; checksum = 1; break;
+		case 'o': drawpattern = fz_optarg; break;
 		case 'r': drawzoom = atof(fz_optarg) / 72.0; break;
 		case 't': drawmode = DRAWTXT; break;
 		case 'x': drawmode = DRAWXML; break;
@@ -457,8 +457,6 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		drawusage();
 
-	drawcache = fz_newglyphcache(512, 512*512);
-
 	setcleanup(local_cleanup);
 
 	state = NO_FILE_OPENED;
@@ -470,6 +468,8 @@ int main(int argc, char **argv)
 				drawpages("1-");
 
 			closexref();
+
+			drawcache = fz_newglyphcache();
 
 			openxref(argv[fz_optind], password, 0);
 			state = NO_PAGES_DRAWN;

@@ -2,14 +2,13 @@
  * Draw device and the graphics library.
  */
 
-typedef struct fz_glyph_s fz_glyph;
 typedef struct fz_glyphcache_s fz_glyphcache;
 
-fz_glyphcache * fz_newglyphcache(int slots, int size);
-void fz_renderftglyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-void fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int cid, fz_matrix trm);
-void fz_renderglyph(fz_glyphcache*, fz_glyph*, fz_font*, int, fz_matrix);
-void fz_debugglyphcache(fz_glyphcache *);
+fz_glyphcache * fz_newglyphcache(void);
+fz_pixmap * fz_renderftglyph(fz_font *font, int cid, fz_matrix trm);
+fz_pixmap * fz_rendert3glyph(fz_font *font, int cid, fz_matrix trm);
+fz_pixmap * fz_renderglyph(fz_glyphcache*, fz_font*, int, fz_matrix);
+void fz_evictglyphcache(fz_glyphcache *);
 void fz_freeglyphcache(fz_glyphcache *);
 
 fz_device *fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest);

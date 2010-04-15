@@ -205,14 +205,15 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	return fz_okay;
 }
 
-void
-fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
+fz_pixmap *
+fz_renderftglyph(fz_font *font, int gid, fz_matrix trm)
 {
 	FT_Face face = font->ftface;
 	FT_Matrix m;
 	FT_Vector v;
 	FT_Error fterr;
-	int x, y;
+	fz_pixmap *glyph;
+	int y;
 
 #if 0
 	/* We lost this feature in refactoring.
@@ -245,12 +246,6 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 		trm = fz_concat(fz_scale(scale, 1.0), trm);
 	}
 #endif
-
-	glyph->w = 0;
-	glyph->h = 0;
-	glyph->x = 0;
-	glyph->y = 0;
-	glyph->samples = nil;
 
 	/* freetype mutilates complex glyphs if they are loaded
 	 * with FT_Set_Char_Size 1.0. it rounds the coordinates
@@ -309,24 +304,21 @@ fz_renderftglyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	if (fterr)
 		fz_warn("freetype render glyph (gid %d): %s", gid, ft_errorstring(fterr));
 
-	glyph->w = face->glyph->bitmap.width;
-	glyph->h = face->glyph->bitmap.rows;
-	glyph->x = face->glyph->bitmap_left;
-	glyph->y = face->glyph->bitmap_top - glyph->h;
-	glyph->samples = face->glyph->bitmap.buffer;
+	glyph = fz_newpixmap(NULL,
+		face->glyph->bitmap_left,
+		face->glyph->bitmap_top - face->glyph->bitmap.rows,
+		face->glyph->bitmap.width,
+		face->glyph->bitmap.rows);
 
-	for (y = 0; y < glyph->h / 2; y++)
+	for (y = 0; y < glyph->h; y++)
 	{
-		for (x = 0; x < glyph->w; x++)
-		{
-			unsigned char a = glyph->samples[y * glyph->w + x ];
-			unsigned char b = glyph->samples[(glyph->h - y - 1) * glyph->w + x];
-			glyph->samples[y * glyph->w + x ] = b;
-			glyph->samples[(glyph->h - y - 1) * glyph->w + x] = a;
-		}
+		memcpy(glyph->samples + y * glyph->w,
+			face->glyph->bitmap.buffer + (glyph->h - y - 1) * face->glyph->bitmap.pitch,
+			glyph->w);
 	}
-}
 
+	return glyph;
+}
 
 /*
  * Type 3 fonts...
@@ -353,8 +345,8 @@ fz_newtype3font(char *name, fz_matrix matrix)
 	return font;
 }
 
-void
-fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
+fz_pixmap *
+fz_rendert3glyph(fz_font *font, int gid, fz_matrix trm)
 {
 	fz_error error;
 	fz_matrix ctm;
@@ -362,46 +354,29 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 	fz_rect bbox;
 	fz_device *dev;
 	fz_glyphcache *cache;
-
-	glyph->x = 0;
-	glyph->y = 0;
-	glyph->w = 0;
-	glyph->h = 0;
-	glyph->samples = nil;
-
-	/* TODO: make it reentrant */
-	static fz_pixmap *pixmap = nil;
-	if (pixmap)
-	{
-		fz_droppixmap(pixmap);
-		pixmap = nil;
-	}
+	fz_pixmap *glyph;
 
 	if (gid < 0 || gid > 255)
-		return;
+		return NULL;
 
 	contents = font->t3procs[gid];
 	if (!contents)
-		return;
+		return NULL;
 
 	ctm = fz_concat(font->t3matrix, trm);
 	bbox = fz_transformrect(ctm, font->bbox);
-	pixmap = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
-	fz_clearpixmap(pixmap, 0x00);
+	glyph = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+	fz_clearpixmap(glyph, 0x00);
 
-	cache = fz_newglyphcache(512, 512*512);
-	dev = fz_newdrawdevice(cache, pixmap);
+	cache = fz_newglyphcache();
+	dev = fz_newdrawdevice(cache, glyph);
 	error = font->t3runcontentstream(dev, ctm, font->t3xref, font->t3resources, contents);
 	if (error)
 		fz_catch(error, "cannot draw type3 glyph");
 	fz_freedevice(dev);
 	fz_freeglyphcache(cache);
 
-	glyph->x = pixmap->x;
-	glyph->y = pixmap->y;
-	glyph->w = pixmap->w;
-	glyph->h = pixmap->h;
-	glyph->samples = pixmap->samples;
+	return glyph;
 }
 
 void

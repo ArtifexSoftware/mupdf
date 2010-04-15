@@ -320,12 +320,6 @@ struct fz_font_s
 	fz_rect bbox;
 };
 
-struct fz_glyph_s
-{
-	int x, y, w, h;
-	unsigned char *samples;
-};
-
 fz_error fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
 fz_error fz_loadfreetypefontfile(fz_font *font, char *path, int index);
 fz_error fz_loadfreetypefontbuffer(fz_font *font, unsigned char *data, int len, int index);
