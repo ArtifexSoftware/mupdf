@@ -629,7 +629,7 @@ pdf_openxref(char *filename)
 
 	xref = fz_malloc(sizeof(pdf_xref));
 	memset(xref, 0, sizeof(pdf_xref));
-	
+
 	pdf_logxref("loadxref '%s' %p\n", filename, xref);
 
 	error = fz_openrfile(&xref->file, filename);
@@ -651,7 +651,7 @@ pdf_openxref(char *filename)
 		if (error)
 			goto cleanup;
 	}
-	
+
 	encrypt = fz_dictgets(xref->trailer, "Encrypt");
 	id = fz_dictgets(xref->trailer, "ID");
 	if (fz_isdict(encrypt))
