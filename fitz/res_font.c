@@ -391,7 +391,6 @@ fz_rendert3glyph(fz_glyph *glyph, fz_font *font, int gid, fz_matrix trm)
 
 	cache = fz_newglyphcache(512, 512*512);
 	dev = fz_newdrawdevice(cache, pixmap);
-	contents->rp = contents->bp;
 	error = font->t3runcontentstream(dev, ctm, font->t3xref, font->t3resources, contents);
 	if (error)
 		fz_catch(error, "cannot draw type3 glyph");

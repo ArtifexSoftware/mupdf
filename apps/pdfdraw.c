@@ -223,7 +223,6 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			fprintf(stdout, "drawing band %d / %d\n", b + 1, drawbands);
 
 		dev = fz_newdrawdevice(drawcache, pix);
-		drawpage->contents->rp = drawpage->contents->bp;
 		error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(error);
@@ -314,7 +313,6 @@ static void drawtxt(int pagenum)
 	text = fz_newtextspan();
 	dev = fz_newtextdevice(text);
 
-	drawpage->contents->rp = drawpage->contents->bp;
 	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 	if (error)
 		die(error);
@@ -345,7 +343,6 @@ static void drawxml(int pagenum)
 	printf("<?xml version=\"1.0\"?>\n");
 	printf("<page number=\"%d\">\n", pagenum);
 
-	drawpage->contents->rp = drawpage->contents->bp;
 	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 	if (error)
 		die(error);

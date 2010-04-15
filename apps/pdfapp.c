@@ -236,7 +236,6 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		list = fz_newdisplaylist();
 
 		mdev = fz_newlistdevice(list);
-		app->page->contents->rp = app->page->contents->bp;
 		error = pdf_runcontentstream(mdev, fz_identity(), app->xref, app->page->resources, app->page->contents);
 		if (error)
 			pdfapp_error(app, error);

@@ -194,7 +194,6 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	if (xobj->resources)
 		resources = xobj->resources;
 
-	xobj->contents->rp = xobj->contents->bp;
 	error = pdf_runcsibuffer(csi, xref, resources, xobj->contents);
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
@@ -1354,11 +1353,14 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 fz_error
 pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents)
 {
-	char *buf = fz_malloc(65536);
-	fz_stream *file = fz_openrbuffer(contents);
-	fz_error error = pdf_runcsifile(csi, xref, rdb, file, buf, 65536);
+	fz_stream *file;
+	fz_error error;
+
+	contents->rp = contents->bp;
+	file = fz_openrbuffer(contents);
+	error = pdf_runcsifile(csi, xref, rdb, file, xref->scratch, sizeof xref->scratch);
 	fz_dropstream(file);
-	fz_free(buf);
+	contents->rp = contents->bp;
 	if (error)
 		return fz_rethrow(error, "cannot parse content stream");
 	return fz_okay;
