@@ -626,20 +626,17 @@ pdf_openxref(char *filename)
 	fz_error error;
 	fz_obj *encrypt;
 	fz_obj *id;
-	char *buf;
 
 	xref = fz_malloc(sizeof(pdf_xref));
 	memset(xref, 0, sizeof(pdf_xref));
 	
-	buf = fz_malloc(65536);
-
 	pdf_logxref("loadxref '%s' %p\n", filename, xref);
 
 	error = fz_openrfile(&xref->file, filename);
 	if (error)
 		goto cleanup;
 
-	error = pdf_loadxref(xref, buf, 65536);
+	error = pdf_loadxref(xref, xref->scratch, sizeof xref->scratch);
 	if (error)
 	{
 		fz_catch(error, "trying to repair");
@@ -650,7 +647,7 @@ pdf_openxref(char *filename)
 			xref->len = 0;
 			xref->cap = 0;
 		}
-		error = pdf_repairxref(xref, buf, 65536);
+		error = pdf_repairxref(xref, xref->scratch, sizeof xref->scratch);
 		if (error)
 			goto cleanup;
 	}
@@ -672,7 +669,6 @@ cleanup:
 	if (xref->table)
 		fz_free(xref->table);
 	fz_free(xref);
-	fz_free(buf);
 	fz_rethrow(error, "cannot open document");
 	return NULL;
 }

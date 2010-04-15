@@ -181,8 +181,6 @@ cleanupbuf:
 fz_error
 pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 {
-	char buf[65536];	/* yeowch! */
-
 	fz_error error;
 	pdf_xrefentry *x;
 	int roid, rgen;
@@ -207,7 +205,8 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 		if (error)
 			return fz_rethrow(error, "cannot seek to object (%d %d R) offset %d", oid, gen, x->ofs);
 
-		error = pdf_parseindobj(&x->obj, xref, xref->file, buf, sizeof buf, &roid, &rgen, &x->stmofs);
+		error = pdf_parseindobj(&x->obj, xref, xref->file, xref->scratch, sizeof xref->scratch,
+			&roid, &rgen, &x->stmofs);
 		if (error)
 			return fz_rethrow(error, "cannot parse object (%d %d R)", oid, gen);
 
@@ -222,7 +221,7 @@ pdf_cacheobject(pdf_xref *xref, int oid, int gen)
 	{
 		if (!x->obj)
 		{
-			error = pdf_loadobjstm(xref, x->ofs, 0, buf, sizeof buf);
+			error = pdf_loadobjstm(xref, x->ofs, 0, xref->scratch, sizeof xref->scratch);
 			if (error)
 				return fz_rethrow(error, "cannot load object stream containing object (%d %d R)", oid, gen);
 		}
