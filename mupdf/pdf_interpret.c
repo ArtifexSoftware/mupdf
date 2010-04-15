@@ -259,8 +259,6 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 		fz_obj *key = fz_dictgetkey(extgstate, i);
 		fz_obj *val = fz_dictgetval(extgstate, i);
 		char *s = fz_toname(key);
-		if (!s)
-			fz_throw("malformed /ExtGState dictionary");
 
 		if (!strcmp(s, "Font"))
 		{
