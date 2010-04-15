@@ -643,8 +643,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		return fz_rethrow(error, "unable to load shading stream");
 
-	shade->usefunction = 0;
-
 	n = 2 + ncomp;
 	j = 0;
 	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
