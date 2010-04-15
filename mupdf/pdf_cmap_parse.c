@@ -17,7 +17,8 @@ enum
 	TBEGINCIDCHAR,
 	TENDCIDCHAR,
 	TBEGINCIDRANGE,
-	TENDCIDRANGE
+	TENDCIDRANGE,
+	TENDCMAP
 };
 
 static pdf_token_e pdf_cmaptokenfromkeyword(char *key)
@@ -33,6 +34,7 @@ static pdf_token_e pdf_cmaptokenfromkeyword(char *key)
 	if (!strcmp(key, "endcidchar")) return TENDCIDCHAR;
 	if (!strcmp(key, "begincidrange")) return TBEGINCIDRANGE;
 	if (!strcmp(key, "endcidrange")) return TENDCIDRANGE;
+	if (!strcmp(key, "endcmap")) return TENDCMAP;
 	return PDF_TKEYWORD;
 }
 
@@ -383,7 +385,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 			goto cleanup;
 		}
 
-		if (tok == PDF_TEOF)
+		if (tok == PDF_TEOF || tok == TENDCMAP)
 			break;
 
 		else if (tok == PDF_TNAME)
