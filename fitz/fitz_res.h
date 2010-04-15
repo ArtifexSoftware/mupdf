@@ -97,8 +97,6 @@ void fz_freedevice(fz_device *dev);
 
 fz_device *fz_newtracedevice(void);
 
-fz_device *fz_newdrawdevice(fz_pixmap *dest);
-
 /* Text extraction device */
 
 typedef struct fz_textspan_s fz_textspan;
@@ -225,7 +223,6 @@ fz_path *fz_clonepath(fz_path *old);
 
 fz_rect fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke);
 void fz_debugpath(fz_path *, int indent);
-void fz_printpath(fz_path *, int indent);
 
 /*
  * Text buffer.

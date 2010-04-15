@@ -50,6 +50,7 @@ struct benchmark
 	int maxpage;
 };
 
+static fz_glyphcache *drawcache = nil;
 static int drawmode = DRAWPNM;
 static char *drawpattern = nil;
 static pdf_page *drawpage = nil;
@@ -66,6 +67,11 @@ static void local_cleanup(void)
 	{
 		pdf_dropstore(xref->store);
 		xref->store = nil;
+	}
+	if (drawcache)
+	{
+		fz_freeglyphcache(drawcache);
+		drawcache = nil;
 	}
 }
 
@@ -216,7 +222,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		if (drawbands > 1)
 			fprintf(stdout, "drawing band %d / %d\n", b + 1, drawbands);
 
-		dev = fz_newdrawdevice(pix);
+		dev = fz_newdrawdevice(drawcache, pix);
 		drawpage->contents->rp = drawpage->contents->bp;
 		error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 		if (error)
@@ -453,6 +459,8 @@ int main(int argc, char **argv)
 
 	if (fz_optind == argc)
 		drawusage();
+
+	drawcache = fz_newglyphcache(512, 512*512);
 
 	setcleanup(local_cleanup);
 

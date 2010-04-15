@@ -56,6 +56,7 @@ void pdfapp_init(pdfapp_t *app)
 	app->scrw = 640;
 	app->scrh = 480;
 	app->zoom = 1.0;
+	app->cache = fz_newglyphcache(512, 512 * 512);
 }
 
 void pdfapp_open(pdfapp_t *app, char *filename)
@@ -133,6 +134,10 @@ void pdfapp_open(pdfapp_t *app, char *filename)
 
 void pdfapp_close(pdfapp_t *app)
 {
+	if (app->cache)
+		fz_freeglyphcache(app->cache);
+	app->cache = nil;
+
 	if (app->page)
 		pdf_droppage(app->page);
 	app->page = nil;
@@ -241,7 +246,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 			fz_droppixmap(app->image);
 		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
-		idev = fz_newdrawdevice(app->image);
+		idev = fz_newdrawdevice(app->cache, app->image);
 		fz_executedisplaylist(list, idev, ctm);
 		fz_freedevice(idev);
 

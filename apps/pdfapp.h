@@ -27,6 +27,7 @@ struct pdfapp_s
 	pdf_xref *xref;
 	pdf_outline *outline;
 	int pagecount;
+	fz_glyphcache *cache;
 
 	/* current view params */
 	float zoom;

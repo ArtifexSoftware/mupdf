@@ -715,21 +715,20 @@ fz_drawfreeuser(void *user)
 	fz_drawdevice *dev = user;
 	if (dev->model)
 		fz_dropcolorspace(dev->model);
-	fz_freeglyphcache(dev->cache);
 	fz_freegel(dev->gel);
 	fz_freeael(dev->ael);
 	fz_free(dev);
 }
 
 fz_device *
-fz_newdrawdevice(fz_pixmap *dest)
+fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 {
 	fz_drawdevice *ddev = fz_malloc(sizeof(fz_drawdevice));
 	if (dest->colorspace)
 		ddev->model = fz_keepcolorspace(dest->colorspace);
 	else
 		ddev->model = nil;
-	ddev->cache = fz_newglyphcache(512, 512 * 512);
+	ddev->cache = cache;
 	ddev->gel = fz_newgel();
 	ddev->ael = fz_newael();
 	ddev->dest = dest;
