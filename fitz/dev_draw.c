@@ -463,7 +463,8 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	fz_bbox bbox;
 	fz_bbox clip;
 	int dx, dy;
-	fz_pixmap *temp;
+	fz_pixmap *scaled = nil;
+	fz_pixmap *converted = nil;
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	int fa, fb, fc, fd;
@@ -499,15 +500,15 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 
 	if (dx != 1 || dy != 1)
 	{
-		temp = fz_scalepixmap(image, dx, dy);
-		image = temp;
+		scaled = fz_scalepixmap(image, dx, dy);
+		image = scaled;
 	}
 
 	if (image->colorspace != dev->model)
 	{
-		temp = fz_newpixmap(dev->model, image->x, image->y, image->w, image->h);
-		fz_convertpixmap(image->colorspace, image, dev->model, temp);
-		image = temp;
+		converted = fz_newpixmap(dev->model, image->x, image->y, image->w, image->h);
+		fz_convertpixmap(image->colorspace, image, dev->model, converted);
+		image = converted;
 	}
 
 	imgmat.a = 1.0 / image->w;
@@ -540,6 +541,11 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	else
 		fz_img_1o1(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
+
+	if (scaled)
+		fz_droppixmap(scaled);
+	if (converted)
+		fz_droppixmap(converted);
 }
 
 static void
@@ -551,7 +557,7 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	fz_bbox bbox;
 	fz_bbox clip;
 	int dx, dy;
-	fz_pixmap *temp;
+	fz_pixmap *scaled = nil;
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	int fa, fb, fc, fd;
@@ -581,8 +587,8 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 
 	if (dx != 1 || dy != 1)
 	{
-		temp = fz_scalepixmap(image, dx, dy);
-		image = temp;
+		scaled = fz_scalepixmap(image, dx, dy);
+		image = scaled;
 	}
 
 	imgmat.a = 1.0 / image->w;
@@ -629,6 +635,9 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 		fz_img_1o1(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
 	}
+
+	if (scaled)
+		fz_droppixmap(scaled);
 }
 
 static void
@@ -639,7 +648,7 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
 	int dx, dy;
-	fz_pixmap *temp;
+	fz_pixmap *scaled = nil;
 	fz_matrix imgmat;
 	fz_matrix invmat;
 	int fa, fb, fc, fd;
@@ -670,8 +679,8 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 
 	if (dx != 1 || dy != 1)
 	{
-		temp = fz_scalepixmap(image, dx, dy);
-		image = temp;
+		scaled = fz_scalepixmap(image, dx, dy);
+		image = scaled;
 	}
 
 	imgmat.a = 1.0 / image->w;
@@ -711,6 +720,9 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	dev->clipstack[dev->cliptop].dest = dev->dest;
 	dev->dest = dest;
 	dev->cliptop++;
+
+	if (scaled)
+		fz_droppixmap(scaled);
 }
 
 static void
