@@ -1,4 +1,4 @@
-.TH PDFDRAW 1 "March 21, 2010"
+.TH PDFDRAW 1 "April 15, 2010"
 .\" Please adjust this date whenever revising the manpage.
 .SH NAME
 pdfdraw \- renderer tool to convert a PDF file to PNM image files
@@ -29,7 +29,7 @@ A description of each of the supported options is included below.
 Each page is rendered in the given number of separate bands. The default is
 to render the entire page in one go.
 .TP
-.B \-d password
+.B \-p password
 Uses the given password during decryption of an encrypted PDF file.
 The password is tried both as user and owner password.
 .TP
@@ -46,6 +46,12 @@ inch. The deafult is 72dpi.
 Enables benchmarking, causing rendering time to be printed for each page as
 well as summary statistics after all pages in each PDF file have been
 rendered.
+.TP
+.B \-t
+Print the text on the page in UTF-8.
+.TP
+.B \-x
+Print an XML representation of the page graphics.
 .SH SEE ALSO
 .BR mupdf (1),
 .BR pdfclean (1).

@@ -50,8 +50,6 @@ struct benchmark
 	int maxpage;
 };
 
-static fz_renderer *drawgc = nil;
-
 static int drawmode = DRAWPNM;
 static char *drawpattern = nil;
 static pdf_page *drawpage = nil;
@@ -69,24 +67,19 @@ static void local_cleanup(void)
 		pdf_dropstore(xref->store);
 		xref->store = nil;
 	}
-
-	if (drawgc)
-	{
-//		fz_droprenderer(drawgc);
-		drawgc = nil;
-	}
 }
 
 static void drawusage(void)
 {
 	fprintf(stderr,
 		"usage: pdfdraw [options] [file.pdf pages ... ]\n"
-		"  -b -\tdraw page in N bands\n"
-		"  -d -\tpassword for decryption\n"
+		"  -p -\tpassword for decryption\n"
 		"  -o -\tpattern (%%d for page number) for output file\n"
 		"  -r -\tresolution in dpi\n"
-		"  -m  \tprint benchmark results\n"
-		"  -s  \tprint MD5 checksum of page pixel data\n"
+		"  -m\tprint benchmark results\n"
+		"  -s\tprint MD5 checksum of page pixel data\n"
+		"  -t\ttext extraction made\n"
+		"  -x\txml trace mode\n"
 		"  example:\n"
 		"    pdfdraw -o output%%03d.pnm input.pdf 1-3,5,9-\n");
 	exit(1);
@@ -218,23 +211,10 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 	for (b = 0; b < drawbands; b++)
 	{
-		if (drawbands > 1)
-			fprintf(stdout, "drawing band %d / %d\n", b + 1, drawbands);
-
-#if 0
-		printf("\nRESOURCES:\n");
-		fz_debugobj(fz_resolveindirect(drawpage->resources));
-		printf("CONTENTS:\n");
-		showsafe(drawpage->contents->rp,
-			drawpage->contents->wp - drawpage->contents->rp);
-		printf("END.\n");
-#endif
-
 		fz_device *dev;
 
-//		dev = fz_newtracedevice();
-//		drawpage->contents->rp = drawpage->contents->bp;
-//		pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
+		if (drawbands > 1)
+			fprintf(stdout, "drawing band %d / %d\n", b + 1, drawbands);
 
 		dev = fz_newdrawdevice(pix);
 		drawpage->contents->rp = drawpage->contents->bp;
@@ -341,6 +321,34 @@ static void drawtxt(int pagenum)
 	fz_freetextspan(text);
 }
 
+static void drawxml(int pagenum)
+{
+	fz_error error;
+	fz_obj *pageobj;
+	fz_matrix ctm;
+	fz_device *dev;
+
+	pageobj = pdf_getpageobject(xref, pagenum);
+	error = pdf_loadpage(&drawpage, xref, pageobj);
+	if (error)
+		die(error);
+
+	ctm = fz_identity();
+
+	dev = fz_newtracedevice();
+	printf("<?xml version=\"1.0\"?>\n");
+	printf("<page number=\"%d\">\n", pagenum);
+
+	drawpage->contents->rp = drawpage->contents->bp;
+	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
+	if (error)
+		die(error);
+
+	fz_freedevice(dev);
+
+	printf("</page>\n");
+}
+
 static void drawpages(char *pagelist)
 {
 	int page, spage, epage;
@@ -384,14 +392,13 @@ static void drawpages(char *pagelist)
 		if (epage > pagecount)
 			epage = pagecount;
 
-		printf("Drawing pages %d-%d...\n", spage, epage);
 		for (page = spage; page <= epage; page++)
 		{
 			switch (drawmode)
 			{
 			case DRAWPNM: drawpnm(page, &loadtimes, &drawtimes); break;
 			case DRAWTXT: drawtxt(page); break;
-//			case DRAWXML: drawxml(page); break;
+			case DRAWXML: drawxml(page); break;
 			}
 		}
 
@@ -426,12 +433,12 @@ int main(int argc, char **argv)
 	fz_cpudetect();
 	fz_accelerate();
 
-	while ((c = fz_getopt(argc, argv, "b:d:o:r:txms")) != -1)
+	while ((c = fz_getopt(argc, argv, "b:p:o:r:txms")) != -1)
 	{
 		switch (c)
 		{
 		case 'b': drawbands = atoi(fz_optarg); break;
-		case 'd': password = fz_optarg; break;
+		case 'p': password = fz_optarg; break;
 		case 'o': drawpattern = fz_optarg; checksum = 1; break;
 		case 'r': drawzoom = atof(fz_optarg) / 72.0; break;
 		case 't': drawmode = DRAWTXT; break;

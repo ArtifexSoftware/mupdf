@@ -189,7 +189,7 @@ fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 }
 
 void
-fz_printpath(fz_path *path, int indent)
+fz_debugpath(fz_path *path, int indent)
 {
 	float x, y;
 	int i = 0;
@@ -227,41 +227,3 @@ fz_printpath(fz_path *path, int indent)
 	}
 }
 
-void
-fz_debugpath(fz_path *path, int indent)
-{
-	float x, y;
-	int i = 0;
-	int n;
-	while (i < path->len)
-	{
-		for (n = 0; n < indent; n++)
-			putchar(' ');
-		switch (path->els[i++].k)
-		{
-		case FZ_MOVETO:
-			x = path->els[i++].v;
-			y = path->els[i++].v;
-			printf("<moveto x=\"%g\" y=\"%g\" />\n", x, y);
-			break;
-		case FZ_LINETO:
-			x = path->els[i++].v;
-			y = path->els[i++].v;
-			printf("<lineto x=\"%g\" y=\"%g\" />\n", x, y);
-			break;
-		case FZ_CURVETO:
-			x = path->els[i++].v;
-			y = path->els[i++].v;
-			printf("<curveto x1=\"%g\" y1=\"%g\" ", x, y);
-			x = path->els[i++].v;
-			y = path->els[i++].v;
-			printf("x2=\"%g\" y2=\"%g\" ", x, y);
-			x = path->els[i++].v;
-			y = path->els[i++].v;
-			printf("x3=\"%g\" y3=\"%g\" />\n", x, y);
-			break;
-		case FZ_CLOSEPATH:
-			printf("<closepath />\n");
-		}
-	}
-}

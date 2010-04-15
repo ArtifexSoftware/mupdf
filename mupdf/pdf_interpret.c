@@ -381,7 +381,6 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 				return fz_rethrow(error, "cannot load xobject");
 				}
 				*/
-				puts("we encountered a soft mask");
 			}
 		}
 

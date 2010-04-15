@@ -1,4 +1,3 @@
-typedef struct fz_renderer_s fz_renderer;
 
 #define FZ_BYTE unsigned char
 
