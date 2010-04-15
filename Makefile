@@ -265,6 +265,9 @@ $(CMAP_LIB): $(CMAP_OBJ)
 
 APPS = $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFEXTRACT_EXE) $(PDFVIEW_EXE)
 
+PDFAPP_HDR = apps/pdfapp.h
+PDFTOOL_HDR = apps/pdftool.h
+
 $(OBJDIR)/%.o: apps/%.c
 	$(CC_CMD)
 
@@ -272,7 +275,7 @@ PDFSHOW_SRC=apps/pdfshow.c apps/pdftool.c
 PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
 
-$(PDFSHOW_OBJ): $(MUPDF_HDR)
+$(PDFSHOW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
 $(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
 	$(LD_CMD)
 
@@ -280,7 +283,7 @@ PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
 PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
 
-$(PDFCLEAN_OBJ): $(MUPDF_HDR)
+$(PDFCLEAN_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
 $(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
 	$(LD_CMD)
 
@@ -288,7 +291,7 @@ PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
 
-$(PDFDRAW_OBJ): $(MUPDF_HDR)
+$(PDFDRAW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
 $(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD)
 
@@ -296,7 +299,7 @@ PDFEXTRACT_SRC=apps/pdfextract.c apps/pdftool.c
 PDFEXTRACT_OBJ=$(PDFEXTRACT_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFEXTRACT_EXE=$(OBJDIR)/pdfextract
 
-$(PDFEXTRACT_OBJ): $(MUPDF_HDR)
+$(PDFEXTRACT_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
 $(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD)
 
@@ -304,7 +307,7 @@ X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
 X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
-$(X11VIEW_OBJ): $(MUPDF_HDR)
+$(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
 $(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(X11LIBS)
 
@@ -316,7 +319,7 @@ WINVIEW_EXE=$(OBJDIR)/mupdf.exe
 $(OBJDIR)/%.o: apps/%.rc
 	windres -i $< -o $@ --include-dir=apps
 
-$(WINVIEW_OBJ): $(MUPDF_HDR)
+$(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
 $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
 	$(LD_CMD) $(W32LIBS)
 
