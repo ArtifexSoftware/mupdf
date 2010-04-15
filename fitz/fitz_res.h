@@ -351,7 +351,6 @@ struct fz_shade_s
 	fz_rect bbox;		/* can be fz_infiniterect */
 	fz_colorspace *cs;
 
-	/* used by build.c -- not used in drawshade.c */
 	fz_matrix matrix;	/* matrix from pattern dict */
 	int usebackground;	/* background color for fills but not 'sh' */
 	float background[FZ_MAXCOLORS];
