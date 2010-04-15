@@ -7,8 +7,6 @@
 #ifndef _FITZ_STREAM_H_
 #define _FITZ_STREAM_H_
 
-typedef struct pdf_xref_s pdf_xref; /* this file is about to be merged with mupdf */
-
 typedef struct fz_obj_s fz_obj;
 typedef struct fz_keyval_s fz_keyval;
 
@@ -59,7 +57,7 @@ struct fz_obj_s
 		struct {
 			int num;
 			int gen;
-			pdf_xref *xref;
+			struct pdf_xref_s *xref;
 			fz_obj *obj;
 		} r;
 	} u;
@@ -71,7 +69,7 @@ fz_obj * fz_newint(int i);
 fz_obj * fz_newreal(float f);
 fz_obj * fz_newname(char *str);
 fz_obj * fz_newstring(char *str, int len);
-fz_obj * fz_newindirect(int num, int gen, pdf_xref *xref);
+fz_obj * fz_newindirect(int num, int gen, struct pdf_xref_s *xref);
 
 fz_obj * fz_newarray(int initialcap);
 fz_obj * fz_newdict(int initialcap);

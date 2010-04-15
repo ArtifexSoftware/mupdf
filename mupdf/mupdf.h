@@ -5,6 +5,8 @@
 #error "fitz.h must be included before mupdf.h"
 #endif
 
+typedef struct pdf_xref_s pdf_xref;
+
 void pdf_logxref(char *fmt, ...);
 void pdf_logrsrc(char *fmt, ...);
 void pdf_logfont(char *fmt, ...);
@@ -114,7 +116,6 @@ int pdf_authenticatepassword(pdf_xref *xref, char *pw);
  */
 
 typedef struct pdf_xrefentry_s pdf_xrefentry;
-/* typedef struct pdf_xref_s pdf_xref; -- already defined in fitz_stream.h */
 
 struct pdf_xref_s
 {
@@ -122,10 +123,7 @@ struct pdf_xref_s
 	int version;
 	int startxref;
 	pdf_crypt *crypt;
-
-	fz_obj *trailer;		/* TODO split this into root/info/encrypt/id */
-	fz_obj *root;			/* resolved catalog dict */
-	fz_obj *info;			/* resolved info dict */
+	fz_obj *trailer;
 
 	int len;
 	int cap;
@@ -144,15 +142,10 @@ struct pdf_xrefentry_s
 	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
 };
 
-pdf_xref * pdf_newxref(void);
-fz_error pdf_repairxref(pdf_xref *, char *filename);
-fz_error pdf_loadxref(pdf_xref *, char *filename);
-fz_error pdf_initxref(pdf_xref *);
-fz_error pdf_decryptxref(pdf_xref *);
-
+pdf_xref * pdf_openxref(char *filename);
+void pdf_closexref(pdf_xref *);
 void pdf_debugxref(pdf_xref *);
 void pdf_flushxref(pdf_xref *, int force);
-void pdf_closexref(pdf_xref *);
 
 fz_error pdf_cacheobject(pdf_xref *, int oid, int gen);
 fz_error pdf_loadobject(fz_obj **objp, pdf_xref *, int oid, int gen);
@@ -165,7 +158,7 @@ fz_error pdf_openrawstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
 fz_error pdf_openstream(fz_stream **stmp, pdf_xref *, int oid, int gen);
 
 /* private */
-fz_error pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap);
+extern fz_error pdf_repairxref(pdf_xref *xref, char *buf, int bufsize);
 
 /*
  * Resource store

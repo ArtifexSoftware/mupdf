@@ -142,7 +142,7 @@ fz_invertmatrix(fz_matrix src)
 int
 fz_isrectilinear(fz_matrix m)
 {
-	return	(fabs(m.b) < FLT_EPSILON && fabs(m.c) < FLT_EPSILON) ||
+	return (fabs(m.b) < FLT_EPSILON && fabs(m.c) < FLT_EPSILON) ||
 		(fabs(m.a) < FLT_EPSILON && fabs(m.d) < FLT_EPSILON);
 }
 

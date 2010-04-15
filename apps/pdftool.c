@@ -23,7 +23,6 @@ void setcleanup(void (*func)(void))
 
 void openxref(char *filename, char *password, int dieonbadpass)
 {
-	fz_error error;
 	int okay;
 
 	basename = strrchr(filename, '/');
@@ -32,19 +31,9 @@ void openxref(char *filename, char *password, int dieonbadpass)
 	else
 		basename++;
 
-	xref = pdf_newxref();
-	error = pdf_loadxref(xref, filename);
-	if (error)
-	{
-		fz_catch(error, "trying to repair");
-		error = pdf_repairxref(xref, filename);
-		if (error)
-			die(error);
-	}
-
-	error = pdf_decryptxref(xref);
-	if (error)
-		die(error);
+	xref = pdf_openxref(filename);
+	if (!xref)
+		die(-1);
 
 	if (pdf_needspassword(xref))
 	{
@@ -54,14 +43,6 @@ void openxref(char *filename, char *password, int dieonbadpass)
 		else if (!okay && dieonbadpass)
 			die(fz_throw("invalid password"));
 	}
-
-	xref->root = fz_dictgets(xref->trailer, "Root");
-	if (xref->root)
-		fz_keepobj(xref->root);
-
-	xref->info = fz_dictgets(xref->trailer, "Info");
-	if (xref->info)
-		fz_keepobj(xref->info);
 
 	pagecount = pdf_getpagecount(xref);
 }

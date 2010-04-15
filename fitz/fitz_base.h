@@ -33,16 +33,6 @@
 #define M_SQRT2 1.41421356237309504880
 #endif
 
-/* Some useful semi-standard functions */
-
-extern char *fz_strsep(char **stringp, const char *delim);
-extern int fz_strlcpy(char *dst, const char *src, int n);
-extern int fz_strlcat(char *dst, const char *src, int n);
-
-extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
-extern int fz_opterr, fz_optind, fz_optopt;
-extern char *fz_optarg;
-
 #ifdef _MSC_VER /* stupid stone-age compiler */
 
 #include <io.h>
@@ -99,7 +89,7 @@ extern unsigned fz_cpuflags;
 #ifndef __printflike
 #if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
 #define __printflike(fmtarg, firstvararg) \
-        __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+	__attribute__((__format__ (__printf__, fmtarg, firstvararg)))
 #else
 #define __printflike(fmtarg, firstvararg)
 #endif
@@ -133,32 +123,44 @@ extern unsigned fz_cpuflags;
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
 #endif
 
-/* plan9 stuff for utf-8 */
+/* utf-8 encoding and decoding */
 int chartorune(int *rune, char *str);
 int runetochar(char *str, int *rune);
 int runelen(int c);
 
+/* useful string functions */
+extern char *fz_strsep(char **stringp, const char *delim);
+extern int fz_strlcpy(char *dst, const char *src, int n);
+extern int fz_strlcat(char *dst, const char *src, int n);
+
+/* getopt */
+extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
+extern int fz_opterr, fz_optind, fz_optopt;
+extern char *fz_optarg;
+
+/* memory allocation */
+void *fz_malloc(int n);
+void *fz_realloc(void *p, int n);
+void fz_free(void *p);
+char *fz_strdup(char *s);
+
 /*
  * Error handling.
  */
+
 typedef int fz_error;
 
 extern char fz_errorbuf[];
-
-#define fz_throw(...) fz_throwimp(__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_rethrow(cause, ...) fz_rethrowimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_catch(cause, ...) fz_catchimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_okay ((fz_error)0)
 
 void fz_warn(char *fmt, ...) __printflike(1,2);
 fz_error fz_throwimp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
 fz_error fz_rethrowimp(fz_error cause, const char *file, int line, const char *func, char *fmt, ...) __printflike(5, 6);
 fz_error fz_catchimp(fz_error cause, const char *file, int line, const char *func, char *fmt, ...) __printflike(5, 6);
 
-void *fz_malloc(int n);
-void *fz_realloc(void *p, int n);
-void fz_free(void *p);
-char *fz_strdup(char *s);
+#define fz_throw(...) fz_throwimp(__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define fz_rethrow(cause, ...) fz_rethrowimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define fz_catch(cause, ...) fz_catchimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define fz_okay ((fz_error)0)
 
 /*
  * Generic hash-table with fixed-length keys.
@@ -202,7 +204,6 @@ extern fz_rect fz_infiniterect;
 	| c d 0 |
 	\ e f 1 /
 */
-
 struct fz_matrix_s
 {
 	float a, b, c, d, e, f;
