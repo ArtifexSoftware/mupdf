@@ -893,6 +893,8 @@ Lsetcolor:
 			if (!subtype)
 				return fz_throw("no XObject subtype specified");
 
+			clearstack(csi);
+
 			if (!strcmp(fz_toname(subtype), "Form"))
 			{
 				pdf_xobject *xobj;
@@ -905,7 +907,6 @@ Lsetcolor:
 				if (!xobj->resources)
 					xobj->resources = fz_keepobj(rdb);
 
-				clearstack(csi);
 				error = pdf_runxobject(csi, xref, rdb, xobj);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");
