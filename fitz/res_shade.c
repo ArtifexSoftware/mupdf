@@ -26,3 +26,56 @@ fz_boundshade(fz_shade *shade, fz_matrix ctm)
 	return fz_transformrect(ctm, shade->bbox);
 }
 
+void
+fz_debugshade(fz_shade *shade)
+{
+	int i, j, n;
+	float *vert;
+
+	printf("shade {\n");
+
+	printf("  bbox [%g %g %g %g]\n",
+		shade->bbox.x0, shade->bbox.y0,
+		shade->bbox.x1, shade->bbox.y1);
+
+	printf("  colorspace %s\n", shade->cs->name);
+
+	printf("  matrix [%g %g %g %g %g %g]\n",
+			shade->matrix.a, shade->matrix.b, shade->matrix.c, 
+			shade->matrix.d, shade->matrix.e, shade->matrix.f);
+
+	if (shade->usebackground)
+	{
+		printf("  background [");
+		for (i = 0; i < shade->cs->n; i++)
+			printf("%s%g", i == 0 ? "" : " ", shade->background[i]);
+		printf("]\n");
+	}
+
+	if (shade->usefunction)
+	{
+		printf("  function\n");
+		n = 3;
+	}
+	else
+		n = 2 + shade->cs->n;
+
+	vert = shade->mesh;
+	while (i < shade->meshlen)
+	{
+		float x = vert[0];
+		float y = vert[1];
+		printf("  (%g, %g): ", x, y);
+
+		for (j = 2; j < n; j++)
+			printf("%s%g", j == 2 ? "" : " ", vert[j]);
+		printf("\n");
+		
+		vert += n;
+		i++;
+	}
+
+	printf("}\n");
+}
+
+
