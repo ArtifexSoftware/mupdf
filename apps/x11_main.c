@@ -105,7 +105,7 @@ static void winopen(void)
 
 	xdpy = XOpenDisplay(nil);
 	if (!xdpy)
-		winerror(&gapp, fz_throw("could not open display"));
+		winerror(&gapp, fz_throw("cannot open display"));
 
 	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
 	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);

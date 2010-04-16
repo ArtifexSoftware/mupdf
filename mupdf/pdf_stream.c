@@ -15,7 +15,7 @@ pdf_isstream(pdf_xref *xref, int num, int gen)
 	error = pdf_cacheobject(xref, num, gen);
 	if (error)
 	{
-		fz_catch(error, "could not load object, ignoring error");
+		fz_catch(error, "cannot load object, ignoring error");
 		return 0;
 	}
 
