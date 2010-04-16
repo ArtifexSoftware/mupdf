@@ -590,6 +590,27 @@ parsedecode(fz_obj *decode, int ncomp,
 	return fz_okay;
 }
 
+static int
+getdata(fz_stream *stream, int bps)
+{
+	unsigned int bitmask = (1 << bps) - 1;
+	unsigned int buf = 0;
+	int bits = 0;
+	int s;
+
+	while (bits < bps)
+	{
+		buf = (buf << 8) | (fz_readbyte(stream) & 0xff);
+		bits += 8;
+	}
+	s = buf >> (bits - bps);
+	if (bps < 32)
+		s = s & bitmask;
+	bits -= bps;
+
+	return s;
+}
+
 static fz_error
 pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 {
@@ -602,11 +623,12 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	float x0, x1, y0, y1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, z;
+	int i;
 	int bitspervertex;
 	int bytepervertex;
-	fz_buffer *buf;
+	fz_stream *stream;
 	int n;
+	int m;
 	int j;
 	float cval[FZ_MAXCOLORS];
 
@@ -639,72 +661,47 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 	bitspervertex = bpflag + bpcoord * 2 + bpcomp * ncomp;
 	bytepervertex = (bitspervertex+7) / 8;
 
-	error = pdf_loadstream(&buf, xref, fz_tonum(dict), fz_togen(dict));
-	if (error)
-		return fz_rethrow(error, "unable to load shading stream");
+	shade->meshlen = 0;
+	shade->meshcap = 0;
+	shade->mesh = nil;
+	growshademesh(shade, 1024);
 
 	n = 2 + ncomp;
 	j = 0;
-	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
-	{
-		flag = *buf->rp++;
 
-		t = *buf->rp++;
-		t = (t << 8) | *buf->rp++;
-		t = (t << 8) | *buf->rp++;
+	error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
+	if (error)
+		return fz_rethrow(error, "unable to open shading stream");
+
+	while (fz_peekbyte(stream) != EOF)
+	{
+		flag = getdata(stream, bpflag);
+
+		t = getdata(stream, bpcoord);
 		x = x0 + (t * (x1 - x0) / (pow(2, 24) - 1));
 
-		t = *buf->rp++;
-		t = (t << 8) | *buf->rp++;
-		t = (t << 8) | *buf->rp++;
+		t = getdata(stream, bpcoord);
 		y = y0 + (t * (y1 - y0) / (pow(2, 24) - 1));
 
-		for (i=0; i < ncomp; ++i)
+		for (i = 0; i < ncomp; i++)
 		{
-			t = *buf->rp++;
-			t = (t << 8) | *buf->rp++;
+			t = getdata(stream, bpcomp);
+			cval[i] = t / (double)(pow(2, 16) - 1);
 		}
 
 		if (flag == 0)
-		{
-			j += n;
-		}
-		if (flag == 1 || flag == 2)
-		{
-			j += 3 * n;
-		}
-	}
-	buf->rp = buf->bp;
+			m = 2 + ncomp;
+		else if (flag == 1 || flag == 2)
+			m = 3 * (2 + ncomp);
 
-	shade->mesh = (float*) malloc(sizeof(float) * j);
-	/* 8, 24, 16 only */
-	j = 0;
-	for (z = 0; z < (buf->wp - buf->bp) / bytepervertex; ++z)
-	{
-		flag = *buf->rp++;
-
-		t = *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		x = x0 + (t * (x1 - x0) / (pow(2, 24) - 1));
-
-		t = *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		t = (t << 8) + *buf->rp++;
-		y = y0 + (t * (y1 - y0) / (pow(2, 24) - 1));
-
-		for (i=0; i < ncomp; ++i)
-		{
-			t = *buf->rp++;
-			t = (t << 8) + *buf->rp++;
-			cval[i] = t / (double)(pow(2, 16) - 1);
-		}
+		if (shade->meshlen + m >= shade->meshcap)
+			growshademesh(shade, shade->meshcap + 1024);
 
 		if (flag == 0)
 		{
 			shade->mesh[j++] = x;
 			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; ++i)
+			for (i=0; i < ncomp; i++)
 			{
 				shade->mesh[j++] = cval[i];
 			}
@@ -716,7 +713,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 			j+= 2 * n;
 			shade->mesh[j++] = x;
 			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; ++i)
+			for (i=0; i < ncomp; i++)
 			{
 				shade->mesh[j++] = cval[i];
 			}
@@ -728,41 +725,20 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict)
 			j+= 2 * n;
 			shade->mesh[j++] = x;
 			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; ++i)
+			for (i=0; i < ncomp; i++)
 			{
 				shade->mesh[j++] = cval[i];
 			}
 		}
 	}
 
-	shade->meshlen = j / n / 3;
+	fz_dropstream(stream);
 
-	fz_dropbuffer(buf);
+	shade->meshlen = j / n / 3;
 
 	pdf_logshade("}\n");
 
 	return fz_okay;
-}
-
-static int
-getdata(fz_stream *stream, int bps)
-{
-	unsigned int bitmask = (1 << bps) - 1;
-	unsigned int buf = 0;
-	int bits = 0;
-	int s;
-
-	while (bits < bps)
-	{
-		buf = (buf << 8) | (fz_readbyte(stream) & 0xff);
-		bits += 8;
-	}
-	s = buf >> (bits - bps);
-	if (bps < 32)
-		s = s & bitmask;
-	bits -= bps;
-
-	return s;
 }
 
 static fz_error
