@@ -41,7 +41,7 @@ fz_debugshade(fz_shade *shade)
 	printf("  colorspace %s\n", shade->cs->name);
 
 	printf("  matrix [%g %g %g %g %g %g]\n",
-			shade->matrix.a, shade->matrix.b, shade->matrix.c, 
+			shade->matrix.a, shade->matrix.b, shade->matrix.c,
 			shade->matrix.d, shade->matrix.e, shade->matrix.f);
 
 	if (shade->usebackground)
@@ -61,16 +61,15 @@ fz_debugshade(fz_shade *shade)
 		n = 2 + shade->cs->n;
 
 	vert = shade->mesh;
+	i = 0;
 	while (i < shade->meshlen)
 	{
-		float x = vert[0];
-		float y = vert[1];
-		printf("  (%g, %g): ", x, y);
+		printf("  (%g, %g): ", vert[0], vert[1]);
 
 		for (j = 2; j < n; j++)
 			printf("%s%g", j == 2 ? "" : " ", vert[j]);
 		printf("\n");
-		
+
 		vert += n;
 		i++;
 	}
