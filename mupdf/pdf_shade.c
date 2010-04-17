@@ -692,6 +692,9 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 	shade->meshlen /= n;
 	shade->meshlen /= 3;
 
+	for (i = 0; i < ncomp; i++)
+		free(c[i]);
+
 	fz_free(x);
 	fz_free(y);
 
