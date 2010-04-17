@@ -27,6 +27,21 @@ pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
 	mesh[i*3+2] = t;
 }
 
+static void
+growshademesh(fz_shade *shade, int amount)
+{
+	if (shade->meshlen + amount < shade->meshcap)
+		return;
+
+	if (shade->meshcap == 0)
+		shade->meshcap = 1024;
+
+	while (shade->meshlen + amount > shade->meshcap)
+		shade->meshcap = (shade->meshcap * 3) / 2;
+
+	shade->mesh = fz_realloc(shade->mesh, sizeof(float) * shade->meshcap);
+}
+
 static fz_error
 pdf_samplecompositeshadefunction(fz_shade *shade,
 	pdf_function *func, float t0, float t1)
@@ -426,13 +441,6 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	return fz_okay;
 }
 
-static void
-growshademesh(fz_shade *shade, int amount)
-{
-	shade->meshcap = shade->meshcap + amount;
-	shade->mesh = fz_realloc(shade->mesh, sizeof(float) * shade->meshcap);
-}
-
 static int
 getdata(fz_stream *stream, int bps)
 {
@@ -467,7 +475,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	int i;
 	int bitspervertex;
 	int bytepervertex;
-	int n, j, m;
+	int n, j;
 	float cval[FZ_MAXCOLORS];
 
 	int flag;
@@ -507,7 +515,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	shade->meshlen = 0;
 	shade->meshcap = 0;
 	shade->mesh = nil;
-	growshademesh(shade, 1024);
 
 	n = 2 + ncomp;
 	j = 0;
@@ -529,15 +536,8 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 		}
 
 		if (flag == 0)
-			m = 2 + ncomp;
-		else if (flag == 1 || flag == 2)
-			m = 3 * (2 + ncomp);
-
-		if (shade->meshlen + m >= shade->meshcap)
-			growshademesh(shade, shade->meshcap + 1024);
-
-		if (flag == 0)
 		{
+			growshademesh(shade, 2 + ncomp);
 			shade->mesh[j++] = x;
 			shade->mesh[j++] = y;
 			for (i=0; i < ncomp; i++)
@@ -547,6 +547,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 		}
 		if (flag == 1)
 		{
+			growshademesh(shade, 3 * (2 + ncomp));
 			memcpy(&(shade->mesh[j]), &(shade->mesh[j - 2 * n]), n * sizeof(float));
 			memcpy(&(shade->mesh[j + 1 * n]), &(shade->mesh[j - 1 * n]), n * sizeof(float));
 			j+= 2 * n;
@@ -559,6 +560,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 		}
 		if (flag == 2)
 		{
+			growshademesh(shade, 3 * (2 + ncomp));
 			memcpy(&(shade->mesh[j]), &(shade->mesh[j - 3 * n]), n * sizeof(float));
 			memcpy(&(shade->mesh[j + 1 * n]), &(shade->mesh[j - 1 * n]), n * sizeof(float));
 			j+= 2 * n;
@@ -658,13 +660,11 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 	shade->meshlen = 0;
 	shade->meshcap = 0;
 	shade->mesh = nil;
-	growshademesh(shade, 1024);
 
 #define ADD_VERTEX(idx) \
 			{\
 				int z;\
-				if (shade->meshlen + 2 + ncomp >= shade->meshcap) \
-					growshademesh(shade, shade->meshcap + 1024); \
+				growshademesh(shade, 2 + ncomp); \
 				shade->mesh[j++] = x[idx];\
 				shade->mesh[j++] = y[idx];\
 				for (z = 0; z < ncomp; z++) \
@@ -833,38 +833,41 @@ split_stripe(pdf_tensorpatch *s0, pdf_tensorpatch *s1, const pdf_tensorpatch *p)
 	copycolor(s1->color[3], p->color[3]);
 }
 
-static inline int setvertex(float *mesh, fz_point pt, float *color, int ptr, int ncomp)
+static inline void
+setvertex(float *mesh, fz_point pt, float *color, int ncomp)
 {
 	int i;
 
-	mesh[ptr++] = pt.x;
-	mesh[ptr++] = pt.y;
+	mesh[0] = pt.x;
+	mesh[1] = pt.y;
 	for (i=0; i < ncomp; i++)
 	{
-		mesh[ptr++] = color[i];
+		mesh[2 + i] = color[i];
 	}
-
-	return ptr;
 }
 
-static int
-triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ptr, int ncomp)
+static void
+triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ncomp)
 {
-	ptr = setvertex(shade->mesh, p.pole[0][0], p.color[0], ptr, ncomp);
-	ptr = setvertex(shade->mesh, p.pole[3][0], p.color[1], ptr, ncomp);
-	ptr = setvertex(shade->mesh, p.pole[3][3], p.color[2], ptr, ncomp);
-	ptr = setvertex(shade->mesh, p.pole[0][0], p.color[0], ptr, ncomp);
-	ptr = setvertex(shade->mesh, p.pole[3][3], p.color[2], ptr, ncomp);
-	ptr = setvertex(shade->mesh, p.pole[0][3], p.color[3], ptr, ncomp);
+	growshademesh(shade, 6 * (2 + ncomp));
 
-	if (shade->meshcap - 1024 < ptr)
-		growshademesh(shade, 1024);
+	setvertex(&shade->mesh[shade->meshlen], p.pole[0][0], p.color[0], ncomp);
+	shade->meshlen += 2 + ncomp;
+	setvertex(&shade->mesh[shade->meshlen], p.pole[3][0], p.color[1], ncomp);
+	shade->meshlen += 2 + ncomp;
+	setvertex(&shade->mesh[shade->meshlen], p.pole[3][3], p.color[2], ncomp);
+	shade->meshlen += 2 + ncomp;
 
-	return ptr;
+	setvertex(&shade->mesh[shade->meshlen], p.pole[0][0], p.color[0], ncomp);
+	shade->meshlen += 2 + ncomp;
+	setvertex(&shade->mesh[shade->meshlen], p.pole[3][3], p.color[2], ncomp);
+	shade->meshlen += 2 + ncomp;
+	setvertex(&shade->mesh[shade->meshlen], p.pole[0][3], p.color[3], ncomp);
+	shade->meshlen += 2 + ncomp;
 }
 
-static int
-drawstripe(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
+static void
+drawstripe(pdf_tensorpatch patch, fz_shade *shade, int ncomp, int depth)
 {
 	pdf_tensorpatch s0, s1;
 
@@ -874,20 +877,18 @@ drawstripe(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth
 
 	if (depth >= SEGMENTATION_DEPTH)
 	{
-		ptr = triangulatepatch(s0, shade, ptr, ncomp);
-		ptr = triangulatepatch(s1, shade, ptr, ncomp);
+		triangulatepatch(s0, shade, ncomp);
+		triangulatepatch(s1, shade, ncomp);
 	}
 	else
 	{
-		ptr = drawstripe(s0, shade, ptr, ncomp, depth);
-		ptr = drawstripe(s1, shade, ptr, ncomp, depth);
+		drawstripe(s0, shade, ncomp, depth);
+		drawstripe(s1, shade, ncomp, depth);
 	}
-
-	return ptr;
 }
 
-static int
-drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
+static void
+drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ncomp, int depth)
 {
 	pdf_tensorpatch s0, s1;
 
@@ -896,16 +897,14 @@ drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ptr, int ncomp, int depth)
 
 	if (depth > SEGMENTATION_DEPTH)
 	{
-		ptr = drawstripe(s0, shade, ptr, ncomp, 0);
-		ptr = drawstripe(s1, shade, ptr, ncomp, 0);
+		drawstripe(s0, shade, ncomp, 0);
+		drawstripe(s1, shade, ncomp, 0);
 	}
 	else
 	{
-		ptr = drawpatch(s0, shade, ptr, ncomp, depth);
-		ptr = drawpatch(s1, shade, ptr, ncomp, depth);
+		drawpatch(s0, shade, ncomp, depth);
+		drawpatch(s1, shade, ncomp, depth);
 	}
-
-	return ptr;
 }
 
 static fz_error
@@ -918,7 +917,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 	fz_point p0, p1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, n, j;
+	int i, n;
 	unsigned int t;
 	int flag;
 	fz_point p[12];
@@ -953,10 +952,8 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 
 	shade->meshcap = 0;
 	shade->mesh = nil;
-	growshademesh(shade, 1024);
 
 	n = 2 + ncomp;
-	j = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -995,10 +992,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 		patch.pole[0][1] = p[11];
 		filltensorinterior(&patch);
 
-		j = drawpatch(patch, shade, j, ncomp, 0);
+		drawpatch(patch, shade, ncomp, 0);
 	}
 
-	shade->meshlen = j / n / 3;
+	shade->meshlen = shade->meshlen / n / 3;
 
 	pdf_logshade("}\n");
 
@@ -1015,7 +1012,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 	float x0, x1, y0, y1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, n, j;
+	int i, n;
 	unsigned int t;
 	int flag;
 	fz_point p[16];
@@ -1050,10 +1047,8 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 
 	shade->meshcap = 0;
 	shade->mesh = nil;
-	growshademesh(shade, 1024);
 
 	n = 2 + ncomp;
-	j = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -1095,10 +1090,10 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 		patch.pole[2][2] = p[14];
 		patch.pole[2][1] = p[15];
 
-		j = drawpatch(patch, shade, j, ncomp, 0);
+		drawpatch(patch, shade, ncomp, 0);
 	}
 
-	shade->meshlen = j / n / 3;
+	shade->meshlen = shade->meshlen / n / 3;
 
 	pdf_logshade("}\n");
 
