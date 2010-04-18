@@ -49,3 +49,4 @@ fz_freedevice(fz_device *dev)
 		dev->freeuser(dev->user);
 	fz_free(dev);
 }
+
