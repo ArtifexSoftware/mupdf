@@ -1220,13 +1220,37 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 	}
 
 	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
-	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
-	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
-	vprow = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
-	if (type == 5 && vprow < 2)
+	if (type >= 4 && type <= 7)
 	{
-		error = fz_throw("VerticesPerRow must be greater than or equal to 2");
-		goto cleanup;
+		if (bpcoord != 1 && bpcoord != 2 && bpcoord != 4 && bpcoord != 4 &&
+			bpcoord != 8 && bpcoord != 12 && bpcoord != 16 &&
+			bpcoord != 24 && bpcoord != 32)
+			fz_warn("invalid number of bits per vertex coordinate in shading, continuing...");
+	}
+
+	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+	if (type >= 4 && type <= 7)
+	{
+		if (bpcomp != 1 && bpcomp != 2 && bpcomp != 4 && bpcomp != 4 &&
+			bpcomp != 8 && bpcomp != 12 && bpcomp != 16)
+			fz_warn("invalid number of bits per vertex color component in shading, continuing...");
+	}
+
+	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
+	if (type == 4 || type == 6 || type == 7)
+	{
+		if (bpflag != 2 && bpflag != 4 && bpflag != 8)
+			fz_warn("invalid number of bits per vertex flag in shading, continuing...");
+	}
+
+	vprow = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
+	if (type == 5)
+	{
+		if (vprow < 2)
+		{
+			vprow = 2;
+			fz_warn("invalid number of vertices per row in shading, continuing...");
+		}
 	}
 
 	obj = fz_dictgets(dict, "Decode");
@@ -1239,7 +1263,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 			goto cleanup;
 		}
 	}
-	else if (type >=4 && type <=7 )
+	else if (type >= 4 && type <= 7)
 		fz_warn("shading vertex color decoding invalid, continuing...");
 
 	funcs = 0;
