@@ -20,14 +20,6 @@ struct pdf_tensorpatch_s
 };
 
 static void
-pdf_setmeshvalue(float *mesh, int i, float x, float y, float t)
-{
-	mesh[i*3+0] = x;
-	mesh[i*3+1] = y;
-	mesh[i*3+2] = t;
-}
-
-static void
 growshademesh(fz_shade *shade, int amount)
 {
 	if (shade->meshlen + amount < shade->meshcap)
@@ -40,6 +32,64 @@ growshademesh(fz_shade *shade, int amount)
 		shade->meshcap = (shade->meshcap * 3) / 2;
 
 	shade->mesh = fz_realloc(shade->mesh, sizeof(float) * shade->meshcap);
+}
+
+/* adds triangle (x0, y0) -> (x1, y1) -> (x2, y2) to mesh */
+static void
+pdf_addtriangle(fz_shade *shade,
+	float x0, float y0, float *color0,
+	float x1, float y1, float *color1,
+	float x2, float y2, float *color2)
+{
+	int triangleentries;
+	int vertexentries;
+	int ncomp;
+	int i;
+
+	if (shade->usefunction)
+		ncomp = 3;
+	else
+		ncomp = 2 + shade->cs->n;
+
+	vertexentries = 2 + ncomp;
+	triangleentries = 3 * vertexentries;
+
+	growshademesh(shade, triangleentries);
+
+	shade->mesh[shade->meshlen++] = x0;
+	shade->mesh[shade->meshlen++] = y0;
+	for (i = 2; i < ncomp; i++)
+		shade->mesh[shade->meshlen++] = color0[i - 2];
+
+	shade->mesh[shade->meshlen++] = x1;
+	shade->mesh[shade->meshlen++] = y1;
+	for (i = 2; i < ncomp; i++)
+		shade->mesh[shade->meshlen++] = color1[i - 2];
+
+	shade->mesh[shade->meshlen++] = x2;
+	shade->mesh[shade->meshlen++] = y2;
+	for (i = 2; i < ncomp; i++)
+		shade->mesh[shade->meshlen++] = color2[i - 2];
+}
+
+/* adds quad triangles (x0, y0) -> (x1, y1) -> (x3, y3) and
+   (x1, y1) -> (x3, y3) -> (x2, y2) to mesh */
+static void
+pdf_addquad(fz_shade *shade,
+	float x0, float y0, float *color0,
+	float x1, float y1, float *color1,
+	float x2, float y2, float *color2,
+	float x3, float y3, float *color3)
+{
+	pdf_addtriangle(shade,
+			x0, y0, color0,
+			x1, y1, color1,
+			x3, y3, color3);
+
+	pdf_addtriangle(shade,
+			x1, y1, color1,
+			x3, y3, color3,
+			x2, y2, color2);
 }
 
 static fz_error
@@ -110,12 +160,8 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref,
 	float x, y;
 	float xn, yn;
 	float x0, y0, x1, y1;
-	int n;
-	int ncomp;
 
 	pdf_logshade("load type1 shade {\n");
-
-	ncomp = shade->cs->n;
 
 	x0 = domain[0];
 	x1 = domain[1];
@@ -127,53 +173,49 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref,
 			matrix.a, matrix.b, matrix.c,
 			matrix.d, matrix.e, matrix.f);
 
-	shade->meshlen = NSEGS * NSEGS * 2;
-	shade->mesh = fz_malloc(sizeof(float) * (2 + ncomp) * 3 * shade->meshlen);
-
-#define ADD_VERTEX(xx, yy) \
-			{\
-				fz_point p;\
-				float cp[2], cv[FZ_MAXCOLORS];\
-				int c;\
-				p.x = xx;\
-				p.y = yy;\
-				p = fz_transformpoint(matrix, p);\
-				shade->mesh[n++] = p.x;\
-				shade->mesh[n++] = p.y;\
-				\
-				cp[0] = xx;\
-				cp[1] = yy;\
-				error = pdf_evalfunction(func, cp, 2, cv, ncomp);\
-				if (error) \
-					return fz_rethrow(error, "unable to evaluate shading function"); \
-				\
-				for (c = 0; c < ncomp; c++)\
-				{\
-					shade->mesh[n++] = cv[c];\
-				}\
-			}
-
-	n = 0;
 	for (yy = 0; yy < NSEGS; yy++)
 	{
-		y = y0 + (y1 - y0) * yy / (float)NSEGS;
-		yn = y0 + (y1 - y0) * (yy + 1) / (float)NSEGS;
+		y = y0 + (y1 - y0) * yy / (float) NSEGS;
+		yn = y0 + (y1 - y0) * (yy + 1) / (float) NSEGS;
+
 		for (xx = 0; xx < NSEGS; xx++)
 		{
-			x = x0 + (x1 - x0) * (xx / (float)NSEGS);
-			xn = x0 + (x1 - x0) * (xx + 1) / (float)NSEGS;
+			float vcolor[4][FZ_MAXCOLORS];
+			fz_point vcoord[4];
+			int i;
 
-			ADD_VERTEX(x, y);
-			ADD_VERTEX(xn, y);
-			ADD_VERTEX(xn, yn);
+			x = x0 + (x1 - x0) * (xx / (float) NSEGS);
+			xn = x0 + (x1 - x0) * (xx + 1) / (float) NSEGS;
 
-			ADD_VERTEX(x, y);
-			ADD_VERTEX(xn, yn);
-			ADD_VERTEX(x, yn);
+			vcoord[0].x =  x; vcoord[0].y =  y;
+			vcoord[1].x = xn; vcoord[1].y =  y;
+			vcoord[2].x = xn; vcoord[2].y = yn;
+			vcoord[3].x =  x; vcoord[3].y = yn;
+
+			for (i = 0; i < 4; i++)
+			{
+				float point[2];
+
+				point[0] = vcoord[i].x;
+				point[1] = vcoord[i].y;
+
+				error = pdf_evalfunction(func, point, 2, vcolor[i], shade->cs->n);
+				if (error)
+					return fz_rethrow(error, "unable to evaluate shading function");
+			}
+
+			for (i = 0; i < 4; i++)
+				vcoord[i] = fz_transformpoint(matrix, vcoord[i]);
+
+			pdf_addquad(shade,
+				vcoord[0].x, vcoord[0].y, vcolor[0],
+				vcoord[1].x, vcoord[1].y, vcolor[1],
+				vcoord[2].x, vcoord[2].y, vcolor[2],
+				vcoord[3].x, vcoord[3].y, vcolor[3]);
 		}
 	}
 
-#undef ADD_VERTEX
+	shade->meshlen = shade->meshlen / (2 + shade->cs->n) / 3;
 
 	pdf_logshade("}\n");
 
@@ -193,6 +235,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	float dist;
 	int n;
 	fz_error error;
+	float tmin, tmax;
 
 	pdf_logshade("load type2 shade {\n");
 
@@ -230,9 +273,6 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 		e1 = 0;
 	}
 
-	shade->meshlen = 2 + e0 * 2 + e1 * 2;
-	shade->mesh = fz_malloc(sizeof(float) * 3*3 * shade->meshlen);
-
 	p1.x = x0 + HUGENUM * cos(theta);
 	p1.y = y0 + HUGENUM * sin(theta);
 	p2.x = x1 + HUGENUM * cos(theta);
@@ -248,26 +288,26 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	pdf_logshade("p4 %g %g\n", p4.x, p4.y);
 
 	n = 0;
+	tmin = 0.0f;
+	tmax = 1.0f;
 
 	/* if the axis has virtually length 0 (a point), use the same axis
 	position t = 0 for all triangle vertices */
 	if (dist < FLT_EPSILON)
 	{
-		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
+		pdf_addquad(shade,
+			p1.x, p1.y, &tmin,
+			p2.x, p2.y, &tmin,
+			p4.x, p4.y, &tmin,
+			p3.x, p3.y, &tmin);
 	}
 	else
 	{
-		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
+		pdf_addquad(shade,
+			p1.x, p1.y, &tmin,
+			p2.x, p2.y, &tmax,
+			p4.x, p4.y, &tmax,
+			p3.x, p3.y, &tmin);
 	}
 
 	if (e0)
@@ -277,12 +317,11 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 		ep3.x = p3.x - (x1 - x0) / dist * HUGENUM;
 		ep3.y = p3.y - (y1 - y0) / dist * HUGENUM;
 
-		pdf_setmeshvalue(shade->mesh, n++, ep1.x, ep1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p1.x, p1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, ep1.x, ep1.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, p3.x, p3.y, 0);
-		pdf_setmeshvalue(shade->mesh, n++, ep3.x, ep3.y, 0);
+		pdf_addquad(shade,
+			ep1.x, ep1.y, &tmin,
+			 p1.x,  p1.y, &tmin,
+			 p3.x,  p3.y, &tmin,
+			ep3.x, ep3.y, &tmin);
 	}
 
 	if (e1)
@@ -292,13 +331,14 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 		ep4.x = p4.x + (x1 - x0) / dist * HUGENUM;
 		ep4.y = p4.y + (y1 - y0) / dist * HUGENUM;
 
-		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, ep2.x, ep2.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, ep4.x, ep4.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, p2.x, p2.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, ep4.x, ep4.y, 1);
-		pdf_setmeshvalue(shade->mesh, n++, p4.x, p4.y, 1);
+		pdf_addquad(shade,
+			 p2.x,  p2.y, &tmax,
+			ep2.x, ep2.y, &tmax,
+			ep4.x, ep4.y, &tmax,
+			 p4.x,  p4.y, &tmax);
 	}
+
+	shade->meshlen = shade->meshlen / 3 / 3;
 
 	pdf_logshade("}\n");
 
@@ -306,25 +346,25 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 }
 
 static int
-buildannulusmesh(float* mesh, int pos,
-	float x0, float y0, float r0, float x1, float y1, float r1,
+buildannulusmesh(fz_shade *shade, int pos,
+	float x0, float y0, float r0,
+	float x1, float y1, float r1,
 	float c0, float c1, int nomesh)
 {
-	int n = pos * 3;
 	float dist = hypot(x1 - x0, y1 - y0);
 	float step;
 	float theta;
 	int i;
 
 	if (dist != 0)
-		theta = asin((r1 - r0) / dist) + M_PI/2.0 + atan2(y1 - y0, x1 - x0);
+		theta = asin((r1 - r0) / dist) + M_PI / 2.0 + atan2(y1 - y0, x1 - x0);
 	else
 		theta = 0;
 
 	if (!(theta >= 0 && theta <= M_PI))
 		theta = 0;
 
-	step = M_PI * 2. / (float)MAX_RAD_SEGS;
+	step = M_PI * 2.0 / (float) MAX_RAD_SEGS;
 
 	for (i = 0; i < MAX_RAD_SEGS; theta -= step, i++)
 	{
@@ -343,9 +383,10 @@ buildannulusmesh(float* mesh, int pos,
 		{
 			if (!nomesh)
 			{
-				pdf_setmeshvalue(mesh, n++, pt1.x, pt1.y, c1);
-				pdf_setmeshvalue(mesh, n++, pt2.x, pt2.y, c0);
-				pdf_setmeshvalue(mesh, n++, pt4.x, pt4.y, c0);
+				pdf_addtriangle(shade,
+					pt1.x, pt1.y, &c1,
+					pt2.x, pt2.y, &c0,
+					pt4.x, pt4.y, &c0);
 			}
 			pos++;
 		}
@@ -354,9 +395,10 @@ buildannulusmesh(float* mesh, int pos,
 		{
 			if (!nomesh)
 			{
-				pdf_setmeshvalue(mesh, n++, pt1.x, pt1.y, c1);
-				pdf_setmeshvalue(mesh, n++, pt3.x, pt3.y, c1);
-				pdf_setmeshvalue(mesh, n++, pt4.x, pt4.y, c0);
+				pdf_addtriangle(shade,
+					pt1.x, pt1.y, &c1,
+					pt3.x, pt3.y, &c1,
+					pt4.x, pt4.y, &c0);
 			}
 			pos++;
 		}
@@ -420,21 +462,26 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	ey1 = y1 + (y0 - y1) * rs;
 	er1 = r1 + (r0 - r1) * rs;
 
-	for (i=0; i<2; i++)
+	for (i = 0; i < 2; i++)
 	{
 		int pos = 0;
 		if (e0)
-			pos = buildannulusmesh(shade->mesh, pos, ex0, ey0, er0, x0, y0, r0, 0, 0, 1-i);
-		pos = buildannulusmesh(shade->mesh, pos, x0, y0, r0, x1, y1, r1, 0, 1., 1-i);
+			pos = buildannulusmesh(shade, pos,
+				ex0, ey0, er0,
+				x0, y0, r0, 0,
+				0, 1 - i);
+		pos = buildannulusmesh(shade, pos,
+			x0, y0, r0,
+			x1, y1, r1,
+			0, 1.0f, 1 - i);
 		if (e1)
-			pos = buildannulusmesh(shade->mesh, pos, x1, y1, r1, ex1, ey1, er1, 1., 1., 1-i);
-
-		if (i == 0)
-		{
-			shade->meshlen = pos;
-			shade->mesh = fz_malloc(sizeof(float) * 9 * shade->meshlen);
-		}
+			pos = buildannulusmesh(shade, pos,
+				x1, y1, r1,
+				ex1, ey1, er1,
+				1.0f, 1.0f, 1 - i);
 	}
+
+	shade->meshlen = shade->meshlen / 3 / 3;
 
 	pdf_logshade("}\n");
 
@@ -472,32 +519,27 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	float x0, x1, y0, y1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
+	float cval[4][FZ_MAXCOLORS];
+	int idx, intriangle, badtriangle;
 	int i;
-	int bitspervertex;
-	int bytepervertex;
-	int n, j;
-	float cval[FZ_MAXCOLORS];
 
-	int flag;
-	unsigned int t;
-	float x, y;
+	int flag[4];
+	float x[4], y[4];
 
 	pdf_logshade("load type4 shade {\n");
-
-	ncomp = shade->cs->n;
 
 	x0 = decode[0];
 	x1 = decode[1];
 	y0 = decode[2];
 	y1 = decode[3];
-	for (i = 0; i < ncomp; i++)
+	for (i = 0; i < shade->cs->n; i++)
 	{
 		c0[i] = decode[4 + i * 2 + 0];
 		c1[i] = decode[4 + i * 2 + 1];
 	}
 
 	pdf_logshade("decode [%g %g %g %g", x0, x1, y0, y1);
-	for (i = 0; i < ncomp; i++)
+	for (i = 0; i < shade->cs->n; i++)
 		pdf_logshade(" %g %g", c0[i], c1[i]);
 	pdf_logshade("]\n");
 
@@ -508,72 +550,96 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 		if (error)
 			return fz_rethrow(error, "cannot load shading function");
 	}
+	else
+		ncomp = shade->cs->n;
 
-	bitspervertex = bpflag + bpcoord * 2 + bpcomp * ncomp;
-	bytepervertex = (bitspervertex+7) / 8;
-
-	shade->meshlen = 0;
-	shade->meshcap = 0;
-	shade->mesh = nil;
-
-	n = 2 + ncomp;
-	j = 0;
+	idx = 0;
+	intriangle = 0;
+	badtriangle = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
-		flag = getdata(stream, bpflag);
+		unsigned int t;
+		int a, b, c;
+
+		flag[idx] = getdata(stream, bpflag);
 
 		t = getdata(stream, bpcoord);
-		x = x0 + (t * (x1 - x0) / (pow(2, 24) - 1));
+		x[idx] = x0 + (t * (x1 - x0) / (pow(2, 24) - 1));
 
 		t = getdata(stream, bpcoord);
-		y = y0 + (t * (y1 - y0) / (pow(2, 24) - 1));
+		y[idx] = y0 + (t * (y1 - y0) / (pow(2, 24) - 1));
 
 		for (i = 0; i < ncomp; i++)
 		{
 			t = getdata(stream, bpcomp);
-			cval[i] = t / (double)(pow(2, 16) - 1);
+			cval[idx][i] = t / (double)(pow(2, 16) - 1);
 		}
 
-		if (flag == 0)
+		if (!intriangle && flag[idx] == 0)
 		{
-			growshademesh(shade, 2 + ncomp);
-			shade->mesh[j++] = x;
-			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; i++)
-			{
-				shade->mesh[j++] = cval[i];
-			}
+			/* two more vertices necessary */
+			intriangle = 1;
 		}
-		if (flag == 1)
+		else if (intriangle && idx >= 2)
 		{
-			growshademesh(shade, 3 * (2 + ncomp));
-			memcpy(&(shade->mesh[j]), &(shade->mesh[j - 2 * n]), n * sizeof(float));
-			memcpy(&(shade->mesh[j + 1 * n]), &(shade->mesh[j - 1 * n]), n * sizeof(float));
-			j+= 2 * n;
-			shade->mesh[j++] = x;
-			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; i++)
-			{
-				shade->mesh[j++] = cval[i];
-			}
+			/* collected three vertices */
+			a = 0; b = 1; c = 2;
+			intriangle = 0;
 		}
-		if (flag == 2)
+		else if (!intriangle && flag[idx] == 1)
 		{
-			growshademesh(shade, 3 * (2 + ncomp));
-			memcpy(&(shade->mesh[j]), &(shade->mesh[j - 3 * n]), n * sizeof(float));
-			memcpy(&(shade->mesh[j + 1 * n]), &(shade->mesh[j - 1 * n]), n * sizeof(float));
-			j+= 2 * n;
-			shade->mesh[j++] = x;
-			shade->mesh[j++] = y;
-			for (i=0; i < ncomp; i++)
-			{
-				shade->mesh[j++] = cval[i];
-			}
+			/* re-use previous b c vertices */
+			a = 1; b = 2; c = 3;
+			intriangle = 0;
+
+			if (idx < 3)
+				badtriangle = 1;
 		}
+		else if (!intriangle && flag[idx] == 2)
+		{
+			/* re-use previous a c vertices */
+			a = 0; b = 2; c = 3;
+			intriangle = 0;
+
+			if (idx < 3)
+				badtriangle = 1;
+		}
+
+		if (intriangle || badtriangle)
+		{
+			idx++;
+			badtriangle = 0;
+		}
+		else
+		{
+			pdf_addtriangle(shade,
+					x[a], y[a], cval[a],
+					x[b], y[b], cval[b],
+					x[c], y[c], cval[c]);
+
+			flag[0] = flag[a];
+			flag[1] = flag[b];
+			flag[2] = flag[c];
+
+			x[0] = x[a];
+			x[1] = x[b];
+			x[2] = x[c];
+
+			y[0] = y[a];
+			y[1] = y[b];
+			y[2] = y[c];
+
+			memcpy(cval[0], cval[a], sizeof cval[0]);
+			memcpy(cval[1], cval[b], sizeof cval[1]);
+			memcpy(cval[2], cval[c], sizeof cval[2]);
+
+			idx = 3;
+		}
+
 	}
 
-	shade->meshlen = j / n / 3;
+	shade->meshlen = shade->meshlen / (2 + ncomp) / 3;
 
 	pdf_logshade("}\n");
 
@@ -586,32 +652,30 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 	int funcs, pdf_function **func, fz_stream *stream)
 {
 	fz_error error;
-	int vpc;
 	int ncomp;
 	float x0, x1, y0, y1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, n, j;
-	int p, q;
+	int i;
 	unsigned int t;
-	float *x, *y, *c[FZ_MAXCOLORS];
+	fz_point *pbuf;
+	float *cbuf;
+	int rows, col;
 
 	pdf_logshade("load type5 shade {\n");
-
-	ncomp = shade->cs->n;
 
 	x0 = decode[0];
 	x1 = decode[1];
 	y0 = decode[2];
 	y1 = decode[3];
-	for (i = 0; i < ncomp; i++)
+	for (i = 0; i < shade->cs->n; i++)
 	{
 		c0[i] = decode[4 + i * 2 + 0];
 		c1[i] = decode[4 + i * 2 + 1];
 	}
 
 	pdf_logshade("decode [%g %g %g %g", x0, x1, y0, y1);
-	for (i = 0; i < ncomp; i++)
+	for (i = 0; i < shade->cs->n; i++)
 		pdf_logshade(" %g %g", c0[i], c1[i]);
 	pdf_logshade("]\n");
 
@@ -622,81 +686,66 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 		if (error)
 			return fz_rethrow(error, "cannot sample shading function");
 	}
+	else
+		ncomp = shade->cs->n;
 
-	n = 2 + ncomp;
-	j = 0;
+	pbuf = fz_malloc(2 * vprow * sizeof(fz_point));
+	cbuf = fz_malloc(2 * vprow * FZ_MAXCOLORS * sizeof(float));
 
-	x = fz_malloc(sizeof(float) * vprow * BIGNUM);
-	y = fz_malloc(sizeof(float) * vprow * BIGNUM);
-	for (i = 0; i < ncomp; i++)
+	rows = 0;
+
+	do
 	{
-		c[i] = fz_malloc(sizeof(float) * vprow * BIGNUM);
-	}
-	q = 0;
+		fz_point *p = &pbuf[rows * vprow];
+		float *c = &cbuf[rows * vprow * FZ_MAXCOLORS];
 
-	while (fz_peekbyte(stream) != EOF)
-	{
-		for (p = 0; p < vprow; p++)
+		while (rows < 2)
 		{
-			int idx;
-			idx = q * vprow + p;
-
-			t = getdata(stream, bpcoord);
-			x[idx] = x0 + (t * (x1 - x0) / ((float)pow(2, bpcoord) - 1));
-			t = getdata(stream, bpcoord);
-			y[idx] = y0 + (t * (y1 - y0) / ((float)pow(2, bpcoord) - 1));
-
-			for (i=0; i < ncomp; i++)
+			for (col = 0; col < vprow; col++)
 			{
-				t = getdata(stream, bpcomp);
-				c[i][idx] = c0[i] + (t * (c1[i] - c0[i]) / (float)(pow(2, bpcomp) - 1));
+				t = getdata(stream, bpcoord);
+				p->x = x0 + (t * (x1 - x0) / (float) (pow(2, bpcoord) - 1));
+				t = getdata(stream, bpcoord);
+				p->y = y0 + (t * (y1 - y0) / (float) (pow(2, bpcoord) - 1));
+
+				for (i = 0; i < ncomp; i++)
+				{
+					t = getdata(stream, bpcomp);
+					c[i] = c0[i] + (t * (c1[i] - c0[i]) / (float) (pow(2, bpcomp) - 1));
+				}
+
+				p++;
+				c += FZ_MAXCOLORS;
 			}
+
+			rows++;
 		}
-		q++;
-	}
 
-	vpc = q;
 
-	shade->meshlen = 0;
-	shade->meshcap = 0;
-	shade->mesh = nil;
-
-#define ADD_VERTEX(idx) \
-			{\
-				int z;\
-				growshademesh(shade, 2 + ncomp); \
-				shade->mesh[j++] = x[idx];\
-				shade->mesh[j++] = y[idx];\
-				for (z = 0; z < ncomp; z++) \
-					shade->mesh[j++] = c[z][idx];\
-				shade->meshlen += 2 + ncomp; \
-			}
-
-	j = 0;
-	for (p = 0; p < vprow-1; p++)
-	{
-		for (q = 0; q < vpc-1; q++)
+		for (i = 0; i < vprow - 1; i++)
 		{
-			ADD_VERTEX(q * vprow + p);
-			ADD_VERTEX(q * vprow + p + 1);
-			ADD_VERTEX((q + 1) * vprow + p + 1);
+			int va = i;
+			int vb = i + 1;
+			int vc = i + 1 + vprow;
+			int vd = i + vprow;
 
-			ADD_VERTEX(q * vprow + p);
-			ADD_VERTEX((q + 1) * vprow + p + 1);
-			ADD_VERTEX((q + 1) * vprow + p);
+			pdf_addquad(shade,
+				pbuf[va].x, pbuf[va].y, &cbuf[va * FZ_MAXCOLORS],
+				pbuf[vb].x, pbuf[vb].y, &cbuf[vb * FZ_MAXCOLORS],
+				pbuf[vc].x, pbuf[vc].y, &cbuf[vc * FZ_MAXCOLORS],
+				pbuf[vd].x, pbuf[vd].y, &cbuf[vd * FZ_MAXCOLORS]);
 		}
-	}
 
-#undef ADD_VERTEX
+		memcpy(pbuf, &pbuf[vprow], vprow * sizeof(fz_point));
+		memcpy(cbuf, &cbuf[vprow * FZ_MAXCOLORS], vprow * FZ_MAXCOLORS * sizeof(float));
+		rows--;
 
-	shade->meshlen /= n;
-	shade->meshlen /= 3;
+	} while (fz_peekbyte(stream) != EOF);
 
-	for (i = 0; i < ncomp; i++)
-		free(c[i]);
+	shade->meshlen = shade->meshlen / (2 + ncomp) / 3 ;
 
-	fz_free(x);
-	fz_free(y);
+	free(pbuf);
+	free(cbuf);
 
 	pdf_logshade("}\n");
 
@@ -849,21 +898,11 @@ setvertex(float *mesh, fz_point pt, float *color, int ncomp)
 static void
 triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ncomp)
 {
-	growshademesh(shade, 6 * (2 + ncomp));
-
-	setvertex(&shade->mesh[shade->meshlen], p.pole[0][0], p.color[0], ncomp);
-	shade->meshlen += 2 + ncomp;
-	setvertex(&shade->mesh[shade->meshlen], p.pole[3][0], p.color[1], ncomp);
-	shade->meshlen += 2 + ncomp;
-	setvertex(&shade->mesh[shade->meshlen], p.pole[3][3], p.color[2], ncomp);
-	shade->meshlen += 2 + ncomp;
-
-	setvertex(&shade->mesh[shade->meshlen], p.pole[0][0], p.color[0], ncomp);
-	shade->meshlen += 2 + ncomp;
-	setvertex(&shade->mesh[shade->meshlen], p.pole[3][3], p.color[2], ncomp);
-	shade->meshlen += 2 + ncomp;
-	setvertex(&shade->mesh[shade->meshlen], p.pole[0][3], p.color[3], ncomp);
-	shade->meshlen += 2 + ncomp;
+	pdf_addquad(shade,
+		p.pole[0][0].x, p.pole[0][0].y, p.color[0],
+		p.pole[3][0].x, p.pole[3][0].y, p.color[1],
+		p.pole[3][3].x, p.pole[3][3].y, p.color[2],
+		p.pole[0][3].x, p.pole[0][3].y, p.color[3]);
 }
 
 static void
