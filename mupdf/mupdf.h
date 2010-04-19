@@ -183,6 +183,7 @@ typedef enum pdf_itemkind_e
 pdf_store * pdf_newstore(void);
 void pdf_emptystore(pdf_store *store);
 void pdf_dropstore(pdf_store *store);
+void pdf_debugstore(pdf_store *store);
 
 void pdf_agestoreditems(pdf_store *store);
 void pdf_evictageditems(pdf_store *store);
