@@ -534,7 +534,7 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 		blendover(temp, dev->dest);
 	}
 
-	fz_rendershade(shade, ctm, dev->model, temp);
+	fz_rendershade(shade, ctm, temp);
 	blendover(temp, dev->dest);
 
 	fz_droppixmap(temp);

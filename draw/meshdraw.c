@@ -311,12 +311,12 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n)
  */
 
 void
-fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap *dest)
+fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest)
 {
-	unsigned char clut[256][3];
+	unsigned char clut[256][FZ_MAXCOLORS];
 	unsigned char *s, *d;
 	fz_pixmap *temp;
-	float rgb[3];
+	float color[FZ_MAXCOLORS];
 	float tri[3][MAXN];
 	fz_point p;
 	int i, j, k, n;
@@ -329,11 +329,6 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 	{
 		n = 3;
 		temp = fz_newpixmap(pdf_devicegray, dest->x, dest->y, dest->w, dest->h);
-	}
-	else if (shade->cs != destcs)
-	{
-		n = 2 + shade->cs->n;
-		temp = fz_newpixmap(shade->cs, dest->x, dest->y, dest->w, dest->h);
 	}
 	else
 	{
@@ -352,20 +347,26 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 			p = fz_transformpoint(ctm, p);
 			tri[k][0] = p.x;
 			tri[k][1] = p.y;
-			for (j = 2; j < n; j++)
-				tri[k][j] = shade->mesh[( i * 3 + k) * n + j] * 255;
+			if (shade->usefunction)
+				tri[k][2] = shade->mesh[(i * 3 + k) * n + 2] * 255;
+			else
+			{
+				fz_convertcolor(shade->cs, shade->mesh + (i * 3 + k) * n + 2, 
+						temp->colorspace, tri[k] + 2);
+				for (j = 0; j < temp->colorspace->n; j++)
+					tri[k][j + 2] *= 255;
+			}
 		}
-		fz_drawtriangle(temp, tri[0], tri[1], tri[2], n);
+		fz_drawtriangle(temp, tri[0], tri[1], tri[2], 2 + temp->colorspace->n);
 	}
 
 	if (shade->usefunction)
 	{
 		for (i = 0; i < 256; i++)
 		{
-			fz_convertcolor(shade->cs, shade->function[i], destcs, rgb);
-			clut[i][0] = rgb[0] * 255;
-			clut[i][1] = rgb[1] * 255;
-			clut[i][2] = rgb[2] * 255;
+			fz_convertcolor(shade->cs, shade->function[i], dest->colorspace, color);
+			for (k = 0; k < dest->colorspace->n; k++)
+				clut[i][k] = color[k] * 255;
 		}
 
 		n = temp->w * temp->h;
@@ -375,19 +376,12 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_colorspace *destcs, fz_pixmap 
 		while (n--)
 		{
 			d[0] = s[0];
-			d[1] = fz_mul255(s[0], clut[s[1]][0]);
-			d[2] = fz_mul255(s[0], clut[s[1]][1]);
-			d[3] = fz_mul255(s[0], clut[s[1]][2]);
+			for (k = 0; k < dest->colorspace->n; k++)
+				d[k + 1] = fz_mul255(s[0], clut[s[1]][k]);
 			s += 2;
-			d += 4;
+			d += 1 + dest->colorspace->n;
 		}
 
-		fz_droppixmap(temp);
-	}
-
-	else if (shade->cs != destcs)
-	{
-		fz_convertpixmap(shade->cs, temp, destcs, dest);
 		fz_droppixmap(temp);
 	}
 }

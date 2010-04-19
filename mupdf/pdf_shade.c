@@ -9,7 +9,7 @@
 #define NSEGS 32
 #define MAX_RAD_SEGS 36
 
-#define SEGMENTATION_DEPTH 6
+#define SEGMENTATION_DEPTH 3
 
 typedef struct pdf_tensorpatch_s pdf_tensorpatch;
 
