@@ -119,6 +119,21 @@ fz_traceclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
+fz_traceclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+{
+	printf("<gsave>\n");
+	printf("<clipstrokepath ");
+	if (path->evenodd)
+		printf("winding=\"eofill\" ");
+	else
+		printf("winding=\"nonzero\" ");
+	fz_tracematrix(ctm);
+	printf(">\n");
+	fz_tracepath(path, 0);
+	printf("</clipstrokepath>\n");
+}
+
+static void
 fz_tracefilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
@@ -151,6 +166,17 @@ fz_tracecliptext(void *user, fz_text *text, fz_matrix ctm)
 	printf(">\n");
 	fz_debugtext(text, 0);
 	printf("</cliptext>\n");
+}
+
+static void
+fz_traceclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+{
+	printf("<gsave>\n");
+	printf("<clipstroketext font=\"%s\" ", text->font->name);
+	fz_tracematrix(fz_concat(ctm, text->trm));
+	printf(">\n");
+	fz_debugtext(text, 0);
+	printf("</clipstroketext>\n");
 }
 
 static void
@@ -211,10 +237,12 @@ fz_device *fz_newtracedevice(void)
 	dev->fillpath = fz_tracefillpath;
 	dev->strokepath = fz_tracestrokepath;
 	dev->clippath = fz_traceclippath;
+	dev->clipstrokepath = fz_traceclipstrokepath;
 
 	dev->filltext = fz_tracefilltext;
 	dev->stroketext = fz_tracestroketext;
 	dev->cliptext = fz_tracecliptext;
+	dev->clipstroketext = fz_traceclipstroketext;
 	dev->ignoretext = fz_traceignoretext;
 
 	dev->fillshade = fz_tracefillshade;

@@ -89,7 +89,7 @@ fz_boundtext(fz_text *text, fz_matrix ctm)
 }
 
 static void
-growtext(fz_text *text, int n)
+fz_growtext(fz_text *text, int n)
 {
 	if (text->len + n < text->cap)
 		return;
@@ -101,7 +101,7 @@ growtext(fz_text *text, int n)
 void
 fz_addtext(fz_text *text, int gid, int ucs, float x, float y)
 {
-	growtext(text, 1);
+	fz_growtext(text, 1);
 	text->els[text->len].ucs = ucs;
 	text->els[text->len].gid = gid;
 	text->els[text->len].x = x;

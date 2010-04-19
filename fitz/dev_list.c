@@ -49,11 +49,13 @@ fz_freedisplaynode(fz_displaynode *node)
 	case FZ_CMDFILLPATH:
 	case FZ_CMDSTROKEPATH:
 	case FZ_CMDCLIPPATH:
+	case FZ_CMDCLIPSTROKEPATH:
 		fz_freepath(node->item.path);
 		break;
 	case FZ_CMDFILLTEXT:
 	case FZ_CMDSTROKETEXT:
 	case FZ_CMDCLIPTEXT:
+	case FZ_CMDCLIPSTROKETEXT:
 	case FZ_CMDIGNORETEXT:
 		fz_freetext(node->item.text);
 		break;
@@ -103,6 +105,15 @@ fz_listclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
+fz_listclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+{
+	fz_displaynode *node;
+	node = fz_newdisplaynode(FZ_CMDCLIPSTROKEPATH, ctm, nil, nil, 0.0);
+	node->item.path = fz_clonepath(path);
+	fz_appenddisplaynode(user, node);
+}
+
+static void
 fz_listfilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
@@ -127,6 +138,15 @@ fz_listcliptext(void *user, fz_text *text, fz_matrix ctm)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDCLIPTEXT, ctm, nil, nil, 0.0);
+	node->item.text = fz_clonetext(text);
+	fz_appenddisplaynode(user, node);
+}
+
+static void
+fz_listclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+{
+	fz_displaynode *node;
+	node = fz_newdisplaynode(FZ_CMDCLIPSTROKETEXT, ctm, nil, nil, 0.0);
 	node->item.text = fz_clonetext(text);
 	fz_appenddisplaynode(user, node);
 }
@@ -193,10 +213,12 @@ fz_newlistdevice(fz_displaylist *list)
 	dev->fillpath = fz_listfillpath;
 	dev->strokepath = fz_liststrokepath;
 	dev->clippath = fz_listclippath;
+	dev->clipstrokepath = fz_listclipstrokepath;
 
 	dev->filltext = fz_listfilltext;
 	dev->stroketext = fz_liststroketext;
 	dev->cliptext = fz_listcliptext;
+	dev->clipstroketext = fz_listclipstroketext;
 	dev->ignoretext = fz_listignoretext;
 
 	dev->fillshade = fz_listfillshade;
@@ -250,6 +272,9 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
 		case FZ_CMDCLIPPATH:
 			dev->clippath(dev->user, node->item.path, ctm);
 			break;
+		case FZ_CMDCLIPSTROKEPATH:
+			dev->clipstrokepath(dev->user, node->item.path, ctm);
+			break;
 		case FZ_CMDFILLTEXT:
 			dev->filltext(dev->user, node->item.text, ctm,
 				node->colorspace, node->color, node->alpha);
@@ -260,6 +285,9 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
 			break;
 		case FZ_CMDCLIPTEXT:
 			dev->cliptext(dev->user, node->item.text, ctm);
+			break;
+		case FZ_CMDCLIPSTROKETEXT:
+			dev->clipstroketext(dev->user, node->item.text, ctm);
 			break;
 		case FZ_CMDIGNORETEXT:
 			dev->ignoretext(dev->user, node->item.text, ctm);

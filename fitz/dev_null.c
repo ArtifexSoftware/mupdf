@@ -4,9 +4,11 @@ static void fz_nullfreeuser(void *user) {}
 static void fz_nullfillpath(void *user, fz_path *path, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
 static void fz_nullstrokepath(void *user, fz_path *path, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
 static void fz_nullclippath(void *user, fz_path *path, fz_matrix ctm) {}
+static void fz_nullclipstrokepath(void *user, fz_path *path, fz_matrix ctm) {}
 static void fz_nullfilltext(void *user, fz_text *text, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
 static void fz_nullstroketext(void *user, fz_text *text, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
 static void fz_nullcliptext(void *user, fz_text *text, fz_matrix ctm) {}
+static void fz_nullclipstroketext(void *user, fz_text *text, fz_matrix ctm) {}
 static void fz_nullignoretext(void *user, fz_text *text, fz_matrix ctm) {}
 static void fz_nullpopclip(void *user) {}
 static void fz_nullfillshade(void *user, fz_shade *shade, fz_matrix ctm) {}
@@ -26,10 +28,12 @@ fz_newdevice(void *user)
 	dev->fillpath = fz_nullfillpath;
 	dev->strokepath = fz_nullstrokepath;
 	dev->clippath = fz_nullclippath;
+	dev->clipstrokepath = fz_nullclipstrokepath;
 
 	dev->filltext = fz_nullfilltext;
 	dev->stroketext = fz_nullstroketext;
 	dev->cliptext = fz_nullcliptext;
+	dev->clipstroketext = fz_nullclipstroketext;
 	dev->ignoretext = fz_nullignoretext;
 
 	dev->fillshade = fz_nullfillshade;

@@ -78,10 +78,12 @@ struct fz_device_s
 	void (*fillpath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*strokepath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*clippath)(void *, fz_path *, fz_matrix);
+	void (*clipstrokepath)(void *, fz_path *, fz_matrix);
 
 	void (*filltext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*stroketext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*cliptext)(void *, fz_text *, fz_matrix);
+	void (*clipstroketext)(void *, fz_text *, fz_matrix);
 	void (*ignoretext)(void *, fz_text *, fz_matrix);
 
 	void (*fillshade)(void *, fz_shade *shd, fz_matrix ctm);
@@ -131,9 +133,11 @@ typedef enum fz_displaycommand_e
 	FZ_CMDFILLPATH,
 	FZ_CMDSTROKEPATH,
 	FZ_CMDCLIPPATH,
+	FZ_CMDCLIPSTROKEPATH,
 	FZ_CMDFILLTEXT,
 	FZ_CMDSTROKETEXT,
 	FZ_CMDCLIPTEXT,
+	FZ_CMDCLIPSTROKETEXT,
 	FZ_CMDIGNORETEXT,
 	FZ_CMDFILLSHADE,
 	FZ_CMDFILLIMAGE,
@@ -216,7 +220,6 @@ void fz_curveto(fz_path*, float, float, float, float, float, float);
 void fz_curvetov(fz_path*, float, float, float, float);
 void fz_curvetoy(fz_path*, float, float, float, float);
 void fz_closepath(fz_path*);
-void fz_resetpath(fz_path *path);
 void fz_freepath(fz_path *path);
 
 fz_path *fz_clonepath(fz_path *old);
@@ -256,10 +259,9 @@ struct fz_text_s
 fz_text * fz_newtext(fz_font *face);
 void fz_addtext(fz_text *text, int gid, int ucs, float x, float y);
 void fz_endtext(fz_text *text);
-void fz_resettext(fz_text *text);
 void fz_freetext(fz_text *text);
 void fz_debugtext(fz_text*, int indent);
-
+fz_rect fz_boundtext(fz_text *text, fz_matrix ctm);
 fz_text *fz_clonetext(fz_text *old);
 
 /*

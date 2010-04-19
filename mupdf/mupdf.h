@@ -638,6 +638,7 @@ struct pdf_gstate_s
 struct pdf_csi_s
 {
 	fz_device *dev;
+	pdf_xref *xref;
 
 	fz_obj *stack[32];
 	int top;
@@ -667,16 +668,16 @@ void pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs);
 void pdf_setcolor(pdf_csi *csi, int what, float *v);
 void pdf_setpattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v);
 void pdf_setshade(pdf_csi *csi, int what, fz_shade *shade);
-void pdf_showpath(pdf_csi*, pdf_xref *xref, int close, int fill, int stroke, int evenodd);
+void pdf_showpath(pdf_csi*, int close, int fill, int stroke, int evenodd);
 void pdf_showtext(pdf_csi*, fz_obj *text);
 void pdf_flushtext(pdf_csi*);
-void pdf_showimage(pdf_csi*, pdf_xref *xref, pdf_image *img);
+void pdf_showimage(pdf_csi*, pdf_image *img);
 void pdf_showshade(pdf_csi*, fz_shade *shd);
 
 /* interpret.c */
 void pdf_gsave(pdf_csi *csi);
 void pdf_grestore(pdf_csi *csi);
-fz_error pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents);
+fz_error pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents);
 fz_error pdf_runcontentstream(fz_device *dev, fz_matrix ctm, pdf_xref *xref, fz_obj *resources, fz_buffer *contents);
 
 pdf_material * pdf_keepmaterial(pdf_material *mat);

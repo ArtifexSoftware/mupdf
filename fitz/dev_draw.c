@@ -242,6 +242,55 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
+fz_drawclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+{
+	fz_drawdevice *dev = user;
+	float expansion = fz_matrixexpansion(ctm);
+	float flatness = 0.3 / expansion;
+	float linewidth = path->linewidth;
+	fz_bbox clip, bbox;
+	fz_pixmap *mask, *dest;
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+
+	if (linewidth * expansion < 0.1)
+		linewidth = 1.0 / expansion;
+
+	fz_resetgel(dev->gel, clip);
+	if (path->dashlen > 0)
+		fz_dashpath(dev->gel, path, ctm, flatness, linewidth);
+	else
+		fz_strokepath(dev->gel, path, ctm, flatness, linewidth);
+	fz_sortgel(dev->gel);
+
+	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectbbox(bbox, clip);
+
+	mask = fz_newpixmapwithrect(nil, bbox);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
+
+	memset(mask->samples, 0, mask->w * mask->h * mask->n);
+	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+	if (!fz_isemptyrect(bbox))
+		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, mask, nil, 1);
+
+	dev->clipstack[dev->cliptop].mask = mask;
+	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->dest = dest;
+	dev->cliptop++;
+}
+
+static void
 drawglyph(unsigned char *argb, fz_pixmap *dst, fz_pixmap *src, int xorig, int yorig)
 {
 	unsigned char *dp, *sp;
@@ -342,18 +391,74 @@ static void
 fz_drawstroketext(void *user, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_warn("/%s setfont", text->font->name);
-	fz_debugtext(text, 0);
-	fz_warn("charpath stroke");
+	fz_warn("stroked text not implemented; filling instead");
+	fz_drawfilltext(user, text, ctm, colorspace, color, alpha);
 }
 
 static void
 fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 {
-	fz_warn("gsave");
-	fz_warn("/%s setfont", text->font->name);
-	fz_debugtext(text, 0);
-	fz_warn("charpath clip");
+	fz_drawdevice *dev = user;
+	fz_bbox clip, bbox;
+	fz_pixmap *mask, *dest;
+	fz_matrix tm, trm;
+	fz_pixmap *glyph;
+	int i, x, y, gid;
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	clip.x0 = dev->dest->x;
+	clip.y0 = dev->dest->y;
+	clip.x1 = dev->dest->x + dev->dest->w;
+	clip.y1 = dev->dest->y + dev->dest->h;
+
+	bbox = fz_roundrect(fz_boundtext(text, ctm));
+	bbox = fz_intersectbbox(bbox, clip);
+
+	mask = fz_newpixmapwithrect(nil, bbox);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
+
+	memset(mask->samples, 0, mask->w * mask->h * mask->n);
+	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+	if (!fz_isemptyrect(bbox))
+	{
+		tm = text->trm;
+
+		for (i = 0; i < text->len; i++)
+		{
+			gid = text->els[i].gid;
+			tm.e = text->els[i].x;
+			tm.f = text->els[i].y;
+			trm = fz_concat(tm, ctm);
+			x = floor(trm.e);
+			y = floor(trm.f);
+			trm.e = QUANT(trm.e - floor(trm.e), HSUBPIX);
+			trm.f = QUANT(trm.f - floor(trm.f), VSUBPIX);
+	
+			glyph = fz_renderglyph(dev->cache, text->font, gid, trm);
+			if (glyph)
+			{
+				drawglyph(NULL, mask, glyph, x, y);
+				fz_droppixmap(glyph);
+			}
+		}
+	}
+
+	dev->clipstack[dev->cliptop].mask = mask;
+	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->dest = dest;
+	dev->cliptop++;
+}
+
+static void
+fz_drawclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+{
+	fz_drawcliptext(user, text, ctm);
 }
 
 static void
@@ -756,10 +861,12 @@ fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 	dev->fillpath = fz_drawfillpath;
 	dev->strokepath = fz_drawstrokepath;
 	dev->clippath = fz_drawclippath;
+	dev->clipstrokepath = fz_drawclipstrokepath;
 
 	dev->filltext = fz_drawfilltext;
 	dev->stroketext = fz_drawstroketext;
 	dev->cliptext = fz_drawcliptext;
+	dev->clipstroketext = fz_drawclipstroketext;
 	dev->ignoretext = fz_drawignoretext;
 
 	dev->fillimagemask = fz_drawfillimagemask;
@@ -771,4 +878,3 @@ fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 
 	return dev;
 }
-

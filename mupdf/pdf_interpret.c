@@ -2,38 +2,36 @@
 #include "mupdf.h"
 
 static pdf_csi *
-pdf_newcsi(fz_device *dev, fz_matrix ctm)
+pdf_newcsi(fz_device *dev, pdf_xref *xref, fz_matrix ctm)
 {
 	pdf_csi *csi;
 
 	csi = fz_malloc(sizeof(pdf_csi));
+	csi->dev = dev;
+	csi->xref = xref;
 
-	pdf_initgstate(&csi->gstate[0], ctm);
-	csi->gtop = 0;
 	csi->top = 0;
 	csi->xbalance = 0;
 	csi->array = nil;
 
 	csi->path = fz_newpath();
-	csi->text = nil;
-
 	csi->clip = 0;
 	csi->clipevenodd = 0;
 
-	csi->textmode = 0;
 	csi->text = nil;
-	csi->tm = fz_identity();
 	csi->tlm = fz_identity();
+	csi->tm = fz_identity();
+	csi->textmode = 0;
 
 	csi->topctm = ctm;
-
-	csi->dev = dev;
+	pdf_initgstate(&csi->gstate[0], ctm);
+	csi->gtop = 0;
 
 	return csi;
 }
 
 static void
-clearstack(pdf_csi *csi)
+pdf_clearstack(pdf_csi *csi)
 {
 	int i;
 	for (i = 0; i < csi->top; i++)
@@ -123,16 +121,19 @@ pdf_freecsi(pdf_csi *csi)
 	while (csi->gtop)
 		pdf_grestore(csi);
 
-	pdf_dropmaterial(&csi->gstate[csi->gtop].fill);
-	pdf_dropmaterial(&csi->gstate[csi->gtop].stroke);
-	if (csi->gstate[csi->gtop].font)
-		pdf_dropfont(csi->gstate[csi->gtop].font);
+	pdf_dropmaterial(&csi->gstate[0].fill);
+	pdf_dropmaterial(&csi->gstate[0].stroke);
+	if (csi->gstate[0].font)
+		pdf_dropfont(csi->gstate[0].font);
+
+	while (csi->gstate[0].clipdepth--)
+		csi->dev->popclip(csi->dev->user);
 
 	if (csi->path) fz_freepath(csi->path);
 	if (csi->text) fz_freetext(csi->text);
 	if (csi->array) fz_dropobj(csi->array);
 
-	clearstack(csi);
+	pdf_clearstack(csi);
 
 	fz_free(csi);
 }
@@ -143,7 +144,7 @@ pdf_freecsi(pdf_csi *csi)
  */
 
 static fz_error
-pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xobj)
+pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 {
 	fz_error error;
 	pdf_gstate *gstate;
@@ -184,7 +185,7 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	fz_lineto(csi->path, xobj->bbox.x0, xobj->bbox.y1);
 	fz_closepath(csi->path);
 	csi->clip = 1;
-	pdf_showpath(csi, xref, 0, 0, 0, 0);
+	pdf_showpath(csi, 0, 0, 0, 0);
 
 	/* run contents */
 
@@ -194,7 +195,7 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
 	if (xobj->resources)
 		resources = xobj->resources;
 
-	error = pdf_runcsibuffer(csi, xref, resources, xobj->contents);
+	error = pdf_runcsibuffer(csi, resources, xobj->contents);
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
 
@@ -213,7 +214,7 @@ pdf_runxobject(pdf_csi *csi, pdf_xref *xref, fz_obj *resources, pdf_xobject *xob
  */
 
 static fz_error
-pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, fz_obj *dict)
+pdf_runinlineimage(pdf_csi *csi, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
 	fz_error error;
 	pdf_image *img;
@@ -221,7 +222,7 @@ pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, f
 	pdf_token_e tok;
 	int len;
 
-	error = pdf_loadinlineimage(&img, xref, rdb, dict, file);
+	error = pdf_loadinlineimage(&img, csi->xref, rdb, dict, file);
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
@@ -238,7 +239,7 @@ pdf_runinlineimage(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, f
 		return fz_throw("syntax error after inline image");
 	}
 
-	pdf_showimage(csi, xref, img);
+	pdf_showimage(csi, img);
 
 	pdf_dropimage(img);
 	return fz_okay;
@@ -398,7 +399,7 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
  */
 
 static fz_error
-pdf_runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
+pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, char *buf)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error error;
@@ -494,7 +495,7 @@ pdf_runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 			if (!obj)
 				return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->stack[0]));
 
-			error = pdf_runextgstate(gstate, xref, rdb, obj);
+			error = pdf_runextgstate(gstate, csi->xref, rdb, obj);
 			if (error)
 				return fz_rethrow(error, "cannot set ExtGState");
 		}
@@ -520,21 +521,21 @@ pdf_runkeyword(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, char *buf)
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, xref, 0, 1, 0, 1);
+			pdf_showpath(csi, 0, 1, 0, 1);
 		}
 
 		else if (!strcmp(buf, "B*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, xref, 0, 1, 1, 1);
+			pdf_showpath(csi, 0, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "b*"))
 		{
 			if (csi->top != 0)
 				goto syntaxerror;
-			pdf_showpath(csi, xref, 1, 1, 1, 1);
+			pdf_showpath(csi, 1, 1, 1, 1);
 		}
 
 		else if (!strcmp(buf, "W*"))
@@ -589,7 +590,7 @@ Lsetcolorspace:
 					if (!obj)
 						return fz_throw("cannot find colorspace resource /%s", fz_toname(csi->stack[0]));
 
-					error = pdf_loadcolorspace(&cs, xref, obj);
+					error = pdf_loadcolorspace(&cs, csi->xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load colorspace");
 				}
@@ -662,7 +663,7 @@ Lsetcolor:
 				if (fz_toint(patterntype) == 1)
 				{
 					pdf_pattern *pat;
-					error = pdf_loadpattern(&pat, xref, obj);
+					error = pdf_loadpattern(&pat, csi->xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load pattern");
 					pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
@@ -672,7 +673,7 @@ Lsetcolor:
 				else if (fz_toint(patterntype) == 2)
 				{
 					fz_shade *shd;
-					error = pdf_loadshade(&shd, xref, obj);
+					error = pdf_loadshade(&shd, csi->xref, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load shade");
 					pdf_setshade(csi, what, shd);
@@ -783,7 +784,7 @@ Lsetcolor:
 				gstate->font = nil;
 			}
 
-			error = pdf_loadfont(&gstate->font, xref, rdb, obj);
+			error = pdf_loadfont(&gstate->font, csi->xref, rdb, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load font");
 
@@ -893,13 +894,11 @@ Lsetcolor:
 			if (!subtype)
 				return fz_throw("no XObject subtype specified");
 
-			clearstack(csi);
-
 			if (!strcmp(fz_toname(subtype), "Form"))
 			{
 				pdf_xobject *xobj;
 
-				error = pdf_loadxobject(&xobj, xref, obj);
+				error = pdf_loadxobject(&xobj, csi->xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load xobject");
 
@@ -907,7 +906,7 @@ Lsetcolor:
 				if (!xobj->resources)
 					xobj->resources = fz_keepobj(rdb);
 
-				error = pdf_runxobject(csi, xref, rdb, xobj);
+				error = pdf_runxobject(csi, rdb, xobj);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject");
 
@@ -917,10 +916,10 @@ Lsetcolor:
 			else if (!strcmp(fz_toname(subtype), "Image"))
 			{
 				pdf_image *img;
-				error = pdf_loadimage(&img, xref, obj);
+				error = pdf_loadimage(&img, csi->xref, obj);
 				if (error)
 					return fz_rethrow(error, "cannot load image");
-				pdf_showimage(csi, xref, img);
+				pdf_showimage(csi, img);
 				pdf_dropimage(img);
 			}
 
@@ -947,7 +946,7 @@ Lsetcolor:
 			if (!obj)
 				return fz_throw("cannot find shade resource: %s", fz_toname(csi->stack[csi->top - 1]));
 
-			error = pdf_loadshade(&shd, xref, obj);
+			error = pdf_loadshade(&shd, csi->xref, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load shade");
 			pdf_showshade(csi, shd);
@@ -1089,38 +1088,38 @@ Lsetcolor:
 	case 'S':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 0, 0, 1, 0);
+		pdf_showpath(csi, 0, 0, 1, 0);
 		break;
 
 	case 's':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 1, 0, 1, 0);
+		pdf_showpath(csi, 1, 0, 1, 0);
 		break;
 
 	case 'F':
 	case 'f':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 0, 1, 0, 0);
+		pdf_showpath(csi, 0, 1, 0, 0);
 		break;
 
 	case 'B':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 0, 1, 1, 0);
+		pdf_showpath(csi, 0, 1, 1, 0);
 		break;
 
 	case 'b':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 1, 1, 1, 0);
+		pdf_showpath(csi, 1, 1, 1, 0);
 		break;
 
 	case 'n':
 		if (csi->top != 0)
 			goto syntaxerror;
-		pdf_showpath(csi, xref, 0, 0, 0, csi->clipevenodd);
+		pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
 		break;
 
 	case 'W':
@@ -1212,12 +1211,14 @@ syntaxerror:
 }
 
 static fz_error
-pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char *buf, int buflen)
+pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen)
 {
 	fz_error error;
 	pdf_token_e tok;
 	int len;
 	fz_obj *obj;
+
+	pdf_clearstack(csi);
 
 	while (1)
 	{
@@ -1254,7 +1255,7 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 			}
 			else
 			{
-				clearstack(csi);
+				pdf_clearstack(csi);
 				return fz_throw("syntaxerror in array");
 			}
 		}
@@ -1270,7 +1271,7 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 			break;
 
 		case PDF_TODICT:
-			error = pdf_parsedict(&csi->stack[csi->top], xref, file, buf, buflen);
+			error = pdf_parsedict(&csi->stack[csi->top], csi->xref, file, buf, buflen);
 			if (error)
 				return fz_rethrow(error, "cannot parse dictionary");
 			csi->top ++;
@@ -1317,7 +1318,7 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 				fz_obj *obj;
 				int ch;
 
-				error = pdf_parsedict(&obj, xref, file, buf, buflen);
+				error = pdf_parsedict(&obj, csi->xref, file, buf, buflen);
 				if (error)
 					return fz_rethrow(error, "cannot parse inline image dictionary");
 
@@ -1330,36 +1331,36 @@ pdf_runcsifile(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_stream *file, char 
 				if (error)
 					return fz_rethrow(error, "cannot parse whitespace before inline image");
 
-				error = pdf_runinlineimage(csi, xref, rdb, file, obj);
+				error = pdf_runinlineimage(csi, rdb, file, obj);
 				fz_dropobj(obj);
 				if (error)
 					return fz_rethrow(error, "cannot parse inline image");
 			}
 			else
 			{
-				error = pdf_runkeyword(csi, xref, rdb, buf);
+				error = pdf_runkeyword(csi, rdb, buf);
 				if (error)
 					return fz_rethrow(error, "cannot run '%s'", buf);
-				clearstack(csi);
+				pdf_clearstack(csi);
 			}
 			break;
 
 		default:
-			clearstack(csi);
+			pdf_clearstack(csi);
 			return fz_throw("syntaxerror in content stream");
 		}
 	}
 }
 
 fz_error
-pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents)
+pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 {
 	fz_stream *file;
 	fz_error error;
 
 	contents->rp = contents->bp;
 	file = fz_openrbuffer(contents);
-	error = pdf_runcsifile(csi, xref, rdb, file, xref->scratch, sizeof xref->scratch);
+	error = pdf_runcsifile(csi, rdb, file, csi->xref->scratch, sizeof csi->xref->scratch);
 	fz_dropstream(file);
 	contents->rp = contents->bp;
 	if (error)
@@ -1371,8 +1372,8 @@ fz_error
 pdf_runcontentstream(fz_device *dev, fz_matrix ctm,
 	pdf_xref *xref, fz_obj *resources, fz_buffer *contents)
 {
-	pdf_csi *csi = pdf_newcsi(dev, ctm);
-	fz_error error = pdf_runcsibuffer(csi, xref, resources, contents);
+	pdf_csi *csi = pdf_newcsi(dev, xref, ctm);
+	fz_error error = pdf_runcsibuffer(csi, resources, contents);
 	pdf_freecsi(csi);
 	if (error)
 		return fz_rethrow(error, "cannot parse content stream");

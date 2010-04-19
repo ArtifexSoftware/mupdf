@@ -43,19 +43,6 @@ fz_freepath(fz_path *path)
 	fz_free(path);
 }
 
-void
-fz_resetpath(fz_path *path)
-{
-	path->dashlen = 0;
-	path->dashphase = 0;
-	path->evenodd = 0;
-	path->linecap = 0;
-	path->linejoin = 0;
-	path->linewidth = 1.0;
-	path->miterlimit = 10.0;
-	path->len = 0;
-}
-
 static void
 growpath(fz_path *path, int n)
 {
