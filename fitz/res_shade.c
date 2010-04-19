@@ -30,7 +30,8 @@ void
 fz_debugshade(fz_shade *shade)
 {
 	int i, j, n;
-	float *vert;
+	float *vertex;
+	int triangle;
 
 	printf("shade {\n");
 
@@ -60,18 +61,23 @@ fz_debugshade(fz_shade *shade)
 	else
 		n = 2 + shade->cs->n;
 
-	vert = shade->mesh;
+	printf("  triangles: %d\n", shade->meshlen);
+
+	vertex = shade->mesh;
+	triangle = 0;
 	i = 0;
-	while (i < shade->meshlen)
+	while (i < shade->meshlen * 3)
 	{
-		printf("  (%g, %g): ", vert[0], vert[1]);
+		printf("  %d:(%g, %g): ", triangle, vertex[0], vertex[1]);
 
 		for (j = 2; j < n; j++)
-			printf("%s%g", j == 2 ? "" : " ", vert[j]);
+			printf("%s%g", j == 2 ? "" : " ", vertex[j]);
 		printf("\n");
 
-		vert += n;
+		vertex += n;
 		i++;
+		if (i % 3 == 0)
+			triangle++;
 	}
 
 	printf("}\n");
