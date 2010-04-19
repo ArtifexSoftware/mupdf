@@ -9,7 +9,7 @@
 #define NSEGS 32
 #define MAX_RAD_SEGS 36
 
-#define SEGMENTATION_DEPTH 2
+#define SEGMENTATION_DEPTH 6
 
 typedef struct pdf_tensorpatch_s pdf_tensorpatch;
 
@@ -90,6 +90,271 @@ pdf_addquad(fz_shade *shade,
 			x1, y1, color1,
 			x3, y3, color3,
 			x2, y2, color2);
+}
+
+static void
+triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ncomp)
+{
+	pdf_addquad(shade,
+		p.pole[0][0].x, p.pole[0][0].y, p.color[0],
+		p.pole[0][3].x, p.pole[0][3].y, p.color[1],
+		p.pole[3][3].x, p.pole[3][3].y, p.color[2],
+		p.pole[3][0].x, p.pole[3][0].y, p.color[3]);
+}
+
+static inline void
+copyvert(float *dst, float *src, int n)
+{
+	memcpy(dst, src, n * sizeof(float));
+}
+
+static inline void
+copycolor(float *c, float *s)
+{
+	memcpy(c, s, FZ_MAXCOLORS * sizeof(float));
+}
+
+static inline void
+midcolor(float *c, float *c1, float *c2)
+{
+	int i;
+	for (i = 0; i < FZ_MAXCOLORS; i++)
+		c[i] = (float) ((c1[i] + c2[i]) / 2.0);
+}
+
+static inline float
+midpoint(float a, float b)
+{
+	return a / 2.0f + b / 2.0f;
+}
+
+static inline void
+split_curve(fz_point *pole, fz_point *q0, fz_point *q1, int pole_step)
+{
+	/* split bezier curve given by control points pole[0]..pole[3]
+	   using de casteljau algo at midpoint and build two new
+	   bezier curves q0[0]..q0[3] and q1[0]..q1[3]. all indices
+	   should be multiplies by pole_step == 1 for vertical bezier
+	   curves in patch and == 4 for horizontal bezier curves due
+	   to C's multi-dimensional matrix memory layout. */
+
+	float x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
+	float y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
+
+	q0[1 * pole_step].x = midpoint(pole[0 * pole_step].x, pole[1 * pole_step].x);
+	q0[1 * pole_step].y = midpoint(pole[0 * pole_step].y, pole[1 * pole_step].y);
+	q1[2 * pole_step].x = midpoint(pole[2 * pole_step].x, pole[3 * pole_step].x);
+	q1[2 * pole_step].y = midpoint(pole[2 * pole_step].y, pole[3 * pole_step].y);
+
+	q0[2 * pole_step].x = midpoint(q0[1 * pole_step].x, x12);
+	q0[2 * pole_step].y = midpoint(q0[1 * pole_step].y, y12);
+	q1[1 * pole_step].x = midpoint(x12, q1[2 * pole_step].x);
+	q1[1 * pole_step].y = midpoint(y12, q1[2 * pole_step].y);
+
+	q0[3 * pole_step].x = midpoint(q0[2 * pole_step].x, q1[1 * pole_step].x);
+	q0[3 * pole_step].y = midpoint(q0[2 * pole_step].y, q1[1 * pole_step].y);
+	q1[0 * pole_step].x = midpoint(q0[2 * pole_step].x, q1[1 * pole_step].x);
+	q1[0 * pole_step].y = midpoint(q0[2 * pole_step].y, q1[1 * pole_step].y);
+
+	q0[0 * pole_step].x = pole[0 * pole_step].x;
+	q0[0 * pole_step].y = pole[0 * pole_step].y;
+	q1[3 * pole_step].x = pole[3 * pole_step].x;
+	q1[3 * pole_step].y = pole[3 * pole_step].y;
+}
+
+static inline void
+split_stripe(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
+{
+	/* split all vertical bezier curves in patch two, creating
+	   two new patches with half the height. */
+	split_curve(p->pole[0], s0->pole[0], s1->pole[0], 1);
+	split_curve(p->pole[1], s0->pole[1], s1->pole[1], 1);
+	split_curve(p->pole[2], s0->pole[2], s1->pole[2], 1);
+	split_curve(p->pole[3], s0->pole[3], s1->pole[3], 1);
+
+	/* linear interpolation to find color values of corners of
+	   the two new patches. TODO: shouldn't this be bicubic
+	   interpolation since the color values are not linearly
+	   drawn over the patch? */
+	copycolor(s0->color[0], p->color[0]);
+	copycolor(s0->color[1], p->color[1]);
+	midcolor(s0->color[2], p->color[1], p->color[2]);
+	midcolor(s0->color[3], p->color[0], p->color[3]);
+
+	copycolor(s1->color[0], s0->color[3]);
+	copycolor(s1->color[1], s0->color[2]);
+	copycolor(s1->color[2], p->color[2]);
+	copycolor(s1->color[3], p->color[3]);
+}
+
+static void
+drawstripe(pdf_tensorpatch *p, fz_shade *shade, int ncomp, int depth)
+{
+	pdf_tensorpatch s0, s1;
+
+	/* split patch into two half-height patches */
+	split_stripe(p, &s0, &s1);
+
+	depth--;
+	if (depth == 0)
+	{
+		/* if no more subdividing, draw two new patches... */
+		triangulatepatch(s0, shade, ncomp);
+		triangulatepatch(s1, shade, ncomp);
+	}
+	else
+	{
+		/* ...otherwise, continue subdividing. */
+		drawstripe(&s0, shade, ncomp, depth);
+		drawstripe(&s1, shade, ncomp, depth);
+	}
+}
+
+static inline void
+split_patch(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
+{
+	/* split all horizontal bezier curves in patch two, creating
+	   two new patches with half the width. */
+	split_curve(&p->pole[0][0], &s0->pole[0][0], &s1->pole[0][0], 4);
+	split_curve(&p->pole[0][1], &s0->pole[0][1], &s1->pole[0][1], 4);
+	split_curve(&p->pole[0][2], &s0->pole[0][2], &s1->pole[0][2], 4);
+	split_curve(&p->pole[0][3], &s0->pole[0][3], &s1->pole[0][3], 4);
+
+	/* linear interpolation to find color values of corners of
+	   the two new patches. TODO: shouldn't this be bicubic
+	   interpolation since the color values are not linearly
+	   drawn over the patch? */
+	copycolor(s0->color[0], p->color[0]);
+	midcolor(s0->color[1], p->color[0], p->color[1]);
+	midcolor(s0->color[2], p->color[2], p->color[3]);
+	copycolor(s0->color[3], p->color[3]);
+
+	copycolor(s1->color[0], s0->color[1]);
+	copycolor(s1->color[1], p->color[1]);
+	copycolor(s1->color[2], p->color[2]);
+	copycolor(s1->color[3], s0->color[2]);
+}
+
+static void
+drawpatch(fz_shade *shade, pdf_tensorpatch *p, int ncomp, int depth, int origdepth)
+{
+	pdf_tensorpatch s0, s1;
+
+	/* split patch into two half-width patches */
+	split_patch(p, &s0, &s1);
+
+	depth--;
+	if (depth == 0)
+	{
+		/* if no more subdividing, draw two new patches... */
+		drawstripe(&s0, shade, ncomp, origdepth);
+		drawstripe(&s1, shade, ncomp, origdepth);
+	}
+	else
+	{
+		/* ...otherwise, continue subdividing. */
+		drawpatch(shade, &s0, ncomp, depth, origdepth);
+		drawpatch(shade, &s1, ncomp, depth, origdepth);
+	}
+}
+
+static void
+pdf_addpatch(fz_shade *shade, pdf_tensorpatch *patch, int ncomp)
+{
+	drawpatch(shade, patch, ncomp, SEGMENTATION_DEPTH, SEGMENTATION_DEPTH);
+}
+
+static inline fz_point
+pdf_computetensorinterior(
+	fz_point a, fz_point b, fz_point c, fz_point d,
+	fz_point e, fz_point f, fz_point g, fz_point h)
+{
+	fz_point pt;
+
+	/* see equations at page 330 in pdf 1.7 */
+
+	pt.x  = -4 * a.x;
+	pt.x +=  6 * (b.x + c.x);
+	pt.x += -2 * (d.x + e.x);
+	pt.x +=  3 * (f.x + g.x);
+	pt.x += -1 * h.x;
+	pt.x /= 9;
+
+	pt.y  = -4 * a.y;
+	pt.y +=  6 * (b.y + c.y);
+	pt.y += -2 * (d.y + e.y);
+	pt.y +=  3 * (f.y + g.y);
+	pt.y += -1 * h.y;
+	pt.y /= 9;
+
+	return pt;
+}
+
+static void
+pdf_tensorinteriorfromcoons(pdf_tensorpatch *p)
+{
+	/* see equations at page 330 in pdf 1.7 */
+
+	p->pole[1][1] = pdf_computetensorinterior(
+			p->pole[0][0], p->pole[0][1], p->pole[1][0], p->pole[0][3],
+			p->pole[3][0], p->pole[3][1], p->pole[1][3], p->pole[3][3]);
+
+	p->pole[1][2] = pdf_computetensorinterior(
+			p->pole[0][3], p->pole[0][2], p->pole[1][3], p->pole[0][0],
+			p->pole[3][3], p->pole[3][2], p->pole[1][0], p->pole[3][0]);
+
+	p->pole[2][1] = pdf_computetensorinterior(
+			p->pole[3][0], p->pole[3][1], p->pole[2][0], p->pole[3][3],
+			p->pole[0][0], p->pole[0][1], p->pole[2][3], p->pole[0][3]);
+
+	p->pole[2][2] = pdf_computetensorinterior(
+			p->pole[3][3], p->pole[3][2], p->pole[2][3], p->pole[3][0],
+			p->pole[0][3], p->pole[0][2], p->pole[2][0], p->pole[0][0]);
+}
+
+static inline void
+pdf_maketensorpatch(pdf_tensorpatch *p, int type, fz_point *pt)
+{
+	if (type == 7)
+	{
+		/* see control point stream order at page 330 in pdf 1.7 */
+
+		p->pole[0][0] = pt[ 0];
+		p->pole[0][1] = pt[ 1];
+		p->pole[0][2] = pt[ 2];
+		p->pole[0][3] = pt[ 3];
+		p->pole[1][3] = pt[ 4];
+		p->pole[2][3] = pt[ 5];
+		p->pole[3][3] = pt[ 6];
+		p->pole[3][2] = pt[ 7];
+		p->pole[3][1] = pt[ 8];
+		p->pole[3][0] = pt[ 9];
+		p->pole[2][0] = pt[10];
+		p->pole[1][0] = pt[11];
+		p->pole[1][1] = pt[12];
+		p->pole[1][2] = pt[13];
+		p->pole[2][2] = pt[14];
+		p->pole[2][1] = pt[15];
+	}
+	else if (type == 6)
+	{
+		/* see control point stream order at page 325 in pdf 1.7 */
+
+		p->pole[0][0] = pt[ 0];
+		p->pole[0][1] = pt[ 1];
+		p->pole[0][2] = pt[ 2];
+		p->pole[0][3] = pt[ 3];
+		p->pole[1][3] = pt[ 4];
+		p->pole[2][3] = pt[ 5];
+		p->pole[3][3] = pt[ 6];
+		p->pole[3][2] = pt[ 7];
+		p->pole[3][1] = pt[ 8];
+		p->pole[3][0] = pt[ 9];
+		p->pole[2][0] = pt[10];
+		p->pole[1][0] = pt[11];
+
+		pdf_tensorinteriorfromcoons(p);
+	}
 }
 
 static fz_error
@@ -630,9 +895,9 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 			y[1] = y[b];
 			y[2] = y[c];
 
-			memcpy(cval[0], cval[a], sizeof cval[0]);
-			memcpy(cval[1], cval[b], sizeof cval[1]);
-			memcpy(cval[2], cval[c], sizeof cval[2]);
+			memmove(cval[0], cval[a], sizeof cval[0]);
+			memmove(cval[1], cval[b], sizeof cval[1]);
+			memmove(cval[2], cval[c], sizeof cval[2]);
 
 			idx = 3;
 		}
@@ -752,200 +1017,6 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 	return fz_okay;
 }
 
-static inline void copyvert(float *dst, float *src, int n)
-{
-	while (n--)
-		*dst++ = *src++;
-}
-
-static inline void copycolor(float *c, const float *s)
-{
-	int i;
-	for (i = 0; i<FZ_MAXCOLORS; i++)
-		c[i] = s[i];
-}
-
-static inline void midcolor(float *c, const float *c1, const float *c2)
-{
-	int i;
-	for (i = 0; i<FZ_MAXCOLORS; i++)
-		c[i] = (float)((c1[i] + c2[i]) / 2.0);
-}
-
-static void
-filltensorinterior(pdf_tensorpatch *p)
-{
-#define lcp1(p0, p3)\
-	((p0 + p0 + p3) / 3.0f)
-
-#define lcp2(p0, p3)\
-	((p0 + p3 + p3) / 3.0f)
-
-	p->pole[1][1].x = lcp1(p->pole[0][1].x, p->pole[3][1].x) +
-	lcp1(p->pole[1][0].x, p->pole[1][3].x) -
-	lcp1(lcp1(p->pole[0][0].x, p->pole[0][3].x),
-		lcp1(p->pole[3][0].x, p->pole[3][3].x));
-	p->pole[1][2].x = lcp1(p->pole[0][2].x, p->pole[3][2].x) +
-	lcp2(p->pole[1][0].x, p->pole[1][3].x) -
-	lcp1(lcp2(p->pole[0][0].x, p->pole[0][3].x),
-		lcp2(p->pole[3][0].x, p->pole[3][3].x));
-	p->pole[2][1].x = lcp2(p->pole[0][1].x, p->pole[3][1].x) +
-	lcp1(p->pole[2][0].x, p->pole[2][3].x) -
-	lcp2(lcp1(p->pole[0][0].x, p->pole[0][3].x),
-		lcp1(p->pole[3][0].x, p->pole[3][3].x));
-	p->pole[2][2].x = lcp2(p->pole[0][2].x, p->pole[3][2].x) +
-	lcp2(p->pole[2][0].x, p->pole[2][3].x) -
-	lcp2(lcp2(p->pole[0][0].x, p->pole[0][3].x),
-		lcp2(p->pole[3][0].x, p->pole[3][3].x));
-
-	p->pole[1][1].y = lcp1(p->pole[0][1].y, p->pole[3][1].y) +
-	lcp1(p->pole[1][0].y, p->pole[1][3].y) -
-	lcp1(lcp1(p->pole[0][0].y, p->pole[0][3].y),
-		lcp1(p->pole[3][0].y, p->pole[3][3].y));
-	p->pole[1][2].y = lcp1(p->pole[0][2].y, p->pole[3][2].y) +
-	lcp2(p->pole[1][0].y, p->pole[1][3].y) -
-	lcp1(lcp2(p->pole[0][0].y, p->pole[0][3].y),
-		lcp2(p->pole[3][0].y, p->pole[3][3].y));
-	p->pole[2][1].y = lcp2(p->pole[0][1].y, p->pole[3][1].y) +
-	lcp1(p->pole[2][0].y, p->pole[2][3].y) -
-	lcp2(lcp1(p->pole[0][0].y, p->pole[0][3].y),
-		lcp1(p->pole[3][0].y, p->pole[3][3].y));
-	p->pole[2][2].y = lcp2(p->pole[0][2].y, p->pole[3][2].y) +
-	lcp2(p->pole[2][0].y, p->pole[2][3].y) -
-	lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
-		lcp2(p->pole[3][0].y, p->pole[3][3].y));
-
-#undef lcp1
-#undef lcp2
-}
-
-static void
-split_curve_s(const fz_point *pole, fz_point *q0, fz_point *q1, int pole_step)
-{
-#define midpoint(a,b)\
-	((a)/2.0f + (b)/2.0f) /* to avoid overflow */
-	float x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
-	float y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
-
-	q0[1 * pole_step].x = midpoint(pole[0 * pole_step].x, pole[1 * pole_step].x);
-	q0[1 * pole_step].y = midpoint(pole[0 * pole_step].y, pole[1 * pole_step].y);
-	q1[2 * pole_step].x = midpoint(pole[2 * pole_step].x, pole[3 * pole_step].x);
-	q1[2 * pole_step].y = midpoint(pole[2 * pole_step].y, pole[3 * pole_step].y);
-	q0[2 * pole_step].x = midpoint(q0[1 * pole_step].x, x12);
-	q0[2 * pole_step].y = midpoint(q0[1 * pole_step].y, y12);
-	q1[1 * pole_step].x = midpoint(x12, q1[2 * pole_step].x);
-	q1[1 * pole_step].y = midpoint(y12, q1[2 * pole_step].y);
-	q0[0 * pole_step].x = pole[0 * pole_step].x;
-	q0[0 * pole_step].y = pole[0 * pole_step].y;
-	q0[3 * pole_step].x = q1[0 * pole_step].x = midpoint(q0[2 * pole_step].x, q1[1 * pole_step].x);
-	q0[3 * pole_step].y = q1[0 * pole_step].y = midpoint(q0[2 * pole_step].y, q1[1 * pole_step].y);
-	q1[3 * pole_step].x = pole[3 * pole_step].x;
-	q1[3 * pole_step].y = pole[3 * pole_step].y;
-#undef midpoint
-}
-
-static inline void
-split_patch(pdf_tensorpatch *s0, pdf_tensorpatch *s1, const pdf_tensorpatch *p)
-{
-	split_curve_s(&p->pole[0][0], &s0->pole[0][0], &s1->pole[0][0], 4);
-	split_curve_s(&p->pole[0][1], &s0->pole[0][1], &s1->pole[0][1], 4);
-	split_curve_s(&p->pole[0][2], &s0->pole[0][2], &s1->pole[0][2], 4);
-	split_curve_s(&p->pole[0][3], &s0->pole[0][3], &s1->pole[0][3], 4);
-
-	copycolor(s0->color[0], p->color[0]);
-	midcolor(s0->color[1], p->color[0], p->color[1]);
-	midcolor(s0->color[2], p->color[2], p->color[3]);
-	copycolor(s0->color[3], p->color[3]);
-
-	copycolor(s1->color[0], s0->color[1]);
-	copycolor(s1->color[1], p->color[1]);
-	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], s0->color[2]);
-}
-
-static inline void
-split_stripe(pdf_tensorpatch *s0, pdf_tensorpatch *s1, const pdf_tensorpatch *p)
-{
-	split_curve_s(p->pole[0], s0->pole[0], s1->pole[0], 1);
-	split_curve_s(p->pole[1], s0->pole[1], s1->pole[1], 1);
-	split_curve_s(p->pole[2], s0->pole[2], s1->pole[2], 1);
-	split_curve_s(p->pole[3], s0->pole[3], s1->pole[3], 1);
-
-	copycolor(s0->color[0], p->color[0]);
-	copycolor(s0->color[1], p->color[1]);
-	midcolor(s0->color[2], p->color[1], p->color[2]);
-	midcolor(s0->color[3], p->color[0], p->color[3]);
-
-	copycolor(s1->color[0], s0->color[3]);
-	copycolor(s1->color[1], s0->color[2]);
-	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], p->color[3]);
-}
-
-static inline void
-setvertex(float *mesh, fz_point pt, float *color, int ncomp)
-{
-	int i;
-
-	mesh[0] = pt.x;
-	mesh[1] = pt.y;
-	for (i=0; i < ncomp; i++)
-	{
-		mesh[2 + i] = color[i];
-	}
-}
-
-static void
-triangulatepatch(pdf_tensorpatch p, fz_shade *shade, int ncomp)
-{
-	pdf_addquad(shade,
-		p.pole[0][0].x, p.pole[0][0].y, p.color[0],
-		p.pole[3][0].x, p.pole[3][0].y, p.color[1],
-		p.pole[3][3].x, p.pole[3][3].y, p.color[2],
-		p.pole[0][3].x, p.pole[0][3].y, p.color[3]);
-}
-
-static void
-drawstripe(pdf_tensorpatch patch, fz_shade *shade, int ncomp, int depth)
-{
-	pdf_tensorpatch s0, s1;
-
-	split_stripe(&s0, &s1, &patch);
-
-	depth++;
-
-	if (depth >= SEGMENTATION_DEPTH)
-	{
-		triangulatepatch(s0, shade, ncomp);
-		triangulatepatch(s1, shade, ncomp);
-	}
-	else
-	{
-		drawstripe(s0, shade, ncomp, depth);
-		drawstripe(s1, shade, ncomp, depth);
-	}
-}
-
-static void
-drawpatch(pdf_tensorpatch patch, fz_shade *shade, int ncomp, int depth)
-{
-	pdf_tensorpatch s0, s1;
-
-	split_patch(&s0, &s1, &patch);
-	depth++;
-
-	if (depth > SEGMENTATION_DEPTH)
-	{
-		drawstripe(s0, shade, ncomp, 0);
-		drawstripe(s1, shade, ncomp, 0);
-	}
-	else
-	{
-		drawpatch(s0, shade, ncomp, depth);
-		drawpatch(s1, shade, ncomp, depth);
-	}
-}
-
 static fz_error
 pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 	int bpcoord, int bpcomp, int bpflag, float *decode,
@@ -956,11 +1027,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 	fz_point p0, p1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, n;
-	unsigned int t;
-	int flag;
-	fz_point p[12];
-	pdf_tensorpatch patch;
+	int i, k;
+	int haspatch, hasprevpatch;
+	float prevc[4][FZ_MAXCOLORS];
+	fz_point prevp[12];
 
 	pdf_logshade("load type6 shade {\n");
 
@@ -992,49 +1062,109 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 	shade->meshcap = 0;
 	shade->mesh = nil;
 
-	n = 2 + ncomp;
+	hasprevpatch = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
+		float c[4][FZ_MAXCOLORS];
+		fz_point p[12];
+		unsigned int t;
+		int startcolor;
+		int startpt;
+		int flag;
+
 		flag = getdata(stream, bpflag);
 
-		for (i = 0; i < 12; i++)
+		if (flag == 0)
 		{
-			t = getdata(stream, bpcoord);
-			p[i].x = (float)(p0.x + (t * (p1.x - p0.x) / (pow(2, bpcoord) - 1.)));
-			t = getdata(stream, bpcoord);
-			p[i].y = (float)(p0.y + (t * (p1.y - p0.y) / (pow(2, bpcoord) - 1.)));
+			startpt = 0;
+			startcolor = 0;
+		}
+		else
+		{
+			startpt = 4;
+			startcolor = 2;
 		}
 
-		for (i = 0; i < 4; i++)
+		for (i = startpt; i < 12; i++)
 		{
-			int k;
-			for (k=0; k < ncomp; k++)
+			t = getdata(stream, bpcoord);
+			p[i].x = (float) (p0.x + (t * (p1.x - p0.x) / (pow(2, bpcoord) - 1.)));
+			t = getdata(stream, bpcoord);
+			p[i].y = (float) (p0.y + (t * (p1.y - p0.y) / (pow(2, bpcoord) - 1.)));
+		}
+
+		for (i = startcolor; i < 4; i++)
+		{
+			for (k = 0; k < ncomp; k++)
 			{
 				t = getdata(stream, bpcomp);
-				patch.color[i][k] =
-				c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
+				c[i][k] = c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
 			}
 		}
 
-		patch.pole[0][0] = p[0];
-		patch.pole[1][0] = p[1];
-		patch.pole[2][0] = p[2];
-		patch.pole[3][0] = p[3];
-		patch.pole[3][1] = p[4];
-		patch.pole[3][2] = p[5];
-		patch.pole[3][3] = p[6];
-		patch.pole[2][3] = p[7];
-		patch.pole[1][3] = p[8];
-		patch.pole[0][3] = p[9];
-		patch.pole[0][2] = p[10];
-		patch.pole[0][1] = p[11];
-		filltensorinterior(&patch);
+		haspatch = 0;
 
-		drawpatch(patch, shade, ncomp, 0);
+		if (flag == 0)
+		{
+			haspatch = 1;
+		}
+		else if (flag == 1 && hasprevpatch)
+		{
+			p[0] = prevp[3];
+			p[1] = prevp[4];
+			p[2] = prevp[5];
+			p[3] = prevp[6];
+			memcpy(c[0], prevc[1], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[2], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+		else if (flag == 2 && hasprevpatch)
+		{
+			p[0] = prevp[6];
+			p[1] = prevp[7];
+			p[2] = prevp[8];
+			p[3] = prevp[9];
+			memcpy(c[0], prevc[2], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[3], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+		else if (flag == 3 && hasprevpatch)
+		{
+			p[0] = prevp[10];
+			p[1] = prevp[11];
+			p[2] = prevp[12];
+			p[3] = prevp[ 0];
+			memcpy(c[0], prevc[3], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[0], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+
+		if (haspatch)
+		{
+			pdf_tensorpatch patch;
+
+			pdf_maketensorpatch(&patch, 6, p);
+
+			for (i = 0; i < 4; i++)
+				memcpy(patch.color[i], c[i], FZ_MAXCOLORS * sizeof(float));
+
+			pdf_addpatch(shade, &patch, ncomp);
+
+			for (i = 0; i < 12; i++)
+				prevp[i] = p[i];
+
+			for (i = 0; i < 4; i++)
+				memcpy(prevc[i], c[i], FZ_MAXCOLORS * sizeof(float));
+
+			hasprevpatch = 1;
+		}
 	}
 
-	shade->meshlen = shade->meshlen / n / 3;
+	shade->meshlen = shade->meshlen / (2 + ncomp) / 3;
 
 	pdf_logshade("}\n");
 
@@ -1048,30 +1178,29 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 {
 	fz_error error;
 	int ncomp;
-	float x0, x1, y0, y1;
+	fz_point p0, p1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	int i, n;
-	unsigned int t;
-	int flag;
-	fz_point p[16];
-	pdf_tensorpatch patch;
+	int i, k;
+	int haspatch, hasprevpatch;
+	float prevc[4][FZ_MAXCOLORS];
+	fz_point prevp[16];
 
 	pdf_logshade("load type7 shade {\n");
 
 	ncomp = shade->cs->n;
 
-	x0 = decode[0];
-	x1 = decode[1];
-	y0 = decode[2];
-	y1 = decode[3];
+	p0.x = decode[0];
+	p1.x = decode[1];
+	p0.y = decode[2];
+	p1.y = decode[3];
 	for (i = 0; i < ncomp; i++)
 	{
 		c0[i] = decode[4 + i * 2 + 0];
 		c1[i] = decode[4 + i * 2 + 1];
 	}
 
-	pdf_logshade("decode [%g %g %g %g", x0, x1, y0, y1);
+	pdf_logshade("decode [%g %g %g %g", p0.x, p1.x, p0.y, p1.y);
 	for (i = 0; i < ncomp; i++)
 		pdf_logshade(" %g %g", c0[i], c1[i]);
 	pdf_logshade("]\n");
@@ -1087,52 +1216,109 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 	shade->meshcap = 0;
 	shade->mesh = nil;
 
-	n = 2 + ncomp;
+	hasprevpatch = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
+		float c[4][FZ_MAXCOLORS];
+		fz_point p[16];
+		unsigned int t;
+		int startcolor;
+		int startpt;
+		int flag;
+
 		flag = getdata(stream, bpflag);
 
-		for (i = 0; i < 16; i++)
+		if (flag == 0)
 		{
-			t = getdata(stream, bpcoord);
-			p[i].x = x0 + (t * (x1 - x0) / (pow(2, bpcoord) - 1.));
-			t = getdata(stream, bpcoord);
-			p[i].y = y0 + (t * (y1 - y0) / (pow(2, bpcoord) - 1.));
+			startpt = 0;
+			startcolor = 0;
+		}
+		else
+		{
+			startpt = 4;
+			startcolor = 2;
 		}
 
-		for (i = 0; i < 4; i++)
+		for (i = startpt; i < 16; i++)
 		{
-			int k;
-			for (k=0; k < ncomp; k++)
+			t = getdata(stream, bpcoord);
+			p[i].x = (float) (p0.x + (t * (p1.x - p0.x) / (pow(2, bpcoord) - 1.)));
+			t = getdata(stream, bpcoord);
+			p[i].y = (float) (p0.y + (t * (p1.y - p0.y) / (pow(2, bpcoord) - 1.)));
+		}
+
+		for (i = startcolor; i < 4; i++)
+		{
+			for (k = 0; k < ncomp; k++)
 			{
 				t = getdata(stream, bpcomp);
-				patch.color[i][k] =
-				c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
+				c[i][k] = c0[k] + (t * (c1[k] - c0[k]) / (pow(2, bpcomp) - 1.0f));
 			}
 		}
 
-		patch.pole[0][0] = p[0];
-		patch.pole[0][1] = p[1];
-		patch.pole[0][2] = p[2];
-		patch.pole[0][3] = p[3];
-		patch.pole[1][3] = p[4];
-		patch.pole[2][3] = p[5];
-		patch.pole[3][3] = p[6];
-		patch.pole[3][2] = p[7];
-		patch.pole[3][1] = p[8];
-		patch.pole[3][0] = p[9];
-		patch.pole[2][0] = p[10];
-		patch.pole[1][0] = p[11];
-		patch.pole[1][1] = p[12];
-		patch.pole[1][2] = p[13];
-		patch.pole[2][2] = p[14];
-		patch.pole[2][1] = p[15];
+		haspatch = 0;
 
-		drawpatch(patch, shade, ncomp, 0);
+		if (flag == 0)
+		{
+			haspatch = 1;
+		}
+		else if (flag == 1 && hasprevpatch)
+		{
+			p[0] = prevp[3];
+			p[1] = prevp[4];
+			p[2] = prevp[5];
+			p[3] = prevp[6];
+			memcpy(c[0], prevc[1], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[2], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+		else if (flag == 2 && hasprevpatch)
+		{
+			p[0] = prevp[6];
+			p[1] = prevp[7];
+			p[2] = prevp[8];
+			p[3] = prevp[9];
+			memcpy(c[0], prevc[2], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[3], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+		else if (flag == 3 && hasprevpatch)
+		{
+			p[0] = prevp[ 9];
+			p[1] = prevp[10];
+			p[2] = prevp[11];
+			p[3] = prevp[ 0];
+			memcpy(c[0], prevc[3], FZ_MAXCOLORS * sizeof(float));
+			memcpy(c[1], prevc[0], FZ_MAXCOLORS * sizeof(float));
+
+			haspatch = 1;
+		}
+
+		if (haspatch)
+		{
+			pdf_tensorpatch patch;
+
+			pdf_maketensorpatch(&patch, 7, p);
+
+			for (i = 0; i < 4; i++)
+				memcpy(patch.color[i], c[i], FZ_MAXCOLORS * sizeof(float));
+
+			pdf_addpatch(shade, &patch, ncomp);
+
+			for (i = 0; i < 16; i++)
+				prevp[i] = p[i];
+
+			for (i = 0; i < 4; i++)
+				memcpy(prevc[i], c[i], FZ_MAXCOLORS * sizeof(float));
+
+			hasprevpatch = 1;
+		}
 	}
 
-	shade->meshlen = shade->meshlen / n / 3;
+	shade->meshlen = shade->meshlen / (2 + ncomp) / 3;
 
 	pdf_logshade("}\n");
 
