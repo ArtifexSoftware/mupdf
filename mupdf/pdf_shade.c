@@ -1624,7 +1624,10 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 		obj = fz_dictgets(dict, "ExtGState");
 		if (obj)
 		{
-			pdf_logshade("extgstate ...\n");
+			if (fz_dictgets(obj, "CA") || fz_dictgets(obj, "ca"))
+			{
+				fz_warn("shading with alpha not supported");
+			}
 		}
 
 		obj = fz_dictgets(dict, "Shading");
