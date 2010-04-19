@@ -200,9 +200,17 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, pdf_xref *xref, fz_rect bbox, in
 		pdf_unsetpattern(csi, PDF_MFILL);
 		pdf_unsetpattern(csi, PDF_MSTROKE);
 		if (what == PDF_MFILL)
-			gstate->stroke = gstate->fill;	// TODO reference counting
+		{
+			pdf_dropmaterial(&gstate->stroke);
+			pdf_keepmaterial(&gstate->fill);
+			gstate->stroke = gstate->fill;
+		}
 		if (what == PDF_MSTROKE)
+		{
+			pdf_dropmaterial(&gstate->fill);
+			pdf_keepmaterial(&gstate->stroke);
 			gstate->fill = gstate->stroke;
+		}
 	}
 	else
 	{

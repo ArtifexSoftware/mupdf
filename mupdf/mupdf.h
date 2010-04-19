@@ -678,4 +678,7 @@ void pdf_grestore(pdf_csi *csi);
 fz_error pdf_runcsibuffer(pdf_csi *csi, pdf_xref *xref, fz_obj *rdb, fz_buffer *contents);
 fz_error pdf_runcontentstream(fz_device *dev, fz_matrix ctm, pdf_xref *xref, fz_obj *resources, fz_buffer *contents);
 
+pdf_material * pdf_keepmaterial(pdf_material *mat);
+pdf_material * pdf_dropmaterial(pdf_material *mat);
+
 #endif

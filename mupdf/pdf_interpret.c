@@ -41,7 +41,7 @@ clearstack(pdf_csi *csi)
 	csi->top = 0;
 }
 
-static pdf_material *
+pdf_material *
 pdf_keepmaterial(pdf_material *mat)
 {
 	if (mat->cs)
@@ -55,7 +55,7 @@ pdf_keepmaterial(pdf_material *mat)
 	return mat;
 }
 
-static pdf_material *
+pdf_material *
 pdf_dropmaterial(pdf_material *mat)
 {
 	if (mat->cs)
