@@ -15,7 +15,7 @@ default: all
 OS := $(shell uname)
 OS := $(OS:MINGW%=MINGW)
 
-LIBS := -ljbig2dec -lopenjpeg -lfreetype -ljpeg -lz
+LIBS := -ljbig2dec -lopenjpeg -lfreetype -ljpeg -lz -lm
 CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf
 LDFLAGS =
 CC = cc
