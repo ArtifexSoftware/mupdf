@@ -177,14 +177,14 @@ split_stripe(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 	   interpolation since the color values are not linearly
 	   drawn over the patch? */
 	copycolor(s0->color[0], p->color[0]);
-	copycolor(s0->color[1], p->color[1]);
-	midcolor(s0->color[2], p->color[1], p->color[2]);
-	midcolor(s0->color[3], p->color[0], p->color[3]);
+	midcolor(s0->color[1], p->color[0], p->color[1]);
+	midcolor(s0->color[2], p->color[2], p->color[3]);
+	copycolor(s0->color[3], p->color[3]);
 
-	copycolor(s1->color[0], s0->color[3]);
-	copycolor(s1->color[1], s0->color[2]);
+	copycolor(s1->color[0], s0->color[1]);
+	copycolor(s1->color[1], p->color[1]);
 	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], p->color[3]);
+	copycolor(s1->color[3], s0->color[2]);
 }
 
 static void
@@ -225,14 +225,14 @@ split_patch(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 	   interpolation since the color values are not linearly
 	   drawn over the patch? */
 	copycolor(s0->color[0], p->color[0]);
-	midcolor(s0->color[1], p->color[0], p->color[1]);
-	midcolor(s0->color[2], p->color[2], p->color[3]);
-	copycolor(s0->color[3], p->color[3]);
+	copycolor(s0->color[1], p->color[1]);
+	midcolor(s0->color[2], p->color[1], p->color[2]);
+	midcolor(s0->color[3], p->color[0], p->color[3]);
 
-	copycolor(s1->color[0], s0->color[1]);
-	copycolor(s1->color[1], p->color[1]);
+	copycolor(s1->color[0], s0->color[3]);
+	copycolor(s1->color[1], s0->color[2]);
 	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], s0->color[2]);
+	copycolor(s1->color[3], p->color[3]);
 }
 
 static void
