@@ -271,18 +271,14 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	fprintf(stdout, "\n");
 }
 
-static void drawtxt(int pagenum)
+static void drawtxt(int pagenum, struct benchmark *loadtimes)
 {
 	fz_error error;
 	fz_matrix ctm;
-	fz_obj *pageobj;
 	fz_textspan *text;
 	fz_device *dev;
 
-	pageobj = pdf_getpageobject(xref, pagenum);
-	error = pdf_loadpage(&drawpage, xref, pageobj);
-	if (error)
-		die(error);
+	drawloadpage(pagenum, loadtimes);
 
 	ctm = fz_identity();
 
@@ -300,6 +296,8 @@ static void drawtxt(int pagenum)
 	printf("\n");
 
 	fz_freetextspan(text);
+
+	drawfreepage();
 }
 
 static void drawxml(int pagenum)
@@ -377,7 +375,7 @@ static void drawpages(char *pagelist)
 			switch (drawmode)
 			{
 			case DRAWPNM: drawpnm(page, &loadtimes, &drawtimes); break;
-			case DRAWTXT: drawtxt(page); break;
+			case DRAWTXT: drawtxt(page, &loadtimes); break;
 			case DRAWXML: drawxml(page); break;
 			}
 		}
