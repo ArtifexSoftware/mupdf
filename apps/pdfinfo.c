@@ -177,9 +177,10 @@ gatherglobalinfo(void)
 	info->ref = nil;
 	info->u.info.obj = nil;
 
-	info->u.info.obj = fz_dictgets(xref->trailer, "Info");
-	if (!fz_isindirect(info->u.info.obj))
+	info->ref = fz_dictgets(xref->trailer, "Info");
+	if (!fz_isindirect(info->ref))
 		die(fz_throw("not an indirect info object"));
+	info->u.info.obj = fz_resolveindirect(info->ref);
 
 	cryptinfo = fz_malloc(sizeof (struct info));
 
@@ -188,14 +189,11 @@ gatherglobalinfo(void)
 	cryptinfo->ref = nil;
 	cryptinfo->u.crypt.obj = nil;
 
-	if (xref->crypt)
-	{
-		cryptinfo->ref = fz_dictgets(xref->trailer, "Encrypt");
-		if (!fz_isdict(cryptinfo->ref) && !fz_isindirect(cryptinfo->ref))
-			die(fz_throw("not an indirect crypt object"));
-
-		// XXX cryptinfo->u.crypt.obj = xref->crypt->encrypt;
-	}
+	cryptinfo->ref = fz_dictgets(xref->trailer, "Encrypt");
+	if (cryptinfo->ref &&
+		!fz_isdict(cryptinfo->ref) && !fz_isindirect(cryptinfo->ref))
+		die(fz_throw("not an indirect crypt object"));
+	cryptinfo->u.info.obj = fz_resolveindirect(cryptinfo->ref);
 }
 
 static fz_error
