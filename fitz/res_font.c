@@ -365,6 +365,10 @@ fz_rendert3glyph(fz_font *font, int gid, fz_matrix trm)
 
 	ctm = fz_concat(font->t3matrix, trm);
 	bbox = fz_transformrect(ctm, font->bbox);
+	bbox.x0 = floor(bbox.x0);
+	bbox.y0 = floor(bbox.y0);
+	bbox.x1 = ceil(bbox.x1);
+	bbox.y1 = ceil(bbox.y1);
 	glyph = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
 	fz_clearpixmap(glyph, 0x00);
 
