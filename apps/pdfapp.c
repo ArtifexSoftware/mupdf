@@ -653,7 +653,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			}
 		}
 
-		if (seen)
+		if (seen && span->eol)
 		{
 #ifdef _WIN32
 			if (p < ucslen - 1)

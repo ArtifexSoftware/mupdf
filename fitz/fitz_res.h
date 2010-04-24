@@ -112,15 +112,18 @@ struct fz_textchar_s
 
 struct fz_textspan_s
 {
-	int ascender, descender;
+	fz_font *font;
+	float size;
 	int len, cap;
 	fz_textchar *text;
 	fz_textspan *next;
+	int eol;
 };
 
 fz_textspan * fz_newtextspan(void);
 void fz_freetextspan(fz_textspan *line);
 void fz_debugtextspan(fz_textspan *line);
+void fz_debugtextspanxml(fz_textspan *span);
 
 fz_device *fz_newtextdevice(fz_textspan *text);
 

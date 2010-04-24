@@ -293,11 +293,12 @@ static void drawtxt(int pagenum)
 	if (error)
 		die(error);
 
+	fz_freedevice(dev);
+
 	printf("[Page %d]\n", pagenum);
 	fz_debugtextspan(text);
 	printf("\n");
 
-	fz_freedevice(dev);
 	fz_freetextspan(text);
 }
 
