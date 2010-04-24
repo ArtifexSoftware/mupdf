@@ -160,9 +160,6 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 	pdf_logxref("repairxref %p\n", xref);
 
-	/* TODO: extract version */
-	xref->version = 14;
-
 	fz_seek(xref->file, 0, 0);
 
 	listlen = 0;
