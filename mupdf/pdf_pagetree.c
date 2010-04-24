@@ -261,7 +261,7 @@ pdf_getpageobject(pdf_xref *xref, int pageno)
 }
 
 static void
-findpageobject(pdf_xref *xref, fz_obj *node, fz_obj *page, int *pagenop, int *foundp)
+pdf_findpageobjectimp(pdf_xref *xref, fz_obj *node, fz_obj *page, int *pagenop, int *foundp)
 {
 	char *typestr;
 	fz_obj *type;
@@ -321,7 +321,7 @@ findpageobject(pdf_xref *xref, fz_obj *node, fz_obj *page, int *pagenop, int *fo
 				return;
 			}
 
-			findpageobject(xref, obj, page, pagenop, foundp);
+			pdf_findpageobjectimp(xref, obj, page, pagenop, foundp);
 		}
 
 		pdf_logpage("}\n");
@@ -345,7 +345,7 @@ pdf_findpageobject(pdf_xref *xref, fz_obj *page)
 
 	pageno = 0;
 	found = 0;
-	findpageobject(xref, pages, page, &pageno, &found);
+	pdf_findpageobjectimp(xref, pages, page, &pageno, &found);
 
 	pdf_logpage("}\n");
 
