@@ -925,6 +925,39 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 
 }
 
+static void
+pdf_makewidthtable(pdf_fontdesc *fontdesc)
+{
+	fz_font *font = fontdesc->font;
+	int i, k, cid, gid;
+
+	font->widthcount = 0;
+	for (i = 0; i < fontdesc->nhmtx; i++)
+	{
+		for (k = fontdesc->hmtx[i].lo; k <= fontdesc->hmtx[i].hi; k++)
+		{
+			cid = pdf_lookupcmap(fontdesc->encoding, k);
+			gid = pdf_fontcidtogid(fontdesc, cid);
+			if (gid > font->widthcount)
+				font->widthcount = gid;
+		}
+	}
+	font->widthcount ++;
+
+	font->widthtable = fz_malloc(sizeof(int) * font->widthcount);
+	memset(font->widthtable, 0, sizeof(int) * font->widthcount);
+
+	for (i = 0; i < fontdesc->nhmtx; i++)
+	{
+		for (k = fontdesc->hmtx[i].lo; k <= fontdesc->hmtx[i].hi; k++)
+		{
+			cid = pdf_lookupcmap(fontdesc->encoding, k);
+			gid = pdf_fontcidtogid(fontdesc, cid);
+			font->widthtable[gid] = fontdesc->hmtx[i].w;
+		}
+	}
+}
+
 fz_error
 pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 {
@@ -970,6 +1003,9 @@ pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict
 	}
 	if (error)
 		return fz_rethrow(error, "cannot load font");
+
+	if ((*fontdescp)->font->ftsubstitute)
+		pdf_makewidthtable(*fontdescp);
 
 	pdf_storeitem(xref->store, PDF_KFONT, dict, *fontdescp);
 

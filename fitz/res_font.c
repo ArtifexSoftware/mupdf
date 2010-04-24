@@ -30,6 +30,9 @@ fz_newfont(void)
 	font->bbox.x1 = 1000;
 	font->bbox.y1 = 1000;
 
+	font->widthcount = 0;
+	font->widthtable = nil;
+
 	return font;
 }
 
@@ -66,6 +69,9 @@ fz_dropfont(fz_font *font)
 				fz_warn("freetype finalizing face: %s", ft_errorstring(fterr));
 			fz_finalizefreetype();
 		}
+
+		if (font->widthtable)
+			fz_free(font->widthtable);
 
 		fz_free(font);
 	}
@@ -215,37 +221,32 @@ fz_renderftglyph(fz_font *font, int gid, fz_matrix trm)
 	fz_pixmap *glyph;
 	int y;
 
-#if 0
-	/* We lost this feature in refactoring.
-	 * We can't access pdf_fontdesc metrics from fz_font.
-	 * The pdf_fontdesc metrics are character based (cid),
-	 * where the glyph being rendered is given by glyph (gid).
-	 */
-	if (font->ftsubstitute && font->wmode == 0)
+	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
+	if (font->ftsubstitute && gid < font->widthcount)
 	{
-		fz_hmtx subw;
+		int subw;
 		int realw;
 		float scale;
 
+		/* TODO: use FT_Get_Advance */
 		fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 		if (fterr)
-			return fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
+			fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
 
 		fterr = FT_Load_Glyph(font->ftface, gid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 		if (fterr)
-			return fz_throw("freetype failed to load glyph: %s", ft_errorstring(fterr));
+			fz_warn("freetype failed to load glyph: %s", ft_errorstring(fterr));
 
 		realw = ((FT_Face)font->ftface)->glyph->advance.x;
-		subw = fz_gethmtx(font, cid); // <-- this is the offender
+		subw = font->widthtable[gid];
 		if (realw)
-			scale = (float) subw.w / realw;
+			scale = (float) subw / realw;
 		else
 			scale = 1.0;
 
 		trm = fz_concat(fz_scale(scale, 1.0), trm);
 	}
-#endif
 
 	/* freetype mutilates complex glyphs if they are loaded
 	 * with FT_Set_Char_Size 1.0. it rounds the coordinates

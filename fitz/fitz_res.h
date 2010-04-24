@@ -324,6 +324,10 @@ struct fz_font_s
 		struct pdf_xref_s *xref, fz_obj *resources, fz_buffer *contents);
 
 	fz_rect bbox;
+
+	/* substitute metrics */
+	int widthcount;
+	int *widthtable;
 };
 
 fz_error fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
