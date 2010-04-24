@@ -622,7 +622,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	ucsbuf[0] = 0;
 	fz_textspan *ln;
-	int x, y, c;
+	int y, c;
 	int i, p;
 
 	int x0 = app->image->x + app->selr.x0 - app->panx;
@@ -638,26 +638,17 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			y = y0 - 1;
 			for (i = 0; i < ln->len; i++)
 			{
-#if 0
 				int bx0, bx1, by0, by1;
 
 				bx0 = ln->text[i].bbox.x0;
 				bx1 = ln->text[i].bbox.x1;
 				by0 = ln->text[i].bbox.y0;
 				by1 = ln->text[i].bbox.y1;
+
 				c = ln->text[i].c;
 				if (c < 32)
 					c = '?';
 				if (bx1 >= x0 && bx0 <= x1 && by1 >= y0 && by0 <= y1)
-					if (p < ucslen - 1)
-						ucsbuf[p++] = c;
-#endif
-				c = ln->text[i].c;
-				x = ln->text[i].x;
-				y = ln->text[i].y;
-				if (c < 32)
-					c = '?';
-				if (x >= x0 && x <= x1 && y >= y0 && y <= y1)
 					if (p < ucslen - 1)
 						ucsbuf[p++] = c;
 			}

@@ -106,7 +106,8 @@ typedef struct fz_textchar_s fz_textchar;
 
 struct fz_textchar_s
 {
-	int c, x, y, w;
+	int c;
+	fz_bbox bbox;
 };
 
 struct fz_textspan_s

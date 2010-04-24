@@ -54,16 +54,15 @@ fz_freetextspan(fz_textspan *line)
 }
 
 static void
-fz_addtextchar(fz_textspan *line, int x, int y, int c)
+fz_addtextchar(fz_textspan *line, int c, fz_bbox bbox)
 {
 	if (line->len + 1 >= line->cap)
 	{
 		line->cap = line->cap ? (line->cap * 3) / 2 : 80;
 		line->text = fz_realloc(line->text, sizeof(fz_textchar) * line->cap);
 	}
-	line->text[line->len].x = x;
-	line->text[line->len].y = y;
 	line->text[line->len].c = c;
+	line->text[line->len].bbox = bbox;
 	line->len ++;
 }
 
@@ -99,9 +98,10 @@ fz_textextractline(fz_textspan **line, fz_text *text, fz_matrix ctm, fz_point *o
 	fz_matrix inv = fz_invertmatrix(text->trm);
 	fz_matrix trm;
 	float dx, dy;
+	fz_rect rect;
 	fz_point p;
 	float adv;
-	int i, x, y, fterr;
+	int i, fterr;
 
 	if (font->ftface)
 	{
@@ -113,14 +113,18 @@ fz_textextractline(fz_textspan **line, fz_text *text, fz_matrix ctm, fz_point *o
 
 	for (i = 0; i < text->len; i++)
 	{
+		/* Get bbox in device space */
 		tm.e = text->els[i].x;
 		tm.f = text->els[i].y;
 		trm = fz_concat(tm, ctm);
-		x = trm.e;
-		y = trm.f;
-		trm.e = 0;
-		trm.f = 0;
 
+		rect.x0 = 0.0;
+		rect.y0 = 0.0;
+		rect.x1 = adv;
+		rect.y1 = 1.0;
+		rect = fz_transformrect(trm, rect);
+
+		/* Get point in user space to perform heuristic space and newline tests */
 		p.x = text->els[i].x;
 		p.y = text->els[i].y;
 		p = fz_transformpoint(inv, p);
@@ -129,7 +133,23 @@ fz_textextractline(fz_textspan **line, fz_text *text, fz_matrix ctm, fz_point *o
 		*oldpt = p;
 
 		/* TODO: flip advance and test for vertical writing */
+		if (fabs(dy) > 0.2)
+		{
+			fz_textspan *newline;
+			newline = fz_newtextspan();
+			(*line)->next = newline;
+			*line = newline;
+		}
+		else if (fabs(dx) > 0.2)
+		{
+			/* TODO: improve the location of the invented space bbox */
+			fz_bbox bbox = fz_roundrect(rect);
+			bbox.x1 = bbox.x0;
+			bbox.y1 = bbox.y0;
+			fz_addtextchar(*line, ' ', bbox);
+		}
 
+		/* Update oldpt for advance width */
 		if (font->ftface)
 		{
 			FT_Fixed ftadv;
@@ -147,19 +167,7 @@ fz_textextractline(fz_textspan **line, fz_text *text, fz_matrix ctm, fz_point *o
 			oldpt->x += adv;
 		}
 
-		if (fabs(dy) > 0.2)
-		{
-			fz_textspan *newline;
-			newline = fz_newtextspan();
-			(*line)->next = newline;
-			*line = newline;
-		}
-		else if (fabs(dx) > 0.2)
-		{
-			fz_addtextchar(*line, x, y, ' ');
-		}
-
-		fz_addtextchar(*line, x, y, text->els[i].ucs);
+		fz_addtextchar(*line, text->els[i].ucs, fz_roundrect(rect));
 	}
 }
 
