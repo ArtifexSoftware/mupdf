@@ -130,16 +130,13 @@ fz_drawfillpath(void *user, fz_path *path, fz_matrix ctm,
 
 	if (dev->model)
 	{
-		unsigned char argb[7];
+		unsigned char argb[4];
 		float rgb[3];
 		fz_convertcolor(colorspace, color, dev->model, rgb);
 		argb[0] = alpha * 255;
-		argb[1] = rgb[0] * alpha * 255;
-		argb[2] = rgb[1] * alpha * 255;
-		argb[3] = rgb[2] * alpha * 255;
-		argb[4] = rgb[0] * 255;
-		argb[5] = rgb[1] * 255;
-		argb[6] = rgb[2] * 255;
+		argb[1] = rgb[0] * 255;
+		argb[2] = rgb[1] * 255;
+		argb[3] = rgb[2] * 255;
 		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, dev->dest, argb, 1);
 	}
 	else
@@ -181,16 +178,13 @@ fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
 
 	if (dev->model)
 	{
-		unsigned char argb[7];
+		unsigned char argb[4];
 		float rgb[3];
 		fz_convertcolor(colorspace, color, dev->model, rgb);
 		argb[0] = alpha * 255;
-		argb[1] = rgb[0] * alpha * 255;
-		argb[2] = rgb[1] * alpha * 255;
-		argb[3] = rgb[2] * alpha * 255;
-		argb[4] = rgb[0] * 255;
-		argb[5] = rgb[1] * 255;
-		argb[6] = rgb[2] * 255;
+		argb[1] = rgb[0] * 255;
+		argb[2] = rgb[1] * 255;
+		argb[3] = rgb[2] * 255;
 		fz_scanconvert(dev->gel, dev->ael, 0, bbox, dev->dest, argb, 1);
 	}
 	else
@@ -339,7 +333,7 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_matrix tm, trm;
 	fz_pixmap *glyph;
 	int i, x, y, gid;
-	unsigned char tmp[7];
+	unsigned char tmp[4];
 	unsigned char *argb;
 
 	if (dev->model)
@@ -347,12 +341,9 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 		float rgb[3];
 		fz_convertcolor(colorspace, color, dev->model, rgb);
 		tmp[0] = alpha * 255;
-		tmp[1] = rgb[0] * alpha * 255;
-		tmp[2] = rgb[1] * alpha * 255;
-		tmp[3] = rgb[2] * alpha * 255;
-		tmp[4] = rgb[0] * 255;
-		tmp[5] = rgb[1] * 255;
-		tmp[6] = rgb[2] * 255;
+		tmp[1] = rgb[0] * 255;
+		tmp[2] = rgb[1] * 255;
+		tmp[3] = rgb[2] * 255;
 		argb = tmp;
 	}
 	else
@@ -722,16 +713,13 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 
 	if (dev->dest->colorspace)
 	{
-		unsigned char argb[7];
+		unsigned char argb[4];
 		float rgb[3];
 		fz_convertcolor(colorspace, color, dev->model, rgb);
 		argb[0] = alpha * 255;
-		argb[1] = rgb[0] * alpha * 255;
-		argb[2] = rgb[1] * alpha * 255;
-		argb[3] = rgb[2] * alpha * 255;
-		argb[4] = rgb[0] * 255;
-		argb[5] = rgb[1] * 255;
-		argb[6] = rgb[2] * 255;
+		argb[1] = rgb[0] * 255;
+		argb[2] = rgb[1] * 255;
+		argb[3] = rgb[2] * 255;
 		fz_img_w4i1o4(argb, image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
 	}

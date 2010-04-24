@@ -312,9 +312,9 @@ static void text_1o1(byte * restrict src0, int srcw, byte * restrict dst0, int d
 static void text_w4i1o4(byte * restrict argb, byte * restrict src0, int srcw, byte * restrict dst0, int dstw, int w0, int h)
 {
 	unsigned char alpha = argb[0];
-	unsigned char r = argb[4];
-	unsigned char g = argb[5];
-	unsigned char b = argb[6];
+	unsigned char r = argb[1];
+	unsigned char g = argb[2];
+	unsigned char b = argb[3];
 	while (h--)
 	{
 		byte *src = src0;
