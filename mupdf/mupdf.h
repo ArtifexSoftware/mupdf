@@ -611,13 +611,7 @@ struct pdf_gstate_s
 	int clipdepth;
 
 	/* path stroking */
-	float linewidth;
-	int linecap;
-	int linejoin;
-	float miterlimit;
-	float dashphase;
-	int dashlen;
-	float dashlist[32];
+	fz_strokestate strokestate;
 
 	/* materials */
 	pdf_material stroke;

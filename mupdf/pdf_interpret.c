@@ -284,23 +284,23 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 		}
 
 		else if (!strcmp(s, "LW"))
-			gstate->linewidth = fz_toreal(val);
+			gstate->strokestate.linewidth = fz_toreal(val);
 		else if (!strcmp(s, "LC"))
-			gstate->linecap = fz_toint(val);
+			gstate->strokestate.linecap = fz_toint(val);
 		else if (!strcmp(s, "LJ"))
-			gstate->linejoin = fz_toint(val);
+			gstate->strokestate.linejoin = fz_toint(val);
 		else if (!strcmp(s, "ML"))
-			gstate->miterlimit = fz_toreal(val);
+			gstate->strokestate.miterlimit = fz_toreal(val);
 
 		else if (!strcmp(s, "D"))
 		{
 			if (fz_isarray(val) && fz_arraylen(val) == 2)
 			{
 				fz_obj *dashes = fz_arrayget(val, 0);
-				gstate->dashlen = MAX(fz_arraylen(dashes), 32);
-				for (k = 0; k < gstate->dashlen; k++)
-					gstate->dashlist[k] = fz_toreal(fz_arrayget(dashes, k));
-				gstate->dashphase = fz_toreal(fz_arrayget(val, 1));
+				gstate->strokestate.dashlen = MAX(fz_arraylen(dashes), 32);
+				for (k = 0; k < gstate->strokestate.dashlen; k++)
+					gstate->strokestate.dashlist[k] = fz_toreal(fz_arrayget(dashes, k));
+				gstate->strokestate.dashphase = fz_toreal(fz_arrayget(val, 1));
 			}
 			else
 				return fz_throw("malformed /D");
@@ -989,25 +989,25 @@ Lsetcolor:
 	case 'w':
 		if (csi->top != 1)
 			goto syntaxerror;
-		gstate->linewidth = fz_toreal(csi->stack[0]);
+		gstate->strokestate.linewidth = fz_toreal(csi->stack[0]);
 		break;
 
 	case 'J':
 		if (csi->top != 1)
 			goto syntaxerror;
-		gstate->linecap = fz_toint(csi->stack[0]);
+		gstate->strokestate.linecap = fz_toint(csi->stack[0]);
 		break;
 
 	case 'j':
 		if (csi->top != 1)
 			goto syntaxerror;
-		gstate->linejoin = fz_toint(csi->stack[0]);
+		gstate->strokestate.linejoin = fz_toint(csi->stack[0]);
 		break;
 
 	case 'M':
 		if (csi->top != 1)
 			goto syntaxerror;
-		gstate->miterlimit = fz_toreal(csi->stack[0]);
+		gstate->strokestate.miterlimit = fz_toreal(csi->stack[0]);
 		break;
 
 	case 'd':
@@ -1016,12 +1016,12 @@ Lsetcolor:
 		{
 			int i;
 			fz_obj *array = csi->stack[0];
-			gstate->dashlen = fz_arraylen(array);
-			if (gstate->dashlen > 32)
+			gstate->strokestate.dashlen = fz_arraylen(array);
+			if (gstate->strokestate.dashlen > 32)
 				return fz_throw("assert: dash pattern too big");
-			for (i = 0; i < gstate->dashlen; i++)
-				gstate->dashlist[i] = fz_toreal(fz_arrayget(array, i));
-			gstate->dashphase = fz_toreal(csi->stack[1]);
+			for (i = 0; i < gstate->strokestate.dashlen; i++)
+				gstate->strokestate.dashlist[i] = fz_toreal(fz_arrayget(array, i));
+			gstate->strokestate.dashphase = fz_toreal(csi->stack[1]);
 		}
 		break;
 

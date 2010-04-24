@@ -388,7 +388,7 @@ strokebezier(struct sctx *s,
 }
 
 void
-fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth)
+fz_strokepath(fz_gel *gel, fz_path *path, fz_strokestate *stroke, fz_matrix ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 	fz_point p0, p1, p2, p3;
@@ -398,10 +398,10 @@ fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float l
 	s.ctm = &ctm;
 	s.flatness = flatness;
 
-	s.linecap = path->linecap;
-	s.linejoin = path->linejoin;
+	s.linecap = stroke->linecap;
+	s.linejoin = stroke->linejoin;
 	s.linewidth = linewidth * 0.5; /* hairlines use a different value from the path value */
-	s.miterlimit = path->miterlimit;
+	s.miterlimit = stroke->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
 	s.dot = 0;
@@ -571,7 +571,7 @@ dashbezier(struct sctx *s,
 }
 
 void
-fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth)
+fz_dashpath(fz_gel *gel, fz_path *path, fz_strokestate *stroke, fz_matrix ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 	fz_point p0, p1, p2, p3, beg;
@@ -581,17 +581,17 @@ fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float lin
 	s.ctm = &ctm;
 	s.flatness = flatness;
 
-	s.linecap = path->linecap;
-	s.linejoin = path->linejoin;
+	s.linecap = stroke->linecap;
+	s.linejoin = stroke->linejoin;
 	s.linewidth = linewidth * 0.5;
-	s.miterlimit = path->miterlimit;
+	s.miterlimit = stroke->miterlimit;
 	s.sn = 0;
 	s.bn = 0;
 	s.dot = 0;
 
-	s.dashlist = path->dashlist;
-	s.dashphase = path->dashphase;
-	s.dashlen = path->dashlen;
+	s.dashlist = stroke->dashlist;
+	s.dashphase = stroke->dashphase;
+	s.dashlen = stroke->dashlen;
 	s.toggle = 0;
 	s.offset = 0;
 	s.phase = 0;

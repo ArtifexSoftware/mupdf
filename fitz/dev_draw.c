@@ -105,7 +105,7 @@ blendmaskover(fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst)
 }
 
 static void
-fz_drawfillpath(void *user, fz_path *path, fz_matrix ctm,
+fz_drawfillpath(void *user, fz_path *path, int evenodd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
@@ -137,22 +137,22 @@ fz_drawfillpath(void *user, fz_path *path, fz_matrix ctm,
 		argb[1] = rgb[0] * 255;
 		argb[2] = rgb[1] * 255;
 		argb[3] = rgb[2] * 255;
-		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, dev->dest, argb, 1);
+		fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, dev->dest, argb, 1);
 	}
 	else
 	{
-		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, dev->dest, nil, 1);
+		fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, dev->dest, nil, 1);
 	}
 }
 
 static void
-fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
+fz_drawstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
-	float linewidth = path->linewidth;
+	float linewidth = stroke->linewidth;
 	fz_bbox bbox;
 	fz_bbox clip;
 
@@ -165,10 +165,10 @@ fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
 	clip.y1 = dev->dest->y + dev->dest->h;
 
 	fz_resetgel(dev->gel, clip);
-	if (path->dashlen > 0)
-		fz_dashpath(dev->gel, path, ctm, flatness, linewidth);
+	if (stroke->dashlen > 0)
+		fz_dashpath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
-		fz_strokepath(dev->gel, path, ctm, flatness, linewidth);
+		fz_strokepath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
@@ -194,7 +194,7 @@ fz_drawstrokepath(void *user, fz_path *path, fz_matrix ctm,
 }
 
 static void
-fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
+fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
@@ -227,7 +227,7 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
 
 	if (!fz_isemptyrect(bbox))
-		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, mask, nil, 1);
+		fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, mask, nil, 1);
 
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
@@ -236,12 +236,12 @@ fz_drawclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
-fz_drawclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
-	float linewidth = path->linewidth;
+	float linewidth = stroke->linewidth;
 	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
 
@@ -260,10 +260,10 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
 		linewidth = 1.0 / expansion;
 
 	fz_resetgel(dev->gel, clip);
-	if (path->dashlen > 0)
-		fz_dashpath(dev->gel, path, ctm, flatness, linewidth);
+	if (stroke->dashlen > 0)
+		fz_dashpath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
-		fz_strokepath(dev->gel, path, ctm, flatness, linewidth);
+		fz_strokepath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
@@ -276,7 +276,7 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
 
 	if (!fz_isemptyrect(bbox))
-		fz_scanconvert(dev->gel, dev->ael, path->evenodd, bbox, mask, nil, 1);
+		fz_scanconvert(dev->gel, dev->ael, 0, bbox, mask, nil, 1);
 
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
@@ -379,7 +379,7 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 }
 
 static void
-fz_drawstroketext(void *user, fz_text *text, fz_matrix ctm,
+fz_drawstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_warn("stroked text not implemented; filling instead");
@@ -447,7 +447,7 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 }
 
 static void
-fz_drawclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+fz_drawclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
 {
 	fz_drawcliptext(user, text, ctm);
 }

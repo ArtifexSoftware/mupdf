@@ -10,6 +10,9 @@ fz_newdisplaynode(fz_displaycommand cmd, fz_matrix ctm,
 	node = fz_malloc(sizeof(fz_displaynode));
 	node->cmd = cmd;
 	node->next = nil;
+	node->item.path = nil;
+	node->stroke = nil;
+	node->evenodd = 0;
 	node->ctm = ctm;
 	if (colorspace)
 	{
@@ -24,6 +27,14 @@ fz_newdisplaynode(fz_displaycommand cmd, fz_matrix ctm,
 	node->alpha = alpha;
 
 	return node;
+}
+
+static fz_strokestate *
+fz_clonestrokestate(fz_strokestate *stroke)
+{
+	fz_strokestate *newstroke = fz_malloc(sizeof(fz_strokestate));
+	*newstroke = *stroke;
+	return newstroke;
 }
 
 static void
@@ -70,46 +81,52 @@ fz_freedisplaynode(fz_displaynode *node)
 	case FZ_CMDPOPCLIP:
 		break;
 	}
+	if (node->stroke)
+		fz_free(node->stroke);
 	if (node->colorspace)
 		fz_dropcolorspace(node->colorspace);
 	fz_free(node);
 }
 
 static void
-fz_listfillpath(void *user, fz_path *path, fz_matrix ctm,
+fz_listfillpath(void *user, fz_path *path, int evenodd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDFILLPATH, ctm, colorspace, color, alpha);
 	node->item.path = fz_clonepath(path);
+	node->evenodd = evenodd;
 	fz_appenddisplaynode(user, node);
 }
 
 static void
-fz_liststrokepath(void *user, fz_path *path, fz_matrix ctm,
+fz_liststrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDSTROKEPATH, ctm, colorspace, color, alpha);
 	node->item.path = fz_clonepath(path);
+	node->stroke = fz_clonestrokestate(stroke);
 	fz_appenddisplaynode(user, node);
 }
 
 static void
-fz_listclippath(void *user, fz_path *path, fz_matrix ctm)
+fz_listclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDCLIPPATH, ctm, nil, nil, 0.0);
 	node->item.path = fz_clonepath(path);
+	node->evenodd = evenodd;
 	fz_appenddisplaynode(user, node);
 }
 
 static void
-fz_listclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+fz_listclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDCLIPSTROKEPATH, ctm, nil, nil, 0.0);
 	node->item.path = fz_clonepath(path);
+	node->stroke = fz_clonestrokestate(stroke);
 	fz_appenddisplaynode(user, node);
 }
 
@@ -124,12 +141,13 @@ fz_listfilltext(void *user, fz_text *text, fz_matrix ctm,
 }
 
 static void
-fz_liststroketext(void *user, fz_text *text, fz_matrix ctm,
+fz_liststroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDSTROKETEXT, ctm, colorspace, color, alpha);
 	node->item.text = fz_clonetext(text);
+	node->stroke = fz_clonestrokestate(stroke);
 	fz_appenddisplaynode(user, node);
 }
 
@@ -143,11 +161,12 @@ fz_listcliptext(void *user, fz_text *text, fz_matrix ctm)
 }
 
 static void
-fz_listclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+fz_listclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
 {
 	fz_displaynode *node;
 	node = fz_newdisplaynode(FZ_CMDCLIPSTROKETEXT, ctm, nil, nil, 0.0);
 	node->item.text = fz_clonetext(text);
+	node->stroke = fz_clonestrokestate(stroke);
 	fz_appenddisplaynode(user, node);
 }
 
@@ -262,32 +281,32 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
 		switch (node->cmd)
 		{
 		case FZ_CMDFILLPATH:
-			dev->fillpath(dev->user, node->item.path, ctm,
+			dev->fillpath(dev->user, node->item.path, node->evenodd, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMDSTROKEPATH:
-			dev->strokepath(dev->user, node->item.path, ctm,
+			dev->strokepath(dev->user, node->item.path, node->stroke, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMDCLIPPATH:
-			dev->clippath(dev->user, node->item.path, ctm);
+			dev->clippath(dev->user, node->item.path, node->evenodd, ctm);
 			break;
 		case FZ_CMDCLIPSTROKEPATH:
-			dev->clipstrokepath(dev->user, node->item.path, ctm);
+			dev->clipstrokepath(dev->user, node->item.path, node->stroke, ctm);
 			break;
 		case FZ_CMDFILLTEXT:
 			dev->filltext(dev->user, node->item.text, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMDSTROKETEXT:
-			dev->stroketext(dev->user, node->item.text, ctm,
+			dev->stroketext(dev->user, node->item.text, node->stroke, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMDCLIPTEXT:
 			dev->cliptext(dev->user, node->item.text, ctm);
 			break;
 		case FZ_CMDCLIPSTROKETEXT:
-			dev->clipstroketext(dev->user, node->item.text, ctm);
+			dev->clipstroketext(dev->user, node->item.text, node->stroke, ctm);
 			break;
 		case FZ_CMDIGNORETEXT:
 			dev->ignoretext(dev->user, node->item.text, ctm);

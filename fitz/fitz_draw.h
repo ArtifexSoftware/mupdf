@@ -59,8 +59,8 @@ fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
 	fz_bbox clip, fz_pixmap *pix, unsigned char *argb, int over);
 
 void fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
-void fz_strokepath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
-void fz_dashpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness, float linewidth);
+void fz_strokepath(fz_gel *gel, fz_path *path, fz_strokestate *stroke, fz_matrix ctm, float flatness, float linewidth);
+void fz_dashpath(fz_gel *gel, fz_path *path, fz_strokestate *stroke, fz_matrix ctm, float flatness, float linewidth);
 
 /*
  * Function pointers -- they can be replaced by cpu-optimized versions

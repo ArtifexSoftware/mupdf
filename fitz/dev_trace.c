@@ -59,11 +59,11 @@ fz_tracepath(fz_path *path, int indent)
 }
 
 static void
-fz_tracefillpath(void *user, fz_path *path, fz_matrix ctm,
+fz_tracefillpath(void *user, fz_path *path, int evenodd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	printf("<fillpath ");
-	if (path->evenodd)
+	if (evenodd)
 		printf("winding=\"eofill\" ");
 	else
 		printf("winding=\"nonzero\" ");
@@ -75,22 +75,22 @@ fz_tracefillpath(void *user, fz_path *path, fz_matrix ctm,
 }
 
 static void
-fz_tracestrokepath(void *user, fz_path *path, fz_matrix ctm,
+fz_tracestrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	int i;
 
 	printf("<strokepath ");
-	printf("linewidth=\"%g\" ", path->linewidth);
-	printf("miterlimit=\"%g\" ", path->miterlimit);
-	printf("linecap=\"%d\" ", path->linecap);
-	printf("linejoin=\"%d\" ", path->linejoin);
+	printf("linewidth=\"%g\" ", stroke->linewidth);
+	printf("miterlimit=\"%g\" ", stroke->miterlimit);
+	printf("linecap=\"%d\" ", stroke->linecap);
+	printf("linejoin=\"%d\" ", stroke->linejoin);
 
-	if (path->dashlen)
+	if (stroke->dashlen)
 	{
-		printf("dashphase=\"%g\" dash=\"", path->dashphase);
-		for (i = 0; i < path->dashlen; i++)
-			printf("%g ", path->dashlist[i]);
+		printf("dashphase=\"%g\" dash=\"", stroke->dashphase);
+		for (i = 0; i < stroke->dashlen; i++)
+			printf("%g ", stroke->dashlist[i]);
 		printf("\"");
 	}
 
@@ -104,11 +104,11 @@ fz_tracestrokepath(void *user, fz_path *path, fz_matrix ctm,
 }
 
 static void
-fz_traceclippath(void *user, fz_path *path, fz_matrix ctm)
+fz_traceclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 {
 	printf("<gsave>\n");
 	printf("<clippath ");
-	if (path->evenodd)
+	if (evenodd)
 		printf("winding=\"eofill\" ");
 	else
 		printf("winding=\"nonzero\" ");
@@ -119,14 +119,10 @@ fz_traceclippath(void *user, fz_path *path, fz_matrix ctm)
 }
 
 static void
-fz_traceclipstrokepath(void *user, fz_path *path, fz_matrix ctm)
+fz_traceclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm)
 {
 	printf("<gsave>\n");
 	printf("<clipstrokepath ");
-	if (path->evenodd)
-		printf("winding=\"eofill\" ");
-	else
-		printf("winding=\"nonzero\" ");
 	fz_tracematrix(ctm);
 	printf(">\n");
 	fz_tracepath(path, 0);
@@ -146,7 +142,7 @@ fz_tracefilltext(void *user, fz_text *text, fz_matrix ctm,
 }
 
 static void
-fz_tracestroketext(void *user, fz_text *text, fz_matrix ctm,
+fz_tracestroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	printf("<stroketext font=\"%s\" ", text->font->name);
@@ -169,7 +165,7 @@ fz_tracecliptext(void *user, fz_text *text, fz_matrix ctm)
 }
 
 static void
-fz_traceclipstroketext(void *user, fz_text *text, fz_matrix ctm)
+fz_traceclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
 {
 	printf("<gsave>\n");
 	printf("<clipstroketext font=\"%s\" ", text->font->name);

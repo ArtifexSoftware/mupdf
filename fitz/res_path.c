@@ -6,13 +6,6 @@ fz_newpath(void)
 	fz_path *path;
 
 	path = fz_malloc(sizeof(fz_path));
-	path->dashlen = 0;
-	path->dashphase = 0;
-	path->evenodd = 0;
-	path->linecap = 0;
-	path->linejoin = 0;
-	path->linewidth = 1.0;
-	path->miterlimit = 10.0;
 	path->len = 0;
 	path->cap = 0;
 	path->els = nil;
@@ -124,7 +117,7 @@ static inline fz_rect boundexpand(fz_rect r, fz_point p)
 }
 
 fz_rect
-fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
+fz_boundpath(fz_path *path, fz_strokestate *stroke, fz_matrix ctm)
 {
 	fz_point p;
 	fz_rect r = fz_emptyrect;
@@ -161,10 +154,10 @@ fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke)
 		}
 	}
 
-	if (dostroke)
+	if (stroke)
 	{
-		float miterlength = sin(path->miterlimit / 2.0);
-		float linewidth = path->linewidth;
+		float miterlength = sin(stroke->miterlimit / 2.0);
+		float linewidth = stroke->linewidth;
 		float expand = MAX(miterlength, linewidth) / 2.0;
 		r.x0 -= expand;
 		r.y0 -= expand;

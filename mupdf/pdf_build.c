@@ -7,13 +7,13 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->ctm = ctm;
 	gs->clipdepth = 0;
 
-	gs->linewidth = 1.0;
-	gs->linecap = 0;
-	gs->linejoin = 0;
-	gs->miterlimit = 10;
-	gs->dashphase = 0;
-	gs->dashlen = 0;
-	memset(gs->dashlist, 0, sizeof(gs->dashlist));
+	gs->strokestate.linewidth = 1.0;
+	gs->strokestate.linecap = 0;
+	gs->strokestate.linejoin = 0;
+	gs->strokestate.miterlimit = 10;
+	gs->strokestate.dashphase = 0;
+	gs->strokestate.dashlen = 0;
+	memset(gs->strokestate.dashlist, 0, sizeof(gs->strokestate.dashlist));
 
 	gs->stroke.kind = PDF_MCOLOR;
 	gs->stroke.cs = fz_keepcolorspace(pdf_devicegray);
@@ -329,7 +329,6 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_rect bbox;
 	fz_path *path;
-	int i;
 
 	path = csi->path;
 	csi->path = fz_newpath();
@@ -337,20 +336,10 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 	if (doclose)
 		fz_closepath(path);
 
-	path->evenodd = evenodd;
-	path->linewidth = gstate->linewidth;
-	path->linecap = gstate->linecap;
-	path->linejoin = gstate->linejoin;
-	path->miterlimit = gstate->miterlimit;
-	path->dashlen = gstate->dashlen;
-	path->dashphase = gstate->dashphase;
-	for (i = 0; i < path->dashlen; i++)
-		path->dashlist[i] = gstate->dashlist[i];
-
 	if (csi->clip)
 	{
 		gstate->clipdepth++;
-		csi->dev->clippath(csi->dev->user, path, gstate->ctm);
+		csi->dev->clippath(csi->dev->user, path, evenodd, gstate->ctm);
 		csi->clip = 0;
 	}
 
@@ -363,17 +352,17 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		case PDF_MCOLOR:
 		case PDF_MINDEXED:
 		case PDF_MLAB:
-			csi->dev->fillpath(csi->dev->user, path, gstate->ctm,
+			csi->dev->fillpath(csi->dev->user, path, evenodd, gstate->ctm,
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
-			bbox = fz_boundpath(path, gstate->ctm, 0);
-			csi->dev->clippath(csi->dev->user, path, gstate->ctm);
+			bbox = fz_boundpath(path, nil, gstate->ctm);
+			csi->dev->clippath(csi->dev->user, path, evenodd, gstate->ctm);
 			pdf_showpattern(csi, gstate->fill.pattern, bbox, PDF_MFILL);
 			csi->dev->popclip(csi->dev->user);
 			break;
 		case PDF_MSHADE:
-			csi->dev->clippath(csi->dev->user, path, gstate->ctm);
+			csi->dev->clippath(csi->dev->user, path, evenodd, gstate->ctm);
 			csi->dev->fillshade(csi->dev->user, gstate->fill.shade, gstate->ctm);
 			csi->dev->popclip(csi->dev->user);
 			break;
@@ -389,17 +378,17 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		case PDF_MCOLOR:
 		case PDF_MINDEXED:
 		case PDF_MLAB:
-			csi->dev->strokepath(csi->dev->user, path, gstate->ctm,
+			csi->dev->strokepath(csi->dev->user, path, &gstate->strokestate, gstate->ctm,
 				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MPATTERN:
-			bbox = fz_boundpath(path, gstate->ctm, 1);
-			csi->dev->clipstrokepath(csi->dev->user, path, gstate->ctm);
+			bbox = fz_boundpath(path, &gstate->strokestate, gstate->ctm);
+			csi->dev->clipstrokepath(csi->dev->user, path, &gstate->strokestate, gstate->ctm);
 			pdf_showpattern(csi, gstate->stroke.pattern, bbox, PDF_MFILL);
 			csi->dev->popclip(csi->dev->user);
 			break;
 		case PDF_MSHADE:
-			csi->dev->clipstrokepath(csi->dev->user, path, gstate->ctm);
+			csi->dev->clipstrokepath(csi->dev->user, path, &gstate->strokestate, gstate->ctm);
 			csi->dev->fillshade(csi->dev->user, gstate->stroke.shade, gstate->ctm);
 			csi->dev->popclip(csi->dev->user);
 			break;
@@ -514,17 +503,17 @@ pdf_flushtext(pdf_csi *csi)
 		case PDF_MCOLOR:
 		case PDF_MINDEXED:
 		case PDF_MLAB:
-			csi->dev->stroketext(csi->dev->user, text, gstate->ctm,
+			csi->dev->stroketext(csi->dev->user, text, &gstate->strokestate, gstate->ctm,
 				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MPATTERN:
 			bbox = fz_boundtext(text, gstate->ctm);
-			csi->dev->clipstroketext(csi->dev->user, text, gstate->ctm);
+			csi->dev->clipstroketext(csi->dev->user, text, &gstate->strokestate, gstate->ctm);
 			pdf_showpattern(csi, gstate->stroke.pattern, bbox, PDF_MFILL);
 			csi->dev->popclip(csi->dev->user);
 			break;
 		case PDF_MSHADE:
-			csi->dev->clipstroketext(csi->dev->user, text, gstate->ctm);
+			csi->dev->clipstroketext(csi->dev->user, text, &gstate->strokestate, gstate->ctm);
 			csi->dev->fillshade(csi->dev->user, gstate->stroke.shade, gstate->ctm);
 			csi->dev->popclip(csi->dev->user);
 			break;

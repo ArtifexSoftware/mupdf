@@ -9,6 +9,8 @@ typedef struct fz_text_s fz_text;
 typedef struct fz_font_s fz_font;
 typedef struct fz_shade_s fz_shade;
 
+typedef struct fz_strokestate_s fz_strokestate;
+
 enum { FZ_MAXCOLORS = 32 };
 
 typedef enum fz_blendkind_e
@@ -75,15 +77,15 @@ struct fz_device_s
 	void *user;
 	void (*freeuser)(void *);
 
-	void (*fillpath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*strokepath)(void *, fz_path *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*clippath)(void *, fz_path *, fz_matrix);
-	void (*clipstrokepath)(void *, fz_path *, fz_matrix);
+	void (*fillpath)(void *, fz_path *, int evenodd, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*strokepath)(void *, fz_path *, fz_strokestate *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*clippath)(void *, fz_path *, int evenodd, fz_matrix);
+	void (*clipstrokepath)(void *, fz_path *, fz_strokestate *, fz_matrix);
 
 	void (*filltext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*stroketext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*stroketext)(void *, fz_text *, fz_strokestate *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*cliptext)(void *, fz_text *, fz_matrix);
-	void (*clipstroketext)(void *, fz_text *, fz_matrix);
+	void (*clipstroketext)(void *, fz_text *, fz_strokestate *, fz_matrix);
 	void (*ignoretext)(void *, fz_text *, fz_matrix);
 
 	void (*fillshade)(void *, fz_shade *shd, fz_matrix ctm);
@@ -166,6 +168,8 @@ struct fz_displaynode_s
 		fz_shade *shade;
 		fz_pixmap *image;
 	} item;
+	fz_strokestate *stroke;
+	int evenodd;
 	fz_matrix ctm;
 	fz_colorspace *colorspace;
 	float alpha;
@@ -186,7 +190,6 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
  * into the Global Edge List.
  */
 
-typedef struct fz_stroke_s fz_stroke;
 typedef union fz_pathel_s fz_pathel;
 
 typedef enum fz_pathelkind_e
@@ -203,9 +206,8 @@ union fz_pathel_s
 	float v;
 };
 
-struct fz_path_s
+struct fz_strokestate_s
 {
-	int evenodd;
 	int linecap;
 	int linejoin;
 	float linewidth;
@@ -213,6 +215,10 @@ struct fz_path_s
 	float dashphase;
 	int dashlen;
 	float dashlist[32];
+};
+
+struct fz_path_s
+{
 	int len, cap;
 	fz_pathel *els;
 };
@@ -228,7 +234,7 @@ void fz_freepath(fz_path *path);
 
 fz_path *fz_clonepath(fz_path *old);
 
-fz_rect fz_boundpath(fz_path *path, fz_matrix ctm, int dostroke);
+fz_rect fz_boundpath(fz_path *path, fz_strokestate *stroke, fz_matrix ctm);
 void fz_debugpath(fz_path *, int indent);
 
 /*
