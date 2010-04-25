@@ -167,8 +167,8 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 		gstate->fill.alpha = gstate->fill.parentalpha;
 	}
 
-	/* push transform */
-	// xobj->matrix
+	/* apply xobject's transform matrix */
+	gstate->ctm = fz_concat(xobj->matrix, gstate->ctm);
 
 	if (xobj->isolated || xobj->knockout)
 	{
