@@ -153,7 +153,7 @@ pdf_loadtype3font(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj 
 		if (estrings[i])
 		{
 			obj = fz_dictgets(charprocs, estrings[i]);
-			if (obj)
+			if (pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 			{
 				error = pdf_loadstream(&fontdesc->font->t3procs[i], xref, fz_tonum(obj), fz_togen(obj));
 				if (error)
