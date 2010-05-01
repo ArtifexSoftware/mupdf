@@ -27,7 +27,7 @@ CFLAGS += -g -O0
 endif
 
 ifeq "$(build)" "release"
-CFLAGS += -O2
+CFLAGS += -O3
 endif
 
 ifeq "$(OS)" "Linux"
@@ -35,6 +35,10 @@ CFLAGS += `pkg-config --cflags freetype2`
 LDFLAGS += `pkg-config --libs freetype2`
 X11LIBS = -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
+ifeq  "$(build)" "release"
+CFLAGS += -mmmx -ftree-vectorize -msse -msse2 -march=k8 -DARCH_X86
+ARCH_SRC = archx86.c
+endif
 endif
 
 ifeq "$(OS)" "Darwin"
