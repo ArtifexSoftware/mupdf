@@ -430,7 +430,7 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 			y = floor(trm.f);
 			trm.e = QUANT(trm.e - floor(trm.e), HSUBPIX);
 			trm.f = QUANT(trm.f - floor(trm.f), VSUBPIX);
-	
+
 			glyph = fz_renderglyph(dev->cache, text->font, gid, trm);
 			if (glyph)
 			{
