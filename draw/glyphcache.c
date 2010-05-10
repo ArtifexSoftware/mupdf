@@ -13,7 +13,7 @@ struct fz_glyphcache_s
 
 struct fz_glyphkey_s
 {
-	void *font;
+	fz_font *font;
 	int a, b;
 	int c, d;
 	unsigned short cid;
@@ -35,11 +35,15 @@ fz_newglyphcache(void)
 void
 fz_evictglyphcache(fz_glyphcache *cache)
 {
+	fz_glyphkey *key;
 	fz_pixmap *pixmap;
 	int i;
 
 	for (i = 0; i < fz_hashlen(cache->hash); i++)
 	{
+		key = fz_hashgetkey(cache->hash, i);
+		if (key->font)
+			fz_dropfont(key->font);
 		pixmap = fz_hashgetval(cache->hash, i);
 		if (pixmap)
 			fz_droppixmap(pixmap);
@@ -100,6 +104,7 @@ fz_renderglyph(fz_glyphcache *cache, fz_font *font, int cid, fz_matrix ctm)
 		{
 			if (cache->total + val->w * val->h > MAXCACHESIZE)
 				fz_evictglyphcache(cache);
+			fz_keepfont(key.font);
 			fz_hashinsert(cache->hash, &key, val);
 			cache->total += val->w * val->h;
 			return fz_keeppixmap(val);
