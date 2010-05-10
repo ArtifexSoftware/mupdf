@@ -207,9 +207,9 @@ static void img_4o4(FZ_PSRC, FZ_PDST, FZ_PCTM)
 static void img_w4i1o4(byte *argb, FZ_PSRC, FZ_PDST, FZ_PCTM)
 {
 	byte alpha = argb[0];
-	byte r = argb[4];
-	byte g = argb[5];
-	byte b = argb[6];
+	byte r = argb[1];
+	byte g = argb[2];
+	byte b = argb[3];
 	byte cov;
 	byte ca;
 	while (h--)
