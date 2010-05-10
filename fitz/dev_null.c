@@ -7,7 +7,7 @@ static void fz_nullclippath(void *user, fz_path *path, int evenodd, fz_matrix ct
 static void fz_nullclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix ctm) {}
 static void fz_nullfilltext(void *user, fz_text *text, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
 static void fz_nullstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_nullcliptext(void *user, fz_text *text, fz_matrix ctm) {}
+static void fz_nullcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate) {}
 static void fz_nullclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm) {}
 static void fz_nullignoretext(void *user, fz_text *text, fz_matrix ctm) {}
 static void fz_nullpopclip(void *user) {}

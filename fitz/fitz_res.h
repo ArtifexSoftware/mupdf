@@ -84,7 +84,7 @@ struct fz_device_s
 
 	void (*filltext)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
 	void (*stroketext)(void *, fz_text *, fz_strokestate *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*cliptext)(void *, fz_text *, fz_matrix);
+	void (*cliptext)(void *, fz_text *, fz_matrix, int accumulate);
 	void (*clipstroketext)(void *, fz_text *, fz_strokestate *, fz_matrix);
 	void (*ignoretext)(void *, fz_text *, fz_matrix);
 
@@ -169,7 +169,7 @@ struct fz_displaynode_s
 		fz_pixmap *image;
 	} item;
 	fz_strokestate *stroke;
-	int evenodd;
+	int flag; /* evenodd, accumulate, ... */
 	fz_matrix ctm;
 	fz_colorspace *colorspace;
 	float alpha;

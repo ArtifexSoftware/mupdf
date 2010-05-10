@@ -649,6 +649,7 @@ struct pdf_csi_s
 	fz_matrix tlm;
 	fz_matrix tm;
 	int textmode;
+	int accumulate;
 
 	/* graphics state */
 	fz_matrix topctm;

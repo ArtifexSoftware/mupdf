@@ -154,10 +154,11 @@ fz_tracestroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix 
 }
 
 static void
-fz_tracecliptext(void *user, fz_text *text, fz_matrix ctm)
+fz_tracecliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 {
 	printf("<gsave>\n");
 	printf("<cliptext font=\"%s\" ", text->font->name);
+	printf("accumulate=\"%d\" ", accumulate);
 	fz_tracematrix(fz_concat(ctm, text->trm));
 	printf(">\n");
 	fz_debugtext(text, 0);

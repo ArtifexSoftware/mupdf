@@ -387,7 +387,7 @@ fz_drawstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix c
 }
 
 static void
-fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
+fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 {
 	fz_drawdevice *dev = user;
 	fz_bbox clip, bbox;
@@ -395,6 +395,10 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 	fz_matrix tm, trm;
 	fz_pixmap *glyph;
 	int i, x, y, gid;
+
+	/* If accumulate == 0 then this text object is guaranteed complete */
+	/* If accumulate == 1 then this text object is the first (or only) in a sequence */
+	/* If accumulate == 2 then this text object is a continuation */
 
 	if (dev->cliptop == MAXCLIP)
 	{
@@ -407,14 +411,30 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 	clip.x1 = dev->dest->x + dev->dest->w;
 	clip.y1 = dev->dest->y + dev->dest->h;
 
-	bbox = fz_roundrect(fz_boundtext(text, ctm));
-	bbox = fz_intersectbbox(bbox, clip);
+	if (accumulate == 0)
+	{
+		/* make the mask the exact size needed */
+		bbox = fz_roundrect(fz_boundtext(text, ctm));
+		bbox = fz_intersectbbox(bbox, clip);
+	}
+	else
+	{
+		/* be conservative about the size of the mask needed */
+		bbox = clip;
+	}
 
-	mask = fz_newpixmapwithrect(nil, bbox);
-	dest = fz_newpixmapwithrect(dev->model, bbox);
+	if (accumulate == 0 || accumulate == 1)
+	{
+		mask = fz_newpixmapwithrect(nil, bbox);
+		dest = fz_newpixmapwithrect(dev->model, bbox);
 
-	memset(mask->samples, 0, mask->w * mask->h * mask->n);
-	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+		memset(mask->samples, 0, mask->w * mask->h * mask->n);
+		memset(dest->samples, 0, dest->w * dest->h * dest->n);
+	}
+	else
+	{
+		mask = dev->clipstack[dev->cliptop-1].mask;
+	}
 
 	if (!fz_isemptyrect(bbox))
 	{
@@ -440,16 +460,19 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm)
 		}
 	}
 
-	dev->clipstack[dev->cliptop].mask = mask;
-	dev->clipstack[dev->cliptop].dest = dev->dest;
-	dev->dest = dest;
-	dev->cliptop++;
+	if (accumulate == 0 || accumulate == 1)
+	{
+		dev->clipstack[dev->cliptop].mask = mask;
+		dev->clipstack[dev->cliptop].dest = dev->dest;
+		dev->dest = dest;
+		dev->cliptop++;
+	}
 }
 
 static void
 fz_drawclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
 {
-	fz_drawcliptext(user, text, ctm);
+	fz_drawcliptext(user, text, ctm, 0);
 }
 
 static void

@@ -465,7 +465,8 @@ pdf_flushtext(pdf_csi *csi)
 	if (doclip)
 	{
 		gstate->clipdepth++;
-		csi->dev->cliptext(csi->dev->user, text, gstate->ctm);
+		csi->dev->cliptext(csi->dev->user, text, gstate->ctm, csi->accumulate);
+		csi->accumulate = 2;
 	}
 
 	if (dofill)
@@ -482,12 +483,12 @@ pdf_flushtext(pdf_csi *csi)
 			break;
 		case PDF_MPATTERN:
 			bbox = fz_boundtext(text, gstate->ctm);
-			csi->dev->cliptext(csi->dev->user, text, gstate->ctm);
+			csi->dev->cliptext(csi->dev->user, text, gstate->ctm, 0);
 			pdf_showpattern(csi, gstate->fill.pattern, bbox, PDF_MFILL);
 			csi->dev->popclip(csi->dev->user);
 			break;
 		case PDF_MSHADE:
-			csi->dev->cliptext(csi->dev->user, text, gstate->ctm);
+			csi->dev->cliptext(csi->dev->user, text, gstate->ctm, 0);
 			csi->dev->fillshade(csi->dev->user, gstate->fill.shade, gstate->ctm);
 			csi->dev->popclip(csi->dev->user);
 			break;

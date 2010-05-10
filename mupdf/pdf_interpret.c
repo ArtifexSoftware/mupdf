@@ -22,6 +22,7 @@ pdf_newcsi(fz_device *dev, pdf_xref *xref, fz_matrix ctm)
 	csi->tlm = fz_identity();
 	csi->tm = fz_identity();
 	csi->textmode = 0;
+	csi->accumulate = 1;
 
 	csi->topctm = ctm;
 	pdf_initgstate(&csi->gstate[0], ctm);
@@ -731,6 +732,7 @@ Lsetcolor:
 			if (csi->top != 0)
 				goto syntaxerror;
 			pdf_flushtext(csi);
+			csi->accumulate = 1;
 		}
 
 		else if (!strcmp(buf, "Tc"))

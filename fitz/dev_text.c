@@ -262,7 +262,7 @@ fz_textstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix c
 }
 
 static void
-fz_textcliptext(void *user, fz_text *text, fz_matrix ctm)
+fz_textcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 {
 	fz_textdevice *tdev = user;
 	fz_textextractspan(&tdev->span, text, ctm, &tdev->point);
