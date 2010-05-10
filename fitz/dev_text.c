@@ -254,6 +254,28 @@ fz_textfilltext(void *user, fz_text *text, fz_matrix ctm,
 }
 
 static void
+fz_textstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	fz_textdevice *tdev = user;
+	fz_textextractspan(&tdev->span, text, ctm, &tdev->point);
+}
+
+static void
+fz_textcliptext(void *user, fz_text *text, fz_matrix ctm)
+{
+	fz_textdevice *tdev = user;
+	fz_textextractspan(&tdev->span, text, ctm, &tdev->point);
+}
+
+static void
+fz_textclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
+{
+	fz_textdevice *tdev = user;
+	fz_textextractspan(&tdev->span, text, ctm, &tdev->point);
+}
+
+static void
 fz_textignoretext(void *user, fz_text *text, fz_matrix ctm)
 {
 	fz_textdevice *tdev = user;
@@ -279,6 +301,9 @@ fz_newtextdevice(fz_textspan *root)
 	fz_device *dev = fz_newdevice(tdev);
 	dev->freeuser = fz_textfreeuser;
 	dev->filltext = fz_textfilltext;
+	dev->stroketext = fz_textstroketext;
+	dev->cliptext = fz_textcliptext;
+	dev->clipstroketext = fz_textclipstroketext;
 	dev->ignoretext = fz_textignoretext;
 	return dev;
 }
