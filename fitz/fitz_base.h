@@ -189,8 +189,13 @@ typedef struct fz_point_s fz_point;
 typedef struct fz_rect_s fz_rect;
 typedef struct fz_bbox_s fz_bbox;
 
-extern fz_rect fz_emptyrect;
-extern fz_rect fz_infiniterect;
+extern const fz_rect fz_unityrect;
+extern const fz_rect fz_emptyrect;
+extern const fz_rect fz_infiniterect;
+
+extern const fz_bbox fz_unitybbox;
+extern const fz_bbox fz_emptybbox;
+extern const fz_bbox fz_infinitebbox;
 
 #define fz_isemptyrect(r) ((r).x0 == (r).x1)
 #define fz_isinfiniterect(r) ((r).x0 > (r).x1)
@@ -235,6 +240,7 @@ float fz_matrixexpansion(fz_matrix m);
 
 fz_bbox fz_roundrect(fz_rect r);
 fz_bbox fz_intersectbbox(fz_bbox a, fz_bbox b);
+fz_bbox fz_unionbbox(fz_bbox a, fz_bbox b);
 
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
 fz_rect fz_transformrect(fz_matrix m, fz_rect r);

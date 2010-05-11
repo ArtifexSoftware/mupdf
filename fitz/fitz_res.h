@@ -101,6 +101,8 @@ void fz_freedevice(fz_device *dev);
 
 fz_device *fz_newtracedevice(void);
 
+fz_device *fz_newbboxdevice(fz_bbox *bboxp);
+
 /* Text extraction device */
 
 typedef struct fz_textspan_s fz_textspan;
