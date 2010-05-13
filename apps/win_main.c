@@ -182,7 +182,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
 	pdf_xref *xref = gapp.xref;
-	fz_obj *obj;
+	fz_obj *info, *obj;
 
 	switch(message)
 	{
@@ -219,7 +219,8 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetDlgItemTextA(hwnd, 0x13, "n/a");
 		}
 
-		if (!xref->info)
+		info = fz_dictgets(xref->trailer, "Info");
+		if (!info)
 			return TRUE;
 
 #define SETUCS(ID) \
@@ -230,14 +231,14 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			fz_free(ucs); \
 		}
 
-		if ((obj = fz_dictgets(xref->info, "Title")))		SETUCS(0x20);
-		if ((obj = fz_dictgets(xref->info, "Author")))		SETUCS(0x21);
-		if ((obj = fz_dictgets(xref->info, "Subject")))		SETUCS(0x22);
-		if ((obj = fz_dictgets(xref->info, "Keywords")))	SETUCS(0x23);
-		if ((obj = fz_dictgets(xref->info, "Creator")))		SETUCS(0x24);
-		if ((obj = fz_dictgets(xref->info, "Producer")))	SETUCS(0x25);
-		if ((obj = fz_dictgets(xref->info, "CreationDate")))	SETUCS(0x26);
-		if ((obj = fz_dictgets(xref->info, "ModDate")))		SETUCS(0x27);
+		if ((obj = fz_dictgets(info, "Title")))		SETUCS(0x20);
+		if ((obj = fz_dictgets(info, "Author")))		SETUCS(0x21);
+		if ((obj = fz_dictgets(info, "Subject")))		SETUCS(0x22);
+		if ((obj = fz_dictgets(info, "Keywords")))	SETUCS(0x23);
+		if ((obj = fz_dictgets(info, "Creator")))		SETUCS(0x24);
+		if ((obj = fz_dictgets(info, "Producer")))	SETUCS(0x25);
+		if ((obj = fz_dictgets(info, "CreationDate")))	SETUCS(0x26);
+		if ((obj = fz_dictgets(info, "ModDate")))		SETUCS(0x27);
 		return TRUE;
 
 	case WM_COMMAND:
