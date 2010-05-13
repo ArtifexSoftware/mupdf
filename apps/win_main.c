@@ -731,6 +731,9 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 		/* Mouse wheel */
+#ifndef WM_MOUSEWHEEL
+#define WM_MOUSEWHEEL 0x020A
+#endif
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) > 0)
 			handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'u');
@@ -806,4 +809,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
