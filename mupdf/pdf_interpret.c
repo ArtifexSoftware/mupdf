@@ -1361,7 +1361,7 @@ pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 	fz_error error;
 
 	contents->rp = contents->bp;
-	file = fz_openrbuffer(contents);
+	file = fz_openbuffer(contents);
 	error = pdf_runcsifile(csi, rdb, file, csi->xref->scratch, sizeof csi->xref->scratch);
 	fz_dropstream(file);
 	contents->rp = contents->bp;

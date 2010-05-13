@@ -338,10 +338,10 @@ struct fz_stream_s
  * Various stream creation functions.
  */
 
-fz_error fz_openrfile(fz_stream **stmp, char *filename);
-fz_stream * fz_openrmemory(unsigned char *mem, int len);
-fz_stream * fz_openrbuffer(fz_buffer *buf);
-fz_stream * fz_openrfilter(fz_filter *flt, fz_stream *chain);
+fz_stream * fz_openfile(int file);
+fz_stream * fz_openmemory(unsigned char *mem, int len);
+fz_stream * fz_openbuffer(fz_buffer *buf);
+fz_stream * fz_openfilter(fz_filter *flt, fz_stream *chain);
 
 /*
  * Functions that are common to both input and output streams.

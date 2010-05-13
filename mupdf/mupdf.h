@@ -144,7 +144,7 @@ struct pdf_xrefentry_s
 	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
 };
 
-pdf_xref * pdf_openxref(char *filename);
+pdf_xref * pdf_openxref(fz_stream *file);
 void pdf_closexref(pdf_xref *);
 void pdf_debugxref(pdf_xref *);
 void pdf_flushxref(pdf_xref *, int force);

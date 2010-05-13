@@ -331,7 +331,7 @@ pdf_openrawstream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 		if (error)
 			return fz_rethrow(error, "cannot seek to stream");
 
-		*stmp = fz_openrfilter(filter, xref->file);
+		*stmp = fz_openfilter(filter, xref->file);
 		fz_dropfilter(filter);
 		return fz_okay;
 	}
@@ -368,7 +368,7 @@ pdf_openstream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 		if (error)
 			return fz_rethrow(error, "cannot seek to stream");
 
-		*stmp = fz_openrfilter(filter, xref->file);
+		*stmp = fz_openfilter(filter, xref->file);
 		fz_dropfilter(filter);
 		return fz_okay;
 	}

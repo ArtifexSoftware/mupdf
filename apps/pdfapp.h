@@ -22,7 +22,6 @@ extern void windocopy(pdfapp_t*);
 struct pdfapp_s
 {
 	/* current document params */
-	char *filename;
 	char *doctitle;
 	pdf_xref *xref;
 	pdf_outline *outline;
@@ -64,7 +63,7 @@ struct pdfapp_s
 };
 
 void pdfapp_init(pdfapp_t *app);
-void pdfapp_open(pdfapp_t *app, char *filename);
+void pdfapp_open(pdfapp_t *app, char *filename, int fd);
 void pdfapp_close(pdfapp_t *app);
 
 char *pdfapp_usage(pdfapp_t *app);

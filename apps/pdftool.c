@@ -23,7 +23,9 @@ void setcleanup(void (*func)(void))
 
 void openxref(char *filename, char *password, int dieonbadpass)
 {
+	fz_stream *file;
 	int okay;
+	int fd;
 
 	basename = strrchr(filename, '/');
 	if (!basename)
@@ -31,9 +33,15 @@ void openxref(char *filename, char *password, int dieonbadpass)
 	else
 		basename++;
 
-	xref = pdf_openxref(filename);
+	fd = open(filename, O_BINARY | O_RDONLY, 0666);
+	if (fd < 0)
+		die(fz_throw("cannot open file"));
+
+	file = fz_openfile(fd);
+	xref = pdf_openxref(file);
 	if (!xref)
 		die(-1);
+	fz_dropstream(file);
 
 	if (pdf_needspassword(xref))
 	{

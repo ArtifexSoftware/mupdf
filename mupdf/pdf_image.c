@@ -170,7 +170,7 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 
 		filter = pdf_buildinlinefilter(xref, dict);
 
-		tempfile = fz_openrfilter(filter, file);
+		tempfile = fz_openfilter(filter, file);
 
 		img->samples = fz_readall(tempfile, img->stride * img->h);
 		fz_dropstream(tempfile);

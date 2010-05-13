@@ -59,19 +59,19 @@ void pdfapp_init(pdfapp_t *app)
 	app->cache = fz_newglyphcache();
 }
 
-void pdfapp_open(pdfapp_t *app, char *filename)
+void pdfapp_open(pdfapp_t *app, char *filename, int fd)
 {
 	fz_obj *obj;
 	fz_obj *info;
 	char *password = "";
+	fz_stream *file;
 
 	/*
 	 * Open PDF and load xref table
 	 */
 
-	app->filename = filename;
-
-	app->xref = pdf_openxref(filename);
+	file = fz_openfile(fd);
+	app->xref = pdf_openxref(file);
 	if (!app->xref)
 		pdfapp_error(app, -1);
 

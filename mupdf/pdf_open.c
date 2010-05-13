@@ -620,7 +620,7 @@ pdf_loadxref(pdf_xref *xref, char *buf, int bufsize)
  */
 
 pdf_xref *
-pdf_openxref(char *filename)
+pdf_openxref(fz_stream *file)
 {
 	pdf_xref *xref;
 	fz_error error;
@@ -630,11 +630,9 @@ pdf_openxref(char *filename)
 	xref = fz_malloc(sizeof(pdf_xref));
 	memset(xref, 0, sizeof(pdf_xref));
 
-	pdf_logxref("loadxref '%s' %p\n", filename, xref);
+	pdf_logxref("loadxref %p\n", xref);
 
-	error = fz_openrfile(&xref->file, filename);
-	if (error)
-		goto cleanup;
+	xref->file = fz_keepstream(file);
 
 	error = pdf_loadxref(xref, xref->scratch, sizeof xref->scratch);
 	if (error)

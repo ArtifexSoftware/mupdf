@@ -64,7 +64,7 @@
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="libcmtd"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -137,9 +137,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				IgnoreDefaultLibraryNames="libcmtd"
+				IgnoreDefaultLibraryNames="libcmt"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"

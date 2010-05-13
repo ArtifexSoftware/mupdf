@@ -61,27 +61,20 @@ fz_dropstream(fz_stream *stm)
 	}
 }
 
-fz_error fz_openrfile(fz_stream **stmp, char *path)
+fz_stream *
+fz_openfile(int fd)
 {
 	fz_stream *stm;
 
 	stm = newstm(FZ_SFILE);
-
 	stm->buffer = fz_newbuffer(FZ_BUFSIZE);
+	stm->file = fd;
 
-	stm->file = open(path, O_BINARY | O_RDONLY, 0666);
-	if (stm->file < 0)
-	{
-		fz_dropbuffer(stm->buffer);
-		fz_free(stm);
-		return fz_throw("syserr: open '%s': %s", path, strerror(errno));
-	}
-
-	*stmp = stm;
-	return fz_okay;
+	return stm;
 }
 
-fz_stream * fz_openrfilter(fz_filter *flt, fz_stream *src)
+fz_stream *
+fz_openfilter(fz_filter *flt, fz_stream *src)
 {
 	fz_stream *stm;
 
@@ -93,7 +86,8 @@ fz_stream * fz_openrfilter(fz_filter *flt, fz_stream *src)
 	return stm;
 }
 
-fz_stream * fz_openrbuffer(fz_buffer *buf)
+fz_stream *
+fz_openbuffer(fz_buffer *buf)
 {
 	fz_stream *stm;
 
@@ -104,13 +98,14 @@ fz_stream * fz_openrbuffer(fz_buffer *buf)
 	return stm;
 }
 
-fz_stream * fz_openrmemory(unsigned char *mem, int len)
+fz_stream *
+fz_openmemory(unsigned char *mem, int len)
 {
 	fz_buffer *buf;
 	fz_stream *stm;
 
 	buf = fz_newbufferwithmemory(mem, len);
-	stm = fz_openrbuffer(buf);
+	stm = fz_openbuffer(buf);
 	fz_dropbuffer(buf);
 
 	return stm;

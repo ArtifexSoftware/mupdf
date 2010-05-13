@@ -137,7 +137,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				IgnoreDefaultLibraryNames="libcmtd"
+				IgnoreDefaultLibraryNames="libcmt"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
