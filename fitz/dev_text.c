@@ -293,12 +293,13 @@ fz_textfreeuser(void *user)
 fz_device *
 fz_newtextdevice(fz_textspan *root)
 {
+	fz_device *dev;
 	fz_textdevice *tdev = fz_malloc(sizeof(fz_textdevice));
 	tdev->span = root;
 	tdev->point.x = -1;
 	tdev->point.y = -1;
 
-	fz_device *dev = fz_newdevice(tdev);
+	dev = fz_newdevice(tdev);
 	dev->freeuser = fz_textfreeuser;
 	dev->filltext = fz_textfilltext;
 	dev->stroketext = fz_textstroketext;

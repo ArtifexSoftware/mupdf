@@ -78,11 +78,12 @@ fz_bboxfreeuser(void *user)
 fz_device *
 fz_newbboxdevice(fz_bbox *bboxp)
 {
+	fz_device *dev;
 	fz_bboxdevice *bdev = fz_malloc(sizeof(fz_bboxdevice));
 	bdev->bbox = bboxp;
 	*bdev->bbox = fz_emptybbox;
 
-	fz_device *dev = fz_newdevice(bdev);
+	dev = fz_newdevice(bdev);
 	dev->freeuser = fz_bboxfreeuser;
 	dev->fillpath = fz_bboxfillpath;
 	dev->strokepath = fz_bboxstrokepath;
