@@ -41,7 +41,7 @@ static void duff_4i1o4mmx(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int d
 			int ts = *s++;
 			int ma = *mp++ + 1;
 			int sa = ((ts & 0xff) * ma) >> 8;
-			int ssa = 256 - sa;
+			int ssa = 255 - sa;
 
 			__m64 d0 = _mm_cvtsi32_si64(*d);
 			__m64 s0 = _mm_cvtsi32_si64(ts);
