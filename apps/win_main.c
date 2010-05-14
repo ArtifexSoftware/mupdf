@@ -2,12 +2,16 @@
 #include <mupdf.h>
 #include "pdfapp.h"
 
-#undef UNICODE
-#undef _UNICODE
+#define UNICODE
+#define _UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <commdlg.h>
 #include <shellapi.h>
+
+#ifndef WM_MOUSEWHEEL
+#define WM_MOUSEWHEEL 0x020A
+#endif
 
 #define ID_ABOUT	0x1000
 #define ID_DOCINFO	0x1001
@@ -58,7 +62,7 @@ void win32error(char *msg)
 		code,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		&buf, 0, NULL);
-	winerror(&gapp, fz_throw("%s: %s", msg, buf));
+	winerror(&gapp, fz_throw("%s:\n%s", msg, buf));
 }
 
 int winfilename(wchar_t *buf, int len)
@@ -95,11 +99,11 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case 1:
 			pd_okay = 1;
 			GetDlgItemTextA(hwnd, 3, pd_password, sizeof pd_password);
-			EndDialog(hwnd, 0);
+			EndDialog(hwnd, 1);
 			return TRUE;
 		case 2:
 			pd_okay = 0;
-			EndDialog(hwnd, 0);
+			EndDialog(hwnd, 1);
 			return TRUE;
 		}
 		break;
@@ -110,6 +114,7 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 char *winpassword(pdfapp_t *app, char *filename)
 {
 	char buf[124], *s;
+	int code;
 	strcpy(buf, filename);
 	s = buf;
 	if (strrchr(s, '\\')) s = strrchr(s, '\\') + 1;
@@ -117,7 +122,9 @@ char *winpassword(pdfapp_t *app, char *filename)
 	if (strlen(s) > 32)
 		strcpy(s + 30, "...");
 	sprintf(pd_filename, "The file \"%s\" is encrypted.", s);
-	DialogBoxA(NULL, "IDD_DLOGPASS", hwndframe, dlogpassproc);
+	code = DialogBoxW(NULL, L"IDD_DLOGPASS", hwndframe, dlogpassproc);
+	if (code <= 0)
+		win32error("cannot create password dialog");
 	if (pd_okay)
 		return pd_password;
 	return NULL;
@@ -196,7 +203,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return TRUE;
 
 	case WM_COMMAND:
-		EndDialog(hwnd, 0);
+		EndDialog(hwnd, 1);
 		return TRUE;
 	}
 	return FALSE;
@@ -204,7 +211,9 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void info()
 {
-	DialogBox(NULL, "IDD_DLOGINFO", hwndframe, dloginfoproc);
+	int code = DialogBoxW(NULL, L"IDD_DLOGINFO", hwndframe, dloginfoproc);
+	if (code <= 0)
+		win32error("cannot create info dialog");
 }
 
 INT CALLBACK
@@ -217,7 +226,7 @@ dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SetDlgItemTextA(hwnd, 3, pdfapp_usage(&gapp));
 		return TRUE;
 	case WM_COMMAND:
-		EndDialog(hwnd, 0);
+		EndDialog(hwnd, 1);
 		return TRUE;
 	}
 	return FALSE;
@@ -225,7 +234,9 @@ dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void help()
 {
-	DialogBox(NULL, "IDD_DLOGABOUT", hwndframe, dlogaboutproc);
+	int code = DialogBoxW(NULL, L"IDD_DLOGABOUT", hwndframe, dlogaboutproc);
+	if (code <= 0)
+		win32error("cannot create help dialog");
 }
 
 /*
@@ -246,12 +257,12 @@ void winopen()
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = GetModuleHandle(NULL);
-	wc.hIcon = LoadIcon(wc.hInstance, "IDI_ICONAPP");
+	wc.hIcon = LoadIconA(wc.hInstance, "IDI_ICONAPP");
 	wc.hCursor = NULL; //LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
 	wc.lpszMenuName = NULL;
-	wc.lpszClassName = "FrameWindow";
-	a = RegisterClass(&wc);
+	wc.lpszClassName = L"FrameWindow";
+	a = RegisterClassW(&wc);
 	if (!a)
 		win32error("cannot register frame window class");
 
@@ -266,8 +277,8 @@ void winopen()
 	wc.hCursor = NULL;
 	wc.hbrBackground = NULL;
 	wc.lpszMenuName = NULL;
-	wc.lpszClassName = "ViewWindow";
-	a = RegisterClass(&wc);
+	wc.lpszClassName = L"ViewWindow";
+	a = RegisterClassW(&wc);
 	if (!a)
 		win32error("cannot register view window class");
 
@@ -299,7 +310,7 @@ void winopen()
 	dibinf->bmiHeader.biClrUsed = 0;
 
 	/* Create window */
-	hwndframe = CreateWindowA("FrameWindow", // window class name
+	hwndframe = CreateWindowW(L"FrameWindow", // window class name
 	NULL, // window caption
 	WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
 	CW_USEDEFAULT, CW_USEDEFAULT, // initial position
@@ -312,7 +323,7 @@ void winopen()
 	if (!hwndframe)
 		win32error("cannot create frame: %s");
 
-	hwndview = CreateWindowA("ViewWindow", // window class name
+	hwndview = CreateWindowW(L"ViewWindow", // window class name
 	NULL,
 	WS_VISIBLE | WS_CHILD,
 	CW_USEDEFAULT, CW_USEDEFAULT,
@@ -323,12 +334,12 @@ void winopen()
 
 	hdc = NULL;
 
-	SetWindowTextA(hwndframe, "MuPDF");
+	SetWindowTextW(hwndframe, L"MuPDF");
 
 	menu = GetSystemMenu(hwndframe, 0);
-	AppendMenuA(menu, MF_SEPARATOR, 0, NULL);
-	AppendMenuA(menu, MF_STRING, ID_ABOUT, "About MuPDF...");
-	AppendMenuA(menu, MF_STRING, ID_DOCINFO, "Document Properties...");
+	AppendMenuW(menu, MF_SEPARATOR, 0, NULL);
+	AppendMenuW(menu, MF_STRING, ID_ABOUT, L"About MuPDF...");
+	AppendMenuW(menu, MF_STRING, ID_DOCINFO, L"Document Properties...");
 
 	SetCursor(arrowcurs);
 }
@@ -641,9 +652,9 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		pdfapp_onresize(&gapp, LOWORD(lParam), HIWORD(lParam));
 		break;
 
-		/* Paint events are low priority and automagically catenated
-		 * so we don't need to do any fancy waiting to defer repainting.
-		 */
+	/* Paint events are low priority and automagically catenated
+	 * so we don't need to do any fancy waiting to defer repainting.
+	 */
 	case WM_PAINT:
 		{
 			//puts("WM_PAINT");
@@ -658,7 +669,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_ERASEBKGND:
 		return 1; // well, we don't need to erase to redraw cleanly
 
-		/* Mouse events */
+	/* Mouse events */
 
 	case WM_LBUTTONDOWN:
 		SetFocus(hwndview);
@@ -694,10 +705,8 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		handlemouse(x, y, 0, 0);
 		return 0;
 
-		/* Mouse wheel */
-#ifndef WM_MOUSEWHEEL
-#define WM_MOUSEWHEEL 0x020A
-#endif
+	/* Mouse wheel */
+
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) > 0)
 			handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'u');
@@ -705,7 +714,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'd');
 		return 0;
 
-		/* Keyboard events */
+	/* Keyboard events */
 
 	case WM_KEYDOWN:
 		/* only handle special keys */
@@ -725,7 +734,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		return 1;
 
-		/* unicode encoded chars, including escape, backspace etc... */
+	/* unicode encoded chars, including escape, backspace etc... */
 	case WM_CHAR:
 		handlekey(wParam);
 		handlemouse(oldx, oldy, 0, 0);	/* update cursor */
@@ -745,6 +754,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	LPWSTR *argv;
 	MSG msg;
 	int fd;
+	int code;
 
 	argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
@@ -770,7 +780,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	if (fd < 0)
 		winerror(&gapp, fz_throw("cannot open file '%s'", filename));
 
-	WideCharToMultiByte(CP_ACP, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
+	code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
+	if (code == 0)
+		win32error("cannot convert filename to utf-8");
 
 	pdfapp_open(&gapp, filename, fd);
 
