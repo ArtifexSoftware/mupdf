@@ -189,11 +189,11 @@ typedef struct fz_point_s fz_point;
 typedef struct fz_rect_s fz_rect;
 typedef struct fz_bbox_s fz_bbox;
 
-extern const fz_rect fz_unityrect;
+extern const fz_rect fz_unitrect;
 extern const fz_rect fz_emptyrect;
 extern const fz_rect fz_infiniterect;
 
-extern const fz_bbox fz_unitybbox;
+extern const fz_bbox fz_unitbbox;
 extern const fz_bbox fz_emptybbox;
 extern const fz_bbox fz_infinitebbox;
 

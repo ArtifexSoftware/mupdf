@@ -351,7 +351,7 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest)
 				tri[k][2] = shade->mesh[(i * 3 + k) * n + 2] * 255;
 			else
 			{
-				fz_convertcolor(shade->cs, shade->mesh + (i * 3 + k) * n + 2, 
+				fz_convertcolor(shade->cs, shade->mesh + (i * 3 + k) * n + 2,
 						temp->colorspace, tri[k] + 2);
 				for (j = 0; j < temp->colorspace->n; j++)
 					tri[k][j + 2] *= 255;

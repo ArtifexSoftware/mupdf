@@ -557,22 +557,21 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 static inline void
 calcimagescale(fz_matrix ctm, int w, int h, int *odx, int *ody)
 {
-	float sx, sy;
-	int dx, dy;
+	float sx = w / sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+	float sy = h / sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
 
-	sx = sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
-	dx = 1;
-	while (((w+dx-1)/dx)/sx > 2.0 && (w+dx-1)/dx > 1)
-		dx++;
+	if (sx < 1.0)
+		*odx = 1;
+	else
+		*odx = sx;
 
-	sy = sqrt(ctm.c * ctm.c + ctm.d * ctm.d);
-	dy = 1;
-	while (((h+dy-1)/dy)/sy > 2.0 && (h+dy-1)/dy > 1)
-		dy++;
-
-	*odx = dx;
-	*ody = dy;
+	if (sy < 1.0)
+		*ody = 1;
+	else
+		*ody = sy;
 }
+
+#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
 static void
 fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
@@ -652,8 +651,6 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	fc = invmat.c * 65536;
 	fd = invmat.d * 65536;
 
-#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
-
 	if (dev->dest->colorspace)
 		fz_img_4o4(image->samples, image->w, image->h, PDST(dev->dest),
 			u0, v0, fa, fb, fc, fd, w, h);
@@ -731,8 +728,6 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	fb = invmat.b * 65536;
 	fc = invmat.c * 65536;
 	fd = invmat.d * 65536;
-
-#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
 	if (dev->dest->colorspace)
 	{
@@ -820,8 +815,6 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	fb = invmat.b * 65536;
 	fc = invmat.c * 65536;
 	fd = invmat.d * 65536;
-
-#define PDST(p) p->samples + ((y0-p->y) * p->w + (x0-p->x)) * p->n, p->w * p->n
 
 	mask = fz_newpixmapwithrect(nil, clip);
 	dest = fz_newpixmapwithrect(dev->model, clip);

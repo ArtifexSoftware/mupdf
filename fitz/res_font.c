@@ -371,7 +371,7 @@ fz_rendert3glyph(fz_font *font, int gid, fz_matrix trm)
 		fz_catch(error, "cannot draw type3 glyph");
 	fz_freedevice(dev);
 
-	glyph = fz_newpixmap(nil, bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+	glyph = fz_newpixmap(nil, bbox.x0-1, bbox.y0-1, bbox.x1 - bbox.x0 + 1, bbox.y1 - bbox.y0 + 1);
 	fz_clearpixmap(glyph, 0x00);
 
 	cache = fz_newglyphcache();

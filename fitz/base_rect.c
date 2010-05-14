@@ -2,11 +2,11 @@
 
 const fz_rect fz_infiniterect = { 1, 1, -1, -1 };
 const fz_rect fz_emptyrect = { 0, 0, 0, 0 };
-const fz_rect fz_unityrect = { 0, 0, 1, 1 };
+const fz_rect fz_unitrect = { 0, 0, 1, 1 };
 
 const fz_bbox fz_infinitebbox = { 1, 1, -1, -1 };
 const fz_bbox fz_emptybbox = { 0, 0, 0, 0 };
-const fz_bbox fz_unitybbox = { 0, 0, 1, 1 };
+const fz_bbox fz_unitbbox = { 0, 0, 1, 1 };
 
 fz_bbox
 fz_roundrect(fz_rect f)

@@ -1,15 +1,24 @@
 #include "fitz.h"
 
+#define CLAMPUV
+
 typedef unsigned char byte;
 
 #define lerp(a,b,t) (a + (((b - a) * t) >> 16))
 
 static inline byte getcomp(byte *s, int w, int h, int u, int v, int n, int k)
 {
+#ifdef CLAMPUV
 	if (u < 0) u = 0;
 	if (v < 0) v = 0;
 	if (u >= w) u = w - 1;
 	if (v >= h) v = h - 1;
+#else
+	if (u < 0) return 0;
+	if (v < 0) return 0;
+	if (u >= w) return 0;
+	if (v >= h) return 0;
+#endif
 	return s[(w * v + u) * n + k];
 }
 
@@ -30,10 +39,17 @@ static inline int samplecomp(byte *s, int w, int h, int u, int v, int n, int k)
 
 static inline byte getmask(byte *s, int w, int h, int u, int v)
 {
+#ifdef CLAMPUV
 	if (u < 0) u = 0;
 	if (v < 0) v = 0;
 	if (u >= w) u = w - 1;
 	if (v >= h) v = h - 1;
+#else
+	if (u < 0) return 0;
+	if (v < 0) return 0;
+	if (u >= w) return 0;
+	if (v >= h) return 0;
+#endif
 	return s[w * v + u];
 }
 
@@ -62,10 +78,18 @@ static inline void lerpargb(byte *dst, byte *a, byte *b, int t)
 
 static inline byte *getargb(byte *s, int w, int h, int u, int v)
 {
+#ifdef CLAMPUV
 	if (u < 0) u = 0;
 	if (v < 0) v = 0;
 	if (u >= w) u = w - 1;
 	if (v >= h) v = h - 1;
+#else
+	static byte t[4] = { 0, 0, 0, 0 };
+	if (u < 0) return t;
+	if (v < 0) return t;
+	if (u >= w) return t;
+	if (v >= h) return t;
+#endif
 	return s + ((w * v + u) << 2);
 }
 

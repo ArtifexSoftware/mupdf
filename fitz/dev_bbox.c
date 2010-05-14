@@ -57,7 +57,7 @@ static void
 fz_bboxfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_bboxdevice *bdev = user;
-	fz_bbox bbox = fz_roundrect(fz_transformrect(ctm, fz_unityrect));
+	fz_bbox bbox = fz_roundrect(fz_transformrect(ctm, fz_unitrect));
 	*bdev->bbox = fz_unionbbox(*bdev->bbox, bbox);
 }
 
