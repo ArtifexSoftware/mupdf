@@ -46,6 +46,9 @@ Before compiling MuPDF you need to install thirdy party dependencies.
 	jbig2dec
 	OpenJPEG
 
+On windows you should download and unzip the mupdf-thirdparty.zip
+archive in the mupdf source to build using the Visual Studio project.
+
 COMPILING
 
 You will need to use GNU Make to build with the supplied Makefile.
