@@ -95,7 +95,7 @@ static void drawloadpage(int pagenum, struct benchmark *loadtimes)
 	pageobj = pdf_getpageobject(xref, pagenum);
 	error = pdf_loadpage(&drawpage, xref, pageobj);
 	if (error)
-		die(error);
+		die(fz_rethrow(error, "cannot load page %d in PDF file '%s'", pagenum, basename));
 
 	if (benchmark && loadtimes)
 	{
@@ -179,7 +179,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 			sprintf(name, drawpattern, drawcount++);
 			fd = open(name, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666);
 			if (fd < 0)
-				die(fz_throw("ioerror: could not open file '%s'", name));
+				die(fz_throw("ioerror: could not create raster file '%s'", name));
 		}
 
 		sprintf(pnmhdr, "P6\n%d %d\n255\n", w, h);
@@ -201,7 +201,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		dev = fz_newdrawdevice(drawcache, pix);
 		error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 		if (error)
-			die(error);
+			die(fz_rethrow(error, "cannot draw page %d in PDF file '%s'", pagenum, basename));
 		fz_freedevice(dev);
 
 		if (drawpattern)
@@ -287,7 +287,7 @@ static void drawtxt(int pagenum, struct benchmark *loadtimes)
 
 	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 	if (error)
-		die(error);
+		die(fz_rethrow(error, "cannot extract text from page %d in PDF file '%s'", pagenum, basename));
 
 	fz_freedevice(dev);
 
@@ -310,7 +310,7 @@ static void drawxml(int pagenum)
 	pageobj = pdf_getpageobject(xref, pagenum);
 	error = pdf_loadpage(&drawpage, xref, pageobj);
 	if (error)
-		die(error);
+		die(fz_rethrow(error, "cannot load page %d from PDF file '%s'", pagenum, basename));
 
 	ctm = fz_identity();
 
@@ -320,7 +320,7 @@ static void drawxml(int pagenum)
 
 	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
 	if (error)
-		die(error);
+		die(fz_rethrow(error, "cannot display page %d in PDF file '%s' as XML", pagenum, basename));
 
 	fz_freedevice(dev);
 
