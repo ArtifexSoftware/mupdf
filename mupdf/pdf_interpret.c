@@ -896,6 +896,9 @@ Lsetcolor:
 			if (!subtype)
 				return fz_throw("no XObject subtype specified");
 
+			if (!strcmp(fz_toname(subtype), "Form") && fz_dictgets(obj, "Subtype2"))
+				subtype = fz_dictgets(obj, "Subtype2");
+
 			if (!strcmp(fz_toname(subtype), "Form"))
 			{
 				pdf_xobject *xobj;
