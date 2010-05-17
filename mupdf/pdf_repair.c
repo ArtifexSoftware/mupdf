@@ -98,7 +98,7 @@ fz_repairobj(fz_stream *file, char *buf, int cap,
 				return fz_rethrow(error, "cannot seek in file");
 			error = pdf_lex(&tok, file, buf, cap, &len);
 			if (error)
-				return fz_rethrow(error, "cannot scan for endstream token");
+				fz_catch(error, "cannot find endstream token, falling back to scanning");
 			if (tok == PDF_TENDSTREAM)
 				goto atobjend;
 			error = fz_seek(file, *stmofsp, 0);
