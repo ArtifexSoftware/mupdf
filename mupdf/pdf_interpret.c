@@ -1267,6 +1267,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 
 		else switch (tok)
 		{
+		case PDF_TENDSTREAM:
 		case PDF_TEOF:
 			return fz_okay;
 
