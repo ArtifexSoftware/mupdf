@@ -1244,7 +1244,7 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			if (error)
 				return fz_rethrow(error, "cannot load sub function %d", i);
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
-				return fz_rethrow(error, "sub function %d /Domain or /Range mismatch", i);
+				return fz_throw("sub function %d /Domain or /Range mismatch", i);
 		}
 
 		if (!func->n)
