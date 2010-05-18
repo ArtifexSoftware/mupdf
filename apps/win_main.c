@@ -381,8 +381,6 @@ void winconvert(pdfapp_t *app, fz_pixmap *image)
 
 	bmpstride = ((image->w * 3 + 3) / 4) * 4;
 	bmpdata = fz_malloc(image->h * bmpstride);
-	if (!bmpdata)
-		return;
 
 	for (y = 0; y < image->h; y++)
 	{
