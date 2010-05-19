@@ -10,15 +10,16 @@ typedef struct fz_drawdevice_s fz_drawdevice;
 
 struct fz_drawdevice_s
 {
-	int maskonly;
 	fz_colorspace *model;
 	fz_glyphcache *cache;
 	fz_gel *gel;
 	fz_ael *ael;
 	fz_pixmap *dest;
+	fz_bbox scissor;
 	struct {
 		fz_pixmap *dest;
 		fz_pixmap *mask;
+		fz_bbox scissor;
 	} clipstack[MAXCLIP];
 	int cliptop;
 };
@@ -112,19 +113,12 @@ fz_drawfillpath(void *user, fz_path *path, int evenodd, fz_matrix ctm,
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
 	fz_bbox bbox;
-	fz_bbox clip;
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
-	fz_resetgel(dev->gel, clip);
+	fz_resetgel(dev->gel, dev->scissor);
 	fz_fillpath(dev->gel, path, ctm, flatness);
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectbbox(bbox, clip);
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -154,17 +148,11 @@ fz_drawstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix c
 	float flatness = 0.3 / expansion;
 	float linewidth = stroke->linewidth;
 	fz_bbox bbox;
-	fz_bbox clip;
 
 	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
-	fz_resetgel(dev->gel, clip);
+	fz_resetgel(dev->gel, dev->scissor);
 	if (stroke->dashlen > 0)
 		fz_dashpath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
@@ -172,7 +160,6 @@ fz_drawstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix c
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectbbox(bbox, clip);
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -199,8 +186,8 @@ fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 	fz_drawdevice *dev = user;
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
-	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
+	fz_bbox bbox;
 
 	if (dev->cliptop == MAXCLIP)
 	{
@@ -208,17 +195,21 @@ fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 		return;
 	}
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
-	fz_resetgel(dev->gel, clip);
+	fz_resetgel(dev->gel, dev->scissor);
 	fz_fillpath(dev->gel, path, ctm, flatness);
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectbbox(bbox, clip);
+
+	if (fz_isemptyrect(bbox) || fz_isrectgel(dev->gel))
+	{
+		dev->clipstack[dev->cliptop].scissor = dev->scissor;
+		dev->clipstack[dev->cliptop].mask = nil;
+		dev->clipstack[dev->cliptop].dest = nil;
+		dev->scissor = bbox;
+		dev->cliptop++;
+		return;
+	}
 
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
@@ -226,11 +217,12 @@ fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 	memset(mask->samples, 0, mask->w * mask->h * mask->n);
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
 
-	if (!fz_isemptyrect(bbox))
-		fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, mask, nil, 1);
+	fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, mask, nil, 1);
 
+	dev->clipstack[dev->cliptop].scissor = dev->scissor;
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->scissor = bbox;
 	dev->dest = dest;
 	dev->cliptop++;
 }
@@ -242,8 +234,8 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 	float expansion = fz_matrixexpansion(ctm);
 	float flatness = 0.3 / expansion;
 	float linewidth = stroke->linewidth;
-	fz_bbox clip, bbox;
 	fz_pixmap *mask, *dest;
+	fz_bbox bbox;
 
 	if (dev->cliptop == MAXCLIP)
 	{
@@ -251,15 +243,10 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 		return;
 	}
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
 	if (linewidth * expansion < 0.1)
 		linewidth = 1.0 / expansion;
 
-	fz_resetgel(dev->gel, clip);
+	fz_resetgel(dev->gel, dev->scissor);
 	if (stroke->dashlen > 0)
 		fz_dashpath(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
@@ -267,8 +254,6 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
-	bbox = fz_intersectbbox(bbox, clip);
-
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
@@ -278,22 +263,24 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 	if (!fz_isemptyrect(bbox))
 		fz_scanconvert(dev->gel, dev->ael, 0, bbox, mask, nil, 1);
 
+	dev->clipstack[dev->cliptop].scissor = dev->scissor;
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->scissor = bbox;
 	dev->dest = dest;
 	dev->cliptop++;
 }
 
 static void
-drawglyph(unsigned char *argb, fz_pixmap *dst, fz_pixmap *src, int xorig, int yorig)
+drawglyph(unsigned char *argb, fz_pixmap *dst, fz_pixmap *src, int xorig, int yorig, fz_bbox scissor)
 {
 	unsigned char *dp, *sp;
 	int w, h;
 
-	int dx0 = dst->x;
-	int dy0 = dst->y;
-	int dx1 = dst->x + dst->w;
-	int dy1 = dst->y + dst->h;
+	int dx0 = scissor.x0;
+	int dy0 = scissor.y0;
+	int dx1 = scissor.x1;
+	int dy1 = scissor.y1;
 
 	int x0 = xorig + src->x;
 	int y0 = yorig + src->y;
@@ -329,7 +316,6 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_drawdevice *dev = user;
-	fz_bbox clip;
 	fz_matrix tm, trm;
 	fz_pixmap *glyph;
 	int i, x, y, gid;
@@ -351,11 +337,6 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 		argb = nil;
 	}
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
 	tm = text->trm;
 
 	for (i = 0; i < text->len; i++)
@@ -372,7 +353,7 @@ fz_drawfilltext(void *user, fz_text *text, fz_matrix ctm,
 		glyph = fz_renderglyph(dev->cache, text->font, gid, trm);
 		if (glyph)
 		{
-			drawglyph(argb, dev->dest, glyph, x, y);
+			drawglyph(argb, dev->dest, glyph, x, y, dev->scissor);
 			fz_droppixmap(glyph);
 		}
 	}
@@ -390,7 +371,7 @@ static void
 fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 {
 	fz_drawdevice *dev = user;
-	fz_bbox clip, bbox;
+	fz_bbox bbox;
 	fz_pixmap *mask, *dest;
 	fz_matrix tm, trm;
 	fz_pixmap *glyph;
@@ -406,21 +387,16 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 		return;
 	}
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-
 	if (accumulate == 0)
 	{
 		/* make the mask the exact size needed */
 		bbox = fz_roundrect(fz_boundtext(text, ctm));
-		bbox = fz_intersectbbox(bbox, clip);
+		bbox = fz_intersectbbox(bbox, dev->scissor);
 	}
 	else
 	{
 		/* be conservative about the size of the mask needed */
-		bbox = clip;
+		bbox = dev->scissor;
 	}
 
 	if (accumulate == 0 || accumulate == 1)
@@ -430,6 +406,13 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 
 		memset(mask->samples, 0, mask->w * mask->h * mask->n);
 		memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+		dev->clipstack[dev->cliptop].scissor = dev->scissor;
+		dev->clipstack[dev->cliptop].mask = mask;
+		dev->clipstack[dev->cliptop].dest = dev->dest;
+		dev->scissor = bbox;
+		dev->dest = dest;
+		dev->cliptop++;
 	}
 	else
 	{
@@ -454,18 +437,10 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 			glyph = fz_renderglyph(dev->cache, text->font, gid, trm);
 			if (glyph)
 			{
-				drawglyph(NULL, mask, glyph, x, y);
+				drawglyph(NULL, mask, glyph, x, y, bbox);
 				fz_droppixmap(glyph);
 			}
 		}
-	}
-
-	if (accumulate == 0 || accumulate == 1)
-	{
-		dev->clipstack[dev->cliptop].mask = mask;
-		dev->clipstack[dev->cliptop].dest = dev->dest;
-		dev->dest = dest;
-		dev->cliptop++;
 	}
 }
 
@@ -481,29 +456,11 @@ fz_drawignoretext(void *user, fz_text *text, fz_matrix ctm)
 }
 
 static void
-fz_drawpopclip(void *user)
-{
-	fz_drawdevice *dev = user;
-	if (dev->cliptop > 0)
-	{
-		fz_pixmap *mask = dev->clipstack[dev->cliptop-1].mask;
-		fz_pixmap *dest = dev->clipstack[dev->cliptop-1].dest;
-		fz_pixmap *scratch = dev->dest;
-		blendmaskover(scratch, mask, dest);
-		fz_droppixmap(mask);
-		fz_droppixmap(scratch);
-		dev->cliptop--;
-		dev->dest = dest;
-	}
-}
-
-static void
 fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
 	fz_bbox bbox;
-	fz_bbox clip;
 	fz_pixmap *temp;
 	float rgb[3];
 	unsigned char argb[4];
@@ -513,12 +470,8 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 	bounds = fz_transformrect(fz_concat(shade->matrix, ctm), shade->bbox);
 	bbox = fz_roundrect(bounds);
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectbbox(clip, bbox);
-	if (fz_isemptyrect(clip))
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+	if (fz_isemptyrect(bbox))
 		return;
 
 	if (!dev->model)
@@ -527,7 +480,7 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 		return;
 	}
 
-	temp = fz_newpixmapwithrect(dev->model, clip);
+	temp = fz_newpixmapwithrect(dev->model, bbox);
 
 	if (shade->usebackground)
 	{
@@ -579,7 +532,6 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
 	fz_bbox bbox;
-	fz_bbox clip;
 	int dx, dy;
 	fz_pixmap *scaled = nil;
 	fz_pixmap *converted = nil;
@@ -590,21 +542,13 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	int x0, y0;
 	int w, h;
 
-	bounds.x0 = 0;
-	bounds.y0 = 0;
-	bounds.x1 = 1;
-	bounds.y1 = 1;
-	bounds = fz_transformrect(ctm, bounds);
+	bounds = fz_transformrect(ctm, fz_unitrect);
 	bbox = fz_roundrect(bounds);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectbbox(clip, bbox);
-
-	if (fz_isemptyrect(clip))
+	if (fz_isemptyrect(bbox))
 		return;
+
 	if (image->w == 0 || image->h == 0)
 		return;
 
@@ -640,10 +584,10 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	invmat.e -= 0.5;
 	invmat.f -= 0.5;
 
-	w = clip.x1 - clip.x0;
-	h = clip.y1 - clip.y0;
-	x0 = clip.x0;
-	y0 = clip.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	x0 = bbox.x0;
+	y0 = bbox.y0;
 	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
 	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
 	fa = invmat.a * 65536;
@@ -671,7 +615,6 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
 	fz_bbox bbox;
-	fz_bbox clip;
 	int dx, dy;
 	fz_pixmap *scaled = nil;
 	fz_matrix imgmat;
@@ -681,21 +624,13 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	int x0, y0;
 	int w, h;
 
-	bounds.x0 = 0;
-	bounds.y0 = 0;
-	bounds.x1 = 1;
-	bounds.y1 = 1;
-	bounds = fz_transformrect(ctm, bounds);
+	bounds = fz_transformrect(ctm, fz_unitrect);
 	bbox = fz_roundrect(bounds);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectbbox(clip, bbox);
-
-	if (fz_isemptyrect(clip))
+	if (fz_isemptyrect(bbox))
 		return;
+
 	if (image->w == 0 || image->h == 0)
 		return;
 
@@ -718,10 +653,10 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	invmat.e -= 0.5;
 	invmat.f -= 0.5;
 
-	w = clip.x1 - clip.x0;
-	h = clip.y1 - clip.y0;
-	x0 = clip.x0;
-	y0 = clip.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	x0 = bbox.x0;
+	y0 = bbox.y0;
 	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
 	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
 	fa = invmat.a * 65536;
@@ -756,7 +691,7 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 {
 	fz_drawdevice *dev = user;
 	fz_rect bounds;
-	fz_bbox clip, bbox;
+	fz_bbox bbox;
 	fz_pixmap *mask, *dest;
 	int dx, dy;
 	fz_pixmap *scaled = nil;
@@ -773,18 +708,19 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 		return;
 	}
 
-	bounds.x0 = 0;
-	bounds.y0 = 0;
-	bounds.x1 = 1;
-	bounds.y1 = 1;
-	bounds = fz_transformrect(ctm, bounds);
+	bounds = fz_transformrect(ctm, fz_unitrect);
 	bbox = fz_roundrect(bounds);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
 
-	clip.x0 = dev->dest->x;
-	clip.y0 = dev->dest->y;
-	clip.x1 = dev->dest->x + dev->dest->w;
-	clip.y1 = dev->dest->y + dev->dest->h;
-	clip = fz_intersectbbox(clip, bbox);
+	if (fz_isemptyrect(bbox) || (image->w == 0 || image->h == 0))
+	{
+		dev->clipstack[dev->cliptop].scissor = dev->scissor;
+		dev->clipstack[dev->cliptop].mask = nil;
+		dev->clipstack[dev->cliptop].dest = nil;
+		dev->scissor = bbox;
+		dev->cliptop++;
+		return;
+	}
 
 	calcimagescale(ctm, image->w, image->h, &dx, &dy);
 
@@ -805,10 +741,10 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	invmat.e -= 0.5;
 	invmat.f -= 0.5;
 
-	w = clip.x1 - clip.x0;
-	h = clip.y1 - clip.y0;
-	x0 = clip.x0;
-	y0 = clip.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	x0 = bbox.x0;
+	y0 = bbox.y0;
 	u0 = (invmat.a * (x0+0.5) + invmat.c * (y0+0.5) + invmat.e) * 65536;
 	v0 = (invmat.b * (x0+0.5) + invmat.d * (y0+0.5) + invmat.f) * 65536;
 	fa = invmat.a * 65536;
@@ -816,8 +752,8 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	fc = invmat.c * 65536;
 	fd = invmat.d * 65536;
 
-	mask = fz_newpixmapwithrect(nil, clip);
-	dest = fz_newpixmapwithrect(dev->model, clip);
+	mask = fz_newpixmapwithrect(nil, bbox);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
 
 	memset(mask->samples, 0, mask->w * mask->h * mask->n);
 	memset(dest->samples, 0, dest->w * dest->h * dest->n);
@@ -825,13 +761,37 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	fz_img_1o1(image->samples, image->w, image->h, PDST(mask),
 			u0, v0, fa, fb, fc, fd, w, h);
 
+	dev->clipstack[dev->cliptop].scissor = dev->scissor;
 	dev->clipstack[dev->cliptop].mask = mask;
 	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->scissor = bbox;
 	dev->dest = dest;
 	dev->cliptop++;
 
 	if (scaled)
 		fz_droppixmap(scaled);
+}
+
+static void
+fz_drawpopclip(void *user)
+{
+	fz_drawdevice *dev = user;
+	fz_pixmap *mask, *dest;
+	if (dev->cliptop > 0)
+	{
+		dev->cliptop--;
+		dev->scissor = dev->clipstack[dev->cliptop].scissor;
+		mask = dev->clipstack[dev->cliptop].mask;
+		dest = dev->clipstack[dev->cliptop].dest;
+		if (mask && dest)
+		{
+			fz_pixmap *scratch = dev->dest;
+			blendmaskover(scratch, mask, dest);
+			fz_droppixmap(mask);
+			fz_droppixmap(scratch);
+			dev->dest = dest;
+		}
+	}
 }
 
 static void
@@ -859,6 +819,11 @@ fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 	ddev->ael = fz_newael();
 	ddev->dest = dest;
 	ddev->cliptop = 0;
+
+	ddev->scissor.x0 = dest->x;
+	ddev->scissor.y0 = dest->y;
+	ddev->scissor.x1 = dest->x + dest->w;
+	ddev->scissor.y1 = dest->y + dest->h;
 
 	dev = fz_newdevice(ddev);
 	dev->freeuser = fz_drawfreeuser;

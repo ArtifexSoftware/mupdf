@@ -51,6 +51,7 @@ fz_bbox fz_boundgel(fz_gel *gel);
 void fz_resetgel(fz_gel *gel, fz_bbox clip);
 void fz_sortgel(fz_gel *gel);
 void fz_freegel(fz_gel *gel);
+int fz_isrectgel(fz_gel *gel);
 
 fz_ael * fz_newael(void);
 void fz_freeael(fz_ael *ael);
