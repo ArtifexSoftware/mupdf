@@ -119,6 +119,8 @@ fz_drawfillpath(void *user, fz_path *path, int evenodd, fz_matrix ctm,
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -160,6 +162,8 @@ fz_drawstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matrix c
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+
 	if (fz_isemptyrect(bbox))
 		return;
 
@@ -200,6 +204,7 @@ fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
 
 	if (fz_isemptyrect(bbox) || fz_isrectgel(dev->gel))
 	{
@@ -254,6 +259,8 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 	fz_sortgel(dev->gel);
 
 	bbox = fz_boundgel(dev->gel);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
@@ -469,8 +476,8 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 
 	bounds = fz_transformrect(fz_concat(shade->matrix, ctm), shade->bbox);
 	bbox = fz_roundrect(bounds);
-
 	bbox = fz_intersectbbox(bbox, dev->scissor);
+
 	if (fz_isemptyrect(bbox))
 		return;
 
