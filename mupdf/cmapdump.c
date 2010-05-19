@@ -93,7 +93,7 @@ main(int argc, char **argv)
 		fd = open(argv[i], O_BINARY | O_RDONLY, 0666);
 		if (fd < 0)
 		{
-			fz_throw(-1, "cmapdump: could not open input file '%s'\n", argv[i]);
+			fz_throw("cmapdump: could not open input file '%s'\n", argv[i]);
 			return 1;
 		}
 
