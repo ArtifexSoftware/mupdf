@@ -42,6 +42,18 @@ $(DIRS):
 	mkdir -p $@
 
 #
+# Code generation tools
+#
+
+FONTDUMP_EXE=$(OBJDIR)/fontdump
+$(FONTDUMP_EXE): $(OBJDIR)/fontdump.o
+	$(LD_CMD)
+
+CMAPDUMP_EXE=$(OBJDIR)/cmapdump
+$(CMAPDUMP_EXE): $(OBJDIR)/cmapdump.o
+	$(LD_CMD)
+
+#
 # Sources
 #
 
@@ -60,21 +72,13 @@ FITZ_SRC=$(addprefix fitz/, \
 	stm_buffer.c stm_filter.c stm_misc.c stm_open.c stm_read.c \
 	util_getopt.c util_gettimeofday.c )
 FITZ_OBJ=$(FITZ_SRC:fitz/%.c=$(OBJDIR)/%.o)
-FITZ_LIB=$(OBJDIR)/libfitz.a
-
 $(FITZ_OBJ): $(FITZ_HDR)
-$(FITZ_LIB): $(FITZ_OBJ)
-	 $(AR_CMD)
 
 DRAW_SRC=$(addprefix draw/, $(ARCH_SRC) \
 	blendmodes.c glyphcache.c imagedraw.c imagescale.c imageunpack.c meshdraw.c \
 	pathfill.c pathscan.c pathstroke.c porterduff.c )
 DRAW_OBJ=$(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
-DRAW_LIB=$(OBJDIR)/libdraw.a
-
 $(DRAW_OBJ): $(FITZ_HDR)
-$(DRAW_LIB): $(DRAW_OBJ)
-	 $(AR_CMD)
 
 MUPDF_HDR=$(FITZ_HDR) mupdf/mupdf.h
 MUPDF_SRC=$(addprefix mupdf/, \
@@ -86,11 +90,7 @@ MUPDF_SRC=$(addprefix mupdf/, \
 	pdf_shade.c pdf_store.c pdf_stream.c pdf_type3.c \
 	pdf_unicode.c pdf_xobject.c pdf_xref.c )
 MUPDF_OBJ=$(MUPDF_SRC:mupdf/%.c=$(OBJDIR)/%.o)
-MUPDF_LIB=$(OBJDIR)/libmupdf.a
-
 $(MUPDF_OBJ): $(MUPDF_HDR)
-$(MUPDF_LIB): $(MUPDF_OBJ)
-	 $(AR_CMD)
 
 $(OBJDIR)/%.o: fitz/%.c
 	$(CC_CMD)
@@ -100,18 +100,6 @@ $(OBJDIR)/%.o: mupdf/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: $(GENDIR)/%.c
 	$(CC_CMD)
-
-#
-# Code generation tools
-#
-
-FONTDUMP_EXE=$(OBJDIR)/fontdump
-$(FONTDUMP_EXE): $(OBJDIR)/fontdump.o
-	$(LD_CMD)
-
-CMAPDUMP_EXE=$(OBJDIR)/cmapdump
-$(CMAPDUMP_EXE): $(OBJDIR)/cmapdump.o
-	$(LD_CMD)
 
 #
 # Generated font file dumps
@@ -140,10 +128,6 @@ FONT_SRC=\
 	$(GENDIR)/font_cjk.c
 
 FONT_OBJ=$(FONT_SRC:$(GENDIR)/%.c=$(OBJDIR)/%.o)
-FONT_LIB=$(OBJDIR)/libfonts.a
-
-$(FONT_LIB): $(FONT_OBJ)
-	 $(AR_CMD)
 
 #
 # Generated CMap file dumps
@@ -213,14 +197,17 @@ CMAP_SRC=\
 	$(GENDIR)/cmap_korea.c
 
 CMAP_OBJ=$(CMAP_SRC:$(GENDIR)/%.c=$(OBJDIR)/%.o)
-CMAP_LIB=$(OBJDIR)/libcmaps.a
 
-$(CMAP_OBJ): $(MUPDF_HDR)
-$(CMAP_LIB): $(CMAP_OBJ)
+#
+# Library
+#
+
+MUPDF_LIB=$(OBJDIR)/libmupdf.a
+$(MUPDF_LIB): $(FITZ_OBJ) $(DRAW_OBJ) $(MUPDF_OBJ) $(CMAP_OBJ) $(FONT_OBJ)
 	 $(AR_CMD)
 
 #
-# Apps
+# Applications
 #
 
 APPS = $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFEXTRACT_EXE) $(PDFINFO_EXE) $(PDFVIEW_EXE)
@@ -236,7 +223,7 @@ PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
 
 $(PDFSHOW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
+$(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB)
 	$(LD_CMD)
 
 PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
@@ -244,7 +231,7 @@ PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
 
 $(PDFCLEAN_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(FITZ_LIB)
+$(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB)
 	$(LD_CMD)
 
 PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
@@ -252,7 +239,7 @@ PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
 
 $(PDFDRAW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
+$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB)
 	$(LD_CMD)
 
 PDFEXTRACT_SRC=apps/pdfextract.c apps/pdftool.c
@@ -260,7 +247,7 @@ PDFEXTRACT_OBJ=$(PDFEXTRACT_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFEXTRACT_EXE=$(OBJDIR)/pdfextract
 
 $(PDFEXTRACT_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
+$(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB)
 	$(LD_CMD)
 
 PDFINFO_SRC=apps/pdfinfo.c apps/pdftool.c
@@ -268,7 +255,7 @@ PDFINFO_OBJ=$(PDFINFO_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFINFO_EXE=$(OBJDIR)/pdfinfo
 
 $(PDFINFO_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
+$(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB)
 	$(LD_CMD)
 
 X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
@@ -276,7 +263,7 @@ X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
 $(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
+$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB)
 	$(LD_CMD) $(X11LIBS)
 
 WINVIEW_SRC=apps/win_main.c apps/pdfapp.c
@@ -288,7 +275,7 @@ $(OBJDIR)/%.o: apps/%.rc
 	windres -i $< -o $@ --include-dir=apps
 
 $(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(FONT_LIB) $(CMAP_LIB) $(FITZ_LIB) $(DRAW_LIB)
+$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB)
 	$(LD_CMD) $(W32LIBS)
 
 #
@@ -313,6 +300,8 @@ clean:
 nuke:
 	rm -rf build
 
-install: $(DIRS) $(APPS)
+install: $(DIRS) $(APPS) $(MUPDF_LIB)
 	install $(APPS) $(prefix)/bin
+	install $(MUPDF_LIB) $(prefix)/lib
+	install $(MUPDF_HDR) $(prefix)/include
 
