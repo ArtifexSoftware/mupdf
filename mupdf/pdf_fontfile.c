@@ -133,6 +133,9 @@ found:
 
 	fz_strlcpy(fontdesc->font->name, fontname, sizeof fontdesc->font->name);
 
+	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
+		fontdesc->flags |= FD_SYMBOLIC;
+
 	return fz_okay;
 }
 

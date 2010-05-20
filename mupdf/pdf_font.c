@@ -352,7 +352,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 			base = fz_dictgets(encoding, "BaseEncoding");
 			if (fz_isname(base))
 				pdf_loadencoding(estrings, fz_toname(base));
-			else if (!fontdesc->isembedded)
+			else if (!fontdesc->isembedded && !symbolic)
 				pdf_loadencoding(estrings, "StandardEncoding");
 
 			diff = fz_dictgets(encoding, "Differences");
