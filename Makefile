@@ -1,12 +1,22 @@
 # GNU Makefile for MuPDF
 #
-#	make build=release prefix=$HOME install
+#	make build=release prefix=/usr/local [pregen=dir] install
 #
 
-prefix ?= /usr/local
-build ?= debug
-
 default: all
+
+build ?= debug
+prefix ?= /usr/local
+
+OBJDIR := build/$(build)
+GENDIR := build/generated
+
+# If no pregen is supplied, then generate (dump) the font and cmap .c
+# files as part of the build. If it is supplied, then just build from
+# that directory.
+ifneq "$(pregen)" ""
+GENDIR := $(pregen)
+endif
 
 #
 # Compiler and configuration
@@ -57,21 +67,11 @@ W32LIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
 PDFVIEW_EXE = $(WINVIEW_EXE)
 endif
 
-# Edit these if you are cross compiling:
-
-HOSTCC ?= $(CC)
-HOSTLD ?= $(HOSTCC)
-HOSTCFLAGS ?= $(CFLAGS)
-HOSTLDFLAGS ?= $(LDFLAGS)
-
 #
 # Build commands
 #
 
-HOSTCC_CMD = @ echo HOSTCC $@ && $(HOSTCC) -o $@ -c $< $(HOSTCFLAGS)
-HOSTLD_CMD = @ echo HOSTLD $@ && $(HOSTLD) -o $@ $^ $(HOSTLDFLAGS)
 GENFILE_CMD = @ echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
-
 CC_CMD = @ echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
 LD_CMD = @ echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
 AR_CMD = @ echo AR $@ && $(AR) cru $@ $^
@@ -80,11 +80,7 @@ AR_CMD = @ echo AR $@ && $(AR) cru $@ $^
 # Directories
 #
 
-OBJDIR = build/$(build)
-GENDIR = build/generated
-HOSTDIR = build/host
-
-DIRS = $(OBJDIR) $(GENDIR) $(HOSTDIR)
+DIRS = $(OBJDIR) $(GENDIR)
 
 $(DIRS):
 	mkdir -p $@
@@ -146,24 +142,20 @@ $(OBJDIR)/%.o: draw/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: mupdf/%.c
 	$(CC_CMD)
-
-#
-# Code generation tools run on the host
-#
-
-FONTDUMP_EXE=$(HOSTDIR)/fontdump
-CMAPDUMP_EXE=$(HOSTDIR)/cmapdump
-
-$(FONTDUMP_EXE): $(HOSTDIR)/fontdump.o
-	$(HOSTLD_CMD)
-$(CMAPDUMP_EXE): $(HOSTDIR)/cmapdump.o
-	$(HOSTLD_CMD)
-
-$(HOSTDIR)/%.o: mupdf/%.c
-	$(HOSTCC_CMD)
-
 $(OBJDIR)/%.o: $(GENDIR)/%.c
 	$(CC_CMD)
+
+#
+# Code generation tools
+#
+
+FONTDUMP_EXE=$(OBJDIR)/fontdump
+$(FONTDUMP_EXE): $(OBJDIR)/fontdump.o
+	$(LD_CMD)
+
+CMAPDUMP_EXE=$(OBJDIR)/cmapdump
+$(CMAPDUMP_EXE): $(OBJDIR)/cmapdump.o
+	$(LD_CMD)
 
 #
 # Generated font file dumps
@@ -178,10 +170,14 @@ BASEFONT_FILES=$(addprefix fonts/, \
 
 CJKFONT_FILES=fonts/droid/DroidSansFallback.ttf
 
+ifeq "$(pregen)" ""
+
 $(GENDIR)/font_base14.c: $(FONTDUMP_EXE) $(BASEFONT_FILES)
 	$(GENFILE_CMD)
 $(GENDIR)/font_cjk.c: $(FONTDUMP_EXE) $(CJKFONT_FILES)
 	$(GENFILE_CMD)
+
+endif
 
 FONT_SRC=\
 	$(GENDIR)/font_base14.c \
@@ -238,6 +234,8 @@ CMAP_KOREA_FILES=$(addprefix cmaps/, \
         KSCms-UHC-HW-H KSCms-UHC-HW-V KSCms-UHC-V KSCpc-EUC-H \
         KSCpc-EUC-V UniKS-UCS2-H UniKS-UCS2-V UniKS-UTF16-H UniKS-UTF16-V )
 
+ifeq "$(pregen)" ""
+
 $(GENDIR)/cmap_unicode.c: $(CMAPDUMP_EXE) $(CMAP_UNICODE_FILES)
 	$(GENFILE_CMD)
 $(GENDIR)/cmap_cns.c: $(CMAPDUMP_EXE) $(CMAP_CNS_FILES)
@@ -248,6 +246,8 @@ $(GENDIR)/cmap_japan.c: $(CMAPDUMP_EXE) $(CMAP_JAPAN_FILES)
 	$(GENFILE_CMD)
 $(GENDIR)/cmap_korea.c: $(CMAPDUMP_EXE) $(CMAP_KOREA_FILES)
 	$(GENFILE_CMD)
+
+endif
 
 CMAP_SRC=\
 	$(GENDIR)/cmap_unicode.c \
@@ -353,8 +353,6 @@ all: $(DIRS) $(APPS)
 
 clean:
 	rm -rf $(OBJDIR)/*
-	rm -rf $(GENDIR)/*
-	rm -rf $(HOSTDIR)/*
 
 nuke:
 	rm -rf build
