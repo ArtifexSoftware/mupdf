@@ -14,58 +14,14 @@ GENDIR := build/generated
 # If no pregen is supplied, then generate (dump) the font and cmap .c
 # files as part of the build. If it is supplied, then just build from
 # that directory.
+
 ifneq "$(pregen)" ""
 GENDIR := $(pregen)
 endif
 
-#
-# Compiler and configuration
-#
+# Compiler flags and configuration options are kept in a separate file.
 
-OS := $(shell uname)
-OS := $(OS:MINGW%=MINGW)
-
-LIBS := -ljbig2dec -lopenjpeg -lfreetype -ljpeg -lz -lm
-CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf
-LDFLAGS =
-CC = cc
-LD = $(CC)
-AR = ar
-
-ifeq "$(build)" "debug"
-CFLAGS += -g -O0
-endif
-
-ifeq "$(build)" "release"
-CFLAGS += -O3
-endif
-
-ifeq "$(OS)" "Linux"
-CFLAGS += `pkg-config --cflags freetype2`
-LDFLAGS += `pkg-config --libs freetype2`
-X11LIBS = -lX11 -lXext
-PDFVIEW_EXE = $(X11VIEW_EXE)
-ifeq  "$(build)" "release"
-CFLAGS += -mmmx -ftree-vectorize -msse -msse2 -march=k8 -DARCH_X86
-ARCH_SRC = archx86.c
-endif
-endif
-
-ifeq "$(OS)" "Darwin"
-CFLAGS += -I$(HOME)/include -I/usr/X11R6/include -I/usr/X11R6/include/freetype2 -DARCH_X86_64
-LDFLAGS += -L$(HOME)/lib -L/usr/X11R6/lib
-X11LIBS = -lX11 -lXext
-PDFVIEW_EXE = $(X11VIEW_EXE)
-ARCH_SRC = archx86.c
-endif
-
-ifeq "$(OS)" "MINGW"
-CC = gcc
-CFLAGS += -Ic:/msys/1.0/local/include
-LDFLAGS += -Lc:/msys/1.0/local/lib
-W32LIBS = -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
-PDFVIEW_EXE = $(WINVIEW_EXE)
-endif
+-include Makerules
 
 #
 # Build commands
