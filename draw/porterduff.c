@@ -264,13 +264,14 @@ static void path_w4i1o4(byte * restrict argb, byte * restrict src, byte cov, int
 	byte b = argb[3];
 	while (len--)
 	{
-		byte ca;
+		byte ca, cca;
 		cov += *src; *src = 0; src++;
 		ca = fz_mul255(cov, alpha);
+		cca = 255 - ca;
 		dst[0] = ca + fz_mul255(dst[0], 255 - ca);
-		dst[1] = fz_mul255((short)r - dst[1], ca) + dst[1];
-		dst[2] = fz_mul255((short)g - dst[2], ca) + dst[2];
-		dst[3] = fz_mul255((short)b - dst[3], ca) + dst[3];
+		dst[1] = fz_mul255(r, ca) + fz_mul255(dst[1], cca);
+		dst[2] = fz_mul255(g, ca) + fz_mul255(dst[2], cca);
+		dst[3] = fz_mul255(b, ca) + fz_mul255(dst[3], cca);
 		dst += 4;
 	}
 }
@@ -323,10 +324,11 @@ static void text_w4i1o4(byte * restrict argb, byte * restrict src0, int srcw, by
 		while (w--)
 		{
 			byte ca = fz_mul255(src[0], alpha);
+			byte cca = 255 - ca;
 			dst[0] = ca + fz_mul255(dst[0], 255 - ca);
-			dst[1] = fz_mul255((short)r - dst[1], ca) + dst[1];
-			dst[2] = fz_mul255((short)g - dst[2], ca) + dst[2];
-			dst[3] = fz_mul255((short)b - dst[3], ca) + dst[3];
+			dst[1] = fz_mul255(r, ca) + fz_mul255(dst[1], cca);
+			dst[2] = fz_mul255(g, ca) + fz_mul255(dst[2], cca);
+			dst[3] = fz_mul255(b, ca) + fz_mul255(dst[3], cca);
 			src ++;
 			dst += 4;
 		}
