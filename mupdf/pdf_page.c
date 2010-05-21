@@ -107,7 +107,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 
 	page->rotate = fz_toint(fz_dictgets(dict, "Rotate"));
 
-	pdf_logpage("bbox [%g %g %g %g]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
+	pdf_logpage("bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	pdf_logpage("rotate %d\n", page->rotate);
 
 	obj = fz_dictgets(dict, "Annots");
