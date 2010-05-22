@@ -1380,27 +1380,24 @@ pdf_dropfunction(pdf_function *func)
 }
 
 fz_error
-pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
+pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	pdf_function *func;
-	fz_obj *dict;
 	fz_obj *obj;
 	int i;
 
-	if ((*funcp = pdf_finditem(xref->store, PDF_KFUNCTION, ref)))
+	if ((*funcp = pdf_finditem(xref->store, PDF_KFUNCTION, dict)))
 	{
 		pdf_keepfunction(*funcp);
 		return fz_okay;
 	}
 
-	pdf_logrsrc("load function (%d %d R) {\n", fz_tonum(ref), fz_togen(ref));
+	pdf_logrsrc("load function (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
 
 	func = fz_malloc(sizeof(pdf_function));
 	memset(func, 0, sizeof(pdf_function));
 	func->refs = 1;
-
-	dict = fz_resolveindirect(ref);
 
 	obj = fz_dictgets(dict, "FunctionType");
 	func->type = fz_toint(obj);
@@ -1445,11 +1442,11 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 	switch(func->type)
 	{
 	case SAMPLE:
-		error = loadsamplefunc(func, xref, dict, fz_tonum(ref), fz_togen(ref));
+		error = loadsamplefunc(func, xref, dict, fz_tonum(dict), fz_togen(dict));
 		if (error)
 		{
 			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load sampled function (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_rethrow(error, "cannot load sampled function (%d %d R)", fz_tonum(dict), fz_togen(dict));
 		}
 		break;
 
@@ -1458,7 +1455,7 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 		if (error)
 		{
 			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load exponential function (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_rethrow(error, "cannot load exponential function (%d %d R)", fz_tonum(dict), fz_togen(dict));
 		}
 		break;
 
@@ -1467,27 +1464,27 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *ref)
 		if (error)
 		{
 			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load stitching function (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_rethrow(error, "cannot load stitching function (%d %d R)", fz_tonum(dict), fz_togen(dict));
 		}
 		break;
 
 	case POSTSCRIPT:
-		error = loadpostscriptfunc(func, xref, dict, fz_tonum(ref), fz_togen(ref));
+		error = loadpostscriptfunc(func, xref, dict, fz_tonum(dict), fz_togen(dict));
 		if (error)
 		{
 			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load calculator function (%d %d R)", fz_tonum(ref), fz_togen(ref));
+			return fz_rethrow(error, "cannot load calculator function (%d %d R)", fz_tonum(dict), fz_togen(dict));
 		}
 		break;
 
 	default:
 		fz_free(func);
-		return fz_throw("unknown function type (%d %d R)", fz_tonum(ref), fz_togen(ref));
+		return fz_throw("unknown function type (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
 
 	pdf_logrsrc("}\n");
 
-	pdf_storeitem(xref->store, PDF_KFUNCTION, ref, func);
+	pdf_storeitem(xref->store, PDF_KFUNCTION, dict, func);
 
 	*funcp = func;
 	return fz_okay;

@@ -592,14 +592,11 @@ loadlab(pdf_xref *xref, fz_obj *dict)
  */
 
 static fz_error
-loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *ref)
+loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
-	fz_obj *dict;
 	int n;
 
 	pdf_logrsrc("load ICCBased\n");
-
-	dict = fz_resolveindirect(ref);
 
 	n = fz_toint(fz_dictgets(dict, "N"));
 

@@ -55,15 +55,14 @@ static fz_error sweepobj(pdf_xref *xref, fz_obj *obj)
 	return fz_okay;
 }
 
-static fz_error sweepref(pdf_xref *xref, fz_obj *ref)
+static fz_error sweepref(pdf_xref *xref, fz_obj *obj)
 {
 	fz_error error;
-	fz_obj *obj;
 	fz_obj *len;
 	int oid, gen;
 
-	oid = fz_tonum(ref);
-	gen = fz_tonum(ref);
+	oid = fz_tonum(obj);
+	gen = fz_tonum(obj);
 
 	if (oid < 0 || oid >= xref->len)
 		return fz_throw("object out of range (%d %d R)", oid, gen);
@@ -73,17 +72,12 @@ static fz_error sweepref(pdf_xref *xref, fz_obj *ref)
 
 	uselist[oid] = 1;
 
-	obj = fz_resolveindirect(ref);
-
 	/* Bake in /Length in stream objects */
 	if (xref->table[oid].stmofs)
 	{
 		len = fz_dictgets(obj, "Length");
 		if (fz_isindirect(len))
-		{
-			len = fz_resolveindirect(len);
 			fz_dictputs(obj, "Length", len);
-		}
 	}
 
 	error = sweepobj(xref, obj);
