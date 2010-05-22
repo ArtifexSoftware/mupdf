@@ -426,7 +426,7 @@ pdf_loadtype1shade(fz_shade *shade, pdf_xref *xref,
 	float xn, yn;
 	float x0, y0, x1, y1;
 
-	pdf_logshade("load type1 shade {\n");
+	pdf_logshade("load type1 shading {\n");
 
 	x0 = domain[0];
 	x1 = domain[1];
@@ -502,7 +502,7 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	fz_error error;
 	float tmin, tmax;
 
-	pdf_logshade("load type2 shade {\n");
+	pdf_logshade("load type2 shading {\n");
 
 	x0 = coords[0];
 	y0 = coords[1];
@@ -685,7 +685,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	int i;
 	fz_error error;
 
-	pdf_logshade("load type3 shade {\n");
+	pdf_logshade("load type3 shading {\n");
 
 	x0 = coords[0];
 	y0 = coords[1];
@@ -791,7 +791,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	int flag[4];
 	float x[4], y[4];
 
-	pdf_logshade("load type4 shade {\n");
+	pdf_logshade("load type4 shading {\n");
 
 	x0 = decode[0];
 	x1 = decode[1];
@@ -927,7 +927,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref,
 	float *cbuf;
 	int rows, col;
 
-	pdf_logshade("load type5 shade {\n");
+	pdf_logshade("load type5 shading {\n");
 
 	x0 = decode[0];
 	x1 = decode[1];
@@ -1032,7 +1032,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 	float prevc[4][FZ_MAXCOLORS];
 	fz_point prevp[12];
 
-	pdf_logshade("load type6 shade {\n");
+	pdf_logshade("load type6 shading {\n");
 
 	ncomp = shade->cs->n;
 
@@ -1186,7 +1186,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref,
 	float prevc[4][FZ_MAXCOLORS];
 	fz_point prevp[16];
 
-	pdf_logshade("load type7 shade {\n");
+	pdf_logshade("load type7 shading {\n");
 
 	ncomp = shade->cs->n;
 
@@ -1366,7 +1366,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 	int type;
 	int i;
 
-	pdf_logshade("load shade dict (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
+	pdf_logshade("load shading dict (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
 
 	shade = fz_malloc(sizeof(fz_shade));
 	shade->refs = 1;
@@ -1607,7 +1607,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 	 */
 	if (fz_dictgets(dict, "PatternType"))
 	{
-		pdf_logshade("load shade pattern (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
+		pdf_logshade("load shading pattern (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
 
 		obj = fz_dictgets(dict, "Matrix");
 		if (obj)
