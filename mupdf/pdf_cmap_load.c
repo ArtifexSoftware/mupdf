@@ -35,7 +35,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 	error = pdf_parsecmap(&cmap, file);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot parse cmap stream");
+		error = fz_rethrow(error, "cannot parse cmap stream (%d %d R)", fz_tonum(stmobj), fz_togen(stmobj));
 		goto cleanup;
 	}
 
@@ -67,7 +67,7 @@ pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmref)
 		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load embedded usecmap");
+			error = fz_rethrow(error, "cannot load embedded usecmap (%d %d R)", fz_tonum(obj), fz_togen(obj));
 			goto cleanup;
 		}
 		pdf_setusecmap(cmap, usecmap);

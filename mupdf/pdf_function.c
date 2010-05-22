@@ -480,7 +480,7 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, in
 	if (error)
 	{
 		fz_dropstream(stream);
-		return fz_rethrow(error, "cannot parse calculator function");
+		return fz_rethrow(error, "cannot parse calculator function (%d %d R)", oid, gen);
 	}
 
 	fz_dropstream(stream);
@@ -995,7 +995,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 
 	error = pdf_openstream(&stream, xref, oid, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open samples stream");
+		return fz_rethrow(error, "cannot open samples stream (%d %d R)", oid, gen);
 
 	/* read samples */
 	{
@@ -1242,7 +1242,7 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			sub = fz_arrayget(obj, i);
 			error = pdf_loadfunction(&func->u.st.funcs[i], xref, sub);
 			if (error)
-				return fz_rethrow(error, "cannot load sub function %d", i);
+				return fz_rethrow(error, "cannot load sub function %d (%d %d R)", i, fz_tonum(sub), fz_togen(sub));
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
 				return fz_throw("sub function %d /Domain or /Range mismatch", i);
 		}

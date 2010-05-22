@@ -1390,7 +1390,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 	if (error)
 	{
 		fz_dropshade(shade);
-		return fz_rethrow(error, "cannot load colorspace");
+		return fz_rethrow(error, "cannot load colorspace (%d %d R)", fz_tonum(obj), fz_togen(obj));
 	}
 	pdf_logshade("colorspace %s\n", shade->cs->name);
 
@@ -1484,7 +1484,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 		error = parsedecode(obj, shade->cs->n, decode);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot parse shading decode");
+			error = fz_rethrow(error, "cannot parse shading decode (%d %d R)", fz_tonum(obj), fz_togen(obj));
 			goto cleanup;
 		}
 	}
@@ -1501,7 +1501,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 		error = pdf_loadfunction(&func[0], xref, obj);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load shading function");
+			error = fz_rethrow(error, "cannot load shading function (%d %d R)", fz_tonum(obj), fz_togen(obj));
 			goto cleanup;
 		}
 	}
@@ -1519,7 +1519,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 			error = pdf_loadfunction(&func[i], xref, fz_arrayget(obj, i));
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot load shading function");
+				error = fz_rethrow(error, "cannot load shading function (%d %d R)", fz_tonum(obj), fz_togen(obj));
 				goto cleanup;
 			}
 		}
@@ -1529,7 +1529,7 @@ pdf_loadshadedict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix tra
 	{
 		error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 		if (error)
-			return fz_rethrow(error, "cannot open shading stream");
+			return fz_rethrow(error, "cannot open shading stream (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
 
 	switch (type)
@@ -1586,7 +1586,7 @@ cleanup:
 			pdf_dropfunction(func[i]);
 	fz_dropshade(shade);
 
-	return fz_rethrow(error, "cannot load shading");
+	return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(dict), fz_togen(dict));
 }
 
 fz_error
@@ -1636,7 +1636,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 
 		error = pdf_loadshadedict(shadep, xref, obj, mat);
 		if (error)
-			return fz_rethrow(error, "cannot load shading dictionary");
+			return fz_rethrow(error, "cannot load shading dictionary (%d %d R)", fz_tonum(obj), fz_togen(obj));
 
 		pdf_logshade("}\n");
 	}
@@ -1648,7 +1648,7 @@ pdf_loadshade(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_loadshadedict(shadep, xref, dict, fz_identity());
 		if (error)
-			return fz_rethrow(error, "cannot load shading dictionary");
+			return fz_rethrow(error, "cannot load shading dictionary (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
 
 	pdf_storeitem(xref->store, PDF_KSHADE, dict, *shadep);

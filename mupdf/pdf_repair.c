@@ -317,7 +317,7 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 			error = pdf_loadobject(&dict, xref, list[i].oid, list[i].gen);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot load stream object");
+				error = fz_rethrow(error, "cannot load stream object (%d %d R)", list[i].oid, list[i].gen);
 				goto cleanup;
 			}
 

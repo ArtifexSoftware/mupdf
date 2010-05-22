@@ -93,7 +93,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 
 	error = pdf_loadobject(&objstm, xref, oid, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load object stream object");
+		return fz_rethrow(error, "cannot load object stream object (%d %d R)", oid, gen);
 
 	count = fz_toint(fz_dictgets(objstm, "N"));
 	first = fz_toint(fz_dictgets(objstm, "First"));
@@ -106,7 +106,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	error = pdf_openstream(&stm, xref, oid, gen);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot open object stream");
+		error = fz_rethrow(error, "cannot open object stream (%d %d R)", oid, gen);
 		goto cleanupbuf;
 	}
 
@@ -115,7 +115,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 		error = pdf_lex(&tok, stm, buf, cap, &n);
 		if (error || tok != PDF_TINT)
 		{
-			error = fz_rethrow(error, "corrupt object stream");
+			error = fz_rethrow(error, "corrupt object stream (%d %d R)", oid, gen);
 			goto cleanupstm;
 		}
 		oidbuf[i] = atoi(buf);
@@ -123,7 +123,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 		error = pdf_lex(&tok, stm, buf, cap, &n);
 		if (error || tok != PDF_TINT)
 		{
-			error = fz_rethrow(error, "corrupt object stream");
+			error = fz_rethrow(error, "corrupt object stream (%d %d R)", oid, gen);
 			goto cleanupstm;
 		}
 		ofsbuf[i] = atoi(buf);
@@ -132,7 +132,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 	error = fz_seek(stm, first, 0);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot seek in object stream");
+		error = fz_rethrow(error, "cannot seek in object stream (%d %d R)", oid, gen);
 		goto cleanupstm;
 	}
 
@@ -143,7 +143,7 @@ pdf_loadobjstm(pdf_xref *xref, int oid, int gen, char *buf, int cap)
 		error = pdf_parsestmobj(&obj, xref, stm, buf, cap);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot parse object %d in stream", i);
+			error = fz_rethrow(error, "cannot parse object %d in stream (%d %d R)", i, oid, gen);
 			goto cleanupstm;
 		}
 

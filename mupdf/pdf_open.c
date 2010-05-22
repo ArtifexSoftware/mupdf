@@ -375,7 +375,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	if (!obj)
 	{
 		fz_dropobj(trailer);
-		return fz_throw("xref stream missing Size entry");
+		return fz_throw("xref stream missing Size entry (%d %d R)", oid, gen);
 	}
 	size = fz_toint(obj);
 
@@ -422,7 +422,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	obj = fz_dictgets(trailer, "W");
 	if (!obj) {
 		fz_dropobj(trailer);
-		return fz_throw("xref stream missing W entry");
+		return fz_throw("xref stream missing W entry (%d %d R)", oid, gen);
 	}
 	w0 = fz_toint(fz_arrayget(obj, 0));
 	w1 = fz_toint(fz_arrayget(obj, 1));
@@ -434,7 +434,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	if (error)
 	{
 		fz_dropobj(trailer);
-		return fz_rethrow(error, "cannot open compressed xref stream");
+		return fz_rethrow(error, "cannot open compressed xref stream (%d %d R)", oid, gen);
 	}
 
 	if (!index)
@@ -444,7 +444,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		{
 			fz_dropstream(stm);
 			fz_dropobj(trailer);
-			return fz_rethrow(error, "cannot read xref stream");
+			return fz_rethrow(error, "cannot read xref stream (%d %d R)", oid, gen);
 		}
 	}
 	else
@@ -458,7 +458,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 			{
 				fz_dropstream(stm);
 				fz_dropobj(trailer);
-				return fz_rethrow(error, "cannot read xref stream section");
+				return fz_rethrow(error, "cannot read xref stream section (%d %d R)", oid, gen);
 			}
 		}
 	}

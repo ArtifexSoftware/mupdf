@@ -95,7 +95,7 @@ static void drawloadpage(int pagenum, struct benchmark *loadtimes)
 	pageobj = pdf_getpageobject(xref, pagenum);
 	error = pdf_loadpage(&drawpage, xref, pageobj);
 	if (error)
-		die(fz_rethrow(error, "cannot load page %d in PDF file '%s'", pagenum, basename));
+		die(fz_rethrow(error, "cannot load page %d (%d %d R) in PDF file '%s'", pagenum, fz_tonum(pageobj), fz_togen(pageobj), basename));
 
 	if (benchmark && loadtimes)
 	{
@@ -310,7 +310,7 @@ static void drawxml(int pagenum)
 	pageobj = pdf_getpageobject(xref, pagenum);
 	error = pdf_loadpage(&drawpage, xref, pageobj);
 	if (error)
-		die(fz_rethrow(error, "cannot load page %d from PDF file '%s'", pagenum, basename));
+		die(fz_rethrow(error, "cannot load page %d (%d %d R) from PDF file '%s'", pagenum, fz_tonum(pageobj), fz_togen(pageobj), basename));
 
 	ctm = fz_identity();
 
