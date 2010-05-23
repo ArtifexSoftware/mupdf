@@ -454,15 +454,15 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 }
 
 static fz_error
-loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
+loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stream;
 	int codeptr;
 
-	pdf_logrsrc("load postscript function (%d %d R)\n", oid, gen);
+	pdf_logrsrc("load postscript function (%d %d R)\n", num, gen);
 
-	error = pdf_openstream(&stream, xref, oid, gen);
+	error = pdf_openstream(&stream, xref, num, gen);
 	if (error)
 		return fz_rethrow(error, "cannot open calculator function stream");
 
@@ -480,7 +480,7 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, in
 	if (error)
 	{
 		fz_dropstream(stream);
-		return fz_rethrow(error, "cannot parse calculator function (%d %d R)", oid, gen);
+		return fz_rethrow(error, "cannot parse calculator function (%d %d R)", num, gen);
 	}
 
 	fz_dropstream(stream);
@@ -914,7 +914,7 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 static int bps_supported[] = { 1, 2, 4, 8, 12, 16, 24, 32 };
 
 static fz_error
-loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int gen)
+loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -993,9 +993,9 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int oid, int ge
 
 	func->u.sa.samples = fz_malloc(samplecount * sizeof(int));
 
-	error = pdf_openstream(&stream, xref, oid, gen);
+	error = pdf_openstream(&stream, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open samples stream (%d %d R)", oid, gen);
+		return fz_rethrow(error, "cannot open samples stream (%d %d R)", num, gen);
 
 	/* read samples */
 	{
