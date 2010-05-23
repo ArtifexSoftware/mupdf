@@ -69,6 +69,7 @@ static int reqh = 0;
 static char copylatin1[1024 * 16] = "";
 static char copyutf8[1024 * 48] = "";
 static Time copytime;
+static char *filename;
 
 static pdfapp_t gapp;
 
@@ -426,6 +427,19 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 	XSendEvent(xdpy, requestor, False, SelectionNotify, &nevt);
 }
 
+void winreloadfile(pdfapp_t *app)
+{
+	int fd;
+
+	pdfapp_close(app);
+
+	fd = open(filename, O_BINARY | O_RDONLY, 0666);
+	if (fd < 0)
+	        winerror(app, fz_throw("cannot reload file '%s'", filename));
+
+	pdfapp_open(app, filename, fd);
+}
+
 void winopenuri(pdfapp_t *app, char *buf)
 {
 	char *browser = getenv("BROWSER");
@@ -512,7 +526,6 @@ static void winresettmo(struct timeval *tmo, struct timeval *tmo_at)
 
 int main(int argc, char **argv)
 {
-	char *filename;
 	int c;
 	int len;
 	char buf[128];
