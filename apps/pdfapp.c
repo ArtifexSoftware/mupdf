@@ -74,6 +74,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd)
 	app->xref = pdf_openxref(file);
 	if (!app->xref)
 		pdfapp_error(app, fz_throw("cannot open PDF file '%s'", filename));
+	fz_dropstream(file);
 
 	/*
 	 * Handle encrypted PDF files
