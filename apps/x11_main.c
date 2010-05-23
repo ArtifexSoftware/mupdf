@@ -138,6 +138,8 @@ static void winopen(void)
 		ximage_get_visual(),
 		0,
 		nil);
+	if (xwin == None)
+		winerror(&gapp, fz_throw("cannot create window"));
 
 	XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
 	XSelectInput(xdpy, xwin,
