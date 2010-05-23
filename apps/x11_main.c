@@ -54,6 +54,7 @@ static Atom XA_UTF8_STRING;
 static int x11fd;
 static int xscr;
 static Window xwin;
+static Pixmap xicon;
 static GC xgc;
 static XEvent xevt;
 static int mapped = 0;
@@ -156,10 +157,11 @@ static void winopen(void)
 	if (wmhints)
 	{
 		wmhints->flags = IconPixmapHint;
-		wmhints->icon_pixmap = XCreateBitmapFromData(xdpy, xwin,
+		xicon = XCreateBitmapFromData(xdpy, xwin,
 			(char *) gs_l_xbm_bits, gs_l_xbm_width, gs_l_xbm_height);
-		if (wmhints->icon_pixmap)
+		if (xicon)
 		{
+			wmhints->icon_pixmap = xicon;
 			XSetWMHints(xdpy, xwin, wmhints);
 		}
 		XFree(wmhints);
@@ -175,6 +177,21 @@ static void winopen(void)
 	}
 
 	x11fd = ConnectionNumber(xdpy);
+}
+
+void winclose(pdfapp_t *app)
+{
+	XFreePixmap(xdpy, xicon);
+
+	XFreeCursor(xdpy, xcwait);
+	XFreeCursor(xdpy, xchand);
+	XFreeCursor(xdpy, xcarrow);
+
+	XFreeGC(xdpy, xgc);
+
+	XDestroyWindow(xdpy, xwin);
+
+	XCloseDisplay(xdpy);
 }
 
 void wincursor(pdfapp_t *app, int curs)
@@ -462,7 +479,10 @@ static void onkey(int c)
 	if (c == 'P')
 		windrawpageno(&gapp);
 	else if (c == 'q')
-		exit(0);
+	{
+		XSelectInput(xdpy, xwin, StructureNotifyMask);
+		XUnmapWindow(xdpy, xwin);
+	}
 	else
 		pdfapp_onkey(&gapp, c);
 }
@@ -538,6 +558,7 @@ int main(int argc, char **argv)
 	int pageno = 1;
 	int wasshowingpage;
 	struct timeval tmo, tmo_at;
+	int closing;
 	int fd;
 
 	while ((c = fz_getopt(argc, argv, "d:z:p:")) != -1)
@@ -580,7 +601,8 @@ int main(int argc, char **argv)
 
 	winresettmo(&tmo, &tmo_at);
 
-	while (1)
+	closing = 0;
+	while (!closing)
 	{
 		do
 		{
@@ -660,11 +682,16 @@ int main(int argc, char **argv)
 					xevt.xselectionrequest.property,
 					xevt.xselectionrequest.time);
 				break;
+
+			case UnmapNotify:
+				winclose(&gapp);
+				closing = 1;
+				break;
 			}
 		}
-		while (XPending(xdpy));
+		while (!closing && XPending(xdpy));
 
-		if (dirty)
+		if (!closing && dirty)
 		{
 			winblit(&gapp);
 			dirty = 0;
