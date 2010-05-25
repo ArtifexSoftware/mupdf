@@ -42,7 +42,6 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 		pdf_sortcmap(font->tounicode);
 
 		pdf_dropcmap(cmap);
-		return fz_okay;
 	}
 
 	else if (collection)
@@ -82,8 +81,6 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 			else
 				font->cidtoucs[i] = '?';
 		}
-
-		return fz_okay;
 	}
 
 	if (!font->tounicode && !font->cidtoucs)
