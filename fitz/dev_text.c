@@ -103,6 +103,8 @@ fz_addtextchar(fz_textspan **last, fz_font *font, float size, int c, fz_bbox bbo
 
 	switch (c)
 	{
+	case -1: /* ignore when one unicode character maps to multiple glyphs */
+		break;
 	case 0xFB00: /* ff */
 		fz_addtextcharimp(span, 'f', fz_splitbbox(bbox, 0, 2));
 		fz_addtextcharimp(span, 'f', fz_splitbbox(bbox, 1, 2));
@@ -233,8 +235,17 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			fz_warn("freetype set character size: %s", ft_errorstring(fterr));
 	}
 
+	rect = fz_emptyrect;
+
 	for (i = 0; i < text->len; i++)
 	{
+		if (text->els[i].gid < 0)
+		{
+			/* TODO: split rect for one-to-many mapped chars */
+			fz_addtextchar(last, font, size, text->els[i].ucs, fz_roundrect(rect));
+			continue;
+		}
+
 		/* Get point in user space to perform heuristic space and newspan tests */
 		p.x = text->els[i].x;
 		p.y = text->els[i].y;

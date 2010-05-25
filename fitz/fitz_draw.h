@@ -259,8 +259,8 @@ typedef struct fz_textel_s fz_textel;
 struct fz_textel_s
 {
 	float x, y;
-	int gid;
-	int ucs;
+	int gid; /* -1 for one gid to many ucs mappings */
+	int ucs; /* -1 for one ucs to many gid mappings */
 };
 
 struct fz_text_s

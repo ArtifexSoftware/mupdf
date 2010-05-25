@@ -12,7 +12,8 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 	fz_error error = fz_okay;
 	pdf_cmap *cmap;
 	int cid;
-	int ucs;
+	int ucsbuf[8];
+	int ucslen;
 	int i;
 
 	if (pdf_isstream(xref, fz_tonum(cmapstm), fz_togen(cmapstm)))
@@ -30,9 +31,11 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 			cid = pdf_lookupcmap(font->encoding, i);
 			if (cid > 0)
 			{
-				ucs = pdf_lookupcmap(cmap, i);
-				if (ucs > 0)
-					pdf_maprangetorange(font->tounicode, cid, cid, ucs);
+				ucslen = pdf_lookupcmapfull(cmap, i, ucsbuf);
+				if (ucslen == 1)
+					pdf_maprangetorange(font->tounicode, cid, cid, ucsbuf[0]);
+				if (ucslen > 1)
+					pdf_maponetomany(font->tounicode, cid, ucsbuf, ucslen);
 			}
 		}
 

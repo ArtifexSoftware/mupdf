@@ -534,7 +534,9 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	pdf_hmtx h;
 	pdf_vmtx v;
 	int gid;
-	int ucs;
+	int ucsbuf[8];
+	int ucslen;
+	int i;
 
 	tsm.a = gstate->size * gstate->scale;
 	tsm.b = 0;
@@ -544,11 +546,17 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	tsm.f = gstate->rise;
 
 	if (fontdesc->tounicode)
-		ucs = pdf_lookupcmap(fontdesc->tounicode, cid);
+		ucslen = pdf_lookupcmapfull(fontdesc->tounicode, cid, ucsbuf);
 	else if (cid < fontdesc->ncidtoucs)
-		ucs = fontdesc->cidtoucs[cid];
+	{
+		ucsbuf[0] = fontdesc->cidtoucs[cid];
+		ucslen = 1;
+	}
 	else
-		ucs = '?';
+	{
+		ucsbuf[0] = '?';
+		ucslen = 1;
+	}
 
 	gid = pdf_fontcidtogid(fontdesc, cid);
 
@@ -580,7 +588,11 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	}
 
 	/* add glyph to textobject */
-	fz_addtext(csi->text, gid, ucs, trm.e, trm.f);
+	fz_addtext(csi->text, gid, ucsbuf[0], trm.e, trm.f);
+
+	/* add filler glyphs for one-to-many unicode mapping */
+	for (i = 1; i < ucslen; i++)
+		fz_addtext(csi->text, -1, ucsbuf[i], trm.e, trm.f);
 
 	if (fontdesc->wmode == 0)
 	{
