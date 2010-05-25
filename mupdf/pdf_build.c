@@ -545,14 +545,15 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	tsm.e = 0;
 	tsm.f = gstate->rise;
 
+	ucslen = 0;
 	if (fontdesc->tounicode)
 		ucslen = pdf_lookupcmapfull(fontdesc->tounicode, cid, ucsbuf);
-	else if (cid < fontdesc->ncidtoucs)
+	if (ucslen == 0 && cid < fontdesc->ncidtoucs)
 	{
 		ucsbuf[0] = fontdesc->cidtoucs[cid];
 		ucslen = 1;
 	}
-	else
+	if (ucslen == 0)
 	{
 		ucsbuf[0] = '?';
 		ucslen = 1;
