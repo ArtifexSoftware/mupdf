@@ -374,6 +374,11 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 		}
 	}
 
+	/* start with the builtin encoding */
+	for (i = 0; i < 256; i++)
+		etable[i] = ftcharindex(face, i);
+
+	/* encode by glyph name where we can */
 	if (kind == TYPE1)
 	{
 		pdf_logfont("encode type1/cff by strings\n");
@@ -395,11 +400,10 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					}
 				}
 			}
-			else
-				etable[i] = ftcharindex(face, i);
 		}
 	}
 
+	/* encode by glyph name where we can */
 	if (kind == TRUETYPE)
 	{
 		/* Unicode cmap */
@@ -416,8 +420,6 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					else
 						etable[i] = ftcharindex(face, aglcode);
 				}
-				else
-					etable[i] = ftcharindex(face, i);
 			}
 		}
 
@@ -435,8 +437,6 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					else
 						etable[i] = ftcharindex(face, k);
 				}
-				else
-					etable[i] = ftcharindex(face, i);
 			}
 		}
 
@@ -452,41 +452,20 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 					if (etable[i] == 0)
 						etable[i] = ftcharindex(face, i);
 				}
-				else
-					etable[i] = ftcharindex(face, i);
-
-				if (FT_HAS_GLYPH_NAMES(face))
-				{
-					fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
-					if (fterr)
-					{
-						error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
-						goto cleanup;
-					}
-					if (ebuffer[i][0])
-						estrings[i] = ebuffer[i];
-				}
 			}
 		}
 	}
 
-	if (kind == UNKNOWN)
+	/* try to reverse the glyph names from the builtin encoding */
+	if (FT_HAS_GLYPH_NAMES(face))
 	{
-		pdf_logfont("encode builtin\n");
 		for (i = 0; i < 256; i++)
 		{
-			etable[i] = ftcharindex(face, i);
-			if (etable[i] == 0)
-				continue;
-
-			if (FT_HAS_GLYPH_NAMES(face))
+			if (etable[i] && !estrings[i])
 			{
 				fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
 				if (fterr)
-				{
-					error = fz_throw("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
-					goto cleanup;
-				}
+					fz_warn("freetype get glyph name (gid %d): %s", etable[i], ft_errorstring(fterr));
 				if (ebuffer[i][0])
 					estrings[i] = ebuffer[i];
 			}
