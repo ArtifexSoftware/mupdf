@@ -29,7 +29,7 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 		for (i = 0; i < (strings ? 256 : 65536); i++)
 		{
 			cid = pdf_lookupcmap(font->encoding, i);
-			if (cid > 0)
+			if (cid >= 0)
 			{
 				ucslen = pdf_lookupcmapfull(cmap, i, ucsbuf);
 				if (ucslen == 1)
