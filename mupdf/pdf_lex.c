@@ -95,7 +95,7 @@ lexnumber(fz_stream *f, char *s, int n, pdf_token_e *tok)
 			goto loop_after_dot;
 		case '+':
 		case '-':
-		case IF_0_9:
+		case RANGE_0_9:
 			*s++ = c;
 			n--;
 			goto loop_after_sign;
@@ -119,7 +119,7 @@ loop_after_sign:
 			*s++ = c;
 			n--;
 			goto loop_after_dot;
-		case IF_0_9:
+		case RANGE_0_9:
 			*s++ = c;
 			break;
 		default:
@@ -138,7 +138,7 @@ loop_after_dot:
 		int c = fz_readbyte(f);
 		switch (c)
 		{
-		case IF_0_9:
+		case RANGE_0_9:
 			*s++ = c;
 			break;
 		default:
