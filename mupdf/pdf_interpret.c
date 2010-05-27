@@ -796,6 +796,7 @@ Lsetcolor:
 			case PDF_MSHADE:
 				return fz_throw("cannot set color in shade objects");
 			}
+			break;
 		}
 		default:
 			goto defaultcase;
