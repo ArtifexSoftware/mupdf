@@ -624,8 +624,37 @@ int main(int argc, char **argv)
 				wasshowingpage = isshowingpage;
 
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, nil);
+
+				switch (keysym)
+				{
+				case XK_Escape:
+					len = 1; buf[0] = 'q';
+					break;
+
+				case XK_Up:
+					len = 1; buf[0] = 'u';
+					break;
+				case XK_Down:
+					len = 1; buf[0] = 'd';
+					break;
+
+				case XK_Left:
+					len = 1; buf[0] = 'p';
+					break;
+				case XK_Right:
+					len = 1; buf[0] = 'n';
+					break;
+
+				case XK_Page_Up:
+					len = 1; buf[0] = 'b';
+					break;
+				case XK_Page_Down:
+					len = 1; buf[0] = ' ';
+					break;
+				}
 				if (len)
 					onkey(buf[0]);
+
 				onmouse(oldx, oldy, 0, 0, 0);
 
 				if (dirty)
