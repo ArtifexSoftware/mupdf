@@ -248,6 +248,7 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int num, int gen)
 	{
 		fz_warn("cannot load missing object (%d %d R), assuming null object", num, gen);
 		xref->table[num].obj = fz_newnull();
+		*objp = fz_keepobj(xref->table[num].obj);
 	}
 
 	return fz_okay;

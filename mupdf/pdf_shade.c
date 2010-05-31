@@ -782,6 +782,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	float c1[FZ_MAXCOLORS];
 	float cval[4][FZ_MAXCOLORS];
 	int idx, intriangle, badtriangle;
+	int a, b, c;
 	int i;
 
 	int flag[4];
@@ -817,11 +818,11 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	idx = 0;
 	intriangle = 0;
 	badtriangle = 0;
+	a = b = c = 0;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
 		unsigned int t;
-		int a, b, c;
 
 		flag[idx] = getdata(stream, bpflag);
 
