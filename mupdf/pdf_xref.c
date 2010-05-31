@@ -154,9 +154,12 @@ pdf_loadobjstm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 			goto cleanupstm;
 		}
 
-		if (xref->table[numbuf[i]].obj)
-			fz_dropobj(xref->table[numbuf[i]].obj);
-		xref->table[numbuf[i]].obj = obj;
+		if (xref->table[numbuf[i]].type == 'o' && xref->table[numbuf[i]].ofs == num)
+		{
+			if (xref->table[numbuf[i]].obj)
+				fz_dropobj(xref->table[numbuf[i]].obj);
+			xref->table[numbuf[i]].obj = obj;
+		}
 	}
 
 	fz_dropstream(stm);
