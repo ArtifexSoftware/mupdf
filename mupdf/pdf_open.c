@@ -413,11 +413,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		}
 	}
 
-	xref->table[num].type = 'n';
-	xref->table[num].gen = gen;
-	xref->table[num].obj = fz_keepobj(trailer);
-	xref->table[num].stmofs = stmofs;
-	xref->table[num].ofs = 0;
+	pdf_logxref("  num=%d gen=%d size=%d\n", num, gen, size);
 
 	obj = fz_dictgets(trailer, "W");
 	if (!obj) {
@@ -430,7 +426,7 @@ pdf_readnewxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 
 	index = fz_dictgets(trailer, "Index");
 
-	error = pdf_openstream(&stm, xref, num, gen);
+	error = pdf_openstreamat(&stm, xref, num, gen, trailer, stmofs);
 	if (error)
 	{
 		fz_dropobj(trailer);
