@@ -1043,10 +1043,11 @@ Lsetcolor:
 		{
 		case 0:
 		{
+			int i;
+			fz_obj *array;
 			if (csi->top != 2)
 				goto syntaxerror;
-			int i;
-			fz_obj *array = csi->stack[0];
+			array = csi->stack[0];
 			gstate->strokestate.dashlen = fz_arraylen(array);
 			if (gstate->strokestate.dashlen > 32)
 				return fz_throw("assert: dash pattern too big");
