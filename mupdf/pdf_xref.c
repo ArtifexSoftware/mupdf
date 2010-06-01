@@ -160,6 +160,10 @@ pdf_loadobjstm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 				fz_dropobj(xref->table[numbuf[i]].obj);
 			xref->table[numbuf[i]].obj = obj;
 		}
+		else
+		{
+			fz_dropobj(obj);
+		}
 	}
 
 	fz_dropstream(stm);

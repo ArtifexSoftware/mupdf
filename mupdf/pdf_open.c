@@ -64,6 +64,7 @@ pdf_readstartxref(pdf_xref *xref)
 			while (iswhite(buf[i]) && i < n)
 				i ++;
 			xref->startxref = atoi((char*)(buf + i));
+			pdf_logxref("startxref %d\n", xref->startxref);
 			return fz_okay;
 		}
 	}
@@ -626,7 +627,7 @@ pdf_openxref(fz_stream *file)
 	xref = fz_malloc(sizeof(pdf_xref));
 	memset(xref, 0, sizeof(pdf_xref));
 
-	pdf_logxref("loadxref %p\n", xref);
+	pdf_logxref("openxref %p\n", xref);
 
 	xref->file = fz_keepstream(file);
 
