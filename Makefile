@@ -1,6 +1,6 @@
 # GNU Makefile for MuPDF
 #
-#	make build=release prefix=/usr/local [pregen=dir] install
+# make build=release prefix=/usr/local install
 #
 
 default: all
@@ -11,15 +11,23 @@ prefix ?= /usr/local
 OBJDIR := build/$(build)
 GENDIR := build/generated
 
-# If no pregen is supplied, then generate (dump) the font and cmap .c
-# files as part of the build. If it is supplied, then just build from
-# that directory.
+# If no pregen directory is supplied, then generate (dump) the
+# font and cmap .c files as part of the build.
+# If it is supplied, then just use the files from that directory.
+
+pregen := $(wildcard pregen)
 
 ifneq "$(pregen)" ""
 GENDIR := $(pregen)
 endif
 
+# Include makefile for third party libraries.
+# They will only be built if the thirdparty directory exists.
+
+-include Makethird
+
 # Compiler flags and configuration options are kept in a separate file.
+# This file includes some tests based on variables set by Makethird.
 
 -include Makerules
 
@@ -63,7 +71,8 @@ FITZ_SRC=$(addprefix fitz/, \
 	base_error.c base_memory.c base_string.c base_unicode.c  \
 	base_hash.c base_matrix.c base_rect.c \
 	crypt_aes.c crypt_arc4.c crypt_md5.c \
-	filt_aesd.c filt_arc4.c filt_basic.c filt_dctd.c filt_faxd.c filt_faxdtab.c filt_flate.c \
+	filt_aesd.c filt_arc4.c filt_basic.c \
+	filt_dctd.c filt_faxd.c filt_faxdtab.c filt_flate.c \
 	filt_jbig2d.c filt_jpxd.c filt_lzwd.c filt_pipeline.c filt_predict.c \
 	dev_null.c dev_text.c dev_draw.c dev_bbox.c dev_list.c dev_trace.c \
 	obj_array.c obj_dict.c obj_print.c obj_simple.c \
@@ -75,7 +84,8 @@ FITZ_OBJ=$(FITZ_SRC:fitz/%.c=$(OBJDIR)/%.o)
 $(FITZ_OBJ): $(FITZ_HDR)
 
 DRAW_SRC=$(addprefix draw/, $(ARCH_SRC) \
-	archport.c blendmodes.c glyphcache.c imagedraw.c imagescale.c imageunpack.c meshdraw.c \
+	archport.c blendmodes.c glyphcache.c \
+	imagedraw.c imagescale.c imageunpack.c meshdraw.c \
 	pathfill.c pathscan.c pathstroke.c porterduff.c )
 DRAW_OBJ=$(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
 $(DRAW_OBJ): $(FITZ_HDR)
@@ -85,10 +95,10 @@ MUPDF_SRC=$(addprefix mupdf/, \
 	pdf_annot.c pdf_build.c pdf_cmap.c pdf_cmap_load.c pdf_cmap_parse.c \
 	pdf_cmap_table.c pdf_colorspace.c pdf_crypt.c pdf_debug.c \
 	pdf_font.c pdf_fontagl.c pdf_fontenc.c pdf_fontfile.c pdf_fontmtx.c \
-	pdf_function.c pdf_image.c pdf_interpret.c pdf_lex.c pdf_nametree.c pdf_open.c \
-	pdf_outline.c pdf_page.c pdf_pagetree.c pdf_parse.c pdf_pattern.c pdf_repair.c \
-	pdf_shade.c pdf_store.c pdf_stream.c pdf_type3.c \
-	pdf_unicode.c pdf_xobject.c pdf_xref.c )
+	pdf_function.c pdf_image.c pdf_interpret.c pdf_lex.c pdf_nametree.c \
+	pdf_open.c pdf_outline.c pdf_page.c pdf_pagetree.c pdf_parse.c \
+	pdf_pattern.c pdf_repair.c pdf_shade.c pdf_store.c pdf_stream.c \
+	pdf_type3.c pdf_unicode.c pdf_xobject.c pdf_xref.c )
 MUPDF_OBJ=$(MUPDF_SRC:mupdf/%.c=$(OBJDIR)/%.o)
 $(MUPDF_OBJ): $(MUPDF_HDR)
 
@@ -106,10 +116,13 @@ $(OBJDIR)/%.o: $(GENDIR)/%.c
 #
 
 BASEFONT_FILES=$(addprefix fonts/, \
-	Dingbats.cff NimbusMonL-Bold.cff NimbusMonL-BoldObli.cff NimbusMonL-Regu.cff \
-	NimbusMonL-ReguObli.cff NimbusRomNo9L-Medi.cff NimbusRomNo9L-MediItal.cff \
-	NimbusRomNo9L-Regu.cff NimbusRomNo9L-ReguItal.cff NimbusSanL-Bold.cff \
-	NimbusSanL-BoldItal.cff NimbusSanL-Regu.cff NimbusSanL-ReguItal.cff \
+	Dingbats.cff \
+	NimbusMonL-Bold.cff NimbusMonL-BoldObli.cff \
+	NimbusMonL-Regu.cff NimbusMonL-ReguObli.cff \
+	NimbusRomNo9L-Medi.cff NimbusRomNo9L-MediItal.cff \
+	NimbusRomNo9L-Regu.cff NimbusRomNo9L-ReguItal.cff \
+	NimbusSanL-Bold.cff NimbusSanL-BoldItal.cff \
+	NimbusSanL-Regu.cff NimbusSanL-ReguItal.cff \
 	StandardSymL.cff URWChanceryL-MediItal.cff )
 
 CJKFONT_FILES=fonts/droid/DroidSansFallback.ttf
@@ -223,7 +236,7 @@ PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
 
 $(PDFSHOW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB)
+$(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
@@ -231,7 +244,7 @@ PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
 
 $(PDFCLEAN_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB)
+$(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
@@ -239,7 +252,7 @@ PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
 
 $(PDFDRAW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB)
+$(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFEXTRACT_SRC=apps/pdfextract.c apps/pdftool.c
@@ -247,7 +260,7 @@ PDFEXTRACT_OBJ=$(PDFEXTRACT_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFEXTRACT_EXE=$(OBJDIR)/pdfextract
 
 $(PDFEXTRACT_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB)
+$(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFINFO_SRC=apps/pdfinfo.c apps/pdftool.c
@@ -255,7 +268,7 @@ PDFINFO_OBJ=$(PDFINFO_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFINFO_EXE=$(OBJDIR)/pdfinfo
 
 $(PDFINFO_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
-$(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB)
+$(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
@@ -263,7 +276,7 @@ X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
 $(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB)
+$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD) $(X11LIBS)
 
 WINVIEW_SRC=apps/win_main.c apps/pdfapp.c
@@ -275,7 +288,7 @@ $(OBJDIR)/%.o: apps/%.rc
 	windres -i $< -o $@ --include-dir=apps
 
 $(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB)
+$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD) $(W32LIBS)
 
 #
@@ -292,7 +305,7 @@ dist: $(DIRS) $(APPS)
 # Default rules
 #
 
-all: $(DIRS) $(MUPDF_LIB) $(APPS)
+all: $(DIRS) $(THIRD_LIBS) $(MUPDF_LIB) $(APPS)
 
 clean:
 	rm -rf $(OBJDIR)/*
