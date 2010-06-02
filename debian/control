@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: libmupdf-dev
 Architecture: any
-Depends: libmupdf, ${shlibs:Depends}
+Depends: ${shlibs:Depends}
 Description: Development files for the MuPDF viewer
  MuPDF is a lightweight PDF viewer and toolkit written in portable C.
  .
