@@ -314,6 +314,7 @@ nuke:
 	rm -rf build
 
 install: $(DIRS) $(APPS) $(MUPDF_LIB)
+	install -d $(prefix)/bin $(prefix)/lib $(prefix)/include
 	install $(APPS) $(prefix)/bin
 	install $(MUPDF_LIB) $(prefix)/lib
 	install $(MUPDF_HDR) $(prefix)/include
