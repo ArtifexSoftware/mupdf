@@ -14,7 +14,10 @@ FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 	fterr = FT_Load_Glyph(face, gid, masks | FT_LOAD_IGNORE_TRANSFORM);
 	if (fterr)
 		return fterr;
-	*out = face->glyph->advance.x * 1024;
+	if (masks & FT_LOAD_VERTICAL_LAYOUT)
+		*out = face->glyph->advance.y * 1024;
+	else
+		*out = face->glyph->advance.x * 1024;
 	return 0;
 }
 
@@ -39,6 +42,7 @@ fz_newtextspan(void)
 	fz_textspan *span;
 	span = fz_malloc(sizeof(fz_textspan));
 	span->font = nil;
+	span->wmode = 0;
 	span->size = 0.0;
 	span->len = 0;
 	span->cap = 0;
@@ -82,7 +86,7 @@ fz_splitbbox(fz_bbox bbox, int i, int n)
 }
 
 static void
-fz_addtextchar(fz_textspan **last, fz_font *font, float size, int c, fz_bbox bbox)
+fz_addtextchar(fz_textspan **last, fz_font *font, float size, int wmode, int c, fz_bbox bbox)
 {
 	fz_textspan *span = *last;
 
@@ -92,11 +96,12 @@ fz_addtextchar(fz_textspan **last, fz_font *font, float size, int c, fz_bbox bbo
 		span->size = size;
 	}
 
-	if (span->font != font || span->size != size)
+	if (span->font != font || span->size != size || span->wmode != wmode)
 	{
 		span = fz_newtextspan();
 		span->font = fz_keepfont(font);
 		span->size = size;
+		span->wmode = wmode;
 		(*last)->next = span;
 		*last = span;
 	}
@@ -139,12 +144,13 @@ fz_addtextchar(fz_textspan **last, fz_font *font, float size, int c, fz_bbox bbo
 }
 
 static void
-fz_addtextnewline(fz_textspan **last, fz_font *font, float size)
+fz_addtextnewline(fz_textspan **last, fz_font *font, float size, int wmode)
 {
 	fz_textspan *span;
 	span = fz_newtextspan();
 	span->font = fz_keepfont(font);
 	span->size = size;
+	span->wmode = wmode;
 	(*last)->eol = 1;
 	(*last)->next = span;
 	*last = span;
@@ -156,8 +162,8 @@ fz_debugtextspanxml(fz_textspan *span)
 	char buf[10];
 	int c, n, k, i;
 
-	printf("<span font=\"%s\" size=\"%g\" eol=\"%d\">\n",
-		span->font ? span->font->name : "NULL", span->size, span->eol);
+	printf("<span font=\"%s\" size=\"%g\" wmode=\"%d\" eol=\"%d\">\n",
+		span->font ? span->font->name : "NULL", span->size, span->wmode, span->eol);
 
 	for (i = 0; i < span->len; i++)
 	{
@@ -242,7 +248,7 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		if (text->els[i].gid < 0)
 		{
 			/* TODO: split rect for one-to-many mapped chars */
-			fz_addtextchar(last, font, size, text->els[i].ucs, fz_roundrect(rect));
+			fz_addtextchar(last, font, size, text->wmode, text->els[i].ucs, fz_roundrect(rect));
 			continue;
 		}
 
@@ -260,13 +266,17 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		if (font->ftface)
 		{
 			FT_Fixed ftadv = 0;
-			fterr = FT_Get_Advance(font->ftface, text->els[i].gid,
-				FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING,
-				&ftadv);
+			int ftmask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING;
+			if (text->wmode)
+				ftmask |= FT_LOAD_VERTICAL_LAYOUT;
+			fterr = FT_Get_Advance(font->ftface, text->els[i].gid, ftmask, &ftadv);
 			if (fterr)
 				fz_warn("freetype get advance (gid %d): %s", text->els[i].gid, ft_errorstring(fterr));
 			adv = ftadv / 65536.0;
-			pen->x += adv;
+			if (text->wmode)
+				pen->y += adv;
+			else
+				pen->x += adv;
 		}
 		else
 		{
@@ -279,28 +289,46 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		tm.f = text->els[i].y;
 		trm = fz_concat(tm, ctm);
 
-		rect.x0 = 0.0;
-		rect.y0 = 0.0;
-		rect.x1 = adv;
-		rect.y1 = 1.0;
+		if (text->wmode)
+		{
+			rect.x0 = 0.0;
+			rect.y0 = 0.0;
+			rect.x1 = 1.0;
+			rect.y1 = 1.0;
+		}
+		else
+		{
+			rect.x0 = 0.0;
+			rect.y0 = 0.0;
+			rect.x1 = adv;
+			rect.y1 = 1.0;
+		}
 		rect = fz_transformrect(trm, rect);
 
 		/* Add to the text span */
-		if (fabs(dy) > 0.001)
+		if (text->wmode)
 		{
-			fz_addtextnewline(last, font, size);
+			if (fabs(dx) > 0.2)
+				fz_addtextnewline(last, font, size, text->wmode);
 		}
-		else if (fabs(dx) > 0.2)
+		else
 		{
-			fz_rect spacerect;
-			spacerect.x0 = -fabs(dx);
-			spacerect.y0 = 0.0;
-			spacerect.x1 = 0.0;
-			spacerect.y1 = 1.0;
-			spacerect = fz_transformrect(trm, spacerect);
-			fz_addtextchar(last, font, size, ' ', fz_roundrect(spacerect));
+			if (fabs(dy) > 0.001)
+			{
+				fz_addtextnewline(last, font, size, text->wmode);
+			}
+			else if (fabs(dx) > 0.2)
+			{
+				fz_rect spacerect;
+				spacerect.x0 = -fabs(dx);
+				spacerect.y0 = 0.0;
+				spacerect.x1 = 0.0;
+				spacerect.y1 = 1.0;
+				spacerect = fz_transformrect(trm, spacerect);
+				fz_addtextchar(last, font, size, text->wmode, ' ', fz_roundrect(spacerect));
+			}
 		}
-		fz_addtextchar(last, font, size, text->els[i].ucs, fz_roundrect(rect));
+		fz_addtextchar(last, font, size, text->wmode, text->els[i].ucs, fz_roundrect(rect));
 	}
 }
 
