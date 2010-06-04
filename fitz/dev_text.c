@@ -10,10 +10,10 @@
 int
 FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 {
-	int fterr;
-	fterr = FT_Load_Glyph(face, gid, masks | FT_LOAD_IGNORE_TRANSFORM);
-	if (fterr)
-		return fterr;
+	int err;
+	err = FT_Load_Glyph(face, gid, masks | FT_LOAD_IGNORE_TRANSFORM);
+	if (err)
+		return err;
 	if (masks & FT_LOAD_VERTICAL_LAYOUT)
 		*out = face->glyph->advance.y * 1024;
 	else
@@ -22,9 +22,7 @@ FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 }
 
 #else
-
 #include FT_ADVANCES_H
-
 #endif
 
 typedef struct fz_textdevice_s fz_textdevice;
@@ -221,14 +219,14 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 {
 	fz_font *font = text->font;
 	fz_matrix tm = text->trm;
-	fz_matrix inv = fz_invertmatrix(text->trm);
-	float size = fz_matrixexpansion(text->trm);
 	fz_matrix trm;
+	float size;
 	float dx, dy;
-	fz_rect rect;
-	fz_point p;
 	float adv;
-	int i, fterr;
+	fz_rect rect;
+	fz_point dir;
+	int i, err;
+	float cross, dist2;
 
  	if (text->len == 0)
 		return;
@@ -236,12 +234,29 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 	if (font->ftface)
 	{
 		FT_Set_Transform(font->ftface, NULL, NULL);
-		fterr = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
-		if (fterr)
-			fz_warn("freetype set character size: %s", ft_errorstring(fterr));
+		err = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+		if (err)
+			fz_warn("freetype set character size: %s", ft_errorstring(err));
 	}
 
 	rect = fz_emptyrect;
+
+	if (text->wmode == 0)
+	{
+		dir.x = 1.0;
+		dir.y = 0.0;
+	}
+	else
+	{
+		dir.x = 0.0;
+		dir.y = 1.0;
+	}
+
+	tm.e = 0;
+	tm.f = 0;
+	trm = fz_concat(tm, ctm);
+ 	dir = fz_transformvector(trm, dir);
+	size = fz_matrixexpansion(trm);
 
 	for (i = 0; i < text->len; i++)
 	{
@@ -252,72 +267,26 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			continue;
 		}
 
-		/* Get point in user space to perform heuristic space and newspan tests */
-		p.x = text->els[i].x;
-		p.y = text->els[i].y;
-		p = fz_transformpoint(inv, p);
-		dx = pen->x - p.x;
-		dy = pen->y - p.y;
-		if (pen->x == -1 && pen->y == -1)
-			dx = dy = 0;
-		*pen = p;
-
-		/* Get advance width and update pen position */
-		if (font->ftface)
-		{
-			FT_Fixed ftadv = 0;
-			int ftmask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING;
-			if (text->wmode)
-				ftmask |= FT_LOAD_VERTICAL_LAYOUT;
-			fterr = FT_Get_Advance(font->ftface, text->els[i].gid, ftmask, &ftadv);
-			if (fterr)
-				fz_warn("freetype get advance (gid %d): %s", text->els[i].gid, ft_errorstring(fterr));
-			adv = ftadv / 65536.0;
-			if (text->wmode)
-				pen->y += adv;
-			else
-				pen->x += adv;
-		}
-		else
-		{
-			adv = font->t3widths[text->els[i].gid];
-			pen->x += adv;
-		}
-
-		/* Get bbox in device space */
+		/* Calculate new pen location and delta */
 		tm.e = text->els[i].x;
 		tm.f = text->els[i].y;
 		trm = fz_concat(tm, ctm);
 
-		if (text->wmode)
-		{
-			rect.x0 = 0.0;
-			rect.y0 = 0.0;
-			rect.x1 = 1.0;
-			rect.y1 = 1.0;
-		}
-		else
-		{
-			rect.x0 = 0.0;
-			rect.y0 = 0.0;
-			rect.x1 = adv;
-			rect.y1 = 1.0;
-		}
-		rect = fz_transformrect(trm, rect);
+		dx = pen->x - trm.e;
+		dy = pen->y - trm.f;
+		if (pen->x == -1 && pen->y == -1)
+			dx = dy = 0;
+		cross = dx * dir.y - dy * dir.x;
+		dist2 = dx * dx + dy * dy;
 
-		/* Add to the text span */
-		if (text->wmode)
+		/* Add space and newlines based on pen movement */
+		if (fabs(dist2) > size * size * 0.1)
 		{
-			if (fabs(dx) > 0.2)
-				fz_addtextnewline(last, font, size, text->wmode);
-		}
-		else
-		{
-			if (fabs(dy) > 0.001)
+			if (fabs(cross) > 0.1)
 			{
 				fz_addtextnewline(last, font, size, text->wmode);
 			}
-			else if (fabs(dx) > 0.2)
+			else if (fabs(cross) < 0.1 && dist2 > size * size * 0.04)
 			{
 				fz_rect spacerect;
 				spacerect.x0 = -fabs(dx);
@@ -328,6 +297,41 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 				fz_addtextchar(last, font, size, text->wmode, ' ', fz_roundrect(spacerect));
 			}
 		}
+
+		/* Calculate bounding box and new pen position based on font metrics */
+		if (font->ftface)
+		{
+			FT_Fixed ftadv = 0;
+			int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING;
+			if (text->wmode)
+				mask |= FT_LOAD_VERTICAL_LAYOUT;
+			err = FT_Get_Advance(font->ftface, text->els[i].gid, mask, &ftadv);
+			if (err)
+				fz_warn("freetype get advance (gid %d): %s", text->els[i].gid, ft_errorstring(err));
+			adv = ftadv / 65536.0;
+			if (text->wmode)
+			{
+				adv = -1.0; /* TODO: freetype returns broken vertical metrics */
+				rect.x0 = 0.0; rect.y1 = 0.0;
+				rect.x1 = 1.0; rect.y1 = adv;
+			}
+			else
+			{
+				rect.x0 = 0.0; rect.y1 = 0.0;
+				rect.x1 = adv; rect.y1 = 1.0;
+			}
+		}
+		else
+		{
+			adv = font->t3widths[text->els[i].gid];
+			rect.x0 = 0.0; rect.y1 = 0.0;
+			rect.x1 = adv; rect.y1 = 1.0;
+		}
+
+		rect = fz_transformrect(trm, rect);
+		pen->x = trm.e + dir.x * adv;
+		pen->y = trm.f + dir.y * adv;
+
 		fz_addtextchar(last, font, size, text->wmode, text->els[i].ucs, fz_roundrect(rect));
 	}
 }
