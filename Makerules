@@ -3,7 +3,7 @@
 OS := $(shell uname)
 OS := $(OS:MINGW%=MINGW)
 
-LIBS := -ljbig2dec -lopenjpeg -ljpeg -lz -lm
+LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
 CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf $(THIRD_INCS)
 LDFLAGS =
 CC = cc
@@ -25,7 +25,7 @@ LDFLAGS += `pkg-config --libs freetype2`
 endif
 X11LIBS = -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
-ifeq  "$(build)" "release"
+ifeq "$(build)" "release"
 CFLAGS += -mmmx -ftree-vectorize -msse -msse2 -march=k8 -DARCH_X86
 ARCH_SRC = archx86.c
 endif
@@ -39,7 +39,7 @@ CFLAGS += -I/usr/X11R6/include/freetype2
 endif
 X11LIBS = -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
-ifeq  "$(build)" "release"
+ifeq "$(build)" "release"
 CFLAGS += -DARCH_X86_64
 ARCH_SRC = archx86.c
 endif

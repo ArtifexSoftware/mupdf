@@ -111,7 +111,7 @@ FREETYPE_LIB=$(OBJDIR)/libfreetype.a
 $(FREETYPE_LIB): $(FREETYPE_OBJ)
 	 $(AR_CMD)
 
-FTCC_CMD = $(CC_CMD) -DFT2_BUILD_LIBRARY
+FTCC_CMD = $(CC_CMD) -DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON
 
 $(OBJDIR)/ft_autofit.o: $(freetype_dir)/src/autofit/autofit.c
 	$(FTCC_CMD)
