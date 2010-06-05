@@ -1533,7 +1533,11 @@ pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 			psinitstack(&st);
 
 			for (i = 0; i < func->m; ++i)
-				SAFE_PUSHREAL(&st, in[i]);
+			{
+				float x;
+				x = CLAMP(in[i], func->domain[i][0], func->domain[i][1]);
+				SAFE_PUSHREAL(&st, x);
+			}
 
 			error = evalpostscriptfunc(func, &st, 0);
 			if (error)
