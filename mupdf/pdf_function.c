@@ -323,7 +323,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 	char buf[64];
 	int len;
 	pdf_token_e tok;
-	int opptr, elseptr;
+	int opptr, elseptr, ifptr;
 	int a, b, mid, cmp;
 
 	memset(buf, 0, sizeof(buf));
@@ -355,10 +355,11 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 
 		case PDF_TOBRACE:
 			opptr = *codeptr;
-			*codeptr += 3;
+			*codeptr += 4;
 
-			resizecode(func, opptr + 2);
+			resizecode(func, *codeptr);
 
+			ifptr = *codeptr;
 			error = parsecode(func, stream, codeptr);
 			if (error)
 				return fz_rethrow(error, "error in 'if' branch");
@@ -392,7 +393,9 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 					func->u.p.code[opptr].type = PSOPERATOR;
 					func->u.p.code[opptr].u.op = PSOIF;
 					func->u.p.code[opptr+2].type = PSBLOCK;
-					func->u.p.code[opptr+2].u.block = *codeptr;
+					func->u.p.code[opptr+2].u.block = ifptr;
+					func->u.p.code[opptr+3].type = PSBLOCK;
+					func->u.p.code[opptr+3].u.block = *codeptr;
 				}
 				else if (!strcmp(buf, "ifelse"))
 				{
@@ -403,7 +406,9 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 					func->u.p.code[opptr+1].type = PSBLOCK;
 					func->u.p.code[opptr+1].u.block = elseptr;
 					func->u.p.code[opptr+2].type = PSBLOCK;
-					func->u.p.code[opptr+2].u.block = *codeptr;
+					func->u.p.code[opptr+2].u.block = ifptr;
+					func->u.p.code[opptr+3].type = PSBLOCK;
+					func->u.p.code[opptr+3].u.block = *codeptr;
 				}
 				else
 				{
@@ -871,26 +876,26 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 			case PSOIF:
 				SAFE_POPBOOL(st, &b1);
 				if (b1) {
-					error = evalpostscriptfunc(func, st, codeptr + 2);
+					error = evalpostscriptfunc(func, st, func->u.p.code[codeptr + 1].u.block);
 					if (error)
 						return fz_rethrow(error, "runtime error in if-branch");
 				}
-				codeptr = func->u.p.code[codeptr + 1].u.block;
+				codeptr = func->u.p.code[codeptr + 2].u.block;
 				break;
 
 			case PSOIFELSE:
 				SAFE_POPBOOL(st, &b1);
 				if (b1) {
-					error = evalpostscriptfunc(func, st, codeptr + 2);
+					error = evalpostscriptfunc(func, st, func->u.p.code[codeptr + 1].u.block);
 					if (error)
 						return fz_rethrow(error, "runtime error in if-branch");
 				}
 				else {
-					error = evalpostscriptfunc(func, st, func->u.p.code[codeptr].u.block);
+					error = evalpostscriptfunc(func, st, func->u.p.code[codeptr + 0].u.block);
 					if (error)
 						return fz_rethrow(error, "runtime error in else-branch");
 				}
-				codeptr = func->u.p.code[codeptr + 1].u.block;
+				codeptr = func->u.p.code[codeptr + 2].u.block;
 				break;
 
 			case PSORETURN:
