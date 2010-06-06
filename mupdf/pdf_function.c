@@ -566,7 +566,10 @@ evalpostscriptfunc(pdf_function *func, psstack *st, int codeptr)
 			case PSOATAN:
 				SAFE_POPNUM(st, &r2);
 				SAFE_POPNUM(st, &r1);
-				SAFE_PUSHREAL(st, atan2(r1, r2)*RADIAN);
+				r1 = atan2(r1, r2) * RADIAN;
+				if (r1 < 0)
+					r1 += 360;
+				SAFE_PUSHREAL(st, r1);
 				break;
 
 			case PSOBITSHIFT:
