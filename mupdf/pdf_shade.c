@@ -1589,7 +1589,7 @@ cleanup:
 			pdf_dropfunction(func[i]);
 	fz_dropshade(shade);
 
-	return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(dict), fz_togen(dict));
+	return fz_rethrow(error, "cannot load shading type %d (%d %d R)", type, fz_tonum(dict), fz_togen(dict));
 }
 
 fz_error
