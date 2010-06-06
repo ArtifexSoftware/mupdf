@@ -73,7 +73,7 @@ pdf_gsave(pdf_csi *csi)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 
-	if (csi->gtop == 31)
+	if (csi->gtop == nelem(csi->gstate) - 1)
 	{
 		fz_warn("gstate overflow in content stream");
 		return;
@@ -1375,7 +1375,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 
 	while (1)
 	{
-		if (csi->top == 31)
+		if (csi->top == nelem(csi->stack) - 1)
 			return fz_throw("stack overflow");
 
 		error = pdf_lex(&tok, file, buf, buflen, &len);
