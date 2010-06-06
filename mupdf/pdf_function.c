@@ -118,6 +118,37 @@ struct psstack_s
 	int sp;
 };
 
+void
+pdf_debugpsstack(psstack *st)
+{
+	int i;
+
+	printf("stack: ");
+
+	for (i = PSSTACKSIZE - 1; i >= st->sp; i--)
+	{
+		switch (st->stack[i].type)
+		{
+		case PSBOOL:
+			if (st->stack[i].u.b)
+				printf("true ");
+			else
+				printf("false ");
+			break;
+
+		case PSINT:
+			printf("%d ", st->stack[i].u.i);
+			break;
+
+		case PSREAL:
+			printf("%g ", st->stack[i].u.f);
+			break;
+		}
+	}
+	printf("\n");
+
+}
+
 static void
 psinitstack(psstack *st)
 {
