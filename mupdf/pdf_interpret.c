@@ -418,26 +418,26 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, char *buf)
 		switch(buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 0, 1, 1, 0);
 			break;
 		case 'D':
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 			break;
 		case 'M':
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			break;
 		case 'T':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			csi->tm = fz_identity();
 			csi->tlm = fz_identity();
@@ -445,14 +445,14 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, char *buf)
 		case 'X':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			csi->xbalance ++;
 			break;
 		case '*':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 0, 1, 1, 1);
 			break;
@@ -470,7 +470,7 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, char *buf)
 			what = PDF_MSTROKE;
 
 Lsetcolorspace:
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 
 			obj = csi->stack[0];
@@ -520,7 +520,7 @@ Lsetcolorspace:
 		case 'P':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 			break;
 		case 'o':
@@ -531,7 +531,7 @@ Lsetcolorspace:
 
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 
 			dict = fz_dictgets(rdb, "XObject");
@@ -595,20 +595,20 @@ Lsetcolorspace:
 		case 'X':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			csi->xbalance --;
 			break;
 		case 'M':
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			break;
 		case 'T':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_flushtext(csi);
 			csi->accumulate = 1;
@@ -621,7 +621,7 @@ Lsetcolorspace:
 	case 'F':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 0)
+		if (csi->top < 0)
 			goto syntaxerror;
 		pdf_showpath(csi, 0, 1, 0, 0);
 		break;
@@ -629,7 +629,7 @@ Lsetcolorspace:
 	case 'G':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
@@ -640,7 +640,7 @@ Lsetcolorspace:
 	case 'J':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 		gstate->strokestate.linecap = fz_toint(csi->stack[0]);
 		break;
@@ -648,7 +648,7 @@ Lsetcolorspace:
 	case 'K':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 4)
+		if (csi->top < 4)
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
@@ -664,14 +664,14 @@ Lsetcolorspace:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->strokestate.miterlimit = fz_toreal(csi->stack[0]);
 			break;
 		case 'P':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			break;
 		default:
@@ -682,7 +682,7 @@ Lsetcolorspace:
 	case 'Q':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 0)
+		if (csi->top < 0)
 			goto syntaxerror;
 		pdf_grestore(csi);
 		break;
@@ -690,7 +690,7 @@ Lsetcolorspace:
 	case 'R':
 		if ((buf[1] != 'G') || (buf[2] != 0))
 			goto defaultcase;
-		if (csi->top != 3)
+		if (csi->top < 3)
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
@@ -705,7 +705,7 @@ Lsetcolorspace:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 0, 0, 1, 0);
 			break;
@@ -736,7 +736,7 @@ Lsetcolor:
 				return fz_throw("cannot set color in mask objects");
 
 			case PDF_MINDEXED:
-				if (csi->top != 1)
+				if (csi->top < 1)
 					goto syntaxerror;
 				v[0] = fz_toreal(csi->stack[0]);
 				pdf_setcolor(csi, what, v);
@@ -744,7 +744,7 @@ Lsetcolor:
 
 			case PDF_MCOLOR:
 			case PDF_MLAB:
-				if (csi->top != mat->cs->n)
+				if (csi->top < mat->cs->n)
 					goto syntaxerror;
 				for (i = 0; i < csi->top; i++)
 					v[i] = fz_toreal(csi->stack[i]);
@@ -809,21 +809,21 @@ Lsetcolor:
 		case 'c':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->charspace = fz_toreal(csi->stack[0]);
 			break;
 		case 'w':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->wordspace = fz_toreal(csi->stack[0]);
 			break;
 		case 'z':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			pdf_flushtext(csi);
 			gstate->scale = fz_toreal(csi->stack[0]) / 100.0;
@@ -831,7 +831,7 @@ Lsetcolor:
 		case 'L':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->leading = fz_toreal(csi->stack[0]);
 			break;
@@ -842,7 +842,7 @@ Lsetcolor:
 
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 
 			dict = fz_dictgets(rdb, "Font");
@@ -879,21 +879,21 @@ Lsetcolor:
 		case 'r':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->render = fz_toint(csi->stack[0]);
 			break;
 		case 's':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			gstate->rise = fz_toreal(csi->stack[0]);
 			break;
 		case 'd':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 			m = fz_translate(fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
 			csi->tlm = fz_concat(m, csi->tlm);
@@ -902,7 +902,7 @@ Lsetcolor:
 		case 'D':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 			gstate->leading = -fz_toreal(csi->stack[1]);
 			m = fz_translate(fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
@@ -912,7 +912,7 @@ Lsetcolor:
 		case 'm':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 6)
+			if (csi->top < 6)
 				goto syntaxerror;
 
 			pdf_flushtext(csi);
@@ -928,7 +928,7 @@ Lsetcolor:
 		case '*':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			m = fz_translate(0, -gstate->leading);
 			csi->tlm = fz_concat(m, csi->tlm);
@@ -937,14 +937,14 @@ Lsetcolor:
 		case 'j':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			pdf_showtext(csi, csi->stack[0]);
 			break;
 		case 'J':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			pdf_showtext(csi, csi->stack[0]);
 			break;
@@ -957,7 +957,7 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			csi->clip = 1;
 			csi->clipevenodd = 0;
@@ -965,7 +965,7 @@ Lsetcolor:
 		case '*':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			csi->clip = 1;
 			csi->clipevenodd = 1;
@@ -979,14 +979,14 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 1, 1, 1, 0);
 			break;
 		case '*':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 1, 1, 1, 1);
 			break;
@@ -999,7 +999,7 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 6)
+			if (csi->top < 6)
 				goto syntaxerror;
 			a = fz_toreal(csi->stack[0]);
 			b = fz_toreal(csi->stack[1]);
@@ -1008,6 +1008,7 @@ Lsetcolor:
 			e = fz_toreal(csi->stack[4]);
 			f = fz_toreal(csi->stack[5]);
 			fz_curveto(csi->path, a, b, c, d, e, f);
+			csi->top = 0;
 			break;
 		case 'm':
 		{
@@ -1015,7 +1016,7 @@ Lsetcolor:
 
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 6)
+			if (csi->top < 6)
 				goto syntaxerror;
 
 			m.a = fz_toreal(csi->stack[0]);
@@ -1045,7 +1046,7 @@ Lsetcolor:
 		{
 			int i;
 			fz_obj *array;
-			if (csi->top != 2)
+			if (csi->top < 2)
 				goto syntaxerror;
 			array = csi->stack[0];
 			gstate->strokestate.dashlen = fz_arraylen(array);
@@ -1071,14 +1072,14 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 0, 1, 0, 0);
 			break;
 		case '*':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 0, 1, 0, 1);
 			break;
@@ -1091,7 +1092,7 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 
 			v[0] = fz_toreal(csi->stack[0]);
@@ -1105,7 +1106,7 @@ Lsetcolor:
 
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 
 			dict = fz_dictgets(rdb, "ExtGState");
@@ -1129,7 +1130,7 @@ Lsetcolor:
 	case 'h':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 0)
+		if (csi->top < 0)
 			goto syntaxerror;
 		fz_closepath(csi->path);
 		break;
@@ -1137,7 +1138,7 @@ Lsetcolor:
 	case 'i':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 		/* flatness */
 		break;
@@ -1145,7 +1146,7 @@ Lsetcolor:
 	case 'j':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 		gstate->strokestate.linejoin = fz_toint(csi->stack[0]);
 		break;
@@ -1153,7 +1154,7 @@ Lsetcolor:
 	case 'k':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 4)
+		if (csi->top < 4)
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
@@ -1168,7 +1169,7 @@ Lsetcolor:
 	case 'l':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 2)
+		if (csi->top < 2)
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
@@ -1178,7 +1179,7 @@ Lsetcolor:
 	case 'm':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 2)
+		if (csi->top < 2)
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
@@ -1188,7 +1189,7 @@ Lsetcolor:
 	case 'n':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 0)
+		if (csi->top < 0)
 			goto syntaxerror;
 		pdf_showpath(csi, 0, 0, 0, csi->clipevenodd);
 		break;
@@ -1196,7 +1197,7 @@ Lsetcolor:
 	case 'q':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 0)
+		if (csi->top < 0)
 			goto syntaxerror;
 		pdf_gsave(csi);
 		break;
@@ -1207,13 +1208,13 @@ Lsetcolor:
 		case 'i':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 			break;
 		case 'e':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 4)
+			if (csi->top < 4)
 				goto syntaxerror;
 
 			x = fz_toreal(csi->stack[0]);
@@ -1230,7 +1231,7 @@ Lsetcolor:
 		case 'g':
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 3)
+			if (csi->top < 3)
 				goto syntaxerror;
 
 			v[0] = fz_toreal(csi->stack[0]);
@@ -1249,7 +1250,7 @@ Lsetcolor:
 		switch (buf[1])
 		{
 		case 0:
-			if (csi->top != 0)
+			if (csi->top < 0)
 				goto syntaxerror;
 			pdf_showpath(csi, 1, 0, 1, 0);
 			break;
@@ -1266,7 +1267,7 @@ Lsetcolor:
 
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top != 1)
+			if (csi->top < 1)
 				goto syntaxerror;
 
 			dict = fz_dictgets(rdb, "Shading");
@@ -1292,7 +1293,7 @@ Lsetcolor:
 	case 'v':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 4)
+		if (csi->top < 4)
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
@@ -1304,7 +1305,7 @@ Lsetcolor:
 	case 'w':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 		gstate->strokestate.linewidth = fz_toreal(csi->stack[0]);
 		break;
@@ -1312,7 +1313,7 @@ Lsetcolor:
 	case 'y':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 4)
+		if (csi->top < 4)
 			goto syntaxerror;
 		a = fz_toreal(csi->stack[0]);
 		b = fz_toreal(csi->stack[1]);
@@ -1324,7 +1325,7 @@ Lsetcolor:
 	case '\'':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 1)
+		if (csi->top < 1)
 			goto syntaxerror;
 
 		m = fz_translate(0, -gstate->leading);
@@ -1337,7 +1338,7 @@ Lsetcolor:
 	case '"':
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top != 3)
+		if (csi->top < 3)
 			goto syntaxerror;
 
 		gstate->wordspace = fz_toreal(csi->stack[0]);
@@ -1356,6 +1357,8 @@ defaultcase:
 			fz_warn("unknown keyword: %s", buf);
 		break;
 	}
+
+	csi->top = 0;
 
 	return fz_okay;
 
