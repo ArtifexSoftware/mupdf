@@ -1134,10 +1134,10 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref,
 		}
 		else if (flag == 3 && hasprevpatch)
 		{
-			p[0] = prevp[10];
-			p[1] = prevp[11];
-			p[2] = prevp[ 0];
-			p[3] = prevp[ 1];
+			p[0] = prevp[ 9];
+			p[1] = prevp[10];
+			p[2] = prevp[11];
+			p[3] = prevp[ 0];
 			memcpy(c[0], prevc[3], FZ_MAXCOLORS * sizeof(float));
 			memcpy(c[1], prevc[0], FZ_MAXCOLORS * sizeof(float));
 
