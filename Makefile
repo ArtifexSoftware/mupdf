@@ -21,15 +21,16 @@ ifneq "$(pregen)" ""
 GENDIR := $(pregen)
 endif
 
-# Include makefile for third party libraries.
-# They will only be built if the thirdparty directory exists.
-
--include Makethird
-
 # Compiler flags and configuration options are kept in a separate file.
 # This file includes some tests based on variables set by Makethird.
 
 -include Makerules
+
+# Include makefile for third party libraries.
+# They will only be built if the thirdparty directory exists.
+# This changes some variables initially set in Makerules.
+
+-include Makethird
 
 #
 # Build commands
