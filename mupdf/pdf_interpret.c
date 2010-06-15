@@ -1008,7 +1008,6 @@ Lsetcolor:
 			e = fz_toreal(csi->stack[4]);
 			f = fz_toreal(csi->stack[5]);
 			fz_curveto(csi->path, a, b, c, d, e, f);
-			csi->top = 0;
 			break;
 		case 'm':
 		{
@@ -1357,8 +1356,6 @@ defaultcase:
 			fz_warn("unknown keyword: %s", buf);
 		break;
 	}
-
-	csi->top = 0;
 
 	return fz_okay;
 
