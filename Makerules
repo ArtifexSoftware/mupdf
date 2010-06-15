@@ -4,7 +4,7 @@ OS := $(shell uname)
 OS := $(OS:MINGW%=MINGW)
 
 LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
-CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf $(THIRD_INCS)
+CFLAGS := -Wall --std=gnu99 -Ifitz -Imupdf
 LDFLAGS =
 CC = cc
 LD = $(CC)

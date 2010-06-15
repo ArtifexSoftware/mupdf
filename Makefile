@@ -36,6 +36,8 @@ endif
 # Build commands
 #
 
+CFLAGS += $(THIRD_INCS)
+
 GENFILE_CMD = @ echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
 CC_CMD = @ echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
 LD_CMD = @ echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
