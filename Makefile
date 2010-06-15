@@ -1,6 +1,6 @@
 # GNU Makefile for MuPDF
 #
-# make build=release prefix=/usr/local install
+# make build=release prefix=/usr/local verbose=true install
 #
 
 default: all
@@ -21,27 +21,31 @@ ifneq "$(pregen)" ""
 GENDIR := $(pregen)
 endif
 
-# Compiler flags and configuration options are kept in a separate file.
-# This file includes some tests based on variables set by Makethird.
+# Compiler flags and configuration options are kept in Makerules.
+# Thirdparty libs will be built by Makethird if the thirdparty
+# directory exists.
+
+LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
 
 -include Makerules
-
-# Include makefile for third party libraries.
-# They will only be built if the thirdparty directory exists.
-# This changes some variables initially set in Makerules.
-
 -include Makethird
+
+CFLAGS += $(THIRD_INCS) $(SYS_FREETYPE_INC)
+LDFLAGS += $(SYS_FREETYPE_LIB)
 
 #
 # Build commands
 #
 
-CFLAGS += $(THIRD_INCS)
+SILENT := @
+ifneq "$(verbose)" ""
+SILENT :=
+endif
 
-GENFILE_CMD = @ echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
-CC_CMD = @ echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
-LD_CMD = @ echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
-AR_CMD = @ echo AR $@ && $(AR) cru $@ $^
+GENFILE_CMD = $(SILENT) echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
+CC_CMD = $(SILENT) echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
+LD_CMD = $(SILENT) echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
+AR_CMD = $(SILENT) echo AR $@ && $(AR) cru $@ $^
 
 #
 # Directories
