@@ -494,7 +494,6 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	int e0, e1;
 	float theta;
 	float dist;
-	int n;
 	fz_error error;
 	float tmin, tmax;
 
@@ -548,7 +547,6 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	pdf_logshade("p3 %g %g\n", p3.x, p3.y);
 	pdf_logshade("p4 %g %g\n", p4.x, p4.y);
 
-	n = 0;
 	tmin = 0.0f;
 	tmax = 1.0f;
 
