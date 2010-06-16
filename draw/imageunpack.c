@@ -31,6 +31,12 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		justinvert &= min[i] == 255 && max[i] == 0 && sub[i] == -255;
 	}
 
+	unsigned mask;
+	if (fz_isbigendian())
+		mask = 0x00ff00ff;
+	else
+		mask = 0xff00ff00;
+
 	if (!needed)
 		return;
 
@@ -51,11 +57,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 				wh = wh - 2 * hwh;
 				while(hwh--) {
 					unsigned in = *wp;
-#if BYTE_ORDER == LITTLE_ENDIAN
-					unsigned out = in ^ 0xff00ff00;
-#else
-					unsigned out = in ^ 0x00ff00ff;
-#endif
+					unsigned out = in ^ mask;
 					*wp++ = out;
 				}
 				p = (byte *)wp;

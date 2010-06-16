@@ -86,6 +86,8 @@ extern void fz_cpudetect(void);
 /* treat as constant! */
 extern unsigned fz_cpuflags;
 
+int fz_isbigendian(void);
+
 /*
  * Base Fitz runtime.
  */
