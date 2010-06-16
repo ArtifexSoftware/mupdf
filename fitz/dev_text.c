@@ -312,12 +312,12 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			if (text->wmode)
 			{
 				adv = -1.0; /* TODO: freetype returns broken vertical metrics */
-				rect.x0 = 0.0; rect.y1 = 0.0;
+				rect.x0 = 0.0; rect.y0 = 0.0;
 				rect.x1 = 1.0; rect.y1 = adv;
 			}
 			else
 			{
-				rect.x0 = 0.0; rect.y1 = 0.0;
+				rect.x0 = 0.0; rect.y0 = 0.0;
 				rect.x1 = adv; rect.y1 = 1.0;
 			}
 		}
