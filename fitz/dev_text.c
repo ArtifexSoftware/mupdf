@@ -280,7 +280,7 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		dist2 = dx * dx + dy * dy;
 
 		/* Add space and newlines based on pen movement */
-		if (fabs(dist2) > size * size * 0.1)
+		if (fabs(dist2) > size * size * 0.04)
 		{
 			if (fabs(cross) > 0.1)
 			{

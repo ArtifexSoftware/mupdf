@@ -17,6 +17,7 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 	int wh = pix->w * pix->h;
 	int i;
 	int justinvert = 1;
+	unsigned int mask;
 
 	min[0] = 0;
 	max[0] = 255;
@@ -31,7 +32,6 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		justinvert &= min[i] == 255 && max[i] == 0 && sub[i] == -255;
 	}
 
-	unsigned mask;
 	if (fz_isbigendian())
 		mask = 0x00ff00ff;
 	else
