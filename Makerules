@@ -10,11 +10,11 @@ LD := $(CC)
 AR := ar
 
 ifeq "$(build)" "debug"
-CFLAGS += -g -O0
+CFLAGS += -g -O0 -DDEBUG
 endif
 
 ifeq "$(build)" "release"
-CFLAGS += -O3
+CFLAGS += -O3 -DNDEBUG
 endif
 
 ifeq "$(OS)" "Linux"
