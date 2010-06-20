@@ -31,26 +31,29 @@ static void pdfapp_error(pdfapp_t *app, fz_error error)
 char *pdfapp_usage(pdfapp_t *app)
 {
 	return
-		"   <\t\t-- rotate left\n"
-		"   >\t\t-- rotate right\n"
-		"   u up\t\t-- scroll up\n"
-		"   d down\t-- scroll down\n"
-		"   = +\t\t-- zoom in\n"
-		"   -\t\t-- zoom out\n"
-		"   w\t\t-- shrinkwrap\n"
-		"   r\t\t-- reload file\n"
-		"\n"
-		"   n pgdn space\t-- next page\n"
-		"   b pgup back\t-- previous page\n"
-		"   right\t\t-- next page\n"
-		"   left\t\t-- previous page\n"
-		"   N F\t\t-- next 10\n"
-		"   B\t\t-- back 10\n"
-		"   m\t\t-- mark page for snap back\n"
-		"   t\t\t-- pop back to last mark\n"
-		"   123g\t\t-- go to page\n"
-		"\n"
-		"   left drag to pan, right drag to copy text\n";
+		"L\t\t-- rotate left\n"
+		"R\t\t-- rotate right\n"
+		"h\t\t-- scroll left\n"
+		"j down\t\t-- scroll down\n"
+		"k up\t\t-- scroll up\n"
+		"l\t\t-- scroll right\n"
+		"+\t\t-- zoom in\n"
+		"-\t\t-- zoom out\n"
+		"w\t\t-- shrinkwrap\n"
+		"r\t\t-- reload file\n"
+		". pgdn right space\t-- next page\n"
+		", pgup left b\t-- previous page\n"
+		">\t\t-- next 10 pages\n"
+		"<\t\t-- back 10 pages\n"
+		"m\t\t-- mark page for snap back\n"
+		"t\t\t-- pop back to latest mark\n"
+		"1m\t\t-- mark page in register 1\n"
+		"1t\t\t-- go to page in register 1\n"
+		"123g\t\t-- go to page 123\n"
+		"/\t\t-- search for text\n"
+		"n\t\t-- find next search result\n"
+		"N\t\t-- find previous search result\n"
+	;
 }
 
 void pdfapp_init(pdfapp_t *app)
@@ -59,6 +62,32 @@ void pdfapp_init(pdfapp_t *app)
 	app->scrw = 640;
 	app->scrh = 480;
 	app->resolution = 72;
+}
+
+void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
+{
+	unsigned *p;
+	int x, y;
+
+	int x0 = rect.x0 - app->panx;
+	int x1 = rect.x1 - app->panx;
+	int y0 = rect.y0 - app->pany;
+	int y1 = rect.y1 - app->pany;
+
+	x0 = CLAMP(x0, 0, app->image->w - 1);
+	x1 = CLAMP(x1, 0, app->image->w - 1);
+	y0 = CLAMP(y0, 0, app->image->h - 1);
+	y1 = CLAMP(y1, 0, app->image->h - 1);
+
+	for (y = y0; y < y1; y++)
+	{
+		p = (unsigned *)(app->image->samples + (y * app->image->w + x0) * 4);
+		for (x = x0; x < x1; x++)
+		{
+			*p = ~0 - *p;
+			p ++;
+		}
+	}
 }
 
 void pdfapp_open(pdfapp_t *app, char *filename, int fd)
@@ -336,6 +365,36 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	int oldpage = app->pageno;
 	enum panning panto = PAN_TO_TOP;
 
+	if (app->isediting)
+	{
+		int n = strlen(app->search);
+		if (c < ' ')
+		{
+			if (c == '\b' && n > 0)
+				app->search[n - 1] = 0;
+			if (c == '\n' || c == '\r')
+			{
+				app->isediting = 0;
+				winrepaint(app);
+				pdfapp_onkey(app, 'n');
+			}
+			if (c == '\033')
+			{
+				app->isediting = 0;
+				winrepaint(app);
+			}
+		}
+		else
+		{
+			if (n + 2 < sizeof app->search)
+			{
+				app->search[n] = c;
+				app->search[n + 1] = 0;
+			}
+		}
+		return;
+	}
+
 	/*
 	 * Save numbers typed for later
 	 */
@@ -349,9 +408,17 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	switch (c)
 	{
 
-		/*
-		 * Zoom and rotate
-		 */
+	case '?':
+		winhelp(app);
+		break;
+
+	case 'q':
+		winclose(app);
+		break;
+
+	/*
+	 * Zoom and rotate
+	 */
 
 	case '+':
 	case '=':
@@ -366,15 +433,17 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->resolution = MINRES;
 		pdfapp_showpage(app, 0, 1);
 		break;
-	case '<':
+
+	case 'L':
 		app->rotate -= 90;
 		pdfapp_showpage(app, 0, 1);
 		break;
-	case '>':
+	case 'R':
 		app->rotate += 90;
 		pdfapp_showpage(app, 0, 1);
 		break;
 
+#ifdef DEBUG
 	case 'a':
 		app->rotate -= 15;
 		pdfapp_showpage(app, 0, 1);
@@ -383,10 +452,11 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		app->rotate += 15;
 		pdfapp_showpage(app, 0, 1);
 		break;
+#endif
 
-		/*
-		 * Pan view, but dont need to repaint image
-		 */
+	/*
+	 * Pan view, but dont need to repaint image
+	 */
 
 	case 'w':
 		app->shrinkwrap = 1;
@@ -394,29 +464,29 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		pdfapp_showpage(app, 0, 0);
 		break;
 
-	case 'd':
-		app->pany -= app->image->h / 10;
-		pdfapp_showpage(app, 0, 0);
-		break;
-
-	case 'u':
-		app->pany += app->image->h / 10;
-		pdfapp_showpage(app, 0, 0);
-		break;
-
-	case ',':
+	case 'h':
 		app->panx += app->image->w / 10;
 		pdfapp_showpage(app, 0, 0);
 		break;
 
-	case '.':
+	case 'j':
+		app->pany -= app->image->h / 10;
+		pdfapp_showpage(app, 0, 0);
+		break;
+
+	case 'k':
+		app->pany += app->image->h / 10;
+		pdfapp_showpage(app, 0, 0);
+		break;
+
+	case 'l':
 		app->panx -= app->image->w / 10;
 		pdfapp_showpage(app, 0, 0);
 		break;
 
-		/*
-		 * Page navigation
-		 */
+	/*
+	 * Page navigation
+	 */
 
 	case 'g':
 	case '\n':
@@ -461,11 +531,11 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->pageno = app->hist[--app->histlen];
 		break;
 
-		/*
-		 * Back and forth ...
-		 */
+	/*
+	 * Back and forth ...
+	 */
 
-	case 'p':
+	case ',':
 		panto = PAN_TO_BOTTOM;
 		if (app->numberlen > 0)
 			app->pageno -= atoi(app->number);
@@ -473,7 +543,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->pageno--;
 		break;
 
-	case 'n':
+	case '.':
 		panto = PAN_TO_TOP;
 		if (app->numberlen > 0)
 			app->pageno += atoi(app->number);
@@ -482,7 +552,6 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case 'b':
-	case '\b':
 		panto = DONT_PAN;
 		if (app->numberlen > 0)
 			app->pageno -= atoi(app->number);
@@ -490,7 +559,6 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->pageno--;
 		break;
 
-	case 'f':
 	case ' ':
 		panto = DONT_PAN;
 		if (app->numberlen > 0)
@@ -499,19 +567,41 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->pageno++;
 		break;
 
-	case 'B':
-		panto = PAN_TO_TOP;	app->pageno -= 10; break;
-	case 'F':
-		panto = PAN_TO_TOP;	app->pageno += 10; break;
+	case '<':
+		panto = PAN_TO_TOP;
+		app->pageno -= 10;
+		break;
+	case '>':
+		panto = PAN_TO_TOP;
+		app->pageno += 10;
+		break;
 
-		/*
-		 * Reloading the file...
-		 */
+	/*
+	 * Reloading the file...
+	 */
 
 	case 'r':
 		oldpage = -1;
 		winreloadfile(app);
 		break;
+
+	/*
+	 * Searching
+	 */
+
+	case '/':
+		app->isediting = 1;
+		app->search[0] = 0;
+		break;
+
+	case 'n':
+		printf("search forward for: '%s'\n", app->search);
+		break;
+
+	case 'N':
+		printf("search backward for: '%s'\n", app->search);
+		break;
+
 	}
 
 	if (c < '0' || c > '9')
@@ -526,9 +616,14 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	{
 		switch (panto)
 		{
-		case PAN_TO_TOP:	app->pany = 0; break;
-		case PAN_TO_BOTTOM:	app->pany = -2000; break;
-		case DONT_PAN:		break;
+		case PAN_TO_TOP:
+			app->pany = 0;
+			break;
+		case PAN_TO_BOTTOM:
+			app->pany = -2000;
+			break;
+		case DONT_PAN:
+			break;
 		}
 		pdfapp_showpage(app, 1, 1);
 	}
