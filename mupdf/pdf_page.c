@@ -122,7 +122,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	error = pdf_loadpagecontents(&page->contents, xref, obj);
 	if (error)
 	{
-		pdf_droppage(page);
+		pdf_freepage(page);
 		return fz_rethrow(error, "cannot load page contents (%d %d R)", fz_tonum(obj), fz_togen(obj));
 	}
 
@@ -133,7 +133,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 }
 
 void
-pdf_droppage(pdf_page *page)
+pdf_freepage(pdf_page *page)
 {
 	pdf_logpage("drop page %p\n", page);
 	if (page->resources)
@@ -141,8 +141,6 @@ pdf_droppage(pdf_page *page)
 	if (page->contents)
 		fz_dropbuffer(page->contents);
 	if (page->links)
-		pdf_droplink(page->links);
-//	if (page->comments)
-//		pdf_dropcomment(page->comments);
+		pdf_freelink(page->links);
 	fz_free(page);
 }

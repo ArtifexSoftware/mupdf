@@ -146,7 +146,7 @@ void pdfapp_close(pdfapp_t *app)
 	app->cache = nil;
 
 	if (app->page)
-		pdf_droppage(app->page);
+		pdf_freepage(app->page);
 	app->page = nil;
 
 	if (app->image)
@@ -158,11 +158,11 @@ void pdfapp_close(pdfapp_t *app)
 	app->text = nil;
 
 	if (app->outline)
-		pdf_dropoutline(app->outline);
+		pdf_freeoutline(app->outline);
 	app->outline = nil;
 
 	if (app->xref->store)
-		pdf_dropstore(app->xref->store);
+		pdf_freestore(app->xref->store);
 	app->xref->store = nil;
 
 	pdf_closexref(app->xref);
@@ -222,7 +222,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		wincursor(app, WAIT);
 
 		if (app->page)
-			pdf_droppage(app->page);
+			pdf_freepage(app->page);
 		app->page = nil;
 
 		pdf_flushxref(app->xref, 0);

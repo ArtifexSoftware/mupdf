@@ -59,7 +59,7 @@ void
 fz_freeglyphcache(fz_glyphcache *cache)
 {
 	fz_evictglyphcache(cache);
-	fz_drophash(cache->hash);
+	fz_freehash(cache->hash);
 	fz_free(cache);
 }
 

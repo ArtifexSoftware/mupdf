@@ -13,10 +13,10 @@ pdf_newlink(pdf_linkkind kind, fz_rect bbox, fz_obj *dest)
 }
 
 void
-pdf_droplink(pdf_link *link)
+pdf_freelink(pdf_link *link)
 {
 	if (link->next)
-		pdf_droplink(link->next);
+		pdf_freelink(link->next);
 	if (link->dest)
 		fz_dropobj(link->dest);
 	fz_free(link);

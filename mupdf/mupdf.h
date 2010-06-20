@@ -183,7 +183,7 @@ typedef enum pdf_itemkind_e
 
 pdf_store * pdf_newstore(void);
 void pdf_emptystore(pdf_store *store);
-void pdf_dropstore(pdf_store *store);
+void pdf_freestore(pdf_store *store);
 void pdf_debugstore(pdf_store *store);
 
 void pdf_agestoreditems(pdf_store *store);
@@ -538,11 +538,11 @@ fz_obj *pdf_lookupdest(pdf_xref *xref, fz_obj *nameddest);
 
 pdf_link *pdf_newlink(pdf_linkkind kind, fz_rect rect, fz_obj *dest);
 pdf_link *pdf_loadlink(pdf_xref *xref, fz_obj *dict);
-void pdf_droplink(pdf_link *link);
+void pdf_freelink(pdf_link *link);
 
 pdf_outline *pdf_loadoutline(pdf_xref *xref);
 void pdf_debugoutline(pdf_outline *outline, int level);
-void pdf_dropoutline(pdf_outline *outline);
+void pdf_freeoutline(pdf_outline *outline);
 
 void pdf_loadannots(pdf_comment **, pdf_link **, pdf_xref *, fz_obj *annots);
 
@@ -569,7 +569,7 @@ int pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj);
 
 /* page.c */
 fz_error pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
-void pdf_droppage(pdf_page *page);
+void pdf_freepage(pdf_page *page);
 
 /*
  * content stream parsing
