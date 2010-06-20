@@ -76,12 +76,11 @@ pdf_parsecmapname(pdf_cmap *cmap, fz_stream *file)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
 	if (tok == PDF_TNAME)
-	{
 		fz_strlcpy(cmap->cmapname, buf, sizeof(cmap->cmapname));
-		return fz_okay;
-	}
+	else
+		fz_warn("expected name after CMapName in cmap");
 
-	return fz_throw("expected name");
+	return fz_okay;
 }
 
 static fz_error
@@ -97,12 +96,11 @@ pdf_parsewmode(pdf_cmap *cmap, fz_stream *file)
 		return fz_rethrow(error, "syntaxerror in cmap");
 
 	if (tok == PDF_TINT)
-	{
 		pdf_setwmode(cmap, atoi(buf));
-		return fz_okay;
-	}
+	else
+		fz_warn("expected integer after WMode in cmap");
 
-	return fz_throw("expected integer");
+	return fz_okay;
 }
 
 static fz_error
@@ -406,7 +404,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 				error = pdf_parsecmapname(cmap, file);
 				if (error)
 				{
-					error = fz_rethrow(error, "syntaxerror in cmap after /CMapName");
+					error = fz_rethrow(error, "syntaxerror in cmap after CMapName");
 					goto cleanup;
 				}
 			}
@@ -415,7 +413,7 @@ pdf_parsecmap(pdf_cmap **cmapp, fz_stream *file)
 				error = pdf_parsewmode(cmap, file);
 				if (error)
 				{
-					error = fz_rethrow(error, "syntaxerror in cmap after /WMode");
+					error = fz_rethrow(error, "syntaxerror in cmap after WMode");
 					goto cleanup;
 				}
 			}
