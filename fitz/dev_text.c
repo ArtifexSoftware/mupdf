@@ -77,9 +77,10 @@ fz_addtextcharimp(fz_textspan *span, int c, fz_bbox bbox)
 static fz_bbox
 fz_splitbbox(fz_bbox bbox, int i, int n)
 {
-	int w = bbox.x1 - bbox.x0;
-	bbox.x0 = bbox.x0 + w * i / n;
-	bbox.x1 = bbox.x0 + w * (i + 1) / n;
+	float w = (float)(bbox.x1 - bbox.x0) / n;
+	float x0 = bbox.x0;
+	bbox.x0 = x0 + i * w;
+	bbox.x1 = x0 + (i + 1) * w;
 	return bbox;
 }
 
@@ -139,6 +140,17 @@ fz_addtextchar(fz_textspan **last, fz_font *font, float size, int wmode, int c, 
 		fz_addtextcharimp(span, c, bbox);
 		break;
 	}
+}
+
+static void
+fz_dividetextchars(fz_textspan **last, int n, fz_bbox bbox)
+{
+	fz_textspan *span = *last;
+	int i, x;
+	x = span->len - n;
+	if (x >= 0)
+		for (i = 0; i < n; i++)
+			span->text[x + i].bbox = fz_splitbbox(bbox, i, n);
 }
 
 static void
@@ -229,6 +241,7 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 	float cross, dist2;
 	float ascender = 1;
 	float descender = 0;
+	int multi;
 
  	if (text->len == 0)
 		return;
@@ -262,14 +275,18 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
  	dir = fz_transformvector(trm, dir);
 	size = fz_matrixexpansion(trm);
 
+	multi = 1;
+
 	for (i = 0; i < text->len; i++)
 	{
 		if (text->els[i].gid < 0)
 		{
-			/* TODO: split rect for one-to-many mapped chars */
 			fz_addtextchar(last, font, size, text->wmode, text->els[i].ucs, fz_roundrect(rect));
+			multi ++;
+			fz_dividetextchars(last, multi, fz_roundrect(rect));
 			continue;
 		}
+		multi = 1;
 
 		/* Calculate new pen location and delta */
 		tm.e = text->els[i].x;
