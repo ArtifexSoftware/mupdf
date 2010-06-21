@@ -292,7 +292,7 @@ static void drawtxt(int pagenum, struct benchmark *loadtimes)
 	fz_freedevice(dev);
 
 	printf("[Page %d]\n", pagenum);
-	fz_debugtextspanxml(text);
+	fz_debugtextspan(text);
 	printf("\n");
 
 	fz_freetextspan(text);
