@@ -1,5 +1,8 @@
 #include "fitz.h"
 
+#define LINEDIST 0.9f
+#define SPACEDIST 0.25f
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -305,17 +308,17 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		dist = sqrtf(delta.x * delta.x + delta.y * delta.y);
 
 		/* Add space and newlines based on pen movement */
-		if (dist > size * 0.1f)
+		if (dist > 0)
 		{
 			ndelta.x = delta.x / dist;
 			ndelta.y = delta.y / dist;
 			dot = ndelta.x * ndir.x + ndelta.y * ndir.y;
 
-			if (dist > size * 0.9f)
+			if (dist > size * LINEDIST)
 			{
 				fz_addtextnewline(last, font, size, text->wmode);
 			}
-			else if (fabsf(dot) > 0.95f && dist > size * 0.1f)
+			else if (fabsf(dot) > 0.95f && dist > size * SPACEDIST)
 			{
 				if ((*last)->len == 0 || (*last)->text[(*last)->len - 1].c != ' ')
 				{
