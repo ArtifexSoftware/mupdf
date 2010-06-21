@@ -15,9 +15,9 @@ FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 	if (err)
 		return err;
 	if (masks & FT_LOAD_VERTICAL_LAYOUT)
-		*out = face->glyph->advance.y * 1024;
+		*out = (face->glyph->metrics.vertAdvance << 16) / 1000;
 	else
-		*out = face->glyph->advance.x * 1024;
+		*out = (face->glyph->metrics.horiAdvance << 16) / 1000;
 	return 0;
 }
 
@@ -230,6 +230,7 @@ static void
 fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *pen)
 {
 	fz_font *font = text->font;
+	FT_Face face = font->ftface;
 	fz_matrix tm = text->trm;
 	fz_matrix trm;
 	float size;
@@ -248,12 +249,11 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 
 	if (font->ftface)
 	{
-		FT_Set_Transform(font->ftface, NULL, NULL);
-		err = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+		err = FT_Set_Char_Size(font->ftface, 1000, 1000, 72, 72);
 		if (err)
 			fz_warn("freetype set character size: %s", ft_errorstring(err));
-		ascender = ((FT_Face)font->ftface)->ascender * 0.001f;
-		descender = ((FT_Face)font->ftface)->descender * 0.001f;
+		ascender = (float)face->ascender / face->units_per_EM;
+		descender = (float)face->descender / face->units_per_EM;
 	}
 
 	rect = fz_emptyrect;
@@ -349,8 +349,10 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		else
 		{
 			adv = font->t3widths[text->els[i].gid];
-			rect.x0 = 0; rect.y1 = 0;
-			rect.x1 = adv; rect.y1 = 1;
+			rect.x0 = 0;
+			rect.y0 = descender;
+			rect.x1 = adv;
+			rect.y1 = ascender;
 		}
 
 		rect = fz_transformrect(trm, rect);
