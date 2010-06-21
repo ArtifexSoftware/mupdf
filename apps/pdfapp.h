@@ -40,7 +40,6 @@ struct pdfapp_s
 	int resolution;
 	int rotate;
 	fz_pixmap *image;
-	fz_textspan *text;
 
 	/* current page params */
 	int pageno;
@@ -70,6 +69,8 @@ struct pdfapp_s
 	/* search state */
 	int isediting;
 	char search[512];
+	int hit;
+	int hitlen;
 
 	/* client context storage */
 	void *userdata;
@@ -86,4 +87,5 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen);
 void pdfapp_onresize(pdfapp_t *app, int w, int h);
 
-extern void pdfapp_invert(pdfapp_t *app, fz_bbox rect);
+void pdfapp_invert(pdfapp_t *app, fz_bbox rect);
+void pdfapp_inverthit(pdfapp_t *app);

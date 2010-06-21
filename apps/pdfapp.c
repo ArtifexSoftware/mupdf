@@ -2,6 +2,8 @@
 #include <mupdf.h>
 #include "pdfapp.h"
 
+#include <ctype.h> /* for tolower() */
+
 #define ZOOMSTEP 1.142857
 
 enum panning
@@ -69,15 +71,10 @@ void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
 	unsigned *p;
 	int x, y;
 
-	int x0 = rect.x0 - app->panx;
-	int x1 = rect.x1 - app->panx;
-	int y0 = rect.y0 - app->pany;
-	int y1 = rect.y1 - app->pany;
-
-	x0 = CLAMP(x0, 0, app->image->w - 1);
-	x1 = CLAMP(x1, 0, app->image->w - 1);
-	y0 = CLAMP(y0, 0, app->image->h - 1);
-	y1 = CLAMP(y1, 0, app->image->h - 1);
+	int x0 = CLAMP(rect.x0, 0, app->image->w - 1);
+	int x1 = CLAMP(rect.x1, 0, app->image->w - 1);
+	int y0 = CLAMP(rect.y0, 0, app->image->h - 1);
+	int y1 = CLAMP(rect.y1, 0, app->image->h - 1);
 
 	for (y = y0; y < y1; y++)
 	{
@@ -182,10 +179,6 @@ void pdfapp_close(pdfapp_t *app)
 		fz_droppixmap(app->image);
 	app->image = nil;
 
-	if (app->text)
-		fz_freetextspan(app->text);
-	app->text = nil;
-
 	if (app->outline)
 		pdf_freeoutline(app->outline);
 	app->outline = nil;
@@ -237,7 +230,6 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 	char buf[256];
 	fz_error error;
 	fz_device *idev, *tdev, *mdev;
-	fz_displaylist *list;
 	fz_matrix ctm;
 	fz_bbox bbox;
 	fz_obj *obj;
@@ -260,6 +252,23 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		error = pdf_loadpage(&app->page, app->xref, obj);
 		if (error)
 			pdfapp_error(app, error);
+
+		ctm = pdfapp_viewctm(app);
+
+		/* Create display list */
+		app->page->list = fz_newdisplaylist();
+		mdev = fz_newlistdevice(app->page->list);
+		error = pdf_runcontentstream(mdev, fz_identity(), app->xref, app->page->resources, app->page->contents);
+		if (error)
+		{
+			error = fz_rethrow(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);
+			pdfapp_error(app, error);
+		}
+		fz_freedevice(mdev);
+
+		/* Zero search hit position */
+		app->hit = -1;
+		app->hitlen = 0;
 	}
 
 	if (drawpage)
@@ -269,33 +278,20 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		ctm = pdfapp_viewctm(app);
 		bbox = fz_roundrect(fz_transformrect(ctm, app->page->mediabox));
 
-		list = fz_newdisplaylist();
+		/* Extract text */
+		app->page->text = fz_newtextspan();
+		tdev = fz_newtextdevice(app->page->text);
+		fz_executedisplaylist(app->page->list, tdev, ctm);
+		fz_freedevice(tdev);
 
-		mdev = fz_newlistdevice(list);
-		error = pdf_runcontentstream(mdev, fz_identity(), app->xref, app->page->resources, app->page->contents);
-		if (error)
-		{
-			error = fz_rethrow(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);
-			pdfapp_error(app, error);
-		}
-		fz_freedevice(mdev);
-
+		/* Draw */
 		if (app->image)
 			fz_droppixmap(app->image);
 		app->image = fz_newpixmapwithrect(pdf_devicergb, bbox);
 		fz_clearpixmap(app->image, 0xFF);
 		idev = fz_newdrawdevice(app->cache, app->image);
-		fz_executedisplaylist(list, idev, ctm);
+		fz_executedisplaylist(app->page->list, idev, ctm);
 		fz_freedevice(idev);
-
-		if (app->text)
-			fz_freetextspan(app->text);
-		app->text = fz_newtextspan();
-		tdev = fz_newtextdevice(app->text);
-		fz_executedisplaylist(list, tdev, ctm);
-		fz_freedevice(tdev);
-
-		fz_freedisplaylist(list);
 
 		winconvert(app, app->image);
 	}
@@ -347,6 +343,165 @@ static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 	app->hist[app->histlen++] = app->pageno;
 	app->pageno = page;
 	pdfapp_showpage(app, 1, 1);
+}
+
+static inline fz_bbox bboxcharat(fz_textspan *span, int idx)
+{
+	int ofs = 0;
+	while (span)
+	{
+		if (idx < ofs + span->len)
+			return span->text[idx - ofs].bbox;
+		if (span->eol)
+		{
+			if (idx == ofs + span->len)
+				return fz_emptybbox;
+			ofs ++;
+		}
+		ofs += span->len;
+		span = span->next;
+	}
+	return fz_emptybbox;
+}
+
+void pdfapp_inverthit(pdfapp_t *app)
+{
+	fz_bbox hitbox, bbox;
+	int i;
+
+	if (app->hit < 0)
+		return;
+
+	hitbox = fz_emptybbox;
+
+	for (i = app->hit; i < app->hit + app->hitlen; i++)
+	{
+		bbox = bboxcharat(app->page->text, i);
+		if (fz_isemptyrect(bbox))
+		{
+			if (!fz_isemptyrect(hitbox))
+				pdfapp_invert(app, hitbox);
+			hitbox = fz_emptybbox;
+		}
+		else
+		{
+			hitbox = fz_unionbbox(hitbox, bbox);
+		}
+	}
+
+	if (!fz_isemptyrect(hitbox))
+		pdfapp_invert(app, hitbox);
+}
+
+static inline int charat(fz_textspan *span, int idx)
+{
+	int ofs = 0;
+	while (span)
+	{
+		if (idx < ofs + span->len)
+			return span->text[idx - ofs].c;
+		if (span->eol)
+		{
+			if (idx == ofs + span->len)
+				return ' ';
+			ofs ++;
+		}
+		ofs += span->len;
+		span = span->next;
+	}
+	return 0;
+}
+
+static int textlen(fz_textspan *span)
+{
+	int len = 0;
+	while (span)
+	{
+		len += span->len;
+		if (span->eol)
+			len ++;
+		span = span->next;
+	}
+	return len;
+}
+
+static int match(char *s, fz_textspan *span, int n)
+{
+	int orig = n;
+	int c;
+	while ((c = *s++))
+	{
+		if (c == ' ' && charat(span, n) == ' ')
+		{
+			while (charat(span, n) == ' ')
+				n++;
+		}
+		else
+		{
+			if (tolower(c) != tolower(charat(span, n)))
+				return 0;
+			n++;
+		}
+	}
+	return n - orig;
+}
+
+static void pdfapp_searchforward(pdfapp_t *app)
+{
+	int matchlen;
+	int test;
+	int len;
+
+	len = textlen(app->page->text);
+
+	if (app->hit >= 0)
+		test = app->hit + strlen(app->search);
+	else
+		test = 0;
+
+	while (test < len)
+	{
+		matchlen = match(app->search, app->page->text, test);
+		if (matchlen)
+		{
+			printf("found hit at %d + %d\n", test, matchlen);
+			app->hit = test;
+			app->hitlen = matchlen;
+			return;
+		}
+		test++;
+	}
+
+	printf("hit not found\n");
+}
+
+static void pdfapp_searchbackward(pdfapp_t *app)
+{
+	int matchlen;
+	int test;
+	int len;
+
+	len = textlen(app->page->text);
+
+	if (app->hit >= 0)
+		test = app->hit - 1;
+	else
+		test = len;
+
+	while (test >= 0)
+	{
+		matchlen = match(app->search, app->page->text, test);
+		if (matchlen)
+		{
+			printf("found hit at %d\n", test);
+			app->hit = test;
+			app->hitlen = matchlen;
+			return;
+		}
+		test--;
+	}
+
+	printf("hit not found\n");
 }
 
 void pdfapp_onresize(pdfapp_t *app, int w, int h)
@@ -592,14 +747,20 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	case '/':
 		app->isediting = 1;
 		app->search[0] = 0;
+		app->hit = -1;
+		app->hitlen = 0;
 		break;
 
 	case 'n':
 		printf("search forward for: '%s'\n", app->search);
+		pdfapp_searchforward(app);
+		winrepaint(app);
 		break;
 
 	case 'N':
 		printf("search backward for: '%s'\n", app->search);
+		pdfapp_searchbackward(app);
+		winrepaint(app);
 		break;
 
 	}
@@ -719,10 +880,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		if (app->iscopying)
 		{
 			app->iscopying = 0;
-			app->selr.x0 = MIN(app->selx, x);
-			app->selr.x1 = MAX(app->selx, x);
-			app->selr.y0 = MIN(app->sely, y);
-			app->selr.y1 = MAX(app->sely, y);
+			app->selr.x0 = MIN(app->selx, x) - app->panx;
+			app->selr.x1 = MAX(app->selx, x) - app->panx;
+			app->selr.y0 = MIN(app->sely, y) - app->pany;
+			app->selr.y1 = MAX(app->sely, y) - app->pany;
 			winrepaint(app);
 			if (app->selr.x0 < app->selr.x1 && app->selr.y0 < app->selr.y1)
 				windocopy(app);
@@ -742,10 +903,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 	else if (app->iscopying)
 	{
-		app->selr.x0 = MIN(app->selx, x);
-		app->selr.x1 = MAX(app->selx, x);
-		app->selr.y0 = MIN(app->sely, y);
-		app->selr.y1 = MAX(app->sely, y);
+		app->selr.x0 = MIN(app->selx, x) - app->panx;
+		app->selr.x1 = MAX(app->selx, x) - app->panx;
+		app->selr.y0 = MIN(app->sely, y) - app->pany;
+		app->selr.y1 = MAX(app->sely, y) - app->pany;
 		winrepaint(app);
 	}
 
@@ -758,13 +919,13 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	int c, i, p;
 	int seen;
 
-	int x0 = app->image->x + app->selr.x0 - app->panx;
-	int x1 = app->image->x + app->selr.x1 - app->panx;
-	int y0 = app->image->y + app->selr.y0 - app->pany;
-	int y1 = app->image->y + app->selr.y1 - app->pany;
+	int x0 = app->image->x + app->selr.x0;
+	int x1 = app->image->x + app->selr.x1;
+	int y0 = app->image->y + app->selr.y0;
+	int y1 = app->image->y + app->selr.y1;
 
 	p = 0;
-	for (span = app->text; span; span = span->next)
+	for (span = app->page->text; span; span = span->next)
 	{
 		seen = 0;
 

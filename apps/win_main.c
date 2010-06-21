@@ -56,7 +56,7 @@ void win32error(char *msg)
 	LPSTR buf;
 	int code = GetLastError();
 	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM | 
+		FORMAT_MESSAGE_FROM_SYSTEM |
 		FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL,
 		code,

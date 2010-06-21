@@ -286,6 +286,8 @@ static void winblit(pdfapp_t *app)
 		justcopied = 1;
 	}
 
+	pdfapp_inverthit(&gapp);
+
 	ximage_blit(xwin, xgc,
 		x0, y0,
 		gapp.image->samples,
@@ -293,6 +295,8 @@ static void winblit(pdfapp_t *app)
 		gapp.image->w,
 		gapp.image->h,
 		gapp.image->w * gapp.image->n);
+
+	pdfapp_inverthit(&gapp);
 
 	if (gapp.iscopying || justcopied)
 	{

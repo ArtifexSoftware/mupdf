@@ -227,6 +227,8 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 	fz_point dir;
 	int i, err;
 	float cross, dist2;
+	float ascender = 1;
+	float descender = 0;
 
  	if (text->len == 0)
 		return;
@@ -237,6 +239,8 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		err = FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
 		if (err)
 			fz_warn("freetype set character size: %s", ft_errorstring(err));
+		ascender = ((FT_Face)font->ftface)->ascender * 0.001f;
+		descender = ((FT_Face)font->ftface)->descender * 0.001f;
 	}
 
 	rect = fz_emptyrect;
@@ -289,7 +293,7 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			else if (cross < 0.1f && dist2 > size * size * 0.04f)
 			{
 				fz_rect spacerect;
-				spacerect.x0 = -fabsf(dx);
+				spacerect.x0 = -0.2f;
 				spacerect.y0 = 0;
 				spacerect.x1 = 0;
 				spacerect.y1 = 1;
@@ -312,13 +316,17 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			if (text->wmode)
 			{
 				adv = -1; /* TODO: freetype returns broken vertical metrics */
-				rect.x0 = 0; rect.y0 = 0;
-				rect.x1 = 1; rect.y1 = adv;
+				rect.x0 = 0;
+				rect.y0 = 0;
+				rect.x1 = 1;
+				rect.y1 = adv;
 			}
 			else
 			{
-				rect.x0 = 0; rect.y0 = 0;
-				rect.x1 = adv; rect.y1 = 1;
+				rect.x0 = 0;
+				rect.y0 = descender;
+				rect.x1 = adv;
+				rect.y1 = ascender;
 			}
 		}
 		else
