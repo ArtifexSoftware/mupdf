@@ -292,7 +292,7 @@ static void drawtxt(int pagenum, struct benchmark *loadtimes)
 	fz_freedevice(dev);
 
 	printf("[Page %d]\n", pagenum);
-	fz_debugtextspan(text);
+	fz_debugtextspanxml(text);
 	printf("\n");
 
 	fz_freetextspan(text);
@@ -446,7 +446,7 @@ int main(int argc, char **argv)
 
 			drawcache = fz_newglyphcache();
 
-			openxref(argv[fz_optind], password, 0);
+			openxref(argv[fz_optind], password, 0, 1);
 			state = NO_PAGES_DRAWN;
 		}
 		else
