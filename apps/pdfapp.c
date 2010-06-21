@@ -71,10 +71,10 @@ void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
 	unsigned *p;
 	int x, y;
 
-	int x0 = CLAMP(rect.x0, 0, app->image->w - 1);
-	int x1 = CLAMP(rect.x1, 0, app->image->w - 1);
-	int y0 = CLAMP(rect.y0, 0, app->image->h - 1);
-	int y1 = CLAMP(rect.y1, 0, app->image->h - 1);
+	int x0 = CLAMP(rect.x0 - app->image->x, 0, app->image->w - 1);
+	int x1 = CLAMP(rect.x1 - app->image->x, 0, app->image->w - 1);
+	int y0 = CLAMP(rect.y0 - app->image->y, 0, app->image->h - 1);
+	int y1 = CLAMP(rect.y1 - app->image->y, 0, app->image->h - 1);
 
 	for (y = y0; y < y1; y++)
 	{
@@ -880,10 +880,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		if (app->iscopying)
 		{
 			app->iscopying = 0;
-			app->selr.x0 = MIN(app->selx, x) - app->panx;
-			app->selr.x1 = MAX(app->selx, x) - app->panx;
-			app->selr.y0 = MIN(app->sely, y) - app->pany;
-			app->selr.y1 = MAX(app->sely, y) - app->pany;
+			app->selr.x0 = MIN(app->selx, x) - app->panx + app->image->x;
+			app->selr.x1 = MAX(app->selx, x) - app->panx + app->image->x;
+			app->selr.y0 = MIN(app->sely, y) - app->pany + app->image->y;
+			app->selr.y1 = MAX(app->sely, y) - app->pany + app->image->y;
 			winrepaint(app);
 			if (app->selr.x0 < app->selr.x1 && app->selr.y0 < app->selr.y1)
 				windocopy(app);
@@ -903,10 +903,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 	else if (app->iscopying)
 	{
-		app->selr.x0 = MIN(app->selx, x) - app->panx;
-		app->selr.x1 = MAX(app->selx, x) - app->panx;
-		app->selr.y0 = MIN(app->sely, y) - app->pany;
-		app->selr.y1 = MAX(app->sely, y) - app->pany;
+		app->selr.x0 = MIN(app->selx, x) - app->panx + app->image->x;
+		app->selr.x1 = MAX(app->selx, x) - app->panx + app->image->x;
+		app->selr.y0 = MIN(app->sely, y) - app->pany + app->image->y;
+		app->selr.y1 = MAX(app->sely, y) - app->pany + app->image->y;
 		winrepaint(app);
 	}
 
@@ -919,10 +919,10 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	int c, i, p;
 	int seen;
 
-	int x0 = app->image->x + app->selr.x0;
-	int x1 = app->image->x + app->selr.x1;
-	int y0 = app->image->y + app->selr.y0;
-	int y1 = app->image->y + app->selr.y1;
+	int x0 = app->selr.x0;
+	int x1 = app->selr.x1;
+	int y0 = app->selr.y0;
+	int y1 = app->selr.y1;
 
 	p = 0;
 	for (span = app->page->text; span; span = span->next)
