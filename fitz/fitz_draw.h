@@ -71,10 +71,18 @@ fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
  * The device interface.
  */
 
+enum
+{
+	FZ_IGNOREIMAGE = 1,
+	FZ_IGNORESHADE = 2,
+};
+
 typedef struct fz_device_s fz_device;
 
 struct fz_device_s
 {
+	int hints;
+
 	void *user;
 	void (*freeuser)(void *);
 

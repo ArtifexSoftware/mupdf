@@ -570,12 +570,15 @@ Lsetcolorspace:
 
 			else if (!strcmp(fz_toname(subtype), "Image"))
 			{
-				pdf_image *img;
-				error = pdf_loadimage(&img, csi->xref, obj);
-				if (error)
-					return fz_rethrow(error, "cannot load image (%d %d R)", fz_tonum(obj), fz_togen(obj));
-				pdf_showimage(csi, img);
-				pdf_dropimage(img);
+				if ((csi->dev->hints & FZ_IGNOREIMAGE) == 0)
+				{
+					pdf_image *img;
+					error = pdf_loadimage(&img, csi->xref, obj);
+					if (error)
+						return fz_rethrow(error, "cannot load image (%d %d R)", fz_tonum(obj), fz_togen(obj));
+					pdf_showimage(csi, img);
+					pdf_dropimage(img);
+				}
 			}
 
 			else if (!strcmp(fz_toname(subtype), "PS"))
@@ -783,12 +786,15 @@ Lsetcolor:
 
 				else if (fz_toint(patterntype) == 2)
 				{
-					fz_shade *shd;
-					error = pdf_loadshade(&shd, csi->xref, obj);
-					if (error)
-						return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
-					pdf_setshade(csi, what, shd);
-					fz_dropshade(shd);
+					if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
+					{
+						fz_shade *shd;
+						error = pdf_loadshade(&shd, csi->xref, obj);
+						if (error)
+							return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
+						pdf_setshade(csi, what, shd);
+						fz_dropshade(shd);
+					}
 				}
 
 				else
@@ -1273,11 +1279,14 @@ Lsetcolor:
 			if (!obj)
 				return fz_throw("cannot find shading resource: %s", fz_toname(csi->stack[csi->top - 1]));
 
-			error = pdf_loadshade(&shd, csi->xref, obj);
-			if (error)
-				return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
-			pdf_showshade(csi, shd);
-			fz_dropshade(shd);
+			if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
+			{
+				error = pdf_loadshade(&shd, csi->xref, obj);
+				if (error)
+					return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
+				pdf_showshade(csi, shd);
+				fz_dropshade(shd);
+			}
 			break;
 		}
 		default:
