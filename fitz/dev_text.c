@@ -1,7 +1,7 @@
 #include "fitz.h"
 
 #define LINEDIST 0.9f
-#define SPACEDIST 0.25f
+#define SPACEDIST 0.1f
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -14,7 +14,7 @@ int
 FT_Get_Advance(FT_Face face, int gid, int masks, FT_Fixed *out)
 {
 	int err;
-	err = FT_Load_Glyph(face, gid, masks | FT_LOAD_IGNORE_TRANSFORM);
+	err = FT_Load_Glyph(face, gid, masks);
 	if (err)
 		return err;
 	if (masks & FT_LOAD_VERTICAL_LAYOUT)
@@ -320,7 +320,7 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 			}
 			else if (fabsf(dot) > 0.95f && dist > size * SPACEDIST)
 			{
-				if ((*last)->len == 0 || (*last)->text[(*last)->len - 1].c != ' ')
+				if ((*last)->len != 0 || (*last)->text[(*last)->len - 1].c != ' ')
 				{
 					fz_rect spacerect;
 					spacerect.x0 = -0.2f;
@@ -337,11 +337,11 @@ fz_textextractspan(fz_textspan **last, fz_text *text, fz_matrix ctm, fz_point *p
 		if (font->ftface)
 		{
 			FT_Fixed ftadv = 0;
-			int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING;
+			int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
 			if (text->wmode)
 				mask |= FT_LOAD_VERTICAL_LAYOUT;
 			FT_Get_Advance(font->ftface, text->els[i].gid, mask, &ftadv);
-			adv = ftadv / 65536.0f;
+			adv = ftadv / 1024000.0f;
 			if (text->wmode)
 			{
 				adv = -1; /* TODO: freetype returns broken vertical metrics */
