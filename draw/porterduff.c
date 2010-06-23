@@ -20,7 +20,7 @@ duff_non(byte * restrict sp, int sw, int sn, byte * restrict dp, int dw, int w0,
 		{
 			/* RJW: Alpha handling suspicious here; sp[0] counts twice */
 			int sa = FZ_EXPAND(sp[0]);
-			dp[0] = FZ_BLEND(255, dp[k], sa);
+			dp[0] = FZ_BLEND(255, dp[0], sa);
 			for (k = 1; k < sn; k++)
 			{
 				dp[k] = FZ_BLEND(sp[k], dp[k], sa);
@@ -48,7 +48,7 @@ duff_nimon(byte * restrict sp, int sw, int sn, byte * restrict mp, int mw, int m
 		{
 			/* TODO: validate this */
 			int ma = FZ_COMBINE(FZ_EXPAND(mp[0]), FZ_EXPAND(sp[0]));
-			dp[k] = FZ_BLEND(255, dp[k], ma);
+			dp[0] = FZ_BLEND(255, dp[0], ma);
 			for (k = 1; k < sn; k++)
 			{
 				dp[k] = FZ_BLEND(sp[k], dp[k], ma);
