@@ -448,8 +448,8 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 	fz_pixmap *dest = dev->dest;
 	fz_rect bounds;
 	fz_bbox bbox;
-	float rgb[3];
-	unsigned char argb[4];
+	float rgb[FZ_MAXCOLORS];
+	unsigned char argb[FZ_MAXCOLORS + 1];
 	unsigned char *s;
 	int x, y;
 
@@ -468,20 +468,19 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 
 	if (shade->usebackground)
 	{
+		/* FIXME: Could use optimisation */
+		int i, n = dev->model->n + 1;
 		fz_convertcolor(shade->cs, shade->background, dev->model, rgb);
-		argb[0] = 255;
-		argb[1] = rgb[0] * 255;
-		argb[2] = rgb[1] * 255;
-		argb[3] = rgb[2] * 255;
+		argb[n] = 255;
+		for (i = 1; i < n; i++)
+			argb[n] = rgb[i-1] * 255;
 		for (y = bbox.y0; y < bbox.y1; y++)
 		{
 			s = dest->samples + ((bbox.x0 - dest->x) + (y - dest->y) * dest->w) * dest->n;
 			for (x = bbox.x0; x < bbox.x1; x++)
 			{
-				*s++ = argb[0];
-				*s++ = argb[1];
-				*s++ = argb[2];
-				*s++ = argb[3];
+				for (i = n; i > 0; i--)
+					*s++ = argb[i];
 			}
 		}
 	}
