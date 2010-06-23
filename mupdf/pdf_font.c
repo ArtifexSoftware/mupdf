@@ -522,10 +522,9 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	return fz_okay;
 
 cleanup:
-	if (etable)
+	if (etable != fontdesc->cidtogid)
 		fz_free(etable);
-	fz_dropfont(fontdesc->font);
-	fz_free(fontdesc);
+	pdf_dropfont(fontdesc);
 	return fz_rethrow(error, "cannot load simple font (%d %d R)", fz_tonum(dict), fz_togen(dict));
 }
 
@@ -804,8 +803,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	return fz_okay;
 
 cleanup:
-	fz_dropfont(fontdesc->font);
-	fz_free(fontdesc);
+	pdf_dropfont(fontdesc);
 	return fz_rethrow(error, "cannot load cid font (%d %d R)", fz_tonum(dict), fz_togen(dict));
 }
 
