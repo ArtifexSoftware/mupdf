@@ -473,7 +473,7 @@ fz_drawfillshade(void *user, fz_shade *shade, fz_matrix ctm)
 		fz_convertcolor(shade->cs, shade->background, dev->model, rgb);
 		argb[n] = 255;
 		for (i = 1; i < n; i++)
-			argb[n] = rgb[i-1] * 255;
+			argb[n-i] = rgb[i-1] * 255;
 		for (y = bbox.y0; y < bbox.y1; y++)
 		{
 			s = dest->samples + ((bbox.x0 - dest->x) + (y - dest->y) * dest->w) * dest->n;
