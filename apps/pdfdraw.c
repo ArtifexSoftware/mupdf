@@ -183,7 +183,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 				die(fz_throw("ioerror: could not create raster file '%s'", name));
 		}
 
- 		if (greyscale)
+		if (greyscale)
 		{
 			sprintf(pnmhdr, "P5\n%d %d\n255\n", w, h);
 		}
