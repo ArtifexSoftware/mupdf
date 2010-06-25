@@ -312,7 +312,8 @@ skip:
 		case PDF_TNULL: val = fz_newnull(); break;
 
 		case PDF_TINT:
-			a = atoi(buf);
+			/* 64-bit to allow for numbers > INT_MAX and overflow */
+			a = (int) strtoll(buf, 0, 10);
 			error = pdf_lex(&tok, file, buf, cap, &len);
 			if (error)
 			{
