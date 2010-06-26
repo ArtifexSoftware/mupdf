@@ -617,7 +617,7 @@ static void
 buildannulusmesh(fz_shade *shade,
 	float x0, float y0, float r0,
 	float x1, float y1, float r1,
-	float c0, float c1, int nomesh)
+	float c0, float c1)
 {
 	float dist = hypotf(x1 - x0, y1 - y0);
 	float step;
@@ -648,26 +648,16 @@ buildannulusmesh(fz_shade *shade,
 		pt4.y = sin (theta+step) * r0 + y0;
 
 		if (r0 > 0)
-		{
-			if (!nomesh)
-			{
-				pdf_addtriangle(shade,
+			pdf_addtriangle(shade,
 					pt1.x, pt1.y, &c1,
 					pt2.x, pt2.y, &c0,
 					pt4.x, pt4.y, &c0);
-			}
-		}
 
 		if (r1 > 0)
-		{
-			if (!nomesh)
-			{
-				pdf_addtriangle(shade,
+			pdf_addtriangle(shade,
 					pt1.x, pt1.y, &c1,
 					pt3.x, pt3.y, &c1,
 					pt4.x, pt4.y, &c0);
-			}
-		}
 	}
 }
 
@@ -681,7 +671,6 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	float ex0, ey0, er0;
 	float ex1, ey1, er1;
 	float rs;
-	int i;
 	fz_error error;
 
 	pdf_logshade("load type3 shading {\n");
@@ -726,23 +715,20 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	ey1 = y1 + (y0 - y1) * rs;
 	er1 = r1 + (r0 - r1) * rs;
 
-	for (i = 0; i < 2; i++)
-	{
-		if (e0)
-			buildannulusmesh(shade,
+	if (e0)
+		buildannulusmesh(shade,
 				ex0, ey0, er0,
 				x0, y0, r0,
-				0, 0, 1 - i);
-		buildannulusmesh(shade,
+				0, 0);
+	buildannulusmesh(shade,
 			x0, y0, r0,
 			x1, y1, r1,
-			0, 1, 1 - i);
-		if (e1)
-			buildannulusmesh(shade,
+			0, 1);
+	if (e1)
+		buildannulusmesh(shade,
 				x1, y1, r1,
 				ex1, ey1, er1,
-				1, 1, 1 - i);
-	}
+				1, 1);
 
 	shade->meshlen = shade->meshlen / 3 / 3;
 
