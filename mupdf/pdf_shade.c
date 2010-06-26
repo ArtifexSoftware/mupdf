@@ -637,14 +637,14 @@ buildannulusmesh(fz_shade *shade,
 	{
 		fz_point pt1, pt2, pt3, pt4;
 
-		pt1.x = cos (theta) * r1 + x1;
-		pt1.y = sin (theta) * r1 + y1;
-		pt2.x = cos (theta) * r0 + x0;
-		pt2.y = sin (theta) * r0 + y0;
-		pt3.x = cos (theta+step) * r1 + x1;
-		pt3.y = sin (theta+step) * r1 + y1;
-		pt4.x = cos (theta+step) * r0 + x0;
-		pt4.y = sin (theta+step) * r0 + y0;
+		pt1.x = cosf(theta) * r1 + x1;
+		pt1.y = sinf(theta) * r1 + y1;
+		pt2.x = cosf(theta) * r0 + x0;
+		pt2.y = sinf(theta) * r0 + y0;
+		pt3.x = cosf(theta + step) * r1 + x1;
+		pt3.y = sinf(theta + step) * r1 + y1;
+		pt4.x = cosf(theta + step) * r0 + x0;
+		pt4.y = sinf(theta + step) * r0 + y0;
 
 		if (r0 > 0)
 			pdf_addtriangle(shade,
