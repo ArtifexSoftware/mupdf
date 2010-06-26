@@ -613,8 +613,8 @@ pdf_loadtype2shade(fz_shade *shade, pdf_xref *xref,
 	return fz_okay;
 }
 
-static int
-buildannulusmesh(fz_shade *shade, int pos,
+static void
+buildannulusmesh(fz_shade *shade,
 	float x0, float y0, float r0,
 	float x1, float y1, float r1,
 	float c0, float c1, int nomesh)
@@ -656,7 +656,6 @@ buildannulusmesh(fz_shade *shade, int pos,
 					pt2.x, pt2.y, &c0,
 					pt4.x, pt4.y, &c0);
 			}
-			pos++;
 		}
 
 		if (r1 > 0)
@@ -668,11 +667,8 @@ buildannulusmesh(fz_shade *shade, int pos,
 					pt3.x, pt3.y, &c1,
 					pt4.x, pt4.y, &c0);
 			}
-			pos++;
 		}
 	}
-
-	return pos;
 }
 
 static fz_error
@@ -732,18 +728,17 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 
 	for (i = 0; i < 2; i++)
 	{
-		int pos = 0;
 		if (e0)
-			pos = buildannulusmesh(shade, pos,
+			buildannulusmesh(shade,
 				ex0, ey0, er0,
 				x0, y0, r0,
 				0, 0, 1 - i);
-		pos = buildannulusmesh(shade, pos,
+		buildannulusmesh(shade,
 			x0, y0, r0,
 			x1, y1, r1,
 			0, 1, 1 - i);
 		if (e1)
-			pos = buildannulusmesh(shade, pos,
+			buildannulusmesh(shade,
 				x1, y1, r1,
 				ex1, ey1, er1,
 				1, 1, 1 - i);
