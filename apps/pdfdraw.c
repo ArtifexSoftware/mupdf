@@ -251,8 +251,8 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 					for (x = pix->w; x > 0; x--)
 					{
-						src++;
 						*dst++ = *src++;
+						src++;
 					}
 					dst -= pix->w;
 
@@ -267,10 +267,10 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 
 					for (x = pix->w; x > 0; x--)
 					{
+						*dst++ = *src++;
+						*dst++ = *src++;
+						*dst++ = *src++;
 						src++;
-						*dst++ = *src++;
-						*dst++ = *src++;
-						*dst++ = *src++;
 					}
 					dst -= pix->w * 3;
 

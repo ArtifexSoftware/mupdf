@@ -301,8 +301,8 @@ static void winblit(pdfapp_t *app)
 			unsigned char *d = color;
 			for (; i > 0 ; i--)
 			{
-				d[0] = *s++;
-				d[3] = d[2] = d[1] = *s++;
+				d[2] = d[1] = d[0] = *s++;
+				d[3] = *s++;
 				d += 4;
 			}
 			ximage_blit(xwin, xgc,

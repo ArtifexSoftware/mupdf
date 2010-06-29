@@ -147,12 +147,12 @@ drawscan(fz_pixmap *pix, int y, int x1, int x2, int *v1, int *v2, int n)
 
 	while (w--)
 	{
-		*p++ = 255;
 		for (k = 0; k < n; k++)
 		{
 			*p++ = v[k] >> 16;
 			v[k] += dv[k];
 		}
+		*p++ = 255;
 	}
 }
 
@@ -376,11 +376,11 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 			d = dest->samples + ((bbox.x0 - dest->x) + (y - dest->y) * dest->w) * dest->n;
 			for (x = bbox.x0; x < bbox.x1; x++)
 			{
-				sa = s[0];
+				sa = s[1];
 				ssa = 255 - sa;
-				d[0] = s[0] + fz_mul255(d[0], ssa);
 				for (k = 0; k < dest->colorspace->n; k++)
-					d[k+1] = fz_mul255(clut[s[1]][k], sa) + fz_mul255(d[k+1], ssa);
+					d[k] = fz_mul255(clut[s[0]][k], sa) + fz_mul255(d[k+1], ssa);
+				d[k] = s[1] + fz_mul255(d[k], ssa);
 				s += 2;
 				d += 1 + dest->colorspace->n;
 			}

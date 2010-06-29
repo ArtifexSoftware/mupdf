@@ -396,9 +396,9 @@ void winconvert(fz_pixmap *image)
 			unsigned char *s = image->samples + y * image->w * 4;
 			for (x = 0; x < image->w; x++)
 			{
-				p[x * 3 + 0] = s[x * 4 + 3];
-				p[x * 3 + 1] = s[x * 4 + 2];
-				p[x * 3 + 2] = s[x * 4 + 1];
+				p[x * 3 + 0] = s[x * 4 + 2];
+				p[x * 3 + 1] = s[x * 4 + 1];
+				p[x * 3 + 2] = s[x * 4 + 0];
 			}
 		}
 	}
@@ -410,9 +410,9 @@ void winconvert(fz_pixmap *image)
 			unsigned char *s = image->samples + y * image->w * 2;
 			for (x = 0; x < image->w; x++)
 			{
-				p[x * 3 + 0] = s[x * 2 + 1];
-				p[x * 3 + 1] = s[x * 2 + 1];
-				p[x * 3 + 2] = s[x * 2 + 1];
+				p[x * 3 + 0] = s[x * 2];
+				p[x * 3 + 1] = s[x * 2];
+				p[x * 3 + 2] = s[x * 2];
 			}
 		}
 	}
