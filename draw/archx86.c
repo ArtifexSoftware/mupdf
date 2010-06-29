@@ -15,14 +15,6 @@ shouldn't require anything */
 
 static void duff_4i1o4mmx(byte *sp0, int sw, byte *mp0, int mw, byte *dp0, int dw, int w0, int h)
 {
-	/*
-	rendering all pages of
-	x11pdf ~/doc/OpenGL/Presentations/CEDEC2003_Venus_and_Vulcan.pdf
-	%     cumulative  self	     self     total
-	time     seconds   seconds    calls ms/call ms/call  name
-	30.50     20.04    20.04      261    76.76    76.76  duff_4i1o4
-	21.67     22.02    10.95      221    49.55    49.55  duff_4i1o4mmx
-	*/
 	__m64 mzero = _mm_setzero_si64();
 	while (h--)
 	{
@@ -224,13 +216,13 @@ static void img_4o4mmx(FZ_PSRC, FZ_PDST, FZ_PCTM)
 void
 fz_acceleratearch(void)
 {
-#  ifdef HAVE_MMX
+#ifdef HAVE_MMX
 	if (fz_cpuflags & HAVE_MMX)
 	{
 		fz_duff_4i1o4 = duff_4i1o4mmx;
 // TODO		fz_img_4o4 = img_4o4mmx;
 	}
-#  endif
+#endif
 }
 #endif
 

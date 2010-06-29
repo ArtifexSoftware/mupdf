@@ -1,73 +1,74 @@
 #include "fitz.h"
 
 /*
- * The functions in this file implement various flavours of Porter-Duff
- * blending.
- *
- * We take the following as definitions:
- *
- *  Cx =          Color (from plane x)
- *  ax =          Alpha (from plane x)
- *  cx = Cx.ax  = Premultiplied color (from plane x)
- *
- * The general PorterDuff blending equation is:
- *
- * Blend Z = X op Y     cz = Fx.cx + Fy. cy    where Fx and Fy depend on op
- *
- * The two operations we use in this file are: '(X in Y) over Z' and
- * 'S over Z'. The definitions of the 'over' and 'in' operations are as
- * follows:
- *
- * For S over Z,    Fs = 1,  Fz = 1-as
- * For X in Y,      Fx = ay, Fy = 0
- *
- * We have 2 choices; we can either work with premultiplied data, or non
- * premultiplied data. Our
- *
- * First the premultiplied case:
- *
- * Let S = (X in Y)
- * Let R = (X in Y) over Z = S over Z
- *
- * cs = cx.Fx + cy.Fy           (where Fx = ay, Fy = 0)
- *    = cx.ay
- * as = ax.Fx + ay.Fy
- *    = ax.ay
- *
- * cr = cs.Fs + cz.Fz           (where Fs = 1, Fz = 1-as)
- *    = cs    + cz.(1-as)
- *    = cx.ay + cz.(1-ax.ay)
- * ar = as.Fs + az.Fz
- *    = as    + az.(1-as)
- *    = ax.ay + az.(1-ax.ay)
- *
- * This has various nice properties, like not needing any divisions, and
- * being symmetric in color and alpha, so this is what we use. Because we
- * went through the pain of deriving the non premultiplied forms, we list
- * them here too, though they are not used.
- *
- * Non Pre-multiplied case:
- *
- * Cs.as =  Fx.Cx.ax + Fy.Cy.ay           (where Fx = ay, Fy = 0)
- *       =  Cx.ay.ax
- * Cs    = (Cx.ay.ax)/(ay.ax)
- *       =  Cx
- * Cr.ar =  Fs.Cs.as + Fz.Cz.az           (where Fs = 1, Fz = 1-as)
- *       =  Cs.as    + (1-as).Cz.az
- *       =  Cx.ax.ay + Cz.az.(1-ax.ay)
- * Cr    = (Cx.ax.ay + Cz.az.(1-ax.ay))/(ax.ay + az.(1-ax-ay))
- *
- * Much more complex, it seems. However, if we could restrict ourselves to
- * the case where we were always plotting onto an opaque background (i.e.
- * az = 1), then:
- *
- * Cr = Cx.(ax.ay) + Cz.(1-ax.ay)
- *    = (Cx-Cz)*(1-ax.ay) + Cz            (a single MLA operation)
- * ar = 1
- *
- * Sadly, this is not true in the general case, so we abandon this effort
- * and stick to using the premultiplied form.
- */
+
+The functions in this file implement various flavours of Porter-Duff blending.
+
+We take the following as definitions:
+
+	Cx = Color (from plane x)
+	ax = Alpha (from plane x)
+	cx = Cx.ax = Premultiplied color (from plane x)
+
+The general PorterDuff blending equation is:
+
+	Blend Z = X op Y	cz = Fx.cx + Fy. cy	where Fx and Fy depend on op
+
+The two operations we use in this file are: '(X in Y) over Z' and
+'S over Z'. The definitions of the 'over' and 'in' operations are as
+follows:
+
+	For S over Z,	Fs = 1, Fz = 1-as
+	For X in Y,	Fx = ay, Fy = 0
+
+We have 2 choices; we can either work with premultiplied data, or non
+premultiplied data. Our
+
+First the premultiplied case:
+
+	Let S = (X in Y)
+	Let R = (X in Y) over Z = S over Z
+
+	cs	= cx.Fx + cy.Fy	(where Fx = ay, Fy = 0)
+		= cx.ay
+	as	= ax.Fx + ay.Fy
+		= ax.ay
+
+	cr	= cs.Fs + cz.Fz	(where Fs = 1, Fz = 1-as)
+		= cs + cz.(1-as)
+		= cx.ay + cz.(1-ax.ay)
+	ar	= as.Fs + az.Fz
+		= as + az.(1-as)
+		= ax.ay + az.(1-ax.ay)
+
+This has various nice properties, like not needing any divisions, and
+being symmetric in color and alpha, so this is what we use. Because we
+went through the pain of deriving the non premultiplied forms, we list
+them here too, though they are not used.
+
+Non Pre-multiplied case:
+
+	Cs.as	= Fx.Cx.ax + Fy.Cy.ay	(where Fx = ay, Fy = 0)
+		= Cx.ay.ax
+	Cs	= (Cx.ay.ax)/(ay.ax)
+		= Cx
+	Cr.ar	= Fs.Cs.as + Fz.Cz.az	(where Fs = 1, Fz = 1-as)
+		= Cs.as	+ (1-as).Cz.az
+		= Cx.ax.ay + Cz.az.(1-ax.ay)
+	Cr	= (Cx.ax.ay + Cz.az.(1-ax.ay))/(ax.ay + az.(1-ax-ay))
+
+Much more complex, it seems. However, if we could restrict ourselves to
+the case where we were always plotting onto an opaque background (i.e.
+az = 1), then:
+
+	Cr	= Cx.(ax.ay) + Cz.(1-ax.ay)
+		= (Cx-Cz)*(1-ax.ay) + Cz	(a single MLA operation)
+	ar	= 1
+
+Sadly, this is not true in the general case, so we abandon this effort
+and stick to using the premultiplied form.
+
+*/
 
 typedef unsigned char byte;
 
@@ -115,7 +116,7 @@ duff_nimon(byte * restrict sp, int sw, int sn, byte * restrict mp, int mw, int m
 		int w = w0;
 		while (w--)
 		{
-                        int ma = mp[0];
+			int ma = mp[0];
 			int ssa = 255-fz_mul255(sp[sn-1], ma);
 			for (k = 0; k < sn; k++)
 			{

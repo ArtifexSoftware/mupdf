@@ -82,7 +82,8 @@ pdf_addtriangle(fz_shade *shade,
 }
 
 /* adds quad triangles (x0, y0) -> (x1, y1) -> (x3, y3) and
-   (x1, y1) -> (x3, y3) -> (x2, y2) to mesh */
+ * (x1, y1) -> (x3, y3) -> (x2, y2) to mesh
+ */
 static void
 pdf_addquad(fz_shade *shade,
 	float x0, float y0, float *color0,
@@ -140,12 +141,14 @@ midpoint(float a, float b)
 static inline void
 split_curve(fz_point *pole, fz_point *q0, fz_point *q1, int pole_step)
 {
-	/* split bezier curve given by control points pole[0]..pole[3]
-	   using de casteljau algo at midpoint and build two new
-	   bezier curves q0[0]..q0[3] and q1[0]..q1[3]. all indices
-	   should be multiplies by pole_step == 1 for vertical bezier
-	   curves in patch and == 4 for horizontal bezier curves due
-	   to C's multi-dimensional matrix memory layout. */
+	/*
+	split bezier curve given by control points pole[0]..pole[3]
+	using de casteljau algo at midpoint and build two new
+	bezier curves q0[0]..q0[3] and q1[0]..q1[3]. all indices
+	should be multiplies by pole_step == 1 for vertical bezier
+	curves in patch and == 4 for horizontal bezier curves due
+	to C's multi-dimensional matrix memory layout.
+	*/
 
 	float x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
 	float y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
@@ -174,15 +177,14 @@ split_curve(fz_point *pole, fz_point *q0, fz_point *q1, int pole_step)
 static inline void
 split_stripe(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 {
-	/* split all horizontal bezier curves in patch, creating
-	   two new patches with half the width. */
+	/* split all horizontal bezier curves in patch,
+ 	 * creating two new patches with half the width. */
 	split_curve(&p->pole[0][0], &s0->pole[0][0], &s1->pole[0][0], 4);
 	split_curve(&p->pole[0][1], &s0->pole[0][1], &s1->pole[0][1], 4);
 	split_curve(&p->pole[0][2], &s0->pole[0][2], &s1->pole[0][2], 4);
 	split_curve(&p->pole[0][3], &s0->pole[0][3], &s1->pole[0][3], 4);
 
-	/* bilinear interpolation to find color values of corners of
-	   the two new patches. */
+	/* bilinear interpolation to find color values of corners of the two new patches. */
 	copycolor(s0->color[0], p->color[0]);
 	copycolor(s0->color[1], p->color[1]);
 	midcolor(s0->color[2], p->color[1], p->color[2]);
@@ -220,15 +222,14 @@ drawstripe(pdf_tensorpatch *p, fz_shade *shade, int ncomp, int depth)
 static inline void
 split_patch(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 {
-	/* split all vertical bezier curves in patch, creating
-	   two new patches with half the height. */
+	/* split all vertical bezier curves in patch,
+	 * creating two new patches with half the height. */
 	split_curve(p->pole[0], s0->pole[0], s1->pole[0], 1);
 	split_curve(p->pole[1], s0->pole[1], s1->pole[1], 1);
 	split_curve(p->pole[2], s0->pole[2], s1->pole[2], 1);
 	split_curve(p->pole[3], s0->pole[3], s1->pole[3], 1);
 
-	/* bilinear interpolation to find color values of corners of
-	   the two new patches. */
+	/* bilinear interpolation to find color values of corners of the two new patches. */
 	copycolor(s0->color[0], p->color[0]);
 	midcolor(s0->color[1], p->color[0], p->color[1]);
 	midcolor(s0->color[2], p->color[2], p->color[3]);
@@ -278,17 +279,17 @@ pdf_computetensorinterior(
 
 	/* see equations at page 330 in pdf 1.7 */
 
-	pt.x  = -4 * a.x;
-	pt.x +=  6 * (b.x + c.x);
+	pt.x = -4 * a.x;
+	pt.x += 6 * (b.x + c.x);
 	pt.x += -2 * (d.x + e.x);
-	pt.x +=  3 * (f.x + g.x);
+	pt.x += 3 * (f.x + g.x);
 	pt.x += -1 * h.x;
 	pt.x /= 9;
 
-	pt.y  = -4 * a.y;
-	pt.y +=  6 * (b.y + c.y);
+	pt.y = -4 * a.y;
+	pt.y += 6 * (b.y + c.y);
 	pt.y += -2 * (d.y + e.y);
-	pt.y +=  3 * (f.y + g.y);
+	pt.y += 3 * (f.y + g.y);
 	pt.y += -1 * h.y;
 	pt.y /= 9;
 
@@ -681,7 +682,7 @@ pdf_loadtype3shade(fz_shade *shade, pdf_xref *xref,
 	y1 = coords[4];
 	r1 = coords[5];
 
-	pdf_logshade("coords %g %g %g  %g %g %g\n", x0, y0, r0, x1, y1, r1);
+	pdf_logshade("coords %g %g %g -> %g %g %g\n", x0, y0, r0, x1, y1, r1);
 
 	t0 = domain[0];
 	t1 = domain[1];

@@ -16,11 +16,11 @@ extern void fz_scol4_arm(byte *src, byte *dst, int w, int denom);
 static void
 path_w4i1o4_arm(byte * restrict rgba, byte * restrict src, byte cov, int len, byte * restrict dst)
 {
-	/* The ARM code here is a hand coded implementation
-	 * of the optimized C version. */
+	/* The ARM code here is a hand coded implementation of the optimized C version. */
 
 	if (len <= 0)
 		return;
+
 	asm volatile(
 	"ldr	%0, [%0]		@ %0 = rgba			\n"
 	"mov	r11,#0							\n"
@@ -34,7 +34,7 @@ path_w4i1o4_arm(byte * restrict rgba, byte * restrict src, byte cov, int len, by
 	"bic	%0, %0, r8		@ %0 = rb			\n"
 	"mov	r6, r6, LSR #8		@ r6 = ga			\n"
 	"cmp	r14,#256		@ if (alpha == 256)		\n"
-	"beq	4f			@     no-alpha loop		\n"
+	"beq	4f			@	no-alpha loop		\n"
 	"B	2f			@ enter the loop		\n"
 	"1:	@ Loop used for when coverage*alpha == 0		\n"
 	"subs	%3, %3, #1		@ len--				\n"
@@ -48,7 +48,7 @@ path_w4i1o4_arm(byte * restrict rgba, byte * restrict src, byte cov, int len, by
 	"beq	1b			@ if coverage == 0 loop back	\n"
 	"add	r10,%2, %2, LSR #7	@ r10= ca = cov+(cov>>7)	\n"
 	"mul	r10,r14,r10		@ r10= ca *= alpha		\n"
-	"and	r7, r8, r9		@ r7 = dga =  drb     & MASK	\n"
+	"and	r7, r8, r9		@ r7 = dga = drb & MASK		\n"
 	"mov	r10,r10,LSR #8		@ r10= ca >>= 8			\n"
 	"and	r9, r8, r9, LSL #8	@ r9 = drb = (drb<<8) & MASK	\n"
 	"sub	r12,r6, r7, LSR #8	@ r12= cga = ga - (dga>>8)	\n"
@@ -77,9 +77,9 @@ path_w4i1o4_arm(byte * restrict rgba, byte * restrict src, byte cov, int len, by
 	"ands	%2, %2, #255		@ %2 = cov &= 255		\n"
 	"beq	4b			@ if coverage == 0 loop back	\n"
 	"cmp	%2, #255		@ if coverage == solid		\n"
-	"beq	3b			@    loop back			\n"
+	"beq	3b			@	loop back		\n"
 	"add	r10,%2, %2, LSR #7	@ r10= ca = cov+(cov>>7)	\n"
-	"and	r7, r8, r9		@ r7 = dga =  drb     & MASK	\n"
+	"and	r7, r8, r9		@ r7 = dga = drb & MASK		\n"
 	"and	r9, r8, r9, LSL #8	@ r9 = dga = (drb<<8) & MASK	\n"
 	"sub	r12,r6, r7, LSR #8	@ r12= cga = ga - (dga>>8)	\n"
 	"sub	r5, %0, r9, LSR #8	@ r5 = crb = rb - (drb>>8)	\n"
@@ -138,12 +138,12 @@ static void loadtile8_arm(byte * restrict src, int sw, byte * restrict dst, int 
 			"SUBS	%[h],%[h],#1				\n"
 			"BGT	1b					\n"
 			:
-			[src] "+r" (src),
-			[sw]  "+r" (sw),
-			[dst] "+r" (dst),
-			[dw]  "+r" (dw),
-			[h]   "+r" (h),
-			[w]   "+r" (w)
+			[src]	"+r" (src),
+			[sw]	"+r" (sw),
+			[dst]	"+r" (dst),
+			[dw]	"+r" (dw),
+			[h]	"+r" (h),
+			[w]	"+r" (w)
 			:
 			:
 			"r4","r5","r11","memory","cc"
@@ -172,12 +172,12 @@ static void loadtile8_arm(byte * restrict src, int sw, byte * restrict dst, int 
 			"SUBS	%[h],%[h],#1				\n"
 			"BGT	1b					\n"
 			:
-			[src] "+r" (src),
-			[sw]  "+r" (sw),
-			[dst] "+r" (dst),
-			[dw]  "+r" (dw),
-			[h]   "+r" (h),
-			[w]   "+r" (w)
+			[src]	"+r" (src),
+			[sw]	"+r" (sw),
+			[dst]	"+r" (dst),
+			[dw]	"+r" (dw),
+			[h]	"+r" (h),
+			[w]	"+r" (w)
 			:
 			:
 			"r4","r5","r6","r7","r8","r11","memory","cc"
@@ -205,13 +205,13 @@ static void loadtile8_arm(byte * restrict src, int sw, byte * restrict dst, int 
 			"subs	%[h], %[h], #1				\n"
 			"bgt	1b					\n"
 			:
-			[src] "+r" (src),
-			[sw]  "+r" (sw),
-			[dst] "+r" (dst),
-			[dw]  "+r" (dw),
-			[h]   "+r" (h),
-			[w]   "+r" (w),
-			[pad] "+r" (pad)
+			[src]	"+r" (src),
+			[sw]	"+r" (sw),
+			[dst]	"+r" (dst),
+			[dw]	"+r" (dw),
+			[h]	"+r" (h),
+			[w]	"+r" (w),
+			[pad]	"+r" (pad)
 			:
 			:
 			"r7","r8","r9","r10","r14","memory","cc"

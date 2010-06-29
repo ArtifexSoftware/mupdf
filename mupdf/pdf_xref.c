@@ -113,7 +113,7 @@ pdf_loadobjstm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 	count = fz_toint(fz_dictgets(objstm, "N"));
 	first = fz_toint(fz_dictgets(objstm, "First"));
 
-	pdf_logxref("  count %d\n", count);
+	pdf_logxref("\tcount %d\n", count);
 
 	numbuf = fz_malloc(count * sizeof(int));
 	ofsbuf = fz_malloc(count * sizeof(int));

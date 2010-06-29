@@ -252,12 +252,6 @@ static void fillrect(int x, int y, int w, int h)
 		XFillRectangle(xdpy, xwin, xgc, x, y, w, h);
 }
 
-void windrawrect(pdfapp_t *app, fz_bbox rect, int color)
-{
-	XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
-	XFillRectangle(xdpy, xwin, xgc, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-}
-
 static void winblit(pdfapp_t *app)
 {
 	int x0 = gapp.panx;
@@ -475,7 +469,7 @@ void winreloadfile(pdfapp_t *app)
 
 	fd = open(filename, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-	        winerror(app, fz_throw("cannot reload file '%s'", filename));
+		winerror(app, fz_throw("cannot reload file '%s'", filename));
 
 	pdfapp_open(app, filename, fd);
 }
