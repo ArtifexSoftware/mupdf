@@ -253,7 +253,7 @@ select_mode(void)
 			info.mode = byteorder == MSBFirst ? RGBA8888 : ABGR8888;
 	}
 
-	printf("ximage: ARGB8888 to %s\n", modename[info.mode]);
+	printf("ximage: RGBA8888 to %s\n", modename[info.mode]);
 
 	/* select conversion function */
 	info.convert_func = ximage_convert_funcs[info.mode];
