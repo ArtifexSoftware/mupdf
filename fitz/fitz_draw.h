@@ -386,9 +386,8 @@ struct fz_shade_s
 
 	int meshlen;
 	int meshcap;
-	float *mesh; /* [x y t] or [x y c1 ... cn] * 3 * meshlen */
+	float *mesh; /* [x y t] or [x y c1 ... cn] */
 };
-
 
 fz_shade *fz_keepshade(fz_shade *shade);
 void fz_dropshade(fz_shade *shade);

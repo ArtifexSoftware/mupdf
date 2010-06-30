@@ -61,12 +61,12 @@ fz_debugshade(fz_shade *shade)
 	else
 		n = 2 + shade->cs->n;
 
-	printf("\ttriangles: %d\n", shade->meshlen);
+	printf("\tvertices: %d\n", shade->meshlen);
 
 	vertex = shade->mesh;
 	triangle = 0;
 	i = 0;
-	while (i < shade->meshlen * 3)
+	while (i < shade->meshlen)
 	{
 		printf("\t%d:(%g, %g): ", triangle, vertex[0], vertex[1]);
 
