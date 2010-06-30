@@ -184,8 +184,9 @@ static void fastrgbtobgr(fz_pixmap *src, fz_pixmap *dst)
 		d[0] = s[2];
 		d[1] = s[1];
 		d[2] = s[0];
-		s += 3;
-		d += 3;
+		d[3] = s[3];
+		s += 4;
+		d += 4;
 	}
 }
 
@@ -213,7 +214,7 @@ void pdf_convpixmap(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixm
 	else if (ss == pdf_devicebgr)
 	{
 		if (ds == pdf_devicegray) fastbgrtogray(sp, dp);
-		else if (ds == pdf_devicergb) fastrgbtobgr(sp, dp); /* bgr = rgb her */
+		else if (ds == pdf_devicergb) fastrgbtobgr(sp, dp); /* bgr = rgb here */
 		else if (ds == pdf_devicecmyk) fastbgrtocmyk(sp, dp);
 		else fz_stdconvpixmap(ss, sp, ds, dp);
 
