@@ -28,37 +28,37 @@ pdf_growmesh(fz_shade *shade, int amount)
 }
 
 static void
-pdf_addvertex(fz_shade *shade, float x, float y, float *color)
+pdf_addvertex(fz_shade *shade, struct vertex *v)
 {
 	int ncomp = shade->usefunction ? 1 : shade->cs->n;
 	int i;
 	pdf_growmesh(shade, 2 + ncomp);
-	shade->mesh[shade->meshlen++] = x;
-	shade->mesh[shade->meshlen++] = y;
+	shade->mesh[shade->meshlen++] = v->x;
+	shade->mesh[shade->meshlen++] = v->y;
 	for (i = 0; i < ncomp; i++)
-		shade->mesh[shade->meshlen++] = color[i];
+		shade->mesh[shade->meshlen++] = v->c[i];
 }
 
 static void
 pdf_addtriangle(fz_shade *shade,
-	float x0, float y0, float *color0,
-	float x1, float y1, float *color1,
-	float x2, float y2, float *color2)
+	struct vertex *v0,
+	struct vertex *v1,
+	struct vertex *v2)
 {
-	pdf_addvertex(shade, x0, y0, color0);
-	pdf_addvertex(shade, x1, y1, color1);
-	pdf_addvertex(shade, x2, y2, color2);
+	pdf_addvertex(shade, v0);
+	pdf_addvertex(shade, v1);
+	pdf_addvertex(shade, v2);
 }
 
 static void
 pdf_addquad(fz_shade *shade,
-	float x0, float y0, float *color0,
-	float x1, float y1, float *color1,
-	float x2, float y2, float *color2,
-	float x3, float y3, float *color3)
+	struct vertex *v0,
+	struct vertex *v1,
+	struct vertex *v2,
+	struct vertex *v3)
 {
-	pdf_addtriangle(shade, x0, y0, color0, x1, y1, color1, x3, y3, color3);
-	pdf_addtriangle(shade, x1, y1, color1, x3, y3, color3, x2, y2, color2);
+	pdf_addtriangle(shade, v0, v1, v3);
+	pdf_addtriangle(shade, v1, v3, v2);
 }
 
 /*
@@ -76,11 +76,25 @@ struct pdf_tensorpatch_s
 static void
 triangulatepatch(pdf_tensorpatch p, fz_shade *shade)
 {
-	pdf_addquad(shade,
-		p.pole[0][0].x, p.pole[0][0].y, p.color[0],
-		p.pole[0][3].x, p.pole[0][3].y, p.color[1],
-		p.pole[3][3].x, p.pole[3][3].y, p.color[2],
-		p.pole[3][0].x, p.pole[3][0].y, p.color[3]);
+	struct vertex v0, v1, v2, v3;
+
+	v0.x = p.pole[0][0].x;
+	v0.y = p.pole[0][0].y;
+	memcpy(v0.c, p.color[0], sizeof(v0.c));
+
+	v1.x = p.pole[0][3].x;
+	v1.y = p.pole[0][3].y;
+	memcpy(v1.c, p.color[1], sizeof(v1.c));
+
+	v2.x = p.pole[3][3].x;
+	v2.y = p.pole[3][3].y;
+	memcpy(v2.c, p.color[2], sizeof(v2.c));
+
+	v3.x = p.pole[3][0].x;
+	v3.y = p.pole[3][0].y;
+	memcpy(v3.c, p.color[3], sizeof(v3.c));
+
+	pdf_addquad(shade, &v0, &v1, &v2, &v3);
 }
 
 static inline void
@@ -441,11 +455,7 @@ pdf_loadfunctionbasedshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, pdf_
 				v[i].y = pt.y;
 			}
 
-			pdf_addquad(shade,
-				v[0].x, v[0].y, v[0].c,
-				v[1].x, v[1].y, v[1].c,
-				v[2].x, v[2].y, v[2].c,
-				v[3].x, v[3].y, v[3].c);
+			pdf_addquad(shade, &v[0], &v[1], &v[2], &v[3]);
 		}
 	}
 
@@ -516,11 +526,7 @@ pdf_loadaxialshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs, p
 	p4.y = y1 - HUGENUM * sinf(theta);
 	p4.c[0] = 1;
 
-	pdf_addquad(shade,
-		p1.x, p1.y, p1.c,
-		p2.x, p2.y, p2.c,
-		p4.x, p4.y, p4.c,
-		p3.x, p3.y, p3.c);
+	pdf_addquad(shade, &p1, &p2, &p4, &p3);
 
 	if (e0)
 	{
@@ -530,11 +536,7 @@ pdf_loadaxialshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs, p
 		ep3.x = p3.x - (x1 - x0) / dist * HUGENUM;
 		ep3.y = p3.y - (y1 - y0) / dist * HUGENUM;
 		ep3.c[0] = 0;
-		pdf_addquad(shade,
-			ep1.x, ep1.y, ep1.c,
-			p1.x, p1.y, p1.c,
-			p3.x, p3.y, p3.c,
-			ep3.x, ep3.y, ep3.c);
+		pdf_addquad(shade, &ep1, &p1, &p3, &ep3);
 	}
 
 	if (e1)
@@ -545,11 +547,7 @@ pdf_loadaxialshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs, p
 		ep4.x = p4.x + (x1 - x0) / dist * HUGENUM;
 		ep4.y = p4.y + (y1 - y0) / dist * HUGENUM;
 		ep4.c[0] = 1;
-		pdf_addquad(shade,
-			p2.x, p2.y, p2.c,
-			ep2.x, ep2.y, ep2.c,
-			ep4.x, ep4.y, ep4.c,
-			p4.x, p4.y, p4.c);
+		pdf_addquad(shade, &p2, &ep2, &ep4, &p4);
 	}
 
 	return fz_okay;
@@ -593,9 +591,9 @@ pdf_buildannulusmesh(fz_shade *shade,
 		pt4.c[0] = c0;
 
 		if (r0 > 0)
-			pdf_addtriangle(shade, pt1.x, pt1.y, pt1.c, pt2.x, pt2.y, pt2.c, pt4.x, pt4.y, pt4.c);
+			pdf_addtriangle(shade, &pt1, &pt2, &pt4);
 		if (r1 > 0)
-			pdf_addtriangle(shade, pt1.x, pt1.y, pt1.c, pt3.x, pt3.y, pt3.c, pt4.x, pt4.y, pt4.c);
+			pdf_addtriangle(shade, &pt1, &pt3, &pt4);
 	}
 }
 
@@ -812,20 +810,20 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 			for (i = 0; i < ncomp; i++)
 				vc.c[i] = readsample(stream, p.bpcomp, p.c0[i], p.c1[i]);
 
-			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			pdf_addtriangle(shade, &va, &vb, &vc);
 			break;
 
 		case 1: /* Vb, Vc, Vd */
 			va = vb;
 			vb = vc;
 			vc = vd;
-			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			pdf_addtriangle(shade, &va, &vb, &vc);
 			break;
 
 		case 2: /* Va, Vc, Vd */
 			vb = vc;
 			vc = vd;
-			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			pdf_addtriangle(shade, &va, &vb, &vc);
 			break;
 		}
 	}
@@ -873,16 +871,9 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 		}
 
 		if (!first)
-		{
 			for (i = 0; i < p.vprow - 1; i++)
-			{
 				pdf_addquad(shade,
-					ref[i].x, ref[i].y, ref[i].c,
-					ref[i+1].x, ref[i+1].y, ref[i+1].c,
-					buf[i+1].x, buf[i+1].y, buf[i+1].c,
-					buf[i].x, buf[i].y, buf[i].c);
-			}
-		}
+					&ref[i], &ref[i+1], &buf[i+1], &buf[i]);
 
 		memcpy(ref, buf, p.vprow * sizeof(struct vertex));
 		first = 0;
