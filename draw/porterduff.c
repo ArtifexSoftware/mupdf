@@ -182,6 +182,9 @@ duff_1i1o1(byte * restrict sp, int sw, byte * restrict mp, int mw, byte * restri
 {
 	/* duff_nimon(sp0, sw, 1, mp0, mw, 1, dp0, dw, w0, h); */
 
+	sw -= w0;
+	dw -= w0;
+	mw -= w0;
 	while (h--)
 	{
 		int w = w0;
