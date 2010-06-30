@@ -1154,7 +1154,6 @@ pdf_loadshadingdict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix t
 
 	obj = fz_dictgets(dict, "ShadingType");
 	type = fz_toint(obj);
-	pdf_logshade("type %d\n", type);
 
 	obj = fz_dictgets(dict, "ColorSpace");
 	if (!obj)
@@ -1183,80 +1182,7 @@ pdf_loadshadingdict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix t
 	if (fz_isarray(obj))
 	{
 		shade->bbox = pdf_torect(obj);
-		pdf_logshade("bbox [%g %g %g %g]\n",
-			shade->bbox.x0, shade->bbox.y0,
-			shade->bbox.x1, shade->bbox.y1);
 	}
-
-	obj = fz_dictgets(dict, "Domain");
-	if (fz_isarray(obj))
-	{
-		for (i = 0; i < MIN(nelem(domain), fz_arraylen(obj)); i++)
-			domain[i] = fz_toreal(fz_arrayget(obj, i));
-	}
-
-	obj = fz_dictgets(dict, "Matrix");
-	if (fz_isarray(obj))
-		matrix = pdf_tomatrix(obj);
-
-	obj = fz_dictgets(dict, "Coords");
-	if (fz_isarray(obj))
-	{
-		for (i = 0; i < MIN(nelem(domain), fz_arraylen(obj)); i++)
-			coords[i] = fz_toreal(fz_arrayget(obj, i));
-	}
-
-	obj = fz_dictgets(dict, "Extend");
-	if (fz_isarray(obj))
-	{
-		extend[0] = fz_tobool(fz_arrayget(obj, 0));
-		extend[1] = fz_tobool(fz_arrayget(obj, 1));
-	}
-
-	bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
-	if (type >= 4 && type <= 7)
-	{
-		if (bpcoord != 1 && bpcoord != 2 && bpcoord != 4 && bpcoord != 4 &&
-			bpcoord != 8 && bpcoord != 12 && bpcoord != 16 &&
-			bpcoord != 24 && bpcoord != 32)
-			fz_warn("invalid number of bits per vertex coordinate in shading, continuing...");
-	}
-
-	bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
-	if (type >= 4 && type <= 7)
-	{
-		if (bpcomp != 1 && bpcomp != 2 && bpcomp != 4 && bpcomp != 4 &&
-			bpcomp != 8 && bpcomp != 12 && bpcomp != 16)
-			fz_warn("invalid number of bits per vertex color component in shading, continuing...");
-	}
-
-	bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
-	if (type == 4 || type == 6 || type == 7)
-	{
-		if (bpflag != 2 && bpflag != 4 && bpflag != 8)
-			fz_warn("invalid number of bits per vertex flag in shading, continuing...");
-	}
-
-	vprow = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
-	if (type == 5)
-	{
-		if (vprow < 2)
-		{
-			vprow = 2;
-			fz_warn("invalid number of vertices per row in shading, continuing...");
-		}
-	}
-
-	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
-	{
-		if (fz_arraylen(obj) != 4 + shade->cs->n * 2)
-			fz_warn("shading decode array is the wrong length");
-		for (i = 0; i < 4 + shade->cs->n * 2; i++)
-			decode[i] = fz_toreal(fz_arrayget(obj, i));
-	}
-	else if (type >= 4 && type <= 7)
-		fz_warn("shading decode array is missing");
 
 	obj = fz_dictgets(dict, "Function");
 	if (fz_isdict(obj))
@@ -1290,11 +1216,94 @@ pdf_loadshadingdict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix t
 		}
 	}
 
+	if (type >= 1 && type <= 3)
+	{
+		obj = fz_dictgets(dict, "Domain");
+		if (fz_isarray(obj))
+		{
+			for (i = 0; i < MIN(nelem(domain), fz_arraylen(obj)); i++)
+				domain[i] = fz_toreal(fz_arrayget(obj, i));
+		}
+
+		obj = fz_dictgets(dict, "Matrix");
+		if (fz_isarray(obj))
+			matrix = pdf_tomatrix(obj);
+
+		obj = fz_dictgets(dict, "Coords");
+		if (fz_isarray(obj))
+		{
+			for (i = 0; i < MIN(nelem(domain), fz_arraylen(obj)); i++)
+				coords[i] = fz_toreal(fz_arrayget(obj, i));
+		}
+
+		obj = fz_dictgets(dict, "Extend");
+		if (fz_isarray(obj))
+		{
+			extend[0] = fz_tobool(fz_arrayget(obj, 0));
+			extend[1] = fz_tobool(fz_arrayget(obj, 1));
+		}
+	}
+
 	if (type >= 4 && type <= 7)
 	{
+		if (type == 4 || type == 6 || type == 7)
+		{
+			bpflag = fz_toint(fz_dictgets(dict, "BitsPerFlag"));
+			if (bpflag != 2 && bpflag != 4 && bpflag != 8)
+				fz_warn("invalid number of bits per vertex flag in shading, continuing...");
+		}
+
+		if (type == 5)
+		{
+			vprow = fz_toint(fz_dictgets(dict, "VerticesPerRow"));
+			if (vprow < 2)
+			{
+				vprow = 2;
+				fz_warn("invalid number of vertices per row in shading, continuing...");
+			}
+		}
+
+		bpcoord = fz_toint(fz_dictgets(dict, "BitsPerCoordinate"));
+		if (bpcoord != 1 && bpcoord != 2 && bpcoord != 4 && bpcoord != 4 &&
+			bpcoord != 8 && bpcoord != 12 && bpcoord != 16 &&
+			bpcoord != 24 && bpcoord != 32)
+			fz_warn("invalid number of bits per vertex coordinate in shading, continuing...");
+
+		bpcomp = fz_toint(fz_dictgets(dict, "BitsPerComponent"));
+		if (bpcomp != 1 && bpcomp != 2 && bpcomp != 4 && bpcomp != 4 &&
+			bpcomp != 8 && bpcomp != 12 && bpcomp != 16)
+			fz_warn("invalid number of bits per vertex color component in shading, continuing...");
+
+		obj = fz_dictgets(dict, "Decode");
+		if (fz_isarray(obj))
+		{
+			if (fz_arraylen(obj) != 4 + shade->cs->n * 2)
+				fz_warn("shading decode array is the wrong length");
+			for (i = 0; i < 4 + shade->cs->n * 2; i++)
+				decode[i] = fz_toreal(fz_arrayget(obj, i));
+		}
+		else
+			fz_warn("shading decode array is missing");
+
 		error = pdf_openstream(&stream, xref, fz_tonum(dict), fz_togen(dict));
 		if (error)
 			return fz_rethrow(error, "cannot open shading stream (%d %d R)", fz_tonum(dict), fz_togen(dict));
+	}
+
+	pdf_logshade("type %d\n", type);
+	if (type <= 3)
+	{
+		// coords
+		// domain
+		pdf_logshade("extend = [%d %d]\n", extend[0], extend[1]);
+	}
+	if (type >= 4)
+	{
+		pdf_logshade("bpflag = %d\n", bpflag);
+		pdf_logshade("bpcoord = %d\n", bpcoord);
+		pdf_logshade("bpcomp = %d\n", bpcomp);
+		pdf_logshade("vprow = %d\n", vprow);
+		pdf_logshade("decode = [%g %g %g %g ...]\n", decode[0], decode[1], decode[2], decode[3]);
 	}
 
 	error = 0;
