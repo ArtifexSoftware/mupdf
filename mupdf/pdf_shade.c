@@ -610,7 +610,14 @@ pdf_loadradialshading(fz_shade *shade, pdf_xref *xref,
  * Type 4 & 5 -- Triangle mesh shadings
  */
 
-static int
+struct vertex
+{
+	int flag;
+	float x, y;
+	float c[FZ_MAXCOLORS];
+};
+
+static unsigned
 getdata(fz_stream *stream, int bps)
 {
 	unsigned int v = 0;
@@ -635,17 +642,12 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	fz_error error;
 	float coordscale = 1 / (powf(2, bpcoord) - 1);
 	float compscale = 1 / (powf(2, bpcomp) - 1);
-	int ncomp;
 	float x0, x1, y0, y1;
 	float c0[FZ_MAXCOLORS];
 	float c1[FZ_MAXCOLORS];
-	float cval[4][FZ_MAXCOLORS];
-	int idx, intriangle, badtriangle;
-	int a, b, c;
+	struct vertex va, vb, vc, vd;
+	int ncomp;
 	int i;
-
-	int flag[4];
-	float x[4], y[4];
 
 	pdf_logshade("load type4 (free-form triangle mesh) shading\n");
 
@@ -669,88 +671,35 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref,
 	else
 		ncomp = shade->cs->n;
 
-	idx = 0;
-	intriangle = 0;
-	badtriangle = 0;
-	a = b = c = 0;
+#define GETVERT(V) \
+	V.flag = getdata(stream, bpflag); \
+	V.x = x0 + getdata(stream, bpcoord) * (x1 - x0) * coordscale; \
+	V.y = y0 + getdata(stream, bpcoord) * (y1 - y0) * coordscale; \
+	for (i = 0; i < ncomp; i++) \
+		V.c[i] = c0[i] + getdata(stream, bpcomp) * (c1[i] - c0[i]) * compscale;
 
 	while (fz_peekbyte(stream) != EOF)
 	{
-		unsigned int t;
-
-		flag[idx] = getdata(stream, bpflag);
-
-		t = getdata(stream, bpcoord);
-		x[idx] = x0 + t * (x1 - x0) * coordscale;
-
-		t = getdata(stream, bpcoord);
-		y[idx] = y0 + t * (y1 - y0) * coordscale;
-
-		for (i = 0; i < ncomp; i++)
+		GETVERT(vd);
+		switch (vd.flag)
 		{
-			t = getdata(stream, bpcomp);
-			cval[idx][i] = c0[i] + t * (c1[i] - c0[i]) * compscale;
-		}
-
-		if (!intriangle && flag[idx] == 0)
-		{
-			/* two more vertices necessary */
-			intriangle = 1;
-		}
-		else if (intriangle && idx >= 2)
-		{
-			/* collected three vertices */
-			a = 0; b = 1; c = 2;
-			intriangle = 0;
-		}
-		else if (!intriangle && flag[idx] == 1)
-		{
-			/* re-use previous b c vertices */
-			a = 1; b = 2; c = 3;
-			intriangle = 0;
-
-			if (idx < 3)
-				badtriangle = 1;
-		}
-		else if (!intriangle && flag[idx] == 2)
-		{
-			/* re-use previous a c vertices */
-			a = 0; b = 2; c = 3;
-			intriangle = 0;
-
-			if (idx < 3)
-				badtriangle = 1;
-		}
-
-		if (intriangle || badtriangle)
-		{
-			idx++;
-			badtriangle = 0;
-		}
-		else
-		{
-			pdf_addtriangle(shade,
-					x[a], y[a], cval[a],
-					x[b], y[b], cval[b],
-					x[c], y[c], cval[c]);
-
-			flag[0] = flag[a];
-			flag[1] = flag[b];
-			flag[2] = flag[c];
-
-			x[0] = x[a];
-			x[1] = x[b];
-			x[2] = x[c];
-
-			y[0] = y[a];
-			y[1] = y[b];
-			y[2] = y[c];
-
-			memmove(cval[0], cval[a], sizeof cval[0]);
-			memmove(cval[1], cval[b], sizeof cval[1]);
-			memmove(cval[2], cval[c], sizeof cval[2]);
-
-			idx = 3;
+		case 0: /* start new triangle */
+			va = vd;
+			GETVERT(vb);
+			GETVERT(vc);
+			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			break;
+		case 1: /* Vb, Vc, Vd */
+			va = vb;
+			vb = vc;
+			vc = vd;
+			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			break;
+		case 2: /* Va, Vc, Vd */
+			vb = vc;
+			vc = vd;
+			pdf_addtriangle(shade, va.x, va.y, va.c, vb.x, vb.y, vb.c, vc.x, vc.y, vc.c);
+			break;
 		}
 	}
 
