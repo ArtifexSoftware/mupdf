@@ -26,7 +26,7 @@ pdf_addvertex(fz_shade *shade, float x, float y, float *color)
 {
 	int ncomp = shade->usefunction ? 1 : shade->cs->n;
 	int i;
-	pdf_growmesh(shade,  2 + ncomp);
+	pdf_growmesh(shade, 2 + ncomp);
 	shade->mesh[shade->meshlen++] = x;
 	shade->mesh[shade->meshlen++] = y;
 	for (i = 0; i < ncomp; i++)

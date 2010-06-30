@@ -279,6 +279,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 
 	if (drawpage)
 	{
+		fz_colorspace *colorspace;
+
 		wincursor(app, WAIT);
 
 		ctm = pdfapp_viewctm(app);
@@ -293,7 +295,15 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		/* Draw */
 		if (app->image)
 			fz_droppixmap(app->image);
-		app->image = fz_newpixmapwithrect((app->grayscale ? pdf_devicegray : pdf_devicergb), bbox);
+		if (app->grayscale)
+			colorspace = pdf_devicegray;
+		else
+#ifdef _WIN32
+			colorspace = pdf_devicebgr;
+#else
+			colorspace = pdf_devicergb;
+#endif
+		app->image = fz_newpixmapwithrect(colorspace, bbox);
 		fz_clearpixmap(app->image, 0xFF);
 		idev = fz_newdrawdevice(app->cache, app->image);
 		fz_executedisplaylist(app->page->list, idev, ctm);
