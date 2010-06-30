@@ -83,8 +83,8 @@ text_w4i1o4_32bit(byte * restrict rgba,
 {
 	unsigned int *dst32 = (unsigned int *)(void *)dst;
 	unsigned int alpha = rgba[3];
-	unsigned int rb = rgba[1] | (rgba[2] << 16);
-	unsigned int ga = rgba[2] | 0xFF0000;
+	unsigned int rb = rgba[0] | (rgba[2] << 16);
+	unsigned int ga = rgba[1] | 0xFF0000;
 
 	if (alpha == 0)
 		return;
