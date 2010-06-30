@@ -98,12 +98,6 @@ triangulatepatch(pdf_tensorpatch p, fz_shade *shade)
 }
 
 static inline void
-copycolor(float *c, float *s)
-{
-	memcpy(c, s, FZ_MAXCOLORS * sizeof(float));
-}
-
-static inline void
 midcolor(float *c, float *c1, float *c2)
 {
 	int i;
@@ -158,15 +152,15 @@ splitstripe(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 	splitcurve(&p->pole[0][3], &s0->pole[0][3], &s1->pole[0][3], 4);
 
 	/* bilinear interpolation to find color values of corners of the two new patches. */
-	copycolor(s0->color[0], p->color[0]);
-	copycolor(s0->color[1], p->color[1]);
+	memcpy(s0->color[0], p->color[0], sizeof(s0->color[0]));
+	memcpy(s0->color[1], p->color[1], sizeof(s0->color[1]));
 	midcolor(s0->color[2], p->color[1], p->color[2]);
 	midcolor(s0->color[3], p->color[0], p->color[3]);
 
-	copycolor(s1->color[0], s0->color[3]);
-	copycolor(s1->color[1], s0->color[2]);
-	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], p->color[3]);
+	memcpy(s1->color[0], s0->color[3], sizeof(s1->color[0]));
+	memcpy(s1->color[1], s0->color[2], sizeof(s1->color[1]));
+	memcpy(s1->color[2], p->color[2], sizeof(s1->color[2]));
+	memcpy(s1->color[3], p->color[3], sizeof(s1->color[3]));
 }
 
 static void
@@ -203,15 +197,15 @@ splitpatch(pdf_tensorpatch *p, pdf_tensorpatch *s0, pdf_tensorpatch *s1)
 	splitcurve(p->pole[3], s0->pole[3], s1->pole[3], 1);
 
 	/* bilinear interpolation to find color values of corners of the two new patches. */
-	copycolor(s0->color[0], p->color[0]);
+	memcpy(s0->color[0], p->color[0], sizeof(s0->color[0]));
 	midcolor(s0->color[1], p->color[0], p->color[1]);
 	midcolor(s0->color[2], p->color[2], p->color[3]);
-	copycolor(s0->color[3], p->color[3]);
+	memcpy(s0->color[3], p->color[3], sizeof(s0->color[3]));
 
-	copycolor(s1->color[0], s0->color[1]);
-	copycolor(s1->color[1], p->color[1]);
-	copycolor(s1->color[2], p->color[2]);
-	copycolor(s1->color[3], s0->color[2]);
+	memcpy(s1->color[0], s0->color[1], sizeof(s1->color[0]));
+	memcpy(s1->color[1], p->color[1], sizeof(s1->color[1]));
+	memcpy(s1->color[2], p->color[2], sizeof(s1->color[2]));
+	memcpy(s1->color[3], s0->color[2], sizeof(s1->color[3]));
 }
 
 static void
