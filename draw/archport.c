@@ -102,7 +102,7 @@ text_w4i1o4_32bit(byte * restrict rgba,
 			{
 				unsigned int ca, drb, dga, crb, cga;
 				ca = *src++;
-				dga = *dst32++;
+				drb = *dst32++;
 				ca += ca>>7;
 				ca = (ca*alpha)>>8;
 				if (ca == 0)
