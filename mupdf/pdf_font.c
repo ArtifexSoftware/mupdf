@@ -265,11 +265,10 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fontdesc = pdf_newfontdesc();
 
 	pdf_logfont("load simple font (%d %d R) ptr=%p {\n", fz_tonum(dict), fz_togen(dict), fontdesc);
-	pdf_logfont("basefont0 %s\n", basefont);
-	pdf_logfont("basefont1 %s\n", fontname);
+	pdf_logfont("basefont %s -> %s\n", basefont, fontname);
 
 	descriptor = fz_dictgets(dict, "FontDescriptor");
-	if (descriptor && basefont == fontname)
+	if (descriptor)
 		error = pdf_loadfontdescriptor(fontdesc, xref, descriptor, nil);
 	else
 		error = pdf_loadbuiltinfont(fontdesc, fontname);
@@ -854,12 +853,14 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 	fz_obj *obj1, *obj2, *obj3, *obj;
 	fz_rect bbox;
 	char *fontname;
+	char *origname;
 
 	pdf_logfont("load fontdescriptor {\n");
 
-	fontname = fz_toname(fz_dictgets(dict, "FontName"));
+	origname = fz_toname(fz_dictgets(dict, "FontName"));
+	fontname = cleanfontname(origname);
 
-	pdf_logfont("fontname '%s'\n", fontname);
+	pdf_logfont("fontname %s -> %s\n", origname, fontname);
 
 	fontdesc->flags = fz_toint(fz_dictgets(dict, "Flags"));
 	fontdesc->italicangle = fz_toreal(fz_dictgets(dict, "ItalicAngle"));
@@ -888,14 +889,20 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 		if (error)
 		{
 			fz_catch(error, "ignored error when loading embedded font, attempting to load system font");
-			error = pdf_loadsystemfont(fontdesc, fontname, collection);
+			if (origname != fontname)
+				error = pdf_loadbuiltinfont(fontdesc, fontname);
+			else
+				error = pdf_loadsystemfont(fontdesc, fontname, collection);
 			if (error)
 				return fz_rethrow(error, "cannot load font descriptor (%d %d R)", fz_tonum(dict), fz_togen(dict));
 		}
 	}
 	else
 	{
-		error = pdf_loadsystemfont(fontdesc, fontname, collection);
+		if (origname != fontname)
+			error = pdf_loadbuiltinfont(fontdesc, fontname);
+		else
+			error = pdf_loadsystemfont(fontdesc, fontname, collection);
 		if (error)
 			return fz_rethrow(error, "cannot load font descriptor (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
