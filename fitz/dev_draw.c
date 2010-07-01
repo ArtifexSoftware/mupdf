@@ -63,9 +63,9 @@ blendmaskover(fz_pixmap *src, fz_pixmap *msk, fz_pixmap *dst)
 		fz_duff_2i1o2(sp, src->w * 2, mp, msk->w, dp, dst->w * 2, w, h);
 	else if (src->n == 4 && msk->n == 1 && dst->n == 4)
 		fz_duff_4i1o4(sp, src->w * 4, mp, msk->w, dp, dst->w * 4, w, h);
-	else if (src->n == dst->n)
-		fz_duff_nimon(sp, src->w * src->n, src->n,
-			mp, msk->w * msk->n, msk->n,
+	else if (src->n == dst->n && msk->n == 1 )
+		fz_duff_ni1on(sp, src->w * src->n, src->n,
+			mp, msk->w * msk->n,
 			dp, dst->w * dst->n, w, h);
 	else
 		assert(!"blendmaskover src and msk and dst mismatch");
