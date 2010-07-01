@@ -301,7 +301,6 @@ path_w4i1o4(byte * restrict rgba, byte * restrict src, byte cov, int len, byte *
 	byte g = rgba[1];
 	byte b = rgba[2];
 	int a = FZ_EXPAND(rgba[3]);
-
 	while (len--)
 	{
 		int ca;
