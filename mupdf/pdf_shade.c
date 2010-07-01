@@ -773,6 +773,8 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	pdf_logshade("load type4 (free-form triangle mesh) shading\n");
 
+	pdf_loadmeshparams(xref, dict, &p);
+
 	if (funcs > 0)
 	{
 		ncomp = 1;
@@ -782,8 +784,6 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	}
 	else
 		ncomp = shade->cs->n;
-
-	pdf_loadmeshparams(xref, dict, &p);
 
 	while (fz_peekbyte(stream) != EOF)
 	{
@@ -844,6 +844,8 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	pdf_logshade("load type5 (lattice-form triangle mesh) shading\n");
 
+	pdf_loadmeshparams(xref, dict, &p);
+
 	if (funcs > 0)
 	{
 		ncomp = 1;
@@ -853,8 +855,6 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	}
 	else
 		ncomp = shade->cs->n;
-
-	pdf_loadmeshparams(xref, dict, &p);
 
 	ref = fz_malloc(p.vprow * sizeof(struct vertex));
 	buf = fz_malloc(p.vprow * sizeof(struct vertex));
@@ -903,6 +903,8 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	pdf_logshade("load type6 (coons patch mesh) shading\n");
 
+	pdf_loadmeshparams(xref, dict, &p);
+
 	if (funcs > 0)
 	{
 		ncomp = 1;
@@ -912,8 +914,6 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	}
 	else
 		ncomp = shade->cs->n;
-
-	pdf_loadmeshparams(xref, dict, &p);
 
 	hasprevpatch = 0;
 
@@ -1028,6 +1028,8 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	pdf_logshade("load type7 (tensor-product patch mesh) shading\n");
 
+	pdf_loadmeshparams(xref, dict, &p);
+
 	if (funcs > 0)
 	{
 		ncomp = 1;
@@ -1037,8 +1039,6 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	}
 	else
 		ncomp = shade->cs->n;
-
-	pdf_loadmeshparams(xref, dict, &p);
 
 	hasprevpatch = 0;
 
