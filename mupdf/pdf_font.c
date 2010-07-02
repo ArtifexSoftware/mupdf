@@ -720,7 +720,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	if (widths)
 	{
 		int c0, c1, w;
-		fz_obj *obj;
 
 		for (i = 0; i < fz_arraylen(widths); )
 		{
@@ -753,7 +752,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 
 	if (pdf_getwmode(fontdesc->encoding) == 1)
 	{
-		fz_obj *obj;
 		int dw2y = 880;
 		int dw2w = -1000;
 
@@ -769,7 +767,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 		widths = fz_dictgets(dict, "W2");
 		if (widths)
 		{
-			int c0, c1, w, x, y, k;
+			int c0, c1, w, x, y;
 
 			for (i = 0; i < fz_arraylen(widths); )
 			{
