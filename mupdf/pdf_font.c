@@ -107,7 +107,8 @@ static inline int ftcidtogid(pdf_fontdesc *fontdesc, int cid)
 	return cid;
 }
 
-int pdf_fontcidtogid(pdf_fontdesc *fontdesc, int cid)
+int
+pdf_fontcidtogid(pdf_fontdesc *fontdesc, int cid)
 {
 	if (fontdesc->font->ftface)
 		return ftcidtogid(fontdesc, cid);
@@ -233,7 +234,7 @@ pdf_newfontdesc(void)
  * Simple fonts (Type1 and TrueType)
  */
 
-	static fz_error
+static fz_error
 loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
@@ -535,7 +536,7 @@ cleanup:
  * CID Fonts
  */
 
-	static fz_error
+static fz_error
 loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *tounicode)
 {
 	fz_error error;
@@ -810,7 +811,7 @@ cleanup:
 	return fz_rethrow(error, "cannot load cid font (%d %d R)", fz_tonum(dict), fz_togen(dict));
 }
 
-	static fz_error
+static fz_error
 loadtype0(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
@@ -994,7 +995,8 @@ pdf_loadfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict
 	if (error)
 		return fz_rethrow(error, "cannot load font (%d %d R)", fz_tonum(dict), fz_togen(dict));
 
-	if ((*fontdescp)->font->ftsubstitute)
+	/* Save the widths to stretch non-CJK substitute fonts */
+	if ((*fontdescp)->font->ftsubstitute && !(*fontdescp)->tottfcmap)
 		pdf_makewidthtable(*fontdescp);
 
 	pdf_storeitem(xref->store, PDF_KFONT, dict, *fontdescp);
