@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="jpeg"
+	Name="libjpeg"
 	ProjectGUID="{A738D37E-F4E2-4ACC-A086-14149E3B6639}"
 	RootNamespace="jpeg"
 	Keyword="Win32Proj"

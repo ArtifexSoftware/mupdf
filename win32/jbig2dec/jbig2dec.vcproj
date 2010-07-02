@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="jbig2dec"
+	Name="libjbig2dec"
 	ProjectGUID="{46F9218B-7A3F-481F-B971-E93547C2643B}"
-	RootNamespace="jbig2dec"
+	RootNamespace="libjbig2dec"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
