@@ -518,8 +518,8 @@ calcimagestate(fz_drawdevice *dev, fz_pixmap *image, fz_matrix ctm,
 	else
 		*dy = sy;
 
-	w = image->w / *dx;
-	h = image->h / *dy;
+	w = (image->w + *dx - 1) / *dx;
+	h = (image->h + *dy - 1) / *dy;
 
 	path = fz_newpath();
 	fz_moveto(path, 0, 0);
