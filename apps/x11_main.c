@@ -590,7 +590,6 @@ int main(int argc, char **argv)
 	if (argc - fz_optind == 1)
 		pageno = atoi(argv[fz_optind++]);
 
-	fz_cpudetect();
 	fz_accelerate();
 
 	winopen();

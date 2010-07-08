@@ -2,6 +2,12 @@
 
 #include <string.h>
 
+int fz_isbigendian(void)
+{
+	static const int one = 1;
+	return *(char*)&one == 0;
+}
+
 char *fz_strsep(char **stringp, const char *delim)
 {
 	char *ret = *stringp;

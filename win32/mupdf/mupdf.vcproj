@@ -289,10 +289,6 @@
 			Name="fitz"
 			>
 			<File
-				RelativePath="..\..\fitz\base_cpudep.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\fitz\base_error.c"
 				>
 			</File>
@@ -502,10 +498,6 @@
 			>
 			<File
 				RelativePath="..\..\draw\archport.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\draw\archx86.c"
 				>
 			</File>
 			<File

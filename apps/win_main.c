@@ -773,7 +773,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	int fd;
 	int code;
 
-	fz_cpudetect();
 	fz_accelerate();
 
 	pdfapp_init(&gapp);

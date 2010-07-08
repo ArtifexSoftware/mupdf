@@ -466,7 +466,6 @@ int main(int argc, char **argv)
 	int c;
 	enum { NO_FILE_OPENED, NO_PAGES_DRAWN, DREW_PAGES } state;
 
-	fz_cpudetect();
 	fz_accelerate();
 
 	while ((c = fz_getopt(argc, argv, "b:p:o:r:gtxms")) != -1)

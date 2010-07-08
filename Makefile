@@ -74,7 +74,6 @@ $(CMAPDUMP_EXE): $(OBJDIR)/cmapdump.o
 
 FITZ_HDR := fitz/fitz.h fitz/fitz_base.h fitz/fitz_draw.h fitz/fitz_stream.h
 FITZ_SRC := $(addprefix fitz/, \
-	base_cpudep.c \
 	base_error.c base_memory.c base_string.c base_unicode.c \
 	base_hash.c base_matrix.c base_rect.c \
 	crypt_aes.c crypt_arc4.c crypt_md5.c \
