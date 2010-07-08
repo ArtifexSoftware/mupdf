@@ -396,9 +396,9 @@ static void drawpages(char *pagelist)
 	if (benchmark)
 	{
 		memset(&loadtimes, 0x00, sizeof (loadtimes));
-		loadtimes.min = LONG_MAX;
+		loadtimes.min = 1<<31;
 		memset(&drawtimes, 0x00, sizeof (drawtimes));
-		drawtimes.min = LONG_MAX;
+		drawtimes.min = 1<<31;
 	}
 
 	spec = fz_strsep(&pagelist, ",");

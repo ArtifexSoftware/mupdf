@@ -1,28 +1,50 @@
-/*
- * Include the basic standard libc headers.
- */
-
 #ifndef _FITZ_BASE_H_
 #define _FITZ_BASE_H_
+
+/*
+ * Include the standard libc headers.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <string.h>
-#include <assert.h>
 #include <stdarg.h>
-
-#include <limits.h>	/* INT_MIN, MAX ... */
-#include <float.h>	/* DBL_EPSILON */
+#include <string.h>
 #include <math.h>
 
+#include <assert.h>
 #include <errno.h>
+#include <float.h>	/* FLT_EPSILON */
 #include <fcntl.h>	/* O_RDONLY & co */
 
-/* Stupid macros that don't exist everywhere */
+#define nil ((void*)0)
 
-#ifndef O_BINARY
+#define nelem(x) (sizeof(x)/sizeof((x)[0]))
+
+/*
+ * Some differences in libc can be smoothed over
+ */
+
+#ifdef _MSC_VER /* Microsoft Visual C */
+
+#pragma warning( disable: 4244 ) /* conversion from X to Y, possible loss of data */
+#pragma warning( disable: 4996 ) /* The POSIX name for this item is deprecated */
+#pragma warning( disable: 4996 ) /* This function or variable may be unsafe */
+
+#include <io.h>
+
+int gettimeofday(struct timeval *tv, struct timezone *tz);
+
+#define snprintf _snprintf
+#define hypotf _hypotf
+#define strtoll _strtoi64
+
+#else /* Unix or close enough */
+
+#include <unistd.h>
+
 #define O_BINARY 0
+
 #endif
 
 #ifndef M_PI
@@ -33,46 +55,44 @@
 #define M_SQRT2 1.41421356237309504880
 #endif
 
-#ifdef _MSC_VER /* stupid stone-age compiler */
+/*
+ * Variadic macros, inline and restrict keywords
+ */
 
-#pragma warning( disable: 4244 ) /* conversion from X to Y, possible loss of data */
-#pragma warning( disable: 4996 ) /* The POSIX name for this item is deprecated */
-#pragma warning( disable: 4996 ) /* This function or variable may be unsafe */
+#if __STDC_VERSION__ == 199901L /* C99 */
 
-#include <io.h>
+#define fz_throw(...) fz_throwimp(__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define fz_rethrow(cause, ...) fz_rethrowimp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
+#define fz_catch(cause, ...) fz_catchimp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
 
-extern int gettimeofday(struct timeval *tv, struct timezone *tz);
+#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 
 #define inline __inline
-
-#define __func__ __FUNCTION__
-
-#define snprintf _snprintf
-#define hypotf _hypotf
-#define strtoll _strtoi64
-
-#if _MSC_VER < 1500
-#define vsnprintf _vsnprintf
-#endif
-
-#else /* unix or close enough */
-
-#include <unistd.h>
-
-#endif
-
-#ifndef _C99
-#ifdef __GNUC__
 #define restrict __restrict
-#else
+#define fz_throw(...) fz_throwimp(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+#define fz_rethrow(cause, ...) fz_rethrowimp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
+#define fz_catch(cause, ...) fz_catchimp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
+
+#elif __GNUC__ >= 3 /* GCC 3 or newer */
+
+#define inline __inline
+#define restrict __restrict
+#define fz_throw(fmt...) fz_throwimp(__FILE__, __LINE__, __FUNCTION__, fmt)
+#define fz_rethrow(cause, fmt...) fz_rethrowimp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
+#define fz_catch(cause, fmt...) fz_catchimp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
+
+#else /* Unknown or ancient */
+
+#define inline
 #define restrict
-#endif
-#endif
+#define fz_throw fz_throwimpx
+#define fz_rethrow fz_rethrowimpx
+#define fz_catch fz_catchimpx
 
 #endif
 
 /*
- * Base Fitz runtime.
+ * GCC can do type checking of printf strings
  */
 
 #ifndef __printflike
@@ -84,51 +104,32 @@ extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 #endif
 
-#ifndef nil
-#define nil ((void*)0)
-#endif
+/*
+ * Error handling
+ */
 
-#ifndef offsetof
-#define offsetof(s, m) (unsigned long)(&(((s*)0)->m))
-#endif
+typedef int fz_error;
 
-#ifndef nelem
-#define nelem(x) (sizeof(x)/sizeof((x)[0]))
-#endif
+void fz_warn(char *fmt, ...) __printflike(1, 2);
 
-#ifndef ABS
+fz_error fz_throwimp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
+fz_error fz_rethrowimp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
+void fz_catchimp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
+
+fz_error fz_throwimpx(char *fmt, ...) __printflike(1, 2);
+fz_error fz_rethrowimpx(fz_error cause, char *fmt, ...) __printflike(2, 3);
+void fz_catchimpx(fz_error cause, char *fmt, ...) __printflike(2, 3);
+
+#define fz_okay ((fz_error)0)
+
+/*
+ * Basic runtime and utility functions
+ */
+
 #define ABS(x) ( (x) < 0 ? -(x) : (x) )
-#endif
-
-#ifndef MAX
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#endif
-
-#ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#endif
-
-#ifndef CLAMP
+#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
-#endif
-
-/* runtime (hah!) test for endian-ness */
-int fz_isbigendian(void);
-
-/* utf-8 encoding and decoding */
-int chartorune(int *rune, char *str);
-int runetochar(char *str, int *rune);
-int runelen(int c);
-
-/* useful string functions */
-extern char *fz_strsep(char **stringp, const char *delim);
-extern int fz_strlcpy(char *dst, const char *src, int n);
-extern int fz_strlcat(char *dst, const char *src, int n);
-
-/* getopt */
-extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
-extern int fz_optind;
-extern char *fz_optarg;
 
 /* memory allocation */
 void *fz_malloc(int n);
@@ -136,23 +137,23 @@ void *fz_realloc(void *p, int n);
 void fz_free(void *p);
 char *fz_strdup(char *s);
 
-/*
- * Error handling.
- */
+/* runtime (hah!) test for endian-ness */
+int fz_isbigendian(void);
 
-typedef int fz_error;
+/* safe string functions */
+char *fz_strsep(char **stringp, const char *delim);
+int fz_strlcpy(char *dst, const char *src, int n);
+int fz_strlcat(char *dst, const char *src, int n);
 
-extern char fz_errorbuf[];
+/* utf-8 encoding and decoding */
+int chartorune(int *rune, char *str);
+int runetochar(char *str, int *rune);
+int runelen(int c);
 
-void fz_warn(char *fmt, ...) __printflike(1,2);
-fz_error fz_throwimp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
-fz_error fz_rethrowimp(fz_error cause, const char *file, int line, const char *func, char *fmt, ...) __printflike(5, 6);
-fz_error fz_catchimp(fz_error cause, const char *file, int line, const char *func, char *fmt, ...) __printflike(5, 6);
-
-#define fz_throw(...) fz_throwimp(__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_rethrow(cause, ...) fz_rethrowimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_catch(cause, ...) fz_catchimp(cause, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_okay ((fz_error)0)
+/* getopt */
+extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
+extern int fz_optind;
+extern char *fz_optarg;
 
 /*
  * Generic hash-table with fixed-length keys.
