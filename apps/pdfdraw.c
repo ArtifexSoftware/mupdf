@@ -168,7 +168,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 	if (benchmark)
 		gettime(&start);
 
-	ctm = fz_identity();
+	ctm = fz_identity;
 	ctm = fz_concat(ctm, fz_translate(0, -drawpage->mediabox.y1));
 	ctm = fz_concat(ctm, fz_scale(drawzoom, -drawzoom));
 	ctm = fz_concat(ctm, fz_rotate(drawrotate + drawpage->rotate));
@@ -212,7 +212,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		fprintf(stdout, "creating display list for banded rendering\n");
 		list = fz_newdisplaylist();
 		dev = fz_newlistdevice(list);
-		error = pdf_runcontentstream(dev, fz_identity(), xref, drawpage->resources, drawpage->contents);
+		error = pdf_runcontentstream(dev, fz_identity, xref, drawpage->resources, drawpage->contents);
 		if (error)
 			die(fz_rethrow(error, "cannot draw page %d in PDF file '%s'", pagenum, basename));
 		fz_freedevice(dev);
@@ -337,7 +337,7 @@ static void drawtxt(int pagenum, struct benchmark *loadtimes)
 
 	drawloadpage(pagenum, loadtimes);
 
-	ctm = fz_identity();
+	ctm = fz_identity;
 
 	text = fz_newtextspan();
 	dev = fz_newtextdevice(text);
@@ -369,7 +369,7 @@ static void drawxml(int pagenum)
 	if (error)
 		die(fz_rethrow(error, "cannot load page %d (%d %d R) from PDF file '%s'", pagenum, fz_tonum(pageobj), fz_togen(pageobj), basename));
 
-	ctm = fz_identity();
+	ctm = fz_identity;
 
 	dev = fz_newtracedevice();
 	printf("<?xml version=\"1.0\"?>\n");
