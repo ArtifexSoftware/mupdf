@@ -299,9 +299,9 @@ typedef struct fz_aes_s fz_aes;
 
 struct fz_aes_s
 {
-	int nr;                     /* number of rounds */
-	unsigned long *rk;          /* AES round keys */
-	unsigned long buf[68];      /* unaligned data */
+	int nr; /* number of rounds */
+	unsigned long *rk; /* AES round keys */
+	unsigned long buf[68]; /* unaligned data */
 };
 
 void aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
@@ -442,10 +442,10 @@ char *fz_objkindstr(fz_obj *obj);
 /*
  * Data buffers for streams and filters.
  *
- *   bp is the pointer to the allocated memory
- *   rp is read-position (*in->rp++ to read data)
- *   wp is write-position (*out->wp++ to write data)
- *   ep is the sentinel
+ *	bp is the pointer to the allocated memory
+ *	rp is read-position (*in->rp++ to read data)
+ *	wp is write-position (*out->wp++ to write data)
+ *	ep is the sentinel
  *
  * Only the data between rp and wp is valid data.
  *
@@ -486,17 +486,17 @@ void fz_dropbuffer(fz_buffer *buf);
  * A filter has one method, process, that takes an input and an output buffer.
  *
  * It returns one of three statuses:
- *    ioneedin -- input buffer exhausted, please give me more data (wp-rp)
- *    ioneedout -- output buffer exhausted, please provide more space (ep-wp)
- *    iodone -- finished, please never call me again. ever!
+ *	ioneedin -- input buffer exhausted, please give me more data (wp-rp)
+ *	ioneedout -- output buffer exhausted, please provide more space (ep-wp)
+ *	iodone -- finished, please never call me again. ever!
  * or...
- *    any other error code -- oops, something blew up.
+ *	any other error code -- oops, something blew up.
  *
  * To make using the filter easier, three variables are updated:
- *    produced -- if we actually produced any new data
- *    consumed -- like above
- *    count -- number of bytes produced in total since the beginning
- *    done -- remember if we've ever returned fz_iodone
+ *	produced -- if we actually produced any new data
+ *	consumed -- like above
+ *	count -- number of bytes produced in total since the beginning
+ *	done -- remember if we've ever returned fz_iodone
  *
  * Most filters take fz_obj as a way to specify parameters.
  * In most cases, this is a dictionary that contains the same keys
@@ -522,9 +522,9 @@ typedef struct fz_filter_s fz_filter;
 	TYPE *VAR; \
 	VAR = fz_malloc(sizeof(TYPE));	 \
 	((fz_filter*)VAR)->refs = 1; \
-	((fz_filter*)VAR)->process = fz_process ## NAME ;  \
-	((fz_filter*)VAR)->drop = fz_drop ## NAME ;  \
-	((fz_filter*)VAR)->consumed = 0;  \
+	((fz_filter*)VAR)->process = fz_process ## NAME ; \
+	((fz_filter*)VAR)->drop = fz_drop ## NAME ; \
+	((fz_filter*)VAR)->consumed = 0; \
 	((fz_filter*)VAR)->produced = 0; \
 	((fz_filter*)VAR)->count = 0; \
 	((fz_filter*)VAR)->done = 0;
@@ -940,7 +940,7 @@ struct fz_edge_s
 	int x, e, h, y;
 	int adjup, adjdown;
 	int xmove;
-	int xdir, ydir;     /* -1 or +1 */
+	int xdir, ydir; /* -1 or +1 */
 };
 
 struct fz_gel_s
@@ -1117,43 +1117,43 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
 extern void fz_accelerate(void);
 extern void fz_acceleratearch(void);
 
-extern void (*fz_duff_ni1on)(unsigned char*,int,int,unsigned char*,int,unsigned char*,int,int,int);
-extern void (*fz_duff_1i1o1)(unsigned char*,int,unsigned char*,int,unsigned char*,int,int,int);
-extern void (*fz_duff_2i1o2)(unsigned char*,int,unsigned char*,int,unsigned char*,int,int,int);
-extern void (*fz_duff_4i1o4)(unsigned char*,int,unsigned char*,int,unsigned char*,int,int,int);
+extern void (*fz_duff_ni1on)(unsigned char*restrict,int,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
+extern void (*fz_duff_1i1o1)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
+extern void (*fz_duff_2i1o2)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
+extern void (*fz_duff_4i1o4)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 
-extern void (*fz_path_1o1)(unsigned char*,unsigned char,int,unsigned char*);
-extern void (*fz_path_w2i1o2)(unsigned char*,unsigned char*,unsigned char,int,unsigned char*);
-extern void (*fz_path_w4i1o4)(unsigned char*,unsigned char*,unsigned char,int,unsigned char*);
+extern void (*fz_path_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict);
+extern void (*fz_path_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
+extern void (*fz_path_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
 
-extern void (*fz_text_1o1)(unsigned char*,int,unsigned char*,int,int,int);
-extern void (*fz_text_w2i1o2)(unsigned char*,unsigned char*,int,unsigned char*,int,int,int);
-extern void (*fz_text_w4i1o4)(unsigned char*,unsigned char*,int,unsigned char*,int,int,int);
+extern void (*fz_text_1o1)(unsigned char*restrict,int,unsigned char*restrict,int,int,int);
+extern void (*fz_text_w2i1o2)(unsigned char*,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
+extern void (*fz_text_w4i1o4)(unsigned char*,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 
-extern void (*fz_img_non)(unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,fz_matrix*);
-extern void (*fz_img_1o1)(unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_4o4)(unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_2o2)(unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_w2i1o2)(unsigned char*,unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_w4i1o4)(unsigned char*,unsigned char*,unsigned char,int,unsigned char*,fz_pixmap*,int u, int v, int fa, int fb);
+extern void (*fz_img_non)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,fz_matrix*);
+extern void (*fz_img_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
+extern void (*fz_img_4o4)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
+extern void (*fz_img_2o2)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
+extern void (*fz_img_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
+extern void (*fz_img_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
 
 extern void (*fz_decodetile)(fz_pixmap *pix, int skip, float *decode);
-extern void (*fz_loadtile1)(unsigned char*, int sw, unsigned char*, int dw, int w, int h, int pad);
-extern void (*fz_loadtile2)(unsigned char*, int sw, unsigned char*, int dw, int w, int h, int pad);
-extern void (*fz_loadtile4)(unsigned char*, int sw, unsigned char*, int dw, int w, int h, int pad);
-extern void (*fz_loadtile8)(unsigned char*, int sw, unsigned char*, int dw, int w, int h, int pad);
-extern void (*fz_loadtile16)(unsigned char*, int sw, unsigned char*, int dw, int w, int h, int pad);
+extern void (*fz_loadtile1)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
+extern void (*fz_loadtile2)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
+extern void (*fz_loadtile4)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
+extern void (*fz_loadtile8)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
+extern void (*fz_loadtile16)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
 
-extern void (*fz_srown)(unsigned char *src, unsigned char *dst, int w, int denom, int n);
-extern void (*fz_srow1)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_srow2)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_srow4)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_srow5)(unsigned char *src, unsigned char *dst, int w, int denom);
+extern void (*fz_srown)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
+extern void (*fz_srow1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_srow2)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_srow4)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_srow5)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
 
-extern void (*fz_scoln)(unsigned char *src, unsigned char *dst, int w, int denom, int n);
-extern void (*fz_scol1)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_scol2)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_scol4)(unsigned char *src, unsigned char *dst, int w, int denom);
-extern void (*fz_scol5)(unsigned char *src, unsigned char *dst, int w, int denom);
+extern void (*fz_scoln)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
+extern void (*fz_scol1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_scol2)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_scol4)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
+extern void (*fz_scol5)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
 
 #endif
