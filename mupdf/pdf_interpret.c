@@ -45,8 +45,6 @@ pdf_keepmaterial(pdf_material *mat)
 {
 	if (mat->cs)
 		fz_keepcolorspace(mat->cs);
-	if (mat->indexed)
-		fz_keepcolorspace(&mat->indexed->super);
 	if (mat->pattern)
 		pdf_keeppattern(mat->pattern);
 	if (mat->shade)
@@ -59,8 +57,6 @@ pdf_dropmaterial(pdf_material *mat)
 {
 	if (mat->cs)
 		fz_dropcolorspace(mat->cs);
-	if (mat->indexed)
-		fz_dropcolorspace(&mat->indexed->super);
 	if (mat->pattern)
 		pdf_droppattern(mat->pattern);
 	if (mat->shade)
@@ -573,7 +569,7 @@ Lsetcolorspace:
 				if ((csi->dev->hints & FZ_IGNOREIMAGE) == 0)
 				{
 					pdf_image *img;
-					error = pdf_loadimage(&img, csi->xref, obj);
+					error = pdf_loadimage(&img, csi->xref, rdb, obj);
 					if (error)
 						return fz_rethrow(error, "cannot load image (%d %d R)", fz_tonum(obj), fz_togen(obj));
 					pdf_showimage(csi, img);
@@ -743,15 +739,7 @@ Lsetcolor:
 			case PDF_MNONE:
 				return fz_throw("cannot set color in mask objects");
 
-			case PDF_MINDEXED:
-				if (csi->top < 1)
-					goto syntaxerror;
-				v[0] = fz_toreal(csi->stack[0]);
-				pdf_setcolor(csi, what, v);
-				break;
-
 			case PDF_MCOLOR:
-			case PDF_MLAB:
 				if (csi->top < mat->cs->n)
 					goto syntaxerror;
 				for (i = 0; i < csi->top; i++)

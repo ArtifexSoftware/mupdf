@@ -474,6 +474,7 @@ struct fz_buffer_s
 fz_buffer * fz_newbuffer(int size);
 fz_buffer * fz_newbufferwithmemory(unsigned char *data, int size);
 
+void fz_resizebuffer(fz_buffer *buf, int size);
 void fz_rewindbuffer(fz_buffer *buf);
 void fz_growbuffer(fz_buffer *buf);
 
@@ -711,29 +712,24 @@ extern fz_colorspace *pdf_devicegray;
 extern fz_colorspace *pdf_devicergb;
 extern fz_colorspace *pdf_devicebgr;
 extern fz_colorspace *pdf_devicecmyk;
-extern fz_colorspace *pdf_devicelab;
-extern fz_colorspace *pdf_devicepattern;
 
 struct fz_colorspace_s
 {
 	int refs;
 	char name[16];
 	int n;
-	void (*convpixmap)(fz_colorspace *ss, fz_pixmap *sp, fz_colorspace *ds, fz_pixmap *dp);
-	void (*convcolor)(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv);
 	void (*toxyz)(fz_colorspace *, float *src, float *xyz);
 	void (*fromxyz)(fz_colorspace *, float *xyz, float *dst);
-	void (*freefunc)(fz_colorspace *);
+	void (*freedata)(fz_colorspace *);
+	void *data;
 };
 
+fz_colorspace *fz_newcolorspace(char *name, int n);
 fz_colorspace *fz_keepcolorspace(fz_colorspace *cs);
 void fz_dropcolorspace(fz_colorspace *cs);
 
 void fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convertpixmap(fz_colorspace *srcs, fz_pixmap *srcv, fz_colorspace *dsts, fz_pixmap *dstv);
-
-void fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
-void fz_stdconvpixmap(fz_colorspace *srcs, fz_pixmap *srcv, fz_colorspace *dsts, fz_pixmap *dstv);
 
 /*
  * Fonts come in two variants:

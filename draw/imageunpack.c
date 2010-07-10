@@ -6,7 +6,7 @@ typedef unsigned char byte;
  * Apply decode parameters
  */
 
-static void decodetile(fz_pixmap *pix, int skip, float *decode)
+static void decodetile(fz_pixmap *pix, int imagemask, float *decode)
 {
 	int min[FZ_MAXCOLORS];
 	int max[FZ_MAXCOLORS];
@@ -17,9 +17,8 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 	int wh = pix->w * pix->h;
 	int i;
 	int justinvert = 1;
-	unsigned int mask;
 
-	for (i = 0; i < n-skip; i++)
+	for (i = 0; i < n - imagemask; i++)
 	{
 		min[i] = decode[i * 2] * 255;
 		max[i] = decode[i * 2 + 1] * 255;
@@ -28,17 +27,12 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		justinvert &= min[i] == 255 && max[i] == 0 && sub[i] == -255;
 	}
 
-	if (skip)
+	if (imagemask)
 	{
 		min[i] = 0;
 		max[i] = 255;
 		sub[i] = 255;
 	}
-
-	if (fz_isbigendian())
-		mask = 0x00ff00ff;
-	else
-		mask = 0xff00ff00;
 
 	if (!needed)
 		return;
@@ -52,9 +46,10 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 		}
 		break;
 	case 2:
-		if (justinvert) {
+		if (justinvert)
+		{
+			unsigned mask = fz_isbigendian() ? 0x00ff00ff : 0xff00ff00;
 			unsigned *wp = (unsigned *)p;
-
 			if ((((char *)wp - (char *)0) & 3) == 0) {
 				int hwh = wh / 2;
 				wh = wh - 2 * hwh;
@@ -72,11 +67,13 @@ static void decodetile(fz_pixmap *pix, int skip, float *decode)
 			}
 		}
 		else
-			while (wh--)
 		{
-			p[0] = min[0] + fz_mul255(sub[0], p[0]);
-			p[1] = min[1] + fz_mul255(sub[1], p[1]);
-			p += 2;
+			while (wh--)
+			{
+				p[0] = min[0] + fz_mul255(sub[0], p[0]);
+				p[1] = min[1] + fz_mul255(sub[1], p[1]);
+				p += 2;
+			}
 		}
 		break;
 	default:

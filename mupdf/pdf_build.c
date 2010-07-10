@@ -18,7 +18,6 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->stroke.kind = PDF_MCOLOR;
 	gs->stroke.cs = fz_keepcolorspace(pdf_devicegray);
 	gs->stroke.v[0] = 0;
-	gs->stroke.indexed = nil;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
 	gs->stroke.parentalpha = 1;
@@ -27,7 +26,6 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->fill.kind = PDF_MCOLOR;
 	gs->fill.cs = fz_keepcolorspace(pdf_devicegray);
 	gs->fill.v[0] = 0;
-	gs->fill.indexed = nil;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;
 	gs->fill.parentalpha = 1;
@@ -60,29 +58,18 @@ pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 	mat->kind = PDF_MCOLOR;
 	mat->cs = fz_keepcolorspace(cs);
 
-	mat->v[0] = 0;	/* FIXME: default color */
-	mat->v[1] = 0;	/* FIXME: default color */
-	mat->v[2] = 0;	/* FIXME: default color */
-	mat->v[3] = 1;	/* FIXME: default color */
-
-	if (!strcmp(cs->name, "Indexed"))
-	{
-		mat->kind = PDF_MINDEXED;
-		mat->indexed = (pdf_indexed*)cs;
-		mat->cs = mat->indexed->base;
-	}
-
-	if (!strcmp(cs->name, "Lab"))
-		mat->kind = PDF_MLAB;
+	mat->v[0] = 0;
+	mat->v[1] = 0;
+	mat->v[2] = 0;
+	mat->v[3] = 1;
 }
 
 void
 pdf_setcolor(pdf_csi *csi, int what, float *v)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
-	pdf_indexed *ind;
 	pdf_material *mat;
-	int i, k;
+	int i;
 
 	pdf_flushtext(csi);
 
@@ -91,32 +78,16 @@ pdf_setcolor(pdf_csi *csi, int what, float *v)
 	switch (mat->kind)
 	{
 	case PDF_MPATTERN:
-		if (!strcmp(mat->cs->name, "Lab"))
-			goto Llab;
-		if (!strcmp(mat->cs->name, "Indexed"))
-			goto Lindexed;
-		/* fall through */
-
 	case PDF_MCOLOR:
+		if (!strcmp(mat->cs->name, "Lab"))
+		{
+			mat->v[0] = v[0] / 100;
+			mat->v[1] = (v[1] + 100) / 200;
+			mat->v[2] = (v[2] + 100) / 200;
+		}
 		for (i = 0; i < mat->cs->n; i++)
 			mat->v[i] = v[i];
 		break;
-
-	case PDF_MLAB:
-Llab:
-		mat->v[0] = v[0] / 100;
-		mat->v[1] = (v[1] + 100) / 200;
-		mat->v[2] = (v[2] + 100) / 200;
-		break;
-
-	case PDF_MINDEXED:
-Lindexed:
-		ind = mat->indexed;
-		i = CLAMP(v[0], 0, ind->high);
-		for (k = 0; k < ind->base->n; k++)
-			mat->v[k] = ind->lookup[ind->base->n * i + k] / 255.0f;
-		break;
-
 	default:
 		fz_warn("color incompatible with material");
 	}
@@ -133,12 +104,7 @@ pdf_unsetpattern(pdf_csi *csi, int what)
 		if (mat->pattern)
 			pdf_droppattern(mat->pattern);
 		mat->pattern = nil;
-		if (!strcmp(mat->cs->name, "Lab"))
-			mat->kind = PDF_MLAB;
-		else if (!strcmp(mat->cs->name, "Indexed"))
-			mat->kind = PDF_MINDEXED;
-		else
-			mat->kind = PDF_MCOLOR;
+		mat->kind = PDF_MCOLOR;
 	}
 }
 
@@ -265,7 +231,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 	fz_pixmap *tile;
 	fz_error error;
 
-	tile = fz_newpixmap(image->cs, 0, 0, image->w, image->h);
+	tile = fz_newpixmap(image->colorspace, 0, 0, image->w, image->h);
 	error = pdf_loadtile(image, tile);
 	if (error)
 	{
@@ -284,7 +250,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 		fz_droppixmap(mask);
 	}
 
-	if (image->n == 0 && image->a == 1)
+	if (image->imagemask)
 	{
 		fz_rect bbox;
 
@@ -293,8 +259,6 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 		case PDF_MNONE:
 			break;
 		case PDF_MCOLOR:
-		case PDF_MINDEXED:
-		case PDF_MLAB:
 			csi->dev->fillimagemask(csi->dev->user, tile, gstate->ctm,
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
@@ -353,8 +317,6 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		case PDF_MNONE:
 			break;
 		case PDF_MCOLOR:
-		case PDF_MINDEXED:
-		case PDF_MLAB:
 			csi->dev->fillpath(csi->dev->user, path, evenodd, gstate->ctm,
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
@@ -379,8 +341,6 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		case PDF_MNONE:
 			break;
 		case PDF_MCOLOR:
-		case PDF_MINDEXED:
-		case PDF_MLAB:
 			csi->dev->strokepath(csi->dev->user, path, &gstate->strokestate, gstate->ctm,
 				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 			break;
@@ -471,8 +431,6 @@ pdf_flushtext(pdf_csi *csi)
 		case PDF_MNONE:
 			break;
 		case PDF_MCOLOR:
-		case PDF_MINDEXED:
-		case PDF_MLAB:
 			csi->dev->filltext(csi->dev->user, text, gstate->ctm,
 				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
 			break;
@@ -497,8 +455,6 @@ pdf_flushtext(pdf_csi *csi)
 		case PDF_MNONE:
 			break;
 		case PDF_MCOLOR:
-		case PDF_MINDEXED:
-		case PDF_MLAB:
 			csi->dev->stroketext(csi->dev->user, text, &gstate->strokestate, gstate->ctm,
 				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
 			break;
