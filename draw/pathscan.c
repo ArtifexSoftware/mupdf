@@ -528,11 +528,11 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 	int skipx = clip.x0 - xmin;
 	int clipn = clip.x1 - clip.x0;
 
-	assert(clip.x0 >= xmin);
-	assert(clip.x1 <= xmax);
-
 	if (gel->len == 0)
 		return fz_okay;
+
+	assert(clip.x0 >= xmin);
+	assert(clip.x1 <= xmax);
 
 	deltas = fz_malloc(xmax - xmin + 1);
 	memset(deltas, 0, xmax - xmin + 1);
