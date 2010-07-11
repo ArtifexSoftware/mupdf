@@ -1112,8 +1112,8 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
 extern void fz_accelerate(void);
 extern void fz_acceleratearch(void);
 
-extern void fz_decodetile(fz_pixmap *pix, float *decode, int scale);
-extern void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride);
+extern void fz_decodetile(fz_pixmap *pix, float *decode);
+extern void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
 
 extern void (*fz_duff_ni1on)(unsigned char*restrict,int,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 extern void (*fz_duff_1i1o1)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);

@@ -249,7 +249,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 }
 
 static void
-pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey)
+pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey, int scale)
 {
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
@@ -258,7 +258,7 @@ pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey)
 	{
 		t = 1;
 		for (k = 0; k < n; k++)
-			if (p[k] < colorkey[k * 2] || p[k] > colorkey[k * 2 + 1])
+			if (p[k] < colorkey[k * 2] * scale || p[k] > colorkey[k * 2 + 1] * scale)
 				t = 0;
 		if (t)
 			for (k = 0; k < pix->n; k++)
@@ -283,15 +283,10 @@ pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 	case 4: scale = 17; break;
 	}
 
-	fz_unpacktile(tile, img->samples->bp, img->n, img->bpc, img->stride);
+	fz_unpacktile(tile, img->samples->bp, img->n, img->bpc, img->stride, scale);
 
 	if (img->usecolorkey)
-		pdf_maskcolorkey(tile, img->n, img->colorkey);
-
-	if (!img->indexed)
-	{
-		fz_decodetile(tile, img->decode, scale);
-	}
+		pdf_maskcolorkey(tile, img->n, img->colorkey, scale);
 
 	if (img->indexed)
 	{
@@ -303,11 +298,15 @@ pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 		decode[2] = img->decode[2];
 		decode[3] = img->decode[3];
 
-		fz_decodetile(tile, decode, scale);
+		fz_decodetile(tile, decode);
 
 		conv = pdf_expandindexedpixmap(tile);
 		fz_droppixmap(tile);
 		tile = conv;
+	}
+	else
+	{
+		fz_decodetile(tile, img->decode);
 	}
 
 	return tile;
