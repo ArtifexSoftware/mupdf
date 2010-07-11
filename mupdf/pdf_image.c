@@ -79,7 +79,6 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	}
 	else
 	{
-		img->colorspace = pdf_devicegray;
 		img->n = 1;
 	}
 
@@ -92,12 +91,22 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	else
 	{
 		for (i = 0; i < img->n * 2; i++)
+		{
 			if (i & 1)
-				img->decode[i] = 1;
+			{
+				if (img->indexed)
+					img->decode[i] = (1 << img->bpc) - 1;
+				else
+					img->decode[i] = 1;
+			}
 			else
+			{
 				img->decode[i] = 0;
+			}
+		}
 	}
 
+	/* Not allowed for inline images */
 	obj = fz_dictgetsa(dict, "Mask", "SMask");
 	if (pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 	{
@@ -107,13 +116,33 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 			pdf_dropimage(img);
 			return fz_rethrow(error, "cannot load image mask/softmask");
 		}
-		img->mask->imagemask = 1;
+		img->mask->imagemask = 1; /* TODO: this triggers bit inversion later. should we? */
+		if (img->mask->colorspace)
+		{
+			fz_dropcolorspace(img->mask->colorspace);
+			img->mask->colorspace = nil;
+		}
 	}
 	else if (fz_isarray(obj))
 	{
 		img->usecolorkey = 1;
 		for (i = 0; i < img->n * 2; i++)
 			img->colorkey[i] = fz_toint(fz_arrayget(obj, i));
+	}
+
+	if (img->imagemask)
+	{
+		if (img->colorspace)
+		{
+			fz_dropcolorspace(img->colorspace);
+			img->colorspace = nil;
+		}
+	}
+	else
+	{
+		/* add an entry for alpha channel */
+		img->decode[img->n * 2] = 0;
+		img->decode[img->n * 2 + 1] = 1;
 	}
 
 	img->stride = (img->w * img->n * img->bpc + 7) / 8;
@@ -152,16 +181,16 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	}
 	img->samples->wp += n;
 
-	fz_dropstream(subfile);
-	fz_dropfilter(filter);
-
-	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
 	if (img->imagemask)
 	{
+		/* 0=opaque and 1=transparent so we need to invert */
 		unsigned char *p;
 		for (p = img->samples->bp; p < img->samples->ep; p++)
 			*p = ~*p;
 	}
+
+	fz_dropstream(subfile);
+	fz_dropfilter(filter);
 
 	pdf_logimage("}\n");
 
@@ -203,9 +232,9 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 		img->samples->wp = img->samples->bp + img->stride * img->h;
 	}
 
-	/* 0 means opaque and 1 means transparent, so we invert to get alpha */
 	if (img->imagemask)
 	{
+		/* 0=opaque and 1=transparent so we need to invert */
 		unsigned char *p;
 		for (p = img->samples->bp; p < img->samples->ep; p++)
 			*p = ~*p;
@@ -220,15 +249,16 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 }
 
 static void
-pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey, int scale)
+pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey)
 {
 	unsigned char *p = pix->samples;
-	int i, k, t;
-	for (i = 0; i < pix->w * pix->h; i++)
+	int len = pix->w * pix->h;
+	int k, t;
+	while (len--)
 	{
 		t = 1;
 		for (k = 0; k < n; k++)
-			if (p[k] < colorkey[k * 2] * scale || p[k] > colorkey[k * 2 + 1] * scale)
+			if (p[k] < colorkey[k * 2] || p[k] > colorkey[k * 2 + 1])
 				t = 0;
 		if (t)
 			for (k = 0; k < pix->n; k++)
@@ -237,54 +267,48 @@ pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey, int scale)
 	}
 }
 
-fz_error
-pdf_loadtile(pdf_image *src, fz_pixmap *tile)
+fz_pixmap *
+pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 {
-	void (*tilefunc)(unsigned char*restrict,int,unsigned char*restrict, int, int, int, int);
+	fz_pixmap *tile;
+	int scale;
 
-	assert(tile->x == 0); /* can't handle general tile yet, only y-banding */
+	tile = fz_newpixmap(img->colorspace, 0, 0, img->w, img->h);
 
-	assert(tile->n == src->n + 1 - src->imagemask);
-	assert(tile->x >= 0);
-	assert(tile->y >= 0);
-	assert(tile->x + tile->w <= src->w);
-	assert(tile->y + tile->h <= src->h);
-
-	switch (src->bpc)
+	scale = 1;
+	switch (img->bpc)
 	{
-	case 1: tilefunc = fz_loadtile1; break;
-	case 2: tilefunc = fz_loadtile2; break;
-	case 4: tilefunc = fz_loadtile4; break;
-	case 8: tilefunc = fz_loadtile8; break;
-	case 16: tilefunc = fz_loadtile16; break;
-	default:
-		return fz_throw("rangecheck: unsupported bit depth: %d", src->bpc);
+	case 1: scale = 255; break;
+	case 2: scale = 85; break;
+	case 4: scale = 17; break;
 	}
 
-	tilefunc(src->samples->rp + (tile->y * src->stride), src->stride,
-		tile->samples, tile->w * tile->n,
-		tile->w * src->n, tile->h, src->imagemask ? 0 : src->n);
+	fz_unpacktile(tile, img->samples->bp, img->n, img->bpc, img->stride);
 
-	if (src->usecolorkey)
+	if (img->usecolorkey)
+		pdf_maskcolorkey(tile, img->n, img->colorkey);
+
+	if (!img->indexed)
 	{
-		int scale = 1; /* tilefunc scaled image samples to 0..255 */
-		if (!src->indexed)
-		{
-			switch (src->bpc)
-			{
-			case 1: scale = 255; break;
-			case 2: scale = 85; break;
-			case 4: scale = 17; break;
-			case 8: scale = 1; break;
-			case 16:
-				fz_warn("color-key masked 16-bpc images are not supported");
-				break;
-			}
-		}
-		pdf_maskcolorkey(tile, src->n, src->colorkey, scale);
+		fz_decodetile(tile, img->decode, scale);
 	}
 
-	fz_decodetile(tile, !src->imagemask, src->decode);
+	if (img->indexed)
+	{
+		fz_pixmap *conv;
+		float decode[4];
 
-	return fz_okay;
+		decode[0] = img->decode[0] * scale / 255;
+		decode[1] = img->decode[1] * scale / 255;
+		decode[2] = img->decode[2];
+		decode[3] = img->decode[3];
+
+		fz_decodetile(tile, decode, scale);
+
+		conv = pdf_expandindexedpixmap(tile);
+		fz_droppixmap(tile);
+		tile = conv;
+	}
+
+	return tile;
 }

@@ -228,27 +228,16 @@ void
 pdf_showimage(pdf_csi *csi, pdf_image *image)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	fz_pixmap *tile;
-	fz_error error;
-
-	tile = fz_newpixmap(image->colorspace, 0, 0, image->w, image->h);
-	error = pdf_loadtile(image, tile);
-	if (error)
-	{
-		fz_droppixmap(tile);
-		fz_catch(error, "cannot load image data");
-		return;
-	}
+	fz_pixmap *tile, *mask;
 
 	if (image->mask)
 	{
-		fz_pixmap *mask = fz_newpixmap(NULL, 0, 0, image->mask->w, image->mask->h);
-		error = pdf_loadtile(image->mask, mask);
-		if (error)
-			fz_catch(error, "cannot load image mask data");
+		mask = pdf_loadtile(image->mask);
 		csi->dev->clipimagemask(csi->dev->user, mask, gstate->ctm);
 		fz_droppixmap(mask);
 	}
+
+	tile = pdf_loadtile(image);
 
 	if (image->imagemask)
 	{

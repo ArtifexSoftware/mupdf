@@ -204,6 +204,42 @@ freeindexed(fz_colorspace *cs)
 	fz_free(idx);
 }
 
+fz_pixmap *
+pdf_expandindexedpixmap(fz_pixmap *src)
+{
+	struct indexed *idx;
+	fz_pixmap *dst;
+	unsigned char *s, *d;
+	int y, x, k, n, high;
+	unsigned char *lookup;
+
+	assert(src->colorspace->toxyz == indexedtoxyz);
+	assert(src->n == 2);
+
+	idx = src->colorspace->data;
+	high = idx->high;
+	lookup = idx->lookup;
+	n = idx->base->n;
+
+	dst = fz_newpixmap(idx->base, src->x, src->y, src->w, src->h);
+	s = src->samples;
+	d = dst->samples;
+
+	for (y = 0; y < src->h; y++)
+	{
+		for (x = 0; x < src->w; x++)
+		{
+			int v = *s++;
+			v = MIN(v, high);
+			for (k = 0; k < n; k++)
+				*d++ = lookup[v * n + k];
+			*d++ = *s++;
+		}
+	}
+
+	return dst;
+}
+
 static fz_error
 loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 {

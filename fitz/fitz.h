@@ -729,7 +729,7 @@ fz_colorspace *fz_keepcolorspace(fz_colorspace *cs);
 void fz_dropcolorspace(fz_colorspace *cs);
 
 void fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
-void fz_convertpixmap(fz_colorspace *srcs, fz_pixmap *srcv, fz_colorspace *dsts, fz_pixmap *dstv);
+void fz_convertpixmap(fz_pixmap *src, fz_pixmap *dst);
 
 /*
  * Fonts come in two variants:
@@ -1113,6 +1113,9 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
 extern void fz_accelerate(void);
 extern void fz_acceleratearch(void);
 
+extern void fz_decodetile(fz_pixmap *pix, float *decode, int scale);
+extern void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride);
+
 extern void (*fz_duff_ni1on)(unsigned char*restrict,int,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 extern void (*fz_duff_1i1o1)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 extern void (*fz_duff_2i1o2)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
@@ -1132,13 +1135,6 @@ extern void (*fz_img_4o4)(unsigned char*restrict,unsigned char,int,unsigned char
 extern void (*fz_img_2o2)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
 extern void (*fz_img_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
 extern void (*fz_img_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
-
-extern void (*fz_decodetile)(fz_pixmap *pix, int skip, float *decode);
-extern void (*fz_loadtile1)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
-extern void (*fz_loadtile2)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
-extern void (*fz_loadtile4)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
-extern void (*fz_loadtile8)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
-extern void (*fz_loadtile16)(unsigned char*restrict, int sw, unsigned char*restrict, int dw, int w, int h, int pad);
 
 extern void (*fz_srown)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
 extern void (*fz_srow1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);

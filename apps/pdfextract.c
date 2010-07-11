@@ -42,11 +42,7 @@ static void saveimage(int num, int gen)
 	if (error)
 		die(error);
 
-	pix = fz_newpixmap(img->colorspace, 0, 0, img->w, img->h);
-
-	error = pdf_loadtile(img, pix);
-	if (error)
-		die(error);
+	pix = pdf_loadtile(img);
 
 	if (img->bpc == 1 && img->n == 0)
 	{
@@ -71,10 +67,8 @@ static void saveimage(int num, int gen)
 	if (img->colorspace && strcmp(img->colorspace->name, "DeviceRGB"))
 	{
 		fz_pixmap *temp;
-
 		temp = fz_newpixmap(pdf_devicergb, pix->x, pix->y, pix->w, pix->h);
-
-		fz_convertpixmap(img->colorspace, pix, pdf_devicergb, temp);
+		fz_convertpixmap(pix, temp);
 		fz_droppixmap(pix);
 		pix = temp;
 	}

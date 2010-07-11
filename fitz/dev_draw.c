@@ -578,7 +578,7 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 	if (image->colorspace != dev->model)
 	{
 		converted = fz_newpixmap(dev->model, image->x, image->y, image->w, image->h);
-		fz_convertpixmap(image->colorspace, image, dev->model, converted);
+		fz_convertpixmap(image, converted);
 		image = converted;
 	}
 

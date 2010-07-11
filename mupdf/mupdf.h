@@ -213,6 +213,7 @@ void pdf_dropfunction(pdf_function *func);
  */
 
 fz_error pdf_loadcolorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj);
+fz_pixmap *pdf_expandindexedpixmap(fz_pixmap *src);
 
 /*
  * Pattern
@@ -281,14 +282,14 @@ struct pdf_image_s
 	pdf_image *mask; /* explicit mask/softmask image */
 	int usecolorkey; /* color-keyed masking */
 	int colorkey[FZ_MAXCOLORS * 2];
-	float decode[FZ_MAXCOLORS * 2];
+	float decode[FZ_MAXCOLORS * 2 + 2];
 	int stride;
 	fz_buffer *samples;
 };
 
 fz_error pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
-fz_error pdf_loadtile(pdf_image *image, fz_pixmap *tile);
+fz_pixmap *pdf_loadtile(pdf_image *image);
 pdf_image *pdf_keepimage(pdf_image *img);
 void pdf_dropimage(pdf_image *img);
 
