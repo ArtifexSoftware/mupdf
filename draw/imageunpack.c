@@ -36,7 +36,7 @@ initget1tables(void)
 
 			get1tab1[i][k] = x;
 			get1tab1p[i][k * 2] = x;
-			get1tab1p[i][k * 2 + 1] = 1;
+			get1tab1p[i][k * 2 + 1] = 255;
 
 			get1tab255[i][k] = x * 255;
 			get1tab255p[i][k * 2] = x * 255;
@@ -55,7 +55,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 
 	pad = 0;
 	if (dst->n > n)
-		pad = ((1 << depth) - 1) * scale;
+		pad = 255;
 
 	initget1tables();
 
@@ -92,7 +92,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 				memcpy(dp, get1tab255[*sp], w - x);
 		}
 
-		else if (n == 1 && depth == 1 && scale == 1 && pad == 1)
+		else if (n == 1 && depth == 1 && scale == 1 && pad)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -105,7 +105,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 				memcpy(dp, get1tab1p[*sp], (w - x) << 1);
 		}
 
-		else if (n == 1 && depth == 1 && scale == 255 && pad == 255)
+		else if (n == 1 && depth == 1 && scale == 255 && pad)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -125,7 +125,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 				*dp++ = *sp++;
 		}
 
-		else if (depth == 8 && pad == 255)
+		else if (depth == 8 && pad)
 		{
 			for (x = 0; x < w; x++)
 			{
@@ -153,7 +153,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 					b++;
 				}
 				if (pad)
-					*dp++ = pad;
+					*dp++ = 255;
 			}
 		}
 	}
