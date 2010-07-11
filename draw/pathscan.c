@@ -220,7 +220,7 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	}
 	if (d == LEAVE) {
 		fz_insertgelraw(gel, gel->clip.x1, v, gel->clip.x1, y1);
-		x1 = gel->clip.x0;
+		x1 = gel->clip.x1;
 		y1 = v;
 	}
 	if (d == ENTER) {
