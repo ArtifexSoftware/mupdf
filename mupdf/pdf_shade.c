@@ -793,13 +793,13 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 		case 0: /* start new triangle */
 			va = vd;
 
-			flag = readbits(stream, p.bpflag);
+			readbits(stream, p.bpflag);
 			vb.x = readsample(stream, p.bpcoord, p.x0, p.x1);
 			vb.y = readsample(stream, p.bpcoord, p.y0, p.y1);
 			for (i = 0; i < ncomp; i++)
 				vb.c[i] = readsample(stream, p.bpcomp, p.c0[i], p.c1[i]);
 
-			flag = readbits(stream, p.bpflag);
+			readbits(stream, p.bpflag);
 			vc.x = readsample(stream, p.bpcoord, p.x0, p.x1);
 			vc.y = readsample(stream, p.bpcoord, p.y0, p.y1);
 			for (i = 0; i < ncomp; i++)
@@ -1238,7 +1238,6 @@ pdf_loadshadingdict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix t
 			return fz_rethrow(error, "cannot open shading stream (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
 
-	error = 0;
 	switch (type)
 	{
 	case 1:
