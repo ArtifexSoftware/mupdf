@@ -323,10 +323,7 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 	if (fz_isname(obj))
 	{
 		if (!strcmp(fz_toname(obj), "Pattern"))
-		{
-fz_warn("uncolored pattern colorspace (name)");
 			*csp = pdf_devicegray;
-		}
 		else if (!strcmp(fz_toname(obj), "G"))
 			*csp = pdf_devicegray;
 		else if (!strcmp(fz_toname(obj), "RGB"))
@@ -358,7 +355,6 @@ fz_warn("uncolored pattern colorspace (name)");
 				obj = fz_arrayget(obj, 1);
 				if (!obj)
 				{
-fz_warn("uncolored pattern colorspace (array)");
 					*csp = pdf_devicegray;
 					return fz_okay;
 				}
