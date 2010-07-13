@@ -245,7 +245,8 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 }
 
 static void
-drawglyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *src, int xorig, int yorig, fz_bbox scissor)
+drawglyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *src,
+	int xorig, int yorig, fz_bbox scissor)
 {
 	unsigned char *dp, *sp;
 	int w, h;
@@ -269,8 +270,8 @@ drawglyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *src, int xorig, int
 	if (y1 <= dy0 || y0 >= dy1) return;
 	if (x0 < dx0) { sx0 += dx0 - x0; x0 = dx0; }
 	if (y0 < dy0) { sy0 += dy0 - y0; y0 = dy0; }
-	if (x1 > dx1) { sx1 += dx1 - x1; x1 = dx1; }
-	if (y1 > dy1) { sy1 += dy1 - y1; y1 = dy1; }
+	if (x1 > dx1) { sx1 += dx1 - x1; }
+	if (y1 > dy1) { sy1 += dy1 - y1; }
 
 	sp = src->samples + (sy0 * src->w + sx0);
 	dp = dst->samples + ((y0 - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
@@ -348,8 +349,47 @@ static void
 fz_drawstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_warn("stroked text not implemented; filling instead");
-	fz_drawfilltext(user, text, ctm, colorspace, color, alpha);
+	fz_drawdevice *dev = user;
+	unsigned char colorbv[FZ_MAXCOLORS + 1];
+	float colorfv[FZ_MAXCOLORS];
+	fz_matrix tm, trm;
+	fz_pixmap *glyph;
+	int i, x, y, gid;
+
+	if (dev->model)
+	{
+		fz_convertcolor(colorspace, color, dev->model, colorfv);
+		for (i = 0; i < dev->model->n; i++)
+			colorbv[i] = colorfv[i] * 255;
+		colorbv[i] = alpha * 255;
+	}
+
+	tm = text->trm;
+
+	for (i = 0; i < text->len; i++)
+	{
+		gid = text->els[i].gid;
+		if (gid < 0)
+			continue;
+
+		tm.e = text->els[i].x;
+		tm.f = text->els[i].y;
+		trm = fz_concat(tm, ctm);
+		x = floorf(trm.e);
+		y = floorf(trm.f);
+		trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
+		trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
+
+		glyph = fz_renderstrokedglyph(dev->cache, text->font, gid, trm, ctm, stroke);
+		if (glyph)
+		{
+			if (dev->model)
+				drawglyph(colorbv, dev->dest, glyph, x, y, dev->scissor);
+			else
+				drawglyph(nil, dev->dest, glyph, x, y, dev->scissor);
+			fz_droppixmap(glyph);
+		}
+	}
 }
 
 static void
@@ -435,7 +475,62 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 static void
 fz_drawclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matrix ctm)
 {
-	fz_drawcliptext(user, text, ctm, 0);
+	fz_drawdevice *dev = user;
+	fz_bbox bbox;
+	fz_pixmap *mask, *dest;
+	fz_matrix tm, trm;
+	fz_pixmap *glyph;
+	int i, x, y, gid;
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	/* make the mask the exact size needed */
+	bbox = fz_roundrect(fz_boundtext(text, ctm));
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+
+	mask = fz_newpixmapwithrect(nil, bbox);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
+
+	memset(mask->samples, 0, mask->w * mask->h * mask->n);
+	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+
+	dev->clipstack[dev->cliptop].scissor = dev->scissor;
+	dev->clipstack[dev->cliptop].mask = mask;
+	dev->clipstack[dev->cliptop].dest = dev->dest;
+	dev->scissor = bbox;
+	dev->dest = dest;
+	dev->cliptop++;
+
+	if (!fz_isemptyrect(bbox))
+	{
+		tm = text->trm;
+
+		for (i = 0; i < text->len; i++)
+		{
+			gid = text->els[i].gid;
+			if (gid < 0)
+				continue;
+
+			tm.e = text->els[i].x;
+			tm.f = text->els[i].y;
+			trm = fz_concat(tm, ctm);
+			x = floorf(trm.e);
+			y = floorf(trm.f);
+			trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
+			trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
+
+			glyph = fz_renderstrokedglyph(dev->cache, text->font, gid, trm, ctm, stroke);
+			if (glyph)
+			{
+				drawglyph(NULL, mask, glyph, x, y, bbox);
+				fz_droppixmap(glyph);
+			}
+		}
+	}
 }
 
 static void

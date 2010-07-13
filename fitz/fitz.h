@@ -919,7 +919,9 @@ typedef struct fz_glyphcache_s fz_glyphcache;
 fz_glyphcache * fz_newglyphcache(void);
 fz_pixmap * fz_renderftglyph(fz_font *font, int cid, fz_matrix trm);
 fz_pixmap * fz_rendert3glyph(fz_font *font, int cid, fz_matrix trm);
+fz_pixmap * fz_renderftstrokedglyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_strokestate *state);
 fz_pixmap * fz_renderglyph(fz_glyphcache*, fz_font*, int, fz_matrix);
+fz_pixmap * fz_renderstrokedglyph(fz_glyphcache*, fz_font*, int, fz_matrix, fz_matrix, fz_strokestate *stroke);
 void fz_freeglyphcache(fz_glyphcache *);
 
 /*
