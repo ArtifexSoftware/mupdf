@@ -774,15 +774,12 @@ Lsetcolor:
 
 				else if (fz_toint(patterntype) == 2)
 				{
-					if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
-					{
-						fz_shade *shd;
-						error = pdf_loadshading(&shd, csi->xref, obj);
-						if (error)
-							return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
-						pdf_setshade(csi, what, shd);
-						fz_dropshade(shd);
-					}
+					fz_shade *shd;
+					error = pdf_loadshading(&shd, csi->xref, obj);
+					if (error)
+						return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
+					pdf_setshade(csi, what, shd);
+					fz_dropshade(shd);
 				}
 
 				else
