@@ -54,10 +54,10 @@ static void saveimage(int num, int gen)
 			for (x = 0; x < pix->w; x++)
 			{
 				int pixel = y * pix->w + x;
-				temp->samples[pixel * temp->n + 0] = 255;
+				temp->samples[pixel * temp->n + 0] = pix->samples[pixel];
 				temp->samples[pixel * temp->n + 1] = pix->samples[pixel];
 				temp->samples[pixel * temp->n + 2] = pix->samples[pixel];
-				temp->samples[pixel * temp->n + 3] = pix->samples[pixel];
+				temp->samples[pixel * temp->n + 3] = 255;
 			}
 
 		fz_droppixmap(pix);
@@ -88,10 +88,10 @@ static void saveimage(int num, int gen)
 		{
 			unsigned char r, g, b;
 
-			samples++;
 			r = *(samples++);
 			g = *(samples++);
 			b = *(samples++);
+			samples++;
 
 			fprintf(f, "%c%c%c", r, g, b);
 		}
