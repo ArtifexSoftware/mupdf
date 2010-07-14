@@ -15,6 +15,7 @@ struct fz_drawdevice_s
 	fz_gel *gel;
 	fz_ael *ael;
 	fz_pixmap *dest;
+
 	fz_bbox scissor;
 	struct {
 		fz_pixmap *dest;
@@ -22,6 +23,10 @@ struct fz_drawdevice_s
 		fz_bbox scissor;
 	} clipstack[MAXCLIP];
 	int cliptop;
+
+	fz_blendmode blendmode;
+	fz_pixmap *groupstack[MAXCLIP];
+	int grouptop;
 };
 
 static void
@@ -185,8 +190,8 @@ fz_drawclippath(void *user, fz_path *path, int evenodd, fz_matrix ctm)
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
-	memset(mask->samples, 0, mask->w * mask->h * mask->n);
-	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+	fz_clearpixmap(mask, 0);
+	fz_clearpixmap(dest, 0);
 
 	fz_scanconvert(dev->gel, dev->ael, evenodd, bbox, mask, nil, nil, nil);
 
@@ -230,8 +235,8 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
-	memset(mask->samples, 0, mask->w * mask->h * mask->n);
-	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+	fz_clearpixmap(mask, 0);
+	fz_clearpixmap(dest, 0);
 
 	if (!fz_isemptyrect(bbox))
 		fz_scanconvert(dev->gel, dev->ael, 0, bbox, mask, nil, nil, nil);
@@ -429,8 +434,8 @@ fz_drawcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 		mask = fz_newpixmapwithrect(nil, bbox);
 		dest = fz_newpixmapwithrect(dev->model, bbox);
 
-		memset(mask->samples, 0, mask->w * mask->h * mask->n);
-		memset(dest->samples, 0, dest->w * dest->h * dest->n);
+		fz_clearpixmap(mask, 0);
+		fz_clearpixmap(dest, 0);
 
 		dev->clipstack[dev->cliptop].scissor = dev->scissor;
 		dev->clipstack[dev->cliptop].mask = mask;
@@ -495,8 +500,8 @@ fz_drawclipstroketext(void *user, fz_text *text, fz_strokestate *stroke, fz_matr
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
-	memset(mask->samples, 0, mask->w * mask->h * mask->n);
-	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+	fz_clearpixmap(mask, 0);
+	fz_clearpixmap(dest, 0);
 
 	dev->clipstack[dev->cliptop].scissor = dev->scissor;
 	dev->clipstack[dev->cliptop].mask = mask;
@@ -763,8 +768,8 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	mask = fz_newpixmapwithrect(nil, bbox);
 	dest = fz_newpixmapwithrect(dev->model, bbox);
 
-	memset(mask->samples, 0, mask->w * mask->h * mask->n);
-	memset(dest->samples, 0, dest->w * dest->h * dest->n);
+	fz_clearpixmap(mask, 0);
+	fz_clearpixmap(dest, 0);
 
 	fz_scanconvert(dev->gel, dev->ael, 0, bbox, mask, nil, image, &invmat);
 
@@ -802,6 +807,62 @@ fz_drawpopclip(void *user)
 }
 
 static void
+fz_drawbeginmask(void *user, fz_rect rect, int luminosity, fz_colorspace *colorspace, float *colorfv)
+{
+	fz_warn("fz_drawbeginmask");
+}
+
+static void
+fz_drawendmask(void *user)
+{
+	fz_warn("fz_drawendmask");
+}
+
+static void
+fz_drawbegingroup(void *user, fz_rect rect, fz_colorspace *colorspace, int isolated, int knockout, fz_blendmode blendmode)
+{
+	fz_drawdevice *dev = user;
+	fz_bbox bbox;
+	fz_pixmap *dest;
+
+	fz_warn("fz_drawbegingroup");
+
+	if (dev->cliptop == MAXCLIP)
+	{
+		fz_warn("assert: too many clip masks on stack");
+		return;
+	}
+
+	bbox = fz_roundrect(rect);
+	bbox = fz_intersectbbox(bbox, dev->scissor);
+	dest = fz_newpixmapwithrect(dev->model, bbox);
+
+	fz_clearpixmap(dest, 0);
+
+	dev->blendmode = blendmode;
+	dev->groupstack[dev->grouptop++] = dev->dest;
+	dev->dest = dest;
+}
+
+static void
+fz_drawendgroup(void *user)
+{
+	fz_drawdevice *dev = user;
+	fz_pixmap *group = dev->dest;
+
+	fz_warn("fz_drawendgroup");
+
+	if (dev->grouptop > 0)
+	{
+		dev->grouptop--;
+		dev->dest = dev->groupstack[dev->grouptop];
+		fz_blendpixmaps(group, dev->dest, dev->blendmode);
+	}
+
+	fz_droppixmap(group);
+}
+
+static void
 fz_drawfreeuser(void *user)
 {
 	fz_drawdevice *dev = user;
@@ -826,6 +887,7 @@ fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 	ddev->ael = fz_newael();
 	ddev->dest = dest;
 	ddev->cliptop = 0;
+	ddev->grouptop = 0;
 
 	ddev->scissor.x0 = dest->x;
 	ddev->scissor.y0 = dest->y;
@@ -852,6 +914,11 @@ fz_newdrawdevice(fz_glyphcache *cache, fz_pixmap *dest)
 	dev->fillshade = fz_drawfillshade;
 
 	dev->popclip = fz_drawpopclip;
+
+	dev->beginmask = fz_drawbeginmask;
+	dev->endmask = fz_drawendmask;
+	dev->begingroup = fz_drawbegingroup;
+	dev->endgroup = fz_drawendgroup;
 
 	return dev;
 }

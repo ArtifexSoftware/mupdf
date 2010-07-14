@@ -107,7 +107,7 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	}
 
 	/* Not allowed for inline images */
-	obj = fz_dictgetsa(dict, "Mask", "SMask");
+	obj = fz_dictgetsa(dict, "SMask", "Mask");
 	if (pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 	{
 		error = pdf_loadimage(&img->mask, xref, rdb, obj);

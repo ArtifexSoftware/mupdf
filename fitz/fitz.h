@@ -653,7 +653,7 @@ static inline void fz_unreadbyte(fz_stream *stm)
 
 enum { FZ_MAXCOLORS = 32 };
 
-typedef enum fz_blendkind_e
+typedef enum fz_blendmode_e
 {
 	/* PDF 1.4 -- standard separable */
 	FZ_BNORMAL,
@@ -674,7 +674,7 @@ typedef enum fz_blendkind_e
 	FZ_BSATURATION,
 	FZ_BCOLOR,
 	FZ_BLUMINOSITY,
-} fz_blendkind;
+} fz_blendmode;
 
 /*
  * Pixmaps have n components per pixel. the last is always alpha.
@@ -1010,6 +1010,11 @@ struct fz_device_s
 	void (*clipimagemask)(void *, fz_pixmap *img, fz_matrix ctm);
 
 	void (*popclip)(void *);
+
+	void (*beginmask)(void *, fz_rect, int luminosity, fz_colorspace *cs, float *bc);
+	void (*endmask)(void *);
+	void (*begingroup)(void *, fz_rect, fz_colorspace *, int isolated, int knockout, fz_blendmode blendmode);
+	void (*endgroup)(void *);
 };
 
 fz_device *fz_newdevice(void *user);
@@ -1075,6 +1080,10 @@ typedef enum fz_displaycommand_e
 	FZ_CMDFILLIMAGEMASK,
 	FZ_CMDCLIPIMAGEMASK,
 	FZ_CMDPOPCLIP,
+	FZ_CMDBEGINMASK,
+	FZ_CMDENDMASK,
+	FZ_CMDBEGINGROUP,
+	FZ_CMDENDGROUP,
 } fz_displaycommand;
 
 struct fz_displaylist_s
@@ -1087,14 +1096,16 @@ struct fz_displaynode_s
 {
 	fz_displaycommand cmd;
 	fz_displaynode *next;
+	fz_rect rect;
 	union {
 		fz_path *path;
 		fz_text *text;
 		fz_shade *shade;
 		fz_pixmap *image;
+		fz_blendmode blendmode;
 	} item;
 	fz_strokestate *stroke;
-	int flag; /* evenodd, accumulate, ... */
+	int flag; /* evenodd, accumulate, isolated/knockout... */
 	fz_matrix ctm;
 	fz_colorspace *colorspace;
 	float alpha;
@@ -1111,11 +1122,12 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
  * They can be replaced by cpu-optimized versions.
  */
 
-extern void fz_accelerate(void);
-extern void fz_acceleratearch(void);
+void fz_accelerate(void);
+void fz_acceleratearch(void);
 
-extern void fz_decodetile(fz_pixmap *pix, float *decode);
-extern void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
+void fz_decodetile(fz_pixmap *pix, float *decode);
+void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
+void fz_blendpixmaps(fz_pixmap *src, fz_pixmap *dst, fz_blendmode blendmode);
 
 extern void (*fz_duff_ni1on)(unsigned char*restrict,int,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 extern void (*fz_duff_1i1o1)(unsigned char*restrict,int,unsigned char*restrict,int,unsigned char*restrict,int,int,int);

@@ -227,6 +227,8 @@ fz_tracepopclip(void *user)
 	printf("</gsave>\n");
 }
 
+/* TODO: transparency group functions */
+
 fz_device *fz_newtracedevice(void)
 {
 	fz_device *dev = fz_newdevice(nil);

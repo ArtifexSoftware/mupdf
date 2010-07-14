@@ -221,7 +221,17 @@ void
 pdf_showshade(pdf_csi *csi, fz_shade *shd)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
+
+	if (gstate->blendmode != FZ_BNORMAL)
+	{
+		fz_rect bbox = fz_boundshade(shd, gstate->ctm);
+		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+	}
+
 	csi->dev->fillshade(csi->dev->user, shd, gstate->ctm);
+
+	if (gstate->blendmode != FZ_BNORMAL)
+		csi->dev->endgroup(csi->dev->user);
 }
 
 void
@@ -235,6 +245,12 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 		mask = pdf_loadtile(image->mask);
 		csi->dev->clipimagemask(csi->dev->user, mask, gstate->ctm);
 		fz_droppixmap(mask);
+	}
+
+	if (gstate->blendmode != FZ_BNORMAL)
+	{
+		fz_rect bbox = fz_transformrect(gstate->ctm, fz_unitrect);
+		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
 	}
 
 	tile = pdf_loadtile(image);
@@ -275,6 +291,9 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 		csi->dev->fillimage(csi->dev->user, tile, gstate->ctm);
 	}
 
+	if (gstate->blendmode != FZ_BNORMAL)
+		csi->dev->endgroup(csi->dev->user);
+
 	if (image->mask)
 		csi->dev->popclip(csi->dev->user);
 
@@ -299,6 +318,16 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		gstate->clipdepth++;
 		csi->dev->clippath(csi->dev->user, path, evenodd, gstate->ctm);
 		csi->clip = 0;
+	}
+
+	if (gstate->blendmode != FZ_BNORMAL)
+	{
+		fz_rect bbox;
+		if (dostroke)
+			bbox = fz_boundpath(path, &gstate->strokestate, gstate->ctm);
+		else
+			bbox = fz_boundpath(path, nil, gstate->ctm);
+		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
 	}
 
 	if (dofill)
@@ -360,6 +389,9 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 			break;
 		}
 	}
+
+	if (gstate->blendmode != FZ_BNORMAL)
+		csi->dev->endgroup(csi->dev->user);
 
 	fz_freepath(path);
 }
@@ -427,6 +459,12 @@ pdf_flushtext(pdf_csi *csi)
 		csi->accumulate = 2;
 	}
 
+	if (gstate->blendmode != FZ_BNORMAL)
+	{
+		fz_rect bbox = fz_boundtext(text, gstate->ctm);
+		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+	}
+
 	if (dofill)
 	{
 		switch (gstate->fill.kind)
@@ -486,6 +524,9 @@ pdf_flushtext(pdf_csi *csi)
 			break;
 		}
 	}
+
+	if (gstate->blendmode != FZ_BNORMAL)
+		csi->dev->endgroup(csi->dev->user);
 
 	fz_freetext(text);
 }

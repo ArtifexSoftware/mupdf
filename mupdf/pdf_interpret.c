@@ -311,7 +311,7 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 
 		else if (!strcmp(s, "BM"))
 		{
-			static const struct { const char *name; fz_blendkind mode; } bm[] = {
+			static const struct { const char *name; fz_blendmode mode; } bm[] = {
 				{ "Normal", FZ_BNORMAL },
 				{ "Multiply", FZ_BMULTIPLY },
 				{ "Screen", FZ_BSCREEN },
@@ -334,6 +334,7 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 				return fz_throw("malformed BM");
 
 			gstate->blendmode = FZ_BNORMAL;
+#if 1
 			for (k = 0; k < nelem(bm); k++) {
 				if (!strcmp(bm[k].name, n)) {
 					gstate->blendmode = bm[k].mode;
@@ -342,26 +343,21 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 					break;
 				}
 			}
-
-			/* The content stream ought to be blended properly,
-			but for now, just do over and hope for something
-			*/
-			// TODO: push, pop and blend buffers
+#endif
 		}
 
 		else if (!strcmp(s, "SMask"))
 		{
 			if (fz_isdict(val))
 			{
-				/* TODO: we should do something here, like inserting a mask node for the S key in val */
-				/* TODO: how to deal with the non-recursive nature of pdf soft masks? */
-				/*
 				fz_error error;
 				fz_obj *g;
 				fz_obj *subtype;
 				pdf_xobject *xobj;
 				pdf_image *img;
 
+				fz_warn("ignoring soft mask");
+#if 0
 				g = fz_dictgets(val, "G");
 				subtype = fz_dictgets(g, "Subtype");
 
@@ -378,7 +374,7 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 				if (error)
 				return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
 				}
-				*/
+#endif
 			}
 		}
 
