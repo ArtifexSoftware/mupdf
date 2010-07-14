@@ -14,6 +14,8 @@ static FILE *out = NULL;
 static char *uselist = NULL;
 static int *ofslist = NULL;
 static int *genlist = NULL;
+static int *newnumlist = NULL;
+static pdf_xrefentry *oldxreflist = NULL;
 
 static int dogarbage = 0;
 static int doexpand = 0;
@@ -88,6 +90,80 @@ static fz_error sweepref(fz_obj *obj)
 	{
 		fz_dropobj(obj);
 		return error; /* too deeply nested for rethrow */
+	}
+
+	return fz_okay;
+}
+
+static fz_error renumberobj(fz_obj *obj)
+{
+	fz_error error;
+	int i;
+
+	if (fz_isdict(obj))
+	{
+		for (i = 0; i < fz_dictlen(obj); i++)
+			if (!fz_isindirect(fz_dictgetval(obj, i)))
+			{
+				error = renumberobj(fz_dictgetval(obj, i));
+				if (error)
+					return error; /* too deeply nested for rethrow */
+			}
+
+		for (i = 0; i < fz_dictlen(obj); i++)
+		{
+			fz_obj *val = fz_dictgetval(obj, i);
+			fz_obj *key = fz_dictgetkey(obj, i);
+
+			if (fz_isindirect(val))
+			{
+				int num = fz_tonum(val);
+				int newnum = newnumlist[num];
+				fz_obj *newval = fz_newindirect(newnum, 0, xref);
+
+				fz_keepobj(val);
+				fz_keepobj(key);
+
+				fz_dictput(obj, key, newval);
+
+				fz_dropobj(val);
+				fz_dropobj(key);
+
+				fz_dropobj(newval);
+			}
+		}
+	}
+
+	if (fz_isarray(obj))
+	{
+		for (i = 0; i < fz_arraylen(obj); i++)
+			if (!fz_isindirect(fz_arrayget(obj, i)))
+			{
+				error = renumberobj(fz_arrayget(obj, i));
+				if (error)
+					return error; /* too deeply nested for rethrow */
+			}
+
+		for (i = 0; i < fz_arraylen(obj); i++)
+		{
+			fz_obj *val = fz_arrayget(obj, i);
+
+			if (fz_isindirect(val))
+			{
+				int num = fz_tonum(val);
+				int newnum = newnumlist[num];
+				fz_obj *newval = fz_newindirect(newnum, 0, xref);
+
+				fz_keepobj(val);
+
+				fz_arrayput(obj, i, newval);
+
+				fz_dropobj(val);
+
+				fz_dropobj(newval);
+			}
+		}
+
 	}
 
 	return fz_okay;
@@ -254,7 +330,8 @@ static void cleanusage(void)
 	fprintf(stderr,
 		"usage: pdfclean [options] input.pdf [outfile.pdf] [pages]\n"
 		"\t-p -\tpassword for decryption\n"
-		"\t-g\tgarbage collect unused objects\n"
+		"\t-g\tgarbage collect unused objects (an additional -g compacts xref)\n"
+		"\t-r\tremove unused object numbers from xref\n"
 		"\t-x\texpand compressed streams\n");
 	exit(1);
 }
@@ -382,13 +459,16 @@ int main(int argc, char **argv)
 				for (page = spage; page <= epage; page++)
 				{
 					fz_obj *pageobj = pdf_getpageobject(xref, page);
+					fz_obj *pageref = pdf_getpageref(xref, page);
 
 					/* Update parent reference */
 					fz_dictputs(pageobj, "Parent", pages);
 
 					/* Store page object in new kids array */
-					fz_arraypush(kids, pageobj);
+					fz_arraypush(kids, pageref);
 					count++;
+
+					fz_dropobj(pageref);
 				}
 
 				spec = fz_strsep(&pagelist, ",");
@@ -406,6 +486,57 @@ int main(int argc, char **argv)
 	error = sweepobj(xref->trailer);
 	if (error)
 		die(fz_rethrow(error, "cannot mark used objects"));
+
+	/* Renumber objects to shorten xref */
+	if (dogarbage >= 2)
+	{
+		int newnum;
+
+		newnumlist = fz_malloc(xref->len * sizeof(int));
+		oldxreflist = fz_malloc(xref->len * sizeof(pdf_xrefentry));
+		for (num = 0; num < xref->len; num++)
+		{
+			newnumlist[num] = -1;
+			oldxreflist[num] = xref->table[num];
+		}
+
+		newnum = 1;
+		for (num = 0; num < xref->len; num++)
+		{
+			if (xref->table[num].type == 'f')
+				uselist[num] = 0;
+
+			if (uselist[num])
+				newnumlist[num] = newnum++;
+		}
+
+		error = renumberobj(xref->trailer);
+		if (error)
+			die(fz_rethrow(error, "cannot renumber used objects"));
+
+		for (num = 0; num < xref->len; num++)
+		{
+			error = renumberobj(xref->table[num].obj);
+			if (error)
+				die(fz_rethrow(error, "cannot renumber used objects"));
+		}
+
+		for (num = 0; num < xref->len; num++)
+			uselist[num] = 0;
+
+
+		for (num = 0; num < xref->len; num++)
+			if (newnumlist[num] >= 0)
+			{
+				xref->table[newnumlist[num]] = oldxreflist[num];
+				uselist[newnumlist[num]] = 1;
+			}
+
+		fz_free(oldxreflist);
+		fz_free(newnumlist);
+
+		xref->len = newnum;
+	}
 
 	for (num = 0; num < xref->len; num++)
 	{
