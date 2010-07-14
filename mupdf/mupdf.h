@@ -534,6 +534,7 @@ struct pdf_page_s
 fz_error pdf_loadpagetree(pdf_xref *xref);
 int pdf_getpagecount(pdf_xref *xref);
 fz_obj * pdf_getpageobject(pdf_xref *xref, int p);
+fz_obj * pdf_getpageref(pdf_xref *xref, int p);
 int pdf_findpageobject(pdf_xref *xref, fz_obj *pageobj);
 
 /* page.c */
