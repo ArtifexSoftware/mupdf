@@ -95,41 +95,25 @@ static fz_error sweepref(fz_obj *obj)
 	return fz_okay;
 }
 
-static fz_error renumberobj(fz_obj *obj)
+static void renumberobj(fz_obj *obj)
 {
-	fz_error error;
 	int i;
 
 	if (fz_isdict(obj))
 	{
 		for (i = 0; i < fz_dictlen(obj); i++)
-			if (!fz_isindirect(fz_dictgetval(obj, i)))
-			{
-				error = renumberobj(fz_dictgetval(obj, i));
-				if (error)
-					return error; /* too deeply nested for rethrow */
-			}
-
-		for (i = 0; i < fz_dictlen(obj); i++)
 		{
-			fz_obj *val = fz_dictgetval(obj, i);
 			fz_obj *key = fz_dictgetkey(obj, i);
-
+			fz_obj *val = fz_dictgetval(obj, i);
 			if (fz_isindirect(val))
 			{
-				int num = fz_tonum(val);
-				int newnum = newnumlist[num];
-				fz_obj *newval = fz_newindirect(newnum, 0, xref);
-
-				fz_keepobj(val);
-				fz_keepobj(key);
-
-				fz_dictput(obj, key, newval);
-
+				val = fz_newindirect(newnumlist[fz_tonum(val)], 0, xref);
+				fz_dictput(obj, key, val);
 				fz_dropobj(val);
-				fz_dropobj(key);
-
-				fz_dropobj(newval);
+			}
+			else
+			{
+				renumberobj(val);
 			}
 		}
 	}
@@ -137,36 +121,20 @@ static fz_error renumberobj(fz_obj *obj)
 	if (fz_isarray(obj))
 	{
 		for (i = 0; i < fz_arraylen(obj); i++)
-			if (!fz_isindirect(fz_arrayget(obj, i)))
-			{
-				error = renumberobj(fz_arrayget(obj, i));
-				if (error)
-					return error; /* too deeply nested for rethrow */
-			}
-
-		for (i = 0; i < fz_arraylen(obj); i++)
 		{
 			fz_obj *val = fz_arrayget(obj, i);
-
 			if (fz_isindirect(val))
 			{
-				int num = fz_tonum(val);
-				int newnum = newnumlist[num];
-				fz_obj *newval = fz_newindirect(newnum, 0, xref);
-
-				fz_keepobj(val);
-
-				fz_arrayput(obj, i, newval);
-
+				val = fz_newindirect(newnumlist[fz_tonum(val)], 0, xref);
+				fz_arrayput(obj, i, val);
 				fz_dropobj(val);
-
-				fz_dropobj(newval);
+			}
+			else
+			{
+				renumberobj(val);
 			}
 		}
-
 	}
-
-	return fz_okay;
 }
 
 static void preloadobjstms(void)
@@ -262,7 +230,6 @@ static void saveobject(int num, int gen)
 		}
 	}
 
-
 	if (!xref->table[num].stmofs)
 	{
 		fprintf(out, "%d %d obj\n", num, gen);
@@ -276,7 +243,6 @@ static void saveobject(int num, int gen)
 		else
 			copystream(obj, num, gen);
 	}
-
 
 	fz_dropobj(obj);
 }
@@ -422,10 +388,9 @@ static void retainpages(int argc, char **argv)
 	fz_dictputs(pages, "Kids", kids);
 }
 
-static void dorenumbering()
+static void renumberxref(void)
 {
 	int num, newnum;
-	fz_error error;
 
 	newnumlist = fz_malloc(xref->len * sizeof(int));
 	oldxreflist = fz_malloc(xref->len * sizeof(pdf_xrefentry));
@@ -440,32 +405,25 @@ static void dorenumbering()
 	{
 		if (xref->table[num].type == 'f')
 			uselist[num] = 0;
-
 		if (uselist[num])
 			newnumlist[num] = newnum++;
 	}
 
-	error = renumberobj(xref->trailer);
-	if (error)
-		die(fz_rethrow(error, "cannot renumber used objects"));
-
+	renumberobj(xref->trailer);
 	for (num = 0; num < xref->len; num++)
-	{
-		error = renumberobj(xref->table[num].obj);
-		if (error)
-			die(fz_rethrow(error, "cannot renumber used objects"));
-	}
+		renumberobj(xref->table[num].obj);
 
 	for (num = 0; num < xref->len; num++)
 		uselist[num] = 0;
 
-
 	for (num = 0; num < xref->len; num++)
+	{
 		if (newnumlist[num] >= 0)
 		{
 			xref->table[newnumlist[num]] = oldxreflist[num];
 			uselist[newnumlist[num]] = 1;
 		}
+	}
 
 	fz_free(oldxreflist);
 	fz_free(newnumlist);
@@ -550,7 +508,7 @@ int main(int argc, char **argv)
 	if (argc - fz_optind > 0)
 		subset = 1;
 
-	openxref(infile, password, 0, 1);
+	openxref(infile, password, 0, subset);
 
 	out = fopen(outfile, "wb");
 	if (!out)
@@ -584,7 +542,7 @@ int main(int argc, char **argv)
 
 	/* Renumber objects to shorten xref */
 	if (dogarbage >= 2)
-		dorenumbering();
+		renumberxref();
 
 	outputpdf();
 
@@ -592,4 +550,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
