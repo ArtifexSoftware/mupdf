@@ -336,6 +336,185 @@ static void cleanusage(void)
 	exit(1);
 }
 
+static void retainpages(int argc, char **argv)
+{
+	fz_obj *root, *pages, *kids;
+	int count;
+
+	/* Snatch pages entry from root dict */
+	root = fz_dictgets(xref->trailer, "Root");
+	pages = fz_keepobj(fz_dictgets(root, "Pages"));
+
+	/* Then empty the root dict */
+	while (fz_dictlen(root) > 0)
+	{
+		fz_obj *key = fz_dictgetkey(root, 0);
+		fz_dictdel(root, key);
+	}
+
+	/* And only retain pages and type entries */
+	fz_dictputs(root, "Pages", pages);
+	fz_dictputs(root, "Type", fz_newname("Catalog"));
+	fz_dropobj(pages);
+
+	/* Create a new kids array too add into pages dict
+	 * since each element must be replaced to point to
+	 * a retained page */
+	kids = fz_newarray(1);
+	count = 0;
+
+	/* Retain pages specified */
+	while (argc - fz_optind)
+	{
+		int page, spage, epage;
+		char *spec, *dash;
+		char *pagelist = argv[fz_optind];
+
+		spec = fz_strsep(&pagelist, ",");
+		while (spec)
+		{
+			dash = strchr(spec, '-');
+
+			if (dash == spec)
+				spage = epage = 1;
+			else
+				spage = epage = atoi(spec);
+
+			if (dash)
+			{
+				if (strlen(dash) > 1)
+					epage = atoi(dash + 1);
+				else
+					epage = pagecount;
+			}
+
+			if (spage > epage)
+				page = spage, spage = epage, epage = page;
+
+			if (spage < 1)
+				spage = 1;
+			if (epage > pagecount)
+				epage = pagecount;
+
+			for (page = spage; page <= epage; page++)
+			{
+				fz_obj *pageobj = pdf_getpageobject(xref, page);
+				fz_obj *pageref = pdf_getpageref(xref, page);
+
+				/* Update parent reference */
+				fz_dictputs(pageobj, "Parent", pages);
+
+				/* Store page object in new kids array */
+				fz_arraypush(kids, pageref);
+				count++;
+
+				fz_dropobj(pageref);
+			}
+
+			spec = fz_strsep(&pagelist, ",");
+		}
+
+		fz_optind++;
+	}
+
+	/* Update page count and kids array */
+	fz_dictputs(pages, "Count", fz_newint(count));
+	fz_dictputs(pages, "Kids", kids);
+}
+
+static void dorenumbering()
+{
+	int num, newnum;
+	fz_error error;
+
+	newnumlist = fz_malloc(xref->len * sizeof(int));
+	oldxreflist = fz_malloc(xref->len * sizeof(pdf_xrefentry));
+	for (num = 0; num < xref->len; num++)
+	{
+		newnumlist[num] = -1;
+		oldxreflist[num] = xref->table[num];
+	}
+
+	newnum = 1;
+	for (num = 0; num < xref->len; num++)
+	{
+		if (xref->table[num].type == 'f')
+			uselist[num] = 0;
+
+		if (uselist[num])
+			newnumlist[num] = newnum++;
+	}
+
+	error = renumberobj(xref->trailer);
+	if (error)
+		die(fz_rethrow(error, "cannot renumber used objects"));
+
+	for (num = 0; num < xref->len; num++)
+	{
+		error = renumberobj(xref->table[num].obj);
+		if (error)
+			die(fz_rethrow(error, "cannot renumber used objects"));
+	}
+
+	for (num = 0; num < xref->len; num++)
+		uselist[num] = 0;
+
+
+	for (num = 0; num < xref->len; num++)
+		if (newnumlist[num] >= 0)
+		{
+			xref->table[newnumlist[num]] = oldxreflist[num];
+			uselist[newnumlist[num]] = 1;
+		}
+
+	fz_free(oldxreflist);
+	fz_free(newnumlist);
+
+	xref->len = newnum;
+}
+
+static void outputpdf()
+{
+	int lastfree;
+	int num;
+
+	for (num = 0; num < xref->len; num++)
+	{
+		if (xref->table[num].type == 'f')
+			uselist[num] = 0;
+
+		if (xref->table[num].type == 'f')
+			genlist[num] = xref->table[num].gen;
+		if (xref->table[num].type == 'n')
+			genlist[num] = xref->table[num].gen;
+		if (xref->table[num].type == 'o')
+			genlist[num] = 0;
+
+		if (dogarbage && !uselist[num])
+			continue;
+
+		if (xref->table[num].type == 'n' || xref->table[num].type == 'o')
+		{
+			ofslist[num] = ftell(out);
+			saveobject(num, genlist[num]);
+		}
+	}
+
+	/* Construct linked list of free object slots */
+	lastfree = 0;
+	for (num = 0; num < xref->len; num++)
+	{
+		if (!uselist[num])
+		{
+			genlist[num]++;
+			ofslist[lastfree] = num;
+			lastfree = num;
+		}
+	}
+
+	savexref();
+}
+
 int main(int argc, char **argv)
 {
 	char *infile;
@@ -343,7 +522,6 @@ int main(int argc, char **argv)
 	char *password = "";
 	fz_error error;
 	int c, num;
-	int lastfree;
 	int subset;
 
 	while ((c = fz_getopt(argc, argv, "gxp:")) != -1)
@@ -397,90 +575,7 @@ int main(int argc, char **argv)
 
 	/* Only retain the specified subset of the pages */
 	if (subset)
-	{
-		fz_obj *root, *pages, *kids;
-		int count;
-
-		/* Snatch pages entry from root dict */
-		root = fz_dictgets(xref->trailer, "Root");
-		pages = fz_keepobj(fz_dictgets(root, "Pages"));
-
-		/* Then empty the root dict */
-		while (fz_dictlen(root) > 0)
-		{
-			fz_obj *key = fz_dictgetkey(root, 0);
-			fz_dictdel(root, key);
-		}
-
-		/* And only retain pages and type entries */
-		fz_dictputs(root, "Pages", pages);
-		fz_dictputs(root, "Type", fz_newname("Catalog"));
-		fz_dropobj(pages);
-
-		/* Create a new kids array too add into pages dict
-		 * since each element must be replaced to point to
-		 * a retained page */
-		kids = fz_newarray(1);
-		count = 0;
-
-		/* Retain pages specified */
-		while (argc - fz_optind)
-		{
-			int page, spage, epage;
-			char *spec, *dash;
-			char *pagelist = argv[fz_optind];
-
-			spec = fz_strsep(&pagelist, ",");
-			while (spec)
-			{
-				dash = strchr(spec, '-');
-
-				if (dash == spec)
-					spage = epage = 1;
-				else
-					spage = epage = atoi(spec);
-
-				if (dash)
-				{
-					if (strlen(dash) > 1)
-						epage = atoi(dash + 1);
-					else
-						epage = pagecount;
-				}
-
-				if (spage > epage)
-					page = spage, spage = epage, epage = page;
-
-				if (spage < 1)
-					spage = 1;
-				if (epage > pagecount)
-					epage = pagecount;
-
-				for (page = spage; page <= epage; page++)
-				{
-					fz_obj *pageobj = pdf_getpageobject(xref, page);
-					fz_obj *pageref = pdf_getpageref(xref, page);
-
-					/* Update parent reference */
-					fz_dictputs(pageobj, "Parent", pages);
-
-					/* Store page object in new kids array */
-					fz_arraypush(kids, pageref);
-					count++;
-
-					fz_dropobj(pageref);
-				}
-
-				spec = fz_strsep(&pagelist, ",");
-			}
-
-			fz_optind++;
-		}
-
-		/* Update page count and kids array */
-		fz_dictputs(pages, "Count", fz_newint(count));
-		fz_dictputs(pages, "Kids", kids);
-	}
+		retainpages(argc, argv);
 
 	/* Sweep & mark objects from the trailer */
 	error = sweepobj(xref->trailer);
@@ -489,90 +584,9 @@ int main(int argc, char **argv)
 
 	/* Renumber objects to shorten xref */
 	if (dogarbage >= 2)
-	{
-		int newnum;
+		dorenumbering();
 
-		newnumlist = fz_malloc(xref->len * sizeof(int));
-		oldxreflist = fz_malloc(xref->len * sizeof(pdf_xrefentry));
-		for (num = 0; num < xref->len; num++)
-		{
-			newnumlist[num] = -1;
-			oldxreflist[num] = xref->table[num];
-		}
-
-		newnum = 1;
-		for (num = 0; num < xref->len; num++)
-		{
-			if (xref->table[num].type == 'f')
-				uselist[num] = 0;
-
-			if (uselist[num])
-				newnumlist[num] = newnum++;
-		}
-
-		error = renumberobj(xref->trailer);
-		if (error)
-			die(fz_rethrow(error, "cannot renumber used objects"));
-
-		for (num = 0; num < xref->len; num++)
-		{
-			error = renumberobj(xref->table[num].obj);
-			if (error)
-				die(fz_rethrow(error, "cannot renumber used objects"));
-		}
-
-		for (num = 0; num < xref->len; num++)
-			uselist[num] = 0;
-
-
-		for (num = 0; num < xref->len; num++)
-			if (newnumlist[num] >= 0)
-			{
-				xref->table[newnumlist[num]] = oldxreflist[num];
-				uselist[newnumlist[num]] = 1;
-			}
-
-		fz_free(oldxreflist);
-		fz_free(newnumlist);
-
-		xref->len = newnum;
-	}
-
-	for (num = 0; num < xref->len; num++)
-	{
-		if (xref->table[num].type == 'f')
-			uselist[num] = 0;
-
-		if (xref->table[num].type == 'f')
-			genlist[num] = xref->table[num].gen;
-		if (xref->table[num].type == 'n')
-			genlist[num] = xref->table[num].gen;
-		if (xref->table[num].type == 'o')
-			genlist[num] = 0;
-
-		if (dogarbage && !uselist[num])
-			continue;
-
-		if (xref->table[num].type == 'n' || xref->table[num].type == 'o')
-		{
-			ofslist[num] = ftell(out);
-			saveobject(num, genlist[num]);
-		}
-	}
-
-	/* Construct linked list of free object slots */
-	lastfree = 0;
-	for (num = 0; num < xref->len; num++)
-	{
-		if (!uselist[num])
-		{
-			genlist[num]++;
-			ofslist[lastfree] = num;
-			lastfree = num;
-		}
-	}
-
-	savexref();
+	outputpdf();
 
 	closexref();
 
