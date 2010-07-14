@@ -24,60 +24,39 @@ static int doexpand = 0;
  * Garbage collect objects not reachable from the trailer.
  */
 
-static fz_error sweepref(fz_obj *ref);
+static void sweepref(fz_obj *ref);
 
-static fz_error sweepobj(fz_obj *obj)
+static void sweepobj(fz_obj *obj)
 {
-	fz_error error;
 	int i;
 
 	if (fz_isindirect(obj))
-		return sweepref(obj);
+		sweepref(obj);
 
-	if (fz_isdict(obj))
-	{
+	else if (fz_isdict(obj))
 		for (i = 0; i < fz_dictlen(obj); i++)
-		{
-			error = sweepobj(fz_dictgetval(obj, i));
-			if (error)
-				return error; /* too deeply nested for rethrow */
-		}
-	}
+			sweepobj(fz_dictgetval(obj, i));
 
-	if (fz_isarray(obj))
-	{
+	else if (fz_isarray(obj))
 		for (i = 0; i < fz_arraylen(obj); i++)
-		{
-			error = sweepobj(fz_arrayget(obj, i));
-			if (error)
-				return error; /* too deeply nested for rethrow */
-		}
-	}
-
-	return fz_okay;
+			sweepobj(fz_arrayget(obj, i));
 }
 
-static fz_error sweepref(fz_obj *obj)
+static void sweepref(fz_obj *obj)
 {
-	fz_error error;
-	fz_obj *len;
-	int num, gen;
-
-	num = fz_tonum(obj);
-	gen = fz_tonum(obj);
+	int num = fz_tonum(obj);
 
 	if (num < 0 || num >= xref->len)
-		return fz_throw("object out of range (%d %d R)", num, gen);
-
+		return;
 	if (uselist[num])
-		return fz_okay;
+		return;
 
 	uselist[num] = 1;
 
 	/* Bake in /Length in stream objects */
 	if (xref->table[num].stmofs)
 	{
-		len = fz_dictgets(obj, "Length");
+		fz_obj *len = fz_dictgets(obj, "Length");
 		if (fz_isindirect(len))
 		{
 			len = fz_resolveindirect(len);
@@ -85,14 +64,7 @@ static fz_error sweepref(fz_obj *obj)
 		}
 	}
 
-	error = sweepobj(fz_resolveindirect(obj));
-	if (error)
-	{
-		fz_dropobj(obj);
-		return error; /* too deeply nested for rethrow */
-	}
-
-	return fz_okay;
+	sweepobj(fz_resolveindirect(obj));
 }
 
 static void renumberobj(fz_obj *obj)
@@ -478,7 +450,6 @@ int main(int argc, char **argv)
 	char *infile;
 	char *outfile = "out.pdf";
 	char *password = "";
-	fz_error error;
 	int c, num;
 	int subset;
 
@@ -536,9 +507,7 @@ int main(int argc, char **argv)
 		retainpages(argc, argv);
 
 	/* Sweep & mark objects from the trailer */
-	error = sweepobj(xref->trailer);
-	if (error)
-		die(fz_rethrow(error, "cannot mark used objects"));
+	sweepobj(xref->trailer);
 
 	/* Renumber objects to shorten xref */
 	if (dogarbage >= 2)
