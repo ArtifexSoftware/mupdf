@@ -255,7 +255,6 @@ fz_writepng(fz_pixmap *pixmap, char *filename, int alpha)
 		return fz_throw("cannot compress image data");
 	}
 
-
 	fp = fopen(filename, "wb");
 	if (!fp)
 	{
