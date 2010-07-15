@@ -189,12 +189,15 @@ void pdfapp_close(pdfapp_t *app)
 		pdf_freeoutline(app->outline);
 	app->outline = nil;
 
-	if (app->xref->store)
-		pdf_freestore(app->xref->store);
-	app->xref->store = nil;
+	if (app->xref)
+	{
+		if (app->xref->store)
+			pdf_freestore(app->xref->store);
+		app->xref->store = nil;
 
-	pdf_closexref(app->xref);
-	app->xref = nil;
+		pdf_closexref(app->xref);
+		app->xref = nil;
+	}
 }
 
 static fz_matrix pdfapp_viewctm(pdfapp_t *app)
