@@ -213,17 +213,17 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 	return;
 }
 
-static fz_error
+static void
 gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
 
 	for (i = 0; i < fz_dictlen(dict); i++)
 	{
-		fz_obj *fontdict;
-		fz_obj *subtype;
-		fz_obj *basefont;
-		fz_obj *name;
+		fz_obj *fontdict = nil;
+		fz_obj *subtype = nil;
+		fz_obj *basefont = nil;
+		fz_obj *name = nil;
 		int k;
 
 		fontdict = fz_dictgetval(dict, i);
@@ -234,21 +234,9 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		subtype = fz_dictgets(fontdict, "Subtype");
-		if (!fz_isname(subtype))
-			fz_warn("not a font dict subtype (%d %d R)", fz_tonum(fontdict), fz_togen(fontdict));
-
 		basefont = fz_dictgets(fontdict, "BaseFont");
-		if (basefont && !fz_isnull(basefont))
-		{
-			if (!fz_isname(basefont))
-				return fz_throw("not a font dict basefont (%d %d R)", fz_tonum(fontdict), fz_togen(fontdict));
-		}
-		else
-		{
+		if (!basefont || fz_isnull(basefont))
 			name = fz_dictgets(fontdict, "Name");
-			if (name && !fz_isname(name))
-				return fz_throw("not a font dict name (%d %d R)", fz_tonum(fontdict), fz_togen(fontdict));
-		}
 
 		for (k = 0; k < fonts; k++)
 			if (fz_tonum(font[k].u.font.obj) == fz_tonum(fontdict) &&
@@ -268,11 +256,9 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		font[fonts - 1].u.font.subtype = subtype;
 		font[fonts - 1].u.font.name = basefont ? basefont : name;
 	}
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
@@ -292,18 +278,16 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		imagedict = fz_dictgetval(dict, i);
 		if (!fz_isdict(imagedict))
-			return fz_throw("not an image dict (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
+		{
+			fz_warn("not an image dict (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
+			continue;
+		}
 
 		type = fz_dictgets(imagedict, "Subtype");
-		if (!fz_isname(type))
-			return fz_throw("not an image subtype (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
 		if (strcmp(fz_toname(type), "Image"))
 			continue;
 
 		filter = fz_dictgets(imagedict, "Filter");
-		if (filter && !fz_isname(filter) && !fz_isarray(filter))
-			return fz_throw("not an image filter (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-
 		mask = fz_dictgets(imagedict, "ImageMask");
 
 		altcs = nil;
@@ -321,29 +305,9 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			}
 		}
 
-		if (fz_isbool(mask) && fz_tobool(mask))
-		{
-			if (cs)
-				fz_warn("image mask (%d %d R) may not have colorspace", fz_tonum(imagedict), fz_togen(imagedict));
-		}
-		if (cs && !fz_isname(cs))
-			return fz_throw("not an image colorspace (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-		if (altcs && !fz_isname(altcs))
-			return fz_throw("not an image alternate colorspace (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-
 		width = fz_dictgets(imagedict, "Width");
-		if (!fz_isint(width))
-			return fz_throw("not an image width (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-
 		height = fz_dictgets(imagedict, "Height");
-		if (!fz_isint(height))
-			return fz_throw("not an image height (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-
 		bpc = fz_dictgets(imagedict, "BitsPerComponent");
-		if (!fz_tobool(mask) && !fz_isint(bpc))
-			return fz_throw("not an image bits per component (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
-		if (fz_tobool(mask) && fz_isint(bpc) && fz_toint(bpc) != 1)
-			return fz_throw("not an image mask bits per component (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
 
 		for (k = 0; k < images; k++)
 			if (fz_tonum(image[k].u.image.obj) == fz_tonum(imagedict) &&
@@ -367,11 +331,9 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		image[images - 1].u.image.cs = cs;
 		image[images - 1].u.image.altcs = altcs;
 	}
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
@@ -388,29 +350,22 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		xobjdict = fz_dictgetval(dict, i);
 		if (!fz_isdict(xobjdict))
-			return fz_throw("not a xobject dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
+		{
+			fz_warn("not a xobject dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
+			continue;
+		}
 
 		type = fz_dictgets(xobjdict, "Subtype");
-		if (!fz_isname(type))
-			return fz_throw("not a xobject type (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
 		if (strcmp(fz_toname(type), "Form"))
 			continue;
 
 		subtype = fz_dictgets(xobjdict, "Subtype2");
-		if (subtype && !fz_isname(subtype))
-			return fz_throw("not a xobject subtype (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
-
 		if (!strcmp(fz_toname(subtype), "PS"))
 			continue;
 
 		group = fz_dictgets(xobjdict, "Group");
-		if (group && !fz_isdict(group))
-			return fz_throw("not a form xobject group dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
 		groupsubtype = fz_dictgets(group, "S");
-
 		reference = fz_dictgets(xobjdict, "Ref");
-		if (reference && !fz_isdict(reference))
-			return fz_throw("not a form xobject reference dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
 
 		for (k = 0; k < forms; k++)
 			if (fz_tonum(form[k].u.form.obj) == fz_tonum(xobjdict) &&
@@ -430,11 +385,9 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		form[forms - 1].u.form.groupsubtype = groupsubtype;
 		form[forms - 1].u.form.reference = reference;
 	}
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
@@ -448,16 +401,13 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		xobjdict = fz_dictgetval(dict, i);
 		if (!fz_isdict(xobjdict))
-			return fz_throw("not a xobject dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
+		{
+			fz_warn("not a xobject dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
+			continue;
+		}
 
 		type = fz_dictgets(xobjdict, "Subtype");
-		if (!fz_isname(type))
-			return fz_throw("not a xobject type (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
-
 		subtype = fz_dictgets(xobjdict, "Subtype2");
-		if (subtype && !fz_isname(subtype))
-			return fz_throw("not a xobject subtype (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
-
 		if (strcmp(fz_toname(type), "PS") &&
 			(strcmp(fz_toname(type), "Form") || strcmp(fz_toname(subtype), "PS")))
 			continue;
@@ -478,11 +428,9 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		psobj[psobjs - 1].pageobj = pageobj;
 		psobj[psobjs - 1].u.form.obj = xobjdict;
 	}
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
@@ -495,7 +443,10 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		shade = fz_dictgetval(dict, i);
 		if (!fz_isdict(shade))
-			return fz_throw("not a shading dict (%d %d R)", fz_tonum(shade), fz_togen(shade));
+		{
+			fz_warn("not a shading dict (%d %d R)", fz_tonum(shade), fz_togen(shade));
+			continue;
+		}
 
 		type = fz_dictgets(shade, "ShadingType");
 		if (!fz_isint(type) || fz_toint(type) < 1 || fz_toint(type) > 7)
@@ -521,11 +472,9 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		shading[shadings - 1].u.shading.obj = shade;
 		shading[shadings - 1].u.shading.type = type;
 	}
-
-	return fz_okay;
 }
 
-static fz_error
+static void
 gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 {
 	int i;
@@ -541,7 +490,10 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		patterndict = fz_dictgetval(dict, i);
 		if (!fz_isdict(patterndict))
-			return fz_throw("not a pattern dict (%d %d R)", fz_tonum(patterndict), fz_togen(patterndict));
+		{
+			fz_warn("not a pattern dict (%d %d R)", fz_tonum(patterndict), fz_togen(patterndict));
+			continue;
+		}
 
 		type = fz_dictgets(patterndict, "PatternType");
 		if (!fz_isint(type) || fz_toint(type) < 1 || fz_toint(type) > 2)
@@ -591,14 +543,11 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		pattern[patterns - 1].u.pattern.tiling = tiling;
 		pattern[patterns - 1].u.pattern.shading = shading;
 	}
-
-	return fz_okay;
 }
 
 static void
 gatherresourceinfo(int page, fz_obj *rsrc)
 {
-	fz_error error;
 	fz_obj *pageobj;
 	fz_obj *pageref;
 	fz_obj *font;
@@ -617,9 +566,7 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 	font = fz_dictgets(rsrc, "Font");
 	if (font)
 	{
-		error = gatherfonts(page, pageref, pageobj, font);
-		if (error)
-			die(fz_rethrow(error, "gathering fonts at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
+		gatherfonts(page, pageref, pageobj, font);
 
 		for (i = 0; i < fz_dictlen(font); i++)
 		{
@@ -634,15 +581,9 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 	xobj = fz_dictgets(rsrc, "XObject");
 	if (xobj)
 	{
-		error = gatherimages(page, pageref, pageobj, xobj);
-		if (error)
-			die(fz_rethrow(error, "gathering images at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
-		error = gatherforms(page, pageref, pageobj, xobj);
-		if (error)
-			die(fz_rethrow(error, "gathering forms at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
-		error = gatherpsobjs(page, pageref, pageobj, xobj);
-		if (error)
-			die(fz_rethrow(error, "gathering postscript objects at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
+		gatherimages(page, pageref, pageobj, xobj);
+		gatherforms(page, pageref, pageobj, xobj);
+		gatherpsobjs(page, pageref, pageobj, xobj);
 
 		for (i = 0; i < fz_dictlen(xobj); i++)
 		{
@@ -655,18 +596,12 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 
 	shade = fz_dictgets(rsrc, "Shading");
 	if (shade)
-	{
-		error = gathershadings(page, pageref, pageobj, shade);
-		if (error)
-			die(fz_rethrow(error, "gathering shadings at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
-	}
+		gathershadings(page, pageref, pageobj, shade);
 
 	pattern = fz_dictgets(rsrc, "Pattern");
 	if (pattern)
 	{
-		error = gatherpatterns(page, pageref, pageobj, pattern);
-		if (error)
-			die(fz_rethrow(error, "gathering shadings at page %d (%d %d R)", page, fz_tonum(pageref), fz_togen(pageref)));
+		gatherpatterns(page, pageref, pageobj, pattern);
 
 		for (i = 0; i < fz_dictlen(pattern); i++)
 		{
