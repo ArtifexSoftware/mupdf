@@ -269,7 +269,6 @@ static void cleanusage(void)
 		"usage: pdfclean [options] input.pdf [outfile.pdf] [pages]\n"
 		"\t-p -\tpassword for decryption\n"
 		"\t-g\tgarbage collect unused objects (an additional -g compacts xref)\n"
-		"\t-r\tremove unused object numbers from xref\n"
 		"\t-x\texpand compressed streams\n");
 	exit(1);
 }
@@ -403,7 +402,7 @@ static void renumberxref(void)
 	xref->len = newnum;
 }
 
-static void outputpdf()
+static void outputpdf(void)
 {
 	int lastfree;
 	int num;
