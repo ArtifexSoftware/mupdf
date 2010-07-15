@@ -11,6 +11,11 @@ prefix ?= /usr/local
 OBJDIR := build/$(build)
 GENDIR := build/generated
 
+$(OBJDIR):
+	mkdir -p $@
+$(GENDIR):
+	mkdir -p $@
+
 # If no pregen directory is supplied, then generate (dump) the
 # font and cmap .c files as part of the build.
 # If it is supplied, then just use the files from that directory.
@@ -27,34 +32,30 @@ endif
 
 LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
 
--include Makerules
--include Makethird
+include Makerules
+include Makethird
 
 CFLAGS += $(THIRD_INCS) $(SYS_FREETYPE_INC)
-LDFLAGS += $(SYS_FREETYPE_LIB)
 
 #
 # Build commands
 #
 
-SILENT := @
 ifneq "$(verbose)" ""
-SILENT :=
+
+GENFILE_CMD = $(firstword $^) $@ $(wordlist 2, 999, $^)
+CC_CMD = $(CC) -o $@ -c $< $(CFLAGS)
+LD_CMD = $(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+AR_CMD = ar cru $@ $^
+
+else
+
+GENFILE_CMD = @ echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
+CC_CMD = @ echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
+LD_CMD = @ echo LD $@ && $(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+AR_CMD = @ echo AR $@ && ar cru $@ $^
+
 endif
-
-GENFILE_CMD = $(SILENT) echo GENFILE $@ && $(firstword $^) $@ $(wordlist 2, 999, $^)
-CC_CMD = $(SILENT) echo CC $@ && $(CC) -o $@ -c $< $(CFLAGS)
-LD_CMD = $(SILENT) echo LD $@ && $(LD) -o $@ $^ $(LDFLAGS) $(LIBS)
-AR_CMD = $(SILENT) echo AR $@ && $(AR) cru $@ $^
-
-#
-# Directories
-#
-
-DIRS = $(OBJDIR) $(GENDIR)
-
-$(DIRS):
-	mkdir -p $@
 
 #
 # Code generation tools
@@ -220,6 +221,7 @@ FONT_SRC := \
 
 FONT_OBJ := $(FONT_SRC:$(GENDIR)/%.c=$(OBJDIR)/%.o)
 
+
 #
 # Generated CMap file dumps
 #
@@ -370,20 +372,12 @@ $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD) $(W32LIBS)
 
 #
-# Installation and tarball packaging
-#
-
-dist: $(DIRS) $(APPS)
-	mkdir -p mupdf-dist
-	cp README COPYING $(APPS) mupdf-dist
-	tar cvf mupdf-dist.tar mupdf-dist
-	rm -rf mupdf-dist
-
-#
 # Default rules
 #
 
-all: $(DIRS) $(THIRD_LIBS) $(MUPDF_LIB) $(APPS)
+.PHONY: default all pregen clean nuke install
+
+all: $(OBJDIR) $(GENDIR) $(THIRD_LIBS) $(MUPDF_LIB) $(APPS)
 
 clean:
 	rm -rf $(OBJDIR)/*
@@ -391,7 +385,7 @@ clean:
 nuke:
 	rm -rf build
 
-install: $(DIRS) $(APPS) $(MUPDF_LIB)
+install: $(OBJDIR) $(GENDIR) $(MUPDF_LIB) $(APPS)
 	install -d $(prefix)/bin $(prefix)/lib $(prefix)/include
 	install $(APPS) $(prefix)/bin
 	install $(MUPDF_LIB) $(prefix)/lib
