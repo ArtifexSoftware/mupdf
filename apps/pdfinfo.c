@@ -65,19 +65,19 @@ struct info
 	} u;
 };
 
-static struct info **dim = nil;
+static struct info *dim = nil;
 static int dims = 0;
-static struct info **font = nil;
+static struct info *font = nil;
 static int fonts = 0;
-static struct info **image = nil;
+static struct info *image = nil;
 static int images = 0;
-static struct info **shading = nil;
+static struct info *shading = nil;
 static int shadings = 0;
-static struct info **pattern = nil;
+static struct info *pattern = nil;
 static int patterns = 0;
-static struct info **form = nil;
+static struct info *form = nil;
 static int forms = 0;
-static struct info **psobj = nil;
+static struct info *psobj = nil;
 static int psobjs = 0;
 
 static void local_cleanup(void)
@@ -87,62 +87,50 @@ static void local_cleanup(void)
 	if (dim)
 	{
 		for (i = 0; i < dims; i++)
-			free(dim[i]);
-		free(dim);
+			fz_free(dim[i].u.dim.bbox);
+		fz_free(dim);
 		dim = nil;
 		dims = 0;
 	}
 
 	if (font)
 	{
-		for (i = 0; i < fonts; i++)
-			free(font[i]);
-		free(font);
+		fz_free(font);
 		font = nil;
 		fonts = 0;
 	}
 
 	if (image)
 	{
-		for (i = 0; i < images; i++)
-			free(image[i]);
-		free(image);
+		fz_free(image);
 		image = nil;
 		images = 0;
 	}
 
 	if (shading)
 	{
-		for (i = 0; i < shadings; i++)
-			free(shading[i]);
-		free(shading);
+		fz_free(shading);
 		shading = nil;
 		shadings = 0;
 	}
 
 	if (pattern)
 	{
-		for (i = 0; i < patterns; i++)
-			free(pattern[i]);
-		free(pattern);
+		fz_free(pattern);
 		pattern = nil;
 		patterns = 0;
 	}
 
 	if (form)
 	{
-		for (i = 0; i < forms; i++)
-			free(form[i]);
-		free(form);
+		fz_free(form);
 		form = nil;
 		forms = 0;
 	}
 
 	if (psobj)
 	{
-		for (i = 0; i < psobjs; i++)
-			free(psobj[i]);
-		free(psobj);
+		fz_free(psobj);
 		psobj = nil;
 		psobjs = 0;
 	}
@@ -207,7 +195,7 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 	bbox = pdf_torect(obj);
 
 	for (j = 0; j < dims; j++)
-		if (!memcmp(dim[j]->u.dim.bbox, &bbox, sizeof (fz_rect)))
+		if (!memcmp(dim[j].u.dim.bbox, &bbox, sizeof (fz_rect)))
 			break;
 
 	if (j < dims)
@@ -215,13 +203,12 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 
 	dims++;
 
-	dim = fz_realloc(dim, dims * sizeof (struct info *));
-	dim[dims - 1] = fz_malloc(sizeof (struct info));
-	dim[dims - 1]->page = page;
-	dim[dims - 1]->pageref = pageref;
-	dim[dims - 1]->pageobj = pageobj;
-	dim[dims - 1]->u.dim.bbox = fz_malloc(sizeof (fz_rect));
-	memcpy(dim[dims - 1]->u.dim.bbox, &bbox, sizeof (fz_rect));
+	dim = fz_realloc(dim, dims * sizeof (struct info));
+	dim[dims - 1].page = page;
+	dim[dims - 1].pageref = pageref;
+	dim[dims - 1].pageobj = pageobj;
+	dim[dims - 1].u.dim.bbox = fz_malloc(sizeof (fz_rect));
+	memcpy(dim[dims - 1].u.dim.bbox, &bbox, sizeof (fz_rect));
 
 	return;
 }
@@ -264,8 +251,8 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		for (k = 0; k < fonts; k++)
-			if (fz_tonum(font[k]->u.font.obj) == fz_tonum(fontdict) &&
-				fz_togen(font[k]->u.font.obj) == fz_togen(fontdict))
+			if (fz_tonum(font[k].u.font.obj) == fz_tonum(fontdict) &&
+				fz_togen(font[k].u.font.obj) == fz_togen(fontdict))
 				break;
 
 		if (k < fonts)
@@ -273,14 +260,13 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		fonts++;
 
-		font = fz_realloc(font, fonts * sizeof (struct info *));
-		font[fonts - 1] = fz_malloc(sizeof (struct info));
-		font[fonts - 1]->page = page;
-		font[fonts - 1]->pageref = pageref;
-		font[fonts - 1]->pageobj = pageobj;
-		font[fonts - 1]->u.font.obj = fontdict;
-		font[fonts - 1]->u.font.subtype = subtype;
-		font[fonts - 1]->u.font.name = basefont ? basefont : name;
+		font = fz_realloc(font, fonts * sizeof (struct info));
+		font[fonts - 1].page = page;
+		font[fonts - 1].pageref = pageref;
+		font[fonts - 1].pageobj = pageobj;
+		font[fonts - 1].u.font.obj = fontdict;
+		font[fonts - 1].u.font.subtype = subtype;
+		font[fonts - 1].u.font.name = basefont ? basefont : name;
 	}
 
 	return fz_okay;
@@ -360,8 +346,8 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			return fz_throw("not an image mask bits per component (%d %d R)", fz_tonum(imagedict), fz_togen(imagedict));
 
 		for (k = 0; k < images; k++)
-			if (fz_tonum(image[k]->u.image.obj) == fz_tonum(imagedict) &&
-				fz_togen(image[k]->u.image.obj) == fz_togen(imagedict))
+			if (fz_tonum(image[k].u.image.obj) == fz_tonum(imagedict) &&
+				fz_togen(image[k].u.image.obj) == fz_togen(imagedict))
 				break;
 
 		if (k < images)
@@ -369,18 +355,17 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		images++;
 
-		image = fz_realloc(image, images * sizeof (struct info *));
-		image[images - 1] = fz_malloc(sizeof (struct info));
-		image[images - 1]->page = page;
-		image[images - 1]->pageref = pageref;
-		image[images - 1]->pageobj = pageobj;
-		image[images - 1]->u.image.obj = imagedict;
-		image[images - 1]->u.image.width = width;
-		image[images - 1]->u.image.height = height;
-		image[images - 1]->u.image.bpc = bpc;
-		image[images - 1]->u.image.filter = filter;
-		image[images - 1]->u.image.cs = cs;
-		image[images - 1]->u.image.altcs = altcs;
+		image = fz_realloc(image, images * sizeof (struct info));
+		image[images - 1].page = page;
+		image[images - 1].pageref = pageref;
+		image[images - 1].pageobj = pageobj;
+		image[images - 1].u.image.obj = imagedict;
+		image[images - 1].u.image.width = width;
+		image[images - 1].u.image.height = height;
+		image[images - 1].u.image.bpc = bpc;
+		image[images - 1].u.image.filter = filter;
+		image[images - 1].u.image.cs = cs;
+		image[images - 1].u.image.altcs = altcs;
 	}
 
 	return fz_okay;
@@ -428,8 +413,8 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			return fz_throw("not a form xobject reference dict (%d %d R)", fz_tonum(xobjdict), fz_togen(xobjdict));
 
 		for (k = 0; k < forms; k++)
-			if (fz_tonum(form[k]->u.form.obj) == fz_tonum(xobjdict) &&
-				fz_togen(form[k]->u.form.obj) == fz_togen(xobjdict))
+			if (fz_tonum(form[k].u.form.obj) == fz_tonum(xobjdict) &&
+				fz_togen(form[k].u.form.obj) == fz_togen(xobjdict))
 				break;
 
 		if (k < forms)
@@ -437,14 +422,13 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		forms++;
 
-		form = fz_realloc(form, forms * sizeof (struct info *));
-		form[forms - 1] = fz_malloc(sizeof (struct info));
-		form[forms - 1]->page = page;
-		form[forms - 1]->pageref = pageref;
-		form[forms - 1]->pageobj = pageobj;
-		form[forms - 1]->u.form.obj = xobjdict;
-		form[forms - 1]->u.form.groupsubtype = groupsubtype;
-		form[forms - 1]->u.form.reference = reference;
+		form = fz_realloc(form, forms * sizeof (struct info));
+		form[forms - 1].page = page;
+		form[forms - 1].pageref = pageref;
+		form[forms - 1].pageobj = pageobj;
+		form[forms - 1].u.form.obj = xobjdict;
+		form[forms - 1].u.form.groupsubtype = groupsubtype;
+		form[forms - 1].u.form.reference = reference;
 	}
 
 	return fz_okay;
@@ -479,8 +463,8 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			continue;
 
 		for (k = 0; k < psobjs; k++)
-			if (fz_tonum(psobj[k]->u.form.obj) == fz_tonum(xobjdict) &&
-				fz_togen(psobj[k]->u.form.obj) == fz_togen(xobjdict))
+			if (fz_tonum(psobj[k].u.form.obj) == fz_tonum(xobjdict) &&
+				fz_togen(psobj[k].u.form.obj) == fz_togen(xobjdict))
 				break;
 
 		if (k < psobjs)
@@ -488,12 +472,11 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		psobjs++;
 
-		psobj = fz_realloc(psobj, psobjs * sizeof (struct info *));
-		psobj[psobjs - 1] = fz_malloc(sizeof (struct info));
-		psobj[psobjs - 1]->page = page;
-		psobj[psobjs - 1]->pageref = pageref;
-		psobj[psobjs - 1]->pageobj = pageobj;
-		psobj[psobjs - 1]->u.form.obj = xobjdict;
+		psobj = fz_realloc(psobj, psobjs * sizeof (struct info));
+		psobj[psobjs - 1].page = page;
+		psobj[psobjs - 1].pageref = pageref;
+		psobj[psobjs - 1].pageobj = pageobj;
+		psobj[psobjs - 1].u.form.obj = xobjdict;
 	}
 
 	return fz_okay;
@@ -522,8 +505,8 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		for (k = 0; k < shadings; k++)
-			if (fz_tonum(shading[k]->u.shading.obj) == fz_tonum(shade) &&
-				fz_togen(shading[k]->u.shading.obj) == fz_togen(shade))
+			if (fz_tonum(shading[k].u.shading.obj) == fz_tonum(shade) &&
+				fz_togen(shading[k].u.shading.obj) == fz_togen(shade))
 				break;
 
 		if (k < shadings)
@@ -531,13 +514,12 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		shadings++;
 
-		shading = fz_realloc(shading, shadings * sizeof (struct info *));
-		shading[shadings - 1] = fz_malloc(sizeof (struct info));
-		shading[shadings - 1]->page = page;
-		shading[shadings - 1]->pageref = pageref;
-		shading[shadings - 1]->pageobj = pageobj;
-		shading[shadings - 1]->u.shading.obj = shade;
-		shading[shadings - 1]->u.shading.type = type;
+		shading = fz_realloc(shading, shadings * sizeof (struct info));
+		shading[shadings - 1].page = page;
+		shading[shadings - 1].pageref = pageref;
+		shading[shadings - 1].pageobj = pageobj;
+		shading[shadings - 1].u.shading.obj = shade;
+		shading[shadings - 1].u.shading.type = type;
 	}
 
 	return fz_okay;
@@ -590,8 +572,8 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		for (k = 0; k < patterns; k++)
-			if (fz_tonum(pattern[k]->u.pattern.obj) == fz_tonum(patterndict) &&
-				fz_togen(pattern[k]->u.pattern.obj) == fz_togen(patterndict))
+			if (fz_tonum(pattern[k].u.pattern.obj) == fz_tonum(patterndict) &&
+				fz_togen(pattern[k].u.pattern.obj) == fz_togen(patterndict))
 				break;
 
 		if (k < patterns)
@@ -599,16 +581,15 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		patterns++;
 
-		pattern = fz_realloc(pattern, patterns * sizeof (struct info *));
-		pattern[patterns - 1] = fz_malloc(sizeof (struct info));
-		pattern[patterns - 1]->page = page;
-		pattern[patterns - 1]->pageref = pageref;
-		pattern[patterns - 1]->pageobj = pageobj;
-		pattern[patterns - 1]->u.pattern.obj = patterndict;
-		pattern[patterns - 1]->u.pattern.type = type;
-		pattern[patterns - 1]->u.pattern.paint = paint;
-		pattern[patterns - 1]->u.pattern.tiling = tiling;
-		pattern[patterns - 1]->u.pattern.shading = shading;
+		pattern = fz_realloc(pattern, patterns * sizeof (struct info));
+		pattern[patterns - 1].page = page;
+		pattern[patterns - 1].pageref = pageref;
+		pattern[patterns - 1].pageobj = pageobj;
+		pattern[patterns - 1].u.pattern.obj = patterndict;
+		pattern[patterns - 1].u.pattern.type = type;
+		pattern[patterns - 1].u.pattern.paint = paint;
+		pattern[patterns - 1].u.pattern.tiling = tiling;
+		pattern[patterns - 1].u.pattern.shading = shading;
 	}
 
 	return fz_okay;
@@ -730,23 +711,14 @@ printinfo(char *filename, int show, int page)
 		for (i = 0; i < dims; i++)
 		{
 			printf(PAGE_FMT "[ %g %g %g %g ]\n",
-				dim[i]->page,
-				fz_tonum(dim[i]->pageref), fz_togen(dim[i]->pageref),
-				dim[i]->u.dim.bbox->x0,
-				dim[i]->u.dim.bbox->y0,
-				dim[i]->u.dim.bbox->x1,
-				dim[i]->u.dim.bbox->y1);
+				dim[i].page,
+				fz_tonum(dim[i].pageref), fz_togen(dim[i].pageref),
+				dim[i].u.dim.bbox->x0,
+				dim[i].u.dim.bbox->y0,
+				dim[i].u.dim.bbox->x1,
+				dim[i].u.dim.bbox->y1);
 		}
 		printf("\n");
-
-		for (i = 0; i < dims; i++)
-		{
-			fz_free(dim[i]->u.dim.bbox);
-			fz_free(dim[i]);
-		}
-		fz_free(dim);
-		dim = nil;
-		dims = 0;
 	}
 
 	if (show & FONTS && fonts > 0)
@@ -755,19 +727,13 @@ printinfo(char *filename, int show, int page)
 		for (i = 0; i < fonts; i++)
 		{
 			printf(PAGE_FMT "%s '%s' (%d %d R)\n",
-				font[i]->page,
-				fz_tonum(font[i]->pageref), fz_togen(font[i]->pageref),
-				fz_toname(font[i]->u.font.subtype),
-				fz_toname(font[i]->u.font.name),
-				fz_tonum(font[i]->u.font.obj), fz_togen(font[i]->u.font.obj));
+				font[i].page,
+				fz_tonum(font[i].pageref), fz_togen(font[i].pageref),
+				fz_toname(font[i].u.font.subtype),
+				fz_toname(font[i].u.font.name),
+				fz_tonum(font[i].u.font.obj), fz_togen(font[i].u.font.obj));
 		}
 		printf("\n");
-
-		for (i = 0; i < fonts; i++)
-			fz_free(font[i]);
-		fz_free(font);
-		font = nil;
-		fonts = 0;
 	}
 
 	if (show & IMAGES && images > 0)
@@ -779,13 +745,13 @@ printinfo(char *filename, int show, int page)
 			char *altcs = nil;
 
 			printf(PAGE_FMT "[ ",
-				image[i]->page,
-				fz_tonum(image[i]->pageref), fz_togen(image[i]->pageref));
+				image[i].page,
+				fz_tonum(image[i].pageref), fz_togen(image[i].pageref));
 
-			if (fz_isarray(image[i]->u.image.filter))
-				for (j = 0; j < fz_arraylen(image[i]->u.image.filter); j++)
+			if (fz_isarray(image[i].u.image.filter))
+				for (j = 0; j < fz_arraylen(image[i].u.image.filter); j++)
 				{
-					fz_obj *obj = fz_arrayget(image[i]->u.image.filter, j);
+					fz_obj *obj = fz_arrayget(image[i].u.image.filter, j);
 					char *filter = fz_strdup(fz_toname(obj));
 
 					if (strstr(filter, "Decode"))
@@ -793,12 +759,12 @@ printinfo(char *filename, int show, int page)
 
 					printf("%s%s",
 							filter,
-							j == fz_arraylen(image[i]->u.image.filter) - 1 ? "" : " ");
+							j == fz_arraylen(image[i].u.image.filter) - 1 ? "" : " ");
 					fz_free(filter);
 				}
-			else if (image[i]->u.image.filter)
+			else if (image[i].u.image.filter)
 			{
-				fz_obj *obj = image[i]->u.image.filter;
+				fz_obj *obj = image[i].u.image.filter;
 				char *filter = fz_strdup(fz_toname(obj));
 
 				if (strstr(filter, "Decode"))
@@ -810,56 +776,58 @@ printinfo(char *filename, int show, int page)
 			else
 				printf("Raw");
 
-			if (image[i]->u.image.cs)
+			if (image[i].u.image.cs)
 			{
-				cs = fz_strdup(fz_toname(image[i]->u.image.cs));
+				cs = fz_strdup(fz_toname(image[i].u.image.cs));
 
 				if (!strncmp(cs, "Device", 6))
-					strcpy(&cs[3], &cs[6]);
+				{
+					for (j = 0; cs[j + 6] != '\0'; j++)
+						cs[3 + j] = cs[j + 6];
+					cs[j + 6] = '\0';
+				}
 				if (strstr(cs, "ICC"))
-					strcpy(cs, "ICC");
+					fz_strlcpy(cs, "ICC", 3);
 				if (strstr(cs, "Indexed"))
-					strcpy(cs, "Idx");
+					fz_strlcpy(cs, "Idx", 3);
 				if (strstr(cs, "Pattern"))
-					strcpy(cs, "Pat");
+					fz_strlcpy(cs, "Pat", 3);
 				if (strstr(cs, "Separation"))
-					strcpy(cs, "Sep");
+					fz_strlcpy(cs, "Sep", 3);
 			}
-			if (image[i]->u.image.altcs)
+			if (image[i].u.image.altcs)
 			{
-				altcs = fz_strdup(fz_toname(image[i]->u.image.altcs));
+				altcs = fz_strdup(fz_toname(image[i].u.image.altcs));
 
 				if (!strncmp(altcs, "Device", 6))
-					strcpy(&altcs[3], &altcs[6]);
+				{
+					for (j = 0; altcs[j + 6] != '\0'; j++)
+						altcs[3 + j] = altcs[j + 6];
+					altcs[j + 6] = '\0';
+				}
 				if (strstr(altcs, "ICC"))
-					strcpy(altcs, "ICC");
+					fz_strlcpy(altcs, "ICC", 3);
 				if (strstr(altcs, "Indexed"))
-					strcpy(altcs, "Idx");
+					fz_strlcpy(altcs, "Idx", 3);
 				if (strstr(altcs, "Pattern"))
-					strcpy(altcs, "Pat");
+					fz_strlcpy(altcs, "Pat", 3);
 				if (strstr(altcs, "Separation"))
-					strcpy(altcs, "Sep");
+					fz_strlcpy(altcs, "Sep", 3);
 			}
 
 			printf(" ] %dx%d %dbpc %s%s%s (%d %d R)\n",
-				fz_toint(image[i]->u.image.width),
-				fz_toint(image[i]->u.image.height),
-				image[i]->u.image.bpc ? fz_toint(image[i]->u.image.bpc) : 1,
-				image[i]->u.image.cs ? cs : "ImageMask",
-				image[i]->u.image.altcs ? " " : "",
-				image[i]->u.image.altcs ? altcs : "",
-				fz_tonum(image[i]->u.image.obj), fz_togen(image[i]->u.image.obj));
+				fz_toint(image[i].u.image.width),
+				fz_toint(image[i].u.image.height),
+				image[i].u.image.bpc ? fz_toint(image[i].u.image.bpc) : 1,
+				image[i].u.image.cs ? cs : "ImageMask",
+				image[i].u.image.altcs ? " " : "",
+				image[i].u.image.altcs ? altcs : "",
+				fz_tonum(image[i].u.image.obj), fz_togen(image[i].u.image.obj));
 
 			fz_free(cs);
 			fz_free(altcs);
 		}
 		printf("\n");
-
-		for (i = 0; i < images; i++)
-			fz_free(image[i]);
-		fz_free(image);
-		image = nil;
-		images = 0;
 	}
 
 	if (show & SHADINGS && shadings > 0)
@@ -880,18 +848,12 @@ printinfo(char *filename, int show, int page)
 			};
 
 			printf(PAGE_FMT "%s (%d %d R)\n",
-				shading[i]->page,
-				fz_tonum(shading[i]->pageref), fz_togen(shading[i]->pageref),
-				shadingtype[fz_toint(shading[i]->u.shading.type)],
-				fz_tonum(shading[i]->u.shading.obj), fz_togen(shading[i]->u.shading.obj));
+				shading[i].page,
+				fz_tonum(shading[i].pageref), fz_togen(shading[i].pageref),
+				shadingtype[fz_toint(shading[i].u.shading.type)],
+				fz_tonum(shading[i].u.shading.obj), fz_togen(shading[i].u.shading.obj));
 		}
 		printf("\n");
-
-		for (i = 0; i < shadings; i++)
-			fz_free(shading[i]);
-		fz_free(shading);
-		shading = nil;
-		shadings = 0;
 	}
 
 	if (show & PATTERNS && patterns > 0)
@@ -899,7 +861,7 @@ printinfo(char *filename, int show, int page)
 		printf("Patterns (%d):\n", patterns);
 		for (i = 0; i < patterns; i++)
 		{
-			if (fz_toint(pattern[i]->u.pattern.type) == 1)
+			if (fz_toint(pattern[i].u.pattern.type) == 1)
 			{
 				char *painttype[] =
 				{
@@ -916,28 +878,22 @@ printinfo(char *filename, int show, int page)
 				};
 
 				printf(PAGE_FMT "Tiling %s %s (%d %d R)\n",
-						pattern[i]->page,
-						fz_tonum(pattern[i]->pageref), fz_togen(pattern[i]->pageref),
-						painttype[fz_toint(pattern[i]->u.pattern.paint)],
-						tilingtype[fz_toint(pattern[i]->u.pattern.tiling)],
-						fz_tonum(pattern[i]->u.pattern.obj), fz_togen(pattern[i]->u.pattern.obj));
+						pattern[i].page,
+						fz_tonum(pattern[i].pageref), fz_togen(pattern[i].pageref),
+						painttype[fz_toint(pattern[i].u.pattern.paint)],
+						tilingtype[fz_toint(pattern[i].u.pattern.tiling)],
+						fz_tonum(pattern[i].u.pattern.obj), fz_togen(pattern[i].u.pattern.obj));
 			}
 			else
 			{
 				printf(PAGE_FMT "Shading %d %d R (%d %d R)\n",
-						pattern[i]->page,
-						fz_tonum(pattern[i]->pageref), fz_togen(pattern[i]->pageref),
-						fz_tonum(pattern[i]->u.pattern.shading), fz_togen(pattern[i]->u.pattern.shading),
-						fz_tonum(pattern[i]->u.pattern.obj), fz_togen(pattern[i]->u.pattern.obj));
+						pattern[i].page,
+						fz_tonum(pattern[i].pageref), fz_togen(pattern[i].pageref),
+						fz_tonum(pattern[i].u.pattern.shading), fz_togen(pattern[i].u.pattern.shading),
+						fz_tonum(pattern[i].u.pattern.obj), fz_togen(pattern[i].u.pattern.obj));
 			}
 		}
 		printf("\n");
-
-		for (i = 0; i < patterns; i++)
-			fz_free(pattern[i]);
-		fz_free(pattern);
-		pattern = nil;
-		patterns = 0;
 	}
 
 	if (show & XOBJS && forms > 0)
@@ -946,21 +902,15 @@ printinfo(char *filename, int show, int page)
 		for (i = 0; i < forms; i++)
 		{
 			printf(PAGE_FMT "Form%s%s%s%s (%d %d R)\n",
-				form[i]->page,
-				fz_tonum(form[i]->pageref), fz_togen(form[i]->pageref),
-				form[i]->u.form.groupsubtype ? " " : "",
-				form[i]->u.form.groupsubtype ? fz_toname(form[i]->u.form.groupsubtype) : "",
-				form[i]->u.form.groupsubtype ? " Group" : "",
-				form[i]->u.form.reference ? " Reference" : "",
-				fz_tonum(form[i]->u.form.obj), fz_togen(form[i]->u.form.obj));
+				form[i].page,
+				fz_tonum(form[i].pageref), fz_togen(form[i].pageref),
+				form[i].u.form.groupsubtype ? " " : "",
+				form[i].u.form.groupsubtype ? fz_toname(form[i].u.form.groupsubtype) : "",
+				form[i].u.form.groupsubtype ? " Group" : "",
+				form[i].u.form.reference ? " Reference" : "",
+				fz_tonum(form[i].u.form.obj), fz_togen(form[i].u.form.obj));
 		}
 		printf("\n");
-
-		for (i = 0; i < forms; i++)
-			fz_free(form[i]);
-		fz_free(form);
-		form = nil;
-		forms = 0;
 	}
 
 	if (show & XOBJS && psobjs > 0)
@@ -969,17 +919,11 @@ printinfo(char *filename, int show, int page)
 		for (i = 0; i < psobjs; i++)
 		{
 			printf(PAGE_FMT "(%d %d R)\n",
-				psobj[i]->page,
-				fz_tonum(psobj[i]->pageref), fz_togen(psobj[i]->pageref),
-				fz_tonum(psobj[i]->u.form.obj), fz_togen(psobj[i]->u.form.obj));
+				psobj[i].page,
+				fz_tonum(psobj[i].pageref), fz_togen(psobj[i].pageref),
+				fz_tonum(psobj[i].u.form.obj), fz_togen(psobj[i].u.form.obj));
 		}
 		printf("\n");
-
-		for (i = 0; i < psobjs; i++)
-			fz_free(psobj[i]);
-		fz_free(psobj);
-		psobj = nil;
-		psobjs = 0;
 	}
 }
 
