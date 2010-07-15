@@ -239,8 +239,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			name = fz_dictgets(fontdict, "Name");
 
 		for (k = 0; k < fonts; k++)
-			if (fz_tonum(font[k].u.font.obj) == fz_tonum(fontdict) &&
-				fz_togen(font[k].u.font.obj) == fz_togen(fontdict))
+			if (!fz_objcmp(font[k].u.font.obj, fontdict))
 				break;
 
 		if (k < fonts)
@@ -310,8 +309,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		bpc = fz_dictgets(imagedict, "BitsPerComponent");
 
 		for (k = 0; k < images; k++)
-			if (fz_tonum(image[k].u.image.obj) == fz_tonum(imagedict) &&
-				fz_togen(image[k].u.image.obj) == fz_togen(imagedict))
+			if (!fz_objcmp(image[k].u.image.obj, imagedict))
 				break;
 
 		if (k < images)
@@ -368,8 +366,7 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		reference = fz_dictgets(xobjdict, "Ref");
 
 		for (k = 0; k < forms; k++)
-			if (fz_tonum(form[k].u.form.obj) == fz_tonum(xobjdict) &&
-				fz_togen(form[k].u.form.obj) == fz_togen(xobjdict))
+			if (!fz_objcmp(form[k].u.form.obj, xobjdict))
 				break;
 
 		if (k < forms)
@@ -413,8 +410,7 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			continue;
 
 		for (k = 0; k < psobjs; k++)
-			if (fz_tonum(psobj[k].u.form.obj) == fz_tonum(xobjdict) &&
-				fz_togen(psobj[k].u.form.obj) == fz_togen(xobjdict))
+			if (!fz_objcmp(psobj[k].u.form.obj, xobjdict))
 				break;
 
 		if (k < psobjs)
@@ -456,8 +452,7 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		for (k = 0; k < shadings; k++)
-			if (fz_tonum(shading[k].u.shading.obj) == fz_tonum(shade) &&
-				fz_togen(shading[k].u.shading.obj) == fz_togen(shade))
+			if (!fz_objcmp(shading[k].u.shading.obj, shade))
 				break;
 
 		if (k < shadings)
@@ -524,8 +519,7 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		}
 
 		for (k = 0; k < patterns; k++)
-			if (fz_tonum(pattern[k].u.pattern.obj) == fz_tonum(patterndict) &&
-				fz_togen(pattern[k].u.pattern.obj) == fz_togen(patterndict))
+			if (!fz_objcmp(pattern[k].u.pattern.obj, patterndict))
 				break;
 
 		if (k < patterns)
