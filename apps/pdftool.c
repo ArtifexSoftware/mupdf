@@ -36,12 +36,12 @@ void openxref(char *filename, char *password, int dieonbadpass, int loadpages)
 
 	fd = open(filename, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		die(fz_throw("cannot open file '%s'", filename));
+		die(fz_throw("cannot open file '%s': %s", filename, strerror(errno)));
 
 	file = fz_openfile(fd);
-	xref = pdf_openxref(file);
-	if (!xref)
-		die(fz_throw("cannot open PDF file '%s'", basename));
+	error = pdf_openxref(&xref, file);
+	if (error)
+		die(fz_rethrow(error, "cannot open document '%s'", basename));
 	fz_dropstream(file);
 
 	if (pdf_needspassword(xref))

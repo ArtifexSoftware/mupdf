@@ -616,8 +616,8 @@ pdf_loadxref(pdf_xref *xref, char *buf, int bufsize)
  * Open PDF file and load or reconstruct xref table.
  */
 
-pdf_xref *
-pdf_openxref(fz_stream *file)
+fz_error
+pdf_openxref(pdf_xref **xrefp, fz_stream *file)
 {
 	pdf_xref *xref;
 	fz_error error;
@@ -625,6 +625,7 @@ pdf_openxref(fz_stream *file)
 	fz_obj *id;
 
 	xref = fz_malloc(sizeof(pdf_xref));
+
 	memset(xref, 0, sizeof(pdf_xref));
 
 	pdf_logxref("openxref %p\n", xref);
@@ -644,7 +645,10 @@ pdf_openxref(fz_stream *file)
 		}
 		error = pdf_repairxref(xref, xref->scratch, sizeof xref->scratch);
 		if (error)
-			goto cleanup;
+		{
+			pdf_closexref(xref);
+			return fz_rethrow(error, "cannot repair document");
+		}
 	}
 
 	encrypt = fz_dictgets(xref->trailer, "Encrypt");
@@ -653,17 +657,12 @@ pdf_openxref(fz_stream *file)
 	{
 		error = pdf_newcrypt(&xref->crypt, encrypt, id);
 		if (error)
-			goto cleanup;
+		{
+			pdf_closexref(xref);
+			return fz_rethrow(error, "cannot decrypt document");
+		}
 	}
 
-	return xref;
-
-cleanup:
-	if (xref->file)
-		fz_dropstream(xref->file);
-	if (xref->table)
-		fz_free(xref->table);
-	fz_free(xref);
-	fz_rethrow(error, "cannot open document");
-	return NULL;
+	*xrefp = xref;
+	return fz_okay;
 }
