@@ -61,7 +61,7 @@ static void drawusage(void)
 		"\t-o -\tpattern (%%d for page number) for output file\n"
 		"\t-r -\tresolution in dpi\n"
 		"\t-m\tprint benchmark results\n"
-		"\t-g\toutput a pgm rather than a pnm\n"
+		"\t-g\trender grayscale\n"
 		"\t-s\tprint MD5 checksum of page pixel data\n"
 		"\t-t\ttext extraction mode\n"
 		"\t-x\txml trace mode\n"

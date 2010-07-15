@@ -697,11 +697,14 @@ fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
 fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
 fz_pixmap *fz_keeppixmap(fz_pixmap *map);
 void fz_droppixmap(fz_pixmap *map);
-
-void fz_debugpixmap(fz_pixmap *map, char *prefix);
 void fz_clearpixmap(fz_pixmap *map, unsigned char value);
+void fz_gammapixmap(fz_pixmap *pix, float gamma);
 
 fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
+
+fz_error fz_writepnm(fz_pixmap *pixmap, char *filename);
+fz_error fz_writepam(fz_pixmap *pixmap, char *filename);
+fz_error fz_writepng(fz_pixmap *pixmap, char *filename, int alpha);
 
 /*
  * Colorspace resources.
