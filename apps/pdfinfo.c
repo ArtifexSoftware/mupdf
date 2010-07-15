@@ -63,8 +63,6 @@ struct info
 	} u;
 };
 
-static struct info *info = nil;
-static struct info *cryptinfo = nil;
 static struct info **dim = nil;
 static int dims = 0;
 static struct info **font = nil;
@@ -83,12 +81,6 @@ static int psobjs = 0;
 static void local_cleanup(void)
 {
 	int i;
-
-	if (info)
-	{
-		free(info);
-		info = nil;
-	}
 
 	if (dim)
 	{
@@ -169,29 +161,27 @@ infousage(void)
 }
 
 static void
-gatherglobalinfo(void)
+showglobalinfo(void)
 {
-	info = fz_malloc(sizeof (struct info));
+	fz_obj *obj;
 
-	info->page = -1;
-	info->pageobj = nil;
-	info->u.info.obj = nil;
+	printf("\nPDF-%d.%d\n", xref->version / 10, xref->version % 10);
 
-	info->u.info.obj = fz_dictgets(xref->trailer, "Info");
-	if (!fz_isindirect(info->u.info.obj))
-		die(fz_throw("not an indirect info object"));
+	obj = fz_dictgets(xref->trailer, "Info");
+	if (obj)
+	{
+		printf("Info object (%d %d R):\n", fz_tonum(obj), fz_togen(obj));
+		fz_debugobj(fz_resolveindirect(obj));
+	}
 
-	cryptinfo = fz_malloc(sizeof (struct info));
+	obj = fz_dictgets(xref->trailer, "Encrypt");
+	if (obj)
+	{
+		printf("\nEncryption object (%d %d R):\n", fz_tonum(obj), fz_togen(obj));
+		fz_debugobj(fz_resolveindirect(obj));
+	}
 
-	cryptinfo->page = -1;
-	cryptinfo->pageobj = nil;
-	cryptinfo->u.crypt.obj = nil;
-
-	cryptinfo->u.info.obj = fz_dictgets(xref->trailer, "Encrypt");
-	if (cryptinfo->u.info.obj &&
-		!fz_isdict(cryptinfo->u.info.obj) &&
-		!fz_isindirect(cryptinfo->u.info.obj))
-		die(fz_throw("not an indirect crypt object"));
+	printf("\nPages: %d\n\n", pagecount);
 }
 
 static fz_error
@@ -611,6 +601,7 @@ gatherinfo(int show, int page)
 {
 	fz_error error;
 	fz_obj *pageobj;
+	fz_obj *pageref;
 	fz_obj *rsrc;
 	fz_obj *font;
 	fz_obj *xobj;
@@ -618,6 +609,7 @@ gatherinfo(int show, int page)
 	fz_obj *pattern;
 
 	pageobj = pdf_getpageobject(xref, page);
+	pageref = pdf_getpageref(xref, page);
 
 	if (!pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
@@ -680,26 +672,6 @@ gatherinfo(int show, int page)
 				die(fz_rethrow(error, "gathering shadings at page %d (%d %d R)", page, fz_tonum(pageobj), fz_togen(pageobj)));
 		}
 	}
-}
-
-static void
-printglobalinfo(void)
-{
-	printf("\nPDF-%d.%d\n", xref->version / 10, xref->version % 10);
-
-	if (info->u.info.obj)
-	{
-		printf("Info object (%d %d R):\n", fz_tonum(info->u.info.obj), fz_togen(info->u.info.obj));
-		fz_debugobj(info->u.info.obj);
-	}
-
-	if (cryptinfo->u.crypt.obj)
-	{
-		printf("\nEncryption object (%d %d R):\n", fz_tonum(cryptinfo->u.info.obj), fz_togen(cryptinfo->u.info.obj));
-		fz_debugobj(cryptinfo->u.crypt.obj);
-	}
-
-	printf("\nPages: %d\n\n", pagecount);
 }
 
 static void
@@ -1011,7 +983,6 @@ int main(int argc, char **argv)
 		{
 			if (state == NO_INFO_GATHERED)
 			{
-				printglobalinfo();
 				showinfo(filename, show, "1-");
 				closexref();
 			}
@@ -1020,13 +991,11 @@ int main(int argc, char **argv)
 			filename = argv[fz_optind];
 			printf("%s:\n", filename);
 			openxref(filename, password, 0, 1);
-			gatherglobalinfo();
+			showglobalinfo();
 			state = NO_INFO_GATHERED;
 		}
 		else
 		{
-			if (state == NO_INFO_GATHERED)
-				printglobalinfo();
 			showinfo(filename, show, argv[fz_optind]);
 			state = INFO_SHOWN;
 		}
@@ -1035,10 +1004,7 @@ int main(int argc, char **argv)
 	}
 
 	if (state == NO_INFO_GATHERED)
-	{
-		printglobalinfo();
 		showinfo(filename, show, "1-");
-	}
 
 	closexref();
 
