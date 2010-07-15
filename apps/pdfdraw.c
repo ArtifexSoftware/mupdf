@@ -212,7 +212,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		fprintf(stdout, "creating display list for banded rendering\n");
 		list = fz_newdisplaylist();
 		dev = fz_newlistdevice(list);
-		error = pdf_runcontentstream(dev, fz_identity, xref, drawpage->resources, drawpage->contents);
+		error = pdf_runpage(xref, drawpage, dev, fz_identity);
 		if (error)
 			die(fz_rethrow(error, "cannot draw page %d in PDF file '%s'", pagenum, basename));
 		fz_freedevice(dev);
@@ -231,7 +231,7 @@ static void drawpnm(int pagenum, struct benchmark *loadtimes, struct benchmark *
 		}
 		else
 		{
-			error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
+			error = pdf_runpage(xref, drawpage, dev, ctm);
 			if (error)
 				die(fz_rethrow(error, "cannot draw page %d in PDF file '%s'", pagenum, basename));
 		}
@@ -342,7 +342,7 @@ static void drawtxt(int pagenum, struct benchmark *loadtimes)
 	text = fz_newtextspan();
 	dev = fz_newtextdevice(text);
 
-	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
+	error = pdf_runpage(xref, drawpage, dev, ctm);
 	if (error)
 		die(fz_rethrow(error, "cannot extract text from page %d in PDF file '%s'", pagenum, basename));
 
@@ -375,7 +375,7 @@ static void drawxml(int pagenum)
 	printf("<?xml version=\"1.0\"?>\n");
 	printf("<page number=\"%d\">\n", pagenum);
 
-	error = pdf_runcontentstream(dev, ctm, xref, drawpage->resources, drawpage->contents);
+	error = pdf_runpage(xref, drawpage, dev, ctm);
 	if (error)
 		die(fz_rethrow(error, "cannot display page %d in PDF file '%s' as XML", pagenum, basename));
 

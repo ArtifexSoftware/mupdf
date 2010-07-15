@@ -225,7 +225,7 @@ pdf_showshade(pdf_csi *csi, fz_shade *shd)
 	if (gstate->blendmode != FZ_BNORMAL)
 	{
 		fz_rect bbox = fz_boundshade(shd, gstate->ctm);
-		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode);
 	}
 
 	csi->dev->fillshade(csi->dev->user, shd, gstate->ctm);
@@ -250,7 +250,7 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 	if (gstate->blendmode != FZ_BNORMAL)
 	{
 		fz_rect bbox = fz_transformrect(gstate->ctm, fz_unitrect);
-		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode);
 	}
 
 	tile = pdf_loadtile(image);
@@ -327,7 +327,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 			bbox = fz_boundpath(path, &gstate->strokestate, gstate->ctm);
 		else
 			bbox = fz_boundpath(path, nil, gstate->ctm);
-		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode);
 	}
 
 	if (dofill)
@@ -462,7 +462,7 @@ pdf_flushtext(pdf_csi *csi)
 	if (gstate->blendmode != FZ_BNORMAL)
 	{
 		fz_rect bbox = fz_boundtext(text, gstate->ctm);
-		csi->dev->begingroup(csi->dev->user, bbox, nil, 0, 0, gstate->blendmode);
+		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode);
 	}
 
 	if (dofill)

@@ -244,7 +244,7 @@ fz_traceendmask(void *user)
 }
 
 static void
-fz_tracebegingroup(void *user, fz_rect bbox, fz_colorspace *colorspace, int isolated, int knockout, fz_blendmode blendmode)
+fz_tracebegingroup(void *user, fz_rect bbox, int isolated, int knockout, fz_blendmode blendmode)
 {
 	printf("<group bbox=\"%g %g %g %g\" isolated=\"%d\" knockout=\"%d\" blendmode=\"%d\">\n",
 		bbox.x0, bbox.y0, bbox.x1, bbox.y1,

@@ -2,13 +2,13 @@
 #include "mupdf.h"
 
 static pdf_csi *
-pdf_newcsi(fz_device *dev, pdf_xref *xref, fz_matrix ctm)
+pdf_newcsi(pdf_xref *xref, fz_device *dev, fz_matrix ctm)
 {
 	pdf_csi *csi;
 
 	csi = fz_malloc(sizeof(pdf_csi));
-	csi->dev = dev;
 	csi->xref = xref;
+	csi->dev = dev;
 
 	csi->top = 0;
 	csi->xbalance = 0;
@@ -156,22 +156,19 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	gstate->stroke.parentalpha = gstate->stroke.alpha;
 	gstate->fill.parentalpha = gstate->fill.alpha;
 
-	/* reset alpha to 1.0 when starting a new Transparency group */
-	if (xobj->transparency)
-	{
-		gstate->blendmode = FZ_BNORMAL;
-		gstate->stroke.alpha = gstate->stroke.parentalpha;
-		gstate->fill.alpha = gstate->fill.parentalpha;
-	}
-
 	/* apply xobject's transform matrix */
 	gstate->ctm = fz_concat(xobj->matrix, gstate->ctm);
 
-	if (xobj->isolated || xobj->knockout)
+	/* reset alpha to 1.0 when starting a new Transparency group */
+	if (xobj->transparency)
 	{
-		/* The xobject's contents ought to be blended properly,
-		but for now, just do over and hope for something */
-		// TODO: push, pop and blend buffers
+		csi->dev->begingroup(csi->dev->user,
+			fz_transformrect(gstate->ctm, xobj->bbox),
+			xobj->isolated, xobj->knockout, gstate->blendmode);
+
+		gstate->blendmode = FZ_BNORMAL;
+		gstate->stroke.alpha = gstate->stroke.parentalpha;
+		gstate->fill.alpha = gstate->fill.parentalpha;
 	}
 
 	/* clip to the bounds */
@@ -195,6 +192,9 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	error = pdf_runcsibuffer(csi, resources, xobj->contents);
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
+
+	if (xobj->transparency)
+		csi->dev->endgroup(csi->dev->user);
 
 	csi->topctm = oldtopctm;
 
@@ -247,7 +247,7 @@ pdf_runinlineimage(pdf_csi *csi, fz_obj *rdb, fz_stream *file, fz_obj *dict)
  */
 
 static fz_error
-pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgstate)
+pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstate)
 {
 	int i, k;
 
@@ -270,7 +270,7 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 					gstate->font = nil;
 				}
 
-				error = pdf_loadfont(&gstate->font, xref, rdb, font);
+				error = pdf_loadfont(&gstate->font, csi->xref, rdb, font);
 				if (error)
 					return fz_rethrow(error, "cannot load font (%d %d R)", fz_tonum(font), fz_togen(font));
 				if (!gstate->font)
@@ -335,16 +335,14 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 				return fz_throw("malformed BM");
 
 			gstate->blendmode = FZ_BNORMAL;
-#if 1
-			for (k = 0; k < nelem(bm); k++) {
-				if (!strcmp(bm[k].name, n)) {
+			for (k = 0; k < nelem(bm); k++)
+			{
+				if (!strcmp(bm[k].name, n))
+				{
 					gstate->blendmode = bm[k].mode;
-					if (gstate->blendmode != FZ_BNORMAL)
-						fz_warn("ignoring blend mode %s", n);
 					break;
 				}
 			}
-#endif
 		}
 
 		else if (!strcmp(s, "SMask"))
@@ -364,14 +362,14 @@ pdf_runextgstate(pdf_gstate *gstate, pdf_xref *xref, fz_obj *rdb, fz_obj *extgst
 
 				if (!strcmp(fz_toname(subtype), "Form"))
 				{
-				error = pdf_loadxobject(&xobj, xref, g);
+				error = pdf_loadxobject(&xobj, csi->xref, g);
 				if (error)
 				return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
 				}
 
 				else if (!strcmp(fz_toname(subtype), "Image"))
 				{
-				error = pdf_loadimage(&img, xref, g);
+				error = pdf_loadimage(&img, csi->xref, g);
 				if (error)
 				return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
 				}
@@ -1100,7 +1098,7 @@ Lsetcolor:
 			if (!obj)
 				return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->stack[0]));
 
-			error = pdf_runextgstate(gstate, csi->xref, rdb, obj);
+			error = pdf_runextgstate(csi, gstate, rdb, obj);
 			if (error)
 				return fz_rethrow(error, "cannot set ExtGState (%d %d R)", fz_tonum(obj), fz_togen(obj));
 			break;
@@ -1497,7 +1495,6 @@ pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 {
 	fz_stream *file;
 	fz_error error;
-
 	contents->rp = contents->bp;
 	file = fz_openbuffer(contents);
 	error = pdf_runcsifile(csi, rdb, file, csi->xref->scratch, sizeof csi->xref->scratch);
@@ -1509,13 +1506,33 @@ pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 }
 
 fz_error
-pdf_runcontentstream(fz_device *dev, fz_matrix ctm,
-	pdf_xref *xref, fz_obj *resources, fz_buffer *contents)
+pdf_runcontents(pdf_xref *xref, fz_obj *resources, fz_buffer *contents,
+	fz_device *dev, fz_matrix ctm)
 {
-	pdf_csi *csi = pdf_newcsi(dev, xref, ctm);
+	pdf_csi *csi = pdf_newcsi(xref, dev, ctm);
 	fz_error error = pdf_runcsibuffer(csi, resources, contents);
 	pdf_freecsi(csi);
 	if (error)
 		return fz_rethrow(error, "cannot parse content stream");
+	return fz_okay;
+}
+
+fz_error
+pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
+{
+	fz_error error;
+
+	if (page->transparency)
+		dev->begingroup(dev->user,
+			fz_transformrect(ctm, page->mediabox),
+			0, 0, FZ_BNORMAL);
+
+	error = pdf_runcontents(xref, page->resources, page->contents, dev, ctm);
+	if (error)
+		return fz_rethrow(error, "cannot parse page content stream");
+
+	if (page->transparency)
+		dev->endgroup(dev->user);
+
 	return fz_okay;
 }

@@ -282,7 +282,7 @@ fz_blendnonseparable(byte * restrict sp, byte * restrict bp, int w, fz_blendmode
 
 		saba = fz_mul255(sa, ba);
 
-		/* ugh, bivision to get non-premul components */
+		/* ugh, division to get non-premul components */
 		if (sa) {
 			sr = sr * 255 / sa;
 			sg = sg * 255 / sa;

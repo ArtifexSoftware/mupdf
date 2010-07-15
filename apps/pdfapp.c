@@ -265,7 +265,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		/* Create display list */
 		app->page->list = fz_newdisplaylist();
 		mdev = fz_newlistdevice(app->page->list);
-		error = pdf_runcontentstream(mdev, fz_identity, app->xref, app->page->resources, app->page->contents);
+		error = pdf_runpage(app->xref, app->page, mdev, fz_identity);
 		if (error)
 		{
 			error = fz_rethrow(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);

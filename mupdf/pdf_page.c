@@ -2,6 +2,7 @@
 #include "mupdf.h"
 
 /* we need to combine all sub-streams into one for the content stream interpreter */
+
 static fz_error
 pdf_loadpagecontentsarray(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 {
@@ -64,6 +65,96 @@ pdf_loadpagecontents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 	return fz_okay;
 }
 
+/* We need to know whether to install a page-level transparency group */
+
+static int pdf_resourcesusetransparency(fz_obj *rdb);
+
+static int
+pdf_extgstateusestransparency(fz_obj *dict)
+{
+	fz_obj *obj;
+
+	obj = fz_dictgets(dict, "BM");
+	if (fz_isname(obj) && strcmp(fz_toname(obj), "Normal"))
+		return 1;
+
+	obj = fz_dictgets(dict, "SMask");
+	if (fz_isname(obj) && strcmp(fz_toname(obj), "None"))
+		return 1;
+
+	obj = fz_dictgets(dict, "ca");
+	if (obj && fz_toreal(obj) < 1)
+		return 1;
+
+	obj = fz_dictgets(dict, "CA");
+	if (obj && fz_toreal(obj) < 1)
+		return 1;
+
+	return 0;
+}
+
+static int
+pdf_patternusestransparency(fz_obj *dict)
+{
+	fz_obj *obj;
+
+	obj = fz_dictgets(dict, "Resources");
+	if (pdf_resourcesusetransparency(obj))
+		return 1;
+
+	obj = fz_dictgets(dict, "ExtGState");
+	if (pdf_resourcesusetransparency(obj))
+		return 1;
+
+	return 0;
+}
+
+static int
+pdf_xobjectusestransparency(fz_obj *dict)
+{
+	fz_obj *obj;
+
+	obj = fz_dictgets(dict, "SMask");
+	if (fz_isname(obj) && strcmp(fz_toname(obj), "None"))
+		return 1;
+
+	obj = fz_dictgets(dict, "Resources");
+	if (pdf_resourcesusetransparency(obj))
+		return 1;
+
+	return 0;
+}
+
+static int
+pdf_resourcesusetransparency(fz_obj *rdb)
+{
+	fz_obj *dict;
+	int i;
+
+	/* stop on cyclic resource dependencies */
+	if (fz_dictgets(rdb, ".seen"))
+		return 0;
+
+	fz_dictputs(rdb, ".seen", fz_newnull());
+
+	dict = fz_dictgets(rdb, "ExtGState");
+	for (i = 0; i < fz_dictlen(dict); i++)
+		if (pdf_extgstateusestransparency(fz_dictgetval(dict, i)))
+			return 1;
+
+	dict = fz_dictgets(rdb, "Pattern");
+	for (i = 0; i < fz_dictlen(dict); i++)
+		if (pdf_patternusestransparency(fz_dictgetval(dict, i)))
+			return 1;
+
+	dict = fz_dictgets(rdb, "XObject");
+	for (i = 0; i < fz_dictlen(dict); i++)
+		if (pdf_xobjectusestransparency(fz_dictgetval(dict, i)))
+			return 1;
+
+	return 0;
+}
+
 fz_error
 pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 {
@@ -82,6 +173,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page = fz_malloc(sizeof(pdf_page));
 	page->resources = nil;
 	page->contents = nil;
+	page->transparency = 0;
 	page->list = nil;
 	page->text = nil;
 	page->links = nil;
@@ -126,6 +218,9 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		pdf_freepage(page);
 		return fz_rethrow(error, "cannot load page contents (%d %d R)", fz_tonum(obj), fz_togen(obj));
 	}
+
+	if (pdf_resourcesusetransparency(page->resources))
+		page->transparency = 1;
 
 	pdf_logpage("} %p\n", page);
 

@@ -24,8 +24,10 @@ struct fz_drawdevice_s
 	} clipstack[MAXCLIP];
 	int cliptop;
 
-	fz_blendmode blendmode;
-	fz_pixmap *groupstack[MAXCLIP];
+	struct {
+		fz_pixmap *dest;
+		fz_blendmode blendmode;
+	} groupstack[MAXCLIP];
 	int grouptop;
 };
 
@@ -819,13 +821,11 @@ fz_drawendmask(void *user)
 }
 
 static void
-fz_drawbegingroup(void *user, fz_rect rect, fz_colorspace *colorspace, int isolated, int knockout, fz_blendmode blendmode)
+fz_drawbegingroup(void *user, fz_rect rect, int isolated, int knockout, fz_blendmode blendmode)
 {
 	fz_drawdevice *dev = user;
 	fz_bbox bbox;
 	fz_pixmap *dest;
-
-	fz_warn("fz_drawbegingroup");
 
 	if (dev->cliptop == MAXCLIP)
 	{
@@ -839,8 +839,9 @@ fz_drawbegingroup(void *user, fz_rect rect, fz_colorspace *colorspace, int isola
 
 	fz_clearpixmap(dest, 0);
 
-	dev->blendmode = blendmode;
-	dev->groupstack[dev->grouptop++] = dev->dest;
+	dev->groupstack[dev->grouptop].blendmode = blendmode;
+	dev->groupstack[dev->grouptop].dest = dev->dest;
+	dev->grouptop++;
 	dev->dest = dest;
 }
 
@@ -849,14 +850,14 @@ fz_drawendgroup(void *user)
 {
 	fz_drawdevice *dev = user;
 	fz_pixmap *group = dev->dest;
-
-	fz_warn("fz_drawendgroup");
+	fz_blendmode blendmode;
 
 	if (dev->grouptop > 0)
 	{
 		dev->grouptop--;
-		dev->dest = dev->groupstack[dev->grouptop];
-		fz_blendpixmaps(group, dev->dest, dev->blendmode);
+		dev->dest = dev->groupstack[dev->grouptop].dest;
+		blendmode = dev->groupstack[dev->grouptop].blendmode;
+		fz_blendpixmaps(group, dev->dest, blendmode);
 	}
 
 	fz_droppixmap(group);
