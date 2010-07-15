@@ -109,6 +109,40 @@ static void renumberobj(fz_obj *obj)
 	}
 }
 
+static void removeduplicateobjs(void)
+{
+	int num, other;
+
+	newnumlist = fz_malloc(xref->len * sizeof(int));
+	for (num = 0; num < xref->len; num++)
+		newnumlist[num] = num;
+
+	for (num = 1; num < xref->len; num++)
+	{
+		for (other = 1; other < num; other++)
+		{
+			fz_obj *a = fz_resolveindirect(xref->table[num].obj);
+			fz_obj *b = fz_resolveindirect(xref->table[other].obj);
+
+			if (num == other ||
+				pdf_isstream(xref, num, 0) ||
+				pdf_isstream(xref, other, 0) ||
+				fz_objcmp(a, b))
+				continue;
+
+			newnumlist[num] = num < other ? num : other;
+			break;
+		}
+	}
+
+	renumberobj(xref->trailer);
+	for (num = 0; num < xref->len; num++)
+		renumberobj(xref->table[num].obj);
+
+	fz_free(newnumlist);
+}
+
+
 static void preloadobjstms(void)
 {
 	fz_error error;
@@ -268,7 +302,9 @@ static void cleanusage(void)
 	fprintf(stderr,
 		"usage: pdfclean [options] input.pdf [outfile.pdf] [pages]\n"
 		"\t-p -\tpassword for decryption\n"
-		"\t-g\tgarbage collect unused objects (an additional -g compacts xref)\n"
+		"\t-g\tgarbage collect unused objects\n"
+		"\t-gg\tin addition to -g xref is compacted\n"
+		"\t-ggg\tin addition to -gg identical objects are garbage collected\n"
 		"\t-x\texpand compressed streams\n");
 	exit(1);
 }
@@ -504,6 +540,10 @@ int main(int argc, char **argv)
 	/* Only retain the specified subset of the pages */
 	if (subset)
 		retainpages(argc, argv);
+
+	/* Coalesce identical objects */
+	if (dogarbage >= 3)
+		removeduplicateobjs();
 
 	/* Sweep & mark objects from the trailer */
 	sweepobj(xref->trailer);
