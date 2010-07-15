@@ -67,10 +67,10 @@ pdf_loadpagecontents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 
 /* We need to know whether to install a page-level transparency group */
 
-static int pdf_resourcesusetransparency(fz_obj *rdb);
+static int pdf_resourcesuseblending(fz_obj *rdb);
 
 static int
-pdf_extgstateusestransparency(fz_obj *dict)
+pdf_extgstateusesblending(fz_obj *dict)
 {
 	fz_obj *obj;
 
@@ -78,55 +78,39 @@ pdf_extgstateusestransparency(fz_obj *dict)
 	if (fz_isname(obj) && strcmp(fz_toname(obj), "Normal"))
 		return 1;
 
-	obj = fz_dictgets(dict, "SMask");
-	if (fz_isname(obj) && strcmp(fz_toname(obj), "None"))
-		return 1;
-
-	obj = fz_dictgets(dict, "ca");
-	if (obj && fz_toreal(obj) < 1)
-		return 1;
-
-	obj = fz_dictgets(dict, "CA");
-	if (obj && fz_toreal(obj) < 1)
-		return 1;
-
 	return 0;
 }
 
 static int
-pdf_patternusestransparency(fz_obj *dict)
+pdf_patternusesblending(fz_obj *dict)
 {
 	fz_obj *obj;
 
 	obj = fz_dictgets(dict, "Resources");
-	if (pdf_resourcesusetransparency(obj))
+	if (pdf_resourcesuseblending(obj))
 		return 1;
 
 	obj = fz_dictgets(dict, "ExtGState");
-	if (pdf_resourcesusetransparency(obj))
+	if (pdf_extgstateusesblending(obj))
 		return 1;
 
 	return 0;
 }
 
 static int
-pdf_xobjectusestransparency(fz_obj *dict)
+pdf_xobjectusesblending(fz_obj *dict)
 {
 	fz_obj *obj;
 
-	obj = fz_dictgets(dict, "SMask");
-	if (fz_isname(obj) && strcmp(fz_toname(obj), "None"))
-		return 1;
-
 	obj = fz_dictgets(dict, "Resources");
-	if (pdf_resourcesusetransparency(obj))
+	if (pdf_resourcesuseblending(obj))
 		return 1;
 
 	return 0;
 }
 
 static int
-pdf_resourcesusetransparency(fz_obj *rdb)
+pdf_resourcesuseblending(fz_obj *rdb)
 {
 	fz_obj *dict;
 	int i;
@@ -139,17 +123,17 @@ pdf_resourcesusetransparency(fz_obj *rdb)
 
 	dict = fz_dictgets(rdb, "ExtGState");
 	for (i = 0; i < fz_dictlen(dict); i++)
-		if (pdf_extgstateusestransparency(fz_dictgetval(dict, i)))
+		if (pdf_extgstateusesblending(fz_dictgetval(dict, i)))
 			return 1;
 
 	dict = fz_dictgets(rdb, "Pattern");
 	for (i = 0; i < fz_dictlen(dict); i++)
-		if (pdf_patternusestransparency(fz_dictgetval(dict, i)))
+		if (pdf_patternusesblending(fz_dictgetval(dict, i)))
 			return 1;
 
 	dict = fz_dictgets(rdb, "XObject");
 	for (i = 0; i < fz_dictlen(dict); i++)
-		if (pdf_xobjectusestransparency(fz_dictgetval(dict, i)))
+		if (pdf_xobjectusesblending(fz_dictgetval(dict, i)))
 			return 1;
 
 	return 0;
@@ -219,7 +203,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return fz_rethrow(error, "cannot load page contents (%d %d R)", fz_tonum(obj), fz_togen(obj));
 	}
 
-	if (pdf_resourcesusetransparency(page->resources))
+	if (pdf_resourcesuseblending(page->resources))
 		page->transparency = 1;
 
 	pdf_logpage("} %p\n", page);
