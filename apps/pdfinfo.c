@@ -3,7 +3,22 @@
  * Print information about the input pdf.
  */
 
-#include "pdftool.h"
+#include "fitz.h"
+#include "mupdf.h"
+
+pdf_xref *xref;
+int pagecount;
+
+void closexref(void);
+
+void die(fz_error error)
+{
+	fz_catch(error, "aborting");
+	closexref();
+	exit(1);
+}
+
+void openxref(char *filename, char *password, int dieonbadpass, int loadpages);
 
 enum
 {
@@ -80,9 +95,14 @@ static int forms = 0;
 static struct info *psobj = nil;
 static int psobjs = 0;
 
-static void local_cleanup(void)
+void closexref(void)
 {
 	int i;
+	if (xref)
+	{
+		pdf_freexref(xref);
+		xref = nil;
+	}
 
 	if (dim)
 	{
@@ -922,6 +942,7 @@ showinfo(char *filename, int show, char *pagelist)
 int main(int argc, char **argv)
 {
 	enum { NO_FILE_OPENED, NO_INFO_GATHERED, INFO_SHOWN } state;
+	fz_error error;
 	char *filename = "";
 	char *password = "";
 	int show = ALL;
@@ -947,8 +968,6 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
-	setcleanup(local_cleanup);
-
 	state = NO_FILE_OPENED;
 	while (fz_optind < argc)
 	{
@@ -963,7 +982,10 @@ int main(int argc, char **argv)
 			closexref();
 			filename = argv[fz_optind];
 			printf("%s:\n", filename);
-			openxref(filename, password, 0, 1);
+			error = pdf_openxref(&xref, filename, password);
+			if (error)
+				die(fz_rethrow(error, "cannot open input file '%s'", filename));
+			pagecount = pdf_getpagecount(xref);
 			showglobalinfo();
 			state = NO_INFO_GATHERED;
 		}

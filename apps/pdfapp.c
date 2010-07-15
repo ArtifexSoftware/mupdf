@@ -103,7 +103,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd)
 	 */
 
 	file = fz_openfile(fd);
-	error = pdf_openxref(&app->xref, file);
+	error = pdf_newxref(&app->xref, file, NULL);
 	if (error)
 		pdfapp_error(app, fz_rethrow(error, "cannot open document '%s'", filename));
 	fz_dropstream(file);
@@ -195,7 +195,7 @@ void pdfapp_close(pdfapp_t *app)
 			pdf_freestore(app->xref->store);
 		app->xref->store = nil;
 
-		pdf_closexref(app->xref);
+		pdf_freexref(app->xref);
 		app->xref = nil;
 	}
 }
@@ -254,8 +254,6 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		if (app->page)
 			pdf_freepage(app->page);
 		app->page = nil;
-
-		pdf_flushxref(app->xref, 0);
 
 		obj = pdf_getpageobject(app->xref, app->pageno);
 		error = pdf_loadpage(&app->page, app->xref, obj);

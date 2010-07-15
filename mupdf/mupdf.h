@@ -134,7 +134,7 @@ struct pdf_xref_s
 	fz_obj **pagerefs;
 
 	struct pdf_store_s *store;
-	struct pdf_outline_s *outlines;
+	void (*freestore)(struct pdf_store_s *);
 
 	char scratch[65536];
 };
@@ -148,11 +148,6 @@ struct pdf_xrefentry_s
 	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
 };
 
-fz_error pdf_openxref(pdf_xref **xrefp, fz_stream *file);
-void pdf_closexref(pdf_xref *);
-void pdf_debugxref(pdf_xref *);
-void pdf_flushxref(pdf_xref *, int force);
-
 fz_error pdf_cacheobject(pdf_xref *, int num, int gen);
 fz_error pdf_loadobject(fz_obj **objp, pdf_xref *, int num, int gen);
 
@@ -164,8 +159,13 @@ fz_error pdf_openrawstream(fz_stream **stmp, pdf_xref *, int num, int gen);
 fz_error pdf_openstream(fz_stream **stmp, pdf_xref *, int num, int gen);
 fz_error pdf_openstreamat(fz_stream **stmp, pdf_xref *xref, int num, int gen, fz_obj *dict, int stmofs);
 
+fz_error pdf_openxref(pdf_xref **xrefp, char *filename, char *password);
+fz_error pdf_newxref(pdf_xref **xrefp, fz_stream *file, char *password);
+void pdf_freexref(pdf_xref *);
+
 /* private */
-extern fz_error pdf_repairxref(pdf_xref *xref, char *buf, int bufsize);
+fz_error pdf_repairxref(pdf_xref *xref, char *buf, int bufsize);
+void pdf_debugxref(pdf_xref *);
 
 /*
  * Resource store

@@ -131,9 +131,16 @@ fz_writepnm(fz_pixmap *pixmap, char *filename)
  */
 
 fz_error
-fz_writepam(fz_pixmap *pixmap, char *filename)
+fz_writepam(fz_pixmap *pixmap, char *filename, int savealpha)
 {
+	unsigned char *sp;
+	int y, w, k;
 	FILE *fp;
+
+	int sn = pixmap->n;
+	int dn = pixmap->n;
+	if (!savealpha && dn > 1)
+		dn--;
 
 	fp = fopen(filename, "wb");
 	if (!fp)
@@ -141,19 +148,31 @@ fz_writepam(fz_pixmap *pixmap, char *filename)
 
 	fprintf(fp, "P7\n");
 	fprintf(fp, "WIDTH %d\n", pixmap->w);
-	fprintf(fp, "HEGIHT %d\n", pixmap->h);
-	fprintf(fp, "DEPTH %d\n", pixmap->n);
+	fprintf(fp, "HEIGHT %d\n", pixmap->h);
+	fprintf(fp, "DEPTH %d\n", dn);
 	fprintf(fp, "MAXVAL 255\n");
-	switch (pixmap->n)
+	if (pixmap->colorspace)
+		fprintf(fp, "# COLORSPACE %s\n", pixmap->colorspace->name);
+	switch (dn)
 	{
 	case 1: fprintf(fp, "TUPLTYPE GRAYSCALE\n"); break;
-	case 2: fprintf(fp, "TUPLTYPE GRAYSCALE_ALPHA\n"); break;
-	case 4: fprintf(fp, "TUPLTYPE RGB_ALPHA\n"); break;
-	case 5: fprintf(fp, "TUPLTYPE CMYK_ALPHA\n"); break;
+	case 2: if (sn == 2) fprintf(fp, "TUPLTYPE GRAYSCALE_ALPHA\n"); break;
+	case 3: if (sn == 4) fprintf(fp, "TUPLTYPE RGB\n"); break;
+	case 4: if (sn == 4) fprintf(fp, "TUPLTYPE RGB_ALPHA\n"); break;
 	}
 	fprintf(fp, "ENDHDR\n");
 
-	fwrite(pixmap->samples, pixmap->w * pixmap->n, pixmap->h, fp);
+	sp = pixmap->samples;
+	for (y = 0; y < pixmap->h; y++)
+	{
+		w = pixmap->w;
+		while (w--)
+		{
+			for (k = 0; k < dn; k++)
+				putc(sp[k], fp);
+			sp += sn;
+		}
+	}
 
 	fclose(fp);
 
@@ -195,7 +214,7 @@ static void putchunk(char *tag, unsigned char *data, int size, FILE *fp)
 }
 
 fz_error
-fz_writepng(fz_pixmap *pixmap, char *filename, int alpha)
+fz_writepng(fz_pixmap *pixmap, char *filename, int savealpha)
 {
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	FILE *fp;
@@ -211,7 +230,7 @@ fz_writepng(fz_pixmap *pixmap, char *filename, int alpha)
 
 	sn = pixmap->n;
 	dn = pixmap->n;
-	if (!alpha && dn > 1)
+	if (!savealpha && dn > 1)
 		dn--;
 
 	switch (dn)

@@ -2,18 +2,28 @@
  * pdfshow -- the ultimate pdf debugging tool
  */
 
-#include "pdftool.h"
+#include "fitz.h"
+#include "mupdf.h"
 
+static pdf_xref *xref = NULL;
 static int showbinary = 0;
 static int showraw = 0;
 static int showcolumn;
 
-static void showusage(void)
+void die(fz_error error)
+{
+	fz_catch(error, "aborting");
+	if (xref)
+		pdf_freexref(xref);
+	exit(1);
+}
+
+static void usage(void)
 {
 	fprintf(stderr, "usage: pdfshow [-bc] [-p password] <file> [xref] [trailer] [object numbers]\n");
-	fprintf(stderr, "\t-b\tprint streams as binary data (don't pretty-print)\n");
+	fprintf(stderr, "\t-b\tprint streams as binary data\n");
 	fprintf(stderr, "\t-c\tprint compressed streams (don't decompress)\n");
-	fprintf(stderr, "\t-p\tpassword for encrypted files\n");
+	fprintf(stderr, "\t-p\tpassword\n");
 	exit(1);
 }
 
@@ -103,12 +113,19 @@ static void showobject(int num, int gen)
 
 	if (pdf_isstream(xref, num, gen))
 	{
-		printf("%d %d obj\n", num, gen);
-		fz_debugobj(obj);
-		printf("stream\n");
-		showstream(num, gen);
-		printf("endstream\n");
-		printf("endobj\n\n");
+		if (showraw)
+		{
+			showstream(num, gen);
+		}
+		else
+		{
+			printf("%d %d obj\n", num, gen);
+			fz_debugobj(obj);
+			printf("stream\n");
+			showstream(num, gen);
+			printf("endstream\n");
+			printf("endobj\n\n");
+		}
 	}
 	else
 	{
@@ -122,7 +139,11 @@ static void showobject(int num, int gen)
 
 int main(int argc, char **argv)
 {
-	char *password = "";
+	char *password = NULL; /* don't throw errors if encrypted */
+	fz_error error;
+	fz_stream *file;
+	char *filename;
+	int fd;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "p:bc")) != -1)
@@ -132,16 +153,26 @@ int main(int argc, char **argv)
 		case 'p': password = fz_optarg; break;
 		case 'b': showbinary ++; break;
 		case 'c': showraw ++; break;
-		default:
-			showusage();
-			break;
+		default: usage(); break;
 		}
 	}
 
 	if (fz_optind == argc)
-		showusage();
+		usage();
 
-	openxref(argv[fz_optind++], password, 0, 0);
+	/* Use newxref directly because we don't care about the page tree */
+	{
+		filename = argv[fz_optind++];
+		fd = open(filename, O_BINARY | O_RDONLY);
+		if (fd < 0)
+			return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
+
+		file = fz_openfile(fd);
+		error = pdf_newxref(&xref, file, password);
+		if (error)
+			die(fz_rethrow(error, "cannot load document '%s'", filename));
+		fz_dropstream(file);
+	}
 
 	if (fz_optind == argc)
 		showtrailer();
@@ -157,7 +188,7 @@ int main(int argc, char **argv)
 		fz_optind++;
 	}
 
-	closexref();
+	pdf_freexref(xref);
 
 	return 0;
 }

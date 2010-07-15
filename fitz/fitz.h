@@ -703,8 +703,8 @@ void fz_gammapixmap(fz_pixmap *pix, float gamma);
 fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
 
 fz_error fz_writepnm(fz_pixmap *pixmap, char *filename);
-fz_error fz_writepam(fz_pixmap *pixmap, char *filename);
-fz_error fz_writepng(fz_pixmap *pixmap, char *filename, int alpha);
+fz_error fz_writepam(fz_pixmap *pixmap, char *filename, int savealpha);
+fz_error fz_writepng(fz_pixmap *pixmap, char *filename, int savealpha);
 
 /*
  * Colorspace resources.

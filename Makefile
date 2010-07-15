@@ -154,7 +154,6 @@ MUPDF_SRC := \
 	mupdf/pdf_interpret.c \
 	mupdf/pdf_lex.c \
 	mupdf/pdf_nametree.c \
-	mupdf/pdf_open.c \
 	mupdf/pdf_outline.c \
 	mupdf/pdf_page.c \
 	mupdf/pdf_pagetree.c \
@@ -305,51 +304,45 @@ $(MUPDF_LIB): $(FITZ_OBJ) $(DRAW_OBJ) $(MUPDF_OBJ) $(CMAP_OBJ) $(FONT_OBJ)
 
 APPS = $(PDFSHOW_EXE) $(PDFCLEAN_EXE) $(PDFDRAW_EXE) $(PDFEXTRACT_EXE) $(PDFINFO_EXE) $(PDFVIEW_EXE)
 
-PDFAPP_HDR = apps/pdfapp.h
-PDFTOOL_HDR = apps/pdftool.h
-
 $(OBJDIR)/%.o: apps/%.c
 	$(CC_CMD)
 
-PDFSHOW_SRC=apps/pdfshow.c apps/pdftool.c
+PDFSHOW_SRC=apps/pdfshow.c
 PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
-
-$(PDFSHOW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
+$(PDFSHOW_OBJ): $(MUPDF_HDR)
 $(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
-PDFCLEAN_SRC=apps/pdfclean.c apps/pdftool.c
+PDFCLEAN_SRC=apps/pdfclean.c
 PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
-
-$(PDFCLEAN_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
+$(PDFCLEAN_OBJ): $(MUPDF_HDR)
 $(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
-PDFDRAW_SRC=apps/pdfdraw.c apps/pdftool.c
+PDFDRAW_SRC=apps/pdfdraw.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
-
-$(PDFDRAW_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
+$(PDFDRAW_OBJ): $(MUPDF_HDR)
 $(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
-PDFEXTRACT_SRC=apps/pdfextract.c apps/pdftool.c
+PDFEXTRACT_SRC=apps/pdfextract.c
 PDFEXTRACT_OBJ=$(PDFEXTRACT_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFEXTRACT_EXE=$(OBJDIR)/pdfextract
-
-$(PDFEXTRACT_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
+$(PDFEXTRACT_OBJ): $(MUPDF_HDR)
 $(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
-PDFINFO_SRC=apps/pdfinfo.c apps/pdftool.c
+PDFINFO_SRC=apps/pdfinfo.c
 PDFINFO_OBJ=$(PDFINFO_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFINFO_EXE=$(OBJDIR)/pdfinfo
-
-$(PDFINFO_OBJ): $(MUPDF_HDR) $(PDFTOOL_HDR)
+$(PDFINFO_OBJ): $(MUPDF_HDR)
 $(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
+
+PDFAPP_HDR = apps/pdfapp.h
 
 X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
 X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
