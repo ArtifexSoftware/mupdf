@@ -507,7 +507,11 @@ static void onmouse(int x, int y, int btn, int modifiers, int state)
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: mupdf [-p password] [-r resolution] file.pdf [page]\n");
+	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
+	fprintf(stderr, "\t-p -\tpassword\n");
+	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-A\tdisable accelerated functions\n");
+	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
 	exit(1);
 }
 
@@ -565,14 +569,16 @@ int main(int argc, char **argv)
 	int pageno = 1;
 	int wasshowingpage;
 	struct timeval tmo, tmo_at;
+	int accelerate = 1;
 	int fd;
 
-	while ((c = fz_getopt(argc, argv, "p:r:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:A")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atoi(fz_optarg); break;
+		case 'A': accelerate = 0; break;
 		default: usage();
 		}
 	}
@@ -590,7 +596,8 @@ int main(int argc, char **argv)
 	if (argc - fz_optind == 1)
 		pageno = atoi(argv[fz_optind++]);
 
-	fz_accelerate();
+	if (accelerate)
+		fz_accelerate();
 
 	winopen();
 

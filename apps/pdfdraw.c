@@ -44,6 +44,7 @@ static void usage(void)
 		"\t\tsupported formats: pgm, ppm, pam, png\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
+		"\t-A\tdisable accelerated functions\n"
 		"\t-a\tsave alpha channel (only pam and png)\n"
 		"\t-g\trender in grayscale\n"
 		"\t-m\tshow timing information\n"
@@ -260,19 +261,19 @@ int main(int argc, char **argv)
 {
 	char *password = "";
 	int grayscale = 0;
+	int accelerate = 1;
 	pdf_xref *xref;
 	fz_error error;
 	int c;
 
-	fz_accelerate();
-
-	while ((c = fz_getopt(argc, argv, "o:p:r:agmtx5")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:p:r:Aagmtx5")) != -1)
 	{
 		switch (c)
 		{
 		case 'o': output = fz_optarg; break;
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atof(fz_optarg) / 72; break;
+		case 'A': accelerate = 0; break;
 		case 'a': savealpha = 1; break;
 		case 'm': showtime++; break;
 		case 't': showtext++; break;
@@ -285,6 +286,9 @@ int main(int argc, char **argv)
 
 	if (fz_optind == argc)
 		usage();
+
+	if (accelerate)
+		fz_accelerate();
 
 	glyphcache = fz_newglyphcache();
 
