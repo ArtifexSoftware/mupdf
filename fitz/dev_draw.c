@@ -27,6 +27,7 @@ struct fz_drawdevice_s
 	struct {
 		fz_pixmap *dest;
 		fz_blendmode blendmode;
+		fz_bbox scissor;
 	} groupstack[MAXCLIP];
 	int grouptop;
 };
@@ -840,8 +841,11 @@ fz_drawbegingroup(void *user, fz_rect rect, int isolated, int knockout, fz_blend
 	fz_clearpixmap(dest, 0);
 
 	dev->groupstack[dev->grouptop].blendmode = blendmode;
+	dev->groupstack[dev->grouptop].scissor = dev->scissor;
 	dev->groupstack[dev->grouptop].dest = dev->dest;
 	dev->grouptop++;
+
+	dev->scissor = bbox;
 	dev->dest = dest;
 }
 
@@ -855,8 +859,9 @@ fz_drawendgroup(void *user)
 	if (dev->grouptop > 0)
 	{
 		dev->grouptop--;
-		dev->dest = dev->groupstack[dev->grouptop].dest;
 		blendmode = dev->groupstack[dev->grouptop].blendmode;
+		dev->dest = dev->groupstack[dev->grouptop].dest;
+		dev->scissor = dev->groupstack[dev->grouptop].scissor;
 		fz_blendpixmaps(group, dev->dest, blendmode);
 	}
 

@@ -193,15 +193,15 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	if (error)
 		return fz_rethrow(error, "cannot interpret XObject stream");
 
-	if (xobj->transparency)
-		csi->dev->endgroup(csi->dev->user);
-
 	csi->topctm = oldtopctm;
 
 	while (oldtop < csi->gtop)
 		pdf_grestore(csi);
 
 	pdf_grestore(csi);
+
+	if (xobj->transparency)
+		csi->dev->endgroup(csi->dev->user);
 
 	return fz_okay;
 }
