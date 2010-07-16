@@ -7,7 +7,7 @@
 
 static pdf_xref *xref = NULL;
 static int showbinary = 0;
-static int showraw = 0;
+static int showdecode = 1;
 static int showcolumn;
 
 void die(fz_error error)
@@ -20,9 +20,9 @@ void die(fz_error error)
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: pdfshow [-bc] [-p password] <file> [xref] [trailer] [object numbers]\n");
+	fprintf(stderr, "usage: pdfshow [options] file.pdf [xref] [trailer] [pagetree] [object numbers]\n");
 	fprintf(stderr, "\t-b\tprint streams as binary data\n");
-	fprintf(stderr, "\t-c\tprint compressed streams (don't decompress)\n");
+	fprintf(stderr, "\t-e\tprint encoded streams (don't decode)\n");
 	fprintf(stderr, "\t-p\tpassword\n");
 	exit(1);
 }
@@ -41,6 +41,32 @@ static void showxref(void)
 	if (!xref)
 		die(fz_throw("no file specified"));
 	pdf_debugxref(xref);
+	printf("\n");
+}
+
+static void showpagetree(void)
+{
+	fz_error error;
+	fz_obj *ref;
+	int count;
+	int i;
+
+	if (!xref)
+		die(fz_throw("no file specified"));
+
+	if (!xref->pagelen)
+	{
+		error = pdf_loadpagetree(xref);
+		if (error)
+			die(fz_rethrow(error, "cannot load page tree"));
+	}
+
+	count = pdf_getpagecount(xref);
+	for (i = 0; i < count; i++)
+	{
+		ref = pdf_getpageref(xref, i + 1);
+		printf("page %d = %d %d R\n", i + 1, fz_tonum(ref), fz_togen(ref));
+	}
 	printf("\n");
 }
 
@@ -76,10 +102,10 @@ static void showstream(int num, int gen)
 
 	showcolumn = 0;
 
-	if (showraw)
-		error = pdf_openrawstream(&stm, xref, num, gen);
-	else
+	if (showdecode)
 		error = pdf_openstream(&stm, xref, num, gen);
+	else
+		error = pdf_openrawstream(&stm, xref, num, gen);
 	if (error)
 		die(error);
 
@@ -113,7 +139,7 @@ static void showobject(int num, int gen)
 
 	if (pdf_isstream(xref, num, gen))
 	{
-		if (showraw)
+		if (showbinary)
 		{
 			showstream(num, gen);
 		}
@@ -144,13 +170,13 @@ int main(int argc, char **argv)
 	char *filename;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "p:bc")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:be")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
-		case 'b': showbinary ++; break;
-		case 'c': showraw ++; break;
+		case 'b': showbinary = 1; break;
+		case 'e': showdecode = 0; break;
 		default: usage(); break;
 		}
 	}
@@ -168,12 +194,13 @@ int main(int argc, char **argv)
 
 	while (fz_optind < argc)
 	{
-		if (!strcmp(argv[fz_optind], "trailer"))
-			showtrailer();
-		else if (!strcmp(argv[fz_optind], "xref"))
-			showxref();
-		else
-			showobject(atoi(argv[fz_optind]), 0);
+		switch (argv[fz_optind][0])
+		{
+		case 't': showtrailer(); break;
+		case 'x': showxref(); break;
+		case 'p': showpagetree(); break;
+		default: showobject(atoi(argv[fz_optind]), 0); break;
+		}
 		fz_optind++;
 	}
 
