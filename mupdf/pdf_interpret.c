@@ -537,7 +537,7 @@ Lsetcolorspace:
 				return fz_throw("cannot find xobject resource: '%s'", fz_toname(csi->stack[0]));
 
 			subtype = fz_dictgets(obj, "Subtype");
-			if (!subtype)
+			if (!fz_isname(subtype))
 				return fz_throw("no XObject subtype specified");
 
 			if (!strcmp(fz_toname(subtype), "Form") && fz_dictgets(obj, "Subtype2"))
