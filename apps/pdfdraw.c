@@ -5,7 +5,11 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#define MAXBANDSIZE (3 * 1024 * 1024)
+#ifdef _MSC_VER
+#include <winsock2.h>
+#else
+#include <sys/time.h>
+#endif
 
 char *output = NULL;
 float resolution = 72;
@@ -13,10 +17,18 @@ float resolution = 72;
 int showxml = 0;
 int showtext = 0;
 int showtime = 0;
+int showmd5 = 0;
 int savealpha = 0;
 
+fz_colorspace *colorspace;
 fz_glyphcache *glyphcache;
 char *filename;
+
+struct {
+	int count, total;
+	int min, max;
+	int minpage, maxpage;
+} timing;
 
 static void die(fz_error error)
 {
@@ -32,11 +44,28 @@ static void usage(void)
 		"\t\tsupported formats: pgm, ppm, pam, png\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
-		"\t-x\tshow display list as xml\n"
-		"\t-t\textract text (-tt for xml)\n"
 		"\t-a\tsave alpha channel (only pam and png)\n"
+		"\t-g\trender in grayscale\n"
+		"\t-m\tshow timing information\n"
+		"\t-t\tshow text (-tt for xml)\n"
+		"\t-x\tshow display list\n"
+		"\t-5\tshow md5 checksums\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
+}
+
+static int gettime(void)
+{
+	static struct timeval first;
+	static int once = 1;
+	struct timeval now;
+	if (once)
+	{
+		gettimeofday(&first, NULL);
+		once = 0;
+	}
+	gettimeofday(&now, NULL);
+	return (now.tv_sec - first.tv_sec) * 1000 + (now.tv_usec - first.tv_usec) / 1000;
 }
 
 static int isrange(char *s)
@@ -57,12 +86,12 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	pdf_page *page;
 	fz_displaylist *list;
 	fz_device *dev;
-	fz_matrix ctm;
-	fz_bbox bbox;
-	fz_colorspace *colorspace;
-	fz_pixmap *pix;
-	char buf[512];
-	float zoom;
+	int start;
+
+	if (showtime)
+	{
+		start = gettime();
+	}
 
 	pageobj = pdf_getpageobject(xref, pagenum);
 	error = pdf_loadpage(&page, xref, pageobj);
@@ -101,19 +130,21 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		fz_freetextspan(text);
 	}
 
-	if (output || showtime)
+	if (showmd5 || showtime)
+		printf("page %s %d", filename, pagenum);
+
+	if (output || showmd5 || showtime)
 	{
-		sprintf(buf, output, pagenum);
+		float zoom;
+		fz_matrix ctm;
+		fz_bbox bbox;
+		fz_pixmap *pix;
 
 		zoom = resolution / 72;
 		ctm = fz_translate(0, -page->mediabox.y1);
 		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
 		ctm = fz_concat(ctm, fz_rotate(page->rotate));
 		bbox = fz_roundrect(fz_transformrect(ctm, page->mediabox));
-
-		colorspace = pdf_devicergb;
-		if (strstr(output, ".pgm"))
-			colorspace = pdf_devicegray;
 
 		/* TODO: banded rendering and multi-page ppm */
 
@@ -128,18 +159,62 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		fz_executedisplaylist(list, dev, ctm);
 		fz_freedevice(dev);
 
-		if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
-			fz_writepnm(pix, buf);
-		else if (strstr(output, ".pam"))
-			fz_writepam(pix, buf, savealpha);
-		else if (strstr(output, ".png"))
-			fz_writepng(pix, buf, savealpha);
+		if (output)
+		{
+			char buf[512];
+			sprintf(buf, output, pagenum);
+			if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
+				fz_writepnm(pix, buf);
+			else if (strstr(output, ".pam"))
+				fz_writepam(pix, buf, savealpha);
+			else if (strstr(output, ".png"))
+				fz_writepng(pix, buf, savealpha);
+		}
+
+		if (showmd5)
+		{
+			fz_md5 md5;
+			unsigned char digest[16];
+			int i;
+
+			fz_md5init(&md5);
+			fz_md5update(&md5, pix->samples, pix->w * pix->h * pix->n);
+			fz_md5final(&md5, digest);
+
+			printf(" ");
+			for (i = 0; i < 16; i++)
+				printf("%02x", digest[i]);
+		}
 
 		fz_droppixmap(pix);
 	}
 
 	fz_freedisplaylist(list);
 	pdf_freepage(page);
+
+	if (showtime)
+	{
+		int end = gettime();
+		int diff = end - start;
+
+		if (diff < timing.min)
+		{
+			timing.min = diff;
+			timing.minpage = pagenum;
+		}
+		if (diff > timing.max)
+		{
+			timing.max = diff;
+			timing.maxpage = pagenum;
+		}
+		timing.total += diff;
+		timing.count ++;
+
+		printf(" %dms", diff);
+	}
+
+	if (showmd5 || showtime)
+		printf("\n");
 
 	pdf_agestore(xref->store, 3);
 }
@@ -184,13 +259,14 @@ static void drawrange(pdf_xref *xref, char *range)
 int main(int argc, char **argv)
 {
 	char *password = "";
+	int grayscale = 0;
 	pdf_xref *xref;
 	fz_error error;
 	int c;
 
 	fz_accelerate();
 
-	while ((c = fz_getopt(argc, argv, "o:p:r:amtx")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:p:r:agmtx5")) != -1)
 	{
 		switch (c)
 		{
@@ -201,6 +277,8 @@ int main(int argc, char **argv)
 		case 'm': showtime++; break;
 		case 't': showtext++; break;
 		case 'x': showxml++; break;
+		case '5': showmd5++; break;
+		case 'g': grayscale++; break;
 		default: usage(); break;
 		}
 	}
@@ -208,10 +286,25 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		usage();
 
+	glyphcache = fz_newglyphcache();
+
+	colorspace = pdf_devicergb;
+	if (grayscale)
+		colorspace = pdf_devicegray;
+	if (output && strstr(output, ".pgm"))
+		colorspace = pdf_devicegray;
+	if (output && strstr(output, ".ppm"))
+		colorspace = pdf_devicergb;
+
+	timing.count = 0;
+	timing.total = 0;
+	timing.min = 1 << 30;
+	timing.max = 0;
+	timing.minpage = 0;
+	timing.maxpage = 0;
+
 	if (showxml)
 		printf("<?xml version=\"1.0\"?>\n");
-
-	glyphcache = fz_newglyphcache();
 
 	while (fz_optind < argc)
 	{
@@ -237,6 +330,14 @@ int main(int argc, char **argv)
 			printf("</document>\n");
 
 		pdf_freexref(xref);
+	}
+
+	if (showtime)
+	{
+		printf("total %dms / %d pages for an average of %dms\n",
+			timing.total, timing.count, timing.total / timing.count);
+		printf("fastest page %d: %dms\n", timing.minpage, timing.min);
+		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
 	fz_freeglyphcache(glyphcache);
