@@ -733,7 +733,7 @@ printinfo(char *filename, int show, int page)
 				{
 					for (j = 0; cs[j + 6] != '\0'; j++)
 						cs[3 + j] = cs[j + 6];
-					cs[j + 6] = '\0';
+					cs[3 + j] = '\0';
 				}
 				if (strstr(cs, "ICC"))
 					fz_strlcpy(cs, "ICC", 3);
