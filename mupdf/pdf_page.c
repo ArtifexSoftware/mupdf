@@ -87,11 +87,11 @@ pdf_patternusesblending(fz_obj *dict)
 	fz_obj *obj;
 
 	obj = fz_dictgets(dict, "Resources");
-	if (pdf_resourcesuseblending(obj))
+	if (fz_isdict(obj) && pdf_resourcesuseblending(obj))
 		return 1;
 
 	obj = fz_dictgets(dict, "ExtGState");
-	if (pdf_extgstateusesblending(obj))
+	if (fz_isdict(obj) && pdf_extgstateusesblending(obj))
 		return 1;
 
 	return 0;
@@ -103,7 +103,7 @@ pdf_xobjectusesblending(fz_obj *dict)
 	fz_obj *obj;
 
 	obj = fz_dictgets(dict, "Resources");
-	if (pdf_resourcesuseblending(obj))
+	if (fz_isdict(obj) && pdf_resourcesuseblending(obj))
 		return 1;
 
 	return 0;
@@ -208,7 +208,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 		return fz_rethrow(error, "cannot load page contents (%d %d R)", fz_tonum(obj), fz_togen(obj));
 	}
 
-	if (pdf_resourcesuseblending(page->resources))
+	if (page->resources && pdf_resourcesuseblending(page->resources))
 		page->transparency = 1;
 
 	pdf_logpage("} %p\n", page);
