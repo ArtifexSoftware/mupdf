@@ -110,7 +110,7 @@ void
 pdf_removeitem(pdf_store *store, void *dropfunc, fz_obj *key)
 {
 	struct refkey refkey;
-	pdf_item *item, *prev;
+	pdf_item *item, *prev, *next;
 
 	if (fz_isindirect(key))
 	{
@@ -129,14 +129,15 @@ pdf_removeitem(pdf_store *store, void *dropfunc, fz_obj *key)
 	else
 	{
 		prev = NULL;
-		for (item = store->root; item; item = item->next)
+		for (item = store->root; item; item = next)
 		{
+			next = item->next;
 			if (item->dropfunc == dropfunc && !fz_objcmp(item->key, key))
 			{
 				if (!prev)
-					store->root = item->next;
+					store->root = next;
 				else
-					prev->next = item->next;
+					prev->next = next;
 				((void(*)(void*))item->dropfunc)(item->val);
 				fz_dropobj(item->key);
 				fz_free(item);
@@ -151,7 +152,7 @@ void
 pdf_agestore(pdf_store *store, int maxage)
 {
 	struct refkey *refkey;
-	pdf_item *item, *prev;
+	pdf_item *item, *prev, *next;
 	int i;
 
 	for (i = 0; i < fz_hashlen(store->hash); i++)
@@ -170,14 +171,15 @@ again:
 	}
 
 	prev = NULL;
-	for (item = store->root; item; item = item->next)
+	for (item = store->root; item; item = next)
 	{
+		next = item->next;
 		if (++item->age > maxage)
 		{
 			if (!prev)
-				store->root = item->next;
+				store->root = next;
 			else
-				prev->next = item->next;
+				prev->next = next;
 			((void(*)(void*))item->dropfunc)(item->val);
 			fz_dropobj(item->key);
 			fz_free(item);

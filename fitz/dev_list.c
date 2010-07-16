@@ -338,6 +338,7 @@ fz_freedisplaylist(fz_displaylist *list)
 		fz_freedisplaynode(node);
 		node = next;
 	}
+	fz_free(list);
 }
 
 void

@@ -113,13 +113,16 @@ static int
 pdf_resourcesuseblending(fz_obj *rdb)
 {
 	fz_obj *dict;
+	fz_obj *tmp;
 	int i;
 
 	/* stop on cyclic resource dependencies */
 	if (fz_dictgets(rdb, ".seen"))
 		return 0;
 
-	fz_dictputs(rdb, ".seen", fz_newnull());
+	tmp = fz_newnull();
+	fz_dictputs(rdb, ".seen", tmp);
+	fz_dropobj(tmp);
 
 	dict = fz_dictgets(rdb, "ExtGState");
 	for (i = 0; i < fz_dictlen(dict); i++)
