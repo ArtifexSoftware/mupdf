@@ -225,8 +225,14 @@ static void removeduplicateobjs(void)
 
 static void retainpages(int argc, char **argv)
 {
+	fz_error error;
 	fz_obj *root, *pages, *kids;
 	int count;
+
+	/* Load the old page tree */
+	error = pdf_loadpagetree(xref);
+	if (error)
+		die(fz_rethrow(error, "cannot load page tree"));
 
 	/* Snatch pages entry from root dict */
 	root = fz_dictgets(xref->trailer, "Root");
@@ -557,7 +563,7 @@ int main(int argc, char **argv)
 		die(fz_throw("cannot open output file '%s'", outfile));
 
 	fprintf(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
-	fprintf(out, "%%\342\343\317\323\n\n");
+	fprintf(out, "%%\316\274\341\277\246\n\n");
 
 	uselist = malloc(sizeof (char) * (xref->len + 1));
 	ofslist = malloc(sizeof (int) * (xref->len + 1));

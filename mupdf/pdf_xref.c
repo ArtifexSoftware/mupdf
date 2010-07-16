@@ -618,7 +618,7 @@ pdf_loadxref(pdf_xref *xref, char *buf, int bufsize)
  */
 
 fz_error
-pdf_newxref(pdf_xref **xrefp, fz_stream *file, char *password)
+pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 {
 	pdf_xref *xref;
 	fz_error error;
@@ -939,9 +939,8 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int num, int gen)
 }
 
 /*
- * Convenience function to open a file, create the xref and load the page tree.
- * If password is not null, try to decrypt.
- */
+ * Convenience function to open a file then call pdf_openxrefwithstream.
+  */
 
 fz_error
 pdf_openxref(pdf_xref **xrefp, char *filename, char *password)
@@ -956,17 +955,10 @@ pdf_openxref(pdf_xref **xrefp, char *filename, char *password)
 		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
 
 	file = fz_openfile(fd);
-	error = pdf_newxref(&xref, file, password);
+	error = pdf_openxrefwithstream(&xref, file, password);
 	if (error)
 		return fz_rethrow(error, "cannot load document '%s'", filename);
 	fz_dropstream(file);
-
-	error = pdf_loadpagetree(xref);
-	if (error)
-	{
-		pdf_freexref(xref);
-		return fz_rethrow(error, "cannot load page tree");
-	}
 
 	*xrefp = xref;
 	return fz_okay;

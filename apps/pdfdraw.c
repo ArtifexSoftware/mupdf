@@ -222,6 +222,10 @@ int main(int argc, char **argv)
 		if (error)
 			die(fz_rethrow(error, "cannot open document: %s", filename));
 
+		error = pdf_loadpagetree(xref);
+		if (error)
+			die(fz_rethrow(error, "cannot load page tree: %s", filename));
+
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);
 

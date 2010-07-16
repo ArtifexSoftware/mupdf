@@ -160,19 +160,10 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		usage();
 
-	/* Use newxref directly because we don't care about the page tree */
-	{
-		filename = argv[fz_optind++];
-		fd = open(filename, O_BINARY | O_RDONLY);
-		if (fd < 0)
-			return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
-
-		file = fz_openfile(fd);
-		error = pdf_newxref(&xref, file, password);
-		if (error)
-			die(fz_rethrow(error, "cannot load document '%s'", filename));
-		fz_dropstream(file);
-	}
+	filename = argv[fz_optind++];
+	error = pdf_openxref(&xref, filename, password);
+	if (error)
+		die(fz_rethrow(error, "cannot open document: %s", filename));
 
 	if (fz_optind == argc)
 		showtrailer();

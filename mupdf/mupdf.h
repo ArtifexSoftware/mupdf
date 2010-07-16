@@ -159,8 +159,8 @@ fz_error pdf_openrawstream(fz_stream **stmp, pdf_xref *, int num, int gen);
 fz_error pdf_openstream(fz_stream **stmp, pdf_xref *, int num, int gen);
 fz_error pdf_openstreamat(fz_stream **stmp, pdf_xref *xref, int num, int gen, fz_obj *dict, int stmofs);
 
+fz_error pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password);
 fz_error pdf_openxref(pdf_xref **xrefp, char *filename, char *password);
-fz_error pdf_newxref(pdf_xref **xrefp, fz_stream *file, char *password);
 void pdf_freexref(pdf_xref *);
 
 /* private */

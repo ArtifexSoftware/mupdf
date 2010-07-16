@@ -980,12 +980,18 @@ int main(int argc, char **argv)
 			}
 
 			closexref();
+
 			filename = argv[fz_optind];
 			printf("%s:\n", filename);
 			error = pdf_openxref(&xref, filename, password);
 			if (error)
 				die(fz_rethrow(error, "cannot open input file '%s'", filename));
+
+			error = pdf_loadpagetree(xref);
+			if (error)
+				die(fz_rethrow(error, "cannot load page tree: %s", filename));
 			pagecount = pdf_getpagecount(xref);
+
 			showglobalinfo();
 			state = NO_INFO_GATHERED;
 		}

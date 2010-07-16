@@ -127,7 +127,7 @@ fz_writepnm(fz_pixmap *pixmap, char *filename)
 }
 
 /*
- * Write pixmap to PAM file (with alpha channel)
+ * Write pixmap to PAM file (with or without alpha channel)
  */
 
 fz_error

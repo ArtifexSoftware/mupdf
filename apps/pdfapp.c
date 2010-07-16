@@ -103,7 +103,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd)
 	 */
 
 	file = fz_openfile(fd);
-	error = pdf_newxref(&app->xref, file, NULL);
+	error = pdf_openxrefwithstream(&app->xref, file, NULL);
 	if (error)
 		pdfapp_error(app, fz_rethrow(error, "cannot open document '%s'", filename));
 	fz_dropstream(file);
