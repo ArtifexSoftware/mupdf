@@ -134,7 +134,6 @@ struct pdf_xref_s
 	fz_obj **pagerefs;
 
 	struct pdf_store_s *store;
-	void (*freestore)(struct pdf_store_s *);
 
 	char scratch[65536];
 };
@@ -173,29 +172,14 @@ void pdf_debugxref(pdf_xref *);
 
 typedef struct pdf_store_s pdf_store;
 
-typedef enum pdf_itemkind_e
-{
-	PDF_KCOLORSPACE,
-	PDF_KFUNCTION,
-	PDF_KXOBJECT,
-	PDF_KIMAGE,
-	PDF_KPATTERN,
-	PDF_KSHADING,
-	PDF_KCMAP,
-	PDF_KFONT,
-} pdf_itemkind;
-
 pdf_store * pdf_newstore(void);
-void pdf_emptystore(pdf_store *store);
 void pdf_freestore(pdf_store *store);
 void pdf_debugstore(pdf_store *store);
 
-void pdf_agestoreditems(pdf_store *store);
-void pdf_evictageditems(pdf_store *store);
-
-void pdf_storeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key, void *val);
-void *pdf_finditem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
-void pdf_removeitem(pdf_store *store, pdf_itemkind tag, fz_obj *key);
+void pdf_storeitem(pdf_store *store, void *keepfn, void *dropfn, fz_obj *key, void *val);
+void *pdf_finditem(pdf_store *store, void *dropfn, fz_obj *key);
+void pdf_removeitem(pdf_store *store, void *dropfn, fz_obj *key);
+void pdf_agestore(pdf_store *store, int maxage);
 
 /*
  * Functions

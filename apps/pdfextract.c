@@ -46,9 +46,6 @@ static void saveimage(int num)
 
 	ref = fz_newindirect(num, 0, xref);
 
-	/* Hack! ...normally installed by pdf_page... */
-	xref->store = pdf_newstore();
-
 	/* TODO: detect DCTD and save as jpeg */
 
 	error = pdf_loadimage(&img, xref, nil, ref);
@@ -81,10 +78,6 @@ static void saveimage(int num)
 
 	fz_droppixmap(pix);
 	pdf_dropimage(img);
-
-	/* We never want to cache resources... */
-	pdf_freestore(xref->store);
-	xref->store = nil;
 
 	fz_dropobj(ref);
 }

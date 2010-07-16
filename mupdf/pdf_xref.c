@@ -690,7 +690,7 @@ pdf_freexref(pdf_xref *xref)
 	pdf_logxref("freexref %p\n", xref);
 
 	if (xref->store)
-		xref->freestore(xref->store);
+		pdf_freestore(xref->store);
 
 	if (xref->table)
 	{

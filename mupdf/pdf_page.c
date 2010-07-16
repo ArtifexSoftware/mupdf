@@ -152,10 +152,7 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	// TODO: move this to a more appropriate place
 	/* Ensure that we have a store for resource objects */
 	if (!xref->store)
-	{
 		xref->store = pdf_newstore();
-		xref->freestore = pdf_freestore;
-	}
 
 	page = fz_malloc(sizeof(pdf_page));
 	page->resources = nil;

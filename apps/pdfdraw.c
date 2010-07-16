@@ -141,8 +141,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	fz_freedisplaylist(list);
 	pdf_freepage(page);
 
-	pdf_agestoreditems(xref->store);
-	pdf_evictageditems(xref->store);
+	pdf_agestore(xref->store, 3);
 }
 
 static void drawrange(pdf_xref *xref, char *range)

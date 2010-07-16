@@ -141,9 +141,7 @@ int main(int argc, char **argv)
 {
 	char *password = NULL; /* don't throw errors if encrypted */
 	fz_error error;
-	fz_stream *file;
 	char *filename;
-	int fd;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "p:bc")) != -1)
