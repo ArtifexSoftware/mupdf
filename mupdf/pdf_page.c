@@ -124,19 +124,24 @@ pdf_resourcesuseblending(fz_obj *rdb)
 	dict = fz_dictgets(rdb, "ExtGState");
 	for (i = 0; i < fz_dictlen(dict); i++)
 		if (pdf_extgstateusesblending(fz_dictgetval(dict, i)))
-			return 1;
+			goto found;
 
 	dict = fz_dictgets(rdb, "Pattern");
 	for (i = 0; i < fz_dictlen(dict); i++)
 		if (pdf_patternusesblending(fz_dictgetval(dict, i)))
-			return 1;
+			goto found;
 
 	dict = fz_dictgets(rdb, "XObject");
 	for (i = 0; i < fz_dictlen(dict); i++)
 		if (pdf_xobjectusesblending(fz_dictgetval(dict, i)))
-			return 1;
+			goto found;
 
+	fz_dictdels(rdb, ".seen");
 	return 0;
+
+found:
+	fz_dictdels(rdb, ".seen");
+	return 1;
 }
 
 fz_error
