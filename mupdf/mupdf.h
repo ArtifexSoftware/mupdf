@@ -570,7 +570,6 @@ struct pdf_gstate_s
 	/* materials */
 	pdf_material stroke;
 	pdf_material fill;
-	fz_blendmode blendmode;
 
 	/* text state */
 	float charspace;
@@ -581,6 +580,12 @@ struct pdf_gstate_s
 	float size;
 	int render;
 	float rise;
+
+	/* transparency */
+	fz_blendmode blendmode;
+	pdf_xobject *softmask;
+	fz_matrix softmaskctm;
+	int luminosity;
 };
 
 struct pdf_csi_s
@@ -627,6 +632,7 @@ void pdf_showshade(pdf_csi*, fz_shade *shd);
 void pdf_gsave(pdf_csi *csi);
 void pdf_grestore(pdf_csi *csi);
 fz_error pdf_runcsibuffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents);
+fz_error pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj);
 fz_error pdf_runcontents(pdf_xref *xref, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm);
 fz_error pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm);
 

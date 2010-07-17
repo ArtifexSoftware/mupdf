@@ -83,6 +83,8 @@ pdf_gsave(pdf_csi *csi)
 	pdf_keepmaterial(&gs->fill);
 	if (gs->font)
 		pdf_keepfont(gs->font);
+	if (gs->softmask)
+		pdf_keepxobject(gs->softmask);
 }
 
 void
@@ -101,6 +103,8 @@ pdf_grestore(pdf_csi *csi)
 	pdf_dropmaterial(&gs->fill);
 	if (gs->font)
 		pdf_dropfont(gs->font);
+	if (gs->softmask)
+		pdf_dropxobject(gs->softmask);
 
 	csi->gtop --;
 
@@ -140,13 +144,14 @@ pdf_freecsi(pdf_csi *csi)
  * Push gstate, set transform, clip, run, pop gstate.
  */
 
-static fz_error
+fz_error
 pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 {
 	fz_error error;
 	pdf_gstate *gstate;
 	fz_matrix oldtopctm;
 	int oldtop;
+	pdf_xobject *softmask = nil;
 
 	pdf_gsave(csi);
 
@@ -162,6 +167,21 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	/* reset alpha to 1.0 when starting a new Transparency group */
 	if (xobj->transparency)
 	{
+		if (gstate->softmask)
+		{
+			softmask = gstate->softmask;
+			gstate->softmask = nil;
+
+			fz_rect bbox = fz_transformrect(gstate->ctm, xobj->bbox);
+			fz_matrix oldctm = gstate->ctm;
+			csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity, nil, nil);
+			pdf_runxobject(csi, nil, softmask);
+			csi->dev->endmask(csi->dev->user);
+			gstate->ctm = oldctm;
+
+			pdf_dropxobject(softmask);
+		}
+
 		csi->dev->begingroup(csi->dev->user,
 			fz_transformrect(gstate->ctm, xobj->bbox),
 			xobj->isolated, xobj->knockout, gstate->blendmode);
@@ -201,7 +221,12 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	pdf_grestore(csi);
 
 	if (xobj->transparency)
+	{
 		csi->dev->endgroup(csi->dev->user);
+
+		if (softmask)
+			csi->dev->popclip(csi->dev->user);
+	}
 
 	return fz_okay;
 }
@@ -311,38 +336,13 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 
 		else if (!strcmp(s, "BM"))
 		{
-			static const struct { const char *name; fz_blendmode mode; } bm[] = {
-				{ "Normal", FZ_BNORMAL },
-				{ "Multiply", FZ_BMULTIPLY },
-				{ "Screen", FZ_BSCREEN },
-				{ "Overlay", FZ_BOVERLAY },
-				{ "SoftLight", FZ_BSOFTLIGHT },
-				{ "HardLight", FZ_BHARDLIGHT },
-				{ "ColorDodge", FZ_BCOLORDODGE },
-				{ "ColorBurn", FZ_BCOLORBURN },
-				{ "Darken", FZ_BDARKEN },
-				{ "Lighten", FZ_BLIGHTEN },
-				{ "Difference", FZ_BDIFFERENCE },
-				{ "Exclusion", FZ_BEXCLUSION },
-				{ "Hue", FZ_BHUE },
-				{ "Saturation", FZ_BSATURATION },
-				{ "Color", FZ_BCOLOR },
-				{ "Luminosity", FZ_BLUMINOSITY }
-			};
-
-			char *n = fz_toname(val);
 			if (!fz_isname(val))
 				return fz_throw("malformed BM");
 
 			gstate->blendmode = FZ_BNORMAL;
-			for (k = 0; k < nelem(bm); k++)
-			{
-				if (!strcmp(bm[k].name, n))
-				{
-					gstate->blendmode = bm[k].mode;
-					break;
-				}
-			}
+			for (k = 0; fz_blendnames[k]; k++)
+				if (!strcmp(fz_blendnames[k], fz_toname(val)))
+					gstate->blendmode = k;
 		}
 
 		else if (!strcmp(s, "SMask"))
@@ -350,30 +350,30 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 			if (fz_isdict(val))
 			{
 				fz_error error;
-				fz_obj *g;
-				fz_obj *subtype;
 				pdf_xobject *xobj;
-				pdf_image *img;
+				fz_obj *group, *luminosity;
 
-				fz_warn("ignoring soft mask");
-#if 0
-				g = fz_dictgets(val, "G");
-				subtype = fz_dictgets(g, "Subtype");
+				fz_warn("not ignoring soft mask");
 
-				if (!strcmp(fz_toname(subtype), "Form"))
+				if (gstate->softmask)
 				{
-				error = pdf_loadxobject(&xobj, csi->xref, g);
-				if (error)
-				return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
+					pdf_dropxobject(gstate->softmask);
+					gstate->softmask = nil;
 				}
 
-				else if (!strcmp(fz_toname(subtype), "Image"))
-				{
-				error = pdf_loadimage(&img, csi->xref, g);
+				group = fz_dictgets(val, "G");
+				error = pdf_loadxobject(&xobj, csi->xref, group);
 				if (error)
-				return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
-				}
-#endif
+					return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
+
+				gstate->softmaskctm = fz_concat(xobj->matrix, gstate->ctm);
+				gstate->softmask = xobj;
+
+				luminosity = fz_dictgets(val, "S");
+				if (fz_isname(luminosity) && !strcmp(fz_toname(luminosity), "Luminosity"))
+					gstate->luminosity = 1;
+				else
+					gstate->luminosity = 0;
 			}
 		}
 

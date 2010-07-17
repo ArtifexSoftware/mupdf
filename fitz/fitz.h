@@ -676,6 +676,8 @@ typedef enum fz_blendmode_e
 	FZ_BLUMINOSITY,
 } fz_blendmode;
 
+extern const char *fz_blendnames[];
+
 /*
  * Pixmaps have n components per pixel. the last is always alpha.
  * premultiplied alpha when rendering, but non-premultiplied for colorspace
@@ -695,10 +697,12 @@ struct fz_pixmap_s
 
 fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
 fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
-fz_pixmap *fz_keeppixmap(fz_pixmap *map);
-void fz_droppixmap(fz_pixmap *map);
-void fz_clearpixmap(fz_pixmap *map, unsigned char value);
+fz_pixmap *fz_keeppixmap(fz_pixmap *pix);
+void fz_droppixmap(fz_pixmap *pix);
+void fz_clearpixmap(fz_pixmap *pix, int value);
 void fz_gammapixmap(fz_pixmap *pix, float gamma);
+fz_pixmap *fz_alphafromgray(fz_pixmap *gray, int luminosity);
+fz_bbox fz_boundpixmap(fz_pixmap *pix);
 
 fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
 

@@ -2,6 +2,27 @@
 
 typedef unsigned char byte;
 
+const char *fz_blendnames[] =
+{
+	"Normal",
+	"Multiply",
+	"Screen",
+	"Overlay",
+	"Darken",
+	"Lighten",
+	"ColorDodge",
+	"ColorBurn",
+	"HardLight",
+	"SoftLight",
+	"Difference",
+	"Exclusion",
+	"Hue",
+	"Saturation",
+	"Color",
+	"Luminosity",
+	nil
+};
+
 /*
 PDF 1.4 blend modes.
 Only the actual blend routines are here, not the rendering logic.

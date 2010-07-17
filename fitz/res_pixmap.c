@@ -51,9 +51,20 @@ fz_droppixmap(fz_pixmap *pix)
 }
 
 void
-fz_clearpixmap(fz_pixmap *pix, unsigned char value)
+fz_clearpixmap(fz_pixmap *pix, int value)
 {
 	memset(pix->samples, value, pix->w * pix->h * pix->n);
+}
+
+fz_bbox
+fz_boundpixmap(fz_pixmap *pix)
+{
+	fz_bbox bbox;
+	bbox.x0 = pix->x;
+	bbox.y0 = pix->y;
+	bbox.x1 = pix->x + pix->w;
+	bbox.y1 = pix->y + pix->h;
+	return bbox;
 }
 
 void
@@ -70,6 +81,31 @@ fz_gammapixmap(fz_pixmap *pix, float gamma)
 		*p = table[*p];
 		p++;
 	}
+}
+
+fz_pixmap *
+fz_alphafromgray(fz_pixmap *gray, int luminosity)
+{
+	fz_pixmap *alpha;
+	unsigned char *sp, *dp;
+	int len;
+
+	assert(gray->n == 2);
+
+	alpha = fz_newpixmap(nil, gray->x, gray->y, gray->w, gray->h);
+	dp = alpha->samples;
+	sp = gray->samples;
+	if (!luminosity)
+		sp ++;
+
+	len = gray->w * gray->h;
+	while (len--)
+	{
+		*dp++ = sp[0];
+		sp += 2;
+	}
+
+	return alpha;
 }
 
 /*
