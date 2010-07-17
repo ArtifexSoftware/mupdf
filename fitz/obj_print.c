@@ -337,4 +337,3 @@ fz_debugobj(fz_obj *obj)
 {
 	fz_fprintobj(stdout, obj, 0);
 }
-

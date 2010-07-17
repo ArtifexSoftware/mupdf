@@ -839,7 +839,7 @@ fz_drawbeginmask(void *user, fz_rect rect, int luminosity, fz_colorspace *colors
 		fz_clearpixmap(dest, 255);
 	else
 		fz_clearpixmap(dest, 0);
-	
+
 	dev->stack[dev->top].scissor = dev->scissor;
 	dev->stack[dev->top].dest = dev->dest;
 	dev->stack[dev->top].luminosity = luminosity;

@@ -393,4 +393,3 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		fz_droppixmap(temp);
 	}
 }
-

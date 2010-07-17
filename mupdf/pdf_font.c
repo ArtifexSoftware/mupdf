@@ -1018,4 +1018,3 @@ pdf_debugfont(pdf_fontdesc *fontdesc)
 		printf("\t}\n");
 	}
 }
-

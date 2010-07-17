@@ -512,4 +512,3 @@ fz_debugfont(fz_font *font)
 
 	printf("}\n");
 }
-

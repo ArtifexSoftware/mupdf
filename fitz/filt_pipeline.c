@@ -129,4 +129,3 @@ tail:
 	else
 		return fz_okay;
 }
-

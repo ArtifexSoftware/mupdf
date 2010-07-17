@@ -292,4 +292,3 @@ pdf_loadembeddedfont(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 
 	return fz_okay;
 }
-

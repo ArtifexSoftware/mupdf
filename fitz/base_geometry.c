@@ -202,4 +202,3 @@ fz_transformrect(fz_matrix m, fz_rect r)
 	r.y1 = MAX4(s.y, t.y, u.y, v.y);
 	return r;
 }
-

@@ -417,4 +417,3 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
 		}
 	}
 }
-

@@ -164,4 +164,3 @@ cleanup:
 	fz_free(fontdesc);
 	return fz_rethrow(error, "cannot load type3 font (%d %d R)", fz_tonum(dict), fz_togen(dict));
 }
-

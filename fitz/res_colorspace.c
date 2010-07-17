@@ -485,4 +485,3 @@ fz_convertcolor(fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv)
 	else
 		fz_stdconvcolor(ss, sv, ds, dv);
 }
-

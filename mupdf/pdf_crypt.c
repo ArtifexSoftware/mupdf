@@ -451,7 +451,6 @@ pdf_authenticateownerpassword(pdf_crypt *crypt, unsigned char *ownerpass, int pw
 	return pdf_authenticateuserpassword(crypt, userpass, 32);
 }
 
-
 int
 pdf_authenticatepassword(pdf_xref *xref, char *password)
 {
@@ -605,4 +604,3 @@ pdf_cryptstream(pdf_crypt * crypt, pdf_cryptfilter * stmf, int num, int gen)
 
 	return fz_newcopyfilter();
 }
-
