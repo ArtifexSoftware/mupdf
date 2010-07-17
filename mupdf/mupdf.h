@@ -554,7 +554,6 @@ struct pdf_material_s
 	fz_colorspace *cs;
 	pdf_pattern *pattern;
 	fz_shade *shade;
-	float parentalpha;
 	float alpha;
 	float v[32];
 };

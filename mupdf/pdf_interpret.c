@@ -151,44 +151,45 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	pdf_gstate *gstate;
 	fz_matrix oldtopctm;
 	int oldtop;
-	pdf_xobject *softmask = nil;
+	int popmask;
 
 	pdf_gsave(csi);
 
 	gstate = csi->gstate + csi->gtop;
 	oldtop = csi->gtop;
-
-	gstate->stroke.parentalpha = gstate->stroke.alpha;
-	gstate->fill.parentalpha = gstate->fill.alpha;
+	popmask = 0;
 
 	/* apply xobject's transform matrix */
 	gstate->ctm = fz_concat(xobj->matrix, gstate->ctm);
 
-	/* reset alpha to 1.0 when starting a new Transparency group */
+	/* apply soft mask, create transparency group and reset state */
 	if (xobj->transparency)
 	{
 		if (gstate->softmask)
 		{
-			softmask = gstate->softmask;
-			gstate->softmask = nil;
-
+			pdf_xobject *softmask = gstate->softmask;
 			fz_rect bbox = fz_transformrect(gstate->ctm, xobj->bbox);
-			fz_matrix oldctm = gstate->ctm;
+
+			gstate->softmask = nil;
+			popmask = 1;
+
 			csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity, nil, nil);
 			pdf_runxobject(csi, nil, softmask);
 			csi->dev->endmask(csi->dev->user);
-			gstate->ctm = oldctm;
 
 			pdf_dropxobject(softmask);
 		}
+
+		if (gstate->fill.alpha < 1)
+			fz_warn("ignoring ca for xobject: %g", gstate->fill.alpha);
 
 		csi->dev->begingroup(csi->dev->user,
 			fz_transformrect(gstate->ctm, xobj->bbox),
 			xobj->isolated, xobj->knockout, gstate->blendmode);
 
 		gstate->blendmode = FZ_BNORMAL;
-		gstate->stroke.alpha = gstate->stroke.parentalpha;
-		gstate->fill.alpha = gstate->fill.parentalpha;
+		gstate->stroke.alpha = 1;
+		gstate->fill.alpha = 1;
 	}
 
 	/* clip to the bounds */
@@ -220,11 +221,12 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 
 	pdf_grestore(csi);
 
+	/* wrap up transparency stacks */
+
 	if (xobj->transparency)
 	{
 		csi->dev->endgroup(csi->dev->user);
-
-		if (softmask)
+		if (popmask)
 			csi->dev->popclip(csi->dev->user);
 	}
 
@@ -330,9 +332,10 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 		}
 
 		else if (!strcmp(s, "CA"))
-			gstate->stroke.alpha = gstate->stroke.parentalpha * fz_toreal(val);
+			gstate->stroke.alpha = fz_toreal(val);
+
 		else if (!strcmp(s, "ca"))
-			gstate->fill.alpha = gstate->fill.parentalpha * fz_toreal(val);
+			gstate->fill.alpha = fz_toreal(val);
 
 		else if (!strcmp(s, "BM"))
 		{

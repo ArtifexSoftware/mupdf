@@ -17,6 +17,7 @@ struct fz_drawdevice_s
 	fz_pixmap *dest;
 	fz_bbox scissor;
 
+	int top;
 	struct {
 		fz_bbox scissor;
 		fz_pixmap *dest;
@@ -24,7 +25,6 @@ struct fz_drawdevice_s
 		fz_blendmode blendmode;
 		int luminosity;
 	} stack[STACKSIZE];
-	int top;
 };
 
 static void
@@ -876,8 +876,6 @@ fz_drawendmask(void *user)
 
 		/* convert to alpha mask */
 		temp = fz_alphafromgray(mask, luminosity);
-fz_writepng(mask, "softmask-1.png", 1);
-fz_writepng(temp, "softmask-2.png", 1);
 		fz_droppixmap(mask);
 
 		/* create new dest scratch buffer */

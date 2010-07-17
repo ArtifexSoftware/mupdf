@@ -20,7 +20,6 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->stroke.v[0] = 0;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
-	gs->stroke.parentalpha = 1;
 	gs->stroke.alpha = 1;
 
 	gs->fill.kind = PDF_MCOLOR;
@@ -28,7 +27,6 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->fill.v[0] = 0;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;
-	gs->fill.parentalpha = 1;
 	gs->fill.alpha = 1;
 
 	gs->charspace = 0;
@@ -226,6 +224,9 @@ pdf_showshade(pdf_csi *csi, fz_shade *shd)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_rect bbox;
 
+	if (gstate->fill.alpha < 1)
+		fz_warn("ignoring ca for shading: %g", gstate->fill.alpha);
+
 	bbox = fz_boundshade(shd, gstate->ctm);
 
 	if (gstate->blendmode != FZ_BNORMAL)
@@ -243,6 +244,9 @@ pdf_showimage(pdf_csi *csi, pdf_image *image)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_pixmap *tile, *mask;
 	fz_rect bbox;
+
+	if (gstate->fill.alpha < 1)
+		fz_warn("ignoring ca for image: %g", gstate->fill.alpha);
 
 	bbox = fz_transformrect(gstate->ctm, fz_unitrect);
 
