@@ -833,7 +833,7 @@ fz_drawbeginmask(void *user, fz_rect rect, int luminosity, fz_colorspace *colors
 
 	bbox = fz_roundrect(rect);
 	bbox = fz_intersectbbox(bbox, dev->scissor);
-	dest = fz_newpixmapwithrect(pdf_devicegray, bbox);
+	dest = fz_newpixmapwithrect(fz_devicegray, bbox);
 
 	if (luminosity)
 		fz_clearpixmap(dest, 255);

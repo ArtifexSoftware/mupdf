@@ -16,9 +16,9 @@ loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 
 	switch (n)
 	{
-	case 1: *csp = pdf_devicegray; return fz_okay;
-	case 3: *csp = pdf_devicergb; return fz_okay;
-	case 4: *csp = pdf_devicecmyk; return fz_okay;
+	case 1: *csp = fz_devicegray; return fz_okay;
+	case 3: *csp = fz_devicergb; return fz_okay;
+	case 4: *csp = fz_devicecmyk; return fz_okay;
 	}
 
 	return fz_throw("syntaxerror: ICCBased must have 1, 3 or 4 components");
@@ -78,7 +78,7 @@ xyztolab(fz_colorspace *cs, float *xyz, float *lab)
 }
 
 static fz_colorspace kdevicelab = { -1, "Lab", 3, labtoxyz, xyztolab };
-static fz_colorspace *pdf_devicelab = &kdevicelab;
+static fz_colorspace *fz_devicelab = &kdevicelab;
 
 /*
  * Separation and DeviceN
@@ -323,19 +323,19 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 	if (fz_isname(obj))
 	{
 		if (!strcmp(fz_toname(obj), "Pattern"))
-			*csp = pdf_devicegray;
+			*csp = fz_devicegray;
 		else if (!strcmp(fz_toname(obj), "G"))
-			*csp = pdf_devicegray;
+			*csp = fz_devicegray;
 		else if (!strcmp(fz_toname(obj), "RGB"))
-			*csp = pdf_devicergb;
+			*csp = fz_devicergb;
 		else if (!strcmp(fz_toname(obj), "CMYK"))
-			*csp = pdf_devicecmyk;
+			*csp = fz_devicecmyk;
 		else if (!strcmp(fz_toname(obj), "DeviceGray"))
-			*csp = pdf_devicegray;
+			*csp = fz_devicegray;
 		else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-			*csp = pdf_devicergb;
+			*csp = fz_devicergb;
 		else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-			*csp = pdf_devicecmyk;
+			*csp = fz_devicecmyk;
 		else
 			return fz_throw("unknown colorspace: %s", fz_toname(obj));
 		return fz_okay;
@@ -355,7 +355,7 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 				obj = fz_arrayget(obj, 1);
 				if (!obj)
 				{
-					*csp = pdf_devicegray;
+					*csp = fz_devicegray;
 					return fz_okay;
 				}
 
@@ -365,25 +365,25 @@ pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			}
 
 			else if (!strcmp(fz_toname(name), "G"))
-				*csp = pdf_devicegray;
+				*csp = fz_devicegray;
 			else if (!strcmp(fz_toname(name), "RGB"))
-				*csp = pdf_devicergb;
+				*csp = fz_devicergb;
 			else if (!strcmp(fz_toname(name), "CMYK"))
-				*csp = pdf_devicecmyk;
+				*csp = fz_devicecmyk;
 			else if (!strcmp(fz_toname(name), "DeviceGray"))
-				*csp = pdf_devicegray;
+				*csp = fz_devicegray;
 			else if (!strcmp(fz_toname(name), "DeviceRGB"))
-				*csp = pdf_devicergb;
+				*csp = fz_devicergb;
 			else if (!strcmp(fz_toname(name), "DeviceCMYK"))
-				*csp = pdf_devicecmyk;
+				*csp = fz_devicecmyk;
 			else if (!strcmp(fz_toname(name), "CalGray"))
-				*csp = pdf_devicegray;
+				*csp = fz_devicegray;
 			else if (!strcmp(fz_toname(name), "CalRGB"))
-				*csp = pdf_devicergb;
+				*csp = fz_devicergb;
 			else if (!strcmp(fz_toname(name), "CalCMYK"))
-				*csp = pdf_devicecmyk;
+				*csp = fz_devicecmyk;
 			else if (!strcmp(fz_toname(name), "Lab"))
-				*csp = pdf_devicelab;
+				*csp = fz_devicelab;
 
 			else if (!strcmp(fz_toname(name), "ICCBased"))
 				return loadiccbased(csp, xref, fz_arrayget(obj, 1));

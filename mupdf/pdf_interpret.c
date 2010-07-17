@@ -480,11 +480,11 @@ Lsetcolorspace:
 			else
 			{
 				if (!strcmp(fz_toname(obj), "DeviceGray"))
-					cs = fz_keepcolorspace(pdf_devicegray);
+					cs = fz_keepcolorspace(fz_devicegray);
 				else if (!strcmp(fz_toname(obj), "DeviceRGB"))
-					cs = fz_keepcolorspace(pdf_devicergb);
+					cs = fz_keepcolorspace(fz_devicergb);
 				else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
-					cs = fz_keepcolorspace(pdf_devicecmyk);
+					cs = fz_keepcolorspace(fz_devicecmyk);
 				else
 				{
 					fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
@@ -635,7 +635,7 @@ Lsetcolorspace:
 			goto syntaxerror;
 
 		v[0] = fz_toreal(csi->stack[0]);
-		pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicegray);
+		pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicegray);
 		pdf_setcolor(csi, PDF_MSTROKE, v);
 		break;
 
@@ -658,7 +658,7 @@ Lsetcolorspace:
 		v[2] = fz_toreal(csi->stack[2]);
 		v[3] = fz_toreal(csi->stack[3]);
 
-		pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicecmyk);
+		pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicecmyk);
 		pdf_setcolor(csi, PDF_MSTROKE, v);
 		break;
 
@@ -699,7 +699,7 @@ Lsetcolorspace:
 		v[1] = fz_toreal(csi->stack[1]);
 		v[2] = fz_toreal(csi->stack[2]);
 
-		pdf_setcolorspace(csi, PDF_MSTROKE, pdf_devicergb);
+		pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicergb);
 		pdf_setcolor(csi, PDF_MSTROKE, v);
 		break;
 
@@ -1080,7 +1080,7 @@ Lsetcolor:
 				goto syntaxerror;
 
 			v[0] = fz_toreal(csi->stack[0]);
-			pdf_setcolorspace(csi, PDF_MFILL, pdf_devicegray);
+			pdf_setcolorspace(csi, PDF_MFILL, fz_devicegray);
 			pdf_setcolor(csi, PDF_MFILL, v);
 			break;
 		case 's':
@@ -1146,7 +1146,7 @@ Lsetcolor:
 		v[2] = fz_toreal(csi->stack[2]);
 		v[3] = fz_toreal(csi->stack[3]);
 
-		pdf_setcolorspace(csi, PDF_MFILL, pdf_devicecmyk);
+		pdf_setcolorspace(csi, PDF_MFILL, fz_devicecmyk);
 		pdf_setcolor(csi, PDF_MFILL, v);
 		break;
 
@@ -1222,7 +1222,7 @@ Lsetcolor:
 			v[1] = fz_toreal(csi->stack[1]);
 			v[2] = fz_toreal(csi->stack[2]);
 
-			pdf_setcolorspace(csi, PDF_MFILL, pdf_devicergb);
+			pdf_setcolorspace(csi, PDF_MFILL, fz_devicergb);
 			pdf_setcolor(csi, PDF_MFILL, v);
 			break;
 		default:

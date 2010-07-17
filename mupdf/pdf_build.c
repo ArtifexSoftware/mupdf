@@ -16,14 +16,14 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	memset(gs->strokestate.dashlist, 0, sizeof(gs->strokestate.dashlist));
 
 	gs->stroke.kind = PDF_MCOLOR;
-	gs->stroke.cs = fz_keepcolorspace(pdf_devicegray);
+	gs->stroke.cs = fz_keepcolorspace(fz_devicegray);
 	gs->stroke.v[0] = 0;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
 	gs->stroke.alpha = 1;
 
 	gs->fill.kind = PDF_MCOLOR;
-	gs->fill.cs = fz_keepcolorspace(pdf_devicegray);
+	gs->fill.cs = fz_keepcolorspace(fz_devicegray);
 	gs->fill.v[0] = 0;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;

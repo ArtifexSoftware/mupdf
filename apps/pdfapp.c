@@ -295,12 +295,12 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage)
 		if (app->image)
 			fz_droppixmap(app->image);
 		if (app->grayscale)
-			colorspace = pdf_devicegray;
+			colorspace = fz_devicegray;
 		else
 #ifdef _WIN32
-			colorspace = pdf_devicebgr;
+			colorspace = fz_devicebgr;
 #else
-			colorspace = pdf_devicergb;
+			colorspace = fz_devicergb;
 #endif
 		app->image = fz_newpixmapwithrect(colorspace, bbox);
 		fz_clearpixmap(app->image, 0xFF);

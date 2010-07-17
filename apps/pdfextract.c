@@ -54,10 +54,10 @@ static void saveimage(int num)
 
 	pix = pdf_loadtile(img);
 
-	if (dorgb && img->colorspace && img->colorspace != pdf_devicergb)
+	if (dorgb && img->colorspace && img->colorspace != fz_devicergb)
 	{
 		fz_pixmap *temp;
-		temp = fz_newpixmap(pdf_devicergb, pix->x, pix->y, pix->w, pix->h);
+		temp = fz_newpixmap(fz_devicergb, pix->x, pix->y, pix->w, pix->h);
 		fz_convertpixmap(pix, temp);
 		fz_droppixmap(pix);
 		pix = temp;

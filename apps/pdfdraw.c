@@ -292,13 +292,13 @@ int main(int argc, char **argv)
 
 	glyphcache = fz_newglyphcache();
 
-	colorspace = pdf_devicergb;
+	colorspace = fz_devicergb;
 	if (grayscale)
-		colorspace = pdf_devicegray;
+		colorspace = fz_devicegray;
 	if (output && strstr(output, ".pgm"))
-		colorspace = pdf_devicegray;
+		colorspace = fz_devicegray;
 	if (output && strstr(output, ".ppm"))
-		colorspace = pdf_devicergb;
+		colorspace = fz_devicergb;
 
 	timing.count = 0;
 	timing.total = 0;
