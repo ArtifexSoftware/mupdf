@@ -361,18 +361,6 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 	XDrawString(xdpy, xwin, xgc, x, y, s, strlen(s));
 }
 
-static void windrawpageno(pdfapp_t *app)
-{
-	char s[100];
-
-	int ret = snprintf(s, 100, "Page %d/%d", gapp.pageno, gapp.pagecount);
-	if (ret >= 0)
-	{
-		isshowingpage = 1;
-		windrawstringxor(&gapp, 10, 20, s);
-	}
-}
-
 void windocopy(pdfapp_t *app)
 {
 	unsigned short copyucs2[16 * 1024];
@@ -398,8 +386,6 @@ void windocopy(pdfapp_t *app)
 	*utf8 = 0;
 	*latin1 = 0;
 
-	printf("oncopy utf8=%d latin1=%d\n", strlen(copyutf8), strlen(copylatin1));
-
 	XSetSelectionOwner(xdpy, XA_PRIMARY, xwin, copytime);
 
 	justcopied = 1;
@@ -408,8 +394,6 @@ void windocopy(pdfapp_t *app)
 void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time time)
 {
 	XEvent nevt;
-
-	printf("onselreq\n");
 
 	if (property == None)
 		property = target;
@@ -438,7 +422,6 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 
 	else if (target == XA_STRING)
 	{
-		printf(" -> string %d\n", strlen(copylatin1));
 		XChangeProperty(xdpy, requestor, property, target,
 			8, PropModeReplace,
 			(unsigned char *)copylatin1, strlen(copylatin1));
@@ -446,7 +429,6 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 
 	else if (target == XA_UTF8_STRING)
 	{
-		printf(" -> utf8string\n");
 		XChangeProperty(xdpy, requestor, property, target,
 			8, PropModeReplace,
 			(unsigned char *)copyutf8, strlen(copyutf8));
@@ -454,7 +436,6 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 
 	else
 	{
-		printf(" -> unknown\n");
 		nevt.xselection.property = None;
 	}
 
