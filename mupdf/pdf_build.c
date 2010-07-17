@@ -397,10 +397,6 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 	fz_freepath(path);
 }
 
-/*
- * Text
- */
-
 void
 pdf_flushtext(pdf_csi *csi)
 {

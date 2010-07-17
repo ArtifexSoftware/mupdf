@@ -61,9 +61,7 @@ pdf_addquad(fz_shade *shade,
 	pdf_addtriangle(shade, v1, v3, v2);
 }
 
-/*
- * Subdivide and tesselate tensor-patches
- */
+/* Subdivide and tesselate tensor-patches */
 
 typedef struct pdf_tensorpatch_s pdf_tensorpatch;
 
@@ -322,9 +320,7 @@ pdf_maketensorpatch(pdf_tensorpatch *p, int type, fz_point *pt)
 	}
 }
 
-/*
- * Sample various functions into lookup tables
- */
+/* Sample various functions into lookup tables */
 
 static fz_error
 pdf_samplecompositeshadefunction(fz_shade *shade,
@@ -385,9 +381,7 @@ pdf_sampleshadefunction(fz_shade *shade, int funcs, pdf_function **func, float t
 	return fz_okay;
 }
 
-/*
- * Type 1-3 -- Function-based, axial and radial shadings
- */
+/* Type 1-3 -- Function-based, axial and radial shadings */
 
 static fz_error
 pdf_loadfunctionbasedshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, pdf_function *func)
@@ -668,9 +662,7 @@ pdf_loadradialshading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs, 
 	return fz_okay;
 }
 
-/*
- * Type 4-7 -- Triangle and patch mesh shadings
- */
+/* Type 4-7 -- Triangle and patch mesh shadings */
 
 static inline unsigned int
 readbits(fz_stream *stream, int bits)
@@ -884,9 +876,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	return fz_okay;
 }
 
-/*
- * Type 6 & 7 -- Patch mesh shadings
- */
+/* Type 6 & 7 -- Patch mesh shadings */
 
 static fz_error
 pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
@@ -1138,9 +1128,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	return fz_okay;
 }
 
-/*
- * Load all of the shading dictionary parameters, then switch on the shading type.
- */
+/* Load all of the shading dictionary parameters, then switch on the shading type. */
 
 static fz_error
 pdf_loadshadingdict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix transform)
@@ -1356,4 +1344,3 @@ pdf_loadshading(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 
 	return fz_okay;
 }
-

@@ -1,5 +1,7 @@
 #include "fitz.h"
 
+/* PDF 1.4 blend modes. These are slow.  */
+
 typedef unsigned char byte;
 
 const char *fz_blendnames[] =
@@ -23,13 +25,7 @@ const char *fz_blendnames[] =
 	nil
 };
 
-/*
-PDF 1.4 blend modes.
-Only the actual blend routines are here, not the rendering logic.
-These are slow.
-*/
-
-/* These functions apply to a single component, 0-255 range */
+/* Separable blend modes */
 
 static inline int
 fz_screen_byte(int b, int s)
@@ -232,9 +228,7 @@ fz_hue_rgb(int *rr, int *rg, int *rb, int br, int bg, int bb, int sr, int sg, in
 	fz_saturation_rgb(rr, rg, rb, tr, tg, tb, br, bg, bb);
 }
 
-/*
- *
- */
+/* Blending functions */
 
 static void
 fz_blendseparable(byte * restrict sp, byte * restrict bp, int n, int w, fz_blendmode blendmode)

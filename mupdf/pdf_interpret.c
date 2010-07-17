@@ -139,11 +139,6 @@ pdf_freecsi(pdf_csi *csi)
 	fz_free(csi);
 }
 
-/*
- * Do some magic to call the xobject subroutine.
- * Push gstate, set transform, clip, run, pop gstate.
- */
-
 fz_error
 pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 {
@@ -233,10 +228,6 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	return fz_okay;
 }
 
-/*
- * Decode inline image and insert into page.
- */
-
 static fz_error
 pdf_runinlineimage(pdf_csi *csi, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 {
@@ -268,10 +259,6 @@ pdf_runinlineimage(pdf_csi *csi, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 	pdf_dropimage(img);
 	return fz_okay;
 }
-
-/*
- * Set gstate params from an ExtGState dictionary.
- */
 
 static fz_error
 pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstate)
@@ -390,9 +377,7 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 	return fz_okay;
 }
 
-/*
- * The meat of the interpreter...
- */
+/* TODO: split pdf_runkeyword into more manageable pieces */
 
 static fz_error
 pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, char *buf)

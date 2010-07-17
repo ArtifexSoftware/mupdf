@@ -1,9 +1,7 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-/*
- * ICCBased
- */
+/* ICCBased */
 
 static fz_error
 loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
@@ -24,9 +22,7 @@ loadiccbased(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 	return fz_throw("syntaxerror: ICCBased must have 1, 3 or 4 components");
 }
 
-/*
- * Lab
- */
+/* Lab */
 
 static inline float fung(float x)
 {
@@ -80,9 +76,7 @@ xyztolab(fz_colorspace *cs, float *xyz, float *lab)
 static fz_colorspace kdevicelab = { -1, "Lab", 3, labtoxyz, xyztolab };
 static fz_colorspace *fz_devicelab = &kdevicelab;
 
-/*
- * Separation and DeviceN
- */
+/* Separation and DeviceN */
 
 struct separation
 {
@@ -170,9 +164,7 @@ loadseparation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	return fz_okay;
 }
 
-/*
- * Indexed
- */
+/* Indexed */
 
 struct indexed
 {
@@ -313,9 +305,7 @@ loadindexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	return fz_okay;
 }
 
-/*
- * Parse and create colorspace from PDF object.
- */
+/* Parse and create colorspace from PDF object */
 
 static fz_error
 pdf_loadcolorspaceimp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)

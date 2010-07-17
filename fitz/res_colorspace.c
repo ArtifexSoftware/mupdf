@@ -36,9 +36,7 @@ fz_dropcolorspace(fz_colorspace *cs)
 	}
 }
 
-/*
- * Fast Device color spaces
- */
+/* Device colorspace definitions */
 
 static void graytoxyz(fz_colorspace *cs, float *gray, float *xyz)
 {
@@ -113,9 +111,7 @@ fz_colorspace *fz_devicergb = &kdevicergb;
 fz_colorspace *fz_devicebgr = &kdevicebgr;
 fz_colorspace *fz_devicecmyk = &kdevicecmyk;
 
-/*
- * Pixmap color conversions
- */
+/* Fast pixmap color conversions */
 
 static void fastgraytorgb(fz_pixmap *src, fz_pixmap *dst)
 {
@@ -362,9 +358,7 @@ fz_convertpixmap(fz_pixmap *sp, fz_pixmap *dp)
 	else fz_stdconvpixmap(sp, dp);
 }
 
-/*
- * Convert a single color
- */
+/* Convert a single color */
 
 static void
 fz_stdconvcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv)
