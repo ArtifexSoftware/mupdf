@@ -287,6 +287,12 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		usage();
 
+	if (!showtext && !showxml && !showtime && !showmd5 && !output)
+	{
+		printf("nothing to do\n");
+		exit(0);
+	}
+
 	if (accelerate)
 		fz_accelerate();
 

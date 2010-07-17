@@ -259,9 +259,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
 	fontname = cleanfontname(basefont);
 
-	/*
-	 * Load font file
-	 */
+	/* Load font file */
 
 	fontdesc = pdf_newfontdesc();
 
@@ -293,9 +291,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	else
 		fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
-	/*
-	 * Encoding
-	 */
+	/* Encoding */
 
 	symbolic = fontdesc->flags & 4;
 
@@ -484,9 +480,7 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		goto cleanup;
 
-	/*
-	 * Widths
-	 */
+	/* Widths */
 
 	pdf_setdefaulthmtx(fontdesc, fontdesc->missingwidth);
 
@@ -552,9 +546,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	fz_obj *obj;
 	int dw;
 
-	/*
-	 * Get font name and CID collection
-	 */
+	/* Get font name and CID collection */
 
 	basefont = fz_toname(fz_dictgets(dict, "BaseFont"));
 
@@ -582,9 +574,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 		fz_strlcat(collection, tmpstr, sizeof collection);
 	}
 
-	/*
-	 * Load font file
-	 */
+	/* Load font file */
 
 	fontdesc = pdf_newfontdesc();
 
@@ -615,9 +605,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	else
 		fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
-	/*
-	 * Encoding
-	 */
+	/* Encoding */
 
 	error = fz_okay;
 	if (fz_isname(encoding))
@@ -707,9 +695,8 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	if (error)
 		goto cleanup;
 
-	/*
-	 * Horizontal
-	 */
+	/* Horizontal */
+
 	dw = 1000;
 	obj = fz_dictgets(dict, "DW");
 	if (obj)
@@ -746,9 +733,7 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 
 	pdf_endhmtx(fontdesc);
 
-	/*
-	 * Vertical
-	 */
+	/* Vertical */
 
 	if (pdf_getwmode(fontdesc->encoding) == 1)
 	{

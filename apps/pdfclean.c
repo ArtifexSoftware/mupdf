@@ -210,8 +210,10 @@ static void removeduplicateobjs(void)
 		{
 			fz_obj *a, *b;
 
-			/* pdf_isstream() calls pdf_cacheobject() and thus
-			ensures that the objects are in xref afterwards. */
+			/*
+			pdf_isstream calls pdf_cacheobject and ensures
+			that the xref table has the objects loaded
+			*/
 			if (num == other ||
 				pdf_isstream(xref, num, 0) ||
 				pdf_isstream(xref, other, 0))
@@ -271,9 +273,7 @@ static void retainpages(int argc, char **argv)
 	fz_dropobj(pages);
 	fz_dropobj(type);
 
-	/* Create a new kids array too add into pages dict
-	 * since each element must be replaced to point to
-	 * a retained page */
+	/* Create a new kids array with only the pages we want to keep. */
 	kids = fz_newarray(1);
 	count = 0;
 
