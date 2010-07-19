@@ -415,6 +415,9 @@ pdf_lex(pdf_token_e *tok, fz_stream *f, char *buf, int n, int *sl)
 			*sl = lexstring(f, buf, n);
 			*tok = PDF_TSTRING;
 			goto cleanupokay;
+		case ')':
+			*tok = PDF_TERROR;
+			goto cleanuperror;
 		case '<':
 			c = fz_readbyte(f);
 			if (c == '<')
@@ -453,7 +456,7 @@ pdf_lex(pdf_token_e *tok, fz_stream *f, char *buf, int n, int *sl)
 			fz_unreadbyte(f);
 			*sl = lexnumber(f, buf, n, tok);
 			goto cleanupokay;
-		default: /* isregular(c) */
+		default: /* isregular: !isdelim && !iswhite && c != EOF */
 			fz_unreadbyte(f);
 			lexname(f, buf, n);
 			*sl = strlen(buf);
