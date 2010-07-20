@@ -145,7 +145,7 @@ fz_insertgelraw(fz_gel *gel, int x0, int y0, int x1, int y1)
 
 	dy = y1 - y0;
 	dx = x1 - x0;
-	width = dx < 0 ? -dx : dx;
+	width = ABS(dx);
 
 	edge->xdir = dx > 0 ? 1 : -1;
 	edge->ydir = winding;
