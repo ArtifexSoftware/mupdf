@@ -1142,16 +1142,14 @@ void fz_blendpixmapswithmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk);
 void fz_blendpixmapswithalpha(fz_pixmap *dst, fz_pixmap *src, float alpha);
 void fz_blendpixmaps(fz_pixmap *dst, fz_pixmap *src);
 
+void fz_blendmasks(unsigned char * restrict dp, unsigned char * restrict sp, int w);
+void fz_blendwithcolormask(unsigned char * restrict dp, unsigned char * restrict sp, unsigned char * restrict mp, int n, int w);
 void fz_blendnormal(unsigned char * restrict dp, unsigned char * restrict sp, int n, int w);
 void fz_blendwithmask(unsigned char * restrict dp, unsigned char * restrict sp, unsigned char * restrict mp, int n, int w);
 
 extern void (*fz_path_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict);
 extern void (*fz_path_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
 extern void (*fz_path_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
-
-extern void (*fz_text_1o1)(unsigned char*restrict,int,unsigned char*restrict,int,int,int);
-extern void (*fz_text_w2i1o2)(unsigned char*,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
-extern void (*fz_text_w4i1o4)(unsigned char*,unsigned char*restrict,int,unsigned char*restrict,int,int,int);
 
 extern void (*fz_img_non)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,fz_matrix*);
 extern void (*fz_img_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);

@@ -470,7 +470,7 @@ void fz_accelerate(void)
 	if (sizeof(int) == 4 && sizeof(unsigned int) == 4 && !fz_isbigendian())
 	{
 		fz_path_w4i1o4 = path_w4i1o4_32bit;
-		fz_text_w4i1o4 = text_w4i1o4_32bit;
+//		fz_text_w4i1o4 = text_w4i1o4_32bit;
 		fz_img_4o4 = img_4o4_32bit;
 		fz_img_w4i1o4 = img_w4i1o4_32bit;
 		fz_img_1o1 = img_1o1_32bit;

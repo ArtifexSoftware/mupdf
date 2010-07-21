@@ -206,57 +206,39 @@ fz_drawclipstrokepath(void *user, fz_path *path, fz_strokestate *stroke, fz_matr
 }
 
 static void
-drawglyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *src,
+drawglyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *msk,
 	int xorig, int yorig, fz_bbox scissor)
 {
-	unsigned char *dp, *sp;
-	int w, h;
+	unsigned char *dp, *mp;
+	fz_bbox bbox;
+	int x, y, w, h;
 
-	int dx0 = scissor.x0;
-	int dy0 = scissor.y0;
-	int dx1 = scissor.x1;
-	int dy1 = scissor.y1;
+	bbox = fz_boundpixmap(msk);
+	bbox.x0 += xorig;
+	bbox.y0 += yorig;
+	bbox.x1 += xorig;
+	bbox.y1 += yorig;
 
-	int x0 = xorig + src->x;
-	int y0 = yorig + src->y;
-	int x1 = x0 + src->w;
-	int y1 = y0 + src->h;
+	bbox = fz_intersectbbox(bbox, scissor); /* scissor < dst */
+	x = bbox.x0;
+	y = bbox.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
 
-	int sx0 = 0;
-	int sy0 = 0;
-	int sx1 = src->w;
-	int sy1 = src->h;
+	mp = msk->samples + ((y - msk->y - yorig) * msk->w + (x - msk->x - xorig));
+	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
 
-	if (x1 <= dx0 || x0 >= dx1) return;
-	if (y1 <= dy0 || y0 >= dy1) return;
-	if (x0 < dx0) { sx0 += dx0 - x0; x0 = dx0; }
-	if (y0 < dy0) { sy0 += dy0 - y0; y0 = dy0; }
-	if (x1 > dx1) { sx1 += dx1 - x1; }
-	if (y1 > dy1) { sy1 += dy1 - y1; }
+	assert(msk->n == 1);
 
-	sp = src->samples + (sy0 * src->w + sx0);
-	dp = dst->samples + ((y0 - dst->y) * dst->w + (x0 - dst->x)) * dst->n;
-
-	w = sx1 - sx0;
-	h = sy1 - sy0;
-
-	if (dst->colorspace)
+	while (h--)
 	{
-		switch (dst->n)
-		{
-		case 2:
-			fz_text_w2i1o2(colorbv, sp, src->w, dp, dst->w * 2, w, h);
-			break;
-		case 4:
-			fz_text_w4i1o4(colorbv, sp, src->w, dp, dst->w * 4, w, h);
-			break;
-		default:
-			assert("Write fz_text_wni1on" != NULL);
-			break;
-		}
+		if (dst->colorspace)
+			fz_blendwithcolormask(dp, colorbv, mp, dst->n, w);
+		else
+			fz_blendmasks(dp, mp, w);
+		dp += dst->w * dst->n;
+		mp += msk->w;
 	}
-	else
-		fz_text_1o1(sp, src->w, dp, dst->w, w, h);
 }
 
 static void

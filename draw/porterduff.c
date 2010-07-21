@@ -130,89 +130,71 @@ void (*fz_path_1o1)(byte*restrict,byte,int,byte*restrict) = path_1o1;
 void (*fz_path_w2i1o2)(byte*,byte*restrict,byte,int,byte*restrict) = path_w2i1o2;
 void (*fz_path_w4i1o4)(byte*,byte*restrict,byte,int,byte*restrict) = path_w4i1o4;
 
-/*
- * Text drawing (the source colors are not premultiplied)
- */
+/* Blend source alpha over destination alpha */
 
-static void
-text_1o1(byte * restrict src, int srcw, byte * restrict dst, int dstw, int w0, int h)
+void
+fz_blendmasks(byte * restrict dp, byte * restrict sp, int w)
 {
-
-	srcw -= w0;
-	dstw -= w0;
-	while (h--)
+	while (w--)
 	{
-		int w = w0;
-		while (w--)
-		{
-			dst[0] = src[0] + fz_mul255(dst[0], 255 - src[0]);
-			src++;
-			dst++;
-		}
-		src += srcw;
-		dst += dstw;
+		dp[0] = sp[0] + fz_mul255(dp[0], 255 - sp[0]);
+		sp++;
+		dp++;
 	}
 }
 
-static void
-text_w2i1o2(byte *ga, byte * restrict src, int srcw, byte * restrict dst, int dstw, int w0, int h)
-{
-	byte g = ga[0];
-	int a = FZ_EXPAND(ga[1]);
+/* Blend a non-premultiplied color in mask over destination */
 
-	srcw -= w0;
-	dstw -= w0<<1;
-	while (h--)
+void
+fz_blendwithcolormask(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
+{
+	int sa, r, g, b, k;
+
+	switch (n)
 	{
-		int w = w0;
+	case 2:
+		sa = FZ_EXPAND(sp[1]);
+		g = sp[0];
 		while (w--)
 		{
-			int c = FZ_COMBINE(FZ_EXPAND(src[0]), a);
-			dst[0] = FZ_BLEND(g, dst[0], c);
-			dst[1] = FZ_BLEND(255, dst[1], c);
-			src ++;
-			dst += 2;
+			int ma = *mp++;
+			int masa = FZ_COMBINE(FZ_EXPAND(ma), sa);
+			dp[0] = FZ_BLEND(g, dp[0], masa);
+			dp[1] = FZ_BLEND(255, dp[1], masa);
+			dp += 2;
 		}
-		src += srcw;
-		dst += dstw;
+		break;
+	case 4:
+		sa = FZ_EXPAND(sp[3]);
+		r = sp[0];
+		g = sp[1];
+		b = sp[2];
+		while (w--)
+		{
+			int ma = *mp++;
+			int masa = FZ_COMBINE(FZ_EXPAND(ma), sa);
+			dp[0] = FZ_BLEND(r, dp[0], masa);
+			dp[1] = FZ_BLEND(g, dp[1], masa);
+			dp[2] = FZ_BLEND(b, dp[2], masa);
+			dp[3] = FZ_BLEND(255, dp[3], masa);
+			dp += 4;
+		}
+		break;
+	default:
+		sa = FZ_EXPAND(sp[n-1]);
+		while (w--)
+		{
+			int ma = *mp++;
+			int masa = FZ_COMBINE(FZ_EXPAND(ma), sa);
+			for (k = 0; k < n - 1; k++)
+				dp[k] = FZ_BLEND(sp[k], dp[k], masa);
+			dp[k] = FZ_BLEND(255, dp[k], masa);
+			dp += n;
+		}
 	}
 }
 
-static void
-text_w4i1o4(byte *rgba, byte * restrict src, int srcw, byte * restrict dst, int dstw, int w0, int h)
-{
-	byte r = rgba[0];
-	byte g = rgba[1];
-	byte b = rgba[2];
-	int a = FZ_EXPAND(rgba[3]);
-
-	srcw -= w0;
-	dstw -= w0<<2;
-	while (h--)
-	{
-		int w = w0;
-		while (w--)
-		{
-			int c = FZ_COMBINE(FZ_EXPAND(src[0]), a);
-			dst[0] = FZ_BLEND(r, dst[0], c);
-			dst[1] = FZ_BLEND(g, dst[1], c);
-			dst[2] = FZ_BLEND(b, dst[2], c);
-			dst[3] = FZ_BLEND(255, dst[3], c);
-			src ++;
-			dst += 4;
-		}
-		src += srcw;
-		dst += dstw;
-	}
-}
-
-void (*fz_text_1o1)(byte*restrict,int,byte*restrict,int,int,int) = text_1o1;
-void (*fz_text_w2i1o2)(byte*,byte*restrict,int,byte*restrict,int,int,int) = text_w2i1o2;
-void (*fz_text_w4i1o4)(byte*,byte*restrict,int,byte*restrict,int,int,int) = text_w4i1o4;
-
-/*
- * Pixmap blending
- */
+/* Blend source in mask over destination */
 
 void
 fz_blendwithmask(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
@@ -260,6 +242,8 @@ fz_blendwithmask(byte * restrict dp, byte * restrict sp, byte * restrict mp, int
 	}
 }
 
+/* Blend source in (constant) alpha over destination */
+
 void
 fz_blendwithalpha(byte * restrict dp, byte * restrict sp, int ma, int n, int w)
 {
@@ -276,6 +260,8 @@ fz_blendwithalpha(byte * restrict dp, byte * restrict sp, int ma, int n, int w)
 	}
 }
 
+/* Blend source over destination */
+
 void
 fz_blendnormal(byte * restrict dp, byte * restrict sp, int n, int w)
 {
@@ -290,6 +276,10 @@ fz_blendnormal(byte * restrict dp, byte * restrict sp, int n, int w)
 		dp += n;
 	}
 }
+
+/*
+ * Pixmap blending functions
+ */
 
 void
 fz_blendpixmapswithmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
