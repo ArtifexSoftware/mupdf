@@ -72,64 +72,6 @@ and stick to using the premultiplied form.
 
 typedef unsigned char byte;
 
-/*
- * Path drawing (the source colors are not premultiplied)
- */
-
-static void
-path_1o1(byte * restrict src, byte cov, int len, byte * restrict dst)
-{
-	while (len--)
-	{
-		int c;
-		cov += *src; *src = 0; src++;
-		c = FZ_EXPAND(cov);
-		dst[0] = FZ_BLEND(255, dst[0], c);
-		dst++;
-	}
-}
-
-static void
-path_w2i1o2(byte *ga, byte * restrict src, byte cov, int len, byte * restrict dst)
-{
-	byte g = ga[0];
-	int a = FZ_EXPAND(ga[1]);
-
-	while (len--)
-	{
-		int ca;
-		cov += *src; *src = 0; src++;
-		ca = FZ_COMBINE(FZ_EXPAND(cov), a);
-		dst[0] = FZ_BLEND(g, dst[0], ca);
-		dst[1] = FZ_BLEND(255, dst[1], ca);
-		dst += 2;
-	}
-}
-
-static void
-path_w4i1o4(byte *rgba, byte * restrict src, byte cov, int len, byte * restrict dst)
-{
-	byte r = rgba[0];
-	byte g = rgba[1];
-	byte b = rgba[2];
-	int a = FZ_EXPAND(rgba[3]);
-	while (len--)
-	{
-		int ca;
-		cov += *src; *src = 0; src++;
-		ca = FZ_COMBINE(FZ_EXPAND(cov), a);
-		dst[0] = FZ_BLEND(r, dst[0], ca);
-		dst[1] = FZ_BLEND(g, dst[1], ca);
-		dst[2] = FZ_BLEND(b, dst[2], ca);
-		dst[3] = FZ_BLEND(255, dst[3], ca);
-		dst += 4;
-	}
-}
-
-void (*fz_path_1o1)(byte*restrict,byte,int,byte*restrict) = path_1o1;
-void (*fz_path_w2i1o2)(byte*,byte*restrict,byte,int,byte*restrict) = path_w2i1o2;
-void (*fz_path_w4i1o4)(byte*,byte*restrict,byte,int,byte*restrict) = path_w4i1o4;
-
 /* Blend source alpha over destination alpha */
 
 void
@@ -288,6 +230,9 @@ fz_blendpixmapswithmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 	fz_bbox bbox;
 	int x, y, w, h, n;
 
+	assert(dst->n == src->n);
+	assert(msk->n == 1);
+
 	bbox = fz_boundpixmap(dst);
 	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
 	bbox = fz_intersectbbox(bbox, fz_boundpixmap(msk));
@@ -301,9 +246,6 @@ fz_blendpixmapswithmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
 	mp = msk->samples + ((y - msk->y) * msk->w + (x - msk->x)) * msk->n;
 	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
-
-	assert(dst->n == src->n);
-	assert(msk->n == 1);
 
 	while (h--)
 	{
@@ -321,6 +263,8 @@ fz_blendpixmapswithalpha(fz_pixmap *dst, fz_pixmap *src, float alpha)
 	fz_bbox bbox;
 	int x, y, w, h, n, a;
 
+	assert(dst->n == src->n);
+
 	bbox = fz_boundpixmap(dst);
 	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
 
@@ -333,8 +277,6 @@ fz_blendpixmapswithalpha(fz_pixmap *dst, fz_pixmap *src, float alpha)
 	n = src->n;
 	sp = src->samples + ((y - src->y) * src->w + (x - src->x)) * src->n;
 	dp = dst->samples + ((y - dst->y) * dst->w + (x - dst->x)) * dst->n;
-
-	assert(dst->n == src->n);
 
 	while (h--)
 	{

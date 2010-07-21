@@ -977,7 +977,7 @@ fz_ael * fz_newael(void);
 void fz_freeael(fz_ael *ael);
 
 fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
-	fz_bbox clip, fz_pixmap *pix, unsigned char *colorbv, fz_pixmap *image, fz_matrix *invmat);
+	fz_bbox clip, fz_pixmap *pix, unsigned char *colorbv);
 
 void fz_fillpath(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
 void fz_strokepath(fz_gel *gel, fz_path *path, fz_strokestate *stroke, fz_matrix ctm, float flatness, float linewidth);
@@ -1147,16 +1147,8 @@ void fz_blendwithcolormask(unsigned char * restrict dp, unsigned char * restrict
 void fz_blendnormal(unsigned char * restrict dp, unsigned char * restrict sp, int n, int w);
 void fz_blendwithmask(unsigned char * restrict dp, unsigned char * restrict sp, unsigned char * restrict mp, int n, int w);
 
-extern void (*fz_path_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict);
-extern void (*fz_path_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
-extern void (*fz_path_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict);
-
-extern void (*fz_img_non)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,fz_matrix*);
-extern void (*fz_img_1o1)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_4o4)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_2o2)(unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_w2i1o2)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
-extern void (*fz_img_w4i1o4)(unsigned char*,unsigned char*restrict,unsigned char,int,unsigned char*restrict,fz_pixmap*,int u, int v, int fa, int fb);
+void fz_blendimage(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matrix ctm);
+void fz_blendimagewithcolor(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matrix ctm, unsigned char *colorbv);
 
 extern void (*fz_srown)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
 extern void (*fz_srow1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
