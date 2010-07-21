@@ -42,7 +42,9 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #include <unistd.h>
 
+#ifndef O_BINARY
 #define O_BINARY 0
+#endif
 
 #endif
 
