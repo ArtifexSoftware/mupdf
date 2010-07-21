@@ -707,6 +707,7 @@ fz_pixmap *fz_alphafromgray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_boundpixmap(fz_pixmap *pix);
 
 fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
+fz_pixmap * fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h);
 
 fz_error fz_writepnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_writepam(fz_pixmap *pixmap, char *filename, int savealpha);

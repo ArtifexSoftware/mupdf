@@ -319,8 +319,8 @@ fz_blendimageimp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matrix ctm,
 	sw = img->w;
 	sh = img->h;
 
-	u = (inv.a * (x+0.5) + inv.c * (y+0.5) + inv.e) * 65536;
-	v = (inv.b * (x+0.5) + inv.d * (y+0.5) + inv.f) * 65536;
+	u = (inv.a * (x+0.5f) + inv.c * (y+0.5f) + inv.e) * 65536;
+	v = (inv.b * (x+0.5f) + inv.d * (y+0.5f) + inv.f) * 65536;
 
 	while (h--)
 	{

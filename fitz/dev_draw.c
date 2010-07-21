@@ -6,6 +6,8 @@
 
 #define STACKSIZE 96
 
+#define noSMOOTHSCALE
+
 typedef struct fz_drawdevice_s fz_drawdevice;
 
 struct fz_drawdevice_s
@@ -574,11 +576,21 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm)
 		image = converted;
 	}
 
+#ifdef SMOOTHSCALE
+	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
+	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
+	if (dx < image->w && dy < image->h)
+	{
+		scaled = fz_smoothscalepixmap(image, image->x, image->y, dx, dy);
+		image = scaled;
+	}
+#else
 	if (fz_calcimagescale(image, ctm, &dx, &dy))
 	{
 		scaled = fz_scalepixmap(image, dx, dy);
 		image = scaled;
 	}
+#endif
 
 	fz_blendimage(dev->dest, dev->scissor, image, ctm);
 
@@ -603,11 +615,21 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 	if (image->w == 0 || image->h == 0)
 		return;
 
+#ifdef SMOOTHSCALE
+	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
+	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
+	if (dx < image->w && dy < image->h)
+	{
+		scaled = fz_smoothscalepixmap(image, image->x, image->y, dx, dy);
+		image = scaled;
+	}
+#else
 	if (fz_calcimagescale(image, ctm, &dx, &dy))
 	{
 		scaled = fz_scalepixmap(image, dx, dy);
 		image = scaled;
 	}
+#endif
 
 	if (dev->dest->colorspace)
 	{
@@ -661,11 +683,21 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 	fz_clearpixmap(mask, 0);
 	fz_clearpixmap(dest, 0);
 
+#ifdef SMOOTHSCALE
+	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
+	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
+	if (dx < image->w && dy < image->h)
+	{
+		scaled = fz_smoothscalepixmap(image, image->x, image->y, dx, dy);
+		image = scaled;
+	}
+#else
 	if (fz_calcimagescale(image, ctm, &dx, &dy))
 	{
 		scaled = fz_scalepixmap(image, dx, dy);
 		image = scaled;
 	}
+#endif
 
 	fz_blendimage(mask, bbox, image, ctm);
 
