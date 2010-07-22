@@ -286,13 +286,9 @@ fz_blendscanwithcolor(unsigned char *dp, unsigned char *sp, int sw, int sh,
 
 /* Draw an image with an affine transform on destination */
 
-static inline float nodropout(float x)
+static inline float roundup(float x)
 {
-	if (x > 0.1 && x < 1)
-		return 1;
-	if (x < -0.1 && x > -1)
-		return -1;
-	return x;
+	return (x < 0) ? floorf(x) : ceilf(x);
 }
 
 static void
@@ -306,12 +302,15 @@ fz_blendimageimp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matrix ctm,
 	fz_matrix inv;
 	fz_bbox bbox;
 
+	/* grid fit the image */
 	if (fz_isrectilinear(ctm))
 	{
-		ctm.a = nodropout(ctm.a);
-		ctm.b = nodropout(ctm.b);
-		ctm.c = nodropout(ctm.c);
-		ctm.d = nodropout(ctm.d);
+		ctm.a = roundup(ctm.a);
+		ctm.b = roundup(ctm.b);
+		ctm.c = roundup(ctm.c);
+		ctm.d = roundup(ctm.d);
+		ctm.e = floorf(ctm.e) + 0.5f;
+		ctm.f = floorf(ctm.f) + 0.5f;
 	}
 
 	bbox = fz_roundrect(fz_transformrect(ctm, fz_unitrect));
