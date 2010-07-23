@@ -1,6 +1,6 @@
 # Configuration for the Makefile
 
-OS := $(shell uname)
+OS ?= $(shell uname)
 OS := $(OS:MINGW%=MINGW)
 
 CC ?= cc
@@ -49,7 +49,7 @@ endif
 
 # MinGW build depends on thirdparty libs
 ifeq "$(OS)" "MINGW"
-CC := gcc
+WINDRES ?= windres
 W32LIBS := -lgdi32 -lcomdlg32 -luser32 -ladvapi32 -lshell32 -mwindows
 PDFVIEW_EXE = $(WINVIEW_EXE)
 endif
