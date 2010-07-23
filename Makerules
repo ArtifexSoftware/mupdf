@@ -27,6 +27,7 @@ endif
 
 ifeq "$(OS)" "FreeBSD"
 SYS_FREETYPE_INC := `pkg-config --cflags freetype2`
+LDFLAGS += -L/usr/local/lib
 X11LIBS := -lX11 -lXext
 PDFVIEW_EXE = $(X11VIEW_EXE)
 endif
