@@ -262,6 +262,5 @@ fz_processpredict(fz_filter *filter, fz_buffer *in, fz_buffer *out)
 		{
 			return fz_iodone;
 		}
-
 	}
 }
