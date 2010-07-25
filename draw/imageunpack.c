@@ -161,11 +161,10 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 /* Apply decode array */
 
 void
-fz_decodetile(fz_pixmap *pix, float *decode, int maxval)
+fz_decodeindexedtile(fz_pixmap *pix, float *decode, int maxval)
 {
-	int min[FZ_MAXCOLORS];
-	int max[FZ_MAXCOLORS];
-	int sub[FZ_MAXCOLORS];
+	int add[FZ_MAXCOLORS];
+	int mul[FZ_MAXCOLORS];
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
 	int n = pix->n - 1;
@@ -175,10 +174,11 @@ fz_decodetile(fz_pixmap *pix, float *decode, int maxval)
 	needed = 0;
 	for (k = 0; k < n; k++)
 	{
-		min[k] = decode[k * 2] * 256;
-		max[k] = decode[k * 2 + 1] * 256;
-		sub[k] = (max[k] - min[k]) / maxval;
-		needed |= min[k] != 0 || max[k] != maxval * 256;
+		int min = decode[k * 2] * 256;
+		int max = decode[k * 2 + 1] * 256;
+		add[k] = min;
+		mul[k] = (max - min) / maxval;
+		needed |= min != 0 || max != maxval * 256;
 	}
 
 	if (!needed)
@@ -187,8 +187,39 @@ fz_decodetile(fz_pixmap *pix, float *decode, int maxval)
 	while (len--)
 	{
 		for (k = 0; k < n; k++)
-			p[k] = (min[k] + (((p[k] << 8) * sub[k]) >> 8)) >> 8;
+			p[k] = (add[k] + (((p[k] << 8) * mul[k]) >> 8)) >> 8;
 		p += n + 1;
 	}
 }
 
+void
+fz_decodetile(fz_pixmap *pix, float *decode)
+{
+	int add[FZ_MAXCOLORS];
+	int mul[FZ_MAXCOLORS];
+	unsigned char *p = pix->samples;
+	int len = pix->w * pix->h;
+	int n = pix->n - 1;
+	int needed;
+	int k;
+
+	needed = 0;
+	for (k = 0; k < n; k++)
+	{
+		int min = decode[k * 2] * 255;
+		int max = decode[k * 2 + 1] * 255;
+		add[k] = min;
+		mul[k] = max - min;
+		needed |= min != 0 || max != 255;
+	}
+
+	if (!needed)
+		return;
+
+	while (len--)
+	{
+		for (k = 0; k < n; k++)
+			p[k] = add[k] + fz_mul255(p[k], mul[k]);
+		p += n + 1;
+	}
+}

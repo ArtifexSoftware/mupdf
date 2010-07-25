@@ -53,7 +53,7 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	if (img->h == 0)
 		fz_warn("image height is zero");
 	if (img->bpc == 0)
-		fz_warn("image bit depth is zero"); /* okay for JPX */
+		img->bpc = 8; /* for JPX */
 
 	obj = fz_dictgetsa(dict, "ColorSpace", "CS");
 	if (obj)
@@ -278,7 +278,7 @@ pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 	{
 		fz_pixmap *conv;
 
-		fz_decodetile(tile, img->decode, (1 << img->bpc) - 1);
+		fz_decodeindexedtile(tile, img->decode, (1 << img->bpc) - 1);
 
 		conv = pdf_expandindexedpixmap(tile);
 		fz_droppixmap(tile);
@@ -286,7 +286,7 @@ pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 	}
 	else
 	{
-		fz_decodetile(tile, img->decode, 1);
+		fz_decodetile(tile, img->decode);
 	}
 
 	return tile;
