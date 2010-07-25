@@ -105,7 +105,7 @@ pdf_loadimageheader(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 			pdf_dropimage(img);
 			return fz_rethrow(error, "cannot load image mask/softmask");
 		}
-		img->mask->imagemask = 1; /* TODO: this triggers bit inversion later. should we? */
+		img->mask->imagemask = 1;
 		if (img->mask->colorspace)
 		{
 			fz_dropcolorspace(img->mask->colorspace);

@@ -199,7 +199,7 @@ fz_decodetile(fz_pixmap *pix, float *decode)
 	int mul[FZ_MAXCOLORS];
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
-	int n = pix->n - 1;
+	int n = MAX(1, pix->n - 1);
 	int needed;
 	int k;
 
@@ -220,6 +220,6 @@ fz_decodetile(fz_pixmap *pix, float *decode)
 	{
 		for (k = 0; k < n; k++)
 			p[k] = add[k] + fz_mul255(p[k], mul[k]);
-		p += n + 1;
+		p += pix->n;
 	}
 }
