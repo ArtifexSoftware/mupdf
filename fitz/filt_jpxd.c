@@ -7,12 +7,8 @@ typedef struct fz_jpxd_s fz_jpxd;
 
 struct fz_jpxd_s
 {
-	fz_filter super;
-	opj_event_mgr_t evtmgr;
-	opj_dparameters_t params;
-	opj_dinfo_t *info;
+	fz_stream *chain;
 	opj_image_t *image;
-	int stage;
 	int x, y, k;
 };
 
@@ -31,136 +27,129 @@ static void fz_opj_info_callback(const char *msg, void *client_data)
 	/* fprintf(stdout, "openjpeg info: %s", msg); */
 }
 
-fz_filter *
-fz_newjpxd(fz_obj *params)
+static int
+readjpxd(fz_stream *stm, unsigned char *outbuf, int outlen)
 {
-	FZ_NEWFILTER(fz_jpxd, d, jpxd);
-
-	d->info = nil;
-	d->image = nil;
-	d->stage = 0;
-
-	d->x = 0;
-	d->y = 0;
-	d->k = 0;
-
-	return (fz_filter*)d;
-}
-
-void
-fz_dropjpxd(fz_filter *filter)
-{
-	fz_jpxd *d = (fz_jpxd*)filter;
-	if (d->image)
-		opj_image_destroy(d->image);
-	if (d->info)
-		opj_destroy_decompress(d->info);
-}
-
-fz_error
-fz_processjpxd(fz_filter *filter, fz_buffer *in, fz_buffer *out)
-{
-	fz_jpxd *d = (fz_jpxd*)filter;
+	fz_jpxd *state = stm->state;
+	unsigned char *p = outbuf;
+	opj_event_mgr_t evtmgr;
+	opj_dparameters_t params;
+	opj_dinfo_t *info;
+	opj_cio_t *cio;
 	int format;
 	int n, w, h, depth, sgnd;
 	int k, v;
 
-	opj_cio_t *cio;
-
-	switch (d->stage)
+	if (!state->image)
 	{
-	case 0: goto input;
-	case 1: goto decode;
-	case 2: goto output;
-	}
+		fz_error error;
+		fz_buffer *buf;
 
-input:
-	/* Wait until we have the entire file in the input buffer */
-	if (!in->eof)
-		return fz_ioneedin;
+		error = fz_readall(&buf, state->chain);
+		if (error)
+			return fz_throw("read error in jpx filter");
 
-	d->stage = 1;
-
-decode:
-	memset(&d->evtmgr, 0, sizeof(d->evtmgr));
-	d->evtmgr.error_handler = fz_opj_error_callback;
-	d->evtmgr.warning_handler = fz_opj_warning_callback;
-	d->evtmgr.info_handler = fz_opj_info_callback;
-
-	opj_set_default_decoder_parameters(&d->params);
-
-	if (in->wp - in->rp < 2)
-		return fz_throw("not enough data to determine image format");
-
-	/* Check for SOC marker -- if found we have a bare J2K stream */
-	if (in->rp[0] == 0xFF && in->rp[1] == 0x4F)
-		format = CODEC_J2K;
-	else
-		format = CODEC_JP2;
-
-	d->info = opj_create_decompress(format);
-	if (!d->info)
-		fz_warn("assert: opj_create_decompress failed");
-
-	opj_set_event_mgr((opj_common_ptr)d->info, &d->evtmgr, stderr);
-	opj_setup_decoder(d->info, &d->params);
-
-	cio = opj_cio_open((opj_common_ptr)d->info, in->rp, in->wp - in->rp);
-	in->rp = in->wp;
-
-	d->image = opj_decode(d->info, cio);
-	if (!d->image)
-	{
-		opj_cio_close(cio);
-		return fz_throw("opj_decode failed");
-	}
-
-	opj_cio_close(cio);
-
-	for (k = 1; k < d->image->numcomps; k++)
-	{
-		if (d->image->comps[k].w != d->image->comps[0].w)
-			return fz_throw("image components have different width");
-		if (d->image->comps[k].h != d->image->comps[0].h)
-			return fz_throw("image components have different height");
-		if (d->image->comps[k].prec != d->image->comps[0].prec)
-			return fz_throw("image components have different precision");
-	}
-
-	d->stage = 2;
-
-output:
-	n = d->image->numcomps;
-	w = d->image->comps[0].w;
-	h = d->image->comps[0].h;
-	depth = d->image->comps[0].prec;
-	sgnd = d->image->comps[0].sgnd;
-
-	while (d->y < h)
-	{
-		while (d->x < w)
+		if (buf->len < 2)
 		{
-			while (d->k < n)
-			{
-				if (out->wp == out->ep)
-					return fz_ioneedout;
+			fz_dropbuffer(buf);
+			return fz_throw("not enough data to determine image format");
+		}
 
-				v = d->image->comps[d->k].data[d->y * w + d->x];
+		/* Check for SOC marker -- if found we have a bare J2K stream */
+		if (buf->data[0] == 0xFF && buf->data[1] == 0x4F)
+			format = CODEC_J2K;
+		else
+			format = CODEC_JP2;
+
+		memset(&evtmgr, 0, sizeof(evtmgr));
+		evtmgr.error_handler = fz_opj_error_callback;
+		evtmgr.warning_handler = fz_opj_warning_callback;
+		evtmgr.info_handler = fz_opj_info_callback;
+
+		opj_set_default_decoder_parameters(&params);
+
+		info = opj_create_decompress(format);
+		opj_set_event_mgr((opj_common_ptr)info, &evtmgr, stderr);
+		opj_setup_decoder(info, &params);
+
+		cio = opj_cio_open((opj_common_ptr)info, buf->data, buf->len);
+
+		state->image = opj_decode(info, cio);
+
+		opj_cio_close(cio);
+		opj_destroy_decompress(info);
+		fz_dropbuffer(buf);
+
+		if (!state->image)
+			return fz_throw("opj_decode failed");
+
+		for (k = 1; k < state->image->numcomps; k++)
+		{
+			if (state->image->comps[k].w != state->image->comps[0].w)
+				return fz_throw("image components have different width");
+			if (state->image->comps[k].h != state->image->comps[0].h)
+				return fz_throw("image components have different height");
+			if (state->image->comps[k].prec != state->image->comps[0].prec)
+				return fz_throw("image components have different precision");
+		}
+	}
+
+	n = state->image->numcomps;
+	w = state->image->comps[0].w;
+	h = state->image->comps[0].h;
+	depth = state->image->comps[0].prec;
+	sgnd = state->image->comps[0].sgnd;
+
+	while (state->y < h)
+	{
+		while (state->x < w)
+		{
+			while (state->k < n)
+			{
+				if (p == outbuf + outlen)
+					return p - outbuf;
+
+				v = state->image->comps[state->k].data[state->y * w + state->x];
 				if (sgnd)
 					v = v + (1 << (depth - 1));
 				if (depth > 8)
 					v = v >> (depth - 8);
 
-				*out->wp++ = v;
+				*p++ = v;
 
-				d->k ++;
+				state->k ++;
 			}
-			d->x ++;
-			d->k = 0;
+			state->x ++;
+			state->k = 0;
 		}
-		d->y ++;
-		d->x = 0;
+		state->y ++;
+		state->x = 0;
 	}
 
-	return fz_iodone;
+	return p - outbuf;
+}
+
+static void
+closejpxd(fz_stream *stm)
+{
+	fz_jpxd *state = stm->state;
+	if (state->image)
+		opj_image_destroy(state->image);
+	fz_close(state->chain);
+	fz_free(state);
+}
+
+fz_stream *
+fz_openjpxd(fz_stream *chain)
+{
+	fz_jpxd *state;
+
+	state = fz_malloc(sizeof(fz_jpxd));
+	state->chain = chain;
+	state->image = nil;
+	state->x = 0;
+	state->y = 0;
+	state->k = 0;
+
+	return fz_newstream(state, readjpxd, closejpxd);
 }

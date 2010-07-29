@@ -142,9 +142,8 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 {
 	fz_error error;
 	pdf_image *img;
-	fz_filter *filter;
 	fz_stream *subfile;
-	int n;
+	int i, n;
 
 	pdf_logimage("load inline image {\n");
 
@@ -152,27 +151,25 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
-	filter = pdf_buildinlinefilter(xref, dict, img->stride * img->h);
-	subfile = fz_openfilter(filter, file);
+	subfile = pdf_openinlinestream(file, xref, dict, img->stride * img->h);
 
 	img->samples = fz_newbuffer(img->h * img->stride);
-	error = fz_read(&n, subfile, img->samples->bp, img->h * img->stride);
-	if (error)
+	n = fz_read(subfile, img->samples->data, img->h * img->stride);
+	if (n < 0)
 	{
 		pdf_dropimage(img);
-		return fz_rethrow(error, "cannot load inline image data");
+		return fz_rethrow(n, "cannot load inline image data");
 	}
-	img->samples->wp += n;
+	img->samples->len = n;
 
-	fz_dropstream(subfile);
-	fz_dropfilter(filter);
+	fz_close(subfile);
 
 	if (img->imagemask)
 	{
 		/* 0=opaque and 1=transparent so we need to invert */
-		unsigned char *p;
-		for (p = img->samples->bp; p < img->samples->ep; p++)
-			*p = ~*p;
+		unsigned char *p = img->samples->data;
+		for (i = 0; i < img->samples->len; i++)
+			p[i] = ~p[i];
 	}
 
 	pdf_logimage("}\n");
@@ -185,7 +182,9 @@ fz_error
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 {
 	fz_error error;
+	fz_stream *stm;
 	pdf_image *img;
+	int i, n;
 
 	if ((*imgp = pdf_finditem(xref->store, pdf_dropimage, dict)))
 	{
@@ -199,28 +198,39 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	if (error)
 		return fz_rethrow(error, "cannot load image (%d %d R)", fz_tonum(dict), fz_togen(dict));
 
-	error = pdf_loadstream(&img->samples, xref, fz_tonum(dict), fz_togen(dict));
+	error = pdf_openstream(&stm, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 	{
 		pdf_dropimage(img);
 		return fz_rethrow(error, "cannot load image data (%d %d R)", fz_tonum(dict), fz_togen(dict));
 	}
 
+	img->samples = fz_newbuffer(img->h * img->stride);
+	n = fz_read(stm, img->samples->data, img->h * img->stride);
+	if (n < 0)
+	{
+		pdf_dropimage(img);
+		fz_close(stm);
+		return fz_rethrow(n, "cannot load inline image data");
+	}
+	img->samples->len = n;
+
+	fz_close(stm);
+
 	/* Pad truncated images */
-	if (img->samples->wp - img->samples->bp < img->stride * img->h)
+	if (img->samples->len < img->stride * img->h)
 	{
 		fz_warn("padding truncated image");
-		fz_resizebuffer(img->samples, img->stride * img->h);
-		memset(img->samples->wp, 0, img->samples->ep - img->samples->wp);
-		img->samples->wp = img->samples->bp + img->stride * img->h;
+		memset(img->samples->data + img->samples->len, 0, img->samples->cap - img->samples->len);
+		img->samples->len = img->samples->cap;
 	}
 
 	if (img->imagemask)
 	{
 		/* 0=opaque and 1=transparent so we need to invert */
-		unsigned char *p;
-		for (p = img->samples->bp; p < img->samples->ep; p++)
-			*p = ~*p;
+		unsigned char *p = img->samples->data;
+		for (i = 0; i < img->samples->len; i++)
+			p[i] = ~p[i];
 	}
 
 	pdf_logimage("}\n");
@@ -269,7 +279,7 @@ pdf_loadtile(pdf_image *img /* ...bbox/y+h should go here... */)
 		}
 	}
 
-	fz_unpacktile(tile, img->samples->bp, img->n, img->bpc, img->stride, scale);
+	fz_unpacktile(tile, img->samples->data, img->n, img->bpc, img->stride, scale);
 
 	if (img->usecolorkey)
 		pdf_maskcolorkey(tile, img->n, img->colorkey);

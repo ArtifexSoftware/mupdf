@@ -104,7 +104,7 @@ fz_error pdf_newcrypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
 void pdf_freecrypt(pdf_crypt *crypt);
 
 fz_error pdf_parsecryptfilter(pdf_cryptfilter *cf, fz_obj *dict, int defaultlength);
-fz_filter * pdf_cryptstream(pdf_crypt *crypt, pdf_cryptfilter *cf, int num, int gen);
+fz_stream * pdf_opencrypt(fz_stream *chain, pdf_crypt *crypt, pdf_cryptfilter *cf, int num, int gen);
 void pdf_cryptobj(pdf_crypt *crypt, fz_obj *obj, int num, int gen);
 
 int pdf_needspassword(pdf_xref *xref);
@@ -153,7 +153,7 @@ fz_error pdf_loadobject(fz_obj **objp, pdf_xref *, int num, int gen);
 void pdf_updateobject( pdf_xref *xref, int num, int gen, fz_obj *newobj);
 
 int pdf_isstream(pdf_xref *xref, int num, int gen);
-fz_filter * pdf_buildinlinefilter(pdf_xref *xref, fz_obj *stmobj, int length);
+fz_stream * pdf_openinlinestream(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int length);
 fz_error pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int num, int gen);
 fz_error pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int num, int gen);
 fz_error pdf_openrawstream(fz_stream **stmp, pdf_xref *, int num, int gen);

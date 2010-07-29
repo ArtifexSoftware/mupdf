@@ -380,7 +380,7 @@ static void copystream(fz_obj *obj, int num, int gen)
 	fprintf(out, "%d %d obj\n", num, gen);
 	fz_fprintobj(out, obj, !doexpand);
 	fprintf(out, "stream\n");
-	fwrite(buf->rp, 1, buf->wp - buf->rp, out);
+	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
 
 	fz_dropbuffer(buf);
@@ -400,14 +400,14 @@ static void expandstream(fz_obj *obj, int num, int gen)
 	fz_dictdels(newdict, "Filter");
 	fz_dictdels(newdict, "DecodeParms");
 
-	newlen = fz_newint(buf->wp - buf->rp);
+	newlen = fz_newint(buf->len);
 	fz_dictputs(newdict, "Length", newlen);
 	fz_dropobj(newlen);
 
 	fprintf(out, "%d %d obj\n", num, gen);
 	fz_fprintobj(out, newdict, !doexpand);
 	fprintf(out, "stream\n");
-	fwrite(buf->rp, 1, buf->wp - buf->rp, out);
+	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
 
 	fz_dropobj(newdict);
