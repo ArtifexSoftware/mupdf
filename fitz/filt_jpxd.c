@@ -38,8 +38,6 @@ pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	int n, w, h, depth, sgnd;
 	int x, y, k, v;
 
-	pdf_logimage("load jpx image (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
-
 	error = pdf_loadstream(&buf, xref, fz_tonum(dict), fz_togen(dict));
 	if (error)
 		return fz_throw("read error in jpx image");
@@ -102,8 +100,7 @@ pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	img->bpc = 8;
 	img->n = n;
 	img->stride = w * n;
-	img->samples = fz_newbuffer(w * n * h);
-	img->samples->len = img->samples->cap;
+	img->samples = fz_malloc(w * n * h);
 
 	switch (n)
 	{
@@ -119,7 +116,7 @@ pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 		img->decode[k * 2 + 1] = 1;
 	}
 
-	p = img->samples->data;
+	p = img->samples;
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w; x++)
@@ -137,8 +134,6 @@ pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	}
 
 	opj_image_destroy(jpx);
-
-	pdf_logimage("}\n");
 
 	*imgp = img;
 	return fz_okay;

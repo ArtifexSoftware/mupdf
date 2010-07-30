@@ -270,7 +270,7 @@ struct pdf_image_s
 	int colorkey[FZ_MAXCOLORS * 2];
 	float decode[FZ_MAXCOLORS * 2];
 	int stride;
-	fz_buffer *samples;
+	unsigned char *samples;
 };
 
 fz_error pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
