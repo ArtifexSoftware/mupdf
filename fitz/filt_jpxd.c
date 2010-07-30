@@ -104,10 +104,14 @@ pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 
 	switch (n)
 	{
-	default:
 	case 1: img->colorspace = fz_devicegray; break;
 	case 3: img->colorspace = fz_devicergb; break;
 	case 4: img->colorspace = fz_devicecmyk; break;
+	default:
+		/* TODO: SMaskInData */
+		opj_image_destroy(jpx);
+		fz_free(img);
+		return fz_throw("unknown jpx colorspace (%d components)", n);
 	}
 
 	for (k = 0; k < n; k++)
