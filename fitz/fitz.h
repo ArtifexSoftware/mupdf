@@ -501,7 +501,7 @@ void fz_seek(fz_stream *stm, int offset, int whence);
 
 int fz_read(fz_stream *stm, unsigned char *buf, int len);
 void fz_readline(fz_stream *stm, char *buf, int max);
-fz_error fz_readall(fz_buffer **bufp, fz_stream *stm);
+fz_error fz_readall(fz_buffer **bufp, fz_stream *stm, int initial);
 
 static inline int fz_readbyte(fz_stream *stm)
 {

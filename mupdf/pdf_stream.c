@@ -315,12 +315,22 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stm;
+	fz_obj *dict;
+	int len;
+
+	error = pdf_loadobject(&dict, xref, num, gen);
+	if (error)
+		return fz_rethrow(error, "cannot load stream dictionary (%d %d R)", num, gen);
+
+	len = fz_toint(fz_dictgets(dict, "Length"));
+
+	fz_dropobj(dict);
 
 	error = pdf_openrawstream(&stm, xref, num, gen);
 	if (error)
 		return fz_rethrow(error, "cannot open raw stream (%d %d R)", num, gen);
 
-	error = fz_readall(bufp, stm);
+	error = fz_readall(bufp, stm, len);
 	if (error)
 	{
 		fz_close(stm);
@@ -331,6 +341,18 @@ pdf_loadrawstream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 	return fz_okay;
 }
 
+static int
+pdf_guessfilterlength(int len, char *filter)
+{
+	if (!strcmp(filter, "ASCIIHexDecode"))
+		return len / 2;
+	if (!strcmp(filter, "FlateDecode"))
+		return len * 3;
+	if (!strcmp(filter, "LZWDecode"))
+		return len * 2;
+	return len;
+}
+
 /*
  * Load uncompressed contents of a stream into buf.
  */
@@ -339,12 +361,26 @@ pdf_loadstream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stm;
+	fz_obj *dict, *obj;
+	int i, len;
 
 	error = pdf_openstream(&stm, xref, num, gen);
 	if (error)
 		return fz_rethrow(error, "cannot open stream (%d %d R)", num, gen);
 
-	error = fz_readall(bufp, stm);
+	error = pdf_loadobject(&dict, xref, num, gen);
+	if (error)
+		return fz_rethrow(error, "cannot load stream dictionary (%d %d R)", num, gen);
+
+	len = fz_toint(fz_dictgets(dict, "Length"));
+	obj = fz_dictgets(dict, "Filter");
+	len = pdf_guessfilterlength(len, fz_toname(obj));
+	for (i = 0; i < fz_arraylen(obj); i++)
+		len = pdf_guessfilterlength(len, fz_toname(fz_arrayget(obj, i)));
+
+	fz_dropobj(dict);
+
+	error = fz_readall(bufp, stm, len);
 	if (error)
 	{
 		fz_close(stm);

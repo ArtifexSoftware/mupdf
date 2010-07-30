@@ -55,12 +55,15 @@ fz_fillbuffer(fz_stream *stm)
 }
 
 fz_error
-fz_readall(fz_buffer **bufp, fz_stream *stm)
+fz_readall(fz_buffer **bufp, fz_stream *stm, int initial)
 {
 	fz_buffer *buf;
 	int n;
 
-	buf = fz_newbuffer(16 * 1024);
+	if (initial < 1024)
+		initial = 1024;
+
+	buf = fz_newbuffer(initial);
 
 	while (1)
 	{
