@@ -279,6 +279,8 @@ fz_pixmap *pdf_loadtile(pdf_image *image);
 pdf_image *pdf_keepimage(pdf_image *img);
 void pdf_dropimage(pdf_image *img);
 
+fz_error pdf_loadjpximage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict);
+
 /*
  * CMap
  */

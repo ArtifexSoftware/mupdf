@@ -178,18 +178,41 @@ pdf_loadinlineimage(pdf_image **imgp, pdf_xref *xref,
 	return fz_okay;
 }
 
+static int
+pdf_isjpximage(fz_obj *filter)
+{
+	int i;
+	if (!strcmp(fz_toname(filter), "JPXDecode"))
+		return 1;
+	for (i = 0; i < fz_arraylen(filter); i++)
+		if (!strcmp(fz_toname(fz_arrayget(filter, i)), "JPXDecode"))
+			return 1;
+	return 0;
+}
+
 fz_error
 pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 {
 	fz_error error;
 	fz_stream *stm;
 	pdf_image *img;
+	fz_obj *obj;
 	int i, n;
 
 	if ((*imgp = pdf_finditem(xref->store, pdf_dropimage, dict)))
 	{
 		pdf_keepimage(*imgp);
 		return fz_okay;
+	}
+
+	/* special case for JPEG2000 images */
+	obj = fz_dictgets(dict, "Filter");
+	if (pdf_isjpximage(obj))
+	{
+		error = pdf_loadjpximage(&img, xref, rdb, dict);
+		if (error)
+			return fz_rethrow(error, "cannot load jpx image");
+		goto skip;
 	}
 
 	pdf_logimage("load image (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
@@ -211,7 +234,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	{
 		pdf_dropimage(img);
 		fz_close(stm);
-		return fz_rethrow(n, "cannot load inline image data");
+		return fz_rethrow(n, "cannot load image data");
 	}
 	img->samples->len = n;
 
@@ -235,6 +258,7 @@ pdf_loadimage(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 
 	pdf_logimage("}\n");
 
+skip:
 	pdf_storeitem(xref->store, pdf_keepimage, pdf_dropimage, dict, img);
 
 	*imgp = img;

@@ -109,7 +109,7 @@ buildfilter(fz_stream *chain, pdf_xref * xref, fz_obj * f, fz_obj * p, int num, 
 	}
 
 	else if (!strcmp(s, "JPXDecode"))
-		return fz_openjpxd(chain);
+		return chain; /* JPX decoding is special cased in the image loading code */
 
 	else if (!strcmp(s, "Crypt"))
 	{

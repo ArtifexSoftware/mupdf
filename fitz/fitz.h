@@ -546,7 +546,6 @@ fz_stream * fz_openflated(fz_stream *chain);
 fz_stream * fz_openlzwd(fz_stream *chain, fz_obj *param);
 fz_stream * fz_openpredict(fz_stream *chain, fz_obj *param);
 fz_stream * fz_openjbig2d(fz_stream *chain, fz_buffer *global);
-fz_stream * fz_openjpxd(fz_stream *chain);
 
 /*
  * Resources and other graphics related objects.
