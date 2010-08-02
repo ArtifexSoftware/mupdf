@@ -121,7 +121,15 @@ void
 fz_seek(fz_stream *stm, int offset, int whence)
 {
 	if (stm->seek)
+	{
+		if (whence == 1)
+		{
+			offset = fz_tell(stm) + offset;
+			whence = 0;
+		}
+
 		stm->seek(stm, offset, whence);
+	}
 	else if (whence != 2)
 	{
 		if (whence == 0)
