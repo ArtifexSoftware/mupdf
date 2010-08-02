@@ -634,13 +634,13 @@ eol:
 
 	if (fax->blackis1)
 	{
-		while (p < buf + len && fax->remain-- > 0)
-			*p++ = fax->dst[fax->stride - fax->remain];
+		while (fax->remain > 0 && p < buf + len)
+			*p++ = fax->dst[fax->stride - fax->remain--];
 	}
 	else
 	{
-		while (p < buf + len && fax->remain-- > 0)
-			*p++ = fax->dst[fax->stride - fax->remain] ^ 0xff;
+		while (fax->remain > 0 && p < buf + len)
+			*p++ = fax->dst[fax->stride - fax->remain--] ^ 0xff;
 	}
 
 	if (fax->remain > 0)

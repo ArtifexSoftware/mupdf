@@ -80,7 +80,7 @@ readlzwd(fz_stream *stm, unsigned char *buf, int len)
 	unsigned char *s;
 
 	while (lzw->remain > 0 && p < buf + len)
-		*p++ = lzw->output[lzw->outlen - lzw->remain];
+		*p++ = lzw->output[lzw->outlen - lzw->remain--];
 
 	while (p < buf + len)
 	{
@@ -171,7 +171,7 @@ output:
 
 		/* copy to output */
 		while (lzw->remain > 0 && p < buf + len)
-			*p++ = lzw->output[lzw->outlen - lzw->remain];
+			*p++ = lzw->output[lzw->outlen - lzw->remain--];
 	}
 
 	return p - buf;

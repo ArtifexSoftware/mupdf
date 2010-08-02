@@ -25,7 +25,7 @@ readnull(fz_stream *stm, unsigned char *buf, int len)
 	if (n < 0)
 		return fz_rethrow(n, "read error in null filter");
 	state->remain -= n;
-	return n;	
+	return n;
 }
 
 static void
@@ -175,7 +175,7 @@ reada85d(fz_stream *stm, unsigned char *buf, int len)
 	int c;
 
 	while (state->remain > 0 && p < buf + len)
-		*p++ = state->buf[4 - state->remain];
+		*p++ = state->buf[4 - state->remain--];
 
 	while (p < buf + len)
 	{
@@ -256,7 +256,7 @@ reada85d(fz_stream *stm, unsigned char *buf, int len)
 		}
 
 		while (state->remain > 0 && p < buf + len)
-			*p++ = state->buf[4 - state->remain];
+			*p++ = state->buf[4 - state->remain--];
 	}
 
 	return p - buf;
@@ -435,8 +435,8 @@ readaesd(fz_stream *stm, unsigned char *buf, int len)
 		state->iv[state->ivcount++] = c;
 	}
 
-	while (p < buf + len && state->remain-- > 0)
-		*p++ = state->buf[16 - state->remain];
+	while (state->remain > 0 && p < buf + len)
+		*p++ = state->buf[16 - state->remain--];
 
 	while (p < buf + len)
 	{
@@ -463,8 +463,8 @@ readaesd(fz_stream *stm, unsigned char *buf, int len)
 			state->remain -= pad;
 		}
 
-		while (p < buf + len && state->remain-- > 0)
-			*p++ = state->buf[16 - state->remain];
+		while (state->remain > 0 && p < buf + len)
+			*p++ = state->buf[16 - state->remain--];
 	}
 
 	return p - buf;
