@@ -230,20 +230,20 @@ reada85d(fz_stream *stm, unsigned char *buf, int len)
 				return fz_throw("partial final byte in a85d");
 			case 2:
 				word = word * (85 * 85 * 85) + 0xffffff;
-				state->buf[0] = word >> 24;
+				state->buf[3] = word >> 24;
 				state->remain = 1;
 				break;
 			case 3:
 				word = word * (85 * 85) + 0xffff;
-				state->buf[0] = word >> 24;
-				state->buf[1] = word >> 16;
+				state->buf[2] = word >> 24;
+				state->buf[3] = word >> 16;
 				state->remain = 2;
 				break;
 			case 4:
 				word = word * 85 + 0xff;
-				state->buf[0] = word >> 24;
-				state->buf[1] = word >> 16;
-				state->buf[2] = word >> 8;
+				state->buf[1] = word >> 24;
+				state->buf[2] = word >> 16;
+				state->buf[3] = word >> 8;
 				state->remain = 3;
 				break;
 			}
@@ -461,6 +461,9 @@ readaesd(fz_stream *stm, unsigned char *buf, int len)
 			if (pad < 1 || pad > 16)
 				return fz_throw("aes padding out of range: %d", pad);
 			state->remain -= pad;
+			memmove(&state->buf[16 - state->remain],
+				&state->buf[0],
+				state->remain);
 		}
 
 		while (state->remain > 0 && p < buf + len)
