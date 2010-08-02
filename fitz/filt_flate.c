@@ -45,7 +45,7 @@ readflated(fz_stream *stm, unsigned char *outbuf, int outlen)
 	{
 		return outlen - zp->avail_out;
 	}
-	else if (code == Z_DATA_ERROR && inlen == 0)
+	else if (code == Z_DATA_ERROR && zp->avail_in == 0)
 	{
 		fz_warn("ignoring zlib error: %s", zp->msg);
 		return outlen - zp->avail_out;
