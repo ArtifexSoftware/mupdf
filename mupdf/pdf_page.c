@@ -49,13 +49,13 @@ pdf_loadpagecontents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 	{
 		error = pdf_loadpagecontentsarray(bufp, xref, obj);
 		if (error)
-			return fz_rethrow(error, "cannot load content stream array (%d %d R)", fz_tonum(obj), fz_togen(obj));
+			return fz_rethrow(error, "cannot load content stream array (%d 0 R)", fz_tonum(obj));
 	}
 	else if (pdf_isstream(xref, fz_tonum(obj), fz_togen(obj)))
 	{
 		error = pdf_loadstream(bufp, xref, fz_tonum(obj), fz_togen(obj));
 		if (error)
-			return fz_rethrow(error, "cannot load content stream (%d %d R)", fz_tonum(obj), fz_togen(obj));
+			return fz_rethrow(error, "cannot load content stream (%d 0 R)", fz_tonum(obj));
 	}
 	else
 	{

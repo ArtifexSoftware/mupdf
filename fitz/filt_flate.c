@@ -44,6 +44,11 @@ readflated(fz_stream *stm, unsigned char *outbuf, int outlen)
 	{
 		return outlen - zp->avail_out;
 	}
+	else if (code == Z_BUF_ERROR)
+	{
+		fz_warn("premature end of data in flate filter");
+		return outlen - zp->avail_out;
+	}
 	else if (code == Z_DATA_ERROR && zp->avail_in == 0)
 	{
 		fz_warn("ignoring zlib error: %s", zp->msg);
