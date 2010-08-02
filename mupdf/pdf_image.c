@@ -159,7 +159,7 @@ pdf_loadimageimp(pdf_image **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 	/* Pad truncated images */
 	if (n < img->stride * img->h)
 	{
-		fz_warn("padding truncated image");
+		fz_warn("padding truncated image (%d 0 R)", fz_tonum(dict));
 		memset(img->samples + n, 0, img->stride * img->h - n);
 	}
 

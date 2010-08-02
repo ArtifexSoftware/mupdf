@@ -329,7 +329,7 @@ struct fz_faxd_s
 	int a, c, dim, eolc;
 	unsigned char *ref;
 	unsigned char *dst;
-	int remain;
+	unsigned char *rp, *wp;
 };
 
 static inline void
@@ -546,6 +546,7 @@ readfaxd(fz_stream *stm, unsigned char *buf, int len)
 {
 	fz_faxd *fax = stm->state;
 	unsigned char *p = buf;
+	unsigned char *ep = buf + len;
 	unsigned char *tmp;
 	fz_error error;
 	int i;
@@ -634,19 +635,20 @@ eol:
 
 	if (fax->blackis1)
 	{
-		while (fax->remain > 0 && p < buf + len)
-			*p++ = fax->dst[fax->stride - fax->remain--];
+		while (fax->rp < fax->wp && p < ep)
+			*p++ = *fax->rp++;
 	}
 	else
 	{
-		while (fax->remain > 0 && p < buf + len)
-			*p++ = fax->dst[fax->stride - fax->remain--] ^ 0xff;
+		while (fax->rp < fax->wp && p < ep)
+			*p++ = *fax->rp++ ^ 0xff;
 	}
 
-	if (fax->remain > 0)
+	if (fax->rp < fax->wp)
 		return p - buf;
 
-	fax->remain = fax->stride;
+	fax->rp = fax->dst;
+	fax->wp = fax->dst + fax->stride;
 
 	tmp = fax->ref;
 	fax->ref = fax->dst;
@@ -759,7 +761,8 @@ fz_openfaxd(fz_stream *chain, fz_obj *params)
 
 	fax->ref = fz_malloc(fax->stride);
 	fax->dst = fz_malloc(fax->stride);
-	fax->remain = fax->stride;
+	fax->rp = fax->dst;
+	fax->wp = fax->dst + fax->stride;
 
 	memset(fax->ref, 0, fax->stride);
 	memset(fax->dst, 0, fax->stride);

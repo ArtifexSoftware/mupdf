@@ -26,14 +26,13 @@ readflated(fz_stream *stm, unsigned char *outbuf, int outlen)
 	fz_flate *state = stm->state;
 	fz_stream *chain = state->chain;
 	z_streamp zp = &state->z;
-	int inlen, code;
+	int code;
 
 	if (chain->rp == chain->wp)
 		fz_fillbuffer(chain);
 
-	inlen = chain->wp - chain->rp;
 	zp->next_in = chain->rp;
-	zp->avail_in = inlen;
+	zp->avail_in = chain->wp - chain->rp;
 	zp->next_out = outbuf;
 	zp->avail_out = outlen;
 

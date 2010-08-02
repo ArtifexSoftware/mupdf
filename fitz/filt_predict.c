@@ -20,7 +20,7 @@ struct fz_predict_s
 	unsigned char *in;
 	unsigned char *out;
 	unsigned char *ref;
-	int outlen, outidx;
+	unsigned char *rp, *wp;
 };
 
 static inline int
@@ -145,13 +145,14 @@ readpredict(fz_stream *stm, unsigned char *buf, int len)
 {
 	fz_predict *state = stm->state;
 	unsigned char *p = buf;
+	unsigned char *ep = buf + len;
 	int ispng = state->predictor >= 10;
 	int n;
 
-	while (state->outidx < state->outlen && p < buf + len)
-		*p++ = state->out[state->outidx++];
+	while (state->rp < state->wp && p < ep)
+		*p++ = *state->rp++;
 
-	while (p < buf + len)
+	while (p < ep)
 	{
 		n = fz_read(state->chain, state->in, state->stride + ispng);
 		if (n < 0)
@@ -169,11 +170,11 @@ readpredict(fz_stream *stm, unsigned char *buf, int len)
 			memcpy(state->ref, state->out, state->stride);
 		}
 
-		state->outlen = n - ispng;
-		state->outidx = 0;
+		state->rp = state->out;
+		state->wp = state->out + n - ispng;
 
-		while (state->outidx < state->outlen && p < buf + len)
-			*p++ = state->out[state->outidx++];
+		while (state->rp < state->wp && p < ep)
+			*p++ = *state->rp++;
 	}
 
 	return p - buf;
@@ -235,8 +236,8 @@ fz_openpredict(fz_stream *chain, fz_obj *params)
 	state->in = fz_malloc(state->stride + 1);
 	state->out = fz_malloc(state->stride);
 	state->ref = fz_malloc(state->stride);
-	state->outlen = 0;
-	state->outidx = 0;
+	state->rp = state->out;
+	state->wp = state->out;
 
 	memset(state->ref, 0, state->stride);
 

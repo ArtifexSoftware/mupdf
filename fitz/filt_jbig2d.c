@@ -47,6 +47,7 @@ readjbig2d(fz_stream *stm, unsigned char *buf, int len)
 	fz_jbig2d *state = stm->state;
 	unsigned char tmp[4096];
 	unsigned char *p = buf;
+	unsigned char *ep = buf + len;
 	unsigned char *s;
 	int x, w, n;
 
@@ -72,7 +73,7 @@ readjbig2d(fz_stream *stm, unsigned char *buf, int len)
 	s = state->page->data;
 	w = state->page->height * state->page->stride;
 	x = state->idx;
-	while (p < buf + len && x < w)
+	while (p < ep && x < w)
 		*p++ = s[x++] ^ 0xff;
 	state->idx = x;
 

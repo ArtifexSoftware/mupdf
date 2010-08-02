@@ -41,9 +41,8 @@ struct fz_lzwd_s
 	int nextcode;			/* next free entry */
 	lzw_code table[NUMCODES];
 
-	unsigned char output[MAXLENGTH];
-	int outlen;
-	int remain;
+	unsigned char bp[MAXLENGTH];
+	unsigned char *rp, *wp;
 };
 
 static inline void eatbits(fz_lzwd *lzw, int nbits)
@@ -77,12 +76,14 @@ readlzwd(fz_stream *stm, unsigned char *buf, int len)
 {
 	fz_lzwd *lzw = stm->state;
 	unsigned char *p = buf;
+	unsigned char *ep = buf + len;
 	unsigned char *s;
+	int codelen;
 
-	while (lzw->remain > 0 && p < buf + len)
-		*p++ = lzw->output[lzw->outlen - lzw->remain--];
+	while (lzw->rp < lzw->wp && p < ep)
+		*p++ = *lzw->rp++;
 
-	while (p < buf + len)
+	while (p < ep)
 	{
 		if (lzw->eod)
 			return 0;
@@ -150,28 +151,30 @@ output:
 		/* code maps to a string, copy to output (in reverse...) */
 		if (lzw->code > 255)
 		{
-			assert(lzw->table[lzw->code].length < MAXLENGTH);
+			codelen = lzw->table[lzw->code].length;
+			lzw->rp = lzw->bp;
+			lzw->wp = lzw->bp + codelen;
 
-			lzw->outlen = lzw->table[lzw->code].length;
-			lzw->remain = lzw->outlen;
-			s = lzw->output + lzw->remain;
+			assert(codelen < MAXLENGTH);
+
+			s = lzw->wp;
 			do {
 				*(--s) = lzw->table[lzw->code].value;
 				lzw->code = lzw->table[lzw->code].prev;
-			} while (lzw->code >= 0 && s > lzw->output);
+			} while (lzw->code >= 0 && s > lzw->bp);
 		}
 
 		/* ... or just a single character */
 		else
 		{
-			lzw->output[0] = lzw->code;
-			lzw->outlen = 1;
-			lzw->remain = 1;
+			lzw->bp[0] = lzw->code;
+			lzw->rp = lzw->bp;
+			lzw->wp = lzw->bp + 1;
 		}
 
 		/* copy to output */
-		while (lzw->remain > 0 && p < buf + len)
-			*p++ = lzw->output[lzw->outlen - lzw->remain--];
+		while (lzw->rp < lzw->wp && p < ep)
+			*p++ = *lzw->rp++;
 	}
 
 	return p - buf;
@@ -224,8 +227,8 @@ fz_openlzwd(fz_stream *chain, fz_obj *params)
 	lzw->code = -1;
 	lzw->nextcode = LZW_FIRST;
 	lzw->oldcode = -1;
-	lzw->remain = 0;
-	lzw->outlen = 0;
+	lzw->rp = lzw->bp;
+	lzw->wp = lzw->bp;
 
 	return fz_newstream(lzw, readlzwd, closelzwd);
 }

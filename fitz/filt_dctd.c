@@ -9,10 +9,10 @@ struct fz_dctd_s
 {
 	fz_stream *chain;
 	int colortransform;
-	int init, done;
-	unsigned char *scanline;
+	int init;
 	int stride;
-	int remain;
+	unsigned char *scanline;
+	unsigned char *rp, *wp;
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_source_mgr srcmgr;
 	struct jpeg_error_mgr errmgr;
@@ -24,6 +24,8 @@ static void error_exit(j_common_ptr cinfo)
 {
 	fz_dctd *state = cinfo->client_data;
 	cinfo->err->format_message(cinfo, state->msg);
+	if (state->cinfo.src)
+		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
 	longjmp(state->jb, 1);
 }
 
@@ -82,12 +84,10 @@ readdctd(fz_stream *stm, unsigned char *buf, int len)
 	fz_dctd *state = stm->state;
 	j_decompress_ptr cinfo = &state->cinfo;
 	unsigned char *p = buf;
+	unsigned char *ep = buf + len;
 
 	if (setjmp(state->jb))
-	{
-		state->done = 1;
 		return fz_throw("jpeg error: %s", state->msg);
-	}
 
 	if (!state->init)
 	{
@@ -144,27 +144,22 @@ readdctd(fz_stream *stm, unsigned char *buf, int len)
 		jpeg_start_decompress(cinfo);
 
 		state->stride = cinfo->output_width * cinfo->output_components;
-		state->remain = 0;
 		state->scanline = fz_malloc(state->stride);
+		state->rp = state->scanline;
+		state->wp = state->scanline;
 
 		state->init = 1;
 	}
 
-	while (state->remain > 0 && p < buf + len)
-		*p++ = state->scanline[state->stride - state->remain--];
+	while (state->rp < state->wp && p < ep)
+		*p++ = *state->rp++;
 
-	while (p < buf + len)
+	while (p < ep)
 	{
-		if (state->done)
-			return p - buf;
-
 		if (cinfo->output_scanline == cinfo->output_height)
-		{
-			state->done = 1;
-			return p - buf;
-		}
+			break;
 
-		if (p + state->stride <= buf + len)
+		if (p + state->stride <= ep)
 		{
 			jpeg_read_scanlines(cinfo, &p, 1);
 			p += state->stride;
@@ -172,13 +167,15 @@ readdctd(fz_stream *stm, unsigned char *buf, int len)
 		else
 		{
 			jpeg_read_scanlines(cinfo, &state->scanline, 1);
-			state->remain = state->stride;
+			state->rp = state->scanline;
+			state->wp = state->scanline + state->stride;
 		}
 
-		while (state->remain > 0 && p < buf + len)
-			*p++ = state->scanline[state->stride - state->remain--];
+		while (state->rp < state->wp && p < ep)
+			*p++ = *state->rp++;
 	}
 
+	state->chain->rp = state->chain->wp - cinfo->src->bytes_in_buffer;
 	return p - buf;
 }
 
@@ -186,9 +183,12 @@ static void
 closedctd(fz_stream *stm)
 {
 	fz_dctd *state = stm->state;
-	jpeg_finish_decompress(&state->cinfo);
+	if (state->init)
+	{
+		jpeg_finish_decompress(&state->cinfo);
+		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
+	}
 	jpeg_destroy_decompress(&state->cinfo);
-	state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
 	fz_free(state->scanline);
 	fz_close(state->chain);
 	fz_free(state);
@@ -204,10 +204,6 @@ fz_opendctd(fz_stream *chain, fz_obj *params)
 	state->chain = chain;
 	state->colortransform = -1; /* unset */
 	state->init = 0;
-	state->done = 0;
-	state->scanline = nil;
-	state->stride = 0;
-	state->remain = 0;
 
 	obj = fz_dictgets(params, "ColorTransform");
 	if (obj)
