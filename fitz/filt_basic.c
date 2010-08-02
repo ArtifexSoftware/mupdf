@@ -490,6 +490,7 @@ fz_openaesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 	state->chain = chain;
 	aes_setkey_dec(&state->aes, key, keylen * 8);
 	state->ivcount = 0;
+	state->remain = 0;
 
 	return fz_newstream(state, readaesd, closeaesd);
 }
