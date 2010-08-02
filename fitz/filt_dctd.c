@@ -161,8 +161,6 @@ readdctd(fz_stream *stm, unsigned char *buf, int len)
 		if (cinfo->output_scanline == cinfo->output_height)
 		{
 			state->done = 1;
-			jpeg_finish_decompress(cinfo);
-			jpeg_destroy_decompress(cinfo);
 			return p - buf;
 		}
 
@@ -188,6 +186,9 @@ static void
 closedctd(fz_stream *stm)
 {
 	fz_dctd *state = stm->state;
+	jpeg_finish_decompress(&state->cinfo);
+	jpeg_destroy_decompress(&state->cinfo);
+	state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
 	fz_free(state->scanline);
 	fz_close(state->chain);
 	fz_free(state);
