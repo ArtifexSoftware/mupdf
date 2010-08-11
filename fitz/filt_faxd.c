@@ -683,10 +683,6 @@ eol:
 			eatbits(fax, (8 - fax->bidx) & 7);
 	}
 
-	/* no more space in output, don't decode the next line yet */
-	if (p == buf + len)
-		return p - buf;
-
 	goto loop;
 
 rtc:
