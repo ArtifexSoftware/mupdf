@@ -24,7 +24,7 @@ pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey)
 }
 
 static fz_error
-pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm)
+pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, int forcemask)
 {
 	fz_stream *stm;
 	fz_pixmap *tile;
@@ -68,7 +68,7 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 		return fz_throw("image depth is zero");
 
 	obj = fz_dictgetsa(dict, "ColorSpace", "CS");
-	if (obj && !imagemask)
+	if (obj && !imagemask && !forcemask)
 	{
 		if (fz_isname(obj))
 		{
@@ -110,7 +110,7 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 		/* Not allowed for inline images */
 		if (!cstm)
 		{
-			error = pdf_loadimage(&mask, xref, rdb, obj);
+			error = pdf_loadimageimp(&mask, xref, rdb, obj, nil, 1);
 			if (error)
 			{
 				if (colorspace)
@@ -242,7 +242,7 @@ pdf_loadinlineimage(fz_pixmap **pixp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 
 	pdf_logimage("load inline image {\n");
 
-	error = pdf_loadimageimp(pixp, xref, rdb, dict, file);
+	error = pdf_loadimageimp(pixp, xref, rdb, dict, file, 0);
 	if (error)
 		return fz_rethrow(error, "cannot load inline image");
 
@@ -289,7 +289,7 @@ pdf_loadjpximage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	obj = fz_dictgetsa(dict, "SMask", "Mask");
 	if (fz_isdict(obj))
 	{
-		error = pdf_loadimage(&img->mask, xref, rdb, obj);
+		error = pdf_loadimageimp(&img->mask, xref, rdb, obj, nil, 1);
 		if (error)
 		{
 			fz_droppixmap(img);
@@ -325,7 +325,7 @@ pdf_loadimage(fz_pixmap **pixp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	}
 	else
 	{
-		error = pdf_loadimageimp(pixp, xref, rdb, dict, nil);
+		error = pdf_loadimageimp(pixp, xref, rdb, dict, nil, 0);
 		if (error)
 			return fz_rethrow(error, "cannot load image (%d 0 R)", fz_tonum(dict));
 	}
