@@ -1492,6 +1492,7 @@ pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
 	fz_error error;
 	pdf_annot *annot;
 	fz_matrix atm;
+	int flags;
 
 	if (page->transparency)
 		dev->begingroup(dev->user,
@@ -1509,6 +1510,16 @@ pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
 
 	for (annot = page->annots; annot; annot = annot->next)
 	{
+		flags = fz_toint(fz_dictgets(annot->obj, "F"));
+
+		/* TODO: NoZoom and NoRotate */
+		if (flags & (1 << 0)) /* Invisible */
+			continue;
+		if (flags & (1 << 1)) /* Hidden */
+			continue;
+		if (flags & (1 << 5)) /* NoView */
+			continue;
+
 		atm = fz_concat(ctm, fz_translate(annot->rect.x0, annot->rect.y0));
 		csi = pdf_newcsi(xref, dev, atm);
 		error = pdf_runxobject(csi, page->resources, annot->ap);
