@@ -247,6 +247,8 @@ pdf_readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 				xref->table[i].ofs = atoi(s);
 				xref->table[i].gen = atoi(s + 11);
 				xref->table[i].type = s[17];
+				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
+					return fz_throw("unexpected xref type: %#x (%d %d R)", s[17], i, xref->table[i].gen);
 			}
 		}
 	}
