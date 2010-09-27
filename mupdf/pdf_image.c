@@ -193,8 +193,6 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 
 	tile = fz_newpixmap(colorspace, 0, 0, w, h);
 
-	tile->mask = mask;
-
 	scale = 1;
 	if (!indexed)
 	{
@@ -228,6 +226,8 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 
 	if (colorspace)
 		fz_dropcolorspace(colorspace);
+
+	tile->mask = mask;
 
 	fz_free(samples);
 
