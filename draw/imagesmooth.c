@@ -602,7 +602,7 @@ scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
 	assert(weights->n == 2);
 	if (weights->flip)
 	{
-		dst += weights->count;
+		dst += 2*weights->count;
 		for (i=weights->count; i > 0; i--)
 		{
 			int c1 = 0;
@@ -649,7 +649,7 @@ scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 	assert(weights->n == 4);
 	if (weights->flip)
 	{
-		dst += weights->count;
+		dst += 4*weights->count;
 #ifdef ARCH_ARM
 		asm volatile(
 		"1:"
