@@ -630,11 +630,10 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 		{
 			buf = pdf_decodecmap(fontdesc->encoding, buf, &cpt);
 			cid = pdf_lookupcmap(fontdesc->encoding, cpt);
-			if (cid == -1)
-				cid = 0;
-
-			pdf_showglyph(csi, cid);
-
+			if (cid >= 0)
+				pdf_showglyph(csi, cid);
+			else
+				fz_warn("cannot encode character with code point %#x", cpt);
 			if (cpt == 32)
 				pdf_showspace(csi, gstate->wordspace);
 		}
