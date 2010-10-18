@@ -608,7 +608,7 @@ struct pdf_csi_s
 
 	/* graphics state */
 	fz_matrix topctm;
-	pdf_gstate gstate[32];
+	pdf_gstate gstate[64];
 	int gtop;
 };
 
