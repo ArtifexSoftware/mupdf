@@ -331,7 +331,8 @@ fz_stdconvpixmap(fz_pixmap *src, fz_pixmap *dst)
 {
 	float srcv[FZ_MAXCOLORS];
 	float dstv[FZ_MAXCOLORS];
-	int y, x, k;
+	int srcn, dstn;
+	int y, x, k, i;
 
 	fz_colorspace *ss = src->colorspace;
 	fz_colorspace *ds = dst->colorspace;
@@ -343,20 +344,89 @@ fz_stdconvpixmap(fz_pixmap *src, fz_pixmap *dst)
 	assert(src->n == ss->n + 1);
 	assert(dst->n == ds->n + 1);
 
-	for (y = 0; y < src->h; y++)
+	srcn = ss->n;
+	dstn = ds->n;
+
+	/* Brute-force for small images */
+	if (src->w * src->h < 256)
 	{
-		for (x = 0; x < src->w; x++)
+		for (y = 0; y < src->h; y++)
 		{
-			for (k = 0; k < src->n - 1; k++)
-				srcv[k] = *s++ / 255.0f;
+			for (x = 0; x < src->w; x++)
+			{
+				for (k = 0; k < srcn; k++)
+					srcv[k] = *s++ / 255.0f;
 
-			fz_convertcolor(ss, srcv, ds, dstv);
+				fz_convertcolor(ss, srcv, ds, dstv);
 
-			for (k = 0; k < dst->n - 1; k++)
-				*d++ = dstv[k] * 255;
+				for (k = 0; k < dstn; k++)
+					*d++ = dstv[k] * 255;
 
-			*d++ = *s++;
+				*d++ = *s++;
+			}
 		}
+	}
+
+	/* 1-d lookup table for separation and similar colorspaces */
+	else if (srcn == 1)
+	{
+		unsigned char lookup[FZ_MAXCOLORS * 256];
+
+		for (i = 0; i < 256; i++)
+		{
+			srcv[0] = i / 255.0f;
+			fz_convertcolor(ss, srcv, ds, dstv);
+			for (k = 0; k < dstn; k++)
+				lookup[i * dstn + k] = dstv[k] * 255;
+		}
+
+		for (y = 0; y < src->h; y++)
+		{
+			for (x = 0; x < src->w; x++)
+			{
+				i = *s++;
+				for (k = 0; k < dstn; k++)
+					*d++ = lookup[i * dstn + k];
+				*d++ = *s++;
+			}
+		}
+	}
+
+	/* Memoize colors using a hash table for the general case */
+	else
+	{
+		fz_hashtable *lookup;
+		unsigned char *color;
+
+		lookup = fz_newhash(509, srcn);
+
+		for (y = 0; y < src->h; y++)
+		{
+			for (x = 0; x < src->w; x++)
+			{
+				color = fz_hashfind(lookup, s);
+				if (color)
+				{
+					memcpy(d, color, dstn);
+					s += srcn;
+					d += dstn;
+					*d++ = *s++;
+				}
+				else
+				{
+					for (k = 0; k < srcn; k++)
+						srcv[k] = *s++ / 255.0f;
+					fz_convertcolor(ss, srcv, ds, dstv);
+					for (k = 0; k < dstn; k++)
+						*d++ = dstv[k] * 255;
+					*d++ = *s++;
+
+					fz_hashinsert(lookup, s - srcn, d - dstn);
+				}
+			}
+		}
+
+		fz_freehash(lookup);
 	}
 }
 
