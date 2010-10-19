@@ -419,9 +419,10 @@ fz_stdconvpixmap(fz_pixmap *src, fz_pixmap *dst)
 					fz_convertcolor(ss, srcv, ds, dstv);
 					for (k = 0; k < dstn; k++)
 						*d++ = dstv[k] * 255;
-					*d++ = *s++;
 
 					fz_hashinsert(lookup, s - srcn, d - dstn);
+
+					*d++ = *s++;
 				}
 			}
 		}
