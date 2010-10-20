@@ -347,6 +347,8 @@ fz_stdconvpixmap(fz_pixmap *src, fz_pixmap *dst)
 	srcn = ss->n;
 	dstn = ds->n;
 
+	/* TODO: special case Lab colorspace (scaling of components to float) */
+
 	/* Brute-force for small images */
 	if (src->w * src->h < 256)
 	{
