@@ -445,14 +445,9 @@ char *fz_objkindstr(fz_obj *obj);
 
 /*
  * Data buffers.
- *
- * A buffer owns the memory it has allocated, unless ownsdata is false,
- * in which case the creator of the buffer owns it.
  */
 
 typedef struct fz_buffer_s fz_buffer;
-
-#define FZ_BUFSIZE (8 * 1024)
 
 struct fz_buffer_s
 {
@@ -462,13 +457,11 @@ struct fz_buffer_s
 };
 
 fz_buffer * fz_newbuffer(int size);
-fz_buffer * fz_newbufferwithmemory(unsigned char *data, int size);
+fz_buffer *fz_keepbuffer(fz_buffer *buf);
+void fz_dropbuffer(fz_buffer *buf);
 
 void fz_resizebuffer(fz_buffer *buf, int size);
 void fz_growbuffer(fz_buffer *buf);
-
-fz_buffer *fz_keepbuffer(fz_buffer *buf);
-void fz_dropbuffer(fz_buffer *buf);
 
 /*
  * Buffered reader.
@@ -598,8 +591,10 @@ struct fz_pixmap_s
 	fz_pixmap *mask; /* explicit soft/image mask */
 	fz_colorspace *colorspace;
 	unsigned char *samples;
+	int freesamples;
 };
 
+fz_pixmap *fz_newpixmapwithdata(fz_colorspace *colorspace, int x, int y, int w, int h, unsigned char *samples);
 fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
 fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
 fz_pixmap *fz_keeppixmap(fz_pixmap *pix);
