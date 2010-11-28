@@ -245,6 +245,7 @@ struct pdf_xobject_s
 	int isolated;
 	int knockout;
 	int transparency;
+	fz_colorspace *colorspace;
 	fz_obj *resources;
 	fz_buffer *contents;
 };
@@ -581,6 +582,7 @@ struct pdf_gstate_s
 	fz_blendmode blendmode;
 	pdf_xobject *softmask;
 	fz_matrix softmaskctm;
+	float softmaskbc[FZ_MAXCOLORS];
 	int luminosity;
 };
 

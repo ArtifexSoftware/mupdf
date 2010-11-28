@@ -168,7 +168,7 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 			gstate->softmask = nil;
 			popmask = 1;
 
-			csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity, nil, nil);
+			csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity, softmask->colorspace, gstate->softmaskbc);
 			error = pdf_runxobject(csi, resources, softmask);
 			if (error)
 				return fz_rethrow(error, "cannot run softmask");
@@ -336,7 +336,7 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 			{
 				fz_error error;
 				pdf_xobject *xobj;
-				fz_obj *group, *luminosity;
+				fz_obj *group, *luminosity, *bc;
 
 				if (gstate->softmask)
 				{
@@ -351,6 +351,21 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 
 				gstate->softmaskctm = fz_concat(xobj->matrix, gstate->ctm);
 				gstate->softmask = xobj;
+				gstate->softmaskbc[0] = 0;
+
+				bc = fz_dictgets(val, "BC");
+				if (fz_isarray(bc))
+				{
+					fz_colorspace *cs;
+					int i;
+
+					cs = xobj->colorspace;
+					if (!cs)
+						cs = fz_devicegray;
+
+					for (i = 0; i < cs->n; i++)
+						gstate->softmaskbc[i] = fz_toreal(fz_arrayget(bc, i));
+				}
 
 				luminosity = fz_dictgets(val, "S");
 				if (fz_isname(luminosity) && !strcmp(fz_toname(luminosity), "Luminosity"))
