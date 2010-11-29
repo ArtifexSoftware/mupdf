@@ -185,6 +185,13 @@ pdf_showpattern(pdf_csi *csi, pdf_pattern *pat, fz_rect bbox, int what)
 		pdf_unsetpattern(csi, what);
 	}
 
+	/* don't apply softmasks to objects in the pattern as well */
+	if (gstate->softmask)
+	{
+		pdf_dropxobject(gstate->softmask);
+		gstate->softmask = nil;
+	}
+
 	ptm = fz_concat(pat->matrix, csi->topctm);
 	invptm = fz_invertmatrix(ptm);
 
@@ -223,6 +230,45 @@ cleanup:
 }
 
 void
+pdf_begingroup(pdf_csi *csi, fz_rect bbox)
+{
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	fz_error error;
+
+	if (gstate->softmask)
+	{
+		pdf_xobject *softmask = gstate->softmask;
+		bbox = fz_transformrect(gstate->ctm, bbox);
+
+		gstate->softmask = nil;
+
+		csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity,
+			softmask->colorspace, gstate->softmaskbc);
+		error = pdf_runxobject(csi, nil, softmask);
+		if (error)
+			fz_catch(error, "cannot run softmask");
+		csi->dev->endmask(csi->dev->user);
+
+		gstate->softmask = softmask;
+	}
+
+	if (gstate->blendmode != FZ_BNORMAL || gstate->softmask)
+		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
+}
+
+void
+pdf_endgroup(pdf_csi *csi)
+{
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+
+	if (gstate->blendmode != FZ_BNORMAL || gstate->softmask)
+		csi->dev->endgroup(csi->dev->user);
+
+	if (gstate->softmask)
+		csi->dev->popclip(csi->dev->user);
+}
+
+void
 pdf_showshade(pdf_csi *csi, fz_shade *shd)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
@@ -230,13 +276,11 @@ pdf_showshade(pdf_csi *csi, fz_shade *shd)
 
 	bbox = fz_boundshade(shd, gstate->ctm);
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
+	pdf_begingroup(csi, bbox);
 
 	csi->dev->fillshade(csi->dev->user, shd, gstate->ctm, gstate->fill.alpha);
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->endgroup(csi->dev->user);
+	pdf_endgroup(csi);
 }
 
 void
@@ -247,11 +291,11 @@ pdf_showimage(pdf_csi *csi, fz_pixmap *image)
 
 	bbox = fz_transformrect(gstate->ctm, fz_unitrect);
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
 
 	if (image->mask)
 		csi->dev->clipimagemask(csi->dev->user, image->mask, gstate->ctm);
+	else /* TODO: only skip gstate softmask for softmasked images? */
+		pdf_begingroup(csi, bbox);
 
 	if (!image->colorspace)
 	{
@@ -289,9 +333,8 @@ pdf_showimage(pdf_csi *csi, fz_pixmap *image)
 
 	if (image->mask)
 		csi->dev->popclip(csi->dev->user);
-
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->endgroup(csi->dev->user);
+	else
+		pdf_endgroup(csi);
 }
 
 void
@@ -307,6 +350,11 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 	if (doclose)
 		fz_closepath(path);
 
+	if (dostroke)
+		bbox = fz_boundpath(path, &gstate->strokestate, gstate->ctm);
+	else
+		bbox = fz_boundpath(path, nil, gstate->ctm);
+
 	if (csi->clip)
 	{
 		gstate->clipdepth++;
@@ -314,13 +362,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		csi->clip = 0;
 	}
 
-	if (dostroke)
-		bbox = fz_boundpath(path, &gstate->strokestate, gstate->ctm);
-	else
-		bbox = fz_boundpath(path, nil, gstate->ctm);
-
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
+	pdf_begingroup(csi, bbox);
 
 	if (dofill)
 	{
@@ -380,8 +422,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 		}
 	}
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->endgroup(csi->dev->user);
+	pdf_endgroup(csi);
 
 	fz_freepath(path);
 }
@@ -417,8 +458,7 @@ pdf_flushtext(pdf_csi *csi)
 
 	bbox = fz_boundtext(text, gstate->ctm);
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
+	pdf_begingroup(csi, bbox);
 
 	if (doinvisible)
 		csi->dev->ignoretext(csi->dev->user, text, gstate->ctm);
@@ -488,8 +528,7 @@ pdf_flushtext(pdf_csi *csi)
 		}
 	}
 
-	if (gstate->blendmode != FZ_BNORMAL)
-		csi->dev->endgroup(csi->dev->user);
+	pdf_endgroup(csi);
 
 	fz_freetext(text);
 }
