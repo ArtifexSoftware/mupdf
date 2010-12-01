@@ -440,6 +440,7 @@ void fz_sortdict(fz_obj *dict);
 int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 int fz_fprintobj(FILE *fp, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);
+void fz_debugref(fz_obj *obj);
 
 char *fz_objkindstr(fz_obj *obj);
 
