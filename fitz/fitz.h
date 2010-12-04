@@ -424,6 +424,7 @@ int fz_arraylen(fz_obj *array);
 fz_obj *fz_arrayget(fz_obj *array, int i);
 void fz_arrayput(fz_obj *array, int i, fz_obj *obj);
 void fz_arraypush(fz_obj *array, fz_obj *obj);
+void fz_arrayinsert(fz_obj *array, fz_obj *obj);
 
 int fz_dictlen(fz_obj *dict);
 fz_obj *fz_dictgetkey(fz_obj *dict, int idx);

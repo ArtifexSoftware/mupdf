@@ -260,6 +260,7 @@ void pdf_dropxobject(pdf_xobject *xobj);
 
 fz_error pdf_loadinlineimage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error pdf_loadimage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
+int pdf_isjpximage(fz_obj *dict);
 
 /*
  * CMap
