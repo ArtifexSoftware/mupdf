@@ -1071,6 +1071,12 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 			x = (x << 8) + fz_readbyte(stream);
 			s = x / 65535.0f;
 		}
+		else if (bps == 24) {
+			unsigned int x = fz_readbyte(stream);
+			x = (x << 8) + fz_readbyte(stream);
+			x = (x << 8) + fz_readbyte(stream);
+			s = x / 16777216.0f;
+		}
 		else if (bps == 32) {
 			unsigned int x = fz_readbyte(stream);
 			x = (x << 8) + fz_readbyte(stream);
