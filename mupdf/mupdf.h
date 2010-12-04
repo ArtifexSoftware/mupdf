@@ -128,7 +128,6 @@ struct pdf_xref_s
 	fz_obj *trailer;
 
 	int len;
-	int cap;
 	pdf_xrefentry *table;
 
 	int pagelen;
@@ -168,7 +167,9 @@ void pdf_freexref(pdf_xref *);
 
 /* private */
 fz_error pdf_repairxref(pdf_xref *xref, char *buf, int bufsize);
+fz_error pdf_repairobjstms(pdf_xref *xref);
 void pdf_debugxref(pdf_xref *);
+void pdf_resizexref(pdf_xref *xref, int newcap);
 
 /*
  * Resource store
