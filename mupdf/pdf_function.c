@@ -1134,16 +1134,49 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 
 		else if (func->m == 2)
 		{
-			float a = func->u.sa.samples[(e0[0] +  e0[1] * func->u.sa.size[0]) * func->n + i];
-			float b = func->u.sa.samples[(e1[0] +  e0[1] * func->u.sa.size[0]) * func->n + i];
-			float c = func->u.sa.samples[(e0[0] +  e1[1] * func->u.sa.size[0]) * func->n + i];
-			float d = func->u.sa.samples[(e1[0] +  e1[1] * func->u.sa.size[0]) * func->n + i];
+			int s0 = func->n;
+			int s1 = s0 * func->u.sa.size[0];
+
+			float a = func->u.sa.samples[e0[0] * s0 +  e0[1] * s1 + i];
+			float b = func->u.sa.samples[e1[0] * s0 +  e0[1] * s1 + i];
+			float c = func->u.sa.samples[e0[0] * s0 +  e1[1] * s1 + i];
+			float d = func->u.sa.samples[e1[0] * s0 +  e1[1] * s1 + i];
 
 			float ab = a + (b - a) * efrac[0];
 			float cd = c + (d - c) * efrac[0];
 			float abcd = ab + (cd - ab) * efrac[1];
 
 			out[i] = LERP(abcd, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
+			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
+		}
+
+		else if (func->m == 3)
+		{
+			int s0 = func->n;
+			int s1 = s0 * func->u.sa.size[0];
+			int s2 = s1 * func->u.sa.size[1];
+
+			float a = func->u.sa.samples[e0[0] * s0 +  e0[1] * s1 + e0[2] * s2 + i];
+			float b = func->u.sa.samples[e1[0] * s0 +  e0[1] * s1 + e0[2] * s2 + i];
+			float c = func->u.sa.samples[e0[0] * s0 +  e1[1] * s1 + e0[2] * s2 + i];
+			float d = func->u.sa.samples[e1[0] * s0 +  e1[1] * s1 + e0[2] * s2 + i];
+
+			float ab = a + (b - a) * efrac[0];
+			float cd = c + (d - c) * efrac[0];
+			float abcd = ab + (cd - ab) * efrac[1];
+
+			float e = func->u.sa.samples[e0[0] * s0 +  e0[1] * s1 + e1[2] * s2 + i];
+			float f = func->u.sa.samples[e1[0] * s0 +  e0[1] * s1 + e1[2] * s2 + i];
+			float g = func->u.sa.samples[e0[0] * s0 +  e1[1] * s1 + e1[2] * s2 + i];
+			float h = func->u.sa.samples[e1[0] * s0 +  e1[1] * s1 + e1[2] * s2 + i];
+
+			float ef = e + (f - e) * efrac[0];
+			float gh = g + (h - g) * efrac[0];
+			float efgh = ef + (gh - ef) * efrac[1];
+
+			float abcdefgh = abcd + (efgh - abcd) * efrac[2];
+
+			out[i] = LERP(abcdefgh, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
 			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 		}
 
