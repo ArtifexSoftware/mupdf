@@ -19,6 +19,7 @@ int showtext = 0;
 int showtime = 0;
 int showmd5 = 0;
 int savealpha = 0;
+int uselist = 1;
 
 fz_colorspace *colorspace;
 fz_glyphcache *glyphcache;
@@ -50,6 +51,7 @@ static void usage(void)
 		"\t-m\tshow timing information\n"
 		"\t-t\tshow text (-tt for xml)\n"
 		"\t-x\tshow display list\n"
+		"\t-d\tdisable use of display list\n"
 		"\t-5\tshow md5 checksums\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
@@ -99,19 +101,26 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	if (error)
 		die(fz_rethrow(error, "cannot load page %d in file '%s'", pagenum, filename));
 
-	list = fz_newdisplaylist();
+	list = nil;
 
-	dev = fz_newlistdevice(list);
-	error = pdf_runpage(xref, page, dev, fz_identity);
-	if (error)
-		die(fz_rethrow(error, "cannot draw page %d in file '%s'", pagenum, filename));
-	fz_freedevice(dev);
+	if (uselist)
+	{
+		list = fz_newdisplaylist();
+		dev = fz_newlistdevice(list);
+		error = pdf_runpage(xref, page, dev, fz_identity);
+		if (error)
+			die(fz_rethrow(error, "cannot draw page %d in file '%s'", pagenum, filename));
+		fz_freedevice(dev);
+	}
 
 	if (showxml)
 	{
 		dev = fz_newtracedevice();
 		printf("<page number=\"%d\">\n", pagenum);
-		fz_executedisplaylist(list, dev, fz_identity);
+		if (list)
+			fz_executedisplaylist(list, dev, fz_identity);
+		else
+			pdf_runpage(xref, page, dev, fz_identity);
 		printf("</page>\n");
 		fz_freedevice(dev);
 	}
@@ -120,7 +129,10 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	{
 		fz_textspan *text = fz_newtextspan();
 		dev = fz_newtextdevice(text);
-		fz_executedisplaylist(list, dev, fz_identity);
+		if (list)
+			fz_executedisplaylist(list, dev, fz_identity);
+		else
+			pdf_runpage(xref, page, dev, fz_identity);
 		fz_freedevice(dev);
 		printf("[Page %d]\n", pagenum);
 		if (showtext > 1)
@@ -157,7 +169,10 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			fz_clearpixmapwithcolor(pix, 255);
 
 		dev = fz_newdrawdevice(glyphcache, pix);
-		fz_executedisplaylist(list, dev, ctm);
+		if (list)
+			fz_executedisplaylist(list, dev, ctm);
+		else
+			pdf_runpage(xref, page, dev, ctm);
 		fz_freedevice(dev);
 
 		if (output)
@@ -190,7 +205,9 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		fz_droppixmap(pix);
 	}
 
-	fz_freedisplaylist(list);
+	if (list)
+		fz_freedisplaylist(list);
+
 	pdf_freepage(page);
 
 	if (showtime)
@@ -266,7 +283,7 @@ int main(int argc, char **argv)
 	fz_error error;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "o:p:r:Aagmtx5")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:p:r:Aadgmtx5")) != -1)
 	{
 		switch (c)
 		{
@@ -280,6 +297,7 @@ int main(int argc, char **argv)
 		case 'x': showxml++; break;
 		case '5': showmd5++; break;
 		case 'g': grayscale++; break;
+		case 'd': uselist = 0; break;
 		default: usage(); break;
 		}
 	}
