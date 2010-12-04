@@ -143,15 +143,15 @@ fz_paintspanmask2(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 {
 	while (w--)
 	{
-		int masa, imasa;
+		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
 		masa = FZ_COMBINE(sp[1], ma);
-		imasa = 255 - masa;
-		imasa = FZ_EXPAND(imasa);
-		*dp = FZ_COMBINE2(*sp, ma, *dp, imasa);
+		masa = 255 - masa;
+		masa = FZ_EXPAND(masa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
-		*dp = masa + FZ_COMBINE(*dp, imasa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
 	}
 }
@@ -161,19 +161,19 @@ fz_paintspanmask4(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 {
 	while (w--)
 	{
-		int masa, imasa;
+		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
 		masa = FZ_COMBINE(sp[3], ma);
-		imasa = 255 - masa;
-		imasa = FZ_EXPAND(imasa);
-		*dp = FZ_COMBINE2(*sp, ma, *dp, imasa);
+		masa = 255 - masa;
+		masa = FZ_EXPAND(masa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
-		*dp = FZ_COMBINE2(*sp, ma, *dp, imasa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
-		*dp = FZ_COMBINE2(*sp, ma, *dp, imasa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
-		*dp = masa + FZ_COMBINE(*dp, imasa);
+		*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 		sp++; dp++;
 	}
 }
@@ -185,19 +185,17 @@ fz_paintspanmaskN(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 	while (w--)
 	{
 		int k = n;
-		int masa, imasa;
+		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
-		masa = FZ_COMBINE(sp[n], ma);
-		imasa = 255-masa;
-		imasa = FZ_EXPAND(imasa);
+		masa = FZ_COMBINE(sp[n-1], ma);
+		masa = 255-masa;
+		masa = FZ_EXPAND(masa);
 		while (k--)
 		{
-			*dp = FZ_COMBINE2(*sp, ma, *dp, imasa);
+			*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 			sp++; dp++;
 		}
-		*dp = masa + FZ_COMBINE(*dp, imasa);
-		sp++; dp++;
 	}
 }
 
