@@ -238,7 +238,7 @@ pdf_begingroup(pdf_csi *csi, fz_rect bbox)
 	if (gstate->softmask)
 	{
 		pdf_xobject *softmask = gstate->softmask;
-		bbox = fz_transformrect(gstate->ctm, bbox);
+		fz_rect bbox = fz_transformrect(gstate->ctm, softmask->bbox);
 
 		gstate->softmask = nil;
 
@@ -252,7 +252,7 @@ pdf_begingroup(pdf_csi *csi, fz_rect bbox)
 		gstate->softmask = softmask;
 	}
 
-	if (gstate->blendmode != FZ_BNORMAL || gstate->softmask)
+	if (gstate->blendmode != FZ_BNORMAL)
 		csi->dev->begingroup(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
 }
 
@@ -261,7 +261,7 @@ pdf_endgroup(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
-	if (gstate->blendmode != FZ_BNORMAL || gstate->softmask)
+	if (gstate->blendmode != FZ_BNORMAL)
 		csi->dev->endgroup(csi->dev->user);
 
 	if (gstate->softmask)
