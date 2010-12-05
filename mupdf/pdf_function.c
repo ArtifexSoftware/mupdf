@@ -1105,7 +1105,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 	int e0[MAXM], e1[MAXM];
 	float efrac[MAXM];
 	float x;
-	int i;
+	int i, k;
 
 	/* encode input coordinates */
 	for (i = 0; i < func->m; i++)
@@ -1182,7 +1182,20 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 
 		else
 		{
-			return fz_throw("sampled %d-d functions not implemented", func->m);
+			int idx = 0;
+			int scale = func->n;
+			float x;
+
+			for (k = 0; k < func->m; k++)
+			{
+				idx = idx + e0[k] * scale;
+				scale = scale * func->u.sa.size[k];
+			}
+
+			x = func->u.sa.samples[idx + i];
+
+			out[i] = LERP(x, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
+			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 		}
 	}
 
