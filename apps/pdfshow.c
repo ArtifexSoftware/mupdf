@@ -183,6 +183,9 @@ static void showgrep(char *filename)
 			fz_dropobj(obj);
 		}
 	}
+
+	printf("%s:trailer: ", filename);
+	fz_fprintobj(stdout, xref->trailer, 1);
 }
 
 int main(int argc, char **argv)
