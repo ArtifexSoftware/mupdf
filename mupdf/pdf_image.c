@@ -334,7 +334,6 @@ fz_error
 pdf_loadimage(fz_pixmap **pixp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 {
 	fz_error error;
-	fz_obj *obj;
 
 	if ((*pixp = pdf_finditem(xref->store, fz_droppixmap, dict)))
 	{
