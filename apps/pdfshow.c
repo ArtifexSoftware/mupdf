@@ -177,6 +177,8 @@ static void showgrep(char *filename)
 			if (error)
 				die(error);
 
+			fz_sortdict(obj);
+
 			printf("%s:%d: ", filename, i);
 			fz_fprintobj(stdout, obj, 1);
 
