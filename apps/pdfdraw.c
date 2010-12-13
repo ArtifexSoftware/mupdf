@@ -248,7 +248,7 @@ static void drawrange(pdf_xref *xref, char *range)
 		dash = strchr(spec, '-');
 
 		if (dash == spec)
-			spage = epage = 1;
+			spage = epage = pdf_getpagecount(xref);
 		else
 			spage = epage = atoi(spec);
 
