@@ -1065,19 +1065,19 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 
 		if (bps == 1) {
 			int x = fz_peekbyte(stream);
-			s = (x >> (7 - (i & 0x7))) & 0x01;
+			s = (x >> ( 7 - (i & 7) ) ) & 1;
 			if ((i & 0x07) == 7)
 				fz_readbyte(stream);
 		}
 		else if (bps == 2) {
 			int x = fz_peekbyte(stream);
-			s = ((x >> (3 - (i & 0x3))) & 0x03) / 4.0f;
+			s = ((x >> ( ( 3 - (i & 3) ) << 1 ) ) & 3 ) / 3.0f;
 			if ((i & 0x3) == 3)
 				fz_readbyte(stream);
 		}
 		else if (bps == 4) {
 			int x = fz_peekbyte(stream);
-			s = ((x >> (1 - (i & 0x1))) & 0x0f) / 16.0f;
+			s = ((x >> ( ( 1 - (i & 1) ) << 2 ) ) & 15 ) / 15.0f;
 			if ((i & 0x1) == 1)
 				fz_readbyte(stream);
 		}
@@ -1094,7 +1094,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 			unsigned int x = fz_readbyte(stream);
 			x = (x << 8) + fz_readbyte(stream);
 			x = (x << 8) + fz_readbyte(stream);
-			s = x / 16777216.0f;
+			s = x / 16777215.0f;
 		}
 		else if (bps == 32) {
 			unsigned int x = fz_readbyte(stream);
