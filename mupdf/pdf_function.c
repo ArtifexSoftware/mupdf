@@ -1118,13 +1118,36 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 	return fz_okay;
 }
 
+static float
+interpolatesample(pdf_function *func, int *scale, int *e0, int *e1, float *efrac, int dim, int idx)
+{
+	float a, b;
+	int idx0, idx1;
+
+	idx0 = e0[dim] * scale[dim] + idx;
+	idx1 = e1[dim] * scale[dim] + idx;
+
+	if (dim == 0)
+	{
+		a = func->u.sa.samples[idx0];
+		b = func->u.sa.samples[idx1];
+	}
+	else
+	{
+		a = interpolatesample(func, scale, e0, e1, efrac, dim - 1, idx0);
+		b = interpolatesample(func, scale, e0, e1, efrac, dim - 1, idx1);
+	}
+
+	return a + (b - a) * efrac[dim];
+}
+
 static fz_error
 evalsamplefunc(pdf_function *func, float *in, float *out)
 {
-	int e0[MAXM], e1[MAXM];
+	int e0[MAXM], e1[MAXM], scale[MAXM];
 	float efrac[MAXM];
 	float x;
-	int i, k;
+	int i;
 
 	/* encode input coordinates */
 	for (i = 0; i < func->m; i++)
@@ -1137,6 +1160,10 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 		e1[i] = ceilf(x);
 		efrac[i] = x - floorf(x);
 	}
+
+	scale[0] = func->n;
+	for (i = 1; i < func->m; i++)
+		scale[i] = scale[i - 1] * func->u.sa.size[i];
 
 	for (i = 0; i < func->n; i++)
 	{
@@ -1169,50 +1196,9 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 		}
 
-		else if (func->m == 3)
-		{
-			int s0 = func->n;
-			int s1 = s0 * func->u.sa.size[0];
-			int s2 = s1 * func->u.sa.size[1];
-
-			float a = func->u.sa.samples[e0[0] * s0 +  e0[1] * s1 + e0[2] * s2 + i];
-			float b = func->u.sa.samples[e1[0] * s0 +  e0[1] * s1 + e0[2] * s2 + i];
-			float c = func->u.sa.samples[e0[0] * s0 +  e1[1] * s1 + e0[2] * s2 + i];
-			float d = func->u.sa.samples[e1[0] * s0 +  e1[1] * s1 + e0[2] * s2 + i];
-
-			float ab = a + (b - a) * efrac[0];
-			float cd = c + (d - c) * efrac[0];
-			float abcd = ab + (cd - ab) * efrac[1];
-
-			float e = func->u.sa.samples[e0[0] * s0 +  e0[1] * s1 + e1[2] * s2 + i];
-			float f = func->u.sa.samples[e1[0] * s0 +  e0[1] * s1 + e1[2] * s2 + i];
-			float g = func->u.sa.samples[e0[0] * s0 +  e1[1] * s1 + e1[2] * s2 + i];
-			float h = func->u.sa.samples[e1[0] * s0 +  e1[1] * s1 + e1[2] * s2 + i];
-
-			float ef = e + (f - e) * efrac[0];
-			float gh = g + (h - g) * efrac[0];
-			float efgh = ef + (gh - ef) * efrac[1];
-
-			float abcdefgh = abcd + (efgh - abcd) * efrac[2];
-
-			out[i] = LERP(abcdefgh, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
-			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
-		}
-
 		else
 		{
-			int idx = 0;
-			int scale = func->n;
-			float x;
-
-			for (k = 0; k < func->m; k++)
-			{
-				idx = idx + e0[k] * scale;
-				scale = scale * func->u.sa.size[k];
-			}
-
-			x = func->u.sa.samples[idx + i];
-
+			float x = interpolatesample(func, scale, e0, e1, efrac, func->m - 1, i);
 			out[i] = LERP(x, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
 			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 		}
