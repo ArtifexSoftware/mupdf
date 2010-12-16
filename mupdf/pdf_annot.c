@@ -22,7 +22,7 @@ resolvedest(pdf_xref *xref, fz_obj *dest)
 
 	else if (fz_isarray(dest))
 	{
-		return fz_arrayget(dest, 0);
+		return dest;
 	}
 
 	else if (fz_isdict(dest))
