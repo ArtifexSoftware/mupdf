@@ -248,7 +248,7 @@ pdf_loadinlineimage(fz_pixmap **pixp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict,
 		return fz_rethrow(error, "cannot load inline image");
 
 	pdf_logimage("}\n");
-	
+
 	return fz_okay;
 }
 
@@ -273,7 +273,7 @@ pdf_loadjpximage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *dict)
 	fz_error error;
 	fz_buffer *buf;
 	fz_pixmap *img;
-	fz_obj *obj, *res;
+	fz_obj *obj;
 
 	pdf_logimage("jpeg2000\n");
 
