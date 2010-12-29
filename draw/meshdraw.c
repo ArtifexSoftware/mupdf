@@ -122,7 +122,7 @@ static int clippoly(float src[MAXV][MAXN],
  */
 
 static inline void
-drawscan(fz_pixmap *pix, int y, int x1, int x2, int *v1, int *v2, int n)
+paintscan(fz_pixmap *pix, int y, int x1, int x2, int *v1, int *v2, int n)
 {
 	unsigned char *p = pix->samples + ((y - pix->y) * pix->w + (x1 - pix->x)) * pix->n;
 	int v[FZ_MAXCOLORS];
@@ -217,7 +217,7 @@ stepedge(int *ael, int *del, int n)
 }
 
 static void
-fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_bbox bbox)
+fz_painttriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_bbox bbox)
 {
 	float poly[MAXV][MAXN];
 	float temp[MAXV][MAXN];
@@ -282,9 +282,9 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_bbox 
 		int x1 = ael[1][0] >> 16;
 
 		if (ael[0][0] < ael[1][0])
-			drawscan(pix, y, x0, x1, ael[0]+2, ael[1]+2, n-2);
+			paintscan(pix, y, x0, x1, ael[0]+2, ael[1]+2, n-2);
 		else
-			drawscan(pix, y, x1, x0, ael[1]+2, ael[0]+2, n-2);
+			paintscan(pix, y, x1, x0, ael[1]+2, ael[0]+2, n-2);
 
 		stepedge(ael[0], del[0], n);
 		stepedge(ael[1], del[1], n);
@@ -307,7 +307,7 @@ fz_drawtriangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_bbox 
 }
 
 static void
-fz_drawquad(fz_pixmap *pix,
+fz_paintquad(fz_pixmap *pix,
 		fz_point p0, fz_point p1, fz_point p2, fz_point p3,
 		float c0, float c1, float c2, float c3,
 		int n, fz_bbox bbox)
@@ -330,12 +330,12 @@ fz_drawquad(fz_pixmap *pix,
 	v[3][1] = p3.y;
 	v[3][2] = c3;
 
-	fz_drawtriangle(pix, v[0], v[2], v[3], n, bbox);
-	fz_drawtriangle(pix, v[0], v[3], v[1], n, bbox);
+	fz_painttriangle(pix, v[0], v[2], v[3], n, bbox);
+	fz_painttriangle(pix, v[0], v[3], v[1], n, bbox);
 }
 
 /*
- * linear, radial and mesh drawing
+ * linear, radial and mesh painting
  */
 
 #define HUGENUM 32000 /* how far to extend axial/radial shadings */
@@ -351,7 +351,7 @@ fz_pointoncircle(fz_point p, float r, float theta)
 }
 
 static void
-fz_renderlinear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paintlinear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	fz_point p0, p1;
 	fz_point v0, v1, v2, v3;
@@ -374,7 +374,7 @@ fz_renderlinear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 	v2 = fz_pointoncircle(p0, -HUGENUM, theta);
 	v3 = fz_pointoncircle(p1, -HUGENUM, theta);
 
-	fz_drawquad(dest, v0, v1, v2, v3, 0, 255, 0, 255, 3, bbox);
+	fz_paintquad(dest, v0, v1, v2, v3, 0, 255, 0, 255, 3, bbox);
 
 	if (shade->extend[0])
 	{
@@ -384,7 +384,7 @@ fz_renderlinear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		e1.x = v2.x - (p1.x - p0.x) * HUGENUM;
 		e1.y = v2.y - (p1.y - p0.y) * HUGENUM;
 
-		fz_drawquad(dest, e0, v0, v2, e1, 0, 0, 0, 0, 3, bbox);
+		fz_paintquad(dest, e0, v0, v2, e1, 0, 0, 0, 0, 3, bbox);
 	}
 
 	if (shade->extend[1])
@@ -395,12 +395,12 @@ fz_renderlinear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		e1.x = v3.x - (p1.x - p0.x) * HUGENUM;
 		e1.y = v3.y - (p1.y - p0.y) * HUGENUM;
 
-		fz_drawquad(dest, e0, v1, v3, e1, 255, 255, 255, 255, 3, bbox);
+		fz_paintquad(dest, e0, v1, v3, e1, 255, 255, 255, 255, 3, bbox);
 	}
 }
 
 static void
-fz_renderannulus(fz_matrix ctm,
+fz_paintannulus(fz_matrix ctm,
 		fz_point p0, float r0, float c0,
 		fz_point p1, float r1, float c1,
 		fz_pixmap *dest, fz_bbox bbox)
@@ -432,13 +432,13 @@ fz_renderannulus(fz_matrix ctm,
 		b2 = fz_transformpoint(ctm, b2);
 		b3 = fz_transformpoint(ctm, b3);
 
-		fz_drawquad(dest, t0, t1, t2, t3, c0, c0, c1, c1, 3, bbox);
-		fz_drawquad(dest, b0, b1, b2, b3, c0, c0, c1, c1, 3, bbox);
+		fz_paintquad(dest, t0, t1, t2, t3, c0, c0, c1, c1, 3, bbox);
+		fz_paintquad(dest, b0, b1, b2, b3, c0, c0, c1, c1, 3, bbox);
 	}
 }
 
 static void
-fz_renderradial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paintradial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	fz_point p0, p1;
 	float r0, r1;
@@ -453,7 +453,7 @@ fz_renderradial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 	p1.y = shade->mesh[4];
 	r1 = shade->mesh[5];
 
-	fz_renderannulus(ctm, p0, r0, 0, p1, r1, 255, dest, bbox);
+	fz_paintannulus(ctm, p0, r0, 0, p1, r1, 255, dest, bbox);
 
 	if (shade->extend[0])
 	{
@@ -466,7 +466,7 @@ fz_renderradial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		e.y = p0.y + (p1.y - p0.y) * rs;
 		er = r0 + (r1 - r0) * rs;
 
-		fz_renderannulus(ctm, e, er, 0, p0, r0, 0, dest, bbox);
+		fz_paintannulus(ctm, e, er, 0, p0, r0, 0, dest, bbox);
 	}
 
 	if (shade->extend[1])
@@ -480,12 +480,12 @@ fz_renderradial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		e.y = p1.y + (p0.y - p1.y) * rs;
 		er = r1 + (r0 - r1) * rs;
 
-		fz_renderannulus(ctm, p1, r1, 255, e, er, 255, dest, bbox);
+		fz_paintannulus(ctm, p1, r1, 255, e, er, 255, dest, bbox);
 	}
 }
 
 static void
-fz_rendermesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paintmesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	float tri[3][MAXN];
 	fz_point p;
@@ -519,12 +519,12 @@ fz_rendermesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 				mesh += shade->cs->n;
 			}
 		}
-		fz_drawtriangle(dest, tri[0], tri[1], tri[2], 2 + dest->colorspace->n, bbox);
+		fz_painttriangle(dest, tri[0], tri[1], tri[2], 2 + dest->colorspace->n, bbox);
 	}
 }
 
 void
-fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paintshade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	unsigned char clut[256][FZ_MAXCOLORS];
 	fz_pixmap *temp, *conv;
@@ -552,15 +552,9 @@ fz_rendershade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 
 	switch (shade->type)
 	{
-	case FZ_LINEAR:
-		fz_renderlinear(shade, ctm, temp, bbox);
-		break;
-	case FZ_RADIAL:
-		fz_renderradial(shade, ctm, temp, bbox);
-		break;
-	case FZ_MESH:
-		fz_rendermesh(shade, ctm, temp, bbox);
-		break;
+	case FZ_LINEAR: fz_paintlinear(shade, ctm, temp, bbox); break;
+	case FZ_RADIAL: fz_paintradial(shade, ctm, temp, bbox); break;
+	case FZ_MESH: fz_paintmesh(shade, ctm, temp, bbox); break;
 	}
 
 	if (shade->usefunction)
