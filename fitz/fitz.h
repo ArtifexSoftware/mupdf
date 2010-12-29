@@ -795,6 +795,13 @@ fz_text *fz_clonetext(fz_text *old);
  * The shading code uses gouraud shaded triangle meshes.
  */
 
+enum
+{
+	FZ_LINEAR,
+	FZ_RADIAL,
+	FZ_MESH,
+};
+
 typedef struct fz_shade_s fz_shade;
 
 struct fz_shade_s
@@ -810,6 +817,9 @@ struct fz_shade_s
 
 	int usefunction;
 	float function[256][FZ_MAXCOLORS];
+
+	int type; /* linear, radial, mesh */
+	int extend[2];
 
 	int meshlen;
 	int meshcap;
