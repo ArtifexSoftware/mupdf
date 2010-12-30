@@ -198,20 +198,20 @@ fz_paintaffinelerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int
 	{
 		switch (n)
 		{
-			case 1: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 1); break;
-			case 2: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2); break;
-			case 4: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4); break;
-			default: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n); break;
+		case 1: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 1); break;
+		case 2: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2); break;
+		case 4: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4); break;
+		default: fz_paintaffineNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n); break;
 		}
 	}
 	else if (alpha > 0)
 	{
 		switch (n)
 		{
-			case 1: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 1, alpha); break;
-			case 2: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2, alpha); break;
-			case 4: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4, alpha); break;
-			default: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n, alpha); break;
+		case 1: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 1, alpha); break;
+		case 2: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2, alpha); break;
+		case 4: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4, alpha); break;
+		default: fz_paintaffinealphaNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n, alpha); break;
 		}
 	}
 }
@@ -223,20 +223,20 @@ fz_paintaffinenear(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int
 	{
 		switch (n)
 		{
-			case 1: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 1); break;
-			case 2: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2); break;
-			case 4: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4); break;
-			default: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, n); break;
+		case 1: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 1); break;
+		case 2: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2); break;
+		case 4: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4); break;
+		default: fz_paintaffineNnear(dp, sp, sw, sh, u, v, fa, fb, w, n); break;
 		}
 	}
 	else if (alpha > 0)
 	{
 		switch (n)
 		{
-			case 1: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 1, alpha); break;
-			case 2: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2, alpha); break;
-			case 4: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4, alpha); break;
-			default: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, n, alpha); break;
+		case 1: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 1, alpha); break;
+		case 2: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2, alpha); break;
+		case 4: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4, alpha); break;
+		default: fz_paintaffinealphaNnear(dp, sp, sw, sh, u, v, fa, fb, w, n, alpha); break;
 		}
 	}
 }
@@ -246,9 +246,9 @@ fz_paintaffinecolorlerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa
 {
 	switch (n)
 	{
-		case 2: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2, color); break;
-		case 4: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4, color); break;
-		default: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n, color); break;
+	case 2: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 2, color); break;
+	case 4: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, 4, color); break;
+	default: fz_paintaffinecolorNlerp(dp, sp, sw, sh, u, v, fa, fb, w, n, color); break;
 	}
 }
 
@@ -257,9 +257,9 @@ fz_paintaffinecolornear(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa
 {
 	switch (n)
 	{
-		case 2: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2, color); break;
-		case 4: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4, color); break;
-		default: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, n, color); break;
+	case 2: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, 2, color); break;
+	case 4: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, 4, color); break;
+	default: fz_paintaffinecolorNnear(dp, sp, sw, sh, u, v, fa, fb, w, n, color); break;
 	}
 }
 

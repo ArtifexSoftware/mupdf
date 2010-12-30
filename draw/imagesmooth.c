@@ -1113,18 +1113,18 @@ fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h)
 			goto cleanup;
 		switch (src->n)
 		{
-			default:
-				row_scale = scale_row_to_temp;
-				break;
-			case 1: /* Image mask case */
-				row_scale = scale_row_to_temp1;
-				break;
-			case 2: /* Greyscale with alpha case */
-				row_scale = scale_row_to_temp2;
-				break;
-			case 4: /* RGBA */
-				row_scale = scale_row_to_temp4;
-				break;
+		default:
+			row_scale = scale_row_to_temp;
+			break;
+		case 1: /* Image mask case */
+			row_scale = scale_row_to_temp1;
+			break;
+		case 2: /* Greyscale with alpha case */
+			row_scale = scale_row_to_temp2;
+			break;
+		case 4: /* RGBA */
+			row_scale = scale_row_to_temp4;
+			break;
 		}
 		max_row = 0;
 		for (row = 0; row < contrib_rows->count; row++)
