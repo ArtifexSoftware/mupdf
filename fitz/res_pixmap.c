@@ -38,7 +38,7 @@ fz_newpixmapwithdata(fz_colorspace *colorspace, int x, int y, int w, int h, unsi
 fz_pixmap *
 fz_newpixmap(fz_colorspace *colorspace, int x, int y, int w, int h)
 {
-	return fz_newpixmapwithdata(colorspace, x, y, w, h, NULL);
+	return fz_newpixmapwithdata(colorspace, x, y, w, h, nil);
 }
 
 fz_pixmap *
@@ -283,7 +283,7 @@ static void putchunk(char *tag, unsigned char *data, int size, FILE *fp)
 	put32(size, fp);
 	fwrite(tag, 1, 4, fp);
 	fwrite(data, 1, size, fp);
-	sum = crc32(0, NULL, 0);
+	sum = crc32(0, nil, 0);
 	sum = crc32(sum, (unsigned char*)tag, 4);
 	sum = crc32(sum, data, size);
 	put32(sum, fp);

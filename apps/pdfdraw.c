@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #endif
 
-char *output = NULL;
+char *output = nil;
 float resolution = 72;
 float rotation = 0;
 
@@ -66,10 +66,10 @@ static int gettime(void)
 	struct timeval now;
 	if (once)
 	{
-		gettimeofday(&first, NULL);
+		gettimeofday(&first, nil);
 		once = 0;
 	}
-	gettimeofday(&now, NULL);
+	gettimeofday(&now, nil);
 	return (now.tv_sec - first.tv_sec) * 1000 + (now.tv_usec - first.tv_usec) / 1000;
 }
 

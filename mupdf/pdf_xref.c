@@ -550,7 +550,7 @@ pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 		if (xref->table)
 		{
 			fz_free(xref->table);
-			xref->table = NULL;
+			xref->table = nil;
 			xref->len = 0;
 		}
 		error = pdf_repairxref(xref, xref->scratch, sizeof xref->scratch);
