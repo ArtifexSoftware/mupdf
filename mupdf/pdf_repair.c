@@ -13,7 +13,7 @@ struct entry
 };
 
 static fz_error
-fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, int *isroot)
+fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp)
 {
 	fz_error error;
 	pdf_token_e tok;
@@ -23,7 +23,6 @@ fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, in
 
 	*stmofsp = 0;
 	*stmlenp = -1;
-	*isroot = 0;
 
 	stmlen = 0;
 
@@ -38,10 +37,6 @@ fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, in
 		error = pdf_parsedict(&dict, nil, file, buf, cap);
 		if (error)
 			return fz_rethrow(error, "cannot parse object");
-
-		obj = fz_dictgets(dict, "Type");
-		if (fz_isname(obj) && !strcmp(fz_toname(obj), "Catalog"))
-			*isroot = 1;
 
 		obj = fz_dictgets(dict, "Length");
 		if (fz_isint(obj))
@@ -181,7 +176,6 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 	int num = 0;
 	int gen = 0;
 	int tmpofs, numofs = 0, genofs = 0;
-	int isroot, rootnum = 0, rootgen = 0;
 	int stmlen, stmofs = 0;
 	pdf_token_e tok;
 	int next;
@@ -236,17 +230,11 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 		if (tok == PDF_TOBJ)
 		{
-			error = fz_repairobj(xref->file, buf, bufsize, &stmofs, &stmlen, &isroot);
+			error = fz_repairobj(xref->file, buf, bufsize, &stmofs, &stmlen);
 			if (error)
 			{
 				error = fz_rethrow(error, "cannot parse object (%d %d R)", num, gen);
 				goto cleanup;
-			}
-
-			if (isroot) {
-				pdf_logxref("found catalog: (%d %d R)\n", num, gen);
-				rootnum = num;
-				rootgen = gen;
 			}
 
 			if (listlen + 1 == listcap)
@@ -293,20 +281,12 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 			break;
 	}
 
-	if (rootnum == 0)
-	{
-		error = fz_throw("cannot find catalog object");
-		goto cleanup;
-	}
+	/* create a repaired trailer, Root will be added later */
 
 	xref->trailer = fz_newdict(4);
 
 	obj = fz_newint(maxnum + 1);
 	fz_dictputs(xref->trailer, "Size", obj);
-	fz_dropobj(obj);
-
-	obj = fz_newindirect(rootnum, rootgen, xref);
-	fz_dictputs(xref->trailer, "Root", obj);
 	fz_dropobj(obj);
 
 	if (encrypt)

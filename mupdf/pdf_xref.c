@@ -531,10 +531,9 @@ pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 {
 	pdf_xref *xref;
 	fz_error error;
-	fz_obj *encrypt;
-	fz_obj *id;
-
-	int repaired = 0;
+	fz_obj *encrypt, *id;
+	fz_obj *dict, *obj;
+	int i, repaired = 0;
 
 	xref = fz_malloc(sizeof(pdf_xref));
 
@@ -596,6 +595,28 @@ pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 		{
 			pdf_freexref(xref);
 			return fz_rethrow(error, "cannot repair document");
+		}
+
+		for (i = 1; i < xref->len; i++)
+		{
+			if (xref->table[i].type == 0 || xref->table[i].type == 'f')
+				continue;
+
+			error = pdf_loadobject(&dict, xref, i, 0);
+			if (error)
+				return fz_rethrow(error, "cannot repair document");
+
+			obj = fz_dictgets(dict, "Type");
+			if (fz_isname(obj) && !strcmp(fz_toname(obj), "Catalog"))
+			{
+				pdf_logxref("found catalog: (%d %d R)\n", i, 0);
+
+				obj = fz_newindirect(i, 0, xref);
+				fz_dictputs(xref->trailer, "Root", obj);
+				fz_dropobj(obj);
+			}
+
+			fz_dropobj(dict);
 		}
 	}
 
