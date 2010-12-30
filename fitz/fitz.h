@@ -1042,17 +1042,17 @@ void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
 /*
 These are the blending primitives:
 
-span over span					(text and path drawing to clip mask)
+span over span			(text and path drawing to clip mask)
 span in alpha over span
 span in span over span
-color in span over span			(text and path drawing)
+color in span over span		(text and path drawing)
 
 	fz_paintspan(dp, sp);
 		fz_paintspanalpha(dp, sp, alpha)
 	fz_paintspanmask(dp, sp, mask);
 	fz_paintspancolor(dp, color, mask);
 
-pixmap over pixmap			(shading with function lookup)
+pixmap over pixmap		(shading with function lookup)
 pixmap in alpha over pixmap	(xobject/shading with ca)
 pixmap in pixmap over pixmap	(xobject with softmask / clip)
 
@@ -1068,9 +1068,9 @@ color in affine over span
 		fz_paintaffinealpha()
 	fz_paintaffinecolor()
 
-image over pixmap				(image fill)
-image in alpha over pixmap		(image fill with ca)
-color in image over pixmap		(image mask fill)
+image over pixmap		(image fill)
+image in alpha over pixmap	(image fill with ca)
+color in image over pixmap	(image mask fill)
 
 	fz_paintimage()
 		fz_paintimagealpha()

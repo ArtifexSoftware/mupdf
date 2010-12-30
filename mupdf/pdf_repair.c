@@ -353,7 +353,6 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 		fz_dropobj(id);
 	}
 
-
 	fz_free(list);
 	return fz_okay;
 

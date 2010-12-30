@@ -291,7 +291,6 @@ pdf_showimage(pdf_csi *csi, fz_pixmap *image)
 
 	bbox = fz_transformrect(gstate->ctm, fz_unitrect);
 
-
 	if (image->mask)
 		csi->dev->clipimagemask(csi->dev->user, image->mask, gstate->ctm);
 	else /* TODO: only skip gstate softmask for softmasked images? */
