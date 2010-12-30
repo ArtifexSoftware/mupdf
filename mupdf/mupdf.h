@@ -119,6 +119,15 @@ void pdf_debugcrypt(pdf_crypt *crypt);
 
 typedef struct pdf_xrefentry_s pdf_xrefentry;
 
+struct pdf_xrefentry_s
+{
+	int ofs;	/* file offset / objstm object number */
+	int gen;	/* generation / objstm index */
+	int stmofs;	/* on-disk stream */
+	fz_obj *obj;	/* stored/cached object */
+	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
+};
+
 struct pdf_xref_s
 {
 	fz_stream *file;
@@ -139,15 +148,6 @@ struct pdf_xref_s
 	struct pdf_store_s *store;
 
 	char scratch[65536];
-};
-
-struct pdf_xrefentry_s
-{
-	int ofs;	/* file offset / objstm object number */
-	int gen;	/* generation / objstm index */
-	int stmofs;	/* on-disk stream */
-	fz_obj *obj;	/* stored/cached object */
-	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
 };
 
 fz_error pdf_cacheobject(pdf_xref *, int num, int gen);
@@ -350,9 +350,9 @@ extern const char * const pdf_expert[256];
 extern const char * const pdf_symbol[256];
 extern const char * const pdf_zapfdingbats[256];
 
+typedef struct pdf_fontdesc_s pdf_fontdesc;
 typedef struct pdf_hmtx_s pdf_hmtx;
 typedef struct pdf_vmtx_s pdf_vmtx;
-typedef struct pdf_fontdesc_s pdf_fontdesc;
 
 struct pdf_hmtx_s
 {

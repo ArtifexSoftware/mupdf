@@ -715,6 +715,12 @@ union fz_pathel_s
 	float v;
 };
 
+struct fz_path_s
+{
+	int len, cap;
+	fz_pathel *els;
+};
+
 struct fz_strokestate_s
 {
 	int linecap;
@@ -724,12 +730,6 @@ struct fz_strokestate_s
 	float dashphase;
 	int dashlen;
 	float dashlist[32];
-};
-
-struct fz_path_s
-{
-	int len, cap;
-	fz_pathel *els;
 };
 
 fz_path *fz_newpath(void);
@@ -1002,12 +1002,6 @@ typedef enum fz_displaycommand_e
 	FZ_CMDENDGROUP,
 } fz_displaycommand;
 
-struct fz_displaylist_s
-{
-	fz_displaynode *first;
-	fz_displaynode *last;
-};
-
 struct fz_displaynode_s
 {
 	fz_displaycommand cmd;
@@ -1026,6 +1020,12 @@ struct fz_displaynode_s
 	fz_colorspace *colorspace;
 	float alpha;
 	float color[FZ_MAXCOLORS];
+};
+
+struct fz_displaylist_s
+{
+	fz_displaynode *first;
+	fz_displaynode *last;
 };
 
 fz_displaylist *fz_newdisplaylist(void);
