@@ -648,7 +648,6 @@ void fz_convertpixmap(fz_pixmap *src, fz_pixmap *dst);
  */
 
 struct fz_device_s;
-struct pdf_xref_s;
 
 typedef struct fz_font_s fz_font;
 char *ft_errorstring(int err);
