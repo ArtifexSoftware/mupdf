@@ -472,8 +472,6 @@ void fz_growbuffer(fz_buffer *buf);
 
 typedef struct fz_stream_s fz_stream;
 
-enum { FZ_SFILE, FZ_SBUFFER, FZ_SFILTER };
-
 struct fz_stream_s
 {
 	int refs;
@@ -679,9 +677,6 @@ struct fz_font_s
 	int *widthtable;
 };
 
-fz_error fz_newfreetypefont(fz_font **fontp, char *name, int substitute);
-fz_error fz_loadfreetypefontfile(fz_font *font, char *path, int index);
-fz_error fz_loadfreetypefontbuffer(fz_font *font, unsigned char *data, int len, int index);
 fz_font * fz_newtype3font(char *name, fz_matrix matrix);
 
 fz_error fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index);
@@ -785,7 +780,6 @@ struct fz_text_s
 
 fz_text * fz_newtext(fz_font *face, fz_matrix trm, int wmode);
 void fz_addtext(fz_text *text, int gid, int ucs, float x, float y);
-void fz_endtext(fz_text *text);
 void fz_freetext(fz_text *text);
 void fz_debugtext(fz_text*, int indent);
 fz_rect fz_boundtext(fz_text *text, fz_matrix ctm);
@@ -1100,7 +1094,6 @@ void fz_paintspan(unsigned char * restrict dp, unsigned char * restrict sp, int 
 void fz_paintspancolor(unsigned char * restrict dp, unsigned char * restrict mp, int n, int w, unsigned char *color);
 void fz_paintspanmask(unsigned char * restrict dp, unsigned char * restrict sp, unsigned char * restrict mp, int n, int w);
 
-void fz_paintaffine(unsigned char *dp, unsigned char *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, int alpha);
 void fz_paintaffinecolor(unsigned char *dp, unsigned char *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, unsigned char *color);
 
 void fz_paintimage(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matrix ctm, int alpha);

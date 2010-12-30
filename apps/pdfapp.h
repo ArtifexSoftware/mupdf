@@ -21,7 +21,6 @@ extern void winopenuri(pdfapp_t*, char *s);
 extern void wincursor(pdfapp_t*, int curs);
 extern void windocopy(pdfapp_t*);
 extern void winreloadfile(pdfapp_t*);
-extern void wininvert(pdfapp_t*, fz_bbox rect);
 extern void windrawstring(pdfapp_t*, int x, int y, char *s);
 extern void winclose(pdfapp_t*);
 extern void winhelp(pdfapp_t*);
