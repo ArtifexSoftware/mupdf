@@ -281,33 +281,9 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 			break;
 	}
 
-	/* create a repaired trailer, Root will be added later */
-
-	xref->trailer = fz_newdict(4);
-
-	obj = fz_newint(maxnum + 1);
-	fz_dictputs(xref->trailer, "Size", obj);
-	fz_dropobj(obj);
-
-	if (encrypt)
-	{
-		fz_dictputs(xref->trailer, "Encrypt", encrypt);
-		fz_dropobj(encrypt);
-	}
-
-	if (id)
-	{
-		fz_dictputs(xref->trailer, "ID", id);
-		fz_dropobj(id);
-	}
+	/* make xref reasonable */
 
 	pdf_resizexref(xref, maxnum + 1);
-
-	xref->table[0].type = 'f';
-	xref->table[0].ofs = 0;
-	xref->table[0].gen = 65535;
-	xref->table[0].stmofs = 0;
-	xref->table[0].obj = nil;
 
 	for (i = 0; i < listlen; i++)
 	{
@@ -339,6 +315,12 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 	}
 
+	xref->table[0].type = 'f';
+	xref->table[0].ofs = 0;
+	xref->table[0].gen = 65535;
+	xref->table[0].stmofs = 0;
+	xref->table[0].obj = nil;
+
 	next = 0;
 	for (i = xref->len - 1; i >= 0; i--)
 	{
@@ -350,6 +332,27 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 			next = i;
 		}
 	}
+
+	/* create a repaired trailer, Root will be added later */
+
+	xref->trailer = fz_newdict(4);
+
+	obj = fz_newint(maxnum + 1);
+	fz_dictputs(xref->trailer, "Size", obj);
+	fz_dropobj(obj);
+
+	if (encrypt)
+	{
+		fz_dictputs(xref->trailer, "Encrypt", encrypt);
+		fz_dropobj(encrypt);
+	}
+
+	if (id)
+	{
+		fz_dictputs(xref->trailer, "ID", id);
+		fz_dropobj(id);
+	}
+
 
 	fz_free(list);
 	return fz_okay;
