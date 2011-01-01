@@ -218,6 +218,8 @@ extern const fz_bbox fz_infinitebbox;
 
 #define fz_isemptyrect(r) ((r).x0 == (r).x1)
 #define fz_isinfiniterect(r) ((r).x0 > (r).x1)
+#define fz_isemptybbox(b) ((b).x0 == (b).x1)
+#define fz_isinfinitebbox(b) ((b).x0 > (b).x1)
 
 struct fz_matrix_s
 {
@@ -258,6 +260,7 @@ fz_bbox fz_unionbbox(fz_bbox a, fz_bbox b);
 fz_point fz_transformpoint(fz_matrix m, fz_point p);
 fz_point fz_transformvector(fz_matrix m, fz_point p);
 fz_rect fz_transformrect(fz_matrix m, fz_rect r);
+fz_bbox fz_transformbbox(fz_matrix m, fz_bbox b);
 
 /*
  * Basic crypto functions.
