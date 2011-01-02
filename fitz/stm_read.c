@@ -70,7 +70,7 @@ fz_readall(fz_buffer **bufp, fz_stream *stm, int initial)
 		if (buf->len == buf->cap)
 			fz_growbuffer(buf);
 
-		if (buf->len > initial * 100)
+		if (initial < 1024 && buf->len >= 100 * 1024 * 1024)
 		{
 			fz_dropbuffer(buf);
 			return fz_throw("compression bomb detected");
