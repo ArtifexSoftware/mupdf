@@ -295,7 +295,6 @@ struct fz_arc4_s
 };
 
 void fz_arc4init(fz_arc4 *state, const unsigned char *key, const unsigned len);
-unsigned char fz_arc4next(fz_arc4 *state);
 void fz_arc4encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, const unsigned len);
 
 /* AES block cipher implementation from XYSSL */
@@ -441,7 +440,6 @@ void fz_dictdel(fz_obj *dict, fz_obj *key);
 void fz_dictdels(fz_obj *dict, char *key);
 void fz_sortdict(fz_obj *dict);
 
-int fz_sprintobj(char *s, int n, fz_obj *obj, int tight);
 int fz_fprintobj(FILE *fp, fz_obj *obj, int tight);
 void fz_debugobj(fz_obj *obj);
 void fz_debugref(fz_obj *obj);
@@ -1093,7 +1091,6 @@ void fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int dept
 
 void fz_paintspan(unsigned char * restrict dp, unsigned char * restrict sp, int n, int w, int alpha);
 void fz_paintspancolor(unsigned char * restrict dp, unsigned char * restrict mp, int n, int w, unsigned char *color);
-void fz_paintspanmask(unsigned char * restrict dp, unsigned char * restrict sp, unsigned char * restrict mp, int n, int w);
 
 void fz_paintaffinecolor(unsigned char *dp, unsigned char *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, unsigned char *color);
 

@@ -191,7 +191,7 @@ fz_paintaffinecolorNnear(byte *dp, byte *sp, int sw, int sh, int u, int v, int f
 	}
 }
 
-void
+static void
 fz_paintaffinelerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, int alpha)
 {
 	if (alpha == 255)
@@ -216,7 +216,7 @@ fz_paintaffinelerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int
 	}
 }
 
-void
+static void
 fz_paintaffinenear(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, int alpha)
 {
 	if (alpha == 255)
@@ -241,7 +241,7 @@ fz_paintaffinenear(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int
 	}
 }
 
-void
+static void
 fz_paintaffinecolorlerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, byte *color)
 {
 	switch (n)
@@ -252,7 +252,7 @@ fz_paintaffinecolorlerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa
 	}
 }
 
-void
+static void
 fz_paintaffinecolornear(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, byte *color)
 {
 	switch (n)
