@@ -152,7 +152,7 @@ int runetochar(char *str, int *rune);
 int runelen(int c);
 
 /* getopt */
-extern int fz_getopt(int nargc, char * const * nargv, const char *ostr);
+extern int fz_getopt(int nargc, char * const *nargv, const char *ostr);
 extern int fz_optind;
 extern char *fz_optarg;
 
@@ -162,7 +162,7 @@ extern char *fz_optarg;
 
 typedef struct fz_hashtable_s fz_hashtable;
 
-fz_hashtable * fz_newhash(int initialsize, int keylen);
+fz_hashtable *fz_newhash(int initialsize, int keylen);
 void fz_debughash(fz_hashtable *table);
 void fz_emptyhash(fz_hashtable *table);
 void fz_freehash(fz_hashtable *table);
@@ -382,18 +382,18 @@ struct fz_obj_s
 	} u;
 };
 
-fz_obj * fz_newnull(void);
-fz_obj * fz_newbool(int b);
-fz_obj * fz_newint(int i);
-fz_obj * fz_newreal(float f);
-fz_obj * fz_newname(char *str);
-fz_obj * fz_newstring(char *str, int len);
-fz_obj * fz_newindirect(int num, int gen, struct pdf_xref_s *xref);
+fz_obj *fz_newnull(void);
+fz_obj *fz_newbool(int b);
+fz_obj *fz_newint(int i);
+fz_obj *fz_newreal(float f);
+fz_obj *fz_newname(char *str);
+fz_obj *fz_newstring(char *str, int len);
+fz_obj *fz_newindirect(int num, int gen, struct pdf_xref_s *xref);
 
-fz_obj * fz_newarray(int initialcap);
-fz_obj * fz_newdict(int initialcap);
-fz_obj * fz_copyarray(fz_obj *array);
-fz_obj * fz_copydict(fz_obj *dict);
+fz_obj *fz_newarray(int initialcap);
+fz_obj *fz_newdict(int initialcap);
+fz_obj *fz_copyarray(fz_obj *array);
+fz_obj *fz_copydict(fz_obj *dict);
 
 fz_obj *fz_keepobj(fz_obj *obj);
 void fz_dropobj(fz_obj *obj);
@@ -461,7 +461,7 @@ struct fz_buffer_s
 	int cap, len;
 };
 
-fz_buffer * fz_newbuffer(int size);
+fz_buffer *fz_newbuffer(int size);
 fz_buffer *fz_keepbuffer(fz_buffer *buf);
 void fz_dropbuffer(fz_buffer *buf);
 
@@ -533,19 +533,19 @@ static inline void fz_unreadbyte(fz_stream *stm)
  * Data filters.
  */
 
-fz_stream * fz_opencopy(fz_stream *chain);
-fz_stream * fz_opennull(fz_stream *chain, int len);
-fz_stream * fz_openarc4(fz_stream *chain, unsigned char *key, unsigned keylen);
-fz_stream * fz_openaesd(fz_stream *chain, unsigned char *key, unsigned keylen);
-fz_stream * fz_opena85d(fz_stream *chain);
-fz_stream * fz_openahxd(fz_stream *chain);
-fz_stream * fz_openrld(fz_stream *chain);
-fz_stream * fz_opendctd(fz_stream *chain, fz_obj *param);
-fz_stream * fz_openfaxd(fz_stream *chain, fz_obj *param);
-fz_stream * fz_openflated(fz_stream *chain);
-fz_stream * fz_openlzwd(fz_stream *chain, fz_obj *param);
-fz_stream * fz_openpredict(fz_stream *chain, fz_obj *param);
-fz_stream * fz_openjbig2d(fz_stream *chain, fz_buffer *global);
+fz_stream *fz_opencopy(fz_stream *chain);
+fz_stream *fz_opennull(fz_stream *chain, int len);
+fz_stream *fz_openarc4(fz_stream *chain, unsigned char *key, unsigned keylen);
+fz_stream *fz_openaesd(fz_stream *chain, unsigned char *key, unsigned keylen);
+fz_stream *fz_opena85d(fz_stream *chain);
+fz_stream *fz_openahxd(fz_stream *chain);
+fz_stream *fz_openrld(fz_stream *chain);
+fz_stream *fz_opendctd(fz_stream *chain, fz_obj *param);
+fz_stream *fz_openfaxd(fz_stream *chain, fz_obj *param);
+fz_stream *fz_openflated(fz_stream *chain);
+fz_stream *fz_openlzwd(fz_stream *chain, fz_obj *param);
+fz_stream *fz_openpredict(fz_stream *chain, fz_obj *param);
+fz_stream *fz_openjbig2d(fz_stream *chain, fz_buffer *global);
 
 /*
  * Resources and other graphics related objects.
@@ -598,8 +598,8 @@ struct fz_pixmap_s
 };
 
 fz_pixmap *fz_newpixmapwithdata(fz_colorspace *colorspace, int x, int y, int w, int h, unsigned char *samples);
-fz_pixmap * fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
-fz_pixmap * fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
+fz_pixmap *fz_newpixmapwithrect(fz_colorspace *, fz_bbox bbox);
+fz_pixmap *fz_newpixmap(fz_colorspace *, int x, int y, int w, int h);
 fz_pixmap *fz_keeppixmap(fz_pixmap *pix);
 void fz_droppixmap(fz_pixmap *pix);
 void fz_clearpixmap(fz_pixmap *pix);
@@ -607,8 +607,8 @@ void fz_clearpixmapwithcolor(fz_pixmap *pix, int value);
 fz_pixmap *fz_alphafromgray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_boundpixmap(fz_pixmap *pix);
 
-fz_pixmap * fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
-fz_pixmap * fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h);
+fz_pixmap *fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
+fz_pixmap *fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h);
 
 fz_error fz_writepnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_writepam(fz_pixmap *pixmap, char *filename, int savealpha);
@@ -678,12 +678,12 @@ struct fz_font_s
 	int *widthtable;
 };
 
-fz_font * fz_newtype3font(char *name, fz_matrix matrix);
+fz_font *fz_newtype3font(char *name, fz_matrix matrix);
 
 fz_error fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index);
 fz_error fz_newfontfromfile(fz_font **fontp, char *path, int index);
 
-fz_font * fz_keepfont(fz_font *font);
+fz_font *fz_keepfont(fz_font *font);
 void fz_dropfont(fz_font *font);
 
 void fz_debugfont(fz_font *font);
@@ -779,7 +779,7 @@ struct fz_text_s
 	fz_textel *els;
 };
 
-fz_text * fz_newtext(fz_font *face, fz_matrix trm, int wmode);
+fz_text *fz_newtext(fz_font *face, fz_matrix trm, int wmode);
 void fz_addtext(fz_text *text, int gid, int ucs, float x, float y);
 void fz_freetext(fz_text *text);
 void fz_debugtext(fz_text*, int indent);
@@ -834,12 +834,12 @@ void fz_paintshade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox
 
 typedef struct fz_glyphcache_s fz_glyphcache;
 
-fz_glyphcache * fz_newglyphcache(void);
-fz_pixmap * fz_renderftglyph(fz_font *font, int cid, fz_matrix trm);
-fz_pixmap * fz_rendert3glyph(fz_font *font, int cid, fz_matrix trm);
-fz_pixmap * fz_renderftstrokedglyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_strokestate *state);
-fz_pixmap * fz_renderglyph(fz_glyphcache*, fz_font*, int, fz_matrix);
-fz_pixmap * fz_renderstrokedglyph(fz_glyphcache*, fz_font*, int, fz_matrix, fz_matrix, fz_strokestate *stroke);
+fz_glyphcache *fz_newglyphcache(void);
+fz_pixmap *fz_renderftglyph(fz_font *font, int cid, fz_matrix trm);
+fz_pixmap *fz_rendert3glyph(fz_font *font, int cid, fz_matrix trm);
+fz_pixmap *fz_renderftstrokedglyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_strokestate *state);
+fz_pixmap *fz_renderglyph(fz_glyphcache*, fz_font*, int, fz_matrix);
+fz_pixmap *fz_renderstrokedglyph(fz_glyphcache*, fz_font*, int, fz_matrix, fz_matrix, fz_strokestate *stroke);
 void fz_freeglyphcache(fz_glyphcache *);
 
 /*
@@ -874,7 +874,7 @@ struct fz_ael_s
 	fz_edge **edges;
 };
 
-fz_gel * fz_newgel(void);
+fz_gel *fz_newgel(void);
 void fz_insertgel(fz_gel *gel, float x0, float y0, float x1, float y1);
 fz_bbox fz_boundgel(fz_gel *gel);
 void fz_resetgel(fz_gel *gel, fz_bbox clip);
@@ -882,7 +882,7 @@ void fz_sortgel(fz_gel *gel);
 void fz_freegel(fz_gel *gel);
 int fz_isrectgel(fz_gel *gel);
 
-fz_ael * fz_newael(void);
+fz_ael *fz_newael(void);
 void fz_freeael(fz_ael *ael);
 
 fz_error fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill,
@@ -968,7 +968,7 @@ struct fz_textspan_s
 	int eol;
 };
 
-fz_textspan * fz_newtextspan(void);
+fz_textspan *fz_newtextspan(void);
 void fz_freetextspan(fz_textspan *line);
 void fz_debugtextspan(fz_textspan *line);
 void fz_debugtextspanxml(fz_textspan *span);
