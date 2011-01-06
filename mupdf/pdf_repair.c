@@ -13,7 +13,7 @@ struct entry
 };
 
 static fz_error
-fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp)
+fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, fz_obj **encrypt, fz_obj **id)
 {
 	fz_error error;
 	pdf_token_e tok;
@@ -37,6 +37,26 @@ fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp)
 		error = pdf_parsedict(&dict, nil, file, buf, cap);
 		if (error)
 			return fz_rethrow(error, "cannot parse object");
+
+		obj = fz_dictgets(dict, "Type");
+		if (fz_isname(obj) && !strcmp(fz_toname(obj), "XRef"))
+		{
+			obj = fz_dictgets(dict, "Encrypt");
+			if (obj)
+			{
+				if (*encrypt)
+					fz_dropobj(*encrypt);
+				*encrypt = fz_keepobj(obj);
+			}
+
+			obj = fz_dictgets(dict, "ID");
+			if (obj)
+			{
+				if (*id)
+					fz_dropobj(*id);
+				*id = fz_keepobj(obj);
+			}
+		}
 
 		obj = fz_dictgets(dict, "Length");
 		if (fz_isint(obj))
@@ -230,20 +250,20 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 		if (tok == PDF_TOBJ)
 		{
-			error = fz_repairobj(xref->file, buf, bufsize, &stmofs, &stmlen);
+			error = fz_repairobj(xref->file, buf, bufsize, &stmofs, &stmlen, &encrypt, &id);
 			if (error)
 			{
 				error = fz_rethrow(error, "cannot parse object (%d %d R)", num, gen);
 				goto cleanup;
 			}
 
+			pdf_logxref("found object: (%d %d R)\n", num, gen);
+
 			if (listlen + 1 == listcap)
 			{
 				listcap = (listcap * 3) / 2;
 				list = fz_realloc(list, listcap * sizeof(struct entry));
 			}
-
-			pdf_logxref("found object: (%d %d R)\n", num, gen);
 
 			list[listlen].num = num;
 			list[listlen].gen = gen;
@@ -265,11 +285,19 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 			obj = fz_dictgets(dict, "Encrypt");
 			if (obj)
+			{
+				if (encrypt)
+					fz_dropobj(encrypt);
 				encrypt = fz_keepobj(obj);
+			}
 
 			obj = fz_dictgets(dict, "ID");
 			if (obj)
+			{
+				if (id)
+					fz_dropobj(id);
 				id = fz_keepobj(obj);
+			}
 
 			fz_dropobj(dict);
 		}
@@ -343,12 +371,26 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 	if (encrypt)
 	{
+		if (fz_isindirect(encrypt))
+		{
+			/* create new reference with non-nil xref pointer */
+			obj = fz_newindirect(fz_tonum(encrypt), fz_togen(encrypt), xref);
+			fz_dropobj(encrypt);
+			encrypt = obj;
+		}
 		fz_dictputs(xref->trailer, "Encrypt", encrypt);
 		fz_dropobj(encrypt);
 	}
 
 	if (id)
 	{
+		if (fz_isindirect(id))
+		{
+			/* create new reference with non-nil xref pointer */
+			obj = fz_newindirect(fz_tonum(id), fz_togen(id), xref);
+			fz_dropobj(id);
+			id = obj;
+		}
 		fz_dictputs(xref->trailer, "ID", id);
 		fz_dropobj(id);
 	}
