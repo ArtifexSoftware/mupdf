@@ -346,6 +346,8 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 				}
 
 				group = fz_dictgets(val, "G");
+				if (!group)
+					return fz_throw("cannot load softmask xobject (%d %d R)", fz_tonum(val), fz_togen(val));
 				error = pdf_loadxobject(&xobj, csi->xref, group);
 				if (error)
 					return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
