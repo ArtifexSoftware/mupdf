@@ -107,22 +107,6 @@ fz_boundpixmap(fz_pixmap *pix)
 	return bbox;
 }
 
-void
-fz_gammapixmap(fz_pixmap *pix, float gamma)
-{
-	unsigned char table[256];
-	int n = pix->w * pix->h * pix->n;
-	unsigned char *p = pix->samples;
-	int i;
-	for (i = 0; i < 256; i++)
-		table[i] = CLAMP(powf(i / 255.0f, gamma) * 255, 0, 255);
-	while (n--)
-	{
-		*p = table[*p];
-		p++;
-	}
-}
-
 fz_pixmap *
 fz_alphafromgray(fz_pixmap *gray, int luminosity)
 {

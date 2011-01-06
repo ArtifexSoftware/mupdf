@@ -314,7 +314,6 @@ void pdf_dropcmap(pdf_cmap *cmap);
 
 void pdf_debugcmap(pdf_cmap *cmap);
 int pdf_getwmode(pdf_cmap *cmap);
-pdf_cmap *pdf_getusecmap(pdf_cmap *cmap);
 void pdf_setwmode(pdf_cmap *cmap, int wmode);
 void pdf_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
 
