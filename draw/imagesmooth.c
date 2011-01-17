@@ -925,7 +925,7 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			/* Scale the next pixel in the column */
 			min = *contrib++;
 			len = *contrib++;
-			min = (src_w-min)*n;
+			min = src_w-min*n;
 			for (j = 0; j < n; j++)
 				tmp[j] = 0;
 			while (len-- > 0)
