@@ -349,7 +349,7 @@ resizecode(pdf_function *func, int newsize)
 	if (newsize >= func->u.p.cap)
 	{
 		func->u.p.cap = func->u.p.cap + 64;
-		func->u.p.code = fz_realloc(func->u.p.code, func->u.p.cap * sizeof(psobj));
+		func->u.p.code = fz_realloc(func->u.p.code, func->u.p.cap, sizeof(psobj));
 	}
 }
 
@@ -1046,7 +1046,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 
 	pdf_logrsrc("samplecount %d\n", samplecount);
 
-	func->u.sa.samples = fz_malloc(samplecount * sizeof(float));
+	func->u.sa.samples = fz_calloc(samplecount, sizeof(float));
 
 	error = pdf_openstream(&stream, xref, num, gen);
 	if (error)
@@ -1322,9 +1322,9 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 
 		pdf_logrsrc("k %d\n", func->u.st.k);
 
-		func->u.st.funcs = fz_malloc(func->u.st.k * sizeof (pdf_function*));
-		func->u.st.bounds = fz_malloc((func->u.st.k - 1) * sizeof (float));
-		func->u.st.encode = fz_malloc(func->u.st.k * 2 * sizeof (float));
+		func->u.st.funcs = fz_calloc(func->u.st.k, sizeof(pdf_function*));
+		func->u.st.bounds = fz_calloc(func->u.st.k - 1, sizeof(float));
+		func->u.st.encode = fz_calloc(func->u.st.k * 2, sizeof(float));
 		funcs = func->u.st.funcs;
 
 		for (i = 0; i < k; ++i)
