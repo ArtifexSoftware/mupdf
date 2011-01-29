@@ -30,11 +30,8 @@ fz_copyarray(fz_obj *obj)
 		fz_warn("assert: not an array (%s)", fz_objkindstr(obj));
 
 	new = fz_newarray(fz_arraylen(obj));
-
 	for (i = 0; i < fz_arraylen(obj); i++)
-	{
 		fz_arraypush(new, fz_arrayget(obj, i));
-	}
 
 	return new;
 }
