@@ -187,6 +187,8 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 	fz_obj *encrypt = nil;
 	fz_obj *id = nil;
+	fz_obj *root = nil;
+	fz_obj *info = nil;
 
 	struct entry *list = nil;
 	int listlen;
@@ -305,6 +307,22 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 				id = fz_keepobj(obj);
 			}
 
+			obj = fz_dictgets(dict, "Root");
+			if (obj)
+			{
+				if (root)
+					fz_dropobj(root);
+				root = fz_keepobj(obj);
+			}
+
+			obj = fz_dictgets(dict, "Info");
+			if (obj)
+			{
+				if (info)
+					fz_dropobj(info);
+				info = fz_keepobj(obj);
+			}
+
 			fz_dropobj(dict);
 		}
 
@@ -369,11 +387,22 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 
 	/* create a repaired trailer, Root will be added later */
 
-	xref->trailer = fz_newdict(4);
+	xref->trailer = fz_newdict(5);
 
 	obj = fz_newint(maxnum + 1);
 	fz_dictputs(xref->trailer, "Size", obj);
 	fz_dropobj(obj);
+
+	if (root)
+	{
+		fz_dictputs(xref->trailer, "Root", root);
+		fz_dropobj(root);
+	}
+	if (info)
+	{
+		fz_dictputs(xref->trailer, "Info", info);
+		fz_dropobj(info);
+	}
 
 	if (encrypt)
 	{
@@ -405,6 +434,10 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 	return fz_okay;
 
 cleanup:
+	if (encrypt) fz_dropobj(encrypt);
+	if (id) fz_dropobj(id);
+	if (root) fz_dropobj(root);
+	if (info) fz_dropobj(info);
 	fz_free(list);
 	return error; /* already rethrown */
 }
