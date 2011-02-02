@@ -930,7 +930,8 @@ pdf_makewidthtable(pdf_fontdesc *fontdesc)
 		{
 			cid = pdf_lookupcmap(fontdesc->encoding, k);
 			gid = pdf_fontcidtogid(fontdesc, cid);
-			font->widthtable[gid] = fontdesc->hmtx[i].w;
+			if (gid >= 0 && gid < font->widthcount)
+				font->widthtable[gid] = fontdesc->hmtx[i].w;
 		}
 	}
 }
