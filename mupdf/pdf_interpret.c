@@ -259,6 +259,7 @@ pdf_runinlineimage(pdf_csi *csi, fz_obj *rdb, fz_stream *file, fz_obj *dict)
 static fz_error
 pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstate)
 {
+	fz_colorspace *colorspace;
 	int i, k;
 
 	pdf_flushtext(csi);
@@ -354,22 +355,20 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 				if (error)
 					return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_tonum(val), fz_togen(val));
 
+				colorspace = xobj->colorspace;
+				if (!colorspace)
+					colorspace = fz_devicegray;
+
 				gstate->softmaskctm = fz_concat(xobj->matrix, gstate->ctm);
 				gstate->softmask = xobj;
-				gstate->softmaskbc[0] = 0;
+				for (k = 0; k < colorspace->n; k++)
+					gstate->softmaskbc[k] = 0;
 
 				bc = fz_dictgets(val, "BC");
 				if (fz_isarray(bc))
 				{
-					fz_colorspace *cs;
-					int i;
-
-					cs = xobj->colorspace;
-					if (!cs)
-						cs = fz_devicegray;
-
-					for (i = 0; i < cs->n; i++)
-						gstate->softmaskbc[i] = fz_toreal(fz_arrayget(bc, i));
+					for (k = 0; k < colorspace->n; k++)
+						gstate->softmaskbc[k] = fz_toreal(fz_arrayget(bc, k));
 				}
 
 				luminosity = fz_dictgets(val, "S");
