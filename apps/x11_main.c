@@ -51,6 +51,7 @@ static Display *xdpy;
 static Atom XA_TARGETS;
 static Atom XA_TIMESTAMP;
 static Atom XA_UTF8_STRING;
+static Atom WM_DELETE_WINDOW;
 static int x11fd;
 static int xscr;
 static Window xwin;
@@ -113,6 +114,7 @@ static void winopen(void)
 	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
 	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);
 	XA_UTF8_STRING = XInternAtom(xdpy, "UTF8_STRING", False);
+	WM_DELETE_WINDOW = XInternAtom(xdpy, "WM_DELETE_WINDOW", False);
 
 	xscr = DefaultScreen(xdpy);
 
@@ -176,6 +178,8 @@ static void winopen(void)
 		XSetClassHint(xdpy, xwin, classhint);
 		XFree(classhint);
 	}
+
+	XSetWMProtocols(xdpy, xwin, &WM_DELETE_WINDOW, 1);
 
 	x11fd = ConnectionNumber(xdpy);
 }
@@ -714,6 +718,11 @@ int main(int argc, char **argv)
 					xevt.xselectionrequest.target,
 					xevt.xselectionrequest.property,
 					xevt.xselectionrequest.time);
+				break;
+
+			case ClientMessage:
+				if (xevt.xclient.format == 33 && xevt.xclient.data.l[0] == WM_DELETE_WINDOW)
+					closing = 1;
 				break;
 			}
 		}
