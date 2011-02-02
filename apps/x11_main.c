@@ -202,6 +202,7 @@ void wincursor(pdfapp_t *app, int curs)
 
 void wintitle(pdfapp_t *app, char *s)
 {
+	XStoreName(xdpy, xwin, s);
 #ifdef X_HAVE_UTF8_STRING
 	Xutf8SetWMProperties(xdpy, xwin, s, s, nil, 0, nil, nil, nil);
 #else
