@@ -18,6 +18,7 @@ fz_newfont(void)
 	font->ftface = nil;
 	font->ftsubstitute = 0;
 	font->fthint = 0;
+	font->ftdata = nil;
 
 	font->t3matrix = fz_identity;
 	font->t3resources = nil;
@@ -70,6 +71,9 @@ fz_dropfont(fz_font *font)
 				fz_warn("freetype finalizing face: %s", ft_errorstring(fterr));
 			fz_finalizefreetype();
 		}
+
+		if (font->ftdata)
+			fz_free(font->ftdata);
 
 		if (font->widthtable)
 			fz_free(font->widthtable);

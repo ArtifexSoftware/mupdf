@@ -162,8 +162,6 @@ pdf_dropfont(pdf_fontdesc *fontdesc)
 	{
 		if (fontdesc->font)
 			fz_dropfont(fontdesc->font);
-		if (fontdesc->buffer)
-			fz_free(fontdesc->buffer);
 		if (fontdesc->encoding)
 			pdf_dropcmap(fontdesc->encoding);
 		if (fontdesc->tottfcmap)
@@ -187,7 +185,6 @@ pdf_newfontdesc(void)
 	fontdesc->refs = 1;
 
 	fontdesc->font = nil;
-	fontdesc->buffer = nil;
 
 	fontdesc->flags = 0;
 	fontdesc->italicangle = 0;
