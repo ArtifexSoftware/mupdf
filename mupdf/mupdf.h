@@ -276,8 +276,10 @@ enum { PDF_CMAP_SINGLE, PDF_CMAP_RANGE, PDF_CMAP_TABLE, PDF_CMAP_MULTI };
 struct pdf_range_s
 {
 	unsigned short low;
-	unsigned short high;
-	unsigned short flag;	/* single, range, table, multi */
+	/* Next, we pack 2 fields into the same unsigned short. Top 14 bits
+	 * are the extent, bottom 2 bits are flags: single, range, table,
+	 * multi */
+	unsigned short extentflags;
 	unsigned short offset;	/* range-delta or table-index */
 };
 
