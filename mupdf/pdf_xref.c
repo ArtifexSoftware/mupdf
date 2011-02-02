@@ -553,6 +553,11 @@ pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 			xref->table = nil;
 			xref->len = 0;
 		}
+		if (xref->trailer)
+		{
+			fz_dropobj(xref->trailer);
+			xref->trailer = nil;
+		}
 		error = pdf_repairxref(xref, xref->scratch, sizeof xref->scratch);
 		if (error)
 		{
