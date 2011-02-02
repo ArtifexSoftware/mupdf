@@ -75,7 +75,7 @@ pdf_readoldtrailer(pdf_xref *xref, char *buf, int cap)
 	char *s;
 	int n;
 	int t;
-	pdf_token_e tok;
+	int tok;
 	int c;
 
 	pdf_logxref("load old xref format trailer\n");
@@ -199,7 +199,7 @@ pdf_readoldxref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 	int ofs, len;
 	char *s;
 	int n;
-	pdf_token_e tok;
+	int tok;
 	int i;
 	int c;
 
@@ -704,7 +704,7 @@ pdf_loadobjstm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 	int first;
 	int count;
 	int i, n;
-	pdf_token_e tok;
+	int tok;
 
 	pdf_logxref("loadobjstm (%d %d R)\n", num, gen);
 

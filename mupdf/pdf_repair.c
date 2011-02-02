@@ -16,7 +16,7 @@ static fz_error
 fz_repairobj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, fz_obj **encrypt, fz_obj **id)
 {
 	fz_error error;
-	pdf_token_e tok;
+	int tok;
 	int stmlen;
 	int len;
 	int n;
@@ -131,7 +131,7 @@ pdf_repairobjstm(pdf_xref *xref, int num, int gen)
 	fz_error error;
 	fz_obj *obj;
 	fz_stream *stm;
-	pdf_token_e tok;
+	int tok;
 	int i, n, count;
 	char buf[256];
 
@@ -197,7 +197,7 @@ pdf_repairxref(pdf_xref *xref, char *buf, int bufsize)
 	int gen = 0;
 	int tmpofs, numofs = 0, genofs = 0;
 	int stmlen, stmofs = 0;
-	pdf_token_e tok;
+	int tok;
 	int next;
 	int i, n;
 

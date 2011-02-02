@@ -1350,7 +1350,7 @@ static fz_error
 pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen)
 {
 	fz_error error;
-	pdf_token_e tok;
+	int tok;
 	int len;
 	fz_obj *obj;
 
