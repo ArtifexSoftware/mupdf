@@ -261,6 +261,8 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 {
 	int i, k;
 
+	pdf_flushtext(csi);
+
 	for (i = 0; i < fz_dictlen(extgstate); i++)
 	{
 		fz_obj *key = fz_dictgetkey(extgstate, i);
