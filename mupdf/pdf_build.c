@@ -464,7 +464,8 @@ pdf_flushtext(pdf_csi *csi)
 
 	if (doclip)
 	{
-		gstate->clipdepth++;
+		if (csi->accumulate < 2)
+			gstate->clipdepth++;
 		csi->dev->cliptext(csi->dev->user, text, gstate->ctm, csi->accumulate);
 		csi->accumulate = 2;
 	}
