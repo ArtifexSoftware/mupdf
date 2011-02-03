@@ -19,6 +19,9 @@ fz_calloc(int count, int size)
 {
 	void *p;
 
+	if (count == 0 || size == 0)
+		return 0;
+
 	if (count > INT_MAX / size)
 	{
 		fprintf(stderr, "fatal error: out of memory (integer overflow)\n");
@@ -38,6 +41,9 @@ void *
 fz_realloc(void *p, int count, int size)
 {
 	void *np;
+
+	if (count == 0 || size == 0)
+		return p;
 
 	if (count > INT_MAX / size)
 	{
