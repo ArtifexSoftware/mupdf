@@ -454,6 +454,9 @@ typedef enum pdf_linkkind_e
 {
 	PDF_LGOTO = 0,
 	PDF_LURI,
+	PDF_LLAUNCH,
+	PDF_LNAMED,
+	PDF_LACTION,
 } pdf_linkkind;
 
 struct pdf_link_s

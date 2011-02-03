@@ -85,6 +85,24 @@ pdf_loadlink(pdf_xref *xref, fz_obj *dict)
 			dest = fz_dictgets(action, "URI");
 			pdf_logpage("action uri %s\n", fz_tostrbuf(dest));
 		}
+		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "Launch"))
+		{
+			kind = PDF_LLAUNCH;
+			dest = fz_dictgets(action, "F");
+			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+		}
+		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "Named"))
+		{
+			kind = PDF_LNAMED;
+			dest = fz_dictgets(action, "N");
+			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+		}
+		else if (fz_isname(obj) && (!strcmp(fz_toname(obj), "GoToR")))
+		{
+			kind = PDF_LACTION;
+			dest = action;
+			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+		}
 		else
 		{
 			pdf_logpage("unhandled link action, ignoring link\n");
@@ -111,7 +129,6 @@ void
 pdf_loadlinks(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
 {
 	pdf_link *link;
-	fz_obj *subtype;
 	fz_obj *obj;
 	int i;
 
@@ -122,16 +139,11 @@ pdf_loadlinks(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
 	for (i = 0; i < fz_arraylen(annots); i++)
 	{
 		obj = fz_arrayget(annots, i);
-
-		subtype = fz_dictgets(obj, "Subtype");
-		if (fz_isname(subtype) && !strcmp(fz_toname(subtype), "Link"))
+		pdf_link *temp = pdf_loadlink(xref, obj);
+		if (temp)
 		{
-			pdf_link *temp = pdf_loadlink(xref, obj);
-			if (temp)
-			{
-				temp->next = link;
-				link = temp;
-			}
+			temp->next = link;
+			link = temp;
 		}
 	}
 
