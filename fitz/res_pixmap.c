@@ -28,7 +28,7 @@ fz_newpixmapwithdata(fz_colorspace *colorspace, int x, int y, int w, int h, unsi
 	}
 	else
 	{
-		pix->samples = fz_malloc(pix->w * pix->h * pix->n);
+		pix->samples = fz_calloc(pix->h, pix->w * pix->n);
 		pix->freesamples = 1;
 	}
 
