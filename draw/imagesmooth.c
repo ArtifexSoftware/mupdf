@@ -1004,21 +1004,21 @@ fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h)
 
 	/* Find the destination bbox, width/height, and sub pixel offset,
 	 * allowing for whether we're flipping or not. */
-        /* Note that the x and y sub pixel offsets here are different, due to
-         * the different way we scale horizontally and vertically. When scaling
-         * rows horizontally, we always read forwards through the source, and
-         * store either forwards or in reverse as required. When scaling
-         * vertically, we always store out forwards, but may feed source rows
-         * in in a different order.
-         *
-         * Consider the image rectange 'r' to which the image is mapped,
-         * and the (possibly) larger rectangle 'R', given by expanding 'r' to
-         * complete pixels.
-         *
-         * x can either be r.xmin-R.xmin or R.xmax-r.xmax depending on whether
-         * the image is x flipped or not. Whatever happens 0 <= x < 1.
-         * y is always r.ymin - R.ymin.
-         */
+	/* Note that the x and y sub pixel offsets here are different, due to
+	 * the different way we scale horizontally and vertically. When scaling
+	 * rows horizontally, we always read forwards through the source, and
+	 * store either forwards or in reverse as required. When scaling
+	 * vertically, we always store out forwards, but may feed source rows
+	 * in in a different order.
+	 *
+	 * Consider the image rectange 'r' to which the image is mapped,
+	 * and the (possibly) larger rectangle 'R', given by expanding 'r' to
+	 * complete pixels.
+	 *
+	 * x can either be r.xmin-R.xmin or R.xmax-r.xmax depending on whether
+	 * the image is x flipped or not. Whatever happens 0 <= x < 1.
+	 * y is always r.ymin - R.ymin.
+	 */
 	flip_x = (w < 0);
 	if (flip_x)
 	{
@@ -1040,8 +1040,8 @@ fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h)
 	if (flip_y)
 	{
 		h = -h;
-                y -= h;
-        }
+		y -= h;
+	}
 	dst_y_int = floor(y);
 	y -= (float)dst_y_int;
 	dst_h_int = (int)ceilf(y + h);
