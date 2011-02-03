@@ -126,6 +126,8 @@ pdf_freecsi(pdf_csi *csi)
 	pdf_dropmaterial(&csi->gstate[0].stroke);
 	if (csi->gstate[0].font)
 		pdf_dropfont(csi->gstate[0].font);
+	if (csi->gstate[0].softmask)
+		pdf_dropxobject(csi->gstate[0].softmask);
 
 	while (csi->gstate[0].clipdepth--)
 		csi->dev->popclip(csi->dev->user);
@@ -163,7 +165,7 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 		if (gstate->softmask)
 		{
 			pdf_xobject *softmask = gstate->softmask;
-			fz_rect bbox = fz_transformrect(gstate->ctm, softmask->bbox);
+			fz_rect bbox = fz_transformrect(gstate->ctm, xobj->bbox);
 
 			gstate->softmask = nil;
 			popmask = 1;
@@ -376,6 +378,14 @@ pdf_runextgstate(pdf_csi *csi, pdf_gstate *gstate, fz_obj *rdb, fz_obj *extgstat
 					gstate->luminosity = 1;
 				else
 					gstate->luminosity = 0;
+			}
+			else if (fz_isname(val) && !strcmp(fz_toname(val), "None"))
+			{
+				if (gstate->softmask)
+				{
+					pdf_dropxobject(gstate->softmask);
+					gstate->softmask = nil;
+				}
 			}
 		}
 
@@ -1386,6 +1396,16 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 				fz_arraypush(csi->array, obj);
 				fz_dropobj(obj);
 			}
+			else if (tok == PDF_TKEYWORD)
+			{
+				/* some producers try to put Tw and Tc commands in the TJ array */
+				fz_warn("ignoring keyword '%s' inside array", buf);
+				if (!strcmp(buf, "Tw") || !strcmp(buf, "Tc"))
+				{
+					if (fz_arraylen(csi->array) > 0)
+						fz_arraydrop(csi->array);
+				}
+			}
 			else if (tok == PDF_TEOF)
 			{
 				return fz_okay;
@@ -1474,7 +1494,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			{
 				error = pdf_runkeyword(csi, rdb, buf);
 				if (error)
-					return fz_rethrow(error, "cannot run keyword '%s'", buf);
+					fz_catch(error, "cannot run keyword '%s'", buf);
 				pdf_clearstack(csi);
 			}
 			break;

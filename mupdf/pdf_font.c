@@ -838,7 +838,7 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 
 	pdf_logfont("load fontdescriptor {\n");
 
-	if (!strchr(basefont, ','))
+	if (!strchr(basefont, ',') || strchr(basefont, '+'))
 		origname = fz_toname(fz_dictgets(dict, "FontName"));
 	else
 		origname = basefont;

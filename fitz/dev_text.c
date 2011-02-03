@@ -98,7 +98,7 @@ fz_addtextchar(fz_textspan **last, fz_font *font, float size, int wmode, int c, 
 		span->size = size;
 	}
 
-	if (span->font != font || span->size != size || span->wmode != wmode)
+	if ((span->font != font || span->size != size || span->wmode != wmode) && c != 32)
 	{
 		span = fz_newtextspan();
 		span->font = fz_keepfont(font);

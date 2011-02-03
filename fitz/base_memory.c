@@ -1,7 +1,5 @@
 #include "fitz.h"
 
-#define INT_MAX 2147483647
-
 void *
 fz_malloc(int size)
 {
@@ -22,7 +20,7 @@ fz_calloc(int count, int size)
 	if (count == 0 || size == 0)
 		return 0;
 
-	if (count > INT_MAX / size)
+	if (count < 0 || size < 0 || count > INT_MAX / size)
 	{
 		fprintf(stderr, "fatal error: out of memory (integer overflow)\n");
 		abort();
@@ -43,9 +41,12 @@ fz_realloc(void *p, int count, int size)
 	void *np;
 
 	if (count == 0 || size == 0)
-		return p;
+	{
+		fz_free(p);
+		return 0;
+	}
 
-	if (count > INT_MAX / size)
+	if (count < 0 || size < 0 || count > INT_MAX / size)
 	{
 		fprintf(stderr, "fatal error: out of memory (integer overflow)\n");
 		abort();
