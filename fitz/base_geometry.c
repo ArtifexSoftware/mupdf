@@ -143,10 +143,10 @@ fz_bbox
 fz_roundrect(fz_rect f)
 {
 	fz_bbox i;
-	i.x0 = floorf(f.x0);
-	i.y0 = floorf(f.y0);
-	i.x1 = ceilf(f.x1);
-	i.y1 = ceilf(f.y1);
+	i.x0 = floorf(f.x0 + 0.001f); /* adjust by 0.001 to compensate for precision errors */
+	i.y0 = floorf(f.y0 + 0.001f);
+	i.x1 = ceilf(f.x1 - 0.001f);
+	i.y1 = ceilf(f.y1 - 0.001f);
 	return i;
 }
 
