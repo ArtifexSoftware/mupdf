@@ -47,7 +47,7 @@ fz_fillbuffer(fz_stream *stm)
 	n = fz_read(stm, stm->bp, stm->ep - stm->bp);
 	if (n < 0)
 		fz_catch(n, "read error; treating as end of file");
-	else
+	else if (n > 0)
 	{
 		stm->rp = stm->bp;
 		stm->wp = stm->bp + n;
