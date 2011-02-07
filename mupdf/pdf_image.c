@@ -308,12 +308,24 @@ pdf_loadjpximage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *dict)
 	obj = fz_dictgets(dict, "ColorSpace");
 	if (obj)
 	{
-		fz_dropcolorspace(img->colorspace);
+		fz_colorspace *original = img->colorspace;
 		img->colorspace = nil;
 
 		error = pdf_loadcolorspace(&img->colorspace, xref, obj);
 		if (error)
+		{
+			fz_dropcolorspace(original);
 			return fz_rethrow(error, "cannot load image colorspace");
+		}
+
+		if (original->n != img->colorspace->n)
+		{
+			fz_warn("jpeg-2000 colorspace (%s) does not match promised colorspace (%s)", original->name, img->colorspace->name);
+			fz_dropcolorspace(img->colorspace);
+			img->colorspace = original;
+		}
+		else
+			fz_dropcolorspace(original);
 
 		if (!strcmp(img->colorspace->name, "Indexed"))
 		{
