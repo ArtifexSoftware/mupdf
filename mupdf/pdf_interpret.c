@@ -142,7 +142,7 @@ pdf_freecsi(pdf_csi *csi)
 }
 
 fz_error
-pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
+pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix transform)
 {
 	fz_error error;
 	pdf_gstate *gstate;
@@ -157,7 +157,8 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 	popmask = 0;
 
 	/* apply xobject's transform matrix */
-	gstate->ctm = fz_concat(xobj->matrix, gstate->ctm);
+	transform = fz_concat(transform, xobj->matrix);
+	gstate->ctm = fz_concat(transform, gstate->ctm);
 
 	/* apply soft mask, create transparency group and reset state */
 	if (xobj->transparency)
@@ -172,7 +173,7 @@ pdf_runxobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj)
 
 			csi->dev->beginmask(csi->dev->user, bbox, gstate->luminosity,
 				softmask->colorspace, gstate->softmaskbc);
-			error = pdf_runxobject(csi, resources, softmask);
+			error = pdf_runxobject(csi, resources, softmask, fz_identity);
 			if (error)
 				return fz_rethrow(error, "cannot run softmask");
 			csi->dev->endmask(csi->dev->user);
@@ -562,7 +563,7 @@ Lsetcolorspace:
 				if (!xobj->resources)
 					xobj->resources = fz_keepobj(rdb);
 
-				error = pdf_runxobject(csi, rdb, xobj);
+				error = pdf_runxobject(csi, rdb, xobj, fz_identity);
 				if (error)
 					return fz_rethrow(error, "cannot draw xobject (%d %d R)", fz_tonum(obj), fz_togen(obj));
 
@@ -1554,7 +1555,7 @@ pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
 			continue;
 
 		csi = pdf_newcsi(xref, dev, ctm);
-		error = pdf_runxobject(csi, page->resources, annot->ap);
+		error = pdf_runxobject(csi, page->resources, annot->ap, annot->matrix);
 		pdf_freecsi(csi);
 		if (error)
 			return fz_rethrow(error, "cannot parse annotation appearance stream");
