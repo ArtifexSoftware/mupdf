@@ -601,7 +601,7 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 #ifdef SMOOTHSCALE
 	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
-	if (dx < image->w && dy < image->h)
+	if (dx < image->w || dy < image->h)
 	{
 		scaled = fz_smoothtransformpixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
 		if (scaled == nil)
@@ -649,7 +649,7 @@ fz_drawfillimagemask(void *user, fz_pixmap *image, fz_matrix ctm,
 #ifdef SMOOTHSCALE
 	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
-	if (dx < image->w && dy < image->h)
+	if (dx < image->w || dy < image->h)
 	{
 		scaled = fz_smoothtransformpixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
 		if (scaled == nil)
@@ -720,7 +720,7 @@ fz_drawclipimagemask(void *user, fz_pixmap *image, fz_matrix ctm)
 #ifdef SMOOTHSCALE
 	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
-	if (dx < image->w && dy < image->h)
+	if (dx < image->w || dy < image->h)
 	{
 		scaled = fz_smoothtransformpixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
 		if (scaled == nil)
