@@ -614,7 +614,10 @@ pdf_openxrefwithstream(pdf_xref **xrefp, fz_stream *file, char *password)
 
 			error = pdf_loadobject(&dict, xref, i, 0);
 			if (error)
-				return fz_rethrow(error, "cannot repair document");
+			{
+				fz_catch(error, "ignoring broken object (%d 0 R)", i);
+				continue;
+			}
 
 			if (!hasroot)
 			{
