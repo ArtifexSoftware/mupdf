@@ -221,25 +221,19 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	return fz_okay;
 }
 
-fz_pixmap *
-fz_renderftglyph(fz_font *font, int gid, fz_matrix trm)
+static fz_matrix
+fz_adjustftglyphwidth(fz_font *font, int gid, fz_matrix trm)
 {
-	FT_Face face = font->ftface;
-	FT_Matrix m;
-	FT_Vector v;
-	FT_Error fterr;
-	fz_pixmap *glyph;
-	int y;
-
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
 	if (font->ftsubstitute && gid < font->widthcount)
 	{
+		FT_Error fterr;
 		int subw;
 		int realw;
 		float scale;
 
 		/* TODO: use FT_Get_Advance */
-		fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
+		fterr = FT_Set_Char_Size(font->ftface, 1000, 1000, 72, 72);
 		if (fterr)
 			fz_warn("freetype setting character size: %s", ft_errorstring(fterr));
 
@@ -255,8 +249,23 @@ fz_renderftglyph(fz_font *font, int gid, fz_matrix trm)
 		else
 			scale = 1;
 
-		trm = fz_concat(fz_scale(scale, 1), trm);
+		return fz_concat(fz_scale(scale, 1), trm);
 	}
+
+	return trm;
+}
+
+fz_pixmap *
+fz_renderftglyph(fz_font *font, int gid, fz_matrix trm)
+{
+	FT_Face face = font->ftface;
+	FT_Matrix m;
+	FT_Vector v;
+	FT_Error fterr;
+	fz_pixmap *glyph;
+	int y;
+
+	trm = fz_adjustftglyphwidth(font, gid, trm);
 
 	/*
 	Freetype mutilates complex glyphs if they are loaded
@@ -353,6 +362,8 @@ fz_renderftstrokedglyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz
 	FT_BitmapGlyph bitmap;
 	fz_pixmap *pix;
 	int y;
+
+	trm = fz_adjustftglyphwidth(font, gid, trm);
 
 	m.xx = trm.a * 64; /* should be 65536 */
 	m.yx = trm.b * 64;
