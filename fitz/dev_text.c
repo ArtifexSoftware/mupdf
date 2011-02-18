@@ -190,7 +190,7 @@ fz_debugtextspanxml(fz_textspan *span)
 			for (k = 0; k < n; k++)
 				putchar(buf[k]);
 		}
-		printf("\" bbox=\"[%d %d %d %d]\">\n",
+		printf("\" bbox=\"%d %d %d %d\" />\n",
 			span->text[i].bbox.x0,
 			span->text[i].bbox.y0,
 			span->text[i].bbox.x1,
