@@ -35,6 +35,19 @@ static char *basefontnames[14][7] =
 	{ "ZapfDingbats", nil }
 };
 
+static int isdynalab(char *name)
+{
+	if (strstr(name, "HuaTian"))
+		return 1;
+	if (strstr(name, "MingLi"))
+		return 1;
+	if ((strstr(name, "DF") == name) || strstr(name, "+DF"))
+		return 1;
+	if ((strstr(name, "DLC") == name) || strstr(name, "+DLC"))
+		return 1;
+	return 0;
+}
+
 static int strcmpignorespace(char *a, char *b)
 {
 	while (1)
@@ -605,10 +618,11 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	/* Check for DynaLab fonts that must use hinting */
 	if (kind == TRUETYPE)
 	{
-		if (FT_IS_TRICKY(face))
+		if (FT_IS_TRICKY(face) || isdynalab(fontdesc->font->name))
+		{
 			fontdesc->font->fthint = 1;
-		if (strstr(collection, "Adobe-"))
-			fontdesc->font->fthint = 1;
+			pdf_logfont("forced hinting for dynalab font\n");
+		}
 	}
 
 	/* Encoding */
