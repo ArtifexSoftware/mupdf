@@ -602,10 +602,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	else
 		fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
-	/* Check for DynaLab fonts */
-	if (FT_IS_TRICKY(face))
-		fontdesc->font->fthint = 1;
-
 	/* Encoding */
 
 	error = fz_okay;
