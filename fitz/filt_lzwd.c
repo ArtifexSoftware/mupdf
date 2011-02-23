@@ -68,10 +68,16 @@ static int
 readlzwd(fz_stream *stm, unsigned char *buf, int len)
 {
 	fz_lzwd *lzw = stm->state;
+	lzw_code *table = lzw->table;
 	unsigned char *p = buf;
 	unsigned char *ep = buf + len;
 	unsigned char *s;
 	int codelen;
+
+	int codebits = lzw->codebits;
+	int code = lzw->code;
+	int oldcode = lzw->oldcode;
+	int nextcode = lzw->nextcode;
 
 	while (lzw->rp < lzw->wp && p < ep)
 		*p++ = *lzw->rp++;
@@ -83,66 +89,65 @@ readlzwd(fz_stream *stm, unsigned char *buf, int len)
 
 		if (fillbits(lzw))
 		{
-			if (lzw->bidx > 32 - lzw->codebits)
+			if (lzw->bidx > 32 - codebits)
 			{
 				lzw->eod = 1;
-				return p - buf;
+				break;
 			}
 		}
 
-		lzw->code = lzw->word >> (32 - lzw->codebits);
-		lzw->code &= (1 << lzw->codebits) - 1;
-		eatbits(lzw, lzw->codebits);
+		code = lzw->word >> (32 - codebits);
+		code &= (1 << codebits) - 1;
+		eatbits(lzw, codebits);
 
-		if (lzw->code == LZW_EOD)
+		if (code == LZW_EOD)
 		{
 			lzw->eod = 1;
-			return p - buf;
+			break;
 		}
 
-		if (lzw->code == LZW_CLEAR)
+		if (code == LZW_CLEAR)
 		{
-			lzw->codebits = MINBITS;
-			lzw->nextcode = LZW_FIRST;
-			lzw->oldcode = -1;
+			codebits = MINBITS;
+			nextcode = LZW_FIRST;
+			oldcode = -1;
 			continue;
 		}
 
 		/* if stream starts without a clear code, oldcode is undefined... */
-		if (lzw->oldcode == -1)
+		if (oldcode == -1)
 		{
-			lzw->oldcode = lzw->code;
-			goto output;
+			oldcode = code;
 		}
-
-		/* add new entry to the code table */
-		lzw->table[lzw->nextcode].prev = lzw->oldcode;
-		lzw->table[lzw->nextcode].firstchar = lzw->table[lzw->oldcode].firstchar;
-		lzw->table[lzw->nextcode].length = lzw->table[lzw->oldcode].length + 1;
-		if (lzw->code < lzw->nextcode)
-			lzw->table[lzw->nextcode].value = lzw->table[lzw->code].firstchar;
-		else if (lzw->code == lzw->nextcode)
-			lzw->table[lzw->nextcode].value = lzw->table[lzw->nextcode].firstchar;
 		else
-			fz_warn("out of range code encountered in lzw decode");
-
-		lzw->nextcode ++;
-
-		if (lzw->nextcode > (1 << lzw->codebits) - lzw->earlychange - 1)
 		{
-			lzw->codebits ++;
-			if (lzw->codebits > MAXBITS)
-				lzw->codebits = MAXBITS;	/* FIXME */
+			/* add new entry to the code table */
+			table[nextcode].prev = oldcode;
+			table[nextcode].firstchar = table[oldcode].firstchar;
+			table[nextcode].length = table[oldcode].length + 1;
+			if (code < nextcode)
+				table[nextcode].value = table[code].firstchar;
+			else if (code == nextcode)
+				table[nextcode].value = table[nextcode].firstchar;
+			else
+				fz_warn("out of range code encountered in lzw decode");
+
+			nextcode ++;
+
+			if (nextcode > (1 << codebits) - lzw->earlychange - 1)
+			{
+				codebits ++;
+				if (codebits > MAXBITS)
+					codebits = MAXBITS;	/* FIXME */
+			}
+
+			oldcode = code;
 		}
-
-		lzw->oldcode = lzw->code;
-
-output:
 
 		/* code maps to a string, copy to output (in reverse...) */
-		if (lzw->code > 255)
+		if (code > 255)
 		{
-			codelen = lzw->table[lzw->code].length;
+			codelen = table[code].length;
 			lzw->rp = lzw->bp;
 			lzw->wp = lzw->bp + codelen;
 
@@ -150,15 +155,15 @@ output:
 
 			s = lzw->wp;
 			do {
-				*(--s) = lzw->table[lzw->code].value;
-				lzw->code = lzw->table[lzw->code].prev;
-			} while (lzw->code >= 0 && s > lzw->bp);
+				*(--s) = table[code].value;
+				code = table[code].prev;
+			} while (code >= 0 && s > lzw->bp);
 		}
 
 		/* ... or just a single character */
 		else
 		{
-			lzw->bp[0] = lzw->code;
+			lzw->bp[0] = code;
 			lzw->rp = lzw->bp;
 			lzw->wp = lzw->bp + 1;
 		}
@@ -167,6 +172,11 @@ output:
 		while (lzw->rp < lzw->wp && p < ep)
 			*p++ = *lzw->rp++;
 	}
+
+	lzw->codebits = codebits;
+	lzw->code = code;
+	lzw->oldcode = oldcode;
+	lzw->nextcode = nextcode;
 
 	return p - buf;
 }
