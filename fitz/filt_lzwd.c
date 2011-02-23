@@ -32,37 +32,16 @@ struct fz_lzwd_s
 
 	int earlychange;
 
-	unsigned int word;		/* bits loaded from data */
-	int bidx;
-
 	int codebits;			/* num bits/code */
 	int code;			/* current code */
 	int oldcode;			/* previously recognized code */
 	int nextcode;			/* next free entry */
+
 	lzw_code table[NUMCODES];
 
 	unsigned char bp[MAXLENGTH];
 	unsigned char *rp, *wp;
 };
-
-static inline void eatbits(fz_lzwd *lzw, int nbits)
-{
-	lzw->word <<= nbits;
-	lzw->bidx += nbits;
-}
-
-static inline int fillbits(fz_lzwd *lzw)
-{
-	while (lzw->bidx >= 8)
-	{
-		int c = fz_readbyte(lzw->chain);
-		if (c == EOF)
-			return EOF;
-		lzw->bidx -= 8;
-		lzw->word |= c << lzw->bidx;
-	}
-	return 0;
-}
 
 static int
 readlzwd(fz_stream *stm, unsigned char *buf, int len)
@@ -87,18 +66,13 @@ readlzwd(fz_stream *stm, unsigned char *buf, int len)
 		if (lzw->eod)
 			return 0;
 
-		if (fillbits(lzw))
-		{
-			if (lzw->bidx > 32 - codebits)
-			{
-				lzw->eod = 1;
-				break;
-			}
-		}
+		code = fz_readbits(lzw->chain, codebits);
 
-		code = lzw->word >> (32 - codebits);
-		code &= (1 << codebits) - 1;
-		eatbits(lzw, codebits);
+		if (fz_peekbyte(lzw->chain) == EOF)
+		{
+			lzw->eod = 1;
+			break;
+		}
 
 		if (code == LZW_EOD)
 		{
@@ -185,13 +159,6 @@ static void
 closelzwd(fz_stream *stm)
 {
 	fz_lzwd *lzw = stm->state;
-	int i;
-
-	/* if we read any extra bytes, try to put them back */
-	i = (32 - lzw->bidx) / 8;
-	while (i--)
-		fz_unreadbyte(lzw->chain);
-
 	fz_close(lzw->chain);
 	fz_free(lzw);
 }
@@ -211,9 +178,6 @@ fz_openlzwd(fz_stream *chain, fz_obj *params)
 	obj = fz_dictgets(params, "EarlyChange");
 	if (obj)
 		lzw->earlychange = !!fz_toint(obj);
-
-	lzw->bidx = 32;
-	lzw->word = 0;
 
 	for (i = 0; i < 256; i++)
 	{
