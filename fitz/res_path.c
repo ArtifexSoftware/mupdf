@@ -19,10 +19,8 @@ fz_clonepath(fz_path *old)
 	fz_path *path;
 
 	path = fz_malloc(sizeof(fz_path));
-	memcpy(path, old, sizeof(fz_path));
-
 	path->len = old->len;
-	path->cap = path->len;
+	path->cap = old->len;
 	path->els = fz_calloc(path->cap, sizeof(fz_pathel));
 	memcpy(path->els, old->els, sizeof(fz_pathel) * path->len);
 
@@ -207,6 +205,7 @@ fz_debugpath(fz_path *path, int indent)
 			break;
 		case FZ_CLOSEPATH:
 			printf("h\n");
+			break;
 		}
 	}
 }
