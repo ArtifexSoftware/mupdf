@@ -82,7 +82,7 @@ endif
 ifneq "$(jpeg_dir)" ""
 
 THIRD_LIBS += $(JPEG_LIB)
-THIRD_INCS += -I$(jpeg_dir)
+THIRD_INCS += -I$(jpeg_dir) -I$(OBJDIR)
 LIBS := $(filter-out -ljpeg, $(LIBS))
 
 # jconfig.h does not exist in the pristine source
@@ -142,7 +142,7 @@ $(JPEG_OBJ): $(OBJDIR)/jconfig.h
 $(JPEG_LIB): $(JPEG_OBJ)
 	 $(AR_CMD)
 $(OBJDIR)/jpeg_%.o: $(jpeg_dir)/%.c
-	$(CC_CMD) -I$(OBJDIR) -Dmain=xxxmain
+	$(CC_CMD) -Dmain=xxxmain
 
 endif
 
