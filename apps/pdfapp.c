@@ -205,6 +205,8 @@ void pdfapp_close(pdfapp_t *app)
 		pdf_freexref(app->xref);
 		app->xref = nil;
 	}
+
+	fz_flushwarnings();
 }
 
 static fz_matrix pdfapp_viewctm(pdfapp_t *app)
@@ -339,6 +341,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		wincursor(app, ARROW);
 	}
+
+	fz_flushwarnings();
 }
 
 static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)

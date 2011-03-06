@@ -238,6 +238,8 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		printf("\n");
 
 	pdf_agestore(xref->store, 3);
+
+	fz_flushwarnings();
 }
 
 static void drawrange(pdf_xref *xref, char *range)
@@ -373,6 +375,8 @@ int main(int argc, char **argv)
 	}
 
 	fz_freeglyphcache(glyphcache);
+
+	fz_flushwarnings();
 
 	return 0;
 }

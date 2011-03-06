@@ -113,6 +113,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 typedef int fz_error;
 
 void fz_warn(char *fmt, ...) __printflike(1, 2);
+void fz_flushwarnings(void);
 
 fz_error fz_throwimp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
 fz_error fz_rethrowimp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
