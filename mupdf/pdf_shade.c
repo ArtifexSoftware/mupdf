@@ -670,7 +670,7 @@ pdf_loadtype4shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	else
 		ncomp = shade->cs->n;
 
-	while (fz_peekbyte(stream) != EOF)
+	while (!fz_iseofbits(stream))
 	{
 		flag = fz_readbits(stream, p.bpflag);
 		vd.x = readsample(stream, p.bpcoord, p.x0, p.x1);
@@ -745,7 +745,7 @@ pdf_loadtype5shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 	buf = fz_calloc(p.vprow, sizeof(struct vertex));
 	first = 1;
 
-	while (fz_peekbyte(stream) != EOF)
+	while (!fz_iseofbits(stream))
 	{
 		for (i = 0; i < p.vprow; i++)
 		{
@@ -800,7 +800,7 @@ pdf_loadtype6shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	hasprevpatch = 0;
 
-	while (fz_peekbyte(stream) != EOF)
+	while (!fz_iseofbits(stream))
 	{
 		float c[4][FZ_MAXCOLORS];
 		fz_point v[12];
@@ -925,7 +925,7 @@ pdf_loadtype7shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 
 	hasprevpatch = 0;
 
-	while (fz_peekbyte(stream) != EOF)
+	while (!fz_iseofbits(stream))
 	{
 		float c[4][FZ_MAXCOLORS];
 		fz_point v[16];

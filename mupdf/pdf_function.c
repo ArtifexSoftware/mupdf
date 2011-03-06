@@ -1058,7 +1058,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 		unsigned int x;
 		float s;
 
-		if (fz_peekbyte(stream) == EOF)
+		if (fz_iseofbits(stream))
 		{
 			fz_close(stream);
 			return fz_throw("truncated sample stream");
