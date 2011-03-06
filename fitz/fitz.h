@@ -125,6 +125,10 @@ void fz_catchimpx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 
 #define fz_okay ((fz_error)0)
 
+/* extract the last error stack trace */
+int fz_geterrorcount(void);
+char *fz_geterrorline(int n);
+
 /*
  * Basic runtime and utility functions
  */
