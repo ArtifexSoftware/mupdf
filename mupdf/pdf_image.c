@@ -4,6 +4,8 @@
 /* TODO: store JPEG compressed samples */
 /* TODO: store flate compressed samples */
 
+static fz_error pdf_loadjpximage(fz_pixmap **imgp, pdf_xref *xref, fz_obj *dict);
+
 static void
 pdf_maskcolorkey(fz_pixmap *pix, int n, int *colorkey)
 {
@@ -45,6 +47,29 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 	int stride;
 	unsigned char *samples;
 	int i, len;
+
+	/* special case for JPEG2000 images */
+	if (pdf_isjpximage(dict))
+	{
+		tile = nil;
+		error = pdf_loadjpximage(&tile, xref, dict);
+		if (error)
+			return fz_rethrow(error, "cannot load jpx image");
+		if (forcemask)
+		{
+			if (tile->n != 2)
+			{
+				fz_droppixmap(tile);
+				return fz_throw("softmask must be grayscale");
+			}
+			mask = fz_alphafromgray(tile, 1);
+			fz_droppixmap(tile);
+			*imgp = mask;
+			return fz_okay;
+		}
+		*imgp = tile;
+		return fz_okay;
+	}
 
 	w = fz_toint(fz_dictgetsa(dict, "Width", "W"));
 	h = fz_toint(fz_dictgetsa(dict, "Height", "H"));
@@ -159,7 +184,7 @@ pdf_loadimageimp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz
 			fz_dropcolorspace(colorspace);
 		if (mask)
 			fz_droppixmap(mask);
-		return fz_rethrow(n, "cannot read image data");
+		return fz_rethrow(len, "cannot read image data");
 	}
 
 	/* Make sure we read the EOF marker (for inline images only) */
@@ -354,19 +379,9 @@ pdf_loadimage(fz_pixmap **pixp, pdf_xref *xref, fz_obj *dict)
 
 	pdf_logimage("load image (%d 0 R) {\n", fz_tonum(dict));
 
-	/* special case for JPEG2000 images */
-	if (pdf_isjpximage(dict))
-	{
-		error = pdf_loadjpximage(pixp, xref, dict);
-		if (error)
-			return fz_rethrow(error, "cannot load jpx image (%d 0 R)", fz_tonum(dict));
-	}
-	else
-	{
-		error = pdf_loadimageimp(pixp, xref, nil, dict, nil, 0);
-		if (error)
-			return fz_rethrow(error, "cannot load image (%d 0 R)", fz_tonum(dict));
-	}
+	error = pdf_loadimageimp(pixp, xref, nil, dict, nil, 0);
+	if (error)
+		return fz_rethrow(error, "cannot load image (%d 0 R)", fz_tonum(dict));
 
 	pdf_storeitem(xref->store, fz_keeppixmap, fz_droppixmap, dict, *pixp);
 
