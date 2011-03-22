@@ -1,19 +1,5 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* XPS interpreter - resource functions */
-
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 static xps_item_t *
 xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name, char **urip)
@@ -82,21 +68,21 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
 	part = xps_read_part(ctx, part_name);
 	if (!part)
 	{
-		return gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
+		return fz_throw("cannot find remote resource part '%s'", part_name);
 	}
 
 	xml = xps_parse_xml(ctx, part->data, part->size);
 	if (!xml)
 	{
 		xps_free_part(ctx, part);
-		return gs_rethrow(-1, "cannot parse xml");
+		return fz_rethrow(-1, "cannot parse xml");
 	}
 
 	if (strcmp(xps_tag(xml), "ResourceDictionary"))
 	{
 		xps_free_item(ctx, xml);
 		xps_free_part(ctx, part);
-		return gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
+		return fz_throw("expected ResourceDictionary element (found %s)", xps_tag(xml));
 	}
 
 	xps_strlcpy(part_uri, part_name, sizeof part_uri);
@@ -109,7 +95,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
 	{
 		xps_free_item(ctx, xml);
 		xps_free_part(ctx, part);
-		return gs_rethrow1(code, "cannot parse remote resource dictionary: %s", part_uri);
+		return fz_rethrow(code, "cannot parse remote resource dictionary: %s", part_uri);
 	}
 
 	dict->base_xml = xml; /* pass on ownership */
@@ -117,7 +103,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
 	xps_free_part(ctx, part);
 
 	*dictp = dict;
-	return gs_okay;
+	return fz_okay;
 }
 
 int
@@ -135,8 +121,8 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 	{
 		code = xps_parse_remote_resource_dictionary(ctx, dictp, base_uri, source);
 		if (code)
-			return gs_rethrow(code, "cannot parse remote resource dictionary");
-		return gs_okay;
+			return fz_rethrow(code, "cannot parse remote resource dictionary");
+		return fz_okay;
 	}
 
 	head = NULL;
@@ -149,7 +135,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 		{
 			entry = xps_alloc(ctx, sizeof(xps_resource_t));
 			if (!entry)
-				return gs_throw(-1, "cannot allocate resource entry");
+				return fz_throw("cannot allocate resource entry");
 			entry->name = key;
 			entry->base_uri = NULL;
 			entry->base_xml = NULL;
@@ -166,7 +152,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 	}
 
 	*dictp = head;
-	return gs_okay;
+	return fz_okay;
 }
 
 void
@@ -191,13 +177,13 @@ xps_debug_resource_dictionary(xps_resource_t *dict)
 	while (dict)
 	{
 		if (dict->base_uri)
-			dprintf1("URI = '%s'\n", dict->base_uri);
-		dprintf2("KEY = '%s' VAL = %p\n", dict->name, dict->data);
+			printf("URI = '%s'\n", dict->base_uri);
+		printf("KEY = '%s' VAL = %p\n", dict->name, dict->data);
 		if (dict->parent)
 		{
-			dputs("PARENT = {\n");
+			printf("PARENT = {\n");
 			xps_debug_resource_dictionary(dict->parent);
-			dputs("}\n");
+			printf("}\n");
 		}
 		dict = dict->next;
 	}

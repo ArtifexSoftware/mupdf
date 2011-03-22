@@ -1,56 +1,37 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* XPS interpreter - common parse functions */
-
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 int
-xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
+xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
 	if (!strcmp(xps_tag(node), "SolidColorBrush"))
-		return xps_parse_solid_color_brush(ctx, base_uri, dict, node);
+		return xps_parse_solid_color_brush(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "ImageBrush"))
-	{
-		int code = xps_parse_image_brush(ctx, base_uri, dict, node);
-		if (code)
-			gs_catch(code, "ignoring error in image brush");
-		return gs_okay;
-	}
+		return xps_parse_image_brush(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "VisualBrush"))
-		return xps_parse_visual_brush(ctx, base_uri, dict, node);
+		return xps_parse_visual_brush(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "LinearGradientBrush"))
-		return xps_parse_linear_gradient_brush(ctx, base_uri, dict, node);
+		return xps_parse_linear_gradient_brush(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "RadialGradientBrush"))
-		return xps_parse_radial_gradient_brush(ctx, base_uri, dict, node);
-	return gs_throw1(-1, "unknown brush tag: %s", xps_tag(node));
+		return xps_parse_radial_gradient_brush(ctx, ctm, base_uri, dict, node);
+	return fz_throw("unknown brush tag: %s", xps_tag(node));
 }
 
 int
-xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
+xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
 	if (!strcmp(xps_tag(node), "Path"))
-		return xps_parse_path(ctx, base_uri, dict, node);
+		return xps_parse_path(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "Glyphs"))
-		return xps_parse_glyphs(ctx, base_uri, dict, node);
+		return xps_parse_glyphs(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "Canvas"))
-		return xps_parse_canvas(ctx, base_uri, dict, node);
+		return xps_parse_canvas(ctx, ctm, base_uri, dict, node);
 	/* skip unknown tags (like Foo.Resources and similar) */
 	return 0;
 }
 
 void
-xps_parse_render_transform(xps_context_t *ctx, char *transform, gs_matrix *matrix)
+xps_parse_render_transform(xps_context_t *ctx, char *transform, fz_matrix *matrix)
 {
 	float args[6];
 	char *s = transform;
@@ -69,17 +50,17 @@ xps_parse_render_transform(xps_context_t *ctx, char *transform, gs_matrix *matri
 			s++;
 	}
 
-	matrix->xx = args[0]; matrix->xy = args[1];
-	matrix->yx = args[2]; matrix->yy = args[3];
-	matrix->tx = args[4]; matrix->ty = args[5];
+	matrix->a = args[0]; matrix->b = args[1];
+	matrix->c = args[2]; matrix->d = args[3];
+	matrix->e = args[4]; matrix->f = args[5];
 }
 
 void
-xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix)
+xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, fz_matrix *matrix)
 {
 	char *transform;
 
-	gs_make_identity(matrix);
+	*matrix = fz_identity;
 
 	if (!strcmp(xps_tag(root), "MatrixTransform"))
 	{
@@ -90,7 +71,7 @@ xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matr
 }
 
 void
-xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect)
+xps_parse_rectangle(xps_context_t *ctx, char *text, fz_rect *rect)
 {
 	float args[4];
 	char *s = text;
@@ -108,8 +89,8 @@ xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect)
 			s++;
 	}
 
-	rect->p.x = args[0];
-	rect->p.y = args[1];
-	rect->q.x = args[0] + args[2];
-	rect->q.y = args[1] + args[3];
+	rect->x0 = args[0];
+	rect->y0 = args[1];
+	rect->x1 = args[0] + args[2];
+	rect->y1 = args[1] + args[3];
 }

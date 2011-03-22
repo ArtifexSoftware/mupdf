@@ -1,19 +1,5 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* XPS interpreter - document parsing */
-
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 #include <expat.h>
 
@@ -50,17 +36,17 @@ xps_debug_fixdocseq(xps_context_t *ctx)
 	xps_page_t *page = ctx->first_page;
 
 	if (ctx->start_part)
-		dprintf1("start part %s\n", ctx->start_part);
+		printf("start part %s\n", ctx->start_part);
 
 	while (fixdoc)
 	{
-		dprintf1("fixdoc %s\n", fixdoc->name);
+		printf("fixdoc %s\n", fixdoc->name);
 		fixdoc = fixdoc->next;
 	}
 
 	while (page)
 	{
-		dprintf3("page %s w=%d h=%d\n", page->name, page->width, page->height);
+		printf("page %s w=%d h=%d\n", page->name, page->width, page->height);
 		page = page->next;
 	}
 }
@@ -74,8 +60,6 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
 	for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 		if (!strcmp(fixdoc->name, name))
 			return;
-
-	if_debug1('|', "doc: adding fixdoc %s\n", name);
 
 	fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
 	fixdoc->name = xps_strdup(ctx, name);
@@ -118,12 +102,11 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 		if (!strcmp(page->name, name))
 			return;
 
-	if_debug1('|', "doc: adding page %s\n", name);
-
 	page = xps_alloc(ctx, sizeof(xps_page_t));
 	page->name = xps_strdup(ctx, name);
 	page->width = width;
 	page->height = height;
+	page->root = NULL;
 	page->next = NULL;
 
 	if (!ctx->first_page)
@@ -257,7 +240,7 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
 
 	xp = XML_ParserCreate(NULL);
 	if (!xp)
-		return gs_throw(-1, "cannot create XML parser");
+		return fz_throw("cannot create XML parser");
 
 	XML_SetUserData(xp, ctx);
 	XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
@@ -271,7 +254,7 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
 	ctx->part_uri = NULL;
 
 	if (code == 0)
-		return gs_throw1(-1, "cannot parse XML in part: %s", part->name);
+		return fz_throw("cannot parse XML in part: %s", part->name);
 
 	return 0;
 }

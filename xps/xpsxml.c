@@ -1,19 +1,7 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
 /* Simple XML document object model on top of Expat. */
 
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 #include <expat.h>
 
@@ -87,7 +75,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 
 	if (!name)
 	{
-		dprintf1("unknown namespace: %s\n", ns_name);
+		fz_warn("unknown namespace: %s", ns_name);
 		name = ns_name;
 	}
 
@@ -214,7 +202,7 @@ on_text(void *zp, char *buf, int len)
 static xps_item_t *
 xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
 {
-	gs_warn("XPS document uses markup compatibility tags");
+	fz_warn("XPS document uses markup compatibility tags");
 	return root;
 }
 
@@ -234,7 +222,7 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
 	xp = XML_ParserCreateNS(NULL, ' ');
 	if (!xp)
 	{
-		gs_throw(-1, "xml error: could not create expat parser");
+		fz_throw("xml error: could not create expat parser");
 		return NULL;
 	}
 
@@ -250,7 +238,7 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
 		if (parser.root)
 			xps_free_item(ctx, parser.root);
 		XML_ParserFree(xp);
-		gs_throw1(-1, "xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
+		fz_throw("xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
 		return NULL;
 	}
 

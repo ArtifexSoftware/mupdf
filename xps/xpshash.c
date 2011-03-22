@@ -1,16 +1,3 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
 /* Linear probe hash table.
  *
  * Simple hashtable with open adressing linear probe.
@@ -18,7 +5,8 @@
  * Does not support deleting entries.
  */
 
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 static const unsigned primes[] =
 {
@@ -67,7 +55,7 @@ xps_hash_new(xps_context_t *ctx)
 	table = xps_alloc(ctx, sizeof(xps_hash_table_t));
 	if (!table)
 	{
-		gs_throw(-1, "out of memory: hash table struct");
+		fz_throw("out of memory: hash table struct");
 		return NULL;
 	}
 
@@ -78,7 +66,7 @@ xps_hash_new(xps_context_t *ctx)
 	if (!table->entries)
 	{
 		xps_free(ctx, table);
-		gs_throw(-1, "out of memory: hash table entries array");
+		fz_throw("out of memory: hash table entries array");
 		return NULL;
 	}
 
@@ -108,7 +96,7 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 	old_entries = table->entries;
 	new_entries = xps_alloc(ctx, sizeof(xps_hash_entry_t) * new_size);
 	if (!new_entries)
-		return gs_throw(-1, "out of memory: hash table entries array");
+		return fz_throw("out of memory: hash table entries array");
 
 	table->size = new_size;
 	table->entries = new_entries;
@@ -173,7 +161,7 @@ xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *va
 	if (table->load > table->size * 8 / 10)
 	{
 		if (xps_hash_double(ctx, table) < 0)
-			return gs_rethrow(-1, "cannot grow hash table");
+			return fz_rethrow(-1, "cannot grow hash table");
 	}
 
 	entries = table->entries;

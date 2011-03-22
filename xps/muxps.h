@@ -1,88 +1,14 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
+#ifndef _MUXPS_H_
+#define _MUXPS_H_
 
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* combined internal header for the XPS interpreter */
-
-#include "memory_.h"
-#include "math_.h"
-
-#include <stdlib.h>
-#include <ctype.h> /* for toupper() */
-
-#include "gp.h"
-
-#include "gsgc.h"
-#include "gstypes.h"
-#include "gsstate.h"
-#include "gsmatrix.h"
-#include "gscoord.h"
-#include "gsmemory.h"
-#include "gsparam.h"
-#include "gsdevice.h"
-#include "scommon.h"
-#include "gdebug.h"
-#include "gserror.h"
-#include "gserrors.h"
-#include "gspaint.h"
-#include "gspath.h"
-#include "gsimage.h"
-#include "gscspace.h"
-#include "gsptype1.h"
-#include "gscolor2.h"
-#include "gscolor3.h"
-#include "gsutil.h"
-#include "gsicc.h"
-
-#include "gstrans.h"
-
-#include "gxpath.h"		/* gsshade.h depends on it */
-#include "gxfixed.h"	/* gsshade.h depends on it */
-#include "gxmatrix.h"	/* gxtype1.h depends on it */
-#include "gsshade.h"
-#include "gsfunc.h"
-#include "gsfunc3.h"	/* we use stitching and exponential interp */
-
-#include "gxfont.h"
-#include "gxchar.h"
-#include "gxcolor2.h" /* Required for definition of gs_pattern1_instance_t */
-#include "gxtype1.h"
-#include "gxfont1.h"
-#include "gxfont42.h"
-#include "gxfcache.h"
-#include "gxistate.h"
-
-#include "gzstate.h"
-#include "gzpath.h"
-#include "gzcpath.h"
-
-#include "gsicc_manage.h"
-#include "gscms.h"
-#include "gsicc_cache.h"
-
-#include "zlib.h"
-
-#ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#ifndef _FITZ_H_
+#error "fitz.h must be included before muxps.h"
 #endif
-#ifndef MAX
-#define MAX(a,b) ((a) < (b) ? (b) : (a))
-#endif
-#ifndef ABS
-#define ABS(a) ((a) < 0 ? -(a) : (a))
-#endif
+
+typedef unsigned char byte;
 
 /*
- * XPS and ZIP contants.
+ * XPS and ZIP constants.
  */
 
 typedef struct xps_context_s xps_context_t;
@@ -103,16 +29,10 @@ typedef struct xps_context_s xps_context_t;
  * Memory, and string functions.
  */
 
-void * xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func);
-
-#define xps_alloc(ctx, size) \
-	((void*)gs_alloc_bytes(ctx->memory, size, __func__))
-#define xps_realloc(ctx, ptr, size) \
-	xps_realloc_imp(ctx, ptr, size, __func__)
-#define xps_strdup(ctx, str) \
-	xps_strdup_imp(ctx, str, __func__)
-#define xps_free(ctx, ptr) \
-	gs_free_object(ctx->memory, ptr, __func__)
+#define xps_alloc(ctx, size) fz_malloc(size)
+#define xps_realloc(ctx, ptr, size) fz_realloc(ptr, size, 1)
+#define xps_strdup(ctx, str) fz_strdup(str)
+#define xps_free(ctx, ptr) fz_free(ptr)
 
 size_t xps_strlcpy(char *destination, const char *source, size_t size);
 size_t xps_strlcat(char *destination, const char *source, size_t size);
@@ -172,6 +92,7 @@ struct xps_page_s
 	char *name;
 	int width;
 	int height;
+	struct xps_item_s *root;
 	xps_page_t *next;
 };
 
@@ -193,14 +114,13 @@ struct xps_image_s
 	int width;
 	int height;
 	int stride;
-	gs_color_space *colorspace;
+	fz_colorspace *colorspace;
 	int comps;
 	int hasalpha; /* chunky alpha */
 	int bits;
 	int xres;
 	int yres;
 	byte *samples;
-	byte *alpha; /* isolated alpha plane */
 	byte *profile;
 	int profilesize;
 };
@@ -220,48 +140,19 @@ void xps_free_image(xps_context_t *ctx, xps_image_t *image);
  * Fonts.
  */
 
-typedef struct xps_font_s xps_font_t;
 typedef struct xps_glyph_metrics_s xps_glyph_metrics_t;
-
-struct xps_font_s
-{
-	byte *data;
-	int length;
-	gs_font *font;
-
-	int subfontid;
-	int cmaptable;
-	int cmapsubcount;
-	int cmapsubtable;
-	int usepua;
-
-	/* these are for CFF opentypes only */
-	byte *cffdata;
-	byte *cffend;
-	byte *gsubrs;
-	byte *subrs;
-	byte *charstrings;
-};
 
 struct xps_glyph_metrics_s
 {
 	float hadv, vadv, vorg;
 };
 
-xps_font_t *xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index);
-void xps_free_font(xps_context_t *ctx, xps_font_t *font);
+int xps_count_font_encodings(fz_font *font);
+void xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid);
+void xps_select_font_encoding(fz_font *font, int idx);
+int xps_encode_font_char(fz_font *font, int key);
 
-int xps_count_font_encodings(xps_font_t *font);
-void xps_identify_font_encoding(xps_font_t *font, int idx, int *pid, int *eid);
-void xps_select_font_encoding(xps_font_t *font, int idx);
-int xps_encode_font_char(xps_font_t *font, int key);
-
-void xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx);
-
-int xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp);
-void xps_load_sfnt_name(xps_font_t *font, char *namep);
-int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
-int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
+void xps_measure_font_glyph(xps_context_t *ctx, fz_font *font, int gid, xps_glyph_metrics_t *mtx);
 
 void xps_debug_path(xps_context_t *ctx);
 
@@ -269,9 +160,9 @@ void xps_debug_path(xps_context_t *ctx);
  * Colorspaces and colors.
  */
 
-gs_color_space *xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profile);
-void xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
-void xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);
+fz_colorspace *xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profile);
+void xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
+void xps_set_color(xps_context_t *ctx, fz_colorspace *colorspace, float *samples);
 
 /*
  * XML document model
@@ -313,33 +204,34 @@ void xps_debug_resource_dictionary(xps_resource_t *dict);
  * Fixed page/graphics parsing.
  */
 
-int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
-int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_glyphs(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_visual_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_linear_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_radial_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_load_fixed_page(xps_context_t *ctx, xps_page_t *page);
+int xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page);
+int xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_linear_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_radial_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-int xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root, int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*), void *user);
+int xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root, int (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user);
 
-void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, gs_matrix *matrix);
-void xps_parse_render_transform(xps_context_t *ctx, char *text, gs_matrix *matrix);
-void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
+void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, fz_matrix *matrix);
+void xps_parse_render_transform(xps_context_t *ctx, char *text, fz_matrix *matrix);
+void xps_parse_rectangle(xps_context_t *ctx, char *text, fz_rect *rect);
 void xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 void xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking);
 
-int xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
+int xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 void xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 
-int xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+int xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-void xps_clip(xps_context_t *ctx);
-void xps_fill(xps_context_t *ctx);
-void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
+void xps_fill(xps_context_t *ctx, fz_matrix ctm);
+void xps_clip(xps_context_t *ctx, fz_matrix ctm);
+void xps_bounds_in_user_space(xps_context_t *ctx, fz_rect *user);
 
 int xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
@@ -361,16 +253,6 @@ struct xps_entry_s
 
 struct xps_context_s
 {
-	void *instance;
-	gs_memory_t *memory;
-	gs_state *pgs;
-	gs_font_dir *fontdir;
-
-	gs_color_space *gray;
-	gs_color_space *srgb;
-	gs_color_space *scrgb;
-	gs_color_space *cmyk;
-
 	char *directory;
 	FILE *file;
 	int zip_count;
@@ -404,9 +286,24 @@ struct xps_context_s
 	 * 1=nonzero, 0=evenodd
 	 */
 	int fill_rule;
+
+	/* Current path being accumulated */
+	fz_path *path;
+
+	/* Current color */
+	fz_colorspace *colorspace;
+	float color[8];
+	float alpha;
+
+	/* Current device */
+	fz_device *dev;
 };
 
-int xps_process_file(xps_context_t *ctx, char *filename);
+int xps_read_and_process_page_part(xps_context_t *ctx, fz_matrix ctm, char *name);
+int xps_open_file(xps_context_t *ctx, char *filename);
+int xps_count_pages(xps_context_t *ctx);
+xps_page_t *xps_load_page(xps_context_t *ctx, int number);
+xps_context_t *xps_new_context(void);
+int xps_free_context(xps_context_t *ctx);
 
-/* end of page device callback foo */
-int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
+#endif

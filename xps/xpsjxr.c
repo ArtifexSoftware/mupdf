@@ -1,19 +1,9 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
 /* JPEG-XR (formerly HD-Photo (formerly Windows Media Photo)) support */
 
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
+
+#ifdef HAVE_JPEGXR
 
 #ifdef _MSC_VER
 #undef _MSC_VER
@@ -257,3 +247,19 @@ xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
 {
 	return 1;
 }
+
+#else
+
+int
+xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
+{
+	return fz_throw("JPEG-XR codec is not available");
+}
+
+int
+xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
+{
+	return 0;
+}
+
+#endif

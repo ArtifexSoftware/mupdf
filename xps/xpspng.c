@@ -1,29 +1,7 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
+#include "fitz.h"
+#include "muxps.h"
 
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* XPS interpreter - PNG image support */
-
-#include "ghostxps.h"
-
-#include "stream.h"
-#include "strimpl.h"
-#include "gsstate.h"
-
-/* silence a warning where #if SHARE_LIBPNG is used when it's undefined */
-#ifndef SHARE_LIBPNG
-#define SHARE_LIBPNG 0
-#endif
-#include "png_.h"
+#include "png.h"
 
 /*
  * PNG using libpng directly (no gs wrappers)
@@ -48,15 +26,13 @@ xps_png_read(png_structp png, png_bytep data, png_size_t length)
 static png_voidp
 xps_png_malloc(png_structp png, png_size_t size)
 {
-	gs_memory_t *mem = png_get_mem_ptr(png);
-	return gs_alloc_bytes(mem, size, "libpng");
+	return fz_malloc(size);
 }
 
 static void
 xps_png_free(png_structp png, png_voidp ptr)
 {
-	gs_memory_t *mem = png_get_mem_ptr(png);
-	gs_free_object(mem, ptr, "libpng");
+	fz_free(ptr);
 }
 
 /* This only determines if we have an alpha value */
@@ -77,15 +53,15 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 
 	png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
 			NULL, NULL, NULL,
-			ctx->memory, xps_png_malloc, xps_png_free);
+			ctx, xps_png_malloc, xps_png_free);
 	if (!png) {
-		gs_warn("png_create_read_struct");
+		fz_warn("png_create_read_struct");
 		return 0;
 	}
 
 	info = png_create_info_struct(png);
 	if (!info) {
-		gs_warn("png_create_info_struct");
+		fz_warn("png_create_info_struct");
 		return 0;
 	}
 
@@ -99,7 +75,7 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 	if (setjmp(png_jmpbuf(png)))
 	{
 		png_destroy_read_struct(&png, &info, NULL);
-		gs_warn("png reading failed");
+		fz_warn("png reading failed");
 		return 0;
 	}
 
@@ -123,7 +99,7 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 		break;
 
 	default:
-		gs_warn("cannot handle this png color type");
+		fz_warn("cannot handle this png color type");
 		has_alpha = 0;
 		break;
 	}
@@ -156,13 +132,13 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 
 	png = png_create_read_struct_2(PNG_LIBPNG_VER_STRING,
 			NULL, NULL, NULL,
-			ctx->memory, xps_png_malloc, xps_png_free);
+			ctx, xps_png_malloc, xps_png_free);
 	if (!png)
-		return gs_throw(-1, "png_create_read_struct");
+		return fz_throw("png_create_read_struct");
 
 	info = png_create_info_struct(png);
 	if (!info)
-		return gs_throw(-1, "png_create_info_struct");
+		return fz_throw("png_create_info_struct");
 
 	png_set_read_fn(png, &io, xps_png_read);
 	png_set_crc_action(png, PNG_CRC_WARN_USE, PNG_CRC_WARN_USE);
@@ -174,7 +150,7 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 	if (setjmp(png_jmpbuf(png)))
 	{
 		png_destroy_read_struct(&png, &info, NULL);
-		return gs_throw(-1, "png reading failed");
+		return fz_throw("png reading failed");
 	}
 
 	/*
@@ -225,27 +201,27 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 	switch (png_get_color_type(png, info))
 	{
 	case PNG_COLOR_TYPE_GRAY:
-		image->colorspace = ctx->gray;
+		image->colorspace = fz_devicegray;
 		image->hasalpha = 0;
 		break;
 
 	case PNG_COLOR_TYPE_RGB:
-		image->colorspace = ctx->srgb;
+		image->colorspace = fz_devicergb;
 		image->hasalpha = 0;
 		break;
 
 	case PNG_COLOR_TYPE_GRAY_ALPHA:
-		image->colorspace = ctx->gray;
+		image->colorspace = fz_devicegray;
 		image->hasalpha = 1;
 		break;
 
 	case PNG_COLOR_TYPE_RGB_ALPHA:
-		image->colorspace = ctx->srgb;
+		image->colorspace = fz_devicergb;
 		image->hasalpha = 1;
 		break;
 
 	default:
-		return gs_throw(-1, "cannot handle this png color type");
+		return fz_throw("cannot handle this png color type");
 	}
 
 	/*
@@ -289,5 +265,5 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 
 	png_destroy_read_struct(&png, &info, NULL);
 
-	return gs_okay;
+	return fz_okay;
 }

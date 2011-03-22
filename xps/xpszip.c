@@ -1,30 +1,7 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
+#include "fitz.h"
+#include "muxps.h"
 
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
-/* XPS interpreter - zip container parsing */
-
-#include "ghostxps.h"
-
-static int isfile(char *path)
-{
-	FILE *file = fopen(path, "rb");
-	if (file)
-	{
-		fclose(file);
-		return 1;
-	}
-	return 0;
-}
+#include <zlib.h>
 
 static inline int getshort(FILE *file)
 {
@@ -95,13 +72,11 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 	int namelength, extralength;
 	int code;
 
-	if_debug1('|', "zip: inflating entry '%s'\n", ent->name);
-
 	fseek(ctx->file, ent->offset, 0);
 
 	sig = getlong(ctx->file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
-		return gs_throw1(-1, "wrong zip local file signature (0x%x)", sig);
+		return fz_throw("wrong zip local file signature (0x%x)", sig);
 
 	version = getshort(ctx->file);
 	general = getshort(ctx->file);
@@ -137,25 +112,25 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 
 		code = inflateInit2(&stream, -15);
 		if (code != Z_OK)
-			return gs_throw1(-1, "zlib inflateInit2 error: %s", stream.msg);
+			return fz_throw("zlib inflateInit2 error: %s", stream.msg);
 		code = inflate(&stream, Z_FINISH);
 		if (code != Z_STREAM_END)
 		{
 			inflateEnd(&stream);
-			return gs_throw1(-1, "zlib inflate error: %s", stream.msg);
+			return fz_throw("zlib inflate error: %s", stream.msg);
 		}
 		code = inflateEnd(&stream);
 		if (code != Z_OK)
-			return gs_throw1(-1, "zlib inflateEnd error: %s", stream.msg);
+			return fz_throw("zlib inflateEnd error: %s", stream.msg);
 
 		xps_free(ctx, inbuf);
 	}
 	else
 	{
-		return gs_throw1(-1, "unknown compression method (%d)", method);
+		return fz_throw("unknown compression method (%d)", method);
 	}
 
-	return gs_okay;
+	return fz_okay;
 }
 
 /*
@@ -174,7 +149,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
 	sig = getlong(ctx->file);
 	if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
-		return gs_throw1(-1, "wrong zip end of central directory signature (0x%x)", sig);
+		return fz_throw("wrong zip end of central directory signature (0x%x)", sig);
 
 	(void) getshort(ctx->file); /* this disk */
 	(void) getshort(ctx->file); /* start disk */
@@ -186,7 +161,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 	ctx->zip_count = count;
 	ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
 	if (!ctx->zip_table)
-		return gs_throw(-1, "cannot allocate zip entry table");
+		return fz_throw("cannot allocate zip entry table");
 
 	memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
 
@@ -196,7 +171,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 	{
 		sig = getlong(ctx->file);
 		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
-			return gs_throw1(-1, "wrong zip central directory signature (0x%x)", sig);
+			return fz_throw("wrong zip central directory signature (0x%x)", sig);
 
 		(void) getshort(ctx->file); /* version made by */
 		(void) getshort(ctx->file); /* version to extract */
@@ -217,7 +192,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
 		ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
 		if (!ctx->zip_table[i].name)
-			return gs_throw(-1, "cannot allocate zip entry name");
+			return fz_throw("cannot allocate zip entry name");
 
 		fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
 		ctx->zip_table[i].name[namesize] = 0;
@@ -228,15 +203,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
 	qsort(ctx->zip_table, count, sizeof(xps_entry_t), xps_compare_entries);
 
-	for (i = 0; i < ctx->zip_count; i++)
-	{
-		if_debug3('|', "zip entry '%s' csize=%d usize=%d\n",
-				ctx->zip_table[i].name,
-				ctx->zip_table[i].csize,
-				ctx->zip_table[i].usize);
-	}
-
-	return gs_okay;
+	return fz_okay;
 }
 
 static int
@@ -258,7 +225,7 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
 
 		n = fread(buf, 1, sizeof buf, ctx->file);
 		if (n < 0)
-			return gs_throw(-1, "cannot read end of central directory");
+			return fz_throw("cannot read end of central directory");
 
 		for (i = n - 4; i > 0; i--)
 			if (!memcmp(buf + i, "PK\5\6", 4))
@@ -267,7 +234,7 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
 		back += sizeof buf - 4;
 	}
 
-	return gs_throw(-1, "cannot find end of central directory");
+	return fz_throw("cannot find end of central directory");
 }
 
 /*
@@ -425,34 +392,15 @@ xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
 
 	part = xps_read_part(ctx, name);
 	if (!part)
-		return gs_rethrow1(-1, "cannot read zip part '%s'", name);
+		return fz_rethrow(-1, "cannot read zip part '%s'", name);
 
 	code = xps_parse_metadata(ctx, part);
 	if (code)
-		return gs_rethrow1(code, "cannot process metadata part '%s'", name);
+		return fz_rethrow(code, "cannot process metadata part '%s'", name);
 
 	xps_free_part(ctx, part);
 
-	return gs_okay;
-}
-
-static int
-xps_read_and_process_page_part(xps_context_t *ctx, char *name)
-{
-	xps_part_t *part;
-	int code;
-
-	part = xps_read_part(ctx, name);
-	if (!part)
-		return gs_rethrow1(-1, "cannot read zip part '%s'", name);
-
-	code = xps_parse_fixed_page(ctx, part);
-	if (code)
-		return gs_rethrow1(code, "cannot parse fixed page part '%s'", name);
-
-	xps_free_part(ctx, part);
-
-	return gs_okay;
+	return fz_okay;
 }
 
 /*
@@ -460,62 +408,16 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
  */
 
 int
-xps_process_file(xps_context_t *ctx, char *filename)
+xps_open_file(xps_context_t *ctx, char *filename)
 {
 	char buf[2048];
 	xps_document_t *doc;
-	xps_page_t *page;
 	int code;
 	char *p;
 
 	ctx->file = fopen(filename, "rb");
 	if (!ctx->file)
-		return gs_throw1(-1, "cannot open file: '%s'", filename);
-
-	if (strstr(filename, ".fpage"))
-	{
-		xps_part_t *part;
-		int size;
-
-		if_debug0('|', "zip: single page mode\n");
-		xps_strlcpy(buf, filename, sizeof buf);
-		while (1)
-		{
-			p = strrchr(buf, '/');
-			if (!p)
-				p = strrchr(buf, '\\');
-			if (!p)
-				break;
-			xps_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
-			if_debug1('|', "zip: testing if '%s' exists\n", buf);
-			if (isfile(buf))
-			{
-				*p = 0;
-				ctx->directory = xps_strdup(ctx, buf);
-				if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
-				break;
-			}
-			*p = 0;
-		}
-		if (!ctx->directory)
-		{
-			if_debug0('|', "zip: no /_rels/.rels found; assuming absolute paths\n");
-			ctx->directory = xps_strdup(ctx, "");
-		}
-
-		fseek(ctx->file, 0, SEEK_END);
-		size = ftell(ctx->file);
-		fseek(ctx->file, 0, SEEK_SET);
-		part = xps_new_part(ctx, filename, size);
-		fread(part->data, 1, size, ctx->file);
-
-		code = xps_parse_fixed_page(ctx, part);
-		if (code)
-			return gs_rethrow1(code, "cannot parse fixed page part '%s'", part->name);
-
-		xps_free_part(ctx, part);
-		return gs_okay;
-	}
+		return fz_throw("cannot open file: '%s'", filename);
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
@@ -525,44 +427,122 @@ xps_process_file(xps_context_t *ctx, char *filename)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
 		ctx->directory = xps_strdup(ctx, buf);
-		if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
 	}
 	else
 	{
 		code = xps_find_and_read_zip_dir(ctx);
 		if (code < 0)
-			return gs_rethrow(code, "cannot read zip central directory");
+			return fz_rethrow(code, "cannot read zip central directory");
 	}
 
 	code = xps_read_and_process_metadata_part(ctx, "/_rels/.rels");
 	if (code)
-		return gs_rethrow(code, "cannot process root relationship part");
+		return fz_rethrow(code, "cannot process root relationship part");
 
 	if (!ctx->start_part)
-		return gs_throw(-1, "cannot find fixed document sequence start part");
+		return fz_throw("cannot find fixed document sequence start part");
 
 	code = xps_read_and_process_metadata_part(ctx, ctx->start_part);
 	if (code)
-		return gs_rethrow(code, "cannot process FixedDocumentSequence part");
+		return fz_rethrow(code, "cannot process FixedDocumentSequence part");
 
 	for (doc = ctx->first_fixdoc; doc; doc = doc->next)
 	{
 		code = xps_read_and_process_metadata_part(ctx, doc->name);
 		if (code)
-			return gs_rethrow(code, "cannot process FixedDocument part");
+			return fz_rethrow(code, "cannot process FixedDocument part");
 	}
+
+	return fz_okay;
+}
+
+int
+xps_count_pages(xps_context_t *ctx)
+{
+	xps_page_t *page;
+	int n = 0;
+	for (page = ctx->first_page; page; page = page->next)
+		n ++;
+	return n;
+}
+
+xps_page_t *
+xps_load_page(xps_context_t *ctx, int number)
+{
+	xps_page_t *page;
+	int code;
+	int n = 0;
 
 	for (page = ctx->first_page; page; page = page->next)
 	{
-		code = xps_read_and_process_page_part(ctx, page->name);
-		if (code)
-			return gs_rethrow(code, "cannot process FixedPage part");
+		if (n == number)
+		{
+			if (!page->root)
+			{
+				code = xps_load_fixed_page(ctx, page);
+				if (code)
+					fz_catch(code, "ignoring errors on page");
+			}
+			return page;
+		}
+		n ++;
 	}
+	return nil;
+}
 
-	if (ctx->directory)
-		xps_free(ctx, ctx->directory);
+xps_context_t *
+xps_new_context(void)
+{
+	xps_context_t *ctx;
+
+	ctx = fz_malloc(sizeof(xps_context_t));
+
+	memset(ctx, 0, sizeof(xps_context_t));
+
+	ctx->font_table = xps_hash_new(ctx);
+	ctx->colorspace_table = xps_hash_new(ctx);
+
+	ctx->start_part = NULL;
+
+	ctx->use_transparency = 1;
+	if (getenv("XPS_DISABLE_TRANSPARENCY"))
+		ctx->use_transparency = 0;
+
+	ctx->opacity_only = 0;
+	ctx->fill_rule = 0;
+
+	return ctx;
+}
+
+static void xps_free_key_func(xps_context_t *ctx, void *ptr)
+{
+	xps_free(ctx, ptr);
+}
+
+static void xps_free_font_func(xps_context_t *ctx, void *ptr)
+{
+	fz_dropfont(ptr);
+}
+
+/* Wrap up interp instance after a "job" */
+int
+xps_free_context(xps_context_t *ctx)
+{
+	int i;
+
 	if (ctx->file)
 		fclose(ctx->file);
 
-	return gs_okay;
+	for (i = 0; i < ctx->zip_count; i++)
+		xps_free(ctx, ctx->zip_table[i].name);
+	xps_free(ctx, ctx->zip_table);
+
+	/* TODO: free resources too */
+	xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
+	xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, NULL);
+
+	xps_free_fixed_pages(ctx);
+	xps_free_fixed_documents(ctx);
+
+	return 0;
 }

@@ -1,22 +1,10 @@
-/* Copyright (C) 2006-2010 Artifex Software, Inc.
-   All Rights Reserved.
-
-   This software is provided AS-IS with no warranty, either express or
-   implied.
-
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen  Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
-
 /* XPS interpreter - analyze page checking for transparency.
  * This is a stripped down parser that looks for alpha values < 1.0 in
  * any part of the page.
  */
 
-#include "ghostxps.h"
+#include "fitz.h"
+#include "muxps.h"
 
 static int
 xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, char *source_att)
@@ -47,7 +35,7 @@ static int
 xps_gradient_stops_have_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 {
 	xps_item_t *node;
-	gs_color_space *colorspace;
+	fz_colorspace *colorspace;
 	char *color_att;
 	float samples[32];
 
@@ -111,7 +99,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 	char *color_att;
 	xps_item_t *node;
 
-	gs_color_space *colorspace;
+	fz_colorspace *colorspace;
 	float samples[32];
 
 	if (!strcmp(xps_tag(root), "SolidColorBrush"))
@@ -266,7 +254,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
 	char *stroke_att;
 	char *fill_att;
 
-	gs_color_space *colorspace;
+	fz_colorspace *colorspace;
 	float samples[32];
 
 	stroke_att = xps_att(node, "Stroke");
