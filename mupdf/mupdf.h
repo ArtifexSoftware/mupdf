@@ -600,6 +600,7 @@ struct pdf_csi_s
 	pdf_xref *xref;
 
 	fz_obj *obj, *array;
+	char name[64];
 	float stack[32];
 	int istack[32];
 	int top;

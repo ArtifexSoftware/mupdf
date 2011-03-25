@@ -13,6 +13,7 @@ pdf_newcsi(pdf_xref *xref, fz_device *dev, fz_matrix ctm)
 	csi->top = 0;
 	csi->obj = nil;
 	csi->array = nil;
+	csi->name[0] = 0;
 	memset(csi->stack, 0, sizeof csi->stack);
 	memset(csi->istack, 0, sizeof csi->istack);
 
@@ -43,6 +44,8 @@ pdf_clearstack(pdf_csi *csi)
 	if (csi->obj)
 		fz_dropobj(csi->obj);
 	csi->obj = nil;
+
+	csi->name[0] = 0;
 
 	for (i = 0; i < csi->top; i++)
 	{
@@ -472,38 +475,32 @@ static void pdf_run_Bstar(pdf_csi *csi)
 static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
 {
 	fz_colorspace *cs;
-	fz_obj *obj, *dict, *res;
+	fz_obj *obj, *dict;
 	fz_error error;
 
-	obj = csi->obj;
-
-	if (!fz_isname(obj))
-		return fz_throw("malformed CS");
-
-	if (!strcmp(fz_toname(obj), "Pattern"))
+	if (!strcmp(csi->name, "Pattern"))
 	{
 		pdf_setpattern(csi, what, nil, nil);
 	}
-
 	else
 	{
-		if (!strcmp(fz_toname(obj), "DeviceGray"))
+		if (!strcmp(csi->name, "DeviceGray"))
 			cs = fz_keepcolorspace(fz_devicegray);
-		else if (!strcmp(fz_toname(obj), "DeviceRGB"))
+		else if (!strcmp(csi->name, "DeviceRGB"))
 			cs = fz_keepcolorspace(fz_devicergb);
-		else if (!strcmp(fz_toname(obj), "DeviceCMYK"))
+		else if (!strcmp(csi->name, "DeviceCMYK"))
 			cs = fz_keepcolorspace(fz_devicecmyk);
 		else
 		{
 			dict = fz_dictgets(rdb, "ColorSpace");
 			if (!dict)
 				return fz_throw("cannot find ColorSpace dictionary");
-			res = fz_dictget(dict, obj);
-			if (!res)
-				return fz_throw("cannot find colorspace resource /%s", fz_toname(obj));
-			error = pdf_loadcolorspace(&cs, csi->xref, res);
+			obj = fz_dictgets(dict, csi->name);
+			if (!obj)
+				return fz_throw("cannot find colorspace resource /%s", csi->name);
+			error = pdf_loadcolorspace(&cs, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_tonum(res));
+				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_tonum(obj));
 		}
 
 		pdf_setcolorspace(csi, what, cs);
@@ -529,21 +526,18 @@ static void pdf_run_DP(pdf_csi *csi)
 
 static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 {
-	fz_obj *name;
 	fz_obj *dict;
 	fz_obj *obj;
 	fz_obj *subtype;
 	fz_error error;
 
-	name = csi->obj;
-
 	dict = fz_dictgets(rdb, "XObject");
 	if (!dict)
-		return fz_throw("cannot find XObject dictionary when looking for: '%s'", fz_toname(name));
+		return fz_throw("cannot find XObject dictionary when looking for: '%s'", csi->name);
 
-	obj = fz_dictget(dict, name);
+	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find xobject resource: '%s'", fz_toname(name));
+		return fz_throw("cannot find xobject resource: '%s'", csi->name);
 
 	subtype = fz_dictgets(obj, "Subtype");
 	if (!fz_isname(subtype))
@@ -686,7 +680,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 	float v[FZ_MAXCOLORS];
 
 	kind = mat->kind;
-	if (fz_isname(csi->obj))
+	if (csi->name[0])
 		kind = PDF_MPATTERN;
 
 	switch (kind)
@@ -710,9 +704,9 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 		if (!dict)
 			return fz_throw("cannot find Pattern dictionary");
 
-		obj = fz_dictget(dict, csi->obj);
+		obj = fz_dictgets(dict, csi->name);
 		if (!obj)
-			return fz_throw("cannot find pattern resource /%s", fz_toname(csi->obj));
+			return fz_throw("cannot find pattern resource /%s", csi->name);
 
 		patterntype = fz_dictgets(obj, "PatternType");
 
@@ -721,7 +715,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 			pdf_pattern *pat;
 			error = pdf_loadpattern(&pat, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load pattern (%d %d R)", fz_tonum(obj), fz_togen(obj));
+				return fz_rethrow(error, "cannot load pattern (%d 0 R)", fz_tonum(obj));
 			pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
 			pdf_droppattern(pat);
 		}
@@ -731,7 +725,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 			fz_shade *shd;
 			error = pdf_loadshading(&shd, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load shading (%d %d R)", fz_tonum(obj), fz_togen(obj));
+				return fz_rethrow(error, "cannot load shading (%d 0 R)", fz_tonum(obj));
 			pdf_setshade(csi, what, shd);
 			fz_dropshade(shd);
 		}
@@ -746,7 +740,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 		return fz_throw("cannot set color in shade objects");
 	}
 	return fz_okay;
-  syntaxerror:
+syntaxerror:
 	return fz_throw("syntax error within sc or SC with %d items on the stack", csi->top);
 }
 
@@ -799,9 +793,9 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find Font dictionary");
 
-	obj = fz_dictget(dict, csi->obj);
+	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find font resource: %s", fz_toname(csi->obj));
+		return fz_throw("cannot find font resource: %s", csi->name);
 
 	if (gstate->font)
 	{
@@ -811,7 +805,7 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 
 	error = pdf_loadfont(&gstate->font, csi->xref, rdb, obj);
 	if (error)
-		return fz_rethrow(error, "cannot load font (%d %d R)", fz_tonum(obj), fz_togen(obj));
+		return fz_rethrow(error, "cannot load font (%d 0 R)", fz_tonum(obj));
 
 	gstate->size = csi->stack[1];
 	return fz_okay;
@@ -974,13 +968,13 @@ static fz_error pdf_run_gs(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find ExtGState dictionary");
 
-	obj = fz_dictget(dict, csi->obj);
+	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->obj));
+		return fz_throw("cannot find extgstate resource /%s", csi->name);
 
 	error = pdf_runextgstate(csi, rdb, obj);
 	if (error)
-		return fz_rethrow(error, "cannot set ExtGState (%d %d R)", fz_tonum(obj), fz_togen(obj));
+		return fz_rethrow(error, "cannot set ExtGState (%d 0 R)", fz_tonum(obj));
 	return fz_okay;
 }
 
@@ -1088,9 +1082,9 @@ static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find shading dictionary");
 
-	obj = fz_dictget(dict, csi->obj);
+	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find shading resource: %s", fz_toname(csi->obj));
+		return fz_throw("cannot find shading resource: %s", csi->name);
 
 	if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
 	{
@@ -1831,7 +1825,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		case PDF_TNAME:
-			csi->obj = fz_newname(buf);
+			fz_strlcpy(csi->name, buf, sizeof(csi->name));
 			csi->top ++;
 			break;
 
