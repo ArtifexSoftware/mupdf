@@ -599,10 +599,12 @@ struct pdf_csi_s
 	fz_device *dev;
 	pdf_xref *xref;
 
-	fz_obj *stack[32];
+	fz_obj *obj, *array;
+	float stack[32];
+	int istack[32];
 	int top;
+
 	int xbalance;
-	fz_obj *array;
 
 	/* path object state */
 	fz_path *path;

@@ -11,8 +11,12 @@ pdf_newcsi(pdf_xref *xref, fz_device *dev, fz_matrix ctm)
 	csi->dev = dev;
 
 	csi->top = 0;
-	csi->xbalance = 0;
+	csi->obj = nil;
 	csi->array = nil;
+	memset(csi->stack, 0, sizeof csi->stack);
+	memset(csi->istack, 0, sizeof csi->istack);
+
+	csi->xbalance = 0;
 
 	csi->path = fz_newpath();
 	csi->clip = 0;
@@ -35,8 +39,17 @@ static void
 pdf_clearstack(pdf_csi *csi)
 {
 	int i;
+
+	if (csi->obj)
+		fz_dropobj(csi->obj);
+	csi->obj = nil;
+
 	for (i = 0; i < csi->top; i++)
-		fz_dropobj(csi->stack[i]);
+	{
+		csi->stack[i] = 0;
+		csi->istack[i] = 0;
+	}
+
 	csi->top = 0;
 }
 
@@ -459,10 +472,10 @@ static void pdf_run_Bstar(pdf_csi *csi)
 static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
 {
 	fz_colorspace *cs;
-	fz_obj *obj;
+	fz_obj *obj, *dict, *res;
 	fz_error error;
 
-	obj = csi->stack[0];
+	obj = csi->obj;
 
 	if (!fz_isname(obj))
 		return fz_throw("malformed CS");
@@ -482,16 +495,15 @@ static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
 			cs = fz_keepcolorspace(fz_devicecmyk);
 		else
 		{
-			fz_obj *dict = fz_dictgets(rdb, "ColorSpace");
+			dict = fz_dictgets(rdb, "ColorSpace");
 			if (!dict)
 				return fz_throw("cannot find ColorSpace dictionary");
-			obj = fz_dictget(dict, obj);
-			if (!obj)
-				return fz_throw("cannot find colorspace resource /%s", fz_toname(csi->stack[0]));
-
-			error = pdf_loadcolorspace(&cs, csi->xref, obj);
+			res = fz_dictget(dict, obj);
+			if (!res)
+				return fz_throw("cannot find colorspace resource /%s", fz_toname(obj));
+			error = pdf_loadcolorspace(&cs, csi->xref, res);
 			if (error)
-				return fz_rethrow(error, "cannot load colorspace (%d %d R)", fz_tonum(obj), fz_togen(obj));
+				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_tonum(res));
 		}
 
 		pdf_setcolorspace(csi, what, cs);
@@ -517,18 +529,21 @@ static void pdf_run_DP(pdf_csi *csi)
 
 static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_obj *name;
 	fz_obj *dict;
 	fz_obj *obj;
 	fz_obj *subtype;
 	fz_error error;
 
+	name = csi->obj;
+
 	dict = fz_dictgets(rdb, "XObject");
 	if (!dict)
-		return fz_throw("cannot find XObject dictionary when looking for: '%s'", fz_toname(csi->stack[0]));
+		return fz_throw("cannot find XObject dictionary when looking for: '%s'", fz_toname(name));
 
-	obj = fz_dictget(dict, csi->stack[0]);
+	obj = fz_dictget(dict, name);
 	if (!obj)
-		return fz_throw("cannot find xobject resource: '%s'", fz_toname(csi->stack[0]));
+		return fz_throw("cannot find xobject resource: '%s'", fz_toname(name));
 
 	subtype = fz_dictgets(obj, "Subtype");
 	if (!fz_isname(subtype))
@@ -603,7 +618,7 @@ static void pdf_run_F(pdf_csi *csi)
 
 static void pdf_run_G(pdf_csi *csi)
 {
-	float v = fz_toreal(csi->stack[0]);
+	float v = csi->stack[0];
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicegray);
 	pdf_setcolor(csi, PDF_MSTROKE, &v);
 }
@@ -611,17 +626,17 @@ static void pdf_run_G(pdf_csi *csi)
 static void pdf_run_J(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.linecap = fz_toint(csi->stack[0]);
+	gstate->strokestate.linecap = csi->istack[0];
 }
 
 static void pdf_run_K(pdf_csi *csi)
 {
 	float v[4];
 
-	v[0] = fz_toreal(csi->stack[0]);
-	v[1] = fz_toreal(csi->stack[1]);
-	v[2] = fz_toreal(csi->stack[2]);
-	v[3] = fz_toreal(csi->stack[3]);
+	v[0] = csi->stack[0];
+	v[1] = csi->stack[1];
+	v[2] = csi->stack[2];
+	v[3] = csi->stack[3];
 
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicecmyk);
 	pdf_setcolor(csi, PDF_MSTROKE, v);
@@ -630,7 +645,7 @@ static void pdf_run_K(pdf_csi *csi)
 static void pdf_run_M(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.miterlimit = fz_toreal(csi->stack[0]);
+	gstate->strokestate.miterlimit = csi->stack[0];
 }
 
 static void pdf_run_MP(pdf_csi *csi)
@@ -646,9 +661,9 @@ static void pdf_run_R(pdf_csi *csi)
 {
 	float v[3];
 
-	v[0] = fz_toreal(csi->stack[0]);
-	v[1] = fz_toreal(csi->stack[1]);
-	v[2] = fz_toreal(csi->stack[2]);
+	v[0] = csi->stack[0];
+	v[1] = csi->stack[1];
+	v[2] = csi->stack[2];
 
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicergb);
 	pdf_setcolor(csi, PDF_MSTROKE, v);
@@ -671,7 +686,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 	float v[FZ_MAXCOLORS];
 
 	kind = mat->kind;
-	if (fz_isname(csi->stack[csi->top - 1]))
+	if (fz_isname(csi->obj))
 		kind = PDF_MPATTERN;
 
 	switch (kind)
@@ -683,22 +698,21 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 		if (csi->top < mat->cs->n)
 			goto syntaxerror;
 		for (i = 0; i < csi->top; i++)
-			v[i] = fz_toreal(csi->stack[i]);
+			v[i] = csi->stack[i];
 		pdf_setcolor(csi, what, v);
 		break;
 
 	case PDF_MPATTERN:
 		for (i = 0; i < csi->top - 1; i++)
-			v[i] = fz_toreal(csi->stack[i]);
+			v[i] = csi->stack[i];
 
 		dict = fz_dictgets(rdb, "Pattern");
 		if (!dict)
 			return fz_throw("cannot find Pattern dictionary");
 
-		obj = fz_dictget(dict, csi->stack[csi->top - 1]);
+		obj = fz_dictget(dict, csi->obj);
 		if (!obj)
-			return fz_throw("cannot find pattern resource /%s",
-					fz_toname(csi->stack[csi->top - 1]));
+			return fz_throw("cannot find pattern resource /%s", fz_toname(csi->obj));
 
 		patterntype = fz_dictgets(obj, "PatternType");
 
@@ -751,19 +765,19 @@ static void pdf_run_sc(pdf_csi *csi, fz_obj *rdb)
 static void pdf_run_Tc(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->charspace = fz_toreal(csi->stack[0]);
+	gstate->charspace = csi->stack[0];
 }
 
 static void pdf_run_Tw(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->wordspace = fz_toreal(csi->stack[0]);
+	gstate->wordspace = csi->stack[0];
 }
 
 static void pdf_run_Tz(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	float a = fz_toreal(csi->stack[0]) / 100;
+	float a = csi->stack[0] / 100;
 	pdf_flushtext(csi);
 	gstate->scale = a;
 }
@@ -771,7 +785,7 @@ static void pdf_run_Tz(pdf_csi *csi)
 static void pdf_run_TL(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->leading = fz_toreal(csi->stack[0]);
+	gstate->leading = csi->stack[0];
 }
 
 static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
@@ -785,9 +799,9 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find Font dictionary");
 
-	obj = fz_dictget(dict, csi->stack[0]);
+	obj = fz_dictget(dict, csi->obj);
 	if (!obj)
-		return fz_throw("cannot find font resource: %s", fz_toname(csi->stack[0]));
+		return fz_throw("cannot find font resource: %s", fz_toname(csi->obj));
 
 	if (gstate->font)
 	{
@@ -799,25 +813,25 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	if (error)
 		return fz_rethrow(error, "cannot load font (%d %d R)", fz_tonum(obj), fz_togen(obj));
 
-	gstate->size = fz_toreal(csi->stack[1]);
+	gstate->size = csi->stack[1];
 	return fz_okay;
 }
 
 static void pdf_run_Tr(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->render = fz_toint(csi->stack[0]);
+	gstate->render = csi->istack[0];
 }
 
 static void pdf_run_Ts(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->rise = fz_toreal(csi->stack[0]);
+	gstate->rise = csi->stack[0];
 }
 
 static void pdf_run_Td(pdf_csi *csi)
 {
-	fz_matrix m = fz_translate(fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
+	fz_matrix m = fz_translate(csi->stack[0], csi->stack[1]);
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 }
@@ -827,27 +841,21 @@ static void pdf_run_TD(pdf_csi *csi)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_matrix m;
 
-	gstate->leading = -fz_toreal(csi->stack[1]);
-	m = fz_translate(fz_toreal(csi->stack[0]), fz_toreal(csi->stack[1]));
+	gstate->leading = -csi->stack[1];
+	m = fz_translate(csi->stack[0], csi->stack[1]);
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 }
 
 static void pdf_run_Tm(pdf_csi *csi)
 {
-	fz_matrix m;
-
-	m.a = fz_toreal(csi->stack[0]);
-	m.b = fz_toreal(csi->stack[1]);
-	m.c = fz_toreal(csi->stack[2]);
-	m.d = fz_toreal(csi->stack[3]);
-	m.e = fz_toreal(csi->stack[4]);
-	m.f = fz_toreal(csi->stack[5]);
-
 	pdf_flushtext(csi);
-
-	/* RJW: Inefficient. Why write to m then copy it? */
-	csi->tm = m;
+	csi->tm.a = csi->stack[0];
+	csi->tm.b = csi->stack[1];
+	csi->tm.c = csi->stack[2];
+	csi->tm.d = csi->stack[3];
+	csi->tm.e = csi->stack[4];
+	csi->tm.f = csi->stack[5];
 	csi->tlm = csi->tm;
 }
 
@@ -861,12 +869,12 @@ static void pdf_run_Tstar(pdf_csi *csi)
 
 static void pdf_run_Tj(pdf_csi *csi)
 {
-	pdf_showtext(csi, csi->stack[0]);
+	pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_TJ(pdf_csi *csi)
 {
-	pdf_showtext(csi, csi->stack[0]);
+	pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_W(pdf_csi *csi)
@@ -894,12 +902,12 @@ static void pdf_run_bstar(pdf_csi *csi)
 static void pdf_run_c(pdf_csi *csi)
 {
 	float a, b, c, d, e, f;
-	a = fz_toreal(csi->stack[0]);
-	b = fz_toreal(csi->stack[1]);
-	c = fz_toreal(csi->stack[2]);
-	d = fz_toreal(csi->stack[3]);
-	e = fz_toreal(csi->stack[4]);
-	f = fz_toreal(csi->stack[5]);
+	a = csi->stack[0];
+	b = csi->stack[1];
+	c = csi->stack[2];
+	d = csi->stack[3];
+	e = csi->stack[4];
+	f = csi->stack[5];
 	fz_curveto(csi->path, a, b, c, d, e, f);
 }
 
@@ -908,12 +916,12 @@ static void pdf_run_cm(pdf_csi *csi)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_matrix m;
 
-	m.a = fz_toreal(csi->stack[0]);
-	m.b = fz_toreal(csi->stack[1]);
-	m.c = fz_toreal(csi->stack[2]);
-	m.d = fz_toreal(csi->stack[3]);
-	m.e = fz_toreal(csi->stack[4]);
-	m.f = fz_toreal(csi->stack[5]);
+	m.a = csi->stack[0];
+	m.b = csi->stack[1];
+	m.c = csi->stack[2];
+	m.d = csi->stack[3];
+	m.e = csi->stack[4];
+	m.f = csi->stack[5];
 
 	gstate->ctm = fz_concat(m, gstate->ctm);
 }
@@ -924,11 +932,11 @@ static void pdf_run_d(pdf_csi *csi)
 	fz_obj *array;
 	int i;
 
-	array = csi->stack[0];
+	array = csi->obj;
 	gstate->strokestate.dashlen = MIN(fz_arraylen(array), nelem(gstate->strokestate.dashlist));
 	for (i = 0; i < gstate->strokestate.dashlen; i++)
 		gstate->strokestate.dashlist[i] = fz_toreal(fz_arrayget(array, i));
-	gstate->strokestate.dashphase = fz_toreal(csi->stack[1]);
+	gstate->strokestate.dashphase = csi->stack[1];
 }
 
 static void pdf_run_d0(pdf_csi *csi)
@@ -951,7 +959,7 @@ static void pdf_run_fstar(pdf_csi *csi)
 
 static void pdf_run_g(pdf_csi *csi)
 {
-	float v = fz_toreal(csi->stack[0]);
+	float v = csi->stack[0];
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicegray);
 	pdf_setcolor(csi, PDF_MFILL, &v);
 }
@@ -966,9 +974,9 @@ static fz_error pdf_run_gs(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find ExtGState dictionary");
 
-	obj = fz_dictget(dict, csi->stack[0]);
+	obj = fz_dictget(dict, csi->obj);
 	if (!obj)
-		return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->stack[0]));
+		return fz_throw("cannot find extgstate resource /%s", fz_toname(csi->obj));
 
 	error = pdf_runextgstate(csi, rdb, obj);
 	if (error)
@@ -988,17 +996,17 @@ static void pdf_run_i(pdf_csi *csi)
 static void pdf_run_j(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.linejoin = fz_toint(csi->stack[0]);
+	gstate->strokestate.linejoin = csi->istack[0];
 }
 
 static void pdf_run_k(pdf_csi *csi)
 {
 	float v[4];
 
-	v[0] = fz_toreal(csi->stack[0]);
-	v[1] = fz_toreal(csi->stack[1]);
-	v[2] = fz_toreal(csi->stack[2]);
-	v[3] = fz_toreal(csi->stack[3]);
+	v[0] = csi->stack[0];
+	v[1] = csi->stack[1];
+	v[2] = csi->stack[2];
+	v[3] = csi->stack[3];
 
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicecmyk);
 	pdf_setcolor(csi, PDF_MFILL, v);
@@ -1008,8 +1016,8 @@ static void pdf_run_l(pdf_csi *csi)
 {
 	float a, b;
 
-	a = fz_toreal(csi->stack[0]);
-	b = fz_toreal(csi->stack[1]);
+	a = csi->stack[0];
+	b = csi->stack[1];
 	fz_lineto(csi->path, a, b);
 }
 
@@ -1017,8 +1025,8 @@ static void pdf_run_m(pdf_csi *csi)
 {
 	float a, b;
 
-	a = fz_toreal(csi->stack[0]);
-	b = fz_toreal(csi->stack[1]);
+	a = csi->stack[0];
+	b = csi->stack[1];
 	fz_moveto(csi->path, a, b);
 }
 
@@ -1036,10 +1044,10 @@ static void pdf_run_re(pdf_csi *csi)
 {
 	float x, y, w, h;
 
-	x = fz_toreal(csi->stack[0]);
-	y = fz_toreal(csi->stack[1]);
-	w = fz_toreal(csi->stack[2]);
-	h = fz_toreal(csi->stack[3]);
+	x = csi->stack[0];
+	y = csi->stack[1];
+	w = csi->stack[2];
+	h = csi->stack[3];
 
 	fz_moveto(csi->path, x, y);
 	fz_lineto(csi->path, x + w, y);
@@ -1052,9 +1060,9 @@ static void pdf_run_rg(pdf_csi *csi)
 {
 	float v[3];
 
-	v[0] = fz_toreal(csi->stack[0]);
-	v[1] = fz_toreal(csi->stack[1]);
-	v[2] = fz_toreal(csi->stack[2]);
+	v[0] = csi->stack[0];
+	v[1] = csi->stack[1];
+	v[2] = csi->stack[2];
 
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicergb);
 	pdf_setcolor(csi, PDF_MFILL, v);
@@ -1080,9 +1088,9 @@ static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 	if (!dict)
 		return fz_throw("cannot find shading dictionary");
 
-	obj = fz_dictget(dict, csi->stack[csi->top - 1]);
+	obj = fz_dictget(dict, csi->obj);
 	if (!obj)
-		return fz_throw("cannot find shading resource: %s", fz_toname(csi->stack[csi->top - 1]));
+		return fz_throw("cannot find shading resource: %s", fz_toname(csi->obj));
 
 	if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
 	{
@@ -1099,27 +1107,27 @@ static void pdf_run_v(pdf_csi *csi)
 {
 	float a, b, c, d;
 
-	a = fz_toreal(csi->stack[0]);
-	b = fz_toreal(csi->stack[1]);
-	c = fz_toreal(csi->stack[2]);
-	d = fz_toreal(csi->stack[3]);
+	a = csi->stack[0];
+	b = csi->stack[1];
+	c = csi->stack[2];
+	d = csi->stack[3];
 	fz_curvetov(csi->path, a, b, c, d);
 }
 
 static void pdf_run_w(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.linewidth = fz_toreal(csi->stack[0]);
+	gstate->strokestate.linewidth = csi->stack[0];
 }
 
 static void pdf_run_y(pdf_csi *csi)
 {
 	float a, b, c, d;
 
-	a = fz_toreal(csi->stack[0]);
-	b = fz_toreal(csi->stack[1]);
-	c = fz_toreal(csi->stack[2]);
-	d = fz_toreal(csi->stack[3]);
+	a = csi->stack[0];
+	b = csi->stack[1];
+	c = csi->stack[2];
+	d = csi->stack[3];
 	fz_curvetoy(csi->path, a, b, c, d);
 }
 
@@ -1132,7 +1140,7 @@ static void pdf_run_squote(pdf_csi *csi)
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 
-	pdf_showtext(csi, csi->stack[0]);
+	pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_dquote(pdf_csi *csi)
@@ -1140,14 +1148,14 @@ static void pdf_run_dquote(pdf_csi *csi)
 	fz_matrix m;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
-	gstate->wordspace = fz_toreal(csi->stack[0]);
-	gstate->charspace = fz_toreal(csi->stack[1]);
+	gstate->wordspace = csi->stack[0];
+	gstate->charspace = csi->stack[1];
 
 	m = fz_translate(0, -gstate->leading);
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 
-	pdf_showtext(csi, csi->stack[2]);
+	pdf_showtext(csi, csi->obj);
 }
 
 static fz_error
@@ -1777,7 +1785,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		{
 			if (tok == PDF_TCARRAY)
 			{
-				csi->stack[csi->top] = csi->array;
+				csi->obj = csi->array;
 				csi->array = nil;
 				csi->top ++;
 			}
@@ -1810,50 +1818,55 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TEOF:
 			return fz_okay;
 
-			/* optimize text-object array parsing */
+		/* TODO: optimize text-object array parsing */
 		case PDF_TOARRAY:
 			csi->array = fz_newarray(8);
 			break;
 
 		case PDF_TODICT:
-			error = pdf_parsedict(&csi->stack[csi->top], csi->xref, file, buf, buflen);
+			error = pdf_parsedict(&csi->obj, csi->xref, file, buf, buflen);
 			if (error)
 				return fz_rethrow(error, "cannot parse dictionary");
 			csi->top ++;
 			break;
 
 		case PDF_TNAME:
-			csi->stack[csi->top] = fz_newname(buf);
+			csi->obj = fz_newname(buf);
 			csi->top ++;
 			break;
 
 		case PDF_TINT:
-			csi->stack[csi->top] = fz_newint(atoi(buf));
+			csi->istack[csi->top] = atoi(buf);
+			csi->stack[csi->top] = csi->istack[csi->top];
 			csi->top ++;
 			break;
 
 		case PDF_TREAL:
-			csi->stack[csi->top] = fz_newreal(atof(buf));
+			csi->stack[csi->top] = atof(buf);
+			csi->istack[csi->top] = csi->stack[csi->top];
 			csi->top ++;
 			break;
 
 		case PDF_TSTRING:
-			csi->stack[csi->top] = fz_newstring(buf, len);
+			csi->obj = fz_newstring(buf, len);
 			csi->top ++;
 			break;
 
 		case PDF_TTRUE:
-			csi->stack[csi->top] = fz_newbool(1);
+			csi->istack[csi->top] = 1;
+			csi->stack[csi->top] = 1;
 			csi->top ++;
 			break;
 
 		case PDF_TFALSE:
-			csi->stack[csi->top] = fz_newbool(0);
+			csi->istack[csi->top] = 0;
+			csi->stack[csi->top] = 0;
 			csi->top ++;
 			break;
 
 		case PDF_TNULL:
-			csi->stack[csi->top] = fz_newnull();
+			csi->istack[csi->top] = 0;
+			csi->stack[csi->top] = 0;
 			csi->top ++;
 			break;
 
