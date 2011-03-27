@@ -12,12 +12,14 @@ pdf_newcsi(pdf_xref *xref, fz_device *dev, fz_matrix ctm)
 
 	csi->top = 0;
 	csi->obj = nil;
-	csi->array = nil;
 	csi->name[0] = 0;
+	csi->stringlen = 0;
 	memset(csi->stack, 0, sizeof csi->stack);
 	memset(csi->istack, 0, sizeof csi->istack);
 
 	csi->xbalance = 0;
+	csi->intext = 0;
+	csi->inarray = 0;
 
 	csi->path = fz_newpath();
 	csi->clip = 0;
@@ -46,6 +48,7 @@ pdf_clearstack(pdf_csi *csi)
 	csi->obj = nil;
 
 	csi->name[0] = 0;
+	csi->stringlen = 0;
 
 	for (i = 0; i < csi->top; i++)
 	{
@@ -150,7 +153,6 @@ pdf_freecsi(pdf_csi *csi)
 
 	if (csi->path) fz_freepath(csi->path);
 	if (csi->text) fz_freetext(csi->text);
-	if (csi->array) fz_dropobj(csi->array);
 
 	pdf_clearstack(csi);
 
@@ -458,6 +460,7 @@ static void pdf_run_BMC(pdf_csi *csi)
 
 static void pdf_run_BT(pdf_csi *csi)
 {
+	csi->intext = 1;
 	csi->tm = fz_identity;
 	csi->tlm = fz_identity;
 }
@@ -598,6 +601,7 @@ static void pdf_run_ET(pdf_csi *csi)
 {
 	pdf_flushtext(csi);
 	csi->accumulate = 1;
+	csi->intext = 0;
 }
 
 static void pdf_run_EX(pdf_csi *csi)
@@ -863,12 +867,18 @@ static void pdf_run_Tstar(pdf_csi *csi)
 
 static void pdf_run_Tj(pdf_csi *csi)
 {
-	pdf_showtext(csi, csi->obj);
+	if (csi->stringlen)
+		pdf_showstring(csi, csi->string, csi->stringlen);
+	else
+		pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_TJ(pdf_csi *csi)
 {
-	pdf_showtext(csi, csi->obj);
+	if (csi->stringlen)
+		pdf_showstring(csi, csi->string, csi->stringlen);
+	else
+		pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_W(pdf_csi *csi)
@@ -1134,7 +1144,10 @@ static void pdf_run_squote(pdf_csi *csi)
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 
-	pdf_showtext(csi, csi->obj);
+	if (csi->stringlen)
+		pdf_showstring(csi, csi->string, csi->stringlen);
+	else
+		pdf_showtext(csi, csi->obj);
 }
 
 static void pdf_run_dquote(pdf_csi *csi)
@@ -1149,7 +1162,10 @@ static void pdf_run_dquote(pdf_csi *csi)
 	csi->tlm = fz_concat(m, csi->tlm);
 	csi->tm = csi->tlm;
 
-	pdf_showtext(csi, csi->obj);
+	if (csi->stringlen)
+		pdf_showstring(csi, csi->string, csi->stringlen);
+	else
+		pdf_showtext(csi, csi->obj);
 }
 
 static fz_error
@@ -1762,7 +1778,6 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 	fz_error error;
 	int tok;
 	int len;
-	fz_obj *obj;
 
 	pdf_clearstack(csi);
 
@@ -1775,25 +1790,21 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		if (error)
 			return fz_rethrow(error, "lexical error in content stream");
 
-		if (csi->array)
+		if (csi->inarray)
 		{
 			if (tok == PDF_TCARRAY)
 			{
-				csi->obj = csi->array;
-				csi->array = nil;
+				csi->inarray = 0;
 				csi->top ++;
 			}
 			else if (tok == PDF_TINT || tok == PDF_TREAL)
 			{
-				obj = fz_newreal(atof(buf));
-				fz_arraypush(csi->array, obj);
-				fz_dropobj(obj);
+				pdf_gstate *gstate = csi->gstate + csi->gtop;
+				pdf_showspace(csi, -atof(buf) * gstate->size * 0.001f);
 			}
 			else if (tok == PDF_TSTRING)
 			{
-				obj = fz_newstring(buf, len);
-				fz_arraypush(csi->array, obj);
-				fz_dropobj(obj);
+				pdf_showstring(csi, (unsigned char *)buf, len);
 			}
 			else if (tok == PDF_TEOF)
 			{
@@ -1812,9 +1823,18 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TEOF:
 			return fz_okay;
 
-		/* TODO: optimize text-object array parsing */
 		case PDF_TOARRAY:
-			csi->array = fz_newarray(8);
+			if (!csi->intext)
+			{
+				error = pdf_parsearray(&csi->obj, csi->xref, file, buf, buflen);
+				if (error)
+					return fz_rethrow(error, "cannot parse array");
+				csi->top ++;
+			}
+			else
+			{
+				csi->inarray = 1;
+			}
 			break;
 
 		case PDF_TODICT:
@@ -1842,25 +1862,15 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		case PDF_TSTRING:
-			csi->obj = fz_newstring(buf, len);
-			csi->top ++;
-			break;
-
-		case PDF_TTRUE:
-			csi->istack[csi->top] = 1;
-			csi->stack[csi->top] = 1;
-			csi->top ++;
-			break;
-
-		case PDF_TFALSE:
-			csi->istack[csi->top] = 0;
-			csi->stack[csi->top] = 0;
-			csi->top ++;
-			break;
-
-		case PDF_TNULL:
-			csi->istack[csi->top] = 0;
-			csi->stack[csi->top] = 0;
+			if (len <= sizeof(csi->string))
+			{
+				memcpy(csi->string, buf, len);
+				csi->stringlen = len;
+			}
+			else
+			{
+				csi->obj = fz_newstring(buf, len);
+			}
 			csi->top ++;
 			break;
 

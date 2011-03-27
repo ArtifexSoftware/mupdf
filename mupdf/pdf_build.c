@@ -629,11 +629,18 @@ pdf_showglyph(pdf_csi *csi, int cid)
 	}
 }
 
-static void
+void
 pdf_showspace(pdf_csi *csi, float tadj)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_fontdesc *fontdesc = gstate->font;
+
+	if (!fontdesc)
+	{
+		fz_warn("cannot draw text since font and size not set");
+		return;
+	}
+
 	if (fontdesc->wmode == 0)
 		csi->tm = fz_concat(fz_translate(tadj * gstate->scale, 0), csi->tm);
 	else
@@ -641,13 +648,11 @@ pdf_showspace(pdf_csi *csi, float tadj)
 }
 
 void
-pdf_showtext(pdf_csi *csi, fz_obj *text)
+pdf_showstring(pdf_csi *csi, unsigned char *buf, int len)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_fontdesc *fontdesc = gstate->font;
-	unsigned char *buf;
-	unsigned char *end;
-	int i, len;
+	unsigned char *end = buf + len;
 	int cpt, cid;
 
 	if (!fontdesc)
@@ -656,34 +661,38 @@ pdf_showtext(pdf_csi *csi, fz_obj *text)
 		return;
 	}
 
+	while (buf < end)
+	{
+		buf = pdf_decodecmap(fontdesc->encoding, buf, &cpt);
+		cid = pdf_lookupcmap(fontdesc->encoding, cpt);
+		if (cid >= 0)
+			pdf_showglyph(csi, cid);
+		else
+			fz_warn("cannot encode character with code point %#x", cpt);
+		if (cpt == 32)
+			pdf_showspace(csi, gstate->wordspace);
+	}
+}
+
+void
+pdf_showtext(pdf_csi *csi, fz_obj *text)
+{
+	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	int i;
+
 	if (fz_isarray(text))
 	{
 		for (i = 0; i < fz_arraylen(text); i++)
 		{
 			fz_obj *item = fz_arrayget(text, i);
 			if (fz_isstring(item))
-				pdf_showtext(csi, item);
+				pdf_showstring(csi, (unsigned char *)fz_tostrbuf(item), fz_tostrlen(item));
 			else
 				pdf_showspace(csi, - fz_toreal(item) * gstate->size * 0.001f);
 		}
 	}
-
-	if (fz_isstring(text))
+	else if (fz_isstring(text))
 	{
-		buf = (unsigned char *)fz_tostrbuf(text);
-		len = fz_tostrlen(text);
-		end = buf + len;
-
-		while (buf < end)
-		{
-			buf = pdf_decodecmap(fontdesc->encoding, buf, &cpt);
-			cid = pdf_lookupcmap(fontdesc->encoding, cpt);
-			if (cid >= 0)
-				pdf_showglyph(csi, cid);
-			else
-				fz_warn("cannot encode character with code point %#x", cpt);
-			if (cpt == 32)
-				pdf_showspace(csi, gstate->wordspace);
-		}
+		pdf_showstring(csi, (unsigned char *)fz_tostrbuf(text), fz_tostrlen(text));
 	}
 }
