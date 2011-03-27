@@ -590,6 +590,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 	{
 		return fz_throw("unknown XObject subtype: %s", fz_toname(subtype));
 	}
+
 	return fz_okay;
 }
 
@@ -616,9 +617,8 @@ static void pdf_run_F(pdf_csi *csi)
 
 static void pdf_run_G(pdf_csi *csi)
 {
-	float v = csi->stack[0];
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicegray);
-	pdf_setcolor(csi, PDF_MSTROKE, &v);
+	pdf_setcolor(csi, PDF_MSTROKE, csi->stack);
 }
 
 static void pdf_run_J(pdf_csi *csi)
@@ -629,15 +629,8 @@ static void pdf_run_J(pdf_csi *csi)
 
 static void pdf_run_K(pdf_csi *csi)
 {
-	float v[4];
-
-	v[0] = csi->stack[0];
-	v[1] = csi->stack[1];
-	v[2] = csi->stack[2];
-	v[3] = csi->stack[3];
-
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicecmyk);
-	pdf_setcolor(csi, PDF_MSTROKE, v);
+	pdf_setcolor(csi, PDF_MSTROKE, csi->stack);
 }
 
 static void pdf_run_M(pdf_csi *csi)
@@ -657,14 +650,8 @@ static void pdf_run_Q(pdf_csi *csi)
 
 static void pdf_run_R(pdf_csi *csi)
 {
-	float v[3];
-
-	v[0] = csi->stack[0];
-	v[1] = csi->stack[1];
-	v[2] = csi->stack[2];
-
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicergb);
-	pdf_setcolor(csi, PDF_MSTROKE, v);
+	pdf_setcolor(csi, PDF_MSTROKE, csi->stack);
 }
 
 static void pdf_run_S(pdf_csi *csi)
@@ -674,14 +661,11 @@ static void pdf_run_S(pdf_csi *csi)
 
 static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_material *mat)
 {
-	/* SC or SCN */
+	fz_error error;
 	fz_obj *patterntype;
 	fz_obj *dict;
 	fz_obj *obj;
 	int kind;
-	fz_error error;
-	int i;
-	float v[FZ_MAXCOLORS];
 
 	kind = mat->kind;
 	if (csi->name[0])
@@ -693,17 +677,10 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 		return fz_throw("cannot set color in mask objects");
 
 	case PDF_MCOLOR:
-		if (csi->top < mat->cs->n)
-			goto syntaxerror;
-		for (i = 0; i < csi->top; i++)
-			v[i] = csi->stack[i];
-		pdf_setcolor(csi, what, v);
+		pdf_setcolor(csi, what, csi->stack);
 		break;
 
 	case PDF_MPATTERN:
-		for (i = 0; i < csi->top - 1; i++)
-			v[i] = csi->stack[i];
-
 		dict = fz_dictgets(rdb, "Pattern");
 		if (!dict)
 			return fz_throw("cannot find Pattern dictionary");
@@ -720,10 +697,9 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 			error = pdf_loadpattern(&pat, csi->xref, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load pattern (%d 0 R)", fz_tonum(obj));
-			pdf_setpattern(csi, what, pat, csi->top == 1 ? nil : v);
+			pdf_setpattern(csi, what, pat, csi->top > 0 ? csi->stack : nil);
 			pdf_droppattern(pat);
 		}
-
 		else if (fz_toint(patterntype) == 2)
 		{
 			fz_shade *shd;
@@ -733,7 +709,6 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 			pdf_setshade(csi, what, shd);
 			fz_dropshade(shd);
 		}
-
 		else
 		{
 			return fz_throw("unknown pattern type: %d", fz_toint(patterntype));
@@ -743,9 +718,8 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 	case PDF_MSHADE:
 		return fz_throw("cannot set color in shade objects");
 	}
+
 	return fz_okay;
-syntaxerror:
-	return fz_throw("syntax error within sc or SC with %d items on the stack", csi->top);
 }
 
 static void pdf_run_SC(pdf_csi *csi, fz_obj *rdb)
@@ -811,7 +785,7 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	if (error)
 		return fz_rethrow(error, "cannot load font (%d 0 R)", fz_tonum(obj));
 
-	gstate->size = csi->stack[1];
+	gstate->size = csi->stack[0];
 	return fz_okay;
 }
 
@@ -940,7 +914,7 @@ static void pdf_run_d(pdf_csi *csi)
 	gstate->strokestate.dashlen = MIN(fz_arraylen(array), nelem(gstate->strokestate.dashlist));
 	for (i = 0; i < gstate->strokestate.dashlen; i++)
 		gstate->strokestate.dashlist[i] = fz_toreal(fz_arrayget(array, i));
-	gstate->strokestate.dashphase = csi->stack[1];
+	gstate->strokestate.dashphase = csi->stack[0];
 }
 
 static void pdf_run_d0(pdf_csi *csi)
@@ -963,9 +937,8 @@ static void pdf_run_fstar(pdf_csi *csi)
 
 static void pdf_run_g(pdf_csi *csi)
 {
-	float v = csi->stack[0];
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicegray);
-	pdf_setcolor(csi, PDF_MFILL, &v);
+	pdf_setcolor(csi, PDF_MFILL, csi->stack);
 }
 
 static fz_error pdf_run_gs(pdf_csi *csi, fz_obj *rdb)
@@ -1005,21 +978,13 @@ static void pdf_run_j(pdf_csi *csi)
 
 static void pdf_run_k(pdf_csi *csi)
 {
-	float v[4];
-
-	v[0] = csi->stack[0];
-	v[1] = csi->stack[1];
-	v[2] = csi->stack[2];
-	v[3] = csi->stack[3];
-
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicecmyk);
-	pdf_setcolor(csi, PDF_MFILL, v);
+	pdf_setcolor(csi, PDF_MFILL, csi->stack);
 }
 
 static void pdf_run_l(pdf_csi *csi)
 {
 	float a, b;
-
 	a = csi->stack[0];
 	b = csi->stack[1];
 	fz_lineto(csi->path, a, b);
@@ -1028,7 +993,6 @@ static void pdf_run_l(pdf_csi *csi)
 static void pdf_run_m(pdf_csi *csi)
 {
 	float a, b;
-
 	a = csi->stack[0];
 	b = csi->stack[1];
 	fz_moveto(csi->path, a, b);
@@ -1062,14 +1026,8 @@ static void pdf_run_re(pdf_csi *csi)
 
 static void pdf_run_rg(pdf_csi *csi)
 {
-	float v[3];
-
-	v[0] = csi->stack[0];
-	v[1] = csi->stack[1];
-	v[2] = csi->stack[2];
-
 	pdf_setcolorspace(csi, PDF_MFILL, fz_devicergb);
-	pdf_setcolor(csi, PDF_MFILL, v);
+	pdf_setcolor(csi, PDF_MFILL, csi->stack);
 }
 
 static void pdf_run_ri(pdf_csi *csi)
@@ -1110,7 +1068,6 @@ static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 static void pdf_run_v(pdf_csi *csi)
 {
 	float a, b, c, d;
-
 	a = csi->stack[0];
 	b = csi->stack[1];
 	c = csi->stack[2];
@@ -1127,7 +1084,6 @@ static void pdf_run_w(pdf_csi *csi)
 static void pdf_run_y(pdf_csi *csi)
 {
 	float a, b, c, d;
-
 	a = csi->stack[0];
 	b = csi->stack[1];
 	c = csi->stack[2];
@@ -1177,15 +1133,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch(buf[1])
 		{
 		case 0: /* "B" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_BM(csi);
 			break;
 		case 'D': /* "BDC" */
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_BDC(csi);
 			break;
 		case 'I':
@@ -1196,29 +1148,21 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'M': /* "BMC" */
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_BMC(csi);
 			break;
 		case 'T': /* "BT" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_BT(csi);
 			break;
 		case 'X': /* "BX" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_BX(csi);
 			break;
 		case '*': /* "B*" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_Bstar(csi);
 			break;
 		default:
@@ -1229,8 +1173,6 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case 'C': /* "CS" */
 		if ((buf[1] == 'S') && (buf[2] == 0))
 		{
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_CS(csi, rdb);
 		}
 		else
@@ -1243,15 +1185,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'P': /* "Dp" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_DP(csi);
 			break;
 		case 'o': /* "Do" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Do(csi, rdb);
 			break;
 		default:
@@ -1265,22 +1203,16 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'X': /* "EX" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_EX(csi);
 			break;
 		case 'M': /* "EW" */
 			if ((buf[2] != 'C') || (buf[3] != 0))
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_EMC(csi);
 			break;
 		case 'T': /* "ET" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_ET(csi);
 			break;
 		default:
@@ -1291,32 +1223,24 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case 'F': /* "F" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 0)
-			goto syntaxerror;
 		pdf_run_F(csi);
 		break;
 
 	case 'G': /* "G" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_G(csi);
 		break;
 
 	case 'J': /* "J" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_J(csi);
 		break;
 
 	case 'K': /* "K" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 4)
-			goto syntaxerror;
 		pdf_run_K(csi);
 		break;
 
@@ -1324,15 +1248,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "M" */
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_M(csi);
 			break;
 		case 'P': /* "Mp" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_MP(csi);
 			break;
 		default:
@@ -1343,16 +1263,12 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case 'Q': /* "Q" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 0)
-			goto syntaxerror;
 		pdf_run_Q(csi);
 		break;
 
 	case 'R': /* "RG" */
 		if ((buf[1] != 'G') || (buf[2] != 0))
 			goto defaultcase;
-		if (csi->top < 3)
-			goto syntaxerror;
 		pdf_run_R(csi);
 		break;
 
@@ -1360,8 +1276,6 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "S" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_S(csi);
 			break;
 		case 'C': /* "SC" or "SCN" */
@@ -1380,92 +1294,66 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'c': /* "Tc" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Tc(csi);
 			break;
 		case 'w': /* "Tw" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Tw(csi);
 			break;
 		case 'z': /* "Tz" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Tz(csi);
 			break;
 		case 'L': /* "TL" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_TL(csi);
 			break;
 		case 'f': /* "Tf" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_Tf(csi, rdb);
 			break;
 		case 'r': /* "Tr" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Tr(csi);
 			break;
 		case 's': /* "Ts" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Ts(csi);
 			break;
 		case 'd': /* "Td" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_Td(csi);
 			break;
 		case 'D': /* "TD" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_TD(csi);
 			break;
 		case 'm': /* "Tm" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 6)
-				goto syntaxerror;
 			pdf_run_Tm(csi);
 			break;
 		case '*': /* "T*" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_Tstar(csi);
 			break;
 		case 'j': /* "Tj" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_Tj(csi);
 			break;
 		case 'J': /* "TJ" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_TJ(csi);
 			break;
 		default:
@@ -1477,15 +1365,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "W" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_W(csi);
 			break;
 		case '*': /* "W*" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_Wstar(csi);
 			break;
 		default:
@@ -1497,15 +1381,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "b" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_b(csi);
 			break;
 		case '*': /* "b*" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_bstar(csi);
 			break;
 		default:
@@ -1517,15 +1397,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "c" */
-			if (csi->top < 6)
-				goto syntaxerror;
 			pdf_run_c(csi);
 			break;
 		case 'm': /* "cm" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 6)
-				goto syntaxerror;
 			pdf_run_cm(csi);
 			break;
 		case 's': /* "cs" */
@@ -1542,8 +1418,6 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "d" */
-			if (csi->top < 2)
-				goto syntaxerror;
 			pdf_run_d(csi);
 			break;
 		case '0': /* "d0" */
@@ -1565,15 +1439,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "f" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_f(csi);
 			break;
 		case '*': /* "f*" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_fstar(csi);
 			break;
 		default:
@@ -1585,15 +1455,11 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "g" */
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_g(csi);
 			break;
 		case 's': /* "gs" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_gs(csi, rdb);
 			break;
 		default:
@@ -1604,64 +1470,48 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case 'h': /* "h" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 0)
-			goto syntaxerror;
 		pdf_run_h(csi);
 		break;
 
 	case 'i': /* "i" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_i(csi);
 		break;
 
 	case 'j': /* "j" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_j(csi);
 		break;
 
 	case 'k': /* "k" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 4)
-			goto syntaxerror;
 		pdf_run_k(csi);
 		break;
 
 	case 'l': /* "l" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 2)
-			goto syntaxerror;
 		pdf_run_l(csi);
 		break;
 
 	case 'm': /* "m" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 2)
-			goto syntaxerror;
 		pdf_run_m(csi);
 		break;
 
 	case 'n': /* "n" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 0)
-			goto syntaxerror;
 		pdf_run_n(csi);
 		break;
 
 	case 'q': /* "q" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 0)
-			goto syntaxerror;
 		pdf_run_q(csi);
 		break;
 
@@ -1671,22 +1521,16 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'i': /* "ri" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_ri(csi);
 			break;
 		case 'e': /* "re" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 4)
-				goto syntaxerror;
 			pdf_run_re(csi);
 			break;
 		case 'g': /* "rg" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 3)
-				goto syntaxerror;
 			pdf_run_rg(csi);
 			break;
 		default:
@@ -1698,8 +1542,6 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		switch (buf[1])
 		{
 		case 0: /* "s" */
-			if (csi->top < 0)
-				goto syntaxerror;
 			pdf_run_s(csi);
 			break;
 		case 'c': /* "sc" or "scn" */
@@ -1710,8 +1552,6 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 		case 'h': /* "sh" */
 			if (buf[2] != 0)
 				goto defaultcase;
-			if (csi->top < 1)
-				goto syntaxerror;
 			pdf_run_sh(csi, rdb);
 			break;
 		default:
@@ -1722,40 +1562,30 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case 'v': /* "v" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 4)
-			goto syntaxerror;
 		pdf_run_v(csi);
 		break;
 
 	case 'w': /* "w" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_w(csi);
 		break;
 
 	case 'y': /* "y" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 4)
-			goto syntaxerror;
 		pdf_run_y(csi);
 		break;
 
 	case '\'': /* "'" */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 1)
-			goto syntaxerror;
 		pdf_run_squote(csi);
 		break;
 
 	case '"': /* """ */
 		if (buf[1] != 0)
 			goto defaultcase;
-		if (csi->top < 3)
-			goto syntaxerror;
 		pdf_run_dquote(csi);
 		break;
 	default:
@@ -1767,9 +1597,6 @@ defaultcase:
 	}
 
 	return fz_okay;
-
-syntaxerror:
-	return fz_throw("syntax error near '%s' with %d items on the stack", buf, csi->top);
 }
 
 static fz_error
@@ -1795,7 +1622,6 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			if (tok == PDF_TCARRAY)
 			{
 				csi->inarray = 0;
-				csi->top ++;
 			}
 			else if (tok == PDF_TINT || tok == PDF_TREAL)
 			{
@@ -1829,7 +1655,6 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 				error = pdf_parsearray(&csi->obj, csi->xref, file, buf, buflen);
 				if (error)
 					return fz_rethrow(error, "cannot parse array");
-				csi->top ++;
 			}
 			else
 			{
@@ -1841,12 +1666,10 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			error = pdf_parsedict(&csi->obj, csi->xref, file, buf, buflen);
 			if (error)
 				return fz_rethrow(error, "cannot parse dictionary");
-			csi->top ++;
 			break;
 
 		case PDF_TNAME:
 			fz_strlcpy(csi->name, buf, sizeof(csi->name));
-			csi->top ++;
 			break;
 
 		case PDF_TINT:
@@ -1871,7 +1694,6 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			{
 				csi->obj = fz_newstring(buf, len);
 			}
-			csi->top ++;
 			break;
 
 		case PDF_TKEYWORD:
