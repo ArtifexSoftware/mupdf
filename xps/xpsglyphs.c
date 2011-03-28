@@ -3,18 +3,6 @@
 
 #include <ctype.h> /* for tolower() */
 
-#define XPS_TEXT_BUFFER_SIZE 300
-
-typedef struct xps_text_buffer_s xps_text_buffer_t;
-
-struct xps_text_buffer_s
-{
-	int count;
-	float x[XPS_TEXT_BUFFER_SIZE + 1];
-	float y[XPS_TEXT_BUFFER_SIZE + 1];
-	int g[XPS_TEXT_BUFFER_SIZE];
-};
-
 static inline int unhex(int i)
 {
 	if (isdigit(i))
@@ -95,60 +83,6 @@ xps_select_best_font_encoding(fz_font *font)
 	}
 
 	fz_warn("could not find a suitable cmap");
-}
-
-/*
- * Call text drawing primitives.
- */
-
-static void
-xps_flush_text_buffer(xps_context_t *ctx, fz_font *font,
-		xps_text_buffer_t *buf, int is_charpath)
-{
-#if 0
-	gs_text_params_t params;
-	gs_text_enum_t *textenum;
-	float x = buf->x[0];
-	float y = buf->y[0];
-	int code;
-	int i;
-
-	// dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
-	gs_moveto(ctx->pgs, x, y);
-
-	params.operation = TEXT_FROM_GLYPHS | TEXT_REPLACE_WIDTHS;
-	if (is_charpath)
-		params.operation |= TEXT_DO_FALSE_CHARPATH;
-	else
-		params.operation |= TEXT_DO_DRAW;
-	params.data.glyphs = buf->g;
-	params.size = buf->count;
-	params.x_widths = buf->x + 1;
-	params.y_widths = buf->y + 1;
-	params.widths_size = buf->count;
-
-	for (i = 0; i < buf->count; i++)
-	{
-		buf->x[i] = buf->x[i] - x;
-		buf->y[i] = buf->y[i] - y;
-		x += buf->x[i];
-		y += buf->y[i];
-	}
-	buf->x[buf->count] = 0;
-	buf->y[buf->count] = 0;
-
-	code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
-	if (code != 0)
-		return fz_throw("cannot gs_text_begin() (%d)", code);
-
-	code = gs_text_process(textenum);
-
-	if (code != 0)
-		return fz_throw("cannot gs_text_process() (%d)", code);
-
-	gs_text_release(textenum, "gslt font render");
-#endif
-	buf->count = 0;
 }
 
 /*
@@ -238,19 +172,17 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
  * Calculate metrics for positioning.
  */
 static void
-xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
+xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float size,
 		float originx, float originy, int is_sideways, int bidi_level,
 		char *indices, char *unicode, int is_charpath)
 {
-	xps_text_buffer_t buf;
 	xps_glyph_metrics_t mtx;
+	float e, f;
 	float x = originx;
 	float y = originy;
 	char *us = unicode;
 	char *is = indices;
 	int un = 0;
-
-	buf.count = 0;
 
 	if (!unicode && !indices)
 		return;
@@ -261,6 +193,8 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 			us = us + 2;
 		un = strlen(us);
 	}
+
+	ctx->text = fz_newtext(font, fz_scale(size, -size), is_sideways);
 
 	while ((us && un > 0) || (is && *is))
 	{
@@ -332,31 +266,22 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 			u_offset = u_offset * 0.01 * size;
 			v_offset = v_offset * 0.01 * size;
 
-			if (buf.count == XPS_TEXT_BUFFER_SIZE)
-			{
-				xps_flush_text_buffer(ctx, font, &buf, is_charpath);
-			}
-
 			if (is_sideways)
 			{
-				buf.x[buf.count] = x + u_offset + (mtx.vorg * size);
-				buf.y[buf.count] = y - v_offset + (mtx.hadv * 0.5 * size);
+				e = x + u_offset + (mtx.vorg * size);
+				f = y - v_offset + (mtx.hadv * 0.5 * size);
 			}
 			else
 			{
-				buf.x[buf.count] = x + u_offset;
-				buf.y[buf.count] = y - v_offset;
+				e = x + u_offset;
+				f = y - v_offset;
 			}
-			buf.g[buf.count] = glyph_index;
-			buf.count ++;
+
+			fz_addtext(ctx->text, glyph_index, char_code, e, f);
+			// TODO: cluster mapping
 
 			x += advance * 0.01 * size;
 		}
-	}
-
-	if (buf.count > 0)
-	{
-		xps_flush_text_buffer(ctx, font, &buf, is_charpath);
 	}
 }
 
@@ -556,10 +481,15 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 			samples[0] = atof(fill_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		xps_parse_glyphs_imp(ctx, font, font_size,
+		xps_parse_glyphs_imp(ctx, ctm, font, font_size,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level,
 				indices_att, unicode_att, 0);
+
+		ctx->dev->filltext(ctx->dev->user, ctx->text, ctm,
+			ctx->colorspace, ctx->color, ctx->alpha);
+		fz_freetext(ctx->text);
+		ctx->text = nil;
 	}
 
 	/*
@@ -568,14 +498,10 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 
 	if (fill_tag)
 	{
-		fz_warn("glyphs filled with general brushes not implemented!");
-#if 0
-		ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
-		xps_parse_glyphs_imp(ctx, font, font_size,
+		xps_parse_glyphs_imp(ctx, ctm, font, font_size,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level, indices_att, unicode_att, 1);
 		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
-#endif
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

@@ -44,9 +44,15 @@ xps_clip(xps_context_t *ctx, fz_matrix ctm)
 		fz_freepath(ctx->path);
 		ctx->path = NULL;
 	}
+	else if (ctx->text)
+	{
+		ctx->dev->cliptext(ctx->dev->user, ctx->text, ctm, 0);
+		fz_freetext(ctx->text);
+		ctx->text = nil;
+	}
 	else
 	{
-		printf("clip not a path! (maybe a glyph, or image?)\n");
+		fz_warn("clip not a path nor text");
 	}
 }
 

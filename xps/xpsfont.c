@@ -3,6 +3,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_ADVANCES_H
 
 int
 xps_count_font_encodings(fz_font *font)
@@ -39,16 +40,12 @@ xps_encode_font_char(fz_font *font, int code)
 void
 xps_measure_font_glyph(xps_context_t *ctx, fz_font *font, int gid, xps_glyph_metrics_t *mtx)
 {
+	int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
+	FT_Fixed adv;
 
-	int hadv, vadv, vorg;
-	int scale;
-
-	scale = 1000; /* units-per-em */
-	hadv = 500;
-	vadv = -1000;
-	vorg = 1000;
-
-	mtx->hadv = hadv / (float) scale;
-	mtx->vadv = vadv / (float) scale;
-	mtx->vorg = vorg / (float) scale;
+	FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
+	FT_Get_Advance(font->ftface, gid, mask, &adv);
+	mtx->hadv = adv / 65536.0f;
+	mtx->vadv = -1000 / 1000.0f;
+	mtx->vorg = 880 / 1000.0f;
 }
