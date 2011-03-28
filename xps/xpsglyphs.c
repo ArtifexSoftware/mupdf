@@ -185,7 +185,10 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 	int un = 0;
 
 	if (!unicode && !indices)
+	{
+		fz_warn("glyphs element with neither characters nor indices");
 		return;
+	}
 
 	if (us)
 	{
@@ -198,6 +201,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 
 	while ((us && un > 0) || (is && *is))
 	{
+		int char_code = '?';
 		int code_count = 1;
 		int glyph_count = 1;
 
@@ -211,30 +215,26 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 		if (glyph_count < 1)
 			glyph_count = 1;
 
-		while (code_count > 0 || glyph_count > 0)
+		/* TODO: add code chars with cluster mappings for proper text extraction */
+
+		while (code_count--)
 		{
-			int char_code = '?';
+			if (us && un > 0)
+			{
+				int t = xps_utf8_to_ucs(&char_code, us, un);
+				us += t; un -= t;
+			}
+		}
+
+		while (glyph_count--)
+		{
 			int glyph_index = -1;
 			float u_offset = 0.0;
 			float v_offset = 0.0;
 			float advance;
 
-			if (glyph_count)
-			{
-				if (is && *is)
-					is = xps_parse_glyph_index(is, &glyph_index);
-				glyph_count --;
-			}
-
-			if (code_count)
-			{
-				if (us && un > 0)
-				{
-					int t = xps_utf8_to_ucs(&char_code, us, un);
-					us += t; un -= t;
-				}
-				code_count --;
-			}
+			if (is && *is)
+				is = xps_parse_glyph_index(is, &glyph_index);
 
 			if (glyph_index == -1)
 				glyph_index = xps_encode_font_char(font, char_code);
@@ -254,12 +254,6 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 					is ++;
 			}
 
-#if 0
-			printf("glyph mapping (%d:%d)%d,%g,%g,%g\n",
-					code_count, glyph_count, glyph_index,
-					advance, u_offset, v_offset);
-#endif
-
 			if (bidi_level & 1)
 				u_offset = -mtx.hadv * 100 - u_offset;
 
@@ -278,7 +272,6 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 			}
 
 			fz_addtext(ctx->text, glyph_index, char_code, e, f);
-			// TODO: cluster mapping
 
 			x += advance * 0.01 * size;
 		}
@@ -440,7 +433,7 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 			xps_parse_render_transform(ctx, transform_att, &transform);
 		if (transform_tag)
 			xps_parse_matrix_transform(ctx, transform_tag, &transform);
-		ctm = fz_concat(ctm, transform);
+		ctm = fz_concat(transform, ctm);
 	}
 
 	if (clip_att || clip_tag)
