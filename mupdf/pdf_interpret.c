@@ -449,7 +449,7 @@ static fz_error pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 	return fz_okay;
 }
 
-static void pdf_run_BM(pdf_csi *csi)
+static void pdf_run_B(pdf_csi *csi)
 {
 	pdf_showpath(csi, 0, 1, 1, 0);
 }
@@ -475,7 +475,7 @@ static void pdf_run_Bstar(pdf_csi *csi)
 	pdf_showpath(csi, 0, 1, 1, 1);
 }
 
-static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
+static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 {
 	fz_colorspace *cs;
 	fz_obj *obj, *dict;
@@ -500,7 +500,7 @@ static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
 				return fz_throw("cannot find ColorSpace dictionary");
 			obj = fz_dictgets(dict, csi->name);
 			if (!obj)
-				return fz_throw("cannot find colorspace resource /%s", csi->name);
+				return fz_throw("cannot find colorspace resource '%s'", csi->name);
 			error = pdf_loadcolorspace(&cs, csi->xref, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_tonum(obj));
@@ -515,12 +515,18 @@ static fz_error pdf_run_cs_core(pdf_csi *csi, fz_obj *rdb, int what)
 
 static void pdf_run_CS(pdf_csi *csi, fz_obj *rdb)
 {
-	pdf_run_cs_core(csi, rdb, PDF_MSTROKE);
+	fz_error error;
+	error = pdf_run_cs_imp(csi, rdb, PDF_MSTROKE);
+	if (error)
+		fz_catch(error, "cannot set colorspace");
 }
 
 static void pdf_run_cs(pdf_csi *csi, fz_obj *rdb)
 {
-	pdf_run_cs_core(csi, rdb, PDF_MFILL);
+	fz_error error;
+	error = pdf_run_cs_imp(csi, rdb, PDF_MFILL);
+	if (error)
+		fz_catch(error, "cannot set colorspace");
 }
 
 static void pdf_run_DP(pdf_csi *csi)
@@ -588,7 +594,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 	else
 	{
-		return fz_throw("unknown XObject subtype: %s", fz_toname(subtype));
+		return fz_throw("unknown XObject subtype: '%s'", fz_toname(subtype));
 	}
 
 	return fz_okay;
@@ -648,7 +654,7 @@ static void pdf_run_Q(pdf_csi *csi)
 	pdf_grestore(csi);
 }
 
-static void pdf_run_R(pdf_csi *csi)
+static void pdf_run_RG(pdf_csi *csi)
 {
 	pdf_setcolorspace(csi, PDF_MSTROKE, fz_devicergb);
 	pdf_setcolor(csi, PDF_MSTROKE, csi->stack);
@@ -659,7 +665,7 @@ static void pdf_run_S(pdf_csi *csi)
 	pdf_showpath(csi, 0, 0, 1, 0);
 }
 
-static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_material *mat)
+static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material *mat)
 {
 	fz_error error;
 	fz_obj *patterntype;
@@ -687,7 +693,7 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 
 		obj = fz_dictgets(dict, csi->name);
 		if (!obj)
-			return fz_throw("cannot find pattern resource /%s", csi->name);
+			return fz_throw("cannot find pattern resource '%s'", csi->name);
 
 		patterntype = fz_dictgets(obj, "PatternType");
 
@@ -724,14 +730,20 @@ static fz_error pdf_run_SC_core(pdf_csi *csi, fz_obj *rdb, int what, pdf_materia
 
 static void pdf_run_SC(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_error error;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_run_SC_core(csi, rdb, PDF_MSTROKE, &gstate->stroke);
+	error = pdf_run_SC_imp(csi, rdb, PDF_MSTROKE, &gstate->stroke);
+	if (error)
+		fz_catch(error, "cannot set color and colorspace");
 }
 
 static void pdf_run_sc(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_error error;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_run_SC_core(csi, rdb, PDF_MFILL, &gstate->fill);
+	error = pdf_run_SC_imp(csi, rdb, PDF_MFILL, &gstate->fill);
+	if (error)
+		fz_catch(error, "cannot set color and colorspace");
 }
 
 static void pdf_run_Tc(pdf_csi *csi)
@@ -773,7 +785,7 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 
 	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find font resource: %s", csi->name);
+		return fz_throw("cannot find font resource: '%s'", csi->name);
 
 	if (gstate->font)
 	{
@@ -953,7 +965,7 @@ static fz_error pdf_run_gs(pdf_csi *csi, fz_obj *rdb)
 
 	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find extgstate resource /%s", csi->name);
+		return fz_throw("cannot find extgstate resource '%s'", csi->name);
 
 	error = pdf_runextgstate(csi, rdb, obj);
 	if (error)
@@ -1052,7 +1064,7 @@ static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 
 	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find shading resource: %s", csi->name);
+		return fz_throw("cannot find shading resource: '%s'", csi->name);
 
 	if ((csi->dev->hints & FZ_IGNORESHADE) == 0)
 	{
@@ -1124,475 +1136,123 @@ static void pdf_run_dquote(pdf_csi *csi)
 		pdf_showtext(csi, csi->obj);
 }
 
+#define A(a) (a << 16)
+#define B(a,b) ((a << 16) | (b << 8))
+#define C(a,b,c) ((a << 16) | (b << 8) | c)
+
 static fz_error
 pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 {
-	switch (buf[0])
+	fz_error error;
+	int c;
+
+	if (buf[0] == 0)
+		c = 0;
+	else if (buf[1] == 0)
+		c = buf[0] << 16;
+	else if (buf[2] == 0)
+		c = buf[0] << 16 | buf[1] << 8;
+	else if (buf[3] == 0)
+		c = buf[0] << 16 | buf[1] << 8 | buf[2];
+	else
+		c = 0;
+
+	switch (c)
 	{
-	case 'B':
-		switch(buf[1])
-		{
-		case 0: /* "B" */
-			pdf_run_BM(csi);
-			break;
-		case 'D': /* "BDC" */
-			if ((buf[2] != 'C') || (buf[3] != 0))
-				goto defaultcase;
-			pdf_run_BDC(csi);
-			break;
-		case 'I':
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_BI(csi, rdb, file);
-			break;
-		case 'M': /* "BMC" */
-			if ((buf[2] != 'C') || (buf[3] != 0))
-				goto defaultcase;
-			pdf_run_BMC(csi);
-			break;
-		case 'T': /* "BT" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_BT(csi);
-			break;
-		case 'X': /* "BX" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_BX(csi);
-			break;
-		case '*': /* "B*" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Bstar(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
+	case A('"'): pdf_run_dquote(csi); break;
+	case A('\''): pdf_run_squote(csi); break;
+	case A('B'): pdf_run_B(csi); break;
+	case B('B','*'): pdf_run_Bstar(csi); break;
+	case C('B','D','C'): pdf_run_BDC(csi); break;
+	case B('B','I'):
+		error = pdf_run_BI(csi, rdb, file);
+		if (error)
+			return fz_rethrow(error, "cannot draw inline image");
 		break;
-
-	case 'C': /* "CS" */
-		if ((buf[1] == 'S') && (buf[2] == 0))
-		{
-			pdf_run_CS(csi, rdb);
-		}
-		else
-			goto defaultcase;
+	case C('B','M','C'): pdf_run_BMC(csi); break;
+	case B('B','T'): pdf_run_BT(csi); break;
+	case B('B','X'): pdf_run_BX(csi); break;
+	case B('C','S'): pdf_run_CS(csi, rdb); break;
+	case B('D','P'): pdf_run_DP(csi); break;
+	case B('D','o'):
+		error = pdf_run_Do(csi, rdb);
+		if (error)
+			fz_catch(error, "cannot draw xobject/image");
 		break;
-
-	case 'D':
-		switch (buf[1])
-		{
-		case 'P': /* "Dp" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_DP(csi);
-			break;
-		case 'o': /* "Do" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Do(csi, rdb);
-			break;
-		default:
-			goto defaultcase;
-		}
+	case C('E','M','C'): pdf_run_EMC(csi); break;
+	case B('E','T'): pdf_run_ET(csi); break;
+	case B('E','X'): pdf_run_EX(csi); break;
+	case A('F'): pdf_run_F(csi); break;
+	case A('G'): pdf_run_G(csi); break;
+	case A('J'): pdf_run_J(csi); break;
+	case A('K'): pdf_run_K(csi); break;
+	case A('M'): pdf_run_M(csi); break;
+	case B('M','P'): pdf_run_MP(csi); break;
+	case A('Q'): pdf_run_Q(csi); break;
+	case B('R','G'): pdf_run_RG(csi); break;
+	case A('S'): pdf_run_S(csi); break;
+	case B('S','C'): pdf_run_SC(csi, rdb); break;
+	case C('S','C','N'): pdf_run_SC(csi, rdb); break;
+	case B('T','*'): pdf_run_Tstar(csi); break;
+	case B('T','D'): pdf_run_TD(csi); break;
+	case B('T','J'): pdf_run_TJ(csi); break;
+	case B('T','L'): pdf_run_TL(csi); break;
+	case B('T','c'): pdf_run_Tc(csi); break;
+	case B('T','d'): pdf_run_Td(csi); break;
+	case B('T','f'):
+		error = pdf_run_Tf(csi, rdb);
+		if (error)
+			return fz_rethrow(error, "cannot set font");
 		break;
-
-	case 'E':
-		switch (buf[1])
-		{
-		case 'X': /* "EX" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_EX(csi);
-			break;
-		case 'M': /* "EW" */
-			if ((buf[2] != 'C') || (buf[3] != 0))
-				goto defaultcase;
-			pdf_run_EMC(csi);
-			break;
-		case 'T': /* "ET" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_ET(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
+	case B('T','j'): pdf_run_Tj(csi); break;
+	case B('T','m'): pdf_run_Tm(csi); break;
+	case B('T','r'): pdf_run_Tr(csi); break;
+	case B('T','s'): pdf_run_Ts(csi); break;
+	case B('T','w'): pdf_run_Tw(csi); break;
+	case B('T','z'): pdf_run_Tz(csi); break;
+	case A('W'): pdf_run_W(csi); break;
+	case B('W','*'): pdf_run_Wstar(csi); break;
+	case A('b'): pdf_run_b(csi); break;
+	case B('b','*'): pdf_run_bstar(csi); break;
+	case A('c'): pdf_run_c(csi); break;
+	case B('c','m'): pdf_run_cm(csi); break;
+	case B('c','s'): pdf_run_cs(csi, rdb); break;
+	case A('d'): pdf_run_d(csi); break;
+	case B('d','0'): pdf_run_d0(csi); break;
+	case B('d','1'): pdf_run_d1(csi); break;
+	case A('f'): pdf_run_f(csi); break;
+	case B('f','*'): pdf_run_fstar(csi); break;
+	case A('g'): pdf_run_g(csi); break;
+	case B('g','s'):
+		error = pdf_run_gs(csi, rdb);
+		if (error)
+			fz_catch(error, "cannot set graphics state");
 		break;
-
-	case 'F': /* "F" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_F(csi);
+	case A('h'): pdf_run_h(csi); break;
+	case A('i'): pdf_run_i(csi); break;
+	case A('j'): pdf_run_j(csi); break;
+	case A('k'): pdf_run_k(csi); break;
+	case A('l'): pdf_run_l(csi); break;
+	case A('m'): pdf_run_m(csi); break;
+	case A('n'): pdf_run_n(csi); break;
+	case A('q'): pdf_run_q(csi); break;
+	case B('r','e'): pdf_run_re(csi); break;
+	case B('r','g'): pdf_run_rg(csi); break;
+	case B('r','i'): pdf_run_ri(csi); break;
+	case A('s'): pdf_run_s(csi); break;
+	case B('s','c'): pdf_run_sc(csi, rdb); break;
+	case C('s','c','n'): pdf_run_sc(csi, rdb); break;
+	case B('s','h'):
+		error = pdf_run_sh(csi, rdb);
+		if (error)
+			fz_catch(error, "cannot draw shading");
 		break;
-
-	case 'G': /* "G" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_G(csi);
-		break;
-
-	case 'J': /* "J" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_J(csi);
-		break;
-
-	case 'K': /* "K" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_K(csi);
-		break;
-
-	case 'M':
-		switch (buf[1])
-		{
-		case 0: /* "M" */
-			pdf_run_M(csi);
-			break;
-		case 'P': /* "Mp" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_MP(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'Q': /* "Q" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_Q(csi);
-		break;
-
-	case 'R': /* "RG" */
-		if ((buf[1] != 'G') || (buf[2] != 0))
-			goto defaultcase;
-		pdf_run_R(csi);
-		break;
-
-	case 'S':
-		switch (buf[1])
-		{
-		case 0: /* "S" */
-			pdf_run_S(csi);
-			break;
-		case 'C': /* "SC" or "SCN" */
-			if ((buf[2] != 0) && ((buf[2] != 'N') || (buf[3] != 0)))
-				goto defaultcase;
-			pdf_run_SC(csi, rdb);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'T':
-		switch (buf[1])
-		{
-		case 'c': /* "Tc" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tc(csi);
-			break;
-		case 'w': /* "Tw" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tw(csi);
-			break;
-		case 'z': /* "Tz" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tz(csi);
-			break;
-		case 'L': /* "TL" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_TL(csi);
-			break;
-		case 'f': /* "Tf" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tf(csi, rdb);
-			break;
-		case 'r': /* "Tr" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tr(csi);
-			break;
-		case 's': /* "Ts" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Ts(csi);
-			break;
-		case 'd': /* "Td" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Td(csi);
-			break;
-		case 'D': /* "TD" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_TD(csi);
-			break;
-		case 'm': /* "Tm" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tm(csi);
-			break;
-		case '*': /* "T*" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tstar(csi);
-			break;
-		case 'j': /* "Tj" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Tj(csi);
-			break;
-		case 'J': /* "TJ" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_TJ(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'W':
-		switch (buf[1])
-		{
-		case 0: /* "W" */
-			pdf_run_W(csi);
-			break;
-		case '*': /* "W*" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_Wstar(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'b':
-		switch (buf[1])
-		{
-		case 0: /* "b" */
-			pdf_run_b(csi);
-			break;
-		case '*': /* "b*" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_bstar(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'c':
-		switch (buf[1])
-		{
-		case 0: /* "c" */
-			pdf_run_c(csi);
-			break;
-		case 'm': /* "cm" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_cm(csi);
-			break;
-		case 's': /* "cs" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_cs(csi, rdb);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'd':
-		switch (buf[1])
-		{
-		case 0: /* "d" */
-			pdf_run_d(csi);
-			break;
-		case '0': /* "d0" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_d0(csi);
-			break;
-		case '1': /* "d1" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_d1(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'f':
-		switch (buf[1])
-		{
-		case 0: /* "f" */
-			pdf_run_f(csi);
-			break;
-		case '*': /* "f*" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_fstar(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'g':
-		switch (buf[1])
-		{
-		case 0: /* "g" */
-			pdf_run_g(csi);
-			break;
-		case 's': /* "gs" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_gs(csi, rdb);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'h': /* "h" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_h(csi);
-		break;
-
-	case 'i': /* "i" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_i(csi);
-		break;
-
-	case 'j': /* "j" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_j(csi);
-		break;
-
-	case 'k': /* "k" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_k(csi);
-		break;
-
-	case 'l': /* "l" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_l(csi);
-		break;
-
-	case 'm': /* "m" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_m(csi);
-		break;
-
-	case 'n': /* "n" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_n(csi);
-		break;
-
-	case 'q': /* "q" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_q(csi);
-		break;
-
-	case 'r':
-		switch (buf[1])
-		{
-		case 'i': /* "ri" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_ri(csi);
-			break;
-		case 'e': /* "re" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_re(csi);
-			break;
-		case 'g': /* "rg" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_rg(csi);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 's':
-		switch (buf[1])
-		{
-		case 0: /* "s" */
-			pdf_run_s(csi);
-			break;
-		case 'c': /* "sc" or "scn" */
-			if ((buf[2] != 0) && ((buf[2] != 'n') || (buf[3] != 0)))
-				goto defaultcase;
-			pdf_run_sc(csi, rdb);
-			break;
-		case 'h': /* "sh" */
-			if (buf[2] != 0)
-				goto defaultcase;
-			pdf_run_sh(csi, rdb);
-			break;
-		default:
-			goto defaultcase;
-		}
-		break;
-
-	case 'v': /* "v" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_v(csi);
-		break;
-
-	case 'w': /* "w" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_w(csi);
-		break;
-
-	case 'y': /* "y" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_y(csi);
-		break;
-
-	case '\'': /* "'" */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_squote(csi);
-		break;
-
-	case '"': /* """ */
-		if (buf[1] != 0)
-			goto defaultcase;
-		pdf_run_dquote(csi);
-		break;
+	case A('v'): pdf_run_v(csi); break;
+	case A('w'): pdf_run_w(csi); break;
+	case A('y'): pdf_run_y(csi); break;
 	default:
-defaultcase:
-		/* don't fail on unknown keywords if braced by BX/EX */
 		if (!csi->xbalance)
-			fz_warn("unknown keyword: %s", buf);
+			fz_warn("unknown keyword: '%s'", buf);
 		break;
 	}
 
@@ -1699,7 +1359,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TKEYWORD:
 			error = pdf_runkeyword(csi, rdb, file, buf);
 			if (error)
-				return fz_rethrow(error, "cannot run keyword '%s'", buf);
+				return fz_rethrow(error, "cannot run keyword");
 			pdf_clearstack(csi);
 			break;
 
