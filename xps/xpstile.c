@@ -159,9 +159,20 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 
 	if (tile_mode != TILE_NONE)
 	{
+		float w = viewbox.x1 - viewbox.x0;
+		float h = viewbox.y1 - viewbox.y0;
+		fz_matrix ttm;
+		int x, y;
+
 		/* TODO: loop in visible area */
-		fz_warn("tiling brushes not implemented!");
-		xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
+		for (y = -10; y < 20; y++)
+		{
+			for (x = -10; x < 20; x++)
+			{
+				ttm = fz_concat(fz_translate(w*x, h*y), ctm);
+				xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);
+			}
+		}
 	}
 	else
 	{
