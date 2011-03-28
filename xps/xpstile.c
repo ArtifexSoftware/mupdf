@@ -8,111 +8,67 @@
 
 enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
-struct tile_closure_s
+struct closure
 {
-	xps_context_t *ctx;
 	char *base_uri;
 	xps_resource_t *dict;
-	xps_item_t *tag;
-	fz_rect viewbox;
-	int tile_mode;
+	xps_item_t *root;
 	void *user;
-	int (*func)(xps_context_t*, char*, xps_resource_t*, xps_item_t*, void*);
+	void (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*);
 };
 
-static int
-xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
+static void
+xps_paint_tiling_brush_clipped(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, struct closure *c)
 {
-	xps_context_t *ctx = c->ctx;
-	int code;
+	ctx->path = fz_newpath();
+	fz_moveto(ctx->path, viewbox.x0, viewbox.y0);
+	fz_lineto(ctx->path, viewbox.x0, viewbox.y1);
+	fz_lineto(ctx->path, viewbox.x1, viewbox.y1);
+	fz_lineto(ctx->path, viewbox.x1, viewbox.y0);
+	fz_closepath(ctx->path);
+	xps_clip(ctx, ctm);
 
-#if 0
-	gs_moveto(ctx->pgs, c->viewbox.p.x, c->viewbox.p.y);
-	gs_lineto(ctx->pgs, c->viewbox.p.x, c->viewbox.q.y);
-	gs_lineto(ctx->pgs, c->viewbox.q.x, c->viewbox.q.y);
-	gs_lineto(ctx->pgs, c->viewbox.q.x, c->viewbox.p.y);
-	gs_closepath(ctx->pgs);
-	gs_clip(ctx->pgs);
-	gs_newpath(ctx->pgs);
-#endif
+	c->func(ctx, ctm, c->base_uri, c->dict, c->root, c->user);
 
-	code = c->func(c->ctx, c->base_uri, c->dict, c->tag, c->user);
-	if (code < 0)
-		return fz_rethrow(code, "cannot draw clipped tile");
-
-	return 0;
+	ctx->dev->popclip(ctx->dev->user);
 }
 
-#if 0
-static int
-xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
+static void
+xps_paint_tiling_brush(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, int tile_mode, struct closure *c)
 {
-	const gs_client_pattern *ppat = gs_getpattern(pcc);
-	struct tile_closure_s *c = ppat->client_data;
-	xps_context_t *ctx = c->ctx;
-	gs_state *saved_pgs;
-	int code;
+	fz_matrix ttm;
 
-	saved_pgs = ctx->pgs;
-	ctx->pgs = pgs;
+	xps_paint_tiling_brush_clipped(ctx, ctm, viewbox, c);
 
-	gs_gsave(ctx->pgs);
-	code = xps_paint_tiling_brush_clipped(c);
-	if (code)
-		goto cleanup;
-	gs_grestore(ctx->pgs);
-
-	if (c->tile_mode == TILE_FLIP_X || c->tile_mode == TILE_FLIP_X_Y)
+	if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
 	{
-		gs_gsave(ctx->pgs);
-		gs_translate(ctx->pgs, c->viewbox.q.x * 2, 0.0);
-		gs_scale(ctx->pgs, -1.0, 1.0);
-		code = xps_paint_tiling_brush_clipped(c);
-		if (code)
-			goto cleanup;
-		gs_grestore(ctx->pgs);
+		ttm = fz_concat(ctm, fz_translate(viewbox.x1 * 2, 0));
+		ttm = fz_concat(ttm, fz_scale(-1, 1));
+		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
 
-	if (c->tile_mode == TILE_FLIP_Y || c->tile_mode == TILE_FLIP_X_Y)
+	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 	{
-		gs_gsave(ctx->pgs);
-		gs_translate(ctx->pgs, 0.0, c->viewbox.q.y * 2);
-		gs_scale(ctx->pgs, 1.0, -1.0);
-		code = xps_paint_tiling_brush_clipped(c);
-		if (code)
-			goto cleanup;
-		gs_grestore(ctx->pgs);
+		ttm = fz_concat(ctm, fz_translate(0, viewbox.y1 * 2));
+		ttm = fz_concat(ttm, fz_scale(1, -1));
+		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
 
-	if (c->tile_mode == TILE_FLIP_X_Y)
+	if (tile_mode == TILE_FLIP_X_Y)
 	{
-		gs_gsave(ctx->pgs);
-		gs_translate(ctx->pgs, c->viewbox.q.x * 2, c->viewbox.q.y * 2);
-		gs_scale(ctx->pgs, -1.0, -1.0);
-		code = xps_paint_tiling_brush_clipped(c);
-		if (code)
-			goto cleanup;
-		gs_grestore(ctx->pgs);
+		ttm = fz_concat(ctm, fz_translate(viewbox.x1 * 2, viewbox.y1 * 2));
+		ttm = fz_concat(ttm, fz_scale(-1, -1));
+		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
-
-	ctx->pgs = saved_pgs;
-
-	return 0;
-
-cleanup:
-	gs_grestore(ctx->pgs);
-	ctx->pgs = saved_pgs;
-	return fz_rethrow(code, "cannot draw tile");
 }
-#endif
 
-int
+void
 xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource_t *dict, xps_item_t *root,
-	int (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user)
+	void (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user)
 {
 	xps_item_t *node;
-	int code;
+	struct closure c;
 
 	char *opacity_att;
 	char *transform_att;
@@ -137,6 +93,12 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 	tile_mode_att = xps_att(root, "TileMode");
 	viewbox_units_att = xps_att(root, "ViewboxUnits");
 	viewport_units_att = xps_att(root, "ViewportUnits");
+
+	c.base_uri = base_uri;
+	c.dict = dict;
+	c.root = root;
+	c.user = user;
+	c.func = func;
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
@@ -163,10 +125,10 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 		xps_parse_rectangle(ctx, viewport_att, &viewport);
 
 	/* some sanity checks on the viewport/viewbox size */
-	if (fabs(viewport.x1 - viewport.x0) < 0.01) return 0;
-	if (fabs(viewport.y1 - viewport.y0) < 0.01) return 0;
-	if (fabs(viewbox.x1 - viewbox.x0) < 0.01) return 0;
-	if (fabs(viewbox.y1 - viewbox.y0) < 0.01) return 0;
+	if (fabs(viewport.x1 - viewport.x0) < 0.01) return;
+	if (fabs(viewport.y1 - viewport.y0) < 0.01) return;
+	if (fabs(viewbox.x1 - viewbox.x0) < 0.01) return;
+	if (fabs(viewbox.y1 - viewbox.y0) < 0.01) return;
 
 	scalex = (viewport.x1 - viewport.x0) / (viewbox.x1 - viewbox.x0);
 	scaley = (viewport.y1 - viewport.y0) / (viewbox.y1 - viewbox.y0);
@@ -186,114 +148,27 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 			tile_mode = TILE_FLIP_X_Y;
 	}
 
-//	gs_gsave(ctx->pgs);
+	xps_clip(ctx, ctm);
 
-	code = xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
-	if (code)
-	{
-//		gs_grestore(ctx->pgs);
-		return fz_rethrow(code, "cannot create transparency group");
-	}
+	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
 
-	/* TODO(tor): check viewport and tiling to see if we can set it to TILE_NONE */
+	ctm = fz_concat(ctm, transform);
+	ctm = fz_concat(ctm, fz_translate(viewport.x0, viewport.y0));
+	ctm = fz_concat(ctm, fz_scale(scalex, scaley));
+	ctm = fz_concat(ctm, fz_translate(-viewbox.x0, -viewbox.y0));
 
-#if 0
 	if (tile_mode != TILE_NONE)
 	{
-		struct tile_closure_s closure;
-
-		gs_client_pattern gspat;
-		gs_client_color gscolor;
-		fz_colorspace *cs;
-
-		closure.ctx = ctx;
-		closure.base_uri = base_uri;
-		closure.dict = dict;
-		closure.tag = root;
-		closure.tile_mode = tile_mode;
-		closure.user = user;
-		closure.func = func;
-
-		closure.viewbox.p.x = viewbox.p.x;
-		closure.viewbox.p.y = viewbox.p.y;
-		closure.viewbox.q.x = viewbox.q.x;
-		closure.viewbox.q.y = viewbox.q.y;
-
-		gs_pattern1_init(&gspat);
-		uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
-		gspat.PaintType = 1;
-		gspat.TilingType = 1;
-		gspat.PaintProc = xps_remap_pattern;
-		gspat.client_data = &closure;
-
-		gspat.XStep = viewbox.q.x - viewbox.p.x;
-		gspat.YStep = viewbox.q.y - viewbox.p.y;
-		gspat.BBox.p.x = viewbox.p.x;
-		gspat.BBox.p.y = viewbox.p.y;
-		gspat.BBox.q.x = viewbox.q.x;
-		gspat.BBox.q.y = viewbox.q.y;
-
-		if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
-		{
-			gspat.BBox.q.x += gspat.XStep;
-			gspat.XStep *= 2;
-		}
-
-		if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
-		{
-			gspat.BBox.q.y += gspat.YStep;
-			gspat.YStep *= 2;
-		}
-
-		fz_matrix_translate(&transform, viewport.p.x, viewport.p.y, &transform);
-		fz_matrix_scale(&transform, scalex, scaley, &transform);
-		fz_matrix_translate(&transform, -viewbox.p.x, -viewbox.p.y, &transform);
-
-		cs = ctx->srgb;
-		gs_setcolorspace(ctx->pgs, cs);
-		gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
-		gs_setpattern(ctx->pgs, &gscolor);
-
-		xps_fill(ctx);
-
-		/* gs_makepattern increments the pattern count stored in the color
-		 * structure. We will discard the color struct (its on the stack)
-		 * so we need to decrement the reference before we throw away
-		 * the structure.
-		 */
-		gs_pattern_reference(&gscolor, -1);
+		/* TODO: loop in visible area */
+		fz_warn("tiling brushes not implemented!");
+		xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
 	}
 	else
 	{
-		xps_clip(ctx);
-
-		gs_concat(ctx->pgs, &transform);
-
-		gs_translate(ctx->pgs, viewport.p.x, viewport.p.y);
-		gs_scale(ctx->pgs, scalex, scaley);
-		gs_translate(ctx->pgs, -viewbox.p.x, -viewbox.p.y);
-
-		gs_moveto(ctx->pgs, viewbox.p.x, viewbox.p.y);
-		gs_lineto(ctx->pgs, viewbox.p.x, viewbox.q.y);
-		gs_lineto(ctx->pgs, viewbox.q.x, viewbox.q.y);
-		gs_lineto(ctx->pgs, viewbox.q.x, viewbox.p.y);
-		gs_closepath(ctx->pgs);
-		gs_clip(ctx->pgs);
-		gs_newpath(ctx->pgs);
-
-		code = func(ctx, base_uri, dict, root, user);
-		if (code < 0)
-		{
-			xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
-			gs_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot draw tile");
-		}
+		xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
 	}
-#endif
 
 	xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
 
-//	gs_grestore(ctx->pgs);
-
-	return 0;
+	ctx->dev->popclip(ctx->dev->user);
 }

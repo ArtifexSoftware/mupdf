@@ -44,7 +44,6 @@ static void
 on_open_tag(void *zp, char *ns_name, char **atts)
 {
 	xps_parser_t *parser = zp;
-	xps_context_t *ctx = parser->ctx;
 	xps_item_t *item;
 	xps_item_t *tail;
 	int namelen;
@@ -93,7 +92,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 			textlen += strlen(atts[i]) + 1;
 	}
 
-	item = xps_alloc(ctx, sizeof(xps_item_t) + attslen + namelen + textlen);
+	item = fz_malloc(sizeof(xps_item_t) + attslen + namelen + textlen);
 	if (!item)
 	{
 		parser->error = "out of memory";
@@ -167,7 +166,6 @@ static void
 on_text(void *zp, char *buf, int len)
 {
 	xps_parser_t *parser = zp;
-	xps_context_t *ctx = parser->ctx;
 	char *atts[3];
 	int i;
 
@@ -178,7 +176,7 @@ on_text(void *zp, char *buf, int len)
 	{
 		if (!is_xml_space(buf[i]))
 		{
-			char *tmp = xps_alloc(ctx, len + 1);
+			char *tmp = fz_malloc(len + 1);
 			if (!tmp)
 			{
 				parser->error = "out of memory";
@@ -193,7 +191,7 @@ on_text(void *zp, char *buf, int len)
 			tmp[len] = 0;
 			on_open_tag(zp, "", atts);
 			on_close_tag(zp, "");
-			xps_free(ctx, tmp);
+			fz_free(tmp);
 			return;
 		}
 	}

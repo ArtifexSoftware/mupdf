@@ -200,7 +200,7 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
 #endif
 }
 
-int
+void
 xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
 	char *opacity_att;
@@ -219,13 +219,9 @@ xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, x
 
 	if (color_att)
 		xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
-
 	if (opacity_att)
 		samples[0] = atof(opacity_att);
 
 	xps_set_color(ctx, colorspace, samples);
-
 	xps_fill(ctx, ctm);
-
-	return 0;
 }

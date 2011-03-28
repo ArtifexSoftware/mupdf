@@ -43,7 +43,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 	return fz_okay;
 }
 
-static int
+static void
 xps_paint_image_brush_imp(xps_context_t *ctx, fz_matrix ctm, xps_image_t *image)
 {
 	fz_colorspace *colorspace;
@@ -54,12 +54,10 @@ xps_paint_image_brush_imp(xps_context_t *ctx, fz_matrix ctm, xps_image_t *image)
 	samples = image->samples;
 	count = image->stride * image->height;
 
-	// xxx
-
-	return 0;
+printf("xps_paint_image_brush_imp!\n");
 }
 
-static int
+static void
 xps_paint_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root, void *vimage)
 {
 #if 0
@@ -124,7 +122,6 @@ xps_paint_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 			return fz_rethrow(code, "cannot draw image");
 	}
 #endif
-	return 0;
 }
 
 static int
@@ -186,7 +183,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
 	return 0;
 }
 
-int
+void
 xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
 	xps_part_t *part;
@@ -198,18 +195,19 @@ xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 	profilename = NULL;
 
 	code = xps_find_image_brush_source_part(ctx, base_uri, root, &part, &profilename);
-	if (code < 0)
-		return fz_rethrow(code, "cannot find image source");
+	if (code < 0) {
+		fz_catch(code, "cannot find image source");
+		return;
+	}
 
 	image = xps_alloc(ctx, sizeof(xps_image_t));
-	if (!image)
-		return fz_throw("out of memory: image struct");
-
-return 0;
 
 	code = xps_decode_image(ctx, part, image);
-	if (code < 0)
-		return fz_rethrow(-1, "cannot decode image resource");
+	if (code < 0) {
+		fz_free(image);
+		fz_catch(-1, "cannot decode image resource");
+		return;
+	}
 
 	/* Override any embedded colorspace profiles if the external one matches. */
 	if (profilename)
@@ -222,16 +220,12 @@ return 0;
 		}
 	}
 
-	code = xps_parse_tiling_brush(ctx, ctm, base_uri, dict, root, xps_paint_image_brush, image);
-	if (code < 0)
-		return fz_rethrow(-1, "cannot parse tiling brush");
+	xps_parse_tiling_brush(ctx, ctm, base_uri, dict, root, xps_paint_image_brush, image);
 
 	if (profilename)
 		xps_free(ctx, profilename);
 	xps_free_image(ctx, image);
 	xps_free_part(ctx, part);
-
-	return 0;
 }
 
 void

@@ -1,33 +1,33 @@
 #include "fitz.h"
 #include "muxps.h"
 
-int
+void
 xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
 	if (!strcmp(xps_tag(node), "SolidColorBrush"))
-		return xps_parse_solid_color_brush(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "ImageBrush"))
-		return xps_parse_image_brush(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "VisualBrush"))
-		return xps_parse_visual_brush(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "LinearGradientBrush"))
-		return xps_parse_linear_gradient_brush(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "RadialGradientBrush"))
-		return xps_parse_radial_gradient_brush(ctx, ctm, base_uri, dict, node);
-	return fz_throw("unknown brush tag: %s", xps_tag(node));
+		xps_parse_solid_color_brush(ctx, ctm, base_uri, dict, node);
+	else if (!strcmp(xps_tag(node), "ImageBrush"))
+		xps_parse_image_brush(ctx, ctm, base_uri, dict, node);
+	else if (!strcmp(xps_tag(node), "VisualBrush"))
+		xps_parse_visual_brush(ctx, ctm, base_uri, dict, node);
+	else if (!strcmp(xps_tag(node), "LinearGradientBrush"))
+		xps_parse_linear_gradient_brush(ctx, ctm, base_uri, dict, node);
+	else if (!strcmp(xps_tag(node), "RadialGradientBrush"))
+		xps_parse_radial_gradient_brush(ctx, ctm, base_uri, dict, node);
+	else
+		fz_warn("unknown brush tag: %s", xps_tag(node));
 }
 
-int
+void
 xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
 	if (!strcmp(xps_tag(node), "Path"))
-		return xps_parse_path(ctx, ctm, base_uri, dict, node);
+		xps_parse_path(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "Glyphs"))
-		return xps_parse_glyphs(ctx, ctm, base_uri, dict, node);
+		xps_parse_glyphs(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xps_tag(node), "Canvas"))
-		return xps_parse_canvas(ctx, ctm, base_uri, dict, node);
+		xps_parse_canvas(ctx, ctm, base_uri, dict, node);
 	/* skip unknown tags (like Foo.Resources and similar) */
-	return 0;
 }
 
 void

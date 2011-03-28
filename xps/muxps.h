@@ -205,17 +205,17 @@ void xps_debug_resource_dictionary(xps_resource_t *dict);
  */
 
 int xps_load_fixed_page(xps_context_t *ctx, xps_page_t *page);
-int xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page);
-int xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_linear_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_radial_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page);
+void xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_linear_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_radial_gradient_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
-int xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root, int (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user);
+void xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root, void(*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user);
 
 void xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, fz_matrix *matrix);
 void xps_parse_render_transform(xps_context_t *ctx, char *text, fz_matrix *matrix);
@@ -223,11 +223,11 @@ void xps_parse_rectangle(xps_context_t *ctx, char *text, fz_rect *rect);
 void xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 void xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking);
 
-int xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
+void xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 void xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 
-int xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
-int xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
+void xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
 void xps_fill(xps_context_t *ctx, fz_matrix ctm);
 void xps_clip(xps_context_t *ctx, fz_matrix ctm);
@@ -289,6 +289,7 @@ struct xps_context_s
 
 	/* Current path being accumulated */
 	fz_path *path;
+	fz_text *text; /* ... or text, for clipping brushes */
 
 	/* Current color */
 	fz_colorspace *colorspace;

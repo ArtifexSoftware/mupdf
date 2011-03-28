@@ -82,25 +82,16 @@ static int isrange(char *s)
 	return 1;
 }
 
-static int
+static void
 xps_run_page(xps_context_t *ctx, xps_page_t *page, fz_device *dev, fz_matrix ctm)
 {
-	int code;
-
 	ctx->dev = dev;
-
-	code = xps_parse_fixed_page(ctx, ctm, page);
-	if (code)
-		return fz_rethrow(code, "cannot draw page part %s", page->name);
-
+	xps_parse_fixed_page(ctx, ctm, page);
 	ctx->dev = nil;
-
-	return fz_okay;
 }
 
 static void drawpage(xps_context_t *ctx, int pagenum)
 {
-	fz_error error;
 	xps_page_t *page;
 	fz_displaylist *list;
 	fz_device *dev;
@@ -121,9 +112,7 @@ static void drawpage(xps_context_t *ctx, int pagenum)
 	{
 		list = fz_newdisplaylist();
 		dev = fz_newlistdevice(list);
-		error = xps_run_page(ctx, page, dev, fz_identity);
-		if (error)
-			die(fz_rethrow(error, "cannot draw page %d in file '%s'", pagenum, filename));
+		xps_run_page(ctx, page, dev, fz_identity);
 		fz_freedevice(dev);
 	}
 
@@ -174,7 +163,7 @@ static void drawpage(xps_context_t *ctx, int pagenum)
 
 		zoom = resolution / 72;
 		ctm = fz_translate(0, -page->height);
-		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
+		ctm = fz_concat(ctm, fz_scale(zoom, zoom));
 		bbox = fz_roundrect(fz_transformrect(ctm, rect));
 
 		/* TODO: banded rendering and multi-page ppm */

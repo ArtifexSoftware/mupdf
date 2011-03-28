@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "muxps.h"
 
-int
+void
 xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
 	xps_resource_t *new_dict = NULL;
@@ -31,9 +31,12 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 		{
 			code = xps_parse_resource_dictionary(ctx, &new_dict, base_uri, xps_down(node));
 			if (code)
-				return fz_rethrow(code, "cannot load Canvas.Resources");
-			new_dict->parent = dict;
-			dict = new_dict;
+				fz_catch(code, "cannot load Canvas.Resources");
+			else
+			{
+				new_dict->parent = dict;
+				dict = new_dict;
+			}
 		}
 
 		if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))
@@ -48,8 +51,6 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 	xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);
 	xps_resolve_resource_reference(ctx, dict, &clip_att, &clip_tag, NULL);
 	xps_resolve_resource_reference(ctx, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
-
-//	gs_gsave(ctx->pgs);
 
 	transform = fz_identity;
 	if (transform_att)
@@ -68,35 +69,23 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 		xps_clip(ctx, ctm);
 	}
 
-	code = xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-	if (code)
-	{
-//		gs_grestore(ctx->pgs);
-		return fz_rethrow(code, "cannot create transparency group");
-	}
+	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
-		code = xps_parse_element(ctx, ctm, base_uri, dict, node);
-		if (code)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-//			gs_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse child of Canvas");
-		}
+		xps_parse_element(ctx, ctm, base_uri, dict, node);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
-//	gs_grestore(ctx->pgs);
+	if (clip_att || clip_tag)
+		ctx->dev->popclip(ctx->dev->user);
 
 	if (new_dict)
 		xps_free_resource_dictionary(ctx, new_dict);
-
-	return 0;
 }
 
-int
+void
 xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page)
 {
 	xps_item_t *node;
@@ -118,19 +107,15 @@ xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page)
 		{
 			code = xps_parse_resource_dictionary(ctx, &dict, base_uri, xps_down(node));
 			if (code)
-				return fz_rethrow(code, "cannot load FixedPage.Resources");
+				fz_catch(code, "cannot load FixedPage.Resources");
 		}
-		code = xps_parse_element(ctx, ctm, base_uri, dict, node);
-		if (code)
-			return fz_rethrow(code, "cannot parse child of FixedPage");
+		xps_parse_element(ctx, ctm, base_uri, dict, node);
 	}
 
 	if (dict)
 	{
 		xps_free_resource_dictionary(ctx, dict);
 	}
-
-	return fz_okay;
 }
 
 int

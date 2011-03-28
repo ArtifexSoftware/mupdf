@@ -186,7 +186,7 @@ xps_gradient_has_transparent_colors(struct stop *stops, int count)
  * mess with the transform to squash the circle into the right aspect.
  */
 
-static int
+static void
 xps_draw_one_radial_gradient(xps_context_t *ctx,
 		int extend,
 		float x0, float y0, float r0,
@@ -230,14 +230,13 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
 
 	gs_free_object(mem, shading, "gs_shading_R");
 #endif
-	return 0;
 }
 
 /*
  * Linear gradients map to Axial shadings.
  */
 
-static int
+static void
 xps_draw_one_linear_gradient(xps_context_t *ctx,
 		int extend,
 		float x0, float y0, float x1, float y1)
@@ -278,7 +277,6 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
 
 	gs_free_object(mem, shading, "gs_shading_A");
 #endif
-	return 0;
 }
 
 /*
@@ -296,7 +294,7 @@ static inline float point_inside_circle(float px, float py, float x, float y, fl
 	return (dx * dx + dy * dy) <= (r * r);
 }
 
-static int
+static void
 xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 {
 	fz_rect bbox;
@@ -306,7 +304,6 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 	float yrad = 1;
 	float invscale;
 	float dx, dy;
-	int code;
 	int i;
 	int done;
 
@@ -380,24 +377,12 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 
 //			reverse = xps_reverse_function(ctx, func, fary, vary);
 
-			code = xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
-			if (code < 0)
-			{
-				xps_free(ctx, reverse);
-				gs_grestore(ctx->pgs);
-				return fz_rethrow(code, "could not draw radial gradient");
-			}
-
+			xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
 #endif
 		}
 		else
 		{
-			code = xps_draw_one_radial_gradient(ctx, 1, x0, y0, r0, x1, y1, r1);
-			if (code < 0)
-			{
-//				gs_grestore(ctx->pgs);
-				return fz_rethrow(code, "could not draw radial gradient");
-			}
+			xps_draw_one_radial_gradient(ctx, 1, x0, y0, r0, x1, y1, r1);
 		}
 	}
 	else
@@ -410,14 +395,9 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 				printf("xps: we should reverse gradient here too\n");
 
 			if (spread == SPREAD_REFLECT && (i & 1))
-				code = xps_draw_one_radial_gradient(ctx, 0, x1, y1, r1, x0, y0, r0);
+				xps_draw_one_radial_gradient(ctx, 0, x1, y1, r1, x0, y0, r0);
 			else
-				code = xps_draw_one_radial_gradient(ctx, 0, x0, y0, r0, x1, y1, r1);
-			if (code < 0)
-			{
-//				gs_grestore(ctx->pgs);
-				return fz_rethrow(code, "could not draw axial gradient");
-			}
+				xps_draw_one_radial_gradient(ctx, 0, x0, y0, r0, x1, y1, r1);
 
 			/* Check if circle encompassed the entire bounding box (break loop if we do) */
 
@@ -440,10 +420,6 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 			y1 += dy;
 		}
 	}
-
-//	gs_grestore(ctx->pgs);
-
-	return 0;
 }
 
 /*
@@ -451,13 +427,12 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
  * the bounding box.
  */
 
-static int
+static void
 xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 {
 	fz_rect bbox;
 	float x0, y0, x1, y1;
 	float dx, dy;
-	int code;
 	int i;
 
 	char *start_point_att = xps_att(root, "StartPoint");
@@ -480,9 +455,7 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 
 	if (spread == SPREAD_PAD)
 	{
-		code = xps_draw_one_linear_gradient(ctx, 1, x0, y0, x1, y1);
-		if (code < 0)
-			return fz_rethrow(code, "could not draw axial gradient");
+		xps_draw_one_linear_gradient(ctx, 1, x0, y0, x1, y1);
 	}
 	else
 	{
@@ -515,23 +488,15 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
 		for (i = i0; i < i1; i++)
 		{
 			if (spread == SPREAD_REFLECT && (i & 1))
-			{
-				code = xps_draw_one_linear_gradient(ctx, 0,
+				xps_draw_one_linear_gradient(ctx, 0,
 						x1 + dx * i, y1 + dy * i,
 						x0 + dx * i, y0 + dy * i);
-			}
 			else
-			{
-				code = xps_draw_one_linear_gradient(ctx, 0,
+				xps_draw_one_linear_gradient(ctx, 0,
 						x0 + dx * i, y0 + dy * i,
 						x1 + dx * i, y1 + dy * i);
-			}
-			if (code < 0)
-				return fz_rethrow(code, "could not draw axial gradient");
 		}
 	}
-
-	return 0;
 }
 
 /*
@@ -539,10 +504,10 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
  * function objects and call gradient drawing primitives.
  */
 
-static int
+static void
 xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource_t *dict, xps_item_t *root,
-	int (*draw)(xps_context_t *, xps_item_t *, int))
+	void (*draw)(xps_context_t *, xps_item_t *, int))
 {
 	xps_item_t *node;
 
@@ -604,12 +569,16 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
 	ctm = fz_concat(ctm, transform);
 
-	if (!stop_tag)
-		return fz_throw("missing gradient stops tag");
+	if (!stop_tag) {
+		fz_warn("missing gradient stops tag");
+		return;
+	}
 
 	stop_count = xps_parse_gradient_stops(ctx, base_uri, stop_tag, stop_list, MAX_STOPS);
-	if (stop_count == 0)
-		return fz_throw("no gradient stops found");
+	if (stop_count == 0) {
+		fz_warn("no gradient stops found");
+		return;
+	}
 
 /*
 	color_func = xps_create_gradient_stop_function(ctx, stop_list, stop_count, 0);
@@ -689,28 +658,18 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 
 //	xps_free_gradient_stop_function(ctx, opacity_func);
 //	xps_free_gradient_stop_function(ctx, color_func);
-
-	return 0;
 }
 
-int
+void
 xps_parse_linear_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
-	int code;
-	code = xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_linear_gradient);
-	if (code < 0)
-		return fz_rethrow(code, "cannot parse linear gradient brush");
-	return fz_okay;
+	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_linear_gradient);
 }
 
-int
+void
 xps_parse_radial_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
-	int code;
-	code = xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_radial_gradient);
-	if (code < 0)
-		return fz_rethrow(code, "cannot parse radial gradient brush");
-	return fz_okay;
+	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_radial_gradient);
 }

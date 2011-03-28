@@ -3,25 +3,17 @@
 
 enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
-struct userdata
-{
-	xps_context_t *ctx;
-	xps_resource_t *dict;
-	xps_item_t *visual_tag;
-};
-
-static int
+static void
 xps_paint_visual_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource_t *dict, xps_item_t *root, void *visual_tag)
 {
-	return xps_parse_element(ctx, ctm, base_uri, dict, (xps_item_t *)visual_tag);
+	xps_parse_element(ctx, ctm, base_uri, dict, (xps_item_t *)visual_tag);
 }
 
-int
+void
 xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
 	xps_item_t *node;
-	int code;
 
 	char *visual_uri;
 	char *visual_att;
@@ -40,10 +32,6 @@ xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_re
 
 	if (visual_tag)
 	{
-		code = xps_parse_tiling_brush(ctx, ctm, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
-		if (code)
-			return fz_rethrow(code, "cannot parse tiling brush");
+		xps_parse_tiling_brush(ctx, ctm, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
 	}
-
-	return 0;
 }

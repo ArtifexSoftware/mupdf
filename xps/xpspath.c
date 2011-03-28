@@ -38,18 +38,22 @@ fz_currentpoint(fz_path *path)
 void
 xps_clip(xps_context_t *ctx, fz_matrix ctm)
 {
-printf("xps_clip\n");
-	assert(ctx->path);
-//	ctx->dev->clippath(ctx->dev, ctx->path, ctx->fill_rule == 0, ctm);
-	fz_freepath(ctx->path);
-	ctx->path = NULL;
+	if (ctx->path)
+	{
+		ctx->dev->clippath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm);
+		fz_freepath(ctx->path);
+		ctx->path = NULL;
+	}
+	else
+	{
+		printf("clip not a path! (maybe a glyph, or image?)\n");
+	}
 }
 
 void
 xps_fill(xps_context_t *ctx, fz_matrix ctm)
 {
-printf("xps_fill!\n");
-	ctx->dev->fillpath(ctx->dev, ctx->path, ctx->fill_rule == 0, ctm,
+	ctx->dev->fillpath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm,
 		ctx->colorspace, ctx->color, ctx->alpha);
 	fz_freepath(ctx->path);
 	ctx->path = NULL;
@@ -58,7 +62,7 @@ printf("xps_fill!\n");
 static void
 xps_stroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
 {
-	ctx->dev->strokepath(ctx->dev, ctx->path, stroke, ctm,
+	ctx->dev->strokepath(ctx->dev->user, ctx->path, stroke, ctm,
 		ctx->colorspace, ctx->color, ctx->alpha);
 	fz_freepath(ctx->path);
 	ctx->path = NULL;
@@ -67,7 +71,7 @@ xps_stroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
 static void
 xps_clipstroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
 {
-	ctx->dev->clipstrokepath(ctx->dev, ctx->path, stroke, ctm);
+	ctx->dev->clipstrokepath(ctx->dev->user, ctx->path, stroke, ctm);
 	fz_freepath(ctx->path);
 	ctx->path = NULL;
 }
@@ -267,8 +271,6 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 	float x1, y1, x2, y2, x3, y3;
 	float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
 	int reset_smooth;
-
-printf("xps_parse_abbreviated_geometry: %s\n", geom);
 
 	args = fz_calloc(strlen(geom) + 1, sizeof(char*));
 	pargs = args;
@@ -747,6 +749,8 @@ xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *ro
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
 	// TODO: apply matrix
+	if (transform_att || transform_tag)
+		fz_warn("ignoring PathGeometry.Transform attribute");
 
 	if (figures_att)
 	{
@@ -783,11 +787,10 @@ xps_parse_line_cap(char *attr)
  * functions for drawing and/or clipping the child elements.
  */
 
-int
+void
 xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
 	xps_item_t *node;
-	int code;
 
 	char *fill_uri;
 	char *stroke_uri;
@@ -827,8 +830,6 @@ xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t
 
 	ctx->fill_rule = 0;
 
-printf("xps_parse_path\n");
-
 	/*
 	 * Extract attributes and extended attributes.
 	 */
@@ -854,19 +855,14 @@ printf("xps_parse_path\n");
 	{
 		if (!strcmp(xps_tag(node), "Path.RenderTransform"))
 			transform_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Path.OpacityMask"))
 			opacity_mask_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Path.Clip"))
 			clip_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Path.Fill"))
 			fill_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Path.Stroke"))
 			stroke_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Path.Data"))
 			data_tag = xps_down(node);
 	}
@@ -956,16 +952,10 @@ printf("xps_parse_path\n");
 		xps_clip(ctx, ctm);
 	}
 
-	code = xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-	if (code)
-	{
-//		fz_grestore(ctx->pgs);
-		return fz_rethrow(code, "cannot create transparency group");
-	}
+	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	if (fill_att)
 	{
-printf("  fill-att\n");
 		xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
 		if (fill_opacity_att)
 			samples[0] = atof(fill_opacity_att);
@@ -982,25 +972,17 @@ printf("  fill-att\n");
 
 	if (fill_tag)
 	{
-printf("  fill-tag\n");
 		ctx->path = fz_newpath();
 		if (data_att)
 			xps_parse_abbreviated_geometry(ctx, data_att);
 		if (data_tag)
 			xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
-		code = xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
-		if (code < 0)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-//			fz_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse fill brush");
-		}
+		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
 	}
 
 	if (stroke_att)
 	{
-printf("  stroke_att\n");
 		xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
 		if (stroke_opacity_att)
 			samples[0] = atof(stroke_opacity_att);
@@ -1017,7 +999,6 @@ printf("  stroke_att\n");
 
 	if (stroke_tag)
 	{
-printf("  stroke_tag\n");
 		ctx->path = fz_newpath();
 		if (data_att)
 			xps_parse_abbreviated_geometry(ctx, data_att);
@@ -1027,18 +1008,13 @@ printf("  stroke_tag\n");
 		ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
 		xps_clipstroke(ctx, ctm, &stroke);
 
-		code = xps_parse_brush(ctx, ctm, stroke_uri, dict, stroke_tag);
-		if (code < 0)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-//			fz_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse stroke brush");
-		}
+		xps_parse_brush(ctx, ctm, stroke_uri, dict, stroke_tag);
 
-		ctx->dev->popclip(ctx->dev);
+		ctx->dev->popclip(ctx->dev->user);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-//	fz_grestore(ctx->pgs);
-	return 0;
+
+	if (clip_att || clip_tag)
+		ctx->dev->popclip(ctx->dev->user);
 }

@@ -101,7 +101,7 @@ xps_select_best_font_encoding(fz_font *font)
  * Call text drawing primitives.
  */
 
-static int
+static void
 xps_flush_text_buffer(xps_context_t *ctx, fz_font *font,
 		xps_text_buffer_t *buf, int is_charpath)
 {
@@ -149,8 +149,6 @@ xps_flush_text_buffer(xps_context_t *ctx, fz_font *font,
 	gs_text_release(textenum, "gslt font render");
 #endif
 	buf->count = 0;
-
-	return 0;
 }
 
 /*
@@ -239,7 +237,7 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
  * Parse unicode and indices strings and encode glyphs.
  * Calculate metrics for positioning.
  */
-static int
+static void
 xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 		float originx, float originy, int is_sideways, int bidi_level,
 		char *indices, char *unicode, int is_charpath)
@@ -251,12 +249,11 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 	char *us = unicode;
 	char *is = indices;
 	int un = 0;
-	int code;
 
 	buf.count = 0;
 
 	if (!unicode && !indices)
-		return fz_throw("no text in glyphs element");
+		return;
 
 	if (us)
 	{
@@ -300,8 +297,6 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 				if (us && un > 0)
 				{
 					int t = xps_utf8_to_ucs(&char_code, us, un);
-					if (t < 0)
-						return fz_rethrow(-1, "error decoding UTF-8 string");
 					us += t; un -= t;
 				}
 				code_count --;
@@ -339,9 +334,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 
 			if (buf.count == XPS_TEXT_BUFFER_SIZE)
 			{
-				code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
-				if (code)
-					return fz_rethrow(code, "cannot flush buffered text");
+				xps_flush_text_buffer(ctx, font, &buf, is_charpath);
 			}
 
 			if (is_sideways)
@@ -363,15 +356,11 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_font *font, float size,
 
 	if (buf.count > 0)
 	{
-		code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
-		if (code)
-			return fz_rethrow(code, "cannot flush buffered text");
+		xps_flush_text_buffer(ctx, font, &buf, is_charpath);
 	}
-
-	return 0;
 }
 
-int
+void
 xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 		char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
@@ -410,7 +399,6 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	char partname[1024];
 	char *subfont;
 
-	fz_matrix matrix;
 	float font_size = 10.0;
 	int subfontid = 0;
 	int is_sideways = 0;
@@ -440,13 +428,10 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	{
 		if (!strcmp(xps_tag(node), "Glyphs.RenderTransform"))
 			transform_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Glyphs.OpacityMask"))
 			opacity_mask_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Glyphs.Clip"))
 			clip_tag = xps_down(node);
-
 		if (!strcmp(xps_tag(node), "Glyphs.Fill"))
 			fill_tag = xps_down(node);
 	}
@@ -463,11 +448,13 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	 * Check that we have all the necessary information.
 	 */
 
-	if (!font_size_att || !font_uri_att || !origin_x_att || !origin_y_att)
-		return fz_throw("missing attributes in glyphs element");
+	if (!font_size_att || !font_uri_att || !origin_x_att || !origin_y_att) {
+		fz_warn("missing attributes in glyphs element");
+		return;
+	}
 
 	if (!indices_att && !unicode_att)
-		return 0; /* nothing to draw */
+		return; /* nothing to draw */
 
 	if (is_sideways_att)
 		is_sideways = !strcmp(is_sideways_att, "true");
@@ -491,8 +478,10 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	if (!font)
 	{
 		part = xps_read_part(ctx, partname);
-		if (!part)
-			return fz_throw("cannot find font resource part '%s'", partname);
+		if (!part) {
+			fz_warn("cannot find font resource part '%s'", partname);
+			return;
+		}
 
 		/* deobfuscate if necessary */
 		if (strstr(part->name, ".odttf"))
@@ -501,8 +490,11 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 			xps_deobfuscate_font_resource(ctx, part);
 
 		code = fz_newfontfrombuffer(&font, part->data, part->size, subfontid);
-		if (code)
-			return fz_rethrow(code, "cannot load font resource '%s'", partname);
+		if (code) {
+			fz_catch(code, "cannot load font resource '%s'", partname);
+			xps_free_part(ctx, part);
+			return;
+		}
 
 		xps_select_best_font_encoding(font);
 
@@ -515,19 +507,15 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	/*
 	 * Set up graphics state.
 	 */
-#if 0
-	gs_gsave(ctx->pgs);
 
 	if (transform_att || transform_tag)
 	{
 		fz_matrix transform;
-
 		if (transform_att)
 			xps_parse_render_transform(ctx, transform_att, &transform);
 		if (transform_tag)
 			xps_parse_matrix_transform(ctx, transform_tag, &transform);
-
-		gs_concat(ctx->pgs, &transform);
+		ctm = fz_concat(ctm, transform);
 	}
 
 	if (clip_att || clip_tag)
@@ -537,26 +525,15 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 			xps_parse_abbreviated_geometry(ctx, clip_att);
 		if (clip_tag)
 			xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-		xps_clip(ctx);
+		xps_clip(ctx, ctm);
 	}
 
 	font_size = atof(font_size_att);
 
-	gs_setfont(ctx->pgs, font->font);
-	gs_make_scaling(font_size, -font_size, &matrix);
 	if (is_sideways)
-		fz_matrix_rotate(&matrix, 90.0, &matrix);
+		fz_warn("sideways text not implemented!");
 
-	gs_setcharmatrix(ctx->pgs, &matrix);
-
-	fz_matrix_multiply(&matrix, &font->font->orig_FontMatrix, &font->font->FontMatrix);
-
-	code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-	if (code)
-	{
-		gs_grestore(ctx->pgs);
-		return fz_rethrow(code, "cannot create transparency group");
-	}
+	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	/*
 	 * If it's a solid color brush fill/stroke do a simple fill
@@ -573,20 +550,16 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	{
 		float samples[32];
 		fz_colorspace *colorspace;
+
 		xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
 		if (fill_opacity_att)
 			samples[0] = atof(fill_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
-		code = xps_parse_glyphs_imp(ctx, font, font_size,
+
+		xps_parse_glyphs_imp(ctx, font, font_size,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level,
 				indices_att, unicode_att, 0);
-		if (code)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-			gs_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse glyphs data");
-		}
 	}
 
 	/*
@@ -595,29 +568,18 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 
 	if (fill_tag)
 	{
+		fz_warn("glyphs filled with general brushes not implemented!");
+#if 0
 		ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
-		code = xps_parse_glyphs_imp(ctx, font, font_size,
+		xps_parse_glyphs_imp(ctx, font, font_size,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level, indices_att, unicode_att, 1);
-		if (code)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-			gs_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse glyphs data");
-		}
-
-		code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
-		if (code)
-		{
-			xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-			gs_grestore(ctx->pgs);
-			return fz_rethrow(code, "cannot parse fill brush");
-		}
+		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
+#endif
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
-	gs_grestore(ctx->pgs);
-#endif
-	return 0;
+	if (clip_att || clip_tag)
+		ctx->dev->popclip(ctx->dev->user);
 }

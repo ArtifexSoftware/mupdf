@@ -21,17 +21,18 @@ xps_bounds_in_user_space(xps_context_t *ctx, fz_rect *ubox)
 #endif
 }
 
-int
+void
 xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict,
 		char *opacity_att, xps_item_t *opacity_mask_tag)
 {
 	fz_rect bbox;
 	float opacity;
 	int save;
-	int code;
+
+return;
 
 	if (!opacity_att && !opacity_mask_tag)
-		return 0;
+		return;
 
 	opacity = 1.0;
 	if (opacity_att)
@@ -47,19 +48,12 @@ xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resourc
 		ctx->opacity_only = 1;
 
 		// begin mask
-		code = xps_parse_brush(ctx, ctm, base_uri, dict, opacity_mask_tag);
-		if (code)
-		{
-			ctx->opacity_only = save;
-			return fz_rethrow(code, "cannot parse opacity mask brush");
-		}
+		xps_parse_brush(ctx, ctm, base_uri, dict, opacity_mask_tag);
 
 		ctx->opacity_only = save;
 	}
 
 	// begin group
-
-	return 0;
 }
 
 void
