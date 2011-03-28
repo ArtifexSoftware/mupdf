@@ -567,7 +567,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 		xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	ctm = fz_concat(ctm, transform);
+	ctm = fz_concat(transform, ctm);
 
 	if (!stop_tag) {
 		fz_warn("missing gradient stops tag");

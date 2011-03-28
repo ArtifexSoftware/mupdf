@@ -92,7 +92,7 @@ xps_draw_arc_segment(xps_context_t *ctx, fz_matrix mtx, float th0, float th1, in
 {
 	float t, d;
 	fz_point p;
-return; // XXX broken
+
 	while (th1 < th0)
 		th1 += M_PI * 2.0;
 
@@ -251,9 +251,9 @@ xps_draw_arc(xps_context_t *ctx,
 	}
 
 	mtx = fz_identity;
-	mtx = fz_concat(mtx, fz_translate(cx, cy));
-	mtx = fz_concat(mtx, fz_rotate(rotation_angle));
-	mtx = fz_concat(mtx, fz_scale(rx, ry));
+	mtx = fz_concat(fz_translate(cx, cy), mtx);
+	mtx = fz_concat(fz_rotate(rotation_angle), mtx);
+	mtx = fz_concat(fz_scale(rx, ry), mtx);
 	xps_draw_arc_segment(ctx, mtx, th1, th1 + dth, is_clockwise);
 
 	fz_lineto(ctx->path, point_x, point_y);
@@ -946,7 +946,7 @@ xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t
 		xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	ctm = fz_concat(ctm, transform);
+	ctm = fz_concat(transform, ctm);
 
 	if (clip_att || clip_tag)
 	{

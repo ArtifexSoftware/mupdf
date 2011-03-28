@@ -57,7 +57,7 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 		xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	ctm = fz_concat(ctm, transform);
+	ctm = fz_concat(transform, ctm);
 
 	if (clip_att || clip_tag)
 	{

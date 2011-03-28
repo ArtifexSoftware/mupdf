@@ -42,22 +42,22 @@ xps_paint_tiling_brush(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, int t
 
 	if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
 	{
-		ttm = fz_concat(ctm, fz_translate(viewbox.x1 * 2, 0));
-		ttm = fz_concat(ttm, fz_scale(-1, 1));
+		ttm = fz_concat(fz_translate(viewbox.x1 * 2, 0), ctm);
+		ttm = fz_concat(fz_scale(-1, 1), ttm);
 		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
 
 	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 	{
-		ttm = fz_concat(ctm, fz_translate(0, viewbox.y1 * 2));
-		ttm = fz_concat(ttm, fz_scale(1, -1));
+		ttm = fz_concat(fz_translate(0, viewbox.y1 * 2), ctm);
+		ttm = fz_concat(fz_scale(1, -1), ttm);
 		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
 
 	if (tile_mode == TILE_FLIP_X_Y)
 	{
-		ttm = fz_concat(ctm, fz_translate(viewbox.x1 * 2, viewbox.y1 * 2));
-		ttm = fz_concat(ttm, fz_scale(-1, -1));
+		ttm = fz_concat(fz_translate(viewbox.x1 * 2, viewbox.y1 * 2), ctm);
+		ttm = fz_concat(fz_scale(-1, -1), ttm);
 		xps_paint_tiling_brush_clipped(ctx, ttm, viewbox, c);
 	}
 }
@@ -152,10 +152,10 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 
 	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
 
-	ctm = fz_concat(ctm, transform);
-	ctm = fz_concat(ctm, fz_translate(viewport.x0, viewport.y0));
-	ctm = fz_concat(ctm, fz_scale(scalex, scaley));
-	ctm = fz_concat(ctm, fz_translate(-viewbox.x0, -viewbox.y0));
+	ctm = fz_concat(transform, ctm);
+	ctm = fz_concat(fz_translate(viewport.x0, viewport.y0), ctm);
+	ctm = fz_concat(fz_scale(scalex, scaley), ctm);
+	ctm = fz_concat(fz_translate(-viewbox.x0, -viewbox.y0), ctm);
 
 	if (tile_mode != TILE_NONE)
 	{
