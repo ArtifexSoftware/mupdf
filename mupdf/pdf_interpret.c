@@ -775,9 +775,13 @@ static void pdf_run_TL(pdf_csi *csi)
 static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	pdf_fontdesc *font;
 	fz_obj *dict;
 	fz_obj *obj;
 	fz_error error;
+
+	gstate->size = csi->stack[0];
+	gstate->font = nil;
 
 	dict = fz_dictgets(rdb, "Font");
 	if (!dict)
@@ -797,7 +801,6 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	if (error)
 		return fz_rethrow(error, "cannot load font (%d 0 R)", fz_tonum(obj));
 
-	gstate->size = csi->stack[0];
 	return fz_okay;
 }
 
@@ -1202,7 +1205,7 @@ pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('T','f'):
 		error = pdf_run_Tf(csi, rdb);
 		if (error)
-			return fz_rethrow(error, "cannot set font");
+			fz_catch(error, "cannot set font");
 		break;
 	case B('T','j'): pdf_run_Tj(csi); break;
 	case B('T','m'): pdf_run_Tm(csi); break;
