@@ -15,7 +15,6 @@ pdf_newcsi(pdf_xref *xref, fz_device *dev, fz_matrix ctm)
 	csi->name[0] = 0;
 	csi->stringlen = 0;
 	memset(csi->stack, 0, sizeof csi->stack);
-	memset(csi->istack, 0, sizeof csi->istack);
 
 	csi->xbalance = 0;
 	csi->intext = 0;
@@ -49,12 +48,8 @@ pdf_clearstack(pdf_csi *csi)
 
 	csi->name[0] = 0;
 	csi->stringlen = 0;
-
 	for (i = 0; i < csi->top; i++)
-	{
 		csi->stack[i] = 0;
-		csi->istack[i] = 0;
-	}
 
 	csi->top = 0;
 }
@@ -630,7 +625,7 @@ static void pdf_run_G(pdf_csi *csi)
 static void pdf_run_J(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.linecap = csi->istack[0];
+	gstate->strokestate.linecap = csi->stack[0];
 }
 
 static void pdf_run_K(pdf_csi *csi)
@@ -775,10 +770,9 @@ static void pdf_run_TL(pdf_csi *csi)
 static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	pdf_fontdesc *font;
+	fz_error error;
 	fz_obj *dict;
 	fz_obj *obj;
-	fz_error error;
 
 	gstate->size = csi->stack[0];
 	gstate->font = nil;
@@ -807,7 +801,7 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 static void pdf_run_Tr(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->render = csi->istack[0];
+	gstate->render = csi->stack[0];
 }
 
 static void pdf_run_Ts(pdf_csi *csi)
@@ -988,7 +982,7 @@ static void pdf_run_i(pdf_csi *csi)
 static void pdf_run_j(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->strokestate.linejoin = csi->istack[0];
+	gstate->strokestate.linejoin = csi->stack[0];
 }
 
 static void pdf_run_k(pdf_csi *csi)
@@ -1139,28 +1133,29 @@ static void pdf_run_dquote(pdf_csi *csi)
 		pdf_showtext(csi, csi->obj);
 }
 
-#define A(a) (a << 16)
-#define B(a,b) ((a << 16) | (b << 8))
-#define C(a,b,c) ((a << 16) | (b << 8) | c)
+#define A(a) (a)
+#define B(a,b) (a | b << 8)
+#define C(a,b,c) (a | b << 8 | c << 16)
 
 static fz_error
 pdf_runkeyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 {
 	fz_error error;
-	int c;
+	int key;
 
-	if (buf[0] == 0)
-		c = 0;
-	else if (buf[1] == 0)
-		c = buf[0] << 16;
-	else if (buf[2] == 0)
-		c = buf[0] << 16 | buf[1] << 8;
-	else if (buf[3] == 0)
-		c = buf[0] << 16 | buf[1] << 8 | buf[2];
-	else
-		c = 0;
+	key = buf[0];
+	if (buf[1])
+	{
+		key |= buf[1] << 8;
+		if (buf[2])
+		{
+			key |= buf[2] << 16;
+			if (buf[3])
+				key = 0;
+		}
+	}
 
-	switch (c)
+	switch (key)
 	{
 	case A('"'): pdf_run_dquote(csi); break;
 	case A('\''): pdf_run_squote(csi); break;
@@ -1336,14 +1331,12 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		case PDF_TINT:
-			csi->istack[csi->top] = atoi(buf);
-			csi->stack[csi->top] = csi->istack[csi->top];
+			csi->stack[csi->top] = atoi(buf);
 			csi->top ++;
 			break;
 
 		case PDF_TREAL:
 			csi->stack[csi->top] = atof(buf);
-			csi->istack[csi->top] = csi->stack[csi->top];
 			csi->top ++;
 			break;
 
