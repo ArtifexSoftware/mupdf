@@ -16,14 +16,14 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 	memset(gs->strokestate.dashlist, 0, sizeof(gs->strokestate.dashlist));
 
 	gs->stroke.kind = PDF_MCOLOR;
-	gs->stroke.cs = fz_keepcolorspace(fz_devicegray);
+	gs->stroke.colorspace = fz_keepcolorspace(fz_devicegray);
 	gs->stroke.v[0] = 0;
 	gs->stroke.pattern = nil;
 	gs->stroke.shade = nil;
 	gs->stroke.alpha = 1;
 
 	gs->fill.kind = PDF_MCOLOR;
-	gs->fill.cs = fz_keepcolorspace(fz_devicegray);
+	gs->fill.colorspace = fz_keepcolorspace(fz_devicegray);
 	gs->fill.v[0] = 0;
 	gs->fill.pattern = nil;
 	gs->fill.shade = nil;
@@ -45,7 +45,7 @@ pdf_initgstate(pdf_gstate *gs, fz_matrix ctm)
 }
 
 void
-pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
+pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *colorspace)
 {
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
@@ -54,10 +54,10 @@ pdf_setcolorspace(pdf_csi *csi, int what, fz_colorspace *cs)
 
 	mat = what == PDF_MFILL ? &gs->fill : &gs->stroke;
 
-	fz_dropcolorspace(mat->cs);
+	fz_dropcolorspace(mat->colorspace);
 
 	mat->kind = PDF_MCOLOR;
-	mat->cs = fz_keepcolorspace(cs);
+	mat->colorspace = fz_keepcolorspace(colorspace);
 
 	mat->v[0] = 0;
 	mat->v[1] = 0;
@@ -80,13 +80,13 @@ pdf_setcolor(pdf_csi *csi, int what, float *v)
 	{
 	case PDF_MPATTERN:
 	case PDF_MCOLOR:
-		if (!strcmp(mat->cs->name, "Lab"))
+		if (!strcmp(mat->colorspace->name, "Lab"))
 		{
 			mat->v[0] = v[0] / 100;
 			mat->v[1] = (v[1] + 100) / 200;
 			mat->v[2] = (v[2] + 100) / 200;
 		}
-		for (i = 0; i < mat->cs->n; i++)
+		for (i = 0; i < mat->colorspace->n; i++)
 			mat->v[i] = v[i];
 		break;
 	default:
@@ -310,7 +310,7 @@ pdf_showimage(pdf_csi *csi, fz_pixmap *image)
 			break;
 		case PDF_MCOLOR:
 			csi->dev->fillimagemask(csi->dev->user, image, gstate->ctm,
-				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
 			if (gstate->fill.pattern)
@@ -380,7 +380,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 			break;
 		case PDF_MCOLOR:
 			csi->dev->fillpath(csi->dev->user, path, evenodd, gstate->ctm,
-				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
 			if (gstate->fill.pattern)
@@ -409,7 +409,7 @@ pdf_showpath(pdf_csi *csi, int doclose, int dofill, int dostroke, int evenodd)
 			break;
 		case PDF_MCOLOR:
 			csi->dev->strokepath(csi->dev->user, path, &gstate->strokestate, gstate->ctm,
-				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+				gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MPATTERN:
 			if (gstate->stroke.pattern)
@@ -487,7 +487,7 @@ pdf_flushtext(pdf_csi *csi)
 			break;
 		case PDF_MCOLOR:
 			csi->dev->filltext(csi->dev->user, text, gstate->ctm,
-				gstate->fill.cs, gstate->fill.v, gstate->fill.alpha);
+				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MPATTERN:
 			if (gstate->fill.pattern)
@@ -516,7 +516,7 @@ pdf_flushtext(pdf_csi *csi)
 			break;
 		case PDF_MCOLOR:
 			csi->dev->stroketext(csi->dev->user, text, &gstate->strokestate, gstate->ctm,
-				gstate->stroke.cs, gstate->stroke.v, gstate->stroke.alpha);
+				gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MPATTERN:
 			if (gstate->stroke.pattern)

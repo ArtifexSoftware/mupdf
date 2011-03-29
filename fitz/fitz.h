@@ -718,8 +718,8 @@ struct fz_colorspace_s
 };
 
 fz_colorspace *fz_newcolorspace(char *name, int n);
-fz_colorspace *fz_keepcolorspace(fz_colorspace *cs);
-void fz_dropcolorspace(fz_colorspace *cs);
+fz_colorspace *fz_keepcolorspace(fz_colorspace *colorspace);
+void fz_dropcolorspace(fz_colorspace *colorspace);
 
 void fz_convertcolor(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convertpixmap(fz_pixmap *src, fz_pixmap *dst);
@@ -890,7 +890,7 @@ struct fz_shade_s
 	int refs;
 
 	fz_rect bbox;		/* can be fz_infiniterect */
-	fz_colorspace *cs;
+	fz_colorspace *colorspace;
 
 	fz_matrix matrix;	/* matrix from pattern dict */
 	int usebackground;	/* background color for fills but not 'sh' */
@@ -1015,7 +1015,7 @@ struct fz_device_s
 
 	void (*popclip)(void *);
 
-	void (*beginmask)(void *, fz_rect, int luminosity, fz_colorspace *cs, float *bc);
+	void (*beginmask)(void *, fz_rect, int luminosity, fz_colorspace *, float *bc);
 	void (*endmask)(void *);
 	void (*begingroup)(void *, fz_rect, int isolated, int knockout, fz_blendmode blendmode, float alpha);
 	void (*endgroup)(void *);

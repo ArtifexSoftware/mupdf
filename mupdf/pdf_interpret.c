@@ -57,8 +57,8 @@ pdf_clearstack(pdf_csi *csi)
 pdf_material *
 pdf_keepmaterial(pdf_material *mat)
 {
-	if (mat->cs)
-		fz_keepcolorspace(mat->cs);
+	if (mat->colorspace)
+		fz_keepcolorspace(mat->colorspace);
 	if (mat->pattern)
 		pdf_keeppattern(mat->pattern);
 	if (mat->shade)
@@ -69,8 +69,8 @@ pdf_keepmaterial(pdf_material *mat)
 pdf_material *
 pdf_dropmaterial(pdf_material *mat)
 {
-	if (mat->cs)
-		fz_dropcolorspace(mat->cs);
+	if (mat->colorspace)
+		fz_dropcolorspace(mat->colorspace);
 	if (mat->pattern)
 		pdf_droppattern(mat->pattern);
 	if (mat->shade)
@@ -472,7 +472,7 @@ static void pdf_run_Bstar(pdf_csi *csi)
 
 static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 {
-	fz_colorspace *cs;
+	fz_colorspace *colorspace;
 	fz_obj *obj, *dict;
 	fz_error error;
 
@@ -483,11 +483,11 @@ static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 	else
 	{
 		if (!strcmp(csi->name, "DeviceGray"))
-			cs = fz_keepcolorspace(fz_devicegray);
+			colorspace = fz_keepcolorspace(fz_devicegray);
 		else if (!strcmp(csi->name, "DeviceRGB"))
-			cs = fz_keepcolorspace(fz_devicergb);
+			colorspace = fz_keepcolorspace(fz_devicergb);
 		else if (!strcmp(csi->name, "DeviceCMYK"))
-			cs = fz_keepcolorspace(fz_devicecmyk);
+			colorspace = fz_keepcolorspace(fz_devicecmyk);
 		else
 		{
 			dict = fz_dictgets(rdb, "ColorSpace");
@@ -496,14 +496,14 @@ static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 			obj = fz_dictgets(dict, csi->name);
 			if (!obj)
 				return fz_throw("cannot find colorspace resource '%s'", csi->name);
-			error = pdf_loadcolorspace(&cs, csi->xref, obj);
+			error = pdf_loadcolorspace(&colorspace, csi->xref, obj);
 			if (error)
 				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_tonum(obj));
 		}
 
-		pdf_setcolorspace(csi, what, cs);
+		pdf_setcolorspace(csi, what, colorspace);
 
-		fz_dropcolorspace(cs);
+		fz_dropcolorspace(colorspace);
 	}
 	return fz_okay;
 }

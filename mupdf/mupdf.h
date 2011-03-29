@@ -557,7 +557,7 @@ enum
 struct pdf_material_s
 {
 	int kind;
-	fz_colorspace *cs;
+	fz_colorspace *colorspace;
 	pdf_pattern *pattern;
 	fz_shade *shade;
 	float alpha;
