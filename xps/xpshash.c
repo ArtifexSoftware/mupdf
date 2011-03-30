@@ -14,7 +14,7 @@ static const unsigned primes[] =
 	131071, 262139, 524287, 1048573, 2097143, 4194301, 8388593, 0
 };
 
-typedef struct xps_hash_entry_s xps_hash_entry_t;
+typedef struct xps_hash_entry_s xps_hash_entry;
 
 struct xps_hash_entry_s
 {
@@ -27,7 +27,7 @@ struct xps_hash_table_s
 	void *ctx;
 	unsigned int size;
 	unsigned int load;
-	xps_hash_entry_t *entries;
+	xps_hash_entry *entries;
 };
 
 static inline int
@@ -47,12 +47,12 @@ xps_hash(char *s)
 	return h;
 }
 
-xps_hash_table_t *
-xps_hash_new(xps_context_t *ctx)
+xps_hash_table *
+xps_hash_new(xps_context *ctx)
 {
-	xps_hash_table_t *table;
+	xps_hash_table *table;
 
-	table = xps_alloc(ctx, sizeof(xps_hash_table_t));
+	table = xps_alloc(ctx, sizeof(xps_hash_table));
 	if (!table)
 	{
 		fz_throw("out of memory: hash table struct");
@@ -62,7 +62,7 @@ xps_hash_new(xps_context_t *ctx)
 	table->size = primes[0];
 	table->load = 0;
 
-	table->entries = xps_alloc(ctx, sizeof(xps_hash_entry_t) * table->size);
+	table->entries = xps_alloc(ctx, sizeof(xps_hash_entry) * table->size);
 	if (!table->entries)
 	{
 		xps_free(ctx, table);
@@ -70,16 +70,16 @@ xps_hash_new(xps_context_t *ctx)
 		return NULL;
 	}
 
-	memset(table->entries, 0, sizeof(xps_hash_entry_t) * table->size);
+	memset(table->entries, 0, sizeof(xps_hash_entry) * table->size);
 
 	return table;
 }
 
 static int
-xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
+xps_hash_double(xps_context *ctx, xps_hash_table *table)
 {
-	xps_hash_entry_t *old_entries;
-	xps_hash_entry_t *new_entries;
+	xps_hash_entry *old_entries;
+	xps_hash_entry *new_entries;
 	unsigned int old_size = table->size;
 	unsigned int new_size = table->size * 2;
 	int i;
@@ -94,7 +94,7 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 	}
 
 	old_entries = table->entries;
-	new_entries = xps_alloc(ctx, sizeof(xps_hash_entry_t) * new_size);
+	new_entries = xps_alloc(ctx, sizeof(xps_hash_entry) * new_size);
 	if (!new_entries)
 		return fz_throw("out of memory: hash table entries array");
 
@@ -102,7 +102,7 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 	table->entries = new_entries;
 	table->load = 0;
 
-	memset(table->entries, 0, sizeof(xps_hash_entry_t) * table->size);
+	memset(table->entries, 0, sizeof(xps_hash_entry) * table->size);
 
 	for (i = 0; i < old_size; i++)
 		if (old_entries[i].value)
@@ -114,9 +114,9 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
 }
 
 void
-xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table,
-	void (*free_key)(xps_context_t *ctx, void *),
-	void (*free_value)(xps_context_t *ctx, void *))
+xps_hash_free(xps_context *ctx, xps_hash_table *table,
+	void (*free_key)(xps_context *ctx, void *),
+	void (*free_value)(xps_context *ctx, void *))
 {
 	int i;
 
@@ -133,9 +133,9 @@ xps_hash_free(xps_context_t *ctx, xps_hash_table_t *table,
 }
 
 void *
-xps_hash_lookup(xps_hash_table_t *table, char *key)
+xps_hash_lookup(xps_hash_table *table, char *key)
 {
-	xps_hash_entry_t *entries = table->entries;
+	xps_hash_entry *entries = table->entries;
 	unsigned int size = table->size;
 	unsigned int pos = xps_hash(key) % size;
 
@@ -152,9 +152,9 @@ xps_hash_lookup(xps_hash_table_t *table, char *key)
 }
 
 int
-xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *value)
+xps_hash_insert(xps_context *ctx, xps_hash_table *table, char *key, void *value)
 {
-	xps_hash_entry_t *entries;
+	xps_hash_entry *entries;
 	unsigned int size, pos;
 
 	/* Grow the table at 80% load */
@@ -188,7 +188,7 @@ xps_hash_insert(xps_context_t *ctx, xps_hash_table_t *table, char *key, void *va
 }
 
 void
-xps_hash_debug(xps_hash_table_t *table)
+xps_hash_debug(xps_hash_table *table)
 {
 	int i;
 

@@ -11,7 +11,7 @@
 
 #include "jpegxr.h"
 
-struct state { xps_context_t *ctx; xps_image_t *output; };
+struct state { xps_context *ctx; xps_image *output; };
 
 static const char *
 jxr_error_string(int code)
@@ -67,11 +67,11 @@ scale_bits(int depth, int value)
 }
 
 static void
-xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
+xps_decode_jpegxr_block(jxr_image image, int mx, int my, int *data)
 {
 	struct state *state = jxr_get_user_data(image);
-	xps_context_t *ctx = state->ctx;
-	xps_image_t *output = state->output;
+	xps_context *ctx = state->ctx;
+	xps_image *output = state->output;
 	int depth;
 	unsigned char *p;
 	int x, y, k;
@@ -117,11 +117,11 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
 }
 
 static void
-xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
+xps_decode_jpegxr_alpha_block(jxr_image image, int mx, int my, int *data)
 {
 	struct state *state = jxr_get_user_data(image);
-	xps_context_t *ctx = state->ctx;
-	xps_image_t *output = state->output;
+	xps_context *ctx = state->ctx;
+	xps_image *output = state->output;
 	int depth;
 	unsigned char *p;
 	int x, y, k;
@@ -152,13 +152,13 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
 }
 
 int
-xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
+xps_decode_jpegxr(xps_context *ctx, byte *buf, int len, xps_image *output)
 {
 	FILE *file;
 	char name[gp_file_name_sizeof];
 	struct state state;
-	jxr_container_t container;
-	jxr_image_t image;
+	jxr_container container;
+	jxr_image image;
 	int offset, alpha_offset;
 	int rc;
 
@@ -243,7 +243,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 }
 
 int
-xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
+xps_jpegxr_has_alpha(xps_context *ctx, byte *buf, int len)
 {
 	return 1;
 }
@@ -251,13 +251,13 @@ xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
 #else
 
 int
-xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
+xps_decode_jpegxr(xps_context *ctx, byte *buf, int len, xps_image *image)
 {
 	return fz_throw("JPEG-XR codec is not available");
 }
 
 int
-xps_jpegxr_has_alpha(xps_context_t *ctx, byte *buf, int len)
+xps_jpegxr_has_alpha(xps_context *ctx, byte *buf, int len)
 {
 	return 0;
 }

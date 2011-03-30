@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 void
-xps_bounds_in_user_space(xps_context_t *ctx, fz_rect *ubox)
+xps_bounds_in_user_space(xps_context *ctx, fz_rect *ubox)
 {
 #if 0
 	gx_clip_path *clip_path;
@@ -22,8 +22,8 @@ xps_bounds_in_user_space(xps_context_t *ctx, fz_rect *ubox)
 }
 
 void
-xps_begin_opacity(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict,
-		char *opacity_att, xps_item_t *opacity_mask_tag)
+xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict,
+		char *opacity_att, xps_item *opacity_mask_tag)
 {
 	fz_rect bbox;
 	float opacity;
@@ -57,8 +57,8 @@ return;
 }
 
 void
-xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
-		char *opacity_att, xps_item_t *opacity_mask_tag)
+xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
+		char *opacity_att, xps_item *opacity_mask_tag)
 {
 	if (!opacity_att && !opacity_mask_tag)
 		return;

@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "muxps.h"
 
-#include "png.h"
+#include <png.h>
 
 /*
  * PNG using libpng directly (no gs wrappers)
@@ -37,7 +37,7 @@ xps_png_free(png_structp png, png_voidp ptr)
 
 /* This only determines if we have an alpha value */
 int
-xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
+xps_png_has_alpha(xps_context *ctx, byte *rbuf, int rlen)
 {
 	png_structp png;
 	png_infop info;
@@ -114,7 +114,7 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 }
 
 int
-xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
+xps_decode_png(xps_context *ctx, byte *rbuf, int rlen, xps_image *image)
 {
 	png_structp png;
 	png_infop info;

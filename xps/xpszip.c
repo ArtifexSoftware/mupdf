@@ -20,13 +20,13 @@ static inline int getlong(FILE *file)
 }
 
 static void *
-xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
+xps_zip_alloc_items(xps_context *ctx, int items, int size)
 {
 	return xps_alloc(ctx, items * size);
 }
 
 static void
-xps_zip_free(xps_context_t *ctx, void *ptr)
+xps_zip_free(xps_context *ctx, void *ptr)
 {
 	xps_free(ctx, ptr);
 }
@@ -34,13 +34,13 @@ xps_zip_free(xps_context_t *ctx, void *ptr)
 static int
 xps_compare_entries(const void *a0, const void *b0)
 {
-	xps_entry_t *a = (xps_entry_t*) a0;
-	xps_entry_t *b = (xps_entry_t*) b0;
+	xps_entry *a = (xps_entry*) a0;
+	xps_entry *b = (xps_entry*) b0;
 	return xps_strcasecmp(a->name, b->name);
 }
 
-static xps_entry_t *
-xps_find_zip_entry(xps_context_t *ctx, char *name)
+static xps_entry *
+xps_find_zip_entry(xps_context *ctx, char *name)
 {
 	int l = 0;
 	int r = ctx->zip_count - 1;
@@ -63,7 +63,7 @@ xps_find_zip_entry(xps_context_t *ctx, char *name)
  */
 
 static int
-xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
+xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
 {
 	z_stream stream;
 	unsigned char *inbuf;
@@ -138,7 +138,7 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
  */
 
 static int
-xps_read_zip_dir(xps_context_t *ctx, int start_offset)
+xps_read_zip_dir(xps_context *ctx, int start_offset)
 {
 	int sig;
 	int offset, count;
@@ -159,11 +159,11 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 	offset = getlong(ctx->file); /* offset to central directory */
 
 	ctx->zip_count = count;
-	ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
+	ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry) * count);
 	if (!ctx->zip_table)
 		return fz_throw("cannot allocate zip entry table");
 
-	memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
+	memset(ctx->zip_table, 0, sizeof(xps_entry) * count);
 
 	fseek(ctx->file, offset, 0);
 
@@ -201,13 +201,13 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 		fseek(ctx->file, commentsize, 1);
 	}
 
-	qsort(ctx->zip_table, count, sizeof(xps_entry_t), xps_compare_entries);
+	qsort(ctx->zip_table, count, sizeof(xps_entry), xps_compare_entries);
 
 	return fz_okay;
 }
 
 static int
-xps_find_and_read_zip_dir(xps_context_t *ctx)
+xps_find_and_read_zip_dir(xps_context *ctx)
 {
 	int filesize, back, maxback;
 	int i, n;
@@ -241,12 +241,12 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
  * Read and interleave split parts from a ZIP file.
  */
 
-static xps_part_t *
-xps_read_zip_part(xps_context_t *ctx, char *partname)
+static xps_part *
+xps_read_zip_part(xps_context *ctx, char *partname)
 {
 	char buf[2048];
-	xps_entry_t *ent;
-	xps_part_t *part;
+	xps_entry *ent;
+	xps_part *part;
 	int count, size, offset, i;
 	char *name;
 
@@ -306,11 +306,11 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
  * Read and interleave split parts from files in the directory.
  */
 
-static xps_part_t *
-xps_read_dir_part(xps_context_t *ctx, char *name)
+static xps_part *
+xps_read_dir_part(xps_context *ctx, char *name)
 {
 	char buf[2048];
-	xps_part_t *part;
+	xps_part *part;
 	FILE *file;
 	int count, size, offset, i, n;
 
@@ -372,8 +372,8 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
 	return NULL;
 }
 
-xps_part_t *
-xps_read_part(xps_context_t *ctx, char *partname)
+xps_part *
+xps_read_part(xps_context *ctx, char *partname)
 {
 	if (ctx->directory)
 		return xps_read_dir_part(ctx, partname);
@@ -385,9 +385,9 @@ xps_read_part(xps_context_t *ctx, char *partname)
  */
 
 static int
-xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
+xps_read_and_process_metadata_part(xps_context *ctx, char *name)
 {
-	xps_part_t *part;
+	xps_part *part;
 	int code;
 
 	part = xps_read_part(ctx, name);
@@ -408,10 +408,10 @@ xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
  */
 
 int
-xps_open_file(xps_context_t *ctx, char *filename)
+xps_open_file(xps_context *ctx, char *filename)
 {
 	char buf[2048];
-	xps_document_t *doc;
+	xps_document *doc;
 	int code;
 	char *p;
 
@@ -457,19 +457,19 @@ xps_open_file(xps_context_t *ctx, char *filename)
 }
 
 int
-xps_count_pages(xps_context_t *ctx)
+xps_count_pages(xps_context *ctx)
 {
-	xps_page_t *page;
+	xps_page *page;
 	int n = 0;
 	for (page = ctx->first_page; page; page = page->next)
 		n ++;
 	return n;
 }
 
-xps_page_t *
-xps_load_page(xps_context_t *ctx, int number)
+xps_page *
+xps_load_page(xps_context *ctx, int number)
 {
-	xps_page_t *page;
+	xps_page *page;
 	int code;
 	int n = 0;
 
@@ -490,14 +490,14 @@ xps_load_page(xps_context_t *ctx, int number)
 	return nil;
 }
 
-xps_context_t *
+xps_context *
 xps_new_context(void)
 {
-	xps_context_t *ctx;
+	xps_context *ctx;
 
-	ctx = fz_malloc(sizeof(xps_context_t));
+	ctx = fz_malloc(sizeof(xps_context));
 
-	memset(ctx, 0, sizeof(xps_context_t));
+	memset(ctx, 0, sizeof(xps_context));
 
 	ctx->font_table = xps_hash_new(ctx);
 	ctx->colorspace_table = xps_hash_new(ctx);
@@ -514,19 +514,19 @@ xps_new_context(void)
 	return ctx;
 }
 
-static void xps_free_key_func(xps_context_t *ctx, void *ptr)
+static void xps_free_key_func(xps_context *ctx, void *ptr)
 {
 	xps_free(ctx, ptr);
 }
 
-static void xps_free_font_func(xps_context_t *ctx, void *ptr)
+static void xps_free_font_func(xps_context *ctx, void *ptr)
 {
 	fz_dropfont(ptr);
 }
 
 /* Wrap up interp instance after a "job" */
 int
-xps_free_context(xps_context_t *ctx)
+xps_free_context(xps_context *ctx)
 {
 	int i;
 

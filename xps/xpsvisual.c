@@ -4,20 +4,20 @@
 enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
 static void
-xps_paint_visual_brush(xps_context_t *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource_t *dict, xps_item_t *root, void *visual_tag)
+xps_paint_visual_brush(xps_context *ctx, fz_matrix ctm,
+	char *base_uri, xps_resource *dict, xps_item *root, void *visual_tag)
 {
-	xps_parse_element(ctx, ctm, base_uri, dict, (xps_item_t *)visual_tag);
+	xps_parse_element(ctx, ctm, base_uri, dict, (xps_item *)visual_tag);
 }
 
 void
-xps_parse_visual_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	char *visual_uri;
 	char *visual_att;
-	xps_item_t *visual_tag = NULL;
+	xps_item *visual_tag = NULL;
 
 	visual_att = xps_att(root, "Visual");
 

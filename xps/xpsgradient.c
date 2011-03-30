@@ -35,7 +35,7 @@ static inline float lerp(float a, float b, float x)
 }
 
 static int
-xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
+xps_parse_gradient_stops(xps_context *ctx, char *base_uri, xps_item *node,
 	struct stop *stops, int maxcount)
 {
 	fz_colorspace *colorspace;
@@ -187,15 +187,15 @@ xps_gradient_has_transparent_colors(struct stop *stops, int count)
  */
 
 static void
-xps_draw_one_radial_gradient(xps_context_t *ctx,
+xps_draw_one_radial_gradient(xps_context *ctx,
 		int extend,
 		float x0, float y0, float r0,
 		float x1, float y1, float r1)
 {
 #if 0
-	gs_memory_t *mem = ctx->memory;
-	gs_shading_t *shading;
-	gs_shading_R_params_t params;
+	gs_memory *mem = ctx->memory;
+	gs_shading *shading;
+	gs_shading_R_params params;
 	int code;
 
 	gs_shading_R_params_init(&params);
@@ -237,14 +237,14 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
  */
 
 static void
-xps_draw_one_linear_gradient(xps_context_t *ctx,
+xps_draw_one_linear_gradient(xps_context *ctx,
 		int extend,
 		float x0, float y0, float x1, float y1)
 {
 #if 0
-	gs_memory_t *mem = ctx->memory;
-	gs_shading_t *shading;
-	gs_shading_A_params_t params;
+	gs_memory *mem = ctx->memory;
+	gs_shading *shading;
+	gs_shading_A_params params;
 	int code;
 
 	gs_shading_A_params_init(&params);
@@ -295,7 +295,7 @@ static inline float point_inside_circle(float px, float py, float x, float y, fl
 }
 
 static void
-xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
+xps_draw_radial_gradient(xps_context *ctx, xps_item *root, int spread)
 {
 	fz_rect bbox;
 	float x0, y0, r0;
@@ -428,7 +428,7 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
  */
 
 static void
-xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
+xps_draw_linear_gradient(xps_context *ctx, xps_item *root, int spread)
 {
 	fz_rect bbox;
 	float x0, y0, x1, y1;
@@ -505,11 +505,11 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread)
  */
 
 static void
-xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource_t *dict, xps_item_t *root,
-	void (*draw)(xps_context_t *, xps_item_t *, int))
+xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
+	char *base_uri, xps_resource *dict, xps_item *root,
+	void (*draw)(xps_context *, xps_item *, int))
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	char *opacity_att;
 	char *interpolation_att;
@@ -517,8 +517,8 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *mapping_att;
 	char *transform_att;
 
-	xps_item_t *transform_tag = NULL;
-	xps_item_t *stop_tag = NULL;
+	xps_item *transform_tag = NULL;
+	xps_item *stop_tag = NULL;
 
 	struct stop stop_list[MAX_STOPS];
 	int stop_count;
@@ -615,8 +615,8 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 	{
 		if (has_opacity)
 		{
-			gs_transparency_mask_params_t params;
-			gs_transparency_group_params_t tgp;
+			gs_transparency_mask_params params;
+			gs_transparency_group_params tgp;
 
 			gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 			gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
@@ -661,15 +661,15 @@ xps_parse_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
 }
 
 void
-xps_parse_linear_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm,
+	char *base_uri, xps_resource *dict, xps_item *root)
 {
 	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_linear_gradient);
 }
 
 void
-xps_parse_radial_gradient_brush(xps_context_t *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm,
+	char *base_uri, xps_resource *dict, xps_item *root)
 {
 	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_radial_gradient);
 }

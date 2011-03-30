@@ -3,12 +3,12 @@
 
 #include <expat.h>
 
-xps_part_t *
-xps_new_part(xps_context_t *ctx, char *name, int size)
+xps_part *
+xps_new_part(xps_context *ctx, char *name, int size)
 {
-	xps_part_t *part;
+	xps_part *part;
 
-	part = xps_alloc(ctx, sizeof(xps_part_t));
+	part = xps_alloc(ctx, sizeof(xps_part));
 	part->name = xps_strdup(ctx, name);
 	part->size = size;
 	part->data = xps_alloc(ctx, size);
@@ -17,7 +17,7 @@ xps_new_part(xps_context_t *ctx, char *name, int size)
 }
 
 void
-xps_free_part(xps_context_t *ctx, xps_part_t *part)
+xps_free_part(xps_context *ctx, xps_part *part)
 {
 	xps_free(ctx, part->name);
 	xps_free(ctx, part->data);
@@ -30,10 +30,10 @@ xps_free_part(xps_context_t *ctx, xps_part_t *part)
  */
 
 void
-xps_debug_fixdocseq(xps_context_t *ctx)
+xps_debug_fixdocseq(xps_context *ctx)
 {
-	xps_document_t *fixdoc = ctx->first_fixdoc;
-	xps_page_t *page = ctx->first_page;
+	xps_document *fixdoc = ctx->first_fixdoc;
+	xps_page *page = ctx->first_page;
 
 	if (ctx->start_part)
 		printf("start part %s\n", ctx->start_part);
@@ -52,16 +52,16 @@ xps_debug_fixdocseq(xps_context_t *ctx)
 }
 
 static void
-xps_add_fixed_document(xps_context_t *ctx, char *name)
+xps_add_fixed_document(xps_context *ctx, char *name)
 {
-	xps_document_t *fixdoc;
+	xps_document *fixdoc;
 
 	/* Check for duplicates first */
 	for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 		if (!strcmp(fixdoc->name, name))
 			return;
 
-	fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
+	fixdoc = xps_alloc(ctx, sizeof(xps_document));
 	fixdoc->name = xps_strdup(ctx, name);
 	fixdoc->next = NULL;
 
@@ -78,12 +78,12 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
 }
 
 void
-xps_free_fixed_documents(xps_context_t *ctx)
+xps_free_fixed_documents(xps_context *ctx)
 {
-	xps_document_t *node = ctx->first_fixdoc;
+	xps_document *node = ctx->first_fixdoc;
 	while (node)
 	{
-		xps_document_t *next = node->next;
+		xps_document *next = node->next;
 		xps_free(ctx, node->name);
 		xps_free(ctx, node);
 		node = next;
@@ -93,16 +93,16 @@ xps_free_fixed_documents(xps_context_t *ctx)
 }
 
 static void
-xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
+xps_add_fixed_page(xps_context *ctx, char *name, int width, int height)
 {
-	xps_page_t *page;
+	xps_page *page;
 
 	/* Check for duplicates first */
 	for (page = ctx->first_page; page; page = page->next)
 		if (!strcmp(page->name, name))
 			return;
 
-	page = xps_alloc(ctx, sizeof(xps_page_t));
+	page = xps_alloc(ctx, sizeof(xps_page));
 	page->name = xps_strdup(ctx, name);
 	page->width = width;
 	page->height = height;
@@ -122,12 +122,12 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
 }
 
 void
-xps_free_fixed_pages(xps_context_t *ctx)
+xps_free_fixed_pages(xps_context *ctx)
 {
-	xps_page_t *node = ctx->first_page;
+	xps_page *node = ctx->first_page;
 	while (node)
 	{
-		xps_page_t *next = node->next;
+		xps_page *next = node->next;
 		xps_free(ctx, node->name);
 		xps_free(ctx, node);
 		node = next;
@@ -145,7 +145,7 @@ xps_free_fixed_pages(xps_context_t *ctx)
 static void
 xps_parse_metadata_imp(void *zp, char *name, char **atts)
 {
-	xps_context_t *ctx = zp;
+	xps_context *ctx = zp;
 	int i;
 
 	if (!strcmp(name, "Relationship"))
@@ -214,7 +214,7 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 }
 
 int
-xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
+xps_parse_metadata(xps_context *ctx, xps_part *part)
 {
 	XML_Parser xp;
 	int code;

@@ -83,16 +83,16 @@ static int isrange(char *s)
 }
 
 static void
-xps_run_page(xps_context_t *ctx, xps_page_t *page, fz_device *dev, fz_matrix ctm)
+xps_run_page(xps_context *ctx, xps_page *page, fz_device *dev, fz_matrix ctm)
 {
 	ctx->dev = dev;
 	xps_parse_fixed_page(ctx, ctm, page);
 	ctx->dev = nil;
 }
 
-static void drawpage(xps_context_t *ctx, int pagenum)
+static void drawpage(xps_context *ctx, int pagenum)
 {
-	xps_page_t *page;
+	xps_page *page;
 	fz_displaylist *list;
 	fz_device *dev;
 	int start;
@@ -241,7 +241,7 @@ static void drawpage(xps_context_t *ctx, int pagenum)
 }
 
 
-static void drawrange(xps_context_t *ctx, char *range)
+static void drawrange(xps_context *ctx, char *range)
 {
 	int page, spage, epage;
 	char *spec, *dash;
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 {
 	int grayscale = 0;
 	int accelerate = 1;
-	xps_context_t *ctx;
+	xps_context *ctx;
 	int code;
 	int c;
 

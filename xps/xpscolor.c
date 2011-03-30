@@ -4,7 +4,7 @@
 #include <ctype.h> /* for toupper() */
 
 void
-xps_set_color(xps_context_t *ctx, fz_colorspace *colorspace, float *samples)
+xps_set_color(xps_context *ctx, fz_colorspace *colorspace, float *samples)
 {
 	int i;
 
@@ -42,7 +42,7 @@ static int count_commas(char *s)
 }
 
 void
-xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
+xps_parse_color(xps_context *ctx, char *base_uri, char *string,
 		fz_colorspace **csp, float *samples)
 {
 	char *p;
@@ -142,11 +142,11 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
 }
 
 fz_colorspace *
-xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
+xps_read_icc_colorspace(xps_context *ctx, char *base_uri, char *profilename)
 {
 #if 0
 	fz_colorspace *space;
-	xps_part_t *part;
+	xps_part *part;
 	char partname[1024];
 
 	/* Find ICC colorspace part */
@@ -201,7 +201,7 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
 }
 
 void
-xps_parse_solid_color_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
+xps_parse_solid_color_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
 {
 	char *opacity_att;
 	char *color_att;

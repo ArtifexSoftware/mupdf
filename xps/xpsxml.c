@@ -10,13 +10,13 @@
 #define NS_XPS "http://schemas.microsoft.com/xps/2005/06"
 #define NS_MC "http://schemas.openxmlformats.org/markup-compatibility/2006"
 
-typedef struct xps_parser_s xps_parser_t;
+typedef struct xps_parser_s xps_parser;
 
 struct xps_parser_s
 {
-	xps_context_t *ctx;
-	xps_item_t *root;
-	xps_item_t *head;
+	xps_context *ctx;
+	xps_item *root;
+	xps_item *head;
 	char *error;
 	int compat;
 	char *base; /* base of relative URIs */
@@ -26,9 +26,9 @@ struct xps_item_s
 {
 	char *name;
 	char **atts;
-	xps_item_t *up;
-	xps_item_t *down;
-	xps_item_t *next;
+	xps_item *up;
+	xps_item *down;
+	xps_item *next;
 };
 
 static char *
@@ -43,9 +43,9 @@ skip_namespace(char *s)
 static void
 on_open_tag(void *zp, char *ns_name, char **atts)
 {
-	xps_parser_t *parser = zp;
-	xps_item_t *item;
-	xps_item_t *tail;
+	xps_parser *parser = zp;
+	xps_item *item;
+	xps_item *tail;
 	int namelen;
 	int attslen;
 	int textlen;
@@ -92,7 +92,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 			textlen += strlen(atts[i]) + 1;
 	}
 
-	item = fz_malloc(sizeof(xps_item_t) + attslen + namelen + textlen);
+	item = fz_malloc(sizeof(xps_item) + attslen + namelen + textlen);
 	if (!item)
 	{
 		parser->error = "out of memory";
@@ -100,9 +100,9 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 
 	/* copy strings to new memory */
 
-	item->atts = (char**) (((char*)item) + sizeof(xps_item_t));
-	item->name = ((char*)item) + sizeof(xps_item_t) + attslen;
-	p = ((char*)item) + sizeof(xps_item_t) + attslen + namelen;
+	item->atts = (char**) (((char*)item) + sizeof(xps_item));
+	item->name = ((char*)item) + sizeof(xps_item) + attslen;
+	p = ((char*)item) + sizeof(xps_item) + attslen + namelen;
 
 	strcpy(item->name, name);
 	for (i = 0; atts[i]; i++)
@@ -147,7 +147,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 static void
 on_close_tag(void *zp, char *name)
 {
-	xps_parser_t *parser = zp;
+	xps_parser *parser = zp;
 
 	if (parser->error)
 		return;
@@ -165,7 +165,7 @@ is_xml_space(int c)
 static void
 on_text(void *zp, char *buf, int len)
 {
-	xps_parser_t *parser = zp;
+	xps_parser *parser = zp;
 	char *atts[3];
 	int i;
 
@@ -197,17 +197,17 @@ on_text(void *zp, char *buf, int len)
 	}
 }
 
-static xps_item_t *
-xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
+static xps_item *
+xps_process_compatibility(xps_context *ctx, xps_item *root)
 {
 	fz_warn("XPS document uses markup compatibility tags");
 	return root;
 }
 
-xps_item_t *
-xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
+xps_item *
+xps_parse_xml(xps_context *ctx, byte *buf, int len)
 {
-	xps_parser_t parser;
+	xps_parser parser;
 	XML_Parser xp;
 	int code;
 
@@ -248,26 +248,26 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
 	return parser.root;
 }
 
-xps_item_t *
-xps_next(xps_item_t *item)
+xps_item *
+xps_next(xps_item *item)
 {
 	return item->next;
 }
 
-xps_item_t *
-xps_down(xps_item_t *item)
+xps_item *
+xps_down(xps_item *item)
 {
 	return item->down;
 }
 
 char *
-xps_tag(xps_item_t *item)
+xps_tag(xps_item *item)
 {
 	return item->name;
 }
 
 char *
-xps_att(xps_item_t *item, const char *att)
+xps_att(xps_item *item, const char *att)
 {
 	int i;
 	for (i = 0; item->atts[i]; i += 2)
@@ -277,9 +277,9 @@ xps_att(xps_item_t *item, const char *att)
 }
 
 void
-xps_free_item(xps_context_t *ctx, xps_item_t *item)
+xps_free_item(xps_context *ctx, xps_item *item)
 {
-	xps_item_t *next;
+	xps_item *next;
 	while (item)
 	{
 		next = item->next;
@@ -297,7 +297,7 @@ static void indent(int n)
 }
 
 static void
-xps_debug_item_imp(xps_item_t *item, int level, int loop)
+xps_debug_item_imp(xps_item *item, int level, int loop)
 {
 	int i;
 
@@ -333,7 +333,7 @@ xps_debug_item_imp(xps_item_t *item, int level, int loop)
 }
 
 void
-xps_debug_item(xps_item_t *item, int level)
+xps_debug_item(xps_item *item, int level)
 {
 	xps_debug_item_imp(item, level, 0);
 }

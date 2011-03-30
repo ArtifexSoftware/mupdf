@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 int
-xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
+xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
 {
 	return fz_throw("TIFF codec is not available");
 }
@@ -30,7 +30,7 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
  * TODO: RGBPal images
  */
 
-typedef struct xps_tiff_s xps_tiff_t;
+typedef struct xps_tiff_s xps_tiff;
 
 struct xps_tiff_s
 {
@@ -158,7 +158,7 @@ xps_report_error(stream_state * st, const char *str)
 }
 
 static inline int
-readbyte(xps_tiff_t *tiff)
+readbyte(xps_tiff *tiff)
 {
 	if (tiff->rp < tiff->ep)
 		return *tiff->rp++;
@@ -166,7 +166,7 @@ readbyte(xps_tiff_t *tiff)
 }
 
 static inline unsigned
-readshort(xps_tiff_t *tiff)
+readshort(xps_tiff *tiff)
 {
 	unsigned a = readbyte(tiff);
 	unsigned b = readbyte(tiff);
@@ -176,7 +176,7 @@ readshort(xps_tiff_t *tiff)
 }
 
 static inline unsigned
-readlong(xps_tiff_t *tiff)
+readlong(xps_tiff *tiff)
 {
 	unsigned a = readbyte(tiff);
 	unsigned b = readbyte(tiff);
@@ -188,14 +188,14 @@ readlong(xps_tiff_t *tiff)
 }
 
 static int
-xps_decode_tiff_uncompressed(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	memcpy(wp, rp, wl - wp);
 	return gs_okay;
 }
 
 static int
-xps_decode_tiff_packbits(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_packbits(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	stream_RLD_state state;
 	stream_cursor_read scr;
@@ -221,7 +221,7 @@ xps_decode_tiff_packbits(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *r
 }
 
 static int
-xps_decode_tiff_lzw(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_lzw(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	stream_LZW_state state;
 	stream_cursor_read scr;
@@ -267,7 +267,7 @@ xps_decode_tiff_lzw(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, by
 }
 
 static int
-xps_decode_tiff_flate(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_flate(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	stream_zlib_state state;
 	stream_cursor_read scr;
@@ -298,7 +298,7 @@ xps_decode_tiff_flate(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, 
 }
 
 static int
-xps_decode_tiff_fax(xps_context_t *ctx, xps_tiff_t *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	stream_CFD_state state;
 	stream_cursor_read scr;
@@ -349,7 +349,7 @@ xps_decode_tiff_fax(xps_context_t *ctx, xps_tiff_t *tiff, int comp, byte *rp, by
  */
 
 static int
-xps_decode_tiff_jpeg(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_jpeg(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
 	stream_DCT_state state; /* used by gs_jpeg_* wrappers */
 	jpeg_decompress_data jddp;
@@ -518,7 +518,7 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 }
 
 static int
-xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
+xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 {
 	int maxval = 1 << image->bits;
 	byte *samples;
@@ -576,7 +576,7 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 }
 
 static int
-xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
+xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 {
 	int error;
 
@@ -773,7 +773,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 }
 
 static void
-xps_read_tiff_bytes(unsigned char *p, xps_tiff_t *tiff, unsigned ofs, unsigned n)
+xps_read_tiff_bytes(unsigned char *p, xps_tiff *tiff, unsigned ofs, unsigned n)
 {
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
@@ -786,7 +786,7 @@ xps_read_tiff_bytes(unsigned char *p, xps_tiff_t *tiff, unsigned ofs, unsigned n
 }
 
 static void
-xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
+xps_read_tiff_tag_value(unsigned *p, xps_tiff *tiff, unsigned type, unsigned ofs, unsigned n)
 {
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
@@ -810,7 +810,7 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
 }
 
 static int
-xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
+xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 {
 	unsigned tag;
 	unsigned type;
@@ -949,7 +949,7 @@ xps_swap_byte_order(byte *buf, int n)
 }
 
 static int
-xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
+xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 {
 	unsigned version;
 	unsigned offset;
@@ -957,7 +957,7 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 	unsigned i;
 	int error;
 
-	memset(tiff, 0, sizeof(xps_tiff_t));
+	memset(tiff, 0, sizeof(xps_tiff));
 
 	tiff->bp = buf;
 	tiff->rp = buf;
@@ -1015,11 +1015,11 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 }
 
 int
-xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
+xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
 {
 	int error;
-	xps_tiff_t tiffst;
-	xps_tiff_t *tiff = &tiffst;
+	xps_tiff tiffst;
+	xps_tiff *tiff = &tiffst;
 
 	error = xps_decode_tiff_header(ctx, tiff, buf, len);
 	if (error)
@@ -1063,11 +1063,11 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
 }
 
 int
-xps_tiff_has_alpha(xps_context_t *ctx, byte *buf, int len)
+xps_tiff_has_alpha(xps_context *ctx, byte *buf, int len)
 {
 	int error;
-	xps_tiff_t tiffst;
-	xps_tiff_t *tiff = &tiffst;
+	xps_tiff tiffst;
+	xps_tiff *tiff = &tiffst;
 
 	error = xps_decode_tiff_header(ctx, tiff, buf, len);
 	if (error)

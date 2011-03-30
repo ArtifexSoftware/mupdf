@@ -15,7 +15,7 @@ static inline int unhex(int i)
  * data with the GUID in the fontname.
  */
 static void
-xps_deobfuscate_font_resource(xps_context_t *ctx, xps_part_t *part)
+xps_deobfuscate_font_resource(xps_context *ctx, xps_part *part)
 {
 	byte buf[33];
 	byte key[16];
@@ -172,11 +172,11 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
  * Calculate metrics for positioning.
  */
 static void
-xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float size,
+xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm, fz_font *font, float size,
 		float originx, float originy, int is_sideways, int bidi_level,
 		char *indices, char *unicode, int is_charpath)
 {
-	xps_glyph_metrics_t mtx;
+	xps_glyph_metrics mtx;
 	fz_matrix tm;
 	float e, f;
 	float x = originx;
@@ -285,10 +285,10 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 }
 
 void
-xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
-		char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
+		char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 	int code;
 
 	char *fill_uri;
@@ -310,14 +310,14 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	char *opacity_att;
 	char *opacity_mask_att;
 
-	xps_item_t *transform_tag = NULL;
-	xps_item_t *clip_tag = NULL;
-	xps_item_t *fill_tag = NULL;
-	xps_item_t *opacity_mask_tag = NULL;
+	xps_item *transform_tag = NULL;
+	xps_item *clip_tag = NULL;
+	xps_item *fill_tag = NULL;
+	xps_item *opacity_mask_tag = NULL;
 
 	char *fill_opacity_att = NULL;
 
-	xps_part_t *part;
+	xps_part *part;
 	fz_font *font;
 
 	char partname[1024];

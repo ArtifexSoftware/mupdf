@@ -5,7 +5,7 @@
 #include <setjmp.h>
 
 int
-xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
+xps_decode_jpeg(xps_context *ctx, byte *rbuf, int rlen, xps_image *image)
 {
 	return fz_throw("jpeg not available");
 }

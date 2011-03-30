@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 static int
-xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
+xps_decode_image(xps_context *ctx, xps_part *part, xps_image *image)
 {
 	byte *buf = part->data;
 	int len = part->size;
@@ -11,7 +11,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 	if (len < 8)
 		return fz_throw("unknown image file format");
 
-	memset(image, 0, sizeof(xps_image_t));
+	memset(image, 0, sizeof(xps_image));
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
 	{
@@ -44,7 +44,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 }
 
 static void
-xps_paint_image_brush_imp(xps_context_t *ctx, fz_matrix ctm, xps_image_t *image)
+xps_paint_image_brush_imp(xps_context *ctx, fz_matrix ctm, xps_image *image)
 {
 	fz_colorspace *colorspace;
 	unsigned int count;
@@ -58,10 +58,10 @@ printf("xps_paint_image_brush_imp!\n");
 }
 
 static void
-xps_paint_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root, void *vimage)
+xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root, void *vimage)
 {
 #if 0
-	xps_image_t *image = vimage;
+	xps_image *image = vimage;
 	int code;
 
 	if (ctx->opacity_only)
@@ -77,8 +77,8 @@ xps_paint_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 
 	if (image->alpha)
 	{
-		gs_transparency_mask_params_t params;
-		gs_transparency_group_params_t tgp;
+		gs_transparency_mask_params params;
+		gs_transparency_group_params tgp;
 		fz_rect bbox;
 
 		xps_bounds_in_user_space(ctx, &bbox);
@@ -125,10 +125,10 @@ xps_paint_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 }
 
 static int
-xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t *root,
-	xps_part_t **partp, char **profilep)
+xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *root,
+	xps_part **partp, char **profilep)
 {
-	xps_part_t *part;
+	xps_part *part;
 	char *image_source_att;
 	char buf[1024];
 	char partname[1024];
@@ -184,10 +184,10 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
 }
 
 void
-xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_part_t *part;
-	xps_image_t *image;
+	xps_part *part;
+	xps_image *image;
 	fz_colorspace *colorspace;
 	char *profilename;
 	int code;
@@ -200,7 +200,7 @@ xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 		return;
 	}
 
-	image = xps_alloc(ctx, sizeof(xps_image_t));
+	image = xps_alloc(ctx, sizeof(xps_image));
 
 	code = xps_decode_image(ctx, part, image);
 	if (code < 0) {
@@ -229,7 +229,7 @@ xps_parse_image_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_res
 }
 
 void
-xps_free_image(xps_context_t *ctx, xps_image_t *image)
+xps_free_image(xps_context *ctx, xps_image *image)
 {
 	// TODO: refcount image->colorspace
 	if (image->samples)

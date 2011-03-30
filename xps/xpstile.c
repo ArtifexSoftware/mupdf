@@ -11,14 +11,14 @@ enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 struct closure
 {
 	char *base_uri;
-	xps_resource_t *dict;
-	xps_item_t *root;
+	xps_resource *dict;
+	xps_item *root;
 	void *user;
-	void (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*);
+	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*);
 };
 
 static void
-xps_paint_tiling_brush_clipped(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, struct closure *c)
+xps_paint_tiling_brush_clipped(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, struct closure *c)
 {
 	ctx->path = fz_newpath();
 	fz_moveto(ctx->path, viewbox.x0, viewbox.y0);
@@ -34,7 +34,7 @@ xps_paint_tiling_brush_clipped(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbo
 }
 
 static void
-xps_paint_tiling_brush(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, int tile_mode, struct closure *c)
+xps_paint_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, int tile_mode, struct closure *c)
 {
 	fz_matrix ttm;
 
@@ -63,11 +63,11 @@ xps_paint_tiling_brush(xps_context_t *ctx, fz_matrix ctm, fz_rect viewbox, int t
 }
 
 void
-xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource_t *dict, xps_item_t *root,
-	void (*func)(xps_context_t*, fz_matrix, char*, xps_resource_t*, xps_item_t*, void*), void *user)
+xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
+	char *base_uri, xps_resource *dict, xps_item *root,
+	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*), void *user)
 {
-	xps_item_t *node;
+	xps_item *node;
 	struct closure c;
 
 	char *opacity_att;
@@ -78,7 +78,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, fz_matrix ctm,
 	char *viewbox_units_att;
 	char *viewport_units_att;
 
-	xps_item_t *transform_tag = NULL;
+	xps_item *transform_tag = NULL;
 
 	fz_matrix transform;
 	fz_rect viewbox;

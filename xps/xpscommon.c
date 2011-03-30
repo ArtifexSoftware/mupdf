@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 void
-xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
+xps_parse_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
 {
 	if (!strcmp(xps_tag(node), "SolidColorBrush"))
 		xps_parse_solid_color_brush(ctx, ctm, base_uri, dict, node);
@@ -19,7 +19,7 @@ xps_parse_brush(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_
 }
 
 void
-xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *node)
+xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
 {
 	if (!strcmp(xps_tag(node), "Path"))
 		xps_parse_path(ctx, ctm, base_uri, dict, node);
@@ -31,7 +31,7 @@ xps_parse_element(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resourc
 }
 
 void
-xps_parse_render_transform(xps_context_t *ctx, char *transform, fz_matrix *matrix)
+xps_parse_render_transform(xps_context *ctx, char *transform, fz_matrix *matrix)
 {
 	float args[6];
 	char *s = transform;
@@ -56,7 +56,7 @@ xps_parse_render_transform(xps_context_t *ctx, char *transform, fz_matrix *matri
 }
 
 void
-xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, fz_matrix *matrix)
+xps_parse_matrix_transform(xps_context *ctx, xps_item *root, fz_matrix *matrix)
 {
 	char *transform;
 
@@ -71,7 +71,7 @@ xps_parse_matrix_transform(xps_context_t *ctx, xps_item_t *root, fz_matrix *matr
 }
 
 void
-xps_parse_rectangle(xps_context_t *ctx, char *text, fz_rect *rect)
+xps_parse_rectangle(xps_context *ctx, char *text, fz_rect *rect)
 {
 	float args[4];
 	char *s = text;

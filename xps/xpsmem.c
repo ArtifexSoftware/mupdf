@@ -21,12 +21,12 @@ xps_strcasecmp(char *a, char *b)
 	return xps_tolower(*a) - xps_tolower(*b);
 }
 
-size_t
-xps_strlcpy(char *dst, const char *src, size_t siz)
+int
+xps_strlcpy(char *dst, const char *src, int size)
 {
 	register char *d = dst;
 	register const char *s = src;
-	register int n = siz;
+	register int n = size;
 
 	/* Copy as many bytes as will fit */
 	if (n != 0 && --n != 0) {
@@ -38,7 +38,7 @@ xps_strlcpy(char *dst, const char *src, size_t siz)
 
 	/* Not enough room in dst, add NUL and traverse rest of src */
 	if (n == 0) {
-		if (siz != 0)
+		if (size != 0)
 			*d = '\0';			/* NUL-terminate dst */
 			while (*s++)
 				;
@@ -47,19 +47,19 @@ xps_strlcpy(char *dst, const char *src, size_t siz)
 	return(s - src - 1);	/* count does not include NUL */
 }
 
-size_t
-xps_strlcat(char *dst, const char *src, size_t siz)
+int
+xps_strlcat(char *dst, const char *src, int size)
 {
 	register char *d = dst;
 	register const char *s = src;
-	register int n = siz;
+	register int n = size;
 	int dlen;
 
 	/* Find the end of dst and adjust bytes left but don't go past end */
 	while (*d != '\0' && n-- != 0)
 		d++;
 	dlen = d - dst;
-	n = siz - dlen;
+	n = size - dlen;
 
 	if (n == 0)
 		return dlen + strlen(s);

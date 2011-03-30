@@ -7,17 +7,17 @@
 #include "muxps.h"
 
 static int
-xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, char *source_att)
+xps_remote_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, char *source_att)
 {
 	//dputs("page has transparency: uses a remote resource; not parsed; being conservative\n");
 	return 1;
 }
 
 int
-xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
 	char *source;
-	xps_item_t *node;
+	xps_item *node;
 
 	source = xps_att(root, "Source");
 	if (source)
@@ -32,9 +32,9 @@ xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps
 }
 
 static int
-xps_gradient_stops_have_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_gradient_stops_have_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 	fz_colorspace *colorspace;
 	char *color_att;
 	float samples[32];
@@ -60,9 +60,9 @@ xps_gradient_stops_have_transparency(xps_context_t *ctx, char *base_uri, xps_ite
 }
 
 static int
-xps_gradient_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_gradient_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 	char *opacity_att;
 
 	opacity_att = xps_att(root, "Opacity");
@@ -93,11 +93,11 @@ xps_gradient_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item
 }
 
 static int
-xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
 	char *opacity_att;
 	char *color_att;
-	xps_item_t *node;
+	xps_item *node;
 
 	fz_colorspace *colorspace;
 	float samples[32];
@@ -170,9 +170,9 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 }
 
 static int
-xps_path_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_path_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
@@ -199,9 +199,9 @@ xps_path_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
 }
 
 static int
-xps_glyphs_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_glyphs_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
@@ -222,9 +222,9 @@ xps_glyphs_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root
 }
 
 static int
-xps_canvas_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
+xps_canvas_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
@@ -248,7 +248,7 @@ xps_canvas_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root
 }
 
 int
-xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node)
+xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
 {
 	char *opacity_att;
 	char *stroke_att;

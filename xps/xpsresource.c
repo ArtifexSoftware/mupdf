@@ -1,10 +1,10 @@
 #include "fitz.h"
 #include "muxps.h"
 
-static xps_item_t *
-xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name, char **urip)
+static xps_item *
+xps_find_resource(xps_context *ctx, xps_resource *dict, char *name, char **urip)
 {
-	xps_resource_t *head, *node;
+	xps_resource *head, *node;
 	for (head = dict; head; head = head->parent)
 	{
 		for (node = head; node; node = node->next)
@@ -20,8 +20,8 @@ xps_find_resource(xps_context_t *ctx, xps_resource_t *dict, char *name, char **u
 	return NULL;
 }
 
-static xps_item_t *
-xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att, char **urip)
+static xps_item *
+xps_parse_resource_reference(xps_context *ctx, xps_resource *dict, char *att, char **urip)
 {
 	char name[1024];
 	char *s;
@@ -38,12 +38,12 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
 }
 
 void
-xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
-		char **attp, xps_item_t **tagp, char **urip)
+xps_resolve_resource_reference(xps_context *ctx, xps_resource *dict,
+		char **attp, xps_item **tagp, char **urip)
 {
 	if (*attp)
 	{
-		xps_item_t *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
+		xps_item *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
 		if (rsrc)
 		{
 			*attp = NULL;
@@ -53,13 +53,13 @@ xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict,
 }
 
 static int
-xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *base_uri, char *source_att)
+xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, char *source_att)
 {
 	char part_name[1024];
 	char part_uri[1024];
-	xps_resource_t *dict;
-	xps_part_t *part;
-	xps_item_t *xml;
+	xps_resource *dict;
+	xps_part *part;
+	xps_item *xml;
 	char *s;
 	int code;
 
@@ -107,11 +107,11 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
 }
 
 int
-xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *base_uri, xps_item_t *root)
+xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, xps_item *root)
 {
-	xps_resource_t *head;
-	xps_resource_t *entry;
-	xps_item_t *node;
+	xps_resource *head;
+	xps_resource *entry;
+	xps_item *node;
 	char *source;
 	char *key;
 	int code;
@@ -133,7 +133,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 		key = xps_att(node, "Key");
 		if (key)
 		{
-			entry = xps_alloc(ctx, sizeof(xps_resource_t));
+			entry = xps_alloc(ctx, sizeof(xps_resource));
 			if (!entry)
 				return fz_throw("cannot allocate resource entry");
 			entry->name = key;
@@ -156,9 +156,9 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
 }
 
 void
-xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
+xps_free_resource_dictionary(xps_context *ctx, xps_resource *dict)
 {
-	xps_resource_t *next;
+	xps_resource *next;
 	while (dict)
 	{
 		next = dict->next;
@@ -172,7 +172,7 @@ xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
 }
 
 void
-xps_debug_resource_dictionary(xps_resource_t *dict)
+xps_debug_resource_dictionary(xps_resource *dict)
 {
 	while (dict)
 	{

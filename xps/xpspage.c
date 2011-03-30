@@ -2,10 +2,10 @@
 #include "muxps.h"
 
 void
-xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_resource_t *new_dict = NULL;
-	xps_item_t *node;
+	xps_resource *new_dict = NULL;
+	xps_item *node;
 	char *opacity_mask_uri;
 	int code;
 
@@ -14,9 +14,9 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 	char *opacity_att;
 	char *opacity_mask_att;
 
-	xps_item_t *transform_tag = NULL;
-	xps_item_t *clip_tag = NULL;
-	xps_item_t *opacity_mask_tag = NULL;
+	xps_item *transform_tag = NULL;
+	xps_item *clip_tag = NULL;
+	xps_item *opacity_mask_tag = NULL;
 
 	fz_matrix transform;
 
@@ -86,10 +86,10 @@ xps_parse_canvas(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource
 }
 
 void
-xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page)
+xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 {
-	xps_item_t *node;
-	xps_resource_t *dict;
+	xps_item *node;
+	xps_resource *dict;
 	char base_uri[1024];
 	char *s;
 	int code;
@@ -119,10 +119,10 @@ xps_parse_fixed_page(xps_context_t *ctx, fz_matrix ctm, xps_page_t *page)
 }
 
 int
-xps_load_fixed_page(xps_context_t *ctx, xps_page_t *page)
+xps_load_fixed_page(xps_context *ctx, xps_page *page)
 {
-	xps_part_t *part;
-	xps_item_t *root;
+	xps_part *part;
+	xps_item *root;
 	char *width_att;
 	char *height_att;
 

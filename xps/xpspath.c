@@ -36,7 +36,7 @@ fz_currentpoint(fz_path *path)
 }
 
 void
-xps_clip(xps_context_t *ctx, fz_matrix ctm)
+xps_clip(xps_context *ctx, fz_matrix ctm)
 {
 	if (ctx->path)
 	{
@@ -57,7 +57,7 @@ xps_clip(xps_context_t *ctx, fz_matrix ctm)
 }
 
 void
-xps_fill(xps_context_t *ctx, fz_matrix ctm)
+xps_fill(xps_context *ctx, fz_matrix ctm)
 {
 	ctx->dev->fillpath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm,
 		ctx->colorspace, ctx->color, ctx->alpha);
@@ -66,7 +66,7 @@ xps_fill(xps_context_t *ctx, fz_matrix ctm)
 }
 
 static void
-xps_stroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
+xps_stroke(xps_context *ctx, fz_matrix ctm, fz_strokestate *stroke)
 {
 	ctx->dev->strokepath(ctx->dev->user, ctx->path, stroke, ctm,
 		ctx->colorspace, ctx->color, ctx->alpha);
@@ -75,7 +75,7 @@ xps_stroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
 }
 
 static void
-xps_clipstroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
+xps_clipstroke(xps_context *ctx, fz_matrix ctm, fz_strokestate *stroke)
 {
 	ctx->dev->clipstrokepath(ctx->dev->user, ctx->path, stroke, ctm);
 	fz_freepath(ctx->path);
@@ -88,7 +88,7 @@ xps_clipstroke(xps_context_t *ctx, fz_matrix ctm, fz_strokestate *stroke)
  * without transforming the line width.
  */
 static inline void
-xps_draw_arc_segment(xps_context_t *ctx, fz_matrix mtx, float th0, float th1, int iscw)
+xps_draw_arc_segment(xps_context *ctx, fz_matrix mtx, float th0, float th1, int iscw)
 {
 	float t, d;
 	fz_point p;
@@ -154,7 +154,7 @@ angle_between(const fz_point u, const fz_point v)
 }
 
 static void
-xps_draw_arc(xps_context_t *ctx,
+xps_draw_arc(xps_context *ctx,
 		float size_x, float size_y, float rotation_angle,
 		int is_large_arc, int is_clockwise,
 		float point_x, float point_y)
@@ -266,7 +266,7 @@ xps_draw_arc(xps_context_t *ctx,
  */
 
 void
-xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
+xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 {
 	char **args;
 	char **pargs;
@@ -489,7 +489,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 }
 
 static void
-xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
+xps_parse_arc_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
 {
 	/* ArcSegment pretty much follows the SVG algorithm for converting an
 	 * arc in endpoint representation to an arc in centerpoint
@@ -537,7 +537,7 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *s
 }
 
 static void
-xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
+xps_parse_poly_quadratic_bezier_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -587,7 +587,7 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, in
 }
 
 static void
-xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
+xps_parse_poly_bezier_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -628,7 +628,7 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking
 }
 
 static void
-xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *skipped_stroke)
+xps_parse_poly_line_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -662,9 +662,9 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
 }
 
 static void
-xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root, int stroking)
+xps_parse_path_figure(xps_context *ctx, xps_item *root, int stroking)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	char *is_closed_att;
 	char *start_point_att;
@@ -715,16 +715,16 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root, int stroking)
 }
 
 void
-xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking)
+xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	char *figures_att;
 	char *fill_rule_att;
 	char *transform_att;
 
-	xps_item_t *transform_tag = NULL;
-	xps_item_t *figures_tag = NULL; /* only used by resource */
+	xps_item *transform_tag = NULL;
+	xps_item *figures_tag = NULL; /* only used by resource */
 
 	fz_matrix transform;
 
@@ -794,9 +794,9 @@ xps_parse_line_cap(char *attr)
  */
 
 void
-xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t *dict, xps_item_t *root)
+xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_item_t *node;
+	xps_item *node;
 
 	char *fill_uri;
 	char *stroke_uri;
@@ -810,12 +810,12 @@ xps_parse_path(xps_context_t *ctx, fz_matrix ctm, char *base_uri, xps_resource_t
 	char *opacity_att;
 	char *opacity_mask_att;
 
-	xps_item_t *transform_tag = NULL;
-	xps_item_t *clip_tag = NULL;
-	xps_item_t *data_tag = NULL;
-	xps_item_t *fill_tag = NULL;
-	xps_item_t *stroke_tag = NULL;
-	xps_item_t *opacity_mask_tag = NULL;
+	xps_item *transform_tag = NULL;
+	xps_item *clip_tag = NULL;
+	xps_item *data_tag = NULL;
+	xps_item *fill_tag = NULL;
+	xps_item *stroke_tag = NULL;
+	xps_item *opacity_mask_tag = NULL;
 
 	char *fill_opacity_att = NULL;
 	char *stroke_opacity_att = NULL;
