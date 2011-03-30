@@ -177,6 +177,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 		char *indices, char *unicode, int is_charpath)
 {
 	xps_glyph_metrics_t mtx;
+	fz_matrix tm;
 	float e, f;
 	float x = originx;
 	float y = originy;
@@ -197,7 +198,12 @@ xps_parse_glyphs_imp(xps_context_t *ctx, fz_matrix ctm, fz_font *font, float siz
 		un = strlen(us);
 	}
 
-	ctx->text = fz_newtext(font, fz_scale(size, -size), is_sideways);
+	if (is_sideways)
+		tm = fz_concat(fz_scale(-size, size), fz_rotate(90));
+	else
+		tm = fz_scale(size, -size);
+
+	ctx->text = fz_newtext(font, tm, is_sideways);
 
 	while ((us && un > 0) || (is && *is))
 	{
@@ -447,9 +453,6 @@ xps_parse_glyphs(xps_context_t *ctx, fz_matrix ctm,
 	}
 
 	font_size = atof(font_size_att);
-
-	if (is_sideways)
-		fz_warn("sideways text not implemented!");
 
 	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 

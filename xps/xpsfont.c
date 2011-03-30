@@ -41,11 +41,14 @@ void
 xps_measure_font_glyph(xps_context_t *ctx, fz_font *font, int gid, xps_glyph_metrics_t *mtx)
 {
 	int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
-	FT_Fixed adv;
+	FT_Face face = font->ftface;
+	FT_Fixed hadv, vadv;
 
-	FT_Set_Char_Size(font->ftface, 64, 64, 72, 72);
-	FT_Get_Advance(font->ftface, gid, mask, &adv);
-	mtx->hadv = adv / 65536.0f;
-	mtx->vadv = -1000 / 1000.0f;
-	mtx->vorg = 880 / 1000.0f;
+	FT_Set_Char_Size(face, 64, 64, 72, 72);
+	FT_Get_Advance(face, gid, mask, &hadv);
+	FT_Get_Advance(face, gid, mask | FT_LOAD_VERTICAL_LAYOUT, &vadv);
+
+	mtx->hadv = hadv / 65536.0f;
+	mtx->vadv = vadv / 65536.0f;
+	mtx->vorg = face->ascender / (float) face->units_per_EM;
 }
