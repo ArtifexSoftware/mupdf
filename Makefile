@@ -176,7 +176,6 @@ MUXPS_SRC := \
 	xps/xpsanalyze.c \
 	xps/xpscolor.c \
 	xps/xpscommon.c \
-	xps/xpscrc.c \
 	xps/xpsdoc.c \
 	xps/xpsfont.c \
 	xps/xpsglyphs.c \

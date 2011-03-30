@@ -22,7 +22,7 @@ static inline int getlong(FILE *file)
 static void *
 xps_zip_alloc_items(xps_context *ctx, int items, int size)
 {
-	return fz_malloc(items * size);
+	return fz_calloc(items, size);
 }
 
 static void
@@ -159,10 +159,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 	offset = getlong(ctx->file); /* offset to central directory */
 
 	ctx->zip_count = count;
-	ctx->zip_table = fz_malloc(sizeof(xps_entry) * count);
-	if (!ctx->zip_table)
-		return fz_throw("cannot allocate zip entry table");
-
+	ctx->zip_table = fz_calloc(count, sizeof(xps_entry));
 	memset(ctx->zip_table, 0, sizeof(xps_entry) * count);
 
 	fseek(ctx->file, offset, 0);
@@ -191,9 +188,6 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 		ctx->zip_table[i].offset = getlong(ctx->file);
 
 		ctx->zip_table[i].name = fz_malloc(namesize + 1);
-		if (!ctx->zip_table[i].name)
-			return fz_throw("cannot allocate zip entry name");
-
 		fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
 		ctx->zip_table[i].name[namesize] = 0;
 

@@ -249,7 +249,7 @@ xps_decode_png(xps_context *ctx, byte *rbuf, int rlen, xps_image *image)
 
 	image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
-	image->samples = fz_malloc(image->stride * image->height);
+	image->samples = fz_calloc(image->height, image->stride);
 
 	for (pass = 0; pass < npasses; pass++)
 	{

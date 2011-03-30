@@ -53,24 +53,11 @@ xps_hash_new(xps_context *ctx)
 	xps_hash_table *table;
 
 	table = fz_malloc(sizeof(xps_hash_table));
-	if (!table)
-	{
-		fz_throw("out of memory: hash table struct");
-		return NULL;
-	}
-
 	table->size = primes[0];
 	table->load = 0;
 
-	table->entries = fz_malloc(sizeof(xps_hash_entry) * table->size);
-	if (!table->entries)
-	{
-		fz_free(table);
-		fz_throw("out of memory: hash table entries array");
-		return NULL;
-	}
-
-	memset(table->entries, 0, sizeof(xps_hash_entry) * table->size);
+	table->entries = fz_calloc(table->size, sizeof(xps_hash_entry));
+	memset(table->entries, 0, table->size * sizeof(xps_hash_entry));
 
 	return table;
 }
@@ -94,15 +81,13 @@ xps_hash_double(xps_context *ctx, xps_hash_table *table)
 	}
 
 	old_entries = table->entries;
-	new_entries = fz_malloc(sizeof(xps_hash_entry) * new_size);
-	if (!new_entries)
-		return fz_throw("out of memory: hash table entries array");
+	new_entries = fz_calloc(new_size, sizeof(xps_hash_entry));
 
 	table->size = new_size;
 	table->entries = new_entries;
 	table->load = 0;
 
-	memset(table->entries, 0, sizeof(xps_hash_entry) * table->size);
+	memset(table->entries, 0, table->size * sizeof(xps_hash_entry));
 
 	for (i = 0; i < old_size; i++)
 		if (old_entries[i].value)

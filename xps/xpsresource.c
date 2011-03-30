@@ -134,8 +134,6 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 		if (key)
 		{
 			entry = fz_malloc(sizeof(xps_resource));
-			if (!entry)
-				return fz_throw("cannot allocate resource entry");
 			entry->name = key;
 			entry->base_uri = NULL;
 			entry->base_xml = NULL;

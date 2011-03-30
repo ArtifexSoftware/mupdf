@@ -239,7 +239,7 @@ xps_decode_jpegxr(xps_context *ctx, byte *buf, int len, xps_image *output)
 	fclose(file);
 	unlink(name);
 
-	return gs_okay;
+	return fz_okay;
 }
 
 int
