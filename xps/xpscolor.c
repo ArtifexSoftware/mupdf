@@ -191,7 +191,7 @@ xps_read_icc_colorspace(xps_context *ctx, char *base_uri, char *profilename)
 		xps_free_part(ctx, part);
 
 		/* Add colorspace to xps color cache. */
-		xps_hash_insert(ctx, ctx->colorspace_table, xps_strdup(ctx, partname), space);
+		xps_hash_insert(ctx, ctx->colorspace_table, fz_strdup(partname), space);
 	}
 
 	return space;

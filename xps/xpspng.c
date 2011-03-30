@@ -190,7 +190,7 @@ xps_decode_png(xps_context *ctx, byte *rbuf, int rlen, xps_image *image)
 	if (info->iccp_profile != NULL)
 	{
 		image->profilesize = info->iccp_proflen;
-		image->profile = xps_alloc(ctx, info->iccp_proflen);
+		image->profile = fz_malloc(info->iccp_proflen);
 		if (image->profile)
 		{
 			/* If we can't create it, just ignore */
@@ -249,7 +249,7 @@ xps_decode_png(xps_context *ctx, byte *rbuf, int rlen, xps_image *image)
 
 	image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
-	image->samples = xps_alloc(ctx, image->stride * image->height);
+	image->samples = fz_malloc(image->stride * image->height);
 
 	for (pass = 0; pass < npasses; pass++)
 	{

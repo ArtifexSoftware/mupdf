@@ -21,60 +21,6 @@ xps_strcasecmp(char *a, char *b)
 	return xps_tolower(*a) - xps_tolower(*b);
 }
 
-int
-xps_strlcpy(char *dst, const char *src, int size)
-{
-	register char *d = dst;
-	register const char *s = src;
-	register int n = size;
-
-	/* Copy as many bytes as will fit */
-	if (n != 0 && --n != 0) {
-		do {
-			if ((*d++ = *s++) == 0)
-				break;
-		} while (--n != 0);
-	}
-
-	/* Not enough room in dst, add NUL and traverse rest of src */
-	if (n == 0) {
-		if (size != 0)
-			*d = '\0';			/* NUL-terminate dst */
-			while (*s++)
-				;
-	}
-
-	return(s - src - 1);	/* count does not include NUL */
-}
-
-int
-xps_strlcat(char *dst, const char *src, int size)
-{
-	register char *d = dst;
-	register const char *s = src;
-	register int n = size;
-	int dlen;
-
-	/* Find the end of dst and adjust bytes left but don't go past end */
-	while (*d != '\0' && n-- != 0)
-		d++;
-	dlen = d - dst;
-	n = size - dlen;
-
-	if (n == 0)
-		return dlen + strlen(s);
-	while (*s != '\0') {
-		if (n != 1) {
-			*d++ = *s;
-			n--;
-		}
-		s++;
-	}
-	*d = '\0';
-
-	return dlen + (s - src);	/* count does not include NUL */
-}
-
 #define SEP(x)	((x)=='/' || (x) == 0)
 
 static char *
@@ -137,13 +83,13 @@ xps_absolute_path(char *output, char *base_uri, char *path, int output_size)
 {
 	if (path[0] == '/')
 	{
-		xps_strlcpy(output, path, output_size);
+		fz_strlcpy(output, path, output_size);
 	}
 	else
 	{
-		xps_strlcpy(output, base_uri, output_size);
-		xps_strlcat(output, "/", output_size);
-		xps_strlcat(output, path, output_size);
+		fz_strlcpy(output, base_uri, output_size);
+		fz_strlcat(output, "/", output_size);
+		fz_strlcat(output, path, output_size);
 	}
 	xps_clean_path(output);
 }

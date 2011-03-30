@@ -538,7 +538,7 @@ xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 
 	stride = image->width * (image->comps + 2);
 
-	samples = xps_alloc(ctx, stride * image->height);
+	samples = fz_malloc(stride * image->height);
 	if (!samples)
 		return fz_throw("out of memory: samples");
 
@@ -655,7 +655,7 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 		image->yres = 96;
 	}
 
-	image->samples = xps_alloc(ctx, image->stride * image->height);
+	image->samples = fz_malloc(image->stride * image->height);
 	if (!image->samples)
 		return fz_throw("could not allocate image samples");
 
@@ -887,7 +887,7 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
 		break;
 	case ICCProfile:
-		tiff->profile = xps_alloc(ctx, count);
+		tiff->profile = fz_malloc(count);
 		if (!tiff->profile)
 			return fz_throw("could not allocate embedded icc profile");
 		/* ICC profile data type is set to UNDEFINED.
@@ -902,21 +902,21 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		break;
 
 	case StripOffsets:
-		tiff->stripoffsets = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+		tiff->stripoffsets = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->stripoffsets)
 			return fz_throw("could not allocate strip offsets");
 		xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		break;
 
 	case StripByteCounts:
-		tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+		tiff->stripbytecounts = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->stripbytecounts)
 			return fz_throw("could not allocate strip byte counts");
 		xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		break;
 
 	case ColorMap:
-		tiff->colormap = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+		tiff->colormap = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->colormap)
 			return fz_throw("could not allocate color map");
 		xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
@@ -1055,9 +1055,9 @@ xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
 	 * Clean up scratch memory
 	 */
 
-	if (tiff->colormap) xps_free(ctx, tiff->colormap);
-	if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
-	if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
+	if (tiff->colormap) fz_free(tiff->colormap);
+	if (tiff->stripoffsets) fz_free(tiff->stripoffsets);
+	if (tiff->stripbytecounts) fz_free(tiff->stripbytecounts);
 
 	return gs_okay;
 }
@@ -1076,10 +1076,10 @@ xps_tiff_has_alpha(xps_context *ctx, byte *buf, int len)
 		return 0;
 	}
 
-	if (tiff->profile) xps_free(ctx, tiff->profile);
-	if (tiff->colormap) xps_free(ctx, tiff->colormap);
-	if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
-	if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
+	if (tiff->profile) fz_free(tiff->profile);
+	if (tiff->colormap) fz_free(tiff->colormap);
+	if (tiff->stripoffsets) fz_free(tiff->stripoffsets);
+	if (tiff->stripbytecounts) fz_free(tiff->stripbytecounts);
 
 	return tiff->extrasamples == 2 || tiff->extrasamples == 1;
 }

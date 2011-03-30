@@ -146,7 +146,7 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *roo
 		image_name = NULL;
 		profile_name = NULL;
 
-		xps_strlcpy(buf, image_source_att, sizeof buf);
+		fz_strlcpy(buf, image_source_att, sizeof buf);
 		p = strchr(buf, ' ');
 		if (p)
 		{
@@ -178,7 +178,7 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *roo
 
 	*partp = part;
 	if (profile_name)
-		*profilep = xps_strdup(ctx, profile_name);
+		*profilep = fz_strdup(profile_name);
 
 	return 0;
 }
@@ -200,7 +200,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resou
 		return;
 	}
 
-	image = xps_alloc(ctx, sizeof(xps_image));
+	image = fz_malloc(sizeof(xps_image));
 
 	code = xps_decode_image(ctx, part, image);
 	if (code < 0) {
@@ -223,7 +223,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resou
 	xps_parse_tiling_brush(ctx, ctm, base_uri, dict, root, xps_paint_image_brush, image);
 
 	if (profilename)
-		xps_free(ctx, profilename);
+		fz_free(profilename);
 	xps_free_image(ctx, image);
 	xps_free_part(ctx, part);
 }
@@ -233,8 +233,8 @@ xps_free_image(xps_context *ctx, xps_image *image)
 {
 	// TODO: refcount image->colorspace
 	if (image->samples)
-		xps_free(ctx, image->samples);
+		fz_free(image->samples);
 	if (image->profile)
-		xps_free(ctx, image->profile);
-	xps_free(ctx, image);
+		fz_free(image->profile);
+	fz_free(image);
 }

@@ -29,15 +29,7 @@ typedef struct xps_context_s xps_context;
  * Memory, and string functions.
  */
 
-#define xps_alloc(ctx, size) fz_malloc(size)
-#define xps_realloc(ctx, ptr, size) fz_realloc(ptr, size, 1)
-#define xps_strdup(ctx, str) fz_strdup(str)
-#define xps_free(ctx, ptr) fz_free(ptr)
-
-int xps_strlcpy(char *destination, const char *source, int size);
-int xps_strlcat(char *destination, const char *source, int size);
 int xps_strcasecmp(char *a, char *b);
-char *xps_strdup_imp(xps_context *ctx, const char *str, const char *function);
 void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);
 
 int xps_utf8_to_ucs(int *p, const char *s, int n);

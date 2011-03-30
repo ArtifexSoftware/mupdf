@@ -29,7 +29,7 @@ xps_parse_resource_reference(xps_context *ctx, xps_resource *dict, char *att, ch
 	if (strstr(att, "{StaticResource ") != att)
 		return NULL;
 
-	xps_strlcpy(name, att + 16, sizeof name);
+	fz_strlcpy(name, att + 16, sizeof name);
 	s = strrchr(name, '}');
 	if (s)
 		*s = 0;
@@ -85,7 +85,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 		return fz_throw("expected ResourceDictionary element (found %s)", xps_tag(xml));
 	}
 
-	xps_strlcpy(part_uri, part_name, sizeof part_uri);
+	fz_strlcpy(part_uri, part_name, sizeof part_uri);
 	s = strrchr(part_uri, '/');
 	if (s)
 		s[1] = 0;
@@ -133,7 +133,7 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 		key = xps_att(node, "Key");
 		if (key)
 		{
-			entry = xps_alloc(ctx, sizeof(xps_resource));
+			entry = fz_malloc(sizeof(xps_resource));
 			if (!entry)
 				return fz_throw("cannot allocate resource entry");
 			entry->name = key;
@@ -148,7 +148,7 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 
 	if (head)
 	{
-		head->base_uri = xps_strdup(ctx, base_uri);
+		head->base_uri = fz_strdup(base_uri);
 	}
 
 	*dictp = head;
@@ -165,8 +165,8 @@ xps_free_resource_dictionary(xps_context *ctx, xps_resource *dict)
 		if (dict->base_xml)
 			xps_free_item(ctx, dict->base_xml);
 		if (dict->base_uri)
-			xps_free(ctx, dict->base_uri);
-		xps_free(ctx, dict);
+			fz_free(dict->base_uri);
+		fz_free(dict);
 		dict = next;
 	}
 }

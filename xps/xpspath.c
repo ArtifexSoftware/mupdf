@@ -485,7 +485,7 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 		old = cmd;
 	}
 
-	xps_free(ctx, args);
+	fz_free(args);
 }
 
 static void

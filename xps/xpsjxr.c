@@ -84,7 +84,7 @@ xps_decode_jpegxr_block(jxr_image image, int mx, int my, int *data)
 		output->hasalpha = jxr_get_ALPHACHANNEL_FLAG(image);
 		output->bits = 8;
 		output->stride = output->width * output->comps;
-		output->samples = xps_alloc(ctx, output->stride * output->height);
+		output->samples = fz_malloc(output->stride * output->height);
 
 		switch (output->comps)
 		{
@@ -128,7 +128,7 @@ xps_decode_jpegxr_alpha_block(jxr_image image, int mx, int my, int *data)
 
 	if (!output->alpha)
 	{
-		output->alpha = xps_alloc(ctx, output->width * output->height);
+		output->alpha = fz_malloc(output->width * output->height);
 	}
 
 	depth = jxr_get_OUTPUT_BITDEPTH(image);

@@ -52,7 +52,7 @@ xps_hash_new(xps_context *ctx)
 {
 	xps_hash_table *table;
 
-	table = xps_alloc(ctx, sizeof(xps_hash_table));
+	table = fz_malloc(sizeof(xps_hash_table));
 	if (!table)
 	{
 		fz_throw("out of memory: hash table struct");
@@ -62,10 +62,10 @@ xps_hash_new(xps_context *ctx)
 	table->size = primes[0];
 	table->load = 0;
 
-	table->entries = xps_alloc(ctx, sizeof(xps_hash_entry) * table->size);
+	table->entries = fz_malloc(sizeof(xps_hash_entry) * table->size);
 	if (!table->entries)
 	{
-		xps_free(ctx, table);
+		fz_free(table);
 		fz_throw("out of memory: hash table entries array");
 		return NULL;
 	}
@@ -94,7 +94,7 @@ xps_hash_double(xps_context *ctx, xps_hash_table *table)
 	}
 
 	old_entries = table->entries;
-	new_entries = xps_alloc(ctx, sizeof(xps_hash_entry) * new_size);
+	new_entries = fz_malloc(sizeof(xps_hash_entry) * new_size);
 	if (!new_entries)
 		return fz_throw("out of memory: hash table entries array");
 
@@ -108,7 +108,7 @@ xps_hash_double(xps_context *ctx, xps_hash_table *table)
 		if (old_entries[i].value)
 			xps_hash_insert(ctx, table, old_entries[i].key, old_entries[i].value);
 
-	xps_free(ctx, old_entries);
+	fz_free(old_entries);
 
 	return 0;
 }
@@ -128,8 +128,8 @@ xps_hash_free(xps_context *ctx, xps_hash_table *table,
 			free_value(ctx, table->entries[i].value);
 	}
 
-	xps_free(ctx, table->entries);
-	xps_free(ctx, table);
+	fz_free(table->entries);
+	fz_free(table);
 }
 
 void *

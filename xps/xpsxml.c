@@ -285,7 +285,7 @@ xps_free_item(xps_context *ctx, xps_item *item)
 		next = item->next;
 		if (item->down)
 			xps_free_item(ctx, item->down);
-		xps_free(ctx, item);
+		fz_free(item);
 		item = next;
 	}
 }

@@ -8,10 +8,10 @@ xps_new_part(xps_context *ctx, char *name, int size)
 {
 	xps_part *part;
 
-	part = xps_alloc(ctx, sizeof(xps_part));
-	part->name = xps_strdup(ctx, name);
+	part = fz_malloc(sizeof(xps_part));
+	part->name = fz_strdup(name);
 	part->size = size;
-	part->data = xps_alloc(ctx, size);
+	part->data = fz_malloc(size);
 
 	return part;
 }
@@ -19,9 +19,9 @@ xps_new_part(xps_context *ctx, char *name, int size)
 void
 xps_free_part(xps_context *ctx, xps_part *part)
 {
-	xps_free(ctx, part->name);
-	xps_free(ctx, part->data);
-	xps_free(ctx, part);
+	fz_free(part->name);
+	fz_free(part->data);
+	fz_free(part);
 }
 
 /*
@@ -61,8 +61,8 @@ xps_add_fixed_document(xps_context *ctx, char *name)
 		if (!strcmp(fixdoc->name, name))
 			return;
 
-	fixdoc = xps_alloc(ctx, sizeof(xps_document));
-	fixdoc->name = xps_strdup(ctx, name);
+	fixdoc = fz_malloc(sizeof(xps_document));
+	fixdoc->name = fz_strdup(name);
 	fixdoc->next = NULL;
 
 	if (!ctx->first_fixdoc)
@@ -84,8 +84,8 @@ xps_free_fixed_documents(xps_context *ctx)
 	while (node)
 	{
 		xps_document *next = node->next;
-		xps_free(ctx, node->name);
-		xps_free(ctx, node);
+		fz_free(node->name);
+		fz_free(node);
 		node = next;
 	}
 	ctx->first_fixdoc = NULL;
@@ -102,8 +102,8 @@ xps_add_fixed_page(xps_context *ctx, char *name, int width, int height)
 		if (!strcmp(page->name, name))
 			return;
 
-	page = xps_alloc(ctx, sizeof(xps_page));
-	page->name = xps_strdup(ctx, name);
+	page = fz_malloc(sizeof(xps_page));
+	page->name = fz_strdup(name);
 	page->width = width;
 	page->height = height;
 	page->root = NULL;
@@ -128,8 +128,8 @@ xps_free_fixed_pages(xps_context *ctx)
 	while (node)
 	{
 		xps_page *next = node->next;
-		xps_free(ctx, node->name);
-		xps_free(ctx, node);
+		fz_free(node->name);
+		fz_free(node);
 		node = next;
 	}
 	ctx->first_page = NULL;
@@ -166,7 +166,7 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
 		{
 			xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
 			if (!strcmp(type, REL_START_PART))
-				ctx->start_part = xps_strdup(ctx, tgtbuf);
+				ctx->start_part = fz_strdup(tgtbuf);
 		}
 	}
 
@@ -222,7 +222,7 @@ xps_parse_metadata(xps_context *ctx, xps_part *part)
 	char *s;
 
 	/* Save directory name part */
-	xps_strlcpy(buf, part->name, sizeof buf);
+	fz_strlcpy(buf, part->name, sizeof buf);
 	s = strrchr(buf, '/');
 	if (s)
 		s[0] = 0;

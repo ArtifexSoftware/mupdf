@@ -94,7 +94,7 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 	char *s;
 	int code;
 
-	xps_strlcpy(base_uri, page->name, sizeof base_uri);
+	fz_strlcpy(base_uri, page->name, sizeof base_uri);
 	s = strrchr(base_uri, '/');
 	if (s)
 		s[1] = 0;

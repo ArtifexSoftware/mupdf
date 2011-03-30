@@ -22,13 +22,13 @@ static inline int getlong(FILE *file)
 static void *
 xps_zip_alloc_items(xps_context *ctx, int items, int size)
 {
-	return xps_alloc(ctx, items * size);
+	return fz_malloc(items * size);
 }
 
 static void
 xps_zip_free(xps_context *ctx, void *ptr)
 {
-	xps_free(ctx, ptr);
+	fz_free(ptr);
 }
 
 static int
@@ -97,7 +97,7 @@ xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
 	}
 	else if (method == 8)
 	{
-		inbuf = xps_alloc(ctx, ent->csize);
+		inbuf = fz_malloc(ent->csize);
 
 		fread(inbuf, 1, ent->csize, ctx->file);
 
@@ -123,7 +123,7 @@ xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
 		if (code != Z_OK)
 			return fz_throw("zlib inflateEnd error: %s", stream.msg);
 
-		xps_free(ctx, inbuf);
+		fz_free(inbuf);
 	}
 	else
 	{
@@ -159,7 +159,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 	offset = getlong(ctx->file); /* offset to central directory */
 
 	ctx->zip_count = count;
-	ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry) * count);
+	ctx->zip_table = fz_malloc(sizeof(xps_entry) * count);
 	if (!ctx->zip_table)
 		return fz_throw("cannot allocate zip entry table");
 
@@ -190,7 +190,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 		(void) getlong(ctx->file); /* ext file atts */
 		ctx->zip_table[i].offset = getlong(ctx->file);
 
-		ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
+		ctx->zip_table[i].name = fz_malloc(namesize + 1);
 		if (!ctx->zip_table[i].name)
 			return fz_throw("cannot allocate zip entry name");
 
@@ -314,8 +314,8 @@ xps_read_dir_part(xps_context *ctx, char *name)
 	FILE *file;
 	int count, size, offset, i, n;
 
-	xps_strlcpy(buf, ctx->directory, sizeof buf);
-	xps_strlcat(buf, name, sizeof buf);
+	fz_strlcpy(buf, ctx->directory, sizeof buf);
+	fz_strlcat(buf, name, sizeof buf);
 
 	/* All in one piece */
 	file = fopen(buf, "rb");
@@ -421,12 +421,12 @@ xps_open_file(xps_context *ctx, char *filename)
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
-		xps_strlcpy(buf, filename, sizeof buf);
+		fz_strlcpy(buf, filename, sizeof buf);
 		p = strstr(buf, "/_rels/.rels");
 		if (!p)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
-		ctx->directory = xps_strdup(ctx, buf);
+		ctx->directory = fz_strdup(buf);
 	}
 	else
 	{
@@ -516,7 +516,7 @@ xps_new_context(void)
 
 static void xps_free_key_func(xps_context *ctx, void *ptr)
 {
-	xps_free(ctx, ptr);
+	fz_free(ptr);
 }
 
 static void xps_free_font_func(xps_context *ctx, void *ptr)
@@ -534,8 +534,8 @@ xps_free_context(xps_context *ctx)
 		fclose(ctx->file);
 
 	for (i = 0; i < ctx->zip_count; i++)
-		xps_free(ctx, ctx->zip_table[i].name);
-	xps_free(ctx, ctx->zip_table);
+		fz_free(ctx->zip_table[i].name);
+	fz_free(ctx->zip_table);
 
 	/* TODO: free resources too */
 	xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
