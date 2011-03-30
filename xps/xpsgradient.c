@@ -583,11 +583,11 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 /*
 	color_func = xps_create_gradient_stop_function(ctx, stop_list, stop_count, 0);
 	if (!color_func)
-		return fz_rethrow(-1, "could not create color gradient function");
+		return fz_rethrow(-1, "cannot create color gradient function");
 
 	opacity_func = xps_create_gradient_stop_function(ctx, stop_list, stop_count, 1);
 	if (!opacity_func)
-		return fz_rethrow(-1, "could not create opacity gradient function");
+		return fz_rethrow(-1, "cannot create opacity gradient function");
 */
 
 	has_opacity = xps_gradient_has_transparent_colors(stop_list, stop_count);

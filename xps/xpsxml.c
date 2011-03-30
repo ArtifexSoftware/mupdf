@@ -220,7 +220,7 @@ xps_parse_xml(xps_context *ctx, byte *buf, int len)
 	xp = XML_ParserCreateNS(NULL, ' ');
 	if (!xp)
 	{
-		fz_throw("xml error: could not create expat parser");
+		fz_throw("xml error: cannot create expat parser");
 		return NULL;
 	}
 

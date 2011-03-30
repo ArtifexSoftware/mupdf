@@ -82,7 +82,7 @@ xps_select_best_font_encoding(fz_font *font)
 		}
 	}
 
-	fz_warn("could not find a suitable cmap");
+	fz_warn("cannot find a suitable cmap");
 }
 
 /*

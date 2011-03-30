@@ -505,7 +505,7 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 		fz_close(stm);
 
 		if (error)
-			return fz_rethrow(error, "could not decode strip %d", row / tiff->rowsperstrip);
+			return fz_rethrow(error, "cannot decode strip %d", row / tiff->rowsperstrip);
 
 		/* scramble the bits back into original order */
 		if (tiff->fillorder == 2)
@@ -532,7 +532,7 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	{
 		error = xps_expand_colormap(ctx, tiff, image);
 		if (error)
-			return fz_rethrow(error, "could not expand colormap");
+			return fz_rethrow(error, "cannot expand colormap");
 	}
 
 	/* WhiteIsZero .. invert */
@@ -716,21 +716,21 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 	case StripOffsets:
 		tiff->stripoffsets = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->stripoffsets)
-			return fz_throw("could not allocate strip offsets");
+			return fz_throw("cannot allocate strip offsets");
 		xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		break;
 
 	case StripByteCounts:
 		tiff->stripbytecounts = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->stripbytecounts)
-			return fz_throw("could not allocate strip byte counts");
+			return fz_throw("cannot allocate strip byte counts");
 		xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		break;
 
 	case ColorMap:
 		tiff->colormap = (unsigned*) fz_malloc(count * sizeof(unsigned));
 		if (!tiff->colormap)
-			return fz_throw("could not allocate color map");
+			return fz_throw("cannot allocate color map");
 		xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
 		break;
 
@@ -819,7 +819,7 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 	{
 		error = xps_read_tiff_tag(ctx, tiff, offset);
 		if (error)
-			return fz_rethrow(error, "could not read TIFF header tag");
+			return fz_rethrow(error, "cannot read TIFF header tag");
 		offset += 12;
 	}
 
@@ -846,7 +846,7 @@ xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
 
 	error = xps_decode_tiff_strips(ctx, tiff, image);
 	if (error)
-		return fz_rethrow(error, "could not decode image data");
+		return fz_rethrow(error, "cannot decode image data");
 
 	/*
 	 * Byte swap 16-bit images to big endian if necessary.
