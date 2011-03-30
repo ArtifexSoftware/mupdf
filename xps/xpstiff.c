@@ -1,26 +1,6 @@
 #include "fitz.h"
 #include "muxps.h"
 
-int
-xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
-{
-	return fz_throw("TIFF codec is not available");
-}
-
-#if 0
-
-#include "stream.h"
-#include "strimpl.h"
-#include "gsstate.h"
-#include "jpeglib_.h"
-#include "sdct.h"
-#include "sjpeg.h"
-#include "srlx.h"
-#include "slzwx.h"
-#include "szlibx.h"
-#include "scfx.h"
-#include "memory_.h"
-
 /*
  * TIFF image loader. Should be enough to support TIFF files in XPS.
  * Baseline TIFF 6.0 plus CMYK, LZW, Flate and JPEG support.
@@ -86,33 +66,33 @@ enum
 	TRATIONAL = 5
 };
 
-#define NewSubfileType							254
-#define ImageWidth								256
-#define ImageLength								257
-#define BitsPerSample							258
-#define Compression								259
-#define PhotometricInterpretation				262
-#define FillOrder								266
-#define StripOffsets							273
-#define SamplesPerPixel							277
-#define RowsPerStrip							278
-#define StripByteCounts							279
-#define XResolution								282
-#define YResolution								283
-#define PlanarConfiguration						284
-#define T4Options								292
-#define T6Options								293
-#define ResolutionUnit							296
-#define Predictor								317
-#define ColorMap								320
-#define TileWidth								322
-#define TileLength								323
-#define TileOffsets								324
-#define TileByteCounts							325
-#define ExtraSamples							338
-#define JPEGTables								347
-#define YCbCrSubSampling						520
-#define ICCProfile								34675
+#define NewSubfileType 254
+#define ImageWidth 256
+#define ImageLength 257
+#define BitsPerSample 258
+#define Compression 259
+#define PhotometricInterpretation 262
+#define FillOrder 266
+#define StripOffsets 273
+#define SamplesPerPixel 277
+#define RowsPerStrip 278
+#define StripByteCounts 279
+#define XResolution 282
+#define YResolution 283
+#define PlanarConfiguration 284
+#define T4Options 292
+#define T6Options 293
+#define ResolutionUnit 296
+#define Predictor 317
+#define ColorMap 320
+#define TileWidth 322
+#define TileLength 323
+#define TileOffsets 324
+#define TileByteCounts 325
+#define ExtraSamples 338
+#define JPEGTables 347
+#define YCbCrSubSampling 520
+#define ICCProfile 34675
 
 static const byte bitrev[256] =
 {
@@ -151,293 +131,92 @@ static const byte bitrev[256] =
 };
 
 static int
-xps_report_error(stream_state * st, const char *str)
+xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, fz_stream *stm, byte *wp, int wlen)
 {
-	(void) fz_throw("%s", str);
-	return 0;
-}
-
-static inline int
-readbyte(xps_tiff *tiff)
-{
-	if (tiff->rp < tiff->ep)
-		return *tiff->rp++;
-	return EOF;
-}
-
-static inline unsigned
-readshort(xps_tiff *tiff)
-{
-	unsigned a = readbyte(tiff);
-	unsigned b = readbyte(tiff);
-	if (tiff->order == TII)
-		return (b << 8) | a;
-	return (a << 8) | b;
-}
-
-static inline unsigned
-readlong(xps_tiff *tiff)
-{
-	unsigned a = readbyte(tiff);
-	unsigned b = readbyte(tiff);
-	unsigned c = readbyte(tiff);
-	unsigned d = readbyte(tiff);
-	if (tiff->order == TII)
-		return (d << 24) | (c << 16) | (b << 8) | a;
-	return (a << 24) | (b << 16) | (c << 8) | d;
+	int n = fz_read(stm, wp, wlen);
+	if (n < 0)
+		return fz_rethrow(n, "cannot read uncompressed strip");
+	return fz_okay;
 }
 
 static int
-xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_packbits(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
-	memcpy(wp, rp, wl - wp);
-	return gs_okay;
+	fz_stream *stm = fz_openrld(chain);
+	int n = fz_read(stm, wp, wlen);
+	fz_close(stm);
+	if (n < 0)
+		return fz_rethrow(n, "cannot read packbits strip");
+	return fz_okay;
 }
 
 static int
-xps_decode_tiff_packbits(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_lzw(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
-	stream_RLD_state state;
-	stream_cursor_read scr;
-	stream_cursor_write scw;
-	int code;
-
-	s_init_state((stream_state*)&state, &s_RLD_template, ctx->memory);
-	state.report_error = xps_report_error;
-
-	s_RLD_template.set_defaults((stream_state*)&state);
-	s_RLD_template.init((stream_state*)&state);
-
-	scr.ptr = rp - 1;
-	scr.limit = rl - 1;
-	scw.ptr = wp - 1;
-	scw.limit = wl - 1;
-
-	code = s_RLD_template.process((stream_state*)&state, &scr, &scw, true);
-	if (code == ERRC)
-		return fz_throw("error in packbits data (code = %d)", code);
-
-	return gs_okay;
+	fz_stream *stm = fz_openlzwd(chain, NULL);
+	int n = fz_read(stm, wp, wlen);
+	fz_close(stm);
+	if (n < 0)
+		return fz_rethrow(n, "cannot read lzw strip");
+	return fz_okay;
+}
+static int
+xps_decode_tiff_flate(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
+{
+	fz_stream *stm = fz_openflated(chain);
+	int n = fz_read(stm, wp, wlen);
+	fz_close(stm);
+	if (n < 0)
+		return fz_rethrow(n, "cannot read flate strip");
+	return fz_okay;
 }
 
 static int
-xps_decode_tiff_lzw(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, fz_stream *chain, byte *wp, int wlen)
 {
-	stream_LZW_state state;
-	stream_cursor_read scr;
-	stream_cursor_write scw;
-	int code;
+	fz_stream *stm;
+	fz_obj *params;
+	fz_obj *columns, *rows, *blackis1, *k, *encodedbytealign;
+	int n;
 
-	s_init_state((stream_state*)&state, &s_LZWD_template, ctx->memory);
-	state.report_error = xps_report_error;
+	columns = fz_newint(tiff->imagewidth);
+	rows = fz_newint(tiff->imagelength);
+	blackis1 = fz_newbool(tiff->photometric == 0);
+	k = fz_newint(comp == 4 ? -1 : 0);
+	encodedbytealign = fz_newbool(comp == 2);
 
-	s_LZWD_template.set_defaults((stream_state*)&state);
+	params = fz_newdict(5);
+	fz_dictputs(params, "Columns", columns);
+	fz_dictputs(params, "Rows", rows);
+	fz_dictputs(params, "BlackIs1", blackis1);
+	fz_dictputs(params, "K", k);
+	fz_dictputs(params, "EncodedByteAlign", encodedbytealign);
 
-	/* old-style TIFF 5.0 reversed bit order, late change */
-	if (rp[0] == 0 && rp[1] & 0x01)
-	{
-		state.EarlyChange = 0;
-		state.FirstBitLowOrder = 1;
-	}
+	fz_dropobj(columns);
+	fz_dropobj(rows);
+	fz_dropobj(blackis1);
+	fz_dropobj(k);
+	fz_dropobj(encodedbytealign);
 
-	/* new-style TIFF 6.0 normal bit order, early change */
-	else
-	{
-		state.EarlyChange = 1;
-		state.FirstBitLowOrder = 0;
-	}
+	stm = fz_openfaxd(chain, params);
+	n = fz_read(stm, wp, wlen);
+	fz_close(stm);
+	fz_dropobj(params);
 
-	s_LZWD_template.init((stream_state*)&state);
-
-	scr.ptr = rp - 1;
-	scr.limit = rl - 1;
-	scw.ptr = wp - 1;
-	scw.limit = wl - 1;
-
-	code = s_LZWD_template.process((stream_state*)&state, &scr, &scw, true);
-	if (code == ERRC)
-	{
-		s_LZWD_template.release((stream_state*)&state);
-		return fz_throw("error in lzw data (code = %d)", code);
-	}
-
-	s_LZWD_template.release((stream_state*)&state);
-
-	return gs_okay;
+	if (n < 0)
+		return fz_rethrow(n, "cannot read fax strip");
+	return fz_okay;
 }
 
 static int
-xps_decode_tiff_flate(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
+xps_decode_tiff_jpeg(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
-	stream_zlib_state state;
-	stream_cursor_read scr;
-	stream_cursor_write scw;
-	int code;
-
-	s_init_state((stream_state*)&state, &s_zlibD_template, ctx->memory);
-	state.report_error = xps_report_error;
-
-	s_zlibD_template.set_defaults((stream_state*)&state);
-
-	s_zlibD_template.init((stream_state*)&state);
-
-	scr.ptr = rp - 1;
-	scr.limit = rl - 1;
-	scw.ptr = wp - 1;
-	scw.limit = wl - 1;
-
-	code = s_zlibD_template.process((stream_state*)&state, &scr, &scw, true);
-	if (code == ERRC)
-	{
-		s_zlibD_template.release((stream_state*)&state);
-		return fz_throw("error in flate data (code = %d)", code);
-	}
-
-	s_zlibD_template.release((stream_state*)&state);
-	return gs_okay;
-}
-
-static int
-xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, byte *rp, byte *rl, byte *wp, byte *wl)
-{
-	stream_CFD_state state;
-	stream_cursor_read scr;
-	stream_cursor_write scw;
-	int code;
-
-	s_init_state((stream_state*)&state, &s_CFD_template, ctx->memory);
-	state.report_error = xps_report_error;
-
-	s_CFD_template.set_defaults((stream_state*)&state);
-
-	state.EndOfLine = false;
-	state.EndOfBlock = false;
-	state.Columns = tiff->imagewidth;
-	state.Rows = tiff->imagelength;
-	state.BlackIs1 = tiff->photometric == 0;
-
-	state.K = 0;
-	if (comp == 4)
-		state.K = -1;
-	if (comp == 2)
-		state.EncodedByteAlign = true;
-
-	s_CFD_template.init((stream_state*)&state);
-
-	scr.ptr = rp - 1;
-	scr.limit = rl - 1;
-	scw.ptr = wp - 1;
-	scw.limit = wl - 1;
-
-	code = s_CFD_template.process((stream_state*)&state, &scr, &scw, true);
-	if (code == ERRC)
-	{
-		s_CFD_template.release((stream_state*)&state);
-		return fz_throw("error in fax data (code = %d)", code);
-	}
-
-	s_CFD_template.release((stream_state*)&state);
-	return gs_okay;
-}
-
-/*
- * We need more find control over JPEG decoding parameters than
- * the s_DCTD_template filter will give us. So we abuse the
- * filter, and take control after the filter setup (which sets up
- * the memory manager and error handling) and call the gs_jpeg
- * wrappers directly for doing the actual decoding.
- */
-
-static int
-xps_decode_tiff_jpeg(xps_context *ctx, xps_tiff *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
-{
-	stream_DCT_state state; /* used by gs_jpeg_* wrappers */
-	jpeg_decompress_data jddp;
-	struct jpeg_source_mgr *srcmgr;
-	JSAMPROW scanlines[1];
-	int stride;
-	int code;
-
-	/*
-	 * Set up the JPEG and DCT filter voodoo.
-	 */
-
-	s_init_state((stream_state*)&state, &s_DCTD_template, ctx->memory);
-	state.report_error = xps_report_error;
-	s_DCTD_template.set_defaults((stream_state*)&state);
-
-	state.jpeg_memory = ctx->memory;
-	state.data.decompress = &jddp;
-
-	jddp.template = s_DCTD_template;
-	jddp.memory = ctx->memory;
-	jddp.scanline_buffer = NULL;
-
-	if ((code = gs_jpeg_create_decompress(&state)) < 0)
-		return fz_throw("error in gs_jpeg_create_decompress");
-
-	s_DCTD_template.init((stream_state*)&state);
-
-	srcmgr = jddp.dinfo.src;
-
-	/*
-	 * Read the abbreviated table file.
-	 */
-
-	if (tiff->jpegtables)
-	{
-		srcmgr->next_input_byte = tiff->jpegtables;
-		srcmgr->bytes_in_buffer = tiff->jpegtableslen;
-
-		code = gs_jpeg_read_header(&state, FALSE);
-		if (code != JPEG_HEADER_TABLES_ONLY)
-			return fz_throw("error in jpeg table data");
-	}
-
-	/*
-	 * Read the image jpeg header.
-	 */
-
-	srcmgr->next_input_byte = rp;
-	srcmgr->bytes_in_buffer = rl - rp;
-
-	if ((code = gs_jpeg_read_header(&state, TRUE)) < 0)
-		return fz_throw("error in jpeg_read_header");
-
-	/* when TIFF says RGB and libjpeg says YCbCr, libjpeg is wrong */
-	if (tiff->photometric == 2 && jddp.dinfo.jpeg_color_space == JCS_YCbCr)
-	{
-		jddp.dinfo.jpeg_color_space = JCS_RGB;
-	}
-
-	/*
-	 * Decode the strip image data.
-	 */
-
-	if ((code = gs_jpeg_start_decompress(&state)) < 0)
-		return fz_throw("error in jpeg_start_decompress");
-
-	stride = jddp.dinfo.output_width * jddp.dinfo.output_components;
-
-	while (wp + stride <= wl && jddp.dinfo.output_scanline < jddp.dinfo.output_height)
-	{
-		scanlines[0] = wp;
-		code = gs_jpeg_read_scanlines(&state, scanlines, 1);
-		if (code < 0)
-			return gs_throw(01, "error in jpeg_read_scanlines");
-		wp += stride;
-	}
-
-	/*
-	 * Clean up.
-	 */
-
-	if ((code = gs_jpeg_finish_decompress(&state)) < 0)
-		return fz_throw("error in jpeg_finish_decompress");
-
-	gs_jpeg_destroy(&state);
-
-	return gs_okay;
+	fz_stream *stm = fz_opendctd(chain, NULL);
+	int n = fz_read(stm, wp, wlen);
+	fz_close(stm);
+	if (n < 0)
+		return fz_rethrow(n, "cannot read jpeg strip");
+	return fz_okay;
 }
 
 static inline int
@@ -572,12 +351,14 @@ xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	image->stride = stride;
 	image->samples = samples;
 
-	return gs_okay;
+	return fz_okay;
 }
 
 static int
 xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 {
+	fz_buffer buf;
+	fz_stream *stm;
 	int error;
 
 	/* switch on compression to create a filter */
@@ -609,23 +390,23 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	switch (tiff->photometric)
 	{
 	case 0: /* WhiteIsZero -- inverted */
-		image->colorspace = ctx->gray;
+		image->colorspace = fz_devicegray;
 		break;
 	case 1: /* BlackIsZero */
-		image->colorspace = ctx->gray;
+		image->colorspace = fz_devicegray;
 		break;
 	case 2: /* RGB */
-		image->colorspace = ctx->srgb;
+		image->colorspace = fz_devicergb;
 		break;
 	case 3: /* RGBPal */
-		image->colorspace = ctx->srgb;
+		image->colorspace = fz_devicergb;
 		break;
 	case 5: /* CMYK */
-		image->colorspace = ctx->cmyk;
+		image->colorspace = fz_devicecmyk;
 		break;
 	case 6: /* YCbCr */
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
-		image->colorspace = ctx->srgb;
+		image->colorspace = fz_devicergb;
 		break;
 	default:
 		return fz_throw("unknown photometric: %d", tiff->photometric);
@@ -656,8 +437,6 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	}
 
 	image->samples = fz_malloc(image->stride * image->height);
-	if (!image->samples)
-		return fz_throw("could not allocate image samples");
 
 	memset(image->samples, 0x55, image->stride * image->height);
 
@@ -682,38 +461,48 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 			for (i = 0; i < rlen; i++)
 				rp[i] = bitrev[rp[i]];
 
+		/* create a fz_buffer on the stack */
+		buf.refs = 1;
+		buf.data = rp;
+		buf.len = rlen;
+		buf.cap = rlen;
+
+		stm = fz_openbuffer(&buf);
+
 		switch (tiff->compression)
 		{
 		case 1:
-			error = xps_decode_tiff_uncompressed(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
 			break;
 		case 2:
-			error = xps_decode_tiff_fax(ctx, tiff, 2, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
 			break;
 		case 3:
-			error = xps_decode_tiff_fax(ctx, tiff, 3, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
 			break;
 		case 4:
-			error = xps_decode_tiff_fax(ctx, tiff, 4, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
 			break;
 		case 5:
-			error = xps_decode_tiff_lzw(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_lzw(ctx, tiff, stm, wp, wlen);
 			break;
 		case 6:
 			error = fz_throw("deprecated JPEG in TIFF compression not supported");
 			break;
 		case 7:
-			error = xps_decode_tiff_jpeg(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
 			break;
 		case 8:
-			error = xps_decode_tiff_flate(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
 			break;
 		case 32773:
-			error = xps_decode_tiff_packbits(ctx, tiff, rp, rp + rlen, wp, wp + wlen);
+			error = xps_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
 			break;
 		default:
 			error = fz_throw("unknown TIFF compression: %d", tiff->compression);
 		}
+
+		fz_close(stm);
 
 		if (error)
 			return fz_rethrow(error, "could not decode strip %d", row / tiff->rowsperstrip);
@@ -769,7 +558,34 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 		image->hasalpha = 1;
 	}
 
-	return gs_okay;
+	return fz_okay;
+}
+
+static inline int readbyte(xps_tiff *tiff)
+{
+	if (tiff->rp < tiff->ep)
+		return *tiff->rp++;
+	return EOF;
+}
+
+static inline unsigned readshort(xps_tiff *tiff)
+{
+	unsigned a = readbyte(tiff);
+	unsigned b = readbyte(tiff);
+	if (tiff->order == TII)
+		return (b << 8) | a;
+	return (a << 8) | b;
+}
+
+static inline unsigned readlong(xps_tiff *tiff)
+{
+	unsigned a = readbyte(tiff);
+	unsigned b = readbyte(tiff);
+	unsigned c = readbyte(tiff);
+	unsigned d = readbyte(tiff);
+	if (tiff->order == TII)
+		return (d << 24) | (c << 16) | (b << 8) | a;
+	return (a << 24) | (b << 16) | (c << 8) | d;
 }
 
 static void
@@ -778,11 +594,8 @@ xps_read_tiff_bytes(unsigned char *p, xps_tiff *tiff, unsigned ofs, unsigned n)
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
 		tiff->rp = tiff->bp;
-
 	while (n--)
-	{
 		*p++ = readbyte(tiff);
-	}
 }
 
 static void
@@ -888,8 +701,6 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		break;
 	case ICCProfile:
 		tiff->profile = fz_malloc(count);
-		if (!tiff->profile)
-			return fz_throw("could not allocate embedded icc profile");
 		/* ICC profile data type is set to UNDEFINED.
 		 * TBYTE reading not correct in xps_read_tiff_tag_value */
 		xps_read_tiff_bytes(tiff->profile, tiff, value, count);
@@ -897,6 +708,7 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		break;
 
 	case JPEGTables:
+		fz_warn("jpeg tables in tiff not implemented");
 		tiff->jpegtables = tiff->bp + value;
 		tiff->jpegtableslen = count;
 		break;
@@ -933,7 +745,7 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		break;
 	}
 
-	return gs_okay;
+	return fz_okay;
 }
 
 static void
@@ -1011,7 +823,7 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 		offset += 12;
 	}
 
-	return gs_okay;
+	return fz_okay;
 }
 
 int
@@ -1059,28 +871,5 @@ xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
 	if (tiff->stripoffsets) fz_free(tiff->stripoffsets);
 	if (tiff->stripbytecounts) fz_free(tiff->stripbytecounts);
 
-	return gs_okay;
+	return fz_okay;
 }
-
-int
-xps_tiff_has_alpha(xps_context *ctx, byte *buf, int len)
-{
-	int error;
-	xps_tiff tiffst;
-	xps_tiff *tiff = &tiffst;
-
-	error = xps_decode_tiff_header(ctx, tiff, buf, len);
-	if (error)
-	{
-		gs_catch(error, "cannot decode tiff header");
-		return 0;
-	}
-
-	if (tiff->profile) fz_free(tiff->profile);
-	if (tiff->colormap) fz_free(tiff->colormap);
-	if (tiff->stripoffsets) fz_free(tiff->stripoffsets);
-	if (tiff->stripbytecounts) fz_free(tiff->stripbytecounts);
-
-	return tiff->extrasamples == 2 || tiff->extrasamples == 1;
-}
-#endif

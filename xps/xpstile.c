@@ -165,9 +165,9 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 		int x, y;
 
 		/* TODO: loop in visible area */
-		for (y = -10; y < 20; y++)
+		for (y = 0; y < 2; y++)
 		{
-			for (x = -10; x < 20; x++)
+			for (x = 0; x < 2; x++)
 			{
 				ttm = fz_concat(fz_translate(w*x, h*y), ctm);
 				xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);

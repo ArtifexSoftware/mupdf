@@ -115,6 +115,7 @@ struct xps_image_s
 	byte *samples;
 	byte *profile;
 	int profilesize;
+	fz_pixmap *pixmap;
 };
 
 int xps_decode_jpeg(xps_context *ctx, byte *rbuf, int rlen, xps_image *image);
