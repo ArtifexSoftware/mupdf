@@ -97,6 +97,24 @@ fz_clearpixmapwithcolor(fz_pixmap *pix, int value)
 	}
 }
 
+void
+fz_premultiplypixmap(fz_pixmap *pix)
+{
+	unsigned char *s = pix->samples;
+	unsigned char a;
+	int k, x, y;
+	for (y = 0; y < pix->h; y++)
+	{
+		for (x = 0; x < pix->w; x++)
+		{
+			a = s[pix->n - 1];
+			for (k = 0; k < pix->n - 1; k++)
+				s[k] = fz_mul255(s[k], a);
+			s += pix->n;
+		}
+	}
+}
+
 fz_bbox
 fz_boundpixmap(fz_pixmap *pix)
 {

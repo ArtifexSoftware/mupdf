@@ -97,35 +97,21 @@ void xps_debug_fixdocseq(xps_context *ctx);
  * Images.
  */
 
-typedef struct xps_image_s xps_image;
+typedef struct xps_image xps_image;
 
 /* type for the information derived directly from the raster file format */
 
-struct xps_image_s
+struct xps_image
 {
-	int width;
-	int height;
-	int stride;
-	fz_colorspace *colorspace;
-	int comps;
-	int hasalpha; /* chunky alpha */
-	int bits;
+	fz_pixmap *pixmap;
 	int xres;
 	int yres;
-	byte *samples;
-	byte *profile;
-	int profilesize;
-	fz_pixmap *pixmap;
 };
 
-int xps_decode_jpeg(xps_context *ctx, byte *rbuf, int rlen, xps_image *image);
-int xps_decode_png(xps_context *ctx, byte *rbuf, int rlen, xps_image *image);
-int xps_decode_tiff(xps_context *ctx, byte *rbuf, int rlen, xps_image *image);
-int xps_decode_jpegxr(xps_context *ctx, byte *buf, int len, xps_image *image);
-
-int xps_png_has_alpha(xps_context *ctx, byte *rbuf, int rlen);
-int xps_tiff_has_alpha(xps_context *ctx, byte *rbuf, int rlen);
-int xps_jpegxr_has_alpha(xps_context *ctx, byte *buf, int len);
+int xps_decode_jpeg(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
+int xps_decode_png(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
+int xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
+int xps_decode_jpegxr(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
 
 void xps_free_image(xps_context *ctx, xps_image *image);
 

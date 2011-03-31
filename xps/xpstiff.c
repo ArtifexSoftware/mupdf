@@ -10,9 +10,9 @@
  * TODO: RGBPal images
  */
 
-typedef struct xps_tiff_s xps_tiff;
+typedef struct xps_tiff xps_tiff;
 
-struct xps_tiff_s
+struct xps_tiff
 {
 	/* "file" */
 	byte *bp, *rp, *ep;
@@ -53,6 +53,11 @@ struct xps_tiff_s
 
 	byte *profile;
 	int profilesize;
+
+	/* decoded data */
+	fz_colorspace *colorspace;
+	byte *samples;
+	int stride;
 };
 
 enum
@@ -134,6 +139,7 @@ static int
 xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, fz_stream *stm, byte *wp, int wlen)
 {
 	int n = fz_read(stm, wp, wlen);
+	fz_close(stm);
 	if (n < 0)
 		return fz_rethrow(n, "cannot read uncompressed strip");
 	return fz_okay;
@@ -297,9 +303,9 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 }
 
 static int
-xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
+xps_expand_tiff_colormap(xps_context *ctx, xps_tiff *tiff)
 {
-	int maxval = 1 << image->bits;
+	int maxval = 1 << tiff->bitspersample;
 	byte *samples;
 	byte *src, *dst;
 	int stride;
@@ -309,37 +315,37 @@ xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	/* colormap values are 0..65535, bits is 4 or 8 */
 	/* image can be with or without extrasamples: comps is 1 or 2 */
 
-	if (image->comps != 1 && image->comps != 2)
+	if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 2)
 		return fz_throw("invalid number of samples for RGBPal");
 
-	if (image->bits != 4 && image->bits != 8)
+	if (tiff->bitspersample != 4 && tiff->bitspersample != 8)
 		return fz_throw("invalid number of bits for RGBPal");
 
-	stride = image->width * (image->comps + 2);
+	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
-	samples = fz_malloc(stride * image->height);
+	samples = fz_malloc(stride * tiff->imagelength);
 	if (!samples)
 		return fz_throw("out of memory: samples");
 
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < tiff->imagelength; y++)
 	{
-		src = image->samples + (image->stride * y);
+		src = tiff->samples + (tiff->stride * y);
 		dst = samples + (stride * y);
 
-		for (x = 0; x < image->width; x++)
+		for (x = 0; x < tiff->imagewidth; x++)
 		{
 			if (tiff->extrasamples)
 			{
-				int c = getcomp(src, x * 2, image->bits);
-				int a = getcomp(src, x * 2 + 1, image->bits);
+				int c = getcomp(src, x * 2, tiff->bitspersample);
+				int a = getcomp(src, x * 2 + 1, tiff->bitspersample);
 				*dst++ = tiff->colormap[c + 0] >> 8;
 				*dst++ = tiff->colormap[c + maxval] >> 8;
 				*dst++ = tiff->colormap[c + maxval * 2] >> 8;
-				*dst++ = a << (8 - image->bits);
+				*dst++ = a << (8 - tiff->bitspersample);
 			}
 			else
 			{
-				int c = getcomp(src, x, image->bits);
+				int c = getcomp(src, x, tiff->bitspersample);
 				*dst++ = tiff->colormap[c + 0] >> 8;
 				*dst++ = tiff->colormap[c + maxval] >> 8;
 				*dst++ = tiff->colormap[c + maxval * 2] >> 8;
@@ -347,15 +353,15 @@ xps_expand_colormap(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 		}
 	}
 
-	image->bits = 8;
-	image->stride = stride;
-	image->samples = samples;
+	tiff->bitspersample = 8;
+	tiff->stride = stride;
+	tiff->samples = samples;
 
 	return fz_okay;
 }
 
 static int
-xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
+xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff)
 {
 	fz_buffer buf;
 	fz_stream *stm;
@@ -381,32 +387,28 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	if (tiff->planar != 1)
 		return fz_throw("image data is not in chunky format");
 
-	image->width = tiff->imagewidth;
-	image->height = tiff->imagelength;
-	image->comps = tiff->samplesperpixel;
-	image->bits = tiff->bitspersample;
-	image->stride = (image->width * image->comps * image->bits + 7) / 8;
+	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
 	switch (tiff->photometric)
 	{
 	case 0: /* WhiteIsZero -- inverted */
-		image->colorspace = fz_devicegray;
+		tiff->colorspace = fz_devicegray;
 		break;
 	case 1: /* BlackIsZero */
-		image->colorspace = fz_devicegray;
+		tiff->colorspace = fz_devicegray;
 		break;
 	case 2: /* RGB */
-		image->colorspace = fz_devicergb;
+		tiff->colorspace = fz_devicergb;
 		break;
 	case 3: /* RGBPal */
-		image->colorspace = fz_devicergb;
+		tiff->colorspace = fz_devicergb;
 		break;
 	case 5: /* CMYK */
-		image->colorspace = fz_devicecmyk;
+		tiff->colorspace = fz_devicecmyk;
 		break;
 	case 6: /* YCbCr */
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
-		image->colorspace = fz_devicergb;
+		tiff->colorspace = fz_devicergb;
 		break;
 	default:
 		return fz_throw("unknown photometric: %d", tiff->photometric);
@@ -415,43 +417,39 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	switch (tiff->resolutionunit)
 	{
 	case 2:
-		image->xres = tiff->xresolution;
-		image->yres = tiff->yresolution;
+		/* no unit conversion needed */
 		break;
 	case 3:
-		image->xres = tiff->xresolution * 2.54 + 0.5;
-		image->yres = tiff->yresolution * 2.54 + 0.5;
-
+		tiff->xresolution *= 2.54;
+		tiff->yresolution *= 2.54;
 		break;
 	default:
-		image->xres = 96;
-		image->yres = 96;
+		tiff->xresolution = 96;
+		tiff->yresolution = 96;
 		break;
 	}
 
-	/* Note xres and yres could be 0 even if unit was set. If so default to 96dpi */
-	if (image->xres == 0 || image->yres == 0)
+	/* Note xres and yres could be 0 even if unit was set. If so default to 96dpi. */
+	if (tiff->xresolution == 0 || tiff->yresolution == 0)
 	{
-		image->xres = 96;
-		image->yres = 96;
+		tiff->xresolution = 96;
+		tiff->yresolution = 96;
 	}
 
-	image->samples = fz_malloc(image->stride * image->height);
-
-	memset(image->samples, 0x55, image->stride * image->height);
-
-	wp = image->samples;
+	tiff->samples = fz_calloc(tiff->imagelength, tiff->stride);
+	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
+	wp = tiff->samples;
 
 	strip = 0;
 	for (row = 0; row < tiff->imagelength; row += tiff->rowsperstrip)
 	{
 		unsigned offset = tiff->stripoffsets[strip];
 		unsigned rlen = tiff->stripbytecounts[strip];
-		unsigned wlen = image->stride * tiff->rowsperstrip;
+		unsigned wlen = tiff->stride * tiff->rowsperstrip;
 		byte *rp = tiff->bp + offset;
 
-		if (wp + wlen > image->samples + image->stride * image->height)
-			wlen = image->samples + image->stride * image->height - wp;
+		if (wp + wlen > tiff->samples + tiff->stride * tiff->imagelength)
+			wlen = tiff->samples + tiff->stride * tiff->imagelength - wp;
 
 		if (rp + rlen > tiff->ep)
 			return fz_throw("strip extends beyond the end of the file");
@@ -462,11 +460,12 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 				rp[i] = bitrev[rp[i]];
 
 		/* create a fz_buffer on the stack */
-		buf.refs = 1;
+		buf.refs = 2;
 		buf.data = rp;
 		buf.len = rlen;
 		buf.cap = rlen;
 
+		/* the strip decoders will close this */
 		stm = fz_openbuffer(&buf);
 
 		switch (tiff->compression)
@@ -502,8 +501,6 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 			error = fz_throw("unknown TIFF compression: %d", tiff->compression);
 		}
 
-		fz_close(stm);
-
 		if (error)
 			return fz_rethrow(error, "cannot decode strip %d", row / tiff->rowsperstrip);
 
@@ -512,25 +509,25 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 			for (i = 0; i < rlen; i++)
 				rp[i] = bitrev[rp[i]];
 
-		wp += image->stride * tiff->rowsperstrip;
+		wp += tiff->stride * tiff->rowsperstrip;
 		strip ++;
 	}
 
 	/* Predictor (only for LZW and Flate) */
 	if ((tiff->compression == 5 || tiff->compression == 8) && tiff->predictor == 2)
 	{
-		byte *p = image->samples;
-		for (i = 0; i < image->height; i++)
+		byte *p = tiff->samples;
+		for (i = 0; i < tiff->imagelength; i++)
 		{
-			xps_unpredict_tiff(p, image->width, tiff->samplesperpixel, image->bits);
-			p += image->stride;
+			xps_unpredict_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample);
+			p += tiff->stride;
 		}
 	}
 
 	/* RGBPal */
 	if (tiff->photometric == 3 && tiff->colormap)
 	{
-		error = xps_expand_colormap(ctx, tiff, image);
+		error = xps_expand_tiff_colormap(ctx, tiff);
 		if (error)
 			return fz_rethrow(error, "cannot expand colormap");
 	}
@@ -538,24 +535,12 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff, xps_image *image)
 	/* WhiteIsZero .. invert */
 	if (tiff->photometric == 0)
 	{
-		byte *p = image->samples;
-		for (i = 0; i < image->height; i++)
+		byte *p = tiff->samples;
+		for (i = 0; i < tiff->imagelength; i++)
 		{
-			xps_invert_tiff(p, image->width, image->comps, image->bits, tiff->extrasamples);
-			p += image->stride;
+			xps_invert_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample, tiff->extrasamples);
+			p += tiff->stride;
 		}
-	}
-
-	/* Premultiplied transparency */
-	if (tiff->extrasamples == 1)
-	{
-		image->hasalpha = 1;
-	}
-
-	/* Non-pre-multiplied transparency */
-	if (tiff->extrasamples == 2)
-	{
-		image->hasalpha = 1;
 	}
 
 	return fz_okay;
@@ -594,6 +579,7 @@ xps_read_tiff_bytes(unsigned char *p, xps_tiff *tiff, unsigned ofs, unsigned n)
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
 		tiff->rp = tiff->bp;
+
 	while (n--)
 		*p++ = readbyte(tiff);
 }
@@ -699,6 +685,7 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 	case ExtraSamples:
 		xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
 		break;
+
 	case ICCProfile:
 		tiff->profile = fz_malloc(count);
 		/* ICC profile data type is set to UNDEFINED.
@@ -714,23 +701,17 @@ xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
 		break;
 
 	case StripOffsets:
-		tiff->stripoffsets = (unsigned*) fz_malloc(count * sizeof(unsigned));
-		if (!tiff->stripoffsets)
-			return fz_throw("cannot allocate strip offsets");
+		tiff->stripoffsets = fz_calloc(count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		break;
 
 	case StripByteCounts:
-		tiff->stripbytecounts = (unsigned*) fz_malloc(count * sizeof(unsigned));
-		if (!tiff->stripbytecounts)
-			return fz_throw("cannot allocate strip byte counts");
+		tiff->stripbytecounts = fz_calloc(count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		break;
 
 	case ColorMap:
-		tiff->colormap = (unsigned*) fz_malloc(count * sizeof(unsigned));
-		if (!tiff->colormap)
-			return fz_throw("cannot allocate color map");
+		tiff->colormap = fz_calloc(count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
 		break;
 
@@ -827,49 +808,55 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 }
 
 int
-xps_decode_tiff(xps_context *ctx, byte *buf, int len, xps_image *image)
+xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *buf, int len)
 {
 	int error;
-	xps_tiff tiffst;
-	xps_tiff *tiff = &tiffst;
+	fz_pixmap *pixmap;
+	xps_image *image;
+	xps_tiff tiff;
 
-	error = xps_decode_tiff_header(ctx, tiff, buf, len);
+	error = xps_decode_tiff_header(ctx, &tiff, buf, len);
 	if (error)
 		return fz_rethrow(error, "cannot decode tiff header");
 
-	/*
-	 * Decode the image strips
-	 */
+	/* Decode the image strips */
 
-	if (tiff->rowsperstrip > tiff->imagelength)
-		tiff->rowsperstrip = tiff->imagelength;
+	if (tiff.rowsperstrip > tiff.imagelength)
+		tiff.rowsperstrip = tiff.imagelength;
 
-	error = xps_decode_tiff_strips(ctx, tiff, image);
+	error = xps_decode_tiff_strips(ctx, &tiff);
 	if (error)
 		return fz_rethrow(error, "cannot decode image data");
 
-	/*
-	 * Byte swap 16-bit images to big endian if necessary.
-	 */
-	if (image->bits == 16)
+	/* Byte swap 16-bit images to big endian if necessary */
+	if (tiff.bitspersample == 16)
 	{
-		if (tiff->order == TII)
-			xps_swap_byte_order(image->samples, image->width * image->height * image->comps);
+		if (tiff.order == TII)
+			xps_swap_byte_order(tiff.samples, tiff.imagewidth * tiff.imagelength * tiff.samplesperpixel);
 	}
 
-	/*
-	 * Save ICC profile data
-	 */
-	image->profile = tiff->profile;
-	image->profilesize = tiff->profilesize;
+	/* Expand into fz_pixmap struct */
 
-	/*
-	 * Clean up scratch memory
-	 */
+	pixmap = fz_newpixmap(tiff.colorspace, 0, 0, tiff.imagewidth, tiff.imagelength);
 
-	if (tiff->colormap) fz_free(tiff->colormap);
-	if (tiff->stripoffsets) fz_free(tiff->stripoffsets);
-	if (tiff->stripbytecounts) fz_free(tiff->stripbytecounts);
+	fz_unpacktile(pixmap, tiff.samples, tiff.samplesperpixel, tiff.bitspersample, tiff.stride, 0);
 
+	/* Non-pre-multiplied transparency */
+	if (tiff.extrasamples == 2)
+		fz_premultiplypixmap(pixmap);
+
+	image = fz_malloc(sizeof(xps_image));
+	image->pixmap = pixmap;
+	image->xres = tiff.xresolution;
+	image->yres = tiff.yresolution;
+
+	/* Clean up scratch memory */
+
+	if (tiff.colormap) fz_free(tiff.colormap);
+	if (tiff.stripoffsets) fz_free(tiff.stripoffsets);
+	if (tiff.stripbytecounts) fz_free(tiff.stripbytecounts);
+	if (tiff.samples) fz_free(tiff.samples);
+
+	*imagep = image;
 	return fz_okay;
 }

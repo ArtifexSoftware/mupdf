@@ -685,6 +685,7 @@ fz_pixmap *fz_keeppixmap(fz_pixmap *pix);
 void fz_droppixmap(fz_pixmap *pix);
 void fz_clearpixmap(fz_pixmap *pix);
 void fz_clearpixmapwithcolor(fz_pixmap *pix, int value);
+void fz_premultiplypixmap(fz_pixmap *pix);
 fz_pixmap *fz_alphafromgray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_boundpixmap(fz_pixmap *pix);
 
