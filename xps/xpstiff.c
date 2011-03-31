@@ -187,7 +187,7 @@ xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, fz_stream *chain
 
 	columns = fz_newint(tiff->imagewidth);
 	rows = fz_newint(tiff->imagelength);
-	blackis1 = fz_newbool(tiff->photometric == 0);
+	blackis1 = fz_newbool(tiff->photometric != 0);
 	k = fz_newint(comp == 4 ? -1 : 0);
 	encodedbytealign = fz_newbool(comp == 2);
 
@@ -324,8 +324,6 @@ xps_expand_tiff_colormap(xps_context *ctx, xps_tiff *tiff)
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
 	samples = fz_malloc(stride * tiff->imagelength);
-	if (!samples)
-		return fz_throw("out of memory: samples");
 
 	for (y = 0; y < tiff->imagelength; y++)
 	{
@@ -353,10 +351,10 @@ xps_expand_tiff_colormap(xps_context *ctx, xps_tiff *tiff)
 		}
 	}
 
+	tiff->samplesperpixel += 2;
 	tiff->bitspersample = 8;
 	tiff->stride = stride;
 	tiff->samples = samples;
-
 	return fz_okay;
 }
 
@@ -841,8 +839,8 @@ xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *buf, int len)
 
 	fz_unpacktile(pixmap, tiff.samples, tiff.samplesperpixel, tiff.bitspersample, tiff.stride, 0);
 
-	/* Non-pre-multiplied transparency */
-	if (tiff.extrasamples == 2)
+	/* We should only do this on non-pre-multiplied images, but files in the wild are bad */
+	if (tiff.extrasamples /* == 2 */)
 		fz_premultiplypixmap(pixmap);
 
 	image = fz_malloc(sizeof(xps_image));

@@ -103,14 +103,32 @@ fz_premultiplypixmap(fz_pixmap *pix)
 	unsigned char *s = pix->samples;
 	unsigned char a;
 	int k, x, y;
-	for (y = 0; y < pix->h; y++)
+
+	/* special case for CMYK (subtractive colors) */
+	if (pix->n == 5)
 	{
-		for (x = 0; x < pix->w; x++)
+		for (y = 0; y < pix->h; y++)
 		{
-			a = s[pix->n - 1];
-			for (k = 0; k < pix->n - 1; k++)
-				s[k] = fz_mul255(s[k], a);
-			s += pix->n;
+			for (x = 0; x < pix->w; x++)
+			{
+				a = s[pix->n - 1];
+				for (k = 0; k < pix->n - 1; k++)
+					s[k] = 255 - fz_mul255(255 - s[k], a);
+				s += pix->n;
+			}
+		}
+	}
+	else
+	{
+		for (y = 0; y < pix->h; y++)
+		{
+			for (x = 0; x < pix->w; x++)
+			{
+				a = s[pix->n - 1];
+				for (k = 0; k < pix->n - 1; k++)
+					s[k] = fz_mul255(s[k], a);
+				s += pix->n;
+			}
 		}
 	}
 }
