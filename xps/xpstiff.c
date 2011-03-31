@@ -187,7 +187,7 @@ xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, fz_stream *chain
 
 	columns = fz_newint(tiff->imagewidth);
 	rows = fz_newint(tiff->imagelength);
-	blackis1 = fz_newbool(tiff->photometric != 0);
+	blackis1 = fz_newbool(tiff->photometric == 0);
 	k = fz_newint(comp == 4 ? -1 : 0);
 	encodedbytealign = fz_newbool(comp == 2);
 
@@ -230,11 +230,11 @@ getcomp(byte *line, int x, int bpc)
 {
 	switch (bpc)
 	{
-	case 1: return line[x / 8] >> (7 - (x % 8)) & 0x01;
-	case 2: return line[x / 4] >> ((3 - (x % 4)) * 2) & 0x03;
-	case 4: return line[x / 2] >> ((1 - (x % 2)) * 4) & 0x0f;
+	case 1: return (line[x >> 3] >> ( 7 - (x & 7) ) ) & 1;
+	case 2: return (line[x >> 2] >> ( ( 3 - (x & 3) ) << 1 ) ) & 3;
+	case 4: return (line[x >> 1] >> ( ( 1 - (x & 1) ) << 2 ) ) & 15;
 	case 8: return line[x];
-	case 16: return ((line[x * 2 + 0]) << 8) | (line[x * 2 + 1]);
+	case 16: return line[x << 1] << 8 | line[(x << 1) + 1];
 	}
 	return 0;
 }
@@ -244,21 +244,20 @@ putcomp(byte *line, int x, int bpc, int value)
 {
 	int maxval = (1 << bpc) - 1;
 
-	// clear bits first
 	switch (bpc)
 	{
-	case 1: line[x / 8] &= ~(maxval << (7 - (x % 8))); break;
-	case 2: line[x / 4] &= ~(maxval << ((3 - (x % 4)) * 2)); break;
-	case 4: line[x / 2] &= ~(maxval << ((1 - (x % 2)) * 4)); break;
+	case 1: line[x >> 3] &= ~(maxval << (7 - (x & 7))); break;
+	case 2: line[x >> 2] &= ~(maxval << ((3 - (x & 3)) << 1)); break;
+	case 4: line[x >> 1] &= ~(maxval << ((1 - (x & 1)) << 2)); break;
 	}
 
 	switch (bpc)
 	{
-	case 1: line[x / 8] |= value << (7 - (x % 8)); break;
-	case 2: line[x / 4] |= value << ((3 - (x % 4)) * 2); break;
-	case 4: line[x / 2] |= value << ((1 - (x % 2)) * 4); break;
+	case 1: line[x >> 3] |= value << (7 - (x & 7)); break;
+	case 2: line[x >> 2] |= value << ((3 - (x & 3)) << 1); break;
+	case 4: line[x >> 1] |= value << ((1 - (x & 1)) << 2); break;
 	case 8: line[x] = value; break;
-	case 16: line[x * 2 + 0] = value >> 8; line[x * 2 + 1] = value & 0xFF; break;
+	case 16: line[x << 1] = value >> 8; line[(x << 1) + 1] = value & 0xFF; break;
 	}
 }
 

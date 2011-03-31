@@ -31,7 +31,7 @@ endif
 # directory exists.
 
 LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
-XPSLIBS := -lexpat -lpng
+XPSLIBS := -lexpat
 
 include Makerules
 include Makethird
