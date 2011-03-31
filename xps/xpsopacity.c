@@ -4,6 +4,7 @@
 void
 xps_bounds_in_user_space(xps_context *ctx, fz_rect *ubox)
 {
+	*ubox = fz_infiniterect; // *evil grin*
 #if 0
 	gx_clip_path *clip_path;
 	fz_rect dbox;
