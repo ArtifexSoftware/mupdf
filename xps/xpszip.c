@@ -484,6 +484,14 @@ xps_load_page(xps_context *ctx, int number)
 	return nil;
 }
 
+void
+xps_free_page(xps_context *ctx, xps_page *page)
+{
+	if (page->root)
+		xps_free_item(ctx, page->root);
+	page->root = NULL;
+}
+
 xps_context *
 xps_new_context(void)
 {

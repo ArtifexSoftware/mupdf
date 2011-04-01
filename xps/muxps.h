@@ -265,6 +265,7 @@ int xps_read_and_process_page_part(xps_context *ctx, fz_matrix ctm, char *name);
 int xps_open_file(xps_context *ctx, char *filename);
 int xps_count_pages(xps_context *ctx);
 xps_page *xps_load_page(xps_context *ctx, int number);
+void xps_free_page(xps_context *ctx, xps_page *page);
 xps_context *xps_new_context(void);
 int xps_free_context(xps_context *ctx);
 

@@ -397,8 +397,8 @@ X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
 $(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
-	$(LD_CMD) $(X11LIBS)
+$(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
+	$(LD_CMD) $(XPSLIBS) $(X11LIBS)
 
 WINVIEW_SRC=apps/win_main.c apps/pdfapp.c
 WINVIEW_RES=apps/win_res.rc
@@ -409,8 +409,8 @@ $(OBJDIR)/%.o: apps/%.rc
 	$(WINDRES) -i $< -o $@ --include-dir=apps
 
 $(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
-$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
-	$(LD_CMD) $(W32LIBS)
+$(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
+	$(LD_CMD) $(XPSLIBS) $(W32LIBS)
 
 #
 # Default rules

@@ -168,8 +168,6 @@ pdf_loadpage(pdf_page **pagep, pdf_xref *xref, fz_obj *dict)
 	page->resources = nil;
 	page->contents = nil;
 	page->transparency = 0;
-	page->list = nil;
-	page->text = nil;
 	page->links = nil;
 	page->annots = nil;
 
@@ -240,10 +238,6 @@ pdf_freepage(pdf_page *page)
 		fz_dropobj(page->resources);
 	if (page->contents)
 		fz_dropbuffer(page->contents);
-	if (page->list)
-		fz_freedisplaylist(page->list);
-	if (page->text)
-		fz_freetextspan(page->text);
 	if (page->links)
 		pdf_freelink(page->links);
 	if (page->annots)
