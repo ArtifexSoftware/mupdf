@@ -21,12 +21,6 @@ fz_colorspace *colorspace;
 fz_glyphcache *glyphcache;
 char *filename;
 
-/* stub function for automatic resolution of indirect objects in obj_simple.c */
-int pdf_cacheobject(struct pdf_xref_s *xref, int num, int gen)
-{
-	return fz_throw("not a pdf");
-}
-
 struct {
 	int count, total;
 	int min, max;

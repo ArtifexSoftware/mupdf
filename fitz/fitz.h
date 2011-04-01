@@ -406,13 +406,15 @@ struct fz_obj_s
 	} u;
 };
 
+extern fz_obj* (*fz_resolveindirect)(fz_obj*);
+
 fz_obj *fz_newnull(void);
 fz_obj *fz_newbool(int b);
 fz_obj *fz_newint(int i);
 fz_obj *fz_newreal(float f);
 fz_obj *fz_newname(char *str);
 fz_obj *fz_newstring(char *str, int len);
-fz_obj *fz_newindirect(int num, int gen, struct pdf_xref_s *xref);
+fz_obj *fz_newindirect(int num, int gen, void *xref);
 
 fz_obj *fz_newarray(int initialcap);
 fz_obj *fz_newdict(int initialcap);
@@ -434,8 +436,6 @@ int fz_isdict(fz_obj *obj);
 int fz_isindirect(fz_obj *obj);
 
 int fz_objcmp(fz_obj *a, fz_obj *b);
-
-fz_obj *fz_resolveindirect(fz_obj *obj);
 
 /* silent failure, no error reporting */
 int fz_tobool(fz_obj *obj);
