@@ -199,8 +199,8 @@ void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char 
 void xps_parse_matrix_transform(xps_context *ctx, xps_item *root, fz_matrix *matrix);
 void xps_parse_render_transform(xps_context *ctx, char *text, fz_matrix *matrix);
 void xps_parse_rectangle(xps_context *ctx, char *text, fz_rect *rect);
-void xps_parse_abbreviated_geometry(xps_context *ctx, char *geom);
-void xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking);
+fz_path *xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule);
+fz_path *xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking, int *fill_rule);
 
 void xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, char *opacity_att, xps_item *opacity_mask_tag);
 void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char *opacity_att, xps_item *opacity_mask_tag);
@@ -208,7 +208,7 @@ void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char 
 void xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
 void xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
 
-void xps_clip(xps_context *ctx, fz_matrix ctm);
+void xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xps_item *clip_tag);
 
 int xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node);
 int xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xps_item *node);
@@ -248,19 +248,9 @@ struct xps_context_s
 	xps_hash_table *font_table;
 	xps_hash_table *colorspace_table;
 
-	/* The fill_rule is set by path parsing.
-	 * It is used by clip/fill functions.
-	 * 1=nonzero, 0=evenodd
-	 */
-	int fill_rule;
-
 	/* Opacity attribute stack */
 	float opacity[64];
 	int opacity_top;
-
-	/* Current path being accumulated */
-	fz_path *path;
-	fz_text *text; /* ... or text, for clipping brushes */
 
 	/* Current color */
 	fz_colorspace *colorspace;

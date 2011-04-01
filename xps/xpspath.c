@@ -36,37 +36,19 @@ fz_currentpoint(fz_path *path)
 }
 
 void
-xps_clip(xps_context *ctx, fz_matrix ctm)
+xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xps_item *clip_tag)
 {
-	ctx->dev->clippath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm);
-	fz_freepath(ctx->path);
-	ctx->path = NULL;
-}
+	fz_path *path;
+	int fill_rule = 0;
 
-void
-xps_fill(xps_context *ctx, fz_matrix ctm)
-{
-	ctx->dev->fillpath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm,
-		ctx->colorspace, ctx->color, ctx->alpha);
-	fz_freepath(ctx->path);
-	ctx->path = NULL;
-}
-
-static void
-xps_stroke(xps_context *ctx, fz_matrix ctm, fz_strokestate *stroke)
-{
-	ctx->dev->strokepath(ctx->dev->user, ctx->path, stroke, ctm,
-		ctx->colorspace, ctx->color, ctx->alpha);
-	fz_freepath(ctx->path);
-	ctx->path = NULL;
-}
-
-static void
-xps_clipstroke(xps_context *ctx, fz_matrix ctm, fz_strokestate *stroke)
-{
-	ctx->dev->clipstrokepath(ctx->dev->user, ctx->path, stroke, ctm);
-	fz_freepath(ctx->path);
-	ctx->path = NULL;
+	if (clip_att)
+		path = xps_parse_abbreviated_geometry(ctx, clip_att, &fill_rule);
+	else if (clip_tag)
+		path = xps_parse_path_geometry(ctx, dict, clip_tag, 0, &fill_rule);
+	else
+		path = fz_newpath();
+	ctx->dev->clippath(ctx->dev->user, path, fill_rule, ctm);
+	fz_freepath(path);
 }
 
 /* Draw an arc segment transformed by the matrix, we approximate with straight
@@ -75,7 +57,7 @@ xps_clipstroke(xps_context *ctx, fz_matrix ctm, fz_strokestate *stroke)
  * without transforming the line width.
  */
 static inline void
-xps_draw_arc_segment(xps_context *ctx, fz_matrix mtx, float th0, float th1, int iscw)
+xps_draw_arc_segment(fz_path *path, fz_matrix mtx, float th0, float th1, int iscw)
 {
 	float t, d;
 	fz_point p;
@@ -90,18 +72,18 @@ xps_draw_arc_segment(xps_context *ctx, fz_matrix mtx, float th0, float th1, int 
 		p.x = cos(th0);
 		p.y = sin(th0);
 		p = fz_transformpoint(mtx, p);
-		fz_lineto(ctx->path, p.x, p.y);
+		fz_lineto(path, p.x, p.y);
 		for (t = th0; t < th1; t += d)
 		{
 			p.x = cos(t);
 			p.y = sin(t);
 			p = fz_transformpoint(mtx, p);
-			fz_lineto(ctx->path, p.x, p.y);
+			fz_lineto(path, p.x, p.y);
 		}
 		p.x = cos(th1);
 		p.y = sin(th1);
 		p = fz_transformpoint(mtx, p);
-		fz_lineto(ctx->path, p.x, p.y);
+		fz_lineto(path, p.x, p.y);
 	}
 	else
 	{
@@ -109,18 +91,18 @@ xps_draw_arc_segment(xps_context *ctx, fz_matrix mtx, float th0, float th1, int 
 		p.x = cos(th0);
 		p.y = sin(th0);
 		p = fz_transformpoint(mtx, p);
-		fz_lineto(ctx->path, p.x, p.y);
+		fz_lineto(path, p.x, p.y);
 		for (t = th0; t > th1; t -= d)
 		{
 			p.x = cos(t);
 			p.y = sin(t);
 			p = fz_transformpoint(mtx, p);
-			fz_lineto(ctx->path, p.x, p.y);
+			fz_lineto(path, p.x, p.y);
 		}
 		p.x = cos(th1);
 		p.y = sin(th1);
 		p = fz_transformpoint(mtx, p);
-		fz_lineto(ctx->path, p.x, p.y);
+		fz_lineto(path, p.x, p.y);
 	}
 }
 
@@ -141,7 +123,7 @@ angle_between(const fz_point u, const fz_point v)
 }
 
 static void
-xps_draw_arc(xps_context *ctx,
+xps_draw_arc(fz_path *path,
 		float size_x, float size_y, float rotation_angle,
 		int is_large_arc, int is_clockwise,
 		float point_x, float point_y)
@@ -157,7 +139,7 @@ xps_draw_arc(xps_context *ctx,
 	double sign;
 	double th1, dth;
 
-	pt = fz_currentpoint(ctx->path);
+	pt = fz_currentpoint(path);
 	x1 = pt.x;
 	y1 = pt.y;
 	x2 = point_x;
@@ -181,7 +163,7 @@ xps_draw_arc(xps_context *ctx,
 	ry = fabsf(ry);
 	if (rx < 0.001 || ry < 0.001)
 	{
-		fz_lineto(ctx->path, x2, y2);
+		fz_lineto(path, x2, y2);
 		return;
 	}
 
@@ -241,9 +223,9 @@ xps_draw_arc(xps_context *ctx,
 	mtx = fz_concat(fz_translate(cx, cy), mtx);
 	mtx = fz_concat(fz_rotate(rotation_angle), mtx);
 	mtx = fz_concat(fz_scale(rx, ry), mtx);
-	xps_draw_arc_segment(ctx, mtx, th1, th1 + dth, is_clockwise);
+	xps_draw_arc_segment(path, mtx, th1, th1 + dth, is_clockwise);
 
-	fz_lineto(ctx->path, point_x, point_y);
+	fz_lineto(path, point_x, point_y);
 }
 
 /*
@@ -252,9 +234,10 @@ xps_draw_arc(xps_context *ctx,
  * build up a path.
  */
 
-void
-xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
+fz_path *
+xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule)
 {
+	fz_path *path;
 	char **args;
 	char **pargs;
 	char *s = geom;
@@ -264,6 +247,8 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 	float x1, y1, x2, y2, x3, y3;
 	float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
 	int reset_smooth;
+
+	path = fz_newpath();
 
 	args = fz_calloc(strlen(geom) + 1, sizeof(char*));
 	pargs = args;
@@ -317,49 +302,49 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 		switch (cmd)
 		{
 		case 'F':
-			ctx->fill_rule = atoi(args[i]);
+			*fill_rule = atoi(args[i]);
 			i ++;
 			break;
 
 		case 'M':
-			fz_moveto(ctx->path, atof(args[i]), atof(args[i+1]));
+			fz_moveto(path, atof(args[i]), atof(args[i+1]));
 			i += 2;
 			break;
 		case 'm':
-			pt = fz_currentpoint(ctx->path);
-			fz_moveto(ctx->path, pt.x + atof(args[i]), pt.y + atof(args[i+1]));
+			pt = fz_currentpoint(path);
+			fz_moveto(path, pt.x + atof(args[i]), pt.y + atof(args[i+1]));
 			i += 2;
 			break;
 
 		case 'L':
-			fz_lineto(ctx->path, atof(args[i]), atof(args[i+1]));
+			fz_lineto(path, atof(args[i]), atof(args[i+1]));
 			i += 2;
 			break;
 		case 'l':
-			pt = fz_currentpoint(ctx->path);
-			fz_lineto(ctx->path, pt.x + atof(args[i]), pt.y + atof(args[i+1]));
+			pt = fz_currentpoint(path);
+			fz_lineto(path, pt.x + atof(args[i]), pt.y + atof(args[i+1]));
 			i += 2;
 			break;
 
 		case 'H':
-			pt = fz_currentpoint(ctx->path);
-			fz_lineto(ctx->path, atof(args[i]), pt.y);
+			pt = fz_currentpoint(path);
+			fz_lineto(path, atof(args[i]), pt.y);
 			i += 1;
 			break;
 		case 'h':
-			pt = fz_currentpoint(ctx->path);
-			fz_lineto(ctx->path, pt.x + atof(args[i]), pt.y);
+			pt = fz_currentpoint(path);
+			fz_lineto(path, pt.x + atof(args[i]), pt.y);
 			i += 1;
 			break;
 
 		case 'V':
-			pt = fz_currentpoint(ctx->path);
-			fz_lineto(ctx->path, pt.x, atof(args[i]));
+			pt = fz_currentpoint(path);
+			fz_lineto(path, pt.x, atof(args[i]));
 			i += 1;
 			break;
 		case 'v':
-			pt = fz_currentpoint(ctx->path);
-			fz_lineto(ctx->path, pt.x, pt.y + atof(args[i]));
+			pt = fz_currentpoint(path);
+			fz_lineto(path, pt.x, pt.y + atof(args[i]));
 			i += 1;
 			break;
 
@@ -370,7 +355,7 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 			y2 = atof(args[i+3]);
 			x3 = atof(args[i+4]);
 			y3 = atof(args[i+5]);
-			fz_curveto(ctx->path, x1, y1, x2, y2, x3, y3);
+			fz_curveto(path, x1, y1, x2, y2, x3, y3);
 			i += 6;
 			reset_smooth = 0;
 			smooth_x = x3 - x2;
@@ -378,14 +363,14 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 			break;
 
 		case 'c':
-			pt = fz_currentpoint(ctx->path);
+			pt = fz_currentpoint(path);
 			x1 = atof(args[i+0]) + pt.x;
 			y1 = atof(args[i+1]) + pt.y;
 			x2 = atof(args[i+2]) + pt.x;
 			y2 = atof(args[i+3]) + pt.y;
 			x3 = atof(args[i+4]) + pt.x;
 			y3 = atof(args[i+5]) + pt.y;
-			fz_curveto(ctx->path, x1, y1, x2, y2, x3, y3);
+			fz_curveto(path, x1, y1, x2, y2, x3, y3);
 			i += 6;
 			reset_smooth = 0;
 			smooth_x = x3 - x2;
@@ -393,12 +378,12 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 			break;
 
 		case 'S':
-			pt = fz_currentpoint(ctx->path);
+			pt = fz_currentpoint(path);
 			x1 = atof(args[i+0]);
 			y1 = atof(args[i+1]);
 			x2 = atof(args[i+2]);
 			y2 = atof(args[i+3]);
-			fz_curveto(ctx->path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+			fz_curveto(path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
 			i += 4;
 			reset_smooth = 0;
 			smooth_x = x2 - x1;
@@ -406,12 +391,12 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 			break;
 
 		case 's':
-			pt = fz_currentpoint(ctx->path);
+			pt = fz_currentpoint(path);
 			x1 = atof(args[i+0]) + pt.x;
 			y1 = atof(args[i+1]) + pt.y;
 			x2 = atof(args[i+2]) + pt.x;
 			y2 = atof(args[i+3]) + pt.y;
-			fz_curveto(ctx->path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+			fz_curveto(path, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
 			i += 4;
 			reset_smooth = 0;
 			smooth_x = x2 - x1;
@@ -419,49 +404,49 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 			break;
 
 		case 'Q':
-			pt = fz_currentpoint(ctx->path);
+			pt = fz_currentpoint(path);
 			x1 = atof(args[i+0]);
 			y1 = atof(args[i+1]);
 			x2 = atof(args[i+2]);
 			y2 = atof(args[i+3]);
-			fz_curveto(ctx->path,
-					(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-					(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-					x2, y2);
+			fz_curveto(path,
+				(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+				(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+				x2, y2);
 			i += 4;
 			break;
 		case 'q':
-			pt = fz_currentpoint(ctx->path);
+			pt = fz_currentpoint(path);
 			x1 = atof(args[i+0]) + pt.x;
 			y1 = atof(args[i+1]) + pt.y;
 			x2 = atof(args[i+2]) + pt.x;
 			y2 = atof(args[i+3]) + pt.y;
-			fz_curveto(ctx->path,
-					(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-					(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-					x2, y2);
+			fz_curveto(path,
+				(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+				(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+				x2, y2);
 			i += 4;
 			break;
 
 		case 'A':
-			xps_draw_arc(ctx,
-					atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
-					atoi(args[i+3]), atoi(args[i+4]),
-					atof(args[i+5]), atof(args[i+6]));
+			xps_draw_arc(path,
+				atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+				atoi(args[i+3]), atoi(args[i+4]),
+				atof(args[i+5]), atof(args[i+6]));
 			i += 7;
 			break;
 		case 'a':
-			pt = fz_currentpoint(ctx->path);
-			xps_draw_arc(ctx,
-					atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
-					atoi(args[i+3]), atoi(args[i+4]),
-					atof(args[i+5]) + pt.x, atof(args[i+6]) + pt.y);
+			pt = fz_currentpoint(path);
+			xps_draw_arc(path,
+				atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+				atoi(args[i+3]), atoi(args[i+4]),
+				atof(args[i+5]) + pt.x, atof(args[i+6]) + pt.y);
 			i += 7;
 			break;
 
 		case 'Z':
 		case 'z':
-			fz_closepath(ctx->path);
+			fz_closepath(path);
 			break;
 
 		default:
@@ -473,10 +458,11 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom)
 	}
 
 	fz_free(args);
+	return path;
 }
 
 static void
-xps_parse_arc_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
+xps_parse_arc_segment(fz_path *path, xps_item *root, int stroking, int *skipped_stroke)
 {
 	/* ArcSegment pretty much follows the SVG algorithm for converting an
 	 * arc in endpoint representation to an arc in centerpoint
@@ -516,15 +502,15 @@ xps_parse_arc_segment(xps_context *ctx, xps_item *root, int stroking, int *skipp
 
 	if (stroking && !is_stroked)
 	{
-		fz_moveto(ctx->path, point_x, point_y);
+		fz_moveto(path, point_x, point_y);
 		return;
 	}
 
-	xps_draw_arc(ctx, size_x, size_y, rotation_angle, is_large_arc, is_clockwise, point_x, point_y);
+	xps_draw_arc(path, size_x, size_y, rotation_angle, is_large_arc, is_clockwise, point_x, point_y);
 }
 
 static void
-xps_parse_poly_quadratic_bezier_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
+xps_parse_poly_quadratic_bezier_segment(fz_path *path, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -558,12 +544,12 @@ xps_parse_poly_quadratic_bezier_segment(xps_context *ctx, xps_item *root, int st
 		{
 			if (stroking && !is_stroked)
 			{
-				fz_moveto(ctx->path, x[1], y[1]);
+				fz_moveto(path, x[1], y[1]);
 			}
 			else
 			{
-				pt = fz_currentpoint(ctx->path);
-				fz_curveto(ctx->path,
+				pt = fz_currentpoint(path);
+				fz_curveto(path,
 						(pt.x + 2 * x[0]) / 3, (pt.y + 2 * y[0]) / 3,
 						(x[1] + 2 * x[0]) / 3, (y[1] + 2 * y[0]) / 3,
 						x[1], y[1]);
@@ -574,7 +560,7 @@ xps_parse_poly_quadratic_bezier_segment(xps_context *ctx, xps_item *root, int st
 }
 
 static void
-xps_parse_poly_bezier_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
+xps_parse_poly_bezier_segment(fz_path *path, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -606,16 +592,16 @@ xps_parse_poly_bezier_segment(xps_context *ctx, xps_item *root, int stroking, in
 		if (n == 3)
 		{
 			if (stroking && !is_stroked)
-				fz_moveto(ctx->path, x[2], y[2]);
+				fz_moveto(path, x[2], y[2]);
 			else
-				fz_curveto(ctx->path, x[0], y[0], x[1], y[1], x[2], y[2]);
+				fz_curveto(path, x[0], y[0], x[1], y[1], x[2], y[2]);
 			n = 0;
 		}
 	}
 }
 
 static void
-xps_parse_poly_line_segment(xps_context *ctx, xps_item *root, int stroking, int *skipped_stroke)
+xps_parse_poly_line_segment(fz_path *path, xps_item *root, int stroking, int *skipped_stroke)
 {
 	char *points_att = xps_att(root, "Points");
 	char *is_stroked_att = xps_att(root, "IsStroked");
@@ -641,15 +627,15 @@ xps_parse_poly_line_segment(xps_context *ctx, xps_item *root, int stroking, int 
 		while (*s == ' ') s++;
 		sscanf(s, "%g,%g", &x, &y);
 		if (stroking && !is_stroked)
-			fz_moveto(ctx->path, x, y);
+			fz_moveto(path, x, y);
 		else
-			fz_lineto(ctx->path, x, y);
+			fz_lineto(path, x, y);
 		while (*s != ' ' && *s != 0) s++;
 	}
 }
 
 static void
-xps_parse_path_figure(xps_context *ctx, xps_item *root, int stroking)
+xps_parse_path_figure(fz_path *path, xps_item *root, int stroking)
 {
 	xps_item *node;
 
@@ -678,31 +664,31 @@ xps_parse_path_figure(xps_context *ctx, xps_item *root, int stroking)
 	if (!stroking && !is_filled) /* not filled, when filling */
 		return;
 
-	fz_moveto(ctx->path, start_x, start_y);
+	fz_moveto(path, start_x, start_y);
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
 		if (!strcmp(xps_tag(node), "ArcSegment"))
-			xps_parse_arc_segment(ctx, node, stroking, &skipped_stroke);
+			xps_parse_arc_segment(path, node, stroking, &skipped_stroke);
 		if (!strcmp(xps_tag(node), "PolyBezierSegment"))
-			xps_parse_poly_bezier_segment(ctx, node, stroking, &skipped_stroke);
+			xps_parse_poly_bezier_segment(path, node, stroking, &skipped_stroke);
 		if (!strcmp(xps_tag(node), "PolyLineSegment"))
-			xps_parse_poly_line_segment(ctx, node, stroking, &skipped_stroke);
+			xps_parse_poly_line_segment(path, node, stroking, &skipped_stroke);
 		if (!strcmp(xps_tag(node), "PolyQuadraticBezierSegment"))
-			xps_parse_poly_quadratic_bezier_segment(ctx, node, stroking, &skipped_stroke);
+			xps_parse_poly_quadratic_bezier_segment(path, node, stroking, &skipped_stroke);
 	}
 
 	if (is_closed)
 	{
 		if (stroking && skipped_stroke)
-			fz_lineto(ctx->path, start_x, start_y); /* we've skipped using fz_moveto... */
+			fz_lineto(path, start_x, start_y); /* we've skipped using fz_moveto... */
 		else
-			fz_closepath(ctx->path); /* no skipped segments, safe to closepath properly */
+			fz_closepath(path); /* no skipped segments, safe to closepath properly */
 	}
 }
 
-void
-xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking)
+fz_path *
+xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking, int *fill_rule)
 {
 	xps_item *node;
 
@@ -714,6 +700,7 @@ xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, in
 	xps_item *figures_tag = NULL; /* only used by resource */
 
 	fz_matrix transform;
+	fz_path *path;
 
 	figures_att = xps_att(root, "Figures");
 	fill_rule_att = xps_att(root, "FillRule");
@@ -731,9 +718,9 @@ xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, in
 	if (fill_rule_att)
 	{
 		if (!strcmp(fill_rule_att, "NonZero"))
-			ctx->fill_rule = 1;
+			*fill_rule = 1;
 		if (!strcmp(fill_rule_att, "EvenOdd"))
-			ctx->fill_rule = 0;
+			*fill_rule = 0;
 	}
 
 	transform = fz_identity;
@@ -743,18 +730,23 @@ xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, in
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
 
 	if (figures_att)
-		xps_parse_abbreviated_geometry(ctx, figures_att);
+		path = xps_parse_abbreviated_geometry(ctx, figures_att, fill_rule);
+	else
+		path = fz_newpath();
+
 	if (figures_tag)
-		xps_parse_path_figure(ctx, figures_tag, stroking);
+		xps_parse_path_figure(path, figures_tag, stroking);
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
 		if (!strcmp(xps_tag(node), "PathFigure"))
-			xps_parse_path_figure(ctx, node, stroking);
+			xps_parse_path_figure(path, node, stroking);
 	}
 
 	if (transform_att || transform_tag)
-		fz_transformpath(ctx->path, transform);
+		fz_transformpath(path, transform);
+
+	return path;
 }
 
 static int
@@ -815,9 +807,9 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	fz_matrix transform;
 	float samples[32];
 	fz_colorspace *colorspace;
+	fz_path *path;
 	fz_rect area;
-
-	ctx->fill_rule = 0;
+	int fill_rule;
 
 	/*
 	 * Extract attributes and extended attributes.
@@ -870,6 +862,9 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	/*
 	 * Act on the information we have gathered:
 	 */
+
+	if (!data_att && !data_tag)
+		return;
 
 	if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
 	{
@@ -932,14 +927,18 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	ctm = fz_concat(transform, ctm);
 
 	if (clip_att || clip_tag)
-	{
-		ctx->path = fz_newpath();
-		if (clip_att)
-			xps_parse_abbreviated_geometry(ctx, clip_att);
-		if (clip_tag)
-			xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-		xps_clip(ctx, ctm);
-	}
+		xps_clip(ctx, ctm, dict, clip_att, clip_tag);
+
+	fill_rule = 0;
+	if (data_att)
+		path = xps_parse_abbreviated_geometry(ctx, data_att, &fill_rule);
+	else if (data_tag)
+		path = xps_parse_path_geometry(ctx, dict, data_tag, 0, &fill_rule);
+
+	if (stroke_att || stroke_tag)
+		area = fz_boundpath(path, &stroke, ctm);
+	else
+		area = fz_boundpath(path, NULL, ctm);
 
 	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
@@ -950,26 +949,15 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 			samples[0] = atof(fill_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		ctx->path = fz_newpath();
-		if (data_att)
-			xps_parse_abbreviated_geometry(ctx, data_att);
-		if (data_tag)
-			xps_parse_path_geometry(ctx, dict, data_tag, 0);
-
-		xps_fill(ctx, ctm);
+		ctx->dev->fillpath(ctx->dev->user, path, fill_rule == 0, ctm,
+			ctx->colorspace, ctx->color, ctx->alpha);
 	}
 
 	if (fill_tag)
 	{
-		ctx->path = fz_newpath();
-		if (data_att)
-			xps_parse_abbreviated_geometry(ctx, data_att);
-		if (data_tag)
-			xps_parse_path_geometry(ctx, dict, data_tag, 0);
+		area = fz_boundpath(path, NULL, ctm);
 
-		area = fz_boundpath(ctx->path, NULL, ctm);
-
-		xps_clip(ctx, ctm);
+		ctx->dev->clippath(ctx->dev->user, path, fill_rule == 0, ctm);
 		xps_parse_brush(ctx, ctm, area, fill_uri, dict, fill_tag);
 		ctx->dev->popclip(ctx->dev->user);
 	}
@@ -981,31 +969,27 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 			samples[0] = atof(stroke_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		ctx->path = fz_newpath();
-		if (data_att)
-			xps_parse_abbreviated_geometry(ctx, data_att);
-		if (data_tag)
-			xps_parse_path_geometry(ctx, dict, data_tag, 1);
-
-		xps_stroke(ctx, ctm, &stroke);
+		ctx->dev->strokepath(ctx->dev->user, path, &stroke, ctm,
+			ctx->colorspace, ctx->color, ctx->alpha);
 	}
 
 	if (stroke_tag)
 	{
-		ctx->path = fz_newpath();
+		path = fz_newpath();
 		if (data_att)
-			xps_parse_abbreviated_geometry(ctx, data_att);
+			xps_parse_abbreviated_geometry(ctx, data_att, &fill_rule);
 		if (data_tag)
-			xps_parse_path_geometry(ctx, dict, data_tag, 1);
+			xps_parse_path_geometry(ctx, dict, data_tag, 1, &fill_rule);
 
-		area = fz_boundpath(ctx->path, &stroke, ctm);
-
-		xps_clipstroke(ctx, ctm, &stroke);
+		ctx->dev->clipstrokepath(ctx->dev->user, path, &stroke, ctm);
 		xps_parse_brush(ctx, ctm, area, stroke_uri, dict, stroke_tag);
 		ctx->dev->popclip(ctx->dev->user);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+
+	fz_freepath(path);
+	path = NULL;
 
 	if (clip_att || clip_tag)
 		ctx->dev->popclip(ctx->dev->user);

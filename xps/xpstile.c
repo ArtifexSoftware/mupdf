@@ -20,13 +20,14 @@ struct closure
 static void
 xps_paint_tiling_brush_clipped(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, struct closure *c)
 {
-	ctx->path = fz_newpath();
-	fz_moveto(ctx->path, viewbox.x0, viewbox.y0);
-	fz_lineto(ctx->path, viewbox.x0, viewbox.y1);
-	fz_lineto(ctx->path, viewbox.x1, viewbox.y1);
-	fz_lineto(ctx->path, viewbox.x1, viewbox.y0);
-	fz_closepath(ctx->path);
-	xps_clip(ctx, ctm);
+	fz_path *path = fz_newpath();
+	fz_moveto(path, viewbox.x0, viewbox.y0);
+	fz_lineto(path, viewbox.x0, viewbox.y1);
+	fz_lineto(path, viewbox.x1, viewbox.y1);
+	fz_lineto(path, viewbox.x1, viewbox.y0);
+	fz_closepath(path);
+
+	ctx->dev->clippath(ctx->dev->user, path, 0, ctm);
 
 	c->func(ctx, ctm, c->base_uri, c->dict, c->root, c->user);
 

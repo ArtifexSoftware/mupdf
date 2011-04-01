@@ -60,14 +60,7 @@ xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *
 	ctm = fz_concat(transform, ctm);
 
 	if (clip_att || clip_tag)
-	{
-		ctx->path = fz_newpath();
-		if (clip_att)
-			xps_parse_abbreviated_geometry(ctx, clip_att);
-		if (clip_tag)
-			xps_parse_path_geometry(ctx, dict, clip_tag, 0);
-		xps_clip(ctx, ctm);
-	}
+		xps_clip(ctx, ctm, dict, clip_att, clip_tag);
 
 	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 

@@ -498,8 +498,6 @@ xps_new_context(void)
 
 	ctx->start_part = NULL;
 
-	ctx->fill_rule = 0;
-
 	return ctx;
 }
 
