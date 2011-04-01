@@ -775,6 +775,8 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	fz_obj *obj;
 
 	gstate->size = csi->stack[0];
+	if (gstate->font)
+		pdf_dropfont(gstate->font);
 	gstate->font = nil;
 
 	dict = fz_dictgets(rdb, "Font");
@@ -784,12 +786,6 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 	obj = fz_dictgets(dict, csi->name);
 	if (!obj)
 		return fz_throw("cannot find font resource: '%s'", csi->name);
-
-	if (gstate->font)
-	{
-		pdf_dropfont(gstate->font);
-		gstate->font = nil;
-	}
 
 	error = pdf_loadfont(&gstate->font, csi->xref, rdb, obj);
 	if (error)
@@ -1290,15 +1286,17 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			{
 				pdf_showstring(csi, (unsigned char *)buf, len);
 			}
+			else if (tok == PDF_TKEYWORD)
+			{
+				if (!strcmp(buf, "Tw") || !strcmp(buf, "Tc"))
+					fz_warn("ignoring keyword '%s' inside array", buf);
+				else
+					return fz_throw("syntax error in array");
+			}
 			else if (tok == PDF_TEOF)
-			{
 				return fz_okay;
-			}
 			else
-			{
-				pdf_clearstack(csi);
-				return fz_throw("syntaxerror in array");
-			}
+				return fz_throw("syntax error in array");
 		}
 
 		else switch (tok)
@@ -1360,8 +1358,7 @@ pdf_runcsifile(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		default:
-			pdf_clearstack(csi);
-			return fz_throw("syntaxerror in content stream");
+			return fz_throw("syntax error in content stream");
 		}
 	}
 }
@@ -1398,9 +1395,6 @@ pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
 	if (error)
 		return fz_rethrow(error, "cannot parse page content stream");
 
-	if (page->transparency)
-		dev->endgroup(dev->user);
-
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		flags = fz_toint(fz_dictgets(annot->obj, "F"));
@@ -1419,6 +1413,9 @@ pdf_runpage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm)
 		if (error)
 			return fz_rethrow(error, "cannot parse annotation appearance stream");
 	}
+
+	if (page->transparency)
+		dev->endgroup(dev->user);
 
 	return fz_okay;
 }
