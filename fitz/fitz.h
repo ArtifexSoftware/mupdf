@@ -830,6 +830,8 @@ void fz_curvetoy(fz_path*, float, float, float, float);
 void fz_closepath(fz_path*);
 void fz_freepath(fz_path *path);
 
+void fz_transformpath(fz_path *path, fz_matrix transform);
+
 fz_path *fz_clonepath(fz_path *old);
 
 fz_rect fz_boundpath(fz_path *path, fz_strokestate *stroke, fz_matrix ctm);

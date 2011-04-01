@@ -741,25 +741,20 @@ xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, in
 		xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
-	// TODO: apply matrix
-	if (transform_att || transform_tag)
-		fz_warn("ignoring PathGeometry.Transform attribute");
 
 	if (figures_att)
-	{
 		xps_parse_abbreviated_geometry(ctx, figures_att);
-	}
-
 	if (figures_tag)
-	{
 		xps_parse_path_figure(ctx, figures_tag, stroking);
-	}
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{
 		if (!strcmp(xps_tag(node), "PathFigure"))
 			xps_parse_path_figure(ctx, node, stroking);
 	}
+
+	if (transform_att || transform_tag)
+		fz_transformpath(ctx->path, transform);
 }
 
 static int
