@@ -11,7 +11,8 @@ xps_paint_visual_brush(xps_context *ctx, fz_matrix ctm,
 }
 
 void
-xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
+xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
+	char *base_uri, xps_resource *dict, xps_item *root)
 {
 	xps_item *node;
 
@@ -32,6 +33,7 @@ xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_reso
 
 	if (visual_tag)
 	{
-		xps_parse_tiling_brush(ctx, ctm, visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
+		xps_parse_tiling_brush(ctx, ctm, area,
+			visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
 	}
 }

@@ -815,6 +815,7 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	fz_matrix transform;
 	float samples[32];
 	fz_colorspace *colorspace;
+	fz_rect area;
 
 	ctx->fill_rule = 0;
 
@@ -966,10 +967,10 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 		if (data_tag)
 			xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
+		area = fz_boundpath(ctx->path, NULL, ctm);
+
 		xps_clip(ctx, ctm);
-
-		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
-
+		xps_parse_brush(ctx, ctm, area, fill_uri, dict, fill_tag);
 		ctx->dev->popclip(ctx->dev->user);
 	}
 
@@ -997,11 +998,10 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 		if (data_tag)
 			xps_parse_path_geometry(ctx, dict, data_tag, 1);
 
-		ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
+		area = fz_boundpath(ctx->path, &stroke, ctm);
+
 		xps_clipstroke(ctx, ctm, &stroke);
-
-		xps_parse_brush(ctx, ctm, stroke_uri, dict, stroke_tag);
-
+		xps_parse_brush(ctx, ctm, area, stroke_uri, dict, stroke_tag);
 		ctx->dev->popclip(ctx->dev->user);
 	}
 

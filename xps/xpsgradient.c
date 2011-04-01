@@ -301,15 +301,11 @@ xps_draw_radial_gradient(xps_context *ctx, fz_matrix ctm,
 	struct stop *stops, int count,
 	xps_item *root, int spread)
 {
-	fz_rect bbox;
 	float x0, y0, r0;
 	float x1, y1, r1;
 	float xrad = 1;
 	float yrad = 1;
 	float invscale;
-	float dx, dy;
-	int i;
-	int done;
 
 	char *center_att = xps_att(root, "Center");
 	char *origin_att = xps_att(root, "GradientOrigin");
@@ -335,99 +331,7 @@ xps_draw_radial_gradient(xps_context *ctx, fz_matrix ctm,
 	r0 = 0.0;
 	r1 = xrad;
 
-	dx = x1 - x0;
-	dy = y1 - y0;
-
 	xps_draw_one_radial_gradient(ctx, ctm, stops, count, 1, x0, y0, r0, x1, y1, r1);
-
-#if 0
-	xps_bounds_in_user_space(ctx, &bbox);
-
-	if (spread == SPREAD_PAD)
-	{
-		if (!point_inside_circle(x0, y0, x1, y1, r1))
-		{
-			float in[1];
-			float out[4];
-			float fary[10];
-			void *vary[1];
-
-			/* PDF shadings with extend doesn't work the same way as XPS
-			 * gradients when the radial shading is a cone. In this case
-			 * we fill the background ourselves.
-			 */
-			in[0] = 1.0;
-			out[0] = 1.0;
-			out[1] = 0.0;
-			out[2] = 0.0;
-			out[3] = 0.0;
-			if (ctx->opacity_only)
-				gs_function_evaluate(func, in, out);
-			else
-				gs_function_evaluate(func, in, out + 1);
-
-			xps_set_color(ctx, ctx->srgb, out);
-
-			gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
-			gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
-			gs_lineto(ctx->pgs, bbox.q.x, bbox.q.y);
-			gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
-			gs_closepath(ctx->pgs);
-			gs_fill(ctx->pgs);
-
-			/* We also have to reverse the direction so the bigger circle
-			 * comes first or the graphical results do not match. We also
-			 * have to reverse the direction of the function to compensate.
-			 */
-
-//			reverse = xps_reverse_function(ctx, func, fary, vary);
-//			xps_draw_one_radial_gradient(ctx, reverse, 1, x1, y1, r1, x0, y0, r0);
-			xps_draw_one_radial_gradient(ctx, ctm, stops, count,
-				1, x1, y1, r1, x0, y0, r0);
-		}
-		else
-		{
-			xps_draw_one_radial_gradient(ctx, ctm, stops, count,
-				1, x0, y0, r0, x1, y1, r1);
-		}
-	}
-	else
-	{
-		for (i = 0; i < 2; i++)
-		{
-			/* Draw current circle */
-
-			if (!point_inside_circle(x0, y0, x1, y1, r1))
-				printf("xps: we should reverse gradient here too\n");
-
-			if (spread == SPREAD_REFLECT && (i & 1))
-				xps_draw_one_radial_gradient(ctx, ctm, stops, count,
-					0, x1, y1, r1, x0, y0, r0);
-			else
-				xps_draw_one_radial_gradient(ctx, ctm, stops, count,
-					0, x0, y0, r0, x1, y1, r1);
-
-			/* Check if circle encompassed the entire bounding box (break loop if we do) */
-			done = 1;
-			if (!point_inside_circle(bbox.x0, bbox.y0, x1, y1, r1)) done = 0;
-			if (!point_inside_circle(bbox.x0, bbox.y1, x1, y1, r1)) done = 0;
-			if (!point_inside_circle(bbox.x1, bbox.y1, x1, y1, r1)) done = 0;
-			if (!point_inside_circle(bbox.x1, bbox.y0, x1, y1, r1)) done = 0;
-			if (done)
-				break;
-
-			/* Prepare next circle */
-
-			r0 = r1;
-			r1 += xrad;
-
-			x0 += dx;
-			y0 += dy;
-			x1 += dx;
-			y1 += dy;
-		}
-	}
-#endif
 }
 
 /*
@@ -440,77 +344,20 @@ xps_draw_linear_gradient(xps_context *ctx, fz_matrix ctm,
 	struct stop *stops, int count,
 	xps_item *root, int spread)
 {
-	fz_rect bbox;
 	float x0, y0, x1, y1;
-	float dx, dy;
-	int i;
 
 	char *start_point_att = xps_att(root, "StartPoint");
 	char *end_point_att = xps_att(root, "EndPoint");
 
-	x0 = 0;
-	y0 = 0;
-	x1 = 0;
-	y1 = 1;
+	x0 = y0 = 0;
+	x1 = y1 = 1;
 
 	if (start_point_att)
 		sscanf(start_point_att, "%g,%g", &x0, &y0);
 	if (end_point_att)
 		sscanf(end_point_att, "%g,%g", &x1, &y1);
 
-	dx = x1 - x0;
-	dy = y1 - y0;
-
 	xps_draw_one_linear_gradient(ctx, ctm, stops, count, 1, x0, y0, x1, y1);
-
-#if 0
-	xps_bounds_in_user_space(ctx, &bbox);
-
-	if (spread == SPREAD_PAD)
-	{
-		xps_draw_one_linear_gradient(ctx, ctm, stops, count, 1, x0, y0, x1, y1);
-	}
-	else
-	{
-		float len;
-		float a, b;
-		float dist[4];
-		float d0, d1;
-		int i0, i1;
-
-		len = sqrt(dx * dx + dy * dy);
-		a = dx / len;
-		b = dy / len;
-
-		dist[0] = a * (bbox.x0 - x0) + b * (bbox.y0 - y0);
-		dist[1] = a * (bbox.x0 - x0) + b * (bbox.y1 - y0);
-		dist[2] = a * (bbox.x1 - x0) + b * (bbox.y1 - y0);
-		dist[3] = a * (bbox.x1 - x0) + b * (bbox.y0 - y0);
-
-		d0 = dist[0];
-		d1 = dist[0];
-		for (i = 1; i < 4; i++)
-		{
-			if (dist[i] < d0) d0 = dist[i];
-			if (dist[i] > d1) d1 = dist[i];
-		}
-
-		i0 = floor(d0 / len);
-		i1 = ceil(d1 / len);
-
-		for (i = i0; i < i1; i++)
-		{
-			if (spread == SPREAD_REFLECT && (i & 1))
-				xps_draw_one_linear_gradient(ctx, ctm, stops, count, 0,
-						x1 + dx * i, y1 + dy * i,
-						x0 + dx * i, y0 + dy * i);
-			else
-				xps_draw_one_linear_gradient(ctx, ctm, stops, count, 0,
-						x0 + dx * i, y0 + dy * i,
-						x1 + dx * i, y1 + dy * i);
-		}
-	}
-#endif
 }
 
 /*
@@ -538,8 +385,6 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 	int stop_count;
 	fz_matrix transform;
 	int spread_method;
-
-	fz_rect bbox;
 
 	opacity_att = xps_att(root, "Opacity");
 	interpolation_att = xps_att(root, "ColorInterpolationMode");
@@ -590,8 +435,6 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 		fz_warn("no gradient stops found");
 		return;
 	}
-
-	xps_bounds_in_user_space(ctx, &bbox);
 
 	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
 

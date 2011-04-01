@@ -105,7 +105,8 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *roo
 }
 
 void
-xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root)
+xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
+	char *base_uri, xps_resource *dict, xps_item *root)
 {
 	xps_part *part;
 	xps_image *image;
@@ -123,7 +124,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resou
 		return;
 	}
 
-	xps_parse_tiling_brush(ctx, ctm, base_uri, dict, root, xps_paint_image_brush, image);
+	xps_parse_tiling_brush(ctx, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
 
 	xps_free_image(ctx, image);
 	xps_free_part(ctx, part);

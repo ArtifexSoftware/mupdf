@@ -328,6 +328,8 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	int is_sideways = 0;
 	int bidi_level = 0;
 
+	fz_rect area;
+
 	/*
 	 * Extract attributes and extended attributes.
 	 */
@@ -498,11 +500,13 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level, indices_att, unicode_att, 1);
 
+		area = fz_boundtext(ctx->text, ctm);
+
 		ctx->dev->cliptext(ctx->dev->user, ctx->text, ctm, 0);
 		fz_freetext(ctx->text);
 		ctx->text = nil;
 
-		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
+		xps_parse_brush(ctx, ctm, area, fill_uri, dict, fill_tag);
 
 		ctx->dev->popclip(ctx->dev->user);
 	}

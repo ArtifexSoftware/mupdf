@@ -2,13 +2,13 @@
 #include "muxps.h"
 
 void
-xps_parse_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
+xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node)
 {
 	/* SolidColorBrushes are handled in a special case and will never show up here */
 	if (!strcmp(xps_tag(node), "ImageBrush"))
-		xps_parse_image_brush(ctx, ctm, base_uri, dict, node);
+		xps_parse_image_brush(ctx, ctm, area, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "VisualBrush"))
-		xps_parse_visual_brush(ctx, ctm, base_uri, dict, node);
+		xps_parse_visual_brush(ctx, ctm, area, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "LinearGradientBrush"))
 		xps_parse_linear_gradient_brush(ctx, ctm, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "RadialGradientBrush"))

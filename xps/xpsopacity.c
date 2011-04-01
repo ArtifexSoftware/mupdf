@@ -2,31 +2,10 @@
 #include "muxps.h"
 
 void
-xps_bounds_in_user_space(xps_context *ctx, fz_rect *ubox)
-{
-	*ubox = fz_infiniterect; // *evil grin*
-#if 0
-	gx_clip_path *clip_path;
-	fz_rect dbox;
-	int code;
-
-	code = gx_effective_clip_path(ctx->pgs, &clip_path);
-	if (code < 0)
-		fz_warn("gx_effective_clip_path failed");
-
-	dbox.p.x = fixed2float(clip_path->outer_box.p.x);
-	dbox.p.y = fixed2float(clip_path->outer_box.p.y);
-	dbox.q.x = fixed2float(clip_path->outer_box.q.x);
-	dbox.q.y = fixed2float(clip_path->outer_box.q.y);
-	gs_bbox_transform_inverse(&dbox, &ctm_only(ctx->pgs), ubox);
-#endif
-}
-
-void
 xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict,
 		char *opacity_att, xps_item *opacity_mask_tag)
 {
-	fz_rect bbox;
+	fz_rect area;
 	float opacity;
 
 	if (!opacity_att && !opacity_mask_tag)
@@ -52,7 +31,7 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource 
 		opacity_mask_tag = NULL;
 	}
 
-	xps_bounds_in_user_space(ctx, &bbox);
+	area = fz_infiniterect; /* FIXME */
 
 	if (ctx->opacity_top + 1 < nelem(ctx->opacity))
 	{
@@ -62,8 +41,8 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource 
 
 	if (opacity_mask_tag)
 	{
-		ctx->dev->beginmask(ctx->dev->user, bbox, 0, NULL, NULL);
-		xps_parse_brush(ctx, ctm, base_uri, dict, opacity_mask_tag);
+		ctx->dev->beginmask(ctx->dev->user, area, 0, NULL, NULL);
+		xps_parse_brush(ctx, ctm, area, base_uri, dict, opacity_mask_tag);
 		ctx->dev->endmask(ctx->dev->user);
 	}
 }

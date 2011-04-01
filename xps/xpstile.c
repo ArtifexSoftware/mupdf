@@ -63,7 +63,7 @@ xps_paint_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, int til
 }
 
 void
-xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
+xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xps_item *root,
 	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*), void *user)
 {
@@ -83,7 +83,8 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 	fz_matrix transform;
 	fz_rect viewbox;
 	fz_rect viewport;
-	float scalex, scaley;
+	float xstep, ystep;
+	float xscale, yscale;
 	int tile_mode;
 
 	opacity_att = xps_att(root, "Opacity");
@@ -130,8 +131,11 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 	if (fabs(viewbox.x1 - viewbox.x0) < 0.01) return;
 	if (fabs(viewbox.y1 - viewbox.y0) < 0.01) return;
 
-	scalex = (viewport.x1 - viewport.x0) / (viewbox.x1 - viewbox.x0);
-	scaley = (viewport.y1 - viewport.y0) / (viewbox.y1 - viewbox.y0);
+	xstep = viewbox.x1 - viewbox.x0;
+	ystep = viewbox.y1 - viewbox.y0;
+
+	xscale = (viewport.x1 - viewport.x0) / xstep;
+	yscale = (viewport.y1 - viewport.y0) / ystep;
 
 	tile_mode = TILE_NONE;
 	if (tile_mode_att)
@@ -148,26 +152,35 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 			tile_mode = TILE_FLIP_X_Y;
 	}
 
+	if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
+		xstep *= 2;
+	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
+		ystep *= 2;
+
 	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
 
 	ctm = fz_concat(transform, ctm);
 	ctm = fz_concat(fz_translate(viewport.x0, viewport.y0), ctm);
-	ctm = fz_concat(fz_scale(scalex, scaley), ctm);
+	ctm = fz_concat(fz_scale(xscale, yscale), ctm);
 	ctm = fz_concat(fz_translate(-viewbox.x0, -viewbox.y0), ctm);
 
-	if (tile_mode != TILE_NONE)
+	if (tile_mode != TILE_NONE && !fz_isinfiniterect(area))
 	{
-		float w = viewbox.x1 - viewbox.x0;
-		float h = viewbox.y1 - viewbox.y0;
-		fz_matrix ttm;
+		fz_matrix invctm = fz_invertmatrix(ctm);
+		fz_rect bbox = fz_transformrect(invctm, area);
+		int x0 = floorf(bbox.x0 / xstep);
+		int y0 = floorf(bbox.y0 / ystep);
+		int x1 = ceilf(bbox.x1 / xstep);
+		int y1 = ceilf(bbox.y1 / ystep);
 		int x, y;
 
-		/* TODO: loop in visible area */
-		for (y = 0; y < 2; y++)
+		printf("repeating tile %d x %d times\n", x1-x0, y1-y0);
+
+		for (y = y0; y < y1; y++)
 		{
-			for (x = 0; x < 2; x++)
+			for (x = x0; x < x1; x++)
 			{
-				ttm = fz_concat(fz_translate(w*x, h*y), ctm);
+				fz_matrix ttm = fz_concat(fz_translate(xstep * x, ystep * y), ctm);
 				xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);
 			}
 		}
