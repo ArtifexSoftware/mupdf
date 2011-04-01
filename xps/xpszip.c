@@ -498,11 +498,6 @@ xps_new_context(void)
 
 	ctx->start_part = NULL;
 
-	ctx->use_transparency = 1;
-	if (getenv("XPS_DISABLE_TRANSPARENCY"))
-		ctx->use_transparency = 0;
-
-	ctx->opacity_only = 0;
 	ctx->fill_rule = 0;
 
 	return ctx;

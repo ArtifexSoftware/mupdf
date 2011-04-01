@@ -900,7 +900,7 @@ struct fz_shade_s
 	float background[FZ_MAXCOLORS];
 
 	int usefunction;
-	float function[256][FZ_MAXCOLORS];
+	float function[256][FZ_MAXCOLORS + 1];
 
 	int type; /* linear, radial, mesh */
 	int extend[2];

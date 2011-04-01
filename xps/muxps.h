@@ -250,16 +250,6 @@ struct xps_context_s
 	xps_hash_table *font_table;
 	xps_hash_table *colorspace_table;
 
-	/* Global toggle for transparency */
-	int use_transparency;
-
-	/* Hack to workaround ghostscript's lack of understanding
-	 * the pdf 1.4 specification of Alpha only transparency groups.
-	 * We have to force all colors to be grayscale whenever we are computing
-	 * opacity masks.
-	 */
-	int opacity_only;
-
 	/* The fill_rule is set by path parsing.
 	 * It is used by clip/fill functions.
 	 * 1=nonzero, 0=evenodd

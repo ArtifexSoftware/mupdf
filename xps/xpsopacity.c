@@ -28,9 +28,6 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource 
 {
 	fz_rect bbox;
 	float opacity;
-	int save;
-
-return;
 
 	if (!opacity_att && !opacity_mask_tag)
 		return;
@@ -38,23 +35,13 @@ return;
 	opacity = 1.0;
 	if (opacity_att)
 		opacity = atof(opacity_att);
-//	gs_setopacityalpha(ctx->pgs, opacity);
 
 	xps_bounds_in_user_space(ctx, &bbox);
 
+	ctx->dev->beginmask(ctx->dev->user, bbox, 0, fz_devicegray, &opacity);
 	if (opacity_mask_tag)
-	{
-		/* opacity-only mode: use alpha value as gray color to create luminosity mask */
-		save = ctx->opacity_only;
-		ctx->opacity_only = 1;
-
-		// begin mask
 		xps_parse_brush(ctx, ctm, base_uri, dict, opacity_mask_tag);
-
-		ctx->opacity_only = save;
-	}
-
-	// begin group
+	ctx->dev->endmask(ctx->dev->user);
 }
 
 void
@@ -63,5 +50,6 @@ xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
 {
 	if (!opacity_att && !opacity_mask_tag)
 		return;
-	// end mask+group
+
+	ctx->dev->popclip(ctx->dev->user);
 }

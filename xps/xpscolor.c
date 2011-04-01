@@ -7,20 +7,10 @@ void
 xps_set_color(xps_context *ctx, fz_colorspace *colorspace, float *samples)
 {
 	int i;
-
-	if (ctx->opacity_only)
-	{
-		ctx->colorspace = fz_devicegray;
-		ctx->color[0] = samples[0];
-		ctx->alpha = 1.0;
-	}
-	else
-	{
-		ctx->colorspace = colorspace;
-		for (i = 0; i < colorspace->n; i++)
-			ctx->color[i] = samples[i + 1];
-		ctx->alpha = samples[0];
-	}
+	ctx->colorspace = colorspace;
+	for (i = 0; i < colorspace->n; i++)
+		ctx->color[i] = samples[i + 1];
+	ctx->alpha = samples[0];
 }
 
 static int unhex(int chr)
