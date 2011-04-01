@@ -10,7 +10,7 @@ xps_set_color(xps_context *ctx, fz_colorspace *colorspace, float *samples)
 	ctx->colorspace = colorspace;
 	for (i = 0; i < colorspace->n; i++)
 		ctx->color[i] = samples[i + 1];
-	ctx->alpha = samples[0];
+	ctx->alpha = samples[0] * ctx->opacity[ctx->opacity_top];
 }
 
 static int unhex(int chr)

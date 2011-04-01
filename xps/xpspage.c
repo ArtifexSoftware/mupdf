@@ -101,6 +101,9 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 
 	dict = NULL;
 
+	ctx->opacity_top = 0;
+	ctx->opacity[0] = 1;
+
 	for (node = xps_down(page->root); node; node = xps_next(node))
 	{
 		if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))

@@ -256,6 +256,10 @@ struct xps_context_s
 	 */
 	int fill_rule;
 
+	/* Opacity attribute stack */
+	float opacity[64];
+	int opacity_top;
+
 	/* Current path being accumulated */
 	fz_path *path;
 	fz_text *text; /* ... or text, for clipping brushes */
