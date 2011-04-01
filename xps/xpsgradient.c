@@ -338,7 +338,7 @@ xps_draw_radial_gradient(xps_context *ctx, fz_matrix ctm,
 	dx = x1 - x0;
 	dy = y1 - y0;
 
-	xps_draw_one_radial_gradient(ctx, ctm, stops, count, 0, x0, y0, r0, x1, y1, r1);
+	xps_draw_one_radial_gradient(ctx, ctm, stops, count, 1, x0, y0, r0, x1, y1, r1);
 
 #if 0
 	xps_bounds_in_user_space(ctx, &bbox);
@@ -461,7 +461,7 @@ xps_draw_linear_gradient(xps_context *ctx, fz_matrix ctm,
 	dx = x1 - x0;
 	dy = y1 - y0;
 
-	xps_draw_one_linear_gradient(ctx, ctm, stops, count, 0, x0, y0, x1, y1);
+	xps_draw_one_linear_gradient(ctx, ctm, stops, count, 1, x0, y0, x1, y1);
 
 #if 0
 	xps_bounds_in_user_space(ctx, &bbox);
@@ -572,8 +572,6 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 			spread_method = SPREAD_REPEAT;
 	}
 
-	xps_clip(ctx, ctm);
-
 	transform = fz_identity;
 	if (transform_att)
 		xps_parse_render_transform(ctx, transform_att, &transform);
@@ -606,16 +604,12 @@ void
 xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_clip(ctx, ctm);
 	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_linear_gradient);
-	ctx->dev->popclip(ctx->dev->user);
 }
 
 void
 xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm,
 	char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_clip(ctx, ctm);
 	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_radial_gradient);
-	ctx->dev->popclip(ctx->dev->user);
 }

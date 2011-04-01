@@ -4,9 +4,8 @@
 void
 xps_parse_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
 {
-	if (!strcmp(xps_tag(node), "SolidColorBrush"))
-		xps_parse_solid_color_brush(ctx, ctm, base_uri, dict, node);
-	else if (!strcmp(xps_tag(node), "ImageBrush"))
+	/* SolidColorBrushes are handled in a special case and will never show up here */
+	if (!strcmp(xps_tag(node), "ImageBrush"))
 		xps_parse_image_brush(ctx, ctm, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "VisualBrush"))
 		xps_parse_visual_brush(ctx, ctm, base_uri, dict, node);

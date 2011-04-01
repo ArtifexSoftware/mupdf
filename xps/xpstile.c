@@ -148,8 +148,6 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 			tile_mode = TILE_FLIP_X_Y;
 	}
 
-	xps_clip(ctx, ctm);
-
 	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
 
 	ctm = fz_concat(transform, ctm);
@@ -180,6 +178,4 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm,
 	}
 
 	xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
-
-	ctx->dev->popclip(ctx->dev->user);
 }

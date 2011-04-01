@@ -497,7 +497,14 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 		xps_parse_glyphs_imp(ctx, ctm, font, font_size,
 				atof(origin_x_att), atof(origin_y_att),
 				is_sideways, bidi_level, indices_att, unicode_att, 1);
+
+		ctx->dev->cliptext(ctx->dev->user, ctx->text, ctm, 0);
+		fz_freetext(ctx->text);
+		ctx->text = nil;
+
 		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
+
+		ctx->dev->popclip(ctx->dev->user);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

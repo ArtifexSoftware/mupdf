@@ -38,22 +38,9 @@ fz_currentpoint(fz_path *path)
 void
 xps_clip(xps_context *ctx, fz_matrix ctm)
 {
-	if (ctx->path)
-	{
-		ctx->dev->clippath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm);
-		fz_freepath(ctx->path);
-		ctx->path = NULL;
-	}
-	else if (ctx->text)
-	{
-		ctx->dev->cliptext(ctx->dev->user, ctx->text, ctm, 0);
-		fz_freetext(ctx->text);
-		ctx->text = nil;
-	}
-	else
-	{
-		fz_warn("clip not a path nor text");
-	}
+	ctx->dev->clippath(ctx->dev->user, ctx->path, ctx->fill_rule == 0, ctm);
+	fz_freepath(ctx->path);
+	ctx->path = NULL;
 }
 
 void
@@ -984,7 +971,11 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 		if (data_tag)
 			xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
+		xps_clip(ctx, ctm);
+
 		xps_parse_brush(ctx, ctm, fill_uri, dict, fill_tag);
+
+		ctx->dev->popclip(ctx->dev->user);
 	}
 
 	if (stroke_att)
