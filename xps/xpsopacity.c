@@ -2,10 +2,10 @@
 #include "muxps.h"
 
 void
-xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict,
-		char *opacity_att, xps_item *opacity_mask_tag)
+xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area,
+	char *base_uri, xps_resource *dict,
+	char *opacity_att, xps_item *opacity_mask_tag)
 {
-	fz_rect area;
 	float opacity;
 
 	if (!opacity_att && !opacity_mask_tag)
@@ -31,8 +31,6 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource 
 		opacity_mask_tag = NULL;
 	}
 
-	area = fz_infiniterect; /* FIXME */
-
 	if (ctx->opacity_top + 1 < nelem(ctx->opacity))
 	{
 		ctx->opacity[ctx->opacity_top + 1] = ctx->opacity[ctx->opacity_top] * opacity;
@@ -49,7 +47,7 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource 
 
 void
 xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
-		char *opacity_att, xps_item *opacity_mask_tag)
+	char *opacity_att, xps_item *opacity_mask_tag)
 {
 	if (!opacity_att && !opacity_mask_tag)
 		return;

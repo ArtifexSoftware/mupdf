@@ -158,7 +158,7 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 		ystep *= 2;
 
-	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
+	xps_begin_opacity(ctx, ctm, area, base_uri, dict, opacity_att, NULL);
 
 	ctm = fz_concat(transform, ctm);
 	ctm = fz_concat(fz_translate(viewport.x0, viewport.y0), ctm);
@@ -174,8 +174,6 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		int x1 = ceilf(bbox.x1 / xstep);
 		int y1 = ceilf(bbox.y1 / ystep);
 		int x, y;
-
-		printf("repeating tile %d x %d times\n", x1-x0, y1-y0);
 
 		for (y = y0; y < y1; y++)
 		{

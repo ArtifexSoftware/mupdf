@@ -456,7 +456,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 
 	area = fz_boundtext(text, ctm);
 
-	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	/*
 	 * If it's a solid color brush fill/stroke do a simple fill

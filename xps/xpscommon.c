@@ -10,9 +10,9 @@ xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, x
 	else if (!strcmp(xps_tag(node), "VisualBrush"))
 		xps_parse_visual_brush(ctx, ctm, area, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(ctx, ctm, base_uri, dict, node);
+		xps_parse_linear_gradient_brush(ctx, ctm, area, base_uri, dict, node);
 	else if (!strcmp(xps_tag(node), "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(ctx, ctm, base_uri, dict, node);
+		xps_parse_radial_gradient_brush(ctx, ctm, area, base_uri, dict, node);
 	else
 		fz_warn("unknown brush tag: %s", xps_tag(node));
 }

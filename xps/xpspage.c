@@ -62,7 +62,7 @@ xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *
 	if (clip_att || clip_tag)
 		xps_clip(ctx, ctm, dict, clip_att, clip_tag);
 
-	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, ctm, fz_infiniterect, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	for (node = xps_down(root); node; node = xps_next(node))
 	{

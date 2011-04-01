@@ -940,7 +940,7 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	else
 		area = fz_boundpath(path, NULL, ctm);
 
-	xps_begin_opacity(ctx, ctm, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	if (fill_att)
 	{

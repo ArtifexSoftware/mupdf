@@ -366,7 +366,7 @@ xps_draw_linear_gradient(xps_context *ctx, fz_matrix ctm,
  */
 
 static void
-xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
+xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xps_item *root,
 	void (*draw)(xps_context *, fz_matrix, struct stop *, int, xps_item *, int))
 {
@@ -436,7 +436,9 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 		return;
 	}
 
-	xps_begin_opacity(ctx, ctm, base_uri, dict, opacity_att, NULL);
+	area = fz_transformrect(ctm, area);
+
+	xps_begin_opacity(ctx, ctm, area, base_uri, dict, opacity_att, NULL);
 
 	draw(ctx, ctm, stop_list, stop_count, root, spread_method);
 
@@ -444,15 +446,15 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm,
 }
 
 void
-xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm,
+xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_linear_gradient);
+	xps_parse_gradient_brush(ctx, ctm, area, base_uri, dict, root, xps_draw_linear_gradient);
 }
 
 void
-xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm,
+xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xps_item *root)
 {
-	xps_parse_gradient_brush(ctx, ctm, base_uri, dict, root, xps_draw_radial_gradient);
+	xps_parse_gradient_brush(ctx, ctm, area, base_uri, dict, root, xps_draw_radial_gradient);
 }
