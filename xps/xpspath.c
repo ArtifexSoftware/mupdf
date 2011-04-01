@@ -975,12 +975,6 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 
 	if (stroke_tag)
 	{
-		path = fz_newpath();
-		if (data_att)
-			xps_parse_abbreviated_geometry(ctx, data_att, &fill_rule);
-		if (data_tag)
-			xps_parse_path_geometry(ctx, dict, data_tag, 1, &fill_rule);
-
 		ctx->dev->clipstrokepath(ctx->dev->user, path, &stroke, ctm);
 		xps_parse_brush(ctx, ctm, area, stroke_uri, dict, stroke_tag);
 		ctx->dev->popclip(ctx->dev->user);
