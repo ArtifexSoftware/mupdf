@@ -758,7 +758,7 @@ xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xm
 		path = xps_parse_path_geometry(ctx, dict, clip_tag, 0, &fill_rule);
 	else
 		path = fz_newpath();
-	ctx->dev->clippath(ctx->dev->user, path, fill_rule, ctm);
+	ctx->dev->clippath(ctx->dev->user, path, fill_rule == 0, ctm);
 	fz_freepath(path);
 }
 

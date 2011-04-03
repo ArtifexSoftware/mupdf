@@ -103,7 +103,7 @@ static int xml_parse_entity(int *c, char *a)
 		else
 			*c = strtol(a + 2, &b, 10);
 		if (*b == ';')
-			return b - a;
+			return b - a + 1;
 	}
 	else if (a[1] == 'l' && a[2] == 't' && a[3] == ';') {
 		*c = '<';

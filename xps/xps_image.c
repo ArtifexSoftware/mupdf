@@ -47,7 +47,7 @@ xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_
 	fz_matrix im = fz_scale(xs, -ys);
 	im.f = ys;
 	ctm = fz_concat(im, ctm);
-	ctx->dev->fillimage(ctx->dev->user, pixmap, ctm, 1.0);
+	ctx->dev->fillimage(ctx->dev->user, pixmap, ctm, ctx->opacity[ctx->opacity_top]);
 }
 
 static xps_part *
