@@ -2,29 +2,29 @@
 #include "muxps.h"
 
 void
-xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node)
+xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node)
 {
 	/* SolidColorBrushes are handled in a special case and will never show up here */
-	if (!strcmp(xps_tag(node), "ImageBrush"))
+	if (!strcmp(xml_tag(node), "ImageBrush"))
 		xps_parse_image_brush(ctx, ctm, area, base_uri, dict, node);
-	else if (!strcmp(xps_tag(node), "VisualBrush"))
+	else if (!strcmp(xml_tag(node), "VisualBrush"))
 		xps_parse_visual_brush(ctx, ctm, area, base_uri, dict, node);
-	else if (!strcmp(xps_tag(node), "LinearGradientBrush"))
+	else if (!strcmp(xml_tag(node), "LinearGradientBrush"))
 		xps_parse_linear_gradient_brush(ctx, ctm, area, base_uri, dict, node);
-	else if (!strcmp(xps_tag(node), "RadialGradientBrush"))
+	else if (!strcmp(xml_tag(node), "RadialGradientBrush"))
 		xps_parse_radial_gradient_brush(ctx, ctm, area, base_uri, dict, node);
 	else
-		fz_warn("unknown brush tag: %s", xps_tag(node));
+		fz_warn("unknown brush tag: %s", xml_tag(node));
 }
 
 void
-xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node)
+xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node)
 {
-	if (!strcmp(xps_tag(node), "Path"))
+	if (!strcmp(xml_tag(node), "Path"))
 		xps_parse_path(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "Glyphs"))
+	if (!strcmp(xml_tag(node), "Glyphs"))
 		xps_parse_glyphs(ctx, ctm, base_uri, dict, node);
-	if (!strcmp(xps_tag(node), "Canvas"))
+	if (!strcmp(xml_tag(node), "Canvas"))
 		xps_parse_canvas(ctx, ctm, base_uri, dict, node);
 	/* skip unknown tags (like Foo.Resources and similar) */
 }
@@ -55,15 +55,15 @@ xps_parse_render_transform(xps_context *ctx, char *transform, fz_matrix *matrix)
 }
 
 void
-xps_parse_matrix_transform(xps_context *ctx, xps_item *root, fz_matrix *matrix)
+xps_parse_matrix_transform(xps_context *ctx, xml_element *root, fz_matrix *matrix)
 {
 	char *transform;
 
 	*matrix = fz_identity;
 
-	if (!strcmp(xps_tag(root), "MatrixTransform"))
+	if (!strcmp(xml_tag(root), "MatrixTransform"))
 	{
-		transform = xps_att(root, "Matrix");
+		transform = xml_att(root, "Matrix");
 		if (transform)
 			xps_parse_render_transform(ctx, transform, matrix);
 	}

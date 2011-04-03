@@ -1,8 +1,6 @@
 #include "fitz.h"
 #include "muxps.h"
 
-#include <expat.h>
-
 xps_part *
 xps_new_part(xps_context *ctx, char *name, int size)
 {
@@ -11,7 +9,8 @@ xps_new_part(xps_context *ctx, char *name, int size)
 	part = fz_malloc(sizeof(xps_part));
 	part->name = fz_strdup(name);
 	part->size = size;
-	part->data = fz_malloc(size);
+	part->data = fz_malloc(size + 1);
+	part->data[size] = 0; /* null-terminate for xml parser */
 
 	return part;
 }
@@ -137,87 +136,63 @@ xps_free_fixed_pages(xps_context *ctx)
 }
 
 /*
- * Parse the fixed document sequence structure and _rels/.rels to find the
- * start part. We hook up unique expat handlers for this, since we don't need
- * the full document model.
+ * Parse the fixed document sequence structure and _rels/.rels to find the start part.
  */
 
 static void
-xps_parse_metadata_imp(void *zp, char *name, char **atts)
+xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 {
-	xps_context *ctx = zp;
-	int i;
-
-	if (!strcmp(name, "Relationship"))
+	while (item)
 	{
-		char tgtbuf[1024];
-		char *target = NULL;
-		char *type = NULL;
+		xps_parse_metadata_imp(ctx, xml_down(item));
 
-		for (i = 0; atts[i]; i += 2)
+		if (!strcmp(xml_tag(item), "Relationship"))
 		{
-			if (!strcmp(atts[i], "Target"))
-				target = atts[i + 1];
-			if (!strcmp(atts[i], "Type"))
-				type = atts[i + 1];
+			char *target = xml_att(item, "Target");
+			char *type = xml_att(item, "Type");
+			if (target && type)
+			{
+				char tgtbuf[1024];
+				xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
+				if (!strcmp(type, REL_START_PART))
+					ctx->start_part = fz_strdup(tgtbuf);
+			}
 		}
 
-		if (target && type)
+		if (!strcmp(xml_tag(item), "DocumentReference"))
 		{
-			xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
-			if (!strcmp(type, REL_START_PART))
-				ctx->start_part = fz_strdup(tgtbuf);
-		}
-	}
-
-	if (!strcmp(name, "DocumentReference"))
-	{
-		char *source = NULL;
-		char srcbuf[1024];
-
-		for (i = 0; atts[i]; i += 2)
-		{
-			if (!strcmp(atts[i], "Source"))
-				source = atts[i + 1];
+			char *source = xml_att(item, "Source");
+			if (source)
+			{
+				char srcbuf[1024];
+				xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
+				xps_add_fixed_document(ctx, srcbuf);
+			}
 		}
 
-		if (source)
+		if (!strcmp(xml_tag(item), "PageContent"))
 		{
-			xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
-			xps_add_fixed_document(ctx, srcbuf);
-		}
-	}
-
-	if (!strcmp(name, "PageContent"))
-	{
-		char *source = NULL;
-		char srcbuf[1024];
-		int width = 0;
-		int height = 0;
-
-		for (i = 0; atts[i]; i += 2)
-		{
-			if (!strcmp(atts[i], "Source"))
-				source = atts[i + 1];
-			if (!strcmp(atts[i], "Width"))
-				width = atoi(atts[i + 1]);
-			if (!strcmp(atts[i], "Height"))
-				height = atoi(atts[i + 1]);
+			char *source = xml_att(item, "Source");
+			char *width_att = xml_att(item, "Width");
+			char *height_att = xml_att(item, "Height");
+			int width = width_att ? atoi(width_att) : 0;
+			int height = height_att ? atoi(height_att) : 0;
+			if (source)
+			{
+				char srcbuf[1024];
+				xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
+				xps_add_fixed_page(ctx, srcbuf, width, height);
+			}
 		}
 
-		if (source)
-		{
-			xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
-			xps_add_fixed_page(ctx, srcbuf, width, height);
-		}
+		item = xml_next(item);
 	}
 }
 
 int
 xps_parse_metadata(xps_context *ctx, xps_part *part)
 {
-	XML_Parser xp;
-	int code;
+	xml_element *root;
 	char buf[1024];
 	char *s;
 
@@ -238,23 +213,16 @@ xps_parse_metadata(xps_context *ctx, xps_part *part)
 	ctx->base_uri = buf;
 	ctx->part_uri = part->name;
 
-	xp = XML_ParserCreate(NULL);
-	if (!xp)
-		return fz_throw("cannot create XML parser");
+	root = xml_parse_document(part->data, part->size);
+	if (!root)
+		return fz_rethrow(-1, "cannot parse metadata part '%s'", part->name);
 
-	XML_SetUserData(xp, ctx);
-	XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-	XML_SetStartElementHandler(xp, (XML_StartElementHandler)xps_parse_metadata_imp);
+	xps_parse_metadata_imp(ctx, root);
 
-	code = XML_Parse(xp, (char*)part->data, part->size, 1);
-
-	XML_ParserFree(xp);
+	xml_free_element(root);
 
 	ctx->base_uri = NULL;
 	ctx->part_uri = NULL;
 
-	if (code == 0)
-		return fz_throw("cannot parse XML in part: %s", part->name);
-
-	return 0;
+	return fz_okay;
 }

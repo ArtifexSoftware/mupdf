@@ -9,27 +9,6 @@ openjpeg_dir := $(wildcard thirdparty/openjpeg*/libopenjpeg)
 freetype_dir := $(wildcard thirdparty/freetype*)
 jpeg_dir := $(wildcard thirdparty/jpeg*)
 zlib_dir := $(wildcard thirdparty/zlib*)
-expat_dir := $(wildcard thirdparty/expat*/lib)
-
-ifneq "$(expat_dir)" ""
-
-THIRD_LIBS += $(EXPAT_LIB)
-THIRD_INCS += -I$(expat_dir)
-LIBS := $(filter-out -lexpat, $(LIBS))
-XPSLIBS := $(filter-out -lexpat, $(XPSLIBS))
-
-EXPAT_SRC=$(addprefix $(expat_dir)/, \
-	xmlparse.c \
-	xmlrole.c \
-	xmltok.c )
-EXPAT_OBJ=$(EXPAT_SRC:$(expat_dir)/%.c=$(OBJDIR)/%.o)
-EXPAT_LIB=$(OBJDIR)/libexpat.a
-$(EXPAT_LIB): $(EXPAT_OBJ)
-	$(AR_CMD)
-$(OBJDIR)/%.o: $(expat_dir)/%.c
-	$(CC_CMD) -DHAVE_MEMMOVE
-
-endif
 
 ifneq "$(jbig2dec_dir)" ""
 

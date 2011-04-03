@@ -286,9 +286,9 @@ xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm, fz_font *font, float size,
 
 void
 xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
-		char *base_uri, xps_resource *dict, xps_item *root)
+		char *base_uri, xps_resource *dict, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 	int code;
 
 	char *fill_uri;
@@ -310,10 +310,10 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	char *opacity_att;
 	char *opacity_mask_att;
 
-	xps_item *transform_tag = NULL;
-	xps_item *clip_tag = NULL;
-	xps_item *fill_tag = NULL;
-	xps_item *opacity_mask_tag = NULL;
+	xml_element *transform_tag = NULL;
+	xml_element *clip_tag = NULL;
+	xml_element *fill_tag = NULL;
+	xml_element *opacity_mask_tag = NULL;
 
 	char *fill_opacity_att = NULL;
 
@@ -335,32 +335,32 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	 * Extract attributes and extended attributes.
 	 */
 
-	bidi_level_att = xps_att(root, "BidiLevel");
-	caret_stops_att = xps_att(root, "CaretStops");
-	fill_att = xps_att(root, "Fill");
-	font_size_att = xps_att(root, "FontRenderingEmSize");
-	font_uri_att = xps_att(root, "FontUri");
-	origin_x_att = xps_att(root, "OriginX");
-	origin_y_att = xps_att(root, "OriginY");
-	is_sideways_att = xps_att(root, "IsSideways");
-	indices_att = xps_att(root, "Indices");
-	unicode_att = xps_att(root, "UnicodeString");
-	style_att = xps_att(root, "StyleSimulations");
-	transform_att = xps_att(root, "RenderTransform");
-	clip_att = xps_att(root, "Clip");
-	opacity_att = xps_att(root, "Opacity");
-	opacity_mask_att = xps_att(root, "OpacityMask");
+	bidi_level_att = xml_att(root, "BidiLevel");
+	caret_stops_att = xml_att(root, "CaretStops");
+	fill_att = xml_att(root, "Fill");
+	font_size_att = xml_att(root, "FontRenderingEmSize");
+	font_uri_att = xml_att(root, "FontUri");
+	origin_x_att = xml_att(root, "OriginX");
+	origin_y_att = xml_att(root, "OriginY");
+	is_sideways_att = xml_att(root, "IsSideways");
+	indices_att = xml_att(root, "Indices");
+	unicode_att = xml_att(root, "UnicodeString");
+	style_att = xml_att(root, "StyleSimulations");
+	transform_att = xml_att(root, "RenderTransform");
+	clip_att = xml_att(root, "Clip");
+	opacity_att = xml_att(root, "Opacity");
+	opacity_mask_att = xml_att(root, "OpacityMask");
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "Glyphs.RenderTransform"))
-			transform_tag = xps_down(node);
-		if (!strcmp(xps_tag(node), "Glyphs.OpacityMask"))
-			opacity_mask_tag = xps_down(node);
-		if (!strcmp(xps_tag(node), "Glyphs.Clip"))
-			clip_tag = xps_down(node);
-		if (!strcmp(xps_tag(node), "Glyphs.Fill"))
-			fill_tag = xps_down(node);
+		if (!strcmp(xml_tag(node), "Glyphs.RenderTransform"))
+			transform_tag = xml_down(node);
+		if (!strcmp(xml_tag(node), "Glyphs.OpacityMask"))
+			opacity_mask_tag = xml_down(node);
+		if (!strcmp(xml_tag(node), "Glyphs.Clip"))
+			clip_tag = xml_down(node);
+		if (!strcmp(xml_tag(node), "Glyphs.Fill"))
+			fill_tag = xml_down(node);
 	}
 
 	fill_uri = base_uri;
@@ -462,10 +462,10 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	 * If it's a solid color brush fill/stroke do a simple fill
 	 */
 
-	if (fill_tag && !strcmp(xps_tag(fill_tag), "SolidColorBrush"))
+	if (fill_tag && !strcmp(xml_tag(fill_tag), "SolidColorBrush"))
 	{
-		fill_opacity_att = xps_att(fill_tag, "Opacity");
-		fill_att = xps_att(fill_tag, "Color");
+		fill_opacity_att = xml_att(fill_tag, "Opacity");
+		fill_att = xml_att(fill_tag, "Color");
 		fill_tag = NULL;
 	}
 

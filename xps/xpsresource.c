@@ -1,7 +1,7 @@
 #include "fitz.h"
 #include "muxps.h"
 
-static xps_item *
+static xml_element *
 xps_find_resource(xps_context *ctx, xps_resource *dict, char *name, char **urip)
 {
 	xps_resource *head, *node;
@@ -20,7 +20,7 @@ xps_find_resource(xps_context *ctx, xps_resource *dict, char *name, char **urip)
 	return NULL;
 }
 
-static xps_item *
+static xml_element *
 xps_parse_resource_reference(xps_context *ctx, xps_resource *dict, char *att, char **urip)
 {
 	char name[1024];
@@ -39,11 +39,11 @@ xps_parse_resource_reference(xps_context *ctx, xps_resource *dict, char *att, ch
 
 void
 xps_resolve_resource_reference(xps_context *ctx, xps_resource *dict,
-		char **attp, xps_item **tagp, char **urip)
+		char **attp, xml_element **tagp, char **urip)
 {
 	if (*attp)
 	{
-		xps_item *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
+		xml_element *rsrc = xps_parse_resource_reference(ctx, dict, *attp, urip);
 		if (rsrc)
 		{
 			*attp = NULL;
@@ -59,7 +59,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 	char part_uri[1024];
 	xps_resource *dict;
 	xps_part *part;
-	xps_item *xml;
+	xml_element *xml;
 	char *s;
 	int code;
 
@@ -71,18 +71,18 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 		return fz_throw("cannot find remote resource part '%s'", part_name);
 	}
 
-	xml = xps_parse_xml(ctx, part->data, part->size);
+	xml = xml_parse_document(part->data, part->size);
 	if (!xml)
 	{
 		xps_free_part(ctx, part);
 		return fz_rethrow(-1, "cannot parse xml");
 	}
 
-	if (strcmp(xps_tag(xml), "ResourceDictionary"))
+	if (strcmp(xml_tag(xml), "ResourceDictionary"))
 	{
-		xps_free_item(ctx, xml);
+		xml_free_element(xml);
 		xps_free_part(ctx, part);
-		return fz_throw("expected ResourceDictionary element (found %s)", xps_tag(xml));
+		return fz_throw("expected ResourceDictionary element (found %s)", xml_tag(xml));
 	}
 
 	fz_strlcpy(part_uri, part_name, sizeof part_uri);
@@ -93,7 +93,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 	code = xps_parse_resource_dictionary(ctx, &dict, part_uri, xml);
 	if (code)
 	{
-		xps_free_item(ctx, xml);
+		xml_free_element(xml);
 		xps_free_part(ctx, part);
 		return fz_rethrow(code, "cannot parse remote resource dictionary: %s", part_uri);
 	}
@@ -107,16 +107,16 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 }
 
 int
-xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, xps_item *root)
+xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, xml_element *root)
 {
 	xps_resource *head;
 	xps_resource *entry;
-	xps_item *node;
+	xml_element *node;
 	char *source;
 	char *key;
 	int code;
 
-	source = xps_att(root, "Source");
+	source = xml_att(root, "Source");
 	if (source)
 	{
 		code = xps_parse_remote_resource_dictionary(ctx, dictp, base_uri, source);
@@ -127,10 +127,10 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 
 	head = NULL;
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
 		/* Usually "x:Key"; we have already processed and stripped namespace */
-		key = xps_att(node, "Key");
+		key = xml_att(node, "Key");
 		if (key)
 		{
 			entry = fz_malloc(sizeof(xps_resource));
@@ -161,7 +161,7 @@ xps_free_resource_dictionary(xps_context *ctx, xps_resource *dict)
 	{
 		next = dict->next;
 		if (dict->base_xml)
-			xps_free_item(ctx, dict->base_xml);
+			xml_free_element(dict->base_xml);
 		if (dict->base_uri)
 			fz_free(dict->base_uri);
 		fz_free(dict);

@@ -313,7 +313,7 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 
 	page = xps_load_page(app->xps, app->pageno - 1);
 	if (!page)
-		pdfapp_error(app, fz_throw("cannot load page %d in file '%s'", app->pageno, app->doctitle));
+		pdfapp_error(app, fz_rethrow(-1, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
 
 	app->page_bbox = fz_transformrect(fz_scale(page->width, page->height), fz_unitrect);
 	app->page_rotate = 0;

@@ -42,7 +42,7 @@ xps_decode_image(xps_image **imagep, xps_context *ctx, xps_part *part)
 }
 
 static void
-xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *root, void *vimage)
+xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *root, void *vimage)
 {
 	xps_image *image = vimage;
 	fz_pixmap *pixmap = image->pixmap;
@@ -55,7 +55,7 @@ xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resou
 }
 
 static xps_part *
-xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *root)
+xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xml_element *root)
 {
 	char *image_source_att;
 	char buf[1024];
@@ -64,7 +64,7 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *roo
 	char *profile_name;
 	char *p;
 
-	image_source_att = xps_att(root, "ImageSource");
+	image_source_att = xml_att(root, "ImageSource");
 	if (!image_source_att)
 		return NULL;
 
@@ -106,7 +106,7 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xps_item *roo
 
 void
 xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xps_item *root)
+	char *base_uri, xps_resource *dict, xml_element *root)
 {
 	xps_part *part;
 	xps_image *image;

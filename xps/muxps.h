@@ -49,6 +49,20 @@ void xps_hash_free(xps_context *ctx, xps_hash_table *table,
 void xps_hash_debug(xps_hash_table *table);
 
 /*
+ * XML document model
+ */
+
+typedef struct element xml_element;
+
+xml_element *xml_parse_document(byte *buf, int len);
+xml_element *xml_next(xml_element *item);
+xml_element *xml_down(xml_element *item);
+char *xml_tag(xml_element *item);
+char *xml_att(xml_element *item, const char *att);
+void xml_free_element(xml_element *item);
+void xml_print_element(xml_element *item, int level);
+
+/*
  * Container parts.
  */
 
@@ -84,7 +98,7 @@ struct xps_page_s
 	char *name;
 	int width;
 	int height;
-	struct xps_item_s *root;
+	struct element *root;
 	xps_page *next;
 };
 
@@ -144,20 +158,6 @@ void xps_parse_color(xps_context *ctx, char *base_uri, char *hexstring, fz_color
 void xps_set_color(xps_context *ctx, fz_colorspace *colorspace, float *samples);
 
 /*
- * XML document model
- */
-
-typedef struct xps_item_s xps_item;
-
-xps_item * xps_parse_xml(xps_context *ctx, byte *buf, int len);
-xps_item * xps_next(xps_item *item);
-xps_item * xps_down(xps_item *item);
-char * xps_tag(xps_item *item);
-char * xps_att(xps_item *item, const char *att);
-void xps_free_item(xps_context *ctx, xps_item *item);
-void xps_debug_item(xps_item *item, int level);
-
-/*
  * Resource dictionaries.
  */
 
@@ -167,15 +167,15 @@ struct xps_resource_s
 {
 	char *name;
 	char *base_uri; /* only used in the head nodes */
-	xps_item *base_xml; /* only used in the head nodes, to free the xml document */
-	xps_item *data;
+	xml_element *base_xml; /* only used in the head nodes, to free the xml document */
+	xml_element *data;
 	xps_resource *next;
 	xps_resource *parent; /* up to the previous dict in the stack */
 };
 
-int xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, xps_item *root);
+int xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base_uri, xml_element *root);
 void xps_free_resource_dictionary(xps_context *ctx, xps_resource *dict);
-void xps_resolve_resource_reference(xps_context *ctx, xps_resource *dict, char **attp, xps_item **tagp, char **urip);
+void xps_resolve_resource_reference(xps_context *ctx, xps_resource *dict, char **attp, xml_element **tagp, char **urip);
 
 void xps_debug_resource_dictionary(xps_resource *dict);
 
@@ -185,34 +185,34 @@ void xps_debug_resource_dictionary(xps_resource *dict);
 
 int xps_load_fixed_page(xps_context *ctx, xps_page *page);
 void xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page);
-void xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_glyphs(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_solid_color_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
+void xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_glyphs(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_solid_color_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 
-void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *root, void(*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*), void *user);
+void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *root, void(*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*), void *user);
 
-void xps_parse_matrix_transform(xps_context *ctx, xps_item *root, fz_matrix *matrix);
+void xps_parse_matrix_transform(xps_context *ctx, xml_element *root, fz_matrix *matrix);
 void xps_parse_render_transform(xps_context *ctx, char *text, fz_matrix *matrix);
 void xps_parse_rectangle(xps_context *ctx, char *text, fz_rect *rect);
 fz_path *xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule);
-fz_path *xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xps_item *root, int stroking, int *fill_rule);
+fz_path *xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xml_element *root, int stroking, int *fill_rule);
 
-void xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, char *opacity_att, xps_item *opacity_mask_tag);
-void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char *opacity_att, xps_item *opacity_mask_tag);
+void xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, char *opacity_att, xml_element *opacity_mask_tag);
+void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char *opacity_att, xml_element *opacity_mask_tag);
 
-void xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xps_item *node);
-void xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xps_item *node);
+void xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
 
-void xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xps_item *clip_tag);
+void xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag);
 
-int xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node);
-int xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xps_item *node);
-int xps_image_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root);
+int xps_element_has_transparency(xps_context *ctx, char *base_uri, xml_element *node);
+int xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xml_element *node);
+int xps_image_brush_has_transparency(xps_context *ctx, char *base_uri, xml_element *root);
 
 /*
  * The interpreter context.

@@ -4,7 +4,7 @@
 void
 xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict,
-	char *opacity_att, xps_item *opacity_mask_tag)
+	char *opacity_att, xml_element *opacity_mask_tag)
 {
 	float opacity;
 
@@ -15,10 +15,10 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	if (opacity_att)
 		opacity = atof(opacity_att);
 
-	if (opacity_mask_tag && !strcmp(xps_tag(opacity_mask_tag), "SolidColorBrush"))
+	if (opacity_mask_tag && !strcmp(xml_tag(opacity_mask_tag), "SolidColorBrush"))
 	{
-		char *scb_opacity_att = xps_att(opacity_mask_tag, "Opacity");
-		char *scb_color_att = xps_att(opacity_mask_tag, "Color");
+		char *scb_opacity_att = xml_att(opacity_mask_tag, "Opacity");
+		char *scb_color_att = xml_att(opacity_mask_tag, "Color");
 		if (scb_opacity_att)
 			opacity = opacity * atof(scb_opacity_att);
 		if (scb_color_att)
@@ -47,7 +47,7 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 void
 xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
-	char *opacity_att, xps_item *opacity_mask_tag)
+	char *opacity_att, xml_element *opacity_mask_tag)
 {
 	if (!opacity_att && !opacity_mask_tag)
 		return;
@@ -57,7 +57,7 @@ xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
 
 	if (opacity_mask_tag)
 	{
-		if (strcmp(xps_tag(opacity_mask_tag), "SolidColorBrush"))
+		if (strcmp(xml_tag(opacity_mask_tag), "SolidColorBrush"))
 			ctx->dev->popclip(ctx->dev->user);
 	}
 }

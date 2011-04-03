@@ -31,7 +31,6 @@ endif
 # directory exists.
 
 LIBS := -lfreetype -ljbig2dec -lopenjpeg -ljpeg -lz -lm
-XPSLIBS := -lexpat
 
 include Makerules
 include Makethird
@@ -388,7 +387,7 @@ XPSDRAW_OBJ=$(XPSDRAW_SRC:xps/%.c=$(OBJDIR)/%.o)
 XPSDRAW_EXE=$(OBJDIR)/xpsdraw
 $(XPSDRAW_OBJ): $(MUXPS_HDR)
 $(XPSDRAW_EXE): $(XPSDRAW_OBJ) $(MUXPS_LIB) $(THIRD_LIBS)
-	$(LD_CMD) $(XPSLIBS)
+	$(LD_CMD)
 
 PDFAPP_HDR = apps/pdfapp.h
 
@@ -398,7 +397,7 @@ X11VIEW_EXE=$(OBJDIR)/mupdf
 
 $(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
 $(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
-	$(LD_CMD) $(XPSLIBS) $(X11LIBS)
+	$(LD_CMD) $(X11LIBS)
 
 WINVIEW_SRC=apps/win_main.c apps/pdfapp.c
 WINVIEW_RES=apps/win_res.rc
@@ -410,7 +409,7 @@ $(OBJDIR)/%.o: apps/%.rc
 
 $(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
 $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
-	$(LD_CMD) $(XPSLIBS) $(W32LIBS)
+	$(LD_CMD) $(W32LIBS)
 
 #
 # Default rules

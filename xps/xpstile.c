@@ -12,9 +12,9 @@ struct closure
 {
 	char *base_uri;
 	xps_resource *dict;
-	xps_item *root;
+	xml_element *root;
 	void *user;
-	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*);
+	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*);
 };
 
 static void
@@ -65,10 +65,10 @@ xps_paint_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, int til
 
 void
 xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xps_item *root,
-	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xps_item*, void*), void *user)
+	char *base_uri, xps_resource *dict, xml_element *root,
+	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*), void *user)
 {
-	xps_item *node;
+	xml_element *node;
 	struct closure c;
 
 	char *opacity_att;
@@ -79,7 +79,7 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *viewbox_units_att;
 	char *viewport_units_att;
 
-	xps_item *transform_tag = NULL;
+	xml_element *transform_tag = NULL;
 
 	fz_matrix transform;
 	fz_rect viewbox;
@@ -88,13 +88,13 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	float xscale, yscale;
 	int tile_mode;
 
-	opacity_att = xps_att(root, "Opacity");
-	transform_att = xps_att(root, "Transform");
-	viewbox_att = xps_att(root, "Viewbox");
-	viewport_att = xps_att(root, "Viewport");
-	tile_mode_att = xps_att(root, "TileMode");
-	viewbox_units_att = xps_att(root, "ViewboxUnits");
-	viewport_units_att = xps_att(root, "ViewportUnits");
+	opacity_att = xml_att(root, "Opacity");
+	transform_att = xml_att(root, "Transform");
+	viewbox_att = xml_att(root, "Viewbox");
+	viewport_att = xml_att(root, "Viewport");
+	tile_mode_att = xml_att(root, "TileMode");
+	viewbox_units_att = xml_att(root, "ViewboxUnits");
+	viewport_units_att = xml_att(root, "ViewportUnits");
 
 	c.base_uri = base_uri;
 	c.dict = dict;
@@ -102,12 +102,12 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	c.user = user;
 	c.func = func;
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "ImageBrush.Transform"))
-			transform_tag = xps_down(node);
-		if (!strcmp(xps_tag(node), "VisualBrush.Transform"))
-			transform_tag = xps_down(node);
+		if (!strcmp(xml_tag(node), "ImageBrush.Transform"))
+			transform_tag = xml_down(node);
+		if (!strcmp(xml_tag(node), "VisualBrush.Transform"))
+			transform_tag = xml_down(node);
 	}
 
 	xps_resolve_resource_reference(ctx, dict, &transform_att, &transform_tag, NULL);

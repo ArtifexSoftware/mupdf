@@ -14,16 +14,16 @@ xps_remote_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri
 }
 
 int
-xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
 	char *source;
-	xps_item *node;
+	xml_element *node;
 
-	source = xps_att(root, "Source");
+	source = xml_att(root, "Source");
 	if (source)
 		return xps_remote_resource_dictionary_has_transparency(ctx, base_uri, source);
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
 		// TODO: ... all kinds of stuff can be here, brushes, elements, whatnot
 	}
@@ -32,18 +32,18 @@ xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xps_i
 }
 
 static int
-xps_gradient_stops_have_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_gradient_stops_have_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 	fz_colorspace *colorspace;
 	char *color_att;
 	float samples[32];
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "GradientStop"))
+		if (!strcmp(xml_tag(node), "GradientStop"))
 		{
-			color_att = xps_att(node, "Color");
+			color_att = xml_att(node, "Color");
 			if (color_att)
 			{
 				xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
@@ -60,12 +60,12 @@ xps_gradient_stops_have_transparency(xps_context *ctx, char *base_uri, xps_item 
 }
 
 static int
-xps_gradient_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_gradient_brush_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 	char *opacity_att;
 
-	opacity_att = xps_att(root, "Opacity");
+	opacity_att = xml_att(root, "Opacity");
 	if (opacity_att)
 	{
 		if (atof(opacity_att) < 1.0)
@@ -75,14 +75,14 @@ xps_gradient_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *
 		}
 	}
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "RadialGradientBrush.GradientStops"))
+		if (!strcmp(xml_tag(node), "RadialGradientBrush.GradientStops"))
 		{
 			if (xps_gradient_stops_have_transparency(ctx, base_uri, node))
 				return 1;
 		}
-		if (!strcmp(xps_tag(node), "LinearGradientBrush.GradientStops"))
+		if (!strcmp(xml_tag(node), "LinearGradientBrush.GradientStops"))
 		{
 			if (xps_gradient_stops_have_transparency(ctx, base_uri, node))
 				return 1;
@@ -93,18 +93,18 @@ xps_gradient_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *
 }
 
 static int
-xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_brush_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
 	char *opacity_att;
 	char *color_att;
-	xps_item *node;
+	xml_element *node;
 
 	fz_colorspace *colorspace;
 	float samples[32];
 
-	if (!strcmp(xps_tag(root), "SolidColorBrush"))
+	if (!strcmp(xml_tag(root), "SolidColorBrush"))
 	{
-		opacity_att = xps_att(root, "Opacity");
+		opacity_att = xml_att(root, "Opacity");
 		if (opacity_att)
 		{
 			if (atof(opacity_att) < 1.0)
@@ -114,7 +114,7 @@ xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 			}
 		}
 
-		color_att = xps_att(root, "Color");
+		color_att = xml_att(root, "Color");
 		if (color_att)
 		{
 			xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
@@ -126,9 +126,9 @@ xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 		}
 	}
 
-	if (!strcmp(xps_tag(root), "VisualBrush"))
+	if (!strcmp(xml_tag(root), "VisualBrush"))
 	{
-		char *opacity_att = xps_att(root, "Opacity");
+		char *opacity_att = xml_att(root, "Opacity");
 		if (opacity_att)
 		{
 			if (atof(opacity_att) < 1.0)
@@ -138,29 +138,29 @@ xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 			}
 		}
 
-		for (node = xps_down(root); node; node = xps_next(node))
+		for (node = xml_down(root); node; node = xml_next(node))
 		{
-			if (!strcmp(xps_tag(node), "VisualBrush.Visual"))
+			if (!strcmp(xml_tag(node), "VisualBrush.Visual"))
 			{
-				if (xps_element_has_transparency(ctx, base_uri, xps_down(node)))
+				if (xps_element_has_transparency(ctx, base_uri, xml_down(node)))
 					return 1;
 			}
 		}
 	}
 
-	if (!strcmp(xps_tag(root), "ImageBrush"))
+	if (!strcmp(xml_tag(root), "ImageBrush"))
 	{
 		if (xps_image_brush_has_transparency(ctx, base_uri, root))
 			return 1;
 	}
 
-	if (!strcmp(xps_tag(root), "LinearGradientBrush"))
+	if (!strcmp(xml_tag(root), "LinearGradientBrush"))
 	{
 		if (xps_gradient_brush_has_transparency(ctx, base_uri, root))
 			return 1;
 	}
 
-	if (!strcmp(xps_tag(root), "RadialGradientBrush"))
+	if (!strcmp(xml_tag(root), "RadialGradientBrush"))
 	{
 		if (xps_gradient_brush_has_transparency(ctx, base_uri, root))
 			return 1;
@@ -170,27 +170,27 @@ xps_brush_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 }
 
 static int
-xps_path_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_path_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "Path.OpacityMask"))
+		if (!strcmp(xml_tag(node), "Path.OpacityMask"))
 		{
 			//dputs("page has transparency: Path.OpacityMask\n");
 			return 1;
 		}
 
-		if (!strcmp(xps_tag(node), "Path.Stroke"))
+		if (!strcmp(xml_tag(node), "Path.Stroke"))
 		{
-			if (xps_brush_has_transparency(ctx, base_uri, xps_down(node)))
+			if (xps_brush_has_transparency(ctx, base_uri, xml_down(node)))
 				return 1;
 		}
 
-		if (!strcmp(xps_tag(node), "Path.Fill"))
+		if (!strcmp(xml_tag(node), "Path.Fill"))
 		{
-			if (xps_brush_has_transparency(ctx, base_uri, xps_down(node)))
+			if (xps_brush_has_transparency(ctx, base_uri, xml_down(node)))
 				return 1;
 		}
 	}
@@ -199,21 +199,21 @@ xps_path_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 }
 
 static int
-xps_glyphs_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_glyphs_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "Glyphs.OpacityMask"))
+		if (!strcmp(xml_tag(node), "Glyphs.OpacityMask"))
 		{
 			//dputs("page has transparency: Glyphs.OpacityMask\n");
 			return 1;
 		}
 
-		if (!strcmp(xps_tag(node), "Glyphs.Fill"))
+		if (!strcmp(xml_tag(node), "Glyphs.Fill"))
 		{
-			if (xps_brush_has_transparency(ctx, base_uri, xps_down(node)))
+			if (xps_brush_has_transparency(ctx, base_uri, xml_down(node)))
 				return 1;
 		}
 	}
@@ -222,19 +222,19 @@ xps_glyphs_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 }
 
 static int
-xps_canvas_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
+xps_canvas_has_transparency(xps_context *ctx, char *base_uri, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "Canvas.Resources"))
+		if (!strcmp(xml_tag(node), "Canvas.Resources"))
 		{
-			if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
+			if (xps_resource_dictionary_has_transparency(ctx, base_uri, xml_down(node)))
 				return 1;
 		}
 
-		if (!strcmp(xps_tag(node), "Canvas.OpacityMask"))
+		if (!strcmp(xml_tag(node), "Canvas.OpacityMask"))
 		{
 			//dputs("page has transparency: Canvas.OpacityMask\n");
 			return 1;
@@ -248,7 +248,7 @@ xps_canvas_has_transparency(xps_context *ctx, char *base_uri, xps_item *root)
 }
 
 int
-xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
+xps_element_has_transparency(xps_context *ctx, char *base_uri, xml_element *node)
 {
 	char *opacity_att;
 	char *stroke_att;
@@ -257,7 +257,7 @@ xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
 	fz_colorspace *colorspace;
 	float samples[32];
 
-	stroke_att = xps_att(node, "Stroke");
+	stroke_att = xml_att(node, "Stroke");
 	if (stroke_att)
 	{
 		xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
@@ -268,7 +268,7 @@ xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
 		}
 	}
 
-	fill_att = xps_att(node, "Fill");
+	fill_att = xml_att(node, "Fill");
 	if (fill_att)
 	{
 		xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
@@ -279,7 +279,7 @@ xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
 		}
 	}
 
-	opacity_att = xps_att(node, "Opacity");
+	opacity_att = xml_att(node, "Opacity");
 	if (opacity_att)
 	{
 		if (atof(opacity_att) < 1.0)
@@ -289,19 +289,19 @@ xps_element_has_transparency(xps_context *ctx, char *base_uri, xps_item *node)
 		}
 	}
 
-	if (xps_att(node, "OpacityMask"))
+	if (xml_att(node, "OpacityMask"))
 	{
 		//dputs("page has transparency: OpacityMask\n");
 		return 1;
 	}
 
-	if (!strcmp(xps_tag(node), "Path"))
+	if (!strcmp(xml_tag(node), "Path"))
 		if (xps_path_has_transparency(ctx, base_uri, node))
 			return 1;
-	if (!strcmp(xps_tag(node), "Glyphs"))
+	if (!strcmp(xml_tag(node), "Glyphs"))
 		if (xps_glyphs_has_transparency(ctx, base_uri, node))
 			return 1;
-	if (!strcmp(xps_tag(node), "Canvas"))
+	if (!strcmp(xml_tag(node), "Canvas"))
 		if (xps_canvas_has_transparency(ctx, base_uri, node))
 			return 1;
 

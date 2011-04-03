@@ -1,339 +1,387 @@
-/* Simple XML document object model on top of Expat. */
-
 #include "fitz.h"
 #include "muxps.h"
 
-#include <expat.h>
-
-#define XMLBUFLEN 4096
-
-#define NS_XPS "http://schemas.microsoft.com/xps/2005/06"
-#define NS_MC "http://schemas.openxmlformats.org/markup-compatibility/2006"
-
-typedef struct xps_parser_s xps_parser;
-
-struct xps_parser_s
+struct attribute
 {
-	xps_context *ctx;
-	xps_item *root;
-	xps_item *head;
-	char *error;
-	int compat;
-	char *base; /* base of relative URIs */
+	char name[32];
+	char *value;
+	struct attribute *next;
 };
 
-struct xps_item_s
+struct element
 {
-	char *name;
-	char **atts;
-	xps_item *up;
-	xps_item *down;
-	xps_item *next;
+	char name[32];
+	struct attribute *atts;
+	struct element *up, *down, *next;
 };
 
-static char *
-skip_namespace(char *s)
+struct parser
 {
-	char *p = strchr(s, ' ');
-	if (p)
-		return p + 1;
-	return s;
+	struct element *head;
+};
+
+static inline void indent(int n)
+{
+	while (n--) putchar(' ');
 }
 
-static void
-on_open_tag(void *zp, char *ns_name, char **atts)
+void xml_print_element(struct element *item, int level)
 {
-	xps_parser *parser = zp;
-	xps_item *item;
-	xps_item *tail;
-	int namelen;
-	int attslen;
-	int textlen;
-	char *name, *p;
-	int i;
-
-	if (parser->error)
-		return;
-
-	/* check namespace */
-
-	name = NULL;
-
-	p = strstr(ns_name, NS_XPS);
-	if (p == ns_name)
-	{
-		name = strchr(ns_name, ' ') + 1;
-	}
-
-	p = strstr(ns_name, NS_MC);
-	if (p == ns_name)
-	{
-		name = strchr(ns_name, ' ') + 1;
-		parser->compat = 1;
-	}
-
-	if (!name)
-	{
-		fz_warn("unknown namespace: %s", ns_name);
-		name = ns_name;
-	}
-
-	/* count size to alloc */
-
-	namelen = strlen(name) + 1; /* zero terminated */
-	attslen = sizeof(char*); /* with space for sentinel */
-	textlen = 0;
-	for (i = 0; atts[i]; i++)
-	{
-		attslen += sizeof(char*);
-		if ((i & 1) == 0)
-			textlen += strlen(skip_namespace(atts[i])) + 1;
-		else
-			textlen += strlen(atts[i]) + 1;
-	}
-
-	item = fz_malloc(sizeof(xps_item) + attslen + namelen + textlen);
-	if (!item)
-	{
-		parser->error = "out of memory";
-	}
-
-	/* copy strings to new memory */
-
-	item->atts = (char**) (((char*)item) + sizeof(xps_item));
-	item->name = ((char*)item) + sizeof(xps_item) + attslen;
-	p = ((char*)item) + sizeof(xps_item) + attslen + namelen;
-
-	strcpy(item->name, name);
-	for (i = 0; atts[i]; i++)
-	{
-		item->atts[i] = p;
-		if ((i & 1) == 0)
-			strcpy(item->atts[i], skip_namespace(atts[i]));
-		else
-			strcpy(item->atts[i], atts[i]);
-		p += strlen(p) + 1;
-	}
-
-	item->atts[i] = 0;
-
-	/* link item into tree */
-
-	item->up = parser->head;
-	item->down = NULL;
-	item->next = NULL;
-
-	if (!parser->head)
-	{
-		parser->root = item;
-		parser->head = item;
-		return;
-	}
-
-	if (!parser->head->down)
-	{
-		parser->head->down = item;
-		parser->head = item;
-		return;
-	}
-
-	tail = parser->head->down;
-	while (tail->next)
-		tail = tail->next;
-	tail->next = item;
-	parser->head = item;
-}
-
-static void
-on_close_tag(void *zp, char *name)
-{
-	xps_parser *parser = zp;
-
-	if (parser->error)
-		return;
-
-	if (parser->head)
-		parser->head = parser->head->up;
-}
-
-static inline int
-is_xml_space(int c)
-{
-	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
-}
-
-static void
-on_text(void *zp, char *buf, int len)
-{
-	xps_parser *parser = zp;
-	char *atts[3];
-	int i;
-
-	if (parser->error)
-		return;
-
-	for (i = 0; i < len; i++)
-	{
-		if (!is_xml_space(buf[i]))
-		{
-			char *tmp = fz_malloc(len + 1);
-			if (!tmp)
-			{
-				parser->error = "out of memory";
-				return;
-			}
-
-			atts[0] = "";
-			atts[1] = tmp;
-			atts[2] = NULL;
-
-			memcpy(tmp, buf, len);
-			tmp[len] = 0;
-			on_open_tag(zp, "", atts);
-			on_close_tag(zp, "");
-			fz_free(tmp);
-			return;
+	while (item) {
+		struct attribute *att;
+		indent(level);
+		printf("<%s", item->name);
+		for (att = item->atts; att; att = att->next)
+			printf(" %s=\"%s\"", att->name, att->value);
+		if (item->down) {
+			printf(">\n");
+			xml_print_element(item->down, level + 1);
+			indent(level);
+			printf("</%s>\n", item->name);
 		}
+		else {
+			printf("/>\n");
+		}
+		item = item->next;
 	}
 }
 
-static xps_item *
-xps_process_compatibility(xps_context *ctx, xps_item *root)
-{
-	fz_warn("XPS document uses markup compatibility tags");
-	return root;
-}
-
-xps_item *
-xps_parse_xml(xps_context *ctx, byte *buf, int len)
-{
-	xps_parser parser;
-	XML_Parser xp;
-	int code;
-
-	parser.ctx = ctx;
-	parser.root = NULL;
-	parser.head = NULL;
-	parser.error = NULL;
-	parser.compat = 0;
-
-	xp = XML_ParserCreateNS(NULL, ' ');
-	if (!xp)
-	{
-		fz_throw("xml error: cannot create expat parser");
-		return NULL;
-	}
-
-	XML_SetUserData(xp, &parser);
-	XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
-	XML_SetStartElementHandler(xp, (XML_StartElementHandler)on_open_tag);
-	XML_SetEndElementHandler(xp, (XML_EndElementHandler)on_close_tag);
-	XML_SetCharacterDataHandler(xp, (XML_CharacterDataHandler)on_text);
-
-	code = XML_Parse(xp, (char*)buf, len, 1);
-	if (code == 0)
-	{
-		if (parser.root)
-			xps_free_item(ctx, parser.root);
-		XML_ParserFree(xp);
-		fz_throw("xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
-		return NULL;
-	}
-
-	XML_ParserFree(xp);
-
-	if (parser.compat)
-		xps_process_compatibility(ctx, parser.root);
-
-	return parser.root;
-}
-
-xps_item *
-xps_next(xps_item *item)
+struct element *xml_next(struct element *item)
 {
 	return item->next;
 }
 
-xps_item *
-xps_down(xps_item *item)
+struct element *xml_down(struct element *item)
 {
 	return item->down;
 }
 
-char *
-xps_tag(xps_item *item)
+char *xml_tag(struct element *item)
 {
 	return item->name;
 }
 
-char *
-xps_att(xps_item *item, const char *att)
+char *xml_att(struct element *item, const char *name)
 {
-	int i;
-	for (i = 0; item->atts[i]; i += 2)
-		if (!strcmp(item->atts[i], att))
-			return item->atts[i + 1];
+	struct attribute *att;
+	for (att = item->atts; att; att = att->next)
+		if (!strcmp(att->name, name))
+			return att->value;
 	return NULL;
 }
 
-void
-xps_free_item(xps_context *ctx, xps_item *item)
+static void xml_free_attribute(struct attribute *att)
 {
-	xps_item *next;
-	while (item)
-	{
-		next = item->next;
+	while (att) {
+		struct attribute *next = att->next;
+		if (att->value)
+			fz_free(att->value);
+		fz_free(att);
+		att = next;
+	}
+}
+
+void xml_free_element(struct element *item)
+{
+	while (item) {
+		struct element *next = item->next;
+		if (item->atts)
+			xml_free_attribute(item->atts);
 		if (item->down)
-			xps_free_item(ctx, item->down);
+			xml_free_element(item->down);
 		fz_free(item);
 		item = next;
 	}
 }
 
-static void indent(int n)
+static int xml_parse_entity(int *c, char *a)
 {
-	while (n--)
-		printf("  ");
-}
-
-static void
-xps_debug_item_imp(xps_item *item, int level, int loop)
-{
-	int i;
-
-	while (item)
-	{
-		indent(level);
-
-		if (strlen(item->name) == 0)
-			printf("%s\n", item->atts[1]);
+	char *b;
+	if (a[1] == '#') {
+		if (a[2] == 'x')
+			*c = strtol(a + 3, &b, 16);
 		else
-		{
-			printf("<%s", item->name);
-
-			for (i = 0; item->atts[i]; i += 2)
-				printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
-
-			if (item->down)
-			{
-				printf(">\n");
-				xps_debug_item_imp(item->down, level + 1, 1);
-				indent(level);
-				printf("</%s>\n", item->name);
-			}
-			else
-				printf(" />\n");
-		}
-
-		item = item->next;
-
-		if (!loop)
-			return;
+			*c = strtol(a + 2, &b, 10);
+		if (*b == ';')
+			return b - a;
 	}
+	else if (a[1] == 'l' && a[2] == 't' && a[3] == ';') {
+		*c = '<';
+		return 4;
+	}
+	else if (a[1] == 'g' && a[2] == 't' && a[3] == ';') {
+		*c = '>';
+		return 4;
+	}
+	else if (a[1] == 'a' && a[2] == 'm' && a[3] == 'p' && a[4] == ';') {
+		*c = '&';
+		return 5;
+	}
+	else if (a[1] == 'a' && a[2] == 'p' && a[3] == 'o' && a[4] == 's' && a[5] == ';') {
+		*c = '\'';
+		return 6;
+	}
+	else if (a[1] == 'q' && a[2] == 'u' && a[3] == 'o' && a[4] == 't' && a[5] == ';') {
+		*c = '"';
+		return 6;
+	}
+	*c = *a++;
+	return 1;
 }
 
-void
-xps_debug_item(xps_item *item, int level)
+static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 {
-	xps_debug_item_imp(item, level, 0);
+	struct element *head, *tail;
+
+	head = fz_malloc(sizeof(struct element));
+	if (b - a > sizeof(head->name))
+		b = a + sizeof(head->name);
+	memcpy(head->name, a, b - a);
+	head->name[b - a] = 0;
+
+	head->atts = NULL;
+	head->up = parser->head;
+	head->down = NULL;
+	head->next = NULL;
+
+	if (!parser->head->down) {
+		parser->head->down = head;
+	}
+	else {
+		tail = parser->head->down;
+		while (tail->next)
+			tail = tail->next;
+		tail->next = head;
+	}
+
+	parser->head = head;
+}
+
+static void xml_emit_att_name(struct parser *parser, char *a, char *b)
+{
+	struct element *head = parser->head;
+	struct attribute *att;
+
+	att = fz_malloc(sizeof(struct attribute));
+	if (b - a > sizeof(att->name))
+		b = a + sizeof(att->name);
+	memcpy(att->name, a, b - a);
+	att->name[b - a] = 0;
+	att->value = NULL;
+	att->next = head->atts;
+	head->atts = att;
+}
+
+static void xml_emit_att_value(struct parser *parser, char *a, char *b)
+{
+	struct element *head = parser->head;
+	struct attribute *att = head->atts;
+	char *s;
+	int c;
+
+	/* entities are all longer than UTFmax so runetochar is safe */
+	s = att->value = fz_malloc(b - a + 1);
+	while (a < b) {
+		if (*a == '&') {
+			a += xml_parse_entity(&c, a);
+			s += runetochar(s, &c);
+		}
+		else {
+			*s++ = *a++;
+		}
+	}
+	*s = 0;
+}
+
+static void xml_emit_close_tag(struct parser *parser)
+{
+	if (parser->head->up)
+		parser->head = parser->head->up;
+}
+
+static inline int isname(int c)
+{
+	return c == '.' || c == '-' || c == '_' || c == ':' ||
+		(c >= '0' && c <= '9') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= 'a' && c <= 'z');
+}
+
+static inline int iswhite(int c)
+{
+	return c == ' ' || c == '\r' || c == '\n' || c == '\t';
+}
+
+static char *xml_parse_document_imp(struct parser *x, char *p)
+{
+	char *mark;
+	int quote;
+
+parse_text:
+	mark = p;
+	while (*p && *p != '<') ++p;
+	if (*p == '<') { ++p; goto parse_element; }
+	return NULL;
+
+parse_element:
+	if (*p == '/') { ++p; goto parse_closing_element; }
+	if (*p == '!') { ++p; goto parse_comment; }
+	if (*p == '?') { ++p; goto parse_processing_instruction; }
+	while (iswhite(*p)) ++p;
+	if (isname(*p))
+		goto parse_element_name;
+	return "syntax error in element";
+
+parse_comment:
+	if (*p == '[') goto parse_cdata;
+	if (*p++ != '-') return "syntax error in comment (<! not followed by --)";
+	if (*p++ != '-') return "syntax error in comment (<!- not followed by -)";
+	mark = p;
+	while (*p) {
+		if (p[0] == '-' && p[1] == '-' && p[2] == '>') {
+			p += 3;
+			goto parse_text;
+		}
+		++p;
+	}
+	return "end of data in comment";
+
+parse_cdata:
+	if (p[1] != 'C' || p[2] != 'D' || p[3] != 'A' || p[4] != 'T' || p[5] != 'A' || p[6] != '[')
+		return "syntax error in CDATA section";
+	p += 7;
+	mark = p;
+	while (*p) {
+		if (p[0] == ']' && p[1] == ']' && p[2] == '>') {
+			p += 3;
+			goto parse_text;
+		}
+		++p;
+	}
+	return "end of data in CDATA section";
+
+parse_processing_instruction:
+	while (*p) {
+		if (p[0] == '?' && p[1] == '>') {
+			p += 2;
+			goto parse_text;
+		}
+		++p;
+	}
+	return "end of data in processing instruction";
+
+parse_closing_element:
+	while (iswhite(*p)) ++p;
+	mark = p;
+	while (isname(*p)) ++p;
+	while (iswhite(*p)) ++p;
+	if (*p != '>')
+		return "syntax error in closing element";
+	xml_emit_close_tag(x);
+	++p;
+	goto parse_text;
+
+parse_element_name:
+	mark = p;
+	while (isname(*p)) ++p;
+	xml_emit_open_tag(x, mark, p);
+	if (*p == '>') { ++p; goto parse_text; }
+	if (p[0] == '/' && p[1] == '>') {
+		xml_emit_close_tag(x);
+		p += 2;
+		goto parse_text;
+	}
+	if (iswhite(*p))
+		goto parse_attributes;
+	return "syntax error after element name";
+
+parse_attributes:
+	while (iswhite(*p)) ++p;
+	if (isname(*p))
+		goto parse_attribute_name;
+	if (*p == '>') { ++p; goto parse_text; }
+	if (p[0] == '/' && p[1] == '>') {
+		xml_emit_close_tag(x);
+		p += 2;
+		goto parse_text;
+	}
+	return "syntax error in attributes";
+
+parse_attribute_name:
+	mark = p;
+	while (isname(*p)) ++p;
+	xml_emit_att_name(x, mark, p);
+	while (iswhite(*p)) ++p;
+	if (*p == '=') { ++p; goto parse_attribute_value; }
+	return "syntax error after attribute name";
+
+parse_attribute_value:
+	while (iswhite(*p)) ++p;
+	quote = *p++;
+	if (quote != '"' && quote != '\'')
+		return "missing quote character";
+	mark = p;
+	while (*p && *p != quote) ++p;
+	if (*p == quote) {
+		xml_emit_att_value(x, mark, p++);
+		goto parse_attributes;
+	}
+	return "end of data in attribute value";
+}
+
+static char *convert_to_utf8(unsigned char *s, int n)
+{
+	unsigned char *e = s + n;
+	char *dst, *d;
+	int c;
+
+	if (s[0] == 0xFE && s[1] == 0xFF) {
+		dst = d = fz_malloc(n * 2);
+		while (s + 1 < e) {
+			c = s[0] << 8 | s[1];
+			d += runetochar(d, &c);
+			s += 2;
+		}
+		*d = 0;
+		return dst;
+	}
+
+	if (s[0] == 0xFF && s[1] == 0xFE) {
+		dst = d = fz_malloc(n * 2);
+		while (s + 1 < e) {
+			c = s[0] | s[1] << 8;
+			d += runetochar(d, &c);
+			s += 2;
+		}
+		*d = 0;
+		return dst;
+	}
+
+	return (char*)s;
+}
+
+struct element *
+xml_parse_document(unsigned char *s, int n)
+{
+	struct parser parser;
+	struct element root;
+	char *p, *error;
+
+	/* s is already null-terminated (see xps_new_part) */
+
+	memset(&root, 0, sizeof(root));
+	parser.head = &root;
+
+	p = convert_to_utf8(s, n);
+
+	error = xml_parse_document_imp(&parser, p);
+	if (error) {
+		fz_throw(error);
+		return NULL;
+	}
+
+	if (p != (char*)s)
+		fz_free(p);
+
+	return root.down;
 }

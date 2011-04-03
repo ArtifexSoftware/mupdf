@@ -5,27 +5,27 @@ enum { TILE_NONE, TILE_TILE, TILE_FLIP_X, TILE_FLIP_Y, TILE_FLIP_X_Y };
 
 static void
 xps_paint_visual_brush(xps_context *ctx, fz_matrix ctm,
-	char *base_uri, xps_resource *dict, xps_item *root, void *visual_tag)
+	char *base_uri, xps_resource *dict, xml_element *root, void *visual_tag)
 {
-	xps_parse_element(ctx, ctm, base_uri, dict, (xps_item *)visual_tag);
+	xps_parse_element(ctx, ctm, base_uri, dict, (xml_element *)visual_tag);
 }
 
 void
 xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xps_item *root)
+	char *base_uri, xps_resource *dict, xml_element *root)
 {
-	xps_item *node;
+	xml_element *node;
 
 	char *visual_uri;
 	char *visual_att;
-	xps_item *visual_tag = NULL;
+	xml_element *visual_tag = NULL;
 
-	visual_att = xps_att(root, "Visual");
+	visual_att = xml_att(root, "Visual");
 
-	for (node = xps_down(root); node; node = xps_next(node))
+	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		if (!strcmp(xps_tag(node), "VisualBrush.Visual"))
-			visual_tag = xps_down(node);
+		if (!strcmp(xml_tag(node), "VisualBrush.Visual"))
+			visual_tag = xml_down(node);
 	}
 
 	visual_uri = base_uri;

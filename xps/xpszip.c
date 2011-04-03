@@ -474,8 +474,10 @@ xps_load_page(xps_context *ctx, int number)
 			if (!page->root)
 			{
 				code = xps_load_fixed_page(ctx, page);
-				if (code)
-					fz_catch(code, "ignoring errors on page");
+				if (code) {
+					fz_rethrow(code, "cannot load page %d", number + 1);
+					return NULL;
+				}
 			}
 			return page;
 		}
@@ -488,7 +490,7 @@ void
 xps_free_page(xps_context *ctx, xps_page *page)
 {
 	if (page->root)
-		xps_free_item(ctx, page->root);
+		xml_free_element(page->root);
 	page->root = NULL;
 }
 
