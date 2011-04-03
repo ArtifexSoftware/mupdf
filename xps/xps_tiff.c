@@ -415,8 +415,8 @@ xps_decode_tiff_strips(struct tiff *tiff)
 		/* no unit conversion needed */
 		break;
 	case 3:
-		tiff->xresolution *= 2.54;
-		tiff->yresolution *= 2.54;
+		tiff->xresolution = tiff->xresolution * 254 / 100;
+		tiff->yresolution = tiff->yresolution * 254 / 100;
 		break;
 	default:
 		tiff->xresolution = 96;

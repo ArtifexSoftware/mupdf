@@ -126,10 +126,10 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		xps_parse_rectangle(ctx, viewport_att, &viewport);
 
 	/* some sanity checks on the viewport/viewbox size */
-	if (fabs(viewport.x1 - viewport.x0) < 0.01) return;
-	if (fabs(viewport.y1 - viewport.y0) < 0.01) return;
-	if (fabs(viewbox.x1 - viewbox.x0) < 0.01) return;
-	if (fabs(viewbox.y1 - viewbox.y0) < 0.01) return;
+	if (fabsf(viewport.x1 - viewport.x0) < 0.01f) return;
+	if (fabsf(viewport.y1 - viewport.y0) < 0.01f) return;
+	if (fabsf(viewbox.x1 - viewbox.x0) < 0.01f) return;
+	if (fabsf(viewbox.y1 - viewbox.y0) < 0.01f) return;
 
 	xstep = viewbox.x1 - viewbox.x0;
 	ystep = viewbox.y1 - viewbox.y0;

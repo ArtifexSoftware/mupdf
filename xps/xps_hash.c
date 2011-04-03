@@ -69,7 +69,7 @@ xps_hash_double(xps_hash_table *table)
 	xps_hash_entry *new_entries;
 	unsigned int old_size = table->size;
 	unsigned int new_size = table->size * 2;
-	int i;
+	unsigned int i;
 
 	for (i = 0; primes[i] != 0; i++)
 	{
@@ -103,7 +103,7 @@ xps_hash_free(xps_hash_table *table,
 	void (*free_key)(void *),
 	void (*free_value)(void *))
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < table->size; i++)
 	{
@@ -175,7 +175,7 @@ xps_hash_insert(xps_hash_table *table, char *key, void *value)
 void
 xps_hash_debug(xps_hash_table *table)
 {
-	int i;
+	unsigned int i;
 
 	printf("hash table load %d / %d\n", table->load, table->size);
 
