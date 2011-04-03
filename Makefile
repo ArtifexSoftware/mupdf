@@ -179,7 +179,6 @@ MUXPS_SRC := \
 	xps/xps_hash.c \
 	xps/xps_image.c \
 	xps/xps_jpeg.c \
-	xps/xps_page.c \
 	xps/xps_path.c \
 	xps/xps_png.c \
 	xps/xps_resource.c \

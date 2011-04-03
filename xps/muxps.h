@@ -96,14 +96,17 @@ struct xps_page_s
 	char *name;
 	int width;
 	int height;
-	struct element *root;
+	xml_element *root;
 	xps_page *next;
 };
 
-int xps_parse_metadata(xps_context *ctx, xps_part *part);
-void xps_free_fixed_pages(xps_context *ctx);
-void xps_free_fixed_documents(xps_context *ctx);
-void xps_debug_fixdocseq(xps_context *ctx);
+int xps_read_page_list(xps_context *ctx);
+void xps_debug_page_list(xps_context *ctx);
+void xps_free_page_list(xps_context *ctx);
+
+int xps_count_pages(xps_context *ctx);
+xps_page *xps_load_page(xps_context *ctx, int number);
+void xps_free_page(xps_context *ctx, xps_page *page);
 
 /*
  * Images.
@@ -180,7 +183,6 @@ void xps_debug_resource_dictionary(xps_resource *dict);
  * Fixed page/graphics parsing.
  */
 
-int xps_load_fixed_page(xps_context *ctx, xps_page *page);
 void xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page);
 void xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
@@ -196,8 +198,6 @@ void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char 
 void xps_parse_matrix_transform(xps_context *ctx, xml_element *root, fz_matrix *matrix);
 void xps_parse_render_transform(xps_context *ctx, char *text, fz_matrix *matrix);
 void xps_parse_rectangle(xps_context *ctx, char *text, fz_rect *rect);
-fz_path *xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule);
-fz_path *xps_parse_path_geometry(xps_context *ctx, xps_resource *dict, xml_element *root, int stroking, int *fill_rule);
 
 void xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, char *opacity_att, xml_element *opacity_mask_tag);
 void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char *opacity_att, xml_element *opacity_mask_tag);
@@ -206,10 +206,6 @@ void xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_u
 void xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
 
 void xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag);
-
-int xps_element_has_transparency(xps_context *ctx, char *base_uri, xml_element *node);
-int xps_resource_dictionary_has_transparency(xps_context *ctx, char *base_uri, xml_element *node);
-int xps_image_brush_has_transparency(xps_context *ctx, char *base_uri, xml_element *root);
 
 /*
  * The interpreter context.
@@ -258,12 +254,8 @@ struct xps_context_s
 	fz_device *dev;
 };
 
-int xps_read_and_process_page_part(xps_context *ctx, fz_matrix ctm, char *name);
-int xps_open_file(xps_context *ctx, char *filename);
-int xps_count_pages(xps_context *ctx);
-xps_page *xps_load_page(xps_context *ctx, int number);
-void xps_free_page(xps_context *ctx, xps_page *page);
 xps_context *xps_new_context(void);
+int xps_open_file(xps_context *ctx, char *filename);
 int xps_free_context(xps_context *ctx);
 
 #endif

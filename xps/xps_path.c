@@ -35,22 +35,6 @@ fz_currentpoint(fz_path *path)
 	return c;
 }
 
-void
-xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag)
-{
-	fz_path *path;
-	int fill_rule = 0;
-
-	if (clip_att)
-		path = xps_parse_abbreviated_geometry(ctx, clip_att, &fill_rule);
-	else if (clip_tag)
-		path = xps_parse_path_geometry(ctx, dict, clip_tag, 0, &fill_rule);
-	else
-		path = fz_newpath();
-	ctx->dev->clippath(ctx->dev->user, path, fill_rule, ctm);
-	fz_freepath(path);
-}
-
 /* Draw an arc segment transformed by the matrix, we approximate with straight
  * line segments. We cannot use the fz_arc function because they only draw
  * circular arcs, we need to transform the line to make them elliptical but
@@ -234,7 +218,7 @@ xps_draw_arc(fz_path *path,
  * build up a path.
  */
 
-fz_path *
+static fz_path *
 xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule)
 {
 	fz_path *path;
@@ -760,6 +744,22 @@ xps_parse_line_cap(char *attr)
 		if (!strcmp(attr, "Triangle")) return 3; /* FIXME add triangle caps */
 	}
 	return 0;
+}
+
+void
+xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag)
+{
+	fz_path *path;
+	int fill_rule = 0;
+
+	if (clip_att)
+		path = xps_parse_abbreviated_geometry(ctx, clip_att, &fill_rule);
+	else if (clip_tag)
+		path = xps_parse_path_geometry(ctx, dict, clip_tag, 0, &fill_rule);
+	else
+		path = fz_newpath();
+	ctx->dev->clippath(ctx->dev->user, path, fill_rule, ctm);
+	fz_freepath(path);
 }
 
 /*

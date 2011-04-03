@@ -3,6 +3,28 @@
 
 #include <zlib.h>
 
+xps_part *
+xps_new_part(xps_context *ctx, char *name, int size)
+{
+	xps_part *part;
+
+	part = fz_malloc(sizeof(xps_part));
+	part->name = fz_strdup(name);
+	part->size = size;
+	part->data = fz_malloc(size + 1);
+	part->data[size] = 0; /* null-terminate for xml parser */
+
+	return part;
+}
+
+void
+xps_free_part(xps_context *ctx, xps_part *part)
+{
+	fz_free(part->name);
+	fz_free(part->data);
+	fz_free(part);
+}
+
 static inline int getshort(FILE *file)
 {
 	int a = getc(file);
@@ -57,10 +79,6 @@ xps_find_zip_entry(xps_context *ctx, char *name)
 	}
 	return NULL;
 }
-
-/*
- * Inflate the data in a zip entry.
- */
 
 static int
 xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
@@ -234,7 +252,6 @@ xps_find_and_read_zip_dir(xps_context *ctx)
 /*
  * Read and interleave split parts from a ZIP file.
  */
-
 static xps_part *
 xps_read_zip_part(xps_context *ctx, char *partname)
 {
@@ -299,7 +316,6 @@ xps_read_zip_part(xps_context *ctx, char *partname)
 /*
  * Read and interleave split parts from files in the directory.
  */
-
 static xps_part *
 xps_read_dir_part(xps_context *ctx, char *name)
 {
@@ -374,38 +390,10 @@ xps_read_part(xps_context *ctx, char *partname)
 	return xps_read_zip_part(ctx, partname);
 }
 
-/*
- * Read and process the XPS document.
- */
-
-static int
-xps_read_and_process_metadata_part(xps_context *ctx, char *name)
-{
-	xps_part *part;
-	int code;
-
-	part = xps_read_part(ctx, name);
-	if (!part)
-		return fz_rethrow(-1, "cannot read zip part '%s'", name);
-
-	code = xps_parse_metadata(ctx, part);
-	if (code)
-		return fz_rethrow(code, "cannot process metadata part '%s'", name);
-
-	xps_free_part(ctx, part);
-
-	return fz_okay;
-}
-
-/*
- * Called by xpstop.c
- */
-
 int
 xps_open_file(xps_context *ctx, char *filename)
 {
 	char buf[2048];
-	xps_document *doc;
 	int code;
 	char *p;
 
@@ -429,69 +417,11 @@ xps_open_file(xps_context *ctx, char *filename)
 			return fz_rethrow(code, "cannot read zip central directory");
 	}
 
-	code = xps_read_and_process_metadata_part(ctx, "/_rels/.rels");
+	code = xps_read_page_list(ctx);
 	if (code)
-		return fz_rethrow(code, "cannot process root relationship part");
-
-	if (!ctx->start_part)
-		return fz_throw("cannot find fixed document sequence start part");
-
-	code = xps_read_and_process_metadata_part(ctx, ctx->start_part);
-	if (code)
-		return fz_rethrow(code, "cannot process FixedDocumentSequence part");
-
-	for (doc = ctx->first_fixdoc; doc; doc = doc->next)
-	{
-		code = xps_read_and_process_metadata_part(ctx, doc->name);
-		if (code)
-			return fz_rethrow(code, "cannot process FixedDocument part");
-	}
+		return fz_rethrow(code, "cannot read page list");
 
 	return fz_okay;
-}
-
-int
-xps_count_pages(xps_context *ctx)
-{
-	xps_page *page;
-	int n = 0;
-	for (page = ctx->first_page; page; page = page->next)
-		n ++;
-	return n;
-}
-
-xps_page *
-xps_load_page(xps_context *ctx, int number)
-{
-	xps_page *page;
-	int code;
-	int n = 0;
-
-	for (page = ctx->first_page; page; page = page->next)
-	{
-		if (n == number)
-		{
-			if (!page->root)
-			{
-				code = xps_load_fixed_page(ctx, page);
-				if (code) {
-					fz_rethrow(code, "cannot load page %d", number + 1);
-					return NULL;
-				}
-			}
-			return page;
-		}
-		n ++;
-	}
-	return nil;
-}
-
-void
-xps_free_page(xps_context *ctx, xps_page *page)
-{
-	if (page->root)
-		xml_free_element(page->root);
-	page->root = NULL;
 }
 
 xps_context *
@@ -521,7 +451,6 @@ static void xps_free_font_func(xps_context *ctx, void *ptr)
 	fz_dropfont(ptr);
 }
 
-/* Wrap up interp instance after a "job" */
 int
 xps_free_context(xps_context *ctx)
 {
@@ -538,8 +467,7 @@ xps_free_context(xps_context *ctx)
 	xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
 	xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, NULL);
 
-	xps_free_fixed_pages(ctx);
-	xps_free_fixed_documents(ctx);
+	xps_free_page_list(ctx);
 
 	return 0;
 }
