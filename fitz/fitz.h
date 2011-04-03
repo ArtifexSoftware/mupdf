@@ -1126,7 +1126,7 @@ struct fz_displaylist_s
 fz_displaylist *fz_newdisplaylist(void);
 void fz_freedisplaylist(fz_displaylist *list);
 fz_device *fz_newlistdevice(fz_displaylist *list);
-void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm);
+void fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix ctm, fz_bbox area);
 
 /*
  * Function pointers for plotting functions.

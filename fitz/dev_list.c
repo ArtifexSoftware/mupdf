@@ -176,6 +176,9 @@ fz_listcliptext(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 	node->rect = fz_boundtext(text, ctm);
 	node->item.text = fz_clonetext(text);
 	node->flag = accumulate;
+	/* when accumulating, be conservative about culling */
+	if (accumulate)
+		node->rect = fz_infiniterect;
 	fz_appenddisplaynode(user, node);
 }
 
@@ -342,13 +345,53 @@ fz_freedisplaylist(fz_displaylist *list)
 }
 
 void
-fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm)
+fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm, fz_bbox bounds)
 {
 	fz_displaynode *node;
 	fz_rect bbox;
+	int clipped = 0;
+
+	if (!fz_isinfinitebbox(bounds))
+	{
+		/* add some fuzz at the edges, as especially glyph rects
+		 * are sometimes not actually completely bounding the glyph */
+		bounds.x0 -= 20; bounds.y0 -= 20;
+		bounds.x1 += 20; bounds.y1 += 20;
+	}
+
 	for (node = list->first; node; node = node->next)
 	{
 		fz_matrix ctm = fz_concat(node->ctm, topctm);
+
+		/* cull objects to draw using a quick visibility test */
+		if (clipped || fz_isemptybbox(fz_intersectbbox(fz_roundrect(node->rect), bounds)))
+		{
+			switch (node->cmd)
+			{
+			case FZ_CMDCLIPPATH:
+			case FZ_CMDCLIPSTROKEPATH:
+			case FZ_CMDCLIPTEXT:
+			case FZ_CMDCLIPSTROKETEXT:
+			case FZ_CMDCLIPIMAGEMASK:
+			case FZ_CMDBEGINMASK:
+			case FZ_CMDBEGINGROUP:
+				clipped++;
+				continue;
+			case FZ_CMDPOPCLIP:
+			case FZ_CMDENDGROUP:
+				if (!clipped)
+					break;
+				clipped--;
+				continue;
+			case FZ_CMDENDMASK:
+				if (!clipped)
+					break;
+				continue;
+			default:
+				continue;
+			}
+		}
+
 		switch (node->cmd)
 		{
 		case FZ_CMDFILLPATH:

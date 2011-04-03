@@ -632,7 +632,6 @@ fz_drawfillimage(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 	}
 #endif
 
-
 	if (image->colorspace != model && after)
 	{
 		converted = fz_newpixmap(model, image->x, image->y, image->w, image->h);
