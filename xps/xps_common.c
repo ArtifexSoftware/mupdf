@@ -26,14 +26,14 @@ xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, x
 }
 
 void
-xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node)
+xps_parse_element(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node)
 {
 	if (!strcmp(xml_tag(node), "Path"))
 		xps_parse_path(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xml_tag(node), "Glyphs"))
 		xps_parse_glyphs(ctx, ctm, base_uri, dict, node);
 	if (!strcmp(xml_tag(node), "Canvas"))
-		xps_parse_canvas(ctx, ctm, base_uri, dict, node);
+		xps_parse_canvas(ctx, ctm, area, base_uri, dict, node);
 	/* skip unknown tags (like Foo.Resources and similar) */
 }
 

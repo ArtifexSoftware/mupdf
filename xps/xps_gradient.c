@@ -436,8 +436,6 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		return;
 	}
 
-	area = fz_transformrect(ctm, area);
-
 	xps_begin_opacity(ctx, ctm, area, base_uri, dict, opacity_att, NULL);
 
 	draw(ctx, ctm, stop_list, stop_count, root, spread_method);

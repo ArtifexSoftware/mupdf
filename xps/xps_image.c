@@ -38,7 +38,7 @@ xps_decode_image(fz_pixmap **imagep, byte *buf, int len)
 }
 
 static void
-xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict,
+xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict,
 	xml_element *root, void *vimage)
 {
 	fz_pixmap *pixmap = vimage;

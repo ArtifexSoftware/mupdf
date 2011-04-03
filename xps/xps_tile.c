@@ -14,7 +14,7 @@ struct closure
 	xps_resource *dict;
 	xml_element *root;
 	void *user;
-	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*);
+	void (*func)(xps_context*, fz_matrix, fz_rect, char*, xps_resource*, xml_element*, void*);
 };
 
 static void
@@ -29,7 +29,7 @@ xps_paint_tiling_brush_clipped(xps_context *ctx, fz_matrix ctm, fz_rect viewbox,
 
 	ctx->dev->clippath(ctx->dev->user, path, 0, ctm);
 
-	c->func(ctx, ctm, c->base_uri, c->dict, c->root, c->user);
+	c->func(ctx, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
 
 	ctx->dev->popclip(ctx->dev->user);
 }
@@ -66,7 +66,7 @@ xps_paint_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect viewbox, int til
 void
 xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xml_element *root,
-	void (*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*), void *user)
+	void (*func)(xps_context*, fz_matrix, fz_rect, char*, xps_resource*, xml_element*, void*), void *user)
 {
 	xml_element *node;
 	struct closure c;
@@ -117,6 +117,7 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		xps_parse_render_transform(ctx, transform_att, &transform);
 	if (transform_tag)
 		xps_parse_matrix_transform(ctx, transform_tag, &transform);
+	ctm = fz_concat(transform, ctm);
 
 	viewbox = fz_unitrect;
 	if (viewbox_att)
@@ -160,12 +161,11 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 	xps_begin_opacity(ctx, ctm, area, base_uri, dict, opacity_att, NULL);
 
-	ctm = fz_concat(transform, ctm);
 	ctm = fz_concat(fz_translate(viewport.x0, viewport.y0), ctm);
 	ctm = fz_concat(fz_scale(xscale, yscale), ctm);
 	ctm = fz_concat(fz_translate(-viewbox.x0, -viewbox.y0), ctm);
 
-	if (tile_mode != TILE_NONE && !fz_isinfiniterect(area))
+	if (tile_mode != TILE_NONE)
 	{
 		fz_matrix invctm = fz_invertmatrix(ctm);
 		fz_rect bbox = fz_transformrect(invctm, area);
@@ -193,10 +193,10 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 }
 
 static void
-xps_paint_visual_brush(xps_context *ctx, fz_matrix ctm,
+xps_paint_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xml_element *root, void *visual_tag)
 {
-	xps_parse_element(ctx, ctm, base_uri, dict, (xml_element *)visual_tag);
+	xps_parse_element(ctx, ctm, area, base_uri, dict, (xml_element *)visual_tag);
 }
 
 void
@@ -228,7 +228,7 @@ xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 }
 
 void
-xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *root)
+xps_parse_canvas(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *root)
 {
 	xps_resource *new_dict = NULL;
 	xml_element *node;
@@ -288,11 +288,11 @@ xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *
 	if (clip_att || clip_tag)
 		xps_clip(ctx, ctm, dict, clip_att, clip_tag);
 
-	xps_begin_opacity(ctx, ctm, fz_infiniterect, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		xps_parse_element(ctx, ctm, base_uri, dict, node);
+		xps_parse_element(ctx, ctm, area, base_uri, dict, node);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
@@ -310,6 +310,7 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 	xml_element *node;
 	xps_resource *dict;
 	char base_uri[1024];
+	fz_rect area;
 	char *s;
 	int code;
 
@@ -326,6 +327,8 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 	if (!page->root)
 		return;
 
+	area = fz_transformrect(fz_scale(page->width, page->height), fz_unitrect);
+
 	for (node = xml_down(page->root); node; node = xml_next(node))
 	{
 		if (!strcmp(xml_tag(node), "FixedPage.Resources") && xml_down(node))
@@ -334,7 +337,7 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 			if (code)
 				fz_catch(code, "cannot load FixedPage.Resources");
 		}
-		xps_parse_element(ctx, ctm, base_uri, dict, node);
+		xps_parse_element(ctx, ctm, area, base_uri, dict, node);
 	}
 
 	if (dict)

@@ -170,7 +170,7 @@ void xps_debug_resource_dictionary(xps_resource *dict);
  */
 
 void xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page);
-void xps_parse_canvas(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_canvas(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_glyphs(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_solid_color_brush(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
@@ -179,7 +179,7 @@ void xps_parse_visual_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char 
 void xps_parse_linear_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_radial_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 
-void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *root, void(*func)(xps_context*, fz_matrix, char*, xps_resource*, xml_element*, void*), void *user);
+void xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *root, void(*func)(xps_context*, fz_matrix, fz_rect, char*, xps_resource*, xml_element*, void*), void *user);
 
 void xps_parse_matrix_transform(xps_context *ctx, xml_element *root, fz_matrix *matrix);
 void xps_parse_render_transform(xps_context *ctx, char *text, fz_matrix *matrix);
@@ -189,7 +189,7 @@ void xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base
 void xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict, char *opacity_att, xml_element *opacity_mask_tag);
 
 void xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
-void xps_parse_element(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
+void xps_parse_element(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 
 void xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag);
 
