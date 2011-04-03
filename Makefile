@@ -172,22 +172,22 @@ $(MUPDF_OBJ): $(MUPDF_HDR)
 
 MUXPS_HDR := $(FITZ_HDR) xps/muxps.h
 MUXPS_SRC := \
-	xps/xpscommon.c \
-	xps/xpsdoc.c \
-	xps/xpsglyphs.c \
-	xps/xpsgradient.c \
-	xps/xpshash.c \
-	xps/xpsimage.c \
-	xps/xpsjpeg.c \
-	xps/xpsmem.c \
-	xps/xpspage.c \
-	xps/xpspath.c \
-	xps/xpspng.c \
-	xps/xpsresource.c \
-	xps/xpstiff.c \
-	xps/xpstile.c \
-	xps/xpsxml.c \
-	xps/xpszip.c
+	xps/xps_common.c \
+	xps/xps_doc.c \
+	xps/xps_glyphs.c \
+	xps/xps_gradient.c \
+	xps/xps_hash.c \
+	xps/xps_image.c \
+	xps/xps_jpeg.c \
+	xps/xps_page.c \
+	xps/xps_path.c \
+	xps/xps_png.c \
+	xps/xps_resource.c \
+	xps/xps_tiff.c \
+	xps/xps_tile.c \
+	xps/xps_util.c \
+	xps/xps_xml.c \
+	xps/xps_zip.c
 MUXPS_OBJ := $(MUXPS_SRC:xps/%.c=$(OBJDIR)/%.o)
 $(MUXPS_OBJ): $(MUXPS_HDR)
 
@@ -375,8 +375,8 @@ $(PDFINFO_OBJ): $(MUPDF_HDR)
 $(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
-XPSDRAW_SRC=xps/xpstop.c
-XPSDRAW_OBJ=$(XPSDRAW_SRC:xps/%.c=$(OBJDIR)/%.o)
+XPSDRAW_SRC=apps/xpsdraw.c
+XPSDRAW_OBJ=$(XPSDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 XPSDRAW_EXE=$(OBJDIR)/xpsdraw
 $(XPSDRAW_OBJ): $(MUXPS_HDR)
 $(XPSDRAW_EXE): $(XPSDRAW_OBJ) $(MUXPS_LIB) $(THIRD_LIBS)
