@@ -152,6 +152,7 @@ struct pdf_xref_s
 	char scratch[65536];
 };
 
+fz_obj *pdf_resolveindirect(fz_obj *ref);
 fz_error pdf_cacheobject(pdf_xref *, int num, int gen);
 fz_error pdf_loadobject(fz_obj **objp, pdf_xref *, int num, int gen);
 void pdf_updateobject( pdf_xref *xref, int num, int gen, fz_obj *newobj);

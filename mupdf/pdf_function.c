@@ -264,7 +264,7 @@ psroll(psstack *st, int n, int j)
 	psobj tmp;
 	int i;
 
-	if (psunderflow(st, n) || j == 0)
+	if (psunderflow(st, n) || j == 0 || n == 0)
 		return;
 
 	if (j >= 0)

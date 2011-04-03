@@ -1,8 +1,6 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-static fz_obj *pdf_resolveindirect(fz_obj *ref);
-
 static inline int iswhite(int ch)
 {
 	return
@@ -898,7 +896,7 @@ pdf_loadobject(fz_obj **objp, pdf_xref *xref, int num, int gen)
 	return fz_okay;
 }
 
-static fz_obj *
+fz_obj *
 pdf_resolveindirect(fz_obj *ref)
 {
 	if (fz_isindirect(ref))
