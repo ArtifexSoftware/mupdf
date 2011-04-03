@@ -244,7 +244,7 @@ static fz_matrix pdfapp_viewctm(pdfapp_t *app)
 	if (app->xref)
 		ctm = fz_concat(ctm, fz_scale(app->resolution/72.0f, -app->resolution/72.0f));
 	else
-		ctm = fz_concat(ctm, fz_scale(app->resolution/72.0f, app->resolution/72.0f));
+		ctm = fz_concat(ctm, fz_scale(app->resolution/96.0f, app->resolution/96.0f));
 	ctm = fz_concat(ctm, fz_rotate(app->rotate + app->page_rotate));
 	return ctm;
 }
@@ -315,7 +315,10 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 	if (!page)
 		pdfapp_error(app, fz_rethrow(-1, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
 
-	app->page_bbox = fz_transformrect(fz_scale(page->width, page->height), fz_unitrect);
+	app->page_bbox.x0 = 0;
+	app->page_bbox.y0 = 0;
+	app->page_bbox.x1 = page->width;
+	app->page_bbox.y1 = page->height;
 	app->page_rotate = 0;
 	app->page_links = NULL;
 

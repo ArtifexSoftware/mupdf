@@ -155,7 +155,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 		rect.x1 = page->width;
 		rect.y1 = page->height;
 
-		zoom = resolution / 72;
+		zoom = resolution / 96;
 		ctm = fz_translate(0, -page->height);
 		ctm = fz_concat(ctm, fz_scale(zoom, zoom));
 		bbox = fz_roundrect(fz_transformrect(ctm, rect));
