@@ -951,16 +951,15 @@ pdf_openxref(pdf_xref **xrefp, char *filename, char *password)
 	fz_error error;
 	pdf_xref *xref;
 	fz_stream *file;
-	int fd;
 
-	fd = open(filename, O_BINARY | O_RDONLY);
-	if (fd < 0)
+	file = fz_openfile(filename);
+	if (!file)
 		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
 
-	file = fz_openfile(fd);
 	error = pdf_openxrefwithstream(&xref, file, password);
 	if (error)
 		return fz_rethrow(error, "cannot load document '%s'", filename);
+
 	fz_close(file);
 
 	*xrefp = xref;

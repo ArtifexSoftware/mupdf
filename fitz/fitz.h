@@ -515,8 +515,11 @@ struct fz_stream_s
 	unsigned char buf[4096];
 };
 
-fz_stream *fz_openfile(int file);
+fz_stream *fz_openfd(int file);
+fz_stream *fz_openfile(const char *filename);
+fz_stream *fz_openfilew(const wchar_t *filename); /* only on win32 */
 fz_stream *fz_openbuffer(fz_buffer *buf);
+fz_stream *fz_openmemory(unsigned char *data, int len);
 void fz_close(fz_stream *stm);
 
 fz_stream *fz_newstream(void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_stream *));

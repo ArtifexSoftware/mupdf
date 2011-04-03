@@ -108,7 +108,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	 * Open PDF and load xref table
 	 */
 
-	file = fz_openfile(fd);
+	file = fz_openfd(fd);
 	error = pdf_openxrefwithstream(&app->xref, file, nil);
 	if (error)
 		pdfapp_error(app, fz_rethrow(error, "cannot open document '%s'", filename));
