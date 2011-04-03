@@ -483,7 +483,9 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 
 		xps_hash_insert(ctx->font_table, part->name, font);
 
-		/* NOTE: we kept part->name in the hashtable and part->data in the font */
+		/* NOTE: we keep part->name in the hashtable and part->data in the font */
+		font->ftdata = part->data;
+		font->ftsize = part->size;
 		fz_free(part);
 	}
 

@@ -212,8 +212,6 @@ fz_newfontfrombuffer(fz_font **fontp, unsigned char *data, int len, int index)
 	if (error)
 		return fz_rethrow(error, "cannot init freetype library");
 
-	font = fz_newfont();
-
 	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, &face);
 	if (fterr)
 		return fz_throw("freetype: cannot load font: %s", ft_errorstring(fterr));
