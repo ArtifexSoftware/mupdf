@@ -129,8 +129,7 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 
 	for (node = xml_down(root); node; node = xml_next(node))
 	{
-		/* Usually "x:Key"; we have already processed and stripped namespace */
-		key = xml_att(node, "Key");
+		key = xml_att(node, "x:Key");
 		if (key)
 		{
 			entry = fz_malloc(sizeof(xps_resource));

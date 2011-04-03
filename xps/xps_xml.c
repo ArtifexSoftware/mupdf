@@ -3,14 +3,14 @@
 
 struct attribute
 {
-	char name[32];
+	char name[40];
 	char *value;
 	struct attribute *next;
 };
 
 struct element
 {
-	char name[32];
+	char name[40];
 	struct attribute *atts;
 	struct element *up, *down, *next;
 };
