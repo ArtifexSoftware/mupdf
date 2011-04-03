@@ -1,13 +1,69 @@
 #include "fitz.h"
 #include "muxps.h"
 
-#include <ctype.h> /* for tolower() */
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_ADVANCES_H
 
-static inline int unhex(int i)
+static inline int ishex(int a)
 {
-	if (isdigit(i))
-		return i - '0';
-	return tolower(i) - 'a' + 10;
+	return (a >= 'A' && a <= 'F') || (a >= 'a' && a <= 'f') || (a >= '0' && a <= '9');
+}
+
+static inline int unhex(int a)
+{
+	if (a >= 'A' && a <= 'F') return a - 'A' + 0xA;
+	if (a >= 'a' && a <= 'f') return a - 'a' + 0xA;
+	if (a >= '0' && a <= '9') return a - '0';
+	return 0;
+}
+
+int
+xps_count_font_encodings(fz_font *font)
+{
+	FT_Face face = font->ftface;
+	return face->num_charmaps;
+}
+
+void
+xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid)
+{
+	FT_Face face = font->ftface;
+	*pid = face->charmaps[idx]->platform_id;
+	*eid = face->charmaps[idx]->encoding_id;
+}
+
+void
+xps_select_font_encoding(fz_font *font, int idx)
+{
+	FT_Face face = font->ftface;
+	FT_Set_Charmap(face, face->charmaps[idx]);
+}
+
+int
+xps_encode_font_char(fz_font *font, int code)
+{
+	FT_Face face = font->ftface;
+	int gid = FT_Get_Char_Index(face, code);
+	if (gid == 0 && face->charmap->platform_id == 3 && face->charmap->encoding_id == 0)
+		gid = FT_Get_Char_Index(face, 0xF000 | code);
+	return gid;
+}
+
+void
+xps_measure_font_glyph(xps_context *ctx, fz_font *font, int gid, xps_glyph_metrics *mtx)
+{
+	int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
+	FT_Face face = font->ftface;
+	FT_Fixed hadv, vadv;
+
+	FT_Set_Char_Size(face, 64, 64, 72, 72);
+	FT_Get_Advance(face, gid, mask, &hadv);
+	FT_Get_Advance(face, gid, mask | FT_LOAD_VERTICAL_LAYOUT, &vadv);
+
+	mtx->hadv = hadv / 65536.0f;
+	mtx->vadv = vadv / 65536.0f;
+	mtx->vorg = face->ascender / (float) face->units_per_EM;
 }
 
 /*
@@ -28,7 +84,7 @@ xps_deobfuscate_font_resource(xps_context *ctx, xps_part *part)
 
 	for (i = 0; i < 32 && *p; p++)
 	{
-		if (isxdigit(*p))
+		if (ishex(*p))
 			buf[i++] = *p;
 	}
 	buf[i] = 0;
@@ -225,7 +281,7 @@ xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm, fz_font *font, float size,
 		{
 			if (us && un > 0)
 			{
-				int t = xps_utf8_to_ucs(&char_code, us, un);
+				int t = chartorune(&char_code, us);
 				us += t; un -= t;
 			}
 		}

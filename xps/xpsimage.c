@@ -25,9 +25,7 @@ xps_decode_image(xps_image **imagep, xps_context *ctx, xps_part *part)
 	}
 	else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
 	{
-		error = xps_decode_jpegxr(imagep, ctx, buf, len);
-		if (error)
-			return fz_rethrow(error, "cannot decode JPEG-XR image");
+		return fz_throw("JPEG-XR codec is not available");
 	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 	{

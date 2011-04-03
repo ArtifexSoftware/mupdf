@@ -32,8 +32,6 @@ typedef struct xps_context_s xps_context;
 int xps_strcasecmp(char *a, char *b);
 void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);
 
-int xps_utf8_to_ucs(int *p, const char *s, int n);
-
 /*
  * Generic hashtable.
  */
@@ -153,7 +151,6 @@ void xps_debug_path(xps_context *ctx);
  * Colorspaces and colors.
  */
 
-fz_colorspace *xps_read_icc_colorspace(xps_context *ctx, char *base_uri, char *profile);
 void xps_parse_color(xps_context *ctx, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
 void xps_set_color(xps_context *ctx, fz_colorspace *colorspace, float *samples);
 
