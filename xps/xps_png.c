@@ -489,6 +489,9 @@ png_expand_palette(struct info *info, fz_pixmap *src)
 	unsigned char *dp = dst->samples;
 	int x, y;
 
+	dst->xres = src->xres;
+	dst->yres = src->yres;
+
 	for (y = 0; y < info->height; y++)
 	{
 		for (x = 0; x < info->width; x++)
@@ -531,11 +534,10 @@ png_mask_transparency(struct info *info, fz_pixmap *dst)
 }
 
 int
-xps_decode_png(xps_image **imagep, xps_context *ctx, byte *p, int total)
+xps_decode_png(fz_pixmap **imagep, byte *p, int total)
 {
-	fz_pixmap *pixmap;
+	fz_pixmap *image;
 	fz_colorspace *colorspace;
-	xps_image *image;
 	struct info png;
 	int code;
 	int stride;
@@ -551,29 +553,21 @@ xps_decode_png(xps_image **imagep, xps_context *ctx, byte *p, int total)
 
 	stride = (png.width * png.n * png.depth + 7) / 8;
 
-	pixmap = fz_newpixmap(colorspace, 0, 0, png.width, png.height);
-	fz_unpacktile(pixmap, png.samples, png.n, png.depth, stride, png.indexed);
-
-	if (png.indexed)
-	{
-		pixmap = png_expand_palette(&png, pixmap);
-	}
-	else if (png.transparency)
-	{
-		png_mask_transparency(&png, pixmap);
-	}
-
-	if (png.transparency || png.n == 2 || png.n == 4)
-	{
-		fz_premultiplypixmap(pixmap);
-	}
-
-	fz_free(png.samples);
-
-	image = fz_malloc(sizeof(xps_image));
-	image->pixmap = pixmap;
+	image = fz_newpixmap(colorspace, 0, 0, png.width, png.height);
 	image->xres = png.xres;
 	image->yres = png.yres;
+
+	fz_unpacktile(image, png.samples, png.n, png.depth, stride, png.indexed);
+
+	if (png.indexed)
+		image = png_expand_palette(&png, image);
+	else if (png.transparency)
+		png_mask_transparency(&png, image);
+
+	if (png.transparency || png.n == 2 || png.n == 4)
+		fz_premultiplypixmap(image);
+
+	fz_free(png.samples);
 
 	*imagep = image;
 	return fz_okay;

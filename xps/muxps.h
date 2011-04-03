@@ -112,23 +112,9 @@ void xps_free_page(xps_context *ctx, xps_page *page);
  * Images.
  */
 
-typedef struct xps_image xps_image;
-
-/* type for the information derived directly from the raster file format */
-
-struct xps_image
-{
-	fz_pixmap *pixmap;
-	int xres;
-	int yres;
-};
-
-int xps_decode_jpeg(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
-int xps_decode_png(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
-int xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
-int xps_decode_jpegxr(xps_image **imagep, xps_context *ctx, byte *rbuf, int rlen);
-
-void xps_free_image(xps_context *ctx, xps_image *image);
+int xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen);
+int xps_decode_png(fz_pixmap **imagep, byte *rbuf, int rlen);
+int xps_decode_tiff(fz_pixmap **imagep, byte *rbuf, int rlen);
 
 /*
  * Fonts.

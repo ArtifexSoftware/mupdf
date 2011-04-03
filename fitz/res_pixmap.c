@@ -13,6 +13,8 @@ fz_newpixmapwithdata(fz_colorspace *colorspace, int x, int y, int w, int h, unsi
 	pix->h = h;
 	pix->mask = nil;
 	pix->interpolate = 1;
+	pix->xres = 96;
+	pix->yres = 96;
 	pix->colorspace = nil;
 	pix->n = 1;
 

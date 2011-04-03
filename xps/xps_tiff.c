@@ -10,9 +10,7 @@
  * TODO: RGBPal images
  */
 
-typedef struct xps_tiff xps_tiff;
-
-struct xps_tiff
+struct tiff
 {
 	/* "file" */
 	byte *bp, *rp, *ep;
@@ -136,7 +134,7 @@ static const byte bitrev[256] =
 };
 
 static int
-xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, fz_stream *stm, byte *wp, int wlen)
+xps_decode_tiff_uncompressed(struct tiff *tiff, fz_stream *stm, byte *wp, int wlen)
 {
 	int n = fz_read(stm, wp, wlen);
 	fz_close(stm);
@@ -146,7 +144,7 @@ xps_decode_tiff_uncompressed(xps_context *ctx, xps_tiff *tiff, fz_stream *stm, b
 }
 
 static int
-xps_decode_tiff_packbits(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
+xps_decode_tiff_packbits(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_openrld(chain);
 	int n = fz_read(stm, wp, wlen);
@@ -157,7 +155,7 @@ xps_decode_tiff_packbits(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byt
 }
 
 static int
-xps_decode_tiff_lzw(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
+xps_decode_tiff_lzw(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_openlzwd(chain, NULL);
 	int n = fz_read(stm, wp, wlen);
@@ -167,7 +165,7 @@ xps_decode_tiff_lzw(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp
 	return fz_okay;
 }
 static int
-xps_decode_tiff_flate(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
+xps_decode_tiff_flate(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_openflated(chain);
 	int n = fz_read(stm, wp, wlen);
@@ -178,7 +176,7 @@ xps_decode_tiff_flate(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *
 }
 
 static int
-xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, fz_stream *chain, byte *wp, int wlen)
+xps_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm;
 	fz_obj *params;
@@ -215,7 +213,7 @@ xps_decode_tiff_fax(xps_context *ctx, xps_tiff *tiff, int comp, fz_stream *chain
 }
 
 static int
-xps_decode_tiff_jpeg(xps_context *ctx, xps_tiff *tiff, fz_stream *chain, byte *wp, int wlen)
+xps_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_opendctd(chain, NULL);
 	int n = fz_read(stm, wp, wlen);
@@ -302,7 +300,7 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 }
 
 static int
-xps_expand_tiff_colormap(xps_context *ctx, xps_tiff *tiff)
+xps_expand_tiff_colormap(struct tiff *tiff)
 {
 	int maxval = 1 << tiff->bitspersample;
 	byte *samples;
@@ -358,7 +356,7 @@ xps_expand_tiff_colormap(xps_context *ctx, xps_tiff *tiff)
 }
 
 static int
-xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff)
+xps_decode_tiff_strips(struct tiff *tiff)
 {
 	fz_buffer buf;
 	fz_stream *stm;
@@ -468,31 +466,31 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff)
 		switch (tiff->compression)
 		{
 		case 1:
-			error = xps_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
+			error = xps_decode_tiff_uncompressed(tiff, stm, wp, wlen);
 			break;
 		case 2:
-			error = xps_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
+			error = xps_decode_tiff_fax(tiff, 2, stm, wp, wlen);
 			break;
 		case 3:
-			error = xps_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
+			error = xps_decode_tiff_fax(tiff, 3, stm, wp, wlen);
 			break;
 		case 4:
-			error = xps_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
+			error = xps_decode_tiff_fax(tiff, 4, stm, wp, wlen);
 			break;
 		case 5:
-			error = xps_decode_tiff_lzw(ctx, tiff, stm, wp, wlen);
+			error = xps_decode_tiff_lzw(tiff, stm, wp, wlen);
 			break;
 		case 6:
 			error = fz_throw("deprecated JPEG in TIFF compression not supported");
 			break;
 		case 7:
-			error = xps_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
+			error = xps_decode_tiff_jpeg(tiff, stm, wp, wlen);
 			break;
 		case 8:
-			error = xps_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
+			error = xps_decode_tiff_flate(tiff, stm, wp, wlen);
 			break;
 		case 32773:
-			error = xps_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
+			error = xps_decode_tiff_packbits(tiff, stm, wp, wlen);
 			break;
 		default:
 			error = fz_throw("unknown TIFF compression: %d", tiff->compression);
@@ -524,7 +522,7 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff)
 	/* RGBPal */
 	if (tiff->photometric == 3 && tiff->colormap)
 	{
-		error = xps_expand_tiff_colormap(ctx, tiff);
+		error = xps_expand_tiff_colormap(tiff);
 		if (error)
 			return fz_rethrow(error, "cannot expand colormap");
 	}
@@ -543,14 +541,14 @@ xps_decode_tiff_strips(xps_context *ctx, xps_tiff *tiff)
 	return fz_okay;
 }
 
-static inline int readbyte(xps_tiff *tiff)
+static inline int readbyte(struct tiff *tiff)
 {
 	if (tiff->rp < tiff->ep)
 		return *tiff->rp++;
 	return EOF;
 }
 
-static inline unsigned readshort(xps_tiff *tiff)
+static inline unsigned readshort(struct tiff *tiff)
 {
 	unsigned a = readbyte(tiff);
 	unsigned b = readbyte(tiff);
@@ -559,7 +557,7 @@ static inline unsigned readshort(xps_tiff *tiff)
 	return (a << 8) | b;
 }
 
-static inline unsigned readlong(xps_tiff *tiff)
+static inline unsigned readlong(struct tiff *tiff)
 {
 	unsigned a = readbyte(tiff);
 	unsigned b = readbyte(tiff);
@@ -571,7 +569,7 @@ static inline unsigned readlong(xps_tiff *tiff)
 }
 
 static void
-xps_read_tiff_bytes(unsigned char *p, xps_tiff *tiff, unsigned ofs, unsigned n)
+xps_read_tiff_bytes(unsigned char *p, struct tiff *tiff, unsigned ofs, unsigned n)
 {
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
@@ -582,7 +580,7 @@ xps_read_tiff_bytes(unsigned char *p, xps_tiff *tiff, unsigned ofs, unsigned n)
 }
 
 static void
-xps_read_tiff_tag_value(unsigned *p, xps_tiff *tiff, unsigned type, unsigned ofs, unsigned n)
+xps_read_tiff_tag_value(unsigned *p, struct tiff *tiff, unsigned type, unsigned ofs, unsigned n)
 {
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
@@ -606,7 +604,7 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff *tiff, unsigned type, unsigned ofs
 }
 
 static int
-xps_read_tiff_tag(xps_context *ctx, xps_tiff *tiff, unsigned offset)
+xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 {
 	unsigned tag;
 	unsigned type;
@@ -739,7 +737,7 @@ xps_swap_byte_order(byte *buf, int n)
 }
 
 static int
-xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
+xps_decode_tiff_header(struct tiff *tiff, byte *buf, int len)
 {
 	unsigned version;
 	unsigned offset;
@@ -747,7 +745,7 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 	unsigned i;
 	int error;
 
-	memset(tiff, 0, sizeof(xps_tiff));
+	memset(tiff, 0, sizeof(struct tiff));
 
 	tiff->bp = buf;
 	tiff->rp = buf;
@@ -795,7 +793,7 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 	offset += 2;
 	for (i = 0; i < count; i++)
 	{
-		error = xps_read_tiff_tag(ctx, tiff, offset);
+		error = xps_read_tiff_tag(tiff, offset);
 		if (error)
 			return fz_rethrow(error, "cannot read TIFF header tag");
 		offset += 12;
@@ -805,14 +803,13 @@ xps_decode_tiff_header(xps_context *ctx, xps_tiff *tiff, byte *buf, int len)
 }
 
 int
-xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *buf, int len)
+xps_decode_tiff(fz_pixmap **imagep, byte *buf, int len)
 {
 	int error;
-	fz_pixmap *pixmap;
-	xps_image *image;
-	xps_tiff tiff;
+	fz_pixmap *image;
+	struct tiff tiff;
 
-	error = xps_decode_tiff_header(ctx, &tiff, buf, len);
+	error = xps_decode_tiff_header(&tiff, buf, len);
 	if (error)
 		return fz_rethrow(error, "cannot decode tiff header");
 
@@ -821,7 +818,7 @@ xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *buf, int len)
 	if (tiff.rowsperstrip > tiff.imagelength)
 		tiff.rowsperstrip = tiff.imagelength;
 
-	error = xps_decode_tiff_strips(ctx, &tiff);
+	error = xps_decode_tiff_strips(&tiff);
 	if (error)
 		return fz_rethrow(error, "cannot decode image data");
 
@@ -834,18 +831,15 @@ xps_decode_tiff(xps_image **imagep, xps_context *ctx, byte *buf, int len)
 
 	/* Expand into fz_pixmap struct */
 
-	pixmap = fz_newpixmap(tiff.colorspace, 0, 0, tiff.imagewidth, tiff.imagelength);
+	image = fz_newpixmap(tiff.colorspace, 0, 0, tiff.imagewidth, tiff.imagelength);
+	image->xres = tiff.xresolution;
+	image->yres = tiff.yresolution;
 
-	fz_unpacktile(pixmap, tiff.samples, tiff.samplesperpixel, tiff.bitspersample, tiff.stride, 0);
+	fz_unpacktile(image, tiff.samples, tiff.samplesperpixel, tiff.bitspersample, tiff.stride, 0);
 
 	/* We should only do this on non-pre-multiplied images, but files in the wild are bad */
 	if (tiff.extrasamples /* == 2 */)
-		fz_premultiplypixmap(pixmap);
-
-	image = fz_malloc(sizeof(xps_image));
-	image->pixmap = pixmap;
-	image->xres = tiff.xresolution;
-	image->yres = tiff.yresolution;
+		fz_premultiplypixmap(image);
 
 	/* Clean up scratch memory */
 

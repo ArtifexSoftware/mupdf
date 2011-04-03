@@ -673,6 +673,7 @@ struct fz_pixmap_s
 	int x, y, w, h, n;
 	fz_pixmap *mask; /* explicit soft/image mask */
 	int interpolate;
+	int xres, yres;
 	fz_colorspace *colorspace;
 	unsigned char *samples;
 	int freesamples;
