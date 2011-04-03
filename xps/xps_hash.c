@@ -48,7 +48,7 @@ xps_hash(char *s)
 }
 
 xps_hash_table *
-xps_hash_new(xps_context *ctx)
+xps_hash_new(void)
 {
 	xps_hash_table *table;
 
@@ -63,7 +63,7 @@ xps_hash_new(xps_context *ctx)
 }
 
 static int
-xps_hash_double(xps_context *ctx, xps_hash_table *table)
+xps_hash_double(xps_hash_table *table)
 {
 	xps_hash_entry *old_entries;
 	xps_hash_entry *new_entries;
@@ -91,7 +91,7 @@ xps_hash_double(xps_context *ctx, xps_hash_table *table)
 
 	for (i = 0; i < old_size; i++)
 		if (old_entries[i].value)
-			xps_hash_insert(ctx, table, old_entries[i].key, old_entries[i].value);
+			xps_hash_insert(table, old_entries[i].key, old_entries[i].value);
 
 	fz_free(old_entries);
 
@@ -99,18 +99,18 @@ xps_hash_double(xps_context *ctx, xps_hash_table *table)
 }
 
 void
-xps_hash_free(xps_context *ctx, xps_hash_table *table,
-	void (*free_key)(xps_context *ctx, void *),
-	void (*free_value)(xps_context *ctx, void *))
+xps_hash_free(xps_hash_table *table,
+	void (*free_key)(void *),
+	void (*free_value)(void *))
 {
 	int i;
 
 	for (i = 0; i < table->size; i++)
 	{
 		if (table->entries[i].key && free_key)
-			free_key(ctx, table->entries[i].key);
+			free_key(table->entries[i].key);
 		if (table->entries[i].value && free_value)
-			free_value(ctx, table->entries[i].value);
+			free_value(table->entries[i].value);
 	}
 
 	fz_free(table->entries);
@@ -137,7 +137,7 @@ xps_hash_lookup(xps_hash_table *table, char *key)
 }
 
 int
-xps_hash_insert(xps_context *ctx, xps_hash_table *table, char *key, void *value)
+xps_hash_insert(xps_hash_table *table, char *key, void *value)
 {
 	xps_hash_entry *entries;
 	unsigned int size, pos;
@@ -145,7 +145,7 @@ xps_hash_insert(xps_context *ctx, xps_hash_table *table, char *key, void *value)
 	/* Grow the table at 80% load */
 	if (table->load > table->size * 8 / 10)
 	{
-		if (xps_hash_double(ctx, table) < 0)
+		if (xps_hash_double(table) < 0)
 			return fz_rethrow(-1, "cannot grow hash table");
 	}
 

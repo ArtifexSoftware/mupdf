@@ -38,12 +38,12 @@ void xps_absolute_path(char *output, char *base_uri, char *path, int output_size
 
 typedef struct xps_hash_table_s xps_hash_table;
 
-xps_hash_table *xps_hash_new(xps_context *ctx);
+xps_hash_table *xps_hash_new(void);
 void *xps_hash_lookup(xps_hash_table *table, char *key);
-int xps_hash_insert(xps_context *ctx, xps_hash_table *table, char *key, void *value);
-void xps_hash_free(xps_context *ctx, xps_hash_table *table,
-	void (*free_key)(xps_context *ctx, void *),
-	void (*free_value)(xps_context *ctx, void *));
+int xps_hash_insert(xps_hash_table *table, char *key, void *value);
+void xps_hash_free(xps_hash_table *table,
+	void (*free_key)(void *),
+	void (*free_value)(void *));
 void xps_hash_debug(xps_hash_table *table);
 
 /*

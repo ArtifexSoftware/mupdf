@@ -433,20 +433,20 @@ xps_new_context(void)
 
 	memset(ctx, 0, sizeof(xps_context));
 
-	ctx->font_table = xps_hash_new(ctx);
-	ctx->colorspace_table = xps_hash_new(ctx);
+	ctx->font_table = xps_hash_new();
+	ctx->colorspace_table = xps_hash_new();
 
 	ctx->start_part = NULL;
 
 	return ctx;
 }
 
-static void xps_free_key_func(xps_context *ctx, void *ptr)
+static void xps_free_key_func(void *ptr)
 {
 	fz_free(ptr);
 }
 
-static void xps_free_font_func(xps_context *ctx, void *ptr)
+static void xps_free_font_func(void *ptr)
 {
 	fz_dropfont(ptr);
 }
@@ -463,9 +463,8 @@ xps_free_context(xps_context *ctx)
 		fz_free(ctx->zip_table[i].name);
 	fz_free(ctx->zip_table);
 
-	/* TODO: free resources too */
-	xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
-	xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, NULL);
+	xps_hash_free(ctx->font_table, xps_free_key_func, xps_free_font_func);
+	xps_hash_free(ctx->colorspace_table, xps_free_key_func, NULL);
 
 	xps_free_page_list(ctx);
 
