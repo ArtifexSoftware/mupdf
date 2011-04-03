@@ -515,8 +515,6 @@ struct pdf_page_s
 	int transparency;
 	fz_obj *resources;
 	fz_buffer *contents;
-	fz_displaylist *list;
-	fz_textspan *text;
 	pdf_link *links;
 	pdf_annot *annots;
 };
