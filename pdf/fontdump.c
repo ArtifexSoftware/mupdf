@@ -12,15 +12,17 @@ hexdump(FILE *fo, FILE *fi)
 	c = fgetc(fi);
 	while (c != -1)
 	{
-		fprintf(fo, "0x%02x,", c);
-		if (n % 16 == 15)
+		n += fprintf(fo, "%d,", c);
+		if (n > 72) {
 			fprintf(fo, "\n");
+			n = 0;
+		}
 		c = fgetc(fi);
-		n ++;
 	}
 
 	return n;
 }
+
 
 int
 main(int argc, char **argv)
@@ -92,7 +94,7 @@ main(int argc, char **argv)
 		fprintf(fo, "const unsigned char pdf_font_%s_buf[%d] = {\n", name, len);
 		hexdump(fo, fi);
 		fprintf(fo, "};\n");
-		fprintf(fo, "#endif\n");
+		fprintf(fo, "#endif\n\n");
 
 		fclose(fi);
 	}
