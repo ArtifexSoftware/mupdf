@@ -121,7 +121,6 @@ DRAW_SRC := $(DRAW_ARCH_SRC) \
 	draw/blendmodes.c \
 	draw/glyphcache.c \
 	draw/imagedraw.c \
-	draw/imagescale.c \
 	draw/imagesmooth.c \
 	draw/imageunpack.c \
 	draw/meshdraw.c \

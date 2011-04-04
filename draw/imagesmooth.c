@@ -989,7 +989,7 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 #endif /* SINGLE_PIXEL_SPECIALS */
 
 fz_pixmap *
-fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h)
+fz_scalepixmap(fz_pixmap *src, float x, float y, float w, float h)
 {
 	fz_scalefilter *filter = &fz_scalefilter_simple;
 	fz_weights *contrib_rows = NULL;

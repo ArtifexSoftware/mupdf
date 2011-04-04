@@ -693,8 +693,7 @@ void fz_premultiplypixmap(fz_pixmap *pix);
 fz_pixmap *fz_alphafromgray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_boundpixmap(fz_pixmap *pix);
 
-fz_pixmap *fz_scalepixmap(fz_pixmap *src, int xdenom, int ydenom);
-fz_pixmap *fz_smoothscalepixmap(fz_pixmap *src, float x, float y, float w, float h);
+fz_pixmap *fz_scalepixmap(fz_pixmap *src, float x, float y, float w, float h);
 
 fz_error fz_writepnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_writepam(fz_pixmap *pixmap, char *filename, int savealpha);
@@ -1202,17 +1201,5 @@ void fz_paintpixmapmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk);
 void fz_paintpixmapbbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox);
 
 void fz_blendpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode);
-
-extern void (*fz_srown)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
-extern void (*fz_srow1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_srow2)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_srow4)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_srow5)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-
-extern void (*fz_scoln)(unsigned char *restrict, unsigned char *restrict, int w, int denom, int n);
-extern void (*fz_scol1)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_scol2)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_scol4)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
-extern void (*fz_scol5)(unsigned char *restrict, unsigned char *restrict, int w, int denom);
 
 #endif
