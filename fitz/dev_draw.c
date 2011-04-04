@@ -960,8 +960,8 @@ fz_drawendtile(void *user)
 			for (x = x0; x < x1; x++)
 			{
 				ttm = fz_concat(fz_translate(x * xstep, y * ystep), ctm);
-				tile->x = roundf(ttm.e);
-				tile->y = roundf(ttm.f);
+				tile->x = ttm.e;
+				tile->y = ttm.f;
 				fz_paintpixmapbbox(dev->dest, tile, 255, dev->scissor);
 			}
 		}
