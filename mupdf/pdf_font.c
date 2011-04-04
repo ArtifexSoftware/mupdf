@@ -253,7 +253,6 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *widths;
 	unsigned short *etable = nil;
 	pdf_fontdesc *fontdesc;
-	fz_bbox bbox;
 	FT_Face face;
 	FT_CharMap cmap;
 	int kind;
@@ -284,24 +283,48 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		goto cleanup;
 
+	/* Some chinese documents mistakenly consider WinAnsiEncoding to be codepage 936 */
+	if (!*fontdesc->font->name &&
+		!fz_dictgets(dict, "ToUnicode") &&
+		!strcmp(fz_toname(fz_dictgets(dict, "Encoding")), "WinAnsiEncoding") &&
+		fz_toint(fz_dictgets(descriptor, "Flags")) == 4)
+	{
+		/* note: without the comma, pdf_loadfontdescriptor would prefer /FontName over /BaseFont */
+		char *cp936fonts[] = {
+			"\xCB\xCE\xCC\xE5", "SimSun,Regular",
+			"\xBA\xDA\xCC\xE5", "SimHei,Regular",
+			"\xBF\xAC\xCC\xE5_GB2312", "SimKai,Regular",
+			"\xB7\xC2\xCB\xCE_GB2312", "SimFang,Regular",
+			"\xC1\xA5\xCA\xE9", "SimLi,Regular",
+			NULL
+		};
+		for (i = 0; cp936fonts[i]; i += 2)
+			if (!strcmp(basefont, cp936fonts[i]))
+				break;
+		if (cp936fonts[i])
+		{
+			fz_warn("workaround for S22PDF lying about chinese font encodings");
+			pdf_dropfont(fontdesc);
+			fontdesc = pdf_newfontdesc();
+			error = pdf_loadfontdescriptor(fontdesc, xref, descriptor, "Adobe-GB1", cp936fonts[i+1]);
+			error |= pdf_loadsystemcmap(&fontdesc->encoding, "GBK-EUC-H");
+			error |= pdf_loadsystemcmap(&fontdesc->tounicode, "Adobe-GB1-UCS2");
+			error |= pdf_loadsystemcmap(&fontdesc->tottfcmap, "Adobe-GB1-UCS2");
+			if (error)
+				return fz_rethrow(error, "cannot load font");
+
+			face = fontdesc->font->ftface;
+			kind = ftkind(face);
+			goto skip_encoding;
+		}
+	}
+
 	face = fontdesc->font->ftface;
 	kind = ftkind(face);
 
-	pdf_logfont("ft name '%s' '%s'\n", face->family_name, face->style_name);
-
-	bbox.x0 = (face->bbox.xMin * 1000) / face->units_per_EM;
-	bbox.y0 = (face->bbox.yMin * 1000) / face->units_per_EM;
-	bbox.x1 = (face->bbox.xMax * 1000) / face->units_per_EM;
-	bbox.y1 = (face->bbox.yMax * 1000) / face->units_per_EM;
-
-	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
-
-	if (bbox.x0 == bbox.x1)
-		fz_setfontbbox(fontdesc->font, -1000, -1000, 2000, 2000);
-	else
-		fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
-
 	/* Encoding */
+
+	pdf_logfont("ft name '%s' '%s'\n", face->family_name, face->style_name);
 
 	symbolic = fontdesc->flags & 4;
 
@@ -490,6 +513,8 @@ loadsimplefont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		fz_catch(error, "cannot load tounicode");
 
+skip_encoding:
+
 	/* Widths */
 
 	pdf_setdefaulthmtx(fontdesc, fontdesc->missingwidth);
@@ -548,7 +573,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 	fz_obj *descriptor;
 	pdf_fontdesc *fontdesc;
 	FT_Face face;
-	fz_bbox bbox;
 	int kind;
 	char collection[256];
 	char *basefont;
@@ -602,18 +626,6 @@ loadcidfont(pdf_fontdesc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *enco
 
 	face = fontdesc->font->ftface;
 	kind = ftkind(face);
-
-	bbox.x0 = (face->bbox.xMin * 1000) / face->units_per_EM;
-	bbox.y0 = (face->bbox.yMin * 1000) / face->units_per_EM;
-	bbox.x1 = (face->bbox.xMax * 1000) / face->units_per_EM;
-	bbox.y1 = (face->bbox.yMax * 1000) / face->units_per_EM;
-
-	pdf_logfont("ft bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
-
-	if (bbox.x0 == bbox.x1)
-		fz_setfontbbox(fontdesc->font, -1000, -1000, 2000, 2000);
-	else
-		fz_setfontbbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	/* Check for DynaLab fonts that must use hinting */
 	if (kind == TRUETYPE)
@@ -855,7 +867,6 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 {
 	fz_error error;
 	fz_obj *obj1, *obj2, *obj3, *obj;
-	fz_rect bbox;
 	char *fontname;
 	char *origname;
 
@@ -876,9 +887,6 @@ pdf_loadfontdescriptor(pdf_fontdesc *fontdesc, pdf_xref *xref, fz_obj *dict, cha
 	fontdesc->capheight = fz_toreal(fz_dictgets(dict, "CapHeight"));
 	fontdesc->xheight = fz_toreal(fz_dictgets(dict, "XHeight"));
 	fontdesc->missingwidth = fz_toreal(fz_dictgets(dict, "MissingWidth"));
-
-	bbox = pdf_torect(fz_dictgets(dict, "FontBBox"));
-	pdf_logfont("bbox [%g %g %g %g]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	pdf_logfont("flags %d\n", fontdesc->flags);
 
