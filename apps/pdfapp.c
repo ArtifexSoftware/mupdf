@@ -472,12 +472,14 @@ static inline fz_bbox bboxcharat(fz_textspan *span, int idx)
 void pdfapp_inverthit(pdfapp_t *app)
 {
 	fz_bbox hitbox, bbox;
+	fz_matrix ctm;
 	int i;
 
 	if (app->hit < 0)
 		return;
 
 	hitbox = fz_emptybbox;
+	ctm = pdfapp_viewctm(app);
 
 	for (i = app->hit; i < app->hit + app->hitlen; i++)
 	{
@@ -485,7 +487,7 @@ void pdfapp_inverthit(pdfapp_t *app)
 		if (fz_isemptyrect(bbox))
 		{
 			if (!fz_isemptyrect(hitbox))
-				pdfapp_invert(app, hitbox);
+				pdfapp_invert(app, fz_transformbbox(ctm, hitbox));
 			hitbox = fz_emptybbox;
 		}
 		else
@@ -495,14 +497,7 @@ void pdfapp_inverthit(pdfapp_t *app)
 	}
 
 	if (!fz_isemptyrect(hitbox))
-	{
-		fz_matrix ctm;
-
-		ctm = pdfapp_viewctm(app);
-		hitbox = fz_transformbbox(ctm, hitbox);
-
-		pdfapp_invert(app, hitbox);
-	}
+		pdfapp_invert(app, fz_transformbbox(ctm, hitbox));
 }
 
 static inline int charat(fz_textspan *span, int idx)
