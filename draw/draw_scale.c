@@ -77,18 +77,18 @@ dst[j] = SUM(filter(dist[j,i] * F) * F * src[i])
 
 */
 
-typedef struct fz_scalefilter_s fz_scalefilter;
+typedef struct fz_scale_filter_s fz_scale_filter;
 
-struct fz_scalefilter_s
+struct fz_scale_filter_s
 {
 	int width;
-	float (*fn)(fz_scalefilter *, float);
+	float (*fn)(fz_scale_filter *, float);
 };
 
 /* Image scale filters */
 
 static float
-triangle(fz_scalefilter *filter, float f)
+triangle(fz_scale_filter *filter, float f)
 {
 	if (f >= 1)
 		return 0;
@@ -96,7 +96,7 @@ triangle(fz_scalefilter *filter, float f)
 }
 
 static float
-box(fz_scalefilter *filter, float f)
+box(fz_scale_filter *filter, float f)
 {
 	if (f >= 0.5f)
 		return 0;
@@ -104,7 +104,7 @@ box(fz_scalefilter *filter, float f)
 }
 
 static float
-simple(fz_scalefilter *filter, float x)
+simple(fz_scale_filter *filter, float x)
 {
 	if (x >= 1)
 		return 0;
@@ -112,7 +112,7 @@ simple(fz_scalefilter *filter, float x)
 }
 
 static float
-lanczos2(fz_scalefilter *filter, float x)
+lanczos2(fz_scale_filter *filter, float x)
 {
 	if (x >= 2)
 		return 0;
@@ -120,7 +120,7 @@ lanczos2(fz_scalefilter *filter, float x)
 }
 
 static float
-lanczos3(fz_scalefilter *filter, float f)
+lanczos3(fz_scale_filter *filter, float f)
 {
 	if (f >= 3)
 		return 0;
@@ -147,7 +147,7 @@ The literature suggests that B=1/3, C=1/3 is best.
 */
 
 static float
-mitchell(fz_scalefilter *filter, float x)
+mitchell(fz_scale_filter *filter, float x)
 {
 	if (x >= 2)
 		return 0;
@@ -156,12 +156,12 @@ mitchell(fz_scalefilter *filter, float x)
 	return (16 + x*x*(-36 + 21*x))/18;
 }
 
-fz_scalefilter fz_scalefilter_box = { 1, box };
-fz_scalefilter fz_scalefilter_triangle = { 1, triangle };
-fz_scalefilter fz_scalefilter_simple = { 1, simple };
-fz_scalefilter fz_scalefilter_lanczos2 = { 2, lanczos2 };
-fz_scalefilter fz_scalefilter_lanczos3 = { 3, lanczos3 };
-fz_scalefilter fz_scalefilter_mitchell = { 2, mitchell };
+fz_scale_filter fz_scale_filter_box = { 1, box };
+fz_scale_filter fz_scale_filter_triangle = { 1, triangle };
+fz_scale_filter fz_scale_filter_simple = { 1, simple };
+fz_scale_filter fz_scale_filter_lanczos2 = { 2, lanczos2 };
+fz_scale_filter fz_scale_filter_lanczos3 = { 3, lanczos3 };
+fz_scale_filter fz_scale_filter_mitchell = { 2, mitchell };
 
 /*
 We build ourselves a set of tables to contain the precalculated weights
@@ -256,7 +256,7 @@ struct fz_weights_s
 };
 
 static fz_weights *
-newweights(fz_scalefilter *filter, int src_w, float dst_w, int dst_w_i, int n, int flip)
+new_weights(fz_scale_filter *filter, int src_w, float dst_w, int dst_w_i, int n, int flip)
 {
 	int max_len;
 	fz_weights *weights;
@@ -314,7 +314,7 @@ init_weights(fz_weights *weights, int j)
 }
 
 static void
-add_weight(fz_weights *weights, int j, int i, fz_scalefilter *filter,
+add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	float x, float F, float G, int src_w, float dst_w)
 {
 	float dist = j - x + 0.5f - ((i + 0.5f)*dst_w/src_w);
@@ -474,7 +474,7 @@ check_weights(fz_weights *weights, int j, int w)
 }
 
 static fz_weights *
-make_weights(int src_w, float x, float dst_w, fz_scalefilter *filter, int vertical, int dst_w_int, int n, int flip)
+make_weights(int src_w, float x, float dst_w, fz_scale_filter *filter, int vertical, int dst_w_int, int n, int flip)
 {
 	fz_weights *weights;
 	float F, G;
@@ -495,7 +495,7 @@ make_weights(int src_w, float x, float dst_w, fz_scalefilter *filter, int vertic
 	}
 	window = filter->width / F;
 	DBUG(("make_weights src_w=%d x=%g dst_w=%g dst_w_int=%d F=%g window=%g\n", src_w, x, dst_w, dst_w_int, F, window));
-	weights	= newweights(filter, src_w, dst_w, dst_w_int, n, flip);
+	weights	= new_weights(filter, src_w, dst_w, dst_w_int, n, flip);
 	if (weights == NULL)
 		return NULL;
 	for (j = 0; j < dst_w_int; j++)
@@ -841,7 +841,7 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j, val, n;
-	int tmp[FZ_MAXCOLORS];
+	int tmp[FZ_MAX_COLORS];
 
 	n = weights->n;
 	/* Scale a single row */
@@ -914,7 +914,7 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j, val;
-	int tmp[FZ_MAXCOLORS];
+	int tmp[FZ_MAX_COLORS];
 
 	if (flip_y)
 	{
@@ -989,9 +989,9 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 #endif /* SINGLE_PIXEL_SPECIALS */
 
 fz_pixmap *
-fz_scalepixmap(fz_pixmap *src, float x, float y, float w, float h)
+fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
 {
-	fz_scalefilter *filter = &fz_scalefilter_simple;
+	fz_scale_filter *filter = &fz_scale_filter_simple;
 	fz_weights *contrib_rows = NULL;
 	fz_weights *contrib_cols = NULL;
 	fz_pixmap *output = NULL;
@@ -1090,7 +1090,7 @@ fz_scalepixmap(fz_pixmap *src, float x, float y, float w, float h)
 
 	assert(contrib_cols == NULL || contrib_cols->count == dst_w_int);
 	assert(contrib_rows == NULL || contrib_rows->count == dst_h_int);
-	output = fz_newpixmap(src->colorspace, dst_x_int, dst_y_int, dst_w_int, dst_h_int);
+	output = fz_new_pixmap(src->colorspace, dst_x_int, dst_y_int, dst_w_int, dst_h_int);
 	if (output == NULL)
 		goto cleanup;
 

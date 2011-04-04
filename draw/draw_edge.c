@@ -20,7 +20,7 @@ enum { HSCALE = 17, VSCALE = 15, SF = 1 };
  */
 
 fz_gel *
-fz_newgel(void)
+fz_new_gel(void)
 {
 	fz_gel *gel;
 
@@ -39,9 +39,9 @@ fz_newgel(void)
 }
 
 void
-fz_resetgel(fz_gel *gel, fz_bbox clip)
+fz_reset_gel(fz_gel *gel, fz_bbox clip)
 {
-	if (fz_isinfiniterect(clip))
+	if (fz_is_infinite_rect(clip))
 	{
 		gel->clip.x0 = gel->clip.y0 = BBOX_MAX;
 		gel->clip.x1 = gel->clip.y1 = BBOX_MIN;
@@ -60,18 +60,18 @@ fz_resetgel(fz_gel *gel, fz_bbox clip)
 }
 
 void
-fz_freegel(fz_gel *gel)
+fz_free_gel(fz_gel *gel)
 {
 	fz_free(gel->edges);
 	fz_free(gel);
 }
 
 fz_bbox
-fz_boundgel(fz_gel *gel)
+fz_bound_gel(fz_gel *gel)
 {
 	fz_bbox bbox;
 	if (gel->len == 0)
-		return fz_emptybbox;
+		return fz_empty_bbox;
 	bbox.x0 = fz_idiv(gel->bbox.x0, HSCALE);
 	bbox.y0 = fz_idiv(gel->bbox.y0, VSCALE);
 	bbox.x1 = fz_idiv(gel->bbox.x1, HSCALE) + 1;
@@ -81,10 +81,10 @@ fz_boundgel(fz_gel *gel)
 
 enum { INSIDE, OUTSIDE, LEAVE, ENTER };
 
-#define cliplerpy(v,m,x0,y0,x1,y1,t) cliplerpx(v,m,y0,x0,y1,x1,t)
+#define clip_lerp_y(v,m,x0,y0,x1,y1,t) clip_lerp_x(v,m,y0,x0,y1,x1,t)
 
 static int
-cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
+clip_lerp_x(int val, int m, int x0, int y0, int x1, int y1, int *out)
 {
 	int v0out = m ? x0 > val : x0 < val;
 	int v1out = m ? x1 > val : x1 < val;
@@ -109,7 +109,7 @@ cliplerpx(int val, int m, int x0, int y0, int x1, int y1, int *out)
 }
 
 static void
-fz_insertgelraw(fz_gel *gel, int x0, int y0, int x1, int y1)
+fz_insert_gel_raw(fz_gel *gel, int x0, int y0, int x1, int y1)
 {
 	fz_edge *edge;
 	int dx, dy;
@@ -152,7 +152,7 @@ fz_insertgelraw(fz_gel *gel, int x0, int y0, int x1, int y1)
 	edge->x = x0;
 	edge->y = y0;
 	edge->h = dy;
-	edge->adjdown = dy;
+	edge->adj_down = dy;
 
 	/* initial error term going l->r and r->l */
 	if (dx >= 0)
@@ -163,18 +163,18 @@ fz_insertgelraw(fz_gel *gel, int x0, int y0, int x1, int y1)
 	/* y-major edge */
 	if (dy >= width) {
 		edge->xmove = 0;
-		edge->adjup = width;
+		edge->adj_up = width;
 	}
 
 	/* x-major edge */
 	else {
 		edge->xmove = (width / dy) * edge->xdir;
-		edge->adjup = width % dy;
+		edge->adj_up = width % dy;
 	}
 }
 
 void
-fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
+fz_insert_gel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 {
 	int x0, y0, x1, y1;
 	int d, v;
@@ -189,51 +189,51 @@ fz_insertgel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	x1 = CLAMP(fx1, BBOX_MIN, BBOX_MAX);
 	y1 = CLAMP(fy1, BBOX_MIN, BBOX_MAX);
 
-	d = cliplerpy(gel->clip.y0, 0, x0, y0, x1, y1, &v);
+	d = clip_lerp_y(gel->clip.y0, 0, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) return;
 	if (d == LEAVE) { y1 = gel->clip.y0; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y0; x0 = v; }
 
-	d = cliplerpy(gel->clip.y1, 1, x0, y0, x1, y1, &v);
+	d = clip_lerp_y(gel->clip.y1, 1, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) return;
 	if (d == LEAVE) { y1 = gel->clip.y1; x1 = v; }
 	if (d == ENTER) { y0 = gel->clip.y1; x0 = v; }
 
-	d = cliplerpx(gel->clip.x0, 0, x0, y0, x1, y1, &v);
+	d = clip_lerp_x(gel->clip.x0, 0, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) {
 		x0 = x1 = gel->clip.x0;
 	}
 	if (d == LEAVE) {
-		fz_insertgelraw(gel, gel->clip.x0, v, gel->clip.x0, y1);
+		fz_insert_gel_raw(gel, gel->clip.x0, v, gel->clip.x0, y1);
 		x1 = gel->clip.x0;
 		y1 = v;
 	}
 	if (d == ENTER) {
-		fz_insertgelraw(gel, gel->clip.x0, y0, gel->clip.x0, v);
+		fz_insert_gel_raw(gel, gel->clip.x0, y0, gel->clip.x0, v);
 		x0 = gel->clip.x0;
 		y0 = v;
 	}
 
-	d = cliplerpx(gel->clip.x1, 1, x0, y0, x1, y1, &v);
+	d = clip_lerp_x(gel->clip.x1, 1, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) {
 		x0 = x1 = gel->clip.x1;
 	}
 	if (d == LEAVE) {
-		fz_insertgelraw(gel, gel->clip.x1, v, gel->clip.x1, y1);
+		fz_insert_gel_raw(gel, gel->clip.x1, v, gel->clip.x1, y1);
 		x1 = gel->clip.x1;
 		y1 = v;
 	}
 	if (d == ENTER) {
-		fz_insertgelraw(gel, gel->clip.x1, y0, gel->clip.x1, v);
+		fz_insert_gel_raw(gel, gel->clip.x1, y0, gel->clip.x1, v);
 		x0 = gel->clip.x1;
 		y0 = v;
 	}
 
-	fz_insertgelraw(gel, x0, y0, x1, y1);
+	fz_insert_gel_raw(gel, x0, y0, x1, y1);
 }
 
 void
-fz_sortgel(fz_gel *gel)
+fz_sort_gel(fz_gel *gel)
 {
 	fz_edge *a = gel->edges;
 	int n = gel->len;
@@ -270,7 +270,7 @@ fz_sortgel(fz_gel *gel)
 }
 
 int
-fz_isrectgel(fz_gel *gel)
+fz_is_rect_gel(fz_gel *gel)
 {
 	/* a rectangular path is converted into two vertical edges of identical height */
 	if (gel->len == 2)
@@ -278,8 +278,8 @@ fz_isrectgel(fz_gel *gel)
 		fz_edge *a = gel->edges + 0;
 		fz_edge *b = gel->edges + 1;
 		return a->y == b->y && a->h == b->h &&
-			a->xmove == 0 && a->adjup == 0 &&
-			b->xmove == 0 && b->adjup == 0;
+			a->xmove == 0 && a->adj_up == 0 &&
+			b->xmove == 0 && b->adj_up == 0;
 	}
 	return 0;
 }
@@ -289,7 +289,7 @@ fz_isrectgel(fz_gel *gel)
  */
 
 fz_ael *
-fz_newael(void)
+fz_new_ael(void)
 {
 	fz_ael *ael;
 	ael = fz_malloc(sizeof(fz_ael));
@@ -300,14 +300,14 @@ fz_newael(void)
 }
 
 void
-fz_freeael(fz_ael *ael)
+fz_free_ael(fz_ael *ael)
 {
 	fz_free(ael->edges);
 	fz_free(ael);
 }
 
 static inline void
-sortael(fz_edge **a, int n)
+sort_ael(fz_edge **a, int n)
 {
 	int h, i, k;
 	fz_edge *t;
@@ -340,7 +340,7 @@ sortael(fz_edge **a, int n)
 }
 
 static fz_error
-insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
+insert_ael(fz_ael *ael, fz_gel *gel, int y, int *e)
 {
 	/* insert edges that start here */
 	while (*e < gel->len && gel->edges[*e].y == y) {
@@ -354,13 +354,13 @@ insertael(fz_ael *ael, fz_gel *gel, int y, int *e)
 	}
 
 	/* shell-sort the edges by increasing x */
-	sortael(ael->edges, ael->len);
+	sort_ael(ael->edges, ael->len);
 
 	return fz_okay;
 }
 
 static void
-advanceael(fz_ael *ael)
+advance_ael(fz_ael *ael)
 {
 	fz_edge *edge;
 	int i = 0;
@@ -378,10 +378,10 @@ advanceael(fz_ael *ael)
 
 		else {
 			edge->x += edge->xmove;
-			edge->e += edge->adjup;
+			edge->e += edge->adj_up;
 			if (edge->e > 0) {
 				edge->x += edge->xdir;
-				edge->e -= edge->adjdown;
+				edge->e -= edge->adj_down;
 			}
 			i ++;
 		}
@@ -393,7 +393,7 @@ advanceael(fz_ael *ael)
  */
 
 static inline void
-addspan(unsigned char *list, int x0, int x1, int xofs)
+add_span(unsigned char *list, int x0, int x1, int xofs)
 {
 	int x0pix, x0sub;
 	int x1pix, x1sub;
@@ -426,7 +426,7 @@ addspan(unsigned char *list, int x0, int x1, int xofs)
 }
 
 static inline void
-nonzerowinding(fz_ael *ael, unsigned char *list, int xofs)
+non_zero_winding(fz_ael *ael, unsigned char *list, int xofs)
 {
 	int winding = 0;
 	int x = 0;
@@ -436,13 +436,13 @@ nonzerowinding(fz_ael *ael, unsigned char *list, int xofs)
 		if (!winding && (winding + ael->edges[i]->ydir))
 			x = ael->edges[i]->x;
 		if (winding && !(winding + ael->edges[i]->ydir))
-			addspan(list, x, ael->edges[i]->x, xofs);
+			add_span(list, x, ael->edges[i]->x, xofs);
 		winding += ael->edges[i]->ydir;
 	}
 }
 
 static inline void
-evenodd(fz_ael *ael, unsigned char *list, int xofs)
+even_odd(fz_ael *ael, unsigned char *list, int xofs)
 {
 	int even = 0;
 	int x = 0;
@@ -452,7 +452,7 @@ evenodd(fz_ael *ael, unsigned char *list, int xofs)
 		if (!even)
 			x = ael->edges[i]->x;
 		else
-			addspan(list, x, ael->edges[i]->x, xofs);
+			add_span(list, x, ael->edges[i]->x, xofs);
 		even = !even;
 	}
 }
@@ -476,13 +476,13 @@ blit(fz_pixmap *dest, int x, int y, unsigned char *mp, int w, unsigned char *col
 	dp = dest->samples + ( (y - dest->y) * dest->w + (x - dest->x) ) * dest->n;
 
 	if (color)
-		fz_paintspancolor(dp, mp, dest->n, w, color);
+		fz_paint_span_with_color(dp, mp, dest->n, w, color);
 	else
-		fz_paintspan(dp, mp, 1, w, 255);
+		fz_paint_span(dp, mp, 1, w, 255);
 }
 
 fz_error
-fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
+fz_scan_convert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 	fz_pixmap *dest, unsigned char *color)
 {
 	fz_error error;
@@ -526,7 +526,7 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 		}
 		yd = yc;
 
-		error = insertael(ael, gel, y, &e);
+		error = insert_ael(ael, gel, y, &e);
 		if (error) {
 			fz_free(deltas);
 			return error;
@@ -535,12 +535,12 @@ fz_scanconvert(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 		if (yd >= clip.y0 && yd < clip.y1)
 		{
 			if (eofill)
-				evenodd(ael, deltas, xofs);
+				even_odd(ael, deltas, xofs);
 			else
-				nonzerowinding(ael, deltas, xofs);
+				non_zero_winding(ael, deltas, xofs);
 		}
 
-		advanceael(ael);
+		advance_ael(ael);
 
 		if (ael->len > 0)
 			y ++;

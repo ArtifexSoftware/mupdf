@@ -2,54 +2,54 @@
 #include "mupdf.h"
 
 void
-pdf_setfontwmode(pdf_fontdesc *font, int wmode)
+pdf_set_font_wmode(pdf_font_desc *font, int wmode)
 {
 	font->wmode = wmode;
 }
 
 void
-pdf_setdefaulthmtx(pdf_fontdesc *font, int w)
+pdf_set_default_hmtx(pdf_font_desc *font, int w)
 {
 	font->dhmtx.w = w;
 }
 
 void
-pdf_setdefaultvmtx(pdf_fontdesc *font, int y, int w)
+pdf_set_default_vmtx(pdf_font_desc *font, int y, int w)
 {
 	font->dvmtx.y = y;
 	font->dvmtx.w = w;
 }
 
 void
-pdf_addhmtx(pdf_fontdesc *font, int lo, int hi, int w)
+pdf_add_hmtx(pdf_font_desc *font, int lo, int hi, int w)
 {
-	if (font->nhmtx + 1 >= font->hmtxcap)
+	if (font->hmtx_len + 1 >= font->hmtx_cap)
 	{
-		font->hmtxcap = font->hmtxcap + 16;
-		font->hmtx = fz_realloc(font->hmtx, font->hmtxcap, sizeof(pdf_hmtx));
+		font->hmtx_cap = font->hmtx_cap + 16;
+		font->hmtx = fz_realloc(font->hmtx, font->hmtx_cap, sizeof(pdf_hmtx));
 	}
 
-	font->hmtx[font->nhmtx].lo = lo;
-	font->hmtx[font->nhmtx].hi = hi;
-	font->hmtx[font->nhmtx].w = w;
-	font->nhmtx++;
+	font->hmtx[font->hmtx_len].lo = lo;
+	font->hmtx[font->hmtx_len].hi = hi;
+	font->hmtx[font->hmtx_len].w = w;
+	font->hmtx_len++;
 }
 
 void
-pdf_addvmtx(pdf_fontdesc *font, int lo, int hi, int x, int y, int w)
+pdf_add_vmtx(pdf_font_desc *font, int lo, int hi, int x, int y, int w)
 {
-	if (font->nvmtx + 1 >= font->vmtxcap)
+	if (font->vmtx_len + 1 >= font->vmtx_cap)
 	{
-		font->vmtxcap = font->vmtxcap + 16;
-		font->vmtx = fz_realloc(font->vmtx, font->vmtxcap, sizeof(pdf_vmtx));
+		font->vmtx_cap = font->vmtx_cap + 16;
+		font->vmtx = fz_realloc(font->vmtx, font->vmtx_cap, sizeof(pdf_vmtx));
 	}
 
-	font->vmtx[font->nvmtx].lo = lo;
-	font->vmtx[font->nvmtx].hi = hi;
-	font->vmtx[font->nvmtx].x = x;
-	font->vmtx[font->nvmtx].y = y;
-	font->vmtx[font->nvmtx].w = w;
-	font->nvmtx++;
+	font->vmtx[font->vmtx_len].lo = lo;
+	font->vmtx[font->vmtx_len].hi = hi;
+	font->vmtx[font->vmtx_len].x = x;
+	font->vmtx[font->vmtx_len].y = y;
+	font->vmtx[font->vmtx_len].w = w;
+	font->vmtx_len++;
 }
 
 static int cmph(const void *a0, const void *b0)
@@ -67,26 +67,26 @@ static int cmpv(const void *a0, const void *b0)
 }
 
 void
-pdf_endhmtx(pdf_fontdesc *font)
+pdf_end_hmtx(pdf_font_desc *font)
 {
 	if (!font->hmtx)
 		return;
-	qsort(font->hmtx, font->nhmtx, sizeof(pdf_hmtx), cmph);
+	qsort(font->hmtx, font->hmtx_len, sizeof(pdf_hmtx), cmph);
 }
 
 void
-pdf_endvmtx(pdf_fontdesc *font)
+pdf_end_vmtx(pdf_font_desc *font)
 {
 	if (!font->vmtx)
 		return;
-	qsort(font->vmtx, font->nvmtx, sizeof(pdf_vmtx), cmpv);
+	qsort(font->vmtx, font->vmtx_len, sizeof(pdf_vmtx), cmpv);
 }
 
 pdf_hmtx
-pdf_gethmtx(pdf_fontdesc *font, int cid)
+pdf_get_hmtx(pdf_font_desc *font, int cid)
 {
 	int l = 0;
-	int r = font->nhmtx - 1;
+	int r = font->hmtx_len - 1;
 	int m;
 
 	if (!font->hmtx)
@@ -108,12 +108,12 @@ notfound:
 }
 
 pdf_vmtx
-pdf_getvmtx(pdf_fontdesc *font, int cid)
+pdf_get_vmtx(pdf_font_desc *font, int cid)
 {
 	pdf_hmtx h;
 	pdf_vmtx v;
 	int l = 0;
-	int r = font->nvmtx - 1;
+	int r = font->vmtx_len - 1;
 	int m;
 
 	if (!font->vmtx)
@@ -131,7 +131,7 @@ pdf_getvmtx(pdf_fontdesc *font, int cid)
 	}
 
 notfound:
-	h = pdf_gethmtx(font, cid);
+	h = pdf_get_hmtx(font, cid);
 	v = font->dvmtx;
 	v.x = h.w / 2;
 	return v;

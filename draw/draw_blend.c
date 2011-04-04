@@ -4,7 +4,7 @@
 
 typedef unsigned char byte;
 
-const char *fz_blendnames[] =
+const char *fz_blendmode_names[] =
 {
 	"Normal",
 	"Multiply",
@@ -22,7 +22,7 @@ const char *fz_blendnames[] =
 	"Saturation",
 	"Color",
 	"Luminosity",
-	nil
+	NULL
 };
 
 /* Separable blend modes */
@@ -34,7 +34,7 @@ fz_screen_byte(int b, int s)
 }
 
 static inline int
-fz_hardlight_byte(int b, int s)
+fz_hard_light_byte(int b, int s)
 {
 	int s2 = s << 1;
 	if (s <= 127)
@@ -46,7 +46,7 @@ fz_hardlight_byte(int b, int s)
 static inline int
 fz_overlay_byte(int b, int s)
 {
-	return fz_hardlight_byte(s, b); /* note swapped order */
+	return fz_hard_light_byte(s, b); /* note swapped order */
 }
 
 static inline int
@@ -62,7 +62,7 @@ fz_lighten_byte(int b, int s)
 }
 
 static inline int
-fz_colordodge_byte(int b, int s)
+fz_color_dodge_byte(int b, int s)
 {
 	s = 255 - s;
 	if (b == 0)
@@ -74,7 +74,7 @@ fz_colordodge_byte(int b, int s)
 }
 
 static inline int
-fz_colorburn_byte(int b, int s)
+fz_color_burn_byte(int b, int s)
 {
 	b = 255 - b;
 	if (b == 0)
@@ -86,7 +86,7 @@ fz_colorburn_byte(int b, int s)
 }
 
 static inline int
-fz_softlight_byte(int b, int s)
+fz_soft_light_byte(int b, int s)
 {
 	/* review this */
 	if (s < 128) {
@@ -228,7 +228,7 @@ fz_hue_rgb(int *rr, int *rg, int *rb, int br, int bg, int bb, int sr, int sg, in
 /* Blending loops */
 
 void
-fz_blendseparable(byte * restrict bp, byte * restrict sp, int n, int w, fz_blendmode blendmode)
+fz_blend_separable(byte * restrict bp, byte * restrict sp, int n, int w, fz_blendmode blendmode)
 {
 	int k;
 	int n1 = n - 1;
@@ -251,18 +251,18 @@ fz_blendseparable(byte * restrict bp, byte * restrict sp, int n, int w, fz_blend
 			switch (blendmode)
 			{
 			default:
-			case FZ_BNORMAL: rc = sc; break;
-			case FZ_BMULTIPLY: rc = fz_mul255(bc, sc); break;
-			case FZ_BSCREEN: rc = fz_screen_byte(bc, sc); break;
-			case FZ_BOVERLAY: rc = fz_overlay_byte(bc, sc); break;
-			case FZ_BDARKEN: rc = fz_darken_byte(bc, sc); break;
-			case FZ_BLIGHTEN: rc = fz_lighten_byte(bc, sc); break;
-			case FZ_BCOLORDODGE: rc = fz_colordodge_byte(bc, sc); break;
-			case FZ_BCOLORBURN: rc = fz_colorburn_byte(bc, sc); break;
-			case FZ_BHARDLIGHT: rc = fz_hardlight_byte(bc, sc); break;
-			case FZ_BSOFTLIGHT: rc = fz_softlight_byte(bc, sc); break;
-			case FZ_BDIFFERENCE: rc = fz_difference_byte(bc, sc); break;
-			case FZ_BEXCLUSION: rc = fz_exclusion_byte(bc, sc); break;
+			case FZ_BLEND_NORMAL: rc = sc; break;
+			case FZ_BLEND_MULTIPLY: rc = fz_mul255(bc, sc); break;
+			case FZ_BLEND_SCREEN: rc = fz_screen_byte(bc, sc); break;
+			case FZ_BLEND_OVERLAY: rc = fz_overlay_byte(bc, sc); break;
+			case FZ_BLEND_DARKEN: rc = fz_darken_byte(bc, sc); break;
+			case FZ_BLEND_LIGHTEN: rc = fz_lighten_byte(bc, sc); break;
+			case FZ_BLEND_COLOR_DODGE: rc = fz_color_dodge_byte(bc, sc); break;
+			case FZ_BLEND_COLOR_BURN: rc = fz_color_burn_byte(bc, sc); break;
+			case FZ_BLEND_HARD_LIGHT: rc = fz_hard_light_byte(bc, sc); break;
+			case FZ_BLEND_SOFT_LIGHT: rc = fz_soft_light_byte(bc, sc); break;
+			case FZ_BLEND_DIFFERENCE: rc = fz_difference_byte(bc, sc); break;
+			case FZ_BLEND_EXCLUSION: rc = fz_exclusion_byte(bc, sc); break;
 			}
 
 			bp[k] = fz_mul255(255 - sa, bp[k]) + fz_mul255(255 - ba, sp[k]) + fz_mul255(saba, rc);
@@ -276,7 +276,7 @@ fz_blendseparable(byte * restrict bp, byte * restrict sp, int n, int w, fz_blend
 }
 
 void
-fz_blendnonseparable(byte * restrict bp, byte * restrict sp, int w, fz_blendmode blendmode)
+fz_blend_nonseparable(byte * restrict bp, byte * restrict sp, int w, fz_blendmode blendmode)
 {
 	while (w--)
 	{
@@ -301,16 +301,16 @@ fz_blendnonseparable(byte * restrict bp, byte * restrict sp, int w, fz_blendmode
 		switch (blendmode)
 		{
 		default:
-		case FZ_BHUE:
+		case FZ_BLEND_HUE:
 			fz_hue_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 			break;
-		case FZ_BSATURATION:
+		case FZ_BLEND_SATURATION:
 			fz_saturation_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 			break;
-		case FZ_BCOLOR:
+		case FZ_BLEND_COLOR:
 			fz_color_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 			break;
-		case FZ_BLUMINOSITY:
+		case FZ_BLEND_LUMINOSITY:
 			fz_luminosity_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 			break;
 		}
@@ -326,7 +326,7 @@ fz_blendnonseparable(byte * restrict bp, byte * restrict sp, int w, fz_blendmode
 }
 
 void
-fz_blendpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode)
+fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode)
 {
 	unsigned char *sp, *dp;
 	fz_bbox bbox;
@@ -344,8 +344,8 @@ fz_blendpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode
 		}
 	}
 
-	bbox = fz_boundpixmap(dst);
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
+	bbox = fz_bound_pixmap(dst);
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(src));
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -360,10 +360,10 @@ fz_blendpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode
 
 	while (h--)
 	{
-		if (n == 4 && blendmode >= FZ_BHUE)
-			fz_blendnonseparable(dp, sp, w, blendmode);
+		if (n == 4 && blendmode >= FZ_BLEND_HUE)
+			fz_blend_nonseparable(dp, sp, w, blendmode);
 		else
-			fz_blendseparable(dp, sp, n, w, blendmode);
+			fz_blend_separable(dp, sp, n, w, blendmode);
 		sp += src->w * n;
 		dp += dst->w * n;
 	}

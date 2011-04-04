@@ -12,7 +12,7 @@
 */
 
 static const struct { char *name; int ucs; }
-aglcodes[] = {
+agl_codes[] = {
 {"A", 0x0041},
 {"AE", 0x00C6},
 {"AEacute", 0x01FC},
@@ -4297,7 +4297,7 @@ aglcodes[] = {
 };
 
 static const struct { int ucs; int ofs; }
-agldupcodes[] = {
+agl_dup_codes[] = {
 {0x0020, 0},
 {0x007C, 3},
 {0x00A0, 6},
@@ -4678,7 +4678,7 @@ agldupcodes[] = {
 {0xFEF4, 1354},
 };
 
-static char *agldupnames[] = {
+static char *agl_dup_names[] = {
 "space", "spacehackarabic", 0,
 "bar", "verticalbar", 0,
 "nbspace", "nonbreakingspace", 0,
@@ -5062,12 +5062,12 @@ static char *agldupnames[] = {
 #include "fitz.h"
 #include "mupdf.h"
 
-int pdf_lookupagl(char *name)
+int pdf_lookup_agl(char *name)
 {
 	char buf[64];
 	char *p;
 	int l = 0;
-	int r = nelem(aglcodes) - 1;
+	int r = nelem(agl_codes) - 1;
 
 	fz_strlcpy(buf, name, sizeof buf);
 
@@ -5080,40 +5080,40 @@ int pdf_lookupagl(char *name)
 	while (l <= r)
 	{
 		int m = (l + r) >> 1;
-		int c = strcmp(buf, aglcodes[m].name);
+		int c = strcmp(buf, agl_codes[m].name);
 		if (c < 0)
 			r = m - 1;
 		else if (c > 0)
 			l = m + 1;
 		else
-			return aglcodes[m].ucs;
+			return agl_codes[m].ucs;
 	}
 
 	if (strstr(buf, "uni") == buf)
-		return strtol(buf + 3, nil, 16);
+		return strtol(buf + 3, NULL, 16);
 	else if (strstr(buf, "u") == buf)
-		return strtol(buf + 1, nil, 16);
+		return strtol(buf + 1, NULL, 16);
 	else if (strstr(buf, "a") == buf && strlen(buf) >= 3)
-		return strtol(buf + 1, nil, 10);
+		return strtol(buf + 1, NULL, 10);
 
 	return 0;
 }
 
-static char *aglnoname[1] = { 0 };
+static char *agl_no_name[1] = { 0 };
 
-char **pdf_lookupaglnames(int ucs)
+char **pdf_lookup_agl_names(int ucs)
 {
 	int l = 0;
-	int r = nelem(agldupcodes) - 1;
+	int r = nelem(agl_dup_codes) - 1;
 	while (l <= r)
 	{
 		int m = (l + r) >> 1;
-		if (ucs < agldupcodes[m].ucs)
+		if (ucs < agl_dup_codes[m].ucs)
 			r = m - 1;
-		else if (ucs > agldupcodes[m].ucs)
+		else if (ucs > agl_dup_codes[m].ucs)
 			l = m + 1;
 		else
-			return agldupnames + agldupcodes[m].ofs;
+			return agl_dup_names + agl_dup_codes[m].ofs;
 	}
-	return aglnoname;
+	return agl_no_name;
 }

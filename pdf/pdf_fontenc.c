@@ -1,19 +1,19 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#define _notdef nil
+#define _notdef NULL
 
-void pdf_loadencoding(char **estrings, char *encoding)
+void pdf_load_encoding(char **estrings, char *encoding)
 {
-	char **bstrings = nil;
+	char **bstrings = NULL;
 	int i;
 
 	if (!strcmp(encoding, "MacRomanEncoding"))
-		bstrings = (char**) pdf_macroman;
+		bstrings = (char**) pdf_mac_roman;
 	if (!strcmp(encoding, "MacExpertEncoding"))
-		bstrings = (char**) pdf_macexpert;
+		bstrings = (char**) pdf_mac_expert;
 	if (!strcmp(encoding, "WinAnsiEncoding"))
-		bstrings = (char**) pdf_winansi;
+		bstrings = (char**) pdf_win_ansi;
 	if (!strcmp(encoding, "StandardEncoding"))
 		bstrings = (char**) pdf_standard;
 
@@ -22,7 +22,7 @@ void pdf_loadencoding(char **estrings, char *encoding)
 			estrings[i] = bstrings[i];
 }
 
-const unsigned short pdf_docencoding[256] =
+const unsigned short pdf_doc_encoding[256] =
 {
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 	0x0000, 0x0009, 0x000A, 0x0000, 0x0000, 0x000D, 0x0000, 0x0000,
@@ -58,7 +58,7 @@ const unsigned short pdf_docencoding[256] =
 	0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00fd, 0x00fe, 0x00ff
 };
 
-const char * const pdf_macroman[256] = { _notdef, _notdef,
+const char * const pdf_mac_roman[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -98,7 +98,7 @@ const char * const pdf_macroman[256] = { _notdef, _notdef,
 	"Ugrave", "dotlessi", "circumflex", "tilde", "macron", "breve",
 	"dotaccent", "ring", "cedilla", "hungarumlaut", "ogonek", "caron" };
 
-const char * const pdf_macexpert[256] = { _notdef, _notdef,
+const char * const pdf_mac_expert[256] = { _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
@@ -151,7 +151,7 @@ const char * const pdf_macexpert[256] = { _notdef, _notdef,
 	"msuperior", "commasuperior", "periodsuperior", "Dotaccentsmall",
 	"Ringsmall", _notdef, _notdef, _notdef, _notdef };
 
-const char * const pdf_winansi[256] = { _notdef, _notdef, _notdef,
+const char * const pdf_win_ansi[256] = { _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,
 	_notdef, _notdef, _notdef, _notdef, _notdef, _notdef,

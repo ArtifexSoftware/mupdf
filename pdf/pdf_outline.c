@@ -2,97 +2,97 @@
 #include "mupdf.h"
 
 static pdf_outline *
-pdf_loadoutlineimp(pdf_xref *xref, fz_obj *dict)
+pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 {
 	pdf_outline *node;
 	fz_obj *obj;
 
-	if (fz_isnull(dict))
-		return nil;
+	if (fz_is_null(dict))
+		return NULL;
 
 	node = fz_malloc(sizeof(pdf_outline));
-	node->title = nil;
-	node->link = nil;
-	node->child = nil;
-	node->next = nil;
+	node->title = NULL;
+	node->link = NULL;
+	node->child = NULL;
+	node->next = NULL;
 	node->count = 0;
 
-	pdf_logpage("load outline {\n");
+	pdf_log_page("load outline {\n");
 
-	obj = fz_dictgets(dict, "Title");
+	obj = fz_dict_gets(dict, "Title");
 	if (obj)
 	{
-		node->title = pdf_toutf8(obj);
-		pdf_logpage("title %s\n", node->title);
+		node->title = pdf_to_utf8(obj);
+		pdf_log_page("title %s\n", node->title);
 	}
 
-	obj = fz_dictgets(dict, "Count");
+	obj = fz_dict_gets(dict, "Count");
 	if (obj)
 	{
-		node->count = fz_toint(obj);
+		node->count = fz_to_int(obj);
 	}
 
-	if (fz_dictgets(dict, "Dest") || fz_dictgets(dict, "A"))
+	if (fz_dict_gets(dict, "Dest") || fz_dict_gets(dict, "A"))
 	{
-		node->link = pdf_loadlink(xref, dict);
+		node->link = pdf_load_link(xref, dict);
 	}
 
-	obj = fz_dictgets(dict, "First");
+	obj = fz_dict_gets(dict, "First");
 	if (obj)
 	{
-		node->child = pdf_loadoutlineimp(xref, obj);
+		node->child = pdf_load_outline_imp(xref, obj);
 	}
 
-	pdf_logpage("}\n");
+	pdf_log_page("}\n");
 
-	obj = fz_dictgets(dict, "Next");
+	obj = fz_dict_gets(dict, "Next");
 	if (obj)
 	{
-		node->next = pdf_loadoutlineimp(xref, obj);
+		node->next = pdf_load_outline_imp(xref, obj);
 	}
 
 	return node;
 }
 
 pdf_outline *
-pdf_loadoutline(pdf_xref *xref)
+pdf_load_outline(pdf_xref *xref)
 {
 	pdf_outline *node;
 	fz_obj *root, *obj, *first;
 
-	pdf_logpage("load outlines {\n");
+	pdf_log_page("load outlines {\n");
 
-	node = nil;
+	node = NULL;
 
-	root = fz_dictgets(xref->trailer, "Root");
-	obj = fz_dictgets(root, "Outlines");
+	root = fz_dict_gets(xref->trailer, "Root");
+	obj = fz_dict_gets(root, "Outlines");
 	if (obj)
 	{
-		first = fz_dictgets(obj, "First");
+		first = fz_dict_gets(obj, "First");
 		if (first)
-			node = pdf_loadoutlineimp(xref, first);
+			node = pdf_load_outline_imp(xref, first);
 	}
 
-	pdf_logpage("}\n");
+	pdf_log_page("}\n");
 
 	return node;
 }
 
 void
-pdf_freeoutline(pdf_outline *outline)
+pdf_free_outline(pdf_outline *outline)
 {
 	if (outline->child)
-		pdf_freeoutline(outline->child);
+		pdf_free_outline(outline->child);
 	if (outline->next)
-		pdf_freeoutline(outline->next);
+		pdf_free_outline(outline->next);
 	if (outline->link)
-		pdf_freelink(outline->link);
+		pdf_free_link(outline->link);
 	fz_free(outline->title);
 	fz_free(outline);
 }
 
 void
-pdf_debugoutline(pdf_outline *outline, int level)
+pdf_debug_outline(pdf_outline *outline, int level)
 {
 	int i;
 	while (outline)
@@ -103,15 +103,15 @@ pdf_debugoutline(pdf_outline *outline, int level)
 		if (outline->title)
 			printf("%s ", outline->title);
 		else
-			printf("<nil> ");
+			printf("<NULL> ");
 
 		if (outline->link)
-			fz_debugobj(outline->link->dest);
+			fz_debug_obj(outline->link->dest);
 		else
-			printf("<nil>\n");
+			printf("<NULL>\n");
 
 		if (outline->child)
-			pdf_debugoutline(outline->child, level + 2);
+			pdf_debug_outline(outline->child, level + 2);
 
 		outline = outline->next;
 	}

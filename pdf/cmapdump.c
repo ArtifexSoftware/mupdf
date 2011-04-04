@@ -75,11 +75,11 @@ main(int argc, char **argv)
 		strcpy(name, realname);
 		clean(name);
 
-		fi = fz_openfile(argv[i]);
+		fi = fz_open_file(argv[i]);
 		if (!fi)
 			fz_throw("cmapdump: could not open input file '%s'\n", argv[i]);
 
-		error = pdf_parsecmap(&cmap, fi);
+		error = pdf_parse_cmap(&cmap, fi);
 		if (error)
 		{
 			fz_catch(error, "cmapdump: could not parse input cmap '%s'\n", argv[i]);
@@ -96,7 +96,7 @@ main(int argc, char **argv)
 			if (k % 4 == 0)
 				fprintf(fo, "\n");
 			fprintf(fo, "{%d,%d,%d},",
-				cmap->ranges[k].low, cmap->ranges[k].extentflags, cmap->ranges[k].offset);
+				cmap->ranges[k].low, cmap->ranges[k].extent_flags, cmap->ranges[k].offset);
 		}
 		fprintf(fo, "\n};\n\n");
 
@@ -119,18 +119,18 @@ main(int argc, char **argv)
 
 		fprintf(fo, "pdf_cmap pdf_cmap_%s = {\n", name);
 		fprintf(fo, "\t-1, ");
-		fprintf(fo, "\"%s\", ", cmap->cmapname);
-		fprintf(fo, "\"%s\", 0, ", cmap->usecmapname);
+		fprintf(fo, "\"%s\", ", cmap->cmap_name);
+		fprintf(fo, "\"%s\", 0, ", cmap->usecmap_name);
 		fprintf(fo, "%d, ", cmap->wmode);
-		fprintf(fo, "%d,\n\t{ ", cmap->ncspace);
-		if (cmap->ncspace == 0)
+		fprintf(fo, "%d,\n\t{ ", cmap->codespace_len);
+		if (cmap->codespace_len == 0)
 		{
 			fprintf(fo, "{0,0,0},");
 		}
-		for (k = 0; k < cmap->ncspace; k++)
+		for (k = 0; k < cmap->codespace_len; k++)
 		{
 			fprintf(fo, "{%d,%d,%d},",
-				cmap->cspace[k].n, cmap->cspace[k].low, cmap->cspace[k].high);
+				cmap->codespace[k].n, cmap->codespace[k].low, cmap->codespace[k].high);
 		}
 		fprintf(fo, " },\n");
 

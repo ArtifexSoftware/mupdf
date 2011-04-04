@@ -23,7 +23,6 @@ hexdump(FILE *fo, FILE *fi)
 	return n;
 }
 
-
 int
 main(int argc, char **argv)
 {

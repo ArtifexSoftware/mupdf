@@ -1,17 +1,17 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-#define ISNUMBER \
+#define IS_NUMBER \
 	'+':case'-':case'.':case'0':case'1':case'2':case'3':\
 	case'4':case'5':case'6':case'7':case'8':case'9'
-#define ISWHITE \
+#define IS_WHITE \
 	'\000':case'\011':case'\012':case'\014':case'\015':case'\040'
-#define ISHEX \
+#define IS_HEX \
 	'0':case'1':case'2':case'3':case'4':case'5':case'6':\
 	case'7':case'8':case'9':case'A':case'B':case'C':\
 	case'D':case'E':case'F':case'a':case'b':case'c':\
 	case'd':case'e':case'f'
-#define ISDELIM \
+#define IS_DELIM \
 	'(':case')':case'<':case'>':case'[':case']':case'{':\
 	case'}':case'/':case'%'
 
@@ -36,7 +36,7 @@ iswhite(int ch)
 }
 
 static inline int
-fromhex(int ch)
+from_hex(int ch)
 {
 	if (ch >= '0' && ch <= '9')
 		return ch - '0';
@@ -48,43 +48,43 @@ fromhex(int ch)
 }
 
 static inline void
-lexwhite(fz_stream *f)
+lex_white(fz_stream *f)
 {
 	int c;
 	do
 	{
-		c = fz_readbyte(f);
+		c = fz_read_byte(f);
 	}
 	while ((c <= 32) && (iswhite(c)));
 	if (c != EOF)
-		fz_unreadbyte(f);
+		fz_unread_byte(f);
 }
 
 static inline void
-lexcomment(fz_stream *f)
+lex_comment(fz_stream *f)
 {
 	int c;
 	do
 	{
-		c = fz_readbyte(f);
+		c = fz_read_byte(f);
 	}
 	while ((c != '\012') && (c != '\015') && (c != EOF));
 }
 
 static int
-lexnumber(fz_stream *f, char *s, int n, int *tok)
+lex_number(fz_stream *f, char *s, int n, int *tok)
 {
 	char *buf = s;
-	*tok = PDF_TINT;
+	*tok = PDF_TOK_INT;
 
 	/* Initially we might have +, -, . or a digit */
 	if (n > 1)
 	{
-		int c = fz_readbyte(f);
+		int c = fz_read_byte(f);
 		switch (c)
 		{
 		case '.':
-			*tok = PDF_TREAL;
+			*tok = PDF_TOK_REAL;
 			*s++ = c;
 			n--;
 			goto loop_after_dot;
@@ -95,7 +95,7 @@ lexnumber(fz_stream *f, char *s, int n, int *tok)
 			n--;
 			goto loop_after_sign;
 		default:
-			fz_unreadbyte(f);
+			fz_unread_byte(f);
 			goto end;
 		case EOF:
 			goto end;
@@ -106,11 +106,11 @@ lexnumber(fz_stream *f, char *s, int n, int *tok)
 loop_after_sign:
 	while (n > 1)
 	{
-		int c = fz_readbyte(f);
+		int c = fz_read_byte(f);
 		switch (c)
 		{
 		case '.':
-			*tok = PDF_TREAL;
+			*tok = PDF_TOK_REAL;
 			*s++ = c;
 			n--;
 			goto loop_after_dot;
@@ -118,7 +118,7 @@ loop_after_sign:
 			*s++ = c;
 			break;
 		default:
-			fz_unreadbyte(f);
+			fz_unread_byte(f);
 			goto end;
 		case EOF:
 			goto end;
@@ -130,14 +130,14 @@ loop_after_sign:
 loop_after_dot:
 	while (n > 1)
 	{
-		int c = fz_readbyte(f);
+		int c = fz_read_byte(f);
 		switch (c)
 		{
 		case RANGE_0_9:
 			*s++ = c;
 			break;
 		default:
-			fz_unreadbyte(f);
+			fz_unread_byte(f);
 			goto end;
 		case EOF:
 			goto end;
@@ -151,23 +151,23 @@ end:
 }
 
 static void
-lexname(fz_stream *f, char *s, int n)
+lex_name(fz_stream *f, char *s, int n)
 {
 	while (n > 1)
 	{
-		int c = fz_readbyte(f);
+		int c = fz_read_byte(f);
 		switch (c)
 		{
-		case ISWHITE:
-		case ISDELIM:
-			fz_unreadbyte(f);
+		case IS_WHITE:
+		case IS_DELIM:
+			fz_unread_byte(f);
 			goto end;
 		case EOF:
 			goto end;
 		case '#':
 		{
 			int d;
-			c = fz_readbyte(f);
+			c = fz_read_byte(f);
 			switch (c)
 			{
 			case RANGE_0_9:
@@ -180,12 +180,12 @@ lexname(fz_stream *f, char *s, int n)
 				d = (c - 'A' + 10) << 4;
 				break;
 			default:
-				fz_unreadbyte(f);
+				fz_unread_byte(f);
 				/* fallthrough */
 			case EOF:
 				goto end;
 			}
-			c = fz_readbyte(f);
+			c = fz_read_byte(f);
 			switch (c)
 			{
 			case RANGE_0_9:
@@ -198,7 +198,7 @@ lexname(fz_stream *f, char *s, int n)
 				c -= 'A' - 10;
 				break;
 			default:
-				fz_unreadbyte(f);
+				fz_unread_byte(f);
 				/* fallthrough */
 			case EOF:
 				*s++ = d;
@@ -220,7 +220,7 @@ end:
 }
 
 static int
-lexstring(fz_stream *f, char *buf, int n)
+lex_string(fz_stream *f, char *buf, int n)
 {
 	char *s = buf;
 	char *e = buf + n;
@@ -230,7 +230,7 @@ lexstring(fz_stream *f, char *buf, int n)
 
 	while (s < e)
 	{
-		c = fz_readbyte(f);
+		c = fz_read_byte(f);
 		switch (c)
 		{
 		case EOF:
@@ -246,7 +246,7 @@ lexstring(fz_stream *f, char *buf, int n)
 			*s++ = c;
 			break;
 		case '\\':
-			c = fz_readbyte(f);
+			c = fz_read_byte(f);
 			switch (c)
 			{
 			case EOF:
@@ -277,26 +277,26 @@ lexstring(fz_stream *f, char *buf, int n)
 				break;
 			case RANGE_0_9:
 				oct = c - '0';
-				c = fz_readbyte(f);
+				c = fz_read_byte(f);
 				if (c >= '0' && c <= '9')
 				{
 					oct = oct * 8 + (c - '0');
-					c = fz_readbyte(f);
+					c = fz_read_byte(f);
 					if (c >= '0' && c <= '9')
 						oct = oct * 8 + (c - '0');
 					else if (c != EOF)
-						fz_unreadbyte(f);
+						fz_unread_byte(f);
 				}
 				else if (c != EOF)
-					fz_unreadbyte(f);
+					fz_unread_byte(f);
 				*s++ = oct;
 				break;
 			case '\n':
 				break;
 			case '\r':
-				c = fz_readbyte(f);
+				c = fz_read_byte(f);
 				if ((c != '\n') && (c != EOF))
-					fz_unreadbyte(f);
+					fz_unread_byte(f);
 				break;
 			default:
 				*s++ = c;
@@ -312,7 +312,7 @@ end:
 }
 
 static int
-lexhexstring(fz_stream *f, char *buf, int n)
+lex_hex_string(fz_stream *f, char *buf, int n)
 {
 	char *s = buf;
 	char *e = buf + n;
@@ -321,20 +321,20 @@ lexhexstring(fz_stream *f, char *buf, int n)
 
 	while (s < e)
 	{
-		c = fz_readbyte(f);
+		c = fz_read_byte(f);
 		switch (c)
 		{
-		case ISWHITE:
+		case IS_WHITE:
 			break;
-		case ISHEX:
+		case IS_HEX:
 			if (x)
 			{
-				*s++ = a * 16 + fromhex(c);
+				*s++ = a * 16 + from_hex(c);
 				x = !x;
 			}
 			else
 			{
-				a = fromhex(c);
+				a = from_hex(c);
 				x = !x;
 			}
 			break;
@@ -348,42 +348,42 @@ end:
 }
 
 static int
-pdf_tokenfromkeyword(char *key)
+pdf_token_from_keyword(char *key)
 {
 	switch (*key)
 	{
 	case 'R':
-		if (!strcmp(key, "R")) return PDF_TR;
+		if (!strcmp(key, "R")) return PDF_TOK_R;
 		break;
 	case 't':
-		if (!strcmp(key, "true")) return PDF_TTRUE;
-		if (!strcmp(key, "trailer")) return PDF_TTRAILER;
+		if (!strcmp(key, "true")) return PDF_TOK_TRUE;
+		if (!strcmp(key, "trailer")) return PDF_TOK_TRAILER;
 		break;
 	case 'f':
-		if (!strcmp(key, "false")) return PDF_TFALSE;
+		if (!strcmp(key, "false")) return PDF_TOK_FALSE;
 		break;
 	case 'n':
-		if (!strcmp(key, "null")) return PDF_TNULL;
+		if (!strcmp(key, "null")) return PDF_TOK_NULL;
 		break;
 	case 'o':
-		if (!strcmp(key, "obj")) return PDF_TOBJ;
+		if (!strcmp(key, "obj")) return PDF_TOK_OBJ;
 		break;
 	case 'e':
-		if (!strcmp(key, "endobj")) return PDF_TENDOBJ;
-		if (!strcmp(key, "endstream")) return PDF_TENDSTREAM;
+		if (!strcmp(key, "endobj")) return PDF_TOK_ENDOBJ;
+		if (!strcmp(key, "endstream")) return PDF_TOK_ENDSTREAM;
 		break;
 	case 's':
-		if (!strcmp(key, "stream")) return PDF_TSTREAM;
-		if (!strcmp(key, "startxref")) return PDF_TSTARTXREF;
+		if (!strcmp(key, "stream")) return PDF_TOK_STREAM;
+		if (!strcmp(key, "startxref")) return PDF_TOK_STARTXREF;
 		break;
 	case 'x':
-		if (!strcmp(key, "xref")) return PDF_TXREF;
+		if (!strcmp(key, "xref")) return PDF_TOK_XREF;
 		break;
 	default:
 		break;
 	}
 
-	return PDF_TKEYWORD;
+	return PDF_TOK_KEYWORD;
 }
 
 fz_error
@@ -391,78 +391,78 @@ pdf_lex(int *tok, fz_stream *f, char *buf, int n, int *sl)
 {
 	while (1)
 	{
-		int c = fz_readbyte(f);
+		int c = fz_read_byte(f);
 		switch (c)
 		{
 		case EOF:
-			*tok = PDF_TEOF;
+			*tok = PDF_TOK_EOF;
 			return fz_okay;
-		case ISWHITE:
-			lexwhite(f);
+		case IS_WHITE:
+			lex_white(f);
 			break;
 		case '%':
-			lexcomment(f);
+			lex_comment(f);
 			break;
 		case '/':
-			lexname(f, buf, n);
+			lex_name(f, buf, n);
 			*sl = strlen(buf);
-			*tok = PDF_TNAME;
+			*tok = PDF_TOK_NAME;
 			return fz_okay;
 		case '(':
-			*sl = lexstring(f, buf, n);
-			*tok = PDF_TSTRING;
+			*sl = lex_string(f, buf, n);
+			*tok = PDF_TOK_STRING;
 			return fz_okay;
 		case ')':
-			*tok = PDF_TERROR;
+			*tok = PDF_TOK_ERROR;
 			goto cleanuperror;
 		case '<':
-			c = fz_readbyte(f);
+			c = fz_read_byte(f);
 			if (c == '<')
 			{
-				*tok = PDF_TODICT;
+				*tok = PDF_TOK_OPEN_DICT;
 			}
 			else
 			{
-				fz_unreadbyte(f);
-				*sl = lexhexstring(f, buf, n);
-				*tok = PDF_TSTRING;
+				fz_unread_byte(f);
+				*sl = lex_hex_string(f, buf, n);
+				*tok = PDF_TOK_STRING;
 			}
 			return fz_okay;
 		case '>':
-			c = fz_readbyte(f);
+			c = fz_read_byte(f);
 			if (c == '>')
 			{
-				*tok = PDF_TCDICT;
+				*tok = PDF_TOK_CLOSE_DICT;
 				return fz_okay;
 			}
-			*tok = PDF_TERROR;
+			*tok = PDF_TOK_ERROR;
 			goto cleanuperror;
 		case '[':
-			*tok = PDF_TOARRAY;
+			*tok = PDF_TOK_OPEN_ARRAY;
 			return fz_okay;
 		case ']':
-			*tok = PDF_TCARRAY;
+			*tok = PDF_TOK_CLOSE_ARRAY;
 			return fz_okay;
 		case '{':
-			*tok = PDF_TOBRACE;
+			*tok = PDF_TOK_OPEN_BRACE;
 			return fz_okay;
 		case '}':
-			*tok = PDF_TCBRACE;
+			*tok = PDF_TOK_CLOSE_BRACE;
 			return fz_okay;
-		case ISNUMBER:
-			fz_unreadbyte(f);
-			*sl = lexnumber(f, buf, n, tok);
+		case IS_NUMBER:
+			fz_unread_byte(f);
+			*sl = lex_number(f, buf, n, tok);
 			return fz_okay;
 		default: /* isregular: !isdelim && !iswhite && c != EOF */
-			fz_unreadbyte(f);
-			lexname(f, buf, n);
+			fz_unread_byte(f);
+			lex_name(f, buf, n);
 			*sl = strlen(buf);
-			*tok = pdf_tokenfromkeyword(buf);
+			*tok = pdf_token_from_keyword(buf);
 			return fz_okay;
 		}
 	}
 
 cleanuperror:
-	*tok = PDF_TERROR;
+	*tok = PDF_TOK_ERROR;
 	return fz_throw("lexical error");
 }

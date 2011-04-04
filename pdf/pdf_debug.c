@@ -72,20 +72,20 @@ static inline void pdflog(int tag, char *name, char *fmt, va_list ap)
 	fflush(stdout);
 }
 
-void pdf_logxref(char *fmt, ...)
+void pdf_log_xref(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LXREF,"xref",fmt,ap);va_end(ap);}
 
-void pdf_logrsrc(char *fmt, ...)
+void pdf_log_rsrc(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LRSRC,"rsrc",fmt,ap);va_end(ap);}
 
-void pdf_logfont(char *fmt, ...)
+void pdf_log_font(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LFONT,"font",fmt,ap);va_end(ap);}
 
-void pdf_logimage(char *fmt, ...)
+void pdf_log_image(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LIMAGE,"imag",fmt,ap);va_end(ap);}
 
-void pdf_logshade(char *fmt, ...)
+void pdf_log_shade(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LSHADE,"shad",fmt,ap);va_end(ap);}
 
-void pdf_logpage(char *fmt, ...)
+void pdf_log_page(char *fmt, ...)
 {va_list ap;va_start(ap,fmt);pdflog(PDF_LPAGE,"page",fmt,ap);va_end(ap);}

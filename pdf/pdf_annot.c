@@ -2,145 +2,145 @@
 #include "mupdf.h"
 
 void
-pdf_freelink(pdf_link *link)
+pdf_free_link(pdf_link *link)
 {
 	if (link->next)
-		pdf_freelink(link->next);
+		pdf_free_link(link->next);
 	if (link->dest)
-		fz_dropobj(link->dest);
+		fz_drop_obj(link->dest);
 	fz_free(link);
 }
 
 static fz_obj *
-resolvedest(pdf_xref *xref, fz_obj *dest)
+resolve_dest(pdf_xref *xref, fz_obj *dest)
 {
-	if (fz_isname(dest) || fz_isstring(dest))
+	if (fz_is_name(dest) || fz_is_string(dest))
 	{
-		dest = pdf_lookupdest(xref, dest);
-		return resolvedest(xref, dest);
+		dest = pdf_lookup_dest(xref, dest);
+		return resolve_dest(xref, dest);
 	}
 
-	else if (fz_isarray(dest))
+	else if (fz_is_array(dest))
 	{
 		return dest;
 	}
 
-	else if (fz_isdict(dest))
+	else if (fz_is_dict(dest))
 	{
-		dest = fz_dictgets(dest, "D");
-		return resolvedest(xref, dest);
+		dest = fz_dict_gets(dest, "D");
+		return resolve_dest(xref, dest);
 	}
 
-	else if (fz_isindirect(dest))
+	else if (fz_is_indirect(dest))
 		return dest;
 
-	return nil;
+	return NULL;
 }
 
 pdf_link *
-pdf_loadlink(pdf_xref *xref, fz_obj *dict)
+pdf_load_link(pdf_xref *xref, fz_obj *dict)
 {
 	fz_obj *dest;
 	fz_obj *action;
 	fz_obj *obj;
 	fz_rect bbox;
-	pdf_linkkind kind;
+	pdf_link_kind kind;
 
-	pdf_logpage("load link {\n");
+	pdf_log_page("load link {\n");
 
-	dest = nil;
+	dest = NULL;
 
-	obj = fz_dictgets(dict, "Rect");
+	obj = fz_dict_gets(dict, "Rect");
 	if (obj)
 	{
-		bbox = pdf_torect(obj);
-		pdf_logpage("rect [%g %g %g %g]\n",
+		bbox = pdf_to_rect(obj);
+		pdf_log_page("rect [%g %g %g %g]\n",
 			bbox.x0, bbox.y0,
 			bbox.x1, bbox.y1);
 	}
 	else
-		bbox = fz_emptyrect;
+		bbox = fz_empty_rect;
 
-	obj = fz_dictgets(dict, "Dest");
+	obj = fz_dict_gets(dict, "Dest");
 	if (obj)
 	{
-		kind = PDF_LGOTO;
-		dest = resolvedest(xref, obj);
-		pdf_logpage("dest (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
+		kind = PDF_LINK_GOTO;
+		dest = resolve_dest(xref, obj);
+		pdf_log_page("dest (%d %d R)\n", fz_to_num(dest), fz_to_gen(dest));
 	}
 
-	action = fz_dictgets(dict, "A");
+	action = fz_dict_gets(dict, "A");
 	if (action)
 	{
-		obj = fz_dictgets(action, "S");
-		if (fz_isname(obj) && !strcmp(fz_toname(obj), "GoTo"))
+		obj = fz_dict_gets(action, "S");
+		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "GoTo"))
 		{
-			kind = PDF_LGOTO;
-			dest = resolvedest(xref, fz_dictgets(action, "D"));
-			pdf_logpage("action goto (%d %d R)\n", fz_tonum(dest), fz_togen(dest));
+			kind = PDF_LINK_GOTO;
+			dest = resolve_dest(xref, fz_dict_gets(action, "D"));
+			pdf_log_page("action goto (%d %d R)\n", fz_to_num(dest), fz_to_gen(dest));
 		}
-		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "URI"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "URI"))
 		{
-			kind = PDF_LURI;
-			dest = fz_dictgets(action, "URI");
-			pdf_logpage("action uri %s\n", fz_tostrbuf(dest));
+			kind = PDF_LINK_URI;
+			dest = fz_dict_gets(action, "URI");
+			pdf_log_page("action uri %s\n", fz_to_str_buf(dest));
 		}
-		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "Launch"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Launch"))
 		{
-			kind = PDF_LLAUNCH;
-			dest = fz_dictgets(action, "F");
-			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+			kind = PDF_LINK_LAUNCH;
+			dest = fz_dict_gets(action, "F");
+			pdf_log_page("action %s (%d %d R)\n", fz_to_name(obj), fz_to_num(dest), fz_to_gen(dest));
 		}
-		else if (fz_isname(obj) && !strcmp(fz_toname(obj), "Named"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Named"))
 		{
-			kind = PDF_LNAMED;
-			dest = fz_dictgets(action, "N");
-			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+			kind = PDF_LINK_NAMED;
+			dest = fz_dict_gets(action, "N");
+			pdf_log_page("action %s (%d %d R)\n", fz_to_name(obj), fz_to_num(dest), fz_to_gen(dest));
 		}
-		else if (fz_isname(obj) && (!strcmp(fz_toname(obj), "GoToR")))
+		else if (fz_is_name(obj) && (!strcmp(fz_to_name(obj), "GoToR")))
 		{
-			kind = PDF_LACTION;
+			kind = PDF_LINK_ACTION;
 			dest = action;
-			pdf_logpage("action %s (%d %d R)\n", fz_toname(obj), fz_tonum(dest), fz_togen(dest));
+			pdf_log_page("action %s (%d %d R)\n", fz_to_name(obj), fz_to_num(dest), fz_to_gen(dest));
 		}
 		else
 		{
-			pdf_logpage("unhandled link action, ignoring link\n");
-			dest = nil;
+			pdf_log_page("unhandled link action, ignoring link\n");
+			dest = NULL;
 		}
 	}
 
-	pdf_logpage("}\n");
+	pdf_log_page("}\n");
 
 	if (dest)
 	{
 		pdf_link *link = fz_malloc(sizeof(pdf_link));
 		link->kind = kind;
 		link->rect = bbox;
-		link->dest = fz_keepobj(dest);
-		link->next = nil;
+		link->dest = fz_keep_obj(dest);
+		link->next = NULL;
 		return link;
 	}
 
-	return nil;
+	return NULL;
 }
 
 void
-pdf_loadlinks(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
+pdf_load_links(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
 {
 	pdf_link *link, *head, *tail;
 	fz_obj *obj;
 	int i;
 
-	head = tail = nil;
-	link = nil;
+	head = tail = NULL;
+	link = NULL;
 
-	pdf_logpage("load link annotations {\n");
+	pdf_log_page("load link annotations {\n");
 
-	for (i = 0; i < fz_arraylen(annots); i++)
+	for (i = 0; i < fz_array_len(annots); i++)
 	{
-		obj = fz_arrayget(annots, i);
-		link = pdf_loadlink(xref, obj);
+		obj = fz_array_get(annots, i);
+		link = pdf_load_link(xref, obj);
 		if (link)
 		{
 			if (!head)
@@ -153,32 +153,32 @@ pdf_loadlinks(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
 		}
 	}
 
-	pdf_logpage("}\n");
+	pdf_log_page("}\n");
 
 	*linkp = head;
 }
 
 void
-pdf_freeannot(pdf_annot *annot)
+pdf_free_annot(pdf_annot *annot)
 {
 	if (annot->next)
-		pdf_freeannot(annot->next);
+		pdf_free_annot(annot->next);
 	if (annot->ap)
-		pdf_dropxobject(annot->ap);
+		pdf_drop_xobject(annot->ap);
 	if (annot->obj)
-		fz_dropobj(annot->obj);
+		fz_drop_obj(annot->obj);
 	fz_free(annot);
 }
 
 static void
-pdf_transformannot(pdf_annot *annot)
+pdf_transform_annot(pdf_annot *annot)
 {
 	fz_matrix matrix = annot->ap->matrix;
 	fz_rect bbox = annot->ap->bbox;
 	fz_rect rect = annot->rect;
 	float w, h, x, y;
 
-	bbox = fz_transformrect(matrix, bbox);
+	bbox = fz_transform_rect(matrix, bbox);
 	w = (rect.x1 - rect.x0) / (bbox.x1 - bbox.x0);
 	h = (rect.y1 - rect.y0) / (bbox.y1 - bbox.y0);
 	x = rect.x0 - bbox.x0;
@@ -187,7 +187,7 @@ pdf_transformannot(pdf_annot *annot)
 }
 
 void
-pdf_loadannots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
+pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 {
 	pdf_annot *annot, *head, *tail;
 	fz_obj *obj, *ap, *as, *n, *rect;
@@ -195,29 +195,29 @@ pdf_loadannots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 	fz_error error;
 	int i;
 
-	head = tail = nil;
-	annot = nil;
+	head = tail = NULL;
+	annot = NULL;
 
-	pdf_logpage("load appearance annotations {\n");
+	pdf_log_page("load appearance annotations {\n");
 
-	for (i = 0; i < fz_arraylen(annots); i++)
+	for (i = 0; i < fz_array_len(annots); i++)
 	{
-		obj = fz_arrayget(annots, i);
+		obj = fz_array_get(annots, i);
 
-		rect = fz_dictgets(obj, "Rect");
-		ap = fz_dictgets(obj, "AP");
-		as = fz_dictgets(obj, "AS");
-		if (fz_isdict(ap))
+		rect = fz_dict_gets(obj, "Rect");
+		ap = fz_dict_gets(obj, "AP");
+		as = fz_dict_gets(obj, "AS");
+		if (fz_is_dict(ap))
 		{
-			n = fz_dictgets(ap, "N"); /* normal state */
+			n = fz_dict_gets(ap, "N"); /* normal state */
 
 			/* lookup current state in sub-dictionary */
-			if (!pdf_isstream(xref, fz_tonum(n), fz_togen(n)))
-				n = fz_dictget(n, as);
+			if (!pdf_is_stream(xref, fz_to_num(n), fz_to_gen(n)))
+				n = fz_dict_get(n, as);
 
-			if (pdf_isstream(xref, fz_tonum(n), fz_togen(n)))
+			if (pdf_is_stream(xref, fz_to_num(n), fz_to_gen(n)))
 			{
-				error = pdf_loadxobject(&form, xref, n);
+				error = pdf_load_xobject(&form, xref, n);
 				if (error)
 				{
 					fz_catch(error, "ignoring broken annotation");
@@ -225,12 +225,12 @@ pdf_loadannots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 				}
 
 				annot = fz_malloc(sizeof(pdf_annot));
-				annot->obj = fz_keepobj(obj);
-				annot->rect = pdf_torect(rect);
+				annot->obj = fz_keep_obj(obj);
+				annot->rect = pdf_to_rect(rect);
 				annot->ap = form;
-				annot->next = nil;
+				annot->next = NULL;
 
-				pdf_transformannot(annot);
+				pdf_transform_annot(annot);
 
 				if (annot)
 				{
@@ -246,7 +246,7 @@ pdf_loadannots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 		}
 	}
 
-	pdf_logpage("}\n");
+	pdf_log_page("}\n");
 
 	*annotp = head;
 }

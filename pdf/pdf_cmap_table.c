@@ -158,7 +158,7 @@ extern pdf_cmap pdf_cmap_Adobe_GB1_UCS2;
 extern pdf_cmap pdf_cmap_Adobe_Japan1_UCS2;
 extern pdf_cmap pdf_cmap_Adobe_Korea1_UCS2;
 
-pdf_cmap *pdf_cmaptable[] =
+pdf_cmap *pdf_cmap_table[] =
 {
 #ifndef NOCJK
 	&pdf_cmap_Adobe_CNS1_0,

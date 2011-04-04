@@ -4,7 +4,7 @@
 /* Load or synthesize ToUnicode map for fonts */
 
 fz_error
-pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
+pdf_load_to_unicode(pdf_font_desc *font, pdf_xref *xref,
 	char **strings, char *collection, fz_obj *cmapstm)
 {
 	fz_error error = fz_okay;
@@ -14,76 +14,76 @@ pdf_loadtounicode(pdf_fontdesc *font, pdf_xref *xref,
 	int ucslen;
 	int i;
 
-	if (pdf_isstream(xref, fz_tonum(cmapstm), fz_togen(cmapstm)))
+	if (pdf_is_stream(xref, fz_to_num(cmapstm), fz_to_gen(cmapstm)))
 	{
-		pdf_logfont("tounicode embedded cmap\n");
+		pdf_log_font("to_unicode embedded cmap\n");
 
-		error = pdf_loadembeddedcmap(&cmap, xref, cmapstm);
+		error = pdf_load_embedded_cmap(&cmap, xref, cmapstm);
 		if (error)
-			return fz_rethrow(error, "cannot load embedded cmap (%d %d R)", fz_tonum(cmapstm), fz_togen(cmapstm));
+			return fz_rethrow(error, "cannot load embedded cmap (%d %d R)", fz_to_num(cmapstm), fz_to_gen(cmapstm));
 
-		font->tounicode = pdf_newcmap();
+		font->to_unicode = pdf_new_cmap();
 
 		for (i = 0; i < (strings ? 256 : 65536); i++)
 		{
-			cid = pdf_lookupcmap(font->encoding, i);
+			cid = pdf_lookup_cmap(font->encoding, i);
 			if (cid >= 0)
 			{
-				ucslen = pdf_lookupcmapfull(cmap, i, ucsbuf);
+				ucslen = pdf_lookup_cmap_full(cmap, i, ucsbuf);
 				if (ucslen == 1)
-					pdf_maprangetorange(font->tounicode, cid, cid, ucsbuf[0]);
+					pdf_map_range_to_range(font->to_unicode, cid, cid, ucsbuf[0]);
 				if (ucslen > 1)
-					pdf_maponetomany(font->tounicode, cid, ucsbuf, ucslen);
+					pdf_map_one_to_many(font->to_unicode, cid, ucsbuf, ucslen);
 			}
 		}
 
-		pdf_sortcmap(font->tounicode);
+		pdf_sort_cmap(font->to_unicode);
 
-		pdf_dropcmap(cmap);
+		pdf_drop_cmap(cmap);
 	}
 
 	else if (collection)
 	{
-		pdf_logfont("tounicode cid collection (%s)\n", collection);
+		pdf_log_font("to_unicode cid collection (%s)\n", collection);
 
 		error = fz_okay;
 
 		if (!strcmp(collection, "Adobe-CNS1"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-CNS1-UCS2");
+			error = pdf_load_system_cmap(&font->to_unicode, "Adobe-CNS1-UCS2");
 		else if (!strcmp(collection, "Adobe-GB1"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-GB1-UCS2");
+			error = pdf_load_system_cmap(&font->to_unicode, "Adobe-GB1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan1"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan1-UCS2");
+			error = pdf_load_system_cmap(&font->to_unicode, "Adobe-Japan1-UCS2");
 		else if (!strcmp(collection, "Adobe-Japan2"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Japan2-UCS2"); /* where's this? */
+			error = pdf_load_system_cmap(&font->to_unicode, "Adobe-Japan2-UCS2"); /* where's this? */
 		else if (!strcmp(collection, "Adobe-Korea1"))
-			error = pdf_loadsystemcmap(&font->tounicode, "Adobe-Korea1-UCS2");
+			error = pdf_load_system_cmap(&font->to_unicode, "Adobe-Korea1-UCS2");
 
 		if (error)
-			return fz_rethrow(error, "cannot load tounicode system cmap %s-UCS2", collection);
+			return fz_rethrow(error, "cannot load to_unicode system cmap %s-UCS2", collection);
 	}
 
 	if (strings)
 	{
-		pdf_logfont("tounicode strings\n");
+		pdf_log_font("to_unicode strings\n");
 
 		/* TODO one-to-many mappings */
 
-		font->ncidtoucs = 256;
-		font->cidtoucs = fz_calloc(256, sizeof(unsigned short));
+		font->cid_to_ucs_len = 256;
+		font->cid_to_ucs = fz_calloc(256, sizeof(unsigned short));
 
 		for (i = 0; i < 256; i++)
 		{
 			if (strings[i])
-				font->cidtoucs[i] = pdf_lookupagl(strings[i]);
+				font->cid_to_ucs[i] = pdf_lookup_agl(strings[i]);
 			else
-				font->cidtoucs[i] = '?';
+				font->cid_to_ucs[i] = '?';
 		}
 	}
 
-	if (!font->tounicode && !font->cidtoucs)
+	if (!font->to_unicode && !font->cid_to_ucs)
 	{
-		pdf_logfont("tounicode could not be loaded\n");
+		pdf_log_font("to_unicode could not be loaded\n");
 		/* TODO: synthesize a ToUnicode if it's a freetype font with
 		* cmap and/or post tables or if it has glyph names. */
 	}

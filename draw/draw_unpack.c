@@ -8,13 +8,13 @@
 #define get8(buf,x) (buf[x])
 #define get16(buf,x) (buf[x << 1])
 
-static unsigned char get1tab1[256][8];
-static unsigned char get1tab1p[256][16];
-static unsigned char get1tab255[256][8];
-static unsigned char get1tab255p[256][16];
+static unsigned char get1_tab_1[256][8];
+static unsigned char get1_tab_1p[256][16];
+static unsigned char get1_tab_255[256][8];
+static unsigned char get1_tab_255p[256][16];
 
 static void
-initget1tables(void)
+init_get1_tables(void)
 {
 	static int once = 0;
 	unsigned char bits[1];
@@ -32,13 +32,13 @@ initget1tables(void)
 		{
 			x = get1(bits, k);
 
-			get1tab1[i][k] = x;
-			get1tab1p[i][k * 2] = x;
-			get1tab1p[i][k * 2 + 1] = 255;
+			get1_tab_1[i][k] = x;
+			get1_tab_1p[i][k * 2] = x;
+			get1_tab_1p[i][k * 2 + 1] = 255;
 
-			get1tab255[i][k] = x * 255;
-			get1tab255p[i][k * 2] = x * 255;
-			get1tab255p[i][k * 2 + 1] = 255;
+			get1_tab_255[i][k] = x * 255;
+			get1_tab_255p[i][k * 2] = x * 255;
+			get1_tab_255p[i][k * 2 + 1] = 255;
 		}
 	}
 
@@ -46,7 +46,7 @@ initget1tables(void)
 }
 
 void
-fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale)
+fz_unpack_tile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale)
 {
 	int pad, x, y, k;
 	int w = dst->w;
@@ -56,7 +56,7 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 		pad = 255;
 
 	if (depth == 1)
-		initget1tables();
+		init_get1_tables();
 
 	if (scale == 0)
 	{
@@ -80,12 +80,12 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
 			{
-				memcpy(dp, get1tab1[*sp++], 8);
+				memcpy(dp, get1_tab_1[*sp++], 8);
 				dp += 8;
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1tab1[*sp], w - x);
+				memcpy(dp, get1_tab_1[*sp], w - x);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 255 && !pad)
@@ -93,12 +93,12 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
 			{
-				memcpy(dp, get1tab255[*sp++], 8);
+				memcpy(dp, get1_tab_255[*sp++], 8);
 				dp += 8;
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1tab255[*sp], w - x);
+				memcpy(dp, get1_tab_255[*sp], w - x);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 1 && pad)
@@ -106,12 +106,12 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
 			{
-				memcpy(dp, get1tab1p[*sp++], 16);
+				memcpy(dp, get1_tab_1p[*sp++], 16);
 				dp += 16;
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1tab1p[*sp], (w - x) << 1);
+				memcpy(dp, get1_tab_1p[*sp], (w - x) << 1);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 255 && pad)
@@ -119,12 +119,12 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
 			{
-				memcpy(dp, get1tab255p[*sp++], 16);
+				memcpy(dp, get1_tab_255p[*sp++], 16);
 				dp += 16;
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1tab255p[*sp], (w - x) << 1);
+				memcpy(dp, get1_tab_255p[*sp], (w - x) << 1);
 		}
 
 		else if (depth == 8 && !pad)
@@ -171,10 +171,10 @@ fz_unpacktile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, in
 /* Apply decode array */
 
 void
-fz_decodeindexedtile(fz_pixmap *pix, float *decode, int maxval)
+fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval)
 {
-	int add[FZ_MAXCOLORS];
-	int mul[FZ_MAXCOLORS];
+	int add[FZ_MAX_COLORS];
+	int mul[FZ_MAX_COLORS];
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
 	int n = pix->n - 1;
@@ -203,10 +203,10 @@ fz_decodeindexedtile(fz_pixmap *pix, float *decode, int maxval)
 }
 
 void
-fz_decodetile(fz_pixmap *pix, float *decode)
+fz_decode_tile(fz_pixmap *pix, float *decode)
 {
-	int add[FZ_MAXCOLORS];
-	int mul[FZ_MAXCOLORS];
+	int add[FZ_MAX_COLORS];
+	int mul[FZ_MAX_COLORS];
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
 	int n = MAX(1, pix->n - 1);

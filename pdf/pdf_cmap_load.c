@@ -5,75 +5,75 @@
  * Load CMap stream in PDF file
  */
 fz_error
-pdf_loadembeddedcmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
+pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
 {
 	fz_error error = fz_okay;
-	fz_stream *file = nil;
-	pdf_cmap *cmap = nil;
+	fz_stream *file = NULL;
+	pdf_cmap *cmap = NULL;
 	pdf_cmap *usecmap;
 	fz_obj *wmode;
 	fz_obj *obj;
 
-	if ((*cmapp = pdf_finditem(xref->store, pdf_dropcmap, stmobj)))
+	if ((*cmapp = pdf_find_item(xref->store, pdf_drop_cmap, stmobj)))
 	{
-		pdf_keepcmap(*cmapp);
+		pdf_keep_cmap(*cmapp);
 		return fz_okay;
 	}
 
-	pdf_logfont("load embedded cmap (%d %d R) {\n", fz_tonum(stmobj), fz_togen(stmobj));
+	pdf_log_font("load embedded cmap (%d %d R) {\n", fz_to_num(stmobj), fz_to_gen(stmobj));
 
-	error = pdf_openstream(&file, xref, fz_tonum(stmobj), fz_togen(stmobj));
+	error = pdf_open_stream(&file, xref, fz_to_num(stmobj), fz_to_gen(stmobj));
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot open cmap stream (%d %d R)", fz_tonum(stmobj), fz_togen(stmobj));
+		error = fz_rethrow(error, "cannot open cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
 		goto cleanup;
 	}
 
-	error = pdf_parsecmap(&cmap, file);
+	error = pdf_parse_cmap(&cmap, file);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot parse cmap stream (%d %d R)", fz_tonum(stmobj), fz_togen(stmobj));
+		error = fz_rethrow(error, "cannot parse cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
 		goto cleanup;
 	}
 
 	fz_close(file);
 
-	wmode = fz_dictgets(stmobj, "WMode");
-	if (fz_isint(wmode))
+	wmode = fz_dict_gets(stmobj, "WMode");
+	if (fz_is_int(wmode))
 	{
-		pdf_logfont("wmode %d\n", wmode);
-		pdf_setwmode(cmap, fz_toint(wmode));
+		pdf_log_font("wmode %d\n", wmode);
+		pdf_set_wmode(cmap, fz_to_int(wmode));
 	}
 
-	obj = fz_dictgets(stmobj, "UseCMap");
-	if (fz_isname(obj))
+	obj = fz_dict_gets(stmobj, "UseCMap");
+	if (fz_is_name(obj))
 	{
-		pdf_logfont("usecmap /%s\n", fz_toname(obj));
-		error = pdf_loadsystemcmap(&usecmap, fz_toname(obj));
+		pdf_log_font("usecmap /%s\n", fz_to_name(obj));
+		error = pdf_load_system_cmap(&usecmap, fz_to_name(obj));
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load system usecmap '%s'", fz_toname(obj));
+			error = fz_rethrow(error, "cannot load system usecmap '%s'", fz_to_name(obj));
 			goto cleanup;
 		}
-		pdf_setusecmap(cmap, usecmap);
-		pdf_dropcmap(usecmap);
+		pdf_set_usecmap(cmap, usecmap);
+		pdf_drop_cmap(usecmap);
 	}
-	else if (fz_isindirect(obj))
+	else if (fz_is_indirect(obj))
 	{
-		pdf_logfont("usecmap (%d %d R)\n", fz_tonum(obj), fz_togen(obj));
-		error = pdf_loadembeddedcmap(&usecmap, xref, obj);
+		pdf_log_font("usecmap (%d %d R)\n", fz_to_num(obj), fz_to_gen(obj));
+		error = pdf_load_embedded_cmap(&usecmap, xref, obj);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load embedded usecmap (%d %d R)", fz_tonum(obj), fz_togen(obj));
+			error = fz_rethrow(error, "cannot load embedded usecmap (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			goto cleanup;
 		}
-		pdf_setusecmap(cmap, usecmap);
-		pdf_dropcmap(usecmap);
+		pdf_set_usecmap(cmap, usecmap);
+		pdf_drop_cmap(usecmap);
 	}
 
-	pdf_logfont("}\n");
+	pdf_log_font("}\n");
 
-	pdf_storeitem(xref->store, pdf_keepcmap, pdf_dropcmap, stmobj, cmap);
+	pdf_store_item(xref->store, pdf_keep_cmap, pdf_drop_cmap, stmobj, cmap);
 
 	*cmapp = cmap;
 	return fz_okay;
@@ -82,7 +82,7 @@ cleanup:
 	if (file)
 		fz_close(file);
 	if (cmap)
-		pdf_dropcmap(cmap);
+		pdf_drop_cmap(cmap);
 	return error; /* already rethrown */
 }
 
@@ -90,14 +90,14 @@ cleanup:
  * Create an Identity-* CMap (for both 1 and 2-byte encodings)
  */
 pdf_cmap *
-pdf_newidentitycmap(int wmode, int bytes)
+pdf_new_identity_cmap(int wmode, int bytes)
 {
-	pdf_cmap *cmap = pdf_newcmap();
-	sprintf(cmap->cmapname, "Identity-%c", wmode ? 'V' : 'H');
-	pdf_addcodespace(cmap, 0x0000, 0xffff, bytes);
-	pdf_maprangetorange(cmap, 0x0000, 0xffff, 0);
-	pdf_sortcmap(cmap);
-	pdf_setwmode(cmap, wmode);
+	pdf_cmap *cmap = pdf_new_cmap();
+	sprintf(cmap->cmap_name, "Identity-%c", wmode ? 'V' : 'H');
+	pdf_add_codespace(cmap, 0x0000, 0xffff, bytes);
+	pdf_map_range_to_range(cmap, 0x0000, 0xffff, 0);
+	pdf_sort_cmap(cmap);
+	pdf_set_wmode(cmap, wmode);
 	return cmap;
 }
 
@@ -105,31 +105,31 @@ pdf_newidentitycmap(int wmode, int bytes)
  * Load predefined CMap from system.
  */
 fz_error
-pdf_loadsystemcmap(pdf_cmap **cmapp, char *cmapname)
+pdf_load_system_cmap(pdf_cmap **cmapp, char *cmap_name)
 {
 	fz_error error;
 	pdf_cmap *usecmap;
 	pdf_cmap *cmap;
 	int i;
 
-	pdf_logfont("loading system cmap %s\n", cmapname);
+	pdf_log_font("loading system cmap %s\n", cmap_name);
 
-	for (i = 0; pdf_cmaptable[i]; i++)
+	for (i = 0; pdf_cmap_table[i]; i++)
 	{
-		if (!strcmp(cmapname, pdf_cmaptable[i]->cmapname))
+		if (!strcmp(cmap_name, pdf_cmap_table[i]->cmap_name))
 		{
-			cmap = pdf_cmaptable[i];
-			if (cmap->usecmapname[0] && !cmap->usecmap)
+			cmap = pdf_cmap_table[i];
+			if (cmap->usecmap_name[0] && !cmap->usecmap)
 			{
-				error = pdf_loadsystemcmap(&usecmap, cmap->usecmapname);
+				error = pdf_load_system_cmap(&usecmap, cmap->usecmap_name);
 				if (error)
-					return fz_rethrow(error, "cannot load usecmap: %s", cmap->usecmapname);
-				pdf_setusecmap(cmap, usecmap);
+					return fz_rethrow(error, "cannot load usecmap: %s", cmap->usecmap_name);
+				pdf_set_usecmap(cmap, usecmap);
 			}
 			*cmapp = cmap;
 			return fz_okay;
 		}
 	}
 
-	return fz_throw("no builtin cmap file: %s", cmapname);
+	return fz_throw("no builtin cmap file: %s", cmap_name);
 }

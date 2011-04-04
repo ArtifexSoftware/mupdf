@@ -328,7 +328,7 @@ xps_load_page(xps_context *ctx, int number)
 		}
 		n ++;
 	}
-	return nil;
+	return NULL;
 }
 
 void

@@ -104,7 +104,7 @@ path_w4i1o4_arm(byte * restrict rgba, byte * restrict src, byte cov, int len, by
 	);
 }
 
-static void loadtile8_arm(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
+static void load_tile8_arm(byte * restrict src, int sw, byte * restrict dst, int dw, int w, int h, int pad)
 {
 	if ((h == 0) || (w == 0))
 		return;
@@ -221,10 +221,10 @@ static void loadtile8_arm(byte * restrict src, int sw, byte * restrict dst, int 
 }
 
 void
-fz_acceleratearch(void)
+fz_accelerate_arch(void)
 {
 	fz_path_w4i1o4 = path_w4i1o4_arm;
-	fz_loadtile8 = loadtile8_arm;
+	fz_loadtile8 = load_tile8_arm;
 	fz_srow4 = fz_srow4_arm;
 	fz_scol4 = fz_scol4_arm;
 }

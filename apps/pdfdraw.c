@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #endif
 
-char *output = nil;
+char *output = NULL;
 float resolution = 72;
 float rotation = 0;
 
@@ -23,7 +23,7 @@ int savealpha = 0;
 int uselist = 1;
 
 fz_colorspace *colorspace;
-fz_glyphcache *glyphcache;
+fz_glyph_cache *glyphcache;
 char *filename;
 
 struct {
@@ -66,10 +66,10 @@ static int gettime(void)
 	struct timeval now;
 	if (once)
 	{
-		gettimeofday(&first, nil);
+		gettimeofday(&first, NULL);
 		once = 0;
 	}
-	gettimeofday(&now, nil);
+	gettimeofday(&now, NULL);
 	return (now.tv_sec - first.tv_sec) * 1000 + (now.tv_usec - first.tv_usec) / 1000;
 }
 
@@ -89,7 +89,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	fz_error error;
 	fz_obj *pageobj;
 	pdf_page *page;
-	fz_displaylist *list;
+	fz_display_list *list;
 	fz_device *dev;
 	int start;
 
@@ -98,51 +98,51 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		start = gettime();
 	}
 
-	pageobj = pdf_getpageobject(xref, pagenum);
-	error = pdf_loadpage(&page, xref, pageobj);
+	pageobj = pdf_get_page_object(xref, pagenum);
+	error = pdf_load_page(&page, xref, pageobj);
 	if (error)
 		die(fz_rethrow(error, "cannot load page %d in file '%s'", pagenum, filename));
 
-	list = nil;
+	list = NULL;
 
 	if (uselist)
 	{
-		list = fz_newdisplaylist();
-		dev = fz_newlistdevice(list);
-		error = pdf_runpage(xref, page, dev, fz_identity);
+		list = fz_new_display_list();
+		dev = fz_new_list_device(list);
+		error = pdf_run_page(xref, page, dev, fz_identity);
 		if (error)
 			die(fz_rethrow(error, "cannot draw page %d in file '%s'", pagenum, filename));
-		fz_freedevice(dev);
+		fz_free_device(dev);
 	}
 
 	if (showxml)
 	{
-		dev = fz_newtracedevice();
+		dev = fz_new_trace_device();
 		printf("<page number=\"%d\">\n", pagenum);
 		if (list)
-			fz_executedisplaylist(list, dev, fz_identity, fz_infinitebbox);
+			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
-			pdf_runpage(xref, page, dev, fz_identity);
+			pdf_run_page(xref, page, dev, fz_identity);
 		printf("</page>\n");
-		fz_freedevice(dev);
+		fz_free_device(dev);
 	}
 
 	if (showtext)
 	{
-		fz_textspan *text = fz_newtextspan();
-		dev = fz_newtextdevice(text);
+		fz_text_span *text = fz_new_text_span();
+		dev = fz_new_text_device(text);
 		if (list)
-			fz_executedisplaylist(list, dev, fz_identity, fz_infinitebbox);
+			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
-			pdf_runpage(xref, page, dev, fz_identity);
-		fz_freedevice(dev);
+			pdf_run_page(xref, page, dev, fz_identity);
+		fz_free_device(dev);
 		printf("[Page %d]\n", pagenum);
 		if (showtext > 1)
-			fz_debugtextspanxml(text);
+			fz_debug_text_span_xml(text);
 		else
-			fz_debugtextspan(text);
+			fz_debug_text_span(text);
 		printf("\n");
-		fz_freetextspan(text);
+		fz_free_text_span(text);
 	}
 
 	if (showmd5 || showtime)
@@ -160,34 +160,34 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
 		ctm = fz_concat(ctm, fz_rotate(page->rotate));
 		ctm = fz_concat(ctm, fz_rotate(rotation));
-		bbox = fz_roundrect(fz_transformrect(ctm, page->mediabox));
+		bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
 
 		/* TODO: banded rendering and multi-page ppm */
 
-		pix = fz_newpixmapwithrect(colorspace, bbox);
+		pix = fz_new_pixmap_with_rect(colorspace, bbox);
 
 		if (savealpha)
-			fz_clearpixmap(pix);
+			fz_clear_pixmap(pix);
 		else
-			fz_clearpixmapwithcolor(pix, 255);
+			fz_clear_pixmap_with_color(pix, 255);
 
-		dev = fz_newdrawdevice(glyphcache, pix);
+		dev = fz_new_draw_device(glyphcache, pix);
 		if (list)
-			fz_executedisplaylist(list, dev, ctm, bbox);
+			fz_execute_display_list(list, dev, ctm, bbox);
 		else
-			pdf_runpage(xref, page, dev, ctm);
-		fz_freedevice(dev);
+			pdf_run_page(xref, page, dev, ctm);
+		fz_free_device(dev);
 
 		if (output)
 		{
 			char buf[512];
 			sprintf(buf, output, pagenum);
 			if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
-				fz_writepnm(pix, buf);
+				fz_write_pnm(pix, buf);
 			else if (strstr(output, ".pam"))
-				fz_writepam(pix, buf, savealpha);
+				fz_write_pam(pix, buf, savealpha);
 			else if (strstr(output, ".png"))
-				fz_writepng(pix, buf, savealpha);
+				fz_write_png(pix, buf, savealpha);
 		}
 
 		if (showmd5)
@@ -196,22 +196,22 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			unsigned char digest[16];
 			int i;
 
-			fz_md5init(&md5);
-			fz_md5update(&md5, pix->samples, pix->w * pix->h * pix->n);
-			fz_md5final(&md5, digest);
+			fz_md5_init(&md5);
+			fz_md5_update(&md5, pix->samples, pix->w * pix->h * pix->n);
+			fz_md5_final(&md5, digest);
 
 			printf(" ");
 			for (i = 0; i < 16; i++)
 				printf("%02x", digest[i]);
 		}
 
-		fz_droppixmap(pix);
+		fz_drop_pixmap(pix);
 	}
 
 	if (list)
-		fz_freedisplaylist(list);
+		fz_free_display_list(list);
 
-	pdf_freepage(page);
+	pdf_free_page(page);
 
 	if (showtime)
 	{
@@ -237,9 +237,9 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	if (showmd5 || showtime)
 		printf("\n");
 
-	pdf_agestore(xref->store, 3);
+	pdf_age_store(xref->store, 3);
 
-	fz_flushwarnings();
+	fz_flush_warnings();
 }
 
 static void drawrange(pdf_xref *xref, char *range)
@@ -253,7 +253,7 @@ static void drawrange(pdf_xref *xref, char *range)
 		dash = strchr(spec, '-');
 
 		if (dash == spec)
-			spage = epage = pdf_getpagecount(xref);
+			spage = epage = pdf_get_page_count(xref);
 		else
 			spage = epage = atoi(spec);
 
@@ -262,11 +262,11 @@ static void drawrange(pdf_xref *xref, char *range)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = pdf_getpagecount(xref);
+				epage = pdf_get_page_count(xref);
 		}
 
-		spage = CLAMP(spage, 1, pdf_getpagecount(xref));
-		epage = CLAMP(epage, 1, pdf_getpagecount(xref));
+		spage = CLAMP(spage, 1, pdf_get_page_count(xref));
+		epage = CLAMP(epage, 1, pdf_get_page_count(xref));
 
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)
@@ -320,15 +320,15 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	glyphcache = fz_newglyphcache();
+	glyphcache = fz_new_glyph_cache();
 
-	colorspace = fz_devicergb;
+	colorspace = fz_device_rgb;
 	if (grayscale)
-		colorspace = fz_devicegray;
+		colorspace = fz_device_gray;
 	if (output && strstr(output, ".pgm"))
-		colorspace = fz_devicegray;
+		colorspace = fz_device_gray;
 	if (output && strstr(output, ".ppm"))
-		colorspace = fz_devicergb;
+		colorspace = fz_device_rgb;
 
 	timing.count = 0;
 	timing.total = 0;
@@ -344,11 +344,11 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		error = pdf_openxref(&xref, filename, password);
+		error = pdf_open_xref(&xref, filename, password);
 		if (error)
 			die(fz_rethrow(error, "cannot open document: %s", filename));
 
-		error = pdf_loadpagetree(xref);
+		error = pdf_load_page_tree(xref);
 		if (error)
 			die(fz_rethrow(error, "cannot load page tree: %s", filename));
 
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 		if (showxml)
 			printf("</document>\n");
 
-		pdf_freexref(xref);
+		pdf_free_xref(xref);
 	}
 
 	if (showtime)
@@ -374,9 +374,9 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_freeglyphcache(glyphcache);
+	fz_free_glyph_cache(glyphcache);
 
-	fz_flushwarnings();
+	fz_flush_warnings();
 
 	return 0;
 }

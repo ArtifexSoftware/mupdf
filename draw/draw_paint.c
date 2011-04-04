@@ -75,7 +75,7 @@ typedef unsigned char byte;
 /* Blend a non-premultiplied color in mask over destination */
 
 static inline void
-fz_paintspancolor2(byte * restrict dp, byte * restrict mp, int w, byte *color)
+fz_paint_span_with_color_2(byte * restrict dp, byte * restrict mp, int w, byte *color)
 {
 	int sa = FZ_EXPAND(color[1]);
 	int g = color[0];
@@ -90,7 +90,7 @@ fz_paintspancolor2(byte * restrict dp, byte * restrict mp, int w, byte *color)
 }
 
 static inline void
-fz_paintspancolor4(byte * restrict dp, byte * restrict mp, int w, byte *color)
+fz_paint_span_with_color_4(byte * restrict dp, byte * restrict mp, int w, byte *color)
 {
 	int sa = FZ_EXPAND(color[3]);
 	int r = color[0];
@@ -109,7 +109,7 @@ fz_paintspancolor4(byte * restrict dp, byte * restrict mp, int w, byte *color)
 }
 
 static inline void
-fz_paintspancolorN(byte * restrict dp, byte * restrict mp, int n, int w, byte *color)
+fz_paint_span_with_color_N(byte * restrict dp, byte * restrict mp, int n, int w, byte *color)
 {
 	int sa = FZ_EXPAND(color[n-1]);
 	int k;
@@ -126,20 +126,20 @@ fz_paintspancolorN(byte * restrict dp, byte * restrict mp, int n, int w, byte *c
 }
 
 void
-fz_paintspancolor(byte * restrict dp, byte * restrict mp, int n, int w, byte *color)
+fz_paint_span_with_color(byte * restrict dp, byte * restrict mp, int n, int w, byte *color)
 {
 	switch (n)
 	{
-	case 2: fz_paintspancolor2(dp, mp, w, color); break;
-	case 4: fz_paintspancolor4(dp, mp, w, color); break;
-	default: fz_paintspancolorN(dp, mp, n, w, color); break;
+	case 2: fz_paint_span_with_color_2(dp, mp, w, color); break;
+	case 4: fz_paint_span_with_color_4(dp, mp, w, color); break;
+	default: fz_paint_span_with_color_N(dp, mp, n, w, color); break;
 	}
 }
 
 /* Blend source in mask over destination */
 
 static inline void
-fz_paintspanmask2(byte * restrict dp, byte * restrict sp, byte * restrict mp, int w)
+fz_paint_span_with_mask_2(byte * restrict dp, byte * restrict sp, byte * restrict mp, int w)
 {
 	while (w--)
 	{
@@ -157,7 +157,7 @@ fz_paintspanmask2(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 }
 
 static inline void
-fz_paintspanmask4(byte * restrict dp, byte * restrict sp, byte * restrict mp, int w)
+fz_paint_span_with_mask_4(byte * restrict dp, byte * restrict sp, byte * restrict mp, int w)
 {
 	while (w--)
 	{
@@ -179,7 +179,7 @@ fz_paintspanmask4(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 }
 
 static inline void
-fz_paintspanmaskN(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
+fz_paint_span_with_mask_N(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
 {
 	n--;
 	while (w--)
@@ -200,20 +200,20 @@ fz_paintspanmaskN(byte * restrict dp, byte * restrict sp, byte * restrict mp, in
 }
 
 static void
-fz_paintspanmask(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
+fz_paint_span_with_mask(byte * restrict dp, byte * restrict sp, byte * restrict mp, int n, int w)
 {
 	switch (n)
 	{
-	case 2: fz_paintspanmask2(dp, sp, mp, w); break;
-	case 4: fz_paintspanmask4(dp, sp, mp, w); break;
-	default: fz_paintspanmaskN(dp, sp, mp, n, w); break;
+	case 2: fz_paint_span_with_mask_2(dp, sp, mp, w); break;
+	case 4: fz_paint_span_with_mask_4(dp, sp, mp, w); break;
+	default: fz_paint_span_with_mask_N(dp, sp, mp, n, w); break;
 	}
 }
 
 /* Blend source in constant alpha over destination */
 
 static inline void
-fz_paintspan2alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
+fz_paint_span_2_with_alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
 {
 	alpha = FZ_EXPAND(alpha);
 	while (w--)
@@ -227,7 +227,7 @@ fz_paintspan2alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
 }
 
 static inline void
-fz_paintspan4alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
+fz_paint_span_4_with_alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
 {
 	alpha = FZ_EXPAND(alpha);
 	while (w--)
@@ -245,7 +245,7 @@ fz_paintspan4alpha(byte * restrict dp, byte * restrict sp, int w, int alpha)
 }
 
 static inline void
-fz_paintspanNalpha(byte * restrict dp, byte * restrict sp, int n, int w, int alpha)
+fz_paint_span_N_with_alpha(byte * restrict dp, byte * restrict sp, int n, int w, int alpha)
 {
 	alpha = FZ_EXPAND(alpha);
 	while (w--)
@@ -263,7 +263,7 @@ fz_paintspanNalpha(byte * restrict dp, byte * restrict sp, int n, int w, int alp
 /* Blend source over destination */
 
 static inline void
-fz_paintspan1(byte * restrict dp, byte * restrict sp, int w)
+fz_paint_span_1(byte * restrict dp, byte * restrict sp, int w)
 {
 	while (w--)
 	{
@@ -274,7 +274,7 @@ fz_paintspan1(byte * restrict dp, byte * restrict sp, int w)
 }
 
 static inline void
-fz_paintspan2(byte * restrict dp, byte * restrict sp, int w)
+fz_paint_span_2(byte * restrict dp, byte * restrict sp, int w)
 {
 	while (w--)
 	{
@@ -287,7 +287,7 @@ fz_paintspan2(byte * restrict dp, byte * restrict sp, int w)
 }
 
 static inline void
-fz_paintspan4(byte * restrict dp, byte * restrict sp, int w)
+fz_paint_span_4(byte * restrict dp, byte * restrict sp, int w)
 {
 	while (w--)
 	{
@@ -304,7 +304,7 @@ fz_paintspan4(byte * restrict dp, byte * restrict sp, int w)
 }
 
 static inline void
-fz_paintspanN(byte * restrict dp, byte * restrict sp, int n, int w)
+fz_paint_span_N(byte * restrict dp, byte * restrict sp, int n, int w)
 {
 	while (w--)
 	{
@@ -319,25 +319,25 @@ fz_paintspanN(byte * restrict dp, byte * restrict sp, int n, int w)
 }
 
 void
-fz_paintspan(byte * restrict dp, byte * restrict sp, int n, int w, int alpha)
+fz_paint_span(byte * restrict dp, byte * restrict sp, int n, int w, int alpha)
 {
 	if (alpha == 255)
 	{
 		switch (n)
 		{
-		case 1: fz_paintspan1(dp, sp, w); break;
-		case 2: fz_paintspan2(dp, sp, w); break;
-		case 4: fz_paintspan4(dp, sp, w); break;
-		default: fz_paintspanN(dp, sp, n, w); break;
+		case 1: fz_paint_span_1(dp, sp, w); break;
+		case 2: fz_paint_span_2(dp, sp, w); break;
+		case 4: fz_paint_span_4(dp, sp, w); break;
+		default: fz_paint_span_N(dp, sp, n, w); break;
 		}
 	}
 	else if (alpha > 0)
 	{
 		switch (n)
 		{
-		case 2: fz_paintspan2alpha(dp, sp, w, alpha); break;
-		case 4: fz_paintspan4alpha(dp, sp, w, alpha); break;
-		default: fz_paintspanNalpha(dp, sp, n, w, alpha); break;
+		case 2: fz_paint_span_2_with_alpha(dp, sp, w, alpha); break;
+		case 4: fz_paint_span_4_with_alpha(dp, sp, w, alpha); break;
+		default: fz_paint_span_N_with_alpha(dp, sp, n, w, alpha); break;
 		}
 	}
 }
@@ -347,15 +347,15 @@ fz_paintspan(byte * restrict dp, byte * restrict sp, int n, int w, int alpha)
  */
 
 void
-fz_paintpixmapbbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox)
+fz_paint_pixmap_with_rect(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox)
 {
 	unsigned char *sp, *dp;
 	int x, y, w, h, n;
 
 	assert(dst->n == src->n);
 
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(dst));
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(dst));
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(src));
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -370,14 +370,14 @@ fz_paintpixmapbbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox)
 
 	while (h--)
 	{
-		fz_paintspan(dp, sp, n, w, alpha);
+		fz_paint_span(dp, sp, n, w, alpha);
 		sp += src->w * n;
 		dp += dst->w * n;
 	}
 }
 
 void
-fz_paintpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
+fz_paint_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
 {
 	unsigned char *sp, *dp;
 	fz_bbox bbox;
@@ -385,8 +385,8 @@ fz_paintpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
 
 	assert(dst->n == src->n);
 
-	bbox = fz_boundpixmap(dst);
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
+	bbox = fz_bound_pixmap(dst);
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(src));
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -401,14 +401,14 @@ fz_paintpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
 
 	while (h--)
 	{
-		fz_paintspan(dp, sp, n, w, alpha);
+		fz_paint_span(dp, sp, n, w, alpha);
 		sp += src->w * n;
 		dp += dst->w * n;
 	}
 }
 
 void
-fz_paintpixmapmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
+fz_paint_pixmap_with_mask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 {
 	unsigned char *sp, *dp, *mp;
 	fz_bbox bbox;
@@ -417,9 +417,9 @@ fz_paintpixmapmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 	assert(dst->n == src->n);
 	assert(msk->n == 1);
 
-	bbox = fz_boundpixmap(dst);
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(src));
-	bbox = fz_intersectbbox(bbox, fz_boundpixmap(msk));
+	bbox = fz_bound_pixmap(dst);
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(src));
+	bbox = fz_intersect_bbox(bbox, fz_bound_pixmap(msk));
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -435,7 +435,7 @@ fz_paintpixmapmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 
 	while (h--)
 	{
-		fz_paintspanmask(dp, sp, mp, n, w);
+		fz_paint_span_with_mask(dp, sp, mp, n, w);
 		sp += src->w * n;
 		dp += dst->w * n;
 		mp += msk->w;

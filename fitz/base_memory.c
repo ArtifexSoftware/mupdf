@@ -53,7 +53,7 @@ fz_realloc(void *p, int count, int size)
 	}
 
 	np = realloc(p, count * size);
-	if (np == nil)
+	if (np == NULL)
 	{
 		fprintf(stderr, "fatal error: out of memory\n");
 		abort();

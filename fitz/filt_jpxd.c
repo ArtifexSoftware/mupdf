@@ -19,7 +19,7 @@ static void fz_opj_info_callback(const char *msg, void *client_data)
 }
 
 fz_error
-fz_loadjpximage(fz_pixmap **imgp, unsigned char *data, int size)
+fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size)
 {
 	fz_pixmap *img;
 	opj_event_mgr_t evtmgr;
@@ -81,16 +81,16 @@ fz_loadjpximage(fz_pixmap **imgp, unsigned char *data, int size)
 
 	switch (n)
 	{
-	case 1: colorspace = fz_devicegray; break;
-	case 3: colorspace = fz_devicergb; break;
-	case 4: colorspace = fz_devicecmyk; break;
+	case 1: colorspace = fz_device_gray; break;
+	case 3: colorspace = fz_device_rgb; break;
+	case 4: colorspace = fz_device_cmyk; break;
 	default:
 		/* TODO: SMaskInData */
 		opj_image_destroy(jpx);
 		return fz_throw("unknown jpx colorspace (%d components)", n);
 	}
 
-	img = fz_newpixmap(colorspace, 0, 0, w, h);
+	img = fz_new_pixmap(colorspace, 0, 0, w, h);
 
 	p = img->samples;
 	for (y = 0; y < h; y++)

@@ -3,8 +3,8 @@
 
 enum
 {
-	MAXN = FZ_MAXCOLORS,
-	MAXM = FZ_MAXCOLORS,
+	MAXN = FZ_MAX_COLORS,
+	MAXM = FZ_MAX_COLORS,
 };
 
 typedef struct psobj_s psobj;
@@ -25,7 +25,7 @@ struct pdf_function_s
 	int n;					/* number of output values */
 	float domain[MAXM][2];	/* even index : min value, odd index : max value */
 	float range[MAXN][2];	/* even index : min value, odd index : max value */
-	int hasrange;
+	int has_range;
 
 	union
 	{
@@ -72,20 +72,20 @@ static inline float LERP(float x, float xmin, float xmax, float ymin, float ymax
  * PostScript calculator
  */
 
-enum { PSBOOL, PSINT, PSREAL, PSOPERATOR, PSBLOCK };
+enum { PS_BOOL, PS_INT, PS_REAL, PS_OPERATOR, PS_BLOCK };
 
 enum
 {
-	PSOABS, PSOADD, PSOAND, PSOATAN, PSOBITSHIFT, PSOCEILING,
-	PSOCOPY, PSOCOS, PSOCVI, PSOCVR, PSODIV, PSODUP, PSOEQ,
-	PSOEXCH, PSOEXP, PSOFALSE, PSOFLOOR, PSOGE, PSOGT, PSOIDIV,
-	PSOINDEX, PSOLE, PSOLN, PSOLOG, PSOLT, PSOMOD, PSOMUL,
-	PSONE, PSONEG, PSONOT, PSOOR, PSOPOP, PSOROLL, PSOROUND,
-	PSOSIN, PSOSQRT, PSOSUB, PSOTRUE, PSOTRUNCATE, PSOXOR,
-	PSOIF, PSOIFELSE, PSORETURN
+	PS_OP_ABS, PS_OP_ADD, PS_OP_AND, PS_OP_ATAN, PS_OP_BITSHIFT, PS_OP_CEILING,
+	PS_OP_COPY, PS_OP_COS, PS_OP_CVI, PS_OP_CVR, PS_OP_DIV, PS_OP_DUP, PS_OP_EQ,
+	PS_OP_EXCH, PS_OP_EXP, PS_OP_FALSE, PS_OP_FLOOR, PS_OP_GE, PS_OP_GT, PS_OP_IDIV,
+	PS_OP_INDEX, PS_OP_LE, PS_OP_LN, PS_OP_LOG, PS_OP_LT, PS_OP_MOD, PS_OP_MUL,
+	PS_OP_NE, PS_OP_NEG, PS_OP_NOT, PS_OP_OR, PS_OP_POP, PS_OP_ROLL, PS_OP_ROUND,
+	PS_OP_SIN, PS_OP_SQRT, PS_OP_SUB, PS_OP_TRUE, PS_OP_TRUNCATE, PS_OP_XOR,
+	PS_OP_IF, PS_OP_IFELSE, PS_OP_RETURN
 };
 
-static char *psopnames[] =
+static char *ps_op_names[] =
 {
 	"abs", "add", "and", "atan", "bitshift", "ceiling", "copy",
 	"cos", "cvi", "cvr", "div", "dup", "eq", "exch", "exp",
@@ -108,16 +108,16 @@ struct psobj_s
 	} u;
 };
 
-typedef struct psstack_s psstack;
+typedef struct ps_stack_s ps_stack;
 
-struct psstack_s
+struct ps_stack_s
 {
 	psobj stack[100];
 	int sp;
 };
 
 void
-pdf_debugpsstack(psstack *st)
+pdf_debug_ps_stack(ps_stack *st)
 {
 	int i;
 
@@ -127,18 +127,18 @@ pdf_debugpsstack(psstack *st)
 	{
 		switch (st->stack[i].type)
 		{
-		case PSBOOL:
+		case PS_BOOL:
 			if (st->stack[i].u.b)
 				printf("true ");
 			else
 				printf("false ");
 			break;
 
-		case PSINT:
+		case PS_INT:
 			printf("%d ", st->stack[i].u.i);
 			break;
 
-		case PSREAL:
+		case PS_REAL:
 			printf("%g ", st->stack[i].u.f);
 			break;
 		}
@@ -148,110 +148,110 @@ pdf_debugpsstack(psstack *st)
 }
 
 static void
-psinitstack(psstack *st)
+ps_init_stack(ps_stack *st)
 {
 	memset(st->stack, 0, sizeof(st->stack));
 	st->sp = 0;
 }
 
 static inline int
-psoverflow(psstack *st, int n)
+ps_overflow(ps_stack *st, int n)
 {
 	return n < 0 || st->sp + n >= nelem(st->stack);
 }
 
 static inline int
-psunderflow(psstack *st, int n)
+ps_underflow(ps_stack *st, int n)
 {
 	return n < 0 || st->sp - n < 0;
 }
 
 static inline int
-psistype(psstack *st, int t)
+ps_is_type(ps_stack *st, int t)
 {
-	return !psunderflow(st, 1) && st->stack[st->sp - 1].type == t;
+	return !ps_underflow(st, 1) && st->stack[st->sp - 1].type == t;
 }
 
 static inline int
-psistype2(psstack *st, int t)
+ps_is_type2(ps_stack *st, int t)
 {
-	return !psunderflow(st, 2) && st->stack[st->sp - 1].type == t && st->stack[st->sp - 2].type == t;
+	return !ps_underflow(st, 2) && st->stack[st->sp - 1].type == t && st->stack[st->sp - 2].type == t;
 }
 
 static void
-pspushbool(psstack *st, int b)
+ps_push_bool(ps_stack *st, int b)
 {
-	if (!psoverflow(st, 1))
+	if (!ps_overflow(st, 1))
 	{
-		st->stack[st->sp].type = PSBOOL;
+		st->stack[st->sp].type = PS_BOOL;
 		st->stack[st->sp].u.b = b;
 		st->sp++;
 	}
 }
 
 static void
-pspushint(psstack *st, int n)
+ps_push_int(ps_stack *st, int n)
 {
-	if (!psoverflow(st, 1))
+	if (!ps_overflow(st, 1))
 	{
-		st->stack[st->sp].type = PSINT;
+		st->stack[st->sp].type = PS_INT;
 		st->stack[st->sp].u.i = n;
 		st->sp++;
 	}
 }
 
 static void
-pspushreal(psstack *st, float n)
+ps_push_real(ps_stack *st, float n)
 {
-	if (!psoverflow(st, 1))
+	if (!ps_overflow(st, 1))
 	{
-		st->stack[st->sp].type = PSREAL;
+		st->stack[st->sp].type = PS_REAL;
 		st->stack[st->sp].u.f = n;
 		st->sp++;
 	}
 }
 
 static int
-pspopbool(psstack *st)
+ps_pop_bool(ps_stack *st)
 {
-	if (!psunderflow(st, 1))
+	if (!ps_underflow(st, 1))
 	{
-		if (psistype(st, PSBOOL))
+		if (ps_is_type(st, PS_BOOL))
 			return st->stack[--st->sp].u.b;
 	}
 	return 0;
 }
 
 static int
-pspopint(psstack *st)
+ps_pop_int(ps_stack *st)
 {
-	if (!psunderflow(st, 1))
+	if (!ps_underflow(st, 1))
 	{
-		if (psistype(st, PSINT))
+		if (ps_is_type(st, PS_INT))
 			return st->stack[--st->sp].u.i;
-		if (psistype(st, PSREAL))
+		if (ps_is_type(st, PS_REAL))
 			return st->stack[--st->sp].u.f;
 	}
 	return 0;
 }
 
 static float
-pspopreal(psstack *st)
+ps_pop_real(ps_stack *st)
 {
-	if (!psunderflow(st, 1))
+	if (!ps_underflow(st, 1))
 	{
-		if (psistype(st, PSINT))
+		if (ps_is_type(st, PS_INT))
 			return st->stack[--st->sp].u.i;
-		if (psistype(st, PSREAL))
+		if (ps_is_type(st, PS_REAL))
 			return st->stack[--st->sp].u.f;
 	}
 	return 0;
 }
 
 static void
-pscopy(psstack *st, int n)
+ps_copy(ps_stack *st, int n)
 {
-	if (!psunderflow(st, n) && !psoverflow(st, n))
+	if (!ps_underflow(st, n) && !ps_overflow(st, n))
 	{
 		memcpy(st->stack + st->sp, st->stack + st->sp - n, n * sizeof(psobj));
 		st->sp += n;
@@ -259,12 +259,12 @@ pscopy(psstack *st, int n)
 }
 
 static void
-psroll(psstack *st, int n, int j)
+ps_roll(ps_stack *st, int n, int j)
 {
 	psobj tmp;
 	int i;
 
-	if (psunderflow(st, n) || j == 0 || n == 0)
+	if (ps_underflow(st, n) || j == 0 || n == 0)
 		return;
 
 	if (j >= 0)
@@ -287,9 +287,9 @@ psroll(psstack *st, int n, int j)
 }
 
 static void
-psindex(psstack *st, int n)
+ps_index(ps_stack *st, int n)
 {
-	if (!psoverflow(st, 1) && !psunderflow(st, n))
+	if (!ps_overflow(st, 1) && !ps_underflow(st, n))
 	{
 		st->stack[st->sp] = st->stack[st->sp - n - 1];
 		st->sp++;
@@ -297,7 +297,7 @@ psindex(psstack *st, int n)
 }
 
 static void
-psrun(psobj *code, psstack *st, int pc)
+ps_run(psobj *code, ps_stack *st, int pc)
 {
 	int i1, i2;
 	float r1, r2;
@@ -307,357 +307,357 @@ psrun(psobj *code, psstack *st, int pc)
 	{
 		switch (code[pc].type)
 		{
-		case PSINT:
-			pspushint(st, code[pc++].u.i);
+		case PS_INT:
+			ps_push_int(st, code[pc++].u.i);
 			break;
 
-		case PSREAL:
-			pspushreal(st, code[pc++].u.f);
+		case PS_REAL:
+			ps_push_real(st, code[pc++].u.f);
 			break;
 
-		case PSOPERATOR:
+		case PS_OPERATOR:
 			switch (code[pc++].u.op)
 			{
-			case PSOABS:
-				if (psistype(st, PSINT))
-					pspushint(st, abs(pspopint(st)));
+			case PS_OP_ABS:
+				if (ps_is_type(st, PS_INT))
+					ps_push_int(st, abs(ps_pop_int(st)));
 				else
-					pspushreal(st, fabsf(pspopreal(st)));
+					ps_push_real(st, fabsf(ps_pop_real(st)));
 				break;
 
-			case PSOADD:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 + i2);
+			case PS_OP_ADD:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 + i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushreal(st, r1 + r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_real(st, r1 + r2);
 				}
 				break;
 
-			case PSOAND:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 & i2);
+			case PS_OP_AND:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 & i2);
 				}
 				else {
-					b2 = pspopbool(st);
-					b1 = pspopbool(st);
-					pspushbool(st, b1 && b2);
+					b2 = ps_pop_bool(st);
+					b1 = ps_pop_bool(st);
+					ps_push_bool(st, b1 && b2);
 				}
 				break;
 
-			case PSOATAN:
-				r2 = pspopreal(st);
-				r1 = pspopreal(st);
+			case PS_OP_ATAN:
+				r2 = ps_pop_real(st);
+				r1 = ps_pop_real(st);
 				r1 = atan2f(r1, r2) * RADIAN;
 				if (r1 < 0)
 					r1 += 360;
-				pspushreal(st, r1);
+				ps_push_real(st, r1);
 				break;
 
-			case PSOBITSHIFT:
-				i2 = pspopint(st);
-				i1 = pspopint(st);
+			case PS_OP_BITSHIFT:
+				i2 = ps_pop_int(st);
+				i1 = ps_pop_int(st);
 				if (i2 > 0)
-					pspushint(st, i1 << i2);
+					ps_push_int(st, i1 << i2);
 				else if (i2 < 0)
-					pspushint(st, (int)((unsigned int)i1 >> i2));
+					ps_push_int(st, (int)((unsigned int)i1 >> i2));
 				else
-					pspushint(st, i1);
+					ps_push_int(st, i1);
 				break;
 
-			case PSOCEILING:
-				r1 = pspopreal(st);
-				pspushreal(st, ceilf(r1));
+			case PS_OP_CEILING:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, ceilf(r1));
 				break;
 
-			case PSOCOPY:
-				pscopy(st, pspopint(st));
+			case PS_OP_COPY:
+				ps_copy(st, ps_pop_int(st));
 				break;
 
-			case PSOCOS:
-				r1 = pspopreal(st);
-				pspushreal(st, cosf(r1/RADIAN));
+			case PS_OP_COS:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, cosf(r1/RADIAN));
 				break;
 
-			case PSOCVI:
-				pspushint(st, pspopint(st));
+			case PS_OP_CVI:
+				ps_push_int(st, ps_pop_int(st));
 				break;
 
-			case PSOCVR:
-				pspushreal(st, pspopreal(st));
+			case PS_OP_CVR:
+				ps_push_real(st, ps_pop_real(st));
 				break;
 
-			case PSODIV:
-				r2 = pspopreal(st);
-				r1 = pspopreal(st);
-				pspushreal(st, r1 / r2);
+			case PS_OP_DIV:
+				r2 = ps_pop_real(st);
+				r1 = ps_pop_real(st);
+				ps_push_real(st, r1 / r2);
 				break;
 
-			case PSODUP:
-				pscopy(st, 1);
+			case PS_OP_DUP:
+				ps_copy(st, 1);
 				break;
 
-			case PSOEQ:
-				if (psistype2(st, PSBOOL)) {
-					b2 = pspopbool(st);
-					b1 = pspopbool(st);
-					pspushbool(st, b1 == b2);
+			case PS_OP_EQ:
+				if (ps_is_type2(st, PS_BOOL)) {
+					b2 = ps_pop_bool(st);
+					b1 = ps_pop_bool(st);
+					ps_push_bool(st, b1 == b2);
 				}
-				else if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 == i2);
-				}
-				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 == r2);
-				}
-				break;
-
-			case PSOEXCH:
-				psroll(st, 2, 1);
-				break;
-
-			case PSOEXP:
-				r2 = pspopreal(st);
-				r1 = pspopreal(st);
-				pspushreal(st, powf(r1, r2));
-				break;
-
-			case PSOFALSE:
-				pspushbool(st, 0);
-				break;
-
-			case PSOFLOOR:
-				r1 = pspopreal(st);
-				pspushreal(st, floorf(r1));
-				break;
-
-			case PSOGE:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 >= i2);
+				else if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 == i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 >= r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 == r2);
 				}
 				break;
 
-			case PSOGT:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 > i2);
+			case PS_OP_EXCH:
+				ps_roll(st, 2, 1);
+				break;
+
+			case PS_OP_EXP:
+				r2 = ps_pop_real(st);
+				r1 = ps_pop_real(st);
+				ps_push_real(st, powf(r1, r2));
+				break;
+
+			case PS_OP_FALSE:
+				ps_push_bool(st, 0);
+				break;
+
+			case PS_OP_FLOOR:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, floorf(r1));
+				break;
+
+			case PS_OP_GE:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 >= i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 > r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 >= r2);
 				}
 				break;
 
-			case PSOIDIV:
-				i2 = pspopint(st);
-				i1 = pspopint(st);
-				pspushint(st, i1 / i2);
-				break;
-
-			case PSOINDEX:
-				psindex(st, pspopint(st));
-				break;
-
-			case PSOLE:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 <= i2);
+			case PS_OP_GT:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 > i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 <= r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 > r2);
 				}
 				break;
 
-			case PSOLN:
-				r1 = pspopreal(st);
-				pspushreal(st, logf(r1));
+			case PS_OP_IDIV:
+				i2 = ps_pop_int(st);
+				i1 = ps_pop_int(st);
+				ps_push_int(st, i1 / i2);
 				break;
 
-			case PSOLOG:
-				r1 = pspopreal(st);
-				pspushreal(st, log10f(r1));
+			case PS_OP_INDEX:
+				ps_index(st, ps_pop_int(st));
 				break;
 
-			case PSOLT:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 < i2);
+			case PS_OP_LE:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 <= i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 < r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 <= r2);
 				}
 				break;
 
-			case PSOMOD:
-				i2 = pspopint(st);
-				i1 = pspopint(st);
-				pspushint(st, i1 % i2);
+			case PS_OP_LN:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, logf(r1));
 				break;
 
-			case PSOMUL:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 * i2);
+			case PS_OP_LOG:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, log10f(r1));
+				break;
+
+			case PS_OP_LT:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 < i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushreal(st, r1 * r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 < r2);
 				}
 				break;
 
-			case PSONE:
-				if (psistype2(st, PSBOOL)) {
-					b2 = pspopbool(st);
-					b1 = pspopbool(st);
-					pspushbool(st, b1 != b2);
-				}
-				else if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushbool(st, i1 != i2);
+			case PS_OP_MOD:
+				i2 = ps_pop_int(st);
+				i1 = ps_pop_int(st);
+				ps_push_int(st, i1 % i2);
+				break;
+
+			case PS_OP_MUL:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 * i2);
 				}
 				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushbool(st, r1 != r2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_real(st, r1 * r2);
 				}
 				break;
 
-			case PSONEG:
-				if (psistype(st, PSINT))
-					pspushint(st, -pspopint(st));
+			case PS_OP_NE:
+				if (ps_is_type2(st, PS_BOOL)) {
+					b2 = ps_pop_bool(st);
+					b1 = ps_pop_bool(st);
+					ps_push_bool(st, b1 != b2);
+				}
+				else if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_bool(st, i1 != i2);
+				}
+				else {
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_bool(st, r1 != r2);
+				}
+				break;
+
+			case PS_OP_NEG:
+				if (ps_is_type(st, PS_INT))
+					ps_push_int(st, -ps_pop_int(st));
 				else
-					pspushreal(st, -pspopreal(st));
+					ps_push_real(st, -ps_pop_real(st));
 				break;
 
-			case PSONOT:
-				if (psistype(st, PSBOOL))
-					pspushbool(st, !pspopbool(st));
+			case PS_OP_NOT:
+				if (ps_is_type(st, PS_BOOL))
+					ps_push_bool(st, !ps_pop_bool(st));
 				else
-					pspushint(st, ~pspopint(st));
+					ps_push_int(st, ~ps_pop_int(st));
 				break;
 
-			case PSOOR:
-				if (psistype2(st, PSBOOL)) {
-					b2 = pspopbool(st);
-					b1 = pspopbool(st);
-					pspushbool(st, b1 || b2);
+			case PS_OP_OR:
+				if (ps_is_type2(st, PS_BOOL)) {
+					b2 = ps_pop_bool(st);
+					b1 = ps_pop_bool(st);
+					ps_push_bool(st, b1 || b2);
 				}
 				else {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 | i2);
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 | i2);
 				}
 				break;
 
-			case PSOPOP:
-				if (!psunderflow(st, 1))
+			case PS_OP_POP:
+				if (!ps_underflow(st, 1))
 					st->sp--;
 				break;
 
-			case PSOROLL:
-				i2 = pspopint(st);
-				i1 = pspopint(st);
-				psroll(st, i1, i2);
+			case PS_OP_ROLL:
+				i2 = ps_pop_int(st);
+				i1 = ps_pop_int(st);
+				ps_roll(st, i1, i2);
 				break;
 
-			case PSOROUND:
-				if (!psistype(st, PSINT)) {
-					r1 = pspopreal(st);
-					pspushreal(st, (r1 >= 0) ? floorf(r1 + 0.5f) : ceilf(r1 - 0.5f));
+			case PS_OP_ROUND:
+				if (!ps_is_type(st, PS_INT)) {
+					r1 = ps_pop_real(st);
+					ps_push_real(st, (r1 >= 0) ? floorf(r1 + 0.5f) : ceilf(r1 - 0.5f));
 				}
 				break;
 
-			case PSOSIN:
-				r1 = pspopreal(st);
-				pspushreal(st, sinf(r1/RADIAN));
+			case PS_OP_SIN:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, sinf(r1/RADIAN));
 				break;
 
-			case PSOSQRT:
-				r1 = pspopreal(st);
-				pspushreal(st, sqrtf(r1));
+			case PS_OP_SQRT:
+				r1 = ps_pop_real(st);
+				ps_push_real(st, sqrtf(r1));
 				break;
 
-			case PSOSUB:
-				if (psistype2(st, PSINT)) {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 - i2);
-				}
-				else {
-					r2 = pspopreal(st);
-					r1 = pspopreal(st);
-					pspushreal(st, r1 - r2);
-				}
-				break;
-
-			case PSOTRUE:
-				pspushbool(st, 1);
-				break;
-
-			case PSOTRUNCATE:
-				if (!psistype(st, PSINT)) {
-					r1 = pspopreal(st);
-					pspushreal(st, (r1 >= 0) ? floorf(r1) : ceilf(r1));
-				}
-				break;
-
-			case PSOXOR:
-				if (psistype2(st, PSBOOL)) {
-					b2 = pspopbool(st);
-					b1 = pspopbool(st);
-					pspushbool(st, b1 ^ b2);
+			case PS_OP_SUB:
+				if (ps_is_type2(st, PS_INT)) {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 - i2);
 				}
 				else {
-					i2 = pspopint(st);
-					i1 = pspopint(st);
-					pspushint(st, i1 ^ i2);
+					r2 = ps_pop_real(st);
+					r1 = ps_pop_real(st);
+					ps_push_real(st, r1 - r2);
 				}
 				break;
 
-			case PSOIF:
-				b1 = pspopbool(st);
+			case PS_OP_TRUE:
+				ps_push_bool(st, 1);
+				break;
+
+			case PS_OP_TRUNCATE:
+				if (!ps_is_type(st, PS_INT)) {
+					r1 = ps_pop_real(st);
+					ps_push_real(st, (r1 >= 0) ? floorf(r1) : ceilf(r1));
+				}
+				break;
+
+			case PS_OP_XOR:
+				if (ps_is_type2(st, PS_BOOL)) {
+					b2 = ps_pop_bool(st);
+					b1 = ps_pop_bool(st);
+					ps_push_bool(st, b1 ^ b2);
+				}
+				else {
+					i2 = ps_pop_int(st);
+					i1 = ps_pop_int(st);
+					ps_push_int(st, i1 ^ i2);
+				}
+				break;
+
+			case PS_OP_IF:
+				b1 = ps_pop_bool(st);
 				if (b1)
-					psrun(code, st, code[pc + 1].u.block);
+					ps_run(code, st, code[pc + 1].u.block);
 				pc = code[pc + 2].u.block;
 				break;
 
-			case PSOIFELSE:
-				b1 = pspopbool(st);
+			case PS_OP_IFELSE:
+				b1 = ps_pop_bool(st);
 				if (b1)
-					psrun(code, st, code[pc + 1].u.block);
+					ps_run(code, st, code[pc + 1].u.block);
 				else
-					psrun(code, st, code[pc + 0].u.block);
+					ps_run(code, st, code[pc + 0].u.block);
 				pc = code[pc + 2].u.block;
 				break;
 
-			case PSORETURN:
+			case PS_OP_RETURN:
 				return;
 
 			default:
@@ -674,7 +674,7 @@ psrun(psobj *code, psstack *st, int pc)
 }
 
 static void
-resizecode(pdf_function *func, int newsize)
+resize_code(pdf_function *func, int newsize)
 {
 	if (newsize >= func->u.p.cap)
 	{
@@ -684,7 +684,7 @@ resizecode(pdf_function *func, int newsize)
 }
 
 static fz_error
-parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
+parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 {
 	fz_error error;
 	char buf[64];
@@ -703,31 +703,31 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 
 		switch(tok)
 		{
-		case PDF_TEOF:
+		case PDF_TOK_EOF:
 			return fz_throw("truncated calculator function");
 
-		case PDF_TINT:
-			resizecode(func, *codeptr);
-			func->u.p.code[*codeptr].type = PSINT;
+		case PDF_TOK_INT:
+			resize_code(func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_INT;
 			func->u.p.code[*codeptr].u.i = atoi(buf);
 			++*codeptr;
 			break;
 
-		case PDF_TREAL:
-			resizecode(func, *codeptr);
-			func->u.p.code[*codeptr].type = PSREAL;
+		case PDF_TOK_REAL:
+			resize_code(func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_REAL;
 			func->u.p.code[*codeptr].u.f = atof(buf);
 			++*codeptr;
 			break;
 
-		case PDF_TOBRACE:
+		case PDF_TOK_OPEN_BRACE:
 			opptr = *codeptr;
 			*codeptr += 4;
 
-			resizecode(func, *codeptr);
+			resize_code(func, *codeptr);
 
 			ifptr = *codeptr;
-			error = parsecode(func, stream, codeptr);
+			error = parse_code(func, stream, codeptr);
 			if (error)
 				return fz_rethrow(error, "error in 'if' branch");
 
@@ -735,10 +735,10 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 			if (error)
 				return fz_rethrow(error, "calculator function syntax error");
 
-			if (tok == PDF_TOBRACE)
+			if (tok == PDF_TOK_OPEN_BRACE)
 			{
 				elseptr = *codeptr;
-				error = parsecode(func, stream, codeptr);
+				error = parse_code(func, stream, codeptr);
 				if (error)
 					return fz_rethrow(error, "error in 'else' branch");
 
@@ -751,30 +751,30 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 				elseptr = -1;
 			}
 
-			if (tok == PDF_TKEYWORD)
+			if (tok == PDF_TOK_KEYWORD)
 			{
 				if (!strcmp(buf, "if"))
 				{
 					if (elseptr >= 0)
 						return fz_throw("too many branches for 'if'");
-					func->u.p.code[opptr].type = PSOPERATOR;
-					func->u.p.code[opptr].u.op = PSOIF;
-					func->u.p.code[opptr+2].type = PSBLOCK;
+					func->u.p.code[opptr].type = PS_OPERATOR;
+					func->u.p.code[opptr].u.op = PS_OP_IF;
+					func->u.p.code[opptr+2].type = PS_BLOCK;
 					func->u.p.code[opptr+2].u.block = ifptr;
-					func->u.p.code[opptr+3].type = PSBLOCK;
+					func->u.p.code[opptr+3].type = PS_BLOCK;
 					func->u.p.code[opptr+3].u.block = *codeptr;
 				}
 				else if (!strcmp(buf, "ifelse"))
 				{
 					if (elseptr < 0)
 						return fz_throw("not enough branches for 'ifelse'");
-					func->u.p.code[opptr].type = PSOPERATOR;
-					func->u.p.code[opptr].u.op = PSOIFELSE;
-					func->u.p.code[opptr+1].type = PSBLOCK;
+					func->u.p.code[opptr].type = PS_OPERATOR;
+					func->u.p.code[opptr].u.op = PS_OP_IFELSE;
+					func->u.p.code[opptr+1].type = PS_BLOCK;
 					func->u.p.code[opptr+1].u.block = elseptr;
-					func->u.p.code[opptr+2].type = PSBLOCK;
+					func->u.p.code[opptr+2].type = PS_BLOCK;
 					func->u.p.code[opptr+2].u.block = ifptr;
-					func->u.p.code[opptr+3].type = PSBLOCK;
+					func->u.p.code[opptr+3].type = PS_BLOCK;
 					func->u.p.code[opptr+3].u.block = *codeptr;
 				}
 				else
@@ -788,21 +788,21 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 			}
 			break;
 
-		case PDF_TCBRACE:
-			resizecode(func, *codeptr);
-			func->u.p.code[*codeptr].type = PSOPERATOR;
-			func->u.p.code[*codeptr].u.op = PSORETURN;
+		case PDF_TOK_CLOSE_BRACE:
+			resize_code(func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_OPERATOR;
+			func->u.p.code[*codeptr].u.op = PS_OP_RETURN;
 			++*codeptr;
 			return fz_okay;
 
-		case PDF_TKEYWORD:
+		case PDF_TOK_KEYWORD:
 			cmp = -1;
 			a = -1;
-			b = nelem(psopnames);
+			b = nelem(ps_op_names);
 			while (b - a > 1)
 			{
 				mid = (a + b) / 2;
-				cmp = strcmp(buf, psopnames[mid]);
+				cmp = strcmp(buf, ps_op_names[mid]);
 				if (cmp > 0)
 					a = mid;
 				else if (cmp < 0)
@@ -813,8 +813,8 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 			if (cmp != 0)
 				return fz_throw("unknown operator: '%s'", buf);
 
-			resizecode(func, *codeptr);
-			func->u.p.code[*codeptr].type = PSOPERATOR;
+			resize_code(func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_OPERATOR;
 			func->u.p.code[*codeptr].u.op = a;
 			++*codeptr;
 			break;
@@ -826,7 +826,7 @@ parsecode(pdf_function *func, fz_stream *stream, int *codeptr)
 }
 
 static fz_error
-loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
+load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -835,9 +835,9 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, in
 	int tok;
 	int len;
 
-	pdf_logrsrc("load postscript function (%d %d R)\n", num, gen);
+	pdf_log_rsrc("load postscript function (%d %d R)\n", num, gen);
 
-	error = pdf_openstream(&stream, xref, num, gen);
+	error = pdf_open_stream(&stream, xref, num, gen);
 	if (error)
 		return fz_rethrow(error, "cannot open calculator function stream");
 
@@ -848,17 +848,17 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, in
 		return fz_rethrow(error, "stream is not a calculator function");
 	}
 
-	if (tok != PDF_TOBRACE)
+	if (tok != PDF_TOK_OPEN_BRACE)
 	{
 		fz_close(stream);
 		return fz_throw("stream is not a calculator function");
 	}
 
-	func->u.p.code = nil;
+	func->u.p.code = NULL;
 	func->u.p.cap = 0;
 
 	codeptr = 0;
-	error = parsecode(func, stream, &codeptr);
+	error = parse_code(func, stream, &codeptr);
 	if (error)
 	{
 		fz_close(stream);
@@ -870,25 +870,25 @@ loadpostscriptfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, in
 }
 
 static void
-evalpostscriptfunc(pdf_function *func, float *in, float *out)
+eval_postscript_func(pdf_function *func, float *in, float *out)
 {
-	psstack st;
+	ps_stack st;
 	float x;
 	int i;
 
-	psinitstack(&st);
+	ps_init_stack(&st);
 
 	for (i = 0; i < func->m; i++)
 	{
 		x = CLAMP(in[i], func->domain[i][0], func->domain[i][1]);
-		pspushreal(&st, x);
+		ps_push_real(&st, x);
 	}
 
-	psrun(func->u.p.code, &st, 0);
+	ps_run(func->u.p.code, &st, 0);
 
 	for (i = func->n - 1; i >= 0; i--)
 	{
-		x = pspopreal(&st);
+		x = ps_pop_real(&st);
 		out[i] = CLAMP(x, func->range[i][0], func->range[i][1]);
 	}
 }
@@ -898,7 +898,7 @@ evalpostscriptfunc(pdf_function *func, float *in, float *out)
  */
 
 static fz_error
-loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
+load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
 	fz_error error;
 	fz_stream *stream;
@@ -907,32 +907,32 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 	int bps;
 	int i;
 
-	pdf_logrsrc("sampled function {\n");
+	pdf_log_rsrc("sampled function {\n");
 
-	func->u.sa.samples = nil;
+	func->u.sa.samples = NULL;
 
-	obj = fz_dictgets(dict, "Size");
-	if (!fz_isarray(obj) || fz_arraylen(obj) != func->m)
+	obj = fz_dict_gets(dict, "Size");
+	if (!fz_is_array(obj) || fz_array_len(obj) != func->m)
 		return fz_throw("malformed /Size");
 	for (i = 0; i < func->m; i++)
-		func->u.sa.size[i] = fz_toint(fz_arrayget(obj, i));
+		func->u.sa.size[i] = fz_to_int(fz_array_get(obj, i));
 
-	obj = fz_dictgets(dict, "BitsPerSample");
-	if (!fz_isint(obj))
+	obj = fz_dict_gets(dict, "BitsPerSample");
+	if (!fz_is_int(obj))
 		return fz_throw("malformed /BitsPerSample");
-	func->u.sa.bps = bps = fz_toint(obj);
+	func->u.sa.bps = bps = fz_to_int(obj);
 
-	pdf_logrsrc("bps %d\n", bps);
+	pdf_log_rsrc("bps %d\n", bps);
 
-	obj = fz_dictgets(dict, "Encode");
-	if (fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Encode");
+	if (fz_is_array(obj))
 	{
-		if (fz_arraylen(obj) != func->m * 2)
+		if (fz_array_len(obj) != func->m * 2)
 			return fz_throw("malformed /Encode");
 		for (i = 0; i < func->m; i++)
 		{
-			func->u.sa.encode[i][0] = fz_toreal(fz_arrayget(obj, i*2+0));
-			func->u.sa.encode[i][1] = fz_toreal(fz_arrayget(obj, i*2+1));
+			func->u.sa.encode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.sa.encode[i][1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 	else
@@ -944,15 +944,15 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 		}
 	}
 
-	obj = fz_dictgets(dict, "Decode");
-	if (fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Decode");
+	if (fz_is_array(obj))
 	{
-		if (fz_arraylen(obj) != func->n * 2)
+		if (fz_array_len(obj) != func->n * 2)
 			return fz_throw("malformed /Decode");
 		for (i = 0; i < func->n; i++)
 		{
-			func->u.sa.decode[i][0] = fz_toreal(fz_arrayget(obj, i*2+0));
-			func->u.sa.decode[i][1] = fz_toreal(fz_arrayget(obj, i*2+1));
+			func->u.sa.decode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.sa.decode[i][1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 	else
@@ -967,11 +967,11 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 	for (i = 0, samplecount = func->n; i < func->m; i++)
 		samplecount *= func->u.sa.size[i];
 
-	pdf_logrsrc("samplecount %d\n", samplecount);
+	pdf_log_rsrc("samplecount %d\n", samplecount);
 
 	func->u.sa.samples = fz_calloc(samplecount, sizeof(float));
 
-	error = pdf_openstream(&stream, xref, num, gen);
+	error = pdf_open_stream(&stream, xref, num, gen);
 	if (error)
 		return fz_rethrow(error, "cannot open samples stream (%d %d R)", num, gen);
 
@@ -981,7 +981,7 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 		unsigned int x;
 		float s;
 
-		if (fz_iseofbits(stream))
+		if (fz_is_eof_bits(stream))
 		{
 			fz_close(stream);
 			return fz_throw("truncated sample stream");
@@ -989,27 +989,27 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 
 		switch (bps)
 		{
-		case 1: s = fz_readbits(stream, 1); break;
-		case 2: s = fz_readbits(stream, 2) / 3.0f; break;
-		case 4: s = fz_readbits(stream, 4) / 15.0f; break;
-		case 8: s = fz_readbyte(stream) / 255.0f; break;
-		case 12: s = fz_readbits(stream, 12) / 4095.0f; break;
+		case 1: s = fz_read_bits(stream, 1); break;
+		case 2: s = fz_read_bits(stream, 2) / 3.0f; break;
+		case 4: s = fz_read_bits(stream, 4) / 15.0f; break;
+		case 8: s = fz_read_byte(stream) / 255.0f; break;
+		case 12: s = fz_read_bits(stream, 12) / 4095.0f; break;
 		case 16:
-			x = fz_readbyte(stream) << 8;
-			x |= fz_readbyte(stream);
+			x = fz_read_byte(stream) << 8;
+			x |= fz_read_byte(stream);
 			s = x / 65535.0f;
 			break;
 		case 24:
-			x = fz_readbyte(stream) << 16;
-			x |= fz_readbyte(stream) << 8;
-			x |= fz_readbyte(stream);
+			x = fz_read_byte(stream) << 16;
+			x |= fz_read_byte(stream) << 8;
+			x |= fz_read_byte(stream);
 			s = x / 16777215.0f;
 			break;
 		case 32:
-			x = fz_readbyte(stream) << 24;
-			x |= fz_readbyte(stream) << 16;
-			x |= fz_readbyte(stream) << 8;
-			x |= fz_readbyte(stream);
+			x = fz_read_byte(stream) << 24;
+			x |= fz_read_byte(stream) << 16;
+			x |= fz_read_byte(stream) << 8;
+			x |= fz_read_byte(stream);
 			s = x / 4294967295.0f;
 			break;
 		default:
@@ -1022,13 +1022,13 @@ loadsamplefunc(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int ge
 
 	fz_close(stream);
 
-	pdf_logrsrc("}\n");
+	pdf_log_rsrc("}\n");
 
 	return fz_okay;
 }
 
 static float
-interpolatesample(pdf_function *func, int *scale, int *e0, int *e1, float *efrac, int dim, int idx)
+interpolate_sample(pdf_function *func, int *scale, int *e0, int *e1, float *efrac, int dim, int idx)
 {
 	float a, b;
 	int idx0, idx1;
@@ -1043,15 +1043,15 @@ interpolatesample(pdf_function *func, int *scale, int *e0, int *e1, float *efrac
 	}
 	else
 	{
-		a = interpolatesample(func, scale, e0, e1, efrac, dim - 1, idx0);
-		b = interpolatesample(func, scale, e0, e1, efrac, dim - 1, idx1);
+		a = interpolate_sample(func, scale, e0, e1, efrac, dim - 1, idx0);
+		b = interpolate_sample(func, scale, e0, e1, efrac, dim - 1, idx1);
 	}
 
 	return a + (b - a) * efrac[dim];
 }
 
 static void
-evalsamplefunc(pdf_function *func, float *in, float *out)
+eval_sample_func(pdf_function *func, float *in, float *out)
 {
 	int e0[MAXM], e1[MAXM], scale[MAXM];
 	float efrac[MAXM];
@@ -1107,7 +1107,7 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
 
 		else
 		{
-			float x = interpolatesample(func, scale, e0, e1, efrac, func->m - 1, i);
+			float x = interpolate_sample(func, scale, e0, e1, efrac, func->m - 1, i);
 			out[i] = LERP(x, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
 			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 		}
@@ -1119,31 +1119,31 @@ evalsamplefunc(pdf_function *func, float *in, float *out)
  */
 
 static fz_error
-loadexponentialfunc(pdf_function *func, fz_obj *dict)
+load_exponential_func(pdf_function *func, fz_obj *dict)
 {
 	fz_obj *obj;
 	int i;
 
-	pdf_logrsrc("exponential function {\n");
+	pdf_log_rsrc("exponential function {\n");
 
 	if (func->m != 1)
 		return fz_throw("/Domain must be one dimension (%d)", func->m);
 
-	obj = fz_dictgets(dict, "N");
-	if (!fz_isint(obj) && !fz_isreal(obj))
+	obj = fz_dict_gets(dict, "N");
+	if (!fz_is_int(obj) && !fz_is_real(obj))
 		return fz_throw("malformed /N");
-	func->u.e.n = fz_toreal(obj);
-	pdf_logrsrc("n %g\n", func->u.e.n);
+	func->u.e.n = fz_to_real(obj);
+	pdf_log_rsrc("n %g\n", func->u.e.n);
 
-	obj = fz_dictgets(dict, "C0");
-	if (fz_isarray(obj))
+	obj = fz_dict_gets(dict, "C0");
+	if (fz_is_array(obj))
 	{
-		func->n = fz_arraylen(obj);
+		func->n = fz_array_len(obj);
 		if (func->n >= MAXN)
 			return fz_throw("exponential function result array out of range");
 		for (i = 0; i < func->n; i++)
-			func->u.e.c0[i] = fz_toreal(fz_arrayget(obj, i));
-		pdf_logrsrc("c0 %d\n", func->n);
+			func->u.e.c0[i] = fz_to_real(fz_array_get(obj, i));
+		pdf_log_rsrc("c0 %d\n", func->n);
 	}
 	else
 	{
@@ -1151,14 +1151,14 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 		func->u.e.c0[0] = 0;
 	}
 
-	obj = fz_dictgets(dict, "C1");
-	if (fz_isarray(obj))
+	obj = fz_dict_gets(dict, "C1");
+	if (fz_is_array(obj))
 	{
-		if (fz_arraylen(obj) != func->n)
+		if (fz_array_len(obj) != func->n)
 			return fz_throw("/C1 must match /C0 length");
 		for (i = 0; i < func->n; i++)
-			func->u.e.c1[i] = fz_toreal(fz_arrayget(obj, i));
-		pdf_logrsrc("c1 %d\n", func->n);
+			func->u.e.c1[i] = fz_to_real(fz_array_get(obj, i));
+		pdf_log_rsrc("c1 %d\n", func->n);
 	}
 	else
 	{
@@ -1167,13 +1167,13 @@ loadexponentialfunc(pdf_function *func, fz_obj *dict)
 		func->u.e.c1[0] = 1;
 	}
 
-	pdf_logrsrc("}\n");
+	pdf_log_rsrc("}\n");
 
 	return fz_okay;
 }
 
 static void
-evalexponentialfunc(pdf_function *func, float in, float *out)
+eval_exponential_func(pdf_function *func, float in, float *out)
 {
 	float x = in;
 	float tmp;
@@ -1192,7 +1192,7 @@ evalexponentialfunc(pdf_function *func, float in, float *out)
 	for (i = 0; i < func->n; i++)
 	{
 		out[i] = func->u.e.c0[i] + tmp * (func->u.e.c1[i] - func->u.e.c0[i]);
-		if (func->hasrange)
+		if (func->has_range)
 			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
 	}
 }
@@ -1202,7 +1202,7 @@ evalexponentialfunc(pdf_function *func, float in, float *out)
  */
 
 static fz_error
-loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
+load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 {
 	pdf_function **funcs;
 	fz_error error;
@@ -1212,20 +1212,20 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	int k;
 	int i;
 
-	pdf_logrsrc("stitching {\n");
+	pdf_log_rsrc("stitching {\n");
 
 	func->u.st.k = 0;
 
 	if (func->m != 1)
 		return fz_throw("/Domain must be one dimension (%d)", func->m);
 
-	obj = fz_dictgets(dict, "Functions");
-	if (!fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Functions");
+	if (!fz_is_array(obj))
 		return fz_throw("stitching function has no input functions");
 	{
-		k = fz_arraylen(obj);
+		k = fz_array_len(obj);
 
-		pdf_logrsrc("k %d\n", k);
+		pdf_log_rsrc("k %d\n", k);
 
 		func->u.st.funcs = fz_calloc(k, sizeof(pdf_function*));
 		func->u.st.bounds = fz_calloc(k - 1, sizeof(float));
@@ -1234,10 +1234,10 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 
 		for (i = 0; i < k; i++)
 		{
-			sub = fz_arrayget(obj, i);
-			error = pdf_loadfunction(&funcs[i], xref, sub);
+			sub = fz_array_get(obj, i);
+			error = pdf_load_function(&funcs[i], xref, sub);
 			if (error)
-				return fz_rethrow(error, "cannot load sub function %d (%d %d R)", i, fz_tonum(sub), fz_togen(sub));
+				return fz_rethrow(error, "cannot load sub function %d (%d %d R)", i, fz_to_num(sub), fz_to_gen(sub));
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
 				return fz_throw("sub function %d /Domain or /Range mismatch", i);
 			func->u.st.k ++;
@@ -1249,19 +1249,19 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			return fz_throw("sub function /Domain or /Range mismatch");
 	}
 
-	obj = fz_dictgets(dict, "Bounds");
-	if (!fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Bounds");
+	if (!fz_is_array(obj))
 		return fz_throw("stitching function has no bounds");
 	{
-		if (!fz_isarray(obj) || fz_arraylen(obj) != k - 1)
+		if (!fz_is_array(obj) || fz_array_len(obj) != k - 1)
 			return fz_throw("malformed /Bounds (not array or wrong length)");
 
 		for (i = 0; i < k-1; i++)
 		{
-			num = fz_arrayget(obj, i);
-			if (!fz_isint(num) && !fz_isreal(num))
+			num = fz_array_get(obj, i);
+			if (!fz_is_int(num) && !fz_is_real(num))
 				return fz_throw("malformed /Bounds (item not real)");
-			func->u.st.bounds[i] = fz_toreal(num);
+			func->u.st.bounds[i] = fz_to_real(num);
 			if (i && func->u.st.bounds[i-1] > func->u.st.bounds[i])
 				return fz_throw("malformed /Bounds (item not monotonic)");
 		}
@@ -1271,26 +1271,26 @@ loadstitchingfunc(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			fz_warn("malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 
-	obj = fz_dictgets(dict, "Encode");
-	if (!fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Encode");
+	if (!fz_is_array(obj))
 		return fz_throw("stitching function is missing encoding");
 	{
-		if (!fz_isarray(obj) || fz_arraylen(obj) != k * 2)
+		if (!fz_is_array(obj) || fz_array_len(obj) != k * 2)
 			return fz_throw("malformed /Encode");
 		for (i = 0; i < k; i++)
 		{
-			func->u.st.encode[i*2+0] = fz_toreal(fz_arrayget(obj, i*2+0));
-			func->u.st.encode[i*2+1] = fz_toreal(fz_arrayget(obj, i*2+1));
+			func->u.st.encode[i*2+0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.st.encode[i*2+1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 
-	pdf_logrsrc("}\n");
+	pdf_log_rsrc("}\n");
 
 	return fz_okay;
 }
 
 static void
-evalstitchingfunc(pdf_function *func, float in, float *out)
+eval_stitching_func(pdf_function *func, float in, float *out)
 {
 	float low, high;
 	int k = func->u.st.k;
@@ -1328,7 +1328,7 @@ evalstitchingfunc(pdf_function *func, float in, float *out)
 
 	in = LERP(in, low, high, func->u.st.encode[i*2+0], func->u.st.encode[i*2+1]);
 
-	pdf_evalfunction(func->u.st.funcs[i], &in, 1, out, func->n);
+	pdf_eval_function(func->u.st.funcs[i], &in, 1, out, func->n);
 }
 
 /*
@@ -1336,14 +1336,14 @@ evalstitchingfunc(pdf_function *func, float in, float *out)
  */
 
 pdf_function *
-pdf_keepfunction(pdf_function *func)
+pdf_keep_function(pdf_function *func)
 {
 	func->refs ++;
 	return func;
 }
 
 void
-pdf_dropfunction(pdf_function *func)
+pdf_drop_function(pdf_function *func)
 {
 	int i;
 	if (--func->refs == 0)
@@ -1357,7 +1357,7 @@ pdf_dropfunction(pdf_function *func)
 			break;
 		case STITCHING:
 			for (i = 0; i < func->u.st.k; i++)
-				pdf_dropfunction(func->u.st.funcs[i]);
+				pdf_drop_function(func->u.st.funcs[i]);
 			fz_free(func->u.st.funcs);
 			fz_free(func->u.st.bounds);
 			fz_free(func->u.st.encode);
@@ -1371,56 +1371,56 @@ pdf_dropfunction(pdf_function *func)
 }
 
 fz_error
-pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
+pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 {
 	fz_error error;
 	pdf_function *func;
 	fz_obj *obj;
 	int i;
 
-	if ((*funcp = pdf_finditem(xref->store, pdf_dropfunction, dict)))
+	if ((*funcp = pdf_find_item(xref->store, pdf_drop_function, dict)))
 	{
-		pdf_keepfunction(*funcp);
+		pdf_keep_function(*funcp);
 		return fz_okay;
 	}
 
-	pdf_logrsrc("load function (%d %d R) {\n", fz_tonum(dict), fz_togen(dict));
+	pdf_log_rsrc("load function (%d %d R) {\n", fz_to_num(dict), fz_to_gen(dict));
 
 	func = fz_malloc(sizeof(pdf_function));
 	memset(func, 0, sizeof(pdf_function));
 	func->refs = 1;
 
-	obj = fz_dictgets(dict, "FunctionType");
-	func->type = fz_toint(obj);
+	obj = fz_dict_gets(dict, "FunctionType");
+	func->type = fz_to_int(obj);
 
-	pdf_logrsrc("type %d\n", func->type);
+	pdf_log_rsrc("type %d\n", func->type);
 
 	/* required for all */
-	obj = fz_dictgets(dict, "Domain");
-	func->m = fz_arraylen(obj) / 2;
+	obj = fz_dict_gets(dict, "Domain");
+	func->m = fz_array_len(obj) / 2;
 	for (i = 0; i < func->m; i++)
 	{
-		func->domain[i][0] = fz_toreal(fz_arrayget(obj, i * 2 + 0));
-		func->domain[i][1] = fz_toreal(fz_arrayget(obj, i * 2 + 1));
+		func->domain[i][0] = fz_to_real(fz_array_get(obj, i * 2 + 0));
+		func->domain[i][1] = fz_to_real(fz_array_get(obj, i * 2 + 1));
 	}
-	pdf_logrsrc("domain %d\n", func->m);
+	pdf_log_rsrc("domain %d\n", func->m);
 
 	/* required for type0 and type4, optional otherwise */
-	obj = fz_dictgets(dict, "Range");
-	if (fz_isarray(obj))
+	obj = fz_dict_gets(dict, "Range");
+	if (fz_is_array(obj))
 	{
-		func->hasrange = 1;
-		func->n = fz_arraylen(obj) / 2;
+		func->has_range = 1;
+		func->n = fz_array_len(obj) / 2;
 		for (i = 0; i < func->n; i++)
 		{
-			func->range[i][0] = fz_toreal(fz_arrayget(obj, i * 2 + 0));
-			func->range[i][1] = fz_toreal(fz_arrayget(obj, i * 2 + 1));
+			func->range[i][0] = fz_to_real(fz_array_get(obj, i * 2 + 0));
+			func->range[i][1] = fz_to_real(fz_array_get(obj, i * 2 + 1));
 		}
-		pdf_logrsrc("range %d\n", func->n);
+		pdf_log_rsrc("range %d\n", func->n);
 	}
 	else
 	{
-		func->hasrange = 0;
+		func->has_range = 0;
 		func->n = 0;
 	}
 
@@ -1433,56 +1433,56 @@ pdf_loadfunction(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 	switch(func->type)
 	{
 	case SAMPLE:
-		error = loadsamplefunc(func, xref, dict, fz_tonum(dict), fz_togen(dict));
+		error = load_sample_func(func, xref, dict, fz_to_num(dict), fz_to_gen(dict));
 		if (error)
 		{
-			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load sampled function (%d %d R)", fz_tonum(dict), fz_togen(dict));
+			pdf_drop_function(func);
+			return fz_rethrow(error, "cannot load sampled function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
 	case EXPONENTIAL:
-		error = loadexponentialfunc(func, dict);
+		error = load_exponential_func(func, dict);
 		if (error)
 		{
-			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load exponential function (%d %d R)", fz_tonum(dict), fz_togen(dict));
+			pdf_drop_function(func);
+			return fz_rethrow(error, "cannot load exponential function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
 	case STITCHING:
-		error = loadstitchingfunc(func, xref, dict);
+		error = load_stitching_func(func, xref, dict);
 		if (error)
 		{
-			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load stitching function (%d %d R)", fz_tonum(dict), fz_togen(dict));
+			pdf_drop_function(func);
+			return fz_rethrow(error, "cannot load stitching function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
 	case POSTSCRIPT:
-		error = loadpostscriptfunc(func, xref, dict, fz_tonum(dict), fz_togen(dict));
+		error = load_postscript_func(func, xref, dict, fz_to_num(dict), fz_to_gen(dict));
 		if (error)
 		{
-			pdf_dropfunction(func);
-			return fz_rethrow(error, "cannot load calculator function (%d %d R)", fz_tonum(dict), fz_togen(dict));
+			pdf_drop_function(func);
+			return fz_rethrow(error, "cannot load calculator function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
 	default:
 		fz_free(func);
-		return fz_throw("unknown function type (%d %d R)", fz_tonum(dict), fz_togen(dict));
+		return fz_throw("unknown function type (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
-	pdf_logrsrc("}\n");
+	pdf_log_rsrc("}\n");
 
-	pdf_storeitem(xref->store, pdf_keepfunction, pdf_dropfunction, dict, func);
+	pdf_store_item(xref->store, pdf_keep_function, pdf_drop_function, dict, func);
 
 	*funcp = func;
 	return fz_okay;
 }
 
 void
-pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outlen)
+pdf_eval_function(pdf_function *func, float *in, int inlen, float *out, int outlen)
 {
 	memset(out, 0, sizeof(float) * outlen);
 
@@ -1499,10 +1499,10 @@ pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outle
 
 	switch(func->type)
 	{
-	case SAMPLE: evalsamplefunc(func, in, out); break;
-	case EXPONENTIAL: evalexponentialfunc(func, *in, out); break;
-	case STITCHING: evalstitchingfunc(func, *in, out); break;
-	case POSTSCRIPT: evalpostscriptfunc(func, in, out); break;
+	case SAMPLE: eval_sample_func(func, in, out); break;
+	case EXPONENTIAL: eval_exponential_func(func, *in, out); break;
+	case STITCHING: eval_stitching_func(func, *in, out); break;
+	case POSTSCRIPT: eval_postscript_func(func, in, out); break;
 	}
 }
 
@@ -1511,7 +1511,7 @@ pdf_evalfunction(pdf_function *func, float *in, int inlen, float *out, int outle
  */
 
 static void
-pdf_debugindent(char *prefix, int level, char *suffix)
+pdf_debug_indent(char *prefix, int level, char *suffix)
 {
 	int i;
 
@@ -1524,20 +1524,20 @@ pdf_debugindent(char *prefix, int level, char *suffix)
 }
 
 static void
-pdf_debugpsfunccode(psobj *funccode, psobj *code, int level)
+pdf_debug_ps_func_code(psobj *funccode, psobj *code, int level)
 {
 	int eof, wasop;
 
-	pdf_debugindent("", level, "{");
+	pdf_debug_indent("", level, "{");
 
 	/* Print empty blocks as { }, instead of separating braces on different lines. */
-	if (code->type == PSOPERATOR && code->u.op == PSORETURN)
+	if (code->type == PS_OPERATOR && code->u.op == PS_OP_RETURN)
 	{
 		printf(" } ");
 		return;
 	}
 
-	pdf_debugindent("\n", ++level, "");
+	pdf_debug_indent("\n", ++level, "");
 
 	eof = 0;
 	wasop = 0;
@@ -1545,60 +1545,60 @@ pdf_debugpsfunccode(psobj *funccode, psobj *code, int level)
 	{
 		switch (code->type)
 		{
-		case PSINT:
+		case PS_INT:
 			if (wasop)
-				pdf_debugindent("\n", level, "");
+				pdf_debug_indent("\n", level, "");
 
 			printf("%d ", code->u.i);
 			wasop = 0;
 			code++;
 			break;
 
-		case PSREAL:
+		case PS_REAL:
 			if (wasop)
-				pdf_debugindent("\n", level, "");
+				pdf_debug_indent("\n", level, "");
 
 			printf("%g ", code->u.f);
 			wasop = 0;
 			code++;
 			break;
 
-		case PSOPERATOR:
-			if (code->u.op == PSORETURN)
+		case PS_OPERATOR:
+			if (code->u.op == PS_OP_RETURN)
 			{
 				printf("\n");
 				eof = 1;
 			}
-			else if (code->u.op == PSOIF)
+			else if (code->u.op == PS_OP_IF)
 			{
 				printf("\n");
-				pdf_debugpsfunccode(funccode, &funccode[(code + 2)->u.block], level);
+				pdf_debug_ps_func_code(funccode, &funccode[(code + 2)->u.block], level);
 
-				printf("%s", psopnames[code->u.op]);
+				printf("%s", ps_op_names[code->u.op]);
 				code = &funccode[(code + 3)->u.block];
-				if (code->type != PSOPERATOR || code->u.op != PSORETURN)
-					pdf_debugindent("\n", level, "");
+				if (code->type != PS_OPERATOR || code->u.op != PS_OP_RETURN)
+					pdf_debug_indent("\n", level, "");
 
 				wasop = 0;
 			}
-			else if (code->u.op == PSOIFELSE)
+			else if (code->u.op == PS_OP_IFELSE)
 			{
 				printf("\n");
-				pdf_debugpsfunccode(funccode, &funccode[(code + 2)->u.block], level);
+				pdf_debug_ps_func_code(funccode, &funccode[(code + 2)->u.block], level);
 
 				printf("\n");
-				pdf_debugpsfunccode(funccode, &funccode[(code + 1)->u.block], level);
+				pdf_debug_ps_func_code(funccode, &funccode[(code + 1)->u.block], level);
 
-				printf("%s", psopnames[code->u.op]);
+				printf("%s", ps_op_names[code->u.op]);
 				code = &funccode[(code + 3)->u.block];
-				if (code->type != PSOPERATOR || code->u.op != PSORETURN)
-					pdf_debugindent("\n", level, "");
+				if (code->type != PS_OPERATOR || code->u.op != PS_OP_RETURN)
+					pdf_debug_indent("\n", level, "");
 
 				wasop = 0;
 			}
 			else
 			{
-				printf("%s ", psopnames[code->u.op]);
+				printf("%s ", ps_op_names[code->u.op]);
 				code++;
 				wasop = 1;
 			}
@@ -1606,17 +1606,17 @@ pdf_debugpsfunccode(psobj *funccode, psobj *code, int level)
 		}
 	}
 
-	pdf_debugindent("", --level, "} ");
+	pdf_debug_indent("", --level, "} ");
 }
 
 static void
-pdf_debugfunctionimp(pdf_function *func, int level)
+pdf_debug_function_imp(pdf_function *func, int level)
 {
 	int i;
 
-	pdf_debugindent("", level, "function {\n");
+	pdf_debug_indent("", level, "function {\n");
 
-	pdf_debugindent("", ++level, "");
+	pdf_debug_indent("", ++level, "");
 	switch (func->type)
 	{
 	case SAMPLE:
@@ -1633,17 +1633,17 @@ pdf_debugfunctionimp(pdf_function *func, int level)
 		break;
 	}
 
-	pdf_debugindent("\n", level, "");
+	pdf_debug_indent("\n", level, "");
 	printf("%d input -> %d output\n", func->m, func->n);
 
-	pdf_debugindent("", level, "domain ");
+	pdf_debug_indent("", level, "domain ");
 	for (i = 0; i < func->m; i++)
 		printf("%g %g ", func->domain[i][0], func->domain[i][1]);
 	printf("\n");
 
-	if (func->hasrange)
+	if (func->has_range)
 	{
-		pdf_debugindent("", level, "range ");
+		pdf_debug_indent("", level, "range ");
 		for (i = 0; i < func->n; i++)
 			printf("%g %g ", func->range[i][0], func->range[i][1]);
 		printf("\n");
@@ -1652,22 +1652,22 @@ pdf_debugfunctionimp(pdf_function *func, int level)
 	switch (func->type)
 	{
 	case SAMPLE:
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("bps: %d\n", func->u.sa.bps);
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("size: [ ");
 		for (i = 0; i < func->m; i++)
 			printf("%d ", func->u.sa.size[i]);
 		printf("]\n");
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("encode: [ ");
 		for (i = 0; i < func->m; i++)
 			printf("%g %g ", func->u.sa.encode[i][0], func->u.sa.encode[i][1]);
 		printf("]\n");
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("decode: [ ");
 		for (i = 0; i < func->m; i++)
 			printf("%g %g ", func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
@@ -1675,16 +1675,16 @@ pdf_debugfunctionimp(pdf_function *func, int level)
 		break;
 
 	case EXPONENTIAL:
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("n: %g\n", func->u.e.n);
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("c0: [ ");
 		for (i = 0; i < func->n; i++)
 			printf("%g ", func->u.e.c0[i]);
 		printf("]\n");
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("c1: [ ");
 		for (i = 0; i < func->n; i++)
 			printf("%g ", func->u.e.c1[i]);
@@ -1692,36 +1692,36 @@ pdf_debugfunctionimp(pdf_function *func, int level)
 		break;
 
 	case STITCHING:
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("%d functions\n", func->u.st.k);
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("bounds: [ ");
 		for (i = 0; i < func->u.st.k - 1; i++)
 			printf("%g ", func->u.st.bounds[i]);
 		printf("]\n");
 
-		pdf_debugindent("", level, "");
+		pdf_debug_indent("", level, "");
 		printf("encode: [ ");
 		for (i = 0; i < func->u.st.k * 2; i++)
 			printf("%g ", func->u.st.encode[i]);
 		printf("]\n");
 
 		for (i = 0; i < func->u.st.k; i++)
-			pdf_debugfunctionimp(func->u.st.funcs[i], level);
+			pdf_debug_function_imp(func->u.st.funcs[i], level);
 		break;
 
 	case POSTSCRIPT:
-		pdf_debugpsfunccode(func->u.p.code, func->u.p.code, level);
+		pdf_debug_ps_func_code(func->u.p.code, func->u.p.code, level);
 		printf("\n");
 		break;
 	}
 
-	pdf_debugindent("", --level, "}\n");
+	pdf_debug_indent("", --level, "}\n");
 }
 
 void
-pdf_debugfunction(pdf_function *func)
+pdf_debug_function(pdf_function *func)
 {
-	pdf_debugfunctionimp(func, 0);
+	pdf_debug_function_imp(func, 0);
 }

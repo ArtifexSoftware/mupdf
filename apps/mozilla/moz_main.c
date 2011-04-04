@@ -89,10 +89,10 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
     moz->filename = filename;
 
     moz->xref = pdf_newxref();
-    error = pdf_loadxref(moz->xref, filename);
+    error = pdf_load_xref(moz->xref, filename);
     if (error)
     {
-	error = pdf_repairxref(moz->xref, filename);
+	error = pdf_repair_xref(moz->xref, filename);
 	if (error)
 	    pdfmoz_error(moz, error);
     }
@@ -105,30 +105,30 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
     if (error)
 	pdfmoz_error(moz, error);
 
-    if (pdf_needspassword(moz->xref))
+    if (pdf_needs_password(moz->xref))
     {
 	pdfmoz_warn(moz, "PDF file is encrypted and needs a password.");
     }
 
-    moz->pagecount = pdf_getpagecount(moz->xref);
+    moz->pagecount = pdf_get_page_count(moz->xref);
     moz->pages = fz_malloc(sizeof(page_t) * moz->pagecount);
 
     for (i = 0; i < moz->pagecount; i++)
     {
 	fz_obj *pageobj;
-	pageobj = pdf_getpageobject(moz->xref, i);
-	moz->pages[i].obj = fz_keepobj(pageobj);
-	moz->pages[i].page = nil;
-	moz->pages[i].image = nil;
+	pageobj = pdf_get_page_object(moz->xref, i);
+	moz->pages[i].obj = fz_keep_obj(pageobj);
+	moz->pages[i].page = NULL;
+	moz->pages[i].image = NULL;
 
-	obj = fz_dictgets(moz->pages[i].obj, "CropBox");
+	obj = fz_dict_gets(moz->pages[i].obj, "CropBox");
 	if (!obj)
-	    obj = fz_dictgets(moz->pages[i].obj, "MediaBox");
-	bbox = fz_roundrect(pdf_torect(obj));
+	    obj = fz_dict_gets(moz->pages[i].obj, "MediaBox");
+	bbox = fz_round_rect(pdf_to_rect(obj));
 	moz->pages[i].w = bbox.x1 - bbox.x0;
 	moz->pages[i].h = bbox.y1 - bbox.y0;
 
-	rot = fz_toint(fz_dictgets(moz->pages[i].obj, "Rotate"));
+	rot = fz_to_int(fz_dict_gets(moz->pages[i].obj, "Rotate"));
 	if ((rot / 90) % 2)
 	{
 	    int t = moz->pages[i].w;
@@ -144,17 +144,17 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
      * TODO: move this into mupdf library
      */
 
-    obj = fz_dictgets(moz->xref->trailer, "Root");
-    moz->xref->root = fz_resolveindirect(obj);
+    obj = fz_dict_gets(moz->xref->trailer, "Root");
+    moz->xref->root = fz_resolve_indirect(obj);
     if (!moz->xref->root)
 	pdfmoz_error(moz, fz_throw("syntaxerror: missing Root object"));
     if (moz->xref->root)
-	fz_keepobj(moz->xref->root);
+	fz_keep_obj(moz->xref->root);
 
-    obj = fz_dictgets(moz->xref->trailer, "Info");
-    moz->xref->info = fz_resolveindirect(obj);
+    obj = fz_dict_gets(moz->xref->trailer, "Info");
+    moz->xref->info = fz_resolve_indirect(obj);
     if (moz->xref->info)
-	fz_keepobj(moz->xref->info);
+	fz_keep_obj(moz->xref->info);
 
     moz->doctitle = filename;
     if (strrchr(moz->doctitle, '\\'))
@@ -163,9 +163,9 @@ void pdfmoz_open(pdfmoz_t *moz, char *filename)
 	moz->doctitle = strrchr(moz->doctitle, '/') + 1;
     if (moz->xref->info)
     {
-	obj = fz_dictgets(moz->xref->info, "Title");
+	obj = fz_dict_gets(moz->xref->info, "Title");
 	if (obj)
-	    moz->doctitle = pdf_toutf8(obj);
+	    moz->doctitle = pdf_to_utf8(obj);
     }
 
     /*
@@ -230,7 +230,7 @@ void pdfmoz_loadpage(pdfmoz_t *moz, int pagenum)
     if (page->page)
 	return;
 
-    error = pdf_loadpage(&page->page, moz->xref, page->obj);
+    error = pdf_load_page(&page->page, moz->xref, page->obj);
     if (error)
 	pdfmoz_error(moz, error);
 }
@@ -249,7 +249,7 @@ void pdfmoz_drawpage(pdfmoz_t *moz, int pagenum)
     bbox = fz_transformaabb(ctm, page->page->mediabox);
 
     error = fz_rendertree(&page->image, moz->rast, page->page->tree,
-	    ctm, fz_roundrect(bbox), 1);
+	    ctm, fz_round_rect(bbox), 1);
     if (error)
 	pdfmoz_error(moz, error);
 }
@@ -257,14 +257,14 @@ void pdfmoz_drawpage(pdfmoz_t *moz, int pagenum)
 void pdfmoz_gotouri(pdfmoz_t *moz, fz_obj *uri)
 {
     char buf[2048];
-    memcpy(buf, fz_tostrbuf(uri), fz_tostrlen(uri));
-    buf[fz_tostrlen(uri)] = 0;
+    memcpy(buf, fz_to_str_buf(uri), fz_to_str_len(uri));
+    buf[fz_to_str_len(uri)] = 0;
     NPN_GetURL(moz->inst, buf, "_blank");
 }
 
 int pdfmoz_getpagenum(pdfmoz_t *moz, fz_obj *obj)
 {
-    return pdf_findpageobject(moz->xref, obj);
+    return pdf_find_page_object(moz->xref, obj);
 }
 
 void pdfmoz_gotopage(pdfmoz_t *moz, fz_obj *obj)
@@ -272,7 +272,7 @@ void pdfmoz_gotopage(pdfmoz_t *moz, fz_obj *obj)
     int page;
     int i, y = 0;
 
-    page = pdf_findpageobject(moz->xref, obj);
+    page = pdf_find_page_object(moz->xref, obj);
 
     for (i = 0; i < page; i++)
 	y += moz->pages[i].px;
@@ -311,9 +311,9 @@ void pdfmoz_onmouse(pdfmoz_t *moz, int x, int y, int click)
     p.y = y + moz->pages[pi].image->y - py;
 
     ctm = pdfmoz_pagectm(moz, pi);
-    ctm = fz_invertmatrix(ctm);
+    ctm = fz_invert_matrix(ctm);
 
-    p = fz_transformpoint(ctm, p);
+    p = fz_transform_point(ctm, p);
 
     for (link = moz->pages[pi].page->links; link; link = link->next)
     {
@@ -327,21 +327,21 @@ void pdfmoz_onmouse(pdfmoz_t *moz, int x, int y, int click)
 	SetCursor(moz->hand);
 	if (click)
 	{
-	    if (link->kind == PDF_LURI)
+	    if (link->kind == PDF_LINK_URI)
 		pdfmoz_gotouri(moz, link->dest);
-	    else if (link->kind == PDF_LGOTO)
+	    else if (link->kind == PDF_LINK_GOTO)
 		pdfmoz_gotopage(moz, link->dest);
 	    return;
 	}
 	else
 	{
-	    if (fz_isstring(link->dest))
+	    if (fz_is_string(link->dest))
 	    {
-		memcpy(buf, fz_tostrbuf(link->dest), fz_tostrlen(link->dest));
-		buf[fz_tostrlen(link->dest)] = 0;
+		memcpy(buf, fz_to_str_buf(link->dest), fz_to_str_len(link->dest));
+		buf[fz_to_str_len(link->dest)] = 0;
 		NPN_Status(moz->inst, buf);
 	    }
-	    else if (fz_isindirect(link->dest))
+	    else if (fz_is_indirect(link->dest))
 	    {
 		sprintf(buf, "Go to page %d",
 			pdfmoz_getpagenum(moz, link->dest) + 1);
@@ -462,15 +462,15 @@ MozWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		if (moz->pages[i].page)
 		{
 		    pdf_droppage(moz->pages[i].page);
-		    moz->pages[i].page = nil;
+		    moz->pages[i].page = NULL;
 		}
 	    }
 	    if (i < moz->scrollpage - 1 || i > moz->scrollpage + 3)
 	    {
 		if (moz->pages[i].image)
 		{
-		    fz_droppixmap(moz->pages[i].image);
-		    moz->pages[i].image = nil;
+		    fz_drop_pixmap(moz->pages[i].image);
+		    moz->pages[i].image = NULL;
 		}
 	    }
 	}
@@ -555,8 +555,8 @@ MozWinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	    if (moz->pages[i].image)
 	    {
-		fz_droppixmap(moz->pages[i].image);
-		moz->pages[i].image = nil;
+		fz_drop_pixmap(moz->pages[i].image);
+		moz->pages[i].image = NULL;
 	    }
 
 	    si.nMax += moz->pages[i].px;
@@ -708,11 +708,11 @@ NPP_Destroy(NPP inst, NPSavedData **saved)
     for (i = 0; i < moz->pagecount; i++)
     {
 	if (moz->pages[i].obj)
-	    fz_dropobj(moz->pages[i].obj);
+	    fz_drop_obj(moz->pages[i].obj);
 	if (moz->pages[i].page)
 	    pdf_droppage(moz->pages[i].page);
 	if (moz->pages[i].image)
-	    fz_droppixmap(moz->pages[i].image);
+	    fz_drop_pixmap(moz->pages[i].image);
     }
 
     fz_free(moz->pages);
@@ -722,7 +722,7 @@ NPP_Destroy(NPP inst, NPSavedData **saved)
 	if (moz->xref->store)
 	{
 	    pdf_dropstore(moz->xref->store);
-	    moz->xref->store = nil;
+	    moz->xref->store = NULL;
 	}
 
 	pdf_closexref(moz->xref);
@@ -839,5 +839,3 @@ NPP_Shutdown(void)
 {
     //	MSG("NPP_Shutdown");
 }
-
-

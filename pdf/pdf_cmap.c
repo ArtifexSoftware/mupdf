@@ -18,43 +18,43 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-/* Macros for accessing the combined extentflags field */
-#define pdf_range_high(r) ((r)->low + ((r)->extentflags >> 2))
-#define pdf_range_flags(r) ((r)->extentflags & 3)
-#define pdf_range_set_high(r, h) ((r)->extentflags = (((r)->extentflags & 3) | ((h - (r)->low) << 2)))
-#define pdf_range_set_flags(r, f) ((r)->extentflags = (((r)->extentflags & ~3) | f))
+/* Macros for accessing the combined extent_flags field */
+#define pdf_range_high(r) ((r)->low + ((r)->extent_flags >> 2))
+#define pdf_range_flags(r) ((r)->extent_flags & 3)
+#define pdf_range_set_high(r, h) ((r)->extent_flags = (((r)->extent_flags & 3) | ((h - (r)->low) << 2)))
+#define pdf_range_set_flags(r, f) ((r)->extent_flags = (((r)->extent_flags & ~3) | f))
 
 /*
  * Allocate, destroy and simple parameters.
  */
 
 pdf_cmap *
-pdf_newcmap(void)
+pdf_new_cmap(void)
 {
 	pdf_cmap *cmap;
 
 	cmap = fz_malloc(sizeof(pdf_cmap));
 	cmap->refs = 1;
 
-	strcpy(cmap->cmapname, "");
-	strcpy(cmap->usecmapname, "");
-	cmap->usecmap = nil;
+	strcpy(cmap->cmap_name, "");
+	strcpy(cmap->usecmap_name, "");
+	cmap->usecmap = NULL;
 	cmap->wmode = 0;
-	cmap->ncspace = 0;
+	cmap->codespace_len = 0;
 
 	cmap->rlen = 0;
 	cmap->rcap = 0;
-	cmap->ranges = nil;
+	cmap->ranges = NULL;
 
 	cmap->tlen = 0;
 	cmap->tcap = 0;
-	cmap->table = nil;
+	cmap->table = NULL;
 
 	return cmap;
 }
 
 pdf_cmap *
-pdf_keepcmap(pdf_cmap *cmap)
+pdf_keep_cmap(pdf_cmap *cmap)
 {
 	if (cmap->refs >= 0)
 		cmap->refs ++;
@@ -62,14 +62,14 @@ pdf_keepcmap(pdf_cmap *cmap)
 }
 
 void
-pdf_dropcmap(pdf_cmap *cmap)
+pdf_drop_cmap(pdf_cmap *cmap)
 {
 	if (cmap->refs >= 0)
 	{
 		if (--cmap->refs == 0)
 		{
 			if (cmap->usecmap)
-				pdf_dropcmap(cmap->usecmap);
+				pdf_drop_cmap(cmap->usecmap);
 			fz_free(cmap->ranges);
 			fz_free(cmap->table);
 			fz_free(cmap);
@@ -78,52 +78,52 @@ pdf_dropcmap(pdf_cmap *cmap)
 }
 
 void
-pdf_setusecmap(pdf_cmap *cmap, pdf_cmap *usecmap)
+pdf_set_usecmap(pdf_cmap *cmap, pdf_cmap *usecmap)
 {
 	int i;
 
 	if (cmap->usecmap)
-		pdf_dropcmap(cmap->usecmap);
-	cmap->usecmap = pdf_keepcmap(usecmap);
+		pdf_drop_cmap(cmap->usecmap);
+	cmap->usecmap = pdf_keep_cmap(usecmap);
 
-	if (cmap->ncspace == 0)
+	if (cmap->codespace_len == 0)
 	{
-		cmap->ncspace = usecmap->ncspace;
-		for (i = 0; i < usecmap->ncspace; i++)
-			cmap->cspace[i] = usecmap->cspace[i];
+		cmap->codespace_len = usecmap->codespace_len;
+		for (i = 0; i < usecmap->codespace_len; i++)
+			cmap->codespace[i] = usecmap->codespace[i];
 	}
 }
 
 int
-pdf_getwmode(pdf_cmap *cmap)
+pdf_get_wmode(pdf_cmap *cmap)
 {
 	return cmap->wmode;
 }
 
 void
-pdf_setwmode(pdf_cmap *cmap, int wmode)
+pdf_set_wmode(pdf_cmap *cmap, int wmode)
 {
 	cmap->wmode = wmode;
 }
 
 void
-pdf_debugcmap(pdf_cmap *cmap)
+pdf_debug_cmap(pdf_cmap *cmap)
 {
 	int i, k, n;
 
-	printf("cmap $%p /%s {\n", (void *) cmap, cmap->cmapname);
+	printf("cmap $%p /%s {\n", (void *) cmap, cmap->cmap_name);
 
-	if (cmap->usecmapname[0])
-		printf("\tusecmap /%s\n", cmap->usecmapname);
+	if (cmap->usecmap_name[0])
+		printf("\tusecmap /%s\n", cmap->usecmap_name);
 	if (cmap->usecmap)
 		printf("\tusecmap $%p\n", (void *) cmap->usecmap);
 
 	printf("\twmode %d\n", cmap->wmode);
 
 	printf("\tcodespaces {\n");
-	for (i = 0; i < cmap->ncspace; i++)
+	for (i = 0; i < cmap->codespace_len; i++)
 	{
-		printf("\t\t<%x> <%x>\n", cmap->cspace[i].low, cmap->cspace[i].high);
+		printf("\t\t<%x> <%x>\n", cmap->codespace[i].low, cmap->codespace[i].high);
 	}
 	printf("\t}\n");
 
@@ -155,29 +155,29 @@ pdf_debugcmap(pdf_cmap *cmap)
 
 /*
  * Add a codespacerange section.
- * These ranges are used by pdf_decodecmap to decode
+ * These ranges are used by pdf_decode_cmap to decode
  * multi-byte encoded strings.
  */
 void
-pdf_addcodespace(pdf_cmap *cmap, int low, int high, int n)
+pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n)
 {
-	if (cmap->ncspace + 1 == nelem(cmap->cspace))
+	if (cmap->codespace_len + 1 == nelem(cmap->codespace))
 	{
 		fz_warn("assert: too many code space ranges");
 		return;
 	}
 
-	cmap->cspace[cmap->ncspace].n = n;
-	cmap->cspace[cmap->ncspace].low = low;
-	cmap->cspace[cmap->ncspace].high = high;
-	cmap->ncspace ++;
+	cmap->codespace[cmap->codespace_len].n = n;
+	cmap->codespace[cmap->codespace_len].low = low;
+	cmap->codespace[cmap->codespace_len].high = high;
+	cmap->codespace_len ++;
 }
 
 /*
  * Add an integer to the table.
  */
 static void
-addtable(pdf_cmap *cmap, int value)
+add_table(pdf_cmap *cmap, int value)
 {
 	if (cmap->tlen + 1 > cmap->tcap)
 	{
@@ -191,13 +191,13 @@ addtable(pdf_cmap *cmap, int value)
  * Add a range.
  */
 static void
-addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
+add_range(pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
 	/* If the range is too large to be represented, split it */
 	if (high - low > 0x3fff)
 	{
-		addrange(cmap, low, low+0x3fff, flag, offset);
-		addrange(cmap, low+0x3fff, high, flag, offset+0x3fff);
+		add_range(cmap, low, low+0x3fff, flag, offset);
+		add_range(cmap, low+0x3fff, high, flag, offset+0x3fff);
 		return;
 	}
 	if (cmap->rlen + 1 > cmap->rcap)
@@ -216,36 +216,36 @@ addrange(pdf_cmap *cmap, int low, int high, int flag, int offset)
  * Add a range-to-table mapping.
  */
 void
-pdf_maprangetotable(pdf_cmap *cmap, int low, int *table, int len)
+pdf_map_range_to_table(pdf_cmap *cmap, int low, int *table, int len)
 {
 	int i;
 	int high = low + len;
 	int offset = cmap->tlen;
 	for (i = 0; i < len; i++)
-		addtable(cmap, table[i]);
-	addrange(cmap, low, high, PDF_CMAP_TABLE, offset);
+		add_table(cmap, table[i]);
+	add_range(cmap, low, high, PDF_CMAP_TABLE, offset);
 }
 
 /*
  * Add a range of contiguous one-to-one mappings (ie 1..5 maps to 21..25)
  */
 void
-pdf_maprangetorange(pdf_cmap *cmap, int low, int high, int offset)
+pdf_map_range_to_range(pdf_cmap *cmap, int low, int high, int offset)
 {
-	addrange(cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
+	add_range(cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
 }
 
 /*
  * Add a single one-to-many mapping.
  */
 void
-pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
+pdf_map_one_to_many(pdf_cmap *cmap, int low, int *values, int len)
 {
 	int offset, i;
 
 	if (len == 1)
 	{
-		addrange(cmap, low, low, PDF_CMAP_SINGLE, values[0]);
+		add_range(cmap, low, low, PDF_CMAP_SINGLE, values[0]);
 		return;
 	}
 
@@ -256,10 +256,10 @@ pdf_maponetomany(pdf_cmap *cmap, int low, int *values, int len)
 	}
 
 	offset = cmap->tlen;
-	addtable(cmap, len);
+	add_table(cmap, len);
 	for (i = 0; i < len; i++)
-		addtable(cmap, values[i]);
-	addrange(cmap, low, low, PDF_CMAP_MULTI, offset);
+		add_table(cmap, values[i]);
+	add_range(cmap, low, low, PDF_CMAP_MULTI, offset);
 }
 
 /*
@@ -274,7 +274,7 @@ static int cmprange(const void *va, const void *vb)
 }
 
 void
-pdf_sortcmap(pdf_cmap *cmap)
+pdf_sort_cmap(pdf_cmap *cmap)
 {
 	pdf_range *a;			/* last written range on output */
 	pdf_range *b;			/* current range examined on input */
@@ -312,7 +312,7 @@ pdf_sortcmap(pdf_cmap *cmap)
 				else if (pdf_range_flags(a) == PDF_CMAP_TABLE && pdf_range_flags(b) == PDF_CMAP_SINGLE)
 				{
 					pdf_range_set_high(a, pdf_range_high(b));
-					addtable(cmap, b->offset);
+					add_table(cmap, b->offset);
 				}
 
 				/* LR -> LR */
@@ -336,8 +336,8 @@ pdf_sortcmap(pdf_cmap *cmap)
 				{
 					pdf_range_set_flags(a, PDF_CMAP_TABLE);
 					pdf_range_set_high(a, pdf_range_high(b));
-					addtable(cmap, a->offset);
-					addtable(cmap, b->offset);
+					add_table(cmap, a->offset);
+					add_table(cmap, b->offset);
 					a->offset = cmap->tlen - 2;
 				}
 
@@ -345,7 +345,7 @@ pdf_sortcmap(pdf_cmap *cmap)
 				else if (pdf_range_flags(a) == PDF_CMAP_TABLE && pdf_range_flags(b) == PDF_CMAP_SINGLE)
 				{
 					pdf_range_set_high(a, pdf_range_high(b));
-					addtable(cmap, b->offset);
+					add_table(cmap, b->offset);
 				}
 
 				/* XX -> XX */
@@ -370,7 +370,7 @@ pdf_sortcmap(pdf_cmap *cmap)
  * Lookup the mapping of a codepoint.
  */
 int
-pdf_lookupcmap(pdf_cmap *cmap, int cpt)
+pdf_lookup_cmap(pdf_cmap *cmap, int cpt)
 {
 	int l = 0;
 	int r = cmap->rlen - 1;
@@ -395,13 +395,13 @@ pdf_lookupcmap(pdf_cmap *cmap, int cpt)
 	}
 
 	if (cmap->usecmap)
-		return pdf_lookupcmap(cmap->usecmap, cpt);
+		return pdf_lookup_cmap(cmap->usecmap, cpt);
 
 	return -1;
 }
 
 int
-pdf_lookupcmapfull(pdf_cmap *cmap, int cpt, int *out)
+pdf_lookup_cmap_full(pdf_cmap *cmap, int cpt, int *out)
 {
 	int i, k, n;
 	int l = 0;
@@ -439,7 +439,7 @@ pdf_lookupcmapfull(pdf_cmap *cmap, int cpt, int *out)
 	}
 
 	if (cmap->usecmap)
-		return pdf_lookupcmapfull(cmap->usecmap, cpt, out);
+		return pdf_lookup_cmap_full(cmap->usecmap, cpt, out);
 
 	return 0;
 }
@@ -449,7 +449,7 @@ pdf_lookupcmapfull(pdf_cmap *cmap, int cpt, int *out)
  * multi-byte encoded string.
  */
 unsigned char *
-pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
+pdf_decode_cmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 {
 	int k, n, c;
 
@@ -457,11 +457,11 @@ pdf_decodecmap(pdf_cmap *cmap, unsigned char *buf, int *cpt)
 	for (n = 0; n < 4; n++)
 	{
 		c = (c << 8) | buf[n];
-		for (k = 0; k < cmap->ncspace; k++)
+		for (k = 0; k < cmap->codespace_len; k++)
 		{
-			if (cmap->cspace[k].n == n + 1)
+			if (cmap->codespace[k].n == n + 1)
 			{
-				if (c >= cmap->cspace[k].low && c <= cmap->cspace[k].high)
+				if (c >= cmap->codespace[k].low && c <= cmap->codespace[k].high)
 				{
 					*cpt = c;
 					return buf + n + 1;

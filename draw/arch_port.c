@@ -471,7 +471,7 @@ img_1o1_32bit(byte * restrict src, byte cov, int len, byte * restrict dst,
 
 void fz_accelerate(void)
 {
-	if (sizeof(int) == 4 && sizeof(unsigned int) == 4 && !fz_isbigendian())
+	if (sizeof(int) == 4 && sizeof(unsigned int) == 4 && !fz_is_big_endian())
 	{
 //		fz_path_w4i1o4 = path_w4i1o4_32bit;
 //		fz_text_w4i1o4 = text_w4i1o4_32bit;
@@ -481,6 +481,6 @@ void fz_accelerate(void)
 	}
 
 #ifdef HAVE_CPUDEP
-	fz_acceleratearch();
+	fz_accelerate_arch();
 #endif
 }

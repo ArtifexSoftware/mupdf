@@ -221,19 +221,19 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 static int
 xps_find_and_read_zip_dir(xps_context *ctx)
 {
-	int filesize, back, maxback;
+	int file_size, back, maxback;
 	int i, n;
 	char buf[512];
 
 	fseek(ctx->file, 0, SEEK_END);
-	filesize = ftell(ctx->file);
+	file_size = ftell(ctx->file);
 
-	maxback = MIN(filesize, 0xFFFF + sizeof buf);
+	maxback = MIN(file_size, 0xFFFF + sizeof buf);
 	back = MIN(maxback, sizeof buf);
 
 	while (back < maxback)
 	{
-		fseek(ctx->file, filesize - back, 0);
+		fseek(ctx->file, file_size - back, 0);
 
 		n = fread(buf, 1, sizeof buf, ctx->file);
 		if (n < 0)
@@ -241,7 +241,7 @@ xps_find_and_read_zip_dir(xps_context *ctx)
 
 		for (i = n - 4; i > 0; i--)
 			if (!memcmp(buf + i, "PK\5\6", 4))
-				return xps_read_zip_dir(ctx, filesize - back + i);
+				return xps_read_zip_dir(ctx, file_size - back + i);
 
 		back += sizeof buf - 4;
 	}
@@ -448,12 +448,12 @@ static void xps_free_key_func(void *ptr)
 
 static void xps_free_font_func(void *ptr)
 {
-	fz_dropfont(ptr);
+	fz_drop_font(ptr);
 }
 
 static void xps_free_colorspace_func(void *ptr)
 {
-	fz_dropcolorspace(ptr);
+	fz_drop_colorspace(ptr);
 }
 
 int
