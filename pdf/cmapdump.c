@@ -86,59 +86,53 @@ main(int argc, char **argv)
 			return 1;
 		}
 
-		fprintf(fo, "/* %s */\n\n", cmap->cmapname);
-
-		fprintf(fo, "static const pdf_range pdf_cmap_%s_ranges[] =\n{\n", name);
+		fprintf(fo, "static const pdf_range pdf_cmap_%s_ranges[] = {", name);
 		if (cmap->rlen == 0)
 		{
-			fprintf(fo, "\t/* dummy entry for non-c99 compilers */\n");
-			fprintf(fo, "\t{ 0x0, %d, 0 }\n", PDF_CMAP_RANGE);
+			fprintf(fo, " {0,%d,0}", PDF_CMAP_RANGE);
 		}
 		for (k = 0; k < cmap->rlen; k++)
 		{
-			fprintf(fo, "\t{ 0x%04x, 0x%04x, %d },\n",
+			if (k % 4 == 0)
+				fprintf(fo, "\n");
+			fprintf(fo, "{%d,%d,%d},",
 				cmap->ranges[k].low, cmap->ranges[k].extentflags, cmap->ranges[k].offset);
 		}
-		fprintf(fo, "};\n\n");
+		fprintf(fo, "\n};\n\n");
 
 		if (cmap->tlen == 0)
 		{
-			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[1] = { 0 };\n\n", name);
+			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[] = { 0 };\n\n", name);
 		}
 		else
 		{
-			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[%d] =\n{",
+			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[%d] = {",
 				name, cmap->tlen);
 			for (k = 0; k < cmap->tlen; k++)
 			{
-				if (k % 8 == 0)
-					fprintf(fo, "\n\t");
+				if (k % 12 == 0)
+					fprintf(fo, "\n");
 				fprintf(fo, "%d,", cmap->table[k]);
 			}
 			fprintf(fo, "\n};\n\n");
 		}
 
-		fprintf(fo, "pdf_cmap pdf_cmap_%s =\n", name);
-		fprintf(fo, "{\n");
+		fprintf(fo, "pdf_cmap pdf_cmap_%s = {\n", name);
 		fprintf(fo, "\t-1, ");
 		fprintf(fo, "\"%s\", ", cmap->cmapname);
-		fprintf(fo, "\"%s\", nil, ", cmap->usecmapname);
-		fprintf(fo, "%d,\n", cmap->wmode);
-
-		fprintf(fo, "\t%d, /* codespace table */\n", cmap->ncspace);
-		fprintf(fo, "\t{\n");
-
+		fprintf(fo, "\"%s\", 0, ", cmap->usecmapname);
+		fprintf(fo, "%d, ", cmap->wmode);
+		fprintf(fo, "%d,\n\t{ ", cmap->ncspace);
 		if (cmap->ncspace == 0)
 		{
-			fprintf(fo, "\t/* dummy entry for non-c99 compilers */\n");
-			fprintf(fo, "\t{ 0, 0x0, 0x0 },\n");
+			fprintf(fo, "{0,0,0},");
 		}
 		for (k = 0; k < cmap->ncspace; k++)
 		{
-			fprintf(fo, "\t\t{ %d, 0x%04x, 0x%04x },\n",
+			fprintf(fo, "{%d,%d,%d},",
 				cmap->cspace[k].n, cmap->cspace[k].low, cmap->cspace[k].high);
 		}
-		fprintf(fo, "\t},\n");
+		fprintf(fo, " },\n");
 
 		fprintf(fo, "\t%d, %d, (pdf_range*) pdf_cmap_%s_ranges,\n",
 			cmap->rlen, cmap->rlen, name);
