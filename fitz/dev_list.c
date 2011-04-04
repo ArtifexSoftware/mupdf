@@ -362,9 +362,10 @@ fz_executedisplaylist(fz_displaylist *list, fz_device *dev, fz_matrix topctm, fz
 	for (node = list->first; node; node = node->next)
 	{
 		fz_matrix ctm = fz_concat(node->ctm, topctm);
+		fz_rect rect = fz_transformrect(topctm, node->rect);
 
 		/* cull objects to draw using a quick visibility test */
-		if (clipped || fz_isemptybbox(fz_intersectbbox(fz_roundrect(node->rect), bounds)))
+		if (clipped || fz_isemptybbox(fz_intersectbbox(fz_roundrect(rect), bounds)))
 		{
 			switch (node->cmd)
 			{
