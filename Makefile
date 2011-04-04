@@ -117,17 +117,16 @@ FITZ_OBJ := $(FITZ_SRC:fitz/%.c=$(OBJDIR)/%.o)
 $(FITZ_OBJ): $(FITZ_HDR)
 
 DRAW_SRC := $(DRAW_ARCH_SRC) \
-	draw/archport.c \
-	draw/blendmodes.c \
-	draw/glyphcache.c \
-	draw/imagedraw.c \
-	draw/imagesmooth.c \
-	draw/imageunpack.c \
-	draw/meshdraw.c \
-	draw/pathfill.c \
-	draw/pathscan.c \
-	draw/pathstroke.c \
-	draw/porterduff.c
+	draw/arch_port.c \
+	draw/draw_affine.c \
+	draw/draw_blend.c \
+	draw/draw_edge.c \
+	draw/draw_glyph.c \
+	draw/draw_mesh.c \
+	draw/draw_paint.c \
+	draw/draw_path.c \
+	draw/draw_scale.c \
+	draw/draw_unpack.c
 DRAW_OBJ := $(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
 DRAW_OBJ := $(DRAW_OBJ:draw/%.s=$(OBJDIR)/%.o)
 $(DRAW_OBJ): $(FITZ_HDR)
