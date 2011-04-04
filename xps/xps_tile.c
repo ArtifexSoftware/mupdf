@@ -167,28 +167,37 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 	if (tile_mode != TILE_NONE)
 	{
+		int x0, y0, x1, y1;
 		fz_matrix invctm = fz_invertmatrix(ctm);
-		fz_rect bbox = fz_transformrect(invctm, area);
-		int x0 = floorf(bbox.x0 / xstep);
-		int y0 = floorf(bbox.y0 / ystep);
-		int x1 = ceilf(bbox.x1 / xstep);
-		int y1 = ceilf(bbox.y1 / ystep);
+		area = fz_transformrect(invctm, area);
+		x0 = floorf(area.x0 / xstep);
+		y0 = floorf(area.y0 / ystep);
+		x1 = ceilf(area.x1 / xstep);
+		y1 = ceilf(area.y1 / ystep);
+
 #ifdef TILE
-		int ntile = (x1 - x0) * (y1 - y0);
-		if (ntile > 1)
-			ctx->dev->begintile(ctx->dev->user, bbox, viewbox, xstep, ystep, ctm);
-		if (ntile > 0)
-			xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
-		if (ntile > 1)
-			ctx->dev->endtile(ctx->dev->user);
-#else
-		int x, y;
-		for (y = y0; y < y1; y++)
 		{
-			for (x = x0; x < x1; x++)
+			int n = (x1 - x0) * (y1 - y0);
+			fz_rect bigview = viewbox;
+			bigview.x1 = bigview.x0 + xstep;
+			bigview.y1 = bigview.y0 + ystep;
+			if (n > 1)
+				ctx->dev->begintile(ctx->dev->user, area, bigview, xstep, ystep, ctm);
+			if (n > 0)
+				xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
+			if (n > 1)
+				ctx->dev->endtile(ctx->dev->user);
+		}
+#else
+		{
+			int x, y;
+			for (y = y0; y < y1; y++)
 			{
-				fz_matrix ttm = fz_concat(fz_translate(xstep * x, ystep * y), ctm);
-				xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);
+				for (x = x0; x < x1; x++)
+				{
+					fz_matrix ttm = fz_concat(fz_translate(xstep * x, ystep * y), ctm);
+					xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);
+				}
 			}
 		}
 #endif
