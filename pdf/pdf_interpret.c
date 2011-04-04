@@ -156,12 +156,12 @@ pdf_free_csi(pdf_csi *csi)
 }
 
 static int
-pdf_is_hidden_ocg(pdf_csi *csi, fz_obj *xobj)
+pdf_is_hidden_ocg(fz_obj *xobj, char *target)
 {
 	char target_state[16];
 	fz_obj *obj;
 
-	fz_strlcpy(target_state, csi->target, sizeof target_state);
+	fz_strlcpy(target_state, target, sizeof target_state);
 	fz_strlcat(target_state, "State", sizeof target_state);
 
 	obj = fz_dict_gets(xobj, "OC");
@@ -169,7 +169,7 @@ pdf_is_hidden_ocg(pdf_csi *csi, fz_obj *xobj)
 	if (fz_is_array(obj))
 		obj = fz_array_get(obj, 0);
 	obj = fz_dict_gets(obj, "Usage");
-	obj = fz_dict_gets(obj, csi->target);
+	obj = fz_dict_gets(obj, target);
 	obj = fz_dict_gets(obj, target_state);
 	return !strcmp(fz_to_name(obj), "OFF");
 }
@@ -567,7 +567,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 	if (!fz_is_name(subtype))
 		return fz_throw("no XObject subtype specified");
 
-	if (pdf_is_hidden_ocg(csi, obj))
+	if (pdf_is_hidden_ocg(obj, csi->target))
 		return fz_okay;
 
 	if (!strcmp(fz_to_name(subtype), "Form") && fz_dict_gets(obj, "Subtype2"))
@@ -1430,7 +1430,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 		if (flags & (1 << 5)) /* NoView */
 			continue;
 
-		if (pdf_is_hidden_ocg(csi, annot->obj))
+		if (pdf_is_hidden_ocg(annot->obj, target))
 			continue;
 
 		csi = pdf_new_csi(xref, dev, ctm, target);
