@@ -13,22 +13,9 @@
 #include "../fitz/stm_open.c"
 #include "../fitz/stm_read.c"
 
-#include "../mupdf/pdf_lex.c"
-#include "../mupdf/pdf_cmap.c"
-#include "../mupdf/pdf_cmap_parse.c"
-
-static char *
-flagtoname(int flag)
-{
-	switch (flag)
-	{
-	case PDF_CMAP_SINGLE: return "PDF_CMAP_SINGLE,";
-	case PDF_CMAP_RANGE: return "PDF_CMAP_RANGE,";
-	case PDF_CMAP_TABLE: return "PDF_CMAP_TABLE,";
-	case PDF_CMAP_MULTI: return "PDF_CMAP_MULTI,";
-	}
-	return "-1,";
-}
+#include "../pdf/pdf_lex.c"
+#include "../pdf/pdf_cmap.c"
+#include "../pdf/pdf_cmap_parse.c"
 
 static void
 clean(char *p)

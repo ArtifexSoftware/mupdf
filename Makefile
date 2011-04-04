@@ -131,41 +131,41 @@ DRAW_OBJ := $(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
 DRAW_OBJ := $(DRAW_OBJ:draw/%.s=$(OBJDIR)/%.o)
 $(DRAW_OBJ): $(FITZ_HDR)
 
-MUPDF_HDR := $(FITZ_HDR) mupdf/mupdf.h
+MUPDF_HDR := $(FITZ_HDR) pdf/mupdf.h
 MUPDF_SRC := \
-	mupdf/pdf_annot.c \
-	mupdf/pdf_build.c \
-	mupdf/pdf_cmap.c \
-	mupdf/pdf_cmap_load.c \
-	mupdf/pdf_cmap_parse.c \
-	mupdf/pdf_cmap_table.c \
-	mupdf/pdf_colorspace.c \
-	mupdf/pdf_crypt.c \
-	mupdf/pdf_debug.c \
-	mupdf/pdf_font.c \
-	mupdf/pdf_fontagl.c \
-	mupdf/pdf_fontenc.c \
-	mupdf/pdf_fontfile.c \
-	mupdf/pdf_fontmtx.c \
-	mupdf/pdf_function.c \
-	mupdf/pdf_image.c \
-	mupdf/pdf_interpret.c \
-	mupdf/pdf_lex.c \
-	mupdf/pdf_nametree.c \
-	mupdf/pdf_outline.c \
-	mupdf/pdf_page.c \
-	mupdf/pdf_pagetree.c \
-	mupdf/pdf_parse.c \
-	mupdf/pdf_pattern.c \
-	mupdf/pdf_repair.c \
-	mupdf/pdf_shade.c \
-	mupdf/pdf_store.c \
-	mupdf/pdf_stream.c \
-	mupdf/pdf_type3.c \
-	mupdf/pdf_unicode.c \
-	mupdf/pdf_xobject.c \
-	mupdf/pdf_xref.c
-MUPDF_OBJ := $(MUPDF_SRC:mupdf/%.c=$(OBJDIR)/%.o)
+	pdf/pdf_annot.c \
+	pdf/pdf_build.c \
+	pdf/pdf_cmap.c \
+	pdf/pdf_cmap_load.c \
+	pdf/pdf_cmap_parse.c \
+	pdf/pdf_cmap_table.c \
+	pdf/pdf_colorspace.c \
+	pdf/pdf_crypt.c \
+	pdf/pdf_debug.c \
+	pdf/pdf_font.c \
+	pdf/pdf_fontagl.c \
+	pdf/pdf_fontenc.c \
+	pdf/pdf_fontfile.c \
+	pdf/pdf_fontmtx.c \
+	pdf/pdf_function.c \
+	pdf/pdf_image.c \
+	pdf/pdf_interpret.c \
+	pdf/pdf_lex.c \
+	pdf/pdf_nametree.c \
+	pdf/pdf_outline.c \
+	pdf/pdf_page.c \
+	pdf/pdf_pagetree.c \
+	pdf/pdf_parse.c \
+	pdf/pdf_pattern.c \
+	pdf/pdf_repair.c \
+	pdf/pdf_shade.c \
+	pdf/pdf_store.c \
+	pdf/pdf_stream.c \
+	pdf/pdf_type3.c \
+	pdf/pdf_unicode.c \
+	pdf/pdf_xobject.c \
+	pdf/pdf_xref.c
+MUPDF_OBJ := $(MUPDF_SRC:pdf/%.c=$(OBJDIR)/%.o)
 $(MUPDF_OBJ): $(MUPDF_HDR)
 
 MUXPS_HDR := $(FITZ_HDR) xps/muxps.h
@@ -194,7 +194,7 @@ $(OBJDIR)/%.o: draw/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: draw/%.s
 	$(CC_CMD)
-$(OBJDIR)/%.o: mupdf/%.c
+$(OBJDIR)/%.o: pdf/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: xps/%.c
 	$(CC_CMD)
