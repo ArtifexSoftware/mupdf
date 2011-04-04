@@ -832,7 +832,19 @@ xps_decode_tiff(fz_pixmap **imagep, byte *buf, int len)
 
 	/* We should only do this on non-pre-multiplied images, but files in the wild are bad */
 	if (tiff.extrasamples /* == 2 */)
+	{
+		/* CMYK is a subtractive colorspace, we want additive for premul alpha */
+		if (image->n == 5)
+		{
+			fz_pixmap *rgb = fz_newpixmap(fz_devicergb, 0, 0, image->w, image->h);
+			fz_convertpixmap(image, rgb);
+			rgb->xres = image->xres;
+			rgb->yres = image->yres;
+			fz_droppixmap(image);
+			image = rgb;
+		}
 		fz_premultiplypixmap(image);
+	}
 
 	/* Clean up scratch memory */
 
