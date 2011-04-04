@@ -29,8 +29,6 @@ extern const unsigned char pdf_font_NimbusSanL_ReguItal_cff_buf[];
 extern const unsigned int pdf_font_NimbusSanL_ReguItal_cff_len;
 extern const unsigned char pdf_font_StandardSymL_cff_buf[];
 extern const unsigned int pdf_font_StandardSymL_cff_len;
-extern const unsigned char pdf_font_URWChanceryL_MediItal_cff_buf[];
-extern const unsigned int pdf_font_URWChanceryL_MediItal_cff_len;
 
 #ifndef NOCJK
 extern const unsigned char pdf_font_DroidSansFallback_ttf_buf[];
@@ -100,9 +98,6 @@ static const struct {
 	{ "ZapfDingbats",
 		pdf_font_Dingbats_cff_buf,
 		&pdf_font_Dingbats_cff_len },
-	{ "Chancery",
-		pdf_font_URWChanceryL_MediItal_cff_buf,
-		&pdf_font_URWChanceryL_MediItal_cff_len },
 	{ nil, nil, nil }
 };
 
@@ -215,9 +210,6 @@ pdf_loadsystemfont(pdf_fontdesc *fontdesc, char *fontname, char *collection)
 
 		fz_warn("unknown cid collection: %s", collection);
 	}
-
-	if (isscript)
-		name = "Chancery";
 
 	else if (isfixed)
 	{

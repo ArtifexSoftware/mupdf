@@ -219,8 +219,7 @@ BASEFONT_FILES := \
 	fonts/NimbusSanL-BoldItal.cff \
 	fonts/NimbusSanL-Regu.cff \
 	fonts/NimbusSanL-ReguItal.cff \
-	fonts/StandardSymL.cff \
-	fonts/URWChanceryL-MediItal.cff
+	fonts/StandardSymL.cff
 
 CJKFONT_FILES := \
 	fonts/droid/DroidSansFallback.ttf
