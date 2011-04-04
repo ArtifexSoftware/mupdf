@@ -131,7 +131,7 @@ DRAW_OBJ := $(DRAW_SRC:draw/%.c=$(OBJDIR)/%.o)
 DRAW_OBJ := $(DRAW_OBJ:draw/%.s=$(OBJDIR)/%.o)
 $(DRAW_OBJ): $(FITZ_HDR)
 
-MUPDF_HDR := $(FITZ_HDR) pdf/mupdf.h
+MUPDF_HDR := pdf/mupdf.h
 MUPDF_SRC := \
 	pdf/pdf_annot.c \
 	pdf/pdf_build.c \
@@ -167,7 +167,7 @@ MUPDF_SRC := \
 MUPDF_OBJ := $(MUPDF_SRC:pdf/%.c=$(OBJDIR)/%.o)
 $(MUPDF_OBJ): $(MUPDF_HDR)
 
-MUXPS_HDR := $(FITZ_HDR) xps/muxps.h
+MUXPS_HDR := xps/muxps.h
 MUXPS_SRC := \
 	xps/xps_common.c \
 	xps/xps_doc.c \
@@ -185,7 +185,7 @@ MUXPS_SRC := \
 	xps/xps_xml.c \
 	xps/xps_zip.c
 MUXPS_OBJ := $(MUXPS_SRC:xps/%.c=$(OBJDIR)/%.o)
-$(MUXPS_OBJ): $(MUXPS_HDR)
+$(MUXPS_OBJ): $(MUXPS_HDR) $(FITZ_HDR)
 
 $(OBJDIR)/%.o: fitz/%.c
 	$(CC_CMD)
@@ -338,42 +338,42 @@ $(OBJDIR)/%.o: apps/%.c
 PDFSHOW_SRC=apps/pdfshow.c
 PDFSHOW_OBJ=$(PDFSHOW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFSHOW_EXE=$(OBJDIR)/pdfshow
-$(PDFSHOW_OBJ): $(MUPDF_HDR)
+$(PDFSHOW_OBJ): $(MUPDF_HDR) $(FITZ_HDR)
 $(PDFSHOW_EXE): $(PDFSHOW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFCLEAN_SRC=apps/pdfclean.c
 PDFCLEAN_OBJ=$(PDFCLEAN_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFCLEAN_EXE=$(OBJDIR)/pdfclean
-$(PDFCLEAN_OBJ): $(MUPDF_HDR)
+$(PDFCLEAN_OBJ): $(MUPDF_HDR) $(FITZ_HDR)
 $(PDFCLEAN_EXE): $(PDFCLEAN_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFDRAW_SRC=apps/pdfdraw.c
 PDFDRAW_OBJ=$(PDFDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFDRAW_EXE=$(OBJDIR)/pdfdraw
-$(PDFDRAW_OBJ): $(MUPDF_HDR)
+$(PDFDRAW_OBJ): $(MUPDF_HDR) $(FITZ_HDR)
 $(PDFDRAW_EXE): $(PDFDRAW_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFEXTRACT_SRC=apps/pdfextract.c
 PDFEXTRACT_OBJ=$(PDFEXTRACT_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFEXTRACT_EXE=$(OBJDIR)/pdfextract
-$(PDFEXTRACT_OBJ): $(MUPDF_HDR)
+$(PDFEXTRACT_OBJ): $(MUPDF_HDR) $(FITZ_HDR)
 $(PDFEXTRACT_EXE): $(PDFEXTRACT_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 PDFINFO_SRC=apps/pdfinfo.c
 PDFINFO_OBJ=$(PDFINFO_SRC:apps/%.c=$(OBJDIR)/%.o)
 PDFINFO_EXE=$(OBJDIR)/pdfinfo
-$(PDFINFO_OBJ): $(MUPDF_HDR)
+$(PDFINFO_OBJ): $(MUPDF_HDR) $(FITZ_HDR)
 $(PDFINFO_EXE): $(PDFINFO_OBJ) $(MUPDF_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
 XPSDRAW_SRC=apps/xpsdraw.c
 XPSDRAW_OBJ=$(XPSDRAW_SRC:apps/%.c=$(OBJDIR)/%.o)
 XPSDRAW_EXE=$(OBJDIR)/xpsdraw
-$(XPSDRAW_OBJ): $(MUXPS_HDR)
+$(XPSDRAW_OBJ): $(MUXPS_HDR) $(FITZ_HDR)
 $(XPSDRAW_EXE): $(XPSDRAW_OBJ) $(MUXPS_LIB) $(THIRD_LIBS)
 	$(LD_CMD)
 
@@ -383,7 +383,7 @@ X11VIEW_SRC=apps/x11_main.c apps/x11_image.c apps/pdfapp.c
 X11VIEW_OBJ=$(X11VIEW_SRC:apps/%.c=$(OBJDIR)/%.o)
 X11VIEW_EXE=$(OBJDIR)/mupdf
 
-$(X11VIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
+$(X11VIEW_OBJ): $(PDFAPP_HDR) $(MUPDF_HDR) $(MUXPS_HDR) $(FITZ_HDR)
 $(X11VIEW_EXE): $(X11VIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
 	$(LD_CMD) $(X11LIBS)
 
@@ -395,7 +395,7 @@ WINVIEW_EXE=$(OBJDIR)/mupdf.exe
 $(OBJDIR)/%.o: apps/%.rc
 	$(WINDRES) -i $< -o $@ --include-dir=apps
 
-$(WINVIEW_OBJ): $(MUPDF_HDR) $(PDFAPP_HDR)
+$(WINVIEW_OBJ): $(PDFAPP_HDR) $(MUPDF_HDR) $(MUXPS_HDR) $(FITZ_HDR)
 $(WINVIEW_EXE): $(WINVIEW_OBJ) $(MUPDF_LIB) $(MUXPS_LIB) $(THIRD_LIBS)
 	$(LD_CMD) $(W32LIBS)
 
@@ -423,4 +423,4 @@ install: $(OBJDIR) $(GENDIR) $(MUPDF_LIB) $(APPS)
 	install $(APPS) $(BINDIR)
 	install $(APPS_MAN) $(MANDIR)
 	install $(MUPDF_LIB) $(LIBDIR)
-	install $(MUPDF_HDR) $(INCDIR)
+	install $(MUPDF_HDR) $(MUXPS_HDR) $(FITZ_HDR) $(INCDIR)
