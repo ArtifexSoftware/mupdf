@@ -522,13 +522,11 @@ struct pdf_page_s
 
 /* pagetree.c */
 fz_error pdf_load_page_tree(pdf_xref *xref);
-int pdf_get_page_count(pdf_xref *xref);
-fz_obj *pdf_get_page_object(pdf_xref *xref, int p);
-fz_obj *pdf_get_page_ref(pdf_xref *xref, int p);
-int pdf_find_page_object(pdf_xref *xref, fz_obj *pageobj);
+int pdf_find_page_number(pdf_xref *xref, fz_obj *pageobj);
+int pdf_count_pages(pdf_xref *xref);
 
 /* page.c */
-fz_error pdf_load_page(pdf_page **pagep, pdf_xref *xref, fz_obj *ref);
+fz_error pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number);
 void pdf_free_page(pdf_page *page);
 
 /*

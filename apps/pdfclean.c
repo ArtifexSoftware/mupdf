@@ -314,7 +314,7 @@ static void retainpages(int argc, char **argv)
 			dash = strchr(spec, '-');
 
 			if (dash == spec)
-				spage = epage = pdf_get_page_count(xref);
+				spage = epage = pdf_count_pages(xref);
 			else
 				spage = epage = atoi(spec);
 
@@ -323,7 +323,7 @@ static void retainpages(int argc, char **argv)
 				if (strlen(dash) > 1)
 					epage = atoi(dash + 1);
 				else
-					epage = pdf_get_page_count(xref);
+					epage = pdf_count_pages(xref);
 			}
 
 			if (spage > epage)
@@ -331,13 +331,13 @@ static void retainpages(int argc, char **argv)
 
 			if (spage < 1)
 				spage = 1;
-			if (epage > pdf_get_page_count(xref))
-				epage = pdf_get_page_count(xref);
+			if (epage > pdf_count_pages(xref))
+				epage = pdf_count_pages(xref);
 
 			for (page = spage; page <= epage; page++)
 			{
-				fz_obj *pageobj = pdf_get_page_object(xref, page);
-				fz_obj *pageref = pdf_get_page_ref(xref, page);
+				fz_obj *pageobj = xref->page_objs[page-1];
+				fz_obj *pageref = xref->page_refs[page-1];
 
 				fz_dict_puts(pageobj, "Parent", parent);
 

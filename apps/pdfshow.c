@@ -61,10 +61,10 @@ static void showpagetree(void)
 			die(fz_rethrow(error, "cannot load page tree"));
 	}
 
-	count = pdf_get_page_count(xref);
+	count = pdf_count_pages(xref);
 	for (i = 0; i < count; i++)
 	{
-		ref = pdf_get_page_ref(xref, i + 1);
+		ref = xref->page_refs[i];
 		printf("page %d = %d %d R\n", i + 1, fz_to_num(ref), fz_to_gen(ref));
 	}
 	printf("\n");

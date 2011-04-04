@@ -569,8 +569,8 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 	fz_obj *subrsrc;
 	int i;
 
-	pageobj = pdf_get_page_object(xref, page);
-	pageref = pdf_get_page_ref(xref, page);
+	pageobj = xref->page_objs[page-1];
+	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
@@ -632,8 +632,8 @@ gatherpageinfo(int page)
 	fz_obj *pageref;
 	fz_obj *rsrc;
 
-	pageobj = pdf_get_page_object(xref, page);
-	pageref = pdf_get_page_ref(xref, page);
+	pageobj = xref->page_objs[page-1];
+	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
 		die(fz_throw("cannot retrieve info from page %d", page));
@@ -988,7 +988,7 @@ int main(int argc, char **argv)
 			error = pdf_load_page_tree(xref);
 			if (error)
 				die(fz_rethrow(error, "cannot load page tree: %s", filename));
-			pagecount = pdf_get_page_count(xref);
+			pagecount = pdf_count_pages(xref);
 
 			showglobalinfo();
 			state = NO_INFO_GATHERED;

@@ -90,15 +90,16 @@ static void drawpage(xps_context *ctx, int pagenum)
 	fz_display_list *list;
 	fz_device *dev;
 	int start;
+	int code;
 
 	if (showtime)
 	{
 		start = gettime();
 	}
 
-	page = xps_load_page(ctx, pagenum - 1);
-	if (!page)
-		die(fz_throw("cannot load page %d in file '%s'", pagenum, filename));
+	code = xps_load_page(&page, ctx, pagenum - 1);
+	if (code)
+		die(fz_rethrow(code, "cannot load page %d in file '%s'", pagenum, filename));
 
 	list = NULL;
 
@@ -333,8 +334,7 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		ctx = xps_new_context();
-		code = xps_open_file(ctx, filename);
+		code = xps_open_file(&ctx, filename);
 		if (code)
 			die(fz_rethrow(code, "cannot open document: %s", filename));
 

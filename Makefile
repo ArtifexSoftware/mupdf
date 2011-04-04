@@ -154,7 +154,6 @@ MUPDF_SRC := \
 	pdf/pdf_nametree.c \
 	pdf/pdf_outline.c \
 	pdf/pdf_page.c \
-	pdf/pdf_pagetree.c \
 	pdf/pdf_parse.c \
 	pdf/pdf_pattern.c \
 	pdf/pdf_repair.c \

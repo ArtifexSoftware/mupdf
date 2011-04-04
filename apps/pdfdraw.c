@@ -87,7 +87,6 @@ static int isrange(char *s)
 static void drawpage(pdf_xref *xref, int pagenum)
 {
 	fz_error error;
-	fz_obj *pageobj;
 	pdf_page *page;
 	fz_display_list *list;
 	fz_device *dev;
@@ -98,8 +97,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		start = gettime();
 	}
 
-	pageobj = pdf_get_page_object(xref, pagenum);
-	error = pdf_load_page(&page, xref, pageobj);
+	error = pdf_load_page(&page, xref, pagenum - 1);
 	if (error)
 		die(fz_rethrow(error, "cannot load page %d in file '%s'", pagenum, filename));
 
@@ -253,7 +251,7 @@ static void drawrange(pdf_xref *xref, char *range)
 		dash = strchr(spec, '-');
 
 		if (dash == spec)
-			spage = epage = pdf_get_page_count(xref);
+			spage = epage = pdf_count_pages(xref);
 		else
 			spage = epage = atoi(spec);
 
@@ -262,11 +260,11 @@ static void drawrange(pdf_xref *xref, char *range)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = pdf_get_page_count(xref);
+				epage = pdf_count_pages(xref);
 		}
 
-		spage = CLAMP(spage, 1, pdf_get_page_count(xref));
-		epage = CLAMP(epage, 1, pdf_get_page_count(xref));
+		spage = CLAMP(spage, 1, pdf_count_pages(xref));
+		epage = CLAMP(epage, 1, pdf_count_pages(xref));
 
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)

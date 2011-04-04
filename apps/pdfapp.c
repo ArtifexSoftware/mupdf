@@ -159,7 +159,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	if (error)
 		pdfapp_error(app, fz_rethrow(error, "cannot load page tree"));
 
-	app->pagecount = pdf_get_page_count(app->xref);
+	app->pagecount = pdf_count_pages(app->xref);
 }
 
 static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
@@ -168,8 +168,7 @@ static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
 
 	close(fd); // TODO: fix this for windows
 
-	app->xps = xps_new_context();
-	error = xps_open_file(app->xps, filename);
+	error = xps_open_file(&app->xps, filename);
 	if (error)
 		pdfapp_error(app, fz_rethrow(error, "cannot open document: '%s'", filename));
 
@@ -278,10 +277,8 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	pdf_page *page;
 	fz_error error;
 	fz_device *mdev;
-	fz_obj *obj;
 
-	obj = pdf_get_page_object(app->xref, app->pageno);
-	error = pdf_load_page(&page, app->xref, obj);
+	error = pdf_load_page(&page, app->xref, app->pageno - 1);
 	if (error)
 		pdfapp_error(app, error);
 
@@ -310,10 +307,11 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 {
 	xps_page *page;
 	fz_device *mdev;
+	fz_error error;
 
-	page = xps_load_page(app->xps, app->pageno - 1);
-	if (!page)
-		pdfapp_error(app, fz_rethrow(-1, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
+	error = xps_load_page(&page, app->xps, app->pageno - 1);
+	if (error)
+		pdfapp_error(app, fz_rethrow(error, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
 
 	app->page_bbox.x0 = 0;
 	app->page_bbox.y0 = 0;
@@ -436,9 +434,11 @@ static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)
 
 static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 {
-	int page;
+	int number;
 
-	page = pdf_find_page_object(app->xref, obj);
+	number = pdf_find_page_number(app->xref, obj);
+	if (number < 0)
+		return;
 
 	if (app->histlen + 1 == 256)
 	{
@@ -446,7 +446,7 @@ static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
 		app->histlen --;
 	}
 	app->hist[app->histlen++] = app->pageno;
-	app->pageno = page;
+	app->pageno = number + 1;
 	pdfapp_showpage(app, 1, 1, 1);
 }
 
