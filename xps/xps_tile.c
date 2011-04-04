@@ -1,6 +1,8 @@
 #include "fitz.h"
 #include "muxps.h"
 
+#define TILE
+
 /*
  * Parse a tiling brush (visual and image brushes at this time) common
  * properties. Use the callback to draw the individual tiles.
@@ -171,8 +173,16 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		int y0 = floorf(bbox.y0 / ystep);
 		int x1 = ceilf(bbox.x1 / xstep);
 		int y1 = ceilf(bbox.y1 / ystep);
+#ifdef TILE
+		int ntile = (x1 - x0) * (y1 - y0);
+		if (ntile > 1)
+			ctx->dev->begintile(ctx->dev->user, bbox, viewbox, xstep, ystep, ctm);
+		if (ntile > 0)
+			xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
+		if (ntile > 1)
+			ctx->dev->endtile(ctx->dev->user);
+#else
 		int x, y;
-
 		for (y = y0; y < y1; y++)
 		{
 			for (x = x0; x < x1; x++)
@@ -181,6 +191,7 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 				xps_paint_tiling_brush(ctx, ttm, viewbox, tile_mode, &c);
 			}
 		}
+#endif
 	}
 	else
 	{

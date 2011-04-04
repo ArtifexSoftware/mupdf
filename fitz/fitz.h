@@ -1026,6 +1026,9 @@ struct fz_device_s
 	void (*endmask)(void *);
 	void (*begingroup)(void *, fz_rect, int isolated, int knockout, fz_blendmode blendmode, float alpha);
 	void (*endgroup)(void *);
+
+	void (*begintile)(void *, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
+	void (*endtile)(void *);
 };
 
 fz_device *fz_newdevice(void *user);
@@ -1095,6 +1098,8 @@ typedef enum fz_displaycommand_e
 	FZ_CMDENDMASK,
 	FZ_CMDBEGINGROUP,
 	FZ_CMDENDGROUP,
+	FZ_CMDBEGINTILE,
+	FZ_CMDENDTILE
 } fz_displaycommand;
 
 struct fz_displaynode_s
@@ -1194,6 +1199,7 @@ void fz_paintimagecolor(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *img, fz_matr
 
 void fz_paintpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha);
 void fz_paintpixmapmask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk);
+void fz_paintpixmapbbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox);
 
 void fz_blendpixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode);
 
