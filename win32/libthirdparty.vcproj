@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="libthirdparty"
 	ProjectGUID="{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}"
 	RootNamespace="mupdf"

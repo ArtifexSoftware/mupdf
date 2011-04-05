@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="libmupdf"
 	ProjectGUID="{5F615F91-DFF8-4F05-BF48-6222B7D86519}"
 	RootNamespace="mupdf"
-	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
 		<Platform
@@ -264,10 +263,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_pagetree.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_parse.c"
 				>
 			</File>
@@ -357,10 +352,6 @@
 			</File>
 			<File
 				RelativePath="..\fitz\dev_bbox.c"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\dev_draw.c"
 				>
 			</File>
 			<File
@@ -481,6 +472,10 @@
 			</File>
 			<File
 				RelativePath="..\draw\draw_blend.c"
+				>
+			</File>
+			<File
+				RelativePath="..\draw\draw_device.c"
 				>
 			</File>
 			<File
