@@ -537,7 +537,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 			samples[0] = atof(fill_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		ctx->dev->fill_text(ctx->dev->user, text, ctm,
+		fz_fill_text(ctx->dev, text, ctm,
 			ctx->colorspace, ctx->color, ctx->alpha);
 	}
 
@@ -547,9 +547,9 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 
 	if (fill_tag)
 	{
-		ctx->dev->clip_text(ctx->dev->user, text, ctm, 0);
+		fz_clip_text(ctx->dev, text, ctm, 0);
 		xps_parse_brush(ctx, ctm, area, fill_uri, dict, fill_tag);
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
@@ -557,5 +557,5 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	fz_free_text(text);
 
 	if (clip_att || clip_tag)
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 }

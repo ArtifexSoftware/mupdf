@@ -235,7 +235,7 @@ xps_draw_one_radial_gradient(xps_context *ctx, fz_matrix ctm,
 	shade->mesh[4] = y1;
 	shade->mesh[5] = r1;
 
-	ctx->dev->fill_shade(ctx->dev->user, shade, ctm, 1);
+	fz_fill_shade(ctx->dev, shade, ctm, 1);
 
 	fz_drop_shade(shade);
 }
@@ -276,7 +276,7 @@ xps_draw_one_linear_gradient(xps_context *ctx, fz_matrix ctm,
 	shade->mesh[4] = y1;
 	shade->mesh[5] = 0;
 
-	ctx->dev->fill_shade(ctx->dev->user, shade, ctm, 1);
+	fz_fill_shade(ctx->dev, shade, ctm, 1);
 
 	fz_drop_shade(shade);
 }

@@ -75,9 +75,9 @@ xps_begin_opacity(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 	if (opacity_mask_tag)
 	{
-		ctx->dev->begin_mask(ctx->dev->user, area, 0, NULL, NULL);
+		fz_begin_mask(ctx->dev, area, 0, NULL, NULL);
 		xps_parse_brush(ctx, ctm, area, base_uri, dict, opacity_mask_tag);
-		ctx->dev->end_mask(ctx->dev->user);
+		fz_end_mask(ctx->dev);
 	}
 }
 
@@ -94,7 +94,7 @@ xps_end_opacity(xps_context *ctx, char *base_uri, xps_resource *dict,
 	if (opacity_mask_tag)
 	{
 		if (strcmp(xml_tag(opacity_mask_tag), "SolidColorBrush"))
-			ctx->dev->pop_clip(ctx->dev->user);
+			fz_pop_clip(ctx->dev);
 	}
 }
 

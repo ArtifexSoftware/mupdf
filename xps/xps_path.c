@@ -758,7 +758,7 @@ xps_clip(xps_context *ctx, fz_matrix ctm, xps_resource *dict, char *clip_att, xm
 		path = xps_parse_path_geometry(ctx, dict, clip_tag, 0, &fill_rule);
 	else
 		path = fz_new_path();
-	ctx->dev->clip_path(ctx->dev->user, path, fill_rule == 0, ctm);
+	fz_clip_path(ctx->dev, path, fill_rule == 0, ctm);
 	fz_free_path(path);
 }
 
@@ -949,7 +949,7 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 			samples[0] = atof(fill_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		ctx->dev->fill_path(ctx->dev->user, path, fill_rule == 0, ctm,
+		fz_fill_path(ctx->dev, path, fill_rule == 0, ctm,
 			ctx->colorspace, ctx->color, ctx->alpha);
 	}
 
@@ -957,9 +957,9 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	{
 		area = fz_bound_path(path, NULL, ctm);
 
-		ctx->dev->clip_path(ctx->dev->user, path, fill_rule == 0, ctm);
+		fz_clip_path(ctx->dev, path, fill_rule == 0, ctm);
 		xps_parse_brush(ctx, ctm, area, fill_uri, dict, fill_tag);
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 	}
 
 	if (stroke_att)
@@ -969,15 +969,15 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 			samples[0] = atof(stroke_opacity_att);
 		xps_set_color(ctx, colorspace, samples);
 
-		ctx->dev->stroke_path(ctx->dev->user, path, &stroke, ctm,
+		fz_stroke_path(ctx->dev, path, &stroke, ctm,
 			ctx->colorspace, ctx->color, ctx->alpha);
 	}
 
 	if (stroke_tag)
 	{
-		ctx->dev->clip_stroke_path(ctx->dev->user, path, &stroke, ctm);
+		fz_clip_stroke_path(ctx->dev, path, &stroke, ctm);
 		xps_parse_brush(ctx, ctm, area, stroke_uri, dict, stroke_tag);
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 	}
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
@@ -986,5 +986,5 @@ xps_parse_path(xps_context *ctx, fz_matrix ctm, char *base_uri, xps_resource *di
 	path = NULL;
 
 	if (clip_att || clip_tag)
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 }

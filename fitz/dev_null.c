@@ -1,64 +1,12 @@
 #include "fitz.h"
 
-static void fz_null_free_user(void *user) {}
-static void fz_null_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_null_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_null_clip_path(void *user, fz_path *path, int even_odd, fz_matrix ctm) {}
-static void fz_null_clip_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm) {}
-static void fz_null_fill_text(void *user, fz_text *text, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_null_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_null_clip_text(void *user, fz_text *text, fz_matrix ctm, int accumulate) {}
-static void fz_null_clip_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm) {}
-static void fz_null_ignore_text(void *user, fz_text *text, fz_matrix ctm) {}
-static void fz_null_pop_clip(void *user) {}
-static void fz_null_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha) {}
-static void fz_null_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha) {}
-static void fz_null_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha) {}
-static void fz_null_clip_image_mask(void *user, fz_pixmap *image, fz_matrix ctm) {}
-static void fz_null_begin_mask(void *user, fz_rect r, int luminosity, fz_colorspace *colorspace, float *bc) {}
-static void fz_null_end_mask(void *user) {}
-static void fz_null_begin_group(void *user, fz_rect r, int isolated, int knockout, fz_blendmode blendmode, float alpha) {}
-static void fz_null_end_group(void *user) {}
-static void fz_null_begin_tile(void *user, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm) {}
-static void fz_null_end_tile(void *user) {}
-
 fz_device *
 fz_new_device(void *user)
 {
 	fz_device *dev = fz_malloc(sizeof(fz_device));
 	memset(dev, 0, sizeof(fz_device));
-
 	dev->hints = 0;
-
 	dev->user = user;
-	dev->free_user = fz_null_free_user;
-
-	dev->fill_path = fz_null_fill_path;
-	dev->stroke_path = fz_null_stroke_path;
-	dev->clip_path = fz_null_clip_path;
-	dev->clip_stroke_path = fz_null_clip_stroke_path;
-
-	dev->fill_text = fz_null_fill_text;
-	dev->stroke_text = fz_null_stroke_text;
-	dev->clip_text = fz_null_clip_text;
-	dev->clip_stroke_text = fz_null_clip_stroke_text;
-	dev->ignore_text = fz_null_ignore_text;
-
-	dev->fill_shade = fz_null_fill_shade;
-	dev->fill_image = fz_null_fill_image;
-	dev->fill_image_mask = fz_null_fill_image_mask;
-	dev->clip_image_mask = fz_null_clip_image_mask;
-
-	dev->pop_clip = fz_null_pop_clip;
-
-	dev->begin_mask = fz_null_begin_mask;
-	dev->end_mask = fz_null_end_mask;
-	dev->begin_group = fz_null_begin_group;
-	dev->end_group = fz_null_end_group;
-
-	dev->begin_tile = fz_null_begin_tile;
-	dev->end_tile = fz_null_end_tile;
-
 	return dev;
 }
 
@@ -68,4 +16,149 @@ fz_free_device(fz_device *dev)
 	if (dev->free_user)
 		dev->free_user(dev->user);
 	fz_free(dev);
+}
+
+void
+fz_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	if (dev->fill_path)
+		dev->fill_path(dev->user, path, even_odd, ctm, colorspace, color, alpha);
+}
+
+void
+fz_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	if (dev->stroke_path)
+		dev->stroke_path(dev->user, path, stroke, ctm, colorspace, color, alpha);
+}
+
+void
+fz_clip_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm)
+{
+	if (dev->clip_path)
+		dev->clip_path(dev->user, path, even_odd, ctm);
+}
+
+void
+fz_clip_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm)
+{
+	if (dev->clip_stroke_path)
+		dev->clip_stroke_path(dev->user, path, stroke, ctm);
+}
+
+void
+fz_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	if (dev->fill_text)
+		dev->fill_text(dev->user, text, ctm, colorspace, color, alpha);
+}
+
+void
+fz_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	if (dev->stroke_text)
+		dev->stroke_text(dev->user, text, stroke, ctm, colorspace, color, alpha);
+}
+
+void
+fz_clip_text(fz_device *dev, fz_text *text, fz_matrix ctm, int accumulate)
+{
+	if (dev->clip_text)
+		dev->clip_text(dev->user, text, ctm, accumulate);
+}
+
+void
+fz_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm)
+{
+	if (dev->clip_stroke_text)
+		dev->clip_stroke_text(dev->user, text, stroke, ctm);
+}
+
+void
+fz_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm)
+{
+	if (dev->ignore_text)
+		dev->ignore_text(dev->user, text, ctm);
+}
+
+void
+fz_pop_clip(fz_device *dev)
+{
+	if (dev->pop_clip)
+		dev->pop_clip(dev->user);
+}
+
+void
+fz_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
+{
+	if (dev->fill_shade)
+		dev->fill_shade(dev->user, shade, ctm, alpha);
+}
+
+void
+fz_fill_image(fz_device *dev, fz_pixmap *image, fz_matrix ctm, float alpha)
+{
+	if (dev->fill_image)
+		dev->fill_image(dev->user, image, ctm, alpha);
+}
+
+void
+fz_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	if (dev->fill_image_mask)
+		dev->fill_image_mask(dev->user, image, ctm, colorspace, color, alpha);
+}
+
+void
+fz_clip_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm)
+{
+	if (dev->clip_image_mask)
+		dev->clip_image_mask(dev->user, image, ctm);
+}
+
+void
+fz_begin_mask(fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, float *bc)
+{
+	if (dev->begin_mask)
+		dev->begin_mask(dev->user, area, luminosity, colorspace, bc);
+}
+
+void
+fz_end_mask(fz_device *dev)
+{
+	if (dev->end_mask)
+		dev->end_mask(dev->user);
+}
+
+void
+fz_begin_group(fz_device *dev, fz_rect area, int isolated, int knockout, fz_blendmode blendmode, float alpha)
+{
+	if (dev->begin_group)
+		dev->begin_group(dev->user, area, isolated, knockout, blendmode, alpha);
+}
+
+void
+fz_end_group(fz_device *dev)
+{
+	if (dev->end_group)
+		dev->end_group(dev->user);
+}
+
+void
+fz_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm)
+{
+	if (dev->begin_tile)
+		dev->begin_tile(dev->user, area, view, xstep, ystep, ctm);
+}
+
+void
+fz_end_tile(fz_device *dev)
+{
+	if (dev->end_tile)
+		dev->end_tile(dev->user);
 }

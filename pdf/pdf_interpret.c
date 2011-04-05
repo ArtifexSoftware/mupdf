@@ -126,7 +126,7 @@ pdf_grestore(pdf_csi *csi)
 	gs = csi->gstate + csi->gtop;
 	while (clip_depth > gs->clip_depth)
 	{
-		csi->dev->pop_clip(csi->dev->user);
+		fz_pop_clip(csi->dev);
 		clip_depth--;
 	}
 }
@@ -145,7 +145,7 @@ pdf_free_csi(pdf_csi *csi)
 		pdf_drop_xobject(csi->gstate[0].softmask);
 
 	while (csi->gstate[0].clip_depth--)
-		csi->dev->pop_clip(csi->dev->user);
+		fz_pop_clip(csi->dev);
 
 	if (csi->path) fz_free_path(csi->path);
 	if (csi->text) fz_free_text(csi->text);
@@ -204,17 +204,17 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 			gstate->softmask = NULL;
 			popmask = 1;
 
-			csi->dev->begin_mask(csi->dev->user, bbox, gstate->luminosity,
+			fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 				softmask->colorspace, gstate->softmask_bc);
 			error = pdf_run_xobject(csi, resources, softmask, fz_identity);
 			if (error)
 				return fz_rethrow(error, "cannot run softmask");
-			csi->dev->end_mask(csi->dev->user);
+			fz_end_mask(csi->dev);
 
 			pdf_drop_xobject(softmask);
 		}
 
-		csi->dev->begin_group(csi->dev->user,
+		fz_begin_group(csi->dev,
 			fz_transform_rect(gstate->ctm, xobj->bbox),
 			xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
 
@@ -256,9 +256,9 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 
 	if (xobj->transparency)
 	{
-		csi->dev->end_group(csi->dev->user);
+		fz_end_group(csi->dev);
 		if (popmask)
-			csi->dev->pop_clip(csi->dev->user);
+			fz_pop_clip(csi->dev);
 	}
 
 	return fz_okay;

@@ -45,7 +45,7 @@ fz_draw_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
 	int i;
 
 	fz_reset_gel(dev->gel, dev->scissor);
-	fz_fill_path(dev->gel, path, ctm, flatness);
+	fz_flatten_fill_path(dev->gel, path, ctm, flatness);
 	fz_sort_gel(dev->gel);
 
 	bbox = fz_bound_gel(dev->gel);
@@ -81,9 +81,9 @@ fz_draw_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matri
 
 	fz_reset_gel(dev->gel, dev->scissor);
 	if (stroke->dash_len > 0)
-		fz_dash_path(dev->gel, path, stroke, ctm, flatness, linewidth);
+		fz_flatten_dash_path(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
-		fz_stroke_path(dev->gel, path, stroke, ctm, flatness, linewidth);
+		fz_flatten_stroke_path(dev->gel, path, stroke, ctm, flatness, linewidth);
 	fz_sort_gel(dev->gel);
 
 	bbox = fz_bound_gel(dev->gel);
@@ -117,7 +117,7 @@ fz_draw_clip_path(void *user, fz_path *path, int even_odd, fz_matrix ctm)
 	}
 
 	fz_reset_gel(dev->gel, dev->scissor);
-	fz_fill_path(dev->gel, path, ctm, flatness);
+	fz_flatten_fill_path(dev->gel, path, ctm, flatness);
 	fz_sort_gel(dev->gel);
 
 	bbox = fz_bound_gel(dev->gel);
@@ -171,9 +171,9 @@ fz_draw_clip_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_
 
 	fz_reset_gel(dev->gel, dev->scissor);
 	if (stroke->dash_len > 0)
-		fz_dash_path(dev->gel, path, stroke, ctm, flatness, linewidth);
+		fz_flatten_dash_path(dev->gel, path, stroke, ctm, flatness, linewidth);
 	else
-		fz_stroke_path(dev->gel, path, stroke, ctm, flatness, linewidth);
+		fz_flatten_stroke_path(dev->gel, path, stroke, ctm, flatness, linewidth);
 	fz_sort_gel(dev->gel);
 
 	bbox = fz_bound_gel(dev->gel);

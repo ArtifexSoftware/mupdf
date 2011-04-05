@@ -28,10 +28,10 @@ xps_paint_tiling_brush_clipped(xps_context *ctx, fz_matrix ctm, fz_rect viewbox,
 	fz_lineto(path, viewbox.x1, viewbox.y1);
 	fz_lineto(path, viewbox.x1, viewbox.y0);
 	fz_closepath(path);
-	ctx->dev->clip_path(ctx->dev->user, path, 0, ctm);
+	fz_clip_path(ctx->dev, path, 0, ctm);
 	fz_free_path(path);
 	c->func(ctx, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
-	ctx->dev->pop_clip(ctx->dev->user);
+	fz_pop_clip(ctx->dev);
 }
 
 static void
@@ -182,11 +182,11 @@ xps_parse_tiling_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 			bigview.x1 = bigview.x0 + xstep;
 			bigview.y1 = bigview.y0 + ystep;
 			if (n > 1)
-				ctx->dev->begin_tile(ctx->dev->user, area, bigview, xstep, ystep, ctm);
+				fz_begin_tile(ctx->dev, area, bigview, xstep, ystep, ctm);
 			if (n > 0)
 				xps_paint_tiling_brush(ctx, ctm, viewbox, tile_mode, &c);
 			if (n > 1)
-				ctx->dev->end_tile(ctx->dev->user);
+				fz_end_tile(ctx->dev);
 		}
 #else
 		{
@@ -316,7 +316,7 @@ xps_parse_canvas(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	if (clip_att || clip_tag)
-		ctx->dev->pop_clip(ctx->dev->user);
+		fz_pop_clip(ctx->dev);
 
 	if (new_dict)
 		xps_free_resource_dictionary(ctx, new_dict);

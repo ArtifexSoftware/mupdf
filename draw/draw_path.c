@@ -69,7 +69,7 @@ bezier(fz_gel *gel, fz_matrix *ctm, float flatness,
 }
 
 void
-fz_fill_path(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
+fz_flatten_fill_path(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness)
 {
 	float x1, y1, x2, y2, x3, y3;
 	float cx = 0;
@@ -203,7 +203,7 @@ fz_add_arc(struct sctx *s,
 }
 
 static void
-fz_linestroke(struct sctx *s, fz_point a, fz_point b)
+fz_add_line_stroke(struct sctx *s, fz_point a, fz_point b)
 {
 	float dx = b.x - a.x;
 	float dy = b.y - a.y;
@@ -215,7 +215,7 @@ fz_linestroke(struct sctx *s, fz_point a, fz_point b)
 }
 
 static void
-fz_linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
+fz_add_line_join(struct sctx *s, fz_point a, fz_point b, fz_point c)
 {
 	float miterlimit = s->miterlimit;
 	float linewidth = s->linewidth;
@@ -303,7 +303,7 @@ fz_linejoin(struct sctx *s, fz_point a, fz_point b, fz_point c)
 }
 
 static void
-fz_linecap(struct sctx *s, fz_point a, fz_point b)
+fz_add_line_cap(struct sctx *s, fz_point a, fz_point b)
 {
 	float flatness = s->flatness;
 	float linewidth = s->linewidth;
@@ -355,7 +355,7 @@ fz_linecap(struct sctx *s, fz_point a, fz_point b)
 }
 
 static void
-fz_linedot(struct sctx *s, fz_point a)
+fz_add_line_dot(struct sctx *s, fz_point a)
 {
 	float flatness = s->flatness;
 	float linewidth = s->linewidth;
@@ -384,12 +384,12 @@ fz_stroke_flush(struct sctx *s)
 {
 	if (s->sn == 2)
 	{
-		fz_linecap(s, s->beg[1], s->beg[0]);
-		fz_linecap(s, s->seg[0], s->seg[1]);
+		fz_add_line_cap(s, s->beg[1], s->beg[0]);
+		fz_add_line_cap(s, s->seg[0], s->seg[1]);
 	}
 	else if (s->dot)
 	{
-		fz_linedot(s, s->beg[0]);
+		fz_add_line_dot(s, s->beg[0]);
 	}
 }
 
@@ -416,11 +416,11 @@ fz_stroke_lineto(struct sctx *s, fz_point cur)
 		return;
 	}
 
-	fz_linestroke(s, s->seg[s->sn-1], cur);
+	fz_add_line_stroke(s, s->seg[s->sn-1], cur);
 
 	if (s->sn == 2)
 	{
-		fz_linejoin(s, s->seg[0], s->seg[1], cur);
+		fz_add_line_join(s, s->seg[0], s->seg[1], cur);
 		s->seg[0] = s->seg[1];
 		s->seg[1] = cur;
 	}
@@ -438,13 +438,13 @@ fz_stroke_closepath(struct sctx *s)
 	{
 		fz_stroke_lineto(s, s->beg[0]);
 		if (s->seg[1].x == s->beg[0].x && s->seg[1].y == s->beg[0].y)
-			fz_linejoin(s, s->seg[0], s->beg[0], s->beg[1]);
+			fz_add_line_join(s, s->seg[0], s->beg[0], s->beg[1]);
 		else
-			fz_linejoin(s, s->seg[1], s->beg[0], s->beg[1]);
+			fz_add_line_join(s, s->seg[1], s->beg[0], s->beg[1]);
 	}
 	else if (s->dot)
 	{
-		fz_linedot(s, s->beg[0]);
+		fz_add_line_dot(s, s->beg[0]);
 	}
 
 	s->seg[0] = s->beg[0];
@@ -511,7 +511,7 @@ fz_stroke_bezier(struct sctx *s,
 }
 
 void
-fz_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth)
+fz_flatten_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 	fz_point p0, p1, p2, p3;
@@ -698,7 +698,7 @@ fz_dash_bezier(struct sctx *s,
 }
 
 void
-fz_dash_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth)
+fz_flatten_dash_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 	fz_point p0, p1, p2, p3, beg;

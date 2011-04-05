@@ -211,7 +211,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 #ifdef TILE
 	if ((x1 - x0) * (y1 - y0) > 0)
 	{
-		csi->dev->begin_tile(csi->dev->user, area, pat->bbox, pat->xstep, pat->ystep, ptm);
+		fz_begin_tile(csi->dev, area, pat->bbox, pat->xstep, pat->ystep, ptm);
 		gstate->ctm = ptm;
 		csi->top_ctm = gstate->ctm;
 		error = pdf_run_csi_buffer(csi, pat->resources, pat->contents);
@@ -219,7 +219,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 			fz_catch(error, "cannot render pattern tile");
 		while (oldtop < csi->gtop)
 			pdf_grestore(csi);
-		csi->dev->end_tile(csi->dev->user);
+		fz_end_tile(csi->dev);
 	}
 #else
 	{
@@ -262,18 +262,18 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 
 		gstate->softmask = NULL;
 
-		csi->dev->begin_mask(csi->dev->user, bbox, gstate->luminosity,
+		fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 			softmask->colorspace, gstate->softmask_bc);
 		error = pdf_run_xobject(csi, NULL, softmask, fz_identity);
 		if (error)
 			fz_catch(error, "cannot run softmask");
-		csi->dev->end_mask(csi->dev->user);
+		fz_end_mask(csi->dev);
 
 		gstate->softmask = softmask;
 	}
 
 	if (gstate->blendmode != FZ_BLEND_NORMAL)
-		csi->dev->begin_group(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
+		fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
 }
 
 static void
@@ -282,10 +282,10 @@ pdf_end_group(pdf_csi *csi)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
 	if (gstate->blendmode != FZ_BLEND_NORMAL)
-		csi->dev->end_group(csi->dev->user);
+		fz_end_group(csi->dev);
 
 	if (gstate->softmask)
-		csi->dev->pop_clip(csi->dev->user);
+		fz_pop_clip(csi->dev);
 }
 
 void
@@ -298,7 +298,7 @@ pdf_show_shade(pdf_csi *csi, fz_shade *shd)
 
 	pdf_begin_group(csi, bbox);
 
-	csi->dev->fill_shade(csi->dev->user, shd, gstate->ctm, gstate->fill.alpha);
+	fz_fill_shade(csi->dev, shd, gstate->ctm, gstate->fill.alpha);
 
 	pdf_end_group(csi);
 }
@@ -315,8 +315,8 @@ pdf_show_image(pdf_csi *csi, fz_pixmap *image)
 	{
 		/* apply blend group even though we skip the softmask */
 		if (gstate->blendmode != FZ_BLEND_NORMAL)
-			csi->dev->begin_group(csi->dev->user, bbox, 0, 0, gstate->blendmode, 1);
-		csi->dev->clip_image_mask(csi->dev->user, image->mask, gstate->ctm);
+			fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
+		fz_clip_image_mask(csi->dev, image->mask, gstate->ctm);
 	}
 	else
 		pdf_begin_group(csi, bbox);
@@ -329,37 +329,37 @@ pdf_show_image(pdf_csi *csi, fz_pixmap *image)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			csi->dev->fill_image_mask(csi->dev->user, image, gstate->ctm,
+			fz_fill_image_mask(csi->dev, image, gstate->ctm,
 				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
 			{
-				csi->dev->clip_image_mask(csi->dev->user, image, gstate->ctm);
+				fz_clip_image_mask(csi->dev, image, gstate->ctm);
 				pdf_show_pattern(csi, gstate->fill.pattern, bbox, PDF_FILL);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->fill.shade)
 			{
-				csi->dev->clip_image_mask(csi->dev->user, image, gstate->ctm);
-				csi->dev->fill_shade(csi->dev->user, gstate->fill.shade, gstate->ctm, gstate->fill.alpha);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_clip_image_mask(csi->dev, image, gstate->ctm);
+				fz_fill_shade(csi->dev, gstate->fill.shade, gstate->ctm, gstate->fill.alpha);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		}
 	}
 	else
 	{
-		csi->dev->fill_image(csi->dev->user, image, gstate->ctm, gstate->fill.alpha);
+		fz_fill_image(csi->dev, image, gstate->ctm, gstate->fill.alpha);
 	}
 
 	if (image->mask)
 	{
-		csi->dev->pop_clip(csi->dev->user);
+		fz_pop_clip(csi->dev);
 		if (gstate->blendmode != FZ_BLEND_NORMAL)
-			csi->dev->end_group(csi->dev->user);
+			fz_end_group(csi->dev);
 	}
 	else
 		pdf_end_group(csi);
@@ -386,7 +386,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 	if (csi->clip)
 	{
 		gstate->clip_depth++;
-		csi->dev->clip_path(csi->dev->user, path, even_odd, gstate->ctm);
+		fz_clip_path(csi->dev, path, even_odd, gstate->ctm);
 		csi->clip = 0;
 	}
 
@@ -399,23 +399,23 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			csi->dev->fill_path(csi->dev->user, path, even_odd, gstate->ctm,
+			fz_fill_path(csi->dev, path, even_odd, gstate->ctm,
 				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
 			{
-				csi->dev->clip_path(csi->dev->user, path, even_odd, gstate->ctm);
+				fz_clip_path(csi->dev, path, even_odd, gstate->ctm);
 				pdf_show_pattern(csi, gstate->fill.pattern, bbox, PDF_FILL);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->fill.shade)
 			{
-				csi->dev->clip_path(csi->dev->user, path, even_odd, gstate->ctm);
-				csi->dev->fill_shade(csi->dev->user, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_clip_path(csi->dev, path, even_odd, gstate->ctm);
+				fz_fill_shade(csi->dev, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		}
@@ -428,23 +428,23 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			csi->dev->stroke_path(csi->dev->user, path, &gstate->stroke_state, gstate->ctm,
+			fz_stroke_path(csi->dev, path, &gstate->stroke_state, gstate->ctm,
 				gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->stroke.pattern)
 			{
-				csi->dev->clip_stroke_path(csi->dev->user, path, &gstate->stroke_state, gstate->ctm);
+				fz_clip_stroke_path(csi->dev, path, &gstate->stroke_state, gstate->ctm);
 				pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->stroke.shade)
 			{
-				csi->dev->clip_stroke_path(csi->dev->user, path, &gstate->stroke_state, gstate->ctm);
-				csi->dev->fill_shade(csi->dev->user, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_clip_stroke_path(csi->dev, path, &gstate->stroke_state, gstate->ctm);
+				fz_fill_shade(csi->dev, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		}
@@ -489,13 +489,13 @@ pdf_flush_text(pdf_csi *csi)
 	pdf_begin_group(csi, bbox);
 
 	if (doinvisible)
-		csi->dev->ignore_text(csi->dev->user, text, gstate->ctm);
+		fz_ignore_text(csi->dev, text, gstate->ctm);
 
 	if (doclip)
 	{
 		if (csi->accumulate < 2)
 			gstate->clip_depth++;
-		csi->dev->clip_text(csi->dev->user, text, gstate->ctm, csi->accumulate);
+		fz_clip_text(csi->dev, text, gstate->ctm, csi->accumulate);
 		csi->accumulate = 2;
 	}
 
@@ -506,23 +506,23 @@ pdf_flush_text(pdf_csi *csi)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			csi->dev->fill_text(csi->dev->user, text, gstate->ctm,
+			fz_fill_text(csi->dev, text, gstate->ctm,
 				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
 			{
-				csi->dev->clip_text(csi->dev->user, text, gstate->ctm, 0);
+				fz_clip_text(csi->dev, text, gstate->ctm, 0);
 				pdf_show_pattern(csi, gstate->fill.pattern, bbox, PDF_FILL);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->fill.shade)
 			{
-				csi->dev->clip_text(csi->dev->user, text, gstate->ctm, 0);
-				csi->dev->fill_shade(csi->dev->user, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_clip_text(csi->dev, text, gstate->ctm, 0);
+				fz_fill_shade(csi->dev, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		}
@@ -535,23 +535,23 @@ pdf_flush_text(pdf_csi *csi)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			csi->dev->stroke_text(csi->dev->user, text, &gstate->stroke_state, gstate->ctm,
+			fz_stroke_text(csi->dev, text, &gstate->stroke_state, gstate->ctm,
 				gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->stroke.pattern)
 			{
-				csi->dev->clip_stroke_text(csi->dev->user, text, &gstate->stroke_state, gstate->ctm);
+				fz_clip_stroke_text(csi->dev, text, &gstate->stroke_state, gstate->ctm);
 				pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->stroke.shade)
 			{
-				csi->dev->clip_stroke_text(csi->dev->user, text, &gstate->stroke_state, gstate->ctm);
-				csi->dev->fill_shade(csi->dev->user, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
-				csi->dev->pop_clip(csi->dev->user);
+				fz_clip_stroke_text(csi->dev, text, &gstate->stroke_state, gstate->ctm);
+				fz_fill_shade(csi->dev, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
+				fz_pop_clip(csi->dev);
 			}
 			break;
 		}

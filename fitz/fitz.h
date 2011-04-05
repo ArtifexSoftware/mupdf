@@ -978,9 +978,9 @@ void fz_free_ael(fz_ael *ael);
 fz_error fz_scan_convert(fz_gel *gel, fz_ael *ael, int eofill,
 	fz_bbox clip, fz_pixmap *pix, unsigned char *colorbv);
 
-void fz_fill_path(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
-void fz_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth);
-void fz_dash_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth);
+void fz_flatten_fill_path(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
+void fz_flatten_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth);
+void fz_flatten_dash_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth);
 
 /*
  * The device interface.
@@ -1028,13 +1028,32 @@ struct fz_device_s
 	void (*end_tile)(void *);
 };
 
+void fz_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_clip_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm);
+void fz_clip_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
+void fz_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_clip_text(fz_device *dev, fz_text *text, fz_matrix ctm, int accumulate);
+void fz_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm);
+void fz_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm);
+void fz_pop_clip(fz_device *dev);
+void fz_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha);
+void fz_fill_image(fz_device *dev, fz_pixmap *image, fz_matrix ctm, float alpha);
+void fz_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
+void fz_clip_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm);
+void fz_begin_mask(fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, float *bc);
+void fz_end_mask(fz_device *dev);
+void fz_begin_group(fz_device *dev, fz_rect area, int isolated, int knockout, fz_blendmode blendmode, float alpha);
+void fz_end_group(fz_device *dev);
+void fz_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
+void fz_end_tile(fz_device *dev);
+
 fz_device *fz_new_device(void *user);
 void fz_free_device(fz_device *dev);
 
 fz_device *fz_new_trace_device(void);
-
 fz_device *fz_new_bbox_device(fz_bbox *bboxp);
-
 fz_device *fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest);
 
 /*
