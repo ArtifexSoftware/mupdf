@@ -697,7 +697,7 @@ fz_error fz_write_pnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha);
 fz_error fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha);
 
-fz_error fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size);
+fz_error fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *dcs);
 
 /*
  * Colorspace resources.
