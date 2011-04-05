@@ -1,7 +1,6 @@
 #include "fitz.h"
 
-#define ISOLATED 1
-#define KNOCKOUT 2
+enum { ISOLATED = 1, KNOCKOUT = 2 };
 
 static fz_display_node *
 fz_new_display_node(fz_display_command cmd, fz_matrix ctm,
@@ -436,78 +435,78 @@ visible:
 		switch (node->cmd)
 		{
 		case FZ_CMD_FILL_PATH:
-			dev->fill_path(dev->user, node->item.path, node->flag, ctm,
+			fz_fill_path(dev, node->item.path, node->flag, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMD_STROKE_PATH:
-			dev->stroke_path(dev->user, node->item.path, node->stroke, ctm,
+			fz_stroke_path(dev, node->item.path, node->stroke, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMD_CLIP_PATH:
-			dev->clip_path(dev->user, node->item.path, node->flag, ctm);
+			fz_clip_path(dev, node->item.path, node->flag, ctm);
 			break;
 		case FZ_CMD_CLIP_STROKE_PATH:
-			dev->clip_stroke_path(dev->user, node->item.path, node->stroke, ctm);
+			fz_clip_stroke_path(dev, node->item.path, node->stroke, ctm);
 			break;
 		case FZ_CMD_FILL_TEXT:
-			dev->fill_text(dev->user, node->item.text, ctm,
+			fz_fill_text(dev, node->item.text, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMD_STROKE_TEXT:
-			dev->stroke_text(dev->user, node->item.text, node->stroke, ctm,
+			fz_stroke_text(dev, node->item.text, node->stroke, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMD_CLIP_TEXT:
-			dev->clip_text(dev->user, node->item.text, ctm, node->flag);
+			fz_clip_text(dev, node->item.text, ctm, node->flag);
 			break;
 		case FZ_CMD_CLIP_STROKE_TEXT:
-			dev->clip_stroke_text(dev->user, node->item.text, node->stroke, ctm);
+			fz_clip_stroke_text(dev, node->item.text, node->stroke, ctm);
 			break;
 		case FZ_CMD_IGNORE_TEXT:
-			dev->ignore_text(dev->user, node->item.text, ctm);
+			fz_ignore_text(dev, node->item.text, ctm);
 			break;
 		case FZ_CMD_FILL_SHADE:
-			dev->fill_shade(dev->user, node->item.shade, ctm, node->alpha);
+			fz_fill_shade(dev, node->item.shade, ctm, node->alpha);
 			break;
 		case FZ_CMD_FILL_IMAGE:
-			dev->fill_image(dev->user, node->item.image, ctm, node->alpha);
+			fz_fill_image(dev, node->item.image, ctm, node->alpha);
 			break;
 		case FZ_CMD_FILL_IMAGE_MASK:
-			dev->fill_image_mask(dev->user, node->item.image, ctm,
+			fz_fill_image_mask(dev, node->item.image, ctm,
 				node->colorspace, node->color, node->alpha);
 			break;
 		case FZ_CMD_CLIP_IMAGE_MASK:
-			dev->clip_image_mask(dev->user, node->item.image, ctm);
+			fz_clip_image_mask(dev, node->item.image, ctm);
 			break;
 		case FZ_CMD_POP_CLIP:
-			dev->pop_clip(dev->user);
+			fz_pop_clip(dev);
 			break;
 		case FZ_CMD_BEGIN_MASK:
 			bbox = fz_transform_rect(top_ctm, node->rect);
-			dev->begin_mask(dev->user, bbox, node->flag, node->colorspace, node->color);
+			fz_begin_mask(dev, bbox, node->flag, node->colorspace, node->color);
 			break;
 		case FZ_CMD_END_MASK:
-			dev->end_mask(dev->user);
+			fz_end_mask(dev);
 			break;
 		case FZ_CMD_BEGIN_GROUP:
 			bbox = fz_transform_rect(top_ctm, node->rect);
-			dev->begin_group(dev->user, bbox,
+			fz_begin_group(dev, bbox,
 				node->flag & ISOLATED, node->flag & KNOCKOUT,
 				node->item.blendmode, node->alpha);
 			break;
 		case FZ_CMD_END_GROUP:
-			dev->end_group(dev->user);
+			fz_end_group(dev);
 			break;
 		case FZ_CMD_BEGIN_TILE:
 			bbox.x0 = node->color[2];
 			bbox.y0 = node->color[3];
 			bbox.x1 = node->color[4];
 			bbox.y1 = node->color[5];
-			dev->begin_tile(dev->user, node->rect, bbox,
+			fz_begin_tile(dev, node->rect, bbox,
 				node->color[0], node->color[1], ctm);
 			break;
 		case FZ_CMD_END_TILE:
-			dev->end_tile(dev->user);
+			fz_end_tile(dev);
 			break;
 		}
 	}
