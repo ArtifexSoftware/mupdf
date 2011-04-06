@@ -28,7 +28,8 @@ main(int argc, char **argv)
 {
 	FILE *fo;
 	FILE *fi;
-	char name[256];
+	char fontname[256];
+	char origname[256];
 	char *basename;
 	char *p;
 	int i, len;
@@ -50,7 +51,7 @@ main(int argc, char **argv)
 	fprintf(fo, "#if defined(__linux__) || defined(__FreeBSD__)\n");
 	fprintf(fo, "#define HAVE_INCBIN\n");
 	fprintf(fo, "#endif\n");
-	fprintf(fo, "#endif\n\n");
+	fprintf(fo, "#endif\n");
 
 	for (i = 2; i < argc; i++)
 	{
@@ -69,11 +70,16 @@ main(int argc, char **argv)
 			basename++;
 		else
 			basename = argv[i];
-		strcpy(name, basename);
-		p = name;
+
+		strcpy(origname, basename);
+		p = strrchr(origname, '.');
+		if (p) *p = 0;
+		strcpy(fontname, origname);
+
+		p = fontname;
 		while (*p)
 		{
-			if ((*p == '/') || (*p == '.') || (*p == '\\') || (*p == '-'))
+			if (*p == '/' || *p == '.' || *p == '\\' || *p == '-')
 				*p = '_';
 			p ++;
 		}
@@ -82,18 +88,19 @@ main(int argc, char **argv)
 		len = ftell(fi);
 		fseek(fi, 0, SEEK_SET);
 
-		fprintf(fo, "const unsigned int pdf_font_%s_len = %d;\n", name, len);
+		printf("\t{\"%s\",pdf_font_%s,%d},\n", origname, fontname, len);
 
-		fprintf(fo, "#ifdef HAVE_INCBIN\n");
-		fprintf(fo, "asm(\".globl pdf_font_%s_buf\");\n", name);
+		fprintf(fo, "\n#ifdef HAVE_INCBIN\n");
+		fprintf(fo, "extern const unsigned char pdf_font_%s[%d];\n", fontname, len);
+		fprintf(fo, "asm(\".globl pdf_font_%s\");\n", fontname);
 		fprintf(fo, "asm(\".balign 8\");\n");
-		fprintf(fo, "asm(\"pdf_font_%s_buf:\");\n", name);
+		fprintf(fo, "asm(\"pdf_font_%s:\");\n", fontname);
 		fprintf(fo, "asm(\".incbin \\\"%s\\\"\");\n", argv[i]);
 		fprintf(fo, "#else\n");
-		fprintf(fo, "const unsigned char pdf_font_%s_buf[%d] = {\n", name, len);
+		fprintf(fo, "static const unsigned char pdf_font_%s[%d] = {\n", fontname, len);
 		hexdump(fo, fi);
 		fprintf(fo, "};\n");
-		fprintf(fo, "#endif\n\n");
+		fprintf(fo, "#endif\n");
 
 		fclose(fi);
 	}

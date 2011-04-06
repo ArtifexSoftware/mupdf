@@ -52,9 +52,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	fprintf(fo, "#include \"fitz.h\"\n");
-	fprintf(fo, "#include \"mupdf.h\"\n");
-	fprintf(fo, "\n");
+	fprintf(fo, "/* This is an automatically generated file. Do not edit. */\n");
 
 	for (i = 2; i < argc; i++)
 	{
@@ -86,7 +84,9 @@ main(int argc, char **argv)
 			return 1;
 		}
 
-		fprintf(fo, "static const pdf_range pdf_cmap_%s_ranges[] = {", name);
+		fprintf(fo, "\n/* %s */\n\n", cmap->cmap_name);
+
+		fprintf(fo, "static const pdf_range cmap_%s_ranges[] = {", name);
 		if (cmap->rlen == 0)
 		{
 			fprintf(fo, " {0,%d,0}", PDF_CMAP_RANGE);
@@ -102,11 +102,11 @@ main(int argc, char **argv)
 
 		if (cmap->tlen == 0)
 		{
-			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[] = { 0 };\n\n", name);
+			fprintf(fo, "static const unsigned short cmap_%s_table[] = { 0 };\n\n", name);
 		}
 		else
 		{
-			fprintf(fo, "static const unsigned short pdf_cmap_%s_table[%d] = {",
+			fprintf(fo, "static const unsigned short cmap_%s_table[%d] = {",
 				name, cmap->tlen);
 			for (k = 0; k < cmap->tlen; k++)
 			{
@@ -117,7 +117,7 @@ main(int argc, char **argv)
 			fprintf(fo, "\n};\n\n");
 		}
 
-		fprintf(fo, "pdf_cmap pdf_cmap_%s = {\n", name);
+		fprintf(fo, "static pdf_cmap cmap_%s = {\n", name);
 		fprintf(fo, "\t-1, ");
 		fprintf(fo, "\"%s\", ", cmap->cmap_name);
 		fprintf(fo, "\"%s\", 0, ", cmap->usecmap_name);
@@ -134,13 +134,15 @@ main(int argc, char **argv)
 		}
 		fprintf(fo, " },\n");
 
-		fprintf(fo, "\t%d, %d, (pdf_range*) pdf_cmap_%s_ranges,\n",
+		fprintf(fo, "\t%d, %d, (pdf_range*) cmap_%s_ranges,\n",
 			cmap->rlen, cmap->rlen, name);
 
-		fprintf(fo, "\t%d, %d, (unsigned short*) pdf_cmap_%s_table,\n",
+		fprintf(fo, "\t%d, %d, (unsigned short*) cmap_%s_table,\n",
 			cmap->tlen, cmap->tlen, name);
 
-		fprintf(fo, "};\n\n");
+		fprintf(fo, "};\n");
+
+		printf("\t{\"%s\",&cmap_%s},\n", cmap->cmap_name, name);
 
 		fz_close(fi);
 	}

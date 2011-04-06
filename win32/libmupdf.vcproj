@@ -140,38 +140,6 @@
 	</References>
 	<Files>
 		<Filter
-			Name="pregen"
-			>
-			<File
-				RelativePath="..\pregen\cmap_cns.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\cmap_gb.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\cmap_japan.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\cmap_korea.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\cmap_unicode.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\font_base14.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pregen\font_cjk.c"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="pdf"
 			>
 			<File
@@ -227,10 +195,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_fontmtx.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_function.c"
 				>
 			</File>
@@ -244,6 +208,10 @@
 			</File>
 			<File
 				RelativePath="..\pdf\pdf_lex.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_metrics.c"
 				>
 			</File>
 			<File
