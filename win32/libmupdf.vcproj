@@ -387,11 +387,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\res_bitmap.c"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\res_colorspace.c"
 				>
 			</File>
 			<File
 				RelativePath="..\fitz\res_font.c"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\res_halftone.c"
 				>
 			</File>
 			<File

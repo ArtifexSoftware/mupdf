@@ -93,8 +93,10 @@ FITZ_SRC := \
 	fitz/obj_dict.c \
 	fitz/obj_print.c \
 	fitz/obj_simple.c \
+	fitz/res_bitmap.c \
 	fitz/res_colorspace.c \
 	fitz/res_font.c \
+	fitz/res_halftone.c \
 	fitz/res_path.c \
 	fitz/res_pixmap.c \
 	fitz/res_shade.c \
