@@ -215,15 +215,11 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_encoding.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_font.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_fontagl.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_fontenc.c"
 				>
 			</File>
 			<File

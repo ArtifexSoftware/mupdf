@@ -343,7 +343,7 @@ fz_error pdf_load_system_cmap(pdf_cmap **cmapp, char *name);
 
 void pdf_load_encoding(char **estrings, char *encoding);
 int pdf_lookup_agl(char *name);
-char **pdf_lookup_agl_names(int ucs);
+const char **pdf_lookup_agl_duplicates(int ucs);
 
 extern const unsigned short pdf_doc_encoding[256];
 extern const char * const pdf_mac_roman[256];

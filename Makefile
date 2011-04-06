@@ -142,9 +142,8 @@ MUPDF_SRC := \
 	pdf/pdf_colorspace.c \
 	pdf/pdf_crypt.c \
 	pdf/pdf_debug.c \
+	pdf/pdf_encoding.c \
 	pdf/pdf_font.c \
-	pdf/pdf_fontagl.c \
-	pdf/pdf_fontenc.c \
 	pdf/pdf_fontfile.c \
 	pdf/pdf_fontmtx.c \
 	pdf/pdf_function.c \

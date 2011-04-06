@@ -419,13 +419,13 @@ load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 				if (etable[i] == 0)
 				{
 					int aglcode = pdf_lookup_agl(estrings[i]);
-					char **aglnames = pdf_lookup_agl_names(aglcode);
-					while (*aglnames)
+					const char **dupnames = pdf_lookup_agl_duplicates(aglcode);
+					while (*dupnames)
 					{
-						etable[i] = FT_Get_Name_Index(face, *aglnames);
+						etable[i] = FT_Get_Name_Index(face, (char*)*dupnames);
 						if (etable[i])
 							break;
-						aglnames++;
+						dupnames++;
 					}
 				}
 			}
