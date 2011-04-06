@@ -197,6 +197,8 @@ $(OBJDIR)/%.o: pdf/%.c
 	$(CC_CMD)
 $(OBJDIR)/%.o: xps/%.c
 	$(CC_CMD)
+$(OBJDIR)/%.o: scripts/%.c
+	$(CC_CMD)
 $(OBJDIR)/%.o: $(GENDIR)/%.c
 	$(CC_CMD)
 
