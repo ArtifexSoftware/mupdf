@@ -713,8 +713,8 @@ struct fz_colorspace_s
 	int refs;
 	char name[16];
 	int n;
-	void (*to_xyz)(fz_colorspace *, float *src, float *xyz);
-	void (*from_xyz)(fz_colorspace *, float *xyz, float *dst);
+	void (*to_rgb)(fz_colorspace *, float *src, float *rgb);
+	void (*from_rgb)(fz_colorspace *, float *rgb, float *dst);
 	void (*free_data)(fz_colorspace *);
 	void *data;
 };

@@ -31,15 +31,8 @@ static inline float fung(float x)
 	return (108.0f / 841.0f) * (x - (4.0f / 29.0f));
 }
 
-static inline float invg(float x)
-{
-	if (x > 0.008856f)
-		return powf(x, 1.0f / 3.0f);
-	return (7.787f * x) + (16.0f / 116.0f);
-}
-
 static void
-lab_to_xyz(fz_colorspace *cs, float *lab, float *rgb)
+lab_to_rgb(fz_colorspace *cs, float *lab, float *rgb)
 {
 	/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
 	float lstar, astar, bstar, l, m, n, x, y, z, r, g, b;
@@ -61,22 +54,15 @@ lab_to_xyz(fz_colorspace *cs, float *lab, float *rgb)
 }
 
 static void
-xyz_to_lab(fz_colorspace *cs, float *xyz, float *lab)
+rgb_to_lab(fz_colorspace *cs, float *rgb, float *lab)
 {
-	float lstar, astar, bstar;
-	float yyn = xyz[1];
-	if (yyn < 0.008856f)
-		lstar = 116.0f * yyn * (1.0f / 3.0f) - 16.0f;
-	else
-		lstar = 903.3f * yyn;
-	astar = 500 * (invg(xyz[0]) - invg(xyz[1]));
-	bstar = 200 * (invg(xyz[1]) - invg(xyz[2]));
-	lab[0] = lstar;
-	lab[1] = astar;
-	lab[2] = bstar;
+	fz_warn("cannot convert into L*a*b colorspace");
+	lab[0] = rgb[0];
+	lab[1] = rgb[1];
+	lab[2] = rgb[2];
 }
 
-static fz_colorspace k_device_lab = { -1, "Lab", 3, lab_to_xyz, xyz_to_lab };
+static fz_colorspace k_device_lab = { -1, "Lab", 3, lab_to_rgb, rgb_to_lab };
 static fz_colorspace *fz_device_lab = &k_device_lab;
 
 /* Separation and DeviceN */
@@ -88,12 +74,12 @@ struct separation
 };
 
 static void
-separation_to_xyz(fz_colorspace *cs, float *color, float *xyz)
+separation_to_rgb(fz_colorspace *cs, float *color, float *rgb)
 {
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
 	pdf_eval_function(sep->tint, color, cs->n, alt, sep->base->n);
-	sep->base->to_xyz(sep->base, alt, xyz);
+	sep->base->to_rgb(sep->base, alt, rgb);
 }
 
 static void
@@ -146,7 +132,7 @@ load_separation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	sep->tint = tint;
 
 	cs = fz_new_colorspace(n == 1 ? "Separation" : "DeviceN", n);
-	cs->to_xyz = separation_to_xyz;
+	cs->to_rgb = separation_to_rgb;
 	cs->free_data = free_separation;
 	cs->data = sep;
 
@@ -166,7 +152,7 @@ struct indexed
 };
 
 static void
-indexed_to_xyz(fz_colorspace *cs, float *color, float *xyz)
+indexed_to_rgb(fz_colorspace *cs, float *color, float *rgb)
 {
 	struct indexed *idx = cs->data;
 	float alt[FZ_MAX_COLORS];
@@ -175,7 +161,7 @@ indexed_to_xyz(fz_colorspace *cs, float *color, float *xyz)
 	i = CLAMP(i, 0, idx->high);
 	for (k = 0; k < idx->base->n; k++)
 		alt[k] = idx->lookup[i * idx->base->n + k] / 255.0f;
-	idx->base->to_xyz(idx->base, alt, xyz);
+	idx->base->to_rgb(idx->base, alt, rgb);
 }
 
 static void
@@ -197,7 +183,7 @@ pdf_expand_indexed_pixmap(fz_pixmap *src)
 	int y, x, k, n, high;
 	unsigned char *lookup;
 
-	assert(src->colorspace->to_xyz == indexed_to_xyz);
+	assert(src->colorspace->to_rgb == indexed_to_rgb);
 	assert(src->n == 2);
 
 	idx = src->colorspace->data;
@@ -258,7 +244,7 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	memset(idx->lookup, 0, n);
 
 	cs = fz_new_colorspace("Indexed", 1);
-	cs->to_xyz = indexed_to_xyz;
+	cs->to_rgb = indexed_to_rgb;
 	cs->free_data = free_indexed;
 	cs->data = idx;
 
