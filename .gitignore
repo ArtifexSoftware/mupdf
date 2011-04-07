@@ -1,7 +1,11 @@
 *~
+.*.swp
 build
 generated
 thirdparty
 cscope.*
 tags
 TAGS
+win32/*.user
+win32/*.ncb
+win32/*.suo
