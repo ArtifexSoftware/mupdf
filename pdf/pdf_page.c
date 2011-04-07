@@ -215,8 +215,6 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 	fz_buffer *one;
 	int i;
 
-	pdf_log_page("multiple content streams: %d\n", fz_array_len(list));
-
 	/* TODO: openstream, read, close into big buffer at once */
 
 	big = fz_new_buffer(32 * 1024);
@@ -283,8 +281,6 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	if (number < 0 || number >= xref->page_len)
 		return fz_throw("cannot find page %d", number + 1);
 
-	pdf_log_page("load page {\n");
-
 	/* Ensure that we have a store for resource objects */
 	if (!xref->store)
 		xref->store = pdf_new_store();
@@ -329,9 +325,6 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 
 	page->rotate = fz_to_int(fz_dict_gets(dict, "Rotate"));
 
-	pdf_log_page("bbox [%d %d %d %d]\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
-	pdf_log_page("rotate %d\n", page->rotate);
-
 	obj = fz_dict_gets(dict, "Annots");
 	if (obj)
 	{
@@ -354,8 +347,6 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	if (page->resources && pdf_resources_use_blending(page->resources))
 		page->transparency = 1;
 
-	pdf_log_page("} %p\n", page);
-
 	*pagep = page;
 	return fz_okay;
 }
@@ -363,7 +354,6 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 void
 pdf_free_page(pdf_page *page)
 {
-	pdf_log_page("drop page %p\n", page);
 	if (page->resources)
 		fz_drop_obj(page->resources);
 	if (page->contents)
