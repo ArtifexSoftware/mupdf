@@ -202,7 +202,7 @@ struct xps_entry_s
 struct xps_context_s
 {
 	char *directory;
-	FILE *file;
+	fz_stream *file;
 	int zip_count;
 	xps_entry *zip_table;
 

@@ -921,19 +921,16 @@ fz_error
 pdf_open_xref(pdf_xref **xrefp, char *filename, char *password)
 {
 	fz_error error;
-	pdf_xref *xref;
 	fz_stream *file;
 
 	file = fz_open_file(filename);
 	if (!file)
 		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
 
-	error = pdf_open_xref_with_stream(&xref, file, password);
+	error = pdf_open_xref_with_stream(xrefp, file, password);
 	if (error)
 		return fz_rethrow(error, "cannot load document '%s'", filename);
 
 	fz_close(file);
-
-	*xrefp = xref;
 	return fz_okay;
 }
