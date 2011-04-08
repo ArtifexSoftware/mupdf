@@ -330,8 +330,10 @@ lex_hex_string(fz_stream *f, char *buf, int n)
 			}
 			break;
 		case '>':
-		default:
+		case EOF:
 			goto end;
+		default:
+			fz_warn("ignoring invalid character in hex string: '%c'", c);
 		}
 	}
 end:

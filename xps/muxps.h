@@ -233,6 +233,7 @@ struct xps_context_s
 };
 
 int xps_open_file(xps_context **ctxp, char *filename);
+int xps_open_stream(xps_context **ctxp, fz_stream *file);
 void xps_free_context(xps_context *ctx);
 
 #endif

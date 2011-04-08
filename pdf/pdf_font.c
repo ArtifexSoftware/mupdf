@@ -102,6 +102,11 @@ static int ft_char_index(FT_Face face, int cid)
 	int gid = FT_Get_Char_Index(face, cid);
 	if (gid == 0)
 		gid = FT_Get_Char_Index(face, 0xf000 + cid);
+
+	/* some chinese fonts only ship the similarly looking 0x2026 */
+	if (gid == 0 && cid == 0x22ef)
+		gid = FT_Get_Char_Index(face, 0x2026);
+
 	return gid;
 }
 

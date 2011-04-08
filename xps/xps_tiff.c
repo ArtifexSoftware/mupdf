@@ -303,8 +303,8 @@ xps_expand_tiff_colormap(struct tiff *tiff)
 	int maxval = 1 << tiff->bitspersample;
 	byte *samples;
 	byte *src, *dst;
-	int stride;
-	int x, y;
+	unsigned int x, y;
+	unsigned int stride;
 
 	/* colormap has first all red, then all green, then all blue values */
 	/* colormap values are 0..65535, bits is 4 or 8 */

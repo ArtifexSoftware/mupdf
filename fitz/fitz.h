@@ -769,6 +769,8 @@ void fz_drop_colorspace(fz_colorspace *colorspace);
 void fz_convert_color(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convert_pixmap(fz_pixmap *src, fz_pixmap *dst);
 
+fz_colorspace *fz_find_device_colorspace(char *name);
+
 /*
  * Fonts come in two variants:
  *	Regular fonts are handled by FreeType.

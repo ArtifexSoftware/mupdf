@@ -390,7 +390,7 @@ xps_read_part(xps_context *ctx, char *partname)
 	return xps_read_zip_part(ctx, partname);
 }
 
-int
+static int
 xps_open_directory(xps_context **ctxp, char *directory)
 {
 	xps_context *ctx;
@@ -470,10 +470,9 @@ xps_open_file(xps_context **ctxp, char *filename)
 		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
 
 	code = xps_open_stream(ctxp, file);
+	fz_close(file);
 	if (code)
 		return fz_rethrow(code, "cannot load document '%s'", filename);
-
-	fz_close(file);
 	return fz_okay;
 }
 

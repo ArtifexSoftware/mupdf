@@ -162,6 +162,21 @@ fz_colorspace *fz_device_rgb = &k_device_rgb;
 fz_colorspace *fz_device_bgr = &k_device_bgr;
 fz_colorspace *fz_device_cmyk = &k_device_cmyk;
 
+fz_colorspace *
+fz_find_device_colorspace(char *name)
+{
+	if (!strcmp(name, "DeviceGray"))
+		return fz_device_gray;
+	if (!strcmp(name, "DeviceRGB"))
+		return fz_device_rgb;
+	if (!strcmp(name, "DeviceBGR"))
+		return fz_device_bgr;
+	if (!strcmp(name, "DeviceCMYK"))
+		return fz_device_cmyk;
+	fz_warn("unknown device colorspace: %s", name);
+	return NULL;
+}
+
 /* Fast pixmap color conversions */
 
 static void fast_gray_to_rgb(fz_pixmap *src, fz_pixmap *dst)
