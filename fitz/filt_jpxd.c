@@ -108,7 +108,7 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 		}
 	}
 
-	img = fz_new_pixmap(colorspace, 0, 0, w, h);
+	img = fz_new_pixmap(colorspace, w, h);
 
 	p = img->samples;
 	for (y = 0; y < h; y++)
@@ -133,7 +133,7 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 	{
 		if (n == 4)
 		{
-			fz_pixmap *tmp = fz_new_pixmap(fz_device_rgb, 0, 0, w, h);
+			fz_pixmap *tmp = fz_new_pixmap(fz_device_rgb, w, h);
 			fz_convert_pixmap(img, tmp);
 			fz_drop_pixmap(img);
 			img = tmp;

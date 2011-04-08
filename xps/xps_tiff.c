@@ -822,7 +822,7 @@ xps_decode_tiff(fz_pixmap **imagep, byte *buf, int len)
 
 	/* Expand into fz_pixmap struct */
 
-	image = fz_new_pixmap(tiff.colorspace, 0, 0, tiff.imagewidth, tiff.imagelength);
+	image = fz_new_pixmap(tiff.colorspace, tiff.imagewidth, tiff.imagelength);
 	image->xres = tiff.xresolution;
 	image->yres = tiff.yresolution;
 
@@ -834,7 +834,7 @@ xps_decode_tiff(fz_pixmap **imagep, byte *buf, int len)
 		/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 		if (image->n == 5)
 		{
-			fz_pixmap *rgb = fz_new_pixmap(fz_device_rgb, 0, 0, image->w, image->h);
+			fz_pixmap *rgb = fz_new_pixmap(fz_device_rgb, image->w, image->h);
 			fz_convert_pixmap(image, rgb);
 			rgb->xres = image->xres;
 			rgb->yres = image->yres;

@@ -1,14 +1,14 @@
 #include "fitz.h"
 
 fz_pixmap *
-fz_new_pixmap_with_data(fz_colorspace *colorspace, int x, int y, int w, int h, unsigned char *samples)
+fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *samples)
 {
 	fz_pixmap *pix;
 
 	pix = fz_malloc(sizeof(fz_pixmap));
 	pix->refs = 1;
-	pix->x = x;
-	pix->y = y;
+	pix->x = 0;
+	pix->y = 0;
 	pix->w = w;
 	pix->h = h;
 	pix->mask = NULL;
@@ -39,15 +39,19 @@ fz_new_pixmap_with_data(fz_colorspace *colorspace, int x, int y, int w, int h, u
 }
 
 fz_pixmap *
-fz_new_pixmap(fz_colorspace *colorspace, int x, int y, int w, int h)
+fz_new_pixmap(fz_colorspace *colorspace, int w, int h)
 {
-	return fz_new_pixmap_with_data(colorspace, x, y, w, h, NULL);
+	return fz_new_pixmap_with_data(colorspace, w, h, NULL);
 }
 
 fz_pixmap *
 fz_new_pixmap_with_rect(fz_colorspace *colorspace, fz_bbox r)
 {
-	return fz_new_pixmap(colorspace, r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+	fz_pixmap *pixmap;
+	pixmap = fz_new_pixmap(colorspace, r.x1 - r.x0, r.y1 - r.y0);
+	pixmap->x = r.x0;
+	pixmap->y = r.y0;
+	return pixmap;
 }
 
 fz_pixmap *
@@ -138,7 +142,7 @@ fz_alpha_from_gray(fz_pixmap *gray, int luminosity)
 
 	assert(gray->n == 2);
 
-	alpha = fz_new_pixmap(NULL, gray->x, gray->y, gray->w, gray->h);
+	alpha = fz_new_pixmap_with_rect(NULL, fz_bound_pixmap(gray));
 	dp = alpha->samples;
 	sp = gray->samples;
 	if (!luminosity)

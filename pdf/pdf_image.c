@@ -221,7 +221,7 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 
 	/* Unpack samples into pixmap */
 
-	tile = fz_new_pixmap(colorspace, 0, 0, w, h);
+	tile = fz_new_pixmap(colorspace, w, h);
 
 	scale = 1;
 	if (!indexed)
