@@ -21,8 +21,10 @@
 /* Macros for accessing the combined extent_flags field */
 #define pdf_range_high(r) ((r)->low + ((r)->extent_flags >> 2))
 #define pdf_range_flags(r) ((r)->extent_flags & 3)
-#define pdf_range_set_high(r, h) ((r)->extent_flags = (((r)->extent_flags & 3) | ((h - (r)->low) << 2)))
-#define pdf_range_set_flags(r, f) ((r)->extent_flags = (((r)->extent_flags & ~3) | f))
+#define pdf_range_set_high(r, h) \
+	((r)->extent_flags = (((r)->extent_flags & 3) | ((h - (r)->low) << 2)))
+#define pdf_range_set_flags(r, f) \
+	((r)->extent_flags = (((r)->extent_flags & ~3) | f))
 
 /*
  * Allocate, destroy and simple parameters.
@@ -179,6 +181,11 @@ pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n)
 static void
 add_table(pdf_cmap *cmap, int value)
 {
+	if (cmap->tlen == USHRT_MAX || cmap->rlen == USHRT_MAX)
+	{
+		fz_warn("cmap table is full; ignoring additional entries");
+		return;
+	}
 	if (cmap->tlen + 1 > cmap->tcap)
 	{
 		cmap->tcap = cmap->tcap > 1 ? (cmap->tcap * 3) / 2 : 256;
@@ -193,6 +200,11 @@ add_table(pdf_cmap *cmap, int value)
 static void
 add_range(pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
+	if (cmap->tlen == USHRT_MAX || cmap->rlen == USHRT_MAX)
+	{
+		fz_warn("cmap table is full; ignoring additional entries");
+		return;
+	}
 	/* If the range is too large to be represented, split it */
 	if (high - low > 0x3fff)
 	{
@@ -283,6 +295,12 @@ pdf_sort_cmap(pdf_cmap *cmap)
 		return;
 
 	qsort(cmap->ranges, cmap->rlen, sizeof(pdf_range), cmprange);
+
+	if (cmap->rlen == USHRT_MAX || cmap->tlen == USHRT_MAX)
+	{
+		fz_warn("cmap table is full; will not combine ranges");
+		return;
+	}
 
 	a = cmap->ranges;
 	b = cmap->ranges + 1;
