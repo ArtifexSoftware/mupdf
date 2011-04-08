@@ -634,6 +634,7 @@ fz_scan_convert_aa(fz_gel *gel, fz_ael *ael, int eofill, fz_bbox clip,
 	}
 
 	fz_free(deltas);
+	fz_free(alphas);
 }
 
 /*
