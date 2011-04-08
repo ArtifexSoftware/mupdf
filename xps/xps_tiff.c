@@ -223,8 +223,7 @@ xps_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 	return fz_okay;
 }
 
-static inline int
-getcomp(byte *line, int x, int bpc)
+static inline int getcomp(byte *line, int x, int bpc)
 {
 	switch (bpc)
 	{
@@ -237,8 +236,7 @@ getcomp(byte *line, int x, int bpc)
 	return 0;
 }
 
-static inline void
-putcomp(byte *line, int x, int bpc, int value)
+static inline void putcomp(byte *line, int x, int bpc, int value)
 {
 	int maxval = (1 << bpc) - 1;
 

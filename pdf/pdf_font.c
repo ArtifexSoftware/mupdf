@@ -105,7 +105,7 @@ static int ft_char_index(FT_Face face, int cid)
 	return gid;
 }
 
-static inline int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
+static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 {
 	if (fontdesc->to_ttf_cmap)
 	{
