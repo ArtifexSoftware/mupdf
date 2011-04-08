@@ -551,7 +551,13 @@ xps_decode_png(fz_pixmap **imagep, byte *p, int total)
 
 	stride = (png.width * png.n * png.depth + 7) / 8;
 
-	image = fz_new_pixmap(colorspace, png.width, png.height);
+	image = fz_new_pixmap_with_limit(colorspace, png.width, png.height);
+	if (!image)
+	{
+		fz_free(png.samples);
+		return fz_throw("out of memory");
+	}
+
 	image->xres = png.xres;
 	image->yres = png.yres;
 

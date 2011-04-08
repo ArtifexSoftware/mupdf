@@ -822,7 +822,16 @@ xps_decode_tiff(fz_pixmap **imagep, byte *buf, int len)
 
 	/* Expand into fz_pixmap struct */
 
-	image = fz_new_pixmap(tiff.colorspace, tiff.imagewidth, tiff.imagelength);
+	image = fz_new_pixmap_with_limit(tiff.colorspace, tiff.imagewidth, tiff.imagelength);
+	if (!image)
+	{
+		if (tiff.colormap) fz_free(tiff.colormap);
+		if (tiff.stripoffsets) fz_free(tiff.stripoffsets);
+		if (tiff.stripbytecounts) fz_free(tiff.stripbytecounts);
+		if (tiff.samples) fz_free(tiff.samples);
+		return fz_throw("out of memory");
+	}
+
 	image->xres = tiff.xresolution;
 	image->yres = tiff.yresolution;
 
