@@ -220,16 +220,8 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 		error = pdf_load_stream(&one, xref, fz_to_num(stm), fz_to_gen(stm));
 		if (error)
 		{
-			if (i == 0)
-			{
-				fz_drop_buffer(big);
-				return fz_rethrow(error, "cannot load content stream part %d/%d", i + 1, n);
-			}
-			else
-			{
-				fz_catch(error, "cannot load content stream part %d/%d", i + 1, n);
-				break;
-			}
+			fz_catch(error, "cannot load content stream part %d/%d", i + 1, n);
+			continue;
 		}
 
 		if (big->len + one->len + 1 > big->cap)
