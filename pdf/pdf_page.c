@@ -209,8 +209,6 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 	fz_buffer *one;
 	int i, n;
 
-	/* TODO: openstream, read, close into big buffer at once */
-
 	big = fz_new_buffer(32 * 1024);
 
 	n = fz_array_len(list);
@@ -231,6 +229,12 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 		big->len += one->len + 1;
 
 		fz_drop_buffer(one);
+	}
+
+	if (n > 0 && big->len == 0)
+	{
+		fz_drop_buffer(big);
+		return fz_throw("cannot load content stream");
 	}
 
 	*bigbufp = big;

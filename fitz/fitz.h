@@ -15,10 +15,15 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>	/* INT_MAX & co */
-#include <float.h>	/* FLT_EPSILON */
-#include <fcntl.h>	/* O_RDONLY & co */
+#include <float.h> /* FLT_EPSILON */
+#include <fcntl.h> /* O_RDONLY & co */
 
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
+
+#define ABS(x) ( (x) < 0 ? -(x) : (x) )
+#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
+#define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
 
 /*
  * Some differences in libc can be smoothed over
@@ -110,6 +115,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 typedef int fz_error;
 
+#define fz_okay ((fz_error)0)
+
 void fz_warn(char *fmt, ...) __printflike(1, 2);
 void fz_flush_warnings(void);
 
@@ -121,8 +128,6 @@ fz_error fz_throw_impx(char *fmt, ...) __printflike(1, 2);
 fz_error fz_rethrow_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 void fz_catch_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 
-#define fz_okay ((fz_error)0)
-
 /* extract the last error stack trace */
 int fz_get_error_count(void);
 char *fz_get_error_line(int n);
@@ -130,11 +135,6 @@ char *fz_get_error_line(int n);
 /*
  * Basic runtime and utility functions
  */
-
-#define ABS(x) ( (x) < 0 ? -(x) : (x) )
-#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
 
 /* memory allocation */
 void *fz_malloc(int size);
