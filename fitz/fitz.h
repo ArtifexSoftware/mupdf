@@ -910,47 +910,17 @@ void fz_free_glyph_cache(fz_glyph_cache *);
 int fz_get_aa_level(void);
 void fz_set_aa_level(int bits);
 
-typedef struct fz_edge_s fz_edge;
 typedef struct fz_gel_s fz_gel;
-typedef struct fz_ael_s fz_ael;
-
-struct fz_edge_s
-{
-	int x, e, h, y;
-	int adj_up, adj_down;
-	int xmove;
-	int xdir, ydir; /* -1 or +1 */
-};
-
-struct fz_gel_s
-{
-	fz_bbox clip;
-	fz_bbox bbox;
-	int cap;
-	int len;
-	fz_edge *edges;
-};
-
-struct fz_ael_s
-{
-	int cap;
-	int len;
-	fz_edge **edges;
-};
 
 fz_gel *fz_new_gel(void);
 void fz_insert_gel(fz_gel *gel, float x0, float y0, float x1, float y1);
-fz_bbox fz_bound_gel(fz_gel *gel);
 void fz_reset_gel(fz_gel *gel, fz_bbox clip);
 void fz_sort_gel(fz_gel *gel);
+fz_bbox fz_bound_gel(fz_gel *gel);
 void fz_free_gel(fz_gel *gel);
 int fz_is_rect_gel(fz_gel *gel);
 
-fz_ael *fz_new_ael(void);
-void fz_free_ael(fz_ael *ael);
-
-void fz_scan_convert(fz_gel *gel, fz_ael *ael, int eofill,
-	fz_bbox clip, fz_pixmap *pix, unsigned char *colorbv);
+void fz_scan_convert(fz_gel *gel, int eofill, fz_bbox clip, fz_pixmap *pix, unsigned char *colorbv);
 
 void fz_flatten_fill_path(fz_gel *gel, fz_path *path, fz_matrix ctm, float flatness);
 void fz_flatten_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, float flatness, float linewidth);

@@ -12,7 +12,6 @@ struct fz_draw_device_s
 {
 	fz_glyph_cache *cache;
 	fz_gel *gel;
-	fz_ael *ael;
 
 	fz_pixmap *dest;
 	fz_bbox scissor;
@@ -59,7 +58,7 @@ fz_draw_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
 
-	fz_scan_convert(dev->gel, dev->ael, even_odd, bbox, dev->dest, colorbv);
+	fz_scan_convert(dev->gel, even_odd, bbox, dev->dest, colorbv);
 }
 
 static void
@@ -97,7 +96,7 @@ fz_draw_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matri
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
 
-	fz_scan_convert(dev->gel, dev->ael, 0, bbox, dev->dest, colorbv);
+	fz_scan_convert(dev->gel, 0, bbox, dev->dest, colorbv);
 }
 
 static void
@@ -139,7 +138,7 @@ fz_draw_clip_path(void *user, fz_path *path, int even_odd, fz_matrix ctm)
 	fz_clear_pixmap(mask);
 	fz_clear_pixmap(dest);
 
-	fz_scan_convert(dev->gel, dev->ael, even_odd, bbox, mask, NULL);
+	fz_scan_convert(dev->gel, even_odd, bbox, mask, NULL);
 
 	dev->stack[dev->top].scissor = dev->scissor;
 	dev->stack[dev->top].mask = mask;
@@ -186,7 +185,7 @@ fz_draw_clip_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_
 	fz_clear_pixmap(dest);
 
 	if (!fz_is_empty_rect(bbox))
-		fz_scan_convert(dev->gel, dev->ael, 0, bbox, mask, NULL);
+		fz_scan_convert(dev->gel, 0, bbox, mask, NULL);
 
 	dev->stack[dev->top].scissor = dev->scissor;
 	dev->stack[dev->top].mask = mask;
@@ -983,8 +982,9 @@ fz_draw_free_user(void *user)
 {
 	fz_draw_device *dev = user;
 	/* TODO: pop and free the stacks */
+	if (dev->top > 0)
+		fz_warn("items left on stack in draw device: %d", dev->top);
 	fz_free_gel(dev->gel);
-	fz_free_ael(dev->ael);
 	fz_free(dev);
 }
 
@@ -995,7 +995,6 @@ fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest)
 	fz_draw_device *ddev = fz_malloc(sizeof(fz_draw_device));
 	ddev->cache = cache;
 	ddev->gel = fz_new_gel();
-	ddev->ael = fz_new_ael();
 	ddev->dest = dest;
 	ddev->top = 0;
 
