@@ -348,61 +348,6 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
  */
 
 typedef struct fz_obj_s fz_obj;
-typedef struct fz_keyval_s fz_keyval;
-
-struct pdf_xref_s;
-
-typedef enum fz_objkind_e
-{
-	FZ_NULL,
-	FZ_BOOL,
-	FZ_INT,
-	FZ_REAL,
-	FZ_STRING,
-	FZ_NAME,
-	FZ_ARRAY,
-	FZ_DICT,
-	FZ_INDIRECT
-} fz_objkind;
-
-struct fz_keyval_s
-{
-	fz_obj *k;
-	fz_obj *v;
-};
-
-struct fz_obj_s
-{
-	int refs;
-	fz_objkind kind;
-	union
-	{
-		int b;
-		int i;
-		float f;
-		struct {
-			unsigned short len;
-			char buf[1];
-		} s;
-		char n[1];
-		struct {
-			int len;
-			int cap;
-			fz_obj **items;
-		} a;
-		struct {
-			char sorted;
-			int len;
-			int cap;
-			fz_keyval *items;
-		} d;
-		struct {
-			int num;
-			int gen;
-			struct pdf_xref_s *xref;
-		} r;
-	} u;
-};
 
 extern fz_obj* (*fz_resolve_indirect)(fz_obj*);
 
@@ -435,7 +380,7 @@ int fz_is_indirect(fz_obj *obj);
 
 int fz_objcmp(fz_obj *a, fz_obj *b);
 
-/* silent failure, no error reporting */
+/* safe, silent failure, no error reporting */
 int fz_to_bool(fz_obj *obj);
 int fz_to_int(fz_obj *obj);
 float fz_to_real(fz_obj *obj);
@@ -449,7 +394,6 @@ int fz_array_len(fz_obj *array);
 fz_obj *fz_array_get(fz_obj *array, int i);
 void fz_array_put(fz_obj *array, int i, fz_obj *obj);
 void fz_array_push(fz_obj *array, fz_obj *obj);
-void fz_array_drop(fz_obj *array);
 void fz_array_insert(fz_obj *array, fz_obj *obj);
 
 int fz_dict_len(fz_obj *dict);
@@ -468,7 +412,8 @@ int fz_fprint_obj(FILE *fp, fz_obj *obj, int tight);
 void fz_debug_obj(fz_obj *obj);
 void fz_debug_ref(fz_obj *obj);
 
-char *fz_objkindstr(fz_obj *obj);
+void fz_set_str_len(fz_obj *obj, int newlen); /* private */
+void *fz_get_indirect_xref(fz_obj *obj); /* private */
 
 /*
  * Data buffers.
@@ -804,7 +749,7 @@ struct fz_font_s
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	void *t3xref; /* a pdf_xref for the callback */
-	fz_error (*t3run)(struct pdf_xref_s *xref, fz_obj *resources, fz_buffer *contents,
+	fz_error (*t3run)(void *xref, fz_obj *resources, fz_buffer *contents,
 		struct fz_device_s *dev, fz_matrix ctm);
 
 	fz_rect bbox;

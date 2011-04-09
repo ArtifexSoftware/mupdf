@@ -638,8 +638,8 @@ pdf_crypt_obj_imp(pdf_crypt *crypt, fz_obj *obj, unsigned char *key, int keylen)
 				memcpy(iv, s, 16);
 				aes_setkey_dec(&aes, key, keylen * 8);
 				aes_crypt_cbc(&aes, AES_DECRYPT, n - 16, iv, s + 16, s);
-				obj->u.s.len -= 16; /* delete space used for iv */
-				obj->u.s.len -= s[n - 17]; /* delete padding bytes at end */
+				/* delete space used for iv and padding bytes at end */
+				fz_set_str_len(obj, n - 16 - s[n - 17]);
 			}
 		}
 	}
