@@ -491,10 +491,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\xps\xps_hash.c"
-				>
-			</File>
-			<File
 				RelativePath="..\xps\xps_image.c"
 				>
 			</File>
