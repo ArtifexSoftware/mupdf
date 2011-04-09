@@ -591,7 +591,7 @@ struct pdf_gstate_s
 	float rise;
 
 	/* transparency */
-	fz_blendmode blendmode;
+	int blendmode;
 	pdf_xobject *softmask;
 	fz_matrix softmask_ctm;
 	float softmask_bc[FZ_MAX_COLORS];

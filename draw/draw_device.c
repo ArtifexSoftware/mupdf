@@ -22,7 +22,7 @@ struct fz_draw_device_s
 		fz_bbox scissor;
 		fz_pixmap *dest;
 		fz_pixmap *mask;
-		fz_blendmode blendmode;
+		int blendmode;
 		int luminosity;
 		float alpha;
 		fz_matrix ctm;
@@ -848,7 +848,7 @@ fz_draw_end_mask(void *user)
 }
 
 static void
-fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, fz_blendmode blendmode, float alpha)
+fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_draw_device *dev = user;
 	fz_colorspace *model = dev->dest->colorspace;
@@ -882,7 +882,7 @@ fz_draw_end_group(void *user)
 {
 	fz_draw_device *dev = user;
 	fz_pixmap *group = dev->dest;
-	fz_blendmode blendmode;
+	int blendmode;
 	float alpha;
 
 	if (dev->top > 0)
@@ -893,7 +893,7 @@ fz_draw_end_group(void *user)
 		dev->dest = dev->stack[dev->top].dest;
 		dev->scissor = dev->stack[dev->top].scissor;
 
-		if (blendmode == FZ_BLEND_NORMAL)
+		if (blendmode == 0)
 			fz_paint_pixmap(dev->dest, group, alpha * 255);
 		else
 			fz_blend_pixmap(dev->dest, group, alpha * 255, blendmode);

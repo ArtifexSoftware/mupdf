@@ -240,11 +240,11 @@ fz_trace_end_mask(void *user)
 }
 
 static void
-fz_trace_begin_group(void *user, fz_rect bbox, int isolated, int knockout, fz_blendmode blendmode, float alpha)
+fz_trace_begin_group(void *user, fz_rect bbox, int isolated, int knockout, int blendmode, float alpha)
 {
 	printf("<group bbox=\"%g %g %g %g\" isolated=\"%d\" knockout=\"%d\" blendmode=\"%s\" alpha=\"%g\">\n",
 		bbox.x0, bbox.y0, bbox.x1, bbox.y1,
-		isolated, knockout, fz_blendmode_names[blendmode], alpha);
+		isolated, knockout, fz_blendmode_name(blendmode), alpha);
 }
 
 static void

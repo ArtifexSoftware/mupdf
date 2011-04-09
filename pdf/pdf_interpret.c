@@ -218,7 +218,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 			fz_transform_rect(gstate->ctm, xobj->bbox),
 			xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
 
-		gstate->blendmode = FZ_BLEND_NORMAL;
+		gstate->blendmode = 0;
 		gstate->stroke.alpha = 1;
 		gstate->fill.alpha = 1;
 	}
@@ -364,11 +364,7 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 		{
 			if (fz_is_array(val))
 				val = fz_array_get(val, 0);
-
-			gstate->blendmode = FZ_BLEND_NORMAL;
-			for (k = 0; fz_blendmode_names[k]; k++)
-				if (!strcmp(fz_blendmode_names[k], fz_to_name(val)))
-					gstate->blendmode = k;
+			gstate->blendmode = fz_find_blendmode(fz_to_name(val));
 		}
 
 		else if (!strcmp(s, "SMask"))
@@ -1408,8 +1404,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 	int flags;
 
 	if (page->transparency)
-		fz_begin_group(dev, fz_transform_rect(ctm, page->mediabox),
-			0, 0, FZ_BLEND_NORMAL, 1);
+		fz_begin_group(dev, fz_transform_rect(ctm, page->mediabox), 0, 0, 0, 1);
 
 	csi = pdf_new_csi(xref, dev, ctm, target);
 	error = pdf_run_csi_buffer(csi, page->resources, page->contents);

@@ -273,7 +273,7 @@ fz_list_end_mask(void *user)
 }
 
 static void
-fz_list_begin_group(void *user, fz_rect rect, int isolated, int knockout, fz_blendmode blendmode, float alpha)
+fz_list_begin_group(void *user, fz_rect rect, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_display_node *node;
 	node = fz_new_display_node(FZ_CMD_BEGIN_GROUP, fz_identity, NULL, NULL, alpha);

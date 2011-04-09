@@ -40,7 +40,7 @@ pdf_init_gstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->render = 0;
 	gs->rise = 0;
 
-	gs->blendmode = FZ_BLEND_NORMAL;
+	gs->blendmode = 0;
 	gs->softmask = NULL;
 	gs->softmask_ctm = fz_identity;
 	gs->luminosity = 0;
@@ -274,7 +274,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 		gstate->softmask = softmask;
 	}
 
-	if (gstate->blendmode != FZ_BLEND_NORMAL)
+	if (gstate->blendmode)
 		fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
 }
 
@@ -283,7 +283,7 @@ pdf_end_group(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 
-	if (gstate->blendmode != FZ_BLEND_NORMAL)
+	if (gstate->blendmode)
 		fz_end_group(csi->dev);
 
 	if (gstate->softmask)
@@ -316,7 +316,7 @@ pdf_show_image(pdf_csi *csi, fz_pixmap *image)
 	if (image->mask)
 	{
 		/* apply blend group even though we skip the softmask */
-		if (gstate->blendmode != FZ_BLEND_NORMAL)
+		if (gstate->blendmode)
 			fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
 		fz_clip_image_mask(csi->dev, image->mask, gstate->ctm);
 	}
@@ -360,7 +360,7 @@ pdf_show_image(pdf_csi *csi, fz_pixmap *image)
 	if (image->mask)
 	{
 		fz_pop_clip(csi->dev);
-		if (gstate->blendmode != FZ_BLEND_NORMAL)
+		if (gstate->blendmode)
 			fz_end_group(csi->dev);
 	}
 	else

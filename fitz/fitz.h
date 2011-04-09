@@ -579,30 +579,8 @@ fz_stream *fz_open_jbig2d(fz_stream *chain, fz_buffer *global);
 
 enum { FZ_MAX_COLORS = 32 };
 
-typedef enum fz_blendmode_e
-{
-	/* PDF 1.4 -- standard separable */
-	FZ_BLEND_NORMAL,
-	FZ_BLEND_MULTIPLY,
-	FZ_BLEND_SCREEN,
-	FZ_BLEND_OVERLAY,
-	FZ_BLEND_DARKEN,
-	FZ_BLEND_LIGHTEN,
-	FZ_BLEND_COLOR_DODGE,
-	FZ_BLEND_COLOR_BURN,
-	FZ_BLEND_HARD_LIGHT,
-	FZ_BLEND_SOFT_LIGHT,
-	FZ_BLEND_DIFFERENCE,
-	FZ_BLEND_EXCLUSION,
-
-	/* PDF 1.4 -- standard non-separable */
-	FZ_BLEND_HUE,
-	FZ_BLEND_SATURATION,
-	FZ_BLEND_COLOR,
-	FZ_BLEND_LUMINOSITY,
-} fz_blendmode;
-
-extern const char *fz_blendmode_names[];
+int fz_find_blendmode(char *name);
+char *fz_blendmode_name(int blendmode);
 
 /*
  * Pixmaps have n components per pixel. the last is always alpha.
@@ -1017,7 +995,7 @@ struct fz_device_s
 
 	void (*begin_mask)(void *, fz_rect, int luminosity, fz_colorspace *, float *bc);
 	void (*end_mask)(void *);
-	void (*begin_group)(void *, fz_rect, int isolated, int knockout, fz_blendmode blendmode, float alpha);
+	void (*begin_group)(void *, fz_rect, int isolated, int knockout, int blendmode, float alpha);
 	void (*end_group)(void *);
 
 	void (*begin_tile)(void *, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
@@ -1040,7 +1018,7 @@ void fz_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm, fz_colo
 void fz_clip_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm);
 void fz_begin_mask(fz_device *dev, fz_rect area, int luminosity, fz_colorspace *colorspace, float *bc);
 void fz_end_mask(fz_device *dev);
-void fz_begin_group(fz_device *dev, fz_rect area, int isolated, int knockout, fz_blendmode blendmode, float alpha);
+void fz_begin_group(fz_device *dev, fz_rect area, int isolated, int knockout, int blendmode, float alpha);
 void fz_end_group(fz_device *dev);
 void fz_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
 void fz_end_tile(fz_device *dev);
@@ -1124,7 +1102,7 @@ struct fz_display_node_s
 		fz_text *text;
 		fz_shade *shade;
 		fz_pixmap *image;
-		fz_blendmode blendmode;
+		int blendmode;
 	} item;
 	fz_stroke_state *stroke;
 	int flag; /* even_odd, accumulate, isolated/knockout... */
@@ -1169,6 +1147,6 @@ void fz_paint_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha);
 void fz_paint_pixmap_with_mask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk);
 void fz_paint_pixmap_with_rect(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbox);
 
-void fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_blendmode blendmode);
+void fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode);
 
 #endif
