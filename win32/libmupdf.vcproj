@@ -155,10 +155,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_build.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_cmap.c"
 				>
 			</File>
