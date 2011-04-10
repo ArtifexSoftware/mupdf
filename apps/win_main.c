@@ -171,17 +171,15 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if (xref->crypt)
 		{
-			sprintf(buf, "Standard %d bit %s", xref->crypt->length,
-				xref->crypt->strf.method == PDF_CRYPT_AESV2 ? "AES" : "RC4");
-			SetDlgItemTextA(hwnd, 0x12, buf);
+			SetDlgItemTextA(hwnd, 0x12, "Encrypted.");
 			strcpy(buf, "");
-			if (xref->crypt->p & (1 << 2))
+			if (pdf_has_permission(xref, PDF_PERM_PRINT))
 				strcat(buf, "print, ");
-			if (xref->crypt->p & (1 << 3))
+			if (pdf_has_permission(xref, PDF_PERM_CHANGE))
 				strcat(buf, "modify, ");
-			if (xref->crypt->p & (1 << 4))
+			if (pdf_has_permission(xref, PDF_PERM_COPY))
 				strcat(buf, "copy, ");
-			if (xref->crypt->p & (1 << 5))
+			if (pdf_has_permission(xref, PDF_PERM_NOTES))
 				strcat(buf, "annotate, ");
 			if (strlen(buf) > 2)
 				buf[strlen(buf)-2] = 0;

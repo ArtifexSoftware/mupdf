@@ -42,78 +42,11 @@ fz_obj *pdf_to_utf8_name(fz_obj *src);
 char *pdf_from_ucs2(unsigned short *str);
 
 /*
- * Encryption
- */
-
-/* Permission flag bits */
-#define PDF_PERM_PRINT (1<<2)
-#define PDF_PERM_CHANGE (1<<3)
-#define PDF_PERM_COPY (1<<4)
-#define PDF_PERM_NOTES (1<<5)
-#define PDF_PERM_FILL_FORM (1<<8)
-#define PDF_PERM_ACCESSIBILITY (1<<9)
-#define PDF_PERM_ASSEMBLE (1<<10)
-#define PDF_PERM_HIGH_RES_PRINT (1<<11)
-#define PDF_DEFAULT_PERM_FLAGS 0xfffc
-
-typedef struct pdf_crypt_s pdf_crypt;
-typedef struct pdf_crypt_filter_s pdf_crypt_filter;
-
-enum
-{
-	PDF_CRYPT_NONE,
-	PDF_CRYPT_RC4,
-	PDF_CRYPT_AESV2,
-	PDF_CRYPT_AESV3,
-	PDF_CRYPT_UNKNOWN,
-};
-
-struct pdf_crypt_filter_s
-{
-	int method;
-	int length;
-};
-
-struct pdf_crypt_s
-{
-	unsigned char id_string[32];
-	int id_length;
-
-	int v;
-	int length;
-	fz_obj *cf;
-	pdf_crypt_filter stmf;
-	pdf_crypt_filter strf;
-
-	int r;
-	unsigned char o[48];
-	unsigned char u[48];
-	unsigned char oe[32];
-	unsigned char ue[32];
-	int p;
-	int encrypt_metadata;
-
-	unsigned char key[32]; /* decryption key generated from password */
-};
-
-/* crypt.c */
-fz_error pdf_new_crypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
-void pdf_free_crypt(pdf_crypt *crypt);
-
-fz_error pdf_parse_crypt_filter(pdf_crypt_filter *cf, fz_obj *dict, int defaultlength);
-fz_stream *pdf_open_crypt(fz_stream *chain, pdf_crypt *crypt, pdf_crypt_filter *cf, int num, int gen);
-void pdf_crypt_obj(pdf_crypt *crypt, fz_obj *obj, int num, int gen);
-
-int pdf_needs_password(pdf_xref *xref);
-int pdf_authenticate_password(pdf_xref *xref, char *pw);
-
-void pdf_debug_crypt(pdf_crypt *crypt);
-
-/*
  * xref and object / stream api
  */
 
 typedef struct pdf_xref_entry_s pdf_xref_entry;
+typedef struct pdf_crypt_s pdf_crypt;
 
 struct pdf_xref_entry_s
 {
@@ -168,6 +101,36 @@ fz_error pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize);
 fz_error pdf_repair_obj_stms(pdf_xref *xref);
 void pdf_debug_xref(pdf_xref *);
 void pdf_resize_xref(pdf_xref *xref, int newcap);
+
+/*
+ * Encryption
+ */
+
+enum
+{
+	PDF_PERM_PRINT = 1 << 2,
+	PDF_PERM_CHANGE = 1 << 3,
+	PDF_PERM_COPY = 1 << 4,
+	PDF_PERM_NOTES = 1 << 5,
+	PDF_PERM_FILL_FORM = 1 << 8,
+	PDF_PERM_ACCESSIBILITY = 1 << 9,
+	PDF_PERM_ASSEMBLE = 1 << 10,
+	PDF_PERM_HIGH_RES_PRINT = 1 << 11,
+	PDF_DEFAULT_PERM_FLAGS = 0xfffc
+};
+
+fz_error pdf_new_crypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
+void pdf_free_crypt(pdf_crypt *crypt);
+
+void pdf_crypt_obj(pdf_crypt *crypt, fz_obj *obj, int num, int gen);
+fz_stream *pdf_open_crypt(fz_stream *chain, pdf_crypt *crypt, int num, int gen);
+fz_stream *pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int num, int gen);
+
+int pdf_needs_password(pdf_xref *xref);
+int pdf_authenticate_password(pdf_xref *xref, char *pw);
+int pdf_has_permission(pdf_xref *xref, int p);
+
+void pdf_debug_crypt(pdf_crypt *crypt);
 
 /*
  * Resource store
