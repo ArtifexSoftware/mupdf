@@ -686,7 +686,7 @@ static inline void even_odd_sharp(fz_gel *gel, int y,
 	int even = 0;
 	int x = 0;
 	int i;
-	for (i = 0; i < gel->len; i++)
+	for (i = 0; i < gel->alen; i++)
 	{
 		if (!even)
 			x = gel->active[i]->x;
