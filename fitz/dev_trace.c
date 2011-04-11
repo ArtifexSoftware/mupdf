@@ -84,7 +84,7 @@ fz_trace_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matr
 	printf("<stroke_path ");
 	printf("linewidth=\"%g\" ", stroke->linewidth);
 	printf("miterlimit=\"%g\" ", stroke->miterlimit);
-	printf("linecap=\"%d\" ", stroke->linecap);
+	printf("linecap=\"%d,%d,%d\" ", stroke->start_cap, stroke->dash_cap, stroke->end_cap);
 	printf("linejoin=\"%d\" ", stroke->linejoin);
 
 	if (stroke->dash_len)

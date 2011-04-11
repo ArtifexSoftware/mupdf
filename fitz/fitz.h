@@ -784,7 +784,7 @@ struct fz_path_s
 
 struct fz_stroke_state_s
 {
-	int linecap;
+	int start_cap, dash_cap, end_cap;
 	int linejoin;
 	float linewidth;
 	float miterlimit;

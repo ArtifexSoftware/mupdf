@@ -609,9 +609,11 @@ pdf_init_gstate(pdf_gstate *gs, fz_matrix ctm)
 	gs->ctm = ctm;
 	gs->clip_depth = 0;
 
-	gs->stroke_state.linewidth = 1;
-	gs->stroke_state.linecap = 0;
+	gs->stroke_state.start_cap = 0;
+	gs->stroke_state.dash_cap = 0;
+	gs->stroke_state.end_cap = 0;
 	gs->stroke_state.linejoin = 0;
+	gs->stroke_state.linewidth = 1;
 	gs->stroke_state.miterlimit = 10;
 	gs->stroke_state.dash_phase = 0;
 	gs->stroke_state.dash_len = 0;
@@ -1142,10 +1144,14 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 				return fz_throw("malformed /Font dictionary");
 		}
 
+		else if (!strcmp(s, "LC"))
+		{
+			gstate->stroke_state.start_cap = fz_to_int(val);
+			gstate->stroke_state.dash_cap = fz_to_int(val);
+			gstate->stroke_state.end_cap = fz_to_int(val);
+		}
 		else if (!strcmp(s, "LW"))
 			gstate->stroke_state.linewidth = fz_to_real(val);
-		else if (!strcmp(s, "LC"))
-			gstate->stroke_state.linecap = fz_to_int(val);
 		else if (!strcmp(s, "LJ"))
 			gstate->stroke_state.linejoin = fz_to_int(val);
 		else if (!strcmp(s, "ML"))
@@ -1472,7 +1478,9 @@ static void pdf_run_G(pdf_csi *csi)
 static void pdf_run_J(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
-	gstate->stroke_state.linecap = csi->stack[0];
+	gstate->stroke_state.start_cap = csi->stack[0];
+	gstate->stroke_state.dash_cap = csi->stack[0];
+	gstate->stroke_state.end_cap = csi->stack[0];
 }
 
 static void pdf_run_K(pdf_csi *csi)
