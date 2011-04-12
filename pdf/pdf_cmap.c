@@ -181,7 +181,7 @@ pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n)
 static void
 add_table(pdf_cmap *cmap, int value)
 {
-	if (cmap->tlen == USHRT_MAX || cmap->rlen == USHRT_MAX)
+	if (cmap->tlen == USHRT_MAX)
 	{
 		fz_warn("cmap table is full; ignoring additional entries");
 		return;
@@ -200,11 +200,6 @@ add_table(pdf_cmap *cmap, int value)
 static void
 add_range(pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
-	if (cmap->tlen == USHRT_MAX || cmap->rlen == USHRT_MAX)
-	{
-		fz_warn("cmap table is full; ignoring additional entries");
-		return;
-	}
 	/* If the range is too large to be represented, split it */
 	if (high - low > 0x3fff)
 	{
@@ -233,9 +228,14 @@ pdf_map_range_to_table(pdf_cmap *cmap, int low, int *table, int len)
 	int i;
 	int high = low + len;
 	int offset = cmap->tlen;
-	for (i = 0; i < len; i++)
-		add_table(cmap, table[i]);
-	add_range(cmap, low, high, PDF_CMAP_TABLE, offset);
+	if (cmap->tlen + len >= USHRT_MAX)
+		fz_warn("cannot map range to table; table is full");
+	else
+	{
+		for (i = 0; i < len; i++)
+			add_table(cmap, table[i]);
+		add_range(cmap, low, high, PDF_CMAP_TABLE, offset);
+	}
 }
 
 /*
@@ -267,11 +267,24 @@ pdf_map_one_to_many(pdf_cmap *cmap, int low, int *values, int len)
 		len = 8;
 	}
 
-	offset = cmap->tlen;
-	add_table(cmap, len);
-	for (i = 0; i < len; i++)
-		add_table(cmap, values[i]);
-	add_range(cmap, low, low, PDF_CMAP_MULTI, offset);
+	if (len == 2 &&
+		values[0] >= 0xD800 && values[0] <= 0xDBFF &&
+		values[1] >= 0xDC00 && values[1] <= 0xDFFF)
+	{
+		fz_warn("ignoring surrogate pair mapping in cmap");
+		return;
+	}
+
+	if (cmap->tlen + len + 1 >= USHRT_MAX)
+		fz_warn("cannot map one to many; table is full");
+	else
+	{
+		offset = cmap->tlen;
+		add_table(cmap, len);
+		for (i = 0; i < len; i++)
+			add_table(cmap, values[i]);
+		add_range(cmap, low, low, PDF_CMAP_MULTI, offset);
+	}
 }
 
 /*
@@ -296,7 +309,7 @@ pdf_sort_cmap(pdf_cmap *cmap)
 
 	qsort(cmap->ranges, cmap->rlen, sizeof(pdf_range), cmprange);
 
-	if (cmap->rlen == USHRT_MAX || cmap->tlen == USHRT_MAX)
+	if (cmap->tlen == USHRT_MAX)
 	{
 		fz_warn("cmap table is full; will not combine ranges");
 		return;
@@ -382,6 +395,10 @@ pdf_sort_cmap(pdf_cmap *cmap)
 
 		b ++;
 	}
+
+	cmap->rlen = a - cmap->ranges;
+
+	fz_flush_warnings();
 }
 
 /*
@@ -407,7 +424,7 @@ pdf_lookup_cmap(pdf_cmap *cmap, int cpt)
 			if (pdf_range_flags(&cmap->ranges[m]) == PDF_CMAP_TABLE)
 				return cmap->table[i];
 			if (pdf_range_flags(&cmap->ranges[m]) == PDF_CMAP_MULTI)
-				return cmap->table[cmap->ranges[m].offset + 1]; /* first char */
+				return -1; /* should use lookup_cmap_full */
 			return i;
 		}
 	}
