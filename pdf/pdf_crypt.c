@@ -609,6 +609,47 @@ pdf_has_permission(pdf_xref *xref, int p)
 	return xref->crypt->p & p;
 }
 
+unsigned char *
+pdf_get_crypt_key(pdf_xref *xref)
+{
+	if (xref->crypt)
+		return xref->crypt->key;
+	return NULL;
+}
+
+int
+pdf_get_crypt_revision(pdf_xref *xref)
+{
+	if (xref->crypt)
+		return xref->crypt->v;
+	return 0;
+}
+
+char *
+pdf_get_crypt_method(pdf_xref *xref)
+{
+	if (xref->crypt)
+	{
+		switch (xref->crypt->strf.method)
+		{
+		case PDF_CRYPT_NONE: return "None";
+		case PDF_CRYPT_RC4: return "RC4";
+		case PDF_CRYPT_AESV2: return "AES";
+		case PDF_CRYPT_AESV3: return "AES";
+		case PDF_CRYPT_UNKNOWN: return "Unknown";
+		}
+	}
+	return "None";
+}
+
+int
+pdf_get_crypt_length(pdf_xref *xref)
+{
+	if (xref->crypt)
+		return xref->crypt->length;
+	return 0;
+}
+
 /*
  * PDF 1.7 algorithm 3.1 and ExtensionLevel 3 algorithm 3.1a
  *
