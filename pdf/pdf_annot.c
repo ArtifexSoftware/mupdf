@@ -62,6 +62,11 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 	}
 
 	action = fz_dict_gets(dict, "A");
+
+	/* fall back to additional action button's down/up action */
+	if (!action)
+		action = fz_dict_getsa(fz_dict_gets(dict, "AA"), "U", "D");
+
 	if (action)
 	{
 		obj = fz_dict_gets(action, "S");
