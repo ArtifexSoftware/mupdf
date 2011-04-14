@@ -175,7 +175,7 @@ pdf_resize_xref(pdf_xref *xref, int newlen)
 	xref->table = fz_realloc(xref->table, newlen, sizeof(pdf_xref_entry));
 	for (i = xref->len; i < newlen; i++)
 	{
-		xref->table[i].type = 0;
+		xref->table[i].type = 'f';
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
 		xref->table[i].stm_ofs = 0;
