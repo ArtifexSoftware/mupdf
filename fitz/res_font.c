@@ -358,7 +358,7 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		if (fterr)
 			fz_warn("freetype setting character size: %s", ft_error_string(fterr));
 		FT_Set_Transform(face, &m, &v);
-		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
+		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_TARGET_MONO);
 		if (fterr)
 			fz_warn("freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
 	}
@@ -371,7 +371,7 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		only be used for DynaLab and similar tricky TrueType fonts,
 		so that we get the correct outline shape.
 		*/
-		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
+		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_TARGET_LIGHT);
 		if (fterr)
 			fz_warn("freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
 	}
@@ -392,7 +392,7 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		FT_Outline_Translate(&face->glyph->outline, -strength * 32, -strength * 32);
 	}
 
-	fterr = FT_Render_Glyph(face->glyph, fz_get_aa_level() > 0 ? ft_render_mode_normal : ft_render_mode_mono);
+	fterr = FT_Render_Glyph(face->glyph, fz_get_aa_level() > 0 ? FT_RENDER_MODE_NORMAL : FT_RENDER_MODE_MONO);
 	if (fterr)
 	{
 		fz_warn("freetype render glyph (gid %d): %s", gid, ft_error_string(fterr));
@@ -472,7 +472,7 @@ fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm,
 
 	FT_Stroker_Done(stroker);
 
-	fterr = FT_Glyph_To_Bitmap(&glyph, fz_get_aa_level() > 0 ? ft_render_mode_normal : ft_render_mode_mono, 0, 1);
+	fterr = FT_Glyph_To_Bitmap(&glyph, fz_get_aa_level() > 0 ? FT_RENDER_MODE_NORMAL : FT_RENDER_MODE_MONO, 0, 1);
 	if (fterr)
 	{
 		fz_warn("FT_Glyph_To_Bitmap: %s", ft_error_string(fterr));
