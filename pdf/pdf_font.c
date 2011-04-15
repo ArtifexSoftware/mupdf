@@ -99,6 +99,16 @@ static int ft_kind(FT_Face face)
 	return UNKNOWN;
 }
 
+static int ft_is_bold(FT_Face face)
+{
+	return face->style_flags & FT_STYLE_FLAG_BOLD;
+}
+
+static int ft_is_italic(FT_Face face)
+{
+	return face->style_flags & FT_STYLE_FLAG_ITALIC;
+}
+
 static int ft_char_index(FT_Face face, int cid)
 {
 	int gid = FT_Get_Char_Index(face, cid);
@@ -197,8 +207,8 @@ pdf_load_substitute_font(pdf_font_desc *fontdesc, int mono, int serif, int bold,
 		return fz_rethrow(error, "cannot load freetype font from memory");
 
 	fontdesc->font->ft_substitute = 1;
-	fontdesc->font->ft_bold = bold;
-	fontdesc->font->ft_italic = italic;
+	fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);
+	fontdesc->font->ft_italic = italic && !ft_is_italic(fontdesc->font->ft_face);
 	return fz_okay;
 }
 
@@ -261,7 +271,7 @@ pdf_load_system_font(pdf_font_desc *fontdesc, char *fontname, char *collection)
 
 	error = pdf_load_substitute_font(fontdesc, mono, serif, bold, italic);
 	if (error)
-		return fz_throw("cannot load substitute font");
+		return fz_rethrow(error, "cannot load substitute font");
 
 	return fz_okay;
 }

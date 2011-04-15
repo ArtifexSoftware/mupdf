@@ -252,6 +252,7 @@ extern const fz_matrix fz_identity;
 
 fz_matrix fz_concat(fz_matrix one, fz_matrix two);
 fz_matrix fz_scale(float sx, float sy);
+fz_matrix fz_shear(float sx, float sy);
 fz_matrix fz_rotate(float theta);
 fz_matrix fz_translate(float tx, float ty);
 fz_matrix fz_invert_matrix(fz_matrix m);

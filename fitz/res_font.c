@@ -13,7 +13,11 @@ fz_new_font(char *name)
 
 	font = fz_malloc(sizeof(fz_font));
 	font->refs = 1;
-	fz_strlcpy(font->name, name, sizeof font->name);
+
+	if (name)
+		fz_strlcpy(font->name, name, sizeof font->name);
+	else
+		fz_strlcpy(font->name, "(null)", sizeof font->name);
 
 	font->ft_face = NULL;
 	font->ft_substitute = 0;
@@ -316,6 +320,9 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 
 	trm = fz_adjust_ft_glyph_width(font, gid, trm);
 
+	if (font->ft_italic)
+		trm = fz_concat(fz_shear(0.3f, 0), trm);
+
 	/*
 	Freetype mutilates complex glyphs if they are loaded
 	with FT_Set_Char_Size 1.0. it rounds the coordinates
@@ -378,6 +385,13 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		}
 	}
 
+	if (font->ft_bold)
+	{
+		float strength = fz_matrix_expansion(trm) * 0.04f;
+		FT_Outline_Embolden(&face->glyph->outline, strength * 64);
+		FT_Outline_Translate(&face->glyph->outline, -strength * 32, -strength * 32);
+	}
+
 	fterr = FT_Render_Glyph(face->glyph, fz_get_aa_level() > 0 ? ft_render_mode_normal : ft_render_mode_mono);
 	if (fterr)
 	{
@@ -403,6 +417,9 @@ fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm,
 	fz_pixmap *pixmap;
 
 	trm = fz_adjust_ft_glyph_width(font, gid, trm);
+
+	if (font->ft_italic)
+		trm = fz_concat(fz_shear(0.3f, 0), trm);
 
 	m.xx = trm.a * 64; /* should be 65536 */
 	m.yx = trm.b * 64;
