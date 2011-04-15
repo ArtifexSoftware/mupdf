@@ -7,16 +7,18 @@
 static void fz_finalize_freetype(void);
 
 static fz_font *
-fz_new_font(void)
+fz_new_font(char *name)
 {
 	fz_font *font;
 
 	font = fz_malloc(sizeof(fz_font));
 	font->refs = 1;
-	strcpy(font->name, "<unknown>");
+	fz_strlcpy(font->name, name, sizeof font->name);
 
 	font->ft_face = NULL;
 	font->ft_substitute = 0;
+	font->ft_bold = 0;
+	font->ft_italic = 0;
 	font->ft_hint = 0;
 
 	font->ft_file = NULL;
@@ -189,7 +191,7 @@ fz_new_font_from_file(fz_font **fontp, char *path, int index)
 	if (fterr)
 		return fz_throw("freetype: cannot load font: %s", ft_error_string(fterr));
 
-	font = fz_new_font();
+	font = fz_new_font(face->family_name);
 	font->ft_face = face;
 	font->bbox.x0 = face->bbox.xMin * 1000 / face->units_per_EM;
 	font->bbox.y0 = face->bbox.yMin * 1000 / face->units_per_EM;
@@ -216,7 +218,7 @@ fz_new_font_from_memory(fz_font **fontp, unsigned char *data, int len, int index
 	if (fterr)
 		return fz_throw("freetype: cannot load font: %s", ft_error_string(fterr));
 
-	font = fz_new_font();
+	font = fz_new_font(face->family_name);
 	font->ft_face = face;
 	font->bbox.x0 = face->bbox.xMin * 1000 / face->units_per_EM;
 	font->bbox.y0 = face->bbox.yMin * 1000 / face->units_per_EM;
@@ -478,11 +480,10 @@ fz_new_type3_font(char *name, fz_matrix matrix)
 	fz_font *font;
 	int i;
 
-	font = fz_new_font();
+	font = fz_new_font(name);
 	font->t3procs = fz_calloc(256, sizeof(fz_buffer*));
 	font->t3widths = fz_calloc(256, sizeof(float));
 
-	fz_strlcpy(font->name, name, sizeof(font->name));
 	font->t3matrix = matrix;
 	for (i = 0; i < 256; i++)
 	{
