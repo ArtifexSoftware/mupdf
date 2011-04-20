@@ -371,7 +371,7 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		only be used for DynaLab and similar tricky TrueType fonts,
 		so that we get the correct outline shape.
 		*/
-		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_TARGET_LIGHT);
+		fterr = FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP);
 		if (fterr)
 			fz_warn("freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
 	}
