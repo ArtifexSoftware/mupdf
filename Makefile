@@ -74,6 +74,9 @@ $(FITZ_LIB) : $(addprefix $(OUT)/, $(FITZ_SRC:%.c=%.o))
 $(MUPDF_LIB) : $(addprefix $(OUT)/, $(MUPDF_SRC:%.c=%.o))
 $(MUXPS_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
 
+libs: $(MUXPS_LIB) $(MUPDF_LIB) $(FITZ_LIB) $(THIRD_LIBS)
+	@ echo MuPDF/XPS and underlying libraries built
+
 # --- Generated CMAP and FONT files ---
 
 CMAPDUMP := $(OUT)/cmapdump

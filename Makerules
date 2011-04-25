@@ -64,3 +64,21 @@ CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ff
 CROSSCOMPILE=yes
 NOX11=yes
 endif
+
+ifeq "$(OS)" "webos-pre-cross"
+CC = arm-none-linux-gnueabi-gcc
+LD = arm-none-linux-gnueabi-gcc
+AR = arm-none-linux-gnueabi-ar
+CFLAGS += -O3 -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
+CROSSCOMPILE=yes
+NOX11=yes
+endif
+
+ifeq "$(OS)" "webos-pixi-cross"
+CC = arm-none-linux-gnueabi-gcc
+LD = arm-none-linux-gnueabi-gcc
+AR = arm-none-linux-gnueabi-ar
+CFLAGS += -O3 -mcpu=arm1136jf-s -mfpu=vfp -mfloat-abi=softfp -ffast-math -fsingle-precision-constant
+CROSSCOMPILE=yes
+NOX11=yes
+endif
