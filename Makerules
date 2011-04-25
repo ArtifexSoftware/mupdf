@@ -50,8 +50,12 @@ endif
 # Invoke this as:
 #      make OS=beagle-cross build=release
 # This does rely on the generated directory being populated with the cmap
-# files etc first. Either do a non cross compile build (e.g. windows in MSVC
-# or windows in cygwin) first, or download the generated files from mupdf.com.
+# files etc first. Either:
+#   1) do 'make generate' first (this relies on you having an appropriate host
+#   base C compiler set up - such as you would have on unix or in windows
+#   cygwin)
+#   2) do a non cross compile build (e.g. windows in MSVC) first.
+#   3) download the generated files from mupdf.com.
 ifeq "$(OS)" "beagle-cross"
 CC = arm-none-linux-gnueabi-gcc
 LD = arm-none-linux-gnueabi-gcc
