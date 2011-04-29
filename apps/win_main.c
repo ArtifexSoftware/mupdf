@@ -83,21 +83,6 @@ void install_app(char *argv0)
 	RegCloseKey(software);
 }
 
-void uninstall_app(void)
-{
-	HKEY software, classes;
-
-	RegOpenKeyExA(HKEY_CURRENT_USER, "Software", 0, KEY_ALL_ACCESS, &software);
-	RegOpenKeyExA(software, "Classes", 0, KEY_ALL_ACCESS, &classes);
-
-	RegDeleteTreeA(classes, "MuPDF");
-
-	RegCloseKey(classes);
-	RegCloseKey(software);
-
-	MessageBoxA(hwndframe, "MuPDF has been uninstalled.", "MuPDF", MB_ICONWARNING);
-}
-
 /*
  * Dialog boxes
  */
@@ -866,11 +851,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	if (argc == 2)
 	{
-		if (argv[1][0] == '-' && argv[1][1] == 'u' && argv[1][2] == 0)
-		{
-			uninstall_app();
-			exit(0);
-		}
 		wcscpy(wbuf, argv[1]);
 	}
 	else
