@@ -151,6 +151,9 @@ char *fz_strsep(char **stringp, const char *delim);
 int fz_strlcpy(char *dst, const char *src, int n);
 int fz_strlcat(char *dst, const char *src, int n);
 
+/* Range checking atof */
+float fz_atof(const char *s);
+
 /* utf-8 encoding and decoding */
 int chartorune(int *rune, char *str);
 int runetochar(char *str, int *rune);

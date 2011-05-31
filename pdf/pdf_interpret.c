@@ -2135,7 +2135,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			else if (tok == PDF_TOK_INT || tok == PDF_TOK_REAL)
 			{
 				pdf_gstate *gstate = csi->gstate + csi->gtop;
-				pdf_show_space(csi, -atof(buf) * gstate->size * 0.001f);
+				pdf_show_space(csi, -fz_atof(buf) * gstate->size * 0.001f);
 			}
 			else if (tok == PDF_TOK_STRING)
 			{
@@ -2189,7 +2189,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		case PDF_TOK_REAL:
-			csi->stack[csi->top] = atof(buf);
+			csi->stack[csi->top] = fz_atof(buf);
 			csi->top ++;
 			break;
 
