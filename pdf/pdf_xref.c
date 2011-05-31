@@ -917,7 +917,7 @@ pdf_update_object(pdf_xref *xref, int num, int gen, fz_obj *newobj)
  */
 
 fz_error
-pdf_open_xref(pdf_xref **xrefp, char *filename, char *password)
+pdf_open_xref(pdf_xref **xrefp, const char *filename, char *password)
 {
 	fz_error error;
 	fz_stream *file;

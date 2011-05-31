@@ -612,6 +612,7 @@ fz_pixmap *fz_new_pixmap_with_limit(fz_colorspace *colorspace, int w, int h);
 
 fz_pixmap *fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *samples);
 fz_pixmap *fz_new_pixmap_with_rect(fz_colorspace *, fz_bbox bbox);
+fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_colorspace *, fz_bbox bbox, unsigned char *samples);
 fz_pixmap *fz_new_pixmap(fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_pixmap *pix);
 void fz_drop_pixmap(fz_pixmap *pix);
