@@ -96,12 +96,12 @@ done once). With the emulator running type:
 (where obviously ../../MyTests/pdf_reference17.pdf is altered for your
 machine). (adb lives in <sdk>/platform-tools if it's not on your path).
 
-13) With the emulator running (see step 9), execute
+13) With the emulator running (see step 11), execute
 
        ant install
 
-and that will copy MuPDF into the emulator where you can run it from the
-launchpad screen.
+('ant.bat install' on Windows) and that will copy MuPDF into the emulator
+where you can run it from the launchpad screen.
 
 14) To see debug messages from the emulator (including stdout/stderr from
 our app), execute:
