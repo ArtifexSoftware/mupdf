@@ -149,7 +149,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 	}
 
 	if (gstate->blendmode)
-		fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
+		fz_begin_group(csi->dev, bbox, 1, 0, gstate->blendmode, 1);
 }
 
 static void
@@ -267,7 +267,8 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 	else
 		bbox = fz_bound_path(path, NULL, gstate->ctm);
 
-	pdf_begin_group(csi, bbox);
+	if (dofill || dostroke)
+		pdf_begin_group(csi, bbox);
 
 	if (dofill)
 	{
@@ -327,7 +328,8 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		}
 	}
 
-	pdf_end_group(csi);
+	if (dofill || dostroke)
+		pdf_end_group(csi);
 
 	fz_free_path(path);
 }
@@ -2239,7 +2241,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 	int flags;
 
 	if (page->transparency)
-		fz_begin_group(dev, fz_transform_rect(ctm, page->mediabox), 0, 0, 0, 1);
+		fz_begin_group(dev, fz_transform_rect(ctm, page->mediabox), 1, 0, 0, 1);
 
 	csi = pdf_new_csi(xref, dev, ctm, target);
 	error = pdf_run_buffer(csi, page->resources, page->contents);
