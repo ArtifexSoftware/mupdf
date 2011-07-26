@@ -627,6 +627,7 @@ fz_pixmap *fz_alpha_from_gray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h);
+fz_pixmap *fz_scale_pixmap_gridfit(fz_pixmap *src, float x, float y, float w, float h, int gridfit);
 
 fz_error fz_write_pnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha);
@@ -1010,6 +1011,7 @@ void fz_free_device(fz_device *dev);
 fz_device *fz_new_trace_device(void);
 fz_device *fz_new_bbox_device(fz_bbox *bboxp);
 fz_device *fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest);
+fz_device *fz_new_draw_device_type3(fz_glyph_cache *cache, fz_pixmap *dest);
 
 /*
  * Text extraction device

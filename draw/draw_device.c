@@ -8,6 +8,10 @@
 
 typedef struct fz_draw_device_s fz_draw_device;
 
+enum {
+	FZ_DRAWDEV_FLAGS_TYPE3 = 1,
+};
+
 struct fz_draw_device_s
 {
 	fz_glyph_cache *cache;
@@ -17,6 +21,7 @@ struct fz_draw_device_s
 	fz_pixmap *shape;
 	fz_bbox scissor;
 
+	int flags;
 	int top;
 	int blendmode;
 	struct {
@@ -737,14 +742,14 @@ fz_draw_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
 }
 
 static fz_pixmap *
-fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy)
+fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy, int gridfit)
 {
 	fz_pixmap *scaled;
 
 	if (ctm->a != 0 && ctm->b == 0 && ctm->c == 0 && ctm->d != 0)
 	{
 		/* Unrotated or X flip or Yflip or XYflip */
-		scaled = fz_scale_pixmap(image, ctm->e, ctm->f, ctm->a, ctm->d);
+		scaled = fz_scale_pixmap_gridfit(image, ctm->e, ctm->f, ctm->a, ctm->d, gridfit);
 		if (scaled == NULL)
 			return NULL;
 		ctm->a = scaled->w;
@@ -756,7 +761,7 @@ fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int 
 	if (ctm->a == 0 && ctm->b != 0 && ctm->c != 0 && ctm->d == 0)
 	{
 		/* Other orthogonal flip/rotation cases */
-		scaled = fz_scale_pixmap(image, ctm->f, ctm->e, ctm->b, ctm->c);
+		scaled = fz_scale_pixmap_gridfit(image, ctm->f, ctm->e, ctm->b, ctm->c, gridfit);
 		if (scaled == NULL)
 			return NULL;
 		ctm->b = scaled->w;
@@ -815,7 +820,7 @@ fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
 	if (dx < image->w && dy < image->h)
 	{
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
+		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, (alpha == 1.0f) && ((dev->flags & FZ_DRAWDEV_FLAGS_TYPE3) == 0));
 		if (scaled == NULL)
 		{
 			if (dx < 1)
@@ -876,7 +881,7 @@ fz_draw_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm,
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
 	if (dx < image->w && dy < image->h)
 	{
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
+		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, (alpha == 1.0f) && ((dev->flags & FZ_DRAWDEV_FLAGS_TYPE3) == 0));
 		if (scaled == NULL)
 		{
 			if (dx < 1)
@@ -951,7 +956,7 @@ fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix c
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
 	if (dx < image->w && dy < image->h)
 	{
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy);
+		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, (dev->flags & FZ_DRAWDEV_FLAGS_TYPE3) == 0);
 		if (scaled == NULL)
 		{
 			if (dx < 1)
@@ -1307,6 +1312,7 @@ fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest)
 	ddev->shape = NULL;
 	ddev->top = 0;
 	ddev->blendmode = 0;
+	ddev->flags = 0;
 
 	ddev->scissor.x0 = dest->x;
 	ddev->scissor.y0 = dest->y;
@@ -1342,5 +1348,19 @@ fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest)
 	dev->begin_tile = fz_draw_begin_tile;
 	dev->end_tile = fz_draw_end_tile;
 
+	return dev;
+}
+
+fz_device *
+fz_new_draw_device_type3(fz_glyph_cache *cache, fz_pixmap *dest)
+{
+	fz_device *dev = fz_new_draw_device(cache, dest);
+
+	if (dev)
+	{
+		fz_draw_device *ddev = (fz_draw_device *)dev->user;
+
+		ddev->flags |= FZ_DRAWDEV_FLAGS_TYPE3;
+	}
 	return dev;
 }
