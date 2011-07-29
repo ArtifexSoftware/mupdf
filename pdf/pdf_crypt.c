@@ -285,7 +285,7 @@ pdf_parse_crypt_filter(pdf_crypt_filter *cf, fz_obj *cf_obj, char *name, int def
 	}
 
 	dict = fz_dict_gets(cf_obj, name);
-	if (fz_is_dict(dict))
+	if (!fz_is_dict(dict))
 	{
 		return fz_throw("cannot parse crypt filter (%d %d R)", fz_to_num(cf_obj), fz_to_gen(cf_obj));
 	}
