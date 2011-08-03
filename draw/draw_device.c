@@ -469,7 +469,7 @@ fz_draw_fill_text(void *user, fz_text *text, fz_matrix ctm,
 			}
 			else
 			{
-				fz_matrix ctm = {glyph->w, 0.0, 0.0, glyph->h, x, y};
+				fz_matrix ctm = {glyph->w, 0.0, 0.0, -glyph->h, x + glyph->x, y + glyph->y + glyph->h};
 				fz_paint_image(dev->dest, dev->scissor, dev->shape, glyph, ctm, alpha * 255);
 			}
 			fz_drop_pixmap(glyph);
