@@ -535,6 +535,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	if (error)
 		fz_catch(error, "cannot draw type3 glyph");
+
 	if (dev->flags & FZ_CHARPROC_MASK)
 	{
 		if (dev->flags & FZ_CHARPROC_COLOR)
@@ -551,6 +552,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 		fz_warn("type3 glyph doesn't specify masked or colored");
 		model = NULL; /* Treat as masked */
 	}
+
 	fz_free_device(dev);
 
 	bbox.x0--;
@@ -558,7 +560,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 	bbox.x1++;
 	bbox.y1++;
 
-	glyph = fz_new_pixmap_with_rect((model ? model : fz_device_gray), bbox);
+	glyph = fz_new_pixmap_with_rect(model ? model : fz_device_gray, bbox);
 	fz_clear_pixmap(glyph);
 
 	cache = fz_new_glyph_cache();

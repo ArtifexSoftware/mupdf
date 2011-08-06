@@ -291,7 +291,7 @@ struct fz_md5_s
 };
 
 void fz_md5_init(fz_md5 *state);
-void fz_md5_update(fz_md5 *state, const unsigned char *input, const unsigned inlen);
+void fz_md5_update(fz_md5 *state, const unsigned char *input, unsigned inlen);
 void fz_md5_final(fz_md5 *state, unsigned char digest[16]);
 
 /* sha-256 digests */
@@ -323,8 +323,8 @@ struct fz_arc4_s
 	unsigned char state[256];
 };
 
-void fz_arc4_init(fz_arc4 *state, const unsigned char *key, const unsigned len);
-void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, const unsigned len);
+void fz_arc4_init(fz_arc4 *state, const unsigned char *key, unsigned len);
+void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, unsigned len);
 
 /* AES block cipher implementation from XYSSL */
 
@@ -621,7 +621,7 @@ void fz_drop_pixmap(fz_pixmap *pix);
 void fz_clear_pixmap(fz_pixmap *pix);
 void fz_clear_pixmap_with_color(fz_pixmap *pix, int value);
 void fz_clear_pixmap_rect_with_color(fz_pixmap *pix, int value, fz_bbox r);
-void fz_copy_pixmap_rect(fz_pixmap *dest, const fz_pixmap *src, fz_bbox r);
+void fz_copy_pixmap_rect(fz_pixmap *dest, fz_pixmap *src, fz_bbox r);
 void fz_premultiply_pixmap(fz_pixmap *pix);
 fz_pixmap *fz_alpha_from_gray(fz_pixmap *gray, int luminosity);
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
