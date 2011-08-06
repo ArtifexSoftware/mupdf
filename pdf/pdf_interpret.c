@@ -2224,11 +2224,13 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 static fz_error
 pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 {
-	fz_stream *file;
 	fz_error error;
-	file = fz_open_buffer(contents);
-	error = pdf_run_stream(csi, rdb, file, csi->xref->scratch, sizeof csi->xref->scratch);
+	int len = sizeof csi->xref->scratch;
+	char *buf = fz_malloc(len); /* we must be re-entrant for type3 fonts */
+	fz_stream *file = fz_open_buffer(contents);
+	error = pdf_run_stream(csi, rdb, file, buf, len);
 	fz_close(file);
+	fz_free(buf);
 	if (error)
 		return fz_rethrow(error, "cannot parse content stream");
 	return fz_okay;
