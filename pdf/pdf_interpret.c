@@ -134,9 +134,11 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 	if (gstate->softmask)
 	{
 		pdf_xobject *softmask = gstate->softmask;
-		fz_rect bbox = fz_transform_rect(gstate->ctm, softmask->bbox);
+		fz_rect bbox = fz_transform_rect(gstate->softmask_ctm, softmask->bbox);
+		fz_matrix save_ctm = gstate->ctm;
 
 		gstate->softmask = NULL;
+		gstate->ctm = gstate->softmask_ctm;
 
 		fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 			softmask->colorspace, gstate->softmask_bc);
@@ -146,6 +148,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 		fz_end_mask(csi->dev);
 
 		gstate->softmask = softmask;
+		gstate->ctm = save_ctm;
 	}
 
 	if (gstate->blendmode)
