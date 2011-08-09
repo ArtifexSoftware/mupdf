@@ -144,9 +144,9 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 	}
 
 	if (head)
-	{
 		head->base_uri = fz_strdup(base_uri);
-	}
+	else
+		return fz_throw("empty resource dictionary");
 
 	*dictp = head;
 	return fz_okay;
