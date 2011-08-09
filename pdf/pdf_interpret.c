@@ -1086,7 +1086,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 
 	error = pdf_run_buffer(csi, resources, xobj->contents);
 	if (error)
-		return fz_rethrow(error, "cannot interpret XObject stream");
+		fz_catch(error, "cannot interpret XObject stream");
 
 	csi->top_ctm = oldtopctm;
 
@@ -2116,8 +2116,15 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 	fz_error error;
 	int tok;
 	int len;
+	int save_in_array;
+	int save_in_text;
 
+	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
+	save_in_array = csi->in_array;
+	save_in_text = csi->in_text;
+	csi->in_array = 0;
+	csi->in_text = 0;
 
 	while (1)
 	{
@@ -2151,7 +2158,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 					return fz_throw("syntax error in array");
 			}
 			else if (tok == PDF_TOK_EOF)
-				return fz_okay;
+				goto end;
 			else
 				return fz_throw("syntax error in array");
 		}
@@ -2160,7 +2167,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		{
 		case PDF_TOK_ENDSTREAM:
 		case PDF_TOK_EOF:
-			return fz_okay;
+			goto end;
 
 		case PDF_TOK_OPEN_ARRAY:
 			if (!csi->in_text)
@@ -2218,6 +2225,11 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			return fz_throw("syntax error in content stream");
 		}
 	}
+
+end:
+	csi->in_array = save_in_array;
+	csi->in_text = save_in_text;
+	return fz_okay;
 }
 
 /*
