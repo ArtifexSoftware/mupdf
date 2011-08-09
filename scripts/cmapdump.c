@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/* We never want to build memento versions of the cmapdump util */
+#undef MEMENTO
+
 #include "fitz.h"
 #include "mupdf.h"
 
