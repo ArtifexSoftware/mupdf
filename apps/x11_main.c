@@ -477,7 +477,7 @@ void winreloadfile(pdfapp_t *app)
 	if (fd < 0)
 		winerror(app, fz_throw("cannot reload file '%s'", filename));
 
-	pdfapp_open(app, filename, fd);
+	pdfapp_open(app, filename, fd, 1);
 }
 
 void winopenuri(pdfapp_t *app, char *buf)
@@ -618,7 +618,7 @@ int main(int argc, char **argv)
 	if (fd < 0)
 		winerror(&gapp, fz_throw("cannot open file '%s'", filename));
 
-	pdfapp_open(&gapp, filename, fd);
+	pdfapp_open(&gapp, filename, fd, 0);
 
 	winresettmo(&tmo, &tmo_at);
 
