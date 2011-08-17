@@ -662,33 +662,34 @@ int main(int argc, char **argv)
 
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, NULL);
 
-				switch (keysym)
-				{
-				case XK_Escape:
-					len = 1; buf[0] = '\033';
-					break;
+				if (!gapp.isediting)
+					switch (keysym)
+					{
+					case XK_Escape:
+						len = 1; buf[0] = '\033';
+						break;
 
-				case XK_Up:
-					len = 1; buf[0] = 'k';
-					break;
-				case XK_Down:
-					len = 1; buf[0] = 'j';
-					break;
+					case XK_Up:
+						len = 1; buf[0] = 'k';
+						break;
+					case XK_Down:
+						len = 1; buf[0] = 'j';
+						break;
 
-				case XK_Left:
-					len = 1; buf[0] = 'b';
-					break;
-				case XK_Right:
-					len = 1; buf[0] = ' ';
-					break;
+					case XK_Left:
+						len = 1; buf[0] = 'b';
+						break;
+					case XK_Right:
+						len = 1; buf[0] = ' ';
+						break;
 
-				case XK_Page_Up:
-					len = 1; buf[0] = ',';
-					break;
-				case XK_Page_Down:
-					len = 1; buf[0] = '.';
-					break;
-				}
+					case XK_Page_Up:
+						len = 1; buf[0] = ',';
+						break;
+					case XK_Page_Down:
+						len = 1; buf[0] = '.';
+						break;
+					}
 				if (len)
 					onkey(buf[0]);
 
