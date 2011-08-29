@@ -689,6 +689,8 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			info();
 			return 0;
 		}
+		if (wParam == SC_MAXIMIZE)
+			gapp.shrinkwrap = 0;
 		break;
 
 	case WM_SIZE:
