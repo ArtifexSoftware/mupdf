@@ -413,7 +413,8 @@ fz_stroke_lineto(struct sctx *s, fz_point cur)
 
 	if (dx * dx + dy * dy < FLT_EPSILON)
 	{
-		s->dot = 1;
+		if (s->cap == ROUND || s->dash_list)
+			s->dot = 1;
 		return;
 	}
 
@@ -528,6 +529,13 @@ fz_flatten_stroke_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, fz_m
 	s.sn = 0;
 	s.bn = 0;
 	s.dot = 0;
+
+	s.dash_list = NULL;
+	s.dash_phase = 0;
+	s.dash_len = 0;
+	s.toggle = 0;
+	s.offset = 0;
+	s.phase = 0;
 
 	i = 0;
 
