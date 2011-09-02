@@ -20,8 +20,7 @@ struct pdf_crypt_filter_s
 
 struct pdf_crypt_s
 {
-	unsigned char id_string[32];
-	int id_length;
+	fz_obj *id;
 
 	int v;
 	int length;
@@ -56,7 +55,6 @@ pdf_new_crypt(pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 
 	crypt = fz_malloc(sizeof(pdf_crypt));
 	memset(crypt, 0x00, sizeof(pdf_crypt));
-	crypt->cf = NULL;
 
 	/* Common to all security handlers (PDF 1.7 table 3.18) */
 
@@ -190,6 +188,11 @@ pdf_new_crypt(pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 		memcpy(crypt->u, fz_to_str_buf(obj), 32);
 	else if (fz_is_string(obj) && fz_to_str_len(obj) >= 48 && crypt->r == 5)
 		memcpy(crypt->u, fz_to_str_buf(obj), 48);
+	else if (fz_is_string(obj) && fz_to_str_len(obj) < 32)
+	{
+		fz_warn("encryption password key too short (%d)", fz_to_str_len(obj));
+		memcpy(crypt->u, fz_to_str_buf(obj), fz_to_str_len(obj));
+	}
 	else
 	{
 		pdf_free_crypt(crypt);
@@ -231,19 +234,11 @@ pdf_new_crypt(pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 
 	/* Extract file identifier string */
 
-	crypt->id_length = 0;
-
 	if (fz_is_array(id) && fz_array_len(id) == 2)
 	{
 		obj = fz_array_get(id, 0);
 		if (fz_is_string(obj))
-		{
-			if (fz_to_str_len(obj) <= sizeof(crypt->id_string))
-			{
-				memcpy(crypt->id_string, fz_to_str_buf(obj), fz_to_str_len(obj));
-				crypt->id_length = fz_to_str_len(obj);
-			}
-		}
+			crypt->id = fz_keep_obj(obj);
 	}
 	else
 		fz_warn("missing file identifier, may not be able to do decryption");
@@ -255,6 +250,7 @@ pdf_new_crypt(pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 void
 pdf_free_crypt(pdf_crypt *crypt)
 {
+	if (crypt->id) fz_drop_obj(crypt->id);
 	if (crypt->cf) fz_drop_obj(crypt->cf);
 	fz_free(crypt);
 }
@@ -362,7 +358,7 @@ pdf_compute_encryption_key(pdf_crypt *crypt, unsigned char *password, int pwlen,
 	fz_md5_update(&md5, buf, 4);
 
 	/* Step 5 - pass first element of ID array */
-	fz_md5_update(&md5, crypt->id_string, crypt->id_length);
+	fz_md5_update(&md5, (unsigned char *)fz_to_str_buf(crypt->id), fz_to_str_len(crypt->id));
 
 	/* Step 6 (revision 4 or greater) - if metadata is not encrypted pass 0xFFFFFFFF */
 	if (crypt->r >= 4)
@@ -471,7 +467,7 @@ pdf_compute_user_password(pdf_crypt *crypt, unsigned char *password, int pwlen, 
 
 		fz_md5_init(&md5);
 		fz_md5_update(&md5, padding, 32);
-		fz_md5_update(&md5, crypt->id_string, crypt->id_length);
+		fz_md5_update(&md5, (unsigned char*)fz_to_str_buf(crypt->id), fz_to_str_len(crypt->id));
 		fz_md5_final(&md5, digest);
 
 		fz_arc4_init(&arc4, crypt->key, n);
