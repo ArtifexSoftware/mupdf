@@ -805,6 +805,8 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	case '\r':
 		if (app->numberlen > 0)
 			app->pageno = atoi(app->number);
+		else
+			app->pageno = 1;
 		break;
 
 	case 'G':
