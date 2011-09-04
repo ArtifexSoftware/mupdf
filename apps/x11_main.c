@@ -543,6 +543,8 @@ int main(int argc, char **argv)
 	int pageno = 1;
 	int accelerate = 1;
 	int fd;
+	int width = -1;
+	int height = -1;
 
 	while ((c = fz_getopt(argc, argv, "p:r:b:A")) != -1)
 	{
@@ -606,9 +608,9 @@ int main(int argc, char **argv)
 						xevt.xconfigure.height != reqh)
 						gapp.shrinkwrap = 0;
 				}
-				pdfapp_onresize(&gapp,
-					xevt.xconfigure.width,
-					xevt.xconfigure.height);
+				width = xevt.xconfigure.width;
+				height = xevt.xconfigure.height;
+
 				break;
 
 			case KeyPress:
@@ -682,6 +684,13 @@ int main(int argc, char **argv)
 
 		if (closing)
 			continue;
+
+		if (width != -1 || height != -1)
+		{
+			pdfapp_onresize(&gapp, width, height);
+			width = -1;
+			height = -1;
+		}
 
 		if (dirty || dirtysearch)
 		{
