@@ -700,6 +700,16 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 				if (n > 0)
 				{
 					winrepaintsearch(app);
+
+					if (app->searchdir < 0)
+					{
+						if (app->pageno == 1)
+							app->pageno = app->pagecount;
+						else
+							app->pageno--;
+						pdfapp_showpage(app, 1, 1, 0);
+					}
+
 					pdfapp_onkey(app, 'n');
 				}
 				else
@@ -735,10 +745,6 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 	switch (c)
 	{
-
-	case '?':
-		winhelp(app);
-		break;
 
 	case 'q':
 		winclose(app);
@@ -925,8 +931,18 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 * Searching
 	 */
 
+	case '?':
+		app->isediting = 1;
+		app->searchdir = -1;
+		app->search[0] = 0;
+		app->hit = -1;
+		app->hitlen = 0;
+		winrepaintsearch(app);
+		break;
+
 	case '/':
 		app->isediting = 1;
+		app->searchdir = 1;
 		app->search[0] = 0;
 		app->hit = -1;
 		app->hitlen = 0;
@@ -934,12 +950,18 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case 'n':
-		pdfapp_searchforward(app, &panto);
+		if (app->searchdir > 0)
+			pdfapp_searchforward(app, &panto);
+		else
+			pdfapp_searchbackward(app, &panto);
 		loadpage = 0;
 		break;
 
 	case 'N':
-		pdfapp_searchbackward(app, &panto);
+		if (app->searchdir > 0)
+			pdfapp_searchbackward(app, &panto);
+		else
+			pdfapp_searchforward(app, &panto);
 		loadpage = 0;
 		break;
 
