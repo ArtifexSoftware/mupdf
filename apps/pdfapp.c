@@ -603,6 +603,8 @@ static void pdfapp_searchforward(pdfapp_t *app, enum panning *panto)
 
 	if (app->pageno == startpage)
 		pdfapp_warn(app, "String '%s' not found.", app->search);
+	else
+		winrepaint(app);
 
 	wincursor(app, HAND);
 }
@@ -651,6 +653,8 @@ static void pdfapp_searchbackward(pdfapp_t *app, enum panning *panto)
 
 	if (app->pageno == startpage)
 		pdfapp_warn(app, "String '%s' not found.", app->search);
+	else
+		winrepaint(app);
 
 	wincursor(app, HAND);
 }
@@ -914,13 +918,11 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 	case 'n':
 		pdfapp_searchforward(app, &panto);
-		winrepaint(app);
 		loadpage = 0;
 		break;
 
 	case 'N':
 		pdfapp_searchbackward(app, &panto);
-		winrepaint(app);
 		loadpage = 0;
 		break;
 
