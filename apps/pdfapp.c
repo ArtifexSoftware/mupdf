@@ -559,7 +559,7 @@ static int match(char *s, fz_text_span *span, int n)
 	return n - orig;
 }
 
-static void pdfapp_searchforward(pdfapp_t *app)
+static void pdfapp_searchforward(pdfapp_t *app, enum panning *panto)
 {
 	int matchlen;
 	int test;
@@ -597,7 +597,7 @@ static void pdfapp_searchforward(pdfapp_t *app)
 			app->pageno = 1;
 
 		pdfapp_showpage(app, 1, 0, 0);
-		app->pany = 0;
+		*panto = PAN_TO_TOP;
 
 	} while (app->pageno != startpage);
 
@@ -607,7 +607,7 @@ static void pdfapp_searchforward(pdfapp_t *app)
 	wincursor(app, HAND);
 }
 
-static void pdfapp_searchbackward(pdfapp_t *app)
+static void pdfapp_searchbackward(pdfapp_t *app, enum panning *panto)
 {
 	int matchlen;
 	int test;
@@ -645,7 +645,7 @@ static void pdfapp_searchbackward(pdfapp_t *app)
 			app->pageno = app->pagecount;
 
 		pdfapp_showpage(app, 1, 0, 0);
-		app->pany = -2000;
+		*panto = PAN_TO_BOTTOM;
 
 	} while (app->pageno != startpage);
 
@@ -913,13 +913,13 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case 'n':
-		pdfapp_searchforward(app);
+		pdfapp_searchforward(app, &panto);
 		winrepaint(app);
 		loadpage = 0;
 		break;
 
 	case 'N':
-		pdfapp_searchbackward(app);
+		pdfapp_searchbackward(app, &panto);
 		winrepaint(app);
 		loadpage = 0;
 		break;
