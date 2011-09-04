@@ -683,7 +683,8 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			{
 				app->isediting = 0;
 				winrepaint(app);
-				pdfapp_onkey(app, 'n');
+				if (n > 0)
+					pdfapp_onkey(app, 'n');
 			}
 			if (c == '\033')
 			{
