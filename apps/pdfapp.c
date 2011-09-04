@@ -587,6 +587,7 @@ static void pdfapp_searchforward(pdfapp_t *app, enum panning *panto)
 				app->hit = test;
 				app->hitlen = matchlen;
 				wincursor(app, HAND);
+				winrepaint(app);
 				return;
 			}
 			test++;
@@ -602,7 +603,10 @@ static void pdfapp_searchforward(pdfapp_t *app, enum panning *panto)
 	} while (app->pageno != startpage);
 
 	if (app->pageno == startpage)
+	{
 		pdfapp_warn(app, "String '%s' not found.", app->search);
+		winrepaintsearch(app);
+	}
 	else
 		winrepaint(app);
 
@@ -637,6 +641,7 @@ static void pdfapp_searchbackward(pdfapp_t *app, enum panning *panto)
 				app->hit = test;
 				app->hitlen = matchlen;
 				wincursor(app, HAND);
+				winrepaint(app);
 				return;
 			}
 			test--;
@@ -652,7 +657,10 @@ static void pdfapp_searchbackward(pdfapp_t *app, enum panning *panto)
 	} while (app->pageno != startpage);
 
 	if (app->pageno == startpage)
+	{
 		pdfapp_warn(app, "String '%s' not found.", app->search);
+		winrepaintsearch(app);
+	}
 	else
 		winrepaint(app);
 
@@ -682,13 +690,20 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		if (c < ' ')
 		{
 			if (c == '\b' && n > 0)
+			{
 				app->search[n - 1] = 0;
+				winrepaintsearch(app);
+			}
 			if (c == '\n' || c == '\r')
 			{
 				app->isediting = 0;
-				winrepaint(app);
 				if (n > 0)
+				{
+					winrepaintsearch(app);
 					pdfapp_onkey(app, 'n');
+				}
+				else
+					winrepaint(app);
 			}
 			if (c == '\033')
 			{
@@ -702,6 +717,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			{
 				app->search[n] = c;
 				app->search[n + 1] = 0;
+				winrepaintsearch(app);
 			}
 		}
 		return;
@@ -914,6 +930,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		app->search[0] = 0;
 		app->hit = -1;
 		app->hitlen = 0;
+		winrepaintsearch(app);
 		break;
 
 	case 'n':

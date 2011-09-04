@@ -75,6 +75,7 @@ static int mapped = 0;
 static Cursor xcarrow, xchand, xcwait;
 static int justcopied = 0;
 static int dirty = 0;
+static int dirtysearch = 0;
 static char *password = "";
 static XColor xbgcolor;
 static XColor xshcolor;
@@ -276,6 +277,18 @@ static void fillrect(int x, int y, int w, int h)
 		XFillRectangle(xdpy, xwin, xgc, x, y, w, h);
 }
 
+static void winblitsearch(pdfapp_t *app)
+{
+	if (gapp.isediting)
+	{
+		char buf[sizeof(gapp.search) + 50];
+		sprintf(buf, "Search: %s", gapp.search);
+		XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
+		fillrect(0, 0, gapp.winw, 30);
+		windrawstring(&gapp, 10, 20, buf);
+	}
+}
+
 static void winblit(pdfapp_t *app)
 {
 	int x0 = gapp.panx;
@@ -342,19 +355,17 @@ static void winblit(pdfapp_t *app)
 		justcopied = 1;
 	}
 
-	if (gapp.isediting)
-	{
-		char buf[sizeof(gapp.search) + 50];
-		sprintf(buf, "Search: %s", gapp.search);
-		XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
-		fillrect(0, 0, gapp.winw, 30);
-		windrawstring(&gapp, 10, 20, buf);
-	}
+	winblitsearch(app);
 }
 
 void winrepaint(pdfapp_t *app)
 {
 	dirty = 1;
+}
+
+void winrepaintsearch(pdfapp_t *app)
+{
+	dirtysearch = 1;
 }
 
 void windrawstringxor(pdfapp_t *app, int x, int y, char *s)
@@ -636,21 +647,6 @@ int main(int argc, char **argv)
 
 				onmouse(oldx, oldy, 0, 0, 0);
 
-				if (dirty)
-				{
-					winblit(&gapp);
-					dirty = 0;
-				}
-
-				if (gapp.isediting)
-				{
-					char str[sizeof(gapp.search) + 50];
-					sprintf(str, "Search: %s", gapp.search);
-					XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
-					fillrect(0, 0, gapp.winw, 30);
-					windrawstring(&gapp, 10, 20, str);
-				}
-
 				break;
 
 			case MotionNotify:
@@ -684,10 +680,17 @@ int main(int argc, char **argv)
 		}
 		while (!closing && XPending(xdpy));
 
-		if (!closing && dirty)
+		if (closing)
+			continue;
+
+		if (dirty || dirtysearch)
 		{
-			winblit(&gapp);
+			if (dirty)
+				winblit(&gapp);
+			else if (dirtysearch)
+				winblitsearch(&gapp);
 			dirty = 0;
+			dirtysearch = 0;
 		}
 	}
 
