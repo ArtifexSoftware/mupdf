@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define mupdf_icon_bitmap_16_width 16
 #define mupdf_icon_bitmap_16_height 16
@@ -88,6 +89,7 @@ static char *filename;
 
 static pdfapp_t gapp;
 static int closing = 0;
+static int reloading = 0;
 
 /*
  * Dialog boxes
@@ -521,6 +523,12 @@ static void onmouse(int x, int y, int btn, int modifiers, int state)
 	pdfapp_onmouse(&gapp, x, y, btn, modifiers, state);
 }
 
+static void signal_handler(int signal)
+{
+	if (signal == SIGHUP)
+		reloading = 1;
+}
+
 static void usage(void)
 {
 	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
@@ -543,6 +551,7 @@ int main(int argc, char **argv)
 	int pageno = 1;
 	int accelerate = 1;
 	int fd;
+	fd_set fds;
 	int width = -1;
 	int height = -1;
 
@@ -588,7 +597,11 @@ int main(int argc, char **argv)
 
 	pdfapp_open(&gapp, filename, fd, 0);
 
-	closing = 0;
+	FD_ZERO(&fds);
+	FD_SET(x11fd, &fds);
+
+	signal(SIGHUP, signal_handler);
+
 	while (!closing)
 	{
 		do
@@ -700,6 +713,18 @@ int main(int argc, char **argv)
 				winblitsearch(&gapp);
 			dirty = 0;
 			dirtysearch = 0;
+		}
+
+		if (XPending(xdpy))
+			continue;
+
+		if (select(x11fd + 1, &fds, NULL, NULL, NULL) < 0)
+		{
+			if (reloading)
+			{
+				winreloadfile(&gapp);
+				reloading = 0;
+			}
 		}
 	}
 
