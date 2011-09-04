@@ -22,7 +22,7 @@ pdf_load_version(pdf_xref *xref)
 	if (memcmp(buf, "%PDF-", 5) != 0)
 		return fz_throw("cannot recognize version marker");
 
-	xref->version = fz_atof(buf + 5) * 10;
+	xref->version = atoi(buf + 5) * 10 + atoi(buf + 7);
 
 	return fz_okay;
 }
