@@ -74,7 +74,6 @@ static XEvent xevt;
 static int mapped = 0;
 static Cursor xcarrow, xchand, xcwait;
 static int justcopied = 0;
-static int isshowingpage = 0;
 static int dirty = 0;
 static char *password = "";
 static XColor xbgcolor;
@@ -521,48 +520,6 @@ static void usage(void)
 	exit(1);
 }
 
-static void winawaitevent(struct timeval *tmo, struct timeval *tmo_at)
-{
-	if (tmo_at->tv_sec == 0 && tmo_at->tv_usec == 0 &&
-		tmo->tv_sec == 0 && tmo->tv_usec == 0)
-		XNextEvent(xdpy, &xevt);
-	else
-	{
-		fd_set fds;
-		struct timeval now;
-
-		FD_ZERO(&fds);
-		FD_SET(x11fd, &fds);
-
-		if (select(x11fd + 1, &fds, NULL, NULL, tmo))
-		{
-			gettimeofday(&now, NULL);
-			timersub(tmo_at, &now, tmo);
-			XNextEvent(xdpy, &xevt);
-		}
-	}
-}
-
-static void winsettmo(struct timeval *tmo, struct timeval *tmo_at)
-{
-	struct timeval now;
-
-	tmo->tv_sec = 2;
-	tmo->tv_usec = 0;
-
-	gettimeofday(&now, NULL);
-	timeradd(&now, tmo, tmo_at);
-}
-
-static void winresettmo(struct timeval *tmo, struct timeval *tmo_at)
-{
-	tmo->tv_sec = 0;
-	tmo->tv_usec = 0;
-
-	tmo_at->tv_sec = 0;
-	tmo_at->tv_usec = 0;
-}
-
 int main(int argc, char **argv)
 {
 	int c;
@@ -573,8 +530,6 @@ int main(int argc, char **argv)
 	int oldy = 0;
 	int resolution = 72;
 	int pageno = 1;
-	int wasshowingpage;
-	struct timeval tmo, tmo_at;
 	int accelerate = 1;
 	int fd;
 
@@ -620,24 +575,12 @@ int main(int argc, char **argv)
 
 	pdfapp_open(&gapp, filename, fd, 0);
 
-	winresettmo(&tmo, &tmo_at);
-
 	closing = 0;
 	while (!closing)
 	{
 		do
 		{
-			winawaitevent(&tmo, &tmo_at);
-
-			if (tmo_at.tv_sec != 0 && tmo_at.tv_usec != 0 &&
-				tmo.tv_sec == 0 && tmo.tv_usec == 0)
-			{
-				/* redraw page */
-				winblit(&gapp);
-				isshowingpage = 0;
-				winresettmo(&tmo, &tmo_at);
-				continue;
-			}
+			XNextEvent(xdpy, &xevt);
 
 			switch (xevt.type)
 			{
@@ -658,8 +601,6 @@ int main(int argc, char **argv)
 				break;
 
 			case KeyPress:
-				wasshowingpage = isshowingpage;
-
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, NULL);
 
 				if (!gapp.isediting)
@@ -699,11 +640,6 @@ int main(int argc, char **argv)
 				{
 					winblit(&gapp);
 					dirty = 0;
-					if (isshowingpage)
-					{
-						isshowingpage = 0;
-						winresettmo(&tmo, &tmo_at);
-					}
 				}
 
 				if (gapp.isediting)
@@ -714,9 +650,6 @@ int main(int argc, char **argv)
 					fillrect(0, 0, gapp.winw, 30);
 					windrawstring(&gapp, 10, 20, str);
 				}
-
-				if (!wasshowingpage && isshowingpage)
-					winsettmo(&tmo, &tmo_at);
 
 				break;
 
@@ -755,11 +688,6 @@ int main(int argc, char **argv)
 		{
 			winblit(&gapp);
 			dirty = 0;
-			if (isshowingpage)
-			{
-				isshowingpage = 0;
-				winresettmo(&tmo, &tmo_at);
-			}
 		}
 	}
 
