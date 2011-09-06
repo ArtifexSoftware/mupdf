@@ -40,11 +40,11 @@ pdf_to_utf8(fz_obj *src)
 	int ucs;
 	int i;
 
-	if (srclen > 2 && srcptr[0] == 254 && srcptr[1] == 255)
+	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
 	{
 		for (i = 2; i < srclen; i += 2)
 		{
-			ucs = (srcptr[i] << 8) | srcptr[i+1];
+			ucs = srcptr[i] << 8 | srcptr[i+1];
 			dstlen += runelen(ucs);
 		}
 
@@ -52,11 +52,26 @@ pdf_to_utf8(fz_obj *src)
 
 		for (i = 2; i < srclen; i += 2)
 		{
-			ucs = (srcptr[i] << 8) | srcptr[i+1];
+			ucs = srcptr[i] << 8 | srcptr[i+1];
 			dstptr += runetochar(dstptr, &ucs);
 		}
 	}
+	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
+	{
+		for (i = 2; i + 1 < srclen; i += 2)
+		{
+			ucs = srcptr[i] | srcptr[i+1] << 8;
+			dstlen += runelen(ucs);
+		}
 
+		dstptr = dst = fz_malloc(dstlen + 1);
+
+		for (i = 2; i + 1 < srclen; i += 2)
+		{
+			ucs = srcptr[i] | srcptr[i+1] << 8;
+			dstptr += runetochar(dstptr, &ucs);
+		}
+	}
 	else
 	{
 		for (i = 0; i < srclen; i++)
@@ -84,13 +99,18 @@ pdf_to_ucs2(fz_obj *src)
 	int srclen = fz_to_str_len(src);
 	int i;
 
-	if (srclen > 2 && srcptr[0] == 254 && srcptr[1] == 255)
+	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
 	{
 		dstptr = dst = fz_calloc((srclen - 2) / 2 + 1, sizeof(short));
-		for (i = 2; i < srclen; i += 2)
-			*dstptr++ = (srcptr[i] << 8) | srcptr[i+1];
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] << 8 | srcptr[i+1];
 	}
-
+	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
+	{
+		dstptr = dst = fz_calloc((srclen - 2) / 2 + 1, sizeof(short));
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] | srcptr[i+1] << 8;
+	}
 	else
 	{
 		dstptr = dst = fz_calloc(srclen + 1, sizeof(short));
