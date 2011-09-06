@@ -973,7 +973,10 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 	oldtop = csi->gtop;
 
 #ifdef TILE
-	if ((x1 - x0) * (y1 - y0) > 0)
+	if ((x1 - x0) * (y1 - y0) > 1)
+#else
+	if (0)
+#endif
 	{
 		fz_begin_tile(csi->dev, area, pat->bbox, pat->xstep, pat->ystep, ptm);
 		gstate->ctm = ptm;
@@ -987,7 +990,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 			pdf_grestore(csi);
 		fz_end_tile(csi->dev);
 	}
-#else
+	else
 	{
 		int x, y;
 		for (y = y0; y < y1; y++)
@@ -996,7 +999,9 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 			{
 				gstate->ctm = fz_concat(fz_translate(x * pat->xstep, y * pat->ystep), ptm);
 				csi->top_ctm = gstate->ctm;
-				error = pdf_run_csi_buffer(csi, pat->resources, pat->contents);
+				pdf_gsave(csi);
+				error = pdf_run_buffer(csi, pat->resources, pat->contents);
+				pdf_grestore(csi);
 				while (oldtop < csi->gtop)
 					pdf_grestore(csi);
 				if (error)
@@ -1008,7 +1013,6 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 		}
 	}
 cleanup:
-#endif
 
 	csi->top_ctm = oldtopctm;
 
