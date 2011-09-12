@@ -13,7 +13,7 @@ void closexref(void);
 
 void die(fz_error error)
 {
-	fz_catch(error, "aborting");
+	fz_error_handle(error, "aborting");
 	closexref();
 	exit(1);
 }
@@ -573,7 +573,7 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		die(fz_throw("cannot retrieve info from page %d", page));
+		die(fz_error_make("cannot retrieve info from page %d", page));
 
 	font = fz_dict_gets(rsrc, "Font");
 	if (font)
@@ -636,7 +636,7 @@ gatherpageinfo(int page)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		die(fz_throw("cannot retrieve info from page %d", page));
+		die(fz_error_make("cannot retrieve info from page %d", page));
 
 	gatherdimensions(page, pageref, pageobj);
 
@@ -983,11 +983,11 @@ int main(int argc, char **argv)
 			printf("%s:\n", filename);
 			error = pdf_open_xref(&xref, filename, password);
 			if (error)
-				die(fz_rethrow(error, "cannot open input file '%s'", filename));
+				die(fz_error_note(error, "cannot open input file '%s'", filename));
 
 			error = pdf_load_page_tree(xref);
 			if (error)
-				die(fz_rethrow(error, "cannot load page tree: %s", filename));
+				die(fz_error_note(error, "cannot load page tree: %s", filename));
 			pagecount = pdf_count_pages(xref);
 
 			showglobalinfo();

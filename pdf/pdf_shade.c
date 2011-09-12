@@ -987,13 +987,13 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 	if (!obj)
 	{
 		fz_drop_shade(shade);
-		return fz_throw("shading colorspace is missing");
+		return fz_error_make("shading colorspace is missing");
 	}
 	error = pdf_load_colorspace(&shade->colorspace, xref, obj);
 	if (error)
 	{
 		fz_drop_shade(shade);
-		return fz_rethrow(error, "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+		return fz_error_note(error, "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 	}
 
 	obj = fz_dict_gets(dict, "Background");
@@ -1018,7 +1018,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 		error = pdf_load_function(&func[0], xref, obj);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			error = fz_error_note(error, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			goto cleanup;
 		}
 	}
@@ -1027,7 +1027,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 		funcs = fz_array_len(obj);
 		if (funcs != 1 && funcs != shade->colorspace->n)
 		{
-			error = fz_throw("incorrect number of shading functions");
+			error = fz_error_make("incorrect number of shading functions");
 			goto cleanup;
 		}
 
@@ -1036,7 +1036,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 			error = pdf_load_function(&func[i], xref, fz_array_get(obj, i));
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+				error = fz_error_note(error, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 				goto cleanup;
 			}
 		}
@@ -1047,7 +1047,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 		error = pdf_open_stream(&stream, xref, fz_to_num(dict), fz_to_gen(dict));
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot open shading stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			error = fz_error_note(error, "cannot open shading stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 			goto cleanup;
 		}
 	}
@@ -1062,7 +1062,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 	case 6: pdf_load_type6_shade(shade, xref, dict, funcs, func, stream); break;
 	case 7: pdf_load_type7_shade(shade, xref, dict, funcs, func, stream); break;
 	default:
-		error = fz_throw("unknown shading type: %d", type);
+		error = fz_error_make("unknown shading type: %d", type);
 		goto cleanup;
 	}
 
@@ -1083,7 +1083,7 @@ cleanup:
 			pdf_drop_function(func[i]);
 	fz_drop_shade(shade);
 
-	return fz_rethrow(error, "cannot load shading type %d (%d %d R)", type, fz_to_num(dict), fz_to_gen(dict));
+	return fz_error_note(error, "cannot load shading type %d (%d %d R)", type, fz_to_num(dict), fz_to_gen(dict));
 }
 
 fz_error
@@ -1119,11 +1119,11 @@ pdf_load_shading(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 
 		obj = fz_dict_gets(dict, "Shading");
 		if (!obj)
-			return fz_throw("syntaxerror: missing shading dictionary");
+			return fz_error_make("syntaxerror: missing shading dictionary");
 
 		error = pdf_load_shading_dict(shadep, xref, obj, mat);
 		if (error)
-			return fz_rethrow(error, "cannot load shading dictionary (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			return fz_error_note(error, "cannot load shading dictionary (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 	}
 
 	/* Naked shading dictionary */
@@ -1131,7 +1131,7 @@ pdf_load_shading(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 	{
 		error = pdf_load_shading_dict(shadep, xref, dict, fz_identity);
 		if (error)
-			return fz_rethrow(error, "cannot load shading dictionary (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load shading dictionary (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
 	pdf_store_item(xref->store, fz_keep_shade, fz_drop_shade, dict, *shadep);

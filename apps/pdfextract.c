@@ -10,7 +10,7 @@ static int dorgb = 0;
 
 void die(fz_error error)
 {
-	fz_catch(error, "aborting");
+	fz_error_handle(error, "aborting");
 	if (xref)
 		pdf_free_xref(xref);
 	exit(1);
@@ -115,7 +115,7 @@ static void savefont(fz_obj *dict, int num)
 
 		obj = fz_dict_gets(obj, "Subtype");
 		if (obj && !fz_is_name(obj))
-			die(fz_throw("Invalid font descriptor subtype"));
+			die(fz_error_make("Invalid font descriptor subtype"));
 
 		subtype = fz_to_name(obj);
 		if (!strcmp(subtype, "Type1C"))
@@ -123,7 +123,7 @@ static void savefont(fz_obj *dict, int num)
 		else if (!strcmp(subtype, "CIDFontType0C"))
 			ext = "cid";
 		else
-			die(fz_throw("Unhandled font type '%s'", subtype));
+			die(fz_error_make("Unhandled font type '%s'", subtype));
 	}
 
 	if (!stream)
@@ -143,14 +143,14 @@ static void savefont(fz_obj *dict, int num)
 
 	f = fopen(name, "wb");
 	if (f == NULL)
-		die(fz_throw("Error creating font file"));
+		die(fz_error_make("Error creating font file"));
 
 	n = fwrite(buf->data, 1, buf->len, f);
 	if (n < buf->len)
-		die(fz_throw("Error writing font file"));
+		die(fz_error_make("Error writing font file"));
 
 	if (fclose(f) < 0)
-		die(fz_throw("Error closing font file"));
+		die(fz_error_make("Error closing font file"));
 
 	fz_drop_buffer(buf);
 }
@@ -161,7 +161,7 @@ static void showobject(int num)
 	fz_obj *obj;
 
 	if (!xref)
-		die(fz_throw("no file specified"));
+		die(fz_error_make("no file specified"));
 
 	error = pdf_load_object(&obj, xref, num, 0);
 	if (error)
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 	infile = argv[fz_optind++];
 	error = pdf_open_xref(&xref, infile, password);
 	if (error)
-		die(fz_rethrow(error, "cannot open input file '%s'", infile));
+		die(fz_error_note(error, "cannot open input file '%s'", infile));
 
 	if (fz_optind == argc)
 	{

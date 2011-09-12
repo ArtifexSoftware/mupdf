@@ -55,7 +55,7 @@ static int read_file(fz_stream *stm, unsigned char *buf, int len)
 {
 	int n = read(*(int*)stm->state, buf, len);
 	if (n < 0)
-		return fz_throw("read error: %s", strerror(errno));
+		return fz_error_make("read error: %s", strerror(errno));
 	return n;
 }
 

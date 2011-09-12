@@ -27,7 +27,7 @@ static pdf_xref *xref = NULL;
 
 void die(fz_error error)
 {
-	fz_catch(error, "aborting");
+	fz_error_handle(error, "aborting");
 	if (xref)
 		pdf_free_xref(xref);
 	exit(1);
@@ -283,7 +283,7 @@ static void retainpages(int argc, char **argv)
 	/* Load the old page tree */
 	error = pdf_load_page_tree(xref);
 	if (error)
-		die(fz_rethrow(error, "cannot load page tree"));
+		die(fz_error_note(error, "cannot load page tree"));
 
 	/* Keep only pages/type entry to avoid references to unretained pages */
 	oldroot = fz_dict_gets(xref->trailer, "Root");
@@ -712,11 +712,11 @@ int main(int argc, char **argv)
 
 	error = pdf_open_xref(&xref, infile, password);
 	if (error)
-		die(fz_rethrow(error, "cannot open input file '%s'", infile));
+		die(fz_error_note(error, "cannot open input file '%s'", infile));
 
 	out = fopen(outfile, "wb");
 	if (!out)
-		die(fz_throw("cannot open output file '%s'", outfile));
+		die(fz_error_make("cannot open output file '%s'", outfile));
 
 	fprintf(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
 	fprintf(out, "%%\316\274\341\277\246\n\n");
@@ -760,7 +760,7 @@ int main(int argc, char **argv)
 	writepdf();
 
 	if (fclose(out))
-		die(fz_throw("cannot close output file '%s'", outfile));
+		die(fz_error_make("cannot close output file '%s'", outfile));
 
 	fz_free(uselist);
 	fz_free(ofslist);

@@ -28,7 +28,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse object");
+		return fz_error_note(error, "cannot parse object");
 	if (tok == PDF_TOK_OPEN_DICT)
 	{
 		fz_obj *dict, *obj;
@@ -36,7 +36,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 		/* Send NULL xref so we don't try to resolve references */
 		error = pdf_parse_dict(&dict, NULL, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse object");
+			return fz_error_note(error, "cannot parse object");
 
 		obj = fz_dict_gets(dict, "Type");
 		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "XRef"))
@@ -72,7 +72,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 	{
 		error = pdf_lex(&tok, file, buf, cap, &len);
 		if (error)
-			return fz_rethrow(error, "cannot scan for endobj or stream token");
+			return fz_error_note(error, "cannot scan for endobj or stream token");
 	}
 
 	if (tok == PDF_TOK_STREAM)
@@ -86,14 +86,14 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 
 		*stmofsp = fz_tell(file);
 		if (*stmofsp < 0)
-			return fz_throw("cannot seek in file");
+			return fz_error_make("cannot seek in file");
 
 		if (stm_len > 0)
 		{
 			fz_seek(file, *stmofsp + stm_len, 0);
 			error = pdf_lex(&tok, file, buf, cap, &len);
 			if (error)
-				fz_catch(error, "cannot find endstream token, falling back to scanning");
+				fz_error_handle(error, "cannot find endstream token, falling back to scanning");
 			if (tok == PDF_TOK_ENDSTREAM)
 				goto atobjend;
 			fz_seek(file, *stmofsp, 0);
@@ -101,7 +101,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 
 		n = fz_read(file, (unsigned char *) buf, 9);
 		if (n < 0)
-			return fz_rethrow(n, "cannot read from file");
+			return fz_error_note(n, "cannot read from file");
 
 		while (memcmp(buf, "endstream", 9) != 0)
 		{
@@ -117,7 +117,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 atobjend:
 		error = pdf_lex(&tok, file, buf, cap, &len);
 		if (error)
-			return fz_rethrow(error, "cannot scan for endobj token");
+			return fz_error_note(error, "cannot scan for endobj token");
 		if (tok != PDF_TOK_ENDOBJ)
 			fz_warn("object missing 'endobj' token");
 	}
@@ -137,7 +137,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 
 	error = pdf_load_object(&obj, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load object stream object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot load object stream object (%d %d R)", num, gen);
 
 	count = fz_to_int(fz_dict_gets(obj, "N"));
 
@@ -145,7 +145,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 
 	error = pdf_open_stream(&stm, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open object stream object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot open object stream object (%d %d R)", num, gen);
 
 	for (i = 0; i < count; i++)
 	{
@@ -153,7 +153,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 		if (error || tok != PDF_TOK_INT)
 		{
 			fz_close(stm);
-			return fz_rethrow(error, "corrupt object stream (%d %d R)", num, gen);
+			return fz_error_note(error, "corrupt object stream (%d %d R)", num, gen);
 		}
 
 		n = atoi(buf);
@@ -170,7 +170,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 		if (error || tok != PDF_TOK_INT)
 		{
 			fz_close(stm);
-			return fz_rethrow(error, "corrupt object stream (%d %d R)", num, gen);
+			return fz_error_note(error, "corrupt object stream (%d %d R)", num, gen);
 		}
 	}
 
@@ -213,7 +213,7 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 	n = fz_read(xref->file, (unsigned char *)buf, MAX(bufsize, 1024));
 	if (n < 0)
 	{
-		error = fz_rethrow(n, "cannot read from file");
+		error = fz_error_note(n, "cannot read from file");
 		goto cleanup;
 	}
 
@@ -239,14 +239,14 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 		tmpofs = fz_tell(xref->file);
 		if (tmpofs < 0)
 		{
-			error = fz_throw("cannot tell in file");
+			error = fz_error_make("cannot tell in file");
 			goto cleanup;
 		}
 
 		error = pdf_lex(&tok, xref->file, buf, bufsize, &n);
 		if (error)
 		{
-			fz_catch(error, "ignoring the rest of the file");
+			fz_error_handle(error, "ignoring the rest of the file");
 			break;
 		}
 
@@ -263,7 +263,7 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			error = pdf_repair_obj(xref->file, buf, bufsize, &stm_ofs, &stm_len, &encrypt, &id);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot parse object (%d %d R)", num, gen);
+				error = fz_error_note(error, "cannot parse object (%d %d R)", num, gen);
 				goto cleanup;
 			}
 
@@ -290,7 +290,7 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			error = pdf_parse_dict(&dict, xref, xref->file, buf, bufsize);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot parse object");
+				error = fz_error_note(error, "cannot parse object");
 				goto cleanup;
 			}
 
@@ -354,7 +354,7 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			error = pdf_load_object(&dict, xref, list[i].num, list[i].gen);
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot load stream object (%d %d R)", list[i].num, list[i].gen);
+				error = fz_error_note(error, "cannot load stream object (%d %d R)", list[i].num, list[i].gen);
 				goto cleanup;
 			}
 

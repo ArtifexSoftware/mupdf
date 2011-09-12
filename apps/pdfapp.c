@@ -112,7 +112,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	file = fz_open_fd(fd);
 	error = pdf_open_xref_with_stream(&app->xref, file, NULL);
 	if (error)
-		pdfapp_error(app, fz_rethrow(error, "cannot open document '%s'", filename));
+		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
 	fz_close(file);
 
 	/*
@@ -158,7 +158,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 
 	error = pdf_load_page_tree(app->xref);
 	if (error)
-		pdfapp_error(app, fz_rethrow(error, "cannot load page tree"));
+		pdfapp_error(app, fz_error_note(error, "cannot load page tree"));
 
 	app->pagecount = pdf_count_pages(app->xref);
 }
@@ -171,7 +171,7 @@ static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
 	file = fz_open_fd(fd);
 	error = xps_open_stream(&app->xps, file);
 	if (error)
-		pdfapp_error(app, fz_rethrow(error, "cannot open document '%s'", filename));
+		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
 	fz_close(file);
 
 	app->doctitle = filename;
@@ -299,7 +299,7 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	error = pdf_run_page(app->xref, page, mdev, fz_identity);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);
+		error = fz_error_note(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);
 		pdfapp_error(app, error);
 	}
 	fz_free_device(mdev);
@@ -317,7 +317,7 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 
 	error = xps_load_page(&page, app->xps, app->pageno - 1);
 	if (error)
-		pdfapp_error(app, fz_rethrow(error, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
+		pdfapp_error(app, fz_error_note(error, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
 
 	app->page_bbox.x0 = 0;
 	app->page_bbox.y0 = 0;

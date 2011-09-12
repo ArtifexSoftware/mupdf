@@ -68,33 +68,33 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #if __STDC_VERSION__ == 199901L /* C99 */
 
-#define fz_throw(...) fz_throw_imp(__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_rethrow(cause, ...) fz_rethrow_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
+#define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
 #define fz_catch(cause, ...) fz_catch_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
 
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 
 #define inline __inline
 #define restrict __restrict
-#define fz_throw(...) fz_throw_imp(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
-#define fz_rethrow(cause, ...) fz_rethrow_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
-#define fz_catch(cause, ...) fz_catch_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
+#define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
+#define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
+#define fz_catch(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
 
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
 
 #define inline __inline
 #define restrict __restrict
-#define fz_throw(fmt...) fz_throw_imp(__FILE__, __LINE__, __FUNCTION__, fmt)
-#define fz_rethrow(cause, fmt...) fz_rethrow_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
-#define fz_catch(cause, fmt...) fz_catch_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
+#define fz_error_make(fmt...) fz_error_make_imp(__FILE__, __LINE__, __FUNCTION__, fmt)
+#define fz_error_note(cause, fmt...) fz_error_note_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
+#define fz_error_handle(cause, fmt...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
 
 #else /* Unknown or ancient */
 
 #define inline
 #define restrict
-#define fz_throw fz_throw_impx
-#define fz_rethrow fz_rethrow_impx
-#define fz_catch fz_catch_impx
+#define fz_error_make fz_error_make_impx
+#define fz_error_note fz_error_note_impx
+#define fz_error_handle fz_catch_impx
 
 #endif
 
@@ -122,13 +122,13 @@ typedef int fz_error;
 void fz_warn(char *fmt, ...) __printflike(1, 2);
 void fz_flush_warnings(void);
 
-fz_error fz_throw_imp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
-fz_error fz_rethrow_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
-void fz_catch_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
+fz_error fz_error_make_imp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
+fz_error fz_error_note_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
+void fz_error_handle_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
 
-fz_error fz_throw_impx(char *fmt, ...) __printflike(1, 2);
-fz_error fz_rethrow_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
-void fz_catch_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
+fz_error fz_error_make_impx(char *fmt, ...) __printflike(1, 2);
+fz_error fz_error_note_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
+void fz_error_handle_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 
 /* extract the last error stack trace */
 int fz_get_error_count(void);
@@ -1118,5 +1118,18 @@ enum
 	FZ_BLEND_ISOLATED = 16,
 	FZ_BLEND_KNOCKOUT = 32
 };
+
+/* Fitz context */
+
+typedef struct fz_except_context fz_except_context;
+typedef struct fz_alloc_context fz_alloc_context;
+
+typedef struct fz_context
+{
+    fz_except_context *except;
+    fz_alloc_context *alloc;
+}
+fz_context;
+
 
 #endif

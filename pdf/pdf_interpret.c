@@ -143,7 +143,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 			softmask->colorspace, gstate->softmask_bc);
 		error = pdf_run_xobject(csi, NULL, softmask, fz_identity);
 		if (error)
-			fz_catch(error, "cannot run softmask");
+			fz_error_handle(error, "cannot run softmask");
 		fz_end_mask(csi->dev);
 
 		gstate->softmask = softmask;
@@ -984,7 +984,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 		pdf_gsave(csi);
 		error = pdf_run_buffer(csi, pat->resources, pat->contents);
 		if (error)
-			fz_catch(error, "cannot render pattern tile");
+			fz_error_handle(error, "cannot render pattern tile");
 		pdf_grestore(csi);
 		while (oldtop < csi->gtop)
 			pdf_grestore(csi);
@@ -1006,7 +1006,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 					pdf_grestore(csi);
 				if (error)
 				{
-					fz_catch(error, "cannot render pattern tile");
+					fz_error_handle(error, "cannot render pattern tile");
 					goto cleanup;
 				}
 			}
@@ -1053,7 +1053,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 				softmask->colorspace, gstate->softmask_bc);
 			error = pdf_run_xobject(csi, resources, softmask, fz_identity);
 			if (error)
-				return fz_rethrow(error, "cannot run softmask");
+				return fz_error_note(error, "cannot run softmask");
 			fz_end_mask(csi->dev);
 
 			pdf_drop_xobject(softmask);
@@ -1088,7 +1088,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 
 	error = pdf_run_buffer(csi, resources, xobj->contents);
 	if (error)
-		fz_catch(error, "cannot interpret XObject stream");
+		fz_error_note(error, "cannot interpret XObject stream");
 
 	csi->top_ctm = oldtopctm;
 
@@ -1139,13 +1139,13 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 
 				error = pdf_load_font(&gstate->font, csi->xref, rdb, font);
 				if (error)
-					return fz_rethrow(error, "cannot load font (%d %d R)", fz_to_num(font), fz_to_gen(font));
+					return fz_error_note(error, "cannot load font (%d %d R)", fz_to_num(font), fz_to_gen(font));
 				if (!gstate->font)
-					return fz_throw("cannot find font in store");
+					return fz_error_make("cannot find font in store");
 				gstate->size = fz_to_real(fz_array_get(val, 1));
 			}
 			else
-				return fz_throw("malformed /Font dictionary");
+				return fz_error_make("malformed /Font dictionary");
 		}
 
 		else if (!strcmp(s, "LC"))
@@ -1172,7 +1172,7 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 				gstate->stroke_state.dash_phase = fz_to_real(fz_array_get(val, 1));
 			}
 			else
-				return fz_throw("malformed /D");
+				return fz_error_make("malformed /D");
 		}
 
 		else if (!strcmp(s, "CA"))
@@ -1204,10 +1204,10 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 
 				group = fz_dict_gets(val, "G");
 				if (!group)
-					return fz_throw("cannot load softmask xobject (%d %d R)", fz_to_num(val), fz_to_gen(val));
+					return fz_error_make("cannot load softmask xobject (%d %d R)", fz_to_num(val), fz_to_gen(val));
 				error = pdf_load_xobject(&xobj, csi->xref, group);
 				if (error)
-					return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_to_num(val), fz_to_gen(val));
+					return fz_error_note(error, "cannot load xobject (%d %d R)", fz_to_num(val), fz_to_gen(val));
 
 				colorspace = xobj->colorspace;
 				if (!colorspace)
@@ -1270,7 +1270,7 @@ static fz_error pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 
 	error = pdf_parse_dict(&obj, csi->xref, file, buf, buflen);
 	if (error)
-		return fz_rethrow(error, "cannot parse inline image dictionary");
+		return fz_error_note(error, "cannot parse inline image dictionary");
 
 	/* read whitespace after ID keyword */
 	ch = fz_read_byte(file);
@@ -1281,7 +1281,7 @@ static fz_error pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 	error = pdf_load_inline_image(&img, csi->xref, rdb, obj, file);
 	fz_drop_obj(obj);
 	if (error)
-		return fz_rethrow(error, "cannot load inline image");
+		return fz_error_note(error, "cannot load inline image");
 
 	pdf_show_image(csi, img);
 
@@ -1293,7 +1293,7 @@ static fz_error pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 		ch = fz_read_byte(file);
 	ch = fz_read_byte(file);
 	if (ch != 'I')
-		return fz_rethrow(error, "syntax error after inline image");
+		return fz_error_note(error, "syntax error after inline image");
 
 	return fz_okay;
 }
@@ -1346,13 +1346,13 @@ static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 		{
 			dict = fz_dict_gets(rdb, "ColorSpace");
 			if (!dict)
-				return fz_throw("cannot find ColorSpace dictionary");
+				return fz_error_make("cannot find ColorSpace dictionary");
 			obj = fz_dict_gets(dict, csi->name);
 			if (!obj)
-				return fz_throw("cannot find colorspace resource '%s'", csi->name);
+				return fz_error_make("cannot find colorspace resource '%s'", csi->name);
 			error = pdf_load_colorspace(&colorspace, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load colorspace (%d 0 R)", fz_to_num(obj));
+				return fz_error_note(error, "cannot load colorspace (%d 0 R)", fz_to_num(obj));
 		}
 
 		pdf_set_colorspace(csi, what, colorspace);
@@ -1367,7 +1367,7 @@ static void pdf_run_CS(pdf_csi *csi, fz_obj *rdb)
 	fz_error error;
 	error = pdf_run_cs_imp(csi, rdb, PDF_STROKE);
 	if (error)
-		fz_catch(error, "cannot set colorspace");
+		fz_error_handle(error, "cannot set colorspace");
 }
 
 static void pdf_run_cs(pdf_csi *csi, fz_obj *rdb)
@@ -1375,7 +1375,7 @@ static void pdf_run_cs(pdf_csi *csi, fz_obj *rdb)
 	fz_error error;
 	error = pdf_run_cs_imp(csi, rdb, PDF_FILL);
 	if (error)
-		fz_catch(error, "cannot set colorspace");
+		fz_error_handle(error, "cannot set colorspace");
 }
 
 static void pdf_run_DP(pdf_csi *csi)
@@ -1391,15 +1391,15 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 	dict = fz_dict_gets(rdb, "XObject");
 	if (!dict)
-		return fz_throw("cannot find XObject dictionary when looking for: '%s'", csi->name);
+		return fz_error_make("cannot find XObject dictionary when looking for: '%s'", csi->name);
 
 	obj = fz_dict_gets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find xobject resource: '%s'", csi->name);
+		return fz_error_make("cannot find xobject resource: '%s'", csi->name);
 
 	subtype = fz_dict_gets(obj, "Subtype");
 	if (!fz_is_name(subtype))
-		return fz_throw("no XObject subtype specified");
+		return fz_error_make("no XObject subtype specified");
 
 	if (pdf_is_hidden_ocg(obj, csi->target))
 		return fz_okay;
@@ -1413,7 +1413,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 		error = pdf_load_xobject(&xobj, csi->xref, obj);
 		if (error)
-			return fz_rethrow(error, "cannot load xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			return fz_error_note(error, "cannot load xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 
 		/* Inherit parent resources, in case this one was empty XXX check where it's loaded */
 		if (!xobj->resources)
@@ -1421,7 +1421,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 		error = pdf_run_xobject(csi, xobj->resources, xobj, fz_identity);
 		if (error)
-			return fz_rethrow(error, "cannot draw xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			return fz_error_note(error, "cannot draw xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 
 		pdf_drop_xobject(xobj);
 	}
@@ -1433,7 +1433,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 			fz_pixmap *img;
 			error = pdf_load_image(&img, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load image (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+				return fz_error_note(error, "cannot load image (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			pdf_show_image(csi, img);
 			fz_drop_pixmap(img);
 		}
@@ -1446,7 +1446,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 	else
 	{
-		return fz_throw("unknown XObject subtype: '%s'", fz_to_name(subtype));
+		return fz_error_make("unknown XObject subtype: '%s'", fz_to_name(subtype));
 	}
 
 	return fz_okay;
@@ -1534,7 +1534,7 @@ static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material
 	switch (kind)
 	{
 	case PDF_MAT_NONE:
-		return fz_throw("cannot set color in mask objects");
+		return fz_error_make("cannot set color in mask objects");
 
 	case PDF_MAT_COLOR:
 		pdf_set_color(csi, what, csi->stack);
@@ -1543,11 +1543,11 @@ static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material
 	case PDF_MAT_PATTERN:
 		dict = fz_dict_gets(rdb, "Pattern");
 		if (!dict)
-			return fz_throw("cannot find Pattern dictionary");
+			return fz_error_make("cannot find Pattern dictionary");
 
 		obj = fz_dict_gets(dict, csi->name);
 		if (!obj)
-			return fz_throw("cannot find pattern resource '%s'", csi->name);
+			return fz_error_make("cannot find pattern resource '%s'", csi->name);
 
 		patterntype = fz_dict_gets(obj, "PatternType");
 
@@ -1556,7 +1556,7 @@ static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material
 			pdf_pattern *pat;
 			error = pdf_load_pattern(&pat, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load pattern (%d 0 R)", fz_to_num(obj));
+				return fz_error_note(error, "cannot load pattern (%d 0 R)", fz_to_num(obj));
 			pdf_set_pattern(csi, what, pat, csi->top > 0 ? csi->stack : NULL);
 			pdf_drop_pattern(pat);
 		}
@@ -1565,18 +1565,18 @@ static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material
 			fz_shade *shd;
 			error = pdf_load_shading(&shd, csi->xref, obj);
 			if (error)
-				return fz_rethrow(error, "cannot load shading (%d 0 R)", fz_to_num(obj));
+				return fz_error_note(error, "cannot load shading (%d 0 R)", fz_to_num(obj));
 			pdf_set_shade(csi, what, shd);
 			fz_drop_shade(shd);
 		}
 		else
 		{
-			return fz_throw("unknown pattern type: %d", fz_to_int(patterntype));
+			return fz_error_make("unknown pattern type: %d", fz_to_int(patterntype));
 		}
 		break;
 
 	case PDF_MAT_SHADE:
-		return fz_throw("cannot set color in shade objects");
+		return fz_error_make("cannot set color in shade objects");
 	}
 
 	return fz_okay;
@@ -1588,7 +1588,7 @@ static void pdf_run_SC(pdf_csi *csi, fz_obj *rdb)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	error = pdf_run_SC_imp(csi, rdb, PDF_STROKE, &gstate->stroke);
 	if (error)
-		fz_catch(error, "cannot set color and colorspace");
+		fz_error_handle(error, "cannot set color and colorspace");
 }
 
 static void pdf_run_sc(pdf_csi *csi, fz_obj *rdb)
@@ -1597,7 +1597,7 @@ static void pdf_run_sc(pdf_csi *csi, fz_obj *rdb)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	error = pdf_run_SC_imp(csi, rdb, PDF_FILL, &gstate->fill);
 	if (error)
-		fz_catch(error, "cannot set color and colorspace");
+		fz_error_handle(error, "cannot set color and colorspace");
 }
 
 static void pdf_run_Tc(pdf_csi *csi)
@@ -1640,15 +1640,15 @@ static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 
 	dict = fz_dict_gets(rdb, "Font");
 	if (!dict)
-		return fz_throw("cannot find Font dictionary");
+		return fz_error_make("cannot find Font dictionary");
 
 	obj = fz_dict_gets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find font resource: '%s'", csi->name);
+		return fz_error_make("cannot find font resource: '%s'", csi->name);
 
 	error = pdf_load_font(&gstate->font, csi->xref, rdb, obj);
 	if (error)
-		return fz_rethrow(error, "cannot load font (%d 0 R)", fz_to_num(obj));
+		return fz_error_note(error, "cannot load font (%d 0 R)", fz_to_num(obj));
 
 	return fz_okay;
 }
@@ -1812,15 +1812,15 @@ static fz_error pdf_run_gs(pdf_csi *csi, fz_obj *rdb)
 
 	dict = fz_dict_gets(rdb, "ExtGState");
 	if (!dict)
-		return fz_throw("cannot find ExtGState dictionary");
+		return fz_error_make("cannot find ExtGState dictionary");
 
 	obj = fz_dict_gets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find extgstate resource '%s'", csi->name);
+		return fz_error_make("cannot find extgstate resource '%s'", csi->name);
 
 	error = pdf_run_extgstate(csi, rdb, obj);
 	if (error)
-		return fz_rethrow(error, "cannot set ExtGState (%d 0 R)", fz_to_num(obj));
+		return fz_error_note(error, "cannot set ExtGState (%d 0 R)", fz_to_num(obj));
 	return fz_okay;
 }
 
@@ -1911,17 +1911,17 @@ static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 
 	dict = fz_dict_gets(rdb, "Shading");
 	if (!dict)
-		return fz_throw("cannot find shading dictionary");
+		return fz_error_make("cannot find shading dictionary");
 
 	obj = fz_dict_gets(dict, csi->name);
 	if (!obj)
-		return fz_throw("cannot find shading resource: '%s'", csi->name);
+		return fz_error_make("cannot find shading resource: '%s'", csi->name);
 
 	if ((csi->dev->hints & FZ_IGNORE_SHADE) == 0)
 	{
 		error = pdf_load_shading(&shd, csi->xref, obj);
 		if (error)
-			return fz_rethrow(error, "cannot load shading (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			return fz_error_note(error, "cannot load shading (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 		pdf_show_shade(csi, shd);
 		fz_drop_shade(shd);
 	}
@@ -2020,7 +2020,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('B','I'):
 		error = pdf_run_BI(csi, rdb, file);
 		if (error)
-			return fz_rethrow(error, "cannot draw inline image");
+			return fz_error_note(error, "cannot draw inline image");
 		break;
 	case C('B','M','C'): pdf_run_BMC(csi); break;
 	case B('B','T'): pdf_run_BT(csi); break;
@@ -2030,7 +2030,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('D','o'):
 		error = pdf_run_Do(csi, rdb);
 		if (error)
-			fz_catch(error, "cannot draw xobject/image");
+			fz_error_handle(error, "cannot draw xobject/image");
 		break;
 	case C('E','M','C'): pdf_run_EMC(csi); break;
 	case B('E','T'): pdf_run_ET(csi); break;
@@ -2055,7 +2055,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('T','f'):
 		error = pdf_run_Tf(csi, rdb);
 		if (error)
-			fz_catch(error, "cannot set font");
+			fz_error_handle(error, "cannot set font");
 		break;
 	case B('T','j'): pdf_run_Tj(csi); break;
 	case B('T','m'): pdf_run_Tm(csi); break;
@@ -2079,7 +2079,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('g','s'):
 		error = pdf_run_gs(csi, rdb);
 		if (error)
-			fz_catch(error, "cannot set graphics state");
+			fz_error_handle(error, "cannot set graphics state");
 		break;
 	case A('h'): pdf_run_h(csi); break;
 	case A('i'): pdf_run_i(csi); break;
@@ -2098,7 +2098,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case B('s','h'):
 		error = pdf_run_sh(csi, rdb);
 		if (error)
-			fz_catch(error, "cannot draw shading");
+			fz_error_handle(error, "cannot draw shading");
 		break;
 	case A('v'): pdf_run_v(csi); break;
 	case A('w'): pdf_run_w(csi); break;
@@ -2125,11 +2125,11 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 	while (1)
 	{
 		if (csi->top == nelem(csi->stack) - 1)
-			return fz_throw("stack overflow");
+			return fz_error_make("stack overflow");
 
 		error = pdf_lex(&tok, file, buf, buflen, &len);
 		if (error)
-			return fz_rethrow(error, "lexical error in content stream");
+			return fz_error_note(error, "lexical error in content stream");
 
 		if (in_array)
 		{
@@ -2151,12 +2151,12 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 				if (!strcmp(buf, "Tw") || !strcmp(buf, "Tc"))
 					fz_warn("ignoring keyword '%s' inside array", buf);
 				else
-					return fz_throw("syntax error in array");
+					return fz_error_make("syntax error in array");
 			}
 			else if (tok == PDF_TOK_EOF)
 				return fz_okay;
 			else
-				return fz_throw("syntax error in array");
+				return fz_error_make("syntax error in array");
 		}
 
 		else switch (tok)
@@ -2170,7 +2170,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			{
 				error = pdf_parse_array(&csi->obj, csi->xref, file, buf, buflen);
 				if (error)
-					return fz_rethrow(error, "cannot parse array");
+					return fz_error_note(error, "cannot parse array");
 			}
 			else
 			{
@@ -2181,7 +2181,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TOK_OPEN_DICT:
 			error = pdf_parse_dict(&csi->obj, csi->xref, file, buf, buflen);
 			if (error)
-				return fz_rethrow(error, "cannot parse dictionary");
+				return fz_error_note(error, "cannot parse dictionary");
 			break;
 
 		case PDF_TOK_NAME:
@@ -2213,12 +2213,12 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TOK_KEYWORD:
 			error = pdf_run_keyword(csi, rdb, file, buf);
 			if (error)
-				return fz_rethrow(error, "cannot run keyword");
+				return fz_error_note(error, "cannot run keyword");
 			pdf_clear_stack(csi);
 			break;
 
 		default:
-			return fz_throw("syntax error in content stream");
+			return fz_error_make("syntax error in content stream");
 		}
 	}
 }
@@ -2241,7 +2241,7 @@ pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 	fz_close(file);
 	fz_free(buf);
 	if (error)
-		return fz_rethrow(error, "cannot parse content stream");
+		return fz_error_note(error, "cannot parse content stream");
 	return fz_okay;
 }
 
@@ -2260,7 +2260,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 	error = pdf_run_buffer(csi, page->resources, page->contents);
 	pdf_free_csi(csi);
 	if (error)
-		return fz_rethrow(error, "cannot parse page content stream");
+		return fz_error_note(error, "cannot parse page content stream");
 
 	for (annot = page->annots; annot; annot = annot->next)
 	{
@@ -2281,7 +2281,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 		error = pdf_run_xobject(csi, page->resources, annot->ap, annot->matrix);
 		pdf_free_csi(csi);
 		if (error)
-			return fz_rethrow(error, "cannot parse annotation appearance stream");
+			return fz_error_note(error, "cannot parse annotation appearance stream");
 	}
 
 	if (page->transparency)
@@ -2303,6 +2303,6 @@ pdf_run_glyph(pdf_xref *xref, fz_obj *resources, fz_buffer *contents, fz_device 
 	fz_error error = pdf_run_buffer(csi, resources, contents);
 	pdf_free_csi(csi);
 	if (error)
-		return fz_rethrow(error, "cannot parse glyph content stream");
+		return fz_error_note(error, "cannot parse glyph content stream");
 	return fz_okay;
 }

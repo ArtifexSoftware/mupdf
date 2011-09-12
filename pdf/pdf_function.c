@@ -697,12 +697,12 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 	{
 		error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "calculator function lexical error");
+			return fz_error_note(error, "calculator function lexical error");
 
 		switch(tok)
 		{
 		case PDF_TOK_EOF:
-			return fz_throw("truncated calculator function");
+			return fz_error_make("truncated calculator function");
 
 		case PDF_TOK_INT:
 			resize_code(func, *codeptr);
@@ -727,22 +727,22 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 			ifptr = *codeptr;
 			error = parse_code(func, stream, codeptr);
 			if (error)
-				return fz_rethrow(error, "error in 'if' branch");
+				return fz_error_note(error, "error in 'if' branch");
 
 			error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 			if (error)
-				return fz_rethrow(error, "calculator function syntax error");
+				return fz_error_note(error, "calculator function syntax error");
 
 			if (tok == PDF_TOK_OPEN_BRACE)
 			{
 				elseptr = *codeptr;
 				error = parse_code(func, stream, codeptr);
 				if (error)
-					return fz_rethrow(error, "error in 'else' branch");
+					return fz_error_note(error, "error in 'else' branch");
 
 				error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 				if (error)
-					return fz_rethrow(error, "calculator function syntax error");
+					return fz_error_note(error, "calculator function syntax error");
 			}
 			else
 			{
@@ -754,7 +754,7 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 				if (!strcmp(buf, "if"))
 				{
 					if (elseptr >= 0)
-						return fz_throw("too many branches for 'if'");
+						return fz_error_make("too many branches for 'if'");
 					func->u.p.code[opptr].type = PS_OPERATOR;
 					func->u.p.code[opptr].u.op = PS_OP_IF;
 					func->u.p.code[opptr+2].type = PS_BLOCK;
@@ -765,7 +765,7 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 				else if (!strcmp(buf, "ifelse"))
 				{
 					if (elseptr < 0)
-						return fz_throw("not enough branches for 'ifelse'");
+						return fz_error_make("not enough branches for 'ifelse'");
 					func->u.p.code[opptr].type = PS_OPERATOR;
 					func->u.p.code[opptr].u.op = PS_OP_IFELSE;
 					func->u.p.code[opptr+1].type = PS_BLOCK;
@@ -777,12 +777,12 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 				}
 				else
 				{
-					return fz_throw("unknown keyword in 'if-else' context: '%s'", buf);
+					return fz_error_make("unknown keyword in 'if-else' context: '%s'", buf);
 				}
 			}
 			else
 			{
-				return fz_throw("missing keyword in 'if-else' context");
+				return fz_error_make("missing keyword in 'if-else' context");
 			}
 			break;
 
@@ -809,7 +809,7 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 					a = b = mid;
 			}
 			if (cmp != 0)
-				return fz_throw("unknown operator: '%s'", buf);
+				return fz_error_make("unknown operator: '%s'", buf);
 
 			resize_code(func, *codeptr);
 			func->u.p.code[*codeptr].type = PS_OPERATOR;
@@ -818,7 +818,7 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 			break;
 
 		default:
-			return fz_throw("calculator function syntax error");
+			return fz_error_make("calculator function syntax error");
 		}
 	}
 }
@@ -835,19 +835,19 @@ load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, 
 
 	error = pdf_open_stream(&stream, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open calculator function stream");
+		return fz_error_note(error, "cannot open calculator function stream");
 
 	error = pdf_lex(&tok, stream, buf, sizeof buf, &len);
 	if (error)
 	{
 		fz_close(stream);
-		return fz_rethrow(error, "stream is not a calculator function");
+		return fz_error_note(error, "stream is not a calculator function");
 	}
 
 	if (tok != PDF_TOK_OPEN_BRACE)
 	{
 		fz_close(stream);
-		return fz_throw("stream is not a calculator function");
+		return fz_error_make("stream is not a calculator function");
 	}
 
 	func->u.p.code = NULL;
@@ -858,7 +858,7 @@ load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, 
 	if (error)
 	{
 		fz_close(stream);
-		return fz_rethrow(error, "cannot parse calculator function (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse calculator function (%d %d R)", num, gen);
 	}
 
 	fz_close(stream);
@@ -907,20 +907,20 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 
 	obj = fz_dict_gets(dict, "Size");
 	if (!fz_is_array(obj) || fz_array_len(obj) != func->m)
-		return fz_throw("malformed /Size");
+		return fz_error_make("malformed /Size");
 	for (i = 0; i < func->m; i++)
 		func->u.sa.size[i] = fz_to_int(fz_array_get(obj, i));
 
 	obj = fz_dict_gets(dict, "BitsPerSample");
 	if (!fz_is_int(obj))
-		return fz_throw("malformed /BitsPerSample");
+		return fz_error_make("malformed /BitsPerSample");
 	func->u.sa.bps = bps = fz_to_int(obj);
 
 	obj = fz_dict_gets(dict, "Encode");
 	if (fz_is_array(obj))
 	{
 		if (fz_array_len(obj) != func->m * 2)
-			return fz_throw("malformed /Encode");
+			return fz_error_make("malformed /Encode");
 		for (i = 0; i < func->m; i++)
 		{
 			func->u.sa.encode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
@@ -940,7 +940,7 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 	if (fz_is_array(obj))
 	{
 		if (fz_array_len(obj) != func->n * 2)
-			return fz_throw("malformed /Decode");
+			return fz_error_make("malformed /Decode");
 		for (i = 0; i < func->n; i++)
 		{
 			func->u.sa.decode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
@@ -963,7 +963,7 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 
 	error = pdf_open_stream(&stream, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open samples stream (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot open samples stream (%d %d R)", num, gen);
 
 	/* read samples */
 	for (i = 0; i < samplecount; i++)
@@ -974,7 +974,7 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 		if (fz_is_eof_bits(stream))
 		{
 			fz_close(stream);
-			return fz_throw("truncated sample stream");
+			return fz_error_make("truncated sample stream");
 		}
 
 		switch (bps)
@@ -1004,7 +1004,7 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 			break;
 		default:
 			fz_close(stream);
-			return fz_throw("sample stream bit depth %d unsupported", bps);
+			return fz_error_make("sample stream bit depth %d unsupported", bps);
 		}
 
 		func->u.sa.samples[i] = s;
@@ -1113,11 +1113,11 @@ load_exponential_func(pdf_function *func, fz_obj *dict)
 	int i;
 
 	if (func->m != 1)
-		return fz_throw("/Domain must be one dimension (%d)", func->m);
+		return fz_error_make("/Domain must be one dimension (%d)", func->m);
 
 	obj = fz_dict_gets(dict, "N");
 	if (!fz_is_int(obj) && !fz_is_real(obj))
-		return fz_throw("malformed /N");
+		return fz_error_make("malformed /N");
 	func->u.e.n = fz_to_real(obj);
 
 	obj = fz_dict_gets(dict, "C0");
@@ -1125,7 +1125,7 @@ load_exponential_func(pdf_function *func, fz_obj *dict)
 	{
 		func->n = fz_array_len(obj);
 		if (func->n >= MAXN)
-			return fz_throw("exponential function result array out of range");
+			return fz_error_make("exponential function result array out of range");
 		for (i = 0; i < func->n; i++)
 			func->u.e.c0[i] = fz_to_real(fz_array_get(obj, i));
 	}
@@ -1139,14 +1139,14 @@ load_exponential_func(pdf_function *func, fz_obj *dict)
 	if (fz_is_array(obj))
 	{
 		if (fz_array_len(obj) != func->n)
-			return fz_throw("/C1 must match /C0 length");
+			return fz_error_make("/C1 must match /C0 length");
 		for (i = 0; i < func->n; i++)
 			func->u.e.c1[i] = fz_to_real(fz_array_get(obj, i));
 	}
 	else
 	{
 		if (func->n != 1)
-			return fz_throw("/C1 must match /C0 length");
+			return fz_error_make("/C1 must match /C0 length");
 		func->u.e.c1[0] = 1;
 	}
 
@@ -1196,11 +1196,11 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	func->u.st.k = 0;
 
 	if (func->m != 1)
-		return fz_throw("/Domain must be one dimension (%d)", func->m);
+		return fz_error_make("/Domain must be one dimension (%d)", func->m);
 
 	obj = fz_dict_gets(dict, "Functions");
 	if (!fz_is_array(obj))
-		return fz_throw("stitching function has no input functions");
+		return fz_error_make("stitching function has no input functions");
 	{
 		k = fz_array_len(obj);
 
@@ -1214,33 +1214,33 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			sub = fz_array_get(obj, i);
 			error = pdf_load_function(&funcs[i], xref, sub);
 			if (error)
-				return fz_rethrow(error, "cannot load sub function %d (%d %d R)", i, fz_to_num(sub), fz_to_gen(sub));
+				return fz_error_note(error, "cannot load sub function %d (%d %d R)", i, fz_to_num(sub), fz_to_gen(sub));
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
-				return fz_throw("sub function %d /Domain or /Range mismatch", i);
+				return fz_error_make("sub function %d /Domain or /Range mismatch", i);
 			func->u.st.k ++;
 		}
 
 		if (!func->n)
 			func->n = funcs[0]->n;
 		else if (func->n != funcs[0]->n)
-			return fz_throw("sub function /Domain or /Range mismatch");
+			return fz_error_make("sub function /Domain or /Range mismatch");
 	}
 
 	obj = fz_dict_gets(dict, "Bounds");
 	if (!fz_is_array(obj))
-		return fz_throw("stitching function has no bounds");
+		return fz_error_make("stitching function has no bounds");
 	{
 		if (!fz_is_array(obj) || fz_array_len(obj) != k - 1)
-			return fz_throw("malformed /Bounds (not array or wrong length)");
+			return fz_error_make("malformed /Bounds (not array or wrong length)");
 
 		for (i = 0; i < k-1; i++)
 		{
 			num = fz_array_get(obj, i);
 			if (!fz_is_int(num) && !fz_is_real(num))
-				return fz_throw("malformed /Bounds (item not real)");
+				return fz_error_make("malformed /Bounds (item not real)");
 			func->u.st.bounds[i] = fz_to_real(num);
 			if (i && func->u.st.bounds[i-1] > func->u.st.bounds[i])
-				return fz_throw("malformed /Bounds (item not monotonic)");
+				return fz_error_make("malformed /Bounds (item not monotonic)");
 		}
 
 		if (k != 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
@@ -1250,10 +1250,10 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 
 	obj = fz_dict_gets(dict, "Encode");
 	if (!fz_is_array(obj))
-		return fz_throw("stitching function is missing encoding");
+		return fz_error_make("stitching function is missing encoding");
 	{
 		if (!fz_is_array(obj) || fz_array_len(obj) != k * 2)
-			return fz_throw("malformed /Encode");
+			return fz_error_make("malformed /Encode");
 		for (i = 0; i < k; i++)
 		{
 			func->u.st.encode[i*2+0] = fz_to_real(fz_array_get(obj, i*2+0));
@@ -1396,7 +1396,7 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 	if (func->m >= MAXM || func->n >= MAXN)
 	{
 		fz_free(func);
-		return fz_throw("assert: /Domain or /Range too big");
+		return fz_error_make("assert: /Domain or /Range too big");
 	}
 
 	switch(func->type)
@@ -1406,7 +1406,7 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 		{
 			pdf_drop_function(func);
-			return fz_rethrow(error, "cannot load sampled function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load sampled function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
@@ -1415,7 +1415,7 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 		{
 			pdf_drop_function(func);
-			return fz_rethrow(error, "cannot load exponential function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load exponential function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
@@ -1424,7 +1424,7 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 		{
 			pdf_drop_function(func);
-			return fz_rethrow(error, "cannot load stitching function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load stitching function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
@@ -1433,13 +1433,13 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 		if (error)
 		{
 			pdf_drop_function(func);
-			return fz_rethrow(error, "cannot load calculator function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load calculator function (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 		break;
 
 	default:
 		fz_free(func);
-		return fz_throw("unknown function type (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+		return fz_error_make("unknown function type (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
 	pdf_store_item(xref->store, pdf_keep_function, pdf_drop_function, dict, func);

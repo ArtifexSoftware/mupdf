@@ -179,11 +179,11 @@ pdf_load_builtin_font(pdf_font_desc *fontdesc, char *fontname)
 
 	data = pdf_find_builtin_font(fontname, &len);
 	if (!data)
-		return fz_throw("cannot find builtin font: '%s'", fontname);
+		return fz_error_make("cannot find builtin font: '%s'", fontname);
 
 	error = fz_new_font_from_memory(&fontdesc->font, data, len, 0);
 	if (error)
-		return fz_rethrow(error, "cannot load freetype font from memory");
+		return fz_error_note(error, "cannot load freetype font from memory");
 
 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
 		fontdesc->flags |= PDF_FD_SYMBOLIC;
@@ -200,11 +200,11 @@ pdf_load_substitute_font(pdf_font_desc *fontdesc, int mono, int serif, int bold,
 
 	data = pdf_find_substitute_font(mono, serif, bold, italic, &len);
 	if (!data)
-		return fz_throw("cannot find substitute font");
+		return fz_error_make("cannot find substitute font");
 
 	error = fz_new_font_from_memory(&fontdesc->font, data, len, 0);
 	if (error)
-		return fz_rethrow(error, "cannot load freetype font from memory");
+		return fz_error_note(error, "cannot load freetype font from memory");
 
 	fontdesc->font->ft_substitute = 1;
 	fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);
@@ -221,11 +221,11 @@ pdf_load_substitute_cjk_font(pdf_font_desc *fontdesc, int ros, int serif)
 
 	data = pdf_find_substitute_cjk_font(ros, serif, &len);
 	if (!data)
-		return fz_throw("cannot find builtin CJK font");
+		return fz_error_make("cannot find builtin CJK font");
 
 	error = fz_new_font_from_memory(&fontdesc->font, data, len, 0);
 	if (error)
-		return fz_rethrow(error, "cannot load builtin CJK font");
+		return fz_error_note(error, "cannot load builtin CJK font");
 
 	fontdesc->font->ft_substitute = 1;
 	return fz_okay;
@@ -266,12 +266,12 @@ pdf_load_system_font(pdf_font_desc *fontdesc, char *fontname, char *collection)
 			return pdf_load_substitute_cjk_font(fontdesc, PDF_ROS_JAPAN, serif);
 		else if (!strcmp(collection, "Adobe-Korea1"))
 			return pdf_load_substitute_cjk_font(fontdesc, PDF_ROS_KOREA, serif);
-		return fz_throw("unknown cid collection: %s", collection);
+		return fz_error_make("unknown cid collection: %s", collection);
 	}
 
 	error = pdf_load_substitute_font(fontdesc, mono, serif, bold, italic);
 	if (error)
-		return fz_rethrow(error, "cannot load substitute font");
+		return fz_error_note(error, "cannot load substitute font");
 
 	return fz_okay;
 }
@@ -284,13 +284,13 @@ pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 
 	error = pdf_load_stream(&buf, xref, fz_to_num(stmref), fz_to_gen(stmref));
 	if (error)
-		return fz_rethrow(error, "cannot load font stream (%d %d R)", fz_to_num(stmref), fz_to_gen(stmref));
+		return fz_error_note(error, "cannot load font stream (%d %d R)", fz_to_num(stmref), fz_to_gen(stmref));
 
 	error = fz_new_font_from_memory(&fontdesc->font, buf->data, buf->len, 0);
 	if (error)
 	{
 		fz_drop_buffer(buf);
-		return fz_rethrow(error, "cannot load embedded font (%d %d R)", fz_to_num(stmref), fz_to_gen(stmref));
+		return fz_error_note(error, "cannot load embedded font (%d %d R)", fz_to_num(stmref), fz_to_gen(stmref));
 	}
 
 	/* save the buffer so we can free it later */
@@ -454,7 +454,7 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 			error |= pdf_load_system_cmap(&fontdesc->to_unicode, "Adobe-GB1-UCS2");
 			error |= pdf_load_system_cmap(&fontdesc->to_ttf_cmap, "Adobe-GB1-UCS2");
 			if (error)
-				return fz_rethrow(error, "cannot load font");
+				return fz_error_note(error, "cannot load font");
 
 			face = fontdesc->font->ft_face;
 			kind = ft_kind(face);
@@ -648,7 +648,7 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 
 	error = pdf_load_to_unicode(fontdesc, xref, estrings, NULL, fz_dict_gets(dict, "ToUnicode"));
 	if (error)
-		fz_catch(error, "cannot load to_unicode");
+		fz_error_handle(error, "cannot load to_unicode");
 
 skip_encoding:
 
@@ -693,7 +693,7 @@ cleanup:
 	if (etable != fontdesc->cid_to_gid)
 		fz_free(etable);
 	pdf_drop_font(fontdesc);
-	return fz_rethrow(error, "cannot load simple font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+	return fz_error_note(error, "cannot load simple font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 }
 
 /*
@@ -726,7 +726,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 		cidinfo = fz_dict_gets(dict, "CIDSystemInfo");
 		if (!cidinfo)
-			return fz_throw("cid font is missing info");
+			return fz_error_make("cid font is missing info");
 
 		obj = fz_dict_gets(cidinfo, "Registry");
 		tmplen = MIN(sizeof tmpstr - 1, fz_to_str_len(obj));
@@ -751,7 +751,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 	if (descriptor)
 		error = pdf_load_font_descriptor(fontdesc, xref, descriptor, collection, basefont);
 	else
-		error = fz_throw("syntaxerror: missing font descriptor");
+		error = fz_error_make("syntaxerror: missing font descriptor");
 	if (error)
 		goto cleanup;
 
@@ -776,7 +776,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 	}
 	else
 	{
-		error = fz_throw("syntaxerror: font missing encoding");
+		error = fz_error_make("syntaxerror: font missing encoding");
 	}
 	if (error)
 		goto cleanup;
@@ -812,7 +812,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 			fterr = FT_Select_Charmap(face, ft_encoding_unicode);
 			if (fterr)
 			{
-				error = fz_throw("fonterror: no unicode cmap when emulating CID font: %s", ft_error_string(fterr));
+				error = fz_error_make("fonterror: no unicode cmap when emulating CID font: %s", ft_error_string(fterr));
 				goto cleanup;
 			}
 
@@ -831,7 +831,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 			if (error)
 			{
-				error = fz_rethrow(error, "cannot load system cmap %s", collection);
+				error = fz_error_note(error, "cannot load system cmap %s", collection);
 				goto cleanup;
 			}
 		}
@@ -839,7 +839,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 	error = pdf_load_to_unicode(fontdesc, xref, NULL, collection, to_unicode);
 	if (error)
-		fz_catch(error, "cannot load to_unicode");
+		fz_error_handle(error, "cannot load to_unicode");
 
 	/* Horizontal */
 
@@ -935,7 +935,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 cleanup:
 	pdf_drop_font(fontdesc);
-	return fz_rethrow(error, "cannot load cid font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+	return fz_error_note(error, "cannot load cid font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 }
 
 static fz_error
@@ -950,7 +950,7 @@ pdf_load_type0_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 
 	dfonts = fz_dict_gets(dict, "DescendantFonts");
 	if (!dfonts)
-		return fz_throw("cid font is missing descendant fonts");
+		return fz_error_make("cid font is missing descendant fonts");
 
 	dfont = fz_array_get(dfonts, 0);
 
@@ -963,9 +963,9 @@ pdf_load_type0_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	else if (fz_is_name(subtype) && !strcmp(fz_to_name(subtype), "CIDFontType2"))
 		error = load_cid_font(fontdescp, xref, dfont, encoding, to_unicode);
 	else
-		error = fz_throw("syntaxerror: unknown cid font type");
+		error = fz_error_make("syntaxerror: unknown cid font type");
 	if (error)
-		return fz_rethrow(error, "cannot load descendant font (%d %d R)", fz_to_num(dfont), fz_to_gen(dfont));
+		return fz_error_note(error, "cannot load descendant font (%d %d R)", fz_to_num(dfont), fz_to_gen(dfont));
 
 	return fz_okay;
 }
@@ -1007,13 +1007,13 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 		error = pdf_load_embedded_font(fontdesc, xref, obj);
 		if (error)
 		{
-			fz_catch(error, "ignored error when loading embedded font, attempting to load system font");
+			fz_error_handle(error, "ignored error when loading embedded font, attempting to load system font");
 			if (origname != fontname)
 				error = pdf_load_builtin_font(fontdesc, fontname);
 			else
 				error = pdf_load_system_font(fontdesc, fontname, collection);
 			if (error)
-				return fz_rethrow(error, "cannot load font descriptor (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+				return fz_error_note(error, "cannot load font descriptor (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 	}
 	else
@@ -1023,7 +1023,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 		else
 			error = pdf_load_system_font(fontdesc, fontname, collection);
 		if (error)
-			return fz_rethrow(error, "cannot load font descriptor (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+			return fz_error_note(error, "cannot load font descriptor (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
 	fz_strlcpy(fontdesc->font->name, fontname, sizeof fontdesc->font->name);
@@ -1118,7 +1118,7 @@ pdf_load_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *di
 		error = pdf_load_simple_font(fontdescp, xref, dict);
 	}
 	if (error)
-		return fz_rethrow(error, "cannot load font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+		return fz_error_note(error, "cannot load font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 
 	/* Save the widths to stretch non-CJK substitute fonts */
 	if ((*fontdescp)->font->ft_substitute && !(*fontdescp)->to_ttf_cmap)

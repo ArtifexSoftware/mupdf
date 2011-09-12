@@ -204,7 +204,7 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 				error = pdf_load_xobject(&form, xref, n);
 				if (error)
 				{
-					fz_catch(error, "ignoring broken annotation");
+					fz_error_handle(error, "ignoring broken annotation");
 					continue;
 				}
 

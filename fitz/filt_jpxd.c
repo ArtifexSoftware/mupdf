@@ -34,7 +34,7 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 	int x, y, k, v;
 
 	if (size < 2)
-		return fz_throw("not enough data to determine image format");
+		return fz_error_make("not enough data to determine image format");
 
 	/* Check for SOC marker -- if found we have a bare J2K stream */
 	if (data[0] == 0xFF && data[1] == 0x4F)
@@ -61,16 +61,16 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 	opj_destroy_decompress(info);
 
 	if (!jpx)
-		return fz_throw("opj_decode failed");
+		return fz_error_make("opj_decode failed");
 
 	for (k = 1; k < jpx->numcomps; k++)
 	{
 		if (jpx->comps[k].w != jpx->comps[0].w)
-			return fz_throw("image components have different width");
+			return fz_error_make("image components have different width");
 		if (jpx->comps[k].h != jpx->comps[0].h)
-			return fz_throw("image components have different height");
+			return fz_error_make("image components have different height");
 		if (jpx->comps[k].prec != jpx->comps[0].prec)
-			return fz_throw("image components have different precision");
+			return fz_error_make("image components have different precision");
 	}
 
 	n = jpx->numcomps;
@@ -112,7 +112,7 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 	if (!img)
 	{
 		opj_image_destroy(jpx);
-		return fz_throw("out of memory");
+		return fz_error_make("out of memory");
 	}
 
 	p = img->samples;

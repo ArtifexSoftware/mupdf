@@ -98,7 +98,7 @@ void winerror(pdfapp_t *app, fz_error error)
 	int i;
 
 	/* TODO: redirect stderr to a log file and display here */
-	fz_catch(error, "displaying error message to user");
+	fz_error_handle(error, "displaying error message to user");
 
 	fz_strlcpy(msgbuf, "An error has occurred.\n\n", sizeof msgbuf);
 	for (i = 0; i < fz_get_error_count(); i++)
@@ -122,7 +122,7 @@ void win32error(char *msg)
 		code,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPSTR)&buf, 0, NULL);
-	winerror(&gapp, fz_throw("%s:\n%s", msg, buf));
+	winerror(&gapp, fz_error_make("%s:\n%s", msg, buf));
 }
 
 int winfilename(wchar_t *buf, int len)
@@ -617,7 +617,7 @@ void winreloadfile(pdfapp_t *app)
 
 	fd = _wopen(wbuf, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(&gapp, fz_throw("cannot reload file '%s'", filename));
+		winerror(&gapp, fz_error_make("cannot reload file '%s'", filename));
 
 	pdfapp_open(app, filename, fd, 1);
 }
@@ -875,7 +875,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	fd = _wopen(wbuf, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(&gapp, fz_throw("cannot open file '%s'", filename));
+		winerror(&gapp, fz_error_make("cannot open file '%s'", filename));
 
 	code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 	if (code == 0)

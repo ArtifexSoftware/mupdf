@@ -345,13 +345,13 @@ dec1d(fz_faxd *fax)
 		code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 	if (code == UNCOMPRESSED)
-		return fz_throw("uncompressed data in faxd");
+		return fz_error_make("uncompressed data in faxd");
 
 	if (code < 0)
-		return fz_throw("negative code in 1d faxd");
+		return fz_error_make("negative code in 1d faxd");
 
 	if (fax->a + code > fax->columns)
-		return fz_throw("overflow in 1d faxd");
+		return fz_error_make("overflow in 1d faxd");
 
 	if (fax->c)
 		setbits(fax->dst, fax->a, fax->a + code);
@@ -386,13 +386,13 @@ dec2d(fz_faxd *fax)
 			code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 		if (code == UNCOMPRESSED)
-			return fz_throw("uncompressed data in faxd");
+			return fz_error_make("uncompressed data in faxd");
 
 		if (code < 0)
-			return fz_throw("negative code in 2d faxd");
+			return fz_error_make("negative code in 2d faxd");
 
 		if (fax->a + code > fax->columns)
-			return fz_throw("overflow in 2d faxd");
+			return fz_error_make("overflow in 2d faxd");
 
 		if (fax->c)
 			setbits(fax->dst, fax->a, fax->a + code);
@@ -485,13 +485,13 @@ dec2d(fz_faxd *fax)
 		break;
 
 	case UNCOMPRESSED:
-		return fz_throw("uncompressed data in faxd");
+		return fz_error_make("uncompressed data in faxd");
 
 	case ERROR:
-		return fz_throw("invalid code in 2d faxd");
+		return fz_error_make("invalid code in 2d faxd");
 
 	default:
-		return fz_throw("invalid code in 2d faxd (%d)", code);
+		return fz_error_make("invalid code in 2d faxd (%d)", code);
 	}
 
 	return 0;
@@ -560,14 +560,14 @@ loop:
 		fax->eolc = 0;
 		error = dec1d(fax);
 		if (error)
-			return fz_rethrow(error, "cannot decode 1d code");
+			return fz_error_note(error, "cannot decode 1d code");
 	}
 	else if (fax->dim == 2)
 	{
 		fax->eolc = 0;
 		error = dec2d(fax);
 		if (error)
-			return fz_rethrow(error, "cannot decode 2d code");
+			return fz_error_note(error, "cannot decode 2d code");
 	}
 
 	/* no eol check after makeup codes nor in the middle of an H code */

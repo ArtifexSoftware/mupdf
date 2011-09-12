@@ -7,32 +7,32 @@ xps_decode_image(fz_pixmap **imagep, byte *buf, int len)
 	int error;
 
 	if (len < 8)
-		return fz_throw("unknown image file format");
+		return fz_error_make("unknown image file format");
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
 	{
 		error = xps_decode_jpeg(imagep, buf, len);
 		if (error)
-			return fz_rethrow(error, "cannot decode jpeg image");
+			return fz_error_note(error, "cannot decode jpeg image");
 	}
 	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 	{
 		error = xps_decode_png(imagep, buf, len);
 		if (error)
-			return fz_rethrow(error, "cannot decode png image");
+			return fz_error_note(error, "cannot decode png image");
 	}
 	else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
 	{
-		return fz_throw("JPEG-XR codec is not available");
+		return fz_error_make("JPEG-XR codec is not available");
 	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 	{
 		error = xps_decode_tiff(imagep, buf, len);
 		if (error)
-			return fz_rethrow(error, "cannot decode TIFF image");
+			return fz_error_note(error, "cannot decode TIFF image");
 	}
 	else
-		return fz_throw("unknown image file format");
+		return fz_error_make("unknown image file format");
 
 	return fz_okay;
 }
@@ -117,7 +117,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	code = xps_decode_image(&image, part->data, part->size);
 	if (code < 0) {
 		xps_free_part(ctx, part);
-		fz_catch(-1, "cannot decode image resource");
+		fz_error_handle(-1, "cannot decode image resource");
 		return;
 	}
 

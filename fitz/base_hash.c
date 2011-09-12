@@ -100,7 +100,7 @@ fz_resize_hash(fz_hash_table *table, int newsize)
 
 	if (newsize < oldload * 8 / 10)
 	{
-		fz_throw("assert: resize hash too small");
+		fz_error_make("assert: resize hash too small");
 		return;
 	}
 

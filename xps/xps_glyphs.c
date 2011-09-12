@@ -498,7 +498,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 
 		code = fz_new_font_from_memory(&font, part->data, part->size, subfontid);
 		if (code) {
-			fz_catch(code, "cannot load font resource '%s'", partname);
+			fz_error_handle(code, "cannot load font resource '%s'", partname);
 			xps_free_part(ctx, part);
 			return;
 		}

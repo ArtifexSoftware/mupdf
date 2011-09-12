@@ -29,7 +29,7 @@ struct {
 
 static void die(fz_error error)
 {
-	fz_catch(error, "aborting");
+	fz_error_handle(error, "aborting");
 	exit(1);
 }
 
@@ -99,7 +99,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 	code = xps_load_page(&page, ctx, pagenum - 1);
 	if (code)
-		die(fz_rethrow(code, "cannot load page %d in file '%s'", pagenum, filename));
+		die(fz_error_note(code, "cannot load page %d in file '%s'", pagenum, filename));
 
 	list = NULL;
 
@@ -336,7 +336,7 @@ int main(int argc, char **argv)
 
 		code = xps_open_file(&ctx, filename);
 		if (code)
-			die(fz_rethrow(code, "cannot open document: %s", filename));
+			die(fz_error_note(code, "cannot open document: %s", filename));
 
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);

@@ -15,7 +15,7 @@ pdf_is_stream(pdf_xref *xref, int num, int gen)
 	error = pdf_cache_object(xref, num, gen);
 	if (error)
 	{
-		fz_catch(error, "cannot load object, ignoring error");
+		fz_error_handle(error, "cannot load object, ignoring error");
 		return 0;
 	}
 
@@ -100,7 +100,7 @@ build_filter(fz_stream *chain, pdf_xref * xref, fz_obj * f, fz_obj * p, int num,
 			fz_buffer *globals;
 			error = pdf_load_stream(&globals, xref, fz_to_num(obj), fz_to_gen(obj));
 			if (error)
-				fz_catch(error, "cannot load jbig2 global segments");
+				fz_error_handle(error, "cannot load jbig2 global segments");
 			chain = fz_open_jbig2d(chain, globals);
 			fz_drop_buffer(globals);
 			return chain;
@@ -236,13 +236,13 @@ pdf_open_raw_stream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 	fz_error error;
 
 	if (num < 0 || num >= xref->len)
-		return fz_throw("object id out of range (%d %d R)", num, gen);
+		return fz_error_make("object id out of range (%d %d R)", num, gen);
 
 	x = xref->table + num;
 
 	error = pdf_cache_object(xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load stream object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot load stream object (%d %d R)", num, gen);
 
 	if (x->stm_ofs)
 	{
@@ -251,7 +251,7 @@ pdf_open_raw_stream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 		return fz_okay;
 	}
 
-	return fz_throw("object is not a stream");
+	return fz_error_make("object is not a stream");
 }
 
 /*
@@ -266,13 +266,13 @@ pdf_open_stream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 	fz_error error;
 
 	if (num < 0 || num >= xref->len)
-		return fz_throw("object id out of range (%d %d R)", num, gen);
+		return fz_error_make("object id out of range (%d %d R)", num, gen);
 
 	x = xref->table + num;
 
 	error = pdf_cache_object(xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load stream object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot load stream object (%d %d R)", num, gen);
 
 	if (x->stm_ofs)
 	{
@@ -281,7 +281,7 @@ pdf_open_stream(fz_stream **stmp, pdf_xref *xref, int num, int gen)
 		return fz_okay;
 	}
 
-	return fz_throw("object is not a stream");
+	return fz_error_make("object is not a stream");
 }
 
 fz_error
@@ -293,7 +293,7 @@ pdf_open_stream_at(fz_stream **stmp, pdf_xref *xref, int num, int gen, fz_obj *d
 		fz_seek(xref->file, stm_ofs, 0);
 		return fz_okay;
 	}
-	return fz_throw("object is not a stream");
+	return fz_error_make("object is not a stream");
 }
 
 /*
@@ -309,7 +309,7 @@ pdf_load_raw_stream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 
 	error = pdf_load_object(&dict, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load stream dictionary (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot load stream dictionary (%d %d R)", num, gen);
 
 	len = fz_to_int(fz_dict_gets(dict, "Length"));
 
@@ -317,13 +317,13 @@ pdf_load_raw_stream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 
 	error = pdf_open_raw_stream(&stm, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open raw stream (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot open raw stream (%d %d R)", num, gen);
 
 	error = fz_read_all(bufp, stm, len);
 	if (error)
 	{
 		fz_close(stm);
-		return fz_rethrow(error, "cannot read raw stream (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot read raw stream (%d %d R)", num, gen);
 	}
 
 	fz_close(stm);
@@ -359,11 +359,11 @@ pdf_load_stream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 
 	error = pdf_open_stream(&stm, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot open stream (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot open stream (%d %d R)", num, gen);
 
 	error = pdf_load_object(&dict, xref, num, gen);
 	if (error)
-		return fz_rethrow(error, "cannot load stream dictionary (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot load stream dictionary (%d %d R)", num, gen);
 
 	len = fz_to_int(fz_dict_gets(dict, "Length"));
 	obj = fz_dict_gets(dict, "Filter");
@@ -377,7 +377,7 @@ pdf_load_stream(fz_buffer **bufp, pdf_xref *xref, int num, int gen)
 	if (error)
 	{
 		fz_close(stm);
-		return fz_rethrow(error, "cannot read raw stream (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot read raw stream (%d %d R)", num, gen);
 	}
 
 	fz_close(stm);

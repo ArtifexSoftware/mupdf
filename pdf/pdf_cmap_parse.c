@@ -55,7 +55,7 @@ pdf_lex_cmap(int *tok, fz_stream *file, char *buf, int n, int *sl)
 
 	error = pdf_lex(tok, file, buf, n, sl);
 	if (error)
-		return fz_rethrow(error, "cannot parse cmap token");
+		return fz_error_note(error, "cannot parse cmap token");
 
 	if (*tok == PDF_TOK_KEYWORD)
 		*tok = pdf_cmap_token_from_keyword(buf);
@@ -73,7 +73,7 @@ pdf_parse_cmap_name(pdf_cmap *cmap, fz_stream *file)
 
 	error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 	if (error)
-		return fz_rethrow(error, "syntaxerror in cmap");
+		return fz_error_note(error, "syntaxerror in cmap");
 
 	if (tok == PDF_TOK_NAME)
 		fz_strlcpy(cmap->cmap_name, buf, sizeof(cmap->cmap_name));
@@ -93,7 +93,7 @@ pdf_parse_wmode(pdf_cmap *cmap, fz_stream *file)
 
 	error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 	if (error)
-		return fz_rethrow(error, "syntaxerror in cmap");
+		return fz_error_note(error, "syntaxerror in cmap");
 
 	if (tok == PDF_TOK_INT)
 		pdf_set_wmode(cmap, atoi(buf));
@@ -116,7 +116,7 @@ pdf_parse_codespace_range(pdf_cmap *cmap, fz_stream *file)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == TOK_END_CODESPACE_RANGE)
 			return fz_okay;
@@ -126,7 +126,7 @@ pdf_parse_codespace_range(pdf_cmap *cmap, fz_stream *file)
 			lo = pdf_code_from_string(buf, len);
 			error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 			if (error)
-				return fz_rethrow(error, "syntaxerror in cmap");
+				return fz_error_note(error, "syntaxerror in cmap");
 			if (tok == PDF_TOK_STRING)
 			{
 				hi = pdf_code_from_string(buf, len);
@@ -138,7 +138,7 @@ pdf_parse_codespace_range(pdf_cmap *cmap, fz_stream *file)
 		else break;
 	}
 
-	return fz_throw("expected string or endcodespacerange");
+	return fz_error_make("expected string or endcodespacerange");
 }
 
 static fz_error
@@ -154,29 +154,29 @@ pdf_parse_cid_range(pdf_cmap *cmap, fz_stream *file)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == TOK_END_CID_RANGE)
 			return fz_okay;
 
 		else if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string or endcidrange");
+			return fz_error_make("expected string or endcidrange");
 
 		lo = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 		if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string");
+			return fz_error_make("expected string");
 
 		hi = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 		if (tok != PDF_TOK_INT)
-			return fz_throw("expected integer");
+			return fz_error_make("expected integer");
 
 		dst = atoi(buf);
 
@@ -197,21 +197,21 @@ pdf_parse_cid_char(pdf_cmap *cmap, fz_stream *file)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == TOK_END_CID_CHAR)
 			return fz_okay;
 
 		else if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string or endcidchar");
+			return fz_error_make("expected string or endcidchar");
 
 		src = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 		if (tok != PDF_TOK_INT)
-			return fz_throw("expected integer");
+			return fz_error_make("expected integer");
 
 		dst = atoi(buf);
 
@@ -233,14 +233,14 @@ pdf_parse_bf_range_array(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == PDF_TOK_CLOSE_ARRAY)
 			return fz_okay;
 
 		/* Note: does not handle [ /Name /Name ... ] */
 		else if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string or ]");
+			return fz_error_make("expected string or ]");
 
 		if (len / 2)
 		{
@@ -267,27 +267,27 @@ pdf_parse_bf_range(pdf_cmap *cmap, fz_stream *file)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == TOK_END_BF_RANGE)
 			return fz_okay;
 
 		else if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string or endbfrange");
+			return fz_error_make("expected string or endbfrange");
 
 		lo = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 		if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string");
+			return fz_error_make("expected string");
 
 		hi = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == PDF_TOK_STRING)
 		{
@@ -320,12 +320,12 @@ pdf_parse_bf_range(pdf_cmap *cmap, fz_stream *file)
 		{
 			error = pdf_parse_bf_range_array(cmap, file, lo, hi);
 			if (error)
-				return fz_rethrow(error, "cannot map bfrange");
+				return fz_error_note(error, "cannot map bfrange");
 		}
 
 		else
 		{
-			return fz_throw("expected string or array or endbfrange");
+			return fz_error_make("expected string or array or endbfrange");
 		}
 	}
 }
@@ -345,22 +345,22 @@ pdf_parse_bf_char(pdf_cmap *cmap, fz_stream *file)
 	{
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 
 		if (tok == TOK_END_BF_CHAR)
 			return fz_okay;
 
 		else if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string or endbfchar");
+			return fz_error_make("expected string or endbfchar");
 
 		src = pdf_code_from_string(buf, len);
 
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
-			return fz_rethrow(error, "syntaxerror in cmap");
+			return fz_error_note(error, "syntaxerror in cmap");
 		/* Note: does not handle /dstName */
 		if (tok != PDF_TOK_STRING)
-			return fz_throw("expected string");
+			return fz_error_make("expected string");
 
 		if (len / 2)
 		{
@@ -390,7 +390,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 		error = pdf_lex_cmap(&tok, file, buf, sizeof buf, &len);
 		if (error)
 		{
-			error = fz_rethrow(error, "syntaxerror in cmap");
+			error = fz_error_note(error, "syntaxerror in cmap");
 			goto cleanup;
 		}
 
@@ -404,7 +404,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 				error = pdf_parse_cmap_name(cmap, file);
 				if (error)
 				{
-					error = fz_rethrow(error, "syntaxerror in cmap after CMapName");
+					error = fz_error_note(error, "syntaxerror in cmap after CMapName");
 					goto cleanup;
 				}
 			}
@@ -413,7 +413,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 				error = pdf_parse_wmode(cmap, file);
 				if (error)
 				{
-					error = fz_rethrow(error, "syntaxerror in cmap after WMode");
+					error = fz_error_note(error, "syntaxerror in cmap after WMode");
 					goto cleanup;
 				}
 			}
@@ -431,7 +431,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 			error = pdf_parse_codespace_range(cmap, file);
 			if (error)
 			{
-				error = fz_rethrow(error, "syntaxerror in cmap codespacerange");
+				error = fz_error_note(error, "syntaxerror in cmap codespacerange");
 				goto cleanup;
 			}
 		}
@@ -441,7 +441,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 			error = pdf_parse_bf_char(cmap, file);
 			if (error)
 			{
-				error = fz_rethrow(error, "syntaxerror in cmap bfchar");
+				error = fz_error_note(error, "syntaxerror in cmap bfchar");
 				goto cleanup;
 			}
 		}
@@ -451,7 +451,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 			error = pdf_parse_cid_char(cmap, file);
 			if (error)
 			{
-				error = fz_rethrow(error, "syntaxerror in cmap cidchar");
+				error = fz_error_note(error, "syntaxerror in cmap cidchar");
 				goto cleanup;
 			}
 		}
@@ -461,7 +461,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 			error = pdf_parse_bf_range(cmap, file);
 			if (error)
 			{
-				error = fz_rethrow(error, "syntaxerror in cmap bfrange");
+				error = fz_error_note(error, "syntaxerror in cmap bfrange");
 				goto cleanup;
 			}
 		}
@@ -471,7 +471,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 			error = pdf_parse_cid_range(cmap, file);
 			if (error)
 			{
-				error = fz_rethrow(error, "syntaxerror in cmap cidrange");
+				error = fz_error_note(error, "syntaxerror in cmap cidrange");
 				goto cleanup;
 			}
 		}

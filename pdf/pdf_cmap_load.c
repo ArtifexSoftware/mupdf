@@ -23,14 +23,14 @@ pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
 	error = pdf_open_stream(&file, xref, fz_to_num(stmobj), fz_to_gen(stmobj));
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot open cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
+		error = fz_error_note(error, "cannot open cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
 		goto cleanup;
 	}
 
 	error = pdf_parse_cmap(&cmap, file);
 	if (error)
 	{
-		error = fz_rethrow(error, "cannot parse cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
+		error = fz_error_note(error, "cannot parse cmap stream (%d %d R)", fz_to_num(stmobj), fz_to_gen(stmobj));
 		goto cleanup;
 	}
 
@@ -46,7 +46,7 @@ pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
 		error = pdf_load_system_cmap(&usecmap, fz_to_name(obj));
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load system usecmap '%s'", fz_to_name(obj));
+			error = fz_error_note(error, "cannot load system usecmap '%s'", fz_to_name(obj));
 			goto cleanup;
 		}
 		pdf_set_usecmap(cmap, usecmap);
@@ -57,7 +57,7 @@ pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
 		error = pdf_load_embedded_cmap(&usecmap, xref, obj);
 		if (error)
 		{
-			error = fz_rethrow(error, "cannot load embedded usecmap (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+			error = fz_error_note(error, "cannot load embedded usecmap (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			goto cleanup;
 		}
 		pdf_set_usecmap(cmap, usecmap);
@@ -103,13 +103,13 @@ pdf_load_system_cmap(pdf_cmap **cmapp, char *cmap_name)
 
 	cmap = pdf_find_builtin_cmap(cmap_name);
 	if (!cmap)
-		return fz_throw("no builtin cmap file: %s", cmap_name);
+		return fz_error_make("no builtin cmap file: %s", cmap_name);
 
 	if (cmap->usecmap_name[0] && !cmap->usecmap)
 	{
 		usecmap = pdf_find_builtin_cmap(cmap->usecmap_name);
 		if (!usecmap)
-			return fz_throw("nu builtin cmap file: %s", cmap->usecmap_name);
+			return fz_error_make("nu builtin cmap file: %s", cmap->usecmap_name);
 		pdf_set_usecmap(cmap, usecmap);
 	}
 

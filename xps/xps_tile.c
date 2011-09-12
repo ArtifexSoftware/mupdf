@@ -274,7 +274,7 @@ xps_parse_canvas(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, 
 		{
 			code = xps_parse_resource_dictionary(ctx, &new_dict, base_uri, xml_down(node));
 			if (code)
-				fz_catch(code, "cannot load Canvas.Resources");
+				fz_error_handle(code, "cannot load Canvas.Resources");
 			else
 			{
 				new_dict->parent = dict;
@@ -352,7 +352,7 @@ xps_parse_fixed_page(xps_context *ctx, fz_matrix ctm, xps_page *page)
 		{
 			code = xps_parse_resource_dictionary(ctx, &dict, base_uri, xml_down(node));
 			if (code)
-				fz_catch(code, "cannot load FixedPage.Resources");
+				fz_error_handle(code, "cannot load FixedPage.Resources");
 		}
 		xps_parse_element(ctx, ctm, area, base_uri, dict, node);
 	}

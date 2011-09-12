@@ -12,7 +12,7 @@ static int showcolumn;
 
 void die(fz_error error)
 {
-	fz_catch(error, "aborting");
+	fz_error_handle(error, "aborting");
 	if (xref)
 		pdf_free_xref(xref);
 	exit(1);
@@ -30,7 +30,7 @@ static void usage(void)
 static void showtrailer(void)
 {
 	if (!xref)
-		die(fz_throw("no file specified"));
+		die(fz_error_make("no file specified"));
 	printf("trailer\n");
 	fz_debug_obj(xref->trailer);
 	printf("\n");
@@ -39,7 +39,7 @@ static void showtrailer(void)
 static void showxref(void)
 {
 	if (!xref)
-		die(fz_throw("no file specified"));
+		die(fz_error_make("no file specified"));
 	pdf_debug_xref(xref);
 	printf("\n");
 }
@@ -52,13 +52,13 @@ static void showpagetree(void)
 	int i;
 
 	if (!xref)
-		die(fz_throw("no file specified"));
+		die(fz_error_make("no file specified"));
 
 	if (!xref->page_len)
 	{
 		error = pdf_load_page_tree(xref);
 		if (error)
-			die(fz_rethrow(error, "cannot load page tree"));
+			die(fz_error_note(error, "cannot load page tree"));
 	}
 
 	count = pdf_count_pages(xref);
@@ -131,7 +131,7 @@ static void showobject(int num, int gen)
 	fz_obj *obj;
 
 	if (!xref)
-		die(fz_throw("no file specified"));
+		die(fz_error_make("no file specified"));
 
 	error = pdf_load_object(&obj, xref, num, gen);
 	if (error)
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 	filename = argv[fz_optind++];
 	error = pdf_open_xref(&xref, filename, password);
 	if (error)
-		die(fz_rethrow(error, "cannot open document: %s", filename));
+		die(fz_error_note(error, "cannot open document: %s", filename));
 
 	if (fz_optind == argc)
 		showtrailer();

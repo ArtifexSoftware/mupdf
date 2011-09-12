@@ -66,7 +66,7 @@ fz_get_error_line(int n)
 }
 
 fz_error
-fz_throw_imp(const char *file, int line, const char *func, char *fmt, ...)
+fz_error_make_imp(const char *file, int line, const char *func, char *fmt, ...)
 {
 	va_list ap;
 	char one[LINE_LEN], two[LINE_LEN];
@@ -84,7 +84,7 @@ fz_throw_imp(const char *file, int line, const char *func, char *fmt, ...)
 }
 
 fz_error
-fz_rethrow_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
+fz_error_note_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
 {
 	va_list ap;
 	char one[LINE_LEN], two[LINE_LEN];
@@ -100,7 +100,7 @@ fz_rethrow_imp(const char *file, int line, const char *func, fz_error cause, cha
 }
 
 void
-fz_catch_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
+fz_error_handle_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
 {
 	va_list ap;
 	char one[LINE_LEN], two[LINE_LEN];
@@ -114,7 +114,7 @@ fz_catch_imp(const char *file, int line, const char *func, fz_error cause, char 
 }
 
 fz_error
-fz_throw_impx(char *fmt, ...)
+fz_error_make_impx(char *fmt, ...)
 {
 	va_list ap;
 	char buf[LINE_LEN];
@@ -131,7 +131,7 @@ fz_throw_impx(char *fmt, ...)
 }
 
 fz_error
-fz_rethrow_impx(fz_error cause, char *fmt, ...)
+fz_error_note_impx(fz_error cause, char *fmt, ...)
 {
 	va_list ap;
 	char buf[LINE_LEN];
@@ -146,7 +146,7 @@ fz_rethrow_impx(fz_error cause, char *fmt, ...)
 }
 
 void
-fz_catch_impx(fz_error cause, char *fmt, ...)
+fz_error_handle_impx(fz_error cause, char *fmt, ...)
 {
 	va_list ap;
 	char buf[LINE_LEN];

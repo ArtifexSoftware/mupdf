@@ -57,7 +57,7 @@ read_jbig2d(fz_stream *stm, unsigned char *buf, int len)
 		{
 			n = fz_read(state->chain, tmp, sizeof tmp);
 			if (n < 0)
-				return fz_rethrow(n, "read error in jbig2 filter");
+				return fz_error_note(n, "read error in jbig2 filter");
 			if (n == 0)
 				break;
 			jbig2_data_in(state->ctx, tmp, n);
@@ -67,7 +67,7 @@ read_jbig2d(fz_stream *stm, unsigned char *buf, int len)
 
 		state->page = jbig2_page_out(state->ctx);
 		if (!state->page)
-			return fz_throw("jbig2_page_out failed");
+			return fz_error_make("jbig2_page_out failed");
 	}
 
 	s = state->page->data;

@@ -86,7 +86,7 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 	{
 		if (cinfo->src)
 			state->chain->rp = state->chain->wp - cinfo->src->bytes_in_buffer;
-		return fz_throw("jpeg error: %s", state->msg);
+		return fz_error_make("jpeg error: %s", state->msg);
 	}
 
 	if (!state->init)

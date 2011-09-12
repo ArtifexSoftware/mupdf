@@ -301,11 +301,11 @@ fz_write_pnm(fz_pixmap *pixmap, char *filename)
 	int len;
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		return fz_throw("pixmap must be grayscale or rgb to write as pnm");
+		return fz_error_make("pixmap must be grayscale or rgb to write as pnm");
 
 	fp = fopen(filename, "wb");
 	if (!fp)
-		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
+		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
 
 	if (pixmap->n == 1 || pixmap->n == 2)
 		fprintf(fp, "P5\n");
@@ -361,7 +361,7 @@ fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha)
 
 	fp = fopen(filename, "wb");
 	if (!fp)
-		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
+		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
 
 	fprintf(fp, "P7\n");
 	fprintf(fp, "WIDTH %d\n", pixmap->w);
@@ -443,7 +443,7 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 	int err;
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		return fz_throw("pixmap must be grayscale or rgb to write as png");
+		return fz_error_make("pixmap must be grayscale or rgb to write as png");
 
 	sn = pixmap->n;
 	dn = pixmap->n;
@@ -488,7 +488,7 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 	{
 		fz_free(udata);
 		fz_free(cdata);
-		return fz_throw("cannot compress image data");
+		return fz_error_make("cannot compress image data");
 	}
 
 	fp = fopen(filename, "wb");
@@ -496,7 +496,7 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 	{
 		fz_free(udata);
 		fz_free(cdata);
-		return fz_throw("cannot open file '%s': %s", filename, strerror(errno));
+		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	big32(head+0, pixmap->w);

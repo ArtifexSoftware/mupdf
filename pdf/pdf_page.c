@@ -103,9 +103,9 @@ pdf_load_page_tree(pdf_xref *xref)
 	fz_obj *count = fz_dict_gets(pages, "Count");
 
 	if (!fz_is_dict(pages))
-		return fz_throw("missing page tree");
+		return fz_error_make("missing page tree");
 	if (!fz_is_int(count))
-		return fz_throw("missing page count");
+		return fz_error_make("missing page count");
 
 	xref->page_cap = fz_to_int(count);
 	xref->page_len = 0;
@@ -218,7 +218,7 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 		error = pdf_load_stream(&one, xref, fz_to_num(stm), fz_to_gen(stm));
 		if (error)
 		{
-			fz_catch(error, "cannot load content stream part %d/%d", i + 1, n);
+			fz_error_handle(error, "cannot load content stream part %d/%d", i + 1, n);
 			continue;
 		}
 
@@ -234,7 +234,7 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 	if (n > 0 && big->len == 0)
 	{
 		fz_drop_buffer(big);
-		return fz_throw("cannot load content stream");
+		return fz_error_make("cannot load content stream");
 	}
 
 	*bigbufp = big;
@@ -250,13 +250,13 @@ pdf_load_page_contents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 	{
 		error = pdf_load_page_contents_array(bufp, xref, obj);
 		if (error)
-			return fz_rethrow(error, "cannot load content stream array");
+			return fz_error_note(error, "cannot load content stream array");
 	}
 	else if (pdf_is_stream(xref, fz_to_num(obj), fz_to_gen(obj)))
 	{
 		error = pdf_load_stream(bufp, xref, fz_to_num(obj), fz_to_gen(obj));
 		if (error)
-			return fz_rethrow(error, "cannot load content stream (%d 0 R)", fz_to_num(obj));
+			return fz_error_note(error, "cannot load content stream (%d 0 R)", fz_to_num(obj));
 	}
 	else
 	{
@@ -278,7 +278,7 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	fz_bbox bbox;
 
 	if (number < 0 || number >= xref->page_len)
-		return fz_throw("cannot find page %d", number + 1);
+		return fz_error_make("cannot find page %d", number + 1);
 
 	/* Ensure that we have a store for resource objects */
 	if (!xref->store)
@@ -341,7 +341,7 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	if (error)
 	{
 		pdf_free_page(page);
-		return fz_rethrow(error, "cannot load page %d contents (%d 0 R)", number + 1, fz_to_num(pageref));
+		return fz_error_note(error, "cannot load page %d contents (%d 0 R)", number + 1, fz_to_num(pageref));
 	}
 
 	if (pdf_resources_use_blending(page->resources))

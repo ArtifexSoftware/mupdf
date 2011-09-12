@@ -188,7 +188,7 @@ pdf_parse_array(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 		if (error)
 		{
 			fz_drop_obj(ary);
-			return fz_rethrow(error, "cannot parse array");
+			return fz_error_note(error, "cannot parse array");
 		}
 
 		if (tok != PDF_TOK_INT && tok != PDF_TOK_R)
@@ -235,7 +235,7 @@ pdf_parse_array(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 			if (n != 2)
 			{
 				fz_drop_obj(ary);
-				return fz_throw("cannot parse indirect reference in array");
+				return fz_error_make("cannot parse indirect reference in array");
 			}
 			obj = fz_new_indirect(a, b, xref);
 			fz_array_push(ary, obj);
@@ -248,7 +248,7 @@ pdf_parse_array(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 			if (error)
 			{
 				fz_drop_obj(ary);
-				return fz_rethrow(error, "cannot parse array");
+				return fz_error_note(error, "cannot parse array");
 			}
 			fz_array_push(ary, obj);
 			fz_drop_obj(obj);
@@ -259,7 +259,7 @@ pdf_parse_array(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 			if (error)
 			{
 				fz_drop_obj(ary);
-				return fz_rethrow(error, "cannot parse array");
+				return fz_error_note(error, "cannot parse array");
 			}
 			fz_array_push(ary, obj);
 			fz_drop_obj(obj);
@@ -298,7 +298,7 @@ pdf_parse_array(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap
 
 		default:
 			fz_drop_obj(ary);
-			return fz_throw("cannot parse token in array");
+			return fz_error_make("cannot parse token in array");
 		}
 	}
 }
@@ -322,7 +322,7 @@ pdf_parse_dict(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int cap)
 		if (error)
 		{
 			fz_drop_obj(dict);
-			return fz_rethrow(error, "cannot parse dict");
+			return fz_error_note(error, "cannot parse dict");
 		}
 
 skip:
@@ -342,7 +342,7 @@ skip:
 		if (tok != PDF_TOK_NAME)
 		{
 			fz_drop_obj(dict);
-			return fz_throw("invalid key in dict");
+			return fz_error_make("invalid key in dict");
 		}
 
 		key = fz_new_name(buf);
@@ -352,7 +352,7 @@ skip:
 		{
 			fz_drop_obj(key);
 			fz_drop_obj(dict);
-			return fz_rethrow(error, "cannot parse dict");
+			return fz_error_note(error, "cannot parse dict");
 		}
 
 		switch (tok)
@@ -363,7 +363,7 @@ skip:
 			{
 				fz_drop_obj(key);
 				fz_drop_obj(dict);
-				return fz_rethrow(error, "cannot parse dict");
+				return fz_error_note(error, "cannot parse dict");
 			}
 			break;
 
@@ -373,7 +373,7 @@ skip:
 			{
 				fz_drop_obj(key);
 				fz_drop_obj(dict);
-				return fz_rethrow(error, "cannot parse dict");
+				return fz_error_note(error, "cannot parse dict");
 			}
 			break;
 
@@ -392,7 +392,7 @@ skip:
 			{
 				fz_drop_obj(key);
 				fz_drop_obj(dict);
-				return fz_rethrow(error, "cannot parse dict");
+				return fz_error_note(error, "cannot parse dict");
 			}
 			if (tok == PDF_TOK_CLOSE_DICT || tok == PDF_TOK_NAME ||
 				(tok == PDF_TOK_KEYWORD && !strcmp(buf, "ID")))
@@ -411,7 +411,7 @@ skip:
 				{
 					fz_drop_obj(key);
 					fz_drop_obj(dict);
-					return fz_rethrow(error, "cannot parse dict");
+					return fz_error_note(error, "cannot parse dict");
 				}
 				if (tok == PDF_TOK_R)
 				{
@@ -421,12 +421,12 @@ skip:
 			}
 			fz_drop_obj(key);
 			fz_drop_obj(dict);
-			return fz_throw("invalid indirect reference in dict");
+			return fz_error_make("invalid indirect reference in dict");
 
 		default:
 			fz_drop_obj(key);
 			fz_drop_obj(dict);
-			return fz_throw("unknown token in dict");
+			return fz_error_make("unknown token in dict");
 		}
 
 		fz_dict_put(dict, key, val);
@@ -444,19 +444,19 @@ pdf_parse_stm_obj(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int c
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse token in object stream");
+		return fz_error_note(error, "cannot parse token in object stream");
 
 	switch (tok)
 	{
 	case PDF_TOK_OPEN_ARRAY:
 		error = pdf_parse_array(op, xref, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse object stream");
+			return fz_error_note(error, "cannot parse object stream");
 		break;
 	case PDF_TOK_OPEN_DICT:
 		error = pdf_parse_dict(op, xref, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse object stream");
+			return fz_error_note(error, "cannot parse object stream");
 		break;
 	case PDF_TOK_NAME: *op = fz_new_name(buf); break;
 	case PDF_TOK_REAL: *op = fz_new_real(fz_atof(buf)); break;
@@ -465,7 +465,7 @@ pdf_parse_stm_obj(fz_obj **op, pdf_xref *xref, fz_stream *file, char *buf, int c
 	case PDF_TOK_FALSE: *op = fz_new_bool(0); break;
 	case PDF_TOK_NULL: *op = fz_new_null(); break;
 	case PDF_TOK_INT: *op = fz_new_int(atoi(buf)); break;
-	default: return fz_throw("unknown token in object stream");
+	default: return fz_error_make("unknown token in object stream");
 	}
 
 	return fz_okay;
@@ -485,40 +485,40 @@ pdf_parse_ind_obj(fz_obj **op, pdf_xref *xref,
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 	if (tok != PDF_TOK_INT)
-		return fz_throw("expected object number (%d %d R)", num, gen);
+		return fz_error_make("expected object number (%d %d R)", num, gen);
 	num = atoi(buf);
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 	if (tok != PDF_TOK_INT)
-		return fz_throw("expected generation number (%d %d R)", num, gen);
+		return fz_error_make("expected generation number (%d %d R)", num, gen);
 	gen = atoi(buf);
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 	if (tok != PDF_TOK_OBJ)
-		return fz_throw("expected 'obj' keyword (%d %d R)", num, gen);
+		return fz_error_make("expected 'obj' keyword (%d %d R)", num, gen);
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
-		return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 
 	switch (tok)
 	{
 	case PDF_TOK_OPEN_ARRAY:
 		error = pdf_parse_array(&obj, xref, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+			return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 		break;
 
 	case PDF_TOK_OPEN_DICT:
 		error = pdf_parse_dict(&obj, xref, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+			return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 		break;
 
 	case PDF_TOK_NAME: obj = fz_new_name(buf); break;
@@ -532,7 +532,7 @@ pdf_parse_ind_obj(fz_obj **op, pdf_xref *xref,
 		a = atoi(buf);
 		error = pdf_lex(&tok, file, buf, cap, &len);
 		if (error)
-			return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+			return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 		if (tok == PDF_TOK_STREAM || tok == PDF_TOK_ENDOBJ)
 		{
 			obj = fz_new_int(a);
@@ -543,28 +543,28 @@ pdf_parse_ind_obj(fz_obj **op, pdf_xref *xref,
 			b = atoi(buf);
 			error = pdf_lex(&tok, file, buf, cap, &len);
 			if (error)
-				return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+				return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 			if (tok == PDF_TOK_R)
 			{
 				obj = fz_new_indirect(a, b, xref);
 				break;
 			}
 		}
-		return fz_throw("expected 'R' keyword (%d %d R)", num, gen);
+		return fz_error_make("expected 'R' keyword (%d %d R)", num, gen);
 
 	case PDF_TOK_ENDOBJ:
 		obj = fz_new_null();
 		goto skip;
 
 	default:
-		return fz_throw("syntax error in object (%d %d R)", num, gen);
+		return fz_error_make("syntax error in object (%d %d R)", num, gen);
 	}
 
 	error = pdf_lex(&tok, file, buf, cap, &len);
 	if (error)
 	{
 		fz_drop_obj(obj);
-		return fz_rethrow(error, "cannot parse indirect object (%d %d R)", num, gen);
+		return fz_error_note(error, "cannot parse indirect object (%d %d R)", num, gen);
 	}
 
 skip:

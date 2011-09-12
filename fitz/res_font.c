@@ -150,7 +150,7 @@ fz_init_freetype(void)
 
 	fterr = FT_Init_FreeType(&fz_ftlib);
 	if (fterr)
-		return fz_throw("cannot init freetype: %s", ft_error_string(fterr));
+		return fz_error_make("cannot init freetype: %s", ft_error_string(fterr));
 
 	FT_Library_Version(fz_ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
@@ -158,7 +158,7 @@ fz_init_freetype(void)
 		fterr = FT_Done_FreeType(fz_ftlib);
 		if (fterr)
 			fz_warn("freetype finalizing: %s", ft_error_string(fterr));
-		return fz_throw("freetype version too old: %d.%d.%d", maj, min, pat);
+		return fz_error_make("freetype version too old: %d.%d.%d", maj, min, pat);
 	}
 
 	fz_ftlib_refs++;
@@ -189,11 +189,11 @@ fz_new_font_from_file(fz_font **fontp, char *path, int index)
 
 	error = fz_init_freetype();
 	if (error)
-		return fz_rethrow(error, "cannot init freetype library");
+		return fz_error_note(error, "cannot init freetype library");
 
 	fterr = FT_New_Face(fz_ftlib, path, index, &face);
 	if (fterr)
-		return fz_throw("freetype: cannot load font: %s", ft_error_string(fterr));
+		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
 
 	font = fz_new_font(face->family_name);
 	font->ft_face = face;
@@ -216,11 +216,11 @@ fz_new_font_from_memory(fz_font **fontp, unsigned char *data, int len, int index
 
 	error = fz_init_freetype();
 	if (error)
-		return fz_rethrow(error, "cannot init freetype library");
+		return fz_error_note(error, "cannot init freetype library");
 
 	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, &face);
 	if (fterr)
-		return fz_throw("freetype: cannot load font: %s", ft_error_string(fterr));
+		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
 
 	font = fz_new_font(face->family_name);
 	font->ft_face = face;
@@ -534,7 +534,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 	dev = fz_new_bbox_device(&bbox);
 	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	if (error)
-		fz_catch(error, "cannot draw type3 glyph");
+		fz_error_handle(error, "cannot draw type3 glyph");
 
 	if (dev->flags & FZ_CHARPROC_MASK)
 	{
@@ -567,7 +567,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 	dev = fz_new_draw_device_type3(cache, glyph);
 	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	if (error)
-		fz_catch(error, "cannot draw type3 glyph");
+		fz_error_handle(error, "cannot draw type3 glyph");
 	fz_free_device(dev);
 	fz_free_glyph_cache(cache);
 

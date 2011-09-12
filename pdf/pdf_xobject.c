@@ -53,7 +53,7 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 		{
 			error = pdf_load_colorspace(&form->colorspace, xref, obj);
 			if (error)
-				fz_catch(error, "cannot load xobject colorspace");
+				fz_error_handle(error, "cannot load xobject colorspace");
 		}
 	}
 
@@ -66,7 +66,7 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 	{
 		pdf_remove_item(xref->store, pdf_drop_xobject, dict);
 		pdf_drop_xobject(form);
-		return fz_rethrow(error, "cannot load xobject content stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+		return fz_error_note(error, "cannot load xobject content stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
 	*formp = form;

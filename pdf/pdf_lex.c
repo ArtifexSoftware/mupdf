@@ -457,5 +457,5 @@ pdf_lex(int *tok, fz_stream *f, char *buf, int n, int *sl)
 
 cleanuperror:
 	*tok = PDF_TOK_ERROR;
-	return fz_throw("lexical error");
+	return fz_error_make("lexical error");
 }

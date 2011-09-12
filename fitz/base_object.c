@@ -537,7 +537,7 @@ fz_copy_dict(fz_obj *obj)
 	int i;
 
 	if (fz_is_indirect(obj) || !fz_is_dict(obj))
-		fz_throw("assert: not a dict (%s)", fz_objkindstr(obj));
+		fz_error_make("assert: not a dict (%s)", fz_objkindstr(obj));
 
 	new = fz_new_dict(fz_dict_len(obj));
 	for (i = 0; i < fz_dict_len(obj); i++)
