@@ -62,6 +62,11 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define M_SQRT2 1.41421356237309504880
 #endif
 
+/* Context types */
+typedef struct fz_except_context fz_except_context;
+typedef struct fz_alloc_context fz_alloc_context;
+typedef struct fz_context fz_context;
+
 /*
  * Variadic macros, inline and restrict keywords
  */
@@ -70,7 +75,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
-#define fz_catch(cause, ...) fz_catch_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
+#define fz_error_handle(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
 
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 
@@ -78,7 +83,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define restrict __restrict
 #define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 #define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
-#define fz_catch(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
+#define fz_error_handle(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
 
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
 
@@ -94,7 +99,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define restrict
 #define fz_error_make fz_error_make_impx
 #define fz_error_note fz_error_note_impx
-#define fz_error_handle fz_catch_impx
+#define fz_error_handle fz_error_handle_impx
 
 #endif
 
@@ -139,11 +144,20 @@ char *fz_get_error_line(int n);
  */
 
 /* memory allocation */
-void *fz_malloc(int size);
-void *fz_calloc(int count, int size);
-void *fz_realloc(void *p, int count, int size);
-void fz_free(void *p);
-char *fz_strdup(char *s);
+
+/* The following throw exceptions on failure to allocate */
+void *fz_malloc(fz_context *ctx, size_t size);
+void *fz_calloc(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc(fz_context *ctx, void *p, size_t size);
+char *fz_strdup(fz_context *ctx, char *s);
+
+void fz_free(fz_context *ctx, void *p);
+
+/* The following returns NULL on failure to allocate */
+void *fz_malloc_nothrow(fz_context *ctx, size_t size);
+void *fz_calloc_nothrow(fz_context *ctx, size_t count, size_t size);
+void *fz_realloc_nothrow(fz_context *ctx, void *p, size_t size);
+char *fz_strdup_nothrow(fz_context *ctx, char *s);
 
 /* runtime (hah!) test for endian-ness */
 int fz_is_big_endian(void);
@@ -172,13 +186,13 @@ extern char *fz_optarg;
 
 typedef struct fz_hash_table_s fz_hash_table;
 
-fz_hash_table *fz_new_hash_table(int initialsize, int keylen);
+fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen);
 void fz_debug_hash(fz_hash_table *table);
 void fz_empty_hash(fz_hash_table *table);
-void fz_free_hash(fz_hash_table *table);
+void fz_free_hash(fz_context *ctx, fz_hash_table *table);
 
 void *fz_hash_find(fz_hash_table *table, void *key);
-void fz_hash_insert(fz_hash_table *table, void *key, void *val);
+void fz_hash_insert(fz_context *ctx, fz_hash_table *table, void *key, void *val);
 void fz_hash_remove(fz_hash_table *table, void *key);
 
 int fz_hash_len(fz_hash_table *table);
@@ -357,70 +371,70 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
 
 typedef struct fz_obj_s fz_obj;
 
-extern fz_obj* (*fz_resolve_indirect)(fz_obj*);
+#define fz_resolve_indirect(ctx, obj) (ctx)->fz_resolve_indirect((obj))
 
-fz_obj *fz_new_null(void);
-fz_obj *fz_new_bool(int b);
-fz_obj *fz_new_int(int i);
-fz_obj *fz_new_real(float f);
-fz_obj *fz_new_name(char *str);
-fz_obj *fz_new_string(char *str, int len);
-fz_obj *fz_new_indirect(int num, int gen, void *xref);
+fz_obj *fz_new_null(fz_context *ctx);
+fz_obj *fz_new_bool(fz_context *ctx, int b);
+fz_obj *fz_new_int(fz_context *ctx, int i);
+fz_obj *fz_new_real(fz_context *ctx, float f);
+fz_obj *fz_new_name(fz_context *ctx, char *str);
+fz_obj *fz_new_string(fz_context *ctx, char *str, int len);
+fz_obj *fz_new_indirect(fz_context *ctx, int num, int gen, void *xref);
 
-fz_obj *fz_new_array(int initialcap);
-fz_obj *fz_new_dict(int initialcap);
-fz_obj *fz_copy_array(fz_obj *array);
-fz_obj *fz_copy_dict(fz_obj *dict);
+fz_obj *fz_new_array(fz_context *ctx, int initialcap);
+fz_obj *fz_new_dict(fz_context *ctx, int initialcap);
+fz_obj *fz_copy_array(fz_context *ctx, fz_obj *array);
+fz_obj *fz_copy_dict(fz_context *ctx, fz_obj *dict);
 
 fz_obj *fz_keep_obj(fz_obj *obj);
-void fz_drop_obj(fz_obj *obj);
+void fz_drop_obj(fz_context *ctx, fz_obj *obj);
 
 /* type queries */
-int fz_is_null(fz_obj *obj);
-int fz_is_bool(fz_obj *obj);
-int fz_is_int(fz_obj *obj);
-int fz_is_real(fz_obj *obj);
-int fz_is_name(fz_obj *obj);
-int fz_is_string(fz_obj *obj);
-int fz_is_array(fz_obj *obj);
-int fz_is_dict(fz_obj *obj);
+int fz_is_null(fz_context *ctx, fz_obj *obj);
+int fz_is_bool(fz_context *ctx, fz_obj *obj);
+int fz_is_int(fz_context *ctx, fz_obj *obj);
+int fz_is_real(fz_context *ctx, fz_obj *obj);
+int fz_is_name(fz_context *ctx, fz_obj *obj);
+int fz_is_string(fz_context *ctx, fz_obj *obj);
+int fz_is_array(fz_context *ctx, fz_obj *obj);
+int fz_is_dict(fz_context *ctx, fz_obj *obj);
 int fz_is_indirect(fz_obj *obj);
 
 int fz_objcmp(fz_obj *a, fz_obj *b);
 
 /* safe, silent failure, no error reporting */
-int fz_to_bool(fz_obj *obj);
-int fz_to_int(fz_obj *obj);
-float fz_to_real(fz_obj *obj);
-char *fz_to_name(fz_obj *obj);
-char *fz_to_str_buf(fz_obj *obj);
-int fz_to_str_len(fz_obj *obj);
+int fz_to_bool(fz_context *ctx, fz_obj *obj);
+int fz_to_int(fz_context *ctx, fz_obj *obj);
+float fz_to_real(fz_context *ctx, fz_obj *obj);
+char *fz_to_name(fz_context *ctx, fz_obj *obj);
+char *fz_to_str_buf(fz_context *ctx, fz_obj *obj);
+int fz_to_str_len(fz_context *ctx, fz_obj *obj);
 int fz_to_num(fz_obj *obj);
 int fz_to_gen(fz_obj *obj);
 
-int fz_array_len(fz_obj *array);
-fz_obj *fz_array_get(fz_obj *array, int i);
-void fz_array_put(fz_obj *array, int i, fz_obj *obj);
-void fz_array_push(fz_obj *array, fz_obj *obj);
-void fz_array_insert(fz_obj *array, fz_obj *obj);
+int fz_array_len(fz_context *ctx, fz_obj *array);
+fz_obj *fz_array_get(fz_context *ctx, fz_obj *array, int i);
+void fz_array_put(fz_context *ctx, fz_obj *array, int i, fz_obj *obj);
+void fz_array_push(fz_context *ctx, fz_obj *array, fz_obj *obj);
+void fz_array_insert(fz_context *ctx, fz_obj *array, fz_obj *obj);
 
-int fz_dict_len(fz_obj *dict);
-fz_obj *fz_dict_get_key(fz_obj *dict, int idx);
-fz_obj *fz_dict_get_val(fz_obj *dict, int idx);
-fz_obj *fz_dict_get(fz_obj *dict, fz_obj *key);
-fz_obj *fz_dict_gets(fz_obj *dict, char *key);
-fz_obj *fz_dict_getsa(fz_obj *dict, char *key, char *abbrev);
-void fz_dict_put(fz_obj *dict, fz_obj *key, fz_obj *val);
-void fz_dict_puts(fz_obj *dict, char *key, fz_obj *val);
-void fz_dict_del(fz_obj *dict, fz_obj *key);
-void fz_dict_dels(fz_obj *dict, char *key);
-void fz_sort_dict(fz_obj *dict);
+int fz_dict_len(fz_context *ctx, fz_obj *dict);
+fz_obj *fz_dict_get_key(fz_context *ctx, fz_obj *dict, int idx);
+fz_obj *fz_dict_get_val(fz_context *ctx, fz_obj *dict, int idx);
+fz_obj *fz_dict_get(fz_context *ctx, fz_obj *dict, fz_obj *key);
+fz_obj *fz_dict_gets(fz_context *ctx, fz_obj *dict, char *key);
+fz_obj *fz_dict_getsa(fz_context *ctx, fz_obj *dict, char *key, char *abbrev);
+void fz_dict_put(fz_context *ctx, fz_obj *dict, fz_obj *key, fz_obj *val);
+void fz_dict_puts(fz_context *ctx, fz_obj *dict, char *key, fz_obj *val);
+void fz_dict_del(fz_context *ctx, fz_obj *dict, fz_obj *key);
+void fz_dict_dels(fz_context *ctx, fz_obj *dict, char *key);
+void fz_sort_dict(fz_context *ctx, fz_obj *dict);
 
-int fz_fprint_obj(FILE *fp, fz_obj *obj, int tight);
-void fz_debug_obj(fz_obj *obj);
-void fz_debug_ref(fz_obj *obj);
+int fz_fprint_obj(fz_context *ctx, FILE *fp, fz_obj *obj, int tight);
+void fz_debug_obj(fz_context *ctx, fz_obj *obj);
+void fz_debug_ref(fz_context *ctx, fz_obj *obj);
 
-void fz_set_str_len(fz_obj *obj, int newlen); /* private */
+void fz_set_str_len(fz_context *ctx, fz_obj *obj, int newlen); /* private */
 void *fz_get_indirect_xref(fz_obj *obj); /* private */
 
 /*
@@ -436,12 +450,12 @@ struct fz_buffer_s
 	int cap, len;
 };
 
-fz_buffer *fz_new_buffer(int size);
+fz_buffer *fz_new_buffer(fz_context *ctx, int size);
 fz_buffer *fz_keep_buffer(fz_buffer *buf);
-void fz_drop_buffer(fz_buffer *buf);
+void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
-void fz_resize_buffer(fz_buffer *buf, int size);
-void fz_grow_buffer(fz_buffer *buf);
+void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
+void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
  * Buffered reader.
@@ -460,20 +474,21 @@ struct fz_stream_s
 	int bits;
 	unsigned char *bp, *rp, *wp, *ep;
 	void *state;
+	fz_context *ctx;
 	int (*read)(fz_stream *stm, unsigned char *buf, int len);
 	void (*close)(fz_stream *stm);
 	void (*seek)(fz_stream *stm, int offset, int whence);
 	unsigned char buf[4096];
 };
 
-fz_stream *fz_open_fd(int file);
-fz_stream *fz_open_file(const char *filename);
-fz_stream *fz_open_file_w(const wchar_t *filename); /* only on win32 */
-fz_stream *fz_open_buffer(fz_buffer *buf);
-fz_stream *fz_open_memory(unsigned char *data, int len);
+fz_stream *fz_open_fd(fz_context *ctx, int file);
+fz_stream *fz_open_file(fz_context *ctx, const char *filename);
+fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename); /* only on win32 */
+fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
+fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
 void fz_close(fz_stream *stm);
 
-fz_stream *fz_new_stream(void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_stream *));
+fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_stream *));
 fz_stream *fz_keep_stream(fz_stream *stm);
 void fz_fill_buffer(fz_stream *stm);
 
@@ -612,32 +627,32 @@ struct fz_pixmap_s
 };
 
 /* will return NULL if soft limit is exceeded */
-fz_pixmap *fz_new_pixmap_with_limit(fz_colorspace *colorspace, int w, int h);
+fz_pixmap *fz_new_pixmap_with_limit(fz_context *ctx, fz_colorspace *colorspace, int w, int h);
 
-fz_pixmap *fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *samples);
-fz_pixmap *fz_new_pixmap_with_rect(fz_colorspace *, fz_bbox bbox);
-fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_colorspace *, fz_bbox bbox, unsigned char *samples);
-fz_pixmap *fz_new_pixmap(fz_colorspace *, int w, int h);
+fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *, fz_bbox bbox);
+fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz_bbox bbox, unsigned char *samples);
+fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_pixmap *pix);
-void fz_drop_pixmap(fz_pixmap *pix);
+void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
 void fz_clear_pixmap(fz_pixmap *pix);
 void fz_clear_pixmap_with_color(fz_pixmap *pix, int value);
 void fz_clear_pixmap_rect_with_color(fz_pixmap *pix, int value, fz_bbox r);
 void fz_copy_pixmap_rect(fz_pixmap *dest, fz_pixmap *src, fz_bbox r);
 void fz_premultiply_pixmap(fz_pixmap *pix);
-fz_pixmap *fz_alpha_from_gray(fz_pixmap *gray, int luminosity);
+fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 void fz_invert_pixmap(fz_pixmap *pix);
 void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
 
-fz_pixmap *fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h);
-fz_pixmap *fz_scale_pixmap_gridfit(fz_pixmap *src, float x, float y, float w, float h, int gridfit);
+fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h);
+fz_pixmap *fz_scale_pixmap_gridfit(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, int gridfit);
 
 fz_error fz_write_pnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha);
-fz_error fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha);
+fz_error fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 
-fz_error fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *dcs);
+fz_error fz_load_jpx_image(fz_context *ctx, fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *dcs);
 
 /*
  * Bitmaps have 1 component per bit. Only used for creating halftoned versions
@@ -654,10 +669,10 @@ struct fz_bitmap_s
 	unsigned char *samples;
 };
 
-fz_bitmap *fz_new_bitmap(int w, int h, int n);
+fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
 fz_bitmap *fz_keep_bitmap(fz_bitmap *bit);
 void fz_clear_bitmap(fz_bitmap *bit);
-void fz_drop_bitmap(fz_bitmap *bit);
+void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 fz_error fz_write_pbm(fz_bitmap *bitmap, char *filename);
 
@@ -675,12 +690,12 @@ struct fz_halftone_s
 	fz_pixmap *comp[1];
 };
 
-fz_halftone *fz_new_halftone(int num_comps);
-fz_halftone *fz_get_default_halftone(int num_comps);
+fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
+fz_halftone *fz_get_default_halftone(fz_context *ctx, int num_comps);
 fz_halftone *fz_keep_halftone(fz_halftone *half);
-void fz_drop_halftone(fz_halftone *half);
+void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
 
-fz_bitmap *fz_halftone_pixmap(fz_pixmap *pix, fz_halftone *ht);
+fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
 /*
  * Colorspace resources.
@@ -698,16 +713,16 @@ struct fz_colorspace_s
 	int n;
 	void (*to_rgb)(fz_colorspace *, float *src, float *rgb);
 	void (*from_rgb)(fz_colorspace *, float *rgb, float *dst);
-	void (*free_data)(fz_colorspace *);
+	void (*free_data)(fz_context *Ctx, fz_colorspace *);
 	void *data;
 };
 
-fz_colorspace *fz_new_colorspace(char *name, int n);
+fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n);
 fz_colorspace *fz_keep_colorspace(fz_colorspace *colorspace);
-void fz_drop_colorspace(fz_colorspace *colorspace);
+void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 
 void fz_convert_color(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
-void fz_convert_pixmap(fz_pixmap *src, fz_pixmap *dst);
+void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
 
 fz_colorspace *fz_find_device_colorspace(char *name);
 
@@ -753,13 +768,13 @@ struct fz_font_s
 	int *width_table;
 };
 
-fz_font *fz_new_type3_font(char *name, fz_matrix matrix);
+fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 
-fz_error fz_new_font_from_memory(fz_font **fontp, unsigned char *data, int len, int index);
-fz_error fz_new_font_from_file(fz_font **fontp, char *path, int index);
+fz_error fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, int len, int index);
+fz_error fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index);
 
 fz_font *fz_keep_font(fz_font *font);
-void fz_drop_font(fz_font *font);
+void fz_drop_font(fz_context *ctx, fz_font *font);
 
 void fz_debug_font(fz_font *font);
 void fz_set_font_bbox(fz_font *font, float xmin, float ymin, float xmax, float ymax);
@@ -809,18 +824,18 @@ struct fz_stroke_state_s
 	float dash_list[32];
 };
 
-fz_path *fz_new_path(void);
-void fz_moveto(fz_path*, float x, float y);
-void fz_lineto(fz_path*, float x, float y);
-void fz_curveto(fz_path*, float, float, float, float, float, float);
-void fz_curvetov(fz_path*, float, float, float, float);
-void fz_curvetoy(fz_path*, float, float, float, float);
-void fz_closepath(fz_path*);
-void fz_free_path(fz_path *path);
+fz_path *fz_new_path(fz_context *ctx);
+void fz_moveto(fz_context*, fz_path*, float x, float y);
+void fz_lineto(fz_context*, fz_path*, float x, float y);
+void fz_curveto(fz_context*,fz_path*, float, float, float, float, float, float);
+void fz_curvetov(fz_context*,fz_path*, float, float, float, float);
+void fz_curvetoy(fz_context*,fz_path*, float, float, float, float);
+void fz_closepath(fz_context*,fz_path*);
+void fz_free_path(fz_context *ctx, fz_path *path);
 
 void fz_transform_path(fz_path *path, fz_matrix transform);
 
-fz_path *fz_clone_path(fz_path *old);
+fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
 fz_rect fz_bound_path(fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
 void fz_debug_path(fz_path *, int indent);
@@ -856,12 +871,12 @@ struct fz_text_s
 	fz_text_item *items;
 };
 
-fz_text *fz_new_text(fz_font *face, fz_matrix trm, int wmode);
-void fz_add_text(fz_text *text, int gid, int ucs, float x, float y);
-void fz_free_text(fz_text *text);
+fz_text *fz_new_text(fz_context *ctx, fz_font *face, fz_matrix trm, int wmode);
+void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y);
+void fz_free_text(fz_context *ctx, fz_text *text);
 void fz_debug_text(fz_text*, int indent);
 fz_rect fz_bound_text(fz_text *text, fz_matrix ctm);
-fz_text *fz_clone_text(fz_text *old);
+fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
 
 /*
  * The shading code uses gouraud shaded triangle meshes.
@@ -899,11 +914,11 @@ struct fz_shade_s
 };
 
 fz_shade *fz_keep_shade(fz_shade *shade);
-void fz_drop_shade(fz_shade *shade);
+void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 void fz_debug_shade(fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_shade *shade, fz_matrix ctm);
-void fz_paint_shade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);
+void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);
 
 /*
  * Glyph cache
@@ -911,13 +926,13 @@ void fz_paint_shade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbo
 
 typedef struct fz_glyph_cache_s fz_glyph_cache;
 
-fz_glyph_cache *fz_new_glyph_cache(void);
-fz_pixmap *fz_render_ft_glyph(fz_font *font, int cid, fz_matrix trm);
-fz_pixmap *fz_render_t3_glyph(fz_font *font, int cid, fz_matrix trm, fz_colorspace *model);
-fz_pixmap *fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state);
-fz_pixmap *fz_render_glyph(fz_glyph_cache*, fz_font*, int, fz_matrix, fz_colorspace *model);
-fz_pixmap *fz_render_stroked_glyph(fz_glyph_cache*, fz_font*, int, fz_matrix, fz_matrix, fz_stroke_state *stroke);
-void fz_free_glyph_cache(fz_glyph_cache *);
+fz_glyph_cache *fz_new_glyph_cache(fz_context *ctx);
+fz_pixmap *fz_render_ft_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm);
+fz_pixmap *fz_render_t3_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm, fz_colorspace *model);
+fz_pixmap *fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state);
+fz_pixmap *fz_render_glyph(fz_context *ctx, fz_glyph_cache*, fz_font*, int, fz_matrix, fz_colorspace *model);
+fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_glyph_cache*, fz_font*, int, fz_matrix, fz_matrix, fz_stroke_state *stroke);
+void fz_free_glyph_cache(fz_context *ctx, fz_glyph_cache *);
 
 /*
  * Scan converter
@@ -928,7 +943,7 @@ void fz_set_aa_level(int bits);
 
 typedef struct fz_gel_s fz_gel;
 
-fz_gel *fz_new_gel(void);
+fz_gel *fz_new_gel(fz_context *ctx);
 void fz_insert_gel(fz_gel *gel, float x0, float y0, float x1, float y1);
 void fz_reset_gel(fz_gel *gel, fz_bbox clip);
 void fz_sort_gel(fz_gel *gel);
@@ -965,33 +980,34 @@ struct fz_device_s
 	int flags;
 
 	void *user;
-	void (*free_user)(void *);
+	void (*free_user)(fz_device *);
+	fz_context *ctx;
 
-	void (*fill_path)(void *, fz_path *, int even_odd, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*stroke_path)(void *, fz_path *, fz_stroke_state *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*clip_path)(void *, fz_path *, fz_rect *rect, int even_odd, fz_matrix);
-	void (*clip_stroke_path)(void *, fz_path *, fz_rect *rect, fz_stroke_state *, fz_matrix);
+	void (*fill_path)(fz_device *, fz_path *, int even_odd, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*stroke_path)(fz_device *, fz_path *, fz_stroke_state *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*clip_path)(fz_device *, fz_path *, fz_rect *rect, int even_odd, fz_matrix);
+	void (*clip_stroke_path)(fz_device *, fz_path *, fz_rect *rect, fz_stroke_state *, fz_matrix);
 
-	void (*fill_text)(void *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*stroke_text)(void *, fz_text *, fz_stroke_state *, fz_matrix, fz_colorspace *, float *color, float alpha);
-	void (*clip_text)(void *, fz_text *, fz_matrix, int accumulate);
-	void (*clip_stroke_text)(void *, fz_text *, fz_stroke_state *, fz_matrix);
-	void (*ignore_text)(void *, fz_text *, fz_matrix);
+	void (*fill_text)(fz_device *, fz_text *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*stroke_text)(fz_device *, fz_text *, fz_stroke_state *, fz_matrix, fz_colorspace *, float *color, float alpha);
+	void (*clip_text)(fz_device *, fz_text *, fz_matrix, int accumulate);
+	void (*clip_stroke_text)(fz_device *, fz_text *, fz_stroke_state *, fz_matrix);
+	void (*ignore_text)(fz_device *, fz_text *, fz_matrix);
 
-	void (*fill_shade)(void *, fz_shade *shd, fz_matrix ctm, float alpha);
-	void (*fill_image)(void *, fz_pixmap *img, fz_matrix ctm, float alpha);
-	void (*fill_image_mask)(void *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color, float alpha);
-	void (*clip_image_mask)(void *, fz_pixmap *img, fz_rect *rect, fz_matrix ctm);
+	void (*fill_shade)(fz_device *, fz_shade *shd, fz_matrix ctm, float alpha);
+	void (*fill_image)(fz_device *, fz_pixmap *img, fz_matrix ctm, float alpha);
+	void (*fill_image_mask)(fz_device *, fz_pixmap *img, fz_matrix ctm, fz_colorspace *, float *color, float alpha);
+	void (*clip_image_mask)(fz_device *, fz_pixmap *img, fz_rect *rect, fz_matrix ctm);
 
-	void (*pop_clip)(void *);
+	void (*pop_clip)(fz_device *);
 
-	void (*begin_mask)(void *, fz_rect, int luminosity, fz_colorspace *, float *bc);
-	void (*end_mask)(void *);
-	void (*begin_group)(void *, fz_rect, int isolated, int knockout, int blendmode, float alpha);
-	void (*end_group)(void *);
+	void (*begin_mask)(fz_device *, fz_rect, int luminosity, fz_colorspace *, float *bc);
+	void (*end_mask)(fz_device *);
+	void (*begin_group)(fz_device *, fz_rect, int isolated, int knockout, int blendmode, float alpha);
+	void (*end_group)(fz_device *);
 
-	void (*begin_tile)(void *, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
-	void (*end_tile)(void *);
+	void (*begin_tile)(fz_device *, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
+	void (*end_tile)(fz_device *);
 };
 
 void fz_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);
@@ -1015,13 +1031,13 @@ void fz_end_group(fz_device *dev);
 void fz_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
 void fz_end_tile(fz_device *dev);
 
-fz_device *fz_new_device(void *user);
+fz_device *fz_new_device(fz_context *ctx, void *user);
 void fz_free_device(fz_device *dev);
 
-fz_device *fz_new_trace_device(void);
-fz_device *fz_new_bbox_device(fz_bbox *bboxp);
-fz_device *fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest);
-fz_device *fz_new_draw_device_type3(fz_glyph_cache *cache, fz_pixmap *dest);
+fz_device *fz_new_trace_device(fz_context *ctx);
+fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
+fz_device *fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest);
+fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest);
 
 /*
  * Text extraction device
@@ -1047,12 +1063,12 @@ struct fz_text_span_s
 	int eol;
 };
 
-fz_text_span *fz_new_text_span(void);
-void fz_free_text_span(fz_text_span *line);
+fz_text_span *fz_new_text_span(fz_context *ctx);
+void fz_free_text_span(fz_context *ctx, fz_text_span *line);
 void fz_debug_text_span(fz_text_span *line);
 void fz_debug_text_span_xml(fz_text_span *span);
 
-fz_device *fz_new_text_device(fz_text_span *text);
+fz_device *fz_new_text_device(fz_context *ctx, fz_text_span *text);
 
 /*
  * Display list device -- record and play back device commands.
@@ -1060,9 +1076,9 @@ fz_device *fz_new_text_device(fz_text_span *text);
 
 typedef struct fz_display_list_s fz_display_list;
 
-fz_display_list *fz_new_display_list(void);
-void fz_free_display_list(fz_display_list *list);
-fz_device *fz_new_list_device(fz_display_list *list);
+fz_display_list *fz_new_display_list(fz_context *ctx);
+void fz_free_display_list(fz_context *ctx, fz_display_list *list);
+fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 void fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area);
 
 /*
@@ -1119,17 +1135,29 @@ enum
 	FZ_BLEND_KNOCKOUT = 32
 };
 
+/* Fitz allocator context */
+
+struct fz_alloc_context
+{
+	void *opaque;
+	void *(*malloc)(void *, size_t);
+	void *(*realloc)(void *, void *, size_t);
+	void (*free)(void *, void *);
+	void *(*calloc)(void *, size_t, size_t);
+};
+
+extern fz_alloc_context fz_alloc_default;
+
 /* Fitz context */
 
-typedef struct fz_except_context fz_except_context;
-typedef struct fz_alloc_context fz_alloc_context;
-
-typedef struct fz_context
+struct fz_context
 {
-    fz_except_context *except;
-    fz_alloc_context *alloc;
-}
-fz_context;
+	fz_except_context *except;
+	fz_alloc_context *alloc;
+	fz_obj *(*fz_resolve_indirect)(fz_obj*);
+};
 
+fz_context *fz_context_init(fz_alloc_context *alloc);
+void fz_context_fin(fz_context *ctx);
 
 #endif

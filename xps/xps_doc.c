@@ -38,8 +38,8 @@ xps_add_fixed_document(xps_context *ctx, char *name)
 		if (!strcmp(fixdoc->name, name))
 			return;
 
-	fixdoc = fz_malloc(sizeof(xps_document));
-	fixdoc->name = fz_strdup(name);
+	fixdoc = fz_malloc(ctx->ctx, sizeof(xps_document));
+	fixdoc->name = fz_strdup(ctx->ctx, name);
 	fixdoc->next = NULL;
 
 	if (!ctx->first_fixdoc)
@@ -64,8 +64,8 @@ xps_add_fixed_page(xps_context *ctx, char *name, int width, int height)
 		if (!strcmp(page->name, name))
 			return;
 
-	page = fz_malloc(sizeof(xps_page));
-	page->name = fz_strdup(name);
+	page = fz_malloc(ctx->ctx, sizeof(xps_page));
+	page->name = fz_strdup(ctx->ctx, name);
 	page->width = width;
 	page->height = height;
 	page->root = NULL;
@@ -91,8 +91,8 @@ xps_free_fixed_pages(xps_context *ctx)
 	{
 		xps_page *next = page->next;
 		xps_free_page(ctx, page);
-		fz_free(page->name);
-		fz_free(page);
+		fz_free(ctx->ctx, page->name);
+		fz_free(ctx->ctx, page);
 		page = next;
 	}
 	ctx->first_page = NULL;
@@ -106,8 +106,8 @@ xps_free_fixed_documents(xps_context *ctx)
 	while (doc)
 	{
 		xps_document *next = doc->next;
-		fz_free(doc->name);
-		fz_free(doc);
+		fz_free(ctx->ctx, doc->name);
+		fz_free(ctx->ctx, doc);
 		doc = next;
 	}
 	ctx->first_fixdoc = NULL;
@@ -141,7 +141,7 @@ xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 				char tgtbuf[1024];
 				xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
 				if (!strcmp(type, REL_START_PART))
-					ctx->start_part = fz_strdup(tgtbuf);
+					ctx->start_part = fz_strdup(ctx->ctx, tgtbuf);
 			}
 		}
 
@@ -199,13 +199,13 @@ xps_parse_metadata(xps_context *ctx, xps_part *part)
 	ctx->base_uri = buf;
 	ctx->part_uri = part->name;
 
-	root = xml_parse_document(part->data, part->size);
+	root = xml_parse_document(ctx->ctx, part->data, part->size);
 	if (!root)
 		return fz_error_note(-1, "cannot parse metadata part '%s'", part->name);
 
 	xps_parse_metadata_imp(ctx, root);
 
-	xml_free_element(root);
+	xml_free_element(ctx->ctx, root);
 
 	ctx->base_uri = NULL;
 	ctx->part_uri = NULL;
@@ -281,7 +281,7 @@ xps_load_fixed_page(xps_context *ctx, xps_page *page)
 	if (!part)
 		return fz_error_note(-1, "cannot read zip part '%s'", page->name);
 
-	root = xml_parse_document(part->data, part->size);
+	root = xml_parse_document(ctx->ctx, part->data, part->size);
 	if (!root)
 		return fz_error_note(-1, "cannot parse xml part '%s'", page->name);
 
@@ -336,6 +336,6 @@ xps_free_page(xps_context *ctx, xps_page *page)
 {
 	/* only free the XML contents */
 	if (page->root)
-		xml_free_element(page->root);
+		xml_free_element(ctx->ctx, page->root);
 	page->root = NULL;
 }

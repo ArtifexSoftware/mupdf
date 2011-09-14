@@ -42,6 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8c;..\thirdparty\openjpeg-1.4\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.4\include"
+				PreprocessorDefinitions="DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -110,6 +111,69 @@
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Memento|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Generate CMap and Font source files"
+				CommandLine="generate.bat"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8c;..\thirdparty\openjpeg-1.4\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.4\include"
+				PreprocessorDefinitions="MEMENTO=1;DEBUG=1"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				WarningLevel="3"
+				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -307,6 +371,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\context.c"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\crypt_aes.c"
 				>
 			</File>
@@ -343,6 +411,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\except.c"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\except.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\exceptxxx.h"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\filt_basic.c"
 				>
 			</File>
@@ -376,6 +456,14 @@
 			</File>
 			<File
 				RelativePath="..\fitz\fitz.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\memento.c"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\memento.h"
 				>
 			</File>
 			<File

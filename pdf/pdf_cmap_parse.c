@@ -180,7 +180,7 @@ pdf_parse_cid_range(pdf_cmap *cmap, fz_stream *file)
 
 		dst = atoi(buf);
 
-		pdf_map_range_to_range(cmap, lo, hi, dst);
+		pdf_map_range_to_range(file->ctx, cmap, lo, hi, dst);
 	}
 }
 
@@ -215,7 +215,7 @@ pdf_parse_cid_char(pdf_cmap *cmap, fz_stream *file)
 
 		dst = atoi(buf);
 
-		pdf_map_range_to_range(cmap, src, src, dst);
+		pdf_map_range_to_range(file->ctx, cmap, src, src, dst);
 	}
 }
 
@@ -247,7 +247,7 @@ pdf_parse_bf_range_array(pdf_cmap *cmap, fz_stream *file, int lo, int hi)
 			for (i = 0; i < len / 2; i++)
 				dst[i] = pdf_code_from_string(buf + i * 2, 2);
 
-			pdf_map_one_to_many(cmap, lo, dst, len / 2);
+			pdf_map_one_to_many(file->ctx, cmap, lo, dst, len / 2);
 		}
 
 		lo ++;
@@ -294,7 +294,7 @@ pdf_parse_bf_range(pdf_cmap *cmap, fz_stream *file)
 			if (len == 2)
 			{
 				dst = pdf_code_from_string(buf, len);
-				pdf_map_range_to_range(cmap, lo, hi, dst);
+				pdf_map_range_to_range(file->ctx, cmap, lo, hi, dst);
 			}
 			else
 			{
@@ -309,7 +309,7 @@ pdf_parse_bf_range(pdf_cmap *cmap, fz_stream *file)
 					while (lo <= hi)
 					{
 						dststr[i-1] ++;
-						pdf_map_one_to_many(cmap, lo, dststr, i);
+						pdf_map_one_to_many(file->ctx, cmap, lo, dststr, i);
 						lo ++;
 					}
 				}
@@ -366,7 +366,7 @@ pdf_parse_bf_char(pdf_cmap *cmap, fz_stream *file)
 		{
 			for (i = 0; i < len / 2; i++)
 				dst[i] = pdf_code_from_string(buf + i * 2, 2);
-			pdf_map_one_to_many(cmap, src, dst, i);
+			pdf_map_one_to_many(file->ctx, cmap, src, dst, i);
 		}
 	}
 }
@@ -381,7 +381,7 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 	int tok;
 	int len;
 
-	cmap = pdf_new_cmap();
+	cmap = pdf_new_cmap(file->ctx);
 
 	strcpy(key, ".notdef");
 
@@ -479,12 +479,12 @@ pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file)
 		/* ignore everything else */
 	}
 
-	pdf_sort_cmap(cmap);
+	pdf_sort_cmap(file->ctx, cmap);
 
 	*cmapp = cmap;
 	return fz_okay;
 
 cleanup:
-	pdf_drop_cmap(cmap);
+	pdf_drop_cmap(file->ctx, cmap);
 	return error; /* already rethrown */
 }

@@ -68,12 +68,13 @@ char *pdfapp_usage(pdfapp_t *app)
 	;
 }
 
-void pdfapp_init(pdfapp_t *app)
+void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 {
 	memset(app, 0, sizeof(pdfapp_t));
 	app->scrw = 640;
 	app->scrh = 480;
 	app->resolution = 72;
+	app->ctx = ctx;
 }
 
 void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
@@ -109,7 +110,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	 * Open PDF and load xref table
 	 */
 
-	file = fz_open_fd(fd);
+	file = fz_open_fd(app->ctx, fd);
 	error = pdf_open_xref_with_stream(&app->xref, file, NULL);
 	if (error)
 		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
@@ -144,12 +145,12 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 		app->doctitle = strrchr(app->doctitle, '\\') + 1;
 	if (strrchr(app->doctitle, '/'))
 		app->doctitle = strrchr(app->doctitle, '/') + 1;
-	info = fz_dict_gets(app->xref->trailer, "Info");
+	info = fz_dict_gets(app->ctx, app->xref->trailer, "Info");
 	if (info)
 	{
-		obj = fz_dict_gets(info, "Title");
+		obj = fz_dict_gets(app->ctx, info, "Title");
 		if (obj)
-			app->doctitle = pdf_to_utf8(obj);
+			app->doctitle = pdf_to_utf8(app->ctx, obj);
 	}
 
 	/*
@@ -168,7 +169,7 @@ static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
 	fz_error error;
 	fz_stream *file;
 
-	file = fz_open_fd(fd);
+	file = fz_open_fd(app->ctx, fd);
 	error = xps_open_stream(&app->xps, file);
 	if (error)
 		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
@@ -186,7 +187,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 	else
 		pdfapp_open_pdf(app, filename, fd);
 
-	app->cache = fz_new_glyph_cache();
+	app->cache = fz_new_glyph_cache(app->ctx);
 
 	if (app->pageno < 1)
 		app->pageno = 1;
@@ -211,21 +212,21 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 void pdfapp_close(pdfapp_t *app)
 {
 	if (app->cache)
-		fz_free_glyph_cache(app->cache);
+		fz_free_glyph_cache(app->ctx, app->cache);
 	app->cache = NULL;
 
 	if (app->image)
-		fz_drop_pixmap(app->image);
+		fz_drop_pixmap(app->ctx, app->image);
 	app->image = NULL;
 
 	if (app->outline)
-		pdf_free_outline(app->outline);
+		pdf_free_outline(app->ctx, app->outline);
 	app->outline = NULL;
 
 	if (app->xref)
 	{
 		if (app->xref->store)
-			pdf_free_store(app->xref->store);
+			pdf_free_store(app->ctx, app->xref->store);
 		app->xref->store = NULL;
 
 		pdf_free_xref(app->xref);
@@ -294,8 +295,8 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	page->links = NULL;
 
 	/* Create display list */
-	app->page_list = fz_new_display_list();
-	mdev = fz_new_list_device(app->page_list);
+	app->page_list = fz_new_display_list(app->ctx);
+	mdev = fz_new_list_device(app->ctx, app->page_list);
 	error = pdf_run_page(app->xref, page, mdev, fz_identity);
 	if (error)
 	{
@@ -304,9 +305,9 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	}
 	fz_free_device(mdev);
 
-	pdf_free_page(page);
+	pdf_free_page(app->ctx, page);
 
-	pdf_age_store(app->xref->store, 3);
+	pdf_age_store(app->ctx, app->xref->store, 3);
 }
 
 static void pdfapp_loadpage_xps(pdfapp_t *app)
@@ -327,8 +328,8 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 	app->page_links = NULL;
 
 	/* Create display list */
-	app->page_list = fz_new_display_list();
-	mdev = fz_new_list_device(app->page_list);
+	app->page_list = fz_new_display_list(app->ctx);
+	mdev = fz_new_list_device(app->ctx, app->page_list);
 	app->xps->dev = mdev;
 	xps_parse_fixed_page(app->xps, fz_identity, page);
 	app->xps->dev = NULL;
@@ -351,11 +352,11 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	if (loadpage)
 	{
 		if (app->page_list)
-			fz_free_display_list(app->page_list);
+			fz_free_display_list(app->ctx, app->page_list);
 		if (app->page_text)
-			fz_free_text_span(app->page_text);
+			fz_free_text_span(app->ctx, app->page_text);
 		if (app->page_links)
-			pdf_free_link(app->page_links);
+			pdf_free_link(app->ctx, app->page_links);
 
 		if (app->xref)
 			pdfapp_loadpage_pdf(app);
@@ -367,8 +368,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		app->hitlen = 0;
 
 		/* Extract text */
-		app->page_text = fz_new_text_span();
-		tdev = fz_new_text_device(app->page_text);
+		app->page_text = fz_new_text_span(app->ctx);
+		tdev = fz_new_text_device(app->ctx, app->page_text);
 		fz_execute_display_list(app->page_list, tdev, fz_identity, fz_infinite_bbox);
 		fz_free_device(tdev);
 	}
@@ -384,7 +385,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		/* Draw */
 		if (app->image)
-			fz_drop_pixmap(app->image);
+			fz_drop_pixmap(app->ctx, app->image);
 		if (app->grayscale)
 			colorspace = fz_device_gray;
 		else
@@ -393,9 +394,9 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 #else
 			colorspace = fz_device_rgb;
 #endif
-		app->image = fz_new_pixmap_with_rect(colorspace, bbox);
+		app->image = fz_new_pixmap_with_rect(app->ctx, colorspace, bbox);
 		fz_clear_pixmap_with_color(app->image, 255);
-		idev = fz_new_draw_device(app->cache, app->image);
+		idev = fz_new_draw_device(app->ctx, app->cache, app->image);
 		fz_execute_display_list(app->page_list, idev, ctm, bbox);
 		fz_free_device(idev);
 	}
@@ -431,11 +432,12 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)
 {
 	char *buf;
-	buf = fz_malloc(fz_to_str_len(uri) + 1);
-	memcpy(buf, fz_to_str_buf(uri), fz_to_str_len(uri));
-	buf[fz_to_str_len(uri)] = 0;
+	int n = fz_to_str_len(app->ctx, uri);
+	buf = fz_malloc(app->ctx, n + 1);
+	memcpy(buf, fz_to_str_buf(app->ctx, uri), n);
+	buf[n] = 0;
 	winopenuri(app, buf);
-	fz_free(buf);
+	fz_free(app->ctx, buf);
 }
 
 static void pdfapp_gotopage(pdfapp_t *app, fz_obj *obj)
@@ -999,7 +1001,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (link->kind == PDF_LINK_URI)
 				pdfapp_gotouri(app, link->dest);
 			else if (link->kind == PDF_LINK_GOTO)
-				pdfapp_gotopage(app, fz_array_get(link->dest, 0)); /* [ pageobj ... ] */
+				pdfapp_gotopage(app, fz_array_get(app->ctx, link->dest, 0)); /* [ pageobj ... ] */
 			return;
 		}
 	}

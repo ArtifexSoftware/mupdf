@@ -37,6 +37,7 @@ static pdfapp_t gapp;
 
 static wchar_t wbuf[1024];
 static char filename[1024];
+static fz_context *context;
 
 /*
  * Create registry keys to associate MuPDF with PDF and XPS files.
@@ -240,33 +241,33 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetDlgItemTextA(hwnd, 0x13, "n/a");
 		}
 
-		info = fz_dict_gets(xref->trailer, "Info");
+		info = fz_dict_gets(xref->ctx, xref->trailer, "Info");
 		if (!info)
 			return TRUE;
 
 #define SETUCS(ID) \
 		{ \
 			unsigned short *ucs; \
-			ucs = pdf_to_ucs2(obj); \
+			ucs = pdf_to_ucs2(xref->ctx, obj); \
 			SetDlgItemTextW(hwnd, ID, ucs); \
-			fz_free(ucs); \
+			fz_free(context, ucs); \
 		}
 
-		if ((obj = fz_dict_gets(info, "Title")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Title")))
 			SETUCS(0x20);
-		if ((obj = fz_dict_gets(info, "Author")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Author")))
 			SETUCS(0x21);
-		if ((obj = fz_dict_gets(info, "Subject")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Subject")))
 			SETUCS(0x22);
-		if ((obj = fz_dict_gets(info, "Keywords")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Keywords")))
 			SETUCS(0x23);
-		if ((obj = fz_dict_gets(info, "Creator")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Creator")))
 			SETUCS(0x24);
-		if ((obj = fz_dict_gets(info, "Producer")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "Producer")))
 			SETUCS(0x25);
-		if ((obj = fz_dict_gets(info, "CreationDate")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "CreationDate")))
 			SETUCS(0x26);
-		if ((obj = fz_dict_gets(info, "ModDate")))
+		if ((obj = fz_dict_gets(xref->ctx, info, "ModDate")))
 			SETUCS(0x27);
 		return TRUE;
 
@@ -853,10 +854,17 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	MSG msg;
 	int fd;
 	int code;
+	fz_context *ctx;
 
 	fz_accelerate();
 
-	pdfapp_init(&gapp);
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "Failed to init context");
+		exit(1);
+	}
+	pdfapp_init(ctx, &gapp);
 
 	GetModuleFileNameA(NULL, argv0, sizeof argv0);
 	install_app(argv0);

@@ -12,12 +12,12 @@ struct fz_flate_s
 
 static void *zalloc(void *opaque, unsigned int items, unsigned int size)
 {
-	return fz_calloc(items, size);
+	return fz_calloc(opaque, items, size);
 }
 
 static void zfree(void *opaque, void *ptr)
 {
-	fz_free(ptr);
+	fz_free(opaque, ptr);
 }
 
 static int
@@ -77,7 +77,7 @@ close_flated(fz_stream *stm)
 		fz_warn("zlib error: inflateEnd: %s", state->z.msg);
 
 	fz_close(state->chain);
-	fz_free(state);
+	fz_free(stm->ctx, state);
 }
 
 fz_stream *
@@ -86,12 +86,12 @@ fz_open_flated(fz_stream *chain)
 	fz_flate *state;
 	int code;
 
-	state = fz_malloc(sizeof(fz_flate));
+	state = fz_malloc(chain->ctx, sizeof(fz_flate));
 	state->chain = chain;
 
 	state->z.zalloc = zalloc;
 	state->z.zfree = zfree;
-	state->z.opaque = NULL;
+	state->z.opaque = chain->ctx;
 	state->z.next_in = NULL;
 	state->z.avail_in = 0;
 
@@ -99,5 +99,5 @@ fz_open_flated(fz_stream *chain)
 	if (code != Z_OK)
 		fz_warn("zlib error: inflateInit: %s", state->z.msg);
 
-	return fz_new_stream(state, read_flated, close_flated);
+	return fz_new_stream(chain->ctx, state, read_flated, close_flated);
 }

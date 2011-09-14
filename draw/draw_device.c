@@ -38,6 +38,7 @@ struct fz_draw_device_s
 {
 	fz_glyph_cache *cache;
 	fz_gel *gel;
+	fz_context *ctx;
 
 	fz_pixmap *dest;
 	fz_pixmap *shape;
@@ -88,9 +89,8 @@ static void dump_spaces(int x, const char *s)
 
 #endif
 
-static void fz_knockout_begin(void *user)
+static void fz_knockout_begin(fz_draw_device *dev)
 {
-	fz_draw_device *dev = user;
 	fz_bbox bbox;
 	fz_pixmap *dest, *shape;
 	int isolated = dev->blendmode & FZ_BLEND_ISOLATED;
@@ -106,7 +106,7 @@ static void fz_knockout_begin(void *user)
 
 	bbox = fz_bound_pixmap(dev->dest);
 	bbox = fz_intersect_bbox(bbox, dev->scissor);
-	dest = fz_new_pixmap_with_rect(dev->dest->colorspace, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, dev->dest->colorspace, bbox);
 
 	if (isolated)
 	{
@@ -130,7 +130,7 @@ static void fz_knockout_begin(void *user)
 	}
 	else
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 	dev->stack[dev->top].blendmode = dev->blendmode;
@@ -148,9 +148,8 @@ static void fz_knockout_begin(void *user)
 	dev->blendmode &= ~FZ_BLEND_MODEMASK;
 }
 
-static void fz_knockout_end(void *user)
+static void fz_knockout_end(fz_draw_device *dev)
 {
-	fz_draw_device *dev = user;
 	fz_pixmap *group = dev->dest;
 	fz_pixmap *shape = dev->shape;
 	int blendmode;
@@ -194,14 +193,14 @@ static void fz_knockout_end(void *user)
 		else
 			fz_blend_pixmap(dev->dest, group, 255, blendmode, isolated, shape);
 
-		fz_drop_pixmap(group);
+		fz_drop_pixmap(dev->ctx, group);
 		if (shape != dev->shape)
 		{
 			if (dev->shape)
 			{
 				fz_paint_pixmap(dev->shape, shape, 255);
 			}
-			fz_drop_pixmap(shape);
+			fz_drop_pixmap(dev->ctx, shape);
 		}
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(dev->dest, " to get ");
@@ -213,10 +212,10 @@ static void fz_knockout_end(void *user)
 }
 
 static void
-fz_draw_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
+fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
@@ -259,10 +258,10 @@ fz_draw_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
 }
 
 static void
-fz_draw_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
+fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
@@ -315,9 +314,9 @@ fz_draw_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matri
 }
 
 static void
-fz_draw_clip_path(void *user, fz_path *path, fz_rect *rect, int even_odd, fz_matrix ctm)
+fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, fz_matrix ctm)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
@@ -354,14 +353,14 @@ fz_draw_clip_path(void *user, fz_path *path, fz_rect *rect, int even_odd, fz_mat
 		return;
 	}
 
-	mask = fz_new_pixmap_with_rect(NULL, bbox);
+	mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 	fz_clear_pixmap(mask);
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
 	if (dev->shape)
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 	else
@@ -385,9 +384,9 @@ fz_draw_clip_path(void *user, fz_path *path, fz_rect *rect, int even_odd, fz_mat
 }
 
 static void
-fz_draw_clip_stroke_path(void *user, fz_path *path, fz_rect *rect, fz_stroke_state *stroke, fz_matrix ctm)
+fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect *rect, fz_stroke_state *stroke, fz_matrix ctm)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
@@ -416,14 +415,14 @@ fz_draw_clip_stroke_path(void *user, fz_path *path, fz_rect *rect, fz_stroke_sta
 	if (rect)
 		bbox = fz_intersect_bbox(bbox, fz_round_rect(*rect));
 
-	mask = fz_new_pixmap_with_rect(NULL, bbox);
+	mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 	fz_clear_pixmap(mask);
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
 	if (dev->shape)
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 	else
@@ -484,10 +483,10 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *msk,
 }
 
 static void
-fz_draw_fill_text(void *user, fz_text *text, fz_matrix ctm,
+fz_draw_fill_text(fz_device *devp, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	unsigned char shapebv;
@@ -521,7 +520,7 @@ fz_draw_fill_text(void *user, fz_text *text, fz_matrix ctm,
 		trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		glyph = fz_render_glyph(dev->cache, text->font, gid, trm, model);
+		glyph = fz_render_glyph(dev->ctx, dev->cache, text->font, gid, trm, model);
 		if (glyph)
 		{
 			if (glyph->n == 1)
@@ -535,7 +534,7 @@ fz_draw_fill_text(void *user, fz_text *text, fz_matrix ctm,
 				fz_matrix ctm = {glyph->w, 0.0, 0.0, -glyph->h, x + glyph->x, y + glyph->y + glyph->h};
 				fz_paint_image(dev->dest, dev->scissor, dev->shape, glyph, ctm, alpha * 255);
 			}
-			fz_drop_pixmap(glyph);
+			fz_drop_pixmap(dev->ctx, glyph);
 		}
 	}
 
@@ -544,10 +543,10 @@ fz_draw_fill_text(void *user, fz_text *text, fz_matrix ctm,
 }
 
 static void
-fz_draw_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
+fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	float colorfv[FZ_MAX_COLORS];
@@ -579,13 +578,13 @@ fz_draw_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matri
 		trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		glyph = fz_render_stroked_glyph(dev->cache, text->font, gid, trm, ctm, stroke);
+		glyph = fz_render_stroked_glyph(dev->ctx, dev->cache, text->font, gid, trm, ctm, stroke);
 		if (glyph)
 		{
 			draw_glyph(colorbv, dev->dest, glyph, x, y, dev->scissor);
 			if (dev->shape)
 				draw_glyph(colorbv, dev->shape, glyph, x, y, dev->scissor);
-			fz_drop_pixmap(glyph);
+			fz_drop_pixmap(dev->ctx, glyph);
 		}
 	}
 
@@ -594,9 +593,9 @@ fz_draw_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matri
 }
 
 static void
-fz_draw_clip_text(void *user, fz_text *text, fz_matrix ctm, int accumulate)
+fz_draw_clip_text(fz_device *devp, fz_text *text, fz_matrix ctm, int accumulate)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_bbox bbox;
 	fz_pixmap *mask, *dest, *shape;
@@ -628,14 +627,14 @@ fz_draw_clip_text(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 
 	if (accumulate == 0 || accumulate == 1)
 	{
-		mask = fz_new_pixmap_with_rect(NULL, bbox);
+		mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(mask);
-		dest = fz_new_pixmap_with_rect(model, bbox);
+		dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 		/* FIXME: See note #1 */
 		fz_clear_pixmap(dest);
 		if (dev->shape)
 		{
-			shape = fz_new_pixmap_with_rect(NULL, bbox);
+			shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 			fz_clear_pixmap(shape);
 		}
 		else
@@ -678,22 +677,22 @@ fz_draw_clip_text(void *user, fz_text *text, fz_matrix ctm, int accumulate)
 			trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 			trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-			glyph = fz_render_glyph(dev->cache, text->font, gid, trm, model);
+			glyph = fz_render_glyph(dev->ctx, dev->cache, text->font, gid, trm, model);
 			if (glyph)
 			{
 				draw_glyph(NULL, mask, glyph, x, y, bbox);
 				if (dev->shape)
 					draw_glyph(NULL, dev->shape, glyph, x, y, bbox);
-				fz_drop_pixmap(glyph);
+				fz_drop_pixmap(dev->ctx, glyph);
 			}
 		}
 	}
 }
 
 static void
-fz_draw_clip_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm)
+fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_bbox bbox;
 	fz_pixmap *mask, *dest, *shape;
@@ -711,14 +710,14 @@ fz_draw_clip_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_
 	bbox = fz_round_rect(fz_bound_text(text, ctm));
 	bbox = fz_intersect_bbox(bbox, dev->scissor);
 
-	mask = fz_new_pixmap_with_rect(NULL, bbox);
+	mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 	fz_clear_pixmap(mask);
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
 	if (dev->shape)
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 	else
@@ -756,27 +755,27 @@ fz_draw_clip_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_
 			trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 			trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-			glyph = fz_render_stroked_glyph(dev->cache, text->font, gid, trm, ctm, stroke);
+			glyph = fz_render_stroked_glyph(dev->ctx, dev->cache, text->font, gid, trm, ctm, stroke);
 			if (glyph)
 			{
 				draw_glyph(NULL, mask, glyph, x, y, bbox);
 				if (dev->shape)
 					draw_glyph(NULL, dev->shape, glyph, x, y, bbox);
-				fz_drop_pixmap(glyph);
+				fz_drop_pixmap(dev->ctx, glyph);
 			}
 		}
 	}
 }
 
 static void
-fz_draw_ignore_text(void *user, fz_text *text, fz_matrix ctm)
+fz_draw_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm)
 {
 }
 
 static void
-fz_draw_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
+fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_pixmap *dest = dev->dest;
 	fz_rect bounds;
@@ -801,7 +800,7 @@ fz_draw_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
 
 	if (alpha < 1)
 	{
-		dest = fz_new_pixmap_with_rect(dev->dest->colorspace, bbox);
+		dest = fz_new_pixmap_with_rect(dev->ctx, dev->dest->colorspace, bbox);
 		fz_clear_pixmap(dest);
 	}
 
@@ -840,14 +839,14 @@ fz_draw_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
 		}
 	}
 
-	fz_paint_shade(shade, ctm, dest, bbox);
+	fz_paint_shade(dev->ctx, shade, ctm, dest, bbox);
 	if (dev->shape)
 		fz_clear_pixmap_rect_with_color(dev->shape, 255, bbox);
 
 	if (alpha < 1)
 	{
 		fz_paint_pixmap(dev->dest, dest, alpha * 255);
-		fz_drop_pixmap(dest);
+		fz_drop_pixmap(dev->ctx, dest);
 	}
 
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
@@ -855,14 +854,14 @@ fz_draw_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
 }
 
 static fz_pixmap *
-fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy, int gridfit)
+fz_transform_pixmap(fz_context *ctx, fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy, int gridfit)
 {
 	fz_pixmap *scaled;
 
 	if (ctm->a != 0 && ctm->b == 0 && ctm->c == 0 && ctm->d != 0)
 	{
 		/* Unrotated or X-flip or Y-flip or XY-flip */
-		scaled = fz_scale_pixmap_gridfit(image, ctm->e, ctm->f, ctm->a, ctm->d, gridfit);
+		scaled = fz_scale_pixmap_gridfit(ctx, image, ctm->e, ctm->f, ctm->a, ctm->d, gridfit);
 		if (scaled == NULL)
 			return NULL;
 		ctm->a = scaled->w;
@@ -875,7 +874,7 @@ fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int 
 	if (ctm->a == 0 && ctm->b != 0 && ctm->c != 0 && ctm->d == 0)
 	{
 		/* Other orthogonal flip/rotation cases */
-		scaled = fz_scale_pixmap_gridfit(image, ctm->f, ctm->e, ctm->b, ctm->c, gridfit);
+		scaled = fz_scale_pixmap_gridfit(ctx, image, ctm->f, ctm->e, ctm->b, ctm->c, gridfit);
 		if (scaled == NULL)
 			return NULL;
 		ctm->b = scaled->w;
@@ -888,7 +887,7 @@ fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int 
 	/* Downscale, non rectilinear case */
 	if (dx > 0 && dy > 0)
 	{
-		scaled = fz_scale_pixmap(image, 0, 0, (float)dx, (float)dy);
+		scaled = fz_scale_pixmap(ctx, image, 0, 0, (float)dx, (float)dy);
 		return scaled;
 	}
 
@@ -896,9 +895,9 @@ fz_transform_pixmap(fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int 
 }
 
 static void
-fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
+fz_draw_fill_image(fz_device *devp, fz_pixmap *image, fz_matrix ctm, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_pixmap *converted = NULL;
 	fz_pixmap *scaled = NULL;
@@ -927,8 +926,8 @@ fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 
 	if (image->colorspace != model && !after)
 	{
-		converted = fz_new_pixmap_with_rect(model, fz_bound_pixmap(image));
-		fz_convert_pixmap(image, converted);
+		converted = fz_new_pixmap_with_rect(dev->ctx, model, fz_bound_pixmap(image));
+		fz_convert_pixmap(dev->ctx, image, converted);
 		image = converted;
 	}
 
@@ -937,14 +936,14 @@ fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 	if (dx < image->w && dy < image->h)
 	{
 		int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
+		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
 		if (scaled == NULL)
 		{
 			if (dx < 1)
 				dx = 1;
 			if (dy < 1)
 				dy = 1;
-			scaled = fz_scale_pixmap(image, image->x, image->y, dx, dy);
+			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
 		if (scaled != NULL)
 			image = scaled;
@@ -959,8 +958,8 @@ fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 		}
 		else
 		{
-			converted = fz_new_pixmap_with_rect(model, fz_bound_pixmap(image));
-			fz_convert_pixmap(image, converted);
+			converted = fz_new_pixmap_with_rect(dev->ctx, model, fz_bound_pixmap(image));
+			fz_convert_pixmap(dev->ctx, image, converted);
 			image = converted;
 		}
 	}
@@ -968,19 +967,19 @@ fz_draw_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
 	fz_paint_image(dev->dest, dev->scissor, dev->shape, image, ctm, alpha * 255);
 
 	if (scaled)
-		fz_drop_pixmap(scaled);
+		fz_drop_pixmap(dev->ctx, scaled);
 	if (converted)
-		fz_drop_pixmap(converted);
+		fz_drop_pixmap(dev->ctx, converted);
 
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_end(dev);
 }
 
 static void
-fz_draw_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm,
+fz_draw_fill_image_mask(fz_device *devp, fz_pixmap *image, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	float colorfv[FZ_MAX_COLORS];
@@ -999,14 +998,14 @@ fz_draw_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm,
 	if (dx < image->w && dy < image->h)
 	{
 		int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
+		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
 		if (scaled == NULL)
 		{
 			if (dx < 1)
 				dx = 1;
 			if (dy < 1)
 				dy = 1;
-			scaled = fz_scale_pixmap(image, image->x, image->y, dx, dy);
+			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
 		if (scaled != NULL)
 			image = scaled;
@@ -1020,16 +1019,16 @@ fz_draw_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm,
 	fz_paint_image_with_color(dev->dest, dev->scissor, dev->shape, image, ctm, colorbv);
 
 	if (scaled)
-		fz_drop_pixmap(scaled);
+		fz_drop_pixmap(dev->ctx, scaled);
 
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(dev);
 }
 
 static void
-fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix ctm)
+fz_draw_clip_image_mask(fz_device *devp, fz_pixmap *image, fz_rect *rect, fz_matrix ctm)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_bbox bbox;
 	fz_pixmap *mask, *dest, *shape;
@@ -1062,14 +1061,14 @@ fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix c
 	if (rect)
 		bbox = fz_intersect_bbox(bbox, fz_round_rect(*rect));
 
-	mask = fz_new_pixmap_with_rect(NULL, bbox);
+	mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 	fz_clear_pixmap(mask);
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
 	if (dev->shape)
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 	else
@@ -1080,14 +1079,14 @@ fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix c
 	if (dx < image->w && dy < image->h)
 	{
 		int gridfit = !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
-		scaled = fz_transform_pixmap(image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
+		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
 		if (scaled == NULL)
 		{
 			if (dx < 1)
 				dx = 1;
 			if (dy < 1)
 				dy = 1;
-			scaled = fz_scale_pixmap(image, image->x, image->y, dx, dy);
+			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
 		if (scaled != NULL)
 			image = scaled;
@@ -1096,7 +1095,7 @@ fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix c
 	fz_paint_image(mask, bbox, dev->shape, image, ctm, 255);
 
 	if (scaled)
-		fz_drop_pixmap(scaled);
+		fz_drop_pixmap(dev->ctx, scaled);
 
 	dev->stack[dev->top].scissor = dev->scissor;
 	dev->stack[dev->top].mask = mask;
@@ -1111,9 +1110,9 @@ fz_draw_clip_image_mask(void *user, fz_pixmap *image, fz_rect *rect, fz_matrix c
 }
 
 static void
-fz_draw_pop_clip(void *user)
+fz_draw_pop_clip(fz_device *devp)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_pixmap *mask, *dest, *shape;
 	if (dev->top > 0)
 	{
@@ -1147,11 +1146,11 @@ fz_draw_pop_clip(void *user)
 			{
 				assert(shape != dev->shape);
 				fz_paint_pixmap_with_mask(shape, dev->shape, mask);
-				fz_drop_pixmap(dev->shape);
+				fz_drop_pixmap(dev->ctx, dev->shape);
 				dev->shape = shape;
 			}
-			fz_drop_pixmap(mask);
-			fz_drop_pixmap(dev->dest);
+			fz_drop_pixmap(dev->ctx, mask);
+			fz_drop_pixmap(dev->ctx, dev->dest);
 			dev->dest = dest;
 #ifdef DUMP_GROUP_BLENDS
 			fz_dump_blend(dev->dest, " to get ");
@@ -1172,9 +1171,9 @@ fz_draw_pop_clip(void *user)
 }
 
 static void
-fz_draw_begin_mask(void *user, fz_rect rect, int luminosity, fz_colorspace *colorspace, float *colorfv)
+fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace *colorspace, float *colorfv)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_pixmap *dest;
 	fz_pixmap *shape = dev->shape;
 	fz_bbox bbox;
@@ -1187,7 +1186,7 @@ fz_draw_begin_mask(void *user, fz_rect rect, int luminosity, fz_colorspace *colo
 
 	bbox = fz_round_rect(rect);
 	bbox = fz_intersect_bbox(bbox, dev->scissor);
-	dest = fz_new_pixmap_with_rect(fz_device_gray, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, fz_device_gray, bbox);
 	if (dev->shape)
 	{
 		/* FIXME: If we ever want to support AIS true, then we
@@ -1232,9 +1231,9 @@ fz_draw_begin_mask(void *user, fz_rect rect, int luminosity, fz_colorspace *colo
 }
 
 static void
-fz_draw_end_mask(void *user)
+fz_draw_end_mask(fz_device *devp)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_pixmap *mask = dev->dest;
 	fz_pixmap *maskshape = dev->shape;
 	fz_pixmap *temp, *dest;
@@ -1257,13 +1256,13 @@ fz_draw_end_mask(void *user)
 		dev->shape = dev->stack[dev->top].shape;
 
 		/* convert to alpha mask */
-		temp = fz_alpha_from_gray(mask, luminosity);
-		fz_drop_pixmap(mask);
-		fz_drop_pixmap(maskshape);
+		temp = fz_alpha_from_gray(dev->ctx, mask, luminosity);
+		fz_drop_pixmap(dev->ctx, mask);
+		fz_drop_pixmap(dev->ctx, maskshape);
 
 		/* create new dest scratch buffer */
 		bbox = fz_bound_pixmap(temp);
-		dest = fz_new_pixmap_with_rect(dev->dest->colorspace, bbox);
+		dest = fz_new_pixmap_with_rect(dev->ctx, dev->dest->colorspace, bbox);
 		/* FIXME: See note #1 */
 		fz_clear_pixmap(dest);
 
@@ -1278,7 +1277,7 @@ fz_draw_end_mask(void *user)
 		if (dev->shape)
 		{
 			dev->stack[dev->top].shape = dev->shape;
-			dev->shape = fz_new_pixmap_with_rect(NULL, bbox);
+			dev->shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 			fz_clear_pixmap(dev->shape);
 		}
 		dev->scissor = bbox;
@@ -1291,9 +1290,9 @@ fz_draw_end_mask(void *user)
 }
 
 static void
-fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, int blendmode, float alpha)
+fz_draw_begin_group(fz_device *devp, fz_rect rect, int isolated, int knockout, int blendmode, float alpha)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_bbox bbox;
 	fz_pixmap *dest, *shape;
@@ -1309,7 +1308,7 @@ fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, int bl
 
 	bbox = fz_round_rect(rect);
 	bbox = fz_intersect_bbox(bbox, dev->scissor);
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 
 #ifndef ATTEMPT_KNOCKOUT_AND_ISOLATED
 	knockout = 0;
@@ -1333,7 +1332,7 @@ fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, int bl
 	}
 	else
 	{
-		shape = fz_new_pixmap_with_rect(NULL, bbox);
+		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
 		fz_clear_pixmap(shape);
 	}
 
@@ -1354,9 +1353,9 @@ fz_draw_begin_group(void *user, fz_rect rect, int isolated, int knockout, int bl
 }
 
 static void
-fz_draw_end_group(void *user)
+fz_draw_end_group(fz_device *devp)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_pixmap *group = dev->dest;
 	fz_pixmap *shape = dev->shape;
 	int blendmode;
@@ -1396,14 +1395,14 @@ fz_draw_end_group(void *user)
 		else
 			fz_blend_pixmap(dev->dest, group, alpha * 255, blendmode, isolated, shape);
 
-		fz_drop_pixmap(group);
+		fz_drop_pixmap(dev->ctx, group);
 		if (shape != dev->shape)
 		{
 			if (dev->shape)
 			{
 				fz_paint_pixmap(dev->shape, shape, alpha * 255);
 			}
-			fz_drop_pixmap(shape);
+			fz_drop_pixmap(dev->ctx, shape);
 		}
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(dev->dest, " to get ");
@@ -1418,9 +1417,9 @@ fz_draw_end_group(void *user)
 }
 
 static void
-fz_draw_begin_tile(void *user, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm)
+fz_draw_begin_tile(fz_device *devp, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_colorspace *model = dev->dest->colorspace;
 	fz_pixmap *dest;
 	fz_bbox bbox;
@@ -1438,7 +1437,7 @@ fz_draw_begin_tile(void *user, fz_rect area, fz_rect view, float xstep, float ys
 		fz_knockout_begin(dev);
 
 	bbox = fz_round_rect(fz_transform_rect(ctm, view));
-	dest = fz_new_pixmap_with_rect(model, bbox);
+	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
 
@@ -1461,9 +1460,9 @@ fz_draw_begin_tile(void *user, fz_rect area, fz_rect view, float xstep, float ys
 }
 
 static void
-fz_draw_end_tile(void *user)
+fz_draw_end_tile(fz_device *devp)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	fz_pixmap *tile = dev->dest;
 	float xstep, ystep;
 	fz_matrix ctm, ttm;
@@ -1504,7 +1503,7 @@ fz_draw_end_tile(void *user)
 			}
 		}
 
-		fz_drop_pixmap(tile);
+		fz_drop_pixmap(dev->ctx, tile);
 	}
 
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
@@ -1512,35 +1511,36 @@ fz_draw_end_tile(void *user)
 }
 
 static void
-fz_draw_free_user(void *user)
+fz_draw_free_user(fz_device *devp)
 {
-	fz_draw_device *dev = user;
+	fz_draw_device *dev = devp->user;
 	/* TODO: pop and free the stacks */
 	if (dev->top > 0)
 		fz_warn("items left on stack in draw device: %d", dev->top);
 	fz_free_gel(dev->gel);
-	fz_free(dev);
+	fz_free(devp->ctx, dev);
 }
 
 fz_device *
-fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest)
+fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 {
 	fz_device *dev;
-	fz_draw_device *ddev = fz_malloc(sizeof(fz_draw_device));
+	fz_draw_device *ddev = fz_malloc(ctx, sizeof(fz_draw_device));
 	ddev->cache = cache;
-	ddev->gel = fz_new_gel();
+	ddev->gel = fz_new_gel(ctx);
 	ddev->dest = dest;
 	ddev->shape = NULL;
 	ddev->top = 0;
 	ddev->blendmode = 0;
 	ddev->flags = 0;
+	ddev->ctx = ctx;
 
 	ddev->scissor.x0 = dest->x;
 	ddev->scissor.y0 = dest->y;
 	ddev->scissor.x1 = dest->x + dest->w;
 	ddev->scissor.y1 = dest->y + dest->h;
 
-	dev = fz_new_device(ddev);
+	dev = fz_new_device(ctx, ddev);
 	dev->free_user = fz_draw_free_user;
 
 	dev->fill_path = fz_draw_fill_path;
@@ -1573,9 +1573,9 @@ fz_new_draw_device(fz_glyph_cache *cache, fz_pixmap *dest)
 }
 
 fz_device *
-fz_new_draw_device_type3(fz_glyph_cache *cache, fz_pixmap *dest)
+fz_new_draw_device_type3(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 {
-	fz_device *dev = fz_new_draw_device(cache, dest);
+	fz_device *dev = fz_new_draw_device(ctx, cache, dest);
 	fz_draw_device *ddev = dev->user;
 	ddev->flags |= FZ_DRAWDEV_FLAGS_TYPE3;
 	return dev;

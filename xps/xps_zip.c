@@ -8,10 +8,10 @@ xps_new_part(xps_context *ctx, char *name, int size)
 {
 	xps_part *part;
 
-	part = fz_malloc(sizeof(xps_part));
-	part->name = fz_strdup(name);
+	part = fz_malloc(ctx->ctx, sizeof(xps_part));
+	part->name = fz_strdup(ctx->ctx, name);
 	part->size = size;
-	part->data = fz_malloc(size + 1);
+	part->data = fz_malloc(ctx->ctx, size + 1);
 	part->data[size] = 0; /* null-terminate for xml parser */
 
 	return part;
@@ -20,9 +20,9 @@ xps_new_part(xps_context *ctx, char *name, int size)
 void
 xps_free_part(xps_context *ctx, xps_part *part)
 {
-	fz_free(part->name);
-	fz_free(part->data);
-	fz_free(part);
+	fz_free(ctx->ctx, part->name);
+	fz_free(ctx->ctx, part->data);
+	fz_free(ctx->ctx, part);
 }
 
 static inline int getshort(fz_stream *file)
@@ -44,13 +44,13 @@ static inline int getlong(fz_stream *file)
 static void *
 xps_zip_alloc_items(xps_context *ctx, int items, int size)
 {
-	return fz_calloc(items, size);
+	return fz_calloc(ctx->ctx, items, size);
 }
 
 static void
 xps_zip_free(xps_context *ctx, void *ptr)
 {
-	fz_free(ptr);
+	fz_free(ctx->ctx, ptr);
 }
 
 static int
@@ -115,7 +115,7 @@ xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
 	}
 	else if (method == 8)
 	{
-		inbuf = fz_malloc(ent->csize);
+		inbuf = fz_malloc(ctx->ctx, ent->csize);
 
 		fz_read(ctx->file, inbuf, ent->csize);
 
@@ -141,7 +141,7 @@ xps_read_zip_entry(xps_context *ctx, xps_entry *ent, unsigned char *outbuf)
 		if (code != Z_OK)
 			return fz_error_make("zlib inflateEnd error: %s", stream.msg);
 
-		fz_free(inbuf);
+		fz_free(ctx->ctx, inbuf);
 	}
 	else
 	{
@@ -177,8 +177,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 	offset = getlong(ctx->file); /* offset to central directory */
 
 	ctx->zip_count = count;
-	ctx->zip_table = fz_calloc(count, sizeof(xps_entry));
-	memset(ctx->zip_table, 0, sizeof(xps_entry) * count);
+	ctx->zip_table = fz_calloc(ctx->ctx, count, sizeof(xps_entry));
 
 	fz_seek(ctx->file, offset, 0);
 
@@ -205,7 +204,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 		(void) getlong(ctx->file); /* ext file atts */
 		ctx->zip_table[i].offset = getlong(ctx->file);
 
-		ctx->zip_table[i].name = fz_malloc(namesize + 1);
+		ctx->zip_table[i].name = fz_malloc(ctx->ctx, namesize + 1);
 		fz_read(ctx->file, (unsigned char*)ctx->zip_table[i].name, namesize);
 		ctx->zip_table[i].name[namesize] = 0;
 
@@ -391,15 +390,15 @@ xps_read_part(xps_context *ctx, char *partname)
 }
 
 static int
-xps_open_directory(xps_context **ctxp, char *directory)
+xps_open_directory(fz_context *fctx, xps_context **ctxp, char *directory)
 {
 	xps_context *ctx;
 	int code;
 
-	ctx = fz_malloc(sizeof(xps_context));
-	memset(ctx, 0, sizeof(xps_context));
+	ctx = fz_calloc(fctx, 1, sizeof(xps_context));
 
-	ctx->directory = fz_strdup(directory);
+	ctx->directory = fz_strdup(fctx, directory);
+	ctx->ctx = fctx;
 
 	code = xps_read_page_list(ctx);
 	if (code)
@@ -418,9 +417,9 @@ xps_open_stream(xps_context **ctxp, fz_stream *file)
 	xps_context *ctx;
 	int code;
 
-	ctx = fz_malloc(sizeof(xps_context));
-	memset(ctx, 0, sizeof(xps_context));
+	ctx = fz_calloc(file->ctx, 1, sizeof(xps_context));
 
+	ctx->ctx = file->ctx;
 	ctx->file = fz_keep_stream(file);
 
 	code = xps_find_and_read_zip_dir(ctx);
@@ -442,7 +441,7 @@ xps_open_stream(xps_context **ctxp, fz_stream *file)
 }
 
 int
-xps_open_file(xps_context **ctxp, char *filename)
+xps_open_file(fz_context *ctx, xps_context **ctxp, char *filename)
 {
 	char buf[2048];
 	fz_stream *file;
@@ -456,10 +455,10 @@ xps_open_file(xps_context **ctxp, char *filename)
 		if (!p)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
-		return xps_open_directory(ctxp, buf);
+		return xps_open_directory(ctx, ctxp, buf);
 	}
 
-	file = fz_open_file(filename);
+	file = fz_open_file(ctx, filename);
 	if (!file)
 		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
 
@@ -480,22 +479,22 @@ xps_free_context(xps_context *ctx)
 		fz_close(ctx->file);
 
 	for (i = 0; i < ctx->zip_count; i++)
-		fz_free(ctx->zip_table[i].name);
-	fz_free(ctx->zip_table);
+		fz_free(ctx->ctx, ctx->zip_table[i].name);
+	fz_free(ctx->ctx, ctx->zip_table);
 
 	font = ctx->font_table;
 	while (font)
 	{
 		next = font->next;
-		fz_drop_font(font->font);
-		fz_free(font->name);
-		fz_free(font);
+		fz_drop_font(ctx->ctx, font->font);
+		fz_free(ctx->ctx, font->name);
+		fz_free(ctx->ctx, font);
 		font = next;
 	}
 
 	xps_free_page_list(ctx);
 
-	fz_free(ctx->start_part);
-	fz_free(ctx->directory);
-	fz_free(ctx);
+	fz_free(ctx->ctx, ctx->start_part);
+	fz_free(ctx->ctx, ctx->directory);
+	fz_free(ctx->ctx, ctx);
 }

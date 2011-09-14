@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 static int
-xps_decode_image(fz_pixmap **imagep, byte *buf, int len)
+xps_decode_image(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 {
 	int error;
 
@@ -11,13 +11,13 @@ xps_decode_image(fz_pixmap **imagep, byte *buf, int len)
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
 	{
-		error = xps_decode_jpeg(imagep, buf, len);
+		error = xps_decode_jpeg(ctx, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode jpeg image");
 	}
 	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 	{
-		error = xps_decode_png(imagep, buf, len);
+		error = xps_decode_png(ctx, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode png image");
 	}
@@ -27,7 +27,7 @@ xps_decode_image(fz_pixmap **imagep, byte *buf, int len)
 	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 	{
-		error = xps_decode_tiff(imagep, buf, len);
+		error = xps_decode_tiff(ctx, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode TIFF image");
 	}
@@ -114,7 +114,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 		return;
 	}
 
-	code = xps_decode_image(&image, part->data, part->size);
+	code = xps_decode_image(ctx->ctx, &image, part->data, part->size);
 	if (code < 0) {
 		xps_free_part(ctx, part);
 		fz_error_handle(-1, "cannot decode image resource");
@@ -123,6 +123,6 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 	xps_parse_tiling_brush(ctx, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
 
-	fz_drop_pixmap(image);
+	fz_drop_pixmap(ctx->ctx, image);
 	xps_free_part(ctx, part);
 }

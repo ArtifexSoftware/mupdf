@@ -8,6 +8,7 @@ typedef struct fz_dctd_s fz_dctd;
 struct fz_dctd_s
 {
 	fz_stream *chain;
+	fz_context *ctx;
 	int color_transform;
 	int init;
 	int stride;
@@ -144,7 +145,7 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 		jpeg_start_decompress(cinfo);
 
 		state->stride = cinfo->output_width * cinfo->output_components;
-		state->scanline = fz_malloc(state->stride);
+		state->scanline = fz_malloc(state->ctx, state->stride);
 		state->rp = state->scanline;
 		state->wp = state->scanline;
 
@@ -196,9 +197,9 @@ close_dctd(fz_stream *stm)
 skip:
 	state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
 	jpeg_destroy_decompress(&state->cinfo);
-	fz_free(state->scanline);
+	fz_free(stm->ctx, state->scanline);
 	fz_close(state->chain);
-	fz_free(state);
+	fz_free(stm->ctx, state);
 }
 
 fz_stream *
@@ -207,15 +208,16 @@ fz_open_dctd(fz_stream *chain, fz_obj *params)
 	fz_dctd *state;
 	fz_obj *obj;
 
-	state = fz_malloc(sizeof(fz_dctd));
-	memset(state, 0, sizeof(fz_dctd));
+        assert(chain);
+        state = fz_calloc(chain->ctx, 1, sizeof(fz_dctd));
+        state->ctx = chain->ctx;
 	state->chain = chain;
 	state->color_transform = -1; /* unset */
 	state->init = 0;
 
-	obj = fz_dict_gets(params, "ColorTransform");
+	obj = fz_dict_gets(chain->ctx, params, "ColorTransform");
 	if (obj)
-		state->color_transform = fz_to_int(obj);
+		state->color_transform = fz_to_int(chain->ctx, obj);
 
-	return fz_new_stream(state, read_dctd, close_dctd);
+	return fz_new_stream(chain->ctx, state, read_dctd, close_dctd);
 }

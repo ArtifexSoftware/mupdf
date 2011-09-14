@@ -87,9 +87,11 @@ struct pdfapp_s
 
 	/* client context storage */
 	void *userdata;
+
+	fz_context *ctx;
 };
 
-void pdfapp_init(pdfapp_t *app);
+void pdfapp_init(fz_context *ctx, pdfapp_t *app);
 void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload);
 void pdfapp_close(pdfapp_t *app);
 

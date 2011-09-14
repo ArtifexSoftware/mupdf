@@ -10,6 +10,7 @@ struct fmt
 	int col;
 	int sep;
 	int last;
+	fz_context *ctx;
 };
 
 static void fmt_obj(struct fmt *fmt, fz_obj *obj);
@@ -78,8 +79,8 @@ static inline void fmt_sep(struct fmt *fmt)
 
 static void fmt_str(struct fmt *fmt, fz_obj *obj)
 {
-	char *s = fz_to_str_buf(obj);
-	int n = fz_to_str_len(obj);
+	char *s = fz_to_str_buf(fmt->ctx, obj);
+	int n = fz_to_str_len(fmt->ctx, obj);
 	int i, c;
 
 	fmt_putc(fmt, '(');
@@ -114,8 +115,8 @@ static void fmt_str(struct fmt *fmt, fz_obj *obj)
 
 static void fmt_hex(struct fmt *fmt, fz_obj *obj)
 {
-	char *s = fz_to_str_buf(obj);
-	int n = fz_to_str_len(obj);
+	char *s = fz_to_str_buf(fmt->ctx, obj);
+	int n = fz_to_str_len(fmt->ctx, obj);
 	int i, b, c;
 
 	fmt_putc(fmt, '<');
@@ -131,7 +132,7 @@ static void fmt_hex(struct fmt *fmt, fz_obj *obj)
 
 static void fmt_name(struct fmt *fmt, fz_obj *obj)
 {
-	unsigned char *s = (unsigned char *) fz_to_name(obj);
+	unsigned char *s = (unsigned char *) fz_to_name(fmt->ctx, obj);
 	int i, c;
 
 	fmt_putc(fmt, '/');
@@ -156,24 +157,26 @@ static void fmt_name(struct fmt *fmt, fz_obj *obj)
 
 static void fmt_array(struct fmt *fmt, fz_obj *obj)
 {
-	int i;
+	int i, n;
+	fz_context *ctx = fmt->ctx;
 
+	n = fz_array_len(ctx, obj);
 	if (fmt->tight) {
 		fmt_putc(fmt, '[');
-		for (i = 0; i < fz_array_len(obj); i++) {
-			fmt_obj(fmt, fz_array_get(obj, i));
+		for (i = 0; i < n; i++) {
+			fmt_obj(fmt, fz_array_get(ctx, obj, i));
 			fmt_sep(fmt);
 		}
 		fmt_putc(fmt, ']');
 	}
 	else {
 		fmt_puts(fmt, "[ ");
-		for (i = 0; i < fz_array_len(obj); i++) {
+		for (i = 0; i < n; i++) {
 			if (fmt->col > 60) {
 				fmt_putc(fmt, '\n');
 				fmt_indent(fmt);
 			}
-			fmt_obj(fmt, fz_array_get(obj, i));
+			fmt_obj(fmt, fz_array_get(ctx, obj, i));
 			fmt_putc(fmt, ' ');
 		}
 		fmt_putc(fmt, ']');
@@ -183,15 +186,17 @@ static void fmt_array(struct fmt *fmt, fz_obj *obj)
 
 static void fmt_dict(struct fmt *fmt, fz_obj *obj)
 {
-	int i;
+	int i, n;
 	fz_obj *key, *val;
+	fz_context *ctx = fmt->ctx;
 
+	n = fz_dict_len(ctx, obj);
 	if (fmt->tight) {
 		fmt_puts(fmt, "<<");
-		for (i = 0; i < fz_dict_len(obj); i++) {
-			fmt_obj(fmt, fz_dict_get_key(obj, i));
+		for (i = 0; i < n; i++) {
+			fmt_obj(fmt, fz_dict_get_key(ctx, obj, i));
 			fmt_sep(fmt);
-			fmt_obj(fmt, fz_dict_get_val(obj, i));
+			fmt_obj(fmt, fz_dict_get_val(ctx, obj, i));
 			fmt_sep(fmt);
 		}
 		fmt_puts(fmt, ">>");
@@ -199,17 +204,17 @@ static void fmt_dict(struct fmt *fmt, fz_obj *obj)
 	else {
 		fmt_puts(fmt, "<<\n");
 		fmt->indent ++;
-		for (i = 0; i < fz_dict_len(obj); i++) {
-			key = fz_dict_get_key(obj, i);
-			val = fz_dict_get_val(obj, i);
+		for (i = 0; i < n; i++) {
+			key = fz_dict_get_key(ctx, obj, i);
+			val = fz_dict_get_val(ctx, obj, i);
 			fmt_indent(fmt);
 			fmt_obj(fmt, key);
 			fmt_putc(fmt, ' ');
-			if (!fz_is_indirect(val) && fz_is_array(val))
+			if (!fz_is_indirect(val) && fz_is_array(ctx, val))
 				fmt->indent ++;
 			fmt_obj(fmt, val);
 			fmt_putc(fmt, '\n');
-			if (!fz_is_indirect(val) && fz_is_array(val))
+			if (!fz_is_indirect(val) && fz_is_array(ctx, val))
 				fmt->indent --;
 		}
 		fmt->indent --;
@@ -221,6 +226,7 @@ static void fmt_dict(struct fmt *fmt, fz_obj *obj)
 static void fmt_obj(struct fmt *fmt, fz_obj *obj)
 {
 	char buf[256];
+	fz_context *ctx = fmt->ctx;
 
 	if (!obj)
 		fmt_puts(fmt, "<NULL>");
@@ -229,26 +235,26 @@ static void fmt_obj(struct fmt *fmt, fz_obj *obj)
 		sprintf(buf, "%d %d R", fz_to_num(obj), fz_to_gen(obj));
 		fmt_puts(fmt, buf);
 	}
-	else if (fz_is_null(obj))
+	else if (fz_is_null(ctx, obj))
 		fmt_puts(fmt, "null");
-	else if (fz_is_bool(obj))
-		fmt_puts(fmt, fz_to_bool(obj) ? "true" : "false");
-	else if (fz_is_int(obj))
+	else if (fz_is_bool(ctx, obj))
+		fmt_puts(fmt, fz_to_bool(ctx, obj) ? "true" : "false");
+	else if (fz_is_int(ctx, obj))
 	{
-		sprintf(buf, "%d", fz_to_int(obj));
+		sprintf(buf, "%d", fz_to_int(ctx, obj));
 		fmt_puts(fmt, buf);
 	}
-	else if (fz_is_real(obj))
+	else if (fz_is_real(ctx, obj))
 	{
-		sprintf(buf, "%g", fz_to_real(obj));
+		sprintf(buf, "%g", fz_to_real(ctx, obj));
 		if (strchr(buf, 'e')) /* bad news! */
-			sprintf(buf, fabsf(fz_to_real(obj)) > 1 ? "%1.1f" : "%1.8f", fz_to_real(obj));
+			sprintf(buf, fabsf(fz_to_real(ctx, obj)) > 1 ? "%1.1f" : "%1.8f", fz_to_real(ctx, obj));
 		fmt_puts(fmt, buf);
 	}
-	else if (fz_is_string(obj))
+	else if (fz_is_string(ctx, obj))
 	{
-		char *str = fz_to_str_buf(obj);
-		int len = fz_to_str_len(obj);
+		char *str = fz_to_str_buf(ctx, obj);
+		int len = fz_to_str_len(ctx, obj);
 		int added = 0;
 		int i, c;
 		for (i = 0; i < len; i++) {
@@ -263,18 +269,18 @@ static void fmt_obj(struct fmt *fmt, fz_obj *obj)
 		else
 			fmt_hex(fmt, obj);
 	}
-	else if (fz_is_name(obj))
+	else if (fz_is_name(ctx, obj))
 		fmt_name(fmt, obj);
-	else if (fz_is_array(obj))
+	else if (fz_is_array(ctx, obj))
 		fmt_array(fmt, obj);
-	else if (fz_is_dict(obj))
+	else if (fz_is_dict(ctx, obj))
 		fmt_dict(fmt, obj);
 	else
 		fmt_puts(fmt, "<unknown object>");
 }
 
 static int
-fz_sprint_obj(char *s, int n, fz_obj *obj, int tight)
+fz_sprint_obj(fz_context *ctx, char *s, int n, fz_obj *obj, int tight)
 {
 	struct fmt fmt;
 
@@ -287,6 +293,7 @@ fz_sprint_obj(char *s, int n, fz_obj *obj, int tight)
 	fmt.buf = s;
 	fmt.cap = n;
 	fmt.len = 0;
+	fmt.ctx = ctx;
 	fmt_obj(&fmt, obj);
 
 	if (fmt.buf && fmt.len < fmt.cap)
@@ -296,40 +303,40 @@ fz_sprint_obj(char *s, int n, fz_obj *obj, int tight)
 }
 
 int
-fz_fprint_obj(FILE *fp, fz_obj *obj, int tight)
+fz_fprint_obj(fz_context *ctx, FILE *fp, fz_obj *obj, int tight)
 {
 	char buf[1024];
 	char *ptr;
 	int n;
 
-	n = fz_sprint_obj(NULL, 0, obj, tight);
+	n = fz_sprint_obj(ctx, NULL, 0, obj, tight);
 	if ((n + 1) < sizeof buf)
 	{
-		fz_sprint_obj(buf, sizeof buf, obj, tight);
+		fz_sprint_obj(ctx, buf, sizeof buf, obj, tight);
 		fputs(buf, fp);
 		fputc('\n', fp);
 	}
 	else
 	{
-		ptr = fz_malloc(n + 1);
-		fz_sprint_obj(ptr, n + 1, obj, tight);
+		ptr = fz_malloc(ctx, n + 1);
+		fz_sprint_obj(ctx, ptr, n + 1, obj, tight);
 		fputs(ptr, fp);
 		fputc('\n', fp);
-		fz_free(ptr);
+		fz_free(ctx, ptr);
 	}
 	return n;
 }
 
 void
-fz_debug_obj(fz_obj *obj)
+fz_debug_obj(fz_context *ctx, fz_obj *obj)
 {
-	fz_fprint_obj(stdout, obj, 0);
+	fz_fprint_obj(ctx, stdout, obj, 0);
 }
 
 void
-fz_debug_ref(fz_obj *ref)
+fz_debug_ref(fz_context *ctx, fz_obj *ref)
 {
 	fz_obj *obj;
-	obj = fz_resolve_indirect(ref);
-	fz_debug_obj(obj);
+	obj = fz_resolve_indirect(ctx, ref);
+	fz_debug_obj(ctx, obj);
 }

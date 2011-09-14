@@ -127,17 +127,19 @@ struct fz_gel_s
 	fz_edge *edges;
 	int acap, alen;
 	fz_edge **active;
+	fz_context *ctx;
 };
 
 fz_gel *
-fz_new_gel(void)
+fz_new_gel(fz_context *ctx)
 {
 	fz_gel *gel;
 
-	gel = fz_malloc(sizeof(fz_gel));
+	gel = fz_malloc(ctx, sizeof(fz_gel));
+	gel->ctx = ctx;
 	gel->cap = 512;
 	gel->len = 0;
-	gel->edges = fz_calloc(gel->cap, sizeof(fz_edge));
+	gel->edges = fz_calloc(ctx, gel->cap, sizeof(fz_edge));
 
 	gel->clip.x0 = gel->clip.y0 = BBOX_MAX;
 	gel->clip.x1 = gel->clip.y1 = BBOX_MIN;
@@ -147,7 +149,7 @@ fz_new_gel(void)
 
 	gel->acap = 64;
 	gel->alen = 0;
-	gel->active = fz_calloc(gel->acap, sizeof(fz_edge*));
+	gel->active = fz_calloc(ctx, gel->acap, sizeof(fz_edge*));
 
 	return gel;
 }
@@ -176,9 +178,9 @@ fz_reset_gel(fz_gel *gel, fz_bbox clip)
 void
 fz_free_gel(fz_gel *gel)
 {
-	fz_free(gel->active);
-	fz_free(gel->edges);
-	fz_free(gel);
+	fz_free(gel->ctx, gel->active);
+	fz_free(gel->ctx, gel->edges);
+	fz_free(gel->ctx, gel);
 }
 
 fz_bbox
@@ -253,7 +255,7 @@ fz_insert_gel_raw(fz_gel *gel, int x0, int y0, int x1, int y1)
 
 	if (gel->len + 1 == gel->cap) {
 		gel->cap = gel->cap + 512;
-		gel->edges = fz_realloc(gel->edges, gel->cap, sizeof(fz_edge));
+		gel->edges = fz_realloc(gel->ctx, gel->edges, gel->cap * sizeof(fz_edge));
 	}
 
 	edge = &gel->edges[gel->len++];
@@ -443,7 +445,7 @@ insert_active(fz_gel *gel, int y, int *e)
 	while (*e < gel->len && gel->edges[*e].y == y) {
 		if (gel->alen + 1 == gel->acap) {
 			int newcap = gel->acap + 64;
-			fz_edge **newactive = fz_realloc(gel->active, newcap, sizeof(fz_edge*));
+			fz_edge **newactive = fz_realloc(gel->ctx, gel->active, newcap * sizeof(fz_edge*));
 			gel->active = newactive;
 			gel->acap = newcap;
 		}
@@ -593,8 +595,8 @@ fz_scan_convert_aa(fz_gel *gel, int eofill, fz_bbox clip,
 	assert(clip.x0 >= xmin);
 	assert(clip.x1 <= xmax);
 
-	alphas = fz_malloc(xmax - xmin + 1);
-	deltas = fz_malloc((xmax - xmin + 1) * sizeof(int));
+	alphas = fz_malloc(gel->ctx, xmax - xmin + 1);
+	deltas = fz_malloc(gel->ctx, (xmax - xmin + 1) * sizeof(int));
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
 
 	e = 0;
@@ -640,8 +642,8 @@ fz_scan_convert_aa(fz_gel *gel, int eofill, fz_bbox clip,
 		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color);
 	}
 
-	fz_free(deltas);
-	fz_free(alphas);
+	fz_free(gel->ctx, deltas);
+	fz_free(gel->ctx, alphas);
 }
 
 /*

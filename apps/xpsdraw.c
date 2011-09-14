@@ -20,6 +20,7 @@ int uselist = 1;
 fz_colorspace *colorspace;
 fz_glyph_cache *glyphcache;
 char *filename;
+fz_context *fzctx;
 
 struct {
 	int count, total;
@@ -105,15 +106,15 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 	if (uselist)
 	{
-		list = fz_new_display_list();
-		dev = fz_new_list_device(list);
+		list = fz_new_display_list(ctx->ctx);
+		dev = fz_new_list_device(ctx->ctx, list);
 		xps_run_page(ctx, page, dev, fz_identity);
 		fz_free_device(dev);
 	}
 
 	if (showxml)
 	{
-		dev = fz_new_trace_device();
+		dev = fz_new_trace_device(ctx->ctx);
 		printf("<page number=\"%d\">\n", pagenum);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
@@ -125,8 +126,8 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 	if (showtext)
 	{
-		fz_text_span *text = fz_new_text_span();
-		dev = fz_new_text_device(text);
+		fz_text_span *text = fz_new_text_span(ctx->ctx);
+		dev = fz_new_text_device(ctx->ctx, text);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
@@ -138,7 +139,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 		else
 			fz_debug_text_span(text);
 		printf("\n");
-		fz_free_text_span(text);
+		fz_free_text_span(ctx->ctx, text);
 	}
 
 	if (showmd5 || showtime)
@@ -163,14 +164,14 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 		/* TODO: banded rendering and multi-page ppm */
 
-		pix = fz_new_pixmap_with_rect(colorspace, bbox);
+		pix = fz_new_pixmap_with_rect(ctx->ctx, colorspace, bbox);
 
 		if (savealpha)
 			fz_clear_pixmap(pix);
 		else
 			fz_clear_pixmap_with_color(pix, 255);
 
-		dev = fz_new_draw_device(glyphcache, pix);
+		dev = fz_new_draw_device(ctx->ctx, glyphcache, pix);
 		if (list)
 			fz_execute_display_list(list, dev, ctm, bbox);
 		else
@@ -186,7 +187,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 			else if (strstr(output, ".pam"))
 				fz_write_pam(pix, buf, savealpha);
 			else if (strstr(output, ".png"))
-				fz_write_png(pix, buf, savealpha);
+				fz_write_png(ctx->ctx, pix, buf, savealpha);
 		}
 
 		if (showmd5)
@@ -204,11 +205,11 @@ static void drawpage(xps_context *ctx, int pagenum)
 				printf("%02x", digest[i]);
 		}
 
-		fz_drop_pixmap(pix);
+		fz_drop_pixmap(ctx->ctx, pix);
 	}
 
 	if (list)
-		fz_free_display_list(list);
+		fz_free_display_list(ctx->ctx, list);
 
 	if (showtime)
 	{
@@ -310,7 +311,14 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	glyphcache = fz_new_glyph_cache();
+	fzctx = fz_context_init(&fz_alloc_default);
+	if (fzctx == NULL)
+	{
+		fprintf(stderr, "failed to initialise context");
+		exit(1);
+	}
+
+	glyphcache = fz_new_glyph_cache(fzctx);
 
 	colorspace = fz_device_rgb;
 	if (grayscale)
@@ -334,7 +342,7 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		code = xps_open_file(&ctx, filename);
+		code = xps_open_file(fzctx, &ctx, filename);
 		if (code)
 			die(fz_error_note(code, "cannot open document: %s", filename));
 
@@ -360,7 +368,8 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_free_glyph_cache(glyphcache);
+	fz_free_glyph_cache(fzctx, glyphcache);
+	fz_context_fin(fzctx);
 
 	return 0;
 }

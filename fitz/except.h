@@ -3,6 +3,9 @@
 
 #include "fitz.h"
 
+typedef struct fz_context fz_context;
+typedef int fz_error;
+
 typedef struct fz_except {
   char mess[256];
 } fz_except;
@@ -41,6 +44,8 @@ void fz_rethrow(fz_context *);
 
 void fz_var_xxx(void *x);
 
-void fz_except_init(fz_context *);
+fz_error fz_except_init(fz_context *);
+
+void fz_except_fin(fz_context *);
 
 #endif /* EXCEPT */

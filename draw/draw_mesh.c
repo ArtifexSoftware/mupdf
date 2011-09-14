@@ -520,7 +520,7 @@ fz_paint_mesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 }
 
 void
-fz_paint_shade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp, *conv;
@@ -538,8 +538,8 @@ fz_paint_shade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 				clut[i][k] = color[k] * 255;
 			clut[i][k] = shade->function[i][shade->colorspace->n] * 255;
 		}
-		conv = fz_new_pixmap_with_rect(dest->colorspace, bbox);
-		temp = fz_new_pixmap_with_rect(fz_device_gray, bbox);
+		conv = fz_new_pixmap_with_rect(ctx, dest->colorspace, bbox);
+		temp = fz_new_pixmap_with_rect(ctx, fz_device_gray, bbox);
 		fz_clear_pixmap(temp);
 	}
 	else
@@ -568,7 +568,7 @@ fz_paint_shade(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 			*d++ = a;
 		}
 		fz_paint_pixmap(dest, conv, 255);
-		fz_drop_pixmap(conv);
-		fz_drop_pixmap(temp);
+		fz_drop_pixmap(ctx, conv);
+		fz_drop_pixmap(ctx, temp);
 	}
 }

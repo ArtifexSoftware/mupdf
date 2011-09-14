@@ -71,7 +71,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 		return fz_error_make("cannot find remote resource part '%s'", part_name);
 	}
 
-	xml = xml_parse_document(part->data, part->size);
+	xml = xml_parse_document(ctx->ctx, part->data, part->size);
 	if (!xml)
 	{
 		xps_free_part(ctx, part);
@@ -80,7 +80,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 
 	if (strcmp(xml_tag(xml), "ResourceDictionary"))
 	{
-		xml_free_element(xml);
+		xml_free_element(ctx->ctx, xml);
 		xps_free_part(ctx, part);
 		return fz_error_make("expected ResourceDictionary element (found %s)", xml_tag(xml));
 	}
@@ -93,7 +93,7 @@ xps_parse_remote_resource_dictionary(xps_context *ctx, xps_resource **dictp, cha
 	code = xps_parse_resource_dictionary(ctx, &dict, part_uri, xml);
 	if (code)
 	{
-		xml_free_element(xml);
+		xml_free_element(ctx->ctx, xml);
 		xps_free_part(ctx, part);
 		return fz_error_note(code, "cannot parse remote resource dictionary: %s", part_uri);
 	}
@@ -132,7 +132,7 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 		key = xml_att(node, "x:Key");
 		if (key)
 		{
-			entry = fz_malloc(sizeof(xps_resource));
+			entry = fz_malloc(ctx->ctx, sizeof(xps_resource));
 			entry->name = key;
 			entry->base_uri = NULL;
 			entry->base_xml = NULL;
@@ -144,9 +144,9 @@ xps_parse_resource_dictionary(xps_context *ctx, xps_resource **dictp, char *base
 	}
 
 	if (head)
-		head->base_uri = fz_strdup(base_uri);
+		head->base_uri = fz_strdup(ctx->ctx, base_uri);
 	else
-		return fz_throw("empty resource dictionary");
+		return fz_error_make("empty resource dictionary");
 
 	*dictp = head;
 	return fz_okay;
@@ -160,10 +160,10 @@ xps_free_resource_dictionary(xps_context *ctx, xps_resource *dict)
 	{
 		next = dict->next;
 		if (dict->base_xml)
-			xml_free_element(dict->base_xml);
+			xml_free_element(ctx->ctx, dict->base_xml);
 		if (dict->base_uri)
-			fz_free(dict->base_uri);
-		fz_free(dict);
+			fz_free(ctx->ctx, dict->base_uri);
+		fz_free(ctx->ctx, dict);
 		dict = next;
 	}
 }

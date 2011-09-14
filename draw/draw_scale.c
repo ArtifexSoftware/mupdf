@@ -256,7 +256,7 @@ struct fz_weights_s
 };
 
 static fz_weights *
-new_weights(fz_scale_filter *filter, int src_w, float dst_w, int dst_w_i, int n, int flip)
+new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, int dst_w_i, int n, int flip)
 {
 	int max_len;
 	fz_weights *weights;
@@ -282,7 +282,7 @@ new_weights(fz_scale_filter *filter, int src_w, float dst_w, int dst_w_i, int n,
 	 * plus (2+max_len)*sizeof(int) for the weights
 	 * plus room for an extra set of weights for reordering.
 	 */
-	weights = fz_malloc(sizeof(*weights)+(max_len+3)*(dst_w_i+1)*sizeof(int));
+	weights = fz_malloc(ctx, sizeof(*weights)+(max_len+3)*(dst_w_i+1)*sizeof(int));
 	if (weights == NULL)
 		return NULL;
 	weights->count = -1;
@@ -490,7 +490,7 @@ check_weights(fz_weights *weights, int j, int w, float x, float wf)
 }
 
 static fz_weights *
-make_weights(int src_w, float x, float dst_w, fz_scale_filter *filter, int vertical, int dst_w_int, int n, int flip)
+make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *filter, int vertical, int dst_w_int, int n, int flip)
 {
 	fz_weights *weights;
 	float F, G;
@@ -511,7 +511,7 @@ make_weights(int src_w, float x, float dst_w, fz_scale_filter *filter, int verti
 	}
 	window = filter->width / F;
 	DBUG(("make_weights src_w=%d x=%g dst_w=%g dst_w_int=%d F=%g window=%g\n", src_w, x, dst_w, dst_w_int, F, window));
-	weights	= new_weights(filter, src_w, dst_w, dst_w_int, n, flip);
+	weights	= new_weights(ctx, filter, src_w, dst_w, dst_w_int, n, flip);
 	if (weights == NULL)
 		return NULL;
 	for (j = 0; j < dst_w_int; j++)
@@ -1005,7 +1005,7 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 #endif /* SINGLE_PIXEL_SPECIALS */
 
 fz_pixmap *
-fz_scale_pixmap_gridfit(fz_pixmap *src, float x, float y, float w, float h, int gridfit)
+fz_scale_pixmap_gridfit(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, int gridfit)
 {
 	if (gridfit) {
 		float n;
@@ -1060,11 +1060,11 @@ fz_scale_pixmap_gridfit(fz_pixmap *src, float x, float y, float w, float h, int 
 				h = n - 1.0f;
 		}
 	}
-	return fz_scale_pixmap(src, x, y, w, h);
+	return fz_scale_pixmap(ctx, src, x, y, w, h);
 }
 
 fz_pixmap *
-fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
+fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h)
 {
 	fz_scale_filter *filter = &fz_scale_filter_simple;
 	fz_weights *contrib_rows = NULL;
@@ -1146,7 +1146,7 @@ fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
-		contrib_cols = make_weights(src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
+		contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
 		if (contrib_cols == NULL)
 			goto cleanup;
 	}
@@ -1158,14 +1158,14 @@ fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
-		contrib_rows = make_weights(src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
+		contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
 		if (contrib_rows == NULL)
 			goto cleanup;
 	}
 
 	assert(contrib_cols == NULL || contrib_cols->count == dst_w_int);
 	assert(contrib_rows == NULL || contrib_rows->count == dst_h_int);
-	output = fz_new_pixmap(src->colorspace, dst_w_int, dst_h_int);
+	output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
 	output->x = dst_x_int;
 	output->y = dst_y_int;
 
@@ -1199,7 +1199,7 @@ fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
 		temp_rows = contrib_rows->max_len;
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
-		temp = fz_calloc(temp_span*temp_rows, sizeof(int));
+		temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(int));
 		if (temp == NULL)
 			goto cleanup;
 		switch (src->n)
@@ -1240,11 +1240,11 @@ fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h)
 			DBUG(("scaling row %d from temp\n", row));
 			scale_row_from_temp(&output->samples[row*output->w*output->n], temp, contrib_rows, temp_span, row);
 		}
-		fz_free(temp);
+		fz_free(ctx, temp);
 	}
 
 cleanup:
-	fz_free(contrib_rows);
-	fz_free(contrib_cols);
+	fz_free(ctx, contrib_rows);
+	fz_free(ctx, contrib_cols);
 	return output;
 }

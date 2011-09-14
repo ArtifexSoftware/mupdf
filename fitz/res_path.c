@@ -1,11 +1,12 @@
+#include <assert.h>
 #include "fitz.h"
 
 fz_path *
-fz_new_path(void)
+fz_new_path(fz_context *ctx)
 {
 	fz_path *path;
 
-	path = fz_malloc(sizeof(fz_path));
+	path = fz_malloc(ctx, sizeof(fz_path));
 	path->len = 0;
 	path->cap = 0;
 	path->items = NULL;
@@ -14,61 +15,62 @@ fz_new_path(void)
 }
 
 fz_path *
-fz_clone_path(fz_path *old)
+fz_clone_path(fz_context *ctx, fz_path *old)
 {
 	fz_path *path;
 
-	path = fz_malloc(sizeof(fz_path));
+	assert(old != NULL);
+	path = fz_malloc(ctx, sizeof(fz_path));
 	path->len = old->len;
 	path->cap = old->len;
-	path->items = fz_calloc(path->cap, sizeof(fz_path_item));
+	path->items = fz_calloc(ctx, path->cap, sizeof(fz_path_item));
 	memcpy(path->items, old->items, sizeof(fz_path_item) * path->len);
 
 	return path;
 }
 
 void
-fz_free_path(fz_path *path)
+fz_free_path(fz_context *ctx, fz_path *path)
 {
-	fz_free(path->items);
-	fz_free(path);
+	fz_free(ctx, path->items);
+	fz_free(ctx, path);
 }
 
 static void
-grow_path(fz_path *path, int n)
+grow_path(fz_context *ctx, fz_path *path, int n)
 {
 	if (path->len + n < path->cap)
 		return;
 	while (path->len + n > path->cap)
 		path->cap = path->cap + 36;
-	path->items = fz_realloc(path->items, path->cap, sizeof(fz_path_item));
+	path->items = fz_realloc(ctx, path->items, path->cap * sizeof(fz_path_item));
 }
 
 void
-fz_moveto(fz_path *path, float x, float y)
+fz_moveto(fz_context *ctx, fz_path *path, float x, float y)
 {
-	grow_path(path, 3);
+	grow_path(ctx, path, 3);
 	path->items[path->len++].k = FZ_MOVETO;
 	path->items[path->len++].v = x;
 	path->items[path->len++].v = y;
 }
 
 void
-fz_lineto(fz_path *path, float x, float y)
+fz_lineto(fz_context *ctx, fz_path *path, float x, float y)
 {
 	if (path->len == 0)
 	{
 		fz_warn("lineto with no current point");
 		return;
 	}
-	grow_path(path, 3);
+	grow_path(ctx, path, 3);
 	path->items[path->len++].k = FZ_LINETO;
 	path->items[path->len++].v = x;
 	path->items[path->len++].v = y;
 }
 
 void
-fz_curveto(fz_path *path,
+fz_curveto(fz_context *ctx, fz_path *path,
 	float x1, float y1,
 	float x2, float y2,
 	float x3, float y3)
@@ -78,7 +80,7 @@ fz_curveto(fz_path *path,
 		fz_warn("curveto with no current point");
 		return;
 	}
-	grow_path(path, 7);
+	grow_path(ctx, path, 7);
 	path->items[path->len++].k = FZ_CURVETO;
 	path->items[path->len++].v = x1;
 	path->items[path->len++].v = y1;
@@ -89,7 +91,7 @@ fz_curveto(fz_path *path,
 }
 
 void
-fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
+fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float y3)
 {
 	float x1, y1;
 	if (path->len == 0)
@@ -99,24 +101,24 @@ fz_curvetov(fz_path *path, float x2, float y2, float x3, float y3)
 	}
 	x1 = path->items[path->len-2].v;
 	y1 = path->items[path->len-1].v;
-	fz_curveto(path, x1, y1, x2, y2, x3, y3);
+	fz_curveto(ctx, path, x1, y1, x2, y2, x3, y3);
 }
 
 void
-fz_curvetoy(fz_path *path, float x1, float y1, float x3, float y3)
+fz_curvetoy(fz_context *ctx, fz_path *path, float x1, float y1, float x3, float y3)
 {
-	fz_curveto(path, x1, y1, x3, y3, x3, y3);
+	fz_curveto(ctx, path, x1, y1, x3, y3, x3, y3);
 }
 
 void
-fz_closepath(fz_path *path)
+fz_closepath(fz_context *ctx, fz_path *path)
 {
 	if (path->len == 0)
 	{
 		fz_warn("closepath with no current point");
 		return;
 	}
-	grow_path(path, 1);
+	grow_path(ctx, path, 1);
 	path->items[path->len++].k = FZ_CLOSE_PATH;
 }
 

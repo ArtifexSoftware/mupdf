@@ -6,6 +6,7 @@
 #include "mupdf.h"
 
 static pdf_xref *xref = NULL;
+static fz_context *ctx = NULL;
 static int showbinary = 0;
 static int showdecode = 1;
 static int showcolumn;
@@ -32,7 +33,7 @@ static void showtrailer(void)
 	if (!xref)
 		die(fz_error_make("no file specified"));
 	printf("trailer\n");
-	fz_debug_obj(xref->trailer);
+	fz_debug_obj(ctx, xref->trailer);
 	printf("\n");
 }
 
@@ -146,7 +147,7 @@ static void showobject(int num, int gen)
 		else
 		{
 			printf("%d %d obj\n", num, gen);
-			fz_debug_obj(obj);
+			fz_debug_obj(ctx, obj);
 			printf("stream\n");
 			showstream(num, gen);
 			printf("endstream\n");
@@ -156,11 +157,11 @@ static void showobject(int num, int gen)
 	else
 	{
 		printf("%d %d obj\n", num, gen);
-		fz_debug_obj(obj);
+		fz_debug_obj(ctx, obj);
 		printf("endobj\n\n");
 	}
 
-	fz_drop_obj(obj);
+	fz_drop_obj(ctx, obj);
 }
 
 static void showgrep(char *filename)
@@ -177,17 +178,17 @@ static void showgrep(char *filename)
 			if (error)
 				die(error);
 
-			fz_sort_dict(obj);
+			fz_sort_dict(ctx, obj);
 
 			printf("%s:%d: ", filename, i);
-			fz_fprint_obj(stdout, obj, 1);
+			fz_fprint_obj(ctx, stdout, obj, 1);
 
-			fz_drop_obj(obj);
+			fz_drop_obj(ctx, obj);
 		}
 	}
 
 	printf("%s:trailer: ", filename);
-	fz_fprint_obj(stdout, xref->trailer, 1);
+	fz_fprint_obj(ctx, stdout, xref->trailer, 1);
 }
 
 int main(int argc, char **argv)
@@ -212,7 +213,12 @@ int main(int argc, char **argv)
 		usage();
 
 	filename = argv[fz_optind++];
-	error = pdf_open_xref(&xref, filename, password);
+
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+		die(fz_error_note(1, "failed to initialise context"));
+
+	error = pdf_open_xref(ctx, &xref, filename, password);
 	if (error)
 		die(fz_error_note(error, "cannot open document: %s", filename));
 
@@ -235,6 +241,7 @@ int main(int argc, char **argv)
 	pdf_free_xref(xref);
 
 	fz_flush_warnings();
+	fz_context_fin(ctx);
 
 	return 0;
 }

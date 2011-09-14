@@ -38,7 +38,7 @@ close_jbig2d(fz_stream *stm)
 		jbig2_global_ctx_free(state->gctx);
 	jbig2_ctx_free(state->ctx);
 	fz_close(state->chain);
-	fz_free(state);
+	fz_free(stm->ctx, state);
 }
 
 static int
@@ -85,7 +85,7 @@ fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 {
 	fz_jbig2d *state;
 
-	state = fz_malloc(sizeof(fz_jbig2d));
+	state = fz_malloc(chain->ctx, sizeof(fz_jbig2d));
 	state->chain = chain;
 	state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, NULL, NULL);
 	state->gctx = NULL;
@@ -99,5 +99,5 @@ fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 		state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, state->gctx, NULL, NULL);
 	}
 
-	return fz_new_stream(state, read_jbig2d, close_jbig2d);
+	return fz_new_stream(chain->ctx, state, read_jbig2d, close_jbig2d);
 }

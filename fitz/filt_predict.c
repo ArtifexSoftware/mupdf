@@ -183,10 +183,10 @@ close_predict(fz_stream *stm)
 {
 	fz_predict *state = stm->state;
 	fz_close(state->chain);
-	fz_free(state->in);
-	fz_free(state->out);
-	fz_free(state->ref);
-	fz_free(state);
+	fz_free(stm->ctx, state->in);
+	fz_free(stm->ctx, state->out);
+	fz_free(stm->ctx, state->ref);
+	fz_free(stm->ctx, state);
 }
 
 fz_stream *
@@ -194,8 +194,9 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 {
 	fz_predict *state;
 	fz_obj *obj;
+	fz_context *ctx = chain->ctx;
 
-	state = fz_malloc(sizeof(fz_predict));
+	state = fz_malloc(ctx, sizeof(fz_predict));
 	state->chain = chain;
 
 	state->predictor = 1;
@@ -203,9 +204,9 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 	state->colors = 1;
 	state->bpc = 8;
 
-	obj = fz_dict_gets(params, "Predictor");
+	obj = fz_dict_gets(ctx, params, "Predictor");
 	if (obj)
-		state->predictor = fz_to_int(obj);
+		state->predictor = fz_to_int(ctx, obj);
 
 	if (state->predictor != 1 && state->predictor != 2 &&
 		state->predictor != 10 && state->predictor != 11 &&
@@ -216,28 +217,28 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 		state->predictor = 1;
 	}
 
-	obj = fz_dict_gets(params, "Columns");
+	obj = fz_dict_gets(ctx, params, "Columns");
 	if (obj)
-		state->columns = fz_to_int(obj);
+		state->columns = fz_to_int(ctx, obj);
 
-	obj = fz_dict_gets(params, "Colors");
+	obj = fz_dict_gets(ctx, params, "Colors");
 	if (obj)
-		state->colors = fz_to_int(obj);
+		state->colors = fz_to_int(ctx, obj);
 
-	obj = fz_dict_gets(params, "BitsPerComponent");
+	obj = fz_dict_gets(ctx, params, "BitsPerComponent");
 	if (obj)
-		state->bpc = fz_to_int(obj);
+		state->bpc = fz_to_int(ctx, obj);
 
 	state->stride = (state->bpc * state->colors * state->columns + 7) / 8;
 	state->bpp = (state->bpc * state->colors + 7) / 8;
 
-	state->in = fz_malloc(state->stride + 1);
-	state->out = fz_malloc(state->stride);
-	state->ref = fz_malloc(state->stride);
+	state->in = fz_malloc(ctx, state->stride + 1);
+	state->out = fz_malloc(ctx, state->stride);
+	state->ref = fz_malloc(ctx, state->stride);
 	state->rp = state->out;
 	state->wp = state->out;
 
 	memset(state->ref, 0, state->stride);
 
-	return fz_new_stream(state, read_predict, close_predict);
+	return fz_new_stream(ctx, state, read_predict, close_predict);
 }

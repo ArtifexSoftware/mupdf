@@ -42,18 +42,17 @@ static unsigned hash(unsigned char *s, int len)
 }
 
 fz_hash_table *
-fz_new_hash_table(int initialsize, int keylen)
+fz_new_hash_table(fz_context *ctx, int initialsize, int keylen)
 {
 	fz_hash_table *table;
 
 	assert(keylen <= MAX_KEY_LEN);
 
-	table = fz_malloc(sizeof(fz_hash_table));
+	table = fz_malloc(ctx, sizeof(fz_hash_table));
 	table->keylen = keylen;
 	table->size = initialsize;
 	table->load = 0;
-	table->ents = fz_calloc(table->size, sizeof(fz_hash_entry));
-	memset(table->ents, 0, sizeof(fz_hash_entry) * table->size);
+	table->ents = fz_calloc(ctx, table->size, sizeof(fz_hash_entry));
 
 	return table;
 }
@@ -84,14 +83,14 @@ fz_hash_get_val(fz_hash_table *table, int idx)
 }
 
 void
-fz_free_hash(fz_hash_table *table)
+fz_free_hash(fz_context *ctx, fz_hash_table *table)
 {
-	fz_free(table->ents);
-	fz_free(table);
+	fz_free(ctx, table->ents);
+	fz_free(ctx, table);
 }
 
 static void
-fz_resize_hash(fz_hash_table *table, int newsize)
+fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 {
 	fz_hash_entry *oldents = table->ents;
 	int oldsize = table->size;
@@ -104,7 +103,7 @@ fz_resize_hash(fz_hash_table *table, int newsize)
 		return;
 	}
 
-	table->ents = fz_calloc(newsize, sizeof(fz_hash_entry));
+	table->ents = fz_calloc(ctx, newsize, sizeof(fz_hash_entry));
 	memset(table->ents, 0, sizeof(fz_hash_entry) * newsize);
 	table->size = newsize;
 	table->load = 0;
@@ -113,11 +112,11 @@ fz_resize_hash(fz_hash_table *table, int newsize)
 	{
 		if (oldents[i].val)
 		{
-			fz_hash_insert(table, oldents[i].key, oldents[i].val);
+			fz_hash_insert(ctx, table, oldents[i].key, oldents[i].val);
 		}
 	}
 
-	fz_free(oldents);
+	fz_free(ctx, oldents);
 }
 
 void *
@@ -140,7 +139,7 @@ fz_hash_find(fz_hash_table *table, void *key)
 }
 
 void
-fz_hash_insert(fz_hash_table *table, void *key, void *val)
+fz_hash_insert(fz_context *ctx, fz_hash_table *table, void *key, void *val)
 {
 	fz_hash_entry *ents;
 	unsigned size;
@@ -148,7 +147,7 @@ fz_hash_insert(fz_hash_table *table, void *key, void *val)
 
 	if (table->load > table->size * 8 / 10)
 	{
-		fz_resize_hash(table, table->size * 2);
+		fz_resize_hash(ctx, table, table->size * 2);
 	}
 
 	ents = table->ents;

@@ -212,7 +212,7 @@ xps_draw_one_radial_gradient(xps_context *ctx, fz_matrix ctm,
 	fz_shade *shade;
 
 	/* TODO: this (and the stuff in pdf_shade) should move to res_shade.c */
-	shade = fz_malloc(sizeof(fz_shade));
+	shade = fz_malloc(ctx->ctx, sizeof(fz_shade));
 	shade->refs = 1;
 	shade->colorspace = fz_device_rgb;
 	shade->bbox = fz_infinite_rect;
@@ -227,7 +227,7 @@ xps_draw_one_radial_gradient(xps_context *ctx, fz_matrix ctm,
 
 	shade->mesh_len = 6;
 	shade->mesh_cap = 6;
-	shade->mesh = fz_calloc(shade->mesh_cap, sizeof(float));
+	shade->mesh = fz_calloc(ctx->ctx, shade->mesh_cap, sizeof(float));
 	shade->mesh[0] = x0;
 	shade->mesh[1] = y0;
 	shade->mesh[2] = r0;
@@ -237,7 +237,7 @@ xps_draw_one_radial_gradient(xps_context *ctx, fz_matrix ctm,
 
 	fz_fill_shade(ctx->dev, shade, ctm, 1);
 
-	fz_drop_shade(shade);
+	fz_drop_shade(ctx->ctx, shade);
 }
 
 /*
@@ -253,7 +253,7 @@ xps_draw_one_linear_gradient(xps_context *ctx, fz_matrix ctm,
 	fz_shade *shade;
 
 	/* TODO: this (and the stuff in pdf_shade) should move to res_shade.c */
-	shade = fz_malloc(sizeof(fz_shade));
+	shade = fz_malloc(ctx->ctx, sizeof(fz_shade));
 	shade->refs = 1;
 	shade->colorspace = fz_device_rgb;
 	shade->bbox = fz_infinite_rect;
@@ -268,7 +268,7 @@ xps_draw_one_linear_gradient(xps_context *ctx, fz_matrix ctm,
 
 	shade->mesh_len = 6;
 	shade->mesh_cap = 6;
-	shade->mesh = fz_calloc(shade->mesh_cap, sizeof(float));
+	shade->mesh = fz_calloc(ctx->ctx, shade->mesh_cap, sizeof(float));
 	shade->mesh[0] = x0;
 	shade->mesh[1] = y0;
 	shade->mesh[2] = 0;
@@ -278,7 +278,7 @@ xps_draw_one_linear_gradient(xps_context *ctx, fz_matrix ctm,
 
 	fz_fill_shade(ctx->dev, shade, ctm, 1);
 
-	fz_drop_shade(shade);
+	fz_drop_shade(ctx->ctx, shade);
 }
 
 /*

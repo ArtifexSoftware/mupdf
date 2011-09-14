@@ -554,6 +554,7 @@ int main(int argc, char **argv)
 	fd_set fds;
 	int width = -1;
 	int height = -1;
+	fz_context *ctx;
 
 	while ((c = fz_getopt(argc, argv, "p:r:b:A")) != -1)
 	{
@@ -583,9 +584,16 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "failed to initialise context");
+		exit(1);
+	}
+
 	winopen();
 
-	pdfapp_init(&gapp);
+	pdfapp_init(ctx, &gapp);
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
 	gapp.resolution = resolution;
@@ -741,6 +749,8 @@ int main(int argc, char **argv)
 	XFreeGC(xdpy, xgc);
 
 	XCloseDisplay(xdpy);
+
+	fz_context_fin(ctx);
 
 	return 0;
 }

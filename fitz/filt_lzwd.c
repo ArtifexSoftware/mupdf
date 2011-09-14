@@ -160,7 +160,7 @@ close_lzwd(fz_stream *stm)
 {
 	fz_lzwd *lzw = stm->state;
 	fz_close(lzw->chain);
-	fz_free(lzw);
+	fz_free(stm->ctx, lzw);
 }
 
 fz_stream *
@@ -170,14 +170,15 @@ fz_open_lzwd(fz_stream *chain, fz_obj *params)
 	fz_obj *obj;
 	int i;
 
-	lzw = fz_malloc(sizeof(fz_lzwd));
+	assert(chain != NULL);
+	lzw = fz_malloc(chain->ctx, sizeof(fz_lzwd));
 	lzw->chain = chain;
 	lzw->eod = 0;
 	lzw->early_change = 1;
 
-	obj = fz_dict_gets(params, "EarlyChange");
+	obj = fz_dict_gets(chain->ctx, params, "EarlyChange");
 	if (obj)
-		lzw->early_change = !!fz_to_int(obj);
+		lzw->early_change = !!fz_to_int(chain->ctx, obj);
 
 	for (i = 0; i < 256; i++)
 	{
@@ -202,5 +203,5 @@ fz_open_lzwd(fz_stream *chain, fz_obj *params)
 	lzw->rp = lzw->bp;
 	lzw->wp = lzw->bp;
 
-	return fz_new_stream(lzw, read_lzwd, close_lzwd);
+	return fz_new_stream(chain->ctx, lzw, read_lzwd, close_lzwd);
 }

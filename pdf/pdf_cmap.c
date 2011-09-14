@@ -31,11 +31,11 @@
  */
 
 pdf_cmap *
-pdf_new_cmap(void)
+pdf_new_cmap(fz_context *ctx)
 {
 	pdf_cmap *cmap;
 
-	cmap = fz_malloc(sizeof(pdf_cmap));
+	cmap = fz_malloc(ctx, sizeof(pdf_cmap));
 	cmap->refs = 1;
 
 	strcpy(cmap->cmap_name, "");
@@ -64,28 +64,28 @@ pdf_keep_cmap(pdf_cmap *cmap)
 }
 
 void
-pdf_drop_cmap(pdf_cmap *cmap)
+pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
 	if (cmap->refs >= 0)
 	{
 		if (--cmap->refs == 0)
 		{
 			if (cmap->usecmap)
-				pdf_drop_cmap(cmap->usecmap);
-			fz_free(cmap->ranges);
-			fz_free(cmap->table);
-			fz_free(cmap);
+				pdf_drop_cmap(ctx, cmap->usecmap);
+			fz_free(ctx, cmap->ranges);
+			fz_free(ctx, cmap->table);
+			fz_free(ctx, cmap);
 		}
 	}
 }
 
 void
-pdf_set_usecmap(pdf_cmap *cmap, pdf_cmap *usecmap)
+pdf_set_usecmap(fz_context *ctx, pdf_cmap *cmap, pdf_cmap *usecmap)
 {
 	int i;
 
 	if (cmap->usecmap)
-		pdf_drop_cmap(cmap->usecmap);
+		pdf_drop_cmap(ctx, cmap->usecmap);
 	cmap->usecmap = pdf_keep_cmap(usecmap);
 
 	if (cmap->codespace_len == 0)
@@ -179,7 +179,7 @@ pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n)
  * Add an integer to the table.
  */
 static void
-add_table(pdf_cmap *cmap, int value)
+add_table(fz_context *ctx, pdf_cmap *cmap, int value)
 {
 	if (cmap->tlen == USHRT_MAX)
 	{
@@ -189,7 +189,7 @@ add_table(pdf_cmap *cmap, int value)
 	if (cmap->tlen + 1 > cmap->tcap)
 	{
 		cmap->tcap = cmap->tcap > 1 ? (cmap->tcap * 3) / 2 : 256;
-		cmap->table = fz_realloc(cmap->table, cmap->tcap, sizeof(unsigned short));
+		cmap->table = fz_realloc(ctx, cmap->table, cmap->tcap * sizeof(unsigned short));
 	}
 	cmap->table[cmap->tlen++] = value;
 }
@@ -198,19 +198,19 @@ add_table(pdf_cmap *cmap, int value)
  * Add a range.
  */
 static void
-add_range(pdf_cmap *cmap, int low, int high, int flag, int offset)
+add_range(fz_context *ctx, pdf_cmap *cmap, int low, int high, int flag, int offset)
 {
 	/* If the range is too large to be represented, split it */
 	if (high - low > 0x3fff)
 	{
-		add_range(cmap, low, low+0x3fff, flag, offset);
-		add_range(cmap, low+0x3fff, high, flag, offset+0x3fff);
+		add_range(ctx, cmap, low, low+0x3fff, flag, offset);
+		add_range(ctx, cmap, low+0x3fff, high, flag, offset+0x3fff);
 		return;
 	}
 	if (cmap->rlen + 1 > cmap->rcap)
 	{
 		cmap->rcap = cmap->rcap > 1 ? (cmap->rcap * 3) / 2 : 256;
-		cmap->ranges = fz_realloc(cmap->ranges, cmap->rcap, sizeof(pdf_range));
+		cmap->ranges = fz_realloc(ctx, cmap->ranges, cmap->rcap * sizeof(pdf_range));
 	}
 	cmap->ranges[cmap->rlen].low = low;
 	pdf_range_set_high(&cmap->ranges[cmap->rlen], high);
@@ -223,7 +223,7 @@ add_range(pdf_cmap *cmap, int low, int high, int flag, int offset)
  * Add a range-to-table mapping.
  */
 void
-pdf_map_range_to_table(pdf_cmap *cmap, int low, int *table, int len)
+pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, int low, int *table, int len)
 {
 	int i;
 	int high = low + len;
@@ -233,8 +233,8 @@ pdf_map_range_to_table(pdf_cmap *cmap, int low, int *table, int len)
 	else
 	{
 		for (i = 0; i < len; i++)
-			add_table(cmap, table[i]);
-		add_range(cmap, low, high, PDF_CMAP_TABLE, offset);
+			add_table(ctx, cmap, table[i]);
+		add_range(ctx, cmap, low, high, PDF_CMAP_TABLE, offset);
 	}
 }
 
@@ -242,22 +242,22 @@ pdf_map_range_to_table(pdf_cmap *cmap, int low, int *table, int len)
  * Add a range of contiguous one-to-one mappings (ie 1..5 maps to 21..25)
  */
 void
-pdf_map_range_to_range(pdf_cmap *cmap, int low, int high, int offset)
+pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, int low, int high, int offset)
 {
-	add_range(cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
+	add_range(ctx, cmap, low, high, high - low == 0 ? PDF_CMAP_SINGLE : PDF_CMAP_RANGE, offset);
 }
 
 /*
  * Add a single one-to-many mapping.
  */
 void
-pdf_map_one_to_many(pdf_cmap *cmap, int low, int *values, int len)
+pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int low, int *values, int len)
 {
 	int offset, i;
 
 	if (len == 1)
 	{
-		add_range(cmap, low, low, PDF_CMAP_SINGLE, values[0]);
+		add_range(ctx, cmap, low, low, PDF_CMAP_SINGLE, values[0]);
 		return;
 	}
 
@@ -280,10 +280,10 @@ pdf_map_one_to_many(pdf_cmap *cmap, int low, int *values, int len)
 	else
 	{
 		offset = cmap->tlen;
-		add_table(cmap, len);
+		add_table(ctx, cmap, len);
 		for (i = 0; i < len; i++)
-			add_table(cmap, values[i]);
-		add_range(cmap, low, low, PDF_CMAP_MULTI, offset);
+			add_table(ctx, cmap, values[i]);
+		add_range(ctx, cmap, low, low, PDF_CMAP_MULTI, offset);
 	}
 }
 
@@ -299,7 +299,7 @@ static int cmprange(const void *va, const void *vb)
 }
 
 void
-pdf_sort_cmap(pdf_cmap *cmap)
+pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
 	pdf_range *a;			/* last written range on output */
 	pdf_range *b;			/* current range examined on input */
@@ -343,7 +343,7 @@ pdf_sort_cmap(pdf_cmap *cmap)
 				else if (pdf_range_flags(a) == PDF_CMAP_TABLE && pdf_range_flags(b) == PDF_CMAP_SINGLE && (pdf_range_high(b) - a->low <= 0x3fff))
 				{
 					pdf_range_set_high(a, pdf_range_high(b));
-					add_table(cmap, b->offset);
+					add_table(ctx, cmap, b->offset);
 				}
 
 				/* LR -> LR */
@@ -367,8 +367,8 @@ pdf_sort_cmap(pdf_cmap *cmap)
 				{
 					pdf_range_set_flags(a, PDF_CMAP_TABLE);
 					pdf_range_set_high(a, pdf_range_high(b));
-					add_table(cmap, a->offset);
-					add_table(cmap, b->offset);
+					add_table(ctx, cmap, a->offset);
+					add_table(ctx, cmap, b->offset);
 					a->offset = cmap->tlen - 2;
 				}
 
@@ -376,7 +376,7 @@ pdf_sort_cmap(pdf_cmap *cmap)
 				else if (pdf_range_flags(a) == PDF_CMAP_TABLE && pdf_range_flags(b) == PDF_CMAP_SINGLE && (pdf_range_high(b) - a->low <= 0x3fff))
 				{
 					pdf_range_set_high(a, pdf_range_high(b));
-					add_table(cmap, b->offset);
+					add_table(ctx, cmap, b->offset);
 				}
 
 				/* XX -> XX */

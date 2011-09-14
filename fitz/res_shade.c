@@ -8,14 +8,14 @@ fz_keep_shade(fz_shade *shade)
 }
 
 void
-fz_drop_shade(fz_shade *shade)
+fz_drop_shade(fz_context *ctx, fz_shade *shade)
 {
 	if (shade && --shade->refs == 0)
 	{
 		if (shade->colorspace)
-			fz_drop_colorspace(shade->colorspace);
-		fz_free(shade->mesh);
-		fz_free(shade);
+			fz_drop_colorspace(ctx, shade->colorspace);
+		fz_free(ctx, shade->mesh);
+		fz_free(ctx, shade);
 	}
 }
 

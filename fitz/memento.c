@@ -30,6 +30,7 @@
 #define COMPILING_MEMENTO_C
 #include "memento.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(__linux__)
 #define MEMENTO_HAS_FORK
@@ -52,7 +53,13 @@ char *getenv(const char *);
 
 #ifdef MEMENTO
 
+#ifdef HAVE_VALGRIND
 #include "valgrind/memcheck.h"
+#else
+#define VALGRIND_MAKE_MEM_NOACCESS(p,s)  do { } while (0==1)
+#define VALGRIND_MAKE_MEM_UNDEFINED(p,s)  do { } while (0==1)
+#define VALGRIND_MAKE_MEM_DEFINED(p,s)  do { } while (0==1)
+#endif
 
 enum {
     Memento_PreSize  = 16,

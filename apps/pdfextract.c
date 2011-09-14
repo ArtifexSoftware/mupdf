@@ -6,6 +6,7 @@
 #include "mupdf.h"
 
 static pdf_xref *xref = NULL;
+static fz_context *ctx = NULL;
 static int dorgb = 0;
 
 void die(fz_error error)
@@ -26,14 +27,14 @@ static void usage(void)
 
 static int isimage(fz_obj *obj)
 {
-	fz_obj *type = fz_dict_gets(obj, "Subtype");
-	return fz_is_name(type) && !strcmp(fz_to_name(type), "Image");
+	fz_obj *type = fz_dict_gets(ctx, obj, "Subtype");
+	return fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "Image");
 }
 
 static int isfontdesc(fz_obj *obj)
 {
-	fz_obj *type = fz_dict_gets(obj, "Type");
-	return fz_is_name(type) && !strcmp(fz_to_name(type), "FontDescriptor");
+	fz_obj *type = fz_dict_gets(ctx, obj, "Type");
+	return fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "FontDescriptor");
 }
 
 static void saveimage(int num)
@@ -43,7 +44,7 @@ static void saveimage(int num)
 	fz_obj *ref;
 	char name[1024];
 
-	ref = fz_new_indirect(num, 0, xref);
+	ref = fz_new_indirect(ctx, num, 0, xref);
 
 	/* TODO: detect DCTD and save as jpeg */
 
@@ -54,9 +55,9 @@ static void saveimage(int num)
 	if (dorgb && img->colorspace && img->colorspace != fz_device_rgb)
 	{
 		fz_pixmap *temp;
-		temp = fz_new_pixmap_with_rect(fz_device_rgb, fz_bound_pixmap(img));
-		fz_convert_pixmap(img, temp);
-		fz_drop_pixmap(img);
+		temp = fz_new_pixmap_with_rect(ctx, fz_device_rgb, fz_bound_pixmap(img));
+		fz_convert_pixmap(ctx, img, temp);
+		fz_drop_pixmap(ctx, img);
 		img = temp;
 	}
 
@@ -64,7 +65,7 @@ static void saveimage(int num)
 	{
 		sprintf(name, "img-%04d.png", num);
 		printf("extracting image %s\n", name);
-		fz_write_png(img, name, 0);
+		fz_write_png(ctx, img, name, 0);
 	}
 	else
 	{
@@ -73,8 +74,8 @@ static void saveimage(int num)
 		fz_write_pam(img, name, 0);
 	}
 
-	fz_drop_pixmap(img);
-	fz_drop_obj(ref);
+	fz_drop_pixmap(ctx, img);
+	fz_drop_obj(ctx, ref);
 }
 
 static void savefont(fz_obj *dict, int num)
@@ -90,34 +91,34 @@ static void savefont(fz_obj *dict, int num)
 	char *fontname = "font";
 	int n;
 
-	obj = fz_dict_gets(dict, "FontName");
+	obj = fz_dict_gets(ctx, dict, "FontName");
 	if (obj)
-		fontname = fz_to_name(obj);
+		fontname = fz_to_name(ctx, obj);
 
-	obj = fz_dict_gets(dict, "FontFile");
+	obj = fz_dict_gets(ctx, dict, "FontFile");
 	if (obj)
 	{
 		stream = obj;
 		ext = "pfa";
 	}
 
-	obj = fz_dict_gets(dict, "FontFile2");
+	obj = fz_dict_gets(ctx, dict, "FontFile2");
 	if (obj)
 	{
 		stream = obj;
 		ext = "ttf";
 	}
 
-	obj = fz_dict_gets(dict, "FontFile3");
+	obj = fz_dict_gets(ctx, dict, "FontFile3");
 	if (obj)
 	{
 		stream = obj;
 
-		obj = fz_dict_gets(obj, "Subtype");
-		if (obj && !fz_is_name(obj))
+		obj = fz_dict_gets(ctx, obj, "Subtype");
+		if (obj && !fz_is_name(ctx, obj))
 			die(fz_error_make("Invalid font descriptor subtype"));
 
-		subtype = fz_to_name(obj);
+		subtype = fz_to_name(ctx, obj);
 		if (!strcmp(subtype, "Type1C"))
 			ext = "cff";
 		else if (!strcmp(subtype, "CIDFontType0C"))
@@ -132,7 +133,7 @@ static void savefont(fz_obj *dict, int num)
 		return;
 	}
 
-	buf = fz_new_buffer(0);
+	buf = fz_new_buffer(ctx, 0);
 
 	error = pdf_load_stream(&buf, xref, fz_to_num(stream), fz_to_gen(stream));
 	if (error)
@@ -152,7 +153,7 @@ static void savefont(fz_obj *dict, int num)
 	if (fclose(f) < 0)
 		die(fz_error_make("Error closing font file"));
 
-	fz_drop_buffer(buf);
+	fz_drop_buffer(ctx, buf);
 }
 
 static void showobject(int num)
@@ -172,7 +173,7 @@ static void showobject(int num)
 	else if (isfontdesc(obj))
 		savefont(obj, num);
 
-	fz_drop_obj(obj);
+	fz_drop_obj(ctx, obj);
 }
 
 int main(int argc, char **argv)
@@ -196,7 +197,12 @@ int main(int argc, char **argv)
 		usage();
 
 	infile = argv[fz_optind++];
-	error = pdf_open_xref(&xref, infile, password);
+
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+		die(fz_error_note(1, "failed to initialise context"));
+
+	error = pdf_open_xref(ctx, &xref, infile, password);
 	if (error)
 		die(fz_error_note(error, "cannot open input file '%s'", infile));
 
@@ -217,6 +223,7 @@ int main(int argc, char **argv)
 	pdf_free_xref(xref);
 
 	fz_flush_warnings();
+	fz_context_fin(ctx);
 
 	return 0;
 }

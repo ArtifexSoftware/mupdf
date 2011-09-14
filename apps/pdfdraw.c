@@ -97,6 +97,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	fz_display_list *list;
 	fz_device *dev;
 	int start;
+	fz_context *ctx = xref->ctx;
 
 	if (showtime)
 	{
@@ -111,8 +112,8 @@ static void drawpage(pdf_xref *xref, int pagenum)
 
 	if (uselist)
 	{
-		list = fz_new_display_list();
-		dev = fz_new_list_device(list);
+		list = fz_new_display_list(ctx);
+		dev = fz_new_list_device(ctx, list);
 		error = pdf_run_page(xref, page, dev, fz_identity);
 		if (error)
 			die(fz_error_note(error, "cannot draw page %d in file '%s'", pagenum, filename));
@@ -121,7 +122,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 
 	if (showxml)
 	{
-		dev = fz_new_trace_device();
+		dev = fz_new_trace_device(ctx);
 		printf("<page number=\"%d\">\n", pagenum);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
@@ -133,8 +134,8 @@ static void drawpage(pdf_xref *xref, int pagenum)
 
 	if (showtext)
 	{
-		fz_text_span *text = fz_new_text_span();
-		dev = fz_new_text_device(text);
+		fz_text_span *text = fz_new_text_span(ctx);
+		dev = fz_new_text_device(ctx, text);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
@@ -146,7 +147,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		else
 			fz_debug_text_span(text);
 		printf("\n");
-		fz_free_text_span(text);
+		fz_free_text_span(ctx, text);
 	}
 
 	if (showmd5 || showtime)
@@ -168,14 +169,14 @@ static void drawpage(pdf_xref *xref, int pagenum)
 
 		/* TODO: banded rendering and multi-page ppm */
 
-		pix = fz_new_pixmap_with_rect(colorspace, bbox);
+		pix = fz_new_pixmap_with_rect(ctx, colorspace, bbox);
 
 		if (savealpha)
 			fz_clear_pixmap(pix);
 		else
 			fz_clear_pixmap_with_color(pix, 255);
 
-		dev = fz_new_draw_device(glyphcache, pix);
+		dev = fz_new_draw_device(ctx, glyphcache, pix);
 		if (list)
 			fz_execute_display_list(list, dev, ctm, bbox);
 		else
@@ -196,13 +197,13 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			else if (strstr(output, ".pam"))
 				fz_write_pam(pix, buf, savealpha);
 			else if (strstr(output, ".png"))
-				fz_write_png(pix, buf, savealpha);
+				fz_write_png(ctx, pix, buf, savealpha);
 			else if (strstr(output, ".pbm")) {
-				fz_halftone *ht = fz_get_default_halftone(1);
-				fz_bitmap *bit = fz_halftone_pixmap(pix, ht);
+				fz_halftone *ht = fz_get_default_halftone(ctx, 1);
+				fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, ht);
 				fz_write_pbm(bit, buf);
-				fz_drop_bitmap(bit);
-				fz_drop_halftone(ht);
+				fz_drop_bitmap(ctx, bit);
+				fz_drop_halftone(ctx, ht);
 			}
 		}
 
@@ -221,13 +222,13 @@ static void drawpage(pdf_xref *xref, int pagenum)
 				printf("%02x", digest[i]);
 		}
 
-		fz_drop_pixmap(pix);
+		fz_drop_pixmap(ctx, pix);
 	}
 
 	if (list)
-		fz_free_display_list(list);
+		fz_free_display_list(ctx, list);
 
-	pdf_free_page(page);
+	pdf_free_page(ctx, page);
 
 	if (showtime)
 	{
@@ -253,7 +254,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	if (showmd5 || showtime)
 		printf("\n");
 
-	pdf_age_store(xref->store, 3);
+	pdf_age_store(ctx, xref->store, 3);
 
 	fz_flush_warnings();
 }
@@ -303,6 +304,7 @@ int main(int argc, char **argv)
 	pdf_xref *xref;
 	fz_error error;
 	int c;
+	fz_context *ctx;
 
 	while ((c = fz_getopt(argc, argv, "o:p:r:R:Aab:dgmtx5G:I")) != -1)
 	{
@@ -341,7 +343,14 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	glyphcache = fz_new_glyph_cache();
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "Failed to init context\n");
+		exit(1);
+	}
+
+	glyphcache = fz_new_glyph_cache(ctx);
 
 	colorspace = fz_device_rgb;
 	if (grayscale)
@@ -367,7 +376,7 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		error = pdf_open_xref(&xref, filename, password);
+		error = pdf_open_xref(ctx, &xref, filename, password);
 		if (error)
 			die(fz_error_note(error, "cannot open document: %s", filename));
 
@@ -397,7 +406,7 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_free_glyph_cache(glyphcache);
+	fz_free_glyph_cache(ctx, glyphcache);
 
 	fz_flush_warnings();
 

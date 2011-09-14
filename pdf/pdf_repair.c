@@ -20,6 +20,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 	int stm_len;
 	int len;
 	int n;
+	fz_context *ctx = file->ctx;
 
 	*stmofsp = 0;
 	*stmlenp = -1;
@@ -38,31 +39,31 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 		if (error)
 			return fz_error_note(error, "cannot parse object");
 
-		obj = fz_dict_gets(dict, "Type");
-		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "XRef"))
+		obj = fz_dict_gets(ctx, dict, "Type");
+		if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "XRef"))
 		{
-			obj = fz_dict_gets(dict, "Encrypt");
+			obj = fz_dict_gets(ctx, dict, "Encrypt");
 			if (obj)
 			{
 				if (*encrypt)
-					fz_drop_obj(*encrypt);
+					fz_drop_obj(ctx, *encrypt);
 				*encrypt = fz_keep_obj(obj);
 			}
 
-			obj = fz_dict_gets(dict, "ID");
+			obj = fz_dict_gets(ctx, dict, "ID");
 			if (obj)
 			{
 				if (*id)
-					fz_drop_obj(*id);
+					fz_drop_obj(ctx, *id);
 				*id = fz_keep_obj(obj);
 			}
 		}
 
-		obj = fz_dict_gets(dict, "Length");
-		if (fz_is_int(obj))
-			stm_len = fz_to_int(obj);
+		obj = fz_dict_gets(ctx, dict, "Length");
+		if (fz_is_int(ctx, obj))
+			stm_len = fz_to_int(ctx, obj);
 
-		fz_drop_obj(dict);
+		fz_drop_obj(ctx, dict);
 	}
 
 	while ( tok != PDF_TOK_STREAM &&
@@ -134,14 +135,15 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 	int tok;
 	int i, n, count;
 	char buf[256];
+	fz_context *ctx = xref->ctx;
 
 	error = pdf_load_object(&obj, xref, num, gen);
 	if (error)
 		return fz_error_note(error, "cannot load object stream object (%d %d R)", num, gen);
 
-	count = fz_to_int(fz_dict_gets(obj, "N"));
+	count = fz_to_int(ctx, fz_dict_gets(ctx, obj, "N"));
 
-	fz_drop_obj(obj);
+	fz_drop_obj(ctx, obj);
 
 	error = pdf_open_stream(&stm, xref, num, gen);
 	if (error)
@@ -202,12 +204,13 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 	int tok;
 	int next;
 	int i, n, c;
+	fz_context *ctx = xref->ctx;
 
 	fz_seek(xref->file, 0, 0);
 
 	listlen = 0;
 	listcap = 1024;
-	list = fz_calloc(listcap, sizeof(struct entry));
+	list = fz_calloc(ctx, listcap, sizeof(struct entry));
 
 	/* look for '%PDF' version marker within first kilobyte of file */
 	n = fz_read(xref->file, (unsigned char *)buf, MAX(bufsize, 1024));
@@ -270,7 +273,7 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			if (listlen + 1 == listcap)
 			{
 				listcap = (listcap * 3) / 2;
-				list = fz_realloc(list, listcap, sizeof(struct entry));
+				list = fz_realloc(ctx, list, listcap * sizeof(struct entry));
 			}
 
 			list[listlen].num = num;
@@ -294,39 +297,39 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 				goto cleanup;
 			}
 
-			obj = fz_dict_gets(dict, "Encrypt");
+			obj = fz_dict_gets(ctx, dict, "Encrypt");
 			if (obj)
 			{
 				if (encrypt)
-					fz_drop_obj(encrypt);
+					fz_drop_obj(ctx, encrypt);
 				encrypt = fz_keep_obj(obj);
 			}
 
-			obj = fz_dict_gets(dict, "ID");
+			obj = fz_dict_gets(ctx, dict, "ID");
 			if (obj)
 			{
 				if (id)
-					fz_drop_obj(id);
+					fz_drop_obj(ctx, id);
 				id = fz_keep_obj(obj);
 			}
 
-			obj = fz_dict_gets(dict, "Root");
+			obj = fz_dict_gets(ctx, dict, "Root");
 			if (obj)
 			{
 				if (root)
-					fz_drop_obj(root);
+					fz_drop_obj(ctx, root);
 				root = fz_keep_obj(obj);
 			}
 
-			obj = fz_dict_gets(dict, "Info");
+			obj = fz_dict_gets(ctx, dict, "Info");
 			if (obj)
 			{
 				if (info)
-					fz_drop_obj(info);
+					fz_drop_obj(ctx, info);
 				info = fz_keep_obj(obj);
 			}
 
-			fz_drop_obj(dict);
+			fz_drop_obj(ctx, dict);
 		}
 
 		else if (tok == PDF_TOK_ERROR)
@@ -358,11 +361,11 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 				goto cleanup;
 			}
 
-			length = fz_new_int(list[i].stm_len);
-			fz_dict_puts(dict, "Length", length);
-			fz_drop_obj(length);
+			length = fz_new_int(ctx, list[i].stm_len);
+			fz_dict_puts(ctx, dict, "Length", length);
+			fz_drop_obj(ctx, length);
 
-			fz_drop_obj(dict);
+			fz_drop_obj(ctx, dict);
 		}
 
 	}
@@ -387,21 +390,21 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 
 	/* create a repaired trailer, Root will be added later */
 
-	xref->trailer = fz_new_dict(5);
+	xref->trailer = fz_new_dict(ctx, 5);
 
-	obj = fz_new_int(maxnum + 1);
-	fz_dict_puts(xref->trailer, "Size", obj);
-	fz_drop_obj(obj);
+	obj = fz_new_int(ctx, maxnum + 1);
+	fz_dict_puts(ctx, xref->trailer, "Size", obj);
+	fz_drop_obj(ctx, obj);
 
 	if (root)
 	{
-		fz_dict_puts(xref->trailer, "Root", root);
-		fz_drop_obj(root);
+		fz_dict_puts(ctx, xref->trailer, "Root", root);
+		fz_drop_obj(ctx, root);
 	}
 	if (info)
 	{
-		fz_dict_puts(xref->trailer, "Info", info);
-		fz_drop_obj(info);
+		fz_dict_puts(ctx, xref->trailer, "Info", info);
+		fz_drop_obj(ctx, info);
 	}
 
 	if (encrypt)
@@ -409,12 +412,12 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 		if (fz_is_indirect(encrypt))
 		{
 			/* create new reference with non-NULL xref pointer */
-			obj = fz_new_indirect(fz_to_num(encrypt), fz_to_gen(encrypt), xref);
-			fz_drop_obj(encrypt);
+			obj = fz_new_indirect(ctx, fz_to_num(encrypt), fz_to_gen(encrypt), xref);
+			fz_drop_obj(ctx, encrypt);
 			encrypt = obj;
 		}
-		fz_dict_puts(xref->trailer, "Encrypt", encrypt);
-		fz_drop_obj(encrypt);
+		fz_dict_puts(ctx, xref->trailer, "Encrypt", encrypt);
+		fz_drop_obj(ctx, encrypt);
 	}
 
 	if (id)
@@ -422,23 +425,23 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 		if (fz_is_indirect(id))
 		{
 			/* create new reference with non-NULL xref pointer */
-			obj = fz_new_indirect(fz_to_num(id), fz_to_gen(id), xref);
-			fz_drop_obj(id);
+			obj = fz_new_indirect(ctx, fz_to_num(id), fz_to_gen(id), xref);
+			fz_drop_obj(ctx, id);
 			id = obj;
 		}
-		fz_dict_puts(xref->trailer, "ID", id);
-		fz_drop_obj(id);
+		fz_dict_puts(ctx, xref->trailer, "ID", id);
+		fz_drop_obj(ctx, id);
 	}
 
-	fz_free(list);
+	fz_free(ctx, list);
 	return fz_okay;
 
 cleanup:
-	if (encrypt) fz_drop_obj(encrypt);
-	if (id) fz_drop_obj(id);
-	if (root) fz_drop_obj(root);
-	if (info) fz_drop_obj(info);
-	fz_free(list);
+	if (encrypt) fz_drop_obj(ctx, encrypt);
+	if (id) fz_drop_obj(ctx, id);
+	if (root) fz_drop_obj(ctx, root);
+	if (info) fz_drop_obj(ctx, info);
+	fz_free(ctx, list);
 	return error; /* already rethrown */
 }
 
@@ -447,15 +450,16 @@ pdf_repair_obj_stms(pdf_xref *xref)
 {
 	fz_obj *dict;
 	int i;
+	fz_context *ctx = xref->ctx;
 
 	for (i = 0; i < xref->len; i++)
 	{
 		if (xref->table[i].stm_ofs)
 		{
 			pdf_load_object(&dict, xref, i, 0);
-			if (!strcmp(fz_to_name(fz_dict_gets(dict, "Type")), "ObjStm"))
+			if (!strcmp(fz_to_name(ctx, fz_dict_gets(ctx, dict, "Type")), "ObjStm"))
 				pdf_repair_obj_stm(xref, i, 0);
-			fz_drop_obj(dict);
+			fz_drop_obj(ctx, dict);
 		}
 	}
 

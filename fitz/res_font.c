@@ -7,11 +7,11 @@
 static void fz_finalize_freetype(void);
 
 static fz_font *
-fz_new_font(char *name)
+fz_new_font(fz_context *ctx, char *name)
 {
 	fz_font *font;
 
-	font = fz_malloc(sizeof(fz_font));
+	font = fz_malloc(ctx, sizeof(fz_font));
 	font->refs = 1;
 
 	if (name)
@@ -55,7 +55,7 @@ fz_keep_font(fz_font *font)
 }
 
 void
-fz_drop_font(fz_font *font)
+fz_drop_font(fz_context *ctx, fz_font *font)
 {
 	int fterr;
 	int i;
@@ -65,12 +65,12 @@ fz_drop_font(fz_font *font)
 		if (font->t3procs)
 		{
 			if (font->t3resources)
-				fz_drop_obj(font->t3resources);
+				fz_drop_obj(ctx, font->t3resources);
 			for (i = 0; i < 256; i++)
 				if (font->t3procs[i])
-					fz_drop_buffer(font->t3procs[i]);
-			fz_free(font->t3procs);
-			fz_free(font->t3widths);
+					fz_drop_buffer(ctx, font->t3procs[i]);
+			fz_free(ctx, font->t3procs);
+			fz_free(ctx, font->t3widths);
 		}
 
 		if (font->ft_face)
@@ -82,14 +82,14 @@ fz_drop_font(fz_font *font)
 		}
 
 		if (font->ft_file)
-			fz_free(font->ft_file);
+			fz_free(ctx, font->ft_file);
 		if (font->ft_data)
-			fz_free(font->ft_data);
+			fz_free(ctx, font->ft_data);
 
 		if (font->width_table)
-			fz_free(font->width_table);
+			fz_free(ctx, font->width_table);
 
-		fz_free(font);
+		fz_free(ctx, font);
 	}
 }
 
@@ -180,7 +180,7 @@ fz_finalize_freetype(void)
 }
 
 fz_error
-fz_new_font_from_file(fz_font **fontp, char *path, int index)
+fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index)
 {
 	FT_Face face;
 	fz_error error;
@@ -195,7 +195,7 @@ fz_new_font_from_file(fz_font **fontp, char *path, int index)
 	if (fterr)
 		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
 
-	font = fz_new_font(face->family_name);
+	font = fz_new_font(ctx, face->family_name);
 	font->ft_face = face;
 	font->bbox.x0 = face->bbox.xMin * 1000 / face->units_per_EM;
 	font->bbox.y0 = face->bbox.yMin * 1000 / face->units_per_EM;
@@ -207,7 +207,7 @@ fz_new_font_from_file(fz_font **fontp, char *path, int index)
 }
 
 fz_error
-fz_new_font_from_memory(fz_font **fontp, unsigned char *data, int len, int index)
+fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, int len, int index)
 {
 	FT_Face face;
 	fz_error error;
@@ -222,7 +222,7 @@ fz_new_font_from_memory(fz_font **fontp, unsigned char *data, int len, int index
 	if (fterr)
 		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
 
-	font = fz_new_font(face->family_name);
+	font = fz_new_font(ctx, face->family_name);
 	font->ft_face = face;
 	font->bbox.x0 = face->bbox.xMin * 1000 / face->units_per_EM;
 	font->bbox.y0 = face->bbox.yMin * 1000 / face->units_per_EM;
@@ -268,12 +268,12 @@ fz_adjust_ft_glyph_width(fz_font *font, int gid, fz_matrix trm)
 }
 
 static fz_pixmap *
-fz_copy_ft_bitmap(int left, int top, FT_Bitmap *bitmap)
+fz_copy_ft_bitmap(fz_context *ctx, int left, int top, FT_Bitmap *bitmap)
 {
 	fz_pixmap *pixmap;
 	int y;
 
-	pixmap = fz_new_pixmap(NULL, bitmap->width, bitmap->rows);
+	pixmap = fz_new_pixmap(ctx, NULL, bitmap->width, bitmap->rows);
 	pixmap->x = left;
 	pixmap->y = top - bitmap->rows;
 
@@ -311,7 +311,7 @@ fz_copy_ft_bitmap(int left, int top, FT_Bitmap *bitmap)
 }
 
 fz_pixmap *
-fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
+fz_render_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 {
 	FT_Face face = font->ft_face;
 	FT_Matrix m;
@@ -399,11 +399,11 @@ fz_render_ft_glyph(fz_font *font, int gid, fz_matrix trm)
 		return NULL;
 	}
 
-	return fz_copy_ft_bitmap(face->glyph->bitmap_left, face->glyph->bitmap_top, &face->glyph->bitmap);
+	return fz_copy_ft_bitmap(ctx, face->glyph->bitmap_left, face->glyph->bitmap_top, &face->glyph->bitmap);
 }
 
 fz_pixmap *
-fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state)
+fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state)
 {
 	FT_Face face = font->ft_face;
 	float expansion = fz_matrix_expansion(ctm);
@@ -481,7 +481,7 @@ fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm,
 	}
 
 	bitmap = (FT_BitmapGlyph)glyph;
-	pixmap = fz_copy_ft_bitmap(bitmap->left, bitmap->top, &bitmap->bitmap);
+	pixmap = fz_copy_ft_bitmap(ctx, bitmap->left, bitmap->top, &bitmap->bitmap);
 	FT_Done_Glyph(glyph);
 
 	return pixmap;
@@ -492,14 +492,14 @@ fz_render_ft_stroked_glyph(fz_font *font, int gid, fz_matrix trm, fz_matrix ctm,
  */
 
 fz_font *
-fz_new_type3_font(char *name, fz_matrix matrix)
+fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix)
 {
 	fz_font *font;
 	int i;
 
-	font = fz_new_font(name);
-	font->t3procs = fz_calloc(256, sizeof(fz_buffer*));
-	font->t3widths = fz_calloc(256, sizeof(float));
+	font = fz_new_font(ctx, name);
+	font->t3procs = fz_calloc(ctx, 256, sizeof(fz_buffer*));
+	font->t3widths = fz_calloc(ctx, 256, sizeof(float));
 
 	font->t3matrix = matrix;
 	for (i = 0; i < 256; i++)
@@ -512,7 +512,7 @@ fz_new_type3_font(char *name, fz_matrix matrix)
 }
 
 fz_pixmap *
-fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
+fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 {
 	fz_error error;
 	fz_matrix ctm;
@@ -531,7 +531,7 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 		return NULL;
 
 	ctm = fz_concat(font->t3matrix, trm);
-	dev = fz_new_bbox_device(&bbox);
+	dev = fz_new_bbox_device(ctx, &bbox);
 	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	if (error)
 		fz_error_handle(error, "cannot draw type3 glyph");
@@ -560,21 +560,21 @@ fz_render_t3_glyph(fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 	bbox.x1++;
 	bbox.y1++;
 
-	glyph = fz_new_pixmap_with_rect(model ? model : fz_device_gray, bbox);
+	glyph = fz_new_pixmap_with_rect(ctx, model ? model : fz_device_gray, bbox);
 	fz_clear_pixmap(glyph);
 
-	cache = fz_new_glyph_cache();
-	dev = fz_new_draw_device_type3(cache, glyph);
+	cache = fz_new_glyph_cache(ctx);
+	dev = fz_new_draw_device_type3(ctx, cache, glyph);
 	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	if (error)
 		fz_error_handle(error, "cannot draw type3 glyph");
 	fz_free_device(dev);
-	fz_free_glyph_cache(cache);
+	fz_free_glyph_cache(ctx, cache);
 
 	if (model == NULL)
 	{
-		result = fz_alpha_from_gray(glyph, 0);
-		fz_drop_pixmap(glyph);
+		result = fz_alpha_from_gray(ctx, glyph, 0);
+		fz_drop_pixmap(ctx, glyph);
 	}
 	else
 		result = glyph;

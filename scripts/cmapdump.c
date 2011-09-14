@@ -15,6 +15,8 @@
 #include "../fitz/stm_buffer.c"
 #include "../fitz/stm_open.c"
 #include "../fitz/stm_read.c"
+#include "../fitz/context.c"
+#include "../fitz/except.c"
 
 #include "../pdf/pdf_lex.c"
 #include "../pdf/pdf_cmap.c"
@@ -41,10 +43,18 @@ main(int argc, char **argv)
 	char name[256];
 	char *realname;
 	int i, k;
+	fz_context *ctx;
 
 	if (argc < 3)
 	{
 		fprintf(stderr, "usage: cmapdump output.c lots of cmap files\n");
+		return 1;
+	}
+
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "failed to initialise!\n");
 		return 1;
 	}
 
@@ -76,7 +86,7 @@ main(int argc, char **argv)
 		strcpy(name, realname);
 		clean(name);
 
-		fi = fz_open_file(argv[i]);
+		fi = fz_open_file(ctx, argv[i]);
 		if (!fi)
 			fz_error_make("cmapdump: could not open input file '%s'\n", argv[i]);
 
@@ -156,5 +166,6 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	fz_context_fin(ctx);
 	return 0;
 }

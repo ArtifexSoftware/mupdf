@@ -48,7 +48,7 @@ static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 }
 
 int
-xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen)
+xps_decode_jpeg(fz_context *ctx, fz_pixmap **imagep, byte *rbuf, int rlen)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr_jmp err;
@@ -63,7 +63,7 @@ xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen)
 	if (setjmp(err.env))
 	{
 		if (image)
-			fz_drop_pixmap(image);
+			fz_drop_pixmap(ctx, image);
 		return fz_error_make("jpeg error: %s", err.msg);
 	}
 
@@ -94,7 +94,7 @@ xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen)
 	else
 		return fz_error_make("bad number of components in jpeg: %d", cinfo.output_components);
 
-	image = fz_new_pixmap_with_limit(colorspace, cinfo.output_width, cinfo.output_height);
+	image = fz_new_pixmap_with_limit(ctx, colorspace, cinfo.output_width, cinfo.output_height);
 	if (!image)
 	{
 		jpeg_finish_decompress(&cinfo);
@@ -115,7 +115,7 @@ xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen)
 
 	fz_clear_pixmap(image);
 
-	row[0] = fz_malloc(cinfo.output_components * cinfo.output_width);
+	row[0] = fz_malloc(ctx, cinfo.output_components * cinfo.output_width);
 	dp = image->samples;
 	while (cinfo.output_scanline < cinfo.output_height)
 	{
@@ -128,7 +128,7 @@ xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen)
 			*dp++ = 255;
 		}
 	}
-	fz_free(row[0]);
+	fz_free(ctx, row[0]);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

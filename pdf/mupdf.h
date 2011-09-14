@@ -32,12 +32,12 @@ fz_error pdf_parse_dict(fz_obj **op, pdf_xref *xref, fz_stream *f, char *buf, in
 fz_error pdf_parse_stm_obj(fz_obj **op, pdf_xref *xref, fz_stream *f, char *buf, int cap);
 fz_error pdf_parse_ind_obj(fz_obj **op, pdf_xref *xref, fz_stream *f, char *buf, int cap, int *num, int *gen, int *stm_ofs);
 
-fz_rect pdf_to_rect(fz_obj *array);
-fz_matrix pdf_to_matrix(fz_obj *array);
-char *pdf_to_utf8(fz_obj *src);
-unsigned short *pdf_to_ucs2(fz_obj *src);
-fz_obj *pdf_to_utf8_name(fz_obj *src);
-char *pdf_from_ucs2(unsigned short *str);
+fz_rect pdf_to_rect(fz_context *ctx, fz_obj *array);
+fz_matrix pdf_to_matrix(fz_context *ctx, fz_obj *array);
+char *pdf_to_utf8(fz_context *ctx, fz_obj *src);
+unsigned short *pdf_to_ucs2(fz_context *ctx, fz_obj *src);
+fz_obj *pdf_to_utf8_name(fz_context *ctx, fz_obj *src);
+char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
 
 /*
  * xref and object / stream api
@@ -57,6 +57,7 @@ struct pdf_xref_entry_s
 
 struct pdf_xref_s
 {
+	fz_context *ctx;
 	fz_stream *file;
 	int version;
 	int startxref;
@@ -91,7 +92,7 @@ fz_error pdf_open_stream(fz_stream **stmp, pdf_xref *, int num, int gen);
 fz_error pdf_open_stream_at(fz_stream **stmp, pdf_xref *xref, int num, int gen, fz_obj *dict, int stm_ofs);
 
 fz_error pdf_open_xref_with_stream(pdf_xref **xrefp, fz_stream *file, char *password);
-fz_error pdf_open_xref(pdf_xref **xrefp, const char *filename, char *password);
+fz_error pdf_open_xref(fz_context *ctx, pdf_xref **xrefp, const char *filename, char *password);
 void pdf_free_xref(pdf_xref *);
 
 /* private */
@@ -117,10 +118,10 @@ enum
 	PDF_DEFAULT_PERM_FLAGS = 0xfffc
 };
 
-fz_error pdf_new_crypt(pdf_crypt **cp, fz_obj *enc, fz_obj *id);
-void pdf_free_crypt(pdf_crypt *crypt);
+fz_error pdf_new_crypt(fz_context *ctx, pdf_crypt **cp, fz_obj *enc, fz_obj *id);
+void pdf_free_crypt(fz_context *ctx, pdf_crypt *crypt);
 
-void pdf_crypt_obj(pdf_crypt *crypt, fz_obj *obj, int num, int gen);
+void pdf_crypt_obj(fz_context *ctx, pdf_crypt *crypt, fz_obj *obj, int num, int gen);
 fz_stream *pdf_open_crypt(fz_stream *chain, pdf_crypt *crypt, int num, int gen);
 fz_stream *pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int num, int gen);
 
@@ -141,14 +142,17 @@ void pdf_debug_crypt(pdf_crypt *crypt);
 
 typedef struct pdf_store_s pdf_store;
 
-pdf_store *pdf_new_store(void);
-void pdf_free_store(pdf_store *store);
-void pdf_debug_store(pdf_store *store);
+pdf_store *pdf_new_store(fz_context *ctx);
+void pdf_free_store(fz_context *ctx, pdf_store *store);
+void pdf_debug_store(fz_context *ctx, pdf_store *store);
 
-void pdf_store_item(pdf_store *store, void *keepfn, void *dropfn, fz_obj *key, void *val);
-void *pdf_find_item(pdf_store *store, void *dropfn, fz_obj *key);
-void pdf_remove_item(pdf_store *store, void *dropfn, fz_obj *key);
-void pdf_age_store(pdf_store *store, int maxage);
+typedef void *(pdf_store_keep_fn)(void *);
+typedef void (pdf_store_drop_fn)(fz_context *, void *);
+
+void pdf_store_item(fz_context *ctx, pdf_store *store, pdf_store_keep_fn *keepfn, pdf_store_drop_fn *dropfn, fz_obj *key, void *val);
+void *pdf_find_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *dropfn, fz_obj *key);
+void pdf_remove_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *dropfn, fz_obj *key);
+void pdf_age_store(fz_context *ctx, pdf_store *store, int maxage);
 
 /*
  * Functions, Colorspaces, Shadings and Images
@@ -159,16 +163,16 @@ typedef struct pdf_function_s pdf_function;
 fz_error pdf_load_function(pdf_function **func, pdf_xref *xref, fz_obj *ref);
 void pdf_eval_function(pdf_function *func, float *in, int inlen, float *out, int outlen);
 pdf_function *pdf_keep_function(pdf_function *func);
-void pdf_drop_function(pdf_function *func);
+void pdf_drop_function(fz_context *ctx, pdf_function *func);
 
 fz_error pdf_load_colorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj);
-fz_pixmap *pdf_expand_indexed_pixmap(fz_pixmap *src);
+fz_pixmap *pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
 
 fz_error pdf_load_shading(fz_shade **shadep, pdf_xref *xref, fz_obj *obj);
 
 fz_error pdf_load_inline_image(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *file);
 fz_error pdf_load_image(fz_pixmap **imgp, pdf_xref *xref, fz_obj *obj);
-int pdf_is_jpx_image(fz_obj *dict);
+int pdf_is_jpx_image(fz_context *ctx, fz_obj *dict);
 
 /*
  * Pattern
@@ -190,7 +194,7 @@ struct pdf_pattern_s
 
 fz_error pdf_load_pattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *obj);
 pdf_pattern *pdf_keep_pattern(pdf_pattern *pat);
-void pdf_drop_pattern(pdf_pattern *pat);
+void pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat);
 
 /*
  * XObject
@@ -213,7 +217,7 @@ struct pdf_xobject_s
 
 fz_error pdf_load_xobject(pdf_xobject **xobjp, pdf_xref *xref, fz_obj *obj);
 pdf_xobject *pdf_keep_xobject(pdf_xobject *xobj);
-void pdf_drop_xobject(pdf_xobject *xobj);
+void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 
 /*
  * CMap
@@ -259,29 +263,29 @@ struct pdf_cmap_s
 	unsigned short *table;
 };
 
-pdf_cmap *pdf_new_cmap(void);
+pdf_cmap *pdf_new_cmap(fz_context *ctx);
 pdf_cmap *pdf_keep_cmap(pdf_cmap *cmap);
-void pdf_drop_cmap(pdf_cmap *cmap);
+void pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap);
 
 void pdf_debug_cmap(pdf_cmap *cmap);
 int pdf_get_wmode(pdf_cmap *cmap);
 void pdf_set_wmode(pdf_cmap *cmap, int wmode);
-void pdf_set_usecmap(pdf_cmap *cmap, pdf_cmap *usecmap);
+void pdf_set_usecmap(fz_context *ctx, pdf_cmap *cmap, pdf_cmap *usecmap);
 
 void pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n);
-void pdf_map_range_to_table(pdf_cmap *cmap, int low, int *map, int len);
-void pdf_map_range_to_range(pdf_cmap *cmap, int srclo, int srchi, int dstlo);
-void pdf_map_one_to_many(pdf_cmap *cmap, int one, int *many, int len);
-void pdf_sort_cmap(pdf_cmap *cmap);
+void pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, int low, int *map, int len);
+void pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, int srclo, int srchi, int dstlo);
+void pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int one, int *many, int len);
+void pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap);
 
 int pdf_lookup_cmap(pdf_cmap *cmap, int cpt);
 int pdf_lookup_cmap_full(pdf_cmap *cmap, int cpt, int *out);
 unsigned char *pdf_decode_cmap(pdf_cmap *cmap, unsigned char *s, int *cpt);
 
-pdf_cmap *pdf_new_identity_cmap(int wmode, int bytes);
+pdf_cmap *pdf_new_identity_cmap(fz_context *ctx, int wmode, int bytes);
 fz_error pdf_parse_cmap(pdf_cmap **cmapp, fz_stream *file);
 fz_error pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *ref);
-fz_error pdf_load_system_cmap(pdf_cmap **cmapp, char *name);
+fz_error pdf_load_system_cmap(fz_context *ctx, pdf_cmap **cmapp, char *name);
 pdf_cmap *pdf_find_builtin_cmap(char *cmap_name);
 
 /*
@@ -376,8 +380,8 @@ struct pdf_font_desc_s
 void pdf_set_font_wmode(pdf_font_desc *font, int wmode);
 void pdf_set_default_hmtx(pdf_font_desc *font, int w);
 void pdf_set_default_vmtx(pdf_font_desc *font, int y, int w);
-void pdf_add_hmtx(pdf_font_desc *font, int lo, int hi, int w);
-void pdf_add_vmtx(pdf_font_desc *font, int lo, int hi, int x, int y, int w);
+void pdf_add_hmtx(fz_context *ctx, pdf_font_desc *font, int lo, int hi, int w);
+void pdf_add_vmtx(fz_context *ctx, pdf_font_desc *font, int lo, int hi, int x, int y, int w);
 void pdf_end_hmtx(pdf_font_desc *font);
 void pdf_end_vmtx(pdf_font_desc *font);
 pdf_hmtx pdf_get_hmtx(pdf_font_desc *font, int cid);
@@ -394,9 +398,9 @@ unsigned char *pdf_find_substitute_cjk_font(int ros, int serif, unsigned int *le
 fz_error pdf_load_type3_font(pdf_font_desc **fontp, pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
 fz_error pdf_load_font(pdf_font_desc **fontp, pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
 
-pdf_font_desc *pdf_new_font_desc(void);
+pdf_font_desc *pdf_new_font_desc(fz_context *ctx);
 pdf_font_desc *pdf_keep_font(pdf_font_desc *fontdesc);
-void pdf_drop_font(pdf_font_desc *font);
+void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
 void pdf_debug_font(pdf_font_desc *fontdesc);
 
@@ -448,15 +452,15 @@ fz_obj *pdf_lookup_name(pdf_xref *xref, char *which, fz_obj *needle);
 fz_obj *pdf_load_name_tree(pdf_xref *xref, char *which);
 
 pdf_outline *pdf_load_outline(pdf_xref *xref);
-void pdf_debug_outline(pdf_outline *outline, int level);
-void pdf_free_outline(pdf_outline *outline);
+void pdf_debug_outline(fz_context *ctx, pdf_outline *outline, int level);
+void pdf_free_outline(fz_context *ctx, pdf_outline *outline);
 
 pdf_link *pdf_load_link(pdf_xref *xref, fz_obj *dict);
 void pdf_load_links(pdf_link **, pdf_xref *, fz_obj *annots);
-void pdf_free_link(pdf_link *link);
+void pdf_free_link(fz_context *ctx, pdf_link *link);
 
 void pdf_load_annots(pdf_annot **, pdf_xref *, fz_obj *annots);
-void pdf_free_annot(pdf_annot *link);
+void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 /*
  * Page tree, pages and related objects
@@ -480,7 +484,7 @@ int pdf_find_page_number(pdf_xref *xref, fz_obj *pageobj);
 int pdf_count_pages(pdf_xref *xref);
 
 fz_error pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number);
-void pdf_free_page(pdf_page *page);
+void pdf_free_page(fz_context *ctx, pdf_page *page);
 
 /*
  * Content stream parsing

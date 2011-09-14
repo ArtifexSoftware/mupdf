@@ -38,12 +38,12 @@ void xps_absolute_path(char *output, char *base_uri, char *path, int output_size
 
 typedef struct element xml_element;
 
-xml_element *xml_parse_document(byte *buf, int len);
+xml_element *xml_parse_document(fz_context *ctx, byte *buf, int len);
 xml_element *xml_next(xml_element *item);
 xml_element *xml_down(xml_element *item);
 char *xml_tag(xml_element *item);
 char *xml_att(xml_element *item, const char *att);
-void xml_free_element(xml_element *item);
+void xml_free_element(fz_context *ctx, xml_element *item);
 void xml_print_element(xml_element *item, int level);
 
 /*
@@ -98,9 +98,9 @@ void xps_free_page(xps_context *ctx, xps_page *page);
  * Images, fonts, and colorspaces.
  */
 
-int xps_decode_jpeg(fz_pixmap **imagep, byte *rbuf, int rlen);
-int xps_decode_png(fz_pixmap **imagep, byte *rbuf, int rlen);
-int xps_decode_tiff(fz_pixmap **imagep, byte *rbuf, int rlen);
+int xps_decode_jpeg(fz_context *ctx, fz_pixmap **imagep, byte *rbuf, int rlen);
+int xps_decode_png(fz_context *ctx, fz_pixmap **imagep, byte *rbuf, int rlen);
+int xps_decode_tiff(fz_context *ctx, fz_pixmap **imagep, byte *rbuf, int rlen);
 
 typedef struct xps_font_cache_s xps_font_cache;
 
@@ -196,6 +196,7 @@ struct xps_entry_s
 
 struct xps_context_s
 {
+	fz_context *ctx;
 	char *directory;
 	fz_stream *file;
 	int zip_count;
@@ -226,7 +227,7 @@ struct xps_context_s
 	fz_device *dev;
 };
 
-int xps_open_file(xps_context **ctxp, char *filename);
+int xps_open_file(fz_context *ctx, xps_context **ctxp, char *filename);
 int xps_open_stream(xps_context **ctxp, fz_stream *file);
 void xps_free_context(xps_context *ctx);
 

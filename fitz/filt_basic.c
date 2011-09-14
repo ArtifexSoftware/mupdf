@@ -32,8 +32,10 @@ static void
 close_null(fz_stream *stm)
 {
 	struct null_filter *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -41,11 +43,12 @@ fz_open_null(fz_stream *chain, int len)
 {
 	struct null_filter *state;
 
-	state = fz_malloc(sizeof(struct null_filter));
+	assert(chain != NULL);
+	state = fz_malloc(chain->ctx, sizeof(struct null_filter));
 	state->chain = chain;
 	state->remain = len;
 
-	return fz_new_stream(state, read_null, close_null);
+	return fz_new_stream(chain->ctx, state, read_null, close_null);
 }
 
 /* ASCII Hex Decode */
@@ -135,8 +138,10 @@ static void
 close_ahxd(fz_stream *stm)
 {
 	fz_ahxd *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -144,11 +149,11 @@ fz_open_ahxd(fz_stream *chain)
 {
 	fz_ahxd *state;
 
-	state = fz_malloc(sizeof(fz_ahxd));
+	state = fz_malloc(chain->ctx, sizeof(fz_ahxd));
 	state->chain = chain;
 	state->eod = 0;
 
-	return fz_new_stream(state, read_ahxd, close_ahxd);
+	return fz_new_stream(chain->ctx, state, read_ahxd, close_ahxd);
 }
 
 /* ASCII 85 Decode */
@@ -270,8 +275,10 @@ static void
 close_a85d(fz_stream *stm)
 {
 	fz_a85d *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -279,13 +286,14 @@ fz_open_a85d(fz_stream *chain)
 {
 	fz_a85d *state;
 
-	state = fz_malloc(sizeof(fz_a85d));
+	assert(chain != NULL);
+	state = fz_malloc(chain->ctx, sizeof(fz_a85d));
 	state->chain = chain;
 	state->rp = state->bp;
 	state->wp = state->bp;
 	state->eod = 0;
 
-	return fz_new_stream(state, read_a85d, close_a85d);
+	return fz_new_stream(chain->ctx, state, read_a85d, close_a85d);
 }
 
 /* Run Length Decode */
@@ -355,8 +363,10 @@ static void
 close_rld(fz_stream *stm)
 {
 	fz_rld *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -364,13 +374,14 @@ fz_open_rld(fz_stream *chain)
 {
 	fz_rld *state;
 
-	state = fz_malloc(sizeof(fz_rld));
+	assert(chain != NULL);
+	state = fz_malloc(chain->ctx, sizeof(fz_rld));
 	state->chain = chain;
 	state->run = 0;
 	state->n = 0;
 	state->c = 0;
 
-	return fz_new_stream(state, read_rld, close_rld);
+	return fz_new_stream(chain->ctx, state, read_rld, close_rld);
 }
 
 /* RC4 Filter */
@@ -402,8 +413,10 @@ static void
 close_arc4(fz_stream *stm)
 {
 	fz_arc4c *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -411,11 +424,11 @@ fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_arc4c *state;
 
-	state = fz_malloc(sizeof(fz_arc4c));
+	state = fz_malloc(chain->ctx, sizeof(fz_arc4c));
 	state->chain = chain;
 	fz_arc4_init(&state->arc4, key, keylen);
 
-	return fz_new_stream(state, read_arc4, close_arc4);
+	return fz_new_stream(chain->ctx, state, read_arc4, close_arc4);
 }
 
 /* AES Filter */
@@ -484,8 +497,10 @@ static void
 close_aesd(fz_stream *stm)
 {
 	fz_aesd *state = stm->state;
-	fz_close(state->chain);
-	fz_free(state);
+	fz_stream *chain = state->chain;
+
+	fz_free(stm->ctx, state);
+	fz_close(chain);
 }
 
 fz_stream *
@@ -493,12 +508,13 @@ fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_aesd *state;
 
-	state = fz_malloc(sizeof(fz_aesd));
+	assert(chain != NULL);
+	state = fz_malloc(chain->ctx, sizeof(fz_aesd));
 	state->chain = chain;
 	aes_setkey_dec(&state->aes, key, keylen * 8);
 	state->ivcount = 0;
 	state->rp = state->bp;
 	state->wp = state->bp;
 
-	return fz_new_stream(state, read_aesd, close_aesd);
+	return fz_new_stream(chain->ctx, state, read_aesd, close_aesd);
 }

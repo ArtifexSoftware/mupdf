@@ -19,7 +19,7 @@ static void fz_opj_info_callback(const char *msg, void *client_data)
 }
 
 fz_error
-fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *defcs)
+fz_load_jpx_image(fz_context *ctx, fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *defcs)
 {
 	fz_pixmap *img;
 	opj_event_mgr_t evtmgr;
@@ -108,7 +108,7 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 		}
 	}
 
-	img = fz_new_pixmap_with_limit(colorspace, w, h);
+	img = fz_new_pixmap_with_limit(ctx, colorspace, w, h);
 	if (!img)
 	{
 		opj_image_destroy(jpx);
@@ -138,9 +138,9 @@ fz_load_jpx_image(fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace
 	{
 		if (n == 4)
 		{
-			fz_pixmap *tmp = fz_new_pixmap(fz_device_rgb, w, h);
-			fz_convert_pixmap(img, tmp);
-			fz_drop_pixmap(img);
+			fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb, w, h);
+			fz_convert_pixmap(ctx, img, tmp);
+			fz_drop_pixmap(ctx, img);
 			img = tmp;
 		}
 		fz_premultiply_pixmap(img);

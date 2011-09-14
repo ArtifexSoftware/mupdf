@@ -5,7 +5,7 @@ typedef struct pdf_item_s pdf_item;
 
 struct pdf_item_s
 {
-	void *drop_func;
+	pdf_store_drop_fn *drop_func;
 	fz_obj *key;
 	void *val;
 	int age;
@@ -14,7 +14,7 @@ struct pdf_item_s
 
 struct refkey
 {
-	void *drop_func;
+	pdf_store_drop_fn *drop_func;
 	int num;
 	int gen;
 };
@@ -26,27 +26,27 @@ struct pdf_store_s
 };
 
 pdf_store *
-pdf_new_store(void)
+pdf_new_store(fz_context *ctx)
 {
 	pdf_store *store;
-	store = fz_malloc(sizeof(pdf_store));
-	store->hash = fz_new_hash_table(4096, sizeof(struct refkey));
+	store = fz_malloc(ctx, sizeof(pdf_store));
+	store->hash = fz_new_hash_table(ctx, 4096, sizeof(struct refkey));
 	store->root = NULL;
 	return store;
 }
 
 void
-pdf_store_item(pdf_store *store, void *keepfunc, void *drop_func, fz_obj *key, void *val)
+pdf_store_item(fz_context *ctx, pdf_store *store, pdf_store_keep_fn *keep_func, pdf_store_drop_fn *drop_func, fz_obj *key, void *val)
 {
 	pdf_item *item;
 
 	if (!store)
 		return;
 
-	item = fz_malloc(sizeof(pdf_item));
+	item = fz_malloc(ctx, sizeof(pdf_item));
 	item->drop_func = drop_func;
 	item->key = fz_keep_obj(key);
-	item->val = ((void*(*)(void*))keepfunc)(val);
+	item->val = keep_func(val);
 	item->age = 0;
 	item->next = NULL;
 
@@ -56,7 +56,7 @@ pdf_store_item(pdf_store *store, void *keepfunc, void *drop_func, fz_obj *key, v
 		refkey.drop_func = drop_func;
 		refkey.num = fz_to_num(key);
 		refkey.gen = fz_to_gen(key);
-		fz_hash_insert(store->hash, &refkey, item);
+		fz_hash_insert(ctx, store->hash, &refkey, item);
 	}
 	else
 	{
@@ -66,7 +66,7 @@ pdf_store_item(pdf_store *store, void *keepfunc, void *drop_func, fz_obj *key, v
 }
 
 void *
-pdf_find_item(pdf_store *store, void *drop_func, fz_obj *key)
+pdf_find_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *drop_func, fz_obj *key)
 {
 	struct refkey refkey;
 	pdf_item *item;
@@ -105,7 +105,7 @@ pdf_find_item(pdf_store *store, void *drop_func, fz_obj *key)
 }
 
 void
-pdf_remove_item(pdf_store *store, void *drop_func, fz_obj *key)
+pdf_remove_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *drop_func, fz_obj *key)
 {
 	struct refkey refkey;
 	pdf_item *item, *prev, *next;
@@ -119,9 +119,9 @@ pdf_remove_item(pdf_store *store, void *drop_func, fz_obj *key)
 		if (item)
 		{
 			fz_hash_remove(store->hash, &refkey);
-			((void(*)(void*))item->drop_func)(item->val);
-			fz_drop_obj(item->key);
-			fz_free(item);
+			item->drop_func(ctx, item->val);
+			fz_drop_obj(ctx, item->key);
+			fz_free(ctx, item);
 		}
 	}
 	else
@@ -136,9 +136,9 @@ pdf_remove_item(pdf_store *store, void *drop_func, fz_obj *key)
 					store->root = next;
 				else
 					prev->next = next;
-				((void(*)(void*))item->drop_func)(item->val);
-				fz_drop_obj(item->key);
-				fz_free(item);
+				item->drop_func(ctx, item->val);
+				fz_drop_obj(ctx, item->key);
+				fz_free(ctx, item);
 			}
 			else
 				prev = item;
@@ -147,22 +147,23 @@ pdf_remove_item(pdf_store *store, void *drop_func, fz_obj *key)
 }
 
 void
-pdf_age_store(pdf_store *store, int maxage)
+pdf_age_store(fz_context *ctx, pdf_store *store, int maxage)
 {
 	struct refkey *refkey;
 	pdf_item *item, *prev, *next;
-	int i;
+	int i, n;
 
-	for (i = 0; i < fz_hash_len(store->hash); i++)
+	n = fz_hash_len(store->hash);
+	for (i = 0; i < n; i++)
 	{
 		refkey = fz_hash_get_key(store->hash, i);
 		item = fz_hash_get_val(store->hash, i);
 		if (item && ++item->age > maxage)
 		{
 			fz_hash_remove(store->hash, refkey);
-			((void(*)(void*))item->drop_func)(item->val);
-			fz_drop_obj(item->key);
-			fz_free(item);
+			item->drop_func(ctx, item->val);
+			fz_drop_obj(ctx, item->key);
+			fz_free(ctx, item);
 			i--; /* items with same hash may move into place */
 		}
 	}
@@ -177,9 +178,9 @@ pdf_age_store(pdf_store *store, int maxage)
 				store->root = next;
 			else
 				prev->next = next;
-			((void(*)(void*))item->drop_func)(item->val);
-			fz_drop_obj(item->key);
-			fz_free(item);
+			item->drop_func(ctx, item->val);
+			fz_drop_obj(ctx, item->key);
+			fz_free(ctx, item);
 		}
 		else
 			prev = item;
@@ -187,24 +188,25 @@ pdf_age_store(pdf_store *store, int maxage)
 }
 
 void
-pdf_free_store(pdf_store *store)
+pdf_free_store(fz_context *ctx, pdf_store *store)
 {
-	pdf_age_store(store, 0);
-	fz_free_hash(store->hash);
-	fz_free(store);
+	pdf_age_store(ctx, store, 0);
+	fz_free_hash(ctx, store->hash);
+	fz_free(ctx, store);
 }
 
 void
-pdf_debug_store(pdf_store *store)
+pdf_debug_store(fz_context *ctx, pdf_store *store)
 {
 	pdf_item *item;
 	pdf_item *next;
 	struct refkey *refkey;
-	int i;
+	int i, n;
 
 	printf("-- resource store contents --\n");
 
-	for (i = 0; i < fz_hash_len(store->hash); i++)
+	n = fz_hash_len(store->hash);
+	for (i = 0; i < n; i++)
 	{
 		refkey = fz_hash_get_key(store->hash, i);
 		item = fz_hash_get_val(store->hash, i);
@@ -216,7 +218,7 @@ pdf_debug_store(pdf_store *store)
 	{
 		next = item->next;
 		printf("store[*] ");
-		fz_debug_obj(item->key);
+		fz_debug_obj(ctx, item->key);
 		printf(" = %p\n", item->val);
 	}
 }

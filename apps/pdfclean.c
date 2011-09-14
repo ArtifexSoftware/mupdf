@@ -24,6 +24,7 @@ static int doexpand = 0;
 static int doascii = 0;
 
 static pdf_xref *xref = NULL;
+static fz_context *ctx = NULL;
 
 void die(fz_error error)
 {
@@ -60,13 +61,19 @@ static void sweepobj(fz_obj *obj)
 	if (fz_is_indirect(obj))
 		sweepref(obj);
 
-	else if (fz_is_dict(obj))
-		for (i = 0; i < fz_dict_len(obj); i++)
-			sweepobj(fz_dict_get_val(obj, i));
+	else if (fz_is_dict(ctx, obj))
+	{
+		int n = fz_dict_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			sweepobj(fz_dict_get_val(ctx, obj, i));
+	}
 
-	else if (fz_is_array(obj))
-		for (i = 0; i < fz_array_len(obj); i++)
-			sweepobj(fz_array_get(obj, i));
+	else if (fz_is_array(ctx, obj))
+	{
+		int n = fz_array_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			sweepobj(fz_array_get(ctx, obj, i));
+	}
 }
 
 static void sweepref(fz_obj *obj)
@@ -84,16 +91,16 @@ static void sweepref(fz_obj *obj)
 	/* Bake in /Length in stream objects */
 	if (pdf_is_stream(xref, num, gen))
 	{
-		fz_obj *len = fz_dict_gets(obj, "Length");
+		fz_obj *len = fz_dict_gets(ctx, obj, "Length");
 		if (fz_is_indirect(len))
 		{
 			uselist[fz_to_num(len)] = 0;
-			len = fz_resolve_indirect(len);
-			fz_dict_puts(obj, "Length", len);
+			len = fz_resolve_indirect(xref->ctx, len);
+			fz_dict_puts(ctx, obj, "Length", len);
 		}
 	}
 
-	sweepobj(fz_resolve_indirect(obj));
+	sweepobj(fz_resolve_indirect(xref->ctx, obj));
 }
 
 /*
@@ -126,8 +133,8 @@ static void removeduplicateobjs(void)
 			a = xref->table[num].obj;
 			b = xref->table[other].obj;
 
-			a = fz_resolve_indirect(a);
-			b = fz_resolve_indirect(b);
+			a = fz_resolve_indirect(xref->ctx, a);
+			b = fz_resolve_indirect(xref->ctx, b);
 
 			if (fz_objcmp(a, b))
 				continue;
@@ -176,18 +183,20 @@ static void compactxref(void)
 static void renumberobj(fz_obj *obj)
 {
 	int i;
+	fz_context *ctx = xref->ctx;
 
-	if (fz_is_dict(obj))
+	if (fz_is_dict(ctx, obj))
 	{
-		for (i = 0; i < fz_dict_len(obj); i++)
+		int n = fz_dict_len(ctx, obj);
+		for (i = 0; i < n; i++)
 		{
-			fz_obj *key = fz_dict_get_key(obj, i);
-			fz_obj *val = fz_dict_get_val(obj, i);
+			fz_obj *key = fz_dict_get_key(ctx, obj, i);
+			fz_obj *val = fz_dict_get_val(ctx, obj, i);
 			if (fz_is_indirect(val))
 			{
-				val = fz_new_indirect(renumbermap[fz_to_num(val)], 0, xref);
-				fz_dict_put(obj, key, val);
-				fz_drop_obj(val);
+				val = fz_new_indirect(ctx, renumbermap[fz_to_num(val)], 0, xref);
+				fz_dict_put(ctx, obj, key, val);
+				fz_drop_obj(ctx, val);
 			}
 			else
 			{
@@ -196,16 +205,17 @@ static void renumberobj(fz_obj *obj)
 		}
 	}
 
-	else if (fz_is_array(obj))
+	else if (fz_is_array(ctx, obj))
 	{
-		for (i = 0; i < fz_array_len(obj); i++)
+		int n = fz_array_len(ctx, obj);
+		for (i = 0; i < n; i++)
 		{
-			fz_obj *val = fz_array_get(obj, i);
+			fz_obj *val = fz_array_get(ctx, obj, i);
 			if (fz_is_indirect(val))
 			{
-				val = fz_new_indirect(renumbermap[fz_to_num(val)], 0, xref);
-				fz_array_put(obj, i, val);
-				fz_drop_obj(val);
+				val = fz_new_indirect(ctx, renumbermap[fz_to_num(val)], 0, xref);
+				fz_array_put(ctx, obj, i, val);
+				fz_drop_obj(ctx, val);
 			}
 			else
 			{
@@ -229,9 +239,9 @@ static void renumberobjs(void)
 
 		if (fz_is_indirect(obj))
 		{
-			obj = fz_new_indirect(renumbermap[fz_to_num(obj)], 0, xref);
+			obj = fz_new_indirect(ctx, renumbermap[fz_to_num(obj)], 0, xref);
 			pdf_update_object(xref, num, 0, obj);
-			fz_drop_obj(obj);
+			fz_drop_obj(ctx, obj);
 		}
 		else
 		{
@@ -241,7 +251,7 @@ static void renumberobjs(void)
 
 	/* Create new table for the reordered, compacted xref */
 	oldxref = xref->table;
-	xref->table = fz_calloc(xref->len, sizeof(pdf_xref_entry));
+	xref->table = fz_calloc(xref->ctx, xref->len, sizeof(pdf_xref_entry));
 	xref->table[0] = oldxref[0];
 
 	/* Move used objects into the new compacted xref */
@@ -257,11 +267,11 @@ static void renumberobjs(void)
 		else
 		{
 			if (oldxref[num].obj)
-				fz_drop_obj(oldxref[num].obj);
+				fz_drop_obj(ctx, oldxref[num].obj);
 		}
 	}
 
-	fz_free(oldxref);
+	fz_free(xref->ctx, oldxref);
 
 	/* Update the used objects count in compacted xref */
 	xref->len = newlen + 1;
@@ -286,20 +296,20 @@ static void retainpages(int argc, char **argv)
 		die(fz_error_note(error, "cannot load page tree"));
 
 	/* Keep only pages/type entry to avoid references to unretained pages */
-	oldroot = fz_dict_gets(xref->trailer, "Root");
-	pages = fz_dict_gets(oldroot, "Pages");
+	oldroot = fz_dict_gets(ctx, xref->trailer, "Root");
+	pages = fz_dict_gets(ctx, oldroot, "Pages");
 
-	root = fz_new_dict(2);
-	fz_dict_puts(root, "Type", fz_dict_gets(oldroot, "Type"));
-	fz_dict_puts(root, "Pages", fz_dict_gets(oldroot, "Pages"));
+	root = fz_new_dict(ctx, 2);
+	fz_dict_puts(ctx, root, "Type", fz_dict_gets(ctx, oldroot, "Type"));
+	fz_dict_puts(ctx, root, "Pages", fz_dict_gets(ctx, oldroot, "Pages"));
 
 	pdf_update_object(xref, fz_to_num(oldroot), fz_to_gen(oldroot), root);
 
-	fz_drop_obj(root);
+	fz_drop_obj(ctx, root);
 
 	/* Create a new kids array with only the pages we want to keep */
-	parent = fz_new_indirect(fz_to_num(pages), fz_to_gen(pages), xref);
-	kids = fz_new_array(1);
+	parent = fz_new_indirect(ctx, fz_to_num(pages), fz_to_gen(pages), xref);
+	kids = fz_new_array(ctx, 1);
 
 	/* Retain pages specified */
 	while (argc - fz_optind)
@@ -339,10 +349,10 @@ static void retainpages(int argc, char **argv)
 				fz_obj *pageobj = xref->page_objs[page-1];
 				fz_obj *pageref = xref->page_refs[page-1];
 
-				fz_dict_puts(pageobj, "Parent", parent);
+				fz_dict_puts(ctx, pageobj, "Parent", parent);
 
 				/* Store page object in new kids array */
-				fz_array_push(kids, pageref);
+				fz_array_push(ctx, kids, pageref);
 			}
 
 			spec = fz_strsep(&pagelist, ",");
@@ -351,14 +361,14 @@ static void retainpages(int argc, char **argv)
 		fz_optind++;
 	}
 
-	fz_drop_obj(parent);
+	fz_drop_obj(ctx, parent);
 
 	/* Update page count and kids array */
-	countobj = fz_new_int(fz_array_len(kids));
-	fz_dict_puts(pages, "Count", countobj);
-	fz_drop_obj(countobj);
-	fz_dict_puts(pages, "Kids", kids);
-	fz_drop_obj(kids);
+	countobj = fz_new_int(ctx, fz_array_len(ctx, kids));
+	fz_dict_puts(ctx, pages, "Count", countobj);
+	fz_drop_obj(ctx, countobj);
+	fz_dict_puts(ctx, pages, "Kids", kids);
+	fz_drop_obj(ctx, kids);
 }
 
 /*
@@ -378,7 +388,7 @@ static void preloadobjstms(void)
 			error = pdf_load_object(&obj, xref, num, 0);
 			if (error)
 				die(error);
-			fz_drop_obj(obj);
+			fz_drop_obj(ctx, obj);
 		}
 	}
 }
@@ -409,7 +419,7 @@ static fz_buffer *hexbuf(unsigned char *p, int n)
 	fz_buffer *buf;
 	int x = 0;
 
-	buf = fz_new_buffer(n * 2 + (n / 32) + 2);
+	buf = fz_new_buffer(ctx, n * 2 + (n / 32) + 2);
 
 	while (n--)
 	{
@@ -434,46 +444,46 @@ static void addhexfilter(fz_obj *dict)
 	fz_obj *f, *dp, *newf, *newdp;
 	fz_obj *ahx, *nullobj;
 
-	ahx = fz_new_name("ASCIIHexDecode");
-	nullobj = fz_new_null();
+	ahx = fz_new_name(ctx, "ASCIIHexDecode");
+	nullobj = fz_new_null(ctx);
 	newf = newdp = NULL;
 
-	f = fz_dict_gets(dict, "Filter");
-	dp = fz_dict_gets(dict, "DecodeParms");
+	f = fz_dict_gets(ctx, dict, "Filter");
+	dp = fz_dict_gets(ctx, dict, "DecodeParms");
 
-	if (fz_is_name(f))
+	if (fz_is_name(ctx, f))
 	{
-		newf = fz_new_array(2);
-		fz_array_push(newf, ahx);
-		fz_array_push(newf, f);
+		newf = fz_new_array(ctx, 2);
+		fz_array_push(ctx, newf, ahx);
+		fz_array_push(ctx, newf, f);
 		f = newf;
-		if (fz_is_dict(dp))
+		if (fz_is_dict(ctx, dp))
 		{
-			newdp = fz_new_array(2);
-			fz_array_push(newdp, nullobj);
-			fz_array_push(newdp, dp);
+			newdp = fz_new_array(ctx, 2);
+			fz_array_push(ctx, newdp, nullobj);
+			fz_array_push(ctx, newdp, dp);
 			dp = newdp;
 		}
 	}
-	else if (fz_is_array(f))
+	else if (fz_is_array(ctx, f))
 	{
-		fz_array_insert(f, ahx);
-		if (fz_is_array(dp))
-			fz_array_insert(dp, nullobj);
+		fz_array_insert(ctx, f, ahx);
+		if (fz_is_array(ctx, dp))
+			fz_array_insert(ctx, dp, nullobj);
 	}
 	else
 		f = ahx;
 
-	fz_dict_puts(dict, "Filter", f);
+	fz_dict_puts(ctx, dict, "Filter", f);
 	if (dp)
-		fz_dict_puts(dict, "DecodeParms", dp);
+		fz_dict_puts(ctx, dict, "DecodeParms", dp);
 
-	fz_drop_obj(ahx);
-	fz_drop_obj(nullobj);
+	fz_drop_obj(ctx, ahx);
+	fz_drop_obj(ctx, nullobj);
 	if (newf)
-		fz_drop_obj(newf);
+		fz_drop_obj(ctx, newf);
 	if (newdp)
-		fz_drop_obj(newdp);
+		fz_drop_obj(ctx, newdp);
 }
 
 static void copystream(fz_obj *obj, int num, int gen)
@@ -489,23 +499,23 @@ static void copystream(fz_obj *obj, int num, int gen)
 	if (doascii && isbinarystream(buf))
 	{
 		tmp = hexbuf(buf->data, buf->len);
-		fz_drop_buffer(buf);
+		fz_drop_buffer(ctx, buf);
 		buf = tmp;
 
 		addhexfilter(obj);
 
-		newlen = fz_new_int(buf->len);
-		fz_dict_puts(obj, "Length", newlen);
-		fz_drop_obj(newlen);
+		newlen = fz_new_int(ctx, buf->len);
+		fz_dict_puts(ctx, obj, "Length", newlen);
+		fz_drop_obj(ctx, newlen);
 	}
 
 	fprintf(out, "%d %d obj\n", num, gen);
-	fz_fprint_obj(out, obj, !doexpand);
+	fz_fprint_obj(ctx, out, obj, !doexpand);
 	fprintf(out, "stream\n");
 	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
 
-	fz_drop_buffer(buf);
+	fz_drop_buffer(ctx, buf);
 }
 
 static void expandstream(fz_obj *obj, int num, int gen)
@@ -518,29 +528,29 @@ static void expandstream(fz_obj *obj, int num, int gen)
 	if (error)
 		die(error);
 
-	fz_dict_dels(obj, "Filter");
-	fz_dict_dels(obj, "DecodeParms");
+	fz_dict_dels(ctx, obj, "Filter");
+	fz_dict_dels(ctx, obj, "DecodeParms");
 
 	if (doascii && isbinarystream(buf))
 	{
 		tmp = hexbuf(buf->data, buf->len);
-		fz_drop_buffer(buf);
+		fz_drop_buffer(ctx, buf);
 		buf = tmp;
 
 		addhexfilter(obj);
 	}
 
-	newlen = fz_new_int(buf->len);
-	fz_dict_puts(obj, "Length", newlen);
-	fz_drop_obj(newlen);
+	newlen = fz_new_int(ctx, buf->len);
+	fz_dict_puts(ctx, obj, "Length", newlen);
+	fz_drop_obj(ctx, newlen);
 
 	fprintf(out, "%d %d obj\n", num, gen);
-	fz_fprint_obj(out, obj, !doexpand);
+	fz_fprint_obj(ctx, out, obj, !doexpand);
 	fprintf(out, "stream\n");
 	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
 
-	fz_drop_buffer(buf);
+	fz_drop_buffer(ctx, buf);
 }
 
 static void writeobject(int num, int gen)
@@ -554,19 +564,19 @@ static void writeobject(int num, int gen)
 		die(error);
 
 	/* skip ObjStm and XRef objects */
-	if (fz_is_dict(obj))
+	if (fz_is_dict(ctx, obj))
 	{
-		type = fz_dict_gets(obj, "Type");
-		if (fz_is_name(type) && !strcmp(fz_to_name(type), "ObjStm"))
+		type = fz_dict_gets(ctx, obj, "Type");
+		if (fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "ObjStm"))
 		{
 			uselist[num] = 0;
-			fz_drop_obj(obj);
+			fz_drop_obj(ctx, obj);
 			return;
 		}
-		if (fz_is_name(type) && !strcmp(fz_to_name(type), "XRef"))
+		if (fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "XRef"))
 		{
 			uselist[num] = 0;
-			fz_drop_obj(obj);
+			fz_drop_obj(ctx, obj);
 			return;
 		}
 	}
@@ -574,18 +584,18 @@ static void writeobject(int num, int gen)
 	if (!pdf_is_stream(xref, num, gen))
 	{
 		fprintf(out, "%d %d obj\n", num, gen);
-		fz_fprint_obj(out, obj, !doexpand);
+		fz_fprint_obj(ctx, out, obj, !doexpand);
 		fprintf(out, "endobj\n\n");
 	}
 	else
 	{
-		if (doexpand && !pdf_is_jpx_image(obj))
+		if (doexpand && !pdf_is_jpx_image(ctx, obj))
 			expandstream(obj, num, gen);
 		else
 			copystream(obj, num, gen);
 	}
 
-	fz_drop_obj(obj);
+	fz_drop_obj(ctx, obj);
 }
 
 static void writexref(void)
@@ -607,29 +617,29 @@ static void writexref(void)
 	}
 	fprintf(out, "\n");
 
-	trailer = fz_new_dict(5);
+	trailer = fz_new_dict(ctx, 5);
 
-	obj = fz_new_int(xref->len);
-	fz_dict_puts(trailer, "Size", obj);
-	fz_drop_obj(obj);
+	obj = fz_new_int(ctx, xref->len);
+	fz_dict_puts(ctx, trailer, "Size", obj);
+	fz_drop_obj(ctx, obj);
 
-	obj = fz_dict_gets(xref->trailer, "Info");
+	obj = fz_dict_gets(ctx, xref->trailer, "Info");
 	if (obj)
-		fz_dict_puts(trailer, "Info", obj);
+		fz_dict_puts(ctx, trailer, "Info", obj);
 
-	obj = fz_dict_gets(xref->trailer, "Root");
+	obj = fz_dict_gets(ctx, xref->trailer, "Root");
 	if (obj)
-		fz_dict_puts(trailer, "Root", obj);
+		fz_dict_puts(ctx, trailer, "Root", obj);
 
-	obj = fz_dict_gets(xref->trailer, "ID");
+	obj = fz_dict_gets(ctx, xref->trailer, "ID");
 	if (obj)
-		fz_dict_puts(trailer, "ID", obj);
+		fz_dict_puts(ctx, trailer, "ID", obj);
 
 	fprintf(out, "trailer\n");
-	fz_fprint_obj(out, trailer, !doexpand);
+	fz_fprint_obj(ctx, out, trailer, !doexpand);
 	fprintf(out, "\n");
 
-	fz_drop_obj(trailer);
+	fz_drop_obj(ctx, trailer);
 
 	fprintf(out, "startxref\n%d\n%%%%EOF\n", startxref);
 }
@@ -710,7 +720,11 @@ int main(int argc, char **argv)
 	if (argc - fz_optind > 0)
 		subset = 1;
 
-	error = pdf_open_xref(&xref, infile, password);
+	ctx = fz_context_init(&fz_alloc_default);
+	if (ctx == NULL)
+		die(fz_error_note(1, "failed to initialise context"));
+
+	error = pdf_open_xref(ctx, &xref, infile, password);
 	if (error)
 		die(fz_error_note(error, "cannot open input file '%s'", infile));
 
@@ -721,10 +735,10 @@ int main(int argc, char **argv)
 	fprintf(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
 	fprintf(out, "%%\316\274\341\277\246\n\n");
 
-	uselist = fz_calloc(xref->len + 1, sizeof(char));
-	ofslist = fz_calloc(xref->len + 1, sizeof(int));
-	genlist = fz_calloc(xref->len + 1, sizeof(int));
-	renumbermap = fz_calloc(xref->len + 1, sizeof(int));
+	uselist = fz_calloc(ctx, xref->len + 1, sizeof(char));
+	ofslist = fz_calloc(ctx, xref->len + 1, sizeof(int));
+	genlist = fz_calloc(ctx, xref->len + 1, sizeof(int));
+	renumbermap = fz_calloc(ctx, xref->len + 1, sizeof(int));
 
 	for (num = 0; num < xref->len; num++)
 	{
@@ -762,14 +776,15 @@ int main(int argc, char **argv)
 	if (fclose(out))
 		die(fz_error_make("cannot close output file '%s'", outfile));
 
-	fz_free(uselist);
-	fz_free(ofslist);
-	fz_free(genlist);
-	fz_free(renumbermap);
+	fz_free(xref->ctx, uselist);
+	fz_free(xref->ctx, ofslist);
+	fz_free(xref->ctx, genlist);
+	fz_free(xref->ctx, renumbermap);
 
 	pdf_free_xref(xref);
 
 	fz_flush_warnings();
+	fz_context_fin(ctx);
 
 	return 0;
 }

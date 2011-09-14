@@ -4,11 +4,11 @@ static int fz_memory_limit = 256 << 20;
 static int fz_memory_used = 0;
 
 fz_pixmap *
-fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *samples)
+fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples)
 {
 	fz_pixmap *pix;
 
-	pix = fz_malloc(sizeof(fz_pixmap));
+	pix = fz_malloc(ctx, sizeof(fz_pixmap));
 	pix->refs = 1;
 	pix->x = 0;
 	pix->y = 0;
@@ -35,7 +35,7 @@ fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *
 	else
 	{
 		fz_memory_used += pix->w * pix->h * pix->n;
-		pix->samples = fz_calloc(pix->h, pix->w * pix->n);
+		pix->samples = fz_calloc(ctx, pix->h, pix->w * pix->n);
 		pix->free_samples = 1;
 	}
 
@@ -43,7 +43,7 @@ fz_new_pixmap_with_data(fz_colorspace *colorspace, int w, int h, unsigned char *
 }
 
 fz_pixmap *
-fz_new_pixmap_with_limit(fz_colorspace *colorspace, int w, int h)
+fz_new_pixmap_with_limit(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
 {
 	int n = colorspace ? colorspace->n + 1 : 1;
 	int size = w * h * n;
@@ -53,30 +53,30 @@ fz_new_pixmap_with_limit(fz_colorspace *colorspace, int w, int h)
 			fz_memory_used/(1<<20), size/(1<<20), fz_memory_limit/(1<<20));
 		return NULL;
 	}
-	return fz_new_pixmap_with_data(colorspace, w, h, NULL);
+	return fz_new_pixmap_with_data(ctx, colorspace, w, h, NULL);
 }
 
 fz_pixmap *
-fz_new_pixmap(fz_colorspace *colorspace, int w, int h)
+fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
 {
-	return fz_new_pixmap_with_data(colorspace, w, h, NULL);
+	return fz_new_pixmap_with_data(ctx, colorspace, w, h, NULL);
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect(fz_colorspace *colorspace, fz_bbox r)
+fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
 {
 	fz_pixmap *pixmap;
-	pixmap = fz_new_pixmap(colorspace, r.x1 - r.x0, r.y1 - r.y0);
+	pixmap = fz_new_pixmap(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0);
 	pixmap->x = r.x0;
 	pixmap->y = r.y0;
 	return pixmap;
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect_and_data(fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
+fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
 {
 	fz_pixmap *pixmap;
-	pixmap = fz_new_pixmap_with_data(colorspace, r.x1 - r.x0, r.y1 - r.y0, samples);
+	pixmap = fz_new_pixmap_with_data(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0, samples);
 	pixmap->x = r.x0;
 	pixmap->y = r.y0;
 	return pixmap;
@@ -90,18 +90,18 @@ fz_keep_pixmap(fz_pixmap *pix)
 }
 
 void
-fz_drop_pixmap(fz_pixmap *pix)
+fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
 	if (pix && --pix->refs == 0)
 	{
 		fz_memory_used -= pix->w * pix->h * pix->n;
 		if (pix->mask)
-			fz_drop_pixmap(pix->mask);
+			fz_drop_pixmap(ctx, pix->mask);
 		if (pix->colorspace)
-			fz_drop_colorspace(pix->colorspace);
+			fz_drop_colorspace(ctx, pix->colorspace);
 		if (pix->free_samples)
-			fz_free(pix->samples);
-		fz_free(pix);
+			fz_free(ctx, pix->samples);
+		fz_free(ctx, pix);
 	}
 }
 
@@ -227,7 +227,7 @@ fz_premultiply_pixmap(fz_pixmap *pix)
 }
 
 fz_pixmap *
-fz_alpha_from_gray(fz_pixmap *gray, int luminosity)
+fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
 {
 	fz_pixmap *alpha;
 	unsigned char *sp, *dp;
@@ -235,7 +235,7 @@ fz_alpha_from_gray(fz_pixmap *gray, int luminosity)
 
 	assert(gray->n == 2);
 
-	alpha = fz_new_pixmap_with_rect(NULL, fz_bound_pixmap(gray));
+	alpha = fz_new_pixmap_with_rect(ctx, NULL, fz_bound_pixmap(gray));
 	dp = alpha->samples;
 	sp = gray->samples;
 	if (!luminosity)
@@ -431,7 +431,7 @@ static void putchunk(char *tag, unsigned char *data, int size, FILE *fp)
 }
 
 fz_error
-fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
+fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	FILE *fp;
@@ -461,8 +461,8 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 
 	usize = (pixmap->w * dn + 1) * pixmap->h;
 	csize = compressBound(usize);
-	udata = fz_malloc(usize);
-	cdata = fz_malloc(csize);
+	udata = fz_malloc(ctx, usize);
+	cdata = fz_malloc(ctx, csize);
 
 	sp = pixmap->samples;
 	dp = udata;
@@ -486,16 +486,16 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 	err = compress(cdata, &csize, udata, usize);
 	if (err != Z_OK)
 	{
-		fz_free(udata);
-		fz_free(cdata);
+		fz_free(ctx, udata);
+		fz_free(ctx, cdata);
 		return fz_error_make("cannot compress image data");
 	}
 
 	fp = fopen(filename, "wb");
 	if (!fp)
 	{
-		fz_free(udata);
-		fz_free(cdata);
+		fz_free(ctx, udata);
+		fz_free(ctx, cdata);
 		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
 	}
 
@@ -513,7 +513,7 @@ fz_write_png(fz_pixmap *pixmap, char *filename, int savealpha)
 	putchunk("IEND", head, 0, fp);
 	fclose(fp);
 
-	fz_free(udata);
-	fz_free(cdata);
+	fz_free(ctx, udata);
+	fz_free(ctx, cdata);
 	return fz_okay;
 }

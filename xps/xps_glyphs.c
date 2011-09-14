@@ -81,8 +81,8 @@ xps_lookup_font(xps_context *ctx, char *name)
 static void
 xps_insert_font(xps_context *ctx, char *name, fz_font *font)
 {
-	xps_font_cache *cache = fz_malloc(sizeof(xps_font_cache));
-	cache->name = fz_strdup(name);
+	xps_font_cache *cache = fz_malloc(ctx->ctx, sizeof(xps_font_cache));
+	cache->name = fz_strdup(ctx->ctx, name);
 	cache->font = fz_keep_font(font);
 	cache->next = ctx->font_table;
 	ctx->font_table = cache;
@@ -281,7 +281,7 @@ xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm,
 	else
 		tm = fz_scale(size, -size);
 
-	text = fz_new_text(font, tm, is_sideways);
+	text = fz_new_text(ctx->ctx, font, tm, is_sideways);
 
 	while ((us && un > 0) || (is && *is))
 	{
@@ -355,7 +355,7 @@ xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm,
 				f = y - v_offset;
 			}
 
-			fz_add_text(text, glyph_index, char_code, e, f);
+			fz_add_text(ctx->ctx, text, glyph_index, char_code, e, f);
 
 			x += advance * 0.01f * size;
 		}
@@ -496,7 +496,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 		if (strstr(part->name, ".ODTTF"))
 			xps_deobfuscate_font_resource(ctx, part);
 
-		code = fz_new_font_from_memory(&font, part->data, part->size, subfontid);
+		code = fz_new_font_from_memory(ctx->ctx, &font, part->data, part->size, subfontid);
 		if (code) {
 			fz_error_handle(code, "cannot load font resource '%s'", partname);
 			xps_free_part(ctx, part);
@@ -510,8 +510,8 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 		/* NOTE: we keep part->data in the font */
 		font->ft_data = part->data;
 		font->ft_size = part->size;
-		fz_free(part->name);
-		fz_free(part);
+		fz_free(ctx->ctx, part->name);
+		fz_free(ctx->ctx, part);
 	}
 
 	/*
@@ -575,10 +575,10 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 
 	xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
-	fz_free_text(text);
+	fz_free_text(ctx->ctx, text);
 
 	if (clip_att || clip_tag)
 		fz_pop_clip(ctx->dev);
 
-	fz_drop_font(font);
+	fz_drop_font(ctx->ctx, font);
 }

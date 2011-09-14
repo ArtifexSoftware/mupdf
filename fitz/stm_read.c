@@ -99,27 +99,28 @@ fz_read_all(fz_buffer **bufp, fz_stream *stm, int initial)
 {
 	fz_buffer *buf;
 	int n;
+	fz_context *ctx = stm->ctx;
 
 	if (initial < 1024)
 		initial = 1024;
 
-	buf = fz_new_buffer(initial);
+	buf = fz_new_buffer(ctx, initial);
 
 	while (1)
 	{
 		if (buf->len == buf->cap)
-			fz_grow_buffer(buf);
+			fz_grow_buffer(ctx, buf);
 
 		if (buf->len / 200 > initial)
 		{
-			fz_drop_buffer(buf);
+			fz_drop_buffer(ctx, buf);
 			return fz_error_make("compression bomb detected");
 		}
 
 		n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
 		if (n < 0)
 		{
-			fz_drop_buffer(buf);
+			fz_drop_buffer(ctx, buf);
 			return fz_error_note(n, "read error");
 		}
 		if (n == 0)
