@@ -394,6 +394,18 @@ fz_new_array(int initialcap)
 	return obj;
 }
 
+static void
+fz_array_grow(fz_obj *obj)
+{
+	int i;
+
+	obj->u.a.cap = (obj->u.a.cap * 3) / 2;
+	obj->u.a.items = fz_realloc(obj->u.a.items, obj->u.a.cap, sizeof(fz_obj*));
+
+	for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
+		obj->u.a.items[i] = NULL;
+}
+
 fz_obj *
 fz_copy_array(fz_obj *obj)
 {
@@ -462,13 +474,7 @@ fz_array_push(fz_obj *obj, fz_obj *item)
 	else
 	{
 		if (obj->u.a.len + 1 > obj->u.a.cap)
-		{
-			int i;
-			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(obj->u.a.items, obj->u.a.cap, sizeof(fz_obj*));
-			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
-				obj->u.a.items[i] = NULL;
-		}
+			fz_array_grow(obj);
 		obj->u.a.items[obj->u.a.len] = fz_keep_obj(item);
 		obj->u.a.len++;
 	}
@@ -484,13 +490,7 @@ fz_array_insert(fz_obj *obj, fz_obj *item)
 	else
 	{
 		if (obj->u.a.len + 1 > obj->u.a.cap)
-		{
-			int i;
-			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(obj->u.a.items, obj->u.a.cap, sizeof(fz_obj*));
-			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
-				obj->u.a.items[i] = NULL;
-		}
+			fz_array_grow(obj);
 		memmove(obj->u.a.items + 1, obj->u.a.items, obj->u.a.len * sizeof(fz_obj*));
 		obj->u.a.items[0] = fz_keep_obj(item);
 		obj->u.a.len++;
@@ -528,6 +528,21 @@ fz_new_dict(int initialcap)
 	}
 
 	return obj;
+}
+
+static void
+fz_dict_grow(fz_obj *obj)
+{
+	int i;
+
+	obj->u.d.cap = (obj->u.d.cap * 3) / 2;
+	obj->u.d.items = fz_realloc(obj->u.d.items, obj->u.d.cap, sizeof(struct keyval));
+
+	for (i = obj->u.d.len; i < obj->u.d.cap; i++)
+	{
+		obj->u.d.items[i].k = NULL;
+		obj->u.d.items[i].v = NULL;
+	}
 }
 
 fz_obj *
@@ -686,15 +701,7 @@ fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 	}
 
 	if (obj->u.d.len + 1 > obj->u.d.cap)
-	{
-		obj->u.d.cap = (obj->u.d.cap * 3) / 2;
-		obj->u.d.items = fz_realloc(obj->u.d.items, obj->u.d.cap, sizeof(struct keyval));
-		for (i = obj->u.d.len; i < obj->u.d.cap; i++)
-		{
-			obj->u.d.items[i].k = NULL;
-			obj->u.d.items[i].v = NULL;
-		}
-	}
+		fz_dict_grow(obj);
 
 	/* borked! */
 	if (obj->u.d.len)
