@@ -516,7 +516,7 @@ fz_new_dict(int initialcap)
 	obj->refs = 1;
 	obj->kind = FZ_DICT;
 
-	obj->u.d.sorted = 1;
+	obj->u.d.sorted = 0;
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
 
@@ -605,6 +605,14 @@ fz_dict_finds(fz_obj *obj, char *key, int *location)
 	{
 		int l = 0;
 		int r = obj->u.d.len - 1;
+
+		if (strcmp(fz_to_name(obj->u.d.items[r].k), key) < 0)
+		{
+			if (location)
+				*location = r + 1;
+			return -1;
+		}
+
 		while (l <= r)
 		{
 			int m = (l + r) >> 1;
@@ -673,6 +681,7 @@ fz_dict_getsa(fz_obj *obj, char *key, char *abbrev)
 void
 fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
+	int location;
 	char *s;
 	int i;
 
@@ -698,25 +707,30 @@ fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 		return;
 	}
 
-	i = fz_dict_finds(obj, s, NULL);
-	if (i >= 0)
+	if (obj->u.d.len > 100 && !obj->u.d.sorted)
+		fz_sort_dict(obj);
+
+	i = fz_dict_finds(obj, s, &location);
+	if (i >= 0 && i < obj->u.d.len)
 	{
 		fz_drop_obj(obj->u.d.items[i].v);
 		obj->u.d.items[i].v = fz_keep_obj(val);
-		return;
 	}
+	else
+	{
+		if (obj->u.d.len + 1 > obj->u.d.cap)
+			fz_dict_grow(obj);
 
-	if (obj->u.d.len + 1 > obj->u.d.cap)
-		fz_dict_grow(obj);
+		i = location;
+		if (obj->u.d.sorted)
+			memmove(&obj->u.d.items[i + 1],
+				&obj->u.d.items[i],
+				(obj->u.d.len - i) * sizeof(struct keyval));
 
-	/* borked! */
-	if (obj->u.d.len)
-		if (strcmp(fz_to_name(obj->u.d.items[obj->u.d.len - 1].k), s) > 0)
-			obj->u.d.sorted = 0;
-
-	obj->u.d.items[obj->u.d.len].k = fz_keep_obj(key);
-	obj->u.d.items[obj->u.d.len].v = fz_keep_obj(val);
-	obj->u.d.len ++;
+		obj->u.d.items[i].k = fz_keep_obj(key);
+		obj->u.d.items[i].v = fz_keep_obj(val);
+		obj->u.d.len ++;
+	}
 }
 
 void
