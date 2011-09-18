@@ -599,7 +599,7 @@ fz_dict_get_val(fz_obj *obj, int i)
 }
 
 static int
-fz_dict_finds(fz_obj *obj, char *key)
+fz_dict_finds(fz_obj *obj, char *key, int *location)
 {
 	if (obj->u.d.sorted)
 	{
@@ -615,6 +615,9 @@ fz_dict_finds(fz_obj *obj, char *key)
 				l = m + 1;
 			else
 				return m;
+
+			if (location)
+				*location = l;
 		}
 	}
 
@@ -624,6 +627,9 @@ fz_dict_finds(fz_obj *obj, char *key)
 		for (i = 0; i < obj->u.d.len; i++)
 			if (strcmp(fz_to_name(obj->u.d.items[i].k), key) == 0)
 				return i;
+
+		if (location)
+			*location = obj->u.d.len;
 	}
 
 	return -1;
@@ -639,7 +645,7 @@ fz_dict_gets(fz_obj *obj, char *key)
 	if (!fz_is_dict(obj))
 		return NULL;
 
-	i = fz_dict_finds(obj, key);
+	i = fz_dict_finds(obj, key, NULL);
 	if (i >= 0)
 		return obj->u.d.items[i].v;
 
@@ -692,7 +698,7 @@ fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 		return;
 	}
 
-	i = fz_dict_finds(obj, s);
+	i = fz_dict_finds(obj, s, NULL);
 	if (i >= 0)
 	{
 		fz_drop_obj(obj->u.d.items[i].v);
@@ -730,7 +736,7 @@ fz_dict_dels(fz_obj *obj, char *key)
 		fz_warn("assert: not a dict (%s)", fz_objkindstr(obj));
 	else
 	{
-		int i = fz_dict_finds(obj, key);
+		int i = fz_dict_finds(obj, key, NULL);
 		if (i >= 0)
 		{
 			fz_drop_obj(obj->u.d.items[i].k);
