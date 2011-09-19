@@ -603,13 +603,8 @@ static void pdfapp_searchforward(pdfapp_t *app, enum panning *panto)
 	} while (app->pageno != startpage);
 
 	if (app->pageno == startpage)
-	{
 		pdfapp_warn(app, "String '%s' not found.", app->search);
-		winrepaintsearch(app);
-	}
-	else
-		winrepaint(app);
-
+	winrepaint(app);
 	wincursor(app, HAND);
 }
 
@@ -657,13 +652,9 @@ static void pdfapp_searchbackward(pdfapp_t *app, enum panning *panto)
 	} while (app->pageno != startpage);
 
 	if (app->pageno == startpage)
-	{
 		pdfapp_warn(app, "String '%s' not found.", app->search);
-		winrepaintsearch(app);
-	}
-	else
-		winrepaint(app);
 
+	winrepaint(app);
 	wincursor(app, HAND);
 }
 
