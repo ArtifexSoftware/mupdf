@@ -210,6 +210,22 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 
 void pdfapp_close(pdfapp_t *app)
 {
+	if (app->page_list)
+		fz_free_display_list(app->page_list);
+	app->page_list = NULL;
+
+	if (app->page_text)
+		fz_free_text_span(app->page_text);
+	app->page_text = NULL;
+
+	if (app->page_links)
+		pdf_free_link(app->page_links);
+	app->page_links = NULL;
+
+	if (app->doctitle)
+		fz_free(app->doctitle);
+	app->doctitle = NULL;
+
 	if (app->cache)
 		fz_free_glyph_cache(app->cache);
 	app->cache = NULL;
