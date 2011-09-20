@@ -981,7 +981,7 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
-	ctx = fz_context_init(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 		die(fz_error_make("failed to initialise context"));
 
@@ -1025,7 +1025,6 @@ int main(int argc, char **argv)
 		showinfo(filename, show, "1-");
 
 	closexref();
-	fz_context_fin(ctx);
-
+	fz_free_context(ctx);
 	return 0;
 }

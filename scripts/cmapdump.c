@@ -16,7 +16,6 @@
 #include "../fitz/stm_open.c"
 #include "../fitz/stm_read.c"
 #include "../fitz/context.c"
-#include "../fitz/except.c"
 
 #include "../pdf/pdf_lex.c"
 #include "../pdf/pdf_cmap.c"
@@ -51,7 +50,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	ctx = fz_context_init(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise!\n");
@@ -166,6 +165,6 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	fz_context_fin(ctx);
+	fz_free_context(ctx);
 	return 0;
 }

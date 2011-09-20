@@ -1,5 +1,4 @@
 #include "fitz.h"
-#include "except.h"
 
 void *
 fz_malloc(fz_context *ctx, size_t size)
@@ -132,15 +131,5 @@ fz_strdup(fz_context *ctx, char *s)
 	int len = strlen(s) + 1;
 	char *ns = fz_malloc(ctx, len);
 	memcpy(ns, s, len);
-	return ns;
-}
-
-char *
-fz_strdup_nothrow(fz_context *ctx, char *s)
-{
-	int len = strlen(s) + 1;
-	char *ns = fz_malloc_nothrow(ctx, len);
-	if (ns != NULL)
-		memcpy(ns, s, len);
 	return ns;
 }

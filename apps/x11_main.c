@@ -584,7 +584,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_context_init(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise context");
@@ -750,7 +750,7 @@ int main(int argc, char **argv)
 
 	XCloseDisplay(xdpy);
 
-	fz_context_fin(ctx);
+	fz_free_context(ctx);
 
 	return 0;
 }

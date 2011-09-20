@@ -339,6 +339,10 @@
 			Name="fitz"
 			>
 			<File
+				RelativePath="..\fitz\base_context.c"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\base_error.c"
 				>
 			</File>
@@ -368,10 +372,6 @@
 			</File>
 			<File
 				RelativePath="..\fitz\base_time.c"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\context.c"
 				>
 			</File>
 			<File
@@ -408,18 +408,6 @@
 			</File>
 			<File
 				RelativePath="..\fitz\dev_trace.c"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\except.c"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\except.h"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\exceptxxx.h"
 				>
 			</File>
 			<File

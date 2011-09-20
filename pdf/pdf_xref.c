@@ -527,7 +527,7 @@ pdf_open_xref_with_stream(pdf_xref **xrefp, fz_stream *file, char *password)
 	fz_context *ctx = file->ctx;
 
 	/* install pdf specific callback */
-	ctx->fz_resolve_indirect = pdf_resolve_indirect;
+	ctx->resolve_indirect = pdf_resolve_indirect;
 
 	xref = fz_calloc(ctx, 1, sizeof(pdf_xref));
 

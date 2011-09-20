@@ -1,5 +1,8 @@
 #include "fitz.h"
 
+/* Warning context
+ * TODO: move into fz_context
+ */
 enum { LINE_LEN = 160, LINE_COUNT = 25 };
 
 static char warn_message[LINE_LEN] = "";
@@ -34,6 +37,55 @@ void fz_warn(char *fmt, ...)
 		warn_count = 1;
 	}
 }
+
+/* Error context */
+
+static void throw(fz_error_context *ex)
+{
+	if (ex->top >= 0)
+		longjmp(ex->stack[ex->top].buffer, 1);
+	else {
+		fprintf(stderr, "uncaught exception: %s\n", ex->message);
+		exit(EXIT_FAILURE);
+	}
+}
+
+void fz_push_try(fz_error_context *ex)
+{
+	assert(ex != NULL);
+	if (ex->top + 1 >= nelem(ex->stack))
+	{
+		fprintf(stderr, "exception stack overflow!\n");
+		exit(EXIT_FAILURE);
+	}
+	ex->top++;
+}
+
+char *fz_caught(fz_context *ctx)
+{
+	assert(ctx != NULL);
+	assert(ctx->error != NULL);
+	return ctx->error->message;
+}
+
+void fz_throw(fz_context *ctx, char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
+	va_end(args);
+
+	fprintf(stderr, "error: %s\n", ctx->error->message);
+
+	throw(ctx->error);
+}
+
+void fz_rethrow(fz_context *ctx)
+{
+	throw(ctx->error);
+}
+
+/* Deprecated error bubbling */
 
 static char error_message[LINE_COUNT][LINE_LEN];
 static int error_count = 0;

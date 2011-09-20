@@ -720,7 +720,7 @@ int main(int argc, char **argv)
 	if (argc - fz_optind > 0)
 		subset = 1;
 
-	ctx = fz_context_init(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 
@@ -782,9 +782,7 @@ int main(int argc, char **argv)
 	fz_free(xref->ctx, renumbermap);
 
 	pdf_free_xref(xref);
-
 	fz_flush_warnings();
-	fz_context_fin(ctx);
-
+	fz_free_context(ctx);
 	return 0;
 }

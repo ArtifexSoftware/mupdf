@@ -18,6 +18,8 @@
 #include <float.h> /* FLT_EPSILON */
 #include <fcntl.h> /* O_RDONLY & co */
 
+#include <setjmp.h>
+
 #include "memento.h"
 
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
@@ -61,11 +63,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #ifndef M_SQRT2
 #define M_SQRT2 1.41421356237309504880
 #endif
-
-/* Context types */
-typedef struct fz_except_context fz_except_context;
-typedef struct fz_alloc_context fz_alloc_context;
-typedef struct fz_context fz_context;
 
 /*
  * Variadic macros, inline and restrict keywords
@@ -117,7 +114,7 @@ typedef struct fz_context fz_context;
 #endif
 
 /*
- * Error handling
+ * Deprecated error handling.
  */
 
 typedef int fz_error;
@@ -139,6 +136,66 @@ void fz_error_handle_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 int fz_get_error_count(void);
 char *fz_get_error_line(int n);
 
+/* Context types */
+
+typedef struct fz_error_context_s fz_error_context;
+typedef struct fz_alloc_context_s fz_alloc_context;
+typedef struct fz_context_s fz_context;
+
+/* Memory allocator context */
+
+struct fz_alloc_context_s
+{
+	void *opaque;
+	void *(*malloc)(void *, size_t);
+	void *(*realloc)(void *, void *, size_t);
+	void (*free)(void *, void *);
+	void *(*calloc)(void *, size_t, size_t);
+};
+
+extern fz_alloc_context fz_alloc_default;
+
+/* Exception context */
+
+struct fz_error_context_s
+{
+	int top;
+	struct {
+		int failed;
+		jmp_buf buffer;
+	} stack[256];
+	char message[256];
+};
+
+#define fz_try(ctx) \
+	if (fz_push_try(ctx->error), \
+		!setjmp(ctx->error->stack[ctx->error->top].buffer)) \
+	{
+
+#define fz_catch(ctx) \
+		ctx->error->stack[ctx->error->top].failed = 0; \
+	} \
+	else \
+		ctx->error->stack[ctx->error->top].failed = 1; \
+	if (ctx->error->stack[ctx->error->top--].failed)
+
+void fz_push_try(fz_error_context *ex);
+void fz_throw(fz_context *, char *, ...);
+void fz_rethrow(fz_context *);
+
+/* Fitz per-thread context */
+
+struct fz_context_s
+{
+	fz_alloc_context *alloc;
+	fz_error_context *error;
+	struct fz_obj_s *(*resolve_indirect)(struct fz_obj_s *);
+};
+
+fz_context *fz_new_context(fz_alloc_context *alloc);
+fz_context *fz_clone_context(fz_context *ctx);
+void fz_free_context(fz_context *ctx);
+
 /*
  * Basic runtime and utility functions
  */
@@ -157,7 +214,6 @@ void fz_free(fz_context *ctx, void *p);
 void *fz_malloc_nothrow(fz_context *ctx, size_t size);
 void *fz_calloc_nothrow(fz_context *ctx, size_t count, size_t size);
 void *fz_realloc_nothrow(fz_context *ctx, void *p, size_t size);
-char *fz_strdup_nothrow(fz_context *ctx, char *s);
 
 /* runtime (hah!) test for endian-ness */
 int fz_is_big_endian(void);
@@ -371,7 +427,7 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
 
 typedef struct fz_obj_s fz_obj;
 
-#define fz_resolve_indirect(ctx, obj) (ctx)->fz_resolve_indirect((obj))
+#define fz_resolve_indirect(ctx, obj) (ctx)->resolve_indirect((obj))
 
 fz_obj *fz_new_null(fz_context *ctx);
 fz_obj *fz_new_bool(fz_context *ctx, int b);
@@ -1134,30 +1190,5 @@ enum
 	FZ_BLEND_ISOLATED = 16,
 	FZ_BLEND_KNOCKOUT = 32
 };
-
-/* Fitz allocator context */
-
-struct fz_alloc_context
-{
-	void *opaque;
-	void *(*malloc)(void *, size_t);
-	void *(*realloc)(void *, void *, size_t);
-	void (*free)(void *, void *);
-	void *(*calloc)(void *, size_t, size_t);
-};
-
-extern fz_alloc_context fz_alloc_default;
-
-/* Fitz context */
-
-struct fz_context
-{
-	fz_except_context *except;
-	fz_alloc_context *alloc;
-	fz_obj *(*fz_resolve_indirect)(fz_obj*);
-};
-
-fz_context *fz_context_init(fz_alloc_context *alloc);
-void fz_context_fin(fz_context *ctx);
 
 #endif

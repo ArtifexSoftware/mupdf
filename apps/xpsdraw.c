@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	fzctx = fz_context_init(&fz_alloc_default);
+	fzctx = fz_new_context(&fz_alloc_default);
 	if (fzctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise context");
@@ -369,7 +369,7 @@ int main(int argc, char **argv)
 	}
 
 	fz_free_glyph_cache(fzctx, glyphcache);
-	fz_context_fin(fzctx);
+	fz_free_context(fzctx);
 
 	return 0;
 }
