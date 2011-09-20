@@ -176,9 +176,9 @@ fz_open_lzwd(fz_stream *chain, fz_obj *params)
 	lzw->eod = 0;
 	lzw->early_change = 1;
 
-	obj = fz_dict_gets(chain->ctx, params, "EarlyChange");
+	obj = fz_dict_gets(params, "EarlyChange");
 	if (obj)
-		lzw->early_change = !!fz_to_int(chain->ctx, obj);
+		lzw->early_change = !!fz_to_int(obj);
 
 	for (i = 0; i < 256; i++)
 	{

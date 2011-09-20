@@ -33,7 +33,7 @@ static void showtrailer(void)
 	if (!xref)
 		die(fz_error_make("no file specified"));
 	printf("trailer\n");
-	fz_debug_obj(ctx, xref->trailer);
+	fz_debug_obj(xref->trailer);
 	printf("\n");
 }
 
@@ -147,7 +147,7 @@ static void showobject(int num, int gen)
 		else
 		{
 			printf("%d %d obj\n", num, gen);
-			fz_debug_obj(ctx, obj);
+			fz_debug_obj(obj);
 			printf("stream\n");
 			showstream(num, gen);
 			printf("endstream\n");
@@ -157,11 +157,11 @@ static void showobject(int num, int gen)
 	else
 	{
 		printf("%d %d obj\n", num, gen);
-		fz_debug_obj(ctx, obj);
+		fz_debug_obj(obj);
 		printf("endobj\n\n");
 	}
 
-	fz_drop_obj(ctx, obj);
+	fz_drop_obj(obj);
 }
 
 static void showgrep(char *filename)
@@ -178,17 +178,17 @@ static void showgrep(char *filename)
 			if (error)
 				die(error);
 
-			fz_sort_dict(ctx, obj);
+			fz_sort_dict(obj);
 
 			printf("%s:%d: ", filename, i);
-			fz_fprint_obj(ctx, stdout, obj, 1);
+			fz_fprint_obj(stdout, obj, 1);
 
-			fz_drop_obj(ctx, obj);
+			fz_drop_obj(obj);
 		}
 	}
 
 	printf("%s:trailer: ", filename);
-	fz_fprint_obj(ctx, stdout, xref->trailer, 1);
+	fz_fprint_obj(stdout, xref->trailer, 1);
 }
 
 int main(int argc, char **argv)

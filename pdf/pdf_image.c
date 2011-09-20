@@ -71,11 +71,11 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 		return fz_okay;
 	}
 
-	w = fz_to_int(ctx, fz_dict_getsa(ctx, dict, "Width", "W"));
-	h = fz_to_int(ctx, fz_dict_getsa(ctx, dict, "Height", "H"));
-	bpc = fz_to_int(ctx, fz_dict_getsa(ctx, dict, "BitsPerComponent", "BPC"));
-	imagemask = fz_to_bool(ctx, fz_dict_getsa(ctx, dict, "ImageMask", "IM"));
-	interpolate = fz_to_bool(ctx, fz_dict_getsa(ctx, dict, "Interpolate", "I"));
+	w = fz_to_int(fz_dict_getsa(dict, "Width", "W"));
+	h = fz_to_int(fz_dict_getsa(dict, "Height", "H"));
+	bpc = fz_to_int(fz_dict_getsa(dict, "BitsPerComponent", "BPC"));
+	imagemask = fz_to_bool(fz_dict_getsa(dict, "ImageMask", "IM"));
+	interpolate = fz_to_bool(fz_dict_getsa(dict, "Interpolate", "I"));
 
 	indexed = 0;
 	usecolorkey = 0;
@@ -98,13 +98,13 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 	if (h > (1 << 16))
 		return fz_error_make("image is too high");
 
-	obj = fz_dict_getsa(ctx, dict, "ColorSpace", "CS");
+	obj = fz_dict_getsa(dict, "ColorSpace", "CS");
 	if (obj && !imagemask && !forcemask)
 	{
 		/* colorspace resource lookup is only done for inline images */
-		if (fz_is_name(ctx, obj))
+		if (fz_is_name(obj))
 		{
-			res = fz_dict_get(ctx, fz_dict_gets(ctx, rdb, "ColorSpace"), obj);
+			res = fz_dict_get(fz_dict_gets(rdb, "ColorSpace"), obj);
 			if (res)
 				obj = res;
 		}
@@ -123,11 +123,11 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 		n = 1;
 	}
 
-	obj = fz_dict_getsa(ctx, dict, "Decode", "D");
+	obj = fz_dict_getsa(dict, "Decode", "D");
 	if (obj)
 	{
 		for (i = 0; i < n * 2; i++)
-			decode[i] = fz_to_real(ctx, fz_array_get(ctx, obj, i));
+			decode[i] = fz_to_real(fz_array_get(obj, i));
 	}
 	else
 	{
@@ -136,8 +136,8 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 			decode[i] = i & 1 ? maxval : 0;
 	}
 
-	obj = fz_dict_getsa(ctx, dict, "SMask", "Mask");
-	if (fz_is_dict(ctx, obj))
+	obj = fz_dict_getsa(dict, "SMask", "Mask");
+	if (fz_is_dict(obj))
 	{
 		/* Not allowed for inline images */
 		if (!cstm)
@@ -151,11 +151,11 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 			}
 		}
 	}
-	else if (fz_is_array(ctx, obj))
+	else if (fz_is_array(obj))
 	{
 		usecolorkey = 1;
 		for (i = 0; i < n * 2; i++)
-			colorkey[i] = fz_to_int(ctx, fz_array_get(ctx, obj, i));
+			colorkey[i] = fz_to_int(fz_array_get(obj, i));
 	}
 
 	/* Allocate now, to fail early if we run out of memory */
@@ -274,12 +274,12 @@ pdf_is_jpx_image(fz_context *ctx, fz_obj *dict)
 	fz_obj *filter;
 	int i, n;
 
-	filter = fz_dict_gets(ctx, dict, "Filter");
-	if (!strcmp(fz_to_name(ctx, filter), "JPXDecode"))
+	filter = fz_dict_gets(dict, "Filter");
+	if (!strcmp(fz_to_name(filter), "JPXDecode"))
 		return 1;
-	n = fz_array_len(ctx, filter);
+	n = fz_array_len(filter);
 	for (i = 0; i < n; i++)
-		if (!strcmp(fz_to_name(ctx, fz_array_get(ctx, filter, i)), "JPXDecode"))
+		if (!strcmp(fz_to_name(fz_array_get(filter, i)), "JPXDecode"))
 			return 1;
 	return 0;
 }
@@ -300,7 +300,7 @@ pdf_load_jpx_image(fz_pixmap **imgp, pdf_xref *xref, fz_obj *dict)
 	if (error)
 		return fz_error_note(error, "cannot load jpx image data");
 
-	obj = fz_dict_gets(ctx, dict, "ColorSpace");
+	obj = fz_dict_gets(dict, "ColorSpace");
 	if (obj)
 	{
 		error = pdf_load_colorspace(&colorspace, xref, obj);
@@ -321,8 +321,8 @@ pdf_load_jpx_image(fz_pixmap **imgp, pdf_xref *xref, fz_obj *dict)
 		fz_drop_colorspace(ctx, colorspace);
 	fz_drop_buffer(ctx, buf);
 
-	obj = fz_dict_getsa(ctx, dict, "SMask", "Mask");
-	if (fz_is_dict(ctx, obj))
+	obj = fz_dict_getsa(dict, "SMask", "Mask");
+	if (fz_is_dict(obj))
 	{
 		error = pdf_load_image_imp(&img->mask, xref, NULL, obj, NULL, 1);
 		if (error)

@@ -3,7 +3,8 @@
 fz_device *
 fz_new_device(fz_context *ctx, void *user)
 {
-	fz_device *dev = fz_calloc(ctx, 1, sizeof(fz_device));
+	fz_device *dev = fz_malloc(ctx, sizeof(fz_device));
+	memset(dev, 0, sizeof *dev);
 	dev->hints = 0;
 	dev->flags = 0;
 	dev->user = user;

@@ -37,17 +37,17 @@ pdf_load_embedded_cmap(pdf_cmap **cmapp, pdf_xref *xref, fz_obj *stmobj)
 
 	fz_close(file);
 
-	wmode = fz_dict_gets(ctx, stmobj, "WMode");
-	if (fz_is_int(ctx, wmode))
-		pdf_set_wmode(cmap, fz_to_int(ctx, wmode));
+	wmode = fz_dict_gets(stmobj, "WMode");
+	if (fz_is_int(wmode))
+		pdf_set_wmode(cmap, fz_to_int(wmode));
 
-	obj = fz_dict_gets(ctx, stmobj, "UseCMap");
-	if (fz_is_name(ctx, obj))
+	obj = fz_dict_gets(stmobj, "UseCMap");
+	if (fz_is_name(obj))
 	{
-		error = pdf_load_system_cmap(ctx, &usecmap, fz_to_name(ctx, obj));
+		error = pdf_load_system_cmap(ctx, &usecmap, fz_to_name(obj));
 		if (error)
 		{
-			error = fz_error_note(error, "cannot load system usecmap '%s'", fz_to_name(ctx, obj));
+			error = fz_error_note(error, "cannot load system usecmap '%s'", fz_to_name(obj));
 			goto cleanup;
 		}
 		pdf_set_usecmap(ctx, cmap, usecmap);

@@ -1,9 +1,5 @@
 #include "fitz.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#define MISSING_QSORT_R
-#endif
-
 typedef enum fz_objkind_e
 {
 	FZ_NULL,
@@ -27,6 +23,7 @@ struct fz_obj_s
 {
 	int refs;
 	fz_objkind kind;
+	fz_context *ctx;
 	union
 	{
 		int b;
@@ -60,6 +57,7 @@ fz_obj *
 fz_new_null(fz_context *ctx)
 {
 	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_NULL;
 	return obj;
@@ -69,6 +67,7 @@ fz_obj *
 fz_new_bool(fz_context *ctx, int b)
 {
 	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_BOOL;
 	obj->u.b = b;
@@ -79,6 +78,7 @@ fz_obj *
 fz_new_int(fz_context *ctx, int i)
 {
 	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_INT;
 	obj->u.i = i;
@@ -89,6 +89,7 @@ fz_obj *
 fz_new_real(fz_context *ctx, float f)
 {
 	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_REAL;
 	obj->u.f = f;
@@ -99,6 +100,7 @@ fz_obj *
 fz_new_string(fz_context *ctx, char *str, int len)
 {
 	fz_obj *obj = fz_malloc(ctx, offsetof(fz_obj, u.s.buf) + len + 1);
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_STRING;
 	obj->u.s.len = len;
@@ -111,6 +113,7 @@ fz_obj *
 fz_new_name(fz_context *ctx, char *str)
 {
 	fz_obj *obj = fz_malloc(ctx, offsetof(fz_obj, u.n) + strlen(str) + 1);
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_NAME;
 	strcpy(obj->u.n, str);
@@ -121,6 +124,7 @@ fz_obj *
 fz_new_indirect(fz_context *ctx, int num, int gen, void *xref)
 {
 	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_INDIRECT;
 	obj->u.r.num = num;
@@ -142,111 +146,111 @@ int fz_is_indirect(fz_obj *obj)
 	return obj ? obj->kind == FZ_INDIRECT : 0;
 }
 
-int fz_is_null(fz_context *ctx, fz_obj *obj)
+int fz_is_null(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_NULL : 0;
 }
 
-int fz_is_bool(fz_context *ctx, fz_obj *obj)
+int fz_is_bool(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_BOOL : 0;
 }
 
-int fz_is_int(fz_context *ctx, fz_obj *obj)
+int fz_is_int(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_INT : 0;
 }
 
-int fz_is_real(fz_context *ctx, fz_obj *obj)
+int fz_is_real(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_REAL : 0;
 }
 
-int fz_is_string(fz_context *ctx, fz_obj *obj)
+int fz_is_string(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_STRING : 0;
 }
 
-int fz_is_name(fz_context *ctx, fz_obj *obj)
+int fz_is_name(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_NAME : 0;
 }
 
-int fz_is_array(fz_context *ctx, fz_obj *obj)
+int fz_is_array(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_ARRAY : 0;
 }
 
-int fz_is_dict(fz_context *ctx, fz_obj *obj)
+int fz_is_dict(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 	return obj ? obj->kind == FZ_DICT : 0;
 }
 
-int fz_to_bool(fz_context *ctx, fz_obj *obj)
+int fz_to_bool(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_bool(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_bool(obj))
 		return obj->u.b;
 	return 0;
 }
 
-int fz_to_int(fz_context *ctx, fz_obj *obj)
+int fz_to_int(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_int(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_int(obj))
 		return obj->u.i;
-	if (fz_is_real(ctx, obj))
+	if (fz_is_real(obj))
 		return obj->u.f;
 	return 0;
 }
 
-float fz_to_real(fz_context *ctx, fz_obj *obj)
+float fz_to_real(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_real(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_real(obj))
 		return obj->u.f;
-	if (fz_is_int(ctx, obj))
+	if (fz_is_int(obj))
 		return obj->u.i;
 	return 0;
 }
 
-char *fz_to_name(fz_context *ctx, fz_obj *obj)
+char *fz_to_name(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_name(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_name(obj))
 		return obj->u.n;
 	return "";
 }
 
-char *fz_to_str_buf(fz_context *ctx, fz_obj *obj)
+char *fz_to_str_buf(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_string(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_string(obj))
 		return obj->u.s.buf;
 	return "";
 }
 
-int fz_to_str_len(fz_context *ctx, fz_obj *obj)
+int fz_to_str_len(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_string(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_string(obj))
 		return obj->u.s.len;
 	return 0;
 }
 
 /* for use by pdf_crypt_obj_imp to decrypt AES string in place */
-void fz_set_str_len(fz_context *ctx, fz_obj *obj, int newlen)
+void fz_set_str_len(fz_obj *obj, int newlen)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (fz_is_string(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (fz_is_string(obj))
 		if (newlen < obj->u.s.len)
 			obj->u.s.len = newlen;
 }
@@ -378,6 +382,7 @@ fz_new_array(fz_context *ctx, int initialcap)
 	int i;
 
 	obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_ARRAY;
 
@@ -398,32 +403,32 @@ fz_copy_array(fz_context *ctx, fz_obj *obj)
 	int i;
 	int n;
 
-	if (fz_is_indirect(obj) || !fz_is_array(ctx, obj))
+	if (fz_is_indirect(obj) || !fz_is_array(obj))
 		fz_warn("assert: not an array (%s)", fz_objkindstr(obj));
 
-	new = fz_new_array(ctx, fz_array_len(ctx, obj));
-	n = fz_array_len(ctx, obj);
+	new = fz_new_array(ctx, fz_array_len(obj));
+	n = fz_array_len(obj);
 	for (i = 0; i < n; i++)
-		fz_array_push(ctx, new, fz_array_get(ctx, obj, i));
+		fz_array_push(new, fz_array_get(obj, i));
 
 	return new;
 }
 
 int
-fz_array_len(fz_context *ctx, fz_obj *obj)
+fz_array_len(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (!fz_is_array(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_array(obj))
 		return 0;
 	return obj->u.a.len;
 }
 
 fz_obj *
-fz_array_get(fz_context *ctx, fz_obj *obj, int i)
+fz_array_get(fz_obj *obj, int i)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_array(ctx, obj))
+	if (!fz_is_array(obj))
 		return NULL;
 
 	if (i < 0 || i >= obj->u.a.len)
@@ -433,11 +438,11 @@ fz_array_get(fz_context *ctx, fz_obj *obj, int i)
 }
 
 void
-fz_array_put(fz_context *ctx, fz_obj *obj, int i, fz_obj *item)
+fz_array_put(fz_obj *obj, int i, fz_obj *item)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_array(ctx, obj))
+	if (!fz_is_array(obj))
 		fz_warn("assert: not an array (%s)", fz_objkindstr(obj));
 	else if (i < 0)
 		fz_warn("assert: index %d < 0", i);
@@ -446,17 +451,17 @@ fz_array_put(fz_context *ctx, fz_obj *obj, int i, fz_obj *item)
 	else
 	{
 		if (obj->u.a.items[i])
-			fz_drop_obj(ctx, obj->u.a.items[i]);
+			fz_drop_obj(obj->u.a.items[i]);
 		obj->u.a.items[i] = fz_keep_obj(item);
 	}
 }
 
 void
-fz_array_push(fz_context *ctx, fz_obj *obj, fz_obj *item)
+fz_array_push(fz_obj *obj, fz_obj *item)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_array(ctx, obj))
+	if (!fz_is_array(obj))
 		fz_warn("assert: not an array (%s)", fz_objkindstr(obj));
 	else
 	{
@@ -464,7 +469,7 @@ fz_array_push(fz_context *ctx, fz_obj *obj, fz_obj *item)
 		{
 			int i;
 			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
+			obj->u.a.items = fz_realloc(obj->ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
 			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
 				obj->u.a.items[i] = NULL;
 		}
@@ -474,11 +479,11 @@ fz_array_push(fz_context *ctx, fz_obj *obj, fz_obj *item)
 }
 
 void
-fz_array_insert(fz_context *ctx, fz_obj *obj, fz_obj *item)
+fz_array_insert(fz_obj *obj, fz_obj *item)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_array(ctx, obj))
+	if (!fz_is_array(obj))
 		fz_warn("assert: not an array (%s)", fz_objkindstr(obj));
 	else
 	{
@@ -486,7 +491,7 @@ fz_array_insert(fz_context *ctx, fz_obj *obj, fz_obj *item)
 		{
 			int i;
 			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
+			obj->u.a.items = fz_realloc(obj->ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
 			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
 				obj->u.a.items[i] = NULL;
 		}
@@ -498,21 +503,12 @@ fz_array_insert(fz_context *ctx, fz_obj *obj, fz_obj *item)
 
 /* dicts may only have names as keys! */
 
-static int keyvalcmp(void *ctxp, const void *ap, const void *bp)
+static int keyvalcmp(const void *ap, const void *bp)
 {
-	fz_context *ctx = (fz_context *)ctxp;
 	const struct keyval *a = ap;
 	const struct keyval *b = bp;
-	return strcmp(fz_to_name(ctx, a->k), fz_to_name(ctx, b->k));
+	return strcmp(fz_to_name(a->k), fz_to_name(b->k));
 }
-
-#ifdef MISSING_QSORT_R
-static void *qsort_r_hack;
-static int keyvalcmp_hack(const void *ap, const void *bp)
-{
-	return keyvalcmp(qsort_r_hack, ap, bp);
-}
-#endif
 
 fz_obj *
 fz_new_dict(fz_context *ctx, int initialcap)
@@ -521,6 +517,7 @@ fz_new_dict(fz_context *ctx, int initialcap)
 	int i;
 
 	obj = fz_malloc(ctx, sizeof(fz_obj));
+	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_DICT;
 
@@ -544,32 +541,32 @@ fz_copy_dict(fz_context *ctx, fz_obj *obj)
 	fz_obj *new;
 	int i, n;
 
-	if (fz_is_indirect(obj) || !fz_is_dict(ctx, obj))
+	if (fz_is_indirect(obj) || !fz_is_dict(obj))
 		fz_error_make("assert: not a dict (%s)", fz_objkindstr(obj));
 
-	n = fz_dict_len(ctx, obj);
+	n = fz_dict_len(obj);
 	new = fz_new_dict(ctx, n);
 	for (i = 0; i < n; i++)
-		fz_dict_put(ctx, new, fz_dict_get_key(ctx, obj, i), fz_dict_get_val(ctx, obj, i));
+		fz_dict_put(new, fz_dict_get_key(obj, i), fz_dict_get_val(obj, i));
 
 	return new;
 }
 
 int
-fz_dict_len(fz_context *ctx, fz_obj *obj)
+fz_dict_len(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (!fz_is_dict(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_dict(obj))
 		return 0;
 	return obj->u.d.len;
 }
 
 fz_obj *
-fz_dict_get_key(fz_context *ctx, fz_obj *obj, int i)
+fz_dict_get_key(fz_obj *obj, int i)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_dict(ctx, obj))
+	if (!fz_is_dict(obj))
 		return NULL;
 
 	if (i < 0 || i >= obj->u.d.len)
@@ -579,11 +576,11 @@ fz_dict_get_key(fz_context *ctx, fz_obj *obj, int i)
 }
 
 fz_obj *
-fz_dict_get_val(fz_context *ctx, fz_obj *obj, int i)
+fz_dict_get_val(fz_obj *obj, int i)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_dict(ctx, obj))
+	if (!fz_is_dict(obj))
 		return NULL;
 
 	if (i < 0 || i >= obj->u.d.len)
@@ -593,7 +590,7 @@ fz_dict_get_val(fz_context *ctx, fz_obj *obj, int i)
 }
 
 static int
-fz_dict_finds(fz_context *ctx, fz_obj *obj, char *key)
+fz_dict_finds(fz_obj *obj, char *key)
 {
 	if (obj->u.d.sorted)
 	{
@@ -602,7 +599,7 @@ fz_dict_finds(fz_context *ctx, fz_obj *obj, char *key)
 		while (l <= r)
 		{
 			int m = (l + r) >> 1;
-			int c = -strcmp(fz_to_name(ctx, obj->u.d.items[m].k), key);
+			int c = -strcmp(fz_to_name(obj->u.d.items[m].k), key);
 			if (c < 0)
 				r = m - 1;
 			else if (c > 0)
@@ -616,7 +613,7 @@ fz_dict_finds(fz_context *ctx, fz_obj *obj, char *key)
 	{
 		int i;
 		for (i = 0; i < obj->u.d.len; i++)
-			if (strcmp(fz_to_name(ctx, obj->u.d.items[i].k), key) == 0)
+			if (strcmp(fz_to_name(obj->u.d.items[i].k), key) == 0)
 				return i;
 	}
 
@@ -624,16 +621,16 @@ fz_dict_finds(fz_context *ctx, fz_obj *obj, char *key)
 }
 
 fz_obj *
-fz_dict_gets(fz_context *ctx, fz_obj *obj, char *key)
+fz_dict_gets(fz_obj *obj, char *key)
 {
 	int i;
 
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_dict(ctx, obj))
+	if (!fz_is_dict(obj))
 		return NULL;
 
-	i = fz_dict_finds(ctx, obj, key);
+	i = fz_dict_finds(obj, key);
 	if (i >= 0)
 		return obj->u.d.items[i].v;
 
@@ -641,39 +638,39 @@ fz_dict_gets(fz_context *ctx, fz_obj *obj, char *key)
 }
 
 fz_obj *
-fz_dict_get(fz_context *ctx, fz_obj *obj, fz_obj *key)
+fz_dict_get(fz_obj *obj, fz_obj *key)
 {
-	if (fz_is_name(ctx, key))
-		return fz_dict_gets(ctx, obj, fz_to_name(ctx, key));
+	if (fz_is_name(key))
+		return fz_dict_gets(obj, fz_to_name(key));
 	return NULL;
 }
 
 fz_obj *
-fz_dict_getsa(fz_context *ctx, fz_obj *obj, char *key, char *abbrev)
+fz_dict_getsa(fz_obj *obj, char *key, char *abbrev)
 {
 	fz_obj *v;
-	v = fz_dict_gets(ctx, obj, key);
+	v = fz_dict_gets(obj, key);
 	if (v)
 		return v;
-	return fz_dict_gets(ctx, obj, abbrev);
+	return fz_dict_gets(obj, abbrev);
 }
 
 void
-fz_dict_put(fz_context *ctx, fz_obj *obj, fz_obj *key, fz_obj *val)
+fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 {
 	char *s;
 	int i;
 
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_dict(ctx, obj))
+	if (!fz_is_dict(obj))
 	{
 		fz_warn("assert: not a dict (%s)", fz_objkindstr(obj));
 		return;
 	}
 
-	if (fz_is_name(ctx, key))
-		s = fz_to_name(ctx, key);
+	if (fz_is_name(key))
+		s = fz_to_name(key);
 	else
 	{
 		fz_warn("assert: key is not a name (%s)", fz_objkindstr(obj));
@@ -686,10 +683,10 @@ fz_dict_put(fz_context *ctx, fz_obj *obj, fz_obj *key, fz_obj *val)
 		return;
 	}
 
-	i = fz_dict_finds(ctx, obj, s);
+	i = fz_dict_finds(obj, s);
 	if (i >= 0)
 	{
-		fz_drop_obj(ctx, obj->u.d.items[i].v);
+		fz_drop_obj(obj->u.d.items[i].v);
 		obj->u.d.items[i].v = fz_keep_obj(val);
 		return;
 	}
@@ -697,7 +694,7 @@ fz_dict_put(fz_context *ctx, fz_obj *obj, fz_obj *key, fz_obj *val)
 	if (obj->u.d.len + 1 > obj->u.d.cap)
 	{
 		obj->u.d.cap = (obj->u.d.cap * 3) / 2;
-		obj->u.d.items = fz_realloc(ctx, obj->u.d.items, obj->u.d.cap * sizeof(struct keyval));
+		obj->u.d.items = fz_realloc(obj->ctx, obj->u.d.items, obj->u.d.cap * sizeof(struct keyval));
 		for (i = obj->u.d.len; i < obj->u.d.cap; i++)
 		{
 			obj->u.d.items[i].k = NULL;
@@ -707,7 +704,7 @@ fz_dict_put(fz_context *ctx, fz_obj *obj, fz_obj *key, fz_obj *val)
 
 	/* borked! */
 	if (obj->u.d.len)
-		if (strcmp(fz_to_name(ctx, obj->u.d.items[obj->u.d.len - 1].k), s) > 0)
+		if (strcmp(fz_to_name(obj->u.d.items[obj->u.d.len - 1].k), s) > 0)
 			obj->u.d.sorted = 0;
 
 	obj->u.d.items[obj->u.d.len].k = fz_keep_obj(key);
@@ -716,27 +713,27 @@ fz_dict_put(fz_context *ctx, fz_obj *obj, fz_obj *key, fz_obj *val)
 }
 
 void
-fz_dict_puts(fz_context *ctx, fz_obj *obj, char *key, fz_obj *val)
+fz_dict_puts(fz_obj *obj, char *key, fz_obj *val)
 {
-	fz_obj *keyobj = fz_new_name(ctx, key);
-	fz_dict_put(ctx, obj, keyobj, val);
-	fz_drop_obj(ctx, keyobj);
+	fz_obj *keyobj = fz_new_name(obj->ctx, key);
+	fz_dict_put(obj, keyobj, val);
+	fz_drop_obj(keyobj);
 }
 
 void
-fz_dict_dels(fz_context *ctx, fz_obj *obj, char *key)
+fz_dict_dels(fz_obj *obj, char *key)
 {
-	obj = fz_resolve_indirect(ctx, obj);
+	obj = fz_resolve_indirect(obj);
 
-	if (!fz_is_dict(ctx, obj))
+	if (!fz_is_dict(obj))
 		fz_warn("assert: not a dict (%s)", fz_objkindstr(obj));
 	else
 	{
-		int i = fz_dict_finds(ctx, obj, key);
+		int i = fz_dict_finds(obj, key);
 		if (i >= 0)
 		{
-			fz_drop_obj(ctx, obj->u.d.items[i].k);
-			fz_drop_obj(ctx, obj->u.d.items[i].v);
+			fz_drop_obj(obj->u.d.items[i].k);
+			fz_drop_obj(obj->u.d.items[i].v);
 			obj->u.d.sorted = 0;
 			obj->u.d.items[i] = obj->u.d.items[obj->u.d.len-1];
 			obj->u.d.len --;
@@ -745,72 +742,403 @@ fz_dict_dels(fz_context *ctx, fz_obj *obj, char *key)
 }
 
 void
-fz_dict_del(fz_context *ctx, fz_obj *obj, fz_obj *key)
+fz_dict_del(fz_obj *obj, fz_obj *key)
 {
-	if (fz_is_name(ctx, key))
-		fz_dict_dels(ctx, obj, fz_to_name(ctx, key));
+	if (fz_is_name(key))
+		fz_dict_dels(obj, fz_to_name(key));
 	else
 		fz_warn("assert: key is not a name (%s)", fz_objkindstr(obj));
 }
 
 void
-fz_sort_dict(fz_context *ctx, fz_obj *obj)
+fz_sort_dict(fz_obj *obj)
 {
-	obj = fz_resolve_indirect(ctx, obj);
-	if (!fz_is_dict(ctx, obj))
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_dict(obj))
 		return;
 	if (!obj->u.d.sorted)
 	{
-#ifdef MISSING_QSORT_R
-		qsort_r_hack = ctx;
-		qsort(obj->u.d.items, obj->u.d.len, sizeof(struct keyval), keyvalcmp_hack);
-#else
-		qsort_r(obj->u.d.items, obj->u.d.len, sizeof(struct keyval), ctx, keyvalcmp);
-#endif
-				obj->u.d.sorted = 1;
+		qsort(obj->u.d.items, obj->u.d.len, sizeof(struct keyval), keyvalcmp);
+		obj->u.d.sorted = 1;
 	}
 }
 
 static void
-fz_free_array(fz_context *ctx, fz_obj *obj)
+fz_free_array(fz_obj *obj)
 {
 	int i;
 
 	for (i = 0; i < obj->u.a.len; i++)
 		if (obj->u.a.items[i])
-			fz_drop_obj(ctx, obj->u.a.items[i]);
+			fz_drop_obj(obj->u.a.items[i]);
 
-	fz_free(ctx, obj->u.a.items);
-	fz_free(ctx, obj);
+	fz_free(obj->ctx, obj->u.a.items);
+	fz_free(obj->ctx, obj);
 }
 
 static void
-fz_free_dict(fz_context *ctx, fz_obj *obj)
+fz_free_dict(fz_obj *obj)
 {
 	int i;
 
 	for (i = 0; i < obj->u.d.len; i++) {
 		if (obj->u.d.items[i].k)
-			fz_drop_obj(ctx, obj->u.d.items[i].k);
+			fz_drop_obj(obj->u.d.items[i].k);
 		if (obj->u.d.items[i].v)
-			fz_drop_obj(ctx, obj->u.d.items[i].v);
+			fz_drop_obj(obj->u.d.items[i].v);
 	}
 
-	fz_free(ctx, obj->u.d.items);
-	fz_free(ctx, obj);
+	fz_free(obj->ctx, obj->u.d.items);
+	fz_free(obj->ctx, obj);
 }
 
 void
-fz_drop_obj(fz_context *ctx, fz_obj *obj)
+fz_drop_obj(fz_obj *obj)
 {
 	assert(obj != NULL);
 	if (--obj->refs == 0)
 	{
 		if (obj->kind == FZ_ARRAY)
-			fz_free_array(ctx, obj);
+			fz_free_array(obj);
 		else if (obj->kind == FZ_DICT)
-			fz_free_dict(ctx, obj);
+			fz_free_dict(obj);
 		else
-			fz_free(ctx, obj);
+			fz_free(obj->ctx, obj);
 	}
+}
+
+/* Pretty printing objects */
+
+struct fmt
+{
+	char *buf;
+	int cap;
+	int len;
+	int indent;
+	int tight;
+	int col;
+	int sep;
+	int last;
+};
+
+static void fmt_obj(struct fmt *fmt, fz_obj *obj);
+
+static inline int iswhite(int ch)
+{
+	return
+		ch == '\000' ||
+		ch == '\011' ||
+		ch == '\012' ||
+		ch == '\014' ||
+		ch == '\015' ||
+		ch == '\040';
+}
+
+static inline int isdelim(int ch)
+{
+	return	ch == '(' || ch == ')' ||
+		ch == '<' || ch == '>' ||
+		ch == '[' || ch == ']' ||
+		ch == '{' || ch == '}' ||
+		ch == '/' ||
+		ch == '%';
+}
+
+static inline void fmt_putc(struct fmt *fmt, int c)
+{
+	if (fmt->sep && !isdelim(fmt->last) && !isdelim(c)) {
+		fmt->sep = 0;
+		fmt_putc(fmt, ' ');
+	}
+	fmt->sep = 0;
+
+	if (fmt->buf && fmt->len < fmt->cap)
+		fmt->buf[fmt->len] = c;
+
+	if (c == '\n')
+		fmt->col = 0;
+	else
+		fmt->col ++;
+
+	fmt->len ++;
+
+	fmt->last = c;
+}
+
+static inline void fmt_indent(struct fmt *fmt)
+{
+	int i = fmt->indent;
+	while (i--) {
+		fmt_putc(fmt, ' ');
+		fmt_putc(fmt, ' ');
+	}
+}
+
+static inline void fmt_puts(struct fmt *fmt, char *s)
+{
+	while (*s)
+		fmt_putc(fmt, *s++);
+}
+
+static inline void fmt_sep(struct fmt *fmt)
+{
+	fmt->sep = 1;
+}
+
+static void fmt_str(struct fmt *fmt, fz_obj *obj)
+{
+	char *s = fz_to_str_buf(obj);
+	int n = fz_to_str_len(obj);
+	int i, c;
+
+	fmt_putc(fmt, '(');
+	for (i = 0; i < n; i++)
+	{
+		c = (unsigned char)s[i];
+		if (c == '\n')
+			fmt_puts(fmt, "\\n");
+		else if (c == '\r')
+			fmt_puts(fmt, "\\r");
+		else if (c == '\t')
+			fmt_puts(fmt, "\\t");
+		else if (c == '\b')
+			fmt_puts(fmt, "\\b");
+		else if (c == '\f')
+			fmt_puts(fmt, "\\f");
+		else if (c == '(')
+			fmt_puts(fmt, "\\(");
+		else if (c == ')')
+			fmt_puts(fmt, "\\)");
+		else if (c < 32 || c >= 127) {
+			char buf[16];
+			fmt_putc(fmt, '\\');
+			sprintf(buf, "%03o", c);
+			fmt_puts(fmt, buf);
+		}
+		else
+			fmt_putc(fmt, c);
+	}
+	fmt_putc(fmt, ')');
+}
+
+static void fmt_hex(struct fmt *fmt, fz_obj *obj)
+{
+	char *s = fz_to_str_buf(obj);
+	int n = fz_to_str_len(obj);
+	int i, b, c;
+
+	fmt_putc(fmt, '<');
+	for (i = 0; i < n; i++) {
+		b = (unsigned char) s[i];
+		c = (b >> 4) & 0x0f;
+		fmt_putc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+		c = (b) & 0x0f;
+		fmt_putc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+	}
+	fmt_putc(fmt, '>');
+}
+
+static void fmt_name(struct fmt *fmt, fz_obj *obj)
+{
+	unsigned char *s = (unsigned char *) fz_to_name(obj);
+	int i, c;
+
+	fmt_putc(fmt, '/');
+
+	for (i = 0; s[i]; i++)
+	{
+		if (isdelim(s[i]) || iswhite(s[i]) ||
+			s[i] == '#' || s[i] < 32 || s[i] >= 127)
+		{
+			fmt_putc(fmt, '#');
+			c = (s[i] >> 4) & 0xf;
+			fmt_putc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+			c = s[i] & 0xf;
+			fmt_putc(fmt, c < 0xA ? c + '0' : c + 'A' - 0xA);
+		}
+		else
+		{
+			fmt_putc(fmt, s[i]);
+		}
+	}
+}
+
+static void fmt_array(struct fmt *fmt, fz_obj *obj)
+{
+	int i, n;
+
+	n = fz_array_len(obj);
+	if (fmt->tight) {
+		fmt_putc(fmt, '[');
+		for (i = 0; i < n; i++) {
+			fmt_obj(fmt, fz_array_get(obj, i));
+			fmt_sep(fmt);
+		}
+		fmt_putc(fmt, ']');
+	}
+	else {
+		fmt_puts(fmt, "[ ");
+		for (i = 0; i < n; i++) {
+			if (fmt->col > 60) {
+				fmt_putc(fmt, '\n');
+				fmt_indent(fmt);
+			}
+			fmt_obj(fmt, fz_array_get(obj, i));
+			fmt_putc(fmt, ' ');
+		}
+		fmt_putc(fmt, ']');
+		fmt_sep(fmt);
+	}
+}
+
+static void fmt_dict(struct fmt *fmt, fz_obj *obj)
+{
+	int i, n;
+	fz_obj *key, *val;
+
+	n = fz_dict_len(obj);
+	if (fmt->tight) {
+		fmt_puts(fmt, "<<");
+		for (i = 0; i < n; i++) {
+			fmt_obj(fmt, fz_dict_get_key(obj, i));
+			fmt_sep(fmt);
+			fmt_obj(fmt, fz_dict_get_val(obj, i));
+			fmt_sep(fmt);
+		}
+		fmt_puts(fmt, ">>");
+	}
+	else {
+		fmt_puts(fmt, "<<\n");
+		fmt->indent ++;
+		for (i = 0; i < n; i++) {
+			key = fz_dict_get_key(obj, i);
+			val = fz_dict_get_val(obj, i);
+			fmt_indent(fmt);
+			fmt_obj(fmt, key);
+			fmt_putc(fmt, ' ');
+			if (!fz_is_indirect(val) && fz_is_array(val))
+				fmt->indent ++;
+			fmt_obj(fmt, val);
+			fmt_putc(fmt, '\n');
+			if (!fz_is_indirect(val) && fz_is_array(val))
+				fmt->indent --;
+		}
+		fmt->indent --;
+		fmt_indent(fmt);
+		fmt_puts(fmt, ">>");
+	}
+}
+
+static void fmt_obj(struct fmt *fmt, fz_obj *obj)
+{
+	char buf[256];
+
+	if (!obj)
+		fmt_puts(fmt, "<NULL>");
+	else if (fz_is_indirect(obj))
+	{
+		sprintf(buf, "%d %d R", fz_to_num(obj), fz_to_gen(obj));
+		fmt_puts(fmt, buf);
+	}
+	else if (fz_is_null(obj))
+		fmt_puts(fmt, "null");
+	else if (fz_is_bool(obj))
+		fmt_puts(fmt, fz_to_bool(obj) ? "true" : "false");
+	else if (fz_is_int(obj))
+	{
+		sprintf(buf, "%d", fz_to_int(obj));
+		fmt_puts(fmt, buf);
+	}
+	else if (fz_is_real(obj))
+	{
+		sprintf(buf, "%g", fz_to_real(obj));
+		if (strchr(buf, 'e')) /* bad news! */
+			sprintf(buf, fabsf(fz_to_real(obj)) > 1 ? "%1.1f" : "%1.8f", fz_to_real(obj));
+		fmt_puts(fmt, buf);
+	}
+	else if (fz_is_string(obj))
+	{
+		char *str = fz_to_str_buf(obj);
+		int len = fz_to_str_len(obj);
+		int added = 0;
+		int i, c;
+		for (i = 0; i < len; i++) {
+			c = (unsigned char)str[i];
+			if (strchr("()\\\n\r\t\b\f", c))
+				added ++;
+			else if (c < 32 || c >= 127)
+				added += 3;
+		}
+		if (added < len)
+			fmt_str(fmt, obj);
+		else
+			fmt_hex(fmt, obj);
+	}
+	else if (fz_is_name(obj))
+		fmt_name(fmt, obj);
+	else if (fz_is_array(obj))
+		fmt_array(fmt, obj);
+	else if (fz_is_dict(obj))
+		fmt_dict(fmt, obj);
+	else
+		fmt_puts(fmt, "<unknown object>");
+}
+
+static int
+fz_sprint_obj(char *s, int n, fz_obj *obj, int tight)
+{
+	struct fmt fmt;
+
+	fmt.indent = 0;
+	fmt.col = 0;
+	fmt.sep = 0;
+	fmt.last = 0;
+
+	fmt.tight = tight;
+	fmt.buf = s;
+	fmt.cap = n;
+	fmt.len = 0;
+	fmt_obj(&fmt, obj);
+
+	if (fmt.buf && fmt.len < fmt.cap)
+		fmt.buf[fmt.len] = '\0';
+
+	return fmt.len;
+}
+
+int
+fz_fprint_obj(FILE *fp, fz_obj *obj, int tight)
+{
+	char buf[1024];
+	char *ptr;
+	int n;
+
+	n = fz_sprint_obj(NULL, 0, obj, tight);
+	if ((n + 1) < sizeof buf)
+	{
+		fz_sprint_obj(buf, sizeof buf, obj, tight);
+		fputs(buf, fp);
+		fputc('\n', fp);
+	}
+	else
+	{
+		ptr = fz_malloc(obj->ctx, n + 1);
+		fz_sprint_obj(ptr, n + 1, obj, tight);
+		fputs(ptr, fp);
+		fputc('\n', fp);
+		fz_free(obj->ctx, ptr);
+	}
+	return n;
+}
+
+void
+fz_debug_obj(fz_obj *obj)
+{
+	fz_fprint_obj(stdout, obj, 0);
+}
+
+void
+fz_debug_ref(fz_obj *ref)
+{
+	fz_debug_obj(fz_resolve_indirect(ref));
 }

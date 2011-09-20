@@ -9,13 +9,13 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+#include "../fitz/base_context.c"
 #include "../fitz/base_error.c"
 #include "../fitz/base_memory.c"
 #include "../fitz/base_string.c"
 #include "../fitz/stm_buffer.c"
 #include "../fitz/stm_open.c"
 #include "../fitz/stm_read.c"
-#include "../fitz/context.c"
 
 #include "../pdf/pdf_lex.c"
 #include "../pdf/pdf_cmap.c"

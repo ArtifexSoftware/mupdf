@@ -8,7 +8,7 @@ load_icc_based(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 {
 	int n;
 
-	n = fz_to_int(xref->ctx, fz_dict_gets(xref->ctx, dict, "N"));
+	n = fz_to_int(fz_dict_gets(dict, "N"));
 
 	switch (n)
 	{
@@ -96,15 +96,15 @@ load_separation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_colorspace *cs;
 	struct separation *sep;
 	fz_context *ctx = xref->ctx;
-	fz_obj *nameobj = fz_array_get(ctx, array, 1);
-	fz_obj *baseobj = fz_array_get(ctx, array, 2);
-	fz_obj *tintobj = fz_array_get(ctx, array, 3);
+	fz_obj *nameobj = fz_array_get(array, 1);
+	fz_obj *baseobj = fz_array_get(array, 2);
+	fz_obj *tintobj = fz_array_get(array, 3);
 	fz_colorspace *base;
 	pdf_function *tint;
 	int n;
 
-	if (fz_is_array(ctx, nameobj))
-		n = fz_array_len(ctx, nameobj);
+	if (fz_is_array(nameobj))
+		n = fz_array_len(nameobj);
 	else
 		n = 1;
 
@@ -215,9 +215,9 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	fz_colorspace *cs;
 	struct indexed *idx;
 	fz_context *ctx = xref->ctx;
-	fz_obj *baseobj = fz_array_get(ctx, array, 1);
-	fz_obj *highobj = fz_array_get(ctx, array, 2);
-	fz_obj *lookup = fz_array_get(ctx, array, 3);
+	fz_obj *baseobj = fz_array_get(array, 1);
+	fz_obj *highobj = fz_array_get(array, 2);
+	fz_obj *lookup = fz_array_get(array, 3);
 	fz_colorspace *base;
 	int i, n;
 
@@ -227,7 +227,7 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 
 	idx = fz_malloc(ctx, sizeof(struct indexed));
 	idx->base = base;
-	idx->high = fz_to_int(ctx, highobj);
+	idx->high = fz_to_int(highobj);
 	idx->high = CLAMP(idx->high, 0, 255);
 	n = base->n * (idx->high + 1);
 	idx->lookup = fz_calloc(ctx, 1, n);
@@ -237,9 +237,9 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs->free_data = free_indexed;
 	cs->data = idx;
 
-	if (fz_is_string(ctx, lookup) && fz_to_str_len(ctx, lookup) == n)
+	if (fz_is_string(lookup) && fz_to_str_len(lookup) == n)
 	{
-		unsigned char *buf = (unsigned char *) fz_to_str_buf(ctx, lookup);
+		unsigned char *buf = (unsigned char *) fz_to_str_buf(lookup);
 		for (i = 0; i < n; i++)
 			idx->lookup[i] = buf[i];
 	}
@@ -278,41 +278,39 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 static fz_error
 pdf_load_colorspace_imp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 {
-	fz_context *ctx = xref->ctx;
-
-	if (fz_is_name(ctx, obj))
+	if (fz_is_name(obj))
 	{
-		if (!strcmp(fz_to_name(ctx, obj), "Pattern"))
+		if (!strcmp(fz_to_name(obj), "Pattern"))
 			*csp = fz_device_gray;
-		else if (!strcmp(fz_to_name(ctx, obj), "G"))
+		else if (!strcmp(fz_to_name(obj), "G"))
 			*csp = fz_device_gray;
-		else if (!strcmp(fz_to_name(ctx, obj), "RGB"))
+		else if (!strcmp(fz_to_name(obj), "RGB"))
 			*csp = fz_device_rgb;
-		else if (!strcmp(fz_to_name(ctx, obj), "CMYK"))
+		else if (!strcmp(fz_to_name(obj), "CMYK"))
 			*csp = fz_device_cmyk;
-		else if (!strcmp(fz_to_name(ctx, obj), "DeviceGray"))
+		else if (!strcmp(fz_to_name(obj), "DeviceGray"))
 			*csp = fz_device_gray;
-		else if (!strcmp(fz_to_name(ctx, obj), "DeviceRGB"))
+		else if (!strcmp(fz_to_name(obj), "DeviceRGB"))
 			*csp = fz_device_rgb;
-		else if (!strcmp(fz_to_name(ctx, obj), "DeviceCMYK"))
+		else if (!strcmp(fz_to_name(obj), "DeviceCMYK"))
 			*csp = fz_device_cmyk;
 		else
-			return fz_error_make("unknown colorspace: %s", fz_to_name(ctx, obj));
+			return fz_error_make("unknown colorspace: %s", fz_to_name(obj));
 		return fz_okay;
 	}
 
-	else if (fz_is_array(ctx, obj))
+	else if (fz_is_array(obj))
 	{
-		fz_obj *name = fz_array_get(ctx, obj, 0);
+		fz_obj *name = fz_array_get(obj, 0);
 
-		if (fz_is_name(ctx, name))
+		if (fz_is_name(name))
 		{
 			/* load base colorspace instead */
-			if (!strcmp(fz_to_name(ctx, name), "Pattern"))
+			if (!strcmp(fz_to_name(name), "Pattern"))
 			{
 				fz_error error;
 
-				obj = fz_array_get(ctx, obj, 1);
+				obj = fz_array_get(obj, 1);
 				if (!obj)
 				{
 					*csp = fz_device_gray;
@@ -324,43 +322,43 @@ pdf_load_colorspace_imp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 					return fz_error_note(error, "cannot load pattern (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			}
 
-			else if (!strcmp(fz_to_name(ctx, name), "G"))
+			else if (!strcmp(fz_to_name(name), "G"))
 				*csp = fz_device_gray;
-			else if (!strcmp(fz_to_name(ctx, name), "RGB"))
+			else if (!strcmp(fz_to_name(name), "RGB"))
 				*csp = fz_device_rgb;
-			else if (!strcmp(fz_to_name(ctx, name), "CMYK"))
+			else if (!strcmp(fz_to_name(name), "CMYK"))
 				*csp = fz_device_cmyk;
-			else if (!strcmp(fz_to_name(ctx, name), "DeviceGray"))
+			else if (!strcmp(fz_to_name(name), "DeviceGray"))
 				*csp = fz_device_gray;
-			else if (!strcmp(fz_to_name(ctx, name), "DeviceRGB"))
+			else if (!strcmp(fz_to_name(name), "DeviceRGB"))
 				*csp = fz_device_rgb;
-			else if (!strcmp(fz_to_name(ctx, name), "DeviceCMYK"))
+			else if (!strcmp(fz_to_name(name), "DeviceCMYK"))
 				*csp = fz_device_cmyk;
-			else if (!strcmp(fz_to_name(ctx, name), "CalGray"))
+			else if (!strcmp(fz_to_name(name), "CalGray"))
 				*csp = fz_device_gray;
-			else if (!strcmp(fz_to_name(ctx, name), "CalRGB"))
+			else if (!strcmp(fz_to_name(name), "CalRGB"))
 				*csp = fz_device_rgb;
-			else if (!strcmp(fz_to_name(ctx, name), "CalCMYK"))
+			else if (!strcmp(fz_to_name(name), "CalCMYK"))
 				*csp = fz_device_cmyk;
-			else if (!strcmp(fz_to_name(ctx, name), "Lab"))
+			else if (!strcmp(fz_to_name(name), "Lab"))
 				*csp = fz_device_lab;
 
-			else if (!strcmp(fz_to_name(ctx, name), "ICCBased"))
-				return load_icc_based(csp, xref, fz_array_get(ctx, obj, 1));
+			else if (!strcmp(fz_to_name(name), "ICCBased"))
+				return load_icc_based(csp, xref, fz_array_get(obj, 1));
 
-			else if (!strcmp(fz_to_name(ctx, name), "Indexed"))
+			else if (!strcmp(fz_to_name(name), "Indexed"))
 				return load_indexed(csp, xref, obj);
-			else if (!strcmp(fz_to_name(ctx, name), "I"))
+			else if (!strcmp(fz_to_name(name), "I"))
 				return load_indexed(csp, xref, obj);
 
-			else if (!strcmp(fz_to_name(ctx, name), "Separation"))
+			else if (!strcmp(fz_to_name(name), "Separation"))
 				return load_separation(csp, xref, obj);
 
-			else if (!strcmp(fz_to_name(ctx, name), "DeviceN"))
+			else if (!strcmp(fz_to_name(name), "DeviceN"))
 				return load_separation(csp, xref, obj);
 
 			else
-				return fz_error_make("syntaxerror: unknown colorspace %s", fz_to_name(ctx, name));
+				return fz_error_make("syntaxerror: unknown colorspace %s", fz_to_name(name));
 
 			return fz_okay;
 		}

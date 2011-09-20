@@ -145,10 +145,10 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 		app->doctitle = strrchr(app->doctitle, '\\') + 1;
 	if (strrchr(app->doctitle, '/'))
 		app->doctitle = strrchr(app->doctitle, '/') + 1;
-	info = fz_dict_gets(app->ctx, app->xref->trailer, "Info");
+	info = fz_dict_gets(app->xref->trailer, "Info");
 	if (info)
 	{
-		obj = fz_dict_gets(app->ctx, info, "Title");
+		obj = fz_dict_gets(info, "Title");
 		if (obj)
 			app->doctitle = pdf_to_utf8(app->ctx, obj);
 	}
@@ -432,9 +432,9 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)
 {
 	char *buf;
-	int n = fz_to_str_len(app->ctx, uri);
+	int n = fz_to_str_len(uri);
 	buf = fz_malloc(app->ctx, n + 1);
-	memcpy(buf, fz_to_str_buf(app->ctx, uri), n);
+	memcpy(buf, fz_to_str_buf(uri), n);
 	buf[n] = 0;
 	winopenuri(app, buf);
 	fz_free(app->ctx, buf);
@@ -1001,7 +1001,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (link->kind == PDF_LINK_URI)
 				pdfapp_gotouri(app, link->dest);
 			else if (link->kind == PDF_LINK_GOTO)
-				pdfapp_gotopage(app, fz_array_get(app->ctx, link->dest, 0)); /* [ pageobj ... ] */
+				pdfapp_gotopage(app, fz_array_get(link->dest, 0)); /* [ pageobj ... ] */
 			return;
 		}
 	}

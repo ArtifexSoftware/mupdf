@@ -906,26 +906,26 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 
 	func->u.sa.samples = NULL;
 
-	obj = fz_dict_gets(ctx, dict, "Size");
-	if (!fz_is_array(ctx, obj) || fz_array_len(ctx, obj) != func->m)
+	obj = fz_dict_gets(dict, "Size");
+	if (!fz_is_array(obj) || fz_array_len(obj) != func->m)
 		return fz_error_make("malformed /Size");
 	for (i = 0; i < func->m; i++)
-		func->u.sa.size[i] = fz_to_int(ctx, fz_array_get(ctx, obj, i));
+		func->u.sa.size[i] = fz_to_int(fz_array_get(obj, i));
 
-	obj = fz_dict_gets(ctx, dict, "BitsPerSample");
-	if (!fz_is_int(ctx, obj))
+	obj = fz_dict_gets(dict, "BitsPerSample");
+	if (!fz_is_int(obj))
 		return fz_error_make("malformed /BitsPerSample");
-	func->u.sa.bps = bps = fz_to_int(ctx, obj);
+	func->u.sa.bps = bps = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, dict, "Encode");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Encode");
+	if (fz_is_array(obj))
 	{
-		if (fz_array_len(ctx, obj) != func->m * 2)
+		if (fz_array_len(obj) != func->m * 2)
 			return fz_error_make("malformed /Encode");
 		for (i = 0; i < func->m; i++)
 		{
-			func->u.sa.encode[i][0] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+0));
-			func->u.sa.encode[i][1] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+1));
+			func->u.sa.encode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.sa.encode[i][1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 	else
@@ -937,15 +937,15 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 		}
 	}
 
-	obj = fz_dict_gets(ctx, dict, "Decode");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Decode");
+	if (fz_is_array(obj))
 	{
-		if (fz_array_len(ctx, obj) != func->n * 2)
+		if (fz_array_len(obj) != func->n * 2)
 			return fz_error_make("malformed /Decode");
 		for (i = 0; i < func->n; i++)
 		{
-			func->u.sa.decode[i][0] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+0));
-			func->u.sa.decode[i][1] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+1));
+			func->u.sa.decode[i][0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.sa.decode[i][1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 	else
@@ -1116,19 +1116,19 @@ load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 	if (func->m != 1)
 		return fz_error_make("/Domain must be one dimension (%d)", func->m);
 
-	obj = fz_dict_gets(ctx, dict, "N");
-	if (!fz_is_int(ctx, obj) && !fz_is_real(ctx, obj))
+	obj = fz_dict_gets(dict, "N");
+	if (!fz_is_int(obj) && !fz_is_real(obj))
 		return fz_error_make("malformed /N");
-	func->u.e.n = fz_to_real(ctx, obj);
+	func->u.e.n = fz_to_real(obj);
 
-	obj = fz_dict_gets(ctx, dict, "C0");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "C0");
+	if (fz_is_array(obj))
 	{
-		func->n = fz_array_len(ctx, obj);
+		func->n = fz_array_len(obj);
 		if (func->n >= MAXN)
 			return fz_error_make("exponential function result array out of range");
 		for (i = 0; i < func->n; i++)
-			func->u.e.c0[i] = fz_to_real(ctx, fz_array_get(ctx, obj, i));
+			func->u.e.c0[i] = fz_to_real(fz_array_get(obj, i));
 	}
 	else
 	{
@@ -1136,13 +1136,13 @@ load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 		func->u.e.c0[0] = 0;
 	}
 
-	obj = fz_dict_gets(ctx, dict, "C1");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "C1");
+	if (fz_is_array(obj))
 	{
-		if (fz_array_len(ctx, obj) != func->n)
+		if (fz_array_len(obj) != func->n)
 			return fz_error_make("/C1 must match /C0 length");
 		for (i = 0; i < func->n; i++)
-			func->u.e.c1[i] = fz_to_real(ctx, fz_array_get(ctx, obj, i));
+			func->u.e.c1[i] = fz_to_real(fz_array_get(obj, i));
 	}
 	else
 	{
@@ -1200,11 +1200,11 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	if (func->m != 1)
 		return fz_error_make("/Domain must be one dimension (%d)", func->m);
 
-	obj = fz_dict_gets(ctx, dict, "Functions");
-	if (!fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Functions");
+	if (!fz_is_array(obj))
 		return fz_error_make("stitching function has no input functions");
 	{
-		k = fz_array_len(ctx, obj);
+		k = fz_array_len(obj);
 
 		func->u.st.funcs = fz_calloc(ctx, k, sizeof(pdf_function*));
 		func->u.st.bounds = fz_calloc(ctx, k - 1, sizeof(float));
@@ -1213,7 +1213,7 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 
 		for (i = 0; i < k; i++)
 		{
-			sub = fz_array_get(ctx, obj, i);
+			sub = fz_array_get(obj, i);
 			error = pdf_load_function(&funcs[i], xref, sub);
 			if (error)
 				return fz_error_note(error, "cannot load sub function %d (%d %d R)", i, fz_to_num(sub), fz_to_gen(sub));
@@ -1228,19 +1228,19 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			return fz_error_make("sub function /Domain or /Range mismatch");
 	}
 
-	obj = fz_dict_gets(ctx, dict, "Bounds");
-	if (!fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Bounds");
+	if (!fz_is_array(obj))
 		return fz_error_make("stitching function has no bounds");
 	{
-		if (!fz_is_array(ctx, obj) || fz_array_len(ctx, obj) != k - 1)
+		if (!fz_is_array(obj) || fz_array_len(obj) != k - 1)
 			return fz_error_make("malformed /Bounds (not array or wrong length)");
 
 		for (i = 0; i < k-1; i++)
 		{
-			num = fz_array_get(ctx, obj, i);
-			if (!fz_is_int(ctx, num) && !fz_is_real(ctx, num))
+			num = fz_array_get(obj, i);
+			if (!fz_is_int(num) && !fz_is_real(num))
 				return fz_error_make("malformed /Bounds (item not real)");
-			func->u.st.bounds[i] = fz_to_real(ctx, num);
+			func->u.st.bounds[i] = fz_to_real(num);
 			if (i && func->u.st.bounds[i-1] > func->u.st.bounds[i])
 				return fz_error_make("malformed /Bounds (item not monotonic)");
 		}
@@ -1250,16 +1250,16 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			fz_warn("malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 
-	obj = fz_dict_gets(ctx, dict, "Encode");
-	if (!fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Encode");
+	if (!fz_is_array(obj))
 		return fz_error_make("stitching function is missing encoding");
 	{
-		if (!fz_is_array(ctx, obj) || fz_array_len(ctx, obj) != k * 2)
+		if (!fz_is_array(obj) || fz_array_len(obj) != k * 2)
 			return fz_error_make("malformed /Encode");
 		for (i = 0; i < k; i++)
 		{
-			func->u.st.encode[i*2+0] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+0));
-			func->u.st.encode[i*2+1] = fz_to_real(ctx, fz_array_get(ctx, obj, i*2+1));
+			func->u.st.encode[i*2+0] = fz_to_real(fz_array_get(obj, i*2+0));
+			func->u.st.encode[i*2+1] = fz_to_real(fz_array_get(obj, i*2+1));
 		}
 	}
 
@@ -1362,31 +1362,32 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 		return fz_okay;
 	}
 
-	func = fz_calloc(ctx, 1, sizeof(pdf_function));
+	func = fz_malloc(ctx, sizeof(pdf_function));
+	memset(func, 0, sizeof *func);
 	func->refs = 1;
 
-	obj = fz_dict_gets(ctx, dict, "FunctionType");
-	func->type = fz_to_int(ctx, obj);
+	obj = fz_dict_gets(dict, "FunctionType");
+	func->type = fz_to_int(obj);
 
 	/* required for all */
-	obj = fz_dict_gets(ctx, dict, "Domain");
-	func->m = fz_array_len(ctx, obj) / 2;
+	obj = fz_dict_gets(dict, "Domain");
+	func->m = fz_array_len(obj) / 2;
 	for (i = 0; i < func->m; i++)
 	{
-		func->domain[i][0] = fz_to_real(ctx, fz_array_get(ctx, obj, i * 2 + 0));
-		func->domain[i][1] = fz_to_real(ctx, fz_array_get(ctx, obj, i * 2 + 1));
+		func->domain[i][0] = fz_to_real(fz_array_get(obj, i * 2 + 0));
+		func->domain[i][1] = fz_to_real(fz_array_get(obj, i * 2 + 1));
 	}
 
 	/* required for type0 and type4, optional otherwise */
-	obj = fz_dict_gets(ctx, dict, "Range");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "Range");
+	if (fz_is_array(obj))
 	{
 		func->has_range = 1;
-		func->n = fz_array_len(ctx, obj) / 2;
+		func->n = fz_array_len(obj) / 2;
 		for (i = 0; i < func->n; i++)
 		{
-			func->range[i][0] = fz_to_real(ctx, fz_array_get(ctx, obj, i * 2 + 0));
-			func->range[i][1] = fz_to_real(ctx, fz_array_get(ctx, obj, i * 2 + 1));
+			func->range[i][0] = fz_to_real(fz_array_get(obj, i * 2 + 0));
+			func->range[i][1] = fz_to_real(fz_array_get(obj, i * 2 + 1));
 		}
 	}
 	else

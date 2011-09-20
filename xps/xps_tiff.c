@@ -192,22 +192,22 @@ xps_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, byte *wp, int
 	encoded_byte_align = fz_new_bool(ctx, comp == 2);
 
 	params = fz_new_dict(ctx, 5);
-	fz_dict_puts(ctx, params, "Columns", columns);
-	fz_dict_puts(ctx, params, "Rows", rows);
-	fz_dict_puts(ctx, params, "BlackIs1", black_is_1);
-	fz_dict_puts(ctx, params, "K", k);
-	fz_dict_puts(ctx, params, "EncodedByteAlign", encoded_byte_align);
+	fz_dict_puts(params, "Columns", columns);
+	fz_dict_puts(params, "Rows", rows);
+	fz_dict_puts(params, "BlackIs1", black_is_1);
+	fz_dict_puts(params, "K", k);
+	fz_dict_puts(params, "EncodedByteAlign", encoded_byte_align);
 
-	fz_drop_obj(ctx, columns);
-	fz_drop_obj(ctx, rows);
-	fz_drop_obj(ctx, black_is_1);
-	fz_drop_obj(ctx, k);
-	fz_drop_obj(ctx, encoded_byte_align);
+	fz_drop_obj(columns);
+	fz_drop_obj(rows);
+	fz_drop_obj(black_is_1);
+	fz_drop_obj(k);
+	fz_drop_obj(encoded_byte_align);
 
 	stm = fz_open_faxd(chain, params);
 	n = fz_read(stm, wp, wlen);
 	fz_close(stm);
-	fz_drop_obj(ctx, params);
+	fz_drop_obj(params);
 
 	if (n < 0)
 		return fz_error_note(n, "cannot read fax strip");

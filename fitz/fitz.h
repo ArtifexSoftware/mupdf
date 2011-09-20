@@ -189,7 +189,6 @@ struct fz_context_s
 {
 	fz_alloc_context *alloc;
 	fz_error_context *error;
-	struct fz_obj_s *(*resolve_indirect)(struct fz_obj_s *);
 };
 
 fz_context *fz_new_context(fz_alloc_context *alloc);
@@ -427,7 +426,7 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
 
 typedef struct fz_obj_s fz_obj;
 
-#define fz_resolve_indirect(ctx, obj) (ctx)->resolve_indirect((obj))
+extern fz_obj *(*fz_resolve_indirect)(fz_obj *obj);
 
 fz_obj *fz_new_null(fz_context *ctx);
 fz_obj *fz_new_bool(fz_context *ctx, int b);
@@ -443,54 +442,54 @@ fz_obj *fz_copy_array(fz_context *ctx, fz_obj *array);
 fz_obj *fz_copy_dict(fz_context *ctx, fz_obj *dict);
 
 fz_obj *fz_keep_obj(fz_obj *obj);
-void fz_drop_obj(fz_context *ctx, fz_obj *obj);
+void fz_drop_obj(fz_obj *obj);
 
 /* type queries */
-int fz_is_null(fz_context *ctx, fz_obj *obj);
-int fz_is_bool(fz_context *ctx, fz_obj *obj);
-int fz_is_int(fz_context *ctx, fz_obj *obj);
-int fz_is_real(fz_context *ctx, fz_obj *obj);
-int fz_is_name(fz_context *ctx, fz_obj *obj);
-int fz_is_string(fz_context *ctx, fz_obj *obj);
-int fz_is_array(fz_context *ctx, fz_obj *obj);
-int fz_is_dict(fz_context *ctx, fz_obj *obj);
+int fz_is_null(fz_obj *obj);
+int fz_is_bool(fz_obj *obj);
+int fz_is_int(fz_obj *obj);
+int fz_is_real(fz_obj *obj);
+int fz_is_name(fz_obj *obj);
+int fz_is_string(fz_obj *obj);
+int fz_is_array(fz_obj *obj);
+int fz_is_dict(fz_obj *obj);
 int fz_is_indirect(fz_obj *obj);
 
 int fz_objcmp(fz_obj *a, fz_obj *b);
 
-/* safe, silent failure, no error reporting */
-int fz_to_bool(fz_context *ctx, fz_obj *obj);
-int fz_to_int(fz_context *ctx, fz_obj *obj);
-float fz_to_real(fz_context *ctx, fz_obj *obj);
-char *fz_to_name(fz_context *ctx, fz_obj *obj);
-char *fz_to_str_buf(fz_context *ctx, fz_obj *obj);
-int fz_to_str_len(fz_context *ctx, fz_obj *obj);
+/* safe, silent failure, no error reporting on type mismatches */
+int fz_to_bool(fz_obj *obj);
+int fz_to_int(fz_obj *obj);
+float fz_to_real(fz_obj *obj);
+char *fz_to_name(fz_obj *obj);
+char *fz_to_str_buf(fz_obj *obj);
+int fz_to_str_len(fz_obj *obj);
 int fz_to_num(fz_obj *obj);
 int fz_to_gen(fz_obj *obj);
 
-int fz_array_len(fz_context *ctx, fz_obj *array);
-fz_obj *fz_array_get(fz_context *ctx, fz_obj *array, int i);
-void fz_array_put(fz_context *ctx, fz_obj *array, int i, fz_obj *obj);
-void fz_array_push(fz_context *ctx, fz_obj *array, fz_obj *obj);
-void fz_array_insert(fz_context *ctx, fz_obj *array, fz_obj *obj);
+int fz_array_len(fz_obj *array);
+fz_obj *fz_array_get(fz_obj *array, int i);
+void fz_array_put(fz_obj *array, int i, fz_obj *obj);
+void fz_array_push(fz_obj *array, fz_obj *obj);
+void fz_array_insert(fz_obj *array, fz_obj *obj);
 
-int fz_dict_len(fz_context *ctx, fz_obj *dict);
-fz_obj *fz_dict_get_key(fz_context *ctx, fz_obj *dict, int idx);
-fz_obj *fz_dict_get_val(fz_context *ctx, fz_obj *dict, int idx);
-fz_obj *fz_dict_get(fz_context *ctx, fz_obj *dict, fz_obj *key);
-fz_obj *fz_dict_gets(fz_context *ctx, fz_obj *dict, char *key);
-fz_obj *fz_dict_getsa(fz_context *ctx, fz_obj *dict, char *key, char *abbrev);
-void fz_dict_put(fz_context *ctx, fz_obj *dict, fz_obj *key, fz_obj *val);
-void fz_dict_puts(fz_context *ctx, fz_obj *dict, char *key, fz_obj *val);
-void fz_dict_del(fz_context *ctx, fz_obj *dict, fz_obj *key);
-void fz_dict_dels(fz_context *ctx, fz_obj *dict, char *key);
-void fz_sort_dict(fz_context *ctx, fz_obj *dict);
+int fz_dict_len(fz_obj *dict);
+fz_obj *fz_dict_get_key(fz_obj *dict, int idx);
+fz_obj *fz_dict_get_val(fz_obj *dict, int idx);
+fz_obj *fz_dict_get(fz_obj *dict, fz_obj *key);
+fz_obj *fz_dict_gets(fz_obj *dict, char *key);
+fz_obj *fz_dict_getsa(fz_obj *dict, char *key, char *abbrev);
+void fz_dict_put(fz_obj *dict, fz_obj *key, fz_obj *val);
+void fz_dict_puts(fz_obj *dict, char *key, fz_obj *val);
+void fz_dict_del(fz_obj *dict, fz_obj *key);
+void fz_dict_dels(fz_obj *dict, char *key);
+void fz_sort_dict(fz_obj *dict);
 
-int fz_fprint_obj(fz_context *ctx, FILE *fp, fz_obj *obj, int tight);
-void fz_debug_obj(fz_context *ctx, fz_obj *obj);
-void fz_debug_ref(fz_context *ctx, fz_obj *obj);
+int fz_fprint_obj(FILE *fp, fz_obj *obj, int tight);
+void fz_debug_obj(fz_obj *obj);
+void fz_debug_ref(fz_obj *obj);
 
-void fz_set_str_len(fz_context *ctx, fz_obj *obj, int newlen); /* private */
+void fz_set_str_len(fz_obj *obj, int newlen); /* private */
 void *fz_get_indirect_xref(fz_obj *obj); /* private */
 
 /*
@@ -522,6 +521,7 @@ typedef struct fz_stream_s fz_stream;
 
 struct fz_stream_s
 {
+	fz_context *ctx;
 	int refs;
 	int error;
 	int eof;
@@ -530,7 +530,6 @@ struct fz_stream_s
 	int bits;
 	unsigned char *bp, *rp, *wp, *ep;
 	void *state;
-	fz_context *ctx;
 	int (*read)(fz_stream *stm, unsigned char *buf, int len);
 	void (*close)(fz_stream *stm);
 	void (*seek)(fz_stream *stm, int offset, int whence);

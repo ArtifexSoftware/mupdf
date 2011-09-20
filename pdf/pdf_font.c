@@ -413,14 +413,14 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	int fterr;
 	fz_context *ctx = xref->ctx;
 
-	basefont = fz_to_name(ctx, fz_dict_gets(ctx, dict, "BaseFont"));
+	basefont = fz_to_name(fz_dict_gets(dict, "BaseFont"));
 	fontname = clean_font_name(basefont);
 
 	/* Load font file */
 
 	fontdesc = pdf_new_font_desc(ctx);
 
-	descriptor = fz_dict_gets(ctx, dict, "FontDescriptor");
+	descriptor = fz_dict_gets(dict, "FontDescriptor");
 	if (descriptor)
 		error = pdf_load_font_descriptor(fontdesc, xref, descriptor, NULL, basefont);
 	else
@@ -430,9 +430,9 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 
 	/* Some chinese documents mistakenly consider WinAnsiEncoding to be codepage 936 */
 	if (!*fontdesc->font->name &&
-		!fz_dict_gets(ctx, dict, "ToUnicode") &&
-		!strcmp(fz_to_name(ctx, fz_dict_gets(ctx, dict, "Encoding")), "WinAnsiEncoding") &&
-		fz_to_int(ctx, fz_dict_gets(ctx, descriptor, "Flags")) == 4)
+		!fz_dict_gets(dict, "ToUnicode") &&
+		!strcmp(fz_to_name(fz_dict_gets(dict, "Encoding")), "WinAnsiEncoding") &&
+		fz_to_int(fz_dict_gets(descriptor, "Flags")) == 4)
 	{
 		/* note: without the comma, pdf_load_font_descriptor would prefer /FontName over /BaseFont */
 		char *cp936fonts[] = {
@@ -511,34 +511,34 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 		etable[i] = 0;
 	}
 
-	encoding = fz_dict_gets(ctx, dict, "Encoding");
+	encoding = fz_dict_gets(dict, "Encoding");
 	if (encoding)
 	{
-		if (fz_is_name(ctx, encoding))
-			pdf_load_encoding(estrings, fz_to_name(ctx, encoding));
+		if (fz_is_name(encoding))
+			pdf_load_encoding(estrings, fz_to_name(encoding));
 
-		if (fz_is_dict(ctx, encoding))
+		if (fz_is_dict(encoding))
 		{
 			fz_obj *base, *diff, *item;
 
-			base = fz_dict_gets(ctx, encoding, "BaseEncoding");
-			if (fz_is_name(ctx, base))
-				pdf_load_encoding(estrings, fz_to_name(ctx, base));
+			base = fz_dict_gets(encoding, "BaseEncoding");
+			if (fz_is_name(base))
+				pdf_load_encoding(estrings, fz_to_name(base));
 			else if (!fontdesc->is_embedded && !symbolic)
 				pdf_load_encoding(estrings, "StandardEncoding");
 
-			diff = fz_dict_gets(ctx, encoding, "Differences");
-			if (fz_is_array(ctx, diff))
+			diff = fz_dict_gets(encoding, "Differences");
+			if (fz_is_array(diff))
 			{
-				n = fz_array_len(ctx, diff);
+				n = fz_array_len(diff);
 				k = 0;
 				for (i = 0; i < n; i++)
 				{
-					item = fz_array_get(ctx, diff, i);
-					if (fz_is_int(ctx, item))
-						k = fz_to_int(ctx, item);
-					if (fz_is_name(ctx, item))
-						estrings[k++] = fz_to_name(ctx, item);
+					item = fz_array_get(diff, i);
+					if (fz_is_int(item))
+						k = fz_to_int(item);
+					if (fz_is_name(item))
+						estrings[k++] = fz_to_name(item);
 					if (k < 0) k = 0;
 					if (k > 255) k = 255;
 				}
@@ -648,7 +648,7 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fontdesc->cid_to_gid_len = 256;
 	fontdesc->cid_to_gid = etable;
 
-	error = pdf_load_to_unicode(fontdesc, xref, estrings, NULL, fz_dict_gets(ctx, dict, "ToUnicode"));
+	error = pdf_load_to_unicode(fontdesc, xref, estrings, NULL, fz_dict_gets(dict, "ToUnicode"));
 	if (error)
 		fz_error_handle(error, "cannot load to_unicode");
 
@@ -658,20 +658,20 @@ skip_encoding:
 
 	pdf_set_default_hmtx(fontdesc, fontdesc->missing_width);
 
-	widths = fz_dict_gets(ctx, dict, "Widths");
+	widths = fz_dict_gets(dict, "Widths");
 	if (widths)
 	{
 		int first, last;
 
-		first = fz_to_int(ctx, fz_dict_gets(ctx, dict, "FirstChar"));
-		last = fz_to_int(ctx, fz_dict_gets(ctx, dict, "LastChar"));
+		first = fz_to_int(fz_dict_gets(dict, "FirstChar"));
+		last = fz_to_int(fz_dict_gets(dict, "LastChar"));
 
 		if (first < 0 || last > 255 || first > last)
 			first = last = 0;
 
 		for (i = 0; i < last - first + 1; i++)
 		{
-			int wid = fz_to_int(ctx, fz_array_get(ctx, widths, i));
+			int wid = fz_to_int(fz_array_get(widths, i));
 			pdf_add_hmtx(ctx, fontdesc, i + first, i + first, wid);
 		}
 	}
@@ -720,28 +720,28 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 	/* Get font name and CID collection */
 
-	basefont = fz_to_name(ctx, fz_dict_gets(ctx, dict, "BaseFont"));
+	basefont = fz_to_name(fz_dict_gets(dict, "BaseFont"));
 
 	{
 		fz_obj *cidinfo;
 		char tmpstr[64];
 		int tmplen;
 
-		cidinfo = fz_dict_gets(ctx, dict, "CIDSystemInfo");
+		cidinfo = fz_dict_gets(dict, "CIDSystemInfo");
 		if (!cidinfo)
 			return fz_error_make("cid font is missing info");
 
-		obj = fz_dict_gets(ctx, cidinfo, "Registry");
-		tmplen = MIN(sizeof tmpstr - 1, fz_to_str_len(ctx, obj));
-		memcpy(tmpstr, fz_to_str_buf(ctx, obj), tmplen);
+		obj = fz_dict_gets(cidinfo, "Registry");
+		tmplen = MIN(sizeof tmpstr - 1, fz_to_str_len(obj));
+		memcpy(tmpstr, fz_to_str_buf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
 		fz_strlcpy(collection, tmpstr, sizeof collection);
 
 		fz_strlcat(collection, "-", sizeof collection);
 
-		obj = fz_dict_gets(ctx, cidinfo, "Ordering");
-		tmplen = MIN(sizeof tmpstr - 1, fz_to_str_len(ctx, obj));
-		memcpy(tmpstr, fz_to_str_buf(ctx, obj), tmplen);
+		obj = fz_dict_gets(cidinfo, "Ordering");
+		tmplen = MIN(sizeof tmpstr - 1, fz_to_str_len(obj));
+		memcpy(tmpstr, fz_to_str_buf(obj), tmplen);
 		tmpstr[tmplen] = '\0';
 		fz_strlcat(collection, tmpstr, sizeof collection);
 	}
@@ -750,7 +750,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 
 	fontdesc = pdf_new_font_desc(ctx);
 
-	descriptor = fz_dict_gets(ctx, dict, "FontDescriptor");
+	descriptor = fz_dict_gets(dict, "FontDescriptor");
 	if (descriptor)
 		error = pdf_load_font_descriptor(fontdesc, xref, descriptor, collection, basefont);
 	else
@@ -764,14 +764,14 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 	/* Encoding */
 
 	error = fz_okay;
-	if (fz_is_name(ctx, encoding))
+	if (fz_is_name(encoding))
 	{
-		if (!strcmp(fz_to_name(ctx, encoding), "Identity-H"))
+		if (!strcmp(fz_to_name(encoding), "Identity-H"))
 			fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 2);
-		else if (!strcmp(fz_to_name(ctx, encoding), "Identity-V"))
+		else if (!strcmp(fz_to_name(encoding), "Identity-V"))
 			fontdesc->encoding = pdf_new_identity_cmap(ctx, 1, 2);
 		else
-			error = pdf_load_system_cmap(ctx, &fontdesc->encoding, fz_to_name(ctx, encoding));
+			error = pdf_load_system_cmap(ctx, &fontdesc->encoding, fz_to_name(encoding));
 	}
 	else if (fz_is_indirect(encoding))
 	{
@@ -790,7 +790,7 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 	{
 		fz_obj *cidtogidmap;
 
-		cidtogidmap = fz_dict_gets(ctx, dict, "CIDToGIDMap");
+		cidtogidmap = fz_dict_gets(dict, "CIDToGIDMap");
 		if (fz_is_indirect(cidtogidmap))
 		{
 			fz_buffer *buf;
@@ -847,35 +847,35 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 	/* Horizontal */
 
 	dw = 1000;
-	obj = fz_dict_gets(ctx, dict, "DW");
+	obj = fz_dict_gets(dict, "DW");
 	if (obj)
-		dw = fz_to_int(ctx, obj);
+		dw = fz_to_int(obj);
 	pdf_set_default_hmtx(fontdesc, dw);
 
-	widths = fz_dict_gets(ctx, dict, "W");
+	widths = fz_dict_gets(dict, "W");
 	if (widths)
 	{
 		int c0, c1, w, n, m;
 
-		n = fz_array_len(ctx, widths);
+		n = fz_array_len(widths);
 		for (i = 0; i < n; )
 		{
-			c0 = fz_to_int(ctx, fz_array_get(ctx, widths, i));
-			obj = fz_array_get(ctx, widths, i + 1);
-			if (fz_is_array(ctx, obj))
+			c0 = fz_to_int(fz_array_get(widths, i));
+			obj = fz_array_get(widths, i + 1);
+			if (fz_is_array(obj))
 			{
-				m = fz_array_len(ctx, obj);
+				m = fz_array_len(obj);
 				for (k = 0; k < m; k++)
 				{
-					w = fz_to_int(ctx, fz_array_get(ctx, obj, k));
+					w = fz_to_int(fz_array_get(obj, k));
 					pdf_add_hmtx(ctx, fontdesc, c0 + k, c0 + k, w);
 				}
 				i += 2;
 			}
 			else
 			{
-				c1 = fz_to_int(ctx, obj);
-				w = fz_to_int(ctx, fz_array_get(ctx, widths, i + 2));
+				c1 = fz_to_int(obj);
+				w = fz_to_int(fz_array_get(widths, i + 2));
 				pdf_add_hmtx(ctx, fontdesc, c0, c1, w);
 				i += 3;
 			}
@@ -891,43 +891,43 @@ load_cid_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict, fz_obj *e
 		int dw2y = 880;
 		int dw2w = -1000;
 
-		obj = fz_dict_gets(ctx, dict, "DW2");
+		obj = fz_dict_gets(dict, "DW2");
 		if (obj)
 		{
-			dw2y = fz_to_int(ctx, fz_array_get(ctx, obj, 0));
-			dw2w = fz_to_int(ctx, fz_array_get(ctx, obj, 1));
+			dw2y = fz_to_int(fz_array_get(obj, 0));
+			dw2w = fz_to_int(fz_array_get(obj, 1));
 		}
 
 		pdf_set_default_vmtx(fontdesc, dw2y, dw2w);
 
-		widths = fz_dict_gets(ctx, dict, "W2");
+		widths = fz_dict_gets(dict, "W2");
 		if (widths)
 		{
 			int c0, c1, w, x, y, n;
 
-			n = fz_array_len(ctx, widths);
+			n = fz_array_len(widths);
 			for (i = 0; i < n; )
 			{
-				c0 = fz_to_int(ctx, fz_array_get(ctx, widths, i));
-				obj = fz_array_get(ctx, widths, i + 1);
-				if (fz_is_array(ctx, obj))
+				c0 = fz_to_int(fz_array_get(widths, i));
+				obj = fz_array_get(widths, i + 1);
+				if (fz_is_array(obj))
 				{
-					int m = fz_array_len(ctx, obj);
+					int m = fz_array_len(obj);
 					for (k = 0; k * 3 < m; k ++)
 					{
-						w = fz_to_int(ctx, fz_array_get(ctx, obj, k * 3 + 0));
-						x = fz_to_int(ctx, fz_array_get(ctx, obj, k * 3 + 1));
-						y = fz_to_int(ctx, fz_array_get(ctx, obj, k * 3 + 2));
+						w = fz_to_int(fz_array_get(obj, k * 3 + 0));
+						x = fz_to_int(fz_array_get(obj, k * 3 + 1));
+						y = fz_to_int(fz_array_get(obj, k * 3 + 2));
 						pdf_add_vmtx(ctx, fontdesc, c0 + k, c0 + k, x, y, w);
 					}
 					i += 2;
 				}
 				else
 				{
-					c1 = fz_to_int(ctx, obj);
-					w = fz_to_int(ctx, fz_array_get(ctx, widths, i + 2));
-					x = fz_to_int(ctx, fz_array_get(ctx, widths, i + 3));
-					y = fz_to_int(ctx, fz_array_get(ctx, widths, i + 4));
+					c1 = fz_to_int(obj);
+					w = fz_to_int(fz_array_get(widths, i + 2));
+					x = fz_to_int(fz_array_get(widths, i + 3));
+					y = fz_to_int(fz_array_get(widths, i + 4));
 					pdf_add_vmtx(ctx, fontdesc, c0, c1, x, y, w);
 					i += 5;
 				}
@@ -954,21 +954,20 @@ pdf_load_type0_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	fz_obj *subtype;
 	fz_obj *encoding;
 	fz_obj *to_unicode;
-	fz_context *ctx = xref->ctx;
 
-	dfonts = fz_dict_gets(ctx, dict, "DescendantFonts");
+	dfonts = fz_dict_gets(dict, "DescendantFonts");
 	if (!dfonts)
 		return fz_error_make("cid font is missing descendant fonts");
 
-	dfont = fz_array_get(ctx, dfonts, 0);
+	dfont = fz_array_get(dfonts, 0);
 
-	subtype = fz_dict_gets(ctx, dfont, "Subtype");
-	encoding = fz_dict_gets(ctx, dict, "Encoding");
-	to_unicode = fz_dict_gets(ctx, dict, "ToUnicode");
+	subtype = fz_dict_gets(dfont, "Subtype");
+	encoding = fz_dict_gets(dict, "Encoding");
+	to_unicode = fz_dict_gets(dict, "ToUnicode");
 
-	if (fz_is_name(ctx, subtype) && !strcmp(fz_to_name(ctx, subtype), "CIDFontType0"))
+	if (fz_is_name(subtype) && !strcmp(fz_to_name(subtype), "CIDFontType0"))
 		error = load_cid_font(fontdescp, xref, dfont, encoding, to_unicode);
-	else if (fz_is_name(ctx, subtype) && !strcmp(fz_to_name(ctx, subtype), "CIDFontType2"))
+	else if (fz_is_name(subtype) && !strcmp(fz_to_name(subtype), "CIDFontType2"))
 		error = load_cid_font(fontdescp, xref, dfont, encoding, to_unicode);
 	else
 		error = fz_error_make("syntaxerror: unknown cid font type");
@@ -993,22 +992,22 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 	fz_context *ctx = xref->ctx;
 
 	if (!strchr(basefont, ',') || strchr(basefont, '+'))
-		origname = fz_to_name(ctx, fz_dict_gets(ctx, dict, "FontName"));
+		origname = fz_to_name(fz_dict_gets(dict, "FontName"));
 	else
 		origname = basefont;
 	fontname = clean_font_name(origname);
 
-	fontdesc->flags = fz_to_int(ctx, fz_dict_gets(ctx, dict, "Flags"));
-	fontdesc->italic_angle = fz_to_real(ctx, fz_dict_gets(ctx, dict, "ItalicAngle"));
-	fontdesc->ascent = fz_to_real(ctx, fz_dict_gets(ctx, dict, "Ascent"));
-	fontdesc->descent = fz_to_real(ctx, fz_dict_gets(ctx, dict, "Descent"));
-	fontdesc->cap_height = fz_to_real(ctx, fz_dict_gets(ctx, dict, "CapHeight"));
-	fontdesc->x_height = fz_to_real(ctx, fz_dict_gets(ctx, dict, "XHeight"));
-	fontdesc->missing_width = fz_to_real(ctx, fz_dict_gets(ctx, dict, "MissingWidth"));
+	fontdesc->flags = fz_to_int(fz_dict_gets(dict, "Flags"));
+	fontdesc->italic_angle = fz_to_real(fz_dict_gets(dict, "ItalicAngle"));
+	fontdesc->ascent = fz_to_real(fz_dict_gets(dict, "Ascent"));
+	fontdesc->descent = fz_to_real(fz_dict_gets(dict, "Descent"));
+	fontdesc->cap_height = fz_to_real(fz_dict_gets(dict, "CapHeight"));
+	fontdesc->x_height = fz_to_real(fz_dict_gets(dict, "XHeight"));
+	fontdesc->missing_width = fz_to_real(fz_dict_gets(dict, "MissingWidth"));
 
-	obj1 = fz_dict_gets(ctx, dict, "FontFile");
-	obj2 = fz_dict_gets(ctx, dict, "FontFile2");
-	obj3 = fz_dict_gets(ctx, dict, "FontFile3");
+	obj1 = fz_dict_gets(dict, "FontFile");
+	obj2 = fz_dict_gets(dict, "FontFile2");
+	obj3 = fz_dict_gets(dict, "FontFile3");
 	obj = obj1 ? obj1 : obj2 ? obj2 : obj3;
 
 	if (fz_is_indirect(obj))
@@ -1097,9 +1096,9 @@ pdf_load_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *di
 		return fz_okay;
 	}
 
-	subtype = fz_to_name(ctx, fz_dict_gets(ctx, dict, "Subtype"));
-	dfonts = fz_dict_gets(ctx, dict, "DescendantFonts");
-	charprocs = fz_dict_gets(ctx, dict, "CharProcs");
+	subtype = fz_to_name(fz_dict_gets(dict, "Subtype"));
+	dfonts = fz_dict_gets(dict, "DescendantFonts");
+	charprocs = fz_dict_gets(dict, "CharProcs");
 
 	if (subtype && !strcmp(subtype, "Type0"))
 		error = pdf_load_type0_font(fontdescp, xref, dict);

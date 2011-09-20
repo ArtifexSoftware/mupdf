@@ -27,14 +27,14 @@ static void usage(void)
 
 static int isimage(fz_obj *obj)
 {
-	fz_obj *type = fz_dict_gets(ctx, obj, "Subtype");
-	return fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "Image");
+	fz_obj *type = fz_dict_gets(obj, "Subtype");
+	return fz_is_name(type) && !strcmp(fz_to_name(type), "Image");
 }
 
 static int isfontdesc(fz_obj *obj)
 {
-	fz_obj *type = fz_dict_gets(ctx, obj, "Type");
-	return fz_is_name(ctx, type) && !strcmp(fz_to_name(ctx, type), "FontDescriptor");
+	fz_obj *type = fz_dict_gets(obj, "Type");
+	return fz_is_name(type) && !strcmp(fz_to_name(type), "FontDescriptor");
 }
 
 static void saveimage(int num)
@@ -75,7 +75,7 @@ static void saveimage(int num)
 	}
 
 	fz_drop_pixmap(ctx, img);
-	fz_drop_obj(ctx, ref);
+	fz_drop_obj(ref);
 }
 
 static void savefont(fz_obj *dict, int num)
@@ -91,34 +91,34 @@ static void savefont(fz_obj *dict, int num)
 	char *fontname = "font";
 	int n;
 
-	obj = fz_dict_gets(ctx, dict, "FontName");
+	obj = fz_dict_gets(dict, "FontName");
 	if (obj)
-		fontname = fz_to_name(ctx, obj);
+		fontname = fz_to_name(obj);
 
-	obj = fz_dict_gets(ctx, dict, "FontFile");
+	obj = fz_dict_gets(dict, "FontFile");
 	if (obj)
 	{
 		stream = obj;
 		ext = "pfa";
 	}
 
-	obj = fz_dict_gets(ctx, dict, "FontFile2");
+	obj = fz_dict_gets(dict, "FontFile2");
 	if (obj)
 	{
 		stream = obj;
 		ext = "ttf";
 	}
 
-	obj = fz_dict_gets(ctx, dict, "FontFile3");
+	obj = fz_dict_gets(dict, "FontFile3");
 	if (obj)
 	{
 		stream = obj;
 
-		obj = fz_dict_gets(ctx, obj, "Subtype");
-		if (obj && !fz_is_name(ctx, obj))
+		obj = fz_dict_gets(obj, "Subtype");
+		if (obj && !fz_is_name(obj))
 			die(fz_error_make("Invalid font descriptor subtype"));
 
-		subtype = fz_to_name(ctx, obj);
+		subtype = fz_to_name(obj);
 		if (!strcmp(subtype, "Type1C"))
 			ext = "cff";
 		else if (!strcmp(subtype, "CIDFontType0C"))
@@ -173,7 +173,7 @@ static void showobject(int num)
 	else if (isfontdesc(obj))
 		savefont(obj, num);
 
-	fz_drop_obj(ctx, obj);
+	fz_drop_obj(obj);
 }
 
 int main(int argc, char **argv)

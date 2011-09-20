@@ -208,16 +208,16 @@ fz_open_dctd(fz_stream *chain, fz_obj *params)
 	fz_dctd *state;
 	fz_obj *obj;
 
-        assert(chain);
-        state = fz_calloc(chain->ctx, 1, sizeof(fz_dctd));
-        state->ctx = chain->ctx;
+	state = fz_malloc(chain->ctx, sizeof(fz_dctd));
+	memset(state, 0, sizeof(fz_dctd));
+	state->ctx = chain->ctx;
 	state->chain = chain;
 	state->color_transform = -1; /* unset */
 	state->init = 0;
 
-	obj = fz_dict_gets(chain->ctx, params, "ColorTransform");
+	obj = fz_dict_gets(params, "ColorTransform");
 	if (obj)
-		state->color_transform = fz_to_int(chain->ctx, obj);
+		state->color_transform = fz_to_int(obj);
 
 	return fz_new_stream(chain->ctx, state, read_dctd, close_dctd);
 }

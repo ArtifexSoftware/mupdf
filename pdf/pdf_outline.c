@@ -4,11 +4,11 @@
 static pdf_outline *
 pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 {
+	fz_context *ctx = xref->ctx;
 	pdf_outline *node;
 	fz_obj *obj;
-	fz_context *ctx = xref->ctx;
 
-	if (fz_is_null(ctx, dict))
+	if (fz_is_null(dict))
 		return NULL;
 
 	node = fz_malloc(ctx, sizeof(pdf_outline));
@@ -18,22 +18,22 @@ pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 	node->next = NULL;
 	node->count = 0;
 
-	obj = fz_dict_gets(ctx, dict, "Title");
+	obj = fz_dict_gets(dict, "Title");
 	if (obj)
 		node->title = pdf_to_utf8(ctx, obj);
 
-	obj = fz_dict_gets(ctx, dict, "Count");
+	obj = fz_dict_gets(dict, "Count");
 	if (obj)
-		node->count = fz_to_int(ctx, obj);
+		node->count = fz_to_int(obj);
 
-	if (fz_dict_gets(ctx, dict, "Dest") || fz_dict_gets(ctx, dict, "A"))
+	if (fz_dict_gets(dict, "Dest") || fz_dict_gets(dict, "A"))
 		node->link = pdf_load_link(xref, dict);
 
-	obj = fz_dict_gets(ctx, dict, "First");
+	obj = fz_dict_gets(dict, "First");
 	if (obj)
 		node->child = pdf_load_outline_imp(xref, obj);
 
-	obj = fz_dict_gets(ctx, dict, "Next");
+	obj = fz_dict_gets(dict, "Next");
 	if (obj)
 		node->next = pdf_load_outline_imp(xref, obj);
 
@@ -44,11 +44,10 @@ pdf_outline *
 pdf_load_outline(pdf_xref *xref)
 {
 	fz_obj *root, *obj, *first;
-	fz_context *ctx = xref->ctx;
 
-	root = fz_dict_gets(ctx, xref->trailer, "Root");
-	obj = fz_dict_gets(ctx, root, "Outlines");
-	first = fz_dict_gets(ctx, obj, "First");
+	root = fz_dict_gets(xref->trailer, "Root");
+	obj = fz_dict_gets(root, "Outlines");
+	first = fz_dict_gets(obj, "First");
 	if (first)
 		return pdf_load_outline_imp(xref, first);
 
@@ -83,7 +82,7 @@ pdf_debug_outline(fz_context *ctx, pdf_outline *outline, int level)
 			printf("<NULL> ");
 
 		if (outline->link)
-			fz_debug_obj(ctx, outline->link->dest);
+			fz_debug_obj(outline->link->dest);
 		else
 			printf("<NULL>\n");
 

@@ -690,26 +690,26 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 	fax->end_of_block = 1;
 	fax->black_is_1 = 0;
 
-	obj = fz_dict_gets(ctx, params, "K");
-	if (obj) fax->k = fz_to_int(ctx, obj);
+	obj = fz_dict_gets(params, "K");
+	if (obj) fax->k = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, params, "EndOfLine");
-	if (obj) fax->end_of_line = fz_to_bool(ctx, obj);
+	obj = fz_dict_gets(params, "EndOfLine");
+	if (obj) fax->end_of_line = fz_to_bool(obj);
 
-	obj = fz_dict_gets(ctx, params, "EncodedByteAlign");
-	if (obj) fax->encoded_byte_align = fz_to_bool(ctx, obj);
+	obj = fz_dict_gets(params, "EncodedByteAlign");
+	if (obj) fax->encoded_byte_align = fz_to_bool(obj);
 
-	obj = fz_dict_gets(ctx, params, "Columns");
-	if (obj) fax->columns = fz_to_int(ctx, obj);
+	obj = fz_dict_gets(params, "Columns");
+	if (obj) fax->columns = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, params, "Rows");
-	if (obj) fax->rows = fz_to_int(ctx, obj);
+	obj = fz_dict_gets(params, "Rows");
+	if (obj) fax->rows = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, params, "EndOfBlock");
-	if (obj) fax->end_of_block = fz_to_bool(ctx, obj);
+	obj = fz_dict_gets(params, "EndOfBlock");
+	if (obj) fax->end_of_block = fz_to_bool(obj);
 
-	obj = fz_dict_gets(ctx, params, "BlackIs1");
-	if (obj) fax->black_is_1 = fz_to_bool(ctx, obj);
+	obj = fz_dict_gets(params, "BlackIs1");
+	if (obj) fax->black_is_1 = fz_to_bool(obj);
 
 	fax->stride = ((fax->columns - 1) >> 3) + 1;
 	fax->ridx = 0;

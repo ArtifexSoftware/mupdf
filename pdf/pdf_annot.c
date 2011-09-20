@@ -10,7 +10,7 @@ pdf_free_link(fz_context *ctx, pdf_link *link)
 	{
 		next = link->next;
 		if (link->dest)
-			fz_drop_obj(ctx, link->dest);
+			fz_drop_obj(link->dest);
 		fz_free(ctx, link);
 		link = next;
 	}
@@ -20,20 +20,20 @@ pdf_free_link(fz_context *ctx, pdf_link *link)
 static fz_obj *
 resolve_dest(pdf_xref *xref, fz_obj *dest)
 {
-	if (fz_is_name(xref->ctx, dest) || fz_is_string(xref->ctx, dest))
+	if (fz_is_name(dest) || fz_is_string(dest))
 	{
 		dest = pdf_lookup_dest(xref, dest);
 		return resolve_dest(xref, dest);
 	}
 
-	else if (fz_is_array(xref->ctx, dest))
+	else if (fz_is_array(dest))
 	{
 		return dest;
 	}
 
-	else if (fz_is_dict(xref->ctx, dest))
+	else if (fz_is_dict(dest))
 	{
-		dest = fz_dict_gets(xref->ctx, dest, "D");
+		dest = fz_dict_gets(dest, "D");
 		return resolve_dest(xref, dest);
 	}
 
@@ -55,49 +55,49 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 
 	dest = NULL;
 
-	obj = fz_dict_gets(ctx, dict, "Rect");
+	obj = fz_dict_gets(dict, "Rect");
 	if (obj)
 		bbox = pdf_to_rect(ctx, obj);
 	else
 		bbox = fz_empty_rect;
 
-	obj = fz_dict_gets(ctx, dict, "Dest");
+	obj = fz_dict_gets(dict, "Dest");
 	if (obj)
 	{
 		kind = PDF_LINK_GOTO;
 		dest = resolve_dest(xref, obj);
 	}
 
-	action = fz_dict_gets(ctx, dict, "A");
+	action = fz_dict_gets(dict, "A");
 
 	/* fall back to additional action button's down/up action */
 	if (!action)
-		action = fz_dict_getsa(ctx, fz_dict_gets(ctx, dict, "AA"), "U", "D");
+		action = fz_dict_getsa(fz_dict_gets(dict, "AA"), "U", "D");
 
 	if (action)
 	{
-		obj = fz_dict_gets(ctx, action, "S");
-		if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "GoTo"))
+		obj = fz_dict_gets(action, "S");
+		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "GoTo"))
 		{
 			kind = PDF_LINK_GOTO;
-			dest = resolve_dest(xref, fz_dict_gets(ctx, action, "D"));
+			dest = resolve_dest(xref, fz_dict_gets(action, "D"));
 		}
-		else if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "URI"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "URI"))
 		{
 			kind = PDF_LINK_URI;
-			dest = fz_dict_gets(ctx, action, "URI");
+			dest = fz_dict_gets(action, "URI");
 		}
-		else if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "Launch"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Launch"))
 		{
 			kind = PDF_LINK_LAUNCH;
-			dest = fz_dict_gets(ctx, action, "F");
+			dest = fz_dict_gets(action, "F");
 		}
-		else if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "Named"))
+		else if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Named"))
 		{
 			kind = PDF_LINK_NAMED;
-			dest = fz_dict_gets(ctx, action, "N");
+			dest = fz_dict_gets(action, "N");
 		}
-		else if (fz_is_name(ctx, obj) && (!strcmp(fz_to_name(ctx, obj), "GoToR")))
+		else if (fz_is_name(obj) && (!strcmp(fz_to_name(obj), "GoToR")))
 		{
 			kind = PDF_LINK_ACTION;
 			dest = action;
@@ -127,15 +127,14 @@ pdf_load_links(pdf_link **linkp, pdf_xref *xref, fz_obj *annots)
 	pdf_link *link, *head, *tail;
 	fz_obj *obj;
 	int i, n;
-	fz_context *ctx = xref->ctx;
 
 	head = tail = NULL;
 	link = NULL;
 
-	n = fz_array_len(ctx, annots);
+	n = fz_array_len(annots);
 	for (i = 0; i < n; i++)
 	{
-		obj = fz_array_get(ctx, annots, i);
+		obj = fz_array_get(annots, i);
 		link = pdf_load_link(xref, obj);
 		if (link)
 		{
@@ -163,7 +162,7 @@ pdf_free_annot(fz_context *ctx, pdf_annot *annot)
 		if (annot->ap)
 			pdf_drop_xobject(ctx, annot->ap);
 		if (annot->obj)
-			fz_drop_obj(ctx, annot->obj);
+			fz_drop_obj(annot->obj);
 		fz_free(ctx, annot);
 		annot = next;
 	}
@@ -200,21 +199,21 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 	head = tail = NULL;
 	annot = NULL;
 
-	len = fz_array_len(ctx, annots);
+	len = fz_array_len(annots);
 	for (i = 0; i < len; i++)
 	{
-		obj = fz_array_get(ctx, annots, i);
+		obj = fz_array_get(annots, i);
 
-		rect = fz_dict_gets(ctx, obj, "Rect");
-		ap = fz_dict_gets(ctx, obj, "AP");
-		as = fz_dict_gets(ctx, obj, "AS");
-		if (fz_is_dict(ctx, ap))
+		rect = fz_dict_gets(obj, "Rect");
+		ap = fz_dict_gets(obj, "AP");
+		as = fz_dict_gets(obj, "AS");
+		if (fz_is_dict(ap))
 		{
-			n = fz_dict_gets(ctx, ap, "N"); /* normal state */
+			n = fz_dict_gets(ap, "N"); /* normal state */
 
 			/* lookup current state in sub-dictionary */
 			if (!pdf_is_stream(xref, fz_to_num(n), fz_to_gen(n)))
-				n = fz_dict_get(ctx, n, as);
+				n = fz_dict_get(n, as);
 
 			if (pdf_is_stream(xref, fz_to_num(n), fz_to_gen(n)))
 			{

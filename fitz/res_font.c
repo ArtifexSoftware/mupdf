@@ -65,7 +65,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 		if (font->t3procs)
 		{
 			if (font->t3resources)
-				fz_drop_obj(ctx, font->t3resources);
+				fz_drop_obj(font->t3resources);
 			for (i = 0; i < 256; i++)
 				if (font->t3procs[i])
 					fz_drop_buffer(ctx, font->t3procs[i]);

@@ -34,52 +34,52 @@ pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 	fz_context *ctx = xref->ctx;
 
 	/* prevent infinite recursion */
-	if (fz_dict_gets(ctx, node, ".seen"))
+	if (fz_dict_gets(node, ".seen"))
 		return;
 
-	kids = fz_dict_gets(ctx, node, "Kids");
-	count = fz_dict_gets(ctx, node, "Count");
+	kids = fz_dict_gets(node, "Kids");
+	count = fz_dict_gets(node, "Count");
 
-	if (fz_is_array(ctx, kids) && fz_is_int(ctx, count))
+	if (fz_is_array(kids) && fz_is_int(count))
 	{
-		obj = fz_dict_gets(ctx, node, "Resources");
+		obj = fz_dict_gets(node, "Resources");
 		if (obj)
 			info.resources = obj;
-		obj = fz_dict_gets(ctx, node, "MediaBox");
+		obj = fz_dict_gets(node, "MediaBox");
 		if (obj)
 			info.mediabox = obj;
-		obj = fz_dict_gets(ctx, node, "CropBox");
+		obj = fz_dict_gets(node, "CropBox");
 		if (obj)
 			info.cropbox = obj;
-		obj = fz_dict_gets(ctx, node, "Rotate");
+		obj = fz_dict_gets(node, "Rotate");
 		if (obj)
 			info.rotate = obj;
 
 		tmp = fz_new_null(ctx);
-		fz_dict_puts(ctx, node, ".seen", tmp);
-		fz_drop_obj(ctx, tmp);
+		fz_dict_puts(node, ".seen", tmp);
+		fz_drop_obj(tmp);
 
-		n = fz_array_len(ctx, kids);
+		n = fz_array_len(kids);
 		for (i = 0; i < n; i++)
 		{
-			obj = fz_array_get(ctx, kids, i);
+			obj = fz_array_get(kids, i);
 			pdf_load_page_tree_node(xref, obj, info);
 		}
 
-		fz_dict_dels(ctx, node, ".seen");
+		fz_dict_dels(node, ".seen");
 	}
 	else
 	{
-		dict = fz_resolve_indirect(ctx, node);
+		dict = fz_resolve_indirect(node);
 
-		if (info.resources && !fz_dict_gets(ctx, dict, "Resources"))
-			fz_dict_puts(ctx, dict, "Resources", info.resources);
-		if (info.mediabox && !fz_dict_gets(ctx, dict, "MediaBox"))
-			fz_dict_puts(ctx, dict, "MediaBox", info.mediabox);
-		if (info.cropbox && !fz_dict_gets(ctx, dict, "CropBox"))
-			fz_dict_puts(ctx, dict, "CropBox", info.cropbox);
-		if (info.rotate && !fz_dict_gets(ctx, dict, "Rotate"))
-			fz_dict_puts(ctx, dict, "Rotate", info.rotate);
+		if (info.resources && !fz_dict_gets(dict, "Resources"))
+			fz_dict_puts(dict, "Resources", info.resources);
+		if (info.mediabox && !fz_dict_gets(dict, "MediaBox"))
+			fz_dict_puts(dict, "MediaBox", info.mediabox);
+		if (info.cropbox && !fz_dict_gets(dict, "CropBox"))
+			fz_dict_puts(dict, "CropBox", info.cropbox);
+		if (info.rotate && !fz_dict_gets(dict, "Rotate"))
+			fz_dict_puts(dict, "Rotate", info.rotate);
 
 		if (xref->page_len == xref->page_cap)
 		{
@@ -100,16 +100,16 @@ pdf_load_page_tree(pdf_xref *xref)
 {
 	struct info info;
 	fz_context *ctx = xref->ctx;
-	fz_obj *catalog = fz_dict_gets(ctx, xref->trailer, "Root");
-	fz_obj *pages = fz_dict_gets(ctx, catalog, "Pages");
-	fz_obj *count = fz_dict_gets(ctx, pages, "Count");
+	fz_obj *catalog = fz_dict_gets(xref->trailer, "Root");
+	fz_obj *pages = fz_dict_gets(catalog, "Pages");
+	fz_obj *count = fz_dict_gets(pages, "Count");
 
-	if (!fz_is_dict(ctx, pages))
+	if (!fz_is_dict(pages))
 		return fz_error_make("missing page tree");
-	if (!fz_is_int(ctx, count))
+	if (!fz_is_int(count))
 		return fz_error_make("missing page count");
 
-	xref->page_cap = fz_to_int(ctx, count);
+	xref->page_cap = fz_to_int(count);
 	xref->page_len = 0;
 	xref->page_refs = fz_calloc(ctx, xref->page_cap, sizeof(fz_obj*));
 	xref->page_objs = fz_calloc(ctx, xref->page_cap, sizeof(fz_obj*));
@@ -131,8 +131,8 @@ static int pdf_resources_use_blending(fz_context *ctx, fz_obj *rdb);
 static int
 pdf_extgstate_uses_blending(fz_context *ctx, fz_obj *dict)
 {
-	fz_obj *obj = fz_dict_gets(ctx, dict, "BM");
-	if (fz_is_name(ctx, obj) && strcmp(fz_to_name(ctx, obj), "Normal"))
+	fz_obj *obj = fz_dict_gets(dict, "BM");
+	if (fz_is_name(obj) && strcmp(fz_to_name(obj), "Normal"))
 		return 1;
 	return 0;
 }
@@ -141,17 +141,17 @@ static int
 pdf_pattern_uses_blending(fz_context *ctx, fz_obj *dict)
 {
 	fz_obj *obj;
-	obj = fz_dict_gets(ctx, dict, "Resources");
+	obj = fz_dict_gets(dict, "Resources");
 	if (pdf_resources_use_blending(ctx, obj))
 		return 1;
-	obj = fz_dict_gets(ctx, dict, "ExtGState");
+	obj = fz_dict_gets(dict, "ExtGState");
 	return pdf_extgstate_uses_blending(ctx, obj);
 }
 
 static int
 pdf_xobject_uses_blending(fz_context *ctx, fz_obj *dict)
 {
-	fz_obj *obj = fz_dict_gets(ctx, dict, "Resources");
+	fz_obj *obj = fz_dict_gets(dict, "Resources");
 	return pdf_resources_use_blending(ctx, obj);
 }
 
@@ -166,37 +166,37 @@ pdf_resources_use_blending(fz_context *ctx, fz_obj *rdb)
 		return 0;
 
 	/* stop on cyclic resource dependencies */
-	if (fz_dict_gets(ctx, rdb, ".useBM"))
-		return fz_to_bool(ctx, fz_dict_gets(ctx, rdb, ".useBM"));
+	if (fz_dict_gets(rdb, ".useBM"))
+		return fz_to_bool(fz_dict_gets(rdb, ".useBM"));
 
 	tmp = fz_new_bool(ctx, 0);
-	fz_dict_puts(ctx, rdb, ".useBM", tmp);
-	fz_drop_obj(ctx, tmp);
+	fz_dict_puts(rdb, ".useBM", tmp);
+	fz_drop_obj(tmp);
 
-	dict = fz_dict_gets(ctx, rdb, "ExtGState");
-	n = fz_dict_len(ctx, dict);
+	dict = fz_dict_gets(rdb, "ExtGState");
+	n = fz_dict_len(dict);
 	for (i = 0; i < n; i++)
-		if (pdf_extgstate_uses_blending(ctx, fz_dict_get_val(ctx, dict, i)))
+		if (pdf_extgstate_uses_blending(ctx, fz_dict_get_val(dict, i)))
 			goto found;
 
-	dict = fz_dict_gets(ctx, rdb, "Pattern");
-	n = fz_dict_len(ctx, dict);
+	dict = fz_dict_gets(rdb, "Pattern");
+	n = fz_dict_len(dict);
 	for (i = 0; i < n; i++)
-		if (pdf_pattern_uses_blending(ctx, fz_dict_get_val(ctx, dict, i)))
+		if (pdf_pattern_uses_blending(ctx, fz_dict_get_val(dict, i)))
 			goto found;
 
-	dict = fz_dict_gets(ctx, rdb, "XObject");
-	n = fz_dict_len(ctx, dict);
+	dict = fz_dict_gets(rdb, "XObject");
+	n = fz_dict_len(dict);
 	for (i = 0; i < n; i++)
-		if (pdf_xobject_uses_blending(ctx, fz_dict_get_val(ctx, dict, i)))
+		if (pdf_xobject_uses_blending(ctx, fz_dict_get_val(dict, i)))
 			goto found;
 
 	return 0;
 
 found:
 	tmp = fz_new_bool(ctx, 1);
-	fz_dict_puts(ctx, rdb, ".useBM", tmp);
-	fz_drop_obj(ctx, tmp);
+	fz_dict_puts(rdb, ".useBM", tmp);
+	fz_drop_obj(tmp);
 	return 1;
 }
 
@@ -213,10 +213,10 @@ pdf_load_page_contents_array(fz_buffer **bigbufp, pdf_xref *xref, fz_obj *list)
 
 	big = fz_new_buffer(ctx, 32 * 1024);
 
-	n = fz_array_len(ctx, list);
+	n = fz_array_len(list);
 	for (i = 0; i < n; i++)
 	{
-		fz_obj *stm = fz_array_get(ctx, list, i);
+		fz_obj *stm = fz_array_get(list, i);
 		error = pdf_load_stream(&one, xref, fz_to_num(stm), fz_to_gen(stm));
 		if (error)
 		{
@@ -249,7 +249,7 @@ pdf_load_page_contents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 	fz_error error;
 	fz_context *ctx = xref->ctx;
 
-	if (fz_is_array(ctx, obj))
+	if (fz_is_array(obj))
 	{
 		error = pdf_load_page_contents_array(bufp, xref, obj);
 		if (error)
@@ -298,7 +298,7 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	page->links = NULL;
 	page->annots = NULL;
 
-	obj = fz_dict_gets(ctx, pageobj, "MediaBox");
+	obj = fz_dict_gets(pageobj, "MediaBox");
 	bbox = fz_round_rect(pdf_to_rect(ctx, obj));
 	if (fz_is_empty_rect(pdf_to_rect(ctx, obj)))
 	{
@@ -309,8 +309,8 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 		bbox.y1 = 792;
 	}
 
-	obj = fz_dict_gets(ctx, pageobj, "CropBox");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(pageobj, "CropBox");
+	if (fz_is_array(obj))
 	{
 		fz_bbox cropbox = fz_round_rect(pdf_to_rect(ctx, obj));
 		bbox = fz_intersect_bbox(bbox, cropbox);
@@ -327,20 +327,20 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 		page->mediabox = fz_unit_rect;
 	}
 
-	page->rotate = fz_to_int(ctx, fz_dict_gets(ctx, pageobj, "Rotate"));
+	page->rotate = fz_to_int(fz_dict_gets(pageobj, "Rotate"));
 
-	obj = fz_dict_gets(ctx, pageobj, "Annots");
+	obj = fz_dict_gets(pageobj, "Annots");
 	if (obj)
 	{
 		pdf_load_links(&page->links, xref, obj);
 		pdf_load_annots(&page->annots, xref, obj);
 	}
 
-	page->resources = fz_dict_gets(ctx, pageobj, "Resources");
+	page->resources = fz_dict_gets(pageobj, "Resources");
 	if (page->resources)
 		fz_keep_obj(page->resources);
 
-	obj = fz_dict_gets(ctx, pageobj, "Contents");
+	obj = fz_dict_gets(pageobj, "Contents");
 	error = pdf_load_page_contents(&page->contents, xref, obj);
 	if (error)
 	{
@@ -363,7 +363,7 @@ void
 pdf_free_page(fz_context *ctx, pdf_page *page)
 {
 	if (page->resources)
-		fz_drop_obj(ctx, page->resources);
+		fz_drop_obj(page->resources);
 	if (page->contents)
 		fz_drop_buffer(ctx, page->contents);
 	if (page->links)

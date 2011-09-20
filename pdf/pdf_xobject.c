@@ -24,10 +24,10 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 	/* Store item immediately, to avoid possible recursion if objects refer back to this one */
 	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_xobject, (pdf_store_drop_fn *)pdf_drop_xobject, dict, form);
 
-	obj = fz_dict_gets(ctx, dict, "BBox");
+	obj = fz_dict_gets(dict, "BBox");
 	form->bbox = pdf_to_rect(ctx, obj);
 
-	obj = fz_dict_gets(ctx, dict, "Matrix");
+	obj = fz_dict_gets(dict, "Matrix");
 	if (obj)
 		form->matrix = pdf_to_matrix(ctx, obj);
 	else
@@ -37,19 +37,19 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 	form->knockout = 0;
 	form->transparency = 0;
 
-	obj = fz_dict_gets(ctx, dict, "Group");
+	obj = fz_dict_gets(dict, "Group");
 	if (obj)
 	{
 		fz_obj *attrs = obj;
 
-		form->isolated = fz_to_bool(ctx, fz_dict_gets(ctx, attrs, "I"));
-		form->knockout = fz_to_bool(ctx, fz_dict_gets(ctx, attrs, "K"));
+		form->isolated = fz_to_bool(fz_dict_gets(attrs, "I"));
+		form->knockout = fz_to_bool(fz_dict_gets(attrs, "K"));
 
-		obj = fz_dict_gets(ctx, attrs, "S");
-		if (fz_is_name(ctx, obj) && !strcmp(fz_to_name(ctx, obj), "Transparency"))
+		obj = fz_dict_gets(attrs, "S");
+		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Transparency"))
 			form->transparency = 1;
 
-		obj = fz_dict_gets(ctx, attrs, "CS");
+		obj = fz_dict_gets(attrs, "CS");
 		if (obj)
 		{
 			error = pdf_load_colorspace(&form->colorspace, xref, obj);
@@ -58,7 +58,7 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 		}
 	}
 
-	form->resources = fz_dict_gets(ctx, dict, "Resources");
+	form->resources = fz_dict_gets(dict, "Resources");
 	if (form->resources)
 		fz_keep_obj(form->resources);
 
@@ -89,7 +89,7 @@ pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj)
 		if (xobj->colorspace)
 			fz_drop_colorspace(ctx, xobj->colorspace);
 		if (xobj->resources)
-			fz_drop_obj(ctx, xobj->resources);
+			fz_drop_obj(xobj->resources);
 		if (xobj->contents)
 			fz_drop_buffer(ctx, xobj->contents);
 		fz_free(ctx, xobj);

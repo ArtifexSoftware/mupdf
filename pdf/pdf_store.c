@@ -120,7 +120,7 @@ pdf_remove_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *drop_func,
 		{
 			fz_hash_remove(store->hash, &refkey);
 			item->drop_func(ctx, item->val);
-			fz_drop_obj(ctx, item->key);
+			fz_drop_obj(item->key);
 			fz_free(ctx, item);
 		}
 	}
@@ -137,7 +137,7 @@ pdf_remove_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *drop_func,
 				else
 					prev->next = next;
 				item->drop_func(ctx, item->val);
-				fz_drop_obj(ctx, item->key);
+				fz_drop_obj(item->key);
 				fz_free(ctx, item);
 			}
 			else
@@ -162,7 +162,7 @@ pdf_age_store(fz_context *ctx, pdf_store *store, int maxage)
 		{
 			fz_hash_remove(store->hash, refkey);
 			item->drop_func(ctx, item->val);
-			fz_drop_obj(ctx, item->key);
+			fz_drop_obj(item->key);
 			fz_free(ctx, item);
 			i--; /* items with same hash may move into place */
 		}
@@ -179,7 +179,7 @@ pdf_age_store(fz_context *ctx, pdf_store *store, int maxage)
 			else
 				prev->next = next;
 			item->drop_func(ctx, item->val);
-			fz_drop_obj(ctx, item->key);
+			fz_drop_obj(item->key);
 			fz_free(ctx, item);
 		}
 		else
@@ -218,7 +218,7 @@ pdf_debug_store(fz_context *ctx, pdf_store *store)
 	{
 		next = item->next;
 		printf("store[*] ");
-		fz_debug_obj(ctx, item->key);
+		fz_debug_obj(item->key);
 		printf(" = %p\n", item->val);
 	}
 }

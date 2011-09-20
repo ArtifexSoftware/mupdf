@@ -58,7 +58,7 @@ static void
 fz_bbox_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox_fill_image(dev->user, image, ctm, alpha);
+	fz_bbox_fill_image(dev, image, ctm, alpha);
 }
 
 fz_device *

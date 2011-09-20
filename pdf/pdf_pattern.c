@@ -23,20 +23,20 @@ pdf_load_pattern(pdf_pattern **patp, pdf_xref *xref, fz_obj *dict)
 	/* Store pattern now, to avoid possible recursion if objects refer back to this one */
 	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_pattern, (pdf_store_drop_fn *)pdf_drop_pattern, dict, pat);
 
-	pat->ismask = fz_to_int(ctx, fz_dict_gets(ctx, dict, "PaintType")) == 2;
-	pat->xstep = fz_to_real(ctx, fz_dict_gets(ctx, dict, "XStep"));
-	pat->ystep = fz_to_real(ctx, fz_dict_gets(ctx, dict, "YStep"));
+	pat->ismask = fz_to_int(fz_dict_gets(dict, "PaintType")) == 2;
+	pat->xstep = fz_to_real(fz_dict_gets(dict, "XStep"));
+	pat->ystep = fz_to_real(fz_dict_gets(dict, "YStep"));
 
-	obj = fz_dict_gets(ctx, dict, "BBox");
+	obj = fz_dict_gets(dict, "BBox");
 	pat->bbox = pdf_to_rect(ctx, obj);
 
-	obj = fz_dict_gets(ctx, dict, "Matrix");
+	obj = fz_dict_gets(dict, "Matrix");
 	if (obj)
 		pat->matrix = pdf_to_matrix(ctx, obj);
 	else
 		pat->matrix = fz_identity;
 
-	pat->resources = fz_dict_gets(ctx, dict, "Resources");
+	pat->resources = fz_dict_gets(dict, "Resources");
 	if (pat->resources)
 		fz_keep_obj(pat->resources);
 
@@ -65,7 +65,7 @@ pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat)
 	if (pat && --pat->refs == 0)
 	{
 		if (pat->resources)
-			fz_drop_obj(ctx, pat->resources);
+			fz_drop_obj(pat->resources);
 		if (pat->contents)
 			fz_drop_buffer(ctx, pat->contents);
 		fz_free(ctx, pat);

@@ -204,9 +204,9 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 	state->colors = 1;
 	state->bpc = 8;
 
-	obj = fz_dict_gets(ctx, params, "Predictor");
+	obj = fz_dict_gets(params, "Predictor");
 	if (obj)
-		state->predictor = fz_to_int(ctx, obj);
+		state->predictor = fz_to_int(obj);
 
 	if (state->predictor != 1 && state->predictor != 2 &&
 		state->predictor != 10 && state->predictor != 11 &&
@@ -217,17 +217,17 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 		state->predictor = 1;
 	}
 
-	obj = fz_dict_gets(ctx, params, "Columns");
+	obj = fz_dict_gets(params, "Columns");
 	if (obj)
-		state->columns = fz_to_int(ctx, obj);
+		state->columns = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, params, "Colors");
+	obj = fz_dict_gets(params, "Colors");
 	if (obj)
-		state->colors = fz_to_int(ctx, obj);
+		state->colors = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, params, "BitsPerComponent");
+	obj = fz_dict_gets(params, "BitsPerComponent");
 	if (obj)
-		state->bpc = fz_to_int(ctx, obj);
+		state->bpc = fz_to_int(obj);
 
 	state->stride = (state->bpc * state->colors * state->columns + 7) / 8;
 	state->bpp = (state->bpc * state->colors + 7) / 8;

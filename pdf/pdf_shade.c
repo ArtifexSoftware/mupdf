@@ -377,18 +377,18 @@ pdf_load_function_based_shading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, p
 
 	x0 = y0 = 0;
 	x1 = y1 = 1;
-	obj = fz_dict_gets(ctx, dict, "Domain");
-	if (fz_array_len(ctx, obj) == 4)
+	obj = fz_dict_gets(dict, "Domain");
+	if (fz_array_len(obj) == 4)
 	{
-		x0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-		x1 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
-		y0 = fz_to_real(ctx, fz_array_get(ctx, obj, 2));
-		y1 = fz_to_real(ctx, fz_array_get(ctx, obj, 3));
+		x0 = fz_to_real(fz_array_get(obj, 0));
+		x1 = fz_to_real(fz_array_get(obj, 1));
+		y0 = fz_to_real(fz_array_get(obj, 2));
+		y1 = fz_to_real(fz_array_get(obj, 3));
 	}
 
 	matrix = fz_identity;
-	obj = fz_dict_gets(ctx, dict, "Matrix");
-	if (fz_array_len(ctx, obj) == 6)
+	obj = fz_dict_gets(dict, "Matrix");
+	if (fz_array_len(obj) == 6)
 		matrix = pdf_to_matrix(ctx, obj);
 
 	for (yy = 0; yy < FUNSEGS; yy++)
@@ -437,27 +437,27 @@ pdf_load_axial_shading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs,
 	struct vertex p1, p2;
 	fz_context *ctx = xref->ctx;
 
-	obj = fz_dict_gets(ctx, dict, "Coords");
-	x0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-	y0 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
-	x1 = fz_to_real(ctx, fz_array_get(ctx, obj, 2));
-	y1 = fz_to_real(ctx, fz_array_get(ctx, obj, 3));
+	obj = fz_dict_gets(dict, "Coords");
+	x0 = fz_to_real(fz_array_get(obj, 0));
+	y0 = fz_to_real(fz_array_get(obj, 1));
+	x1 = fz_to_real(fz_array_get(obj, 2));
+	y1 = fz_to_real(fz_array_get(obj, 3));
 
 	d0 = 0;
 	d1 = 1;
-	obj = fz_dict_gets(ctx, dict, "Domain");
-	if (fz_array_len(ctx, obj) == 2)
+	obj = fz_dict_gets(dict, "Domain");
+	if (fz_array_len(obj) == 2)
 	{
-		d0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-		d1 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
+		d0 = fz_to_real(fz_array_get(obj, 0));
+		d1 = fz_to_real(fz_array_get(obj, 1));
 	}
 
 	e0 = e1 = 0;
-	obj = fz_dict_gets(ctx, dict, "Extend");
-	if (fz_array_len(ctx, obj) == 2)
+	obj = fz_dict_gets(dict, "Extend");
+	if (fz_array_len(obj) == 2)
 	{
-		e0 = fz_to_bool(ctx, fz_array_get(ctx, obj, 0));
-		e1 = fz_to_bool(ctx, fz_array_get(ctx, obj, 1));
+		e0 = fz_to_bool(fz_array_get(obj, 0));
+		e1 = fz_to_bool(fz_array_get(obj, 1));
 	}
 
 	pdf_sample_shade_function(shade, funcs, func, d0, d1);
@@ -488,29 +488,29 @@ pdf_load_radial_shading(fz_shade *shade, pdf_xref *xref, fz_obj *dict, int funcs
 	struct vertex p1, p2;
 	fz_context *ctx = xref->ctx;
 
-	obj = fz_dict_gets(ctx, dict, "Coords");
-	x0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-	y0 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
-	r0 = fz_to_real(ctx, fz_array_get(ctx, obj, 2));
-	x1 = fz_to_real(ctx, fz_array_get(ctx, obj, 3));
-	y1 = fz_to_real(ctx, fz_array_get(ctx, obj, 4));
-	r1 = fz_to_real(ctx, fz_array_get(ctx, obj, 5));
+	obj = fz_dict_gets(dict, "Coords");
+	x0 = fz_to_real(fz_array_get(obj, 0));
+	y0 = fz_to_real(fz_array_get(obj, 1));
+	r0 = fz_to_real(fz_array_get(obj, 2));
+	x1 = fz_to_real(fz_array_get(obj, 3));
+	y1 = fz_to_real(fz_array_get(obj, 4));
+	r1 = fz_to_real(fz_array_get(obj, 5));
 
 	d0 = 0;
 	d1 = 1;
-	obj = fz_dict_gets(ctx, dict, "Domain");
-	if (fz_array_len(ctx, obj) == 2)
+	obj = fz_dict_gets(dict, "Domain");
+	if (fz_array_len(obj) == 2)
 	{
-		d0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-		d1 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
+		d0 = fz_to_real(fz_array_get(obj, 0));
+		d1 = fz_to_real(fz_array_get(obj, 1));
 	}
 
 	e0 = e1 = 0;
-	obj = fz_dict_gets(ctx, dict, "Extend");
-	if (fz_array_len(ctx, obj) == 2)
+	obj = fz_dict_gets(dict, "Extend");
+	if (fz_array_len(obj) == 2)
 	{
-		e0 = fz_to_bool(ctx, fz_array_get(ctx, obj, 0));
-		e1 = fz_to_bool(ctx, fz_array_get(ctx, obj, 1));
+		e0 = fz_to_bool(fz_array_get(obj, 0));
+		e1 = fz_to_bool(fz_array_get(obj, 1));
 	}
 
 	pdf_sample_shade_function(shade, funcs, func, d0, d1);
@@ -557,7 +557,6 @@ pdf_load_mesh_params(pdf_xref *xref, fz_obj *dict, struct mesh_params *p)
 {
 	fz_obj *obj;
 	int i, n;
-	fz_context *ctx = xref->ctx;
 
 	p->x0 = p->y0 = 0;
 	p->x1 = p->y1 = 1;
@@ -567,23 +566,23 @@ pdf_load_mesh_params(pdf_xref *xref, fz_obj *dict, struct mesh_params *p)
 		p->c1[i] = 1;
 	}
 
-	p->vprow = fz_to_int(ctx, fz_dict_gets(ctx, dict, "VerticesPerRow"));
-	p->bpflag = fz_to_int(ctx, fz_dict_gets(ctx, dict, "BitsPerFlag"));
-	p->bpcoord = fz_to_int(ctx, fz_dict_gets(ctx, dict, "BitsPerCoordinate"));
-	p->bpcomp = fz_to_int(ctx, fz_dict_gets(ctx, dict, "BitsPerComponent"));
+	p->vprow = fz_to_int(fz_dict_gets(dict, "VerticesPerRow"));
+	p->bpflag = fz_to_int(fz_dict_gets(dict, "BitsPerFlag"));
+	p->bpcoord = fz_to_int(fz_dict_gets(dict, "BitsPerCoordinate"));
+	p->bpcomp = fz_to_int(fz_dict_gets(dict, "BitsPerComponent"));
 
-	obj = fz_dict_gets(ctx, dict, "Decode");
-	if (fz_array_len(ctx, obj) >= 6)
+	obj = fz_dict_gets(dict, "Decode");
+	if (fz_array_len(obj) >= 6)
 	{
-		n = (fz_array_len(ctx, obj) - 4) / 2;
-		p->x0 = fz_to_real(ctx, fz_array_get(ctx, obj, 0));
-		p->x1 = fz_to_real(ctx, fz_array_get(ctx, obj, 1));
-		p->y0 = fz_to_real(ctx, fz_array_get(ctx, obj, 2));
-		p->y1 = fz_to_real(ctx, fz_array_get(ctx, obj, 3));
+		n = (fz_array_len(obj) - 4) / 2;
+		p->x0 = fz_to_real(fz_array_get(obj, 0));
+		p->x1 = fz_to_real(fz_array_get(obj, 1));
+		p->y0 = fz_to_real(fz_array_get(obj, 2));
+		p->y1 = fz_to_real(fz_array_get(obj, 3));
 		for (i = 0; i < n; i++)
 		{
-			p->c0[i] = fz_to_real(ctx, fz_array_get(ctx, obj, 4 + i * 2));
-			p->c1[i] = fz_to_real(ctx, fz_array_get(ctx, obj, 5 + i * 2));
+			p->c0[i] = fz_to_real(fz_array_get(obj, 4 + i * 2));
+			p->c1[i] = fz_to_real(fz_array_get(obj, 5 + i * 2));
 		}
 	}
 
@@ -989,10 +988,10 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 
 	funcs = 0;
 
-	obj = fz_dict_gets(ctx, dict, "ShadingType");
-	type = fz_to_int(ctx, obj);
+	obj = fz_dict_gets(dict, "ShadingType");
+	type = fz_to_int(obj);
 
-	obj = fz_dict_gets(ctx, dict, "ColorSpace");
+	obj = fz_dict_gets(dict, "ColorSpace");
 	if (!obj)
 	{
 		fz_drop_shade(ctx, shade);
@@ -1005,22 +1004,22 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 		return fz_error_note(error, "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 	}
 
-	obj = fz_dict_gets(ctx, dict, "Background");
+	obj = fz_dict_gets(dict, "Background");
 	if (obj)
 	{
 		shade->use_background = 1;
 		for (i = 0; i < shade->colorspace->n; i++)
-			shade->background[i] = fz_to_real(ctx, fz_array_get(ctx, obj, i));
+			shade->background[i] = fz_to_real(fz_array_get(obj, i));
 	}
 
-	obj = fz_dict_gets(ctx, dict, "BBox");
-	if (fz_is_array(ctx, obj))
+	obj = fz_dict_gets(dict, "BBox");
+	if (fz_is_array(obj))
 	{
 		shade->bbox = pdf_to_rect(ctx, obj);
 	}
 
-	obj = fz_dict_gets(ctx, dict, "Function");
-	if (fz_is_dict(ctx, obj))
+	obj = fz_dict_gets(dict, "Function");
+	if (fz_is_dict(obj))
 	{
 		funcs = 1;
 
@@ -1031,9 +1030,9 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 			goto cleanup;
 		}
 	}
-	else if (fz_is_array(ctx, obj))
+	else if (fz_is_array(obj))
 	{
-		funcs = fz_array_len(ctx, obj);
+		funcs = fz_array_len(obj);
 		if (funcs != 1 && funcs != shade->colorspace->n)
 		{
 			error = fz_error_make("incorrect number of shading functions");
@@ -1042,7 +1041,7 @@ pdf_load_shading_dict(fz_shade **shadep, pdf_xref *xref, fz_obj *dict, fz_matrix
 
 		for (i = 0; i < funcs; i++)
 		{
-			error = pdf_load_function(&func[i], xref, fz_array_get(ctx, obj, i));
+			error = pdf_load_function(&func[i], xref, fz_array_get(obj, i));
 			if (error)
 			{
 				error = fz_error_note(error, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
@@ -1110,24 +1109,24 @@ pdf_load_shading(fz_shade **shadep, pdf_xref *xref, fz_obj *dict)
 	}
 
 	/* Type 2 pattern dictionary */
-	if (fz_dict_gets(ctx, dict, "PatternType"))
+	if (fz_dict_gets(dict, "PatternType"))
 	{
-		obj = fz_dict_gets(ctx, dict, "Matrix");
+		obj = fz_dict_gets(dict, "Matrix");
 		if (obj)
 			mat = pdf_to_matrix(ctx, obj);
 		else
 			mat = fz_identity;
 
-		obj = fz_dict_gets(ctx, dict, "ExtGState");
+		obj = fz_dict_gets(dict, "ExtGState");
 		if (obj)
 		{
-			if (fz_dict_gets(ctx, obj, "CA") || fz_dict_gets(ctx, obj, "ca"))
+			if (fz_dict_gets(obj, "CA") || fz_dict_gets(obj, "ca"))
 			{
 				fz_warn("shading with alpha not supported");
 			}
 		}
 
-		obj = fz_dict_gets(ctx, dict, "Shading");
+		obj = fz_dict_gets(dict, "Shading");
 		if (!obj)
 			return fz_error_make("syntaxerror: missing shading dictionary");
 

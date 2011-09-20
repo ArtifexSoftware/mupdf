@@ -455,10 +455,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fitz\obj_print.c"
-				>
-			</File>
-			<File
 				RelativePath="..\fitz\res_bitmap.c"
 				>
 			</File>
