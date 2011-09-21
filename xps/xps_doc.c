@@ -7,13 +7,13 @@
  */
 
 void
-xps_debug_page_list(xps_context *ctx)
+xps_debug_page_list(xps_document *doc)
 {
-	xps_document *fixdoc = ctx->first_fixdoc;
-	xps_page *page = ctx->first_page;
+	xps_fixdoc *fixdoc = doc->first_fixdoc;
+	xps_page *page = doc->first_page;
 
-	if (ctx->start_part)
-		printf("start part %s\n", ctx->start_part);
+	if (doc->start_part)
+		printf("start part %s\n", doc->start_part);
 
 	while (fixdoc)
 	{
@@ -29,96 +29,96 @@ xps_debug_page_list(xps_context *ctx)
 }
 
 static void
-xps_add_fixed_document(xps_context *ctx, char *name)
+xps_add_fixed_document(xps_document *doc, char *name)
 {
-	xps_document *fixdoc;
+	xps_fixdoc *fixdoc;
 
 	/* Check for duplicates first */
-	for (fixdoc = ctx->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
+	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 		if (!strcmp(fixdoc->name, name))
 			return;
 
-	fixdoc = fz_malloc(ctx->ctx, sizeof(xps_document));
-	fixdoc->name = fz_strdup(ctx->ctx, name);
+	fixdoc = fz_malloc(doc->ctx, sizeof(xps_fixdoc));
+	fixdoc->name = fz_strdup(doc->ctx, name);
 	fixdoc->next = NULL;
 
-	if (!ctx->first_fixdoc)
+	if (!doc->first_fixdoc)
 	{
-		ctx->first_fixdoc = fixdoc;
-		ctx->last_fixdoc = fixdoc;
+		doc->first_fixdoc = fixdoc;
+		doc->last_fixdoc = fixdoc;
 	}
 	else
 	{
-		ctx->last_fixdoc->next = fixdoc;
-		ctx->last_fixdoc = fixdoc;
+		doc->last_fixdoc->next = fixdoc;
+		doc->last_fixdoc = fixdoc;
 	}
 }
 
 static void
-xps_add_fixed_page(xps_context *ctx, char *name, int width, int height)
+xps_add_fixed_page(xps_document *doc, char *name, int width, int height)
 {
 	xps_page *page;
 
 	/* Check for duplicates first */
-	for (page = ctx->first_page; page; page = page->next)
+	for (page = doc->first_page; page; page = page->next)
 		if (!strcmp(page->name, name))
 			return;
 
-	page = fz_malloc(ctx->ctx, sizeof(xps_page));
-	page->name = fz_strdup(ctx->ctx, name);
+	page = fz_malloc(doc->ctx, sizeof(xps_page));
+	page->name = fz_strdup(doc->ctx, name);
 	page->width = width;
 	page->height = height;
 	page->root = NULL;
 	page->next = NULL;
 
-	if (!ctx->first_page)
+	if (!doc->first_page)
 	{
-		ctx->first_page = page;
-		ctx->last_page = page;
+		doc->first_page = page;
+		doc->last_page = page;
 	}
 	else
 	{
-		ctx->last_page->next = page;
-		ctx->last_page = page;
+		doc->last_page->next = page;
+		doc->last_page = page;
 	}
 }
 
 static void
-xps_free_fixed_pages(xps_context *ctx)
+xps_free_fixed_pages(xps_document *doc)
 {
-	xps_page *page = ctx->first_page;
+	xps_page *page = doc->first_page;
 	while (page)
 	{
 		xps_page *next = page->next;
-		xps_free_page(ctx, page);
-		fz_free(ctx->ctx, page->name);
-		fz_free(ctx->ctx, page);
+		xps_free_page(doc, page);
+		fz_free(doc->ctx, page->name);
+		fz_free(doc->ctx, page);
 		page = next;
 	}
-	ctx->first_page = NULL;
-	ctx->last_page = NULL;
+	doc->first_page = NULL;
+	doc->last_page = NULL;
 }
 
 static void
-xps_free_fixed_documents(xps_context *ctx)
+xps_free_fixed_documents(xps_document *doc)
 {
-	xps_document *doc = ctx->first_fixdoc;
-	while (doc)
+	xps_fixdoc *fixdoc = doc->first_fixdoc;
+	while (fixdoc)
 	{
-		xps_document *next = doc->next;
-		fz_free(ctx->ctx, doc->name);
-		fz_free(ctx->ctx, doc);
-		doc = next;
+		xps_fixdoc *next = fixdoc->next;
+		fz_free(doc->ctx, fixdoc->name);
+		fz_free(doc->ctx, fixdoc);
+		fixdoc = next;
 	}
-	ctx->first_fixdoc = NULL;
-	ctx->last_fixdoc = NULL;
+	doc->first_fixdoc = NULL;
+	doc->last_fixdoc = NULL;
 }
 
 void
-xps_free_page_list(xps_context *ctx)
+xps_free_page_list(xps_document *doc)
 {
-	xps_free_fixed_documents(ctx);
-	xps_free_fixed_pages(ctx);
+	xps_free_fixed_documents(doc);
+	xps_free_fixed_pages(doc);
 }
 
 /*
@@ -126,11 +126,11 @@ xps_free_page_list(xps_context *ctx)
  */
 
 static void
-xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
+xps_parse_metadata_imp(xps_document *doc, xml_element *item)
 {
 	while (item)
 	{
-		xps_parse_metadata_imp(ctx, xml_down(item));
+		xps_parse_metadata_imp(doc, xml_down(item));
 
 		if (!strcmp(xml_tag(item), "Relationship"))
 		{
@@ -139,9 +139,9 @@ xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 			if (target && type)
 			{
 				char tgtbuf[1024];
-				xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
+				xps_absolute_path(tgtbuf, doc->base_uri, target, sizeof tgtbuf);
 				if (!strcmp(type, REL_START_PART))
-					ctx->start_part = fz_strdup(ctx->ctx, tgtbuf);
+					doc->start_part = fz_strdup(doc->ctx, tgtbuf);
 			}
 		}
 
@@ -151,8 +151,8 @@ xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 			if (source)
 			{
 				char srcbuf[1024];
-				xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
-				xps_add_fixed_document(ctx, srcbuf);
+				xps_absolute_path(srcbuf, doc->base_uri, source, sizeof srcbuf);
+				xps_add_fixed_document(doc, srcbuf);
 			}
 		}
 
@@ -166,8 +166,8 @@ xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 			if (source)
 			{
 				char srcbuf[1024];
-				xps_absolute_path(srcbuf, ctx->base_uri, source, sizeof srcbuf);
-				xps_add_fixed_page(ctx, srcbuf, width, height);
+				xps_absolute_path(srcbuf, doc->base_uri, source, sizeof srcbuf);
+				xps_add_fixed_page(doc, srcbuf, width, height);
 			}
 		}
 
@@ -176,7 +176,7 @@ xps_parse_metadata_imp(xps_context *ctx, xml_element *item)
 }
 
 static int
-xps_parse_metadata(xps_context *ctx, xps_part *part)
+xps_parse_metadata(xps_document *doc, xps_part *part)
 {
 	xml_element *root;
 	char buf[1024];
@@ -196,62 +196,62 @@ xps_parse_metadata(xps_context *ctx, xps_part *part)
 	if (s)
 		*s = 0;
 
-	ctx->base_uri = buf;
-	ctx->part_uri = part->name;
+	doc->base_uri = buf;
+	doc->part_uri = part->name;
 
-	root = xml_parse_document(ctx->ctx, part->data, part->size);
+	root = xml_parse_document(doc->ctx, part->data, part->size);
 	if (!root)
 		return fz_error_note(-1, "cannot parse metadata part '%s'", part->name);
 
-	xps_parse_metadata_imp(ctx, root);
+	xps_parse_metadata_imp(doc, root);
 
-	xml_free_element(ctx->ctx, root);
+	xml_free_element(doc->ctx, root);
 
-	ctx->base_uri = NULL;
-	ctx->part_uri = NULL;
+	doc->base_uri = NULL;
+	doc->part_uri = NULL;
 
 	return fz_okay;
 }
 
 static int
-xps_read_and_process_metadata_part(xps_context *ctx, char *name)
+xps_read_and_process_metadata_part(xps_document *doc, char *name)
 {
 	xps_part *part;
 	int code;
 
-	part = xps_read_part(ctx, name);
+	part = xps_read_part(doc, name);
 	if (!part)
 		return fz_error_note(-1, "cannot read zip part '%s'", name);
 
-	code = xps_parse_metadata(ctx, part);
+	code = xps_parse_metadata(doc, part);
 	if (code)
 		return fz_error_note(code, "cannot process metadata part '%s'", name);
 
-	xps_free_part(ctx, part);
+	xps_free_part(doc, part);
 
 	return fz_okay;
 }
 
 int
-xps_read_page_list(xps_context *ctx)
+xps_read_page_list(xps_document *doc)
 {
-	xps_document *doc;
+	xps_fixdoc *fixdoc;
 	int code;
 
-	code = xps_read_and_process_metadata_part(ctx, "/_rels/.rels");
+	code = xps_read_and_process_metadata_part(doc, "/_rels/.rels");
 	if (code)
 		return fz_error_note(code, "cannot process root relationship part");
 
-	if (!ctx->start_part)
+	if (!doc->start_part)
 		return fz_error_make("cannot find fixed document sequence start part");
 
-	code = xps_read_and_process_metadata_part(ctx, ctx->start_part);
+	code = xps_read_and_process_metadata_part(doc, doc->start_part);
 	if (code)
 		return fz_error_note(code, "cannot process FixedDocumentSequence part");
 
-	for (doc = ctx->first_fixdoc; doc; doc = doc->next)
+	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 	{
-		code = xps_read_and_process_metadata_part(ctx, doc->name);
+		code = xps_read_and_process_metadata_part(doc, fixdoc->name);
 		if (code)
 			return fz_error_note(code, "cannot process FixedDocument part");
 	}
@@ -260,32 +260,32 @@ xps_read_page_list(xps_context *ctx)
 }
 
 int
-xps_count_pages(xps_context *ctx)
+xps_count_pages(xps_document *doc)
 {
 	xps_page *page;
 	int n = 0;
-	for (page = ctx->first_page; page; page = page->next)
+	for (page = doc->first_page; page; page = page->next)
 		n ++;
 	return n;
 }
 
 static int
-xps_load_fixed_page(xps_context *ctx, xps_page *page)
+xps_load_fixed_page(xps_document *doc, xps_page *page)
 {
 	xps_part *part;
 	xml_element *root;
 	char *width_att;
 	char *height_att;
 
-	part = xps_read_part(ctx, page->name);
+	part = xps_read_part(doc, page->name);
 	if (!part)
 		return fz_error_note(-1, "cannot read zip part '%s'", page->name);
 
-	root = xml_parse_document(ctx->ctx, part->data, part->size);
+	root = xml_parse_document(doc->ctx, part->data, part->size);
 	if (!root)
 		return fz_error_note(-1, "cannot parse xml part '%s'", page->name);
 
-	xps_free_part(ctx, part);
+	xps_free_part(doc, part);
 
 	if (strcmp(xml_tag(root), "FixedPage"))
 		return fz_error_make("expected FixedPage element (found %s)", xml_tag(root));
@@ -306,19 +306,19 @@ xps_load_fixed_page(xps_context *ctx, xps_page *page)
 }
 
 int
-xps_load_page(xps_page **pagep, xps_context *ctx, int number)
+xps_load_page(xps_page **pagep, xps_document *doc, int number)
 {
 	xps_page *page;
 	int code;
 	int n = 0;
 
-	for (page = ctx->first_page; page; page = page->next)
+	for (page = doc->first_page; page; page = page->next)
 	{
 		if (n == number)
 		{
 			if (!page->root)
 			{
-				code = xps_load_fixed_page(ctx, page);
+				code = xps_load_fixed_page(doc, page);
 				if (code)
 					return fz_error_note(code, "cannot load page %d", number + 1);
 			}
@@ -332,10 +332,10 @@ xps_load_page(xps_page **pagep, xps_context *ctx, int number)
 }
 
 void
-xps_free_page(xps_context *ctx, xps_page *page)
+xps_free_page(xps_document *doc, xps_page *page)
 {
 	/* only free the XML contents */
 	if (page->root)
-		xml_free_element(ctx->ctx, page->root);
+		xml_free_element(doc->ctx, page->root);
 	page->root = NULL;
 }

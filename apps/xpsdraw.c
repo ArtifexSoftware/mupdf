@@ -78,14 +78,14 @@ static int isrange(char *s)
 }
 
 static void
-xps_run_page(xps_context *ctx, xps_page *page, fz_device *dev, fz_matrix ctm)
+xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, fz_matrix ctm)
 {
-	ctx->dev = dev;
-	xps_parse_fixed_page(ctx, ctm, page);
-	ctx->dev = NULL;
+	doc->dev = dev;
+	xps_parse_fixed_page(doc, ctm, page);
+	doc->dev = NULL;
 }
 
-static void drawpage(xps_context *ctx, int pagenum)
+static void drawpage(xps_document *doc, int pagenum)
 {
 	xps_page *page;
 	fz_display_list *list;
@@ -98,7 +98,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 		start = gettime();
 	}
 
-	code = xps_load_page(&page, ctx, pagenum - 1);
+	code = xps_load_page(&page, doc, pagenum - 1);
 	if (code)
 		die(fz_error_note(code, "cannot load page %d in file '%s'", pagenum, filename));
 
@@ -106,32 +106,32 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 	if (uselist)
 	{
-		list = fz_new_display_list(ctx->ctx);
-		dev = fz_new_list_device(ctx->ctx, list);
-		xps_run_page(ctx, page, dev, fz_identity);
+		list = fz_new_display_list(doc->ctx);
+		dev = fz_new_list_device(doc->ctx, list);
+		xps_run_page(doc, page, dev, fz_identity);
 		fz_free_device(dev);
 	}
 
 	if (showxml)
 	{
-		dev = fz_new_trace_device(ctx->ctx);
+		dev = fz_new_trace_device(doc->ctx);
 		printf("<page number=\"%d\">\n", pagenum);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
-			xps_run_page(ctx, page, dev, fz_identity);
+			xps_run_page(doc, page, dev, fz_identity);
 		printf("</page>\n");
 		fz_free_device(dev);
 	}
 
 	if (showtext)
 	{
-		fz_text_span *text = fz_new_text_span(ctx->ctx);
-		dev = fz_new_text_device(ctx->ctx, text);
+		fz_text_span *text = fz_new_text_span(doc->ctx);
+		dev = fz_new_text_device(doc->ctx, text);
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox);
 		else
-			xps_run_page(ctx, page, dev, fz_identity);
+			xps_run_page(doc, page, dev, fz_identity);
 		fz_free_device(dev);
 		printf("[Page %d]\n", pagenum);
 		if (showtext > 1)
@@ -139,7 +139,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 		else
 			fz_debug_text_span(text);
 		printf("\n");
-		fz_free_text_span(ctx->ctx, text);
+		fz_free_text_span(doc->ctx, text);
 	}
 
 	if (showmd5 || showtime)
@@ -164,18 +164,18 @@ static void drawpage(xps_context *ctx, int pagenum)
 
 		/* TODO: banded rendering and multi-page ppm */
 
-		pix = fz_new_pixmap_with_rect(ctx->ctx, colorspace, bbox);
+		pix = fz_new_pixmap_with_rect(doc->ctx, colorspace, bbox);
 
 		if (savealpha)
 			fz_clear_pixmap(pix);
 		else
 			fz_clear_pixmap_with_color(pix, 255);
 
-		dev = fz_new_draw_device(ctx->ctx, glyphcache, pix);
+		dev = fz_new_draw_device(doc->ctx, glyphcache, pix);
 		if (list)
 			fz_execute_display_list(list, dev, ctm, bbox);
 		else
-			xps_run_page(ctx, page, dev, ctm);
+			xps_run_page(doc, page, dev, ctm);
 		fz_free_device(dev);
 
 		if (output)
@@ -187,7 +187,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 			else if (strstr(output, ".pam"))
 				fz_write_pam(pix, buf, savealpha);
 			else if (strstr(output, ".png"))
-				fz_write_png(ctx->ctx, pix, buf, savealpha);
+				fz_write_png(doc->ctx, pix, buf, savealpha);
 		}
 
 		if (showmd5)
@@ -205,11 +205,11 @@ static void drawpage(xps_context *ctx, int pagenum)
 				printf("%02x", digest[i]);
 		}
 
-		fz_drop_pixmap(ctx->ctx, pix);
+		fz_drop_pixmap(doc->ctx, pix);
 	}
 
 	if (list)
-		fz_free_display_list(ctx->ctx, list);
+		fz_free_display_list(doc->ctx, list);
 
 	if (showtime)
 	{
@@ -236,7 +236,7 @@ static void drawpage(xps_context *ctx, int pagenum)
 		printf("\n");
 }
 
-static void drawrange(xps_context *ctx, char *range)
+static void drawrange(xps_document *doc, char *range)
 {
 	int page, spage, epage;
 	char *spec, *dash;
@@ -247,7 +247,7 @@ static void drawrange(xps_context *ctx, char *range)
 		dash = strchr(spec, '-');
 
 		if (dash == spec)
-			spage = epage = xps_count_pages(ctx);
+			spage = epage = xps_count_pages(doc);
 		else
 			spage = epage = atoi(spec);
 
@@ -256,18 +256,18 @@ static void drawrange(xps_context *ctx, char *range)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = xps_count_pages(ctx);
+				epage = xps_count_pages(doc);
 		}
 
-		spage = CLAMP(spage, 1, xps_count_pages(ctx));
-		epage = CLAMP(epage, 1, xps_count_pages(ctx));
+		spage = CLAMP(spage, 1, xps_count_pages(doc));
+		epage = CLAMP(epage, 1, xps_count_pages(doc));
 
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)
-				drawpage(ctx, page);
+				drawpage(doc, page);
 		else
 			for (page = spage; page >= epage; page--)
-				drawpage(ctx, page);
+				drawpage(doc, page);
 
 		spec = fz_strsep(&range, ",");
 	}
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
 {
 	int grayscale = 0;
 	int accelerate = 1;
-	xps_context *ctx;
+	xps_document *doc;
 	int code;
 	int c;
 
@@ -342,7 +342,7 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		code = xps_open_file(fzctx, &ctx, filename);
+		code = xps_open_file(fzctx, &doc, filename);
 		if (code)
 			die(fz_error_note(code, "cannot open document: %s", filename));
 
@@ -350,14 +350,14 @@ int main(int argc, char **argv)
 			printf("<document name=\"%s\">\n", filename);
 
 		if (fz_optind == argc || !isrange(argv[fz_optind]))
-			drawrange(ctx, "1-");
+			drawrange(doc, "1-");
 		if (fz_optind < argc && isrange(argv[fz_optind]))
-			drawrange(ctx, argv[fz_optind++]);
+			drawrange(doc, argv[fz_optind++]);
 
 		if (showxml)
 			printf("</document>\n");
 
-		xps_free_context(ctx);
+		xps_free_context(doc);
 	}
 
 	if (showtime)

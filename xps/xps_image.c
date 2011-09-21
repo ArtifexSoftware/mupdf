@@ -2,7 +2,7 @@
 #include "muxps.h"
 
 static int
-xps_decode_image(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
+xps_decode_image(fz_context *doc, fz_pixmap **imagep, byte *buf, int len)
 {
 	int error;
 
@@ -11,13 +11,13 @@ xps_decode_image(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
 	{
-		error = xps_decode_jpeg(ctx, imagep, buf, len);
+		error = xps_decode_jpeg(doc, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode jpeg image");
 	}
 	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 	{
-		error = xps_decode_png(ctx, imagep, buf, len);
+		error = xps_decode_png(doc, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode png image");
 	}
@@ -27,7 +27,7 @@ xps_decode_image(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 	{
-		error = xps_decode_tiff(ctx, imagep, buf, len);
+		error = xps_decode_tiff(doc, imagep, buf, len);
 		if (error)
 			return fz_error_note(error, "cannot decode TIFF image");
 	}
@@ -38,7 +38,7 @@ xps_decode_image(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 }
 
 static void
-xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict,
+xps_paint_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict,
 	xml_element *root, void *vimage)
 {
 	fz_pixmap *pixmap = vimage;
@@ -47,11 +47,11 @@ xps_paint_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_
 	fz_matrix im = fz_scale(xs, -ys);
 	im.f = ys;
 	ctm = fz_concat(im, ctm);
-	fz_fill_image(ctx->dev, pixmap, ctm, ctx->opacity[ctx->opacity_top]);
+	fz_fill_image(doc->dev, pixmap, ctm, doc->opacity[doc->opacity_top]);
 }
 
 static xps_part *
-xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xml_element *root)
+xps_find_image_brush_source_part(xps_document *doc, char *base_uri, xml_element *root)
 {
 	char *image_source_att;
 	char buf[1024];
@@ -97,32 +97,32 @@ xps_find_image_brush_source_part(xps_context *ctx, char *base_uri, xml_element *
 
 	xps_absolute_path(partname, base_uri, image_name, sizeof partname);
 
-	return xps_read_part(ctx, partname);
+	return xps_read_part(doc, partname);
 }
 
 void
-xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
+xps_parse_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	char *base_uri, xps_resource *dict, xml_element *root)
 {
 	xps_part *part;
 	fz_pixmap *image;
 	int code;
 
-	part = xps_find_image_brush_source_part(ctx, base_uri, root);
+	part = xps_find_image_brush_source_part(doc, base_uri, root);
 	if (!part) {
-		fz_warn(ctx, "cannot find image source");
+		fz_warn(doc->ctx, "cannot find image source");
 		return;
 	}
 
-	code = xps_decode_image(ctx->ctx, &image, part->data, part->size);
+	code = xps_decode_image(doc->ctx, &image, part->data, part->size);
 	if (code < 0) {
-		xps_free_part(ctx, part);
+		xps_free_part(doc, part);
 		fz_error_handle(-1, "cannot decode image resource");
 		return;
 	}
 
-	xps_parse_tiling_brush(ctx, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
+	xps_parse_tiling_brush(doc, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
 
-	fz_drop_pixmap(ctx->ctx, image);
-	xps_free_part(ctx, part);
+	fz_drop_pixmap(doc->ctx, image);
+	xps_free_part(doc, part);
 }

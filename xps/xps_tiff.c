@@ -56,7 +56,7 @@ struct tiff
 	fz_colorspace *colorspace;
 	byte *samples;
 	int stride;
-	fz_context *ctx;
+	fz_context *doc;
 };
 
 enum
@@ -183,15 +183,15 @@ xps_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, byte *wp, int
 	fz_obj *params;
 	fz_obj *columns, *rows, *black_is_1, *k, *encoded_byte_align;
 	int n;
-	fz_context *ctx = tiff->ctx;
+	fz_context *doc = tiff->doc;
 
-	columns = fz_new_int(ctx, tiff->imagewidth);
-	rows = fz_new_int(ctx, tiff->imagelength);
-	black_is_1 = fz_new_bool(ctx, tiff->photometric == 0);
-	k = fz_new_int(ctx, comp == 4 ? -1 : 0);
-	encoded_byte_align = fz_new_bool(ctx, comp == 2);
+	columns = fz_new_int(doc, tiff->imagewidth);
+	rows = fz_new_int(doc, tiff->imagelength);
+	black_is_1 = fz_new_bool(doc, tiff->photometric == 0);
+	k = fz_new_int(doc, comp == 4 ? -1 : 0);
+	encoded_byte_align = fz_new_bool(doc, comp == 2);
 
-	params = fz_new_dict(ctx, 5);
+	params = fz_new_dict(doc, 5);
 	fz_dict_puts(params, "Columns", columns);
 	fz_dict_puts(params, "Rows", rows);
 	fz_dict_puts(params, "BlackIs1", black_is_1);
@@ -320,7 +320,7 @@ xps_expand_tiff_colormap(struct tiff *tiff)
 
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
-	samples = fz_malloc(tiff->ctx, stride * tiff->imagelength);
+	samples = fz_malloc(tiff->doc, stride * tiff->imagelength);
 
 	for (y = 0; y < tiff->imagelength; y++)
 	{
@@ -430,7 +430,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 		tiff->yresolution = 96;
 	}
 
-	tiff->samples = fz_malloc_array(tiff->ctx, tiff->imagelength, tiff->stride);
+	tiff->samples = fz_malloc_array(tiff->doc, tiff->imagelength, tiff->stride);
 	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
 	wp = tiff->samples;
 
@@ -454,7 +454,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 				rp[i] = bitrev[rp[i]];
 
 		/* the strip decoders will close this */
-		stm = fz_open_memory(tiff->ctx, rp, rlen);
+		stm = fz_open_memory(tiff->doc, rp, rlen);
 
 		switch (tiff->compression)
 		{
@@ -675,7 +675,7 @@ xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 		break;
 
 	case ICCProfile:
-		tiff->profile = fz_malloc(tiff->ctx, count);
+		tiff->profile = fz_malloc(tiff->doc, count);
 		/* ICC profile data type is set to UNDEFINED.
 		 * TBYTE reading not correct in xps_read_tiff_tag_value */
 		xps_read_tiff_bytes(tiff->profile, tiff, value, count);
@@ -683,23 +683,23 @@ xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 		break;
 
 	case JPEGTables:
-		fz_warn(tiff->ctx, "jpeg tables in tiff not implemented");
+		fz_warn(tiff->doc, "jpeg tables in tiff not implemented");
 		tiff->jpegtables = tiff->bp + value;
 		tiff->jpegtableslen = count;
 		break;
 
 	case StripOffsets:
-		tiff->stripoffsets = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
+		tiff->stripoffsets = fz_malloc_array(tiff->doc, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		break;
 
 	case StripByteCounts:
-		tiff->stripbytecounts = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
+		tiff->stripbytecounts = fz_malloc_array(tiff->doc, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		break;
 
 	case ColorMap:
-		tiff->colormap = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
+		tiff->colormap = fz_malloc_array(tiff->doc, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
 		break;
 
@@ -796,13 +796,13 @@ xps_decode_tiff_header(struct tiff *tiff, byte *buf, int len)
 }
 
 int
-xps_decode_tiff(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
+xps_decode_tiff(fz_context *doc, fz_pixmap **imagep, byte *buf, int len)
 {
 	int error;
 	fz_pixmap *image;
 	struct tiff tiff;
 
-	tiff.ctx = ctx;
+	tiff.doc = doc;
 	error = xps_decode_tiff_header(&tiff, buf, len);
 	if (error)
 		return fz_error_note(error, "cannot decode tiff header");
@@ -825,13 +825,13 @@ xps_decode_tiff(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 
 	/* Expand into fz_pixmap struct */
 
-	image = fz_new_pixmap_with_limit(tiff.ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength);
+	image = fz_new_pixmap_with_limit(tiff.doc, tiff.colorspace, tiff.imagewidth, tiff.imagelength);
 	if (!image)
 	{
-		if (tiff.colormap) fz_free(ctx, tiff.colormap);
-		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
-		if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
-		if (tiff.samples) fz_free(ctx, tiff.samples);
+		if (tiff.colormap) fz_free(doc, tiff.colormap);
+		if (tiff.stripoffsets) fz_free(doc, tiff.stripoffsets);
+		if (tiff.stripbytecounts) fz_free(doc, tiff.stripbytecounts);
+		if (tiff.samples) fz_free(doc, tiff.samples);
 		return fz_error_make("out of memory");
 	}
 
@@ -846,11 +846,11 @@ xps_decode_tiff(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 		/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 		if (image->n == 5)
 		{
-			fz_pixmap *rgb = fz_new_pixmap(tiff.ctx, fz_device_rgb, image->w, image->h);
-			fz_convert_pixmap(tiff.ctx, image, rgb);
+			fz_pixmap *rgb = fz_new_pixmap(tiff.doc, fz_device_rgb, image->w, image->h);
+			fz_convert_pixmap(tiff.doc, image, rgb);
 			rgb->xres = image->xres;
 			rgb->yres = image->yres;
-			fz_drop_pixmap(ctx, image);
+			fz_drop_pixmap(doc, image);
 			image = rgb;
 		}
 		fz_premultiply_pixmap(image);
@@ -858,10 +858,10 @@ xps_decode_tiff(fz_context *ctx, fz_pixmap **imagep, byte *buf, int len)
 
 	/* Clean up scratch memory */
 
-	if (tiff.colormap) fz_free(ctx, tiff.colormap);
-	if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
-	if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
-	if (tiff.samples) fz_free(ctx, tiff.samples);
+	if (tiff.colormap) fz_free(doc, tiff.colormap);
+	if (tiff.stripoffsets) fz_free(doc, tiff.stripoffsets);
+	if (tiff.stripbytecounts) fz_free(doc, tiff.stripbytecounts);
+	if (tiff.samples) fz_free(doc, tiff.samples);
 
 	*imagep = image;
 	return fz_okay;
