@@ -192,11 +192,11 @@ fz_seek(fz_stream *stm, int offset, int whence)
 		if (whence == 0)
 			offset -= fz_tell(stm);
 		if (offset < 0)
-			fz_warn("cannot seek backwards");
+			fz_warn(stm->ctx, "cannot seek backwards");
 		/* dog slow, but rare enough */
 		while (offset-- > 0)
 			fz_read_byte(stm);
 	}
 	else
-		fz_warn("cannot seek");
+		fz_warn(stm->ctx, "cannot seek");
 }

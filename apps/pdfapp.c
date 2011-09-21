@@ -239,7 +239,7 @@ void pdfapp_close(pdfapp_t *app)
 		app->xps = NULL;
 	}
 
-	fz_flush_warnings();
+	fz_flush_warnings(app->ctx);
 }
 
 static fz_matrix pdfapp_viewctm(pdfapp_t *app)
@@ -426,7 +426,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		wincursor(app, ARROW);
 	}
 
-	fz_flush_warnings();
+	fz_flush_warnings(app->ctx);
 }
 
 static void pdfapp_gotouri(pdfapp_t *app, fz_obj *uri)

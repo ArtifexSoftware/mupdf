@@ -93,7 +93,7 @@ fz_load_jpx_image(fz_context *ctx, fz_pixmap **imgp, unsigned char *data, int si
 		}
 		else
 		{
-			fz_warn("jpx file and dict colorspaces do not match");
+			fz_warn(ctx, "jpx file and dict colorspaces do not match");
 			defcs = NULL;
 		}
 	}

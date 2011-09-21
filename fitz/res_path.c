@@ -60,7 +60,7 @@ fz_lineto(fz_context *ctx, fz_path *path, float x, float y)
 {
 	if (path->len == 0)
 	{
-		fz_warn("lineto with no current point");
+		fz_warn(ctx, "lineto with no current point");
 		return;
 	}
 	grow_path(ctx, path, 3);
@@ -77,7 +77,7 @@ fz_curveto(fz_context *ctx, fz_path *path,
 {
 	if (path->len == 0)
 	{
-		fz_warn("curveto with no current point");
+		fz_warn(ctx, "curveto with no current point");
 		return;
 	}
 	grow_path(ctx, path, 7);
@@ -96,7 +96,7 @@ fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float 
 	float x1, y1;
 	if (path->len == 0)
 	{
-		fz_warn("curvetov with no current point");
+		fz_warn(ctx, "curvetov with no current point");
 		return;
 	}
 	x1 = path->items[path->len-2].v;
@@ -115,7 +115,7 @@ fz_closepath(fz_context *ctx, fz_path *path)
 {
 	if (path->len == 0)
 	{
-		fz_warn("closepath with no current point");
+		fz_warn(ctx, "closepath with no current point");
 		return;
 	}
 	grow_path(ctx, path, 1);

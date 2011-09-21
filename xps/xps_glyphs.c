@@ -113,7 +113,7 @@ xps_deobfuscate_font_resource(xps_context *ctx, xps_part *part)
 
 	if (i != 32)
 	{
-		fz_warn("cannot extract GUID from obfuscated font part name");
+		fz_warn(ctx->ctx, "cannot extract GUID from obfuscated font part name");
 		return;
 	}
 
@@ -128,7 +128,7 @@ xps_deobfuscate_font_resource(xps_context *ctx, xps_part *part)
 }
 
 static void
-xps_select_best_font_encoding(fz_font *font)
+xps_select_best_font_encoding(xps_context *ctx, fz_font *font)
 {
 	static struct { int pid, eid; } xps_cmap_list[] =
 	{
@@ -160,7 +160,7 @@ xps_select_best_font_encoding(fz_font *font)
 		}
 	}
 
-	fz_warn("cannot find a suitable cmap");
+	fz_warn(ctx->ctx, "cannot find a suitable cmap");
 }
 
 /*
@@ -267,7 +267,7 @@ xps_parse_glyphs_imp(xps_context *ctx, fz_matrix ctm,
 	int un = 0;
 
 	if (!unicode && !indices)
-		fz_warn("glyphs element with neither characters nor indices");
+		fz_warn(ctx->ctx, "glyphs element with neither characters nor indices");
 
 	if (us)
 	{
@@ -456,7 +456,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	 */
 
 	if (!font_size_att || !font_uri_att || !origin_x_att || !origin_y_att) {
-		fz_warn("missing attributes in glyphs element");
+		fz_warn(ctx->ctx, "missing attributes in glyphs element");
 		return;
 	}
 
@@ -486,7 +486,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 	{
 		part = xps_read_part(ctx, partname);
 		if (!part) {
-			fz_warn("cannot find font resource part '%s'", partname);
+			fz_warn(ctx->ctx, "cannot find font resource part '%s'", partname);
 			return;
 		}
 
@@ -503,7 +503,7 @@ xps_parse_glyphs(xps_context *ctx, fz_matrix ctm,
 			return;
 		}
 
-		xps_select_best_font_encoding(font);
+		xps_select_best_font_encoding(ctx, font);
 
 		xps_insert_font(ctx, part->name, font);
 

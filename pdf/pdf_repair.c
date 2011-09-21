@@ -119,7 +119,7 @@ atobjend:
 		if (error)
 			return fz_error_note(error, "cannot scan for endobj token");
 		if (tok != PDF_TOK_ENDOBJ)
-			fz_warn("object missing 'endobj' token");
+			fz_warn(file->ctx, "object missing 'endobj' token");
 	}
 
 	return fz_okay;

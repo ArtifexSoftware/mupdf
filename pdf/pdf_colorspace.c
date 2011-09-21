@@ -30,7 +30,7 @@ static inline float fung(float x)
 }
 
 static void
-lab_to_rgb(fz_colorspace *cs, float *lab, float *rgb)
+lab_to_rgb(fz_context *ctx, fz_colorspace *cs, float *lab, float *rgb)
 {
 	/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
 	float lstar, astar, bstar, l, m, n, x, y, z, r, g, b;
@@ -52,9 +52,9 @@ lab_to_rgb(fz_colorspace *cs, float *lab, float *rgb)
 }
 
 static void
-rgb_to_lab(fz_colorspace *cs, float *rgb, float *lab)
+rgb_to_lab(fz_context *ctx, fz_colorspace *cs, float *rgb, float *lab)
 {
-	fz_warn("cannot convert into L*a*b colorspace");
+	fz_warn(ctx, "cannot convert into L*a*b colorspace");
 	lab[0] = rgb[0];
 	lab[1] = rgb[1];
 	lab[2] = rgb[2];
@@ -72,12 +72,12 @@ struct separation
 };
 
 static void
-separation_to_rgb(fz_colorspace *cs, float *color, float *rgb)
+separation_to_rgb(fz_context *ctx, fz_colorspace *cs, float *color, float *rgb)
 {
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
-	pdf_eval_function(sep->tint, color, cs->n, alt, sep->base->n);
-	sep->base->to_rgb(sep->base, alt, rgb);
+	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
+	sep->base->to_rgb(ctx, sep->base, alt, rgb);
 }
 
 static void
@@ -145,7 +145,7 @@ struct indexed
 };
 
 static void
-indexed_to_rgb(fz_colorspace *cs, float *color, float *rgb)
+indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, float *color, float *rgb)
 {
 	struct indexed *idx = cs->data;
 	float alt[FZ_MAX_COLORS];
@@ -154,7 +154,7 @@ indexed_to_rgb(fz_colorspace *cs, float *color, float *rgb)
 	i = CLAMP(i, 0, idx->high);
 	for (k = 0; k < idx->base->n; k++)
 		alt[k] = idx->lookup[i * idx->base->n + k] / 255.0f;
-	idx->base->to_rgb(idx->base, alt, rgb);
+	idx->base->to_rgb(ctx, idx->base, alt, rgb);
 }
 
 static void

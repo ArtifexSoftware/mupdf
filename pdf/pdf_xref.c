@@ -213,14 +213,14 @@ pdf_read_old_xref(fz_obj **trailerp, pdf_xref *xref, char *buf, int cap)
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
 		{
-			fz_warn("broken xref section. proceeding anyway.");
+			fz_warn(xref->ctx, "broken xref section. proceeding anyway.");
 			fz_seek(xref->file, -(2 + (int)strlen(s)), 1);
 		}
 
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
 		if (ofs + len > xref->len)
 		{
-			fz_warn("broken xref section, proceeding anyway.");
+			fz_warn(xref->ctx, "broken xref section, proceeding anyway.");
 			pdf_resize_xref(xref, ofs + len);
 		}
 
@@ -908,7 +908,7 @@ pdf_update_object(pdf_xref *xref, int num, int gen, fz_obj *newobj)
 
 	if (num < 0 || num >= xref->len)
 	{
-		fz_warn("object out of range (%d %d R); xref size %d", num, gen, xref->len);
+		fz_warn(xref->ctx, "object out of range (%d %d R); xref size %d", num, gen, xref->len);
 		return;
 	}
 

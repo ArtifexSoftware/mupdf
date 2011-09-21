@@ -210,7 +210,7 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 		if (tlen < 0)
 			fz_error_handle(tlen, "ignoring error at end of image");
 		if (tlen > 0)
-			fz_warn("ignoring garbage at end of image");
+			fz_warn(ctx, "ignoring garbage at end of image");
 	}
 
 	fz_close(stm);
@@ -218,7 +218,7 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 	/* Pad truncated images */
 	if (len < stride * h)
 	{
-		fz_warn("padding truncated image (%d 0 R)", fz_to_num(dict));
+		fz_warn(ctx, "padding truncated image (%d 0 R)", fz_to_num(dict));
 		memset(samples + len, 0, stride * h - len);
 	}
 

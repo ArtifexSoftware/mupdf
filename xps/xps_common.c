@@ -22,7 +22,7 @@ xps_parse_brush(xps_context *ctx, fz_matrix ctm, fz_rect area, char *base_uri, x
 	else if (!strcmp(xml_tag(node), "RadialGradientBrush"))
 		xps_parse_radial_gradient_brush(ctx, ctm, area, base_uri, dict, node);
 	else
-		fz_warn("unknown brush tag: %s", xml_tag(node));
+		fz_warn(ctx->ctx, "unknown brush tag: %s", xml_tag(node));
 }
 
 void
@@ -230,7 +230,7 @@ xps_parse_color(xps_context *ctx, char *base_uri, char *string,
 		profile = strchr(buf, ' ');
 		if (!profile)
 		{
-			fz_warn("cannot find icc profile uri in '%s'", string);
+			fz_warn(ctx->ctx, "cannot find icc profile uri in '%s'", string);
 			return;
 		}
 
@@ -238,7 +238,7 @@ xps_parse_color(xps_context *ctx, char *base_uri, char *string,
 		p = strchr(profile, ' ');
 		if (!p)
 		{
-			fz_warn("cannot find component values in '%s'", profile);
+			fz_warn(ctx->ctx, "cannot find component values in '%s'", profile);
 			return;
 		}
 

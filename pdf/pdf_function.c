@@ -295,7 +295,7 @@ ps_index(ps_stack *st, int n)
 }
 
 static void
-ps_run(psobj *code, ps_stack *st, int pc)
+ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 {
 	int i1, i2;
 	float r1, r2;
@@ -642,16 +642,16 @@ ps_run(psobj *code, ps_stack *st, int pc)
 			case PS_OP_IF:
 				b1 = ps_pop_bool(st);
 				if (b1)
-					ps_run(code, st, code[pc + 1].u.block);
+					ps_run(ctx, code, st, code[pc + 1].u.block);
 				pc = code[pc + 2].u.block;
 				break;
 
 			case PS_OP_IFELSE:
 				b1 = ps_pop_bool(st);
 				if (b1)
-					ps_run(code, st, code[pc + 1].u.block);
+					ps_run(ctx, code, st, code[pc + 1].u.block);
 				else
-					ps_run(code, st, code[pc + 0].u.block);
+					ps_run(ctx, code, st, code[pc + 0].u.block);
 				pc = code[pc + 2].u.block;
 				break;
 
@@ -659,13 +659,13 @@ ps_run(psobj *code, ps_stack *st, int pc)
 				return;
 
 			default:
-				fz_warn("foreign operator in calculator function");
+				fz_warn(ctx, "foreign operator in calculator function");
 				return;
 			}
 			break;
 
 		default:
-			fz_warn("foreign object in calculator function");
+			fz_warn(ctx, "foreign object in calculator function");
 			return;
 		}
 	}
@@ -866,7 +866,7 @@ load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, 
 }
 
 static void
-eval_postscript_func(pdf_function *func, float *in, float *out)
+eval_postscript_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 {
 	ps_stack st;
 	float x;
@@ -880,7 +880,7 @@ eval_postscript_func(pdf_function *func, float *in, float *out)
 		ps_push_real(&st, x);
 	}
 
-	ps_run(func->u.p.code, &st, 0);
+	ps_run(ctx, func->u.p.code, &st, 0);
 
 	for (i = func->n - 1; i >= 0; i--)
 	{
@@ -896,13 +896,13 @@ eval_postscript_func(pdf_function *func, float *in, float *out)
 static fz_error
 load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
+	fz_context *ctx = xref->ctx;
 	fz_error error;
 	fz_stream *stream;
 	fz_obj *obj;
 	int samplecount;
 	int bps;
 	int i;
-	fz_context *ctx = xref->ctx;
 
 	func->u.sa.samples = NULL;
 
@@ -1040,7 +1040,7 @@ interpolate_sample(pdf_function *func, int *scale, int *e0, int *e1, float *efra
 }
 
 static void
-eval_sample_func(pdf_function *func, float *in, float *out)
+eval_sample_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 {
 	int e0[MAXM], e1[MAXM], scale[MAXM];
 	float efrac[MAXM];
@@ -1155,7 +1155,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 }
 
 static void
-eval_exponential_func(pdf_function *func, float in, float *out)
+eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 {
 	float x = in;
 	float tmp;
@@ -1166,7 +1166,7 @@ eval_exponential_func(pdf_function *func, float in, float *out)
 	/* constraint */
 	if ((func->u.e.n != (int)func->u.e.n && x < 0) || (func->u.e.n < 0 && x == 0))
 	{
-		fz_warn("constraint error");
+		fz_warn(ctx, "constraint error");
 		return;
 	}
 
@@ -1186,6 +1186,7 @@ eval_exponential_func(pdf_function *func, float in, float *out)
 static fz_error
 load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 {
+	fz_context *ctx = xref->ctx;
 	pdf_function **funcs;
 	fz_error error;
 	fz_obj *obj;
@@ -1193,7 +1194,6 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 	fz_obj *num;
 	int k;
 	int i;
-	fz_context *ctx = xref->ctx;
 
 	func->u.st.k = 0;
 
@@ -1247,7 +1247,7 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 
 		if (k != 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
 			func->domain[0][1] < func->u.st.bounds[k-2]))
-			fz_warn("malformed shading function bounds (domain mismatch), proceeding anyway.");
+			fz_warn(ctx, "malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 
 	obj = fz_dict_gets(dict, "Encode");
@@ -1267,7 +1267,7 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 }
 
 static void
-eval_stitching_func(pdf_function *func, float in, float *out)
+eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 {
 	float low, high;
 	int k = func->u.st.k;
@@ -1305,7 +1305,7 @@ eval_stitching_func(pdf_function *func, float in, float *out)
 
 	in = lerp(in, low, high, func->u.st.encode[i*2+0], func->u.st.encode[i*2+1]);
 
-	pdf_eval_function(func->u.st.funcs[i], &in, 1, out, func->n);
+	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->n);
 }
 
 /*
@@ -1350,11 +1350,11 @@ pdf_drop_function(fz_context *ctx, pdf_function *func)
 fz_error
 pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 {
+	fz_context *ctx = xref->ctx;
 	fz_error error;
 	pdf_function *func;
 	fz_obj *obj;
 	int i;
-	fz_context *ctx = xref->ctx;
 
 	if ((*funcp = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_function, dict)))
 	{
@@ -1452,27 +1452,27 @@ pdf_load_function(pdf_function **funcp, pdf_xref *xref, fz_obj *dict)
 }
 
 void
-pdf_eval_function(pdf_function *func, float *in, int inlen, float *out, int outlen)
+pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen)
 {
 	memset(out, 0, sizeof(float) * outlen);
 
 	if (inlen != func->m)
 	{
-		fz_warn("tried to evaluate function with wrong number of inputs");
+		fz_warn(ctx, "tried to evaluate function with wrong number of inputs");
 		return;
 	}
 	if (func->n != outlen)
 	{
-		fz_warn("tried to evaluate function with wrong number of outputs");
+		fz_warn(ctx, "tried to evaluate function with wrong number of outputs");
 		return;
 	}
 
 	switch(func->type)
 	{
-	case SAMPLE: eval_sample_func(func, in, out); break;
-	case EXPONENTIAL: eval_exponential_func(func, *in, out); break;
-	case STITCHING: eval_stitching_func(func, *in, out); break;
-	case POSTSCRIPT: eval_postscript_func(func, in, out); break;
+	case SAMPLE: eval_sample_func(ctx, func, in, out); break;
+	case EXPONENTIAL: eval_exponential_func(ctx, func, *in, out); break;
+	case STITCHING: eval_stitching_func(ctx, func, *in, out); break;
+	case POSTSCRIPT: eval_postscript_func(ctx, func, in, out); break;
 	}
 }
 

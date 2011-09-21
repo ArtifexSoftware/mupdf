@@ -49,12 +49,12 @@ read_flated(fz_stream *stm, unsigned char *outbuf, int outlen)
 		}
 		else if (code == Z_BUF_ERROR)
 		{
-			fz_warn("premature end of data in flate filter");
+			fz_warn(stm->ctx, "premature end of data in flate filter");
 			return outlen - zp->avail_out;
 		}
 		else if (code == Z_DATA_ERROR && zp->avail_in == 0)
 		{
-			fz_warn("ignoring zlib error: %s", zp->msg);
+			fz_warn(stm->ctx, "ignoring zlib error: %s", zp->msg);
 			return outlen - zp->avail_out;
 		}
 		else if (code != Z_OK)
@@ -74,7 +74,7 @@ close_flated(fz_stream *stm)
 
 	code = inflateEnd(&state->z);
 	if (code != Z_OK)
-		fz_warn("zlib error: inflateEnd: %s", state->z.msg);
+		fz_warn(stm->ctx, "zlib error: inflateEnd: %s", state->z.msg);
 
 	fz_close(state->chain);
 	fz_free(stm->ctx, state);
@@ -97,7 +97,7 @@ fz_open_flated(fz_stream *chain)
 
 	code = inflateInit(&state->z);
 	if (code != Z_OK)
-		fz_warn("zlib error: inflateInit: %s", state->z.msg);
+		fz_warn(chain->ctx, "zlib error: inflateInit: %s", state->z.msg);
 
 	return fz_new_stream(chain->ctx, state, read_flated, close_flated);
 }

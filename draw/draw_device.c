@@ -100,7 +100,7 @@ static void fz_knockout_begin(fz_draw_device *dev)
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -160,7 +160,7 @@ static void fz_knockout_end(fz_draw_device *dev)
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -237,7 +237,7 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, fz_matrix ctm,
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(dev);
 
-	fz_convert_color(colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -290,7 +290,7 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, fz_
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(dev);
 
-	fz_convert_color(colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -325,7 +325,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, f
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -396,7 +396,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect *rect, fz_strok
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -498,7 +498,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, fz_matrix ctm,
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(dev);
 
-	fz_convert_color(colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -557,7 +557,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke, fz_
 	if (dev->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(dev);
 
-	fz_convert_color(colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -609,7 +609,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, fz_matrix ctm, int accumulate)
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -702,7 +702,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -794,7 +794,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 
 	if (!model)
 	{
-		fz_warn("cannot render shading directly to an alpha mask");
+		fz_warn(dev->ctx, "cannot render shading directly to an alpha mask");
 		return;
 	}
 
@@ -811,7 +811,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 	{
 		unsigned char *s;
 		int x, y, n, i;
-		fz_convert_color(shade->colorspace, shade->background, model, colorfv);
+		fz_convert_color(dev->ctx, shade->colorspace, shade->background, model, colorfv);
 		for (i = 0; i < model->n; i++)
 			colorbv[i] = colorfv[i] * 255;
 		colorbv[i] = 255;
@@ -906,7 +906,7 @@ fz_draw_fill_image(fz_device *devp, fz_pixmap *image, fz_matrix ctm, float alpha
 
 	if (!model)
 	{
-		fz_warn("cannot render image directly to an alpha mask");
+		fz_warn(dev->ctx, "cannot render image directly to an alpha mask");
 		return;
 	}
 
@@ -1011,7 +1011,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_pixmap *image, fz_matrix ctm,
 			image = scaled;
 	}
 
-	fz_convert_color(colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -1037,7 +1037,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_pixmap *image, fz_rect *rect, fz_mat
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -1180,7 +1180,7 @@ fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace 
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -1203,7 +1203,7 @@ fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace 
 		float bc;
 		if (!colorspace)
 			colorspace = fz_device_gray;
-		fz_convert_color(colorspace, colorfv, fz_device_gray, &bc);
+		fz_convert_color(dev->ctx, colorspace, colorfv, fz_device_gray, &bc);
 		fz_clear_pixmap_with_color(dest, bc * 255);
 		if (shape)
 			fz_clear_pixmap_with_color(shape, 255);
@@ -1242,7 +1242,7 @@ fz_draw_end_mask(fz_device *devp)
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -1299,7 +1299,7 @@ fz_draw_begin_group(fz_device *devp, fz_rect rect, int isolated, int knockout, i
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -1429,7 +1429,7 @@ fz_draw_begin_tile(fz_device *devp, fz_rect area, fz_rect view, float xstep, flo
 
 	if (dev->top == STACK_SIZE)
 	{
-		fz_warn("assert: too many buffers on stack");
+		fz_warn(dev->ctx, "assert: too many buffers on stack");
 		return;
 	}
 
@@ -1516,7 +1516,7 @@ fz_draw_free_user(fz_device *devp)
 	fz_draw_device *dev = devp->user;
 	/* TODO: pop and free the stacks */
 	if (dev->top > 0)
-		fz_warn("items left on stack in draw device: %d", dev->top);
+		fz_warn(dev->ctx, "items left on stack in draw device: %d", dev->top);
 	fz_free_gel(dev->gel);
 	fz_free(devp->ctx, dev);
 }

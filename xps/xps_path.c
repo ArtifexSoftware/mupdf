@@ -468,7 +468,7 @@ xps_parse_arc_segment(fz_context *ctx, fz_path *path, xml_element *root, int str
 
 	if (!point_att || !size_att || !rotation_angle_att || !is_large_arc_att || !sweep_direction_att)
 	{
-		fz_warn("ArcSegment element is missing attributes");
+		fz_warn(ctx, "ArcSegment element is missing attributes");
 		return;
 	}
 
@@ -506,7 +506,7 @@ xps_parse_poly_quadratic_bezier_segment(fz_context *ctx, fz_path *path, xml_elem
 
 	if (!points_att)
 	{
-		fz_warn("PolyQuadraticBezierSegment element has no points");
+		fz_warn(ctx, "PolyQuadraticBezierSegment element has no points");
 		return;
 	}
 
@@ -555,7 +555,7 @@ xps_parse_poly_bezier_segment(fz_context *ctx, fz_path *path, xml_element *root,
 
 	if (!points_att)
 	{
-		fz_warn("PolyBezierSegment element has no points");
+		fz_warn(ctx, "PolyBezierSegment element has no points");
 		return;
 	}
 
@@ -595,7 +595,7 @@ xps_parse_poly_line_segment(fz_context *ctx, fz_path *path, xml_element *root, i
 
 	if (!points_att)
 	{
-		fz_warn("PolyLineSegment element has no points");
+		fz_warn(ctx, "PolyLineSegment element has no points");
 		return;
 	}
 

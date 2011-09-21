@@ -121,9 +121,6 @@ typedef int fz_error;
 
 #define fz_okay ((fz_error)0)
 
-void fz_warn(char *fmt, ...) __printflike(1, 2);
-void fz_flush_warnings(void);
-
 fz_error fz_error_make_imp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
 fz_error fz_error_note_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
 void fz_error_handle_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
@@ -136,12 +133,20 @@ void fz_error_handle_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
 int fz_get_error_count(void);
 char *fz_get_error_line(int n);
 
-/* Context types */
+/* Contexts */
 
+typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
+typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_context_s fz_context;
 
-/* Exception context */
+struct fz_alloc_context_s
+{
+	void *user;
+	void *(*malloc)(void *, unsigned int);
+	void *(*realloc)(void *, void *, unsigned int);
+	void *(*free)(void *, void *, unsigned int);
+};
 
 struct fz_error_context_s
 {
@@ -166,14 +171,22 @@ struct fz_error_context_s
 	if (ctx->error->stack[ctx->error->top--].failed)
 
 void fz_push_try(fz_error_context *ex);
-void fz_throw(fz_context *, char *, ...);
+void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
 void fz_rethrow(fz_context *);
 
-/* Fitz per-thread context */
+struct fz_warn_context_s
+{
+	char message[256];
+	int count;
+};
+
+void fz_warn(fz_context *ctx, char *fmt, ...) __printflike(2, 3);
+void fz_flush_warnings(fz_context *ctx);
 
 struct fz_context_s
 {
 	fz_error_context *error;
+	fz_warn_context *warn;
 };
 
 fz_context *fz_new_context(void);
@@ -224,10 +237,10 @@ typedef struct fz_hash_table_s fz_hash_table;
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen);
 void fz_debug_hash(fz_hash_table *table);
 void fz_empty_hash(fz_hash_table *table);
-void fz_free_hash(fz_context *ctx, fz_hash_table *table);
+void fz_free_hash(fz_hash_table *table);
 
 void *fz_hash_find(fz_hash_table *table, void *key);
-void fz_hash_insert(fz_context *ctx, fz_hash_table *table, void *key, void *val);
+void fz_hash_insert(fz_hash_table *table, void *key, void *val);
 void fz_hash_remove(fz_hash_table *table, void *key);
 
 int fz_hash_len(fz_hash_table *table);
@@ -746,8 +759,8 @@ struct fz_colorspace_s
 	int refs;
 	char name[16];
 	int n;
-	void (*to_rgb)(fz_colorspace *, float *src, float *rgb);
-	void (*from_rgb)(fz_colorspace *, float *rgb, float *dst);
+	void (*to_rgb)(fz_context *ctx, fz_colorspace *, float *src, float *rgb);
+	void (*from_rgb)(fz_context *ctx, fz_colorspace *, float *rgb, float *dst);
 	void (*free_data)(fz_context *Ctx, fz_colorspace *);
 	void *data;
 };
@@ -756,7 +769,7 @@ fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n);
 fz_colorspace *fz_keep_colorspace(fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 
-void fz_convert_color(fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
+void fz_convert_color(fz_context *ctx, fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
 
 fz_colorspace *fz_find_device_colorspace(char *name);

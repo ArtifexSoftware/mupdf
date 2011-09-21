@@ -65,7 +65,7 @@ void
 fz_set_aa_level(int level)
 {
 #ifdef AA_BITS
-	fz_warn("anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_level);
+	fz_warn(ctx, "anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_level);
 #else
 	if (level > 6)
 	{

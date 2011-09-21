@@ -254,10 +254,10 @@ static void pdf_show_clip(pdf_csi *csi, int even_odd)
 static void
 pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_path *path;
 	fz_rect bbox;
-	fz_context *ctx = csi->dev->ctx;
 
 	path = csi->path;
 	csi->path = fz_new_path(ctx);
@@ -452,6 +452,7 @@ pdf_flush_text(pdf_csi *csi)
 static void
 pdf_show_char(pdf_csi *csi, int cid)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_font_desc *fontdesc = gstate->font;
 	fz_matrix tsm, trm;
@@ -462,7 +463,6 @@ pdf_show_char(pdf_csi *csi, int cid)
 	int ucsbuf[8];
 	int ucslen;
 	int i;
-	fz_context *ctx = csi->dev->ctx;
 
 	tsm.a = gstate->size * gstate->scale;
 	tsm.b = 0;
@@ -540,12 +540,13 @@ pdf_show_char(pdf_csi *csi, int cid)
 static void
 pdf_show_space(pdf_csi *csi, float tadj)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_font_desc *fontdesc = gstate->font;
 
 	if (!fontdesc)
 	{
-		fz_warn("cannot draw text since font and size not set");
+		fz_warn(ctx, "cannot draw text since font and size not set");
 		return;
 	}
 
@@ -558,6 +559,7 @@ pdf_show_space(pdf_csi *csi, float tadj)
 static void
 pdf_show_string(pdf_csi *csi, unsigned char *buf, int len)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	pdf_font_desc *fontdesc = gstate->font;
 	unsigned char *end = buf + len;
@@ -565,7 +567,7 @@ pdf_show_string(pdf_csi *csi, unsigned char *buf, int len)
 
 	if (!fontdesc)
 	{
-		fz_warn("cannot draw text since font and size not set");
+		fz_warn(ctx, "cannot draw text since font and size not set");
 		return;
 	}
 
@@ -576,7 +578,7 @@ pdf_show_string(pdf_csi *csi, unsigned char *buf, int len)
 		if (cid >= 0)
 			pdf_show_char(csi, cid);
 		else
-			fz_warn("cannot encode character with code point %#x", cpt);
+			fz_warn(ctx, "cannot encode character with code point %#x", cpt);
 		if (cpt == 32)
 			pdf_show_space(csi, gstate->word_space);
 	}
@@ -733,11 +735,12 @@ pdf_drop_material(fz_context *ctx, pdf_material *mat)
 static void
 pdf_gsave(pdf_csi *csi)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 
 	if (csi->gtop == nelem(csi->gstate) - 1)
 	{
-		fz_warn("gstate overflow in content stream");
+		fz_warn(ctx, "gstate overflow in content stream");
 		return;
 	}
 
@@ -756,13 +759,13 @@ pdf_gsave(pdf_csi *csi)
 static void
 pdf_grestore(pdf_csi *csi)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	int clip_depth = gs->clip_depth;
-	fz_context *ctx = csi->dev->ctx;
 
 	if (csi->gtop == 0)
 	{
-		fz_warn("gstate underflow in content stream");
+		fz_warn(ctx, "gstate underflow in content stream");
 		return;
 	}
 
@@ -816,6 +819,7 @@ pdf_free_csi(pdf_csi *csi)
 static void
 pdf_set_colorspace(pdf_csi *csi, int what, fz_colorspace *colorspace)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
 
@@ -823,7 +827,7 @@ pdf_set_colorspace(pdf_csi *csi, int what, fz_colorspace *colorspace)
 
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 
-	fz_drop_colorspace(csi->dev->ctx, mat->colorspace);
+	fz_drop_colorspace(ctx, mat->colorspace);
 
 	mat->kind = PDF_MAT_COLOR;
 	mat->colorspace = fz_keep_colorspace(colorspace);
@@ -837,6 +841,7 @@ pdf_set_colorspace(pdf_csi *csi, int what, fz_colorspace *colorspace)
 static void
 pdf_set_color(pdf_csi *csi, int what, float *v)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
 	int i;
@@ -859,13 +864,14 @@ pdf_set_color(pdf_csi *csi, int what, float *v)
 			mat->v[i] = v[i];
 		break;
 	default:
-		fz_warn("color incompatible with material");
+		fz_warn(ctx, "color incompatible with material");
 	}
 }
 
 static void
 pdf_set_shade(pdf_csi *csi, int what, fz_shade *shade)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
 
@@ -874,7 +880,7 @@ pdf_set_shade(pdf_csi *csi, int what, fz_shade *shade)
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 
 	if (mat->shade)
-		fz_drop_shade(csi->dev->ctx, mat->shade);
+		fz_drop_shade(ctx, mat->shade);
 
 	mat->kind = PDF_MAT_SHADE;
 	mat->shade = fz_keep_shade(shade);
@@ -883,6 +889,7 @@ pdf_set_shade(pdf_csi *csi, int what, fz_shade *shade)
 static void
 pdf_set_pattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
 
@@ -891,7 +898,7 @@ pdf_set_pattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 
 	if (mat->pattern)
-		pdf_drop_pattern(csi->dev->ctx, mat->pattern);
+		pdf_drop_pattern(ctx, mat->pattern);
 
 	mat->kind = PDF_MAT_PATTERN;
 	if (pat)
@@ -906,13 +913,14 @@ pdf_set_pattern(pdf_csi *csi, int what, pdf_pattern *pat, float *v)
 static void
 pdf_unset_pattern(pdf_csi *csi, int what)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	pdf_material *mat;
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 	if (mat->kind == PDF_MAT_PATTERN)
 	{
 		if (mat->pattern)
-			pdf_drop_pattern(csi->dev->ctx, mat->pattern);
+			pdf_drop_pattern(ctx, mat->pattern);
 		mat->pattern = NULL;
 		mat->kind = PDF_MAT_COLOR;
 	}
@@ -925,13 +933,13 @@ pdf_unset_pattern(pdf_csi *csi, int what)
 static void
 pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate;
 	fz_matrix ptm, invptm;
 	fz_matrix oldtopctm;
 	fz_error error;
 	int x0, y0, x1, y1;
 	int oldtop;
-	fz_context *ctx = csi->dev->ctx;
 
 	pdf_gsave(csi);
 	gstate = csi->gstate + csi->gtop;
@@ -1030,12 +1038,12 @@ cleanup:
 static fz_error
 pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix transform)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_error error;
 	pdf_gstate *gstate;
 	fz_matrix oldtopctm;
 	int oldtop;
 	int popmask;
-	fz_context *ctx = csi->dev->ctx;
 
 	pdf_gsave(csi);
 
@@ -1121,10 +1129,10 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 static fz_error
 pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_colorspace *colorspace;
 	int i, k, n;
-	fz_context *ctx = csi->dev->ctx;
 
 	pdf_flush_text(csi);
 
@@ -1255,7 +1263,7 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 		else if (!strcmp(s, "TR"))
 		{
 			if (fz_is_name(val) && strcmp(fz_to_name(val), "Identity"))
-				fz_warn("ignoring transfer function");
+				fz_warn(ctx, "ignoring transfer function");
 		}
 	}
 
@@ -1272,13 +1280,13 @@ static void pdf_run_BDC(pdf_csi *csi)
 
 static fz_error pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 {
+	fz_context *ctx = csi->dev->ctx;
 	int ch;
 	fz_error error;
 	char *buf = csi->xref->scratch;
 	int buflen = sizeof(csi->xref->scratch);
 	fz_pixmap *img;
 	fz_obj *obj;
-	fz_context *ctx = csi->dev->ctx;
 
 	error = pdf_parse_dict(&obj, csi->xref, file, buf, buflen);
 	if (error)
@@ -1338,10 +1346,10 @@ static void pdf_run_Bstar(pdf_csi *csi)
 
 static fz_error pdf_run_cs_imp(pdf_csi *csi, fz_obj *rdb, int what)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_colorspace *colorspace;
 	fz_obj *obj, *dict;
 	fz_error error;
-	fz_context *ctx = csi->dev->ctx;
 
 	if (!strcmp(csi->name, "Pattern"))
 	{
@@ -1397,11 +1405,11 @@ static void pdf_run_DP(pdf_csi *csi)
 
 static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_obj *dict;
 	fz_obj *obj;
 	fz_obj *subtype;
 	fz_error error;
-	fz_context *ctx = csi->dev->ctx;
 
 	dict = fz_dict_gets(rdb, "XObject");
 	if (!dict)
@@ -1455,7 +1463,7 @@ static fz_error pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 
 	else if (!strcmp(fz_to_name(subtype), "PS"))
 	{
-		fz_warn("ignoring XObject with subtype PS");
+		fz_warn(ctx, "ignoring XObject with subtype PS");
 	}
 
 	else
@@ -1535,12 +1543,12 @@ static void pdf_run_S(pdf_csi *csi)
 
 static fz_error pdf_run_SC_imp(pdf_csi *csi, fz_obj *rdb, int what, pdf_material *mat)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_error error;
 	fz_obj *patterntype;
 	fz_obj *dict;
 	fz_obj *obj;
 	int kind;
-	fz_context *ctx = csi->dev->ctx;
 
 	kind = mat->kind;
 	if (csi->name[0])
@@ -1643,11 +1651,11 @@ static void pdf_run_TL(pdf_csi *csi)
 
 static fz_error pdf_run_Tf(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_error error;
 	fz_obj *dict;
 	fz_obj *obj;
-	fz_context *ctx = csi->dev->ctx;
 
 	gstate->size = csi->stack[0];
 	if (gstate->font)
@@ -1889,8 +1897,8 @@ static void pdf_run_q(pdf_csi *csi)
 
 static void pdf_run_re(pdf_csi *csi)
 {
-	float x, y, w, h;
 	fz_context *ctx = csi->dev->ctx;
+	float x, y, w, h;
 
 	x = csi->stack[0];
 	y = csi->stack[1];
@@ -1921,11 +1929,11 @@ static void pdf_run(pdf_csi *csi)
 
 static fz_error pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_obj *dict;
 	fz_obj *obj;
 	fz_shade *shd;
 	fz_error error;
-	fz_context *ctx = csi->dev->ctx;
 
 	dict = fz_dict_gets(rdb, "Shading");
 	if (!dict)
@@ -2013,6 +2021,7 @@ static void pdf_run_dquote(pdf_csi *csi)
 static fz_error
 pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_error error;
 	int key;
 
@@ -2123,7 +2132,7 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 	case A('y'): pdf_run_y(csi); break;
 	default:
 		if (!csi->xbalance)
-			fz_warn("unknown keyword: '%s'", buf);
+			fz_warn(ctx, "unknown keyword: '%s'", buf);
 		break;
 	}
 
@@ -2133,9 +2142,9 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 static fz_error
 pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen)
 {
+	fz_context *ctx = csi->dev->ctx;
 	fz_error error;
 	int tok, len, in_array;
-	fz_context *ctx = csi->dev->ctx;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
@@ -2168,7 +2177,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			else if (tok == PDF_TOK_KEYWORD)
 			{
 				if (!strcmp(buf, "Tw") || !strcmp(buf, "Tc"))
-					fz_warn("ignoring keyword '%s' inside array", buf);
+					fz_warn(ctx, "ignoring keyword '%s' inside array", buf);
 				else
 					return fz_error_make("syntax error in array");
 			}

@@ -52,7 +52,7 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 	if (src->bytes_in_buffer == 0)
 	{
 		static unsigned char eoi[2] = { 0xFF, JPEG_EOI };
-		fz_warn("premature end of file in jpeg");
+		fz_warn(state->ctx, "premature end of file in jpeg");
 		src->next_input_byte = eoi;
 		src->bytes_in_buffer = 2;
 	}
@@ -187,7 +187,7 @@ close_dctd(fz_stream *stm)
 	if (setjmp(state->jb))
 	{
 		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
-		fz_warn("jpeg error: %s", state->msg);
+		fz_warn(state->ctx, "jpeg error: %s", state->msg);
 		goto skip;
 	}
 

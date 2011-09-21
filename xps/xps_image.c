@@ -110,7 +110,7 @@ xps_parse_image_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 
 	part = xps_find_image_brush_source_part(ctx, base_uri, root);
 	if (!part) {
-		fz_warn("cannot find image source");
+		fz_warn(ctx, "cannot find image source");
 		return;
 	}
 

@@ -119,7 +119,7 @@ build_filter(fz_stream *chain, pdf_xref * xref, fz_obj * f, fz_obj * p, int num,
 
 		if (!xref->crypt)
 		{
-			fz_warn("crypt filter in unencrypted document");
+			fz_warn(ctx, "crypt filter in unencrypted document");
 			return chain;
 		}
 
@@ -130,7 +130,7 @@ build_filter(fz_stream *chain, pdf_xref * xref, fz_obj * f, fz_obj * p, int num,
 		return chain;
 	}
 
-	fz_warn("unknown filter name (%s)", s);
+	fz_warn(ctx, "unknown filter name (%s)", s);
 	return chain;
 }
 

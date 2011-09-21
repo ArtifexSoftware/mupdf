@@ -191,7 +191,7 @@ pdf_new_crypt(fz_context *ctx, pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 		memcpy(crypt->u, fz_to_str_buf(obj), 48);
 	else if (fz_is_string(obj) && fz_to_str_len(obj) < 32)
 	{
-		fz_warn("encryption password key too short (%d)", fz_to_str_len(obj));
+		fz_warn(ctx, "encryption password key too short (%d)", fz_to_str_len(obj));
 		memcpy(crypt->u, fz_to_str_buf(obj), fz_to_str_len(obj));
 	}
 	else
@@ -242,7 +242,7 @@ pdf_new_crypt(fz_context *ctx, pdf_crypt **cryptp, fz_obj *dict, fz_obj *id)
 			crypt->id = fz_keep_obj(obj);
 	}
 	else
-		fz_warn("missing file identifier, may not be able to do decryption");
+		fz_warn(ctx, "missing file identifier, may not be able to do decryption");
 
 	*cryptp = crypt;
 	return fz_okay;
@@ -298,7 +298,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, fz_obj *cf_obj, ch
 		else if (!strcmp(fz_to_name(obj), "AESV3"))
 			cf->method = PDF_CRYPT_AESV3;
 		else
-			fz_error_make("unknown encryption method: %s", fz_to_name(obj));
+			fz_warn(ctx, "unknown encryption method: %s", fz_to_name(obj));
 	}
 
 	obj = fz_dict_gets(dict, "Length");
@@ -731,7 +731,7 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, fz_obj *obj, unsigned char 
 		if (crypt->strf.method == PDF_CRYPT_AESV2 || crypt->strf.method == PDF_CRYPT_AESV3)
 		{
 			if (n & 15 || n < 32)
-				fz_warn("invalid string length for aes encryption");
+				fz_warn(ctx, "invalid string length for aes encryption");
 			else
 			{
 				unsigned char iv[16];
@@ -741,7 +741,7 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, fz_obj *obj, unsigned char 
 				aes_crypt_cbc(&aes, AES_DECRYPT, n - 16, iv, s + 16, s);
 				/* delete space used for iv and padding bytes at end */
 				if (s[n - 17] < 1 || s[n - 17] > 16)
-					fz_warn("aes padding out of range");
+					fz_warn(ctx, "aes padding out of range");
 				else
 					fz_set_str_len(obj, n - 16 - s[n - 17]);
 			}

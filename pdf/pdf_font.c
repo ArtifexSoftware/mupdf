@@ -144,14 +144,14 @@ pdf_font_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 	return cid;
 }
 
-static int ft_width(pdf_font_desc *fontdesc, int cid)
+static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	int gid = ft_cid_to_gid(fontdesc, cid);
 	int fterr = FT_Load_Glyph(fontdesc->font->ft_face, gid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 	if (fterr)
 	{
-		fz_warn("freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
+		fz_warn(ctx, "freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
 		return 0;
 	}
 	return ((FT_Face)fontdesc->font->ft_face)->glyph->advance.x;
@@ -448,7 +448,7 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 				break;
 		if (cp936fonts[i])
 		{
-			fz_warn("workaround for S22PDF lying about chinese font encodings");
+			fz_warn(ctx, "workaround for S22PDF lying about chinese font encodings");
 			pdf_drop_font(ctx, fontdesc);
 			fontdesc = pdf_new_font_desc(ctx);
 			error = pdf_load_font_descriptor(fontdesc, xref, descriptor, "Adobe-GB1", cp936fonts[i+1]);
@@ -499,10 +499,10 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 	{
 		fterr = FT_Set_Charmap(face, cmap);
 		if (fterr)
-			fz_warn("freetype could not set cmap: %s", ft_error_string(fterr));
+			fz_warn(ctx, "freetype could not set cmap: %s", ft_error_string(fterr));
 	}
 	else
-		fz_warn("freetype could not find any cmaps");
+		fz_warn(ctx, "freetype could not find any cmaps");
 
 	etable = fz_malloc_array(ctx, 256, sizeof(unsigned short));
 	for (i = 0; i < 256; i++)
@@ -633,7 +633,7 @@ pdf_load_simple_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *dict)
 			{
 				fterr = FT_Get_Glyph_Name(face, etable[i], ebuffer[i], 32);
 				if (fterr)
-					fz_warn("freetype get glyph name (gid %d): %s", etable[i], ft_error_string(fterr));
+					fz_warn(ctx, "freetype get glyph name (gid %d): %s", etable[i], ft_error_string(fterr));
 				if (ebuffer[i][0])
 					estrings[i] = ebuffer[i];
 			}
@@ -679,10 +679,10 @@ skip_encoding:
 	{
 		fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 		if (fterr)
-			fz_warn("freetype set character size: %s", ft_error_string(fterr));
+			fz_warn(ctx, "freetype set character size: %s", ft_error_string(fterr));
 		for (i = 0; i < 256; i++)
 		{
-			pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(fontdesc, i));
+			pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
 		}
 	}
 
@@ -1112,17 +1112,17 @@ pdf_load_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_obj *di
 		error = pdf_load_type3_font(fontdescp, xref, rdb, dict);
 	else if (charprocs)
 	{
-		fz_warn("unknown font format, guessing type3.");
+		fz_warn(ctx, "unknown font format, guessing type3.");
 		error = pdf_load_type3_font(fontdescp, xref, rdb, dict);
 	}
 	else if (dfonts)
 	{
-		fz_warn("unknown font format, guessing type0.");
+		fz_warn(ctx, "unknown font format, guessing type0.");
 		error = pdf_load_type0_font(fontdescp, xref, dict);
 	}
 	else
 	{
-		fz_warn("unknown font format, guessing type1 or truetype.");
+		fz_warn(ctx, "unknown font format, guessing type1 or truetype.");
 		error = pdf_load_simple_font(fontdescp, xref, dict);
 	}
 	if (error)

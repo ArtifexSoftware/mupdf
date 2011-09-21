@@ -78,7 +78,7 @@ pdf_parse_cmap_name(pdf_cmap *cmap, fz_stream *file)
 	if (tok == PDF_TOK_NAME)
 		fz_strlcpy(cmap->cmap_name, buf, sizeof(cmap->cmap_name));
 	else
-		fz_warn("expected name after CMapName in cmap");
+		fz_warn(file->ctx, "expected name after CMapName in cmap");
 
 	return fz_okay;
 }
@@ -98,7 +98,7 @@ pdf_parse_wmode(pdf_cmap *cmap, fz_stream *file)
 	if (tok == PDF_TOK_INT)
 		pdf_set_wmode(cmap, atoi(buf));
 	else
-		fz_warn("expected integer after WMode in cmap");
+		fz_warn(file->ctx, "expected integer after WMode in cmap");
 
 	return fz_okay;
 }
@@ -130,7 +130,7 @@ pdf_parse_codespace_range(pdf_cmap *cmap, fz_stream *file)
 			if (tok == PDF_TOK_STRING)
 			{
 				hi = pdf_code_from_string(buf, len);
-				pdf_add_codespace(cmap, lo, hi, len);
+				pdf_add_codespace(file->ctx, cmap, lo, hi, len);
 			}
 			else break;
 		}

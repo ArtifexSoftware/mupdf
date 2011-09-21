@@ -64,7 +64,7 @@ static void seek_file(fz_stream *stm, int offset, int whence)
 {
 	int n = lseek(*(int*)stm->state, offset, whence);
 	if (n < 0)
-		fz_warn("cannot lseek: %s", strerror(errno));
+		fz_warn(stm->ctx, "cannot lseek: %s", strerror(errno));
 	stm->pos = n;
 	stm->rp = stm->bp;
 	stm->wp = stm->bp;
@@ -74,7 +74,7 @@ static void close_file(fz_stream *stm)
 {
 	int n = close(*(int*)stm->state);
 	if (n < 0)
-		fz_warn("close error: %s", strerror(errno));
+		fz_warn(stm->ctx, "close error: %s", strerror(errno));
 	fz_free(stm->ctx, stm->state);
 }
 

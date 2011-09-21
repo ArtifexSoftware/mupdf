@@ -59,7 +59,7 @@ void
 fz_free_glyph_cache(fz_context *ctx, fz_glyph_cache *cache)
 {
 	fz_evict_glyph_cache(ctx, cache);
-	fz_free_hash(ctx, cache->hash);
+	fz_free_hash(cache->hash);
 	fz_free(ctx, cache);
 }
 
@@ -81,7 +81,7 @@ fz_render_glyph(fz_context *ctx, fz_glyph_cache *cache, fz_font *font, int gid, 
 	if (size > MAX_FONT_SIZE)
 	{
 		/* TODO: this case should be handled by rendering glyph as a path fill */
-		fz_warn("font size too large (%g), not rendering glyph", size);
+		fz_warn(ctx, "font size too large (%g), not rendering glyph", size);
 		return NULL;
 	}
 
@@ -112,7 +112,7 @@ fz_render_glyph(fz_context *ctx, fz_glyph_cache *cache, fz_font *font, int gid, 
 	}
 	else
 	{
-		fz_warn("assert: uninitialized font structure");
+		fz_warn(ctx, "assert: uninitialized font structure");
 		return NULL;
 	}
 
@@ -123,7 +123,7 @@ fz_render_glyph(fz_context *ctx, fz_glyph_cache *cache, fz_font *font, int gid, 
 			if (cache->total + val->w * val->h > MAX_CACHE_SIZE)
 				fz_evict_glyph_cache(ctx, cache);
 			fz_keep_font(key.font);
-			fz_hash_insert(ctx, cache->hash, &key, val);
+			fz_hash_insert(cache->hash, &key, val);
 			cache->total += val->w * val->h;
 			return fz_keep_pixmap(val);
 		}

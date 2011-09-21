@@ -121,7 +121,7 @@ pdf_load_type3_font(pdf_font_desc **fontdescp, pdf_xref *xref, fz_obj *rdb, fz_o
 	if (fontdesc->font->t3resources)
 		fz_keep_obj(fontdesc->font->t3resources);
 	if (!fontdesc->font->t3resources)
-		fz_warn("no resource dictionary for type 3 font!");
+		fz_warn(ctx, "no resource dictionary for type 3 font!");
 
 	fontdesc->font->t3xref = xref;
 	fontdesc->font->t3run = pdf_run_glyph_func;

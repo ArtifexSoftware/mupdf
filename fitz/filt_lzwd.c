@@ -104,7 +104,7 @@ read_lzwd(fz_stream *stm, unsigned char *buf, int len)
 			else if (code == next_code)
 				table[next_code].value = table[next_code].first_char;
 			else
-				fz_warn("out of range code encountered in lzw decode");
+				fz_warn(stm->ctx, "out of range code encountered in lzw decode");
 
 			next_code ++;
 

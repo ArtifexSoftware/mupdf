@@ -481,7 +481,7 @@ fz_paint_radial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 }
 
 static void
-fz_paint_mesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+fz_paint_mesh(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	float tri[3][MAXN];
 	fz_point p;
@@ -509,7 +509,7 @@ fz_paint_mesh(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 				tri[k][2] = *mesh++ * 255;
 			else
 			{
-				fz_convert_color(shade->colorspace, mesh, dest->colorspace, tri[k] + 2);
+				fz_convert_color(ctx, shade->colorspace, mesh, dest->colorspace, tri[k] + 2);
 				for (i = 0; i < dest->colorspace->n; i++)
 					tri[k][i + 2] *= 255;
 				mesh += shade->colorspace->n;
@@ -533,7 +533,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest,
 	{
 		for (i = 0; i < 256; i++)
 		{
-			fz_convert_color(shade->colorspace, shade->function[i], dest->colorspace, color);
+			fz_convert_color(ctx, shade->colorspace, shade->function[i], dest->colorspace, color);
 			for (k = 0; k < dest->colorspace->n; k++)
 				clut[i][k] = color[k] * 255;
 			clut[i][k] = shade->function[i][shade->colorspace->n] * 255;
@@ -551,7 +551,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest,
 	{
 	case FZ_LINEAR: fz_paint_linear(shade, ctm, temp, bbox); break;
 	case FZ_RADIAL: fz_paint_radial(shade, ctm, temp, bbox); break;
-	case FZ_MESH: fz_paint_mesh(shade, ctm, temp, bbox); break;
+	case FZ_MESH: fz_paint_mesh(ctx, shade, ctm, temp, bbox); break;
 	}
 
 	if (shade->use_function)

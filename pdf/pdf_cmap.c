@@ -161,11 +161,11 @@ pdf_debug_cmap(pdf_cmap *cmap)
  * multi-byte encoded strings.
  */
 void
-pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n)
+pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, int low, int high, int n)
 {
 	if (cmap->codespace_len + 1 == nelem(cmap->codespace))
 	{
-		fz_warn("assert: too many code space ranges");
+		fz_warn(ctx, "assert: too many code space ranges");
 		return;
 	}
 
@@ -183,7 +183,7 @@ add_table(fz_context *ctx, pdf_cmap *cmap, int value)
 {
 	if (cmap->tlen == USHRT_MAX)
 	{
-		fz_warn("cmap table is full; ignoring additional entries");
+		fz_warn(ctx, "cmap table is full; ignoring additional entries");
 		return;
 	}
 	if (cmap->tlen + 1 > cmap->tcap)
@@ -229,7 +229,7 @@ pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, int low, int *table, int
 	int high = low + len;
 	int offset = cmap->tlen;
 	if (cmap->tlen + len >= USHRT_MAX)
-		fz_warn("cannot map range to table; table is full");
+		fz_warn(ctx, "cannot map range to table; table is full");
 	else
 	{
 		for (i = 0; i < len; i++)
@@ -263,7 +263,7 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int low, int *values, int l
 
 	if (len > 8)
 	{
-		fz_warn("one to many mapping is too large (%d); truncating", len);
+		fz_warn(ctx, "one to many mapping is too large (%d); truncating", len);
 		len = 8;
 	}
 
@@ -271,12 +271,12 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int low, int *values, int l
 		values[0] >= 0xD800 && values[0] <= 0xDBFF &&
 		values[1] >= 0xDC00 && values[1] <= 0xDFFF)
 	{
-		fz_warn("ignoring surrogate pair mapping in cmap");
+		fz_warn(ctx, "ignoring surrogate pair mapping in cmap");
 		return;
 	}
 
 	if (cmap->tlen + len + 1 >= USHRT_MAX)
-		fz_warn("cannot map one to many; table is full");
+		fz_warn(ctx, "cannot map one to many; table is full");
 	else
 	{
 		offset = cmap->tlen;
@@ -311,7 +311,7 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 
 	if (cmap->tlen == USHRT_MAX)
 	{
-		fz_warn("cmap table is full; will not combine ranges");
+		fz_warn(ctx, "cmap table is full; will not combine ranges");
 		return;
 	}
 
@@ -398,7 +398,7 @@ pdf_sort_cmap(fz_context *ctx, pdf_cmap *cmap)
 
 	cmap->rlen = a - cmap->ranges + 1;
 
-	fz_flush_warnings();
+	fz_flush_warnings(ctx);
 }
 
 /*

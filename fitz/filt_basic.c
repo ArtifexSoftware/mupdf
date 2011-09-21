@@ -227,7 +227,7 @@ read_a85d(fz_stream *stm, unsigned char *buf, int len)
 		{
 			c = fz_read_byte(state->chain);
 			if (c != '>')
-				fz_warn("bad eod marker in a85d");
+				fz_warn(stm->ctx, "bad eod marker in a85d");
 
 			switch (count) {
 			case 0:

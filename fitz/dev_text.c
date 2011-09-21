@@ -239,7 +239,7 @@ fz_text_extract_span(fz_context *ctx, fz_text_span **last, fz_text *text, fz_mat
 	{
 		err = FT_Set_Char_Size(font->ft_face, 64, 64, 72, 72);
 		if (err)
-			fz_warn("freetype set character size: %s", ft_error_string(err));
+			fz_warn(ctx, "freetype set character size: %s", ft_error_string(err));
 		ascender = (float)face->ascender / face->units_per_EM;
 		descender = (float)face->descender / face->units_per_EM;
 	}

@@ -129,7 +129,7 @@ static void savefont(fz_obj *dict, int num)
 
 	if (!stream)
 	{
-		fz_warn("Unhandled font type");
+		fz_warn(ctx, "Unhandled font type");
 		return;
 	}
 
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 	}
 
 	pdf_free_xref(xref);
-	fz_flush_warnings();
+	fz_flush_warnings(ctx);
 	fz_free_context(ctx);
 	return 0;
 }

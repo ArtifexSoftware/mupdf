@@ -161,7 +161,7 @@ void pdf_age_store(fz_context *ctx, pdf_store *store, int maxage);
 typedef struct pdf_function_s pdf_function;
 
 fz_error pdf_load_function(pdf_function **func, pdf_xref *xref, fz_obj *ref);
-void pdf_eval_function(pdf_function *func, float *in, int inlen, float *out, int outlen);
+void pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen);
 pdf_function *pdf_keep_function(pdf_function *func);
 void pdf_drop_function(fz_context *ctx, pdf_function *func);
 
@@ -272,7 +272,7 @@ int pdf_get_wmode(pdf_cmap *cmap);
 void pdf_set_wmode(pdf_cmap *cmap, int wmode);
 void pdf_set_usecmap(fz_context *ctx, pdf_cmap *cmap, pdf_cmap *usecmap);
 
-void pdf_add_codespace(pdf_cmap *cmap, int low, int high, int n);
+void pdf_add_codespace(fz_context *ctx, pdf_cmap *cmap, int low, int high, int n);
 void pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, int low, int *map, int len);
 void pdf_map_range_to_range(fz_context *ctx, pdf_cmap *cmap, int srclo, int srchi, int dstlo);
 void pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int one, int *many, int len);

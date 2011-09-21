@@ -61,7 +61,7 @@ xps_parse_gradient_stops(xps_context *ctx, char *base_uri, xml_element *node,
 
 				xps_parse_color(ctx, base_uri, color, &colorspace, sample);
 
-				fz_convert_color(colorspace, sample + 1, fz_device_rgb, rgb);
+				fz_convert_color(ctx->ctx, colorspace, sample + 1, fz_device_rgb, rgb);
 
 				stops[count].r = rgb[0];
 				stops[count].g = rgb[1];
@@ -76,7 +76,7 @@ xps_parse_gradient_stops(xps_context *ctx, char *base_uri, xml_element *node,
 
 	if (count == 0)
 	{
-		fz_warn("gradient brush has no gradient stops");
+		fz_warn(ctx->ctx, "gradient brush has no gradient stops");
 		stops[0].offset = 0;
 		stops[0].r = 0;
 		stops[0].g = 0;
@@ -91,7 +91,7 @@ xps_parse_gradient_stops(xps_context *ctx, char *base_uri, xml_element *node,
 	}
 
 	if (count == maxcount)
-		fz_warn("gradient brush exceeded maximum number of gradient stops");
+		fz_warn(ctx->ctx, "gradient brush exceeded maximum number of gradient stops");
 
 	/* Postprocess to make sure the range of offsets is 0.0 to 1.0 */
 
@@ -425,14 +425,14 @@ xps_parse_gradient_brush(xps_context *ctx, fz_matrix ctm, fz_rect area,
 	ctm = fz_concat(transform, ctm);
 
 	if (!stop_tag) {
-		fz_warn("missing gradient stops tag");
+		fz_warn(ctx->ctx, "missing gradient stops tag");
 		return;
 	}
 
 	stop_count = xps_parse_gradient_stops(ctx, base_uri, stop_tag, stop_list, MAX_STOPS);
 	if (stop_count == 0)
 	{
-		fz_warn("no gradient stops found");
+		fz_warn(ctx->ctx, "no gradient stops found");
 		return;
 	}
 

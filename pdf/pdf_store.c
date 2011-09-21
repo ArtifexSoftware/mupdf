@@ -56,7 +56,7 @@ pdf_store_item(fz_context *ctx, pdf_store *store, pdf_store_keep_fn *keep_func, 
 		refkey.drop_func = drop_func;
 		refkey.num = fz_to_num(key);
 		refkey.gen = fz_to_gen(key);
-		fz_hash_insert(ctx, store->hash, &refkey, item);
+		fz_hash_insert(store->hash, &refkey, item);
 	}
 	else
 	{
@@ -191,7 +191,7 @@ void
 pdf_free_store(fz_context *ctx, pdf_store *store)
 {
 	pdf_age_store(ctx, store, 0);
-	fz_free_hash(ctx, store->hash);
+	fz_free_hash(store->hash);
 	fz_free(ctx, store);
 }
 

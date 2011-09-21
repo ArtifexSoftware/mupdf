@@ -581,7 +581,7 @@ skip:
 		{
 			c = fz_peek_byte(file);
 			if (c != '\n')
-				fz_warn("line feed missing after stream begin marker (%d %d R)", num, gen);
+				fz_warn(ctx, "line feed missing after stream begin marker (%d %d R)", num, gen);
 			else
 				fz_read_byte(file);
 		}
@@ -593,7 +593,7 @@ skip:
 	}
 	else
 	{
-		fz_warn("expected 'endobj' or 'stream' keyword (%d %d R)", num, gen);
+		fz_warn(ctx, "expected 'endobj' or 'stream' keyword (%d %d R)", num, gen);
 		stm_ofs = 0;
 	}
 

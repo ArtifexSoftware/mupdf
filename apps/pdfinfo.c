@@ -251,7 +251,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		fontdict = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(fontdict))
 		{
-			fz_warn("not a font dict (%d %d R)", fz_to_num(fontdict), fz_to_gen(fontdict));
+			fz_warn(ctx, "not a font dict (%d %d R)", fz_to_num(fontdict), fz_to_gen(fontdict));
 			continue;
 		}
 
@@ -300,7 +300,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		imagedict = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(imagedict))
 		{
-			fz_warn("not an image dict (%d %d R)", fz_to_num(imagedict), fz_to_gen(imagedict));
+			fz_warn(ctx, "not an image dict (%d %d R)", fz_to_num(imagedict), fz_to_gen(imagedict));
 			continue;
 		}
 
@@ -371,7 +371,7 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		xobjdict = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(xobjdict))
 		{
-			fz_warn("not a xobject dict (%d %d R)", fz_to_num(xobjdict), fz_to_gen(xobjdict));
+			fz_warn(ctx, "not a xobject dict (%d %d R)", fz_to_num(xobjdict), fz_to_gen(xobjdict));
 			continue;
 		}
 
@@ -422,7 +422,7 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		xobjdict = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(xobjdict))
 		{
-			fz_warn("not a xobject dict (%d %d R)", fz_to_num(xobjdict), fz_to_gen(xobjdict));
+			fz_warn(ctx, "not a xobject dict (%d %d R)", fz_to_num(xobjdict), fz_to_gen(xobjdict));
 			continue;
 		}
 
@@ -464,14 +464,14 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		shade = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(shade))
 		{
-			fz_warn("not a shading dict (%d %d R)", fz_to_num(shade), fz_to_gen(shade));
+			fz_warn(ctx, "not a shading dict (%d %d R)", fz_to_num(shade), fz_to_gen(shade));
 			continue;
 		}
 
 		type = fz_dict_gets(shade, "ShadingType");
 		if (!fz_is_int(type) || fz_to_int(type) < 1 || fz_to_int(type) > 7)
 		{
-			fz_warn("not a shading type (%d %d R)", fz_to_num(shade), fz_to_gen(shade));
+			fz_warn(ctx, "not a shading type (%d %d R)", fz_to_num(shade), fz_to_gen(shade));
 			type = NULL;
 		}
 
@@ -511,14 +511,14 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 		patterndict = fz_dict_get_val(dict, i);
 		if (!fz_is_dict(patterndict))
 		{
-			fz_warn("not a pattern dict (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
+			fz_warn(ctx, "not a pattern dict (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
 			continue;
 		}
 
 		type = fz_dict_gets(patterndict, "PatternType");
 		if (!fz_is_int(type) || fz_to_int(type) < 1 || fz_to_int(type) > 2)
 		{
-			fz_warn("not a pattern type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
+			fz_warn(ctx, "not a pattern type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
 			type = NULL;
 		}
 
@@ -527,14 +527,14 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 			paint = fz_dict_gets(patterndict, "PaintType");
 			if (!fz_is_int(paint) || fz_to_int(paint) < 1 || fz_to_int(paint) > 2)
 			{
-				fz_warn("not a pattern paint type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
+				fz_warn(ctx, "not a pattern paint type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
 				paint = NULL;
 			}
 
 			tiling = fz_dict_gets(patterndict, "TilingType");
 			if (!fz_is_int(tiling) || fz_to_int(tiling) < 1 || fz_to_int(tiling) > 3)
 			{
-				fz_warn("not a pattern tiling type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
+				fz_warn(ctx, "not a pattern tiling type (%d %d R)", fz_to_num(patterndict), fz_to_gen(patterndict));
 				tiling = NULL;
 			}
 		}

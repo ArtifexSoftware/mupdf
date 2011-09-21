@@ -1,40 +1,34 @@
 #include "fitz.h"
 
-/* Warning context
- * TODO: move into fz_context
- */
-enum { LINE_LEN = 160, LINE_COUNT = 25 };
+/* Warning context */
 
-static char warn_message[LINE_LEN] = "";
-static int warn_count = 0;
-
-void fz_flush_warnings(void)
+void fz_flush_warnings(fz_context *ctx)
 {
-	if (warn_count > 1)
-		fprintf(stderr, "warning: ... repeated %d times ...\n", warn_count);
-	warn_message[0] = 0;
-	warn_count = 0;
+	if (ctx->warn->count > 1)
+		fprintf(stderr, "warning: ... repeated %d times ...\n", ctx->warn->count);
+	ctx->warn->message[0] = 0;
+	ctx->warn->count = 0;
 }
 
-void fz_warn(char *fmt, ...)
+void fz_warn(fz_context *ctx, char *fmt, ...)
 {
 	va_list ap;
-	char buf[LINE_LEN];
+	char buf[sizeof ctx->warn->message];
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
 
-	if (!strcmp(buf, warn_message))
+	if (!strcmp(buf, ctx->warn->message))
 	{
-		warn_count++;
+		ctx->warn->count++;
 	}
 	else
 	{
-		fz_flush_warnings();
+		fz_flush_warnings(ctx);
 		fprintf(stderr, "warning: %s\n", buf);
-		fz_strlcpy(warn_message, buf, sizeof warn_message);
-		warn_count = 1;
+		fz_strlcpy(ctx->warn->message, buf, sizeof ctx->warn->message);
+		ctx->warn->count = 1;
 	}
 }
 
@@ -87,43 +81,29 @@ void fz_rethrow(fz_context *ctx)
 
 /* Deprecated error bubbling */
 
-static char error_message[LINE_COUNT][LINE_LEN];
-static int error_count = 0;
-
 static void
 fz_emit_error(char what, char *location, char *message)
 {
-	fz_flush_warnings();
-
 	fprintf(stderr, "%c %s%s\n", what, location, message);
-
-	if (error_count < LINE_COUNT)
-	{
-		fz_strlcpy(error_message[error_count], location, LINE_LEN);
-		fz_strlcat(error_message[error_count], message, LINE_LEN);
-		error_count++;
-	}
 }
 
 int
 fz_get_error_count(void)
 {
-	return error_count;
+	return 0;
 }
 
 char *
 fz_get_error_line(int n)
 {
-	return error_message[n];
+	return "";
 }
 
 fz_error
 fz_error_make_imp(const char *file, int line, const char *func, char *fmt, ...)
 {
 	va_list ap;
-	char one[LINE_LEN], two[LINE_LEN];
-
-	error_count = 0;
+	char one[256], two[256];
 
 	snprintf(one, sizeof one, "%s:%d: %s(): ", file, line, func);
 	va_start(ap, fmt);
@@ -139,7 +119,7 @@ fz_error
 fz_error_note_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
 {
 	va_list ap;
-	char one[LINE_LEN], two[LINE_LEN];
+	char one[256], two[256];
 
 	snprintf(one, sizeof one, "%s:%d: %s(): ", file, line, func);
 	va_start(ap, fmt);
@@ -155,7 +135,7 @@ void
 fz_error_handle_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...)
 {
 	va_list ap;
-	char one[LINE_LEN], two[LINE_LEN];
+	char one[256], two[256];
 
 	snprintf(one, sizeof one, "%s:%d: %s(): ", file, line, func);
 	va_start(ap, fmt);
@@ -169,9 +149,7 @@ fz_error
 fz_error_make_impx(char *fmt, ...)
 {
 	va_list ap;
-	char buf[LINE_LEN];
-
-	error_count = 0;
+	char buf[256];
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
@@ -186,7 +164,7 @@ fz_error
 fz_error_note_impx(fz_error cause, char *fmt, ...)
 {
 	va_list ap;
-	char buf[LINE_LEN];
+	char buf[256];
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
@@ -201,7 +179,7 @@ void
 fz_error_handle_impx(fz_error cause, char *fmt, ...)
 {
 	va_list ap;
-	char buf[LINE_LEN];
+	char buf[256];
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);

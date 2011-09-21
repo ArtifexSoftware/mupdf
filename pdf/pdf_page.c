@@ -83,7 +83,7 @@ pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 
 		if (xref->page_len == xref->page_cap)
 		{
-			fz_warn("found more pages than expected");
+			fz_warn(ctx, "found more pages than expected");
 			xref->page_cap ++;
 			xref->page_refs = fz_resize_array(ctx, xref->page_refs, xref->page_cap, sizeof(fz_obj*));
 			xref->page_objs = fz_resize_array(ctx, xref->page_objs, xref->page_cap, sizeof(fz_obj*));
@@ -263,7 +263,7 @@ pdf_load_page_contents(fz_buffer **bufp, pdf_xref *xref, fz_obj *obj)
 	}
 	else
 	{
-		fz_warn("page contents missing, leaving page blank");
+		fz_warn(ctx, "page contents missing, leaving page blank");
 		*bufp = fz_new_buffer(ctx, 0);
 	}
 
@@ -302,7 +302,7 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 	bbox = fz_round_rect(pdf_to_rect(ctx, obj));
 	if (fz_is_empty_rect(pdf_to_rect(ctx, obj)))
 	{
-		fz_warn("cannot find page size for page %d", number + 1);
+		fz_warn(ctx, "cannot find page size for page %d", number + 1);
 		bbox.x0 = 0;
 		bbox.y0 = 0;
 		bbox.x1 = 612;
@@ -323,7 +323,7 @@ pdf_load_page(pdf_page **pagep, pdf_xref *xref, int number)
 
 	if (page->mediabox.x1 - page->mediabox.x0 < 1 || page->mediabox.y1 - page->mediabox.y0 < 1)
 	{
-		fz_warn("invalid page size in page %d", number + 1);
+		fz_warn(ctx, "invalid page size in page %d", number + 1);
 		page->mediabox = fz_unit_rect;
 	}
 
