@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
 	filename = argv[fz_optind++];
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context();
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 

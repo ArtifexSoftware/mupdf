@@ -44,7 +44,7 @@ static inline int getlong(fz_stream *file)
 static void *
 xps_zip_alloc_items(xps_context *ctx, int items, int size)
 {
-	return fz_calloc(ctx->ctx, items, size);
+	return fz_malloc_array(ctx->ctx, items, size);
 }
 
 static void
@@ -177,7 +177,7 @@ xps_read_zip_dir(xps_context *ctx, int start_offset)
 	offset = getlong(ctx->file); /* offset to central directory */
 
 	ctx->zip_count = count;
-	ctx->zip_table = fz_calloc(ctx->ctx, count, sizeof(xps_entry));
+	ctx->zip_table = fz_malloc_array(ctx->ctx, count, sizeof(xps_entry));
 
 	fz_seek(ctx->file, offset, 0);
 
@@ -395,7 +395,8 @@ xps_open_directory(fz_context *fctx, xps_context **ctxp, char *directory)
 	xps_context *ctx;
 	int code;
 
-	ctx = fz_calloc(fctx, 1, sizeof(xps_context));
+	ctx = fz_malloc(fctx, sizeof(xps_context));
+	memset(ctx, 0, sizeof *ctx);
 
 	ctx->directory = fz_strdup(fctx, directory);
 	ctx->ctx = fctx;
@@ -417,7 +418,8 @@ xps_open_stream(xps_context **ctxp, fz_stream *file)
 	xps_context *ctx;
 	int code;
 
-	ctx = fz_calloc(file->ctx, 1, sizeof(xps_context));
+	ctx = fz_malloc(file->ctx, sizeof(xps_context));
+	memset(ctx, 0, sizeof *ctx);
 
 	ctx->ctx = file->ctx;
 	ctx->file = fz_keep_stream(file);

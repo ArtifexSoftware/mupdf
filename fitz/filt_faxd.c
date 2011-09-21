@@ -672,12 +672,12 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 {
 	fz_faxd *fax;
 	fz_obj *obj;
-        fz_context *ctx;
+	fz_context *ctx;
 
 	assert(chain != NULL);
-        ctx = chain->ctx;
-        fax = fz_malloc(ctx, sizeof(fz_faxd));
-        fax->chain = chain;
+	ctx = chain->ctx;
+	fax = fz_malloc(ctx, sizeof(fz_faxd));
+	fax->chain = chain;
 
 	fax->ref = NULL;
 	fax->dst = NULL;

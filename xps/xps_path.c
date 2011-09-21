@@ -234,7 +234,7 @@ xps_parse_abbreviated_geometry(xps_context *ctx, char *geom, int *fill_rule)
 
 	path = fz_new_path(ctx->ctx);
 
-	args = fz_calloc(ctx->ctx, strlen(geom) + 1, sizeof(char*));
+	args = fz_malloc_array(ctx->ctx, strlen(geom) + 1, sizeof(char*));
 	pargs = args;
 
 	while (*s)

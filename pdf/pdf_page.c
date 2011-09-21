@@ -85,8 +85,8 @@ pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 		{
 			fz_warn("found more pages than expected");
 			xref->page_cap ++;
-			xref->page_refs = fz_realloc(ctx, xref->page_refs, xref->page_cap * sizeof(fz_obj*));
-			xref->page_objs = fz_realloc(ctx, xref->page_objs, xref->page_cap * sizeof(fz_obj*));
+			xref->page_refs = fz_resize_array(ctx, xref->page_refs, xref->page_cap, sizeof(fz_obj*));
+			xref->page_objs = fz_resize_array(ctx, xref->page_objs, xref->page_cap, sizeof(fz_obj*));
 		}
 
 		xref->page_refs[xref->page_len] = fz_keep_obj(node);
@@ -111,8 +111,8 @@ pdf_load_page_tree(pdf_xref *xref)
 
 	xref->page_cap = fz_to_int(count);
 	xref->page_len = 0;
-	xref->page_refs = fz_calloc(ctx, xref->page_cap, sizeof(fz_obj*));
-	xref->page_objs = fz_calloc(ctx, xref->page_cap, sizeof(fz_obj*));
+	xref->page_refs = fz_malloc_array(ctx, xref->page_cap, sizeof(fz_obj*));
+	xref->page_objs = fz_malloc_array(ctx, xref->page_cap, sizeof(fz_obj*));
 
 	info.resources = NULL;
 	info.mediabox = NULL;

@@ -55,7 +55,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_span *span, int c, fz_bbox bbox)
 	if (span->len + 1 >= span->cap)
 	{
 		span->cap = span->cap > 1 ? (span->cap * 3) / 2 : 80;
-		span->text = fz_realloc(ctx, span->text, span->cap * sizeof(fz_text_char));
+		span->text = fz_resize_array(ctx, span->text, span->cap, sizeof(fz_text_char));
 	}
 	span->text[span->len].c = c;
 	span->text[span->len].bbox = bbox;

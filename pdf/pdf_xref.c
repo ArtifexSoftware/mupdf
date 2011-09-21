@@ -172,7 +172,7 @@ pdf_resize_xref(pdf_xref *xref, int newlen)
 {
 	int i;
 
-	xref->table = fz_realloc(xref->ctx, xref->table, newlen * sizeof(pdf_xref_entry));
+	xref->table = fz_resize_array(xref->ctx, xref->table, newlen, sizeof(pdf_xref_entry));
 	for (i = xref->len; i < newlen; i++)
 	{
 		xref->table[i].type = 0;
@@ -726,8 +726,8 @@ pdf_load_obj_stm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 	count = fz_to_int(fz_dict_gets(objstm, "N"));
 	first = fz_to_int(fz_dict_gets(objstm, "First"));
 
-	numbuf = fz_calloc(ctx, count, sizeof(int));
-	ofsbuf = fz_calloc(ctx, count, sizeof(int));
+	numbuf = fz_malloc_array(ctx, count, sizeof(int));
+	ofsbuf = fz_malloc_array(ctx, count, sizeof(int));
 
 	error = pdf_open_stream(&stm, xref, num, gen);
 	if (error)

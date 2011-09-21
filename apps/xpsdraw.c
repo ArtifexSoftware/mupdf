@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	fzctx = fz_new_context(&fz_alloc_default);
+	fzctx = fz_new_context();
 	if (fzctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise context");

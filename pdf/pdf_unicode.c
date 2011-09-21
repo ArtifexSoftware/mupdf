@@ -63,7 +63,7 @@ pdf_load_to_unicode(pdf_font_desc *font, pdf_xref *xref,
 		/* TODO one-to-many mappings */
 
 		font->cid_to_ucs_len = 256;
-		font->cid_to_ucs = fz_calloc(ctx, 256, sizeof(unsigned short));
+		font->cid_to_ucs = fz_malloc_array(ctx, 256, sizeof(unsigned short));
 
 		for (i = 0; i < 256; i++)
 		{

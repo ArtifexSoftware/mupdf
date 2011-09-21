@@ -35,7 +35,7 @@ fz_clone_text(fz_context *ctx, fz_text *old)
 	text->wmode = old->wmode;
 	text->len = old->len;
 	text->cap = text->len;
-	text->items = fz_calloc(ctx, text->len, sizeof(fz_text_item));
+	text->items = fz_malloc_array(ctx, text->len, sizeof(fz_text_item));
 	memcpy(text->items, old->items, text->len * sizeof(fz_text_item));
 
 	return text;
@@ -97,7 +97,7 @@ fz_grow_text(fz_context *ctx, fz_text *text, int n)
 		return;
 	while (text->len + n > text->cap)
 		text->cap = text->cap + 36;
-	text->items = fz_realloc(ctx, text->items, text->cap * sizeof(fz_text_item));
+	text->items = fz_resize_array(ctx, text->items, text->cap, sizeof(fz_text_item));
 }
 
 void

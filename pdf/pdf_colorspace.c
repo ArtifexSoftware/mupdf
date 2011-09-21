@@ -230,7 +230,7 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	idx->high = fz_to_int(highobj);
 	idx->high = CLAMP(idx->high, 0, 255);
 	n = base->n * (idx->high + 1);
-	idx->lookup = fz_calloc(ctx, 1, n);
+	idx->lookup = fz_malloc_array(ctx, 1, n);
 
 	cs = fz_new_colorspace(ctx, "Indexed", 1);
 	cs->to_rgb = indexed_to_rgb;

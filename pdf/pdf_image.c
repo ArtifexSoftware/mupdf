@@ -191,7 +191,7 @@ pdf_load_image_imp(fz_pixmap **imgp, pdf_xref *xref, fz_obj *rdb, fz_obj *dict, 
 		}
 	}
 
-	samples = fz_calloc(ctx, h, stride);
+	samples = fz_malloc_array(ctx, h, stride);
 
 	len = fz_read(stm, samples, h * stride);
 	if (len < 0)

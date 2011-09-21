@@ -14,7 +14,7 @@ fz_new_bitmap(fz_context *ctx, int w, int h, int n)
 	 * use SSE2 etc. */
 	bit->stride = ((n * w + 31) & ~31) >> 3;
 
-	bit->samples = fz_calloc(ctx, h, bit->stride);
+	bit->samples = fz_malloc_array(ctx, h, bit->stride);
 
 	return bit;
 }

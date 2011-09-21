@@ -227,7 +227,7 @@ xps_draw_one_radial_gradient(xps_context *ctx, fz_matrix ctm,
 
 	shade->mesh_len = 6;
 	shade->mesh_cap = 6;
-	shade->mesh = fz_calloc(ctx->ctx, shade->mesh_cap, sizeof(float));
+	shade->mesh = fz_malloc_array(ctx->ctx, shade->mesh_cap, sizeof(float));
 	shade->mesh[0] = x0;
 	shade->mesh[1] = y0;
 	shade->mesh[2] = r0;
@@ -268,7 +268,7 @@ xps_draw_one_linear_gradient(xps_context *ctx, fz_matrix ctm,
 
 	shade->mesh_len = 6;
 	shade->mesh_cap = 6;
-	shade->mesh = fz_calloc(ctx->ctx, shade->mesh_cap, sizeof(float));
+	shade->mesh = fz_malloc_array(ctx->ctx, shade->mesh_cap, sizeof(float));
 	shade->mesh[0] = x0;
 	shade->mesh[1] = y0;
 	shade->mesh[2] = 0;

@@ -430,7 +430,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 		tiff->yresolution = 96;
 	}
 
-	tiff->samples = fz_calloc(tiff->ctx, tiff->imagelength, tiff->stride);
+	tiff->samples = fz_malloc_array(tiff->ctx, tiff->imagelength, tiff->stride);
 	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
 	wp = tiff->samples;
 
@@ -689,17 +689,17 @@ xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 		break;
 
 	case StripOffsets:
-		tiff->stripoffsets = fz_calloc(tiff->ctx, count, sizeof(unsigned));
+		tiff->stripoffsets = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		break;
 
 	case StripByteCounts:
-		tiff->stripbytecounts = fz_calloc(tiff->ctx, count, sizeof(unsigned));
+		tiff->stripbytecounts = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		break;
 
 	case ColorMap:
-		tiff->colormap = fz_calloc(tiff->ctx, count, sizeof(unsigned));
+		tiff->colormap = fz_malloc_array(tiff->ctx, count, sizeof(unsigned));
 		xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
 		break;
 

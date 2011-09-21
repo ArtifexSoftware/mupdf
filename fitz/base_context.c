@@ -18,27 +18,23 @@ fz_free_context(fz_context *ctx)
 	if (ctx->error)
 	{
 		assert(ctx->error->top == -1);
-		ctx->alloc->free(ctx->alloc->opaque, ctx->error);
+		free(ctx->error);
 	}
 
 	/* Free the context itself */
-	ctx->alloc->free(ctx->alloc->opaque, ctx);
-
-	/* We do NOT free the allocator! */
+	free(ctx);
 }
 
 fz_context *
-fz_new_context(fz_alloc_context *alloc)
+fz_new_context(void)
 {
 	fz_context *ctx;
 
-	assert(alloc != NULL);
-	ctx = alloc->malloc(alloc->opaque, sizeof(fz_context));
-	if (ctx == NULL)
+	ctx = malloc(sizeof(fz_context));
+	if (!ctx)
 		return NULL;
-	ctx->alloc = alloc;
 
-	ctx->error = alloc->malloc(alloc->opaque, sizeof(fz_error_context));
+	ctx->error = malloc(sizeof(fz_error_context));
 	if (!ctx->error)
 		goto cleanup;
 	ctx->error->top = -1;
@@ -57,5 +53,5 @@ cleanup:
 fz_context *
 fz_clone_context(fz_context *ctx)
 {
-	return fz_new_context(ctx->alloc);
+	return fz_new_context();
 }

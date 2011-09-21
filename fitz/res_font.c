@@ -498,8 +498,8 @@ fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix)
 	int i;
 
 	font = fz_new_font(ctx, name);
-	font->t3procs = fz_calloc(ctx, 256, sizeof(fz_buffer*));
-	font->t3widths = fz_calloc(ctx, 256, sizeof(float));
+	font->t3procs = fz_malloc_array(ctx, 256, sizeof(fz_buffer*));
+	font->t3widths = fz_malloc_array(ctx, 256, sizeof(float));
 
 	font->t3matrix = matrix;
 	for (i = 0; i < 256; i++)

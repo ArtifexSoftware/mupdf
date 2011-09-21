@@ -35,7 +35,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	else
 	{
 		fz_memory_used += pix->w * pix->h * pix->n;
-		pix->samples = fz_calloc(ctx, pix->h, pix->w * pix->n);
+		pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
 		pix->free_samples = 1;
 	}
 

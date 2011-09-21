@@ -52,7 +52,7 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen)
 	table->keylen = keylen;
 	table->size = initialsize;
 	table->load = 0;
-	table->ents = fz_calloc(ctx, table->size, sizeof(fz_hash_entry));
+	table->ents = fz_malloc_array(ctx, table->size, sizeof(fz_hash_entry));
 
 	return table;
 }
@@ -103,7 +103,7 @@ fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 		return;
 	}
 
-	table->ents = fz_calloc(ctx, newsize, sizeof(fz_hash_entry));
+	table->ents = fz_malloc_array(ctx, newsize, sizeof(fz_hash_entry));
 	memset(table->ents, 0, sizeof(fz_hash_entry) * newsize);
 	table->size = newsize;
 	table->load = 0;

@@ -1199,7 +1199,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 		temp_rows = contrib_rows->max_len;
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
-		temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(int));
+		temp = fz_malloc_array(ctx, temp_span*temp_rows, sizeof(int));
 		if (temp == NULL)
 			goto cleanup;
 		switch (src->n)

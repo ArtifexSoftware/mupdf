@@ -389,7 +389,7 @@ fz_new_array(fz_context *ctx, int initialcap)
 	obj->u.a.len = 0;
 	obj->u.a.cap = initialcap > 1 ? initialcap : 6;
 
-	obj->u.a.items = fz_calloc(ctx, obj->u.a.cap, sizeof(fz_obj*));
+	obj->u.a.items = fz_malloc_array(ctx, obj->u.a.cap, sizeof(fz_obj*));
 	for (i = 0; i < obj->u.a.cap; i++)
 		obj->u.a.items[i] = NULL;
 
@@ -469,7 +469,7 @@ fz_array_push(fz_obj *obj, fz_obj *item)
 		{
 			int i;
 			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(obj->ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
+			obj->u.a.items = fz_resize_array(obj->ctx, obj->u.a.items, obj->u.a.cap, sizeof(fz_obj*));
 			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
 				obj->u.a.items[i] = NULL;
 		}
@@ -491,7 +491,7 @@ fz_array_insert(fz_obj *obj, fz_obj *item)
 		{
 			int i;
 			obj->u.a.cap = (obj->u.a.cap * 3) / 2;
-			obj->u.a.items = fz_realloc(obj->ctx, obj->u.a.items, obj->u.a.cap * sizeof(fz_obj*));
+			obj->u.a.items = fz_resize_array(obj->ctx, obj->u.a.items, obj->u.a.cap, sizeof(fz_obj*));
 			for (i = obj->u.a.len ; i < obj->u.a.cap; i++)
 				obj->u.a.items[i] = NULL;
 		}
@@ -525,7 +525,7 @@ fz_new_dict(fz_context *ctx, int initialcap)
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
 
-	obj->u.d.items = fz_calloc(ctx, obj->u.d.cap, sizeof(struct keyval));
+	obj->u.d.items = fz_malloc_array(ctx, obj->u.d.cap, sizeof(struct keyval));
 	for (i = 0; i < obj->u.d.cap; i++)
 	{
 		obj->u.d.items[i].k = NULL;
@@ -694,7 +694,7 @@ fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 	if (obj->u.d.len + 1 > obj->u.d.cap)
 	{
 		obj->u.d.cap = (obj->u.d.cap * 3) / 2;
-		obj->u.d.items = fz_realloc(obj->ctx, obj->u.d.items, obj->u.d.cap * sizeof(struct keyval));
+		obj->u.d.items = fz_resize_array(obj->ctx, obj->u.d.items, obj->u.d.cap, sizeof(struct keyval));
 		for (i = obj->u.d.len; i < obj->u.d.cap; i++)
 		{
 			obj->u.d.items[i].k = NULL;

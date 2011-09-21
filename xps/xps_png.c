@@ -62,7 +62,7 @@ static const unsigned char png_signature[8] =
 
 static void *zalloc(void *opaque, unsigned int items, unsigned int size)
 {
-	return fz_calloc(opaque, items, size);
+	return fz_malloc_array(opaque, items, size);
 }
 
 static void zfree(void *opaque, void *address)
@@ -189,7 +189,7 @@ png_deinterlace(struct info *info, int *passw, int *passh, int *passofs)
 	unsigned char *output;
 	int p, x, y, k;
 
-	output = fz_calloc(info->ctx, info->height, stride);
+	output = fz_malloc_array(info->ctx, info->height, stride);
 
 	for (p = 0; p < 7; p++)
 	{

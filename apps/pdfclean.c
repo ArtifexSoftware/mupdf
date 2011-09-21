@@ -251,7 +251,7 @@ static void renumberobjs(void)
 
 	/* Create new table for the reordered, compacted xref */
 	oldxref = xref->table;
-	xref->table = fz_calloc(xref->ctx, xref->len, sizeof(pdf_xref_entry));
+	xref->table = fz_malloc_array(xref->ctx, xref->len, sizeof(pdf_xref_entry));
 	xref->table[0] = oldxref[0];
 
 	/* Move used objects into the new compacted xref */
@@ -720,7 +720,7 @@ int main(int argc, char **argv)
 	if (argc - fz_optind > 0)
 		subset = 1;
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context();
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 
@@ -735,10 +735,10 @@ int main(int argc, char **argv)
 	fprintf(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
 	fprintf(out, "%%\316\274\341\277\246\n\n");
 
-	uselist = fz_calloc(ctx, xref->len + 1, sizeof(char));
-	ofslist = fz_calloc(ctx, xref->len + 1, sizeof(int));
-	genlist = fz_calloc(ctx, xref->len + 1, sizeof(int));
-	renumbermap = fz_calloc(ctx, xref->len + 1, sizeof(int));
+	uselist = fz_malloc_array(ctx, xref->len + 1, sizeof(char));
+	ofslist = fz_malloc_array(ctx, xref->len + 1, sizeof(int));
+	genlist = fz_malloc_array(ctx, xref->len + 1, sizeof(int));
+	renumbermap = fz_malloc_array(ctx, xref->len + 1, sizeof(int));
 
 	for (num = 0; num < xref->len; num++)
 	{

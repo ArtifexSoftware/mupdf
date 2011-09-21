@@ -224,7 +224,7 @@ gatherdimensions(int page, fz_obj *pageref, fz_obj *pageobj)
 
 	dims++;
 
-	dim = fz_realloc(ctx, dim, dims * sizeof(struct info));
+	dim = fz_resize_array(ctx, dim, dims, sizeof(struct info));
 	dim[dims - 1].page = page;
 	dim[dims - 1].pageref = pageref;
 	dim[dims - 1].pageobj = pageobj;
@@ -269,7 +269,7 @@ gatherfonts(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		fonts++;
 
-		font = fz_realloc(ctx, font, fonts * sizeof(struct info));
+		font = fz_resize_array(ctx, font, fonts, sizeof(struct info));
 		font[fonts - 1].page = page;
 		font[fonts - 1].pageref = pageref;
 		font[fonts - 1].pageobj = pageobj;
@@ -338,7 +338,7 @@ gatherimages(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		images++;
 
-		image = fz_realloc(ctx, image, images * sizeof(struct info));
+		image = fz_resize_array(ctx, image, images, sizeof(struct info));
 		image[images - 1].page = page;
 		image[images - 1].pageref = pageref;
 		image[images - 1].pageobj = pageobj;
@@ -396,7 +396,7 @@ gatherforms(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		forms++;
 
-		form = fz_realloc(ctx, form, forms * sizeof(struct info));
+		form = fz_resize_array(ctx, form, forms, sizeof(struct info));
 		form[forms - 1].page = page;
 		form[forms - 1].pageref = pageref;
 		form[forms - 1].pageobj = pageobj;
@@ -441,7 +441,7 @@ gatherpsobjs(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		psobjs++;
 
-		psobj = fz_realloc(ctx, psobj, psobjs * sizeof(struct info));
+		psobj = fz_resize_array(ctx, psobj, psobjs, sizeof(struct info));
 		psobj[psobjs - 1].page = page;
 		psobj[psobjs - 1].pageref = pageref;
 		psobj[psobjs - 1].pageobj = pageobj;
@@ -484,7 +484,7 @@ gathershadings(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		shadings++;
 
-		shading = fz_realloc(ctx, shading, shadings * sizeof(struct info));
+		shading = fz_resize_array(ctx, shading, shadings, sizeof(struct info));
 		shading[shadings - 1].page = page;
 		shading[shadings - 1].pageref = pageref;
 		shading[shadings - 1].pageobj = pageobj;
@@ -552,7 +552,7 @@ gatherpatterns(int page, fz_obj *pageref, fz_obj *pageobj, fz_obj *dict)
 
 		patterns++;
 
-		pattern = fz_realloc(ctx, pattern, patterns * sizeof(struct info));
+		pattern = fz_resize_array(ctx, pattern, patterns, sizeof(struct info));
 		pattern[patterns - 1].page = page;
 		pattern[patterns - 1].pageref = pageref;
 		pattern[patterns - 1].pageobj = pageobj;
@@ -981,7 +981,7 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context();
 	if (ctx == NULL)
 		die(fz_error_make("failed to initialise context"));
 

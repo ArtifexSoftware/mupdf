@@ -139,21 +139,7 @@ char *fz_get_error_line(int n);
 /* Context types */
 
 typedef struct fz_error_context_s fz_error_context;
-typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_context_s fz_context;
-
-/* Memory allocator context */
-
-struct fz_alloc_context_s
-{
-	void *opaque;
-	void *(*malloc)(void *, size_t);
-	void *(*realloc)(void *, void *, size_t);
-	void (*free)(void *, void *);
-	void *(*calloc)(void *, size_t, size_t);
-};
-
-extern fz_alloc_context fz_alloc_default;
 
 /* Exception context */
 
@@ -187,11 +173,10 @@ void fz_rethrow(fz_context *);
 
 struct fz_context_s
 {
-	fz_alloc_context *alloc;
 	fz_error_context *error;
 };
 
-fz_context *fz_new_context(fz_alloc_context *alloc);
+fz_context *fz_new_context(void);
 fz_context *fz_clone_context(fz_context *ctx);
 void fz_free_context(fz_context *ctx);
 
@@ -202,17 +187,12 @@ void fz_free_context(fz_context *ctx);
 /* memory allocation */
 
 /* The following throw exceptions on failure to allocate */
-void *fz_malloc(fz_context *ctx, size_t size);
-void *fz_calloc(fz_context *ctx, size_t count, size_t size);
-void *fz_realloc(fz_context *ctx, void *p, size_t size);
+void *fz_malloc(fz_context *ctx, unsigned int  size);
+void *fz_malloc_array(fz_context *ctx, unsigned int  count, unsigned int  size);
+void *fz_resize_array(fz_context *ctx, void *p, unsigned int  count, unsigned int  size);
 char *fz_strdup(fz_context *ctx, char *s);
 
 void fz_free(fz_context *ctx, void *p);
-
-/* The following returns NULL on failure to allocate */
-void *fz_malloc_nothrow(fz_context *ctx, size_t size);
-void *fz_calloc_nothrow(fz_context *ctx, size_t count, size_t size);
-void *fz_realloc_nothrow(fz_context *ctx, void *p, size_t size);
 
 /* runtime (hah!) test for endian-ness */
 int fz_is_big_endian(void);

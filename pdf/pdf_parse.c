@@ -101,19 +101,19 @@ pdf_to_ucs2(fz_context *ctx, fz_obj *src)
 
 	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
 	{
-		dstptr = dst = fz_calloc(ctx, (srclen - 2) / 2 + 1, sizeof(short));
+		dstptr = dst = fz_malloc_array(ctx, (srclen - 2) / 2 + 1, sizeof(short));
 		for (i = 2; i + 1 < srclen; i += 2)
 			*dstptr++ = srcptr[i] << 8 | srcptr[i+1];
 	}
 	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
 	{
-		dstptr = dst = fz_calloc(ctx, (srclen - 2) / 2 + 1, sizeof(short));
+		dstptr = dst = fz_malloc_array(ctx, (srclen - 2) / 2 + 1, sizeof(short));
 		for (i = 2; i + 1 < srclen; i += 2)
 			*dstptr++ = srcptr[i] | srcptr[i+1] << 8;
 	}
 	else
 	{
-		dstptr = dst = fz_calloc(ctx, srclen + 1, sizeof(short));
+		dstptr = dst = fz_malloc_array(ctx, srclen + 1, sizeof(short));
 		for (i = 0; i < srclen; i++)
 			*dstptr++ = pdf_doc_encoding[srcptr[i]];
 	}
