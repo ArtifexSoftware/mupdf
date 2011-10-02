@@ -529,7 +529,7 @@ static void onkey(int c)
 		winrepaint(&gapp);
 	}
 
-	if (c == 'P')
+	if (!gapp.isediting && c == 'P')
 	{
 		showingpage = 1;
 		winrepaint(&gapp);
