@@ -214,6 +214,12 @@ void winclose(pdfapp_t *app)
 	closing = 1;
 }
 
+static int winresolution()
+{
+	return DisplayWidth(xdpy, xscr) * 25.4 /
+		DisplayWidthMM(xdpy, xscr) + 0.5;
+}
+
 void wincursor(pdfapp_t *app, int curs)
 {
 	if (curs == ARROW)
@@ -562,7 +568,7 @@ int main(int argc, char **argv)
 	KeySym keysym;
 	int oldx = 0;
 	int oldy = 0;
-	int resolution = 72;
+	int resolution = -1;
 	int pageno = 1;
 	int accelerate = 1;
 	int fd;
@@ -586,11 +592,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (resolution < MINRES)
-		resolution = MINRES;
-	if (resolution > MAXRES)
-		resolution = MAXRES;
-
 	if (argc - fz_optind == 0)
 		usage();
 
@@ -603,6 +604,13 @@ int main(int argc, char **argv)
 		fz_accelerate();
 
 	winopen();
+
+	if (resolution == -1)
+		resolution = winresolution();
+	if (resolution < MINRES)
+		resolution = MINRES;
+	if (resolution > MAXRES)
+		resolution = MAXRES;
 
 	pdfapp_init(&gapp);
 	gapp.scrw = DisplayWidth(xdpy, xscr);
