@@ -369,7 +369,6 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 		char *base_uri, xps_resource *dict, xml_element *root)
 {
 	xml_element *node;
-	int code;
 
 	char *fill_uri;
 	char *opacity_mask_uri;
@@ -496,9 +495,13 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 		if (strstr(part->name, ".ODTTF"))
 			xps_deobfuscate_font_resource(doc, part);
 
-		code = fz_new_font_from_memory(doc->ctx, &font, part->data, part->size, subfontid);
-		if (code) {
-			fz_error_handle(code, "cannot load font resource '%s'", partname);
+		fz_try(doc->ctx)
+		{
+			font = fz_new_font_from_memory(doc->ctx, part->data, part->size, subfontid);
+		}
+		fz_catch(doc->ctx)
+		{
+			fz_error_handle(1, "cannot load font resource '%s'", partname);
 			xps_free_part(doc, part);
 			return;
 		}

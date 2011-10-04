@@ -92,7 +92,6 @@ static int isrange(char *s)
 
 static void drawpage(pdf_xref *xref, int pagenum)
 {
-	fz_error error;
 	pdf_page *page;
 	fz_display_list *list;
 	fz_device *dev;
@@ -104,9 +103,14 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		start = gettime();
 	}
 
-	error = pdf_load_page(&page, xref, pagenum - 1);
-	if (error)
-		die(fz_error_note(error, "cannot load page %d in file '%s'", pagenum, filename));
+	fz_try(ctx)
+	{
+		page = pdf_load_page(xref, pagenum - 1);
+	}
+	fz_catch(ctx)
+	{
+		die(fz_error_note(1, "cannot load page %d in file '%s'", pagenum, filename));
+	}
 
 	list = NULL;
 
@@ -114,9 +118,14 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	{
 		list = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, list);
-		error = pdf_run_page(xref, page, dev, fz_identity);
-		if (error)
-			die(fz_error_note(error, "cannot draw page %d in file '%s'", pagenum, filename));
+		fz_try(ctx)
+		{
+			pdf_run_page(xref, page, dev, fz_identity);
+		}
+		fz_catch(ctx)
+		{
+			die(fz_error_note(1, "cannot draw page %d in file '%s'", pagenum, filename));
+		}
 		fz_free_device(dev);
 	}
 
@@ -193,15 +202,15 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			char buf[512];
 			sprintf(buf, output, pagenum);
 			if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
-				fz_write_pnm(pix, buf);
+				fz_write_pnm(ctx, pix, buf);
 			else if (strstr(output, ".pam"))
-				fz_write_pam(pix, buf, savealpha);
+				fz_write_pam(ctx, pix, buf, savealpha);
 			else if (strstr(output, ".png"))
 				fz_write_png(ctx, pix, buf, savealpha);
 			else if (strstr(output, ".pbm")) {
 				fz_halftone *ht = fz_get_default_halftone(ctx, 1);
 				fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, ht);
-				fz_write_pbm(bit, buf);
+				fz_write_pbm(ctx, bit, buf);
 				fz_drop_bitmap(ctx, bit);
 				fz_drop_halftone(ctx, ht);
 			}
@@ -376,13 +385,23 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		error = pdf_open_xref(ctx, &xref, filename, password);
-		if (error)
+		fz_try(ctx)
+		{
+			xref = pdf_open_xref(ctx, filename, password);
+		}
+		fz_catch(ctx)
+		{
 			die(fz_error_note(error, "cannot open document: %s", filename));
+		}
 
-		error = pdf_load_page_tree(xref);
-		if (error)
+		fz_try(ctx)
+		{
+			pdf_load_page_tree(xref);
+		}
+		fz_catch(ctx)
+		{
 			die(fz_error_note(error, "cannot load page tree: %s", filename));
+		}
 
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);

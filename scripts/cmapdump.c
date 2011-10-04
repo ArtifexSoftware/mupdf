@@ -89,8 +89,11 @@ main(int argc, char **argv)
 		if (!fi)
 			fz_error_make("cmapdump: could not open input file '%s'\n", argv[i]);
 
-		error = pdf_parse_cmap(&cmap, fi);
-		if (error)
+		fz_try(ctx)
+		{
+			cmap = pdf_parse_cmap(fi);
+		}
+		fz_catch(ctx)
 		{
 			fz_error_handle(error, "cmapdump: could not parse input cmap '%s'\n", argv[i]);
 			return 1;

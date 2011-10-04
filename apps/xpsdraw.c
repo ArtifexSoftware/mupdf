@@ -20,7 +20,7 @@ int uselist = 1;
 fz_colorspace *colorspace;
 fz_glyph_cache *glyphcache;
 char *filename;
-fz_context *fzctx;
+fz_context *ctx;
 
 struct {
 	int count, total;
@@ -91,16 +91,20 @@ static void drawpage(xps_document *doc, int pagenum)
 	fz_display_list *list;
 	fz_device *dev;
 	int start;
-	int code;
 
 	if (showtime)
 	{
 		start = gettime();
 	}
 
-	code = xps_load_page(&page, doc, pagenum - 1);
-	if (code)
-		die(fz_error_note(code, "cannot load page %d in file '%s'", pagenum, filename));
+	fz_try(doc->ctx)
+	{
+		page = xps_load_page(doc, pagenum - 1);
+	}
+	fz_catch(doc->ctx)
+	{
+		die(fz_error_note(1, "cannot load page %d in file '%s'", pagenum, filename));
+	}
 
 	list = NULL;
 
@@ -183,9 +187,9 @@ static void drawpage(xps_document *doc, int pagenum)
 			char buf[512];
 			sprintf(buf, output, pagenum);
 			if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
-				fz_write_pnm(pix, buf);
+				fz_write_pnm(doc->ctx, pix, buf);
 			else if (strstr(output, ".pam"))
-				fz_write_pam(pix, buf, savealpha);
+				fz_write_pam(doc->ctx, pix, buf, savealpha);
 			else if (strstr(output, ".png"))
 				fz_write_png(doc->ctx, pix, buf, savealpha);
 		}
@@ -278,7 +282,6 @@ int main(int argc, char **argv)
 	int grayscale = 0;
 	int accelerate = 1;
 	xps_document *doc;
-	int code;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "o:p:r:Aadgmtx5")) != -1)
@@ -311,14 +314,14 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	fzctx = fz_new_context();
-	if (fzctx == NULL)
+	ctx = fz_new_context();
+	if (ctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise context");
 		exit(1);
 	}
 
-	glyphcache = fz_new_glyph_cache(fzctx);
+	glyphcache = fz_new_glyph_cache(ctx);
 
 	colorspace = fz_device_rgb;
 	if (grayscale)
@@ -342,9 +345,14 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		code = xps_open_file(fzctx, &doc, filename);
-		if (code)
-			die(fz_error_note(code, "cannot open document: %s", filename));
+		fz_try(ctx)
+		{
+			doc = xps_open_file(ctx, filename);
+		}
+		fz_catch(ctx)
+		{
+			die(fz_error_note(-1, "cannot open document: %s", filename));
+		}
 
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);
@@ -368,8 +376,8 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_free_glyph_cache(fzctx, glyphcache);
-	fz_free_context(fzctx);
+	fz_free_glyph_cache(ctx, glyphcache);
+	fz_free_context(ctx);
 
 	return 0;
 }

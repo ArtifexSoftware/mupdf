@@ -47,7 +47,6 @@ static void showxref(void)
 
 static void showpagetree(void)
 {
-	fz_error error;
 	fz_obj *ref;
 	int count;
 	int i;
@@ -57,9 +56,14 @@ static void showpagetree(void)
 
 	if (!xref->page_len)
 	{
-		error = pdf_load_page_tree(xref);
-		if (error)
-			die(fz_error_note(error, "cannot load page tree"));
+		fz_try(xref->ctx)
+		{
+			pdf_load_page_tree(xref);
+		}
+		fz_catch(xref->ctx)
+		{
+			die(fz_error_note(1, "cannot load page tree"));
+		}
 	}
 
 	count = pdf_count_pages(xref);
@@ -96,19 +100,23 @@ static void showsafe(unsigned char *buf, int n)
 
 static void showstream(int num, int gen)
 {
-	fz_error error;
 	fz_stream *stm;
 	unsigned char buf[2048];
 	int n;
 
 	showcolumn = 0;
 
-	if (showdecode)
-		error = pdf_open_stream(&stm, xref, num, gen);
-	else
-		error = pdf_open_raw_stream(&stm, xref, num, gen);
-	if (error)
-		die(error);
+	fz_try(xref->ctx)
+	{
+		if (showdecode)
+			stm = pdf_open_stream(xref, num, gen);
+		else
+			stm = pdf_open_raw_stream(xref, num, gen);
+	}
+	fz_catch(xref->ctx)
+	{
+		die(1);
+	}
 
 	while (1)
 	{
@@ -128,15 +136,19 @@ static void showstream(int num, int gen)
 
 static void showobject(int num, int gen)
 {
-	fz_error error;
 	fz_obj *obj;
 
 	if (!xref)
 		die(fz_error_make("no file specified"));
 
-	error = pdf_load_object(&obj, xref, num, gen);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		obj = pdf_load_object(xref, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	if (pdf_is_stream(xref, num, gen))
 	{
@@ -166,7 +178,6 @@ static void showobject(int num, int gen)
 
 static void showgrep(char *filename)
 {
-	fz_error error;
 	fz_obj *obj;
 	int i;
 
@@ -174,9 +185,14 @@ static void showgrep(char *filename)
 	{
 		if (xref->table[i].type == 'n' || xref->table[i].type == 'o')
 		{
-			error = pdf_load_object(&obj, xref, i, 0);
-			if (error)
-				die(error);
+			fz_try(ctx)
+			{
+				obj = pdf_load_object(xref, i, 0);
+			}
+			fz_catch(ctx)
+			{
+				die(1);
+			}
 
 			fz_sort_dict(obj);
 
@@ -195,7 +211,6 @@ int main(int argc, char **argv)
 {
 	char *password = NULL; /* don't throw errors if encrypted */
 	char *filename;
-	fz_error error;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "p:be")) != -1)
@@ -218,9 +233,14 @@ int main(int argc, char **argv)
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 
-	error = pdf_open_xref(ctx, &xref, filename, password);
-	if (error)
-		die(fz_error_note(error, "cannot open document: %s", filename));
+	fz_try(ctx)
+	{
+		xref = pdf_open_xref(ctx, filename, password);
+	}
+	fz_catch(ctx)
+	{
+		die(fz_error_note(1, "cannot open document: %s", filename));
+	}
 
 	if (fz_optind == argc)
 		showtrailer();

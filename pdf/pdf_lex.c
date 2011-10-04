@@ -379,8 +379,8 @@ pdf_token_from_keyword(char *key)
 	return PDF_TOK_KEYWORD;
 }
 
-fz_error
-pdf_lex(int *tok, fz_stream *f, char *buf, int n, int *sl)
+int
+pdf_lex(fz_stream *f, char *buf, int n, int *sl)
 {
 	while (1)
 	{
@@ -388,8 +388,7 @@ pdf_lex(int *tok, fz_stream *f, char *buf, int n, int *sl)
 		switch (c)
 		{
 		case EOF:
-			*tok = PDF_TOK_EOF;
-			return fz_okay;
+			return PDF_TOK_EOF;
 		case IS_WHITE:
 			lex_white(f);
 			break;
@@ -399,63 +398,51 @@ pdf_lex(int *tok, fz_stream *f, char *buf, int n, int *sl)
 		case '/':
 			lex_name(f, buf, n);
 			*sl = strlen(buf);
-			*tok = PDF_TOK_NAME;
-			return fz_okay;
+			return PDF_TOK_NAME;
 		case '(':
 			*sl = lex_string(f, buf, n);
-			*tok = PDF_TOK_STRING;
-			return fz_okay;
+			return PDF_TOK_STRING;
 		case ')':
-			*tok = PDF_TOK_ERROR;
-			goto cleanuperror;
+			fz_throw(f->ctx, "lexical error (unexpected ')')");
 		case '<':
 			c = fz_read_byte(f);
 			if (c == '<')
 			{
-				*tok = PDF_TOK_OPEN_DICT;
+				return PDF_TOK_OPEN_DICT;
 			}
 			else
 			{
 				fz_unread_byte(f);
 				*sl = lex_hex_string(f, buf, n);
-				*tok = PDF_TOK_STRING;
+				return PDF_TOK_STRING;
 			}
-			return fz_okay;
 		case '>':
 			c = fz_read_byte(f);
 			if (c == '>')
 			{
-				*tok = PDF_TOK_CLOSE_DICT;
-				return fz_okay;
+				return PDF_TOK_CLOSE_DICT;
 			}
-			*tok = PDF_TOK_ERROR;
-			goto cleanuperror;
+			fz_throw(f->ctx, "lexical error (unexpected '>')");
 		case '[':
-			*tok = PDF_TOK_OPEN_ARRAY;
-			return fz_okay;
+			return PDF_TOK_OPEN_ARRAY;
 		case ']':
-			*tok = PDF_TOK_CLOSE_ARRAY;
-			return fz_okay;
+			return PDF_TOK_CLOSE_ARRAY;
 		case '{':
-			*tok = PDF_TOK_OPEN_BRACE;
-			return fz_okay;
+			return PDF_TOK_OPEN_BRACE;
 		case '}':
-			*tok = PDF_TOK_CLOSE_BRACE;
-			return fz_okay;
+			return PDF_TOK_CLOSE_BRACE;
 		case IS_NUMBER:
-			fz_unread_byte(f);
-			*sl = lex_number(f, buf, n, tok);
-			return fz_okay;
+			{
+				int tok;
+				fz_unread_byte(f);
+				*sl = lex_number(f, buf, n, &tok);
+				return tok;
+			}
 		default: /* isregular: !isdelim && !iswhite && c != EOF */
 			fz_unread_byte(f);
 			lex_name(f, buf, n);
 			*sl = strlen(buf);
-			*tok = pdf_token_from_keyword(buf);
-			return fz_okay;
+			return pdf_token_from_keyword(buf);
 		}
 	}
-
-cleanuperror:
-	*tok = PDF_TOK_ERROR;
-	return fz_error_make("lexical error");
 }

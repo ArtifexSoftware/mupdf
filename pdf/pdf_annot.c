@@ -192,7 +192,6 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 	pdf_annot *annot, *head, *tail;
 	fz_obj *obj, *ap, *as, *n, *rect;
 	pdf_xobject *form;
-	fz_error error;
 	int i, len;
 	fz_context *ctx = xref->ctx;
 
@@ -217,10 +216,13 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 
 			if (pdf_is_stream(xref, fz_to_num(n), fz_to_gen(n)))
 			{
-				error = pdf_load_xobject(&form, xref, n);
-				if (error)
+				fz_try(ctx)
 				{
-					fz_error_handle(error, "ignoring broken annotation");
+					form = pdf_load_xobject(xref, n);
+				}
+				fz_catch(ctx)
+				{
+					fz_warn(ctx, "ignoring broken annotation");
 					continue;
 				}
 

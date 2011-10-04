@@ -1,18 +1,16 @@
 #include "fitz.h"
 #include "mupdf.h"
 
-fz_error
-pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
+pdf_xobject *
+pdf_load_xobject(pdf_xref *xref, fz_obj *dict)
 {
-	fz_error error;
 	pdf_xobject *form;
 	fz_obj *obj;
 	fz_context *ctx = xref->ctx;
 
-	if ((*formp = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_xobject, dict)))
+	if ((form = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_xobject, dict)))
 	{
-		pdf_keep_xobject(*formp);
-		return fz_okay;
+		return pdf_keep_xobject(form);
 	}
 
 	form = fz_malloc(ctx, sizeof(pdf_xobject));
@@ -52,9 +50,8 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 		obj = fz_dict_gets(attrs, "CS");
 		if (obj)
 		{
-			error = pdf_load_colorspace(&form->colorspace, xref, obj);
-			if (error)
-				fz_error_handle(error, "cannot load xobject colorspace");
+			form->colorspace = pdf_load_colorspace(xref, obj);
+			fz_throw(ctx, "cannot load xobject colorspace");
 		}
 	}
 
@@ -62,16 +59,18 @@ pdf_load_xobject(pdf_xobject **formp, pdf_xref *xref, fz_obj *dict)
 	if (form->resources)
 		fz_keep_obj(form->resources);
 
-	error = pdf_load_stream(&form->contents, xref, fz_to_num(dict), fz_to_gen(dict));
-	if (error)
+	fz_try(ctx)
+	{
+		form->contents = pdf_load_stream(xref, fz_to_num(dict), fz_to_gen(dict));
+	}
+	fz_catch(ctx)
 	{
 		pdf_remove_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_xobject, dict);
 		pdf_drop_xobject(ctx, form);
-		return fz_error_note(error, "cannot load xobject content stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
+		fz_throw(ctx, "cannot load xobject content stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
-	*formp = form;
-	return fz_okay;
+	return form;
 }
 
 pdf_xobject *

@@ -551,6 +551,10 @@
 			Name="xps"
 			>
 			<File
+				RelativePath="..\xps\muxps.h"
+				>
+			</File>
+			<File
 				RelativePath="..\xps\xps_common.c"
 				>
 			</File>

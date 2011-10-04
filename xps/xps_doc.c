@@ -305,11 +305,10 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	return 0;
 }
 
-int
-xps_load_page(xps_page **pagep, xps_document *doc, int number)
+xps_page *
+xps_load_page(xps_document *doc, int number)
 {
 	xps_page *page;
-	int code;
 	int n = 0;
 
 	for (page = doc->first_page; page; page = page->next)
@@ -318,17 +317,16 @@ xps_load_page(xps_page **pagep, xps_document *doc, int number)
 		{
 			if (!page->root)
 			{
-				code = xps_load_fixed_page(doc, page);
-				if (code)
-					return fz_error_note(code, "cannot load page %d", number + 1);
+				xps_load_fixed_page(doc, page);
+				/* RJW: "cannot load page %d", number + 1 */
 			}
-			*pagep = page;
-			return fz_okay;
+			return page;
 		}
 		n ++;
 	}
 
-	return fz_error_make("cannot find page %d", number + 1);
+	fz_throw(doc->ctx, "cannot find page %d", number + 1);
+	return NULL; /* Stupid MSVC */
 }
 
 void

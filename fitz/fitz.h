@@ -202,6 +202,7 @@ void fz_free_context(fz_context *ctx);
 /* The following throw exceptions on failure to allocate */
 void *fz_malloc(fz_context *ctx, unsigned int  size);
 void *fz_malloc_array(fz_context *ctx, unsigned int  count, unsigned int  size);
+void *fz_calloc(fz_context *ctx, unsigned int  count, unsigned int  size);
 void *fz_resize_array(fz_context *ctx, void *p, unsigned int  count, unsigned int  size);
 char *fz_strdup(fz_context *ctx, char *s);
 
@@ -545,7 +546,7 @@ void fz_seek(fz_stream *stm, int offset, int whence);
 
 int fz_read(fz_stream *stm, unsigned char *buf, int len);
 void fz_read_line(fz_stream *stm, char *buf, int max);
-fz_error fz_read_all(fz_buffer **bufp, fz_stream *stm, int initial);
+fz_buffer *fz_read_all(fz_stream *stm, int initial);
 
 static inline int fz_read_byte(fz_stream *stm)
 {
@@ -696,11 +697,11 @@ void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h);
 fz_pixmap *fz_scale_pixmap_gridfit(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, int gridfit);
 
-fz_error fz_write_pnm(fz_pixmap *pixmap, char *filename);
-fz_error fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha);
-fz_error fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
+void fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
+void fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
+void fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 
-fz_error fz_load_jpx_image(fz_context *ctx, fz_pixmap **imgp, unsigned char *data, int size, fz_colorspace *dcs);
+fz_pixmap *fz_load_jpx_image(fz_context *ctx, unsigned char *data, int size, fz_colorspace *dcs);
 
 /*
  * Bitmaps have 1 component per bit. Only used for creating halftoned versions
@@ -722,7 +723,7 @@ fz_bitmap *fz_keep_bitmap(fz_bitmap *bit);
 void fz_clear_bitmap(fz_bitmap *bit);
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
-fz_error fz_write_pbm(fz_bitmap *bitmap, char *filename);
+void fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
 
 /*
  * A halftone is a set of threshold tiles, one per component. Each threshold
@@ -806,7 +807,7 @@ struct fz_font_s
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	void *t3xref; /* a pdf_xref for the callback */
-	fz_error (*t3run)(void *xref, fz_obj *resources, fz_buffer *contents,
+	void (*t3run)(void *xref, fz_obj *resources, fz_buffer *contents,
 		struct fz_device_s *dev, fz_matrix ctm);
 
 	fz_rect bbox;
@@ -818,8 +819,8 @@ struct fz_font_s
 
 fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 
-fz_error fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, int len, int index);
-fz_error fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index);
+fz_font *fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index);
+fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index);
 
 fz_font *fz_keep_font(fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);

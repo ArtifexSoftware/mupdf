@@ -94,8 +94,8 @@ fz_fill_buffer(fz_stream *stm)
 	}
 }
 
-fz_error
-fz_read_all(fz_buffer **bufp, fz_stream *stm, int initial)
+fz_buffer *
+fz_read_all(fz_stream *stm, int initial)
 {
 	fz_buffer *buf;
 	int n;
@@ -114,14 +114,14 @@ fz_read_all(fz_buffer **bufp, fz_stream *stm, int initial)
 		if (buf->len / 200 > initial)
 		{
 			fz_drop_buffer(ctx, buf);
-			return fz_error_make("compression bomb detected");
+			fz_throw(ctx, "compression bomb detected");
 		}
 
 		n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
 		if (n < 0)
 		{
 			fz_drop_buffer(ctx, buf);
-			return fz_error_note(n, "read error");
+			fz_throw(ctx, "read error");
 		}
 		if (n == 0)
 			break;
@@ -129,8 +129,7 @@ fz_read_all(fz_buffer **bufp, fz_stream *stm, int initial)
 		buf->len += n;
 	}
 
-	*bufp = buf;
-	return fz_okay;
+	return buf;
 }
 
 void

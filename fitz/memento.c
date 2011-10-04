@@ -487,8 +487,10 @@ static void Memento_event(void)
         globals.countdown = globals.paranoia;
     }
 
-    if (globals.sequence == globals.breakAt)
+    if (globals.sequence == globals.breakAt) {
+        fprintf(stderr, "Breaking at event %d\n", globals.breakAt);
         Memento_breakpoint();
+    }
 }
 
 int Memento_breakAt(int event)

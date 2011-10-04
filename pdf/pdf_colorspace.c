@@ -3,8 +3,8 @@
 
 /* ICCBased */
 
-static fz_error
-load_icc_based(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
+static fz_colorspace *
+load_icc_based(pdf_xref *xref, fz_obj *dict)
 {
 	int n;
 
@@ -12,12 +12,13 @@ load_icc_based(fz_colorspace **csp, pdf_xref *xref, fz_obj *dict)
 
 	switch (n)
 	{
-	case 1: *csp = fz_device_gray; return fz_okay;
-	case 3: *csp = fz_device_rgb; return fz_okay;
-	case 4: *csp = fz_device_cmyk; return fz_okay;
+	case 1: return fz_device_gray;
+	case 3: return fz_device_rgb;
+	case 4: return fz_device_cmyk;
 	}
 
-	return fz_error_make("syntaxerror: ICCBased must have 1, 3 or 4 components");
+	fz_throw(xref->ctx, "syntaxerror: ICCBased must have 1, 3 or 4 components");
+	return NULL; /* Stupid MSVC */
 }
 
 /* Lab */
@@ -89,10 +90,9 @@ free_separation(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, sep);
 }
 
-static fz_error
-load_separation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
+static fz_colorspace *
+load_separation(pdf_xref *xref, fz_obj *array)
 {
-	fz_error error;
 	fz_colorspace *cs;
 	struct separation *sep;
 	fz_context *ctx = xref->ctx;
@@ -109,18 +109,14 @@ load_separation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 		n = 1;
 
 	if (n > FZ_MAX_COLORS)
-		return fz_error_make("too many components in colorspace");
+		fz_throw(ctx, "too many components in colorspace");
 
-	error = pdf_load_colorspace(&base, xref, baseobj);
-	if (error)
-		return fz_error_note(error, "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj));
+	base = pdf_load_colorspace(xref, baseobj);
+	/* RJW: "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj) */
 
-	error = pdf_load_function(&tint, xref, tintobj);
-	if (error)
-	{
-		fz_drop_colorspace(ctx, base);
-		return fz_error_note(error, "cannot load tint function (%d %d R)", fz_to_num(tintobj), fz_to_gen(tintobj));
-	}
+	tint = pdf_load_function(xref, tintobj);
+	/* RJW: fz_drop_colorspace(ctx, base);
+	 * "cannot load tint function (%d %d R)", fz_to_num(tintobj), fz_to_gen(tintobj) */
 
 	sep = fz_malloc(ctx, sizeof(struct separation));
 	sep->base = base;
@@ -131,8 +127,7 @@ load_separation(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	cs->free_data = free_separation;
 	cs->data = sep;
 
-	*csp = cs;
-	return fz_okay;
+	return cs;
 }
 
 /* Indexed */
@@ -208,22 +203,19 @@ pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
 	return dst;
 }
 
-static fz_error
-load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
+static fz_colorspace *
+load_indexed(pdf_xref *xref, fz_obj *array)
 {
-	fz_error error;
-	fz_colorspace *cs;
 	struct indexed *idx;
 	fz_context *ctx = xref->ctx;
 	fz_obj *baseobj = fz_array_get(array, 1);
 	fz_obj *highobj = fz_array_get(array, 2);
 	fz_obj *lookup = fz_array_get(array, 3);
-	fz_colorspace *base;
+	fz_colorspace *base, *cs;
 	int i, n;
 
-	error = pdf_load_colorspace(&base, xref, baseobj);
-	if (error)
-		return fz_error_note(error, "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj));
+	base = pdf_load_colorspace(xref, baseobj);
+	/* "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj) */
 
 	idx = fz_malloc(ctx, sizeof(struct indexed));
 	idx->base = base;
@@ -247,18 +239,21 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	{
 		fz_stream *file;
 
-		error = pdf_open_stream(&file, xref, fz_to_num(lookup), fz_to_gen(lookup));
-		if (error)
+		fz_try(ctx)
+		{
+			file = pdf_open_stream(xref, fz_to_num(lookup), fz_to_gen(lookup));
+		}
+		fz_catch(ctx)
 		{
 			fz_drop_colorspace(ctx, cs);
-			return fz_error_note(error, "cannot open colorspace lookup table (%d 0 R)", fz_to_num(lookup));
+			fz_throw(ctx, "cannot open colorspace lookup table (%d 0 R)", fz_to_num(lookup));
 		}
 
 		i = fz_read(file, idx->lookup, n);
 		if (i < 0)
 		{
 			fz_drop_colorspace(ctx, cs);
-			return fz_error_make("cannot read colorspace lookup table (%d 0 R)", fz_to_num(lookup));
+			fz_throw(ctx, "cannot read colorspace lookup table (%d 0 R)", fz_to_num(lookup));
 		}
 
 		fz_close(file);
@@ -266,37 +261,35 @@ load_indexed(fz_colorspace **csp, pdf_xref *xref, fz_obj *array)
 	else
 	{
 		fz_drop_colorspace(ctx, cs);
-		return fz_error_make("cannot parse colorspace lookup table");
+		fz_throw(ctx, "cannot parse colorspace lookup table");
 	}
 
-	*csp = cs;
-	return fz_okay;
+	return cs;
 }
 
 /* Parse and create colorspace from PDF object */
 
-static fz_error
-pdf_load_colorspace_imp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
+static fz_colorspace *
+pdf_load_colorspace_imp(pdf_xref *xref, fz_obj *obj)
 {
 	if (fz_is_name(obj))
 	{
 		if (!strcmp(fz_to_name(obj), "Pattern"))
-			*csp = fz_device_gray;
+			return fz_device_gray;
 		else if (!strcmp(fz_to_name(obj), "G"))
-			*csp = fz_device_gray;
+			return fz_device_gray;
 		else if (!strcmp(fz_to_name(obj), "RGB"))
-			*csp = fz_device_rgb;
+			return fz_device_rgb;
 		else if (!strcmp(fz_to_name(obj), "CMYK"))
-			*csp = fz_device_cmyk;
+			return fz_device_cmyk;
 		else if (!strcmp(fz_to_name(obj), "DeviceGray"))
-			*csp = fz_device_gray;
+			return fz_device_gray;
 		else if (!strcmp(fz_to_name(obj), "DeviceRGB"))
-			*csp = fz_device_rgb;
+			return fz_device_rgb;
 		else if (!strcmp(fz_to_name(obj), "DeviceCMYK"))
-			*csp = fz_device_cmyk;
+			return fz_device_cmyk;
 		else
-			return fz_error_make("unknown colorspace: %s", fz_to_name(obj));
-		return fz_okay;
+			fz_throw(xref->ctx, "unknown colorspace: %s", fz_to_name(obj));
 	}
 
 	else if (fz_is_array(obj))
@@ -308,82 +301,75 @@ pdf_load_colorspace_imp(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
 			/* load base colorspace instead */
 			if (!strcmp(fz_to_name(name), "Pattern"))
 			{
-				fz_error error;
-
 				obj = fz_array_get(obj, 1);
 				if (!obj)
 				{
-					*csp = fz_device_gray;
-					return fz_okay;
+					return fz_device_gray;
 				}
 
-				error = pdf_load_colorspace(csp, xref, obj);
-				if (error)
-					return fz_error_note(error, "cannot load pattern (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+				return pdf_load_colorspace(xref, obj);
+				/* RJW: "cannot load pattern (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
 			}
 
 			else if (!strcmp(fz_to_name(name), "G"))
-				*csp = fz_device_gray;
+				return fz_device_gray;
 			else if (!strcmp(fz_to_name(name), "RGB"))
-				*csp = fz_device_rgb;
+				return fz_device_rgb;
 			else if (!strcmp(fz_to_name(name), "CMYK"))
-				*csp = fz_device_cmyk;
+				return fz_device_cmyk;
 			else if (!strcmp(fz_to_name(name), "DeviceGray"))
-				*csp = fz_device_gray;
+				return fz_device_gray;
 			else if (!strcmp(fz_to_name(name), "DeviceRGB"))
-				*csp = fz_device_rgb;
+				return fz_device_rgb;
 			else if (!strcmp(fz_to_name(name), "DeviceCMYK"))
-				*csp = fz_device_cmyk;
+				return fz_device_cmyk;
 			else if (!strcmp(fz_to_name(name), "CalGray"))
-				*csp = fz_device_gray;
+				return fz_device_gray;
 			else if (!strcmp(fz_to_name(name), "CalRGB"))
-				*csp = fz_device_rgb;
+				return fz_device_rgb;
 			else if (!strcmp(fz_to_name(name), "CalCMYK"))
-				*csp = fz_device_cmyk;
+				return fz_device_cmyk;
 			else if (!strcmp(fz_to_name(name), "Lab"))
-				*csp = fz_device_lab;
+				return fz_device_lab;
 
 			else if (!strcmp(fz_to_name(name), "ICCBased"))
-				return load_icc_based(csp, xref, fz_array_get(obj, 1));
+				return load_icc_based(xref, fz_array_get(obj, 1));
 
 			else if (!strcmp(fz_to_name(name), "Indexed"))
-				return load_indexed(csp, xref, obj);
+				return load_indexed(xref, obj);
 			else if (!strcmp(fz_to_name(name), "I"))
-				return load_indexed(csp, xref, obj);
+				return load_indexed(xref, obj);
 
 			else if (!strcmp(fz_to_name(name), "Separation"))
-				return load_separation(csp, xref, obj);
+				return load_separation(xref, obj);
 
 			else if (!strcmp(fz_to_name(name), "DeviceN"))
-				return load_separation(csp, xref, obj);
+				return load_separation(xref, obj);
 
 			else
-				return fz_error_make("syntaxerror: unknown colorspace %s", fz_to_name(name));
-
-			return fz_okay;
+				fz_throw(xref->ctx, "syntaxerror: unknown colorspace %s", fz_to_name(name));
 		}
 	}
 
-	return fz_error_make("syntaxerror: could not parse color space (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+	fz_throw(xref->ctx, "syntaxerror: could not parse color space (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+	return NULL; /* Stupid MSVC */
 }
 
-fz_error
-pdf_load_colorspace(fz_colorspace **csp, pdf_xref *xref, fz_obj *obj)
+fz_colorspace *
+pdf_load_colorspace(pdf_xref *xref, fz_obj *obj)
 {
-	fz_error error;
 	fz_context *ctx = xref->ctx;
+	fz_colorspace *cs;
 
-	if ((*csp = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)fz_drop_colorspace, obj)))
+	if ((cs = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)fz_drop_colorspace, obj)))
 	{
-		fz_keep_colorspace(*csp);
-		return fz_okay;
+		return fz_keep_colorspace(cs);
 	}
 
-	error = pdf_load_colorspace_imp(csp, xref, obj);
-	if (error)
-		return fz_error_note(error, "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+	cs = pdf_load_colorspace_imp(xref, obj);
+	/* RJW: "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)fz_keep_colorspace, (pdf_store_drop_fn *)fz_drop_colorspace, obj, *csp);
+	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)fz_keep_colorspace, (pdf_store_drop_fn *)fz_drop_colorspace, obj, cs);
 
-	return fz_okay;
+	return cs;
 }

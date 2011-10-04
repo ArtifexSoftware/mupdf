@@ -179,8 +179,8 @@ fz_finalize_freetype(fz_context *ctx)
 	}
 }
 
-fz_error
-fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index)
+fz_font *
+fz_new_font_from_file(fz_context *ctx, char *path, int index)
 {
 	FT_Face face;
 	fz_error error;
@@ -189,11 +189,11 @@ fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index)
 
 	error = fz_init_freetype(ctx);
 	if (error)
-		return fz_error_note(error, "cannot init freetype library");
+		fz_throw(ctx, "cannot init freetype library");
 
 	fterr = FT_New_Face(fz_ftlib, path, index, &face);
 	if (fterr)
-		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
+		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 
 	font = fz_new_font(ctx, face->family_name);
 	font->ft_face = face;
@@ -202,12 +202,11 @@ fz_new_font_from_file(fz_context *ctx, fz_font **fontp, char *path, int index)
 	font->bbox.x1 = face->bbox.xMax * 1000 / face->units_per_EM;
 	font->bbox.y1 = face->bbox.yMax * 1000 / face->units_per_EM;
 
-	*fontp = font;
-	return fz_okay;
+	return font;
 }
 
-fz_error
-fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, int len, int index)
+fz_font *
+fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index)
 {
 	FT_Face face;
 	fz_error error;
@@ -216,11 +215,11 @@ fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, i
 
 	error = fz_init_freetype(ctx);
 	if (error)
-		return fz_error_note(error, "cannot init freetype library");
+		fz_throw(ctx, "cannot init freetype library");
 
 	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, &face);
 	if (fterr)
-		return fz_error_make("freetype: cannot load font: %s", ft_error_string(fterr));
+		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 
 	font = fz_new_font(ctx, face->family_name);
 	font->ft_face = face;
@@ -229,8 +228,7 @@ fz_new_font_from_memory(fz_context *ctx, fz_font **fontp, unsigned char *data, i
 	font->bbox.x1 = face->bbox.xMax * 1000 / face->units_per_EM;
 	font->bbox.y1 = face->bbox.yMax * 1000 / face->units_per_EM;
 
-	*fontp = font;
-	return fz_okay;
+	return font;
 }
 
 static fz_matrix
@@ -514,7 +512,6 @@ fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix)
 fz_pixmap *
 fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 {
-	fz_error error;
 	fz_matrix ctm;
 	fz_buffer *contents;
 	fz_bbox bbox;
@@ -532,9 +529,8 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 
 	ctm = fz_concat(font->t3matrix, trm);
 	dev = fz_new_bbox_device(ctx, &bbox);
-	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
-	if (error)
-		fz_error_handle(error, "cannot draw type3 glyph");
+	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
+	/* RJW: "cannot draw type3 glyph" */
 
 	if (dev->flags & FZ_CHARPROC_MASK)
 	{
@@ -565,9 +561,8 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 
 	cache = fz_new_glyph_cache(ctx);
 	dev = fz_new_draw_device_type3(ctx, cache, glyph);
-	error = font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
-	if (error)
-		fz_error_handle(error, "cannot draw type3 glyph");
+	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
+	/* RJW: "cannot draw type3 glyph" */
 	fz_free_device(dev);
 	fz_free_glyph_cache(ctx, cache);
 

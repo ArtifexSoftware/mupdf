@@ -39,7 +39,6 @@ static int isfontdesc(fz_obj *obj)
 
 static void saveimage(int num)
 {
-	fz_error error;
 	fz_pixmap *img;
 	fz_obj *ref;
 	char name[1024];
@@ -48,9 +47,14 @@ static void saveimage(int num)
 
 	/* TODO: detect DCTD and save as jpeg */
 
-	error = pdf_load_image(&img, xref, ref);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		img = pdf_load_image(xref, ref);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	if (dorgb && img->colorspace && img->colorspace != fz_device_rgb)
 	{
@@ -71,7 +75,7 @@ static void saveimage(int num)
 	{
 		sprintf(name, "img-%04d.pam", num);
 		printf("extracting image %s\n", name);
-		fz_write_pam(img, name, 0);
+		fz_write_pam(ctx, img, name, 0);
 	}
 
 	fz_drop_pixmap(ctx, img);
@@ -80,7 +84,6 @@ static void saveimage(int num)
 
 static void savefont(fz_obj *dict, int num)
 {
-	fz_error error;
 	char name[1024];
 	char *subtype;
 	fz_buffer *buf;
@@ -133,11 +136,14 @@ static void savefont(fz_obj *dict, int num)
 		return;
 	}
 
-	buf = fz_new_buffer(ctx, 0);
-
-	error = pdf_load_stream(&buf, xref, fz_to_num(stream), fz_to_gen(stream));
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		buf = pdf_load_stream(xref, fz_to_num(stream), fz_to_gen(stream));
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	sprintf(name, "%s-%04d.%s", fontname, num, ext);
 	printf("extracting font %s\n", name);
@@ -158,15 +164,19 @@ static void savefont(fz_obj *dict, int num)
 
 static void showobject(int num)
 {
-	fz_error error;
 	fz_obj *obj;
 
 	if (!xref)
 		die(fz_error_make("no file specified"));
 
-	error = pdf_load_object(&obj, xref, num, 0);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		obj = pdf_load_object(xref, num, 0);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	if (isimage(obj))
 		saveimage(num);
@@ -178,7 +188,6 @@ static void showobject(int num)
 
 int main(int argc, char **argv)
 {
-	fz_error error;
 	char *infile;
 	char *password = "";
 	int c, o;
@@ -202,9 +211,14 @@ int main(int argc, char **argv)
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 
-	error = pdf_open_xref(ctx, &xref, infile, password);
-	if (error)
-		die(fz_error_note(error, "cannot open input file '%s'", infile));
+	fz_try(ctx)
+	{
+		xref = pdf_open_xref(ctx, infile, password);
+	}
+	fz_catch(ctx)
+	{
+		die(fz_error_note(1, "cannot open input file '%s'", infile));
+	}
 
 	if (fz_optind == argc)
 	{

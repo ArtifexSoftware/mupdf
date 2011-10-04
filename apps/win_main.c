@@ -241,7 +241,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetDlgItemTextA(hwnd, 0x13, "n/a");
 		}
 
-		info = fz_dict_gets(xref->ctx, xref->trailer, "Info");
+		info = fz_dict_gets(xref->trailer, "Info");
 		if (!info)
 			return TRUE;
 
@@ -253,21 +253,21 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			fz_free(context, ucs); \
 		}
 
-		if ((obj = fz_dict_gets(xref->ctx, info, "Title")))
+		if ((obj = fz_dict_gets(info, "Title")))
 			SETUCS(0x20);
-		if ((obj = fz_dict_gets(xref->ctx, info, "Author")))
+		if ((obj = fz_dict_gets(info, "Author")))
 			SETUCS(0x21);
-		if ((obj = fz_dict_gets(xref->ctx, info, "Subject")))
+		if ((obj = fz_dict_gets(info, "Subject")))
 			SETUCS(0x22);
-		if ((obj = fz_dict_gets(xref->ctx, info, "Keywords")))
+		if ((obj = fz_dict_gets(info, "Keywords")))
 			SETUCS(0x23);
-		if ((obj = fz_dict_gets(xref->ctx, info, "Creator")))
+		if ((obj = fz_dict_gets(info, "Creator")))
 			SETUCS(0x24);
-		if ((obj = fz_dict_gets(xref->ctx, info, "Producer")))
+		if ((obj = fz_dict_gets(info, "Producer")))
 			SETUCS(0x25);
-		if ((obj = fz_dict_gets(xref->ctx, info, "CreationDate")))
+		if ((obj = fz_dict_gets(info, "CreationDate")))
 			SETUCS(0x26);
-		if ((obj = fz_dict_gets(xref->ctx, info, "ModDate")))
+		if ((obj = fz_dict_gets(info, "ModDate")))
 			SETUCS(0x27);
 		return TRUE;
 
@@ -858,7 +858,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	fz_accelerate();
 
-	ctx = fz_context_init(&fz_alloc_default);
+	ctx = fz_new_context(/*&fz_alloc_default*/);
 	if (ctx == NULL)
 	{
 		fprintf(stderr, "Failed to init context");

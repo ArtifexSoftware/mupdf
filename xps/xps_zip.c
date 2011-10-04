@@ -389,66 +389,72 @@ xps_read_part(xps_document *doc, char *partname)
 	return xps_read_zip_part(doc, partname);
 }
 
-static int
-xps_open_directory(fz_context *fctx, xps_document **ctxp, char *directory)
+static xps_document *
+xps_open_directory(fz_context *ctx, char *directory)
 {
 	xps_document *doc;
-	int code;
 
-	doc = fz_malloc(fctx, sizeof(xps_document));
+	doc = fz_malloc(ctx, sizeof(xps_document));
 	memset(doc, 0, sizeof *doc);
 
-	doc->directory = fz_strdup(fctx, directory);
-	doc->ctx = fctx;
+	doc->directory = fz_strdup(ctx, directory);
+	doc->ctx = ctx;
 
-	code = xps_read_page_list(doc);
-	if (code)
+	fz_try(ctx)
+	{
+		xps_read_page_list(doc);
+	}
+	fz_catch(ctx)
 	{
 		xps_free_context(doc);
-		return fz_error_note(code, "cannot read page list");
+		fz_throw(ctx, "cannot read page list");
 	}
 
-	*ctxp = doc;
-	return fz_okay;
+	return doc;
 }
 
-int
-xps_open_stream(xps_document **ctxp, fz_stream *file)
+xps_document *
+xps_open_stream(fz_stream *file)
 {
 	xps_document *doc;
-	int code;
+	fz_context *ctx = file->ctx;
 
-	doc = fz_malloc(file->ctx, sizeof(xps_document));
+	doc = fz_malloc(ctx, sizeof(xps_document));
 	memset(doc, 0, sizeof *doc);
 
-	doc->ctx = file->ctx;
+	doc->ctx = ctx;
 	doc->file = fz_keep_stream(file);
 
-	code = xps_find_and_read_zip_dir(doc);
-	if (code < 0)
+	fz_try(ctx)
+	{
+		xps_find_and_read_zip_dir(doc);
+	}
+	fz_catch(ctx)
 	{
 		xps_free_context(doc);
-		return fz_error_note(code, "cannot read zip central directory");
+		fz_throw(ctx, "cannot read zip central directory");
 	}
 
-	code = xps_read_page_list(doc);
-	if (code)
+	fz_try(ctx)
+	{
+		xps_read_page_list(doc);
+	}
+	fz_catch(ctx)
 	{
 		xps_free_context(doc);
-		return fz_error_note(code, "cannot read page list");
+		fz_throw(ctx, "cannot read page list");
 	}
 
-	*ctxp = doc;
-	return fz_okay;
+	return doc;
 }
 
-int
-xps_open_file(fz_context *doc, xps_document **ctxp, char *filename)
+xps_document *
+xps_open_file(fz_context *ctx, char *filename)
 {
 	char buf[2048];
 	fz_stream *file;
 	char *p;
-	int code;
+	xps_document *doc;
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
@@ -457,18 +463,24 @@ xps_open_file(fz_context *doc, xps_document **ctxp, char *filename)
 		if (!p)
 			p = strstr(buf, "\\_rels\\.rels");
 		*p = 0;
-		return xps_open_directory(doc, ctxp, buf);
+		return xps_open_directory(ctx, buf);
 	}
 
-	file = fz_open_file(doc, filename);
+	file = fz_open_file(ctx, filename);
 	if (!file)
-		return fz_error_make("cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
 
-	code = xps_open_stream(ctxp, file);
+	fz_try(ctx)
+	{
+		doc = xps_open_stream(file);
+	}
+	fz_catch(ctx)
+	{
+		fz_close(file);
+		fz_throw(ctx, "cannot load document '%s'", filename);
+	}
 	fz_close(file);
-	if (code)
-		return fz_error_note(code, "cannot load document '%s'", filename);
-	return fz_okay;
+	return doc;
 }
 
 void

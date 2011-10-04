@@ -100,20 +100,25 @@ void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
 
 static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 {
-	fz_error error;
 	fz_stream *file;
 	char *password = "";
 	fz_obj *obj;
 	fz_obj *info;
+	fz_context *ctx = app->ctx;
 
 	/*
 	 * Open PDF and load xref table
 	 */
 
-	file = fz_open_fd(app->ctx, fd);
-	error = pdf_open_xref_with_stream(&app->xref, file, NULL);
-	if (error)
-		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
+	file = fz_open_fd(ctx, fd);
+	fz_try(ctx)
+	{
+		app->xref = pdf_open_xref_with_stream(file, NULL);
+	}
+	fz_catch(ctx)
+	{
+		pdfapp_error(app, fz_error_note(1, "cannot open document '%s'", filename));
+	}
 	fz_close(file);
 
 	/*
@@ -150,29 +155,38 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	{
 		obj = fz_dict_gets(info, "Title");
 		if (obj)
-			app->doctitle = pdf_to_utf8(app->ctx, obj);
+			app->doctitle = pdf_to_utf8(ctx, obj);
 	}
 
 	/*
 	 * Start at first page
 	 */
 
-	error = pdf_load_page_tree(app->xref);
-	if (error)
-		pdfapp_error(app, fz_error_note(error, "cannot load page tree"));
+	fz_try(ctx)
+	{
+		pdf_load_page_tree(app->xref);
+	}
+	fz_catch(ctx)
+	{
+		pdfapp_error(app, fz_error_note(1, "cannot load page tree"));
+	}
 
 	app->pagecount = pdf_count_pages(app->xref);
 }
 
 static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
 {
-	fz_error error;
 	fz_stream *file;
 
 	file = fz_open_fd(app->ctx, fd);
-	error = xps_open_stream(&app->xps, file);
-	if (error)
-		pdfapp_error(app, fz_error_note(error, "cannot open document '%s'", filename));
+	fz_try(app->ctx)
+	{
+		app->xps = xps_open_stream(file);
+	}
+	fz_catch(app->ctx)
+	{
+		pdfapp_error(app, fz_error_note(-1, "cannot open document '%s'", filename));
+	}
 	fz_close(file);
 
 	app->doctitle = filename;
@@ -282,12 +296,16 @@ static void pdfapp_panview(pdfapp_t *app, int newx, int newy)
 static void pdfapp_loadpage_pdf(pdfapp_t *app)
 {
 	pdf_page *page;
-	fz_error error;
 	fz_device *mdev;
 
-	error = pdf_load_page(&page, app->xref, app->pageno - 1);
-	if (error)
-		pdfapp_error(app, error);
+	fz_try(app->ctx)
+	{
+		page = pdf_load_page(app->xref, app->pageno - 1);
+	}
+	fz_catch(app->ctx)
+	{
+		pdfapp_error(app, 1);
+	}
 
 	app->page_bbox = page->mediabox;
 	app->page_rotate = page->rotate;
@@ -297,11 +315,13 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	/* Create display list */
 	app->page_list = fz_new_display_list(app->ctx);
 	mdev = fz_new_list_device(app->ctx, app->page_list);
-	error = pdf_run_page(app->xref, page, mdev, fz_identity);
-	if (error)
+	fz_try(app->ctx)
 	{
-		error = fz_error_note(error, "cannot draw page %d in '%s'", app->pageno, app->doctitle);
-		pdfapp_error(app, error);
+		pdf_run_page(app->xref, page, mdev, fz_identity);
+	}
+	fz_catch(app->ctx)
+	{
+		pdfapp_error(app, fz_error_note(-1, "cannot draw page %d in '%s'", app->pageno, app->doctitle));
 	}
 	fz_free_device(mdev);
 
@@ -314,11 +334,15 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 {
 	xps_page *page;
 	fz_device *mdev;
-	fz_error error;
 
-	error = xps_load_page(&page, app->xps, app->pageno - 1);
-	if (error)
-		pdfapp_error(app, fz_error_note(error, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
+	fz_try(app->ctx)
+	{
+		page = xps_load_page(app->xps, app->pageno - 1);
+	}
+	fz_catch(app->ctx)
+	{
+		pdfapp_error(app, fz_error_note(1, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
+	}
 
 	app->page_bbox.x0 = 0;
 	app->page_bbox.y0 = 0;

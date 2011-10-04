@@ -91,16 +91,16 @@ void xps_debug_page_list(xps_document *doc);
 void xps_free_page_list(xps_document *doc);
 
 int xps_count_pages(xps_document *doc);
-int xps_load_page(xps_page **page, xps_document *doc, int number);
+xps_page *xps_load_page(xps_document *doc, int number);
 void xps_free_page(xps_document *doc, xps_page *page);
 
 /*
  * Images, fonts, and colorspaces.
  */
 
-int xps_decode_jpeg(fz_context *doc, fz_pixmap **imagep, byte *rbuf, int rlen);
-int xps_decode_png(fz_context *doc, fz_pixmap **imagep, byte *rbuf, int rlen);
-int xps_decode_tiff(fz_context *doc, fz_pixmap **imagep, byte *rbuf, int rlen);
+fz_pixmap *xps_decode_jpeg(fz_context *doc, byte *rbuf, int rlen);
+fz_pixmap *xps_decode_png(fz_context *doc, byte *rbuf, int rlen);
+fz_pixmap *xps_decode_tiff(fz_context *doc, byte *rbuf, int rlen);
 
 typedef struct xps_font_cache_s xps_font_cache;
 
@@ -227,8 +227,8 @@ struct xps_document_s
 	fz_device *dev;
 };
 
-int xps_open_file(fz_context *doc, xps_document **ctxp, char *filename);
-int xps_open_stream(xps_document **ctxp, fz_stream *file);
+xps_document *xps_open_file(fz_context *ctx, char *filename);
+xps_document *xps_open_stream(fz_stream *file);
 void xps_free_context(xps_document *doc);
 
 #endif

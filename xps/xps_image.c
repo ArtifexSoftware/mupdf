@@ -1,40 +1,37 @@
 #include "fitz.h"
 #include "muxps.h"
 
-static int
-xps_decode_image(fz_context *doc, fz_pixmap **imagep, byte *buf, int len)
+static fz_pixmap *
+xps_decode_image(fz_context *ctx, byte *buf, int len)
 {
-	int error;
+	fz_pixmap *image;
 
 	if (len < 8)
-		return fz_error_make("unknown image file format");
+		fz_throw(ctx, "unknown image file format");
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
 	{
-		error = xps_decode_jpeg(doc, imagep, buf, len);
-		if (error)
-			return fz_error_note(error, "cannot decode jpeg image");
+		image = xps_decode_jpeg(ctx, buf, len);
+		/* RJW: "cannot decode jpeg image" */
 	}
 	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 	{
-		error = xps_decode_png(doc, imagep, buf, len);
-		if (error)
-			return fz_error_note(error, "cannot decode png image");
+		image = xps_decode_png(ctx, buf, len);
+		/* RJW: "cannot decode png image" */
 	}
 	else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
 	{
-		return fz_error_make("JPEG-XR codec is not available");
+		fz_throw(ctx, "JPEG-XR codec is not available");
 	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 	{
-		error = xps_decode_tiff(doc, imagep, buf, len);
-		if (error)
-			return fz_error_note(error, "cannot decode TIFF image");
+		image = xps_decode_tiff(ctx, buf, len);
+		/* RJW: "cannot decode TIFF image" */
 	}
 	else
-		return fz_error_make("unknown image file format");
+		fz_throw(ctx, "unknown image file format");
 
-	return fz_okay;
+	return image;
 }
 
 static void
@@ -106,7 +103,6 @@ xps_parse_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 {
 	xps_part *part;
 	fz_pixmap *image;
-	int code;
 
 	part = xps_find_image_brush_source_part(doc, base_uri, root);
 	if (!part) {
@@ -114,8 +110,12 @@ xps_parse_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 		return;
 	}
 
-	code = xps_decode_image(doc->ctx, &image, part->data, part->size);
-	if (code < 0) {
+	fz_try(doc->ctx)
+	{
+		image = xps_decode_image(doc->ctx, part->data, part->size);
+	}
+	fz_catch(doc->ctx)
+	{
 		xps_free_part(doc, part);
 		fz_error_handle(-1, "cannot decode image resource");
 		return;

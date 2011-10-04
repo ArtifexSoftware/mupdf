@@ -795,16 +795,16 @@ fz_free_dict(fz_obj *obj)
 void
 fz_drop_obj(fz_obj *obj)
 {
-	assert(obj != NULL);
-	if (--obj->refs == 0)
-	{
-		if (obj->kind == FZ_ARRAY)
-			fz_free_array(obj);
-		else if (obj->kind == FZ_DICT)
-			fz_free_dict(obj);
-		else
-			fz_free(obj->ctx, obj);
-	}
+	if (obj == NULL)
+		return;
+	if (--obj->refs)
+		return;
+	if (obj->kind == FZ_ARRAY)
+		fz_free_array(obj);
+	else if (obj->kind == FZ_DICT)
+		fz_free_dict(obj);
+	else
+		fz_free(obj->ctx, obj);
 }
 
 /* Pretty printing objects */

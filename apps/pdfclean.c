@@ -287,13 +287,17 @@ static void renumberobjs(void)
 
 static void retainpages(int argc, char **argv)
 {
-	fz_error error;
 	fz_obj *oldroot, *root, *pages, *kids, *countobj, *parent;
 
 	/* Load the old page tree */
-	error = pdf_load_page_tree(xref);
-	if (error)
-		die(fz_error_note(error, "cannot load page tree"));
+	fz_try(xref->ctx)
+	{
+		pdf_load_page_tree(xref);
+	}
+	fz_catch(xref->ctx)
+	{
+		die(fz_error_note(1, "cannot load page tree"));
+	}
 
 	/* Keep only pages/type entry to avoid references to unretained pages */
 	oldroot = fz_dict_gets(xref->trailer, "Root");
@@ -377,7 +381,6 @@ static void retainpages(int argc, char **argv)
 
 static void preloadobjstms(void)
 {
-	fz_error error;
 	fz_obj *obj;
 	int num;
 
@@ -385,9 +388,14 @@ static void preloadobjstms(void)
 	{
 		if (xref->table[num].type == 'o')
 		{
-			error = pdf_load_object(&obj, xref, num, 0);
-			if (error)
-				die(error);
+			fz_try(ctx)
+			{
+				obj = pdf_load_object(xref, num, 0);
+			}
+			fz_catch(ctx)
+			{
+				die(1);
+			}
 			fz_drop_obj(obj);
 		}
 	}
@@ -488,13 +496,17 @@ static void addhexfilter(fz_obj *dict)
 
 static void copystream(fz_obj *obj, int num, int gen)
 {
-	fz_error error;
 	fz_buffer *buf, *tmp;
 	fz_obj *newlen;
 
-	error = pdf_load_raw_stream(&buf, xref, num, gen);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		buf = pdf_load_raw_stream(xref, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	if (doascii && isbinarystream(buf))
 	{
@@ -520,13 +532,17 @@ static void copystream(fz_obj *obj, int num, int gen)
 
 static void expandstream(fz_obj *obj, int num, int gen)
 {
-	fz_error error;
 	fz_buffer *buf, *tmp;
 	fz_obj *newlen;
 
-	error = pdf_load_stream(&buf, xref, num, gen);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		buf = pdf_load_stream(xref, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	fz_dict_dels(obj, "Filter");
 	fz_dict_dels(obj, "DecodeParms");
@@ -555,13 +571,17 @@ static void expandstream(fz_obj *obj, int num, int gen)
 
 static void writeobject(int num, int gen)
 {
-	fz_error error;
 	fz_obj *obj;
 	fz_obj *type;
 
-	error = pdf_load_object(&obj, xref, num, gen);
-	if (error)
-		die(error);
+	fz_try(ctx)
+	{
+		obj = pdf_load_object(xref, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		die(1);
+	}
 
 	/* skip ObjStm and XRef objects */
 	if (fz_is_dict(obj))
@@ -686,7 +706,6 @@ static void writepdf(void)
 
 int main(int argc, char **argv)
 {
-	fz_error error;
 	char *infile;
 	char *outfile = "out.pdf";
 	char *password = "";
@@ -724,9 +743,14 @@ int main(int argc, char **argv)
 	if (ctx == NULL)
 		die(fz_error_note(1, "failed to initialise context"));
 
-	error = pdf_open_xref(ctx, &xref, infile, password);
-	if (error)
-		die(fz_error_note(error, "cannot open input file '%s'", infile));
+	fz_try(ctx)
+	{
+		xref = pdf_open_xref(ctx, infile, password);
+	}
+	fz_catch(ctx)
+	{
+		die(fz_error_note(1, "cannot open input file '%s'", infile));
+	}
 
 	out = fopen(outfile, "wb");
 	if (!out)
