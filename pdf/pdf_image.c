@@ -63,7 +63,7 @@ pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, i
 				tile = mask;
 				mask = NULL;
 			}
-			goto end;
+			break; /* Out of fz_try */
 		}
 
 		w = fz_to_int(fz_dict_getsa(dict, "Width", "W"));
@@ -234,8 +234,6 @@ pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, i
 		{
 			fz_decode_tile(tile, decode);
 		}
-end:
-		{}
 	}
 	fz_catch(ctx)
 	{

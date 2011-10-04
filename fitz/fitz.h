@@ -164,9 +164,10 @@ struct fz_error_context_s
 #define fz_try(ctx) \
 	if (fz_push_try(ctx->error), \
 		!setjmp(ctx->error->stack[ctx->error->top].buffer)) \
-	{
+	{ do {
 
 #define fz_catch(ctx) \
+		} while(0); \
 		ctx->error->stack[ctx->error->top].failed = 0; \
 	} \
 	else \
