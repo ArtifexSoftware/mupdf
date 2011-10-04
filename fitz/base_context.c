@@ -11,37 +11,39 @@ fz_obj *(*fz_resolve_indirect)(fz_obj*) = fz_resolve_indirect_null;
 void
 fz_free_context(fz_context *ctx)
 {
-	assert(ctx != NULL);
+	if (ctx == NULL)
+		return;
 
 	/* Other finalisation calls go here (in reverse order) */
 
 	if (ctx->error)
 	{
 		assert(ctx->error->top == -1);
-		free(ctx->error);
+		fz_free(ctx, ctx->error);
 	}
 
 	/* Free the context itself */
-	free(ctx);
+	ctx->alloc->free(ctx->alloc->user, ctx);
 }
 
 fz_context *
-fz_new_context(void)
+fz_new_context(fz_alloc_context *alloc)
 {
 	fz_context *ctx;
 
-	ctx = malloc(sizeof(fz_context));
+	ctx = alloc->malloc(alloc->user, sizeof(fz_context));
 	if (!ctx)
 		return NULL;
 	memset(ctx, 0, sizeof *ctx);
+	ctx->alloc = alloc;
 
-	ctx->error = malloc(sizeof(fz_error_context));
+	ctx->error = fz_malloc_no_throw(ctx, sizeof(fz_error_context));
 	if (!ctx->error)
 		goto cleanup;
 	ctx->error->top = -1;
 	ctx->error->message[0] = 0;
 
-	ctx->warn = malloc(sizeof(fz_warn_context));
+	ctx->warn = fz_malloc_no_throw(ctx, sizeof(fz_warn_context));
 	if (!ctx->warn)
 		goto cleanup;
 	ctx->warn->message[0] = 0;
@@ -60,5 +62,5 @@ cleanup:
 fz_context *
 fz_clone_context(fz_context *ctx)
 {
-	return fz_new_context();
+	return fz_new_context(ctx->alloc);
 }

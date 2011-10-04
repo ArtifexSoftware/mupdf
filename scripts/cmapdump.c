@@ -50,7 +50,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	ctx = fz_new_context();
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
 		fprintf(stderr, "failed to initialise!\n");

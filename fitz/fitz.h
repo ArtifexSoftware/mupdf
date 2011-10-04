@@ -145,8 +145,11 @@ struct fz_alloc_context_s
 	void *user;
 	void *(*malloc)(void *, unsigned int);
 	void *(*realloc)(void *, void *, unsigned int);
-	void *(*free)(void *, void *, unsigned int);
+	void  (*free)(void *, void *);
 };
+
+/* Default allocator */
+extern fz_alloc_context fz_alloc_default;
 
 struct fz_error_context_s
 {
@@ -185,11 +188,12 @@ void fz_flush_warnings(fz_context *ctx);
 
 struct fz_context_s
 {
+	fz_alloc_context *alloc;
 	fz_error_context *error;
 	fz_warn_context *warn;
 };
 
-fz_context *fz_new_context(void);
+fz_context *fz_new_context(fz_alloc_context *alloc);
 fz_context *fz_clone_context(fz_context *ctx);
 void fz_free_context(fz_context *ctx);
 
@@ -207,6 +211,14 @@ void *fz_resize_array(fz_context *ctx, void *p, unsigned int  count, unsigned in
 char *fz_strdup(fz_context *ctx, char *s);
 
 void fz_free(fz_context *ctx, void *p);
+
+/* The following returns NULL on failure to allocate */
+void *fz_malloc_no_throw(fz_context *ctx, unsigned int  size);
+void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int  count, unsigned int  size);
+void *fz_calloc_no_throw(fz_context *ctx, unsigned int  count, unsigned int  size);
+void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int  size);
+char *fz_strdup_no_throw(fz_context *ctx, char *s);
+
 
 /* runtime (hah!) test for endian-ness */
 int fz_is_big_endian(void);

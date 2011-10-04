@@ -352,7 +352,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_new_context();
+	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
 		fprintf(stderr, "Failed to init context\n");
