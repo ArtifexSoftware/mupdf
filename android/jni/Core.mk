@@ -4,6 +4,8 @@ include $(CLEAR_VARS)
 
 MY_ROOT := ../..
 
+LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB
+
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \
 	../thirdparty/openjpeg-1.4/libopenjpeg \
@@ -53,7 +55,6 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/fitz/stm_buffer.c \
 	$(MY_ROOT)/fitz/stm_open.c \
 	$(MY_ROOT)/fitz/stm_read.c \
-	$(MY_ROOT)/draw/arch_arm.c \
 	$(MY_ROOT)/draw/arch_port.c \
 	$(MY_ROOT)/draw/draw_affine.c \
 	$(MY_ROOT)/draw/draw_blend.c \

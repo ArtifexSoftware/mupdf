@@ -16,6 +16,21 @@ and then positioning it at (frac(x),frac(y)).
  */
 #define SINGLE_PIXEL_SPECIALS
 
+/* If we're compiling as thumb code, then we need to tell the compiler
+ * to enter and exit ARM mode around our assembly sections. If we move
+ * the ARM functions to a separate file and arrange for it to be compiled
+ * without thumb mode, we can save some time on entry.
+ */
+#ifdef ARCH_ARM
+#ifdef ARCH_THUMB
+#define ENTER_ARM   ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n"
+#define ENTER_THUMB "9:.thumb\n"
+#else
+#define ENTER_ARM
+#define ENTER_THUMB
+#endif
+#endif
+
 #ifdef DEBUG_SCALING
 #ifdef WIN32
 #include <windows.h>
@@ -247,10 +262,10 @@ typedef struct fz_weights_s fz_weights;
 
 struct fz_weights_s
 {
+	int flip;
 	int count;
 	int max_len;
 	int n;
-	int flip;
 	int new_line;
 	int index[1];
 };
@@ -584,6 +599,274 @@ scale_row_to_temp(int *dst, unsigned char *src, fz_weights *weights)
 	}
 }
 
+#ifdef ARCH_ARM
+
+static void
+scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
+__attribute__((naked));
+
+static void
+scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
+__attribute__((naked));
+
+static void
+scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
+__attribute__((naked));
+
+static void
+scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width, int row)
+__attribute__((naked));
+
+static void
+scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
+{
+	/* possible optimisation in here; unroll inner loops to avoid stall. */
+	asm volatile(
+	ENTER_ARM
+	"stmfd	r13!,{r4-r5,r9,r14}				\n"
+	"@ r0 = dst						\n"
+	"@ r1 = src						\n"
+	"@ r2 = weights						\n"
+	"ldr	r12,[r2],#4		@ r12= flip		\n"
+	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
+	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"cmp	r12,#0			@ if (flip)		\n"
+	"beq	4f			@ {			\n"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"add	r0, r0, r3, LSL #2	@ dst += count		\n"
+	"1:							\n"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = a = 0		\n"
+	"add	r4, r1, r4		@ r4 = min = &src[r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	3f			@ {			\n"
+	"2:							\n"
+	"ldr	r12,[r2], #4		@ r12 = *contrib++	\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"@stall on r14						\n"
+	"mla	r5, r12,r14,r5		@ g += r14 * r12	\n"
+	"bgt	2b			@ }			\n"
+	"3:							\n"
+	"str	r5,[r0, #-4]!		@ *--dst=a		\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	1b			@ 			\n"
+	"ldmfd	r13!,{r4-r5,r9,PC}	@ pop, return to thumb	\n"
+	"4:"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"5:"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = a = 0		\n"
+	"add	r4, r1, r4		@ r4 = min = &src[r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	7f			@ {			\n"
+	"6:							\n"
+	"ldr	r12,[r2], #4		@ r12 = *contrib++	\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"@stall on r14						\n"
+	"mla	r5, r12,r14,r5		@ a += r14 * r12	\n"
+	"bgt	6b			@ }			\n"
+	"7:							\n"
+	"str	r5, [r0], #4		@ *dst++=a		\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	5b			@ 			\n"
+	"ldmfd	r13!,{r4-r5,r9,PC}	@ pop, return to thumb	\n"
+	ENTER_THUMB
+	);
+}
+
+static void
+scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
+{
+	asm volatile(
+	ENTER_ARM
+	"stmfd	r13!,{r4-r6,r9-r11,r14}				\n"
+	"@ r0 = dst						\n"
+	"@ r1 = src						\n"
+	"@ r2 = weights						\n"
+	"ldr	r12,[r2],#4		@ r12= flip		\n"
+	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
+	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"cmp	r12,#0			@ if (flip)		\n"
+	"beq	4f			@ {			\n"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"add	r0, r0, r3, LSL #3	@ dst += 2*count	\n"
+	"1:							\n"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = g = 0		\n"
+	"mov	r6, #0			@ r6 = a = 0		\n"
+	"add	r4, r1, r4, LSL #1	@ r4 = min = &src[2*r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	3f			@ {			\n"
+	"2:							\n"
+	"ldr	r14,[r2], #4		@ r14 = *contrib++	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"mla	r5, r14,r11,r5		@ g += r11 * r14	\n"
+	"mla	r6, r14,r12,r6		@ a += r12 * r14	\n"
+	"bgt	2b			@ }			\n"
+	"3:							\n"
+	"stmdb	r0!,{r5,r6}		@ *--dst=a;*--dst=g;	\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	1b			@ 			\n"
+	"ldmfd	r13!,{r4-r6,r9-r11,PC}	@ pop, return to thumb	\n"
+	"4:"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"5:"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = g = 0		\n"
+	"mov	r6, #0			@ r6 = a = 0		\n"
+	"add	r4, r1, r4, LSL #1	@ r4 = min = &src[2*r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	7f			@ {			\n"
+	"6:							\n"
+	"ldr	r14,[r2], #4		@ r10 = *contrib++	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"mla	r5, r14,r11,r5		@ g += r11 * r14	\n"
+	"mla	r6, r14,r12,r6		@ a += r12 * r14	\n"
+	"bgt	6b			@ }			\n"
+	"7:							\n"
+	"stmia	r0!,{r5,r6}		@ *dst++=r;*dst++=g;	\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	5b			@ 			\n"
+	"ldmfd	r13!,{r4-r6,r9-r11,PC}	@ pop, return to thumb	\n"
+	ENTER_THUMB
+	);
+}
+
+static void
+scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
+{
+	asm volatile(
+	ENTER_ARM
+	"stmfd	r13!,{r4-r11,r14}				\n"
+	"@ r0 = dst						\n"
+	"@ r1 = src						\n"
+	"@ r2 = weights						\n"
+	"ldr	r12,[r2],#4		@ r12= flip		\n"
+	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
+	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"cmp	r12,#0			@ if (flip)		\n"
+	"beq	4f			@ {			\n"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"add	r0, r0, r3, LSL #4	@ dst += 4*count	\n"
+	"1:							\n"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = r = 0		\n"
+	"mov	r6, #0			@ r6 = g = 0		\n"
+	"mov	r7, #0			@ r7 = b = 0		\n"
+	"mov	r8, #0			@ r8 = a = 0		\n"
+	"add	r4, r1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	3f			@ {			\n"
+	"2:							\n"
+	"ldr	r10,[r2], #4		@ r10 = *contrib++	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
+	"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
+	"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"bgt	2b			@ }			\n"
+	"3:							\n"
+	"stmdb	r0!,{r5,r6,r7,r8}	@ *--dst=a;*--dst=b;	\n"
+	"				@ *--dst=g;*--dst=r;	\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	1b			@ 			\n"
+	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
+	"4:"
+	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
+	"5:"
+	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
+	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
+	"mov	r5, #0			@ r5 = r = 0		\n"
+	"mov	r6, #0			@ r6 = g = 0		\n"
+	"mov	r7, #0			@ r7 = b = 0		\n"
+	"mov	r8, #0			@ r8 = a = 0		\n"
+	"add	r4, r1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
+	"cmp	r9, #0			@ while (len-- > 0)	\n"
+	"beq	7f			@ {			\n"
+	"6:							\n"
+	"ldr	r10,[r2], #4		@ r10 = *contrib++	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
+	"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
+	"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
+	"bgt	6b			@ }			\n"
+	"7:							\n"
+	"stmia	r0!,{r5,r6,r7,r8}	@ *dst++=r;*dst++=g;	\n"
+	"				@ *dst++=b;*dst++=a;	\n"
+	"subs	r3, r3, #1		@ i--			\n"
+	"bgt	5b			@ 			\n"
+	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
+	ENTER_THUMB
+	);
+}
+
+static void
+scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width, int row)
+{
+	asm volatile(
+	ENTER_ARM
+	"ldr	r12,[r13]		@ r12= row		\n"
+	"add	r2, r2, #20		@ r2 = weights->index	\n"
+	"stmfd	r13!,{r4-r11,r14}				\n"
+	"@ r0 = dst						\n"
+	"@ r1 = src						\n"
+	"@ r2 = &weights->index[0]				\n"
+	"@ r3 = width						\n"
+	"@ r12= row						\n"
+	"ldr    r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
+	"add	r2, r2, #4		@ r2 = &index[1]	\n"
+	"mov	r6, r3			@ r6 = x = width	\n"
+	"ldr	r14,[r2, r4, LSL #2]!	@ r2 = contrib = index[index[row]+1]\n"
+	"				@ r14= len = *contrib	\n"
+	"1:							\n"
+	"mov	r5, r1			@ r5 = min = src	\n"
+	"mov	r7, #1<<15		@ r7 = val = 1<<15	\n"
+	"movs	r8, r14			@ r8 = len2 = len	\n"
+	"add	r9, r2, #4		@ r9 = contrib2		\n"
+	"ble	3f			@ while (len2-- > 0) {	\n"
+	"2:							\n"
+	"ldr	r10,[r9], #4		@ r10 = *contrib2++	\n"
+	"ldr	r12,[r5], r3, LSL #2	@ r12 = *min	r5 = min += width\n"
+	"subs	r8, r8, #1		@ len2--		\n"
+	"@ stall r12						\n"
+	"mla	r7, r10,r12,r7		@ val += r12 * r10	\n"
+	"bgt	2b			@ }			\n"
+	"3:							\n"
+	"movs	r7, r7, asr #16		@ r7 = val >>= 16	\n"
+	"movlt	r7, #0			@ if (r7 < 0) r7 = 0	\n"
+	"cmp	r7, #255		@ if (r7 > 255)		\n"
+	"add	r1, r1, #4		@ src++			\n"
+	"movgt	r7, #255		@     r7 = 255		\n"
+	"subs	r6, r6, #1		@ x--			\n"
+	"strb	r7, [r0], #1		@ *dst++ = val		\n"
+	"bgt	1b			@ 			\n"
+	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
+	ENTER_THUMB
+	);
+}
+
+#else
+
 static void
 scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
 {
@@ -672,54 +955,13 @@ static void
 scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 {
 	int *contrib = &weights->index[weights->index[0]];
-#ifndef ARCH_ARM
 	int len, i;
 	unsigned char *min;
-#endif
 
 	assert(weights->n == 4);
 	if (weights->flip)
 	{
 		dst += 4*weights->count;
-#ifdef ARCH_ARM
-		asm volatile(
-		"1:"
-		"ldr	r4, [%2], #4		@ r4 = *contrib++	\n"
-		"ldr	r9, [%2], #4		@ r9 = len = *contrib++	\n"
-		"mov	r5, #0			@ r5 = r = 0		\n"
-		"mov	r6, #0			@ r6 = g = 0		\n"
-		"mov	r7, #0			@ r7 = b = 0		\n"
-		"mov	r8, #0			@ r8 = a = 0		\n"
-		"add	r4, %1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
-		"cmp	r9, #0			@ while (len-- > 0)	\n"
-		"beq	3f			@ {			\n"
-		"2:							\n"
-		"ldr	r10,[%2], #4		@ r10 = *contrib++	\n"
-		"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
-		"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
-		"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
-		"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
-		"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
-		"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
-		"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
-		"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
-		"subs	r9, r9, #1		@ r9 = len--		\n"
-		"bgt	2b			@ }			\n"
-		"stmdb	%0!,{r5,r6,r7,r8}	@ *--dst=a;*--dst=b;	\n"
-		"3:				@ *--dst=g;*--dst=r;	\n"
-		"subs	%3, %3, #1		@ i--			\n"
-		"bgt	1b			@ 			\n"
-		:
-		:
-		"r" (dst),
-		"r" (src),
-		"r" (contrib),
-		"r" (weights->count)
-		:
-		"r4","r5","r6","r7","r8","r9","r10","r11","r12","r14",
-		"memory","cc"
-		);
-#else
 		for (i=weights->count; i > 0; i--)
 		{
 			int r = 0;
@@ -740,49 +982,9 @@ scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 			*--dst = g;
 			*--dst = r;
 		}
-#endif
 	}
 	else
 	{
-#ifdef ARCH_ARM
-		asm volatile(
-		"1:"
-		"ldr	r4, [%2], #4		@ r4 = *contrib++	\n"
-		"ldr	r9, [%2], #4		@ r9 = len = *contrib++	\n"
-		"mov	r5, #0			@ r5 = r = 0		\n"
-		"mov	r6, #0			@ r6 = g = 0		\n"
-		"mov	r7, #0			@ r7 = b = 0		\n"
-		"mov	r8, #0			@ r8 = a = 0		\n"
-		"add	r4, %1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
-		"cmp	r9, #0			@ while (len-- > 0)	\n"
-		"beq	3f			@ {			\n"
-		"2:							\n"
-		"ldr	r10,[%2], #4		@ r10 = *contrib++	\n"
-		"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
-		"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
-		"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
-		"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
-		"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
-		"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
-		"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
-		"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
-		"subs	r9, r9, #1		@ r9 = len--		\n"
-		"bgt	2b			@ }			\n"
-		"stmia	%0!,{r5,r6,r7,r8}	@ *dst++=r;*dst++=g;	\n"
-		"3:				@ *dst++=b;*dst++=a;	\n"
-		"subs	%3, %3, #1		@ i--			\n"
-		"bgt	1b			@ 			\n"
-		:
-		:
-		"r" (dst),
-		"r" (src),
-		"r" (contrib),
-		"r" (weights->count)
-		:
-		"r4","r5","r6","r7","r8","r9","r10","r11","r12","r14",
-		"memory","cc"
-		);
-#else
 		for (i=weights->count; i > 0; i--)
 		{
 			int r = 0;
@@ -803,7 +1005,6 @@ scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 			*dst++ = b;
 			*dst++ = a;
 		}
-#endif
 	}
 }
 
@@ -836,6 +1037,7 @@ scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width
 		src++;
 	}
 }
+#endif
 
 #ifdef SINGLE_PIXEL_SPECIALS
 static void
