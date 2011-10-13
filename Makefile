@@ -2,7 +2,12 @@
 
 build ?= debug
 
+ifneq "$(OS)" ""
+OUT := build/$(build)-$(OS)
+else
 OUT := build/$(build)
+endif
+
 GEN := generated
 
 # --- Variables, Commands, etc... ---
@@ -41,6 +46,7 @@ $(OUT) $(GEN) :
 
 $(OUT)/%.a :
 	$(AR_CMD)
+	$(RANLIB_CMD)
 
 $(OUT)/% : $(OUT)/%.o
 	$(LINK_CMD)
