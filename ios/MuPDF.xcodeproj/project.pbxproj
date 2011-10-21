@@ -6,33 +6,19 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		969E1929141FB5E200189AA3 /* Libraries */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 969E1934141FB62400189AA3 /* Build configuration list for PBXAggregateTarget "Libraries" */;
-			buildPhases = (
-				96165BEE143B4F3D00699814 /* ShellScript */,
-			);
-			dependencies = (
-			);
-			name = Libraries;
-			productName = Libraries;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		1D60589B0D05DD56006BFB54 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; };
 		1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D30AB110D05D00D00671497 /* Foundation.framework */; };
 		1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DF5F4DF0D08C38300B7A737 /* UIKit.framework */; };
 		288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 288765FC0DF74451002DB57D /* CoreGraphics.framework */; };
+		964FF8C1144F618000F5FF22 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BA144F618000F5FF22 /* libfreetype.a */; };
+		964FF8C2144F618000F5FF22 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BB144F618000F5FF22 /* libjbig2dec.a */; };
+		964FF8C3144F618000F5FF22 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BC144F618000F5FF22 /* libjpeg.a */; };
+		964FF8C4144F618000F5FF22 /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BD144F618000F5FF22 /* libmupdf.a */; };
+		964FF8C5144F618000F5FF22 /* libmuxps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BE144F618000F5FF22 /* libmuxps.a */; };
+		964FF8C6144F618000F5FF22 /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BF144F618000F5FF22 /* libopenjpeg.a */; };
+		964FF8C7144F618000F5FF22 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8C0144F618000F5FF22 /* libz.a */; };
 		968184A3143E251A00374B41 /* libfitz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849B143E251A00374B41 /* libfitz.a */; };
-		968184A4143E251A00374B41 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849C143E251A00374B41 /* libfreetype.a */; };
-		968184A5143E251A00374B41 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849D143E251A00374B41 /* libjbig2dec.a */; };
-		968184A6143E251A00374B41 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849E143E251A00374B41 /* libjpeg.a */; };
-		968184A7143E251A00374B41 /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849F143E251A00374B41 /* libmupdf.a */; };
-		968184A8143E251A00374B41 /* libmuxps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968184A0143E251A00374B41 /* libmuxps.a */; };
-		968184A9143E251A00374B41 /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968184A1143E251A00374B41 /* libopenjpeg.a */; };
-		968184AA143E251A00374B41 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968184A2143E251A00374B41 /* libz.a */; };
 		969E1294141FA57800189AA3 /* mupdf_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 969E1293141FA57800189AA3 /* mupdf_icon.png */; };
 /* End PBXBuildFile section */
 
@@ -44,14 +30,14 @@
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 		96165BEB143B4F2800699814 /* build_libs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
-		9681849B143E251A00374B41 /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfitz.a; path = "build/Debug-iphonesimulator/libfitz.a"; sourceTree = "<group>"; };
-		9681849C143E251A00374B41 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = "build/Debug-iphonesimulator/libfreetype.a"; sourceTree = "<group>"; };
-		9681849D143E251A00374B41 /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjbig2dec.a; path = "build/Debug-iphonesimulator/libjbig2dec.a"; sourceTree = "<group>"; };
-		9681849E143E251A00374B41 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = "build/Debug-iphonesimulator/libjpeg.a"; sourceTree = "<group>"; };
-		9681849F143E251A00374B41 /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmupdf.a; path = "build/Debug-iphonesimulator/libmupdf.a"; sourceTree = "<group>"; };
-		968184A0143E251A00374B41 /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmuxps.a; path = "build/Debug-iphonesimulator/libmuxps.a"; sourceTree = "<group>"; };
-		968184A1143E251A00374B41 /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopenjpeg.a; path = "build/Debug-iphonesimulator/libopenjpeg.a"; sourceTree = "<group>"; };
-		968184A2143E251A00374B41 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "build/Debug-iphonesimulator/libz.a"; sourceTree = "<group>"; };
+		964FF8BA144F618000F5FF22 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8BB144F618000F5FF22 /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjbig2dec.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8BC144F618000F5FF22 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8BD144F618000F5FF22 /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdf.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8BE144F618000F5FF22 /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmuxps.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8BF144F618000F5FF22 /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopenjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		964FF8C0144F618000F5FF22 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libz.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		9681849B143E251A00374B41 /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfitz.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		969E1293141FA57800189AA3 /* mupdf_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mupdf_icon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -64,13 +50,13 @@
 				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
 				288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */,
 				968184A3143E251A00374B41 /* libfitz.a in Frameworks */,
-				968184A4143E251A00374B41 /* libfreetype.a in Frameworks */,
-				968184A5143E251A00374B41 /* libjbig2dec.a in Frameworks */,
-				968184A6143E251A00374B41 /* libjpeg.a in Frameworks */,
-				968184A7143E251A00374B41 /* libmupdf.a in Frameworks */,
-				968184A8143E251A00374B41 /* libmuxps.a in Frameworks */,
-				968184A9143E251A00374B41 /* libopenjpeg.a in Frameworks */,
-				968184AA143E251A00374B41 /* libz.a in Frameworks */,
+				964FF8C1144F618000F5FF22 /* libfreetype.a in Frameworks */,
+				964FF8C2144F618000F5FF22 /* libjbig2dec.a in Frameworks */,
+				964FF8C3144F618000F5FF22 /* libjpeg.a in Frameworks */,
+				964FF8C4144F618000F5FF22 /* libmupdf.a in Frameworks */,
+				964FF8C5144F618000F5FF22 /* libmuxps.a in Frameworks */,
+				964FF8C6144F618000F5FF22 /* libopenjpeg.a in Frameworks */,
+				964FF8C7144F618000F5FF22 /* libz.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,15 +66,15 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				9681849B143E251A00374B41 /* libfitz.a */,
-				9681849C143E251A00374B41 /* libfreetype.a */,
-				9681849D143E251A00374B41 /* libjbig2dec.a */,
-				9681849E143E251A00374B41 /* libjpeg.a */,
-				9681849F143E251A00374B41 /* libmupdf.a */,
-				968184A0143E251A00374B41 /* libmuxps.a */,
-				968184A1143E251A00374B41 /* libopenjpeg.a */,
-				968184A2143E251A00374B41 /* libz.a */,
 				1D6058910D05DD3D006BFB54 /* MuPDF.app */,
+				9681849B143E251A00374B41 /* libfitz.a */,
+				964FF8BD144F618000F5FF22 /* libmupdf.a */,
+				964FF8BE144F618000F5FF22 /* libmuxps.a */,
+				964FF8BA144F618000F5FF22 /* libfreetype.a */,
+				964FF8BB144F618000F5FF22 /* libjbig2dec.a */,
+				964FF8BC144F618000F5FF22 /* libjpeg.a */,
+				964FF8BF144F618000F5FF22 /* libopenjpeg.a */,
+				964FF8C0144F618000F5FF22 /* libz.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -131,6 +117,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1D6058960D05DD3E006BFB54 /* Build configuration list for PBXNativeTarget "MuPDF" */;
 			buildPhases = (
+				965A1554144E144F001A6426 /* Build Libraries */,
 				1D60588D0D05DD3D006BFB54 /* Resources */,
 				1D60588E0D05DD3D006BFB54 /* Sources */,
 				1D60588F0D05DD3D006BFB54 /* Frameworks */,
@@ -164,7 +151,6 @@
 			projectRoot = "";
 			targets = (
 				1D6058900D05DD3D006BFB54 /* MuPDF */,
-				969E1929141FB5E200189AA3 /* Libraries */,
 			);
 		};
 /* End PBXProject section */
@@ -181,18 +167,19 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		96165BEE143B4F3D00699814 /* ShellScript */ = {
+		965A1554144E144F001A6426 /* Build Libraries */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
+			name = "Build Libraries";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "sh build_libs.sh\n";
+			shellScript = "exec sh build_libs.sh";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -217,10 +204,8 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = ..;
 				INFOPLIST_FILE = Info.plist;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/build/Debug-iphonesimulator\"",
-				);
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = MuPDF;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -233,36 +218,14 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
+				HEADER_SEARCH_PATHS = ..;
 				INFOPLIST_FILE = Info.plist;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/build/Debug-iphonesimulator\"",
-				);
+				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = MuPDF;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		969E192A141FB5E200189AA3 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_NAME = Libraries;
-			};
-			name = Debug;
-		};
-		969E192B141FB5E200189AA3 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				PRODUCT_NAME = Libraries;
-				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
@@ -301,15 +264,6 @@
 			buildConfigurations = (
 				1D6058940D05DD3E006BFB54 /* Debug */,
 				1D6058950D05DD3E006BFB54 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		969E1934141FB62400189AA3 /* Build configuration list for PBXAggregateTarget "Libraries" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				969E192A141FB5E200189AA3 /* Debug */,
-				969E192B141FB5E200189AA3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

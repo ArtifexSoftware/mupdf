@@ -85,21 +85,15 @@ CROSSCOMPILE=yes
 NOX11=yes
 endif
 
-ifeq "$(OS)" "iphonesimulator"
-CC = $(PLATFORM_DEVELOPER_BIN_DIR)/gcc
-AR = $(PLATFORM_DEVELOPER_BIN_DIR)/ar
-CFLAGS += -arch i386 -isysroot $(SDKROOT)
-LDFLAGS += -arch i386 -isysroot $(SDKROOT)
-RANLIB_CMD = $(PLATFORM_DEVELOPER_BIN_DIR)/ranlib $@
-CROSSCOMPILE=yes
-NOX11=yes
-endif
+# Most variables when building for iOS are set up in ios/build_libs.sh,
+# which is called from the Xcode project as a "Run Script" build step.
+# The following section works for both device and simulator builds.
 
-ifeq "$(OS)" "iphoneos"
+ifeq "$(OS)" "ios"
+# sadly, llvm generates invalid arm code when compiling freetype,
+# so no clang or llvm-gcc for us :(
 CC = $(PLATFORM_DEVELOPER_BIN_DIR)/gcc
 AR = $(PLATFORM_DEVELOPER_BIN_DIR)/ar
-CFLAGS += -arch armv7 -isysroot $(SDKROOT)
-LDFLAGS += -arch armv7 -isysroot $(SDKROOT)
 RANLIB_CMD = $(PLATFORM_DEVELOPER_BIN_DIR)/ranlib $@
 CROSSCOMPILE=yes
 NOX11=yes
