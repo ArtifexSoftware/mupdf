@@ -13,53 +13,40 @@
 	NSArray *files;
 }
 - (void) reload;
+- (void) openDocument: (NSString*)filename;
 @end
 
-@interface MuOutlineController : UITableViewController { NSArray *pages; } @end
-@interface MuDocumentController : UIViewController { } @end
-
-@interface MuAppDelegate : NSObject <UIApplicationDelegate, UIScrollViewDelegate, UINavigationControllerDelegate>
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate>
 {
-	UIWindow *window;
-	UINavigationController *navigator;
+	pdf_xref *xref;
 	UIScrollView *canvas;
-	MuLibraryController *library;
-	MuDocumentController *document;
-	MuOutlineController *outline;
 	UIView **pageviews;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
 }
-- (void) onOpenDocument: (NSString*)filename;
-- (void) closeDocument;
-- (void) onShowOutline;
-- (void) onHideOutline;
-- (void) onReconfigure;
+- (id) initWithFile: (NSString*)filename;
+- (void) reconfigure;
 - (void) loadPage: (int)number;
 - (void) unloadPage: (int)number;
-- (void) onGotoPage: (int)number;
+- (void) gotoPage: (int)number;
+- (void) didSingleTap: (UITapGestureRecognizer*)sender;
 - (void) toggleNavigationBar;
-- (void) onSingleTap: (UITapGestureRecognizer*)sender;
+@end
+
+@interface MuAppDelegate : NSObject <UIApplicationDelegate, UINavigationControllerDelegate>
+{
+	UIWindow *window;
+	UINavigationController *navigator;
+	MuLibraryController *library;
+}
 @end
 
 static fz_glyph_cache *glyphcache = NULL;
-static pdf_xref *xref = NULL;
+
 static MuAppDelegate *app = nil;
 
 #pragma mark -
-
-static void show_alert(NSString *msg)
-{
-	UIAlertView *alert = [[UIAlertView alloc]
-		initWithTitle: @"Error"
-		message: msg
-		delegate: nil
-		cancelButtonTitle: @"Okay"
-		otherButtonTitles: nil];
-	[alert show];
-	[alert release];
-}
 
 static int get_page_number(pdf_xref *xref, pdf_link *link)
 {
@@ -68,14 +55,38 @@ static int get_page_number(pdf_xref *xref, pdf_link *link)
 	return 0;
 }
 
-static void release_pixmap(void *info, const void *data, size_t size)
+static void showAlert(NSString *msg)
+{
+	char msgbuf[160 * 30];
+	int i;
+
+	fz_strlcpy(msgbuf, "", sizeof msgbuf);
+	for (i = 0; i < fz_get_error_count(); i++)
+	{
+		char *s = fz_get_error_line(i);
+		s = strstr(s, "(): ") + 4;
+		fz_strlcat(msgbuf, s, sizeof msgbuf);
+		fz_strlcat(msgbuf, "\n", sizeof msgbuf);
+	}
+
+	UIAlertView *alert = [[UIAlertView alloc]
+		initWithTitle: msg
+		message: [NSString stringWithUTF8String: msgbuf]
+		delegate: nil
+		cancelButtonTitle: @"Okay"
+		otherButtonTitles: nil];
+	[alert show];
+	[alert release];
+}
+
+static void releasePixmap(void *info, const void *data, size_t size)
 {
 	fz_drop_pixmap(info);
 }
 
-static UIImage *convert_pixmap(fz_pixmap *pix)
+static UIImage *imageWithPixmap(fz_pixmap *pix)
 {
-	CGDataProviderRef cgdata = CGDataProviderCreateWithData(pix, pix->samples, pix->w * 4 * pix->h, release_pixmap);
+	CGDataProviderRef cgdata = CGDataProviderCreateWithData(pix, pix->samples, pix->w * 4 * pix->h, releasePixmap);
 	CGImageRef cgimage = CGImageCreate(pix->w, pix->h, 8, 32, 4 * pix->w,
 			CGColorSpaceCreateDeviceRGB(),
 			kCGBitmapByteOrderDefault,
@@ -86,7 +97,6 @@ static UIImage *convert_pixmap(fz_pixmap *pix)
 	return image;
 }
 
-// TODO: custom view with hyperlinks
 static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float height)
 {
 	fz_bbox bbox;
@@ -100,7 +110,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 	error = pdf_load_page(&page, xref, number);
 	if (error)
 	{
-		show_alert(@"Cannot load page");
+		showAlert(@"Cannot load page");
 		return [[UIImageView alloc] initWithImage: [UIImage imageNamed: @"mupdf_icon.png"]];
 	}
 
@@ -124,27 +134,10 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 	pdf_age_store(xref->store, 3);
 	fz_flush_warnings();
 
-	return [[UIImageView alloc] initWithImage: convert_pixmap(pix)];
+	return [[UIImageView alloc] initWithImage: imageWithPixmap(pix)];
 }
 
 #pragma mark -
-
-@implementation MuDocumentController
-
-- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
-{
-	return YES;
-}
-
-- (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
-{
-	[app onReconfigure];
-}
-
-@end
-
-@implementation MuOutlineController
-@end
 
 @implementation MuLibraryController
 
@@ -185,12 +178,12 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 	return 1;
 }
 
-- (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection:(NSInteger)section
+- (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection: (NSInteger)section
 {
 	return [files count];
 }
 
-- (UITableViewCell*) tableView: (UITableView*)tableView cellForRowAtIndexPath:(NSIndexPath*)indexPath
+- (UITableViewCell*) tableView: (UITableView*)tableView cellForRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	static NSString *cellid = @"MuCellIdent";
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: cellid];
@@ -204,68 +197,33 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	NSString *filename = [files objectAtIndex: [indexPath row]];
-	[app onOpenDocument: filename];
+	[self openDocument: filename];
+}
+
+- (void) openDocument: (NSString*)filename
+{
+	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
+	if (document) {
+		[[self navigationController] pushViewController: document animated: YES];
+		[document release];
+	}
 }
 
 @end
 
 #pragma mark -
 
-@implementation MuAppDelegate
+@implementation MuDocumentController
 
-- (BOOL) application: (UIApplication*)application didFinishLaunchingWithOptions: (NSDictionary*)launchOptions
-{
-	CGRect viewframe;
-	app = self;
-
-	glyphcache = fz_new_glyph_cache();
-
-	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
-	// outline = [[MuOutlineController alloc] initWithStyle: UITableViewStylePlain];
-
-	document = [[MuDocumentController alloc] init];
-	// [document setWantsFullScreenLayout: YES];
-
-	navigator = [[UINavigationController alloc] initWithRootViewController: library];
-	[[navigator navigationBar] setTranslucent: YES];
-	[navigator setDelegate: app];
-
-	viewframe = [[[navigator topViewController] view] frame];
-
-	canvas = [[UIScrollView alloc] initWithFrame: viewframe];
-	[canvas setPagingEnabled: YES];
-	[canvas setBackgroundColor: [UIColor grayColor]];
-	[canvas setShowsHorizontalScrollIndicator: NO];
-	[canvas setShowsVerticalScrollIndicator: NO];
-	// [canvas setDirectionalLockEnabled: YES];
-	[canvas setDelegate: app];
-	[document setView: canvas];
-
-	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onSingleTap:)]];
-
-	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-	[window addSubview: [navigator view]];
-	[window makeKeyAndVisible];
-
-	return YES;
-}
-
-- (void) onShowOutline
-{
-	[outline setTitle: @"Table of Contents"];
-	[navigator pushViewController: outline animated: YES];
-}
-
-- (void) onHideOutline
-{
-	[navigator popViewControllerAnimated: YES];
-}
-
-- (void) onOpenDocument: (NSString*)nsfilename
+- (id) initWithFile: (NSString*)nsfilename
 {
 	fz_error error;
 	char filename[PATH_MAX];
 	char *password = "";
+
+	self = [super init];
+	if (!self)
+		return nil;
 
 	strcpy(filename, [NSHomeDirectory() UTF8String]);
 	strcat(filename, "/Documents/");
@@ -276,29 +234,40 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 	error = pdf_open_xref(&xref, filename, password);
 	if (error)
 	{
-		show_alert(@"Cannot open document");
-		return;
+		showAlert(@"Cannot open PDF file");
+		[self release];
+		return nil;
 	}
 
 	error = pdf_load_page_tree(xref);
 	if (error)
 	{
-		show_alert(@"Cannot load page list");
-		return;
+		showAlert(@"Cannot open document");
+		[self release];
+		return nil;
 	}
 
-	[document setTitle: nsfilename];
+	[self setTitle: nsfilename];
+
+	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,10,10)];
+	[canvas setPagingEnabled: YES];
+	[canvas setBackgroundColor: [UIColor grayColor]];
+	[canvas setShowsHorizontalScrollIndicator: NO];
+	[canvas setShowsVerticalScrollIndicator: NO];
+	[canvas setDelegate: self];
+	[self setView: canvas];
+
+	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
 
 	current = 0;
 	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
 
-	[navigator pushViewController: document animated: YES];
-
-	[self onReconfigure];
+	return self;
 }
 
-- (void) closeDocument
+- (void) dealloc
 {
+puts("document controller closed");
 	if (xref)
 	{
 		for (int i = 0; i < pdf_count_pages(xref); i++)
@@ -306,30 +275,48 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 		pdf_free_xref(xref);
 		xref = NULL;
 	}
+	[canvas release];
+	[super dealloc];
 }
 
-- (void) onReconfigure
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
+{
+	return YES;
+}
+
+- (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
+{
+	[self reconfigure];
+}
+
+- (void) viewWillAppear: (BOOL)animated
+{
+	[self reconfigure];
+}
+
+- (void) reconfigure
 {
 	CGSize size = [canvas frame].size;
-	int i;
 
-	if (size.width == width && size.height != height)
+	if (size.width == width && size.height == height)
 		return;
 
-	width = [canvas frame].size.width;
-	height = [canvas frame].size.height;
-printf("reconfig w=%d h=%d\n", width, height);
+	width = size.width;
+	height = size.height;
+
+printf("reconfig w=%g h=%g\n", size.width, size.height);
 
 	// facing pages mode in landscape
-	// if (width > height) width *= 0.5;
+	// if (size.width > size.height) size.width *= 0.5;
 
-	for (i = 0; i < pdf_count_pages(xref); i++)
+	for (int i = 0; i < pdf_count_pages(xref); i++)
 		[self unloadPage: i];
 
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, 10)];
 	[canvas setContentOffset: CGPointMake(current * width, 0) animated: NO];
+	[canvas setContentInset: UIEdgeInsetsZero];
 
-	[app scrollViewDidScroll: canvas];
+	[self scrollViewDidScroll: canvas];
 }
 
 - (void) loadPage: (int)number
@@ -367,7 +354,7 @@ printf("unload %d\n", number);
 	}
 }
 
-- (void) onGotoPage: (int)number
+- (void) gotoPage: (int)number
 {
 	if (number < 0)
 		number = 0;
@@ -379,7 +366,7 @@ printf("unload %d\n", number);
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
 {
-	float x = [canvas contentOffset].x;
+	float x = [canvas contentOffset].x + width * 0.5f;
 	int i;
 
 	current = x / width;
@@ -394,7 +381,7 @@ printf("unload %d\n", number);
 	[self loadPage: current + 1];
 }
 
-- (void) onSingleTap: (UITapGestureRecognizer*)sender
+- (void) didSingleTap: (UITapGestureRecognizer*)sender
 {
 	CGPoint p = [sender locationInView: canvas];
 	CGPoint ofs = [canvas contentOffset];
@@ -402,25 +389,45 @@ printf("unload %d\n", number);
 	float x1 = width - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
-	if (p.x < x0) [self onGotoPage: current - 1];
-	else if (p.x > x1) [self onGotoPage: current + 1];
+	if (p.x < x0) [self gotoPage: current - 1];
+	else if (p.x > x1) [self gotoPage: current + 1];
 	else [self toggleNavigationBar];
 }
 
 - (void) toggleNavigationBar
 {
-	if ([navigator isNavigationBarHidden])
+	UINavigationController *navigator = [self navigationController];
+	if ([navigator isNavigationBarHidden]) {
 		[navigator setNavigationBarHidden: NO];
-	else
+	} else {
 		[navigator setNavigationBarHidden: YES];
+	}
 	[canvas setContentInset: UIEdgeInsetsZero];
 }
 
-- (void) navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated
+@end
+
+#pragma mark -
+
+@implementation MuAppDelegate
+
+- (BOOL) application: (UIApplication*)application didFinishLaunchingWithOptions: (NSDictionary*)launchOptions
 {
-	// popped back to document picker
-	if (viewController == library)
-		[self closeDocument];
+	app = self;
+
+	glyphcache = fz_new_glyph_cache();
+
+	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
+
+	navigator = [[UINavigationController alloc] initWithRootViewController: library];
+	[[navigator navigationBar] setTranslucent: YES];
+	[navigator setDelegate: app];
+
+	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
+	[window addSubview: [navigator view]];
+	[window makeKeyAndVisible];
+
+	return YES;
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
@@ -474,8 +481,6 @@ printf("applicationDidBecomeActive!\n");
 
 - (void) dealloc
 {
-	[canvas release];
-	[document release];
 	[library release];
 	[navigator release];
 	[window release];
