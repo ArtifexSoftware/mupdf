@@ -8,21 +8,27 @@
 #include "pdf/mupdf.h"
 #include "xps/muxps.h"
 
-@interface MuLibrary : UITableViewController { NSArray *files; } @end
-@interface MuOutline : UITableViewController { NSArray *pages; } @end
-@interface MuDocument : UIViewController { } @end
+@interface MuLibraryController : UITableViewController
+{
+	NSArray *files;
+}
+- (void) reload;
+@end
 
-@interface MuAppDelegate : NSObject <UIApplicationDelegate>
+@interface MuOutlineController : UITableViewController { NSArray *pages; } @end
+@interface MuDocumentController : UIViewController { } @end
+
+@interface MuAppDelegate : NSObject <UIApplicationDelegate, UIScrollViewDelegate, UINavigationControllerDelegate>
 {
 	UIWindow *window;
 	UINavigationController *navigator;
 	UIScrollView *canvas;
-	MuLibrary *library;
-	MuDocument *document;
-	MuOutline *outline;
+	MuLibraryController *library;
+	MuDocumentController *document;
+	MuOutlineController *outline;
 	UIView **pageviews;
-	int width; // current screen width
-	int height; // tallest page so far
+	int width; // current screen size
+	int height;
 	int current; // currently visible page
 }
 - (void) onOpenDocument: (NSString*)filename;
@@ -33,6 +39,8 @@
 - (void) loadPage: (int)number;
 - (void) unloadPage: (int)number;
 - (void) onGotoPage: (int)number;
+- (void) toggleNavigationBar;
+- (void) onSingleTap: (UITapGestureRecognizer*)sender;
 @end
 
 static fz_glyph_cache *glyphcache = NULL;
@@ -79,7 +87,7 @@ static UIImage *convert_pixmap(fz_pixmap *pix)
 }
 
 // TODO: custom view with hyperlinks
-static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
+static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float height)
 {
 	fz_bbox bbox;
 	fz_matrix ctm;
@@ -87,8 +95,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 	fz_pixmap *pix;
 	pdf_page *page;
 	fz_error error;
-	float scale;
-	float pw;
+	float scale, hscale, vscale;
 
 	error = pdf_load_page(&page, xref, number);
 	if (error)
@@ -97,8 +104,9 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 		return [[UIImageView alloc] initWithImage: [UIImage imageNamed: @"mupdf_icon.png"]];
 	}
 
-	pw = page->mediabox.x1 - page->mediabox.x0;
-	scale = width / pw;
+	hscale = width / page->mediabox.x1 - page->mediabox.x0;
+	vscale = height / page->mediabox.y1 - page->mediabox.y0;
+	scale = MIN(hscale, vscale);
 
 	ctm = fz_translate(0, -page->mediabox.y1);
 	ctm = fz_concat(ctm, fz_scale(scale, -scale));
@@ -121,7 +129,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 
 #pragma mark -
 
-@implementation MuDocument
+@implementation MuDocumentController
 
 - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
 {
@@ -135,24 +143,30 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 
 @end
 
-@implementation MuOutline
+@implementation MuOutlineController
 @end
 
-@implementation MuLibrary
+@implementation MuLibraryController
 
-- (void) viewDidLoad
+- (void) reload
 {
-	[super viewDidLoad];
-
 	[self setTitle: @"Library"];
 
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 	NSString *docdir = [paths objectAtIndex: 0];
 	NSError *error = nil;
+
+	if (files) {
+		[files release];
+		files = nil;
+	}
+
 	files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath: docdir error: &error];
 	if (error)
 		files = paths;
 	[files retain];
+
+	[[self tableView] reloadData];
 }
 
 - (void) dealloc
@@ -201,22 +215,33 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 
 - (BOOL) application: (UIApplication*)application didFinishLaunchingWithOptions: (NSDictionary*)launchOptions
 {
+	CGRect viewframe;
 	app = self;
 
 	glyphcache = fz_new_glyph_cache();
 
-	library = [[MuLibrary alloc] initWithStyle: UITableViewStylePlain];
-	// outline = [[MuOutline alloc] initWithStyle: UITableViewStylePlain];
-	document = [[MuDocument alloc] init];
+	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
+	// outline = [[MuOutlineController alloc] initWithStyle: UITableViewStylePlain];
+
+	document = [[MuDocumentController alloc] init];
+	// [document setWantsFullScreenLayout: YES];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
+	[[navigator navigationBar] setTranslucent: YES];
 	[navigator setDelegate: app];
 
-	canvas = [[UIScrollView alloc] initWithFrame: [[navigator view] bounds]];
-	[canvas setBackgroundColor: [UIColor grayColor]];
+	viewframe = [[[navigator topViewController] view] frame];
+
+	canvas = [[UIScrollView alloc] initWithFrame: viewframe];
 	[canvas setPagingEnabled: YES];
+	[canvas setBackgroundColor: [UIColor grayColor]];
+	[canvas setShowsHorizontalScrollIndicator: NO];
+	[canvas setShowsVerticalScrollIndicator: NO];
+	// [canvas setDirectionalLockEnabled: YES];
 	[canvas setDelegate: app];
 	[document setView: canvas];
+
+	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onSingleTap:)]];
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
 	[window addSubview: [navigator view]];
@@ -267,9 +292,9 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 	current = 0;
 	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
 
-	[self onReconfigure];
-
 	[navigator pushViewController: document animated: YES];
+
+	[self onReconfigure];
 }
 
 - (void) closeDocument
@@ -285,10 +310,18 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 
 - (void) onReconfigure
 {
+	CGSize size = [canvas frame].size;
 	int i;
 
-	width = [[navigator view] bounds].size.width;
-	height = 0;
+	if (size.width == width && size.height != height)
+		return;
+
+	width = [canvas frame].size.width;
+	height = [canvas frame].size.height;
+printf("reconfig w=%d h=%d\n", width, height);
+
+	// facing pages mode in landscape
+	// if (width > height) width *= 0.5;
 
 	for (i = 0; i < pdf_count_pages(xref); i++)
 		[self unloadPage: i];
@@ -306,13 +339,13 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width)
 	if (!pageviews[number])
 	{
 printf("load page %d\n", number);
-		UIImageView *page = new_page_view(xref, number, width);
+		UIImageView *page = new_page_view(xref, number, width, height);
 
 		CGRect frame = [page frame];
 		frame.origin.x = number * width;
+		frame.origin.x += (width - frame.size.width) / 2;
+		frame.origin.y += (height - frame.size.height) / 2;
 		[page setFrame: frame];
-
-		height = MAX(height, frame.size.height);
 
 		[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
 		[canvas addSubview: page];
@@ -336,10 +369,12 @@ printf("unload %d\n", number);
 
 - (void) onGotoPage: (int)number
 {
+	if (number < 0)
+		number = 0;
+	if (number >= pdf_count_pages(xref))
+		number = pdf_count_pages(xref) - 1;
 	current = number;
 	[canvas setContentOffset: CGPointMake(current * width, 0) animated: YES];
-printf("onGotoPage!\n");
-	// [app scrollViewDidScroll: canvas];
 }
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
@@ -349,14 +384,36 @@ printf("onGotoPage!\n");
 
 	current = x / width;
 
-	for (i = 0; i < current - 2; i++)
+	for (i = 0; i < current - 3; i++)
 		[self unloadPage: i];
-	for (i = current + 2; i < pdf_count_pages(xref); i++)
+	for (i = current + 3; i < pdf_count_pages(xref); i++)
 		[self unloadPage: i];
 
 	[self loadPage: current];
 	[self loadPage: current - 1];
 	[self loadPage: current + 1];
+}
+
+- (void) onSingleTap: (UITapGestureRecognizer*)sender
+{
+	CGPoint p = [sender locationInView: canvas];
+	CGPoint ofs = [canvas contentOffset];
+	float x0 = width / 5;
+	float x1 = width - x0;
+	p.x -= ofs.x;
+	p.y -= ofs.y;
+	if (p.x < x0) [self onGotoPage: current - 1];
+	else if (p.x > x1) [self onGotoPage: current + 1];
+	else [self toggleNavigationBar];
+}
+
+- (void) toggleNavigationBar
+{
+	if ([navigator isNavigationBarHidden])
+		[navigator setNavigationBarHidden: NO];
+	else
+		[navigator setNavigationBarHidden: YES];
+	[canvas setContentInset: UIEdgeInsetsZero];
 }
 
 - (void) navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated
@@ -375,6 +432,7 @@ printf("onGotoPage!\n");
 	 If your application supports background execution,
 	 called instead of applicationWillTerminate: when the user quits.
 	 */
+printf("applicationDidEnterBackground!\n");
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application
@@ -384,6 +442,7 @@ printf("onGotoPage!\n");
 	 inactive state: here you can undo many of the changes made
 	 on entering the background.
 	 */
+printf("applicationWillEnterForeground!\n");
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
@@ -393,6 +452,8 @@ printf("onGotoPage!\n");
 	 the application was inactive. If the application was previously
 	 in the background, optionally refresh the user interface.
 	 */
+printf("applicationDidBecomeActive!\n");
+	[library reload];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application
