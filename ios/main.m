@@ -247,7 +247,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 		return nil;
 	}
 
-	[self setTitle: nsfilename];
+	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
 
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,10,10)];
 	[canvas setPagingEnabled: YES];
@@ -259,15 +259,27 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 
 	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
 
-	current = 0;
-	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
+	[self setTitle: nsfilename];
+
+//	[self setToolbarItems: [NSArray arrayWithObjects: pager, nil]];
+
+	[[self navigationItem] setRightBarButtonItem:
+		[[UIBarButtonItem alloc]
+			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
+			target:self action:@selector(toggleNavigationBar)]];
+
+	[self setToolbarItems:
+		[NSArray arrayWithObjects:
+			[[UIBarButtonItem alloc]
+				initWithBarButtonSystemItem: UIBarButtonSystemItemAction
+				target:self action:@selector(toggleNavigationBar)],
+			nil]];
 
 	return self;
 }
 
 - (void) dealloc
 {
-puts("document controller closed");
 	if (xref)
 	{
 		for (int i = 0; i < pdf_count_pages(xref); i++)
@@ -291,6 +303,8 @@ puts("document controller closed");
 
 - (void) viewWillAppear: (BOOL)animated
 {
+	[super viewWillAppear: animated];
+	[[self navigationController] setToolbarHidden: NO animated: NO];
 	[self reconfigure];
 }
 
@@ -298,13 +312,13 @@ puts("document controller closed");
 {
 	CGSize size = [canvas frame].size;
 
+printf("reconfig w=%g h=%g\n", size.width, size.height);
+
 	if (size.width == width && size.height == height)
 		return;
 
 	width = size.width;
 	height = size.height;
-
-printf("reconfig w=%g h=%g\n", size.width, size.height);
 
 	// facing pages mode in landscape
 	// if (size.width > size.height) size.width *= 0.5;
@@ -312,9 +326,9 @@ printf("reconfig w=%g h=%g\n", size.width, size.height);
 	for (int i = 0; i < pdf_count_pages(xref); i++)
 		[self unloadPage: i];
 
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, 10)];
-	[canvas setContentOffset: CGPointMake(current * width, 0) animated: NO];
 	[canvas setContentInset: UIEdgeInsetsZero];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0) animated: NO];
 
 	[self scrollViewDidScroll: canvas];
 }
@@ -334,7 +348,6 @@ printf("load page %d\n", number);
 		frame.origin.y += (height - frame.size.height) / 2;
 		[page setFrame: frame];
 
-		[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
 		[canvas addSubview: page];
 
 		pageviews[number] = page;
@@ -366,19 +379,42 @@ printf("unload %d\n", number);
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
 {
-	float x = [canvas contentOffset].x + width * 0.5f;
 	int i;
+
+	if (width == 0) return; // not visible yet
+
+	float x = [canvas contentOffset].x + width * 0.5f;
 
 	current = x / width;
 
-	for (i = 0; i < current - 3; i++)
-		[self unloadPage: i];
-	for (i = current + 3; i < pdf_count_pages(xref); i++)
-		[self unloadPage: i];
+	for (i = 0; i < pdf_count_pages(xref); i++)
+		if (i < current - 1 || i > current + 2)
+			[self unloadPage: i];
 
 	[self loadPage: current];
 	[self loadPage: current - 1];
 	[self loadPage: current + 1];
+}
+
+- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
+{
+	CGSize size = [canvas frame].size;
+	UIView *page = pageviews[current];
+	CGRect frame = [page frame];
+	float scale = MIN(size.width / frame.size.width, size.height / frame.size.height);
+	int i;
+
+	for (i = 0; i < pdf_count_pages(xref); i++)
+		if (i != current)
+			[self unloadPage: i];
+
+	frame.size.width *= scale;
+	frame.size.height *= scale;
+	frame.origin.x = current * width;
+	frame.origin.y = 0;
+	frame.origin.x += (size.width - frame.size.width) / 2;
+	frame.origin.y += (size.height - frame.size.height) / 2;
+	[page setFrame: frame];
 }
 
 - (void) didSingleTap: (UITapGestureRecognizer*)sender
@@ -398,9 +434,11 @@ printf("unload %d\n", number);
 {
 	UINavigationController *navigator = [self navigationController];
 	if ([navigator isNavigationBarHidden]) {
-		[navigator setNavigationBarHidden: NO];
+		[navigator setNavigationBarHidden: NO animated: NO];
+		[navigator setToolbarHidden: NO animated: NO];
 	} else {
-		[navigator setNavigationBarHidden: YES];
+		[navigator setNavigationBarHidden: YES animated: NO];
+		[navigator setToolbarHidden: YES animated: NO];
 	}
 	[canvas setContentInset: UIEdgeInsetsZero];
 }
@@ -421,6 +459,8 @@ printf("unload %d\n", number);
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
 	[[navigator navigationBar] setTranslucent: YES];
+	[[navigator toolbar] setTranslucent: YES];
+	[navigator setToolbarHidden: NO animated: NO];
 	[navigator setDelegate: app];
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
