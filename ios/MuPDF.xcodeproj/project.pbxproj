@@ -7,120 +7,124 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1D60589B0D05DD56006BFB54 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; };
-		1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D30AB110D05D00D00671497 /* Foundation.framework */; };
-		1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DF5F4DF0D08C38300B7A737 /* UIKit.framework */; };
-		288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 288765FC0DF74451002DB57D /* CoreGraphics.framework */; };
-		964FF8C1144F618000F5FF22 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BA144F618000F5FF22 /* libfreetype.a */; };
-		964FF8C2144F618000F5FF22 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BB144F618000F5FF22 /* libjbig2dec.a */; };
-		964FF8C3144F618000F5FF22 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BC144F618000F5FF22 /* libjpeg.a */; };
-		964FF8C4144F618000F5FF22 /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BD144F618000F5FF22 /* libmupdf.a */; };
-		964FF8C5144F618000F5FF22 /* libmuxps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BE144F618000F5FF22 /* libmuxps.a */; };
-		964FF8C6144F618000F5FF22 /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8BF144F618000F5FF22 /* libopenjpeg.a */; };
-		964FF8C7144F618000F5FF22 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 964FF8C0144F618000F5FF22 /* libz.a */; };
-		968184A3143E251A00374B41 /* libfitz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9681849B143E251A00374B41 /* libfitz.a */; };
-		969E1294141FA57800189AA3 /* mupdf_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 969E1293141FA57800189AA3 /* mupdf_icon.png */; };
+		968F2E9C14539C880085264E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9B14539C880085264E /* UIKit.framework */; };
+		968F2E9E14539C880085264E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9D14539C880085264E /* Foundation.framework */; };
+		968F2EA014539C880085264E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9F14539C880085264E /* CoreGraphics.framework */; };
+		968F2EB014539CDA0085264E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 968F2E9014539BEB0085264E /* main.m */; };
+		968F2EBB14539F350085264E /* libfitz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB314539F350085264E /* libfitz.a */; };
+		968F2EBC14539F350085264E /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB414539F350085264E /* libfreetype.a */; };
+		968F2EBD14539F350085264E /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB514539F350085264E /* libjbig2dec.a */; };
+		968F2EBE14539F350085264E /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB614539F350085264E /* libjpeg.a */; };
+		968F2EBF14539F350085264E /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB714539F350085264E /* libmupdf.a */; };
+		968F2EC014539F350085264E /* libmuxps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB814539F350085264E /* libmuxps.a */; };
+		968F2EC114539F350085264E /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB914539F350085264E /* libopenjpeg.a */; };
+		968F2EC214539F350085264E /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EBA14539F350085264E /* libz.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1D30AB110D05D00D00671497 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		1D6058910D05DD3D006BFB54 /* MuPDF.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MuPDF.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1DF5F4DF0D08C38300B7A737 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
-		288765FC0DF74451002DB57D /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
-		96165BEB143B4F2800699814 /* build_libs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
-		964FF8BA144F618000F5FF22 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8BB144F618000F5FF22 /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjbig2dec.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8BC144F618000F5FF22 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8BD144F618000F5FF22 /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdf.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8BE144F618000F5FF22 /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmuxps.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8BF144F618000F5FF22 /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopenjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		964FF8C0144F618000F5FF22 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libz.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		9681849B143E251A00374B41 /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfitz.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		969E1293141FA57800189AA3 /* mupdf_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = mupdf_icon.png; sourceTree = "<group>"; };
+		968F2E8E14539BEB0085264E /* build_libs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
+		968F2E8F14539BEB0085264E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		968F2E9014539BEB0085264E /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		968F2E9714539C880085264E /* MuPDF.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MuPDF.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2E9B14539C880085264E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+		968F2E9D14539C880085264E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		968F2E9F14539C880085264E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
+		968F2EB314539F350085264E /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfitz.a; path = "../Debug-iphoneos/libfitz.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB414539F350085264E /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = "../Debug-iphoneos/libfreetype.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB514539F350085264E /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjbig2dec.a; path = "../Debug-iphoneos/libjbig2dec.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB614539F350085264E /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = "../Debug-iphoneos/libjpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB714539F350085264E /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmupdf.a; path = "../Debug-iphoneos/libmupdf.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB814539F350085264E /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmuxps.a; path = "../Debug-iphoneos/libmuxps.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB914539F350085264E /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopenjpeg.a; path = "../Debug-iphoneos/libopenjpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EBA14539F350085264E /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "../Debug-iphoneos/libz.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1D60588F0D05DD3D006BFB54 /* Frameworks */ = {
+		968F2E9414539C880085264E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */,
-				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
-				288765FD0DF74451002DB57D /* CoreGraphics.framework in Frameworks */,
-				968184A3143E251A00374B41 /* libfitz.a in Frameworks */,
-				964FF8C1144F618000F5FF22 /* libfreetype.a in Frameworks */,
-				964FF8C2144F618000F5FF22 /* libjbig2dec.a in Frameworks */,
-				964FF8C3144F618000F5FF22 /* libjpeg.a in Frameworks */,
-				964FF8C4144F618000F5FF22 /* libmupdf.a in Frameworks */,
-				964FF8C5144F618000F5FF22 /* libmuxps.a in Frameworks */,
-				964FF8C6144F618000F5FF22 /* libopenjpeg.a in Frameworks */,
-				964FF8C7144F618000F5FF22 /* libz.a in Frameworks */,
+				968F2E9C14539C880085264E /* UIKit.framework in Frameworks */,
+				968F2E9E14539C880085264E /* Foundation.framework in Frameworks */,
+				968F2EA014539C880085264E /* CoreGraphics.framework in Frameworks */,
+				968F2EBB14539F350085264E /* libfitz.a in Frameworks */,
+				968F2EBC14539F350085264E /* libfreetype.a in Frameworks */,
+				968F2EBD14539F350085264E /* libjbig2dec.a in Frameworks */,
+				968F2EBE14539F350085264E /* libjpeg.a in Frameworks */,
+				968F2EBF14539F350085264E /* libmupdf.a in Frameworks */,
+				968F2EC014539F350085264E /* libmuxps.a in Frameworks */,
+				968F2EC114539F350085264E /* libopenjpeg.a in Frameworks */,
+				968F2EC214539F350085264E /* libz.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		19C28FACFE9D520D11CA2CBB /* Products */ = {
+		968F2E9214539BF10085264E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				1D6058910D05DD3D006BFB54 /* MuPDF.app */,
-				9681849B143E251A00374B41 /* libfitz.a */,
-				964FF8BD144F618000F5FF22 /* libmupdf.a */,
-				964FF8BE144F618000F5FF22 /* libmuxps.a */,
-				964FF8BA144F618000F5FF22 /* libfreetype.a */,
-				964FF8BB144F618000F5FF22 /* libjbig2dec.a */,
-				964FF8BC144F618000F5FF22 /* libjpeg.a */,
-				964FF8BF144F618000F5FF22 /* libopenjpeg.a */,
-				964FF8C0144F618000F5FF22 /* libz.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
-			isa = PBXGroup;
-			children = (
-				29B97315FDCFA39411CA2CEA /* Sources */,
-				29B97323FDCFA39411CA2CEA /* Frameworks */,
-				19C28FACFE9D520D11CA2CBB /* Products */,
-			);
-			name = CustomTemplate;
-			sourceTree = "<group>";
-		};
-		29B97315FDCFA39411CA2CEA /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				96165BEB143B4F2800699814 /* build_libs.sh */,
-				969E1293141FA57800189AA3 /* mupdf_icon.png */,
-				8D1107310486CEB800E47090 /* Info.plist */,
-				29B97316FDCFA39411CA2CEA /* main.m */,
+				968F2E8E14539BEB0085264E /* build_libs.sh */,
+				968F2E8F14539BEB0085264E /* Info.plist */,
+				968F2E9014539BEB0085264E /* main.m */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
 		};
-		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
+		968F2E9814539C880085264E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1DF5F4DF0D08C38300B7A737 /* UIKit.framework */,
-				1D30AB110D05D00D00671497 /* Foundation.framework */,
-				288765FC0DF74451002DB57D /* CoreGraphics.framework */,
+				968F2E9714539C880085264E /* MuPDF.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		968F2E9A14539C880085264E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				968F2E9B14539C880085264E /* UIKit.framework */,
+				968F2E9D14539C880085264E /* Foundation.framework */,
+				968F2E9F14539C880085264E /* CoreGraphics.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		968F2EB214539F230085264E /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				968F2EB314539F350085264E /* libfitz.a */,
+				968F2EB414539F350085264E /* libfreetype.a */,
+				968F2EB514539F350085264E /* libjbig2dec.a */,
+				968F2EB614539F350085264E /* libjpeg.a */,
+				968F2EB714539F350085264E /* libmupdf.a */,
+				968F2EB814539F350085264E /* libmuxps.a */,
+				968F2EB914539F350085264E /* libopenjpeg.a */,
+				968F2EBA14539F350085264E /* libz.a */,
+			);
+			name = Libraries;
+			sourceTree = "<group>";
+		};
+		96A3B27414539BAD00D0A895 = {
+			isa = PBXGroup;
+			children = (
+				968F2EB214539F230085264E /* Libraries */,
+				968F2E9214539BF10085264E /* Sources */,
+				968F2E9A14539C880085264E /* Frameworks */,
+				968F2E9814539C880085264E /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1D6058900D05DD3D006BFB54 /* MuPDF */ = {
+		968F2E9614539C880085264E /* MuPDF */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1D6058960D05DD3E006BFB54 /* Build configuration list for PBXNativeTarget "MuPDF" */;
+			buildConfigurationList = 968F2EAD14539C880085264E /* Build configuration list for PBXNativeTarget "MuPDF" */;
 			buildPhases = (
-				965A1554144E144F001A6426 /* Build Libraries */,
-				1D60588D0D05DD3D006BFB54 /* Resources */,
-				1D60588E0D05DD3D006BFB54 /* Sources */,
-				1D60588F0D05DD3D006BFB54 /* Frameworks */,
+				968F2EB114539D9D0085264E /* ShellScript */,
+				968F2E9314539C880085264E /* Sources */,
+				968F2E9414539C880085264E /* Frameworks */,
+				968F2E9514539C880085264E /* Resources */,
 			);
 			buildRules = (
 			);
@@ -128,156 +132,177 @@
 			);
 			name = MuPDF;
 			productName = MuPDF;
-			productReference = 1D6058910D05DD3D006BFB54 /* MuPDF.app */;
+			productReference = 968F2E9714539C880085264E /* MuPDF.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		29B97313FDCFA39411CA2CEA /* Project object */ = {
+		96A3B27614539BAD00D0A895 /* Project object */ = {
 			isa = PBXProject;
-			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MuPDF" */;
+			attributes = {
+				LastUpgradeCheck = 0420;
+			};
+			buildConfigurationList = 96A3B27914539BAD00D0A895 /* Build configuration list for PBXProject "MuPDF" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
-			hasScannedForEncodings = 1;
+			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
-				Japanese,
-				French,
-				German,
+				en,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA /* CustomTemplate */;
+			mainGroup = 96A3B27414539BAD00D0A895;
+			productRefGroup = 968F2E9814539C880085264E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1D6058900D05DD3D006BFB54 /* MuPDF */,
+				968F2E9614539C880085264E /* MuPDF */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1D60588D0D05DD3D006BFB54 /* Resources */ = {
+		968F2E9514539C880085264E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				969E1294141FA57800189AA3 /* mupdf_icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		965A1554144E144F001A6426 /* Build Libraries */ = {
+		968F2EB114539D9D0085264E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Build Libraries";
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/libfitz.a",
+				"$(DERIVED_FILE_DIR)/libmupdf.a",
+				"$(DERIVED_FILE_DIR)/libxps.a",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "exec sh build_libs.sh";
+			shellScript = "bash build_libs.sh";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1D60588E0D05DD3D006BFB54 /* Sources */ = {
+		968F2E9314539C880085264E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1D60589B0D05DD56006BFB54 /* main.m in Sources */,
+				968F2EB014539CDA0085264E /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1D6058940D05DD3E006BFB54 /* Debug */ = {
+		968F2EAE14539C880085264E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(DEVELOPER_FRAMEWORKS_DIR)\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ..;
 				INFOPLIST_FILE = Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				PRODUCT_NAME = MuPDF;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.2;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../Library/Developer/Xcode/DerivedData/MuPDF-cvkrphzautzteofxxhlfmeyskiun/Build/Products/Debug-iphoneos\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
 		};
-		1D6058950D05DD3E006BFB54 /* Release */ = {
+		968F2EAF14539C880085264E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(DEVELOPER_FRAMEWORKS_DIR)\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = ..;
 				INFOPLIST_FILE = Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
-				PRODUCT_NAME = MuPDF;
+				IPHONEOS_DEPLOYMENT_TARGET = 3.2;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../Library/Developer/Xcode/DerivedData/MuPDF-cvkrphzautzteofxxhlfmeyskiun/Build/Products/Debug-iphoneos\"",
+				);
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
+				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
 		};
-		C01FCF4F08A954540054247B /* Debug */ = {
+		96A3B27B14539BAD00D0A895 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				PREBINDING = NO;
-				SDKROOT = iphoneos4.3;
 			};
 			name = Debug;
 		};
-		C01FCF5008A954540054247B /* Release */ = {
+		96A3B27C14539BAD00D0A895 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
-				PREBINDING = NO;
-				SDKROOT = iphoneos4.3;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1D6058960D05DD3E006BFB54 /* Build configuration list for PBXNativeTarget "MuPDF" */ = {
+		968F2EAD14539C880085264E /* Build configuration list for PBXNativeTarget "MuPDF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1D6058940D05DD3E006BFB54 /* Debug */,
-				1D6058950D05DD3E006BFB54 /* Release */,
+				968F2EAE14539C880085264E /* Debug */,
+				968F2EAF14539C880085264E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
 		};
-		C01FCF4E08A954540054247B /* Build configuration list for PBXProject "MuPDF" */ = {
+		96A3B27914539BAD00D0A895 /* Build configuration list for PBXProject "MuPDF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C01FCF4F08A954540054247B /* Debug */,
-				C01FCF5008A954540054247B /* Release */,
+				96A3B27B14539BAD00D0A895 /* Debug */,
+				96A3B27C14539BAD00D0A895 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;
+	rootObject = 96A3B27614539BAD00D0A895 /* Project object */;
 }

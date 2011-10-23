@@ -8,7 +8,7 @@ echo Generating cmap and font files
 make -C .. generate || exit 1
 
 export OS=ios
-export build=$(echo $BUILD_STYLE | tr A-Z a-z)
+export build=$(echo $CONFIGURATION | tr A-Z a-z)
 
 for ARCH in $ARCHS
 do
@@ -26,7 +26,7 @@ do
 	make -C .. libs || exit 1
 done
 
-echo Performing liposuction
+echo Performing liposuction into $BUILT_PRODUCTS_DIR.
 
 mkdir -p "$BUILT_PRODUCTS_DIR"
 
