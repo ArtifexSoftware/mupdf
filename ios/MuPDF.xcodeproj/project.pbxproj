@@ -107,8 +107,8 @@
 		96A3B27414539BAD00D0A895 = {
 			isa = PBXGroup;
 			children = (
-				968F2EB214539F230085264E /* Libraries */,
 				968F2E9214539BF10085264E /* Sources */,
+				968F2EB214539F230085264E /* Libraries */,
 				968F2E9A14539C880085264E /* Frameworks */,
 				968F2E9814539C880085264E /* Products */,
 			);
@@ -292,6 +292,7 @@
 				968F2EAF14539C880085264E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		96A3B27914539BAD00D0A895 /* Build configuration list for PBXProject "MuPDF" */ = {
 			isa = XCConfigurationList;

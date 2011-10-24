@@ -29,9 +29,20 @@
 - (void) reconfigure;
 - (void) loadPage: (int)number;
 - (void) unloadPage: (int)number;
-- (void) gotoPage: (int)number;
+- (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) didSingleTap: (UITapGestureRecognizer*)sender;
 - (void) toggleNavigationBar;
+- (void) showOutline: (id)sender;
+@end
+
+@interface MuOutlineController : UITableViewController
+{
+	MuDocumentController *document;
+	NSMutableArray *titles;
+	NSMutableArray *pages;
+}
+- (id) initWithStyle: (UITableViewStyle)style xref: (pdf_xref*)xref outline: (pdf_outline*)outline;
+- (void) gotoPage: (int)number;
 @end
 
 @interface MuAppDelegate : NSObject <UIApplicationDelegate, UINavigationControllerDelegate>
@@ -213,6 +224,89 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 
 #pragma mark -
 
+@implementation MuOutlineController
+
+static void loadOutline(NSMutableArray *titles, NSMutableArray *pages, pdf_xref *xref, pdf_outline *outline, int level)
+{
+	char buf[512];
+	memset(buf, 0, sizeof buf);
+	memset(buf, ' ', level * 4);
+	while (outline)
+	{
+		[titles addObject: [NSString stringWithFormat: @"%s%s", buf, outline->title]];
+		[pages addObject: [NSNumber numberWithInt: get_page_number(xref, outline->link)]];
+		printf("-- %s\n", outline->title);
+		loadOutline(titles, pages, xref, outline->child, level + 1);
+		outline = outline->next;
+	}
+}
+
+- (id) initWithStyle: (UITableViewStyle)style document: (MuDocumentController*)document xref: (pdf_xref*)xref outline: (pdf_outline*)outline;
+{
+	self = [super initWithStyle: style];
+	if (self)
+	{
+		[self setTitle: @"Table of Contents"];
+		self->document = [document retain];
+		titles = [[NSMutableArray alloc] init];
+		pages = [[NSMutableArray alloc] init];
+		loadOutline(titles, pages, xref, outline, 0);
+	}
+	return self;
+}
+
+- (void) dealloc
+{
+	[document release];
+	[titles release];
+	[pages release];
+	[super dealloc];
+}
+
+- (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
+{
+	return YES;
+}
+
+- (NSInteger) numberOfSectionsInTableView: (UITableView*)tableView
+{
+	return 1;
+}
+
+- (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection: (NSInteger)section
+{
+	return [titles count];
+}
+
+- (UITableViewCell*) tableView: (UITableView*)tableView cellForRowAtIndexPath: (NSIndexPath*)indexPath
+{
+	static NSString *cellid = @"MuCellIdent";
+	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: cellid];
+	if (!cell)
+		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleValue1 reuseIdentifier: cellid] autorelease];
+	NSString *title = [titles objectAtIndex: [indexPath row]];
+	NSString *page = [pages objectAtIndex: [indexPath row]];
+	[[cell textLabel] setText: title];
+	[[cell detailTextLabel] setText: [NSString stringWithFormat: @"%d", [page intValue]+1]];
+	return cell;
+}
+
+- (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
+{
+	NSNumber *page = [pages objectAtIndex: [indexPath row]];
+	[self gotoPage: [page intValue]];
+}
+
+- (void) gotoPage: (int)number
+{
+	[[self navigationController] popViewControllerAnimated: YES];
+	[document gotoPage: number animated: NO];
+}
+
+@end
+
+#pragma mark -
+
 @implementation MuDocumentController
 
 - (id) initWithFile: (NSString*)nsfilename
@@ -266,7 +360,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 	[[self navigationItem] setRightBarButtonItem:
 		[[UIBarButtonItem alloc]
 			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-			target:self action:@selector(toggleNavigationBar)]];
+			target:self action:@selector(showOutline:)]];
 
 	[self setToolbarItems:
 		[NSArray arrayWithObjects:
@@ -367,14 +461,14 @@ printf("unload %d\n", number);
 	}
 }
 
-- (void) gotoPage: (int)number
+- (void) gotoPage: (int)number animated: (BOOL)animated
 {
 	if (number < 0)
 		number = 0;
 	if (number >= pdf_count_pages(xref))
 		number = pdf_count_pages(xref) - 1;
 	current = number;
-	[canvas setContentOffset: CGPointMake(current * width, 0) animated: YES];
+	[canvas setContentOffset: CGPointMake(current * width, 0) animated: animated];
 }
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
@@ -425,8 +519,8 @@ printf("unload %d\n", number);
 	float x1 = width - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
-	if (p.x < x0) [self gotoPage: current - 1];
-	else if (p.x > x1) [self gotoPage: current + 1];
+	if (p.x < x0) [self gotoPage: current - 1 animated: YES];
+	else if (p.x > x1) [self gotoPage: current + 1 animated: YES];
 	else [self toggleNavigationBar];
 }
 
@@ -441,6 +535,15 @@ printf("unload %d\n", number);
 		[navigator setToolbarHidden: YES animated: NO];
 	}
 	[canvas setContentInset: UIEdgeInsetsZero];
+}
+
+- (void) showOutline: (id)sender
+{
+	pdf_outline *outline = pdf_load_outline(xref);
+	MuOutlineController *ctl = [[MuOutlineController alloc] initWithStyle: UITableViewStylePlain document: self xref: xref outline: outline];
+	[[self navigationController] pushViewController: ctl animated: YES];
+	[ctl release];
+//	pdf_free_outline(outline);
 }
 
 @end

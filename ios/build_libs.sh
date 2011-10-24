@@ -10,35 +10,23 @@ make -C .. generate || exit 1
 export OS=ios
 export build=$(echo $CONFIGURATION | tr A-Z a-z)
 
-for ARCH in $ARCHS
-do
-	case $ARCH in
-		armv6) ARCHFLAGS="-arch armv6 -mno-thumb" ;;
-		armv7) ARCHFLAGS="-arch armv7 -mthumb" ;;
-		*) ARCHFLAGS="-arch $ARCH" ;;
-	esac
+case $ARCHS in
+	armv6) ARCHFLAGS="-arch armv6 -mno-thumb" ;;
+	armv7) ARCHFLAGS="-arch armv7 -mthumb" ;;
+	i386) ARCHFLAGS="-arch i386" ;;
+	*) echo "Unknown architecture!"; exit 1 ;;
+esac
 
-	export CFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
-	export LDFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
-	export OUT=build/$build-$OS-$ARCH
+export CFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
+export LDFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
+export OUT=build/$build-$OS-$ARCHS
 
-	echo Building libraries for $ARCH.
-	make -C .. libs || exit 1
-done
+echo Building libraries for $ARCHS.
+make -C .. libs || exit 1
 
-echo Performing liposuction into $BUILT_PRODUCTS_DIR.
+echo Copying files into $BUILT_PRODUCTS_DIR.
 
 mkdir -p "$BUILT_PRODUCTS_DIR"
-
-for LIB in ../$OUT/lib*.a
-do
-	LIB=$(basename $LIB)
-	IN=""
-	for ARCH in $ARCHS
-	do
-		IN="$IN ../build/$build-$OS-$ARCH/$LIB"
-	done
-	lipo $IN -output $BUILT_PRODUCTS_DIR/$LIB -create
-done
+cp ../$OUT/lib*.a $BUILT_PRODUCTS_DIR
 
 echo Done.
