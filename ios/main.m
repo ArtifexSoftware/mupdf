@@ -145,6 +145,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	fz_error error;
 	float scale, hscale, vscale;
 
+	printf("loading page %d for size %g x %g\n", number, width, height);
+
 	error = pdf_load_page(&page, xref, number);
 	if (error) {
 		showAlert(@"Cannot load page");
@@ -325,7 +327,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	strcat(filename, "/Documents/");
 	strcat(filename, [nsfilename UTF8String]);
 
-printf("open xref '%s'\n", filename);
+	printf("open xref '%s'\n", filename);
 
 	error = pdf_open_xref(&xref, filename, password);
 	if (error) {
@@ -379,7 +381,7 @@ printf("open xref '%s'\n", filename);
 
 	pdf_xref *self_xref = xref; // don't use self after dealloc has finished
 	dispatch_async(queue, ^{
-		printf("dealloced, close xref\n");
+		printf("close xref\n");
 		if (self_xref)
 			pdf_free_xref(self_xref);
 	});
@@ -422,10 +424,8 @@ printf("open xref '%s'\n", filename);
 
 	dispatch_async(queue, ^{
 		if (pageviews[number]) {
-			printf("load %d: rendering page in worker thread\n", number);
 			UIImage *image = renderPage(xref, number, width - GAP, height);
 			dispatch_async(dispatch_get_main_queue(), ^{
-				printf("load %d: replacing image in main thread\n", number);
 				if (pageviews[number]) {
 					[pageviews[number] setImage: image];
 					[self layoutPage: number];
@@ -499,7 +499,7 @@ printf("open xref '%s'\n", filename);
 	[self loadPage: number];
 #else
 	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i < number - 1 || i > number + 1)
+		if (i < number - 2 || i > number + 2)
 			[self unloadPage: i];
 	[self loadPage: number];
 	[self loadPage: number + 1];
