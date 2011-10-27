@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		96476B4614599D9400EA67C0 /* loading.png in Resources */ = {isa = PBXBuildFile; fileRef = 96476B4514599D9400EA67C0 /* loading.png */; };
 		968F2E9C14539C880085264E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9B14539C880085264E /* UIKit.framework */; };
 		968F2E9E14539C880085264E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9D14539C880085264E /* Foundation.framework */; };
 		968F2EA014539C880085264E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9F14539C880085264E /* CoreGraphics.framework */; };
@@ -22,6 +23,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		96476B4514599D9400EA67C0 /* loading.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = loading.png; sourceTree = "<group>"; };
 		968F2E8E14539BEB0085264E /* build_libs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
 		968F2E8F14539BEB0085264E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		968F2E9014539BEB0085264E /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 		968F2E9214539BF10085264E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				96476B4514599D9400EA67C0 /* loading.png */,
 				968F2E8E14539BEB0085264E /* build_libs.sh */,
 				968F2E8F14539BEB0085264E /* Info.plist */,
 				968F2E9014539BEB0085264E /* main.m */,
@@ -165,6 +168,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				96476B4614599D9400EA67C0 /* loading.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
