@@ -8,12 +8,14 @@
 #include "pdf/mupdf.h"
 #include "xps/muxps.h"
 
+static dispatch_queue_t queue;
+static fz_glyph_cache *glyphcache = NULL;
+
 @interface MuLibraryController : UITableViewController
 {
 	NSArray *files;
 }
 - (void) reload;
-- (void) openDocument: (NSString*)filename;
 @end
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate>
@@ -24,19 +26,17 @@
 		NSMutableArray *pages;
 	} outline;
 	UIScrollView *canvas;
-	UIView **pageviews;
-	UIView **loadviews;
-	UIView *rotateview;
+	UIImageView **pageviews;
 	char *cancel;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
 }
 - (id) initWithFile: (NSString*)filename;
-- (void) reconfigure;
 - (void) layoutVisiblePages;
 - (void) loadPage: (int)number;
 - (void) unloadPage: (int)number;
+- (void) resizePage: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) didSingleTap: (UITapGestureRecognizer*)sender;
 - (void) toggleNavigationBar;
@@ -59,10 +59,6 @@
 	MuLibraryController *library;
 }
 @end
-
-static dispatch_queue_t queue;
-static fz_glyph_cache *glyphcache = NULL;
-static MuAppDelegate *app = nil;
 
 #pragma mark -
 
@@ -240,11 +236,6 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	NSString *filename = [files objectAtIndex: [indexPath row]];
-	[self openDocument: filename];
-}
-
-- (void) openDocument: (NSString*)filename
-{
 	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
 	if (document) {
 		[[self navigationController] pushViewController: document animated: YES];
@@ -261,8 +252,7 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 - (id) initWithTarget: (MuDocumentController*)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages
 {
 	self = [super initWithStyle: UITableViewStylePlain];
-	if (self)
-	{
+	if (self) {
 		[self setTitle: @"Table of Contents"];
 		target = [aTarget retain];
 		titles = [aTitles retain];
@@ -340,16 +330,14 @@ static UIImageView *new_page_view(pdf_xref *xref, int number, float width, float
 printf("open xref '%s'\n", filename);
 
 	error = pdf_open_xref(&xref, filename, password);
-	if (error)
-	{
+	if (error) {
 		showAlert(@"Cannot open PDF file");
 		[self release];
 		return nil;
 	}
 
 	error = pdf_load_page_tree(xref);
-	if (error)
-	{
+	if (error) {
 		showAlert(@"Cannot open document");
 		[self release];
 		return nil;
@@ -360,11 +348,10 @@ printf("open xref '%s'\n", filename);
 	loadOutline(outline.titles, outline.pages, xref);
 
 	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
-	loadviews = calloc(pdf_count_pages(xref), sizeof *loadviews);
 	cancel = malloc(pdf_count_pages(xref));
 
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,10,10)];
-	[canvas setPagingEnabled: YES];
+//	[canvas setPagingEnabled: YES];
 	[canvas setBackgroundColor: [UIColor grayColor]];
 	[canvas setShowsHorizontalScrollIndicator: NO];
 	[canvas setShowsVerticalScrollIndicator: NO];
@@ -375,78 +362,42 @@ printf("open xref '%s'\n", filename);
 
 	[self setTitle: nsfilename];
 
-	if ([outline.titles count])
-	{
+	if ([outline.titles count]) {
 		[[self navigationItem] setRightBarButtonItem:
 			[[UIBarButtonItem alloc]
 				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
 				target:self action:@selector(showOutline:)]];
 	}
 
-	[self setToolbarItems:
-		[NSArray arrayWithObjects:
-			[[UIBarButtonItem alloc]
-				initWithBarButtonSystemItem: UIBarButtonSystemItemAction
-				target:self action:@selector(toggleNavigationBar)],
-			nil]];
-
 	return self;
 }
 
 - (void) loadPage: (int)number
 {
-	UILabel *loading;
-
 	if (number < 0 || number >= pdf_count_pages(xref))
 		return;
 
 	cancel[number] = NO;
 
-	if (!loadviews[number] && !pageviews[number]) {
-		loading = [[UILabel alloc] initWithFrame: CGRectMake(number * width + width/3, height/3, width/3, height/3)];
-		[loading setText: [NSString stringWithFormat: @"Loading page %d of %d", number + 1, pdf_count_pages(xref)]];
-		[loading setTextAlignment: UITextAlignmentCenter];
-		[canvas addSubview: loading];
-		loadviews[number] = loading;
-printf("loadviews[current] added original %p\n", loadviews[number]);
-		[loading release];
-	}
-
 	dispatch_async(queue, ^{
-		if (cancel[number]) {
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (loadviews[number]) {
-					printf("  load %d: canceled\n", number);
-					[loadviews[number] removeFromSuperview];
-					loadviews[number] = nil;
-				}
-			});
-		} else if (!pageviews[number]) {
+		if (!cancel[number] && !pageviews[number]) {
 			printf("load %d: in worker thread\n", number);
 
 			UIImageView *page = new_page_view(xref, number, width, height);
-
-			CGRect frame = [page frame];
-			frame.origin.x = number * width;
-			frame.origin.x += (width - frame.size.width) / 2;
-			frame.origin.y += (height - frame.size.height) / 2;
-			[page setFrame: frame];
 
 			pageviews[number] = page; // weak reference
 
 			dispatch_async(dispatch_get_main_queue(), ^{
 				printf("  load %d: adding view in main thread\n", number);
-printf("loadviews[current] removed %p\n", loadviews[number]);
-				[loadviews[number] removeFromSuperview];
-				loadviews[number] = nil;
+
+				CGRect frame = [page frame];
+				frame.origin.x = number * width;
+				frame.origin.x += (width - frame.size.width) / 2;
+				frame.origin.y += (height - frame.size.height) / 2;
+				[page setFrame: frame];
+
 				[canvas addSubview: page];
 				[page release];
-
-				if (rotateview) {
-					[rotateview removeFromSuperview];
-					[rotateview release];
-					rotateview = nil;
-				}
 			});
 		}
 	});
@@ -489,21 +440,44 @@ printf("loadviews[current] removed %p\n", loadviews[number]);
 
 - (void) viewWillAppear: (BOOL)animated
 {
-	[super viewWillAppear: animated];
-	[[self navigationController] setToolbarHidden: NO animated: NO];
-	[self reconfigure];
+puts("viewWillAppear");
+	CGSize size = [canvas frame].size;
+	width = size.width;
+	height = size.height;
+
+	[canvas setContentInset: UIEdgeInsetsZero];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
 - (void) viewDidDisappear: (BOOL)animated
 {
+puts("viewDidDisappear");
 	[super viewDidDisappear: animated];
 	for (int i = 0; i < pdf_count_pages(xref); i++)
 		[self unloadPage: i];
 }
 
+- (void) resizePage: (int)number
+{
+	if (pageviews[number]) {
+		CGRect frame = [pageviews[number] frame];
+		CGSize pagesize = [[pageviews[number] image] size];
+		float scale = MIN(width / pagesize.width, height / pagesize.height);
+		frame.size.width = pagesize.width * scale;
+		frame.size.height = pagesize.height * scale;
+		frame.origin.x = number * width;
+		frame.origin.y = 0;
+		frame.origin.x += (width - frame.size.width) / 2;
+		frame.origin.y += (height - frame.size.height) / 2;
+		[pageviews[number] setFrame: frame];
+	}
+}
+
 - (void) reconfigure
 {
 	CGSize size = [canvas frame].size;
+	int max_width = MAX(width, size.width);
 
 	if (size.width == width && size.height == height)
 		return;
@@ -511,49 +485,45 @@ printf("loadviews[current] removed %p\n", loadviews[number]);
 	width = size.width;
 	height = size.height;
 
+printf("reconfigure current=%d width=%d\n", current, width);
+
 	for (int i = 0; i < pdf_count_pages(xref); i++)
-		[self unloadPage: i];
+		[self resizePage: i];
 
 	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0) animated: NO];
-
-	if (rotateview) {
-		CGRect frame = [rotateview frame];
-		frame.origin.x = current * width;
-		frame.origin.y = 0;
-		frame.origin.x += (width - frame.size.width) / 2;
-		frame.origin.y += (height - frame.size.height) / 2;
-		[rotateview setFrame: frame];
-	}
-
-	[self layoutVisiblePages];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
 - (void) layoutVisiblePages
 {
-	int i;
+	int i, number;
 
 	if (width == 0) return; // not visible yet
 
 	float x = [canvas contentOffset].x + width * 0.5f;
 
-	current = x / width;
+	number = x / width;
 
-#if 0
+#if 1
 	for (i = 0; i < pdf_count_pages(xref); i++)
-		if (i != current)
+		if (0) // i != number)
 			[self unloadPage: i];
-	[self loadPage: current];
+	[self loadPage: number];
 #else
 	for (i = 0; i < pdf_count_pages(xref); i++)
-		if (i < current - 1 || i > current + 1)
+		if (i < number - 1 || i > number + 1)
 			[self unloadPage: i];
 
-	[self loadPage: current];
-	[self loadPage: current + 1];
-	[self loadPage: current - 1];
+	[self loadPage: number];
+	[self loadPage: number + 1];
+	[self loadPage: number - 1];
 #endif
+
+	if (current != number) {
+		printf("changed page to %d\n", number);
+		current = number;
+	}
 }
 
 - (void) gotoPage: (int)number animated: (BOOL)animated
@@ -579,38 +549,35 @@ printf("loadviews[current] removed %p\n", loadviews[number]);
 - (void) willRotateToInterfaceOrientation: (UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
 {
 puts("willRotateToInterfaceOrientation");
-	if (pageviews[current]) {
-		rotateview = [[UIImageView alloc] initWithImage: [(UIImageView*)pageviews[current] image]];
-		[rotateview setFrame: [pageviews[current] frame]];
-		[canvas addSubview: rotateview];
-	}
-
-	for (int i = 0; i < pdf_count_pages(xref); i++)
-		[self unloadPage: i];
-	dispatch_sync(queue, ^{});
 }
 
 - (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
 {
 puts("willAnimateRotationToInterfaceOrientation");
-	if (rotateview) {
-		CGSize size = [canvas frame].size;
-		CGRect frame = [rotateview frame];
-		float scale = MIN(size.width / frame.size.width, size.height / frame.size.height);
-		frame.size.width *= scale;
-		frame.size.height *= scale;
-		frame.origin.x = current * width;
-		frame.origin.y = 0;
-		frame.origin.x += (size.width - frame.size.width) / 2;
-		frame.origin.y += (size.height - frame.size.height) / 2;
-		[rotateview setFrame: frame];
-	}
+
+	CGSize size = [canvas frame].size;
+	int max_width = MAX(width, size.width);
+
+	width = size.width;
+	height = size.height;
+
+printf("reconfigure current=%d width=%d\n", current, width);
+
+	for (int i = 0; i < pdf_count_pages(xref); i++)
+		[self resizePage: i];
+
+	// use max_width so we don't clamp the content offset too early during animation
+	[canvas setContentInset: UIEdgeInsetsZero];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
 puts("didRotateFromInterfaceOrientation");
-	[self reconfigure];
+	[canvas setContentInset: UIEdgeInsetsZero];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
 - (void) didSingleTap: (UITapGestureRecognizer*)sender
@@ -629,13 +596,10 @@ puts("didRotateFromInterfaceOrientation");
 - (void) toggleNavigationBar
 {
 	UINavigationController *navigator = [self navigationController];
-	if ([navigator isNavigationBarHidden]) {
+	if ([navigator isNavigationBarHidden])
 		[navigator setNavigationBarHidden: NO animated: NO];
-		[navigator setToolbarHidden: NO animated: NO];
-	} else {
+	else
 		[navigator setNavigationBarHidden: YES animated: NO];
-		[navigator setToolbarHidden: YES animated: NO];
-	}
 	[canvas setContentInset: UIEdgeInsetsZero];
 }
 
@@ -654,12 +618,6 @@ puts("didRotateFromInterfaceOrientation");
 
 - (BOOL) application: (UIApplication*)application didFinishLaunchingWithOptions: (NSDictionary*)launchOptions
 {
-	app = self;
-
-	NSThread *foo = [[NSThread alloc] init];
-	[foo start];
-	[foo release];
-
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
 	glyphcache = fz_new_glyph_cache();
@@ -668,8 +626,6 @@ puts("didRotateFromInterfaceOrientation");
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
 	[[navigator navigationBar] setTranslucent: YES];
-	[[navigator toolbar] setTranslucent: YES];
-	[navigator setToolbarHidden: NO animated: NO];
 	[navigator setDelegate: self];
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
@@ -718,6 +674,7 @@ puts("didRotateFromInterfaceOrientation");
 	 Called when the application is about to terminate.
 	 See also applicationDidEnterBackground:.
 	 */
+	printf("applicationWillTerminate!\n");
 }
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
@@ -726,7 +683,7 @@ puts("didRotateFromInterfaceOrientation");
 	 Free up as much memory as possible by purging cached data objects that can
 	 be recreated (or reloaded from disk) later.
 	 */
-printf("RUNNING OUT OF MEMORY SOON!!!111eleven\n");
+	printf("applicationDidReceiveMemoryWarning\n");
 }
 
 - (void) dealloc
