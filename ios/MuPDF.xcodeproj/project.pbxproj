@@ -20,6 +20,8 @@
 		968F2EC014539F350085264E /* libmuxps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB814539F350085264E /* libmuxps.a */; };
 		968F2EC114539F350085264E /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EB914539F350085264E /* libopenjpeg.a */; };
 		968F2EC214539F350085264E /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2EBA14539F350085264E /* libz.a */; };
+		96BD2B38145AC485001CEBC3 /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 96BD2B35145AC485001CEBC3 /* Icon-72.png */; };
+		96BD2B39145AC485001CEBC3 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 96BD2B36145AC485001CEBC3 /* Icon.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +41,8 @@
 		968F2EB814539F350085264E /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmuxps.a; path = "../Debug-iphoneos/libmuxps.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		968F2EB914539F350085264E /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopenjpeg.a; path = "../Debug-iphoneos/libopenjpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		968F2EBA14539F350085264E /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "../Debug-iphoneos/libz.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		96BD2B35145AC485001CEBC3 /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
+		96BD2B36145AC485001CEBC3 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,9 +70,11 @@
 		968F2E9214539BF10085264E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				96476B4514599D9400EA67C0 /* loading.png */,
-				968F2E8E14539BEB0085264E /* build_libs.sh */,
+				96BD2B36145AC485001CEBC3 /* Icon.png */,
+				96BD2B35145AC485001CEBC3 /* Icon-72.png */,
 				968F2E8F14539BEB0085264E /* Info.plist */,
+				968F2E8E14539BEB0085264E /* build_libs.sh */,
+				96476B4514599D9400EA67C0 /* loading.png */,
 				968F2E9014539BEB0085264E /* main.m */,
 			);
 			name = Sources;
@@ -169,6 +175,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				96476B4614599D9400EA67C0 /* loading.png in Resources */,
+				96BD2B38145AC485001CEBC3 /* Icon-72.png in Resources */,
+				96BD2B39145AC485001CEBC3 /* Icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

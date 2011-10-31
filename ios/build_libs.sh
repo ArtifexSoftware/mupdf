@@ -28,5 +28,6 @@ echo Copying files into $BUILT_PRODUCTS_DIR.
 
 mkdir -p "$BUILT_PRODUCTS_DIR"
 cp ../$OUT/lib*.a $BUILT_PRODUCTS_DIR
+ranlib $BUILT_PRODUCTS_DIR/lib*.a
 
 echo Done.
