@@ -303,6 +303,11 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	return [titles count];
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return 28;
+}
+
 - (UITableViewCell*) tableView: (UITableView*)tableView cellForRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	static NSString *cellid = @"MuCellIdent";
@@ -311,6 +316,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleValue1 reuseIdentifier: cellid] autorelease];
 	NSString *title = [titles objectAtIndex: [indexPath row]];
 	NSString *page = [pages objectAtIndex: [indexPath row]];
+	[[cell textLabel] setFont: [UIFont systemFontOfSize: 16]];
+	[[cell detailTextLabel] setFont: [UIFont systemFontOfSize: 16]];
 	[[cell textLabel] setText: title];
 	[[cell detailTextLabel] setText: [NSString stringWithFormat: @"%d", [page intValue]+1]];
 	return cell;
