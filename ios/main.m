@@ -319,7 +319,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) dealloc
 {
-	[target release];
 	[titles release];
 	[pages release];
 	[super dealloc];
@@ -469,6 +468,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[self setToolbarItems: [NSArray arrayWithObjects: wrapper, nil]];
 
 	[self setView: view];
+	[view release];
 }
 
 - (void) viewWillAppear: (BOOL)animated
@@ -504,26 +504,28 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[[self navigationController] setToolbarHidden: YES animated: animated];
 }
 
+- (void) viewDidUnload
+{
+	for (int i = 0; i < pdf_count_pages(xref); i++) {
+		if (pageviews[i]) {
+			[pageviews[i] release];
+			pageviews[i] = nil;
+		}
+	}
+
+	[indicator release]; indicator = nil;
+	[slider release]; slider = nil;
+	[wrapper release]; wrapper = nil;
+	[canvas release]; canvas = nil;
+}
+
 - (void) dealloc
 {
-	if (xref)
-		for (int i = 0; i < pdf_count_pages(xref); i++)
-			if (pageviews[i])
-				[pageviews[i] release];
-
-	pdf_xref *self_xref = xref; // don't use self after dealloc has finished
-	dispatch_async(queue, ^{
+	if (xref) {
 		printf("close xref\n");
-		if (self_xref)
-			pdf_free_xref(self_xref);
-	});
-
+		pdf_free_xref(xref);
+	}
 	free(pageviews);
-
-	[indicator release];
-	[slider release];
-	[wrapper release];
-	[canvas release];
 	[outline release];
 	[key release];
 	[super dealloc];
