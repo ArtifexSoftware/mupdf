@@ -207,7 +207,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewWillAppear: (BOOL)animated
 {
-	[self setTitle: @"MuPDF"];
+	[self setTitle: @"PDF and XPS Documents"];
 	[self reload];
 	printf("library viewWillAppear (starting reload timer)\n");
 	timer = [NSTimer timerWithTimeInterval: 1
@@ -218,6 +218,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	[self setTitle: @"Library"];
 	printf("library viewWillDisappear (stopping reload timer)\n");
 	[timer invalidate];
 	timer = nil;
@@ -311,6 +312,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 		target = aTarget; // only keep a weak reference, to avoid retain cycles
 		titles = [aTitles retain];
 		pages = [aPages retain];
+		[[self tableView] setSeparatorStyle: UITableViewCellSeparatorStyleNone];
 	}
 	return self;
 }
@@ -405,14 +407,11 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 		return nil;
 	}
 
-	[self setTitle: [nsfilename lastPathComponent]];
-
 	NSMutableArray *titles = [[NSMutableArray alloc] init];
 	NSMutableArray *pages = [[NSMutableArray alloc] init];
 	loadOutline(titles, pages, xref);
 	if ([titles count]) {
 		outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
-		[[outline tableView] setSeparatorStyle: UITableViewCellSeparatorStyleNone];
 		[[self navigationItem] setRightBarButtonItem:
 			[[UIBarButtonItem alloc]
 				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
@@ -478,12 +477,14 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	width = size.width;
 	height = size.height;
 
+	[self setTitle: [key lastPathComponent]];
+
 	[slider setValue: current];
 
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
 
 	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width - GAP, height)];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	[wrapper setWidth: width - GAP - 24];
@@ -498,8 +499,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	[self setTitle: @"Resume"];
 	[[NSUserDefaults standardUserDefaults] removeObjectForKey: @"OpenDocumentKey"];
-
 	[[self navigationController] setToolbarHidden: YES animated: animated];
 }
 
