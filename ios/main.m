@@ -14,7 +14,6 @@
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
 static UIImage *loadingImage = nil;
-static NSString *docdir = nil;
 
 @interface MuLibraryController : UITableViewController
 {
@@ -36,8 +35,8 @@ static NSString *docdir = nil;
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate>
 {
-	NSString *key;
 	pdf_xref *xref;
+	NSString *key;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
 	UILabel *indicator;
@@ -110,7 +109,7 @@ static void loadOutlineImp(NSMutableArray *titles, NSMutableArray *pages, pdf_xr
 	memset(buf, ' ', level * 4);
 	while (outline)
 	{
-		int number =  pageNumberFromLink(xref, outline->link);
+		int number = pageNumberFromLink(xref, outline->link);
 		if (number >= 0) {
 			[titles addObject: [NSString stringWithFormat: @"%s%s", buf, outline->title]];
 			[pages addObject: [NSNumber numberWithInt: number]];
@@ -147,17 +146,31 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix)
 	return image;
 }
 
-static UIImage *renderPage(pdf_xref *xref, int number, float width, float height)
+static CGSize fitPageToScreen(CGSize page, CGSize screen)
 {
+	float hscale = screen.width / page.width;
+	float vscale = screen.height / page.height;
+	float scale = MIN(hscale, vscale);
+	float new_w = floorf(page.width * scale);
+	float new_h = floorf(page.height * scale);
+	hscale = new_w / page.width;
+	vscale = new_h / page.height;
+	return CGSizeMake(hscale, vscale);
+}
+
+static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
+{
+	fz_error error;
+	CGSize pagesize;
+	fz_rect mediabox;
 	fz_bbox bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
 	pdf_page *page;
-	fz_error error;
-	float scale, hscale, vscale;
+	CGSize scale;
 
-	printf("loading page %d [%g %g]\n", number, width, height);
+	printf("loading page %d\n", number);
 
 	error = pdf_load_page(&page, xref, number);
 	if (error) {
@@ -165,12 +178,12 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		return nil;
 	}
 
-	hscale = width / (page->mediabox.x1 - page->mediabox.x0);
-	vscale = height / (page->mediabox.y1 - page->mediabox.y0);
-	scale = MIN(hscale, vscale);
+	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
+	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
+	scale = fitPageToScreen(pagesize, screen);
 
 	ctm = fz_translate(0, -page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(scale, -scale));
+	ctm = fz_concat(ctm, fz_scale(scale.width, -scale.height));
 	ctm = fz_concat(ctm, fz_rotate(page->rotate));
 	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
 
@@ -194,25 +207,24 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 - (void) viewWillAppear: (BOOL)animated
 {
+	[self setTitle: @"MuPDF"];
 	[self reload];
-
+	printf("library viewWillAppear (starting reload timer)\n");
 	timer = [NSTimer timerWithTimeInterval: 1
 		target: self selector: @selector(reload) userInfo: nil
 		repeats: YES];
-
 	[[NSRunLoop currentRunLoop] addTimer: timer forMode: NSDefaultRunLoopMode];
 }
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	printf("library viewWillDisappear (stopping reload timer)\n");
 	[timer invalidate];
 	timer = nil;
 }
 
 - (void) reload
 {
-	[self setTitle: @"MuPDF"];
-
 	NSError *error = nil;
 
 	if (files) {
@@ -220,6 +232,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		files = nil;
 	}
 
+	NSString *docdir = [NSString stringWithFormat: @"%@/Documents", NSHomeDirectory()];
 	files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath: docdir error: &error];
 	if (error)
 		files = [NSArray arrayWithObjects: @"...error loading directory...", nil];
@@ -295,7 +308,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	self = [super initWithStyle: UITableViewStylePlain];
 	if (self) {
 		[self setTitle: @"Table of Contents"];
-		target = [aTarget retain];
+		target = aTarget; // only keep a weak reference, to avoid retain cycles
 		titles = [aTitles retain];
 		pages = [aPages retain];
 	}
@@ -372,8 +385,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	dispatch_sync(queue, ^{});
 
-	strcpy(filename, [docdir UTF8String]);
-	strcat(filename, "/");
+	strcpy(filename, [NSHomeDirectory() UTF8String]);
+	strcat(filename, "/Documents/");
 	strcat(filename, [nsfilename UTF8String]);
 
 	printf("open xref '%s'\n", filename);
@@ -547,7 +560,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	dispatch_async(queue, ^{
 		if (pageviews[number]) {
-			UIImage *image = renderPage(xref, number, width - GAP, height);
+			UIImage *image = renderPage(xref, number, CGSizeMake(width - GAP, height));
 			dispatch_async(dispatch_get_main_queue(), ^{
 				if (pageviews[number]) {
 					[pageviews[number] setImage: image];
@@ -567,13 +580,13 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		UIImageView *page = pageviews[number];
 		UIImage *image = [page image];
 		if (image != loadingImage) {
-			CGRect frame = [page frame];
-			CGSize pagesize = [image size];
-			float scale = MIN((width - GAP) / pagesize.width, height / pagesize.height);
-			if (fabs(scale - 1) > 0.1) {
+			CGSize imagesize = [image size];
+			CGSize scale = fitPageToScreen(imagesize, CGSizeMake(width-GAP, height));
+			if (fabs(scale.width - 1) > 0.1) {
 				[self reloadPage: number];
-				frame.size.width = pagesize.width * scale;
-				frame.size.height = pagesize.height * scale;
+				CGRect frame = [page frame];
+				frame.size.width = imagesize.width * scale.width;
+				frame.size.height = imagesize.height * scale.height;
 				[page setFrame: frame];
 			} else {
 				[page sizeToFit];
@@ -581,7 +594,15 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		} else {
 			[page sizeToFit];
 		}
-		[page setCenter: CGPointMake(number * width + (width-GAP)/2, height/2)];
+
+		// We can't use setCenter because we'll end up with a
+		// misaligned and blurry image on odd pixel sizes
+		CGRect frame = [page frame];
+		frame.origin.x = number * width;
+		frame.origin.y = 0;
+		frame.origin.x += floor((width-GAP - frame.size.width) / 2);
+		frame.origin.y += floor((height - frame.size.height) / 2);
+		[page setFrame: frame];
 	}
 }
 
@@ -765,9 +786,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
 	glyphcache = fz_new_glyph_cache();
-
-	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	docdir = [[paths objectAtIndex: 0] retain];
 
 	loadingImage = [[UIImage imageNamed: @"loading.png"] retain];
 
