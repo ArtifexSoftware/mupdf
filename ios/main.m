@@ -14,11 +14,11 @@
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
 static UIImage *loadingImage = nil;
-static UIBarButtonItem *flexibleSpace = nil;
 static NSString *docdir = nil;
 
 @interface MuLibraryController : UITableViewController
 {
+	NSTimer *timer;
 	NSArray *files;
 }
 - (void) openDocument: (NSString*)filename;
@@ -191,6 +191,23 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 #pragma mark -
 
 @implementation MuLibraryController
+
+- (void) viewWillAppear: (BOOL)animated
+{
+	[self reload];
+
+	timer = [NSTimer timerWithTimeInterval: 1
+		target: self selector: @selector(reload) userInfo: nil
+		repeats: YES];
+
+	[[NSRunLoop currentRunLoop] addTimer: timer forMode: NSDefaultRunLoopMode];
+}
+
+- (void) viewWillDisappear: (BOOL)animated
+{
+	[timer invalidate];
+	timer = nil;
+}
 
 - (void) reload
 {
@@ -754,10 +771,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	loadingImage = [[UIImage imageNamed: @"loading.png"] retain];
 
-	flexibleSpace = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-		target: nil action: nil];
-
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
@@ -791,7 +804,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
 	printf("applicationDidBecomeActive!\n");
-	[library reload];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application
