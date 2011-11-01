@@ -44,6 +44,7 @@ static UIBarButtonItem *flexibleSpace = nil;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
+	int scroll_animating; // stop view updates during scrolling animations
 }
 - (id) initWithFile: (NSString*)filename;
 - (void) loadPage: (int)number;
@@ -392,8 +393,11 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[canvas setPagingEnabled: YES];
 	[canvas setShowsHorizontalScrollIndicator: NO];
 	[canvas setShowsVerticalScrollIndicator: NO];
-	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
 	[canvas setDelegate: self];
+
+	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
+
+	scroll_animating = NO;
 
 	indicator = [[UILabel alloc] initWithFrame: CGRectZero];
 	[indicator setAutoresizingMask: UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
@@ -459,6 +463,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	});
 
 	free(pageviews);
+
 	[indicator release];
 	[slider release];
 	[wrapper release];
@@ -507,6 +512,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 				}
 				[image release];
 			});
+		} else {
+			printf("not loading page %d\n", number);
 		}
 	});
 }
@@ -593,25 +600,21 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	if (width == 0)
 		return; // not visible yet
 
+	if (scroll_animating)
+		return; // don't mess with layout during animations
+
 	float x = [canvas contentOffset].x + width * 0.5f;
 	current = x / width;
 
-#if 0
-	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i != current)
-			[self unloadPage: i];
-	[self loadPage: current];
-#else
 	for (int i = 0; i < pdf_count_pages(xref); i++)
 		if (i < current - 2 || i > current + 2)
 			[self unloadPage: i];
 	[self loadPage: current];
 	[self loadPage: current + 1];
 	[self loadPage: current - 1];
-#endif
 
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
-	[slider setValue: current animated: YES];
+	[slider setValue: current];
 }
 
 - (void) gotoPage: (int)number animated: (BOOL)animated
@@ -620,8 +623,33 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		number = 0;
 	if (number >= pdf_count_pages(xref))
 		number = pdf_count_pages(xref) - 1;
+	if (animated) {
+		// setContentOffset:animated: does not use the normal animation
+		// framework. It also doesn't play nice with the tap gesture
+		// recognizer. So we do our own page flipping animation here.
+		// We must set the scroll_animating flag so that we don't create
+		// or remove subviews until after the animation, or they'll
+		// swoop in from origo during the animation.
+		scroll_animating = YES;
+		[UIView beginAnimations: @"MuScroll" context: NULL];
+		[UIView setAnimationDuration: 0.4];
+		[UIView setAnimationBeginsFromCurrentState: YES];
+		[UIView setAnimationDelegate: self];
+		[UIView setAnimationDidStopSelector: @selector(didGotoPage)];
+		[canvas setContentOffset: CGPointMake(number * width, 0)];
+		[slider setValue: number];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
+		[UIView commitAnimations];
+	} else {
+		[canvas setContentOffset: CGPointMake(number * width, 0)];
+	}
 	current = number;
-	[canvas setContentOffset: CGPointMake(current * width, 0) animated: animated];
+}
+
+- (void) didGotoPage
+{
+	scroll_animating = NO;
+	[self scrollViewDidScroll: canvas];
 }
 
 - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
@@ -664,11 +692,11 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	float x1 = (width - GAP) - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
-	if (p.x < x0)
-		[self gotoPage: current - 1 animated: YES];
-	else if (p.x > x1)
-		[self gotoPage: current + 1 animated: YES];
-	else {
+	if (p.x < x0) {
+		[self gotoPage: current-1 animated: YES];
+	} else if (p.x > x1) {
+		[self gotoPage: current+1 animated: YES];
+	} else {
 		if ([[self navigationController] isNavigationBarHidden])
 			[self showNavigationBar];
 		else
