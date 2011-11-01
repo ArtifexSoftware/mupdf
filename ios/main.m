@@ -21,6 +21,7 @@ static NSString *docdir = nil;
 {
 	NSArray *files;
 }
+- (void) openDocument: (NSString*)filename;
 - (void) reload;
 @end
 
@@ -35,6 +36,7 @@ static NSString *docdir = nil;
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate>
 {
+	NSString *key;
 	pdf_xref *xref;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
@@ -239,25 +241,25 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	int row = [indexPath row];
 	if (row == 0) {
 		[[cell textLabel] setText: @"About MuPDF"];
+		[[cell textLabel] setFont: [UIFont italicSystemFontOfSize: 20]];
 	} else {
 		[[cell textLabel] setText: [files objectAtIndex: row - 1]];
+		[[cell textLabel] setFont: [UIFont systemFontOfSize: 21]];
 	}
-	[[cell textLabel] setFont: [UIFont boldSystemFontOfSize: 20]];
-//	[[cell textLabel] setBackgroundColor: [UIColor clearColor]];
-//	[[cell contentView] setBackgroundColor: row & 1 ?
-//		[UIColor colorWithWhite: 1.0 alpha: 1] :
-//		[UIColor colorWithWhite: 0.9 alpha: 1]];
 	return cell;
 }
 
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	int row = [indexPath row];
-	NSString *filename;
 	if (row == 0)
-		filename = @"../MuPDF.app/About.pdf";
+		[self openDocument: @"../MuPDF.app/About.pdf"];
 	else
-		filename = [files objectAtIndex: row - 1];
+		[self openDocument: [files objectAtIndex: row - 1]];
+}
+
+- (void) openDocument: (NSString*)filename
+{
 	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
 	if (document) {
 		[[self navigationController] pushViewController: document animated: YES];
@@ -349,6 +351,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	if (!self)
 		return nil;
 
+	key = [nsfilename retain];
+
 	dispatch_sync(queue, ^{});
 
 	strcpy(filename, [docdir UTF8String]);
@@ -394,6 +398,12 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 - (void) loadView
 {
+	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
+
+	current = [[NSUserDefaults standardUserDefaults] integerForKey: key];
+	if (current < 0 || current >= pdf_count_pages(xref))
+		current = 0;
+
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
 	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[view setAutoresizesSubviews: YES];
@@ -413,7 +423,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[indicator setAutoresizingMask: UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
 	[indicator setText: @"0000 of 9999"];
 	[indicator sizeToFit];
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
 	[indicator setCenter: CGPointMake(0, INDICATOR_Y)];
 	[indicator setTextAlignment: UITextAlignmentCenter];
 	[indicator setBackgroundColor: [[UIColor blackColor] colorWithAlphaComponent: 0.5]];
@@ -422,7 +431,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
 	[slider setMaximumValue: pdf_count_pages(xref) - 1];
-	[slider setValue: current];
 	[slider addTarget: self action: @selector(didSlide:) forControlEvents: UIControlEventValueChanged];
 
 	[view addSubview: canvas];
@@ -440,6 +448,10 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	width = size.width;
 	height = size.height;
 
+	[slider setValue: current];
+
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
+
 	[canvas setContentInset: UIEdgeInsetsZero];
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width - GAP, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
@@ -456,6 +468,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	[[NSUserDefaults standardUserDefaults] removeObjectForKey: @"OpenDocumentKey"];
+
 	[[self navigationController] setToolbarHidden: YES animated: animated];
 }
 
@@ -480,6 +494,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[wrapper release];
 	[canvas release];
 	[outline release];
+	[key release];
 	[super dealloc];
 }
 
@@ -617,6 +632,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	float x = [canvas contentOffset].x + width * 0.5f;
 	current = x / width;
 
+	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
+
 	for (int i = 0; i < pdf_count_pages(xref); i++)
 		if (i < current - 2 || i > current + 2)
 			[self unloadPage: i];
@@ -742,7 +759,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		target: nil action: nil];
 
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
-//	[[library tableView] setSeparatorStyle: UITableViewCellSeparatorStyleNone];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
 	[[navigator navigationBar] setTranslucent: YES];
@@ -754,12 +770,17 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[window addSubview: [navigator view]];
 	[window makeKeyAndVisible];
 
+	NSString *filename = [[NSUserDefaults standardUserDefaults] objectForKey: @"OpenDocumentKey"];
+	if (filename)
+		[library openDocument: filename];
+
 	return YES;
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
 {
 	printf("applicationDidEnterBackground!\n");
+	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application
@@ -776,6 +797,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 - (void)applicationWillTerminate:(UIApplication *)application
 {
 	printf("applicationWillTerminate!\n");
+	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
