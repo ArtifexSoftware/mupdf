@@ -419,7 +419,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[view addSubview: indicator];
 
 	wrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
-	[self setToolbarItems: [NSArray arrayWithObjects: flexibleSpace, wrapper, flexibleSpace, nil]];
+	[self setToolbarItems: [NSArray arrayWithObjects: wrapper, nil]];
 
 	[self setView: view];
 }
