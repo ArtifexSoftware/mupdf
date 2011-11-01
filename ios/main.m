@@ -8,11 +8,13 @@
 #include "pdf/mupdf.h"
 #include "xps/muxps.h"
 
-#define GAP 0
+#define GAP 20
+#define INDICATOR_Y -44-24
 
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
 static UIImage *loadingImage = nil;
+static UIBarButtonItem *flexibleSpace = nil;
 
 @interface MuLibraryController : UITableViewController
 {
@@ -35,6 +37,9 @@ static UIImage *loadingImage = nil;
 	pdf_xref *xref;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
+	UILabel *indicator;
+	UISlider *slider;
+	UIBarButtonItem *wrapper; // for slider
 	UIImageView **pageviews;
 	int width; // current screen size
 	int height;
@@ -47,7 +52,10 @@ static UIImage *loadingImage = nil;
 - (void) layoutPage: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) didSingleTap: (UITapGestureRecognizer*)sender;
+- (void) didSlide: (id)sender;
 - (void) showOutline: (id)sender;
+- (void) hideNavigationBar;
+- (void) showNavigationBar;
 @end
 
 @interface MuAppDelegate : NSObject <UIApplicationDelegate, UINavigationControllerDelegate>
@@ -145,7 +153,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	fz_error error;
 	float scale, hscale, vscale;
 
-	printf("loading page %d for size %g x %g\n", number, width, height);
+	printf("loading page %d [%g %g]\n", number, width, height);
 
 	error = pdf_load_page(&page, xref, number);
 	if (error) {
@@ -153,8 +161,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		return nil;
 	}
 
-	hscale = width / page->mediabox.x1 - page->mediabox.x0;
-	vscale = height / page->mediabox.y1 - page->mediabox.y0;
+	hscale = width / (page->mediabox.x1 - page->mediabox.x0);
+	vscale = height / (page->mediabox.y1 - page->mediabox.y0);
 	scale = MIN(hscale, vscale);
 
 	ctm = fz_translate(0, -page->mediabox.y1);
@@ -219,7 +227,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 - (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection: (NSInteger)section
 {
-	return [files count];
+	return [files count] + 1;
 }
 
 - (UITableViewCell*) tableView: (UITableView*)tableView cellForRowAtIndexPath: (NSIndexPath*)indexPath
@@ -228,14 +236,24 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: cellid];
 	if (!cell)
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier: cellid] autorelease];
-	NSString *value = [files objectAtIndex: [indexPath row]];
+	NSString *value;
+	int row = [indexPath row];
+	if (row == 0)
+		value = @"How To Sync Files with iTunes";
+	else
+		value = [files objectAtIndex: row - 1];
 	[[cell textLabel] setText: value];
 	return cell;
 }
 
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
-	NSString *filename = [files objectAtIndex: [indexPath row]];
+	int row = [indexPath row];
+	NSString *filename;
+	if (row == 0)
+		filename = @"../MuPDF.app/howto.pdf";
+	else
+		filename = [files objectAtIndex: row - 1];
 	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
 	if (document) {
 		[[self navigationController] pushViewController: document animated: YES];
@@ -320,7 +338,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	if (!self)
 		return nil;
 
-	// make sure we're not doing any background processing
 	dispatch_sync(queue, ^{});
 
 	strcpy(filename, [NSHomeDirectory() UTF8String]);
@@ -343,18 +360,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		return nil;
 	}
 
-	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
-
-	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,10,10)];
-	[canvas setPagingEnabled: YES];
-	[canvas setShowsHorizontalScrollIndicator: NO];
-	[canvas setShowsVerticalScrollIndicator: NO];
-	[canvas setDelegate: self];
-	[self setView: canvas];
-
-	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
-
-	[self setTitle: nsfilename];
+	[self setTitle: [nsfilename lastPathComponent]];
 
 	NSMutableArray *titles = [[NSMutableArray alloc] init];
 	NSMutableArray *pages = [[NSMutableArray alloc] init];
@@ -370,7 +376,73 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	[titles release];
 	[pages release];
 
+	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
+
 	return self;
+}
+
+- (void) loadView
+{
+	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
+	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+	[view setAutoresizesSubviews: YES];
+
+	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,GAP,0)];
+	[canvas setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+	[canvas setPagingEnabled: YES];
+	[canvas setShowsHorizontalScrollIndicator: NO];
+	[canvas setShowsVerticalScrollIndicator: NO];
+	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
+	[canvas setDelegate: self];
+
+	indicator = [[UILabel alloc] initWithFrame: CGRectZero];
+	[indicator setAutoresizingMask: UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
+	[indicator setText: @"0000 of 9999"];
+	[indicator sizeToFit];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
+	[indicator setCenter: CGPointMake(0, INDICATOR_Y)];
+	[indicator setTextAlignment: UITextAlignmentCenter];
+	[indicator setBackgroundColor: [[UIColor blackColor] colorWithAlphaComponent: 0.5]];
+	[indicator setTextColor: [UIColor whiteColor]];
+
+	slider = [[UISlider alloc] initWithFrame: CGRectZero];
+	[slider setMinimumValue: 0];
+	[slider setMaximumValue: pdf_count_pages(xref) - 1];
+	[slider setValue: current];
+	[slider addTarget: self action: @selector(didSlide:) forControlEvents: UIControlEventValueChanged];
+
+	[view addSubview: canvas];
+	[view addSubview: indicator];
+
+	wrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
+	[self setToolbarItems: [NSArray arrayWithObjects: flexibleSpace, wrapper, flexibleSpace, nil]];
+
+	[self setView: view];
+}
+
+- (void) viewWillAppear: (BOOL)animated
+{
+	CGSize size = [canvas frame].size;
+	width = size.width;
+	height = size.height;
+
+	[canvas setContentInset: UIEdgeInsetsZero];
+	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width - GAP, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
+
+	[wrapper setWidth: width - GAP - 24];
+
+	[[self navigationController] setToolbarHidden: NO animated: animated];
+}
+
+- (void) viewDidAppear: (BOOL)animated
+{
+	[self scrollViewDidScroll: canvas];
+}
+
+- (void) viewWillDisappear: (BOOL)animated
+{
+	[[self navigationController] setToolbarHidden: YES animated: animated];
 }
 
 - (void) dealloc
@@ -387,8 +459,11 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	});
 
 	free(pageviews);
-	[outline release];
+	[indicator release];
+	[slider release];
+	[wrapper release];
 	[canvas release];
+	[outline release];
 	[super dealloc];
 }
 
@@ -430,7 +505,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 					[pageviews[number] setImage: image];
 					[self layoutPage: number];
 				}
-				[image release];	
+				[image release];
 			});
 		}
 	});
@@ -449,39 +524,68 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 				[self reloadPage: number];
 				frame.size.width = pagesize.width * scale;
 				frame.size.height = pagesize.height * scale;
-				frame.origin.x = number * width;
-				frame.origin.y = 0;
-				frame.origin.x += (width - frame.size.width) / 2;
-				frame.origin.y += (height - frame.size.height) / 2;
 				[page setFrame: frame];
 			} else {
 				[page sizeToFit];
-				[page setCenter: CGPointMake(number * width + width/2, height/2)];
 			}
 		} else {
 			[page sizeToFit];
-			[page setCenter: CGPointMake(number * width + width/2, height/2)];
 		}
+		[page setCenter: CGPointMake(number * width + (width-GAP)/2, height/2)];
 	}
 }
 
-- (void) viewWillAppear: (BOOL)animated
+- (void) hideNavigationBar
 {
-	CGSize size = [canvas frame].size;
-	width = size.width;
-	height = size.height;
+	if (![[self navigationController] isNavigationBarHidden]) {
+		[UIView beginAnimations: @"MuNavBar" context: NULL];
+		[UIView setAnimationDelegate: self];
+		[UIView setAnimationDidStopSelector: @selector(didHideNavigationBar)];
 
-	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0)];
+		[[[self navigationController] navigationBar] setAlpha: 0];
+		[[[self navigationController] toolbar] setAlpha: 0];
+		[indicator setAlpha: 0];
+
+		[UIView commitAnimations];
+	}
+}
+
+- (void) didHideNavigationBar
+{
+	[[self navigationController] setNavigationBarHidden: YES];
+	[[self navigationController] setToolbarHidden: YES];
+	[indicator setHidden: YES];
+}
+
+- (void) showNavigationBar
+{
+	if ([[self navigationController] isNavigationBarHidden]) {
+		[[self navigationController] setNavigationBarHidden: NO];
+		[[self navigationController] setToolbarHidden: NO];
+		[indicator setHidden: NO];
+
+		[UIView beginAnimations: @"MuNavBar" context: NULL];
+
+		[[[self navigationController] navigationBar] setAlpha: 1];
+		[[[self navigationController] toolbar] setAlpha: 1];
+		[indicator setAlpha: 1];
+
+		[UIView commitAnimations];
+	}
+}
+
+- (void) didSlide: (id)sender
+{
+	int number = [slider value];
+	if ([slider isTracking])
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
+	else
+		[self gotoPage: number animated: NO];
 }
 
 - (void) scrollViewWillBeginDragging: (UIScrollView *)scrollView
 {
-	if (![[self navigationController] isNavigationBarHidden]) {
-		[[self navigationController] setNavigationBarHidden: YES animated: YES];
-		[canvas setContentInset: UIEdgeInsetsZero];
-	}
+	[self hideNavigationBar];
 }
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
@@ -490,23 +594,24 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		return; // not visible yet
 
 	float x = [canvas contentOffset].x + width * 0.5f;
-	int number = x / width;
+	current = x / width;
 
 #if 0
 	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i != number)
+		if (i != current)
 			[self unloadPage: i];
-	[self loadPage: number];
+	[self loadPage: current];
 #else
 	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i < number - 2 || i > number + 2)
+		if (i < current - 2 || i > current + 2)
 			[self unloadPage: i];
-	[self loadPage: number];
-	[self loadPage: number + 1];
-	[self loadPage: number - 1];
+	[self loadPage: current];
+	[self loadPage: current + 1];
+	[self loadPage: current - 1];
 #endif
 
-	current = number;
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
+	[slider setValue: current animated: YES];
 }
 
 - (void) gotoPage: (int)number animated: (BOOL)animated
@@ -537,15 +642,16 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		if (i != current)
 			[self layoutPage: i];
 
+	[wrapper setWidth: width - GAP - 24];
+	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
+
 	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentInset: UIEdgeInsetsZero];
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
-	[canvas setContentInset: UIEdgeInsetsZero];
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
@@ -554,8 +660,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 {
 	CGPoint p = [sender locationInView: canvas];
 	CGPoint ofs = [canvas contentOffset];
-	float x0 = width / 5;
-	float x1 = width - x0;
+	float x0 = (width - GAP) / 5;
+	float x1 = (width - GAP) - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
 	if (p.x < x0)
@@ -563,12 +669,10 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	else if (p.x > x1)
 		[self gotoPage: current + 1 animated: YES];
 	else {
-		UINavigationController *navigator = [self navigationController];
-		if ([navigator isNavigationBarHidden])
-			[navigator setNavigationBarHidden: NO animated: YES];
+		if ([[self navigationController] isNavigationBarHidden])
+			[self showNavigationBar];
 		else
-			[navigator setNavigationBarHidden: YES animated: YES];
-		[canvas setContentInset: UIEdgeInsetsZero];
+			[self hideNavigationBar];
 	}
 }
 
@@ -591,10 +695,15 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	loadingImage = [[UIImage imageNamed: @"loading.png"] retain];
 
+	flexibleSpace = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+		target: nil action: nil];
+
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
 	[[navigator navigationBar] setTranslucent: YES];
+	[[navigator toolbar] setTranslucent: YES];
 	[navigator setDelegate: self];
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
