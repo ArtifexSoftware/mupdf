@@ -15,6 +15,7 @@ static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
 static UIImage *loadingImage = nil;
 static UIBarButtonItem *flexibleSpace = nil;
+static NSString *docdir = nil;
 
 @interface MuLibraryController : UITableViewController
 {
@@ -193,8 +194,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 {
 	[self setTitle: @"MuPDF"];
 
-	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	NSString *docdir = [paths objectAtIndex: 0];
 	NSError *error = nil;
 
 	if (files) {
@@ -204,7 +203,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath: docdir error: &error];
 	if (error)
-		files = paths;
+		files = [NSArray arrayWithObjects: @"...error loading directory...", nil];
 	[files retain];
 
 	[[self tableView] reloadData];
@@ -237,13 +236,17 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: cellid];
 	if (!cell)
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier: cellid] autorelease];
-	NSString *value;
 	int row = [indexPath row];
-	if (row == 0)
-		value = @"How To Sync Files with iTunes";
-	else
-		value = [files objectAtIndex: row - 1];
-	[[cell textLabel] setText: value];
+	if (row == 0) {
+		[[cell textLabel] setText: @"About MuPDF"];
+	} else {
+		[[cell textLabel] setText: [files objectAtIndex: row - 1]];
+	}
+	[[cell textLabel] setFont: [UIFont boldSystemFontOfSize: 20]];
+//	[[cell textLabel] setBackgroundColor: [UIColor clearColor]];
+//	[[cell contentView] setBackgroundColor: row & 1 ?
+//		[UIColor colorWithWhite: 1.0 alpha: 1] :
+//		[UIColor colorWithWhite: 0.9 alpha: 1]];
 	return cell;
 }
 
@@ -252,7 +255,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 	int row = [indexPath row];
 	NSString *filename;
 	if (row == 0)
-		filename = @"../MuPDF.app/howto.pdf";
+		filename = @"../MuPDF.app/About.pdf";
 	else
 		filename = [files objectAtIndex: row - 1];
 	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
@@ -348,8 +351,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	dispatch_sync(queue, ^{});
 
-	strcpy(filename, [NSHomeDirectory() UTF8String]);
-	strcat(filename, "/Documents/");
+	strcpy(filename, [docdir UTF8String]);
+	strcat(filename, "/");
 	strcat(filename, [nsfilename UTF8String]);
 
 	printf("open xref '%s'\n", filename);
@@ -458,9 +461,10 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 - (void) dealloc
 {
-	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (pageviews[i])
-			[pageviews[i] release];
+	if (xref)
+		for (int i = 0; i < pdf_count_pages(xref); i++)
+			if (pageviews[i])
+				[pageviews[i] release];
 
 	pdf_xref *self_xref = xref; // don't use self after dealloc has finished
 	dispatch_async(queue, ^{
@@ -728,6 +732,9 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 
 	glyphcache = fz_new_glyph_cache();
 
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	docdir = [[paths objectAtIndex: 0] retain];
+
 	loadingImage = [[UIImage imageNamed: @"loading.png"] retain];
 
 	flexibleSpace = [[UIBarButtonItem alloc]
@@ -735,6 +742,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, float width, float height
 		target: nil action: nil];
 
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
+//	[[library tableView] setSeparatorStyle: UITableViewCellSeparatorStyleNone];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
 	[[navigator navigationBar] setTranslucent: YES];
