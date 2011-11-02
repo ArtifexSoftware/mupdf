@@ -36,14 +36,14 @@
 		968F2E9B14539C880085264E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		968F2E9D14539C880085264E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		968F2E9F14539C880085264E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = Library/Frameworks/CoreGraphics.framework; sourceTree = DEVELOPER_DIR; };
-		968F2EB314539F350085264E /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfitz.a; path = "../Debug-iphoneos/libfitz.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB414539F350085264E /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype.a; path = "../Debug-iphoneos/libfreetype.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB514539F350085264E /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjbig2dec.a; path = "../Debug-iphoneos/libjbig2dec.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB614539F350085264E /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = "../Debug-iphoneos/libjpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB714539F350085264E /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmupdf.a; path = "../Debug-iphoneos/libmupdf.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB814539F350085264E /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmuxps.a; path = "../Debug-iphoneos/libmuxps.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EB914539F350085264E /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopenjpeg.a; path = "../Debug-iphoneos/libopenjpeg.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		968F2EBA14539F350085264E /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "../Debug-iphoneos/libz.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB314539F350085264E /* libfitz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfitz.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB414539F350085264E /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB514539F350085264E /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjbig2dec.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB614539F350085264E /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB714539F350085264E /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdf.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB814539F350085264E /* libmuxps.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmuxps.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EB914539F350085264E /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopenjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		968F2EBA14539F350085264E /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libz.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96BD2B35145AC485001CEBC3 /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
 		96BD2B36145AC485001CEBC3 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		96F2341414603FBA004A8A22 /* Icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon@2x.png"; sourceTree = "<group>"; };
@@ -240,7 +240,6 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -267,7 +266,6 @@
 					"\"$(DEVELOPER_FRAMEWORKS_DIR)\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
