@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
 
 MY_ROOT := ../..
 
-LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB
+LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB -DARCH_ARM_CAN_LOAD_UNALIGNED
 
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \
@@ -64,7 +64,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/draw/draw_mesh.c \
 	$(MY_ROOT)/draw/draw_paint.c \
 	$(MY_ROOT)/draw/draw_path.c \
-	$(MY_ROOT)/draw/draw_scale.c \
+	$(MY_ROOT)/draw/draw_simple_scale.c \
 	$(MY_ROOT)/draw/draw_unpack.c \
 	$(MY_ROOT)/pdf/pdf_annot.c \
 	$(MY_ROOT)/pdf/pdf_cmap.c \

@@ -470,7 +470,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\draw\draw_scale.c"
+				RelativePath="..\draw\draw_simple_scale.c"
 				>
 			</File>
 			<File
