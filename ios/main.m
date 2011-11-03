@@ -36,16 +36,20 @@ static fz_glyph_cache *glyphcache = NULL;
 
 @interface MuPageView : UIScrollView <UIScrollViewDelegate>
 {
-	UIImageView *imageView;
-	UIActivityIndicatorView *loadingView;
 	pdf_xref *xref;
 	int number;
+	UIActivityIndicatorView *loadingView;
+	UIImageView *imageView;
+	UIImageView *tileView;
+	CGRect tileFrame;
+	float tileScale;
 	BOOL cancel;
 }
 - (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
 - (void) resizeImage;
 - (void) loadPage;
+- (void) loadTile;
 - (void) willRotate;
 - (void) resetZoomAnimated: (BOOL)animated;
 - (int) number;
@@ -198,6 +202,57 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	ctm = fz_concat(ctm, fz_scale(scale.width, -scale.height));
 	ctm = fz_concat(ctm, fz_rotate(page->rotate));
 	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
+
+	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
+	fz_clear_pixmap_with_color(pix, 255);
+
+	dev = fz_new_draw_device(glyphcache, pix);
+	pdf_run_page(xref, page, dev, ctm);
+	fz_free_device(dev);
+
+	pdf_free_page(page);
+	pdf_age_store(xref->store, 3);
+	fz_flush_warnings();
+
+	return newImageWithPixmap(pix);
+}
+
+static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect tile, float zoom)
+{
+	fz_error error;
+	CGSize pagesize;
+	fz_rect mediabox;
+	fz_rect tilebox;
+	fz_bbox bbox;
+	fz_matrix ctm;
+	fz_device *dev;
+	fz_pixmap *pix;
+	pdf_page *page;
+	CGSize scale;
+
+	error = pdf_load_page(&page, xref, number);
+	if (error) {
+		showAlert(@"Cannot load page");
+		return nil;
+	}
+
+	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
+	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
+	scale = fitPageToScreen(pagesize, screen);
+	scale.width *= zoom;
+	scale.height *= zoom;
+
+	ctm = fz_translate(-page->mediabox.x0, page->mediabox.y0 - page->mediabox.y1);
+	ctm = fz_concat(ctm, fz_scale(scale.width, -scale.height));
+	ctm = fz_concat(ctm, fz_rotate(page->rotate));
+	mediabox = fz_transform_rect(ctm, page->mediabox);
+
+	tilebox.x0 = tile.origin.x - mediabox.x0;
+	tilebox.y0 = tile.origin.y - mediabox.y0;
+	tilebox.x1 = tilebox.x0 + tile.size.width;
+	tilebox.y1 = tilebox.y0 + tile.size.height;
+	bbox = fz_round_rect(tilebox);
+printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
 	fz_clear_pixmap_with_color(pix, 255);
@@ -411,6 +466,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) dealloc
 {
+	[tileView release];
 	[loadingView release];
 	[imageView release];
 	[super dealloc];
@@ -419,6 +475,22 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 - (int) number
 {
 	return number;
+}
+
+- (void) resetZoomAnimated: (BOOL)animated
+{
+	// discard tile and any pending tile jobs
+	tileFrame = CGRectZero;
+	tileScale = 1;
+	if (tileView) {
+		[tileView removeFromSuperview];
+		[tileView release];
+		tileView = nil;
+	}
+
+	[self setMinimumZoomScale: 1];
+	[self setMaximumZoomScale: 5];
+	[self setZoomScale: 1 animated: animated];
 }
 
 - (void) removeFromSuperview
@@ -443,13 +515,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 			printf("cancel page %d\n", number);
 		}
 	});
-}
-
-- (void) resetZoomAnimated: (BOOL)animated
-{
-	[self setMinimumZoomScale: 1];
-	[self setMaximumZoomScale: 3];
-	[self setZoomScale: 1 animated: animated];
 }
 
 - (void) displayImage: (UIImage*)image
@@ -495,7 +560,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 		[self setContentSize: imageView.frame.size];
 
-//		[self setNeedsLayout];
 		[self layoutIfNeeded];
 	}
 }
@@ -538,6 +602,89 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 - (UIView*) viewForZoomingInScrollView: (UIScrollView*)scrollView
 {
 	return imageView;
+}
+
+- (void) loadTile
+{
+	CGSize pageSize = self.bounds.size;
+
+	tileFrame.origin = self.contentOffset;
+	tileFrame.size = self.bounds.size;
+	tileFrame = CGRectIntersection(tileFrame, imageView.frame);
+	tileScale = self.zoomScale;
+
+	CGRect frame = tileFrame;
+	float scale = tileScale;
+
+	CGRect viewFrame = frame;
+	if (self.contentOffset.x < imageView.frame.origin.x)
+		viewFrame.origin.x = 0;
+	if (self.contentOffset.y < imageView.frame.origin.y)
+		viewFrame.origin.y = 0;
+
+	if (scale < 1.1)
+		return;
+
+	printf("queuing tile\n");
+
+	dispatch_async(queue, ^{
+		__block BOOL isValid;
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
+		});
+		if (!isValid) {
+			puts("cancel tile");
+			return;
+		}
+
+		UIImage *image = renderTile(xref, number, pageSize, viewFrame, scale);
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
+			if (isValid) {
+				tileFrame = CGRectZero;
+				tileScale = 1;
+				if (tileView) {
+					[tileView removeFromSuperview];
+					[tileView release];
+					tileView = nil;
+				}
+
+				tileView = [[UIImageView alloc] initWithFrame: frame];
+				[tileView setImage: image];
+				[self addSubview: tileView];
+			} else {
+				printf("discard tile\n");
+			}
+			[image release];
+		});
+	});
+}
+
+- (void)scrollViewDidScrollToTop:(UIScrollView *)scrollView { [self loadTile]; }
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView { [self loadTile]; }
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView { [self loadTile]; }
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+	if (!decelerate)
+		[self loadTile];
+}
+
+- (void)scrollViewWillBeginZooming:(UIScrollView *)scrollView withView:(UIView *)view
+{
+	// discard tile and any pending tile jobs
+	tileFrame = CGRectZero;
+	tileScale = 1;
+	if (tileView) {
+		[tileView removeFromSuperview];
+		[tileView release];
+		tileView = nil;
+	}
+}
+
+- (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(UIView *)view atScale:(float)scale
+{
+	[self loadTile];
 }
 
 @end
