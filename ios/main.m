@@ -13,12 +13,11 @@
 
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
-static UIImage *loadingImage = nil;
 
 @interface MuLibraryController : UITableViewController
 {
-	NSTimer *timer;
 	NSArray *files;
+	NSTimer *timer;
 }
 - (void) openDocument: (NSString*)filename;
 - (void) reload;
@@ -33,29 +32,46 @@ static UIImage *loadingImage = nil;
 - (id) initWithTarget: (id)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages;
 @end
 
-@interface MuDocumentController : UIViewController <UIScrollViewDelegate>
+@interface MuPageView : UIScrollView <UIScrollViewDelegate>
+{
+	UIImageView *imageView;
+	UIActivityIndicatorView *loadingView;
+	pdf_xref *xref;
+	int number;
+	int cancel;
+}
+- (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber;
+- (void) displayImage: (UIImage*)image;
+- (void) loadPage;
+- (void) onRotate;
+- (void) resetZoom;
+- (void) resetZoomAnimated;
+- (int) number;
+@end
+
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 {
 	pdf_xref *xref;
 	NSString *key;
+	NSMutableSet *visiblePages;
+	NSMutableSet *recycledPages;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
 	UILabel *indicator;
 	UISlider *slider;
 	UIBarButtonItem *wrapper; // for slider
-	UIImageView **pageviews;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
 	int scroll_animating; // stop view updates during scrolling animations
 }
 - (id) initWithFile: (NSString*)filename;
-- (void) loadPage: (int)number;
-- (void) reloadPage: (int)number;
-- (void) unloadPage: (int)number;
-- (void) layoutPage: (int)number;
+- (void) layoutPageViews;
+- (void) rotatePageViews;
+- (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
-- (void) didSingleTap: (UITapGestureRecognizer*)sender;
-- (void) didSlide: (id)sender;
+- (void) onTap: (UITapGestureRecognizer*)sender;
+- (void) onSlide: (id)sender;
 - (void) showOutline: (id)sender;
 - (void) hideNavigationBar;
 - (void) showNavigationBar;
@@ -151,10 +167,8 @@ static CGSize fitPageToScreen(CGSize page, CGSize screen)
 	float hscale = screen.width / page.width;
 	float vscale = screen.height / page.height;
 	float scale = MIN(hscale, vscale);
-	float new_w = floorf(page.width * scale);
-	float new_h = floorf(page.height * scale);
-	hscale = new_w / page.width;
-	vscale = new_h / page.height;
+	hscale = floorf(page.width * scale) / page.width;
+	vscale = floorf(page.height * scale) / page.height;
 	return CGSizeMake(hscale, vscale);
 }
 
@@ -169,8 +183,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	fz_pixmap *pix;
 	pdf_page *page;
 	CGSize scale;
-
-	printf("loading page %d\n", number);
 
 	error = pdf_load_page(&page, xref, number);
 	if (error) {
@@ -370,6 +382,155 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 #pragma mark -
 
+@implementation MuPageView
+
+- (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber
+{
+	self = [super initWithFrame: frame];
+	if (self) {
+		xref = aXref;
+		number = aNumber;
+
+		[self setShowsVerticalScrollIndicator: NO];
+		[self setShowsHorizontalScrollIndicator: NO];
+		[self setDecelerationRate: UIScrollViewDecelerationRateFast];
+		[self setDelegate: self];
+
+		// TODO: use a one shot timer to delay the display of this?
+		loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+		[loadingView startAnimating];
+		[self addSubview: loadingView];
+
+		[self loadPage];
+	}
+	return self;
+}
+
+- (void) dealloc
+{
+	printf("pageview dealloc (%d)\n", number);
+	[loadingView release];
+	[imageView release];
+	[super dealloc];
+}
+
+- (int) number
+{
+	return number;
+}
+
+- (void) removeFromSuperview
+{
+	cancel = YES;
+	[super removeFromSuperview];
+}
+
+- (void) loadPage
+{
+	if (number < 0 || number >= pdf_count_pages(xref))
+		return;
+	cancel = NO;
+	dispatch_async(queue, ^{
+		if (!cancel) {
+			printf("loading page %d\n", number);
+			UIImage *image = renderPage(xref, number, [self bounds].size);
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[self displayImage: image];
+				[image release];
+			});
+		} else {
+			printf("cancel page %d\n", number);
+		}
+	});
+}
+
+- (void) resetZoomAnimated: (BOOL)animated
+{
+	[self setMinimumZoomScale: 1];
+	[self setMaximumZoomScale: 3];
+	[self setZoomScale: 1 animated: animated];
+}
+
+- (void) displayImage: (UIImage*)image
+{
+	[loadingView removeFromSuperview];
+	[loadingView release];
+	loadingView = nil;
+
+	[imageView removeFromSuperview];
+	[imageView release];
+	imageView = nil;
+
+	// TODO: if rotated during loading the size won't be as expected
+	// TODO: ... and what to do about zooming ...
+	// TODO: [[UIScreen mainScreen] scale]; -- for retina iphone 4 displays we want double resolution!
+
+	[self resetZoomAnimated: NO];
+
+	imageView = [[UIImageView alloc] initWithImage: image];
+	[self addSubview: imageView];
+	[self setContentSize: [imageView frame].size];
+}
+
+- (void) onRotate
+{
+	[self resetZoomAnimated: NO];
+
+	CGSize imageSize = [[imageView image] size];
+	CGSize scale = fitPageToScreen(imageSize, [self bounds].size);
+	if (fabs(scale.width - 1) > 0.1) {
+printf("image size is off, reloading (%d)\n", number);
+		[self loadPage];
+		CGRect frame = [imageView frame];
+		frame.size.width = imageSize.width * scale.width;
+		frame.size.height = imageSize.height * scale.height;
+		[imageView setFrame: frame];
+	} else {
+		[imageView sizeToFit];
+	}
+
+	[self setContentSize: [imageView frame].size];
+
+	[self setNeedsLayout];
+	[self layoutIfNeeded];
+}
+
+- (void) layoutSubviews
+{
+	[super layoutSubviews];
+
+	// center the image as it becomes smaller than the size of the screen
+
+	CGSize boundsSize = self.bounds.size;
+	CGRect frameToCenter = loadingView ? loadingView.frame : imageView.frame;
+
+	// center horizontally
+	if (frameToCenter.size.width < boundsSize.width)
+		frameToCenter.origin.x = floor((boundsSize.width - frameToCenter.size.width) / 2);
+	else
+		frameToCenter.origin.x = 0;
+
+	// center vertically
+	if (frameToCenter.size.height < boundsSize.height)
+		frameToCenter.origin.y = floor((boundsSize.height - frameToCenter.size.height) / 2);
+	else
+		frameToCenter.origin.y = 0;
+
+	if (loadingView)
+		loadingView.frame = frameToCenter;
+	else
+		imageView.frame = frameToCenter;
+}
+
+- (UIView*) viewForZoomingInScrollView: (UIScrollView*)scrollView
+{
+	return imageView;
+}
+
+@end
+
+#pragma mark -
+
 @implementation MuDocumentController
 
 - (id) initWithFile: (NSString*)nsfilename
@@ -419,8 +580,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[titles release];
 	[pages release];
 
-	pageviews = calloc(pdf_count_pages(xref), sizeof *pageviews);
-
 	return self;
 }
 
@@ -436,6 +595,9 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[view setAutoresizesSubviews: YES];
 
+	visiblePages = [[NSMutableSet alloc] init];
+	recycledPages = [[NSMutableSet alloc] init];
+
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,GAP,0)];
 	[canvas setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[canvas setPagingEnabled: YES];
@@ -443,7 +605,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[canvas setShowsVerticalScrollIndicator: NO];
 	[canvas setDelegate: self];
 
-	[canvas addGestureRecognizer: [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(didSingleTap:)]];
+	[canvas addGestureRecognizer: [[[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onTap:)] autorelease]];
 
 	scroll_animating = NO;
 
@@ -459,7 +621,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
 	[slider setMaximumValue: pdf_count_pages(xref) - 1];
-	[slider addTarget: self action: @selector(didSlide:) forControlEvents: UIControlEventValueChanged];
+	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
 	[view addSubview: canvas];
 	[view addSubview: indicator];
@@ -494,7 +656,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewDidAppear: (BOOL)animated
 {
-	[self scrollViewDidScroll: canvas];
+	[self layoutPageViews];
 }
 
 - (void) viewWillDisappear: (BOOL)animated
@@ -506,13 +668,8 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewDidUnload
 {
-	for (int i = 0; i < pdf_count_pages(xref); i++) {
-		if (pageviews[i]) {
-			[pageviews[i] release];
-			pageviews[i] = nil;
-		}
-	}
-
+	[visiblePages release]; visiblePages = nil;
+	[recycledPages release]; recycledPages = nil;
 	[indicator release]; indicator = nil;
 	[slider release]; slider = nil;
 	[wrapper release]; wrapper = nil;
@@ -525,88 +682,9 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 		printf("close xref\n");
 		pdf_free_xref(xref);
 	}
-	free(pageviews);
 	[outline release];
 	[key release];
 	[super dealloc];
-}
-
-- (void) loadPage: (int)number
-{
-	if (number < 0 || number >= pdf_count_pages(xref))
-		return;
-
-	if (!pageviews[number]) {
-		pageviews[number] = [[UIImageView alloc] initWithImage: loadingImage];
-		[pageviews[number] setCenter: CGPointMake(number * width + width / 2, height / 2)];
-		[canvas addSubview: pageviews[number]];
-		[self reloadPage: number];
-	}
-}
-
-- (void) unloadPage: (int)number
-{
-	if (number < 0 || number >= pdf_count_pages(xref))
-		return;
-
-	if (pageviews[number]) {
-		[pageviews[number] removeFromSuperview];
-		[pageviews[number] release];
-		pageviews[number] = nil;
-	}
-}
-
-- (void) reloadPage: (int)number
-{
-	if (number < 0 || number >= pdf_count_pages(xref))
-		return;
-
-	dispatch_async(queue, ^{
-		if (pageviews[number]) {
-			UIImage *image = renderPage(xref, number, CGSizeMake(width - GAP, height));
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (pageviews[number]) {
-					[pageviews[number] setImage: image];
-					[self layoutPage: number];
-				}
-				[image release];
-			});
-		} else {
-			printf("not loading page %d\n", number);
-		}
-	});
-}
-
-- (void) layoutPage: (int)number
-{
-	if (pageviews[number]) {
-		UIImageView *page = pageviews[number];
-		UIImage *image = [page image];
-		if (image != loadingImage) {
-			CGSize imagesize = [image size];
-			CGSize scale = fitPageToScreen(imagesize, CGSizeMake(width-GAP, height));
-			if (fabs(scale.width - 1) > 0.1) {
-				[self reloadPage: number];
-				CGRect frame = [page frame];
-				frame.size.width = imagesize.width * scale.width;
-				frame.size.height = imagesize.height * scale.height;
-				[page setFrame: frame];
-			} else {
-				[page sizeToFit];
-			}
-		} else {
-			[page sizeToFit];
-		}
-
-		// We can't use setCenter because we'll end up with a
-		// misaligned and blurry image on odd pixel sizes
-		CGRect frame = [page frame];
-		frame.origin.x = number * width;
-		frame.origin.y = 0;
-		frame.origin.x += floor((width-GAP - frame.size.width) / 2);
-		frame.origin.y += floor((height - frame.size.height) / 2);
-		[page setFrame: frame];
-	}
 }
 
 - (void) hideNavigationBar
@@ -614,7 +692,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	if (![[self navigationController] isNavigationBarHidden]) {
 		[UIView beginAnimations: @"MuNavBar" context: NULL];
 		[UIView setAnimationDelegate: self];
-		[UIView setAnimationDidStopSelector: @selector(didHideNavigationBar)];
+		[UIView setAnimationDidStopSelector: @selector(onHideNavigationBarFinished)];
 
 		[[[self navigationController] navigationBar] setAlpha: 0];
 		[[[self navigationController] toolbar] setAlpha: 0];
@@ -624,7 +702,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	}
 }
 
-- (void) didHideNavigationBar
+- (void) onHideNavigationBarFinished
 {
 	[[self navigationController] setNavigationBarHidden: YES];
 	[[self navigationController] setToolbarHidden: YES];
@@ -648,7 +726,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	}
 }
 
-- (void) didSlide: (id)sender
+- (void) onSlide: (id)sender
 {
 	int number = [slider value];
 	if ([slider isTracking])
@@ -675,15 +753,56 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i < current - 2 || i > current + 2)
-			[self unloadPage: i];
-	[self loadPage: current];
-	[self loadPage: current + 1];
-	[self loadPage: current - 1];
+	[self layoutPageViews];
 
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
 	[slider setValue: current];
+}
+
+- (void) layoutPageViews
+{
+	for (MuPageView *view in visiblePages) {
+		if ([view number] != current)
+			[view resetZoomAnimated: YES];
+		if ([view number] < current - 2 || [view number] > current + 2) {
+			[recycledPages addObject: view];
+			[view removeFromSuperview];
+		}
+	}
+	[visiblePages minusSet: recycledPages];
+	[recycledPages removeAllObjects]; // don't bother recycling them...
+
+	[self createPageView: current];
+	[self createPageView: current - 1];
+	[self createPageView: current + 1];
+}
+
+- (void) rotatePageViews
+{
+	for (MuPageView *view in visiblePages)
+		[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+	for (MuPageView *view in visiblePages)
+		if ([view number] == current)
+			[view onRotate];
+	for (MuPageView *view in visiblePages)
+		if ([view number] != current)
+			[view onRotate];
+}
+
+- (void) createPageView: (int)number
+{
+	if (number < 0 || number >= pdf_count_pages(xref))
+		return;
+	int found = 0;
+	for (MuPageView *view in [canvas subviews])
+		if ([view number] == number)
+			found = 1;
+	if (!found) {
+		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) xref: xref page: number];
+		[visiblePages addObject: view];
+		[canvas addSubview: view];
+		[view release];
+	}
 }
 
 - (void) gotoPage: (int)number animated: (BOOL)animated
@@ -699,23 +818,31 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 		// We must set the scroll_animating flag so that we don't create
 		// or remove subviews until after the animation, or they'll
 		// swoop in from origo during the animation.
+
 		scroll_animating = YES;
 		[UIView beginAnimations: @"MuScroll" context: NULL];
 		[UIView setAnimationDuration: 0.4];
 		[UIView setAnimationBeginsFromCurrentState: YES];
 		[UIView setAnimationDelegate: self];
-		[UIView setAnimationDidStopSelector: @selector(didGotoPage)];
+		[UIView setAnimationDidStopSelector: @selector(onGotoPageFinished)];
+
+		for (MuPageView *view in visiblePages)
+			[view resetZoomAnimated: NO];
+
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 		[slider setValue: number];
 		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
+
 		[UIView commitAnimations];
 	} else {
+		for (MuPageView *view in visiblePages)
+			[view resetZoomAnimated: NO];
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 	}
 	current = number;
 }
 
-- (void) didGotoPage
+- (void) onGotoPageFinished
 {
 	scroll_animating = NO;
 	[self scrollViewDidScroll: canvas];
@@ -734,17 +861,14 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	width = size.width;
 	height = size.height;
 
-	[self layoutPage: current]; // make sure current page is first in queue
-	for (int i = 0; i < pdf_count_pages(xref); i++)
-		if (i != current)
-			[self layoutPage: i];
-
 	[wrapper setWidth: width - GAP - 24];
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
+
+	[self rotatePageViews];
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
@@ -753,7 +877,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
-- (void) didSingleTap: (UITapGestureRecognizer*)sender
+- (void) onTap: (UITapGestureRecognizer*)sender
 {
 	CGPoint p = [sender locationInView: canvas];
 	CGPoint ofs = [canvas contentOffset];
@@ -789,8 +913,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
 	glyphcache = fz_new_glyph_cache();
-
-	loadingImage = [[UIImage imageNamed: @"loading.png"] retain];
 
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
 

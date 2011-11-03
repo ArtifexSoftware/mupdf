@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		96476B4614599D9400EA67C0 /* loading.png in Resources */ = {isa = PBXBuildFile; fileRef = 96476B4514599D9400EA67C0 /* loading.png */; };
 		9683F619145F4F84000E1607 /* About.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 9683F618145F4F84000E1607 /* About.pdf */; };
 		968F2E9C14539C880085264E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9B14539C880085264E /* UIKit.framework */; };
 		968F2E9E14539C880085264E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 968F2E9D14539C880085264E /* Foundation.framework */; };
@@ -27,7 +26,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		96476B4514599D9400EA67C0 /* loading.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = loading.png; sourceTree = "<group>"; };
 		9683F618145F4F84000E1607 /* About.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = About.pdf; sourceTree = "<group>"; };
 		968F2E8E14539BEB0085264E /* build_libs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
 		968F2E8F14539BEB0085264E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -80,7 +78,6 @@
 				96BD2B35145AC485001CEBC3 /* Icon-72.png */,
 				968F2E8F14539BEB0085264E /* Info.plist */,
 				968F2E8E14539BEB0085264E /* build_libs.sh */,
-				96476B4514599D9400EA67C0 /* loading.png */,
 				968F2E9014539BEB0085264E /* main.m */,
 			);
 			name = Sources;
@@ -180,7 +177,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				96476B4614599D9400EA67C0 /* loading.png in Resources */,
 				96BD2B38145AC485001CEBC3 /* Icon-72.png in Resources */,
 				96BD2B39145AC485001CEBC3 /* Icon.png in Resources */,
 				9683F619145F4F84000E1607 /* About.pdf in Resources */,
