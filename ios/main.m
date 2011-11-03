@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
 
+// TODO: [[UIScreen mainScreen] scale]; -- for retina iphone 4 displays we want double resolution!
+
 #undef ABS
 #undef MIN
 #undef MAX
@@ -38,14 +40,14 @@ static fz_glyph_cache *glyphcache = NULL;
 	UIActivityIndicatorView *loadingView;
 	pdf_xref *xref;
 	int number;
-	int cancel;
+	BOOL cancel;
 }
 - (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
+- (void) resizeImage;
 - (void) loadPage;
-- (void) onRotate;
-- (void) resetZoom;
-- (void) resetZoomAnimated;
+- (void) willRotate;
+- (void) resetZoomAnimated: (BOOL)animated;
 - (int) number;
 @end
 
@@ -66,15 +68,13 @@ static fz_glyph_cache *glyphcache = NULL;
 	int scroll_animating; // stop view updates during scrolling animations
 }
 - (id) initWithFile: (NSString*)filename;
-- (void) layoutPageViews;
-- (void) rotatePageViews;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
-- (void) onTap: (UITapGestureRecognizer*)sender;
+- (void) onShowOutline: (id)sender;
 - (void) onSlide: (id)sender;
-- (void) showOutline: (id)sender;
-- (void) hideNavigationBar;
+- (void) onTap: (UITapGestureRecognizer*)sender;
 - (void) showNavigationBar;
+- (void) hideNavigationBar;
 @end
 
 @interface MuAppDelegate : NSObject <UIApplicationDelegate, UINavigationControllerDelegate>
@@ -230,7 +230,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) viewWillDisappear: (BOOL)animated
 {
-	[self setTitle: @"Library"];
 	printf("library viewWillDisappear (stopping reload timer)\n");
 	[timer invalidate];
 	timer = nil;
@@ -305,6 +304,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 {
 	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
 	if (document) {
+		[self setTitle: @"Library"];
 		[[self navigationController] pushViewController: document animated: YES];
 		[document release];
 	}
@@ -390,11 +390,14 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	if (self) {
 		xref = aXref;
 		number = aNumber;
+		cancel = NO;
 
 		[self setShowsVerticalScrollIndicator: NO];
 		[self setShowsHorizontalScrollIndicator: NO];
 		[self setDecelerationRate: UIScrollViewDecelerationRateFast];
 		[self setDelegate: self];
+
+		[self resetZoomAnimated: NO];
 
 		// TODO: use a one shot timer to delay the display of this?
 		loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
@@ -408,7 +411,6 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) dealloc
 {
-	printf("pageview dealloc (%d)\n", number);
 	[loadingView release];
 	[imageView release];
 	[super dealloc];
@@ -429,11 +431,10 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 {
 	if (number < 0 || number >= pdf_count_pages(xref))
 		return;
-	cancel = NO;
 	dispatch_async(queue, ^{
 		if (!cancel) {
 			printf("loading page %d\n", number);
-			UIImage *image = renderPage(xref, number, [self bounds].size);
+			UIImage *image = renderPage(xref, number, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -453,46 +454,58 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 
 - (void) displayImage: (UIImage*)image
 {
-	[loadingView removeFromSuperview];
-	[loadingView release];
-	loadingView = nil;
-
-	[imageView removeFromSuperview];
-	[imageView release];
-	imageView = nil;
-
-	// TODO: if rotated during loading the size won't be as expected
-	// TODO: ... and what to do about zooming ...
-	// TODO: [[UIScreen mainScreen] scale]; -- for retina iphone 4 displays we want double resolution!
-
-	[self resetZoomAnimated: NO];
-
-	imageView = [[UIImageView alloc] initWithImage: image];
-	[self addSubview: imageView];
-	[self setContentSize: [imageView frame].size];
-}
-
-- (void) onRotate
-{
-	[self resetZoomAnimated: NO];
-
-	CGSize imageSize = [[imageView image] size];
-	CGSize scale = fitPageToScreen(imageSize, [self bounds].size);
-	if (fabs(scale.width - 1) > 0.1) {
-printf("image size is off, reloading (%d)\n", number);
-		[self loadPage];
-		CGRect frame = [imageView frame];
-		frame.size.width = imageSize.width * scale.width;
-		frame.size.height = imageSize.height * scale.height;
-		[imageView setFrame: frame];
-	} else {
-		[imageView sizeToFit];
+	if (loadingView) {
+		[loadingView removeFromSuperview];
+		[loadingView release];
+		loadingView = nil;
 	}
 
-	[self setContentSize: [imageView frame].size];
+	if (!imageView) {
+		imageView = [[UIImageView alloc] initWithImage: image];
+		[self addSubview: imageView];
+	} else {
+		[imageView setImage: image];
+	}
 
-	[self setNeedsLayout];
-	[self layoutIfNeeded];
+	[self resizeImage];
+}
+
+- (void) resizeImage
+{
+	if (imageView) {
+		CGSize imageSize = imageView.image.size;
+		CGSize scale = fitPageToScreen(imageSize, self.bounds.size);
+		if (fabs(scale.width - 1) > 0.1) {
+			CGRect frame = [imageView frame];
+			frame.size.width = imageSize.width * scale.width;
+			frame.size.height = imageSize.height * scale.height;
+			[imageView setFrame: frame];
+
+			printf("resized view; queuing up a reload (%d)\n", number);
+			dispatch_async(queue, ^{
+				dispatch_async(dispatch_get_main_queue(), ^{
+					CGSize scale = fitPageToScreen(imageView.image.size, self.bounds.size);
+					if (fabs(scale.width - 1) > 0.1)
+						[self loadPage];
+				});
+			});
+		} else {
+			[imageView sizeToFit];
+		}
+
+		[self setContentSize: imageView.frame.size];
+
+//		[self setNeedsLayout];
+		[self layoutIfNeeded];
+	}
+}
+
+- (void) willRotate
+{
+	if (imageView) {
+		[self resetZoomAnimated: NO];
+		[self resizeImage];
+	}
 }
 
 - (void) layoutSubviews
@@ -575,7 +588,7 @@ printf("image size is off, reloading (%d)\n", number);
 		[[self navigationItem] setRightBarButtonItem:
 			[[UIBarButtonItem alloc]
 				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-				target:self action:@selector(showOutline:)]];
+				target:self action:@selector(onShowOutline:)]];
 	}
 	[titles release];
 	[pages release];
@@ -633,6 +646,30 @@ printf("image size is off, reloading (%d)\n", number);
 	[view release];
 }
 
+- (void) viewDidUnload
+{
+	[visiblePages release]; visiblePages = nil;
+	[recycledPages release]; recycledPages = nil;
+	[indicator release]; indicator = nil;
+	[slider release]; slider = nil;
+	[wrapper release]; wrapper = nil;
+	[canvas release]; canvas = nil;
+}
+
+- (void) dealloc
+{
+	if (xref) {
+		pdf_xref *self_xref = xref; // don't auto-retain self here!
+		dispatch_async(queue, ^{
+			printf("close xref\n");
+			pdf_free_xref(self_xref);
+		});
+	}
+	[outline release];
+	[key release];
+	[super dealloc];
+}
+
 - (void) viewWillAppear: (BOOL)animated
 {
 	CGSize size = [canvas frame].size;
@@ -656,7 +693,7 @@ printf("image size is off, reloading (%d)\n", number);
 
 - (void) viewDidAppear: (BOOL)animated
 {
-	[self layoutPageViews];
+	[self scrollViewDidScroll: canvas];
 }
 
 - (void) viewWillDisappear: (BOOL)animated
@@ -666,25 +703,21 @@ printf("image size is off, reloading (%d)\n", number);
 	[[self navigationController] setToolbarHidden: YES animated: animated];
 }
 
-- (void) viewDidUnload
+- (void) showNavigationBar
 {
-	[visiblePages release]; visiblePages = nil;
-	[recycledPages release]; recycledPages = nil;
-	[indicator release]; indicator = nil;
-	[slider release]; slider = nil;
-	[wrapper release]; wrapper = nil;
-	[canvas release]; canvas = nil;
-}
+	if ([[self navigationController] isNavigationBarHidden]) {
+		[[self navigationController] setNavigationBarHidden: NO];
+		[[self navigationController] setToolbarHidden: NO];
+		[indicator setHidden: NO];
 
-- (void) dealloc
-{
-	if (xref) {
-		printf("close xref\n");
-		pdf_free_xref(xref);
+		[UIView beginAnimations: @"MuNavBar" context: NULL];
+
+		[[[self navigationController] navigationBar] setAlpha: 1];
+		[[[self navigationController] toolbar] setAlpha: 1];
+		[indicator setAlpha: 1];
+
+		[UIView commitAnimations];
 	}
-	[outline release];
-	[key release];
-	[super dealloc];
 }
 
 - (void) hideNavigationBar
@@ -709,21 +742,9 @@ printf("image size is off, reloading (%d)\n", number);
 	[indicator setHidden: YES];
 }
 
-- (void) showNavigationBar
+- (void) onShowOutline: (id)sender
 {
-	if ([[self navigationController] isNavigationBarHidden]) {
-		[[self navigationController] setNavigationBarHidden: NO];
-		[[self navigationController] setToolbarHidden: NO];
-		[indicator setHidden: NO];
-
-		[UIView beginAnimations: @"MuNavBar" context: NULL];
-
-		[[[self navigationController] navigationBar] setAlpha: 1];
-		[[[self navigationController] toolbar] setAlpha: 1];
-		[indicator setAlpha: 1];
-
-		[UIView commitAnimations];
-	}
+	[[self navigationController] pushViewController: outline animated: YES];
 }
 
 - (void) onSlide: (id)sender
@@ -733,6 +754,26 @@ printf("image size is off, reloading (%d)\n", number);
 		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
 	else
 		[self gotoPage: number animated: NO];
+}
+
+- (void) onTap: (UITapGestureRecognizer*)sender
+{
+	CGPoint p = [sender locationInView: canvas];
+	CGPoint ofs = [canvas contentOffset];
+	float x0 = (width - GAP) / 5;
+	float x1 = (width - GAP) - x0;
+	p.x -= ofs.x;
+	p.y -= ofs.y;
+	if (p.x < x0) {
+		[self gotoPage: current-1 animated: YES];
+	} else if (p.x > x1) {
+		[self gotoPage: current+1 animated: YES];
+	} else {
+		if ([[self navigationController] isNavigationBarHidden])
+			[self showNavigationBar];
+		else
+			[self hideNavigationBar];
+	}
 }
 
 - (void) scrollViewWillBeginDragging: (UIScrollView *)scrollView
@@ -753,18 +794,15 @@ printf("image size is off, reloading (%d)\n", number);
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	[self layoutPageViews];
-
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
 	[slider setValue: current];
-}
 
-- (void) layoutPageViews
-{
+	// swap the page views in and out
+
 	for (MuPageView *view in visiblePages) {
 		if ([view number] != current)
 			[view resetZoomAnimated: YES];
-		if ([view number] < current - 2 || [view number] > current + 2) {
+		if ([view number] < current - 1 || [view number] > current + 1) {
 			[recycledPages addObject: view];
 			[view removeFromSuperview];
 		}
@@ -775,18 +813,6 @@ printf("image size is off, reloading (%d)\n", number);
 	[self createPageView: current];
 	[self createPageView: current - 1];
 	[self createPageView: current + 1];
-}
-
-- (void) rotatePageViews
-{
-	for (MuPageView *view in visiblePages)
-		[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
-	for (MuPageView *view in visiblePages)
-		if ([view number] == current)
-			[view onRotate];
-	for (MuPageView *view in visiblePages)
-		if ([view number] != current)
-			[view onRotate];
 }
 
 - (void) createPageView: (int)number
@@ -868,38 +894,24 @@ printf("image size is off, reloading (%d)\n", number);
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
-	[self rotatePageViews];
+	for (MuPageView *view in visiblePages) {
+		if ([view number] == current) {
+			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+			[view willRotate];
+		}
+	}
+	for (MuPageView *view in visiblePages) {
+		if ([view number] != current) {
+			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+			[view willRotate];
+		}
+	}
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
 	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
-}
-
-- (void) onTap: (UITapGestureRecognizer*)sender
-{
-	CGPoint p = [sender locationInView: canvas];
-	CGPoint ofs = [canvas contentOffset];
-	float x0 = (width - GAP) / 5;
-	float x1 = (width - GAP) - x0;
-	p.x -= ofs.x;
-	p.y -= ofs.y;
-	if (p.x < x0) {
-		[self gotoPage: current-1 animated: YES];
-	} else if (p.x > x1) {
-		[self gotoPage: current+1 animated: YES];
-	} else {
-		if ([[self navigationController] isNavigationBarHidden])
-			[self showNavigationBar];
-		else
-			[self hideNavigationBar];
-	}
-}
-
-- (void) showOutline: (id)sender
-{
-	[[self navigationController] pushViewController: outline animated: YES];
 }
 
 @end
