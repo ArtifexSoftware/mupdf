@@ -25,8 +25,19 @@
 		96F2341514603FBA004A8A22 /* Icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 96F2341414603FBA004A8A22 /* Icon@2x.png */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		968461EE14642E3A0012AE09 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 96A3B27614539BAD00D0A895 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 968461E114642DB00012AE09;
+			remoteInfo = Libraries;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		9683F618145F4F84000E1607 /* About.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = About.pdf; sourceTree = "<group>"; };
+		968461E214642DB00012AE09 /* libLibraries.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libLibraries.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		968F2E8E14539BEB0085264E /* build_libs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_libs.sh; sourceTree = "<group>"; };
 		968F2E8F14539BEB0085264E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		968F2E9014539BEB0085264E /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -87,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				968F2E9714539C880085264E /* MuPDF.app */,
+				968461E214642DB00012AE09 /* libLibraries.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -129,11 +141,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		968461E114642DB00012AE09 /* Libraries */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 968461EA14642DB00012AE09 /* Build configuration list for PBXNativeTarget "Libraries" */;
+			buildPhases = (
+				968461ED14642DE50012AE09 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Libraries;
+			productName = Libraries;
+			productReference = 968461E214642DB00012AE09 /* libLibraries.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		968F2E9614539C880085264E /* MuPDF */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 968F2EAD14539C880085264E /* Build configuration list for PBXNativeTarget "MuPDF" */;
 			buildPhases = (
-				968F2EB114539D9D0085264E /* ShellScript */,
 				968F2E9314539C880085264E /* Sources */,
 				968F2E9414539C880085264E /* Frameworks */,
 				968F2E9514539C880085264E /* Resources */,
@@ -141,6 +167,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				968461EF14642E3A0012AE09 /* PBXTargetDependency */,
 			);
 			name = MuPDF;
 			productName = MuPDF;
@@ -168,6 +195,7 @@
 			projectRoot = "";
 			targets = (
 				968F2E9614539C880085264E /* MuPDF */,
+				968461E114642DB00012AE09 /* Libraries */,
 			);
 		};
 /* End PBXProject section */
@@ -187,7 +215,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		968F2EB114539D9D0085264E /* ShellScript */ = {
+		968461ED14642DE50012AE09 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -195,13 +223,19 @@
 			inputPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/libfitz.a",
 				"$(DERIVED_FILE_DIR)/libmupdf.a",
-				"$(DERIVED_FILE_DIR)/libxps.a",
+				"$(DERIVED_FILE_DIR)/libfitz.a",
+				"$(DERIVED_FILE_DIR)/libmuxps.a",
+				"$(DERIVED_FILE_DIR)/libfreetype.a",
+				"$(DERIVED_FILE_DIR)/libjbig2dec.a",
+				"$(DERIVED_FILE_DIR)/libjpeg.a",
+				"$(DERIVED_FILE_DIR)/libopenjpeg.a",
+				"$(DERIVED_FILE_DIR)/libz.a",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "bash build_libs.sh";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -216,7 +250,35 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		968461EF14642E3A0012AE09 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 968461E114642DB00012AE09 /* Libraries */;
+			targetProxy = 968461EE14642E3A0012AE09 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		968461EB14642DB00012AE09 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				PRODUCT_NAME = Libraries;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		968461EC14642DB00012AE09 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				PRODUCT_NAME = Libraries;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
 		968F2EAE14539C880085264E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -293,6 +355,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		968461EA14642DB00012AE09 /* Build configuration list for PBXNativeTarget "Libraries" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				968461EB14642DB00012AE09 /* Debug */,
+				968461EC14642DB00012AE09 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		968F2EAD14539C880085264E /* Build configuration list for PBXNativeTarget "MuPDF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
