@@ -198,9 +198,9 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
 	scale = fitPageToScreen(pagesize, screen);
 
-	ctm = fz_translate(0, -page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(scale.width, -scale.height));
-	ctm = fz_concat(ctm, fz_rotate(page->rotate));
+	ctm = fz_concat(fz_scale(scale.width, -scale.height), fz_rotate(page->rotate));
+	mediabox = fz_transform_rect(ctm, page->mediabox);
+	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
 	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
 
 	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
@@ -242,13 +242,13 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	scale.width *= zoom;
 	scale.height *= zoom;
 
-	ctm = fz_translate(-page->mediabox.x0, page->mediabox.y0 - page->mediabox.y1);
-	ctm = fz_concat(ctm, fz_scale(scale.width, -scale.height));
-	ctm = fz_concat(ctm, fz_rotate(page->rotate));
+	ctm = fz_concat(fz_scale(scale.width, -scale.height), fz_rotate(page->rotate));
 	mediabox = fz_transform_rect(ctm, page->mediabox);
+	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
+	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
 
-	tilebox.x0 = tile.origin.x - mediabox.x0;
-	tilebox.y0 = tile.origin.y - mediabox.y0;
+	tilebox.x0 = tile.origin.x + bbox.x0;
+	tilebox.y0 = tile.origin.y + bbox.y0;
 	tilebox.x1 = tilebox.x0 + tile.size.width;
 	tilebox.y1 = tilebox.y0 + tile.size.height;
 	bbox = fz_round_rect(tilebox);
