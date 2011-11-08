@@ -15,6 +15,7 @@
 
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
+static float screenScale = 1;
 
 @interface MuLibraryController : UITableViewController
 {
@@ -160,7 +161,10 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix)
 			CGColorSpaceCreateDeviceRGB(),
 			kCGBitmapByteOrderDefault,
 			cgdata, NULL, NO, kCGRenderingIntentDefault);
-	UIImage *image = [[UIImage alloc] initWithCGImage: cgimage];
+	UIImage *image = [[UIImage alloc]
+		initWithCGImage: cgimage
+		scale: screenScale
+		orientation: UIImageOrientationUp];
 	CGDataProviderRelease(cgdata);
 	CGImageRelease(cgimage);
 	return image;
@@ -193,6 +197,9 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 		showAlert(@"Cannot load page");
 		return nil;
 	}
+
+	screen.width *= screenScale;
+	screen.height *= screenScale;
 
 	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
 	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
@@ -235,6 +242,13 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 		showAlert(@"Cannot load page");
 		return nil;
 	}
+
+	screen.width *= screenScale;
+	screen.height *= screenScale;
+	tile.origin.x *= screenScale;
+	tile.origin.y *= screenScale;
+	tile.size.width *= screenScale;
+	tile.size.height *= screenScale;
 
 	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
 	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
@@ -1084,6 +1098,8 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
 	glyphcache = fz_new_glyph_cache();
+
+	screenScale = [[UIScreen mainScreen] scale];
 
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
 
