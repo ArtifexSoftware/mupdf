@@ -198,7 +198,7 @@ static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
 	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
 	scale = fitPageToScreen(pagesize, screen);
 
-	ctm = fz_concat(fz_scale(scale.width, -scale.height), fz_rotate(page->rotate));
+	ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(scale.width, -scale.height));
 	mediabox = fz_transform_rect(ctm, page->mediabox);
 	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
 	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
@@ -242,7 +242,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	scale.width *= zoom;
 	scale.height *= zoom;
 
-	ctm = fz_concat(fz_scale(scale.width, -scale.height), fz_rotate(page->rotate));
+	ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(scale.width, -scale.height));
 	mediabox = fz_transform_rect(ctm, page->mediabox);
 	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
 	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
@@ -252,7 +252,6 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	tilebox.x1 = tilebox.x0 + tile.size.width;
 	tilebox.y1 = tilebox.y0 + tile.size.height;
 	bbox = fz_round_rect(tilebox);
-printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
 	fz_clear_pixmap_with_color(pix, 255);
@@ -338,10 +337,11 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	int row = [indexPath row];
 	if (row == 0) {
 		[[cell textLabel] setText: @"About MuPDF"];
-		[[cell textLabel] setFont: [UIFont italicSystemFontOfSize: 20]];
+		[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
+//		[[cell textLabel] setFont: [UIFont italicSystemFontOfSize: 20]];
 	} else {
 		[[cell textLabel] setText: [files objectAtIndex: row - 1]];
-		[[cell textLabel] setFont: [UIFont systemFontOfSize: 21]];
+		[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
 	}
 	return cell;
 }
@@ -517,7 +517,7 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 		return;
 	dispatch_async(queue, ^{
 		if (!cancel) {
-			printf("loading page %d\n", number);
+			printf("render page %d\n", number);
 			UIImage *image = renderPage(xref, number, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
@@ -539,6 +539,7 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 	if (!imageView) {
 		imageView = [[UIImageView alloc] initWithImage: image];
+		imageView.opaque = YES;
 		[self addSubview: imageView];
 	} else {
 		[imageView setImage: image];
@@ -634,10 +635,8 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	if (self.contentOffset.y < imageView.frame.origin.y)
 		viewFrame.origin.y = 0;
 
-	if (scale < 1.1)
+	if (scale < 1.01)
 		return;
-
-	printf("queuing tile\n");
 
 	dispatch_async(queue, ^{
 		__block BOOL isValid;
@@ -645,10 +644,11 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
 		});
 		if (!isValid) {
-			puts("cancel tile");
+			printf("cancel tile\n");
 			return;
 		}
 
+		printf("render tile\n");
 		UIImage *image = renderTile(xref, number, pageSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
@@ -961,7 +961,7 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	for (MuPageView *view in visiblePages) {
 		if ([view number] != current)
 			[view resetZoomAnimated: YES];
-		if ([view number] < current - 1 || [view number] > current + 1) {
+		if ([view number] < current - 2 || [view number] > current + 2) {
 			[recycledPages addObject: view];
 			[view removeFromSuperview];
 		}
