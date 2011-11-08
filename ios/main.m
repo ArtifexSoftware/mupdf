@@ -452,6 +452,10 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 		[self setDecelerationRate: UIScrollViewDecelerationRateFast];
 		[self setDelegate: self];
 
+		// zoomDidFinish/Begin events fire before bounce animation completes,
+		// making a mess when we rearrange views during the animation.
+		[self setBouncesZoom: NO];
+
 		[self resetZoomAnimated: NO];
 
 		// TODO: use a one shot timer to delay the display of this?
@@ -466,10 +470,18 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 - (void) dealloc
 {
-	[tileView release];
-	[loadingView release];
-	[imageView release];
-	[super dealloc];
+	// dealloc can trigger in background thread when the queued block is
+	// our last owner, and releases us on completion.
+	// Send the dealloc back to the main thread so we don't mess up UIKit.
+	if (dispatch_get_current_queue() != dispatch_get_main_queue()) {
+		__block id block_self = self; // don't auto-retain self!
+		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
+	} else {
+		[tileView release];
+		[loadingView release];
+		[imageView release];
+		[super dealloc];
+	}
 }
 
 - (int) number
@@ -661,16 +673,16 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	});
 }
 
-- (void)scrollViewDidScrollToTop:(UIScrollView *)scrollView { [self loadTile]; }
-- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView { [self loadTile]; }
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView { [self loadTile]; }
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+- (void) scrollViewDidScrollToTop:(UIScrollView *)scrollView { [self loadTile]; }
+- (void) scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView { [self loadTile]; }
+- (void) scrollViewDidEndDecelerating:(UIScrollView *)scrollView { [self loadTile]; }
+- (void) scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
 {
 	if (!decelerate)
 		[self loadTile];
 }
 
-- (void)scrollViewWillBeginZooming:(UIScrollView *)scrollView withView:(UIView *)view
+- (void) scrollViewWillBeginZooming: (UIScrollView*)scrollView withView: (UIView*)view
 {
 	// discard tile and any pending tile jobs
 	tileFrame = CGRectZero;
@@ -682,7 +694,7 @@ printf("render tile %d %d %d %d\n", bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 	}
 }
 
-- (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(UIView *)view atScale:(float)scale
+- (void) scrollViewDidEndZooming: (UIScrollView*)scrollView withView: (UIView*)view atScale: (float)scale
 {
 	[self loadTile];
 }
