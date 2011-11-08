@@ -273,6 +273,8 @@ fz_point fz_transform_vector(fz_matrix m, fz_point p);
 fz_rect fz_transform_rect(fz_matrix m, fz_rect r);
 fz_bbox fz_transform_bbox(fz_matrix m, fz_bbox b);
 
+void fz_gridfit_matrix(fz_matrix *m);
+
 /*
  * Basic crypto functions.
  * Independent of the rest of fitz.
@@ -629,7 +631,6 @@ void fz_invert_pixmap(fz_pixmap *pix);
 void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
 
 fz_pixmap *fz_scale_pixmap(fz_pixmap *src, float x, float y, float w, float h);
-fz_pixmap *fz_scale_pixmap_gridfit(fz_pixmap *src, float x, float y, float w, float h, int gridfit);
 
 fz_error fz_write_pnm(fz_pixmap *pixmap, char *filename);
 fz_error fz_write_pam(fz_pixmap *pixmap, char *filename, int savealpha);
