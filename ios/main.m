@@ -10,6 +10,8 @@
 #include "pdf/mupdf.h"
 #include "xps/muxps.h"
 
+#include "document.h"
+
 #define GAP 20
 #define INDICATOR_Y -44-24
 
@@ -37,7 +39,7 @@ static float screenScale = 1;
 
 @interface MuPageView : UIScrollView <UIScrollViewDelegate>
 {
-	pdf_xref *xref;
+	struct document *doc;
 	int number;
 	UIActivityIndicatorView *loadingView;
 	UIImageView *imageView;
@@ -46,7 +48,7 @@ static float screenScale = 1;
 	float tileScale;
 	BOOL cancel;
 }
-- (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber;
+- (id) initWithFrame: (CGRect)frame document: (struct document*)aDoc page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
 - (void) resizeImage;
 - (void) loadPage;
@@ -58,7 +60,7 @@ static float screenScale = 1;
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>
 {
-	pdf_xref *xref;
+	struct document *doc;
 	NSString *key;
 	NSMutableSet *visiblePages;
 	NSMutableSet *recycledPages;
@@ -180,103 +182,66 @@ static CGSize fitPageToScreen(CGSize page, CGSize screen)
 	return CGSizeMake(hscale, vscale);
 }
 
-static UIImage *renderPage(pdf_xref *xref, int number, CGSize screen)
+static UIImage *renderPage(struct document *doc, int number, CGSize screenSize)
 {
-	fz_error error;
-	CGSize pagesize;
-	fz_rect mediabox;
+	CGSize pageSize;
 	fz_bbox bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
-	pdf_page *page;
 	CGSize scale;
 
-	error = pdf_load_page(&page, xref, number);
-	if (error) {
-		showAlert(@"Cannot load page");
-		return nil;
-	}
+	screenSize.width *= screenScale;
+	screenSize.height *= screenScale;
 
-	screen.width *= screenScale;
-	screen.height *= screenScale;
-
-	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
-	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
-	scale = fitPageToScreen(pagesize, screen);
-
-	ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(scale.width, -scale.height));
-	mediabox = fz_transform_rect(ctm, page->mediabox);
-	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
-	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
+	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	scale = fitPageToScreen(pageSize, screenSize);
+	ctm = fz_scale(scale.width, scale.height);
+	bbox = (fz_bbox){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
 
 	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
 	fz_clear_pixmap_with_color(pix, 255);
 
 	dev = fz_new_draw_device(glyphcache, pix);
-	pdf_run_page(xref, page, dev, ctm);
+	draw_page(doc, number, dev, ctm);
 	fz_free_device(dev);
-
-	pdf_free_page(page);
-	pdf_age_store(xref->store, 3);
-	fz_flush_warnings();
 
 	return newImageWithPixmap(pix);
 }
 
-static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect tile, float zoom)
+static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, CGRect tileRect, float zoom)
 {
-	fz_error error;
-	CGSize pagesize;
-	fz_rect mediabox;
-	fz_rect tilebox;
+	CGSize pageSize;
+	fz_rect rect;
 	fz_bbox bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
-	pdf_page *page;
 	CGSize scale;
 
-	error = pdf_load_page(&page, xref, number);
-	if (error) {
-		showAlert(@"Cannot load page");
-		return nil;
-	}
+	screenSize.width *= screenScale;
+	screenSize.height *= screenScale;
+	tileRect.origin.x *= screenScale;
+	tileRect.origin.y *= screenScale;
+	tileRect.size.width *= screenScale;
+	tileRect.size.height *= screenScale;
 
-	screen.width *= screenScale;
-	screen.height *= screenScale;
-	tile.origin.x *= screenScale;
-	tile.origin.y *= screenScale;
-	tile.size.width *= screenScale;
-	tile.size.height *= screenScale;
+	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	scale = fitPageToScreen(pageSize, screenSize);
+	ctm = fz_scale(scale.width * zoom, scale.height * zoom);
 
-	mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
-	pagesize = CGSizeMake(mediabox.x1 - mediabox.x0, mediabox.y1 - mediabox.y0);
-	scale = fitPageToScreen(pagesize, screen);
-	scale.width *= zoom;
-	scale.height *= zoom;
-
-	ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(scale.width, -scale.height));
-	mediabox = fz_transform_rect(ctm, page->mediabox);
-	ctm = fz_concat(ctm, fz_translate(-mediabox.x0, -mediabox.y0));
-	bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
-
-	tilebox.x0 = tile.origin.x + bbox.x0;
-	tilebox.y0 = tile.origin.y + bbox.y0;
-	tilebox.x1 = tilebox.x0 + tile.size.width;
-	tilebox.y1 = tilebox.y0 + tile.size.height;
-	bbox = fz_round_rect(tilebox);
+	rect.x0 = tileRect.origin.x;
+	rect.y0 = tileRect.origin.y;
+	rect.x1 = tileRect.origin.x + tileRect.size.width;
+	rect.y1 = tileRect.origin.y + tileRect.size.height;
+	bbox = fz_round_rect(rect);
 
 	pix = fz_new_pixmap_with_rect(fz_device_rgb, bbox);
 	fz_clear_pixmap_with_color(pix, 255);
 
 	dev = fz_new_draw_device(glyphcache, pix);
-	pdf_run_page(xref, page, dev, ctm);
+	draw_page(doc, number, dev, ctm);
 	fz_free_device(dev);
-
-	pdf_free_page(page);
-	pdf_age_store(xref->store, 3);
-	fz_flush_warnings();
 
 	return newImageWithPixmap(pix);
 }
@@ -453,11 +418,11 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 @implementation MuPageView
 
-- (id) initWithFrame: (CGRect)frame xref: (pdf_xref*)aXref page: (int)aNumber
+- (id) initWithFrame: (CGRect)frame document: (struct document*)aDoc page: (int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {
-		xref = aXref;
+		doc = aDoc;
 		number = aNumber;
 		cancel = NO;
 
@@ -527,12 +492,12 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 - (void) loadPage
 {
-	if (number < 0 || number >= pdf_count_pages(xref))
+	if (number < 0 || number >= count_pages(doc))
 		return;
 	dispatch_async(queue, ^{
 		if (!cancel) {
 			printf("render page %d\n", number);
-			UIImage *image = renderPage(xref, number, self.bounds.size);
+			UIImage *image = renderPage(doc, number, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -663,7 +628,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 		}
 
 		printf("render tile\n");
-		UIImage *image = renderTile(xref, number, pageSize, viewFrame, scale);
+		UIImage *image = renderTile(doc, number, pageSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
@@ -737,34 +702,29 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	strcat(filename, "/Documents/");
 	strcat(filename, [nsfilename UTF8String]);
 
-	printf("open xref '%s'\n", filename);
+	printf("open document '%s'\n", filename);
 
-	error = pdf_open_xref(&xref, filename, password);
-	if (error) {
-		showAlert(@"Cannot open PDF file");
-		[self release];
-		return nil;
-	}
-
-	error = pdf_load_page_tree(xref);
-	if (error) {
+	doc = open_document(filename);
+	if (!doc) {
 		showAlert(@"Cannot open document");
 		[self release];
 		return nil;
 	}
 
-	NSMutableArray *titles = [[NSMutableArray alloc] init];
-	NSMutableArray *pages = [[NSMutableArray alloc] init];
-	loadOutline(titles, pages, xref);
-	if ([titles count]) {
-		outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
-		[[self navigationItem] setRightBarButtonItem:
-			[[UIBarButtonItem alloc]
-				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-				target:self action:@selector(onShowOutline:)]];
+	if (doc->pdf) {
+		NSMutableArray *titles = [[NSMutableArray alloc] init];
+		NSMutableArray *pages = [[NSMutableArray alloc] init];
+		loadOutline(titles, pages, doc->pdf);
+		if ([titles count]) {
+			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
+			[[self navigationItem] setRightBarButtonItem:
+				[[UIBarButtonItem alloc]
+					initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
+					target:self action:@selector(onShowOutline:)]];
+		}
+		[titles release];
+		[pages release];
 	}
-	[titles release];
-	[pages release];
 
 	return self;
 }
@@ -774,7 +734,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
 
 	current = [[NSUserDefaults standardUserDefaults] integerForKey: key];
-	if (current < 0 || current >= pdf_count_pages(xref))
+	if (current < 0 || current >= count_pages(doc))
 		current = 0;
 
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
@@ -806,7 +766,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
-	[slider setMaximumValue: pdf_count_pages(xref) - 1];
+	[slider setMaximumValue: count_pages(doc) - 1];
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
 	[view addSubview: canvas];
@@ -831,11 +791,11 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 - (void) dealloc
 {
-	if (xref) {
-		pdf_xref *self_xref = xref; // don't auto-retain self here!
+	if (doc) {
+		struct document *self_doc = doc; // don't auto-retain self here!
 		dispatch_async(queue, ^{
-			printf("close xref\n");
-			pdf_free_xref(self_xref);
+			printf("close document\n");
+			close_document(self_doc);
 		});
 	}
 	[outline release];
@@ -853,10 +813,10 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 	[slider setValue: current];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
 
 	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
+	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	[wrapper setWidth: width - GAP - 24];
@@ -924,7 +884,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 {
 	int number = [slider value];
 	if ([slider isTracking])
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, count_pages(doc)]];
 	else
 		[self gotoPage: number animated: NO];
 }
@@ -967,7 +927,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, pdf_count_pages(xref)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
 	[slider setValue: current];
 
 	// swap the page views in and out
@@ -990,14 +950,14 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 - (void) createPageView: (int)number
 {
-	if (number < 0 || number >= pdf_count_pages(xref))
+	if (number < 0 || number >= count_pages(doc))
 		return;
 	int found = 0;
 	for (MuPageView *view in [canvas subviews])
 		if ([view number] == number)
 			found = 1;
 	if (!found) {
-		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) xref: xref page: number];
+		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: doc page: number];
 		[visiblePages addObject: view];
 		[canvas addSubview: view];
 		[view release];
@@ -1008,8 +968,8 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 {
 	if (number < 0)
 		number = 0;
-	if (number >= pdf_count_pages(xref))
-		number = pdf_count_pages(xref) - 1;
+	if (number >= count_pages(doc))
+		number = count_pages(doc) - 1;
 	if (animated) {
 		// setContentOffset:animated: does not use the normal animation
 		// framework. It also doesn't play nice with the tap gesture
@@ -1030,7 +990,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 		[slider setValue: number];
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, pdf_count_pages(xref)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, count_pages(doc)]];
 
 		[UIView commitAnimations];
 	} else {
@@ -1064,7 +1024,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * max_width, height)];
+	[canvas setContentSize: CGSizeMake(count_pages(doc) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	for (MuPageView *view in visiblePages) {
@@ -1083,7 +1043,7 @@ static UIImage *renderTile(pdf_xref *xref, int number, CGSize screen, CGRect til
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
-	[canvas setContentSize: CGSizeMake(pdf_count_pages(xref) * width, height)];
+	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
