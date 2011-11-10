@@ -1,7 +1,5 @@
 #import <UIKit/UIKit.h>
 
-// TODO: [[UIScreen mainScreen] scale]; -- for retina iphone 4 displays we want double resolution!
-
 #undef ABS
 #undef MIN
 #undef MAX
@@ -118,37 +116,27 @@ static void showAlert(NSString *msg)
 	[alert release];
 }
 
-static int pageNumberFromLink(pdf_xref *xref, pdf_link *link)
+static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_outline *outline, int level)
 {
-	if (link->kind == PDF_LINK_GOTO)
-		return pdf_find_page_number(xref, fz_array_get(link->dest, 0));
-	return -1;
-}
-
-static void loadOutlineImp(NSMutableArray *titles, NSMutableArray *pages, pdf_xref *xref, pdf_outline *outline, int level)
-{
-	char buf[512];
-	memset(buf, 0, sizeof buf);
-	memset(buf, ' ', level * 4);
+	char indent[8*4+1];
+	if (level > 8)
+		level = 8;
+	memset(indent, ' ', level * 4);
+	indent[level * 4] = 0;
 	while (outline)
 	{
-		int number = pageNumberFromLink(xref, outline->link);
-		if (number >= 0) {
-			[titles addObject: [NSString stringWithFormat: @"%s%s", buf, outline->title]];
-			[pages addObject: [NSNumber numberWithInt: number]];
+		if (outline->page >= 0 && outline->title) {
+			NSString *title = [NSString stringWithUTF8String: outline->title];
+			[titles addObject: [NSString stringWithFormat: @"%s%@", indent, title]];
+			[pages addObject: [NSNumber numberWithInt: outline->page]];
 		}
-		loadOutlineImp(titles, pages, xref, outline->child, level + 1);
+		flattenOutline(titles, pages, outline->down, level + 1);
 		outline = outline->next;
 	}
 }
 
-static void loadOutline(NSMutableArray *titles, NSMutableArray *pages, pdf_xref *xref)
+static void loadOutline(NSMutableArray *titles, NSMutableArray *pages, struct document *doc)
 {
-	pdf_outline *outline = pdf_load_outline(xref);
-	if (outline) {
-		loadOutlineImp(titles, pages, xref, outline, 0);
-		pdf_free_outline(outline);
-	}
 }
 
 static void releasePixmap(void *info, const void *data, size_t size)
@@ -686,9 +674,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (id) initWithFile: (NSString*)nsfilename
 {
-	fz_error error;
 	char filename[PATH_MAX];
-	char *password = "";
 
 	self = [super init];
 	if (!self)
@@ -711,20 +697,22 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		return nil;
 	}
 
-	if (doc->pdf) {
-		NSMutableArray *titles = [[NSMutableArray alloc] init];
-		NSMutableArray *pages = [[NSMutableArray alloc] init];
-		loadOutline(titles, pages, doc->pdf);
-		if ([titles count]) {
-			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
-			[[self navigationItem] setRightBarButtonItem:
-				[[UIBarButtonItem alloc]
-					initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-					target:self action:@selector(onShowOutline:)]];
-		}
-		[titles release];
-		[pages release];
+	NSMutableArray *titles = [[NSMutableArray alloc] init];
+	NSMutableArray *pages = [[NSMutableArray alloc] init];
+	fz_outline *root = load_outline(doc);
+	if (root) {
+		flattenOutline(titles, pages, root, 0);
+		fz_free_outline(root);
 	}
+	if ([titles count]) {
+		outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
+		[[self navigationItem] setRightBarButtonItem:
+			[[UIBarButtonItem alloc]
+				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
+				target:self action:@selector(onShowOutline:)]];
+	}
+	[titles release];
+	[pages release];
 
 	return self;
 }

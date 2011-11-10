@@ -1064,6 +1064,24 @@ fz_device *fz_new_list_device(fz_display_list *list);
 void fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area);
 
 /*
+ * Document interface.
+ */
+
+typedef struct fz_outline_s fz_outline;
+
+struct fz_outline_s
+{
+	char *title;
+	int page;
+	fz_outline *next;
+	fz_outline *down;
+};
+
+void fz_debug_outline_xml(fz_outline *outline, int level);
+void fz_debug_outline(fz_outline *outline, int level);
+void fz_free_outline(fz_outline *outline);
+
+/*
  * Plotting functions.
  */
 

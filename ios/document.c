@@ -43,6 +43,17 @@ open_document(char *filename)
 	}
 }
 
+fz_outline *
+load_outline(struct document *doc)
+{
+	if (doc->pdf)
+		return pdf_load_outline(doc->pdf);
+	else if (doc->xps)
+		return xps_load_outline(doc->xps);
+	else
+		return NULL;
+}
+
 int
 count_pages(struct document *doc)
 {
