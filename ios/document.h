@@ -27,6 +27,7 @@ fz_outline *load_outline(struct document *doc);
 int count_pages(struct document *doc);
 void measure_page(struct document *doc, int number, float *w, float *h);
 void draw_page(struct document *doc, int number, fz_device *dev, fz_matrix ctm);
+int search_page(struct document *doc, int number, char *needle);
 void close_document(struct document *doc);
 
 #endif

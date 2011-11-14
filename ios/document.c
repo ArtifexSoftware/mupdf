@@ -3,6 +3,8 @@
 #include "xps/muxps.h"
 #include "document.h"
 
+#include <ctype.h> // for tolower()
+
 struct document *
 open_document(char *filename)
 {
@@ -135,6 +137,95 @@ draw_page(struct document *doc, int number, fz_device *dev, fz_matrix ctm)
 		doc->xps->dev = NULL;
 	}
 	fz_flush_warnings();
+}
+
+static int
+charat(fz_text_span *span, int idx)
+{
+	int ofs = 0;
+	while (span) {
+		if (idx < ofs + span->len)
+			return span->text[idx - ofs].c;
+		if (span->eol) {
+			if (idx == ofs + span->len)
+				return ' ';
+			ofs ++;
+		}
+		ofs += span->len;
+		span = span->next;
+	}
+	return 0;
+}
+
+static fz_bbox
+bboxat(fz_text_span *span, int idx)
+{
+	int ofs = 0;
+	while (span) {
+		if (idx < ofs + span->len)
+			return span->text[idx - ofs].bbox;
+		if (span->eol) {
+			if (idx == ofs + span->len)
+				return fz_empty_bbox;
+			ofs ++;
+		}
+		ofs += span->len;
+		span = span->next;
+	}
+	return fz_empty_bbox;
+}
+
+static int
+textlen(fz_text_span *span)
+{
+	int len = 0;
+	while (span) {
+		len += span->len;
+		if (span->eol)
+			len ++;
+		span = span->next;
+	}
+	return len;
+}
+
+static int
+match(fz_text_span *span, char *s, int n)
+{
+	int start = n, c;
+	while ((c = *s++)) {
+		if (c == ' ' && charat(span, n) == ' ') {
+			while (charat(span, n) == ' ')
+				n++;
+		} else {
+			if (tolower(c) != tolower(charat(span, n)))
+				return 0;
+			n++;
+		}
+	}
+	return n - start;
+}
+
+int
+search_page(struct document *doc, int number, char *needle)
+{
+	int pos, len, count = 0;
+	fz_text_span *text = fz_new_text_span();
+	fz_device *dev = fz_new_text_device(text);
+	draw_page(doc, number, dev, fz_identity);
+	fz_free_device(dev);
+
+	len = textlen(text);
+	for (pos = 0; pos < len; pos++) {
+		int n = match(text, needle, pos);
+		if (n) {
+			// TODO: extract bbox(es) into a result list
+			printf("found a match at page %d, pos %d!\n", number, pos);
+			count++;
+		}
+	}
+
+	fz_free_text_span(text);
+	return count;
 }
 
 void
