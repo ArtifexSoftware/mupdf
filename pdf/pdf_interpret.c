@@ -82,6 +82,8 @@ struct pdf_csi_s
 
 	/* path object state */
 	fz_path *path;
+	int clip;
+	int clip_even_odd;
 
 	/* text object state */
 	fz_text *text;
@@ -243,14 +245,6 @@ pdf_show_image(pdf_csi *csi, fz_pixmap *image)
 		pdf_end_group(csi);
 }
 
-static void pdf_show_clip(pdf_csi *csi, int even_odd)
-{
-	pdf_gstate *gstate = csi->gstate + csi->gtop;
-
-	gstate->clip_depth++;
-	fz_clip_path(csi->dev, csi->path, NULL, even_odd, gstate->ctm);
-}
-
 static void
 pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 {
@@ -271,6 +265,12 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 
 	if (dofill || dostroke)
 		pdf_begin_group(csi, bbox);
+
+	if (csi->clip)
+	{
+		gstate->clip_depth++;
+		fz_clip_path(csi->dev, path, NULL, csi->clip_even_odd, gstate->ctm);
+	}
 
 	if (dofill)
 	{
@@ -671,6 +671,8 @@ pdf_new_csi(pdf_xref *xref, fz_device *dev, fz_matrix ctm, char *target)
 	csi->in_text = 0;
 
 	csi->path = fz_new_path();
+	csi->clip = 0;
+	csi->clip_even_odd = 0;
 
 	csi->text = NULL;
 	csi->tlm = fz_identity;
@@ -1075,7 +1077,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 	fz_lineto(csi->path, xobj->bbox.x1, xobj->bbox.y1);
 	fz_lineto(csi->path, xobj->bbox.x0, xobj->bbox.y1);
 	fz_closepath(csi->path);
-	pdf_show_clip(csi, 0);
+	csi->clip = 1;
 	pdf_show_path(csi, 0, 0, 0, 0);
 
 	/* run contents */
@@ -1720,12 +1722,14 @@ static void pdf_run_TJ(pdf_csi *csi)
 
 static void pdf_run_W(pdf_csi *csi)
 {
-	pdf_show_clip(csi, 0);
+	csi->clip = 1;
+	csi->clip_even_odd = 0;
 }
 
 static void pdf_run_Wstar(pdf_csi *csi)
 {
-	pdf_show_clip(csi, 1);
+	csi->clip = 1;
+	csi->clip_even_odd = 1;
 }
 
 static void pdf_run_b(pdf_csi *csi)
