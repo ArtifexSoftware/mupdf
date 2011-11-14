@@ -325,6 +325,7 @@
 			<File
 				RelativePath="..\fitz\doc_outline.c"
 				>
+			</File>
 			<File
 				RelativePath="..\fitz\dev_bbox.c"
 				>
