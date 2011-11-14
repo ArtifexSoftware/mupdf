@@ -155,7 +155,6 @@ struct fz_error_context_s
 {
 	int top;
 	struct {
-		int failed;
 		jmp_buf buffer;
 	} stack[256];
 	char message[256];
@@ -168,11 +167,9 @@ struct fz_error_context_s
 
 #define fz_catch(ctx) \
 		} while(0); \
-		ctx->error->stack[ctx->error->top].failed = 0; \
+		ctx->error->top--; \
 	} \
-	else \
-		ctx->error->stack[ctx->error->top].failed = 1; \
-	if (ctx->error->stack[ctx->error->top--].failed)
+	else
 
 void fz_push_try(fz_error_context *ex);
 void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
