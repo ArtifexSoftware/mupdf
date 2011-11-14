@@ -241,6 +241,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\apps\pdfapp.h"
+			>
+		</File>
+		<File
 			RelativePath="..\apps\win_main.c"
 			>
 		</File>

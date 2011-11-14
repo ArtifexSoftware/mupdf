@@ -14,6 +14,7 @@ int showxml = 0;
 int showtext = 0;
 int showtime = 0;
 int showmd5 = 0;
+int showoutline = 0;
 int savealpha = 0;
 int uselist = 1;
 
@@ -48,6 +49,7 @@ static void usage(void)
 		"\t-x\tshow display list\n"
 		"\t-d\tdisable use of display list\n"
 		"\t-5\tshow md5 checksums\n"
+		"\t-l\tprint outline\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
 }
@@ -277,6 +279,16 @@ static void drawrange(xps_document *doc, char *range)
 	}
 }
 
+static void drawoutline(xps_document *doc)
+{
+	fz_outline *outline = xps_load_outline(doc);
+	if (showoutline > 1)
+		fz_debug_outline_xml(outline, 0);
+	else
+		fz_debug_outline(outline, 0);
+	fz_free_outline(outline);
+}
+
 int main(int argc, char **argv)
 {
 	int grayscale = 0;
@@ -284,7 +296,7 @@ int main(int argc, char **argv)
 	xps_document *doc;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "o:p:r:Aadgmtx5")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:p:r:Aadglmtx5")) != -1)
 	{
 		switch (c)
 		{
@@ -292,6 +304,7 @@ int main(int argc, char **argv)
 		case 'r': resolution = atof(fz_optarg); break;
 		case 'A': accelerate = 0; break;
 		case 'a': savealpha = 1; break;
+		case 'l': showoutline++; break;
 		case 'm': showtime++; break;
 		case 't': showtext++; break;
 		case 'x': showxml++; break;
@@ -305,7 +318,7 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		usage();
 
-	if (!showtext && !showxml && !showtime && !showmd5 && !output)
+	if (!showtext && !showxml && !showtime && !showmd5 && !showoutline && !output)
 	{
 		printf("nothing to do\n");
 		exit(0);
@@ -357,10 +370,16 @@ int main(int argc, char **argv)
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);
 
-		if (fz_optind == argc || !isrange(argv[fz_optind]))
-			drawrange(doc, "1-");
-		if (fz_optind < argc && isrange(argv[fz_optind]))
-			drawrange(doc, argv[fz_optind++]);
+		if (showoutline)
+			drawoutline(doc);
+
+		if (showtext || showxml || showtime || showmd5 || output)
+		{
+			if (fz_optind == argc || !isrange(argv[fz_optind]))
+				drawrange(doc, "1-");
+			if (fz_optind < argc && isrange(argv[fz_optind]))
+				drawrange(doc, argv[fz_optind++]);
+		}
 
 		if (showxml)
 			printf("</document>\n");

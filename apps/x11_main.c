@@ -61,6 +61,8 @@ extern void ximage_blit(Drawable d, GC gc, int dstx, int dsty,
 	unsigned char *srcdata,
 	int srcx, int srcy, int srcw, int srch, int srcstride);
 
+void windrawstringxor(pdfapp_t *app, int x, int y, char *s);
+
 static Display *xdpy;
 static Atom XA_TARGETS;
 static Atom XA_TIMESTAMP;
@@ -90,6 +92,7 @@ static char *filename;
 static pdfapp_t gapp;
 static int closing = 0;
 static int reloading = 0;
+static int showingpage = 0;
 
 /*
  * Dialog boxes
@@ -209,6 +212,12 @@ static void winopen(void)
 void winclose(pdfapp_t *app)
 {
 	closing = 1;
+}
+
+static int winresolution()
+{
+	return DisplayWidth(xdpy, xscr) * 25.4 /
+		DisplayWidthMM(xdpy, xscr) + 0.5;
 }
 
 void wincursor(pdfapp_t *app, int curs)
@@ -358,6 +367,13 @@ static void winblit(pdfapp_t *app)
 	}
 
 	winblitsearch(app);
+
+	if (showingpage)
+	{
+		char buf[42];
+		snprintf(buf, sizeof buf, "Page %d/%d", gapp.pageno, gapp.pagecount);
+		windrawstringxor(&gapp, 10, 20, buf);
+	}
 }
 
 void winrepaint(pdfapp_t *app)
@@ -388,8 +404,6 @@ void windrawstringxor(pdfapp_t *app, int x, int y, char *s)
 	XGetGCValues(xdpy, xgc, GCFunction, &xgcv);
 	xgcv.function = prevfunction;
 	XChangeGC(xdpy, xgc, GCFunction, &xgcv);
-
-	printf("drawstring '%s'\n", s);
 }
 
 void windrawstring(pdfapp_t *app, int x, int y, char *s)
@@ -496,7 +510,13 @@ void winopenuri(pdfapp_t *app, char *buf)
 {
 	char *browser = getenv("BROWSER");
 	if (!browser)
+	{
+#ifdef __APPLE__
 		browser = "open";
+#else
+		browser = "xdg-open";
+#endif
+	}
 	if (fork() == 0)
 		execlp(browser, browser, buf, (char*)0);
 }
@@ -507,6 +527,13 @@ static void onkey(int c)
 	{
 		justcopied = 0;
 		winrepaint(&gapp);
+	}
+
+	if (!gapp.isediting && c == 'P')
+	{
+		showingpage = 1;
+		winrepaint(&gapp);
+		return;
 	}
 
 	pdfapp_onkey(&gapp, c);
@@ -547,14 +574,21 @@ int main(int argc, char **argv)
 	KeySym keysym;
 	int oldx = 0;
 	int oldy = 0;
-	int resolution = 72;
+	int resolution = -1;
 	int pageno = 1;
 	int accelerate = 1;
 	int fd;
 	fd_set fds;
 	int width = -1;
 	int height = -1;
+<<<<<<< HEAD
 	fz_context *ctx;
+=======
+	struct timeval tmo_at;
+	struct timeval now;
+	struct timeval tmo;
+	struct timeval *timeout;
+>>>>>>> master
 
 	while ((c = fz_getopt(argc, argv, "p:r:b:A")) != -1)
 	{
@@ -567,11 +601,6 @@ int main(int argc, char **argv)
 		default: usage();
 		}
 	}
-
-	if (resolution < MINRES)
-		resolution = MINRES;
-	if (resolution > MAXRES)
-		resolution = MAXRES;
 
 	if (argc - fz_optind == 0)
 		usage();
@@ -593,7 +622,18 @@ int main(int argc, char **argv)
 
 	winopen();
 
+<<<<<<< HEAD
 	pdfapp_init(ctx, &gapp);
+=======
+	if (resolution == -1)
+		resolution = winresolution();
+	if (resolution < MINRES)
+		resolution = MINRES;
+	if (resolution > MAXRES)
+		resolution = MAXRES;
+
+	pdfapp_init(&gapp);
+>>>>>>> master
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
 	gapp.resolution = resolution;
@@ -606,13 +646,15 @@ int main(int argc, char **argv)
 	pdfapp_open(&gapp, filename, fd, 0);
 
 	FD_ZERO(&fds);
-	FD_SET(x11fd, &fds);
 
 	signal(SIGHUP, signal_handler);
 
+	tmo_at.tv_sec = 0;
+	tmo_at.tv_usec = 0;
+
 	while (!closing)
 	{
-		do
+		while (!closing && XPending(xdpy))
 		{
 			XNextEvent(xdpy, &xevt);
 
@@ -701,7 +743,6 @@ int main(int argc, char **argv)
 				break;
 			}
 		}
-		while (!closing && XPending(xdpy));
 
 		if (closing)
 			continue;
@@ -723,16 +764,52 @@ int main(int argc, char **argv)
 			dirtysearch = 0;
 		}
 
+		if (showingpage && !tmo_at.tv_sec && !tmo_at.tv_usec)
+		{
+			tmo.tv_sec = 2;
+			tmo.tv_usec = 0;
+
+			gettimeofday(&now, NULL);
+			timeradd(&now, &tmo, &tmo_at);
+		}
+
 		if (XPending(xdpy))
 			continue;
 
-		if (select(x11fd + 1, &fds, NULL, NULL, NULL) < 0)
+		timeout = NULL;
+
+		if (tmo_at.tv_sec || tmo_at.tv_usec)
+		{
+			gettimeofday(&now, NULL);
+			timersub(&tmo_at, &now, &tmo);
+			if (tmo.tv_sec <= 0)
+			{
+				tmo_at.tv_sec = 0;
+				tmo_at.tv_usec = 0;
+				timeout = NULL;
+				showingpage = 0;
+				winrepaint(&gapp);
+			}
+			else
+				timeout = &tmo;
+		}
+
+		FD_SET(x11fd, &fds);
+		if (select(x11fd + 1, &fds, NULL, NULL, timeout) < 0)
 		{
 			if (reloading)
 			{
 				winreloadfile(&gapp);
 				reloading = 0;
 			}
+		}
+		if (!FD_ISSET(x11fd, &fds))
+		{
+			tmo_at.tv_sec = 0;
+			tmo_at.tv_usec = 0;
+			timeout = NULL;
+			showingpage = 0;
+			winrepaint(&gapp);
 		}
 	}
 

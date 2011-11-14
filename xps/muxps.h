@@ -15,6 +15,8 @@ typedef struct xps_document_s xps_document;
 
 #define REL_START_PART \
 	"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
+#define REL_DOC_STRUCTURE \
+	"http://schemas.microsoft.com/xps/2005/06/documentstructure"
 #define REL_REQUIRED_RESOURCE \
 	"http://schemas.microsoft.com/xps/2005/06/required-resource"
 #define REL_REQUIRED_RESOURCE_RECURSIVE \
@@ -70,20 +72,30 @@ void xps_free_part(xps_document *doc, xps_part *part);
 
 typedef struct xps_fixdoc_s xps_fixdoc;
 typedef struct xps_page_s xps_page;
+typedef struct xps_target_s xps_target;
 
 struct xps_fixdoc_s
 {
 	char *name;
+	char *outline;
 	xps_fixdoc *next;
 };
 
 struct xps_page_s
 {
 	char *name;
+	int number;
 	int width;
 	int height;
 	xml_element *root;
 	xps_page *next;
+};
+
+struct xps_target_s
+{
+	char *name;
+	int page;
+	xps_target *next;
 };
 
 int xps_read_page_list(xps_document *doc);
@@ -93,6 +105,10 @@ void xps_free_page_list(xps_document *doc);
 int xps_count_pages(xps_document *doc);
 xps_page *xps_load_page(xps_document *doc, int number);
 void xps_free_page(xps_document *doc, xps_page *page);
+
+fz_outline *xps_load_outline(xps_document *doc);
+
+int xps_find_link_target(xps_document *doc, char *target_uri);
 
 /*
  * Images, fonts, and colorspaces.
@@ -207,6 +223,9 @@ struct xps_document_s
 	xps_fixdoc *last_fixdoc; /* last fixed document */
 	xps_page *first_page; /* first page of document */
 	xps_page *last_page; /* last page of document */
+	int page_count;
+
+	xps_target *target; /* link targets */
 
 	char *base_uri; /* base uri for parsing XML and resolving relative paths */
 	char *part_uri; /* part uri for parsing metadata relations */

@@ -861,7 +861,10 @@ fz_transform_pixmap(fz_context *ctx, fz_pixmap *image, fz_matrix *ctm, int x, in
 	if (ctm->a != 0 && ctm->b == 0 && ctm->c == 0 && ctm->d != 0)
 	{
 		/* Unrotated or X-flip or Y-flip or XY-flip */
-		scaled = fz_scale_pixmap_gridfit(ctx, image, ctm->e, ctm->f, ctm->a, ctm->d, gridfit);
+		fz_matrix m = *ctm;
+		if (gridfit)
+			fz_gridfit_matrix(&m);
+		scaled = fz_scale_pixmap(ctx, image, m.e, m.f, m.a, m.d);
 		if (scaled == NULL)
 			return NULL;
 		ctm->a = scaled->w;
@@ -874,7 +877,10 @@ fz_transform_pixmap(fz_context *ctx, fz_pixmap *image, fz_matrix *ctm, int x, in
 	if (ctm->a == 0 && ctm->b != 0 && ctm->c != 0 && ctm->d == 0)
 	{
 		/* Other orthogonal flip/rotation cases */
-		scaled = fz_scale_pixmap_gridfit(ctx, image, ctm->f, ctm->e, ctm->b, ctm->c, gridfit);
+		fz_matrix m = *ctm;
+		if (gridfit)
+			fz_gridfit_matrix(&m);
+		scaled = fz_scale_pixmap(ctx, image, m.f, m.e, m.b, m.c);
 		if (scaled == NULL)
 			return NULL;
 		ctm->b = scaled->w;

@@ -18,7 +18,7 @@ struct element
 struct parser
 {
 	struct element *head;
-	fz_context *doc;
+	fz_context *ctx;
 };
 
 static inline void indent(int n)
@@ -71,26 +71,26 @@ char *xml_att(struct element *item, const char *name)
 	return NULL;
 }
 
-static void xml_free_attribute(fz_context *doc, struct attribute *att)
+static void xml_free_attribute(fz_context *ctx, struct attribute *att)
 {
 	while (att) {
 		struct attribute *next = att->next;
 		if (att->value)
-			fz_free(doc, att->value);
-		fz_free(doc, att);
+			fz_free(ctx, att->value);
+		fz_free(ctx, att);
 		att = next;
 	}
 }
 
-void xml_free_element(fz_context *doc, struct element *item)
+void xml_free_element(fz_context *ctx, struct element *item)
 {
 	while (item) {
 		struct element *next = item->next;
 		if (item->atts)
-			xml_free_attribute(doc, item->atts);
+			xml_free_attribute(ctx, item->atts);
 		if (item->down)
-			xml_free_element(doc, item->down);
-		fz_free(doc, item);
+			xml_free_element(ctx, item->down);
+		fz_free(ctx, item);
 		item = next;
 	}
 }
@@ -134,7 +134,7 @@ static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 {
 	struct element *head, *tail;
 
-	head = fz_malloc(parser->doc, sizeof(struct element));
+	head = fz_malloc(parser->ctx, sizeof(struct element));
 	if (b - a > sizeof(head->name))
 		b = a + sizeof(head->name);
 	memcpy(head->name, a, b - a);
@@ -163,7 +163,7 @@ static void xml_emit_att_name(struct parser *parser, char *a, char *b)
 	struct element *head = parser->head;
 	struct attribute *att;
 
-	att = fz_malloc(parser->doc, sizeof(struct attribute));
+	att = fz_malloc(parser->ctx, sizeof(struct attribute));
 	if (b - a > sizeof(att->name))
 		b = a + sizeof(att->name);
 	memcpy(att->name, a, b - a);
@@ -181,7 +181,7 @@ static void xml_emit_att_value(struct parser *parser, char *a, char *b)
 	int c;
 
 	/* entities are all longer than UTFmax so runetochar is safe */
-	s = att->value = fz_malloc(parser->doc, b - a + 1);
+	s = att->value = fz_malloc(parser->ctx, b - a + 1);
 	while (a < b) {
 		if (*a == '&') {
 			a += xml_parse_entity(&c, a);
@@ -362,7 +362,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n)
 }
 
 struct element *
-xml_parse_document(fz_context *doc, unsigned char *s, int n)
+xml_parse_document(fz_context *ctx, unsigned char *s, int n)
 {
 	struct parser parser;
 	struct element root;
@@ -372,18 +372,18 @@ xml_parse_document(fz_context *doc, unsigned char *s, int n)
 
 	memset(&root, 0, sizeof(root));
 	parser.head = &root;
-	parser.doc = doc;
+	parser.ctx = ctx;
 
-	p = convert_to_utf8(doc, s, n);
+	p = convert_to_utf8(ctx, s, n);
 
 	error = xml_parse_document_imp(&parser, p);
 	if (error) {
-		fz_error_handle(-1, error);
+		fz_throw(ctx, "%s", error);
 		return NULL;
 	}
 
 	if (p != (char*)s)
-		fz_free(doc, p);
+		fz_free(ctx, p);
 
 	return root.down;
 }

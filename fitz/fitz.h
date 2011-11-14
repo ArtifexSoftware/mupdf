@@ -348,6 +348,8 @@ fz_point fz_transform_vector(fz_matrix m, fz_point p);
 fz_rect fz_transform_rect(fz_matrix m, fz_rect r);
 fz_bbox fz_transform_bbox(fz_matrix m, fz_bbox b);
 
+void fz_gridfit_matrix(fz_matrix *m);
+
 /*
  * Basic crypto functions.
  * Independent of the rest of fitz.
@@ -705,7 +707,6 @@ void fz_invert_pixmap(fz_pixmap *pix);
 void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h);
-fz_pixmap *fz_scale_pixmap_gridfit(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, int gridfit);
 
 void fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 void fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
@@ -1139,6 +1140,25 @@ fz_display_list *fz_new_display_list(fz_context *ctx);
 void fz_free_display_list(fz_context *ctx, fz_display_list *list);
 fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 void fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area);
+
+/*
+ * Document interface.
+ */
+
+typedef struct fz_outline_s fz_outline;
+
+struct fz_outline_s
+{
+	fz_context *ctx;
+	char *title;
+	int page;
+	fz_outline *next;
+	fz_outline *down;
+};
+
+void fz_debug_outline_xml(fz_outline *outline, int level);
+void fz_debug_outline(fz_outline *outline, int level);
+void fz_free_outline(fz_outline *outline);
 
 /*
  * Plotting functions.

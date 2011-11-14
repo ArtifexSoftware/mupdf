@@ -1,6 +1,7 @@
 *~
 .*.swp
 build
+DerivedData
 generated
 thirdparty
 cscope.*
