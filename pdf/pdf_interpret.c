@@ -263,14 +263,14 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 	else
 		bbox = fz_bound_path(path, NULL, gstate->ctm);
 
-	if (dofill || dostroke)
-		pdf_begin_group(csi, bbox);
-
 	if (csi->clip)
 	{
 		gstate->clip_depth++;
 		fz_clip_path(csi->dev, path, NULL, csi->clip_even_odd, gstate->ctm);
 	}
+
+	if (dofill || dostroke)
+		pdf_begin_group(csi, bbox);
 
 	if (dofill)
 	{
