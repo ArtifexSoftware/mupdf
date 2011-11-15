@@ -98,7 +98,7 @@ fz_open_file(fz_context *ctx, const char *name)
 {
 	int fd = open(name, O_BINARY | O_RDONLY, 0);
 	if (fd == -1)
-		return NULL;
+		fz_throw(ctx, "Failed to open %s", name);
 	return fz_open_fd(ctx, fd);
 }
 
