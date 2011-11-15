@@ -1,4 +1,4 @@
-#import <UIKit/UIKit.h>
+#import <UIKit/UIKit.h> 
 
 #undef ABS
 #undef MIN
@@ -12,6 +12,9 @@
 
 #define GAP 20
 #define INDICATOR_Y -44-24
+#define BUTTON_W (44*2+10-4)
+#define SEARCH_W (width - GAP - BUTTON_W)
+#define SLIDER_W (width - GAP - 24)
 
 static dispatch_queue_t queue;
 static fz_glyph_cache *glyphcache = NULL;
@@ -56,7 +59,7 @@ static float screenScale = 1;
 - (int) number;
 @end
 
-@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate>
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UISearchBarDelegate>
 {
 	struct document *doc;
 	NSString *key;
@@ -66,7 +69,10 @@ static float screenScale = 1;
 	UIScrollView *canvas;
 	UILabel *indicator;
 	UISlider *slider;
-	UIBarButtonItem *wrapper; // for slider
+	UISearchBar *searchBar;
+	char *searchText;
+	UINavigationBar *buttonBar;
+	UIBarButtonItem *sliderWrapper;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
@@ -76,6 +82,8 @@ static float screenScale = 1;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;
+- (void) onToggleSearch: (id)sender;
+- (void) resetSearch;
 - (void) onSlide: (id)sender;
 - (void) onTap: (UITapGestureRecognizer*)sender;
 - (void) showNavigationBar;
@@ -91,6 +99,22 @@ static float screenScale = 1;
 @end
 
 #pragma mark -
+
+// We need a transparent UIToolbar to embed into other toolbars.
+@interface FakeToolbar : UIToolbar {} @end
+@implementation FakeToolbar
+- (id) initWithFrame: (CGRect)frame
+{
+	[super initWithFrame: frame];
+	[self setOpaque: NO];
+	[self setTranslucent: YES];
+	return self;
+}
+- (void) drawRect: (CGRect)r
+{
+	// don't draw a backdrop!
+}
+@end
 
 static void showAlert(NSString *msg)
 {
@@ -697,22 +721,17 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		return nil;
 	}
 
-	NSMutableArray *titles = [[NSMutableArray alloc] init];
-	NSMutableArray *pages = [[NSMutableArray alloc] init];
 	fz_outline *root = load_outline(doc);
 	if (root) {
+		NSMutableArray *titles = [[NSMutableArray alloc] init];
+		NSMutableArray *pages = [[NSMutableArray alloc] init];
 		flattenOutline(titles, pages, root, 0);
+		if ([titles count])
+			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
+		[titles release];
+		[pages release];
 		fz_free_outline(root);
 	}
-	if ([titles count]) {
-		outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
-		[[self navigationItem] setRightBarButtonItem:
-			[[UIBarButtonItem alloc]
-				initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-				target:self action:@selector(onShowOutline:)]];
-	}
-	[titles release];
-	[pages release];
 
 	return self;
 }
@@ -752,16 +771,86 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[indicator setBackgroundColor: [[UIColor blackColor] colorWithAlphaComponent: 0.5]];
 	[indicator setTextColor: [UIColor whiteColor]];
 
+	[view addSubview: canvas];
+	[view addSubview: indicator];
+
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
 	[slider setMaximumValue: count_pages(doc) - 1];
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
-	[view addSubview: canvas];
-	[view addSubview: indicator];
+	sliderWrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
 
-	wrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
-	[self setToolbarItems: [NSArray arrayWithObjects: wrapper, nil]];
+	[self setToolbarItems: [NSArray arrayWithObjects: sliderWrapper, nil]];
+
+	// Set up the button on the right side of the navigation bar
+
+	UIToolbar *rightBar = nil;
+	UIBarButtonItem *outlineButton = nil;
+
+	UIBarButtonItem *searchButton = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemSearch
+		target:self action:@selector(onToggleSearch:)];
+	[searchButton setStyle: UIBarButtonItemStyleBordered];
+
+	if (outline) {
+		outlineButton = [[UIBarButtonItem alloc]
+			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
+			target:self action:@selector(onShowOutline:)];
+		[outlineButton setStyle: UIBarButtonItemStyleBordered];
+		rightBar = [[FakeToolbar alloc] initWithFrame: CGRectMake(0,0,54*2-4,44)];
+		[rightBar setItems: [NSArray arrayWithObjects: outlineButton, searchButton, nil]];
+	} else {
+		rightBar = [[FakeToolbar alloc] initWithFrame: CGRectMake(0,0,54-4,44)];
+		[rightBar setItems: [NSArray arrayWithObjects: searchButton, nil]];
+	}
+
+	UIBarButtonItem *rightWrapper = [[UIBarButtonItem alloc] initWithCustomView: rightBar];
+	[[self navigationItem] setRightBarButtonItem: rightWrapper];
+	[rightWrapper release];
+	[rightBar release];
+
+	[searchButton release];
+	[outlineButton release];
+
+	// Set up the search bar and prev/next search buttons
+
+	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,44,SEARCH_W,44)];
+	[searchBar setHidden: YES];
+	[searchBar setTranslucent: YES];
+	[searchBar setDelegate: self];
+	[view addSubview: searchBar];
+
+	// We abuse UINavigationBar to get the same background as UISearchBar.
+	// We'd like to use UIToolbar, but that has a different backdrop than the search bar.
+	// Ideally we'd add these buttons to the search bar, but that can't be done without
+	// even more ugly hacks.
+	buttonBar = [[UINavigationBar alloc] initWithFrame: CGRectMake(SEARCH_W,44,BUTTON_W,44)];
+	[buttonBar setHidden: YES];
+	[buttonBar setTranslucent: YES];
+	[view addSubview: buttonBar];
+
+	UIBarButtonItem *prevButton = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemRewind
+		target:self action:@selector(onSearchPrev:)];
+	UIBarButtonItem *space = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemFixedSpace
+		target:nil action:nil];
+	[space setWidth: 10];
+	UIBarButtonItem *nextButton = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemFastForward
+		target:self action:@selector(onSearchNext:)];
+
+	// TODO: add activityindicator to search bar
+
+	rightBar = [[FakeToolbar alloc] initWithFrame: CGRectMake(0,0,BUTTON_W,44)];
+	[rightBar setItems: [NSArray arrayWithObjects: prevButton, space, nextButton, nil]];
+	[buttonBar addSubview: rightBar];
+	[rightBar release];
+
+	[prevButton release];
+	[space release];
+	[nextButton release];
 
 	[self setView: view];
 	[view release];
@@ -773,7 +862,9 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[recycledPages release]; recycledPages = nil;
 	[indicator release]; indicator = nil;
 	[slider release]; slider = nil;
-	[wrapper release]; wrapper = nil;
+	[sliderWrapper release]; sliderWrapper = nil;
+	[searchBar release]; searchBar = nil;
+	[buttonBar release]; buttonBar = nil;
 	[canvas release]; canvas = nil;
 }
 
@@ -786,6 +877,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 			close_document(self_doc);
 		});
 	}
+	free(searchText);
 	[outline release];
 	[key release];
 	[super dealloc];
@@ -807,7 +899,9 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
-	[wrapper setWidth: width - GAP - 24];
+	[sliderWrapper setWidth: SLIDER_W];
+	[searchBar setFrame: CGRectMake(0,44,SEARCH_W,44)];
+	[buttonBar setFrame: CGRectMake(SEARCH_W,44,BUTTON_W,44)];
 
 	[[self navigationController] setToolbarHidden: NO animated: animated];
 }
@@ -844,6 +938,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (void) hideNavigationBar
 {
 	if (![[self navigationController] isNavigationBarHidden]) {
+		[searchBar resignFirstResponder];
+
 		[UIView beginAnimations: @"MuNavBar" context: NULL];
 		[UIView setAnimationDelegate: self];
 		[UIView setAnimationDidStopSelector: @selector(onHideNavigationBarFinished)];
@@ -851,6 +947,9 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		[[[self navigationController] navigationBar] setAlpha: 0];
 		[[[self navigationController] toolbar] setAlpha: 0];
 		[indicator setAlpha: 0];
+
+		[searchBar setAlpha: 0];
+		[buttonBar setAlpha: 0];
 
 		[UIView commitAnimations];
 	}
@@ -861,11 +960,72 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[[self navigationController] setNavigationBarHidden: YES];
 	[[self navigationController] setToolbarHidden: YES];
 	[indicator setHidden: YES];
+	[searchBar setHidden: YES];
+	[buttonBar setHidden: YES];
 }
 
 - (void) onShowOutline: (id)sender
 {
 	[[self navigationController] pushViewController: outline animated: YES];
+}
+
+- (void) onToggleSearch: (id)sender
+{
+	if ([searchBar isHidden]) {
+		[searchBar becomeFirstResponder];
+		[searchBar setAlpha: 0];
+		[searchBar setHidden: NO];
+		[buttonBar setAlpha: 0];
+		[buttonBar setHidden: NO];
+		[UIView beginAnimations: @"MuNavBar" context: NULL];
+		[searchBar setAlpha: 1];
+		[buttonBar setAlpha: 1];
+		[UIView commitAnimations];
+	} else {
+		[searchBar resignFirstResponder];
+		[UIView beginAnimations: @"MuNavBar" context: NULL];
+		[UIView setAnimationDelegate: self];
+		[UIView setAnimationDidStopSelector: @selector(onHideSearchFinished)];
+		[searchBar setAlpha: 0];
+		[buttonBar setAlpha: 0];
+		[UIView commitAnimations];
+	}
+}
+
+- (void) onHideSearchFinished
+{
+	[searchBar setHidden: YES];
+	[buttonBar setHidden: YES];
+}
+
+- (void) resetSearch
+{
+	[searchBar resignFirstResponder];
+	free(searchText);
+	searchText = strdup([[searchBar text] UTF8String]);
+}
+
+- (void) onSearchPrev: (id)sender
+{
+	[self resetSearch];
+
+	dispatch_sync(queue, ^{});
+	int n = search_page(doc, current, searchText);
+	printf("search prev for '%s' found %d matches\n", searchText, n);
+}
+
+- (void) onSearchNext: (id)sender
+{
+	[self resetSearch];
+
+	dispatch_sync(queue, ^{});
+	int n = search_page(doc, current, searchText);
+	printf("search next for '%s' found %d matches\n", searchText, n);
+}
+
+- (void) searchBarSearchButtonClicked: (UISearchBar*)sender
+{
+	[self onSearchNext: sender];
 }
 
 - (void) onSlide: (id)sender
@@ -1008,7 +1168,10 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	width = size.width;
 	height = size.height;
 
-	[wrapper setWidth: width - GAP - 24];
+	[sliderWrapper setWidth: SLIDER_W];
+	[searchBar setFrame: CGRectMake(0,44,SEARCH_W,44)];
+	[buttonBar setFrame: CGRectMake(SEARCH_W,44,BUTTON_W,44)];
+
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation

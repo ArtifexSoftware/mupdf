@@ -192,7 +192,8 @@ static int
 match(fz_text_span *span, char *s, int n)
 {
 	int start = n, c;
-	while ((c = *s++)) {
+	while (*s) {
+		s += chartorune(&c, s);
 		if (c == ' ' && charat(span, n) == ' ') {
 			while (charat(span, n) == ' ')
 				n++;
