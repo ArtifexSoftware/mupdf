@@ -754,7 +754,10 @@ int main(int argc, char **argv)
 		compactxref();
 
 	/* Make renumbering affect all indirect references and update xref */
-	if (dogarbage >= 2)
+	/* Do not renumber objects if encryption is in use, as the object
+	 * numbers are baked into the streams/strings, and we can't currently
+	 * cope with moving them. See bug 692627. */
+	if (dogarbage >= 2 && xref->crypt == NULL)
 		renumberobjs();
 
 	writepdf();
