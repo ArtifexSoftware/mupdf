@@ -209,24 +209,39 @@ match(fz_text_span *span, char *s, int n)
 int
 search_page(struct document *doc, int number, char *needle)
 {
-	int pos, len, count = 0;
+	int pos, len, i, n;
+
+	if (strlen(needle) == 0)
+		return 0;
+
 	fz_text_span *text = fz_new_text_span();
 	fz_device *dev = fz_new_text_device(text);
 	draw_page(doc, number, dev, fz_identity);
 	fz_free_device(dev);
 
+	doc->hit_count = 0;
+
 	len = textlen(text);
 	for (pos = 0; pos < len; pos++) {
-		int n = match(text, needle, pos);
+		n = match(text, needle, pos);
 		if (n) {
-			// TODO: extract bbox(es) into a result list
 			printf("found a match at page %d, pos %d!\n", number, pos);
-			count++;
+			for (i = 0; i < n; i++) {
+				fz_bbox r = bboxat(text, pos + i);
+				if (!fz_is_empty_bbox(r) && doc->hit_count < nelem(doc->hit_bbox))
+					doc->hit_bbox[doc->hit_count++] = r;
+			}
 		}
 	}
 
 	fz_free_text_span(text);
-	return count;
+	return doc->hit_count;
+}
+
+fz_bbox
+search_result_bbox(struct document *doc, int i)
+{
+	return doc->hit_bbox[i];
 }
 
 void

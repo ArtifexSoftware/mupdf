@@ -12,7 +12,7 @@
 
 #define GAP 20
 #define INDICATOR_Y -44-24
-#define BUTTON_W (44*2+10-4)
+#define BUTTON_W (44*2+12-4)
 #define SEARCH_W (width - GAP - BUTTON_W)
 #define SLIDER_W (width - GAP - 24)
 
@@ -38,6 +38,16 @@ static float screenScale = 1;
 - (id) initWithTarget: (id)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages;
 @end
 
+@interface MuHitView : UIView
+{
+	CGSize pageSize;
+	int hitCount;
+	CGRect hitRects[500];
+}
+- (id) initWithSearchResults: (int)n forDocument: (struct document *)doc;
+- (void) setPageSize: (CGSize)s;
+@end
+
 @interface MuPageView : UIScrollView <UIScrollViewDelegate>
 {
 	struct document *doc;
@@ -45,6 +55,8 @@ static float screenScale = 1;
 	UIActivityIndicatorView *loadingView;
 	UIImageView *imageView;
 	UIImageView *tileView;
+	MuHitView *hitView;
+	CGSize pageSize;
 	CGRect tileFrame;
 	float tileScale;
 	BOOL cancel;
@@ -56,6 +68,8 @@ static float screenScale = 1;
 - (void) loadTile;
 - (void) willRotate;
 - (void) resetZoomAnimated: (BOOL)animated;
+- (void) showSearchResults: (int)count;
+- (void) clearSearchResults;
 - (int) number;
 @end
 
@@ -70,7 +84,8 @@ static float screenScale = 1;
 	UILabel *indicator;
 	UISlider *slider;
 	UISearchBar *searchBar;
-	char *searchText;
+	UIBarButtonItem *nextButton, *prevButton;
+	int searchPage;
 	UINavigationBar *buttonBar;
 	UIBarButtonItem *sliderWrapper;
 	int width; // current screen size
@@ -84,6 +99,7 @@ static float screenScale = 1;
 - (void) onShowOutline: (id)sender;
 - (void) onToggleSearch: (id)sender;
 - (void) resetSearch;
+- (void) showSearchResults: (int)count forPage: (int)number;
 - (void) onSlide: (id)sender;
 - (void) onTap: (UITapGestureRecognizer*)sender;
 - (void) showNavigationBar;
@@ -192,6 +208,13 @@ static CGSize fitPageToScreen(CGSize page, CGSize screen)
 	hscale = floorf(page.width * scale) / page.width;
 	vscale = floorf(page.height * scale) / page.height;
 	return CGSizeMake(hscale, vscale);
+}
+
+static CGSize measurePage(struct document *doc, int number)
+{
+	CGSize pageSize;
+	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	return pageSize;
 }
 
 static UIImage *renderPage(struct document *doc, int number, CGSize screenSize)
@@ -428,6 +451,51 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 #pragma mark -
 
+@implementation MuHitView
+
+- (id) initWithSearchResults: (int)n forDocument: (struct document *)doc
+{
+	self = [super init];
+	if (self) {
+		[self setOpaque: NO];
+
+		pageSize = CGSizeMake(1,1);
+
+		for (int i = 0; i < n && i < nelem(hitRects); i++) {
+			fz_bbox bbox = search_result_bbox(doc, i); // this is thread-safe enough
+			hitRects[i].origin.x = bbox.x0;
+			hitRects[i].origin.y = bbox.y0;
+			hitRects[i].size.width = bbox.x1 - bbox.x0;
+			hitRects[i].size.height = bbox.y1 - bbox.y0;
+		}
+		hitCount = n;
+	}
+	return self;
+}
+
+- (void) setPageSize: (CGSize)s
+{
+	pageSize = s;
+}
+
+- (void) drawRect: (CGRect)r
+{
+	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+
+	[[UIColor colorWithRed: 0.3 green: 0.3 blue: 1 alpha: 0.5] set];
+
+	for (int i = 0; i < hitCount; i++) {
+		CGRect rect = hitRects[i];
+		rect.origin.x *= scale.width;
+		rect.origin.y *= scale.height;
+		rect.size.width *= scale.width;
+		rect.size.height *= scale.height;
+		UIRectFill(rect);
+	}
+}
+
+@end
+
 @implementation MuPageView
 
 - (id) initWithFrame: (CGRect)frame document: (struct document*)aDoc page: (int)aNumber
@@ -468,6 +536,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		__block id block_self = self; // don't auto-retain self!
 		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
 	} else {
+		[hitView release];
 		[tileView release];
 		[loadingView release];
 		[imageView release];
@@ -478,6 +547,30 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (int) number
 {
 	return number;
+}
+
+- (void) showSearchResults: (int)count
+{
+	if (hitView) {
+		[hitView removeFromSuperview];
+		[hitView release];
+		hitView = nil;
+	}
+	hitView = [[MuHitView alloc] initWithSearchResults: count forDocument: doc];
+	if (imageView) {
+		[hitView setFrame: [imageView frame]];
+		[hitView setPageSize: pageSize];
+	}
+	[self addSubview: hitView];
+}
+
+- (void) clearSearchResults
+{
+	if (hitView) {
+		[hitView removeFromSuperview];
+		[hitView release];
+		hitView = nil;
+	}
 }
 
 - (void) resetZoomAnimated: (BOOL)animated
@@ -509,8 +602,10 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	dispatch_async(queue, ^{
 		if (!cancel) {
 			printf("render page %d\n", number);
+			CGSize size = measurePage(doc, number);
 			UIImage *image = renderPage(doc, number, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
+				pageSize = size;
 				[self displayImage: image];
 				[image release];
 			});
@@ -554,7 +649,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 			dispatch_async(queue, ^{
 				dispatch_async(dispatch_get_main_queue(), ^{
 					CGSize scale = fitPageToScreen(imageView.image.size, self.bounds.size);
-					if (fabs(scale.width - 1) > 0.1)
+					if (fabs(scale.width - 1) > 0.01)
 						[self loadPage];
 				});
 			});
@@ -564,8 +659,14 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 		[self setContentSize: imageView.frame.size];
 
+		if (hitView) {
+			[hitView setPageSize: pageSize];
+			[self bringSubviewToFront: hitView];
+		}
+
 		[self layoutIfNeeded];
 	}
+
 }
 
 - (void) willRotate
@@ -601,6 +702,10 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		loadingView.frame = frameToCenter;
 	else
 		imageView.frame = frameToCenter;
+
+	if (hitView && imageView)
+		[hitView setFrame: [imageView frame]];
+
 }
 
 - (UIView*) viewForZoomingInScrollView: (UIScrollView*)scrollView
@@ -610,7 +715,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) loadTile
 {
-	CGSize pageSize = self.bounds.size;
+	CGSize screenSize = self.bounds.size;
 
 	tileFrame.origin = self.contentOffset;
 	tileFrame.size = self.bounds.size;
@@ -640,7 +745,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		}
 
 		printf("render tile\n");
-		UIImage *image = renderTile(doc, number, pageSize, viewFrame, scale);
+		UIImage *image = renderTile(doc, number, screenSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
@@ -656,6 +761,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 				tileView = [[UIImageView alloc] initWithFrame: frame];
 				[tileView setImage: image];
 				[self addSubview: tileView];
+				if (hitView)
+					[self bringSubviewToFront: hitView];
 			} else {
 				printf("discard tile\n");
 			}
@@ -688,6 +795,12 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (void) scrollViewDidEndZooming: (UIScrollView*)scrollView withView: (UIView*)view atScale: (float)scale
 {
 	[self loadTile];
+}
+
+- (void) scrollViewDidZoom: (UIScrollView*)scrollView
+{
+	if (hitView && imageView)
+		[hitView setFrame: [imageView frame]];
 }
 
 @end
@@ -818,6 +931,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,44,SEARCH_W,44)];
 	[searchBar setHidden: YES];
 	[searchBar setTranslucent: YES];
+	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
 	[view addSubview: searchBar];
 
@@ -830,16 +944,20 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[buttonBar setTranslucent: YES];
 	[view addSubview: buttonBar];
 
-	UIBarButtonItem *prevButton = [[UIBarButtonItem alloc]
+	prevButton = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem: UIBarButtonSystemItemRewind
 		target:self action:@selector(onSearchPrev:)];
+	nextButton = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemFastForward
+		target:self action:@selector(onSearchNext:)];
+
+	[prevButton setEnabled: NO];
+	[nextButton setEnabled: NO];
+
 	UIBarButtonItem *space = [[UIBarButtonItem alloc]
 		initWithBarButtonSystemItem: UIBarButtonSystemItemFixedSpace
 		target:nil action:nil];
-	[space setWidth: 10];
-	UIBarButtonItem *nextButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemFastForward
-		target:self action:@selector(onSearchNext:)];
+	[space setWidth: 12];
 
 	// TODO: add activityindicator to search bar
 
@@ -848,9 +966,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[buttonBar addSubview: rightBar];
 	[rightBar release];
 
-	[prevButton release];
 	[space release];
-	[nextButton release];
 
 	[self setView: view];
 	[view release];
@@ -864,6 +980,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[slider release]; slider = nil;
 	[sliderWrapper release]; sliderWrapper = nil;
 	[searchBar release]; searchBar = nil;
+	[prevButton release]; prevButton = nil;
+	[nextButton release]; nextButton = nil;
 	[buttonBar release]; buttonBar = nil;
 	[canvas release]; canvas = nil;
 }
@@ -877,7 +995,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 			close_document(self_doc);
 		});
 	}
-	free(searchText);
 	[outline release];
 	[key release];
 	[super dealloc];
@@ -1000,32 +1117,101 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) resetSearch
 {
+	searchPage = -1;
+	for (MuPageView *view in [canvas subviews])
+		[view clearSearchResults];
+}
+
+- (void) showSearchResults: (int)count forPage: (int)number
+{
+	printf("search found %d matches on page %d\n", count, number);
+	searchPage = number;
+	[self gotoPage: number animated: NO];
+	for (MuPageView *view in [canvas subviews])
+		if ([view number] == number)
+			[view showSearchResults: count];
+		else
+			[view clearSearchResults];
+}
+
+- (void) searchInDirection: (int)dir
+{
+	UITextField *searchField;
+	char *needle;
+	int start;
+
 	[searchBar resignFirstResponder];
-	free(searchText);
-	searchText = strdup([[searchBar text] UTF8String]);
+
+	if (searchPage == current)
+		start = current + dir;
+	else
+		start = current;
+
+	needle = strdup([[searchBar text] UTF8String]);
+
+	searchField = nil;
+	for (id view in [searchBar subviews])
+		if ([view isKindOfClass: [UITextField class]])
+			searchField = view;
+
+	[prevButton setEnabled: NO];
+	[nextButton setEnabled: NO];
+
+	dispatch_async(queue, ^{
+		for (int i = start; i >= 0 && i < count_pages(doc); i += dir) {
+			int n = search_page(doc, i, needle);
+			if (n) {
+				dispatch_sync(dispatch_get_main_queue(), ^{
+					[prevButton setEnabled: YES];
+					[nextButton setEnabled: YES];
+					[self showSearchResults: n forPage: i]; // this is why we don't async
+					free(needle);
+				});
+				return;
+			}
+		}
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			printf("no search results found\n");
+			[prevButton setEnabled: YES];
+			[nextButton setEnabled: YES];
+			UIAlertView *alert = [[UIAlertView alloc]
+				initWithTitle: @"Search Completed"
+				message: @"No matches found"
+				delegate: nil
+				cancelButtonTitle: @"Okay"
+				otherButtonTitles: nil];
+			[alert show];
+			[alert release];
+			free(needle);
+		});
+	});
 }
 
 - (void) onSearchPrev: (id)sender
 {
-	[self resetSearch];
-
-	dispatch_sync(queue, ^{});
-	int n = search_page(doc, current, searchText);
-	printf("search prev for '%s' found %d matches\n", searchText, n);
+	[self searchInDirection: -1];
 }
 
 - (void) onSearchNext: (id)sender
 {
-	[self resetSearch];
-
-	dispatch_sync(queue, ^{});
-	int n = search_page(doc, current, searchText);
-	printf("search next for '%s' found %d matches\n", searchText, n);
+	[self searchInDirection: 1];
 }
 
 - (void) searchBarSearchButtonClicked: (UISearchBar*)sender
 {
 	[self onSearchNext: sender];
+}
+
+- (void) searchBar: (UISearchBar*)sender textDidChange: (NSString*)searchText
+{
+	[self resetSearch];
+	if ([[searchBar text] length] > 0) {
+		[prevButton setEnabled: YES];
+		[nextButton setEnabled: YES];
+	} else {
+		[prevButton setEnabled: NO];
+		[nextButton setEnabled: NO];
+	}
 }
 
 - (void) onSlide: (id)sender
@@ -1094,6 +1280,10 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[self createPageView: current];
 	[self createPageView: current - 1];
 	[self createPageView: current + 1];
+
+	// reset search results when page has flipped
+	if (current != searchPage)
+		[self resetSearch];
 }
 
 - (void) createPageView: (int)number
@@ -1118,6 +1308,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		number = 0;
 	if (number >= count_pages(doc))
 		number = count_pages(doc) - 1;
+	if (current == number)
+		return;
 	if (animated) {
 		// setContentOffset:animated: does not use the normal animation
 		// framework. It also doesn't play nice with the tap gesture
