@@ -80,7 +80,6 @@ load_page(struct document *doc, int number)
 			pdf_free_page(doc->pdf_page);
 		}
 		doc->pdf_page = NULL;
-printf("load pdf page %d\n", number);
 		error = pdf_load_page(&doc->pdf_page, doc->pdf, number);
 		if (error)
 			fz_catch(error, "cannot load page %d", number);
@@ -89,7 +88,6 @@ printf("load pdf page %d\n", number);
 		if (doc->xps_page)
 			xps_free_page(doc->xps, doc->xps_page);
 		doc->xps_page = NULL;
-printf("load xps page %d\n", number);
 		error = xps_load_page(&doc->xps_page, doc->xps, number);
 		if (error)
 			fz_catch(error, "cannot load page %d", number);
@@ -225,7 +223,6 @@ search_page(struct document *doc, int number, char *needle)
 	for (pos = 0; pos < len; pos++) {
 		n = match(text, needle, pos);
 		if (n) {
-			printf("found a match at page %d, pos %d!\n", number, pos);
 			for (i = 0; i < n; i++) {
 				fz_bbox r = bboxat(text, pos + i);
 				if (!fz_is_empty_bbox(r) && doc->hit_count < nelem(doc->hit_bbox))

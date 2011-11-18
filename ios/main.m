@@ -1,4 +1,4 @@
-#import <UIKit/UIKit.h> 
+#import <UIKit/UIKit.h>
 
 #undef ABS
 #undef MIN
@@ -364,7 +364,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 {
 	int row = [indexPath row];
 	if (row == 0)
-		[self openDocument: @"../MuPDF.app/About.pdf"];
+		[self openDocument: @"../MuPDF.app/About.xps"];
 	else
 		[self openDocument: [files objectAtIndex: row - 1]];
 }
@@ -455,11 +455,11 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (id) initWithSearchResults: (int)n forDocument: (struct document *)doc
 {
-	self = [super init];
+	self = [super initWithFrame: CGRectMake(0,0,100,100)];
 	if (self) {
 		[self setOpaque: NO];
 
-		pageSize = CGSizeMake(1,1);
+		pageSize = CGSizeMake(100,100);
 
 		for (int i = 0; i < n && i < nelem(hitRects); i++) {
 			fz_bbox bbox = search_result_bbox(doc, i); // this is thread-safe enough
@@ -476,6 +476,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (void) setPageSize: (CGSize)s
 {
 	pageSize = s;
+	// if page takes a long time to load we may have drawn at the initial (wrong) size
+	[self setNeedsDisplay];
 }
 
 - (void) drawRect: (CGRect)r
@@ -623,10 +625,15 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		loadingView = nil;
 	}
 
+	if (hitView)
+		[hitView setPageSize: pageSize];
+
 	if (!imageView) {
 		imageView = [[UIImageView alloc] initWithImage: image];
 		imageView.opaque = YES;
 		[self addSubview: imageView];
+		if (hitView)
+			[self bringSubviewToFront: hitView];
 	} else {
 		[imageView setImage: image];
 	}
@@ -658,11 +665,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		}
 
 		[self setContentSize: imageView.frame.size];
-
-		if (hitView) {
-			[hitView setPageSize: pageSize];
-			[self bringSubviewToFront: hitView];
-		}
 
 		[self layoutIfNeeded];
 	}
@@ -705,7 +707,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	if (hitView && imageView)
 		[hitView setFrame: [imageView frame]];
-
 }
 
 - (UIView*) viewForZoomingInScrollView: (UIScrollView*)scrollView
@@ -1124,7 +1125,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) showSearchResults: (int)count forPage: (int)number
 {
-	printf("search found %d matches on page %d\n", count, number);
+	printf("search found match on page %d\n", number);
 	searchPage = number;
 	[self gotoPage: number animated: NO];
 	for (MuPageView *view in [canvas subviews])
