@@ -75,8 +75,6 @@ static float screenScale = 1;
 {
 	struct document *doc;
 	NSString *key;
-	NSMutableSet *visiblePages;
-	NSMutableSet *recycledPages;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
 	UILabel *indicator;
@@ -170,15 +168,16 @@ static void releasePixmap(void *info, const void *data, size_t size)
 static UIImage *newImageWithPixmap(fz_pixmap *pix)
 {
 	CGDataProviderRef cgdata = CGDataProviderCreateWithData(pix, pix->samples, pix->w * 4 * pix->h, releasePixmap);
+	CGColorSpaceRef cgcolor = CGColorSpaceCreateDeviceRGB();
 	CGImageRef cgimage = CGImageCreate(pix->w, pix->h, 8, 32, 4 * pix->w,
-			CGColorSpaceCreateDeviceRGB(),
-			kCGBitmapByteOrderDefault,
+			cgcolor, kCGBitmapByteOrderDefault,
 			cgdata, NULL, NO, kCGRenderingIntentDefault);
 	UIImage *image = [[UIImage alloc]
 		initWithCGImage: cgimage
 		scale: screenScale
 		orientation: UIImageOrientationUp];
 	CGDataProviderRelease(cgdata);
+	CGColorSpaceRelease(cgcolor);
 	CGImageRelease(cgimage);
 	return image;
 }
@@ -845,9 +844,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[view setAutoresizesSubviews: YES];
 
-	visiblePages = [[NSMutableSet alloc] init];
-	recycledPages = [[NSMutableSet alloc] init];
-
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,GAP,0)];
 	[canvas setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[canvas setPagingEnabled: YES];
@@ -880,11 +876,13 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	[self setToolbarItems: [NSArray arrayWithObjects: sliderWrapper, nil]];
 
-	// Set up the buttons on the navigation bar
+	// Set up the buttons on the navigation and search bar
 
-	outlineButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-		target:self action:@selector(onShowOutline:)];
+	if (outline) {
+		outlineButton = [[UIBarButtonItem alloc]
+			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
+			target:self action:@selector(onShowOutline:)];
+	}
 	cancelButton = [[UIBarButtonItem alloc]
 		initWithTitle: @"Cancel" style: UIBarButtonItemStyleBordered
 		target:self action:@selector(onCancelSearch:)];
@@ -898,7 +896,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		initWithBarButtonSystemItem: UIBarButtonSystemItemFastForward
 		target:self action:@selector(onSearchNext:)];
 
-	// Set up the search bar and prev/next search buttons
 	float w = [[UIScreen mainScreen] bounds].size.width - 180;
 
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,w,32)];
@@ -920,10 +917,16 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[view release];
 }
 
-- (void) viewDidUnload
+- (void) dealloc
 {
-	[visiblePages release]; visiblePages = nil;
-	[recycledPages release]; recycledPages = nil;
+	if (doc) {
+		struct document *self_doc = doc; // don't auto-retain self here!
+		dispatch_async(queue, ^{
+			printf("close document\n");
+			close_document(self_doc);
+		});
+	}
+
 	[indicator release]; indicator = nil;
 	[slider release]; slider = nil;
 	[sliderWrapper release]; sliderWrapper = nil;
@@ -934,17 +937,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[prevButton release]; prevButton = nil;
 	[nextButton release]; nextButton = nil;
 	[canvas release]; canvas = nil;
-}
 
-- (void) dealloc
-{
-	if (doc) {
-		struct document *self_doc = doc; // don't auto-retain self here!
-		dispatch_async(queue, ^{
-			printf("close document\n");
-			close_document(self_doc);
-		});
-	}
 	[outline release];
 	[key release];
 	[super dealloc];
@@ -1212,18 +1205,18 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
 	[slider setValue: current];
 
-	// swap the page views in and out
+	// swap the distant page views out
 
-	for (MuPageView *view in visiblePages) {
+	NSMutableSet *invisiblePages = [[NSMutableSet alloc] init];
+	for (MuPageView *view in [canvas subviews]) {
 		if ([view number] != current)
 			[view resetZoomAnimated: YES];
-		if ([view number] < current - 2 || [view number] > current + 2) {
-			[recycledPages addObject: view];
-			[view removeFromSuperview];
-		}
+		if ([view number] < current - 2 || [view number] > current + 2)
+			[invisiblePages addObject: view];
 	}
-	[visiblePages minusSet: recycledPages];
-	[recycledPages removeAllObjects]; // don't bother recycling them...
+	for (MuPageView *view in invisiblePages)
+		[view removeFromSuperview];
+	[invisiblePages release]; // don't bother recycling them...
 
 	[self createPageView: current];
 	[self createPageView: current - 1];
@@ -1244,7 +1237,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 			found = 1;
 	if (!found) {
 		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: doc page: number];
-		[visiblePages addObject: view];
 		[canvas addSubview: view];
 		[view release];
 	}
@@ -1273,7 +1265,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		[UIView setAnimationDelegate: self];
 		[UIView setAnimationDidStopSelector: @selector(onGotoPageFinished)];
 
-		for (MuPageView *view in visiblePages)
+		for (MuPageView *view in [canvas subviews])
 			[view resetZoomAnimated: NO];
 
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
@@ -1282,7 +1274,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 		[UIView commitAnimations];
 	} else {
-		for (MuPageView *view in visiblePages)
+		for (MuPageView *view in [canvas subviews])
 			[view resetZoomAnimated: NO];
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 	}
@@ -1316,13 +1308,13 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[canvas setContentSize: CGSizeMake(count_pages(doc) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
-	for (MuPageView *view in visiblePages) {
+	for (MuPageView *view in [canvas subviews]) {
 		if ([view number] == current) {
 			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
 			[view willRotate];
 		}
 	}
-	for (MuPageView *view in visiblePages) {
+	for (MuPageView *view in [canvas subviews]) {
 		if ([view number] != current) {
 			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
 			[view willRotate];
