@@ -22,8 +22,13 @@ static float screenScale = 1;
 {
 	NSArray *files;
 	NSTimer *timer;
+	struct document *_doc; // temporaries for juggling password dialog
+	NSString *_filename;
 }
 - (void) openDocument: (NSString*)filename;
+- (void) askForPassword: (NSString*)prompt;
+- (void) onPasswordOkay;
+- (void) onPasswordCancel;
 - (void) reload;
 @end
 
@@ -89,7 +94,7 @@ static float screenScale = 1;
 	int current; // currently visible page
 	int scroll_animating; // stop view updates during scrolling animations
 }
-- (id) initWithFile: (NSString*)filename;
+- (id) initWithFilename: (NSString*)nsfilename document: (struct document *)aDoc;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;
@@ -351,14 +356,76 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		[self openDocument: [files objectAtIndex: row - 1]];
 }
 
-- (void) openDocument: (NSString*)filename
+- (void) openDocument: (NSString*)nsfilename
 {
-	MuDocumentController *document = [[MuDocumentController alloc] initWithFile: filename];
+	char filename[PATH_MAX];
+
+	dispatch_sync(queue, ^{});
+
+	strcpy(filename, [NSHomeDirectory() UTF8String]);
+	strcat(filename, "/Documents/");
+	strcat(filename, [nsfilename UTF8String]);
+
+	printf("open document '%s'\n", filename);
+
+	_filename = [nsfilename retain];
+	_doc = open_document(filename);
+	if (!_doc) {
+		showAlert(@"Cannot open document");
+		return;
+	}
+
+	if (needs_password(_doc))
+		[self askForPassword: @"'%@' needs a password:"];
+	else
+		[self onPasswordOkay];
+}
+
+- (void) askForPassword: (NSString*)prompt
+{
+	UIAlertView *passwordAlertView = [[UIAlertView alloc]
+		initWithTitle: @"Password Protected"
+		message: [NSString stringWithFormat: prompt, [_filename lastPathComponent]]
+		delegate: self
+		cancelButtonTitle: @"Cancel"
+		otherButtonTitles: @"Done", nil];
+	[passwordAlertView setAlertViewStyle: UIAlertViewStyleSecureTextInput];
+	[passwordAlertView show];
+	[passwordAlertView release];
+}
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+	char *password = (char*) [[[alertView textFieldAtIndex: 0] text] UTF8String];
+	[alertView dismissWithClickedButtonIndex: buttonIndex animated: TRUE];
+	if (buttonIndex == 1) {
+		if (authenticate_password(_doc, password))
+			[self onPasswordOkay];
+		else
+			[self askForPassword: @"Wrong password for '%@'. Try again:"];
+	} else {
+		[self onPasswordCancel];
+	}
+}
+
+- (void) onPasswordOkay
+{
+	MuDocumentController *document = [[MuDocumentController alloc] initWithFilename: _filename document: _doc];
 	if (document) {
 		[self setTitle: @"Library"];
 		[[self navigationController] pushViewController: document animated: YES];
 		[document release];
 	}
+	[_filename release];
+	_doc = NULL;
+}
+
+- (void) onPasswordCancel
+{
+	[_filename release];
+	printf("close document (password cancel)\n");
+	close_document(_doc);
+	_doc = NULL;
 }
 
 @end
@@ -792,30 +859,16 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 @implementation MuDocumentController
 
-- (id) initWithFile: (NSString*)nsfilename
+- (id) initWithFilename: (NSString*)filename document: (struct document *)aDoc
 {
-	char filename[PATH_MAX];
-
 	self = [super init];
 	if (!self)
 		return nil;
 
-	key = [nsfilename retain];
+	key = [filename retain];
+	doc = aDoc;
 
 	dispatch_sync(queue, ^{});
-
-	strcpy(filename, [NSHomeDirectory() UTF8String]);
-	strcat(filename, "/Documents/");
-	strcat(filename, [nsfilename UTF8String]);
-
-	printf("open document '%s'\n", filename);
-
-	doc = open_document(filename);
-	if (!doc) {
-		showAlert(@"Cannot open document");
-		[self release];
-		return nil;
-	}
 
 	fz_outline *root = load_outline(doc);
 	if (root) {
@@ -1119,7 +1172,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 				initWithTitle: @"No matches found for:"
 				message: [NSString stringWithUTF8String: needle]
 				delegate: nil
-				cancelButtonTitle: @"Okay"
+				cancelButtonTitle: @"Close"
 				otherButtonTitles: nil];
 			[alert show];
 			[alert release];

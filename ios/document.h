@@ -25,6 +25,8 @@ struct document
 };
 
 struct document *open_document(char *filename);
+int needs_password(struct document *doc);
+int authenticate_password(struct document *doc, char *password);
 fz_outline *load_outline(struct document *doc);
 int count_pages(struct document *doc);
 void measure_page(struct document *doc, int number, float *w, float *h);

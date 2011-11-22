@@ -14,7 +14,7 @@ open_document(char *filename)
 		struct document *doc = fz_malloc(sizeof *doc);
 		memset(doc, 0, sizeof *doc);
 		doc->number = -1;
-		error = pdf_open_xref(&doc->pdf, filename, "");
+		error = pdf_open_xref(&doc->pdf, filename, NULL);
 		if (error) {
 			fz_free(doc);
 			fz_rethrow(error, "cannot open pdf document");
@@ -43,6 +43,24 @@ open_document(char *filename)
 		fz_throw("unknown document format");
 		return NULL;
 	}
+}
+
+int
+needs_password(struct document *doc)
+{
+	if (doc->pdf) {
+		return pdf_needs_password(doc->pdf);
+	}
+	return 0;
+}
+
+int
+authenticate_password(struct document *doc, char *password)
+{
+	if (doc->pdf) {
+		return pdf_authenticate_password(doc->pdf, password);
+	}
+	return 1;
 }
 
 fz_outline *
