@@ -36,7 +36,10 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 		/* Send NULL xref so we don't try to resolve references */
 		error = pdf_parse_dict(&dict, NULL, file, buf, cap);
 		if (error)
-			return fz_rethrow(error, "cannot parse object");
+		{
+			fz_catch(error, "cannot parse object - repair will be incomplete");
+			dict = fz_new_dict(2);
+		}
 
 		obj = fz_dict_gets(dict, "Type");
 		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "XRef"))
