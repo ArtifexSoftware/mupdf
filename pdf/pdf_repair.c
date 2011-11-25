@@ -33,8 +33,15 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 		fz_obj *dict, *obj;
 
 		/* Send NULL xref so we don't try to resolve references */
-		dict = pdf_parse_dict(NULL, file, buf, cap);
-		/* RJW: "cannot parse object" */
+		fz_try(ctx)
+		{
+			dict = pdf_parse_dict(NULL, file, buf, cap);
+		}
+		fz_catch(ctx)
+		{
+			/* Silently swallow the error */
+			dict = fz_new_dict(ctx, 2);
+		}
 
 		obj = fz_dict_gets(dict, "Type");
 		if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "XRef"))
@@ -66,13 +73,19 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 	while ( tok != PDF_TOK_STREAM &&
 		tok != PDF_TOK_ENDOBJ &&
 		tok != PDF_TOK_ERROR &&
-		tok != PDF_TOK_EOF )
+		tok != PDF_TOK_EOF &&
+		tok != PDF_TOK_INT )
 	{
 		tok = pdf_lex(file, buf, cap, &len);
 		/* RJW: "cannot scan for endobj or stream token" */
 	}
 
-	if (tok == PDF_TOK_STREAM)
+	if (tok == PDF_TOK_INT)
+	{
+		while (len-- > 0)
+			fz_unread_byte(file);
+	}
+	else if (tok == PDF_TOK_STREAM)
 	{
 		int c = fz_read_byte(file);
 		if (c == '\r') {

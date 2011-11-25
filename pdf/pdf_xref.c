@@ -469,6 +469,165 @@ pdf_load_xref(pdf_xref *xref, char *buf, int bufsize)
 	}
 }
 
+void
+pdf_ocg_set_config(pdf_xref *xref, int config)
+{
+	int i, j, len, len2;
+	pdf_ocg_descriptor *desc = xref->ocg;
+	fz_obj *obj, *cobj;
+	char *name;
+
+	obj = fz_dict_gets(fz_dict_gets(xref->trailer, "Root"), "OCProperties");
+	if (obj == NULL)
+	{
+		if (config == 0)
+			return;
+		else
+			fz_throw(xref->ctx, "Unknown OCG config (None known!)");
+	}
+	if (config == 0)
+	{
+		cobj = fz_dict_gets(obj, "D");
+		if (cobj == NULL)
+			fz_throw(xref->ctx, "No default OCG config");
+	}
+	else
+	{
+		cobj = fz_array_get(fz_dict_gets(obj, "Configs"), config);
+		if (cobj == NULL)
+			fz_throw(xref->ctx, "Illegal OCG config");
+	}
+
+	if (desc->intent != NULL)
+		fz_drop_obj(desc->intent);
+	desc->intent = fz_dict_gets(cobj, "Intent");
+	if (desc->intent != NULL)
+		fz_keep_obj(desc->intent);
+
+	len = desc->len;
+	name = fz_to_name(fz_dict_gets(cobj, "BaseState"));
+	if (strcmp(name, "Unchanged") == 0)
+	{
+		/* Do nothing */
+	}
+	else if (strcmp(name, "OFF") == 0)
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 0;
+		}
+	}
+	else /* Default to ON */
+	{
+		for (i = 0; i < len; i++)
+		{
+			desc->ocgs[i].state = 1;
+		}
+	}
+
+	obj = fz_dict_gets(cobj, "ON");
+	len2 = fz_array_len(obj);
+	for (i = 0; i < len2; i++)
+	{
+		fz_obj *o = fz_array_get(obj, i);
+		int n = fz_to_num(o);
+		int g = fz_to_gen(o);
+		for (j=0; j < len; j++)
+		{
+			if (desc->ocgs[j].num == n && desc->ocgs[j].gen == g)
+			{
+				desc->ocgs[j].state = 1;
+				break;
+			}
+		}
+	}
+
+	obj = fz_dict_gets(cobj, "OFF");
+	len2 = fz_array_len(obj);
+	for (i = 0; i < len2; i++)
+	{
+		fz_obj *o = fz_array_get(obj, i);
+		int n = fz_to_num(o);
+		int g = fz_to_gen(o);
+		for (j=0; j < len; j++)
+		{
+			if (desc->ocgs[j].num == n && desc->ocgs[j].gen == g)
+			{
+				desc->ocgs[j].state = 0;
+				break;
+			}
+		}
+	}
+
+	/* FIXME: Should make 'num configs' available in the descriptor. */
+	/* FIXME: Should copy out 'Intent' here into the descriptor, and remove
+	 * csi->intent in favour of that. */
+	/* FIXME: Should copy 'AS' into the descriptor, and visibility
+	 * decisions should respect it. */
+	/* FIXME: Make 'Order' available via the descriptor (when we have an
+	 * app that needs it) */
+	/* FIXME: Make 'ListMode' available via the descriptor (when we have
+	 * an app that needs it) */
+	/* FIXME: Make 'RBGroups' available via the descriptor (when we have
+	 * an app that needs it) */
+	/* FIXME: Make 'Locked' available via the descriptor (when we have
+	 * an app that needs it) */
+}
+
+static void
+pdf_read_ocg(pdf_xref *xref)
+{
+	fz_obj *obj, *ocg;
+	int len, i;
+	pdf_ocg_descriptor * volatile desc;
+	fz_context *ctx = xref->ctx;
+
+	obj = fz_dict_gets(fz_dict_gets(xref->trailer, "Root"), "OCProperties");
+	if (obj == NULL)
+		return;
+	ocg = fz_dict_gets(obj, "OCGs");
+	if (ocg == NULL || !fz_is_array(ocg))
+		/* Not ever supposed to happen, but live with it. */
+		return;
+	len = fz_array_len(ocg);
+	fz_try(ctx)
+	{
+		desc = fz_calloc(ctx, 1, sizeof(*desc));
+		desc->len = len;
+		desc->ocgs = fz_calloc(ctx, len, sizeof(*desc->ocgs));
+		desc->intent = NULL;
+		for (i=0; i < len; i++)
+		{
+			fz_obj *o = fz_array_get(ocg, i);
+			desc->ocgs[i].num = fz_to_num(o);
+			desc->ocgs[i].gen = fz_to_gen(o);
+			desc->ocgs[i].state = 0;
+		}
+		xref->ocg = desc;
+	}
+	fz_catch(ctx)
+	{
+		if (desc != NULL)
+			fz_free(ctx, desc->ocgs);
+		fz_free(ctx, desc);
+		fz_rethrow(ctx);
+	}
+
+	pdf_ocg_set_config(xref, 0);
+}
+
+static void
+pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
+{
+	if (desc == NULL)
+		return;
+
+	if (desc->intent)
+		fz_drop_obj(desc->intent);
+	fz_free(ctx, desc->ocgs);
+	fz_free(ctx, desc);
+}
+
 /*
  * Initialize and load xref tables.
  * If password is not null, try to decrypt.
@@ -591,6 +750,16 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 		fz_throw(ctx, "cannot open document");
 	}
 
+	fz_try(ctx)
+	{
+		pdf_read_ocg(xref);
+	}
+	fz_catch(ctx)
+	{
+		pdf_free_xref(xref);
+		fz_throw(ctx, "Broken Optional Content");
+	}
+
 	return xref;
 }
 
@@ -636,6 +805,8 @@ pdf_free_xref(pdf_xref *xref)
 		fz_drop_obj(xref->trailer);
 	if (xref->crypt)
 		pdf_free_crypt(ctx, xref->crypt);
+
+	pdf_free_ocg(ctx, xref->ocg);
 
 	fz_free(ctx, xref);
 }

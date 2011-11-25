@@ -157,6 +157,15 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 		if (obj)
 			app->doctitle = pdf_to_utf8(ctx, obj);
 	}
+	if (!app->doctitle)
+	{
+		app->doctitle = filename;
+		if (strrchr(app->doctitle, '\\'))
+			app->doctitle = strrchr(app->doctitle, '\\') + 1;
+		if (strrchr(app->doctitle, '/'))
+			app->doctitle = strrchr(app->doctitle, '/') + 1;
+		app->doctitle = fz_strdup(ctx, app->doctitle);
+	}
 
 	/*
 	 * Start at first page

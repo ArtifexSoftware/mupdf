@@ -287,7 +287,7 @@ static void renumberobjs(void)
 
 static void retainpages(int argc, char **argv)
 {
-	fz_obj *oldroot, *root, *pages, *kids, *countobj, *parent;
+	fz_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
 
 	/* Load the old page tree */
 	fz_try(xref->ctx)
@@ -299,9 +299,11 @@ static void retainpages(int argc, char **argv)
 		die(fz_error_note(1, "cannot load page tree"));
 	}
 
-	/* Keep only pages/type entry to avoid references to unretained pages */
+	/* Keep only pages/type and (reduced) dest entries to avoid
+	 * references to unretained pages */
 	oldroot = fz_dict_gets(xref->trailer, "Root");
 	pages = fz_dict_gets(oldroot, "Pages");
+	olddests = pdf_load_name_tree(xref, "Dests");
 
 	root = fz_new_dict(ctx, 2);
 	fz_dict_puts(root, "Type", fz_dict_gets(oldroot, "Type"));
@@ -373,6 +375,41 @@ static void retainpages(int argc, char **argv)
 	fz_drop_obj(countobj);
 	fz_dict_puts(pages, "Kids", kids);
 	fz_drop_obj(kids);
+
+	/* Also preserve the (partial) Dests name tree */
+	if (olddests)
+	{
+		int i;
+		fz_obj *names = fz_new_dict(ctx, 1);
+		fz_obj *dests = fz_new_dict(ctx, 1);
+		fz_obj *names_list = fz_new_array(ctx, 32);
+
+		for (i = 0; i < fz_dict_len(olddests); i++)
+		{
+			fz_obj *key = fz_dict_get_key(olddests, i);
+			fz_obj *val = fz_dict_get_val(olddests, i);
+			fz_obj *key_str = fz_new_string(ctx, fz_to_name(key), strlen(fz_to_name(key)));
+			fz_obj *dest = fz_dict_gets(val, "D");
+
+			dest = fz_array_get(dest ? dest : val, 0);
+			if (fz_array_contains(fz_dict_gets(pages, "Kids"), dest))
+			{
+				fz_array_push(names_list, key_str);
+				fz_array_push(names_list, val);
+			}
+			fz_drop_obj(key_str);
+		}
+
+		root = fz_dict_gets(xref->trailer, "Root");
+		fz_dict_puts(dests, "Names", names_list);
+		fz_dict_puts(names, "Dests", dests);
+		fz_dict_puts(root, "Names", names);
+
+		fz_drop_obj(names);
+		fz_drop_obj(dests);
+		fz_drop_obj(names_list);
+		fz_drop_obj(olddests);
+	}
 }
 
 /*
@@ -792,7 +829,10 @@ int main(int argc, char **argv)
 		compactxref();
 
 	/* Make renumbering affect all indirect references and update xref */
-	if (dogarbage >= 2)
+	/* Do not renumber objects if encryption is in use, as the object
+	 * numbers are baked into the streams/strings, and we can't currently
+	 * cope with moving them. See bug 692627. */
+	if (dogarbage >= 2 && xref->crypt == NULL)
 		renumberobjs();
 
 	writepdf();

@@ -45,6 +45,8 @@ char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
 
 typedef struct pdf_xref_entry_s pdf_xref_entry;
 typedef struct pdf_crypt_s pdf_crypt;
+typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
+typedef struct pdf_ocg_entry_s pdf_ocg_entry;
 
 struct pdf_xref_entry_s
 {
@@ -53,6 +55,20 @@ struct pdf_xref_entry_s
 	int stm_ofs;	/* on-disk stream */
 	fz_obj *obj;	/* stored/cached object */
 	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
+};
+
+struct pdf_ocg_entry_s
+{
+	int num;
+	int gen;
+	int state;
+};
+
+struct pdf_ocg_descriptor_s
+{
+	int len;
+	pdf_ocg_entry *ocgs;
+	fz_obj *intent;
 };
 
 struct pdf_xref_s
@@ -64,6 +80,7 @@ struct pdf_xref_s
 	int file_size;
 	pdf_crypt *crypt;
 	fz_obj *trailer;
+	pdf_ocg_descriptor *ocg;
 
 	int len;
 	pdf_xref_entry *table;
@@ -478,7 +495,7 @@ void pdf_free_page(fz_context *ctx, pdf_page *page);
  * Content stream parsing
  */
 
-void pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm, char *target);
+void pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event);
 void pdf_run_page(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matrix ctm);
 void pdf_run_glyph(pdf_xref *xref, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm);
 

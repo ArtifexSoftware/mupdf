@@ -37,16 +37,15 @@ fz_free_text_span(fz_context *ctx, fz_text_span *span)
 {
 	fz_text_span *next;
 
-	do
+	while (span)
 	{
-		next = span->next;
 		if (span->font)
 			fz_drop_font(ctx, span->font);
+		next = span->next;
 		fz_free(ctx, span->text);
 		fz_free(ctx, span);
 		span = next;
 	}
-	while (span != NULL);
 }
 
 static void
@@ -160,32 +159,34 @@ fz_debug_text_span_xml(fz_text_span *span)
 	char buf[10];
 	int c, n, k, i;
 
-	printf("<span font=\"%s\" size=\"%g\" wmode=\"%d\" eol=\"%d\">\n",
-		span->font ? span->font->name : "NULL", span->size, span->wmode, span->eol);
-
-	for (i = 0; i < span->len; i++)
+	while (span)
 	{
-		printf("\t<char ucs=\"");
-		c = span->text[i].c;
-		if (c < 128)
-			putchar(c);
-		else
+		printf("<span font=\"%s\" size=\"%g\" wmode=\"%d\" eol=\"%d\">\n",
+			span->font ? span->font->name : "NULL", span->size, span->wmode, span->eol);
+
+		for (i = 0; i < span->len; i++)
 		{
-			n = runetochar(buf, &c);
-			for (k = 0; k < n; k++)
-				putchar(buf[k]);
+			printf("\t<char ucs=\"");
+			c = span->text[i].c;
+			if (c < 128)
+				putchar(c);
+			else
+			{
+				n = runetochar(buf, &c);
+				for (k = 0; k < n; k++)
+					putchar(buf[k]);
+			}
+			printf("\" bbox=\"%d %d %d %d\" />\n",
+				span->text[i].bbox.x0,
+				span->text[i].bbox.y0,
+				span->text[i].bbox.x1,
+				span->text[i].bbox.y1);
 		}
-		printf("\" bbox=\"%d %d %d %d\" />\n",
-			span->text[i].bbox.x0,
-			span->text[i].bbox.y0,
-			span->text[i].bbox.x1,
-			span->text[i].bbox.y1);
+
+		printf("</span>\n");
+
+		span = span->next;
 	}
-
-	printf("</span>\n");
-
-	if (span->next)
-		fz_debug_text_span_xml(span->next);
 }
 
 void
@@ -194,24 +195,26 @@ fz_debug_text_span(fz_text_span *span)
 	char buf[10];
 	int c, n, k, i;
 
-	for (i = 0; i < span->len; i++)
+	while (span)
 	{
-		c = span->text[i].c;
-		if (c < 128)
-			putchar(c);
-		else
+		for (i = 0; i < span->len; i++)
 		{
-			n = runetochar(buf, &c);
-			for (k = 0; k < n; k++)
-				putchar(buf[k]);
+			c = span->text[i].c;
+			if (c < 128)
+				putchar(c);
+			else
+			{
+				n = runetochar(buf, &c);
+				for (k = 0; k < n; k++)
+					putchar(buf[k]);
+			}
 		}
+
+		if (span->eol)
+			putchar('\n');
+
+		span = span->next;
 	}
-
-	if (span->eol)
-		putchar('\n');
-
-	if (span->next)
-		fz_debug_text_span(span->next);
 }
 
 static void

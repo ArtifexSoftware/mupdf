@@ -501,6 +501,18 @@ fz_array_insert(fz_obj *obj, fz_obj *item)
 	}
 }
 
+int
+fz_array_contains(fz_obj *arr, fz_obj *obj)
+{
+	int i;
+
+	for (i = 0; i < fz_array_len(arr); i++)
+		if (!fz_objcmp(fz_array_get(arr, i), obj))
+			return 1;
+
+	return 0;
+}
+
 /* dicts may only have names as keys! */
 
 static int keyvalcmp(const void *ap, const void *bp)
