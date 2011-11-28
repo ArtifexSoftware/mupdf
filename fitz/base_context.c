@@ -15,6 +15,7 @@ fz_free_context(fz_context *ctx)
 		return;
 
 	/* Other finalisation calls go here (in reverse order) */
+	fz_free_font_context(ctx);
 
 	if (ctx->error)
 	{
@@ -50,6 +51,14 @@ fz_new_context(fz_alloc_context *alloc)
 	ctx->warn->count = 0;
 
 	/* New initialisation calls for context entries go here */
+	fz_try(ctx)
+	{
+		fz_new_font_context(ctx);
+	}
+	fz_catch(ctx)
+	{
+		goto cleanup;
+	}
 
 	return ctx;
 

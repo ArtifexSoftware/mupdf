@@ -138,6 +138,7 @@ char *fz_get_error_line(int n);
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
 typedef struct fz_warn_context_s fz_warn_context;
+typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_context_s fz_context;
 
 struct fz_alloc_context_s
@@ -189,6 +190,7 @@ struct fz_context_s
 	fz_alloc_context *alloc;
 	fz_error_context *error;
 	fz_warn_context *warn;
+	fz_font_context *font;
 };
 
 fz_context *fz_new_context(fz_alloc_context *alloc);
@@ -828,6 +830,9 @@ struct fz_font_s
 	int width_count;
 	int *width_table;
 };
+
+void fz_new_font_context(fz_context *ctx);
+void fz_free_font_context(fz_context *ctx);
 
 fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 

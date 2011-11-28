@@ -172,3 +172,11 @@ main(int argc, char **argv)
 	fz_free_context(ctx);
 	return 0;
 }
+
+void fz_new_font_context(fz_context *ctx)
+{
+}
+
+void fz_free_font_context(fz_context *ctx)
+{
+}

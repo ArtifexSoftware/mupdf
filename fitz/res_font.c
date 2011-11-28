@@ -106,8 +106,10 @@ fz_set_font_bbox(fz_font *font, float xmin, float ymin, float xmax, float ymax)
  * Freetype hooks
  */
 
-static FT_Library fz_ftlib = NULL;
-static int fz_ftlib_refs = 0;
+struct fz_font_context_s {
+	FT_Library ftlib;
+	int ftlib_refs;
+};
 
 #undef __FTERRORS_H__
 #define FT_ERRORDEF(e, v, s)	{ (e), (s) },
@@ -119,6 +121,22 @@ struct ft_error
 	int err;
 	char *str;
 };
+
+void fz_new_font_context(fz_context *ctx)
+{
+	ctx->font = fz_malloc(ctx, sizeof(*ctx->font));
+	ctx->font->ftlib = NULL;
+	ctx->font->ftlib_refs = 0;
+}
+
+void fz_free_font_context(fz_context *ctx)
+{
+	if (ctx->font == NULL)
+		return;
+	/* assert(ctx->ftlib == NULL); */
+	/* assert(ctx->ftlib_refs == 0); */
+	fz_free(ctx, ctx->font);
+}
 
 static const struct ft_error ft_errors[] =
 {
@@ -141,27 +159,28 @@ fz_init_freetype(fz_context *ctx)
 {
 	int fterr;
 	int maj, min, pat;
+	fz_font_context *fct = ctx->font;
 
-	if (fz_ftlib)
+	if (fct->ftlib)
 	{
-		fz_ftlib_refs++;
+		fct->ftlib_refs++;
 		return fz_okay;
 	}
 
-	fterr = FT_Init_FreeType(&fz_ftlib);
+	fterr = FT_Init_FreeType(&fct->ftlib);
 	if (fterr)
 		return fz_error_make("cannot init freetype: %s", ft_error_string(fterr));
 
-	FT_Library_Version(fz_ftlib, &maj, &min, &pat);
+	FT_Library_Version(fct->ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
 	{
-		fterr = FT_Done_FreeType(fz_ftlib);
+		fterr = FT_Done_FreeType(fct->ftlib);
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
 		return fz_error_make("freetype version too old: %d.%d.%d", maj, min, pat);
 	}
 
-	fz_ftlib_refs++;
+	fct->ftlib_refs++;
 	return fz_okay;
 }
 
@@ -169,13 +188,14 @@ static void
 fz_finalize_freetype(fz_context *ctx)
 {
 	int fterr;
+	fz_font_context *fct = ctx->font;
 
-	if (--fz_ftlib_refs == 0)
+	if (--fct->ftlib_refs == 0)
 	{
-		fterr = FT_Done_FreeType(fz_ftlib);
+		fterr = FT_Done_FreeType(fct->ftlib);
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
-		fz_ftlib = NULL;
+		fct->ftlib = NULL;
 	}
 }
 
@@ -191,7 +211,7 @@ fz_new_font_from_file(fz_context *ctx, char *path, int index)
 	if (error)
 		fz_throw(ctx, "cannot init freetype library");
 
-	fterr = FT_New_Face(fz_ftlib, path, index, &face);
+	fterr = FT_New_Face(ctx->font->ftlib, path, index, &face);
 	if (fterr)
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 
@@ -217,7 +237,7 @@ fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index
 	if (error)
 		fz_throw(ctx, "cannot init freetype library");
 
-	fterr = FT_New_Memory_Face(fz_ftlib, data, len, index, &face);
+	fterr = FT_New_Memory_Face(ctx->font->ftlib, data, len, index, &face);
 	if (fterr)
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 
@@ -442,7 +462,7 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix tr
 		return NULL;
 	}
 
-	fterr = FT_Stroker_New(fz_ftlib, &stroker);
+	fterr = FT_Stroker_New(ctx->font->ftlib, &stroker);
 	if (fterr)
 	{
 		fz_warn(ctx, "FT_Stroker_New: %s", ft_error_string(fterr));
