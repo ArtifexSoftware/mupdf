@@ -180,3 +180,11 @@ void fz_new_font_context(fz_context *ctx)
 void fz_free_font_context(fz_context *ctx)
 {
 }
+
+void fz_new_aa_context(fz_context *ctx)
+{
+}
+
+void fz_free_aa_context(fz_context *ctx)
+{
+}

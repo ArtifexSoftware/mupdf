@@ -351,8 +351,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	fz_set_aa_level(alphabits);
-
 	if (fz_optind == argc)
 		usage();
 
@@ -371,6 +369,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to init context\n");
 		exit(1);
 	}
+
+	fz_set_aa_level(ctx, alphabits);
 
 	glyphcache = fz_new_glyph_cache(ctx);
 
