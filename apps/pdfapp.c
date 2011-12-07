@@ -145,11 +145,6 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 
 	app->outline = pdf_load_outline(app->xref);
 
-	app->doctitle = fz_strdup(ctx, filename);
-	if (strrchr(app->doctitle, '\\'))
-		app->doctitle = strrchr(app->doctitle, '\\') + 1;
-	if (strrchr(app->doctitle, '/'))
-		app->doctitle = strrchr(app->doctitle, '/') + 1;
 	info = fz_dict_gets(app->xref->trailer, "Info");
 	if (info)
 	{
