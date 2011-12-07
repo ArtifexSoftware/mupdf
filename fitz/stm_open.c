@@ -41,6 +41,8 @@ fz_keep_stream(fz_stream *stm)
 void
 fz_close(fz_stream *stm)
 {
+	if (stm == NULL)
+		return;
 	stm->refs --;
 	if (stm->refs == 0)
 	{
