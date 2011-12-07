@@ -1437,6 +1437,11 @@ fz_draw_begin_tile(fz_device *devp, fz_rect area, fz_rect view, float xstep, flo
 		fz_knockout_begin(dev);
 
 	bbox = fz_round_rect(fz_transform_rect(ctm, view));
+	/* We should never have a bbox that entirely covers our destination.
+	 * If we do, then the check for only 1 tile being visible above has
+	 * failed. */
+	assert(bbox.x0 > dev->dest->x || bbox.x1 < dev->dest->x + dev->dest->w ||
+		bbox.y0 > dev->dest->y || bbox.y1 < dev->dest->y + dev->dest->h);
 	dest = fz_new_pixmap_with_rect(dev->ctx, model, bbox);
 	/* FIXME: See note #1 */
 	fz_clear_pixmap(dest);
