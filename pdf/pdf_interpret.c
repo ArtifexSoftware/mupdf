@@ -112,7 +112,7 @@ ocg_intents_include(pdf_ocg_descriptor *desc, char *name)
 		return 1;
 
 	/* In the absence of a specified intent, it's 'View' */
-	if (desc->intent == NULL)
+	if (!desc->intent)
 		return (strcmp(name, "View") == 0);
 
 	if (fz_is_name(desc->intent))
@@ -146,7 +146,7 @@ pdf_is_hidden_ocg(fz_obj *ocg, pdf_csi *csi, fz_obj *rdb)
 	pdf_ocg_descriptor *desc = csi->xref->ocg;
 
 	/* If no ocg descriptor, everything is visible */
-	if (desc == NULL)
+	if (!desc)
 		return 0;
 
 	/* If we've been handed a name, look it up in the properties. */
@@ -155,7 +155,7 @@ pdf_is_hidden_ocg(fz_obj *ocg, pdf_csi *csi, fz_obj *rdb)
 		ocg = fz_dict_gets(fz_dict_gets(rdb, "Properties"), fz_to_name(ocg));
 	}
 	/* If we haven't been given an ocg at all, then we're visible */
-	if (ocg == NULL)
+	if (!ocg)
 		return 0;
 
 	fz_strlcpy(event_state, csi->event, sizeof event_state);
@@ -1469,7 +1469,7 @@ static void pdf_run_BDC(pdf_csi *csi, fz_obj *rdb)
 	}
 
 	ocg = fz_dict_gets(fz_dict_gets(rdb, "Properties"), csi->name);
-	if (ocg == NULL)
+	if (!ocg)
 	{
 		/* No Properties array, or name not found in the properties
 		 * means visible. */

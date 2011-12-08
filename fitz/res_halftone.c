@@ -162,7 +162,7 @@ fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 	unsigned char *ht_line, *o, *p;
 	int w, h, x, y, n, pstride, ostride;
 
-	if (pix == NULL || ht == NULL)
+	if (!pix || !ht)
 		return NULL;
 
 	assert(pix->n == 2); /* Mono + Alpha */

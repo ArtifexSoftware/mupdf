@@ -74,7 +74,7 @@ pdf_find_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *drop_func, f
 	if (!store)
 		return NULL;
 
-	if (key == NULL)
+	if (!key)
 		return NULL;
 
 	if (fz_is_indirect(key))

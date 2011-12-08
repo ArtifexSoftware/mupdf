@@ -1033,7 +1033,7 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 			for (i = 0; i < funcs; i++)
 			{
 				func[i] = pdf_load_function(xref, fz_array_get(obj, i));
-				if (func[i] == NULL)
+				if (!func[i])
 					fz_throw(ctx, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			}
 		}

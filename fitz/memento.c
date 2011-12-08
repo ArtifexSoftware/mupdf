@@ -423,7 +423,7 @@ static void Memento_fin(void)
             globals.numFrees, globals.numReallocs);
     fprintf(stderr, "Average allocation size %d bytes\n",
             globals.totalAlloc/globals.numMallocs);
-    if (globals.used.head != NULL) {
+    if (globals.used.head) {
         Memento_listBlocks();
         Memento_breakpoint();
     }
@@ -937,7 +937,7 @@ int Memento_find(void *a)
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    if (data.blk) {
         fprintf(stderr, "Address 0x%p is in %sallocated block 0x%p(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
@@ -948,7 +948,7 @@ int Memento_find(void *a)
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
-    if (data.blk != NULL) {
+    if (data.blk) {
         fprintf(stderr, "Address 0x%p is in %sfreed block 0x%p(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?

@@ -136,7 +136,7 @@ fz_new_indirect(fz_context *ctx, int num, int gen, void *xref)
 fz_obj *
 fz_keep_obj(fz_obj *obj)
 {
-	assert(obj != NULL);
+	assert(obj);
 	obj->refs ++;
 	return obj;
 }
@@ -358,7 +358,7 @@ fz_objcmp(fz_obj *a, fz_obj *b)
 static char *
 fz_objkindstr(fz_obj *obj)
 {
-	if (obj == NULL)
+	if (!obj)
 		return "<NULL>";
 	switch (obj->kind)
 	{
@@ -834,7 +834,7 @@ fz_free_dict(fz_obj *obj)
 void
 fz_drop_obj(fz_obj *obj)
 {
-	if (obj == NULL)
+	if (!obj)
 		return;
 	if (--obj->refs)
 		return;

@@ -4,7 +4,7 @@ void *
 fz_malloc(fz_context *ctx, unsigned int size)
 {
 	void *p = ctx->alloc->malloc(ctx->alloc->user, size);
-	if (p == NULL)
+	if (!p)
 		fz_throw(ctx, "malloc of %d bytes failed", size);
 	return p;
 }
@@ -27,7 +27,7 @@ fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size)
 		fz_throw(ctx, "malloc of array (%d x %d bytes) failed (integer overflow)", count, size);
 
 	p = ctx->alloc->malloc(ctx->alloc->user, count * size);
-	if (p == NULL)
+	if (!p)
 		fz_throw(ctx, "malloc of array (%d x %d bytes) failed", count, size);
 	return p;
 }
@@ -61,7 +61,7 @@ fz_calloc(fz_context *ctx, unsigned int count, unsigned int size)
 	}
 
 	p = ctx->alloc->malloc(ctx->alloc->user, count * size);
-	if (p == NULL)
+	if (!p)
 	{
 		fz_throw(ctx, "calloc (%d x %d bytes) failed", count, size);
 	}
@@ -84,7 +84,7 @@ fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
 	}
 
 	p = ctx->alloc->malloc(ctx->alloc->user, count * size);
-	if (p != NULL)
+	if (p)
 	{
 		memset(p, 0, count*size);
 	}
@@ -106,7 +106,7 @@ fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size)
 		fz_throw(ctx, "resize array (%d x %d bytes) failed (integer overflow)", count, size);
 
 	np = ctx->alloc->realloc(ctx->alloc->user, p, count * size);
-	if (np == NULL)
+	if (!np)
 		fz_throw(ctx, "resize array (%d x %d bytes) failed", count, size);
 	return np;
 }
@@ -149,7 +149,7 @@ fz_strdup_no_throw(fz_context *ctx, char *s)
 {
 	int len = strlen(s) + 1;
 	char *ns = fz_malloc_no_throw(ctx, len);
-	if (ns != NULL)
+	if (ns)
 		memcpy(ns, s, len);
 	return ns;
 }

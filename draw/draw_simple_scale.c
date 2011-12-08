@@ -254,7 +254,7 @@ new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, in
 	 * plus room for an extra set of weights for reordering.
 	 */
 	weights = fz_malloc(ctx, sizeof(*weights)+(max_len+3)*(dst_w_i+1)*sizeof(int));
-	if (weights == NULL)
+	if (!weights)
 		return NULL;
 	weights->count = -1;
 	weights->max_len = max_len;
@@ -465,7 +465,7 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 	window = filter->width / F;
 	DBUG(("make_weights src_w=%d x=%g dst_w=%g dst_w_int=%d F=%g window=%g\n", src_w, x, dst_w, dst_w_int, F, window));
 	weights	= new_weights(ctx, filter, src_w, dst_w, dst_w_int, n, flip);
-	if (weights == NULL)
+	if (!weights)
 		return NULL;
 	for (j = 0; j < dst_w_int; j++)
 	{
@@ -1250,7 +1250,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
 		contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
-		if (contrib_cols == NULL)
+		if (!contrib_cols)
 			goto cleanup;
 	}
 #ifdef SINGLE_PIXEL_SPECIALS
@@ -1262,22 +1262,22 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
 		contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
-		if (contrib_rows == NULL)
+		if (!contrib_rows)
 			goto cleanup;
 	}
 
-	assert(contrib_cols == NULL || contrib_cols->count == dst_w_int);
-	assert(contrib_rows == NULL || contrib_rows->count == dst_h_int);
+	assert(!contrib_cols || contrib_cols->count == dst_w_int);
+	assert(!contrib_rows || contrib_rows->count == dst_h_int);
 	output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
 	output->x = dst_x_int;
 	output->y = dst_y_int;
 
 	/* Step 2: Apply the weights */
 #ifdef SINGLE_PIXEL_SPECIALS
-	if (contrib_rows == NULL)
+	if (!contrib_rows)
 	{
 		/* Only 1 source pixel high. */
-		if (contrib_cols == NULL)
+		if (!contrib_cols)
 		{
 			/* Only 1 pixel in the entire image! */
 			duplicate_single_pixel(output->samples, src->samples, src->n, dst_w_int, dst_h_int);
@@ -1288,7 +1288,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 			scale_single_row(output->samples, src->samples, contrib_cols, src->w, dst_h_int);
 		}
 	}
-	else if (contrib_cols == NULL)
+	else if (!contrib_cols)
 	{
 		/* Only 1 source pixel wide. Scale the col and duplicate. */
 		scale_single_col(output->samples, src->samples, contrib_rows, src->h, src->n, dst_w_int, flip_y);
@@ -1303,7 +1303,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
 		temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(unsigned char));
-		if (temp == NULL)
+		if (!temp)
 			goto cleanup;
 		switch (src->n)
 		{

@@ -266,7 +266,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, fz_obj *cf_obj, ch
 	cf->method = PDF_CRYPT_NONE;
 	cf->length = defaultlength;
 
-	if (cf_obj == NULL)
+	if (!cf_obj)
 	{
 		cf->method = (is_identity ? PDF_CRYPT_NONE : PDF_CRYPT_RC4);
 		return;

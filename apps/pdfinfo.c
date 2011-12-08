@@ -976,7 +976,7 @@ int main(int argc, char **argv)
 	ctx = fz_new_context(&fz_alloc_default);
 	if (!ctx)
 	{
-		fprintf(stderr, "cannot initialise context");
+		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
 

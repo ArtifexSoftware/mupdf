@@ -19,7 +19,7 @@ fz_clone_path(fz_context *ctx, fz_path *old)
 {
 	fz_path *path;
 
-	assert(old != NULL);
+	assert(old);
 	path = fz_malloc(ctx, sizeof(fz_path));
 	path->len = old->len;
 	path->cap = old->len;

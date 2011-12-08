@@ -745,7 +745,7 @@ load_cid_font(pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *to_unicode
 		fontdesc = pdf_new_font_desc(ctx);
 
 		descriptor = fz_dict_gets(dict, "FontDescriptor");
-		if (descriptor == NULL)
+		if (!descriptor)
 			fz_throw(ctx, "syntaxerror: missing font descriptor");
 		pdf_load_font_descriptor(fontdesc, xref, descriptor, collection, basefont);
 

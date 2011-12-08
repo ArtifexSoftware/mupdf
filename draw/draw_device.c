@@ -74,7 +74,7 @@ static void fz_dump_blend(fz_pixmap *pix, const char *s)
 {
 	char name[80];
 
-	if (pix == NULL)
+	if (!pix)
 		return;
 
 	sprintf(name, "dump%02d.png", group_dump_count);
@@ -139,7 +139,7 @@ static void fz_knockout_begin(fz_draw_device *dev)
 		int i  = dev->top;
 		do
 			prev = dev->stack[--i].dest;
-		while (prev == NULL);
+		while (!prev);
 		fz_copy_pixmap_rect(dest, prev, bbox);
 	}
 
@@ -206,7 +206,7 @@ static void fz_knockout_end(fz_draw_device *dev)
 			printf(" (isolated)");
 		printf(" (knockout)");
 #endif
-		if ((blendmode == 0) && (shape == NULL))
+		if ((blendmode == 0) && (!shape))
 			fz_paint_pixmap(dev->dest, group, 255);
 		else
 			fz_blend_pixmap(dev->dest, group, 255, blendmode, isolated, shape);
@@ -871,7 +871,7 @@ fz_transform_pixmap(fz_context *ctx, fz_pixmap *image, fz_matrix *ctm, int x, in
 		if (gridfit)
 			fz_gridfit_matrix(&m);
 		scaled = fz_scale_pixmap(ctx, image, m.e, m.f, m.a, m.d);
-		if (scaled == NULL)
+		if (!scaled)
 			return NULL;
 		ctm->a = scaled->w;
 		ctm->d = scaled->h;
@@ -887,7 +887,7 @@ fz_transform_pixmap(fz_context *ctx, fz_pixmap *image, fz_matrix *ctm, int x, in
 		if (gridfit)
 			fz_gridfit_matrix(&m);
 		scaled = fz_scale_pixmap(ctx, image, m.f, m.e, m.b, m.c);
-		if (scaled == NULL)
+		if (!scaled)
 			return NULL;
 		ctm->b = scaled->w;
 		ctm->c = scaled->h;
@@ -949,7 +949,7 @@ fz_draw_fill_image(fz_device *devp, fz_pixmap *image, fz_matrix ctm, float alpha
 	{
 		int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
-		if (scaled == NULL)
+		if (!scaled)
 		{
 			if (dx < 1)
 				dx = 1;
@@ -957,7 +957,7 @@ fz_draw_fill_image(fz_device *devp, fz_pixmap *image, fz_matrix ctm, float alpha
 				dy = 1;
 			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
-		if (scaled != NULL)
+		if (scaled)
 			image = scaled;
 	}
 
@@ -1011,7 +1011,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_pixmap *image, fz_matrix ctm,
 	{
 		int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
-		if (scaled == NULL)
+		if (!scaled)
 		{
 			if (dx < 1)
 				dx = 1;
@@ -1019,7 +1019,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_pixmap *image, fz_matrix ctm,
 				dy = 1;
 			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
-		if (scaled != NULL)
+		if (scaled)
 			image = scaled;
 	}
 
@@ -1089,7 +1089,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_pixmap *image, fz_rect *rect, fz_mat
 	{
 		int gridfit = !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 		scaled = fz_transform_pixmap(dev->ctx, image, &ctm, dev->dest->x, dev->dest->y, dx, dy, gridfit);
-		if (scaled == NULL)
+		if (!scaled)
 		{
 			if (dx < 1)
 				dx = 1;
@@ -1097,7 +1097,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_pixmap *image, fz_rect *rect, fz_mat
 				dy = 1;
 			scaled = fz_scale_pixmap(dev->ctx, image, image->x, image->y, dx, dy);
 		}
-		if (scaled != NULL)
+		if (scaled)
 			image = scaled;
 	}
 
@@ -1151,7 +1151,7 @@ fz_draw_pop_clip(fz_device *devp)
 			fz_dump_blend(mask, " with ");
 #endif
 			fz_paint_pixmap_with_mask(dest, dev->dest, mask);
-			if (shape != NULL)
+			if (shape)
 			{
 				assert(shape != dev->shape);
 				fz_paint_pixmap_with_mask(shape, dev->shape, mask);
@@ -1173,7 +1173,7 @@ fz_draw_pop_clip(fz_device *devp)
 #ifdef DUMP_GROUP_BLENDS
 			dump_spaces(dev->top, "Clip End\n");
 #endif
-			assert(dest == NULL);
+			assert(!dest);
 			assert(shape == dev->shape);
 		}
 	}
@@ -1393,7 +1393,7 @@ fz_draw_end_group(fz_device *devp)
 		if (blendmode & FZ_BLEND_KNOCKOUT)
 			printf(" (knockout)");
 #endif
-		if ((blendmode == 0) && (shape == NULL))
+		if ((blendmode == 0) && (!shape))
 			fz_paint_pixmap(dev->dest, group, alpha * 255);
 		else
 			fz_blend_pixmap(dev->dest, group, alpha * 255, blendmode, isolated, shape);

@@ -337,7 +337,7 @@ static void winblit(pdfapp_t *app)
 	{
 		int i = gapp.image->w*gapp.image->h;
 		unsigned char *color = malloc(i*4);
-		if (color != NULL)
+		if (color)
 		{
 			unsigned char *s = gapp.image->samples;
 			unsigned char *d = color;
@@ -588,9 +588,9 @@ int main(int argc, char **argv)
 	struct timeval *timeout;
 
 	ctx = fz_new_context(&fz_alloc_default);
-	if (ctx == NULL)
+	if (!ctx)
 	{
-		fprintf(stderr, "failed to initialise context");
+		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
 

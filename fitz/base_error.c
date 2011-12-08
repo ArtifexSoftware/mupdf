@@ -51,7 +51,7 @@ static void throw(fz_error_context *ex)
 
 void fz_push_try(fz_error_context *ex)
 {
-	assert(ex != NULL);
+	assert(ex);
 	if (ex->top + 1 >= nelem(ex->stack))
 	{
 		fprintf(stderr, "exception stack overflow!\n");
@@ -62,8 +62,8 @@ void fz_push_try(fz_error_context *ex)
 
 char *fz_caught(fz_context *ctx)
 {
-	assert(ctx != NULL);
-	assert(ctx->error != NULL);
+	assert(ctx);
+	assert(ctx->error);
 	return ctx->error->message;
 }
 

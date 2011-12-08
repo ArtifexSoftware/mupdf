@@ -14,7 +14,7 @@ pdf_free_link(fz_context *ctx, pdf_link *link)
 		fz_free(ctx, link);
 		link = next;
 	}
-	while(link != NULL);
+	while(link);
 }
 
 static fz_obj *
@@ -166,7 +166,7 @@ pdf_free_annot(fz_context *ctx, pdf_annot *annot)
 		fz_free(ctx, annot);
 		annot = next;
 	}
-	while (annot != NULL);
+	while (annot);
 }
 
 static void

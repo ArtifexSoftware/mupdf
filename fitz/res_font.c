@@ -131,9 +131,9 @@ void fz_new_font_context(fz_context *ctx)
 
 void fz_free_font_context(fz_context *ctx)
 {
-	if (ctx->font == NULL)
+	if (!ctx->font)
 		return;
-	/* assert(ctx->ftlib == NULL); */
+	/* assert(!ctx->ftlib); */
 	/* assert(ctx->ftlib_refs == 0); */
 	fz_free(ctx, ctx->font);
 }
@@ -147,7 +147,7 @@ char *ft_error_string(int err)
 {
 	const struct ft_error *e;
 
-	for (e = ft_errors; e->str != NULL; e++)
+	for (e = ft_errors; e->str; e++)
 		if (e->err == err)
 			return e->str;
 
@@ -553,7 +553,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 	}
 	else if (dev->flags & FZ_CHARPROC_COLOR)
 	{
-		if (model == NULL)
+		if (!model)
 			fz_warn(ctx, "colored type3 glyph wanted in masked context");
 	}
 	else
@@ -579,7 +579,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 	fz_free_device(dev);
 	fz_free_glyph_cache(ctx, cache);
 
-	if (model == NULL)
+	if (!model)
 	{
 		result = fz_alpha_from_gray(ctx, glyph, 0);
 		fz_drop_pixmap(ctx, glyph);

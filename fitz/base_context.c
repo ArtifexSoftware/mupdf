@@ -11,7 +11,7 @@ fz_obj *(*fz_resolve_indirect)(fz_obj*) = fz_resolve_indirect_null;
 void
 fz_free_context(fz_context *ctx)
 {
-	if (ctx == NULL)
+	if (!ctx)
 		return;
 
 	/* Other finalisation calls go here (in reverse order) */

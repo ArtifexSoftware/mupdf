@@ -170,7 +170,7 @@ fz_open_lzwd(fz_stream *chain, fz_obj *params)
 	fz_obj *obj;
 	int i;
 
-	assert(chain != NULL);
+	assert(chain);
 	lzw = fz_malloc(chain->ctx, sizeof(fz_lzwd));
 	lzw->chain = chain;
 	lzw->eod = 0;

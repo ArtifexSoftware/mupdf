@@ -26,7 +26,7 @@ fz_keep_buffer(fz_buffer *buf)
 void
 fz_drop_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	if (buf == NULL)
+	if (!buf)
 		return;
 	if (--buf->refs == 0)
 	{

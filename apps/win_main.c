@@ -340,7 +340,7 @@ void winopen()
 
 	/* Init DIB info for buffer */
 	dibinf = malloc(sizeof(BITMAPINFO) + 12);
-	assert(dibinf != NULL);
+	assert(dibinf);
 	dibinf->bmiHeader.biSize = sizeof(dibinf->bmiHeader);
 	dibinf->bmiHeader.biPlanes = 1;
 	dibinf->bmiHeader.biBitCount = 32;
@@ -832,9 +832,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	fz_accelerate();
 
 	ctx = fz_new_context(&fz_alloc_default);
-	if (ctx == NULL)
+	if (!ctx)
 	{
-		fprintf(stderr, "cannot init context");
+		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
 	pdfapp_init(ctx, &gapp);

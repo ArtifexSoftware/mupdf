@@ -480,7 +480,7 @@ pdf_ocg_set_config(pdf_xref *xref, int config)
 	char *name;
 
 	obj = fz_dict_gets(fz_dict_gets(xref->trailer, "Root"), "OCProperties");
-	if (obj == NULL)
+	if (!obj)
 	{
 		if (config == 0)
 			return;
@@ -490,20 +490,20 @@ pdf_ocg_set_config(pdf_xref *xref, int config)
 	if (config == 0)
 	{
 		cobj = fz_dict_gets(obj, "D");
-		if (cobj == NULL)
+		if (!cobj)
 			fz_throw(xref->ctx, "No default OCG config");
 	}
 	else
 	{
 		cobj = fz_array_get(fz_dict_gets(obj, "Configs"), config);
-		if (cobj == NULL)
+		if (!cobj)
 			fz_throw(xref->ctx, "Illegal OCG config");
 	}
 
-	if (desc->intent != NULL)
+	if (desc->intent)
 		fz_drop_obj(desc->intent);
 	desc->intent = fz_dict_gets(cobj, "Intent");
-	if (desc->intent != NULL)
+	if (desc->intent)
 		fz_keep_obj(desc->intent);
 
 	len = desc->len;
@@ -587,10 +587,10 @@ pdf_read_ocg(pdf_xref *xref)
 	fz_var(desc);
 
 	obj = fz_dict_gets(fz_dict_gets(xref->trailer, "Root"), "OCProperties");
-	if (obj == NULL)
+	if (!obj)
 		return;
 	ocg = fz_dict_gets(obj, "OCGs");
-	if (ocg == NULL || !fz_is_array(ocg))
+	if (!ocg || !fz_is_array(ocg))
 		/* Not ever supposed to happen, but live with it. */
 		return;
 	len = fz_array_len(ocg);
@@ -611,7 +611,7 @@ pdf_read_ocg(pdf_xref *xref)
 	}
 	fz_catch(ctx)
 	{
-		if (desc != NULL)
+		if (desc)
 			fz_free(ctx, desc->ocgs);
 		fz_free(ctx, desc);
 		fz_rethrow(ctx);
@@ -623,7 +623,7 @@ pdf_read_ocg(pdf_xref *xref)
 static void
 pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
 {
-	if (desc == NULL)
+	if (!desc)
 		return;
 
 	if (desc->intent)
@@ -707,8 +707,8 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 			pdf_repair_obj_stms(xref);
 		}
 
-		hasroot = fz_dict_gets(xref->trailer, "Root") != NULL;
-		hasinfo = fz_dict_gets(xref->trailer, "Info") != NULL;
+		hasroot = fz_dict_gets(xref->trailer, "Root");
+		hasinfo = fz_dict_gets(xref->trailer, "Info");
 
 		for (i = 1; i < xref->len; i++)
 		{
@@ -779,7 +779,7 @@ pdf_free_xref(pdf_xref *xref)
 	int i;
 	fz_context *ctx;
 
-	if (xref == NULL)
+	if (!xref)
 		return;
 	ctx = xref->ctx;
 

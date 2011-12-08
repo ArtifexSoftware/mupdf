@@ -785,7 +785,7 @@ int main(int argc, char **argv)
 	/* Do not renumber objects if encryption is in use, as the object
 	 * numbers are baked into the streams/strings, and we can't currently
 	 * cope with moving them. See bug 692627. */
-	if (dogarbage >= 2 && xref->crypt == NULL)
+	if (dogarbage >= 2 && !xref->crypt)
 		renumberobjs();
 
 	writepdf();

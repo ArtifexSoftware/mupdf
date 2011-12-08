@@ -127,7 +127,7 @@ static void savefont(fz_obj *dict, int num)
 	printf("extracting font %s\n", name);
 
 	f = fopen(name, "wb");
-	if (f == NULL)
+	if (!f)
 		fz_throw(ctx, "Error creating font file");
 
 	n = fwrite(buf->data, 1, buf->len, f);

@@ -51,7 +51,7 @@ pdf_load_xobject(pdf_xref *xref, fz_obj *dict)
 		if (obj)
 		{
 			form->colorspace = pdf_load_colorspace(xref, obj);
-			if (form->colorspace == NULL)
+			if (!form->colorspace)
 				fz_throw(ctx, "cannot load xobject colorspace");
 		}
 	}

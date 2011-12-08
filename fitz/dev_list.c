@@ -154,7 +154,7 @@ fz_append_display_node(fz_display_list *list, fz_display_node *node)
 			update = list->stack[list->top].update;
 			if (list->tiled == 0)
 			{
-				if (update != NULL)
+				if (update)
 				{
 					*update = fz_intersect_rect(*update, list->stack[list->top].rect);
 					node->rect = *update;
@@ -255,7 +255,7 @@ fz_list_clip_path(fz_device *dev, fz_path *path, fz_rect *rect, int even_odd, fz
 	fz_display_node *node;
 	node = fz_new_display_node(dev->ctx, FZ_CMD_CLIP_PATH, ctm, NULL, NULL, 0);
 	node->rect = fz_bound_path(path, NULL, ctm);
-	if (rect != NULL)
+	if (rect)
 		node->rect = fz_intersect_rect(node->rect, *rect);
 	node->item.path = fz_clone_path(dev->ctx, path);
 	node->flag = even_odd;
@@ -268,7 +268,7 @@ fz_list_clip_stroke_path(fz_device *dev, fz_path *path, fz_rect *rect, fz_stroke
 	fz_display_node *node;
 	node = fz_new_display_node(dev->ctx, FZ_CMD_CLIP_STROKE_PATH, ctm, NULL, NULL, 0);
 	node->rect = fz_bound_path(path, stroke, ctm);
-	if (rect != NULL)
+	if (rect)
 		node->rect = fz_intersect_rect(node->rect, *rect);
 	node->item.path = fz_clone_path(dev->ctx, path);
 	node->stroke = fz_clone_stroke_state(dev->ctx, stroke);
@@ -378,7 +378,7 @@ fz_list_clip_image_mask(fz_device *dev, fz_pixmap *image, fz_rect *rect, fz_matr
 	fz_display_node *node;
 	node = fz_new_display_node(dev->ctx, FZ_CMD_CLIP_IMAGE_MASK, ctm, NULL, NULL, 0);
 	node->rect = fz_transform_rect(ctm, fz_unit_rect);
-	if (rect != NULL)
+	if (rect)
 		node->rect = fz_intersect_rect(node->rect, *rect);
 	node->item.image = fz_keep_pixmap(image);
 	fz_append_display_node(dev->user, node);
