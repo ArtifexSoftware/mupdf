@@ -26,14 +26,6 @@ static int doascii = 0;
 static pdf_xref *xref = NULL;
 static fz_context *ctx = NULL;
 
-void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	if (xref)
-		pdf_free_xref(xref);
-	exit(1);
-}
-
 static void usage(void)
 {
 	fprintf(stderr,
@@ -290,14 +282,7 @@ static void retainpages(int argc, char **argv)
 	fz_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
 
 	/* Load the old page tree */
-	fz_try(xref->ctx)
-	{
-		pdf_load_page_tree(xref);
-	}
-	fz_catch(xref->ctx)
-	{
-		die(fz_error_note(1, "cannot load page tree"));
-	}
+	pdf_load_page_tree(xref);
 
 	/* Keep only pages/type and (reduced) dest entries to avoid
 	 * references to unretained pages */
@@ -425,14 +410,7 @@ static void preloadobjstms(void)
 	{
 		if (xref->table[num].type == 'o')
 		{
-			fz_try(ctx)
-			{
-				obj = pdf_load_object(xref, num, 0);
-			}
-			fz_catch(ctx)
-			{
-				die(1);
-			}
+			obj = pdf_load_object(xref, num, 0);
 			fz_drop_obj(obj);
 		}
 	}
@@ -536,14 +514,7 @@ static void copystream(fz_obj *obj, int num, int gen)
 	fz_buffer *buf, *tmp;
 	fz_obj *newlen;
 
-	fz_try(ctx)
-	{
-		buf = pdf_load_raw_stream(xref, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	buf = pdf_load_raw_stream(xref, num, gen);
 
 	if (doascii && isbinarystream(buf))
 	{
@@ -572,14 +543,7 @@ static void expandstream(fz_obj *obj, int num, int gen)
 	fz_buffer *buf, *tmp;
 	fz_obj *newlen;
 
-	fz_try(ctx)
-	{
-		buf = pdf_load_stream(xref, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	buf = pdf_load_stream(xref, num, gen);
 
 	fz_dict_dels(obj, "Filter");
 	fz_dict_dels(obj, "DecodeParms");
@@ -611,14 +575,7 @@ static void writeobject(int num, int gen)
 	fz_obj *obj;
 	fz_obj *type;
 
-	fz_try(ctx)
-	{
-		obj = pdf_load_object(xref, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	obj = pdf_load_object(xref, num, gen);
 
 	/* skip ObjStm and XRef objects */
 	if (fz_is_dict(obj))
@@ -777,21 +734,17 @@ int main(int argc, char **argv)
 		subset = 1;
 
 	ctx = fz_new_context(&fz_alloc_default);
-	if (ctx == NULL)
-		die(fz_error_note(1, "failed to initialise context"));
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		exit(1);
+	}
 
-	fz_try(ctx)
-	{
-		xref = pdf_open_xref(ctx, infile, password);
-	}
-	fz_catch(ctx)
-	{
-		die(fz_error_note(1, "cannot open input file '%s'", infile));
-	}
+	xref = pdf_open_xref(ctx, infile, password);
 
 	out = fopen(outfile, "wb");
 	if (!out)
-		die(fz_error_make("cannot open output file '%s'", outfile));
+		fz_throw(ctx, "cannot open output file '%s'", outfile);
 
 	fprintf(out, "%%PDF-%d.%d\n", xref->version / 10, xref->version % 10);
 	fprintf(out, "%%\316\274\341\277\246\n\n");
@@ -838,7 +791,7 @@ int main(int argc, char **argv)
 	writepdf();
 
 	if (fclose(out))
-		die(fz_error_make("cannot close output file '%s'", outfile));
+		fz_throw(ctx, "cannot close output file '%s'", outfile);
 
 	fz_free(xref->ctx, uselist);
 	fz_free(xref->ctx, ofslist);

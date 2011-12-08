@@ -7,7 +7,6 @@
 pdf_cmap *
 pdf_load_embedded_cmap(pdf_xref *xref, fz_obj *stmobj)
 {
-	fz_error error = fz_okay;
 	fz_stream *file = NULL;
 	pdf_cmap *cmap = NULL;
 	pdf_cmap *usecmap;

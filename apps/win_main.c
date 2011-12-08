@@ -93,37 +93,10 @@ void winwarn(pdfapp_t *app, char *msg)
 	MessageBoxA(hwndframe, msg, "MuPDF: Warning", MB_ICONWARNING);
 }
 
-void winerror(pdfapp_t *app, fz_error error)
+void winerror(pdfapp_t *app, char *msg)
 {
-	char msgbuf[160 * 30];
-	int i;
-
-	/* TODO: redirect stderr to a log file and display here */
-	fz_error_handle(error, "displaying error message to user");
-
-	fz_strlcpy(msgbuf, "An error has occurred.\n\n", sizeof msgbuf);
-	for (i = 0; i < fz_get_error_count(); i++)
-	{
-		fz_strlcat(msgbuf, fz_get_error_line(i), sizeof msgbuf);
-		fz_strlcat(msgbuf, "\n", sizeof msgbuf);
-	}
-
-	MessageBoxA(hwndframe, msgbuf, "MuPDF: Error", MB_ICONERROR);
+	MessageBoxA(hwndframe, msg, "MuPDF: Error", MB_ICONERROR);
 	exit(1);
-}
-
-void win32error(char *msg)
-{
-	LPSTR buf;
-	int code = GetLastError();
-	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		code,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPSTR)&buf, 0, NULL);
-	winerror(&gapp, fz_error_make("%s:\n%s", msg, buf));
 }
 
 int winfilename(wchar_t *buf, int len)
@@ -185,7 +158,7 @@ char *winpassword(pdfapp_t *app, char *filename)
 	sprintf(pd_filename, "The file \"%s\" is encrypted.", s);
 	code = DialogBoxW(NULL, L"IDD_DLOGPASS", hwndframe, dlogpassproc);
 	if (code <= 0)
-		win32error("cannot create password dialog");
+		winerror(app, "cannot create password dialog");
 	if (pd_okay)
 		return pd_password;
 	return NULL;
@@ -282,7 +255,7 @@ void info()
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGINFO", hwndframe, dloginfoproc);
 	if (code <= 0)
-		win32error("cannot create info dialog");
+		winerror(&gapp, "cannot create info dialog");
 }
 
 INT CALLBACK
@@ -305,7 +278,7 @@ void winhelp(pdfapp_t*app)
 {
 	int code = DialogBoxW(NULL, L"IDD_DLOGABOUT", hwndframe, dlogaboutproc);
 	if (code <= 0)
-		win32error("cannot create help dialog");
+		winerror(&gapp, "cannot create help dialog");
 }
 
 /*
@@ -333,7 +306,7 @@ void winopen()
 	wc.lpszClassName = L"FrameWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		win32error("cannot register frame window class");
+		winerror(&gapp, "cannot register frame window class");
 
 	/* Create and register window view class */
 	memset(&wc, 0, sizeof(wc));
@@ -349,7 +322,7 @@ void winopen()
 	wc.lpszClassName = L"ViewWindow";
 	a = RegisterClassW(&wc);
 	if (!a)
-		win32error("cannot register view window class");
+		winerror(&gapp, "cannot register view window class");
 
 	/* Get screen size */
 	SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0);
@@ -390,7 +363,7 @@ void winopen()
 	0, // program instance handle
 	0); // creation parameters
 	if (!hwndframe)
-		win32error("cannot create frame: %s");
+		winerror(&gapp, "cannot create frame);
 
 	hwndview = CreateWindowW(L"ViewWindow", // window class name
 	NULL,
@@ -399,7 +372,7 @@ void winopen()
 	CW_USEDEFAULT, CW_USEDEFAULT,
 	hwndframe, 0, 0, 0);
 	if (!hwndview)
-		win32error("cannot create view: %s");
+		winerror(&gapp, "cannot create view");
 
 	hdc = NULL;
 
@@ -618,7 +591,7 @@ void winreloadfile(pdfapp_t *app)
 
 	fd = _wopen(wbuf, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(&gapp, fz_error_make("cannot reload file '%s'", filename));
+		winerror(&gapp, "cannot reload file");
 
 	pdfapp_open(app, filename, fd, 1);
 }
@@ -883,11 +856,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	fd = _wopen(wbuf, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(&gapp, fz_error_make("cannot open file '%s'", filename));
+		winerror(&gapp, "cannot open file");
 
 	code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 	if (code == 0)
-		win32error("cannot convert filename to utf-8");
+		winerror(&gapp, "cannot convert filename to utf-8");
 
 	pdfapp_open(&gapp, filename, fd, 0);
 

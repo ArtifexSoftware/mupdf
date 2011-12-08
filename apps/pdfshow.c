@@ -11,14 +11,6 @@ static int showbinary = 0;
 static int showdecode = 1;
 static int showcolumn;
 
-void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	if (xref)
-		pdf_free_xref(xref);
-	exit(1);
-}
-
 static void usage(void)
 {
 	fprintf(stderr, "usage: pdfshow [options] file.pdf [grepable] [xref] [trailer] [pagetree] [object numbers]\n");
@@ -31,7 +23,7 @@ static void usage(void)
 static void showtrailer(void)
 {
 	if (!xref)
-		die(fz_error_make("no file specified"));
+		fz_throw(ctx, "no file specified");
 	printf("trailer\n");
 	fz_debug_obj(xref->trailer);
 	printf("\n");
@@ -40,7 +32,7 @@ static void showtrailer(void)
 static void showxref(void)
 {
 	if (!xref)
-		die(fz_error_make("no file specified"));
+		fz_throw(ctx, "no file specified");
 	pdf_debug_xref(xref);
 	printf("\n");
 }
@@ -52,19 +44,10 @@ static void showpagetree(void)
 	int i;
 
 	if (!xref)
-		die(fz_error_make("no file specified"));
+		fz_throw(ctx, "no file specified");
 
 	if (!xref->page_len)
-	{
-		fz_try(xref->ctx)
-		{
-			pdf_load_page_tree(xref);
-		}
-		fz_catch(xref->ctx)
-		{
-			die(fz_error_note(1, "cannot load page tree"));
-		}
-	}
+		pdf_load_page_tree(xref);
 
 	count = pdf_count_pages(xref);
 	for (i = 0; i < count; i++)
@@ -106,23 +89,14 @@ static void showstream(int num, int gen)
 
 	showcolumn = 0;
 
-	fz_try(xref->ctx)
-	{
-		if (showdecode)
-			stm = pdf_open_stream(xref, num, gen);
-		else
-			stm = pdf_open_raw_stream(xref, num, gen);
-	}
-	fz_catch(xref->ctx)
-	{
-		die(1);
-	}
+	if (showdecode)
+		stm = pdf_open_stream(xref, num, gen);
+	else
+		stm = pdf_open_raw_stream(xref, num, gen);
 
 	while (1)
 	{
 		n = fz_read(stm, buf, sizeof buf);
-		if (n < 0)
-			die(n);
 		if (n == 0)
 			break;
 		if (showbinary)
@@ -139,16 +113,9 @@ static void showobject(int num, int gen)
 	fz_obj *obj;
 
 	if (!xref)
-		die(fz_error_make("no file specified"));
+		fz_throw(ctx, "no file specified");
 
-	fz_try(ctx)
-	{
-		obj = pdf_load_object(xref, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	obj = pdf_load_object(xref, num, gen);
 
 	if (pdf_is_stream(xref, num, gen))
 	{
@@ -185,14 +152,7 @@ static void showgrep(char *filename)
 	{
 		if (xref->table[i].type == 'n' || xref->table[i].type == 'o')
 		{
-			fz_try(ctx)
-			{
-				obj = pdf_load_object(xref, i, 0);
-			}
-			fz_catch(ctx)
-			{
-				die(1);
-			}
+			obj = pdf_load_object(xref, i, 0);
 
 			fz_sort_dict(obj);
 
@@ -230,17 +190,13 @@ int main(int argc, char **argv)
 	filename = argv[fz_optind++];
 
 	ctx = fz_new_context(&fz_alloc_default);
-	if (ctx == NULL)
-		die(fz_error_note(1, "failed to initialise context"));
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		exit(1);
+	}
 
-	fz_try(ctx)
-	{
-		xref = pdf_open_xref(ctx, filename, password);
-	}
-	fz_catch(ctx)
-	{
-		die(fz_error_note(1, "cannot open document: %s", filename));
-	}
+	xref = pdf_open_xref(ctx, filename, password);
 
 	if (fz_optind == argc)
 		showtrailer();

@@ -27,9 +27,9 @@ static void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 	winwarn(app, buf);
 }
 
-static void pdfapp_error(pdfapp_t *app, fz_error error)
+static void pdfapp_error(pdfapp_t *app, char *msg)
 {
-	winerror(app, error);
+	winerror(app, msg);
 }
 
 char *pdfapp_version(pdfapp_t *app)
@@ -110,16 +110,16 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	 * Open PDF and load xref table
 	 */
 
-	file = fz_open_fd(ctx, fd);
 	fz_try(ctx)
 	{
+		file = fz_open_fd(ctx, fd);
 		app->xref = pdf_open_xref_with_stream(file, NULL);
+		fz_close(file);
 	}
 	fz_catch(ctx)
 	{
-		pdfapp_error(app, fz_error_note(1, "cannot open document '%s'", filename));
+		pdfapp_error(app, "cannot open document");
 	}
-	fz_close(file);
 
 	/*
 	 * Handle encrypted PDF files
@@ -172,7 +172,7 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	}
 	fz_catch(ctx)
 	{
-		pdfapp_error(app, fz_error_note(1, "cannot load page tree"));
+		pdfapp_error(app, "cannot load page tree");
 	}
 
 	app->pagecount = pdf_count_pages(app->xref);
@@ -189,7 +189,7 @@ static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
 	}
 	fz_catch(app->ctx)
 	{
-		pdfapp_error(app, fz_error_note(-1, "cannot open document '%s'", filename));
+		pdfapp_error(app, "cannot open document");
 	}
 	fz_close(file);
 
@@ -324,7 +324,7 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	}
 	fz_catch(app->ctx)
 	{
-		pdfapp_error(app, 1);
+		pdfapp_error(app, "cannot load page");
 	}
 
 	app->page_bbox = page->mediabox;
@@ -341,7 +341,7 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	}
 	fz_catch(app->ctx)
 	{
-		pdfapp_error(app, fz_error_note(-1, "cannot draw page %d in '%s'", app->pageno, app->doctitle));
+		pdfapp_error(app, "cannot draw page");
 	}
 	fz_free_device(mdev);
 
@@ -361,7 +361,7 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 	}
 	fz_catch(app->ctx)
 	{
-		pdfapp_error(app, fz_error_note(1, "cannot load page %d in file '%s'", app->pageno, app->doctitle));
+		pdfapp_error(app, "cannot load page");
 	}
 
 	app->page_bbox.x0 = 0;

@@ -98,15 +98,15 @@ static int showingpage = 0;
  * Dialog boxes
  */
 
-void winwarn(pdfapp_t *app, char *msg)
+void winerror(pdfapp_t *app, char *msg)
 {
-	fprintf(stderr, "mupdf: %s\n", msg);
+	fprintf(stderr, "mupdf: error: %s\n", msg);
+	exit(1);
 }
 
-void winerror(pdfapp_t *app, fz_error error)
+void winwarn(pdfapp_t *app, char *msg)
 {
-	fz_error_handle(error, "aborting");
-	exit(1);
+	fprintf(stderr, "mupdf: warning: %s\n", msg);
 }
 
 char *winpassword(pdfapp_t *app, char *filename)
@@ -127,7 +127,7 @@ static void winopen(void)
 
 	xdpy = XOpenDisplay(NULL);
 	if (!xdpy)
-		winerror(&gapp, fz_error_make("cannot open display"));
+		fz_throw(gapp.ctx, "cannot open display");
 
 	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
 	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);
@@ -161,7 +161,7 @@ static void winopen(void)
 		0,
 		NULL);
 	if (xwin == None)
-		winerror(&gapp, fz_error_make("cannot create window"));
+		fz_throw(gapp.ctx, "cannot create window");
 
 	XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
 	XSelectInput(xdpy, xwin,
@@ -501,7 +501,7 @@ void winreloadfile(pdfapp_t *app)
 
 	fd = open(filename, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(app, fz_error_make("cannot reload file '%s'", filename));
+		fz_throw(gapp.ctx, "cannot reload file '%s'", filename);
 
 	pdfapp_open(app, filename, fd, 1);
 }
@@ -634,7 +634,7 @@ int main(int argc, char **argv)
 
 	fd = open(filename, O_BINARY | O_RDONLY, 0666);
 	if (fd < 0)
-		winerror(&gapp, fz_error_make("cannot open file '%s'", filename));
+		fz_throw(gapp.ctx, "cannot open file '%s'", filename);
 
 	pdfapp_open(&gapp, filename, fd, 0);
 

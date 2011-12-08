@@ -29,12 +29,6 @@ struct {
 	int minpage, maxpage;
 } timing;
 
-static void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	exit(1);
-}
-
 static void usage(void)
 {
 	fprintf(stderr,
@@ -99,14 +93,7 @@ static void drawpage(xps_document *doc, int pagenum)
 		start = gettime();
 	}
 
-	fz_try(doc->ctx)
-	{
-		page = xps_load_page(doc, pagenum - 1);
-	}
-	fz_catch(doc->ctx)
-	{
-		die(fz_error_note(1, "cannot load page %d in file '%s'", pagenum, filename));
-	}
+	page = xps_load_page(doc, pagenum - 1);
 
 	list = NULL;
 
@@ -358,14 +345,7 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		fz_try(ctx)
-		{
-			doc = xps_open_file(ctx, filename);
-		}
-		fz_catch(ctx)
-		{
-			die(fz_error_note(-1, "cannot open document: %s", filename));
-		}
+		doc = xps_open_file(ctx, filename);
 
 		if (showxml)
 			printf("<document name=\"%s\">\n", filename);

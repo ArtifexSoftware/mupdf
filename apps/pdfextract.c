@@ -9,14 +9,6 @@ static pdf_xref *xref = NULL;
 static fz_context *ctx = NULL;
 static int dorgb = 0;
 
-void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	if (xref)
-		pdf_free_xref(xref);
-	exit(1);
-}
-
 static void usage(void)
 {
 	fprintf(stderr, "usage: pdfextract [options] file.pdf [object numbers]\n");
@@ -47,14 +39,7 @@ static void saveimage(int num)
 
 	/* TODO: detect DCTD and save as jpeg */
 
-	fz_try(ctx)
-	{
-		img = pdf_load_image(xref, ref);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	img = pdf_load_image(xref, ref);
 
 	if (dorgb && img->colorspace && img->colorspace != fz_device_rgb)
 	{
@@ -119,7 +104,7 @@ static void savefont(fz_obj *dict, int num)
 
 		obj = fz_dict_gets(obj, "Subtype");
 		if (obj && !fz_is_name(obj))
-			die(fz_error_make("Invalid font descriptor subtype"));
+			fz_throw(ctx, "Invalid font descriptor subtype");
 
 		subtype = fz_to_name(obj);
 		if (!strcmp(subtype, "Type1C"))
@@ -127,7 +112,7 @@ static void savefont(fz_obj *dict, int num)
 		else if (!strcmp(subtype, "CIDFontType0C"))
 			ext = "cid";
 		else
-			die(fz_error_make("Unhandled font type '%s'", subtype));
+			fz_throw(ctx, "Unhandled font type '%s'", subtype);
 	}
 
 	if (!stream)
@@ -136,28 +121,21 @@ static void savefont(fz_obj *dict, int num)
 		return;
 	}
 
-	fz_try(ctx)
-	{
-		buf = pdf_load_stream(xref, fz_to_num(stream), fz_to_gen(stream));
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	buf = pdf_load_stream(xref, fz_to_num(stream), fz_to_gen(stream));
 
 	sprintf(name, "%s-%04d.%s", fontname, num, ext);
 	printf("extracting font %s\n", name);
 
 	f = fopen(name, "wb");
 	if (f == NULL)
-		die(fz_error_make("Error creating font file"));
+		fz_throw(ctx, "Error creating font file");
 
 	n = fwrite(buf->data, 1, buf->len, f);
 	if (n < buf->len)
-		die(fz_error_make("Error writing font file"));
+		fz_throw(ctx, "Error writing font file");
 
 	if (fclose(f) < 0)
-		die(fz_error_make("Error closing font file"));
+		fz_throw(ctx, "Error closing font file");
 
 	fz_drop_buffer(ctx, buf);
 }
@@ -167,16 +145,9 @@ static void showobject(int num)
 	fz_obj *obj;
 
 	if (!xref)
-		die(fz_error_make("no file specified"));
+		fz_throw(ctx, "no file specified");
 
-	fz_try(ctx)
-	{
-		obj = pdf_load_object(xref, num, 0);
-	}
-	fz_catch(ctx)
-	{
-		die(1);
-	}
+	obj = pdf_load_object(xref, num, 0);
 
 	if (isimage(obj))
 		saveimage(num);
@@ -208,17 +179,13 @@ int main(int argc, char **argv)
 	infile = argv[fz_optind++];
 
 	ctx = fz_new_context(&fz_alloc_default);
-	if (ctx == NULL)
-		die(fz_error_note(1, "failed to initialise context"));
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		exit(1);
+	}
 
-	fz_try(ctx)
-	{
-		xref = pdf_open_xref(ctx, infile, password);
-	}
-	fz_catch(ctx)
-	{
-		die(fz_error_note(1, "cannot open input file '%s'", infile));
-	}
+	xref = pdf_open_xref(ctx, infile, password);
 
 	if (fz_optind == argc)
 	{

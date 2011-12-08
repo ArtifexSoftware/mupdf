@@ -69,35 +69,15 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
  */
 
 #if __STDC_VERSION__ == 199901L /* C99 */
-
-#define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
-#define fz_error_handle(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __func__, cause, __VA_ARGS__)
-
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
-
 #define inline __inline
 #define restrict __restrict
-#define fz_error_make(...) fz_error_make_imp(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
-#define fz_error_note(cause, ...) fz_error_note_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
-#define fz_error_handle(cause, ...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, __VA_ARGS__)
-
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
-
 #define inline __inline
 #define restrict __restrict
-#define fz_error_make(fmt...) fz_error_make_imp(__FILE__, __LINE__, __FUNCTION__, fmt)
-#define fz_error_note(cause, fmt...) fz_error_note_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
-#define fz_error_handle(cause, fmt...) fz_error_handle_imp(__FILE__, __LINE__, __FUNCTION__, cause, fmt)
-
 #else /* Unknown or ancient */
-
 #define inline
 #define restrict
-#define fz_error_make fz_error_make_impx
-#define fz_error_note fz_error_note_impx
-#define fz_error_handle fz_error_handle_impx
-
 #endif
 
 /*
@@ -112,26 +92,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define __printflike(fmtarg, firstvararg)
 #endif
 #endif
-
-/*
- * Deprecated error handling.
- */
-
-typedef int fz_error;
-
-#define fz_okay ((fz_error)0)
-
-fz_error fz_error_make_imp(const char *file, int line, const char *func, char *fmt, ...) __printflike(4, 5);
-fz_error fz_error_note_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
-void fz_error_handle_imp(const char *file, int line, const char *func, fz_error cause, char *fmt, ...) __printflike(5, 6);
-
-fz_error fz_error_make_impx(char *fmt, ...) __printflike(1, 2);
-fz_error fz_error_note_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
-void fz_error_handle_impx(fz_error cause, char *fmt, ...) __printflike(2, 3);
-
-/* extract the last error stack trace */
-int fz_get_error_count(void);
-char *fz_get_error_line(int n);
 
 /* Contexts */
 

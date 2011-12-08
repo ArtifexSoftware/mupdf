@@ -12,13 +12,6 @@ int pagecount;
 
 void closexref(void);
 
-void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	closexref();
-	exit(1);
-}
-
 void openxref(char *filename, char *password, int dieonbadpass, int loadpages);
 
 enum
@@ -580,7 +573,7 @@ gatherresourceinfo(int page, fz_obj *rsrc)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		die(fz_error_make("cannot retrieve info from page %d", page));
+		fz_throw(ctx, "cannot retrieve info from page %d", page);
 
 	font = fz_dict_gets(rsrc, "Font");
 	if (font)
@@ -648,7 +641,7 @@ gatherpageinfo(int page)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		die(fz_error_make("cannot retrieve info from page %d", page));
+		fz_throw(ctx, "cannot retrieve info from page %d", page);
 
 	gatherdimensions(page, pageref, pageobj);
 
@@ -955,7 +948,6 @@ showinfo(char *filename, int show, char *pagelist)
 int main(int argc, char **argv)
 {
 	enum { NO_FILE_OPENED, NO_INFO_GATHERED, INFO_SHOWN } state;
-	fz_error error;
 	char *filename = "";
 	char *password = "";
 	int show = ALL;
@@ -981,9 +973,12 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
-	ctx = fz_new_context();
-	if (ctx == NULL)
-		die(fz_error_make("failed to initialise context"));
+	ctx = fz_new_context(&fz_alloc_default);
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context");
+		exit(1);
+	}
 
 	state = NO_FILE_OPENED;
 	while (fz_optind < argc)
@@ -1000,13 +995,8 @@ int main(int argc, char **argv)
 
 			filename = argv[fz_optind];
 			printf("%s:\n", filename);
-			error = pdf_open_xref(ctx, &xref, filename, password);
-			if (error)
-				die(fz_error_note(error, "cannot open input file '%s'", filename));
-
-			error = pdf_load_page_tree(xref);
-			if (error)
-				die(fz_error_note(error, "cannot load page tree: %s", filename));
+			xref = pdf_open_xref(ctx, filename, password);
+			pdf_load_page_tree(xref);
 			pagecount = pdf_count_pages(xref);
 
 			showglobalinfo();
