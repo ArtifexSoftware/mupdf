@@ -581,14 +581,18 @@ int main(int argc, char **argv)
 	fd_set fds;
 	int width = -1;
 	int height = -1;
-<<<<<<< HEAD
 	fz_context *ctx;
-=======
 	struct timeval tmo_at;
 	struct timeval now;
 	struct timeval tmo;
 	struct timeval *timeout;
->>>>>>> master
+
+	ctx = fz_new_context(&fz_alloc_default);
+	if (ctx == NULL)
+	{
+		fprintf(stderr, "failed to initialise context");
+		exit(1);
+	}
 
 	while ((c = fz_getopt(argc, argv, "p:r:b:A")) != -1)
 	{
@@ -597,7 +601,7 @@ int main(int argc, char **argv)
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atoi(fz_optarg); break;
 		case 'A': accelerate = 0; break;
-		case 'b': fz_set_aa_level(atoi(fz_optarg)); break;
+		case 'b': fz_set_aa_level(ctx, atoi(fz_optarg)); break;
 		default: usage();
 		}
 	}
@@ -613,18 +617,9 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_new_context();
-	if (ctx == NULL)
-	{
-		fprintf(stderr, "failed to initialise context");
-		exit(1);
-	}
-
 	winopen();
 
-<<<<<<< HEAD
 	pdfapp_init(ctx, &gapp);
-=======
 	if (resolution == -1)
 		resolution = winresolution();
 	if (resolution < MINRES)
@@ -632,8 +627,6 @@ int main(int argc, char **argv)
 	if (resolution > MAXRES)
 		resolution = MAXRES;
 
-	pdfapp_init(&gapp);
->>>>>>> master
 	gapp.scrw = DisplayWidth(xdpy, xscr);
 	gapp.scrh = DisplayHeight(xdpy, xscr);
 	gapp.resolution = resolution;
