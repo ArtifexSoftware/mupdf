@@ -640,11 +640,12 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 	fz_obj *encrypt, *id;
 	fz_obj *dict = NULL;
 	fz_obj *obj;
-	fz_obj *nobj;
+	fz_obj *nobj = NULL;
 	int i, repaired = 0;
 	fz_context *ctx = file->ctx;
 
 	//fz_var(dict);
+	//fz_var(nobj);
 
 	/* install pdf specific callback */
 	fz_resolve_indirect = pdf_resolve_indirect;
@@ -688,7 +689,11 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 			/* Only care if we have a password */
 			if (password)
 			{
-				pdf_authenticate_password(xref, password);
+				int okay = pdf_authenticate_password(xref, password);
+				if (!okay)
+				{
+					fz_throw(ctx, "invalid password");
+				}
 			}
 		}
 
@@ -767,7 +772,11 @@ void
 pdf_free_xref(pdf_xref *xref)
 {
 	int i;
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx;
+
+	if (xref == NULL)
+		return;
+	ctx = xref->ctx;
 
 	if (xref->store)
 		pdf_free_store(ctx, xref->store);
