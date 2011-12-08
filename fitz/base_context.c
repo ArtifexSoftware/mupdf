@@ -22,6 +22,7 @@ fz_free_context(fz_context *ctx)
 	{
 		assert(ctx->error->top == -1);
 		fz_free(ctx, ctx->error);
+		fz_free(ctx, ctx->warn);
 	}
 
 	/* Free the context itself */

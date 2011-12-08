@@ -36,12 +36,6 @@ struct {
 	int minpage, maxpage;
 } timing;
 
-static void die(fz_error error)
-{
-	fz_error_handle(error, "aborting");
-	exit(1);
-}
-
 static void usage(void)
 {
 	fprintf(stderr,
@@ -111,7 +105,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	}
 	fz_catch(ctx)
 	{
-		die(fz_error_note(1, "cannot load page %d in file '%s'", pagenum, filename));
+		fz_throw(ctx, "cannot load page %d in file '%s'", pagenum, filename);
 	}
 
 	list = NULL;
@@ -126,7 +120,8 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		}
 		fz_catch(ctx)
 		{
-			die(fz_error_note(1, "cannot draw page %d in file '%s'", pagenum, filename));
+			fz_free_device(dev);
+			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
 		fz_free_device(dev);
 	}
@@ -325,10 +320,11 @@ int main(int argc, char **argv)
 	char *password = "";
 	int grayscale = 0;
 	int accelerate = 1;
-	pdf_xref *xref;
-	fz_error error;
+	pdf_xref *xref = NULL;
 	int c;
 	fz_context *ctx;
+
+	fz_var(xref);
 
 	while ((c = fz_getopt(argc, argv, "lo:p:r:R:Aab:dgmtx5G:I")) != -1)
 	{
@@ -397,45 +393,53 @@ int main(int argc, char **argv)
 	if (showxml)
 		printf("<?xml version=\"1.0\"?>\n");
 
-	while (fz_optind < argc)
+	fz_try(ctx)
 	{
-		filename = argv[fz_optind++];
-
-		fz_try(ctx)
+		while (fz_optind < argc)
 		{
-			xref = pdf_open_xref(ctx, filename, password);
+			filename = argv[fz_optind++];
+
+			fz_try(ctx)
+			{
+				xref = pdf_open_xref(ctx, filename, password);
+			}
+			fz_catch(ctx)
+			{
+				fz_throw(ctx, "cannot open document: %s", filename);
+			}
+
+			fz_try(ctx)
+			{
+				pdf_load_page_tree(xref);
+			}
+			fz_catch(ctx)
+			{
+				fz_throw(ctx, "cannot load page tree: %s", filename);
+			}
+
+			if (showxml)
+				printf("<document name=\"%s\">\n", filename);
+
+			if (showoutline)
+				drawoutline(xref);
+
+			if (showtext || showxml || showtime || showmd5 || output)
+			{
+				if (fz_optind == argc || !isrange(argv[fz_optind]))
+					drawrange(xref, "1-");
+				if (fz_optind < argc && isrange(argv[fz_optind]))
+					drawrange(xref, argv[fz_optind++]);
+			}
+
+			if (showxml)
+				printf("</document>\n");
+
+			pdf_free_xref(xref);
+			xref = NULL;
 		}
-		fz_catch(ctx)
-		{
-			die(fz_error_note(error, "cannot open document: %s", filename));
-		}
-
-		fz_try(ctx)
-		{
-			pdf_load_page_tree(xref);
-		}
-		fz_catch(ctx)
-		{
-			die(fz_error_note(error, "cannot load page tree: %s", filename));
-		}
-
-		if (showxml)
-			printf("<document name=\"%s\">\n", filename);
-
-		if (showoutline)
-			drawoutline(xref);
-
-		if (showtext || showxml || showtime || showmd5 || output)
-		{
-			if (fz_optind == argc || !isrange(argv[fz_optind]))
-				drawrange(xref, "1-");
-			if (fz_optind < argc && isrange(argv[fz_optind]))
-				drawrange(xref, argv[fz_optind++]);
-		}
-
-		if (showxml)
-			printf("</document>\n");
-
+	}
+	fz_catch(ctx)
+	{
 		pdf_free_xref(xref);
 	}
 
