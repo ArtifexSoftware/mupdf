@@ -861,7 +861,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
-		fprintf(stderr, "Failed to init context");
+		fprintf(stderr, "cannot init context");
 		exit(1);
 	}
 	pdfapp_init(ctx, &gapp);

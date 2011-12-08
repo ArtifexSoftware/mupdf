@@ -265,6 +265,7 @@ enum
 
 struct fz_faxd_s
 {
+	fz_context *ctx;
 	fz_stream *chain;
 
 	int k;
@@ -331,8 +332,8 @@ get_code(fz_faxd *fax, const cfd_node *table, int initialbits)
 }
 
 /* decode one 1d code */
-static fz_error
-dec1d(fz_faxd *fax)
+static void
+dec1d(fz_context *ctx, fz_faxd *fax)
 {
 	int code;
 
@@ -345,13 +346,13 @@ dec1d(fz_faxd *fax)
 		code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 	if (code == UNCOMPRESSED)
-		return fz_error_make("uncompressed data in faxd");
+		fz_throw(ctx, "uncompressed data in faxd");
 
 	if (code < 0)
-		return fz_error_make("negative code in 1d faxd");
+		fz_throw(ctx, "negative code in 1d faxd");
 
 	if (fax->a + code > fax->columns)
-		return fz_error_make("overflow in 1d faxd");
+		fz_throw(ctx, "overflow in 1d faxd");
 
 	if (fax->c)
 		setbits(fax->dst, fax->a, fax->a + code);
@@ -365,13 +366,11 @@ dec1d(fz_faxd *fax)
 	}
 	else
 		fax->stage = STATE_MAKEUP;
-
-	return fz_okay;
 }
 
 /* decode one 2d code */
-static fz_error
-dec2d(fz_faxd *fax)
+static void
+dec2d(fz_context *ctx, fz_faxd *fax)
 {
 	int code, b1, b2;
 
@@ -386,13 +385,13 @@ dec2d(fz_faxd *fax)
 			code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 		if (code == UNCOMPRESSED)
-			return fz_error_make("uncompressed data in faxd");
+			fz_throw(ctx, "uncompressed data in faxd");
 
 		if (code < 0)
-			return fz_error_make("negative code in 2d faxd");
+			fz_throw(ctx, "negative code in 2d faxd");
 
 		if (fax->a + code > fax->columns)
-			return fz_error_make("overflow in 2d faxd");
+			fz_throw(ctx, "overflow in 2d faxd");
 
 		if (fax->c)
 			setbits(fax->dst, fax->a, fax->a + code);
@@ -408,7 +407,7 @@ dec2d(fz_faxd *fax)
 				fax->stage = STATE_NORMAL;
 		}
 
-		return fz_okay;
+		return;
 	}
 
 	code = get_code(fax, cf_2d_decode, cfd_2d_initial_bits);
@@ -485,16 +484,14 @@ dec2d(fz_faxd *fax)
 		break;
 
 	case UNCOMPRESSED:
-		return fz_error_make("uncompressed data in faxd");
+		fz_throw(ctx, "uncompressed data in faxd");
 
 	case ERROR:
-		return fz_error_make("invalid code in 2d faxd");
+		fz_throw(ctx, "invalid code in 2d faxd");
 
 	default:
-		return fz_error_make("invalid code in 2d faxd (%d)", code);
+		fz_throw(ctx, "invalid code in 2d faxd (%d)", code);
 	}
-
-	return 0;
 }
 
 static int
@@ -504,7 +501,6 @@ read_faxd(fz_stream *stm, unsigned char *buf, int len)
 	unsigned char *p = buf;
 	unsigned char *ep = buf + len;
 	unsigned char *tmp;
-	fz_error error;
 
 	if (fax->stage == STATE_DONE)
 		return 0;
@@ -558,16 +554,12 @@ loop:
 	else if (fax->dim == 1)
 	{
 		fax->eolc = 0;
-		error = dec1d(fax);
-		if (error)
-			return fz_error_note(error, "cannot decode 1d code");
+		dec1d(stm->ctx, fax);
 	}
 	else if (fax->dim == 2)
 	{
 		fax->eolc = 0;
-		error = dec2d(fax);
-		if (error)
-			return fz_error_note(error, "cannot decode 2d code");
+		dec2d(stm->ctx, fax);
 	}
 
 	/* no eol check after makeup codes nor in the middle of an H code */

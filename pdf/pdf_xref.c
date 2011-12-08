@@ -424,7 +424,7 @@ pdf_read_xref_sections(pdf_xref *xref, int ofs, char *buf, int cap)
 	fz_catch(ctx)
 	{
 		fz_drop_obj(trailer);
-		fz_throw(ctx, "Failed to read xref at offset %d", ofs);
+		fz_throw(ctx, "cannot read xref at offset %d", ofs);
 	}
 
 	fz_drop_obj(trailer);
@@ -675,6 +675,7 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 			fz_drop_obj(xref->trailer);
 			xref->trailer = NULL;
 		}
+		fz_warn(xref->ctx, "trying to repair broken xref");
 		pdf_repair_xref(xref, xref->scratch, sizeof xref->scratch);
 		repaired = 1;
 	}

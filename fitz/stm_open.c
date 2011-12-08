@@ -58,7 +58,7 @@ static int read_file(fz_stream *stm, unsigned char *buf, int len)
 {
 	int n = read(*(int*)stm->state, buf, len);
 	if (n < 0)
-		return fz_error_make("read error: %s", strerror(errno));
+		fz_throw(stm->ctx, "read error: %s", strerror(errno));
 	return n;
 }
 
@@ -66,7 +66,7 @@ static void seek_file(fz_stream *stm, int offset, int whence)
 {
 	int n = lseek(*(int*)stm->state, offset, whence);
 	if (n < 0)
-		fz_warn(stm->ctx, "cannot lseek: %s", strerror(errno));
+		fz_throw(stm->ctx, "cannot lseek: %s", strerror(errno));
 	stm->pos = n;
 	stm->rp = stm->bp;
 	stm->wp = stm->bp;
@@ -100,7 +100,7 @@ fz_open_file(fz_context *ctx, const char *name)
 {
 	int fd = open(name, O_BINARY | O_RDONLY, 0);
 	if (fd == -1)
-		fz_throw(ctx, "Failed to open %s", name);
+		fz_throw(ctx, "cannot open %s", name);
 	return fz_open_fd(ctx, fd);
 }
 

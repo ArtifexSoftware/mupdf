@@ -153,8 +153,6 @@ read_predict(fz_stream *stm, unsigned char *buf, int len)
 	while (p < ep)
 	{
 		n = fz_read(state->chain, state->in, state->stride + ispng);
-		if (n < 0)
-			return fz_error_note(n, "read error in prediction filter");
 		if (n == 0)
 			return p - buf;
 

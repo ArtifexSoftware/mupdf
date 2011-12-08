@@ -20,12 +20,7 @@ fz_read(fz_stream *stm, unsigned char *buf, int len)
 	if (len - count < stm->ep - stm->bp)
 	{
 		n = stm->read(stm, stm->bp, stm->ep - stm->bp);
-		if (n < 0)
-		{
-			stm->error = 1;
-			return fz_error_note(n, "read error");
-		}
-		else if (n == 0)
+		if (n == 0)
 		{
 			stm->eof = 1;
 		}
@@ -47,12 +42,7 @@ fz_read(fz_stream *stm, unsigned char *buf, int len)
 	else
 	{
 		n = stm->read(stm, buf + count, len - count);
-		if (n < 0)
-		{
-			stm->error = 1;
-			return fz_error_note(n, "read error");
-		}
-		else if (n == 0)
+		if (n == 0)
 		{
 			stm->eof = 1;
 		}
@@ -76,21 +66,24 @@ fz_fill_buffer(fz_stream *stm)
 	if (stm->error || stm->eof)
 		return;
 
-	n = stm->read(stm, stm->bp, stm->ep - stm->bp);
-	if (n < 0)
+	fz_try(stm->ctx)
 	{
+		n = stm->read(stm, stm->bp, stm->ep - stm->bp);
+		if (n == 0)
+		{
+			stm->eof = 1;
+		}
+		else if (n > 0)
+		{
+			stm->rp = stm->bp;
+			stm->wp = stm->bp + n;
+			stm->pos += n;
+		}
+	}
+	fz_catch(stm->ctx)
+	{
+		fz_warn(stm->ctx, "read error; treating as end of file");
 		stm->error = 1;
-		fz_error_handle(n, "read error; treating as end of file");
-	}
-	else if (n == 0)
-	{
-		stm->eof = 1;
-	}
-	else if (n > 0)
-	{
-		stm->rp = stm->bp;
-		stm->wp = stm->bp + n;
-		stm->pos += n;
 	}
 }
 
@@ -118,11 +111,6 @@ fz_read_all(fz_stream *stm, int initial)
 		}
 
 		n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
-		if (n < 0)
-		{
-			fz_drop_buffer(ctx, buf);
-			fz_throw(ctx, "read error");
-		}
 		if (n == 0)
 			break;
 

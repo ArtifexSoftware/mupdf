@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 	ctx = fz_new_context(&fz_alloc_default);
 	if (ctx == NULL)
 	{
-		fprintf(stderr, "Failed to init context\n");
+		fprintf(stderr, "cannot init context\n");
 		exit(1);
 	}
 

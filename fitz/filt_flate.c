@@ -59,7 +59,7 @@ read_flated(fz_stream *stm, unsigned char *outbuf, int outlen)
 		}
 		else if (code != Z_OK)
 		{
-			return fz_error_make("zlib error: %s", zp->msg);
+			fz_throw(stm->ctx, "zlib error: %s", zp->msg);
 		}
 	}
 

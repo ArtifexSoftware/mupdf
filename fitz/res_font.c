@@ -154,7 +154,7 @@ char *ft_error_string(int err)
 	return "Unknown error";
 }
 
-static fz_error
+static void
 fz_init_freetype(fz_context *ctx)
 {
 	int fterr;
@@ -164,12 +164,12 @@ fz_init_freetype(fz_context *ctx)
 	if (fct->ftlib)
 	{
 		fct->ftlib_refs++;
-		return fz_okay;
+		return;
 	}
 
 	fterr = FT_Init_FreeType(&fct->ftlib);
 	if (fterr)
-		return fz_error_make("cannot init freetype: %s", ft_error_string(fterr));
+		fz_throw(ctx, "cannot init freetype: %s", ft_error_string(fterr));
 
 	FT_Library_Version(fct->ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
@@ -177,11 +177,10 @@ fz_init_freetype(fz_context *ctx)
 		fterr = FT_Done_FreeType(fct->ftlib);
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
-		return fz_error_make("freetype version too old: %d.%d.%d", maj, min, pat);
+		fz_throw(ctx, "freetype version too old: %d.%d.%d", maj, min, pat);
 	}
 
 	fct->ftlib_refs++;
-	return fz_okay;
 }
 
 static void
@@ -203,13 +202,10 @@ fz_font *
 fz_new_font_from_file(fz_context *ctx, char *path, int index)
 {
 	FT_Face face;
-	fz_error error;
 	fz_font *font;
 	int fterr;
 
-	error = fz_init_freetype(ctx);
-	if (error)
-		fz_throw(ctx, "cannot init freetype library");
+	fz_init_freetype(ctx);
 
 	fterr = FT_New_Face(ctx->font->ftlib, path, index, &face);
 	if (fterr)
@@ -229,13 +225,10 @@ fz_font *
 fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index)
 {
 	FT_Face face;
-	fz_error error;
 	fz_font *font;
 	int fterr;
 
-	error = fz_init_freetype(ctx);
-	if (error)
-		fz_throw(ctx, "cannot init freetype library");
+	fz_init_freetype(ctx);
 
 	fterr = FT_New_Memory_Face(ctx->font->ftlib, data, len, index, &face);
 	if (fterr)
