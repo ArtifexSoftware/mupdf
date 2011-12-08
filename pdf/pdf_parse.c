@@ -285,7 +285,6 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 				break;
 
 			default:
-				fz_drop_obj(ary);
 				fz_throw(ctx, "cannot parse token in array");
 			}
 		}
