@@ -200,11 +200,16 @@ pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, i
 		if (cstm)
 		{
 			unsigned char tbuf[512];
-			int tlen = fz_read(stm, tbuf, sizeof tbuf);
-			if (tlen < 0)
-				fz_error_handle(tlen, "ignoring error at end of image");
-			if (tlen > 0)
-				fz_warn(ctx, "ignoring garbage at end of image");
+			fz_try(ctx)
+			{
+				int tlen = fz_read(stm, tbuf, sizeof tbuf);
+				if (tlen > 0)
+					fz_warn(ctx, "ignoring garbage at end of image");
+			}
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "ignoring error at end of image");
+			}
 		}
 
 		fz_close(stm);

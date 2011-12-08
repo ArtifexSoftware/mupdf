@@ -36,7 +36,6 @@ int
 main(int argc, char **argv)
 {
 	pdf_cmap *cmap;
-	fz_error error;
 	fz_stream *fi;
 	FILE *fo;
 	char name[256];
@@ -86,18 +85,8 @@ main(int argc, char **argv)
 		clean(name);
 
 		fi = fz_open_file(ctx, argv[i]);
-		if (!fi)
-			fz_error_make("cmapdump: could not open input file '%s'\n", argv[i]);
-
-		fz_try(ctx)
-		{
-			cmap = pdf_parse_cmap(fi);
-		}
-		fz_catch(ctx)
-		{
-			fz_error_handle(error, "cmapdump: could not parse input cmap '%s'\n", argv[i]);
-			return 1;
-		}
+		cmap = pdf_parse_cmap(fi);
+		fz_close(fi);
 
 		fprintf(fo, "\n/* %s */\n\n", cmap->cmap_name);
 
@@ -159,8 +148,6 @@ main(int argc, char **argv)
 
 		if (getenv("verbose"))
 			printf("\t{\"%s\",&cmap_%s},\n", cmap->cmap_name, name);
-
-		fz_close(fi);
 	}
 
 	if (fclose(fo))

@@ -107,7 +107,7 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 			}
 			fz_catch(ctx)
 			{
-				fz_error_handle(1, "cannot find endstream token, falling back to scanning");
+				fz_warn(ctx, "cannot find endstream token, falling back to scanning");
 			}
 			if (tok == PDF_TOK_ENDSTREAM)
 				goto atobjend;

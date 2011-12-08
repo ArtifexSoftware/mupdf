@@ -992,7 +992,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 		}
 		fz_catch(ctx)
 		{
-			fz_error_handle(-1, "ignored error when loading embedded font, attempting to load system font");
+			fz_warn(ctx, "ignored error when loading embedded font; attempting to load system font");
 			if (origname != fontname)
 				pdf_load_builtin_font(ctx, fontdesc, fontname);
 			else

@@ -1090,18 +1090,18 @@ eval_sample_func(fz_context *ctx, pdf_function *func, float *in, float *out)
  * Exponential function
  */
 
-static fz_error
+static void
 load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 {
 	fz_obj *obj;
 	int i;
 
 	if (func->m != 1)
-		return fz_error_make("/Domain must be one dimension (%d)", func->m);
+		fz_throw(ctx, "/Domain must be one dimension (%d)", func->m);
 
 	obj = fz_dict_gets(dict, "N");
 	if (!fz_is_int(obj) && !fz_is_real(obj))
-		return fz_error_make("malformed /N");
+		fz_throw(ctx, "malformed /N");
 	func->u.e.n = fz_to_real(obj);
 
 	obj = fz_dict_gets(dict, "C0");
@@ -1109,7 +1109,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 	{
 		func->n = fz_array_len(obj);
 		if (func->n >= MAXN)
-			return fz_error_make("exponential function result array out of range");
+			fz_throw(ctx, "exponential function result array out of range");
 		for (i = 0; i < func->n; i++)
 			func->u.e.c0[i] = fz_to_real(fz_array_get(obj, i));
 	}
@@ -1123,18 +1123,16 @@ load_exponential_func(fz_context *ctx, pdf_function *func, fz_obj *dict)
 	if (fz_is_array(obj))
 	{
 		if (fz_array_len(obj) != func->n)
-			return fz_error_make("/C1 must match /C0 length");
+			fz_throw(ctx, "/C1 must match /C0 length");
 		for (i = 0; i < func->n; i++)
 			func->u.e.c1[i] = fz_to_real(fz_array_get(obj, i));
 	}
 	else
 	{
 		if (func->n != 1)
-			return fz_error_make("/C1 must match /C0 length");
+			fz_throw(ctx, "/C1 must match /C0 length");
 		func->u.e.c1[0] = 1;
 	}
-
-	return fz_okay;
 }
 
 static void
