@@ -247,8 +247,15 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			if (tmpofs < 0)
 				fz_throw(ctx, "cannot tell in file");
 
-			tok = pdf_lex(xref->file, buf, bufsize, &n);
-			/* RJW: "ignoring the rest of the file" */
+			fz_try(ctx)
+			{
+				tok = pdf_lex(xref->file, buf, bufsize, &n);
+			}
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "ignoring the rest of the file");
+				break;
+			}
 
 			if (tok == PDF_TOK_INT)
 			{
