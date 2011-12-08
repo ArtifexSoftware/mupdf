@@ -1003,11 +1003,11 @@ pdf_resolve_indirect(fz_obj *ref)
 	if (fz_is_indirect(ref))
 	{
 		pdf_xref *xref = fz_get_indirect_xref(ref);
-		fz_context *ctx = xref->ctx;
-		int num = fz_to_num(ref);
-		int gen = fz_to_gen(ref);
 		if (xref)
 		{
+			int num = fz_to_num(ref);
+			int gen = fz_to_gen(ref);
+			fz_context *ctx = xref->ctx;
 			fz_try(ctx)
 			{
 				pdf_cache_object(xref, num, gen);
