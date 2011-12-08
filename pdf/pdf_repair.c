@@ -192,12 +192,12 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 	fz_obj *dict, *obj;
 	fz_obj *length;
 
-	fz_obj * volatile encrypt = NULL;
-	fz_obj * volatile id = NULL;
-	fz_obj * volatile root = NULL;
-	fz_obj * volatile info = NULL;
+	fz_obj *encrypt = NULL;
+	fz_obj *id = NULL;
+	fz_obj *root = NULL;
+	fz_obj *info = NULL;
 
-	struct entry * volatile list = NULL;
+	struct entry *list = NULL;
 	int listlen;
 	int listcap;
 	int maxnum = 0;
@@ -210,6 +210,12 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 	int next;
 	int i, n, c;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(encrypt);
+	fz_var(id);
+	fz_var(root);
+	fz_var(info);
+	fz_var(list);
 
 	fz_seek(xref->file, 0, 0);
 

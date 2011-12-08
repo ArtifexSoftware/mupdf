@@ -228,8 +228,10 @@ pdf_open_inline_stream(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int len
 fz_stream *
 pdf_open_raw_stream(pdf_xref *xref, int num, int gen)
 {
-	pdf_xref_entry * volatile x;
+	pdf_xref_entry *x;
 	fz_stream *stm;
+
+	fz_var(x);
 
 	if (num < 0 || num >= xref->len)
 		fz_throw(xref->ctx, "object id out of range (%d %d R)", num, gen);
@@ -341,7 +343,9 @@ pdf_load_stream(pdf_xref *xref, int num, int gen)
 	fz_stream *stm;
 	fz_obj *dict, *obj;
 	int i, len, n;
-	fz_buffer * volatile buf;
+	fz_buffer *buf;
+
+	fz_var(buf);
 
 	stm = pdf_open_stream(xref, num, gen);
 	/* RJW: "cannot open stream (%d %d R)", num, gen */

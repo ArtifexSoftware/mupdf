@@ -391,7 +391,7 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 	fz_obj *encoding;
 	fz_obj *widths;
 	unsigned short *etable = NULL;
-	pdf_font_desc * volatile fontdesc;
+	pdf_font_desc *fontdesc;
 	FT_Face face;
 	FT_CharMap cmap;
 	int symbolic;
@@ -404,6 +404,8 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 	int i, k, n;
 	int fterr;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(fontdesc);
 
 	basefont = fz_to_name(fz_dict_gets(dict, "BaseFont"));
 	fontname = clean_font_name(basefont);
@@ -696,7 +698,7 @@ load_cid_font(pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *to_unicode
 {
 	fz_obj *widths;
 	fz_obj *descriptor;
-	pdf_font_desc * volatile fontdesc;
+	pdf_font_desc *fontdesc;
 	FT_Face face;
 	int kind;
 	char collection[256];
@@ -705,6 +707,8 @@ load_cid_font(pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *to_unicode
 	fz_obj *obj;
 	int dw;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(fontdesc);
 
 	fz_try(ctx)
 	{

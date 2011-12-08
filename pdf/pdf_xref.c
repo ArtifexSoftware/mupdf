@@ -297,13 +297,15 @@ static fz_obj *
 pdf_read_new_xref(pdf_xref *xref, char *buf, int cap)
 {
 	fz_stream *stm;
-	fz_obj * volatile trailer = NULL;
+	fz_obj *trailer = NULL;
 	fz_obj *index = NULL;
 	fz_obj *obj = NULL;
 	int num, gen, stm_ofs;
 	int size, w0, w1, w2;
 	int t;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(trailer);
 
 	fz_try(ctx)
 	{
@@ -579,8 +581,10 @@ pdf_read_ocg(pdf_xref *xref)
 {
 	fz_obj *obj, *ocg;
 	int len, i;
-	pdf_ocg_descriptor * volatile desc;
+	pdf_ocg_descriptor *desc;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(desc);
 
 	obj = fz_dict_gets(fz_dict_gets(xref->trailer, "Root"), "OCProperties");
 	if (obj == NULL)
@@ -844,8 +848,8 @@ pdf_load_obj_stm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 {
 	fz_stream *stm;
 	fz_obj *objstm;
-	int * volatile numbuf = NULL;
-	int * volatile ofsbuf = NULL;
+	int *numbuf = NULL;
+	int *ofsbuf = NULL;
 
 	fz_obj *obj;
 	int first;
@@ -854,8 +858,8 @@ pdf_load_obj_stm(pdf_xref *xref, int num, int gen, char *buf, int cap)
 	int tok;
 	fz_context *ctx = xref->ctx;
 
-	//fz_var(numbuf);
-	//fz_var(ofsbuf);
+	fz_var(numbuf);
+	fz_var(ofsbuf);
 	fz_try(ctx)
 	{
 		objstm = pdf_load_object(xref, num, gen);

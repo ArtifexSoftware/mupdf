@@ -162,6 +162,9 @@ struct fz_error_context_s
 	char message[256];
 };
 
+void fz_var_imp(void *);
+#define fz_var(var) fz_var_imp((void *)&(var))
+
 #define fz_try(ctx) \
 	if (fz_push_try(ctx->error), \
 		!setjmp(ctx->error->stack[ctx->error->top].buffer)) \

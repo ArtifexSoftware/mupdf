@@ -28,24 +28,30 @@ pdf_mask_color_key(fz_pixmap *pix, int n, int *colorkey)
 static fz_pixmap *
 pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, int forcemask)
 {
-	fz_stream * volatile stm = NULL;
-	fz_pixmap * volatile tile = NULL;
+	fz_stream *stm = NULL;
+	fz_pixmap *tile = NULL;
 	fz_obj *obj, *res;
 
 	int w, h, bpc, n;
 	int imagemask;
 	int interpolate;
 	int indexed;
-	fz_colorspace * volatile colorspace = NULL;
-	fz_pixmap * volatile mask = NULL; /* explicit mask/softmask image */
+	fz_colorspace *colorspace = NULL;
+	fz_pixmap *mask = NULL; /* explicit mask/softmask image */
 	int usecolorkey;
 	int colorkey[FZ_MAX_COLORS * 2];
 	float decode[FZ_MAX_COLORS * 2];
 
 	int stride;
-	unsigned char * volatile samples = NULL;
+	unsigned char *samples = NULL;
 	int i, len;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(stm);
+	fz_var(tile);
+	fz_var(colorspace);
+	fz_var(mask);
+	fz_var(samples);
 
 	fz_try(ctx)
 	{
@@ -285,11 +291,14 @@ pdf_is_jpx_image(fz_context *ctx, fz_obj *dict)
 static fz_pixmap *
 pdf_load_jpx_image(pdf_xref *xref, fz_obj *dict)
 {
-	fz_buffer * volatile buf = NULL;
-	fz_colorspace * volatile colorspace = NULL;
+	fz_buffer *buf = NULL;
+	fz_colorspace *colorspace = NULL;
 	fz_pixmap *img;
 	fz_obj *obj;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(buf);
+	fz_var(colorspace);
 
 	buf = pdf_load_stream(xref, fz_to_num(dict), fz_to_gen(dict));
 	/* RJW: "cannot load jpx image data" */
@@ -307,7 +316,10 @@ pdf_load_jpx_image(pdf_xref *xref, fz_obj *dict)
 		/* RJW: "cannot load jpx image" */
 
 		if (colorspace)
+		{
 			fz_drop_colorspace(ctx, colorspace);
+			colorspace = NULL;
+		}
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 

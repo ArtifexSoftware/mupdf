@@ -302,13 +302,17 @@ end:
 fz_obj *
 pdf_parse_dict(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 {
-	fz_obj * volatile dict = NULL;
-	fz_obj * volatile key = NULL;
-	fz_obj * volatile val = NULL;
+	fz_obj *dict = NULL;
+	fz_obj *key = NULL;
+	fz_obj *val = NULL;
 	int tok;
 	int len;
 	int a, b;
 	fz_context *ctx = file->ctx;
+
+	fz_var(dict);
+	fz_var(key);
+	fz_var(val);
 
 	dict = fz_new_dict(ctx, 8);
 
@@ -430,12 +434,14 @@ pdf_parse_ind_obj(pdf_xref *xref,
 	fz_stream *file, char *buf, int cap,
 	int *onum, int *ogen, int *ostmofs)
 {
-	fz_obj * volatile obj = NULL;
+	fz_obj *obj = NULL;
 	int num = 0, gen = 0, stm_ofs;
 	int tok;
 	int len;
 	int a, b;
 	fz_context *ctx = file->ctx;
+
+	fz_var(obj);
 
 	tok = pdf_lex(file, buf, cap, &len);
 	/* RJW: cannot parse indirect object (%d %d R)", num, gen */

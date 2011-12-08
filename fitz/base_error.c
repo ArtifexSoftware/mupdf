@@ -2,6 +2,11 @@
 
 /* Warning context */
 
+void fz_var_imp(void *var)
+{
+	var = var; /* Do nothing */
+}
+
 void fz_flush_warnings(fz_context *ctx)
 {
 	if (ctx->warn->count > 1)

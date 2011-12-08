@@ -960,14 +960,18 @@ pdf_load_type7_shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 static fz_shade *
 pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 {
-	fz_shade * volatile shade = NULL;
-	pdf_function * volatile func[FZ_MAX_COLORS] = { NULL };
-	fz_stream * volatile stream = NULL;
+	fz_shade *shade = NULL;
+	pdf_function *func[FZ_MAX_COLORS] = { NULL };
+	fz_stream *stream = NULL;
 	fz_obj *obj;
 	int funcs;
 	int type;
 	int i;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(shade);
+	fz_var(func);
+	fz_var(stream);
 
 	fz_try(ctx)
 	{

@@ -2452,9 +2452,12 @@ pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 {
 	fz_context *ctx = csi->dev->ctx;
 	int len = sizeof csi->xref->scratch;
-	char * volatile buf = NULL;
-	fz_stream * volatile file = NULL;
+	char *buf = NULL;
+	fz_stream * file = NULL;
 	int save_in_text;
+
+	fz_var(buf);
+	fz_var(file);
 
 	fz_try(ctx)
 	{

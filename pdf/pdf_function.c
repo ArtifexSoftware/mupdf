@@ -817,12 +817,14 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 static void
 load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int gen)
 {
-	fz_stream * volatile stream = NULL;
+	fz_stream *stream = NULL;
 	int codeptr;
 	char buf[64];
 	int tok;
 	int len;
 	fz_context *ctx = xref->ctx;
+
+	fz_var(stream);
 
 	fz_try(ctx)
 	{
@@ -1328,7 +1330,7 @@ pdf_function *
 pdf_load_function(pdf_xref *xref, fz_obj *dict)
 {
 	fz_context *ctx = xref->ctx;
-	pdf_function * volatile func;
+	pdf_function *func;
 	fz_obj *obj;
 	int i;
 
