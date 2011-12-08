@@ -309,6 +309,7 @@ pdf_load_jpx_image(pdf_xref *xref, fz_obj *dict)
 		if (colorspace)
 			fz_drop_colorspace(ctx, colorspace);
 		fz_drop_buffer(ctx, buf);
+		buf = NULL;
 
 		obj = fz_dict_getsa(dict, "SMask", "Mask");
 		if (fz_is_dict(obj))
@@ -335,6 +336,7 @@ pdf_load_jpx_image(pdf_xref *xref, fz_obj *dict)
 			fz_drop_colorspace(ctx, colorspace);
 		fz_drop_buffer(ctx, buf);
 		fz_drop_pixmap(ctx, img);
+		fz_rethrow(ctx);
 	}
 	return img;
 }
