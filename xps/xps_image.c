@@ -10,24 +10,13 @@ xps_decode_image(fz_context *ctx, byte *buf, int len)
 		fz_throw(ctx, "unknown image file format");
 
 	if (buf[0] == 0xff && buf[1] == 0xd8)
-	{
 		image = xps_decode_jpeg(ctx, buf, len);
-		/* RJW: "cannot decode jpeg image" */
-	}
 	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
-	{
 		image = xps_decode_png(ctx, buf, len);
-		/* RJW: "cannot decode png image" */
-	}
 	else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
-	{
 		fz_throw(ctx, "JPEG-XR codec is not available");
-	}
 	else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
-	{
 		image = xps_decode_tiff(ctx, buf, len);
-		/* RJW: "cannot decode TIFF image" */
-	}
 	else
 		fz_throw(ctx, "unknown image file format");
 
@@ -59,7 +48,7 @@ xps_find_image_brush_source_part(xps_document *doc, char *base_uri, xml_element 
 
 	image_source_att = xml_att(root, "ImageSource");
 	if (!image_source_att)
-		return NULL;
+		fz_throw(doc->ctx, "cannot find image source attribute");
 
 	/* "{ColorConvertedBitmap /Resources/Image.tiff /Resources/Profile.icc}" */
 	if (strstr(image_source_att, "{ColorConvertedBitmap") == image_source_att)
@@ -90,7 +79,7 @@ xps_find_image_brush_source_part(xps_document *doc, char *base_uri, xml_element 
 	}
 
 	if (!image_name)
-		return NULL;
+		fz_throw(doc->ctx, "cannot find image source");
 
 	xps_absolute_path(partname, base_uri, image_name, sizeof partname);
 
@@ -104,8 +93,12 @@ xps_parse_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	xps_part *part;
 	fz_pixmap *image;
 
-	part = xps_find_image_brush_source_part(doc, base_uri, root);
-	if (!part) {
+	fz_try(doc->ctx)
+	{
+		part = xps_find_image_brush_source_part(doc, base_uri, root);
+	}
+	fz_catch(doc->ctx)
+	{
 		fz_warn(doc->ctx, "cannot find image source");
 		return;
 	}
@@ -116,13 +109,13 @@ xps_parse_image_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	}
 	fz_catch(doc->ctx)
 	{
+		fz_warn(doc->ctx, "cannot decode image resource");
 		xps_free_part(doc, part);
-		fz_error_handle(-1, "cannot decode image resource");
 		return;
 	}
+	xps_free_part(doc, part);
 
 	xps_parse_tiling_brush(doc, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
 
 	fz_drop_pixmap(doc->ctx, image);
-	xps_free_part(doc, part);
 }

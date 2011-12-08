@@ -83,23 +83,29 @@ xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 	fz_outline *outline;
 
 	part = xps_read_part(doc, fixdoc->outline);
-	if (!part)
-		return NULL;
-
-	root = xml_parse_document(doc->ctx, part->data, part->size);
-	if (!root) {
-		fz_error_handle(-1, "cannot parse document structure part '%s'", part->name);
-		xps_free_part(doc, part);
-		return NULL;
+	fz_try(doc->ctx)
+	{
+		root = xml_parse_document(doc->ctx, part->data, part->size);
 	}
-
-	outline = xps_parse_document_structure(doc, root);
-
-	xml_free_element(doc->ctx, root);
+	fz_catch(doc->ctx)
+	{
+		xps_free_part(doc, part);
+		fz_rethrow(doc->ctx);
+	}
 	xps_free_part(doc, part);
 
-	return outline;
+	fz_try(doc->ctx)
+	{
+		outline = xps_parse_document_structure(doc, root);
+	}
+	fz_catch(doc->ctx)
+	{
+		xml_free_element(doc->ctx, root);
+		fz_rethrow(doc->ctx);
+	}
+	xml_free_element(doc->ctx, root);
 
+	return outline;
 }
 
 fz_outline *
@@ -111,13 +117,11 @@ xps_load_outline(xps_document *doc)
 	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next) {
 		if (fixdoc->outline) {
 			outline = xps_load_document_structure(doc, fixdoc);
-			if (outline) {
-				if (!head)
-					head = outline;
-				else
-					tail->next = outline;
-				tail = outline;
-			}
+			if (!head)
+				head = outline;
+			else
+				tail->next = outline;
+			tail = outline;
 		}
 	}
 	return head;

@@ -250,7 +250,6 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	xps_resource *new_dict = NULL;
 	xml_element *node;
 	char *opacity_mask_uri;
-	int code;
 
 	char *transform_att;
 	char *clip_att;
@@ -272,14 +271,9 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	{
 		if (!strcmp(xml_tag(node), "Canvas.Resources") && xml_down(node))
 		{
-			code = xps_parse_resource_dictionary(doc, &new_dict, base_uri, xml_down(node));
-			if (code)
-				fz_error_handle(code, "cannot load Canvas.Resources");
-			else
-			{
-				new_dict->parent = dict;
-				dict = new_dict;
-			}
+			new_dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
+			new_dict->parent = dict;
+			dict = new_dict;
 		}
 
 		if (!strcmp(xml_tag(node), "Canvas.RenderTransform"))
@@ -329,7 +323,6 @@ xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page)
 	char base_uri[1024];
 	fz_rect area;
 	char *s;
-	int code;
 
 	fz_strlcpy(base_uri, page->name, sizeof base_uri);
 	s = strrchr(base_uri, '/');
@@ -349,16 +342,10 @@ xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page)
 	for (node = xml_down(page->root); node; node = xml_next(node))
 	{
 		if (!strcmp(xml_tag(node), "FixedPage.Resources") && xml_down(node))
-		{
-			code = xps_parse_resource_dictionary(doc, &dict, base_uri, xml_down(node));
-			if (code)
-				fz_error_handle(code, "cannot load FixedPage.Resources");
-		}
+			dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
 		xps_parse_element(doc, ctm, area, base_uri, dict, node);
 	}
 
 	if (dict)
-	{
 		xps_free_resource_dictionary(doc, dict);
-	}
 }

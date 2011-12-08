@@ -80,7 +80,7 @@ xps_find_zip_entry(xps_document *doc, char *name)
 	return NULL;
 }
 
-static int
+static void
 xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 {
 	z_stream stream;
@@ -94,7 +94,7 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 
 	sig = getlong(doc->file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
-		return fz_error_make("wrong zip local file signature (0x%x)", sig);
+		fz_throw(doc->ctx, "wrong zip local file signature (0x%x)", sig);
 
 	version = getshort(doc->file);
 	general = getshort(doc->file);
@@ -130,32 +130,30 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 
 		code = inflateInit2(&stream, -15);
 		if (code != Z_OK)
-			return fz_error_make("zlib inflateInit2 error: %s", stream.msg);
+			fz_throw(doc->ctx, "zlib inflateInit2 error: %s", stream.msg);
 		code = inflate(&stream, Z_FINISH);
 		if (code != Z_STREAM_END)
 		{
 			inflateEnd(&stream);
-			return fz_error_make("zlib inflate error: %s", stream.msg);
+			fz_throw(doc->ctx, "zlib inflate error: %s", stream.msg);
 		}
 		code = inflateEnd(&stream);
 		if (code != Z_OK)
-			return fz_error_make("zlib inflateEnd error: %s", stream.msg);
+			fz_throw(doc->ctx, "zlib inflateEnd error: %s", stream.msg);
 
 		fz_free(doc->ctx, inbuf);
 	}
 	else
 	{
-		return fz_error_make("unknown compression method (%d)", method);
+		fz_throw(doc->ctx, "unknown compression method (%d)", method);
 	}
-
-	return fz_okay;
 }
 
 /*
  * Read the central directory in a zip file.
  */
 
-static int
+static void
 xps_read_zip_dir(xps_document *doc, int start_offset)
 {
 	int sig;
@@ -167,7 +165,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 
 	sig = getlong(doc->file);
 	if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
-		return fz_error_make("wrong zip end of central directory signature (0x%x)", sig);
+		fz_throw(doc->ctx, "wrong zip end of central directory signature (0x%x)", sig);
 
 	(void) getshort(doc->file); /* this disk */
 	(void) getshort(doc->file); /* start disk */
@@ -185,7 +183,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 	{
 		sig = getlong(doc->file);
 		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
-			return fz_error_make("wrong zip central directory signature (0x%x)", sig);
+			fz_throw(doc->ctx, "wrong zip central directory signature (0x%x)", sig);
 
 		(void) getshort(doc->file); /* version made by */
 		(void) getshort(doc->file); /* version to extract */
@@ -213,11 +211,9 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 	}
 
 	qsort(doc->zip_table, count, sizeof(xps_entry), xps_compare_entries);
-
-	return fz_okay;
 }
 
-static int
+static void
 xps_find_and_read_zip_dir(xps_document *doc)
 {
 	unsigned char buf[512];
@@ -233,19 +229,20 @@ xps_find_and_read_zip_dir(xps_document *doc)
 	while (back < maxback)
 	{
 		fz_seek(doc->file, file_size - back, 0);
-
 		n = fz_read(doc->file, buf, sizeof buf);
-		if (n < 0)
-			return fz_error_make("cannot read end of central directory");
-
 		for (i = n - 4; i > 0; i--)
+		{
 			if (!memcmp(buf + i, "PK\5\6", 4))
-				return xps_read_zip_dir(doc, file_size - back + i);
+			{
+				xps_read_zip_dir(doc, file_size - back + i);
+				return;
+			}
+		}
 
 		back += sizeof buf - 4;
 	}
 
-	return fz_error_make("cannot find end of central directory");
+	fz_throw(doc->ctx, "cannot find end of central directory");
 }
 
 /*
@@ -309,7 +306,23 @@ xps_read_zip_part(xps_document *doc, char *partname)
 		return part;
 	}
 
+	fz_throw(doc->ctx, "cannot find part '%s'", partname);
 	return NULL;
+}
+
+static int
+xps_has_zip_part(xps_document *doc, char *name)
+{
+	char buf[2048];
+	if (xps_find_zip_entry(doc, name))
+		return 1;
+	sprintf(buf, "%s/[0].piece", name);
+	if (xps_find_zip_entry(doc, buf));
+		return 1;
+	sprintf(buf, "%s/[0].last.piece", name);
+	if (xps_find_zip_entry(doc, buf));
+		return 1;
+	return 0;
 }
 
 /*
@@ -371,6 +384,8 @@ xps_read_dir_part(xps_document *doc, char *name)
 			else
 				sprintf(buf, "%s%s/[%d].last.piece", doc->directory, name, i);
 			file = fopen(buf, "rb");
+			if (!file)
+				fz_throw(doc->ctx, "cannot open file '%s'", buf);
 			n = fread(part->data + offset, 1, size - offset, file);
 			offset += n;
 			fclose(file);
@@ -378,7 +393,39 @@ xps_read_dir_part(xps_document *doc, char *name)
 		return part;
 	}
 
+	fz_throw(doc->ctx, "cannot find part '%s'", name);
 	return NULL;
+}
+
+static int
+file_exists(xps_document *doc, char *name)
+{
+	char buf[2048];
+	FILE *file;
+	fz_strlcpy(buf, doc->directory, sizeof buf);
+	fz_strlcat(buf, name, sizeof buf);
+	file = fopen(buf, "rb");
+	if (file)
+	{
+		fclose(file);
+		return 1;
+	}
+	return 0;
+}
+
+static int
+xps_has_dir_part(xps_document *doc, char *name)
+{
+	char buf[2048];
+	if (file_exists(doc, name))
+		return 1;
+	sprintf(buf, "%s/[0].piece", name);
+	if (file_exists(doc, buf));
+		return 1;
+	sprintf(buf, "%s/[0].last.piece", name);
+	if (file_exists(doc, buf));
+		return 1;
+	return 0;
 }
 
 xps_part *
@@ -389,6 +436,14 @@ xps_read_part(xps_document *doc, char *partname)
 	return xps_read_zip_part(doc, partname);
 }
 
+int
+xps_has_part(xps_document *doc, char *partname)
+{
+	if (doc->directory)
+		return xps_has_dir_part(doc, partname);
+	return xps_has_zip_part(doc, partname);
+}
+
 static xps_document *
 xps_open_directory(fz_context *ctx, char *directory)
 {
@@ -397,8 +452,8 @@ xps_open_directory(fz_context *ctx, char *directory)
 	doc = fz_malloc(ctx, sizeof(xps_document));
 	memset(doc, 0, sizeof *doc);
 
-	doc->directory = fz_strdup(ctx, directory);
 	doc->ctx = ctx;
+	doc->directory = fz_strdup(ctx, directory);
 
 	fz_try(ctx)
 	{
@@ -407,7 +462,7 @@ xps_open_directory(fz_context *ctx, char *directory)
 	fz_catch(ctx)
 	{
 		xps_free_context(doc);
-		fz_throw(ctx, "cannot read page list");
+		fz_rethrow(ctx);
 	}
 
 	return doc;
@@ -416,8 +471,8 @@ xps_open_directory(fz_context *ctx, char *directory)
 xps_document *
 xps_open_stream(fz_stream *file)
 {
-	xps_document *doc;
 	fz_context *ctx = file->ctx;
+	xps_document *doc;
 
 	doc = fz_malloc(ctx, sizeof(xps_document));
 	memset(doc, 0, sizeof *doc);
@@ -428,21 +483,12 @@ xps_open_stream(fz_stream *file)
 	fz_try(ctx)
 	{
 		xps_find_and_read_zip_dir(doc);
-	}
-	fz_catch(ctx)
-	{
-		xps_free_context(doc);
-		fz_throw(ctx, "cannot read zip central directory");
-	}
-
-	fz_try(ctx)
-	{
 		xps_read_page_list(doc);
 	}
 	fz_catch(ctx)
 	{
 		xps_free_context(doc);
-		fz_throw(ctx, "cannot read page list");
+		fz_rethrow(ctx);
 	}
 
 	return doc;

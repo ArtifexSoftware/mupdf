@@ -377,10 +377,8 @@ xml_parse_document(fz_context *ctx, unsigned char *s, int n)
 	p = convert_to_utf8(ctx, s, n);
 
 	error = xml_parse_document_imp(&parser, p);
-	if (error) {
+	if (error)
 		fz_throw(ctx, "%s", error);
-		return NULL;
-	}
 
 	if (p != (char*)s)
 		fz_free(ctx, p);

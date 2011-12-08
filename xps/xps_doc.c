@@ -237,7 +237,7 @@ xps_parse_metadata_imp(xps_document *doc, xml_element *item, xps_fixdoc *fixdoc)
 	}
 }
 
-static int
+static void
 xps_parse_metadata(xps_document *doc, xps_part *part, xps_fixdoc *fixdoc)
 {
 	xml_element *root;
@@ -262,70 +262,50 @@ xps_parse_metadata(xps_document *doc, xps_part *part, xps_fixdoc *fixdoc)
 	doc->part_uri = part->name;
 
 	root = xml_parse_document(doc->ctx, part->data, part->size);
-	if (!root)
-		return fz_error_note(-1, "cannot parse metadata part '%s'", part->name);
-
 	xps_parse_metadata_imp(doc, root, fixdoc);
-
 	xml_free_element(doc->ctx, root);
 
 	doc->base_uri = NULL;
 	doc->part_uri = NULL;
-
-	return fz_okay;
 }
 
-static int
+static void
 xps_read_and_process_metadata_part(xps_document *doc, char *name, xps_fixdoc *fixdoc)
 {
-	xps_part *part;
-	int code;
-
-	part = xps_read_part(doc, name);
-	if (!part)
-		return fz_error_note(-1, "cannot read zip part '%s'", name);
-
-	code = xps_parse_metadata(doc, part, fixdoc);
-	if (code)
-		return fz_error_note(code, "cannot process metadata part '%s'", name);
-
-	xps_free_part(doc, part);
-
-	return fz_okay;
+	if (xps_has_part(doc, name))
+	{
+		xps_part *part = xps_read_part(doc, name);
+		xps_parse_metadata(doc, part, fixdoc);
+		xps_free_part(doc, part);
+	}
 }
 
-int
+void
 xps_read_page_list(xps_document *doc)
 {
 	xps_fixdoc *fixdoc;
-	int code;
 
-	code = xps_read_and_process_metadata_part(doc, "/_rels/.rels", NULL);
-	if (code)
-		return fz_error_note(code, "cannot process root relationship part");
+	xps_read_and_process_metadata_part(doc, "/_rels/.rels", NULL);
 
 	if (!doc->start_part)
-		return fz_error_make("cannot find fixed document sequence start part");
+		fz_throw(doc->ctx, "cannot find fixed document sequence start part");
 
-	code = xps_read_and_process_metadata_part(doc, doc->start_part, NULL);
-	if (code)
-		return fz_error_note(code, "cannot process FixedDocumentSequence part");
+	xps_read_and_process_metadata_part(doc, doc->start_part, NULL);
 
 	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 	{
 		char relbuf[1024];
-		xps_rels_for_part(relbuf, fixdoc->name, sizeof relbuf);
-
-		code = xps_read_and_process_metadata_part(doc, relbuf, fixdoc);
-		if (code)
-			fz_error_handle(code, "cannot process FixedDocument rels part");
-
-		code = xps_read_and_process_metadata_part(doc, fixdoc->name, fixdoc);
-		if (code)
-			return fz_error_note(code, "cannot process FixedDocument part");
+		fz_try(doc->ctx)
+		{
+			xps_rels_for_part(relbuf, fixdoc->name, sizeof relbuf);
+			xps_read_and_process_metadata_part(doc, relbuf, fixdoc);
+		}
+		fz_catch(doc->ctx)
+		{
+			fz_warn(doc->ctx, "cannot process FixedDocument rels part");
+		}
+		xps_read_and_process_metadata_part(doc, fixdoc->name, fixdoc);
 	}
-
-	return fz_okay;
 }
 
 int
@@ -334,7 +314,7 @@ xps_count_pages(xps_document *doc)
 	return doc->page_count;
 }
 
-static int
+static void
 xps_load_fixed_page(xps_document *doc, xps_page *page)
 {
 	xps_part *part;
@@ -343,31 +323,23 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	char *height_att;
 
 	part = xps_read_part(doc, page->name);
-	if (!part)
-		return fz_error_note(-1, "cannot read zip part '%s'", page->name);
-
 	root = xml_parse_document(doc->ctx, part->data, part->size);
-	if (!root)
-		return fz_error_note(-1, "cannot parse xml part '%s'", page->name);
-
 	xps_free_part(doc, part);
 
 	if (strcmp(xml_tag(root), "FixedPage"))
-		return fz_error_make("expected FixedPage element (found %s)", xml_tag(root));
+		fz_throw(doc->ctx, "expected FixedPage element (found %s)", xml_tag(root));
 
 	width_att = xml_att(root, "Width");
 	if (!width_att)
-		return fz_error_make("FixedPage missing required attribute: Width");
+		fz_throw(doc->ctx, "FixedPage missing required attribute: Width");
 
 	height_att = xml_att(root, "Height");
 	if (!height_att)
-		return fz_error_make("FixedPage missing required attribute: Height");
+		fz_throw(doc->ctx, "FixedPage missing required attribute: Height");
 
 	page->width = atoi(width_att);
 	page->height = atoi(height_att);
 	page->root = root;
-
-	return 0;
 }
 
 xps_page *
@@ -381,17 +353,14 @@ xps_load_page(xps_document *doc, int number)
 		if (n == number)
 		{
 			if (!page->root)
-			{
 				xps_load_fixed_page(doc, page);
-				/* RJW: "cannot load page %d", number + 1 */
-			}
 			return page;
 		}
 		n ++;
 	}
 
 	fz_throw(doc->ctx, "cannot find page %d", number + 1);
-	return NULL; /* Stupid MSVC */
+	return NULL;
 }
 
 void

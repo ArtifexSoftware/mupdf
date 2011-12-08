@@ -63,6 +63,7 @@ struct xps_part_s
 };
 
 xps_part *xps_new_part(xps_document *doc, char *name, int size);
+int xps_has_part(xps_document *doc, char *partname);
 xps_part *xps_read_part(xps_document *doc, char *partname);
 void xps_free_part(xps_document *doc, xps_part *part);
 
@@ -98,7 +99,7 @@ struct xps_target_s
 	xps_target *next;
 };
 
-int xps_read_page_list(xps_document *doc);
+void xps_read_page_list(xps_document *doc);
 void xps_debug_page_list(xps_document *doc);
 void xps_free_page_list(xps_document *doc);
 
@@ -162,7 +163,7 @@ struct xps_resource_s
 	xps_resource *parent; /* up to the previous dict in the stack */
 };
 
-int xps_parse_resource_dictionary(xps_document *doc, xps_resource **dictp, char *base_uri, xml_element *root);
+xps_resource * xps_parse_resource_dictionary(xps_document *doc, char *base_uri, xml_element *root);
 void xps_free_resource_dictionary(xps_document *doc, xps_resource *dict);
 void xps_resolve_resource_reference(xps_document *doc, xps_resource *dict, char **attp, xml_element **tagp, char **urip);
 

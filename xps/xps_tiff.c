@@ -12,6 +12,8 @@
 
 struct tiff
 {
+	fz_context *ctx;
+
 	/* "file" */
 	byte *bp, *rp, *ep;
 
@@ -56,7 +58,6 @@ struct tiff
 	fz_colorspace *colorspace;
 	byte *samples;
 	int stride;
-	fz_context *ctx;
 };
 
 enum
@@ -134,56 +135,44 @@ static const byte bitrev[256] =
 	0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
-static int
+static void
 xps_decode_tiff_uncompressed(struct tiff *tiff, fz_stream *stm, byte *wp, int wlen)
 {
-	int n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
-	if (n < 0)
-		return fz_error_note(n, "cannot read uncompressed strip");
-	return fz_okay;
 }
 
-static int
+static void
 xps_decode_tiff_packbits(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_open_rld(chain);
-	int n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
-	if (n < 0)
-		return fz_error_note(n, "cannot read packbits strip");
-	return fz_okay;
 }
 
-static int
+static void
 xps_decode_tiff_lzw(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_open_lzwd(chain, NULL);
-	int n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
-	if (n < 0)
-		return fz_error_note(n, "cannot read lzw strip");
-	return fz_okay;
 }
-static int
+
+static void
 xps_decode_tiff_flate(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_open_flated(chain);
-	int n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
-	if (n < 0)
-		return fz_error_note(n, "cannot read flate strip");
-	return fz_okay;
 }
 
-static int
+static void
 xps_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, byte *wp, int wlen)
 {
+	fz_context *ctx = tiff->ctx;
 	fz_stream *stm;
 	fz_obj *params;
 	fz_obj *columns, *rows, *black_is_1, *k, *encoded_byte_align;
-	int n;
-	fz_context *ctx = tiff->ctx;
 
 	columns = fz_new_int(ctx, tiff->imagewidth);
 	rows = fz_new_int(ctx, tiff->imagelength);
@@ -205,24 +194,17 @@ xps_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, byte *wp, int
 	fz_drop_obj(encoded_byte_align);
 
 	stm = fz_open_faxd(chain, params);
-	n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
 	fz_drop_obj(params);
-
-	if (n < 0)
-		return fz_error_note(n, "cannot read fax strip");
-	return fz_okay;
 }
 
-static int
+static void
 xps_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, byte *wp, int wlen)
 {
 	fz_stream *stm = fz_open_dctd(chain, NULL);
-	int n = fz_read(stm, wp, wlen);
+	fz_read(stm, wp, wlen);
 	fz_close(stm);
-	if (n < 0)
-		return fz_error_note(n, "cannot read jpeg strip");
-	return fz_okay;
 }
 
 static inline int getcomp(byte *line, int x, int bpc)
@@ -299,7 +281,7 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 	}
 }
 
-static int
+static void
 xps_expand_tiff_colormap(struct tiff *tiff)
 {
 	int maxval = 1 << tiff->bitspersample;
@@ -313,10 +295,10 @@ xps_expand_tiff_colormap(struct tiff *tiff)
 	/* image can be with or without extrasamples: comps is 1 or 2 */
 
 	if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 2)
-		return fz_error_make("invalid number of samples for RGBPal");
+		fz_throw(tiff->ctx, "invalid number of samples for RGBPal");
 
 	if (tiff->bitspersample != 4 && tiff->bitspersample != 8)
-		return fz_error_make("invalid number of bits for RGBPal");
+		fz_throw(tiff->ctx, "invalid number of bits for RGBPal");
 
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
@@ -352,14 +334,12 @@ xps_expand_tiff_colormap(struct tiff *tiff)
 	tiff->bitspersample = 8;
 	tiff->stride = stride;
 	tiff->samples = samples;
-	return fz_okay;
 }
 
-static int
+static void
 xps_decode_tiff_strips(struct tiff *tiff)
 {
 	fz_stream *stm;
-	int error;
 
 	/* switch on compression to create a filter */
 	/* feed each strip to the filter */
@@ -376,10 +356,10 @@ xps_decode_tiff_strips(struct tiff *tiff)
 	unsigned i;
 
 	if (!tiff->rowsperstrip || !tiff->stripoffsets || !tiff->rowsperstrip)
-		return fz_error_make("no image data in tiff; maybe it is tiled");
+		fz_throw(tiff->ctx, "no image data in tiff; maybe it is tiled");
 
 	if (tiff->planar != 1)
-		return fz_error_make("image data is not in chunky format");
+		fz_throw(tiff->ctx, "image data is not in chunky format");
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
@@ -405,7 +385,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 		tiff->colorspace = fz_device_rgb;
 		break;
 	default:
-		return fz_error_make("unknown photometric: %d", tiff->photometric);
+		fz_throw(tiff->ctx, "unknown photometric: %d", tiff->photometric);
 	}
 
 	switch (tiff->resolutionunit)
@@ -446,7 +426,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 			wlen = tiff->samples + tiff->stride * tiff->imagelength - wp;
 
 		if (rp + rlen > tiff->ep)
-			return fz_error_make("strip extends beyond the end of the file");
+			fz_throw(tiff->ctx, "strip extends beyond the end of the file");
 
 		/* the bits are in un-natural order */
 		if (tiff->fillorder == 2)
@@ -459,38 +439,35 @@ xps_decode_tiff_strips(struct tiff *tiff)
 		switch (tiff->compression)
 		{
 		case 1:
-			error = xps_decode_tiff_uncompressed(tiff, stm, wp, wlen);
+			xps_decode_tiff_uncompressed(tiff, stm, wp, wlen);
 			break;
 		case 2:
-			error = xps_decode_tiff_fax(tiff, 2, stm, wp, wlen);
+			xps_decode_tiff_fax(tiff, 2, stm, wp, wlen);
 			break;
 		case 3:
-			error = xps_decode_tiff_fax(tiff, 3, stm, wp, wlen);
+			xps_decode_tiff_fax(tiff, 3, stm, wp, wlen);
 			break;
 		case 4:
-			error = xps_decode_tiff_fax(tiff, 4, stm, wp, wlen);
+			xps_decode_tiff_fax(tiff, 4, stm, wp, wlen);
 			break;
 		case 5:
-			error = xps_decode_tiff_lzw(tiff, stm, wp, wlen);
+			xps_decode_tiff_lzw(tiff, stm, wp, wlen);
 			break;
 		case 6:
-			error = fz_error_make("deprecated JPEG in TIFF compression not supported");
+			fz_throw(tiff->ctx, "deprecated JPEG in TIFF compression not supported");
 			break;
 		case 7:
-			error = xps_decode_tiff_jpeg(tiff, stm, wp, wlen);
+			xps_decode_tiff_jpeg(tiff, stm, wp, wlen);
 			break;
 		case 8:
-			error = xps_decode_tiff_flate(tiff, stm, wp, wlen);
+			xps_decode_tiff_flate(tiff, stm, wp, wlen);
 			break;
 		case 32773:
-			error = xps_decode_tiff_packbits(tiff, stm, wp, wlen);
+			xps_decode_tiff_packbits(tiff, stm, wp, wlen);
 			break;
 		default:
-			error = fz_error_make("unknown TIFF compression: %d", tiff->compression);
+			fz_throw(tiff->ctx, "unknown TIFF compression: %d", tiff->compression);
 		}
-
-		if (error)
-			return fz_error_note(error, "cannot decode strip %d", row / tiff->rowsperstrip);
 
 		/* scramble the bits back into original order */
 		if (tiff->fillorder == 2)
@@ -514,11 +491,7 @@ xps_decode_tiff_strips(struct tiff *tiff)
 
 	/* RGBPal */
 	if (tiff->photometric == 3 && tiff->colormap)
-	{
-		error = xps_expand_tiff_colormap(tiff);
-		if (error)
-			return fz_error_note(error, "cannot expand colormap");
-	}
+		xps_expand_tiff_colormap(tiff);
 
 	/* WhiteIsZero .. invert */
 	if (tiff->photometric == 0)
@@ -530,8 +503,6 @@ xps_decode_tiff_strips(struct tiff *tiff)
 			p += tiff->stride;
 		}
 	}
-
-	return fz_okay;
 }
 
 static inline int readbyte(struct tiff *tiff)
@@ -596,7 +567,7 @@ xps_read_tiff_tag_value(unsigned *p, struct tiff *tiff, unsigned type, unsigned 
 	}
 }
 
-static int
+static void
 xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 {
 	unsigned tag;
@@ -707,14 +678,12 @@ xps_read_tiff_tag(struct tiff *tiff, unsigned offset)
 	case TileLength:
 	case TileOffsets:
 	case TileByteCounts:
-		return fz_error_make("tiled tiffs not supported");
+		fz_throw(tiff->ctx, "tiled tiffs not supported");
 
 	default:
 		/* printf("unknown tag: %d t=%d n=%d\n", tag, type, count); */
 		break;
 	}
-
-	return fz_okay;
 }
 
 static void
@@ -729,14 +698,13 @@ xps_swap_byte_order(byte *buf, int n)
 	}
 }
 
-static int
+static void
 xps_decode_tiff_header(struct tiff *tiff, byte *buf, int len)
 {
 	unsigned version;
 	unsigned offset;
 	unsigned count;
 	unsigned i;
-	int error;
 
 	memset(tiff, 0, sizeof(struct tiff));
 
@@ -765,12 +733,12 @@ xps_decode_tiff_header(struct tiff *tiff, byte *buf, int len)
 	tiff->order = TII;
 	tiff->order = readshort(tiff);
 	if (tiff->order != TII && tiff->order != TMM)
-		return fz_error_make("not a TIFF file, wrong magic marker");
+		fz_throw(tiff->ctx, "not a TIFF file, wrong magic marker");
 
 	/* check version */
 	version = readshort(tiff);
 	if (version != 42)
-		return fz_error_make("not a TIFF file, wrong version marker");
+		fz_throw(tiff->ctx, "not a TIFF file, wrong version marker");
 
 	/* get offset of IFD */
 	offset = readlong(tiff);
@@ -786,13 +754,9 @@ xps_decode_tiff_header(struct tiff *tiff, byte *buf, int len)
 	offset += 2;
 	for (i = 0; i < count; i++)
 	{
-		error = xps_read_tiff_tag(tiff, offset);
-		if (error)
-			return fz_error_note(error, "cannot read TIFF header tag");
+		xps_read_tiff_tag(tiff, offset);
 		offset += 12;
 	}
-
-	return fz_okay;
 }
 
 fz_pixmap *
@@ -803,7 +767,6 @@ xps_decode_tiff(fz_context *ctx, byte *buf, int len)
 
 	tiff.ctx = ctx;
 	xps_decode_tiff_header(&tiff, buf, len);
-	/* RJW: "cannot decode tiff header" */
 
 	/* Decode the image strips */
 
@@ -811,14 +774,11 @@ xps_decode_tiff(fz_context *ctx, byte *buf, int len)
 		tiff.rowsperstrip = tiff.imagelength;
 
 	xps_decode_tiff_strips(&tiff);
-	/* RJW: "cannot decode image data" */
 
 	/* Byte swap 16-bit images to big endian if necessary */
 	if (tiff.bitspersample == 16)
-	{
 		if (tiff.order == TII)
 			xps_swap_byte_order(tiff.samples, tiff.imagewidth * tiff.imagelength * tiff.samplesperpixel);
-	}
 
 	/* Expand into fz_pixmap struct */
 

@@ -483,8 +483,12 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 	font = xps_lookup_font(doc, partname);
 	if (!font)
 	{
-		part = xps_read_part(doc, partname);
-		if (!part) {
+		fz_try(doc->ctx)
+		{
+			part = xps_read_part(doc, partname);
+		}
+		fz_catch(doc->ctx)
+		{
 			fz_warn(doc->ctx, "cannot find font resource part '%s'", partname);
 			return;
 		}
@@ -501,7 +505,7 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 		}
 		fz_catch(doc->ctx)
 		{
-			fz_error_handle(1, "cannot load font resource '%s'", partname);
+			fz_warn(doc->ctx, "cannot load font resource '%s'", partname);
 			xps_free_part(doc, part);
 			return;
 		}
