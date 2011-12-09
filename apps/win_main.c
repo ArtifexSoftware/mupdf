@@ -363,7 +363,7 @@ void winopen()
 	0, // program instance handle
 	0); // creation parameters
 	if (!hwndframe)
-		winerror(&gapp, "cannot create frame);
+		winerror(&gapp, "cannot create frame");
 
 	hwndview = CreateWindowW(L"ViewWindow", // window class name
 	NULL,
