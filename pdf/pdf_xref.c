@@ -707,8 +707,8 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 			pdf_repair_obj_stms(xref);
 		}
 
-		hasroot = fz_dict_gets(xref->trailer, "Root");
-		hasinfo = fz_dict_gets(xref->trailer, "Info");
+		hasroot = (fz_dict_gets(xref->trailer, "Root") != NULL);
+		hasinfo = (fz_dict_gets(xref->trailer, "Info") != NULL);
 
 		for (i = 1; i < xref->len; i++)
 		{
