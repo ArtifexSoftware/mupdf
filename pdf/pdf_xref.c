@@ -705,51 +705,51 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 		if (repaired)
 		{
 			pdf_repair_obj_stms(xref);
-		}
 
-		hasroot = (fz_dict_gets(xref->trailer, "Root") != NULL);
-		hasinfo = (fz_dict_gets(xref->trailer, "Info") != NULL);
+			hasroot = (fz_dict_gets(xref->trailer, "Root") != NULL);
+			hasinfo = (fz_dict_gets(xref->trailer, "Info") != NULL);
 
-		for (i = 1; i < xref->len; i++)
-		{
-			if (xref->table[i].type == 0 || xref->table[i].type == 'f')
-				continue;
-
-			fz_try(ctx)
+			for (i = 1; i < xref->len; i++)
 			{
-				dict = pdf_load_object(xref, i, 0);
-			}
-			fz_catch(ctx)
-			{
-				fz_warn(ctx, "ignoring broken object (%d 0 R)", i);
-				continue;
-			}
+				if (xref->table[i].type == 0 || xref->table[i].type == 'f')
+					continue;
 
-			if (!hasroot)
-			{
-				obj = fz_dict_gets(dict, "Type");
-				if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Catalog"))
+				fz_try(ctx)
 				{
-					nobj = fz_new_indirect(ctx, i, 0, xref);
-					fz_dict_puts(xref->trailer, "Root", nobj);
-					fz_drop_obj(nobj);
-					nobj = NULL;
+					dict = pdf_load_object(xref, i, 0);
 				}
-			}
-
-			if (!hasinfo)
-			{
-				if (fz_dict_gets(dict, "Creator") || fz_dict_gets(dict, "Producer"))
+				fz_catch(ctx)
 				{
-					nobj = fz_new_indirect(ctx, i, 0, xref);
-					fz_dict_puts(xref->trailer, "Info", nobj);
-					fz_drop_obj(nobj);
-					nobj = NULL;
+					fz_warn(ctx, "ignoring broken object (%d 0 R)", i);
+					continue;
 				}
-			}
 
-			fz_drop_obj(dict);
-			dict = NULL;
+				if (!hasroot)
+				{
+					obj = fz_dict_gets(dict, "Type");
+					if (fz_is_name(obj) && !strcmp(fz_to_name(obj), "Catalog"))
+					{
+						nobj = fz_new_indirect(ctx, i, 0, xref);
+						fz_dict_puts(xref->trailer, "Root", nobj);
+						fz_drop_obj(nobj);
+						nobj = NULL;
+					}
+				}
+
+				if (!hasinfo)
+				{
+					if (fz_dict_gets(dict, "Creator") || fz_dict_gets(dict, "Producer"))
+					{
+						nobj = fz_new_indirect(ctx, i, 0, xref);
+						fz_dict_puts(xref->trailer, "Info", nobj);
+						fz_drop_obj(nobj);
+						nobj = NULL;
+					}
+				}
+
+				fz_drop_obj(dict);
+				dict = NULL;
+			}
 		}
 	}
 	fz_catch(ctx)
