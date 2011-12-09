@@ -648,8 +648,8 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 	int i, repaired = 0;
 	fz_context *ctx = file->ctx;
 
-	//fz_var(dict);
-	//fz_var(nobj);
+	fz_var(dict);
+	fz_var(nobj);
 
 	/* install pdf specific callback */
 	fz_resolve_indirect = pdf_resolve_indirect;
@@ -1070,7 +1070,7 @@ pdf_open_xref(fz_context *ctx, const char *filename, char *password)
 	fz_stream *file = NULL;
 	pdf_xref *xref;
 
-	//fz_var(file);
+	fz_var(file);
 	fz_try(ctx)
 	{
 		file = fz_open_file(ctx, filename);
