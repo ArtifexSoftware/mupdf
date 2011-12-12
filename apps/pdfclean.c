@@ -14,6 +14,13 @@
 
 static FILE *out = NULL;
 
+enum
+{
+	expand_images = 1,
+	expand_fonts = 2,
+	expand_all = -1
+};
+
 static char *uselist = NULL;
 static int *ofslist = NULL;
 static int *genlist = NULL;
@@ -34,7 +41,9 @@ static void usage(void)
 		"\t-g\tgarbage collect unused objects\n"
 		"\t-gg\tin addition to -g compact xref table\n"
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
-		"\t-d\tdecompress streams\n"
+		"\t-d\tdecompress all streams\n"
+		"\t-i\ttoggle decompression of image streams\n"
+		"\t-f\ttoggle decompression of font streams\n"
 		"\t-a\tascii hex encode binary streams\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
@@ -530,7 +539,7 @@ static void copystream(fz_obj *obj, int num, int gen)
 	}
 
 	fprintf(out, "%d %d obj\n", num, gen);
-	fz_fprint_obj(out, obj, !doexpand);
+	fz_fprint_obj(out, obj, doexpand == 0);
 	fprintf(out, "stream\n");
 	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
@@ -562,7 +571,7 @@ static void expandstream(fz_obj *obj, int num, int gen)
 	fz_drop_obj(newlen);
 
 	fprintf(out, "%d %d obj\n", num, gen);
-	fz_fprint_obj(out, obj, !doexpand);
+	fz_fprint_obj(out, obj, doexpand == 0);
 	fprintf(out, "stream\n");
 	fwrite(buf->data, 1, buf->len, out);
 	fprintf(out, "endstream\nendobj\n\n");
@@ -598,12 +607,35 @@ static void writeobject(int num, int gen)
 	if (!pdf_is_stream(xref, num, gen))
 	{
 		fprintf(out, "%d %d obj\n", num, gen);
-		fz_fprint_obj(out, obj, !doexpand);
+		fz_fprint_obj(out, obj, doexpand == 0);
 		fprintf(out, "endobj\n\n");
 	}
 	else
 	{
-		if (doexpand && !pdf_is_jpx_image(ctx, obj))
+		int dontexpand = 0;
+		if (doexpand != 0 && doexpand != expand_all)
+		{
+			fz_obj *o;
+
+			if ((o = fz_dict_gets(obj, "Type"), !strcmp(fz_to_name(o), "XObject")) &&
+				(o = fz_dict_gets(obj, "Subtype"), !strcmp(fz_to_name(o), "Image")))
+				dontexpand = !(doexpand & expand_images);
+			if (o = fz_dict_gets(obj, "Type"), !strcmp(fz_to_name(o), "Font"))
+				dontexpand = !(doexpand & expand_fonts);
+			if (o = fz_dict_gets(obj, "Type"), !strcmp(fz_to_name(o), "FontDescriptor"))
+				dontexpand = !(doexpand & expand_fonts);
+			if ((o = fz_dict_gets(obj, "Length1")) != NULL)
+				dontexpand = !(doexpand & expand_fonts);
+			if ((o = fz_dict_gets(obj, "Length2")) != NULL)
+				dontexpand = !(doexpand & expand_fonts);
+			if ((o = fz_dict_gets(obj, "Length3")) != NULL)
+				dontexpand = !(doexpand & expand_fonts);
+			if (o = fz_dict_gets(obj, "Subtype"), !strcmp(fz_to_name(o), "Type1C"))
+				dontexpand = !(doexpand & expand_fonts);
+			if (o = fz_dict_gets(obj, "Subtype"), !strcmp(fz_to_name(o), "CIDFontType0C"))
+				dontexpand = !(doexpand & expand_fonts);
+		}
+		if (doexpand && !dontexpand && !pdf_is_jpx_image(ctx, obj))
 			expandstream(obj, num, gen);
 		else
 			copystream(obj, num, gen);
@@ -650,7 +682,7 @@ static void writexref(void)
 		fz_dict_puts(trailer, "ID", obj);
 
 	fprintf(out, "trailer\n");
-	fz_fprint_obj(out, trailer, !doexpand);
+	fz_fprint_obj(out, trailer, doexpand != 0);
 	fprintf(out, "\n");
 
 	fz_drop_obj(trailer);
@@ -706,13 +738,15 @@ int main(int argc, char **argv)
 	int c, num;
 	int subset;
 
-	while ((c = fz_getopt(argc, argv, "adgp:")) != -1)
+	while ((c = fz_getopt(argc, argv, "adfgip:")) != -1)
 	{
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'g': dogarbage ++; break;
-		case 'd': doexpand ++; break;
+		case 'd': doexpand ^= expand_all; break;
+		case 'f': doexpand ^= expand_fonts; break;
+		case 'i': doexpand ^= expand_images; break;
 		case 'a': doascii ++; break;
 		default: usage(); break;
 		}
