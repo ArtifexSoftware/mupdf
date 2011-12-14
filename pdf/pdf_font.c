@@ -198,6 +198,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 		fz_throw(ctx, "cannot find substitute font");
 
 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
+	fontdesc->size += len;
 	/* RJW: "cannot load freetype font from memory" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -216,6 +217,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, 
 		fz_throw(ctx, "cannot find builtin CJK font");
 
 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
+	fontdesc->size += len;
 	/* RJW: "cannot load builtin CJK font" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -288,6 +290,7 @@ pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 		fz_drop_buffer(ctx, buf);
 		fz_throw(ctx, "cannot load embedded font (%d %d R)", fz_to_num(stmref), fz_to_gen(stmref));
 	}
+	fontdesc->size += buf->len;
 
 	/* save the buffer so we can free it later */
 	fontdesc->font->ft_data = buf->data;
@@ -304,29 +307,31 @@ pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 pdf_font_desc *
 pdf_keep_font(pdf_font_desc *fontdesc)
 {
-	fontdesc->refs ++;
-	return fontdesc;
+	return (pdf_font_desc *)fz_keep_storable(&fontdesc->storable);
 }
 
 void
 pdf_drop_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
-	if (fontdesc && --fontdesc->refs == 0)
-	{
-		if (fontdesc->font)
-			fz_drop_font(ctx, fontdesc->font);
-		if (fontdesc->encoding)
-			pdf_drop_cmap(ctx, fontdesc->encoding);
-		if (fontdesc->to_ttf_cmap)
-			pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
-		if (fontdesc->to_unicode)
-			pdf_drop_cmap(ctx, fontdesc->to_unicode);
-		fz_free(ctx, fontdesc->cid_to_gid);
-		fz_free(ctx, fontdesc->cid_to_ucs);
-		fz_free(ctx, fontdesc->hmtx);
-		fz_free(ctx, fontdesc->vmtx);
-		fz_free(ctx, fontdesc);
-	}
+	fz_drop_storable(ctx, &fontdesc->storable);
+}
+
+static void
+pdf_free_font_imp(fz_context *ctx, pdf_font_desc *fontdesc)
+{
+	if (fontdesc->font)
+		fz_drop_font(ctx, fontdesc->font);
+	if (fontdesc->encoding)
+		pdf_drop_cmap(ctx, fontdesc->encoding);
+	if (fontdesc->to_ttf_cmap)
+		pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
+	if (fontdesc->to_unicode)
+		pdf_drop_cmap(ctx, fontdesc->to_unicode);
+	fz_free(ctx, fontdesc->cid_to_gid);
+	fz_free(ctx, fontdesc->cid_to_ucs);
+	fz_free(ctx, fontdesc->hmtx);
+	fz_free(ctx, fontdesc->vmtx);
+	fz_free(ctx, fontdesc);
 }
 
 pdf_font_desc *
@@ -335,7 +340,8 @@ pdf_new_font_desc(fz_context *ctx)
 	pdf_font_desc *fontdesc;
 
 	fontdesc = fz_malloc(ctx, sizeof(pdf_font_desc));
-	fontdesc->refs = 1;
+	FZ_INIT_STORABLE(fontdesc, 1, pdf_free_font_imp);
+	fontdesc->size = sizeof(pdf_font_desc);
 
 	fontdesc->font = NULL;
 
@@ -497,6 +503,7 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 			fz_warn(ctx, "freetype could not find any cmaps");
 
 		etable = fz_malloc_array(ctx, 256, sizeof(unsigned short));
+		fontdesc->size += 256 * sizeof(unsigned short);
 		for (i = 0; i < 256; i++)
 		{
 			estrings[i] = NULL;
@@ -637,6 +644,7 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 		}
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
+		fontdesc->size += pdf_cmap_size(fontdesc->encoding);
 		fontdesc->cid_to_gid_len = 256;
 		fontdesc->cid_to_gid = etable;
 
@@ -771,6 +779,7 @@ load_cid_font(pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *to_unicode
 		{
 			fz_throw(ctx, "syntaxerror: font missing encoding");
 		}
+		fontdesc->size += pdf_cmap_size(fontdesc->encoding);
 
 		pdf_set_font_wmode(fontdesc, pdf_get_wmode(fontdesc->encoding));
 
@@ -787,6 +796,7 @@ load_cid_font(pdf_xref *xref, fz_obj *dict, fz_obj *encoding, fz_obj *to_unicode
 
 				fontdesc->cid_to_gid_len = (buf->len) / 2;
 				fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, sizeof(unsigned short));
+				fontdesc->size += fontdesc->cid_to_gid_len * sizeof(unsigned short);
 				for (i = 0; i < fontdesc->cid_to_gid_len; i++)
 					fontdesc->cid_to_gid[i] = (buf->data[i * 2] << 8) + buf->data[i * 2 + 1];
 
@@ -1040,6 +1050,7 @@ pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 	font->width_count ++;
 
 	font->width_table = fz_malloc_array(ctx, font->width_count, sizeof(int));
+	fontdesc->size += font->width_count * sizeof(int);
 
 	for (i = 0; i < fontdesc->hmtx_len; i++)
 	{
@@ -1062,9 +1073,8 @@ pdf_load_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	fz_context *ctx = xref->ctx;
 	pdf_font_desc *fontdesc;
 
-	if ((fontdesc = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_font, dict)))
+	if ((fontdesc = fz_find_item(ctx, pdf_free_font_imp, dict)))
 	{
-		pdf_keep_font(fontdesc);
 		return fontdesc;
 	}
 
@@ -1103,7 +1113,7 @@ pdf_load_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 	if (fontdesc->font->ft_substitute && !fontdesc->to_ttf_cmap)
 		pdf_make_width_table(ctx, fontdesc);
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_font, (pdf_store_drop_fn *)pdf_drop_font, dict, fontdesc);
+	fz_store_item(ctx, dict, fontdesc, fontdesc->size);
 
 	return fontdesc;
 }

@@ -90,8 +90,6 @@ struct pdf_xref_s
 	fz_obj **page_objs;
 	fz_obj **page_refs;
 
-	struct pdf_store_s *store;
-
 	char scratch[65536];
 };
 
@@ -154,24 +152,6 @@ unsigned char *pdf_get_crypt_key(pdf_xref *xref);
 void pdf_debug_crypt(pdf_crypt *crypt);
 
 /*
- * Resource store
- */
-
-typedef struct pdf_store_s pdf_store;
-
-pdf_store *pdf_new_store(fz_context *ctx);
-void pdf_free_store(fz_context *ctx, pdf_store *store);
-void pdf_debug_store(fz_context *ctx, pdf_store *store);
-
-typedef void *(pdf_store_keep_fn)(void *);
-typedef void (pdf_store_drop_fn)(fz_context *, void *);
-
-void pdf_store_item(fz_context *ctx, pdf_store *store, pdf_store_keep_fn *keepfn, pdf_store_drop_fn *dropfn, fz_obj *key, void *val);
-void *pdf_find_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *dropfn, fz_obj *key);
-void pdf_remove_item(fz_context *ctx, pdf_store *store, pdf_store_drop_fn *dropfn, fz_obj *key);
-void pdf_age_store(fz_context *ctx, pdf_store *store, int maxage);
-
-/*
  * Functions, Colorspaces, Shadings and Images
  */
 
@@ -181,6 +161,7 @@ pdf_function *pdf_load_function(pdf_xref *xref, fz_obj *ref);
 void pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen);
 pdf_function *pdf_keep_function(pdf_function *func);
 void pdf_drop_function(fz_context *ctx, pdf_function *func);
+unsigned int pdf_function_size(pdf_function *func);
 
 fz_colorspace *pdf_load_colorspace(pdf_xref *xref, fz_obj *obj);
 fz_pixmap *pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
@@ -199,7 +180,7 @@ typedef struct pdf_pattern_s pdf_pattern;
 
 struct pdf_pattern_s
 {
-	int refs;
+	fz_storable storable;
 	int ismask;
 	float xstep;
 	float ystep;
@@ -221,7 +202,7 @@ typedef struct pdf_xobject_s pdf_xobject;
 
 struct pdf_xobject_s
 {
-	int refs;
+	fz_storable storable;
 	fz_matrix matrix;
 	fz_rect bbox;
 	int isolated;
@@ -257,7 +238,7 @@ struct pdf_range_s
 
 struct pdf_cmap_s
 {
-	int refs;
+	fz_storable storable;
 	char cmap_name[32];
 
 	char usecmap_name[32];
@@ -283,6 +264,8 @@ struct pdf_cmap_s
 pdf_cmap *pdf_new_cmap(fz_context *ctx);
 pdf_cmap *pdf_keep_cmap(pdf_cmap *cmap);
 void pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap);
+void pdf_free_cmap_imp(fz_context *ctx, void *cmap);
+unsigned int pdf_cmap_size(pdf_cmap *cmap);
 
 void pdf_debug_cmap(pdf_cmap *cmap);
 int pdf_get_wmode(pdf_cmap *cmap);
@@ -356,7 +339,8 @@ struct pdf_vmtx_s
 
 struct pdf_font_desc_s
 {
-	int refs;
+	fz_storable storable;
+	unsigned int size;
 
 	fz_font *font;
 

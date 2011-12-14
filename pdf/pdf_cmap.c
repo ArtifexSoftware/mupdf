@@ -30,13 +30,24 @@
  * Allocate, destroy and simple parameters.
  */
 
+void
+pdf_free_cmap_imp(fz_context *ctx, void *cmap_)
+{
+	pdf_cmap *cmap = (pdf_cmap *)cmap_;
+	if (cmap->usecmap)
+		pdf_drop_cmap(ctx, cmap->usecmap);
+	fz_free(ctx, cmap->ranges);
+	fz_free(ctx, cmap->table);
+	fz_free(ctx, cmap);
+}
+
 pdf_cmap *
 pdf_new_cmap(fz_context *ctx)
 {
 	pdf_cmap *cmap;
 
 	cmap = fz_malloc(ctx, sizeof(pdf_cmap));
-	cmap->refs = 1;
+	FZ_INIT_STORABLE(cmap, 1, pdf_free_cmap_imp);
 
 	strcpy(cmap->cmap_name, "");
 	strcpy(cmap->usecmap_name, "");
@@ -55,28 +66,18 @@ pdf_new_cmap(fz_context *ctx)
 	return cmap;
 }
 
+/* Could be a macro for speed */
 pdf_cmap *
 pdf_keep_cmap(pdf_cmap *cmap)
 {
-	if (cmap->refs >= 0)
-		cmap->refs ++;
-	return cmap;
+	return (pdf_cmap *)fz_keep_storable(&cmap->storable);
 }
 
+/* Could be a macro for speed */
 void
 pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
-	if (cmap->refs >= 0)
-	{
-		if (--cmap->refs == 0)
-		{
-			if (cmap->usecmap)
-				pdf_drop_cmap(ctx, cmap->usecmap);
-			fz_free(ctx, cmap->ranges);
-			fz_free(ctx, cmap->table);
-			fz_free(ctx, cmap);
-		}
-	}
+	fz_drop_storable(ctx, &cmap->storable);
 }
 
 void

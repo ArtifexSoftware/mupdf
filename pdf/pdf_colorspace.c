@@ -61,7 +61,7 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, float *rgb, float *lab)
 	lab[2] = rgb[2];
 }
 
-static fz_colorspace k_device_lab = { -1, "Lab", 3, lab_to_rgb, rgb_to_lab };
+static fz_colorspace k_device_lab = { {-1, fz_free_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
 static fz_colorspace *fz_device_lab = &k_device_lab;
 
 /* Separation and DeviceN */
@@ -126,6 +126,7 @@ load_separation(pdf_xref *xref, fz_obj *array)
 	cs->to_rgb = separation_to_rgb;
 	cs->free_data = free_separation;
 	cs->data = sep;
+	cs->size += sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(tint);
 
 	return cs;
 }
@@ -228,6 +229,7 @@ load_indexed(pdf_xref *xref, fz_obj *array)
 	cs->to_rgb = indexed_to_rgb;
 	cs->free_data = free_indexed;
 	cs->data = idx;
+	cs->size += sizeof(*idx) + n + (base ? base->size : 0);
 
 	if (fz_is_string(lookup) && fz_to_str_len(lookup) == n)
 	{
@@ -361,15 +363,15 @@ pdf_load_colorspace(pdf_xref *xref, fz_obj *obj)
 	fz_context *ctx = xref->ctx;
 	fz_colorspace *cs;
 
-	if ((cs = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)fz_drop_colorspace, obj)))
+	if ((cs = fz_find_item(ctx, fz_free_colorspace_imp, obj)))
 	{
-		return fz_keep_colorspace(cs);
+		return cs;
 	}
 
 	cs = pdf_load_colorspace_imp(xref, obj);
 	/* RJW: "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)fz_keep_colorspace, (pdf_store_drop_fn *)fz_drop_colorspace, obj, cs);
+	fz_store_item(ctx, obj, cs, cs->size);
 
 	return cs;
 }

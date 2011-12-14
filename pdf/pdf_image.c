@@ -364,15 +364,15 @@ pdf_load_image(pdf_xref *xref, fz_obj *dict)
 	fz_context *ctx = xref->ctx;
 	fz_pixmap *pix;
 
-	if ((pix = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)fz_drop_pixmap, dict)))
+	if ((pix = fz_find_item(ctx, fz_free_pixmap_imp, dict)))
 	{
-		return fz_keep_pixmap(pix);
+		return pix;
 	}
 
 	pix = pdf_load_image_imp(xref, NULL, dict, NULL, 0);
 	/* RJW: "cannot load image (%d 0 R)", fz_to_num(dict) */
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)fz_keep_pixmap, (pdf_store_drop_fn *)fz_drop_pixmap, dict, pix);
+	fz_store_item(ctx, dict, pix, fz_pixmap_size(pix));
 
 	return pix;
 }

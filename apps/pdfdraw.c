@@ -263,7 +263,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	if (showmd5 || showtime)
 		printf("\n");
 
-	pdf_age_store(ctx, xref->store, 3);
+	fz_age_store(ctx, 3);
 
 	fz_flush_warnings(ctx);
 }
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default, FZ_STORE_UNLIMITED);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

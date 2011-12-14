@@ -37,6 +37,7 @@ pdf_load_to_unicode(pdf_font_desc *font, pdf_xref *xref,
 		pdf_sort_cmap(ctx, font->to_unicode);
 
 		pdf_drop_cmap(ctx, cmap);
+		font->size += pdf_cmap_size(font->to_unicode);
 	}
 
 	else if (collection)
@@ -60,6 +61,7 @@ pdf_load_to_unicode(pdf_font_desc *font, pdf_xref *xref,
 
 		font->cid_to_ucs_len = 256;
 		font->cid_to_ucs = fz_malloc_array(ctx, 256, sizeof(unsigned short));
+		font->size += 256 * sizeof(unsigned short);
 
 		for (i = 0; i < 256; i++)
 		{

@@ -259,10 +259,6 @@ void pdfapp_close(pdfapp_t *app)
 
 	if (app->xref)
 	{
-		if (app->xref->store)
-			pdf_free_store(app->ctx, app->xref->store);
-		app->xref->store = NULL;
-
 		pdf_free_xref(app->xref);
 		app->xref = NULL;
 	}
@@ -347,7 +343,7 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 
 	pdf_free_page(app->ctx, page);
 
-	pdf_age_store(app->ctx, app->xref->store, 3);
+	fz_age_store(app->ctx, 3);
 }
 
 static void pdfapp_loadpage_xps(pdfapp_t *app)

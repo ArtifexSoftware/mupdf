@@ -311,10 +311,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_store.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_stream.c"
 				>
 			</File>
@@ -484,6 +480,10 @@
 			</File>
 			<File
 				RelativePath="..\fitz\res_shade.c"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\res_store.c"
 				>
 			</File>
 			<File

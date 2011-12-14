@@ -40,6 +40,7 @@ pdf_load_type3_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 		bbox = pdf_to_rect(ctx, obj);
 
 		fontdesc->font = fz_new_type3_font(ctx, buf, matrix);
+		fontdesc->size += sizeof(fz_font) + 256 * (sizeof(fz_buffer*) + sizeof(float));
 
 		fz_set_font_bbox(fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
@@ -84,6 +85,7 @@ pdf_load_type3_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 		}
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
+		fontdesc->size += pdf_cmap_size(fontdesc->encoding);
 
 		pdf_load_to_unicode(fontdesc, xref, estrings, NULL, fz_dict_gets(dict, "ToUnicode"));
 
@@ -139,6 +141,7 @@ pdf_load_type3_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 				if (pdf_is_stream(xref, fz_to_num(obj), fz_to_gen(obj)))
 				{
 					fontdesc->font->t3procs[i] = pdf_load_stream(xref, fz_to_num(obj), fz_to_gen(obj));
+					fontdesc->size += fontdesc->font->t3procs[i]->cap;
 				}
 			}
 		}

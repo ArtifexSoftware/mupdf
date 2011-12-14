@@ -976,7 +976,7 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 	fz_try(ctx)
 	{
 		shade = fz_malloc(ctx, sizeof(fz_shade));
-		shade->refs = 1;
+		FZ_INIT_STORABLE(shade, 1, fz_free_shade_imp);
 		shade->type = FZ_MESH;
 		shade->use_background = 0;
 		shade->use_function = 0;
@@ -1077,6 +1077,14 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 	return shade;
 }
 
+static unsigned int
+fz_shade_size(fz_shade *s)
+{
+	if (s == NULL)
+		return 0;
+	return sizeof(*s) + s->mesh_cap * sizeof(*s->mesh) + s->colorspace->size;
+}
+
 fz_shade *
 pdf_load_shading(pdf_xref *xref, fz_obj *dict)
 {
@@ -1085,9 +1093,9 @@ pdf_load_shading(pdf_xref *xref, fz_obj *dict)
 	fz_context *ctx = xref->ctx;
 	fz_shade *shade;
 
-	if ((shade = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)fz_drop_shade, dict)))
+	if ((shade = fz_find_item(ctx, fz_free_shade_imp, dict)))
 	{
-		return fz_keep_shade(shade);
+		return shade;
 	}
 
 	/* Type 2 pattern dictionary */
@@ -1123,7 +1131,7 @@ pdf_load_shading(pdf_xref *xref, fz_obj *dict)
 		/* RJW: "cannot load shading dictionary (%d %d R)", fz_to_num(dict), fz_to_gen(dict) */
 	}
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)fz_keep_shade, (pdf_store_drop_fn *)fz_drop_shade, dict, shade);
+	fz_store_item(ctx, dict, shade, fz_shade_size(shade));
 
 	return shade;
 }

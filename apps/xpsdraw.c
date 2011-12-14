@@ -314,7 +314,7 @@ int main(int argc, char **argv)
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default, FZ_STORE_UNLIMITED);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

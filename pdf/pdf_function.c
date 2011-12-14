@@ -19,7 +19,8 @@ enum
 
 struct pdf_function_s
 {
-	int refs;
+	fz_storable storable;
+	unsigned int size;
 	int type;				/* 0=sample 2=exponential 3=stitching 4=postscript */
 	int m;					/* number of input values */
 	int n;					/* number of output values */
@@ -849,6 +850,8 @@ load_postscript_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, 
 		fz_throw(ctx, "cannot parse calculator function (%d %d R)", num, gen);
 	}
 
+	func->size += func->u.p.cap * sizeof(psobj);
+
 	fz_close(stream);
 }
 
@@ -947,6 +950,7 @@ load_sample_func(pdf_function *func, pdf_xref *xref, fz_obj *dict, int num, int 
 		samplecount *= func->u.sa.size[i];
 
 	func->u.sa.samples = fz_malloc_array(ctx, samplecount, sizeof(float));
+	func->size += samplecount * sizeof(float);
 
 	stream = pdf_open_stream(xref, num, gen);
 	/* RJW: "cannot open samples stream (%d %d R)", num, gen */
@@ -1198,6 +1202,7 @@ load_stitching_func(pdf_function *func, pdf_xref *xref, fz_obj *dict)
 			/* RJW: "cannot load sub function %d (%d %d R)", i, fz_to_num(sub), fz_to_gen(sub) */
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
 				fz_throw(ctx, "sub function %d /Domain or /Range mismatch", i);
+			func->size += pdf_function_size(funcs[i]);
 			func->u.st.k ++;
 		}
 
@@ -1292,36 +1297,46 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 pdf_function *
 pdf_keep_function(pdf_function *func)
 {
-	func->refs ++;
-	return func;
+	return (pdf_function *)fz_keep_storable(&func->storable);
 }
 
 void
 pdf_drop_function(fz_context *ctx, pdf_function *func)
 {
+	fz_drop_storable(ctx, &func->storable);
+}
+
+static void
+pdf_free_function_imp(fz_context *ctx, void *func_)
+{
+	pdf_function *func = (pdf_function *)func_;
 	int i;
-	if (--func->refs == 0)
+
+	switch(func->type)
 	{
-		switch(func->type)
-		{
-		case SAMPLE:
-			fz_free(ctx, func->u.sa.samples);
-			break;
-		case EXPONENTIAL:
-			break;
-		case STITCHING:
-			for (i = 0; i < func->u.st.k; i++)
-				pdf_drop_function(ctx, func->u.st.funcs[i]);
-			fz_free(ctx, func->u.st.funcs);
-			fz_free(ctx, func->u.st.bounds);
-			fz_free(ctx, func->u.st.encode);
-			break;
-		case POSTSCRIPT:
-			fz_free(ctx, func->u.p.code);
-			break;
-		}
-		fz_free(ctx, func);
+	case SAMPLE:
+		fz_free(ctx, func->u.sa.samples);
+		break;
+	case EXPONENTIAL:
+		break;
+	case STITCHING:
+		for (i = 0; i < func->u.st.k; i++)
+			pdf_drop_function(ctx, func->u.st.funcs[i]);
+		fz_free(ctx, func->u.st.funcs);
+		fz_free(ctx, func->u.st.bounds);
+		fz_free(ctx, func->u.st.encode);
+		break;
+	case POSTSCRIPT:
+		fz_free(ctx, func->u.p.code);
+		break;
 	}
+	fz_free(ctx, func);
+}
+
+unsigned int
+pdf_function_size(pdf_function *func)
+{
+	return (func ? func->size : 0);
 }
 
 pdf_function *
@@ -1332,15 +1347,15 @@ pdf_load_function(pdf_xref *xref, fz_obj *dict)
 	fz_obj *obj;
 	int i;
 
-	if ((func = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_function, dict)))
+	if ((func = fz_find_item(ctx, pdf_free_function_imp, dict)))
 	{
-		pdf_keep_function(func);
 		return func;
 	}
 
 	func = fz_malloc(ctx, sizeof(pdf_function));
 	memset(func, 0, sizeof *func);
-	func->refs = 1;
+	FZ_INIT_STORABLE(func, 1, pdf_free_function_imp);
+	func->size = sizeof(*func);
 
 	obj = fz_dict_gets(dict, "FunctionType");
 	func->type = fz_to_int(obj);
@@ -1414,7 +1429,7 @@ pdf_load_function(pdf_xref *xref, fz_obj *dict)
 			     "unknown")))), fz_to_num(dict), fz_to_gen(dict));
 	}
 
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_function, (pdf_store_drop_fn *)pdf_drop_function, dict, func);
+	fz_store_item(ctx, dict, func, func->size);
 
 	return func;
 }

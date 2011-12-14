@@ -15,6 +15,7 @@ fz_free_context(fz_context *ctx)
 		return;
 
 	/* Other finalisation calls go here (in reverse order) */
+	fz_free_store_context(ctx);
 	fz_free_aa_context(ctx);
 	fz_free_font_context(ctx);
 
@@ -30,7 +31,7 @@ fz_free_context(fz_context *ctx)
 }
 
 fz_context *
-fz_new_context(fz_alloc_context *alloc)
+fz_new_context(fz_alloc_context *alloc, unsigned int max_store)
 {
 	fz_context *ctx;
 
@@ -57,6 +58,7 @@ fz_new_context(fz_alloc_context *alloc)
 	{
 		fz_new_font_context(ctx);
 		fz_new_aa_context(ctx);
+		fz_new_store_context(ctx, max_store);
 	}
 	fz_catch(ctx)
 	{
@@ -74,5 +76,5 @@ cleanup:
 fz_context *
 fz_clone_context(fz_context *ctx)
 {
-	return fz_new_context(ctx->alloc);
+	return fz_new_context(ctx->alloc, FZ_STORE_UNLIMITED);
 }

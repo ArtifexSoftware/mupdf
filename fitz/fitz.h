@@ -100,6 +100,7 @@ typedef struct fz_error_context_s fz_error_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_aa_context_s fz_aa_context;
+typedef struct fz_store_s fz_store;
 typedef struct fz_context_s fz_context;
 
 struct fz_alloc_context_s
@@ -156,9 +157,10 @@ struct fz_context_s
 	fz_warn_context *warn;
 	fz_font_context *font;
 	fz_aa_context *aa;
+	fz_store *store;
 };
 
-fz_context *fz_new_context(fz_alloc_context *alloc);
+fz_context *fz_new_context(fz_alloc_context *alloc, unsigned int max_store);
 fz_context *fz_clone_context(fz_context *ctx);
 void fz_free_context(fz_context *ctx);
 
@@ -490,6 +492,42 @@ void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
 void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
+ * Resource store
+ */
+
+typedef struct fz_storable_s fz_storable;
+
+typedef struct fz_item_s fz_item;
+
+typedef void (fz_store_free_fn)(fz_context *, void *);
+
+struct fz_storable_s {
+	int refs;
+	fz_store_free_fn *free;
+};
+
+#define FZ_INIT_STORABLE(S_,RC,FREE) \
+	do { fz_storable *S = &(S_)->storable; S->refs = (RC); \
+	S->free = (FREE); \
+	} while (0)
+
+enum {
+	FZ_STORE_UNLIMITED = 0
+};
+
+void fz_new_store_context(fz_context *ctx, unsigned int max);
+void fz_free_store_context(fz_context *ctx);
+void fz_debug_store(fz_context *ctx);
+
+void *fz_keep_storable(fz_storable *);
+void fz_drop_storable(fz_context *, fz_storable *);
+
+void fz_store_item(fz_context *ctx, fz_obj *key, void *val, unsigned int itemsize);
+void *fz_find_item(fz_context *ctx, fz_store_free_fn *freefn, fz_obj *key);
+void fz_remove_item(fz_context *ctx, fz_store_free_fn *freefn, fz_obj *key);
+void fz_age_store(fz_context *ctx, int maxage);
+
+/*
  * Buffered reader.
  * Only the data between rp and wp is valid data.
  */
@@ -648,7 +686,7 @@ typedef struct fz_colorspace_s fz_colorspace;
 
 struct fz_pixmap_s
 {
-	int refs;
+	fz_storable storable;
 	int x, y, w, h, n;
 	fz_pixmap *mask; /* explicit soft/image mask */
 	int interpolate;
@@ -667,6 +705,7 @@ fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz
 fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_pixmap *pix);
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
+void fz_free_pixmap_imp(fz_context *ctx, void *pix);
 void fz_clear_pixmap(fz_pixmap *pix);
 void fz_clear_pixmap_with_color(fz_pixmap *pix, int value);
 void fz_clear_pixmap_rect_with_color(fz_pixmap *pix, int value, fz_bbox r);
@@ -677,6 +716,7 @@ fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 void fz_invert_pixmap(fz_pixmap *pix);
 void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
+unsigned int fz_pixmap_size(fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h);
 
@@ -740,7 +780,8 @@ extern fz_colorspace *fz_device_cmyk;
 
 struct fz_colorspace_s
 {
-	int refs;
+	fz_storable storable;
+	unsigned int size;
 	char name[16];
 	int n;
 	void (*to_rgb)(fz_context *ctx, fz_colorspace *, float *src, float *rgb);
@@ -752,6 +793,7 @@ struct fz_colorspace_s
 fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n);
 fz_colorspace *fz_keep_colorspace(fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
+void fz_free_colorspace_imp(fz_context *ctx, void *colorspace);
 
 void fz_convert_color(fz_context *ctx, fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
@@ -928,7 +970,7 @@ typedef struct fz_shade_s fz_shade;
 
 struct fz_shade_s
 {
-	int refs;
+	fz_storable storable;
 
 	fz_rect bbox;		/* can be fz_infinite_rect */
 	fz_colorspace *colorspace;
@@ -950,6 +992,7 @@ struct fz_shade_s
 
 fz_shade *fz_keep_shade(fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
+void fz_free_shade_imp(fz_context *ctx, void *shade);
 void fz_debug_shade(fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_shade *shade, fz_matrix ctm);

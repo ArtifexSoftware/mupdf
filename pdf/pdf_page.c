@@ -275,10 +275,6 @@ pdf_load_page(pdf_xref *xref, int number)
 	if (number < 0 || number >= xref->page_len)
 		fz_throw(ctx, "cannot find page %d", number + 1);
 
-	/* Ensure that we have a store for resource objects */
-	if (!xref->store)
-		xref->store = pdf_new_store(ctx);
-
 	pageobj = xref->page_objs[number];
 	pageref = xref->page_refs[number];
 

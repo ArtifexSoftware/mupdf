@@ -783,9 +783,6 @@ pdf_free_xref(pdf_xref *xref)
 		return;
 	ctx = xref->ctx;
 
-	if (xref->store)
-		pdf_free_store(ctx, xref->store);
-
 	if (xref->table)
 	{
 		for (i = 0; i < xref->len; i++)

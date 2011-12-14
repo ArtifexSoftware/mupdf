@@ -72,6 +72,7 @@ pdf_end_hmtx(pdf_font_desc *font)
 	if (!font->hmtx)
 		return;
 	qsort(font->hmtx, font->hmtx_len, sizeof(pdf_hmtx), cmph);
+	font->size += font->hmtx_cap * sizeof(pdf_hmtx);
 }
 
 void
@@ -80,6 +81,7 @@ pdf_end_vmtx(pdf_font_desc *font)
 	if (!font->vmtx)
 		return;
 	qsort(font->vmtx, font->vmtx_len, sizeof(pdf_vmtx), cmpv);
+	font->size += font->vmtx_cap * sizeof(pdf_vmtx);
 }
 
 pdf_hmtx

@@ -3,20 +3,24 @@
 fz_shade *
 fz_keep_shade(fz_shade *shade)
 {
-	shade->refs ++;
-	return shade;
+	return (fz_shade *)fz_keep_storable(&shade->storable);
+}
+
+void
+fz_free_shade_imp(fz_context *ctx, void *shade_)
+{
+	fz_shade *shade = (fz_shade *)shade_;
+
+	if (shade->colorspace)
+		fz_drop_colorspace(ctx, shade->colorspace);
+	fz_free(ctx, shade->mesh);
+	fz_free(ctx, shade);
 }
 
 void
 fz_drop_shade(fz_context *ctx, fz_shade *shade)
 {
-	if (shade && --shade->refs == 0)
-	{
-		if (shade->colorspace)
-			fz_drop_colorspace(ctx, shade->colorspace);
-		fz_free(ctx, shade->mesh);
-		fz_free(ctx, shade);
-	}
+	fz_drop_storable(ctx, &shade->storable);
 }
 
 fz_rect

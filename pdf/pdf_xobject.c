@@ -2,25 +2,57 @@
 #include "mupdf.h"
 
 pdf_xobject *
+pdf_keep_xobject(pdf_xobject *xobj)
+{
+	return (pdf_xobject *)fz_keep_storable(&xobj->storable);
+}
+
+void
+pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj)
+{
+	fz_drop_storable(ctx, &xobj->storable);
+}
+
+static void
+pdf_free_xobject_imp(fz_context *ctx, pdf_xobject *xobj)
+{
+	if (xobj->colorspace)
+		fz_drop_colorspace(ctx, xobj->colorspace);
+	if (xobj->resources)
+		fz_drop_obj(xobj->resources);
+	if (xobj->contents)
+		fz_drop_buffer(ctx, xobj->contents);
+	fz_free(ctx, xobj);
+}
+
+static unsigned int
+pdf_xobject_size(pdf_xobject *xobj)
+{
+	if (xobj == NULL)
+		return 0;
+	return sizeof(*xobj) + (xobj->colorspace ? xobj->colorspace->size : 0) + (xobj->contents ? xobj->contents->len : 0);
+}
+
+pdf_xobject *
 pdf_load_xobject(pdf_xref *xref, fz_obj *dict)
 {
 	pdf_xobject *form;
 	fz_obj *obj;
 	fz_context *ctx = xref->ctx;
 
-	if ((form = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_xobject, dict)))
+	if ((form = fz_find_item(ctx, pdf_free_xobject_imp, dict)))
 	{
-		return pdf_keep_xobject(form);
+		return form;
 	}
 
 	form = fz_malloc(ctx, sizeof(pdf_xobject));
-	form->refs = 1;
+	FZ_INIT_STORABLE(form, 1, pdf_free_xobject_imp);
 	form->resources = NULL;
 	form->contents = NULL;
 	form->colorspace = NULL;
 
 	/* Store item immediately, to avoid possible recursion if objects refer back to this one */
-	pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_xobject, (pdf_store_drop_fn *)pdf_drop_xobject, dict, form);
+	fz_store_item(ctx, dict, form, pdf_xobject_size(form));
 
 	obj = fz_dict_gets(dict, "BBox");
 	form->bbox = pdf_to_rect(ctx, obj);
@@ -66,32 +98,10 @@ pdf_load_xobject(pdf_xref *xref, fz_obj *dict)
 	}
 	fz_catch(ctx)
 	{
-		pdf_remove_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_xobject, dict);
+		fz_remove_item(ctx, pdf_free_xobject_imp, dict);
 		pdf_drop_xobject(ctx, form);
 		fz_throw(ctx, "cannot load xobject content stream (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 	}
 
 	return form;
-}
-
-pdf_xobject *
-pdf_keep_xobject(pdf_xobject *xobj)
-{
-	xobj->refs ++;
-	return xobj;
-}
-
-void
-pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj)
-{
-	if (xobj && --xobj->refs == 0)
-	{
-		if (xobj->colorspace)
-			fz_drop_colorspace(ctx, xobj->colorspace);
-		if (xobj->resources)
-			fz_drop_obj(xobj->resources);
-		if (xobj->contents)
-			fz_drop_buffer(ctx, xobj->contents);
-		fz_free(ctx, xobj);
-	}
 }

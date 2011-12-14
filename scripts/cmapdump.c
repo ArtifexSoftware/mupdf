@@ -49,7 +49,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default, FZ_STORE_UNLIMITED);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");
@@ -122,7 +122,7 @@ main(int argc, char **argv)
 		}
 
 		fprintf(fo, "static pdf_cmap cmap_%s = {\n", name);
-		fprintf(fo, "\t-1, ");
+		fprintf(fo, "\t{-1, pdf_free_cmap_imp}, ");
 		fprintf(fo, "\"%s\", ", cmap->cmap_name);
 		fprintf(fo, "\"%s\", 0, ", cmap->usecmap_name);
 		fprintf(fo, "%d, ", cmap->wmode);
@@ -173,5 +173,22 @@ void fz_new_aa_context(fz_context *ctx)
 }
 
 void fz_free_aa_context(fz_context *ctx)
+{
+}
+
+void *fz_keep_storable(fz_storable *s)
+{
+	return s;
+}
+
+void fz_drop_storable(fz_context *ctx, fz_storable *s)
+{
+}
+
+void fz_new_store_context(fz_context *ctx, unsigned int max)
+{
+}
+
+void fz_free_store_context(fz_context *ctx)
 {
 }

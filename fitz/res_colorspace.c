@@ -2,11 +2,22 @@
 
 #define SLOWCMYK
 
+void
+fz_free_colorspace_imp(fz_context *ctx, void *cs_)
+{
+	fz_colorspace *cs = (fz_colorspace *)cs_;
+
+	if (cs->free_data && cs->data)
+		cs->free_data(ctx, cs);
+	fz_free(ctx, cs);
+}
+
 fz_colorspace *
 fz_new_colorspace(fz_context *ctx, char *name, int n)
 {
 	fz_colorspace *cs = fz_malloc(ctx, sizeof(fz_colorspace));
-	cs->refs = 1;
+	FZ_INIT_STORABLE(cs, 1, fz_free_colorspace_imp);
+	cs->size = sizeof(fz_colorspace);
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
 	cs->to_rgb = NULL;
@@ -19,23 +30,13 @@ fz_new_colorspace(fz_context *ctx, char *name, int n)
 fz_colorspace *
 fz_keep_colorspace(fz_colorspace *cs)
 {
-	if (cs->refs < 0)
-		return cs;
-	cs->refs ++;
-	return cs;
+	return (fz_colorspace *)fz_keep_storable(&cs->storable);
 }
 
 void
 fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	if (cs && cs->refs < 0)
-		return;
-	if (cs && --cs->refs == 0)
-	{
-		if (cs->free_data && cs->data)
-			cs->free_data(ctx, cs);
-		fz_free(ctx, cs);
-	}
+	fz_drop_storable(ctx, &cs->storable);
 }
 
 /* Device colorspace definitions */
@@ -152,10 +153,10 @@ static void rgb_to_cmyk(fz_context *ctx, fz_colorspace *cs, float *rgb, float *c
 	cmyk[3] = k;
 }
 
-static fz_colorspace k_device_gray = { -1, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
-static fz_colorspace k_device_rgb = { -1, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
-static fz_colorspace k_device_bgr = { -1, "DeviceRGB", 3, bgr_to_rgb, rgb_to_bgr };
-static fz_colorspace k_device_cmyk = { -1, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
+static fz_colorspace k_device_gray = { {-1, fz_free_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
+static fz_colorspace k_device_rgb = { {-1, fz_free_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
+static fz_colorspace k_device_bgr = { {-1, fz_free_colorspace_imp}, 0, "DeviceRGB", 3, bgr_to_rgb, rgb_to_bgr };
+static fz_colorspace k_device_cmyk = { {-1, fz_free_colorspace_imp}, 0, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
 
 fz_colorspace *fz_device_gray = &k_device_gray;
 fz_colorspace *fz_device_rgb = &k_device_rgb;

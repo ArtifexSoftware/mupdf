@@ -1,6 +1,17 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+unsigned int
+pdf_cmap_size(pdf_cmap *cmap)
+{
+	if (cmap == NULL)
+		return 0;
+	if (cmap->storable.refs < 0)
+		return 0;
+
+	return cmap->rcap * sizeof(pdf_range) + cmap->tcap * sizeof(short) + pdf_cmap_size(cmap->usecmap);
+}
+
 /*
  * Load CMap stream in PDF file
  */
@@ -13,11 +24,12 @@ pdf_load_embedded_cmap(pdf_xref *xref, fz_obj *stmobj)
 	fz_obj *wmode;
 	fz_obj *obj;
 	fz_context *ctx = xref->ctx;
-	volatile int phase = 0;
+	int phase = 0;
 
-	if ((cmap = pdf_find_item(ctx, xref->store, (pdf_store_drop_fn *)pdf_drop_cmap, stmobj)))
+	fz_var(phase);
+
+	if ((cmap = fz_find_item(ctx, pdf_free_cmap_imp, stmobj)))
 	{
-		pdf_keep_cmap(cmap);
 		return cmap;
 	}
 
@@ -49,7 +61,7 @@ pdf_load_embedded_cmap(pdf_xref *xref, fz_obj *stmobj)
 			pdf_drop_cmap(ctx, usecmap);
 		}
 
-		pdf_store_item(ctx, xref->store, (pdf_store_keep_fn *)pdf_keep_cmap, (pdf_store_drop_fn *)pdf_drop_cmap, stmobj, cmap);
+		fz_store_item(ctx, stmobj, cmap, pdf_cmap_size(cmap));
 	}
 	fz_catch(ctx)
 	{

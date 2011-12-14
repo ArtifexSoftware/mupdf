@@ -4,12 +4,37 @@ static int fz_memory_limit = 256 << 20;
 static int fz_memory_used = 0;
 
 fz_pixmap *
+fz_keep_pixmap(fz_pixmap *pix)
+{
+	return (fz_pixmap *)fz_keep_storable(&pix->storable);
+}
+
+void
+fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
+{
+	fz_drop_storable(ctx, &pix->storable);
+}
+
+void
+fz_free_pixmap_imp(fz_context *ctx, fz_pixmap *pix)
+{
+	fz_memory_used -= pix->w * pix->h * pix->n;
+	if (pix->mask)
+		fz_drop_pixmap(ctx, pix->mask);
+	if (pix->colorspace)
+		fz_drop_colorspace(ctx, pix->colorspace);
+	if (pix->free_samples)
+		fz_free(ctx, pix->samples);
+	fz_free(ctx, pix);
+}
+
+fz_pixmap *
 fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples)
 {
 	fz_pixmap *pix;
 
 	pix = fz_malloc(ctx, sizeof(fz_pixmap));
-	pix->refs = 1;
+	FZ_INIT_STORABLE(pix, 1, fz_free_pixmap_imp);
 	pix->x = 0;
 	pix->y = 0;
 	pix->w = w;
@@ -80,29 +105,6 @@ fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_
 	pixmap->x = r.x0;
 	pixmap->y = r.y0;
 	return pixmap;
-}
-
-fz_pixmap *
-fz_keep_pixmap(fz_pixmap *pix)
-{
-	pix->refs++;
-	return pix;
-}
-
-void
-fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
-{
-	if (pix && --pix->refs == 0)
-	{
-		fz_memory_used -= pix->w * pix->h * pix->n;
-		if (pix->mask)
-			fz_drop_pixmap(ctx, pix->mask);
-		if (pix->colorspace)
-			fz_drop_colorspace(ctx, pix->colorspace);
-		if (pix->free_samples)
-			fz_free(ctx, pix->samples);
-		fz_free(ctx, pix);
-	}
 }
 
 fz_bbox
@@ -532,4 +534,12 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	fz_free(ctx, udata);
 	fz_free(ctx, cdata);
+}
+
+unsigned int
+fz_pixmap_size(fz_pixmap * pix)
+{
+	if (pix == NULL)
+		return 0;
+	return sizeof(*pix) + pix->n * pix->x * pix->y;
 }
