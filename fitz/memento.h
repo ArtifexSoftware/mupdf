@@ -174,9 +174,10 @@ int Memento_find(void *a);
 void Memento_breakpoint(void);
 int Memento_failAt(int);
 int Memento_failThisEvent(void);
-
 void Memento_listBlocks(void);
 void Memento_listNewBlocks(void);
+size_t Memento_setMax(size_t);
+void Memento_stats(void);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -212,6 +213,8 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_failThisEvent()  0
 #define Memento_listBlocks()     do {} while (0)
 #define Memento_listNewBlocks()  do {} while (0)
+#define Memento_setMax(A)        0
+#define Memento_stats()          do {} while (0)
 
 #endif /* MEMENTO */
 

@@ -108,6 +108,7 @@ static struct {
     int            squeezeAt;
     int            squeezing;
     int            squeezed;
+    size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
     size_t         totalAlloc;
@@ -438,15 +439,26 @@ void Memento_listNewBlocks(void) {
     fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
 }
 
-static void Memento_fin(void)
+static void Memento_endStats(void)
 {
-    Memento_checkAllMemory();
     fprintf(stderr, "Total memory malloced = %d bytes\n", globals.totalAlloc);
     fprintf(stderr, "Peak memory malloced = %d bytes\n", globals.peakAlloc);
     fprintf(stderr, "%d mallocs, %d frees, %d reallocs\n", globals.numMallocs,
             globals.numFrees, globals.numReallocs);
     fprintf(stderr, "Average allocation size %d bytes\n",
             globals.totalAlloc/globals.numMallocs);
+}
+
+void Memento_stats(void)
+{
+    fprintf(stderr, "Current memory malloced = %d bytes\n", globals.alloc);
+    Memento_endStats();
+}
+
+static void Memento_fin(void)
+{
+    Memento_checkAllMemory();
+    Memento_endStats();
     if (globals.used.head != NULL) {
         Memento_listBlocks();
         Memento_breakpoint();
@@ -486,6 +498,9 @@ static void Memento_init(void)
 
     env = getenv("MEMENTO_SQUEEZEAT");
     globals.squeezeAt = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_MAXMEMORY");
+    globals.maxMemory = (env ? atoi(env) : 0);
 
     atexit(Memento_fin);
 
@@ -642,6 +657,9 @@ void *Memento_malloc(size_t s)
 
     globals.numMallocs++;
 
+    if (globals.maxMemory != 0 && globals.alloc + s > globals.maxMemory)
+        return NULL;
+
     memblk = MEMENTO_UNDERLYING_MALLOC(smem);
     if (memblk == NULL)
         return NULL;
@@ -763,6 +781,9 @@ void *Memento_realloc(void *blk, size_t newsize)
     Memento_event();
 
     if (checkBlock(memblk, "realloc"))
+        return NULL;
+
+    if (globals.maxMemory != 0 && globals.alloc - memblk->rawsize + newsize > globals.maxMemory)
         return NULL;
 
     newsizemem = MEMBLK_SIZE(newsize);
@@ -993,6 +1014,12 @@ int Memento_failAt(int i)
     return i;
 }
 
+size_t Memento_setMax(size_t max)
+{
+    globals.maxMemory = max;
+    return max;
+}
+
 #else
 
 /* Just in case anyone has left some debugging code in... */
@@ -1075,6 +1102,15 @@ void (Memento_listBlocks)(void)
 }
 
 void (Memento_listNewBlocks)(void)
+{
+}
+
+size_t (Memento_setMax)(size_t max)
+{
+    return 0;
+}
+
+void Memento_stats(void)
 {
 }
 
