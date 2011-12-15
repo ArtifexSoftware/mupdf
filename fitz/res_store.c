@@ -410,7 +410,7 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 			max = store->max / 16 * (16 - *phase);
 		else
 			max = store->size / (16 - *phase) * (15 - *phase);
-		*phase++;
+		(*phase)++;
 
 		if (size + store->size > max)
 			if (scavenge(ctx, size + store->size - max))

@@ -14,8 +14,10 @@ pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj)
 }
 
 static void
-pdf_free_xobject_imp(fz_context *ctx, pdf_xobject *xobj)
+pdf_free_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 {
+	pdf_xobject *xobj = (pdf_xobject *)xobj_;
+
 	if (xobj->colorspace)
 		fz_drop_colorspace(ctx, xobj->colorspace);
 	if (xobj->resources)

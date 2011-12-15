@@ -13,9 +13,11 @@ fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
 }
 
 void
-fz_free_pixmap_imp(fz_context *ctx, fz_pixmap *pix)
+fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix_)
 {
-	if (pix->mask)
+	fz_pixmap *pix = (fz_pixmap *)pix_;
+
+        if (pix->mask)
 		fz_drop_pixmap(ctx, pix->mask);
 	if (pix->colorspace)
 		fz_drop_colorspace(ctx, pix->colorspace);

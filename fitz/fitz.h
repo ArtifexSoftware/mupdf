@@ -499,7 +499,7 @@ typedef struct fz_storable_s fz_storable;
 
 typedef struct fz_item_s fz_item;
 
-typedef void (fz_store_free_fn)(fz_context *, void *);
+typedef void (fz_store_free_fn)(fz_context *, fz_storable *);
 
 struct fz_storable_s {
 	int refs;
@@ -703,7 +703,7 @@ fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz
 fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_pixmap *pix);
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
-void fz_free_pixmap_imp(fz_context *ctx, void *pix);
+void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
 void fz_clear_pixmap(fz_pixmap *pix);
 void fz_clear_pixmap_with_color(fz_pixmap *pix, int value);
 void fz_clear_pixmap_rect_with_color(fz_pixmap *pix, int value, fz_bbox r);
@@ -791,7 +791,7 @@ struct fz_colorspace_s
 fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n);
 fz_colorspace *fz_keep_colorspace(fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
-void fz_free_colorspace_imp(fz_context *ctx, void *colorspace);
+void fz_free_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
 void fz_convert_color(fz_context *ctx, fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
 void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
@@ -990,7 +990,7 @@ struct fz_shade_s
 
 fz_shade *fz_keep_shade(fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
-void fz_free_shade_imp(fz_context *ctx, void *shade);
+void fz_free_shade_imp(fz_context *ctx, fz_storable *shade);
 void fz_debug_shade(fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_shade *shade, fz_matrix ctm);

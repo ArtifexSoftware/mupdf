@@ -1307,7 +1307,7 @@ pdf_drop_function(fz_context *ctx, pdf_function *func)
 }
 
 static void
-pdf_free_function_imp(fz_context *ctx, void *func_)
+pdf_free_function_imp(fz_context *ctx, fz_storable *func_)
 {
 	pdf_function *func = (pdf_function *)func_;
 	int i;

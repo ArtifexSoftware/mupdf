@@ -148,12 +148,6 @@ void closexref(void)
 		psobj = NULL;
 		psobjs = 0;
 	}
-
-	if (xref && xref->store)
-	{
-		pdf_free_store(ctx, xref->store);
-		xref->store = NULL;
-	}
 }
 
 static void
@@ -973,7 +967,7 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		infousage();
 
-	ctx = fz_new_context(&fz_alloc_default);
+	ctx = fz_new_context(&fz_alloc_default, 256<<20);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

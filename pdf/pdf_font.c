@@ -315,8 +315,10 @@ pdf_drop_font(fz_context *ctx, pdf_font_desc *fontdesc)
 }
 
 static void
-pdf_free_font_imp(fz_context *ctx, pdf_font_desc *fontdesc)
+pdf_free_font_imp(fz_context *ctx, fz_storable *fontdesc_)
 {
+	pdf_font_desc *fontdesc = (pdf_font_desc *)fontdesc_;
+
 	if (fontdesc->font)
 		fz_drop_font(ctx, fontdesc->font);
 	if (fontdesc->encoding)

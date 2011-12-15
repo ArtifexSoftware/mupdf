@@ -3,7 +3,7 @@
 #define SLOWCMYK
 
 void
-fz_free_colorspace_imp(fz_context *ctx, void *cs_)
+fz_free_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
 	fz_colorspace *cs = (fz_colorspace *)cs_;
 

@@ -31,7 +31,7 @@
  */
 
 void
-pdf_free_cmap_imp(fz_context *ctx, void *cmap_)
+pdf_free_cmap_imp(fz_context *ctx, fz_storable *cmap_)
 {
 	pdf_cmap *cmap = (pdf_cmap *)cmap_;
 	if (cmap->usecmap)

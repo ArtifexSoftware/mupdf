@@ -7,7 +7,7 @@ fz_keep_shade(fz_shade *shade)
 }
 
 void
-fz_free_shade_imp(fz_context *ctx, void *shade_)
+fz_free_shade_imp(fz_context *ctx, fz_storable *shade_)
 {
 	fz_shade *shade = (fz_shade *)shade_;
 
