@@ -108,7 +108,7 @@ struct fz_alloc_context_s
 	void *user;
 	void *(*malloc)(void *, unsigned int);
 	void *(*realloc)(void *, void *, unsigned int);
-	void  (*free)(void *, void *);
+	void (*free)(void *, void *);
 };
 
 /* Default allocator */
@@ -174,19 +174,19 @@ void fz_free_aa_context(fz_context *ctx);
 /* memory allocation */
 
 /* The following throw exceptions on failure to allocate */
-void *fz_malloc(fz_context *ctx, unsigned int  size);
-void *fz_malloc_array(fz_context *ctx, unsigned int  count, unsigned int  size);
-void *fz_calloc(fz_context *ctx, unsigned int  count, unsigned int  size);
-void *fz_resize_array(fz_context *ctx, void *p, unsigned int  count, unsigned int  size);
+void *fz_malloc(fz_context *ctx, unsigned int size);
+void *fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_calloc(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size);
 char *fz_strdup(fz_context *ctx, char *s);
 
 void fz_free(fz_context *ctx, void *p);
 
 /* The following returns NULL on failure to allocate */
-void *fz_malloc_no_throw(fz_context *ctx, unsigned int  size);
-void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int  count, unsigned int  size);
-void *fz_calloc_no_throw(fz_context *ctx, unsigned int  count, unsigned int  size);
-void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int  size);
+void *fz_malloc_no_throw(fz_context *ctx, unsigned int size);
+void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int size);
 char *fz_strdup_no_throw(fz_context *ctx, char *s);
 
 

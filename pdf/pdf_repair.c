@@ -148,7 +148,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 	fz_context *ctx = xref->ctx;
 
 	fz_try(ctx)
-        {
+	{
 		obj = pdf_load_object(xref, num, gen);
 
 		count = fz_to_int(fz_dict_gets(obj, "N"));

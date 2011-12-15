@@ -1080,5 +1080,5 @@ pdf_open_xref(fz_context *ctx, const char *filename, char *password)
 	}
 
 	fz_close(file);
-        return xref;
+	return xref;
 }
