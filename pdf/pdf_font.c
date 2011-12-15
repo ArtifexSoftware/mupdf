@@ -198,7 +198,6 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 		fz_throw(ctx, "cannot find substitute font");
 
 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
-	fontdesc->size += len;
 	/* RJW: "cannot load freetype font from memory" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -217,7 +216,6 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, 
 		fz_throw(ctx, "cannot find builtin CJK font");
 
 	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
-	fontdesc->size += len;
 	/* RJW: "cannot load builtin CJK font" */
 
 	fontdesc->font->ft_substitute = 1;
