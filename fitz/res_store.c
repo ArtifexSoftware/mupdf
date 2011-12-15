@@ -9,7 +9,6 @@ struct fz_item_s
 	fz_item *next;
 	fz_item *prev;
 	fz_store *store;
-	int age;
 };
 
 struct refkey
@@ -83,8 +82,10 @@ fz_drop_storable(fz_context *ctx, fz_storable *s)
 }
 
 static void
-evict(fz_context *ctx, fz_store *store, fz_item *item)
+evict(fz_context *ctx, fz_item *item)
 {
+	fz_store *store = ctx->store;
+
 	store->size -= item->size;
 	/* Unlink from the linked list */
 	if (item->next)
@@ -104,8 +105,10 @@ evict(fz_context *ctx, fz_store *store, fz_item *item)
 		refkey.gen = fz_to_gen(item->key);
 		fz_hash_remove(store->hash, &refkey);
 	}
-	/* Drop the value, key and item */
-	item->val->free(ctx, item->val);
+	/* Drop a reference to the value (freeing if required) */
+	if (item->val->refs > 0 && --item->val->refs == 0)
+		item->val->free(ctx, item->val);
+	/* Always drops the key and free the item */
 	fz_drop_obj(item->key);
 	fz_free(ctx, item);
 }
@@ -143,7 +146,7 @@ ensure_space(fz_context *ctx, unsigned int tofree)
 		{
 			/* Free this item */
 			count += item->size;
-			evict(ctx, store, item);
+			evict(ctx, item);
 
 			if (count >= tofree)
 				break;
@@ -308,7 +311,7 @@ fz_remove_item(fz_context *ctx, fz_store_free_fn *free, fz_obj *key)
 }
 
 void
-fz_age_store(fz_context *ctx, int maxage)
+fz_empty_store(fz_context *ctx)
 {
 	fz_item *item, *next;
 	fz_store *store = ctx->store;
@@ -321,11 +324,7 @@ fz_age_store(fz_context *ctx, int maxage)
 	for (item = store->head; item; item = next)
 	{
 		next = item->next;
-		/* If we've only got 1 reference, then we must be the only
-		 * holders. Age the item. If it's older than the maximum,
-		 * bin it. */
-		if (item->val->refs == 1 && ++item->age > maxage)
-			evict(ctx, store, item);
+		evict(ctx, item);
 	}
 	/* UNLOCK */
 }
@@ -335,7 +334,7 @@ fz_free_store_context(fz_context *ctx)
 {
 	if (ctx == NULL || ctx->store == NULL)
 		return;
-	fz_age_store(ctx, 0);
+	fz_empty_store(ctx);
 	fz_free_hash(ctx->store->hash);
 	fz_free(ctx, ctx->store);
 	ctx->store = NULL;
@@ -352,7 +351,7 @@ fz_debug_store(fz_context *ctx)
 	/* LOCK */
 	for (item = store->head; item; item = item->next)
 	{
-		printf("store[*][claim=%d] ", item->val->refs);
+		printf("store[*][refs=%d][size=%d] ", item->val->refs, item->size);
 		if (fz_is_indirect(item->key))
 		{
 			printf("(%d %d R) ", fz_to_num(item->key), fz_to_gen(item->key));
@@ -361,4 +360,75 @@ fz_debug_store(fz_context *ctx)
 		printf(" = %p\n", item->val);
 	}
 	/* UNLOCK */
+}
+
+static int
+scavenge(fz_context *ctx, unsigned int tofree)
+{
+	fz_store *store = ctx->store;
+	unsigned int count = 0;
+	fz_item *item, *prev;
+
+	/* Free the items */
+	for (item = store->tail; item; item = prev)
+	{
+		prev = item->prev;
+		if (item->val->refs == 1)
+		{
+			/* Free this item */
+			count += item->size;
+			evict(ctx, item);
+
+			if (count >= tofree)
+				break;
+		}
+	}
+	/* Success is managing to evict any blocks */
+	return count != 0;
+}
+
+int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
+{
+	fz_store *store;
+	unsigned int max;
+
+	if (ctx == NULL)
+		return 0;
+	store = ctx->store;
+	if (store == NULL)
+		return 0;
+
+#ifdef DEBUG_SCAVENGING
+	printf("Scavenging: store=%d size=%d phase=%d\n", store->size, size, *phase);
+	fz_debug_store(ctx);
+	Memento_stats();
+#endif
+	do
+	{
+		/* Calculate 'max' as the maximum size of the store for this phase */
+		if (store->max != FZ_STORE_UNLIMITED)
+			max = store->max / 16 * (16 - *phase);
+		else
+			max = store->size / (16 - *phase) * (15 - *phase);
+		*phase++;
+
+		if (size + store->size > max)
+			if (scavenge(ctx, size + store->size - max))
+			{
+#ifdef DEBUG_SCAVENGING
+				printf("scavenged: store=%d\n", store->size);
+				fz_debug_store(ctx);
+				Memento_stats();
+#endif
+				return 1;
+			}
+	}
+	while (max > 0);
+
+#ifdef DEBUG_SCAVENGING
+	printf("scavenging failed\n");
+	fz_debug_store(ctx);
+	Memento_listBlocks();
+#endif
+	return 0;
 }

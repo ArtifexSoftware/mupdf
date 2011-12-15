@@ -263,8 +263,6 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	if (showmd5 || showtime)
 		printf("\n");
 
-	fz_age_store(ctx, 3);
-
 	fz_flush_warnings(ctx);
 }
 

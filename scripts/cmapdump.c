@@ -192,3 +192,8 @@ void fz_new_store_context(fz_context *ctx, unsigned int max)
 void fz_free_store_context(fz_context *ctx)
 {
 }
+
+int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
+{
+	return 0;
+}

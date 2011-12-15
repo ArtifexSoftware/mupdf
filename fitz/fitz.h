@@ -525,7 +525,8 @@ void fz_drop_storable(fz_context *, fz_storable *);
 void fz_store_item(fz_context *ctx, fz_obj *key, void *val, unsigned int itemsize);
 void *fz_find_item(fz_context *ctx, fz_store_free_fn *freefn, fz_obj *key);
 void fz_remove_item(fz_context *ctx, fz_store_free_fn *freefn, fz_obj *key);
-void fz_age_store(fz_context *ctx, int maxage);
+void fz_empty_store(fz_context *ctx);
+int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase);
 
 /*
  * Buffered reader.

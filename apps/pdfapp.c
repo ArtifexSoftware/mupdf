@@ -342,8 +342,6 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 	fz_free_device(mdev);
 
 	pdf_free_page(app->ctx, page);
-
-	fz_age_store(app->ctx, 3);
 }
 
 static void pdfapp_loadpage_xps(pdfapp_t *app)
