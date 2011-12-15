@@ -696,9 +696,6 @@ struct fz_pixmap_s
 	int free_samples;
 };
 
-/* will return NULL if soft limit is exceeded */
-fz_pixmap *fz_new_pixmap_with_limit(fz_context *ctx, fz_colorspace *colorspace, int w, int h);
-
 fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
 fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *, fz_bbox bbox);
 fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz_bbox bbox, unsigned char *samples);

@@ -76,5 +76,6 @@ cleanup:
 fz_context *
 fz_clone_context(fz_context *ctx)
 {
-	return fz_new_context(ctx->alloc, FZ_STORE_UNLIMITED);
+	/* FIXME: Should be sharing store */
+	return fz_new_context(ctx->alloc, 256<<20);
 }

@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 
 	infile = argv[fz_optind++];
 
-	ctx = fz_new_context(&fz_alloc_default, FZ_STORE_UNLIMITED);
+	ctx = fz_new_context(&fz_alloc_default, 256<<20);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

@@ -1,8 +1,5 @@
 #include "fitz.h"
 
-static int fz_memory_limit = 256 << 20;
-static int fz_memory_used = 0;
-
 fz_pixmap *
 fz_keep_pixmap(fz_pixmap *pix)
 {
@@ -18,7 +15,6 @@ fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
 void
 fz_free_pixmap_imp(fz_context *ctx, fz_pixmap *pix)
 {
-	fz_memory_used -= pix->w * pix->h * pix->n;
 	if (pix->mask)
 		fz_drop_pixmap(ctx, pix->mask);
 	if (pix->colorspace)
@@ -59,26 +55,11 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	}
 	else
 	{
-		fz_memory_used += pix->w * pix->h * pix->n;
 		pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
 		pix->free_samples = 1;
 	}
 
 	return pix;
-}
-
-fz_pixmap *
-fz_new_pixmap_with_limit(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
-{
-	int n = colorspace ? colorspace->n + 1 : 1;
-	int size = w * h * n;
-	if (fz_memory_used + size > fz_memory_limit)
-	{
-		fz_warn(ctx, "pixmap memory exceeds soft limit %dM + %dM > %dM",
-			fz_memory_used/(1<<20), size/(1<<20), fz_memory_limit/(1<<20));
-		return NULL;
-	}
-	return fz_new_pixmap_with_data(ctx, colorspace, w, h, NULL);
 }
 
 fz_pixmap *
@@ -541,5 +522,5 @@ fz_pixmap_size(fz_pixmap * pix)
 {
 	if (pix == NULL)
 		return 0;
-	return sizeof(*pix) + pix->n * pix->x * pix->y;
+	return sizeof(*pix) + pix->n * pix->w * pix->h;
 }

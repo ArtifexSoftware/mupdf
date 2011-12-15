@@ -160,8 +160,11 @@ pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, i
 		}
 
 		/* Allocate now, to fail early if we run out of memory */
-		tile = fz_new_pixmap_with_limit(ctx, colorspace, w, h);
-		if (!tile)
+		fz_try(ctx)
+		{
+			tile = fz_new_pixmap(ctx, colorspace, w, h);
+		}
+		fz_catch(ctx)
 		{
 			fz_throw(ctx, "out of memory");
 		}

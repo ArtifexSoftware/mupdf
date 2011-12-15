@@ -516,8 +516,11 @@ xps_decode_png(fz_context *ctx, byte *p, int total)
 
 	stride = (png.width * png.n * png.depth + 7) / 8;
 
-	image = fz_new_pixmap_with_limit(ctx, colorspace, png.width, png.height);
-	if (!image)
+	fz_try(ctx)
+	{
+		image = fz_new_pixmap(ctx, colorspace, png.width, png.height);
+	}
+	fz_catch(ctx)
 	{
 		fz_free(png.ctx, png.samples);
 		fz_throw(ctx, "out of memory");

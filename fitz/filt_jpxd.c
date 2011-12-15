@@ -111,8 +111,11 @@ fz_load_jpx_image(fz_context *ctx, unsigned char *data, int size, fz_colorspace 
 		}
 	}
 
-	img = fz_new_pixmap_with_limit(ctx, colorspace, w, h);
-	if (!img)
+	fz_try(ctx)
+	{
+		img = fz_new_pixmap(ctx, colorspace, w, h);
+	}
+	fz_catch(ctx)
 	{
 		opj_image_destroy(jpx);
 		fz_throw(ctx, "out of memory");

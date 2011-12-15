@@ -782,8 +782,11 @@ xps_decode_tiff(fz_context *ctx, byte *buf, int len)
 
 	/* Expand into fz_pixmap struct */
 
-	image = fz_new_pixmap_with_limit(tiff.ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength);
-	if (!image)
+	fz_try(ctx)
+	{
+		image = fz_new_pixmap(tiff.ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength);
+	}
+	fz_catch(ctx)
 	{
 		if (tiff.colormap) fz_free(ctx, tiff.colormap);
 		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);

@@ -94,8 +94,11 @@ xps_decode_jpeg(fz_context *ctx, byte *rbuf, int rlen)
 	else
 		fz_throw(ctx, "bad number of components in jpeg: %d", cinfo.output_components);
 
-	image = fz_new_pixmap_with_limit(ctx, colorspace, cinfo.output_width, cinfo.output_height);
-	if (!image)
+	fz_try(ctx)
+	{
+		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height);
+	}
+	fz_catch(ctx)
 	{
 		jpeg_finish_decompress(&cinfo);
 		jpeg_destroy_decompress(&cinfo);
