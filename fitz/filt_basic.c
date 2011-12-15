@@ -39,13 +39,24 @@ fz_stream *
 fz_open_null(fz_stream *chain, int len)
 {
 	struct null_filter *state;
+	fz_stream *stream;
+	fz_context *ctx = chain->ctx;
 
 	assert(chain);
-	state = fz_malloc(chain->ctx, sizeof(struct null_filter));
+	state = fz_malloc(ctx, sizeof(struct null_filter));
 	state->chain = chain;
 	state->remain = len;
 
-	return fz_new_stream(chain->ctx, state, read_null, close_null);
+	fz_try(ctx)
+	{
+		stream = fz_new_stream(ctx, state, read_null, close_null);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, state);
+		fz_rethrow(ctx);
+	}
+	return stream;
 }
 
 /* ASCII Hex Decode */

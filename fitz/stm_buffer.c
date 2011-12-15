@@ -9,7 +9,15 @@ fz_new_buffer(fz_context *ctx, int size)
 
 	b = fz_malloc(ctx, sizeof(fz_buffer));
 	b->refs = 1;
-	b->data = fz_malloc(ctx, size);
+	fz_try(ctx)
+	{
+		b->data = fz_malloc(ctx, size);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, b);
+		fz_rethrow(ctx);
+	}
 	b->cap = size;
 	b->len = 0;
 

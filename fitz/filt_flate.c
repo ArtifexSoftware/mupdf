@@ -12,7 +12,7 @@ struct fz_flate_s
 
 static void *zalloc(void *opaque, unsigned int items, unsigned int size)
 {
-	return fz_malloc_array(opaque, items, size);
+	return fz_malloc_array_no_throw(opaque, items, size);
 }
 
 static void zfree(void *opaque, void *ptr)
@@ -84,20 +84,34 @@ fz_stream *
 fz_open_flated(fz_stream *chain)
 {
 	fz_flate *state;
-	int code;
+	int code = Z_OK;
+	fz_context *ctx = chain->ctx;
+	fz_stream *stream;
 
-	state = fz_malloc(chain->ctx, sizeof(fz_flate));
+	fz_var(code);
+
+	state = fz_malloc(ctx, sizeof(fz_flate));
 	state->chain = chain;
 
 	state->z.zalloc = zalloc;
 	state->z.zfree = zfree;
-	state->z.opaque = chain->ctx;
+	state->z.opaque = ctx;
 	state->z.next_in = NULL;
 	state->z.avail_in = 0;
 
-	code = inflateInit(&state->z);
-	if (code != Z_OK)
-		fz_warn(chain->ctx, "zlib error: inflateInit: %s", state->z.msg);
-
-	return fz_new_stream(chain->ctx, state, read_flated, close_flated);
+	fz_try(ctx)
+	{
+		code = inflateInit(&state->z);
+		if (code != Z_OK)
+			fz_throw(ctx, "zlib error: inflateInit: %s", state->z.msg);
+		stream = fz_new_stream(chain->ctx, state, read_flated, close_flated);
+	}
+	fz_catch(ctx)
+	{
+		if (code == Z_OK)
+			inflateEnd(&state->z);
+		fz_free(ctx, state);
+		fz_rethrow(ctx);
+	}
+	return stream;
 }

@@ -26,10 +26,28 @@ pdf_find_page_number(pdf_xref *xref, fz_obj *page)
 }
 
 static void
+put_marker_bool(fz_context *ctx, fz_obj *rdb, char *marker, int val)
+{
+	fz_obj *tmp;
+
+	tmp = fz_new_bool(ctx, val);
+	fz_try(ctx)
+	{
+		fz_dict_puts(rdb, marker, tmp);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_obj(tmp);
+		fz_rethrow(ctx);
+	}
+	fz_drop_obj(tmp);
+}
+
+static void
 pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 {
 	fz_obj *dict, *kids, *count;
-	fz_obj *obj, *tmp;
+	fz_obj *obj;
 	int i, n;
 	fz_context *ctx = xref->ctx;
 
@@ -55,17 +73,7 @@ pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 		if (obj)
 			info.rotate = obj;
 
-		tmp = fz_new_null(ctx);
-		fz_try(ctx)
-		{
-			fz_dict_puts(node, ".seen", tmp);
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_obj(tmp);
-			fz_rethrow(ctx);
-		}
-		fz_drop_obj(tmp);
+		put_marker_bool(ctx, node, ".seen", 0);
 
 		n = fz_array_len(kids);
 		for (i = 0; i < n; i++)
@@ -165,7 +173,6 @@ static int
 pdf_resources_use_blending(fz_context *ctx, fz_obj *rdb)
 {
 	fz_obj *dict;
-	fz_obj *tmp;
 	int i, n;
 
 	if (!rdb)
@@ -175,9 +182,7 @@ pdf_resources_use_blending(fz_context *ctx, fz_obj *rdb)
 	if (fz_dict_gets(rdb, ".useBM"))
 		return fz_to_bool(fz_dict_gets(rdb, ".useBM"));
 
-	tmp = fz_new_bool(ctx, 0);
-	fz_dict_puts(rdb, ".useBM", tmp);
-	fz_drop_obj(tmp);
+	put_marker_bool(ctx, rdb, ".useBM", 0);
 
 	dict = fz_dict_gets(rdb, "ExtGState");
 	n = fz_dict_len(dict);
@@ -200,9 +205,7 @@ pdf_resources_use_blending(fz_context *ctx, fz_obj *rdb)
 	return 0;
 
 found:
-	tmp = fz_new_bool(ctx, 1);
-	fz_dict_puts(rdb, ".useBM", tmp);
-	fz_drop_obj(tmp);
+	put_marker_bool(ctx, rdb, ".useBM", 1);
 	return 1;
 }
 
@@ -335,19 +338,19 @@ pdf_load_page(pdf_xref *xref, int number)
 	fz_try(ctx)
 	{
 		page->contents = pdf_load_page_contents(xref, obj);
+
+		if (pdf_resources_use_blending(ctx, page->resources))
+			page->transparency = 1;
+
+		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
+			if (pdf_resources_use_blending(ctx, annot->ap->resources))
+				page->transparency = 1;
 	}
 	fz_catch(ctx)
 	{
 		pdf_free_page(ctx, page);
 		fz_throw(ctx, "cannot load page %d contents (%d 0 R)", number + 1, fz_to_num(pageref));
 	}
-
-	if (pdf_resources_use_blending(ctx, page->resources))
-		page->transparency = 1;
-
-	for (annot = page->annots; annot && !page->transparency; annot = annot->next)
-		if (pdf_resources_use_blending(ctx, annot->ap->resources))
-			page->transparency = 1;
 
 	return page;
 }

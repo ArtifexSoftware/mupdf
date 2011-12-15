@@ -155,21 +155,30 @@ build_filter_chain(fz_stream *chain, pdf_xref *xref, fz_obj *fs, fz_obj *ps, int
  * stream length, followed by a decryption filter.
  */
 static fz_stream *
-pdf_open_raw_filter(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int num, int gen)
+pdf_open_raw_filter(fz_stream *orig, pdf_xref *xref, fz_obj *stmobj, int num, int gen)
 {
 	int hascrypt;
 	int len;
-	fz_context *ctx = chain->ctx;
-
-	/* don't close chain when we close this filter */
-	fz_keep_stream(chain);
+	fz_context *ctx = orig->ctx;
+	fz_stream *chain;
 
 	len = fz_to_int(fz_dict_gets(stmobj, "Length"));
-	chain = fz_open_null(chain, len);
+	chain = fz_open_null(orig, len);
 
-	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
-	if (xref->crypt && !hascrypt)
-		chain = pdf_open_crypt(chain, xref->crypt, num, gen);
+	fz_try(ctx)
+	{
+		hascrypt = pdf_stream_has_crypt(ctx, stmobj);
+		if (xref->crypt && !hascrypt)
+			chain = pdf_open_crypt(chain, xref->crypt, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
+
+	/* don't close the original stream when we close this filter */
+	fz_keep_stream(orig);
 
 	return chain;
 }
@@ -183,16 +192,25 @@ pdf_open_filter(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int num, int g
 {
 	fz_obj *filters;
 	fz_obj *params;
+	fz_context *ctx = chain->ctx;
 
 	filters = fz_dict_getsa(stmobj, "Filter", "F");
 	params = fz_dict_getsa(stmobj, "DecodeParms", "DP");
 
 	chain = pdf_open_raw_filter(chain, xref, stmobj, num, gen);
 
-	if (fz_is_name(filters))
-		return build_filter(chain, xref, filters, params, num, gen);
-	if (fz_array_len(filters) > 0)
-		return build_filter_chain(chain, xref, filters, params, num, gen);
+	fz_try(ctx)
+	{
+		if (fz_is_name(filters))
+			chain = build_filter(chain, xref, filters, params, num, gen);
+		else if (fz_array_len(filters) > 0)
+			chain = build_filter_chain(chain, xref, filters, params, num, gen);
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
 	return chain;
 }
@@ -340,7 +358,7 @@ fz_buffer *
 pdf_load_stream(pdf_xref *xref, int num, int gen)
 {
 	fz_context *ctx = xref->ctx;
-	fz_stream *stm;
+	fz_stream *stm = NULL;
 	fz_obj *dict, *obj;
 	int i, len, n;
 	fz_buffer *buf;

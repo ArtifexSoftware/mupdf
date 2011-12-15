@@ -94,27 +94,37 @@ fz_read_all(fz_stream *stm, int initial)
 	int n;
 	fz_context *ctx = stm->ctx;
 
-	if (initial < 1024)
-		initial = 1024;
+	fz_var(buf);
 
-	buf = fz_new_buffer(ctx, initial);
-
-	while (1)
+	fz_try(ctx)
 	{
-		if (buf->len == buf->cap)
-			fz_grow_buffer(ctx, buf);
+		if (initial < 1024)
+			initial = 1024;
 
-		if (buf->len / 200 > initial)
+		buf = fz_new_buffer(ctx, initial);
+
+		while (1)
 		{
-			fz_drop_buffer(ctx, buf);
-			fz_throw(ctx, "compression bomb detected");
+			if (buf->len == buf->cap)
+				fz_grow_buffer(ctx, buf);
+
+			if (buf->len / 200 > initial)
+			{
+				fz_drop_buffer(ctx, buf);
+				fz_throw(ctx, "compression bomb detected");
+			}
+
+			n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
+			if (n == 0)
+				break;
+
+			buf->len += n;
 		}
-
-		n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
-		if (n == 0)
-			break;
-
-		buf->len += n;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
 	}
 
 	return buf;
