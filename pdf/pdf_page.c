@@ -56,7 +56,15 @@ pdf_load_page_tree_node(pdf_xref *xref, fz_obj *node, struct info info)
 			info.rotate = obj;
 
 		tmp = fz_new_null(ctx);
-		fz_dict_puts(node, ".seen", tmp);
+		fz_try(ctx)
+		{
+			fz_dict_puts(node, ".seen", tmp);
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_obj(tmp);
+			fz_rethrow(ctx);
+		}
 		fz_drop_obj(tmp);
 
 		n = fz_array_len(kids);
