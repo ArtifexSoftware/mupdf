@@ -388,6 +388,7 @@ pdf_parse_dict(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 
 			fz_dict_put(dict, key, val);
 			fz_drop_obj(val);
+			val = NULL;
 			fz_drop_obj(key);
 			key = NULL;
 		}
@@ -396,6 +397,7 @@ pdf_parse_dict(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 	{
 		fz_drop_obj(dict);
 		fz_drop_obj(key);
+		fz_drop_obj(val);
 		fz_throw(ctx, "cannot parse dict");
 	}
 	return dict;
