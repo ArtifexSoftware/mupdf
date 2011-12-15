@@ -641,15 +641,7 @@ void *Memento_malloc(size_t s)
     Memento_BlkHeader *memblk;
     size_t             smem = MEMBLK_SIZE(s);
 
-    if (!globals.inited)
-        Memento_init();
-
-    Memento_event();
-
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
-
-    if (globals.failing)
+    if (Memento_failThisEvent())
         return NULL;
 
     if (s == 0)
@@ -762,24 +754,17 @@ void *Memento_realloc(void *blk, size_t newsize)
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
 
-    if (!globals.inited)
-        Memento_init();
-
     if (blk == NULL)
         return Memento_malloc(newsize);
     if (newsize == 0) {
         Memento_free(blk);
         return NULL;
     }
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
-    if (globals.failing)
+
+    if (Memento_failThisEvent())
         return NULL;
 
     memblk     = MEMBLK_FROMBLK(blk);
-
-    Memento_event();
-
     if (checkBlock(memblk, "realloc"))
         return NULL;
 
