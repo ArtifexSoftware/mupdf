@@ -175,6 +175,9 @@ void Memento_breakpoint(void);
 int Memento_failAt(int);
 int Memento_failThisEvent(void);
 
+void Memento_listBlocks(void);
+void Memento_listNewBlocks(void);
+
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
 void  Memento_free(void *);
@@ -207,6 +210,8 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_breakpoint()     do {} while (0)
 #define Memento_failAt(A)        0
 #define Memento_failThisEvent()  0
+#define Memento_listBlocks()     do {} while (0)
+#define Memento_listNewBlocks()  do {} while (0)
 
 #endif /* MEMENTO */
 

@@ -66,6 +66,10 @@ enum {
     Memento_PostSize = 16
 };
 
+enum {
+    Memento_Flag_OldBlock = 1
+};
+
 typedef struct Memento_BlkHeader Memento_BlkHeader;
 
 struct Memento_BlkHeader
@@ -73,6 +77,7 @@ struct Memento_BlkHeader
     size_t             rawsize;
     int                sequence;
     int                lastCheckedOK;
+    int                flags;
     Memento_BlkHeader *next;
     char               preblk[Memento_PreSize];
 };
@@ -404,12 +409,31 @@ static int Memento_listBlock(Memento_BlkHeader *b,
     return 0;
 }
 
-static void Memento_listBlocks(void) {
+void Memento_listBlocks(void) {
     int counts[2];
     counts[0] = 0;
     counts[1] = 0;
     fprintf(stderr, "Allocated blocks:\n");
     Memento_appBlocks(&globals.used, Memento_listBlock, &counts[0]);
+    fprintf(stderr, "  Total number of blocks = %d\n", counts[0]);
+    fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
+}
+
+static int Memento_listNewBlock(Memento_BlkHeader *b,
+                                void              *arg)
+{
+    if (b->flags & Memento_Flag_OldBlock)
+        return 0;
+    b->flags |= Memento_Flag_OldBlock;
+    return Memento_listBlock(b, arg);
+}
+
+void Memento_listNewBlocks(void) {
+    int counts[2];
+    counts[0] = 0;
+    counts[1] = 0;
+    fprintf(stderr, "Blocks allocated and still extant since last list:\n");
+    Memento_appBlocks(&globals.used, Memento_listNewBlock, &counts[0]);
     fprintf(stderr, "  Total number of blocks = %d\n", counts[0]);
     fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
 }
@@ -423,7 +447,7 @@ static void Memento_fin(void)
             globals.numFrees, globals.numReallocs);
     fprintf(stderr, "Average allocation size %d bytes\n",
             globals.totalAlloc/globals.numMallocs);
-    if (globals.used.head) {
+    if (globals.used.head != NULL) {
         Memento_listBlocks();
         Memento_breakpoint();
     }
@@ -632,6 +656,7 @@ void *Memento_malloc(size_t s)
     memblk->rawsize       = s;
     memblk->sequence      = globals.sequence;
     memblk->lastCheckedOK = memblk->sequence;
+    memblk->flags         = 0;
     Memento_addBlockHead(&globals.used, memblk, 0);
     return MEMBLK_TOBLK(memblk);
 }
@@ -937,7 +962,7 @@ int Memento_find(void *a)
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
-    if (data.blk) {
+    if (data.blk != NULL) {
         fprintf(stderr, "Address 0x%p is in %sallocated block 0x%p(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
@@ -948,7 +973,7 @@ int Memento_find(void *a)
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
-    if (data.blk) {
+    if (data.blk != NULL) {
         fprintf(stderr, "Address 0x%p is in %sfreed block 0x%p(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
@@ -1045,5 +1070,12 @@ void *Memento_calloc(size_t n, size_t s)
     return MEMENTO_UNDERLYING_CALLOC(n, s);
 }
 
+void (Memento_listBlocks)(void)
+{
+}
+
+void (Memento_listNewBlocks)(void)
+{
+}
 
 #endif
