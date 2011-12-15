@@ -363,7 +363,9 @@ pdf_parse_dict(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 					val = fz_new_int(ctx, a);
 					fz_dict_put(dict, key, val);
 					fz_drop_obj(val);
+					val = NULL;
 					fz_drop_obj(key);
+					key = NULL;
 					goto skip;
 				}
 				if (tok == PDF_TOK_INT)

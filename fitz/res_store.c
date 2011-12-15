@@ -39,7 +39,15 @@ fz_new_store_context(fz_context *ctx, unsigned int max)
 {
 	fz_store *store;
 	store = fz_malloc(ctx, sizeof(fz_store));
-	store->hash = fz_new_hash_table(ctx, 4096, sizeof(struct refkey));
+	fz_try(ctx)
+	{
+		store->hash = fz_new_hash_table(ctx, 4096, sizeof(struct refkey));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, store);
+		fz_rethrow(ctx);
+	}
 	store->head = NULL;
 	store->tail = NULL;
 	store->size = 0;

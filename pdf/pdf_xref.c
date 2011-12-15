@@ -676,13 +676,15 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 			xref->trailer = NULL;
 		}
 		fz_warn(xref->ctx, "trying to repair broken xref");
-		pdf_repair_xref(xref, xref->scratch, sizeof xref->scratch);
 		repaired = 1;
 	}
 
 	fz_try(ctx)
 	{
 		int hasroot, hasinfo;
+
+		if (repaired)
+			pdf_repair_xref(xref, xref->scratch, sizeof xref->scratch);
 
 		encrypt = fz_dict_gets(xref->trailer, "Encrypt");
 		id = fz_dict_gets(xref->trailer, "ID");

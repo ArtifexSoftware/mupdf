@@ -27,7 +27,15 @@ fz_new_glyph_cache(fz_context *ctx)
 	fz_glyph_cache *cache;
 
 	cache = fz_malloc(ctx, sizeof(fz_glyph_cache));
-	cache->hash = fz_new_hash_table(ctx, 509, sizeof(fz_glyph_key));
+	fz_try(ctx)
+	{
+		cache->hash = fz_new_hash_table(ctx, 509, sizeof(fz_glyph_key));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, cache);
+		fz_rethrow(ctx);
+	}
 	cache->total = 0;
 
 	return cache;
@@ -58,6 +66,9 @@ fz_evict_glyph_cache(fz_context *ctx, fz_glyph_cache *cache)
 void
 fz_free_glyph_cache(fz_context *ctx, fz_glyph_cache *cache)
 {
+	if (!cache)
+		return;
+
 	fz_evict_glyph_cache(ctx, cache);
 	fz_free_hash(cache->hash);
 	fz_free(ctx, cache);

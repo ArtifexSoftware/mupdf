@@ -389,7 +389,15 @@ fz_new_array(fz_context *ctx, int initialcap)
 	obj->u.a.len = 0;
 	obj->u.a.cap = initialcap > 1 ? initialcap : 6;
 
-	obj->u.a.items = fz_malloc_array(ctx, obj->u.a.cap, sizeof(fz_obj*));
+	fz_try(ctx)
+	{
+		obj->u.a.items = fz_malloc_array(ctx, obj->u.a.cap, sizeof(fz_obj*));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, obj);
+		fz_rethrow(ctx);
+	}
 	for (i = 0; i < obj->u.a.cap; i++)
 		obj->u.a.items[i] = NULL;
 
@@ -537,7 +545,15 @@ fz_new_dict(fz_context *ctx, int initialcap)
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
 
-	obj->u.d.items = fz_malloc_array(ctx, obj->u.d.cap, sizeof(struct keyval));
+	fz_try(ctx)
+	{
+		obj->u.d.items = fz_malloc_array(ctx, obj->u.d.cap, sizeof(struct keyval));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, obj);
+		fz_rethrow(ctx);
+	}
 	for (i = 0; i < obj->u.d.cap; i++)
 	{
 		obj->u.d.items[i].k = NULL;

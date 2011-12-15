@@ -446,7 +446,7 @@ static void Memento_endStats(void)
     fprintf(stderr, "%d mallocs, %d frees, %d reallocs\n", globals.numMallocs,
             globals.numFrees, globals.numReallocs);
     fprintf(stderr, "Average allocation size %d bytes\n",
-            globals.totalAlloc/globals.numMallocs);
+            (globals.numMallocs != 0 ? globals.totalAlloc/globals.numMallocs: 0));
 }
 
 void Memento_stats(void)

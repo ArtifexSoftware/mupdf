@@ -369,8 +369,6 @@ int main(int argc, char **argv)
 
 	fz_set_aa_level(ctx, alphabits);
 
-	glyphcache = fz_new_glyph_cache(ctx);
-
 	colorspace = fz_device_rgb;
 	if (grayscale)
 		colorspace = fz_device_gray;
@@ -393,6 +391,8 @@ int main(int argc, char **argv)
 
 	fz_try(ctx)
 	{
+		glyphcache = fz_new_glyph_cache(ctx);
+
 		while (fz_optind < argc)
 		{
 			filename = argv[fz_optind++];
