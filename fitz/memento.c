@@ -67,7 +67,8 @@ enum {
 };
 
 enum {
-    Memento_Flag_OldBlock = 1
+    Memento_Flag_OldBlock = 1,
+    Memento_Flag_HasParent = 2
 };
 
 typedef struct Memento_BlkHeader Memento_BlkHeader;
@@ -79,6 +80,13 @@ struct Memento_BlkHeader
     int                lastCheckedOK;
     int                flags;
     Memento_BlkHeader *next;
+
+    const char        *label;
+
+    /* Entries for nesting display calculations */
+    Memento_BlkHeader *child;
+    Memento_BlkHeader *sibling;
+
     char               preblk[Memento_PreSize];
 };
 
@@ -399,25 +407,144 @@ static int Memento_appBlock(Memento_Blocks    *blks,
     return 0;
 }
 
+static void showBlock(Memento_BlkHeader *b, int space)
+{
+    fprintf(stderr, "0x%p:(size=%d,num=%d)",
+            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    if (b->label)
+        fprintf(stderr, "%c(%s)", space, b->label);
+}
+
+static void blockDisplay(Memento_BlkHeader *b, int n)
+{
+    int i = 0;
+    n++;
+    while(i < n)
+    {
+        fprintf(stderr, &"                                "[32-((n-i)&31)]);
+        i += ((n-i)&31);
+    }
+    showBlock(b, '\t');
+    fprintf(stderr, "\n");
+}
+
 static int Memento_listBlock(Memento_BlkHeader *b,
                              void              *arg)
 {
     int *counts = (int *)arg;
-    fprintf(stderr, "    0x%p:(size=%d,num=%d)\n",
-            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    blockDisplay(b, 0);
     counts[0]++;
     counts[1]+= b->rawsize;
     return 0;
 }
 
-void Memento_listBlocks(void) {
-    int counts[2];
-    counts[0] = 0;
-    counts[1] = 0;
+static void doNestedDisplay(Memento_BlkHeader *b,
+                            int depth)
+{
+    blockDisplay(b, depth);
+    for (b = b->child; b; b = b->sibling)
+        doNestedDisplay(b, depth+1);
+}
+
+static int ptrcmp(const void *a_, const void *b_)
+{
+    const char **a = (const char **)a_;
+    const char **b = (const char **)b_;
+    return (int)(*a-*b);
+}
+
+int Memento_listBlocksNested(void)
+{
+    int count, size, i;
+    Memento_BlkHeader *b;
+    void **blocks, *minptr, *maxptr;
+    int mask;
+
+    /* Count the blocks */
+    count = 0;
+    size = 0;
+    for (b = globals.used.head; b; b = b->next) {
+        size += b->rawsize;
+        count++;
+    }
+
+    /* Make our block list */
+    blocks = MEMENTO_UNDERLYING_MALLOC(sizeof(void *) * count);
+    if (blocks == NULL)
+        return 1;
+
+    /* Populate our block list */
+    b = globals.used.head;
+    minptr = maxptr = MEMBLK_TOBLK(b);
+    mask = (int)minptr;
+    for (i = 0; b; b = b->next, i++) {
+        void *p = MEMBLK_TOBLK(b);
+        mask &= (int)p;
+        if (p < minptr)
+            minptr = p;
+        if (p > maxptr)
+            maxptr = p;
+        blocks[i] = p;
+        b->flags &= ~Memento_Flag_HasParent;
+        b->child   = NULL;
+        b->sibling = NULL;
+    }
+    qsort(blocks, count, sizeof(void *), ptrcmp);
+
+    /* Now, calculate tree */
+    for (b = globals.used.head; b; b = b->next) {
+        char *p = MEMBLK_TOBLK(b);
+        int end = (b->rawsize < 1024 ? b->rawsize : 1024);
+        for (i = 0; i < end; i += sizeof(void *)) {
+            void *q = *(void **)(&p[i]);
+            void **r;
+
+            /* Do trivial checks on pointer */
+            if ((mask & (int)q) != mask || q < minptr || q > maxptr)
+                continue;
+
+            /* Search for pointer */
+            r = bsearch(&q, blocks, count, sizeof(void *), ptrcmp);
+            if (r) {
+                /* Found child */
+                Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
+
+                /* We're assuming tree structure, not graph - ignore second
+                 * and subsequent pointers. */
+                if (child->flags & Memento_Flag_HasParent)
+                    continue;
+
+                child->sibling = b->child;
+                b->child = child;
+                child->flags |= Memento_Flag_HasParent;
+            }
+        }
+    }
+
+    /* Now display with nesting */
+    for (b = globals.used.head; b; b = b->next) {
+        if ((b->flags & Memento_Flag_HasParent) == 0)
+            doNestedDisplay(b, 0);
+    }
+    fprintf(stderr, " Total number of blocks = %d\n", count);
+    fprintf(stderr, " Total size of blocks = %d\n", size);
+
+    MEMENTO_UNDERLYING_FREE(blocks);
+    return 0;
+}
+
+void Memento_listBlocks(void)
+{
     fprintf(stderr, "Allocated blocks:\n");
-    Memento_appBlocks(&globals.used, Memento_listBlock, &counts[0]);
-    fprintf(stderr, "  Total number of blocks = %d\n", counts[0]);
-    fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
+    if (Memento_listBlocksNested())
+    {
+        int counts[2];
+        counts[0] = 0;
+        counts[1] = 0;
+        Memento_appBlocks(&globals.used, Memento_listBlock, &counts[0]);
+        fprintf(stderr, " Total number of blocks = %d\n", counts[0]);
+        fprintf(stderr, " Total size of blocks = %d\n", counts[1]);
+    }
 }
 
 static int Memento_listNewBlock(Memento_BlkHeader *b,
@@ -536,6 +663,17 @@ int Memento_breakAt(int event)
 {
     globals.breakAt = event;
     return event;
+}
+
+void *Memento_label(void *ptr, const char *label)
+{
+    Memento_BlkHeader *block;
+
+    if (ptr == NULL)
+        return NULL;
+    block = MEMBLK_FROMBLK(ptr);
+    block->label = label;
+    return ptr;
 }
 
 #ifdef MEMENTO_HAS_FORK
@@ -667,6 +805,9 @@ void *Memento_malloc(size_t s)
     memblk->sequence      = globals.sequence;
     memblk->lastCheckedOK = memblk->sequence;
     memblk->flags         = 0;
+    memblk->label         = 0;
+    memblk->child         = NULL;
+    memblk->sibling       = NULL;
     Memento_addBlockHead(&globals.used, memblk, 0);
     return MEMBLK_TOBLK(memblk);
 }
@@ -690,13 +831,14 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
                      &data, memblk);
     if (!data.found) {
         /* Failure! */
-        fprintf(stderr, "Attempt to %s block 0x%p(size=%d,num=%d) not on allocated list!\n",
-                action, memblk, memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "Attempt to %s block ", action);
+        showBlock(memblk, 32);
         Memento_breakpoint();
         return 1;
     } else if (data.preCorrupt || data.postCorrupt) {
-        fprintf(stderr, "Block 0x%p(size=%d,num=%d) found to be corrupted on %s!\n",
-                action, memblk->rawsize, memblk->sequence, action);
+        fprintf(stderr, "Block ");
+        showBlock(memblk, ' ');
+        fprintf(stderr, " found to be corrupted on %s!\n", action);
         if (data.preCorrupt) {
             fprintf(stderr, "Preguard corrupted\n");
         }
@@ -821,8 +963,8 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
             fprintf(stderr, "Allocated blocks:\n");
             data->found |= 2;
         }
-        fprintf(stderr, "  Block 0x%p(size=%d,num=%d)",
-                memblk, memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "  Block ");
+        showBlock(memblk, ' ');
         if (data->preCorrupt) {
             fprintf(stderr, " Preguard ");
         }
@@ -850,28 +992,28 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
             fprintf(stderr, "Freed blocks:\n");
             data->found |= 4;
         }
-        fprintf(stderr, "  0x%p(size=%d,num=%d) ",
-                MEMBLK_TOBLK(memblk), memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "  ");
+        showBlock(memblk, ' ');
         if (data->freeCorrupt) {
-            fprintf(stderr, "index %d (address 0x%p) onwards ", data->index,
+            fprintf(stderr, " index %d (address 0x%p) onwards", data->index,
                     &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
-                fprintf(stderr, "+ preguard ");
+                fprintf(stderr, "+ preguard");
             }
             if (data->postCorrupt) {
-                fprintf(stderr, "+ postguard ");
+                fprintf(stderr, "+ postguard");
             }
         } else {
             if (data->preCorrupt) {
-                fprintf(stderr, " preguard ");
+                fprintf(stderr, " preguard");
             }
             if (data->postCorrupt) {
-                fprintf(stderr, "%s Postguard ",
+                fprintf(stderr, "%s Postguard",
                         (data->preCorrupt ? "+" : ""));
             }
         }
-        fprintf(stderr, "corrupted.\n    "
-                "Block last checked OK at allocation %d. Now %d.\n",
+        fprintf(stderr, " corrupted.\n"
+                "    Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, globals.sequence);
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
@@ -969,22 +1111,24 @@ int Memento_find(void *a)
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address 0x%p is in %sallocated block 0x%p(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%p is in %sallocated block ",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")),
-                MEMBLK_TOBLK(data.blk), data.blk->rawsize, data.blk->sequence);
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
         return data.blk->sequence;
     }
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address 0x%p is in %sfreed block 0x%p(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%p is in %sfreed block ",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")),
-                MEMBLK_TOBLK(data.blk), data.blk->rawsize, data.blk->sequence);
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
         return data.blk->sequence;
     }
     return 0;
@@ -1095,8 +1239,13 @@ size_t (Memento_setMax)(size_t max)
     return 0;
 }
 
-void Memento_stats(void)
+void (Memento_stats)(void)
 {
+}
+
+void *(Memento_label)(void *ptr, const char *label)
+{
+    return ptr;
 }
 
 #endif
