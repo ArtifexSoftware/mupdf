@@ -181,6 +181,8 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 	fz_context *ctx = file->ctx;
 	fz_obj *op;
 
+	fz_var(obj);
+
 	ary = fz_new_array(ctx, 4);
 
 	fz_try(ctx)
@@ -196,12 +198,14 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 					obj = fz_new_int(ctx, a);
 					fz_array_push(ary, obj);
 					fz_drop_obj(obj);
+					obj = NULL;
 				}
 				if (n > 1)
 				{
 					obj = fz_new_int(ctx, b);
 					fz_array_push(ary, obj);
 					fz_drop_obj(obj);
+					obj = NULL;
 				}
 				n = 0;
 			}
@@ -211,6 +215,7 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 				obj = fz_new_int(ctx, a);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				a = b;
 				n --;
 			}
@@ -231,13 +236,11 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 
 			case PDF_TOK_R:
 				if (n != 2)
-				{
-					fz_drop_obj(ary);
 					fz_throw(ctx, "cannot parse indirect reference in array");
-				}
 				obj = fz_new_indirect(ctx, a, b, xref);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				n = 0;
 				break;
 
@@ -245,43 +248,51 @@ pdf_parse_array(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 				obj = pdf_parse_array(xref, file, buf, cap);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 
 			case PDF_TOK_OPEN_DICT:
 				obj = pdf_parse_dict(xref, file, buf, cap);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 
 			case PDF_TOK_NAME:
 				obj = fz_new_name(ctx, buf);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 			case PDF_TOK_REAL:
 				obj = fz_new_real(ctx, fz_atof(buf));
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 			case PDF_TOK_STRING:
 				obj = fz_new_string(ctx, buf, len);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 			case PDF_TOK_TRUE:
 				obj = fz_new_bool(ctx, 1);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 			case PDF_TOK_FALSE:
 				obj = fz_new_bool(ctx, 0);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 			case PDF_TOK_NULL:
 				obj = fz_new_null(ctx);
 				fz_array_push(ary, obj);
 				fz_drop_obj(obj);
+				obj = NULL;
 				break;
 
 			default:
@@ -293,6 +304,7 @@ end:
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_obj(obj);
 		fz_drop_obj(ary);
 		fz_throw(ctx, "cannot parse array");
 	}
