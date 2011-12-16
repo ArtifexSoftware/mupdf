@@ -2153,7 +2153,15 @@ static void pdf_run_sh(pdf_csi *csi, fz_obj *rdb)
 	{
 		shd = pdf_load_shading(csi->xref, obj);
 		/* RJW: "cannot load shading (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
-		pdf_show_shade(csi, shd);
+		fz_try(ctx)
+		{
+			pdf_show_shade(csi, shd);
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_shade(ctx, shd);
+			fz_rethrow(ctx);
+		}
 		fz_drop_shade(ctx, shd);
 	}
 }

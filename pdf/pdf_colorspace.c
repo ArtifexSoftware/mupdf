@@ -384,15 +384,7 @@ pdf_load_colorspace(pdf_xref *xref, fz_obj *obj)
 	cs = pdf_load_colorspace_imp(xref, obj);
 	/* RJW: "cannot load colorspace (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
 
-	fz_try(ctx)
-	{
-		fz_store_item(ctx, obj, cs, cs->size);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_colorspace(ctx, cs);
-		fz_rethrow(ctx);
-	}
+	fz_store_item(ctx, obj, cs, cs->size);
 
 	return cs;
 }

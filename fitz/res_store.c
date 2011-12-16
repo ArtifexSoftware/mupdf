@@ -167,7 +167,7 @@ ensure_space(fz_context *ctx, unsigned int tofree)
 void
 fz_store_item(fz_context *ctx, fz_obj *key, void *val_, unsigned int itemsize)
 {
-	fz_item *item;
+	fz_item *item = NULL;
 	unsigned int size;
 	fz_storable *val = (fz_storable *)val_;
 	fz_store *store = ctx->store;
@@ -175,7 +175,20 @@ fz_store_item(fz_context *ctx, fz_obj *key, void *val_, unsigned int itemsize)
 	if (!store)
 		return;
 
-	item = fz_malloc_struct(ctx, fz_item);
+	fz_var(item);
+
+	/* If we fail for any reason, we swallow the exception and continue.
+	 * All that the above program will see is that we failed to store
+	 * the item. */
+	fz_try(ctx)
+	{
+		item = fz_malloc_struct(ctx, fz_item);
+	}
+	fz_catch(ctx)
+	{
+		return;
+	}
+
 	/* LOCK */
 	size = store->size + itemsize;
 	if (store->max != FZ_STORE_UNLIMITED && size > store->max && ensure_space(ctx, size - store->max))
@@ -190,8 +203,6 @@ fz_store_item(fz_context *ctx, fz_obj *key, void *val_, unsigned int itemsize)
 	item->val = val;
 	item->size = itemsize;
 	item->next = NULL;
-	if (val->refs > 0)
-		val->refs++;
 
 	/* If we can index it fast, put it into the hash table */
 	if (fz_is_indirect(key))
@@ -200,8 +211,20 @@ fz_store_item(fz_context *ctx, fz_obj *key, void *val_, unsigned int itemsize)
 		refkey.free = val->free;
 		refkey.num = fz_to_num(key);
 		refkey.gen = fz_to_gen(key);
-		fz_hash_insert(store->hash, &refkey, item);
+		fz_try(ctx)
+		{
+			fz_hash_insert(store->hash, &refkey, item);
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, item);
+			/* UNLOCK */
+			return;
+		}
 	}
+	/* Now we can never fail, bump the ref */
+	if (val->refs > 0)
+		val->refs++;
 	/* Regardless of whether it's indexed, it goes into the linked list */
 	item->next = store->head;
 	if (item->next)
