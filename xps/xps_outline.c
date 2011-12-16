@@ -31,7 +31,7 @@ xps_parse_document_outline(xps_document *doc, xml_element *root)
 			if (!target || !description)
 				continue;
 
-			entry = fz_malloc(doc->ctx, sizeof *entry);
+			entry = fz_malloc_struct(doc->ctx, fz_outline);
 			entry->title = fz_strdup(doc->ctx, description);
 			entry->page = xps_find_link_target(doc, target);
 			entry->down = NULL;

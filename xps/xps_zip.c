@@ -449,7 +449,7 @@ xps_open_directory(fz_context *ctx, char *directory)
 {
 	xps_document *doc;
 
-	doc = fz_malloc(ctx, sizeof(xps_document));
+	doc = fz_malloc_struct(ctx, xps_document);
 	memset(doc, 0, sizeof *doc);
 
 	doc->ctx = ctx;
@@ -474,7 +474,7 @@ xps_open_stream(fz_stream *file)
 	fz_context *ctx = file->ctx;
 	xps_document *doc;
 
-	doc = fz_malloc(ctx, sizeof(xps_document));
+	doc = fz_malloc_struct(ctx, xps_document);
 	memset(doc, 0, sizeof *doc);
 
 	doc->ctx = ctx;

@@ -189,6 +189,9 @@ void *fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
 void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int size);
 char *fz_strdup_no_throw(fz_context *ctx, char *s);
 
+#define fz_malloc_struct(CTX, STRUCT) \
+	Memento_label(fz_malloc(CTX,sizeof(STRUCT)), #STRUCT)
+
 
 /* runtime (hah!) test for endian-ness */
 int fz_is_big_endian(void);

@@ -43,7 +43,7 @@ fz_open_null(fz_stream *chain, int len)
 	fz_context *ctx = chain->ctx;
 
 	assert(chain);
-	state = fz_malloc(ctx, sizeof(struct null_filter));
+	state = fz_malloc_struct(ctx, struct null_filter);
 	state->chain = chain;
 	state->remain = len;
 
@@ -156,7 +156,7 @@ fz_open_ahxd(fz_stream *chain)
 {
 	fz_ahxd *state;
 
-	state = fz_malloc(chain->ctx, sizeof(fz_ahxd));
+	state = fz_malloc_struct(chain->ctx, fz_ahxd);
 	state->chain = chain;
 	state->eod = 0;
 
@@ -294,7 +294,7 @@ fz_open_a85d(fz_stream *chain)
 	fz_a85d *state;
 
 	assert(chain);
-	state = fz_malloc(chain->ctx, sizeof(fz_a85d));
+	state = fz_malloc_struct(chain->ctx, fz_a85d);
 	state->chain = chain;
 	state->rp = state->bp;
 	state->wp = state->bp;
@@ -382,7 +382,7 @@ fz_open_rld(fz_stream *chain)
 	fz_rld *state;
 
 	assert(chain);
-	state = fz_malloc(chain->ctx, sizeof(fz_rld));
+	state = fz_malloc_struct(chain->ctx, fz_rld);
 	state->chain = chain;
 	state->run = 0;
 	state->n = 0;
@@ -425,7 +425,7 @@ fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_arc4c *state;
 
-	state = fz_malloc(chain->ctx, sizeof(fz_arc4c));
+	state = fz_malloc_struct(chain->ctx, fz_arc4c);
 	state->chain = chain;
 	fz_arc4_init(&state->arc4, key, keylen);
 
@@ -508,7 +508,7 @@ fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 	fz_aesd *state;
 
 	assert(chain);
-	state = fz_malloc(chain->ctx, sizeof(fz_aesd));
+	state = fz_malloc_struct(chain->ctx, fz_aesd);
 	state->chain = chain;
 	aes_setkey_dec(&state->aes, key, keylen * 8);
 	state->ivcount = 0;

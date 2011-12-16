@@ -7,7 +7,7 @@ fz_new_buffer(fz_context *ctx, int size)
 
 	size = size > 1 ? size : 16;
 
-	b = fz_malloc(ctx, sizeof(fz_buffer));
+	b = fz_malloc_struct(ctx, fz_buffer);
 	b->refs = 1;
 	fz_try(ctx)
 	{

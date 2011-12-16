@@ -11,7 +11,7 @@ fz_new_font(fz_context *ctx, char *name)
 {
 	fz_font *font;
 
-	font = fz_malloc(ctx, sizeof(fz_font));
+	font = fz_malloc_struct(ctx, fz_font);
 	font->refs = 1;
 
 	if (name)
@@ -124,7 +124,7 @@ struct ft_error
 
 void fz_new_font_context(fz_context *ctx)
 {
-	ctx->font = fz_malloc(ctx, sizeof(*ctx->font));
+	ctx->font = fz_malloc_struct(ctx, fz_font_context);
 	ctx->font->ftlib = NULL;
 	ctx->font->ftlib_refs = 0;
 }

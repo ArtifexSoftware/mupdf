@@ -90,7 +90,7 @@ fz_open_flated(fz_stream *chain)
 
 	fz_var(code);
 
-	state = fz_malloc(ctx, sizeof(fz_flate));
+	state = fz_malloc_struct(ctx, fz_flate);
 	state->chain = chain;
 
 	state->z.zalloc = zalloc;

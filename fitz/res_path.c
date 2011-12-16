@@ -6,7 +6,7 @@ fz_new_path(fz_context *ctx)
 {
 	fz_path *path;
 
-	path = fz_malloc(ctx, sizeof(fz_path));
+	path = fz_malloc_struct(ctx, fz_path);
 	path->len = 0;
 	path->cap = 0;
 	path->items = NULL;
@@ -20,7 +20,7 @@ fz_clone_path(fz_context *ctx, fz_path *old)
 	fz_path *path;
 
 	assert(old);
-	path = fz_malloc(ctx, sizeof(fz_path));
+	path = fz_malloc_struct(ctx, fz_path);
 	path->len = old->len;
 	path->cap = old->len;
 	path->items = fz_malloc_array(ctx, path->cap, sizeof(fz_path_item));

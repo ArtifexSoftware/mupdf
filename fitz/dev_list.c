@@ -70,7 +70,7 @@ fz_new_display_node(fz_context *ctx, fz_display_command cmd, fz_matrix ctm,
 	fz_display_node *node;
 	int i;
 
-	node = fz_malloc(ctx, sizeof(fz_display_node));
+	node = fz_malloc_struct(ctx, fz_display_node);
 	node->cmd = cmd;
 	node->next = NULL;
 	node->rect = fz_empty_rect;
@@ -99,7 +99,7 @@ fz_new_display_node(fz_context *ctx, fz_display_command cmd, fz_matrix ctm,
 static fz_stroke_state *
 fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {
-	fz_stroke_state *newstroke = fz_malloc(ctx, sizeof(fz_stroke_state));
+	fz_stroke_state *newstroke = fz_malloc_struct(ctx, fz_stroke_state);
 	*newstroke = *stroke;
 	return newstroke;
 }
@@ -482,7 +482,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 fz_display_list *
 fz_new_display_list(fz_context *ctx)
 {
-	fz_display_list *list = fz_malloc(ctx, sizeof(fz_display_list));
+	fz_display_list *list = fz_malloc_struct(ctx, fz_display_list);
 	list->first = NULL;
 	list->last = NULL;
 	list->top = 0;

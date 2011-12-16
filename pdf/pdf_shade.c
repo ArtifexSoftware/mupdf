@@ -975,7 +975,7 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 
 	fz_try(ctx)
 	{
-		shade = fz_malloc(ctx, sizeof(fz_shade));
+		shade = fz_malloc_struct(ctx, fz_shade);
 		FZ_INIT_STORABLE(shade, 1, fz_free_shade_imp);
 		shade->type = FZ_MESH;
 		shade->use_background = 0;

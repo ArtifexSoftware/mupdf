@@ -194,7 +194,7 @@ fz_open_predict(fz_stream *chain, fz_obj *params)
 	fz_obj *obj;
 	fz_context *ctx = chain->ctx;
 
-	state = fz_malloc(ctx, sizeof(fz_predict));
+	state = fz_malloc_struct(ctx, fz_predict);
 	state->chain = chain;
 
 	state->predictor = 1;

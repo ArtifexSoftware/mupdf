@@ -5,7 +5,7 @@ fz_new_text(fz_context *ctx, fz_font *font, fz_matrix trm, int wmode)
 {
 	fz_text *text;
 
-	text = fz_malloc(ctx, sizeof(fz_text));
+	text = fz_malloc_struct(ctx, fz_text);
 	text->font = fz_keep_font(font);
 	text->trm = trm;
 	text->wmode = wmode;
@@ -29,7 +29,7 @@ fz_clone_text(fz_context *ctx, fz_text *old)
 {
 	fz_text *text;
 
-	text = fz_malloc(ctx, sizeof(fz_text));
+	text = fz_malloc_struct(ctx, fz_text);
 	text->font = fz_keep_font(old->font);
 	text->trm = old->trm;
 	text->wmode = old->wmode;

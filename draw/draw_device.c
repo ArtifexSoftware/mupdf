@@ -1532,7 +1532,7 @@ fz_device *
 fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 {
 	fz_device *dev;
-	fz_draw_device *ddev = fz_malloc(ctx, sizeof(fz_draw_device));
+	fz_draw_device *ddev = fz_malloc_struct(ctx, fz_draw_device);
 	ddev->cache = cache;
 	ddev->gel = fz_new_gel(ctx);
 	ddev->dest = dest;

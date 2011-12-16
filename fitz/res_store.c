@@ -38,7 +38,7 @@ void
 fz_new_store_context(fz_context *ctx, unsigned int max)
 {
 	fz_store *store;
-	store = fz_malloc(ctx, sizeof(fz_store));
+	store = fz_malloc_struct(ctx, fz_store);
 	fz_try(ctx)
 	{
 		store->hash = fz_new_hash_table(ctx, 4096, sizeof(struct refkey));
@@ -175,7 +175,7 @@ fz_store_item(fz_context *ctx, fz_obj *key, void *val_, unsigned int itemsize)
 	if (!store)
 		return;
 
-	item = fz_malloc(ctx, sizeof(*item));
+	item = fz_malloc_struct(ctx, fz_item);
 	/* LOCK */
 	size = store->size + itemsize;
 	if (store->max != FZ_STORE_UNLIMITED && size > store->max && ensure_space(ctx, size - store->max))

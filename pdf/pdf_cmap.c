@@ -46,7 +46,7 @@ pdf_new_cmap(fz_context *ctx)
 {
 	pdf_cmap *cmap;
 
-	cmap = fz_malloc(ctx, sizeof(pdf_cmap));
+	cmap = fz_malloc_struct(ctx, pdf_cmap);
 	FZ_INIT_STORABLE(cmap, 1, pdf_free_cmap_imp);
 
 	strcpy(cmap->cmap_name, "");

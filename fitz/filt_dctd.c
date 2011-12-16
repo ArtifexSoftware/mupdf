@@ -208,7 +208,7 @@ fz_open_dctd(fz_stream *chain, fz_obj *params)
 	fz_dctd *state;
 	fz_obj *obj;
 
-	state = fz_malloc(chain->ctx, sizeof(fz_dctd));
+	state = fz_malloc_struct(chain->ctx, fz_dctd);
 	memset(state, 0, sizeof(fz_dctd));
 	state->ctx = chain->ctx;
 	state->chain = chain;

@@ -110,7 +110,7 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 
 	if (dest)
 	{
-		pdf_link *link = fz_malloc(ctx, sizeof(pdf_link));
+		pdf_link *link = fz_malloc_struct(ctx, pdf_link);
 		link->kind = kind;
 		link->rect = bbox;
 		link->dest = fz_keep_obj(dest);
@@ -226,7 +226,7 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 					continue;
 				}
 
-				annot = fz_malloc(ctx, sizeof(pdf_annot));
+				annot = fz_malloc_struct(ctx, pdf_annot);
 				annot->obj = fz_keep_obj(obj);
 				annot->rect = pdf_to_rect(ctx, rect);
 				annot->ap = form;

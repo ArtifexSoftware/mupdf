@@ -844,7 +844,7 @@ pdf_new_csi(pdf_xref *xref, fz_device *dev, fz_matrix ctm, char *event)
 {
 	pdf_csi *csi;
 
-	csi = fz_malloc(dev->ctx, sizeof(pdf_csi));
+	csi = fz_malloc_struct(dev->ctx, pdf_csi);
 	csi->xref = xref;
 	csi->dev = dev;
 	csi->event = event;

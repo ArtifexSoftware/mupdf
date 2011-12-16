@@ -52,7 +52,7 @@ xps_add_fixed_document(xps_document *doc, char *name)
 		if (!strcmp(fixdoc->name, name))
 			return;
 
-	fixdoc = fz_malloc(doc->ctx, sizeof(xps_fixdoc));
+	fixdoc = fz_malloc_struct(doc->ctx, xps_fixdoc);
 	fixdoc->name = fz_strdup(doc->ctx, name);
 	fixdoc->outline = NULL;
 	fixdoc->next = NULL;
@@ -79,7 +79,7 @@ xps_add_fixed_page(xps_document *doc, char *name, int width, int height)
 		if (!strcmp(page->name, name))
 			return;
 
-	page = fz_malloc(doc->ctx, sizeof(xps_page));
+	page = fz_malloc_struct(doc->ctx, xps_page);
 	page->name = fz_strdup(doc->ctx, name);
 	page->number = doc->page_count++;
 	page->width = width;
@@ -103,7 +103,7 @@ static void
 xps_add_link_target(xps_document *doc, char *name)
 {
 	xps_page *page = doc->last_page;
-	xps_target *target = fz_malloc(doc->ctx, sizeof *target);
+	xps_target *target = fz_malloc_struct(doc->ctx, xps_target);
 	target->name = fz_strdup(doc->ctx, name);
 	target->page = page->number;
 	target->next = doc->target;

@@ -20,7 +20,7 @@ fz_text_span *
 fz_new_text_span(fz_context *ctx)
 {
 	fz_text_span *span;
-	span = fz_malloc(ctx, sizeof(fz_text_span));
+	span = fz_malloc_struct(ctx, fz_text_span);
 	span->font = NULL;
 	span->wmode = 0;
 	span->size = 0;
@@ -409,7 +409,7 @@ fz_device *
 fz_new_text_device(fz_context *ctx, fz_text_span *root)
 {
 	fz_device *dev;
-	fz_text_device *tdev = fz_malloc(ctx, sizeof(fz_text_device));
+	fz_text_device *tdev = fz_malloc_struct(ctx, fz_text_device);
 	tdev->head = root;
 	tdev->span = root;
 	tdev->point.x = -1;

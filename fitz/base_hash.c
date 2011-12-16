@@ -49,7 +49,7 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen)
 
 	assert(keylen <= MAX_KEY_LEN);
 
-	table = fz_malloc(ctx, sizeof(fz_hash_table));
+	table = fz_malloc_struct(ctx, fz_hash_table);
 	table->ctx = ctx;
 	table->keylen = keylen;
 	table->size = initialsize;

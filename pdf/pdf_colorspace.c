@@ -118,7 +118,7 @@ load_separation(pdf_xref *xref, fz_obj *array)
 	/* RJW: fz_drop_colorspace(ctx, base);
 	 * "cannot load tint function (%d %d R)", fz_to_num(tintobj), fz_to_gen(tintobj) */
 
-	sep = fz_malloc(ctx, sizeof(struct separation));
+	sep = fz_malloc_struct(ctx, struct separation);
 	sep->base = base;
 	sep->tint = tint;
 
@@ -218,7 +218,7 @@ load_indexed(pdf_xref *xref, fz_obj *array)
 	base = pdf_load_colorspace(xref, baseobj);
 	/* "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj) */
 
-	idx = fz_malloc(ctx, sizeof(struct indexed));
+	idx = fz_malloc_struct(ctx, struct indexed);
 	idx->base = base;
 	idx->high = fz_to_int(highobj);
 	idx->high = CLAMP(idx->high, 0, 255);

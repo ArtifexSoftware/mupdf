@@ -26,7 +26,7 @@ struct fz_aa_context_s
 void fz_new_aa_context(fz_context *ctx)
 {
 #ifndef AA_BITS
-	ctx->aa = fz_malloc(ctx, sizeof(*ctx->aa));
+	ctx->aa = fz_malloc_struct(ctx, fz_aa_context);
 	ctx->aa->hscale = 17;
 	ctx->aa->vscale = 15;
 	ctx->aa->scale = 256;
@@ -166,21 +166,32 @@ fz_new_gel(fz_context *ctx)
 {
 	fz_gel *gel;
 
-	gel = fz_malloc(ctx, sizeof(fz_gel));
-	gel->ctx = ctx;
-	gel->cap = 512;
-	gel->len = 0;
-	gel->edges = fz_malloc_array(ctx, gel->cap, sizeof(fz_edge));
+	gel = fz_malloc_struct(ctx, fz_gel);
+	fz_try(ctx)
+	{
+		gel->edges = NULL;
+		gel->ctx = ctx;
+		gel->cap = 512;
+		gel->len = 0;
+		gel->edges = fz_malloc_array(ctx, gel->cap, sizeof(fz_edge));
 
-	gel->clip.x0 = gel->clip.y0 = BBOX_MAX;
-	gel->clip.x1 = gel->clip.y1 = BBOX_MIN;
+		gel->clip.x0 = gel->clip.y0 = BBOX_MAX;
+		gel->clip.x1 = gel->clip.y1 = BBOX_MIN;
 
-	gel->bbox.x0 = gel->bbox.y0 = BBOX_MAX;
-	gel->bbox.x1 = gel->bbox.y1 = BBOX_MIN;
+		gel->bbox.x0 = gel->bbox.y0 = BBOX_MAX;
+		gel->bbox.x1 = gel->bbox.y1 = BBOX_MIN;
 
-	gel->acap = 64;
-	gel->alen = 0;
-	gel->active = fz_malloc_array(ctx, gel->acap, sizeof(fz_edge*));
+		gel->acap = 64;
+		gel->alen = 0;
+		gel->active = fz_malloc_array(ctx, gel->acap, sizeof(fz_edge*));
+	}
+	fz_catch(ctx)
+	{
+		if (gel)
+			fz_free(ctx, gel->edges);
+		fz_free(ctx, gel);
+		fz_rethrow(ctx);
+	}
 
 	return gel;
 }
@@ -636,8 +647,14 @@ fz_scan_convert_aa(fz_gel *gel, int eofill, fz_bbox clip,
 	assert(clip.x0 >= xmin);
 	assert(clip.x1 <= xmax);
 
-	alphas = fz_malloc(ctx, xmax - xmin + 1);
-	deltas = fz_malloc(ctx, (xmax - xmin + 1) * sizeof(int));
+	alphas = fz_malloc_no_throw(ctx, xmax - xmin + 1);
+	deltas = fz_malloc_no_throw(ctx, (xmax - xmin + 1) * sizeof(int));
+	if (alphas == NULL || deltas == NULL)
+	{
+		fz_free(ctx, alphas);
+		fz_free(ctx, deltas);
+		fz_throw(ctx, "scan conversion failed (malloc failure)");
+	}
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
 
 	e = 0;

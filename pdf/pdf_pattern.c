@@ -45,7 +45,7 @@ pdf_load_pattern(pdf_xref *xref, fz_obj *dict)
 		return pat;
 	}
 
-	pat = fz_malloc(ctx, sizeof(pdf_pattern));
+	pat = fz_malloc_struct(ctx, pdf_pattern);
 	FZ_INIT_STORABLE(pat, 1, pdf_free_pattern_imp);
 	pat->resources = NULL;
 	pat->contents = NULL;

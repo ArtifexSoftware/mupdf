@@ -5,7 +5,7 @@ fz_new_bitmap(fz_context *ctx, int w, int h, int n)
 {
 	fz_bitmap *bit;
 
-	bit = fz_malloc(ctx, sizeof(fz_bitmap));
+	bit = fz_malloc_struct(ctx, fz_bitmap);
 	bit->refs = 1;
 	bit->w = w;
 	bit->h = h;

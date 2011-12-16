@@ -289,7 +289,7 @@ pdf_load_page(pdf_xref *xref, int number)
 	pageobj = xref->page_objs[number];
 	pageref = xref->page_refs[number];
 
-	page = fz_malloc(ctx, sizeof(pdf_page));
+	page = fz_malloc_struct(ctx, pdf_page);
 	page->resources = NULL;
 	page->contents = NULL;
 	page->transparency = 0;

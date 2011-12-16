@@ -47,7 +47,7 @@ pdf_load_xobject(pdf_xref *xref, fz_obj *dict)
 		return form;
 	}
 
-	form = fz_malloc(ctx, sizeof(pdf_xobject));
+	form = fz_malloc_struct(ctx, pdf_xobject);
 	FZ_INIT_STORABLE(form, 1, pdf_free_xobject_imp);
 	form->resources = NULL;
 	form->contents = NULL;

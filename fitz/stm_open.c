@@ -7,7 +7,7 @@ fz_new_stream(fz_context *ctx, void *state,
 {
 	fz_stream *stm;
 
-	stm = fz_malloc(ctx, sizeof(fz_stream));
+	stm = fz_malloc_struct(ctx, fz_stream);
 
 	stm->refs = 1;
 	stm->error = 0;
@@ -86,7 +86,7 @@ fz_open_fd(fz_context *ctx, int fd)
 	fz_stream *stm;
 	int *state;
 
-	state = fz_malloc(ctx, sizeof(int));
+	state = fz_malloc_struct(ctx, int);
 	*state = fd;
 
 	fz_try(ctx)

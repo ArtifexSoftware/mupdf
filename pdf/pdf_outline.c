@@ -12,7 +12,7 @@ pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 	if (fz_is_null(dict))
 		return NULL;
 
-	node = fz_malloc(ctx, sizeof(fz_outline));
+	node = fz_malloc_struct(ctx, fz_outline);
 	node->ctx = ctx;
 	node->title = NULL;
 	node->page = 0;

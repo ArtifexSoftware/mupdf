@@ -105,7 +105,7 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, xml_element *ro
 		key = xml_att(node, "x:Key");
 		if (key)
 		{
-			entry = fz_malloc(doc->ctx, sizeof(xps_resource));
+			entry = fz_malloc_struct(doc->ctx, xps_resource);
 			entry->name = key;
 			entry->base_uri = NULL;
 			entry->base_xml = NULL;

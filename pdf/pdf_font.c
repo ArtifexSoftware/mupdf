@@ -339,7 +339,7 @@ pdf_new_font_desc(fz_context *ctx)
 {
 	pdf_font_desc *fontdesc;
 
-	fontdesc = fz_malloc(ctx, sizeof(pdf_font_desc));
+	fontdesc = fz_malloc_struct(ctx, pdf_font_desc);
 	FZ_INIT_STORABLE(fontdesc, 1, pdf_free_font_imp);
 	fontdesc->size = sizeof(pdf_font_desc);
 

@@ -134,7 +134,7 @@ static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 {
 	struct element *head, *tail;
 
-	head = fz_malloc(parser->ctx, sizeof(struct element));
+	head = fz_malloc_struct(parser->ctx, struct element);
 	if (b - a > sizeof(head->name))
 		b = a + sizeof(head->name);
 	memcpy(head->name, a, b - a);
@@ -163,7 +163,7 @@ static void xml_emit_att_name(struct parser *parser, char *a, char *b)
 	struct element *head = parser->head;
 	struct attribute *att;
 
-	att = fz_malloc(parser->ctx, sizeof(struct attribute));
+	att = fz_malloc_struct(parser->ctx, struct attribute);
 	if (b - a > sizeof(att->name))
 		b = a + sizeof(att->name);
 	memcpy(att->name, a, b - a);

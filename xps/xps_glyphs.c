@@ -81,7 +81,7 @@ xps_lookup_font(xps_document *doc, char *name)
 static void
 xps_insert_font(xps_document *doc, char *name, fz_font *font)
 {
-	xps_font_cache *cache = fz_malloc(doc->ctx, sizeof(xps_font_cache));
+	xps_font_cache *cache = fz_malloc_struct(doc->ctx, xps_font_cache);
 	cache->name = fz_strdup(doc->ctx, name);
 	cache->font = fz_keep_font(font);
 	cache->next = doc->font_table;

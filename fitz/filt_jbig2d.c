@@ -83,7 +83,7 @@ fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 {
 	fz_jbig2d *state;
 
-	state = fz_malloc(chain->ctx, sizeof(fz_jbig2d));
+	state = fz_malloc_struct(chain->ctx, fz_jbig2d);
 	state->chain = chain;
 	state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, NULL, NULL);
 	state->gctx = NULL;

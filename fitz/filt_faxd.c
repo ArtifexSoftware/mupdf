@@ -665,10 +665,11 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 	fz_faxd *fax;
 	fz_obj *obj;
 	fz_context *ctx;
+	fz_stream *stream;
 
 	assert(chain);
 	ctx = chain->ctx;
-	fax = fz_malloc(ctx, sizeof(fz_faxd));
+	fax = fz_malloc_struct(ctx, fz_faxd);
 	fax->chain = chain;
 
 	fax->ref = NULL;
@@ -682,45 +683,56 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 	fax->end_of_block = 1;
 	fax->black_is_1 = 0;
 
-	obj = fz_dict_gets(params, "K");
-	if (obj) fax->k = fz_to_int(obj);
+	fz_try(ctx)
+	{
+		obj = fz_dict_gets(params, "K");
+		if (obj) fax->k = fz_to_int(obj);
 
-	obj = fz_dict_gets(params, "EndOfLine");
-	if (obj) fax->end_of_line = fz_to_bool(obj);
+		obj = fz_dict_gets(params, "EndOfLine");
+		if (obj) fax->end_of_line = fz_to_bool(obj);
 
-	obj = fz_dict_gets(params, "EncodedByteAlign");
-	if (obj) fax->encoded_byte_align = fz_to_bool(obj);
+		obj = fz_dict_gets(params, "EncodedByteAlign");
+		if (obj) fax->encoded_byte_align = fz_to_bool(obj);
 
-	obj = fz_dict_gets(params, "Columns");
-	if (obj) fax->columns = fz_to_int(obj);
+		obj = fz_dict_gets(params, "Columns");
+		if (obj) fax->columns = fz_to_int(obj);
 
-	obj = fz_dict_gets(params, "Rows");
-	if (obj) fax->rows = fz_to_int(obj);
+		obj = fz_dict_gets(params, "Rows");
+		if (obj) fax->rows = fz_to_int(obj);
 
-	obj = fz_dict_gets(params, "EndOfBlock");
-	if (obj) fax->end_of_block = fz_to_bool(obj);
+		obj = fz_dict_gets(params, "EndOfBlock");
+		if (obj) fax->end_of_block = fz_to_bool(obj);
 
-	obj = fz_dict_gets(params, "BlackIs1");
-	if (obj) fax->black_is_1 = fz_to_bool(obj);
+		obj = fz_dict_gets(params, "BlackIs1");
+		if (obj) fax->black_is_1 = fz_to_bool(obj);
 
-	fax->stride = ((fax->columns - 1) >> 3) + 1;
-	fax->ridx = 0;
-	fax->bidx = 32;
-	fax->word = 0;
+		fax->stride = ((fax->columns - 1) >> 3) + 1;
+		fax->ridx = 0;
+		fax->bidx = 32;
+		fax->word = 0;
 
-	fax->stage = STATE_NORMAL;
-	fax->a = -1;
-	fax->c = 0;
-	fax->dim = fax->k < 0 ? 2 : 1;
-	fax->eolc = 0;
+		fax->stage = STATE_NORMAL;
+		fax->a = -1;
+		fax->c = 0;
+		fax->dim = fax->k < 0 ? 2 : 1;
+		fax->eolc = 0;
 
-	fax->ref = fz_malloc(ctx, fax->stride);
-	fax->dst = fz_malloc(ctx, fax->stride);
-	fax->rp = fax->dst;
-	fax->wp = fax->dst + fax->stride;
+		fax->ref = fz_malloc(ctx, fax->stride);
+		fax->dst = fz_malloc(ctx, fax->stride);
+		fax->rp = fax->dst;
+		fax->wp = fax->dst + fax->stride;
 
-	memset(fax->ref, 0, fax->stride);
-	memset(fax->dst, 0, fax->stride);
+		memset(fax->ref, 0, fax->stride);
+		memset(fax->dst, 0, fax->stride);
 
-	return fz_new_stream(ctx, fax, read_faxd, close_faxd);
+		stream = fz_new_stream(ctx, fax, read_faxd, close_faxd);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, fax->dst);
+		fz_free(ctx, fax->ref);
+		fz_free(ctx, fax);
+		fz_rethrow(ctx);
+	}
+	return stream;
 }
