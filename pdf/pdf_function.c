@@ -1417,6 +1417,8 @@ pdf_load_function(pdf_xref *xref, fz_obj *dict)
 			fz_free(ctx, func);
 			fz_throw(ctx, "unknown function type (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
+
+		fz_store_item(ctx, dict, func, func->size);
 	}
 	fz_catch(ctx)
 	{
@@ -1428,8 +1430,6 @@ pdf_load_function(pdf_xref *xref, fz_obj *dict)
 				   (func->type == POSTSCRIPT ? "calculator" :
 				    "unknown")))), fz_to_num(dict), fz_to_gen(dict));
 	}
-
-	fz_store_item(ctx, dict, func, func->size);
 
 	return func;
 }

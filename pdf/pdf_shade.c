@@ -1022,7 +1022,8 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 			funcs = 1;
 
 			func[0] = pdf_load_function(xref, obj);
-			/* RJW: "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
+			if (!func[0])
+				fz_throw(ctx, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 		}
 		else if (fz_is_array(obj))
 		{
@@ -1036,6 +1037,10 @@ pdf_load_shading_dict(pdf_xref *xref, fz_obj *dict, fz_matrix transform)
 				if (!func[i])
 					fz_throw(ctx, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 			}
+		}
+		else
+		{
+			fz_throw(ctx, "cannot load shading function (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
 		}
 
 		if (type >= 4 && type <= 7)
