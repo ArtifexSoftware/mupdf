@@ -123,6 +123,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		{
 			fz_free_device(dev);
 			fz_free_display_list(ctx, list);
+			pdf_free_page(ctx, page);
 			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
 		fz_free_device(dev);
@@ -144,6 +145,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 		{
 			fz_free_device(dev);
 			fz_free_display_list(ctx, list);
+			pdf_free_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 		fz_free_device(dev);
@@ -177,6 +179,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			fz_free_device(dev);
 			fz_free_text_span(ctx, text);
 			fz_free_display_list(ctx, list);
+			pdf_free_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 		fz_free_text_span(ctx, text);
@@ -269,6 +272,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			fz_free_device(dev);
 			fz_drop_pixmap(ctx, pix);
 			fz_free_display_list(ctx, list);
+			pdf_free_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 	}
