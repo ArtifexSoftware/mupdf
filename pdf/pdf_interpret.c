@@ -843,35 +843,44 @@ static pdf_csi *
 pdf_new_csi(pdf_xref *xref, fz_device *dev, fz_matrix ctm, char *event)
 {
 	pdf_csi *csi;
+	fz_context *ctx = dev->ctx;
 
-	csi = fz_malloc_struct(dev->ctx, pdf_csi);
-	csi->xref = xref;
-	csi->dev = dev;
-	csi->event = event;
+	csi = fz_malloc_struct(ctx, pdf_csi);
+	fz_try(ctx)
+	{
+		csi->xref = xref;
+		csi->dev = dev;
+		csi->event = event;
 
-	csi->top = 0;
-	csi->obj = NULL;
-	csi->name[0] = 0;
-	csi->string_len = 0;
-	memset(csi->stack, 0, sizeof csi->stack);
+		csi->top = 0;
+		csi->obj = NULL;
+		csi->name[0] = 0;
+		csi->string_len = 0;
+		memset(csi->stack, 0, sizeof csi->stack);
 
-	csi->xbalance = 0;
-	csi->in_text = 0;
-	csi->in_hidden_ocg = 0;
+		csi->xbalance = 0;
+		csi->in_text = 0;
+		csi->in_hidden_ocg = 0;
 
-	csi->path = fz_new_path(xref->ctx);
-	csi->clip = 0;
-	csi->clip_even_odd = 0;
+		csi->path = fz_new_path(ctx);
+		csi->clip = 0;
+		csi->clip_even_odd = 0;
 
-	csi->text = NULL;
-	csi->tlm = fz_identity;
-	csi->tm = fz_identity;
-	csi->text_mode = 0;
-	csi->accumulate = 1;
+		csi->text = NULL;
+		csi->tlm = fz_identity;
+		csi->tm = fz_identity;
+		csi->text_mode = 0;
+		csi->accumulate = 1;
 
-	csi->top_ctm = ctm;
-	pdf_init_gstate(&csi->gstate[0], ctm);
-	csi->gtop = 0;
+		csi->top_ctm = ctm;
+		pdf_init_gstate(&csi->gstate[0], ctm);
+		csi->gtop = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, csi);
+		fz_rethrow(ctx);
+	}
 
 	return csi;
 }
