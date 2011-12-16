@@ -51,6 +51,10 @@ char *getenv(const char *);
 //void *memset(void *,int,size_t);
 //int atexit(void (*)(void));
 
+/* How far to search for pointers in each block when calculating nestings */
+/* mupdf needs at least 34000ish (sizeof(fz_shade))/ */
+#define MEMENTO_PTRSEARCH 65536
+
 #ifdef MEMENTO
 
 #ifdef HAVE_VALGRIND
@@ -494,7 +498,7 @@ int Memento_listBlocksNested(void)
     /* Now, calculate tree */
     for (b = globals.used.head; b; b = b->next) {
         char *p = MEMBLK_TOBLK(b);
-        int end = (b->rawsize < 1024 ? b->rawsize : 1024);
+        int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
         for (i = 0; i < end; i += sizeof(void *)) {
             void *q = *(void **)(&p[i]);
             void **r;
