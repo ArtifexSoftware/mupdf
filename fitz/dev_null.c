@@ -15,6 +15,8 @@ fz_new_device(fz_context *ctx, void *user)
 void
 fz_free_device(fz_device *dev)
 {
+	if (dev == NULL)
+		return;
 	if (dev->free_user)
 		dev->free_user(dev);
 	fz_free(dev->ctx, dev);
