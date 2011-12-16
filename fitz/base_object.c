@@ -56,8 +56,8 @@ struct fz_obj_s
 fz_obj *
 fz_new_null(fz_context *ctx)
 {
-	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(null)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(null)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_NULL;
@@ -67,8 +67,8 @@ fz_new_null(fz_context *ctx)
 fz_obj *
 fz_new_bool(fz_context *ctx, int b)
 {
-	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(bool)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(bool)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_BOOL;
@@ -79,8 +79,8 @@ fz_new_bool(fz_context *ctx, int b)
 fz_obj *
 fz_new_int(fz_context *ctx, int i)
 {
-	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(int)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(int)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_INT;
@@ -91,8 +91,8 @@ fz_new_int(fz_context *ctx, int i)
 fz_obj *
 fz_new_real(fz_context *ctx, float f)
 {
-	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(real)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(real)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_REAL;
@@ -103,8 +103,8 @@ fz_new_real(fz_context *ctx, float f)
 fz_obj *
 fz_new_string(fz_context *ctx, char *str, int len)
 {
-	fz_obj *obj = fz_malloc(ctx, offsetof(fz_obj, u.s.buf) + len + 1);
-	Memento_label(obj, "fz_obj(string)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, offsetof(fz_obj, u.s.buf) + len + 1), "fz_obj(string)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_STRING;
@@ -117,8 +117,8 @@ fz_new_string(fz_context *ctx, char *str, int len)
 fz_obj *
 fz_new_name(fz_context *ctx, char *str)
 {
-	fz_obj *obj = fz_malloc(ctx, offsetof(fz_obj, u.n) + strlen(str) + 1);
-	Memento_label(obj, "fz_obj(name)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, offsetof(fz_obj, u.n) + strlen(str) + 1), "fz_obj(name)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_NAME;
@@ -129,8 +129,8 @@ fz_new_name(fz_context *ctx, char *str)
 fz_obj *
 fz_new_indirect(fz_context *ctx, int num, int gen, void *xref)
 {
-	fz_obj *obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(indirect)");
+	fz_obj *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(indirect)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_INDIRECT;
@@ -399,8 +399,7 @@ fz_new_array(fz_context *ctx, int initialcap)
 
 	fz_try(ctx)
 	{
-		obj->u.a.items = fz_malloc_array(ctx, obj->u.a.cap, sizeof(fz_obj*));
-		Memento_label(obj->u.a.items, "fz_obj(array items)");
+		obj->u.a.items = Memento_label(fz_malloc_array(ctx, obj->u.a.cap, sizeof(fz_obj*)), "fz_obj(array items)");
 	}
 	fz_catch(ctx)
 	{
@@ -545,8 +544,7 @@ fz_new_dict(fz_context *ctx, int initialcap)
 	fz_obj *obj;
 	int i;
 
-	obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(dict)");
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(dict)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_DICT;
@@ -557,8 +555,7 @@ fz_new_dict(fz_context *ctx, int initialcap)
 
 	fz_try(ctx)
 	{
-		obj->u.d.items = fz_malloc_array(ctx, obj->u.d.cap, sizeof(struct keyval));
-		Memento_label(obj->u.d.items, "fz_obj(dict items)");
+		obj->u.d.items = Memento_label(fz_malloc_array(ctx, obj->u.d.cap, sizeof(struct keyval)), "fz_obj(dict items)");
 	}
 	fz_catch(ctx)
 	{
