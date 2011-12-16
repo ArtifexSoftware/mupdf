@@ -431,88 +431,95 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 	path = csi->path;
 	csi->path = fz_new_path(ctx);
 
-	if (doclose)
-		fz_closepath(ctx, path);
-
-	if (dostroke)
-		bbox = fz_bound_path(path, &gstate->stroke_state, gstate->ctm);
-	else
-		bbox = fz_bound_path(path, NULL, gstate->ctm);
-
-	if (csi->clip)
+	fz_try(ctx)
 	{
-		gstate->clip_depth++;
-		fz_clip_path(csi->dev, path, NULL, csi->clip_even_odd, gstate->ctm);
-		csi->clip = 0;
-	}
+		if (doclose)
+			fz_closepath(ctx, path);
 
-	if (csi->in_hidden_ocg > 0)
-		dostroke = dofill = 0;
+		if (dostroke)
+			bbox = fz_bound_path(path, &gstate->stroke_state, gstate->ctm);
+		else
+			bbox = fz_bound_path(path, NULL, gstate->ctm);
 
-	if (dofill || dostroke)
-		pdf_begin_group(csi, bbox);
-
-	if (dofill)
-	{
-		switch (gstate->fill.kind)
+		if (csi->clip)
 		{
-		case PDF_MAT_NONE:
-			break;
-		case PDF_MAT_COLOR:
-			fz_fill_path(csi->dev, path, even_odd, gstate->ctm,
-				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
-			break;
-		case PDF_MAT_PATTERN:
-			if (gstate->fill.pattern)
-			{
-				fz_clip_path(csi->dev, path, NULL, even_odd, gstate->ctm);
-				pdf_show_pattern(csi, gstate->fill.pattern, bbox, PDF_FILL);
-				fz_pop_clip(csi->dev);
-			}
-			break;
-		case PDF_MAT_SHADE:
-			if (gstate->fill.shade)
-			{
-				fz_clip_path(csi->dev, path, NULL, even_odd, gstate->ctm);
-				fz_fill_shade(csi->dev, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
-				fz_pop_clip(csi->dev);
-			}
-			break;
+			gstate->clip_depth++;
+			fz_clip_path(csi->dev, path, NULL, csi->clip_even_odd, gstate->ctm);
+			csi->clip = 0;
 		}
-	}
 
-	if (dostroke)
-	{
-		switch (gstate->stroke.kind)
+		if (csi->in_hidden_ocg > 0)
+			dostroke = dofill = 0;
+
+		if (dofill || dostroke)
+			pdf_begin_group(csi, bbox);
+
+		if (dofill)
 		{
-		case PDF_MAT_NONE:
-			break;
-		case PDF_MAT_COLOR:
-			fz_stroke_path(csi->dev, path, &gstate->stroke_state, gstate->ctm,
-				gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
-			break;
-		case PDF_MAT_PATTERN:
-			if (gstate->stroke.pattern)
+			switch (gstate->fill.kind)
 			{
-				fz_clip_stroke_path(csi->dev, path, &bbox, &gstate->stroke_state, gstate->ctm);
-				pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
-				fz_pop_clip(csi->dev);
+			case PDF_MAT_NONE:
+				break;
+			case PDF_MAT_COLOR:
+				fz_fill_path(csi->dev, path, even_odd, gstate->ctm,
+					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
+				break;
+			case PDF_MAT_PATTERN:
+				if (gstate->fill.pattern)
+				{
+					fz_clip_path(csi->dev, path, NULL, even_odd, gstate->ctm);
+					pdf_show_pattern(csi, gstate->fill.pattern, bbox, PDF_FILL);
+					fz_pop_clip(csi->dev);
+				}
+				break;
+			case PDF_MAT_SHADE:
+				if (gstate->fill.shade)
+				{
+					fz_clip_path(csi->dev, path, NULL, even_odd, gstate->ctm);
+					fz_fill_shade(csi->dev, gstate->fill.shade, csi->top_ctm, gstate->fill.alpha);
+					fz_pop_clip(csi->dev);
+				}
+				break;
 			}
-			break;
-		case PDF_MAT_SHADE:
-			if (gstate->stroke.shade)
-			{
-				fz_clip_stroke_path(csi->dev, path, &bbox, &gstate->stroke_state, gstate->ctm);
-				fz_fill_shade(csi->dev, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
-				fz_pop_clip(csi->dev);
-			}
-			break;
 		}
+
+		if (dostroke)
+		{
+			switch (gstate->stroke.kind)
+			{
+			case PDF_MAT_NONE:
+				break;
+			case PDF_MAT_COLOR:
+				fz_stroke_path(csi->dev, path, &gstate->stroke_state, gstate->ctm,
+					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
+				break;
+			case PDF_MAT_PATTERN:
+				if (gstate->stroke.pattern)
+				{
+					fz_clip_stroke_path(csi->dev, path, &bbox, &gstate->stroke_state, gstate->ctm);
+					pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
+					fz_pop_clip(csi->dev);
+				}
+				break;
+			case PDF_MAT_SHADE:
+				if (gstate->stroke.shade)
+				{
+					fz_clip_stroke_path(csi->dev, path, &bbox, &gstate->stroke_state, gstate->ctm);
+					fz_fill_shade(csi->dev, gstate->stroke.shade, csi->top_ctm, gstate->stroke.alpha);
+					fz_pop_clip(csi->dev);
+				}
+				break;
+			}
+		}
+
+		if (dofill || dostroke)
+			pdf_end_group(csi);
 	}
-
-	if (dofill || dostroke)
-		pdf_end_group(csi);
-
+	fz_catch(ctx)
+	{
+		fz_free_path(ctx, path);
+		fz_rethrow(ctx);
+	}
 	fz_free_path(ctx, path);
 }
 
@@ -975,7 +982,14 @@ pdf_grestore(pdf_csi *csi)
 	gs = csi->gstate + csi->gtop;
 	while (clip_depth > gs->clip_depth)
 	{
-		fz_pop_clip(csi->dev);
+		fz_try(ctx)
+		{
+			fz_pop_clip(csi->dev);
+		}
+		fz_catch(ctx)
+		{
+			/* Silently swallow the problem */
+		}
 		clip_depth--;
 	}
 }

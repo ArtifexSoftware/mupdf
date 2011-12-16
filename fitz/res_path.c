@@ -21,10 +21,18 @@ fz_clone_path(fz_context *ctx, fz_path *old)
 
 	assert(old);
 	path = fz_malloc_struct(ctx, fz_path);
-	path->len = old->len;
-	path->cap = old->len;
-	path->items = fz_malloc_array(ctx, path->cap, sizeof(fz_path_item));
-	memcpy(path->items, old->items, sizeof(fz_path_item) * path->len);
+	fz_try(ctx)
+	{
+		path->len = old->len;
+		path->cap = old->len;
+		path->items = fz_malloc_array(ctx, path->cap, sizeof(fz_path_item));
+		memcpy(path->items, old->items, sizeof(fz_path_item) * path->len);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, path);
+		fz_rethrow(ctx);
+	}
 
 	return path;
 }
@@ -32,6 +40,8 @@ fz_clone_path(fz_context *ctx, fz_path *old)
 void
 fz_free_path(fz_context *ctx, fz_path *path)
 {
+	if (path == NULL)
+		return;
 	fz_free(ctx, path->items);
 	fz_free(ctx, path);
 }
