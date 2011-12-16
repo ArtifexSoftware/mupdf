@@ -388,8 +388,7 @@ fz_new_array(fz_context *ctx, int initialcap)
 	fz_obj *obj;
 	int i;
 
-	obj = fz_malloc(ctx, sizeof(fz_obj));
-	Memento_label(obj, "fz_obj(array)");
+	obj = Memento_label(fz_malloc(ctx, sizeof(fz_obj)), "fz_obj(array)");
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = FZ_ARRAY;
