@@ -83,33 +83,35 @@ close_flated(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_flated(fz_stream *chain)
 {
-	fz_flate *state;
+	fz_flate *state = NULL;
 	int code = Z_OK;
 	fz_context *ctx = chain->ctx;
 
 	fz_var(code);
-
-	state = fz_malloc_struct(ctx, fz_flate);
-	state->chain = chain;
-
-	state->z.zalloc = zalloc;
-	state->z.zfree = zfree;
-	state->z.opaque = ctx;
-	state->z.next_in = NULL;
-	state->z.avail_in = 0;
+	fz_var(state);
 
 	fz_try(ctx)
 	{
+		state = fz_malloc_struct(ctx, fz_flate);
+		state->chain = chain;
+
+		state->z.zalloc = zalloc;
+		state->z.zfree = zfree;
+		state->z.opaque = ctx;
+		state->z.next_in = NULL;
+		state->z.avail_in = 0;
+
 		code = inflateInit(&state->z);
 		if (code != Z_OK)
 			fz_throw(ctx, "zlib error: inflateInit: %s", state->z.msg);
 	}
 	fz_catch(ctx)
 	{
-		if (code == Z_OK)
+		if (state && code == Z_OK)
 			inflateEnd(&state->z);
 		fz_free(ctx, state);
+		fz_close(chain);
 		fz_rethrow(ctx);
 	}
-	return fz_new_stream(chain->ctx, state, read_flated, close_flated);
+	return fz_new_stream(ctx, state, read_flated, close_flated);
 }

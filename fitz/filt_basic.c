@@ -41,10 +41,17 @@ fz_open_null(fz_stream *chain, int len)
 	struct null_filter *state;
 	fz_context *ctx = chain->ctx;
 
-	assert(chain);
-	state = fz_malloc_struct(ctx, struct null_filter);
-	state->chain = chain;
-	state->remain = len;
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, struct null_filter);
+		state->chain = chain;
+		state->remain = len;
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
 	return fz_new_stream(ctx, state, read_null, close_null);
 }
@@ -145,12 +152,21 @@ fz_stream *
 fz_open_ahxd(fz_stream *chain)
 {
 	fz_ahxd *state;
+	fz_context *ctx = chain->ctx;
 
-	state = fz_malloc_struct(chain->ctx, fz_ahxd);
-	state->chain = chain;
-	state->eod = 0;
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_ahxd);
+		state->chain = chain;
+		state->eod = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
-	return fz_new_stream(chain->ctx, state, read_ahxd, close_ahxd);
+	return fz_new_stream(ctx, state, read_ahxd, close_ahxd);
 }
 
 /* ASCII 85 Decode */
@@ -282,15 +298,23 @@ fz_stream *
 fz_open_a85d(fz_stream *chain)
 {
 	fz_a85d *state;
+	fz_context *ctx = chain->ctx;
 
-	assert(chain);
-	state = fz_malloc_struct(chain->ctx, fz_a85d);
-	state->chain = chain;
-	state->rp = state->bp;
-	state->wp = state->bp;
-	state->eod = 0;
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_a85d);
+		state->chain = chain;
+		state->rp = state->bp;
+		state->wp = state->bp;
+		state->eod = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
-	return fz_new_stream(chain->ctx, state, read_a85d, close_a85d);
+	return fz_new_stream(ctx, state, read_a85d, close_a85d);
 }
 
 /* Run Length Decode */
@@ -370,15 +394,23 @@ fz_stream *
 fz_open_rld(fz_stream *chain)
 {
 	fz_rld *state;
+	fz_context *ctx = chain->ctx;
 
-	assert(chain);
-	state = fz_malloc_struct(chain->ctx, fz_rld);
-	state->chain = chain;
-	state->run = 0;
-	state->n = 0;
-	state->c = 0;
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_rld);
+		state->chain = chain;
+		state->run = 0;
+		state->n = 0;
+		state->c = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
-	return fz_new_stream(chain->ctx, state, read_rld, close_rld);
+	return fz_new_stream(ctx, state, read_rld, close_rld);
 }
 
 /* RC4 Filter */
@@ -414,12 +446,21 @@ fz_stream *
 fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_arc4c *state;
+	fz_context *ctx = chain->ctx;
 
-	state = fz_malloc_struct(chain->ctx, fz_arc4c);
-	state->chain = chain;
-	fz_arc4_init(&state->arc4, key, keylen);
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_arc4c);
+		state->chain = chain;
+		fz_arc4_init(&state->arc4, key, keylen);
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
-	return fz_new_stream(chain->ctx, state, read_arc4, close_arc4);
+	return fz_new_stream(ctx, state, read_arc4, close_arc4);
 }
 
 /* AES Filter */
@@ -496,14 +537,22 @@ fz_stream *
 fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_aesd *state;
+	fz_context *ctx = chain->ctx;
 
-	assert(chain);
-	state = fz_malloc_struct(chain->ctx, fz_aesd);
-	state->chain = chain;
-	aes_setkey_dec(&state->aes, key, keylen * 8);
-	state->ivcount = 0;
-	state->rp = state->bp;
-	state->wp = state->bp;
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_aesd);
+		state->chain = chain;
+		aes_setkey_dec(&state->aes, key, keylen * 8);
+		state->ivcount = 0;
+		state->rp = state->bp;
+		state->wp = state->bp;
+	}
+	fz_catch(ctx)
+	{
+		fz_close(chain);
+		fz_rethrow(ctx);
+	}
 
-	return fz_new_stream(chain->ctx, state, read_aesd, close_aesd);
+	return fz_new_stream(ctx, state, read_aesd, close_aesd);
 }

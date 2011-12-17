@@ -662,28 +662,28 @@ close_faxd(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_faxd(fz_stream *chain, fz_obj *params)
 {
-	fz_faxd *fax;
+	fz_faxd *fax = NULL;
 	fz_obj *obj;
-	fz_context *ctx;
+	fz_context *ctx = chain->ctx;
 
-	assert(chain);
-	ctx = chain->ctx;
-	fax = fz_malloc_struct(ctx, fz_faxd);
-	fax->chain = chain;
-
-	fax->ref = NULL;
-	fax->dst = NULL;
-
-	fax->k = 0;
-	fax->end_of_line = 0;
-	fax->encoded_byte_align = 0;
-	fax->columns = 1728;
-	fax->rows = 0;
-	fax->end_of_block = 1;
-	fax->black_is_1 = 0;
+	fz_var(fax);
 
 	fz_try(ctx)
 	{
+		fax = fz_malloc_struct(ctx, fz_faxd);
+		fax->chain = chain;
+
+		fax->ref = NULL;
+		fax->dst = NULL;
+
+		fax->k = 0;
+		fax->end_of_line = 0;
+		fax->encoded_byte_align = 0;
+		fax->columns = 1728;
+		fax->rows = 0;
+		fax->end_of_block = 1;
+		fax->black_is_1 = 0;
+
 		obj = fz_dict_gets(params, "K");
 		if (obj) fax->k = fz_to_int(obj);
 
@@ -726,9 +726,13 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, fax->dst);
-		fz_free(ctx, fax->ref);
+		if (fax)
+		{
+			fz_free(ctx, fax->dst);
+			fz_free(ctx, fax->ref);
+		}
 		fz_free(ctx, fax);
+		fz_close(chain);
 		fz_rethrow(ctx);
 	}
 

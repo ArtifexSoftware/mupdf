@@ -81,21 +81,41 @@ read_jbig2d(fz_stream *stm, unsigned char *buf, int len)
 fz_stream *
 fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 {
-	fz_jbig2d *state;
+	fz_jbig2d *state = NULL;
+	fz_context *ctx = chain->ctx;
 
-	state = fz_malloc_struct(chain->ctx, fz_jbig2d);
-	state->chain = chain;
-	state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, NULL, NULL);
-	state->gctx = NULL;
-	state->page = NULL;
-	state->idx = 0;
+	fz_var(state);
 
-	if (globals)
+	fz_try(ctx)
 	{
-		jbig2_data_in(state->ctx, globals->data, globals->len);
-		state->gctx = jbig2_make_global_ctx(state->ctx);
-		state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, state->gctx, NULL, NULL);
+		state = fz_malloc_struct(chain->ctx, fz_jbig2d);
+		state->ctx = NULL;
+		state->gctx = NULL;
+		state->chain = chain;
+		state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, NULL, NULL);
+		state->page = NULL;
+		state->idx = 0;
+
+		if (globals)
+		{
+			jbig2_data_in(state->ctx, globals->data, globals->len);
+			state->gctx = jbig2_make_global_ctx(state->ctx);
+			state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, state->gctx, NULL, NULL);
+		}
+	}
+	fz_catch(ctx)
+	{
+		if (state)
+		{
+			if (state->gctx)
+				jbig2_global_ctx_free(state->gctx);
+			if (state->ctx)
+				jbig2_ctx_free(state->ctx);
+		}
+		fz_free(ctx, state);
+		fz_close(chain);
+		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(chain->ctx, state, read_jbig2d, close_jbig2d);
+	return fz_new_stream(ctx, state, read_jbig2d, close_jbig2d);
 }
