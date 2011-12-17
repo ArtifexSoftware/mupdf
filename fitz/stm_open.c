@@ -3,11 +3,19 @@
 fz_stream *
 fz_new_stream(fz_context *ctx, void *state,
 	int(*read)(fz_stream *stm, unsigned char *buf, int len),
-	void(*close)(fz_stream *stm))
+	void(*close)(fz_context *ctx, void *state))
 {
 	fz_stream *stm;
 
-	stm = fz_malloc_struct(ctx, fz_stream);
+	fz_try(ctx)
+	{
+		stm = fz_malloc_struct(ctx, fz_stream);
+	}
+	fz_catch(ctx)
+	{
+		close(ctx, state);
+		fz_rethrow(ctx);
+	}
 
 	stm->refs = 1;
 	stm->error = 0;
@@ -47,7 +55,7 @@ fz_close(fz_stream *stm)
 	if (stm->refs == 0)
 	{
 		if (stm->close)
-			stm->close(stm);
+			stm->close(stm->ctx, stm->state);
 		fz_free(stm->ctx, stm);
 	}
 }
@@ -72,12 +80,12 @@ static void seek_file(fz_stream *stm, int offset, int whence)
 	stm->wp = stm->bp;
 }
 
-static void close_file(fz_stream *stm)
+static void close_file(fz_context *ctx, void *state)
 {
-	int n = close(*(int*)stm->state);
+	int n = close(*(int*)state);
 	if (n < 0)
-		fz_warn(stm->ctx, "close error: %s", strerror(errno));
-	fz_free(stm->ctx, stm->state);
+		fz_warn(ctx, "close error: %s", strerror(errno));
+	fz_free(ctx, state);
 }
 
 fz_stream *
@@ -89,15 +97,7 @@ fz_open_fd(fz_context *ctx, int fd)
 	state = fz_malloc_struct(ctx, int);
 	*state = fd;
 
-	fz_try(ctx)
-	{
-		stm = fz_new_stream(ctx, state, read_file, close_file);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
+	stm = fz_new_stream(ctx, state, read_file, close_file);
 	stm->seek = seek_file;
 
 	return stm;
@@ -142,10 +142,11 @@ static void seek_buffer(fz_stream *stm, int offset, int whence)
 	stm->wp = stm->ep;
 }
 
-static void close_buffer(fz_stream *stm)
+static void close_buffer(fz_context *ctx, void *state_)
 {
-	if (stm->state)
-		fz_drop_buffer(stm->ctx, stm->state);
+	fz_buffer *state = (fz_buffer *)state_;
+	if (state)
+		fz_drop_buffer(ctx, state);
 }
 
 fz_stream *

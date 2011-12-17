@@ -199,18 +199,10 @@ pdf_open_filter(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int num, int g
 
 	chain = pdf_open_raw_filter(chain, xref, stmobj, num, gen);
 
-	fz_try(ctx)
-	{
-		if (fz_is_name(filters))
-			chain = build_filter(chain, xref, filters, params, num, gen);
-		else if (fz_array_len(filters) > 0)
-			chain = build_filter_chain(chain, xref, filters, params, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		fz_close(chain);
-		fz_rethrow(ctx);
-	}
+	if (fz_is_name(filters))
+		chain = build_filter(chain, xref, filters, params, num, gen);
+	else if (fz_array_len(filters) > 0)
+		chain = build_filter_chain(chain, xref, filters, params, num, gen);
 
 	return chain;
 }

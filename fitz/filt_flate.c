@@ -67,17 +67,17 @@ read_flated(fz_stream *stm, unsigned char *outbuf, int outlen)
 }
 
 static void
-close_flated(fz_stream *stm)
+close_flated(fz_context *ctx, void *state_)
 {
-	fz_flate *state = stm->state;
+	fz_flate *state = (fz_flate *)state_;
 	int code;
 
 	code = inflateEnd(&state->z);
 	if (code != Z_OK)
-		fz_warn(stm->ctx, "zlib error: inflateEnd: %s", state->z.msg);
+		fz_warn(ctx, "zlib error: inflateEnd: %s", state->z.msg);
 
 	fz_close(state->chain);
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 }
 
 fz_stream *
@@ -86,7 +86,6 @@ fz_open_flated(fz_stream *chain)
 	fz_flate *state;
 	int code = Z_OK;
 	fz_context *ctx = chain->ctx;
-	fz_stream *stream;
 
 	fz_var(code);
 
@@ -104,7 +103,6 @@ fz_open_flated(fz_stream *chain)
 		code = inflateInit(&state->z);
 		if (code != Z_OK)
 			fz_throw(ctx, "zlib error: inflateInit: %s", state->z.msg);
-		stream = fz_new_stream(chain->ctx, state, read_flated, close_flated);
 	}
 	fz_catch(ctx)
 	{
@@ -113,5 +111,5 @@ fz_open_flated(fz_stream *chain)
 		fz_free(ctx, state);
 		fz_rethrow(ctx);
 	}
-	return stream;
+	return fz_new_stream(chain->ctx, state, read_flated, close_flated);
 }

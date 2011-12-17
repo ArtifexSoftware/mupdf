@@ -550,7 +550,7 @@ struct fz_stream_s
 	unsigned char *bp, *rp, *wp, *ep;
 	void *state;
 	int (*read)(fz_stream *stm, unsigned char *buf, int len);
-	void (*close)(fz_stream *stm);
+	void (*close)(fz_context *ctx, void *state);
 	void (*seek)(fz_stream *stm, int offset, int whence);
 	unsigned char buf[4096];
 };
@@ -562,7 +562,7 @@ fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
 void fz_close(fz_stream *stm);
 
-fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_stream *));
+fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_context *, void *));
 fz_stream *fz_keep_stream(fz_stream *stm);
 void fz_fill_buffer(fz_stream *stm);
 

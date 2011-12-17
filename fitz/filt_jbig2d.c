@@ -29,16 +29,16 @@ struct fz_jbig2d_s
 };
 
 static void
-close_jbig2d(fz_stream *stm)
+close_jbig2d(fz_context *ctx, void *state_)
 {
-	fz_jbig2d *state = stm->state;
+	fz_jbig2d *state = (fz_jbig2d *)state_;
 	if (state->page)
 		jbig2_release_page(state->ctx, state->page);
 	if (state->gctx)
 		jbig2_global_ctx_free(state->gctx);
 	jbig2_ctx_free(state->ctx);
 	fz_close(state->chain);
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 }
 
 static int

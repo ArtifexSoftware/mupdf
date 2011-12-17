@@ -27,11 +27,11 @@ read_null(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_null(fz_stream *stm)
+close_null(fz_context *ctx, void *state_)
 {
-	struct null_filter *state = stm->state;
+	struct null_filter *state = (struct null_filter *)state_;
 	fz_stream *chain = state->chain;
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 
@@ -39,7 +39,6 @@ fz_stream *
 fz_open_null(fz_stream *chain, int len)
 {
 	struct null_filter *state;
-	fz_stream *stream;
 	fz_context *ctx = chain->ctx;
 
 	assert(chain);
@@ -47,16 +46,7 @@ fz_open_null(fz_stream *chain, int len)
 	state->chain = chain;
 	state->remain = len;
 
-	fz_try(ctx)
-	{
-		stream = fz_new_stream(ctx, state, read_null, close_null);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
-	return stream;
+	return fz_new_stream(ctx, state, read_null, close_null);
 }
 
 /* ASCII Hex Decode */
@@ -143,11 +133,11 @@ read_ahxd(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_ahxd(fz_stream *stm)
+close_ahxd(fz_context *ctx, void *state_)
 {
-	fz_ahxd *state = stm->state;
+	fz_ahxd *state = (fz_ahxd *)state_;
 	fz_stream *chain = state->chain;
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 
@@ -279,12 +269,12 @@ read_a85d(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_a85d(fz_stream *stm)
+close_a85d(fz_context *ctx, void *state_)
 {
-	fz_a85d *state = stm->state;
+	fz_a85d *state = (fz_a85d *)state_;
 	fz_stream *chain = state->chain;
 
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 
@@ -367,12 +357,12 @@ read_rld(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_rld(fz_stream *stm)
+close_rld(fz_context *ctx, void *state_)
 {
-	fz_rld *state = stm->state;
+	fz_rld *state = (void *)state_;
 	fz_stream *chain = state->chain;
 
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 
@@ -411,12 +401,12 @@ read_arc4(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_arc4(fz_stream *stm)
+close_arc4(fz_context *ctx, void *state_)
 {
-	fz_arc4c *state = stm->state;
+	fz_arc4c *state = (fz_arc4c *)state_;
 	fz_stream *chain = state->chain;
 
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 
@@ -493,12 +483,12 @@ read_aesd(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_aesd(fz_stream *stm)
+close_aesd(fz_context *ctx, void *state_)
 {
-	fz_aesd *state = stm->state;
+	fz_aesd *state = (fz_aesd *)state_;
 	fz_stream *chain = state->chain;
 
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 	fz_close(chain);
 }
 

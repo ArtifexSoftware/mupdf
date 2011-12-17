@@ -156,11 +156,11 @@ read_lzwd(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_lzwd(fz_stream *stm)
+close_lzwd(fz_context *ctx, void *state_)
 {
-	fz_lzwd *lzw = stm->state;
+	fz_lzwd *lzw = (fz_lzwd *)state_;
 	fz_close(lzw->chain);
-	fz_free(stm->ctx, lzw);
+	fz_free(ctx, lzw);
 }
 
 fz_stream *

@@ -643,9 +643,9 @@ rtc:
 }
 
 static void
-close_faxd(fz_stream *stm)
+close_faxd(fz_context *ctx, void *state_)
 {
-	fz_faxd *fax = stm->state;
+	fz_faxd *fax = (fz_faxd *)state_;
 	int i;
 
 	/* if we read any extra bytes, try to put them back */
@@ -654,9 +654,9 @@ close_faxd(fz_stream *stm)
 		fz_unread_byte(fax->chain);
 
 	fz_close(fax->chain);
-	fz_free(stm->ctx, fax->ref);
-	fz_free(stm->ctx, fax->dst);
-	fz_free(stm->ctx, fax);
+	fz_free(ctx, fax->ref);
+	fz_free(ctx, fax->dst);
+	fz_free(ctx, fax);
 }
 
 fz_stream *
@@ -665,7 +665,6 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 	fz_faxd *fax;
 	fz_obj *obj;
 	fz_context *ctx;
-	fz_stream *stream;
 
 	assert(chain);
 	ctx = chain->ctx;
@@ -724,8 +723,6 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 
 		memset(fax->ref, 0, fax->stride);
 		memset(fax->dst, 0, fax->stride);
-
-		stream = fz_new_stream(ctx, fax, read_faxd, close_faxd);
 	}
 	fz_catch(ctx)
 	{
@@ -734,5 +731,6 @@ fz_open_faxd(fz_stream *chain, fz_obj *params)
 		fz_free(ctx, fax);
 		fz_rethrow(ctx);
 	}
-	return stream;
+
+	return fz_new_stream(ctx, fax, read_faxd, close_faxd);
 }

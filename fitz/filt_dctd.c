@@ -180,14 +180,15 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_dctd(fz_stream *stm)
+close_dctd(fz_context *ctx, void *state_)
 {
-	fz_dctd *state = stm->state;
+	fz_dctd *state = (fz_dctd *)state_;
 
 	if (setjmp(state->jb))
 	{
-		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
-		fz_warn(state->ctx, "jpeg error: %s", state->msg);
+		if (state->cinfo.src)
+			state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
+		fz_warn(ctx, "jpeg error: %s", state->msg);
 		goto skip;
 	}
 
@@ -195,11 +196,12 @@ close_dctd(fz_stream *stm)
 		jpeg_finish_decompress(&state->cinfo);
 
 skip:
-	state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
+	if (state->cinfo.src)
+		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
 	jpeg_destroy_decompress(&state->cinfo);
-	fz_free(stm->ctx, state->scanline);
+	fz_free(ctx, state->scanline);
 	fz_close(state->chain);
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state);
 }
 
 fz_stream *

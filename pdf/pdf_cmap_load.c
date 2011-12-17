@@ -89,11 +89,19 @@ pdf_cmap *
 pdf_new_identity_cmap(fz_context *ctx, int wmode, int bytes)
 {
 	pdf_cmap *cmap = pdf_new_cmap(ctx);
-	sprintf(cmap->cmap_name, "Identity-%c", wmode ? 'V' : 'H');
-	pdf_add_codespace(ctx, cmap, 0x0000, 0xffff, bytes);
-	pdf_map_range_to_range(ctx, cmap, 0x0000, 0xffff, 0);
-	pdf_sort_cmap(ctx, cmap);
-	pdf_set_wmode(cmap, wmode);
+	fz_try(ctx)
+	{
+		sprintf(cmap->cmap_name, "Identity-%c", wmode ? 'V' : 'H');
+		pdf_add_codespace(ctx, cmap, 0x0000, 0xffff, bytes);
+		pdf_map_range_to_range(ctx, cmap, 0x0000, 0xffff, 0);
+		pdf_sort_cmap(ctx, cmap);
+		pdf_set_wmode(cmap, wmode);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_cmap(ctx, cmap);
+		fz_rethrow(ctx);
+	}
 	return cmap;
 }
 

@@ -177,14 +177,14 @@ read_predict(fz_stream *stm, unsigned char *buf, int len)
 }
 
 static void
-close_predict(fz_stream *stm)
+close_predict(fz_context *ctx, void *state_)
 {
-	fz_predict *state = stm->state;
+	fz_predict *state = (fz_predict *)state_;
 	fz_close(state->chain);
-	fz_free(stm->ctx, state->in);
-	fz_free(stm->ctx, state->out);
-	fz_free(stm->ctx, state->ref);
-	fz_free(stm->ctx, state);
+	fz_free(ctx, state->in);
+	fz_free(ctx, state->out);
+	fz_free(ctx, state->ref);
+	fz_free(ctx, state);
 }
 
 fz_stream *
