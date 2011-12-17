@@ -50,14 +50,22 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		pix->n = 1 + colorspace->n;
 	}
 
+	pix->samples = samples;
 	if (samples)
 	{
-		pix->samples = samples;
 		pix->free_samples = 0;
 	}
 	else
 	{
-		pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
+		fz_try(ctx)
+		{
+			pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, pix);
+			fz_rethrow(ctx);
+		}
 		pix->free_samples = 1;
 	}
 

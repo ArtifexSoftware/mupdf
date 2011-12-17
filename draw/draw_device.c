@@ -1531,25 +1531,37 @@ fz_draw_free_user(fz_device *devp)
 fz_device *
 fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 {
-	fz_device *dev;
+	fz_device *dev = NULL;
 	fz_draw_device *ddev = fz_malloc_struct(ctx, fz_draw_device);
-	ddev->cache = cache;
-	ddev->gel = fz_new_gel(ctx);
-	ddev->dest = dest;
-	ddev->shape = NULL;
-	ddev->top = 0;
-	ddev->blendmode = 0;
-	ddev->flags = 0;
-	ddev->ctx = ctx;
-	ddev->stack = &ddev->init_stack[0];
-	ddev->stack_max = STACK_SIZE;
+	ddev->gel = NULL;
 
-	ddev->scissor.x0 = dest->x;
-	ddev->scissor.y0 = dest->y;
-	ddev->scissor.x1 = dest->x + dest->w;
-	ddev->scissor.y1 = dest->y + dest->h;
+	fz_var(dev);
+	fz_try(ctx)
+	{
+		ddev->cache = cache;
+		ddev->gel = fz_new_gel(ctx);
+		ddev->dest = dest;
+		ddev->shape = NULL;
+		ddev->top = 0;
+		ddev->blendmode = 0;
+		ddev->flags = 0;
+		ddev->ctx = ctx;
+		ddev->stack = &ddev->init_stack[0];
+		ddev->stack_max = STACK_SIZE;
 
-	dev = fz_new_device(ctx, ddev);
+		ddev->scissor.x0 = dest->x;
+		ddev->scissor.y0 = dest->y;
+		ddev->scissor.x1 = dest->x + dest->w;
+		ddev->scissor.y1 = dest->y + dest->h;
+
+		dev = fz_new_device(ctx, ddev);
+	}
+	fz_catch(ctx)
+	{
+		fz_free_gel(ddev->gel);
+		fz_free(ctx, ddev);
+		fz_rethrow(ctx);
+	}
 	dev->free_user = fz_draw_free_user;
 
 	dev->fill_path = fz_draw_fill_path;

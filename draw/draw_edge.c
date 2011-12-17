@@ -222,6 +222,8 @@ fz_reset_gel(fz_gel *gel, fz_bbox clip)
 void
 fz_free_gel(fz_gel *gel)
 {
+	if (gel == NULL)
+		return;
 	fz_free(gel->ctx, gel->active);
 	fz_free(gel->ctx, gel->edges);
 	fz_free(gel->ctx, gel);
