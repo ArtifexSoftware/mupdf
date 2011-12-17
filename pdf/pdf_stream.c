@@ -155,15 +155,17 @@ build_filter_chain(fz_stream *chain, pdf_xref *xref, fz_obj *fs, fz_obj *ps, int
  * stream length, followed by a decryption filter.
  */
 static fz_stream *
-pdf_open_raw_filter(fz_stream *orig, pdf_xref *xref, fz_obj *stmobj, int num, int gen)
+pdf_open_raw_filter(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int num, int gen)
 {
 	int hascrypt;
 	int len;
-	fz_context *ctx = orig->ctx;
-	fz_stream *chain;
+	fz_context *ctx = chain->ctx;
+
+	/* don't close chain when we close this filter */
+	fz_keep_stream(chain);
 
 	len = fz_to_int(fz_dict_gets(stmobj, "Length"));
-	chain = fz_open_null(orig, len);
+	chain = fz_open_null(chain, len);
 
 	fz_try(ctx)
 	{
@@ -176,9 +178,6 @@ pdf_open_raw_filter(fz_stream *orig, pdf_xref *xref, fz_obj *stmobj, int num, in
 		fz_close(chain);
 		fz_rethrow(ctx);
 	}
-
-	/* don't close the original stream when we close this filter */
-	fz_keep_stream(orig);
 
 	return chain;
 }
