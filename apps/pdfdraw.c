@@ -127,6 +127,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
 		fz_free_device(dev);
+		dev = NULL;
 	}
 
 	if (showxml)
@@ -149,6 +150,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			fz_rethrow(ctx);
 		}
 		fz_free_device(dev);
+		dev = NULL;
 	}
 
 	if (showtext)
