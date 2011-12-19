@@ -191,7 +191,6 @@ pdf_open_filter(fz_stream *chain, pdf_xref *xref, fz_obj *stmobj, int num, int g
 {
 	fz_obj *filters;
 	fz_obj *params;
-	fz_context *ctx = chain->ctx;
 
 	filters = fz_dict_getsa(stmobj, "Filter", "F");
 	params = fz_dict_getsa(stmobj, "DecodeParms", "DP");
