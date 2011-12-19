@@ -55,6 +55,10 @@ char *getenv(const char *);
 /* mupdf needs at least 34000ish (sizeof(fz_shade))/ */
 #define MEMENTO_PTRSEARCH 65536
 
+#ifndef MEMENTO_MAXPATTERN
+#define MEMENTO_MAXPATTERN 0
+#endif
+
 #ifdef MEMENTO
 
 #ifdef HAVE_VALGRIND
@@ -117,9 +121,13 @@ static struct {
     int            breakAt;
     int            failAt;
     int            failing;
+    int            nextFailAt;
     int            squeezeAt;
     int            squeezing;
-    int            squeezed;
+    int            segv;
+    int            pattern;
+    int            nextPattern;
+    int            patternBit;
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
@@ -425,7 +433,7 @@ static void blockDisplay(Memento_BlkHeader *b, int n)
     n++;
     while(i < n)
     {
-        fprintf(stderr, &"                                "[32-((n-i)&31)]);
+        fprintf(stderr, "%s", &"                                "[32-((n-i)&31)]);
         i += ((n-i)&31);
     }
     showBlock(b, '\t');
@@ -572,17 +580,17 @@ void Memento_listNewBlocks(void) {
 
 static void Memento_endStats(void)
 {
-    fprintf(stderr, "Total memory malloced = %d bytes\n", globals.totalAlloc);
-    fprintf(stderr, "Peak memory malloced = %d bytes\n", globals.peakAlloc);
-    fprintf(stderr, "%d mallocs, %d frees, %d reallocs\n", globals.numMallocs,
-            globals.numFrees, globals.numReallocs);
-    fprintf(stderr, "Average allocation size %d bytes\n",
+    fprintf(stderr, "Total memory malloced = %u bytes\n", (unsigned int)globals.totalAlloc);
+    fprintf(stderr, "Peak memory malloced = %u bytes\n", (unsigned int)globals.peakAlloc);
+    fprintf(stderr, "%u mallocs, %u frees, %u reallocs\n", (unsigned int)globals.numMallocs,
+            (unsigned int)globals.numFrees, (unsigned int)globals.numReallocs);
+    fprintf(stderr, "Average allocation size %u bytes\n", (unsigned int)
             (globals.numMallocs != 0 ? globals.totalAlloc/globals.numMallocs: 0));
 }
 
 void Memento_stats(void)
 {
-    fprintf(stderr, "Current memory malloced = %d bytes\n", globals.alloc);
+    fprintf(stderr, "Current memory malloced = %u bytes\n", (unsigned int)globals.alloc);
     Memento_endStats();
 }
 
@@ -594,8 +602,23 @@ static void Memento_fin(void)
         Memento_listBlocks();
         Memento_breakpoint();
     }
-    if (globals.squeezed) {
-        fprintf(stderr, "Memory squeezing @ %d complete\n", globals.squeezed);
+    if (globals.segv) {
+        fprintf(stderr, "Memory dumped on SEGV while squeezing @ %d\n", globals.failAt);
+    } else if (globals.squeezing) {
+        if (globals.pattern == 0)
+            fprintf(stderr, "Memory squeezing @ %d complete\n", globals.squeezeAt);
+        else
+            fprintf(stderr, "Memory squeezing @ %d (%d) complete\n", globals.squeezeAt, globals.pattern);
+    }
+    if (globals.failing)
+    {
+        fprintf(stderr, "MEMENTO_FAILAT=%d\n", globals.failAt);
+        fprintf(stderr, "MEMENTO_PATTERN=%d\n", globals.pattern);
+    }
+    if (globals.nextFailAt != 0)
+    {
+        fprintf(stderr, "MEMENTO_NEXTFAILAT=%d\n", globals.nextFailAt);
+        fprintf(stderr, "MEMENTO_NEXTPATTERN=%d\n", globals.nextPattern);
     }
 }
 
@@ -630,12 +653,155 @@ static void Memento_init(void)
     env = getenv("MEMENTO_SQUEEZEAT");
     globals.squeezeAt = (env ? atoi(env) : 0);
 
+    env = getenv("MEMENTO_PATTERN");
+    globals.pattern = (env ? atoi(env) : 0);
+
     env = getenv("MEMENTO_MAXMEMORY");
     globals.maxMemory = (env ? atoi(env) : 0);
 
     atexit(Memento_fin);
 
     Memento_inited();
+}
+
+#ifdef MEMENTO_HAS_FORK
+#include <unistd.h>
+#include <sys/wait.h>
+#ifdef MEMENTO_STACKTRACE_METHOD
+#if MEMENTO_STACKTRACE_METHOD == 1
+#include <signal.h>
+#endif
+#endif
+
+/* FIXME: Find some portable way of getting this */
+/* MacOSX has 10240, Ubuntu seems to have 256 */
+#define OPEN_MAX 10240
+
+/* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
+int stashed_map[OPEN_MAX];
+
+extern size_t backtrace(void **, int);
+extern void backtrace_symbols_fd(void **, size_t, int);
+
+static void Memento_signal(void)
+{
+    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezeAt);
+
+#ifdef MEMENTO_STACKTRACE_METHOD
+#if MEMENTO_STACKTRACE_METHOD == 1
+    {
+      void *array[100];
+      size_t size;
+
+      size = backtrace(array, 100);
+      fprintf(stderr, "------------------------------------------------------------------------\n");
+      fprintf(stderr, "Backtrace:\n");
+      backtrace_symbols_fd(array, size, 2);
+      fprintf(stderr, "------------------------------------------------------------------------\n");
+    }
+#endif
+#endif
+
+    exit(1);
+}
+
+static int squeeze(void)
+{
+    pid_t pid;
+    int i, status;
+
+    if (globals.patternBit < 0)
+        return 1;
+    if (globals.squeezing && globals.patternBit >= MEMENTO_MAXPATTERN)
+        return 1;
+    
+    if (globals.patternBit == 0)
+        globals.squeezeAt = globals.sequence;
+
+    if (!globals.squeezing) {
+        fprintf(stderr, "Memory squeezing @ %d\n", globals.squeezeAt);
+    } else
+        fprintf(stderr, "Memory squeezing @ %d (%x,%x)\n", globals.squeezeAt, globals.pattern, globals.patternBit);
+
+    /* When we fork below, the child is going to snaffle all our file pointers
+     * and potentially corrupt them. Let's make copies of all of them before
+     * we fork, so we can restore them when we restart. */
+    for (i = 0; i < OPEN_MAX; i++) {
+        if (stashed_map[i] == 0) {
+            int j = dup(i);
+            stashed_map[j] = i+1;
+        }
+    }
+
+    pid = fork();
+    if (pid == 0) {
+        /* Child */
+        signal(SIGSEGV, Memento_signal);
+        /* In the child, we always fail the next allocation. */
+        if (globals.patternBit == 0) {
+            globals.patternBit = 1;
+        } else
+            globals.patternBit <<= 1;
+        globals.squeezing = 1;
+        return 1;
+    }
+
+    /* In the parent if we hit another allocation, pass it (and record the
+     * fact we passed it in the pattern. */
+    globals.pattern |= globals.patternBit;
+    globals.patternBit <<= 1;
+
+    /* Wait for pid to finish */
+    waitpid(pid, &status, 0);
+
+    /* Put the files back */
+    for (i = 0; i < OPEN_MAX; i++) {
+        if (stashed_map[i] != 0) {
+            dup2(i, stashed_map[i]-1);
+            close(i);
+            stashed_map[i] = 0;
+        }
+    }
+
+    return 0;
+}
+#else
+#include <signal.h>
+
+static void Memento_signal(void)
+{
+    globals.segv = 1;
+    /* If we just return from this function the SEGV will be unhandled, and
+     * we'll launch into whatever JIT debugging system the OS provides. At
+     * least output something useful first. If MEMENTO_NOJIT is set, then
+     * just exit to avoid the JIT (and get the usual atexit handling). */
+    if (getenv("MEMENTO_NOJIT"))
+        exit(1);
+    else
+        Memento_fin();
+}
+    
+int squeeze(void)
+{
+    fprintf(stderr, "Memento memory squeezing disabled as no fork!\n");
+    return 0;
+}
+#endif
+
+static void Memento_startFailing(void)
+{
+    if (!globals.failing) {
+        fprintf(stderr, "Starting to fail...\n");
+        fflush(stderr);
+        globals.failing = 1;
+        globals.failAt = globals.sequence;
+        globals.nextFailAt = globals.sequence+1;
+        globals.pattern = 0;
+        globals.patternBit = 0;
+        signal(SIGSEGV, Memento_signal);
+        signal(SIGABRT, Memento_signal);
+        Memento_breakpoint();
+    }
 }
 
 static void Memento_event(void)
@@ -645,13 +811,6 @@ static void Memento_event(void)
         globals.paranoia = 1;
         globals.countdown = 1;
     }
-    if ((globals.sequence >= globals.failAt) && (globals.failAt != 0)) {
-        globals.failing = 1;
-    }
-    if ((globals.sequence >= globals.squeezeAt) && (globals.squeezeAt != 0)) {
-        globals.squeezing = 1;
-    }
-
     if (--globals.countdown == 0) {
         Memento_checkAllMemory();
         globals.countdown = globals.paranoia;
@@ -680,102 +839,39 @@ void *Memento_label(void *ptr, const char *label)
     return ptr;
 }
 
-#ifdef MEMENTO_HAS_FORK
-#include <unistd.h>
-#include <sys/wait.h>
-#include <signal.h>
-#ifdef MEMENTO_STACKTRACE_METHOD
-#if MEMENTO_STACKTRACE_METHOD == 1
-#include <signal.h>
-#endif
-#endif
-
-/* FIXME: Find some portable way of getting this */
-/* MacOSX has 10240, Ubuntu seems to have 256 */
-#define OPEN_MAX 10240
-
-/* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
-int stashed_map[OPEN_MAX];
-
-static void Memento_signal(void)
-{
-    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezed);
-
-#ifdef MEMENTO_STACKTRACE_METHOD
-#if MEMENTO_STACKTRACE_METHOD == 1
-    {
-      void *array[100];
-      size_t size;
-
-      size = backtrace(array, 100);
-      fprintf(stderr, "------------------------------------------------------------------------\n");
-      fprintf(stderr, "Backtrace:\n");
-      backtrace_symbols_fd(array, size, 2);
-      fprintf(stderr, "------------------------------------------------------------------------\n");
-    }
-#endif
-#endif
-
-    exit(1);
-}
-
-static void squeeze(void)
-{
-    pid_t pid;
-    int i, status;
-
-    fprintf(stderr, "Memory squeezing @ %d\n", globals.sequence);
-
-    /* When we fork below, the child is going to snaffle all our file pointers
-     * and potentially corrupt them. Let's make copies of all of them before
-     * we fork, so we can restore them when we restart. */
-    for (i = 0; i < OPEN_MAX; i++) {
-        if (stashed_map[i] == 0) {
-            int j = dup(i);
-            stashed_map[j] = i+1;
-        }
-    }
-
-    pid = fork();
-    if (pid == 0) {
-        /* Child */
-        signal(SIGSEGV, Memento_signal);
-        /* We must fail all new allocations from here */
-        globals.failing  = 1;
-        globals.squeezed = globals.sequence;
-        return;
-    }
-
-    /* Wait for pid to finish */
-    waitpid(pid, &status, 0);
-
-    /* Put the files back */
-    for (i = 0; i < OPEN_MAX; i++) {
-        if (stashed_map[i] != 0) {
-            dup2(i, stashed_map[i]-1);
-            close(i);
-            stashed_map[i] = 0;
-        }
-    }
-}
-#else
-void squeeze(void)
-{
-    fprintf(stderr, "Memento memory squeezing disabled as no fork!\n");
-}
-#endif
-
 int Memento_failThisEvent(void)
 {
+    int failThisOne;
+
     if (!globals.inited)
         Memento_init();
 
     Memento_event();
 
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
+    if ((globals.sequence >= globals.failAt) && (globals.failAt != 0))
+        Memento_startFailing();
+    if ((globals.sequence >= globals.squeezeAt) && (globals.squeezeAt != 0)) {
+        return squeeze();
+    }
 
-    return globals.failing;
+    if (!globals.failing)
+        return 0;
+    failThisOne = ((globals.patternBit & globals.pattern) == 0);
+    /* If we are failing, and we've reached the end of the pattern and we've
+     * still got bits available in the pattern word, and we haven't already
+     * set a nextPattern, then extend the pattern. */
+    if (globals.failing &&
+        ((~(globals.patternBit-1) & globals.pattern) == 0) &&
+        (globals.patternBit != 0) &&
+        globals.nextPattern == 0)
+    {
+        /* We'll fail this one, and set the 'next' one to pass it. */
+        globals.nextFailAt = globals.failAt;
+        globals.nextPattern = globals.pattern | globals.patternBit;
+    }
+    globals.patternBit = (globals.patternBit ? globals.patternBit << 1 : 1);
+
+    return failThisOne;
 }
 
 void *Memento_malloc(size_t s)
@@ -1143,7 +1239,7 @@ int Memento_failAt(int i)
     globals.failAt = i;
     if ((globals.sequence > globals.failAt) &&
         (globals.failing != 0))
-        globals.failing = 1;
+        Memento_startFailing();
     return i;
 }
 
