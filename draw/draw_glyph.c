@@ -133,10 +133,18 @@ fz_render_glyph(fz_context *ctx, fz_glyph_cache *cache, fz_font *font, int gid, 
 		{
 			if (cache->total + val->w * val->h > MAX_CACHE_SIZE)
 				fz_evict_glyph_cache(ctx, cache);
-			fz_keep_font(key.font);
-			fz_hash_insert(cache->hash, &key, val);
+			fz_try(ctx)
+			{
+				fz_hash_insert(cache->hash, &key, val);
+				fz_keep_font(key.font);
+				val = fz_keep_pixmap(val);
+			}
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "Failed to encache glyph - continuing");
+			}
 			cache->total += val->w * val->h;
-			return fz_keep_pixmap(val);
+			return val;
 		}
 		return val;
 	}

@@ -1266,6 +1266,7 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 	fz_matrix oldtopctm;
 	int oldtop;
 	int popmask;
+	int caught = 0;
 
 	pdf_gsave(csi);
 
@@ -1277,55 +1278,62 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 	transform = fz_concat(xobj->matrix, transform);
 	gstate->ctm = fz_concat(transform, gstate->ctm);
 
-	/* apply soft mask, create transparency group and reset state */
-	if (xobj->transparency)
+	fz_try(ctx)
 	{
-		if (gstate->softmask)
+		/* apply soft mask, create transparency group and reset state */
+		if (xobj->transparency)
 		{
-			pdf_xobject *softmask = gstate->softmask;
-			fz_rect bbox = fz_transform_rect(gstate->ctm, xobj->bbox);
+			if (gstate->softmask)
+			{
+				pdf_xobject *softmask = gstate->softmask;
+				fz_rect bbox = fz_transform_rect(gstate->ctm, xobj->bbox);
 
-			gstate->softmask = NULL;
-			popmask = 1;
+				gstate->softmask = NULL;
+				popmask = 1;
 
-			fz_begin_mask(csi->dev, bbox, gstate->luminosity,
-				softmask->colorspace, gstate->softmask_bc);
-			pdf_run_xobject(csi, resources, softmask, fz_identity);
-			/* RJW: "cannot run softmask" */
-			fz_end_mask(csi->dev);
+				fz_begin_mask(csi->dev, bbox, gstate->luminosity,
+					softmask->colorspace, gstate->softmask_bc);
+				pdf_run_xobject(csi, resources, softmask, fz_identity);
+				/* RJW: "cannot run softmask" */
+				fz_end_mask(csi->dev);
 
-			pdf_drop_xobject(ctx, softmask);
+				pdf_drop_xobject(ctx, softmask);
+			}
+
+			fz_begin_group(csi->dev,
+				fz_transform_rect(gstate->ctm, xobj->bbox),
+				xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
+
+			gstate->blendmode = 0;
+			gstate->stroke.alpha = 1;
+			gstate->fill.alpha = 1;
 		}
 
-		fz_begin_group(csi->dev,
-			fz_transform_rect(gstate->ctm, xobj->bbox),
-			xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
+		/* clip to the bounds */
 
-		gstate->blendmode = 0;
-		gstate->stroke.alpha = 1;
-		gstate->fill.alpha = 1;
+		fz_moveto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y0);
+		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y0);
+		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y1);
+		fz_lineto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y1);
+		fz_closepath(ctx, csi->path);
+		csi->clip = 1;
+		pdf_show_path(csi, 0, 0, 0, 0);
+
+		/* run contents */
+
+		oldtopctm = csi->top_ctm;
+		csi->top_ctm = gstate->ctm;
+
+		if (xobj->resources)
+			resources = xobj->resources;
+
+		pdf_run_buffer(csi, resources, xobj->contents);
+		/* RJW: "cannot interpret XObject stream" */
 	}
-
-	/* clip to the bounds */
-
-	fz_moveto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y0);
-	fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y0);
-	fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y1);
-	fz_lineto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y1);
-	fz_closepath(ctx, csi->path);
-	csi->clip = 1;
-	pdf_show_path(csi, 0, 0, 0, 0);
-
-	/* run contents */
-
-	oldtopctm = csi->top_ctm;
-	csi->top_ctm = gstate->ctm;
-
-	if (xobj->resources)
-		resources = xobj->resources;
-
-	pdf_run_buffer(csi, resources, xobj->contents);
-	/* RJW: "cannot interpret XObject stream" */
+	fz_catch(ctx)
+	{
+		caught = 1;
+	}
 
 	csi->top_ctm = oldtopctm;
 
@@ -1334,8 +1342,10 @@ pdf_run_xobject(pdf_csi *csi, fz_obj *resources, pdf_xobject *xobj, fz_matrix tr
 
 	pdf_grestore(csi);
 
-	/* wrap up transparency stacks */
+	if (caught)
+		fz_rethrow(ctx);
 
+	/* wrap up transparency stacks */
 	if (xobj->transparency)
 	{
 		fz_end_group(csi->dev);
@@ -1671,8 +1681,15 @@ static void pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 		if (!xobj->resources)
 			xobj->resources = fz_keep_obj(rdb);
 
-		pdf_run_xobject(csi, xobj->resources, xobj, fz_identity);
-		/* RJW: "cannot draw xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
+		fz_try(ctx)
+		{
+			pdf_run_xobject(csi, xobj->resources, xobj, fz_identity);
+		}
+		fz_catch(ctx)
+		{
+			pdf_drop_xobject(ctx, xobj);
+			fz_throw(ctx, "cannot draw xobject (%d %d R)", fz_to_num(obj), fz_to_gen(obj));
+		}
 
 		pdf_drop_xobject(ctx, xobj);
 	}
@@ -1684,7 +1701,15 @@ static void pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 			fz_pixmap *img;
 			img = pdf_load_image(csi->xref, obj);
 			/* RJW: "cannot load image (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
-			pdf_show_image(csi, img);
+			fz_try(ctx)
+			{
+				pdf_show_image(csi, img);
+			}
+			fz_catch(ctx)
+			{
+				fz_drop_pixmap(ctx, img);
+				fz_rethrow(ctx);
+			}
 			fz_drop_pixmap(ctx, img);
 		}
 	}

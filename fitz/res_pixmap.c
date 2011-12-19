@@ -446,11 +446,16 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	FILE *fp;
 	unsigned char head[13];
-	unsigned char *udata, *cdata, *sp, *dp;
+	unsigned char *udata = NULL;
+	unsigned char *cdata = NULL;
+	unsigned char *sp, *dp;
 	uLong usize, csize;
 	int y, x, k, sn, dn;
 	int color;
 	int err;
+
+	fz_var(udata);
+	fz_var(cdata);
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
 		fz_throw(ctx, "pixmap must be grayscale or rgb to write as png");
@@ -471,8 +476,16 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	usize = (pixmap->w * dn + 1) * pixmap->h;
 	csize = compressBound(usize);
-	udata = fz_malloc(ctx, usize);
-	cdata = fz_malloc(ctx, csize);
+	fz_try(ctx)
+	{
+		udata = fz_malloc(ctx, usize);
+		cdata = fz_malloc(ctx, csize);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, udata);
+		fz_rethrow(ctx);
+	}
 
 	sp = pixmap->samples;
 	dp = udata;

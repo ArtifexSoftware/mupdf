@@ -19,8 +19,11 @@ fz_new_text(fz_context *ctx, fz_font *font, fz_matrix trm, int wmode)
 void
 fz_free_text(fz_context *ctx, fz_text *text)
 {
-	fz_drop_font(ctx, text->font);
-	fz_free(ctx, text->items);
+	if (text != NULL)
+	{
+		fz_drop_font(ctx, text->font);
+		fz_free(ctx, text->items);
+	}
 	fz_free(ctx, text);
 }
 
@@ -30,13 +33,21 @@ fz_clone_text(fz_context *ctx, fz_text *old)
 	fz_text *text;
 
 	text = fz_malloc_struct(ctx, fz_text);
+	text->len = old->len;
+	fz_try(ctx)
+	{
+		text->items = fz_malloc_array(ctx, text->len, sizeof(fz_text_item));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, text);
+		fz_rethrow(ctx);
+	}
+	memcpy(text->items, old->items, text->len * sizeof(fz_text_item));
 	text->font = fz_keep_font(old->font);
 	text->trm = old->trm;
 	text->wmode = old->wmode;
-	text->len = old->len;
 	text->cap = text->len;
-	text->items = fz_malloc_array(ctx, text->len, sizeof(fz_text_item));
-	memcpy(text->items, old->items, text->len * sizeof(fz_text_item));
 
 	return text;
 }

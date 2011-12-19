@@ -90,7 +90,7 @@ fz_fill_buffer(fz_stream *stm)
 fz_buffer *
 fz_read_all(fz_stream *stm, int initial)
 {
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	int n;
 	fz_context *ctx = stm->ctx;
 

@@ -49,11 +49,13 @@ fz_free_path(fz_context *ctx, fz_path *path)
 static void
 grow_path(fz_context *ctx, fz_path *path, int n)
 {
-	if (path->len + n < path->cap)
+	int newcap = path->cap;
+	if (path->len + n <= path->cap)
 		return;
-	while (path->len + n > path->cap)
-		path->cap = path->cap + 36;
-	path->items = fz_resize_array(ctx, path->items, path->cap, sizeof(fz_path_item));
+	while (path->len + n > newcap)
+		newcap = newcap + 36;
+	path->items = fz_resize_array(ctx, path->items, newcap, sizeof(fz_path_item));
+	path->cap = newcap;
 }
 
 void

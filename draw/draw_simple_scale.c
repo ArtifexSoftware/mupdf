@@ -1178,6 +1178,9 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 	int dst_w_int, dst_h_int, dst_x_int, dst_y_int;
 	int flip_x, flip_y;
 
+	fz_var(contrib_cols);
+	fz_var(contrib_rows);
+
 	DBUG(("Scale: (%d,%d) to (%g,%g) at (%g,%g)\n",src->w,src->h,w,h,x,y));
 
 	/* Find the destination bbox, width/height, and sub pixel offset,
@@ -1240,35 +1243,30 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 
 	DBUG(("Result image: (%d,%d) at (%d,%d) (subpix=%g,%g)\n", dst_w_int, dst_h_int, dst_x_int, dst_y_int, x, y));
 
-	/* Step 1: Calculate the weights for columns and rows */
+	fz_try(ctx)
+	{
+		/* Step 1: Calculate the weights for columns and rows */
 #ifdef SINGLE_PIXEL_SPECIALS
-	if (src->w == 1)
-	{
-		contrib_cols = NULL;
-	}
-	else
+		if (src->w == 1)
+			contrib_cols = NULL;
+		else
 #endif /* SINGLE_PIXEL_SPECIALS */
-	{
-		contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
-		if (!contrib_cols)
-			goto cleanup;
-	}
+			contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
 #ifdef SINGLE_PIXEL_SPECIALS
-	if (src->h == 1)
-	{
-		contrib_rows = NULL;
-	}
-	else
+		if (src->h == 1)
+			contrib_rows = NULL;
+		else
 #endif /* SINGLE_PIXEL_SPECIALS */
-	{
-		contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
-		if (!contrib_rows)
-			goto cleanup;
-	}
+			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
 
-	assert(!contrib_cols || contrib_cols->count == dst_w_int);
-	assert(!contrib_rows || contrib_rows->count == dst_h_int);
-	output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
+		output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, contrib_cols);
+		fz_free(ctx, contrib_rows);
+		fz_rethrow(ctx);
+	}
 	output->x = dst_x_int;
 	output->y = dst_y_int;
 
@@ -1302,9 +1300,17 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 		temp_rows = contrib_rows->max_len;
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
-		temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(unsigned char));
-		if (!temp)
-			goto cleanup;
+		fz_try(ctx)
+		{
+			temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(unsigned char));
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_pixmap(ctx, output);
+			fz_free(ctx, contrib_cols);
+			fz_free(ctx, contrib_rows);
+			fz_rethrow(ctx);
+		}
 		switch (src->n)
 		{
 		default:

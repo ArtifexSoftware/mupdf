@@ -166,7 +166,8 @@ pdf_load_image_imp(pdf_xref *xref, fz_obj *rdb, fz_obj *dict, fz_stream *cstm, i
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "out of memory");
+			fz_drop_colorspace(ctx, colorspace);
+			fz_rethrow(ctx);
 		}
 
 		if (colorspace)

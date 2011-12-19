@@ -220,63 +220,82 @@ pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
 static fz_colorspace *
 load_indexed(pdf_xref *xref, fz_obj *array)
 {
-	struct indexed *idx;
+	struct indexed *idx = NULL;
 	fz_context *ctx = xref->ctx;
 	fz_obj *baseobj = fz_array_get(array, 1);
 	fz_obj *highobj = fz_array_get(array, 2);
 	fz_obj *lookup = fz_array_get(array, 3);
-	fz_colorspace *base, *cs;
+	fz_colorspace *base = NULL;
+	fz_colorspace *cs = NULL;
 	int i, n;
 
-	base = pdf_load_colorspace(xref, baseobj);
-	/* "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj) */
+	fz_var(idx);
+	fz_var(base);
+	fz_var(cs);
 
-	idx = fz_malloc_struct(ctx, struct indexed);
-	idx->base = base;
-	idx->high = fz_to_int(highobj);
-	idx->high = CLAMP(idx->high, 0, 255);
-	n = base->n * (idx->high + 1);
-	idx->lookup = fz_malloc_array(ctx, 1, n);
-
-	cs = fz_new_colorspace(ctx, "Indexed", 1);
-	cs->to_rgb = indexed_to_rgb;
-	cs->free_data = free_indexed;
-	cs->data = idx;
-	cs->size += sizeof(*idx) + n + (base ? base->size : 0);
-
-	if (fz_is_string(lookup) && fz_to_str_len(lookup) == n)
+	fz_try(ctx)
 	{
-		unsigned char *buf = (unsigned char *) fz_to_str_buf(lookup);
-		for (i = 0; i < n; i++)
-			idx->lookup[i] = buf[i];
+		base = pdf_load_colorspace(xref, baseobj);
+		/* "cannot load base colorspace (%d %d R)", fz_to_num(baseobj), fz_to_gen(baseobj) */
+
+		idx = fz_malloc_struct(ctx, struct indexed);
+		idx->lookup = NULL;
+		idx->base = base;
+		idx->high = fz_to_int(highobj);
+		idx->high = CLAMP(idx->high, 0, 255);
+		n = base->n * (idx->high + 1);
+		idx->lookup = fz_malloc_array(ctx, 1, n);
+
+		cs = fz_new_colorspace(ctx, "Indexed", 1);
+		cs->to_rgb = indexed_to_rgb;
+		cs->free_data = free_indexed;
+		cs->data = idx;
+		cs->size += sizeof(*idx) + n + (base ? base->size : 0);
+
+		if (fz_is_string(lookup) && fz_to_str_len(lookup) == n)
+		{
+			unsigned char *buf = (unsigned char *) fz_to_str_buf(lookup);
+			for (i = 0; i < n; i++)
+				idx->lookup[i] = buf[i];
+		}
+		else if (fz_is_indirect(lookup))
+		{
+			fz_stream *file = NULL;
+
+			fz_try(ctx)
+			{
+				file = pdf_open_stream(xref, fz_to_num(lookup), fz_to_gen(lookup));
+			}
+			fz_catch(ctx)
+			{
+				fz_throw(ctx, "cannot open colorspace lookup table (%d 0 R)", fz_to_num(lookup));
+			}
+
+			i = fz_read(file, idx->lookup, n);
+			if (i < 0)
+			{
+				fz_close(file);
+				fz_throw(ctx, "cannot read colorspace lookup table (%d 0 R)", fz_to_num(lookup));
+			}
+
+			fz_close(file);
+		}
+		else
+		{
+			fz_throw(ctx, "cannot parse colorspace lookup table");
+		}
 	}
-	else if (fz_is_indirect(lookup))
+	fz_catch(ctx)
 	{
-		fz_stream *file;
-
-		fz_try(ctx)
+		if (cs == NULL || cs->data != idx)
 		{
-			file = pdf_open_stream(xref, fz_to_num(lookup), fz_to_gen(lookup));
+			fz_drop_colorspace(ctx, base);
+			if (idx)
+				fz_free(ctx, idx->lookup);
+			fz_free(ctx, idx);
 		}
-		fz_catch(ctx)
-		{
-			fz_drop_colorspace(ctx, cs);
-			fz_throw(ctx, "cannot open colorspace lookup table (%d 0 R)", fz_to_num(lookup));
-		}
-
-		i = fz_read(file, idx->lookup, n);
-		if (i < 0)
-		{
-			fz_drop_colorspace(ctx, cs);
-			fz_throw(ctx, "cannot read colorspace lookup table (%d 0 R)", fz_to_num(lookup));
-		}
-
-		fz_close(file);
-	}
-	else
-	{
 		fz_drop_colorspace(ctx, cs);
-		fz_throw(ctx, "cannot parse colorspace lookup table");
+		fz_rethrow(ctx);
 	}
 
 	return cs;
