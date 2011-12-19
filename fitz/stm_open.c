@@ -154,8 +154,8 @@ fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	fz_stream *stm;
 
-	stm = fz_new_stream(ctx, buf, read_buffer, close_buffer);
 	fz_keep_buffer(buf);
+	stm = fz_new_stream(ctx, buf, read_buffer, close_buffer);
 	stm->seek = seek_buffer;
 
 	stm->bp = buf->data;
