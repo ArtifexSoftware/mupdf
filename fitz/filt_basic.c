@@ -383,7 +383,7 @@ read_rld(fz_stream *stm, unsigned char *buf, int len)
 static void
 close_rld(fz_context *ctx, void *state_)
 {
-	fz_rld *state = (void *)state_;
+	fz_rld *state = (fz_rld *)state_;
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);

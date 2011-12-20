@@ -754,6 +754,10 @@ static int squeeze(void)
     /* Wait for pid to finish */
     waitpid(pid, &status, 0);
 
+    if (status != 0) {
+        fprintf(stderr, "Child status=%d\n", status);
+    }
+    
     /* Put the files back */
     for (i = 0; i < OPEN_MAX; i++) {
         if (stashed_map[i] != 0) {

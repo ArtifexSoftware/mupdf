@@ -97,7 +97,15 @@ fz_open_fd(fz_context *ctx, int fd)
 	state = fz_malloc_struct(ctx, int);
 	*state = fd;
 
-	stm = fz_new_stream(ctx, state, read_file, close_file);
+	fz_try(ctx)
+	{
+		stm = fz_new_stream(ctx, state, read_file, close_file);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, state);
+		fz_rethrow(ctx);
+	}
 	stm->seek = seek_file;
 
 	return stm;
