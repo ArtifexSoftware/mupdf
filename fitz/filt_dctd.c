@@ -196,9 +196,9 @@ close_dctd(fz_context *ctx, void *state_)
 skip:
 	if (state->cinfo.src)
 		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
-        if (state->init)
+	if (state->init)
 		jpeg_destroy_decompress(&state->cinfo);
-        
+
 	fz_free(ctx, state->scanline);
 	fz_close(state->chain);
 	fz_free(ctx, state);

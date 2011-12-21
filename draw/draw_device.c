@@ -136,7 +136,7 @@ static void fz_knockout_begin(fz_draw_device *dev)
 	else
 	{
 		fz_pixmap *prev;
-		int i  = dev->top;
+		int i = dev->top;
 		do
 			prev = dev->stack[--i].dest;
 		while (!prev);
@@ -1226,7 +1226,7 @@ fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace 
 	{
 		/* FIXME: If we ever want to support AIS true, then we
 		 * probably want to create a shape pixmap here, using:
-		 *     shape = fz_new_pixmap_with_rect(NULL, bbox);
+		 * shape = fz_new_pixmap_with_rect(NULL, bbox);
 		 * then, in the end_mask code, we create the mask from this
 		 * rather than dest.
 		 */
