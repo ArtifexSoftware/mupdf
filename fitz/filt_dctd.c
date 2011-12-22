@@ -43,9 +43,17 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 	struct jpeg_source_mgr *src = cinfo->src;
 	fz_dctd *state = cinfo->client_data;
 	fz_stream *chain = state->chain;
+	fz_context *ctx = chain->ctx;
 
 	chain->rp = chain->wp;
-	fz_fill_buffer(chain);
+	fz_try(ctx)
+	{
+		fz_fill_buffer(chain);
+	}
+	fz_catch(ctx)
+	{
+		return 0;
+	}
 	src->next_input_byte = chain->rp;
 	src->bytes_in_buffer = chain->wp - chain->rp;
 

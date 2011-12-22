@@ -412,6 +412,7 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 	fz_context *ctx = xref->ctx;
 
 	fz_var(fontdesc);
+	fz_var(etable);
 
 	basefont = fz_to_name(fz_dict_gets(dict, "BaseFont"));
 	fontname = clean_font_name(basefont);
@@ -689,7 +690,7 @@ pdf_load_simple_font(pdf_xref *xref, fz_obj *dict)
 	}
 	fz_catch(ctx)
 	{
-		if (etable != fontdesc->cid_to_gid)
+		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
 		fz_throw(ctx, "cannot load simple font (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
