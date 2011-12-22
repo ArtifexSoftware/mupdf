@@ -6,7 +6,7 @@ pdf_free_link(fz_context *ctx, pdf_link *link)
 {
 	pdf_link *next;
 
-	do
+	while (link)
 	{
 		next = link->next;
 		if (link->dest)
@@ -14,7 +14,6 @@ pdf_free_link(fz_context *ctx, pdf_link *link)
 		fz_free(ctx, link);
 		link = next;
 	}
-	while(link);
 }
 
 static fz_obj *
