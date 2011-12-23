@@ -5,7 +5,6 @@ static fz_outline *
 pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 {
 	fz_context *ctx = xref->ctx;
-	pdf_link *link;
 	fz_outline *node;
 	fz_obj *obj;
 
@@ -25,10 +24,8 @@ pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 
 	if (fz_dict_gets(dict, "Dest") || fz_dict_gets(dict, "A"))
 	{
-		link = pdf_load_link(xref, dict);
-		if (link && link->kind == PDF_LINK_GOTO)
-			node->page = pdf_find_page_number(xref, fz_array_get(link->dest, 0));
-		pdf_free_link(xref->ctx, link);
+		fz_link_dest ld = pdf_parse_link_dest(xref, dict);
+		node->page = ld.gotor.page;
 	}
 
 	obj = fz_dict_gets(dict, "First");

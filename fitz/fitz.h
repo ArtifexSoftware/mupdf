@@ -1233,4 +1233,64 @@ enum
 	FZ_BLEND_KNOCKOUT = 32
 };
 
+/* Links */
+
+typedef struct fz_link_s fz_link;
+
+typedef union fz_link_dest_s fz_link_dest;
+
+typedef enum fz_link_kind_e
+{
+	FZ_LINK_GOTO = 0,
+	FZ_LINK_URI,
+	FZ_LINK_LAUNCH,
+	FZ_LINK_NAMED,
+	FZ_LINK_GOTOR
+} fz_link_kind;
+
+enum {
+	fz_link_flag_l_valid   = 1,  /* lt.x is valid */
+	fz_link_flag_t_valid   = 2,  /* lt.y is valid */
+	fz_link_flag_r_valid   = 4,  /* rb.x is valid */
+	fz_link_flag_b_valid   = 8,  /* rb.y is valid */
+	fz_link_flag_fit_h     = 16, /* Fit horizontally */
+	fz_link_flag_fit_v     = 32, /* Fit vertically */
+	fz_link_flag_r_is_zoom = 64  /* rb.x is actually a zoom figure */
+};
+
+union fz_link_dest_s
+{
+	struct {
+		int page;
+		int flags;
+		fz_point lt;
+		fz_point rb;
+		char *file_spec;
+		int new_window;
+	} gotor;
+	struct {
+		char *uri;
+		int is_map;
+	} uri;
+	struct {
+		char *file_spec;
+		int new_window;
+	} launch;
+	struct {
+		char *named;
+	} named;
+};
+
+
+struct fz_link_s
+{
+	fz_link_kind kind;
+	fz_rect rect;
+	fz_link_dest dest;
+	fz_link *next;
+};
+
+fz_link *fz_new_link(fz_context *ctx, fz_link_kind, fz_rect bbox, fz_link_dest dest);
+void fz_free_link(fz_context *ctx, fz_link *);
+
 #endif
