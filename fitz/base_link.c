@@ -37,6 +37,7 @@ fz_new_link(fz_context *ctx, fz_link_kind kind, fz_rect bbox, fz_link_dest dest)
 		fz_rethrow(ctx);
 	}
 	link->kind = kind;
+	link->dest = dest;
 	link->rect = bbox;
 	link->next = NULL;
 	return link;
