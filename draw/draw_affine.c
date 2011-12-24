@@ -632,9 +632,19 @@ fz_paint_image_imp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap 
 	bbox = fz_round_rect(fz_transform_rect(ctm, fz_unit_rect));
 	bbox = fz_intersect_bbox(bbox, scissor);
 	x = bbox.x0;
+	if (shape && shape->x > x)
+		x = shape->x;
 	y = bbox.y0;
-	w = bbox.x1 - bbox.x0;
-	h = bbox.y1 - bbox.y0;
+	if (shape && shape->y > y)
+		y = shape->y;
+	w = bbox.x1;
+	if (shape && shape->x + shape->w < w)
+		w = shape->x + shape->w;
+	w -= x;
+	h = bbox.y1;
+	if (shape && shape->y + shape->h < h)
+		h = shape->y + shape->h;
+	h -= y;
 
 	/* map from screen space (x,y) to image space (u,v) */
 	inv = fz_scale(1.0f / img->w, -1.0f / img->h);

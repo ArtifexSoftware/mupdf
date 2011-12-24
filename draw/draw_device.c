@@ -70,7 +70,7 @@ struct fz_draw_device_s
 #ifdef DUMP_GROUP_BLENDS
 static int group_dump_count = 0;
 
-static void fz_dump_blend(fz_pixmap *pix, const char *s)
+static void fz_dump_blend(fz_context *ctx, fz_pixmap *pix, const char *s)
 {
 	char name[80];
 
@@ -82,7 +82,7 @@ static void fz_dump_blend(fz_pixmap *pix, const char *s)
 		printf("%s%02d", s, group_dump_count);
 	group_dump_count++;
 
-	fz_write_png(pix, name, (pix->n > 1));
+	fz_write_png(ctx, pix, name, (pix->n > 1));
 }
 
 static void dump_spaces(int x, const char *s)
@@ -194,12 +194,12 @@ static void fz_knockout_end(fz_draw_device *dev)
 
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top, "");
-		fz_dump_blend(group, "Blending ");
+		fz_dump_blend(dev->ctx, group, "Blending ");
 		if (shape)
-			fz_dump_blend(shape, "/");
-		fz_dump_blend(dev->dest, " onto ");
+			fz_dump_blend(dev->ctx, shape, "/");
+		fz_dump_blend(dev->ctx, dev->dest, " onto ");
 		if (dev->shape)
-			fz_dump_blend(dev->shape, "/");
+			fz_dump_blend(dev->ctx, dev->shape, "/");
 		if (blendmode != 0)
 			printf(" (blend %d)", blendmode);
 		if (isolated != 0)
@@ -221,9 +221,9 @@ static void fz_knockout_end(fz_draw_device *dev)
 			fz_drop_pixmap(dev->ctx, shape);
 		}
 #ifdef DUMP_GROUP_BLENDS
-		fz_dump_blend(dev->dest, " to get ");
+		fz_dump_blend(dev->ctx, dev->dest, " to get ");
 		if (dev->shape)
-			fz_dump_blend(dev->shape, "/");
+			fz_dump_blend(dev->ctx, dev->shape, "/");
 		printf("\n");
 #endif
 	}
@@ -1171,13 +1171,13 @@ fz_draw_pop_clip(fz_device *devp)
 
 #ifdef DUMP_GROUP_BLENDS
 			dump_spaces(dev->top, "");
-			fz_dump_blend(dev->dest, "Clipping ");
+			fz_dump_blend(dev->ctx, dev->dest, "Clipping ");
 			if (dev->shape)
-				fz_dump_blend(dev->shape, "/");
-			fz_dump_blend(dest, " onto ");
+				fz_dump_blend(dev->ctx, dev->shape, "/");
+			fz_dump_blend(dev->ctx, dest, " onto ");
 			if (shape)
-				fz_dump_blend(shape, "/");
-			fz_dump_blend(mask, " with ");
+				fz_dump_blend(dev->ctx, shape, "/");
+			fz_dump_blend(dev->ctx, mask, " with ");
 #endif
 			fz_paint_pixmap_with_mask(dest, dev->dest, mask);
 			if (shape)
@@ -1191,9 +1191,9 @@ fz_draw_pop_clip(fz_device *devp)
 			fz_drop_pixmap(dev->ctx, dev->dest);
 			dev->dest = dest;
 #ifdef DUMP_GROUP_BLENDS
-			fz_dump_blend(dev->dest, " to get ");
+			fz_dump_blend(dev->ctx, dev->dest, " to get ");
 			if (dev->shape)
-				fz_dump_blend(dev->shape, "/");
+				fz_dump_blend(dev->ctx, dev->shape, "/");
 			printf("\n");
 #endif
 		}
@@ -1416,12 +1416,12 @@ fz_draw_end_group(fz_device *devp)
 
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top, "");
-		fz_dump_blend(group, "Blending ");
+		fz_dump_blend(dev->ctx, group, "Blending ");
 		if (shape)
-			fz_dump_blend(shape, "/");
-		fz_dump_blend(dev->dest, " onto ");
+			fz_dump_blend(dev->ctx, shape, "/");
+		fz_dump_blend(dev->ctx, dev->dest, " onto ");
 		if (dev->shape)
-			fz_dump_blend(dev->shape, "/");
+			fz_dump_blend(dev->ctx, dev->shape, "/");
 		if (alpha != 1.0f)
 			printf(" (alpha %g)", alpha);
 		if (blendmode != 0)
@@ -1446,9 +1446,9 @@ fz_draw_end_group(fz_device *devp)
 			fz_drop_pixmap(dev->ctx, shape);
 		}
 #ifdef DUMP_GROUP_BLENDS
-		fz_dump_blend(dev->dest, " to get ");
+		fz_dump_blend(dev->ctx, dev->dest, " to get ");
 		if (dev->shape)
-			fz_dump_blend(dev->shape, "/");
+			fz_dump_blend(dev->ctx, dev->shape, "/");
 		printf("\n");
 #endif
 	}
