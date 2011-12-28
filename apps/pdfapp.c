@@ -1037,10 +1037,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		wincursor(app, HAND);
 		if (btn == 1 && state == 1)
 		{
-			if (link->kind == FZ_LINK_URI)
-				pdfapp_gotouri(app, link->dest.uri.uri);
-			else if (link->kind == FZ_LINK_GOTO)
-				pdfapp_gotopage(app, link->dest.gotor.page);
+			if (link->dest.kind == FZ_LINK_URI)
+				pdfapp_gotouri(app, link->dest.ld.uri.uri);
+			else if (link->dest.kind == FZ_LINK_GOTO)
+				pdfapp_gotopage(app, link->dest.ld.gotor.page);
 			return;
 		}
 	}

@@ -34,19 +34,26 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 	fz_obj *obj;
 	int read = 0;
 
+	dest = resolve_dest(xref, dest);
+	if (dest == NULL || !fz_is_array(dest))
+	{
+		ld.kind = FZ_LINK_NONE;
+		return ld;
+	}
 	obj = fz_array_get(dest, 0);
 	if (fz_is_int(obj))
-		ld.gotor.page = fz_to_int(obj)-1;
+		ld.ld.gotor.page = fz_to_int(obj)-1;
 	else
-		ld.gotor.page = pdf_find_page_number(xref, obj);
+		ld.ld.gotor.page = pdf_find_page_number(xref, obj);
 
-	ld.gotor.flags = 0;
-	ld.gotor.lt.x = 0;
-	ld.gotor.lt.y = 0;
-	ld.gotor.rb.x = 0;
-	ld.gotor.rb.y = 0;
-	ld.gotor.file_spec = NULL;
-	ld.gotor.new_window = 0;
+	ld.kind = FZ_LINK_GOTO;
+	ld.ld.gotor.flags = 0;
+	ld.ld.gotor.lt.x = 0;
+	ld.ld.gotor.lt.y = 0;
+	ld.ld.gotor.rb.x = 0;
+	ld.ld.gotor.rb.y = 0;
+	ld.ld.gotor.file_spec = NULL;
+	ld.ld.gotor.new_window = 0;
 
 	obj = fz_array_get(dest, 1);
 	if (!fz_is_name(obj))
@@ -55,29 +62,29 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 	if (!strcmp("XYZ", fz_to_name(obj)))
 	{
 		read = 1+16;
-		ld.gotor.flags |= fz_link_flag_r_is_zoom;
+		ld.ld.gotor.flags |= fz_link_flag_r_is_zoom;
 	}
 	else if ((!strcmp("Fit", fz_to_name(obj))) || (!strcmp("FitB", fz_to_name(obj))))
 	{
 		read = 0;
-		ld.gotor.flags |= fz_link_flag_fit_h;
-		ld.gotor.flags |= fz_link_flag_fit_v;
+		ld.ld.gotor.flags |= fz_link_flag_fit_h;
+		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 	else if ((!strcmp("FitH", fz_to_name(obj))) || (!strcmp("FitBH", fz_to_name(obj))))
 	{
 		read = 32;
-		ld.gotor.flags |= fz_link_flag_fit_h;
+		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 	}
 	else if ((!strcmp("FitV", fz_to_name(obj))) || (!strcmp("FitBV", fz_to_name(obj))))
 	{
 		read = 1;
-		ld.gotor.flags |= fz_link_flag_fit_v;
+		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 	else if (!strcmp("FitR", fz_to_name(obj)))
 	{
 		read = 1+2+4+8;
-		ld.gotor.flags |= fz_link_flag_fit_h;
-		ld.gotor.flags |= fz_link_flag_fit_v;
+		ld.ld.gotor.flags |= fz_link_flag_fit_h;
+		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 
 	if (read & 1)
@@ -85,13 +92,13 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 		obj = fz_array_get(dest, 2);
 		if (fz_is_int(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_l_valid;
-			ld.gotor.lt.x = fz_to_int(obj);
+			ld.ld.gotor.flags |= fz_link_flag_l_valid;
+			ld.ld.gotor.lt.x = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_l_valid;
-			ld.gotor.lt.x = fz_to_real(obj);
+			ld.ld.gotor.flags |= fz_link_flag_l_valid;
+			ld.ld.gotor.lt.x = fz_to_real(obj);
 		}
 	}
 	if (read & 2)
@@ -99,13 +106,13 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 		obj = fz_array_get(dest, 3);
 		if (fz_is_int(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_b_valid;
-			ld.gotor.rb.y = fz_to_int(obj);
+			ld.ld.gotor.flags |= fz_link_flag_b_valid;
+			ld.ld.gotor.rb.y = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_b_valid;
-			ld.gotor.rb.y = fz_to_real(obj);
+			ld.ld.gotor.flags |= fz_link_flag_b_valid;
+			ld.ld.gotor.rb.y = fz_to_real(obj);
 		}
 	}
 	if (read & 4)
@@ -113,13 +120,13 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.gotor.rb.x = fz_to_int(obj);
+			ld.ld.gotor.flags |= fz_link_flag_r_valid;
+			ld.ld.gotor.rb.x = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.gotor.rb.x = fz_to_real(obj);
+			ld.ld.gotor.flags |= fz_link_flag_r_valid;
+			ld.ld.gotor.rb.x = fz_to_real(obj);
 		}
 	}
 	if (read & (8+16+32))
@@ -132,13 +139,13 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			obj = fz_array_get(dest, 2);
 		if (fz_is_int(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.gotor.lt.x = fz_to_int(obj);
+			ld.ld.gotor.flags |= fz_link_flag_t_valid;
+			ld.ld.gotor.lt.x = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.gotor.lt.x = fz_to_real(obj);
+			ld.ld.gotor.flags |= fz_link_flag_t_valid;
+			ld.ld.gotor.lt.x = fz_to_real(obj);
 		}
 	}
 	if (read & 16)
@@ -146,26 +153,72 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.gotor.rb.x = fz_to_int(obj);
+			ld.ld.gotor.flags |= fz_link_flag_r_valid;
+			ld.ld.gotor.rb.x = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
-			ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.gotor.rb.x = fz_to_real(obj);
+			ld.ld.gotor.flags |= fz_link_flag_r_valid;
+			ld.ld.gotor.rb.x = fz_to_real(obj);
 		}
 	}
 
 	/* Duplicate the values out for the sake of stupid clients */
-	if ((ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid)) == fz_link_flag_l_valid)
-		ld.gotor.rb.x = ld.gotor.lt.x;
-	if ((ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid | fz_link_flag_r_is_zoom)) == fz_link_flag_r_valid)
-		ld.gotor.lt.x = ld.gotor.rb.x;
-	if ((ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_t_valid)
-		ld.gotor.rb.y = ld.gotor.lt.y;
-	if ((ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_b_valid)
-		ld.gotor.lt.y = ld.gotor.rb.y;
+	if ((ld.ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid)) == fz_link_flag_l_valid)
+		ld.ld.gotor.rb.x = ld.ld.gotor.lt.x;
+	if ((ld.ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid | fz_link_flag_r_is_zoom)) == fz_link_flag_r_valid)
+		ld.ld.gotor.lt.x = ld.ld.gotor.rb.x;
+	if ((ld.ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_t_valid)
+		ld.ld.gotor.rb.y = ld.ld.gotor.lt.y;
+	if ((ld.ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_b_valid)
+		ld.ld.gotor.lt.y = ld.ld.gotor.rb.y;
 
+	return ld;
+}
+
+fz_link_dest
+pdf_parse_action(pdf_xref *xref, fz_obj *action)
+{
+	fz_link_dest ld;
+	fz_obj *obj, *dest;
+	fz_context *ctx = xref->ctx;
+
+	ld.kind = FZ_LINK_NONE;
+
+	if (!action)
+		return ld;
+
+	obj = fz_dict_gets(action, "S");
+	if (!strcmp(fz_to_name(obj), "GoTo"))
+	{
+		dest = fz_dict_gets(action, "D");
+		ld = pdf_parse_link_dest(xref, dest);
+	}
+	else if (!strcmp(fz_to_name(obj), "URI"))
+	{
+		ld.kind = FZ_LINK_URI;
+		ld.ld.uri.is_map = fz_to_int(fz_dict_gets(action, "IsMap"));
+		ld.ld.uri.uri = pdf_to_utf8(ctx, fz_dict_gets(action, "URI"));
+	}
+	else if (!strcmp(fz_to_name(obj), "Launch"))
+	{
+		ld.kind = FZ_LINK_LAUNCH;
+		ld.ld.launch.file_spec = pdf_to_utf8(ctx, fz_dict_gets(action, "F"));
+		ld.ld.launch.new_window = fz_to_int(fz_dict_gets(action, "NewWindow"));
+	}
+	else if (!strcmp(fz_to_name(obj), "Named"))
+	{
+		ld.kind = FZ_LINK_NAMED;
+		ld.ld.named.named = pdf_to_utf8(ctx, fz_dict_gets(action, "N"));
+	}
+	else if (!strcmp(fz_to_name(obj), "GoToR"))
+	{
+		dest = fz_dict_gets(action, "D");
+		ld = pdf_parse_link_dest(xref, dest);
+		ld.kind = FZ_LINK_GOTOR;
+		ld.ld.gotor.file_spec = pdf_to_utf8(ctx, fz_dict_gets(action, "F"));
+		ld.ld.gotor.new_window = fz_to_int(fz_dict_gets(action, "NewWindow"));
+	}
 	return ld;
 }
 
@@ -177,6 +230,7 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 	fz_obj *obj;
 	fz_rect bbox;
 	fz_context *ctx = xref->ctx;
+	fz_link_dest ld;
 
 	dest = NULL;
 
@@ -189,63 +243,21 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 	obj = fz_dict_gets(dict, "Dest");
 	if (obj)
 	{
-		fz_link_dest ld;
 		dest = resolve_dest(xref, obj);
 		ld = pdf_parse_link_dest(xref, dest);
-		return fz_new_link(ctx, FZ_LINK_GOTO, bbox, ld);
 	}
-
-	action = fz_dict_gets(dict, "A");
-
-	/* fall back to additional action button's down/up action */
-	if (!action)
-		action = fz_dict_getsa(fz_dict_gets(dict, "AA"), "U", "D");
-
-	if (action)
+	else
 	{
-		obj = fz_dict_gets(action, "S");
-		if (!fz_is_name(obj))
-		{
-		}
-		else if (!strcmp(fz_to_name(obj), "GoTo"))
-		{
-			fz_link_dest ld;
-			dest = resolve_dest(xref, fz_dict_gets(action, "D"));
-			ld = pdf_parse_link_dest(xref, dest);
-			return fz_new_link(ctx, FZ_LINK_GOTO, bbox, ld);
-		}
-		else if (!strcmp(fz_to_name(obj), "URI"))
-		{
-			fz_link_dest ld;
-			ld.uri.is_map = fz_to_int(fz_dict_gets(action, "IsMap"));
-			ld.uri.uri = pdf_to_utf8(ctx, fz_dict_gets(action, "URI"));
-			return fz_new_link(ctx, FZ_LINK_URI, bbox, ld);
-		}
-		else if (!strcmp(fz_to_name(obj), "Launch"))
-		{
-			fz_link_dest ld;
-			ld.launch.file_spec = pdf_to_utf8(ctx, fz_dict_gets(action, "F"));
-			ld.launch.new_window = fz_to_int(fz_dict_gets(action, "NewWindow"));
-			return fz_new_link(ctx, FZ_LINK_LAUNCH, bbox, ld);
-		}
-		else if (!strcmp(fz_to_name(obj), "Named"))
-		{
-			fz_link_dest ld;
-			ld.named.named = pdf_to_utf8(ctx, fz_dict_gets(action, "N"));
-			return fz_new_link(ctx, FZ_LINK_NAMED, bbox, ld);
-		}
-		else if (!strcmp(fz_to_name(obj), "GoToR"))
-		{
-			fz_link_dest ld;
-			dest = resolve_dest(xref, fz_dict_gets(action, "D"));
-			ld = pdf_parse_link_dest(xref, dest);
-			ld.gotor.file_spec = pdf_to_utf8(ctx, fz_dict_gets(action, "F"));
-			ld.gotor.new_window = fz_to_int(fz_dict_gets(action, "NewWindow"));
-			return fz_new_link(ctx, FZ_LINK_GOTOR, bbox, ld);
-		}
-	}
+		action = fz_dict_gets(dict, "A");
+		/* fall back to additional action button's down/up action */
+		if (!action)
+			action = fz_dict_getsa(fz_dict_gets(dict, "AA"), "U", "D");
 
-	return NULL;
+		ld = pdf_parse_action(xref, action);
+	}
+	if (ld.kind == FZ_LINK_NONE)
+		return NULL;
+	return fz_new_link(ctx, bbox, ld);
 }
 
 void

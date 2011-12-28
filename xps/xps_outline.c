@@ -33,7 +33,9 @@ xps_parse_document_outline(xps_document *doc, xml_element *root)
 
 			entry = fz_malloc_struct(doc->ctx, fz_outline);
 			entry->title = fz_strdup(doc->ctx, description);
-			entry->page = xps_find_link_target(doc, target);
+			entry->dest.kind = FZ_LINK_GOTO;
+			entry->dest.ld.gotor.flags = 0;
+			entry->dest.ld.gotor.page = xps_find_link_target(doc, target);
 			entry->down = NULL;
 			entry->next = NULL;
 
