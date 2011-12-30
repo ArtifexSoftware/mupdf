@@ -53,7 +53,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 	}
 	obj = fz_array_get(dest, 0);
 	if (fz_is_int(obj))
-		ld.ld.gotor.page = fz_to_int(obj)-1;
+		ld.ld.gotor.page = fz_to_int(obj);
 	else
 		ld.ld.gotor.page = pdf_find_page_number(xref, obj);
 
