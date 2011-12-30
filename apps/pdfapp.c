@@ -143,8 +143,6 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	 * Load meta information
 	 */
 
-	app->outline = pdf_load_outline(app->xref);
-
 	info = fz_dict_gets(app->xref->trailer, "Info");
 	if (info)
 	{
@@ -176,6 +174,8 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	}
 
 	app->pagecount = pdf_count_pages(app->xref);
+
+	app->outline = pdf_load_outline(app->xref);
 }
 
 static void pdfapp_open_xps(pdfapp_t *app, char *filename, int fd)
