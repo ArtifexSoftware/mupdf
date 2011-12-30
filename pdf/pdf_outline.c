@@ -5,12 +5,14 @@ static fz_outline *
 pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 {
 	fz_context *ctx = xref->ctx;
-	fz_outline *node, *first = NULL;
+	fz_outline *node, **prev, *first;
 	fz_obj *obj;
 
 	if (fz_is_null(dict))
 		return NULL;
 
+	first = NULL;
+	prev = &first;
 	while (dict)
 	{
 		node = fz_malloc_struct(ctx, fz_outline);
@@ -19,8 +21,8 @@ pdf_load_outline_imp(pdf_xref *xref, fz_obj *dict)
 		node->dest.kind = FZ_LINK_NONE;
 		node->down = NULL;
 		node->next = NULL;
-		if (first == NULL)
-			first = node;
+		*prev = node;
+		prev = &node->next;
 
 		obj = fz_dict_gets(dict, "Title");
 		if (obj)

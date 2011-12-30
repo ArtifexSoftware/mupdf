@@ -34,6 +34,17 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 	fz_obj *obj;
 	int read = 0;
 
+	enum
+	{
+		l_from_2 = 1,
+		b_from_3 = 2,
+		r_from_4 = 4,
+		t_from_5 = 8,
+		t_from_3 = 16,
+		t_from_2 = 32,
+		z_from_4 = 64
+	};
+
 	dest = resolve_dest(xref, dest);
 	if (dest == NULL || !fz_is_array(dest))
 	{
@@ -61,7 +72,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 
 	if (!strcmp("XYZ", fz_to_name(obj)))
 	{
-		read = 1+16;
+		read = l_from_2 + t_from_3 + z_from_4;
 		ld.ld.gotor.flags |= fz_link_flag_r_is_zoom;
 	}
 	else if ((!strcmp("Fit", fz_to_name(obj))) || (!strcmp("FitB", fz_to_name(obj))))
@@ -72,22 +83,22 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 	}
 	else if ((!strcmp("FitH", fz_to_name(obj))) || (!strcmp("FitBH", fz_to_name(obj))))
 	{
-		read = 32;
+		read = t_from_2;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 	}
 	else if ((!strcmp("FitV", fz_to_name(obj))) || (!strcmp("FitBV", fz_to_name(obj))))
 	{
-		read = 1;
+		read = l_from_2;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 	else if (!strcmp("FitR", fz_to_name(obj)))
 	{
-		read = 1+2+4+8;
+		read = l_from_2 + b_from_3 + r_from_4 + t_from_5;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 
-	if (read & 1)
+	if (read & l_from_2)
 	{
 		obj = fz_array_get(dest, 2);
 		if (fz_is_int(obj))
@@ -101,7 +112,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.lt.x = fz_to_real(obj);
 		}
 	}
-	if (read & 2)
+	if (read & b_from_3)
 	{
 		obj = fz_array_get(dest, 3);
 		if (fz_is_int(obj))
@@ -115,7 +126,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.rb.y = fz_to_real(obj);
 		}
 	}
-	if (read & 4)
+	if (read & r_from_4)
 	{
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
@@ -129,26 +140,26 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.rb.x = fz_to_real(obj);
 		}
 	}
-	if (read & (8+16+32))
+	if (read & (t_from_5 + t_from_3 + t_from_2))
 	{
-		if (read & 8)
+		if (read & t_from_5)
 			obj = fz_array_get(dest, 5);
-		else if (read & 16)
+		else if (read & t_from_3)
 			obj = fz_array_get(dest, 3);
 		else
 			obj = fz_array_get(dest, 2);
 		if (fz_is_int(obj))
 		{
 			ld.ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.ld.gotor.lt.x = fz_to_int(obj);
+			ld.ld.gotor.lt.y = fz_to_int(obj);
 		}
 		else if (fz_is_real(obj))
 		{
 			ld.ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.ld.gotor.lt.x = fz_to_real(obj);
+			ld.ld.gotor.lt.y = fz_to_real(obj);
 		}
 	}
-	if (read & 16)
+	if (read & z_from_4)
 	{
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
