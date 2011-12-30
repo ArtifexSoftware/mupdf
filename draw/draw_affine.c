@@ -677,7 +677,7 @@ fz_paint_image_imp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap 
 	if (shape)
 	{
 		hw = shape->w;
-		hp = shape->samples + ((y - shape->y) * hw) + x - dst->x;
+		hp = shape->samples + ((y - shape->y) * hw) + x - shape->x;
 	}
 	else
 	{
