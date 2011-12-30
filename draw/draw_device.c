@@ -7,9 +7,8 @@
 #define STACK_SIZE 96
 
 /* Enable the following to attempt to support knockout and/or isolated
- * blending groups. This code is known to give incorrect results currently
- * so disabled by default. See bug 692377. */
-#undef ATTEMPT_KNOCKOUT_AND_ISOLATED
+ * blending groups. */
+#define ATTEMPT_KNOCKOUT_AND_ISOLATED
 
 /* Enable the following to help debug group blending. */
 #undef DUMP_GROUP_BLENDS
