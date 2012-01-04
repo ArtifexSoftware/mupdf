@@ -1150,6 +1150,19 @@ void fz_debug_text_span_xml(fz_text_span *span);
 fz_device *fz_new_text_device(fz_context *ctx, fz_text_span *text);
 
 /*
+ * Cookie support - simple communication channel between app/library.
+ */
+
+typedef struct fz_cookie_s fz_cookie;
+
+struct fz_cookie_s
+{
+	int abort;
+	int progress;
+	int progress_max; /* -1 for unknown */
+};
+
+/*
  * Display list device -- record and play back device commands.
  */
 
@@ -1158,7 +1171,7 @@ typedef struct fz_display_list_s fz_display_list;
 fz_display_list *fz_new_display_list(fz_context *ctx);
 void fz_free_display_list(fz_context *ctx, fz_display_list *list);
 fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
-void fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area);
+void fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area, fz_cookie *cookie);
 
 
 /*
