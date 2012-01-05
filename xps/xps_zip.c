@@ -314,13 +314,15 @@ static int
 xps_has_zip_part(xps_document *doc, char *name)
 {
 	char buf[2048];
+	if (name[0] == '/')
+		name++;
 	if (xps_find_zip_entry(doc, name))
 		return 1;
 	sprintf(buf, "%s/[0].piece", name);
-	if (xps_find_zip_entry(doc, buf));
+	if (xps_find_zip_entry(doc, buf))
 		return 1;
 	sprintf(buf, "%s/[0].last.piece", name);
-	if (xps_find_zip_entry(doc, buf));
+	if (xps_find_zip_entry(doc, buf))
 		return 1;
 	return 0;
 }
@@ -420,10 +422,10 @@ xps_has_dir_part(xps_document *doc, char *name)
 	if (file_exists(doc, name))
 		return 1;
 	sprintf(buf, "%s/[0].piece", name);
-	if (file_exists(doc, buf));
+	if (file_exists(doc, buf))
 		return 1;
 	sprintf(buf, "%s/[0].last.piece", name);
-	if (file_exists(doc, buf));
+	if (file_exists(doc, buf))
 		return 1;
 	return 0;
 }
