@@ -1299,7 +1299,8 @@ struct fz_link_s
 };
 
 fz_link *fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest);
-void fz_free_link(fz_context *ctx, fz_link *);
+void fz_free_link(fz_context *ctx, fz_link *link);
+void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 
 /*
  * Document interface.

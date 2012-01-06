@@ -1,7 +1,7 @@
 #include "fitz.h"
 
-static void
-free_link_dest(fz_context *ctx, fz_link_dest *dest)
+void
+fz_free_link_dest(fz_context *ctx, fz_link_dest *dest)
 {
 	switch(dest->kind)
 	{
@@ -34,7 +34,7 @@ fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest)
 	}
 	fz_catch(ctx)
 	{
-		free_link_dest(ctx, &dest);
+		fz_free_link_dest(ctx, &dest);
 		fz_rethrow(ctx);
 	}
 	link->dest = dest;
@@ -51,7 +51,7 @@ fz_free_link(fz_context *ctx, fz_link *link)
 	while (link)
 	{
 		next = link->next;
-		free_link_dest(ctx, &link->dest);
+		fz_free_link_dest(ctx, &link->dest);
 		fz_free(ctx, link);
 		link = next;
 	}
