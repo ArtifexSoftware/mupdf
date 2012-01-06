@@ -39,6 +39,9 @@ pdf_repair_obj(fz_stream *file, char *buf, int cap, int *stmofsp, int *stmlenp, 
 		}
 		fz_catch(ctx)
 		{
+			/* Don't let a broken object at EOF overwrite a good one */
+			if (file->eof)
+				fz_throw(ctx, "broken object at EOF ignored");
 			/* Silently swallow the error */
 			dict = fz_new_dict(ctx, 2);
 		}
@@ -172,6 +175,7 @@ pdf_repair_obj_stm(pdf_xref *xref, int num, int gen)
 			xref->table[n].ofs = num;
 			xref->table[n].gen = i;
 			xref->table[n].stm_ofs = 0;
+			fz_drop_obj(xref->table[n].obj);
 			xref->table[n].obj = NULL;
 			xref->table[n].type = 'o';
 
@@ -275,8 +279,20 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 
 			else if (tok == PDF_TOK_OBJ)
 			{
-				pdf_repair_obj(xref->file, buf, bufsize, &stm_ofs, &stm_len, &encrypt, &id);
-				/* RJW: "cannot parse object (%d %d R)", num, gen); */
+				fz_try(ctx)
+				{
+					pdf_repair_obj(xref->file, buf, bufsize, &stm_ofs, &stm_len, &encrypt, &id);
+				}
+				fz_catch(ctx)
+				{
+					/* If we haven't seen a root yet, there is nothing
+					 * we can do, but give up. Otherwise, we'll make
+					 * do. */
+					if (!root)
+						fz_rethrow(ctx);
+					fz_warn(ctx, "cannot parse object (%d %d R) - ignoring rest of file", num, gen);
+					break;
+				}
 
 				if (listlen + 1 == listcap)
 				{
@@ -298,8 +314,20 @@ pdf_repair_xref(pdf_xref *xref, char *buf, int bufsize)
 			/* trailer dictionary */
 			else if (tok == PDF_TOK_OPEN_DICT)
 			{
-				dict = pdf_parse_dict(xref, xref->file, buf, bufsize);
-				/* RJW: "cannot parse object" */
+				fz_try(ctx)
+				{
+					dict = pdf_parse_dict(xref, xref->file, buf, bufsize);
+				}
+				fz_catch(ctx)
+				{
+					/* If we haven't seen a root yet, there is nothing
+					 * we can do, but give up. Otherwise, we'll make
+					 * do. */
+					if (!root)
+						fz_rethrow(ctx);
+					fz_warn(ctx, "cannot parse trailer dictionary - ignoring rest of file", num, gen);
+					break;
+				}
 
 				obj = fz_dict_gets(dict, "Encrypt");
 				if (obj)
@@ -462,4 +490,9 @@ pdf_repair_obj_stms(pdf_xref *xref)
 			fz_drop_obj(dict);
 		}
 	}
+
+	/* Ensure that streamed objects reside insided a known non-streamed object */
+	for (i = 0; i < xref->len; i++)
+		if (xref->table[i].type == 'o' && xref->table[xref->table[i].ofs].type != 'n')
+			fz_throw(xref->ctx, "invalid reference to non-object-stream: %d (%d 0 R)", xref->table[i].ofs, i);
 }
