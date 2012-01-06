@@ -42,7 +42,7 @@ pdf_to_utf8(fz_context *ctx, fz_obj *src)
 
 	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
 	{
-		for (i = 2; i < srclen; i += 2)
+		for (i = 2; i + 1 < srclen; i += 2)
 		{
 			ucs = srcptr[i] << 8 | srcptr[i+1];
 			dstlen += runelen(ucs);
@@ -50,7 +50,7 @@ pdf_to_utf8(fz_context *ctx, fz_obj *src)
 
 		dstptr = dst = fz_malloc(ctx, dstlen + 1);
 
-		for (i = 2; i < srclen; i += 2)
+		for (i = 2; i + 1 < srclen; i += 2)
 		{
 			ucs = srcptr[i] << 8 | srcptr[i+1];
 			dstptr += runetochar(dstptr, &ucs);
@@ -393,8 +393,6 @@ pdf_parse_dict(pdf_xref *xref, fz_stream *file, char *buf, int cap)
 				fz_throw(ctx, "invalid indirect reference in dict");
 
 			default:
-				fz_drop_obj(key);
-				fz_drop_obj(dict);
 				fz_throw(ctx, "unknown token in dict");
 			}
 

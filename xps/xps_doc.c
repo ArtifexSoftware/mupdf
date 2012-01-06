@@ -159,6 +159,7 @@ xps_free_fixed_documents(xps_document *doc)
 	{
 		xps_fixdoc *next = fixdoc->next;
 		fz_free(doc->ctx, fixdoc->name);
+		fz_free(doc->ctx, fixdoc->outline);
 		fz_free(doc->ctx, fixdoc);
 		fixdoc = next;
 	}

@@ -711,8 +711,8 @@ pdf_load_type5_shade(fz_shade *shade, pdf_xref *xref, fz_obj *dict,
 		first = 0;
 	}
 
-	free(ref);
-	free(buf);
+	fz_free(ctx, ref);
+	fz_free(ctx, buf);
 }
 
 /* Type 6 & 7 -- Patch mesh shadings */
