@@ -763,8 +763,11 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 	{
 		dest = fz_new_pixmap_with_rect(dev->ctx, state->dest->colorspace, bbox);
 		fz_clear_pixmap(dest);
-		shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
-		fz_clear_pixmap(shape);
+		if (shape)
+		{
+			shape = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);
+			fz_clear_pixmap(shape);
+		}
 	}
 
 	if (shade->use_background)
@@ -1222,11 +1225,15 @@ fz_draw_end_mask(fz_device *devp)
 #endif
 	/* convert to alpha mask */
 	temp = fz_alpha_from_gray(dev->ctx, state[1].dest, luminosity);
-	fz_drop_pixmap(dev->ctx, state[1].mask);
-	state[1].mask = NULL;
+	if (state[1].dest != state[0].dest)
+		fz_drop_pixmap(dev->ctx, state[1].dest);
+	state[1].dest = NULL;
 	if (state[1].shape != state[0].shape)
 		fz_drop_pixmap(dev->ctx, state[1].shape);
 	state[1].shape = NULL;
+	if (state[1].mask != state[0].mask)
+		fz_drop_pixmap(dev->ctx, state[1].mask);
+	state[1].mask = NULL;
 
 	/* create new dest scratch buffer */
 	bbox = fz_bound_pixmap(temp);
