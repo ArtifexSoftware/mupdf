@@ -403,7 +403,8 @@ pdf_lex(fz_stream *f, char *buf, int n, int *sl)
 			*sl = lex_string(f, buf, n);
 			return PDF_TOK_STRING;
 		case ')':
-			fz_throw(f->ctx, "lexical error (unexpected ')')");
+			fz_warn(f->ctx, "lexical error (unexpected ')')");
+			continue;
 		case '<':
 			c = fz_read_byte(f);
 			if (c == '<')
@@ -422,7 +423,8 @@ pdf_lex(fz_stream *f, char *buf, int n, int *sl)
 			{
 				return PDF_TOK_CLOSE_DICT;
 			}
-			fz_throw(f->ctx, "lexical error (unexpected '>')");
+			fz_warn(f->ctx, "lexical error (unexpected '>')");
+			continue;
 		case '[':
 			return PDF_TOK_OPEN_ARRAY;
 		case ']':

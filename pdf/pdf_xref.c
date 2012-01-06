@@ -769,8 +769,7 @@ pdf_open_xref_with_stream(fz_stream *file, char *password)
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_xref(xref);
-		fz_throw(ctx, "Broken Optional Content");
+		fz_warn(ctx, "Ignoring Broken Optional Content");
 	}
 
 	return xref;
@@ -968,7 +967,11 @@ pdf_cache_object(pdf_xref *xref, int num, int gen)
 		}
 
 		if (rnum != num)
+		{
+			fz_drop_obj(x->obj);
+			x->obj = NULL;
 			fz_throw(ctx, "found object (%d %d R) instead of (%d %d R)", rnum, rgen, num, gen);
+		}
 
 		if (xref->crypt)
 			pdf_crypt_obj(ctx, xref->crypt, x->obj, num, gen);
@@ -1017,7 +1020,9 @@ pdf_load_object(pdf_xref *xref, int num, int gen)
 fz_obj *
 pdf_resolve_indirect(fz_obj *ref)
 {
-	if (fz_is_indirect(ref))
+	int sanity = 10;
+
+	while (fz_is_indirect(ref) && sanity--)
 	{
 		pdf_xref *xref = fz_get_indirect_xref(ref);
 		if (xref)
@@ -1034,8 +1039,9 @@ pdf_resolve_indirect(fz_obj *ref)
 				fz_warn(ctx, "cannot load object (%d %d R) into cache", num, gen);
 				return ref;
 			}
-			if (xref->table[num].obj)
-				return xref->table[num].obj;
+			if (!xref->table[num].obj)
+				return ref;
+			ref = xref->table[num].obj;
 		}
 	}
 	return ref;

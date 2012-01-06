@@ -500,7 +500,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_path(csi->dev, path, &bbox, &gstate->stroke_state, gstate->ctm);
-					pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
+					pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_STROKE);
 					fz_pop_clip(csi->dev);
 				}
 				break;
@@ -623,7 +623,7 @@ pdf_flush_text(pdf_csi *csi)
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_text(csi->dev, text, &gstate->stroke_state, gstate->ctm);
-					pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_FILL);
+					pdf_show_pattern(csi, gstate->stroke.pattern, bbox, PDF_STROKE);
 					fz_pop_clip(csi->dev);
 				}
 				break;
@@ -1491,7 +1491,7 @@ pdf_run_extgstate(pdf_csi *csi, fz_obj *rdb, fz_obj *extgstate)
 
 		else if (!strcmp(s, "TR"))
 		{
-			if (fz_is_name(val) && strcmp(fz_to_name(val), "Identity"))
+			if (!fz_is_name(val) || strcmp(fz_to_name(val), "Identity"))
 				fz_warn(ctx, "ignoring transfer function");
 		}
 	}
@@ -2542,13 +2542,23 @@ pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 	fz_var(buf);
 	fz_var(file);
 
+	if (contents == NULL)
+		return;
+
 	fz_try(ctx)
 	{
 		buf = fz_malloc(ctx, len); /* we must be re-entrant for type3 fonts */
 		file = fz_open_buffer(ctx, contents);
 		save_in_text = csi->in_text;
 		csi->in_text = 0;
-		pdf_run_stream(csi, rdb, file, buf, len);
+		fz_try(ctx)
+		{
+			pdf_run_stream(csi, rdb, file, buf, len);
+		}
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "Content stream parsing error - rendering truncated");
+		}
 		csi->in_text = save_in_text;
 	}
 	fz_catch(ctx)
@@ -2609,7 +2619,9 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 			continue;
 		if (flags & (1 << 1)) /* Hidden */
 			continue;
-		if (flags & (1 << 5)) /* NoView */
+		if (!strcmp(event, "Print") && !(flags & (1 << 2))) /* Print */
+			continue;
+		if (!strcmp(event, "View") && (flags & (1 << 5))) /* NoView */
 			continue;
 
 		csi = pdf_new_csi(xref, dev, ctm, event, cookie);
