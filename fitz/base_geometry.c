@@ -153,10 +153,16 @@ fz_bbox
 fz_round_rect(fz_rect f)
 {
 	fz_bbox i;
-	i.x0 = floorf(f.x0 + 0.001f); /* adjust by 0.001 to compensate for precision errors */
-	i.y0 = floorf(f.y0 + 0.001f);
-	i.x1 = ceilf(f.x1 - 0.001f);
-	i.y1 = ceilf(f.y1 - 0.001f);
+	/* adjust by 0.001 to compensate for precision errors */
+	f.x0 = floorf(f.x0 + 0.001f);
+	f.y0 = floorf(f.y0 + 0.001f);
+	f.x1 = ceilf(f.x1 - 0.001f);
+	f.y1 = ceilf(f.y1 - 0.001f);
+#define SAFE_INT(f) ((f > INT_MAX) ? INT_MAX : ((f < INT_MIN) ? INT_MIN : (int)f))
+	i.x0 = SAFE_INT(f.x0);
+	i.y0 = SAFE_INT(f.y0);
+	i.x1 = SAFE_INT(f.x1);
+	i.y1 = SAFE_INT(f.y1);
 	return i;
 }
 

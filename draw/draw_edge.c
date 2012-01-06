@@ -261,13 +261,13 @@ clip_lerp_x(int val, int m, int x0, int y0, int x1, int y1, int *out)
 
 	if (v1out)
 	{
-		*out = y0 + (y1 - y0) * (val - x0) / (x1 - x0);
+		*out = y0 + (int)(((float)(y1 - y0)) * (val - x0) / (x1 - x0));
 		return LEAVE;
 	}
 
 	else
 	{
-		*out = y1 + (y0 - y1) * (val - x1) / (x0 - x1);
+		*out = y1 + (int)(((float)(y0 - y1)) * (val - x1) / (x0 - x1));
 		return ENTER;
 	}
 }
@@ -349,10 +349,10 @@ fz_insert_gel(fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
 	fy0 = floorf(fy0 * fz_aa_vscale);
 	fy1 = floorf(fy1 * fz_aa_vscale);
 
-	x0 = CLAMP(fx0, BBOX_MIN, BBOX_MAX);
-	y0 = CLAMP(fy0, BBOX_MIN, BBOX_MAX);
-	x1 = CLAMP(fx1, BBOX_MIN, BBOX_MAX);
-	y1 = CLAMP(fy1, BBOX_MIN, BBOX_MAX);
+	x0 = CLAMP(fx0, BBOX_MIN * fz_aa_hscale, BBOX_MAX * fz_aa_hscale);
+	y0 = CLAMP(fy0, BBOX_MIN * fz_aa_vscale, BBOX_MAX * fz_aa_vscale);
+	x1 = CLAMP(fx1, BBOX_MIN * fz_aa_hscale, BBOX_MAX * fz_aa_hscale);
+	y1 = CLAMP(fy1, BBOX_MIN * fz_aa_vscale, BBOX_MAX * fz_aa_vscale);
 
 	d = clip_lerp_y(gel->clip.y0, 0, x0, y0, x1, y1, &v);
 	if (d == OUTSIDE) return;

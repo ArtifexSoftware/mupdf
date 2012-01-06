@@ -145,7 +145,7 @@ xps_draw_arc(fz_context *doc, fz_path *path,
 	/* F.6.6.1 -- ensure radii are positive and non-zero */
 	rx = fabsf(rx);
 	ry = fabsf(ry);
-	if (rx < 0.001f || ry < 0.001f)
+	if (rx < 0.001f || ry < 0.001f || (x1 == x2 && y1 == y2))
 	{
 		fz_lineto(doc, path, x2, y2);
 		return;
