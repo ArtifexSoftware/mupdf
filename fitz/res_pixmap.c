@@ -59,6 +59,8 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	{
 		fz_try(ctx)
 		{
+			if (pix->w + pix->n - 1 > INT_MAX / pix->n)
+				fz_throw(ctx, "overly wide image");
 			pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
 		}
 		fz_catch(ctx)
