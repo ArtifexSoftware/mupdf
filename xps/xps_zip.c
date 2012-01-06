@@ -256,6 +256,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 	xps_part *part;
 	int count, size, offset, i;
 	char *name;
+	int seen_last = 0;
 
 	name = partname;
 	if (name[0] == '/')
@@ -273,7 +274,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 	/* Count the number of pieces and their total size */
 	count = 0;
 	size = 0;
-	while (1)
+	while (!seen_last)
 	{
 		sprintf(buf, "%s/[%d].piece", name, count);
 		ent = xps_find_zip_entry(doc, buf);
@@ -281,12 +282,15 @@ xps_read_zip_part(xps_document *doc, char *partname)
 		{
 			sprintf(buf, "%s/[%d].last.piece", name, count);
 			ent = xps_find_zip_entry(doc, buf);
+			seen_last = (ent != NULL);
 		}
 		if (!ent)
 			break;
 		count ++;
 		size += ent->usize;
 	}
+	if (!seen_last)
+		fz_throw(doc->ctx, "cannot find all pieces for part '%s'", partname);
 
 	/* Inflate the pieces */
 	if (count)

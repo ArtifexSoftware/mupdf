@@ -269,11 +269,16 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 
 	for (node = xml_down(root); node; node = xml_next(node))
 	{
+		/* FIXME: Sumatra warns of memory leak here where we have multiple
+		 * Canvas.Resources. */
 		if (!strcmp(xml_tag(node), "Canvas.Resources") && xml_down(node))
 		{
 			new_dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
-			new_dict->parent = dict;
-			dict = new_dict;
+			if (new_dict)
+			{
+				new_dict->parent = dict;
+				dict = new_dict;
+			}
 		}
 
 		if (!strcmp(xml_tag(node), "Canvas.RenderTransform"))
@@ -341,6 +346,8 @@ xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page)
 
 	for (node = xml_down(page->root); node; node = xml_next(node))
 	{
+		/* FIXME: Sumatra warns of memory leak here where we have multiple
+		 * FixedPage.Resources. */
 		if (!strcmp(xml_tag(node), "FixedPage.Resources") && xml_down(node))
 			dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
 		xps_parse_element(doc, ctm, area, base_uri, dict, node);
