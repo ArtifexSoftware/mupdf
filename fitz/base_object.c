@@ -41,6 +41,7 @@ struct fz_obj_s
 		} a;
 		struct {
 			char sorted;
+			char marked;
 			int len;
 			int cap;
 			struct keyval *items;
@@ -549,6 +550,7 @@ fz_new_dict(fz_context *ctx, int initialcap)
 	obj->kind = FZ_DICT;
 
 	obj->u.d.sorted = 0;
+	obj->u.d.marked = 0;
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
 
@@ -642,7 +644,7 @@ fz_dict_get_val(fz_obj *obj, int i)
 static int
 fz_dict_finds(fz_obj *obj, char *key, int *location)
 {
-	if (obj->u.d.sorted)
+	if (obj->u.d.sorted && obj->u.d.len > 0)
 	{
 		int l = 0;
 		int r = obj->u.d.len - 1;
@@ -763,7 +765,7 @@ fz_dict_put(fz_obj *obj, fz_obj *key, fz_obj *val)
 			fz_dict_grow(obj);
 
 		i = location;
-		if (obj->u.d.sorted)
+		if (obj->u.d.sorted && obj->u.d.len > 0)
 			memmove(&obj->u.d.items[i + 1],
 				&obj->u.d.items[i],
 				(obj->u.d.len - i) * sizeof(struct keyval));
@@ -823,6 +825,36 @@ fz_sort_dict(fz_obj *obj)
 		qsort(obj->u.d.items, obj->u.d.len, sizeof(struct keyval), keyvalcmp);
 		obj->u.d.sorted = 1;
 	}
+}
+
+int
+fz_dict_marked(fz_obj *obj)
+{
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_dict(obj))
+		return 0;
+	return obj->u.d.marked;
+}
+
+int
+fz_dict_mark(fz_obj *obj)
+{
+	int marked;
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_dict(obj))
+		return 0;
+	marked = obj->u.d.marked;
+	obj->u.d.marked = 1;
+	return marked;
+}
+
+void
+fz_dict_unmark(fz_obj *obj)
+{
+	obj = fz_resolve_indirect(obj);
+	if (!fz_is_dict(obj))
+		return;
+	obj->u.d.marked = 0;
 }
 
 static void
