@@ -152,7 +152,15 @@ static void showgrep(char *filename)
 	{
 		if (xref->table[i].type == 'n' || xref->table[i].type == 'o')
 		{
-			obj = pdf_load_object(xref, i, 0);
+			fz_try(ctx)
+			{
+				obj = pdf_load_object(xref, i, 0);
+			}
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "skipping object (%d 0 R)", i);
+				continue;
+			}
 
 			fz_sort_dict(obj);
 
