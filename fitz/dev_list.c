@@ -602,14 +602,6 @@ fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm
 	int empty;
 	int progress = 0;
 
-	if (!fz_is_infinite_bbox(scissor))
-	{
-		/* add some fuzz at the edges, as especially glyph rects
-		 * are sometimes not actually completely bounding the glyph */
-		scissor.x0 -= 20; scissor.y0 -= 20;
-		scissor.x1 += 20; scissor.y1 += 20;
-	}
-
 	if (cookie)
 	{
 		cookie->progress_max = list->last - list->first;

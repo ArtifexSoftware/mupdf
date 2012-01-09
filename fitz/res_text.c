@@ -98,6 +98,13 @@ fz_bound_text(fz_text *text, fz_matrix ctm)
 	bbox.x1 += fbox.x1;
 	bbox.y1 += fbox.y1;
 
+	/* add some fuzz at the edges, as font bbox is often not accurate.
+	 * Better to localise this fuzz in just this one place than have it
+	 * everywhere that looks at these results. If we ever change to using
+	 * freetype to exactly bound text, we can remove this. */
+	bbox.x0 -= 20; bbox.y0 -= 20;
+	bbox.x1 += 20; bbox.y1 += 20;
+
 	return bbox;
 }
 
