@@ -284,8 +284,10 @@ int main(int argc, char **argv)
 {
 	int grayscale = 0;
 	int accelerate = 1;
-	xps_document *doc;
+	xps_document *doc = NULL;
 	int c;
+
+	fz_var(doc);
 
 	while ((c = fz_getopt(argc, argv, "o:p:r:Aadglmtx5")) != -1)
 	{
@@ -349,26 +351,33 @@ int main(int argc, char **argv)
 	{
 		filename = argv[fz_optind++];
 
-		doc = xps_open_file(ctx, filename);
-
-		if (showxml)
-			printf("<document name=\"%s\">\n", filename);
-
-		if (showoutline)
-			drawoutline(doc);
-
-		if (showtext || showxml || showtime || showmd5 || output)
+		fz_try(ctx)
 		{
-			if (fz_optind == argc || !isrange(argv[fz_optind]))
-				drawrange(doc, "1-");
-			if (fz_optind < argc && isrange(argv[fz_optind]))
-				drawrange(doc, argv[fz_optind++]);
+			doc = xps_open_file(ctx, filename);
+
+			if (showxml)
+				printf("<document name=\"%s\">\n", filename);
+
+			if (showoutline)
+				drawoutline(doc);
+
+			if (showtext || showxml || showtime || showmd5 || output)
+			{
+				if (fz_optind == argc || !isrange(argv[fz_optind]))
+					drawrange(doc, "1-");
+				if (fz_optind < argc && isrange(argv[fz_optind]))
+					drawrange(doc, argv[fz_optind++]);
+			}
+
+			if (showxml)
+				printf("</document>\n");
+
+			xps_free_context(doc);
 		}
-
-		if (showxml)
-			printf("</document>\n");
-
-		xps_free_context(doc);
+		fz_catch(ctx)
+		{
+			xps_free_context(doc);
+		}
 	}
 
 	if (showtime)
