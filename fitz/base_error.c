@@ -12,7 +12,7 @@ void fz_flush_warnings(fz_context *ctx)
 	if (ctx->warn->count > 1)
 	{
 		fprintf(stderr, "warning: ... repeated %d times ...\n", ctx->warn->count);
-		LOGE("warning: %s\n", ctx->warn->count);
+		LOGE("warning: ... repeated %d times ...\n", ctx->warn->count);
 	}
 	ctx->warn->message[0] = 0;
 	ctx->warn->count = 0;
