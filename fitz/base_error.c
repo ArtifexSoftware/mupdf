@@ -46,7 +46,7 @@ void fz_warn(fz_context *ctx, char *fmt, ...)
 static void throw(fz_error_context *ex)
 {
 	if (ex->top >= 0) {
-		longjmp(ex->stack[ex->top--].buffer, 1);
+		longjmp(ex->stack[ex->top].buffer, 1);
 	} else {
 		fprintf(stderr, "uncaught exception: %s\n", ex->message);
 		LOGE("uncaught exception: %s\n", ex->message);
