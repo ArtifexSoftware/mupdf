@@ -290,9 +290,6 @@ static void retainpages(int argc, char **argv)
 {
 	fz_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
 
-	/* Load the old page tree */
-	pdf_load_page_tree(xref);
-
 	/* Keep only pages/type and (reduced) dest entries to avoid
 	 * references to unretained pages */
 	oldroot = fz_dict_gets(xref->trailer, "Root");

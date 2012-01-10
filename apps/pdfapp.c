@@ -164,15 +164,6 @@ static void pdfapp_open_pdf(pdfapp_t *app, char *filename, int fd)
 	 * Start at first page
 	 */
 
-	fz_try(ctx)
-	{
-		pdf_load_page_tree(app->xref);
-	}
-	fz_catch(ctx)
-	{
-		pdfapp_error(app, "cannot load page tree");
-	}
-
 	app->pagecount = pdf_count_pages(app->xref);
 
 	app->outline = pdf_load_outline(app->xref);
