@@ -114,7 +114,7 @@ static void removeduplicateobjs(void)
 
 	for (num = 1; num < xref->len; num++)
 	{
-		/* Only compare an object to objects preceeding it */
+		/* Only compare an object to objects preceding it */
 		for (other = 1; other < num; other++)
 		{
 			fz_obj *a, *b;

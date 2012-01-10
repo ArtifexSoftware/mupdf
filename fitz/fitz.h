@@ -192,7 +192,7 @@ void fz_var_imp(void *);
  *        }
  *
  * 3) The macros are implemented using setjmp and longjmp, and so the standard
- *    C restrictions on the use of those functions apply to fz_try/fa_catch
+ *    C restrictions on the use of those functions apply to fz_try/fz_catch
  *    too. In particular, any "truly local" variable that is set between the
  *    start of fz_try and something in fz_try throwing an exception may become
  *    undefined as part of the process of throwing that exception.

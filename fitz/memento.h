@@ -15,7 +15,7 @@
  *
  * Usage:
  *    First, build your project with MEMENTO defined, and include this
- *    header file whereever you use malloc, realloc or free.
+ *    header file wherever you use malloc, realloc or free.
  *    This header file will use macros to point malloc, realloc and free to
  *    point to Memento_malloc, Memento_realloc, Memento_free.
  *
@@ -58,7 +58,7 @@
  *    the the code will wait until it reaches that event and then start
  *    checking the heap after every allocation event. Assuming it is a
  *    deterministic failure, you should then find out where in your program
- *    the error is occuring (between event x-1 and event x).
+ *    the error is occurring (between event x-1 and event x).
  *
  *    Then you can rerun the program again, and call
  *    Memento_breakAt(int event); and the program will call
