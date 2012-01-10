@@ -122,7 +122,7 @@ static inline int fz_exclusion_byte(int b, int s)
 /* Non-separable blend modes */
 
 static void
-fz_luminosity_rgb(int *rd, int *gd, int *bd, int rb, int gb, int bb, int rs, int gs, int bs)
+fz_luminosity_rgb(unsigned char *rd, unsigned char *gd, unsigned char *bd, int rb, int gb, int bb, int rs, int gs, int bs)
 {
 	int delta, scale;
 	int r, g, b, y;
@@ -153,13 +153,13 @@ fz_luminosity_rgb(int *rd, int *gd, int *bd, int rb, int gb, int bb, int rs, int
 		b = y + (((b - y) * scale + 0x8000) >> 16);
 	}
 
-	*rd = r;
-	*gd = g;
-	*bd = b;
+	*rd = CLAMP(r, 0, 255);
+	*gd = CLAMP(g, 0, 255);
+	*bd = CLAMP(b, 0, 255);
 }
 
 static void
-fz_saturation_rgb(int *rd, int *gd, int *bd, int rb, int gb, int bb, int rs, int gs, int bs)
+fz_saturation_rgb(unsigned char *rd, unsigned char *gd, unsigned char *bd, int rb, int gb, int bb, int rs, int gs, int bs)
 {
 	int minb, maxb;
 	int mins, maxs;
@@ -172,6 +172,7 @@ fz_saturation_rgb(int *rd, int *gd, int *bd, int rb, int gb, int bb, int rs, int
 	if (minb == maxb)
 	{
 		/* backdrop has zero saturation, avoid divide by 0 */
+		gb = CLAMP(gb, 0, 255);
 		*rd = gb;
 		*gd = gb;
 		*bd = gb;
@@ -211,23 +212,57 @@ fz_saturation_rgb(int *rd, int *gd, int *bd, int rb, int gb, int bb, int rs, int
 		b = y + (((b - y) * scale + 0x8000) >> 16);
 	}
 
-	*rd = r;
-	*gd = g;
-	*bd = b;
+	*rd = CLAMP(r, 0, 255);
+	*gd = CLAMP(g, 0, 255);
+	*bd = CLAMP(b, 0, 255);
 }
 
 static void
-fz_color_rgb(int *rr, int *rg, int *rb, int br, int bg, int bb, int sr, int sg, int sb)
+fz_color_rgb(unsigned char *rr, unsigned char *rg, unsigned char *rb, int br, int bg, int bb, int sr, int sg, int sb)
 {
 	fz_luminosity_rgb(rr, rg, rb, sr, sg, sb, br, bg, bb);
 }
 
 static void
-fz_hue_rgb(int *rr, int *rg, int *rb, int br, int bg, int bb, int sr, int sg, int sb)
+fz_hue_rgb(unsigned char *rr, unsigned char *rg, unsigned char *rb, int br, int bg, int bb, int sr, int sg, int sb)
 {
-	int tr, tg, tb;
+	unsigned char tr, tg, tb;
 	fz_luminosity_rgb(&tr, &tg, &tb, sr, sg, sb, br, bg, bb);
 	fz_saturation_rgb(rr, rg, rb, tr, tg, tb, br, bg, bb);
+}
+
+void
+fz_blend_pixel(unsigned char dp[3], unsigned char bp[3], unsigned char sp[3], int blendmode)
+{
+	int k;
+	/* non-separable blend modes */
+	switch (blendmode)
+	{
+	case FZ_BLEND_HUE: fz_hue_rgb(&dp[0], &dp[1], &dp[2], bp[0], bp[1], bp[2], sp[0], sp[1], sp[2]); return;
+	case FZ_BLEND_SATURATION: fz_saturation_rgb(&dp[0], &dp[1], &dp[2], bp[0], bp[1], bp[2], sp[0], sp[1], sp[2]); return;
+	case FZ_BLEND_COLOR: fz_color_rgb(&dp[0], &dp[1], &dp[2], bp[0], bp[1], bp[2], sp[0], sp[1], sp[2]); return;
+	case FZ_BLEND_LUMINOSITY: fz_luminosity_rgb(&dp[0], &dp[1], &dp[2], bp[0], bp[1], bp[2], sp[0], sp[1], sp[2]); return;
+	}
+	/* separable blend modes */
+	for (k = 0; k < 3; k++)
+	{
+		switch (blendmode)
+		{
+		default:
+		case FZ_BLEND_NORMAL: dp[k] = sp[k]; break;
+		case FZ_BLEND_MULTIPLY: dp[k] = fz_mul255(bp[k], sp[k]); break;
+		case FZ_BLEND_SCREEN: dp[k] = fz_screen_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_OVERLAY: dp[k] = fz_overlay_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_DARKEN: dp[k] = fz_darken_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_LIGHTEN: dp[k] = fz_lighten_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_COLOR_DODGE: dp[k] = fz_color_dodge_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_COLOR_BURN: dp[k] = fz_color_burn_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_HARD_LIGHT: dp[k] = fz_hard_light_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_SOFT_LIGHT: dp[k] = fz_soft_light_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_DIFFERENCE: dp[k] = fz_difference_byte(bp[k], sp[k]); break;
+		case FZ_BLEND_EXCLUSION: dp[k] = fz_exclusion_byte(bp[k], sp[k]); break;
+		}
+	}
 }
 
 /* Blending loops */
@@ -285,7 +320,7 @@ fz_blend_nonseparable(byte * restrict bp, byte * restrict sp, int w, int blendmo
 {
 	while (w--)
 	{
-		int rr, rg, rb;
+		unsigned char rr, rg, rb;
 
 		int sa = sp[3];
 		int ba = bp[3];
@@ -485,7 +520,7 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, byte * restrict sp, int w,
 				 * src, so: */
 				int invha = ha ? 255 * 256 / ha : 0;
 
-				int rr, rg, rb;
+				unsigned char rr, rg, rb;
 
 				/* ugh, division to get non-premul components */
 				int invsa = sa ? 255 * 256 / sa : 0;
