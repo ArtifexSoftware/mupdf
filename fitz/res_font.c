@@ -4,12 +4,15 @@
 #include FT_FREETYPE_H
 #include FT_STROKER_H
 
+#define MAX_BBOX_TABLE_SIZE 4096
+
 static void fz_finalize_freetype(fz_context *ctx);
 
 static fz_font *
-fz_new_font(fz_context *ctx, char *name)
+fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
 {
 	fz_font *font;
+	int i;
 
 	font = fz_malloc_struct(ctx, fz_font);
 	font->refs = 1;
@@ -40,6 +43,22 @@ fz_new_font(fz_context *ctx, char *name)
 	font->bbox.y0 = 0;
 	font->bbox.x1 = 1;
 	font->bbox.y1 = 1;
+
+	font->use_glyph_bbox = use_glyph_bbox;
+	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
+	{
+		font->bbox_count = glyph_count;
+		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
+		for (i = 0; i < glyph_count; i++)
+			font->bbox_table[i] = fz_infinite_rect;
+	}
+	else
+	{
+		if (use_glyph_bbox)
+			fz_warn(ctx, "not building glyph bbox table for font '%s' with %d glyphs", name, glyph_count);
+		font->bbox_count = 0;
+		font->bbox_table = NULL;
+	}
 
 	font->width_count = 0;
 	font->width_table = NULL;
@@ -199,7 +218,7 @@ fz_finalize_freetype(fz_context *ctx)
 }
 
 fz_font *
-fz_new_font_from_file(fz_context *ctx, char *path, int index)
+fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_glyph_bbox)
 {
 	FT_Face face;
 	fz_font *font;
@@ -214,7 +233,7 @@ fz_new_font_from_file(fz_context *ctx, char *path, int index)
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
-	font = fz_new_font(ctx, face->family_name);
+	font = fz_new_font(ctx, face->family_name, use_glyph_bbox, face->num_glyphs);
 	font->ft_face = face;
 	font->bbox.x0 = (float) face->bbox.xMin / face->units_per_EM;
 	font->bbox.y0 = (float) face->bbox.yMin / face->units_per_EM;
@@ -225,7 +244,7 @@ fz_new_font_from_file(fz_context *ctx, char *path, int index)
 }
 
 fz_font *
-fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index)
+fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index, int use_glyph_bbox)
 {
 	FT_Face face;
 	fz_font *font;
@@ -240,7 +259,7 @@ fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
-	font = fz_new_font(ctx, face->family_name);
+	font = fz_new_font(ctx, face->family_name, use_glyph_bbox, face->num_glyphs);
 	font->ft_face = face;
 	font->bbox.x0 = (float) face->bbox.xMin / face->units_per_EM;
 	font->bbox.y0 = (float) face->bbox.yMin / face->units_per_EM;
@@ -514,7 +533,6 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 	FT_Vector v;
 	fz_rect bounds;
 
-	// TODO: stroke state
 	// TODO: refactor loading into fz_load_ft_glyph
 	// TODO: cache results
 
@@ -576,7 +594,7 @@ fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix)
 	fz_font *font;
 	int i;
 
-	font = fz_new_font(ctx, name);
+	font = fz_new_font(ctx, name, 1, 256);
 	font->t3procs = fz_malloc_array(ctx, 256, sizeof(fz_buffer*));
 	font->t3widths = fz_malloc_array(ctx, 256, sizeof(float));
 
@@ -593,6 +611,7 @@ fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix)
 static fz_rect
 fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 {
+	// TODO: run through bbox device here and set d0/d1 flags
 	trm = fz_concat(font->t3matrix, trm);
 	return fz_transform_rect(trm, font->bbox);
 }
@@ -694,9 +713,20 @@ fz_debug_font(fz_font *font)
 fz_rect
 fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 {
-	if (font->ft_face)
-		return fz_bound_ft_glyph(ctx, font, gid, trm);
-	if (font->t3procs)
-		return fz_bound_t3_glyph(ctx, font, gid, trm);
-	return fz_empty_rect;
+	if (font->bbox_table && gid < font->bbox_count)
+	{
+		if (fz_is_infinite_rect(font->bbox_table[gid]))
+		{
+			if (font->ft_face)
+				font->bbox_table[gid] = fz_bound_ft_glyph(ctx, font, gid, fz_identity);
+			else if (font->t3procs)
+				font->bbox_table[gid] = fz_bound_t3_glyph(ctx, font, gid, fz_identity);
+			else
+				font->bbox_table[gid] = fz_empty_rect;
+		}
+		return fz_transform_rect(trm, font->bbox_table[gid]);
+	}
+
+	/* fall back to font bbox */
+	return fz_transform_rect(trm, font->bbox);
 }

@@ -63,6 +63,8 @@ fz_bound_text(fz_context *ctx, fz_text *text, fz_matrix ctm)
 	if (text->len == 0)
 		return fz_empty_rect;
 
+	// TODO: stroke state
+
 	tm = text->trm;
 
 	tm.e = text->items[0].x;

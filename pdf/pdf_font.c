@@ -180,7 +180,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 	if (!data)
 		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
 
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
+	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
 	/* RJW: "cannot load freetype font from memory" */
 
 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
@@ -197,7 +197,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 	if (!data)
 		fz_throw(ctx, "cannot find substitute font");
 
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
+	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
 	/* RJW: "cannot load freetype font from memory" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -215,7 +215,8 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, 
 	if (!data)
 		fz_throw(ctx, "cannot find builtin CJK font");
 
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0);
+	/* a glyph bbox cache is too big for droid sans fallback (51k glyphs!) */
+	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 0);
 	/* RJW: "cannot load builtin CJK font" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -281,7 +282,7 @@ pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *stmref)
 
 	fz_try(ctx)
 	{
-		fontdesc->font = fz_new_font_from_memory(ctx, buf->data, buf->len, 0);
+		fontdesc->font = fz_new_font_from_memory(ctx, buf->data, buf->len, 0, 1);
 	}
 	fz_catch(ctx)
 	{
@@ -1031,10 +1032,12 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 	}
 }
 
-static int
-pdf_count_font_glyphs(fz_context *ctx, pdf_font_desc *fontdesc)
+static void
+pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 {
+	fz_font *font = fontdesc->font;
 	int i, k, n, cid, gid;
+
 	n = 0;
 	for (i = 0; i < fontdesc->hmtx_len; i++)
 	{
@@ -1045,17 +1048,9 @@ pdf_count_font_glyphs(fz_context *ctx, pdf_font_desc *fontdesc)
 			if (gid > n)
 				n = gid;
 		}
-	}
-	return n + 1;
-}
+	};
 
-static void
-pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
-{
-	fz_font *font = fontdesc->font;
-	int i, k, cid, gid;
-
-	font->width_count = pdf_count_font_glyphs(ctx, fontdesc);
+	font->width_count = n + 1;
 	font->width_table = fz_malloc_array(ctx, font->width_count, sizeof(int));
 	fontdesc->size += font->width_count * sizeof(int);
 

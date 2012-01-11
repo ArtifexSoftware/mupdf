@@ -1044,8 +1044,14 @@ struct fz_font_s
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
+	/* per glyph bounding box cache */
+	int use_glyph_bbox;
+	int bbox_count;
+	fz_rect *bbox_table;
+
+	/* substitute metrics */
 	int width_count;
-	int *width_table; /* substitute metrics */
+	int *width_table; // in 1000 units
 };
 
 void fz_new_font_context(fz_context *ctx);
@@ -1053,8 +1059,8 @@ void fz_free_font_context(fz_context *ctx);
 
 fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 
-fz_font *fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index);
-fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index);
+fz_font *fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_glyph_bbox);
 
 fz_font *fz_keep_font(fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);
