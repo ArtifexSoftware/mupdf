@@ -79,6 +79,7 @@ void fz_throw(fz_context *ctx, char *fmt, ...)
 	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
 	va_end(args);
 
+	fz_flush_warnings(ctx);
 	fprintf(stderr, "error: %s\n", ctx->error->message);
 	LOGE("error: %s\n", ctx->error->message);
 
