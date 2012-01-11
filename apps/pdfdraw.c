@@ -27,7 +27,6 @@ static float gamma_value = 1;
 static int invert = 0;
 
 static fz_colorspace *colorspace;
-static fz_glyph_cache *glyphcache;
 static char *filename;
 
 static struct {
@@ -217,7 +216,7 @@ static void drawpage(pdf_xref *xref, int pagenum)
 			else
 				fz_clear_pixmap_with_color(pix, 255);
 
-			dev = fz_new_draw_device(ctx, glyphcache, pix);
+			dev = fz_new_draw_device(ctx, pix);
 			if (list)
 				fz_execute_display_list(list, dev, ctm, bbox, NULL);
 			else
@@ -440,8 +439,6 @@ int main(int argc, char **argv)
 
 	fz_try(ctx)
 	{
-		glyphcache = fz_new_glyph_cache(ctx);
-
 		while (fz_optind < argc)
 		{
 			filename = argv[fz_optind++];
@@ -489,8 +486,6 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_free_glyph_cache(ctx, glyphcache);
-	fz_flush_warnings(ctx);
 	fz_free_context(ctx);
 	return 0;
 }

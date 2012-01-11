@@ -197,3 +197,7 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 {
 	return 0;
 }
+
+void fz_free_glyph_cache_context(fz_context *ctx)
+{
+}

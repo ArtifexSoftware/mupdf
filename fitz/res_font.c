@@ -623,7 +623,6 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 	fz_buffer *contents;
 	fz_bbox bbox;
 	fz_device *dev;
-	fz_glyph_cache *cache;
 	fz_pixmap *glyph;
 	fz_pixmap *result;
 
@@ -666,12 +665,10 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 	glyph = fz_new_pixmap_with_rect(ctx, model ? model : fz_device_gray, bbox);
 	fz_clear_pixmap(glyph);
 
-	cache = fz_new_glyph_cache(ctx);
-	dev = fz_new_draw_device_type3(ctx, cache, glyph);
+	dev = fz_new_draw_device_type3(ctx, glyph);
 	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm);
 	/* RJW: "cannot draw type3 glyph" */
 	fz_free_device(dev);
-	fz_free_glyph_cache(ctx, cache);
 
 	if (!model)
 	{

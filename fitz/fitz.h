@@ -111,6 +111,7 @@ typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_store_s fz_store;
+typedef struct fz_glyph_cache_s fz_glyph_cache;
 typedef struct fz_context_s fz_context;
 
 struct fz_alloc_context_s
@@ -365,6 +366,7 @@ struct fz_context_s
 	fz_font_context *font;
 	fz_aa_context *aa;
 	fz_store *store;
+	fz_glyph_cache *glyph_cache;
 };
 
 fz_context *fz_new_context(fz_alloc_context *alloc, unsigned int max_store);
@@ -1138,6 +1140,19 @@ fz_rect fz_bound_path(fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
 void fz_debug_path(fz_path *, int indent);
 
 /*
+ * Glyph cache
+ */
+
+void fz_new_glyph_cache_context(fz_context *ctx);
+void fz_free_glyph_cache_context(fz_context *ctx);
+
+fz_pixmap *fz_render_ft_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm);
+fz_pixmap *fz_render_t3_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm, fz_colorspace *model);
+fz_pixmap *fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state);
+fz_pixmap *fz_render_glyph(fz_context *ctx, fz_font*, int, fz_matrix, fz_colorspace *model);
+fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_font*, int, fz_matrix, fz_matrix, fz_stroke_state *stroke);
+
+/*
  * Text buffer.
  *
  * The trm field contains the a, b, c and d coefficients.
@@ -1217,20 +1232,6 @@ void fz_debug_shade(fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_shade *shade, fz_matrix ctm);
 void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);
-
-/*
- * Glyph cache
- */
-
-typedef struct fz_glyph_cache_s fz_glyph_cache;
-
-fz_glyph_cache *fz_new_glyph_cache(fz_context *ctx);
-fz_pixmap *fz_render_ft_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm);
-fz_pixmap *fz_render_t3_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm, fz_colorspace *model);
-fz_pixmap *fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *state);
-fz_pixmap *fz_render_glyph(fz_context *ctx, fz_glyph_cache*, fz_font*, int, fz_matrix, fz_colorspace *model);
-fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_glyph_cache*, fz_font*, int, fz_matrix, fz_matrix, fz_stroke_state *stroke);
-void fz_free_glyph_cache(fz_context *ctx, fz_glyph_cache *);
 
 /*
  * Scan converter
@@ -1334,8 +1335,8 @@ void fz_free_device(fz_device *dev);
 
 fz_device *fz_new_trace_device(fz_context *ctx);
 fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
-fz_device *fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest);
-fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest);
+fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
+fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
 /*
  * Text extraction device

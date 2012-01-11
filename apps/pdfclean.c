@@ -834,7 +834,6 @@ int main(int argc, char **argv)
 	fz_free(xref->ctx, renumbermap);
 
 	pdf_free_xref(xref);
-	fz_flush_warnings(ctx);
 	fz_free_context(ctx);
 	return 0;
 }

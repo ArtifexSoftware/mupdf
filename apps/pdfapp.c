@@ -196,8 +196,6 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 	else
 		pdfapp_open_pdf(app, filename, fd);
 
-	app->cache = fz_new_glyph_cache(app->ctx);
-
 	if (app->pageno < 1)
 		app->pageno = 1;
 	if (app->pageno > app->pagecount)
@@ -235,10 +233,6 @@ void pdfapp_close(pdfapp_t *app)
 	if (app->doctitle)
 		fz_free(app->ctx, app->doctitle);
 	app->doctitle = NULL;
-
-	if (app->cache)
-		fz_free_glyph_cache(app->ctx, app->cache);
-	app->cache = NULL;
 
 	if (app->image)
 		fz_drop_pixmap(app->ctx, app->image);
@@ -425,7 +419,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 #endif
 		app->image = fz_new_pixmap_with_rect(app->ctx, colorspace, bbox);
 		fz_clear_pixmap_with_color(app->image, 255);
-		idev = fz_new_draw_device(app->ctx, app->cache, app->image);
+		idev = fz_new_draw_device(app->ctx, app->image);
 		fz_execute_display_list(app->page_list, idev, ctm, bbox, NULL);
 		fz_free_device(idev);
 	}

@@ -36,7 +36,6 @@ struct fz_draw_state_s {
 
 struct fz_draw_device_s
 {
-	fz_glyph_cache *cache;
 	fz_gel *gel;
 	fz_context *ctx;
 	int flags;
@@ -494,7 +493,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, fz_matrix ctm,
 		trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		glyph = fz_render_glyph(dev->ctx, dev->cache, text->font, gid, trm, model);
+		glyph = fz_render_glyph(dev->ctx, text->font, gid, trm, model);
 		if (glyph)
 		{
 			if (glyph->n == 1)
@@ -553,7 +552,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke, fz_
 		trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		glyph = fz_render_stroked_glyph(dev->ctx, dev->cache, text->font, gid, trm, ctm, stroke);
+		glyph = fz_render_stroked_glyph(dev->ctx, text->font, gid, trm, ctm, stroke);
 		if (glyph)
 		{
 			draw_glyph(colorbv, state->dest, glyph, x, y, state->scissor);
@@ -645,7 +644,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, fz_matrix ctm, int accumulate)
 			trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 			trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-			glyph = fz_render_glyph(dev->ctx, dev->cache, text->font, gid, trm, model);
+			glyph = fz_render_glyph(dev->ctx, text->font, gid, trm, model);
 			if (glyph)
 			{
 				draw_glyph(NULL, mask, glyph, x, y, bbox);
@@ -711,7 +710,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 			trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 			trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-			glyph = fz_render_stroked_glyph(dev->ctx, dev->cache, text->font, gid, trm, ctm, stroke);
+			glyph = fz_render_stroked_glyph(dev->ctx, text->font, gid, trm, ctm, stroke);
 			if (glyph)
 			{
 				draw_glyph(NULL, mask, glyph, x, y, bbox);
@@ -1543,7 +1542,7 @@ fz_draw_free_user(fz_device *devp)
 }
 
 fz_device *
-fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
+fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 {
 	fz_device *dev = NULL;
 	fz_draw_device *ddev = fz_malloc_struct(ctx, fz_draw_device);
@@ -1553,7 +1552,6 @@ fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 	fz_var(dev);
 	fz_try(ctx)
 	{
-		ddev->cache = cache;
 		ddev->gel = fz_new_gel(ctx);
 		ddev->flags = 0;
 		ddev->ctx = ctx;
@@ -1609,9 +1607,9 @@ fz_new_draw_device(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
 }
 
 fz_device *
-fz_new_draw_device_type3(fz_context *ctx, fz_glyph_cache *cache, fz_pixmap *dest)
+fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest)
 {
-	fz_device *dev = fz_new_draw_device(ctx, cache, dest);
+	fz_device *dev = fz_new_draw_device(ctx, dest);
 	fz_draw_device *ddev = dev->user;
 	ddev->flags |= FZ_DRAWDEV_FLAGS_TYPE3;
 	return dev;

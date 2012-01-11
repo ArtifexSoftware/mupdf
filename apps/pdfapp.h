@@ -35,7 +35,6 @@ struct pdfapp_s
 	xps_document *xps;
 
 	int pagecount;
-	fz_glyph_cache *cache;
 
 	/* current view params */
 	int resolution;

@@ -19,7 +19,6 @@ int savealpha = 0;
 int uselist = 1;
 
 fz_colorspace *colorspace;
-fz_glyph_cache *glyphcache;
 char *filename;
 fz_context *ctx;
 
@@ -164,7 +163,7 @@ static void drawpage(xps_document *doc, int pagenum)
 		else
 			fz_clear_pixmap_with_color(pix, 255);
 
-		dev = fz_new_draw_device(doc->ctx, glyphcache, pix);
+		dev = fz_new_draw_device(doc->ctx, pix);
 		if (list)
 			fz_execute_display_list(list, dev, ctm, bbox, NULL);
 		else
@@ -327,8 +326,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	glyphcache = fz_new_glyph_cache(ctx);
-
 	colorspace = fz_device_rgb;
 	if (grayscale)
 		colorspace = fz_device_gray;
@@ -388,7 +385,6 @@ int main(int argc, char **argv)
 		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
 	}
 
-	fz_free_glyph_cache(ctx, glyphcache);
 	fz_free_context(ctx);
 
 	return 0;
