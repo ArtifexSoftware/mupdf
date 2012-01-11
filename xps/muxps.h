@@ -173,6 +173,8 @@ void xps_debug_resource_dictionary(xps_resource *dict);
  * Fixed page/graphics parsing.
  */
 
+void xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+
 void xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page);
 void xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *node);
 void xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *dict, xml_element *node);
@@ -244,6 +246,7 @@ struct xps_document_s
 	float alpha;
 
 	/* Current device */
+	fz_cookie *cookie;
 	fz_device *dev;
 };
 

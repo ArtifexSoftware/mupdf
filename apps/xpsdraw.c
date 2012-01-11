@@ -72,14 +72,6 @@ static int isrange(char *s)
 	return 1;
 }
 
-static void
-xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, fz_matrix ctm)
-{
-	doc->dev = dev;
-	xps_parse_fixed_page(doc, ctm, page);
-	doc->dev = NULL;
-}
-
 static void drawpage(xps_document *doc, int pagenum)
 {
 	xps_page *page;
@@ -100,7 +92,7 @@ static void drawpage(xps_document *doc, int pagenum)
 	{
 		list = fz_new_display_list(doc->ctx);
 		dev = fz_new_list_device(doc->ctx, list);
-		xps_run_page(doc, page, dev, fz_identity);
+		xps_run_page(doc, page, dev, fz_identity, NULL);
 		fz_free_device(dev);
 	}
 
@@ -111,7 +103,7 @@ static void drawpage(xps_document *doc, int pagenum)
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox, NULL);
 		else
-			xps_run_page(doc, page, dev, fz_identity);
+			xps_run_page(doc, page, dev, fz_identity, NULL);
 		printf("</page>\n");
 		fz_free_device(dev);
 	}
@@ -123,7 +115,7 @@ static void drawpage(xps_document *doc, int pagenum)
 		if (list)
 			fz_execute_display_list(list, dev, fz_identity, fz_infinite_bbox, NULL);
 		else
-			xps_run_page(doc, page, dev, fz_identity);
+			xps_run_page(doc, page, dev, fz_identity, NULL);
 		fz_free_device(dev);
 		printf("[Page %d]\n", pagenum);
 		if (showtext > 1)
@@ -167,7 +159,7 @@ static void drawpage(xps_document *doc, int pagenum)
 		if (list)
 			fz_execute_display_list(list, dev, ctm, bbox, NULL);
 		else
-			xps_run_page(doc, page, dev, ctm);
+			xps_run_page(doc, page, dev, ctm, NULL);
 		fz_free_device(dev);
 
 		if (output)

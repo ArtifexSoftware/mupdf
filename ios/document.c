@@ -153,9 +153,7 @@ draw_page(struct document *doc, int number, fz_device *dev, fz_matrix ctm, fz_co
 			xps_page *page = doc->xps_page;
 			fz_matrix page_ctm = fz_scale(72.0f / 96.0f, 72.0f / 96.0f);
 			ctm = fz_concat(page_ctm, ctm);
-			doc->xps->dev = dev;
-			xps_parse_fixed_page(doc->xps, ctm, page);
-			doc->xps->dev = NULL;
+			xps_run_page(doc->xps, page, dev, ctm, cookie);
 		}
 	}
 	fz_catch (doc->ctx)
