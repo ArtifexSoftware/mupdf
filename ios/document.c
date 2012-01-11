@@ -3,7 +3,7 @@
 #include "xps/muxps.h"
 #include "document.h"
 
-#include <ctype.h> // for tolower()
+#include <ctype.h> /* for tolower() */
 
 struct document *
 open_document(fz_context *ctx, char *filename)

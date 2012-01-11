@@ -137,133 +137,137 @@ struct fz_error_context_s
 void fz_var_imp(void *);
 #define fz_var(var) fz_var_imp((void *)&(var))
 
-/* MuPDF uses an set of exception handling macros to simplify error return
- * and cleanup. Conceptually, they work a lot like C++'s try/catch system,
- * but do not require any special compiler support.
- *
- * The basic formulation is as follows:
- *
- * fz_try(ctx)
- * {
- *	// Try to perform a task. Never 'return', 'goto' or 'longjmp' out
- *	// of here. 'break' may be used to safely exit (just) the try block
- *	// scope.
- * }
- * fz_always(ctx)
- * {
- *	// Any code here is always executed, regardless of whether an
- *	// exception was thrown within the try or not. Never 'return', 'goto'
- *	// or longjmp out from here. 'break' may be used to safely exit (just)
- *	// the always block scope.
- * }
- * fz_catch(ctx)
- * {
- *	// This code is called (after any always block) only if something
- *	// within the fz_try block (including any functions it called) threw
- *	// an exception. The code here is expected to handle the exception
- *	// (maybe record/report the error, cleanup any stray state etc) and
- *	// can then either exit the block, or pass on the exception to a
- *	// higher level (enclosing) fz_try block (using fz_throw, or
- *	// fz_rethrow).
- * }
- *
- * The fz_always block is optional, and can safely be omitted.
- *
- * The macro based nature of this system has 3 main limitations:
- *
- * 1) Never return from within try (or 'goto' or longjmp out of it).
- *    This upsets the internal housekeeping of the macros and will cause
- *    problems later on. The code will detect such things happening, but
- *    by then it is too late to give a helpful error report as to where the
- *    original infraction occurred.
- *
- * 2) The fz_try(ctx) { ... } fz_always(ctx) { ... } fz_catch(ctx) { ... }
- *    is not one atomic C statement. That is to say, if you do:
- *
- *        if (condition)
- *            fz_try(ctx) { ... }
- *            fz_catch(ctx) { ... }
- *
- *    then you will not get what you want. Use the following instead:
- *
- *        if (condition) {
- *            fz_try(ctx) { ... }
- *            fz_catch(ctx) { ... }
- *        }
- *
- * 3) The macros are implemented using setjmp and longjmp, and so the standard
- *    C restrictions on the use of those functions apply to fz_try/fz_catch
- *    too. In particular, any "truly local" variable that is set between the
- *    start of fz_try and something in fz_try throwing an exception may become
- *    undefined as part of the process of throwing that exception.
- *
- *    As a way of mitigating this problem, we provide an fz_var() macro that
- *    tells the compiler to ensure that that variable is not unset by the
- *    act of throwing the exception.
- *
- * A model piece of code using these macros then might be:
- *
- * house build_house(plans *p)
- * {
- *     material m = NULL;
- *     walls w = NULL;
- *     roof r = NULL;
- *     house h = NULL;
- *     tiles t = make_tiles();
- *
- *     fz_var(w);
- *     fz_var(r);
- *     fz_var(h);
- *
- *     fz_try(ctx)
- *     {
- *         fz_try(ctx)
- *         {
- *             m = make_bricks();
- *         }
- *         fz_catch(ctx)
- *         {
- *             // No bricks available, make do with straw?
- *             m = make_straw();
- *         }
- *         w = make_walls(m, p);
- *         r = make_roof(m, t);
- *         h = combine(w, r);              // Note, NOT: return combine(w,r);
- *     }
- *     fz_always(ctx)
- *     {
- *         drop_walls(w);
- *         drop_roof(r);
- *         drop_material(m);
- *         drop_tiles(t);
- *     }
- *     fz_catch(ctx)
- *     {
- *         fz_throw(ctx, "build_house failed");
- *     }
- *     return h;
- * }
- *
- * Things to note about this:
- *
- *   a) If make_tiles throws an exception, this will immediately be handled
- *      by some higher level exception handler. If it succeeds, t will be
- *      set before fz_try starts, so there is no need to fz_var(t);
- *
- *   b) We try first off to make some bricks as our building material. If
- *      this fails, we fall back to straw. If this fails, we'll end up in
- *      the fz_catch, and the process will fail neatly.
- *
- *   c) We assume in this code that combine takes new reference to both the
- *      walls and the roof it uses, and therefore that w and r need to be
- *      cleaned up in all cases.
- *
- *   d) We assume the standard C convention that it is safe to destroy
- *      NULL things.
- */
+/*
+
+MuPDF uses a set of exception handling macros to simplify error return
+and cleanup. Conceptually, they work a lot like C++'s try/catch system,
+but do not require any special compiler support.
+
+The basic formulation is as follows:
+
+	fz_try(ctx)
+	{
+		// Try to perform a task. Never 'return', 'goto' or 'longjmp' out
+		// of here. 'break' may be used to safely exit (just) the try block
+		// scope.
+	}
+	fz_always(ctx)
+	{
+		// Any code here is always executed, regardless of whether an
+		// exception was thrown within the try or not. Never 'return', 'goto'
+		// or longjmp out from here. 'break' may be used to safely exit (just)
+		// the always block scope.
+	}
+	fz_catch(ctx)
+	{
+		// This code is called (after any always block) only if something
+		// within the fz_try block (including any functions it called) threw
+		// an exception. The code here is expected to handle the exception
+		// (maybe record/report the error, cleanup any stray state etc) and
+		// can then either exit the block, or pass on the exception to a
+		// higher level (enclosing) fz_try block (using fz_throw, or
+		// fz_rethrow).
+	}
+
+The fz_always block is optional, and can safely be omitted.
+
+The macro based nature of this system has 3 main limitations:
+
+1)	Never return from within try (or 'goto' or longjmp out of it).
+	This upsets the internal housekeeping of the macros and will cause
+	problems later on. The code will detect such things happening, but
+	by then it is too late to give a helpful error report as to where the
+	original infraction occurred.
+
+2)	The fz_try(ctx) { ... } fz_always(ctx) { ... } fz_catch(ctx) { ... }
+	is not one atomic C statement. That is to say, if you do:
+
+		if (condition)
+			fz_try(ctx) { ... }
+			fz_catch(ctx) { ... }
+
+	then you will not get what you want. Use the following instead:
+
+		if (condition) {
+			fz_try(ctx) { ... }
+			fz_catch(ctx) { ... }
+		}
+
+3)	The macros are implemented using setjmp and longjmp, and so the standard
+	C restrictions on the use of those functions apply to fz_try/fz_catch
+	too. In particular, any "truly local" variable that is set between the
+	start of fz_try and something in fz_try throwing an exception may become
+	undefined as part of the process of throwing that exception.
+
+As a way of mitigating this problem, we provide an fz_var() macro that
+tells the compiler to ensure that that variable is not unset by the
+act of throwing the exception.
+
+A model piece of code using these macros then might be:
+
+	house build_house(plans *p)
+	{
+		material m = NULL;
+		walls w = NULL;
+		roof r = NULL;
+		house h = NULL;
+		tiles t = make_tiles();
+
+		fz_var(w);
+		fz_var(r);
+		fz_var(h);
+
+		fz_try(ctx)
+		{
+			fz_try(ctx)
+			{
+				m = make_bricks();
+			}
+			fz_catch(ctx)
+			{
+				// No bricks available, make do with straw?
+				m = make_straw();
+			}
+			w = make_walls(m, p);
+			r = make_roof(m, t);
+			h = combine(w, r);	// Note, NOT: return combine(w,r);
+		}
+		fz_always(ctx)
+		{
+			drop_walls(w);
+			drop_roof(r);
+			drop_material(m);
+			drop_tiles(t);
+		}
+		fz_catch(ctx)
+		{
+			fz_throw(ctx, "build_house failed");
+		}
+		return h;
+	}
+
+Things to note about this:
+
+a)	If make_tiles throws an exception, this will immediately be handled
+	by some higher level exception handler. If it succeeds, t will be
+	set before fz_try starts, so there is no need to fz_var(t);
+
+b)	We try first off to make some bricks as our building material. If
+	this fails, we fall back to straw. If this fails, we'll end up in
+	the fz_catch, and the process will fail neatly.
+
+c)	We assume in this code that combine takes new reference to both the
+	walls and the roof it uses, and therefore that w and r need to be
+	cleaned up in all cases.
+
+d)	We assume the standard C convention that it is safe to destroy
+	NULL things.
+
+*/
 
 /* Exception macro definitions. Just treat these as a black box - pay no
  * attention to the man behind the curtain. */
+
 #define fz_try(ctx) \
 	if (fz_push_try(ctx->error), \
 		(ctx->error->stack[ctx->error->top].code = setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
@@ -280,63 +284,65 @@ void fz_var_imp(void *);
 	if (ctx->error->stack[ctx->error->top--].code)
 
 /*
- * We also include a couple of other formulations of the macros, with
- * different strengths and weaknesses. These will be removed shortly, but
- * I want them in git for at least 1 revision so I have a record of them.
- *
- * A formulation of try/always/catch that lifts limitation 2 above, but
- * has problems when try/catch are nested in the same function; the inner
- * nestings need to use fz_always_(ctx, label) and fz_catch_(ctx, label)
- * instead. This was held as too high a price to pay to drop limitation 2.
- *
- * #define fz_try(ctx) \
- *	if (fz_push_try(ctx->error), \
- *		(ctx->error->stack[ctx->error->top].code = setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
- *	{ do {
- *
- * #define fz_always_(ctx, label) \
- *		} while (0); \
- *		goto ALWAYS_LABEL_ ## label ; \
- *	} \
- *	else if (ctx->error->stack[ctx->error->top].code) \
- *	{ ALWAYS_LABEL_ ## label : \
- *		do {
- *
- * #define fz_catch_(ctx, label) \
- *		} while(0); \
- *		if (ctx->error->stack[ctx->error->top--].code) \
- *			goto CATCH_LABEL_ ## label; \
- *	} \
- *	else if (ctx->error->top--, 1) \
- *	CATCH_LABEL ## label:
- *
- * #define fz_always(ctx) fz_always_(ctx, TOP)
- * #define fz_catch(ctx) fz_catch_(ctx, TOP)
- *
- * Another alternative formulation, that again removes limitation 2, but at
- * the cost of an always block always costing us 1 extra longjmp per
- * execution. Again this was felt to be too high a cost to use.
- *
- * #define fz_try(ctx) \
- *	if (fz_push_try(ctx->error), \
- *		(ctx->error->stack[ctx->error->top].code = setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
- *	{ do {
- *
- * #define fz_always(ctx) \
- *		} while (0); \
- *		longjmp(ctx->error->stack[ctx->error->top].buffer, 3); \
- *	} \
- *	else if (ctx->error->stack[ctx->error->top].code & 1) \
- *	{ do {
- *
- * #define fz_catch(ctx) \
- *		} while(0); \
- *		if (ctx->error->stack[ctx->error->top].code == 1) \
- *			longjmp(ctx->error->stack[ctx->error->top].buffer, 2); \
- *		ctx->error->top--;\
- *	} \
- *	else if (ctx->error->top--, 1)
- */
+
+We also include a couple of other formulations of the macros, with
+different strengths and weaknesses. These will be removed shortly, but
+I want them in git for at least 1 revision so I have a record of them.
+
+A formulation of try/always/catch that lifts limitation 2 above, but
+has problems when try/catch are nested in the same function; the inner
+nestings need to use fz_always_(ctx, label) and fz_catch_(ctx, label)
+instead. This was held as too high a price to pay to drop limitation 2.
+
+#define fz_try(ctx) \
+	if (fz_push_try(ctx->error), \
+		(ctx->error->stack[ctx->error->top].code = setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
+	{ do {
+
+#define fz_always_(ctx, label) \
+		} while (0); \
+		goto ALWAYS_LABEL_ ## label ; \
+	} \
+	else if (ctx->error->stack[ctx->error->top].code) \
+	{ ALWAYS_LABEL_ ## label : \
+		do {
+
+#define fz_catch_(ctx, label) \
+		} while(0); \
+		if (ctx->error->stack[ctx->error->top--].code) \
+			goto CATCH_LABEL_ ## label; \
+	} \
+	else if (ctx->error->top--, 1) \
+	CATCH_LABEL ## label:
+
+#define fz_always(ctx) fz_always_(ctx, TOP)
+#define fz_catch(ctx) fz_catch_(ctx, TOP)
+
+Another alternative formulation, that again removes limitation 2, but at
+the cost of an always block always costing us 1 extra longjmp per
+execution. Again this was felt to be too high a cost to use.
+
+#define fz_try(ctx) \
+	if (fz_push_try(ctx->error), \
+		(ctx->error->stack[ctx->error->top].code = setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
+	{ do {
+
+#define fz_always(ctx) \
+		} while (0); \
+		longjmp(ctx->error->stack[ctx->error->top].buffer, 3); \
+	} \
+	else if (ctx->error->stack[ctx->error->top].code & 1) \
+	{ do {
+
+#define fz_catch(ctx) \
+		} while(0); \
+		if (ctx->error->stack[ctx->error->top].code == 1) \
+			longjmp(ctx->error->stack[ctx->error->top].buffer, 2); \
+		ctx->error->top--;\
+	} \
+	else if (ctx->error->top--, 1)
+
+*/
 
 void fz_push_try(fz_error_context *ex);
 void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
@@ -1459,13 +1465,13 @@ typedef enum fz_link_kind_e
 } fz_link_kind;
 
 enum {
-	fz_link_flag_l_valid   = 1,  /* lt.x is valid */
-	fz_link_flag_t_valid   = 2,  /* lt.y is valid */
-	fz_link_flag_r_valid   = 4,  /* rb.x is valid */
-	fz_link_flag_b_valid   = 8,  /* rb.y is valid */
-	fz_link_flag_fit_h     = 16, /* Fit horizontally */
-	fz_link_flag_fit_v     = 32, /* Fit vertically */
-	fz_link_flag_r_is_zoom = 64  /* rb.x is actually a zoom figure */
+	fz_link_flag_l_valid = 1, /* lt.x is valid */
+	fz_link_flag_t_valid = 2, /* lt.y is valid */
+	fz_link_flag_r_valid = 4, /* rb.x is valid */
+	fz_link_flag_b_valid = 8, /* rb.y is valid */
+	fz_link_flag_fit_h = 16, /* Fit horizontally */
+	fz_link_flag_fit_v = 32, /* Fit vertically */
+	fz_link_flag_r_is_zoom = 64 /* rb.x is actually a zoom figure */
 };
 
 struct fz_link_dest_s

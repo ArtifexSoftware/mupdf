@@ -139,7 +139,6 @@ xps_select_best_font_encoding(xps_document *doc, fz_font *font)
 		{ 3, 3 },		/* Prc */
 		{ 3, 2 },		/* ShiftJis */
 		{ 3, 0 },		/* Symbol */
-		// { 0, * }, -- Unicode (deprecated)
 		{ 1, 0 },
 		{ -1, -1 },
 	};
