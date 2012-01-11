@@ -729,7 +729,8 @@ struct fz_storable_s {
 	} while (0)
 
 enum {
-	FZ_STORE_UNLIMITED = 0
+	FZ_STORE_UNLIMITED = 0,
+	FZ_STORE_DEFAULT = 256 << 20,
 };
 
 void fz_new_store_context(fz_context *ctx, unsigned int max);

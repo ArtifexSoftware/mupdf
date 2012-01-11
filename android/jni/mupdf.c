@@ -51,7 +51,8 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 	if (accelerate)
 		fz_accelerate();
 
-	ctx = fz_new_context(&fz_alloc_default, FZ_STORE_UNLIMITED);
+	/* 128 MB store for low memory devices. Tweak as necessary. */
+	ctx = fz_new_context(NULL, 128 << 20);
 	if (!ctx)
 	{
 		LOGE("Failed to initialise context");

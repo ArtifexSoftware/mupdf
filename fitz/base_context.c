@@ -43,8 +43,6 @@ fz_new_context(fz_alloc_context *alloc, unsigned int max_store)
 
 	if (!alloc)
 		alloc = &fz_alloc_default;
-	if (max_store == 0)
-		max_store = 256 << 20;
 
 	ctx = alloc->malloc(alloc->user, sizeof(fz_context));
 	if (!ctx)
