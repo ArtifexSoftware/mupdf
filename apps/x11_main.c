@@ -499,7 +499,7 @@ void winreloadfile(pdfapp_t *app)
 
 	pdfapp_close(app);
 
-	fd = open(filename, O_BINARY | O_RDONLY, 0666);
+	fd = open(filename, O_RDONLY, 0666);
 	if (fd < 0)
 		fz_throw(gapp.ctx, "cannot reload file '%s'", filename);
 
@@ -632,7 +632,7 @@ int main(int argc, char **argv)
 	gapp.resolution = resolution;
 	gapp.pageno = pageno;
 
-	fd = open(filename, O_BINARY | O_RDONLY, 0666);
+	fd = open(filename, O_RDONLY, 0666);
 	if (fd < 0)
 		fz_throw(gapp.ctx, "cannot open file '%s'", filename);
 
