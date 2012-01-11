@@ -565,7 +565,7 @@ pdf_flush_text(pdf_csi *csi)
 
 	fz_try(ctx)
 	{
-		bbox = fz_bound_text(text, gstate->ctm);
+		bbox = fz_bound_text(ctx, text, gstate->ctm);
 
 		pdf_begin_group(csi, bbox);
 

@@ -40,6 +40,10 @@ pdf_load_type3_font(pdf_xref *xref, fz_obj *rdb, fz_obj *dict)
 
 		obj = fz_dict_gets(dict, "FontBBox");
 		bbox = pdf_to_rect(ctx, obj);
+		bbox.x0 *= 0.001;
+		bbox.y0 *= 0.001;
+		bbox.x1 *= 0.001;
+		bbox.y1 *= 0.001;
 
 		fontdesc->font = fz_new_type3_font(ctx, buf, matrix);
 		fontdesc->size += sizeof(fz_font) + 256 * (sizeof(fz_buffer*) + sizeof(float));

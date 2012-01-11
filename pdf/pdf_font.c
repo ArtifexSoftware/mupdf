@@ -1031,25 +1031,31 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_xref *xref, fz_obj *dict, 
 	}
 }
 
-static void
-pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
+static int
+pdf_count_font_glyphs(fz_context *ctx, pdf_font_desc *fontdesc)
 {
-	fz_font *font = fontdesc->font;
-	int i, k, cid, gid;
-
-	font->width_count = 0;
+	int i, k, n, cid, gid;
+	n = 0;
 	for (i = 0; i < fontdesc->hmtx_len; i++)
 	{
 		for (k = fontdesc->hmtx[i].lo; k <= fontdesc->hmtx[i].hi; k++)
 		{
 			cid = pdf_lookup_cmap(fontdesc->encoding, k);
 			gid = pdf_font_cid_to_gid(fontdesc, cid);
-			if (gid > font->width_count)
-				font->width_count = gid;
+			if (gid > n)
+				n = gid;
 		}
 	}
-	font->width_count ++;
+	return n + 1;
+}
 
+static void
+pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
+{
+	fz_font *font = fontdesc->font;
+	int i, k, cid, gid;
+
+	font->width_count = pdf_count_font_glyphs(ctx, fontdesc);
 	font->width_table = fz_malloc_array(ctx, font->width_count, sizeof(int));
 	fontdesc->size += font->width_count * sizeof(int);
 

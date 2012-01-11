@@ -320,7 +320,7 @@ fz_list_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 	node = fz_new_display_node(ctx, FZ_CMD_FILL_TEXT, ctm, colorspace, color, alpha);
 	fz_try(ctx)
 	{
-		node->rect = fz_bound_text(text, ctm);
+		node->rect = fz_bound_text(dev->ctx, text, ctm);
 		node->item.text = fz_clone_text(dev->ctx, text);
 	}
 	fz_catch(ctx)
@@ -341,7 +341,7 @@ fz_list_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_m
 	node->item.text = NULL;
 	fz_try(ctx)
 	{
-		node->rect = fz_bound_text(text, ctm);
+		node->rect = fz_bound_text(dev->ctx, text, ctm);
 		node->item.text = fz_clone_text(dev->ctx, text);
 		node->stroke = fz_clone_stroke_state(dev->ctx, stroke);
 	}
@@ -361,7 +361,7 @@ fz_list_clip_text(fz_device *dev, fz_text *text, fz_matrix ctm, int accumulate)
 	node = fz_new_display_node(ctx, FZ_CMD_CLIP_TEXT, ctm, NULL, NULL, 0);
 	fz_try(ctx)
 	{
-		node->rect = fz_bound_text(text, ctm);
+		node->rect = fz_bound_text(dev->ctx, text, ctm);
 		node->item.text = fz_clone_text(dev->ctx, text);
 		node->flag = accumulate;
 		/* when accumulating, be conservative about culling */
@@ -384,7 +384,7 @@ fz_list_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 	node = fz_new_display_node(ctx, FZ_CMD_CLIP_STROKE_TEXT, ctm, NULL, NULL, 0);
 	fz_try(ctx)
 	{
-		node->rect = fz_bound_text(text, ctm);
+		node->rect = fz_bound_text(dev->ctx, text, ctm);
 		node->item.text = fz_clone_text(dev->ctx, text);
 		node->stroke = fz_clone_stroke_state(dev->ctx, stroke);
 	}
@@ -404,7 +404,7 @@ fz_list_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm)
 	node = fz_new_display_node(ctx, FZ_CMD_IGNORE_TEXT, ctm, NULL, NULL, 0);
 	fz_try(ctx)
 	{
-		node->rect = fz_bound_text(text, ctm);
+		node->rect = fz_bound_text(dev->ctx, text, ctm);
 		node->item.text = fz_clone_text(dev->ctx, text);
 	}
 	fz_catch(ctx)

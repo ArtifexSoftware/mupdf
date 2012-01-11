@@ -589,7 +589,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, fz_matrix ctm, int accumulate)
 	if (accumulate == 0)
 	{
 		/* make the mask the exact size needed */
-		bbox = fz_round_rect(fz_bound_text(text, ctm));
+		bbox = fz_round_rect(fz_bound_text(dev->ctx, text, ctm));
 		bbox = fz_intersect_bbox(bbox, state->scissor);
 	}
 	else
@@ -670,7 +670,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 	fz_colorspace *model = state->dest->colorspace;
 
 	/* make the mask the exact size needed */
-	bbox = fz_round_rect(fz_bound_text(text, ctm));
+	bbox = fz_round_rect(fz_bound_text(dev->ctx, text, ctm));
 	bbox = fz_intersect_bbox(bbox, state->scissor);
 
 	mask = fz_new_pixmap_with_rect(dev->ctx, NULL, bbox);

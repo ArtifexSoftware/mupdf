@@ -1042,11 +1042,10 @@ struct fz_font_s
 	void (*t3run)(void *xref, fz_obj *resources, fz_buffer *contents,
 		struct fz_device_s *dev, fz_matrix ctm);
 
-	fz_rect bbox;
+	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
-	/* substitute metrics */
 	int width_count;
-	int *width_table;
+	int *width_table; /* substitute metrics */
 };
 
 void fz_new_font_context(fz_context *ctx);
@@ -1061,7 +1060,9 @@ fz_font *fz_keep_font(fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);
 
 void fz_debug_font(fz_font *font);
+
 void fz_set_font_bbox(fz_font *font, float xmin, float ymin, float xmax, float ymax);
+fz_rect fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm);
 
 /*
  * Vector path buffer.
@@ -1158,9 +1159,9 @@ struct fz_text_s
 fz_text *fz_new_text(fz_context *ctx, fz_font *face, fz_matrix trm, int wmode);
 void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y);
 void fz_free_text(fz_context *ctx, fz_text *text);
-void fz_debug_text(fz_text*, int indent);
-fz_rect fz_bound_text(fz_text *text, fz_matrix ctm);
+fz_rect fz_bound_text(fz_context *ctx, fz_text *text, fz_matrix ctm);
 fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
+void fz_debug_text(fz_text*, int indent);
 
 /*
  * The shading code uses gouraud shaded triangle meshes.
