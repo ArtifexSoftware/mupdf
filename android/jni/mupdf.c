@@ -22,7 +22,6 @@
 
 /* Globals */
 fz_colorspace *colorspace;
-fz_glyph_cache *glyphcache;
 pdf_xref *xref;
 int pagenum = 1;
 int resolution = 160;
@@ -60,10 +59,8 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 	}
 
 	xref = NULL;
-	glyphcache = NULL;
 	fz_try(ctx)
 	{
-		glyphcache = fz_new_glyph_cache(ctx);
 		colorspace = fz_device_rgb;
 
 		LOGE("Opening document...");
@@ -93,8 +90,6 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 		LOGE("Failed: %s", ctx->error->message);
 		pdf_free_xref(xref);
 		xref = NULL;
-		fz_free_glyph_cache(ctx, glyphcache);
-		glyphcache = NULL;
 		fz_free_context(ctx);
 		ctx = NULL;
 	}
@@ -231,7 +226,7 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
 		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
 		bbox = fz_round_rect(fz_transform_rect(ctm,currentMediabox));
-		dev = fz_new_draw_device(ctx, glyphcache, pix);
+		dev = fz_new_draw_device(ctx, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
 			clock_t time;
@@ -271,6 +266,4 @@ Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
 	currentPageList = NULL;
 	pdf_free_xref(xref);
 	xref = NULL;
-	fz_free_glyph_cache(ctx, glyphcache);
-	glyphcache = NULL;
 }
