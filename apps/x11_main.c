@@ -587,7 +587,7 @@ int main(int argc, char **argv)
 	struct timeval tmo;
 	struct timeval *timeout;
 
-	ctx = fz_new_context(&fz_alloc_default, 256<<20);
+	ctx = fz_new_context(NULL, 0);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

@@ -768,7 +768,7 @@ int main(int argc, char **argv)
 	if (argc - fz_optind > 0)
 		subset = 1;
 
-	ctx = fz_new_context(&fz_alloc_default, 256<<20);
+	ctx = fz_new_context(NULL, 0);
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");

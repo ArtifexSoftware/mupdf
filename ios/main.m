@@ -1386,7 +1386,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
 	// use at most 128M for resource cache
-	ctx = fz_new_context(&fz_alloc_default, 128<<20);
+	ctx = fz_new_context(NULL, 128<<20);
 
 	glyphcache = fz_new_glyph_cache(ctx);
 
