@@ -6,7 +6,7 @@
 
 #define MAX_BBOX_TABLE_SIZE 4096
 
-static void fz_finalize_freetype(fz_context *ctx);
+static void fz_drop_freetype(fz_context *ctx);
 
 static fz_font *
 fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
@@ -97,17 +97,13 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 			fterr = FT_Done_Face((FT_Face)font->ft_face);
 			if (fterr)
 				fz_warn(ctx, "freetype finalizing face: %s", ft_error_string(fterr));
-			fz_finalize_freetype(ctx);
+			fz_drop_freetype(ctx);
 		}
 
-		if (font->ft_file)
-			fz_free(ctx, font->ft_file);
-		if (font->ft_data)
-			fz_free(ctx, font->ft_data);
-
-		if (font->width_table)
-			fz_free(ctx, font->width_table);
-
+		fz_free(ctx, font->ft_file);
+		fz_free(ctx, font->ft_data);
+		fz_free(ctx, font->bbox_table);
+		fz_free(ctx, font->width_table);
 		fz_free(ctx, font);
 	}
 }
@@ -174,7 +170,7 @@ char *ft_error_string(int err)
 }
 
 static void
-fz_init_freetype(fz_context *ctx)
+fz_keep_freetype(fz_context *ctx)
 {
 	int fterr;
 	int maj, min, pat;
@@ -203,7 +199,7 @@ fz_init_freetype(fz_context *ctx)
 }
 
 static void
-fz_finalize_freetype(fz_context *ctx)
+fz_drop_freetype(fz_context *ctx)
 {
 	int fterr;
 	fz_font_context *fct = ctx->font;
@@ -224,12 +220,12 @@ fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_glyph_bbox
 	fz_font *font;
 	int fterr;
 
-	fz_init_freetype(ctx);
+	fz_keep_freetype(ctx);
 
 	fterr = FT_New_Face(ctx->font->ftlib, path, index, &face);
 	if (fterr)
 	{
-		fz_finalize_freetype(ctx);
+		fz_drop_freetype(ctx);
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
@@ -250,12 +246,12 @@ fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index
 	fz_font *font;
 	int fterr;
 
-	fz_init_freetype(ctx);
+	fz_keep_freetype(ctx);
 
 	fterr = FT_New_Memory_Face(ctx->font->ftlib, data, len, index, &face);
 	if (fterr)
 	{
-		fz_finalize_freetype(ctx);
+		fz_drop_freetype(ctx);
 		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
