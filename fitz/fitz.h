@@ -1047,6 +1047,7 @@ struct fz_font_s
 	fz_obj *t3resources;
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
+	char *t3flags; /* has 256 entries if used */
 	void *t3xref; /* a pdf_xref for the callback */
 	void (*t3run)(void *xref, fz_obj *resources, fz_buffer *contents,
 		struct fz_device_s *dev, fz_matrix ctm);
