@@ -29,7 +29,6 @@ float pageWidth = 100;
 float pageHeight = 100;
 fz_display_list *currentPageList;
 fz_rect currentMediabox;
-int currentRotate;
 fz_context *ctx;
 
 JNIEXPORT int JNICALL
@@ -124,11 +123,8 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 		pagenum = page;
 		currentPage = pdf_load_page(xref, pagenum);
 		zoom = resolution / 72;
-		currentMediabox = currentPage->mediabox;
-		currentRotate = currentPage->rotate;
-		ctm = fz_translate(0, -currentMediabox.y1);
-		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
-		ctm = fz_concat(ctm, fz_rotate(currentRotate));
+		currentMediabox = pdf_bound_page(xref, currentPage);
+		ctm = fz_scale(zoom, zoom);
 		bbox = fz_round_rect(fz_transform_rect(ctm, currentMediabox));
 		pageWidth = bbox.x1-bbox.x0;
 		pageHeight = bbox.y1-bbox.y0;
@@ -216,9 +212,7 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 		fz_clear_pixmap_with_color(pix, 0xff);
 
 		zoom = resolution / 72;
-		ctm = fz_translate(-currentMediabox.x0, -currentMediabox.y1);
-		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
-		ctm = fz_concat(ctm, fz_rotate(currentRotate));
+		ctm = fz_scale(zoom, zoom);
 		bbox = fz_round_rect(fz_transform_rect(ctm,currentMediabox));
 		/* Now, adjust ctm so that it would give the correct page width
 		 * heights. */

@@ -260,13 +260,8 @@ void pdfapp_close(pdfapp_t *app)
 static fz_matrix pdfapp_viewctm(pdfapp_t *app)
 {
 	fz_matrix ctm;
-	ctm = fz_identity;
-	ctm = fz_concat(ctm, fz_translate(0, -app->page_bbox.y1));
-	if (app->xref)
-		ctm = fz_concat(ctm, fz_scale(app->resolution/72.0f, -app->resolution/72.0f));
-	else
-		ctm = fz_concat(ctm, fz_scale(app->resolution/96.0f, app->resolution/96.0f));
-	ctm = fz_concat(ctm, fz_rotate(app->rotate + app->page_rotate));
+	ctm = fz_scale(app->resolution/72.0f, app->resolution/72.0f);
+	ctm = fz_concat(ctm, fz_rotate(app->rotate));
 	return ctm;
 }
 
@@ -308,8 +303,7 @@ static void pdfapp_loadpage_pdf(pdfapp_t *app)
 		pdfapp_error(app, "cannot load page");
 	}
 
-	app->page_bbox = page->mediabox;
-	app->page_rotate = page->rotate;
+	app->page_bbox = pdf_bound_page(app->xref, page);
 	app->page_links = page->links;
 	page->links = NULL;
 
@@ -343,11 +337,7 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 		pdfapp_error(app, "cannot load page");
 	}
 
-	app->page_bbox.x0 = 0;
-	app->page_bbox.y0 = 0;
-	app->page_bbox.x1 = page->width;
-	app->page_bbox.y1 = page->height;
-	app->page_rotate = 0;
+	app->page_bbox = xps_bound_page(app->xps, page);
 	app->page_links = NULL;
 
 	/* Create display list */

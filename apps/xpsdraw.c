@@ -137,13 +137,9 @@ static void drawpage(xps_document *doc, int pagenum)
 		fz_bbox bbox;
 		fz_pixmap *pix;
 
-		rect.x0 = rect.y0 = 0;
-		rect.x1 = page->width;
-		rect.y1 = page->height;
-
-		zoom = resolution / 96;
-		ctm = fz_translate(0, -page->height);
-		ctm = fz_concat(ctm, fz_scale(zoom, zoom));
+		rect = xps_bound_page(doc, page);
+		zoom = resolution / 72;
+		ctm = fz_scale(zoom, zoom);
 		bbox = fz_round_rect(fz_transform_rect(ctm, rect));
 
 		/* TODO: banded rendering and multi-page ppm */

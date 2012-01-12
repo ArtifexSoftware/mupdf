@@ -45,7 +45,6 @@ struct pdfapp_s
 	/* current page params */
 	int pageno;
 	fz_rect page_bbox;
-	float page_rotate;
 	fz_display_list *page_list;
 	fz_text_span *page_text;
 	fz_link *page_links;

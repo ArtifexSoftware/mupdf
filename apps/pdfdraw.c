@@ -193,17 +193,17 @@ static void drawpage(pdf_xref *xref, int pagenum)
 	{
 		float zoom;
 		fz_matrix ctm;
+		fz_rect bounds;
 		fz_bbox bbox;
 		fz_pixmap *pix = NULL;
 
 		fz_var(pix);
 
+		bounds = pdf_bound_page(xref, page);
 		zoom = resolution / 72;
-		ctm = fz_translate(0, -page->mediabox.y1);
-		ctm = fz_concat(ctm, fz_scale(zoom, -zoom));
-		ctm = fz_concat(ctm, fz_rotate(page->rotate));
+		ctm = fz_scale(zoom, zoom);
 		ctm = fz_concat(ctm, fz_rotate(rotation));
-		bbox = fz_round_rect(fz_transform_rect(ctm, page->mediabox));
+		bbox = fz_round_rect(fz_transform_rect(ctm, bounds));
 
 		/* TODO: banded rendering and multi-page ppm */
 

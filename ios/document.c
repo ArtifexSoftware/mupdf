@@ -120,15 +120,14 @@ measure_page(struct document *doc, int number, float *w, float *h)
 {
 	load_page(doc, number);
 	if (doc->pdf_page) {
-		pdf_page *page = doc->pdf_page;
-		fz_rect mediabox = fz_transform_rect(fz_rotate(page->rotate), page->mediabox);
-		*w = mediabox.x1 - mediabox.x0;
-		*h = mediabox.y1 - mediabox.y0;
+		fz_rect bounds = pdf_bound_page(doc->pdf, doc->pdf_page);
+		*w = bounds.x1 - bounds.x0;
+		*h = bounds.y1 - bounds.y0;
 	}
 	else if (doc->xps_page) {
-		xps_page *page = doc->xps_page;
-		*w = page->width * 72.0f / 96.0f;
-		*h = page->height * 72.0f / 96.0f;
+		fz_rect bounds = xps_bound_page(doc->xps, doc->xps_page);
+		*w = bounds.x1 - bounds.x0;
+		*h = bounds.y1 - bounds.y0;
 	}
 	else {
 		*w = *h = 72;
@@ -143,17 +142,9 @@ draw_page(struct document *doc, int number, fz_device *dev, fz_matrix ctm, fz_co
 	fz_try (doc->ctx)
 	{
 		if (doc->pdf_page) {
-			pdf_page *page = doc->pdf_page;
-			fz_matrix page_ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(1, -1));
-			fz_rect mediabox = fz_transform_rect(page_ctm, page->mediabox);
-			page_ctm = fz_concat(page_ctm, fz_translate(-mediabox.x0, -mediabox.y0));
-			ctm = fz_concat(page_ctm, ctm);
-			pdf_run_page(doc->pdf, page, dev, ctm, cookie);
+			pdf_run_page(doc->pdf, doc->pdf_page, dev, ctm, cookie);
 		} else if (doc->xps_page) {
-			xps_page *page = doc->xps_page;
-			fz_matrix page_ctm = fz_scale(72.0f / 96.0f, 72.0f / 96.0f);
-			ctm = fz_concat(page_ctm, ctm);
-			xps_run_page(doc->xps, page, dev, ctm, cookie);
+			xps_run_page(doc->xps, doc->xps_page, dev, ctm, cookie);
 		}
 	}
 	fz_catch (doc->ctx)
