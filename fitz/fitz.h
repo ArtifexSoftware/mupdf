@@ -520,6 +520,7 @@ fz_matrix fz_translate(float tx, float ty);
 fz_matrix fz_invert_matrix(fz_matrix m);
 int fz_is_rectilinear(fz_matrix m);
 float fz_matrix_expansion(fz_matrix m);
+float fz_matrix_max_expansion(fz_matrix m);
 
 fz_bbox fz_round_rect(fz_rect r);
 fz_bbox fz_intersect_bbox(fz_bbox a, fz_bbox b);
@@ -1102,6 +1103,22 @@ typedef enum fz_path_item_kind_e
 	FZ_CLOSE_PATH
 } fz_path_item_kind;
 
+typedef enum fz_linecap_e
+{
+	FZ_LINECAP_BUTT = 0,
+	FZ_LINECAP_ROUND = 1,
+	FZ_LINECAP_SQUARE = 2,
+	FZ_LINECAP_TRIANGLE = 3
+} fz_linecap;
+
+typedef enum fz_linejoin_e
+{
+	FZ_LINEJOIN_MITER = 0,
+	FZ_LINEJOIN_ROUND = 1,
+	FZ_LINEJOIN_BEVEL = 2,
+	FZ_LINEJOIN_MITER_XPS = 3
+} fz_linejoin;
+
 union fz_path_item_s
 {
 	fz_path_item_kind k;
@@ -1116,8 +1133,8 @@ struct fz_path_s
 
 struct fz_stroke_state_s
 {
-	int start_cap, dash_cap, end_cap;
-	int linejoin;
+	fz_linecap start_cap, dash_cap, end_cap;
+	fz_linejoin linejoin;
 	float linewidth;
 	float miterlimit;
 	float dash_phase;

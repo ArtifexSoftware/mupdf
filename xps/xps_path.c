@@ -39,6 +39,9 @@ fz_currentpoint(fz_path *path)
  * line segments. We cannot use the fz_arc function because they only draw
  * circular arcs, we need to transform the line to make them elliptical but
  * without transforming the line width.
+ *
+ * We are guaranteed that on entry the point is at the point that would be
+ * calculated by th0, and on exit, a point is generated for us at th0.
  */
 static void
 xps_draw_arc_segment(fz_context *doc, fz_path *path, fz_matrix mtx, float th0, float th1, int iscw)
@@ -53,40 +56,24 @@ xps_draw_arc_segment(fz_context *doc, fz_path *path, fz_matrix mtx, float th0, f
 
 	if (iscw)
 	{
-		p.x = cosf(th0);
-		p.y = sinf(th0);
-		p = fz_transform_point(mtx, p);
-		fz_lineto(doc, path, p.x, p.y);
-		for (t = th0; t < th1; t += d)
+		for (t = th0 + d; t < th1 - d/2; t += d)
 		{
 			p.x = cosf(t);
 			p.y = sinf(t);
 			p = fz_transform_point(mtx, p);
 			fz_lineto(doc, path, p.x, p.y);
 		}
-		p.x = cosf(th1);
-		p.y = sinf(th1);
-		p = fz_transform_point(mtx, p);
-		fz_lineto(doc, path, p.x, p.y);
 	}
 	else
 	{
 		th0 += (float)M_PI * 2;
-		p.x = cosf(th0);
-		p.y = sinf(th0);
-		p = fz_transform_point(mtx, p);
-		fz_lineto(doc, path, p.x, p.y);
-		for (t = th0; t > th1; t -= d)
+		for (t = th0 - d; t > th1 + d/2; t -= d)
 		{
 			p.x = cosf(t);
 			p.y = sinf(t);
 			p = fz_transform_point(mtx, p);
 			fz_lineto(doc, path, p.x, p.y);
 		}
-		p.x = cosf(th1);
-		p.y = sinf(th1);
-		p = fz_transform_point(mtx, p);
-		fz_lineto(doc, path, p.x, p.y);
 	}
 }
 
@@ -106,6 +93,16 @@ angle_between(const fz_point u, const fz_point v)
 	return sign * acosf(t);
 }
 
+/* Some explaination of the parameters here is warranted. See:
+ *     http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
+ * Add an arc segment to path, that describes a section of an elliptical arc
+ * from the current point of path to (point_x,point_y), such that:
+ *   the arc segment is taken from an elliptical arc of semi major radius
+ *     size_x, semi minor radius size_y, where the semi major axis of the
+ *     ellipse is rotated by rotation_angle.
+ *   if is_large_arc, then the arc segment is selected to be > 180 degrees.
+ *   if is_clockwise, then the arc sweeps clockwise.
+ */
 static void
 xps_draw_arc(fz_context *doc, fz_path *path,
 		float size_x, float size_y, float rotation_angle,
@@ -884,12 +881,12 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	stroke.dash_cap = xps_parse_line_cap(stroke_dash_cap_att);
 	stroke.end_cap = xps_parse_line_cap(stroke_end_line_cap_att);
 
-	stroke.linejoin = 0;
+	stroke.linejoin = FZ_LINEJOIN_MITER_XPS;
 	if (stroke_line_join_att)
 	{
-		if (!strcmp(stroke_line_join_att, "Miter")) stroke.linejoin = 0;
-		if (!strcmp(stroke_line_join_att, "Round")) stroke.linejoin = 1;
-		if (!strcmp(stroke_line_join_att, "Bevel")) stroke.linejoin = 2;
+		if (!strcmp(stroke_line_join_att, "Miter")) stroke.linejoin = FZ_LINEJOIN_MITER_XPS;
+		if (!strcmp(stroke_line_join_att, "Round")) stroke.linejoin = FZ_LINEJOIN_ROUND;
+		if (!strcmp(stroke_line_join_att, "Bevel")) stroke.linejoin = FZ_LINEJOIN_BEVEL;
 	}
 
 	stroke.miterlimit = 10;
