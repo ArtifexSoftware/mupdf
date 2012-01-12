@@ -130,7 +130,7 @@ static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 		return ft_char_index(fontdesc->font->ft_face, cid);
 	}
 
-	if (fontdesc->cid_to_gid)
+	if (fontdesc->cid_to_gid && cid < fontdesc->cid_to_gid_len && cid >= 0)
 		return fontdesc->cid_to_gid[cid];
 
 	return cid;
