@@ -36,7 +36,7 @@ char *pdfapp_version(pdfapp_t *app)
 {
 	return
 		"MuPDF 0.9\n"
-		"Copyright 2006-2011 Artifex Software, Inc.\n";
+		"Copyright 2006-2012 Artifex Software, Inc.\n";
 }
 
 char *pdfapp_usage(pdfapp_t *app)
