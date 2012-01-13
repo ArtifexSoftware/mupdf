@@ -52,8 +52,7 @@ fz_load_jpx_image(fz_context *ctx, unsigned char *data, int size, fz_colorspace 
 	opj_set_default_decoder_parameters(&params);
 
 	info = opj_create_decompress(format);
-	info->client_data = (void *)ctx;
-	opj_set_event_mgr((opj_common_ptr)info, &evtmgr, stderr);
+	opj_set_event_mgr((opj_common_ptr)info, &evtmgr, ctx);
 	opj_setup_decoder(info, &params);
 
 	cio = opj_cio_open((opj_common_ptr)info, data, size);
