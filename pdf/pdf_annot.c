@@ -2,12 +2,15 @@
 #include "mupdf.h"
 
 static fz_obj *
-resolve_dest(pdf_xref *xref, fz_obj *dest)
+resolve_dest_rec(pdf_xref *xref, fz_obj *dest, int depth)
 {
+	if (depth > 10) /* Arbitrary to avoid infinite recursion */
+		return NULL;
+
 	if (fz_is_name(dest) || fz_is_string(dest))
 	{
 		dest = pdf_lookup_dest(xref, dest);
-		return resolve_dest(xref, dest);
+		return resolve_dest_rec(xref, dest, depth+1);
 	}
 
 	else if (fz_is_array(dest))
@@ -18,13 +21,19 @@ resolve_dest(pdf_xref *xref, fz_obj *dest)
 	else if (fz_is_dict(dest))
 	{
 		dest = fz_dict_gets(dest, "D");
-		return resolve_dest(xref, dest);
+		return resolve_dest_rec(xref, dest, depth+1);
 	}
 
 	else if (fz_is_indirect(dest))
 		return dest;
 
 	return NULL;
+}
+
+static fz_obj *
+resolve_dest(pdf_xref *xref, fz_obj *dest)
+{
+	return resolve_dest_rec(xref, dest, 0);
 }
 
 fz_link_dest
@@ -208,7 +217,7 @@ pdf_parse_action(pdf_xref *xref, fz_obj *action)
 	else if (!strcmp(fz_to_name(obj), "URI"))
 	{
 		ld.kind = FZ_LINK_URI;
-		ld.ld.uri.is_map = fz_to_int(fz_dict_gets(action, "IsMap"));
+		ld.ld.uri.is_map = fz_to_bool(fz_dict_gets(action, "IsMap"));
 		ld.ld.uri.uri = pdf_to_utf8(ctx, fz_dict_gets(action, "URI"));
 	}
 	else if (!strcmp(fz_to_name(obj), "Launch"))
