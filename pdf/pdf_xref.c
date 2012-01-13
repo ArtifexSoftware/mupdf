@@ -1023,29 +1023,35 @@ fz_obj *
 pdf_resolve_indirect(fz_obj *ref)
 {
 	int sanity = 10;
+	int num;
+	int gen;
+	fz_context *ctx = NULL; /* Avoid warning for stupid compilers */
+	pdf_xref *xref;
 
-	while (fz_is_indirect(ref) && sanity--)
+	while (fz_is_indirect(ref))
 	{
-		pdf_xref *xref = fz_get_indirect_xref(ref);
-		if (xref)
+		if (--sanity == 0)
+			fz_throw(ctx, "Too many indirections (possible indirection cycle involving %d %d R)", num, gen);
+		xref = fz_get_indirect_xref(ref);
+		if (!xref)
+			return NULL;
+		ctx = xref->ctx;
+		num = fz_to_num(ref);
+		gen = fz_to_gen(ref);
+		fz_try(ctx)
 		{
-			int num = fz_to_num(ref);
-			int gen = fz_to_gen(ref);
-			fz_context *ctx = xref->ctx;
-			fz_try(ctx)
-			{
-				pdf_cache_object(xref, num, gen);
-			}
-			fz_catch(ctx)
-			{
-				fz_warn(ctx, "cannot load object (%d %d R) into cache", num, gen);
-				return ref;
-			}
-			if (!xref->table[num].obj)
-				return ref;
-			ref = xref->table[num].obj;
+			pdf_cache_object(xref, num, gen);
 		}
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot load object (%d %d R) into cache", num, gen);
+			return NULL;
+		}
+		if (!xref->table[num].obj)
+			return NULL;
+		ref = xref->table[num].obj;
 	}
+
 	return ref;
 }
 

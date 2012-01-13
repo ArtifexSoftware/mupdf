@@ -659,6 +659,7 @@ int fz_to_int(fz_obj *obj);
 float fz_to_real(fz_obj *obj);
 char *fz_to_name(fz_obj *obj);
 char *fz_to_str_buf(fz_obj *obj);
+fz_obj *fz_to_dict(fz_obj *obj);
 int fz_to_str_len(fz_obj *obj);
 int fz_to_num(fz_obj *obj);
 int fz_to_gen(fz_obj *obj);
