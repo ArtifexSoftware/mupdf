@@ -131,7 +131,7 @@ fz_append_display_node(fz_display_list *list, fz_display_node *node)
 		break;
 	case FZ_CMD_BEGIN_TILE:
 		list->tiled++;
-		if (list->top > 0 && list->top < STACK_SIZE)
+		if (list->top > 0 && list->top <= STACK_SIZE)
 		{
 			list->stack[list->top-1].rect = fz_infinite_rect;
 		}
@@ -637,12 +637,16 @@ fz_execute_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm
 			{
 			case FZ_CMD_CLIP_PATH:
 			case FZ_CMD_CLIP_STROKE_PATH:
-			case FZ_CMD_CLIP_TEXT:
 			case FZ_CMD_CLIP_STROKE_TEXT:
 			case FZ_CMD_CLIP_IMAGE_MASK:
 			case FZ_CMD_BEGIN_MASK:
 			case FZ_CMD_BEGIN_GROUP:
 				clipped++;
+				continue;
+			case FZ_CMD_CLIP_TEXT:
+				/* Accumulated text has no extra pops */
+				if (node->flag != 2)
+					clipped++;
 				continue;
 			case FZ_CMD_POP_CLIP:
 			case FZ_CMD_END_GROUP:
