@@ -211,6 +211,7 @@ struct pdf_xobject_s
 	fz_colorspace *colorspace;
 	fz_obj *resources;
 	fz_buffer *contents;
+	fz_obj *me;
 };
 
 pdf_xobject *pdf_load_xobject(pdf_xref *xref, fz_obj *obj);
