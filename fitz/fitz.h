@@ -1130,6 +1130,7 @@ struct fz_path_s
 {
 	int len, cap;
 	fz_path_item *items;
+	int last;
 };
 
 struct fz_stroke_state_s
