@@ -159,7 +159,7 @@ typedef struct pdf_function_s pdf_function;
 
 pdf_function *pdf_load_function(pdf_xref *xref, fz_obj *ref);
 void pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen);
-pdf_function *pdf_keep_function(pdf_function *func);
+pdf_function *pdf_keep_function(fz_context *ctx, pdf_function *func);
 void pdf_drop_function(fz_context *ctx, pdf_function *func);
 unsigned int pdf_function_size(pdf_function *func);
 
@@ -191,7 +191,7 @@ struct pdf_pattern_s
 };
 
 pdf_pattern *pdf_load_pattern(pdf_xref *xref, fz_obj *obj);
-pdf_pattern *pdf_keep_pattern(pdf_pattern *pat);
+pdf_pattern *pdf_keep_pattern(fz_context *ctx, pdf_pattern *pat);
 void pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat);
 
 /*
@@ -215,7 +215,7 @@ struct pdf_xobject_s
 };
 
 pdf_xobject *pdf_load_xobject(pdf_xref *xref, fz_obj *obj);
-pdf_xobject *pdf_keep_xobject(pdf_xobject *xobj);
+pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 
 /*
@@ -263,7 +263,7 @@ struct pdf_cmap_s
 };
 
 pdf_cmap *pdf_new_cmap(fz_context *ctx);
-pdf_cmap *pdf_keep_cmap(pdf_cmap *cmap);
+pdf_cmap *pdf_keep_cmap(fz_context *ctx, pdf_cmap *cmap);
 void pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap);
 void pdf_free_cmap_imp(fz_context *ctx, fz_storable *cmap);
 unsigned int pdf_cmap_size(pdf_cmap *cmap);
@@ -401,7 +401,7 @@ pdf_font_desc *pdf_load_type3_font(pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
 pdf_font_desc *pdf_load_font(pdf_xref *xref, fz_obj *rdb, fz_obj *obj);
 
 pdf_font_desc *pdf_new_font_desc(fz_context *ctx);
-pdf_font_desc *pdf_keep_font(pdf_font_desc *fontdesc);
+pdf_font_desc *pdf_keep_font(fz_context *ctx, pdf_font_desc *fontdesc);
 void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
 void pdf_debug_font(pdf_font_desc *fontdesc);
