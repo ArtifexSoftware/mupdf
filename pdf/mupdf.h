@@ -429,10 +429,9 @@ fz_obj *pdf_load_name_tree(pdf_xref *xref, char *which);
 
 fz_outline *pdf_load_outline(pdf_xref *xref);
 
-fz_link *pdf_load_link(pdf_xref *xref, fz_obj *dict);
-void pdf_load_links(fz_link **, pdf_xref *, fz_obj *annots);
+fz_link *pdf_load_links(pdf_xref *, fz_obj *annots, fz_matrix page_ctm);
 
-void pdf_load_annots(pdf_annot **, pdf_xref *, fz_obj *annots);
+pdf_annot *pdf_load_annots(pdf_xref *, fz_obj *annots);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 /*
@@ -443,6 +442,7 @@ typedef struct pdf_page_s pdf_page;
 
 struct pdf_page_s
 {
+	fz_matrix ctm; /* calculated from mediabox and rotate */
 	fz_rect mediabox;
 	int rotate;
 	int transparency;

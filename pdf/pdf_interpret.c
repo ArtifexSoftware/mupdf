@@ -2687,11 +2687,7 @@ pdf_run_page_with_usage(pdf_xref *xref, pdf_page *page, fz_device *dev, fz_matri
 	pdf_annot *annot;
 	int flags;
 
-	/* Adjust CTM for rotation */
-	fz_matrix page_ctm = fz_concat(fz_rotate(-page->rotate), fz_scale(1, -1));
-	fz_rect mediabox = fz_transform_rect(page_ctm, page->mediabox);
-	page_ctm = fz_concat(page_ctm, fz_translate(-mediabox.x0, -mediabox.y0));
-	ctm = fz_concat(page_ctm, ctm);
+	ctm = fz_concat(page->ctm, ctm);
 
 	if (page->transparency)
 		fz_begin_group(dev, fz_transform_rect(ctm, page->mediabox), 1, 0, 0, 1);

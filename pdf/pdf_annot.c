@@ -242,8 +242,8 @@ pdf_parse_action(pdf_xref *xref, fz_obj *action)
 	return ld;
 }
 
-fz_link *
-pdf_load_link(pdf_xref *xref, fz_obj *dict)
+static fz_link *
+pdf_load_link(pdf_xref *xref, fz_obj *dict, fz_matrix page_ctm)
 {
 	fz_obj *dest = NULL;
 	fz_obj *action;
@@ -259,6 +259,8 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 		bbox = pdf_to_rect(ctx, obj);
 	else
 		bbox = fz_empty_rect;
+
+	bbox = fz_transform_rect(page_ctm, bbox);
 
 	obj = fz_dict_gets(dict, "Dest");
 	if (obj)
@@ -280,8 +282,8 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict)
 	return fz_new_link(ctx, bbox, ld);
 }
 
-void
-pdf_load_links(fz_link **linkp, pdf_xref *xref, fz_obj *annots)
+fz_link *
+pdf_load_links(pdf_xref *xref, fz_obj *annots, fz_matrix page_ctm)
 {
 	fz_link *link, *head, *tail;
 	fz_obj *obj;
@@ -294,7 +296,7 @@ pdf_load_links(fz_link **linkp, pdf_xref *xref, fz_obj *annots)
 	for (i = 0; i < n; i++)
 	{
 		obj = fz_array_get(annots, i);
-		link = pdf_load_link(xref, obj);
+		link = pdf_load_link(xref, obj, page_ctm);
 		if (link)
 		{
 			if (!head)
@@ -307,7 +309,7 @@ pdf_load_links(fz_link **linkp, pdf_xref *xref, fz_obj *annots)
 		}
 	}
 
-	*linkp = head;
+	return head;
 }
 
 void
@@ -351,8 +353,8 @@ pdf_transform_annot(pdf_annot *annot)
 	annot->matrix = fz_concat(fz_scale(w, h), fz_translate(x, y));
 }
 
-void
-pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
+pdf_annot *
+pdf_load_annots(pdf_xref *xref, fz_obj *annots)
 {
 	pdf_annot *annot, *head, *tail;
 	fz_obj *obj, *ap, *as, *n, *rect;
@@ -413,5 +415,5 @@ pdf_load_annots(pdf_annot **annotp, pdf_xref *xref, fz_obj *annots)
 		}
 	}
 
-	*annotp = head;
+	return head;
 }
