@@ -41,18 +41,14 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 {
 	fz_link_dest ld;
 	fz_obj *obj;
-	int read = 0;
 
-	enum
-	{
-		l_from_2 = 1,
-		b_from_3 = 2,
-		r_from_4 = 4,
-		t_from_5 = 8,
-		t_from_3 = 16,
-		t_from_2 = 32,
-		z_from_4 = 64
-	};
+	int l_from_2 = 0;
+	int b_from_3 = 0;
+	int r_from_4 = 0;
+	int t_from_5 = 0;
+	int t_from_3 = 0;
+	int t_from_2 = 0;
+	int z_from_4 = 0;
 
 	dest = resolve_dest(xref, dest);
 	if (dest == NULL || !fz_is_array(dest))
@@ -81,33 +77,32 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 
 	if (!strcmp("XYZ", fz_to_name(obj)))
 	{
-		read = l_from_2 + t_from_3 + z_from_4;
+		l_from_2 = t_from_3 = z_from_4 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_r_is_zoom;
 	}
 	else if ((!strcmp("Fit", fz_to_name(obj))) || (!strcmp("FitB", fz_to_name(obj))))
 	{
-		read = 0;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 	else if ((!strcmp("FitH", fz_to_name(obj))) || (!strcmp("FitBH", fz_to_name(obj))))
 	{
-		read = t_from_2;
+		t_from_2 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 	}
 	else if ((!strcmp("FitV", fz_to_name(obj))) || (!strcmp("FitBV", fz_to_name(obj))))
 	{
-		read = l_from_2;
+		l_from_2 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 	else if (!strcmp("FitR", fz_to_name(obj)))
 	{
-		read = l_from_2 + b_from_3 + r_from_4 + t_from_5;
+		l_from_2 = b_from_3 = r_from_4 = t_from_5 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
 
-	if (read & l_from_2)
+	if (l_from_2)
 	{
 		obj = fz_array_get(dest, 2);
 		if (fz_is_int(obj))
@@ -121,7 +116,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.lt.x = fz_to_real(obj);
 		}
 	}
-	if (read & b_from_3)
+	if (b_from_3)
 	{
 		obj = fz_array_get(dest, 3);
 		if (fz_is_int(obj))
@@ -135,7 +130,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.rb.y = fz_to_real(obj);
 		}
 	}
-	if (read & r_from_4)
+	if (r_from_4)
 	{
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
@@ -149,11 +144,11 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.rb.x = fz_to_real(obj);
 		}
 	}
-	if (read & (t_from_5 + t_from_3 + t_from_2))
+	if (t_from_5 || t_from_3 || t_from_2)
 	{
-		if (read & t_from_5)
+		if (t_from_5)
 			obj = fz_array_get(dest, 5);
-		else if (read & t_from_3)
+		else if (t_from_3)
 			obj = fz_array_get(dest, 3);
 		else
 			obj = fz_array_get(dest, 2);
@@ -168,7 +163,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 			ld.ld.gotor.lt.y = fz_to_real(obj);
 		}
 	}
-	if (read & z_from_4)
+	if (z_from_4)
 	{
 		obj = fz_array_get(dest, 4);
 		if (fz_is_int(obj))
