@@ -4,10 +4,6 @@ This code does smooth scaling of a pixmap.
 This function returns a new pixmap representing the area starting at (0,0)
 given by taking the source pixmap src, scaling it to width w, and height h,
 and then positioning it at (frac(x),frac(y)).
-
-This is a cut-down version of draw_scale.c that only copes with filters
-that return values strictly in the 0..1 range, and uses bytes for
-intermediate results rather than ints.
 */
 
 #include "fitz.h"
@@ -130,9 +126,57 @@ simple(fz_scale_filter *filter, float x)
 	return 1 + (2*x - 3)*x*x;
 }
 
+static float
+lanczos2(fz_scale_filter *filter, float x)
+{
+	if (x >= 2)
+		return 0;
+	return sinf(M_PI*x) * sinf(M_PI*x/2) / (M_PI*x) / (M_PI*x/2);
+}
+
+static float
+lanczos3(fz_scale_filter *filter, float f)
+{
+	if (f >= 3)
+		return 0;
+	return sinf(M_PI*f) * sinf(M_PI*f/3) / (M_PI*f) / (M_PI*f/3);
+}
+
+/*
+The Mitchell family of filters is defined:
+
+	f(x) =	1 { (12-9B-6C)x^3 + (-18+12B+6C)x^2 + (6-2B)	for x < 1
+		- {
+		6 { (-B-6C)x^3+(6B+30C)x^2+(-12B-48C)x+(8B+24C)	for 1<=x<=2
+
+The 'best' ones lie along the line B+2C = 1.
+The literature suggests that B=1/3, C=1/3 is best.
+
+	f(x) =	1 { (12-3-2)x^3 - (-18+4+2)x^2 + (16/3)	for x < 1
+		- {
+		6 { (-7/3)x^3 + 12x^2 - 20x + (32/3)	for 1<=x<=2
+
+	f(x) =	1 { 21x^3 - 36x^2 + 16			for x < 1
+		- {
+		18{ -7x^3 + 36x^2 - 60x + 32		for 1<=x<=2
+*/
+
+static float
+mitchell(fz_scale_filter *filter, float x)
+{
+	if (x >= 2)
+		return 0;
+	if (x >= 1)
+		return (32 + x*(-60 + x*(36 - 7*x)))/18;
+	return (16 + x*x*(-36 + 21*x))/18;
+}
+
 fz_scale_filter fz_scale_filter_box = { 1, box };
 fz_scale_filter fz_scale_filter_triangle = { 1, triangle };
 fz_scale_filter fz_scale_filter_simple = { 1, simple };
+fz_scale_filter fz_scale_filter_lanczos2 = { 2, lanczos2 };
+fz_scale_filter fz_scale_filter_lanczos3 = { 3, lanczos3 };
+fz_scale_filter fz_scale_filter_mitchell = { 2, mitchell };
 
 /*
 We build ourselves a set of tables to contain the precalculated weights
@@ -300,7 +344,24 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	if (weight == 0)
 		return;
 
-	/* Ensure i is in range */
+	/* wrap i back into range */
+#ifdef MIRROR_WRAP
+	do
+	{
+		if (i < 0)
+			i = -1-i;
+		else if (i >= src_w)
+			i = 2*src_w-1-i;
+		else
+			break;
+	}
+	while (1);
+#elif defined(WRAP)
+	if (i < 0)
+		i = 0;
+	else if (i >= src_w)
+		i = src_w-1;
+#else
 	if (i < 0)
 	{
 		i = 0;
@@ -313,6 +374,7 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	}
 	if (weight == 0)
 		return;
+#endif
 
 	DBUG(("add_weight[%d][%d] = %d(%g) dist=%g\n",j,i,weight,f,dist));
 
@@ -491,17 +553,13 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 }
 
 static void
-scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp(int *dst, unsigned char *src, fz_weights *weights)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int len, i, j, n;
 	unsigned char *min;
-	int tmp[FZ_MAX_COLORS];
-	int *t = tmp;
 
 	n = weights->n;
-	for (j = 0; j < n; j++)
-		tmp[j] = 128;
 	if (weights->flip)
 	{
 		dst += (weights->count-1)*n;
@@ -509,20 +567,16 @@ scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
 		{
 			min = &src[n * *contrib++];
 			len = *contrib++;
+			for (j = 0; j < n; j++)
+				dst[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = n; j > 0; j--)
-					*t++ += *min++ * *contrib;
-				t -= n;
+					*dst++ += *min++ * *contrib;
+				dst -= n;
 				contrib++;
 			}
-			for (j = n; j > 0; j--)
-			{
-				*dst++ = (unsigned char)(*t>>8);
-				*t++ = 128;
-			}
-			t -= n;
-			dst -= n*2;
+			dst -= n;
 		}
 	}
 	else
@@ -531,19 +585,16 @@ scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
 		{
 			min = &src[n * *contrib++];
 			len = *contrib++;
+			for (j = 0; j < n; j++)
+				dst[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = n; j > 0; j--)
-					*t++ += *min++ * *contrib;
-				t -= n;
+					*dst++ += *min++ * *contrib;
+				dst -= n;
 				contrib++;
 			}
-			for (j = n; j > 0; j--)
-			{
-				*dst++ = (unsigned char)(*t>>8);
-				*t++ = 128;
-			}
-			t -= n;
+			dst += n;
 		}
 	}
 }
@@ -551,23 +602,23 @@ scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
 #ifdef ARCH_ARM
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 __attribute__((naked));
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width, int row)
 __attribute__((naked));
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
 {
 	/* possible optimisation in here; unroll inner loops to avoid stall. */
 	asm volatile(
@@ -582,11 +633,11 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"cmp	r12,#0			@ if (flip)		\n"
 	"beq	4f			@ {			\n"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
-	"add	r0, r0, r3		@ dst += count		\n"
+	"add	r0, r0, r3, LSL #2	@ dst += count		\n"
 	"1:							\n"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r5, #128		@ r5 = a = 128		\n"
+	"mov	r5, #0			@ r5 = a = 0		\n"
 	"add	r4, r1, r4		@ r4 = min = &src[r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	3f			@ {			\n"
@@ -598,8 +649,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"mla	r5, r12,r14,r5		@ g += r14 * r12	\n"
 	"bgt	2b			@ }			\n"
 	"3:							\n"
-	"mov	r5, r5, lsr #8		@ g >>= 8		\n"
-	"strb	r5,[r0, #-1]!		@ *--dst=a		\n"
+	"str	r5,[r0, #-4]!		@ *--dst=a		\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	1b			@ 			\n"
 	"ldmfd	r13!,{r4-r5,r9,PC}	@ pop, return to thumb	\n"
@@ -608,7 +658,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"5:"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r5, #128		@ r5 = a = 128		\n"
+	"mov	r5, #0			@ r5 = a = 0		\n"
 	"add	r4, r1, r4		@ r4 = min = &src[r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	7f			@ {			\n"
@@ -620,8 +670,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"mla	r5, r12,r14,r5		@ a += r14 * r12	\n"
 	"bgt	6b			@ }			\n"
 	"7:							\n"
-	"mov	r5, r5, LSR #8		@ a >>= 8		\n"
-	"strb	r5, [r0], #1		@ *dst++=a		\n"
+	"str	r5, [r0], #4		@ *dst++=a		\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	5b			@ 			\n"
 	"ldmfd	r13!,{r4-r5,r9,PC}	@ pop, return to thumb	\n"
@@ -630,7 +679,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -644,12 +693,12 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"cmp	r12,#0			@ if (flip)		\n"
 	"beq	4f			@ {			\n"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
-	"add	r0, r0, r3, LSL #1	@ dst += 2*count	\n"
+	"add	r0, r0, r3, LSL #3	@ dst += 2*count	\n"
 	"1:							\n"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r5, #128		@ r5 = g = 128		\n"
-	"mov	r6, #128		@ r6 = a = 128		\n"
+	"mov	r5, #0			@ r5 = g = 0		\n"
+	"mov	r6, #0			@ r6 = a = 0		\n"
 	"add	r4, r1, r4, LSL #1	@ r4 = min = &src[2*r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	3f			@ {			\n"
@@ -662,10 +711,7 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"mla	r6, r14,r12,r6		@ a += r12 * r14	\n"
 	"bgt	2b			@ }			\n"
 	"3:							\n"
-	"mov	r5, r5, lsr #8		@ g >>= 8		\n"
-	"mov	r6, r6, lsr #8		@ a >>= 8		\n"
-	"strb	r5, [r0, #-2]!		@ *--dst=a		\n"
-	"strb	r6, [r0, #1]		@ *--dst=g		\n"
+	"stmdb	r0!,{r5,r6}		@ *--dst=a;*--dst=g;	\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	1b			@ 			\n"
 	"ldmfd	r13!,{r4-r6,r9-r11,PC}	@ pop, return to thumb	\n"
@@ -674,8 +720,8 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"5:"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r5, #128		@ r5 = g = 128		\n"
-	"mov	r6, #128		@ r6 = a = 128		\n"
+	"mov	r5, #0			@ r5 = g = 0		\n"
+	"mov	r6, #0			@ r6 = a = 0		\n"
 	"add	r4, r1, r4, LSL #1	@ r4 = min = &src[2*r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	7f			@ {			\n"
@@ -688,10 +734,7 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"mla	r6, r14,r12,r6		@ a += r12 * r14	\n"
 	"bgt	6b			@ }			\n"
 	"7:							\n"
-	"mov	r5, r5, lsr #8		@ g >>= 8		\n"
-	"mov	r6, r6, lsr #8		@ a >>= 8		\n"
-	"strb	r5, [r0], #1		@ *dst++=g		\n"
-	"strb	r6, [r0], #1		@ *dst++=a		\n"
+	"stmia	r0!,{r5,r6}		@ *dst++=r;*dst++=g;	\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	5b			@ 			\n"
 	"ldmfd	r13!,{r4-r6,r9-r11,PC}	@ pop, return to thumb	\n"
@@ -700,7 +743,7 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -711,61 +754,65 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"ldr	r12,[r2],#4		@ r12= flip		\n"
 	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
 	"ldr    r4, [r2]		@ r4 = index[0]		\n"
-	"ldr	r5,=0x00800080		@ r5 = rounding		\n"
-	"ldr	r6,=0x00FF00FF		@ r7 = 0x00FF00FF	\n"
 	"cmp	r12,#0			@ if (flip)		\n"
 	"beq	4f			@ {			\n"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
-	"add	r0, r0, r3, LSL #2	@ dst += 4*count	\n"
+	"add	r0, r0, r3, LSL #4	@ dst += 4*count	\n"
 	"1:							\n"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r7, r5			@ r7 = b = rounding	\n"
-	"mov	r8, r5			@ r8 = a = rounding	\n"
+	"mov	r5, #0			@ r5 = r = 0		\n"
+	"mov	r6, #0			@ r6 = g = 0		\n"
+	"mov	r7, #0			@ r7 = b = 0		\n"
+	"mov	r8, #0			@ r8 = a = 0		\n"
 	"add	r4, r1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	3f			@ {			\n"
 	"2:							\n"
-	"ldr	r11,[r4], #4		@ r11 = *min++		\n"
 	"ldr	r10,[r2], #4		@ r10 = *contrib++	\n"
-	"subs	r9, r9, #1		@ r9 = len--		\n"
-	"and	r12,r6, r11		@ r12 = __22__00	\n"
-	"and	r11,r6, r11,LSR #8	@ r11 = __33__11	\n"
-	"mla	r7, r10,r12,r7		@ b += r14 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
+	"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
 	"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
 	"bgt	2b			@ }			\n"
 	"3:							\n"
-	"and	r7, r6, r7, lsr #8	@ r7 = __22__00		\n"
-	"bic	r8, r8, r6		@ r8 = 33__11__		\n"
-	"orr	r7, r7, r8		@ r7 = 33221100		\n"
-	"str	r7, [r0, #-4]!		@ *--dst=r		\n"
+	"stmdb	r0!,{r5,r6,r7,r8}	@ *--dst=a;*--dst=b;	\n"
+	"				@ *--dst=g;*--dst=r;	\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	1b			@ 			\n"
 	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
-	"4:							\n"
+	"4:"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
-	"5:							\n"
+	"5:"
 	"ldr	r4, [r2], #4		@ r4 = *contrib++	\n"
 	"ldr	r9, [r2], #4		@ r9 = len = *contrib++	\n"
-	"mov	r7, r5			@ r7 = b = rounding	\n"
-	"mov	r8, r5			@ r8 = a = rounding	\n"
+	"mov	r5, #0			@ r5 = r = 0		\n"
+	"mov	r6, #0			@ r6 = g = 0		\n"
+	"mov	r7, #0			@ r7 = b = 0		\n"
+	"mov	r8, #0			@ r8 = a = 0		\n"
 	"add	r4, r1, r4, LSL #2	@ r4 = min = &src[4*r4]	\n"
 	"cmp	r9, #0			@ while (len-- > 0)	\n"
 	"beq	7f			@ {			\n"
 	"6:							\n"
-	"ldr	r11,[r4], #4		@ r11 = *min++		\n"
 	"ldr	r10,[r2], #4		@ r10 = *contrib++	\n"
-	"subs	r9, r9, #1		@ r9 = len--		\n"
-	"and	r12,r6, r11		@ r12 = __22__00	\n"
-	"and	r11,r6, r11,LSR #8	@ r11 = __33__11	\n"
-	"mla	r7, r10,r12,r7		@ b += r14 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"ldrb	r12,[r4], #1		@ r12 = *min++		\n"
+	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
+	"mla	r5, r10,r11,r5		@ r += r11 * r10	\n"
+	"ldrb	r11,[r4], #1		@ r11 = *min++		\n"
+	"mla	r6, r10,r12,r6		@ g += r12 * r10	\n"
+	"mla	r7, r10,r14,r7		@ b += r14 * r10	\n"
 	"mla	r8, r10,r11,r8		@ a += r11 * r10	\n"
+	"subs	r9, r9, #1		@ r9 = len--		\n"
 	"bgt	6b			@ }			\n"
 	"7:							\n"
-	"and	r7, r6, r7, lsr #8	@ r7 = __22__00		\n"
-	"bic	r8, r8, r6		@ r8 = 33__11__		\n"
-	"orr	r7, r7, r8		@ r7 = 33221100		\n"
-	"str	r7, [r0], #4		@ *dst++=r		\n"
+	"stmia	r0!,{r5,r6,r7,r8}	@ *dst++=r;*dst++=g;	\n"
+	"				@ *dst++=b;*dst++=a;	\n"
 	"subs	r3, r3, #1		@ i--			\n"
 	"bgt	5b			@ 			\n"
 	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
@@ -774,7 +821,7 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width, int row)
 {
 	asm volatile(
 	ENTER_ARM
@@ -788,72 +835,40 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	"@ r12= row						\n"
 	"ldr    r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
 	"add	r2, r2, #4		@ r2 = &index[1]	\n"
-	"subs	r6, r3, #4		@ r6 = x = width-4	\n"
+	"mov	r6, r3			@ r6 = x = width	\n"
 	"ldr	r14,[r2, r4, LSL #2]!	@ r2 = contrib = index[index[row]+1]\n"
 	"				@ r14= len = *contrib	\n"
-	"blt	4f			@ while (x >= 0) {	\n"
-#ifndef ARCH_ARM_CAN_LOAD_UNALIGNED
-	"tst	r3, #3			@ if (r3 & 3)		\n"
-	"blt	4f			@     can't do fast code\n"
-#endif
-	"ldr	r9, =0x00FF00FF		@ r9 = 0x00FF00FF	\n"
 	"1:							\n"
-	"ldr	r5, =0x00800080		@ r5 = val0 = round	\n"
-	"stmfd	r13!,{r1,r2}		@ stash r1,r2,r14	\n"
-	"				@ r1 = min = src	\n"
-	"				@ r2 = contrib2-4	\n"
-	"movs	r8, r14			@ r8 = len2 = len	\n"
-	"mov	r7, r5			@ r7 = val1 = round	\n"
-	"ble	3f			@ while (len2-- > 0) {	\n"
-	"2:							\n"
-	"ldr	r12,[r1], r3		@ r12 = *min	r5 = min += width\n"
-	"ldr	r10,[r2, #4]!		@ r10 = *contrib2++	\n"
-	"subs	r8, r8, #1		@ len2--		\n"
-	"and	r11,r9, r12		@ r11= __22__00		\n"
-	"and	r12,r9, r12,LSR #8	@ r12= __33__11		\n"
-	"mla	r5, r10,r11,r5		@ r5 = val0 += r11 * r10\n"
-	"mla	r7, r10,r12,r7		@ r7 = val1 += r12 * r10\n"
-	"bgt	2b			@ }			\n"
-	"3:							\n"
-	"ldmfd	r13!,{r1,r2}		@ restore r1,r2,r14	\n"
-	"and	r5, r9, r5, LSR #8	@ r5 = __22__00		\n"
-	"and	r7, r7, r9, LSL #8	@ r7 = 33__11__		\n"
-	"orr	r5, r5, r7		@ r5 = 33221100		\n"
-	"subs	r6, r6, #4		@ x--			\n"
-	"add	r1, r1, #4		@ src++			\n"
-	"str	r5, [r0], #4		@ *dst++ = val		\n"
-	"bge	1b			@ 			\n"
-	"4:				@ } (Less than 4 to go)	\n"
-	"adds	r6, r6, #4		@ r6 = x += 4		\n"
-	"beq	8f			@ if (x == 0) done	\n"
-	"5:							\n"
 	"mov	r5, r1			@ r5 = min = src	\n"
-	"mov	r7, #128		@ r7 = val = 128	\n"
+	"mov	r7, #1<<15		@ r7 = val = 1<<15	\n"
 	"movs	r8, r14			@ r8 = len2 = len	\n"
 	"add	r9, r2, #4		@ r9 = contrib2		\n"
-	"ble	7f			@ while (len2-- > 0) {	\n"
-	"6:							\n"
+	"ble	3f			@ while (len2-- > 0) {	\n"
+	"2:							\n"
 	"ldr	r10,[r9], #4		@ r10 = *contrib2++	\n"
-	"ldrb	r12,[r5], r3		@ r12 = *min	r5 = min += width\n"
+	"ldr	r12,[r5], r3, LSL #2	@ r12 = *min	r5 = min += width\n"
 	"subs	r8, r8, #1		@ len2--		\n"
 	"@ stall r12						\n"
 	"mla	r7, r10,r12,r7		@ val += r12 * r10	\n"
-	"bgt	6b			@ }			\n"
-	"7:							\n"
-	"mov	r7, r7, asr #8		@ r7 = val >>= 8	\n"
+	"bgt	2b			@ }			\n"
+	"3:							\n"
+	"movs	r7, r7, asr #16		@ r7 = val >>= 16	\n"
+	"movlt	r7, #0			@ if (r7 < 0) r7 = 0	\n"
+	"cmp	r7, #255		@ if (r7 > 255)		\n"
+	"add	r1, r1, #4		@ src++			\n"
+	"movgt	r7, #255		@     r7 = 255		\n"
 	"subs	r6, r6, #1		@ x--			\n"
-	"add	r1, r1, #1		@ src++			\n"
 	"strb	r7, [r0], #1		@ *dst++ = val		\n"
-	"bgt	5b			@ 			\n"
-	"8:							\n"
+	"bgt	1b			@ 			\n"
 	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
 	ENTER_THUMB
 	);
 }
+
 #else
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(int *dst, unsigned char *src, fz_weights *weights)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -865,34 +880,34 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 		dst += weights->count;
 		for (i=weights->count; i > 0; i--)
 		{
-			int val = 128;
+			int val = 0;
 			min = &src[*contrib++];
 			len = *contrib++;
 			while (len-- > 0)
 			{
 				val += *min++ * *contrib++;
 			}
-			*--dst = (unsigned char)(val>>8);
+			*--dst = val;
 		}
 	}
 	else
 	{
 		for (i=weights->count; i > 0; i--)
 		{
-			int val = 128;
+			int val = 0;
 			min = &src[*contrib++];
 			len = *contrib++;
 			while (len-- > 0)
 			{
 				val += *min++ * *contrib++;
 			}
-			*dst++ = (unsigned char)(val>>8);
+			*dst++ = val;
 		}
 	}
 }
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(int *dst, unsigned char *src, fz_weights *weights)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -904,8 +919,8 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 		dst += 2*weights->count;
 		for (i=weights->count; i > 0; i--)
 		{
-			int c1 = 128;
-			int c2 = 128;
+			int c1 = 0;
+			int c2 = 0;
 			min = &src[2 * *contrib++];
 			len = *contrib++;
 			while (len-- > 0)
@@ -913,16 +928,16 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 				c1 += *min++ * *contrib;
 				c2 += *min++ * *contrib++;
 			}
-			*--dst = (unsigned char)(c2>>8);
-			*--dst = (unsigned char)(c1>>8);
+			*--dst = c2;
+			*--dst = c1;
 		}
 	}
 	else
 	{
 		for (i=weights->count; i > 0; i--)
 		{
-			int c1 = 128;
-			int c2 = 128;
+			int c1 = 0;
+			int c2 = 0;
 			min = &src[2 * *contrib++];
 			len = *contrib++;
 			while (len-- > 0)
@@ -930,14 +945,14 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 				c1 += *min++ * *contrib;
 				c2 += *min++ * *contrib++;
 			}
-			*dst++ = (unsigned char)(c1>>8);
-			*dst++ = (unsigned char)(c2>>8);
+			*dst++ = c1;
+			*dst++ = c2;
 		}
 	}
 }
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(int *dst, unsigned char *src, fz_weights *weights)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int len, i;
@@ -949,10 +964,10 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 		dst += 4*weights->count;
 		for (i=weights->count; i > 0; i--)
 		{
-			int r = 128;
-			int g = 128;
-			int b = 128;
-			int a = 128;
+			int r = 0;
+			int g = 0;
+			int b = 0;
+			int a = 0;
 			min = &src[4 * *contrib++];
 			len = *contrib++;
 			while (len-- > 0)
@@ -962,20 +977,20 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 				b += *min++ * *contrib;
 				a += *min++ * *contrib++;
 			}
-			*--dst = (unsigned char)(a>>8);
-			*--dst = (unsigned char)(b>>8);
-			*--dst = (unsigned char)(g>>8);
-			*--dst = (unsigned char)(r>>8);
+			*--dst = a;
+			*--dst = b;
+			*--dst = g;
+			*--dst = r;
 		}
 	}
 	else
 	{
 		for (i=weights->count; i > 0; i--)
 		{
-			int r = 128;
-			int g = 128;
-			int b = 128;
-			int a = 128;
+			int r = 0;
+			int g = 0;
+			int b = 0;
+			int a = 0;
 			min = &src[4 * *contrib++];
 			len = *contrib++;
 			while (len-- > 0)
@@ -985,16 +1000,16 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 				b += *min++ * *contrib;
 				a += *min++ * *contrib++;
 			}
-			*dst++ = (unsigned char)(r>>8);
-			*dst++ = (unsigned char)(g>>8);
-			*dst++ = (unsigned char)(b>>8);
-			*dst++ = (unsigned char)(a>>8);
+			*dst++ = r;
+			*dst++ = g;
+			*dst++ = b;
+			*dst++ = a;
 		}
 	}
 }
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char *dst, int *src, fz_weights *weights, int width, int row)
 {
 	int *contrib = &weights->index[weights->index[row]];
 	int len, x;
@@ -1003,8 +1018,8 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	len = *contrib++;
 	for (x=width; x > 0; x--)
 	{
-		unsigned char *min = src;
-		int val = 128;
+		int *min = src;
+		int val = 0;
 		int len2 = len;
 		int *contrib2 = contrib;
 
@@ -1013,7 +1028,12 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 			val += *min * *contrib2++;
 			min += width;
 		}
-		*dst++ = (unsigned char)(val>>8);
+		val = (val+(1<<15))>>16;
+		if (val < 0)
+			val = 0;
+		else if (val > 255)
+			val = 255;
+		*dst++ = val;
 		src++;
 	}
 }
@@ -1038,13 +1058,11 @@ static void
 scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, int src_w, int h)
 {
 	int *contrib = &weights->index[weights->index[0]];
-	int min, len, i, j, n;
+	int min, len, i, j, val, n;
 	int tmp[FZ_MAX_COLORS];
 
 	n = weights->n;
 	/* Scale a single row */
-	for (j = 0; j < n; j++)
-		tmp[j] = 128;
 	if (weights->flip)
 	{
 		dst += (weights->count-1)*n;
@@ -1053,6 +1071,8 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			min = *contrib++;
 			len = *contrib++;
 			min *= n;
+			for (j = 0; j < n; j++)
+				tmp[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
@@ -1061,8 +1081,12 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			}
 			for (j = 0; j < n; j++)
 			{
-				*dst++ = (unsigned char)(tmp[j]>>8);
-				tmp[j] = 128;
+				val = (tmp[j]+(1<<7))>>8;
+				if (val < 0)
+					val = 0;
+				else if (val > 255)
+					val = 255;
+				*dst++ = val;
 			}
 			dst -= 2*n;
 		}
@@ -1075,6 +1099,8 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			min = *contrib++;
 			len = *contrib++;
 			min *= n;
+			for (j = 0; j < n; j++)
+				tmp[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
@@ -1083,8 +1109,12 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			}
 			for (j = 0; j < n; j++)
 			{
-				*dst++ = (unsigned char)(tmp[j]>>8);
-				tmp[j] = 128;
+				val = (tmp[j]+(1<<7))>>8;
+				if (val < 0)
+					val = 0;
+				else if (val > 255)
+					val = 255;
+				*dst++ = val;
 			}
 		}
 	}
@@ -1101,11 +1131,9 @@ static void
 scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, int src_w, int n, int w, int flip_y)
 {
 	int *contrib = &weights->index[weights->index[0]];
-	int min, len, i, j;
+	int min, len, i, j, val;
 	int tmp[FZ_MAX_COLORS];
 
-	for (j = 0; j < n; j++)
-		tmp[j] = 128;
 	if (flip_y)
 	{
 		src_w = (src_w-1)*n;
@@ -1116,6 +1144,8 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			min = *contrib++;
 			len = *contrib++;
 			min = src_w-min*n;
+			for (j = 0; j < n; j++)
+				tmp[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
@@ -1124,8 +1154,12 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			}
 			for (j = 0; j < n; j++)
 			{
-				*dst++ = (unsigned char)(tmp[j]>>8);
-				tmp[j] = 128;
+				val = (tmp[j]+(1<<7))>>8;
+				if (val < 0)
+					val = 0;
+				else if (val > 255)
+					val = 255;
+				*dst++ = val;
 			}
 			/* And then duplicate it across the row */
 			for (j = w; j > 0; j--)
@@ -1144,6 +1178,8 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			min = *contrib++;
 			len = *contrib++;
 			min *= n;
+			for (j = 0; j < n; j++)
+				tmp[j] = 0;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
@@ -1152,8 +1188,12 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			}
 			for (j = 0; j < n; j++)
 			{
-				*dst++ = (unsigned char)(tmp[j]>>8);
-				tmp[j] = 128;
+				val = (tmp[j]+(1<<7))>>8;
+				if (val < 0)
+					val = 0;
+				else if (val > 255)
+					val = 255;
+				*dst++ = val;
 			}
 			/* And then duplicate it across the row */
 			for (j = w; j > 0; j--)
@@ -1166,6 +1206,7 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 }
 #endif /* SINGLE_PIXEL_SPECIALS */
 
+
 fz_pixmap *
 fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h)
 {
@@ -1173,13 +1214,10 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 	fz_weights *contrib_rows = NULL;
 	fz_weights *contrib_cols = NULL;
 	fz_pixmap *output = NULL;
-	unsigned char *temp = NULL;
+	int *temp = NULL;
 	int max_row, temp_span, temp_rows, row;
 	int dst_w_int, dst_h_int, dst_x_int, dst_y_int;
 	int flip_x, flip_y;
-
-	fz_var(contrib_cols);
-	fz_var(contrib_rows);
 
 	DBUG(("Scale: (%d,%d) to (%g,%g) at (%g,%g)\n",src->w,src->h,w,h,x,y));
 
@@ -1243,30 +1281,35 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 
 	DBUG(("Result image: (%d,%d) at (%d,%d) (subpix=%g,%g)\n", dst_w_int, dst_h_int, dst_x_int, dst_y_int, x, y));
 
-	fz_try(ctx)
+	/* Step 1: Calculate the weights for columns and rows */
+#ifdef SINGLE_PIXEL_SPECIALS
+	if (src->w == 1)
 	{
-		/* Step 1: Calculate the weights for columns and rows */
-#ifdef SINGLE_PIXEL_SPECIALS
-		if (src->w == 1)
-			contrib_cols = NULL;
-		else
+		contrib_cols = NULL;
+	}
+	else
 #endif /* SINGLE_PIXEL_SPECIALS */
-			contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
+	{
+		contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
+		if (!contrib_cols)
+			goto cleanup;
+	}
 #ifdef SINGLE_PIXEL_SPECIALS
-		if (src->h == 1)
-			contrib_rows = NULL;
-		else
+	if (src->h == 1)
+	{
+		contrib_rows = NULL;
+	}
+	else
 #endif /* SINGLE_PIXEL_SPECIALS */
-			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
+	{
+		contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
+		if (!contrib_rows)
+			goto cleanup;
+	}
 
-		output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, contrib_cols);
-		fz_free(ctx, contrib_rows);
-		fz_rethrow(ctx);
-	}
+	assert(!contrib_cols || contrib_cols->count == dst_w_int);
+	assert(!contrib_rows || contrib_rows->count == dst_h_int);
+	output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
 	output->x = dst_x_int;
 	output->y = dst_y_int;
 
@@ -1294,23 +1337,15 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
-		void (*row_scale)(unsigned char *dst, unsigned char *src, fz_weights *weights);
+		void (*row_scale)(int *dst, unsigned char *src, fz_weights *weights);
 
 		temp_span = contrib_cols->count * src->n;
 		temp_rows = contrib_rows->max_len;
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
-		fz_try(ctx)
-		{
-			temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(unsigned char));
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_pixmap(ctx, output);
-			fz_free(ctx, contrib_cols);
-			fz_free(ctx, contrib_rows);
-			fz_rethrow(ctx);
-		}
+		temp = fz_malloc_array(ctx, temp_span*temp_rows, sizeof(int));
+		if (!temp)
+			goto cleanup;
 		switch (src->n)
 		{
 		default:
