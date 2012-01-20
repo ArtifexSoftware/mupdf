@@ -262,16 +262,17 @@ typedef struct fz_weights_s fz_weights;
 
 struct fz_weights_s
 {
-	int flip;
-	int count;
-	int max_len;
-	int n;
-	int new_line;
+	int flip;	/* true if outputting reversed */
+	int count;	/* number of output pixels we have records for in this table */
+	int max_len;	/* Maximum number of weights for any one output pixel */
+	int n;		/* number of components (src->n) */
+	int new_line;	/* True if no weights for the current output pixel */
+	int patch_l;	/* How many output pixels we skip over */
 	int index[1];
 };
 
 static fz_weights *
-new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, int dst_w_i, int n, int flip)
+new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, int patch_w, int n, int flip, int patch_l)
 {
 	int max_len;
 	fz_weights *weights;
@@ -293,26 +294,29 @@ new_weights(fz_context *ctx, fz_scale_filter *filter, int src_w, float dst_w, in
 		max_len = 2 * filter->width;
 	}
 	/* We need the size of the struct,
-	 * plus dst_w*sizeof(int) for the index
+	 * plus patch_w*sizeof(int) for the index
 	 * plus (2+max_len)*sizeof(int) for the weights
 	 * plus room for an extra set of weights for reordering.
 	 */
-	weights = fz_malloc(ctx, sizeof(*weights)+(max_len+3)*(dst_w_i+1)*sizeof(int));
+	weights = fz_malloc(ctx, sizeof(*weights)+(max_len+3)*(patch_w+1)*sizeof(int));
 	if (!weights)
 		return NULL;
 	weights->count = -1;
 	weights->max_len = max_len;
-	weights->index[0] = dst_w_i;
+	weights->index[0] = patch_w;
 	weights->n = n;
+	weights->patch_l = patch_l;
 	weights->flip = flip;
 	return weights;
 }
 
+/* j is destination pixel in the patch_l..patch_l+patch_w range */
 static void
 init_weights(fz_weights *weights, int j)
 {
 	int index;
 
+	j -= weights->patch_l;
 	assert(weights->count == j-1);
 	weights->count++;
 	weights->new_line = 1;
@@ -344,24 +348,7 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	if (weight == 0)
 		return;
 
-	/* wrap i back into range */
-#ifdef MIRROR_WRAP
-	do
-	{
-		if (i < 0)
-			i = -1-i;
-		else if (i >= src_w)
-			i = 2*src_w-1-i;
-		else
-			break;
-	}
-	while (1);
-#elif defined(WRAP)
-	if (i < 0)
-		i = 0;
-	else if (i >= src_w)
-		i = src_w-1;
-#else
+	/* Ensure i is in range */
 	if (i < 0)
 	{
 		i = 0;
@@ -374,10 +361,11 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	}
 	if (weight == 0)
 		return;
-#endif
 
 	DBUG(("add_weight[%d][%d] = %d(%g) dist=%g\n",j,i,weight,f,dist));
 
+	/* Move j from patch_l...patch_l+patch_w range to 0..patch_w range */
+	j -= weights->patch_l;
 	if (weights->new_line)
 	{
 		/* New line */
@@ -428,7 +416,7 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 static void
 reorder_weights(fz_weights *weights, int j, int src_w)
 {
-	int idx = weights->index[j];
+	int idx = weights->index[j - weights->patch_l];
 	int min = weights->index[idx++];
 	int len = weights->index[idx++];
 	int max = weights->max_len;
@@ -475,7 +463,7 @@ check_weights(fz_weights *weights, int j, int w, float x, float wf)
 	int maxidx = 0;
 	int i;
 
-	idx = weights->index[j];
+	idx = weights->index[j - weights->patch_l];
 	idx++; /* min */
 	len = weights->index[idx++];
 
@@ -505,7 +493,7 @@ check_weights(fz_weights *weights, int j, int w, float x, float wf)
 }
 
 static fz_weights *
-make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *filter, int vertical, int dst_w_int, int n, int flip)
+make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *filter, int vertical, int dst_w_int, int patch_l, int patch_r, int n, int flip)
 {
 	fz_weights *weights;
 	float F, G;
@@ -525,11 +513,11 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 		G = src_w / dst_w;
 	}
 	window = filter->width / F;
-	DBUG(("make_weights src_w=%d x=%g dst_w=%g dst_w_int=%d F=%g window=%g\n", src_w, x, dst_w, dst_w_int, F, window));
-	weights	= new_weights(ctx, filter, src_w, dst_w, dst_w_int, n, flip);
+	DBUG(("make_weights src_w=%d x=%g dst_w=%g patch_l=%d patch_r=%d F=%g window=%g\n", src_w, x, dst_w, patch_l, patch_r, F, window));
+	weights	= new_weights(ctx, filter, src_w, dst_w, patch_r-patch_l, n, flip, patch_l);
 	if (!weights)
 		return NULL;
-	for (j = 0; j < dst_w_int; j++)
+	for (j = patch_l; j < patch_r; j++)
 	{
 		/* find the position of the centre of dst[j] in src space */
 		float centre = (j - x + 0.5f)*src_w/dst_w - 0.5f;
@@ -1206,9 +1194,8 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 }
 #endif /* SINGLE_PIXEL_SPECIALS */
 
-
 fz_pixmap *
-fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h)
+fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip)
 {
 	fz_scale_filter *filter = &fz_scale_filter_simple;
 	fz_weights *contrib_rows = NULL;
@@ -1218,6 +1205,10 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 	int max_row, temp_span, temp_rows, row;
 	int dst_w_int, dst_h_int, dst_x_int, dst_y_int;
 	int flip_x, flip_y;
+	fz_bbox patch;
+
+	fz_var(contrib_cols);
+	fz_var(contrib_rows);
 
 	DBUG(("Scale: (%d,%d) to (%g,%g) at (%g,%g)\n",src->w,src->h,w,h,x,y));
 
@@ -1281,35 +1272,82 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 
 	DBUG(("Result image: (%d,%d) at (%d,%d) (subpix=%g,%g)\n", dst_w_int, dst_h_int, dst_x_int, dst_y_int, x, y));
 
-	/* Step 1: Calculate the weights for columns and rows */
-#ifdef SINGLE_PIXEL_SPECIALS
-	if (src->w == 1)
+	/* Step 0: Calculate the patch */
+	patch.x0 = 0;
+	patch.y0 = 0;
+	patch.x1 = dst_w_int;
+	patch.y1 = dst_h_int;
+	if (clip)
 	{
-		contrib_cols = NULL;
-	}
-	else
-#endif /* SINGLE_PIXEL_SPECIALS */
-	{
-		contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, src->n, flip_x);
-		if (!contrib_cols)
-			goto cleanup;
-	}
-#ifdef SINGLE_PIXEL_SPECIALS
-	if (src->h == 1)
-	{
-		contrib_rows = NULL;
-	}
-	else
-#endif /* SINGLE_PIXEL_SPECIALS */
-	{
-		contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, src->n, flip_y);
-		if (!contrib_rows)
-			goto cleanup;
-	}
+		if (flip_x)
+		{
+			if (dst_x_int + dst_w_int > clip->x1)
+				patch.x0 = dst_x_int + dst_w_int - clip->x1;
+			if (clip->x0 > dst_x_int)
+			{
+				patch.x1 = dst_w_int - (clip->x0 - dst_x_int);
+				dst_x_int = clip->x0;
+			}
+		}
+		else
+		{
+			if (dst_x_int + dst_w_int > clip->x1)
+				patch.x1 = clip->x1 - dst_x_int;
+			if (clip->x0 > dst_x_int)
+			{
+				patch.x0 = clip->x0 - dst_x_int;
+				dst_x_int += patch.x0;
+			}
+		}
 
-	assert(!contrib_cols || contrib_cols->count == dst_w_int);
-	assert(!contrib_rows || contrib_rows->count == dst_h_int);
-	output = fz_new_pixmap(ctx, src->colorspace, dst_w_int, dst_h_int);
+		if (flip_y)
+		{
+			if (dst_y_int + dst_h_int > clip->y1)
+				patch.y1 = clip->y1 - dst_y_int;
+			if (clip->y0 > dst_y_int)
+			{
+				patch.y0 = clip->y0 - dst_y_int;
+				dst_y_int = clip->y0;
+			}
+		}
+		else
+		{
+			if (dst_y_int + dst_h_int > clip->y1)
+				patch.y1 = clip->y1 - dst_y_int;
+			if (clip->y0 > dst_y_int)
+			{
+				patch.y0 = clip->y0 - dst_y_int;
+				dst_y_int += patch.y0;
+			}
+		}
+	}
+	if (patch.x0 >= patch.x1 || patch.y0 >= patch.y1)
+		return NULL;
+
+	fz_try(ctx)
+	{
+		/* Step 1: Calculate the weights for columns and rows */
+#ifdef SINGLE_PIXEL_SPECIALS
+		if (src->w == 1)
+			contrib_cols = NULL;
+		else
+#endif /* SINGLE_PIXEL_SPECIALS */
+			contrib_cols = make_weights(ctx, src->w, x, w, filter, 0, dst_w_int, patch.x0, patch.x1, src->n, flip_x);
+#ifdef SINGLE_PIXEL_SPECIALS
+		if (src->h == 1)
+			contrib_rows = NULL;
+		else
+#endif /* SINGLE_PIXEL_SPECIALS */
+			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y);
+
+		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, contrib_cols);
+		fz_free(ctx, contrib_rows);
+		fz_rethrow(ctx);
+	}
 	output->x = dst_x_int;
 	output->y = dst_y_int;
 
@@ -1321,18 +1359,18 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 		if (!contrib_cols)
 		{
 			/* Only 1 pixel in the entire image! */
-			duplicate_single_pixel(output->samples, src->samples, src->n, dst_w_int, dst_h_int);
+			duplicate_single_pixel(output->samples, src->samples, src->n, patch.x1-patch.x0, patch.y1-patch.y0);
 		}
 		else
 		{
 			/* Scale the row once, then copy it. */
-			scale_single_row(output->samples, src->samples, contrib_cols, src->w, dst_h_int);
+			scale_single_row(output->samples, src->samples, contrib_cols, src->w, patch.y1-patch.y0);
 		}
 	}
 	else if (!contrib_cols)
 	{
 		/* Only 1 source pixel wide. Scale the col and duplicate. */
-		scale_single_col(output->samples, src->samples, contrib_rows, src->h, src->n, dst_w_int, flip_y);
+		scale_single_col(output->samples, src->samples, contrib_rows, src->h, src->n, patch.x1-patch.x0, flip_y);
 	}
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
@@ -1343,9 +1381,17 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 		temp_rows = contrib_rows->max_len;
 		if (temp_span <= 0 || temp_rows > INT_MAX / temp_span)
 			goto cleanup;
-		temp = fz_malloc_array(ctx, temp_span*temp_rows, sizeof(int));
-		if (!temp)
-			goto cleanup;
+		fz_try(ctx)
+		{
+			temp = fz_calloc(ctx, temp_span*temp_rows, sizeof(int));
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_pixmap(ctx, output);
+			fz_free(ctx, contrib_cols);
+			fz_free(ctx, contrib_rows);
+			fz_rethrow(ctx);
+		}
 		switch (src->n)
 		{
 		default:
@@ -1361,7 +1407,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 			row_scale = scale_row_to_temp4;
 			break;
 		}
-		max_row = 0;
+		max_row = contrib_rows->index[contrib_rows->index[0]];
 		for (row = 0; row < contrib_rows->count; row++)
 		{
 			/*
