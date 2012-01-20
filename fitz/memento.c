@@ -1083,6 +1083,8 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
     }
+    else
+        memblk->lastCheckedOK = globals.sequence;
     return 0;
 }
 
@@ -1123,6 +1125,8 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
     }
+    else
+        memblk->lastCheckedOK = globals.sequence;
     return 0;
 }
 
