@@ -27,7 +27,7 @@ intermediate results rather than ints.
  */
 #ifdef ARCH_ARM
 #ifdef ARCH_THUMB
-#define ENTER_ARM   ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n"
+#define ENTER_ARM ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n"
 #define ENTER_THUMB "9:.thumb\n"
 #else
 #define ENTER_ARM
@@ -584,7 +584,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"@ r2 = weights						\n"
 	"ldr	r12,[r2],#4		@ r12= flip		\n"
 	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
-	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"ldr	r4, [r2]		@ r4 = index[0]		\n"
 	"cmp	r12,#0			@ if (flip)		\n"
 	"beq	4f			@ {			\n"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
@@ -646,7 +646,7 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"@ r2 = weights						\n"
 	"ldr	r12,[r2],#4		@ r12= flip		\n"
 	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
-	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"ldr	r4, [r2]		@ r4 = index[0]		\n"
 	"cmp	r12,#0			@ if (flip)		\n"
 	"beq	4f			@ {			\n"
 	"add	r2, r2, r4, LSL #2	@ r2 = &index[index[0]] \n"
@@ -716,7 +716,7 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 	"@ r2 = weights						\n"
 	"ldr	r12,[r2],#4		@ r12= flip		\n"
 	"ldr	r3, [r2],#16		@ r3 = count r2 = &index\n"
-	"ldr    r4, [r2]		@ r4 = index[0]		\n"
+	"ldr	r4, [r2]		@ r4 = index[0]		\n"
 	"ldr	r5,=0x00800080		@ r5 = rounding		\n"
 	"ldr	r6,=0x00FF00FF		@ r7 = 0x00FF00FF	\n"
 	"cmp	r12,#0			@ if (flip)		\n"
@@ -792,7 +792,7 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	"@ r2 = &weights->index[0]				\n"
 	"@ r3 = width						\n"
 	"@ r12= row						\n"
-	"ldr    r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
+	"ldr	r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
 	"add	r2, r2, #4		@ r2 = &index[1]	\n"
 	"subs	r6, r3, #4		@ r6 = x = width-4	\n"
 	"ldr	r14,[r2, r4, LSL #2]!	@ r2 = contrib = index[index[row]+1]\n"
@@ -800,7 +800,7 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	"blt	4f			@ while (x >= 0) {	\n"
 #ifndef ARCH_ARM_CAN_LOAD_UNALIGNED
 	"tst	r3, #3			@ if (r3 & 3)		\n"
-	"blt	4f			@     can't do fast code\n"
+	"blt	4f			@ can't do fast code	\n"
 #endif
 	"ldr	r9, =0x00FF00FF		@ r9 = 0x00FF00FF	\n"
 	"1:							\n"
