@@ -688,6 +688,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 	state[1].scissor = bbox;
 	state[1].dest = dest;
 	state[1].shape = shape;
+	state[1].mask = mask;
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top-1, "Clip (stroke text) begin\n");
 #endif
