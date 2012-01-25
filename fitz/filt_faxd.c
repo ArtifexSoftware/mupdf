@@ -211,7 +211,7 @@ find_changing_color(const unsigned char *line, int x, int w, int color)
 	if (!line)
 		return w;
 
-	x = find_changing(line, x, w);
+	x = find_changing(line, (x > 0 || !color) ? x : -1, w);
 
 	if (x < w && getbit(line, x) != color)
 		x = find_changing(line, x, w);
