@@ -128,21 +128,27 @@ angle_between(const fz_point u, const fz_point v)
 	return sign * acosf(t);
 }
 
-/* Some explaination of the parameters here is warranted. See:
- *     http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
- * Add an arc segment to path, that describes a section of an elliptical arc
- * from the current point of path to (point_x,point_y), such that:
- *   the arc segment is taken from an elliptical arc of semi major radius
- *     size_x, semi minor radius size_y, where the semi major axis of the
- *     ellipse is rotated by rotation_angle.
- *   if is_large_arc, then the arc segment is selected to be > 180 degrees.
- *   if is_clockwise, then the arc sweeps clockwise.
- */
+/*
+	Some explaination of the parameters here is warranted. See:
+
+	http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
+
+	Add an arc segment to path, that describes a section of an elliptical
+	arc from the current point of path to (point_x,point_y), such that:
+
+	The arc segment is taken from an elliptical arc of semi major radius
+	size_x, semi minor radius size_y, where the semi major axis of the
+	ellipse is rotated by rotation_angle.
+
+	If is_large_arc, then the arc segment is selected to be > 180 degrees.
+
+	If is_clockwise, then the arc sweeps clockwise.
+*/
 static void
 xps_draw_arc(fz_context *doc, fz_path *path,
-		float size_x, float size_y, float rotation_angle,
-		int is_large_arc, int is_clockwise,
-		float point_x, float point_y)
+	float size_x, float size_y, float rotation_angle,
+	int is_large_arc, int is_clockwise,
+	float point_x, float point_y)
 {
 	fz_matrix rotmat, revmat;
 	fz_matrix mtx;

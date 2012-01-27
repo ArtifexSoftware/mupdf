@@ -156,7 +156,7 @@ int fz_is_indirect(fz_obj *obj)
 
 #define RESOLVE(obj) \
 	do { if (obj && obj->kind == FZ_INDIRECT) \
-		obj = fz_resolve_indirect(obj);   \
+		obj = fz_resolve_indirect(obj); \
 	} while (0)
 
 int fz_is_null(fz_obj *obj)
