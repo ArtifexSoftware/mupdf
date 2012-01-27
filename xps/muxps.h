@@ -251,9 +251,9 @@ struct xps_document_s
 	fz_device *dev;
 };
 
-xps_document *xps_open_file(fz_context *ctx, char *filename);
-xps_document *xps_open_stream(fz_stream *file);
-void xps_free_context(xps_document *doc);
+xps_document *xps_open_document(fz_context *ctx, char *filename);
+xps_document *xps_open_document_with_stream(fz_stream *file);
+void xps_close_document(xps_document *doc);
 
 /*
  * Parsing helper functions

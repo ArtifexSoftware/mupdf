@@ -37,7 +37,7 @@ fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
 	font->t3procs = NULL;
 	font->t3widths = NULL;
 	font->t3flags = NULL;
-	font->t3xref = NULL;
+	font->t3doc = NULL;
 	font->t3run = NULL;
 
 	font->bbox.x0 = 0;
@@ -646,7 +646,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 			FZ_DEVFLAG_LINEJOIN_UNDEFINED |
 			FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
-	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm, NULL);
+	font->t3run(font->t3doc, font->t3resources, contents, dev, ctm, NULL);
 	font->t3flags[gid] = dev->flags;
 	fz_free_device(dev);
 
@@ -702,7 +702,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 
 	ctm = fz_concat(font->t3matrix, trm);
 	dev = fz_new_draw_device_type3(ctx, glyph);
-	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm, NULL);
+	font->t3run(font->t3doc, font->t3resources, contents, dev, ctm, NULL);
 	/* RJW: "cannot draw type3 glyph" */
 	fz_free_device(dev);
 
@@ -744,7 +744,7 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	}
 
 	ctm = fz_concat(font->t3matrix, trm);
-	font->t3run(font->t3xref, font->t3resources, contents, dev, ctm, gstate);
+	font->t3run(font->t3doc, font->t3resources, contents, dev, ctm, gstate);
 	/* RJW: "cannot draw type3 glyph" */
 }
 

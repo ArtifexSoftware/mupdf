@@ -2,7 +2,7 @@
 #include "mupdf.h"
 
 static fz_obj *
-resolve_dest_rec(pdf_xref *xref, fz_obj *dest, int depth)
+resolve_dest_rec(pdf_document *xref, fz_obj *dest, int depth)
 {
 	if (depth > 10) /* Arbitrary to avoid infinite recursion */
 		return NULL;
@@ -31,13 +31,13 @@ resolve_dest_rec(pdf_xref *xref, fz_obj *dest, int depth)
 }
 
 static fz_obj *
-resolve_dest(pdf_xref *xref, fz_obj *dest)
+resolve_dest(pdf_document *xref, fz_obj *dest)
 {
 	return resolve_dest_rec(xref, dest, 0);
 }
 
 fz_link_dest
-pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
+pdf_parse_link_dest(pdf_document *xref, fz_obj *dest)
 {
 	fz_link_dest ld;
 	fz_obj *obj;
@@ -192,7 +192,7 @@ pdf_parse_link_dest(pdf_xref *xref, fz_obj *dest)
 }
 
 fz_link_dest
-pdf_parse_action(pdf_xref *xref, fz_obj *action)
+pdf_parse_action(pdf_document *xref, fz_obj *action)
 {
 	fz_link_dest ld;
 	fz_obj *obj, *dest;
@@ -238,7 +238,7 @@ pdf_parse_action(pdf_xref *xref, fz_obj *action)
 }
 
 static fz_link *
-pdf_load_link(pdf_xref *xref, fz_obj *dict, fz_matrix page_ctm)
+pdf_load_link(pdf_document *xref, fz_obj *dict, fz_matrix page_ctm)
 {
 	fz_obj *dest = NULL;
 	fz_obj *action;
@@ -278,7 +278,7 @@ pdf_load_link(pdf_xref *xref, fz_obj *dict, fz_matrix page_ctm)
 }
 
 fz_link *
-pdf_load_links(pdf_xref *xref, fz_obj *annots, fz_matrix page_ctm)
+pdf_load_links(pdf_document *xref, fz_obj *annots, fz_matrix page_ctm)
 {
 	fz_link *link, *head, *tail;
 	fz_obj *obj;
@@ -349,7 +349,7 @@ pdf_transform_annot(pdf_annot *annot)
 }
 
 pdf_annot *
-pdf_load_annots(pdf_xref *xref, fz_obj *annots)
+pdf_load_annots(pdf_document *xref, fz_obj *annots)
 {
 	pdf_annot *annot, *head, *tail;
 	fz_obj *obj, *ap, *as, *n, *rect;

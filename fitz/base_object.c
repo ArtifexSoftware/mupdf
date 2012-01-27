@@ -294,7 +294,7 @@ int fz_to_gen(fz_obj *obj)
 	return obj->u.r.gen;
 }
 
-void *fz_get_indirect_xref(fz_obj *obj)
+void *fz_get_indirect_document(fz_obj *obj)
 {
 	if (!obj || obj->kind != FZ_INDIRECT)
 		return NULL;
