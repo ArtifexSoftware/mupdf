@@ -168,7 +168,7 @@ INT CALLBACK
 dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
-	pdf_document *doc = gapp.doc;
+	pdf_document *doc = gapp.pdf;
 	fz_obj *info, *obj;
 
 	switch(message)
