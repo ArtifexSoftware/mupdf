@@ -9,7 +9,7 @@
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
 #define ZIP_END_OF_CENTRAL_DIRECTORY_SIG 0x06054b50
 
-#define DPI (72.0f / 144.0f)
+#define DPI 72.0f
 
 static const char *cbz_ext_list[] = {
 	".jpg", ".jpeg", ".png",
@@ -395,8 +395,8 @@ cbz_bound_page(cbz_document *doc, cbz_page *page)
 	fz_pixmap *image = page->image;
 	fz_rect bbox;
 	bbox.x0 = bbox.y0 = 0;
-	bbox.x1 = image->w * DPI;
-	bbox.y1 = image->h * DPI;
+	bbox.x1 = image->w * DPI / image->xres;
+	bbox.y1 = image->h * DPI / image->yres;
 	return bbox;
 }
 
@@ -404,6 +404,8 @@ void
 cbz_run_page(cbz_document *doc, cbz_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie)
 {
 	fz_pixmap *image = page->image;
-	ctm = fz_concat(fz_scale(image->w * DPI, image->h * DPI), ctm);
+	float w = image->w * DPI / image->xres;
+	float h = image->h * DPI / image->yres;
+	ctm = fz_concat(fz_scale(w, h), ctm);
 	fz_fill_image(dev, image, ctm, 1);
 }
