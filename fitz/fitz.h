@@ -961,7 +961,10 @@ void fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 void fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 void fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 
-fz_pixmap *fz_load_jpx_image(fz_context *ctx, unsigned char *data, int size, fz_colorspace *dcs);
+fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *cs);
+fz_pixmap *fz_load_jpeg(fz_context *doc, unsigned char *data, int size);
+fz_pixmap *fz_load_png(fz_context *doc, unsigned char *data, int size);
+fz_pixmap *fz_load_tiff(fz_context *doc, unsigned char *data, int size);
 
 /*
  * Bitmaps have 1 component per bit. Only used for creating halftoned versions
