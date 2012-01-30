@@ -68,6 +68,7 @@ MUPDF_LIB := $(OUT)/libmupdf.a
 MUXPS_LIB := $(OUT)/libmuxps.a
 
 FITZ_SRC := $(notdir $(wildcard fitz/*.c draw/*.c))
+FITZ_SRC := $(filter-out draw_simple_scale.c, $(FITZ_SRC))
 MUPDF_SRC := $(notdir $(wildcard pdf/*.c))
 MUXPS_SRC := $(notdir $(wildcard xps/*.c))
 
