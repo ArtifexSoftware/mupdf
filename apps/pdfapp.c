@@ -214,7 +214,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 {
 	if (strstr(filename, ".xps") || strstr(filename, ".XPS") || strstr(filename, ".rels"))
 		pdfapp_open_xps(app, filename, fd);
-	else if (strstr(filename, ".cbz") || strstr(filename, ".CBZ"))
+	else if (strstr(filename, ".cbz") || strstr(filename, ".CBZ") || strstr(filename, ".zip") || strstr(filename, ".ZIP"))
 		pdfapp_open_cbz(app, filename, fd);
 	else
 		pdfapp_open_pdf(app, filename, fd);

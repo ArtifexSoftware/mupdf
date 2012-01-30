@@ -111,7 +111,7 @@ int winfilename(wchar_t *buf, int len)
 	ofn.nMaxFile = len;
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrTitle = L"MuPDF: Open PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz)\0*.cbz;*.xps;*.pdf\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*cbz)\0*.cbz\0All Files\0*\0\0";
+	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.zip)\0*.zip;*.cbz;*.xps;*.pdf\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	return GetOpenFileNameW(&ofn);
 }
