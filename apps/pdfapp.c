@@ -262,7 +262,7 @@ void pdfapp_close(pdfapp_t *app)
 	app->image = NULL;
 
 	if (app->outline)
-		fz_free_outline(app->outline);
+		fz_free_outline(app->ctx, app->outline);
 	app->outline = NULL;
 
 	if (app->pdf)

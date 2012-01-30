@@ -1588,7 +1588,6 @@ typedef struct fz_outline_s fz_outline;
 
 struct fz_outline_s
 {
-	fz_context *ctx;
 	char *title;
 	fz_link_dest dest;
 	fz_outline *next;
@@ -1597,6 +1596,6 @@ struct fz_outline_s
 
 void fz_debug_outline_xml(fz_outline *outline, int level);
 void fz_debug_outline(fz_outline *outline, int level);
-void fz_free_outline(fz_outline *outline);
+void fz_free_outline(fz_context *ctx, fz_outline *outline);
 
 #endif
