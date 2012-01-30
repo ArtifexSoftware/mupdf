@@ -623,6 +623,18 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="cbz"
+			>
+			<File
+				RelativePath="..\cbz\mucbz.h"
+				>
+			</File>
+			<File
+				RelativePath="..\cbz\mucbz.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
