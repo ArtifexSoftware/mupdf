@@ -711,6 +711,20 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 			++*codeptr;
 			break;
 
+		case PDF_TOK_TRUE:
+			resize_code(ctx, func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_BOOL;
+			func->u.p.code[*codeptr].u.b = 1;
+			++*codeptr;
+			break;
+
+		case PDF_TOK_FALSE:
+			resize_code(ctx, func, *codeptr);
+			func->u.p.code[*codeptr].type = PS_BOOL;
+			func->u.p.code[*codeptr].u.b = 0;
+			++*codeptr;
+			break;
+
 		case PDF_TOK_REAL:
 			resize_code(ctx, func, *codeptr);
 			func->u.p.code[*codeptr].type = PS_REAL;
