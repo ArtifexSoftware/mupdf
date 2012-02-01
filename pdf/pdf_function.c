@@ -1216,8 +1216,8 @@ load_stitching_func(pdf_function *func, pdf_document *xref, fz_obj *dict)
 	if (!fz_is_array(obj))
 		fz_throw(ctx, "stitching function has no bounds");
 	{
-		if (!fz_is_array(obj) || fz_array_len(obj) != k - 1)
-			fz_throw(ctx, "malformed /Bounds (not array or wrong length)");
+		if (fz_array_len(obj) != k - 1)
+			fz_throw(ctx, "malformed /Bounds (wrong length)");
 
 		for (i = 0; i < k-1; i++)
 		{
@@ -1238,7 +1238,7 @@ load_stitching_func(pdf_function *func, pdf_document *xref, fz_obj *dict)
 	if (!fz_is_array(obj))
 		fz_throw(ctx, "stitching function is missing encoding");
 	{
-		if (!fz_is_array(obj) || fz_array_len(obj) != k * 2)
+		if (fz_array_len(obj) != k * 2)
 			fz_throw(ctx, "malformed /Encode");
 		for (i = 0; i < k; i++)
 		{
