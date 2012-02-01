@@ -80,22 +80,20 @@ enum
 	PS_OP_ABS, PS_OP_ADD, PS_OP_AND, PS_OP_ATAN, PS_OP_BITSHIFT,
 	PS_OP_CEILING, PS_OP_COPY, PS_OP_COS, PS_OP_CVI, PS_OP_CVR,
 	PS_OP_DIV, PS_OP_DUP, PS_OP_EQ, PS_OP_EXCH, PS_OP_EXP,
-	PS_OP_FALSE, PS_OP_FLOOR, PS_OP_GE, PS_OP_GT, PS_OP_IDIV,
-	PS_OP_INDEX, PS_OP_LE, PS_OP_LN, PS_OP_LOG, PS_OP_LT, PS_OP_MOD,
-	PS_OP_MUL, PS_OP_NE, PS_OP_NEG, PS_OP_NOT, PS_OP_OR, PS_OP_POP,
-	PS_OP_ROLL, PS_OP_ROUND, PS_OP_SIN, PS_OP_SQRT, PS_OP_SUB,
-	PS_OP_TRUE, PS_OP_TRUNCATE, PS_OP_XOR, PS_OP_IF, PS_OP_IFELSE,
-	PS_OP_RETURN
+	PS_OP_FALSE, PS_OP_FLOOR, PS_OP_GE, PS_OP_GT, PS_OP_IDIV, PS_OP_IF,
+	PS_OP_IFELSE, PS_OP_INDEX, PS_OP_LE, PS_OP_LN, PS_OP_LOG, PS_OP_LT,
+	PS_OP_MOD, PS_OP_MUL, PS_OP_NE, PS_OP_NEG, PS_OP_NOT, PS_OP_OR,
+	PS_OP_POP, PS_OP_RETURN, PS_OP_ROLL, PS_OP_ROUND, PS_OP_SIN,
+	PS_OP_SQRT, PS_OP_SUB, PS_OP_TRUE, PS_OP_TRUNCATE, PS_OP_XOR
 };
 
 static char *ps_op_names[] =
 {
 	"abs", "add", "and", "atan", "bitshift", "ceiling", "copy",
 	"cos", "cvi", "cvr", "div", "dup", "eq", "exch", "exp",
-	"false", "floor", "ge", "gt", "idiv", "index", "le", "ln",
-	"log", "lt", "mod", "mul", "ne", "neg", "not", "or", "pop",
-	"roll", "round", "sin", "sqrt", "sub", "true", "truncate",
-	"xor", "if", "ifelse", "return"
+	"false", "floor", "ge", "gt", "idiv", "if", "ifelse", "index", "le", "ln",
+	"log", "lt", "mod", "mul", "ne", "neg", "not", "or", "pop", "return",
+	"roll", "round", "sin", "sqrt", "sub", "true", "truncate", "xor"
 };
 
 struct psobj_s
