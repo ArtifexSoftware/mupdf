@@ -69,6 +69,69 @@ xps_add_fixed_document(xps_document *doc, char *name)
 	}
 }
 
+void
+xps_add_link(xps_document *doc, fz_rect area, char *base_uri, char *target_uri)
+{
+	int len;
+	char *buffer = NULL;
+	char *uri;
+	xps_target *target;
+	fz_link_dest dest;
+	fz_link *link;
+	fz_context *ctx = doc->ctx;
+
+	fz_var(buffer);
+
+	if (doc->current_page == NULL || doc->current_page->links_resolved)
+		return;
+
+	fz_try(ctx)
+	{
+		len = 2 + (base_uri ? strlen(base_uri) : 0) +
+			(target_uri ? strlen(target_uri) : 0);
+		buffer = fz_malloc(doc->ctx, len);
+		xps_absolute_path(buffer, base_uri, target_uri, len);
+		uri = buffer;
+
+		/* FIXME: This won't work for remote docs */
+		/* Skip until we find the fragment marker */
+		while (*uri && *uri != '#')
+			uri++;
+		if (*uri == '#')
+			uri++;
+
+		for (target = doc->target; target; target = target->next)
+			if (!strcmp(target->name, uri))
+				break;
+
+		if (target == NULL)
+			break;
+
+		dest.kind = FZ_LINK_GOTO;
+		dest.ld.gotor.flags = fz_link_flag_l_valid | fz_link_flag_t_valid | fz_link_flag_r_valid | fz_link_flag_b_valid;
+		dest.ld.gotor.lt.x = area.x0;
+		dest.ld.gotor.lt.y = area.y0;
+		dest.ld.gotor.rb.x = area.x1;
+		dest.ld.gotor.rb.y = area.y1;
+		dest.ld.gotor.page = target->page;
+		dest.ld.gotor.file_spec = NULL;
+		dest.ld.gotor.new_window = 0;
+
+		link = fz_new_link(doc->ctx, area, dest);
+		link->next = doc->current_page->links;
+		doc->current_page->links = link;
+	}
+	fz_always(ctx)
+	{
+		fz_free(doc->ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+
 static void
 xps_add_fixed_page(xps_document *doc, char *name, int width, int height)
 {
@@ -84,6 +147,8 @@ xps_add_fixed_page(xps_document *doc, char *name, int width, int height)
 	page->number = doc->page_count++;
 	page->width = width;
 	page->height = height;
+	page->links = NULL;
+	page->links_resolved = 0;
 	page->root = NULL;
 	page->next = NULL;
 
@@ -353,8 +418,10 @@ xps_load_page(xps_document *doc, int number)
 	{
 		if (n == number)
 		{
+			doc->current_page = page;
 			if (!page->root)
 				xps_load_fixed_page(doc, page);
+			page->links_resolved = 1;
 			return page;
 		}
 		n ++;
@@ -380,5 +447,6 @@ xps_free_page(xps_document *doc, xps_page *page)
 	/* only free the XML contents */
 	if (page->root)
 		xml_free_element(doc->ctx, page->root);
+	fz_free_link(doc->ctx, page->links);
 	page->root = NULL;
 }

@@ -77,6 +77,10 @@ xps_clean_path(char *name)
 	return name;
 }
 
+/* RJW: Possible problems here:
+ * "/foo" + "../../bar" = "/bar" not "../bar"
+ * "http://something/" + ... doesn't work.
+ */
 void
 xps_absolute_path(char *output, char *base_uri, char *path, int output_size)
 {

@@ -89,6 +89,8 @@ struct xps_page_s
 	int width;
 	int height;
 	xml_element *root;
+	int links_resolved;
+	fz_link *links;
 	xps_page *next;
 };
 
@@ -111,7 +113,7 @@ void xps_free_page(xps_document *doc, xps_page *page);
 fz_outline *xps_load_outline(xps_document *doc);
 
 int xps_find_link_target(xps_document *doc, char *target_uri);
-
+void xps_add_link(xps_document *doc, fz_rect area, char *base_uri, char *target_uri);
 /*
  * Images, fonts, and colorspaces.
  */
@@ -245,6 +247,9 @@ struct xps_document_s
 	/* Current device */
 	fz_cookie *cookie;
 	fz_device *dev;
+
+	/* Current page we are loading */
+	xps_page *current_page;
 };
 
 xps_document *xps_open_document(fz_context *ctx, char *filename);

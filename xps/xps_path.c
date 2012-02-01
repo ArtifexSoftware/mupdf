@@ -837,6 +837,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	char *stroke_line_join_att;
 	char *stroke_miter_limit_att;
 	char *stroke_thickness_att;
+	char *navigate_uri_att;
 
 	fz_stroke_state stroke;
 	fz_matrix transform;
@@ -866,6 +867,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	stroke_line_join_att = xml_att(root, "StrokeLineJoin");
 	stroke_miter_limit_att = xml_att(root, "StrokeMiterLimit");
 	stroke_thickness_att = xml_att(root, "StrokeThickness");
+	navigate_uri_att = xml_att(root, "FixedPage.NavigateUri");
 
 	for (node = xml_down(root); node; node = xml_next(node))
 	{
@@ -975,6 +977,9 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 		area = fz_bound_path(path, &stroke, ctm);
 	else
 		area = fz_bound_path(path, NULL, ctm);
+
+	if (navigate_uri_att)
+		xps_add_link(doc, area, base_uri, navigate_uri_att);
 
 	xps_begin_opacity(doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 

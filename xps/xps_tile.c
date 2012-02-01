@@ -255,6 +255,7 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	char *clip_att;
 	char *opacity_att;
 	char *opacity_mask_att;
+	char *navigate_uri_att;
 
 	xml_element *transform_tag = NULL;
 	xml_element *clip_tag = NULL;
@@ -266,6 +267,7 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	clip_att = xml_att(root, "Clip");
 	opacity_att = xml_att(root, "Opacity");
 	opacity_mask_att = xml_att(root, "OpacityMask");
+	navigate_uri_att = xml_att(root, "FixedPage.NavigateUri");
 
 	for (node = xml_down(root); node; node = xml_next(node))
 	{
@@ -300,6 +302,9 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	if (transform_tag)
 		xps_parse_matrix_transform(doc, transform_tag, &transform);
 	ctm = fz_concat(transform, ctm);
+
+	if (navigate_uri_att)
+		xps_add_link(doc, area, base_uri, navigate_uri_att);
 
 	if (clip_att || clip_tag)
 		xps_clip(doc, ctm, dict, clip_att, clip_tag);
