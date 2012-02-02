@@ -243,9 +243,46 @@ struct fz_context_s
 	fz_glyph_cache *glyph_cache;
 };
 
+/*
+	fz_new_context: Allocate context containing global state.
+
+	The global state contains exception stack, resource store,
+	etc.  Most functions in MuPDF take a context argument to be
+	able to reference the global state.
+
+	alloc: Supply a custom memory allocator through a set of
+	function pointers. Set to NULL for the standard library
+	allocator. The context will keep the allocator pointer, so it
+	must not be modified or freed during the lifetime of the
+	context.
+
+	locks: Supply a set of locks and functions to lock/unlock
+	them, intended for multi-threaded environment. Set to NULL
+	when using MuPDF in a single-threaded environment. The context
+	will keep the locks pointer, so it must not be modified or
+	freed during the lifetime of the context.
+
+	max_store: Maximum size in bytes of the resource store, before
+	it will start evicting cached resources such as fonts and
+	images.  FZ_STORE_UNLIMITED can be used to not set a hard
+	upper limit. Use FZ_STORE_DEFAULT to get a reasonable size.
+
+	Does not throw exceptions, but may return NULL.
+*/
 fz_context *fz_new_context(fz_alloc_context *alloc, fz_locks_context *locks, unsigned int max_store);
+
 fz_context *fz_clone_context(fz_context *ctx);
 fz_context *fz_clone_context_internal(fz_context *ctx);
+
+/*
+	fz_free_context: Frees a context and its global state.
+
+	The context and all of its global state is freed, and any
+	cached warnings are flushed. If NULL is passed in nothing will
+	happen.
+
+	Does not throw exceptions.
+*/
 void fz_free_context(fz_context *ctx);
 
 void fz_new_aa_context(fz_context *ctx);
@@ -457,19 +494,54 @@ struct fz_bbox_s
 	int x1, y1;
 };
 
+/*
+	fz_identity: Identity transform matrix.
+*/
 extern const fz_matrix fz_identity;
 
-fz_matrix fz_concat(fz_matrix one, fz_matrix two);
+/*
+	fz_concat: Multiply two matrices.
+
+	The order of the two matrices are important since matrix
+	multiplication is not commutative.
+*/
+fz_matrix fz_concat(fz_matrix left, fz_matrix right);
+
+/*
+	fz_scale: Create a scaling matrix.
+
+	sx, sy: Scaling factors along the X- and Y-axes. A scaling
+	factor of 1.0 will not cause any scaling along that relevant
+	axis.
+*/
 fz_matrix fz_scale(float sx, float sy);
+
 fz_matrix fz_shear(float sx, float sy);
-fz_matrix fz_rotate(float theta);
+
+/*
+	fz_rotate: Create a rotation matrix.
+*/
+fz_matrix fz_rotate(float degrees);
+
 fz_matrix fz_translate(float tx, float ty);
 fz_matrix fz_invert_matrix(fz_matrix m);
 int fz_is_rectilinear(fz_matrix m);
 float fz_matrix_expansion(fz_matrix m);
 float fz_matrix_max_expansion(fz_matrix m);
 
-fz_bbox fz_round_rect(fz_rect r);
+
+/*
+	fz_round_rect: Convert a rect into a bounding box.
+
+	Coordinates in a bounding box are integers, so rounding of the
+	rects coordinates takes place. The top left corner is rounded
+	upwards and left while the bottom right corner is rounded
+	downwards and to the right. There are no overflows, instead
+	the coordinates will be clamped to INT_MIN/INT_MAX.
+
+	rect: The rect to be converted.
+*/
+fz_bbox fz_round_rect(fz_rect rect);
 fz_bbox fz_intersect_bbox(fz_bbox a, fz_bbox b);
 fz_rect fz_intersect_rect(fz_rect a, fz_rect b);
 fz_bbox fz_union_bbox(fz_bbox a, fz_bbox b);
@@ -477,7 +549,19 @@ fz_rect fz_union_rect(fz_rect a, fz_rect b);
 
 fz_point fz_transform_point(fz_matrix m, fz_point p);
 fz_point fz_transform_vector(fz_matrix m, fz_point p);
-fz_rect fz_transform_rect(fz_matrix m, fz_rect r);
+
+/*
+	fz_transform_rect: Apply a transformation to a rect.
+
+	transform: Transformation matrix to apply. See fz_concat,
+	fz_scale and fz_rotate of how to create a matrix.
+
+	rect: The rect to be transformed. The two degenerate cases see
+	fz_empty_rect and fz_infinite_rect, may be used but the
+	resulting rect will be identical.
+*/
+fz_rect fz_transform_rect(fz_matrix transform, fz_rect rect);
+
 fz_bbox fz_transform_bbox(fz_matrix m, fz_bbox b);
 
 void fz_gridfit_matrix(fz_matrix *m);
@@ -752,11 +836,47 @@ struct fz_stream_s
 	unsigned char buf[4096];
 };
 
-fz_stream *fz_open_fd(fz_context *ctx, int file);
+/*
+	fz_open_file: Open a named file and wrap it in a stream.
+
+	The stream is reference counted.
+
+	filename: Path to a file as it would be given to open(2).
+*/
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
-fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename); /* only on win32 */
+
+/*
+	fz_open_file_w: Open a named file and wrap it in a stream.
+
+	This function is only available when compiling for Win32. The
+	stream is reference counted.
+
+	filename: Wide character path to the file as it would be given
+	to _wopen().
+*/
+fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
+
+/*
+	fz_open_fd: Wrap an open file descriptor in a stream.
+
+	file: An open file descriptor supporting bidirectional
+	seeking. The stream will take ownership of the file
+	descriptor, so it may not be modified or closed after the call
+	to fz_open_fd. When the stream is closed it will also close
+	the file descriptor.
+*/
+fz_stream *fz_open_fd(fz_context *ctx, int file);
+
 fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
+
+/*
+	fz_close: Close an open stream.
+
+	Drops a reference for the stream. Once no references remain
+	the stream will be closed, as will any file descriptor the
+	stream is using.
+*/
 void fz_close(fz_stream *stm);
 void fz_lock_stream(fz_stream *stm);
 
@@ -904,14 +1024,52 @@ struct fz_pixmap_s
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 
 fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
+
+/*
+	fz_new_pixmap_with_rect: Create a pixmap of a given size and
+	format.
+
+	The bounding box specifies the size of the created pixmap and
+	where it will be located. The colorspace determines the number
+	of components per pixel, exluding alpha which is always
+	present. Pixmaps are reference counted, so drop references
+	using fz_drop_pixmap.
+
+	colorspace: Colorspace format used for the created pixmap. The
+	pixmap will keep a reference to the colorspace.
+
+	bbox: Bounding box specifcying location/size of created
+	pixmap.
+*/
 fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *, fz_bbox bbox);
+
 fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz_bbox bbox, unsigned char *samples);
 fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_drop_pixmap: Drop a reference and free a pixmap.
+
+	pix: Pixmap whose reference count will be decremented. If no
+	reference remain the pixmap will also be freed.
+*/
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
+
 void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
 void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_clear_pixmap_with_value: Clears a pixmap with the given value
+
+	pix: Pixmap obtained from fz_new_pixmap*.
+
+	value: Values in the range 0 to 255 are accepted (higher
+	values get truncated). Each component sample for each pixel in
+	the pixmap will be set to this value, while alpha will always
+	be set to 255 (non-transparent).
+*/
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
+
 void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, fz_bbox r);
 void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_bbox r);
 void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
@@ -1375,11 +1533,25 @@ void fz_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, floa
 void fz_end_tile(fz_device *dev);
 
 fz_device *fz_new_device(fz_context *ctx, void *user);
+
+/*
+	fz_free_device: Free a devices of any type and its resources.
+*/
 void fz_free_device(fz_device *dev);
 
 fz_device *fz_new_trace_device(fz_context *ctx);
 fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
+
+/*
+	fz_new_draw_device: Create a device drawing on a pixmap.
+
+	dest: Target pixmap for the draw device. See fz_new_pixmap*
+	for how to obtain a pixmap. The pixmap is not cleared by the
+	draw device, see fz_clear_pixmap* for how to clear it prior to
+	calling fz_new_draw_device.
+*/
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
+
 fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
 /*
@@ -1419,6 +1591,40 @@ fz_device *fz_new_text_device(fz_context *ctx, fz_text_span *text);
 
 typedef struct fz_cookie_s fz_cookie;
 
+/*
+	Provide two-way communication between application and library.
+	Intended for multi-threaded applications where one thread is
+	rendering pages and another thread wants read progress
+	feedback or abort a job that takes a long time to finish. The
+	communication is unsynchronized without locking.
+
+	abort: The appliation should set this field to 0 before
+	calling fz_run_page to render a page. At any point when the
+	page is being rendered the application my set this field to 1
+	which will cause the rendering to finish soon. This field is
+	checked periodically when the page is rendered, but exactly
+	when is not known, therefore there is no upper bound on
+	exactly when the the rendering will abort. If the application
+	did not provide a set of locks to fz_new_context, it must also
+	await the completion of fz_run_page before issuing another
+	call to fz_run_page. Note that once the application has set
+	this field to 1 after it called fz_run_page it may not change
+	the value again.
+
+	progress: Communicates rendering progress back to the
+	application and is read only. Increments as a page is being
+	rendered. The value starts out at 0 and is limited to less
+	than or equal to progress_max, unless progress_max is -1.
+
+	progress_max: Communicates known upper bound of rendering back
+	to the application and is read only. Maximum value that the
+	progress field may take. If there is no known upper bound on
+	how long the rendering may take this value is -1 and
+	progress is not limited. Note that the value of progress_max
+	may change from -1 to a positive value once an upper bound is
+	known, so take this into consideration when comparing the
+	value of progress to that of progress_max.
+*/
 struct fz_cookie_s
 {
 	int abort;
@@ -1432,10 +1638,36 @@ struct fz_cookie_s
 
 typedef struct fz_display_list_s fz_display_list;
 
+/*
+	fz_new_display_list: Create an empty display list.
+
+	A display list contains a page's objects (text, images, etc.)
+	in drawing order. Use fz_new_list_device for populating the list.
+*/
 fz_display_list *fz_new_display_list(fz_context *ctx);
-void fz_free_display_list(fz_context *ctx, fz_display_list *list);
+
+/*
+	fz_new_list_device: Create a rendering device for a display list.
+
+	When the device is rendering a page it will populate the
+	display list with the page's objects (text, images, etc.) in
+	drawing order. The display list can later be reused to render
+	a page many times without having to re-interpret the page from
+	the document file for each rendering.
+
+	list: A display list that the list device takes ownership of.
+*/
 fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
+
 void fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area, fz_cookie *cookie);
+
+/*
+	fz_free_display_list: Frees a display list.
+
+	list: Display list to be freed. Any objects put into the
+	display list by a list device will also be freed.
+*/
+void fz_free_display_list(fz_context *ctx, fz_display_list *list);
 
 /*
  * Plotting functions.
@@ -1599,8 +1831,27 @@ struct fz_document_s
 	void (*free_page)(fz_document *doc, fz_page *page);
 };
 
+/*
+	fz_open_document: Open a PDF, XPS or CBZ document.
+
+	Open a document file and read its basic structure so pages and
+	objects can be located. MuPDF will try to repair broken
+	documents (without actually changing the file contents).
+
+	The returned fz_document sould be provided when calling most
+	other fz_* functions. Note that it wraps the context, so those
+	functions implicitly can access the global state in context.
+
+	filename: a path to a file as it would be given to open(2).
+*/
 fz_document *fz_open_document(fz_context *ctx, char *filename);
 
+/*
+	fz_close_document: Closes and frees an opened document.
+
+	The resource store in the context associated with fz_document
+	is emptied, and any allocations for the document are freed.
+*/
 void fz_close_document(fz_document *doc);
 
 int fz_needs_password(fz_document *doc);
@@ -1608,11 +1859,65 @@ int fz_authenticate_password(fz_document *doc, char *password);
 
 fz_outline *fz_load_outline(fz_document *doc);
 
+/*
+	fz_count_pages: Return number of pages in document
+
+	May return 0 for documents without any pages at all.
+*/
 int fz_count_pages(fz_document *doc);
+
+/*
+	fz_load_page: Load a page and its resources.
+
+	Locates the page number in an open document and loads the page
+	and its resources. After fz_load_page is it possible to
+	retrieve the size of the page using fz_bound_page, or to
+	render the page using fz_run_page_*.
+
+	number: page number, 0 is the first page of the document.
+*/
 fz_page *fz_load_page(fz_document *doc, int number);
+
 fz_link *fz_load_links(fz_document *doc, fz_page *page);
+
+/*
+	fz_bound_page: Determine the size of a page.
+
+	Determine the page size in user space units, taking page
+	rotation into account. The page size is taken to be the crop
+	box if it exists (visible area after cropping), otherwise the
+	media box will be used (possibly including printing marks).
+*/
 fz_rect fz_bound_page(fz_document *doc, fz_page *page);
+
+/*
+	fz_run_page: Run a page through a device.
+
+	page: Page obtained from fz_load_page.
+
+	dev: Device obtained from fz_new_*_device.
+
+	transform: Transform to apply to page. May include for example
+	scaling and rotation, see fz_scale, fz_rotate and fz_concat.
+	Set to fz_identity if no transformation is desired.
+
+	cookie: Communication mechanism between caller and library
+	rendering the page. Intended for multi-threaded environments,
+	while single-threaded environments set cookie to NULL. The
+	caller may abort an ongoing rendering of a page. Cookie also
+	communicates progress information back to the caller. The
+	fields inside cookie are continually updated while the page is
+	rendering.
+*/
 void fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+
+/*
+	fz_free_page: Free a loaded page.
+
+	page: A loaded page to be freed. Its own references to
+	resources are dropped, the resources themselves may still be
+	refered to by the resource store in the context.
+*/
 void fz_free_page(fz_document *doc, fz_page *page);
 
 #endif

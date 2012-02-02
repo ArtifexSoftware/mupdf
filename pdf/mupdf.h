@@ -217,8 +217,39 @@ fz_stream *pdf_open_stream(pdf_document *doc, int num, int gen);
 fz_stream *pdf_open_stream_with_offset(pdf_document *doc, int num, int gen, fz_obj *dict, int stm_ofs);
 fz_stream *pdf_open_image_decomp_stream(fz_context *ctx, fz_buffer *, pdf_image_params *params, int *factor);
 
-pdf_document *pdf_open_document_with_stream(fz_stream *file);
+/*
+	pdf_open_document: Open a PDF document.
+
+	Open a PDF document by reading its cross reference table, so MuPDF
+	can locate PDF objects inside the file. Upon an broken cross
+	reference table or other parse errors MuPDF will restart parsing
+	the file from the beginning to try to rebuild a (hopefully correct)
+	cross reference table to allow further processing of the file.
+
+	The returned pdf_document should be used when calling most other
+	PDF functions. Note that it wraps the context, so those functions
+	implicitly get access to the global state in context.
+
+	filename: a path to a file as it would be given to open(2).
+*/
 pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
+
+/*
+	pdf_open_document_with_stream: Opens a PDF document.
+
+	Same as pdf_open_document, but takes a stream instead of a filename
+	to locate the PDF document to open. Increments the reference count
+	of the stream. See fz_open_file, fz_open_file_w or fz_open_fd for
+	opening a stream, and fz_close for closing an open stream.
+*/
+pdf_document *pdf_open_document_with_stream(fz_stream *file);
+
+/*
+	pdf_close_document: Closes and frees an opened PDF document.
+
+	The resource store in the context associated with pdf_document is
+	emptied.
+*/
 void pdf_close_document(pdf_document *doc);
 
 /* private */
@@ -566,17 +597,52 @@ struct pdf_page_s
 int pdf_find_page_number(pdf_document *doc, fz_obj *pageobj);
 int pdf_count_pages(pdf_document *doc);
 
+/*
+	pdf_load_page: Load a page and its resources.
+
+	Locates the page in the PDF document and loads the page and its
+	resources. After pdf_load_page is it possible to retrieve the size
+	of the page using pdf_bound_page, or to render the page using
+	pdf_run_page_*.
+
+	number: page number, where 0 is the first page of the document.
+*/
 pdf_page *pdf_load_page(pdf_document *doc, int number);
+
 fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_bound_page: Determine the size of a page.
+
+	Determine the page size in user space units, taking page rotation
+	into account. The page size is taken to be the crop box if it
+	exists (visible area after cropping), otherwise the media box will
+	be used (possibly including printing marks).
+*/
 fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_free_page: Frees a page and its resources.
+*/
 void pdf_free_page(pdf_document *doc, pdf_page *page);
 
 /*
  * Content stream parsing
  */
 
-void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
+/*
+	pdf_run_page: Interpret a loaded page and render it on a device.
+
+	page: A page loaded by pdf_load_page.
+
+	dev: Device used for rendering, obtained from fz_new_*_device.
+
+	ctm: A transformation matrix applied to the objects on the page,
+	e.g. to scale or rotate the page contents as desired.
+*/
 void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+
+void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
 void pdf_run_glyph(pdf_document *doc, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
 
 /*
