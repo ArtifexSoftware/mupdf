@@ -90,32 +90,42 @@ xps_add_link(xps_document *doc, fz_rect area, char *base_uri, char *target_uri)
 		len = 2 + (base_uri ? strlen(base_uri) : 0) +
 			(target_uri ? strlen(target_uri) : 0);
 		buffer = fz_malloc(doc->ctx, len);
-		xps_absolute_path(buffer, base_uri, target_uri, len);
-		uri = buffer;
+		xps_resolve_url(buffer, base_uri, target_uri, len);
+		if (xps_url_is_remote(buffer))
+		{
+			dest.kind = FZ_LINK_URI;
+			dest.ld.uri.is_map = 0;
+			dest.ld.uri.uri = buffer;
+			buffer = NULL;
+		}
+		else
+		{
+			uri = buffer;
 
-		/* FIXME: This won't work for remote docs */
-		/* Skip until we find the fragment marker */
-		while (*uri && *uri != '#')
-			uri++;
-		if (*uri == '#')
-			uri++;
+			/* FIXME: This won't work for remote docs */
+			/* Skip until we find the fragment marker */
+			while (*uri && *uri != '#')
+				uri++;
+			if (*uri == '#')
+				uri++;
 
-		for (target = doc->target; target; target = target->next)
-			if (!strcmp(target->name, uri))
+			for (target = doc->target; target; target = target->next)
+				if (!strcmp(target->name, uri))
+					break;
+
+			if (target == NULL)
 				break;
 
-		if (target == NULL)
-			break;
-
-		dest.kind = FZ_LINK_GOTO;
-		dest.ld.gotor.flags = fz_link_flag_l_valid | fz_link_flag_t_valid | fz_link_flag_r_valid | fz_link_flag_b_valid;
-		dest.ld.gotor.lt.x = area.x0;
-		dest.ld.gotor.lt.y = area.y0;
-		dest.ld.gotor.rb.x = area.x1;
-		dest.ld.gotor.rb.y = area.y1;
-		dest.ld.gotor.page = target->page;
-		dest.ld.gotor.file_spec = NULL;
-		dest.ld.gotor.new_window = 0;
+			dest.kind = FZ_LINK_GOTO;
+			dest.ld.gotor.flags = 0;
+			dest.ld.gotor.lt.x = 0;
+			dest.ld.gotor.lt.y = 0;
+			dest.ld.gotor.rb.x = 0;
+			dest.ld.gotor.rb.y = 0;
+			dest.ld.gotor.page = target->page;
+			dest.ld.gotor.file_spec = NULL;
+			dest.ld.gotor.new_window = 0;
+		}
 
 		link = fz_new_link(doc->ctx, area, dest);
 		link->next = doc->current_page->links;
@@ -256,7 +266,7 @@ xps_parse_metadata_imp(xps_document *doc, xml_element *item, xps_fixdoc *fixdoc)
 			if (target && type)
 			{
 				char tgtbuf[1024];
-				xps_absolute_path(tgtbuf, doc->base_uri, target, sizeof tgtbuf);
+				xps_resolve_url(tgtbuf, doc->base_uri, target, sizeof tgtbuf);
 				if (!strcmp(type, REL_START_PART))
 					doc->start_part = fz_strdup(doc->ctx, tgtbuf);
 				if (!strcmp(type, REL_DOC_STRUCTURE) && fixdoc)
@@ -270,7 +280,7 @@ xps_parse_metadata_imp(xps_document *doc, xml_element *item, xps_fixdoc *fixdoc)
 			if (source)
 			{
 				char srcbuf[1024];
-				xps_absolute_path(srcbuf, doc->base_uri, source, sizeof srcbuf);
+				xps_resolve_url(srcbuf, doc->base_uri, source, sizeof srcbuf);
 				xps_add_fixed_document(doc, srcbuf);
 			}
 		}
@@ -285,7 +295,7 @@ xps_parse_metadata_imp(xps_document *doc, xml_element *item, xps_fixdoc *fixdoc)
 			if (source)
 			{
 				char srcbuf[1024];
-				xps_absolute_path(srcbuf, doc->base_uri, source, sizeof srcbuf);
+				xps_resolve_url(srcbuf, doc->base_uri, source, sizeof srcbuf);
 				xps_add_fixed_page(doc, srcbuf, width, height);
 			}
 		}
@@ -421,7 +431,6 @@ xps_load_page(xps_document *doc, int number)
 			doc->current_page = page;
 			if (!page->root)
 				xps_load_fixed_page(doc, page);
-			page->links_resolved = 1;
 			return page;
 		}
 		n ++;

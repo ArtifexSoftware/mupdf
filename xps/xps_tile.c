@@ -375,4 +375,5 @@ xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, fz_matrix ctm, f
 	xps_parse_fixed_page(doc, ctm, page);
 	doc->cookie = NULL;
 	doc->dev = NULL;
+	page->links_resolved = 1;
 }

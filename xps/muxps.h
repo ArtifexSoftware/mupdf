@@ -32,7 +32,8 @@ typedef struct xps_document_s xps_document;
  */
 
 int xps_strcasecmp(char *a, char *b);
-void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);
+void xps_resolve_url(char *output, char *base_uri, char *path, int output_size);
+int xps_url_is_remote(char *path);
 
 /*
  * XML document model

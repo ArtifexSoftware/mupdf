@@ -375,6 +375,7 @@ static void pdfapp_loadpage_xps(pdfapp_t *app)
 	fz_free_device(mdev);
 
 	app->page_links = page->links;
+	page->links = NULL;
 
 	xps_free_page(app->xps, page);
 }
