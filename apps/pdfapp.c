@@ -313,7 +313,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = fz_device_rgb;
 #endif
 		app->image = fz_new_pixmap_with_rect(app->ctx, colorspace, bbox);
-		fz_clear_pixmap_with_color(app->image, 255);
+		fz_clear_pixmap_with_color(app->ctx, app->image, 255);
 		idev = fz_new_draw_device(app->ctx, app->image);
 		fz_execute_display_list(app->page_list, idev, ctm, bbox, NULL);
 		fz_free_device(idev);

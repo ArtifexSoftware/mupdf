@@ -720,7 +720,7 @@ struct fz_buffer_s
 };
 
 fz_buffer *fz_new_buffer(fz_context *ctx, int size);
-fz_buffer *fz_keep_buffer(fz_buffer *buf);
+fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
 void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
@@ -936,6 +936,8 @@ struct fz_pixmap_s
 	int free_samples;
 };
 
+fz_bbox fz_bound_pixmap(fz_pixmap *pix);
+
 fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
 fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *, fz_bbox bbox);
 fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz_bbox bbox, unsigned char *samples);
@@ -943,17 +945,16 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
 void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
-void fz_clear_pixmap(fz_pixmap *pix);
-void fz_clear_pixmap_with_color(fz_pixmap *pix, int value);
-void fz_clear_pixmap_rect_with_color(fz_pixmap *pix, int value, fz_bbox r);
-void fz_copy_pixmap_rect(fz_pixmap *dest, fz_pixmap *src, fz_bbox r);
-void fz_premultiply_pixmap(fz_pixmap *pix);
-void fz_unmultiply_pixmap(fz_pixmap *pix);
+void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
+void fz_clear_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, int value);
+void fz_clear_pixmap_rect_with_color(fz_context *ctx, fz_pixmap *pix, int value, fz_bbox r);
+void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_bbox r);
+void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
+void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
-fz_bbox fz_bound_pixmap(fz_pixmap *pix);
-void fz_invert_pixmap(fz_pixmap *pix);
-void fz_gamma_pixmap(fz_pixmap *pix, float gamma);
-unsigned int fz_pixmap_size(fz_pixmap *pix);
+void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
+void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
+unsigned int fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip);
 
@@ -982,8 +983,8 @@ struct fz_bitmap_s
 };
 
 fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
-fz_bitmap *fz_keep_bitmap(fz_bitmap *bit);
-void fz_clear_bitmap(fz_bitmap *bit);
+fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
+void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 void fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
@@ -1004,7 +1005,7 @@ struct fz_halftone_s
 
 fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
 fz_halftone *fz_get_default_halftone(fz_context *ctx, int num_comps);
-fz_halftone *fz_keep_halftone(fz_halftone *half);
+fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
 
 fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);

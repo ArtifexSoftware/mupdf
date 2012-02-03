@@ -212,9 +212,9 @@ static void drawpage(pdf_document *doc, int pagenum)
 			pix = fz_new_pixmap_with_rect(ctx, colorspace, bbox);
 
 			if (savealpha)
-				fz_clear_pixmap(pix);
+				fz_clear_pixmap(ctx, pix);
 			else
-				fz_clear_pixmap_with_color(pix, 255);
+				fz_clear_pixmap_with_color(ctx, pix, 255);
 
 			dev = fz_new_draw_device(ctx, pix);
 			if (list)
@@ -225,12 +225,12 @@ static void drawpage(pdf_document *doc, int pagenum)
 			dev = NULL;
 
 			if (invert)
-				fz_invert_pixmap(pix);
+				fz_invert_pixmap(ctx, pix);
 			if (gamma_value != 1)
-				fz_gamma_pixmap(pix, gamma_value);
+				fz_gamma_pixmap(ctx, pix, gamma_value);
 
 			if (savealpha)
-				fz_unmultiply_pixmap(pix);
+				fz_unmultiply_pixmap(ctx, pix);
 
 			if (output)
 			{

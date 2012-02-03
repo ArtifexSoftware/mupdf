@@ -795,7 +795,7 @@ fz_load_tiff(fz_context *ctx, unsigned char *buf, int len)
 				fz_drop_pixmap(ctx, image);
 				image = rgb;
 			}
-			fz_premultiply_pixmap(image);
+			fz_premultiply_pixmap(ctx, image);
 		}
 	}
 	fz_always(ctx)
