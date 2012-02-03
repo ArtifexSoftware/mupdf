@@ -446,17 +446,17 @@ extern char *fz_optarg;
 typedef struct fz_hash_table_s fz_hash_table;
 
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen);
-void fz_debug_hash(fz_hash_table *table);
-void fz_empty_hash(fz_hash_table *table);
-void fz_free_hash(fz_hash_table *table);
+void fz_debug_hash(fz_context *ctx, fz_hash_table *table);
+void fz_empty_hash(fz_context *ctx, fz_hash_table *table);
+void fz_free_hash(fz_context *ctx, fz_hash_table *table);
 
-void *fz_hash_find(fz_hash_table *table, void *key);
-void fz_hash_insert(fz_hash_table *table, void *key, void *val);
-void fz_hash_remove(fz_hash_table *table, void *key);
+void *fz_hash_find(fz_context *ctx, fz_hash_table *table, void *key);
+void fz_hash_insert(fz_context *ctx, fz_hash_table *table, void *key, void *val);
+void fz_hash_remove(fz_context *ctx, fz_hash_table *table, void *key);
 
-int fz_hash_len(fz_hash_table *table);
-void *fz_hash_get_key(fz_hash_table *table, int idx);
-void *fz_hash_get_val(fz_hash_table *table, int idx);
+int fz_hash_len(fz_context *ctx, fz_hash_table *table);
+void *fz_hash_get_key(fz_context *ctx, fz_hash_table *table, int idx);
+void *fz_hash_get_val(fz_context *ctx, fz_hash_table *table, int idx);
 
 /*
  * Math and geometry
