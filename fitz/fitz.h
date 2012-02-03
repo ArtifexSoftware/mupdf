@@ -1580,9 +1580,7 @@ fz_link *fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest);
 void fz_free_link(fz_context *ctx, fz_link *link);
 void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 
-/*
- * Document interface.
- */
+/* Outline */
 
 typedef struct fz_outline_s fz_outline;
 
@@ -1597,5 +1595,40 @@ struct fz_outline_s
 void fz_debug_outline_xml(fz_outline *outline, int level);
 void fz_debug_outline(fz_outline *outline, int level);
 void fz_free_outline(fz_context *ctx, fz_outline *outline);
+
+/* Document interface */
+
+typedef struct fz_document_s fz_document;
+typedef struct fz_page_s fz_page; /* doesn't have a definition -- always cast to *_page */
+
+struct fz_document_s
+{
+	void (*close)(fz_document *);
+	int (*needs_password)(fz_document *doc);
+	int (*authenticate_password)(fz_document *doc, char *password);
+	fz_outline *(*load_outline)(fz_document *doc);
+	int (*count_pages)(fz_document *doc);
+	fz_page *(*load_page)(fz_document *doc, int number);
+	fz_link *(*load_links)(fz_document *doc, fz_page *page);
+	fz_rect (*bound_page)(fz_document *doc, fz_page *page);
+	void (*run_page)(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+	void (*free_page)(fz_document *doc, fz_page *page);
+};
+
+fz_document *fz_open_document(fz_context *ctx, char *filename);
+
+void fz_close_document(fz_document *doc);
+
+int fz_needs_password(fz_document *doc);
+int fz_authenticate_password(fz_document *doc, char *password);
+
+fz_outline *fz_load_outline(fz_document *doc);
+
+int fz_count_pages(fz_document *doc);
+fz_page *fz_load_page(fz_document *doc, int number);
+fz_link *fz_load_links(fz_document *doc, fz_page *page);
+fz_rect fz_bound_page(fz_document *doc, fz_page *page);
+void fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
+void fz_free_page(fz_document *doc, fz_page *page);
 
 #endif

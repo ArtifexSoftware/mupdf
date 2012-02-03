@@ -141,6 +141,13 @@ xps_add_link(xps_document *doc, fz_rect area, char *base_uri, char *target_uri)
 	}
 }
 
+fz_link *
+xps_load_links(xps_document *doc, xps_page *page)
+{
+	if (!page->links_resolved)
+		fz_warn(doc->ctx, "xps_load_links before page has been executed!");
+	return page->links;
+}
 
 static void
 xps_add_fixed_page(xps_document *doc, char *name, int width, int height)

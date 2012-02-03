@@ -11,6 +11,8 @@
 
 #define DPI 72.0f
 
+static void cbz_init_document(cbz_document *doc);
+
 static const char *cbz_ext_list[] = {
 	".jpg", ".jpeg", ".png",
 	".JPG", ".JPEG", ".PNG",
@@ -32,6 +34,8 @@ struct cbz_entry_s
 
 struct cbz_document_s
 {
+	fz_document super;
+
 	fz_context *ctx;
 	fz_stream *file;
 	int entry_count;
@@ -278,6 +282,7 @@ cbz_open_document_with_stream(fz_stream *file)
 	cbz_document *doc;
 
 	doc = fz_malloc_struct(ctx, cbz_document);
+	cbz_init_document(doc);
 	doc->ctx = ctx;
 	doc->file = fz_keep_stream(file);
 	doc->entry_count = 0;
@@ -408,4 +413,51 @@ cbz_run_page(cbz_document *doc, cbz_page *page, fz_device *dev, fz_matrix ctm, f
 	float h = image->h * DPI / image->yres;
 	ctm = fz_concat(fz_scale(w, h), ctm);
 	fz_fill_image(dev, image, ctm, 1);
+}
+
+/* Document interface wrappers */
+
+static void cbz_close_document_shim(fz_document *doc)
+{
+	cbz_close_document((cbz_document*)doc);
+}
+
+static int cbz_count_pages_shim(fz_document *doc)
+{
+	return cbz_count_pages((cbz_document*)doc);
+}
+
+static fz_page *cbz_load_page_shim(fz_document *doc, int number)
+{
+	return (fz_page*) cbz_load_page((cbz_document*)doc, number);
+}
+
+static fz_rect cbz_bound_page_shim(fz_document *doc, fz_page *page)
+{
+	return cbz_bound_page((cbz_document*)doc, (cbz_page*)page);
+}
+
+static void cbz_run_page_shim(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
+{
+	cbz_run_page((cbz_document*)doc, (cbz_page*)page, dev, transform, cookie);
+}
+
+static void cbz_free_page_shim(fz_document *doc, fz_page *page)
+{
+	cbz_free_page((cbz_document*)doc, (cbz_page*)page);
+}
+
+static void
+cbz_init_document(cbz_document *doc)
+{
+	doc->super.close = cbz_close_document_shim;
+	doc->super.needs_password = NULL;
+	doc->super.authenticate_password = NULL;
+	doc->super.load_outline = NULL;
+	doc->super.count_pages = cbz_count_pages_shim;
+	doc->super.load_page = cbz_load_page_shim;
+	doc->super.load_links = NULL;
+	doc->super.bound_page = cbz_bound_page_shim;
+	doc->super.run_page = cbz_run_page_shim;
+	doc->super.free_page = cbz_free_page_shim;
 }

@@ -215,6 +215,8 @@ struct xps_entry_s
 
 struct xps_document_s
 {
+	fz_document super;
+
 	fz_context *ctx;
 	char *directory;
 	fz_stream *file;
