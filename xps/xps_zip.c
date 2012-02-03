@@ -456,8 +456,6 @@ xps_open_document_with_directory(fz_context *ctx, char *directory)
 	xps_document *doc;
 
 	doc = fz_malloc_struct(ctx, xps_document);
-	memset(doc, 0, sizeof *doc);
-
 	doc->ctx = ctx;
 	doc->directory = fz_strdup(ctx, directory);
 
@@ -481,8 +479,6 @@ xps_open_document_with_stream(fz_stream *file)
 	xps_document *doc;
 
 	doc = fz_malloc_struct(ctx, xps_document);
-	memset(doc, 0, sizeof *doc);
-
 	doc->ctx = ctx;
 	doc->file = fz_keep_stream(file);
 

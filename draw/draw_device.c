@@ -1567,8 +1567,6 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 	fz_device *dev = NULL;
 	fz_draw_device *ddev = fz_malloc_struct(ctx, fz_draw_device);
 
-	memset(ddev, 0, sizeof(*ddev));
-
 	fz_var(dev);
 	fz_try(ctx)
 	{
