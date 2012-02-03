@@ -108,6 +108,7 @@ void xps_free_page_list(xps_document *doc);
 
 int xps_count_pages(xps_document *doc);
 xps_page *xps_load_page(xps_document *doc, int number);
+fz_link *xps_load_links(xps_document *doc, xps_page *page);
 fz_rect xps_bound_page(xps_document *doc, xps_page *page);
 void xps_free_page(xps_document *doc, xps_page *page);
 

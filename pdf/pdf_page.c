@@ -401,7 +401,7 @@ pdf_bound_page(pdf_document *xref, pdf_page *page)
 fz_link *
 pdf_load_links(pdf_document *xref, pdf_page *page)
 {
-	return page->links;
+	return fz_keep_link(xref->ctx, page->links);
 }
 
 void
@@ -412,7 +412,7 @@ pdf_free_page(pdf_document *xref, pdf_page *page)
 	if (page->contents)
 		fz_drop_buffer(xref->ctx, page->contents);
 	if (page->links)
-		fz_free_link(xref->ctx, page->links);
+		fz_drop_link(xref->ctx, page->links);
 	if (page->annots)
 		pdf_free_annot(xref->ctx, page->annots);
 	fz_free(xref->ctx, page);

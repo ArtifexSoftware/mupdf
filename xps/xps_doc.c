@@ -146,7 +146,7 @@ xps_load_links(xps_document *doc, xps_page *page)
 {
 	if (!page->links_resolved)
 		fz_warn(doc->ctx, "xps_load_links before page has been executed!");
-	return page->links;
+	return fz_keep_link(doc->ctx, page->links);
 }
 
 static void
@@ -463,6 +463,6 @@ xps_free_page(xps_document *doc, xps_page *page)
 	/* only free the XML contents */
 	if (page->root)
 		xml_free_element(doc->ctx, page->root);
-	fz_free_link(doc->ctx, page->links);
+	fz_drop_link(doc->ctx, page->links);
 	page->root = NULL;
 }

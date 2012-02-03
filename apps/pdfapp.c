@@ -178,7 +178,7 @@ void pdfapp_close(pdfapp_t *app)
 	app->page_text = NULL;
 
 	if (app->page_links)
-		fz_free_link(app->ctx, app->page_links);
+		fz_drop_link(app->ctx, app->page_links);
 	app->page_links = NULL;
 
 	if (app->doctitle)
@@ -242,8 +242,8 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		fz_free_display_list(app->ctx, app->page_list);
 	if (app->page_text)
 		fz_free_text_span(app->ctx, app->page_text);
-//	if (app->page_links) // TODO: ownership
-//		fz_free_link(app->ctx, app->page_links);
+	if (app->page_links)
+		fz_drop_link(app->ctx, app->page_links);
 	if (app->page)
 		fz_free_page(app->doc, app->page);
 
@@ -258,7 +258,7 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		fz_free_device(mdev);
 
 		app->page_bbox = fz_bound_page(app->doc, app->page);
-		app->page_links = fz_load_links(app->doc, app->page); // FIXME: refcount or ownership of links
+		app->page_links = fz_load_links(app->doc, app->page);
 	}
 	fz_catch(app->ctx)
 	{

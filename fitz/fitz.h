@@ -1569,13 +1569,15 @@ struct fz_link_dest_s
 
 struct fz_link_s
 {
+	int refs;
 	fz_rect rect;
 	fz_link_dest dest;
 	fz_link *next;
 };
 
 fz_link *fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest);
-void fz_free_link(fz_context *ctx, fz_link *link);
+fz_link *fz_keep_link(fz_context *ctx, fz_link *link);
+void fz_drop_link(fz_context *ctx, fz_link *link);
 void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 
 /* Outline */
