@@ -345,13 +345,14 @@ pdf_end_group(pdf_csi *csi)
 static void
 pdf_show_shade(pdf_csi *csi, fz_shade *shd)
 {
+	fz_context *ctx = csi->dev->ctx;
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_rect bbox;
 
 	if (csi->in_hidden_ocg > 0)
 		return;
 
-	bbox = fz_bound_shade(shd, gstate->ctm);
+	bbox = fz_bound_shade(ctx, shd, gstate->ctm);
 
 	pdf_begin_group(csi, bbox);
 
@@ -460,9 +461,9 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 			fz_closepath(ctx, path);
 
 		if (dostroke)
-			bbox = fz_bound_path(path, &gstate->stroke_state, gstate->ctm);
+			bbox = fz_bound_path(ctx, path, &gstate->stroke_state, gstate->ctm);
 		else
-			bbox = fz_bound_path(path, NULL, gstate->ctm);
+			bbox = fz_bound_path(ctx, path, NULL, gstate->ctm);
 
 		if (csi->clip)
 		{
@@ -722,7 +723,7 @@ pdf_show_char(pdf_csi *csi, int cid)
 	bbox.x1 += 1;
 	bbox.y1 += 1;
 
-	render_direct = !fz_glyph_cacheable(fontdesc->font, gid);
+	render_direct = !fz_glyph_cacheable(ctx, fontdesc->font, gid);
 
 	/* flush buffered text if face or matrix or rendermode has changed */
 	if (!csi->text ||

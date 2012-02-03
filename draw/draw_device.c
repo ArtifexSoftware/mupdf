@@ -741,7 +741,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 
-	bounds = fz_bound_shade(shade, ctm);
+	bounds = fz_bound_shade(dev->ctx, shade, ctm);
 	scissor = state->scissor;
 	bbox = fz_intersect_bbox(fz_round_rect(bounds), scissor);
 

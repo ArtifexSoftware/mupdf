@@ -1047,7 +1047,7 @@ fz_colorspace *fz_find_device_colorspace(char *name);
  *	Type 3 fonts have callbacks to the interpreter.
  */
 
-struct fz_device_s;
+typedef struct fz_device_s fz_device;
 
 typedef struct fz_font_s fz_font;
 char *ft_error_string(int err);
@@ -1074,8 +1074,7 @@ struct fz_font_s
 	float *t3widths; /* has 256 entries if used */
 	char *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
-	void (*t3run)(void *doc, fz_obj *resources, fz_buffer *contents,
-		struct fz_device_s *dev, fz_matrix ctm, void *gstate);
+	void (*t3run)(void *doc, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
@@ -1097,14 +1096,14 @@ fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 fz_font *fz_new_font_from_memory(fz_context *ctx, unsigned char *data, int len, int index, int use_glyph_bbox);
 fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_glyph_bbox);
 
-fz_font *fz_keep_font(fz_font *font);
+fz_font *fz_keep_font(fz_context *ctx, fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);
 
-void fz_debug_font(fz_font *font);
+void fz_debug_font(fz_context *ctx, fz_font *font);
 
-void fz_set_font_bbox(fz_font *font, float xmin, float ymin, float xmax, float ymax);
+void fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float xmax, float ymax);
 fz_rect fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm);
-int fz_glyph_cacheable(fz_font *font, int gid);
+int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid);
 
 /*
  * Vector path buffer.
@@ -1177,18 +1176,16 @@ void fz_curvetoy(fz_context*,fz_path*, float, float, float, float);
 void fz_closepath(fz_context*,fz_path*);
 void fz_free_path(fz_context *ctx, fz_path *path);
 
-void fz_transform_path(fz_path *path, fz_matrix transform);
+void fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix transform);
 
 fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
-fz_rect fz_bound_path(fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
-void fz_debug_path(fz_path *, int indent);
+fz_rect fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
+void fz_debug_path(fz_context *ctx, fz_path *, int indent);
 
 /*
  * Glyph cache
  */
-
-typedef struct fz_device_s fz_device;
 
 void fz_new_glyph_cache_context(fz_context *ctx);
 void fz_free_glyph_cache_context(fz_context *ctx);
@@ -1236,7 +1233,7 @@ void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, floa
 void fz_free_text(fz_context *ctx, fz_text *text);
 fz_rect fz_bound_text(fz_context *ctx, fz_text *text, fz_matrix ctm);
 fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
-void fz_debug_text(fz_text*, int indent);
+void fz_debug_text(fz_context *ctx, fz_text*, int indent);
 
 /*
  * The shading code uses gouraud shaded triangle meshes.
@@ -1276,9 +1273,9 @@ struct fz_shade_s
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 void fz_free_shade_imp(fz_context *ctx, fz_storable *shade);
-void fz_debug_shade(fz_shade *shade);
+void fz_debug_shade(fz_context *ctx, fz_shade *shade);
 
-fz_rect fz_bound_shade(fz_shade *shade, fz_matrix ctm);
+fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);
 
 /*
@@ -1593,8 +1590,8 @@ struct fz_outline_s
 	fz_outline *down;
 };
 
-void fz_debug_outline_xml(fz_outline *outline, int level);
-void fz_debug_outline(fz_outline *outline, int level);
+void fz_debug_outline_xml(fz_context *ctx, fz_outline *outline, int level);
+void fz_debug_outline(fz_context *ctx, fz_outline *outline, int level);
 void fz_free_outline(fz_context *ctx, fz_outline *outline);
 
 /* Document interface */

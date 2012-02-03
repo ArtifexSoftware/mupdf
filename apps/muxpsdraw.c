@@ -257,9 +257,9 @@ static void drawoutline(xps_document *doc)
 {
 	fz_outline *outline = xps_load_outline(doc);
 	if (showoutline > 1)
-		fz_debug_outline_xml(outline, 0);
+		fz_debug_outline_xml(doc->ctx, outline, 0);
 	else
-		fz_debug_outline(outline, 0);
+		fz_debug_outline(doc->ctx, outline, 0);
 	fz_free_outline(doc->ctx, outline);
 }
 

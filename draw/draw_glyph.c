@@ -143,7 +143,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_color
 			fz_try(ctx)
 			{
 				fz_hash_insert(ctx, cache->hash, &key, val);
-				fz_keep_font(key.font);
+				fz_keep_font(ctx, key.font);
 				val = fz_keep_pixmap(ctx, val);
 			}
 			fz_catch(ctx)

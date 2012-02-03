@@ -763,7 +763,7 @@ xps_parse_path_geometry(xps_document *doc, xps_resource *dict, xml_element *root
 	}
 
 	if (transform_att || transform_tag)
-		fz_transform_path(path, transform);
+		fz_transform_path(doc->ctx, path, transform);
 
 	return path;
 }
@@ -974,9 +974,9 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 		path = xps_parse_path_geometry(doc, dict, data_tag, 0, &fill_rule);
 
 	if (stroke_att || stroke_tag)
-		area = fz_bound_path(path, &stroke, ctm);
+		area = fz_bound_path(doc->ctx, path, &stroke, ctm);
 	else
-		area = fz_bound_path(path, NULL, ctm);
+		area = fz_bound_path(doc->ctx, path, NULL, ctm);
 
 	if (navigate_uri_att)
 		xps_add_link(doc, area, base_uri, navigate_uri_att);
@@ -996,7 +996,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 
 	if (fill_tag)
 	{
-		area = fz_bound_path(path, NULL, ctm);
+		area = fz_bound_path(doc->ctx, path, NULL, ctm);
 
 		fz_clip_path(doc->dev, path, NULL, fill_rule == 0, ctm);
 		xps_parse_brush(doc, ctm, area, fill_uri, dict, fill_tag);

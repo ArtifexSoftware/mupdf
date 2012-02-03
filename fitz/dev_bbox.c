@@ -7,7 +7,7 @@ fz_bbox_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_round_rect(fz_bound_path(path, NULL, ctm));
+	fz_bbox bbox = fz_round_rect(fz_bound_path(dev->ctx, path, NULL, ctm));
 	*result = fz_union_bbox(*result, bbox);
 }
 
@@ -16,7 +16,7 @@ fz_bbox_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_m
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_round_rect(fz_bound_path(path, stroke, ctm));
+	fz_bbox bbox = fz_round_rect(fz_bound_path(dev->ctx, path, stroke, ctm));
 	*result = fz_union_bbox(*result, bbox);
 }
 
@@ -42,7 +42,7 @@ static void
 fz_bbox_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
 {
 	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_round_rect(fz_bound_shade(shade, ctm));
+	fz_bbox bbox = fz_round_rect(fz_bound_shade(dev->ctx, shade, ctm));
 	*result = fz_union_bbox(*result, bbox);
 }
 
