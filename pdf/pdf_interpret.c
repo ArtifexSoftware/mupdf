@@ -941,7 +941,6 @@ copy_state(fz_context *ctx, pdf_gstate *gs, pdf_gstate *old)
 		pdf_keep_xobject(ctx, gs->softmask);
 }
 
-
 static pdf_csi *
 pdf_new_csi(pdf_document *xref, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie, pdf_gstate *gstate)
 {

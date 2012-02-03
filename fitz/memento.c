@@ -137,7 +137,6 @@ static struct {
     size_t         numReallocs;
 } globals;
 
-
 #define MEMENTO_EXTRASIZE (sizeof(Memento_BlkHeader) + Memento_PostSize)
 
 /* Round up size S to the next multiple of N (where N is a power of 2) */
@@ -714,7 +713,7 @@ static int squeeze(void)
         return 1;
     if (globals.squeezing && globals.patternBit >= MEMENTO_MAXPATTERN)
         return 1;
-    
+
     if (globals.patternBit == 0)
         globals.squeezeAt = globals.sequence;
 
@@ -757,7 +756,7 @@ static int squeeze(void)
     if (status != 0) {
         fprintf(stderr, "Child status=%d\n", status);
     }
-    
+
     /* Put the files back */
     for (i = 0; i < OPEN_MAX; i++) {
         if (stashed_map[i] != 0) {
@@ -784,7 +783,7 @@ static void Memento_signal(void)
     else
         Memento_fin();
 }
-    
+
 int squeeze(void)
 {
     fprintf(stderr, "Memento memory squeezing disabled as no fork!\n");

@@ -226,4 +226,3 @@ fz_alloc_context fz_alloc_default =
 	fz_realloc_default,
 	fz_free_default
 };
-
