@@ -705,11 +705,11 @@ pdf_show_char(pdf_csi *csi, int cid)
 		ucslen = 1;
 	}
 
-	gid = pdf_font_cid_to_gid(fontdesc, cid);
+	gid = pdf_font_cid_to_gid(ctx, fontdesc, cid);
 
 	if (fontdesc->wmode == 1)
 	{
-		v = pdf_get_vmtx(fontdesc, cid);
+		v = pdf_get_vmtx(ctx, fontdesc, cid);
 		tsm.e -= v.x * gstate->size * 0.001f;
 		tsm.f -= v.y * gstate->size * 0.001f;
 	}
@@ -767,7 +767,7 @@ pdf_show_char(pdf_csi *csi, int cid)
 
 	if (fontdesc->wmode == 0)
 	{
-		h = pdf_get_hmtx(fontdesc, cid);
+		h = pdf_get_hmtx(ctx, fontdesc, cid);
 		w0 = h.w * 0.001f;
 		tx = (w0 * gstate->size + gstate->char_space) * gstate->scale;
 		csi->tm = fz_concat(fz_translate(tx, 0), csi->tm);
