@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ViewAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/buttons"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:inAnimation="@anim/fade_in"
+    android:outAnimation="@anim/fade_out">
+
+    <RelativeLayout
+        android:id="@+id/dummy"
+        android:layout_width="0dp"
+        android:layout_height="0dp" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <SeekBar
+            android:id="@+id/pageSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="10dp"
+            android:background="@drawable/slider" />
+
+        <ViewSwitcher
+            android:id="@+id/switcher"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_below="@+id/topBar"
+            android:layout_centerHorizontal="true" >
+
+            <RelativeLayout
+                android:id="@+id/topBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#CC444444"
+                android:paddingBottom="0dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:paddingTop="0dp" >
+
+                <ImageButton
+                    android:id="@+id/searchButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:contentDescription="@string/search_document"
+                    android:src="@drawable/ic_btn_search" />
+
+                <ImageButton
+                    android:id="@+id/outlineButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toLeftOf="@+id/searchButton"
+                    android:layout_centerVertical="true"
+                    android:contentDescription="@string/search_document"
+                    android:src="@drawable/btn_star_big_off" />
+
+                <TextView
+                    android:id="@+id/docNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_toLeftOf="@+id/outlineButton"
+                    android:layout_centerVertical="true"
+                    android:textAppearance="?android:attr/textAppearanceMedium" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/topBar2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#CC444444" >
+
+                <Button
+                    android:id="@+id/cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
+                    android:text="@string/cancel" />
+
+                <EditText
+                    android:id="@+id/searchText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_toLeftOf="@+id/searchBack"
+                    android:layout_toRightOf="@+id/cancel"
+                    android:singleLine="true"
+                    android:inputType="text" />
+
+                <ImageButton
+                    android:id="@+id/searchBack"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toLeftOf="@+id/searchForward"
+                    android:contentDescription="@string/search_backwards"
+                    android:src="@drawable/ic_media_previous" />
+
+                <ImageButton
+                    android:id="@+id/searchForward"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:contentDescription="@string/search_forwards"
+                    android:src="@drawable/ic_media_next" />
+            </RelativeLayout>
+        </ViewSwitcher>
+
+        <TextView
+            android:id="@+id/pageNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/pageSlider"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/page_num"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+    </RelativeLayout>
+
+</ViewAnimator>

@@ -1,46 +1,76 @@
 package com.artifex.mupdf;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.RectF;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.*;
-import android.view.View.OnClickListener;
-import android.widget.*;
-import android.widget.LinearLayout.*;
-import java.io.File;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.method.PasswordTransformationMethod;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.ViewAnimator;
+import android.widget.ViewSwitcher;
 
-import com.artifex.mupdf.PixmapView;
+class SearchTaskResult {
+	public final int   pageNumber;
+	public final RectF searchBoxes[];
 
+	SearchTaskResult(int _pageNumber, RectF _searchBoxes[]) {
+		pageNumber = _pageNumber;
+		searchBoxes = _searchBoxes;
+	}
+}
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
-	private MuPDFCore core;
+	private MuPDFCore    core;
+	private String       mFileName;
+	private ReaderView   mDocView;
+	private ViewAnimator mButtonsView;
+	private boolean      mButtonsVisible;
+	private EditText     mPasswordView;
+	private TextView     mFilenameView;
+	private SeekBar      mPageSlider;
+	private TextView     mPageNumberView;
+	private ImageButton  mSearchButton;
+	private Button       mCancelButton;
+	private ImageButton  mOutlineButton;
+	private ViewSwitcher mTopBarSwitcher;
+	private boolean      mTopBarIsSearch;
+	private ImageButton  mSearchBack;
+	private ImageButton  mSearchFwd;
+	private EditText     mSearchText;
+	private AsyncTask<Integer,Void,SearchTaskResult> mSearchTask;
+	private SearchTaskResult mSearchTaskResult;
+	private AlertDialog.Builder mAlertBuilder;
 
-	private MuPDFCore openFile()
+	private MuPDFCore openFile(String path)
 	{
-		String storageState = Environment.getExternalStorageState();
-		File path, file;
-		MuPDFCore core;
-
-		if (Environment.MEDIA_MOUNTED.equals(storageState))
-		{
-			System.out.println("Media mounted read/write");
-		}
-		else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(storageState))
-		{
-			System.out.println("Media mounted read only");
-		}
-		else
-		{
-			System.out.println("No media at all! Bale!\n");
-			return null;
-		}
-		path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-		file = new File(path, "test.pdf");
-		System.out.println("Trying to open "+file.toString());
+		int lastSlashPos = path.lastIndexOf('/');
+		mFileName = new String(lastSlashPos == -1
+					? path
+					: path.substring(lastSlashPos+1));
+		System.out.println("Trying to open "+path);
 		try
 		{
-			core = new MuPDFCore(file.toString());
+			core = new MuPDFCore(path);
+			// New file: drop the old outline data
+			OutlineActivityData.set(null);
 		}
 		catch (Exception e)
 		{
@@ -54,69 +84,256 @@ public class MuPDFActivity extends Activity
 	@Override
 	public void onCreate(Bundle savedInstanceState)
 	{
-		PixmapView pixmapView;
+		super.onCreate(savedInstanceState);
+
+		mAlertBuilder = new AlertDialog.Builder(this);
 
 		if (core == null) {
 			core = (MuPDFCore)getLastNonConfigurationInstance();
+
+			if (savedInstanceState != null && savedInstanceState.containsKey("FileName")) {
+				mFileName = savedInstanceState.getString("FileName");
+			}
 		}
 		if (core == null) {
-			core = openFile();
+			Intent intent = getIntent();
+			if (Intent.ACTION_VIEW.equals(intent.getAction()))
+				core = openFile(intent.getData().getEncodedPath());
+			if (core != null && core.needsPassword()) {
+				requestPassword(savedInstanceState);
+				return;
+			}
 		}
 		if (core == null)
 		{
-			/* FIXME: Error handling here! */
+			AlertDialog alert = mAlertBuilder.create();
+			alert.setTitle(R.string.open_failed);
+			alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							finish();
+						}
+					});
+			alert.show();
 			return;
 		}
 
-		pixmapView = new PixmapView(this, core);
-		super.onCreate(savedInstanceState);
+		createUI(savedInstanceState);
+	}
 
-		/* Now create the UI */
-		RelativeLayout layout;
-		LinearLayout bar;
-		MyButtonHandler bh = new MyButtonHandler(pixmapView);
+	public void requestPassword(final Bundle savedInstanceState) {
+		mPasswordView = new EditText(this);
+		mPasswordView.setInputType(EditorInfo.TYPE_TEXT_VARIATION_PASSWORD);
+		mPasswordView.setTransformationMethod(new PasswordTransformationMethod());
 
-		bar = new LinearLayout(this);
-		bar.setOrientation(LinearLayout.HORIZONTAL);
-		bh.buttonStart = new Button(this);
-		bh.buttonStart.setText("<<");
-		bh.buttonStart.setOnClickListener(bh);
-		bar.addView(bh.buttonStart);
-		bh.buttonPrev = new Button(this);
-		bh.buttonPrev.setText("<");
-		bh.buttonPrev.setOnClickListener(bh);
-		bar.addView(bh.buttonPrev);
-		bh.buttonNext = new Button(this);
-		bh.buttonNext.setText(">");
-		bh.buttonNext.setOnClickListener(bh);
-		bar.addView(bh.buttonNext);
-		bh.buttonEnd = new Button(this);
-		bh.buttonEnd.setText(">>");
-		bh.buttonEnd.setOnClickListener(bh);
-		bar.addView(bh.buttonEnd);
+		AlertDialog alert = mAlertBuilder.create();
+		alert.setTitle(R.string.enter_password);
+		alert.setView(mPasswordView);
+		alert.setButton(AlertDialog.BUTTON_POSITIVE, "Ok",
+				new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				if (core.authenticatePassword(mPasswordView.getText().toString())) {
+					createUI(savedInstanceState);
+				} else {
+					requestPassword(savedInstanceState);
+				}
+			}
+		});
+		alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel",
+				new DialogInterface.OnClickListener() {
 
-		layout = new RelativeLayout(this);
-		layout.setLayoutParams(new RelativeLayout.LayoutParams(
-					RelativeLayout.LayoutParams.FILL_PARENT,
-					RelativeLayout.LayoutParams.FILL_PARENT));
-		layout.setGravity(Gravity.FILL);
+			public void onClick(DialogInterface dialog, int which) {
+				finish();
+			}
+		});
+		alert.show();
+	}
 
-		RelativeLayout.LayoutParams barParams =
-			new RelativeLayout.LayoutParams(
-					RelativeLayout.LayoutParams.FILL_PARENT,
-					RelativeLayout.LayoutParams.WRAP_CONTENT);
-		barParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-		bar.setId(100);
-		layout.addView(bar, barParams);
+	public void createUI(Bundle savedInstanceState) {
+		// Now create the UI.
+		// First create the document view making use of the ReaderView's internal
+		// gesture recognition
+		mDocView = new ReaderView(this) {
+			private boolean showButtonsDisabled;
 
-		RelativeLayout.LayoutParams pixmapParams =
-			new RelativeLayout.LayoutParams(
-					RelativeLayout.LayoutParams.FILL_PARENT,
-					RelativeLayout.LayoutParams.FILL_PARENT);
-		pixmapParams.addRule(RelativeLayout.ABOVE,100);
-		layout.addView(pixmapView, pixmapParams);
+			public boolean onSingleTapUp(MotionEvent e) {
+				if (!showButtonsDisabled) {
+					int linkPage = -1;
+					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
+					if (pageView != null) {
+						linkPage = pageView.hitLinkPage(e.getX(), e.getY());
+					}
 
+					if (linkPage != -1) {
+						mDocView.setDisplayedViewIndex(linkPage);
+					} else {
+						if (!mButtonsVisible) {
+							showButtons();
+						} else {
+							hideButtons();
+						}
+					}
+				}
+				return super.onSingleTapUp(e);
+			}
+
+			public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+				if (!showButtonsDisabled)
+					hideButtons();
+
+				return super.onScroll(e1, e2, distanceX, distanceY);
+			}
+
+			public boolean onScaleBegin(ScaleGestureDetector d) {
+				// Disabled showing the buttons until next touch.
+				// Not sure why this is needed, but without it
+				// pinch zoom can make the buttons appear
+				showButtonsDisabled = true;
+				return super.onScaleBegin(d);
+			}
+
+			public boolean onTouchEvent(MotionEvent event) {
+				if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
+					showButtonsDisabled = false;
+
+				return super.onTouchEvent(event);
+			}
+
+			protected void onChildSetup(int i, View v) {
+				if (mSearchTaskResult != null && mSearchTaskResult.pageNumber == i)
+					((PageView)v).setSearchBoxes(mSearchTaskResult.searchBoxes);
+				else
+					((PageView)v).setSearchBoxes(null);
+			}
+
+			protected void onMoveToChild(int i) {
+				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
+				mPageSlider.setMax(core.countPages()-1);
+				mPageSlider.setProgress(i);
+				if (mSearchTaskResult != null && mSearchTaskResult.pageNumber != i) {
+					mSearchTaskResult = null;
+					mDocView.resetupChildren();
+				}
+			}
+
+			protected void onSettle(View v) {
+				// When the layout has settled ask the page to render
+				// in HQ
+				((PageView)v).addHq();
+			}
+
+			protected void onUnsettle(View v) {
+				// When something changes making the previous settled view
+				// no longer appropriate, tell the page to remove HQ
+				((PageView)v).removeHq();
+			}
+		};
+		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
+		mDocView.setBackgroundResource(R.drawable.tiled_background);
+
+		// Make the buttons overlay, and store all its
+		// controls in variables
+		makeButtonsView();
+
+		// Set the file-name text
+		mFilenameView.setText(mFileName);
+
+		// Activate the seekbar
+		mPageSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				mDocView.setDisplayedViewIndex(seekBar.getProgress());
+			}
+
+			public void onStartTrackingTouch(SeekBar seekBar) {}
+
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				updatePageNumView(progress);
+			}
+		});
+
+		// Activate the search-preparing button
+		mSearchButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				searchModeOn();
+			}
+		});
+
+		mCancelButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				searchModeOff();
+			}
+		});
+
+		// Search invoking buttons are disabled while there is no text specified
+		mSearchBack.setEnabled(false);
+		mSearchFwd.setEnabled(false);
+
+		// React to interaction with the text widget
+		mSearchText.addTextChangedListener(new TextWatcher() {
+
+			public void afterTextChanged(Editable s) {
+				boolean haveText = s.toString().length() > 0;
+				mSearchBack.setEnabled(haveText);
+				mSearchFwd.setEnabled(haveText);
+			}
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {}
+			public void onTextChanged(CharSequence s, int start, int before,
+					int count) {}
+		});
+
+		// Activate search invoking buttons
+		mSearchBack.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				hideKeyboard();
+				search(-1);
+			}
+		});
+		mSearchFwd.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				hideKeyboard();
+				search(1);
+			}
+		});
+
+		if (core.hasOutline()) {
+			mOutlineButton.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					OutlineItem outline[] = core.getOutline();
+					if (outline != null) {
+						OutlineActivityData.get().items = outline;
+						Intent intent = new Intent(MuPDFActivity.this, OutlineActivity.class);
+						startActivityForResult(intent, 0);
+					}
+				}
+			});
+		} else {
+			mOutlineButton.setVisibility(View.GONE);
+		}
+
+		// Reenstate last state if it was recorded
+		SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+		mDocView.setDisplayedViewIndex(prefs.getInt("page"+mFileName, 0));
+
+		if (savedInstanceState == null || !savedInstanceState.getBoolean("ButtonsHidden", false))
+			showButtons();
+
+		if(savedInstanceState != null && savedInstanceState.getBoolean("SearchMode", false))
+			searchModeOn();
+
+		// Stick the document view and the buttons overlay into a parent view
+		RelativeLayout layout = new RelativeLayout(this);
+		layout.addView(mDocView);
+		layout.addView(mButtonsView);
 		setContentView(layout);
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (resultCode >= 0)
+			mDocView.setDisplayedViewIndex(resultCode);
+		super.onActivityResult(requestCode, resultCode, data);
 	}
 
 	public Object onRetainNonConfigurationInstance()
@@ -124,6 +341,41 @@ public class MuPDFActivity extends Activity
 		MuPDFCore mycore = core;
 		core = null;
 		return mycore;
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+
+		if (mFileName != null && mDocView != null) {
+			outState.putString("FileName", mFileName);
+
+			// Store current page in the prefs against the file name,
+			// so that we can pick it up each time the file is loaded
+			// Other info is needed only for screen-orientation change,
+			// so it can go in the bundle
+			SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+			SharedPreferences.Editor edit = prefs.edit();
+			edit.putInt("page"+mFileName, mDocView.getDisplayedViewIndex());
+			edit.commit();
+		}
+
+		if (!mButtonsVisible)
+			outState.putBoolean("ButtonsHidden", true);
+
+		if (mTopBarIsSearch)
+			outState.putBoolean("SearchMode", true);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (mFileName != null && mDocView != null) {
+			SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+			SharedPreferences.Editor edit = prefs.edit();
+			edit.putInt("page"+mFileName, mDocView.getDisplayedViewIndex());
+			edit.commit();
+		}
 	}
 
 	public void onDestroy()
@@ -134,29 +386,126 @@ public class MuPDFActivity extends Activity
 		super.onDestroy();
 	}
 
-	private class MyButtonHandler implements OnClickListener
-	{
-		Button buttonStart;
-		Button buttonPrev;
-		Button buttonNext;
-		Button buttonEnd;
-		PixmapView pixmapView;
+	void showButtons() {
+		if (!mButtonsVisible) {
+			mButtonsVisible = true;
+			// Update page number text and slider
+			int index = mDocView.getDisplayedViewIndex();
+			updatePageNumView(index);
+			mPageSlider.setMax(core.countPages()-1);
+			mPageSlider.setProgress(index);
+			if (mTopBarIsSearch) {
+				mSearchText.requestFocus();
+				showKeyboard();
+			}
+			mButtonsView.showNext();
+		}
+	}
 
-		public MyButtonHandler(PixmapView pixmapView)
-		{
-			this.pixmapView = pixmapView;
+	void hideButtons() {
+		if (mButtonsVisible) {
+			mButtonsVisible = false;
+			hideKeyboard();
+			mButtonsView.showPrevious();
+		}
+	}
+
+	void searchModeOn() {
+		mTopBarIsSearch = true;
+		//Focus on EditTextWidget
+		mSearchText.requestFocus();
+		showKeyboard();
+		mTopBarSwitcher.showNext();
+	}
+
+	void searchModeOff() {
+		mTopBarIsSearch = false;
+		hideKeyboard();
+		mTopBarSwitcher.showPrevious();
+		mSearchTaskResult = null;
+		// Make the ReaderView act on the change to mSearchTaskResult
+		// via overridden onChildSetup method.
+		mDocView.resetupChildren();
+	}
+
+	void updatePageNumView(int index) {
+		mPageNumberView.setText(String.format("%d/%d", index+1, core.countPages()));
+	}
+
+	void makeButtonsView() {
+		// mButtonsView is a ViewAnimator between an initial dummy empty view
+		// and the actual control view. showNext and showPrevious can be used
+		// to fade it in an out
+		mButtonsView = (ViewAnimator)getLayoutInflater().inflate(R.layout.buttons,null);
+		mFilenameView = (TextView)mButtonsView.findViewById(R.id.docNameText);
+		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
+		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
+		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
+		mCancelButton = (Button)mButtonsView.findViewById(R.id.cancel);
+		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
+		mTopBarSwitcher = (ViewSwitcher)mButtonsView.findViewById(R.id.switcher);
+		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
+		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
+		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
+	}
+
+	void showKeyboard() {
+		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+		if (imm != null)
+			imm.showSoftInput(mSearchText, 0);
+	}
+
+	void hideKeyboard() {
+		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+		if (imm != null)
+			imm.hideSoftInputFromWindow(mSearchText.getWindowToken(), 0);
+	}
+
+	void search(int direction) {
+		if (mSearchTask != null) {
+			mSearchTask.cancel(true);
+			mSearchTask = null;
 		}
 
-		public void onClick(View v)
-		{
-			if (v == buttonStart)
-				pixmapView.changePage(Integer.MIN_VALUE);
-			else if (v == buttonPrev)
-				pixmapView.changePage(-1);
-			else if (v == buttonNext)
-				pixmapView.changePage(+1);
-			else if (v == buttonEnd)
-				pixmapView.changePage(Integer.MAX_VALUE);
-		}
+		mSearchTask = new AsyncTask<Integer,Void,SearchTaskResult>() {
+			@Override
+			protected SearchTaskResult doInBackground(Integer... params) {
+				int index;
+				if (mSearchTaskResult == null)
+					index = mDocView.getDisplayedViewIndex();
+				else
+					index = mSearchTaskResult.pageNumber + params[0].intValue();
+
+				while (0 <= index && index < core.countPages()) {
+					RectF searchHits[] = core.searchPage(index, mSearchText.getText().toString());
+
+					if (searchHits != null && searchHits.length > 0)
+						return new SearchTaskResult(index, searchHits);
+
+					index += params[0].intValue();
+				}
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(SearchTaskResult result) {
+				if (result != null) {
+					// Ask the ReaderView to move to the resulting page
+					mDocView.setDisplayedViewIndex(result.pageNumber);
+				    mSearchTaskResult = result;
+					// Make the ReaderView act on the change to mSearchTaskResult
+					// via overridden onChildSetup method.
+				    mDocView.resetupChildren();
+				} else {
+					mAlertBuilder.setTitle("Text not found");
+					AlertDialog alert = mAlertBuilder.create();
+					alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+							(DialogInterface.OnClickListener)null);
+					alert.show();
+				}
+			}
+		};
+
+		mSearchTask.execute(new Integer(direction));
 	}
 }
