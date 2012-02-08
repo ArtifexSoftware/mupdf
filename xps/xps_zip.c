@@ -91,12 +91,17 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 	int version, general, method;
 	int namelength, extralength;
 	int code;
+	fz_context *ctx = doc->ctx;
 
+	fz_lock(ctx, FZ_LOCK_FILE);
 	fz_seek(doc->file, ent->offset, 0);
 
 	sig = getlong(doc->file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
+	{
+		fz_unlock(ctx, FZ_LOCK_FILE);
 		fz_throw(doc->ctx, "wrong zip local file signature (0x%x)", sig);
+	}
 
 	version = getshort(doc->file);
 	general = getshort(doc->file);
@@ -132,23 +137,32 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 
 		code = inflateInit2(&stream, -15);
 		if (code != Z_OK)
+		{
+			fz_unlock(ctx, FZ_LOCK_FILE);
 			fz_throw(doc->ctx, "zlib inflateInit2 error: %s", stream.msg);
+		}
 		code = inflate(&stream, Z_FINISH);
 		if (code != Z_STREAM_END)
 		{
 			inflateEnd(&stream);
+			fz_unlock(ctx, FZ_LOCK_FILE);
 			fz_throw(doc->ctx, "zlib inflate error: %s", stream.msg);
 		}
 		code = inflateEnd(&stream);
 		if (code != Z_OK)
+		{
+			fz_unlock(ctx, FZ_LOCK_FILE);
 			fz_throw(doc->ctx, "zlib inflateEnd error: %s", stream.msg);
+		}
 
 		fz_free(doc->ctx, inbuf);
 	}
 	else
 	{
+		fz_unlock(ctx, FZ_LOCK_FILE);
 		fz_throw(doc->ctx, "unknown compression method (%d)", method);
 	}
+	fz_unlock(ctx, FZ_LOCK_FILE);
 }
 
 /*
@@ -221,7 +235,9 @@ xps_find_and_read_zip_dir(xps_document *doc)
 	unsigned char buf[512];
 	int file_size, back, maxback;
 	int i, n;
+	fz_context *ctx = doc->ctx;
 
+	fz_lock(ctx, FZ_LOCK_FILE);
 	fz_seek(doc->file, 0, SEEK_END);
 	file_size = fz_tell(doc->file);
 
@@ -237,6 +253,7 @@ xps_find_and_read_zip_dir(xps_document *doc)
 			if (!memcmp(buf + i, "PK\5\6", 4))
 			{
 				xps_read_zip_dir(doc, file_size - back + i);
+				fz_unlock(ctx, FZ_LOCK_FILE);
 				return;
 			}
 		}
@@ -244,6 +261,7 @@ xps_find_and_read_zip_dir(xps_document *doc)
 		back += sizeof buf - 4;
 	}
 
+	fz_unlock(ctx, FZ_LOCK_FILE);
 	fz_throw(doc->ctx, "cannot find end of central directory");
 }
 
