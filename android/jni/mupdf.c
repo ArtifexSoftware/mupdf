@@ -24,7 +24,7 @@
 
 /* Globals */
 fz_colorspace *colorspace;
-pdf_document *xref;
+fz_document *doc;
 int pagenum = 1;
 int resolution = 160;
 float pageWidth = 100;
@@ -33,7 +33,7 @@ fz_display_list *currentPageList;
 fz_rect currentMediabox;
 fz_context *ctx;
 int currentPageNumber = -1;
-pdf_page *currentPage = NULL;
+fz_page *currentPage = NULL;
 fz_bbox *hit_bbox = NULL;
 
 JNIEXPORT int JNICALL
@@ -58,7 +58,7 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 		return 0;
 	}
 
-	xref = NULL;
+	doc = NULL;
 	fz_try(ctx)
 	{
 		colorspace = fz_device_rgb;
@@ -66,7 +66,7 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 		LOGE("Opening document...");
 		fz_try(ctx)
 		{
-			xref = pdf_open_document(ctx, filename);
+			doc = fz_open_document(ctx, (char *)filename);
 		}
 		fz_catch(ctx)
 		{
@@ -78,8 +78,8 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 	fz_catch(ctx)
 	{
 		LOGE("Failed: %s", ctx->error->message);
-		pdf_close_document(xref);
-		xref = NULL;
+		fz_close_document(doc);
+		doc = NULL;
 		fz_free_context(ctx);
 		ctx = NULL;
 	}
@@ -92,7 +92,7 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_countPagesInternal(JNIEnv *env, jobject thiz)
 {
-	return pdf_count_pages(xref);
+	return fz_count_pages(doc);
 }
 
 JNIEXPORT void JNICALL
@@ -107,7 +107,7 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 
 	if (currentPage != NULL && page != currentPageNumber)
 	{
-		pdf_free_page(xref, currentPage);
+		fz_free_page(doc, currentPage);
 		currentPage = NULL;
 	}
 
@@ -125,9 +125,9 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 			currentPageList = NULL;
 		}
 		pagenum = page;
-		currentPage = pdf_load_page(xref, pagenum);
+		currentPage = fz_load_page(doc, pagenum);
 		zoom = resolution / 72;
-		currentMediabox = pdf_bound_page(xref, currentPage);
+		currentMediabox = fz_bound_page(doc, currentPage);
 		ctm = fz_scale(zoom, zoom);
 		bbox = fz_round_rect(fz_transform_rect(ctm, currentMediabox));
 		pageWidth = bbox.x1-bbox.x0;
@@ -203,7 +203,7 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 			/* Render to list */
 			currentPageList = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, currentPageList);
-			pdf_run_page(xref, currentPage, dev, fz_identity, NULL);
+			fz_run_page(doc, currentPage, dev, fz_identity, NULL);
 		}
 		rect.x0 = patchX;
 		rect.y0 = patchY;
@@ -377,7 +377,7 @@ fillInOutlineItems(JNIEnv * env, jclass olClass, jmethodID ctor, jobjectArray ar
 JNIEXPORT jboolean JNICALL
 Java_com_artifex_mupdf_MuPDFCore_needsPasswordInternal(JNIEnv * env, jobject thiz)
 {
-	return pdf_needs_password(xref) ? JNI_TRUE : JNI_FALSE;
+	return fz_needs_password(doc) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -389,7 +389,7 @@ Java_com_artifex_mupdf_MuPDFCore_authenticatePasswordInternal(JNIEnv *env, jobje
 	if (pw == NULL)
 		return JNI_FALSE;
 
-	result = pdf_authenticate_password(xref, (char *)pw);
+	result = fz_authenticate_password(doc, (char *)pw);
 	(*env)->ReleaseStringUTFChars(env, password, pw);
 	return result;
 }
@@ -397,7 +397,7 @@ Java_com_artifex_mupdf_MuPDFCore_authenticatePasswordInternal(JNIEnv *env, jobje
 JNIEXPORT jboolean JNICALL
 Java_com_artifex_mupdf_MuPDFCore_hasOutlineInternal(JNIEnv * env, jobject thiz)
 {
-	fz_outline *outline = pdf_load_outline(xref);
+	fz_outline *outline = fz_load_outline(doc);
 	return (outline == NULL) ? JNI_FALSE : JNI_TRUE;
 }
 
@@ -416,7 +416,7 @@ Java_com_artifex_mupdf_MuPDFCore_getOutlineInternal(JNIEnv * env, jobject thiz)
 	ctor = (*env)->GetMethodID(env, olClass, "<init>", "(ILjava/lang/String;I)V");
 	if (ctor == NULL) return NULL;
 
-	outline = pdf_load_outline(xref);
+	outline = fz_load_outline(doc);
 	nItems = countOutlineItems(outline);
 
 	arr = (*env)->NewObjectArray(env,
@@ -466,7 +466,7 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 		dev  = fz_new_text_device(ctx, text);
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
-		pdf_run_page(xref, currentPage, dev, ctm, NULL);
+		fz_run_page(doc, currentPage, dev, ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
 
@@ -530,11 +530,11 @@ Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
 	currentPageList = NULL;
 	if (currentPage != NULL)
 	{
-		pdf_free_page(xref, currentPage);
+		fz_free_page(doc, currentPage);
 		currentPage = NULL;
 	}
-	pdf_close_document(xref);
-	xref = NULL;
+	fz_close_document(doc);
+	doc = NULL;
 }
 
 JNIEXPORT int JNICALL
@@ -561,7 +561,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLink(JNIEnv * env, jobject thiz, int pag
 
 	p = fz_transform_point(ctm, p);
 
-	for (link = currentPage->links; link; link = link->next)
+	for (link = fz_load_links(doc, currentPage); link; link = link->next)
 	{
 		if (p.x >= link->rect.x0 && p.x <= link->rect.x1)
 			if (p.y >= link->rect.y0 && p.y <= link->rect.y1)

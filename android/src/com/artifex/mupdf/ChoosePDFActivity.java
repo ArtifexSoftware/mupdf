@@ -47,7 +47,13 @@ public class ChoosePDFActivity extends ListActivity {
 		mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 		mFiles = mDirectory.listFiles(new FilenameFilter() {
 			public boolean accept(File file, String name) {
-				return name.toLowerCase().endsWith(".pdf");
+				if (name.toLowerCase().endsWith(".pdf"))
+					return true;
+				if (name.toLowerCase().endsWith(".xps"))
+					return true;
+				if (name.toLowerCase().endsWith(".cbz"))
+					return true;
+				return false;
 			}
 
 		});

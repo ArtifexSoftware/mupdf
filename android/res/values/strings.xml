@@ -8,7 +8,7 @@
     <string name="search_backwards">Search backwards</string>
     <string name="search_forwards">Search forwards</string>
     <string name="search_document">Search document</string>
-    <string name="picker_title">PDF Documents</string>
+    <string name="picker_title">MuPDF</string>
     <string name="outline_title">Table of Contents</string>
     <string name="enter_password">Enter Password</string>
 </resources>

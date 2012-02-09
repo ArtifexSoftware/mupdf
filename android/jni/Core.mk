@@ -15,6 +15,8 @@ LOCAL_C_INCLUDES := \
 	../draw \
 	../fitz \
 	../pdf \
+	../xps \
+	../cbz \
 	../scripts \
 	..
 
@@ -98,7 +100,20 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/pdf/pdf_type3.c \
 	$(MY_ROOT)/pdf/pdf_unicode.c \
 	$(MY_ROOT)/pdf/pdf_xobject.c \
-	$(MY_ROOT)/pdf/pdf_xref.c
+	$(MY_ROOT)/pdf/pdf_xref.c \
+	$(MY_ROOT)/xps/xps_common.c \
+	$(MY_ROOT)/xps/xps_doc.c \
+	$(MY_ROOT)/xps/xps_glyphs.c \
+	$(MY_ROOT)/xps/xps_gradient.c \
+	$(MY_ROOT)/xps/xps_image.c \
+	$(MY_ROOT)/xps/xps_outline.c \
+	$(MY_ROOT)/xps/xps_path.c \
+	$(MY_ROOT)/xps/xps_resource.c \
+	$(MY_ROOT)/xps/xps_tile.c \
+	$(MY_ROOT)/xps/xps_util.c \
+	$(MY_ROOT)/xps/xps_xml.c \
+	$(MY_ROOT)/xps/xps_zip.c \
+	$(MY_ROOT)/cbz/mucbz.c
 
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
 
