@@ -318,7 +318,6 @@ pdf_open_stream_with_offset(pdf_document *xref, int num, int gen, fz_obj *dict, 
 		fz_throw(xref->ctx, "object is not a stream");
 
 	stm = pdf_open_filter(xref->file, xref, dict, num, gen);
-	fz_lock_stream(stm);
 	fz_seek(xref->file, stm_ofs, 0);
 	return stm;
 }
