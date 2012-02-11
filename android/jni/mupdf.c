@@ -35,7 +35,6 @@ JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jfilename)
 {
 	const char *filename;
-	int accelerate = 1;
 	int pages = 0;
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
@@ -44,9 +43,6 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 		LOGE("Failed to get filename");
 		return 0;
 	}
-
-	if (accelerate)
-		fz_accelerate();
 
 	/* 128 MB store for low memory devices. Tweak as necessary. */
 	ctx = fz_new_context(NULL, NULL, 128 << 20);

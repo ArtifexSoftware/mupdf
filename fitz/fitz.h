@@ -1513,9 +1513,6 @@ void fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, f
  * Plotting functions.
  */
 
-void fz_accelerate(void);
-void fz_accelerate_arch(void);
-
 void fz_decode_tile(fz_pixmap *pix, float *decode);
 void fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval);
 void fz_unpack_tile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
