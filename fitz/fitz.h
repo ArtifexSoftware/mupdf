@@ -257,10 +257,10 @@ struct fz_context_s
 	context.
 
 	locks: Supply a set of locks and functions to lock/unlock
-	them, intended for multi-threaded environment. Set to NULL
-	when using MuPDF in a single-threaded environment. The context
-	will keep the locks pointer, so it must not be modified or
-	freed during the lifetime of the context.
+	them, intended for multi-threaded applications. Set to NULL
+	when using MuPDF in a single-threaded applications. The
+	context will keep the locks pointer, so it must not be
+	modified or freed during the lifetime of the context.
 
 	max_store: Maximum size in bytes of the resource store, before
 	it will start evicting cached resources such as fonts and
@@ -271,6 +271,21 @@ struct fz_context_s
 */
 fz_context *fz_new_context(fz_alloc_context *alloc, fz_locks_context *locks, unsigned int max_store);
 
+/*
+	fz_clone_context: Make a clone of an existing context.
+
+	This function is meant to be used in multi-threaded
+	applications where each thread requires its own context, yet
+	parts of the global state, for example caching, is shared.
+
+	ctx: Context obtained from fz_new_context to make a copy of.
+	ctx must have had locks and lock/functions setup when created.
+	The two contexts will share the memory allocator, resource
+	store, locks and lock/unlock functions. They will each have
+	their own exception stacks though.
+
+	Does not throw exception, but may return NULL.
+*/
 fz_context *fz_clone_context(fz_context *ctx);
 fz_context *fz_clone_context_internal(fz_context *ctx);
 
@@ -288,24 +303,26 @@ void fz_free_context(fz_context *ctx);
 void fz_new_aa_context(fz_context *ctx);
 void fz_free_aa_context(fz_context *ctx);
 
-/* Locking functions
- *
- * MuPDF is kept deliberately free of any knowledge of particular threading
- * systems. As such, in order for safe multi-threaded operation, we rely on
- * callbacks to client provided functions.
- *
- * A client is expected to provide FZ_LOCK_MAX mutexes, and a function to
- * lock/unlock each of them. These may be recursive mutexes, but do not have
- * to be.
- *
- * If a client does not intend to use multiple threads, then it may pass
- * NULL instead of the address of a lock structure.
- *
- * In order to avoid deadlocks, we have 1 simple rules internally as to how
- * we use locks: We can never take lock n when we already hold any lock i,
- * where 0 <= i <= n. In order to verify this, we have some debugging code
- * built in, that is enabled by defining FITZ_DEBUG_LOCKING.
- */
+/*
+	Locking functions
+
+	MuPDF is kept deliberately free of any knowledge of particular
+	threading systems. As such, in order for safe multi-threaded
+	operation, we rely on callbacks to client provided functions.
+
+	A client is expected to provide FZ_LOCK_MAX mutexes, and a
+	function to lock/unlock each of them. These may be recursive
+	mutexes, but do not have to be.
+
+	If a client does not intend to use multiple threads, then it
+	may pass NULL instead of the address of a lock structure.
+
+	In order to avoid deadlocks, we have 1 simple rules internally
+	as to how we use locks: We can never take lock n when we
+	already hold any lock i, where 0 <= i <= n. In order to verify
+	this, we have some debugging code built in, that is enabled by
+	defining FITZ_DEBUG_LOCKING.
+*/
 
 #if defined(MEMENTO) || defined(DEBUG)
 #define FITZ_DEBUG_LOCKING
@@ -1800,6 +1817,23 @@ void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 
 typedef struct fz_outline_s fz_outline;
 
+/*
+	fz_outline represent one item in a document's hierarchical
+	outline (also know as table of contents).
+
+	title: Title of outline item using UTF-8 encoding. May be NULL
+	if the outline item has no text string.
+
+	dest: Destination in the document to be displayed when this
+	outline item is activated. May be FZ_LINK_NONE if the outline
+	item does not have a destination.
+
+	next: The next outline item at the same level as this outline
+	item. May be NULL if not more outline items exist at this level.
+
+	down: The outline items immediate children in the hierarchy.
+	May be NULL if no children exist.
+*/
 struct fz_outline_s
 {
 	char *title;
@@ -1854,9 +1888,28 @@ fz_document *fz_open_document(fz_context *ctx, char *filename);
 */
 void fz_close_document(fz_document *doc);
 
+/*
+	fz_needs_password: Checks for encrypted document.
+
+	Encrypted documents that require only an empty password are
+	treated as if they were not encrypted, thus requiring no
+	password authentication.
+*/
 int fz_needs_password(fz_document *doc);
+
+/*
+	fz_authenticate_password: Test if password can decrypt a
+	document.
+
+	password: The password string to be checked. It is assumed
+	that is in a suitable text encoding, as some document
+	specifications do not specify any particular text encoding.
+*/
 int fz_authenticate_password(fz_document *doc, char *password);
 
+/*
+	fz_load_outline: Load the hierarchical document outline.
+*/
 fz_outline *fz_load_outline(fz_document *doc);
 
 /*
@@ -1902,8 +1955,8 @@ fz_rect fz_bound_page(fz_document *doc, fz_page *page);
 	Set to fz_identity if no transformation is desired.
 
 	cookie: Communication mechanism between caller and library
-	rendering the page. Intended for multi-threaded environments,
-	while single-threaded environments set cookie to NULL. The
+	rendering the page. Intended for multi-threaded applications,
+	while single-threaded applications set cookie to NULL. The
 	caller may abort an ongoing rendering of a page. Cookie also
 	communicates progress information back to the caller. The
 	fields inside cookie are continually updated while the page is
