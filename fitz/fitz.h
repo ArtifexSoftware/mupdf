@@ -215,7 +215,6 @@ execution. Again this was felt to be too high a cost to use.
 		ctx->error->top--;\
 	} \
 	else if (ctx->error->top--, 1)
-
 */
 
 void fz_push_try(fz_error_context *ex);
@@ -229,6 +228,17 @@ struct fz_warn_context_s
 };
 
 void fz_warn(fz_context *ctx, char *fmt, ...) __printflike(2, 3);
+/*
+	fz_flush_warnings: Flush any repeated warnings.
+
+	Repeated warnings are buffered, counted and eventually printed
+	along with the number of repetitions. Call fz_flush_warnings
+	to force printing of the latest buffered warning and the
+	number of repetitions, for example to make sure that all
+	warnings are printed before exiting an application.
+
+	Does not throw exceptions.
+*/
 void fz_flush_warnings(fz_context *ctx);
 
 struct fz_context_s
@@ -246,26 +256,28 @@ struct fz_context_s
 /*
 	fz_new_context: Allocate context containing global state.
 
-	The global state contains exception stack, resource store,
-	etc.  Most functions in MuPDF take a context argument to be
-	able to reference the global state.
+	The global state contains an exception stack, resource store,
+	etc. Most functions in MuPDF take a context argument to be
+	able to reference the global state. See fz_free_context for
+	freeing an allocated context.
 
 	alloc: Supply a custom memory allocator through a set of
 	function pointers. Set to NULL for the standard library
-	allocator. The context will keep the allocator pointer, so it
-	must not be modified or freed during the lifetime of the
-	context.
+	allocator. The context will keep the allocator pointer, so the
+	data it points to must not be modified or freed during the
+	lifetime of the context.
 
 	locks: Supply a set of locks and functions to lock/unlock
 	them, intended for multi-threaded applications. Set to NULL
 	when using MuPDF in a single-threaded applications. The
-	context will keep the locks pointer, so it must not be
-	modified or freed during the lifetime of the context.
+	context will keep the locks pointer, so the data it points to
+	must not be modified or freed during the lifetime of the
+	context.
 
 	max_store: Maximum size in bytes of the resource store, before
 	it will start evicting cached resources such as fonts and
-	images.  FZ_STORE_UNLIMITED can be used to not set a hard
-	upper limit. Use FZ_STORE_DEFAULT to get a reasonable size.
+	images. FZ_STORE_UNLIMITED can be used if a hard limit is not
+	desired. Use FZ_STORE_DEFAULT to get a reasonable size.
 
 	Does not throw exceptions, but may return NULL.
 */
@@ -290,11 +302,11 @@ fz_context *fz_clone_context(fz_context *ctx);
 fz_context *fz_clone_context_internal(fz_context *ctx);
 
 /*
-	fz_free_context: Frees a context and its global state.
+	fz_free_context: Free a context and its global state.
 
 	The context and all of its global state is freed, and any
-	cached warnings are flushed. If NULL is passed in nothing will
-	happen.
+	buffered warnings are flushed (see fz_flush_warnings). If NULL
+	is passed in nothing will happen.
 
 	Does not throw exceptions.
 */
@@ -310,18 +322,18 @@ void fz_free_aa_context(fz_context *ctx);
 	threading systems. As such, in order for safe multi-threaded
 	operation, we rely on callbacks to client provided functions.
 
-	A client is expected to provide FZ_LOCK_MAX mutexes, and a
-	function to lock/unlock each of them. These may be recursive
-	mutexes, but do not have to be.
+	A client is expected to provide FZ_LOCK_MAX number of mutexes,
+	and a function to lock/unlock each of them. These may be
+	recursive mutexes, but do not have to be.
 
 	If a client does not intend to use multiple threads, then it
-	may pass NULL instead of the address of a lock structure.
+	may pass NULL instead of a lock structure.
 
-	In order to avoid deadlocks, we have 1 simple rules internally
-	as to how we use locks: We can never take lock n when we
-	already hold any lock i, where 0 <= i <= n. In order to verify
-	this, we have some debugging code built in, that is enabled by
-	defining FITZ_DEBUG_LOCKING.
+	In order to avoid deadlocks, we have one simple rule
+	internally as to how we use locks: We can never take lock n
+	when we already hold any lock i, where 0 <= i <= n. In order
+	to verify this, we have some debugging code, that can be
+	enabled by defining FITZ_DEBUG_LOCKING.
 */
 
 #if defined(MEMENTO) || defined(DEBUG)
@@ -390,6 +402,11 @@ void *fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size);
 void *fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size);
 char *fz_strdup(fz_context *ctx, char *s);
 
+/*
+	fz_free: Frees an allocation.
+
+	Does not throw exceptions.
+*/
 void fz_free(fz_context *ctx, void *p);
 
 /* The following returns NULL on failure to allocate */
@@ -476,35 +493,136 @@ typedef struct fz_point_s fz_point;
 typedef struct fz_rect_s fz_rect;
 typedef struct fz_bbox_s fz_bbox;
 
+/*
+	A rectangle with sides of length one.
+
+	The bottom left corner is at (0, 0) and the top right corner
+	is at (1, 1).
+*/
 extern const fz_rect fz_unit_rect;
+
+/*
+	A bounding box with sides of length one. See fz_unit_rect.
+*/
+extern const fz_bbox fz_unit_bbox;
+
+/*
+	An empty rectangle with an area equal to zero.
+
+	Both the top left and bottom right corner are at (0, 0).
+*/
 extern const fz_rect fz_empty_rect;
+
+/*
+	An empty bounding box. See fz_empty_rect.
+*/
+extern const fz_bbox fz_empty_bbox;
+
+/*
+	An infinite rectangle with negative area.
+
+	The corner (x0, y0) is at (1, 1) while the corner (x1, y1) is
+	at (-1, -1).
+*/
 extern const fz_rect fz_infinite_rect;
 
-extern const fz_bbox fz_unit_bbox;
-extern const fz_bbox fz_empty_bbox;
+/*
+	An infinite bounding box. See fz_infinite_rect.
+*/
 extern const fz_bbox fz_infinite_bbox;
 
+/*
+	fz_is_empty_rect: Check if rectangle is empty.
+
+	An empty rectangle is defined as one whose area is zero.
+*/
 #define fz_is_empty_rect(r) ((r).x0 == (r).x1)
-#define fz_is_infinite_rect(r) ((r).x0 > (r).x1)
+
+/*
+	fz_is_empty_bbox: Check if bounding box is empty.
+
+	Same definition of empty bounding boxes as for empty
+	rectangles. See fz_is_empty_rect.
+*/
 #define fz_is_empty_bbox(b) ((b).x0 == (b).x1)
+
+/*
+	fz_is_infinite: Check if rectangle is infinite.
+
+	An infinite rectangle is defined as one where either of the
+	two relationships between corner coordinates are not true.
+*/
+#define fz_is_infinite_rect(r) ((r).x0 > (r).x1)
+
+/*
+	fz_is_infinite_bbox: Check if bounding box is infinite.
+
+	Same definition of infinite bounding boxes as for infinite
+	rectangles. See fz_is_infinite_rect.
+*/
 #define fz_is_infinite_bbox(b) ((b).x0 > (b).x1)
 
+/*
+	fz_matrix is a a row-major 3x3 matrix used for representing
+	transformations of coordinates throughout MuPDF.
+
+	Since all points reside in a two-dimensional space, one vector
+	is always a constant unit vector; hence only some elements may
+	vary in a matrix. Below is how the elements map between
+	different representations.
+
+	/ a b 0 \
+	| c d 0 |   normally represented as    [ a b c d e f ].
+	\ e f 1 /
+*/
 struct fz_matrix_s
 {
 	float a, b, c, d, e, f;
 };
 
+/*
+	fz_point is a point in a two-dimensional space.
+*/
 struct fz_point_s
 {
 	float x, y;
 };
 
+/*
+	fz_rect is a rectangle represented by two diagonally opposite
+	corners at arbitrary coordinates.
+
+	Rectangles are always axis-aligned with the X- and Y- axes.
+	The relationship between the coordinates are that x0 <= x1 and
+	y0 <= y1 in all cases except for infinte rectangles. The area
+	of a rectangle is defined as (x1 - x0) * (y1 - y0). If either
+	x0 > x1 or y0 > y1 is true for a given rectangle then it is
+	defined to be infinite.
+
+	To check for empty or infinite rectangles use fz_is_empty_rect
+	and fz_is_infinite_rect. Compare to fz_bbox which has corners
+	at integer coordinates.
+
+	x0, y0: The top left corner.
+
+	x1, y1: The botton right corner.
+*/
 struct fz_rect_s
 {
 	float x0, y0;
 	float x1, y1;
 };
 
+/*
+	fz_bbox is a bounding box similar to a fz_rect, except that
+	all corner coordinates are rounded to integer coordinates.
+	To check for empty or infinite bounding boxes use
+	fz_is_empty_bbox and fz_is_infinite_bbox.
+
+	x0, y0: The top left corner.
+
+	x1, y1: The botton right corner.
+*/
 struct fz_bbox_s
 {
 	int x0, y0;
@@ -521,31 +639,87 @@ extern const fz_matrix fz_identity;
 
 	The order of the two matrices are important since matrix
 	multiplication is not commutative.
+
+	Does not throw exceptions.
 */
 fz_matrix fz_concat(fz_matrix left, fz_matrix right);
 
 /*
 	fz_scale: Create a scaling matrix.
 
+	The returned matrix is of the form [ sx 0 0 sy 0 0 ].
+
 	sx, sy: Scaling factors along the X- and Y-axes. A scaling
-	factor of 1.0 will not cause any scaling along that relevant
+	factor of 1.0 will not cause any scaling along the relevant
 	axis.
+
+	Does not throw exceptions.
 */
 fz_matrix fz_scale(float sx, float sy);
 
+/*
+	fz_shear: Create a shearing matrix.
+
+	The returned matrix is of the form [ 1 sy sx 1 0 0 ].
+
+	sx, sy: Shearing factors. A shearing factor of 0.0 will not
+	cause any shearing along the relevant axis.
+
+	Does not throw exceptions.
+*/
 fz_matrix fz_shear(float sx, float sy);
 
 /*
 	fz_rotate: Create a rotation matrix.
+
+	The returned matrix is of the form
+	[ cos(deg) sin(deg) -sin(deg) cos(deg) 0 0 ].
+
+	degrees: Degrees of counter clockwise rotation. Values less
+	than zero and greater than 360 are handled as expected.
+
+	Does not throw exceptions.
 */
 fz_matrix fz_rotate(float degrees);
 
+/*
+	fz_translate: Create a translation matrix.
+
+	The returned matrix is of the form [ 1 0 0 1 tx ty ].
+
+	tx, ty: Translation distances along the X- and Y-axes. A
+	translation of 0 will not cause any translation along the
+	relevant axis.
+
+	Does not throw exceptions.
+*/
 fz_matrix fz_translate(float tx, float ty);
-fz_matrix fz_invert_matrix(fz_matrix m);
+
+/*
+	fz_invert_matrix: Create an inverse matrix.
+
+	matrix: Matrix to invert. A degenerate matrix, where the
+	determinant is equal to zero, can not be inverted and the
+	original matrix is returned instead.
+
+	Does not throw exceptions.
+*/
+fz_matrix fz_invert_matrix(fz_matrix matrix);
+
+/*
+	fz_is_rectilinear: Check if a transformation is rectilinear.
+
+	Rectilinear means that no shearing is present and that any
+	rotations present are a multiple of 90 degrees. Usually this
+	is used to make sure that axis-aligned rectangles before the
+	transformation are still axis-aligned rectangles afterwards.
+
+	Does not throw exceptions.
+*/
 int fz_is_rectilinear(fz_matrix m);
+
 float fz_matrix_expansion(fz_matrix m);
 float fz_matrix_max_expansion(fz_matrix m);
-
 
 /*
 	fz_round_rect: Convert a rect into a bounding box.
@@ -553,33 +727,110 @@ float fz_matrix_max_expansion(fz_matrix m);
 	Coordinates in a bounding box are integers, so rounding of the
 	rects coordinates takes place. The top left corner is rounded
 	upwards and left while the bottom right corner is rounded
-	downwards and to the right. There are no overflows, instead
-	the coordinates will be clamped to INT_MIN/INT_MAX.
+	downwards and to the right. Overflows or underflowing
+	coordinates are clamped to INT_MIN/INT_MAX.
 
-	rect: The rect to be converted.
+	Does not throw exceptions.
 */
 fz_bbox fz_round_rect(fz_rect rect);
-fz_bbox fz_intersect_bbox(fz_bbox a, fz_bbox b);
-fz_rect fz_intersect_rect(fz_rect a, fz_rect b);
-fz_bbox fz_union_bbox(fz_bbox a, fz_bbox b);
-fz_rect fz_union_rect(fz_rect a, fz_rect b);
-
-fz_point fz_transform_point(fz_matrix m, fz_point p);
-fz_point fz_transform_vector(fz_matrix m, fz_point p);
 
 /*
-	fz_transform_rect: Apply a transformation to a rect.
+	fz_intersect_rect: Compute intersection of two rectangles.
+
+	Compute the largest axis-aligned rectangle that covers the
+	area covered by both given rectangles. If either rectangle is
+	empty then the intersection is also empty. If either rectangle
+	is infinite then the intersection is simply the non-infinite
+	rectangle. Should both rectangles be infinite, then the
+	intersection is also infinite.
+
+	Does not throw exceptions.
+*/
+fz_rect fz_intersect_rect(fz_rect a, fz_rect b);
+
+/*
+	fz_intersect_bbox: Compute intersection of two bounding boxes.
+
+	Similar to fz_intersect_rect but operates on two bounding
+	boxes instead of two rectangles.
+
+	Does not throw exceptions.
+*/
+fz_bbox fz_intersect_bbox(fz_bbox a, fz_bbox b);
+
+/*
+	fz_union_rect: Compute union of two rectangles.
+
+	Compute the smallest axis-aligned rectangle that encompasses
+	both given rectangles. If either rectangle is infinite then
+	the union is also infinite. If either rectangle is empty then
+	the union is simply the non-empty rectangle. Should both
+	rectangles be empty, then the union is also empty.
+
+	Does not throw exceptions.
+*/
+fz_rect fz_union_rect(fz_rect a, fz_rect b);
+
+/*
+	fz_union_bbox: Compute union of two bounding boxes.
+
+	Similar to fz_union_rect but operates on two bounding boxes
+	instead of two rectangles.
+
+	Does not throw exceptions.
+*/
+fz_bbox fz_union_bbox(fz_bbox a, fz_bbox b);
+
+/*
+	fz_transform_point: Apply a transformation to a point.
 
 	transform: Transformation matrix to apply. See fz_concat,
-	fz_scale and fz_rotate of how to create a matrix.
+	fz_scale, fz_rotate and fz_translate for how to create a
+	matrix.
 
-	rect: The rect to be transformed. The two degenerate cases see
-	fz_empty_rect and fz_infinite_rect, may be used but the
-	resulting rect will be identical.
+	Does not throw exceptions.
+*/
+fz_point fz_transform_point(fz_matrix transform, fz_point point);
+
+/*
+	fz_transform_vector: Apply a transformation to a vector.
+
+	transform: Transformation matrix to apply. See fz_concat,
+	fz_scale and fz_rotate for how to create a matrix. Any
+	translation will be ignored.
+
+	Does not throw exceptions.
+*/
+fz_point fz_transform_vector(fz_matrix transform, fz_point vector);
+
+/*
+	fz_transform_rect: Apply a transform to a rectangle.
+
+	After the four corner points of the axis-aligned rectangle
+	have been transformed it may not longer be axis-aligned. So a
+	new axis-aligned rectangle is created covering at least the
+	area of the transformed rectangle.
+
+	transform: Transformation matrix to apply. See fz_concat,
+	fz_scale and fz_rotate for how to create a matrix.
+
+	rect: Rectangle to be transformed. The two special cases
+	fz_empty_rect and fz_infinite_rect, may be used but are
+	returned unchanged as expected.
+
+	Does not throw exceptions.
 */
 fz_rect fz_transform_rect(fz_matrix transform, fz_rect rect);
 
-fz_bbox fz_transform_bbox(fz_matrix m, fz_bbox b);
+/*
+	fz_transform_bbox: Transform a given bounding box.
+
+	Similar to fz_transform_rect, but operates on a bounding box
+	instead of a rectangle.
+
+	Does not throw exceptions.
+*/
+fz_bbox fz_transform_bbox(fz_matrix matrix, fz_bbox bbox);
 
 void fz_gridfit_matrix(fz_matrix *m);
 
@@ -739,9 +990,8 @@ void fz_set_str_len(fz_obj *obj, int newlen); /* private */
 void *fz_get_indirect_document(fz_obj *obj); /* private */
 
 /*
- * Data buffers.
- */
-
+	fz_buffer is a XXX
+*/
 typedef struct fz_buffer_s fz_buffer;
 
 struct fz_buffer_s
@@ -779,6 +1029,15 @@ struct fz_storable_s {
 	S->free = (FREE); \
 	} while (0)
 
+/*
+	Specifies the maximum size in bytes of the resource store in
+	fz_context. Given as argument to fz_new_context.
+
+	FZ_STORE_UNLIMITED: Let resource store grow unbounded.
+
+	FZ_STORE_DEFAULT: A reasonable upper bound on the size, for
+	devices that are not memory constrained.
+*/
 enum {
 	FZ_STORE_UNLIMITED = 0,
 	FZ_STORE_DEFAULT = 256 << 20,
@@ -829,10 +1088,14 @@ void fz_empty_store(fz_context *ctx);
 int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase);
 
 /*
- * Buffered reader.
- * Only the data between rp and wp is valid data.
- */
+	fz_stream is a buffered reader capable of seeking in both
+	directions.
 
+	Streams are reference counted, so references must be dropped
+	by a call to fz_close.
+
+	Only the data between rp and wp is valid.
+*/
 typedef struct fz_stream_s fz_stream;
 
 struct fz_stream_s
@@ -854,19 +1117,16 @@ struct fz_stream_s
 };
 
 /*
-	fz_open_file: Open a named file and wrap it in a stream.
-
-	The stream is reference counted.
+	fz_open_file: Open the named file and wrap it in a stream.
 
 	filename: Path to a file as it would be given to open(2).
 */
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
 
 /*
-	fz_open_file_w: Open a named file and wrap it in a stream.
+	fz_open_file_w: Open the named file and wrap it in a stream.
 
-	This function is only available when compiling for Win32. The
-	stream is reference counted.
+	This function is only available when compiling for Win32.
 
 	filename: Wide character path to the file as it would be given
 	to _wopen().
@@ -884,7 +1144,14 @@ fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
 */
 fz_stream *fz_open_fd(fz_context *ctx, int file);
 
+/*
+	fz_open_buffer: XXX
+*/
 fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
+
+/*
+	fz_open_memory: XXX
+*/
 fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
 
 /*
@@ -893,8 +1160,11 @@ fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
 	Drops a reference for the stream. Once no references remain
 	the stream will be closed, as will any file descriptor the
 	stream is using.
+
+	Does not throw exceptions.
 */
 void fz_close(fz_stream *stm);
+
 void fz_lock_stream(fz_stream *stm);
 
 fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_context *, void *));
@@ -1026,6 +1296,33 @@ char *fz_blendmode_name(int blendmode);
 typedef struct fz_pixmap_s fz_pixmap;
 typedef struct fz_colorspace_s fz_colorspace;
 
+/*
+	fz_pixmap is an image XXX
+
+	x, y: XXX
+
+	w, h: The width and height of the image in pixels.
+
+	n: The number of color components in the image. Always
+	includes a separate alpha channel. XXX RGBA=4
+
+	mask: XXX
+
+	interpolate: A boolean flag set to non-zero if the image
+	will be drawn using linear interpolation, or set to zero if
+	image will be using nearest neighbour sampling.
+
+	xres, yres: Image resolution in dpi. Default is 96 dpi.
+
+	colorspace: XXX
+
+	samples:
+
+	free_samples: Is zero when an application has provided its own
+	buffer for pixel data through fz_new_pixmap_with_rect_and_data.
+	If not zero the buffer will be freed when fz_drop_pixmap is
+	called for the pixmap.
+*/
 struct fz_pixmap_s
 {
 	fz_storable storable;
@@ -1043,32 +1340,47 @@ fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
 
 /*
-	fz_new_pixmap_with_rect: Create a pixmap of a given size and
-	format.
+	fz_new_pixmap_with_rect: Create a pixmap of a given size,
+	location and pixel format.
 
 	The bounding box specifies the size of the created pixmap and
 	where it will be located. The colorspace determines the number
-	of components per pixel, exluding alpha which is always
-	present. Pixmaps are reference counted, so drop references
-	using fz_drop_pixmap.
+	of components per pixel. Alpha is always present. Pixmaps are
+	reference counted, so drop references using fz_drop_pixmap.
 
 	colorspace: Colorspace format used for the created pixmap. The
 	pixmap will keep a reference to the colorspace.
 
-	bbox: Bounding box specifcying location/size of created
-	pixmap.
+	bbox: Bounding box specifying location/size of created pixmap.
 */
-fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *, fz_bbox bbox);
+fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox);
 
-fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *, fz_bbox bbox, unsigned char *samples);
+/*
+	fz_new_pixmap_with_rect_and_data: Create a pixmap using the
+	provided buffer for pixel data.
+
+	While fz_new_pixmap_with_rect allocates its own buffer for
+	pixel data, fz_new_pixmap_with_rect_and_data lets the caller
+	allocate and provide a buffer to be used. Otherwise the two
+	functions are identical.
+
+	samples: An array of pixel samples. The created pixmap will
+	keep a pointer to the array so it must not be modified or
+	freed until the created pixmap is dropped and freed by
+	fz_drop_pixmap.
+*/
+fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx,
+fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
 fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_drop_pixmap: Drop a reference and free a pixmap.
 
-	pix: Pixmap whose reference count will be decremented. If no
-	reference remain the pixmap will also be freed.
+	Decrement the reference count for the pixmap. When no
+	references remain the pixmap will be freed.
+
+	Does not throw exceptions.
 */
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
 
@@ -1080,10 +1392,11 @@ void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 	pix: Pixmap obtained from fz_new_pixmap*.
 
-	value: Values in the range 0 to 255 are accepted (higher
-	values get truncated). Each component sample for each pixel in
-	the pixmap will be set to this value, while alpha will always
-	be set to 255 (non-transparent).
+	value: Values in the range 0 to 255 are valid. Each component
+	sample for each pixel in the pixmap will be set to this value,
+	while alpha will always be set to 255 (non-transparent).
+
+	Does not throw exceptions.
 */
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
@@ -1129,7 +1442,7 @@ fz_pixmap *fz_load_png(fz_context *doc, unsigned char *data, int size);
 fz_pixmap *fz_load_tiff(fz_context *doc, unsigned char *data, int size);
 
 /*
- * Bitmaps have 1 component per bit. Only used for creating halftoned versions
+ * Bitmaps have 1 bit per component. Only used for creating halftoned versions
  * of contone buffers, and saving out. Samples are stored msb first, akin to
  * pbms.
  */
@@ -1175,9 +1488,24 @@ fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
  * Colorspace resources.
  */
 
+/*
+	fz_device_gray: XXX
+*/
 extern fz_colorspace *fz_device_gray;
+
+/*
+	fz_device_rgb: XXX
+*/
 extern fz_colorspace *fz_device_rgb;
+
+/*
+	fz_device_bgr: XXX
+*/
 extern fz_colorspace *fz_device_bgr;
+
+/*
+	fz_device_cmyk: XXX
+*/
 extern fz_colorspace *fz_device_cmyk;
 
 struct fz_colorspace_s
@@ -1556,16 +1884,31 @@ fz_device *fz_new_device(fz_context *ctx, void *user);
 */
 void fz_free_device(fz_device *dev);
 
+/*
+	fz_new_trace_device: Create a device to print a debug trace of
+	all device calls.
+
+	XXX
+*/
 fz_device *fz_new_trace_device(fz_context *ctx);
+
+/*
+	fz_new_bbox_device: Create a device to compute the bounding
+	box of all marks on a page.
+
+	The returned bounding box will be the union of all bounding
+	boxes of all objects on a page.
+*/
 fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
 
 /*
-	fz_new_draw_device: Create a device drawing on a pixmap.
+	fz_new_draw_device: Create a device to draw on a pixmap.
 
 	dest: Target pixmap for the draw device. See fz_new_pixmap*
 	for how to obtain a pixmap. The pixmap is not cleared by the
 	draw device, see fz_clear_pixmap* for how to clear it prior to
-	calling fz_new_draw_device.
+	calling fz_new_draw_device. Free the device by calling
+	fz_free_device.
 */
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 
@@ -1600,6 +1943,18 @@ void fz_free_text_span(fz_context *ctx, fz_text_span *line);
 void fz_debug_text_span(fz_text_span *line);
 void fz_debug_text_span_xml(fz_text_span *span);
 
+/*
+	fz_new_text_device: Create a device to print the text on a
+	page in XML.
+
+	The text on a page will be translated into a sequnce of XML
+	elements. For each text span the font, font size, writing mode
+	and end of line flag is printed. Since text can be placed at
+	arbitrary positions then heuristics must be used to try to
+	collect text spans together that are roughly located on the
+	same baseline. Each character in the text span will have its
+	UTF-8 character printed along with a bounding box containing it.
+*/
 fz_device *fz_new_text_device(fz_context *ctx, fz_text_span *text);
 
 /*
@@ -1633,10 +1988,10 @@ typedef struct fz_cookie_s fz_cookie;
 	rendered. The value starts out at 0 and is limited to less
 	than or equal to progress_max, unless progress_max is -1.
 
-	progress_max: Communicates known upper bound of rendering back
-	to the application and is read only. Maximum value that the
-	progress field may take. If there is no known upper bound on
-	how long the rendering may take this value is -1 and
+	progress_max: Communicates the known upper bound of rendering
+	back to the application and is read only. The maximum value
+	that the progress field may take. If there is no known upper
+	bound on how long the rendering may take this value is -1 and
 	progress is not limited. Note that the value of progress_max
 	may change from -1 to a positive value once an upper bound is
 	known, so take this into consideration when comparing the
@@ -1653,13 +2008,25 @@ struct fz_cookie_s
  * Display list device -- record and play back device commands.
  */
 
+/*
+	fz_display_list is a list containing drawing commands (text,
+	images, etc.). The intent is two-fold: as a caching-mechanism
+	to reduce parsing of a page, and to be used as a data
+	structure in multi-threading where one thread parses the page
+	and another renders pages.
+
+	Create a displaylist with fz_new_display_list, hand it over to
+	fz_new_list_device to have it populated, and later replay the
+	list (once or many times) by calling fz_run_display_list. When
+	the list is no longer needed free it with fz_free_display_list.
+*/
 typedef struct fz_display_list_s fz_display_list;
 
 /*
 	fz_new_display_list: Create an empty display list.
 
-	A display list contains a page's objects (text, images, etc.)
-	in drawing order. Use fz_new_list_device for populating the list.
+	A display list contains drawing commands (text, images, etc.).
+	Use fz_new_list_device for populating the list.
 */
 fz_display_list *fz_new_display_list(fz_context *ctx);
 
@@ -1667,15 +2034,41 @@ fz_display_list *fz_new_display_list(fz_context *ctx);
 	fz_new_list_device: Create a rendering device for a display list.
 
 	When the device is rendering a page it will populate the
-	display list with the page's objects (text, images, etc.) in
-	drawing order. The display list can later be reused to render
-	a page many times without having to re-interpret the page from
-	the document file for each rendering.
+	display list with drawing commsnds (text, images, etc.). The
+	display list can later be reused to render a page many times
+	without having to re-interpret the page from the document file
+	for each rendering. Once the device is no longer needed, free
+	it with fz_free_device.
 
 	list: A display list that the list device takes ownership of.
 */
 fz_device *fz_new_list_device(fz_context *ctx, fz_display_list *list);
 
+/*
+	fz_run_display_list: (Re)-run a display list through a device.
+
+	list: A display list, created by fz_new_display_list and
+	populated with objects from a page by running fz_run_page on a
+	device obtained from fz_new_list_device.
+
+	dev: Device obtained from fz_new_*_device.
+
+	ctm: Transform to apply to display list contents. May include
+	for example scaling and rotation, see fz_scale, fz_rotate and
+	fz_concat. Set to fz_identity if no transformation is desired.
+
+	area: Only the part of the contents of the display list
+	visible within this area will be considered when the list is
+	run through the device. This does not imply for tile objects
+	contained in the display list.
+
+	cookie: Communication mechanism between caller and library
+	running the page. Intended for multi-threaded applications,
+	while single-threaded applications set cookie to NULL. The
+	caller may abort an ongoing page run. Cookie also communicates
+	progress information back to the caller. The fields inside
+	cookie are continually updated while the page is being run.
+*/
 void fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, fz_bbox area, fz_cookie *cookie);
 
 /*
@@ -1683,6 +2076,8 @@ void fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, f
 
 	list: Display list to be freed. Any objects put into the
 	display list by a list device will also be freed.
+
+	Does not throw exceptions.
 */
 void fz_free_display_list(fz_context *ctx, fz_display_list *list);
 
@@ -1764,6 +2159,35 @@ enum {
 	fz_link_flag_r_is_zoom = 64 /* rb.x is actually a zoom figure */
 };
 
+/*
+	fz_link_dest: XXX
+
+	kind: Set to one of FZ_LINK_* to tell what what type of link
+	destination this is, and where in the union to look for
+	information. XXX
+
+	gotor.page: Page number, 0 is the first page of the document. XXX
+
+	gotor.flags: A bitfield consisting of fz_link_flag_* telling
+	what parts of gotor.lt and gotor.rb are valid, whether
+	fitting to width/height should be used, or if an arbitrary
+	zoom factor is used. XXX
+
+	gotor.lt: The top left corner of the destination bounding box. XXX
+	gotor.rb: The bottom right corner of the destination bounding box. XXX
+
+	gotor.file_spec: XXX
+
+	gotor.new_window: XXX
+
+	uri.uri: XXX
+	uri.is_map: XXX
+
+	launch.file_spec: XXX
+	launch.new_window: XXX
+
+	named.named: XXX
+*/
 struct fz_link_dest_s
 {
 	fz_link_kind kind;
@@ -1800,6 +2224,25 @@ struct fz_link_dest_s
 	ld;
 };
 
+/*
+	fz_link is a list of interactive links on a page.
+
+	There is no relation between the order of the links in the
+	list and the order they appear on the page. The list of links
+	for a given page can be obtained from fz_load_links.
+
+	A link is reference counted. Dropping a reference to a link is
+	done by calling fz_drop_link.
+
+	rect: The hot zone. The area that can be clicked in
+	untransformed coordinates.
+
+	dest: Link destinations come in two forms: Page and area that
+	an application should display when this link is activated. Or
+	as an URI that can be given to a browser.
+
+	next: A pointer to the next link on the same page.
+*/
 struct fz_link_s
 {
 	int refs;
@@ -1810,7 +2253,14 @@ struct fz_link_s
 
 fz_link *fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest);
 fz_link *fz_keep_link(fz_context *ctx, fz_link *link);
+
+/*
+	fz_drop_link: Drop and free a list of links.
+
+	Does not throw exceptions.
+*/
 void fz_drop_link(fz_context *ctx, fz_link *link);
+
 void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 
 /* Outline */
@@ -1818,8 +2268,8 @@ void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
 typedef struct fz_outline_s fz_outline;
 
 /*
-	fz_outline represent one item in a document's hierarchical
-	outline (also know as table of contents).
+	fz_outline is a tree of the outline of a document (also known
+	as table of contents).
 
 	title: Title of outline item using UTF-8 encoding. May be NULL
 	if the outline item has no text string.
@@ -1829,7 +2279,7 @@ typedef struct fz_outline_s fz_outline;
 	item does not have a destination.
 
 	next: The next outline item at the same level as this outline
-	item. May be NULL if not more outline items exist at this level.
+	item. May be NULL if no more outline items exist at this level.
 
 	down: The outline items immediate children in the hierarchy.
 	May be NULL if no children exist.
@@ -1844,6 +2294,14 @@ struct fz_outline_s
 
 void fz_debug_outline_xml(fz_context *ctx, fz_outline *outline, int level);
 void fz_debug_outline(fz_context *ctx, fz_outline *outline, int level);
+
+/*
+	fz_free_outline: Free hierarchical outline.
+
+	Free an outline obtained from fz_load_outline.
+
+	Does not throw exceptions.
+*/
 void fz_free_outline(fz_context *ctx, fz_outline *outline);
 
 /* Document interface */
@@ -1872,74 +2330,86 @@ struct fz_document_s
 	objects can be located. MuPDF will try to repair broken
 	documents (without actually changing the file contents).
 
-	The returned fz_document sould be provided when calling most
-	other fz_* functions. Note that it wraps the context, so those
-	functions implicitly can access the global state in context.
+	The returned fz_document is used when calling most other
+	document related functions. Note that it wraps the context, so
+	those functions implicitly can access the global state in
+	context.
 
 	filename: a path to a file as it would be given to open(2).
 */
 fz_document *fz_open_document(fz_context *ctx, char *filename);
 
 /*
-	fz_close_document: Closes and frees an opened document.
+	fz_close_document: Close and free an open document.
 
 	The resource store in the context associated with fz_document
 	is emptied, and any allocations for the document are freed.
+
+	Does not throw exceptions.
 */
 void fz_close_document(fz_document *doc);
 
 /*
-	fz_needs_password: Checks for encrypted document.
+	fz_needs_password: Check if a document is encrypted with a
+	non-blank password.
 
-	Encrypted documents that require only an empty password are
-	treated as if they were not encrypted, thus requiring no
-	password authentication.
+	Does not throw exceptions.
 */
 int fz_needs_password(fz_document *doc);
 
 /*
-	fz_authenticate_password: Test if password can decrypt a
-	document.
+	fz_authenticate_password: Test if the given password can
+	decrypt the document.
 
-	password: The password string to be checked. It is assumed
-	that is in a suitable text encoding, as some document
-	specifications do not specify any particular text encoding.
+	password: The password string to be checked. Some document
+	specifications do not specify any particular text encoding, so
+	neither do we.
+
+	Does not throw exceptions.
 */
 int fz_authenticate_password(fz_document *doc, char *password);
 
 /*
 	fz_load_outline: Load the hierarchical document outline.
+
+	Should be freed by fz_free_outline.
 */
 fz_outline *fz_load_outline(fz_document *doc);
 
 /*
-	fz_count_pages: Return number of pages in document
+	fz_count_pages: Return the number of pages in document
 
-	May return 0 for documents without any pages at all.
+	May return 0 for documents with no pages.
 */
 int fz_count_pages(fz_document *doc);
 
 /*
-	fz_load_page: Load a page and its resources.
+	fz_load_page: Load a page.
 
-	Locates the page number in an open document and loads the page
-	and its resources. After fz_load_page is it possible to
-	retrieve the size of the page using fz_bound_page, or to
-	render the page using fz_run_page_*.
+	After fz_load_page is it possible to retrieve the size of the
+	page using fz_bound_page, or to render the page using
+	fz_run_page_*. Free the page by calling fz_free_page.
 
 	number: page number, 0 is the first page of the document.
 */
 fz_page *fz_load_page(fz_document *doc, int number);
 
+/*
+	fz_load_links: Load the list of links for a page.
+
+	Returns a linked list of all the links on the page, each with
+	its clickable region and link destination. Each link is
+	reference counted so drop and free the list of links by
+	calling fz_drop_link on the pointer return from fz_load_links.
+
+	page: Page obtained from fz_load_page.
+*/
 fz_link *fz_load_links(fz_document *doc, fz_page *page);
 
 /*
-	fz_bound_page: Determine the size of a page.
+	fz_bound_page: Determine the size of a page at 72 dpi.
 
-	Determine the page size in user space units, taking page
-	rotation into account. The page size is taken to be the crop
-	box if it exists (visible area after cropping), otherwise the
-	media box will be used (possibly including printing marks).
+	Does not throw exceptions.
 */
 fz_rect fz_bound_page(fz_document *doc, fz_page *page);
 
@@ -1967,9 +2437,7 @@ void fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix tran
 /*
 	fz_free_page: Free a loaded page.
 
-	page: A loaded page to be freed. Its own references to
-	resources are dropped, the resources themselves may still be
-	refered to by the resource store in the context.
+	Does not throw exceptions.
 */
 void fz_free_page(fz_document *doc, fz_page *page);
 

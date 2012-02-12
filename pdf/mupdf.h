@@ -220,15 +220,17 @@ fz_stream *pdf_open_image_decomp_stream(fz_context *ctx, fz_buffer *, pdf_image_
 /*
 	pdf_open_document: Open a PDF document.
 
-	Open a PDF document by reading its cross reference table, so MuPDF
-	can locate PDF objects inside the file. Upon an broken cross
-	reference table or other parse errors MuPDF will restart parsing
-	the file from the beginning to try to rebuild a (hopefully correct)
-	cross reference table to allow further processing of the file.
+	Open a PDF document by reading its cross reference table, so
+	MuPDF can locate PDF objects inside the file. Upon an broken
+	cross reference table or other parse errors MuPDF will restart
+	parsing the file from the beginning to try to rebuild a
+	(hopefully correct) cross reference table to allow further
+	processing of the file.
 
-	The returned pdf_document should be used when calling most other
-	PDF functions. Note that it wraps the context, so those functions
-	implicitly get access to the global state in context.
+	The returned pdf_document should be used when calling most
+	other PDF functions. Note that it wraps the context, so those
+	functions implicitly get access to the global state in
+	context.
 
 	filename: a path to a file as it would be given to open(2).
 */
@@ -237,18 +239,21 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 /*
 	pdf_open_document_with_stream: Opens a PDF document.
 
-	Same as pdf_open_document, but takes a stream instead of a filename
-	to locate the PDF document to open. Increments the reference count
-	of the stream. See fz_open_file, fz_open_file_w or fz_open_fd for
-	opening a stream, and fz_close for closing an open stream.
+	Same as pdf_open_document, but takes a stream instead of a
+	filename to locate the PDF document to open. Increments the
+	reference count of the stream. See fz_open_file,
+	fz_open_file_w or fz_open_fd for opening a stream, and
+	fz_close for closing an open stream.
 */
 pdf_document *pdf_open_document_with_stream(fz_stream *file);
 
 /*
 	pdf_close_document: Closes and frees an opened PDF document.
 
-	The resource store in the context associated with pdf_document is
-	emptied.
+	The resource store in the context associated with pdf_document
+	is emptied.
+
+	Does not throw exceptions.
 */
 void pdf_close_document(pdf_document *doc);
 
@@ -618,11 +623,15 @@ fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
 	into account. The page size is taken to be the crop box if it
 	exists (visible area after cropping), otherwise the media box will
 	be used (possibly including printing marks).
+
+	Does not throw exceptions.
 */
 fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
 
 /*
 	pdf_free_page: Frees a page and its resources.
+
+	Does not throw exceptions.
 */
 void pdf_free_page(pdf_document *doc, pdf_page *page);
 

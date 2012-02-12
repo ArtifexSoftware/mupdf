@@ -1,3 +1,11 @@
+Contents
+========
+
+* Basic MuPDF usage example
+* Common function arguments
+* Error Handling
+* Multi-threading
+
 Basic MuPDF usage example
 =========================
 
@@ -9,22 +17,26 @@ using MuPDF should use the error handling strategies described below.
 Common function arguments
 =========================
 
-Most functions in the MuPDF interface take an argument which is one of
-context, document, stream or device.
+Many functions in MuPDFs interface take a context argument.
 
 A context contains global state used by MuPDF inside functions when
-parsing or rendering pages of the document. It contains e.g.:
+parsing or rendering pages of the document. It contains for example:
 
-	 an exception stack (see error handling below),
+	an exception stack (see error handling below),
 
-	 a memory allocator (allowing for custom allocators)
+	a memory allocator (allowing for custom allocators)
 
-	 a resource store (for caching of images, fonts, etc.)
+	a resource store (for caching of images, fonts, etc.)
 
-The other arguments -- document, stream and device -- all contain a
-reference to the context, in order to not require context to be passed
-to sets of functions that need to take a common argument for parsing
-or rendering reasons.
+	a set of locks and (un-)locking functions (for multi-threading)
+
+Other functions in MuPDF's interface take arguments such as document,
+stream and device which contain state for each type of object. Those
+arguments each have a reference to a context and therefore act as
+proxies for a context.
+
+Without the set of locks and accompanying functions the context and
+its proxies may only be used in a single-threaded application.
 
 Error handling
 ==============
@@ -157,3 +169,44 @@ c)	We assume in this code that combine takes new reference to
 
 d)	We assume the standard C convention that it is safe to destroy
 	NULL things.
+
+Multi-threading
+===============
+
+First off, study the basic usage example in doc/example.c and make
+sure you understand how it works as it will be the referenced in this
+section too.
+
+There are two variations of how to create multi-threaded applications:
+
+1)	lock-less operation -- in which one thread is requesting pages
+	to be drawn and responding to user interface actions, while
+	another thread is dedicated to drawing pages. In this scenario
+	only one thread owns and manipulates the context and document
+	at any one time.
+
+2)	using locking -- where one thread is requesting pages to be
+	draw and responding to user interface actions, while several
+	threads may be drawing pages. In this scenario each thread has
+	its own context but they share some global state, for example
+	the resource store. An additional constraint
+
+The usage example starts by getting a context from fz_new_context with
+standard memory allocation functions, default resource store size and,
+crucially, no locking. 
+
+In a multi-threaded application every thread must have a context. Or
+more specifically, each context can only be used from one thread at a
+time. When starting another thread, do NOT call fz_new_context again;
+instead call fz_clone_context. This creates a context sharing the
+memory allocator, resource store etc.
+
+
+
+
+så utan lås: en gui-tråd som visa progress, en tråd som renderar
+med lås: en gui-tråd som request:ar och flera trådar som renderar
+
+having fitz level display list objects created in 
+one thread, consumed as read-only in multiple threads, with locked access 
+around a few shared caches
