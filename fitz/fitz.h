@@ -373,6 +373,7 @@ struct fz_context_s
 
 fz_context *fz_new_context(fz_alloc_context *alloc, fz_locks_context *locks, unsigned int max_store);
 fz_context *fz_clone_context(fz_context *ctx);
+fz_context *fz_clone_context_internal(fz_context *ctx);
 void fz_free_context(fz_context *ctx);
 
 void fz_new_aa_context(fz_context *ctx);
