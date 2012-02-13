@@ -435,7 +435,7 @@ fz_store_keep(fz_context *ctx)
 }
 
 void
-fz_free_store_context(fz_context *ctx)
+fz_drop_store_context(fz_context *ctx)
 {
 	int refs;
 	if (ctx == NULL || ctx->store == NULL)

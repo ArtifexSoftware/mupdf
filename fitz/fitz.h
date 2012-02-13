@@ -411,6 +411,7 @@ struct fz_locks_context_s
 enum {
 	FZ_LOCK_ALLOC = 0,
 	FZ_LOCK_FILE,
+	FZ_LOCK_FREETYPE,
 	FZ_LOCK_GLYPHCACHE,
 	FZ_LOCK_MAX
 };
@@ -809,7 +810,7 @@ enum {
 };
 
 void fz_new_store_context(fz_context *ctx, unsigned int max);
-void fz_free_store_context(fz_context *ctx);
+void fz_drop_store_context(fz_context *ctx);
 fz_store *fz_store_keep(fz_context *ctx);
 void fz_debug_store(fz_context *ctx);
 
@@ -1148,7 +1149,8 @@ struct fz_font_s
 };
 
 void fz_new_font_context(fz_context *ctx);
-void fz_free_font_context(fz_context *ctx);
+fz_font_context *fz_keep_font_context(fz_context *ctx);
+void fz_drop_font_context(fz_context *ctx);
 
 fz_font *fz_new_type3_font(fz_context *ctx, char *name, fz_matrix matrix);
 
@@ -1247,8 +1249,9 @@ void fz_debug_path(fz_context *ctx, fz_path *, int indent);
  */
 
 void fz_new_glyph_cache_context(fz_context *ctx);
-fz_glyph_cache *fz_glyph_cache_keep(fz_context *ctx);
-void fz_free_glyph_cache_context(fz_context *ctx);
+fz_glyph_cache *fz_keep_glyph_cache(fz_context *ctx);
+void fz_drop_glyph_cache_context(fz_context *ctx);
+void fz_purge_glyph_cache(fz_context *ctx);
 
 fz_pixmap *fz_render_ft_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm);
 fz_pixmap *fz_render_t3_glyph(fz_context *ctx, fz_font *font, int cid, fz_matrix trm, fz_colorspace *model);

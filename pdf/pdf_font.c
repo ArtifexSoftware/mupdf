@@ -147,7 +147,9 @@ pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
 	int gid = ft_cid_to_gid(fontdesc, cid);
-	int fterr = FT_Load_Glyph(fontdesc->font->ft_face, gid,
+	int fterr;
+	
+	fterr = FT_Load_Glyph(fontdesc->font->ft_face, gid,
 			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
 	if (fterr)
 	{
@@ -552,6 +554,7 @@ pdf_load_simple_font(pdf_document *xref, fz_obj *dict)
 			etable[i] = ft_char_index(face, i);
 
 		/* encode by glyph name where we can */
+		fz_lock(ctx, FZ_LOCK_FREETYPE);
 		if (kind == TYPE1)
 		{
 			for (i = 0; i < 256; i++)
@@ -644,6 +647,7 @@ pdf_load_simple_font(pdf_document *xref, fz_obj *dict)
 				}
 			}
 		}
+		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
 		fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
@@ -678,6 +682,7 @@ pdf_load_simple_font(pdf_document *xref, fz_obj *dict)
 		}
 		else
 		{
+			fz_lock(ctx, FZ_LOCK_FREETYPE);
 			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 			if (fterr)
 				fz_warn(ctx, "freetype set character size: %s", ft_error_string(fterr));
@@ -685,6 +690,7 @@ pdf_load_simple_font(pdf_document *xref, fz_obj *dict)
 			{
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
 			}
+			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		}
 
 		pdf_end_hmtx(ctx, fontdesc);
