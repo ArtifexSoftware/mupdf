@@ -410,7 +410,6 @@ struct fz_locks_context_s
 
 enum {
 	FZ_LOCK_ALLOC = 0,
-	FZ_LOCK_STORE,
 	FZ_LOCK_FILE,
 	FZ_LOCK_GLYPHCACHE,
 	FZ_LOCK_MAX
