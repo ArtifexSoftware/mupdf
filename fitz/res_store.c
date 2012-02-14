@@ -183,7 +183,8 @@ ensure_space(fz_context *ctx, unsigned int tofree)
 			 * no other evict process can have thrown prev away in
 			 * the meantime. So we are safe to just decrement its
 			 * reference count here. */
-			--prev->val->refs;
+			if (prev)
+				--prev->val->refs;
 
 			if (count >= tofree)
 				return count;
