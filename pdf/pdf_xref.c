@@ -469,7 +469,7 @@ pdf_load_xref(pdf_document *xref, char *buf, int bufsize)
 	for (i = 0; i < xref->len; i++)
 	{
 		if (xref->table[i].type == 'n')
-			/* Special case code: "0000000000 * f" means free,
+			/* Special case code: "0000000000 * n" means free,
 			 * according to some producers (inc Quartz) */
 			if (xref->table[i].ofs == 0)
 				xref->table[i].type = 'f';
