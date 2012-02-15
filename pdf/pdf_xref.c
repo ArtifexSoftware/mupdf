@@ -469,7 +469,11 @@ pdf_load_xref(pdf_document *xref, char *buf, int bufsize)
 	for (i = 0; i < xref->len; i++)
 	{
 		if (xref->table[i].type == 'n')
-			if (xref->table[i].ofs <= 0 || xref->table[i].ofs >= xref->file_size)
+			/* Special case code: "0000000000 * f" means free,
+			 * according to some producers (inc Quartz) */
+			if (xref->table[i].ofs == 0)
+				xref->table[i].type = 'f';
+			else if (xref->table[i].ofs <= 0 || xref->table[i].ofs >= xref->file_size)
 				fz_throw(ctx, "object offset out of range: %d (%d 0 R)", xref->table[i].ofs, i);
 		if (xref->table[i].type == 'o')
 			if (xref->table[i].ofs <= 0 || xref->table[i].ofs >= xref->len || xref->table[xref->table[i].ofs].type != 'n')
