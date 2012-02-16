@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>	/* INT_MAX & co */
-#include <float.h> /* FLT_EPSILON */
+#include <float.h> /* FLT_EPSILON, FLT_MAX & co */
 #include <fcntl.h> /* O_RDONLY & co */
 
 #include <setjmp.h>
@@ -46,6 +46,7 @@
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
+#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
 
 /*
  * Some differences in libc can be smoothed over
@@ -62,6 +63,7 @@
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define snprintf _snprintf
+#define isnan _isnan
 
 #else /* Unix or close enough */
 
