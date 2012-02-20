@@ -17,13 +17,14 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.ViewAnimator;
 import android.widget.ViewSwitcher;
 
 class SearchTaskResult {
@@ -41,7 +42,7 @@ public class MuPDFActivity extends Activity
 	private MuPDFCore    core;
 	private String       mFileName;
 	private ReaderView   mDocView;
-	private ViewAnimator mButtonsView;
+	private View         mButtonsView;
 	private boolean      mButtonsVisible;
 	private EditText     mPasswordView;
 	private TextView     mFilenameView;
@@ -398,7 +399,15 @@ public class MuPDFActivity extends Activity
 				mSearchText.requestFocus();
 				showKeyboard();
 			}
-			mButtonsView.showNext();
+			Animation anim = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+			anim.setAnimationListener(new Animation.AnimationListener() {
+				public void onAnimationStart(Animation animation) {
+					mButtonsView.setVisibility(View.VISIBLE);
+				}
+				public void onAnimationRepeat(Animation animation) {}
+				public void onAnimationEnd(Animation animation) {}
+			});
+			mButtonsView.startAnimation(anim);
 		}
 	}
 
@@ -406,7 +415,15 @@ public class MuPDFActivity extends Activity
 		if (mButtonsVisible) {
 			mButtonsVisible = false;
 			hideKeyboard();
-			mButtonsView.showPrevious();
+			Animation anim = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+			anim.setAnimationListener(new Animation.AnimationListener() {
+				public void onAnimationStart(Animation animation) {}
+				public void onAnimationRepeat(Animation animation) {}
+				public void onAnimationEnd(Animation animation) {
+					mButtonsView.setVisibility(View.INVISIBLE);
+				}
+			});
+			mButtonsView.startAnimation(anim);
 		}
 	}
 
@@ -433,10 +450,8 @@ public class MuPDFActivity extends Activity
 	}
 
 	void makeButtonsView() {
-		// mButtonsView is a ViewAnimator between an initial dummy empty view
-		// and the actual control view. showNext and showPrevious can be used
-		// to fade it in an out
-		mButtonsView = (ViewAnimator)getLayoutInflater().inflate(R.layout.buttons,null);
+		mButtonsView = getLayoutInflater().inflate(R.layout.buttons,null);
+		mButtonsView.setVisibility(View.INVISIBLE);
 		mFilenameView = (TextView)mButtonsView.findViewById(R.id.docNameText);
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
