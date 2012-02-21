@@ -1362,7 +1362,7 @@ pdf_load_function(pdf_document *xref, fz_obj *dict)
 	fz_obj *obj;
 	int i;
 
-	if ((func = fz_find_item(ctx, pdf_free_function_imp, dict)))
+	if ((func = pdf_find_item(ctx, pdf_free_function_imp, dict)))
 	{
 		return func;
 	}
@@ -1432,7 +1432,7 @@ pdf_load_function(pdf_document *xref, fz_obj *dict)
 			fz_throw(ctx, "unknown function type (%d %d R)", fz_to_num(dict), fz_to_gen(dict));
 		}
 
-		fz_store_item(ctx, dict, func, func->size);
+		pdf_store_item(ctx, dict, func, func->size);
 	}
 	fz_catch(ctx)
 	{

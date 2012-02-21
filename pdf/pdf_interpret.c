@@ -362,7 +362,7 @@ pdf_show_shade(pdf_csi *csi, fz_shade *shd)
 }
 
 static void
-pdf_show_image(pdf_csi *csi, fz_pixmap *image)
+pdf_show_image(pdf_csi *csi, fz_image *image)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_matrix image_ctm;
@@ -1627,7 +1627,7 @@ static void pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 	int ch;
 	char *buf = csi->xref->scratch;
 	int buflen = sizeof(csi->xref->scratch);
-	fz_pixmap *img;
+	fz_image *img;
 	fz_obj *obj;
 
 	obj = pdf_parse_dict(csi->xref, file, buf, buflen);
@@ -1645,7 +1645,7 @@ static void pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 
 	pdf_show_image(csi, img);
 
-	fz_drop_pixmap(ctx, img);
+	fz_drop_image(ctx, img);
 
 	/* find EI */
 	ch = fz_read_byte(file);
@@ -1798,19 +1798,20 @@ static void pdf_run_Do(pdf_csi *csi, fz_obj *rdb)
 	{
 		if ((csi->dev->hints & FZ_IGNORE_IMAGE) == 0)
 		{
-			fz_pixmap *img;
-			img = pdf_load_image(csi->xref, obj);
+			fz_image *img = pdf_load_image(csi->xref, obj);
 			/* RJW: "cannot load image (%d %d R)", fz_to_num(obj), fz_to_gen(obj) */
 			fz_try(ctx)
 			{
 				pdf_show_image(csi, img);
 			}
+			fz_always(ctx)
+			{
+				fz_drop_image(ctx, img);
+			}
 			fz_catch(ctx)
 			{
-				fz_drop_pixmap(ctx, img);
 				fz_rethrow(ctx);
 			}
-			fz_drop_pixmap(ctx, img);
 		}
 	}
 

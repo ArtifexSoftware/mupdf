@@ -5,6 +5,83 @@
 #error "fitz.h must be included before mupdf.h"
 #endif
 
+/*
+ * PDF Images
+ */
+
+typedef struct pdf_image_params_s pdf_image_params;
+
+struct pdf_image_params_s
+{
+	int type;
+	fz_colorspace *colorspace;
+	union
+	{
+		struct
+		{
+			int columns;
+			int rows;
+			int k;
+			int eol;
+			int eba;
+			int eob;
+			int bi1;
+		}
+		fax;
+		struct
+		{
+			int ct;
+		}
+		jpeg;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+		}
+		flate;
+		struct
+		{
+			int columns;
+			int colors;
+			int predictor;
+			int bpc;
+			int ec;
+		}
+		lzw;
+	}
+	u;
+};
+
+
+typedef struct pdf_image_s pdf_image;
+
+struct pdf_image_s
+{
+	fz_image base;
+	fz_pixmap *tile;
+	int n, bpc;
+	pdf_image_params params;
+	fz_buffer *buffer;
+	int colorkey[FZ_MAX_COLORS * 2];
+	float decode[FZ_MAX_COLORS * 2];
+	int imagemask;
+	int interpolate;
+	int usecolorkey;
+};
+
+enum
+{
+	PDF_IMAGE_RAW,
+	PDF_IMAGE_FAX,
+	PDF_IMAGE_JPEG,
+	PDF_IMAGE_RLD,
+	PDF_IMAGE_FLATE,
+	PDF_IMAGE_LZW,
+	PDF_IMAGE_JPX
+};
+
 typedef struct pdf_document_s pdf_document;
 
 /*
@@ -102,12 +179,15 @@ fz_obj *pdf_load_object(pdf_document *doc, int num, int gen);
 void pdf_update_object(pdf_document *doc, int num, int gen, fz_obj *newobj);
 
 int pdf_is_stream(pdf_document *doc, int num, int gen);
-fz_stream *pdf_open_inline_stream(pdf_document *doc, fz_obj *stmobj, int length, fz_stream *chain);
+fz_stream *pdf_open_inline_stream(pdf_document *doc, fz_obj *stmobj, int length, fz_stream *chain, pdf_image_params *params);
 fz_buffer *pdf_load_raw_stream(pdf_document *doc, int num, int gen);
 fz_buffer *pdf_load_stream(pdf_document *doc, int num, int gen);
+fz_buffer *pdf_load_image_stream(pdf_document *doc, int num, int gen, pdf_image_params *params);
 fz_stream *pdf_open_raw_stream(pdf_document *doc, int num, int gen);
+fz_stream *pdf_open_image_stream(pdf_document *doc, int num, int gen, pdf_image_params *params);
 fz_stream *pdf_open_stream(pdf_document *doc, int num, int gen);
 fz_stream *pdf_open_stream_with_offset(pdf_document *doc, int num, int gen, fz_obj *dict, int stm_ofs);
+fz_stream *pdf_open_image_decomp_stream(fz_context *ctx, fz_buffer *, pdf_image_params *params, int *factor);
 
 pdf_document *pdf_open_document_with_stream(fz_stream *file);
 pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
@@ -171,8 +251,8 @@ fz_pixmap *pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
 
 fz_shade *pdf_load_shading(pdf_document *doc, fz_obj *obj);
 
-fz_pixmap *pdf_load_inline_image(pdf_document *doc, fz_obj *rdb, fz_obj *dict, fz_stream *file);
-fz_pixmap *pdf_load_image(pdf_document *doc, fz_obj *obj);
+fz_image *pdf_load_inline_image(pdf_document *doc, fz_obj *rdb, fz_obj *dict, fz_stream *file);
+fz_image *pdf_load_image(pdf_document *doc, fz_obj *obj);
 int pdf_is_jpx_image(fz_context *ctx, fz_obj *dict);
 
 /*
@@ -470,5 +550,13 @@ void pdf_free_page(pdf_document *doc, pdf_page *page);
 void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
 void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
 void pdf_run_glyph(pdf_document *doc, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
+
+/*
+ * PDF interface to store
+ */
+
+void pdf_store_item(fz_context *ctx, fz_obj *key, void *val, unsigned int itemsize);
+void *pdf_find_item(fz_context *ctx, fz_store_free_fn *free, fz_obj *key);
+void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, fz_obj *key);
 
 #endif
