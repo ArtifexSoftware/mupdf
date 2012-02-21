@@ -380,6 +380,12 @@ public class ReaderView extends AdapterView<Adapter>
 			cvLeft   += corr.x;
 			cvTop    += corr.y;
 			cvBottom += corr.y;
+		} else if (cv.getMeasuredHeight() <= getHeight()) {
+			// When the current view is as small as the screen in height, clamp
+			// it vertically
+			Point corr = getCorrection(getScrollBounds(cvLeft, cvTop, cvRight, cvBottom));
+			cvTop    += corr.y;
+			cvBottom += corr.y;
 		}
 
 		cv.layout(cvLeft, cvTop, cvRight, cvBottom);
