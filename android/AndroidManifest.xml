@@ -12,8 +12,7 @@
                  android:icon="@drawable/icon"
                  android:debuggable="true">
         <activity android:name="ChoosePDFActivity"
-                  android:label="@string/picker_title"
-                  android:theme="@android:style/Theme.NoTitleBar">
+                  android:label="@string/picker_title">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
