@@ -10,3 +10,7 @@ TAGS
 win32/*.user
 win32/*.ncb
 win32/*.suo
+android/obj
+android/bin
+android/libs
+android/gen
