@@ -9,7 +9,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_margin="10dp"
+        android:layout_margin="0dp"
         android:background="@drawable/slider" />
 
     <ViewSwitcher
@@ -24,11 +24,11 @@
             android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#CC444444"
             android:paddingBottom="0dp"
-            android:paddingLeft="5dp"
-            android:paddingRight="5dp"
-            android:paddingTop="0dp" >
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:paddingTop="0dp"
+            android:background="#CC444444" >
 
             <ImageButton
                 android:id="@+id/searchButton"
@@ -37,7 +37,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:contentDescription="@string/search_document"
-                android:src="@drawable/ic_btn_search" />
+                android:src="@drawable/ic_magnifying_glass" />
 
             <ImageButton
                 android:id="@+id/outlineButton"
@@ -46,7 +46,7 @@
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/searchButton"
                 android:contentDescription="@string/search_document"
-                android:src="@drawable/btn_star_big_off" />
+                android:src="@drawable/ic_list" />
 
             <TextView
                 android:id="@+id/docNameText"
@@ -55,6 +55,7 @@
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/outlineButton"
+                android:paddingLeft="15dp"
                 android:singleLine="true"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
         </RelativeLayout>
@@ -63,24 +64,31 @@
             android:id="@+id/topBar2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingBottom="0dp"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:paddingTop="0dp"
             android:background="#CC444444" >
 
-            <Button
+            <ImageButton
                 android:id="@+id/cancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
-                android:text="@string/cancel" />
+                android:contentDescription="@string/cancel"
+                android:src="@drawable/ic_cancel" />
 
             <EditText
                 android:id="@+id/searchText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/searchBack"
                 android:layout_toRightOf="@+id/cancel"
                 android:inputType="text"
+                android:hint="Search"
                 android:singleLine="true" />
 
             <ImageButton
@@ -90,7 +98,7 @@
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/searchForward"
                 android:contentDescription="@string/search_backwards"
-                android:src="@drawable/ic_media_previous" />
+                android:src="@drawable/ic_arrow_left" />
 
             <ImageButton
                 android:id="@+id/searchForward"
@@ -99,7 +107,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:contentDescription="@string/search_forwards"
-                android:src="@drawable/ic_media_next" />
+                android:src="@drawable/ic_arrow_right" />
         </RelativeLayout>
     </ViewSwitcher>
 

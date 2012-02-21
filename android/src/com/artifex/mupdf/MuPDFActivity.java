@@ -51,7 +51,7 @@ public class MuPDFActivity extends Activity
 	private SeekBar      mPageSlider;
 	private TextView     mPageNumberView;
 	private ImageButton  mSearchButton;
-	private Button       mCancelButton;
+	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ViewSwitcher mTopBarSwitcher;
 	private boolean      mTopBarIsSearch;
@@ -462,7 +462,7 @@ public class MuPDFActivity extends Activity
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
 		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
-		mCancelButton = (Button)mButtonsView.findViewById(R.id.cancel);
+		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
 		mTopBarSwitcher = (ViewSwitcher)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
