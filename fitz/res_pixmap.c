@@ -65,6 +65,8 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		}
 		fz_catch(ctx)
 		{
+			if (colorspace)
+				fz_drop_colorspace(ctx, colorspace);
 			fz_free(ctx, pix);
 			fz_rethrow(ctx);
 		}
