@@ -539,8 +539,7 @@ public class ReaderView extends AdapterView<Adapter>
 		Point corr = getCorrection(getScrollBounds(v));
 		if (corr.x != 0 || corr.y != 0) {
 			mScrollerLastX = mScrollerLastY = 0;
-			mScroller.startScroll(0, 0, corr.x, corr.y,
-						Math.max(Math.abs(corr.x), Math.abs(corr.y))*SCROLL_SPEED);
+			mScroller.startScroll(0, 0, corr.x, corr.y, 400);
 			post(this);
 		}
 	}
