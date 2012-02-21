@@ -17,10 +17,10 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -55,6 +55,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ViewSwitcher mTopBarSwitcher;
+	private View         mLowerButtons;
 	private boolean      mTopBarIsSearch;
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
@@ -415,15 +416,26 @@ public class MuPDFActivity extends Activity
 				mSearchText.requestFocus();
 				showKeyboard();
 			}
-			Animation anim = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+			Animation anim = new TranslateAnimation(0, 0, -mTopBarSwitcher.getHeight(), 0);
+			anim.setDuration(500);
 			anim.setAnimationListener(new Animation.AnimationListener() {
 				public void onAnimationStart(Animation animation) {
-					mButtonsView.setVisibility(View.VISIBLE);
+					mTopBarSwitcher.setVisibility(View.VISIBLE);
 				}
 				public void onAnimationRepeat(Animation animation) {}
 				public void onAnimationEnd(Animation animation) {}
 			});
-			mButtonsView.startAnimation(anim);
+			mTopBarSwitcher.startAnimation(anim);
+			anim = new TranslateAnimation(0, 0, mLowerButtons.getHeight(), 0);
+			anim.setDuration(500);
+			anim.setAnimationListener(new Animation.AnimationListener() {
+				public void onAnimationStart(Animation animation) {
+					mLowerButtons.setVisibility(View.VISIBLE);
+				}
+				public void onAnimationRepeat(Animation animation) {}
+				public void onAnimationEnd(Animation animation) {}
+			});
+			mLowerButtons.startAnimation(anim);
 		}
 	}
 
@@ -431,15 +443,26 @@ public class MuPDFActivity extends Activity
 		if (mButtonsVisible) {
 			mButtonsVisible = false;
 			hideKeyboard();
-			Animation anim = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+			Animation anim = new TranslateAnimation(0, 0, 0, -mTopBarSwitcher.getHeight());
+			anim.setDuration(500);
 			anim.setAnimationListener(new Animation.AnimationListener() {
 				public void onAnimationStart(Animation animation) {}
 				public void onAnimationRepeat(Animation animation) {}
 				public void onAnimationEnd(Animation animation) {
-					mButtonsView.setVisibility(View.INVISIBLE);
+					mTopBarSwitcher.setVisibility(View.INVISIBLE);
 				}
 			});
-			mButtonsView.startAnimation(anim);
+			mTopBarSwitcher.startAnimation(anim);
+			anim = new TranslateAnimation(0, 0, 0, mLowerButtons.getHeight());
+			anim.setDuration(500);
+			anim.setAnimationListener(new Animation.AnimationListener() {
+				public void onAnimationStart(Animation animation) {}
+				public void onAnimationRepeat(Animation animation) {}
+				public void onAnimationEnd(Animation animation) {
+					mLowerButtons.setVisibility(View.INVISIBLE);
+				}
+			});
+			mLowerButtons.startAnimation(anim);
 		}
 	}
 
@@ -467,7 +490,6 @@ public class MuPDFActivity extends Activity
 
 	void makeButtonsView() {
 		mButtonsView = getLayoutInflater().inflate(R.layout.buttons,null);
-		mButtonsView.setVisibility(View.INVISIBLE);
 		mFilenameView = (TextView)mButtonsView.findViewById(R.id.docNameText);
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
@@ -478,6 +500,9 @@ public class MuPDFActivity extends Activity
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
+		mLowerButtons = mButtonsView.findViewById(R.id.lowerButtons);
+		mTopBarSwitcher.setVisibility(View.INVISIBLE);
+		mLowerButtons.setVisibility(View.INVISIBLE);
 	}
 
 	void showKeyboard() {
