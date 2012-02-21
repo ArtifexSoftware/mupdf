@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -100,7 +101,7 @@ public class MuPDFActivity extends Activity
 		if (core == null) {
 			Intent intent = getIntent();
 			if (Intent.ACTION_VIEW.equals(intent.getAction()))
-				core = openFile(intent.getData().getEncodedPath());
+				core = openFile(Uri.decode(intent.getData().getEncodedPath()));
 			if (core != null && core.needsPassword()) {
 				requestPassword(savedInstanceState);
 				return;
