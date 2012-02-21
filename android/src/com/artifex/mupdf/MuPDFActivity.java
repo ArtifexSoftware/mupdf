@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -288,6 +289,15 @@ public class MuPDFActivity extends Activity
 					int after) {}
 			public void onTextChanged(CharSequence s, int start, int before,
 					int count) {}
+		});
+
+		//React to Done button on keyboard
+		mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				if (actionId == EditorInfo.IME_ACTION_DONE)
+					search(1);
+				return false;
+			}
 		});
 
 		// Activate search invoking buttons
