@@ -90,6 +90,18 @@ public class ReaderView extends AdapterView<Adapter>
 		}
 	}
 
+	public void moveToNext() {
+		View v = mChildViews.get(mCurrent+1);
+		if (v != null)
+			slideViewOntoScreen(v);
+	}
+
+	public void moveToPrevious() {
+		View v = mChildViews.get(mCurrent-1);
+		if (v != null)
+			slideViewOntoScreen(v);
+	}
+
 	public void resetupChildren() {
 		for (int i = 0; i < mChildViews.size(); i++)
 			onChildSetup(mChildViews.keyAt(i), mChildViews.valueAt(i));

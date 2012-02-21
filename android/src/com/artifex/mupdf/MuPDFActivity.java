@@ -39,6 +39,7 @@ class SearchTaskResult {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
+	private final int    TAP_PAGE_MARGIN = 5;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private ReaderView   mDocView;
@@ -158,7 +159,11 @@ public class MuPDFActivity extends Activity
 			private boolean showButtonsDisabled;
 
 			public boolean onSingleTapUp(MotionEvent e) {
-				if (!showButtonsDisabled) {
+				if (e.getX() < super.getWidth()/TAP_PAGE_MARGIN) {
+					super.moveToPrevious();
+				} else if (e.getX() > super.getWidth()*(TAP_PAGE_MARGIN-1)/TAP_PAGE_MARGIN) {
+					super.moveToNext();
+				} else if (!showButtonsDisabled) {
 					int linkPage = -1;
 					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
 					if (pageView != null) {
