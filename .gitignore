@@ -14,3 +14,4 @@ android/obj
 android/bin
 android/libs
 android/gen
+android/local.properties

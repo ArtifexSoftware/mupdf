@@ -6,5 +6,5 @@
         android:right="20dp"
         android:top="20dp"
         android:bottom="20dp" />
-    <solid android:color="#FF444444" />
+    <solid android:color="@color/bar" />
 </shape>

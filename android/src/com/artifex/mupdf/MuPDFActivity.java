@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.RectF;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -238,7 +239,6 @@ public class MuPDFActivity extends Activity
 			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
-		mDocView.setBackgroundResource(R.drawable.tiled_background);
 
 		// Make the buttons overlay, and store all its
 		// controls in variables
@@ -344,6 +344,8 @@ public class MuPDFActivity extends Activity
 		RelativeLayout layout = new RelativeLayout(this);
 		layout.addView(mDocView);
 		layout.addView(mButtonsView);
+		layout.setBackgroundResource(R.drawable.tiled_background);
+		//layout.setBackgroundResource(R.color.canvas);
 		setContentView(layout);
 	}
 
@@ -416,8 +418,9 @@ public class MuPDFActivity extends Activity
 				mSearchText.requestFocus();
 				showKeyboard();
 			}
+
 			Animation anim = new TranslateAnimation(0, 0, -mTopBarSwitcher.getHeight(), 0);
-			anim.setDuration(500);
+			anim.setDuration(200);
 			anim.setAnimationListener(new Animation.AnimationListener() {
 				public void onAnimationStart(Animation animation) {
 					mTopBarSwitcher.setVisibility(View.VISIBLE);
@@ -426,16 +429,19 @@ public class MuPDFActivity extends Activity
 				public void onAnimationEnd(Animation animation) {}
 			});
 			mTopBarSwitcher.startAnimation(anim);
-			anim = new TranslateAnimation(0, 0, mLowerButtons.getHeight(), 0);
-			anim.setDuration(500);
+
+			anim = new TranslateAnimation(0, 0, mPageSlider.getHeight(), 0);
+			anim.setDuration(200);
 			anim.setAnimationListener(new Animation.AnimationListener() {
 				public void onAnimationStart(Animation animation) {
-					mLowerButtons.setVisibility(View.VISIBLE);
+					mPageSlider.setVisibility(View.VISIBLE);
 				}
 				public void onAnimationRepeat(Animation animation) {}
-				public void onAnimationEnd(Animation animation) {}
+				public void onAnimationEnd(Animation animation) {
+					mPageNumberView.setVisibility(View.VISIBLE);
+				}
 			});
-			mLowerButtons.startAnimation(anim);
+			mPageSlider.startAnimation(anim);
 		}
 	}
 
@@ -443,8 +449,9 @@ public class MuPDFActivity extends Activity
 		if (mButtonsVisible) {
 			mButtonsVisible = false;
 			hideKeyboard();
+
 			Animation anim = new TranslateAnimation(0, 0, 0, -mTopBarSwitcher.getHeight());
-			anim.setDuration(500);
+			anim.setDuration(200);
 			anim.setAnimationListener(new Animation.AnimationListener() {
 				public void onAnimationStart(Animation animation) {}
 				public void onAnimationRepeat(Animation animation) {}
@@ -453,16 +460,19 @@ public class MuPDFActivity extends Activity
 				}
 			});
 			mTopBarSwitcher.startAnimation(anim);
-			anim = new TranslateAnimation(0, 0, 0, mLowerButtons.getHeight());
-			anim.setDuration(500);
+
+			anim = new TranslateAnimation(0, 0, 0, mPageSlider.getHeight());
+			anim.setDuration(200);
 			anim.setAnimationListener(new Animation.AnimationListener() {
-				public void onAnimationStart(Animation animation) {}
+				public void onAnimationStart(Animation animation) {
+					mPageNumberView.setVisibility(View.INVISIBLE);
+				}
 				public void onAnimationRepeat(Animation animation) {}
 				public void onAnimationEnd(Animation animation) {
-					mLowerButtons.setVisibility(View.INVISIBLE);
+					mPageSlider.setVisibility(View.INVISIBLE);
 				}
 			});
-			mLowerButtons.startAnimation(anim);
+			mPageSlider.startAnimation(anim);
 		}
 	}
 
@@ -502,7 +512,8 @@ public class MuPDFActivity extends Activity
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
 		mLowerButtons = mButtonsView.findViewById(R.id.lowerButtons);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
-		mLowerButtons.setVisibility(View.INVISIBLE);
+		mPageNumberView.setVisibility(View.INVISIBLE);
+		mPageSlider.setVisibility(View.INVISIBLE);
 	}
 
 	void showKeyboard() {
