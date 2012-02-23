@@ -125,6 +125,7 @@ fz_read_all(fz_stream *stm, int initial)
 		fz_drop_buffer(ctx, buf);
 		fz_rethrow(ctx);
 	}
+	fz_trim_buffer(ctx, buf);
 
 	return buf;
 }

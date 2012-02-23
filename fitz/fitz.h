@@ -784,6 +784,7 @@ void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
 void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
 void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
+void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
  * Resource store
