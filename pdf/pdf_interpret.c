@@ -819,6 +819,7 @@ pdf_show_string(pdf_csi *csi, unsigned char *buf, int len)
 	{
 		int w = pdf_decode_cmap(fontdesc->encoding, buf, &cpt);
 		buf += w;
+                
 		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
 		if (cid >= 0)
 			pdf_show_char(csi, cid);
@@ -1625,12 +1626,10 @@ static void pdf_run_BI(pdf_csi *csi, fz_obj *rdb, fz_stream *file)
 {
 	fz_context *ctx = csi->dev->ctx;
 	int ch;
-	char *buf = csi->xref->scratch;
-	int buflen = sizeof(csi->xref->scratch);
 	fz_image *img;
 	fz_obj *obj;
 
-	obj = pdf_parse_dict(csi->xref, file, buf, buflen);
+	obj = pdf_parse_dict(csi->xref, file, &csi->xref->lexbuf.base);
 	/* RJW: "cannot parse inline image dictionary" */
 
 	/* read whitespace after ID keyword */
@@ -2523,10 +2522,10 @@ pdf_run_keyword(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf)
 }
 
 static void
-pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen)
+pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 {
 	fz_context *ctx = csi->dev->ctx;
-	int tok, len, in_array;
+	int tok, in_array;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
@@ -2551,7 +2550,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			csi->cookie->progress++;
 		}
 
-		tok = pdf_lex(file, buf, buflen, &len);
+		tok = pdf_lex(file, buf);
 		/* RJW: "lexical error in content stream" */
 
 		if (in_array)
@@ -2560,19 +2559,24 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			{
 				in_array = 0;
 			}
-			else if (tok == PDF_TOK_INT || tok == PDF_TOK_REAL)
+			else if (tok == PDF_TOK_REAL)
 			{
 				pdf_gstate *gstate = csi->gstate + csi->gtop;
-				pdf_show_space(csi, -fz_atof(buf) * gstate->size * 0.001f);
+				pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
+			}
+			else if (tok == PDF_TOK_INT)
+			{
+				pdf_gstate *gstate = csi->gstate + csi->gtop;
+				pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
 			}
 			else if (tok == PDF_TOK_STRING)
 			{
-				pdf_show_string(csi, (unsigned char *)buf, len);
+				pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
 			}
 			else if (tok == PDF_TOK_KEYWORD)
 			{
-				if (!strcmp(buf, "Tw") || !strcmp(buf, "Tc"))
-					fz_warn(ctx, "ignoring keyword '%s' inside array", buf);
+				if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
+					fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
 				else
 					fz_throw(ctx, "syntax error in array");
 			}
@@ -2591,7 +2595,7 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 		case PDF_TOK_OPEN_ARRAY:
 			if (!csi->in_text)
 			{
-				csi->obj = pdf_parse_array(csi->xref, file, buf, buflen);
+				csi->obj = pdf_parse_array(csi->xref, file, buf);
 				/* RJW: "cannot parse array" */
 			}
 			else
@@ -2601,38 +2605,38 @@ pdf_run_stream(pdf_csi *csi, fz_obj *rdb, fz_stream *file, char *buf, int buflen
 			break;
 
 		case PDF_TOK_OPEN_DICT:
-			csi->obj = pdf_parse_dict(csi->xref, file, buf, buflen);
+			csi->obj = pdf_parse_dict(csi->xref, file, buf);
 			/* RJW: "cannot parse dictionary" */
 			break;
 
 		case PDF_TOK_NAME:
-			fz_strlcpy(csi->name, buf, sizeof(csi->name));
+			fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
 			break;
 
 		case PDF_TOK_INT:
-			csi->stack[csi->top] = atoi(buf);
+			csi->stack[csi->top] = buf->i;
 			csi->top ++;
 			break;
 
 		case PDF_TOK_REAL:
-			csi->stack[csi->top] = fz_atof(buf);
+			csi->stack[csi->top] = buf->f;
 			csi->top ++;
 			break;
 
 		case PDF_TOK_STRING:
-			if (len <= sizeof(csi->string))
+			if (buf->len <= sizeof(csi->string))
 			{
-				memcpy(csi->string, buf, len);
-				csi->string_len = len;
+				memcpy(csi->string, buf->scratch, buf->len);
+				csi->string_len = buf->len;
 			}
 			else
 			{
-				csi->obj = fz_new_string(ctx, buf, len);
+				csi->obj = fz_new_string(ctx, buf->scratch, buf->len);
 			}
 			break;
 
 		case PDF_TOK_KEYWORD:
-			pdf_run_keyword(csi, rdb, file, buf);
+			pdf_run_keyword(csi, rdb, file, buf->scratch);
 			/* RJW: "cannot run keyword" */
 			pdf_clear_stack(csi);
 			break;
@@ -2651,8 +2655,7 @@ static void
 pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 {
 	fz_context *ctx = csi->dev->ctx;
-	int len = sizeof csi->xref->scratch;
-	char *buf = NULL;
+	pdf_lexbuf_large *buf;
 	fz_stream * file = NULL;
 	int save_in_text;
 
@@ -2664,13 +2667,14 @@ pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 
 	fz_try(ctx)
 	{
-		buf = fz_malloc(ctx, len); /* we must be re-entrant for type3 fonts */
+		buf = fz_malloc(ctx, sizeof(*buf)); /* we must be re-entrant for type3 fonts */
+		buf->base.size = PDF_LEXBUF_LARGE;
 		file = fz_open_buffer(ctx, contents);
 		save_in_text = csi->in_text;
 		csi->in_text = 0;
 		fz_try(ctx)
 		{
-			pdf_run_stream(csi, rdb, file, buf, len);
+			pdf_run_stream(csi, rdb, file, &buf->base);
 		}
 		fz_catch(ctx)
 		{
@@ -2678,14 +2682,15 @@ pdf_run_buffer(pdf_csi *csi, fz_obj *rdb, fz_buffer *contents)
 		}
 		csi->in_text = save_in_text;
 	}
-	fz_catch(ctx)
-	{
+        fz_always(ctx)
+        {
 		fz_close(file);
 		fz_free(ctx, buf);
+        }
+	fz_catch(ctx)
+	{
 		fz_throw(ctx, "cannot parse context stream");
 	}
-	fz_close(file);
-	fz_free(ctx, buf);
 }
 
 void

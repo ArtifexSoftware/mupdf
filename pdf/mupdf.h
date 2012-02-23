@@ -102,12 +102,40 @@ enum
 	PDF_NUM_TOKENS
 };
 
-int pdf_lex(fz_stream *f, char *buf, int n, int *len);
+enum
+{
+	PDF_LEXBUF_SMALL = 256,
+	PDF_LEXBUF_LARGE = 65536
+};
 
-fz_obj *pdf_parse_array(pdf_document *doc, fz_stream *f, char *buf, int cap);
-fz_obj *pdf_parse_dict(pdf_document *doc, fz_stream *f, char *buf, int cap);
-fz_obj *pdf_parse_stm_obj(pdf_document *doc, fz_stream *f, char *buf, int cap);
-fz_obj *pdf_parse_ind_obj(pdf_document *doc, fz_stream *f, char *buf, int cap, int *num, int *gen, int *stm_ofs);
+    
+
+typedef struct pdf_lexbuf_s pdf_lexbuf;
+typedef struct pdf_lexbuf_large_s pdf_lexbuf_large;
+
+struct pdf_lexbuf_s
+{
+	int size;
+	int len;
+	int i;
+	float f;
+	char scratch[PDF_LEXBUF_SMALL];
+};
+
+struct pdf_lexbuf_large_s
+{
+	pdf_lexbuf base;
+	char scratch[PDF_LEXBUF_LARGE - PDF_LEXBUF_SMALL];
+};
+
+    
+
+int pdf_lex(fz_stream *f, pdf_lexbuf *lexbuf);
+
+fz_obj *pdf_parse_array(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
+fz_obj *pdf_parse_dict(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
+fz_obj *pdf_parse_stm_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
+fz_obj *pdf_parse_ind_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf, int *num, int *gen, int *stm_ofs);
 
 fz_rect pdf_to_rect(fz_context *ctx, fz_obj *array);
 fz_matrix pdf_to_matrix(fz_context *ctx, fz_obj *array);
@@ -170,7 +198,7 @@ struct pdf_document_s
 	fz_obj **page_objs;
 	fz_obj **page_refs;
 
-	char scratch[65536];
+	pdf_lexbuf_large lexbuf;
 };
 
 fz_obj *pdf_resolve_indirect(fz_obj *ref);
@@ -194,7 +222,7 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 void pdf_close_document(pdf_document *doc);
 
 /* private */
-void pdf_repair_xref(pdf_document *doc, char *buf, int bufsize);
+void pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf);
 void pdf_repair_obj_stms(pdf_document *doc);
 void pdf_debug_xref(pdf_document *);
 void pdf_resize_xref(pdf_document *doc, int newcap);
