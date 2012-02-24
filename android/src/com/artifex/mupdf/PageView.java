@@ -9,6 +9,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -59,6 +60,7 @@ public abstract class PageView extends ViewGroup {
 	private       RectF     mSearchBoxes[];
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
+	private       boolean   mUsingHardwareAcceleration;
 
 	private       ProgressBar mBusyIndicator;
 
@@ -67,6 +69,7 @@ public abstract class PageView extends ViewGroup {
 		mContext    = c;
 		mParentSize = parentSize;
 		setBackgroundColor(BACKGROUND_COLOR);
+		mUsingHardwareAcceleration = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
 	}
 
 	protected abstract void drawPage(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
@@ -119,6 +122,15 @@ public abstract class PageView extends ViewGroup {
 		mSourceScale = Math.min(mParentSize.x/size.x, mParentSize.y/size.y);
 		Point newSize = new Point((int)(size.x*mSourceScale), (int)(size.y*mSourceScale));
 		mSize = newSize;
+
+		if (mUsingHardwareAcceleration) {
+			// When hardware accelerated, updates to the bitmap seem to be
+			// ignored, so we recreate it. There may be another way around this
+			// that we are yet to find.
+			mEntire.setImageBitmap(null);
+			mEntireBm = null;
+		}
+
 		if (mEntireBm == null || mEntireBm.getWidth() != newSize.x
 				              || mEntireBm.getHeight() != newSize.y) {
 			mEntireBm = Bitmap.createBitmap(mSize.x, mSize.y, Bitmap.Config.ARGB_8888);
