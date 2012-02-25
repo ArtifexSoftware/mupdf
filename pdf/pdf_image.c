@@ -505,6 +505,9 @@ pdf_load_jpx(pdf_document *xref, fz_obj *dict, pdf_image *image)
 		img = fz_load_jpx(ctx, buf->data, buf->len, colorspace);
 		/* RJW: "cannot load jpx image" */
 
+		if (img && colorspace == NULL)
+			colorspace = fz_keep_colorspace(ctx, img->colorspace);
+
 		fz_drop_buffer(ctx, buf);
 		buf = NULL;
 
