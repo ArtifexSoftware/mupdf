@@ -54,7 +54,6 @@
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define snprintf _snprintf
-#define strtoll _strtoi64
 
 #else /* Unix or close enough */
 
@@ -909,87 +908,6 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
 	unsigned char *output );
 
 /*
- * Dynamic objects.
- * The same type of objects as found in PDF and PostScript.
- * Used by the filters and the mupdf parser.
- */
-
-typedef struct fz_obj_s fz_obj;
-
-extern fz_obj *(*fz_resolve_indirect)(fz_obj *obj);
-
-fz_obj *fz_new_null(fz_context *ctx);
-fz_obj *fz_new_bool(fz_context *ctx, int b);
-fz_obj *fz_new_int(fz_context *ctx, int i);
-fz_obj *fz_new_real(fz_context *ctx, float f);
-fz_obj *fz_new_name(fz_context *ctx, char *str);
-fz_obj *fz_new_string(fz_context *ctx, char *str, int len);
-fz_obj *fz_new_indirect(fz_context *ctx, int num, int gen, void *doc);
-
-fz_obj *fz_new_array(fz_context *ctx, int initialcap);
-fz_obj *fz_new_dict(fz_context *ctx, int initialcap);
-fz_obj *fz_copy_array(fz_context *ctx, fz_obj *array);
-fz_obj *fz_copy_dict(fz_context *ctx, fz_obj *dict);
-
-fz_obj *fz_keep_obj(fz_obj *obj);
-void fz_drop_obj(fz_obj *obj);
-
-/* type queries */
-int fz_is_null(fz_obj *obj);
-int fz_is_bool(fz_obj *obj);
-int fz_is_int(fz_obj *obj);
-int fz_is_real(fz_obj *obj);
-int fz_is_name(fz_obj *obj);
-int fz_is_string(fz_obj *obj);
-int fz_is_array(fz_obj *obj);
-int fz_is_dict(fz_obj *obj);
-int fz_is_indirect(fz_obj *obj);
-
-int fz_objcmp(fz_obj *a, fz_obj *b);
-
-/* dict marking and unmarking functions - to avoid infinite recursions */
-int fz_dict_marked(fz_obj *obj);
-int fz_dict_mark(fz_obj *obj);
-void fz_dict_unmark(fz_obj *obj);
-
-/* safe, silent failure, no error reporting on type mismatches */
-int fz_to_bool(fz_obj *obj);
-int fz_to_int(fz_obj *obj);
-float fz_to_real(fz_obj *obj);
-char *fz_to_name(fz_obj *obj);
-char *fz_to_str_buf(fz_obj *obj);
-fz_obj *fz_to_dict(fz_obj *obj);
-int fz_to_str_len(fz_obj *obj);
-int fz_to_num(fz_obj *obj);
-int fz_to_gen(fz_obj *obj);
-
-int fz_array_len(fz_obj *array);
-fz_obj *fz_array_get(fz_obj *array, int i);
-void fz_array_put(fz_obj *array, int i, fz_obj *obj);
-void fz_array_push(fz_obj *array, fz_obj *obj);
-void fz_array_insert(fz_obj *array, fz_obj *obj);
-int fz_array_contains(fz_obj *array, fz_obj *obj);
-
-int fz_dict_len(fz_obj *dict);
-fz_obj *fz_dict_get_key(fz_obj *dict, int idx);
-fz_obj *fz_dict_get_val(fz_obj *dict, int idx);
-fz_obj *fz_dict_get(fz_obj *dict, fz_obj *key);
-fz_obj *fz_dict_gets(fz_obj *dict, char *key);
-fz_obj *fz_dict_getsa(fz_obj *dict, char *key, char *abbrev);
-void fz_dict_put(fz_obj *dict, fz_obj *key, fz_obj *val);
-void fz_dict_puts(fz_obj *dict, char *key, fz_obj *val);
-void fz_dict_del(fz_obj *dict, fz_obj *key);
-void fz_dict_dels(fz_obj *dict, char *key);
-void fz_sort_dict(fz_obj *dict);
-
-int fz_fprint_obj(FILE *fp, fz_obj *obj, int tight);
-void fz_debug_obj(fz_obj *obj);
-void fz_debug_ref(fz_obj *obj);
-
-void fz_set_str_len(fz_obj *obj, int newlen); /* private */
-void *fz_get_indirect_document(fz_obj *obj); /* private */
-
-/*
 	fz_buffer is a XXX
 */
 typedef struct fz_buffer_s fz_buffer;
@@ -1071,6 +989,7 @@ struct fz_store_type_s
 	void *(*keep_key)(fz_context *,void *);
 	void (*drop_key)(fz_context *,void *);
 	int (*cmp_key)(void *, void *);
+	void (*debug)(void *);
 };
 
 void fz_new_store_context(fz_context *ctx, unsigned int max);
@@ -1558,12 +1477,13 @@ struct fz_font_s
 	int ft_size;
 
 	fz_matrix t3matrix;
-	fz_obj *t3resources;
+	void *t3resources;
 	fz_buffer **t3procs; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	char *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
-	void (*t3run)(void *doc, fz_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
+	void (*t3run)(void *doc, void *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
+	void (*t3freeres)(void *doc, void *resources);
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
