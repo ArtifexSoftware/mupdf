@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -103,8 +104,19 @@ public class MuPDFActivity extends Activity
 		}
 		if (core == null) {
 			Intent intent = getIntent();
-			if (Intent.ACTION_VIEW.equals(intent.getAction()))
-				core = openFile(Uri.decode(intent.getData().getEncodedPath()));
+			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+				Uri uri = intent.getData();
+				if (uri.toString().startsWith("content://media/external/file")) {
+					// Handle view requests from the Transformer Prime's file manager
+					// Hopefully other file managers will use this same scheme, if not
+					// using explicit paths.
+					Cursor cursor = getContentResolver().query(uri, new String[]{"_data"}, null, null, null);
+					if (cursor.moveToFirst()) {
+						uri = Uri.parse(cursor.getString(0));
+					}
+				}
+				core = openFile(Uri.decode(uri.getEncodedPath()));
+			}
 			if (core != null && core.needsPassword()) {
 				requestPassword(savedInstanceState);
 				return;
