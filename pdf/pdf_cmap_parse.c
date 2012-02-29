@@ -67,7 +67,7 @@ pdf_parse_cmap_name(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	pdf_lexbuf buf;
 	int tok;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	tok = pdf_lex_cmap(file, &buf);
 	/* RJW: Lost debugging: "syntaxerror in cmap" */
 
@@ -83,7 +83,7 @@ pdf_parse_wmode(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	pdf_lexbuf buf;
 	int tok;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	tok = pdf_lex_cmap(file, &buf);
 	/* RJW: Lost debugging: "syntaxerror in cmap" */
 
@@ -100,7 +100,7 @@ pdf_parse_codespace_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	int tok;
 	int lo, hi;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -135,7 +135,7 @@ pdf_parse_cid_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	int tok;
 	int lo, hi, dst;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -174,7 +174,7 @@ pdf_parse_cid_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	int tok;
 	int src, dst;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -208,7 +208,7 @@ pdf_parse_bf_range_array(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, int l
 	int dst[256];
 	int i;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -240,7 +240,7 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	int tok;
 	int lo, hi, dst;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -313,7 +313,7 @@ pdf_parse_bf_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file)
 	int src;
 	int i;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	while (1)
 	{
 		tok = pdf_lex_cmap(file, &buf);
@@ -351,7 +351,7 @@ pdf_load_cmap(fz_context *ctx, fz_stream *file)
 	int tok;
 	const char *where;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	cmap = pdf_new_cmap(ctx);
 
 	strcpy(key, ".notdef");

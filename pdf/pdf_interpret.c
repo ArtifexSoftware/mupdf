@@ -819,7 +819,7 @@ pdf_show_string(pdf_csi *csi, unsigned char *buf, int len)
 	{
 		int w = pdf_decode_cmap(fontdesc->encoding, buf, &cpt);
 		buf += w;
-                
+
 		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
 		if (cid >= 0)
 			pdf_show_char(csi, cid);
@@ -2682,11 +2682,11 @@ pdf_run_buffer(pdf_csi *csi, pdf_obj *rdb, fz_buffer *contents)
 		}
 		csi->in_text = save_in_text;
 	}
-        fz_always(ctx)
-        {
+	fz_always(ctx)
+	{
 		fz_close(file);
 		fz_free(ctx, buf);
-        }
+	}
 	fz_catch(ctx)
 	{
 		fz_throw(ctx, "cannot parse context stream");

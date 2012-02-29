@@ -51,7 +51,7 @@ pdf_read_start_xref(pdf_document *xref)
 			while (iswhite(buf[i]) && i < n)
 				i ++;
 			xref->startxref = atoi((char*)(buf + i));
-                        
+
 			return;
 		}
 	}

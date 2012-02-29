@@ -689,7 +689,7 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr)
 	int a, b, mid, cmp;
 	fz_context *ctx = stream->ctx;
 
-        buf.size = PDF_LEXBUF_SMALL;
+	buf.size = PDF_LEXBUF_SMALL;
 	memset(buf.scratch, 0, sizeof(buf.scratch));
 
 	while (1)
