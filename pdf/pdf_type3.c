@@ -11,7 +11,7 @@ pdf_run_glyph_func(void *doc, void *rdb_, fz_buffer *contents, fz_device *dev, f
 static void
 pdf_t3_free_resources(void *doc, void *rdb_)
 {
-	pdf_obj *rdb = (pdf_obj *)rdb;
+	pdf_obj *rdb = (pdf_obj *)rdb_;
 	pdf_drop_obj(rdb);
 }
 
