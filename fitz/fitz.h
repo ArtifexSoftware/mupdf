@@ -1233,8 +1233,6 @@ typedef struct fz_colorspace_s fz_colorspace;
 	n: The number of color components in the image. Always
 	includes a separate alpha channel. XXX RGBA=4
 
-	mask: XXX
-
 	interpolate: A boolean flag set to non-zero if the image
 	will be drawn using linear interpolation, or set to zero if
 	image will be using nearest neighbour sampling.
@@ -1254,7 +1252,6 @@ struct fz_pixmap_s
 {
 	fz_storable storable;
 	int x, y, w, h, n;
-	fz_pixmap *mask; /* explicit soft/image mask */
 	int interpolate;
 	int xres, yres;
 	fz_colorspace *colorspace;
