@@ -210,7 +210,7 @@ execution. Again this was felt to be too high a cost to use.
 
 #define fz_always(ctx) \
 		} while (0); \
-		longjmp(ctx->error->stack[ctx->error->top].buffer, 3); \
+		fz_longjmp(ctx->error->stack[ctx->error->top].buffer, 3); \
 	} \
 	else if (ctx->error->stack[ctx->error->top].code & 1) \
 	{ do {
@@ -218,7 +218,7 @@ execution. Again this was felt to be too high a cost to use.
 #define fz_catch(ctx) \
 		} while(0); \
 		if (ctx->error->stack[ctx->error->top].code == 1) \
-			longjmp(ctx->error->stack[ctx->error->top].buffer, 2); \
+			fz_longjmp(ctx->error->stack[ctx->error->top].buffer, 2); \
 		ctx->error->top--;\
 	} \
 	else if (ctx->error->top--, 1)
