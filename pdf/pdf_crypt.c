@@ -207,8 +207,8 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		crypt->p = pdf_to_int(obj);
 	else
 	{
-		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "encryption dictionary missing permissions value");
+		fz_warn(ctx, "encryption dictionary missing permissions");
+		crypt->p = 0xfffffffc;
 	}
 
 	if (crypt->r == 5)
