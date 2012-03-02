@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 void
 fz_free_context(fz_context *ctx)

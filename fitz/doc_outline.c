@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 void
 fz_free_outline(fz_context *ctx, fz_outline *outline)

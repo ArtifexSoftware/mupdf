@@ -3,7 +3,7 @@
  */
 
 #include "fitz.h"
-#include "mupdf.h"
+#include "mupdf-internal.h"
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;

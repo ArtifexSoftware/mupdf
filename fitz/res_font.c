@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

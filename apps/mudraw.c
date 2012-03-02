@@ -251,14 +251,10 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 			if (showmd5)
 			{
-				fz_md5 md5;
 				unsigned char digest[16];
 				int i;
 
-				fz_md5_init(&md5);
-				fz_md5_update(&md5, pix->samples, pix->w * pix->h * pix->n);
-				fz_md5_final(&md5, digest);
-
+				fz_md5_pixmap(digest, pix);
 				printf(" ");
 				for (i = 0; i < 16; i++)
 					printf("%02x", digest[i]);

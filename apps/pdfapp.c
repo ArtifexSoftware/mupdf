@@ -80,23 +80,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 
 void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
 {
-	unsigned char *p;
-	int x, y, n;
-
-	int x0 = CLAMP(rect.x0 - app->image->x, 0, app->image->w - 1);
-	int x1 = CLAMP(rect.x1 - app->image->x, 0, app->image->w - 1);
-	int y0 = CLAMP(rect.y0 - app->image->y, 0, app->image->h - 1);
-	int y1 = CLAMP(rect.y1 - app->image->y, 0, app->image->h - 1);
-
-	for (y = y0; y < y1; y++)
-	{
-		p = app->image->samples + (y * app->image->w + x0) * app->image->n;
-		for (x = x0; x < x1; x++)
-		{
-			for (n = app->image->n; n > 0; n--, p++)
-				*p = 255 - *p;
-		}
-	}
+	fz_invert_pixmap_rect(app->image, rect);
 }
 
 void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)

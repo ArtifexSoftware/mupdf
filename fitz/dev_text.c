@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #define LINE_DIST 0.9f
 #define SPACE_DIST 0.2f

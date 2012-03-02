@@ -6,7 +6,7 @@ given by taking the source pixmap src, scaling it to width w, and height h,
 and then positioning it at (frac(x),frac(y)).
 */
 
-#include "fitz.h"
+#include "fitz-internal.h"
 
 /* Do we special case handling of single pixel high/wide images? The
  * 'purest' handling is given by not special casing them, but certain

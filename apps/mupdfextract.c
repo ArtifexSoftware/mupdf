@@ -3,7 +3,7 @@
  */
 
 #include "fitz.h"
-#include "mupdf.h"
+#include "mupdf-internal.h"
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
@@ -34,7 +34,7 @@ static void saveimage(int num)
 	fz_image *image;
 	fz_pixmap *img;
 	pdf_obj *ref;
-	char name[1024];
+	char name[32];
 
 	ref = pdf_new_indirect(ctx, num, 0, doc);
 
@@ -44,27 +44,8 @@ static void saveimage(int num)
 	img = fz_image_to_pixmap(ctx, image, 0, 0);
 	fz_drop_image(ctx, image);
 
-	if (dorgb && img->colorspace && img->colorspace != fz_device_rgb)
-	{
-		fz_pixmap *temp;
-		temp = fz_new_pixmap_with_rect(ctx, fz_device_rgb, fz_bound_pixmap(img));
-		fz_convert_pixmap(ctx, img, temp);
-		fz_drop_pixmap(ctx, img);
-		img = temp;
-	}
-
-	if (img->n <= 4)
-	{
-		sprintf(name, "img-%04d.png", num);
-		printf("extracting image %s\n", name);
-		fz_write_png(ctx, img, name, 0);
-	}
-	else
-	{
-		sprintf(name, "img-%04d.pam", num);
-		printf("extracting image %s\n", name);
-		fz_write_pam(ctx, img, name, 0);
-	}
+	sprintf(name, "img-%04d", num);
+	fz_save_pixmap(ctx, img, name, dorgb);
 
 	fz_drop_pixmap(ctx, img);
 	pdf_drop_obj(ref);

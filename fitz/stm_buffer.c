@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 fz_buffer *
 fz_new_buffer(fz_context *ctx, int size)

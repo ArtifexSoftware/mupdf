@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 fz_bitmap *
 fz_new_bitmap(fz_context *ctx, int w, int h, int n)
@@ -73,4 +73,25 @@ fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 	}
 
 	fclose(fp);
+}
+
+fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
+{
+	if (!pix)
+		return NULL;
+	return pix->colorspace;
+}
+
+int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix)
+{
+	if (!pix)
+		return 0;
+	return pix->n;
+}
+
+unsigned char *fz_pixmap_pixels(fz_context *ctx, fz_pixmap *pix)
+{
+	if (!pix)
+		return NULL;
+	return pix->samples;
 }

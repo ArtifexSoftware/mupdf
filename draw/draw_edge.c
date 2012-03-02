@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #define BBOX_MIN -(1<<20)
 #define BBOX_MAX (1<<20)

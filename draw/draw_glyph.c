@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #define MAX_FONT_SIZE 1000
 #define MAX_GLYPH_SIZE 256
