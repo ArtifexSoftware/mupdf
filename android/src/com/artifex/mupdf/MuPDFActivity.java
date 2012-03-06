@@ -2,13 +2,13 @@ package com.artifex.mupdf;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.RectF;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,7 +23,6 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
@@ -62,7 +61,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
-	private AsyncTask<Integer,Void,SearchTaskResult> mSearchTask;
+	private AsyncTask<Integer,Integer,SearchTaskResult> mSearchTask;
 	private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 
@@ -297,6 +296,12 @@ public class MuPDFActivity extends Activity
 				boolean haveText = s.toString().length() > 0;
 				mSearchBack.setEnabled(haveText);
 				mSearchFwd.setEnabled(haveText);
+
+				// Remove any previous search results
+				if (mSearchTaskResult != null) {
+					mSearchTaskResult = null;
+					mDocView.resetupChildren();
+				}
 			}
 			public void beforeTextChanged(CharSequence s, int start, int count,
 					int after) {}
@@ -402,6 +407,9 @@ public class MuPDFActivity extends Activity
 	@Override
 	protected void onPause() {
 		super.onPause();
+
+		killSearch();
+
 		if (mFileName != null && mDocView != null) {
 			SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
 			SharedPreferences.Editor edit = prefs.edit();
@@ -540,13 +548,27 @@ public class MuPDFActivity extends Activity
 			imm.hideSoftInputFromWindow(mSearchText.getWindowToken(), 0);
 	}
 
-	void search(int direction) {
+	void killSearch() {
 		if (mSearchTask != null) {
 			mSearchTask.cancel(true);
 			mSearchTask = null;
 		}
+	}
 
-		mSearchTask = new AsyncTask<Integer,Void,SearchTaskResult>() {
+	void search(int direction) {
+		killSearch();
+
+		final ProgressDialog progressDialog = new ProgressDialog(this);
+		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		progressDialog.setTitle(getString(R.string.searching_));
+		progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+			public void onCancel(DialogInterface dialog) {
+				killSearch();
+			}
+		});
+		progressDialog.setMax(core.countPages());
+
+		mSearchTask = new AsyncTask<Integer,Integer,SearchTaskResult>() {
 			@Override
 			protected SearchTaskResult doInBackground(Integer... params) {
 				int index;
@@ -555,7 +577,8 @@ public class MuPDFActivity extends Activity
 				else
 					index = mSearchTaskResult.pageNumber + params[0].intValue();
 
-				while (0 <= index && index < core.countPages()) {
+				while (0 <= index && index < core.countPages() && !isCancelled()) {
+					publishProgress(index);
 					RectF searchHits[] = core.searchPage(index, mSearchText.getText().toString());
 
 					if (searchHits != null && searchHits.length > 0)
@@ -568,6 +591,7 @@ public class MuPDFActivity extends Activity
 
 			@Override
 			protected void onPostExecute(SearchTaskResult result) {
+				progressDialog.cancel();
 				if (result != null) {
 					// Ask the ReaderView to move to the resulting page
 					mDocView.setDisplayedViewIndex(result.pageNumber);
@@ -576,12 +600,30 @@ public class MuPDFActivity extends Activity
 					// via overridden onChildSetup method.
 				    mDocView.resetupChildren();
 				} else {
-					mAlertBuilder.setTitle("Text not found");
+					mAlertBuilder.setTitle(R.string.text_not_found);
 					AlertDialog alert = mAlertBuilder.create();
 					alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
 							(DialogInterface.OnClickListener)null);
 					alert.show();
 				}
+			}
+
+			@Override
+			protected void onCancelled() {
+				super.onCancelled();
+				progressDialog.cancel();
+			}
+
+			@Override
+			protected void onProgressUpdate(Integer... values) {
+				super.onProgressUpdate(values);
+				progressDialog.setProgress(values[0].intValue());
+			}
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
+				progressDialog.show();
 			}
 		};
 
