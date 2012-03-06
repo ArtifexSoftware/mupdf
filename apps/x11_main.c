@@ -466,7 +466,7 @@ void windocopy(pdfapp_t *app)
 	{
 		ucs = ucs2[0];
 
-		utf8 += runetochar(utf8, &ucs);
+		utf8 += fz_runetochar(utf8, ucs);
 
 		if (ucs < 256)
 			*latin1++ = ucs;

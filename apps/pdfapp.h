@@ -52,7 +52,8 @@ struct pdfapp_s
 	fz_page *page;
 	fz_rect page_bbox;
 	fz_display_list *page_list;
-	fz_text_span *page_text;
+	fz_text_page *page_text;
+	fz_text_sheet *page_sheet;
 	fz_link *page_links;
 
 	/* snapback history */

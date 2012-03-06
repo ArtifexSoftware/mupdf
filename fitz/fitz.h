@@ -1424,46 +1424,102 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 
 /*
-	Text extraction device
-*/
-typedef struct fz_text_span_s fz_text_span;
+ * Text extraction device
+ */
+
+typedef struct fz_text_style_s fz_text_style;
 typedef struct fz_text_char_s fz_text_char;
+typedef struct fz_text_span_s fz_text_span;
+typedef struct fz_text_line_s fz_text_line;
+typedef struct fz_text_block_s fz_text_block;
+
+typedef struct fz_text_sheet_s fz_text_sheet;
+typedef struct fz_text_page_s fz_text_page;
+
+struct fz_text_style_s
+{
+	int id;
+	fz_font *font;
+	float size;
+	int wmode;
+	int script;
+	/* etc... */
+	fz_text_style *next;
+};
+
+struct fz_text_sheet_s
+{
+	int maxid;
+	fz_text_style *style;
+};
 
 struct fz_text_char_s
 {
+	fz_rect bbox;
 	int c;
-	fz_bbox bbox;
 };
 
 struct fz_text_span_s
 {
-	fz_font *font;
-	float size;
-	int wmode;
+	fz_rect bbox;
 	int len, cap;
 	fz_text_char *text;
-	fz_text_span *next;
-	int eol;
+	fz_text_style *style;
 };
 
-fz_text_span *fz_new_text_span(fz_context *ctx);
-void fz_free_text_span(fz_context *ctx, fz_text_span *line);
-void fz_debug_text_span(fz_text_span *line);
-void fz_debug_text_span_xml(fz_text_span *span);
+struct fz_text_line_s
+{
+	fz_rect bbox;
+	int len, cap;
+	fz_text_span *spans;
+};
+
+struct fz_text_block_s
+{
+	fz_rect bbox;
+	int len, cap;
+	fz_text_line *lines;
+};
+
+struct fz_text_page_s
+{
+	fz_rect mediabox;
+	int len, cap;
+	fz_text_block *blocks;
+};
 
 /*
-	fz_new_text_device: Create a device to print the text on a
-	page in XML.
+	fz_new_text_device: Create a device to extract the text on a page.
 
-	The text on a page will be translated into a sequnce of XML
-	elements. For each text span the font, font size, writing mode
-	and end of line flag is printed. Since text can be placed at
-	arbitrary positions then heuristics must be used to try to
-	collect text spans together that are roughly located on the
-	same baseline. Each character in the text span will have its
-	UTF-8 character printed along with a bounding box containing it.
+	Gather and sort the text on a page into spans of uniform style,
+	arranged into lines and blocks by reading order. The reading order
+	is determined by various heuristics, so may not be accurate.
 */
-fz_device *fz_new_text_device(fz_context *ctx, fz_text_span *text);
+fz_device *fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
+
+/*
+	fz_new_text_sheet: Create an empty style sheet.
+
+	The style sheet is filled out by the text device, creating
+	one style for each unique font, color, size combination that
+	is used.
+*/
+fz_text_sheet *fz_new_text_sheet(fz_context *ctx);
+void fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet);
+
+/*
+	fz_new_text_page: Create an empty text page.
+
+	The text page is filled out by the text device to contain the blocks,
+	lines and spans of text on the page.
+*/
+fz_text_page *fz_new_text_page(fz_context *ctx, fz_rect mediabox);
+void fz_free_text_page(fz_context *ctx, fz_text_page *page);
+
+void fz_print_text_sheet(FILE *out, fz_text_sheet *sheet);
+void fz_print_text_page_html(FILE *out, fz_text_page *page);
+void fz_print_text_page_xml(FILE *out, fz_text_page *page);
+void fz_print_text_page(FILE *out, fz_text_page *page);
 
 /*
  * Cookie support - simple communication channel between app/library.

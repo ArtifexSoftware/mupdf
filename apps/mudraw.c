@@ -10,6 +10,8 @@
 #include <sys/time.h>
 #endif
 
+enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
+
 static char *output = NULL;
 static float resolution = 72;
 static float rotation = 0;
@@ -28,6 +30,7 @@ static int width = 0;
 static int height = 0;
 static int fit = 0;
 
+static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
 
@@ -157,42 +160,43 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (showtext)
 	{
-		fz_text_span *text = NULL;
+		fz_text_page *text = NULL;
 
 		fz_var(text);
 
 		fz_try(ctx)
 		{
-			text = fz_new_text_span(ctx);
-			dev = fz_new_text_device(ctx, text);
+			text = fz_new_text_page(ctx, fz_bound_page(doc, page));
+			dev = fz_new_text_device(ctx, sheet, text);
 			if (list)
 				fz_run_display_list(list, dev, fz_identity, fz_infinite_bbox, NULL);
 			else
 				fz_run_page(doc, page, dev, fz_identity, NULL);
 			fz_free_device(dev);
 			dev = NULL;
-			if (showtext > 1)
+			if (showtext == TEXT_XML)
 			{
-				printf("<page number=\"%d\">\n", pagenum);
-				fz_debug_text_span_xml(text);
-				printf("</page>\n");
+				fz_print_text_page_xml(stdout, text);
 			}
-			else
+			else if (showtext == TEXT_HTML)
 			{
-				printf("[Page %d]\n", pagenum);
-				fz_debug_text_span(text);
+				fz_print_text_page_html(stdout, text);
 			}
-			printf("\n");
+			else if (showtext == TEXT_PLAIN)
+			{
+				fz_print_text_page(stdout, text);
+				printf("\f\n");
+			}
 		}
 		fz_catch(ctx)
 		{
 			fz_free_device(dev);
-			fz_free_text_span(ctx, text);
+			fz_free_text_page(ctx, text);
 			fz_free_display_list(ctx, list);
 			fz_free_page(doc, page);
 			fz_rethrow(ctx);
 		}
-		fz_free_text_span(ctx, text);
+		fz_free_text_page(ctx, text);
 	}
 
 	if (showmd5 || showtime)
@@ -456,8 +460,22 @@ int main(int argc, char **argv)
 	timing.minpage = 0;
 	timing.maxpage = 0;
 
-	if (showxml || showtext > 1)
+	if (showxml || showtext == TEXT_XML)
 		printf("<?xml version=\"1.0\"?>\n");
+
+	if (showtext)
+		sheet = fz_new_text_sheet(ctx);
+
+	if (showtext == TEXT_HTML)
+	{
+		printf("<style>\n");
+		printf("body{background-color:gray;margin:12tp;}\n");
+		printf("div.page{background-color:white;margin:6pt;padding:6pt;}\n");
+		printf("div.block{border:1px solid gray;margin:6pt;padding:6pt;}\n");
+		printf("p{margin:0;padding:0;}\n");
+		printf("</style>\n");
+		printf("<body>\n");
+	}
 
 	fz_try(ctx)
 	{
@@ -478,7 +496,7 @@ int main(int argc, char **argv)
 				if (!fz_authenticate_password(doc, password))
 					fz_throw(ctx, "cannot authenticate password: %s", filename);
 
-			if (showxml || showtext > 1)
+			if (showxml || showtext == TEXT_XML)
 				printf("<document name=\"%s\">\n", filename);
 
 			if (showoutline)
@@ -492,7 +510,7 @@ int main(int argc, char **argv)
 					drawrange(ctx, doc, argv[fz_optind++]);
 			}
 
-			if (showxml || showtext > 1)
+			if (showxml || showtext == TEXT_XML)
 				printf("</document>\n");
 
 			fz_close_document(doc);
@@ -502,6 +520,14 @@ int main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_close_document(doc);
+	}
+
+	if (showtext == TEXT_HTML)
+	{
+		printf("</body>\n");
+		printf("<style>\n");
+		fz_print_text_sheet(stdout, sheet);
+		printf("</style>\n");
 	}
 
 	if (showtime)
