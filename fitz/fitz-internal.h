@@ -15,6 +15,9 @@ fz_context *fz_clone_context_internal(fz_context *ctx);
 void fz_new_aa_context(fz_context *ctx);
 void fz_free_aa_context(fz_context *ctx);
 
+/* Default locks */
+extern fz_locks_context fz_locks_default;
+
 #if defined(MEMENTO) || defined(DEBUG)
 #define FITZ_DEBUG_LOCKING
 #endif
@@ -53,6 +56,22 @@ fz_unlock(fz_context *ctx, int lock)
 /*
  * Basic runtime and utility functions
  */
+
+/*
+	fz_malloc_struct: Allocate storage for a structure (with scavenging),
+	clear it, and (in Memento builds) tag the pointer as belonging to a
+	struct of this type.
+
+	CTX: The context.
+
+	STRUCT: The structure type.
+
+	Returns a pointer to allocated (and cleared) structure. Throws
+	exception on failure to allocate.
+*/
+/* alloc and zero a struct, and tag it for memento */
+#define fz_malloc_struct(CTX, STRUCT) \
+	Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT)
 
 /* Range checking atof */
 float fz_atof(const char *s);

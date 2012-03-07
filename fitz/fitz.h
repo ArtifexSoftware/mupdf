@@ -318,14 +318,80 @@ enum {
 	FZ_LOCK_MAX
 };
 
-/* Default locks */
-extern fz_locks_context fz_locks_default;
+/*
+	Memory Allocation and Scavenging:
 
-/* The following throw exceptions on failure to allocate */
+	All calls to MuPDFs allocator functions pass through to the
+	underlying allocators passed in when the initial context is
+	created, after locks are taken (using the supplied locking function)
+	to ensure that only one thread at a time calls through.
+
+	If the underlying allocator fails, MuPDF attempts to make room for
+	the allocation by evicting elements from the store, then retrying.
+
+	Any call to allocate may then result in several calls to the underlying
+	allocator, and result in elements that are only referred to by the
+	store being freed.
+*/
+
+/*
+	fz_malloc: Allocate a block of memory (with scavenging)
+
+	size: The number of bytes to allocate.
+
+	Returns a pointer to the allocated block. May return NULL if size is
+	0. Throws exception on failure to allocate.
+*/
 void *fz_malloc(fz_context *ctx, unsigned int size);
+
+/*
+	fz_calloc: Allocate a zeroed block of memory (with scavenging)
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Throws exception on failure to allocate.
+*/
 void *fz_calloc(fz_context *ctx, unsigned int count, unsigned int size);
+
+/*
+	fz_malloc_array: Allocate a block of (non zeroed) memory (with
+	scavenging). Equivalent to fz_calloc without the memory clearing.
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Throws exception on failure to allocate.
+*/
 void *fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size);
+
+/*
+	fz_resize_array: Resize a block of memory (with scavenging).
+
+	p: The existing block to resize
+
+	count: The number of objects to resize to.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the resized block. May return NULL if size
+	and/or count are 0. Throws exception on failure to resize (original
+	block is left unchanged).
+*/
 void *fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size);
+
+/*
+	fz_strdup: Duplicate a C string (with scavenging)
+
+	s: The string to duplicate.
+
+	Returns a pointer to a duplicated string. Throws exception on failure
+	to allocate.
+*/
 char *fz_strdup(fz_context *ctx, char *s);
 
 /*
@@ -335,26 +401,144 @@ char *fz_strdup(fz_context *ctx, char *s);
 */
 void fz_free(fz_context *ctx, void *p);
 
-/* The following return NULL on failure to allocate */
+/*
+	fz_malloc_no_throw: Allocate a block of memory (with scavenging)
+
+	size: The number of bytes to allocate.
+
+	Returns a pointer to the allocated block. May return NULL if size is
+	0. Returns NULL on failure to allocate.
+*/
 void *fz_malloc_no_throw(fz_context *ctx, unsigned int size);
-void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+
+/*
+	fz_calloc_no_throw: Allocate a zeroed block of memory (with scavenging)
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to allocate.
+*/
 void *fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+
+/*
+	fz_malloc_array_no_throw: Allocate a block of (non zeroed) memory
+	(with scavenging). Equivalent to fz_calloc_no_throw without the
+	memory clearing.
+
+	count: The number of objects to allocate space for.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the allocated block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to allocate.
+*/
+void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+
+/*
+	fz_resize_array_no_throw: Resize a block of memory (with scavenging).
+
+	p: The existing block to resize
+
+	count: The number of objects to resize to.
+
+	size: The size (in bytes) of each object.
+
+	Returns a pointer to the resized block. May return NULL if size
+	and/or count are 0. Returns NULL on failure to resize (original
+	block is left unchanged).
+*/
 void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int size);
+
+/*
+	fz_strdup_no_throw: Duplicate a C string (with scavenging)
+
+	s: The string to duplicate.
+
+	Returns a pointer to a duplicated string. Returns NULL on failure
+	to allocate.
+*/
 char *fz_strdup_no_throw(fz_context *ctx, char *s);
 
-/* alloc and zero a struct, and tag it for memento */
-#define fz_malloc_struct(CTX, STRUCT) \
-	Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT)
-
 /* safe string functions */
+/*
+	fz_strsep: Given a pointer to a C string (or a pointer to NULL) break
+	it at the first occurence of a delimiter char (from a given set).
+
+	stringp: Pointer to a C string pointer (or NULL). Updated on exit to
+	point to the first char of the string after the delimiter that was
+	found. The string pointed to by stringp will be corrupted by this
+	call (as the found delimiter will be overwritten by 0).
+
+	delim: A C string of acceptable delimiter characters.
+
+	Returns a pointer to a C string containing the chars of stringp up
+	to the first delimiter char (or the end of the string), or NULL.
+*/
 char *fz_strsep(char **stringp, const char *delim);
+
+/*
+	fz_strlcpy: Copy at most n-1 chars of a string into a destination
+	buffer with null termination, returning the real length of the
+	initial string (excluding terminator).
+
+	dst: Destination buffer, at least n bytes long.
+
+	src: C string (non-NULL).
+
+	n: Size of dst buffer in bytes.
+
+	Returns the length (excluding terminator) of src.
+*/
 int fz_strlcpy(char *dst, const char *src, int n);
+
+/*
+	fz_strlcat: Concatenate 2 strings, with a maximum length.
+
+	dst: pointer to first string in a buffer of n bytes.
+
+	src: pointer to string to concatenate.
+
+	n: Size (in bytes) of buffer that dst is in.
+
+	Returns the real length that a concatenated dst + src would have been
+	(not including terminator).
+*/
 int fz_strlcat(char *dst, const char *src, int n);
 
-/* utf-8 encoding and decoding */
-int chartorune(int *rune, char *str);
-int runetochar(char *str, int *rune);
-int runelen(int c);
+/*
+	fz_chartorune: UTF8 decode a string of chars to a rune.
+
+	rune: Pointer to an int to assign the decoded 'rune' to.
+
+	str: Pointer to a UTF8 encoded string
+
+	Returns the number of bytes consumed. Does not throw exceptions.
+*/
+int fz_chartorune(int *rune, char *str);
+
+/*
+	runetochar: UTF8 encode a run to a string of chars.
+
+	str: Pointer to a place to put the UTF8 encoded string.
+
+	rune: Pointer to a 'rune'.
+
+	Returns the number of bytes the rune took to output. Does not throw
+	exceptions.
+*/
+int fz_runetochar(char *str, int rune);
+
+/*
+	fz_runelen: Count many chars are required to represent a rune.
+
+	rune: The rune to encode.
+
+	Returns the number of bytes required to represent this run in UTF8.
+*/
+int fz_runelen(int rune);
 
 /* getopt */
 extern int fz_getopt(int nargc, char * const *nargv, const char *ostr);

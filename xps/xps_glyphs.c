@@ -307,7 +307,7 @@ xps_parse_glyphs_imp(xps_document *doc, fz_matrix ctm,
 		{
 			if (us && un > 0)
 			{
-				int t = chartorune(&char_code, us);
+				int t = fz_chartorune(&char_code, us);
 				us += t; un -= t;
 			}
 		}

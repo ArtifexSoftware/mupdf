@@ -1,5 +1,5 @@
 #include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf.h"
 #include "muxps.h"
 #include "mucbz.h"
 #include "pdfapp.h"
@@ -317,7 +317,7 @@ void wintitle(pdfapp_t *app, char *title)
 	sp = title;
 	while (*sp && dp < wide + 255)
 	{
-		sp += chartorune(&rune, sp);
+		sp += fz_chartorune(&rune, sp);
 		*dp++ = rune;
 	}
 	*dp = 0;
