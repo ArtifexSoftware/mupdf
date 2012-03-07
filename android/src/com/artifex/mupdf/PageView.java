@@ -42,6 +42,7 @@ class OpaqueImageView extends ImageView {
 
 public abstract class PageView extends ViewGroup {
 	private static final int HIGHLIGHT_COLOR = 0x805555FF;
+	private static final int LINK_COLOR = 0x80FFCC88;
 	private static final int BACKGROUND_COLOR = 0xFFFFFFFF;
 	private final Context   mContext;
 	protected     int       mPageNumber;
@@ -51,16 +52,18 @@ public abstract class PageView extends ViewGroup {
 
 	private       ImageView mEntire; // Image rendered at minimum zoom
 	private       Bitmap    mEntireBm;
-	private       AsyncTask<Void,Void,Void> mDrawEntire;
+	private       AsyncTask<Void,Void,LinkInfo[]> mDrawEntire;
 
 	private       Point     mPatchViewSize; // View size on the basis of which the patch was created
 	private       Rect      mPatchArea;
 	private       ImageView mPatch;
 	private       AsyncTask<PatchInfo,Void,PatchInfo> mDrawPatch;
 	private       RectF     mSearchBoxes[];
+	private       LinkInfo  mLinks[];
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
 	private       boolean   mUsingHardwareAcceleration;
+	private       boolean   mHighlightLinks;
 
 	private       ProgressBar mBusyIndicator;
 
@@ -73,6 +76,7 @@ public abstract class PageView extends ViewGroup {
 	}
 
 	protected abstract void drawPage(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
+	protected abstract LinkInfo[] getLinkInfo();
 
 	public void blank(int page) {
 		// Cancel pending render task
@@ -137,10 +141,10 @@ public abstract class PageView extends ViewGroup {
 		}
 
 		// Render the page in the background
-		mDrawEntire = new AsyncTask<Void,Void,Void>() {
-			protected Void doInBackground(Void... v) {
+		mDrawEntire = new AsyncTask<Void,Void,LinkInfo[]>() {
+			protected LinkInfo[] doInBackground(Void... v) {
 				drawPage(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y);
-				return null;
+				return getLinkInfo();
 			}
 
 			protected void onPreExecute() {
@@ -154,10 +158,11 @@ public abstract class PageView extends ViewGroup {
 				}
 			}
 
-			protected void onPostExecute(Void v) {
+			protected void onPostExecute(LinkInfo[] v) {
 				removeView(mBusyIndicator);
 				mBusyIndicator = null;
 				mEntire.setImageBitmap(mEntireBm);
+				mLinks = v;
 				invalidate();
 			}
 		};
@@ -169,17 +174,27 @@ public abstract class PageView extends ViewGroup {
 				@Override
 				protected void onDraw(Canvas canvas) {
 					super.onDraw(canvas);
+					float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
+					Paint paint = new Paint();
 
 					if (!mIsBlank && mSearchBoxes != null) {
 						// Work out current total scale factor
 						// from source to view
-						float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
-						Paint paint = new Paint();
 						paint.setColor(HIGHLIGHT_COLOR);
 						for (RectF rect : mSearchBoxes)
-							canvas.drawRect(new RectF(rect.left * scale,
-									rect.top * scale, rect.right * scale,
-									rect.bottom * scale), paint);
+							canvas.drawRect(rect.left*scale, rect.top*scale,
+									        rect.right*scale, rect.bottom*scale,
+									        paint);
+					}
+
+					if (!mIsBlank && mLinks != null && mHighlightLinks) {
+						// Work out current total scale factor
+						// from source to view
+						paint.setColor(LINK_COLOR);
+						for (RectF rect : mLinks)
+							canvas.drawRect(rect.left*scale, rect.top*scale,
+									        rect.right*scale, rect.bottom*scale,
+									        paint);
 					}
 				}
 			};
@@ -191,6 +206,10 @@ public abstract class PageView extends ViewGroup {
 
 	public void setSearchBoxes(RectF searchBoxes[]) {
 		mSearchBoxes = searchBoxes;
+	}
+
+	public void setLinkHighlighting(boolean f) {
+		mHighlightLinks = f;
 	}
 
 	@Override

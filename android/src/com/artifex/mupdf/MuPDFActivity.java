@@ -42,6 +42,7 @@ class SearchTaskResult {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
+	private enum LinkState {DEFAULT, HIGHLIGHT, INHIBIT};
 	private final int    TAP_PAGE_MARGIN = 5;
 	private MuPDFCore    core;
 	private String       mFileName;
@@ -56,7 +57,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ViewSwitcher mTopBarSwitcher;
-	private View         mLowerButtons;
+	private ImageButton  mLinkButton;
 	private boolean      mTopBarIsSearch;
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
@@ -64,6 +65,7 @@ public class MuPDFActivity extends Activity
 	private AsyncTask<Integer,Integer,SearchTaskResult> mSearchTask;
 	private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
+	private LinkState    mLinkState = LinkState.DEFAULT;
 
 	private MuPDFCore openFile(String path)
 	{
@@ -180,9 +182,11 @@ public class MuPDFActivity extends Activity
 					super.moveToNext();
 				} else if (!showButtonsDisabled) {
 					int linkPage = -1;
-					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
-					if (pageView != null) {
-						linkPage = pageView.hitLinkPage(e.getX(), e.getY());
+					if (mLinkState != LinkState.INHIBIT) {
+						MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
+						if (pageView != null) {
+							linkPage = pageView.hitLinkPage(e.getX(), e.getY());
+						}
 					}
 
 					if (linkPage != -1) {
@@ -225,6 +229,8 @@ public class MuPDFActivity extends Activity
 					((PageView)v).setSearchBoxes(mSearchTaskResult.searchBoxes);
 				else
 					((PageView)v).setSearchBoxes(null);
+
+				((PageView)v).setLinkHighlighting(mLinkState == LinkState.HIGHLIGHT);
 			}
 
 			protected void onMoveToChild(int i) {
@@ -329,6 +335,29 @@ public class MuPDFActivity extends Activity
 			public void onClick(View v) {
 				hideKeyboard();
 				search(1);
+			}
+		});
+
+		mLinkButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				switch(mLinkState) {
+				case DEFAULT:
+					mLinkState = LinkState.HIGHLIGHT;
+					mLinkButton.setImageResource(R.drawable.ic_hl_link);
+					//Inform pages of the change.
+					mDocView.resetupChildren();
+					break;
+				case HIGHLIGHT:
+					mLinkState = LinkState.INHIBIT;
+					mLinkButton.setImageResource(R.drawable.ic_nolink);
+					//Inform pages of the change.
+					mDocView.resetupChildren();
+					break;
+				case INHIBIT:
+					mLinkState = LinkState.DEFAULT;
+					mLinkButton.setImageResource(R.drawable.ic_link);
+					break;
+				}
 			}
 		});
 
@@ -530,7 +559,7 @@ public class MuPDFActivity extends Activity
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
-		mLowerButtons = mButtonsView.findViewById(R.id.lowerButtons);
+		mLinkButton = (ImageButton)mButtonsView.findViewById(R.id.linkButton);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
 		mPageNumberView.setVisibility(View.INVISIBLE);
 		mPageSlider.setVisibility(View.INVISIBLE);

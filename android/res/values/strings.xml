@@ -13,4 +13,5 @@
     <string name="enter_password">Enter Password</string>
     <string name="text_not_found">Text not found</string>
     <string name="searching_">Searching...</string>
+    <string name="link_control">Link highlighting and enabling</string>
 </resources>
