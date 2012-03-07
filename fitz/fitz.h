@@ -962,11 +962,23 @@ fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
 /*
 	A halftone is a set of threshold tiles, one per component. Each
 	threshold tile is a pixmap, possibly of varying sizes and phases.
+	Currently, we only provide one 'default' halftone tile for operating
+	on 1 component plus alpha pixmaps (where the alpha is ignored). This
+	is signified by an fz_halftone pointer to NULL.
 */
 typedef struct fz_halftone_s fz_halftone;
 
-fz_halftone *fz_get_default_halftone(fz_context *ctx, int num_comps);
-void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
+/*
+	fz_halftone_pixmap: Make a bitmap from a pixmap and a halftone.
+
+	pix: The pixmap to generate from. Currently must be a single color
+	component + alpha (where the alpha is assumed to be solid).
+
+	ht: The halftone to use. NULL implies the default halftone.
+
+	Returns the resultant bitmap. Throws exceptions in the case of
+	failure to allocate.
+*/
 fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
 /*

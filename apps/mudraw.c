@@ -240,11 +240,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				else if (strstr(output, ".png"))
 					fz_write_png(ctx, pix, buf, savealpha);
 				else if (strstr(output, ".pbm")) {
-					fz_halftone *ht = fz_get_default_halftone(ctx, 1);
-					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, ht);
+					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 					fz_write_pbm(ctx, bit, buf);
 					fz_drop_bitmap(ctx, bit);
-					fz_drop_halftone(ctx, ht);
 				}
 			}
 

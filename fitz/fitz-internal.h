@@ -559,6 +559,8 @@ struct fz_halftone_s
 };
 
 fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
+fz_halftone *fz_get_default_halftone(fz_context *ctx, int num_comps);
+void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 
 struct fz_colorspace_s
