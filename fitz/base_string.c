@@ -1,12 +1,5 @@
 #include "fitz-internal.h"
 
-int
-fz_is_big_endian(void)
-{
-	static const int one = 1;
-	return *(char*)&one == 0;
-}
-
 char *
 fz_strsep(char **stringp, const char *delim)
 {

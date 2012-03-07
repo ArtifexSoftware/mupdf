@@ -1074,6 +1074,11 @@ pdf_resolve_indirect(pdf_obj *ref)
 	return ref;
 }
 
+int pdf_count_objects(pdf_document *doc)
+{
+	return doc->len;
+}
+
 /* Replace numbered object -- for use by pdfclean and similar tools */
 void
 pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)

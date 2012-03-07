@@ -1,5 +1,5 @@
-#ifndef _FITZ_INTERNAL_H_
-#define _FITZ_INTERNAL_H_
+#ifndef FITZ_INTERNAL_H
+#define FITZ_INTERNAL_H
 
 #include "fitz.h"
 
@@ -57,11 +57,6 @@ fz_unlock(fz_context *ctx, int lock)
 /* Range checking atof */
 float fz_atof(const char *s);
 
-/* utf-8 encoding and decoding */
-int chartorune(int *rune, char *str);
-int runetochar(char *str, int *rune);
-int runelen(int c);
-
 /*
  * Generic hash-table with fixed-length keys.
  */
@@ -108,11 +103,6 @@ static inline int fz_mul255(int a, int b)
 /* Blend SRC and DST (in the same range) together according to
  * AMOUNT (in the 0...256 range). */
 #define FZ_BLEND(SRC, DST, AMOUNT) ((((SRC)-(DST))*(AMOUNT) + ((DST)<<8))>>8)
-
-
-float fz_matrix_expansion(fz_matrix m);
-float fz_matrix_max_expansion(fz_matrix m);
-
 
 void fz_gridfit_matrix(fz_matrix *m);
 
@@ -189,19 +179,6 @@ void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
 	unsigned char iv[16],
 	const unsigned char *input,
 	unsigned char *output );
-
-struct fz_buffer_s
-{
-	int refs;
-	unsigned char *data;
-	int cap, len;
-};
-
-fz_buffer *fz_new_buffer(fz_context *ctx, int size);
-
-void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
-void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
-void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
 	Resource store
@@ -397,46 +374,13 @@ struct fz_stream_s
 	unsigned char buf[4096];
 };
 
-/*
-	fz_open_file: Open the named file and wrap it in a stream.
-
-	filename: Path to a file as it would be given to open(2).
-*/
-fz_stream *fz_open_file(fz_context *ctx, const char *filename);
-
-/*
-	fz_open_file_w: Open the named file and wrap it in a stream.
-
-	This function is only available when compiling for Win32.
-
-	filename: Wide character path to the file as it would be given
-	to _wopen().
-*/
-fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
-
-
-/*
-	fz_open_buffer: XXX
-*/
-fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
-
-/*
-	fz_open_memory: XXX
-*/
-fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
-
 void fz_lock_stream(fz_stream *stm);
 
 fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_context *, void *));
 fz_stream *fz_keep_stream(fz_stream *stm);
 void fz_fill_buffer(fz_stream *stm);
 
-int fz_tell(fz_stream *stm);
-void fz_seek(fz_stream *stm, int offset, int whence);
-
-int fz_read(fz_stream *stm, unsigned char *buf, int len);
 void fz_read_line(fz_stream *stm, char *buf, int max);
-fz_buffer *fz_read_all(fz_stream *stm, int initial);
 
 static inline int fz_read_byte(fz_stream *stm)
 {
@@ -583,27 +527,6 @@ struct fz_pixmap_s
 	int free_samples;
 };
 
-
-fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
-
-/*
-	fz_new_pixmap_with_rect_and_data: Create a pixmap using the
-	provided buffer for pixel data.
-
-	While fz_new_pixmap_with_rect allocates its own buffer for
-	pixel data, fz_new_pixmap_with_rect_and_data lets the caller
-	allocate and provide a buffer to be used. Otherwise the two
-	functions are identical.
-
-	samples: An array of pixel samples. The created pixmap will
-	keep a pointer to the array so it must not be modified or
-	freed until the created pixmap is dropped and freed by
-	fz_drop_pixmap.
-*/
-fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx,
-fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
-fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
-
 void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
 void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, fz_bbox r);
@@ -628,18 +551,6 @@ fz_pixmap *fz_load_jpeg(fz_context *doc, unsigned char *data, int size);
 fz_pixmap *fz_load_png(fz_context *doc, unsigned char *data, int size);
 fz_pixmap *fz_load_tiff(fz_context *doc, unsigned char *data, int size);
 
-struct fz_bitmap_s
-{
-	int refs;
-	int w, h, stride, n;
-	unsigned char *samples;
-};
-
-fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
-fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
-void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
-
-
 struct fz_halftone_s
 {
 	int refs;
@@ -649,7 +560,6 @@ struct fz_halftone_s
 
 fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
-
 
 struct fz_colorspace_s
 {
@@ -669,9 +579,6 @@ void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_free_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
 void fz_convert_color(fz_context *ctx, fz_colorspace *srcs, float *srcv, fz_colorspace *dsts, float *dstv);
-void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
-
-fz_colorspace *fz_find_device_colorspace(char *name);
 
 /*
  * Fonts come in two variants:

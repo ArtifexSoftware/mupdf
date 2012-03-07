@@ -1,11 +1,11 @@
-#ifndef _MUPDF_INTERNAL_H_
-#define _MUPDF_INTERNAL_H_
+#ifndef MUPDF_INTERNAL_H
+#define MUPDF_INTERNAL_H
 
 #include "mupdf.h"
 #include "fitz-internal.h"
 
-void pdf_set_str_len(pdf_obj *obj, int newlen); /* private */
-void *pdf_get_indirect_document(pdf_obj *obj); /* private */
+void pdf_set_str_len(pdf_obj *obj, int newlen);
+void *pdf_get_indirect_document(pdf_obj *obj);
 
 /*
  * PDF Images
@@ -133,15 +133,20 @@ pdf_obj *pdf_parse_dict(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_stm_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_ind_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf, int *num, int *gen, int *stm_ofs);
 
-fz_matrix pdf_to_matrix(fz_context *ctx, pdf_obj *array);
-char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
-unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src);
-pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
-char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
-
 /*
  * xref and object / stream api
  */
+
+typedef struct pdf_xref_entry_s pdf_xref_entry;
+
+struct pdf_xref_entry_s
+{
+	int ofs;	/* file offset / objstm object number */
+	int gen;	/* generation / objstm index */
+	int stm_ofs;	/* on-disk stream */
+	pdf_obj *obj;	/* stored/cached object */
+	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
+};
 
 typedef struct pdf_crypt_s pdf_crypt;
 typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
@@ -194,8 +199,6 @@ fz_stream *pdf_open_image_stream(pdf_document *doc, int num, int gen, pdf_image_
 fz_stream *pdf_open_stream_with_offset(pdf_document *doc, int num, int gen, pdf_obj *dict, int stm_ofs);
 fz_stream *pdf_open_image_decomp_stream(fz_context *ctx, fz_buffer *, pdf_image_params *params, int *factor);
 
-
-/* private */
 void pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf);
 void pdf_repair_obj_stms(pdf_document *doc);
 void pdf_debug_xref(pdf_document *);
@@ -205,27 +208,12 @@ void pdf_resize_xref(pdf_document *doc, int newcap);
  * Encryption
  */
 
-enum
-{
-	PDF_PERM_PRINT = 1 << 2,
-	PDF_PERM_CHANGE = 1 << 3,
-	PDF_PERM_COPY = 1 << 4,
-	PDF_PERM_NOTES = 1 << 5,
-	PDF_PERM_FILL_FORM = 1 << 8,
-	PDF_PERM_ACCESSIBILITY = 1 << 9,
-	PDF_PERM_ASSEMBLE = 1 << 10,
-	PDF_PERM_HIGH_RES_PRINT = 1 << 11,
-	PDF_DEFAULT_PERM_FLAGS = 0xfffc
-};
-
 pdf_crypt *pdf_new_crypt(fz_context *ctx, pdf_obj *enc, pdf_obj *id);
 void pdf_free_crypt(fz_context *ctx, pdf_crypt *crypt);
 
 void pdf_crypt_obj(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, int num, int gen);
 fz_stream *pdf_open_crypt(fz_stream *chain, pdf_crypt *crypt, int num, int gen);
 fz_stream *pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int num, int gen);
-
-int pdf_has_permission(pdf_document *doc, int p);
 
 int pdf_get_crypt_revision(pdf_document *doc);
 char *pdf_get_crypt_method(pdf_document *doc);
@@ -509,8 +497,6 @@ pdf_obj *pdf_lookup_dest(pdf_document *doc, pdf_obj *needle);
 pdf_obj *pdf_lookup_name(pdf_document *doc, char *which, pdf_obj *needle);
 pdf_obj *pdf_load_name_tree(pdf_document *doc, char *which);
 
-fz_outline *pdf_load_outline(pdf_document *doc);
-
 fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 
 pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots);
@@ -519,8 +505,6 @@ void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 /*
  * Page tree, pages and related objects
  */
-
-typedef struct pdf_page_s pdf_page;
 
 struct pdf_page_s
 {
@@ -534,59 +518,10 @@ struct pdf_page_s
 	pdf_annot *annots;
 };
 
-int pdf_find_page_number(pdf_document *doc, pdf_obj *pageobj);
-int pdf_count_pages(pdf_document *doc);
-
-/*
-	pdf_load_page: Load a page and its resources.
-
-	Locates the page in the PDF document and loads the page and its
-	resources. After pdf_load_page is it possible to retrieve the size
-	of the page using pdf_bound_page, or to render the page using
-	pdf_run_page_*.
-
-	number: page number, where 0 is the first page of the document.
-*/
-pdf_page *pdf_load_page(pdf_document *doc, int number);
-
-fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
-
-/*
-	pdf_bound_page: Determine the size of a page.
-
-	Determine the page size in user space units, taking page rotation
-	into account. The page size is taken to be the crop box if it
-	exists (visible area after cropping), otherwise the media box will
-	be used (possibly including printing marks).
-
-	Does not throw exceptions.
-*/
-fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
-
-/*
-	pdf_free_page: Frees a page and its resources.
-
-	Does not throw exceptions.
-*/
-void pdf_free_page(pdf_document *doc, pdf_page *page);
-
 /*
  * Content stream parsing
  */
 
-/*
-	pdf_run_page: Interpret a loaded page and render it on a device.
-
-	page: A page loaded by pdf_load_page.
-
-	dev: Device used for rendering, obtained from fz_new_*_device.
-
-	ctm: A transformation matrix applied to the objects on the page,
-	e.g. to scale or rotate the page contents as desired.
-*/
-void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
-
-void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
 void pdf_run_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, fz_matrix ctm, void *gstate);
 
 /*
@@ -597,4 +532,4 @@ void pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int items
 void *pdf_find_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 
-#endif /* _MUPDF_INTERNAL_H_ */
+#endif

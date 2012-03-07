@@ -1,5 +1,5 @@
 #include "fitz.h"
-#include "mupdf.h"
+#include "mupdf-internal.h"
 #include "muxps.h"
 #include "mucbz.h"
 #include "pdfapp.h"

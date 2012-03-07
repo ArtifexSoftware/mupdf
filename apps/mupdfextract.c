@@ -2,8 +2,7 @@
  * pdfextract -- the ultimate way to extract images and fonts from pdfs
  */
 
-#include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf.h"
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
@@ -180,7 +179,7 @@ int main(int argc, char **argv)
 
 	if (fz_optind == argc)
 	{
-		for (o = 0; o < doc->len; o++)
+		for (o = 0; o < pdf_count_objects(doc); o++)
 			showobject(o);
 	}
 	else

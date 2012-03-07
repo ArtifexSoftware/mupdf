@@ -1,5 +1,5 @@
-#ifndef _FITZ_H_
-#define _FITZ_H_
+#ifndef FITZ_H
+#define FITZ_H
 
 /*
 	Include the standard libc headers.
@@ -351,8 +351,10 @@ char *fz_strsep(char **stringp, const char *delim);
 int fz_strlcpy(char *dst, const char *src, int n);
 int fz_strlcat(char *dst, const char *src, int n);
 
-/* runtime (hah!) test for endian-ness */
-int fz_is_big_endian(void);
+/* utf-8 encoding and decoding */
+int chartorune(int *rune, char *str);
+int runetochar(char *str, int *rune);
+int runelen(int c);
 
 /* getopt */
 extern int fz_getopt(int nargc, char * const *nargv, const char *ostr);
@@ -590,6 +592,12 @@ fz_matrix fz_invert_matrix(fz_matrix matrix);
 int fz_is_rectilinear(fz_matrix m);
 
 /*
+	fz_matrix_expansion: Calculate average scaling factor of matrix.
+*/
+float fz_matrix_expansion(fz_matrix m); /* sumatrapdf */
+float fz_matrix_max_expansion(fz_matrix m);
+
+/*
 	fz_round_rect: Convert a rect into a bounding box.
 
 	Coordinates in a bounding box are integers, so rounding of the
@@ -701,13 +709,24 @@ fz_rect fz_transform_rect(fz_matrix transform, fz_rect rect);
 fz_bbox fz_transform_bbox(fz_matrix matrix, fz_bbox bbox);
 
 /*
-	fz_buffer is a XXX
+	fz_buffer is a wrapper around a dynamically allocated array of bytes
 */
 typedef struct fz_buffer_s fz_buffer;
 
-fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
+struct fz_buffer_s
+{
+	int refs;
+	unsigned char *data;
+	int cap, len;
+};
 
+fz_buffer *fz_new_buffer(fz_context *ctx, int size);
+fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
+
+void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
+void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
+void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
 	fz_stream is a buffered reader capable of seeking in both
@@ -721,6 +740,23 @@ void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 typedef struct fz_stream_s fz_stream;
 
 /*
+	fz_open_file: Open the named file and wrap it in a stream.
+
+	filename: Path to a file as it would be given to open(2).
+*/
+fz_stream *fz_open_file(fz_context *ctx, const char *filename);
+
+/*
+	fz_open_file_w: Open the named file and wrap it in a stream.
+
+	This function is only available when compiling for Win32.
+
+	filename: Wide character path to the file as it would be given
+	to _wopen().
+*/
+fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
+
+/*
 	fz_open_fd: Wrap an open file descriptor in a stream.
 
 	file: An open file descriptor supporting bidirectional
@@ -730,6 +766,16 @@ typedef struct fz_stream_s fz_stream;
 	the file descriptor.
 */
 fz_stream *fz_open_fd(fz_context *ctx, int file);
+
+/*
+	fz_open_memory: XXX
+*/
+fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
+
+/*
+	fz_open_buffer: XXX
+*/
+fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
 	fz_close: Close an open stream.
@@ -742,6 +788,11 @@ fz_stream *fz_open_fd(fz_context *ctx, int file);
 */
 void fz_close(fz_stream *stm);
 
+int fz_tell(fz_stream *stm);
+void fz_seek(fz_stream *stm, int offset, int whence);
+int fz_read(fz_stream *stm, unsigned char *buf, int len);
+fz_buffer *fz_read_all(fz_stream *stm, int initial);
+
 /*
 	Bitmaps have 1 bit per component. Only used for creating halftoned
 	versions of contone buffers, and saving out. Samples are stored msb
@@ -749,6 +800,16 @@ void fz_close(fz_stream *stm);
 */
 typedef struct fz_bitmap_s fz_bitmap;
 
+struct fz_bitmap_s
+{
+	int refs;
+	int w, h, stride, n;
+	unsigned char *samples;
+};
+
+fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
+fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
+void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 /*
@@ -762,6 +823,8 @@ typedef struct fz_pixmap_s fz_pixmap;
 typedef struct fz_colorspace_s fz_colorspace;
 
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
+
+fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 
 /*
 	fz_new_pixmap_with_rect: Create a pixmap of a given size,
@@ -778,6 +841,17 @@ fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 	bbox: Bounding box specifying location/size of created pixmap.
 */
 fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox);
+
+fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
+
+/*
+	fz_keep_pixmap: Take a reference to a pixmap.
+
+	pix: The pixmap to increment the reference for.
+
+	Returns pix. Does not throw exceptions.
+*/
+fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
 
 /*
 	fz_keep_pixmap: Take a reference to a pixmap.
@@ -898,6 +972,10 @@ fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 /*
 	Colorspace resources.
 */
+
+void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
+
+fz_colorspace *fz_find_device_colorspace(char *name);
 
 /*
 	fz_device_gray: XXX
@@ -1418,4 +1496,4 @@ void fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix tran
 */
 void fz_free_page(fz_document *doc, fz_page *page);
 
-#endif /* _FITZ_H_ */
+#endif

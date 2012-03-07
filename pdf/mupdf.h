@@ -1,5 +1,5 @@
-#ifndef _MUPDF_H_
-#define _MUPDF_H_
+#ifndef MUPDF_H
+#define MUPDF_H
 
 #include "fitz.h"
 
@@ -82,19 +82,15 @@ int pdf_fprint_obj(FILE *fp, pdf_obj *obj, int tight);
 void pdf_debug_obj(pdf_obj *obj);
 void pdf_debug_ref(pdf_obj *obj);
 
+char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
+unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src); /* sumatrapdf */
+pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
+char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
+
 fz_rect pdf_to_rect(fz_context *ctx, pdf_obj *array);
+fz_matrix pdf_to_matrix(fz_context *ctx, pdf_obj *array);
 
-typedef struct pdf_xref_entry_s pdf_xref_entry;
-
-struct pdf_xref_entry_s
-{
-	int ofs;	/* file offset / objstm object number */
-	int gen;	/* generation / objstm index */
-	int stm_ofs;	/* on-disk stream */
-	pdf_obj *obj;	/* stored/cached object */
-	int type;	/* 0=unset (f)ree i(n)use (o)bjstm */
-};
-
+int pdf_count_objects(pdf_document *doc);
 pdf_obj *pdf_resolve_indirect(pdf_obj *ref);
 pdf_obj *pdf_load_object(pdf_document *doc, int num, int gen);
 void pdf_update_object(pdf_document *doc, int num, int gen, pdf_obj *newobj);
@@ -103,6 +99,10 @@ fz_buffer *pdf_load_raw_stream(pdf_document *doc, int num, int gen);
 fz_buffer *pdf_load_stream(pdf_document *doc, int num, int gen);
 fz_stream *pdf_open_raw_stream(pdf_document *doc, int num, int gen);
 fz_stream *pdf_open_stream(pdf_document *doc, int num, int gen);
+
+fz_image *pdf_load_image(pdf_document *doc, pdf_obj *obj);
+
+fz_outline *pdf_load_outline(pdf_document *doc);
 
 /*
 	pdf_open_document: Open a PDF document.
@@ -147,6 +147,71 @@ void pdf_close_document(pdf_document *doc);
 int pdf_needs_password(pdf_document *doc);
 int pdf_authenticate_password(pdf_document *doc, char *pw);
 
-fz_image *pdf_load_image(pdf_document *doc, pdf_obj *obj);
+enum
+{
+	PDF_PERM_PRINT = 1 << 2,
+	PDF_PERM_CHANGE = 1 << 3,
+	PDF_PERM_COPY = 1 << 4,
+	PDF_PERM_NOTES = 1 << 5,
+	PDF_PERM_FILL_FORM = 1 << 8,
+	PDF_PERM_ACCESSIBILITY = 1 << 9,
+	PDF_PERM_ASSEMBLE = 1 << 10,
+	PDF_PERM_HIGH_RES_PRINT = 1 << 11,
+	PDF_DEFAULT_PERM_FLAGS = 0xfffc
+};
 
-#endif /* _MUPDF_H_ */
+int pdf_has_permission(pdf_document *doc, int p);
+
+typedef struct pdf_page_s pdf_page;
+
+int pdf_find_page_number(pdf_document *doc, pdf_obj *pageobj);
+int pdf_count_pages(pdf_document *doc);
+
+/*
+	pdf_load_page: Load a page and its resources.
+
+	Locates the page in the PDF document and loads the page and its
+	resources. After pdf_load_page is it possible to retrieve the size
+	of the page using pdf_bound_page, or to render the page using
+	pdf_run_page_*.
+
+	number: page number, where 0 is the first page of the document.
+*/
+pdf_page *pdf_load_page(pdf_document *doc, int number);
+
+fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_bound_page: Determine the size of a page.
+
+	Determine the page size in user space units, taking page rotation
+	into account. The page size is taken to be the crop box if it
+	exists (visible area after cropping), otherwise the media box will
+	be used (possibly including printing marks).
+
+	Does not throw exceptions.
+*/
+fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_free_page: Frees a page and its resources.
+
+	Does not throw exceptions.
+*/
+void pdf_free_page(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_run_page: Interpret a loaded page and render it on a device.
+
+	page: A page loaded by pdf_load_page.
+
+	dev: Device used for rendering, obtained from fz_new_*_device.
+
+	ctm: A transformation matrix applied to the objects on the page,
+	e.g. to scale or rotate the page contents as desired.
+*/
+void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, fz_cookie *cookie);
+
+void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
+
+#endif

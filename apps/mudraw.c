@@ -3,7 +3,6 @@
  */
 
 #include "fitz.h"
-#include "mupdf.h"
 
 #ifdef _MSC_VER
 #include <winsock2.h>

@@ -1,3 +1,8 @@
+#ifndef PDFAPP_H
+#define PDFAPP_H
+
+#include "fitz.h"
+
 /*
  * Utility object for handling a pdf application / view
  * Takes care of PDF loading and displaying and navigation,
@@ -106,3 +111,5 @@ void pdfapp_onresize(pdfapp_t *app, int w, int h);
 
 void pdfapp_invert(pdfapp_t *app, fz_bbox rect);
 void pdfapp_inverthit(pdfapp_t *app);
+
+#endif
