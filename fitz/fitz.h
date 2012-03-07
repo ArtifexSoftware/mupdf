@@ -545,10 +545,57 @@ extern int fz_getopt(int nargc, char * const *nargv, const char *ostr);
 extern int fz_optind;
 extern char *fz_optarg;
 
-typedef struct fz_matrix_s fz_matrix;
+/*
+	fz_point is a point in a two-dimensional space.
+*/
 typedef struct fz_point_s fz_point;
+struct fz_point_s
+{
+	float x, y;
+};
+
+/*
+	fz_rect is a rectangle represented by two diagonally opposite
+	corners at arbitrary coordinates.
+
+	Rectangles are always axis-aligned with the X- and Y- axes.
+	The relationship between the coordinates are that x0 <= x1 and
+	y0 <= y1 in all cases except for infinte rectangles. The area
+	of a rectangle is defined as (x1 - x0) * (y1 - y0). If either
+	x0 > x1 or y0 > y1 is true for a given rectangle then it is
+	defined to be infinite.
+
+	To check for empty or infinite rectangles use fz_is_empty_rect
+	and fz_is_infinite_rect. Compare to fz_bbox which has corners
+	at integer coordinates.
+
+	x0, y0: The top left corner.
+
+	x1, y1: The botton right corner.
+*/
 typedef struct fz_rect_s fz_rect;
+struct fz_rect_s
+{
+	float x0, y0;
+	float x1, y1;
+};
+
+/*
+	fz_bbox is a bounding box similar to a fz_rect, except that
+	all corner coordinates are rounded to integer coordinates.
+	To check for empty or infinite bounding boxes use
+	fz_is_empty_bbox and fz_is_infinite_bbox.
+
+	x0, y0: The top left corner.
+
+	x1, y1: The bottom right corner.
+*/
 typedef struct fz_bbox_s fz_bbox;
+struct fz_bbox_s
+{
+	int x0, y0;
+	int x1, y1;
+};
 
 /*
 	A rectangle with sides of length one.
@@ -632,59 +679,12 @@ extern const fz_bbox fz_infinite_bbox;
 	| c d 0 |   normally represented as    [ a b c d e f ].
 	\ e f 1 /
 */
+typedef struct fz_matrix_s fz_matrix;
 struct fz_matrix_s
 {
 	float a, b, c, d, e, f;
 };
 
-/*
-	fz_point is a point in a two-dimensional space.
-*/
-struct fz_point_s
-{
-	float x, y;
-};
-
-/*
-	fz_rect is a rectangle represented by two diagonally opposite
-	corners at arbitrary coordinates.
-
-	Rectangles are always axis-aligned with the X- and Y- axes.
-	The relationship between the coordinates are that x0 <= x1 and
-	y0 <= y1 in all cases except for infinte rectangles. The area
-	of a rectangle is defined as (x1 - x0) * (y1 - y0). If either
-	x0 > x1 or y0 > y1 is true for a given rectangle then it is
-	defined to be infinite.
-
-	To check for empty or infinite rectangles use fz_is_empty_rect
-	and fz_is_infinite_rect. Compare to fz_bbox which has corners
-	at integer coordinates.
-
-	x0, y0: The top left corner.
-
-	x1, y1: The botton right corner.
-*/
-struct fz_rect_s
-{
-	float x0, y0;
-	float x1, y1;
-};
-
-/*
-	fz_bbox is a bounding box similar to a fz_rect, except that
-	all corner coordinates are rounded to integer coordinates.
-	To check for empty or infinite bounding boxes use
-	fz_is_empty_bbox and fz_is_infinite_bbox.
-
-	x0, y0: The top left corner.
-
-	x1, y1: The bottom right corner.
-*/
-struct fz_bbox_s
-{
-	int x0, y0;
-	int x1, y1;
-};
 
 /*
 	fz_identity: Identity transform matrix.
@@ -893,7 +893,10 @@ fz_rect fz_transform_rect(fz_matrix transform, fz_rect rect);
 fz_bbox fz_transform_bbox(fz_matrix matrix, fz_bbox bbox);
 
 /*
-	fz_buffer is a wrapper around a dynamically allocated array of bytes
+	fz_buffer is a wrapper around a dynamically allocated array of bytes.
+
+	Buffers have a capacity (the number of bytes storage immediately
+	available) and a current size.
 */
 typedef struct fz_buffer_s fz_buffer;
 
@@ -904,12 +907,59 @@ struct fz_buffer_s
 	int cap, len;
 };
 
-fz_buffer *fz_new_buffer(fz_context *ctx, int size);
+/*
+	fz_new_buffer: Create a new buffer.
+
+	capacity: Initial capacity.
+
+	Returns pointer to new buffer. Throws exception on allocation
+	failure.
+*/
+fz_buffer *fz_new_buffer(fz_context *ctx, int capacity);
+
+/*
+	fz_keep_buffer: Increment the reference count for a buffer.
+
+	buf: The buffer to increment the reference count for.
+
+	Returns a pointer to the buffer. Does not throw exceptions.
+*/
 fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
+
+/*
+	fz_drop_buffer: Decrement the reference count for a buffer.
+
+	buf: The buffer to decrement the reference count for.
+*/
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
-void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size);
+/*
+	fz_resize_buffer: Ensure that a buffer has a given capacity,
+	truncating data if required.
+
+	buf: The buffer to alter.
+
+	capacity: The desired capacity for the buffer. If the current size
+	of the buffer contents is smaller than capacity, it is truncated.
+
+*/
+void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int capacity);
+
+/*
+	fz_grow_buffer: Make some space within a buffer (i.e. ensure that
+	capacity > size).
+
+	buf: The buffer to grow.
+
+	May throw exception on failure to allocate.
+*/
 void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
+
+/*
+	fz_trim_buffer: Trim wasted capacity from a buffer.
+
+	buf: The buffer to trim.
+*/
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
@@ -952,12 +1002,26 @@ fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
 fz_stream *fz_open_fd(fz_context *ctx, int file);
 
 /*
-	fz_open_memory: XXX
+	fz_open_memory: Open a block of memory as a stream.
+
+	data: Pointer to start of data block. Ownership of the data block is
+	NOT passed in.
+
+	len: Number of bytes in data block.
+
+	Returns pointer to newly created stream. May throw exceptions on
+	failure to allocate.
 */
 fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
 
 /*
-	fz_open_buffer: XXX
+	fz_open_buffer: Open a buffer as a stream.
+
+	buf: The buffer to open. Ownership of the buffer is NOT passed in
+	(this function takes it's own reference).
+
+	Returns pointer to newly created stream. May throw exceptions on
+	failure to allocate.
 */
 fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 
@@ -972,9 +1036,45 @@ fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 */
 void fz_close(fz_stream *stm);
 
+/*
+	fz_tell: return the current reading position within a stream
+*/
 int fz_tell(fz_stream *stm);
+
+/*
+	fz_seek: Seek within a stream.
+
+	stm: The stream to seek within.
+
+	offset: The offset to seek to.
+
+	whence: From where the offset is measured (see fseek).
+*/
 void fz_seek(fz_stream *stm, int offset, int whence);
-int fz_read(fz_stream *stm, unsigned char *buf, int len);
+
+/*
+	fz_read: Read from a stream into a given data block.
+
+	stm: The stream to read from.
+
+	data: The data block to read into.
+
+	len: The length of the data block (in bytes).
+
+	Returns the number of bytes read. May throw exceptions.
+*/
+int fz_read(fz_stream *stm, unsigned char *data, int len);
+
+/*
+	fz_read_all: Read all of a stream into a buffer.
+
+	stm: The stream to read from
+
+	initial: Suggested initial size for the buffer.
+
+	Returns a buffer created from reading from the stream. May throw
+	exceptions on failure to allocate.
+*/
 fz_buffer *fz_read_all(fz_stream *stm, int initial);
 
 /*
