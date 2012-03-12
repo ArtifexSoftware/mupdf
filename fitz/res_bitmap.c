@@ -95,3 +95,27 @@ unsigned char *fz_pixmap_pixels(fz_context *ctx, fz_pixmap *pix)
 		return NULL;
 	return pix->samples;
 }
+
+void fz_bitmap_details(fz_bitmap *bit, int *w, int *h, int *n, int *stride)
+{
+	if (!bit)
+	{
+		if (w)
+			*w = 0;
+		if (h)
+			*h = 0;
+		if (n)
+			*n = 0;
+		if (stride)
+			*stride = 0;
+		return;
+	}
+	if (w)
+		*w = bit->w;
+	if (h)
+		*h = bit->h;
+	if (n)
+		*n = bit->n;
+	if (stride)
+		*w = bit->stride;
+}

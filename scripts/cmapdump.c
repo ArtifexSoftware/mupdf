@@ -181,6 +181,10 @@ void fz_free_aa_context(fz_context *ctx)
 {
 }
 
+void fz_copy_aa_context(fz_context *dst, fz_context *src)
+{
+}
+
 void *fz_keep_storable(fz_context *ctx, fz_storable *s)
 {
 	return s;

@@ -41,6 +41,12 @@ void fz_new_aa_context(fz_context *ctx)
 #endif
 }
 
+void fz_copy_aa_context(fz_context *dst, fz_context *src)
+{
+	if (dst && src)
+		memcpy(dst, src, sizeof(*src));
+}
+
 void fz_free_aa_context(fz_context *ctx)
 {
 #ifndef AA_BITS

@@ -1,6 +1,6 @@
 #include "fitz-internal.h"
 
-void fz_md5_pixmap(unsigned char digest[16], fz_pixmap *pix)
+void fz_md5_pixmap(fz_pixmap *pix, unsigned char digest[16])
 {
 	fz_md5 md5;
 

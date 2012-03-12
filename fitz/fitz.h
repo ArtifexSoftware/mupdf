@@ -1084,17 +1084,63 @@ fz_buffer *fz_read_all(fz_stream *stm, int initial);
 */
 typedef struct fz_bitmap_s fz_bitmap;
 
-struct fz_bitmap_s
-{
-	int refs;
-	int w, h, stride, n;
-	unsigned char *samples;
-};
+/*
+	fz_keep_bitmap: Take a reference to a bitmap.
 
-fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
+	bit: The bitmap to increment the reference for.
+
+	Returns bit. Does not throw exceptions.
+*/
 fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
-void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
+
+/*
+	fz_drop_bitmap: Drop a reference and free a bitmap.
+
+	Decrement the reference count for the bitmap. When no
+	references remain the pixmap will be freed.
+
+	Does not throw exceptions.
+*/
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
+
+/*
+	An fz_colorspace object represents an abstract colorspace. While
+	this should be treated as a black box by callers of the library at
+	this stage, know that it encapsulates knowledge of how to convert
+	colors to and from the colorspace, any lookup tables generated, the
+	number of components in the colorspace etc.
+*/
+typedef struct fz_colorspace_s fz_colorspace;
+
+/*
+	fz_find_device_colorspace: Find a standard colorspace based upon
+	it's name.
+*/
+fz_colorspace *fz_find_device_colorspace(char *name);
+
+/*
+	fz_device_gray: Abstract colorspace representing device specific
+	gray.
+*/
+extern fz_colorspace *fz_device_gray;
+
+/*
+	fz_device_rgb: Abstract colorspace representing device specific
+	rgb.
+*/
+extern fz_colorspace *fz_device_rgb;
+
+/*
+	fz_device_bgr: Abstract colorspace representing device specific
+	bgr.
+*/
+extern fz_colorspace *fz_device_bgr;
+
+/*
+	fz_device_cmyk: Abstract colorspace representing device specific
+	CMYK.
+*/
+extern fz_colorspace *fz_device_cmyk;
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
@@ -1104,11 +1150,27 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 */
 typedef struct fz_pixmap_s fz_pixmap;
 
-typedef struct fz_colorspace_s fz_colorspace;
+/*
+	fz_bound_pixmap: Return a bounding box for a pixmap.
 
+	Returns an exact bounding box for the supplied pixmap.
+*/
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 
-fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
+/*
+	fz_new_pixmap: Create a new pixmap, with it's origin at (0,0)
+
+	cs: The colorspace to use for the pixmap, or NULL for an alpha
+	plane/mask.
+
+	w: The width of the pixmap (in pixels)
+
+	h: The height of the pixmap (in pixels)
+
+	Returns a pointer to the new pixmap. Throws exception on failure to
+	allocate.
+*/
+fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h);
 
 /*
 	fz_new_pixmap_with_rect: Create a pixmap of a given size,
@@ -1125,17 +1187,6 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *, int w, int h);
 	bbox: Bounding box specifying location/size of created pixmap.
 */
 fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox);
-
-fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
-
-/*
-	fz_keep_pixmap: Take a reference to a pixmap.
-
-	pix: The pixmap to increment the reference for.
-
-	Returns pix. Does not throw exceptions.
-*/
-fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
 
 /*
 	fz_keep_pixmap: Take a reference to a pixmap.
@@ -1178,9 +1229,9 @@ int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix);
 unsigned char *fz_pixmap_pixels(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_clear_pixmap_with_value: Clears a pixmap with the given value
+	fz_clear_pixmap_with_value: Clears a pixmap with the given value.
 
-	pix: Pixmap obtained from fz_new_pixmap*.
+	pix: The pixmap to clear.
 
 	value: Values in the range 0 to 255 are valid. Each component
 	sample for each pixel in the pixmap will be set to this value,
@@ -1190,17 +1241,106 @@ unsigned char *fz_pixmap_pixels(fz_context *ctx, fz_pixmap *pix);
 */
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
+/*
+	fz_clear_pixmap_with_value: Sets all components (including alpha) of
+	all pixels in a pixmap to 0.
+
+	pix: The pixmap to clear.
+
+	Does not throw exceptions.
+*/
 void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_invert_pixmap: Invert all the pixels in a pixmap. All components
+	of all pixels are inverted (except alpha, which is unchanged).
+
+	Does not throw exceptions.
+*/
 void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_invert_pixmap: Invert all the pixels in a given rectangle of a
+	pixmap. All components of all pixels in the rectangle are inverted
+	(except alpha, which is unchanged).
+
+	Does not throw exceptions.
+*/
 void fz_invert_pixmap_rect(fz_pixmap *image, fz_bbox rect);
+
+/*
+	fz_gamma_pixmap: Apply gamma correction to a pixmap. All components
+	of all pixels are modified (except alpha, which is unchanged).
+
+	gamma: The gamma value to apply; 1.0 for no change.
+
+	Does not throw exceptions.
+*/
 void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
+
+/*
+	fz_unmultiply_pixmap: Convert a pixmap from premultiplied to
+	non-premultiplied format.
+
+	Does not throw exceptions.
+*/
 void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_convert_pixmap: Convert from one pixmap to another (assumed to be
+	the same size, but possibly with a different colorspace).
+
+	src: the source pixmap.
+
+	dst: the destination pixmap.
+*/
+void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
+
+/*
+	fz_save_pixmap: Save a pixmap out.
+
+	name: The prefix for the name of the pixmap. The pixmap will be saved
+	as "name.png" if the pixmap is RGB or Greyscale, "name.pam" otherwise.
+
+	rgb: If non zero, the pixmap is converted to rgb (if possible) before
+	saving.
+*/
 void fz_save_pixmap(fz_context *ctx, fz_pixmap *img, char *name, int rgb);
+
+/*
+	fz_write_pnm: Save a pixmap as a pnm
+
+	filename: The filename to save as (including extension).
+*/
 void fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
+
+/*
+	fz_write_pam: Save a pixmap as a pam
+
+	filename: The filename to save as (including extension).
+*/
 void fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
+
+/*
+	fz_write_png: Save a pixmap as a png
+
+	filename: The filename to save as (including extension).
+*/
 void fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
+
+/*
+	fz_write_pbm: Save a bitmap as a pbm
+
+	filename: The filename to save as (including extension).
+*/
 void fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
-void fz_md5_pixmap(unsigned char digest[16], fz_pixmap *pixmap);
+
+/*
+	fz_md5_pixmap: Return the md5 digest for a pixmap
+
+	filename: The filename to save as (including extension).
+*/
+void fz_md5_pixmap(fz_pixmap *pixmap, unsigned char digest[16]);
 
 /*
 	Images are storable objects from which we can obtain fz_pixmaps.
@@ -1266,36 +1406,23 @@ typedef struct fz_halftone_s fz_halftone;
 fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
 /*
-	Colorspace resources.
+	An abstract font handle. Currently there are no public API functions
+	for handling these.
 */
-
-void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
-
-fz_colorspace *fz_find_device_colorspace(char *name);
-
-/*
-	fz_device_gray: XXX
-*/
-extern fz_colorspace *fz_device_gray;
-
-/*
-	fz_device_rgb: XXX
-*/
-extern fz_colorspace *fz_device_rgb;
-
-/*
-	fz_device_bgr: XXX
-*/
-extern fz_colorspace *fz_device_bgr;
-
-/*
-	fz_device_cmyk: XXX
-*/
-extern fz_colorspace *fz_device_cmyk;
-
-typedef struct fz_device_s fz_device;
-
 typedef struct fz_font_s fz_font;
+
+/*
+	The different format handlers (pdf, xps etc) interpret pages to a
+	device. These devices can then process the stream of calls they
+	recieve in various ways:
+		The trace device outputs debugging information for the calls.
+		The draw device will render them.
+		The list device stores them in a list to play back later.
+		The text device performs text extraction and searching.
+		The bbox device calculates the bounding box for the page.
+	Other devices can (and will) be written in future.
+*/
+typedef struct fz_device_s fz_device;
 
 /*
 	fz_free_device: Free a devices of any type and its resources.
@@ -1305,8 +1432,6 @@ void fz_free_device(fz_device *dev);
 /*
 	fz_new_trace_device: Create a device to print a debug trace of
 	all device calls.
-
-	XXX
 */
 fz_device *fz_new_trace_device(fz_context *ctx);
 
@@ -1329,8 +1454,6 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
 	fz_free_device.
 */
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
-
-fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
 /*
 	Text extraction device

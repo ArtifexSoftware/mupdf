@@ -14,6 +14,7 @@ fz_context *fz_clone_context_internal(fz_context *ctx);
 
 void fz_new_aa_context(fz_context *ctx);
 void fz_free_aa_context(fz_context *ctx);
+void fz_copy_aa_context(fz_context *dst, fz_context *src);
 
 /* Default locks */
 extern fz_locks_context fz_locks_default;
@@ -510,15 +511,32 @@ enum { FZ_MAX_COLORS = 32 };
 int fz_find_blendmode(char *name);
 char *fz_blendmode_name(int blendmode);
 
+struct fz_bitmap_s
+{
+	int refs;
+	int w, h, stride, n;
+	unsigned char *samples;
+};
+
+fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n);
+
+void fz_bitmap_details(fz_bitmap *bitmap, int *w, int *h, int *n, int *stride);
+
+void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
+
 /*
-	fz_pixmap is an image XXX
+	Pixmaps represent a set of pixels for a 2 dimensional region of a
+	plane. Each pixel has n components per pixel, the last of which is
+	always alpha. The data is in premultiplied alpha when rendering, but
+	non-premultiplied for colorspace conversions and rescaling.
 
-	x, y: XXX
+	x, y: The minimum x and y coord of the region in pixels.
 
-	w, h: The width and height of the image in pixels.
+	w, h: The width and height of the region in pixels.
 
 	n: The number of color components in the image. Always
-	includes a separate alpha channel. XXX RGBA=4
+	includes a separate alpha channel. For mask images n=1, for greyscale
+	(plus alpha) images n=2, for rgb (plus alpha) images n=3.
 
 	interpolate: A boolean flag set to non-zero if the image
 	will be drawn using linear interpolation, or set to zero if
@@ -526,9 +544,13 @@ char *fz_blendmode_name(int blendmode);
 
 	xres, yres: Image resolution in dpi. Default is 96 dpi.
 
-	colorspace: XXX
+	colorspace: Pointer to a colorspace object describing the colorspace
+	the pixmap is in. If NULL, the image is a mask.
 
-	samples:
+	samples: A simple block of memory w * h * n bytes of memory in which
+	the components are stored. The first n bytes are components 0 to n-1
+	for the pixel at (x,y). Each successive n bytes gives another pixel
+	in scanline order. Subsequent scanlines follow on with no padding.
 
 	free_samples: Is zero when an application has provided its own
 	buffer for pixel data through fz_new_pixmap_with_rect_and_data.
@@ -545,6 +567,10 @@ struct fz_pixmap_s
 	unsigned char *samples;
 	int free_samples;
 };
+
+fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
+
+fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
 
 void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
@@ -862,6 +888,8 @@ void fz_flatten_dash_path(fz_gel *gel, fz_path *path, fz_stroke_state *stroke, f
 /*
  * The device interface.
  */
+
+fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
 enum
 {

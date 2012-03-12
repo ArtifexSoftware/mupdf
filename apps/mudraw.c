@@ -251,7 +251,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				unsigned char digest[16];
 				int i;
 
-				fz_md5_pixmap(digest, pix);
+				fz_md5_pixmap(pix, digest);
 				printf(" ");
 				for (i = 0; i < 16; i++)
 					printf("%02x", digest[i]);
