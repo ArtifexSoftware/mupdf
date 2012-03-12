@@ -368,7 +368,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 				i1 = ps_pop_int(st);
 				if (i2 > 0 && i2 < 8 * sizeof (i2))
 					ps_push_int(st, i1 << i2);
-				else if (i2 < 0 && i2 > -8 * sizeof (i2))
+				else if (i2 < 0 && i2 > -8 * (int)sizeof (i2))
 					ps_push_int(st, (int)((unsigned int)i1 >> -i2));
 				else
 					ps_push_int(st, i1);
