@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 /* TODO: add clip stack and use to intersect bboxes */
 

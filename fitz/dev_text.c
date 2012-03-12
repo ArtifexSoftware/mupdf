@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #define LINE_DIST 0.9f
 #define SPACE_DIST 0.2f
@@ -172,7 +172,7 @@ fz_debug_text_span_xml(fz_text_span *span)
 				putchar(c);
 			else
 			{
-				n = runetochar(buf, &c);
+				n = fz_runetochar(buf, c);
 				for (k = 0; k < n; k++)
 					putchar(buf[k]);
 			}
@@ -204,7 +204,7 @@ fz_debug_text_span(fz_text_span *span)
 				putchar(c);
 			else
 			{
-				n = runetochar(buf, &c);
+				n = fz_runetochar(buf, c);
 				for (k = 0; k < n; k++)
 					putchar(buf[k]);
 			}

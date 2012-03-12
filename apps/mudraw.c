@@ -3,7 +3,6 @@
  */
 
 #include "fitz.h"
-#include "mupdf.h"
 
 #ifdef _MSC_VER
 #include <winsock2.h>
@@ -273,24 +272,18 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				else if (strstr(output, ".png"))
 					fz_write_png(ctx, pix, buf, savealpha);
 				else if (strstr(output, ".pbm")) {
-					fz_halftone *ht = fz_get_default_halftone(ctx, 1);
-					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, ht);
+					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 					fz_write_pbm(ctx, bit, buf);
 					fz_drop_bitmap(ctx, bit);
-					fz_drop_halftone(ctx, ht);
 				}
 			}
 
 			if (showmd5)
 			{
-				fz_md5 md5;
 				unsigned char digest[16];
 				int i;
 
-				fz_md5_init(&md5);
-				fz_md5_update(&md5, pix->samples, pix->w * pix->h * pix->n);
-				fz_md5_final(&md5, digest);
-
+				fz_md5_pixmap(pix, digest);
 				printf(" ");
 				for (i = 0; i < 16; i++)
 					printf("%02x", digest[i]);
@@ -382,9 +375,9 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 {
 	fz_outline *outline = fz_load_outline(doc);
 	if (showoutline > 1)
-		fz_debug_outline_xml(ctx, outline, 0);
+		fz_debug_outline_xml(ctx, outline);
 	else
-		fz_debug_outline(ctx, outline, 0);
+		fz_debug_outline(ctx, outline);
 	fz_free_outline(ctx, outline);
 }
 

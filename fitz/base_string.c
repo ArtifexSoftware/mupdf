@@ -1,11 +1,4 @@
-#include "fitz.h"
-
-int
-fz_is_big_endian(void)
-{
-	static const int one = 1;
-	return *(char*)&one == 0;
-}
+#include "fitz-internal.h"
 
 char *
 fz_strsep(char **stringp, const char *delim)
@@ -36,8 +29,8 @@ fz_strlcpy(char *dst, const char *src, int siz)
 	if (n == 0) {
 		if (siz != 0)
 			*d = '\0';		/* NUL-terminate dst */
-			while (*s++)
-				;
+		while (*s++)
+			;
 	}
 
 	return(s - src - 1);	/* count does not include NUL */
@@ -108,7 +101,7 @@ enum
 };
 
 int
-chartorune(int *rune, char *str)
+fz_chartorune(int *rune, char *str)
 {
 	int c, c1, c2, c3;
 	long l;
@@ -183,16 +176,15 @@ bad:
 }
 
 int
-runetochar(char *str, int *rune)
+fz_runetochar(char *str, int rune)
 {
 	/* Runes are signed, so convert to unsigned for range check. */
-	unsigned long c;
+	unsigned long c = (unsigned long)rune;
 
 	/*
 	 * one character sequence
 	 *	00000-0007F => 00-7F
 	 */
-	c = *rune;
 	if(c <= Rune1) {
 		str[0] = c;
 		return 1;
@@ -240,10 +232,10 @@ runetochar(char *str, int *rune)
 }
 
 int
-runelen(int c)
+fz_runelen(int c)
 {
 	char str[10];
-	return runetochar(str, &c);
+	return fz_runetochar(str, c);
 }
 
 float fz_atof(const char *s)

@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 static void *
 do_scavenging_malloc(fz_context *ctx, unsigned int size)

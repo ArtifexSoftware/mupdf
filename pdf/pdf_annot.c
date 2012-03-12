@@ -1,5 +1,5 @@
-#include "fitz.h"
-#include "mupdf.h"
+#include "fitz-internal.h"
+#include "mupdf-internal.h"
 
 static pdf_obj *
 resolve_dest_rec(pdf_document *xref, pdf_obj *dest, int depth)
