@@ -25,6 +25,9 @@ static int uselist = 1;
 static int alphabits = 8;
 static float gamma_value = 1;
 static int invert = 0;
+static int width = 0;
+static int height = 0;
+static int fit = 0;
 
 static fz_colorspace *colorspace;
 static char *filename;
@@ -43,6 +46,9 @@ static void usage(void)
 		"\t\tsupported formats: pgm, ppm, pam, png, pbm\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
+		"\t-w -\twidth (in pixels)\n"
+		"\t-h -\theight (in pixels)\n"
+		"\t-f -\tif both -w and -h are used then fit exactly\n"
 		"\t-a\tsave alpha channel (only pam and png)\n"
 		"\t-b -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-g\trender in grayscale\n"
@@ -197,7 +203,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		float zoom;
 		fz_matrix ctm;
-		fz_rect bounds;
+		fz_rect bounds, bounds2;
 		fz_bbox bbox;
 		fz_pixmap *pix = NULL;
 
@@ -207,7 +213,27 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
 		ctm = fz_concat(ctm, fz_rotate(rotation));
-		bbox = fz_round_rect(fz_transform_rect(ctm, bounds));
+		bounds2 = fz_transform_rect(ctm, bounds);
+		if (width || height)
+		{
+			float scalex = width/(bounds2.x1-bounds2.x0);
+			float scaley = height/(bounds2.y1-bounds2.y0);
+
+			if (width == 0)
+				scalex = scaley;
+			if (height == 0)
+				scaley = scalex;
+			if (!fit)
+			{
+				if (scalex > scaley)
+					scalex = scaley;
+				else
+					scaley = scalex;
+			}
+			ctm = fz_concat(ctm, fz_scale(scalex, scaley));
+			bounds2 = fz_transform_rect(ctm, bounds);
+		}
+		bbox = fz_round_rect(bounds2);
 
 		/* TODO: banded rendering and multi-page ppm */
 
@@ -376,7 +402,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:I")) != -1)
+	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:f")) != -1)
 	{
 		switch (c)
 		{
@@ -394,6 +420,9 @@ int main(int argc, char **argv)
 		case 'g': grayscale++; break;
 		case 'd': uselist = 0; break;
 		case 'G': gamma_value = atof(fz_optarg); break;
+		case 'w': width = atof(fz_optarg); break;
+		case 'h': height = atof(fz_optarg); break;
+		case 'f': fit = 1; break;
 		case 'I': invert++; break;
 		default: usage(); break;
 		}
