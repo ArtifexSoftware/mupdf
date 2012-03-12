@@ -248,7 +248,7 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, fz_matrix ctm,
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
 
-	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, model, colorfv, colorspace, color);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -302,7 +302,7 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, fz_
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
 
-	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, model, colorfv, colorspace, color);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -472,7 +472,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, fz_matrix ctm,
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
 
-	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, model, colorfv, colorspace, color);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -532,7 +532,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke, fz_
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
 
-	fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
+	fz_convert_color(dev->ctx, model, colorfv, colorspace, color);
 	for (i = 0; i < model->n; i++)
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
@@ -775,7 +775,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 	{
 		unsigned char *s;
 		int x, y, n, i;
-		fz_convert_color(dev->ctx, shade->colorspace, shade->background, model, colorfv);
+		fz_convert_color(dev->ctx, model, colorfv, shade->colorspace, shade->background);
 		for (i = 0; i < model->n; i++)
 			colorbv[i] = colorfv[i] * 255;
 		colorbv[i] = 255;
@@ -1027,7 +1027,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_image *image, fz_matrix ctm,
 				pixmap = scaled;
 		}
 
-		fz_convert_color(dev->ctx, colorspace, color, model, colorfv);
+		fz_convert_color(dev->ctx, model, colorfv, colorspace, color);
 		for (i = 0; i < model->n; i++)
 			colorbv[i] = colorfv[i] * 255;
 		colorbv[i] = alpha * 255;
@@ -1228,7 +1228,7 @@ fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace 
 		float bc;
 		if (!colorspace)
 			colorspace = fz_device_gray;
-		fz_convert_color(dev->ctx, colorspace, colorfv, fz_device_gray, &bc);
+		fz_convert_color(dev->ctx, fz_device_gray, &bc, colorspace, colorfv);
 		fz_clear_pixmap_with_value(dev->ctx, dest, bc * 255);
 		if (shape)
 			fz_clear_pixmap_with_value(dev->ctx, shape, 255);

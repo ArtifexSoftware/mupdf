@@ -404,7 +404,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 				srcv[1] = *s++ - 128;
 				srcv[2] = *s++ - 128;
 
-				fz_convert_color(ctx, ss, srcv, ds, dstv);
+				fz_convert_color(ctx, ds, dstv, ss, srcv);
 
 				for (k = 0; k < dstn; k++)
 					*d++ = dstv[k] * 255;
@@ -424,7 +424,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 				for (k = 0; k < srcn; k++)
 					srcv[k] = *s++ / 255.0f;
 
-				fz_convert_color(ctx, ss, srcv, ds, dstv);
+				fz_convert_color(ctx, ds, dstv, ss, srcv);
 
 				for (k = 0; k < dstn; k++)
 					*d++ = dstv[k] * 255;
@@ -442,7 +442,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		for (i = 0; i < 256; i++)
 		{
 			srcv[0] = i / 255.0f;
-			fz_convert_color(ctx, ss, srcv, ds, dstv);
+			fz_convert_color(ctx, ds, dstv, ss, srcv);
 			for (k = 0; k < dstn; k++)
 				lookup[i * dstn + k] = dstv[k] * 255;
 		}
@@ -483,7 +483,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 				{
 					for (k = 0; k < srcn; k++)
 						srcv[k] = *s++ / 255.0f;
-					fz_convert_color(ctx, ss, srcv, ds, dstv);
+					fz_convert_color(ctx, ds, dstv, ss, srcv);
 					for (k = 0; k < dstn; k++)
 						*d++ = dstv[k] * 255;
 
@@ -567,7 +567,7 @@ fz_std_conv_color(fz_context *ctx, fz_colorspace *srcs, float *srcv, fz_colorspa
 }
 
 void
-fz_convert_color(fz_context *ctx, fz_colorspace *ss, float *sv, fz_colorspace *ds, float *dv)
+fz_convert_color(fz_context *ctx, fz_colorspace *ds, float *dv, fz_colorspace *ss, float *sv)
 {
 	if (ss == fz_device_gray)
 	{
