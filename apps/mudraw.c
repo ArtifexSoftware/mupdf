@@ -349,9 +349,9 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 {
 	fz_outline *outline = fz_load_outline(doc);
 	if (showoutline > 1)
-		fz_debug_outline_xml(ctx, outline, 0);
+		fz_debug_outline_xml(ctx, outline);
 	else
-		fz_debug_outline(ctx, outline, 0);
+		fz_debug_outline(ctx, outline);
 	fz_free_outline(ctx, outline);
 }
 

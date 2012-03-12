@@ -22,6 +22,12 @@
 
 #include "memento.h"
 
+/*
+	Some versions of setjmp/longjmp (notably MacOSX and ios) store/restore
+	signal handlers too. We don't alter signal handlers within mupdf, so
+	there is no need for us to store/restore - hence we use the
+	non-restoring variants. This makes a large speed difference.
+*/
 #ifdef __APPLE__
 #define fz_setjmp _setjmp
 #define fz_longjmp _longjmp
@@ -781,7 +787,6 @@ int fz_is_rectilinear(fz_matrix m);
 	fz_matrix_expansion: Calculate average scaling factor of matrix.
 */
 float fz_matrix_expansion(fz_matrix m); /* sumatrapdf */
-float fz_matrix_max_expansion(fz_matrix m);
 
 /*
 	fz_round_rect: Convert a rect into a bounding box.
@@ -902,23 +907,6 @@ fz_bbox fz_transform_bbox(fz_matrix matrix, fz_bbox bbox);
 */
 typedef struct fz_buffer_s fz_buffer;
 
-struct fz_buffer_s
-{
-	int refs;
-	unsigned char *data;
-	int cap, len;
-};
-
-/*
-	fz_new_buffer: Create a new buffer.
-
-	capacity: Initial capacity.
-
-	Returns pointer to new buffer. Throws exception on allocation
-	failure.
-*/
-fz_buffer *fz_new_buffer(fz_context *ctx, int capacity);
-
 /*
 	fz_keep_buffer: Increment the reference count for a buffer.
 
@@ -936,33 +924,14 @@ fz_buffer *fz_keep_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_resize_buffer: Ensure that a buffer has a given capacity,
-	truncating data if required.
+	fz_buffer_storage: Retrieve information on the storage currently used
+	by a buffer.
 
-	buf: The buffer to alter.
+	data: Pointer to place to retrieve data pointer.
 
-	capacity: The desired capacity for the buffer. If the current size
-	of the buffer contents is smaller than capacity, it is truncated.
-
+	Returns length of stream.
 */
-void fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int capacity);
-
-/*
-	fz_grow_buffer: Make some space within a buffer (i.e. ensure that
-	capacity > size).
-
-	buf: The buffer to grow.
-
-	May throw exception on failure to allocate.
-*/
-void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
-
-/*
-	fz_trim_buffer: Trim wasted capacity from a buffer.
-
-	buf: The buffer to trim.
-*/
-void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
+int fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **data);
 
 /*
 	fz_stream is a buffered reader capable of seeking in both
@@ -1782,8 +1751,16 @@ struct fz_outline_s
 	fz_outline *down;
 };
 
-void fz_debug_outline_xml(fz_context *ctx, fz_outline *outline, int level);
-void fz_debug_outline(fz_context *ctx, fz_outline *outline, int level);
+/*
+	fz_debug_outline_xml: Dump the given outlines to stdout as (pseudo)
+	XML.
+*/
+void fz_debug_outline_xml(fz_context *ctx, fz_outline *outline);
+
+/*
+	fz_debug_outline: Dump the given outlines to stdout as text.
+*/
+void fz_debug_outline(fz_context *ctx, fz_outline *outline);
 
 /*
 	fz_free_outline: Free hierarchical outline.
@@ -1794,10 +1771,11 @@ void fz_debug_outline(fz_context *ctx, fz_outline *outline, int level);
 */
 void fz_free_outline(fz_context *ctx, fz_outline *outline);
 
-/* Document interface */
-
+/*
+	Document interface
+*/
 typedef struct fz_document_s fz_document;
-typedef struct fz_page_s fz_page; /* doesn't have a definition -- always cast to *_page */
+typedef struct fz_page_s fz_page;
 
 /*
 	fz_open_document: Open a PDF, XPS or CBZ document.

@@ -60,7 +60,8 @@ static void savefont(pdf_obj *dict, int num)
 	char *ext = "";
 	FILE *f;
 	char *fontname = "font";
-	int n;
+	int n, len;
+	char *data;
 
 	obj = pdf_dict_gets(dict, "FontName");
 	if (obj)
@@ -113,8 +114,9 @@ static void savefont(pdf_obj *dict, int num)
 	if (!f)
 		fz_throw(ctx, "Error creating font file");
 
-	n = fwrite(buf->data, 1, buf->len, f);
-	if (n < buf->len)
+	len = fz_buffer_storage(ctx, buf, &data);
+	n = fwrite(data, 1, len, f);
+	if (n < len)
 		fz_throw(ctx, "Error writing font file");
 
 	if (fclose(f) < 0)
