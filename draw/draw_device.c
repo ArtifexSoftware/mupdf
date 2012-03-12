@@ -927,7 +927,7 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, fz_matrix ctm, float alpha)
 		if (pixmap->colorspace != model && !after)
 		{
 			converted = fz_new_pixmap_with_rect(ctx, model, fz_bound_pixmap(pixmap));
-			fz_convert_pixmap(ctx, pixmap, converted);
+			fz_convert_pixmap(ctx, converted, pixmap);
 			pixmap = converted;
 		}
 
@@ -957,7 +957,7 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, fz_matrix ctm, float alpha)
 			else
 			{
 				converted = fz_new_pixmap_with_rect(ctx, model, fz_bound_pixmap(pixmap));
-				fz_convert_pixmap(ctx, pixmap, converted);
+				fz_convert_pixmap(ctx, converted, pixmap);
 				pixmap = converted;
 			}
 		}

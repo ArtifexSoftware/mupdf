@@ -1292,11 +1292,11 @@ void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 	fz_convert_pixmap: Convert from one pixmap to another (assumed to be
 	the same size, but possibly with a different colorspace).
 
-	src: the source pixmap.
+	dst: the source pixmap.
 
-	dst: the destination pixmap.
+	src: the destination pixmap.
 */
-void fz_convert_pixmap(fz_context *ctx, fz_pixmap *src, fz_pixmap *dst);
+void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 
 /*
 	fz_save_pixmap: Save a pixmap out.
