@@ -16,6 +16,9 @@ void fz_new_aa_context(fz_context *ctx);
 void fz_free_aa_context(fz_context *ctx);
 void fz_copy_aa_context(fz_context *dst, fz_context *src);
 
+/* Default allocator */
+extern fz_alloc_context fz_alloc_default;
+
 /* Default locks */
 extern fz_locks_context fz_locks_default;
 

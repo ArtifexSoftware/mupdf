@@ -138,9 +138,6 @@ struct fz_alloc_context_s
 	void (*free)(void *, void *);
 };
 
-/* Default allocator */
-extern fz_alloc_context fz_alloc_default;
-
 struct fz_error_context_s
 {
 	int top;
