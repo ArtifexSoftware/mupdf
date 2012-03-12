@@ -349,16 +349,8 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 	weight = (int)(256*f+0.5f);
 
 	/* Ensure i is in range */
-	if (i < 0)
-	{
-		i = 0;
+	if (i < 0 || i >= src_w)
 		return;
-	}
-	else if (i >= src_w)
-	{
-		i = src_w-1;
-		return;
-	}
 	if (weight == 0)
 	{
 		/* We add a fudge factor here to allow for extreme downscales

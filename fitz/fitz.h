@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>	/* INT_MAX & co */
-#include <float.h> /* FLT_EPSILON */
+#include <float.h> /* FLT_EPSILON, FLT_MAX & co */
 #include <fcntl.h> /* O_RDONLY & co */
 
 #include <setjmp.h>
@@ -46,6 +46,7 @@
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
+#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
 
 /*
 	Some differences in libc can be smoothed over
@@ -62,6 +63,7 @@
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define snprintf _snprintf
+#define isnan _isnan
 
 #else /* Unix or close enough */
 
@@ -640,7 +642,7 @@ extern const fz_bbox fz_infinite_bbox;
 
 	An empty rectangle is defined as one whose area is zero.
 */
-#define fz_is_empty_rect(r) ((r).x0 == (r).x1)
+#define fz_is_empty_rect(r) ((r).x0 == (r).x1 || (r).y0 == (r).y1)
 
 /*
 	fz_is_empty_bbox: Check if bounding box is empty.
@@ -648,7 +650,7 @@ extern const fz_bbox fz_infinite_bbox;
 	Same definition of empty bounding boxes as for empty
 	rectangles. See fz_is_empty_rect.
 */
-#define fz_is_empty_bbox(b) ((b).x0 == (b).x1)
+#define fz_is_empty_bbox(b) ((b).x0 == (b).x1 || (b).y0 == (b).y1)
 
 /*
 	fz_is_infinite: Check if rectangle is infinite.
@@ -656,7 +658,7 @@ extern const fz_bbox fz_infinite_bbox;
 	An infinite rectangle is defined as one where either of the
 	two relationships between corner coordinates are not true.
 */
-#define fz_is_infinite_rect(r) ((r).x0 > (r).x1)
+#define fz_is_infinite_rect(r) ((r).x0 > (r).x1 || (r).y0 > (r).y1)
 
 /*
 	fz_is_infinite_bbox: Check if bounding box is infinite.
@@ -664,7 +666,7 @@ extern const fz_bbox fz_infinite_bbox;
 	Same definition of infinite bounding boxes as for infinite
 	rectangles. See fz_is_infinite_rect.
 */
-#define fz_is_infinite_bbox(b) ((b).x0 > (b).x1)
+#define fz_is_infinite_bbox(b) ((b).x0 > (b).x1 || (b).y0 > (b).y1)
 
 /*
 	fz_matrix is a a row-major 3x3 matrix used for representing

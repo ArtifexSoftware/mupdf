@@ -165,11 +165,17 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_run_page(doc, page, dev, fz_identity, NULL);
 			fz_free_device(dev);
 			dev = NULL;
-			printf("[Page %d]\n", pagenum);
 			if (showtext > 1)
+			{
+				printf("<page number=\"%d\">\n", pagenum);
 				fz_debug_text_span_xml(text);
+				printf("</page>\n");
+			}
 			else
+			{
+				printf("[Page %d]\n", pagenum);
 				fz_debug_text_span(text);
+			}
 			printf("\n");
 		}
 		fz_catch(ctx)
@@ -421,7 +427,7 @@ int main(int argc, char **argv)
 	timing.minpage = 0;
 	timing.maxpage = 0;
 
-	if (showxml)
+	if (showxml || showtext > 1)
 		printf("<?xml version=\"1.0\"?>\n");
 
 	fz_try(ctx)
@@ -443,7 +449,7 @@ int main(int argc, char **argv)
 				if (!fz_authenticate_password(doc, password))
 					fz_throw(ctx, "cannot authenticate password: %s", filename);
 
-			if (showxml)
+			if (showxml || showtext > 1)
 				printf("<document name=\"%s\">\n", filename);
 
 			if (showoutline)
@@ -457,7 +463,7 @@ int main(int argc, char **argv)
 					drawrange(ctx, doc, argv[fz_optind++]);
 			}
 
-			if (showxml)
+			if (showxml || showtext > 1)
 				printf("</document>\n");
 
 			fz_close_document(doc);
