@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.4\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
+				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.5.0\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
 				PreprocessorDefinitions="DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -106,7 +106,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.4\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
+				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.5.0\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -166,7 +166,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.4\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
+				AdditionalIncludeDirectories="..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg-8d;..\thirdparty\openjpeg-1.5.0\libopenjpeg;..\thirdparty\zlib-1.2.5;..\thirdparty\freetype-2.4.8\include"
 				PreprocessorDefinitions="MEMENTO=1;DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -210,11 +210,19 @@
 			Name="pdf"
 			>
 			<File
+				RelativePath="..\pdf\base_object.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\data_encodings.h"
 				>
 			</File>
 			<File
 				RelativePath="..\pdf\data_glyphlist.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\mupdf-internal.h"
 				>
 			</File>
 			<File
@@ -310,6 +318,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_store.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_stream.c"
 				>
 			</File>
@@ -355,10 +367,6 @@
 			</File>
 			<File
 				RelativePath="..\fitz\base_memory.c"
-				>
-			</File>
-			<File
-				RelativePath="..\fitz\base_object.c"
 				>
 			</File>
 			<File
@@ -446,6 +454,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\fitz-internal.h"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\fitz.h"
 				>
 			</File>
@@ -458,7 +470,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\image_md5.c"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\image_png.c"
+				>
+			</File>
+			<File
+				RelativePath="..\fitz\image_save.c"
 				>
 			</File>
 			<File

@@ -1,5 +1,4 @@
-#include "fitz.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 static inline int unhex(int a)
 {

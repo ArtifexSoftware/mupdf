@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 #define MAX_FONT_SIZE 1000
 #define MAX_GLYPH_SIZE 256
@@ -20,6 +20,7 @@ struct fz_glyph_key_s
 	int c, d;
 	unsigned short gid;
 	unsigned char e, f;
+	int aa;
 };
 
 void
@@ -30,7 +31,7 @@ fz_new_glyph_cache_context(fz_context *ctx)
 	cache = fz_malloc_struct(ctx, fz_glyph_cache);
 	fz_try(ctx)
 	{
-		cache->hash = fz_new_hash_table(ctx, 509, sizeof(fz_glyph_key));
+		cache->hash = fz_new_hash_table(ctx, 509, sizeof(fz_glyph_key), FZ_LOCK_GLYPHCACHE);
 	}
 	fz_catch(ctx)
 	{
@@ -128,6 +129,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_color
 	key.d = ctm.d * 65536;
 	key.e = (ctm.e - floorf(ctm.e)) * 256;
 	key.f = (ctm.f - floorf(ctm.f)) * 256;
+	key.aa = fz_aa_level(ctx);
 
 	fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 	val = fz_hash_find(ctx, cache->hash, &key);
@@ -145,7 +147,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_color
 	{
 		if (font->ft_face)
 		{
-			val = fz_render_ft_glyph(ctx, font, gid, ctm);
+			val = fz_render_ft_glyph(ctx, font, gid, ctm, key.aa);
 		}
 		else if (font->t3procs)
 		{

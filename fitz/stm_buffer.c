@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 fz_buffer *
 fz_new_buffer(fz_context *ctx, int size)
@@ -28,7 +28,12 @@ fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	if (buf)
+	{
+		if (buf->refs == 1 && buf->cap > buf->len+1)
+			fz_resize_buffer(ctx, buf, buf->len);
 		buf->refs ++;
+	}
+
 	return buf;
 }
 
@@ -57,4 +62,19 @@ void
 fz_grow_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	fz_resize_buffer(ctx, buf, (buf->cap * 3) / 2);
+}
+
+void
+fz_trim_buffer(fz_context *ctx, fz_buffer *buf)
+{
+	if (buf->cap > buf->len+1)
+		fz_resize_buffer(ctx, buf, buf->len);
+}
+
+int
+fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
+{
+	if (datap)
+		*datap = (buf ? buf->data : NULL);
+	return (buf ? buf->len : 0);
 }

@@ -1,5 +1,4 @@
-#include "fitz.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 static void
 xps_rels_for_part(char *buf, char *name, int buflen)
@@ -21,7 +20,7 @@ xps_rels_for_part(char *buf, char *name, int buflen)
  */
 
 void
-xps_debug_page_list(xps_document *doc)
+xps_print_page_list(xps_document *doc)
 {
 	xps_fixdoc *fixdoc = doc->first_fixdoc;
 	xps_page *page = doc->first_page;
@@ -193,7 +192,7 @@ xps_add_link_target(xps_document *doc, char *name)
 }
 
 int
-xps_find_link_target(xps_document *doc, char *target_uri)
+xps_lookup_link_target(xps_document *doc, char *target_uri)
 {
 	xps_target *target;
 	char *needle = strrchr(target_uri, '#');

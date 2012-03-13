@@ -1,5 +1,4 @@
-#include "fitz.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 #define MAX_STOPS 256
 
@@ -61,7 +60,7 @@ xps_parse_gradient_stops(xps_document *doc, char *base_uri, xml_element *node,
 
 				xps_parse_color(doc, base_uri, color, &colorspace, sample);
 
-				fz_convert_color(doc->ctx, colorspace, sample + 1, fz_device_rgb, rgb);
+				fz_convert_color(doc->ctx, fz_device_rgb, rgb, colorspace, sample + 1);
 
 				stops[count].r = rgb[0];
 				stops[count].g = rgb[1];
@@ -318,9 +317,9 @@ xps_draw_radial_gradient(xps_document *doc, fz_matrix ctm,
 	yrad = 1.0;
 
 	if (origin_att)
-		xps_get_point(origin_att, &x0, &y0);
+		xps_parse_point(origin_att, &x0, &y0);
 	if (center_att)
-		xps_get_point(center_att, &x1, &y1);
+		xps_parse_point(center_att, &x1, &y1);
 	if (radius_x_att)
 		xrad = fz_atof(radius_x_att);
 	if (radius_y_att)
@@ -362,9 +361,9 @@ xps_draw_linear_gradient(xps_document *doc, fz_matrix ctm,
 	x1 = y1 = 1;
 
 	if (start_point_att)
-		xps_get_point(start_point_att, &x0, &y0);
+		xps_parse_point(start_point_att, &x0, &y0);
 	if (end_point_att)
-		xps_get_point(end_point_att, &x1, &y1);
+		xps_parse_point(end_point_att, &x1, &y1);
 
 	xps_draw_one_linear_gradient(doc, ctm, stops, count, 1, x0, y0, x1, y1);
 }

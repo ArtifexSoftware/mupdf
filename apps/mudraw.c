@@ -3,13 +3,14 @@
  */
 
 #include "fitz.h"
-#include "mupdf.h"
 
 #ifdef _MSC_VER
 #include <winsock2.h>
 #else
 #include <sys/time.h>
 #endif
+
+enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
 static char *output = NULL;
 static float resolution = 72;
@@ -25,7 +26,11 @@ static int uselist = 1;
 static int alphabits = 8;
 static float gamma_value = 1;
 static int invert = 0;
+static int width = 0;
+static int height = 0;
+static int fit = 0;
 
+static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
 
@@ -43,6 +48,9 @@ static void usage(void)
 		"\t\tsupported formats: pgm, ppm, pam, png, pbm\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
+		"\t-w -\twidth (in pixels)\n"
+		"\t-h -\theight (in pixels)\n"
+		"\t-f -\tif both -w and -h are used then fit exactly\n"
 		"\t-a\tsave alpha channel (only pam and png)\n"
 		"\t-b -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-g\trender in grayscale\n"
@@ -152,36 +160,43 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (showtext)
 	{
-		fz_text_span *text = NULL;
+		fz_text_page *text = NULL;
 
 		fz_var(text);
 
 		fz_try(ctx)
 		{
-			text = fz_new_text_span(ctx);
-			dev = fz_new_text_device(ctx, text);
+			text = fz_new_text_page(ctx, fz_bound_page(doc, page));
+			dev = fz_new_text_device(ctx, sheet, text);
 			if (list)
 				fz_run_display_list(list, dev, fz_identity, fz_infinite_bbox, NULL);
 			else
 				fz_run_page(doc, page, dev, fz_identity, NULL);
 			fz_free_device(dev);
 			dev = NULL;
-			printf("[Page %d]\n", pagenum);
-			if (showtext > 1)
-				fz_debug_text_span_xml(text);
-			else
-				fz_debug_text_span(text);
-			printf("\n");
+			if (showtext == TEXT_XML)
+			{
+				fz_print_text_page_xml(ctx, stdout, text);
+			}
+			else if (showtext == TEXT_HTML)
+			{
+				fz_print_text_page_html(ctx, stdout, text);
+			}
+			else if (showtext == TEXT_PLAIN)
+			{
+				fz_print_text_page(ctx, stdout, text);
+				printf("\f\n");
+			}
 		}
 		fz_catch(ctx)
 		{
 			fz_free_device(dev);
-			fz_free_text_span(ctx, text);
+			fz_free_text_page(ctx, text);
 			fz_free_display_list(ctx, list);
 			fz_free_page(doc, page);
 			fz_rethrow(ctx);
 		}
-		fz_free_text_span(ctx, text);
+		fz_free_text_page(ctx, text);
 	}
 
 	if (showmd5 || showtime)
@@ -191,7 +206,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		float zoom;
 		fz_matrix ctm;
-		fz_rect bounds;
+		fz_rect bounds, bounds2;
 		fz_bbox bbox;
 		fz_pixmap *pix = NULL;
 
@@ -201,13 +216,33 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
 		ctm = fz_concat(ctm, fz_rotate(rotation));
-		bbox = fz_round_rect(fz_transform_rect(ctm, bounds));
+		bounds2 = fz_transform_rect(ctm, bounds);
+		if (width || height)
+		{
+			float scalex = width/(bounds2.x1-bounds2.x0);
+			float scaley = height/(bounds2.y1-bounds2.y0);
+
+			if (width == 0)
+				scalex = scaley;
+			if (height == 0)
+				scaley = scalex;
+			if (!fit)
+			{
+				if (scalex > scaley)
+					scalex = scaley;
+				else
+					scaley = scalex;
+			}
+			ctm = fz_concat(ctm, fz_scale(scalex, scaley));
+			bounds2 = fz_transform_rect(ctm, bounds);
+		}
+		bbox = fz_round_rect(bounds2);
 
 		/* TODO: banded rendering and multi-page ppm */
 
 		fz_try(ctx)
 		{
-			pix = fz_new_pixmap_with_rect(ctx, colorspace, bbox);
+			pix = fz_new_pixmap_with_bbox(ctx, colorspace, bbox);
 
 			if (savealpha)
 				fz_clear_pixmap(ctx, pix);
@@ -241,24 +276,18 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				else if (strstr(output, ".png"))
 					fz_write_png(ctx, pix, buf, savealpha);
 				else if (strstr(output, ".pbm")) {
-					fz_halftone *ht = fz_get_default_halftone(ctx, 1);
-					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, ht);
+					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 					fz_write_pbm(ctx, bit, buf);
 					fz_drop_bitmap(ctx, bit);
-					fz_drop_halftone(ctx, ht);
 				}
 			}
 
 			if (showmd5)
 			{
-				fz_md5 md5;
 				unsigned char digest[16];
 				int i;
 
-				fz_md5_init(&md5);
-				fz_md5_update(&md5, pix->samples, pix->w * pix->h * pix->n);
-				fz_md5_final(&md5, digest);
-
+				fz_md5_pixmap(pix, digest);
 				printf(" ");
 				for (i = 0; i < 16; i++)
 					printf("%02x", digest[i]);
@@ -350,9 +379,9 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 {
 	fz_outline *outline = fz_load_outline(doc);
 	if (showoutline > 1)
-		fz_debug_outline_xml(ctx, outline, 0);
+		fz_print_outline_xml(ctx, stdout, outline);
 	else
-		fz_debug_outline(ctx, outline, 0);
+		fz_print_outline(ctx, stdout, outline);
 	fz_free_outline(ctx, outline);
 }
 
@@ -370,7 +399,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:I")) != -1)
+	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:f")) != -1)
 	{
 		switch (c)
 		{
@@ -388,6 +417,9 @@ int main(int argc, char **argv)
 		case 'g': grayscale++; break;
 		case 'd': uselist = 0; break;
 		case 'G': gamma_value = atof(fz_optarg); break;
+		case 'w': width = atof(fz_optarg); break;
+		case 'h': height = atof(fz_optarg); break;
+		case 'f': fit = 1; break;
 		case 'I': invert++; break;
 		default: usage(); break;
 		}
@@ -428,8 +460,22 @@ int main(int argc, char **argv)
 	timing.minpage = 0;
 	timing.maxpage = 0;
 
-	if (showxml)
+	if (showxml || showtext == TEXT_XML)
 		printf("<?xml version=\"1.0\"?>\n");
+
+	if (showtext)
+		sheet = fz_new_text_sheet(ctx);
+
+	if (showtext == TEXT_HTML)
+	{
+		printf("<style>\n");
+		printf("body{background-color:gray;margin:12tp;}\n");
+		printf("div.page{background-color:white;margin:6pt;padding:6pt;}\n");
+		printf("div.block{border:1px solid gray;margin:6pt;padding:6pt;}\n");
+		printf("p{margin:0;padding:0;}\n");
+		printf("</style>\n");
+		printf("<body>\n");
+	}
 
 	fz_try(ctx)
 	{
@@ -450,7 +496,7 @@ int main(int argc, char **argv)
 				if (!fz_authenticate_password(doc, password))
 					fz_throw(ctx, "cannot authenticate password: %s", filename);
 
-			if (showxml)
+			if (showxml || showtext == TEXT_XML)
 				printf("<document name=\"%s\">\n", filename);
 
 			if (showoutline)
@@ -464,7 +510,7 @@ int main(int argc, char **argv)
 					drawrange(ctx, doc, argv[fz_optind++]);
 			}
 
-			if (showxml)
+			if (showxml || showtext == TEXT_XML)
 				printf("</document>\n");
 
 			fz_close_document(doc);
@@ -474,6 +520,14 @@ int main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_close_document(doc);
+	}
+
+	if (showtext == TEXT_HTML)
+	{
+		printf("</body>\n");
+		printf("<style>\n");
+		fz_print_text_sheet(ctx, stdout, sheet);
+		printf("</style>\n");
 	}
 
 	if (showtime)

@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 fz_pixmap *
 fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix)
@@ -17,8 +17,6 @@ fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix_)
 {
 	fz_pixmap *pix = (fz_pixmap *)pix_;
 
-	if (pix->mask)
-		fz_drop_pixmap(ctx, pix->mask);
 	if (pix->colorspace)
 		fz_drop_colorspace(ctx, pix->colorspace);
 	if (pix->free_samples)
@@ -37,7 +35,6 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	pix->y = 0;
 	pix->w = w;
 	pix->h = h;
-	pix->mask = NULL;
 	pix->interpolate = 1;
 	pix->xres = 96;
 	pix->yres = 96;
@@ -65,6 +62,8 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		}
 		fz_catch(ctx)
 		{
+			if (colorspace)
+				fz_drop_colorspace(ctx, colorspace);
 			fz_free(ctx, pix);
 			fz_rethrow(ctx);
 		}
@@ -81,7 +80,7 @@ fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
+fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
 {
 	fz_pixmap *pixmap;
 	pixmap = fz_new_pixmap(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0);
@@ -91,7 +90,7 @@ fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
+fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
 {
 	fz_pixmap *pixmap;
 	pixmap = fz_new_pixmap_with_data(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0, samples);
@@ -101,7 +100,7 @@ fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_
 }
 
 fz_bbox
-fz_bound_pixmap(fz_pixmap *pix)
+fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix)
 {
 	fz_bbox bbox;
 	bbox.x0 = pix->x;
@@ -109,6 +108,29 @@ fz_bound_pixmap(fz_pixmap *pix)
 	bbox.x1 = pix->x + pix->w;
 	bbox.y1 = pix->y + pix->h;
 	return bbox;
+}
+
+fz_bbox
+fz_pixmap_bbox_no_ctx(fz_pixmap *pix)
+{
+	fz_bbox bbox;
+	bbox.x0 = pix->x;
+	bbox.y0 = pix->y;
+	bbox.x1 = pix->x + pix->w;
+	bbox.y1 = pix->y + pix->h;
+	return bbox;
+}
+
+int
+fz_pixmap_width(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->w;
+}
+
+int
+fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->h;
 }
 
 void
@@ -145,8 +167,8 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_bbox r)
 	unsigned char *destp;
 	int y, w, destspan, srcspan;
 
-	r = fz_intersect_bbox(r, fz_bound_pixmap(dest));
-	r = fz_intersect_bbox(r, fz_bound_pixmap(src));
+	r = fz_intersect_bbox(r, fz_pixmap_bbox(ctx, dest));
+	r = fz_intersect_bbox(r, fz_pixmap_bbox(ctx, src));
 	w = r.x1 - r.x0;
 	y = r.y1 - r.y0;
 	if (w <= 0 || y <= 0)
@@ -172,7 +194,7 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, fz_
 	unsigned char *destp;
 	int x, y, w, k, destspan;
 
-	r = fz_intersect_bbox(r, fz_bound_pixmap(dest));
+	r = fz_intersect_bbox(r, fz_pixmap_bbox(ctx, dest));
 	w = r.x1 - r.x0;
 	y = r.y1 - r.y0;
 	if (w <= 0 || y <= 0)
@@ -250,7 +272,7 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
 
 	assert(gray->n == 2);
 
-	alpha = fz_new_pixmap_with_rect(ctx, NULL, fz_bound_pixmap(gray));
+	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, gray));
 	dp = alpha->samples;
 	sp = gray->samples;
 	if (!luminosity)
@@ -279,6 +301,27 @@ fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 			for (k = 0; k < pix->n - 1; k++)
 				s[k] = 255 - s[k];
 			s += pix->n;
+		}
+	}
+}
+
+void fz_invert_pixmap_rect(fz_pixmap *image, fz_bbox rect)
+{
+	unsigned char *p;
+	int x, y, n;
+
+	int x0 = CLAMP(rect.x0 - image->x, 0, image->w - 1);
+	int x1 = CLAMP(rect.x1 - image->x, 0, image->w - 1);
+	int y0 = CLAMP(rect.y0 - image->y, 0, image->h - 1);
+	int y1 = CLAMP(rect.y1 - image->y, 0, image->h - 1);
+
+	for (y = y0; y < y1; y++)
+	{
+		p = image->samples + (y * image->w + x0) * image->n;
+		for (x = x0; x < x1; x++)
+		{
+			for (n = image->n; n > 0; n--, p++)
+				*p = 255 - *p;
 		}
 	}
 }
@@ -548,4 +591,24 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 	if (pix == NULL)
 		return 0;
 	return sizeof(*pix) + pix->n * pix->w * pix->h;
+}
+
+fz_pixmap *
+fz_image_to_pixmap(fz_context *ctx, fz_image *image, int w, int h)
+{
+	if (image == NULL)
+		return NULL;
+	return image->get_pixmap(ctx, image, w, h);
+}
+
+fz_image *
+fz_keep_image(fz_context *ctx, fz_image *image)
+{
+	return (fz_image *)fz_keep_storable(ctx, &image->storable);
+}
+
+void
+fz_drop_image(fz_context *ctx, fz_image *image)
+{
+	fz_drop_storable(ctx, &image->storable);
 }

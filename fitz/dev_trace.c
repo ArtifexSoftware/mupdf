@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 static void
 fz_trace_matrix(fz_matrix ctm)
@@ -145,7 +145,7 @@ fz_trace_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 	fz_trace_matrix(ctm);
 	fz_trace_trm(text->trm);
 	printf(">\n");
-	fz_debug_text(dev->ctx, text, 0);
+	fz_print_text(dev->ctx, stdout, text);
 	printf("</fill_text>\n");
 }
 
@@ -158,7 +158,7 @@ fz_trace_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_
 	fz_trace_matrix(ctm);
 	fz_trace_trm(text->trm);
 	printf(">\n");
-	fz_debug_text(dev->ctx, text, 0);
+	fz_print_text(dev->ctx, stdout, text);
 	printf("</stroke_text>\n");
 }
 
@@ -170,7 +170,7 @@ fz_trace_clip_text(fz_device *dev, fz_text *text, fz_matrix ctm, int accumulate)
 	fz_trace_matrix(ctm);
 	fz_trace_trm(text->trm);
 	printf(">\n");
-	fz_debug_text(dev->ctx, text, 0);
+	fz_print_text(dev->ctx, stdout, text);
 	printf("</clip_text>\n");
 }
 
@@ -181,7 +181,7 @@ fz_trace_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke
 	fz_trace_matrix(ctm);
 	fz_trace_trm(text->trm);
 	printf(">\n");
-	fz_debug_text(dev->ctx, text, 0);
+	fz_print_text(dev->ctx, stdout, text);
 	printf("</clip_stroke_text>\n");
 }
 
@@ -192,12 +192,12 @@ fz_trace_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm)
 	fz_trace_matrix(ctm);
 	fz_trace_trm(text->trm);
 	printf(">\n");
-	fz_debug_text(dev->ctx, text, 0);
+	fz_print_text(dev->ctx, stdout, text);
 	printf("</ignore_text>\n");
 }
 
 static void
-fz_trace_fill_image(fz_device *dev, fz_pixmap *image, fz_matrix ctm, float alpha)
+fz_trace_fill_image(fz_device *dev, fz_image *image, fz_matrix ctm, float alpha)
 {
 	printf("<fill_image alpha=\"%g\" ", alpha);
 	fz_trace_matrix(ctm);
@@ -213,7 +213,7 @@ fz_trace_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
 }
 
 static void
-fz_trace_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm,
+fz_trace_fill_image_mask(fz_device *dev, fz_image *image, fz_matrix ctm,
 fz_colorspace *colorspace, float *color, float alpha)
 {
 	printf("<fill_image_mask ");
@@ -223,7 +223,7 @@ fz_colorspace *colorspace, float *color, float alpha)
 }
 
 static void
-fz_trace_clip_image_mask(fz_device *dev, fz_pixmap *image, fz_rect *rect, fz_matrix ctm)
+fz_trace_clip_image_mask(fz_device *dev, fz_image *image, fz_rect *rect, fz_matrix ctm)
 {
 	printf("<clip_image_mask ");
 	fz_trace_matrix(ctm);

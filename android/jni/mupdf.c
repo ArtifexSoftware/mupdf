@@ -209,7 +209,7 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 		rect.y0 = patchY;
 		rect.x1 = patchX + patchW;
 		rect.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_rect_and_data(ctx, colorspace, rect, pixels);
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, colorspace, rect, pixels);
 		if (currentPageList == NULL)
 		{
 			fz_clear_pixmap_with_value(ctx, pix, 0xd0);
@@ -259,71 +259,83 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 	return 1;
 }
 
-static int
-charat(fz_text_span *span, int idx)
+static fz_text_char textcharat(fz_text_page *page, int idx)
 {
+	static fz_text_char emptychar = { {0,0,0,0}, ' ' };
+	fz_text_block *block;
+	fz_text_line *line;
+	fz_text_span *span;
 	int ofs = 0;
-	while (span) {
-		if (idx < ofs + span->len)
-			return span->text[idx - ofs].c;
-		if (span->eol) {
-			if (idx == ofs + span->len)
-				return ' ';
-			ofs ++;
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		for (line = block->lines; line < block->lines + block->len; line++)
+		{
+			for (span = line->spans; span < line->spans + line->len; span++)
+			{
+				if (idx < ofs + span->len)
+					return span->text[idx - ofs];
+				/* pseudo-newline */
+				if (span + 1 == line->spans + line->len)
+				{
+					if (idx == ofs + span->len)
+						return emptychar;
+					ofs++;
+				}
+				ofs += span->len;
+			}
 		}
-		ofs += span->len;
-		span = span->next;
 	}
-	return 0;
+	return emptychar;
+}
+
+static int
+charat(fz_text_page *page, int idx)
+{
+	return textcharat(page, idx).c;
 }
 
 static fz_bbox
-bboxat(fz_text_span *span, int idx)
+bboxcharat(fz_text_page *page, int idx)
 {
-	int ofs = 0;
-	while (span) {
-		if (idx < ofs + span->len)
-			return span->text[idx - ofs].bbox;
-		if (span->eol) {
-			if (idx == ofs + span->len)
-				return fz_empty_bbox;
-			ofs ++;
-		}
-		ofs += span->len;
-		span = span->next;
-	}
-	return fz_empty_bbox;
+	return fz_round_rect(textcharat(page, idx).bbox);
 }
 
 static int
-textlen(fz_text_span *span)
+textlen(fz_text_page *page)
 {
+	fz_text_block *block;
+	fz_text_line *line;
+	fz_text_span *span;
 	int len = 0;
-	while (span) {
-		len += span->len;
-		if (span->eol)
-			len ++;
-		span = span->next;
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		for (line = block->lines; line < block->lines + block->len; line++)
+		{
+			for (span = line->spans; span < line->spans + line->len; span++)
+				len += span->len;
+			len++; /* pseudo-newline */
+		}
 	}
 	return len;
 }
 
 static int
-match(fz_text_span *span, const char *s, int n)
+match(fz_text_page *page, const char *s, int n)
 {
-	int start = n, c;
+	int orig = n;
+	int c;
 	while (*s) {
-		s += chartorune(&c, (char *)s);
-		if (c == ' ' && charat(span, n) == ' ') {
-			while (charat(span, n) == ' ')
+		s += fz_chartorune(&c, (char *)s);
+		if (c == ' ' && charat(page, n) == ' ') {
+			while (charat(page, n) == ' ')
 				n++;
 		} else {
-			if (tolower(c) != tolower(charat(span, n)))
+			if (tolower(c) != tolower(charat(page, n)))
 				return 0;
 			n++;
 		}
 	}
-	return n - start;
+	return n - orig;
 }
 
 static int
@@ -433,19 +445,20 @@ Java_com_artifex_mupdf_MuPDFCore_getOutlineInternal(JNIEnv * env, jobject thiz)
 JNIEXPORT jobjectArray JNICALL
 Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring jtext)
 {
-	jclass        rectClass;
-	jmethodID     ctor;
-	jobjectArray  arr;
-	jobject       rect;
-	fz_text_span *text = NULL;
-	fz_device    *dev  = NULL;
-	float         zoom;
-	fz_matrix     ctm;
-	int           pos;
-	int           len;
-	int           i, n;
-	int           hit_count = 0;
-	const char   *str;
+	jclass         rectClass;
+	jmethodID      ctor;
+	jobjectArray   arr;
+	jobject        rect;
+	fz_text_sheet *sheet = NULL;
+	fz_text_page  *text = NULL;
+	fz_device     *dev  = NULL;
+	float          zoom;
+	fz_matrix      ctm;
+	int            pos;
+	int            len;
+	int            i, n;
+	int            hit_count = 0;
+	const char    *str;
 
 	rectClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectClass == NULL) return NULL;
@@ -454,18 +467,23 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 	str = (*env)->GetStringUTFChars(env, jtext, NULL);
 	if (str == NULL) return NULL;
 
+	fz_var(sheet);
 	fz_var(text);
 	fz_var(dev);
 
 	fz_try(ctx)
 	{
+		fz_rect rect;
+
 		if (hit_bbox == NULL)
 			hit_bbox = fz_malloc_array(ctx, MAX_SEARCH_HITS, sizeof(*hit_bbox));
 
-		text = fz_new_text_span(ctx);
-		dev  = fz_new_text_device(ctx, text);
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
+		rect = fz_transform_rect(ctm, currentMediabox);
+		sheet = fz_new_text_sheet(ctx);
+		text = fz_new_text_page(ctx, rect);
+		dev  = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, currentPage, dev, ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
@@ -476,19 +494,21 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 			fz_bbox rr = fz_empty_bbox;
 			n = match(text, str, pos);
 			for (i = 0; i < n; i++)
-				rr = fz_union_bbox(rr, bboxat(text, pos + i));
+				rr = fz_union_bbox(rr, bboxcharat(text, pos + i));
 
 			if (!fz_is_empty_bbox(rr) && hit_count < MAX_SEARCH_HITS)
 				hit_bbox[hit_count++] = rr;
 		}
-		fz_free_text_span(ctx, text);
-		text = NULL;
+	}
+	fz_always(ctx)
+	{
+		fz_free_text_page(ctx, text);
+		fz_free_text_sheet(ctx, sheet);
+		fz_free_device(dev);
 	}
 	fz_catch(ctx)
 	{
 		jclass cls;
-		fz_free_device(dev);
-		fz_free_text_span(ctx, text);
 		(*env)->ReleaseStringUTFChars(env, jtext, str);
 		cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 		if (cls != NULL)

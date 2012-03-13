@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "fitz-internal.h"
 
 /* TODO: add clip stack and use to intersect bboxes */
 
@@ -47,7 +47,7 @@ fz_bbox_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
 }
 
 static void
-fz_bbox_fill_image(fz_device *dev, fz_pixmap *image, fz_matrix ctm, float alpha)
+fz_bbox_fill_image(fz_device *dev, fz_image *image, fz_matrix ctm, float alpha)
 {
 	fz_bbox *result = dev->user;
 	fz_bbox bbox = fz_round_rect(fz_transform_rect(ctm, fz_unit_rect));
@@ -55,7 +55,7 @@ fz_bbox_fill_image(fz_device *dev, fz_pixmap *image, fz_matrix ctm, float alpha)
 }
 
 static void
-fz_bbox_fill_image_mask(fz_device *dev, fz_pixmap *image, fz_matrix ctm,
+fz_bbox_fill_image_mask(fz_device *dev, fz_image *image, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_bbox_fill_image(dev, image, ctm, alpha);

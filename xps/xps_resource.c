@@ -1,5 +1,4 @@
-#include "fitz.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 static xml_element *
 xps_find_resource(xps_document *doc, xps_resource *dict, char *name, char **urip)
@@ -142,7 +141,7 @@ xps_free_resource_dictionary(xps_document *doc, xps_resource *dict)
 }
 
 void
-xps_debug_resource_dictionary(xps_resource *dict)
+xps_print_resource_dictionary(xps_resource *dict)
 {
 	while (dict)
 	{
@@ -152,7 +151,7 @@ xps_debug_resource_dictionary(xps_resource *dict)
 		if (dict->parent)
 		{
 			printf("PARENT = {\n");
-			xps_debug_resource_dictionary(dict->parent);
+			xps_print_resource_dictionary(dict->parent);
 			printf("}\n");
 		}
 		dict = dict->next;
