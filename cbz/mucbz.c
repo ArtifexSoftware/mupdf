@@ -203,8 +203,8 @@ cbz_read_zip_dir_imp(cbz_document *doc, int startoffset)
 	(void) getlong(file); /* size of central directory */
 	offset = getlong(file); /* offset to central directory */
 
+	doc->entry = fz_calloc(ctx, count, sizeof(cbz_entry));
 	doc->entry_count = count;
-	doc->entry = fz_malloc_array(ctx, count, sizeof(cbz_entry));
 
 	fz_seek(file, offset, 0);
 
