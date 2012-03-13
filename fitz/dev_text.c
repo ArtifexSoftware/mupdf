@@ -597,7 +597,7 @@ fz_print_style(FILE *out, fz_text_style *style)
 }
 
 void
-fz_print_text_sheet(FILE *out, fz_text_sheet *sheet)
+fz_print_text_sheet(fz_context *ctx, FILE *out, fz_text_sheet *sheet)
 {
 	fz_text_style *style;
 	for (style = sheet->style; style; style = style->next)
@@ -605,7 +605,7 @@ fz_print_text_sheet(FILE *out, fz_text_sheet *sheet)
 }
 
 void
-fz_print_text_page_html(FILE *out, fz_text_page *page)
+fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 {
 	int block_n, line_n, span_n, ch_n;
 	fz_text_style *style = NULL;
@@ -661,7 +661,7 @@ fz_print_text_page_html(FILE *out, fz_text_page *page)
 }
 
 void
-fz_print_text_page_xml(FILE *out, fz_text_page *page)
+fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
@@ -716,7 +716,7 @@ fz_print_text_page_xml(FILE *out, fz_text_page *page)
 }
 
 void
-fz_print_text_page(FILE *out, fz_text_page *page)
+fz_print_text_page(fz_context *ctx, FILE *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;

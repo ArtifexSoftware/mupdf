@@ -379,7 +379,7 @@ void winblit()
 		dibinf->bmiHeader.biHeight = -image_h;
 		dibinf->bmiHeader.biSizeImage = image_h * 4;
 
-		if (gapp.image->n == 2)
+		if (image_n == 2)
 		{
 			int i = image_w * image_h;
 			unsigned char *color = malloc(i*4);
@@ -397,7 +397,7 @@ void winblit()
 				dibinf, DIB_RGB_COLORS);
 			free(color);
 		}
-		if (gapp.image->n == 4)
+		if (image_n == 4)
 		{
 			SetDIBitsToDevice(hdc,
 				gapp.panx, gapp.pany, image_w, image_h,

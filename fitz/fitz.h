@@ -118,7 +118,9 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 #endif
 
-/* Contexts */
+/*
+	Contexts
+*/
 
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
@@ -467,7 +469,9 @@ void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, uns
 */
 char *fz_strdup_no_throw(fz_context *ctx, char *s);
 
-/* safe string functions */
+/*
+	Safe string functions
+*/
 /*
 	fz_strsep: Given a pointer to a C string (or a pointer to NULL) break
 	it at the first occurence of a delimiter char (from a given set).
@@ -1434,7 +1438,7 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 
 /*
- * Text extraction device
+	Text extraction device: Used for searching, format conversion etc.
  */
 
 typedef struct fz_text_style_s fz_text_style;
@@ -1526,10 +1530,10 @@ void fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet);
 fz_text_page *fz_new_text_page(fz_context *ctx, fz_rect mediabox);
 void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
-void fz_print_text_sheet(FILE *out, fz_text_sheet *sheet);
-void fz_print_text_page_html(FILE *out, fz_text_page *page);
-void fz_print_text_page_xml(FILE *out, fz_text_page *page);
-void fz_print_text_page(FILE *out, fz_text_page *page);
+void fz_print_text_sheet(fz_context *ctx, FILE *out, fz_text_sheet *sheet);
+void fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page);
+void fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page);
+void fz_print_text_page(fz_context *ctx, FILE *out, fz_text_page *page);
 
 /*
  * Cookie support - simple communication channel between app/library.
@@ -1815,15 +1819,22 @@ struct fz_outline_s
 };
 
 /*
-	fz_print_outline_xml: Dump the given outlines to stdout as (pseudo)
-	XML.
+	fz_print_outline_xml: Dump the given outlines as (pseudo) XML.
+
+	out: The file handle to output to.
+
+	outline: The outlines to output.
 */
-void fz_print_outline_xml(fz_context *ctx, fz_outline *outline);
+void fz_print_outline_xml(fz_context *ctx, FILE *out, fz_outline *outline);
 
 /*
-	fz_print_outline: Dump the given outlines to stdout as text.
+	fz_print_outline: Dump the given outlines to as text.
+
+	out: The file handle to output to.
+
+	outline: The outlines to output.
 */
-void fz_print_outline(fz_context *ctx, fz_outline *outline);
+void fz_print_outline(fz_context *ctx, FILE *out, fz_outline *outline);
 
 /*
 	fz_free_outline: Free hierarchical outline.

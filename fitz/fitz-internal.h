@@ -87,7 +87,7 @@ float fz_atof(const char *s);
 typedef struct fz_hash_table_s fz_hash_table;
 
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock);
-void fz_print_hash(fz_context *ctx, fz_hash_table *table);
+void fz_print_hash(fz_context *ctx, FILE *out, fz_hash_table *table);
 void fz_empty_hash(fz_context *ctx, fz_hash_table *table);
 void fz_free_hash(fz_context *ctx, fz_hash_table *table);
 
@@ -310,7 +310,7 @@ fz_store *fz_keep_store_context(fz_context *ctx);
 /*
 	fz_print_store: Dump the contents of the store for debugging.
 */
-void fz_print_store(fz_context *ctx);
+void fz_print_store(fz_context *ctx, FILE *out);
 
 /*
 	fz_store_item: Add an item to the store.
@@ -736,7 +736,7 @@ fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_g
 fz_font *fz_keep_font(fz_context *ctx, fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);
 
-void fz_print_font(fz_context *ctx, fz_font *font);
+void fz_print_font(fz_context *ctx, FILE *out, fz_font *font);
 
 void fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float xmax, float ymax);
 fz_rect fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm);
@@ -818,7 +818,7 @@ void fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix transform);
 fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
 fz_rect fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
-void fz_print_path(fz_context *ctx, fz_path *, int indent);
+void fz_print_path(fz_context *ctx, FILE *out, fz_path *, int indent);
 
 /*
  * Glyph cache
@@ -872,7 +872,7 @@ void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, floa
 void fz_free_text(fz_context *ctx, fz_text *text);
 fz_rect fz_bound_text(fz_context *ctx, fz_text *text, fz_matrix ctm);
 fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
-void fz_print_text(fz_context *ctx, fz_text*, int indent);
+void fz_print_text(fz_context *ctx, FILE *out, fz_text*);
 
 /*
  * The shading code uses gouraud shaded triangle meshes.
@@ -912,7 +912,7 @@ struct fz_shade_s
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 void fz_free_shade_imp(fz_context *ctx, fz_storable *shade);
-void fz_print_shade(fz_context *ctx, fz_shade *shade);
+void fz_print_shade(fz_context *ctx, FILE *out, fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);

@@ -808,29 +808,29 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 }
 
 void
-fz_print_font(fz_context *ctx, fz_font *font)
+fz_print_font(fz_context *ctx, FILE *out, fz_font *font)
 {
-	printf("font '%s' {\n", font->name);
+	fprintf(out, "font '%s' {\n", font->name);
 
 	if (font->ft_face)
 	{
-		printf("\tfreetype face %p\n", font->ft_face);
+		fprintf(out, "\tfreetype face %p\n", font->ft_face);
 		if (font->ft_substitute)
-			printf("\tsubstitute font\n");
+			fprintf(out, "\tsubstitute font\n");
 	}
 
 	if (font->t3procs)
 	{
-		printf("\ttype3 matrix [%g %g %g %g]\n",
+		fprintf(out, "\ttype3 matrix [%g %g %g %g]\n",
 			font->t3matrix.a, font->t3matrix.b,
 			font->t3matrix.c, font->t3matrix.d);
 
-		printf("\ttype3 bbox [%g %g %g %g]\n",
+		fprintf(out, "\ttype3 bbox [%g %g %g %g]\n",
 			font->bbox.x0, font->bbox.y0,
 			font->bbox.x1, font->bbox.y1);
 	}
 
-	printf("}\n");
+	fprintf(out, "}\n");
 }
 
 fz_rect
