@@ -274,10 +274,10 @@ fz_context *fz_clone_context(fz_context *ctx);
 void fz_free_context(fz_context *ctx);
 
 /*
-	fz_get_aa_level: Get the number of bits of antialiasing we are
+	fz_aa_level: Get the number of bits of antialiasing we are
 	using. Between 0 and 8.
 */
-int fz_get_aa_level(fz_context *ctx);
+int fz_aa_level(fz_context *ctx);
 
 /*
 	fz_set_aa_level: Set the number of bits of antialiasing we should use.
@@ -1151,7 +1151,7 @@ int fz_pixmap_height(fz_context *ctx, fz_pixmap *pix);
 fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h);
 
 /*
-	fz_new_pixmap_with_rect: Create a pixmap of a given size,
+	fz_new_pixmap_with_bbox: Create a pixmap of a given size,
 	location and pixel format.
 
 	The bounding box specifies the size of the created pixmap and
@@ -1164,7 +1164,7 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h);
 
 	bbox: Bounding box specifying location/size of created pixmap.
 */
-fz_pixmap *fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox);
+fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox);
 
 /*
 	fz_keep_pixmap: Take a reference to a pixmap.
@@ -1200,11 +1200,11 @@ fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix);
 int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_pixmap_pixels: Returns a pointer to the pixel data of a pixmap.
+	fz_pixmap_samples: Returns a pointer to the pixel data of a pixmap.
 
 	Returns the pointer. Does not throw exceptions.
 */
-unsigned char *fz_pixmap_pixels(fz_context *ctx, fz_pixmap *pix);
+unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_clear_pixmap_with_value: Clears a pixmap with the given value.
@@ -1275,7 +1275,7 @@ void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 
 /*
-	fz_save_pixmap: Save a pixmap out.
+	fz_write_pixmap: Save a pixmap out.
 
 	name: The prefix for the name of the pixmap. The pixmap will be saved
 	as "name.png" if the pixmap is RGB or Greyscale, "name.pam" otherwise.
@@ -1283,7 +1283,7 @@ void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 	rgb: If non zero, the pixmap is converted to rgb (if possible) before
 	saving.
 */
-void fz_save_pixmap(fz_context *ctx, fz_pixmap *img, char *name, int rgb);
+void fz_write_pixmap(fz_context *ctx, fz_pixmap *img, char *name, int rgb);
 
 /*
 	fz_write_pnm: Save a pixmap as a pnm
@@ -1815,15 +1815,15 @@ struct fz_outline_s
 };
 
 /*
-	fz_debug_outline_xml: Dump the given outlines to stdout as (pseudo)
+	fz_print_outline_xml: Dump the given outlines to stdout as (pseudo)
 	XML.
 */
-void fz_debug_outline_xml(fz_context *ctx, fz_outline *outline);
+void fz_print_outline_xml(fz_context *ctx, fz_outline *outline);
 
 /*
-	fz_debug_outline: Dump the given outlines to stdout as text.
+	fz_print_outline: Dump the given outlines to stdout as text.
 */
-void fz_debug_outline(fz_context *ctx, fz_outline *outline);
+void fz_print_outline(fz_context *ctx, fz_outline *outline);
 
 /*
 	fz_free_outline: Free hierarchical outline.

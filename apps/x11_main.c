@@ -340,7 +340,7 @@ static void winblit(pdfapp_t *app)
 	int image_w = bb.x1 - bb.x0;
 	int image_h = bb.y1 - bb.y0;
 	int image_n = fz_pixmap_components(gapp.ctx, gapp.image);
-	unsigned char *image_samples = fz_pixmap_pixels(gapp.ctx, gapp.image);
+	unsigned char *image_samples = fz_pixmap_samples(gapp.ctx, gapp.image);
 	int x0 = gapp.panx;
 	int y0 = gapp.pany;
 	int x1 = gapp.panx + image_w;

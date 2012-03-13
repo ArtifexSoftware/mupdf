@@ -86,7 +86,7 @@ struct xps_target_s
 };
 
 void xps_read_page_list(xps_document *doc);
-void xps_debug_page_list(xps_document *doc);
+void xps_print_page_list(xps_document *doc);
 void xps_free_page_list(xps_document *doc);
 
 int xps_count_pages(xps_document *doc);
@@ -97,7 +97,7 @@ void xps_free_page(xps_document *doc, xps_page *page);
 
 fz_outline *xps_load_outline(xps_document *doc);
 
-int xps_find_link_target(xps_document *doc, char *target_uri);
+int xps_lookup_link_target(xps_document *doc, char *target_uri);
 void xps_add_link(xps_document *doc, fz_rect area, char *base_uri, char *target_uri);
 /*
  * Images, fonts, and colorspaces.
@@ -126,7 +126,7 @@ int xps_encode_font_char(fz_font *font, int key);
 
 void xps_measure_font_glyph(xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx);
 
-void xps_debug_path(xps_document *doc);
+void xps_print_path(xps_document *doc);
 
 void xps_parse_color(xps_document *doc, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
 void xps_set_color(xps_document *doc, fz_colorspace *colorspace, float *samples);
@@ -151,7 +151,7 @@ xps_resource * xps_parse_resource_dictionary(xps_document *doc, char *base_uri, 
 void xps_free_resource_dictionary(xps_document *doc, xps_resource *dict);
 void xps_resolve_resource_reference(xps_document *doc, xps_resource *dict, char **attp, xml_element **tagp, char **urip);
 
-void xps_debug_resource_dictionary(xps_resource *dict);
+void xps_print_resource_dictionary(xps_resource *dict);
 
 /*
  * Fixed page/graphics parsing.

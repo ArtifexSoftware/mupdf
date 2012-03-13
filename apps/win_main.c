@@ -358,7 +358,7 @@ void winblit()
 	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
 	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
 	int image_n = fz_pixmap_components(context, gapp.image);
-	unsigned char *samples = fz_pixmap_pixels(context, gapp.image);
+	unsigned char *samples = fz_pixmap_samples(context, gapp.image);
 	int x0 = gapp.panx;
 	int y0 = gapp.pany;
 	int x1 = gapp.panx + image_w;

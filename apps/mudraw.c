@@ -242,7 +242,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 		fz_try(ctx)
 		{
-			pix = fz_new_pixmap_with_rect(ctx, colorspace, bbox);
+			pix = fz_new_pixmap_with_bbox(ctx, colorspace, bbox);
 
 			if (savealpha)
 				fz_clear_pixmap(ctx, pix);
@@ -379,9 +379,9 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 {
 	fz_outline *outline = fz_load_outline(doc);
 	if (showoutline > 1)
-		fz_debug_outline_xml(ctx, outline);
+		fz_print_outline_xml(ctx, outline);
 	else
-		fz_debug_outline(ctx, outline);
+		fz_print_outline(ctx, outline);
 	fz_free_outline(ctx, outline);
 }
 

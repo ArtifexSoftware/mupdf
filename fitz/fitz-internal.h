@@ -87,7 +87,7 @@ float fz_atof(const char *s);
 typedef struct fz_hash_table_s fz_hash_table;
 
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock);
-void fz_debug_hash(fz_context *ctx, fz_hash_table *table);
+void fz_print_hash(fz_context *ctx, fz_hash_table *table);
 void fz_empty_hash(fz_context *ctx, fz_hash_table *table);
 void fz_free_hash(fz_context *ctx, fz_hash_table *table);
 
@@ -308,9 +308,9 @@ void fz_drop_store_context(fz_context *ctx);
 fz_store *fz_keep_store_context(fz_context *ctx);
 
 /*
-	fz_debug_store: Dump the contents of the store for debugging.
+	fz_print_store: Dump the contents of the store for debugging.
 */
-void fz_debug_store(fz_context *ctx);
+void fz_print_store(fz_context *ctx);
 
 /*
 	fz_store_item: Add an item to the store.
@@ -558,7 +558,7 @@ fz_stream *fz_open_jbig2d(fz_stream *chain, fz_buffer *global);
 
 enum { FZ_MAX_COLORS = 32 };
 
-int fz_find_blendmode(char *name);
+int fz_lookup_blendmode(char *name);
 char *fz_blendmode_name(int blendmode);
 
 struct fz_bitmap_s
@@ -603,7 +603,7 @@ void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
 	in scanline order. Subsequent scanlines follow on with no padding.
 
 	free_samples: Is zero when an application has provided its own
-	buffer for pixel data through fz_new_pixmap_with_rect_and_data.
+	buffer for pixel data through fz_new_pixmap_with_bbox_and_data.
 	If not zero the buffer will be freed when fz_drop_pixmap is
 	called for the pixmap.
 */
@@ -620,7 +620,7 @@ struct fz_pixmap_s
 
 fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, unsigned char *samples);
 
-fz_pixmap *fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox bbox, unsigned char *samples);
 
 void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
@@ -654,7 +654,7 @@ struct fz_halftone_s
 };
 
 fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
-fz_halftone *fz_get_default_halftone(fz_context *ctx, int num_comps);
+fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 
@@ -734,7 +734,7 @@ fz_font *fz_new_font_from_file(fz_context *ctx, char *path, int index, int use_g
 fz_font *fz_keep_font(fz_context *ctx, fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);
 
-void fz_debug_font(fz_context *ctx, fz_font *font);
+void fz_print_font(fz_context *ctx, fz_font *font);
 
 void fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float xmax, float ymax);
 fz_rect fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm);
@@ -816,7 +816,7 @@ void fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix transform);
 fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
 fz_rect fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
-void fz_debug_path(fz_context *ctx, fz_path *, int indent);
+void fz_print_path(fz_context *ctx, fz_path *, int indent);
 
 /*
  * Glyph cache
@@ -870,7 +870,7 @@ void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, floa
 void fz_free_text(fz_context *ctx, fz_text *text);
 fz_rect fz_bound_text(fz_context *ctx, fz_text *text, fz_matrix ctm);
 fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
-void fz_debug_text(fz_context *ctx, fz_text*, int indent);
+void fz_print_text(fz_context *ctx, fz_text*, int indent);
 
 /*
  * The shading code uses gouraud shaded triangle meshes.
@@ -910,7 +910,7 @@ struct fz_shade_s
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 void fz_drop_shade(fz_context *ctx, fz_shade *shade);
 void fz_free_shade_imp(fz_context *ctx, fz_storable *shade);
-void fz_debug_shade(fz_context *ctx, fz_shade *shade);
+void fz_print_shade(fz_context *ctx, fz_shade *shade);
 
 fz_rect fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm);
 void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox);

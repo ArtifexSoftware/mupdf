@@ -178,7 +178,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 	unsigned char *data;
 	unsigned int len;
 
-	data = pdf_find_builtin_font(fontname, &len);
+	data = pdf_lookup_builtin_font(fontname, &len);
 	if (!data)
 		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
 
@@ -195,7 +195,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 	unsigned char *data;
 	unsigned int len;
 
-	data = pdf_find_substitute_font(mono, serif, bold, italic, &len);
+	data = pdf_lookup_substitute_font(mono, serif, bold, italic, &len);
 	if (!data)
 		fz_throw(ctx, "cannot find substitute font");
 
@@ -213,7 +213,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, 
 	unsigned char *data;
 	unsigned int len;
 
-	data = pdf_find_substitute_cjk_font(ros, serif, &len);
+	data = pdf_lookup_substitute_cjk_font(ros, serif, &len);
 	if (!data)
 		fz_throw(ctx, "cannot find builtin CJK font");
 
@@ -789,7 +789,7 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 		}
 		fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
 
-		pdf_set_font_wmode(ctx, fontdesc, pdf_get_wmode(ctx, fontdesc->encoding));
+		pdf_set_font_wmode(ctx, fontdesc, pdf_cmap_wmode(ctx, fontdesc->encoding));
 
 		if (kind == TRUETYPE)
 		{
@@ -881,7 +881,7 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 
 		/* Vertical */
 
-		if (pdf_get_wmode(ctx, fontdesc->encoding) == 1)
+		if (pdf_cmap_wmode(ctx, fontdesc->encoding) == 1)
 		{
 			int dw2y = 880;
 			int dw2w = -1000;
@@ -1127,7 +1127,7 @@ pdf_load_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 }
 
 void
-pdf_debug_font(fz_context *ctx, pdf_font_desc *fontdesc)
+pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
 	int i;
 

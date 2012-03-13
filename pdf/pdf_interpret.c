@@ -709,7 +709,7 @@ pdf_show_char(pdf_csi *csi, int cid)
 
 	if (fontdesc->wmode == 1)
 	{
-		v = pdf_get_vmtx(ctx, fontdesc, cid);
+		v = pdf_lookup_vmtx(ctx, fontdesc, cid);
 		tsm.e -= v.x * gstate->size * 0.001f;
 		tsm.f -= v.y * gstate->size * 0.001f;
 	}
@@ -767,7 +767,7 @@ pdf_show_char(pdf_csi *csi, int cid)
 
 	if (fontdesc->wmode == 0)
 	{
-		h = pdf_get_hmtx(ctx, fontdesc, cid);
+		h = pdf_lookup_hmtx(ctx, fontdesc, cid);
 		w0 = h.w * 0.001f;
 		tx = (w0 * gstate->size + gstate->char_space) * gstate->scale;
 		csi->tm = fz_concat(fz_translate(tx, 0), csi->tm);
@@ -1527,7 +1527,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 		{
 			if (pdf_is_array(val))
 				val = pdf_array_get(val, 0);
-			gstate->blendmode = fz_find_blendmode(pdf_to_name(val));
+			gstate->blendmode = fz_lookup_blendmode(pdf_to_name(val));
 		}
 
 		else if (!strcmp(s, "SMask"))

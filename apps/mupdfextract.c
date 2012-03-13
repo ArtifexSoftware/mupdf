@@ -44,7 +44,7 @@ static void saveimage(int num)
 	fz_drop_image(ctx, image);
 
 	sprintf(name, "img-%04d", num);
-	fz_save_pixmap(ctx, img, name, dorgb);
+	fz_write_pixmap(ctx, img, name, dorgb);
 
 	fz_drop_pixmap(ctx, img);
 	pdf_drop_obj(ref);

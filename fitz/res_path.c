@@ -316,7 +316,7 @@ fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm)
 }
 
 void
-fz_debug_path(fz_context *ctx, fz_path *path, int indent)
+fz_print_path(fz_context *ctx, fz_path *path, int indent)
 {
 	float x, y;
 	int i = 0;

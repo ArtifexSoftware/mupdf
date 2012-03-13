@@ -35,7 +35,7 @@ do_debug_outline_xml(fz_outline *outline, int level)
 }
 
 void
-fz_debug_outline_xml(fz_context *ctx, fz_outline *outline)
+fz_print_outline_xml(fz_context *ctx, fz_outline *outline)
 {
 	do_debug_outline_xml(outline, 0);
 }
@@ -56,7 +56,7 @@ do_debug_outline(fz_outline *outline, int level)
 }
 
 void
-fz_debug_outline(fz_context *ctx, fz_outline *outline)
+fz_print_outline(fz_context *ctx, fz_outline *outline)
 {
 	do_debug_outline(outline, 0);
 }

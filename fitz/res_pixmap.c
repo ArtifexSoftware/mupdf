@@ -80,7 +80,7 @@ fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
+fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
 {
 	fz_pixmap *pixmap;
 	pixmap = fz_new_pixmap(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0);
@@ -90,7 +90,7 @@ fz_new_pixmap_with_rect(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r)
 }
 
 fz_pixmap *
-fz_new_pixmap_with_rect_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
+fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, fz_bbox r, unsigned char *samples)
 {
 	fz_pixmap *pixmap;
 	pixmap = fz_new_pixmap_with_data(ctx, colorspace, r.x1 - r.x0, r.y1 - r.y0, samples);
@@ -261,7 +261,7 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
 
 	assert(gray->n == 2);
 
-	alpha = fz_new_pixmap_with_rect(ctx, NULL, fz_bound_pixmap(gray));
+	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_bound_pixmap(gray));
 	dp = alpha->samples;
 	sp = gray->samples;
 	if (!luminosity)

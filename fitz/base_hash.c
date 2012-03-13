@@ -268,7 +268,7 @@ fz_hash_remove(fz_context *ctx, fz_hash_table *table, void *key)
 }
 
 void
-fz_debug_hash(fz_context *ctx, fz_hash_table *table)
+fz_print_hash(fz_context *ctx, fz_hash_table *table)
 {
 	int i, k;
 

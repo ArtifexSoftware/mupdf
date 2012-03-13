@@ -123,7 +123,7 @@ static int isxmlmeta(int c)
 	return c < 32 || c >= 128 || c == '&' || c == '<' || c == '>' || c == '\'' || c == '"';
 }
 
-void fz_debug_text(fz_context *ctx, fz_text *text, int indent)
+void fz_print_text(fz_context *ctx, fz_text *text, int indent)
 {
 	int i, n;
 	for (i = 0; i < text->len; i++)

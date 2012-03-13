@@ -68,7 +68,7 @@ fz_bound_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm)
 }
 
 void
-fz_debug_shade(fz_context *ctx, fz_shade *shade)
+fz_print_shade(fz_context *ctx, fz_shade *shade)
 {
 	int i, j, n;
 	float *vertex;
