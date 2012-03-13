@@ -336,9 +336,8 @@ static void winblitsearch(pdfapp_t *app)
 
 static void winblit(pdfapp_t *app)
 {
-	fz_bbox bb = fz_bound_pixmap(gapp.image);
-	int image_w = bb.x1 - bb.x0;
-	int image_h = bb.y1 - bb.y0;
+	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
+	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
 	int image_n = fz_pixmap_components(gapp.ctx, gapp.image);
 	unsigned char *image_samples = fz_pixmap_samples(gapp.ctx, gapp.image);
 	int x0 = gapp.panx;

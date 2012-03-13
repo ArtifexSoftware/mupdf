@@ -1084,7 +1084,7 @@ typedef struct fz_colorspace_s fz_colorspace;
 	fz_find_device_colorspace: Find a standard colorspace based upon
 	it's name.
 */
-fz_colorspace *fz_find_device_colorspace(char *name);
+fz_colorspace *fz_find_device_colorspace(fz_context *ctx, char *name);
 
 /*
 	fz_device_gray: Abstract colorspace representing device specific
@@ -1119,11 +1119,11 @@ extern fz_colorspace *fz_device_cmyk;
 typedef struct fz_pixmap_s fz_pixmap;
 
 /*
-	fz_bound_pixmap: Return a bounding box for a pixmap.
+	fz_pixmap_bbox: Return a bounding box for a pixmap.
 
 	Returns an exact bounding box for the supplied pixmap.
 */
-fz_bbox fz_bound_pixmap(fz_pixmap *pix);
+fz_bbox fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_pixmap_width: Return the width of the pixmap in pixels.

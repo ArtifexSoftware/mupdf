@@ -632,6 +632,8 @@ unsigned int fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip);
 
+fz_bbox fz_pixmap_bbox_no_ctx(fz_pixmap *src);
+
 struct fz_image_s
 {
 	fz_storable storable;
