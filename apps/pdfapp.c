@@ -256,9 +256,11 @@ static void pdfapp_loadpage(pdfapp_t *app)
 	}
 }
 
+#define MAX_TITLE 256
+
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint)
 {
-	char buf[256];
+	char buf[MAX_TITLE];
 	fz_device *idev;
 	fz_device *tdev;
 	fz_colorspace *colorspace;
@@ -285,8 +287,20 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 	if (drawpage)
 	{
-		sprintf(buf, "%s - %d/%d (%d dpi)", app->doctitle,
+		char buf2[64];
+		int len;
+
+		sprintf(buf2, " - %d/%d (%d dpi)",
 				app->pageno, app->pagecount, app->resolution);
+		len = MAX_TITLE-strlen(buf2);
+		if (strlen(app->doctitle) > len)
+		{
+			snprintf(buf, len-3, "%s", app->doctitle);
+			strcat(buf, "...");
+			strcat(buf, buf2);
+		}
+		else
+			sprintf(buf, "%s%s", app->doctitle, buf2);
 		wintitle(app, buf);
 
 		ctm = pdfapp_viewctm(app);
