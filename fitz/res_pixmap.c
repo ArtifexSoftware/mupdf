@@ -110,6 +110,18 @@ fz_bound_pixmap(fz_pixmap *pix)
 	return bbox;
 }
 
+int
+fz_pixmap_width(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->w;
+}
+
+int
+fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->h;
+}
+
 void
 fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 {

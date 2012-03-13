@@ -1,5 +1,4 @@
-#include "fitz-internal.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 static xml_element *
 xps_find_resource(xps_document *doc, xps_resource *dict, char *name, char **urip)

@@ -1126,6 +1126,16 @@ typedef struct fz_pixmap_s fz_pixmap;
 fz_bbox fz_bound_pixmap(fz_pixmap *pix);
 
 /*
+	fz_pixmap_width: Return the width of the pixmap in pixels.
+*/
+int fz_pixmap_width(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_pixmap_height: Return the height of the pixmap in pixels.
+*/
+int fz_pixmap_height(fz_context *ctx, fz_pixmap *pix);
+
+/*
 	fz_new_pixmap: Create a new pixmap, with it's origin at (0,0)
 
 	cs: The colorspace to use for the pixmap, or NULL for an alpha

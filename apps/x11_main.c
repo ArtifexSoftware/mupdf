@@ -249,9 +249,8 @@ void winhelp(pdfapp_t *app)
 
 void winresize(pdfapp_t *app, int w, int h)
 {
-	fz_bbox bb = fz_bound_pixmap(gapp.image);
-	int image_w = bb.x1 - bb.x0;
-	int image_h = bb.y1 - bb.y0;
+	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
+	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
 	XWindowChanges values;
 	int mask, width, height;
 

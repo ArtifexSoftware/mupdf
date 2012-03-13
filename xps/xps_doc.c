@@ -1,5 +1,4 @@
-#include "fitz-internal.h"
-#include "muxps.h"
+#include "muxps-internal.h"
 
 static void
 xps_rels_for_part(char *buf, char *name, int buflen)
