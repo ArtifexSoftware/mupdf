@@ -303,6 +303,7 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 	float descender = 0;
 	int multi;
 	int i, j, err;
+	int lastchar = ' ';
 
 	if (text->len == 0)
 		return;
@@ -341,8 +342,6 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 	ndir.y = dir.y / dist;
 
 	size = fz_matrix_expansion(trm);
-
-	int lastchar = ' ';
 
 	for (i = 0; i < text->len; i++)
 	{
