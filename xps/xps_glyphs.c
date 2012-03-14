@@ -402,6 +402,7 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 	fz_font *font;
 
 	char partname[1024];
+	char fakename[1024];
 	char *subfont;
 
 	float font_size = 10;
@@ -483,7 +484,19 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 		*subfont = 0;
 	}
 
-	font = xps_lookup_font(doc, partname);
+	/* Make a new part name for font with style simulation applied */
+	fz_strlcpy(fakename, partname, sizeof fakename);
+	if (style_att)
+	{
+		if (!strcmp(style_att, "BoldSimulation"))
+			fz_strlcat(fakename, "#Bold", sizeof fakename);
+		else if (!strcmp(style_att, "ItalicSimulation"))
+			fz_strlcat(fakename, "#Italic", sizeof fakename);
+		else if (!strcmp(style_att, "BoldItalicSimulation"))
+			fz_strlcat(fakename, "#BoldItalic", sizeof fakename);
+	}
+
+	font = xps_lookup_font(doc, fakename);
 	if (!font)
 	{
 		fz_try(doc->ctx)
@@ -513,9 +526,15 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 			return;
 		}
 
+		if (style_att)
+		{
+			font->ft_bold = !!strstr(style_att, "Bold");
+			font->ft_italic = !!strstr(style_att, "Italic");
+		}
+
 		xps_select_best_font_encoding(doc, font);
 
-		xps_insert_font(doc, part->name, font);
+		xps_insert_font(doc, fakename, font);
 
 		/* NOTE: we keep part->data in the font */
 		font->ft_data = part->data;
