@@ -1050,7 +1050,10 @@ pdf_resolve_indirect(pdf_obj *ref)
 	while (pdf_is_indirect(ref))
 	{
 		if (--sanity == 0)
-			fz_throw(ctx, "Too many indirections (possible indirection cycle involving %d %d R)", num, gen);
+		{
+			fz_warn(ctx, "Too many indirections (possible indirection cycle involving %d %d R)", num, gen);
+			return NULL;
+		}
 		xref = pdf_get_indirect_document(ref);
 		if (!xref)
 			return NULL;
