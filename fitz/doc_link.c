@@ -55,10 +55,11 @@ fz_keep_link(fz_context *ctx, fz_link *link)
 void
 fz_drop_link(fz_context *ctx, fz_link *link)
 {
-	if (link && --link->refs == 0)
+	while (link && --link->refs == 0)
 	{
-		fz_drop_link(ctx, link->next);
+		fz_link *next = link->next;
 		fz_free_link_dest(ctx, &link->dest);
 		fz_free(ctx, link);
+		link = next;
 	}
 }
