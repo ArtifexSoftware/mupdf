@@ -70,6 +70,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define snprintf _snprintf
 #define isnan _isnan
+#define hypotf _hypotf
 
 #else /* Unix or close enough */
 
