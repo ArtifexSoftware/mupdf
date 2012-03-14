@@ -94,6 +94,8 @@ xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 		fz_rethrow(doc->ctx);
 	}
 	xps_free_part(doc, part);
+	if (!root)
+		return NULL;
 
 	fz_try(doc->ctx)
 	{
@@ -118,10 +120,16 @@ xps_load_outline(xps_document *doc)
 	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next) {
 		if (fixdoc->outline) {
 			outline = xps_load_document_structure(doc, fixdoc);
+			if (!outline)
+				continue;
 			if (!head)
 				head = outline;
 			else
+			{
+				while (tail->next)
+					tail = tail->next;
 				tail->next = outline;
+			}
 			tail = outline;
 		}
 	}

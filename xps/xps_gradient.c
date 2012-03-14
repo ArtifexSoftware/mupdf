@@ -146,10 +146,10 @@ xps_parse_gradient_stops(xps_document *doc, char *base_uri, xml_element *node,
 	{
 		float d = (1 - stops[count-2].offset) / (stops[count-1].offset - stops[count-2].offset);
 		stops[count-1].offset = 1;
-		stops[0].r = lerp(stops[count-2].r, stops[count-1].r, d);
-		stops[0].g = lerp(stops[count-2].g, stops[count-1].g, d);
-		stops[0].b = lerp(stops[count-2].b, stops[count-1].b, d);
-		stops[0].a = lerp(stops[count-2].a, stops[count-1].a, d);
+		stops[count-1].r = lerp(stops[count-2].r, stops[count-1].r, d);
+		stops[count-1].g = lerp(stops[count-2].g, stops[count-1].g, d);
+		stops[count-1].b = lerp(stops[count-2].b, stops[count-1].b, d);
+		stops[count-1].a = lerp(stops[count-2].a, stops[count-1].a, d);
 	}
 
 	/* First stop > 0 -- insert a duplicate at 0 */
@@ -275,7 +275,7 @@ xps_draw_one_linear_gradient(xps_document *doc, fz_matrix ctm,
 	shade->mesh[4] = y1;
 	shade->mesh[5] = 0;
 
-	fz_fill_shade(doc->dev, shade, ctm, 1);
+	fz_fill_shade(doc->dev, shade, ctm, doc->opacity[doc->opacity_top]);
 
 	fz_drop_shade(doc->ctx, shade);
 }

@@ -67,6 +67,9 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	xml = xml_parse_document(doc->ctx, part->data, part->size);
 	xps_free_part(doc, part);
 
+	if (!xml)
+		return NULL;
+
 	if (strcmp(xml_tag(xml), "ResourceDictionary"))
 	{
 		xml_free_element(doc->ctx, xml);
@@ -118,8 +121,6 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, xml_element *ro
 
 	if (head)
 		head->base_uri = fz_strdup(doc->ctx, base_uri);
-	else
-		fz_warn(doc->ctx, "empty resource dictionary");
 
 	return head;
 }
