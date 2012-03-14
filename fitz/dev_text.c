@@ -17,6 +17,7 @@ struct fz_text_device_s
 	fz_text_line cur_line;
 	fz_text_span cur_span;
 	fz_point point;
+	int lastchar;
 };
 
 fz_text_sheet *
@@ -304,7 +305,6 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 	float descender = 0;
 	int multi;
 	int i, j, err;
-	int lastchar = ' ';
 
 	if (text->len == 0)
 		return;
@@ -368,9 +368,9 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 			if (dist > size * LINE_DIST)
 			{
 				fz_flush_text_line(ctx, dev, style);
-				lastchar = ' ';
+				dev->lastchar = ' ';
 			}
-			else if (fabsf(dot) > 0.95f && dist > size * SPACE_DIST && lastchar != ' ')
+			else if (fabsf(dot) > 0.95f && dist > size * SPACE_DIST && dev->lastchar != ' ')
 			{
 				fz_rect spacerect;
 				spacerect.x0 = -0.2f;
@@ -379,7 +379,7 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 				spacerect.y1 = 1;
 				spacerect = fz_transform_rect(trm, spacerect);
 				fz_add_text_char(ctx, dev, style, ' ', spacerect);
-				lastchar = ' ';
+				dev->lastchar = ' ';
 			}
 		}
 
@@ -437,7 +437,7 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 			}
 		}
 
-		lastchar = text->items[i].ucs;
+		dev->lastchar = text->items[i].ucs;
 	}
 }
 
@@ -524,6 +524,7 @@ fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 	tdev->page = page;
 	tdev->point.x = -1;
 	tdev->point.y = -1;
+	tdev->lastchar = ' ';
 
 	init_line(ctx, &tdev->cur_line);
 	init_span(ctx, &tdev->cur_span, NULL);
