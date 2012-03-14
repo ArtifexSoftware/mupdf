@@ -165,6 +165,8 @@ void xps_parse_element(xps_document *doc, fz_matrix ctm, fz_rect area, char *bas
 
 void xps_clip(xps_document *doc, fz_matrix ctm, xps_resource *dict, char *clip_att, xml_element *clip_tag);
 
+xml_element *xps_lookup_alternate_content(xml_element *node);
+
 /*
  * The interpreter context.
  */
