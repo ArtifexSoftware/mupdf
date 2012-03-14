@@ -862,6 +862,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	float samples[32];
 	fz_colorspace *colorspace;
 	fz_path *path;
+	fz_path *stroke_path = NULL;
 	fz_rect area;
 	int fill_rule;
 
@@ -989,10 +990,20 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	if (data_att)
 		path = xps_parse_abbreviated_geometry(doc, data_att, &fill_rule);
 	else if (data_tag)
+	{
 		path = xps_parse_path_geometry(doc, dict, data_tag, 0, &fill_rule);
+		if (stroke_att || stroke_tag)
+			stroke_path = xps_parse_path_geometry(doc, dict, data_tag, 1, &fill_rule);
+	}
+	if (!stroke_path)
+		stroke_path = path;
 
 	if (stroke_att || stroke_tag)
-		area = fz_bound_path(doc->ctx, path, &stroke, ctm);
+	{
+		area = fz_bound_path(doc->ctx, stroke_path, &stroke, ctm);
+		if (stroke_path != path && (fill_att || fill_tag))
+			area = fz_union_rect(area, fz_bound_path(doc->ctx, path, NULL, ctm));
+	}
 	else
 		area = fz_bound_path(doc->ctx, path, NULL, ctm);
 
@@ -1014,8 +1025,6 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 
 	if (fill_tag)
 	{
-		area = fz_bound_path(doc->ctx, path, NULL, ctm);
-
 		fz_clip_path(doc->dev, path, NULL, fill_rule == 0, ctm);
 		xps_parse_brush(doc, ctm, area, fill_uri, dict, fill_tag);
 		fz_pop_clip(doc->dev);
@@ -1028,19 +1037,21 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 			samples[0] = fz_atof(stroke_opacity_att);
 		xps_set_color(doc, colorspace, samples);
 
-		fz_stroke_path(doc->dev, path, &stroke, ctm,
+		fz_stroke_path(doc->dev, stroke_path, &stroke, ctm,
 			doc->colorspace, doc->color, doc->alpha);
 	}
 
 	if (stroke_tag)
 	{
-		fz_clip_stroke_path(doc->dev, path, NULL, &stroke, ctm);
+		fz_clip_stroke_path(doc->dev, stroke_path, NULL, &stroke, ctm);
 		xps_parse_brush(doc, ctm, area, stroke_uri, dict, stroke_tag);
 		fz_pop_clip(doc->dev);
 	}
 
 	xps_end_opacity(doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
+	if (stroke_path != path)
+		fz_free_path(doc->ctx, stroke_path);
 	fz_free_path(doc->ctx, path);
 	path = NULL;
 
