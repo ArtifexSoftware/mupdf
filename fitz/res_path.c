@@ -279,7 +279,7 @@ fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix
 		if (expand == 0)
 			expand = 1.0f;
 		expand *= fz_matrix_max_expansion(ctm);
-		if (stroke->miterlimit > 1)
+		if ((stroke->linejoin == FZ_LINEJOIN_MITER || stroke->linejoin == FZ_LINEJOIN_MITER_XPS) && stroke->miterlimit > 1)
 			expand *= stroke->miterlimit;
 		r.x0 -= expand;
 		r.y0 -= expand;
