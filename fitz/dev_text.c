@@ -319,6 +319,11 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 		descender = (float)face->descender / face->units_per_EM;
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 	}
+	else if (font->t3procs && !fz_is_empty_rect(font->bbox))
+	{
+		ascender = font->bbox.y1;
+		descender = font->bbox.y0;
+	}
 
 	rect = fz_empty_rect;
 
@@ -374,9 +379,9 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 			{
 				fz_rect spacerect;
 				spacerect.x0 = -0.2f;
-				spacerect.y0 = 0;
+				spacerect.y0 = descender;
 				spacerect.x1 = 0;
-				spacerect.y1 = 1;
+				spacerect.y1 = ascender;
 				spacerect = fz_transform_rect(trm, spacerect);
 				fz_add_text_char(ctx, dev, style, ' ', spacerect);
 				dev->lastchar = ' ';
@@ -433,8 +438,9 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, fz_matrix c
 			for (j = 0; j < multi; j++)
 			{
 				fz_rect part = fz_split_bbox(rect, j, multi);
-				fz_add_text_char(ctx, dev, style, text->items[i].ucs, part);
+				fz_add_text_char(ctx, dev, style, text->items[i + j].ucs, part);
 			}
+			i += j - 1;
 		}
 
 		dev->lastchar = text->items[i].ucs;
@@ -653,7 +659,8 @@ fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 						fprintf(out, "&#x%x;", ch->c);
 				}
 			}
-			fz_print_style_end(out, style);
+			if (style != NULL)
+				fz_print_style_end(out, style);
 			fprintf(out, "</p>\n");
 		}
 		fprintf(out, "</div>\n");
