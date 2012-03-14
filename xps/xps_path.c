@@ -1016,7 +1016,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	{
 		xps_parse_color(doc, base_uri, fill_att, &colorspace, samples);
 		if (fill_opacity_att)
-			samples[0] = fz_atof(fill_opacity_att);
+			samples[0] *= fz_atof(fill_opacity_att);
 		xps_set_color(doc, colorspace, samples);
 
 		fz_fill_path(doc->dev, path, fill_rule == 0, ctm,
@@ -1034,7 +1034,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	{
 		xps_parse_color(doc, base_uri, stroke_att, &colorspace, samples);
 		if (stroke_opacity_att)
-			samples[0] = fz_atof(stroke_opacity_att);
+			samples[0] *= fz_atof(stroke_opacity_att);
 		xps_set_color(doc, colorspace, samples);
 
 		fz_stroke_path(doc->dev, stroke_path, &stroke, ctm,

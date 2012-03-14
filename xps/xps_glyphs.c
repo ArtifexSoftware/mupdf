@@ -589,7 +589,7 @@ xps_parse_glyphs(xps_document *doc, fz_matrix ctm,
 
 		xps_parse_color(doc, base_uri, fill_att, &colorspace, samples);
 		if (fill_opacity_att)
-			samples[0] = fz_atof(fill_opacity_att);
+			samples[0] *= fz_atof(fill_opacity_att);
 		xps_set_color(doc, colorspace, samples);
 
 		fz_fill_text(doc->dev, text, ctm,
