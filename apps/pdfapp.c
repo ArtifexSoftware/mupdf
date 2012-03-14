@@ -160,6 +160,10 @@ void pdfapp_close(pdfapp_t *app)
 		fz_free_text_page(app->ctx, app->page_text);
 	app->page_text = NULL;
 
+	if (app->page_sheet)
+		fz_free_text_sheet(app->ctx, app->page_sheet);
+	app->page_sheet = NULL;
+
 	if (app->page_links)
 		fz_drop_link(app->ctx, app->page_links);
 	app->page_links = NULL;
@@ -232,10 +236,18 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		fz_free_display_list(app->ctx, app->page_list);
 	if (app->page_text)
 		fz_free_text_page(app->ctx, app->page_text);
+	if (app->page_sheet)
+		fz_free_text_sheet(app->ctx, app->page_sheet);
 	if (app->page_links)
 		fz_drop_link(app->ctx, app->page_links);
 	if (app->page)
 		fz_free_page(app->doc, app->page);
+
+	app->page_list = NULL;
+	app->page_text = NULL;
+	app->page_sheet = NULL;
+	app->page_links = NULL;
+	app->page = NULL;
 
 	fz_try(app->ctx)
 	{

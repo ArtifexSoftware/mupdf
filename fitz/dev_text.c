@@ -39,6 +39,7 @@ fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet)
 		fz_free(ctx, style);
 		style = next;
 	}
+	fz_free(ctx, sheet);
 }
 
 static fz_text_style *
