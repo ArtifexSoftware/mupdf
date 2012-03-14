@@ -2,6 +2,15 @@
 
 #include <zlib.h>
 
+#define ZIP_LOCAL_FILE_SIG 0x04034b50
+#define ZIP_DATA_DESC_SIG 0x08074b50
+#define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
+#define ZIP_END_OF_CENTRAL_DIRECTORY_SIG 0x06054b50
+
+#define ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIG 0x07064b50
+#define ZIP64_END_OF_CENTRAL_DIRECTORY_SIG 0x06064b50
+#define ZIP64_EXTRA_FIELD_SIG 0x0001
+
 static void xps_init_document(xps_document *doc);
 
 xps_part *
@@ -40,6 +49,13 @@ static inline int getlong(fz_stream *file)
 	int c = fz_read_byte(file);
 	int d = fz_read_byte(file);
 	return a | b << 8 | c << 16 | d << 24;
+}
+
+static inline int getlong64(fz_stream *file)
+{
+	int a = getlong(file);
+	int b = getlong(file);
+	return b != 0 ? -1 : a;
 }
 
 static void *
@@ -138,6 +154,7 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 		if (code != Z_OK)
 		{
 			fz_unlock(ctx, FZ_LOCK_FILE);
+			fz_free(doc->ctx, inbuf);
 			fz_throw(doc->ctx, "zlib inflateInit2 error: %s", stream.msg);
 		}
 		code = inflate(&stream, Z_FINISH);
@@ -145,12 +162,14 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 		{
 			inflateEnd(&stream);
 			fz_unlock(ctx, FZ_LOCK_FILE);
+			fz_free(doc->ctx, inbuf);
 			fz_throw(doc->ctx, "zlib inflate error: %s", stream.msg);
 		}
 		code = inflateEnd(&stream);
 		if (code != Z_OK)
 		{
 			fz_unlock(ctx, FZ_LOCK_FILE);
+			fz_free(doc->ctx, inbuf);
 			fz_throw(doc->ctx, "zlib inflateEnd error: %s", stream.msg);
 		}
 
@@ -189,8 +208,43 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 	(void) getlong(doc->file); /* size of central directory */
 	offset = getlong(doc->file); /* offset to central directory */
 
-	doc->zip_count = count;
+	/* ZIP64 */
+	if (count == 0xFFFF)
+	{
+		fz_seek(doc->file, start_offset - 20, 0);
+
+		sig = getlong(doc->file);
+		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIG)
+			fz_throw(doc->ctx, "wrong zip64 end of central directory locator signature (0x%x)", sig);
+
+		(void) getlong(doc->file); /* start disk */
+		offset = getlong64(doc->file); /* offset to end of central directory record */
+		if (offset < 0)
+			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+
+		fz_seek(doc->file, offset, 0);
+
+		sig = getlong(doc->file);
+		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_SIG)
+			fz_throw(doc->ctx, "wrong zip64 end of central directory signature (0x%x)", sig);
+
+		(void) getlong64(doc->file); /* size of record */
+		(void) getshort(doc->file); /* version made by */
+		(void) getshort(doc->file); /* version to extract */
+		(void) getlong(doc->file); /* disk number */
+		(void) getlong(doc->file); /* disk number start */
+		count = getlong64(doc->file); /* entries in central directory disk */
+		(void) getlong64(doc->file); /* entries in central directory */
+		(void) getlong64(doc->file); /* size of central directory */
+		offset = getlong64(doc->file); /* offset to central directory */
+
+		if (count < 0 || offset < 0)
+			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+	}
+
 	doc->zip_table = fz_malloc_array(doc->ctx, count, sizeof(xps_entry));
+	memset(doc->zip_table, 0, count * sizeof(xps_entry));
+	doc->zip_count = count;
 
 	fz_seek(doc->file, offset, 0);
 
@@ -221,7 +275,23 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 		fz_read(doc->file, (unsigned char*)doc->zip_table[i].name, namesize);
 		doc->zip_table[i].name[namesize] = 0;
 
-		fz_seek(doc->file, metasize, 1);
+		while (metasize > 0)
+		{
+			int type = getshort(doc->file);
+			int size = getshort(doc->file);
+			if (type == ZIP64_EXTRA_FIELD_SIG)
+			{
+				doc->zip_table[i].usize = getlong64(doc->file);
+				doc->zip_table[i].csize = getlong64(doc->file);
+				doc->zip_table[i].offset = getlong64(doc->file);
+				fz_seek(doc->file, -24, 1);
+			}
+			fz_seek(doc->file, size, 1);
+			metasize -= 4 + size;
+		}
+		if (doc->zip_table[i].usize < 0 || doc->zip_table[i].csize < 0 || doc->zip_table[i].offset < 0)
+			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+
 		fz_seek(doc->file, commentsize, 1);
 	}
 
@@ -286,7 +356,15 @@ xps_read_zip_part(xps_document *doc, char *partname)
 	if (ent)
 	{
 		part = xps_new_part(doc, partname, ent->usize);
-		xps_read_zip_entry(doc, ent, part->data);
+		fz_try(doc->ctx)
+		{
+			xps_read_zip_entry(doc, ent, part->data);
+		}
+		fz_catch(doc->ctx)
+		{
+			xps_free_part(doc, part);
+			fz_rethrow(doc->ctx);
+		}
 		return part;
 	}
 
@@ -323,7 +401,15 @@ xps_read_zip_part(xps_document *doc, char *partname)
 			else
 				sprintf(buf, "%s/[%d].last.piece", name, i);
 			ent = xps_find_zip_entry(doc, buf);
-			xps_read_zip_entry(doc, ent, part->data + offset);
+			fz_try(doc->ctx)
+			{
+				xps_read_zip_entry(doc, ent, part->data + offset);
+			}
+			fz_catch(doc->ctx)
+			{
+				xps_free_part(doc, part);
+				fz_rethrow(doc->ctx);
+			}
 			offset += ent->usize;
 		}
 		return part;
@@ -360,6 +446,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 	xps_part *part;
 	FILE *file;
 	int count, size, offset, i, n;
+	int seen_last = 0;
 
 	fz_strlcpy(buf, doc->directory, sizeof buf);
 	fz_strlcat(buf, name, sizeof buf);
@@ -380,7 +467,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 	/* Count the number of pieces and their total size */
 	count = 0;
 	size = 0;
-	while (1)
+	while (!seen_last)
 	{
 		sprintf(buf, "%s%s/[%d].piece", doc->directory, name, count);
 		file = fopen(buf, "rb");
@@ -388,6 +475,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 		{
 			sprintf(buf, "%s%s/[%d].last.piece", doc->directory, name, count);
 			file = fopen(buf, "rb");
+			seen_last = (file != NULL);
 		}
 		if (!file)
 			break;
@@ -396,6 +484,8 @@ xps_read_dir_part(xps_document *doc, char *name)
 		size += ftell(file);
 		fclose(file);
 	}
+	if (!seen_last)
+		fz_throw(doc->ctx, "cannot find all pieces for part '%s'", name);
 
 	/* Inflate the pieces */
 	if (count)
@@ -410,7 +500,10 @@ xps_read_dir_part(xps_document *doc, char *name)
 				sprintf(buf, "%s%s/[%d].last.piece", doc->directory, name, i);
 			file = fopen(buf, "rb");
 			if (!file)
+			{
+				xps_free_part(doc, part);
 				fz_throw(doc->ctx, "cannot open file '%s'", buf);
+			}
 			n = fread(part->data + offset, 1, size - offset, file);
 			offset += n;
 			fclose(file);

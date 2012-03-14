@@ -1,5 +1,14 @@
 #include "muxps-internal.h"
 
+#define REL_START_PART \
+	"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
+#define REL_DOC_STRUCTURE \
+	"http://schemas.microsoft.com/xps/2005/06/documentstructure"
+#define REL_REQUIRED_RESOURCE \
+	"http://schemas.microsoft.com/xps/2005/06/required-resource"
+#define REL_REQUIRED_RESOURCE_RECURSIVE \
+	"http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
+
 static void
 xps_rels_for_part(char *buf, char *name, int buflen)
 {
