@@ -174,8 +174,8 @@ Multi-threading
 ===============
 
 First off, study the basic usage example in doc/example.c and make
-sure you understand how it works as it will be the referenced in this
-section too.
+sure you understand how it works as the data structures manipulated
+there will be refered to in this section too.
 
 MuPDF can usefully be built into a multi-threaded application without
 the library needing to know anything threading at all. If the library
@@ -195,7 +195,7 @@ concurrently from multiple threads within a single application.
 
 MuPDF can be invoked with a user supplied set of locking functions.
 It uses these to take mutexes around operations that would conflict
-is performed concurrently in multiple threads. By leaving the
+if performed concurrently in multiple threads. By leaving the
 exact implementation of locks to the caller MuPDF remains threading
 library agnostic.
 
@@ -228,7 +228,7 @@ The calling code should provide FZ_LOCK_MAX mutexes, which will be
 locked/unlocked by MuPDF calling the lock/unlock function pointers
 in the supplied structure with the user pointer from the structure
 and the lock number, i (0 <= i < FZ_LOCK_MAX). These mutexes can
-safely be recursive or non-recursive as MuPDF only calls in a non
+safely be recursive or non-recursive as MuPDF only calls in a non-
 recursive style.
 
 To make subsequent contexts, the user should NOT call fz_new_context
@@ -254,3 +254,6 @@ and then acts as a 'server' creating display lists for other threads
 to render, or he can add his own mutex around calls to mupdf that
 use the document. The former is likely to be far more efficient in
 the long run.
+
+For an example of how to do multi-threading see doc/multi-threaded.c
+which has a main thread and one rendering thread per page.
