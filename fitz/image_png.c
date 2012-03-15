@@ -283,14 +283,28 @@ png_read_plte(struct info *info, unsigned char *p, int size)
 	int n = size / 3;
 	int i;
 
-	if (n > 256 || n > (1 << info->depth))
-		fz_throw(info->ctx, "too many samples in palette");
+	if (n > 256)
+	{
+		fz_warn(info->ctx, "too many samples in palette");
+		n = 256;
+	}
 
 	for (i = 0; i < n; i++)
 	{
 		info->palette[i * 4] = p[i * 3];
 		info->palette[i * 4 + 1] = p[i * 3 + 1];
 		info->palette[i * 4 + 2] = p[i * 3 + 2];
+	}
+
+	/* Fill in any missing palette entries */
+	n = 1 << info->depth;
+	if (n > 256)
+		n = 256;
+	for (; i < n; i++)
+	{
+		info->palette[i * 4] = 0;
+		info->palette[i * 4 + 1] = 0;
+		info->palette[i * 4 + 2] = 0;
 	}
 }
 
@@ -303,10 +317,19 @@ png_read_trns(struct info *info, unsigned char *p, int size)
 
 	if (info->indexed)
 	{
-		if (size > 256 || size > (1 << info->depth))
-			fz_throw(info->ctx, "too many samples in transparency table");
+		if (size > 256)
+		{
+			fz_warn(info->ctx, "too many samples in transparency table");
+			size = 256;
+		}
 		for (i = 0; i < size; i++)
 			info->palette[i * 4 + 3] = p[i];
+		/* Fill in any missing entries */
+		size = (1 << info->depth);
+		if (size > 256)
+			size = 256;
+		for (; i < size; i++)
+			info->palette[i * 4 + 3] = 0;
 	}
 	else
 	{
