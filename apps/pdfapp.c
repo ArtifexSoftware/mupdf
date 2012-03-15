@@ -1109,7 +1109,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	fz_text_line *line;
 	fz_text_span *span;
 	int c, i, p;
-	int seen;
+	int seen = 0;
 
 	int x0 = app->selr.x0;
 	int x1 = app->selr.x1;
@@ -1126,6 +1126,16 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 		{
 			for (span = line->spans; span < line->spans + line->len; span++)
 			{
+				if (seen)
+				{
+#ifdef _WIN32
+					if (p < ucslen - 1)
+						ucsbuf[p++] = '\r';
+#endif
+					if (p < ucslen - 1)
+						ucsbuf[p++] = '\n';
+				}
+
 				seen = 0;
 
 				for (i = 0; i < span->len; i++)
@@ -1143,15 +1153,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 					}
 				}
 
-				if (seen && span + 1 == line->spans + line->len)
-				{
-#ifdef _WIN32
-					if (p < ucslen - 1)
-						ucsbuf[p++] = '\r';
-#endif
-					if (p < ucslen - 1)
-						ucsbuf[p++] = '\n';
-				}
+				seen = (seen && span + 1 == line->spans + line->len);
 			}
 		}
 	}
