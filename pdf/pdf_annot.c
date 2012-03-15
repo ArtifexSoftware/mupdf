@@ -217,8 +217,11 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 	}
 	else if (!strcmp(pdf_to_name(obj), "Launch"))
 	{
+		dest = pdf_dict_gets(action, "F");
 		ld.kind = FZ_LINK_LAUNCH;
-		ld.ld.launch.file_spec = pdf_to_utf8(ctx, pdf_dict_gets(action, "F"));
+		if (pdf_is_dict(dest))
+			dest = pdf_dict_gets(dest, "F");
+		ld.ld.launch.file_spec = pdf_to_utf8(ctx, dest);
 		ld.ld.launch.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Named"))
