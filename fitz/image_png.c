@@ -297,10 +297,7 @@ png_read_plte(struct info *info, unsigned char *p, int size)
 	}
 
 	/* Fill in any missing palette entries */
-	n = 1 << info->depth;
-	if (n > 256)
-		n = 256;
-	for (; i < n; i++)
+	for (; i < 256; i++)
 	{
 		info->palette[i * 4] = 0;
 		info->palette[i * 4 + 1] = 0;
@@ -325,11 +322,8 @@ png_read_trns(struct info *info, unsigned char *p, int size)
 		for (i = 0; i < size; i++)
 			info->palette[i * 4 + 3] = p[i];
 		/* Fill in any missing entries */
-		size = (1 << info->depth);
-		if (size > 256)
-			size = 256;
-		for (; i < size; i++)
-			info->palette[i * 4 + 3] = 0;
+		for (; i < 256; i++)
+			info->palette[i * 4 + 3] = 255;
 	}
 	else
 	{
