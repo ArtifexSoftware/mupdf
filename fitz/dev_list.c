@@ -618,7 +618,7 @@ fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm, fz
 		}
 		else
 		{
-			bbox = fz_round_rect(fz_transform_rect(top_ctm, node->rect));
+			bbox = fz_bbox_covering_rect(fz_transform_rect(top_ctm, node->rect));
 			bbox = fz_intersect_bbox(bbox, scissor);
 			empty = fz_is_empty_bbox(bbox);
 		}

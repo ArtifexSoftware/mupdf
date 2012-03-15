@@ -438,7 +438,7 @@ static inline int charat(fz_text_page *page, int idx)
 
 static inline fz_bbox bboxcharat(fz_text_page *page, int idx)
 {
-	return fz_round_rect(textcharat(page, idx).bbox);
+	return fz_bbox_covering_rect(textcharat(page, idx).bbox);
 }
 
 void pdfapp_inverthit(pdfapp_t *app)
@@ -1140,7 +1140,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 
 				for (i = 0; i < span->len; i++)
 				{
-					hitbox = fz_round_rect(span->text[i].bbox);
+					hitbox = fz_bbox_covering_rect(span->text[i].bbox);
 					hitbox = fz_transform_bbox(ctm, hitbox);
 					c = span->text[i].c;
 					if (c < 32)
