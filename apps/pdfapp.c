@@ -92,7 +92,9 @@ void pdfapp_open(pdfapp_t *app, char *filename, int fd, int reload)
 	{
 		file = fz_open_fd(ctx, fd);
 
-		if (strstr(filename, ".xps") || strstr(filename, ".XPS") || strstr(filename, ".rels"))
+		if (strstr(filename, ".rels"))
+			app->doc = (fz_document*) xps_open_document(ctx, filename);
+		else if (strstr(filename, ".xps") || strstr(filename, ".XPS") || strstr(filename, ".rels"))
 			app->doc = (fz_document*) xps_open_document_with_stream(file);
 		else if (strstr(filename, ".cbz") || strstr(filename, ".CBZ") || strstr(filename, ".zip") || strstr(filename, ".ZIP"))
 			app->doc = (fz_document*) cbz_open_document_with_stream(file);
