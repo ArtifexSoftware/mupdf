@@ -214,9 +214,18 @@ multi-threaded operations run smoothly:
 	All subsequent accesses to the document implicitly use the same
 	context; this means that only 1 thread can ever be accessing
 	the document at once. This does not mean that the document can
-	only be used from one thread ever, though in many cases this
+	only ever be used from one thread, though in many cases this
 	is the simplest structure overall.
 
+3)	"Any device is bound to the context with which it is created."
+
+	All subsequent uses of a device implicitly use the context with
+	which it was created; this means that if a device is used with
+	a document, it should be created with the same context as that
+	document was. This does not mean that the device can only ever
+	be used from one thread, though in many cases this is the
+	simplest structure overall.
+	
 So, how does a multi-threaded example differ from a non-multithreaded
 one?
 
