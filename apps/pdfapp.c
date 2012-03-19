@@ -67,6 +67,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"n\t\t-- find next search result\n"
 		"N\t\t-- find previous search result\n"
 		"c\t\t-- toggle between color and grayscale\n"
+		"i\t\t-- toggle inverted color mode\n"
 	;
 }
 
@@ -338,6 +339,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		idev = fz_new_draw_device(app->ctx, app->image);
 		fz_run_display_list(app->page_list, idev, ctm, bbox, NULL);
 		fz_free_device(idev);
+		if (app->invert)
+			fz_invert_pixmap(app->ctx, app->image);
 	}
 
 	if (repaint)
@@ -725,6 +728,11 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 	case 'c':
 		app->grayscale ^= 1;
+		pdfapp_showpage(app, 0, 1, 1);
+		break;
+
+	case 'i':
+		app->invert ^= 1;
 		pdfapp_showpage(app, 0, 1, 1);
 		break;
 
