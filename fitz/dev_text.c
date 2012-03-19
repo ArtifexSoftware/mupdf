@@ -150,6 +150,8 @@ init_span(fz_context *ctx, fz_text_span *span, fz_text_style *style)
 static void
 append_span(fz_context *ctx, fz_text_line *line, fz_text_span *span)
 {
+	if (span->len == 0)
+		return;
 	if (line->len == line->cap)
 	{
 		line->cap = MAX(8, line->cap * 2);
@@ -212,6 +214,8 @@ lookup_block_for_line(fz_context *ctx, fz_text_page *page, fz_text_line *line)
 static void
 insert_line(fz_context *ctx, fz_text_page *page, fz_text_line *line)
 {
+	if (line->len == 0)
+		return;
 	append_line(ctx, lookup_block_for_line(ctx, page, line), line);
 }
 
@@ -638,7 +642,7 @@ fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 				span = &line->spans[span_n];
 				if (style != span->style)
 				{
-					if (style != NULL)
+					if (style)
 						fz_print_style_end(out, style);
 					fz_print_style_begin(out, span->style);
 					style = span->style;
@@ -659,7 +663,7 @@ fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 						fprintf(out, "&#x%x;", ch->c);
 				}
 			}
-			if (style != NULL)
+			if (style)
 				fz_print_style_end(out, style);
 			fprintf(out, "</p>\n");
 		}
