@@ -12,6 +12,7 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
@@ -39,11 +40,30 @@ class SearchTaskResult {
 		searchBoxes = _searchBoxes;
 	}
 }
+
+class ProgressDialogX extends ProgressDialog {
+	public ProgressDialogX(Context context) {
+		super(context);
+	}
+
+	private boolean mCancelled = false;
+
+	public boolean isCancelled() {
+		return mCancelled;
+	}
+
+	@Override
+	public void cancel() {
+		mCancelled = true;
+		super.cancel();
+	}
+}
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
 	private enum LinkState {DEFAULT, HIGHLIGHT, INHIBIT};
 	private final int    TAP_PAGE_MARGIN = 5;
+	private final int    SEARCH_PROGRESS_DELAY = 200;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private ReaderView   mDocView;
@@ -66,6 +86,7 @@ public class MuPDFActivity extends Activity
 	private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 	private LinkState    mLinkState = LinkState.DEFAULT;
+	private final Handler mHandler = new Handler();
 
 	private MuPDFCore openFile(String path)
 	{
@@ -587,7 +608,7 @@ public class MuPDFActivity extends Activity
 	void search(int direction) {
 		killSearch();
 
-		final ProgressDialog progressDialog = new ProgressDialog(this);
+		final ProgressDialogX progressDialog = new ProgressDialogX(this);
 		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 		progressDialog.setTitle(getString(R.string.searching_));
 		progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -652,7 +673,12 @@ public class MuPDFActivity extends Activity
 			@Override
 			protected void onPreExecute() {
 				super.onPreExecute();
-				progressDialog.show();
+				mHandler.postDelayed(new Runnable() {
+					public void run() {
+						if (!progressDialog.isCancelled())
+							progressDialog.show();
+					}
+				}, SEARCH_PROGRESS_DELAY);
 			}
 		};
 
