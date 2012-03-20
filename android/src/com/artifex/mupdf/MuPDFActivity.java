@@ -63,7 +63,7 @@ public class MuPDFActivity extends Activity
 	/* The core rendering instance */
 	private enum LinkState {DEFAULT, HIGHLIGHT, INHIBIT};
 	private final int    TAP_PAGE_MARGIN = 5;
-	private final int    SEARCH_PROGRESS_DELAY = 200;
+	private static final int    SEARCH_PROGRESS_DELAY = 200;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private ReaderView   mDocView;
