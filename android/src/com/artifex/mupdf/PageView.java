@@ -216,10 +216,14 @@ public abstract class PageView extends ViewGroup {
 
 	public void setSearchBoxes(RectF searchBoxes[]) {
 		mSearchBoxes = searchBoxes;
+		if (mSearchView != null)
+			mSearchView.invalidate();
 	}
 
 	public void setLinkHighlighting(boolean f) {
 		mHighlightLinks = f;
+		if (mSearchView != null)
+			mSearchView.invalidate();
 	}
 
 	@Override
