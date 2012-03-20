@@ -2231,4 +2231,120 @@ enum
 	FZ_META_INFO = 4,
 };
 
+
+/* Interactive features */
+
+/* Types of widget */
+enum
+{
+	FZ_WIDGET_TYPE_PUSHBUTTON,
+	FZ_WIDGET_TYPE_CHECKBOX,
+	FZ_WIDGET_TYPE_RADIOBUTTON,
+	FZ_WIDGET_TYPE_TEXT,
+	FZ_WIDGET_TYPE_LISTBOX,
+	FZ_WIDGET_TYPE_COMBOBOX
+};
+
+/* Types of UI event */
+enum
+{
+	FZ_EVENT_TYPE_POINTER,
+};
+
+/* Types of pointer event */
+enum
+{
+	FZ_POINTER_DOWN,
+	FZ_POINTER_UP,
+};
+
+/*
+	UI events that can be passed to an interactive document.
+*/
+typedef struct fz_ui_event_s
+{
+	int etype;
+	union
+	{
+		struct
+		{
+			int   ptype;
+			float x, y;
+		} pointer;
+	} event;
+} fz_ui_event;
+
+/*
+	Widgets that may appear in PDF forms
+*/
+typedef struct fz_widget_s fz_widget;
+
+/*
+	Specific types of widget
+*/
+typedef struct fz_widget_text_s fz_widget_test;
+
+/*
+	fz_pass_event: Pass a UI event to an interactive
+	document.
+
+	Returns a boolean indication of whether the ui_event was
+	handled. Example of use for the return value: when considering
+	passing the events that make up a drag, if the down event isn't
+	accepted then don't send the move events or the up event.
+*/
+int fz_pass_event(fz_document *doc, fz_page *page, fz_ui_event *ui_event);
+
+/*
+	fz_ui_event_pointer: Set up a pointer event
+*/
+void fz_ui_event_pointer(fz_ui_event *event, int type, float x, float y);
+
+/*
+	fz_get_screen_update: Get the bounding box of an area needing
+	update because of a visual change.
+
+	After a sequence of interactions with a document that may cause
+	it to change in appearance - such as passing ui events - this
+	method should be called repeatedly until it returns NULL, to
+	enumerate the changed areas for which screen updates are
+	needed.
+*/
+fz_rect *fz_get_screen_update(fz_document *doc);
+
+/*
+	fz_get_focussed_widget: returns the currently focussed widget
+
+	Widgets can become focussed as a result of passing in ui events.
+	NULL is returned if there is no currently focussed widget. An
+	app may wish to create a native representative of the focussed
+	widget, e.g., to collect the text for a text widget, rather than
+	routing key strokes through fz_pass_event.
+*/
+fz_widget *fz_get_focussed_widget(fz_document *doc);
+
+/*
+	fz_widget_get_type: find out the type of a widget.
+
+	The type determines what widget subclass the widget
+	can safely be cast to.
+*/
+int fz_widget_get_type(fz_widget *widget);
+
+/*
+	fz_widget_get_bbox: get the bounding box of a widget.
+*/
+fz_bbox *fz_widget_get_bbox(fz_widget *widget);
+
+/*
+	fz_widget_text_get_text: Get the text currently displayed in
+	a text widget.
+*/
+char *fz_widget_text_get_text(fz_widget_text *tw);
+
+/*
+	fz_widget_text_set_text: Update the text of a text widget.
+*/
+char *fz_widget_text_set_text(fz_widget_text *tw, char *text);
+
 #endif
