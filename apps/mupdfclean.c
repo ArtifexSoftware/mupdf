@@ -59,9 +59,9 @@ static pdf_obj *sweepref(pdf_obj *obj)
 	int gen = pdf_to_gen(obj);
 
 	if (num < 0 || num >= xref->len)
-		return;
+		return NULL;
 	if (uselist[num])
-		return;
+		return NULL;
 
 	uselist[num] = 1;
 
