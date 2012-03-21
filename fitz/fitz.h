@@ -365,6 +365,22 @@ void *fz_malloc(fz_context *ctx, unsigned int size);
 void *fz_calloc(fz_context *ctx, unsigned int count, unsigned int size);
 
 /*
+	fz_malloc_struct: Allocate storage for a structure (with scavenging),
+	clear it, and (in Memento builds) tag the pointer as belonging to a
+	struct of this type.
+
+	CTX: The context.
+
+	STRUCT: The structure type.
+
+	Returns a pointer to allocated (and cleared) structure. Throws
+	exception on failure to allocate.
+*/
+/* alloc and zero a struct, and tag it for memento */
+#define fz_malloc_struct(CTX, STRUCT) \
+	Memento_label(fz_calloc(CTX,1,sizeof(STRUCT)), #STRUCT)
+
+/*
 	fz_malloc_array: Allocate a block of (non zeroed) memory (with
 	scavenging). Equivalent to fz_calloc without the memory clearing.
 
