@@ -73,7 +73,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	if (strcmp(xml_tag(xml), "ResourceDictionary"))
 	{
 		xml_free_element(doc->ctx, xml);
-		fz_throw(doc->ctx, "expected ResourceDictionary element (found %s)", xml_tag(xml));
+		fz_throw(doc->ctx, "expected ResourceDictionary element");
 	}
 
 	fz_strlcpy(part_uri, part_name, sizeof part_uri);
