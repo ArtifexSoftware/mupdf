@@ -865,7 +865,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 	fz_path *stroke_path = NULL;
 	fz_rect area;
 	int fill_rule;
-        int dash_len = 0;
+	int dash_len = 0;
 
 	/*
 	 * Extract attributes and extended attributes.
@@ -937,8 +937,8 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 		stroke_tag = NULL;
 	}
 
-        if (stroke_att || stroke_tag)
-        {
+	if (stroke_att || stroke_tag)
+	{
 		if (stroke_dash_array_att)
 		{
 			char *s = stroke_dash_array_att;
@@ -949,7 +949,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 					s++;
 				if (*s) /* needed in case of a space before the last quote */
 					dash_len++;
-                        
+
 				while (*s && *s != ' ')
 					s++;
 			}
@@ -1075,7 +1075,7 @@ xps_parse_path(xps_document *doc, fz_matrix ctm, char *base_uri, xps_resource *d
 		fz_free_path(doc->ctx, stroke_path);
 	fz_free_path(doc->ctx, path);
 	path = NULL;
-        fz_drop_stroke_state(doc->ctx, stroke);
+	fz_drop_stroke_state(doc->ctx, stroke);
 
 	if (clip_att || clip_tag)
 		fz_pop_clip(doc->dev);
