@@ -1738,7 +1738,10 @@ void fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix ctm, f
 */
 void fz_free_display_list(fz_context *ctx, fz_display_list *list);
 
-/* Links */
+/*
+	NOTE: The link destination struct is scheduled for imminent change!
+	Use at your own peril.
+*/
 
 typedef struct fz_link_s fz_link;
 
@@ -1764,35 +1767,6 @@ enum {
 	fz_link_flag_r_is_zoom = 64 /* rb.x is actually a zoom figure */
 };
 
-/*
-	fz_link_dest: XXX
-
-	kind: Set to one of FZ_LINK_* to tell what what type of link
-	destination this is, and where in the union to look for
-	information. XXX
-
-	gotor.page: Page number, 0 is the first page of the document. XXX
-
-	gotor.flags: A bitfield consisting of fz_link_flag_* telling
-	what parts of gotor.lt and gotor.rb are valid, whether
-	fitting to width/height should be used, or if an arbitrary
-	zoom factor is used. XXX
-
-	gotor.lt: The top left corner of the destination bounding box. XXX
-	gotor.rb: The bottom right corner of the destination bounding box. XXX
-
-	gotor.file_spec: XXX
-
-	gotor.new_window: XXX
-
-	uri.uri: XXX
-	uri.is_map: XXX
-
-	launch.file_spec: XXX
-	launch.new_window: XXX
-
-	named.named: XXX
-*/
 struct fz_link_dest_s
 {
 	fz_link_kind kind;
