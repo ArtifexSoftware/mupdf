@@ -119,7 +119,7 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char *text)
 {
 	fz_buffer *fzbuf;
-	int len_prediction, len;
+	int len;
 	unsigned char *buf;
 	fz_rect rect;
 	const char *fmt = "/Tx BMC"
@@ -134,7 +134,7 @@ fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char
 		" Q"
 		" EMC";
 
-	len_prediction = strlen(fmt) + 4*(MaxNumChars - 2) + strlen(da) - 2, strlen(text) - 2;
+	len = strlen(fmt) + 4*(MaxNumChars - 2) + strlen(da) - 2, strlen(text) - 2;
 	rect = *bbox;
 
 	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
@@ -145,14 +145,13 @@ fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char
 		rect.y1 -= 1.0;
 	}
 
-	fzbuf = fz_new_buffer(ctx, len_prediction+1);
+	fzbuf = fz_new_buffer(ctx, len+1);
 	(void)fz_buffer_storage(ctx, fzbuf, &buf);
-	len = snprintf(buf, len_prediction+1,
+	fzbuf->len = snprintf(buf, len+1,
 		fmt, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0,
 		da, text);
-	if (len < 0 || len > len_prediction)
+	if (fzbuf->len < 0 || fzbuf->len > len)
 		fz_throw(ctx, "predicted length to small");
-	fzbuf->len = len;
 
 	return fzbuf;
 }
@@ -196,13 +195,62 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 			}
 		}
 	}
+	fz_always(ctx)
+	{
+		pdf_drop_xobject(ctx, form);
+		fz_drop_buffer(ctx, fzbuf);
+	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "update_text_appearance failed");
 	}
+}
 
-	pdf_drop_xobject(ctx, form);
-	fz_drop_buffer(ctx, fzbuf);
+static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *ap = NULL;
+	fz_rect rect;
+	pdf_obj *form = NULL;
+
+	fz_var(form);
+	fz_var(ap);
+	fz_try(ctx)
+	{
+		rect = pdf_to_rect(ctx, pdf_dict_gets(obj, "Rect"));
+		rect.x1 -= rect.x0;
+		rect.y1 -= rect.y0;
+		rect.x0 = rect.y0 = 0;
+		form = pdf_new_xobject(doc, &rect);
+		ap = pdf_new_dict(ctx, 1);
+		pdf_dict_puts(ap, "N", form);
+		pdf_dict_puts(obj, "AP", ap);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(form);
+		pdf_drop_obj(ap);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj)
+{
+	if (!pdf_dict_gets(obj, "AP"))
+	{
+		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
+		{
+			switch(get_field_type(obj))
+			{
+			case FZ_WIDGET_TYPE_TEXT:
+				synthesize_text_widget(doc, obj);
+				break;
+			}
+		}
+	}
 }
 
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
@@ -372,17 +420,30 @@ char *fz_widget_text_get_text(fz_widget_text *tw)
 			tw->text[len] = 0;
 		}
 	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, strmbuf);
+	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "failed allocation in fz_widget_text_get_text");
 	}
-
-	fz_drop_buffer(ctx, strmbuf);
 
 	return tw->text;
 }
 
 void fz_widget_text_set_text(fz_widget_text *tw, char *text)
 {
-	update_text_appearance(tw->super.doc, tw->super.obj, text);
+	fz_context *ctx = tw->super.doc->ctx;
+
+	fz_try(ctx)
+	{
+		update_text_appearance(tw->super.doc, tw->super.obj, text);
+		fz_free(ctx, tw->text);
+		tw->text = fz_strdup(ctx, text);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "fz_widget_text_set_text failed");
+	}
 }

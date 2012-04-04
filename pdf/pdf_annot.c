@@ -368,9 +368,12 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 	{
 		obj = pdf_array_get(annots, i);
 
+		pdf_synthesize_missing_appearance(xref, obj);
+
 		rect = pdf_dict_gets(obj, "Rect");
 		ap = pdf_dict_gets(obj, "AP");
 		as = pdf_dict_gets(obj, "AS");
+
 		if (pdf_is_dict(ap))
 		{
 			pdf_hotspot *hp = &xref->hotspot;

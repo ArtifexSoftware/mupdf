@@ -313,6 +313,8 @@ pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_xobject_set_contents(fz_context *ctx, pdf_xobject *from, fz_buffer *buffer);
 
+void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj);
+
 /*
  * CMap
  */
