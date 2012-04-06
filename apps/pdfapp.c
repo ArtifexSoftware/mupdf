@@ -985,9 +985,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (widget && fz_widget_get_type(widget) == FZ_WIDGET_TYPE_TEXT)
 			{
 				char *text = fz_widget_text_get_text((fz_widget_text *)widget);
-				/* Should invoke dialog for text entry, but for now,
-				 * just change any text field clicked to "Hello" */
-				fz_widget_text_set_text((fz_widget_text *)widget, "Hello");
+				char *newtext = wintextinput(app, text);
+				if (newtext)
+					fz_widget_text_set_text((fz_widget_text *)widget, newtext);
 			}
 
 			app->nowaitcursor = 1;

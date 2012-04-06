@@ -117,6 +117,7 @@ int winfilename(wchar_t *buf, int len)
 
 static char pd_filename[256] = "The file is encrypted.";
 static char pd_password[256] = "";
+static char td_textinput[1024] = "";
 static int pd_okay = 0;
 
 INT CALLBACK
@@ -145,6 +146,32 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+INT CALLBACK
+dlogtextinput(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message)
+	{
+	case WM_INITDIALOG:
+		SetDlgItemTextA(hwnd, 3, td_textinput);
+		return TRUE;
+	case WM_COMMAND:
+		switch(wParam)
+		{
+		case 1:
+			pd_okay = 1;
+			GetDlgItemTextA(hwnd, 3, td_textinput, sizeof td_textinput);
+			EndDialog(hwnd, 1);
+			return TRUE;
+		case 2:
+			pd_okay = 0;
+			EndDialog(hwnd, 1);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
 char *winpassword(pdfapp_t *app, char *filename)
 {
 	char buf[1024], *s;
@@ -161,6 +188,18 @@ char *winpassword(pdfapp_t *app, char *filename)
 		winerror(app, "cannot create password dialog");
 	if (pd_okay)
 		return pd_password;
+	return NULL;
+}
+
+char *wintextinput(pdfapp_t *app, char *inittext)
+{
+	int code;
+	strncpy(td_textinput, inittext?inittext:"", sizeof(td_textinput));
+	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextinput);
+	if (code <= 0)
+		winerror(app, "cannot create text input dialog");
+	if (pd_okay)
+		return td_textinput;
 	return NULL;
 }
 
