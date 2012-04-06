@@ -348,6 +348,30 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 	}
 }
 
+static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
+{
+	pdf_obj *parent = pdf_dict_gets(obj, "Parent");
+	pdf_obj *sobj = NULL;
+
+	if (parent)
+		obj = parent;
+
+	fz_var(sobj);
+	fz_try(ctx)
+	{
+		sobj = pdf_new_string(ctx, text, strlen(text));
+		pdf_dict_puts(obj, "V", sobj);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(sobj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
@@ -592,6 +616,7 @@ void fz_widget_text_set_text(fz_widget_text *tw, char *text)
 	fz_try(ctx)
 	{
 		update_text_appearance(tw->super.doc, tw->super.obj, text);
+		update_text_field_value(tw->super.doc->ctx, tw->super.obj, text);
 		fz_free(ctx, tw->text);
 		tw->text = fz_strdup(ctx, text);
 	}
