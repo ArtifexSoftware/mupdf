@@ -286,24 +286,35 @@ static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 	fz_context *ctx = doc->ctx;
 	pdf_obj *ap = NULL;
 	fz_rect rect;
-	pdf_obj *form = NULL;
+	pdf_obj *formobj = NULL;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
 
-	fz_var(form);
+	fz_var(formobj);
 	fz_var(ap);
+	fz_var(form);
+	fz_var(fzbuf);
 	fz_try(ctx)
 	{
 		rect = pdf_to_rect(ctx, pdf_dict_gets(obj, "Rect"));
 		rect.x1 -= rect.x0;
 		rect.y1 -= rect.y0;
 		rect.x0 = rect.y0 = 0;
-		form = pdf_new_xobject(doc, &rect);
+		formobj = pdf_new_xobject(doc, &rect);
+		form = pdf_load_xobject(doc, formobj);
+		fzbuf = fz_new_buffer(ctx, 0);
+		fz_buffer_printf(ctx, fzbuf, "/Tx BMC EMC");
+		pdf_xobject_set_contents(ctx, form, fzbuf);
+
 		ap = pdf_new_dict(ctx, 1);
-		pdf_dict_puts(ap, "N", form);
+		pdf_dict_puts(ap, "N", formobj);
 		pdf_dict_puts(obj, "AP", ap);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(form);
+		fz_drop_buffer(ctx, fzbuf);
+		pdf_drop_xobject(ctx, form);
+		pdf_drop_obj(formobj);
 		pdf_drop_obj(ap);
 	}
 	fz_catch(ctx)
