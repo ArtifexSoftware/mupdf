@@ -264,7 +264,7 @@ static int find_context(fz_context *ctx)
 			return i;
 		if (fz_lock_debug_contexts[i] == NULL)
 		{
-			int gottit;
+			int gottit = 0;
 			/* We've not locked on this context before, so use
 			 * this one for this new context. We might have other
 			 * threads trying here too though so, so claim it
