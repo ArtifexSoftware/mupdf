@@ -128,7 +128,7 @@ static int read_font_size_from_da(fz_context *ctx, char *da)
 		{
 			if (last_tok_was_int)
 			{
-				if (tok = PDF_TOK_NAME && !strcmp(lbuf.scratch, "Tf"))
+				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "Tf"))
 					fontsize = last_int_tok_val;
 
 				last_tok_was_int = 0;
@@ -170,7 +170,7 @@ static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *d
 		{
 			if (last_tok_was_int)
 			{
-				if (tok = PDF_TOK_NAME && !strcmp(lbuf.scratch, "Tf"))
+				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "Tf"))
 					fz_buffer_printf(ctx, fzbuf, " %1.2f", size);
 				else
 					fz_buffer_printf(ctx, fzbuf, " %d", last_int_tok_val);
@@ -223,6 +223,79 @@ static fz_bbox measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
 	return bbox;
 }
 
+static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, float fontsize, float x, float y, char *text)
+{
+	fz_buffer *fzbuf = fz_new_buffer(ctx, 0);
+	const char *fmtstart =
+		"/Tx BMC"
+		" q";
+	const char *fmtclip =
+		" %1.2f %1.2f %1.2f %1.2f re"
+		" W"
+		" n";
+	const char *fmtbtxt =
+		" BT";
+	const char *fmttxt =
+		" %1.2f %1.2f Td"
+		" (%s) Tj"
+		" ET"
+		" Q"
+		" EMC";
+
+	fz_try(ctx)
+	{
+		fz_buffer_printf(ctx, fzbuf, fmtstart);
+		if (clip)
+			fz_buffer_printf(ctx, fzbuf, fmtclip, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_buffer_printf(ctx, fzbuf, fmtbtxt);
+		if (fontsize < 0.0)
+			fz_buffer_printf(ctx, fzbuf, " %s", da); /* Copy da unchanged */
+		else
+			copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
+		fz_buffer_printf(ctx, fzbuf, fmttxt, x, y, text);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, fzbuf);
+		fz_rethrow(ctx);
+	}
+
+	return fzbuf;
+}
+
+static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, char *text, float *ascent, float *descent)
+{
+	fz_context *ctx = doc->ctx;
+	char *testtext = NULL;
+	fz_buffer *fzbuf = NULL;
+	fz_bbox bbox;
+
+	fz_var(testtext);
+	fz_var(fzbuf);
+	fz_try(ctx)
+	{
+		/* Heuristic: adding "My" to text will in most cases
+		 * produce a measurement that will accompass all chars */
+		testtext = fz_malloc(ctx, strlen(text) + 3);
+		strcpy(testtext, "My");
+		strcat(testtext, text);
+		/* Use large font size for increased accuracy */
+		fzbuf = create_text_buffer(ctx, NULL, da, 100, 0, 0, testtext);
+		bbox = measure_text(doc, dr, fzbuf);
+		*descent = -bbox.y0 / 100.0;
+		*ascent = bbox.y1 / 100.0;
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, fzbuf);
+		fz_free(ctx, testtext);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr, char *da, char *text)
 {
 	fz_context *ctx = doc->ctx;
@@ -230,20 +303,6 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 	fz_buffer *fzbuf = NULL;
 	fz_rect rect;
 	fz_bbox tbox;
-	const char *fmt1 =
-		"/Tx BMC"
-		" q"
-		" %1.2f %1.2f %1.2f %1.2f re"
-		" W"
-		" n"
-		" BT";
-	const char *fmt2 =
-		" 2 %1.2f Td"
-		" (%s) Tj"
-		" ET"
-		" Q"
-		" EMC";
-
 	rect = *bbox;
 
 	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
@@ -260,20 +319,18 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 	fz_var(fzbuf);
 	fz_try(ctx)
 	{
+	    float ascent, descent;
+
+		measure_ascent_descent(doc, dr, da, text, &ascent, &descent);
 		fontsize = read_font_size_from_da(ctx, da);
 		if (fontsize)
 		{
-			fzbuf = fz_new_buffer(ctx, 0);
-			fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-			fz_buffer_printf(ctx, fzbuf, " %s", da); /* Copy da unchanged */
-			fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - fontsize)/2, text);
+			fzbuf = create_text_buffer(ctx, &rect, da, -1.0, 2.0, 2.0 + fontsize * descent, text);
 		}
 		else
 		{
-			fzbuf = fz_new_buffer(ctx, 0);
-			fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-			copy_da_with_altered_size(ctx, fzbuf, da, height);
-			fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - height)/2, text);
+			fontsize = height;
+			fzbuf = create_text_buffer(ctx, &rect, da, fontsize, 2.0, 2.0 + height * descent, text);
 			tbox = measure_text(doc, dr, fzbuf);
 
 			if (tbox.x1 - tbox.x0 > width)
@@ -281,11 +338,9 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 				/* Text doesn't fit. Regenerate with a calculated font size */
 				fz_drop_buffer(ctx, fzbuf);
 				fzbuf = NULL;
-				height = height * width / (tbox.x1 - tbox.x0);
-				fzbuf = fz_new_buffer(ctx, 0);
-				fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-				copy_da_with_altered_size(ctx, fzbuf, da, height);
-				fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - height)/2, text);
+				fontsize = height * width / (tbox.x1 - tbox.x0);
+				/* Use the same offset to keep the baseline constant */
+				fzbuf = create_text_buffer(ctx, &rect, da, fontsize, 2.0, 2.0 + height * descent, text);
 			}
 		}
 	}
