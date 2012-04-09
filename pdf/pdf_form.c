@@ -360,6 +360,94 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 	return fzbuf;
 }
 
+static void update_marked_content(fz_context *ctx, pdf_xobject *form, fz_buffer *fzbuf)
+{
+	int tok;
+	pdf_lexbuf lbuf;
+	fz_stream *str_outer = NULL;
+	fz_stream *str_inner = NULL;
+	unsigned char *buf;
+	int            len;
+	fz_buffer *newbuf = NULL;
+
+	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
+	lbuf.size = sizeof(lbuf.scratch);
+
+	fz_var(str_outer);
+	fz_var(str_inner);
+	fz_var(newbuf);
+	fz_try(ctx)
+	{
+		int bmc_found;
+		int first = 1;
+
+		newbuf = fz_new_buffer(ctx, 0);
+		len = fz_buffer_storage(ctx, form->contents, &buf);
+		str_outer = fz_open_memory(ctx, buf, len);
+		len = fz_buffer_storage(ctx, fzbuf, &buf);
+		str_inner = fz_open_memory(ctx, buf, len);
+
+		/* Copy the existing appearance stream to newbuf while looking for BMC */
+		for (tok = pdf_lex(str_outer, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str_outer, &lbuf))
+		{
+			if (first)
+				first = 0;
+			else
+				fz_buffer_printf(ctx, newbuf, " ");
+
+			pdf_print_token(ctx, newbuf, tok, &lbuf);
+			if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "BMC"))
+				break;
+		}
+
+		bmc_found = (tok != PDF_TOK_EOF);
+
+		if (bmc_found)
+		{
+			/* Drop Tx BMC from the replacement appearance stream */
+			(void)pdf_lex(str_inner, &lbuf);
+			(void)pdf_lex(str_inner, &lbuf);
+		}
+
+		/* Copy the replacement appearance stream to newbuf */
+		for (tok = pdf_lex(str_inner, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str_inner, &lbuf))
+		{
+			fz_buffer_printf(ctx, newbuf, " ");
+			pdf_print_token(ctx, newbuf, tok, &lbuf);
+		}
+
+		if (bmc_found)
+		{
+			/* Drop the rest of the existing appearance stream until EMC found */
+			for (tok = pdf_lex(str_outer, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str_outer, &lbuf))
+			{
+				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "EMC"))
+					break;
+			}
+
+			/* Copy the rest of the existing appearance stream to newbuf */
+			for (tok = pdf_lex(str_outer, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str_outer, &lbuf))
+			{
+				fz_buffer_printf(ctx, newbuf, " ");
+				pdf_print_token(ctx, newbuf, tok, &lbuf);
+			}
+		}
+
+		/* Use newbuf in place of the existing appearance stream */
+		pdf_xobject_set_contents(ctx, form, newbuf);
+	}
+	fz_always(ctx)
+	{
+		fz_close(str_outer);
+		fz_close(str_inner);
+		fz_drop_buffer(ctx, newbuf);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 {
 	fz_context *ctx = doc->ctx;
@@ -395,7 +483,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 				}
 
 				fzbuf = create_text_appearance(doc, &form->bbox, dr, pdf_to_str_buf(da), text);
-				pdf_xobject_set_contents(ctx, form, fzbuf);
+				update_marked_content(ctx, form, fzbuf);
 			}
 		}
 	}
