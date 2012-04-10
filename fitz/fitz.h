@@ -1518,6 +1518,20 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_bbox *bboxp);
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 
 /*
+	fz_new_draw_device_with_bbox: Create a device to draw on a pixmap.
+
+	dest: Target pixmap for the draw device. See fz_new_pixmap*
+	for how to obtain a pixmap. The pixmap is not cleared by the
+	draw device, see fz_clear_pixmap* for how to clear it prior to
+	calling fz_new_draw_device. Free the device by calling
+	fz_free_device.
+
+	clip: Bounding box to restrict any marking operations of the
+	draw device.
+*/
+fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, fz_bbox clip);
+
+/*
 	Text extraction device: Used for searching, format conversion etc.
 
 	(In development - Subject to change in future versions)
