@@ -2157,6 +2157,8 @@ void fz_free_page(fz_document *doc, fz_page *page);
 /*
 	fz_meta: Perform a meta operation on a document.
 
+	(In development - Subject to change in future versions)
+
 	Meta operations provide a way to perform format specific
 	operations on a document. The meta operation scheme is
 	designed to be extensible so that new features can be
@@ -2213,7 +2215,7 @@ enum
 
 	/*
 		ptr: Pointer to block. First entry in the block is
-		a pointer to a UCS string to lookup. The rest of the
+		a pointer to a UTF8 string to lookup. The rest of the
 		block is uninitialised on entry.
 		size: size of the block in bytes.
 		Returns: 0 if not found. 1 if found. The string
