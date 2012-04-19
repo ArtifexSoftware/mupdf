@@ -23,7 +23,7 @@ struct fz_widget_text_s
 	char     *text;
 };
 
-static pdf_obj *get_inheritable(pdf_obj *obj, char *key)
+static pdf_obj *get_inheritable(pdf_document *doc, pdf_obj *obj, char *key)
 {
 	pdf_obj *fobj = NULL;
 
@@ -35,29 +35,30 @@ static pdf_obj *get_inheritable(pdf_obj *obj, char *key)
 			obj = pdf_dict_gets(obj, "Parent");
 	}
 
-	return fobj;
+	return fobj ? fobj
+				: pdf_dict_gets(pdf_dict_gets(pdf_dict_gets(doc->trailer, "Root"), "AcroForm"), key);
 }
 
-static char *get_field_type_name(pdf_obj *obj)
+static char *get_field_type_name(pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *type = get_inheritable(obj, "FT");
+	pdf_obj *type = get_inheritable(doc, obj, "FT");
 
 	return type ? pdf_to_name(type)
 				: NULL;
 }
 
-static int get_field_flags(pdf_obj *obj)
+static int get_field_flags(pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *flags = get_inheritable(obj, "Ff");
+	pdf_obj *flags = get_inheritable(doc, obj, "Ff");
 
 	return flags ? pdf_to_int(flags)
 				 : 0;
 }
 
-static int get_field_type(pdf_obj *obj)
+static int get_field_type(pdf_document *doc, pdf_obj *obj)
 {
-	char *type = get_field_type_name(obj);
-	int   flags = get_field_flags(obj);
+	char *type = get_field_type_name(doc, obj);
+	int   flags = get_field_flags(doc, obj);
 
 	if (!strcmp(type, "Btn"))
 	{
@@ -87,7 +88,7 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 
 	fz_try(doc->ctx)
 	{
-		int type = get_field_type(obj);
+		int type = get_field_type(doc, obj);
 
 		switch(type)
 		{
@@ -460,8 +461,8 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 
 	fz_try(ctx)
 	{
-		dr = get_inheritable(obj, "DR");
-		da = get_inheritable(obj, "DA");
+		dr = get_inheritable(doc, obj, "DR");
+		da = get_inheritable(doc, obj, "DA");
 		ap = pdf_dict_gets(obj, "AP");
 		if (pdf_is_dict(ap))
 		{
@@ -570,7 +571,7 @@ void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj)
 	{
 		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
 		{
-			switch(get_field_type(obj))
+			switch(get_field_type(doc, obj))
 			{
 			case FZ_WIDGET_TYPE_TEXT:
 				synthesize_text_widget(doc, obj);
@@ -684,7 +685,7 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 
 				if (annot)
 				{
-					switch(get_field_type(annot->obj))
+					switch(get_field_type(doc, annot->obj))
 					{
 					case FZ_WIDGET_TYPE_RADIOBUTTON:
 					case FZ_WIDGET_TYPE_CHECKBOX:
@@ -739,7 +740,7 @@ int fz_widget_get_type(fz_widget *widget)
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_obj *vobj = get_inheritable(field, "V");
+	pdf_obj *vobj = get_inheritable(doc, field, "V");
 	int len = 0;
 	char *buf = NULL;
 	fz_buffer *strmbuf = NULL;
