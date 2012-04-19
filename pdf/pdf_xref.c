@@ -690,8 +690,8 @@ pdf_open_document_with_stream(fz_stream *file)
 
 	fz_try(ctx)
 	{
-		xref->js = pdf_new_js(xref);
 		pdf_load_xref(xref, &xref->lexbuf.base);
+		xref->js = pdf_new_js(xref);
 	}
 	fz_catch(ctx)
 	{

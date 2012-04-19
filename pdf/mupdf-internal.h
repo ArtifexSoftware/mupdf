@@ -568,11 +568,15 @@ void *pdf_find_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 
 /*
- * Javascript engine interface
+ * Javascript handler
  */
 pdf_js *pdf_new_js(pdf_document *doc);
 void pdf_drop_js(pdf_js *js);
+void pdf_js_execute(pdf_js *js, char *code);
 
+/*
+ * Javascript engine interface
+ */
 typedef struct pdf_jsimp_s pdf_jsimp;
 typedef struct pdf_jsimp_type_s pdf_jsimp_type;
 typedef struct pdf_jsimp_obj_s pdf_jsimp_obj;
@@ -595,5 +599,7 @@ void pdf_jsimp_set_this(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
 char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+
+void pdf_jsimp_execute(pdf_jsimp *imp, char *code);
 
 #endif

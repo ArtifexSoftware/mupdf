@@ -580,6 +580,26 @@ void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+static void execute_action(pdf_document *doc, pdf_obj *obj)
+{
+	pdf_obj *a;
+
+	a = pdf_dict_gets(obj, "A");
+	while (a)
+	{
+		char *type = pdf_to_name(pdf_dict_gets(a, "S"));
+
+		if (!strcmp(type, "JavaScript"))
+		{
+			pdf_obj *js = pdf_dict_gets(a, "JS");
+			if (js)
+				pdf_js_execute(doc->js, pdf_to_str_buf(js));
+		}
+
+		a = pdf_dict_gets(a, "Next");
+	}
+}
+
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *as;
@@ -673,6 +693,8 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 						changed = 1;
 						break;
 					}
+
+					execute_action(doc, annot->obj);
 				}
 				break;
 			}

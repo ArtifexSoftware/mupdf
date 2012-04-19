@@ -46,7 +46,7 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 		pdf_obj *t;
 		field = pdf_array_get(js->form, i);
 		t = pdf_dict_gets(field, "T");
-		if (!strcmp(name, pdf_to_name(t)))
+		if (!strcmp(name, pdf_to_str_buf(t)))
 			break;
 	}
 
@@ -111,4 +111,9 @@ void pdf_drop_js(pdf_js *js)
 		pdf_drop_jsimp(js->imp);
 		fz_free(ctx, js);
 	}
+}
+
+void pdf_js_execute(pdf_js *js, char *code)
+{
+	pdf_jsimp_execute(js->imp, code);
 }
