@@ -53,8 +53,9 @@ char *pdfapp_usage(pdfapp_t *app)
 		"W\t\t-- zoom to fit window width\n"
 		"H\t\t-- zoom to fit window height\n"
 		"w\t\t-- shrinkwrap\n"
+		"f\t\t-- fullscreen\n"
 		"r\t\t-- reload file\n"
-		". pgdn right space\t-- next page\n"
+		". pgdn right spc\t-- next page\n"
 		", pgup left b\t-- previous page\n"
 		">\t\t-- next 10 pages\n"
 		"<\t\t-- back 10 pages\n"
@@ -62,12 +63,15 @@ char *pdfapp_usage(pdfapp_t *app)
 		"t\t\t-- pop back to latest mark\n"
 		"1m\t\t-- mark page in register 1\n"
 		"1t\t\t-- go to page in register 1\n"
+		"G\t\t-- go to last page\n"
 		"123g\t\t-- go to page 123\n"
-		"/\t\t-- search for text\n"
+		"/\t\t-- search forwards for text\n"
+		"?\t\t-- search backwards for text\n"
 		"n\t\t-- find next search result\n"
 		"N\t\t-- find previous search result\n"
 		"c\t\t-- toggle between color and grayscale\n"
 		"i\t\t-- toggle inverted color mode\n"
+		"q\t\t-- quit\n"
 	;
 }
 
