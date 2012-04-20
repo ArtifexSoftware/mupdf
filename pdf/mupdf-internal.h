@@ -590,10 +590,12 @@ pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx);
 void pdf_drop_jsimp(pdf_jsimp *imp);
 
 pdf_jsimp_type *pdf_jsimp_new_type(pdf_jsimp *imp, pdf_jsimp_dtr *dtr);
+void pdf_jsimp_drop_type(pdf_jsimp *imp, pdf_jsimp_type *type);
 void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth);
 void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set);
 
 pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *obj);
+void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 void pdf_jsimp_set_this(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 

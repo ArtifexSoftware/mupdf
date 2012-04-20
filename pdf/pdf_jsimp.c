@@ -65,58 +65,90 @@ static double digit_button(pdf_jsimp *imp, int digit)
 
 static void assign_display_value(pdf_jsimp *imp, double val)
 {
+	fz_context *ctx = imp->ctx;
 	char valstr[256];
-	pdf_jsimp_obj *valobj;
+	pdf_jsimp_obj *valobj = NULL;
+	pdf_jsimp_obj *strarg = NULL;
 
-	if (imp->display == NULL)
+	fz_var(valobj);
+	fz_var(strarg);
+	fz_try(ctx)
 	{
-		pdf_jsimp_obj *str_arg = pdf_jsimp_fromString(imp, "Display");
-		pdf_jsimp_obj *doc = imp->jsthis;
-		imp->display = doc->type->getField(imp->jsctx, doc->obj, 1, &str_arg);
+		if (imp->display == NULL)
+		{
+			pdf_jsimp_obj *doc = imp->jsthis;
+			strarg = pdf_jsimp_fromString(imp, "Display");
+			imp->display = doc->type->getField(imp->jsctx, doc->obj, 1, &strarg);
+		}
+
+		snprintf(valstr, sizeof(valstr), "%f", val);
+		if (imp->display && imp->display->type->setValue)
+		{
+			valobj = pdf_jsimp_fromString(imp, valstr);
+			imp->display->type->setValue(imp->jsctx, imp->display->obj, valobj);
+		}
 	}
-
-	snprintf(valstr, sizeof(valstr), "%f", val);
-	if (imp->display && imp->display->type->setValue)
+	fz_always(ctx)
 	{
-		valobj = pdf_jsimp_fromString(imp, valstr);
-		imp->display->type->setValue(imp->jsctx, imp->display->obj, valobj);
+		pdf_jsimp_drop_obj(imp, strarg);
+		pdf_jsimp_drop_obj(imp, valobj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 
 static void assign_func_value(pdf_jsimp *imp, int val)
 {
+	fz_context *ctx = imp->ctx;
 	pdf_jsimp_obj *valobj = NULL;
+	pdf_jsimp_obj *strarg = NULL;
 
-	if (imp->funcfield == NULL)
+	fz_var(valobj);
+	fz_var(strarg);
+	fz_try(ctx)
 	{
-		pdf_jsimp_obj *str_arg = pdf_jsimp_fromString(imp, "Func");
-		pdf_jsimp_obj *doc = imp->jsthis;
-		imp->funcfield = doc->type->getField(imp->jsctx, doc->obj, 1, &str_arg);
-	}
-
-	if (imp->funcfield && imp->funcfield->type->setValue)
-	{
-		switch(val)
+		if (imp->funcfield == NULL)
 		{
-		case FUNC_NONE:
-			valobj = pdf_jsimp_fromString(imp, "");
-			break;
-		case FUNC_MULT:
-			valobj = pdf_jsimp_fromString(imp, "MULT");
-			break;
-		case FUNC_DIV:
-			valobj = pdf_jsimp_fromString(imp, "DIV");
-			break;
-		case FUNC_PLUS:
-			valobj = pdf_jsimp_fromString(imp, "PLUS");
-			break;
-		case FUNC_MINUS:
-			valobj = pdf_jsimp_fromString(imp, "MINUS");
-			break;
+			pdf_jsimp_obj *strarg = pdf_jsimp_fromString(imp, "Func");
+			pdf_jsimp_obj *doc = imp->jsthis;
+			imp->funcfield = doc->type->getField(imp->jsctx, doc->obj, 1, &strarg);
 		}
 
-		if (valobj)
-			imp->funcfield->type->setValue(imp->jsctx, imp->funcfield->obj, valobj);
+		if (imp->funcfield && imp->funcfield->type->setValue)
+		{
+			switch(val)
+			{
+			case FUNC_NONE:
+				valobj = pdf_jsimp_fromString(imp, "");
+				break;
+			case FUNC_MULT:
+				valobj = pdf_jsimp_fromString(imp, "MULT");
+				break;
+			case FUNC_DIV:
+				valobj = pdf_jsimp_fromString(imp, "DIV");
+				break;
+			case FUNC_PLUS:
+				valobj = pdf_jsimp_fromString(imp, "PLUS");
+				break;
+			case FUNC_MINUS:
+				valobj = pdf_jsimp_fromString(imp, "MINUS");
+				break;
+			}
+
+			if (valobj)
+				imp->funcfield->type->setValue(imp->jsctx, imp->funcfield->obj, valobj);
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_jsimp_drop_obj(imp, strarg);
+		pdf_jsimp_drop_obj(imp, valobj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 
@@ -206,6 +238,11 @@ pdf_jsimp_type *pdf_jsimp_new_type(pdf_jsimp *imp, pdf_jsimp_dtr *dtr)
 	return type;
 }
 
+void pdf_jsimp_drop_type(pdf_jsimp *imp, pdf_jsimp_type *type)
+{
+	fz_free(imp->ctx, type);
+}
+
 void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth)
 {
 	if (!strcmp(name, "getField"))
@@ -232,6 +269,25 @@ pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *nat
 	return obj;
 }
 
+void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+{
+	if (obj)
+	{
+		if (obj->type)
+		{
+			if (obj->type->dtr)
+				obj->type->dtr(imp->jsctx, obj->obj);
+		}
+		else
+		{
+			/* It's a string */
+			fz_free(imp->ctx, obj->obj);
+		}
+
+		fz_free(imp->ctx, obj);
+	}
+}
+
 void pdf_jsimp_set_this(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	imp->jsthis = obj;
@@ -242,7 +298,15 @@ pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str)
 {
 	/* Represent a string object as a pdf_jsimp_obj with a NULL type */
 	pdf_jsimp_obj *obj = fz_malloc_struct(imp->ctx, pdf_jsimp_obj);
-	obj->obj = fz_strdup(imp->ctx, str);
+	fz_try(imp->ctx)
+	{
+		obj->obj = fz_strdup(imp->ctx, str);
+	}
+	fz_catch(imp->ctx)
+	{
+		pdf_jsimp_drop_obj(imp, obj);
+		fz_rethrow(imp->ctx);
+	}
 
 	return obj;
 }
