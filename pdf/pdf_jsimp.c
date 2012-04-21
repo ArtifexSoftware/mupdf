@@ -81,7 +81,7 @@ static void assign_display_value(pdf_jsimp *imp, double val)
 			imp->display = doc->type->getField(imp->jsctx, doc->obj, 1, &strarg);
 		}
 
-		snprintf(valstr, sizeof(valstr), "%f", val);
+		snprintf(valstr, sizeof(valstr), "%.8f", val);
 		if (imp->display && imp->display->type->setValue)
 		{
 			valobj = pdf_jsimp_fromString(imp, valstr);
