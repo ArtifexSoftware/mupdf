@@ -1236,7 +1236,7 @@ static int pdf_meta(fz_document *doc_, int key, void *ptr, int size)
 		default:
 			return 0;
 		}
-		return pdf_has_permission(doc, size);
+		return pdf_has_permission(doc, i);
 	}
 	case FZ_META_INFO:
 	{
