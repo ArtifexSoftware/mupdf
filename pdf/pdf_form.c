@@ -1,6 +1,9 @@
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
 
+#define MEASURE_SCALE (10.0)
+#define MATRIX_COEFS (6)
+
 enum
 {
 	Ff_NoToggleToOff = 1 << (15-1),
@@ -8,6 +11,13 @@ enum
 	Ff_Pushbutton    = 1 << (17-1),
 	Ff_RadioInUnison = 1 << (26-1),
 	Ff_Combo         = 1 << (18-1)
+};
+
+enum
+{
+	Q_Left  = 0,
+	Q_Cent  = 1,
+	Q_Right = 2
 };
 
 struct fz_widget_s
@@ -201,16 +211,17 @@ static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *d
 	}
 }
 
-static fz_bbox measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
+static fz_rect measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
 {
 	fz_context *ctx = doc->ctx;
 	fz_device *dev = NULL;
 	fz_bbox bbox = fz_empty_bbox;
+	fz_rect rect;
 
 	fz_try(ctx)
 	{
 		dev = fz_new_bbox_device(doc->ctx, &bbox);
-		pdf_run_glyph(doc, dr, fzbuf, dev, fz_identity, NULL);
+		pdf_run_glyph(doc, dr, fzbuf, dev, fz_scale(MEASURE_SCALE, MEASURE_SCALE), NULL);
 	}
 	fz_always(ctx)
 	{
@@ -221,7 +232,12 @@ static fz_bbox measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
 		fz_rethrow(ctx);
 	}
 
-	return bbox;
+	rect.x0 = bbox.x0 / MEASURE_SCALE;
+	rect.x1 = bbox.x1 / MEASURE_SCALE;
+	rect.y0 = bbox.y0 / MEASURE_SCALE;
+	rect.y1 = bbox.y1 / MEASURE_SCALE;
+
+	return rect;
 }
 
 static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
@@ -249,10 +265,7 @@ static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, i
 		if (clip)
 			fz_buffer_printf(ctx, fzbuf, fmtclip, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
 		fz_buffer_printf(ctx, fzbuf, fmtbtxt);
-		if (fontsize < 0)
-			fz_buffer_printf(ctx, fzbuf, " %s", da); /* Copy da unchanged */
-		else
-			copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
+		copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
 		fz_buffer_printf(ctx, fzbuf, fmttxt, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f, text);
 	}
 	fz_catch(ctx)
@@ -264,27 +277,47 @@ static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, i
 	return fzbuf;
 }
 
+static fz_buffer *create_aligned_text_buffer(pdf_document *doc, fz_rect *clip, pdf_obj *dr, char *da, int fontsize, fz_matrix *tm, int q, char *text)
+{
+	fz_context *ctx = doc->ctx;
+	fz_buffer *fzbuf = create_text_buffer(ctx, clip, da, fontsize, tm, text);
+
+	if (q != Q_Left)
+	{
+		fz_matrix atm = *tm;
+		fz_rect rect = measure_text(doc, dr, fzbuf);
+
+		atm.e -= q == Q_Right ? (rect.x1 - rect.x0)
+							  : (rect.x1 - rect.x0) / 2;
+
+		fz_drop_buffer(ctx, fzbuf);
+		fzbuf = create_text_buffer(ctx, clip, da, fontsize, &atm, text);
+	}
+
+	return fzbuf;
+}
+
 static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, char *text, float *ascent, float *descent)
 {
 	fz_context *ctx = doc->ctx;
 	char *testtext = NULL;
 	fz_buffer *fzbuf = NULL;
-	fz_bbox bbox;
+	fz_rect bbox;
 
 	fz_var(testtext);
 	fz_var(fzbuf);
 	fz_try(ctx)
 	{
 		/* Heuristic: adding "My" to text will in most cases
-		 * produce a measurement that will accompass all chars */
+		 * produce a measurement that will encompass all chars */
 		testtext = fz_malloc(ctx, strlen(text) + 3);
 		strcpy(testtext, "My");
 		strcat(testtext, text);
 		/* Use large font size for increased accuracy */
-		fzbuf = create_text_buffer(ctx, NULL, da, 100, &fz_identity, testtext);
+		fzbuf = create_text_buffer(ctx, NULL, da, 10, &fz_identity, testtext);
 		bbox = measure_text(doc, dr, fzbuf);
-		*descent = -bbox.y0 / 100.0;
-		*ascent = bbox.y1 / 100.0;
+		*descent = -bbox.y0 / 10.0;
+		*ascent = bbox.y1 / 10.0;
 	}
 	fz_always(ctx)
 	{
@@ -297,14 +330,14 @@ static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, cha
 	}
 }
 
-fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr, char *da, char *text)
+fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, int q, pdf_obj *dr, char *da, char *text)
 {
 	fz_context *ctx = doc->ctx;
-	int fontsize;
+	int fontsize, da_fontsize;
 	float height, width;
 	fz_buffer *fzbuf = NULL;
 	fz_rect rect;
-	fz_bbox tbox;
+	fz_rect tbox;
 	rect = *bbox;
 
 	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
@@ -322,22 +355,33 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 	fz_try(ctx)
 	{
 	    float ascent, descent;
-		fz_matrix tm = fz_identity;
+		fz_matrix tm;
 
-		measure_ascent_descent(doc, dr, da, text, &ascent, &descent);
-		fontsize = read_font_size_from_da(ctx, da);
-		if (fontsize)
+		da_fontsize = read_font_size_from_da(ctx, da);
+		fontsize = da_fontsize ? da_fontsize : floor(height);
+
+		if (oldtm)
 		{
-			tm.e = 2.0;
-			tm.f = 2.0 + fontsize * descent;
-			fzbuf = create_text_buffer(ctx, &rect, da, -1.0, &tm, text);
+			tm = *oldtm;
 		}
 		else
 		{
-			fontsize = floor(height);
+			measure_ascent_descent(doc, dr, da, text, &ascent, &descent);
+			tm = fz_identity;
 			tm.e = 2.0;
 			tm.f = 2.0 + fontsize * descent;
-			fzbuf = create_text_buffer(ctx, &rect, da, fontsize, &tm, text);
+
+			switch(q)
+			{
+			case Q_Right: tm.e += width; break;
+			case Q_Cent: tm.e += width/2; break;
+			}
+		}
+
+		fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
+
+		if (!da_fontsize)
+		{
 			tbox = measure_text(doc, dr, fzbuf);
 
 			if (tbox.x1 - tbox.x0 > width)
@@ -347,8 +391,9 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr,
 				fzbuf = NULL;
 				/* Scale the text to fit but use the same offset
 				 * to keep the baseline constant */
-				tm.a = tm.d = width / (tbox.x1 - tbox.x0);
-				fzbuf = create_text_buffer(ctx, &rect, da, fontsize, &tm, text);
+				tm.a *= width / (tbox.x1 - tbox.x0);
+				tm.d *= width / (tbox.x1 - tbox.x0);
+				fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
 			}
 		}
 	}
@@ -449,12 +494,95 @@ static void update_marked_content(fz_context *ctx, pdf_xobject *form, fz_buffer 
 	}
 }
 
+int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
+{
+	fz_context *ctx = doc->ctx;
+	int found = 0;
+	unsigned char *buf;
+	int bufsize;
+	pdf_lexbuf lbuf;
+	fz_stream *str;
+
+	bufsize = fz_buffer_storage(ctx, form->contents, &buf);
+	str = fz_open_memory(ctx, buf, bufsize);
+
+	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
+	lbuf.size = sizeof(lbuf.scratch);
+
+	fz_try(ctx)
+	{
+		int tok;
+		float coefs[MATRIX_COEFS];
+		int coef_i = 0;
+
+		/* Look for the text matrix Tm in the stream */
+		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
+		{
+			if (tok == PDF_TOK_INT || tok == PDF_TOK_REAL)
+			{
+				if (coef_i >= MATRIX_COEFS)
+				{
+					int i;
+					for (i = 0; i < MATRIX_COEFS-1; i++)
+						coefs[i] = coefs[i+1];
+
+					coef_i = MATRIX_COEFS-1;
+				}
+
+				coefs[coef_i++] = tok == PDF_TOK_INT ? lbuf.i
+													 : lbuf.f;
+			}
+			else
+			{
+				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "Tm") && coef_i == MATRIX_COEFS)
+				{
+					found = 1;
+					mt->a = coefs[0];
+					mt->b = coefs[1];
+					mt->c = coefs[2];
+					mt->d = coefs[3];
+					mt->e = coefs[4];
+					mt->f = coefs[5];
+				}
+
+				coef_i = 0;
+			}
+		}
+
+		if (found)
+		{
+			if (q != Q_Left)
+			{
+				/* Offset the matrix to refer to the alignment position */
+				fz_rect bbox = measure_text(doc, form->resources, form->contents);
+				mt->e += q == Q_Right ? (bbox.x1 - bbox.x0)
+									  : (bbox.x1 - bbox.x0) / 2;
+			}
+		}
+		else
+		{
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_close(str);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return found;
+}
+
 static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *ap, *n, *dr, *da;
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
+	fz_matrix tm;
+	int q, has_tm;
 
 	fz_var(form);
 	fz_var(fzbuf);
@@ -464,6 +592,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 		dr = get_inheritable(doc, obj, "DR");
 		da = get_inheritable(doc, obj, "DA");
 		ap = pdf_dict_gets(obj, "AP");
+		q  = pdf_to_int(get_inheritable(doc, obj, "Q"));
 		if (pdf_is_dict(ap))
 		{
 			n = pdf_dict_gets(ap, "N");
@@ -483,7 +612,8 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 						fz_dict_put(form->resources, key, pdf_dict_get_val(dr, i));
 				}
 
-				fzbuf = create_text_appearance(doc, &form->bbox, dr, pdf_to_str_buf(da), text);
+				has_tm = get_matrix(doc, form, q, &tm);
+				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, q, dr, pdf_to_str_buf(da), text);
 				update_marked_content(ctx, form, fzbuf);
 			}
 		}
