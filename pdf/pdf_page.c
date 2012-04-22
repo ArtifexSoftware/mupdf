@@ -129,10 +129,14 @@ pdf_load_page_tree_node(pdf_document *xref, pdf_obj *node, struct info info)
 		}
 		while (stacklen >= 0);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		while (stacklen >= 0)
 			pdf_dict_unmark(stack[stacklen--].node);
+		fz_free(ctx, stack);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
 }
