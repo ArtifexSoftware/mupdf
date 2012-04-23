@@ -310,11 +310,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg-8d\jmemansi.c"
+				RelativePath="..\thirdparty\jpeg-8d\jmemmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg-8d\jmemmgr.c"
+				RelativePath="..\thirdparty\jpeg-8d\jmemnobs.c"
 				>
 			</File>
 			<File
