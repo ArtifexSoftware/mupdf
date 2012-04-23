@@ -190,6 +190,8 @@ public class MuPDFActivity extends Activity
 	}
 
 	public void createUI(Bundle savedInstanceState) {
+		if (core == null)
+			return;
 		// Now create the UI.
 		// First create the document view making use of the ReaderView's internal
 		// gesture recognition
@@ -255,6 +257,8 @@ public class MuPDFActivity extends Activity
 			}
 
 			protected void onMoveToChild(int i) {
+				if (core == null)
+					return;
 				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
 				mPageSlider.setMax(core.countPages()-1);
 				mPageSlider.setProgress(i);
@@ -479,6 +483,8 @@ public class MuPDFActivity extends Activity
 	}
 
 	void showButtons() {
+		if (core == null)
+			return;
 		if (!mButtonsVisible) {
 			mButtonsVisible = true;
 			// Update page number text and slider
@@ -567,6 +573,8 @@ public class MuPDFActivity extends Activity
 	}
 
 	void updatePageNumView(int index) {
+		if (core == null)
+			return;
 		mPageNumberView.setText(String.format("%d/%d", index+1, core.countPages()));
 	}
 
@@ -608,6 +616,8 @@ public class MuPDFActivity extends Activity
 	}
 
 	void search(int direction) {
+		if (core == null)
+			return;
 		killSearch();
 
 		final ProgressDialogX progressDialog = new ProgressDialogX(this);
