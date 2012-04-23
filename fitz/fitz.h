@@ -703,7 +703,7 @@ extern const fz_bbox fz_infinite_bbox;
 	different representations.
 
 	/ a b 0 \
-	| c d 0 |   normally represented as    [ a b c d e f ].
+	| c d 0 | normally represented as [ a b c d e f ].
 	\ e f 1 /
 */
 typedef struct fz_matrix_s fz_matrix;
