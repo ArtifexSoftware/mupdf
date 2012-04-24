@@ -32,12 +32,23 @@ import android.widget.TextView;
 import android.widget.ViewSwitcher;
 
 class SearchTaskResult {
+	public final String txt;
 	public final int   pageNumber;
 	public final RectF searchBoxes[];
+	static private SearchTaskResult singleton;
 
-	SearchTaskResult(int _pageNumber, RectF _searchBoxes[]) {
+	SearchTaskResult(String _txt, int _pageNumber, RectF _searchBoxes[]) {
+		txt = _txt;
 		pageNumber = _pageNumber;
 		searchBoxes = _searchBoxes;
+	}
+
+	static public SearchTaskResult get() {
+		return singleton;
+	}
+
+	static public void set(SearchTaskResult r) {
+		singleton = r;
 	}
 }
 
@@ -83,7 +94,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
 	private AsyncTask<Integer,Integer,SearchTaskResult> mSearchTask;
-	private SearchTaskResult mSearchTaskResult;
+	//private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 	private LinkState    mLinkState = LinkState.DEFAULT;
 	private final Handler mHandler = new Handler();
@@ -248,8 +259,8 @@ public class MuPDFActivity extends Activity
 			}
 
 			protected void onChildSetup(int i, View v) {
-				if (mSearchTaskResult != null && mSearchTaskResult.pageNumber == i)
-					((PageView)v).setSearchBoxes(mSearchTaskResult.searchBoxes);
+				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber == i)
+					((PageView)v).setSearchBoxes(SearchTaskResult.get().searchBoxes);
 				else
 					((PageView)v).setSearchBoxes(null);
 
@@ -262,8 +273,8 @@ public class MuPDFActivity extends Activity
 				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
 				mPageSlider.setMax(core.countPages()-1);
 				mPageSlider.setProgress(i);
-				if (mSearchTaskResult != null && mSearchTaskResult.pageNumber != i) {
-					mSearchTaskResult = null;
+				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber != i) {
+					SearchTaskResult.set(null);
 					mDocView.resetupChildren();
 				}
 			}
@@ -329,8 +340,8 @@ public class MuPDFActivity extends Activity
 				mSearchFwd.setEnabled(haveText);
 
 				// Remove any previous search results
-				if (mSearchTaskResult != null) {
-					mSearchTaskResult = null;
+				if (SearchTaskResult.get() != null && !mSearchText.getText().toString().equals(SearchTaskResult.get().txt)) {
+					SearchTaskResult.set(null);
 					mDocView.resetupChildren();
 				}
 			}
@@ -572,7 +583,7 @@ public class MuPDFActivity extends Activity
 		mTopBarIsSearch = false;
 		hideKeyboard();
 		mTopBarSwitcher.showPrevious();
-		mSearchTaskResult = null;
+		SearchTaskResult.set(null);
 		// Make the ReaderView act on the change to mSearchTaskResult
 		// via overridden onChildSetup method.
 		mDocView.resetupChildren();
@@ -641,17 +652,17 @@ public class MuPDFActivity extends Activity
 			@Override
 			protected SearchTaskResult doInBackground(Integer... params) {
 				int index;
-				if (mSearchTaskResult == null)
+				if (SearchTaskResult.get() == null)
 					index = mDocView.getDisplayedViewIndex();
 				else
-					index = mSearchTaskResult.pageNumber + params[0].intValue();
+					index = SearchTaskResult.get().pageNumber + params[0].intValue();
 
 				while (0 <= index && index < core.countPages() && !isCancelled()) {
 					publishProgress(index);
 					RectF searchHits[] = core.searchPage(index, mSearchText.getText().toString());
 
 					if (searchHits != null && searchHits.length > 0)
-						return new SearchTaskResult(index, searchHits);
+						return new SearchTaskResult(mSearchText.getText().toString(), index, searchHits);
 
 					index += params[0].intValue();
 				}
@@ -664,7 +675,7 @@ public class MuPDFActivity extends Activity
 				if (result != null) {
 					// Ask the ReaderView to move to the resulting page
 					mDocView.setDisplayedViewIndex(result.pageNumber);
-				    mSearchTaskResult = result;
+				    SearchTaskResult.set(result);
 					// Make the ReaderView act on the change to mSearchTaskResult
 					// via overridden onChildSetup method.
 				    mDocView.resetupChildren();
