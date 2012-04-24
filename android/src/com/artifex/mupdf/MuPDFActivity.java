@@ -349,16 +349,22 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
+		mSearchText.setOnKeyListener(new View.OnKeyListener() {
+			public boolean onKey(View v, int keyCode, KeyEvent event) {
+				if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER)
+					search(1);
+				return false;
+			}
+		});
+
 		// Activate search invoking buttons
 		mSearchBack.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				hideKeyboard();
 				search(-1);
 			}
 		});
 		mSearchFwd.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				hideKeyboard();
 				search(1);
 			}
 		});
@@ -616,6 +622,7 @@ public class MuPDFActivity extends Activity
 	}
 
 	void search(int direction) {
+		hideKeyboard();
 		if (core == null)
 			return;
 		killSearch();
