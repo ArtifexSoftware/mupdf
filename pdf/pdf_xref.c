@@ -178,6 +178,18 @@ pdf_resize_xref(pdf_document *xref, int newlen)
 	xref->len = newlen;
 }
 
+pdf_obj *
+pdf_new_ref(pdf_document *xref, pdf_obj *obj)
+{
+	int i = xref->len;
+	pdf_resize_xref(xref, i+1);
+	xref->table[i].type = 'n';
+	xref->table[i].ofs = -1;
+	xref->table[i].gen = 0;
+	xref->table[i].obj = obj;
+	return pdf_new_indirect(xref->ctx, i, 0, xref);
+}
+
 static pdf_obj *
 pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
