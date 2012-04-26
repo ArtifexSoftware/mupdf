@@ -81,11 +81,46 @@ public abstract class PageView extends ViewGroup {
 	protected abstract void drawPage(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract LinkInfo[] getLinkInfo();
 
+	public void releaseResources() {
+		// Cancel pending render task
+		if (mDrawEntire != null) {
+			mDrawEntire.cancel(true);
+			mDrawEntire = null;
+		}
+
+		if (mDrawPatch != null) {
+			mDrawPatch.cancel(true);
+			mDrawPatch = null;
+		}
+
+		mIsBlank = true;
+		mPageNumber = 0;
+
+		if (mSize == null)
+			mSize = mParentSize;
+
+		if (mEntire != null)
+			mEntire.setImageBitmap(null);
+
+		if (mPatch != null)
+			mPatch.setImageBitmap(null);
+
+		if (mBusyIndicator != null) {
+			removeView(mBusyIndicator);
+			mBusyIndicator = null;
+		}
+	}
+
 	public void blank(int page) {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
 			mDrawEntire.cancel(true);
 			mDrawEntire = null;
+		}
+
+		if (mDrawPatch != null) {
+			mDrawPatch.cancel(true);
+			mDrawPatch = null;
 		}
 
 		mIsBlank = true;
