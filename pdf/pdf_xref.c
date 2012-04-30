@@ -422,13 +422,13 @@ static void
 pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer = NULL;
-	pdf_obj *xrefstm = NULL;
-	pdf_obj *prev = NULL;
 	fz_context *ctx = xref->ctx;
+	int xrefstmofs = 0;
+	int prevofs = 0;
 
 	fz_var(trailer);
-	fz_var(xrefstm);
-	fz_var(prev);
+	fz_var(xrefstmofs);
+	fz_var(prevofs);
 
 	fz_try(ctx)
 	{
@@ -441,8 +441,8 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 			fz_try(ctx)
 			{
 				/* FIXME: do we overwrite free entries properly? */
-				xrefstm = pdf_dict_gets(trailer, "XRefStm");
-				prev = pdf_dict_gets(trailer, "Prev");
+				xrefstmofs = pdf_to_int(pdf_dict_gets(trailer, "XRefStm"));
+				prevofs = pdf_to_int(pdf_dict_gets(trailer, "Prev"));
 			}
 			fz_always(ctx)
 			{
@@ -455,16 +455,16 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 
 			/* We only recurse if we have both xrefstm and prev.
 			 * Hopefully this happens infrequently. */
-			if (xrefstm && prev)
-				pdf_read_xref_sections(xref, pdf_to_int(xrefstm), buf);
-			if (prev)
-				ofs = pdf_to_int(prev);
-			else if (xrefstm)
-				ofs = pdf_to_int(xrefstm);
+			if (xrefstmofs && prevofs)
+				pdf_read_xref_sections(xref, xrefstmofs, buf);
+			if (prevofs)
+ 				ofs = prevofs;
+			else if (xrefstmofs)
+				ofs = xrefstmofs;
 			pdf_drop_obj(trailer);
 			trailer = NULL;
 		}
-		while (prev || xrefstm);
+		while (prevofs || xrefstmofs);
 	}
 	fz_catch(ctx)
 	{
@@ -482,7 +482,7 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 static void
 pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
-	pdf_obj *size;
+	int size;
 	int i;
 	fz_context *ctx = xref->ctx;
 
@@ -496,7 +496,7 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 	fz_unlock(ctx, FZ_LOCK_FILE);
 	fz_try(ctx)
 	{
-		size = pdf_dict_gets(xref->trailer, "Size");
+		size = pdf_to_int(pdf_dict_gets(xref->trailer, "Size"));
 		if (!size)
 			fz_throw(ctx, "trailer missing Size entry");
 	}
@@ -509,7 +509,7 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 		fz_rethrow(ctx);
 	}
 
-	pdf_resize_xref(xref, pdf_to_int(size));
+	pdf_resize_xref(xref, size);
 
 	pdf_read_xref_sections(xref, xref->startxref, buf);
 
