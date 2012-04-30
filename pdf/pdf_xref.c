@@ -424,9 +424,23 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 		{
 			trailer = pdf_read_xref(xref, ofs, buf);
 
-			/* FIXME: do we overwrite free entries properly? */
-			xrefstm = pdf_dict_gets(trailer, "XRefStm");
-			prev = pdf_dict_gets(trailer, "Prev");
+			/* Unlock file in case XRefStm or Prev are indirect. */
+			fz_unlock(ctx, FZ_LOCK_FILE);
+			fz_try(ctx)
+			{
+				/* FIXME: do we overwrite free entries properly? */
+				xrefstm = pdf_dict_gets(trailer, "XRefStm");
+				prev = pdf_dict_gets(trailer, "Prev");
+			}
+			fz_always(ctx)
+			{
+				fz_lock(ctx, FZ_LOCK_FILE);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow(ctx);
+			}
+
 			/* We only recurse if we have both xrefstm and prev.
 			 * Hopefully this happens infrequently. */
 			if (xrefstm && prev)
@@ -449,6 +463,8 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 
 /*
  * load xref tables from pdf
+ *
+ * File locked on entry and exit; lock may be dropped in the middle.
  */
 
 static void
@@ -464,9 +480,22 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 	pdf_read_trailer(xref, buf);
 
-	size = pdf_dict_gets(xref->trailer, "Size");
-	if (!size)
-		fz_throw(ctx, "trailer missing Size entry");
+	/* Unlock (and relock) in case Size is indirect. */
+	fz_unlock(ctx, FZ_LOCK_FILE);
+	fz_try(ctx)
+	{
+		size = pdf_dict_gets(xref->trailer, "Size");
+		if (!size)
+			fz_throw(ctx, "trailer missing Size entry");
+	}
+	fz_always(ctx)
+	{
+		fz_lock(ctx, FZ_LOCK_FILE);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 
 	pdf_resize_xref(xref, pdf_to_int(size));
 
