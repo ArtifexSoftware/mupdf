@@ -12,8 +12,6 @@
 #include "fitz.h"
 #include "mupdf-internal.h"
 
-static FILE *out = NULL;
-
 static int x_factor = 0;
 static int y_factor = 0;
 
