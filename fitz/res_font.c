@@ -56,7 +56,7 @@ fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
 	else
 	{
 		if (use_glyph_bbox)
-			fz_warn(ctx, "not building glyph bbox table for font '%s' with %d glyphs", name, glyph_count);
+			fz_warn(ctx, "not building glyph bbox table for font '%s' with %d glyphs", font->name, glyph_count);
 		font->bbox_count = 0;
 		font->bbox_table = NULL;
 	}
