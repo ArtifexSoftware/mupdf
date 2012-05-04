@@ -520,7 +520,7 @@ static inline int fz_is_eof_bits(fz_stream *stm)
  */
 
 fz_stream *fz_open_copy(fz_stream *chain);
-fz_stream *fz_open_null(fz_stream *chain, int len);
+fz_stream *fz_open_null(fz_stream *chain, int len, int offset);
 fz_stream *fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen);
 fz_stream *fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen);
 fz_stream *fz_open_a85d(fz_stream *chain);

@@ -14,6 +14,7 @@ struct null_filter
 {
 	fz_stream *chain;
 	int remain;
+	int pos;
 };
 
 static int
@@ -21,8 +22,12 @@ read_null(fz_stream *stm, unsigned char *buf, int len)
 {
 	struct null_filter *state = stm->state;
 	int amount = MIN(len, state->remain);
-	int n = fz_read(state->chain, buf, amount);
+	int n;
+
+	fz_seek(state->chain, state->pos, 0);
+	n = fz_read(state->chain, buf, amount);
 	state->remain -= n;
+	state->pos += n;
 	return n;
 }
 
@@ -36,7 +41,7 @@ close_null(fz_context *ctx, void *state_)
 }
 
 fz_stream *
-fz_open_null(fz_stream *chain, int len)
+fz_open_null(fz_stream *chain, int len, int offset)
 {
 	struct null_filter *state;
 	fz_context *ctx = chain->ctx;
@@ -46,6 +51,7 @@ fz_open_null(fz_stream *chain, int len)
 		state = fz_malloc_struct(ctx, struct null_filter);
 		state->chain = chain;
 		state->remain = len;
+		state->pos = offset;
 	}
 	fz_catch(ctx)
 	{

@@ -226,7 +226,7 @@ build_filter_chain(fz_stream *chain, pdf_document *xref, pdf_obj *fs, pdf_obj *p
  * stream length, followed by a decryption filter.
  */
 static fz_stream *
-pdf_open_raw_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, int gen)
+pdf_open_raw_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, int gen, int offset)
 {
 	int hascrypt;
 	int len;
@@ -236,7 +236,7 @@ pdf_open_raw_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int n
 	fz_keep_stream(chain);
 
 	len = pdf_to_int(pdf_dict_gets(stmobj, "Length"));
-	chain = fz_open_null(chain, len);
+	chain = fz_open_null(chain, len, offset);
 
 	fz_try(ctx)
 	{
@@ -258,7 +258,7 @@ pdf_open_raw_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int n
  * to stream length and decrypting.
  */
 static fz_stream *
-pdf_open_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, int gen, pdf_image_params *imparams)
+pdf_open_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, int gen, int offset, pdf_image_params *imparams)
 {
 	pdf_obj *filters;
 	pdf_obj *params;
@@ -266,7 +266,7 @@ pdf_open_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, 
 	filters = pdf_dict_getsa(stmobj, "Filter", "F");
 	params = pdf_dict_getsa(stmobj, "DecodeParms", "DP");
 
-	chain = pdf_open_raw_filter(chain, xref, stmobj, num, gen);
+	chain = pdf_open_raw_filter(chain, xref, stmobj, num, gen, offset);
 
 	if (pdf_is_name(filters))
 		chain = build_filter(chain, xref, filters, params, num, gen, imparams);
@@ -298,7 +298,7 @@ pdf_open_inline_stream(pdf_document *xref, pdf_obj *stmobj, int length, fz_strea
 	if (pdf_array_len(filters) > 0)
 		return build_filter_chain(chain, xref, filters, params, 0, 0, imparams);
 
-	return fz_open_null(chain, length);
+	return fz_open_null(chain, length, fz_tell(chain));
 }
 
 /*
@@ -324,9 +324,8 @@ pdf_open_raw_stream(pdf_document *xref, int num, int gen)
 	if (x->stm_ofs == 0)
 		fz_throw(xref->ctx, "object is not a stream");
 
-	stm = pdf_open_raw_filter(xref->file, xref, x->obj, num, gen);
+	stm = pdf_open_raw_filter(xref->file, xref, x->obj, num, gen, x->stm_ofs);
 	fz_lock_stream(stm);
-	fz_seek(xref->file, x->stm_ofs, 0);
 	return stm;
 }
 
@@ -345,7 +344,6 @@ fz_stream *
 pdf_open_image_stream(pdf_document *xref, int num, int gen, pdf_image_params *params)
 {
 	pdf_xref_entry *x;
-	fz_stream *stm;
 
 	if (num < 0 || num >= xref->len)
 		fz_throw(xref->ctx, "object id out of range (%d %d R)", num, gen);
@@ -358,9 +356,7 @@ pdf_open_image_stream(pdf_document *xref, int num, int gen, pdf_image_params *pa
 	if (x->stm_ofs == 0)
 		fz_throw(xref->ctx, "object is not a stream");
 
-	stm = pdf_open_filter(xref->file, xref, x->obj, num, gen, params);
-	fz_seek(xref->file, x->stm_ofs, 0);
-	return stm;
+	return pdf_open_filter(xref->file, xref, x->obj, num, gen, x->stm_ofs, params);
 }
 
 fz_stream *
@@ -410,14 +406,10 @@ pdf_open_image_decomp_stream(fz_context *ctx, fz_buffer *buffer, pdf_image_param
 fz_stream *
 pdf_open_stream_with_offset(pdf_document *xref, int num, int gen, pdf_obj *dict, int stm_ofs)
 {
-	fz_stream *stm;
-
 	if (stm_ofs == 0)
 		fz_throw(xref->ctx, "object is not a stream");
 
-	stm = pdf_open_filter(xref->file, xref, dict, num, gen, NULL);
-	fz_seek(xref->file, stm_ofs, 0);
-	return stm;
+	return pdf_open_filter(xref->file, xref, dict, num, gen, stm_ofs, NULL);
 }
 
 /*
