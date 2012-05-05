@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 		doc = pdf_open_document(ctx, filename);
 		if (pdf_needs_password(doc))
 			if (!pdf_authenticate_password(doc, password))
-				fz_throw(ctx, "cannot authenticate password: %s", filename);
+				fz_warn(ctx, "cannot authenticate password: %s", filename);
 
 		if (fz_optind == argc)
 			showtrailer();
