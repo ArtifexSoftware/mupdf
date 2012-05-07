@@ -273,7 +273,6 @@ pdf_open_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, 
 	else if (pdf_array_len(filters) > 0)
 		chain = build_filter_chain(chain, xref, filters, params, num, gen, imparams);
 
-	fz_lock_stream(chain);
 	return chain;
 }
 
@@ -309,7 +308,6 @@ fz_stream *
 pdf_open_raw_stream(pdf_document *xref, int num, int gen)
 {
 	pdf_xref_entry *x;
-	fz_stream *stm;
 
 	fz_var(x);
 
@@ -324,9 +322,7 @@ pdf_open_raw_stream(pdf_document *xref, int num, int gen)
 	if (x->stm_ofs == 0)
 		fz_throw(xref->ctx, "object is not a stream");
 
-	stm = pdf_open_raw_filter(xref->file, xref, x->obj, num, gen, x->stm_ofs);
-	fz_lock_stream(stm);
-	return stm;
+	return pdf_open_raw_filter(xref->file, xref, x->obj, num, gen, x->stm_ofs);
 }
 
 /*
@@ -505,4 +501,50 @@ pdf_load_image_stream(pdf_document *xref, int num, int gen, pdf_image_params *pa
 	}
 
 	return buf;
+}
+
+static fz_stream *
+pdf_open_object_array(pdf_document *xref, pdf_obj *list)
+{
+	int i, n;
+	fz_context *ctx = xref->ctx;
+	fz_stream *stm;
+
+	n = pdf_array_len(list);
+	stm = fz_open_concat(ctx, n, 1);
+
+	fz_var(i); /* Workaround Mac compiler bug */
+	for (i = 0; i < n; i++)
+	{
+		pdf_obj *obj = pdf_array_get(list, i);
+		fz_try(ctx)
+		{
+			fz_concat_push(stm, pdf_open_stream(xref, pdf_to_num(obj), pdf_to_gen(obj)));
+		}
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot load content stream part %d/%d", i + 1, n);
+			continue;
+		}
+	}
+
+	return stm;
+}
+
+fz_stream *
+pdf_open_contents_stream(pdf_document *xref, pdf_obj *obj)
+{
+	fz_context *ctx = xref->ctx;
+
+	if (pdf_is_array(obj))
+	{
+		return pdf_open_object_array(xref, obj);
+	}
+	else if (pdf_is_stream(xref, pdf_to_num(obj), pdf_to_gen(obj)))
+	{
+		return pdf_open_image_stream(xref, pdf_to_num(obj), pdf_to_gen(obj), NULL);
+	}
+
+	fz_warn(ctx, "pdf object stream missing (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+	return NULL;
 }

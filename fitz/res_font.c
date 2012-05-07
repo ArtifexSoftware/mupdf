@@ -692,7 +692,7 @@ static fz_rect
 fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 {
 	fz_matrix ctm;
-	fz_buffer *contents;
+	void *contents;
 	fz_rect bounds;
 	fz_bbox bbox;
 	fz_device *dev;
@@ -726,7 +726,7 @@ fz_pixmap *
 fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_colorspace *model)
 {
 	fz_matrix ctm;
-	fz_buffer *contents;
+	void *contents;
 	fz_bbox bbox;
 	fz_device *dev;
 	fz_pixmap *glyph;
@@ -786,7 +786,7 @@ void
 fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, fz_matrix trm, void *gstate)
 {
 	fz_matrix ctm;
-	fz_buffer *contents;
+	void *contents;
 
 	if (gid < 0 || gid > 255)
 		return;
