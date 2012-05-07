@@ -66,20 +66,23 @@ static void declare_dom(pdf_js *js)
 	js->fieldtype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addproperty(imp, js->fieldtype, "value", field_getValue, field_setValue);
 
-	/* Create the document object and tell the engine to use
-	 * it as "this" */
-	js->jsdoc = pdf_jsimp_new_obj(imp, js->doctype, NULL);
-	pdf_jsimp_set_this(js->imp, js->jsdoc);
+	/* Create the document object and tell the engine to use */
+	pdf_jsimp_set_global_type(js->imp, js->doctype);
 }
 
 pdf_js *pdf_new_js(pdf_document *doc)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_js     *js = NULL;
+	pdf_obj    *javascript = NULL;
+	fz_buffer  *fzbuf = NULL;
 
 	fz_var(js);
+	fz_var(javascript);
+	fz_var(fzbuf);
 	fz_try(ctx)
 	{
+		int len, i;
 		pdf_obj *root, *acroform;
 		js = fz_malloc_struct(ctx, pdf_js);
 		js->doc = doc;
@@ -94,6 +97,32 @@ pdf_js *pdf_new_js(pdf_document *doc)
 		 * pass our js context, for it to pass back to us. */
 		js->imp = pdf_new_jsimp(ctx, js);
 		declare_dom(js);
+
+		javascript = pdf_load_name_tree(doc, "JavaScript");
+		len = pdf_dict_len(javascript);
+
+		for (i = 0; i < len; i++)
+		{
+			pdf_obj *fragment = pdf_dict_get_val(javascript, i);
+			pdf_obj *code = pdf_dict_gets(fragment, "JS");
+
+			if (pdf_is_stream(doc, pdf_to_num(code), pdf_to_gen(code)))
+			{
+				unsigned char *buf;
+				int len;
+
+				fzbuf = pdf_load_stream(doc, pdf_to_num(code), pdf_to_gen(code));
+				len = fz_buffer_storage(ctx, fzbuf, &buf);
+				pdf_jsimp_execute_count(js->imp, buf, len);
+				fz_drop_buffer(ctx, fzbuf);
+				fzbuf = NULL;
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, fzbuf);
+		pdf_drop_obj(javascript);
 	}
 	fz_catch(ctx)
 	{
@@ -119,4 +148,9 @@ void pdf_drop_js(pdf_js *js)
 void pdf_js_execute(pdf_js *js, char *code)
 {
 	pdf_jsimp_execute(js->imp, code);
+}
+
+void pdf_js_execute_count(pdf_js *js, char *code, int count)
+{
+	pdf_jsimp_execute_count(js->imp, code, count);
 }

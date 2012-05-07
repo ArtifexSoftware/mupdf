@@ -573,6 +573,7 @@ void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 pdf_js *pdf_new_js(pdf_document *doc);
 void pdf_drop_js(pdf_js *js);
 void pdf_js_execute(pdf_js *js, char *code);
+void pdf_js_execute_count(pdf_js *js, char *code, int count);
 
 /*
  * Javascript engine interface
@@ -593,15 +594,15 @@ pdf_jsimp_type *pdf_jsimp_new_type(pdf_jsimp *imp, pdf_jsimp_dtr *dtr);
 void pdf_jsimp_drop_type(pdf_jsimp *imp, pdf_jsimp_type *type);
 void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth);
 void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set);
+void pdf_jsimp_set_global_type(pdf_jsimp *imp, pdf_jsimp_type *type);
 
 pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *obj);
 void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
-
-void pdf_jsimp_set_this(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
 char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 void pdf_jsimp_execute(pdf_jsimp *imp, char *code);
+void pdf_jsimp_execute_count(pdf_jsimp *imp, char *code, int count);
 
 #endif

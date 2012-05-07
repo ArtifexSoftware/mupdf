@@ -260,6 +260,11 @@ void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf
 	}
 }
 
+void pdf_jsimp_set_global_type(pdf_jsimp *imp, pdf_jsimp_type *type)
+{
+	imp->jsthis = pdf_jsimp_new_obj(imp, type, NULL);
+}
+
 pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj)
 {
 	pdf_jsimp_obj *obj = fz_malloc_struct(imp->ctx, pdf_jsimp_obj);
@@ -396,4 +401,8 @@ void pdf_jsimp_execute(pdf_jsimp *imp, char *code)
 		update_result(imp);
 		assign_display_value(imp, imp->accum);
 	}
+}
+
+void pdf_jsimp_execute_count(pdf_jsimp *imp, char *code, int count)
+{
 }
