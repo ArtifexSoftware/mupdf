@@ -78,3 +78,23 @@ fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 		*datap = (buf ? buf->data : NULL);
 	return (buf ? buf->len : 0);
 }
+
+void
+fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...)
+{
+	int count;
+	int done = 0;
+	va_list args;
+	va_start(args, fmt);
+
+	while(!done)
+	{
+		count = vsnprintf(buffer->data + buffer->len, buffer->cap - buffer->len, fmt, args);
+		done = (count >= 0 && count < buffer->cap - buffer->len);
+		if (!done)
+			fz_grow_buffer(ctx, buffer);
+	}
+
+	buffer->len += count;
+	va_end(args);
+}

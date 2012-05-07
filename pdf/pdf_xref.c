@@ -1115,6 +1115,18 @@ pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
 	x->ofs = 0;
 }
 
+pdf_obj *
+pdf_new_stream_indirection(pdf_document *xref, pdf_obj *obj)
+{
+	int num = xref->len;
+	pdf_resize_xref(xref, xref->len + 1);
+	pdf_update_object(xref, num, 0, obj);
+	/* Set stm_ofs, so that obj is treated as a stream */
+	xref->table[num].stm_ofs = 1;
+
+	return pdf_new_indirect(xref->ctx, num, 0, xref);
+}
+
 /*
  * Convenience function to open a file then call pdf_open_document_with_stream.
  */

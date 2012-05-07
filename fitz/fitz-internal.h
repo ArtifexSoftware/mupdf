@@ -410,6 +410,11 @@ void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 */
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
+/*
+	fz_buffer_printf: print formatted to a buffer, growing if necessary
+*/
+void fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...);
+
 struct fz_stream_s
 {
 	fz_context *ctx;

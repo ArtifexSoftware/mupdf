@@ -134,6 +134,11 @@ pdf_obj *pdf_parse_stm_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_ind_obj(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf, int *num, int *gen, int *stm_ofs);
 
 /*
+	pdf_print_token: print a lexed token to a buffer, growing if necessary
+*/
+void pdf_print_token(fz_context *ctx, fz_buffer *buf, int tok, pdf_lexbuf *lex);
+
+/*
  * xref and object / stream api
  */
 
@@ -203,6 +208,7 @@ void pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf);
 void pdf_repair_obj_stms(pdf_document *doc);
 void pdf_print_xref(pdf_document *);
 void pdf_resize_xref(pdf_document *doc, int newcap);
+pdf_obj *pdf_new_stream_indirection(pdf_document *doc, pdf_obj *obj);
 
 /*
  * Encryption
@@ -285,8 +291,10 @@ struct pdf_xobject_s
 };
 
 pdf_xobject *pdf_load_xobject(pdf_document *doc, pdf_obj *obj);
+pdf_obj *pdf_new_xobject(pdf_document *doc, fz_rect *bbox);
 pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
+void pdf_xobject_set_contents(fz_context *ctx, pdf_xobject *from, fz_buffer *buffer);
 
 /*
  * CMap
