@@ -10,11 +10,6 @@ enum
 	Ff_Combo         = 1 << (18-1)
 };
 
-enum
-{
-	MaxNumChars = 20
-};
-
 struct fz_widget_s
 {
 	pdf_document *doc;
@@ -116,25 +111,69 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 	return widget;
 }
 
+static void copy_da_with_size_check(fz_context *ctx, fz_buffer *fzbuf, char *da, float h)
+{
+	int tok;
+	pdf_lexbuf lbuf;
+	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
+
+	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
+	lbuf.size = sizeof(lbuf.scratch);
+	fz_try(ctx)
+	{
+		int last_tok_was_zero = 0;
+
+		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
+		{
+			if (last_tok_was_zero)
+			{
+				/* Tf with 0 size means choose size to fit, so replace
+				 * 0 with h */
+				if (tok = PDF_TOK_NAME && !strcmp(lbuf.scratch, "Tf"))
+					fz_buffer_printf(ctx, fzbuf, " %1.2f", h);
+				else
+					fz_buffer_printf(ctx, fzbuf, " %d", 0);
+
+				last_tok_was_zero = 0;
+			}
+
+			if (tok == PDF_TOK_INT && lbuf.i == 0)
+				last_tok_was_zero = 1;
+			else
+			{
+				fz_buffer_printf(ctx, fzbuf, " ");
+				pdf_print_token(ctx, fzbuf, tok, &lbuf);
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_close(str);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char *text)
 {
+	int height;
 	fz_buffer *fzbuf;
-	int len;
-	unsigned char *buf;
 	fz_rect rect;
-	const char *fmt = "/Tx BMC"
+	const char *fmt1 =
+		"/Tx BMC"
 		" q"
-		" %.2f %.2f %.2f %.2f re"
+		" %1.2f %1.2f %1.2f %1.2f re"
 		" W"
 		" n"
-		" BT"
-		" %s"
+		" BT";
+	const char *fmt2 = 
 		" (%s) Tj"
 		" ET"
 		" Q"
 		" EMC";
 
-	len = strlen(fmt) + 4*(MaxNumChars - 2) + strlen(da) - 2, strlen(text) - 2;
 	rect = *bbox;
 
 	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
@@ -145,13 +184,14 @@ fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char
 		rect.y1 -= 1.0;
 	}
 
-	fzbuf = fz_new_buffer(ctx, len+1);
-	(void)fz_buffer_storage(ctx, fzbuf, &buf);
-	fzbuf->len = snprintf(buf, len+1,
-		fmt, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0,
-		da, text);
-	if (fzbuf->len < 0 || fzbuf->len > len)
-		fz_throw(ctx, "predicted length to small");
+	height = MAX(bbox->y1 - bbox->y0 - 4.0, 1.0);
+
+	fzbuf = fz_new_buffer(ctx, 0);
+	fz_buffer_printf(ctx, fzbuf, fmt1,
+		rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
+	copy_da_with_size_check(ctx, fzbuf, da, height);
+	fz_buffer_printf(ctx, fzbuf, fmt2,
+		text);
 
 	return fzbuf;
 }
