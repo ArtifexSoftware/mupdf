@@ -978,9 +978,18 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 		if (fz_pass_event(app->doc, app->page, &event))
 		{
+			fz_widget *widget;
+
 			app->nowaitcursor = 1;
 			pdfapp_showpage(app, 1, 1, 1);
 			app->nowaitcursor = 0;
+			widget = fz_get_focussed_widget(app->doc);
+
+			if (widget && fz_widget_get_type(widget) == FZ_WIDGET_TYPE_TEXT)
+			{
+				char *text = fz_widget_text_get_text((fz_widget_text *)widget);
+				/* Invoke dialog for text entry */
+			}
 		}
 	}
 

@@ -2345,6 +2345,6 @@ char *fz_widget_text_get_text(fz_widget_text *tw);
 /*
 	fz_widget_text_set_text: Update the text of a text widget.
 */
-char *fz_widget_text_set_text(fz_widget_text *tw, char *text);
+void fz_widget_text_set_text(fz_widget_text *tw, char *text);
 
 #endif

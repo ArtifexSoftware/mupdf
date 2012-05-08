@@ -209,6 +209,8 @@ struct pdf_document_s
 	pdf_obj **page_refs;
 
 	pdf_lexbuf_large lexbuf;
+
+	fz_widget *focus;
 };
 
 void pdf_cache_object(pdf_document *doc, int num, int gen);

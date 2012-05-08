@@ -839,6 +839,8 @@ pdf_close_document(pdf_document *xref)
 		fz_free(ctx, xref->page_refs);
 	}
 
+	if (xref->focus)
+		fz_free_widget(ctx, xref->focus);
 	if (xref->file)
 		fz_close(xref->file);
 	if (xref->trailer)

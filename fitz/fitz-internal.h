@@ -830,13 +830,9 @@ fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_font*, int, fz_matrix, fz
 void fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, fz_matrix trm, void *gstate);
 
 /*
- * Forms
+ * Form widgets
  */
-struct fz_widget
-{
-	int     type;
-	fz_bbox bbox;
-};
+void fz_free_widget(fz_context *ctx, fz_widget *widget);
 
 /*
  * Text buffer.
