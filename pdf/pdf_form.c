@@ -10,6 +10,11 @@ enum
 	Ff_Combo         = 1 << (18-1)
 };
 
+enum
+{
+	MaxNumChars = 20
+};
+
 struct fz_widget_s
 {
 	pdf_document *doc;
@@ -109,6 +114,95 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 	}
 
 	return widget;
+}
+
+fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char *text)
+{
+	fz_buffer *fzbuf;
+	int len_prediction, len;
+	unsigned char *buf;
+	fz_rect rect;
+	const char *fmt = "/Tx BMC"
+		" q"
+		" %.2f %.2f %.2f %.2f re"
+		" W"
+		" n"
+		" BT"
+		" %s"
+		" (%s) Tj"
+		" ET"
+		" Q"
+		" EMC";
+
+	len_prediction = strlen(fmt) + 4*(MaxNumChars - 2) + strlen(da) - 2, strlen(text) - 2;
+	rect = *bbox;
+
+	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
+	{
+		rect.x0 += 1.0;
+		rect.x1 -= 1.0;
+		rect.y0 += 1.0;
+		rect.y1 -= 1.0;
+	}
+
+	fzbuf = fz_new_buffer(ctx, len_prediction+1);
+	(void)fz_buffer_storage(ctx, fzbuf, &buf);
+	len = snprintf(buf, len_prediction+1,
+		fmt, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0,
+		da, text);
+	if (len < 0 || len > len_prediction)
+		fz_throw(ctx, "predicted length to small");
+	fzbuf->len = len;
+
+	return fzbuf;
+}
+
+static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *ap, *n, *dr, *da;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
+
+	fz_var(form);
+	fz_var(fzbuf);
+
+	fz_try(ctx)
+	{
+		dr = get_field_entry(obj, "DR");
+		da = get_field_entry(obj, "DA");
+		ap = pdf_dict_gets(obj, "AP");
+		if (pdf_is_dict(ap))
+		{
+			n = pdf_dict_gets(ap, "N");
+
+			if (pdf_is_stream(doc, pdf_to_num(n), pdf_to_gen(n)))
+			{
+				int i, len;
+				form = pdf_load_xobject(doc, n);
+
+				/* copy the default resources to the xobject */
+				len = pdf_dict_len(dr);
+				for (i = 0; i < len; i++)
+				{
+					pdf_obj *key = pdf_dict_get_key(dr, i);
+
+					if (!pdf_dict_get(form->resources, key))
+						fz_dict_put(form->resources, key, pdf_dict_get_val(dr, i));
+				}
+
+				fzbuf = create_text_appearance(ctx, &form->bbox, pdf_to_str_buf(da), text);
+				pdf_xobject_set_contents(ctx, form, fzbuf);
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "update_text_appearance failed");
+	}
+
+	pdf_drop_xobject(ctx, form);
+	fz_drop_buffer(ctx, fzbuf);
 }
 
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
@@ -290,4 +384,5 @@ char *fz_widget_text_get_text(fz_widget_text *tw)
 
 void fz_widget_text_set_text(fz_widget_text *tw, char *text)
 {
+	update_text_appearance(tw->super.doc, tw->super.obj, text);
 }
