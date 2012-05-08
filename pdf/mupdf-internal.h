@@ -185,6 +185,8 @@ struct pdf_hotspot_s
 	int state;
 };
 
+typedef struct pdf_js_s pdf_js;
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -211,6 +213,8 @@ struct pdf_document_s
 	pdf_lexbuf_large lexbuf;
 
 	fz_widget *focus;
+
+	pdf_js *js;
 };
 
 void pdf_cache_object(pdf_document *doc, int num, int gen);
@@ -530,6 +534,9 @@ fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ct
 pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
+char *pdf_field_getValue(pdf_document *doc, pdf_obj *field);
+void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
+
 /*
  * Page tree, pages and related objects
  */
@@ -559,5 +566,34 @@ void pdf_run_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, f
 void pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int itemsize);
 void *pdf_find_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
+
+/*
+ * Javascript engine interface
+ */
+pdf_js *pdf_new_js(pdf_document *doc);
+void pdf_drop_js(pdf_js *js);
+
+typedef struct pdf_jsimp_s pdf_jsimp;
+typedef struct pdf_jsimp_type_s pdf_jsimp_type;
+typedef struct pdf_jsimp_obj_s pdf_jsimp_obj;
+
+typedef void (pdf_jsimp_dtr)(void *jsctx, void *obj);
+typedef pdf_jsimp_obj *(pdf_jsimp_method)(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[]);
+typedef pdf_jsimp_obj *(pdf_jsimp_getter)(void *jsctx, void *obj);
+typedef void (pdf_jsimp_setter)(void *jsctx, void *obj, pdf_jsimp_obj *val);
+
+pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx);
+void pdf_drop_jsimp(pdf_jsimp *imp);
+
+pdf_jsimp_type *pdf_jsimp_new_type(pdf_jsimp *imp, pdf_jsimp_dtr *dtr);
+void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth);
+void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set);
+
+pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *obj);
+
+void pdf_jsimp_set_this(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+
+pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
+char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 #endif

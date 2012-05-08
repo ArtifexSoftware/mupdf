@@ -714,19 +714,17 @@ int fz_widget_get_type(fz_widget *widget)
 	return widget->type;
 }
 
-char *fz_widget_text_get_text(fz_widget_text *tw)
+char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 {
-	pdf_document *doc = tw->super.doc;
 	fz_context *ctx = doc->ctx;
-	pdf_obj *vobj = get_inheritable(tw->super.obj, "V");
+	pdf_obj *vobj = get_inheritable(field, "V");
 	int len = 0;
 	char *buf = NULL;
 	fz_buffer *strmbuf = NULL;
-
-	fz_free(ctx, tw->text);
-	tw->text = NULL;
+	char *text = NULL;
 
 	fz_var(strmbuf);
+	fz_var(text);
 	fz_try(ctx)
 	{
 		if (pdf_is_string(vobj))
@@ -742,14 +740,41 @@ char *fz_widget_text_get_text(fz_widget_text *tw)
 
 		if (buf)
 		{
-			tw->text = fz_malloc(ctx, len+1);
-			memcpy(tw->text, buf, len);
-			tw->text[len] = 0;
+			text = fz_malloc(ctx, len+1);
+			memcpy(text, buf, len);
+			text[len] = 0;
 		}
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, strmbuf);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, text);
+		fz_rethrow(ctx);
+	}
+
+	return text;
+}
+
+void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
+{
+	update_text_appearance(doc, field, text);
+	update_text_field_value(doc->ctx, field, text);
+}
+
+char *fz_widget_text_get_text(fz_widget_text *tw)
+{
+	pdf_document *doc = tw->super.doc;
+	fz_context *ctx = doc->ctx;
+
+	fz_free(ctx, tw->text);
+	tw->text = NULL;
+
+	fz_try(ctx)
+	{
+		tw->text = pdf_field_getValue(doc, tw->super.obj);
 	}
 	fz_catch(ctx)
 	{
@@ -765,8 +790,7 @@ void fz_widget_text_set_text(fz_widget_text *tw, char *text)
 
 	fz_try(ctx)
 	{
-		update_text_appearance(tw->super.doc, tw->super.obj, text);
-		update_text_field_value(tw->super.doc->ctx, tw->super.obj, text);
+		pdf_field_setValue(tw->super.doc, tw->super.obj, text);
 		fz_free(ctx, tw->text);
 		tw->text = fz_strdup(ctx, text);
 	}

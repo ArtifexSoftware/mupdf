@@ -286,6 +286,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_js.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_jsimp.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_lex.c"
 				>
 			</File>
