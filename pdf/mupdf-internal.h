@@ -156,6 +156,7 @@ struct pdf_xref_entry_s
 typedef struct pdf_crypt_s pdf_crypt;
 typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
 typedef struct pdf_ocg_entry_s pdf_ocg_entry;
+typedef struct pdf_hotspot_s pdf_hotspot;
 
 struct pdf_ocg_entry_s
 {
@@ -171,6 +172,19 @@ struct pdf_ocg_descriptor_s
 	pdf_obj *intent;
 };
 
+enum
+{
+	HOTSPOT_POINTER_DOWN = 0x1,
+	HOTSPOT_POINTER_OVER = 0x2
+};
+
+struct pdf_hotspot_s
+{
+	int num;
+	int gen;
+	int state;
+};
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -184,6 +198,7 @@ struct pdf_document_s
 	pdf_crypt *crypt;
 	pdf_obj *trailer;
 	pdf_ocg_descriptor *ocg;
+	pdf_hotspot hotspot;
 
 	int len;
 	pdf_xref_entry *table;
@@ -494,6 +509,7 @@ struct pdf_annot_s
 {
 	pdf_obj *obj;
 	fz_rect rect;
+	fz_rect pagerect;
 	pdf_xobject *ap;
 	fz_matrix matrix;
 	pdf_annot *next;
@@ -507,7 +523,7 @@ pdf_obj *pdf_load_name_tree(pdf_document *doc, char *which);
 
 fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 
-pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots);
+pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 /*

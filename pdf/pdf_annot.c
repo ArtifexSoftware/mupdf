@@ -352,7 +352,7 @@ pdf_transform_annot(pdf_annot *annot)
 }
 
 pdf_annot *
-pdf_load_annots(pdf_document *xref, pdf_obj *annots)
+pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 {
 	pdf_annot *annot, *head, *tail;
 	pdf_obj *obj, *ap, *as, *n, *rect;
@@ -373,7 +373,19 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots)
 		as = pdf_dict_gets(obj, "AS");
 		if (pdf_is_dict(ap))
 		{
-			n = pdf_dict_gets(ap, "N"); /* normal state */
+			pdf_hotspot *hp = &xref->hotspot;
+
+			n = NULL;
+
+			if (hp->num == pdf_to_num(obj)
+				&& hp->gen == pdf_to_gen(obj)
+				&& (hp->state & HOTSPOT_POINTER_DOWN))
+			{
+				n = pdf_dict_gets(ap, "D"); /* down state */
+			}
+
+			if (n == NULL)
+				n = pdf_dict_gets(ap, "N"); /* normal state */
 
 			/* lookup current state in sub-dictionary */
 			if (!pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
@@ -394,6 +406,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots)
 				annot = fz_malloc_struct(ctx, pdf_annot);
 				annot->obj = pdf_keep_obj(obj);
 				annot->rect = pdf_to_rect(ctx, rect);
+				annot->pagerect = fz_transform_rect(page_ctm, annot->rect);
 				annot->ap = form;
 				annot->next = NULL;
 

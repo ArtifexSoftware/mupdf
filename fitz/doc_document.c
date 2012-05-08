@@ -129,3 +129,27 @@ fz_meta(fz_document *doc, int key, void *ptr, int size)
 		return doc->meta(doc, key, ptr, size);
 	return FZ_META_UNKNOWN_KEY;
 }
+
+int
+fz_pass_event(fz_document *doc, fz_page *page, fz_ui_event *ui_event)
+{
+	if (doc && doc->pass_event)
+		return doc->pass_event(doc, page, ui_event);
+	return 0;
+}
+
+fz_rect *
+fz_get_screen_update(fz_document *doc)
+{
+	if (doc && doc->get_screen_update, doc)
+		return doc->get_screen_update(doc);
+	return NULL;
+}
+
+fz_widget *
+fz_get_focussed_widget(fz_document *doc)
+{
+	if (doc && doc->get_focussed_widget)
+		return doc->get_focussed_widget(doc);
+	return NULL;
+}

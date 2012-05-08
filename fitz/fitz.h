@@ -2269,7 +2269,7 @@ typedef struct fz_ui_event_s
 		struct
 		{
 			int   ptype;
-			float x, y;
+			fz_point pt;
 		} pointer;
 	} event;
 } fz_ui_event;
@@ -2282,7 +2282,7 @@ typedef struct fz_widget_s fz_widget;
 /*
 	Specific types of widget
 */
-typedef struct fz_widget_text_s fz_widget_test;
+typedef struct fz_widget_text_s fz_widget_text;
 
 /*
 	fz_pass_event: Pass a UI event to an interactive

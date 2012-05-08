@@ -1280,6 +1280,21 @@ static int pdf_meta(fz_document *doc_, int key, void *ptr, int size)
 	}
 }
 
+static int pdf_pass_event_shim(fz_document *doc, fz_page *page, fz_ui_event *ui_event)
+{
+	return pdf_pass_event((pdf_document*)doc, (pdf_page*)page, ui_event);
+}
+
+static fz_rect *pdf_get_screen_update_shim(fz_document *doc)
+{
+	return pdf_get_screen_update((pdf_document*)doc);
+}
+
+static fz_widget *pdf_get_focussed_widget_shim(fz_document *doc)
+{
+	return pdf_get_focussed_widget((pdf_document*)doc);
+}
+
 static void
 pdf_init_document(pdf_document *doc)
 {
@@ -1294,4 +1309,7 @@ pdf_init_document(pdf_document *doc)
 	doc->super.run_page = pdf_run_page_shim;
 	doc->super.free_page = pdf_free_page_shim;
 	doc->super.meta = pdf_meta;
+	doc->super.pass_event = pdf_pass_event_shim;
+	doc->super.get_screen_update = pdf_get_screen_update_shim;
+	doc->super.get_focussed_widget = pdf_get_focussed_widget_shim;
 }

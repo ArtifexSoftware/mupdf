@@ -964,6 +964,21 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 	p = fz_transform_point(ctm, p);
 
+	if (btn == 1 && (state == 1 || state == -1))
+	{
+		fz_ui_event event;
+
+		event.etype = FZ_EVENT_TYPE_POINTER;
+		event.event.pointer.pt = p;
+		if (state == 1)
+			event.event.pointer.ptype = FZ_POINTER_DOWN;
+		else /* state == -1 */
+			event.event.pointer.ptype = FZ_POINTER_UP;
+
+		if (fz_pass_event(app->doc, app->page, &event))
+			pdfapp_showpage(app, 1, 1, 1);
+	}
+
 	for (link = app->page_links; link; link = link->next)
 	{
 		if (p.x >= link->rect.x0 && p.x <= link->rect.x1)
