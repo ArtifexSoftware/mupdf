@@ -111,9 +111,9 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 	return widget;
 }
 
-static int copy_da_with_size_check(fz_context *ctx, fz_buffer *fzbuf, char *da, int h)
+static int read_font_size_from_da(fz_context *ctx, char *da)
 {
-	int tok, fontsize = h; /* Default to use if Tf defines size 0 */
+	int tok, fontsize = 0;
 	pdf_lexbuf lbuf;
 	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
 
@@ -129,18 +129,51 @@ static int copy_da_with_size_check(fz_context *ctx, fz_buffer *fzbuf, char *da, 
 			if (last_tok_was_int)
 			{
 				if (tok = PDF_TOK_NAME && !strcmp(lbuf.scratch, "Tf"))
-				{
-					/* Tf defines nonzero font size. Use defined value
-					 * rather than the default */
-					if(last_int_tok_val != 0)
-						fontsize = last_int_tok_val;
+					fontsize = last_int_tok_val;
 
-					fz_buffer_printf(ctx, fzbuf, " %d", fontsize);
-				}
+				last_tok_was_int = 0;
+			}
+
+			if (tok == PDF_TOK_INT)
+			{
+				last_tok_was_int = 1;
+				last_int_tok_val = lbuf.i;
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_close(str);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return fontsize;
+}
+
+static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *da, float size)
+{
+	int tok;
+	pdf_lexbuf lbuf;
+	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
+
+	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
+	lbuf.size = sizeof(lbuf.scratch);
+	fz_try(ctx)
+	{
+		int last_tok_was_int = 0;
+		int last_int_tok_val = 0;
+
+		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
+		{
+			if (last_tok_was_int)
+			{
+				if (tok = PDF_TOK_NAME && !strcmp(lbuf.scratch, "Tf"))
+					fz_buffer_printf(ctx, fzbuf, " %1.2f", size);
 				else
-				{
 					fz_buffer_printf(ctx, fzbuf, " %d", last_int_tok_val);
-				}
 
 				last_tok_was_int = 0;
 			}
@@ -165,15 +198,38 @@ static int copy_da_with_size_check(fz_context *ctx, fz_buffer *fzbuf, char *da, 
 	{
 		fz_rethrow(ctx);
 	}
-
-	return fontsize;
 }
 
-fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char *text)
+static fz_bbox measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
 {
-	int height, fontsize;
-	fz_buffer *fzbuf;
+	fz_context *ctx = doc->ctx;
+	fz_device *dev = NULL;
+	fz_bbox bbox = fz_empty_bbox;
+
+	fz_try(ctx)
+	{
+		dev = fz_new_bbox_device(doc->ctx, &bbox);
+		pdf_run_glyph(doc, dr, fzbuf, dev, fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return bbox;
+}
+
+fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, pdf_obj *dr, char *da, char *text)
+{
+	fz_context *ctx = doc->ctx;
+	float height, width, fontsize;
+	fz_buffer *fzbuf = NULL;
 	fz_rect rect;
+	fz_bbox tbox;
 	const char *fmt1 =
 		"/Tx BMC"
 		" q"
@@ -198,37 +254,48 @@ fz_buffer *create_text_appearance(fz_context *ctx, fz_rect *bbox, char *da, char
 		rect.y1 -= 1.0;
 	}
 
-	height = MAX(floor(bbox->y1 - bbox->y0 - 4.0), 1);
+	height = MAX(bbox->y1 - bbox->y0 - 4.0, 1);
+	width = MAX(bbox->x1 - bbox->x0 - 4.0, 1);
 
-	fzbuf = fz_new_buffer(ctx, 0);
-	fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
-	fontsize = copy_da_with_size_check(ctx, fzbuf, da, height);
-	fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - fontsize)/2, text);
-
-	return fzbuf;
-}
-
-static fz_bbox measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
-{
-	fz_context *ctx = doc->ctx;
-	fz_device *dev = NULL;
-	fz_bbox bbox = fz_empty_bbox;
-
+	fz_var(fzbuf);
 	fz_try(ctx)
 	{
-		dev = fz_new_bbox_device(doc->ctx, &bbox);
-		pdf_run_glyph(doc, dr, fzbuf, dev, fz_identity, NULL);
-	}
-	fz_always(ctx)
-	{
-		fz_free_device(dev);
+		fontsize = read_font_size_from_da(ctx, da);
+		if (fontsize)
+		{
+			fzbuf = fz_new_buffer(ctx, 0);
+			fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
+			fz_buffer_printf(ctx, fzbuf, " %s", da); /* Copy da unchanged */
+			fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - fontsize)/2, text);
+		}
+		else
+		{
+			fzbuf = fz_new_buffer(ctx, 0);
+			fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
+			copy_da_with_altered_size(ctx, fzbuf, da, height);
+			fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - height)/2, text);
+			tbox = measure_text(doc, dr, fzbuf);
+
+			if (tbox.x1 - tbox.x0 > width)
+			{
+				/* Text doesn't fit. Regenerate with a calculated font size */
+				fz_drop_buffer(ctx, fzbuf);
+				fzbuf = NULL;
+				height = height * width / (tbox.x1 - tbox.x0);
+				fzbuf = fz_new_buffer(ctx, 0);
+				fz_buffer_printf(ctx, fzbuf, fmt1, rect.x0, rect.y0, rect.x1 - rect.x0, rect.y1 - rect.y0);
+				copy_da_with_altered_size(ctx, fzbuf, da, height);
+				fz_buffer_printf(ctx, fzbuf, fmt2, (bbox->y1 - bbox->y0 - height)/2, text);
+			}
+		}
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_buffer(ctx, fzbuf);
 		fz_rethrow(ctx);
 	}
 
-	return bbox;
+	return fzbuf;
 }
 
 static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
@@ -265,7 +332,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 						fz_dict_put(form->resources, key, pdf_dict_get_val(dr, i));
 				}
 
-				fzbuf = create_text_appearance(ctx, &form->bbox, pdf_to_str_buf(da), text);
+				fzbuf = create_text_appearance(doc, &form->bbox, dr, pdf_to_str_buf(da), text);
 				pdf_xobject_set_contents(ctx, form, fzbuf);
 			}
 		}
