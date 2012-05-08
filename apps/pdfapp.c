@@ -276,7 +276,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	fz_matrix ctm;
 	fz_bbox bbox;
 
-	wincursor(app, WAIT);
+	if (!app->nowaitcursor)
+		wincursor(app, WAIT);
 
 	if (loadpage)
 	{
@@ -976,7 +977,11 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			event.event.pointer.ptype = FZ_POINTER_UP;
 
 		if (fz_pass_event(app->doc, app->page, &event))
+		{
+			app->nowaitcursor = 1;
 			pdfapp_showpage(app, 1, 1, 1);
+			app->nowaitcursor = 0;
+		}
 	}
 
 	for (link = app->page_links; link; link = link->next)

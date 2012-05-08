@@ -86,6 +86,8 @@ struct pdfapp_s
 	int beyondy;
 	fz_bbox selr;
 
+	int nowaitcursor;
+
 	/* search state */
 	int isediting;
 	int searchdir;
