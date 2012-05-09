@@ -65,7 +65,7 @@ pdf_load_outline(pdf_document *xref)
 	obj = pdf_dict_gets(root, "Outlines");
 	first = pdf_dict_gets(obj, "First");
 	if (first)
-		return  pdf_load_outline_imp(xref, first);
+		return pdf_load_outline_imp(xref, first);
 
 	return NULL;
 }
