@@ -200,7 +200,7 @@ int pdfclean_main(int argc, char **argv)
 		exit(1);
 	}
 
-	xref = pdf_open_document(ctx, infile);
+	xref = pdf_open_document_no_run(ctx, infile);
 	if (pdf_needs_password(xref))
 		if (!pdf_authenticate_password(xref, password))
 			fz_throw(ctx, "cannot authenticate password: %s", infile);

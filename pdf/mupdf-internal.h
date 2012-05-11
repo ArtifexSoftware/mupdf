@@ -191,6 +191,9 @@ struct pdf_document_s
 	pdf_lexbuf_large lexbuf;
 };
 
+pdf_document *pdf_open_document_no_run(fz_context *ctx, const char *filename);
+pdf_document *pdf_open_document_no_run_with_stream(fz_stream *file);
+
 void pdf_cache_object(pdf_document *doc, int num, int gen);
 
 fz_stream *pdf_open_inline_stream(pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *chain, pdf_image_params *params);

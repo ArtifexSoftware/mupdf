@@ -217,4 +217,9 @@ void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix c
 
 void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
 
+/*
+	Metadata interface.
+*/
+int pdf_meta(pdf_document *doc, int key, void *ptr, int size);
+
 #endif

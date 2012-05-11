@@ -672,28 +672,18 @@ pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
  * If password is not null, try to decrypt.
  */
 
-static void pdf_init_document(pdf_document *xref);
-
-pdf_document *
-pdf_open_document_with_stream(fz_stream *file)
+static void
+pdf_init_document(pdf_document *xref)
 {
-	pdf_document *xref;
+	fz_context *ctx = xref->ctx;
 	pdf_obj *encrypt, *id;
 	pdf_obj *dict = NULL;
 	pdf_obj *obj;
 	pdf_obj *nobj = NULL;
 	int i, repaired = 0;
-	fz_context *ctx = file->ctx;
 
 	fz_var(dict);
 	fz_var(nobj);
-
-	xref = fz_malloc_struct(ctx, pdf_document);
-	pdf_init_document(xref);
-	xref->lexbuf.base.size = PDF_LEXBUF_LARGE;
-
-	xref->file = fz_keep_stream(file);
-	xref->ctx = ctx;
 
 	fz_try(ctx)
 	{
@@ -797,8 +787,6 @@ pdf_open_document_with_stream(fz_stream *file)
 	{
 		fz_warn(ctx, "Ignoring Broken Optional Content");
 	}
-
-	return xref;
 }
 
 void
@@ -1083,7 +1071,8 @@ pdf_resolve_indirect(pdf_obj *ref)
 	return ref;
 }
 
-int pdf_count_objects(pdf_document *doc)
+int
+pdf_count_objects(pdf_document *doc)
 {
 	return doc->len;
 }
@@ -1110,88 +1099,9 @@ pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
 	x->ofs = 0;
 }
 
-/*
- * Convenience function to open a file then call pdf_open_document_with_stream.
- */
-
-pdf_document *
-pdf_open_document(fz_context *ctx, const char *filename)
+int
+pdf_meta(pdf_document *doc, int key, void *ptr, int size)
 {
-	fz_stream *file = NULL;
-	pdf_document *xref;
-
-	fz_var(file);
-	fz_try(ctx)
-	{
-		file = fz_open_file(ctx, filename);
-		xref = pdf_open_document_with_stream(file);
-	}
-	fz_catch(ctx)
-	{
-		fz_close(file);
-		fz_throw(ctx, "cannot load document '%s'", filename);
-	}
-
-	fz_close(file);
-	return xref;
-}
-
-/* Document interface wrappers */
-
-static void pdf_close_document_shim(fz_document *doc)
-{
-	pdf_close_document((pdf_document*)doc);
-}
-
-static int pdf_needs_password_shim(fz_document *doc)
-{
-	return pdf_needs_password((pdf_document*)doc);
-}
-
-static int pdf_authenticate_password_shim(fz_document *doc, char *password)
-{
-	return pdf_authenticate_password((pdf_document*)doc, password);
-}
-
-static fz_outline *pdf_load_outline_shim(fz_document *doc)
-{
-	return pdf_load_outline((pdf_document*)doc);
-}
-
-static int pdf_count_pages_shim(fz_document *doc)
-{
-	return pdf_count_pages((pdf_document*)doc);
-}
-
-static fz_page *pdf_load_page_shim(fz_document *doc, int number)
-{
-	return (fz_page*) pdf_load_page((pdf_document*)doc, number);
-}
-
-static fz_link *pdf_load_links_shim(fz_document *doc, fz_page *page)
-{
-	return pdf_load_links((pdf_document*)doc, (pdf_page*)page);
-}
-
-static fz_rect pdf_bound_page_shim(fz_document *doc, fz_page *page)
-{
-	return pdf_bound_page((pdf_document*)doc, (pdf_page*)page);
-}
-
-static void pdf_run_page_shim(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
-{
-	pdf_run_page((pdf_document*)doc, (pdf_page*)page, dev, transform, cookie);
-}
-
-static void pdf_free_page_shim(fz_document *doc, fz_page *page)
-{
-	pdf_free_page((pdf_document*)doc, (pdf_page*)page);
-}
-
-static int pdf_meta(fz_document *doc_, int key, void *ptr, int size)
-{
-	pdf_document *doc = (pdf_document *)doc_;
-
 	switch(key)
 	{
 	/*
@@ -1263,9 +1173,72 @@ static int pdf_meta(fz_document *doc_, int key, void *ptr, int size)
 	}
 }
 
-static void
-pdf_init_document(pdf_document *doc)
+/*
+	Wrappers to implement the fz_document interface for pdf_document.
+
+	The functions are split across two files to allow calls to a
+	version of the constructor that does not link in the interpreter.
+	The interpreter references the built-in font and cmap resources
+	which are quite big. Not linking those into the mubusy binary
+	saves roughly 6MB of space.
+*/
+
+static void pdf_close_document_shim(fz_document *doc)
 {
+	pdf_close_document((pdf_document*)doc);
+}
+
+static int pdf_needs_password_shim(fz_document *doc)
+{
+	return pdf_needs_password((pdf_document*)doc);
+}
+
+static int pdf_authenticate_password_shim(fz_document *doc, char *password)
+{
+	return pdf_authenticate_password((pdf_document*)doc, password);
+}
+
+static fz_outline *pdf_load_outline_shim(fz_document *doc)
+{
+	return pdf_load_outline((pdf_document*)doc);
+}
+
+static int pdf_count_pages_shim(fz_document *doc)
+{
+	return pdf_count_pages((pdf_document*)doc);
+}
+
+static fz_page *pdf_load_page_shim(fz_document *doc, int number)
+{
+	return (fz_page*) pdf_load_page((pdf_document*)doc, number);
+}
+
+static fz_link *pdf_load_links_shim(fz_document *doc, fz_page *page)
+{
+	return pdf_load_links((pdf_document*)doc, (pdf_page*)page);
+}
+
+static fz_rect pdf_bound_page_shim(fz_document *doc, fz_page *page)
+{
+	return pdf_bound_page((pdf_document*)doc, (pdf_page*)page);
+}
+
+static void pdf_free_page_shim(fz_document *doc, fz_page *page)
+{
+	pdf_free_page((pdf_document*)doc, (pdf_page*)page);
+}
+
+static int pdf_meta_shim(fz_document *doc, int key, void *ptr, int size)
+{
+	return pdf_meta((pdf_document*)doc, key, ptr, size);
+}
+
+static pdf_document *
+pdf_new_document(fz_stream *file)
+{
+	fz_context *ctx = file->ctx;
+	pdf_document *doc = fz_malloc_struct(ctx, pdf_document);
+
 	doc->super.close = pdf_close_document_shim;
 	doc->super.needs_password = pdf_needs_password_shim;
 	doc->super.authenticate_password = pdf_authenticate_password_shim;
@@ -1274,7 +1247,46 @@ pdf_init_document(pdf_document *doc)
 	doc->super.load_page = pdf_load_page_shim;
 	doc->super.load_links = pdf_load_links_shim;
 	doc->super.bound_page = pdf_bound_page_shim;
-	doc->super.run_page = pdf_run_page_shim;
+	doc->super.run_page = NULL; /* see pdf_xref_aux.c */
 	doc->super.free_page = pdf_free_page_shim;
-	doc->super.meta = pdf_meta;
+	doc->super.meta = pdf_meta_shim;
+
+	doc->lexbuf.base.size = PDF_LEXBUF_LARGE;
+	doc->file = fz_keep_stream(file);
+	doc->ctx = ctx;
+
+	return doc;
+}
+
+pdf_document *
+pdf_open_document_no_run_with_stream(fz_stream *file)
+{
+	pdf_document *doc = pdf_new_document(file);
+	pdf_init_document(doc);
+	return doc;
+}
+
+pdf_document *
+pdf_open_document_no_run(fz_context *ctx, const char *filename)
+{
+	fz_stream *file = NULL;
+	pdf_document *doc;
+
+	fz_var(file);
+
+	fz_try(ctx)
+	{
+		file = fz_open_file(ctx, filename);
+		doc = pdf_new_document(file);
+		pdf_init_document(doc);
+	}
+	fz_always(ctx)
+	{
+		fz_close(file);
+	}
+	fz_catch(ctx)
+	{
+		fz_throw(ctx, "cannot load document '%s'", filename);
+	}
+	return doc;
 }
