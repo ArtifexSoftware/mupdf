@@ -8,7 +8,6 @@ struct pdf_js_s
 	pdf_jsimp      *imp;
 	pdf_jsimp_type *doctype;
 	pdf_jsimp_type *fieldtype;
-	pdf_jsimp_obj  *jsdoc;
 };
 
 static pdf_jsimp_obj *field_getValue(void *jsctx, void *obj)
@@ -137,7 +136,6 @@ void pdf_drop_js(pdf_js *js)
 	if (js)
 	{
 		fz_context *ctx = js->doc->ctx;
-		pdf_jsimp_drop_obj(js->imp, js->jsdoc);
 		pdf_jsimp_drop_type(js->imp, js->fieldtype);
 		pdf_jsimp_drop_type(js->imp, js->doctype);
 		pdf_drop_jsimp(js->imp);
