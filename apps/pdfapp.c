@@ -968,6 +968,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	if (btn == 1 && (state == 1 || state == -1))
 	{
 		fz_ui_event event;
+		fz_interactive *idoc = fz_interact(app->doc);
 
 		event.etype = FZ_EVENT_TYPE_POINTER;
 		event.event.pointer.pt = p;
@@ -976,11 +977,11 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		else /* state == -1 */
 			event.event.pointer.ptype = FZ_POINTER_UP;
 
-		if (fz_pass_event(app->doc, app->page, &event))
+		if (idoc && fz_pass_event(idoc, app->page, &event))
 		{
 			fz_widget *widget;
 
-			widget = fz_get_focussed_widget(app->doc);
+			widget = fz_get_focussed_widget(idoc);
 
 			if (widget && fz_widget_get_type(widget) == FZ_WIDGET_TYPE_TEXT)
 			{

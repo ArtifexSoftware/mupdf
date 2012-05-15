@@ -1090,9 +1090,7 @@ struct fz_document_s
 	void (*run_page)(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie);
 	void (*free_page)(fz_document *doc, fz_page *page);
 	int (*meta)(fz_document *doc, int key, void *ptr, int size);
-	int (*pass_event)(fz_document *doc, fz_page *page, fz_ui_event *ui_event);
-	fz_rect *(*get_screen_update)(fz_document *doc);
-	fz_widget *(*get_focussed_widget)(fz_document *doc);
+	fz_interactive *(*interact)(fz_document *doc);
 };
 
 #endif

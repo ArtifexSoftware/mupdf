@@ -562,10 +562,16 @@ void pdf_run_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, f
 /*
  * PDF interface to store
  */
-
 void pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int itemsize);
 void *pdf_find_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
+
+/*
+ * PDF interaction interface
+ */
+int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
+fz_rect *pdf_get_screen_update(pdf_document *doc);
+fz_widget *pdf_get_focussed_widget(pdf_document *doc);
 
 /*
  * Javascript handler

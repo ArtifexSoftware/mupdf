@@ -216,23 +216,4 @@ void pdf_run_page(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix c
 
 void pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, fz_matrix ctm, char *event, fz_cookie *cookie);
 
-/*
-	pdf_pass_event: pass a UI event to a page.
-
-	The event may activate or focus a form field.
-*/
-int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
-
-/*
-	pdf_get_screen_update: return areas needing updating because of
-	appearance change.
-*/
-fz_rect *pdf_get_screen_update(pdf_document *doc);
-
-/*
-	pdf_get_focussed_widget: return the currently focussed form field,
-	if any.
-*/
-fz_widget *pdf_get_focussed_widget(pdf_document *doc);
-
 #endif

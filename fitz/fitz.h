@@ -2259,6 +2259,13 @@ enum
 };
 
 /*
+	Interface supported by some types of documents,
+	via which interactions (such as filling in forms)
+	can be achieved.
+*/
+typedef struct fz_interactive_s fz_interactive;
+
+/*
 	UI events that can be passed to an interactive document.
 */
 typedef struct fz_ui_event_s
@@ -2285,6 +2292,13 @@ typedef struct fz_widget_s fz_widget;
 typedef struct fz_widget_text_s fz_widget_text;
 
 /*
+	Obtain an interface for interaction from a document.
+	For document types that don't support interaction, NULL
+	is returned.
+*/
+fz_interactive *fz_interact(fz_document *doc);
+
+/*
 	fz_pass_event: Pass a UI event to an interactive
 	document.
 
@@ -2293,7 +2307,7 @@ typedef struct fz_widget_text_s fz_widget_text;
 	passing the events that make up a drag, if the down event isn't
 	accepted then don't send the move events or the up event.
 */
-int fz_pass_event(fz_document *doc, fz_page *page, fz_ui_event *ui_event);
+int fz_pass_event(fz_interactive *idoc, fz_page *page, fz_ui_event *ui_event);
 
 /*
 	fz_ui_event_pointer: Set up a pointer event
@@ -2310,7 +2324,7 @@ void fz_ui_event_pointer(fz_ui_event *event, int type, float x, float y);
 	enumerate the changed areas for which screen updates are
 	needed.
 */
-fz_rect *fz_get_screen_update(fz_document *doc);
+fz_rect *fz_get_screen_update(fz_interactive *idoc);
 
 /*
 	fz_get_focussed_widget: returns the currently focussed widget
@@ -2321,7 +2335,7 @@ fz_rect *fz_get_screen_update(fz_document *doc);
 	widget, e.g., to collect the text for a text widget, rather than
 	routing key strokes through fz_pass_event.
 */
-fz_widget *fz_get_focussed_widget(fz_document *doc);
+fz_widget *fz_get_focussed_widget(fz_interactive *idoc);
 
 /*
 	fz_widget_get_type: find out the type of a widget.
