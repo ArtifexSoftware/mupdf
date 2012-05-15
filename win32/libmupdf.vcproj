@@ -286,11 +286,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_js.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_jsimp.c"
+				RelativePath="..\pdf\pdf_js_none.c"
 				>
 			</File>
 			<File
