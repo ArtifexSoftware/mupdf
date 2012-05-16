@@ -126,6 +126,7 @@ pdf_js *pdf_new_js(pdf_document *doc)
 	fz_catch(ctx)
 	{
 		pdf_drop_js(js);
+		js = NULL;
 	}
 
 	return js;
@@ -145,10 +146,30 @@ void pdf_drop_js(pdf_js *js)
 
 void pdf_js_execute(pdf_js *js, char *code)
 {
-	pdf_jsimp_execute(js->imp, code);
+	if (js)
+	{
+		fz_context *ctx = js->doc->ctx;
+		fz_try(ctx)
+		{
+			pdf_jsimp_execute(js->imp, code);
+		}
+		fz_catch(ctx)
+		{
+		}
+	}
 }
 
 void pdf_js_execute_count(pdf_js *js, char *code, int count)
 {
-	pdf_jsimp_execute_count(js->imp, code, count);
+	if (js)
+	{
+		fz_context *ctx = js->doc->ctx;
+		fz_try(ctx)
+		{
+			pdf_jsimp_execute_count(js->imp, code, count);
+		}
+		fz_catch(ctx)
+		{
+		}
+	}
 }

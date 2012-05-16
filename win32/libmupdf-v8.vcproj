@@ -291,6 +291,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_jsimp_cpp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_jsimp_cpp.h"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_jsimp_v8.cpp"
 				>
 			</File>

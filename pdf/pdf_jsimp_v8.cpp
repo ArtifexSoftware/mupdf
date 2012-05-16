@@ -7,6 +7,7 @@
 extern "C" {
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
+#include "pdf_jsimp_cpp.h"
 }
 
 #include <vector>
@@ -161,28 +162,37 @@ public:
 	}
 };
 
-
-extern "C" pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx)
+extern "C" fz_context *pdf_jsimp_ctx_cpp(pdf_jsimp *imp)
 {
-	return reinterpret_cast<pdf_jsimp *>(new PDFJSImp(ctx, jsctx));
+	return reinterpret_cast<PDFJSImp *>(imp)->ctx;
 }
 
-extern "C" void pdf_drop_jsimp(pdf_jsimp *imp)
+extern "C" char *pdf_new_jsimp_cpp(fz_context *ctx, void *jsctx, pdf_jsimp **imp)
+{
+	*imp = reinterpret_cast<pdf_jsimp *>(new PDFJSImp(ctx, jsctx));
+
+	return NULL;
+}
+
+extern "C" char *pdf_drop_jsimp_cpp(pdf_jsimp *imp)
 {
 	delete reinterpret_cast<PDFJSImp *>(imp);
+	return NULL;
 }
 
-extern "C" pdf_jsimp_type *pdf_jsimp_new_type(pdf_jsimp *imp, pdf_jsimp_dtr *dtr)
+extern "C" char *pdf_jsimp_new_type_cpp(pdf_jsimp *imp, pdf_jsimp_dtr *dtr, pdf_jsimp_type **type)
 {
 	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
 	PDFJSImpType *vType = new PDFJSImpType(vImp, dtr);
 	vImp->types.push_back(vType);
-	return reinterpret_cast<pdf_jsimp_type *>(vType);
+	*type = reinterpret_cast<pdf_jsimp_type *>(vType);
+	return NULL;
 }
 
-extern "C" void pdf_jsimp_drop_type(pdf_jsimp *imp, pdf_jsimp_type *type)
+extern "C" char *pdf_jsimp_drop_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
 {
 	/* Types are recorded and destroyed as part of PDFJSImp */
+	return NULL;
 }
 
 static Handle<Value> callMethod(const Arguments &args)
@@ -217,7 +227,7 @@ static Handle<Value> callMethod(const Arguments &args)
 	return scope.Close(val);
 }
 
-extern "C" void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth)
+extern "C" char *pdf_jsimp_addmethod_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -225,6 +235,7 @@ extern "C" void pdf_jsimp_addmethod(pdf_jsimp *imp, pdf_jsimp_type *type, char *
 	PDFJSImpMethod *pmeth = new PDFJSImpMethod(vType->imp->jsctx, meth);
 	vType->templ->Set(String::New(name), FunctionTemplate::New(callMethod, External::New(pmeth)));
 	vType->methods.push_back(pmeth);
+	return NULL;
 }
 
 static Handle<Value> getProp(Local<String> property, const AccessorInfo &info)
@@ -269,7 +280,7 @@ static void setProp(Local<String> property, Local<Value> value, const AccessorIn
 	delete obj;
 }
 
-extern "C" void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set)
+extern "C" char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -277,15 +288,17 @@ extern "C" void pdf_jsimp_addproperty(pdf_jsimp *imp, pdf_jsimp_type *type, char
 	PDFJSImpProperty *prop = new PDFJSImpProperty(vType->imp->jsctx, get, set);
 	vType->templ->SetAccessor(String::New(name), getProp, setProp, External::New(prop));
 	vType->properties.push_back(prop);
+	return NULL;
 }
 
-extern "C" void pdf_jsimp_set_global_type(pdf_jsimp *imp, pdf_jsimp_type *type)
+extern "C" char *pdf_jsimp_set_global_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
 {
 	PDFJSImp	 *vImp  = reinterpret_cast<PDFJSImp *>(imp);
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
 
 	vImp->context = Persistent<Context>::New(Context::New(NULL, vType->templ));
+	return NULL;
 }
 
 static void gcCallback(Persistent<Value> val, void *parm)
@@ -301,7 +314,7 @@ static void gcCallback(Persistent<Value> val, void *parm)
 	delete gco; /* Disposes of the persistent handle */
 }
 
-extern "C" pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj)
+extern "C" char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, pdf_jsimp_obj **robj)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -317,36 +330,48 @@ extern "C" pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type
 		gco->pobj.MakeWeak(gco, gcCallback);
 	}
 
-	return reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(obj));
+	*robj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(obj));
+	return NULL;
 }
 
-extern "C" void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+extern "C" char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	delete reinterpret_cast<PDFJSImpObject *>(obj);
+	return NULL;
 }
 
-extern "C" pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str)
+extern "C" char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj)
 {
-	return reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(str));
+	*obj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(str));
+	return NULL;
 }
 
-extern "C" char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+extern "C" char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str)
 {
-	return reinterpret_cast<PDFJSImpObject *>(obj)->toString();
+	*str = reinterpret_cast<PDFJSImpObject *>(obj)->toString();
+	return NULL;
 }
 
-extern "C" void pdf_jsimp_execute(pdf_jsimp *imp, char *code)
-{
-	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
-	HandleScope scope;
-	Context::Scope context_scope(vImp->context);
-	Script::Compile(String::New(code))->Run();
-}
-
-extern "C" void pdf_jsimp_execute_count(pdf_jsimp *imp, char *code, int count)
+extern "C" char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code)
 {
 	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
 	HandleScope scope;
 	Context::Scope context_scope(vImp->context);
-	Script::Compile(String::New(code, count))->Run();
+	Handle<Script> script = Script::Compile(String::New(code));
+	if (script.IsEmpty())
+		return "compile failed in pdf_jsimp_execute";
+	script->Run();
+	return NULL;
+}
+
+extern "C" char *pdf_jsimp_execute_count_cpp(pdf_jsimp *imp, char *code, int count)
+{
+	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
+	HandleScope scope;
+	Context::Scope context_scope(vImp->context);
+	Handle<Script> script = Script::Compile(String::New(code, count));
+	if (script.IsEmpty())
+		return "compile failed in pdf_jsimp_execute_count";
+	script->Run();
+	return NULL;
 }
