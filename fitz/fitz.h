@@ -95,6 +95,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 */
 
 #if __STDC_VERSION__ == 199901L /* C99 */
+#elif defined __cplusplus
+#define restrict
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 #define inline __inline
 #define restrict __restrict
