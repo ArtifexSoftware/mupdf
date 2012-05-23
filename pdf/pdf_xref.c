@@ -173,21 +173,10 @@ pdf_resize_xref(pdf_document *xref, int newlen)
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
 		xref->table[i].stm_ofs = 0;
+		xref->table[i].stm_buf = NULL;
 		xref->table[i].obj = NULL;
 	}
 	xref->len = newlen;
-}
-
-pdf_obj *
-pdf_new_ref(pdf_document *xref, pdf_obj *obj)
-{
-	int i = xref->len;
-	pdf_resize_xref(xref, i+1);
-	xref->table[i].type = 'n';
-	xref->table[i].ofs = -1;
-	xref->table[i].gen = 0;
-	xref->table[i].obj = obj;
-	return pdf_new_indirect(xref->ctx, i, 0, xref);
 }
 
 static pdf_obj *
@@ -847,11 +836,12 @@ pdf_print_xref(pdf_document *xref)
 	printf("xref\n0 %d\n", xref->len);
 	for (i = 0; i < xref->len; i++)
 	{
-		printf("%05d: %010d %05d %c (stm_ofs=%d)\n", i,
+		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
 			xref->table[i].ofs,
 			xref->table[i].gen,
 			xref->table[i].type ? xref->table[i].type : '-',
-			xref->table[i].stm_ofs);
+			xref->table[i].stm_ofs,
+			xref->table[i].stm_buf);
 	}
 }
 
@@ -1077,15 +1067,53 @@ pdf_count_objects(pdf_document *doc)
 	return doc->len;
 }
 
-/* Replace numbered object -- for use by pdfclean and similar tools */
+int
+pdf_create_object(pdf_document *xref)
+{
+	/* TODO: reuse free object slots by properly linking free object chains in the ofs field */
+	int num = xref->len;
+	pdf_resize_xref(xref, num + 1);
+	xref->table[num].type = 'f';
+	xref->table[num].ofs = -1;
+	xref->table[num].gen = 0;
+	xref->table[num].stm_ofs = 0;
+	xref->table[num].stm_buf = NULL;
+	xref->table[num].obj = NULL;
+	return num;
+}
+
 void
-pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
+pdf_delete_object(pdf_document *xref, int num)
 {
 	pdf_xref_entry *x;
 
 	if (num < 0 || num >= xref->len)
 	{
-		fz_warn(xref->ctx, "object out of range (%d %d R); xref size %d", num, gen, xref->len);
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
+		return;
+	}
+
+	x = &xref->table[num];
+
+	fz_drop_buffer(xref->ctx, x->stm_buf);
+	pdf_drop_obj(x->obj);
+
+	x->type = 'f';
+	x->ofs = 0;
+	x->gen = 0;
+	x->stm_ofs = 0;
+	x->stm_buf = NULL;
+	x->obj = NULL;
+}
+
+void
+pdf_update_object(pdf_document *xref, int num, pdf_obj *newobj)
+{
+	pdf_xref_entry *x;
+
+	if (num < 0 || num >= xref->len)
+	{
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
 		return;
 	}
 
@@ -1094,9 +1122,25 @@ pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
 	if (x->obj)
 		pdf_drop_obj(x->obj);
 
-	x->obj = pdf_keep_obj(newobj);
 	x->type = 'n';
 	x->ofs = 0;
+	x->obj = pdf_keep_obj(newobj);
+}
+void
+pdf_update_stream(pdf_document *xref, int num, fz_buffer *newbuf)
+{
+	pdf_xref_entry *x;
+
+	if (num < 0 || num >= xref->len)
+	{
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
+		return;
+	}
+
+	x = &xref->table[num];
+
+	fz_drop_buffer(xref->ctx, x->stm_buf);
+	x->stm_buf = fz_keep_buffer(xref->ctx, newbuf);
 }
 
 int

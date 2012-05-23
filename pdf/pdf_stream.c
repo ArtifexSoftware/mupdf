@@ -13,7 +13,7 @@ pdf_is_stream(pdf_document *xref, int num, int gen)
 	pdf_cache_object(xref, num, gen);
 	/* RJW: "cannot load object, ignoring error" */
 
-	return xref->table[num].stm_ofs > 0;
+	return xref->table[num].stm_ofs > 0 || xref->table[num].stm_buf;
 }
 
 /*
@@ -231,9 +231,12 @@ build_filter_chain(fz_stream *chain, pdf_document *xref, pdf_obj *fs, pdf_obj *p
 static fz_stream *
 pdf_open_raw_filter(fz_stream *chain, pdf_document *xref, pdf_obj *stmobj, int num, int gen, int offset)
 {
+	fz_context *ctx = chain->ctx;
 	int hascrypt;
 	int len;
-	fz_context *ctx = chain->ctx;
+
+	if (num > 0 && num < xref->len && xref->table[num].stm_buf)
+		return fz_open_buffer(ctx, xref->table[num].stm_buf);
 
 	/* don't close chain when we close this filter */
 	fz_keep_stream(chain);
@@ -430,6 +433,9 @@ pdf_load_raw_renumbered_stream(pdf_document *xref, int num, int gen, int orig_nu
 	pdf_obj *dict;
 	int len;
 	fz_buffer *buf;
+
+	if (num > 0 && num < xref->len && xref->table[num].stm_buf)
+		return fz_keep_buffer(xref->ctx, xref->table[num].stm_buf);
 
 	dict = pdf_load_object(xref, num, gen);
 	/* RJW: "cannot load stream dictionary (%d %d R)", num, gen */

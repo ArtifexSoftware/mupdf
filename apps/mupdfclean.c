@@ -49,7 +49,7 @@ static void retainpages(int argc, char **argv)
 	pdf_dict_puts(root, "Type", pdf_dict_gets(oldroot, "Type"));
 	pdf_dict_puts(root, "Pages", pdf_dict_gets(oldroot, "Pages"));
 
-	pdf_update_object(xref, pdf_to_num(oldroot), pdf_to_gen(oldroot), root);
+	pdf_update_object(xref, pdf_to_num(oldroot), root);
 
 	pdf_drop_obj(root);
 
@@ -209,7 +209,7 @@ int pdfclean_main(int argc, char **argv)
 	if (subset)
 		retainpages(argc, argv);
 
-	pdf_write(xref, outfile, &opts);
+	pdf_write_document(xref, outfile, &opts);
 
 	pdf_close_document(xref);
 	fz_free_context(ctx);
