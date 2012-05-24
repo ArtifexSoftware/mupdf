@@ -15,6 +15,15 @@ enum
 
 enum
 {
+	BS_Solid,
+	BS_Dashed,
+	BS_Beveled,
+	BS_Inset,
+	BS_Underline
+};
+
+enum
+{
 	Q_Left  = 0,
 	Q_Cent  = 1,
 	Q_Right = 2
@@ -32,6 +41,51 @@ struct fz_widget_text_s
 	fz_widget super;
 	char     *text;
 };
+
+
+static const char *fmt_re = "%f %f %f %f re\n";
+static const char *fmt_f = "f\n";
+static const char *fmt_s = "s\n";
+static const char *fmt_g = "%f g\n";
+static const char *fmt_m = "%f %f m\n";
+static const char *fmt_l = "%f %f l\n";
+static const char *fmt_w = "%f w\n";
+static const char *fmt_Tx_BMC = "/Tx BMC\n";
+static const char *fmt_q = "q\n";
+static const char *fmt_W = "W\n";
+static const char *fmt_n = "n\n";
+static const char *fmt_BT = "BT\n";
+static const char *fmt_Tm = "%1.2f %1.2f %1.2f %1.2f %1.2f %1.2f Tm\n";
+static const char *fmt_Tj = "(%s) Tj\n";
+static const char *fmt_ET = "ET\n";
+static const char *fmt_Q = "Q\n";
+static const char *fmt_EMC = "EMC\n";
+
+static void account_for_rot(fz_rect *rect, fz_matrix *mat, int rot)
+{
+	float width = rect->x1;
+	float height = rect->y1;
+
+	switch (rot)
+	{
+	default:
+		*mat = fz_identity;
+		break;
+	case 90:
+		*mat = fz_concat(fz_rotate(rot), fz_translate(width, 0));
+		rect->x1 = height;
+		rect->y1 = width;
+		break;
+	case 180:
+		*mat = fz_concat(fz_rotate(rot), fz_translate(width, height));
+		break;
+	case 270:
+		*mat = fz_concat(fz_rotate(rot), fz_translate(0, height));
+		rect->x1 = height;
+		rect->y1 = width;
+		break;
+	}
+}
 
 static pdf_obj *get_inheritable(pdf_document *doc, pdf_obj *obj, char *key)
 {
@@ -90,6 +144,20 @@ static int get_field_type(pdf_document *doc, pdf_obj *obj)
 	}
 	else
 		return -1;
+}
+
+static void copy_resources(pdf_obj *dst, pdf_obj *src)
+{
+	int i, len;
+
+	len = pdf_dict_len(src);
+	for (i = 0; i < len; i++)
+	{
+		pdf_obj *key = pdf_dict_get_key(src, i);
+
+		if (!pdf_dict_get(dst, key))
+			fz_dict_put(dst, key, pdf_dict_get_val(src, i));
+	}
 }
 
 static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
@@ -240,33 +308,41 @@ static fz_rect measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
 	return rect;
 }
 
+static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
+{
+	fz_buffer_printf(ctx, fzbuf, fmt_q);
+	if (clip)
+	{
+		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_buffer_printf(ctx, fzbuf, fmt_W);
+		fz_buffer_printf(ctx, fzbuf, fmt_n);
+	}
+
+	fz_buffer_printf(ctx, fzbuf, fmt_BT);
+
+	if (fontsize > 0)
+		copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
+	else
+		fz_buffer_printf(ctx, fzbuf, "%s\n", da);
+
+	fz_buffer_printf(ctx, fzbuf, "\n");
+	if (tm)
+		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
+
+	fz_buffer_printf(ctx, fzbuf, fmt_Tj, text);
+	fz_buffer_printf(ctx, fzbuf, fmt_ET);
+	fz_buffer_printf(ctx, fzbuf, fmt_Q);
+}
+
 static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
 {
 	fz_buffer *fzbuf = fz_new_buffer(ctx, 0);
-	const char *fmtstart =
-		"/Tx BMC"
-		" q";
-	const char *fmtclip =
-		" %1.2f %1.2f %1.2f %1.2f re"
-		" W"
-		" n";
-	const char *fmtbtxt =
-		" BT";
-	const char *fmttxt =
-		" %1.2f %1.2f %1.2f %1.2f %1.2f %1.2f Tm"
-		" (%s) Tj"
-		" ET"
-		" Q"
-		" EMC";
 
 	fz_try(ctx)
 	{
-		fz_buffer_printf(ctx, fzbuf, fmtstart);
-		if (clip)
-			fz_buffer_printf(ctx, fzbuf, fmtclip, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
-		fz_buffer_printf(ctx, fzbuf, fmtbtxt);
-		copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
-		fz_buffer_printf(ctx, fzbuf, fmttxt, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f, text);
+		fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
+		fzbuf_print_text(ctx, fzbuf, clip, da, fontsize, tm, text);
+		fz_buffer_printf(ctx, fzbuf, fmt_EMC);
 	}
 	fz_catch(ctx)
 	{
@@ -599,18 +675,10 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 
 			if (pdf_is_stream(doc, pdf_to_num(n), pdf_to_gen(n)))
 			{
-				int i, len;
 				form = pdf_load_xobject(doc, n);
 
 				/* copy the default resources to the xobject */
-				len = pdf_dict_len(dr);
-				for (i = 0; i < len; i++)
-				{
-					pdf_obj *key = pdf_dict_get_key(dr, i);
-
-					if (!pdf_dict_get(form->resources, key))
-						fz_dict_put(form->resources, key, pdf_dict_get_val(dr, i));
-				}
+				copy_resources(form->resources, dr);
 
 				has_tm = get_matrix(doc, form, q, &tm);
 				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, q, dr, pdf_to_str_buf(da), text);
@@ -672,7 +740,7 @@ static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 		rect.x1 -= rect.x0;
 		rect.y1 -= rect.y0;
 		rect.x0 = rect.y0 = 0;
-		formobj = pdf_new_xobject(doc, &rect);
+		formobj = pdf_new_xobject(doc, &rect, &fz_identity);
 		form = pdf_load_xobject(doc, formobj);
 		fzbuf = fz_new_buffer(ctx, 0);
 		fz_buffer_printf(ctx, fzbuf, "/Tx BMC EMC");
@@ -695,9 +763,228 @@ static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
-void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj)
+static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect *rect)
 {
-	if (!pdf_dict_gets(obj, "AP"))
+	fz_context *ctx = doc->ctx;
+	pdf_obj *ap = NULL;
+	pdf_obj *tobj = NULL;
+	fz_matrix mat;
+	int rot;
+	pdf_obj *formobj = NULL;
+	pdf_xobject *form = NULL;
+	const char *dn;
+
+	fz_var(formobj);
+	fz_var(tobj);
+	fz_var(form);
+	fz_try(ctx)
+	{
+		pdf_hotspot *hp = &doc->hotspot;
+		if (hp->num == pdf_to_num(obj)
+			&& hp->gen == pdf_to_gen(obj)
+			&& (hp->state & HOTSPOT_POINTER_DOWN))
+		{
+			dn = "D";
+		}
+		else
+		{
+			dn = "N";
+		}
+
+		rot = pdf_to_int(pdf_dict_getp(obj, "MK/R"));
+		*rect = pdf_to_rect(ctx, pdf_dict_gets(obj, "Rect"));
+		rect->x1 -= rect->x0;
+		rect->y1 -= rect->y0;
+		rect->x0 = rect->y0 = 0;
+		account_for_rot(rect, &mat, rot);
+
+		ap = pdf_dict_gets(obj, "AP");
+		if (ap == NULL)
+		{
+			tobj = pdf_new_dict(ctx, 1);
+			pdf_dict_puts(obj, "AP", tobj);
+			ap = tobj;
+			tobj = NULL;
+		}
+
+		formobj = pdf_dict_gets(ap, dn);
+		if (formobj == NULL)
+		{
+			tobj = pdf_new_xobject(doc, rect, &mat);
+			pdf_dict_puts(ap, dn, tobj);
+			formobj = tobj;
+			tobj = NULL;
+		}
+
+		form = pdf_load_xobject(doc, formobj);
+
+		copy_resources(form->resources, get_inheritable(doc, obj, "DR"));
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(tobj);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_xobject(ctx, form);
+		fz_rethrow(ctx);
+	}
+
+	return form;
+}
+
+static fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, int stroke, float adj)
+{
+	switch(pdf_array_len(arr))
+	{
+	case 1:
+		fz_buffer_printf(ctx, fzbuf, stroke?"%f G\n":"%f g\n",
+			pdf_to_real(pdf_array_get(arr, 0)) + adj);
+		break;
+	case 3:
+		fz_buffer_printf(ctx, fzbuf, stroke?"%f %f %f rg\n":"%f %f %f rg\n",
+			pdf_to_real(pdf_array_get(arr, 0)) + adj,
+			pdf_to_real(pdf_array_get(arr, 1)) + adj,
+			pdf_to_real(pdf_array_get(arr, 2)) + adj);
+		break;
+	case 4:
+		fz_buffer_printf(ctx, fzbuf, stroke?"%f %f %f %f k\n":"%f %f %f %f k\n",
+			pdf_to_real(pdf_array_get(arr, 0)),
+			pdf_to_real(pdf_array_get(arr, 1)),
+			pdf_to_real(pdf_array_get(arr, 2)),
+			pdf_to_real(pdf_array_get(arr, 3)));
+		break;
+	}
+}
+
+static int get_border_style(pdf_obj *obj)
+{
+	char *sname = pdf_to_name(pdf_dict_getp(obj, "BS/S"));
+
+	if (!strcmp(sname, "D"))
+		return BS_Dashed;
+	else if (!strcmp(sname, "B"))
+		return BS_Beveled;
+	else if (!strcmp(sname, "I"))
+		return BS_Inset;
+	else if (!strcmp(sname, "U"))
+		return BS_Underline;
+	else
+		return BS_Solid;
+}
+
+static float get_border_width(pdf_obj *obj)
+{
+	float w = pdf_to_real(pdf_dict_getp(obj, "BS/W"));
+	return w == 0.0 ? 1.0 : w;
+}
+
+static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	fz_rect rect;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
+	fz_buffer *measure_buf = NULL;
+	pdf_obj *tobj = NULL;
+	int bstyle;
+	float bwidth;
+	float btotal;
+
+	fz_var(form);
+	fz_var(fzbuf);
+	fz_var(measure_buf);
+	fz_try(ctx)
+	{
+		form = load_or_create_form(doc, obj, &rect);
+		fzbuf = fz_new_buffer(ctx, 0);
+		tobj = pdf_dict_getp(obj, "MK/BG");
+		if (pdf_is_array(tobj))
+		{
+			fzbuf_print_color(ctx, fzbuf, tobj, 0, 0.0);
+			fz_buffer_printf(ctx, fzbuf, fmt_re,
+				rect.x0, rect.y0, rect.x1, rect.y1);
+			fz_buffer_printf(ctx, fzbuf, fmt_f);
+		}
+		bstyle = get_border_style(obj);
+		bwidth = get_border_width(obj);
+		btotal = bwidth;
+		if (bstyle == BS_Beveled || bstyle == BS_Inset)
+		{
+			btotal += bwidth;
+
+			if (bstyle == BS_Beveled)
+				fz_buffer_printf(ctx, fzbuf, fmt_g, 1.0);
+			else
+				fz_buffer_printf(ctx, fzbuf, fmt_g, 0.33);
+			fz_buffer_printf(ctx, fzbuf, fmt_m, bwidth, bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, bwidth, rect.y1 - bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, rect.y1 - bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_f);
+			if (bstyle == BS_Beveled)
+				fzbuf_print_color(ctx, fzbuf, tobj, 0, -0.25);
+			else
+				fz_buffer_printf(ctx, fzbuf, fmt_g, 0.66);
+			fz_buffer_printf(ctx, fzbuf, fmt_m, rect.x1 - bwidth, rect.y1 - bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, bwidth, bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_f);
+		}
+
+		tobj = pdf_dict_getp(obj, "MK/BC");
+		if (tobj)
+		{
+			fzbuf_print_color(ctx, fzbuf, tobj, 1, 0.0);
+			fz_buffer_printf(ctx, fzbuf, fmt_w, bwidth);
+			fz_buffer_printf(ctx, fzbuf, fmt_re,
+				bwidth/2, bwidth/2,
+				rect.x1 -bwidth/2, rect.y1 - bwidth/2);
+			fz_buffer_printf(ctx, fzbuf, fmt_s);
+		}
+
+		tobj = pdf_dict_getp(obj, "MK/CA");
+		if (tobj)
+		{
+			fz_rect clip = rect;
+			fz_rect bounds;
+			fz_matrix mat;
+			char *da = pdf_to_str_buf(pdf_dict_gets(obj, "DA"));
+			char *text = pdf_to_str_buf(tobj);
+
+			clip.x0 += btotal;
+			clip.y0 += btotal;
+			clip.x1 -= btotal;
+			clip.y1 -= btotal;
+
+			measure_buf = create_text_buffer(ctx, NULL, da, 0, NULL, text);
+			bounds = measure_text(doc, form->resources, measure_buf);
+			mat = fz_translate((rect.x1 - bounds.x1)/2, (rect.y1 - bounds.y1)/2);
+			fzbuf_print_text(ctx, fzbuf, &clip, da, 0, &mat, text);
+		}
+
+		pdf_xobject_set_contents(ctx, form, fzbuf);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, fzbuf);
+		fz_drop_buffer(ctx, measure_buf);
+		pdf_drop_xobject(ctx, form);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
+{
+	if (!pdf_dict_gets(obj, "AP") || pdf_dict_gets(obj, "Dirty"))
 	{
 		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
 		{
@@ -706,8 +993,13 @@ void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj)
 			case FZ_WIDGET_TYPE_TEXT:
 				synthesize_text_widget(doc, obj);
 				break;
+			case FZ_WIDGET_TYPE_PUSHBUTTON:
+				update_pushbutton_widget(doc, obj);
+				break;
 			}
 		}
+
+		pdf_dict_dels(obj, "Dirty");
 	}
 }
 

@@ -825,6 +825,36 @@ pdf_dict_gets(pdf_obj *obj, char *key)
 }
 
 pdf_obj *
+pdf_dict_getp(pdf_obj *obj, char *keys)
+{
+	char buf[256];
+	char *k, *e;
+
+	if (strlen(keys)+1 > 256)
+		fz_throw(obj->ctx, "buffer overflow in pdf_dict_getp");
+
+	strcpy(buf, keys);
+
+	e = buf;
+	while (*e && obj)
+	{
+		k = e;
+		while (*e != '/' && *e != '\0')
+			e++;
+
+		if (*e == '/')
+		{
+			*e = '\0';
+			e++;
+		}
+
+		obj = pdf_dict_gets(obj, k);
+	}
+
+	return obj;
+}
+
+pdf_obj *
 pdf_dict_get(pdf_obj *obj, pdf_obj *key)
 {
 	if (!key || key->kind != PDF_NAME)

@@ -312,12 +312,12 @@ struct pdf_xobject_s
 };
 
 pdf_xobject *pdf_load_xobject(pdf_document *doc, pdf_obj *obj);
-pdf_obj *pdf_new_xobject(pdf_document *doc, fz_rect *bbox);
+pdf_obj *pdf_new_xobject(pdf_document *doc, fz_rect *bbox, fz_matrix *mat);
 pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_xobject_set_contents(fz_context *ctx, pdf_xobject *from, fz_buffer *buffer);
 
-void pdf_synthesize_missing_appearance(pdf_document *doc, pdf_obj *obj);
+void pdf_update_appearance(pdf_document *doc, pdf_obj *obj);
 
 /*
  * CMap

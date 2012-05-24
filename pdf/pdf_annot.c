@@ -368,7 +368,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 	{
 		obj = pdf_array_get(annots, i);
 
-		pdf_synthesize_missing_appearance(xref, obj);
+		pdf_update_appearance(xref, obj);
 
 		rect = pdf_dict_gets(obj, "Rect");
 		ap = pdf_dict_gets(obj, "AP");
