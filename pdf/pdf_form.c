@@ -103,6 +103,49 @@ static pdf_obj *get_inheritable(pdf_document *doc, pdf_obj *obj, char *key)
 				: pdf_dict_gets(pdf_dict_gets(pdf_dict_gets(doc->trailer, "Root"), "AcroForm"), key);
 }
 
+static char *get_string_or_stream(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	int len = 0;
+	char *buf = NULL;
+	fz_buffer *strmbuf = NULL;
+	char *text = NULL;
+
+	fz_var(strmbuf);
+	fz_var(text);
+	fz_try(ctx)
+	{
+		if (pdf_is_string(obj))
+		{
+			len = pdf_to_str_len(obj);
+			buf = pdf_to_str_buf(obj);
+		}
+		else if (pdf_is_stream(doc, pdf_to_num(obj), pdf_to_gen(obj)))
+		{
+			strmbuf = pdf_load_stream(doc, pdf_to_num(obj), pdf_to_gen(obj));
+			len = fz_buffer_storage(ctx, strmbuf, &buf);
+		}
+
+		if (buf)
+		{
+			text = fz_malloc(ctx, len+1);
+			memcpy(text, buf, len);
+			text[len] = 0;
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, strmbuf);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, text);
+		fz_rethrow(ctx);
+	}
+
+	return text;
+}
+
 static char *get_field_type_name(pdf_document *doc, pdf_obj *obj)
 {
 	pdf_obj *type = get_inheritable(doc, obj, "FT");
@@ -144,6 +187,23 @@ static int get_field_type(pdf_document *doc, pdf_obj *obj)
 	}
 	else
 		return -1;
+}
+
+static void pdf_field_mark_dirty(fz_context *ctx, pdf_obj *field)
+{
+	pdf_obj *nullobj = pdf_new_null(ctx);
+	fz_try(ctx)
+	{
+		pdf_dict_puts(field, "Dirty", nullobj);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(nullobj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static void copy_resources(pdf_obj *dst, pdf_obj *src)
@@ -1005,6 +1065,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 
 static void execute_action(pdf_document *doc, pdf_obj *obj)
 {
+	fz_context *ctx = doc->ctx;
 	pdf_obj *a;
 
 	a = pdf_dict_gets(obj, "A");
@@ -1016,7 +1077,22 @@ static void execute_action(pdf_document *doc, pdf_obj *obj)
 		{
 			pdf_obj *js = pdf_dict_gets(a, "JS");
 			if (js)
-				pdf_js_execute(doc->js, pdf_to_str_buf(js));
+			{
+				char *code = get_string_or_stream(doc, js);
+				fz_try(ctx)
+				{
+					pdf_js_setup_event(doc->js, obj);
+					pdf_js_execute(doc->js, code);
+				}
+				fz_always(ctx)
+				{
+					fz_free(ctx, code);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
+				}
+			}
 		}
 
 		a = pdf_dict_gets(a, "Next");
@@ -1161,52 +1237,85 @@ int fz_widget_get_type(fz_widget *widget)
 
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 {
-	fz_context *ctx = doc->ctx;
-	pdf_obj *vobj = get_inheritable(doc, field, "V");
-	int len = 0;
-	char *buf = NULL;
-	fz_buffer *strmbuf = NULL;
-	char *text = NULL;
-
-	fz_var(strmbuf);
-	fz_var(text);
-	fz_try(ctx)
-	{
-		if (pdf_is_string(vobj))
-		{
-			len = pdf_to_str_len(vobj);
-			buf = pdf_to_str_buf(vobj);
-		}
-		else if (pdf_is_stream(doc, pdf_to_num(vobj), pdf_to_gen(vobj)))
-		{
-			strmbuf = pdf_load_stream(doc, pdf_to_num(vobj), pdf_to_gen(vobj));
-			len = fz_buffer_storage(ctx, strmbuf, &buf);
-		}
-
-		if (buf)
-		{
-			text = fz_malloc(ctx, len+1);
-			memcpy(text, buf, len);
-			text[len] = 0;
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, strmbuf);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, text);
-		fz_rethrow(ctx);
-	}
-
-	return text;
+	return get_string_or_stream(doc, get_inheritable(doc, field, "V"));
 }
 
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
 	update_text_appearance(doc, field, text);
 	update_text_field_value(doc->ctx, field, text);
+}
+
+char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field)
+{
+	char *bs = pdf_to_name(pdf_dict_getp(field, "BS/S"));
+
+	switch (*bs)
+	{
+	case 'S': return "Solid";
+	case 'D': return "Dashed";
+	case 'B': return "Beveled";
+	case 'I': return "Inset";
+	case 'U': return "Underline";
+	}
+
+	return "Solid";
+}
+
+void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *val = NULL;
+
+	if (!strcmp(text, "Solid"))
+		val = fz_new_name(ctx, "S");
+	else if (!strcmp(text, "Dashed"))
+		val = fz_new_name(ctx, "D");
+	else if (!strcmp(text, "Beveled"))
+		val = fz_new_name(ctx, "B");
+	else if (!strcmp(text, "Inset"))
+		val = fz_new_name(ctx, "I");
+	else if (!strcmp(text, "Underline"))
+		val = fz_new_name(ctx, "U");
+	else
+		return;
+
+	fz_try(ctx);
+	{
+		pdf_dict_putp(field, "BS/S", val);
+		pdf_field_mark_dirty(ctx, field);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(val);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *val = pdf_new_string(ctx, text, strlen(text));
+
+	fz_try(ctx);
+	{
+		if (get_field_type(doc, field) == FZ_WIDGET_TYPE_PUSHBUTTON)
+		{
+			pdf_dict_putp(field, "MK/CA", val);
+			pdf_field_mark_dirty(ctx, field);
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(val);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 char *fz_widget_text_get_text(fz_widget_text *tw)

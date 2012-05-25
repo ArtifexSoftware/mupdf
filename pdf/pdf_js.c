@@ -1,18 +1,74 @@
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
 
+typedef struct pdf_js_event_s
+{
+	pdf_obj *target;
+} pdf_js_event;
+
 struct pdf_js_s
 {
-	pdf_document   *doc;
-	pdf_obj        *form;
-	pdf_jsimp      *imp;
+	pdf_document *doc;
+	pdf_obj *form;
+	pdf_js_event event;
+	pdf_jsimp *imp;
 	pdf_jsimp_type *doctype;
+	pdf_jsimp_type *eventtype;
 	pdf_jsimp_type *fieldtype;
 };
 
+static pdf_jsimp_obj *field_buttonSetCaption(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	pdf_js  *js = (pdf_js *)jsctx;
+	pdf_obj *field = (pdf_obj *)obj;
+	char    *name;
+
+	if (argc != 1)
+		return NULL;
+
+	name = pdf_jsimp_toString(js->imp, args[0]);
+	pdf_field_buttonSetCaption(js->doc, field, name);
+
+	return NULL;
+}
+
+static pdf_jsimp_obj *field_getFillColor(void *jsctx, void *obj)
+{
+	return NULL;
+}
+
+static void field_setFillColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+}
+
+static pdf_jsimp_obj *field_getTextColor(void *jsctx, void *obj)
+{
+	return NULL;
+}
+
+static void field_setTextColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+}
+
+static pdf_jsimp_obj *field_getBorderStyle(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	pdf_obj *field = (pdf_obj *)obj;
+
+	return pdf_jsimp_fromString(js->imp, pdf_field_getBorderStyle(js->doc, field));
+}
+
+static void field_setBorderStyle(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	pdf_obj *field = (pdf_obj *)obj;
+
+	pdf_field_setBorderStyle(js->doc, field, pdf_jsimp_toString(js->imp, val));
+}
+
 static pdf_jsimp_obj *field_getValue(void *jsctx, void *obj)
 {
-	pdf_js  *js    = (pdf_js *)jsctx;
+	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
 	return pdf_jsimp_fromString(js->imp, pdf_field_getValue(js->doc, field));
@@ -20,10 +76,37 @@ static pdf_jsimp_obj *field_getValue(void *jsctx, void *obj)
 
 static void field_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 {
-	pdf_js  *js    = (pdf_js *)jsctx;
+	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
 	pdf_field_setValue(js->doc, field, pdf_jsimp_toString(js->imp, val));
+}
+
+static pdf_jsimp_obj *event_getTarget(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	pdf_js_event *e = (pdf_js_event *)obj;
+
+	return pdf_jsimp_new_obj(js->imp, js->fieldtype, e->target);
+}
+
+static void event_setTarget(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_warn(js->doc->ctx, "Unexpected call to event_setTarget");
+}
+
+static pdf_jsimp_obj *doc_getEvent(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	return pdf_jsimp_new_obj(js->imp, js->eventtype, &js->event);
+}
+
+static void doc_setEvent(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_warn(js->doc->ctx, "Unexpected call to doc_setEvent");
 }
 
 static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
@@ -60,13 +143,33 @@ static void declare_dom(pdf_js *js)
 	/* Create the document type */
 	js->doctype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addmethod(imp, js->doctype, "getField", doc_getField);
+	pdf_jsimp_addproperty(imp, js->doctype, "event", doc_getEvent, doc_setEvent);
+
+	/* Create the event type */
+	js->eventtype = pdf_jsimp_new_type(imp, NULL);
+	pdf_jsimp_addproperty(imp, js->eventtype, "target", event_getTarget, event_setTarget);
 
 	/* Create the field type */
 	js->fieldtype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addproperty(imp, js->fieldtype, "value", field_getValue, field_setValue);
+	pdf_jsimp_addproperty(imp, js->fieldtype, "borderStyle", field_getBorderStyle, field_setBorderStyle);
+	pdf_jsimp_addproperty(imp, js->fieldtype, "textColor", field_getTextColor, field_setTextColor);
+	pdf_jsimp_addproperty(imp, js->fieldtype, "fillColor", field_getFillColor, field_setFillColor);
+	pdf_jsimp_addmethod(imp, js->fieldtype, "buttonSetCaption", field_buttonSetCaption);
 
 	/* Create the document object and tell the engine to use */
 	pdf_jsimp_set_global_type(js->imp, js->doctype);
+}
+
+static void preload_helpers(pdf_js *js)
+{
+	pdf_jsimp_execute(js->imp,
+		"var border = new Array();\n"
+		"border.s = \"Solid\";\n"
+		"border.d = \"Dashed\";\n"
+		"border.b = \"Beveled\";\n"
+		"border.i = \"Inset\";\n"
+		"border.u = \"Underline\";\n");
 }
 
 pdf_js *pdf_new_js(pdf_document *doc)
@@ -96,6 +199,8 @@ pdf_js *pdf_new_js(pdf_document *doc)
 		 * pass our js context, for it to pass back to us. */
 		js->imp = pdf_new_jsimp(ctx, js);
 		declare_dom(js);
+
+		preload_helpers(js);
 
 		javascript = pdf_load_name_tree(doc, "JavaScript");
 		len = pdf_dict_len(javascript);
@@ -142,6 +247,11 @@ void pdf_drop_js(pdf_js *js)
 		pdf_drop_jsimp(js->imp);
 		fz_free(ctx, js);
 	}
+}
+
+void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
+{
+	js->event.target = target;
 }
 
 void pdf_js_execute(pdf_js *js, char *code)

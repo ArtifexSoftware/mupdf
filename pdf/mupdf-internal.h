@@ -536,6 +536,9 @@ void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field);
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
+char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field);
+void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text);
 
 /*
  * Page tree, pages and related objects
@@ -578,6 +581,7 @@ fz_widget *pdf_get_focussed_widget(pdf_document *doc);
  */
 pdf_js *pdf_new_js(pdf_document *doc);
 void pdf_drop_js(pdf_js *js);
+void pdf_js_setup_event(pdf_js *js, pdf_obj *target);
 void pdf_js_execute(pdf_js *js, char *code);
 void pdf_js_execute_count(pdf_js *js, char *code, int count);
 

@@ -216,7 +216,9 @@ static Handle<Value> callMethod(const Arguments &args)
 		native_args[i] = new PDFJSImpObject(args[i]);
 
 	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(m->meth(m->jsctx, nself, c, reinterpret_cast<pdf_jsimp_obj **>(native_args)));
-	Handle<Value> val = obj->toValue();
+	Handle<Value> val;
+	if (obj)
+		val = obj->toValue();
 	delete obj;
 
 	for (int i = 0; i < c; i++)
@@ -249,12 +251,18 @@ static Handle<Value> getProp(Local<String> property, const AccessorInfo &info)
 	void *nself = NULL;
 	if (self->InternalFieldCount() > 0)
 	{
-		owrap = Local<External>::Cast(self->GetInternalField(0));
-		nself = owrap->Value();
+		Local<Value> val = self->GetInternalField(0);
+		if (val->IsExternal())
+		{
+			owrap = Local<External>::Cast(val);
+			nself = owrap->Value();
+		}
 	}
 
 	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(p->get(p->jsctx, nself));
-	Handle<Value> val = obj->toValue();
+	Handle<Value> val;
+	if (obj)
+		val = obj->toValue();
 	delete obj;
 	return scope.Close(val);
 }

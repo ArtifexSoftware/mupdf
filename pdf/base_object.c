@@ -938,6 +938,63 @@ pdf_dict_puts(pdf_obj *obj, char *key, pdf_obj *val)
 }
 
 void
+pdf_dict_putp(pdf_obj *obj, char *keys, pdf_obj *val)
+{
+	fz_context *ctx = obj->ctx;
+	char buf[256];
+	char *k, *e;
+	pdf_obj *cobj = NULL;
+
+	if (strlen(keys)+1 > 256)
+		fz_throw(obj->ctx, "buffer overflow in pdf_dict_getp");
+
+	strcpy(buf, keys);
+
+	e = buf;
+	while (*e)
+	{
+		k = e;
+		while (*e != '/' && *e != '\0')
+			e++;
+
+		if (*e == '/')
+		{
+			*e = '\0';
+			e++;
+		}
+
+		if (*e)
+		{
+			/* Not the last key in the key path. Create subdict if not already there. */
+			cobj = pdf_dict_gets(obj, k);
+			if (cobj == NULL)
+			{
+				cobj = pdf_new_dict(ctx, 1);
+				fz_try(ctx)
+				{
+					pdf_dict_puts(obj, k, cobj);
+				}
+				fz_always(ctx)
+				{
+					pdf_drop_obj(cobj);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
+				}
+			}
+			/* Move to subdict */
+			obj = cobj;
+		}
+		else
+		{
+			/* Last key. Use it to store the value */
+			pdf_dict_puts(obj, k, val);
+		}
+	}
+}
+
+void
 pdf_dict_dels(pdf_obj *obj, char *key)
 {
 	RESOLVE(obj);
