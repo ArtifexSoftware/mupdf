@@ -42,6 +42,16 @@ struct fz_widget_text_s
 	char     *text;
 };
 
+typedef struct da_parse_state_s
+{
+	char *name;
+	float stack[32];
+	int top;
+	char *font_name;
+	int font_size;
+	float col[4];
+	int col_size;
+} da_parse_state;
 
 static const char *fmt_re = "%f %f %f %f re\n";
 static const char *fmt_f = "f\n";
@@ -191,18 +201,21 @@ static int get_field_type(pdf_document *doc, pdf_obj *obj)
 
 static void pdf_field_mark_dirty(fz_context *ctx, pdf_obj *field)
 {
-	pdf_obj *nullobj = pdf_new_null(ctx);
-	fz_try(ctx)
+	if (!pdf_dict_gets(field, "Dirty"))
 	{
-		pdf_dict_puts(field, "Dirty", nullobj);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(nullobj);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
+		pdf_obj *nullobj = pdf_new_null(ctx);
+		fz_try(ctx)
+		{
+			pdf_dict_puts(field, "Dirty", nullobj);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(nullobj);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
 	}
 }
 
@@ -290,6 +303,110 @@ static int read_font_size_from_da(fz_context *ctx, char *da)
 	}
 
 	return fontsize;
+}
+
+static void da_init(fz_context *ctx, da_parse_state *da_state)
+{
+	da_state->name = NULL;
+	da_state->top = 0;
+	da_state->font_name = NULL;
+	da_state->font_size = 0;
+	da_state->col_size = 0;
+}
+
+static void da_fin(fz_context *ctx, da_parse_state *da_state)
+{
+	fz_free(ctx, da_state->name);
+	da_state->name = NULL;
+	fz_free(ctx, da_state->font_name);
+	da_state->font_name = NULL;
+}
+
+static void da_reset(fz_context *ctx, da_parse_state *da_state)
+{
+	fz_free(ctx, da_state->name);
+	da_state->name = NULL;
+	da_state->top = 0;
+}
+
+static void da_check_stack(da_parse_state *da_state)
+{
+	if (da_state->top == 32)
+	{
+		memmove(da_state->stack, da_state->stack + 1,
+			31 * sizeof(da_state->stack[0]));
+		da_state->top = 31;
+	}
+}
+
+static void parse_da(fz_context *ctx, char *da, da_parse_state *da_state)
+{
+	int tok;
+	pdf_lexbuf lbuf;
+	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
+
+	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
+	lbuf.size = sizeof(lbuf.scratch);
+	fz_try(ctx)
+	{
+		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
+		{
+			switch (tok)
+			{
+			case PDF_TOK_NAME:
+				fz_free(ctx, da_state->name);
+				da_state->name = fz_strdup(ctx, lbuf.scratch);
+				break;
+
+			case PDF_TOK_INT:
+				da_check_stack(da_state);
+				da_state->stack[da_state->top] = lbuf.i;
+				da_state->top ++;
+				break;
+
+			case PDF_TOK_REAL:
+				da_check_stack(da_state);
+				da_state->stack[da_state->top] = lbuf.f;
+				da_state->top ++;
+				break;
+
+			case PDF_TOK_KEYWORD:
+				if (!strcmp(lbuf.scratch, "Tf"))
+				{
+					da_state->font_size = da_state->stack[0];
+					da_state->font_name = da_state->name;
+					da_state->name = NULL;
+				}
+				else if (!strcmp(lbuf.scratch, "rg"))
+				{
+					da_state->col[0] = da_state->stack[0];
+					da_state->col[1] = da_state->stack[1];
+					da_state->col[2] = da_state->stack[2];
+					da_state->col_size = 3;
+				}
+
+				da_reset(ctx, da_state);
+				break;
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_close(str);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_parse_state *da)
+{
+	if (da->font_name != NULL && da->font_size != 0)
+		fz_buffer_printf(ctx, fzbuf, "/%s %d Tf", da->font_name, da->font_size);
+
+	if (da->col_size != 0)
+		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", da->col[0], da->col[1], da->col[2]);
 }
 
 static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *da, int size)
@@ -1315,6 +1432,53 @@ void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
+	}
+}
+
+void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
+{
+	pdf_dict_putp(field, "MK/BG", col);
+	pdf_field_mark_dirty(doc->ctx, field);
+}
+
+void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
+{
+	fz_context *ctx = doc->ctx;
+	da_parse_state da_state;
+	fz_buffer *fzbuf = NULL;
+	char *da = pdf_to_str_buf(pdf_dict_gets(field, "DA"));
+	unsigned char *buf;
+	int len;
+	pdf_obj *daobj = NULL;
+
+	da_init(ctx, &da_state);
+
+	fz_var(fzbuf);
+	fz_var(da_state);
+	fz_var(daobj);
+	fz_try(ctx)
+	{
+		parse_da(ctx, da, &da_state);
+		da_state.col_size = 3;
+		da_state.col[0] = pdf_to_real(pdf_array_get(col, 0));
+		da_state.col[1] = pdf_to_real(pdf_array_get(col, 1));
+		da_state.col[2] = pdf_to_real(pdf_array_get(col, 2));
+		fzbuf = fz_new_buffer(ctx, 0);
+		fzbuf_print_da(ctx, fzbuf, &da_state);
+		len = fz_buffer_storage(ctx, fzbuf, &buf);
+		daobj = pdf_new_string(ctx, buf, len);
+		pdf_dict_puts(field, "DA", daobj);
+		pdf_field_mark_dirty(ctx, field);
+	}
+	fz_always(ctx)
+	{
+		da_fin(ctx, &da_state);
+		fz_drop_buffer(ctx, fzbuf);
+		pdf_drop_obj(daobj);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "%s", ctx->error->message);
 	}
 }
 

@@ -17,6 +17,45 @@ struct pdf_js_s
 	pdf_jsimp_type *fieldtype;
 };
 
+static pdf_obj *load_color(fz_context *ctx, pdf_jsimp *imp, pdf_jsimp_obj *val)
+{
+	pdf_obj *col = NULL;
+
+	if (pdf_jsimp_array_len(imp, val) == 4)
+	{
+		pdf_obj *comp = NULL;
+		pdf_jsimp_obj *jscomp = NULL;
+		int i;
+
+		col = pdf_new_array(ctx, 3);
+
+		fz_var(comp);
+		fz_var(jscomp);
+		fz_try(ctx)
+		{
+			for (i = 0; i < 3; i++)
+			{
+				jscomp = pdf_jsimp_array_item(imp, val, i+1);
+				comp = pdf_new_real(ctx, pdf_jsimp_toNumber(imp, jscomp));
+				pdf_array_push(col, comp);
+				pdf_jsimp_drop_obj(imp, jscomp);
+				jscomp = NULL;
+				pdf_drop_obj(comp);
+				comp = NULL;
+			}
+		}
+		fz_catch(ctx)
+		{
+			pdf_jsimp_drop_obj(imp, jscomp);
+			pdf_drop_obj(comp);
+			pdf_drop_obj(col);
+			fz_rethrow(ctx);
+		}
+	}
+
+	return col;
+}
+
 static pdf_jsimp_obj *field_buttonSetCaption(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
 {
 	pdf_js  *js = (pdf_js *)jsctx;
@@ -39,6 +78,23 @@ static pdf_jsimp_obj *field_getFillColor(void *jsctx, void *obj)
 
 static void field_setFillColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
 {
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	pdf_obj *field = (pdf_obj *)obj;
+	pdf_obj *col = load_color(js->doc->ctx, js->imp, val);
+
+	fz_try(ctx)
+	{
+		pdf_field_setFillColor(js->doc, field, col);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(col);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static pdf_jsimp_obj *field_getTextColor(void *jsctx, void *obj)
@@ -48,6 +104,23 @@ static pdf_jsimp_obj *field_getTextColor(void *jsctx, void *obj)
 
 static void field_setTextColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
 {
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	pdf_obj *field = (pdf_obj *)obj;
+	pdf_obj *col = load_color(js->doc->ctx, js->imp, val);
+
+	fz_try(ctx)
+	{
+		pdf_field_setTextColor(js->doc, field, col);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(col);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static pdf_jsimp_obj *field_getBorderStyle(void *jsctx, void *obj)

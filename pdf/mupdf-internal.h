@@ -539,6 +539,8 @@ void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
 char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field);
 void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text);
 void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
+void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
 
 /*
  * Page tree, pages and related objects
@@ -611,6 +613,11 @@ void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
 char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+
+double pdf_jsimp_toNumber(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+
+int pdf_jsimp_array_len(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+pdf_jsimp_obj *pdf_jsimp_array_item(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i);
 
 void pdf_jsimp_execute(pdf_jsimp *imp, char *code);
 void pdf_jsimp_execute_count(pdf_jsimp *imp, char *code, int count);

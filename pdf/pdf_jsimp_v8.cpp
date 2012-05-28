@@ -156,6 +156,11 @@ public:
 		return **utf8;
 	}
 
+	double toNumber()
+	{
+		return pobj->NumberValue();
+	}
+
 	Handle<Value> toValue()
 	{
 		return pobj;
@@ -357,6 +362,28 @@ extern "C" char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_o
 extern "C" char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str)
 {
 	*str = reinterpret_cast<PDFJSImpObject *>(obj)->toString();
+	return NULL;
+}
+
+extern "C" char *pdf_jsimp_toNumber_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num)
+{
+	*num = reinterpret_cast<PDFJSImpObject *>(obj)->toNumber();
+	return NULL;
+}
+
+extern "C" char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len)
+{
+	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
+	Local<Array> arr = Local<Array>::Cast(val);
+	*len = arr->Length();
+	return NULL;
+}
+
+extern "C" char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item)
+{
+	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
+	Local<Array> arr = Local<Array>::Cast(val);
+	*item = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(arr->Get(Number::New(i))));
 	return NULL;
 }
 

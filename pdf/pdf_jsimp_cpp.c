@@ -103,6 +103,36 @@ char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 	return str;
 }
 
+double pdf_jsimp_toNumber(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+{
+	double num;
+	char *err = pdf_jsimp_toNumber_cpp(imp, obj, &num);
+	if (err != NULL)
+		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
+
+	return num;
+}
+
+int pdf_jsimp_array_len(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+{
+	int len = 0;
+	char *err = pdf_jsimp_array_len_cpp(imp, obj, &len);
+	if (err != NULL)
+		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
+
+	return len;
+}
+
+pdf_jsimp_obj *pdf_jsimp_array_item(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i)
+{
+	pdf_jsimp_obj *item = NULL;
+	char *err = pdf_jsimp_array_item_cpp(imp, obj, i, &item);
+	if (err != NULL)
+		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
+
+	return item;
+}
+
 void pdf_jsimp_execute(pdf_jsimp *imp, char *code)
 {
 	char *err = pdf_jsimp_execute_cpp(imp, code);

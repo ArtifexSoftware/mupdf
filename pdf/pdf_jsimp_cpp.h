@@ -14,5 +14,8 @@ char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, 
 char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj);
 char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str);
+char *pdf_jsimp_toNumber_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num);
+char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len);
+char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item);
 char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code);
 char *pdf_jsimp_execute_count_cpp(pdf_jsimp *imp, char *code, int count);
