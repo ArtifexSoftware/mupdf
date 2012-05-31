@@ -358,7 +358,7 @@ pdf_open_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 	pdf_cache_object(xref, num, gen);
 	/* RJW: "cannot load stream object (%d %d R)", num, gen */
 
-	if (x->stm_ofs == 0)
+	if (x->stm_ofs == 0 && x->stm_buf == NULL)
 		fz_throw(xref->ctx, "object is not a stream");
 
 	return pdf_open_filter(xref->file, xref, x->obj, orig_num, orig_gen, x->stm_ofs, params);
