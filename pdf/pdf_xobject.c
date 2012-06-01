@@ -23,7 +23,7 @@ pdf_free_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 	if (xobj->resources)
 		pdf_drop_obj(xobj->resources);
 	if (xobj->contents)
-		fz_drop_buffer(ctx, xobj->contents);
+		pdf_drop_obj(xobj->contents);
 	pdf_drop_obj(xobj->me);
 	fz_free(ctx, xobj);
 }
@@ -33,7 +33,7 @@ pdf_xobject_size(pdf_xobject *xobj)
 {
 	if (xobj == NULL)
 		return 0;
-	return sizeof(*xobj) + (xobj->colorspace ? xobj->colorspace->size : 0) + (xobj->contents ? xobj->contents->len : 0);
+	return sizeof(*xobj) + (xobj->colorspace ? xobj->colorspace->size : 0);
 }
 
 pdf_xobject *
@@ -98,7 +98,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		form->contents = pdf_load_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
+		form->contents = pdf_keep_obj(dict);
 	}
 	fz_catch(ctx)
 	{
@@ -114,6 +114,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 pdf_obj *
 pdf_new_xobject(pdf_document *xref, fz_rect *bbox, fz_matrix *mat)
 {
+	int idict_num;
 	pdf_obj *idict = NULL;
 	pdf_obj *dict = NULL;
 	pdf_xobject *form = NULL;
@@ -195,12 +196,15 @@ pdf_new_xobject(pdf_document *xref, fz_rect *bbox, fz_matrix *mat)
 		form->resources = res;
 		res = NULL;
 
-		idict = pdf_new_stream_indirection(xref, dict);
+		idict_num = pdf_create_object(xref);
+		pdf_update_object(xref, idict_num, dict);
+		idict = pdf_new_indirect(ctx, idict_num, 0, xref);
 		pdf_drop_obj(dict);
 		dict = NULL;
 
 		pdf_store_item(ctx, idict, form, pdf_xobject_size(form));
 
+		form->contents = pdf_keep_obj(idict);
 		form->me = pdf_keep_obj(idict);
 
 		pdf_drop_xobject(ctx, form);
@@ -220,8 +224,8 @@ pdf_new_xobject(pdf_document *xref, fz_rect *bbox, fz_matrix *mat)
 	return idict;
 }
 
-void pdf_xobject_set_contents(fz_context *ctx, pdf_xobject *form, fz_buffer *buffer)
+void pdf_xobject_set_contents(pdf_document *xref, pdf_xobject *form, fz_buffer *buffer)
 {
-	fz_drop_buffer(ctx, form->contents);
-	form->contents = fz_keep_buffer(ctx, buffer);
+	pdf_dict_dels(form->contents, "Filter");
+	pdf_update_stream(xref, pdf_to_num(form->contents), buffer);
 }

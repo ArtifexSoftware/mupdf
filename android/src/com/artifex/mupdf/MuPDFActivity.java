@@ -289,6 +289,11 @@ public class MuPDFActivity extends Activity
 				// no longer appropriate, tell the page to remove HQ
 				((PageView)v).removeHq();
 			}
+
+			@Override
+			protected void onNotInUse(View v) {
+				((PageView)v).releaseResources();
+			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
 

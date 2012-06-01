@@ -210,10 +210,6 @@
 			Name="pdf"
 			>
 			<File
-				RelativePath="..\pdf\base_object.c"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\data_encodings.h"
 				>
 			</File>
@@ -302,6 +298,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_object.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_outline.c"
 				>
 			</File>
@@ -342,11 +342,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_write.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_xobject.c"
 				>
 			</File>
 			<File
 				RelativePath="..\pdf\pdf_xref.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_xref_aux.c"
 				>
 			</File>
 		</Filter>

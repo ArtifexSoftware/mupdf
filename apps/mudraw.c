@@ -34,11 +34,14 @@ static int fit = 0;
 static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
+static int files = 0;
 
 static struct {
 	int count, total;
 	int min, max;
 	int minpage, maxpage;
+	char *minfilename;
+	char *maxfilename;
 } timing;
 
 static void usage(void)
@@ -348,11 +351,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			timing.min = diff;
 			timing.minpage = pagenum;
+			timing.minfilename = filename;
 		}
 		if (diff > timing.max)
 		{
 			timing.max = diff;
-			timing.maxpage = pagenum;
+			timing.maxfilename = filename;
 		}
 		timing.total += diff;
 		timing.count ++;
@@ -368,17 +372,17 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 static void drawrange(fz_context *ctx, fz_document *doc, char *range)
 {
-	int page, spage, epage, final;
+	int page, spage, epage, pagecount;
 	char *spec, *dash;
 
-	final = fz_count_pages(doc);
+	pagecount = fz_count_pages(doc);
 	spec = fz_strsep(&range, ",");
 	while (spec)
 	{
 		dash = strchr(spec, '-');
 
 		if (dash == spec)
-			spage = epage = final;
+			spage = epage = pagecount;
 		else
 			spage = epage = atoi(spec);
 
@@ -387,11 +391,11 @@ static void drawrange(fz_context *ctx, fz_document *doc, char *range)
 			if (strlen(dash) > 1)
 				epage = atoi(dash + 1);
 			else
-				epage = final;
+				epage = pagecount;
 		}
 
-		spage = CLAMP(spage, 1, final);
-		epage = CLAMP(epage, 1, final);
+		spage = CLAMP(spage, 1, pagecount);
+		epage = CLAMP(epage, 1, pagecount);
 
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)
@@ -488,6 +492,8 @@ int main(int argc, char **argv)
 	timing.max = 0;
 	timing.minpage = 0;
 	timing.maxpage = 0;
+	timing.minfilename = "";
+	timing.maxfilename = "";
 
 	if (showxml || showtext == TEXT_XML)
 		printf("<?xml version=\"1.0\"?>\n");
@@ -511,6 +517,7 @@ int main(int argc, char **argv)
 		while (fz_optind < argc)
 		{
 			filename = argv[fz_optind++];
+			files++;
 
 			fz_try(ctx)
 			{
@@ -549,6 +556,7 @@ int main(int argc, char **argv)
 	fz_catch(ctx)
 	{
 		fz_close_document(doc);
+		fprintf(stderr, "error: cannot draw '%s'\n", filename);
 	}
 
 	if (showtext == TEXT_HTML)
@@ -562,12 +570,22 @@ int main(int argc, char **argv)
 	if (showtext)
 		fz_free_text_sheet(ctx, sheet);
 
-	if (showtime)
+	if (showtime && timing.count > 0)
 	{
-		printf("total %dms / %d pages for an average of %dms\n",
-			timing.total, timing.count, timing.total / timing.count);
-		printf("fastest page %d: %dms\n", timing.minpage, timing.min);
-		printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
+		if (files == 1)
+		{
+			printf("total %dms / %d pages for an average of %dms\n",
+				timing.total, timing.count, timing.total / timing.count);
+			printf("fastest page %d: %dms\n", timing.minpage, timing.min);
+			printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
+		}
+		else
+		{
+			printf("total %dms / %d pages for an average of %dms in %d files\n",
+				timing.total, timing.count, timing.total / timing.count, files);
+			printf("fastest page %d: %dms (%s)\n", timing.minpage, timing.min, timing.minfilename);
+			printf("slowest page %d: %dms (%s)\n", timing.maxpage, timing.max, timing.maxfilename);
+		}
 	}
 
 	fz_free_context(ctx);

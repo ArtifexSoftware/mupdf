@@ -136,3 +136,10 @@ fz_interactive *fz_interact(fz_document *doc)
 		return doc->interact(doc);
 	return NULL;
 }
+
+void
+fz_write(fz_document *doc, char *filename, fz_write_options *opts)
+{
+	if (doc && doc->write)
+		doc->write(doc, filename, opts);
+}

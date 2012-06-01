@@ -173,6 +173,7 @@ pdf_resize_xref(pdf_document *xref, int newlen)
 		xref->table[i].ofs = 0;
 		xref->table[i].gen = 0;
 		xref->table[i].stm_ofs = 0;
+		xref->table[i].stm_buf = NULL;
 		xref->table[i].obj = NULL;
 	}
 	xref->len = newlen;
@@ -293,8 +294,7 @@ pdf_read_new_xref_section(pdf_document *xref, fz_stream *stm, int i0, int i1, in
 	}
 }
 
-/* Entered with file locked. Drops the lock in the middle, but then picks
- * it up again before exiting. */
+/* Entered with file locked, remains locked throughout. */
 static pdf_obj *
 pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
@@ -321,7 +321,6 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 	fz_try(ctx)
 	{
-		fz_unlock(ctx, FZ_LOCK_FILE);
 		obj = pdf_dict_gets(trailer, "Size");
 		if (!obj)
 			fz_throw(ctx, "xref stream missing Size entry (%d %d R)", num, gen);
@@ -371,7 +370,6 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 		pdf_drop_obj(index);
 		fz_rethrow(ctx);
 	}
-	fz_lock(ctx, FZ_LOCK_FILE);
 
 	return trailer;
 }
@@ -410,13 +408,13 @@ static void
 pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer = NULL;
-	pdf_obj *xrefstm = NULL;
-	pdf_obj *prev = NULL;
 	fz_context *ctx = xref->ctx;
+	int xrefstmofs = 0;
+	int prevofs = 0;
 
 	fz_var(trailer);
-	fz_var(xrefstm);
-	fz_var(prev);
+	fz_var(xrefstmofs);
+	fz_var(prevofs);
 
 	fz_try(ctx)
 	{
@@ -425,20 +423,21 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 			trailer = pdf_read_xref(xref, ofs, buf);
 
 			/* FIXME: do we overwrite free entries properly? */
-			xrefstm = pdf_dict_gets(trailer, "XRefStm");
-			prev = pdf_dict_gets(trailer, "Prev");
+			xrefstmofs = pdf_to_int(pdf_dict_gets(trailer, "XRefStm"));
+			prevofs = pdf_to_int(pdf_dict_gets(trailer, "Prev"));
+
 			/* We only recurse if we have both xrefstm and prev.
 			 * Hopefully this happens infrequently. */
-			if (xrefstm && prev)
-				pdf_read_xref_sections(xref, pdf_to_int(xrefstm), buf);
-			if (prev)
-				ofs = pdf_to_int(prev);
-			else if (xrefstm)
-				ofs = pdf_to_int(xrefstm);
+			if (xrefstmofs && prevofs)
+				pdf_read_xref_sections(xref, xrefstmofs, buf);
+			if (prevofs)
+ 				ofs = prevofs;
+			else if (xrefstmofs)
+				ofs = xrefstmofs;
 			pdf_drop_obj(trailer);
 			trailer = NULL;
 		}
-		while (prev || xrefstm);
+		while (prevofs || xrefstmofs);
 	}
 	fz_catch(ctx)
 	{
@@ -449,12 +448,14 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 
 /*
  * load xref tables from pdf
+ *
+ * File locked on entry, throughout and on exit.
  */
 
 static void
 pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
-	pdf_obj *size;
+	int size;
 	int i;
 	fz_context *ctx = xref->ctx;
 
@@ -464,11 +465,11 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 	pdf_read_trailer(xref, buf);
 
-	size = pdf_dict_gets(xref->trailer, "Size");
+	size = pdf_to_int(pdf_dict_gets(xref->trailer, "Size"));
 	if (!size)
 		fz_throw(ctx, "trailer missing Size entry");
 
-	pdf_resize_xref(xref, pdf_to_int(size));
+	pdf_resize_xref(xref, size);
 
 	pdf_read_xref_sections(xref, xref->startxref, buf);
 
@@ -660,33 +661,18 @@ pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
  * If password is not null, try to decrypt.
  */
 
-static void pdf_init_document(pdf_document *xref);
-
-pdf_document *
-pdf_open_document_with_stream(fz_stream *file)
+static void
+pdf_init_document(pdf_document *xref)
 {
-	pdf_document *xref;
+	fz_context *ctx = xref->ctx;
 	pdf_obj *encrypt, *id;
 	pdf_obj *dict = NULL;
 	pdf_obj *obj;
 	pdf_obj *nobj = NULL;
 	int i, repaired = 0;
-	int locked;
-	fz_context *ctx = file->ctx;
 
 	fz_var(dict);
 	fz_var(nobj);
-	fz_var(locked);
-
-	xref = fz_malloc_struct(ctx, pdf_document);
-	pdf_init_document(xref);
-	xref->lexbuf.base.size = PDF_LEXBUF_LARGE;
-
-	xref->file = fz_keep_stream(file);
-	xref->ctx = ctx;
-
-	fz_lock(ctx, FZ_LOCK_FILE);
-	locked = 1;
 
 	fz_try(ctx)
 	{
@@ -716,9 +702,6 @@ pdf_open_document_with_stream(fz_stream *file)
 
 		if (repaired)
 			pdf_repair_xref(xref, &xref->lexbuf.base);
-
-		fz_unlock(ctx, FZ_LOCK_FILE);
-		locked = 0;
 
 		encrypt = pdf_dict_gets(xref->trailer, "Encrypt");
 		id = pdf_dict_gets(xref->trailer, "ID");
@@ -778,11 +761,6 @@ pdf_open_document_with_stream(fz_stream *file)
 			}
 		}
 	}
-	fz_always(ctx)
-	{
-		if (locked)
-			fz_unlock(ctx, FZ_LOCK_FILE);
-	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(dict);
@@ -799,8 +777,6 @@ pdf_open_document_with_stream(fz_stream *file)
 	{
 		fz_warn(ctx, "Ignoring Broken Optional Content");
 	}
-
-	return xref;
 }
 
 void
@@ -865,11 +841,12 @@ pdf_print_xref(pdf_document *xref)
 	printf("xref\n0 %d\n", xref->len);
 	for (i = 0; i < xref->len; i++)
 	{
-		printf("%05d: %010d %05d %c (stm_ofs=%d)\n", i,
+		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
 			xref->table[i].ofs,
 			xref->table[i].gen,
 			xref->table[i].type ? xref->table[i].type : '-',
-			xref->table[i].stm_ofs);
+			xref->table[i].stm_ofs,
+			xref->table[i].stm_buf);
 	}
 }
 
@@ -987,7 +964,6 @@ pdf_cache_object(pdf_document *xref, int num, int gen)
 	}
 	else if (x->type == 'n')
 	{
-		fz_lock(ctx, FZ_LOCK_FILE);
 		fz_seek(xref->file, x->ofs, 0);
 
 		fz_try(ctx)
@@ -997,7 +973,6 @@ pdf_cache_object(pdf_document *xref, int num, int gen)
 		}
 		fz_catch(ctx)
 		{
-			fz_unlock(ctx, FZ_LOCK_FILE);
 			fz_throw(ctx, "cannot parse object (%d %d R)", num, gen);
 		}
 
@@ -1005,13 +980,11 @@ pdf_cache_object(pdf_document *xref, int num, int gen)
 		{
 			pdf_drop_obj(x->obj);
 			x->obj = NULL;
-			fz_unlock(ctx, FZ_LOCK_FILE);
 			fz_throw(ctx, "found object (%d %d R) instead of (%d %d R)", rnum, rgen, num, gen);
 		}
 
 		if (xref->crypt)
 			pdf_crypt_obj(ctx, xref->crypt, x->obj, num, gen);
-		fz_unlock(ctx, FZ_LOCK_FILE);
 	}
 	else if (x->type == 'o')
 	{
@@ -1093,20 +1066,59 @@ pdf_resolve_indirect(pdf_obj *ref)
 	return ref;
 }
 
-int pdf_count_objects(pdf_document *doc)
+int
+pdf_count_objects(pdf_document *doc)
 {
 	return doc->len;
 }
 
-/* Replace numbered object -- for use by pdfclean and similar tools */
+int
+pdf_create_object(pdf_document *xref)
+{
+	/* TODO: reuse free object slots by properly linking free object chains in the ofs field */
+	int num = xref->len;
+	pdf_resize_xref(xref, num + 1);
+	xref->table[num].type = 'f';
+	xref->table[num].ofs = -1;
+	xref->table[num].gen = 0;
+	xref->table[num].stm_ofs = 0;
+	xref->table[num].stm_buf = NULL;
+	xref->table[num].obj = NULL;
+	return num;
+}
+
 void
-pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
+pdf_delete_object(pdf_document *xref, int num)
 {
 	pdf_xref_entry *x;
 
 	if (num < 0 || num >= xref->len)
 	{
-		fz_warn(xref->ctx, "object out of range (%d %d R); xref size %d", num, gen, xref->len);
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
+		return;
+	}
+
+	x = &xref->table[num];
+
+	fz_drop_buffer(xref->ctx, x->stm_buf);
+	pdf_drop_obj(x->obj);
+
+	x->type = 'f';
+	x->ofs = 0;
+	x->gen = 0;
+	x->stm_ofs = 0;
+	x->stm_buf = NULL;
+	x->obj = NULL;
+}
+
+void
+pdf_update_object(pdf_document *xref, int num, pdf_obj *newobj)
+{
+	pdf_xref_entry *x;
+
+	if (num < 0 || num >= xref->len)
+	{
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
 		return;
 	}
 
@@ -1115,105 +1127,44 @@ pdf_update_object(pdf_document *xref, int num, int gen, pdf_obj *newobj)
 	if (x->obj)
 		pdf_drop_obj(x->obj);
 
-	x->obj = pdf_keep_obj(newobj);
 	x->type = 'n';
 	x->ofs = 0;
+	x->obj = pdf_keep_obj(newobj);
 }
 
-pdf_obj *
-pdf_new_stream_indirection(pdf_document *xref, pdf_obj *obj)
+fz_buffer *
+pdf_get_stream(pdf_document *xref, int num)
 {
-	int num = xref->len;
-	pdf_resize_xref(xref, xref->len + 1);
-	pdf_update_object(xref, num, 0, obj);
-	/* Set stm_ofs, so that obj is treated as a stream */
-	xref->table[num].stm_ofs = 1;
+	pdf_xref_entry *x;
 
-	return pdf_new_indirect(xref->ctx, num, 0, xref);
+	if (num < 0 || num >= xref->len)
+		fz_throw(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
+
+	x = &xref->table[num];
+
+	return x->stm_buf;
 }
 
-/*
- * Convenience function to open a file then call pdf_open_document_with_stream.
- */
-
-pdf_document *
-pdf_open_document(fz_context *ctx, const char *filename)
+void
+pdf_update_stream(pdf_document *xref, int num, fz_buffer *newbuf)
 {
-	fz_stream *file = NULL;
-	pdf_document *xref;
+	pdf_xref_entry *x;
 
-	fz_var(file);
-	fz_try(ctx)
+	if (num < 0 || num >= xref->len)
 	{
-		file = fz_open_file(ctx, filename);
-		xref = pdf_open_document_with_stream(file);
-	}
-	fz_catch(ctx)
-	{
-		fz_close(file);
-		fz_throw(ctx, "cannot load document '%s'", filename);
+		fz_warn(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
+		return;
 	}
 
-	fz_close(file);
-	return xref;
+	x = &xref->table[num];
+
+	fz_drop_buffer(xref->ctx, x->stm_buf);
+	x->stm_buf = fz_keep_buffer(xref->ctx, newbuf);
 }
 
-/* Document interface wrappers */
-
-static void pdf_close_document_shim(fz_document *doc)
+int
+pdf_meta(pdf_document *doc, int key, void *ptr, int size)
 {
-	pdf_close_document((pdf_document*)doc);
-}
-
-static int pdf_needs_password_shim(fz_document *doc)
-{
-	return pdf_needs_password((pdf_document*)doc);
-}
-
-static int pdf_authenticate_password_shim(fz_document *doc, char *password)
-{
-	return pdf_authenticate_password((pdf_document*)doc, password);
-}
-
-static fz_outline *pdf_load_outline_shim(fz_document *doc)
-{
-	return pdf_load_outline((pdf_document*)doc);
-}
-
-static int pdf_count_pages_shim(fz_document *doc)
-{
-	return pdf_count_pages((pdf_document*)doc);
-}
-
-static fz_page *pdf_load_page_shim(fz_document *doc, int number)
-{
-	return (fz_page*) pdf_load_page((pdf_document*)doc, number);
-}
-
-static fz_link *pdf_load_links_shim(fz_document *doc, fz_page *page)
-{
-	return pdf_load_links((pdf_document*)doc, (pdf_page*)page);
-}
-
-static fz_rect pdf_bound_page_shim(fz_document *doc, fz_page *page)
-{
-	return pdf_bound_page((pdf_document*)doc, (pdf_page*)page);
-}
-
-static void pdf_run_page_shim(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
-{
-	pdf_run_page((pdf_document*)doc, (pdf_page*)page, dev, transform, cookie);
-}
-
-static void pdf_free_page_shim(fz_document *doc, fz_page *page)
-{
-	pdf_free_page((pdf_document*)doc, (pdf_page*)page);
-}
-
-static int pdf_meta(fz_document *doc_, int key, void *ptr, int size)
-{
-	pdf_document *doc = (pdf_document *)doc_;
-
 	switch(key)
 	{
 	/*
@@ -1295,9 +1246,72 @@ static fz_interactive *pdf_interact_shim(fz_document *doc)
 	return (fz_interactive *)doc;
 }
 
-static void
-pdf_init_document(pdf_document *doc)
+/*
+	Wrappers to implement the fz_document interface for pdf_document.
+
+	The functions are split across two files to allow calls to a
+	version of the constructor that does not link in the interpreter.
+	The interpreter references the built-in font and cmap resources
+	which are quite big. Not linking those into the mubusy binary
+	saves roughly 6MB of space.
+*/
+
+static void pdf_close_document_shim(fz_document *doc)
 {
+	pdf_close_document((pdf_document*)doc);
+}
+
+static int pdf_needs_password_shim(fz_document *doc)
+{
+	return pdf_needs_password((pdf_document*)doc);
+}
+
+static int pdf_authenticate_password_shim(fz_document *doc, char *password)
+{
+	return pdf_authenticate_password((pdf_document*)doc, password);
+}
+
+static fz_outline *pdf_load_outline_shim(fz_document *doc)
+{
+	return pdf_load_outline((pdf_document*)doc);
+}
+
+static int pdf_count_pages_shim(fz_document *doc)
+{
+	return pdf_count_pages((pdf_document*)doc);
+}
+
+static fz_page *pdf_load_page_shim(fz_document *doc, int number)
+{
+	return (fz_page*) pdf_load_page((pdf_document*)doc, number);
+}
+
+static fz_link *pdf_load_links_shim(fz_document *doc, fz_page *page)
+{
+	return pdf_load_links((pdf_document*)doc, (pdf_page*)page);
+}
+
+static fz_rect pdf_bound_page_shim(fz_document *doc, fz_page *page)
+{
+	return pdf_bound_page((pdf_document*)doc, (pdf_page*)page);
+}
+
+static void pdf_free_page_shim(fz_document *doc, fz_page *page)
+{
+	pdf_free_page((pdf_document*)doc, (pdf_page*)page);
+}
+
+static int pdf_meta_shim(fz_document *doc, int key, void *ptr, int size)
+{
+	return pdf_meta((pdf_document*)doc, key, ptr, size);
+}
+
+static pdf_document *
+pdf_new_document(fz_stream *file)
+{
+	fz_context *ctx = file->ctx;
+	pdf_document *doc = fz_malloc_struct(ctx, pdf_document);
+
 	doc->super.close = pdf_close_document_shim;
 	doc->super.needs_password = pdf_needs_password_shim;
 	doc->super.authenticate_password = pdf_authenticate_password_shim;
@@ -1306,8 +1320,47 @@ pdf_init_document(pdf_document *doc)
 	doc->super.load_page = pdf_load_page_shim;
 	doc->super.load_links = pdf_load_links_shim;
 	doc->super.bound_page = pdf_bound_page_shim;
-	doc->super.run_page = pdf_run_page_shim;
+	doc->super.run_page = NULL; /* see pdf_xref_aux.c */
 	doc->super.free_page = pdf_free_page_shim;
-	doc->super.meta = pdf_meta;
+	doc->super.meta = pdf_meta_shim;
 	doc->super.interact = pdf_interact_shim;
+
+	doc->lexbuf.base.size = PDF_LEXBUF_LARGE;
+	doc->file = fz_keep_stream(file);
+	doc->ctx = ctx;
+
+	return doc;
+}
+
+pdf_document *
+pdf_open_document_no_run_with_stream(fz_stream *file)
+{
+	pdf_document *doc = pdf_new_document(file);
+	pdf_init_document(doc);
+	return doc;
+}
+
+pdf_document *
+pdf_open_document_no_run(fz_context *ctx, const char *filename)
+{
+	fz_stream *file = NULL;
+	pdf_document *doc;
+
+	fz_var(file);
+
+	fz_try(ctx)
+	{
+		file = fz_open_file(ctx, filename);
+		doc = pdf_new_document(file);
+		pdf_init_document(doc);
+	}
+	fz_always(ctx)
+	{
+		fz_close(file);
+	}
+	fz_catch(ctx)
+	{
+		fz_throw(ctx, "cannot load document '%s'", filename);
+	}
+	return doc;
 }

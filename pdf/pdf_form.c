@@ -71,6 +71,11 @@ static const char *fmt_ET = "ET\n";
 static const char *fmt_Q = "Q\n";
 static const char *fmt_EMC = "EMC\n";
 
+static fz_buffer *form_contents(pdf_document *doc, pdf_xobject *form)
+{
+	return pdf_get_stream(doc, pdf_to_num(form->contents));
+}
+
 static void account_for_rot(fz_rect *rect, fz_matrix *mat, int rot)
 {
 	float width = rect->x1;
@@ -659,8 +664,9 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 	return fzbuf;
 }
 
-static void update_marked_content(fz_context *ctx, pdf_xobject *form, fz_buffer *fzbuf)
+static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffer *fzbuf)
 {
+	fz_context *ctx = doc->ctx;
 	int tok;
 	pdf_lexbuf lbuf;
 	fz_stream *str_outer = NULL;
@@ -681,7 +687,7 @@ static void update_marked_content(fz_context *ctx, pdf_xobject *form, fz_buffer 
 		int first = 1;
 
 		newbuf = fz_new_buffer(ctx, 0);
-		len = fz_buffer_storage(ctx, form->contents, &buf);
+		len = fz_buffer_storage(ctx, form_contents(doc, form), &buf);
 		str_outer = fz_open_memory(ctx, buf, len);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		str_inner = fz_open_memory(ctx, buf, len);
@@ -733,7 +739,7 @@ static void update_marked_content(fz_context *ctx, pdf_xobject *form, fz_buffer 
 		}
 
 		/* Use newbuf in place of the existing appearance stream */
-		pdf_xobject_set_contents(ctx, form, newbuf);
+		pdf_xobject_set_contents(doc, form, newbuf);
 	}
 	fz_always(ctx)
 	{
@@ -756,7 +762,7 @@ int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
 	pdf_lexbuf lbuf;
 	fz_stream *str;
 
-	bufsize = fz_buffer_storage(ctx, form->contents, &buf);
+	bufsize = fz_buffer_storage(ctx, form_contents(doc, form), &buf);
 	str = fz_open_memory(ctx, buf, bufsize);
 
 	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
@@ -807,7 +813,7 @@ int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
 			if (q != Q_Left)
 			{
 				/* Offset the matrix to refer to the alignment position */
-				fz_rect bbox = measure_text(doc, form->resources, form->contents);
+				fz_rect bbox = measure_text(doc, form->resources, form_contents(doc, form));
 				mt->e += q == Q_Right ? (bbox.x1 - bbox.x0)
 									  : (bbox.x1 - bbox.x0) / 2;
 			}
@@ -859,7 +865,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 
 				has_tm = get_matrix(doc, form, q, &tm);
 				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, q, dr, pdf_to_str_buf(da), text);
-				update_marked_content(ctx, form, fzbuf);
+				update_marked_content(doc, form, fzbuf);
 			}
 		}
 	}
@@ -921,7 +927,7 @@ static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 		form = pdf_load_xobject(doc, formobj);
 		fzbuf = fz_new_buffer(ctx, 0);
 		fz_buffer_printf(ctx, fzbuf, "/Tx BMC EMC");
-		pdf_xobject_set_contents(ctx, form, fzbuf);
+		pdf_xobject_set_contents(doc, form, fzbuf);
 
 		ap = pdf_new_dict(ctx, 1);
 		pdf_dict_puts(ap, "N", formobj);
@@ -1145,7 +1151,7 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 			fzbuf_print_text(ctx, fzbuf, &clip, da, 0, &mat, text);
 		}
 
-		pdf_xobject_set_contents(ctx, form, fzbuf);
+		pdf_xobject_set_contents(doc, form, fzbuf);
 	}
 	fz_always(ctx)
 	{

@@ -95,7 +95,7 @@ static fz_store_type pdf_image_store_type =
 };
 
 static fz_pixmap *
-decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int in_line, int indexed, int factor)
+decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int in_line, int indexed, int factor, int cache)
 {
 	fz_pixmap *tile = NULL;
 	fz_pixmap *existing_tile;
@@ -190,6 +190,9 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 		fz_rethrow(ctx);
 	}
 
+	if (!cache)
+		return tile;
+
 	/* Now we try to cache the pixmap. Any failure here will just result
 	 * in us not caching. */
 	fz_try(ctx)
@@ -279,7 +282,7 @@ pdf_image_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h)
 	/* We need to make a new one. */
 	stm = pdf_open_image_decomp_stream(ctx, image->buffer, &image->params, &factor);
 
-	return decomp_image_from_stream(ctx, stm, image, 0, 0, factor);
+	return decomp_image_from_stream(ctx, stm, image, 0, 0, factor, 1);
 }
 
 static pdf_image *
@@ -427,7 +430,9 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		{
 			/* Just load the compressed image data now and we can
 			 * decode it on demand. */
-			image->buffer = pdf_load_image_stream(xref, pdf_to_num(dict), pdf_to_gen(dict), &image->params);
+			int num = pdf_to_num(dict);
+			int gen = pdf_to_gen(dict);
+			image->buffer = pdf_load_image_stream(xref, num, gen, num, gen, &image->params);
 			break; /* Out of fz_try */
 		}
 
@@ -443,7 +448,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 			/* RJW: "cannot open image data stream (%d 0 R)", pdf_to_num(dict) */
 		}
 
-		image->tile = decomp_image_from_stream(ctx, stm, image, cstm != NULL, indexed, 1);
+		image->tile = decomp_image_from_stream(ctx, stm, image, cstm != NULL, indexed, 1, 0);
 	}
 	fz_catch(ctx)
 	{

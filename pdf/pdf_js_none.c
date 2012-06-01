@@ -13,6 +13,10 @@ void pdf_drop_js(pdf_js *js)
 {
 }
 
+void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
+{
+}
+
 void pdf_js_execute(pdf_js *js, char *code)
 {
 }

@@ -411,7 +411,9 @@ void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
-	fz_buffer_printf: print formatted to a buffer, growing if necessary
+	fz_buffer_printf: print formatted to a buffer. The buffer will
+	grow, but the caller must ensure that no more than 256 bytes are
+	added to the buffer per call.
 */
 void fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...);
 
@@ -424,7 +426,6 @@ struct fz_stream_s
 	int pos;
 	int avail;
 	int bits;
-	int locked;
 	unsigned char *bp, *rp, *wp, *ep;
 	void *state;
 	int (*read)(fz_stream *stm, unsigned char *buf, int len);
@@ -432,8 +433,6 @@ struct fz_stream_s
 	void (*seek)(fz_stream *stm, int offset, int whence);
 	unsigned char buf[4096];
 };
-
-void fz_lock_stream(fz_stream *stm);
 
 fz_stream *fz_new_stream(fz_context *ctx, void*, int(*)(fz_stream*, unsigned char*, int), void(*)(fz_context *, void *));
 fz_stream *fz_keep_stream(fz_stream *stm);
@@ -525,7 +524,9 @@ static inline int fz_is_eof_bits(fz_stream *stm)
  */
 
 fz_stream *fz_open_copy(fz_stream *chain);
-fz_stream *fz_open_null(fz_stream *chain, int len);
+fz_stream *fz_open_null(fz_stream *chain, int len, int offset);
+fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);
+void fz_concat_push(fz_stream *concat, fz_stream *chain); /* Ownership of chain is passed in */
 fz_stream *fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen);
 fz_stream *fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen);
 fz_stream *fz_open_a85d(fz_stream *chain);
@@ -1091,6 +1092,7 @@ struct fz_document_s
 	void (*free_page)(fz_document *doc, fz_page *page);
 	int (*meta)(fz_document *doc, int key, void *ptr, int size);
 	fz_interactive *(*interact)(fz_document *doc);
+	void (*write)(fz_document *doc, char *filename, fz_write_options *opts);
 };
 
 #endif

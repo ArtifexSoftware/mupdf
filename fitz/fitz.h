@@ -92,19 +92,32 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 /*
 	Variadic macros, inline and restrict keywords
+
+	inline is standard in C++, so don't touch the definition in this case.
+	For some compilers we can enable it within C too.
 */
 
+#ifndef __cplusplus
 #if __STDC_VERSION__ == 199901L /* C99 */
-#elif defined __cplusplus
-#define restrict
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 #define inline __inline
-#define restrict __restrict
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
 #define inline __inline
-#define restrict __restrict
 #else /* Unknown or ancient */
 #define inline
+#endif
+#endif
+
+/*
+	restrict is standard in C99, but not in all C++ compilers. Enable
+	where possible, disable if in doubt.
+ */
+#if __STDC_VERSION__ == 199901L /* C99 */
+#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
+#define restrict __restrict
+#elif __GNUC__ >= 3 /* GCC 3 or newer */
+#define restrict __restrict
+#else /* Unknown or ancient */
 #define restrict
 #endif
 
@@ -2362,5 +2375,52 @@ char *fz_widget_text_get_text(fz_widget_text *tw);
 	fz_widget_text_set_text: Update the text of a text widget.
 */
 void fz_widget_text_set_text(fz_widget_text *tw, char *text);
+
+
+typedef struct fz_write_options_s fz_write_options;
+
+/*
+	In calls to fz_write, the following options structure can be used
+	to control aspects of the writing process. This structure may grow
+	in future, and should be zero-filled to allow forwards compatiblity.
+*/
+struct fz_write_options_s
+{
+	int doascii;    /*	If non-zero then attempt (where possible) to
+				make the output ascii. */
+	int doexpand;	/*	Bitflags; each non zero bit indicates an aspect
+				of the file that should be 'expanded' on
+				writing. */
+	int dogarbage;	/*	If non-zero then attempt (where possible) to
+				garbage collect the file before writing. */
+};
+
+/*	An enumeration of bitflags to use in the above 'doexpand' field of
+	fz_write_options.
+*/
+enum
+{
+	fz_expand_images = 1,
+	fz_expand_fonts = 2,
+	fz_expand_all = -1
+};
+
+/*
+	fz_write: Write a document out.
+
+	(In development - Subject to change in future versions)
+
+	Save a copy of the current document in its original format.
+	Internally the document may change.
+
+	doc: The document to save.
+
+	filename: The filename to save to.
+
+	opts: NULL, or a pointer to an options structure.
+
+	May throw exceptions.
+*/
+void fz_write(fz_document *doc, char *filename, fz_write_options *opts);
 
 #endif
