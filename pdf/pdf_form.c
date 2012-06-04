@@ -1,7 +1,6 @@
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
 
-#define MEASURE_SCALE (10.0)
 #define MATRIX_COEFS (6)
 
 enum
@@ -461,33 +460,50 @@ static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *d
 	}
 }
 
-static fz_rect measure_text(pdf_document *doc, pdf_obj *dr, fz_buffer *fzbuf)
+static fz_rect measure_text(pdf_document *doc, pdf_obj *dr, char *da, int font_size, fz_matrix *tm, char *text)
 {
 	fz_context *ctx = doc->ctx;
-	fz_device *dev = NULL;
-	fz_bbox bbox = fz_empty_bbox;
-	fz_rect rect;
+	da_parse_state da_state;
+	pdf_obj *font_obj;
+	pdf_font_desc *font = NULL;
+	fz_rect bbox;
 
+	da_init(ctx, &da_state);
+
+	fz_var(font);
 	fz_try(ctx)
 	{
-		dev = fz_new_bbox_device(doc->ctx, &bbox);
-		pdf_run_glyph(doc, dr, fzbuf, dev, fz_scale(MEASURE_SCALE, MEASURE_SCALE), NULL);
+		parse_da(ctx, da, &da_state);
+
+		if (da_state.font_name == NULL)
+			fz_throw(ctx, "font name not found in default appearance");
+
+		font_obj = pdf_dict_gets(pdf_dict_gets(dr, "Font"), da_state.font_name);
+		if (font_obj == NULL)
+			fz_throw(ctx, "font not found: %s", da_state.font_name);
+
+		font = pdf_load_font(doc, dr, font_obj);
+		bbox = pdf_measure_text(ctx, font, text, strlen(text));
+
+		if (font_size == 0)
+			font_size = da_state.font_size;
+
+		bbox.x0 *= font_size * tm->a;
+		bbox.y0 *= font_size * tm->d;
+		bbox.x1 *= font_size * tm->a;
+		bbox.y1 *= font_size * tm->d;
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		da_fin(ctx, &da_state);
+		pdf_drop_font(ctx, font);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
 
-	rect.x0 = bbox.x0 / MEASURE_SCALE;
-	rect.x1 = bbox.x1 / MEASURE_SCALE;
-	rect.y0 = bbox.y0 / MEASURE_SCALE;
-	rect.y1 = bbox.y1 / MEASURE_SCALE;
-
-	return rect;
+	return bbox;
 }
 
 static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
@@ -538,32 +554,26 @@ static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, i
 static fz_buffer *create_aligned_text_buffer(pdf_document *doc, fz_rect *clip, pdf_obj *dr, char *da, int fontsize, fz_matrix *tm, int q, char *text)
 {
 	fz_context *ctx = doc->ctx;
-	fz_buffer *fzbuf = create_text_buffer(ctx, clip, da, fontsize, tm, text);
+	fz_matrix atm = *tm;
 
 	if (q != Q_Left)
 	{
-		fz_matrix atm = *tm;
-		fz_rect rect = measure_text(doc, dr, fzbuf);
+		fz_rect rect = measure_text(doc, dr, da, fontsize, tm, text);
 
-		atm.e -= q == Q_Right ? (rect.x1 - rect.x0)
+		atm.e -= q == Q_Right ? rect.x1
 							  : (rect.x1 - rect.x0) / 2;
-
-		fz_drop_buffer(ctx, fzbuf);
-		fzbuf = create_text_buffer(ctx, clip, da, fontsize, &atm, text);
 	}
 
-	return fzbuf;
+	return create_text_buffer(ctx, clip, da, fontsize, &atm, text);
 }
 
 static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, char *text, float *ascent, float *descent)
 {
 	fz_context *ctx = doc->ctx;
 	char *testtext = NULL;
-	fz_buffer *fzbuf = NULL;
 	fz_rect bbox;
 
 	fz_var(testtext);
-	fz_var(fzbuf);
 	fz_try(ctx)
 	{
 		/* Heuristic: adding "My" to text will in most cases
@@ -571,15 +581,12 @@ static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, cha
 		testtext = fz_malloc(ctx, strlen(text) + 3);
 		strcpy(testtext, "My");
 		strcat(testtext, text);
-		/* Use large font size for increased accuracy */
-		fzbuf = create_text_buffer(ctx, NULL, da, 10, &fz_identity, testtext);
-		bbox = measure_text(doc, dr, fzbuf);
-		*descent = -bbox.y0 / 10.0;
-		*ascent = bbox.y1 / 10.0;
+		bbox = measure_text(doc, dr, da, 1, &fz_identity, testtext);
+		*descent = -bbox.y0;
+		*ascent = bbox.y1;
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, fzbuf);
 		fz_free(ctx, testtext);
 	}
 	fz_catch(ctx)
@@ -636,24 +643,20 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 			}
 		}
 
-		fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
-
 		if (!da_fontsize)
 		{
-			tbox = measure_text(doc, dr, fzbuf);
+			tbox = measure_text(doc, dr, da, fontsize, &tm, text);
 
 			if (tbox.x1 - tbox.x0 > width)
 			{
-				/* Text doesn't fit. Regenerate with a calculated font size */
-				fz_drop_buffer(ctx, fzbuf);
-				fzbuf = NULL;
 				/* Scale the text to fit but use the same offset
 				 * to keep the baseline constant */
 				tm.a *= width / (tbox.x1 - tbox.x0);
 				tm.d *= width / (tbox.x1 - tbox.x0);
-				fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
 			}
 		}
+
+		fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
 	}
 	fz_catch(ctx)
 	{
@@ -810,16 +813,22 @@ int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
 
 		if (found)
 		{
-			if (q != Q_Left)
+			fz_rect bbox = pdf_to_rect(ctx, pdf_dict_gets(form->contents, "BBox"));
+
+			switch (q)
 			{
-				/* Offset the matrix to refer to the alignment position */
-				fz_rect bbox = measure_text(doc, form->resources, form_contents(doc, form));
-				mt->e += q == Q_Right ? (bbox.x1 - bbox.x0)
-									  : (bbox.x1 - bbox.x0) / 2;
+			case Q_Left:
+				mt->e = bbox.x0 + 1;
+				break;
+
+			case Q_Cent:
+				mt->e = (bbox.x1 - bbox.x0) / 2;
+				break;
+
+			case Q_Right:
+				mt->e = bbox.x1 - 1;
+				break;
 			}
-		}
-		else
-		{
 		}
 	}
 	fz_always(ctx)
@@ -1068,7 +1077,6 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 	fz_rect rect;
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
-	fz_buffer *measure_buf = NULL;
 	pdf_obj *tobj = NULL;
 	int bstyle;
 	float bwidth;
@@ -1076,7 +1084,6 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 
 	fz_var(form);
 	fz_var(fzbuf);
-	fz_var(measure_buf);
 	fz_try(ctx)
 	{
 		form = load_or_create_form(doc, obj, &rect);
@@ -1145,8 +1152,7 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 			clip.x1 -= btotal;
 			clip.y1 -= btotal;
 
-			measure_buf = create_text_buffer(ctx, NULL, da, 0, NULL, text);
-			bounds = measure_text(doc, form->resources, measure_buf);
+			bounds = measure_text(doc, form->resources, da, 0, &fz_identity, text);
 			mat = fz_translate((rect.x1 - bounds.x1)/2, (rect.y1 - bounds.y1)/2);
 			fzbuf_print_text(ctx, fzbuf, &clip, da, 0, &mat, text);
 		}
@@ -1156,7 +1162,6 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, fzbuf);
-		fz_drop_buffer(ctx, measure_buf);
 		pdf_drop_xobject(ctx, form);
 	}
 	fz_catch(ctx)
