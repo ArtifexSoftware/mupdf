@@ -1158,7 +1158,7 @@ pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc)
 	}
 }
 
-fz_rect pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len)
+fz_rect pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, int *stride)
 {
 	pdf_hmtx h;
 	int gid;
@@ -1177,6 +1177,9 @@ fz_rect pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char
 		acc = fz_union_rect(acc, bbox);
 		x += h.w / 1000.0;
 	}
+
+	if (stride)
+		*stride = x;
 
 	return acc;
 }

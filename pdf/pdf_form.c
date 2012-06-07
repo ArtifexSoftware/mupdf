@@ -41,16 +41,27 @@ struct fz_widget_text_s
 	char     *text;
 };
 
-typedef struct da_parse_state_s
+typedef struct da_info_s
 {
-	char *name;
-	float stack[32];
-	int top;
 	char *font_name;
 	int font_size;
 	float col[4];
 	int col_size;
-} da_parse_state;
+} da_info;
+
+typedef struct font_info_s
+{
+	da_info da_rec;
+	pdf_font_desc *font;
+} font_info;
+
+typedef struct text_widget_info_s
+{
+	pdf_obj *dr;
+	font_info font_rec;
+	int q;
+	int multiline;
+} text_widget_info;
 
 static const char *fmt_re = "%f %f %f %f re\n";
 static const char *fmt_f = "f\n";
@@ -267,90 +278,35 @@ static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
 	return widget;
 }
 
-static int read_font_size_from_da(fz_context *ctx, char *da)
+static void da_info_fin(fz_context *ctx, da_info *di)
 {
-	int tok, fontsize = 0;
-	pdf_lexbuf lbuf;
-	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
-
-	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
-	lbuf.size = sizeof(lbuf.scratch);
-	fz_try(ctx)
-	{
-		int last_tok_was_int = 0;
-		int last_int_tok_val = 0;
-
-		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
-		{
-			if (last_tok_was_int)
-			{
-				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "Tf"))
-					fontsize = last_int_tok_val;
-
-				last_tok_was_int = 0;
-			}
-
-			if (tok == PDF_TOK_INT)
-			{
-				last_tok_was_int = 1;
-				last_int_tok_val = lbuf.i;
-			}
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_close(str);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return fontsize;
+	fz_free(ctx, di->font_name);
+	di->font_name = NULL;
 }
 
-static void da_init(fz_context *ctx, da_parse_state *da_state)
+static void da_check_stack(int *stack, int *top)
 {
-	da_state->name = NULL;
-	da_state->top = 0;
-	da_state->font_name = NULL;
-	da_state->font_size = 0;
-	da_state->col_size = 0;
-}
-
-static void da_fin(fz_context *ctx, da_parse_state *da_state)
-{
-	fz_free(ctx, da_state->name);
-	da_state->name = NULL;
-	fz_free(ctx, da_state->font_name);
-	da_state->font_name = NULL;
-}
-
-static void da_reset(fz_context *ctx, da_parse_state *da_state)
-{
-	fz_free(ctx, da_state->name);
-	da_state->name = NULL;
-	da_state->top = 0;
-}
-
-static void da_check_stack(da_parse_state *da_state)
-{
-	if (da_state->top == 32)
+	if (*top == 32)
 	{
-		memmove(da_state->stack, da_state->stack + 1,
-			31 * sizeof(da_state->stack[0]));
-		da_state->top = 31;
+		memmove(stack, stack + 1, 31 * sizeof(stack[0]));
+		*top = 31;
 	}
 }
 
-static void parse_da(fz_context *ctx, char *da, da_parse_state *da_state)
+static void parse_da(fz_context *ctx, char *da, da_info *di)
 {
+	float stack[32];
+	int top = 0;
 	int tok;
+	char *name = NULL;
 	pdf_lexbuf lbuf;
 	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
 
 	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
 	lbuf.size = sizeof(lbuf.scratch);
+
+	fz_var(str);
+	fz_var(name);
 	fz_try(ctx)
 	{
 		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
@@ -358,44 +314,47 @@ static void parse_da(fz_context *ctx, char *da, da_parse_state *da_state)
 			switch (tok)
 			{
 			case PDF_TOK_NAME:
-				fz_free(ctx, da_state->name);
-				da_state->name = fz_strdup(ctx, lbuf.scratch);
+				fz_free(ctx, name);
+				name = fz_strdup(ctx, lbuf.scratch);
 				break;
 
 			case PDF_TOK_INT:
-				da_check_stack(da_state);
-				da_state->stack[da_state->top] = lbuf.i;
-				da_state->top ++;
+				da_check_stack(stack, &top);
+				stack[top] = lbuf.i;
+				top ++;
 				break;
 
 			case PDF_TOK_REAL:
-				da_check_stack(da_state);
-				da_state->stack[da_state->top] = lbuf.f;
-				da_state->top ++;
+				da_check_stack(stack, &top);
+				stack[top] = lbuf.f;
+				top ++;
 				break;
 
 			case PDF_TOK_KEYWORD:
 				if (!strcmp(lbuf.scratch, "Tf"))
 				{
-					da_state->font_size = da_state->stack[0];
-					da_state->font_name = da_state->name;
-					da_state->name = NULL;
+					di->font_size = stack[0];
+					di->font_name = name;
+					name = NULL;
 				}
 				else if (!strcmp(lbuf.scratch, "rg"))
 				{
-					da_state->col[0] = da_state->stack[0];
-					da_state->col[1] = da_state->stack[1];
-					da_state->col[2] = da_state->stack[2];
-					da_state->col_size = 3;
+					di->col[0] = stack[0];
+					di->col[1] = stack[1];
+					di->col[2] = stack[2];
+					di->col_size = 3;
 				}
 
-				da_reset(ctx, da_state);
+				fz_free(ctx, name);
+				name = NULL;
+				top = 0;
 				break;
 			}
 		}
 	}
 	fz_always(ctx)
 	{
+		fz_free(ctx, name);
 		fz_close(str);
 	}
 	fz_catch(ctx)
@@ -404,109 +363,56 @@ static void parse_da(fz_context *ctx, char *da, da_parse_state *da_state)
 	}
 }
 
-static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_parse_state *da)
-{
-	if (da->font_name != NULL && da->font_size != 0)
-		fz_buffer_printf(ctx, fzbuf, "/%s %d Tf", da->font_name, da->font_size);
-
-	if (da->col_size != 0)
-		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", da->col[0], da->col[1], da->col[2]);
-}
-
-static void copy_da_with_altered_size(fz_context *ctx, fz_buffer *fzbuf, char *da, int size)
-{
-	int tok;
-	pdf_lexbuf lbuf;
-	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
-
-	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
-	lbuf.size = sizeof(lbuf.scratch);
-	fz_try(ctx)
-	{
-		int last_tok_was_int = 0;
-		int last_int_tok_val = 0;
-
-		for (tok = pdf_lex(str, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(str, &lbuf))
-		{
-			if (last_tok_was_int)
-			{
-				if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "Tf"))
-					fz_buffer_printf(ctx, fzbuf, " %d", size);
-				else
-					fz_buffer_printf(ctx, fzbuf, " %d", last_int_tok_val);
-
-				last_tok_was_int = 0;
-			}
-
-			if (tok == PDF_TOK_INT)
-			{
-				last_tok_was_int = 1;
-				last_int_tok_val = lbuf.i;
-			}
-			else
-			{
-				fz_buffer_printf(ctx, fzbuf, " ");
-				pdf_print_token(ctx, fzbuf, tok, &lbuf);
-			}
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_close(str);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
-static fz_rect measure_text(pdf_document *doc, pdf_obj *dr, char *da, int font_size, fz_matrix *tm, char *text)
+static void get_font_info(pdf_document *doc, pdf_obj *dr, char *da, font_info *font_rec)
 {
 	fz_context *ctx = doc->ctx;
-	da_parse_state da_state;
-	pdf_obj *font_obj;
-	pdf_font_desc *font = NULL;
-	fz_rect bbox;
 
-	da_init(ctx, &da_state);
+	parse_da(ctx, da, &font_rec->da_rec);
+	if (font_rec->da_rec.font_name == NULL)
+		fz_throw(ctx, "No font name in default appearance");
+	font_rec->font = pdf_load_font(doc, dr, pdf_dict_gets(pdf_dict_gets(dr, "Font"), font_rec->da_rec.font_name));
+}
 
-	fz_var(font);
-	fz_try(ctx)
-	{
-		parse_da(ctx, da, &da_state);
+static void font_info_fin(fz_context *ctx, font_info *font_rec)
+{
+	pdf_drop_font(ctx, font_rec->font);
+	font_rec->font = NULL;
+	da_info_fin(ctx, &font_rec->da_rec);
+}
 
-		if (da_state.font_name == NULL)
-			fz_throw(ctx, "font name not found in default appearance");
+static void get_text_widget_info(pdf_document *doc, pdf_obj *widget, text_widget_info *info)
+{
+	fz_context *ctx = doc->ctx;
+	char *da = pdf_to_str_buf(get_inheritable(doc, widget, "DA"));
 
-		font_obj = pdf_dict_gets(pdf_dict_gets(dr, "Font"), da_state.font_name);
-		if (font_obj == NULL)
-			fz_throw(ctx, "font not found: %s", da_state.font_name);
+	info->dr = get_inheritable(doc, widget, "DR");
+	info->q = pdf_to_int(get_inheritable(doc, widget, "Q"));
+	info->multiline = 0;
+	get_font_info(doc, info->dr, da, &info->font_rec);
+}
 
-		font = pdf_load_font(doc, dr, font_obj);
-		bbox = pdf_measure_text(ctx, font, text, strlen(text));
+static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
+{
+	if (di->font_name != NULL && di->font_size != 0)
+		fz_buffer_printf(ctx, fzbuf, "/%s %d Tf", di->font_name, di->font_size);
 
-		if (font_size == 0)
-			font_size = da_state.font_size;
+	if (di->col_size != 0)
+		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
+}
 
-		bbox.x0 *= font_size * tm->a;
-		bbox.y0 *= font_size * tm->d;
-		bbox.x1 *= font_size * tm->a;
-		bbox.y1 *= font_size * tm->d;
-	}
-	fz_always(ctx)
-	{
-		da_fin(ctx, &da_state);
-		pdf_drop_font(ctx, font);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+static fz_rect measure_text(pdf_document *doc, font_info *font_rec, fz_matrix *tm, char *text)
+{
+	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, text, strlen(text), NULL);
+
+	bbox.x0 *= font_rec->da_rec.font_size * tm->a;
+	bbox.y0 *= font_rec->da_rec.font_size * tm->d;
+	bbox.x1 *= font_rec->da_rec.font_size * tm->a;
+	bbox.y1 *= font_rec->da_rec.font_size * tm->d;
 
 	return bbox;
 }
 
-static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
+static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, font_info *font_rec, fz_matrix *tm, char *text)
 {
 	fz_buffer_printf(ctx, fzbuf, fmt_q);
 	if (clip)
@@ -518,10 +424,7 @@ static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, c
 
 	fz_buffer_printf(ctx, fzbuf, fmt_BT);
 
-	if (fontsize > 0)
-		copy_da_with_altered_size(ctx, fzbuf, da, fontsize);
-	else
-		fz_buffer_printf(ctx, fzbuf, "%s\n", da);
+	fzbuf_print_da(ctx, fzbuf, &font_rec->da_rec);
 
 	fz_buffer_printf(ctx, fzbuf, "\n");
 	if (tm)
@@ -532,14 +435,14 @@ static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, c
 	fz_buffer_printf(ctx, fzbuf, fmt_Q);
 }
 
-static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, int fontsize, fz_matrix *tm, char *text)
+static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, font_info *font_rec, fz_matrix *tm, char *text)
 {
 	fz_buffer *fzbuf = fz_new_buffer(ctx, 0);
 
 	fz_try(ctx)
 	{
 		fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
-		fzbuf_print_text(ctx, fzbuf, clip, da, fontsize, tm, text);
+		fzbuf_print_text(ctx, fzbuf, clip, font_rec, tm, text);
 		fz_buffer_printf(ctx, fzbuf, fmt_EMC);
 	}
 	fz_catch(ctx)
@@ -551,27 +454,28 @@ static fz_buffer *create_text_buffer(fz_context *ctx, fz_rect *clip, char *da, i
 	return fzbuf;
 }
 
-static fz_buffer *create_aligned_text_buffer(pdf_document *doc, fz_rect *clip, pdf_obj *dr, char *da, int fontsize, fz_matrix *tm, int q, char *text)
+static fz_buffer *create_aligned_text_buffer(pdf_document *doc, fz_rect *clip, text_widget_info *info, fz_matrix *tm, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	fz_matrix atm = *tm;
 
-	if (q != Q_Left)
+	if (info->q != Q_Left)
 	{
-		fz_rect rect = measure_text(doc, dr, da, fontsize, tm, text);
+		fz_rect rect = measure_text(doc, &info->font_rec, tm, text);
 
-		atm.e -= q == Q_Right ? rect.x1
+		atm.e -= info->q == Q_Right ? rect.x1
 							  : (rect.x1 - rect.x0) / 2;
 	}
 
-	return create_text_buffer(ctx, clip, da, fontsize, &atm, text);
+	return create_text_buffer(ctx, clip, &info->font_rec, &atm, text);
 }
 
-static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, char *text, float *ascent, float *descent)
+static void measure_ascent_descent(pdf_document *doc, font_info *finf, char *text, float *ascent, float *descent)
 {
 	fz_context *ctx = doc->ctx;
 	char *testtext = NULL;
 	fz_rect bbox;
+	font_info tinf = *finf;
 
 	fz_var(testtext);
 	fz_try(ctx)
@@ -581,7 +485,8 @@ static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, cha
 		testtext = fz_malloc(ctx, strlen(text) + 3);
 		strcpy(testtext, "My");
 		strcat(testtext, text);
-		bbox = measure_text(doc, dr, da, 1, &fz_identity, testtext);
+		tinf.da_rec.font_size = 1;
+		bbox = measure_text(doc, &tinf, &fz_identity, testtext);
 		*descent = -bbox.y0;
 		*ascent = bbox.y1;
 	}
@@ -595,7 +500,7 @@ static void measure_ascent_descent(pdf_document *doc, pdf_obj *dr, char *da, cha
 	}
 }
 
-fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, int q, pdf_obj *dr, char *da, char *text)
+fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, text_widget_info *info, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	int fontsize, da_fontsize;
@@ -622,7 +527,7 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 	    float ascent, descent;
 		fz_matrix tm;
 
-		da_fontsize = read_font_size_from_da(ctx, da);
+		da_fontsize = info->font_rec.da_rec.font_size;
 		fontsize = da_fontsize ? da_fontsize : floor(height);
 
 		if (oldtm)
@@ -631,12 +536,12 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 		}
 		else
 		{
-			measure_ascent_descent(doc, dr, da, text, &ascent, &descent);
+			measure_ascent_descent(doc, &info->font_rec, text, &ascent, &descent);
 			tm = fz_identity;
 			tm.e = 2.0;
 			tm.f = 2.0 + fontsize * descent;
 
-			switch(q)
+			switch(info->q)
 			{
 			case Q_Right: tm.e += width; break;
 			case Q_Cent: tm.e += width/2; break;
@@ -645,7 +550,8 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 
 		if (!da_fontsize)
 		{
-			tbox = measure_text(doc, dr, da, fontsize, &tm, text);
+			info->font_rec.da_rec.font_size = fontsize;
+			tbox = measure_text(doc, &info->font_rec, &tm, text);
 
 			if (tbox.x1 - tbox.x0 > width)
 			{
@@ -656,7 +562,7 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 			}
 		}
 
-		fzbuf = create_aligned_text_buffer(doc, &rect, dr, da, fontsize, &tm, q, text);
+		fzbuf = create_aligned_text_buffer(doc, &rect, info, &tm, text);
 	}
 	fz_catch(ctx)
 	{
@@ -756,7 +662,7 @@ static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffe
 	}
 }
 
-int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
+static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
 {
 	fz_context *ctx = doc->ctx;
 	int found = 0;
@@ -846,21 +752,22 @@ int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt)
 static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_obj *ap, *n, *dr, *da;
+	text_widget_info info;
+	pdf_obj *ap, *n;
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
 	fz_matrix tm;
-	int q, has_tm;
+	int has_tm;
 
+	memset(&info, 0, sizeof(info));
+
+	fz_var(info);
 	fz_var(form);
 	fz_var(fzbuf);
-
 	fz_try(ctx)
 	{
-		dr = get_inheritable(doc, obj, "DR");
-		da = get_inheritable(doc, obj, "DA");
+		get_text_widget_info(doc, obj, &info);
 		ap = pdf_dict_gets(obj, "AP");
-		q  = pdf_to_int(get_inheritable(doc, obj, "Q"));
 		if (pdf_is_dict(ap))
 		{
 			n = pdf_dict_gets(ap, "N");
@@ -870,10 +777,10 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 				form = pdf_load_xobject(doc, n);
 
 				/* copy the default resources to the xobject */
-				copy_resources(form->resources, dr);
+				copy_resources(form->resources, info.dr);
 
-				has_tm = get_matrix(doc, form, q, &tm);
-				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, q, dr, pdf_to_str_buf(da), text);
+				has_tm = get_matrix(doc, form, info.q, &tm);
+				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, &info, text);
 				update_marked_content(doc, form, fzbuf);
 			}
 		}
@@ -882,6 +789,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
 	{
 		pdf_drop_xobject(ctx, form);
 		fz_drop_buffer(ctx, fzbuf);
+		font_info_fin(ctx, &info.font_rec);
 	}
 	fz_catch(ctx)
 	{
@@ -1078,10 +986,14 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
 	pdf_obj *tobj = NULL;
+	font_info font_rec;
 	int bstyle;
 	float bwidth;
 	float btotal;
 
+	memset(&font_rec, 0, sizeof(font_rec));
+
+	fz_var(font_rec);
 	fz_var(form);
 	fz_var(fzbuf);
 	fz_try(ctx)
@@ -1152,15 +1064,17 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 			clip.x1 -= btotal;
 			clip.y1 -= btotal;
 
-			bounds = measure_text(doc, form->resources, da, 0, &fz_identity, text);
+			get_font_info(doc, form->resources, da, &font_rec);
+			bounds = measure_text(doc, &font_rec, &fz_identity, text);
 			mat = fz_translate((rect.x1 - bounds.x1)/2, (rect.y1 - bounds.y1)/2);
-			fzbuf_print_text(ctx, fzbuf, &clip, da, 0, &mat, text);
+			fzbuf_print_text(ctx, fzbuf, &clip, &font_rec, &mat, text);
 		}
 
 		pdf_xobject_set_contents(doc, form, fzbuf);
 	}
 	fz_always(ctx)
 	{
+		font_info_fin(ctx, &font_rec);
 		fz_drop_buffer(ctx, fzbuf);
 		pdf_drop_xobject(ctx, form);
 	}
@@ -1455,27 +1369,27 @@ void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 {
 	fz_context *ctx = doc->ctx;
-	da_parse_state da_state;
+	da_info di;
 	fz_buffer *fzbuf = NULL;
 	char *da = pdf_to_str_buf(pdf_dict_gets(field, "DA"));
 	unsigned char *buf;
 	int len;
 	pdf_obj *daobj = NULL;
 
-	da_init(ctx, &da_state);
+	memset(&di, 0, sizeof(di));
 
 	fz_var(fzbuf);
-	fz_var(da_state);
+	fz_var(di);
 	fz_var(daobj);
 	fz_try(ctx)
 	{
-		parse_da(ctx, da, &da_state);
-		da_state.col_size = 3;
-		da_state.col[0] = pdf_to_real(pdf_array_get(col, 0));
-		da_state.col[1] = pdf_to_real(pdf_array_get(col, 1));
-		da_state.col[2] = pdf_to_real(pdf_array_get(col, 2));
+		parse_da(ctx, da, &di);
+		di.col_size = 3;
+		di.col[0] = pdf_to_real(pdf_array_get(col, 0));
+		di.col[1] = pdf_to_real(pdf_array_get(col, 1));
+		di.col[2] = pdf_to_real(pdf_array_get(col, 2));
 		fzbuf = fz_new_buffer(ctx, 0);
-		fzbuf_print_da(ctx, fzbuf, &da_state);
+		fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		daobj = pdf_new_string(ctx, buf, len);
 		pdf_dict_puts(field, "DA", daobj);
@@ -1483,7 +1397,7 @@ void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 	}
 	fz_always(ctx)
 	{
-		da_fin(ctx, &da_state);
+		da_info_fin(ctx, &di);
 		fz_drop_buffer(ctx, fzbuf);
 		pdf_drop_obj(daobj);
 	}
