@@ -2393,7 +2393,7 @@ static void pdf_run_dquote(pdf_csi *csi)
 #define B(a,b) (a | b << 8)
 #define C(a,b,c) (a | b << 8 | c << 16)
 
-static void
+static int
 pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 {
 	fz_context *ctx = csi->dev->ctx;
@@ -2525,22 +2525,28 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 	case A('y'): pdf_run_y(csi); break;
 	default:
 		if (!csi->xbalance)
-			fz_throw(ctx, "unknown keyword: '%s'", buf);
+		{
+			fz_warn(ctx, "unknown keyword: '%s'", buf);
+			return 1;
+		}
 		break;
 	}
+	return 0;
 }
 
 static void
 pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 {
 	fz_context *ctx = csi->dev->ctx;
-	int tok, in_array;
+	int tok = PDF_TOK_ERROR;
+	int in_array;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
 	in_array = 0;
 
 	fz_var(in_array);
+	fz_var(tok);
 
 	if (csi->cookie)
 	{
@@ -2550,117 +2556,124 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 
 	do
 	{
-		if (csi->top == nelem(csi->stack) - 1)
-			fz_throw(ctx, "stack overflow");
-
-		/* Check the cookie */
-		if (csi->cookie)
-		{
-			if (csi->cookie->abort)
-			{
-				tok = PDF_TOK_EOF;
-				break;
-			}
-			csi->cookie->progress++;
-		}
-
 		fz_try(ctx)
 		{
-			tok = pdf_lex(file, buf);
-			/* RJW: "lexical error in content stream" */
-
-			if (in_array)
+			do
 			{
-				if (tok == PDF_TOK_CLOSE_ARRAY)
+				if (csi->top == nelem(csi->stack) - 1)
+					fz_throw(ctx, "stack overflow");
+
+				/* Check the cookie */
+				if (csi->cookie)
 				{
-					in_array = 0;
+					if (csi->cookie->abort)
+					{
+						tok = PDF_TOK_EOF;
+						break;
+					}
+					csi->cookie->progress++;
 				}
-				else if (tok == PDF_TOK_REAL)
+
+				tok = pdf_lex(file, buf);
+				/* RJW: "lexical error in content stream" */
+
+				if (in_array)
 				{
-					pdf_gstate *gstate = csi->gstate + csi->gtop;
-					pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
-				}
-				else if (tok == PDF_TOK_INT)
-				{
-					pdf_gstate *gstate = csi->gstate + csi->gtop;
-					pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
-				}
-				else if (tok == PDF_TOK_STRING)
-				{
-					pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
-				}
-				else if (tok == PDF_TOK_KEYWORD)
-				{
-					if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
-						fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
+					if (tok == PDF_TOK_CLOSE_ARRAY)
+					{
+						in_array = 0;
+					}
+					else if (tok == PDF_TOK_REAL)
+					{
+						pdf_gstate *gstate = csi->gstate + csi->gtop;
+						pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
+					}
+					else if (tok == PDF_TOK_INT)
+					{
+						pdf_gstate *gstate = csi->gstate + csi->gtop;
+						pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
+					}
+					else if (tok == PDF_TOK_STRING)
+					{
+						pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
+					}
+					else if (tok == PDF_TOK_KEYWORD)
+					{
+						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
+							fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
+						else
+							fz_throw(ctx, "syntax error in array");
+					}
+					else if (tok == PDF_TOK_EOF)
+						break;
 					else
 						fz_throw(ctx, "syntax error in array");
 				}
-				else if (tok == PDF_TOK_EOF)
+
+				else switch (tok)
+				{
+				case PDF_TOK_ENDSTREAM:
+				case PDF_TOK_EOF:
+					tok = PDF_TOK_EOF;
 					break;
-				else
-					fz_throw(ctx, "syntax error in array");
+
+				case PDF_TOK_OPEN_ARRAY:
+					if (!csi->in_text)
+					{
+						csi->obj = pdf_parse_array(csi->xref, file, buf);
+						/* RJW: "cannot parse array" */
+					}
+					else
+					{
+						in_array = 1;
+					}
+					break;
+
+				case PDF_TOK_OPEN_DICT:
+					csi->obj = pdf_parse_dict(csi->xref, file, buf);
+					/* RJW: "cannot parse dictionary" */
+					break;
+
+				case PDF_TOK_NAME:
+					fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
+					break;
+
+				case PDF_TOK_INT:
+					csi->stack[csi->top] = buf->i;
+					csi->top ++;
+					break;
+
+				case PDF_TOK_REAL:
+					csi->stack[csi->top] = buf->f;
+					csi->top ++;
+					break;
+
+				case PDF_TOK_STRING:
+					if (buf->len <= sizeof(csi->string))
+					{
+						memcpy(csi->string, buf->scratch, buf->len);
+						csi->string_len = buf->len;
+					}
+					else
+					{
+						csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
+					}
+					break;
+
+				case PDF_TOK_KEYWORD:
+					if (pdf_run_keyword(csi, rdb, file, buf->scratch))
+					{
+						tok = PDF_TOK_EOF;
+					}
+					/* RJW: "cannot run keyword" */
+					pdf_clear_stack(csi);
+					break;
+
+				default:
+					fz_throw(ctx, "syntax error in content stream");
+				}
 			}
-
-			else switch (tok)
-			{
-			case PDF_TOK_ENDSTREAM:
-			case PDF_TOK_EOF:
-				tok = PDF_TOK_EOF;
-				break;
-
-			case PDF_TOK_OPEN_ARRAY:
-				if (!csi->in_text)
-				{
-					csi->obj = pdf_parse_array(csi->xref, file, buf);
-					/* RJW: "cannot parse array" */
-				}
-				else
-				{
-					in_array = 1;
-				}
-				break;
-
-			case PDF_TOK_OPEN_DICT:
-				csi->obj = pdf_parse_dict(csi->xref, file, buf);
-				/* RJW: "cannot parse dictionary" */
-				break;
-
-			case PDF_TOK_NAME:
-				fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
-				break;
-
-			case PDF_TOK_INT:
-				csi->stack[csi->top] = buf->i;
-				csi->top ++;
-				break;
-
-			case PDF_TOK_REAL:
-				csi->stack[csi->top] = buf->f;
-				csi->top ++;
-				break;
-
-			case PDF_TOK_STRING:
-				if (buf->len <= sizeof(csi->string))
-				{
-					memcpy(csi->string, buf->scratch, buf->len);
-					csi->string_len = buf->len;
-				}
-				else
-				{
-					csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
-				}
-				break;
-
-			case PDF_TOK_KEYWORD:
-				pdf_run_keyword(csi, rdb, file, buf->scratch);
-				/* RJW: "cannot run keyword" */
-				pdf_clear_stack(csi);
-				break;
-
-			default:
-				fz_throw(ctx, "syntax error in content stream");
-			}
+			while (tok != PDF_TOK_EOF);
 		}
 		fz_catch(ctx)
 		{
