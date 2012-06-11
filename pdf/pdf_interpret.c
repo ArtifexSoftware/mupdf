@@ -2434,7 +2434,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_warn(ctx, "cannot draw xobject/image");
+			fz_throw(ctx, "cannot draw xobject/image");
 		}
 		break;
 	case C('E','M','C'): pdf_run_EMC(csi); break;
@@ -2464,7 +2464,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_warn(ctx, "cannot set font");
+			fz_throw(ctx, "cannot set font");
 		}
 		break;
 	case B('T','j'): pdf_run_Tj(csi); break;
@@ -2493,7 +2493,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_warn(ctx, "cannot set graphics state");
+			fz_throw(ctx, "cannot set graphics state");
 		}
 		break;
 	case A('h'): pdf_run_h(csi); break;
@@ -2517,7 +2517,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_warn(ctx, "cannot draw shading");
+			fz_throw(ctx, "cannot draw shading");
 		}
 		break;
 	case A('v'): pdf_run_v(csi); break;
@@ -2525,7 +2525,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 	case A('y'): pdf_run_y(csi); break;
 	default:
 		if (!csi->xbalance)
-			fz_warn(ctx, "unknown keyword: '%s'", buf);
+			fz_throw(ctx, "unknown keyword: '%s'", buf);
 		break;
 	}
 }
@@ -2540,13 +2540,15 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 	pdf_clear_stack(csi);
 	in_array = 0;
 
+	fz_var(in_array);
+
 	if (csi->cookie)
 	{
 		csi->cookie->progress_max = -1;
 		csi->cookie->progress = 0;
 	}
 
-	while (1)
+	do
 	{
 		if (csi->top == nelem(csi->stack) - 1)
 			fz_throw(ctx, "stack overflow");
@@ -2555,105 +2557,123 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 		if (csi->cookie)
 		{
 			if (csi->cookie->abort)
+			{
+				tok = PDF_TOK_EOF;
 				break;
+			}
 			csi->cookie->progress++;
 		}
 
-		tok = pdf_lex(file, buf);
-		/* RJW: "lexical error in content stream" */
-
-		if (in_array)
+		fz_try(ctx)
 		{
-			if (tok == PDF_TOK_CLOSE_ARRAY)
+			tok = pdf_lex(file, buf);
+			/* RJW: "lexical error in content stream" */
+
+			if (in_array)
 			{
-				in_array = 0;
-			}
-			else if (tok == PDF_TOK_REAL)
-			{
-				pdf_gstate *gstate = csi->gstate + csi->gtop;
-				pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
-			}
-			else if (tok == PDF_TOK_INT)
-			{
-				pdf_gstate *gstate = csi->gstate + csi->gtop;
-				pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
-			}
-			else if (tok == PDF_TOK_STRING)
-			{
-				pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
-			}
-			else if (tok == PDF_TOK_KEYWORD)
-			{
-				if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
-					fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
+				if (tok == PDF_TOK_CLOSE_ARRAY)
+				{
+					in_array = 0;
+				}
+				else if (tok == PDF_TOK_REAL)
+				{
+					pdf_gstate *gstate = csi->gstate + csi->gtop;
+					pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
+				}
+				else if (tok == PDF_TOK_INT)
+				{
+					pdf_gstate *gstate = csi->gstate + csi->gtop;
+					pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
+				}
+				else if (tok == PDF_TOK_STRING)
+				{
+					pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
+				}
+				else if (tok == PDF_TOK_KEYWORD)
+				{
+					if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
+						fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
+					else
+						fz_throw(ctx, "syntax error in array");
+				}
+				else if (tok == PDF_TOK_EOF)
+					break;
 				else
 					fz_throw(ctx, "syntax error in array");
 			}
-			else if (tok == PDF_TOK_EOF)
-				return;
-			else
-				fz_throw(ctx, "syntax error in array");
+
+			else switch (tok)
+			{
+			case PDF_TOK_ENDSTREAM:
+			case PDF_TOK_EOF:
+				tok = PDF_TOK_EOF;
+				break;
+
+			case PDF_TOK_OPEN_ARRAY:
+				if (!csi->in_text)
+				{
+					csi->obj = pdf_parse_array(csi->xref, file, buf);
+					/* RJW: "cannot parse array" */
+				}
+				else
+				{
+					in_array = 1;
+				}
+				break;
+
+			case PDF_TOK_OPEN_DICT:
+				csi->obj = pdf_parse_dict(csi->xref, file, buf);
+				/* RJW: "cannot parse dictionary" */
+				break;
+
+			case PDF_TOK_NAME:
+				fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
+				break;
+
+			case PDF_TOK_INT:
+				csi->stack[csi->top] = buf->i;
+				csi->top ++;
+				break;
+
+			case PDF_TOK_REAL:
+				csi->stack[csi->top] = buf->f;
+				csi->top ++;
+				break;
+
+			case PDF_TOK_STRING:
+				if (buf->len <= sizeof(csi->string))
+				{
+					memcpy(csi->string, buf->scratch, buf->len);
+					csi->string_len = buf->len;
+				}
+				else
+				{
+					csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
+				}
+				break;
+
+			case PDF_TOK_KEYWORD:
+				pdf_run_keyword(csi, rdb, file, buf->scratch);
+				/* RJW: "cannot run keyword" */
+				pdf_clear_stack(csi);
+				break;
+
+			default:
+				fz_throw(ctx, "syntax error in content stream");
+			}
 		}
-
-		else switch (tok)
+		fz_catch(ctx)
 		{
-		case PDF_TOK_ENDSTREAM:
-		case PDF_TOK_EOF:
-			return;
-
-		case PDF_TOK_OPEN_ARRAY:
-			if (!csi->in_text)
-			{
-				csi->obj = pdf_parse_array(csi->xref, file, buf);
-				/* RJW: "cannot parse array" */
-			}
-			else
-			{
-				in_array = 1;
-			}
-			break;
-
-		case PDF_TOK_OPEN_DICT:
-			csi->obj = pdf_parse_dict(csi->xref, file, buf);
-			/* RJW: "cannot parse dictionary" */
-			break;
-
-		case PDF_TOK_NAME:
-			fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
-			break;
-
-		case PDF_TOK_INT:
-			csi->stack[csi->top] = buf->i;
-			csi->top ++;
-			break;
-
-		case PDF_TOK_REAL:
-			csi->stack[csi->top] = buf->f;
-			csi->top ++;
-			break;
-
-		case PDF_TOK_STRING:
-			if (buf->len <= sizeof(csi->string))
-			{
-				memcpy(csi->string, buf->scratch, buf->len);
-				csi->string_len = buf->len;
-			}
-			else
-			{
-				csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
-			}
-			break;
-
-		case PDF_TOK_KEYWORD:
-			pdf_run_keyword(csi, rdb, file, buf->scratch);
-			/* RJW: "cannot run keyword" */
-			pdf_clear_stack(csi);
-			break;
-
-		default:
-			fz_throw(ctx, "syntax error in content stream");
+			/* Swallow the error */
+			if (csi->cookie)
+				csi->cookie->errors++;
+			fz_warn(ctx, "Ignoring error during rendering");
+			/* If we do catch an error, then reset ourselves to a
+			 * base lexing state */
+			in_array = 0;
 		}
 	}
+	while (tok != PDF_TOK_EOF);
 }
 
 /*

@@ -1750,12 +1750,15 @@ typedef struct fz_cookie_s fz_cookie;
 	may change from -1 to a positive value once an upper bound is
 	known, so take this into consideration when comparing the
 	value of progress to that of progress_max.
+
+	errors: count of errors during current rendering.
 */
 struct fz_cookie_s
 {
 	int abort;
 	int progress;
 	int progress_max; /* -1 for unknown */
+	int errors;
 };
 
 /*
