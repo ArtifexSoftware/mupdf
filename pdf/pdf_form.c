@@ -5,6 +5,7 @@
 
 enum
 {
+	Ff_Multiline = 1 << (13-1),
 	Ff_NoToggleToOff = 1 << (15-1),
 	Ff_Radio         = 1 << (16-1),
 	Ff_Pushbutton    = 1 << (17-1),
@@ -76,6 +77,7 @@ static const char *fmt_W = "W\n";
 static const char *fmt_n = "n\n";
 static const char *fmt_BT = "BT\n";
 static const char *fmt_Tm = "%1.2f %1.2f %1.2f %1.2f %1.2f %1.2f Tm\n";
+static const char *fmt_Td = "%f %f Td\n";
 static const char *fmt_Tj = "(%s) Tj\n";
 static const char *fmt_ET = "ET\n";
 static const char *fmt_Q = "Q\n";
@@ -173,18 +175,12 @@ static char *get_string_or_stream(pdf_document *doc, pdf_obj *obj)
 
 static char *get_field_type_name(pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *type = get_inheritable(doc, obj, "FT");
-
-	return type ? pdf_to_name(type)
-				: NULL;
+	return pdf_to_name(get_inheritable(doc, obj, "FT"));
 }
 
 static int get_field_flags(pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *flags = get_inheritable(doc, obj, "Ff");
-
-	return flags ? pdf_to_int(flags)
-				 : 0;
+	return pdf_to_int(get_inheritable(doc, obj, "Ff"));
 }
 
 static int get_field_type(pdf_document *doc, pdf_obj *obj)
@@ -284,7 +280,7 @@ static void da_info_fin(fz_context *ctx, da_info *di)
 	di->font_name = NULL;
 }
 
-static void da_check_stack(int *stack, int *top)
+static void da_check_stack(float *stack, int *top)
 {
 	if (*top == 32)
 	{
@@ -387,7 +383,7 @@ static void get_text_widget_info(pdf_document *doc, pdf_obj *widget, text_widget
 
 	info->dr = get_inheritable(doc, widget, "DR");
 	info->q = pdf_to_int(get_inheritable(doc, widget, "Q"));
-	info->multiline = 0;
+	info->multiline = (get_field_flags(doc, widget) & Ff_Multiline) != 0;
 	get_font_info(doc, info->dr, da, &info->font_rec);
 }
 
@@ -402,7 +398,7 @@ static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
 
 static fz_rect measure_text(pdf_document *doc, font_info *font_rec, fz_matrix *tm, char *text)
 {
-	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, text, strlen(text), NULL);
+	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, text, strlen(text));
 
 	bbox.x0 *= font_rec->da_rec.font_size * tm->a;
 	bbox.y0 *= font_rec->da_rec.font_size * tm->d;
@@ -500,6 +496,129 @@ static void measure_ascent_descent(pdf_document *doc, font_info *finf, char *tex
 	}
 }
 
+typedef struct text_splitter_s
+{
+	font_info *info;
+	char *text;
+	int done;
+	float x_orig;
+	float y_orig;
+	float x;
+	float x_end;
+	float width;
+	int text_start;
+	int text_end;
+	int text_count;
+} text_splitter;
+
+static void text_splitter_init(text_splitter *splitter, font_info *info, char *text, float width)
+{
+	memset(splitter, 0, sizeof(*splitter));
+	splitter->info = info;
+	splitter->text = text;
+	splitter->width = width;
+}
+
+static void text_splitter_start_line(text_splitter *splitter)
+{
+	splitter->x_end = 0;
+}
+
+static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
+{
+	char *text;
+	float room;
+	float stride;
+	int count;
+	int len;
+	float fontsize = splitter->info->da_rec.font_size;
+
+	splitter->x = splitter->x_end;
+	splitter->text_start = splitter->text_end;
+
+	text = splitter->text + splitter->text_start;
+	room = splitter->width - splitter->x;
+
+	if (text[0] == ' ')
+	{
+		/* Treat each space as a word */
+		len = 1;
+	}
+	else
+	{
+		len = 0;
+		while (text[len] != '\0' && text[len] != ' ')
+			len ++;
+	}
+
+	stride = pdf_text_stride(ctx, splitter->info->font, text, len, room/fontsize, &count);
+	stride *= fontsize;
+
+	/* Don't split a word if other than at the beggining of a line
+	* because we may fit the whole word on the next line */
+	if (splitter->x > 0.0 && count < len)
+	{
+		return 0;
+	}
+	else
+	{
+		splitter->text_end = splitter->text_start + count;
+		splitter->x_end = splitter->x + stride;
+		splitter->done = (splitter->text[splitter->text_end] == '\0');
+		return 1;
+	}
+}
+
+static void text_splitter_move(text_splitter *splitter, float newy, float *relx, float *rely)
+{
+	*relx = splitter->x - splitter->x_orig;
+	*rely = newy - splitter->y_orig;
+
+	splitter->x_orig = splitter->x;
+	splitter->y_orig = newy;
+}
+
+static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, font_info *font, float scale)
+{
+	fz_matrix tm = fz_scale(scale, scale);
+
+	fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
+	fz_buffer_printf(ctx, fzbuf, fmt_q);
+
+	if (clip)
+	{
+		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_buffer_printf(ctx, fzbuf, fmt_W);
+		fz_buffer_printf(ctx, fzbuf, fmt_n);
+	}
+
+	fz_buffer_printf(ctx, fzbuf, fmt_BT);
+
+	fzbuf_print_da(ctx, fzbuf, &font->da_rec);
+	fz_buffer_printf(ctx, fzbuf, "\n");
+
+	fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
+}
+
+static void fzbuf_print_text_end(fz_context *ctx, fz_buffer *fzbuf)
+{
+	fz_buffer_printf(ctx, fzbuf, fmt_ET);
+	fz_buffer_printf(ctx, fzbuf, fmt_Q);
+}
+
+static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, float y, char *text, int count)
+{
+	int i;
+
+	fz_buffer_printf(ctx, fzbuf, fmt_Td, x, y);
+	fz_buffer_printf(ctx, fzbuf, "(");
+
+	for (i = 0; i < count; i++)
+		fz_buffer_printf(ctx, fzbuf, "%c", text[i]);
+
+	fz_buffer_printf(ctx, fzbuf, ") Tj\n");
+}
+
 fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, text_widget_info *info, char *text)
 {
 	fz_context *ctx = doc->ctx;
@@ -510,7 +629,7 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 	fz_rect tbox;
 	rect = *bbox;
 
-	if (rect.x1 - rect.x0 >= 2.0 && rect.y1 - rect.y0 >= 2.0)
+	if (rect.x1 - rect.x0 > 3.0 && rect.y1 - rect.y0 > 3.0)
 	{
 		rect.x0 += 1.0;
 		rect.x1 -= 1.0;
@@ -518,8 +637,8 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 		rect.y1 -= 1.0;
 	}
 
-	height = MAX(bbox->y1 - bbox->y0 - 4.0, 1);
-	width = MAX(bbox->x1 - bbox->x0 - 4.0, 1);
+	height = rect.y1 - rect.y0;
+	width = rect.x1 - rect.x0;
 
 	fz_var(fzbuf);
 	fz_try(ctx)
@@ -528,7 +647,12 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 		fz_matrix tm;
 
 		da_fontsize = info->font_rec.da_rec.font_size;
-		fontsize = da_fontsize ? da_fontsize : floor(height);
+		fontsize = da_fontsize
+			? da_fontsize
+			: (info->multiline ? 12.0 : floor(height));
+		info->font_rec.da_rec.font_size = fontsize;
+
+		measure_ascent_descent(doc, &info->font_rec, text, &ascent, &descent);
 
 		if (oldtm)
 		{
@@ -536,7 +660,6 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 		}
 		else
 		{
-			measure_ascent_descent(doc, &info->font_rec, text, &ascent, &descent);
 			tm = fz_identity;
 			tm.e = 2.0;
 			tm.f = 2.0 + fontsize * descent;
@@ -548,21 +671,87 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 			}
 		}
 
-		if (!da_fontsize)
-		{
-			info->font_rec.da_rec.font_size = fontsize;
-			tbox = measure_text(doc, &info->font_rec, &tm, text);
 
-			if (tbox.x1 - tbox.x0 > width)
+		if (info->multiline)
+		{
+			text_splitter splitter;
+			float scale = 1.0;
+			int max_lines = da_fontsize
+				? INT_MAX
+				: (int)(height / fontsize);
+
+			memset(&splitter, 0, sizeof(splitter));
+
+			while (!splitter.done)
 			{
-				/* Scale the text to fit but use the same offset
-				 * to keep the baseline constant */
-				tm.a *= width / (tbox.x1 - tbox.x0);
-				tm.d *= width / (tbox.x1 - tbox.x0);
+				/* Try to layout into max_lines or less */
+				int line = 0;
+				/* Offsets to apply to the first Td operator */
+				float x_off = rect.x0;
+				float y_off = height - (1.0+ascent-descent)*fontsize*scale/2.0;
+
+				fz_drop_buffer(ctx, fzbuf);
+				fzbuf = NULL;
+				fzbuf = fz_new_buffer(ctx, 0);
+
+				fzbuf_print_text_start(ctx, fzbuf, &rect, &info->font_rec, scale);
+
+				/* Layout unscaled text to a scaled-up width, so that
+				 * the scaled-down text will fit the unscaled width */
+				text_splitter_init(&splitter, &info->font_rec, text, width/scale);
+
+				while (!splitter.done && line < max_lines)
+				{
+					/* Layout a line */
+					text_splitter_start_line(&splitter);
+
+					while (!splitter.done && text_splitter_layout(ctx, &splitter))
+					{
+						if (splitter.text[splitter.text_start] != ' ')
+						{
+							float x, y;
+							char *word = text+splitter.text_start;
+							int wordlen = splitter.text_end-splitter.text_start;
+
+							text_splitter_move(&splitter, -line*fontsize, &x, &y);
+							fzbuf_print_text_word(ctx, fzbuf, x_off+x, y_off+y, word, wordlen);
+							x_off = y_off = 0.0; /* Offset has been applied */
+						}
+					}
+
+					line ++;
+				}
+
+				if (splitter.done)
+				{
+					fzbuf_print_text_end(ctx, fzbuf);
+				}
+				else
+				{
+					/* Failed to layout into max_lines. Try scaling down to
+					 * fit one more line in */
+					max_lines ++;
+					scale = height / (fontsize * max_lines);
+				}
 			}
 		}
+		else
+		{
+			if (!da_fontsize)
+			{
+				tbox = measure_text(doc, &info->font_rec, &tm, text);
 
-		fzbuf = create_aligned_text_buffer(doc, &rect, info, &tm, text);
+				if (tbox.x1 - tbox.x0 > width)
+				{
+					/* Scale the text to fit but use the same offset
+					* to keep the baseline constant */
+					tm.a *= width / (tbox.x1 - tbox.x0);
+					tm.d *= width / (tbox.x1 - tbox.x0);
+				}
+			}
+
+			fzbuf = create_aligned_text_buffer(doc, &rect, info, &tm, text);
+		}
 	}
 	fz_catch(ctx)
 	{
