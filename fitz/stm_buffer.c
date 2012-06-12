@@ -80,6 +80,19 @@ fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 }
 
 void
+fz_buffer_cat(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
+{
+	if (buf->cap - buf->len < extra->len)
+	{
+		buf->data = fz_resize_array(ctx, buf->data, buf->len + extra->len, 1);
+		buf->cap = buf->len + extra->len;
+	}
+
+	memcpy(buf->data + buf->len, extra->data, extra->len);
+	buf->len += extra->len;
+}
+
+void
 fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...)
 {
 	va_list args;

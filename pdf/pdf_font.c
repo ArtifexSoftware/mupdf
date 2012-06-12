@@ -1181,7 +1181,7 @@ fz_rect pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char
 	return acc;
 }
 
-float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, float room, int *count)
+float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count)
 {
 	pdf_hmtx h;
 	int gid;
@@ -1193,13 +1193,13 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *b
 		gid = pdf_font_cid_to_gid(ctx, fontdesc, buf[i]);
 		h = pdf_lookup_hmtx(ctx, fontdesc, buf[i]);
 
-		x += h.w / 1000.0;
+		x += h.w * fontsize / 1000.0;
 	}
 
 	if (x > room)
 	{
 		i --;
-		x -= h.w / 1000.0;
+		x -= h.w * fontsize / 1000.0;
 	}
 
 	*count = i;

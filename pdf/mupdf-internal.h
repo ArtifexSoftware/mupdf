@@ -515,7 +515,7 @@ void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
 void pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc);
 fz_rect pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len);
-float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, float room, int *count);
+float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count);
 
 /*
  * Interactive features

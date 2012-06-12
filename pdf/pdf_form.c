@@ -499,24 +499,43 @@ static void measure_ascent_descent(pdf_document *doc, font_info *finf, char *tex
 typedef struct text_splitter_s
 {
 	font_info *info;
+	float width;
+	float height;
+	float scale;
+	float unscaled_width;
+	float fontsize;
 	char *text;
 	int done;
 	float x_orig;
 	float y_orig;
 	float x;
 	float x_end;
-	float width;
 	int text_start;
 	int text_end;
-	int text_count;
+	int max_lines;
+	int retry;
 } text_splitter;
 
-static void text_splitter_init(text_splitter *splitter, font_info *info, char *text, float width)
+static void text_splitter_init(text_splitter *splitter, font_info *info, char *text, float width, float height, int variable)
 {
+	float fontsize = info->da_rec.font_size;
+
 	memset(splitter, 0, sizeof(*splitter));
 	splitter->info = info;
 	splitter->text = text;
 	splitter->width = width;
+	splitter->unscaled_width = width;
+	splitter->height = height;
+	splitter->fontsize = fontsize;
+	splitter->scale = 1.0;
+	splitter->max_lines = variable ? height/fontsize : FLT_MAX;
+}
+
+static void text_splitter_start_pass(text_splitter *splitter)
+{
+	splitter->text_end = 0;
+	splitter->x_orig = 0;
+	splitter->y_orig = 0;
 }
 
 static void text_splitter_start_line(text_splitter *splitter)
@@ -537,7 +556,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 	splitter->text_start = splitter->text_end;
 
 	text = splitter->text + splitter->text_start;
-	room = splitter->width - splitter->x;
+	room = splitter->unscaled_width - splitter->x;
 
 	if (text[0] == ' ')
 	{
@@ -551,22 +570,54 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 			len ++;
 	}
 
-	stride = pdf_text_stride(ctx, splitter->info->font, text, len, room/fontsize, &count);
-	stride *= fontsize;
+	stride = pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, room, &count);
 
-	/* Don't split a word if other than at the beggining of a line
-	* because we may fit the whole word on the next line */
-	if (splitter->x > 0.0 && count < len)
+	if (count < len && splitter->retry)
 	{
+		/* The word didn't fit and we are in retry mode. Work out the
+		 * least additional scaling that may help */
+		float fitwidth; /* width if we force the word in */
+		float hstretchwidth; /* width if we just bump by 10% */
+		float vstretchwidth; /* width resulting from forcing in another line */
+		float bestwidth;
+
+		fitwidth = splitter->x +
+			pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, FLT_MAX, &count);
+		/* FIXME: temporary fiddle factor. Would be better to work in integers */
+		fitwidth *= 1.001;
+
+		/* Stretching by 10% is worth trying only if processing the first word on the line */
+		hstretchwidth = splitter->x == 0.0
+			? splitter->width * 1.1 / splitter->scale
+			: FLT_MAX;
+
+		vstretchwidth = splitter->width * (splitter->max_lines + 1) * splitter->fontsize
+			/ splitter->height;
+
+		bestwidth = MIN(fitwidth, MIN(hstretchwidth, vstretchwidth));
+
+		if (bestwidth == vstretchwidth)
+			splitter->max_lines ++;
+
+		splitter->scale = splitter->width / bestwidth;
+		splitter->unscaled_width = bestwidth;
+
+		splitter->retry = 0;
+
+		/* Try again */
+		room = splitter->unscaled_width - splitter->x;
+		stride = pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, room, &count);
+	}
+
+	/* This is not the first word on the line. Best to give up on this line and push
+	 * the word onto the next */
+	if (count < len && splitter->x > 0.0)
 		return 0;
-	}
-	else
-	{
-		splitter->text_end = splitter->text_start + count;
-		splitter->x_end = splitter->x + stride;
-		splitter->done = (splitter->text[splitter->text_end] == '\0');
-		return 1;
-	}
+
+	splitter->text_end = splitter->text_start + count;
+	splitter->x_end = splitter->x + stride;
+	splitter->done = (splitter->text[splitter->text_end] == '\0');
+	return 1;
 }
 
 static void text_splitter_move(text_splitter *splitter, float newy, float *relx, float *rely)
@@ -578,10 +629,8 @@ static void text_splitter_move(text_splitter *splitter, float newy, float *relx,
 	splitter->y_orig = newy;
 }
 
-static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, font_info *font, float scale)
+static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, font_info *font, fz_matrix *tm)
 {
-	fz_matrix tm = fz_scale(scale, scale);
-
 	fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
 	fz_buffer_printf(ctx, fzbuf, fmt_q);
 
@@ -597,7 +646,7 @@ static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, fz_rect *c
 	fzbuf_print_da(ctx, fzbuf, &font->da_rec);
 	fz_buffer_printf(ctx, fzbuf, "\n");
 
-	fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
+	fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 }
 
 static void fzbuf_print_text_end(fz_context *ctx, fz_buffer *fzbuf)
@@ -622,9 +671,11 @@ static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, fl
 fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, text_widget_info *info, char *text)
 {
 	fz_context *ctx = doc->ctx;
-	int fontsize, da_fontsize;
+	int fontsize;
+	int variable;
 	float height, width;
 	fz_buffer *fzbuf = NULL;
+	fz_buffer *fztmp = NULL;
 	fz_rect rect;
 	fz_rect tbox;
 	rect = *bbox;
@@ -641,66 +692,42 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 	width = rect.x1 - rect.x0;
 
 	fz_var(fzbuf);
+	fz_var(fztmp);
 	fz_try(ctx)
 	{
 	    float ascent, descent;
 		fz_matrix tm;
 
-		da_fontsize = info->font_rec.da_rec.font_size;
-		fontsize = da_fontsize
-			? da_fontsize
-			: (info->multiline ? 12.0 : floor(height));
+		variable = (info->font_rec.da_rec.font_size == 0);
+		fontsize = variable
+			? (info->multiline ? 14.0 : floor(height))
+			: info->font_rec.da_rec.font_size == 0;
+
 		info->font_rec.da_rec.font_size = fontsize;
 
 		measure_ascent_descent(doc, &info->font_rec, text, &ascent, &descent);
 
-		if (oldtm)
-		{
-			tm = *oldtm;
-		}
-		else
-		{
-			tm = fz_identity;
-			tm.e = 2.0;
-			tm.f = 2.0 + fontsize * descent;
-
-			switch(info->q)
-			{
-			case Q_Right: tm.e += width; break;
-			case Q_Cent: tm.e += width/2; break;
-			}
-		}
-
-
 		if (info->multiline)
 		{
 			text_splitter splitter;
-			float scale = 1.0;
-			int max_lines = da_fontsize
-				? INT_MAX
-				: (int)(height / fontsize);
 
-			memset(&splitter, 0, sizeof(splitter));
+			text_splitter_init(&splitter, &info->font_rec, text, width, height, variable);
 
 			while (!splitter.done)
 			{
-				/* Try to layout into max_lines or less */
+				/* Try a layout pass */
 				int line = 0;
-				/* Offsets to apply to the first Td operator */
-				float x_off = rect.x0;
-				float y_off = height - (1.0+ascent-descent)*fontsize*scale/2.0;
 
-				fz_drop_buffer(ctx, fzbuf);
-				fzbuf = NULL;
-				fzbuf = fz_new_buffer(ctx, 0);
+				fz_drop_buffer(ctx, fztmp);
+				fztmp = NULL;
+				fztmp = fz_new_buffer(ctx, 0);
 
-				fzbuf_print_text_start(ctx, fzbuf, &rect, &info->font_rec, scale);
+				text_splitter_start_pass(&splitter);
 
 				/* Layout unscaled text to a scaled-up width, so that
 				 * the scaled-down text will fit the unscaled width */
-				text_splitter_init(&splitter, &info->font_rec, text, width/scale);
 
-				while (!splitter.done && line < max_lines)
+				while (!splitter.done && line < splitter.max_lines)
 				{
 					/* Layout a line */
 					text_splitter_start_line(&splitter);
@@ -714,30 +741,52 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 							int wordlen = splitter.text_end-splitter.text_start;
 
 							text_splitter_move(&splitter, -line*fontsize, &x, &y);
-							fzbuf_print_text_word(ctx, fzbuf, x_off+x, y_off+y, word, wordlen);
-							x_off = y_off = 0.0; /* Offset has been applied */
+							fzbuf_print_text_word(ctx, fztmp, x, y, word, wordlen);
 						}
 					}
 
 					line ++;
 				}
 
-				if (splitter.done)
-				{
-					fzbuf_print_text_end(ctx, fzbuf);
-				}
-				else
-				{
-					/* Failed to layout into max_lines. Try scaling down to
-					 * fit one more line in */
-					max_lines ++;
-					scale = height / (fontsize * max_lines);
-				}
+				if (!splitter.done)
+					splitter.retry = 1;
 			}
+
+			fzbuf = fz_new_buffer(ctx, 0);
+
+			tm.a = splitter.scale;
+			tm.b = 0.0;
+			tm.c = 0.0;
+			tm.d = splitter.scale;
+			tm.e = rect.x0;
+			tm.f = rect.y1 - (1.0+ascent-descent)*fontsize*splitter.scale/2.0;
+
+			fzbuf_print_text_start(ctx, fzbuf, &rect, &info->font_rec, &tm);
+
+			fz_buffer_cat(ctx, fzbuf, fztmp);
+
+			fzbuf_print_text_end(ctx, fzbuf);
 		}
 		else
 		{
-			if (!da_fontsize)
+			if (oldtm)
+			{
+				tm = *oldtm;
+			}
+			else
+			{
+				tm = fz_identity;
+				tm.e = 2.0;
+				tm.f = 2.0 + fontsize * descent;
+
+				switch(info->q)
+				{
+				case Q_Right: tm.e += width; break;
+				case Q_Cent: tm.e += width/2; break;
+				}
+			}
+
+			if (variable)
 			{
 				tbox = measure_text(doc, &info->font_rec, &tm, text);
 
@@ -752,6 +801,10 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 
 			fzbuf = create_aligned_text_buffer(doc, &rect, info, &tm, text);
 		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, fztmp);
 	}
 	fz_catch(ctx)
 	{

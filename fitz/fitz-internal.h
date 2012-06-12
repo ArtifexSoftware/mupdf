@@ -411,6 +411,16 @@ void fz_grow_buffer(fz_context *ctx, fz_buffer *buf);
 void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
+	fz_buffer_cat: Concatenate buffers
+
+	buf: first to concatenate and the holder of the result
+	extra: second to concatenate
+
+	May throw exception on failure to allocate.
+*/
+void fz_buffer_cat(fz_context *ctx, fz_buffer *buf, fz_buffer *extra);
+
+/*
 	fz_buffer_printf: print formatted to a buffer. The buffer will
 	grow, but the caller must ensure that no more than 256 bytes are
 	added to the buffer per call.
