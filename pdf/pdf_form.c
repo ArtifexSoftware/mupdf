@@ -558,7 +558,15 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 	text = splitter->text + splitter->text_start;
 	room = splitter->unscaled_width - splitter->x;
 
-	if (text[0] == ' ')
+	if (strchr("\r\n", text[0]))
+	{
+		/* Consume return chars and report end of line */
+		splitter->text_end += strspn(text, "\r\n");
+		splitter->text_start = splitter->text_end;
+		splitter->done = (splitter->text[splitter->text_end] == '\0');
+		return 0;
+	}
+	else if (text[0] == ' ')
 	{
 		/* Treat each space as a word */
 		len = 1;
@@ -566,7 +574,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 	else
 	{
 		len = 0;
-		while (text[len] != '\0' && text[len] != ' ')
+		while (text[len] != '\0' && !strchr(" \r\n", text[len]))
 			len ++;
 	}
 
@@ -627,6 +635,24 @@ static void text_splitter_move(text_splitter *splitter, float newy, float *relx,
 
 	splitter->x_orig = splitter->x;
 	splitter->y_orig = newy;
+}
+
+static void text_splitter_retry(text_splitter *splitter)
+{
+	if (splitter->retry)
+	{
+		/* Already tried expanding lines. Overflow must
+		 * be caused by carriage control */
+		splitter->max_lines ++;
+		splitter->retry = 0;
+		splitter->unscaled_width = splitter->width * splitter->max_lines * splitter->fontsize
+			/ splitter->height;
+		splitter->scale = splitter->width / splitter->unscaled_width;
+	}
+	else
+	{
+		splitter->retry = 1;
+	}
 }
 
 static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, font_info *font, fz_matrix *tm)
@@ -749,7 +775,7 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 				}
 
 				if (!splitter.done)
-					splitter.retry = 1;
+					text_splitter_retry(&splitter);
 			}
 
 			fzbuf = fz_new_buffer(ctx, 0);

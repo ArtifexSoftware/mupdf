@@ -54,7 +54,7 @@ IDD_DLOGTEXT DIALOG 50, 50, 204, 85
 CAPTION " MuPDF: fill out form"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    EDITTEXT        3,8,7,183,50,4
+    EDITTEXT        3,8,7,183,50,0x1004
     DEFPUSHBUTTON   "Okay",1,89,64,50,14
     PUSHBUTTON      "Cancel",2,147,64,50,14
 END
