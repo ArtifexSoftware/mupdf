@@ -304,7 +304,7 @@ pdf_xobject *pdf_load_xobject(pdf_document *doc, pdf_obj *obj);
 pdf_obj *pdf_new_xobject(pdf_document *doc, fz_rect *bbox, fz_matrix *mat);
 pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
-void pdf_xobject_set_contents(pdf_document *xref, pdf_xobject *from, fz_buffer *buffer);
+void pdf_update_xobject_contents(pdf_document *xref, pdf_xobject *from, fz_buffer *buffer);
 
 
 /*
