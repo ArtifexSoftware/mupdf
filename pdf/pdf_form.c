@@ -83,11 +83,6 @@ static const char *fmt_ET = "ET\n";
 static const char *fmt_Q = "Q\n";
 static const char *fmt_EMC = "EMC\n";
 
-static fz_buffer *form_contents(pdf_document *doc, pdf_xobject *form)
-{
-	return pdf_get_stream(doc, pdf_to_num(form->contents));
-}
-
 static void account_for_rot(fz_rect *rect, fz_matrix *mat, int rot)
 {
 	float width = rect->x1;
@@ -240,7 +235,7 @@ static void copy_resources(pdf_obj *dst, pdf_obj *src)
 		pdf_obj *key = pdf_dict_get_key(src, i);
 
 		if (!pdf_dict_get(dst, key))
-			fz_dict_put(dst, key, pdf_dict_get_val(src, i));
+			pdf_dict_put(dst, key, pdf_dict_get_val(src, i));
 	}
 }
 
@@ -727,7 +722,7 @@ fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *o
 		variable = (info->font_rec.da_rec.font_size == 0);
 		fontsize = variable
 			? (info->multiline ? 14.0 : floor(height))
-			: info->font_rec.da_rec.font_size == 0;
+			: info->font_rec.da_rec.font_size;
 
 		info->font_rec.da_rec.font_size = fontsize;
 
@@ -864,8 +859,7 @@ static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffe
 		int first = 1;
 
 		newbuf = fz_new_buffer(ctx, 0);
-		len = fz_buffer_storage(ctx, form_contents(doc, form), &buf);
-		str_outer = fz_open_memory(ctx, buf, len);
+		str_outer = pdf_open_stream(doc, pdf_to_num(form->contents), pdf_to_gen(form->contents));
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		str_inner = fz_open_memory(ctx, buf, len);
 
@@ -939,8 +933,7 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 	pdf_lexbuf lbuf;
 	fz_stream *str;
 
-	bufsize = fz_buffer_storage(ctx, form_contents(doc, form), &buf);
-	str = fz_open_memory(ctx, buf, bufsize);
+	str = pdf_open_stream(doc, pdf_to_num(form->contents), pdf_to_gen(form->contents));
 
 	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
 	lbuf.size = sizeof(lbuf.scratch);

@@ -138,7 +138,7 @@ fz_interactive *fz_interact(fz_document *doc)
 }
 
 void
-fz_write(fz_document *doc, char *filename, fz_write_options *opts)
+fz_write_document(fz_document *doc, char *filename, fz_write_options *opts)
 {
 	if (doc && doc->write)
 		doc->write(doc, filename, opts);

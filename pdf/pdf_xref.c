@@ -179,6 +179,14 @@ pdf_resize_xref(pdf_document *xref, int newlen)
 	xref->len = newlen;
 }
 
+pdf_obj *
+pdf_new_ref(pdf_document *xref, pdf_obj *obj)
+{
+	int num = pdf_create_object(xref);
+	pdf_update_object(xref, num, obj);
+	return pdf_new_indirect(xref->ctx, num, 0, xref);
+}
+
 static pdf_obj *
 pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
@@ -799,6 +807,7 @@ pdf_close_document(pdf_document *xref)
 			{
 				pdf_drop_obj(xref->table[i].obj);
 				xref->table[i].obj = NULL;
+				fz_drop_buffer(ctx, xref->table[i].stm_buf);
 			}
 		}
 		fz_free(xref->ctx, xref->table);

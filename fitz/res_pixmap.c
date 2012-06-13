@@ -136,14 +136,16 @@ fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
 void
 fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
-	memset(pix->samples, 0, pix->w * pix->h * pix->n);
+  memset(pix->samples, 0, (unsigned int)(pix->w * pix->h * pix->n));
 }
 
 void
 fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 {
 	if (value == 255)
-		memset(pix->samples, 255, pix->w * pix->h * pix->n);
+	{
+		memset(pix->samples, 255, (unsigned int)(pix->w * pix->h * pix->n));
+	}
 	else
 	{
 		int k, x, y;
@@ -165,7 +167,7 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_bbox r)
 {
 	const unsigned char *srcp;
 	unsigned char *destp;
-	int y, w, destspan, srcspan;
+	int x, y, w, destspan, srcspan;
 
 	r = fz_intersect_bbox(r, fz_pixmap_bbox(ctx, dest));
 	r = fz_intersect_bbox(r, fz_pixmap_bbox(ctx, src));
@@ -174,18 +176,90 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, fz_bbox r)
 	if (w <= 0 || y <= 0)
 		return;
 
-	w *= src->n;
 	srcspan = src->w * src->n;
-	srcp = src->samples + srcspan * (r.y0 - src->y) + src->n * (r.x0 - src->x);
+	srcp = src->samples + (unsigned int)(srcspan * (r.y0 - src->y) + src->n * (r.x0 - src->x));
 	destspan = dest->w * dest->n;
-	destp = dest->samples + destspan * (r.y0 - dest->y) + dest->n * (r.x0 - dest->x);
-	do
+	destp = dest->samples + (unsigned int)(destspan * (r.y0 - dest->y) + dest->n * (r.x0 - dest->x));
+
+	if (src->n == dest->n)
 	{
-		memcpy(destp, srcp, w);
-		srcp += srcspan;
-		destp += destspan;
+		w *= src->n;
+		do
+		{
+			memcpy(destp, srcp, w);
+			srcp += srcspan;
+			destp += destspan;
+		}
+		while (--y);
 	}
-	while (--y);
+	else if (src->n == 2 && dest->n == 4)
+	{
+		/* Copy, and convert from grey+alpha to rgb+alpha */
+		srcspan -= w*2;
+		destspan -= w*4;
+		do
+		{
+			for (x = w; x > 0; x--)
+			{
+				unsigned char v = *srcp++;
+				unsigned char a = *srcp++;
+				*destp++ = v;
+				*destp++ = v;
+				*destp++ = v;
+				*destp++ = a;
+			}
+			srcp += srcspan;
+			destp += destspan;
+		}
+		while (--y);
+	}
+	else if (src->n == 4 && dest->n == 2)
+	{
+		/* Copy, and convert from rgb+alpha to grey+alpha */
+		srcspan -= w*4;
+		destspan -= w*2;
+		do
+		{
+			for (x = w; x > 0; x--)
+			{
+				int v;
+				v  = *srcp++;
+				v += *srcp++;
+				v += *srcp++;
+				*destp++ = (unsigned char)((v+1)/3);
+				*destp++ = *srcp++;
+			}
+			srcp += srcspan;
+			destp += destspan;
+		}
+		while (--y);
+	}
+	else
+	{
+		/* FIXME: Crap conversion */
+		int z;
+		int sn = src->n-1;
+		int dn = dest->n-1;
+
+		srcspan -= w*src->n;
+		destspan -= w*dest->n;
+		do
+		{
+			for (x = w; x > 0; x--)
+			{
+				int v = 0;
+				for (z = sn; z > 0; z--)
+					v += *srcp++;
+				v = (v * dn + (sn>>1)) / sn;
+				for (z = dn; z > 0; z--)
+					*destp++ = (unsigned char)v;
+				*destp++ = *srcp++;
+			}
+			srcp += srcspan;
+			destp += destspan;
+		}
+		while (--y);
+	}
 }
 
 void
@@ -201,11 +275,11 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, fz_
 		return;
 
 	destspan = dest->w * dest->n;
-	destp = dest->samples + destspan * (r.y0 - dest->y) + dest->n * (r.x0 - dest->x);
+	destp = dest->samples + (unsigned int)(destspan * (r.y0 - dest->y) + dest->n * (r.x0 - dest->x));
 	if (value == 255)
 		do
 		{
-			memset(destp, 255, w * dest->n);
+			memset(destp, 255, (unsigned int)(w * dest->n));
 			destp += destspan;
 		}
 		while (--y);
@@ -317,7 +391,7 @@ void fz_invert_pixmap_rect(fz_pixmap *image, fz_bbox rect)
 
 	for (y = y0; y < y1; y++)
 	{
-		p = image->samples + (y * image->w + x0) * image->n;
+		p = image->samples + (unsigned int)((y * image->w + x0) * image->n);
 		for (x = x0; x < x1; x++)
 		{
 			for (n = image->n; n > 0; n--, p++)

@@ -369,6 +369,7 @@ struct fz_buffer_s
 	int refs;
 	unsigned char *data;
 	int cap, len;
+	int unused_bits;
 };
 
 /*
@@ -419,6 +420,14 @@ void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 	May throw exception on failure to allocate.
 */
 void fz_buffer_cat(fz_context *ctx, fz_buffer *buf, fz_buffer *extra);
+
+void fz_write_buffer(fz_context *ctx, fz_buffer *buf, unsigned char *data, int len);
+
+void fz_write_buffer_byte(fz_context *ctx, fz_buffer *buf, int val);
+
+void fz_write_buffer_bits(fz_context *ctx, fz_buffer *buf, int val, int bits);
+
+void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
 
 /*
 	fz_buffer_printf: print formatted to a buffer. The buffer will

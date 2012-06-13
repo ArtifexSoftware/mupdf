@@ -22,18 +22,10 @@
 
 #include "memento.h"
 
-/*
-	Some versions of setjmp/longjmp (notably MacOSX and ios) store/restore
-	signal handlers too. We don't alter signal handlers within mupdf, so
-	there is no need for us to store/restore - hence we use the
-	non-restoring variants. This makes a large speed difference.
-*/
 #ifdef __APPLE__
-#define fz_setjmp _setjmp
-#define fz_longjmp _longjmp
-#else
-#define fz_setjmp setjmp
-#define fz_longjmp longjmp
+#define HAVE_SIGSETJMP
+#elif defined(__unix)
+#define HAVE_SIGSETJMP
 #endif
 
 #ifdef __ANDROID__
@@ -156,18 +148,37 @@ struct fz_alloc_context_s
 	void (*free)(void *, void *);
 };
 
+/*
+	Where possible (i.e. on platforms on which they are provided), use
+	sigsetjmp/siglongjmp in preference to setjmp/longjmp. We don't alter
+	signal handlers within mupdf, so there is no need for us to
+	store/restore them - hence we use the non-restoring variants. This
+	makes a large speed difference on MacOSX (and probably other
+	platforms too.
+*/
+#ifdef HAVE_SIGSETJMP
+#define fz_setjmp(BUF) sigsetjmp(BUF, 0)
+#define fz_longjmp(BUF,VAL) siglongjmp(BUF, VAL)
+#define fz_jmp_buf sigjmp_buf
+#else
+#define fz_setjmp(BUF) setjmp(BUF)
+#define fz_longjmp(BUF,VAL) longjmp(BUF,VAL)
+#define fz_jmp_buf jmp_buf
+#endif
+
 struct fz_error_context_s
 {
 	int top;
 	struct {
 		int code;
-		jmp_buf buffer;
+		fz_jmp_buf buffer;
 	} stack[256];
 	char message[256];
 };
 
 void fz_var_imp(void *);
 #define fz_var(var) fz_var_imp((void *)&(var))
+
 
 /*
 	Exception macro definitions. Just treat these as a black box - pay no
@@ -1750,12 +1761,15 @@ typedef struct fz_cookie_s fz_cookie;
 	may change from -1 to a positive value once an upper bound is
 	known, so take this into consideration when comparing the
 	value of progress to that of progress_max.
+
+	errors: count of errors during current rendering.
 */
 struct fz_cookie_s
 {
 	int abort;
 	int progress;
 	int progress_max; /* -1 for unknown */
+	int errors;
 };
 
 /*
@@ -2386,16 +2400,17 @@ typedef struct fz_write_options_s fz_write_options;
 */
 struct fz_write_options_s
 {
-	int doascii;    /*	If non-zero then attempt (where possible) to
+	int do_ascii;    /*	If non-zero then attempt (where possible) to
 				make the output ascii. */
-	int doexpand;	/*	Bitflags; each non zero bit indicates an aspect
+	int do_expand;	/*	Bitflags; each non zero bit indicates an aspect
 				of the file that should be 'expanded' on
 				writing. */
-	int dogarbage;	/*	If non-zero then attempt (where possible) to
+	int do_garbage;	/*	If non-zero then attempt (where possible) to
 				garbage collect the file before writing. */
+	int do_linear;   /*	If non-zero then write linearised. */
 };
 
-/*	An enumeration of bitflags to use in the above 'doexpand' field of
+/*	An enumeration of bitflags to use in the above 'do_expand' field of
 	fz_write_options.
 */
 enum
@@ -2421,6 +2436,6 @@ enum
 
 	May throw exceptions.
 */
-void fz_write(fz_document *doc, char *filename, fz_write_options *opts);
+void fz_write_document(fz_document *doc, char *filename, fz_write_options *opts);
 
 #endif

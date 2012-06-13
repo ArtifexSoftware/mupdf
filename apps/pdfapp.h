@@ -57,6 +57,7 @@ struct pdfapp_s
 	fz_text_page *page_text;
 	fz_text_sheet *page_sheet;
 	fz_link *page_links;
+	int errored;
 
 	/* snapback history */
 	int hist[256];
