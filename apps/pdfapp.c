@@ -412,7 +412,7 @@ static void pdfapp_gotouri(pdfapp_t *app, char *uri)
 	winopenuri(app, uri);
 }
 
-static void pdfapp_gotopage(pdfapp_t *app, int number)
+void pdfapp_gotopage(pdfapp_t *app, int number)
 {
 	app->isediting = 0;
 	winrepaint(app);

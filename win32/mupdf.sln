@@ -31,6 +31,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generated", "generated.vcpr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf-v8", "libmupdf-v8.vcproj", "{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}"
 	ProjectSection(ProjectDependencies) = postProject
+		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 		{A5053AA7-02E5-4903-B596-04F17AEB1526} = {A5053AA7-02E5-4903-B596-04F17AEB1526}
 	EndProjectSection
 EndProject
@@ -38,6 +39,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf-v8", "mupdf-v8.vcproj
 	ProjectSection(ProjectDependencies) = postProject
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D} = {2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}
 		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C} = {5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mujstest-v8", "mujstest-v8.vcproj", "{21E28758-E4D2-4B84-8EC5-B631CEE66B30}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C} = {5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}
+		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D} = {2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}
 	EndProjectSection
 EndProject
 Global
@@ -95,6 +102,12 @@ Global
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.Memento|Win32.Build.0 = Memento|Win32
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.Release|Win32.ActiveCfg = Release|Win32
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.Release|Win32.Build.0 = Release|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Debug|Win32.Build.0 = Debug|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Memento|Win32.ActiveCfg = Memento|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Memento|Win32.Build.0 = Memento|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Release|Win32.ActiveCfg = Release|Win32
+		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
