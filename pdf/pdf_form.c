@@ -910,7 +910,7 @@ static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffe
 		}
 
 		/* Use newbuf in place of the existing appearance stream */
-		pdf_xobject_set_contents(doc, form, newbuf);
+		pdf_update_xobject_contents(doc, form, newbuf);
 	}
 	fz_always(ctx)
 	{
@@ -1105,7 +1105,7 @@ static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
 		form = pdf_load_xobject(doc, formobj);
 		fzbuf = fz_new_buffer(ctx, 0);
 		fz_buffer_printf(ctx, fzbuf, "/Tx BMC EMC");
-		pdf_xobject_set_contents(doc, form, fzbuf);
+		pdf_update_xobject_contents(doc, form, fzbuf);
 
 		ap = pdf_new_dict(ctx, 1);
 		pdf_dict_puts(ap, "N", formobj);
@@ -1331,7 +1331,7 @@ static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
 			fzbuf_print_text(ctx, fzbuf, &clip, &font_rec, &mat, text);
 		}
 
-		pdf_xobject_set_contents(doc, form, fzbuf);
+		pdf_update_xobject_contents(doc, form, fzbuf);
 	}
 	fz_always(ctx)
 	{

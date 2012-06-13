@@ -1141,19 +1141,6 @@ pdf_update_object(pdf_document *xref, int num, pdf_obj *newobj)
 	x->obj = pdf_keep_obj(newobj);
 }
 
-fz_buffer *
-pdf_get_stream(pdf_document *xref, int num)
-{
-	pdf_xref_entry *x;
-
-	if (num < 0 || num >= xref->len)
-		fz_throw(xref->ctx, "object out of range (%d 0 R); xref size %d", num, xref->len);
-
-	x = &xref->table[num];
-
-	return x->stm_buf;
-}
-
 void
 pdf_update_stream(pdf_document *xref, int num, fz_buffer *newbuf)
 {

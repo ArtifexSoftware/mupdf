@@ -122,11 +122,6 @@ void pdf_delete_object(pdf_document *xref, int num);
 void pdf_update_object(pdf_document *xref, int num, pdf_obj *obj);
 
 /*
-	pdf_get_stream: Return the contents for object in xref table
-*/
-fz_buffer *pdf_get_stream(pdf_document *xref, int num);
-
-/*
 	pdf_update_stream: Replace stream contents for object in xref table with the passed in buffer.
 
 	The buffer contents must match the /Filter setting.

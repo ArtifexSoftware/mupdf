@@ -224,7 +224,7 @@ pdf_new_xobject(pdf_document *xref, fz_rect *bbox, fz_matrix *mat)
 	return idict;
 }
 
-void pdf_xobject_set_contents(pdf_document *xref, pdf_xobject *form, fz_buffer *buffer)
+void pdf_update_xobject_contents(pdf_document *xref, pdf_xobject *form, fz_buffer *buffer)
 {
 	pdf_dict_dels(form->contents, "Filter");
 	pdf_update_stream(xref, pdf_to_num(form->contents), buffer);
