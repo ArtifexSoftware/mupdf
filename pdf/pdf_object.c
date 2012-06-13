@@ -579,22 +579,22 @@ pdf_obj *pdf_new_rect(fz_context *ctx, fz_rect *rect)
 		arr = pdf_new_array(ctx, 4);
 
 		item = pdf_new_real(ctx, rect->x0);
-		pdf_array_put(arr, 0, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, rect->y0);
-		pdf_array_put(arr, 1, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, rect->x1 - rect->x0);
-		pdf_array_put(arr, 2, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, rect->y1 - rect->y0);
-		pdf_array_put(arr, 3, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 	}
@@ -620,32 +620,32 @@ pdf_obj *pdf_new_matrix(fz_context *ctx, fz_matrix *mtx)
 		arr = pdf_new_array(ctx, 6);
 
 		item = pdf_new_real(ctx, mtx->a);
-		pdf_array_put(arr, 0, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, mtx->b);
-		pdf_array_put(arr, 1, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, mtx->c);
-		pdf_array_put(arr, 2, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, mtx->d);
-		pdf_array_put(arr, 3, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, mtx->e);
-		pdf_array_put(arr, 4, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
 		item = pdf_new_real(ctx, mtx->f);
-		pdf_array_put(arr, 5, item);
+		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 	}
