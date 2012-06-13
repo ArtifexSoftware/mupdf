@@ -2161,6 +2161,15 @@ fz_link *fz_load_links(fz_document *doc, fz_page *page);
 fz_rect fz_bound_page(fz_document *doc, fz_page *page);
 
 /*
+	fz_bound_annots: Bound the annotations on a page.
+
+	(Temporary function - do not rely on this remaining in future)
+
+	Does not throw exceptions (unless the callback does).
+*/
+void fz_bound_annots(fz_document *doc, fz_page *page, void(*callback)(void *arg, fz_rect *), void *arg);
+
+/*
 	fz_run_page: Run a page through a device.
 
 	page: Page obtained from fz_load_page.

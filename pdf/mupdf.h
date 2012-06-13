@@ -233,6 +233,15 @@ fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
 void pdf_free_page(pdf_document *doc, pdf_page *page);
 
 /*
+	pdf_bound_annots: Bound the annotations on a page.
+
+	(Temporary function - do not rely on this remaining in future)
+
+	Does not throw exceptions (unless the callback does).
+*/
+void pdf_bound_annots(pdf_document *doc, pdf_page *page, void(*callback)(void *arg, fz_rect *), void *arg);
+
+/*
 	pdf_run_page: Interpret a loaded page and render it on a device.
 
 	page: A page loaded by pdf_load_page.

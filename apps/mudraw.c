@@ -22,6 +22,7 @@ static int showtext = 0;
 static int showtime = 0;
 static int showmd5 = 0;
 static int showoutline = 0;
+static int showannotrects = 0;
 static int savealpha = 0;
 static int uselist = 1;
 static int alphabits = 8;
@@ -36,6 +37,11 @@ static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
 static int files = 0;
+
+static char *mujstest_filename = NULL;
+static FILE *mujstest_file = NULL;
+static int mujstest_page = 0;
+static int mujstest_count = 0;
 
 static struct {
 	int count, total;
@@ -68,6 +74,7 @@ static void usage(void)
 		"\t-G gamma\tgamma correct output\n"
 		"\t-I\tinvert output\n"
 		"\t-l\tprint outline\n"
+		"\t-j -\tOutput mujstest file\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
 }
@@ -97,6 +104,18 @@ static int isrange(char *s)
 	return 1;
 }
 
+static void mujsannot(void *arg, fz_rect *rect)
+{
+	if (mujstest_page >= 0)
+	{
+		fprintf(mujstest_file, "GOTO %d\n", mujstest_page);
+		mujstest_page = -1;
+	}
+	fprintf(mujstest_file, "%% %0.2f %0.2f %0.2f %0.2f\n", rect->x0, rect->y0, rect->x1, rect->y1);
+	fprintf(mujstest_file, "TEXT %dTestText\n", ++mujstest_count);
+	fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect->x0+rect->x1)/2, (rect->y0+rect->y1)/2);
+}
+
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
 	fz_page *page;
@@ -120,6 +139,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_catch(ctx)
 	{
 		fz_throw(ctx, "cannot load page %d in file '%s'", pagenum, filename);
+	}
+
+	if (mujstest_file)
+	{
+		mujstest_page = pagenum;
+		fz_bound_annots(doc, page, mujsannot, NULL);
 	}
 
 	if (uselist)
@@ -378,6 +403,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	fz_flush_warnings(ctx);
 
+	if (mujstest_file && mujstest_page < 0)
+	{
+		fprintf(mujstest_file, "SCREENSHOT\n");
+	}
+
+
 	if (cookie.errors)
 		errored = 1;
 }
@@ -444,7 +475,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:f")) != -1)
+	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:fj:")) != -1)
 	{
 		switch (c)
 		{
@@ -466,6 +497,7 @@ int main(int argc, char **argv)
 		case 'h': height = atof(fz_optarg); break;
 		case 'f': fit = 1; break;
 		case 'I': invert++; break;
+		case 'j': mujstest_filename = fz_optarg; break;
 		default: usage(); break;
 		}
 	}
@@ -473,10 +505,18 @@ int main(int argc, char **argv)
 	if (fz_optind == argc)
 		usage();
 
-	if (!showtext && !showxml && !showtime && !showmd5 && !showoutline && !output)
+	if (!showtext && !showxml && !showtime && !showmd5 && !showoutline && !output && !mujstest_filename)
 	{
 		printf("nothing to do\n");
 		exit(0);
+	}
+
+	if (mujstest_filename)
+	{
+		if (strcmp(mujstest_filename, "-") == 0)
+			mujstest_file = stdout;
+		else
+			mujstest_file = fopen(mujstest_filename, "wb");
 	}
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
@@ -541,8 +581,18 @@ int main(int argc, char **argv)
 			}
 
 			if (fz_needs_password(doc))
+			{
 				if (!fz_authenticate_password(doc, password))
 					fz_throw(ctx, "cannot authenticate password: %s", filename);
+				if (mujstest_file)
+					fprintf(mujstest_file, "PASSWORD %s\n", password);
+
+			}
+
+			if (mujstest_file)
+			{
+				fprintf(mujstest_file, "OPEN %s\n", filename);
+			}
 
 			if (showxml || showtext == TEXT_XML)
 				printf("<document name=\"%s\">\n", filename);
@@ -550,7 +600,7 @@ int main(int argc, char **argv)
 			if (showoutline)
 				drawoutline(ctx, doc);
 
-			if (showtext || showxml || showtime || showmd5 || output)
+			if (showtext || showxml || showtime || showmd5 || output || mujstest_file)
 			{
 				if (fz_optind == argc || !isrange(argv[fz_optind]))
 					drawrange(ctx, doc, "1-");
@@ -600,6 +650,9 @@ int main(int argc, char **argv)
 			printf("slowest page %d: %dms (%s)\n", timing.maxpage, timing.max, timing.maxfilename);
 		}
 	}
+
+	if (mujstest_file && mujstest_file != stdout)
+		fclose(mujstest_file);
 
 	fz_free_context(ctx);
 	return (errored != 0);

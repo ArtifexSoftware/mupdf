@@ -109,6 +109,13 @@ fz_bound_page(fz_document *doc, fz_page *page)
 }
 
 void
+fz_bound_annots(fz_document *doc, fz_page *page, void (*callback)(void *arg, fz_rect *), void *arg)
+{
+	if (doc && doc->bound_annots && page && callback)
+		doc->bound_annots(doc, page, callback, arg);
+}
+
+void
 fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
 {
 	if (doc && doc->run_page && page)

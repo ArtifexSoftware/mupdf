@@ -1112,6 +1112,7 @@ struct fz_document_s
 	int (*meta)(fz_document *doc, int key, void *ptr, int size);
 	fz_interactive *(*interact)(fz_document *doc);
 	void (*write)(fz_document *doc, char *filename, fz_write_options *opts);
+	void (*bound_annots)(fz_document *doc, fz_page *page, void (*callback)(void *arg, fz_rect *), void *arg);
 };
 
 #endif

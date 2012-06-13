@@ -431,3 +431,19 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 
 	return head;
 }
+
+void
+pdf_bound_annots(pdf_document *doc, pdf_page *page, void (*callback)(void *arg, fz_rect *), void *arg)
+{
+	pdf_annot *a;
+
+	if (!doc || !page || !callback)
+		return;
+
+	a = page->annots;
+	while (a)
+	{
+		callback(arg, &a->pagerect);
+		a = a->next;
+	}
+}
