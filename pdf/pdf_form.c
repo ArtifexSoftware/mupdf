@@ -523,7 +523,10 @@ static void text_splitter_init(text_splitter *splitter, font_info *info, char *t
 	splitter->height = height;
 	splitter->fontsize = fontsize;
 	splitter->scale = 1.0;
-	splitter->max_lines = variable ? height/fontsize : FLT_MAX;
+	/* RJW: The cast in the following line is important, as otherwise
+	 * under MSVC in the variable = 0 case, splitter->max_lines becomes
+	 * INT_MIN. */
+	splitter->max_lines = variable ? (int)(height/fontsize) : INT_MAX;
 }
 
 static void text_splitter_start_pass(text_splitter *splitter)
