@@ -1037,6 +1037,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			app->nowaitcursor = 1;
 			pdfapp_showpage(app, 1, 1, 1);
 			app->nowaitcursor = 0;
+			return;
 		}
 	}
 
