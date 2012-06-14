@@ -133,6 +133,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="v8_base.lib v8_snapshot.lib ws2_32.lib winmm.lib"
+				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -207,6 +209,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="v8_base.lib v8_snapshot.lib ws2_32.lib winmm.lib"
+				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
