@@ -229,6 +229,7 @@ main(int argc, char *argv[])
 	pdfapp_init(ctx, &gapp);
 	gapp.scrw = 640;
 	gapp.scrh = 480;
+	gapp.colorspace = fz_device_rgb;
 
 	fz_try(ctx)
 	{

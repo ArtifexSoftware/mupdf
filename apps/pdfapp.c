@@ -82,6 +82,11 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->scrh = 480;
 	app->resolution = 72;
 	app->ctx = ctx;
+#ifdef _WIN32
+	app->colorspace = fz_device_bgr;
+#else
+	app->colorspace = fz_device_rgb;
+#endif
 }
 
 void pdfapp_invert(pdfapp_t *app, fz_bbox rect)
@@ -359,11 +364,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		if (app->grayscale)
 			colorspace = fz_device_gray;
 		else
-#ifdef _WIN32
-			colorspace = fz_device_bgr;
-#else
-			colorspace = fz_device_rgb;
-#endif
+			colorspace = app->colorspace;
 		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, bbox);
 		fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 		idev = fz_new_draw_device(app->ctx, app->image);

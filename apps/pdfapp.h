@@ -47,6 +47,7 @@ struct pdfapp_s
 	int rotate;
 	fz_pixmap *image;
 	int grayscale;
+	fz_colorspace *colorspace;
 	int invert;
 
 	/* current page params */
