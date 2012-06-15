@@ -5,12 +5,19 @@
 #include "pdfapp.h"
 #include <ctype.h>
 
+/*
+	A useful bit of bash script to call this is:
+	for f in ../ghostpcl/tests_private/pdf/forms/v1.3/*.pdf ; do g=${f%.*} ; echo $g ; win32/debug/mujstest-v8.exe -o ../ghostpcl/$g-%d.png -p ../ghostpcl/ $g.mjs ; done
+*/
+
 static pdfapp_t gapp;
 static int file_open = 0;
 static char filename[1024] = "";
 static char *scriptname;
-static char *output;
+static char *output = NULL;
+static char *prefix = NULL;
 static int shotcount = 0;
+static int verbose = 0;
 
 static char getline_buffer[1024];
 
@@ -108,8 +115,10 @@ static void
 usage(void)
 {
 	fprintf(stderr, "mujstest: Scriptable tester for mupdf + js\n");
-	fprintf(stderr, "\nSyntax: mujstest -o <filename> <scriptfile>\n");
+	fprintf(stderr, "\nSyntax: mujstest -o <filename> [ -p <prefix> ] [-v] <scriptfile>\n");
 	fprintf(stderr, "\n<filename> should sensibly be of the form file-%d.png\n");
+	fprintf(stderr, "\n<prefix> is a path prefix to apply to filenames within the script\n");
+	fprintf(stderr, "\n-v    verbose\n");
 	fprintf(stderr, "\nscriptfile contains a list of commands:\n");
 	fprintf(stderr, "\tPASSWORD <password>\tSet the password\n");
 	fprintf(stderr, "\tOPEN <filename>\tOpen a file\n");
@@ -197,11 +206,13 @@ main(int argc, char *argv[])
 	FILE *script = NULL;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "o:")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:p:v")) != -1)
 	{
 		switch(c)
 		{
 		case 'o': output = fz_optarg; break;
+		case 'p': prefix = fz_optarg; break;
+		case 'v': verbose ^= 1; break;
 		default: usage(); break;
 		}
 	}
@@ -231,6 +242,10 @@ main(int argc, char *argv[])
 			do
 			{
 				char *line = getline(script);
+				if (line == NULL)
+					continue;
+				if (verbose)
+					fprintf(stderr, "%s\n", line);
 				if (match(&line, "%"))
 				{
 					/* Comment */
@@ -241,10 +256,19 @@ main(int argc, char *argv[])
 				}
 				else if (match(&line, "OPEN"))
 				{
+					char path[1024];
 					if (file_open)
 						pdfapp_close(&gapp);
 					strcpy(filename, line);
-					pdfapp_open(&gapp, line, 0);
+					if (prefix)
+					{
+						sprintf(path, "%s%s", prefix, line);
+					}
+					else
+					{
+						strcpy(path, line);
+					}
+					pdfapp_open(&gapp, path, 0);
 					file_open = 1;
 				}
 				else if (match(&line, "GOTO"))
