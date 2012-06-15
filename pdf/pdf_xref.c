@@ -685,7 +685,6 @@ pdf_init_document(pdf_document *xref)
 	fz_try(ctx)
 	{
 		pdf_load_xref(xref, &xref->lexbuf.base);
-		xref->js = pdf_new_js(xref);
 	}
 	fz_catch(ctx)
 	{
@@ -768,6 +767,7 @@ pdf_init_document(pdf_document *xref)
 				dict = NULL;
 			}
 		}
+		xref->js = pdf_new_js(xref);
 	}
 	fz_catch(ctx)
 	{
