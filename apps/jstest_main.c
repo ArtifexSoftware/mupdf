@@ -133,7 +133,7 @@ usage(void)
 static char *
 getline(FILE *file)
 {
-	char c;
+	int c;
 	char *d = getline_buffer;
 
 	/* Skip over any prefix of whitespace */
@@ -148,7 +148,7 @@ getline(FILE *file)
 
 	do
 	{
-		*d++ = c;
+		*d++ = (char)c;
 		c = fgetc(file);
 	}
 	while (c >= 32);
@@ -166,7 +166,7 @@ match(char **line, const char *match)
 	if (s == NULL)
 		return 0;
 
-	while (isspace(*s))
+	while (isspace(*(unsigned char *)s))
 		s++;
 
 	while (*s == *match)
@@ -179,7 +179,7 @@ match(char **line, const char *match)
 		return 0;
 
 	/* We matched! Skip over any whitespace */
-	while (isspace(*s))
+	while (isspace(*(unsigned char *)s))
 		s++;
 
 	*line = s;
@@ -190,7 +190,7 @@ match(char **line, const char *match)
 		s++;
 
 	/* Run back until we find where we started, or non whitespace */
-	while (s != *line && isspace(s[-1]))
+	while (s != *line && isspace((unsigned char)s[-1]))
 		s--;
 
 	/* Remove the suffix of whitespace */
