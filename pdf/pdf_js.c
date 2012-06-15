@@ -288,17 +288,26 @@ pdf_js *pdf_new_js(pdf_document *doc)
 				unsigned char *buf;
 				int len;
 
-				fzbuf = pdf_load_stream(doc, pdf_to_num(code), pdf_to_gen(code));
-				len = fz_buffer_storage(ctx, fzbuf, &buf);
-				pdf_jsimp_execute_count(js->imp, buf, len);
-				fz_drop_buffer(ctx, fzbuf);
-				fzbuf = NULL;
+				fz_try(ctx)
+				{
+					fzbuf = pdf_load_stream(doc, pdf_to_num(code), pdf_to_gen(code));
+					len = fz_buffer_storage(ctx, fzbuf, &buf);
+					pdf_jsimp_execute_count(js->imp, buf, len);
+				}
+				fz_always(ctx)
+				{
+					fz_drop_buffer(ctx, fzbuf);
+					fzbuf = NULL;
+				}
+				fz_catch(ctx)
+				{
+					fz_warn(ctx, "Warning: %s", ctx->error->message);
+				}
 			}
 		}
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, fzbuf);
 		pdf_drop_obj(javascript);
 	}
 	fz_catch(ctx)
@@ -324,7 +333,8 @@ void pdf_drop_js(pdf_js *js)
 
 void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
 {
-	js->event.target = target;
+	if (js)
+		js->event.target = target;
 }
 
 void pdf_js_execute(pdf_js *js, char *code)
