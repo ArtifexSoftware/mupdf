@@ -999,6 +999,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	fz_link *link;
 	fz_matrix ctm;
 	fz_point p;
+	int processed = 0;
 
 	p.x = x - app->panx + rect.x0;
 	p.y = y - app->pany + rect.y0;
@@ -1037,7 +1038,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			app->nowaitcursor = 1;
 			pdfapp_showpage(app, 1, 1, 1);
 			app->nowaitcursor = 0;
-			return;
+			processed = 1;
 		}
 	}
 
@@ -1051,7 +1052,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	if (link)
 	{
 		wincursor(app, HAND);
-		if (btn == 1 && state == 1)
+		if (btn == 1 && state == 1 && !processed)
 		{
 			if (link->dest.kind == FZ_LINK_URI)
 				pdfapp_gotouri(app, link->dest.ld.uri.uri);
@@ -1065,7 +1066,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		wincursor(app, ARROW);
 	}
 
-	if (state == 1)
+	if (state == 1 && !processed)
 	{
 		if (btn == 1 && !app->iscopying)
 		{
@@ -1126,8 +1127,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (app->selr.x0 < app->selr.x1 && app->selr.y0 < app->selr.y1)
 				windocopy(app);
 		}
-		if (app->ispanning)
-			app->ispanning = 0;
+		app->ispanning = 0;
 	}
 
 	else if (app->ispanning)
