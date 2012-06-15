@@ -389,6 +389,8 @@ static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
 
 	if (di->col_size != 0)
 		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
+	else
+		fz_buffer_printf(ctx, fzbuf, " 0 g");
 }
 
 static fz_rect measure_text(pdf_document *doc, font_info *font_rec, fz_matrix *tm, char *text)
