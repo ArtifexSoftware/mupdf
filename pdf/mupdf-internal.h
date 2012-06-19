@@ -523,8 +523,6 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
  * Interactive features
  */
 
-typedef struct pdf_annot_s pdf_annot;
-
 struct pdf_annot_s
 {
 	pdf_obj *obj;

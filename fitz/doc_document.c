@@ -108,11 +108,28 @@ fz_bound_page(fz_document *doc, fz_page *page)
 	return fz_empty_rect;
 }
 
-void
-fz_bound_annots(fz_document *doc, fz_page *page, void (*callback)(void *arg, fz_rect *), void *arg)
+fz_annot *
+fz_first_annot(fz_document *doc, fz_page *page)
 {
-	if (doc && doc->bound_annots && page && callback)
-		doc->bound_annots(doc, page, callback, arg);
+	if (doc && doc->first_annot && page)
+		return doc->first_annot(doc, page);
+	return NULL;
+}
+
+fz_annot *
+fz_next_annot(fz_document *doc, fz_annot *annot)
+{
+	if (doc && doc->next_annot && annot)
+		return doc->next_annot(doc, annot);
+	return NULL;
+}
+
+fz_rect
+fz_bound_annot(fz_document *doc, fz_annot *annot)
+{
+	if (doc && doc->bound_annot && annot)
+		return doc->bound_annot(doc, annot);
+	return fz_empty_rect;
 }
 
 void

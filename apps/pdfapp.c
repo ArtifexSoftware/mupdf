@@ -1064,7 +1064,18 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	}
 	else
 	{
-		wincursor(app, ARROW);
+		fz_annot *annot;
+		for (annot = fz_first_annot(app->doc, app->page); annot; annot = fz_next_annot(app->doc, annot))
+		{
+			fz_rect rect = fz_bound_annot(app->doc, annot);
+			if (x >= rect.x0 && x < rect.x1)
+				if (y >= rect.y0 && y < rect.y1)
+					break;
+		}
+		if (annot)
+			wincursor(app, CARET);
+		else
+			wincursor(app, ARROW);
 	}
 
 	if (state == 1 && !processed)

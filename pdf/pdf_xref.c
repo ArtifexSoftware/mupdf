@@ -1292,9 +1292,19 @@ static fz_rect pdf_bound_page_shim(fz_document *doc, fz_page *page)
 	return pdf_bound_page((pdf_document*)doc, (pdf_page*)page);
 }
 
-static void pdf_bound_annots_shim(fz_document *doc, fz_page *page, void (*callback)(void *arg, fz_rect *), void *arg)
+static fz_annot *pdf_first_annot_shim(fz_document *doc, fz_page *page)
 {
-	pdf_bound_annots((pdf_document*)doc, (pdf_page*)page, callback, arg);
+	return (fz_annot *)pdf_first_annot((pdf_document*)doc, (pdf_page*)page);
+}
+
+static fz_annot *pdf_next_annot_shim(fz_document *doc, fz_annot *annot)
+{
+	return (fz_annot *)pdf_next_annot((pdf_document*)doc, (pdf_annot*)annot);
+}
+
+static fz_rect pdf_bound_annot_shim(fz_document *doc, fz_annot *annot)
+{
+	return pdf_bound_annot((pdf_document*)doc, (pdf_annot*)annot);
 }
 
 static void pdf_free_page_shim(fz_document *doc, fz_page *page)
@@ -1321,7 +1331,9 @@ pdf_new_document(fz_stream *file)
 	doc->super.load_page = pdf_load_page_shim;
 	doc->super.load_links = pdf_load_links_shim;
 	doc->super.bound_page = pdf_bound_page_shim;
-	doc->super.bound_annots = pdf_bound_annots_shim;
+	doc->super.first_annot = pdf_first_annot_shim;
+	doc->super.next_annot = pdf_next_annot_shim;
+	doc->super.bound_annot = pdf_bound_annot_shim;
 	doc->super.run_page = NULL; /* see pdf_xref_aux.c */
 	doc->super.free_page = pdf_free_page_shim;
 	doc->super.meta = pdf_meta_shim;

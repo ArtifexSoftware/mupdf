@@ -14,7 +14,7 @@
 
 typedef struct pdfapp_s pdfapp_t;
 
-enum { ARROW, HAND, WAIT };
+enum { ARROW, HAND, WAIT, CARET };
 
 extern void winwarn(pdfapp_t*, char *s);
 extern void winerror(pdfapp_t*, char *s);

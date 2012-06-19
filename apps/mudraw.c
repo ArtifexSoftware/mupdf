@@ -104,18 +104,6 @@ static int isrange(char *s)
 	return 1;
 }
 
-static void mujsannot(void *arg, fz_rect *rect)
-{
-	if (mujstest_page >= 0)
-	{
-		fprintf(mujstest_file, "GOTO %d\n", mujstest_page);
-		mujstest_page = -1;
-	}
-	fprintf(mujstest_file, "%% %0.2f %0.2f %0.2f %0.2f\n", rect->x0, rect->y0, rect->x1, rect->y1);
-	fprintf(mujstest_file, "TEXT %dTestText\n", ++mujstest_count);
-	fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect->x0+rect->x1)/2, (rect->y0+rect->y1)/2);
-}
-
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
 	fz_page *page;
@@ -143,8 +131,18 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (mujstest_file)
 	{
-		mujstest_page = pagenum;
-		fz_bound_annots(doc, page, mujsannot, NULL);
+		fz_annot *annot = fz_first_annot(doc, page);
+		if (annot)
+		{
+			fprintf(mujstest_file, "GOTO %d\n", pagenum);
+		}
+		for (;annot; annot = fz_next_annot(doc, annot))
+		{
+			fz_rect rect = fz_bound_annot(doc, annot);
+			fprintf(mujstest_file, "%% %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(mujstest_file, "TEXT %dTestText\n", ++mujstest_count);
+			fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
+		}
 	}
 
 	if (uselist)

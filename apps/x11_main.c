@@ -75,7 +75,7 @@ static Pixmap xicon, xmask;
 static GC xgc;
 static XEvent xevt;
 static int mapped = 0;
-static Cursor xcarrow, xchand, xcwait;
+static Cursor xcarrow, xchand, xcwait, xccaret;
 static int justcopied = 0;
 static int dirty = 0;
 static int dirtysearch = 0;
@@ -144,6 +144,7 @@ static void winopen(void)
 	xcarrow = XCreateFontCursor(xdpy, XC_left_ptr);
 	xchand = XCreateFontCursor(xdpy, XC_hand2);
 	xcwait = XCreateFontCursor(xdpy, XC_watch);
+	xccaret = XCreateFontCursor(xdpy, XC_xterm);
 
 	xbgcolor.red = 0x7000;
 	xbgcolor.green = 0x7000;
@@ -227,6 +228,7 @@ void cleanup(pdfapp_t *app)
 
 	XFreePixmap(xdpy, xicon);
 
+	XFreeCursor(xdpy, xccaret);
 	XFreeCursor(xdpy, xcwait);
 	XFreeCursor(xdpy, xchand);
 	XFreeCursor(xdpy, xcarrow);
@@ -252,6 +254,8 @@ void wincursor(pdfapp_t *app, int curs)
 		XDefineCursor(xdpy, xwin, xchand);
 	if (curs == WAIT)
 		XDefineCursor(xdpy, xwin, xcwait);
+	if (curs == CARET)
+		XDefineCursor(xdpy, xwin, xccaret);
 	XFlush(xdpy);
 }
 

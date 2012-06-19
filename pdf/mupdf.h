@@ -232,14 +232,28 @@ fz_rect pdf_bound_page(pdf_document *doc, pdf_page *page);
 */
 void pdf_free_page(pdf_document *doc, pdf_page *page);
 
+typedef struct pdf_annot_s pdf_annot;
+
 /*
-	pdf_bound_annots: Bound the annotations on a page.
+	pdf_first_annot: Return the first annotation on a page.
 
-	(Temporary function - do not rely on this remaining in future)
-
-	Does not throw exceptions (unless the callback does).
+	Does not throw exceptions.
 */
-void pdf_bound_annots(pdf_document *doc, pdf_page *page, void(*callback)(void *arg, fz_rect *), void *arg);
+pdf_annot *pdf_first_annot(pdf_document *doc, pdf_page *page);
+
+/*
+	pdf_next_annot: Return the next annotation on a page.
+
+	Does not throw exceptions.
+*/
+pdf_annot *pdf_next_annot(pdf_document *doc, pdf_annot *annot);
+
+/*
+	pdf_bound_annot: Return the rectangle for an annotation on a page.
+
+	Does not throw exceptions.
+*/
+fz_rect pdf_bound_annot(pdf_document *doc, pdf_annot *annot);
 
 /*
 	pdf_run_page: Interpret a loaded page and render it on a device.

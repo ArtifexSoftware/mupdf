@@ -28,7 +28,7 @@ static HDC hdc;
 static HBRUSH bgbrush;
 static HBRUSH shbrush;
 static BITMAPINFO *dibinf;
-static HCURSOR arrowcurs, handcurs, waitcurs;
+static HCURSOR arrowcurs, handcurs, waitcurs, caretcurs;
 static LRESULT CALLBACK frameproc(HWND, UINT, WPARAM, LPARAM);
 static LRESULT CALLBACK viewproc(HWND, UINT, WPARAM, LPARAM);
 
@@ -355,6 +355,7 @@ void winopen()
 	arrowcurs = LoadCursor(NULL, IDC_ARROW);
 	handcurs = LoadCursor(NULL, IDC_HAND);
 	waitcurs = LoadCursor(NULL, IDC_WAIT);
+	caretcurs = LoadCursor(NULL, IDC_IBEAM);
 
 	/* And a background color */
 	bgbrush = CreateSolidBrush(RGB(0x70,0x70,0x70));
@@ -422,6 +423,8 @@ void wincursor(pdfapp_t *app, int curs)
 		SetCursor(handcurs);
 	if (curs == WAIT)
 		SetCursor(waitcurs);
+	if (curs == CARET)
+		SetCursor(caretcurs);
 }
 
 void wintitle(pdfapp_t *app, char *title)

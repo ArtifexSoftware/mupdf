@@ -432,18 +432,22 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 	return head;
 }
 
-void
-pdf_bound_annots(pdf_document *doc, pdf_page *page, void (*callback)(void *arg, fz_rect *), void *arg)
+pdf_annot *
+pdf_first_annot(pdf_document *doc, pdf_page *page)
 {
-	pdf_annot *a;
+	return page ? page->annots : NULL;
+}
 
-	if (!doc || !page || !callback)
-		return;
+pdf_annot *
+pdf_next_annot(pdf_document *doc, pdf_annot *annot)
+{
+	return annot ? annot->next : NULL;
+}
 
-	a = page->annots;
-	while (a)
-	{
-		callback(arg, &a->pagerect);
-		a = a->next;
-	}
+fz_rect
+pdf_bound_annot(pdf_document *doc, pdf_annot *annot)
+{
+	if (annot)
+		return annot->pagerect;
+	return fz_empty_rect;
 }

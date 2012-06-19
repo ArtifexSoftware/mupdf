@@ -2161,13 +2161,30 @@ fz_link *fz_load_links(fz_document *doc, fz_page *page);
 fz_rect fz_bound_page(fz_document *doc, fz_page *page);
 
 /*
-	fz_bound_annots: Bound the annotations on a page.
-
-	(Temporary function - do not rely on this remaining in future)
-
-	Does not throw exceptions (unless the callback does).
+	fz_annot: opaque pointer to annotation details.
 */
-void fz_bound_annots(fz_document *doc, fz_page *page, void(*callback)(void *arg, fz_rect *), void *arg);
+typedef struct fz_annot_s fz_annot;
+
+/*
+	fz_first_annot: Return a pointer to the first annotation on a page.
+
+	Does not throw exceptions.
+*/
+fz_annot *fz_first_annot(fz_document *doc, fz_page *page);
+
+/*
+	fz_next_annot: Return a pointer to the next annotation on a page.
+
+	Does not throw exceptions.
+*/
+fz_annot *fz_next_annot(fz_document *doc, fz_annot *annot);
+
+/*
+	fz_bound_annot: Return the bounding rectangle of the annotation.
+
+	Does not throw exceptions.
+*/
+fz_rect fz_bound_annot(fz_document *doc, fz_annot *annot);
 
 /*
 	fz_run_page: Run a page through a device.
