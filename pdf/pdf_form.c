@@ -592,7 +592,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 		fitwidth = splitter->x +
 			pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, FLT_MAX, &count);
 		/* FIXME: temporary fiddle factor. Would be better to work in integers */
-		fitwidth *= 1.001;
+		fitwidth *= 1.001f;
 
 		/* Stretching by 10% is worth trying only if processing the first word on the line */
 		hstretchwidth = splitter->x == 0.0
@@ -694,7 +694,7 @@ static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, fl
 	fz_buffer_printf(ctx, fzbuf, ") Tj\n");
 }
 
-fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, text_widget_info *info, char *text)
+static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_matrix *oldtm, text_widget_info *info, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	int fontsize;
@@ -933,8 +933,6 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 {
 	fz_context *ctx = doc->ctx;
 	int found = 0;
-	unsigned char *buf;
-	int bufsize;
 	pdf_lexbuf lbuf;
 	fz_stream *str;
 
@@ -1015,54 +1013,6 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 	return found;
 }
 
-static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *text)
-{
-	fz_context *ctx = doc->ctx;
-	text_widget_info info;
-	pdf_obj *ap, *n;
-	pdf_xobject *form = NULL;
-	fz_buffer *fzbuf = NULL;
-	fz_matrix tm;
-	int has_tm;
-
-	memset(&info, 0, sizeof(info));
-
-	fz_var(info);
-	fz_var(form);
-	fz_var(fzbuf);
-	fz_try(ctx)
-	{
-		get_text_widget_info(doc, obj, &info);
-		ap = pdf_dict_gets(obj, "AP");
-		if (pdf_is_dict(ap))
-		{
-			n = pdf_dict_gets(ap, "N");
-
-			if (pdf_is_stream(doc, pdf_to_num(n), pdf_to_gen(n)))
-			{
-				form = pdf_load_xobject(doc, n);
-
-				/* copy the default resources to the xobject */
-				copy_resources(form->resources, info.dr);
-
-				has_tm = get_matrix(doc, form, info.q, &tm);
-				fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, &info, text);
-				update_marked_content(doc, form, fzbuf);
-			}
-		}
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_xobject(ctx, form);
-		fz_drop_buffer(ctx, fzbuf);
-		font_info_fin(ctx, &info.font_rec);
-	}
-	fz_catch(ctx)
-	{
-		fz_warn(ctx, "update_text_appearance failed");
-	}
-}
-
 static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 {
 	pdf_obj *parent = pdf_dict_gets(obj, "Parent");
@@ -1087,48 +1037,6 @@ static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 	}
 }
 
-static void synthesize_text_widget(pdf_document *doc, pdf_obj *obj)
-{
-	fz_context *ctx = doc->ctx;
-	pdf_obj *ap = NULL;
-	fz_rect rect;
-	pdf_obj *formobj = NULL;
-	pdf_xobject *form = NULL;
-	fz_buffer *fzbuf = NULL;
-
-	fz_var(formobj);
-	fz_var(ap);
-	fz_var(form);
-	fz_var(fzbuf);
-	fz_try(ctx)
-	{
-		rect = pdf_to_rect(ctx, pdf_dict_gets(obj, "Rect"));
-		rect.x1 -= rect.x0;
-		rect.y1 -= rect.y0;
-		rect.x0 = rect.y0 = 0;
-		formobj = pdf_new_xobject(doc, &rect, &fz_identity);
-		form = pdf_load_xobject(doc, formobj);
-		fzbuf = fz_new_buffer(ctx, 0);
-		fz_buffer_printf(ctx, fzbuf, "/Tx BMC EMC");
-		pdf_update_xobject_contents(doc, form, fzbuf);
-
-		ap = pdf_new_dict(ctx, 1);
-		pdf_dict_puts(ap, "N", formobj);
-		pdf_dict_puts(obj, "AP", ap);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, fzbuf);
-		pdf_drop_xobject(ctx, form);
-		pdf_drop_obj(formobj);
-		pdf_drop_obj(ap);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
 static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect *rect)
 {
 	fz_context *ctx = doc->ctx;
@@ -1138,25 +1046,16 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	int rot;
 	pdf_obj *formobj = NULL;
 	pdf_xobject *form = NULL;
-	const char *dn;
+	const char *dn = "N";
+	fz_buffer *fzbuf = NULL;
+	int create_form = 0;
 
 	fz_var(formobj);
 	fz_var(tobj);
 	fz_var(form);
+	fz_var(fzbuf);
 	fz_try(ctx)
 	{
-		pdf_hotspot *hp = &doc->hotspot;
-		if (hp->num == pdf_to_num(obj)
-			&& hp->gen == pdf_to_gen(obj)
-			&& (hp->state & HOTSPOT_POINTER_DOWN))
-		{
-			dn = "D";
-		}
-		else
-		{
-			dn = "N";
-		}
-
 		rot = pdf_to_int(pdf_dict_getp(obj, "MK/R"));
 		*rect = pdf_to_rect(ctx, pdf_dict_gets(obj, "Rect"));
 		rect->x1 -= rect->x0;
@@ -1180,15 +1079,22 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 			pdf_dict_puts(ap, dn, tobj);
 			formobj = tobj;
 			tobj = NULL;
+			create_form = 1;
 		}
 
 		form = pdf_load_xobject(doc, formobj);
+		if (create_form)
+		{
+			fzbuf = fz_new_buffer(ctx, 1);
+			pdf_update_xobject_contents(doc, form, fzbuf);
+		}
 
 		copy_resources(form->resources, get_inheritable(doc, obj, "DR"));
 	}
 	fz_always(ctx)
 	{
 		pdf_drop_obj(tobj);
+		fz_drop_buffer(ctx, fzbuf);
 	}
 	fz_catch(ctx)
 	{
@@ -1197,6 +1103,47 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	}
 
 	return form;
+}
+
+static void update_text_appearance(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	text_widget_info info;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
+	fz_matrix tm;
+	fz_rect rect;
+	int has_tm;
+	char *text = NULL;
+
+	memset(&info, 0, sizeof(info));
+
+	fz_var(info);
+	fz_var(form);
+	fz_var(fzbuf);
+	fz_var(text);
+	fz_try(ctx)
+	{
+		text = pdf_field_getValue(doc, obj);
+		get_text_widget_info(doc, obj, &info);
+		form = load_or_create_form(doc, obj, &rect);
+
+		has_tm = get_matrix(doc, form, info.q, &tm);
+		fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, &info,
+			text?text:"");
+		update_marked_content(doc, form, fzbuf);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, text);
+		pdf_drop_xobject(ctx, form);
+		fz_drop_buffer(ctx, fzbuf);
+		font_info_fin(ctx, &info.font_rec);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "update_text_appearance failed");
+	}
 }
 
 static fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, int stroke, float adj)
@@ -1245,7 +1192,7 @@ static float get_border_width(pdf_obj *obj)
 	return w == 0.0 ? 1.0 : w;
 }
 
-static void update_pushbutton_widget(pdf_document *doc, pdf_obj *obj)
+static void update_pushbutton_appearance(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
 	fz_rect rect;
@@ -1359,10 +1306,10 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 			switch(get_field_type(doc, obj))
 			{
 			case FZ_WIDGET_TYPE_TEXT:
-				synthesize_text_widget(doc, obj);
+				update_text_appearance(doc, obj);
 				break;
 			case FZ_WIDGET_TYPE_PUSHBUTTON:
-				update_pushbutton_widget(doc, obj);
+				update_pushbutton_appearance(doc, obj);
 				break;
 			}
 		}
@@ -1550,8 +1497,8 @@ char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
-	update_text_appearance(doc, field, text);
 	update_text_field_value(doc->ctx, field, text);
+	pdf_field_mark_dirty(doc->ctx, field);
 }
 
 char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field)

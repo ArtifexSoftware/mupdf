@@ -187,7 +187,7 @@ pdf_new_xobject(pdf_document *xref, fz_rect *bbox, fz_matrix *mat)
 
 		form->bbox = *bbox;
 
-		form->matrix = fz_identity;
+		form->matrix = *mat;
 
 		form->isolated = 0;
 		form->knockout = 0;
