@@ -434,7 +434,7 @@ void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
 	grow, but the caller must ensure that no more than 256 bytes are
 	added to the buffer per call.
 */
-void fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...);
+void fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);
 
 struct fz_stream_s
 {

@@ -393,7 +393,7 @@ static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
 		fz_buffer_printf(ctx, fzbuf, " 0 g");
 }
 
-static fz_rect measure_text(pdf_document *doc, font_info *font_rec, fz_matrix *tm, char *text)
+static fz_rect measure_text(pdf_document *doc, font_info *font_rec, const fz_matrix *tm, char *text)
 {
 	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, text, strlen(text));
 
@@ -1046,7 +1046,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	int rot;
 	pdf_obj *formobj = NULL;
 	pdf_xobject *form = NULL;
-	const char *dn = "N";
+	char *dn = "N";
 	fz_buffer *fzbuf = NULL;
 	int create_form = 0;
 

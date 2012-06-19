@@ -174,7 +174,7 @@ void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf)
 }
 
 void
-fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, char *fmt, ...)
+fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
