@@ -364,7 +364,7 @@ pdf_load_page(pdf_document *xref, int number)
 			page->transparency = 1;
 
 		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
-			if (pdf_resources_use_blending(ctx, annot->ap->resources))
+			if (annot->ap && pdf_resources_use_blending(ctx, annot->ap->resources))
 				page->transparency = 1;
 	}
 	fz_catch(ctx)
