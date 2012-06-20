@@ -117,6 +117,14 @@ char *winpassword(pdfapp_t *app, char *filename)
 	return r;
 }
 
+char *wintextinput(pdfapp_t *app, char *inittext)
+{
+	static char buf[256];
+	printf("> [%s] ", inittext);
+	fgets(buf, sizeof buf, stdin);
+	return buf;
+}
+
 /*
  * X11 magic
  */
