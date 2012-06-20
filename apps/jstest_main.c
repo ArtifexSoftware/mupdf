@@ -7,7 +7,7 @@
 
 /*
 	A useful bit of bash script to call this is:
-	for f in ../ghostpcl/tests_private/pdf/forms/v1.3/*.pdf ; do g=${f%.*} ; echo $g ; win32/debug/mujstest-v8.exe -o ../ghostpcl/$g-%d.png -p ../ghostpcl/ $g.mjs ; done
+	for f in ../ghostpcl/tests_private/pdf/forms/v1.3/{*}.pdf ; do g=${f%.*} ; echo $g ; win32/debug/mujstest-v8.exe -o ../ghostpcl/$g-%d.png -p ../ghostpcl/ $g.mjs ; done
 */
 
 static pdfapp_t gapp;
@@ -17,7 +17,7 @@ static char *scriptname;
 static char *output = NULL;
 static char *prefix = NULL;
 static int shotcount = 0;
-static int verbose = 0;
+static int verbosity = 0;
 
 static char getline_buffer[1024];
 
@@ -28,14 +28,12 @@ void winwarn(pdfapp_t *app, char *msg)
 
 void winerror(pdfapp_t *app, char *msg)
 {
-	fprintf(stderr, msg);
+	fprintf(stderr, "%s", msg);
 	exit(1);
 }
 
-static char pd_filename[256] = "The file is encrypted.";
 static char pd_password[256] = "";
 static char td_textinput[1024] = "";
-static int pd_okay = 0;
 
 char *winpassword(pdfapp_t *app, char *filename)
 {
@@ -116,7 +114,7 @@ usage(void)
 {
 	fprintf(stderr, "mujstest: Scriptable tester for mupdf + js\n");
 	fprintf(stderr, "\nSyntax: mujstest -o <filename> [ -p <prefix> ] [-v] <scriptfile>\n");
-	fprintf(stderr, "\n<filename> should sensibly be of the form file-%d.png\n");
+	fprintf(stderr, "\n<filename> should sensibly be of the form file-%%d.png\n");
 	fprintf(stderr, "\n<prefix> is a path prefix to apply to filenames within the script\n");
 	fprintf(stderr, "\n-v    verbose\n");
 	fprintf(stderr, "\nscriptfile contains a list of commands:\n");
@@ -131,7 +129,7 @@ usage(void)
 }
 
 static char *
-getline(FILE *file)
+my_getline(FILE *file)
 {
 	int c;
 	char *d = getline_buffer;
@@ -212,7 +210,7 @@ main(int argc, char *argv[])
 		{
 		case 'o': output = fz_optarg; break;
 		case 'p': prefix = fz_optarg; break;
-		case 'v': verbose ^= 1; break;
+		case 'v': verbosity ^= 1; break;
 		default: usage(); break;
 		}
 	}
@@ -242,10 +240,10 @@ main(int argc, char *argv[])
 
 			do
 			{
-				char *line = getline(script);
+				char *line = my_getline(script);
 				if (line == NULL)
 					continue;
-				if (verbose)
+				if (verbosity)
 					fprintf(stderr, "%s\n", line);
 				if (match(&line, "%"))
 				{
@@ -293,7 +291,7 @@ main(int argc, char *argv[])
 				{
 					float x, y, b;
 					int n;
-					n = sscanf(line, "%f %f %d", &x, &y, &b);
+					n = sscanf(line, "%f %f %f", &x, &y, &b);
 					if (n < 1)
 						x = 0.0f;
 					if (n < 2)
