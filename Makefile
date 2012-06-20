@@ -78,6 +78,7 @@ FITZ_LIB := $(OUT)/libfitz.a
 FITZ_SRC := $(notdir $(wildcard fitz/*.c draw/*.c))
 FITZ_SRC := $(filter-out draw_simple_scale.c, $(FITZ_SRC))
 MUPDF_SRC := $(notdir $(wildcard pdf/*.c))
+MUPDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(MUPDF_SRC))
 MUXPS_SRC := $(notdir $(wildcard xps/*.c))
 MUCBZ_SRC := $(notdir $(wildcard cbz/*.c))
 
