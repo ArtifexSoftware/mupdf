@@ -293,7 +293,7 @@ pdf_js *pdf_new_js(pdf_document *doc)
 				{
 					fzbuf = pdf_load_stream(doc, pdf_to_num(code), pdf_to_gen(code));
 					len = fz_buffer_storage(ctx, fzbuf, &buf);
-					pdf_jsimp_execute_count(js->imp, buf, len);
+					pdf_jsimp_execute_count(js->imp, (char *)buf, len);
 				}
 				fz_always(ctx)
 				{

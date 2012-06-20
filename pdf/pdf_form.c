@@ -145,7 +145,7 @@ static char *get_string_or_stream(pdf_document *doc, pdf_obj *obj)
 		else if (pdf_is_stream(doc, pdf_to_num(obj), pdf_to_gen(obj)))
 		{
 			strmbuf = pdf_load_stream(doc, pdf_to_num(obj), pdf_to_gen(obj));
-			len = fz_buffer_storage(ctx, strmbuf, &buf);
+			len = fz_buffer_storage(ctx, strmbuf, (unsigned char **)&buf);
 		}
 
 		if (buf)
@@ -291,7 +291,7 @@ static void parse_da(fz_context *ctx, char *da, da_info *di)
 	int tok;
 	char *name = NULL;
 	pdf_lexbuf lbuf;
-	fz_stream *str = fz_open_memory(ctx, da, strlen(da));
+	fz_stream *str = fz_open_memory(ctx, (unsigned char *)da, strlen(da));
 
 	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
 	lbuf.size = sizeof(lbuf.scratch);
@@ -373,7 +373,6 @@ static void font_info_fin(fz_context *ctx, font_info *font_rec)
 
 static void get_text_widget_info(pdf_document *doc, pdf_obj *widget, text_widget_info *info)
 {
-	fz_context *ctx = doc->ctx;
 	char *da = pdf_to_str_buf(get_inheritable(doc, widget, "DA"));
 
 	info->dr = get_inheritable(doc, widget, "DR");
@@ -395,7 +394,7 @@ static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
 
 static fz_rect measure_text(pdf_document *doc, font_info *font_rec, const fz_matrix *tm, char *text)
 {
-	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, text, strlen(text));
+	fz_rect bbox = pdf_measure_text(doc->ctx, font_rec->font, (unsigned char *)text, strlen(text));
 
 	bbox.x0 *= font_rec->da_rec.font_size * tm->a;
 	bbox.y0 *= font_rec->da_rec.font_size * tm->d;
@@ -578,7 +577,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 			len ++;
 	}
 
-	stride = pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, room, &count);
+	stride = pdf_text_stride(ctx, splitter->info->font, fontsize, (unsigned char *)text, len, room, &count);
 
 	if (count < len && splitter->retry)
 	{
@@ -590,7 +589,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 		float bestwidth;
 
 		fitwidth = splitter->x +
-			pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, FLT_MAX, &count);
+			pdf_text_stride(ctx, splitter->info->font, fontsize, (unsigned char *)text, len, FLT_MAX, &count);
 		/* FIXME: temporary fiddle factor. Would be better to work in integers */
 		fitwidth *= 1.001f;
 
@@ -614,7 +613,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 
 		/* Try again */
 		room = splitter->unscaled_width - splitter->x;
-		stride = pdf_text_stride(ctx, splitter->info->font, fontsize, text, len, room, &count);
+		stride = pdf_text_stride(ctx, splitter->info->font, fontsize, (unsigned char *)text, len, room, &count);
 	}
 
 	/* This is not the first word on the line. Best to give up on this line and push
@@ -1146,7 +1145,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
-static fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, int stroke, float adj)
+static void fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, int stroke, float adj)
 {
 	switch(pdf_array_len(arr))
 	{
@@ -1604,7 +1603,7 @@ void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 		fzbuf = fz_new_buffer(ctx, 0);
 		fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
-		daobj = pdf_new_string(ctx, buf, len);
+		daobj = pdf_new_string(ctx, (char *)buf, len);
 		pdf_dict_puts(field, "DA", daobj);
 		pdf_field_mark_dirty(ctx, field);
 	}
