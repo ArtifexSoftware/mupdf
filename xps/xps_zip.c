@@ -668,54 +668,9 @@ xps_close_document(xps_document *doc)
 	fz_free(doc->ctx, doc);
 }
 
-/* Document interface wrappers */
-
-static void xps_close_document_shim(fz_document *doc)
+static int
+xps_meta(xps_document *doc, int key, void *ptr, int size)
 {
-	xps_close_document((xps_document*)doc);
-}
-
-static fz_outline *xps_load_outline_shim(fz_document *doc)
-{
-	return xps_load_outline((xps_document*)doc);
-}
-
-static int xps_count_pages_shim(fz_document *doc)
-{
-	return xps_count_pages((xps_document*)doc);
-}
-
-static fz_page *xps_load_page_shim(fz_document *doc, int number)
-{
-	return (fz_page*) xps_load_page((xps_document*)doc, number);
-}
-
-static fz_link *xps_load_links_shim(fz_document *doc, fz_page *page)
-{
-	return xps_load_links((xps_document*)doc, (xps_page*)page);
-}
-
-static fz_rect xps_bound_page_shim(fz_document *doc, fz_page *page)
-{
-	return xps_bound_page((xps_document*)doc, (xps_page*)page);
-}
-
-static void xps_run_page_shim(fz_document *doc, fz_page *page, fz_device *dev, fz_matrix transform, fz_cookie *cookie)
-{
-	xps_run_page((xps_document*)doc, (xps_page*)page, dev, transform, cookie);
-}
-
-static void xps_free_page_shim(fz_document *doc, fz_page *page)
-{
-	xps_free_page((xps_document*)doc, (xps_page*)page);
-}
-
-static int xps_meta(fz_document *doc_, int key, void *ptr, int size)
-{
-	xps_document *doc = (xps_document *)doc_;
-
-	doc = doc;
-
 	switch(key)
 	{
 	case FZ_META_FORMAT_INFO:
@@ -729,15 +684,13 @@ static int xps_meta(fz_document *doc_, int key, void *ptr, int size)
 static void
 xps_init_document(xps_document *doc)
 {
-	doc->super.close = xps_close_document_shim;
-	doc->super.needs_password = NULL;
-	doc->super.authenticate_password = NULL;
-	doc->super.load_outline = xps_load_outline_shim;
-	doc->super.count_pages = xps_count_pages_shim;
-	doc->super.load_page = xps_load_page_shim;
-	doc->super.load_links = xps_load_links_shim;
-	doc->super.bound_page = xps_bound_page_shim;
-	doc->super.run_page = xps_run_page_shim;
-	doc->super.free_page = xps_free_page_shim;
-	doc->super.meta = xps_meta;
+	doc->super.close = (void*)xps_close_document;
+	doc->super.load_outline = (void*)xps_load_outline;
+	doc->super.count_pages = (void*)xps_count_pages;
+	doc->super.load_page = (void*)xps_load_page;
+	doc->super.load_links = (void*)xps_load_links;
+	doc->super.bound_page = (void*)xps_bound_page;
+	doc->super.run_page = (void*)xps_run_page;
+	doc->super.free_page = (void*)xps_free_page;
+	doc->super.meta = (void*)xps_meta;
 }
