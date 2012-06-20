@@ -14,6 +14,7 @@ default: all
 # set a variable that was set on the command line.
 CFLAGS += $(XCFLAGS) -Ifitz -Ipdf -Ixps -Icbz -Iscripts
 LIBS += $(XLIBS) -lfreetype -ljbig2dec -ljpeg -lopenjpeg -lz -lm
+LIBS_V8 = $(LIBS) $(V8LIBS)
 
 include Makerules
 include Makethird
@@ -35,6 +36,7 @@ endif
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
 AR_CMD = $(QUIET_AR) $(AR) cru $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+LINK_V8_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS_V8)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 
 # --- Rules ---
@@ -74,11 +76,14 @@ $(OUT)/%.o : scripts/%.c | $(OUT)
 # --- Fitz, MuPDF, MuXPS and MuCBZ library ---
 
 FITZ_LIB := $(OUT)/libfitz.a
+FITZ_V8_LIB := $(OUT)/libfitzv8.a
 
 FITZ_SRC := $(notdir $(wildcard fitz/*.c draw/*.c))
 FITZ_SRC := $(filter-out draw_simple_scale.c, $(FITZ_SRC))
 MUPDF_SRC := $(notdir $(wildcard pdf/*.c))
 MUPDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(MUPDF_SRC))
+MUPDF_V8_SRC := $(filter-out pdf_js_none, $(MUPDF_SRC))
+MUPDF_V8_SRC := pdf_js.c pdf_jsimp_cpp.c $(MUPDF_V8_SRC)
 MUXPS_SRC := $(notdir $(wildcard xps/*.c))
 MUCBZ_SRC := $(notdir $(wildcard cbz/*.c))
 
@@ -87,7 +92,13 @@ $(FITZ_LIB) : $(addprefix $(OUT)/, $(MUPDF_SRC:%.c=%.o))
 $(FITZ_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
 $(FITZ_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
 
+$(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(FITZ_SRC:%.c=%.o))
+$(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUPDF_V8_SRC:%.c=%.o))
+$(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
+$(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
+
 libs: $(FITZ_LIB) $(THIRD_LIBS)
+libs_v8: libs $(FITZ_V8_LIB)
 
 # --- Generated CMAP and FONT files ---
 
@@ -145,6 +156,22 @@ MUVIEW := $(OUT)/mupdf
 $(MUVIEW) : $(FITZ_LIB) $(THIRD_LIBS)
 $(MUVIEW) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
 	$(LINK_CMD) $(X11_LIBS)
+
+MUVIEW_V8 := $(OUT)/mupdf-v8
+$(MUVIEW_V8) : $(FITZ_V8_LIB) $(THIRD_LIBS)
+$(MUVIEW_V8) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
+	$(LINK_V8_CMD) $(X11_LIBS)
+endif
+
+MUJSTEST_V8 := $(OUT)/mujstest-v8
+$(MUJSTEST_V8) : $(FITZ_V8_LIB) $(THIRD_LIBS)
+$(MUJSTEST_V8) : $(addprefix $(OUT)/, jstest_main.o pdfapp.o)
+	$(LINK_V8_CMD)
+
+ifeq "$(V8_PRESENT)" "1"
+JSTARGETS := $(MUJSTEST_V8) $(FITZ_V8_LIB) $(MUVIEW_V8)
+else
+JSTARGETS :=
 endif
 
 # --- Format man pages ---
@@ -174,7 +201,7 @@ install: $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
 # --- Clean and Default ---
 
-all: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
+all: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY) $(JSTARGETS)
 
 clean:
 	rm -rf $(OUT)
