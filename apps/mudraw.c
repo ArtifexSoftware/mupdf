@@ -22,7 +22,6 @@ static int showtext = 0;
 static int showtime = 0;
 static int showmd5 = 0;
 static int showoutline = 0;
-static int showannotrects = 0;
 static int savealpha = 0;
 static int uselist = 1;
 static int alphabits = 8;
