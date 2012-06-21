@@ -801,8 +801,8 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 			else
 			{
 				tm = fz_identity;
-				tm.e = 2.0;
-				tm.f = 2.0 + fontsize * descent;
+				tm.e = rect.x0;
+				tm.f = rect.y1 - (height+(ascent-descent)*fontsize)/2.0;
 
 				switch(info->q)
 				{
