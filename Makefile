@@ -175,6 +175,8 @@ install: $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
 all: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
+third: $(THIRD_LIBS)
+
 clean:
 	rm -rf $(OUT)
 nuke:
