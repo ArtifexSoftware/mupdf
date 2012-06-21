@@ -7,7 +7,10 @@
 
 /*
 	A useful bit of bash script to call this is:
-	for f in ../ghostpcl/tests_private/pdf/forms/v1.3/{*}.pdf ; do g=${f%.*} ; echo $g ; win32/debug/mujstest-v8.exe -o ../ghostpcl/$g-%d.png -p ../ghostpcl/ $g.mjs ; done
+	for f in ../ghostpcl/tests_private/pdf/forms/v1.3/ *.pdf ; do g=${f%.*} ; echo $g ; win32/debug/mujstest-v8.exe -o $g-%d.png -p ../ghostpcl/ $g.mjs > $g.log 2>&1 ; done
+
+	Remove the space from "/ *.pdf" before running - can't leave that
+	in here, as it causes a warning about a possibly malformed comment.
 */
 
 static pdfapp_t gapp;
@@ -19,7 +22,9 @@ static char *prefix = NULL;
 static int shotcount = 0;
 static int verbosity = 0;
 
-static char getline_buffer[1024];
+#define LONGLINE 4096
+
+static char getline_buffer[LONGLINE];
 
 void winwarn(pdfapp_t *app, char *msg)
 {
@@ -33,7 +38,7 @@ void winerror(pdfapp_t *app, char *msg)
 }
 
 static char pd_password[256] = "";
-static char td_textinput[1024] = "";
+static char td_textinput[LONGLINE] = "";
 
 char *winpassword(pdfapp_t *app, char *filename)
 {
@@ -133,6 +138,7 @@ my_getline(FILE *file)
 {
 	int c;
 	char *d = getline_buffer;
+	int space = sizeof(getline_buffer)-1;
 
 	/* Skip over any prefix of whitespace */
 	do
@@ -149,7 +155,13 @@ my_getline(FILE *file)
 		*d++ = (char)c;
 		c = fgetc(file);
 	}
-	while (c >= 32);
+	while (c >= 32 && space--);
+
+	if (space == 0)
+	{
+		while (c >= 32)
+			c = fgetc(file);
+	}
 
 	*d = 0;
 
@@ -196,6 +208,34 @@ match(char **line, const char *match)
 
 	return 1;
 }
+
+static void unescape_string(char *d, const char *s)
+{
+	char c;
+
+	while (c = *s++)
+	{
+		if (c == '\\')
+		{
+			c = *s++;
+			switch(c)
+			{
+			case 'n':
+				c = '\n';
+				break;
+			case 'r':
+				c = '\r';
+				break;
+			case 't':
+				c = '\t';
+				break;
+			}
+		}
+		*d++ = c;
+	}
+	*d = 0;
+}
+
 
 int
 main(int argc, char *argv[])
@@ -305,7 +345,7 @@ main(int argc, char *argv[])
 				}
 				else if (match(&line, "TEXT"))
 				{
-					strcpy(td_textinput, line);
+					unescape_string(td_textinput, line);
 				}
 			}
 			while (!feof(script));

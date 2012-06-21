@@ -12,6 +12,56 @@
 
 enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
+/*
+	A useful bit of bash script to call this to generate mjs files:
+	for f in tests_private/pdf/forms/v1.3/ *.pdf ; do g=${f%.*} ; echo $g ; ../mupdf.git/win32/debug/mudraw.exe -j $g.mjs $g.pdf ; done
+
+	Remove the space from "/ *.pdf" before running - can't leave that
+	in here, as it causes a warning about a possibly malformed comment.
+*/
+
+static char lorem[] =
+"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum "
+"vehicula augue id est lobortis mollis. Aenean vestibulum metus sed est "
+"gravida non tempus lacus aliquet. Nulla vehicula lobortis tincidunt. "
+"Donec malesuada nisl et lacus condimentum nec tincidunt urna gravida. "
+"Sed dapibus magna eu velit ultrices non rhoncus risus lacinia. Fusce "
+"vitae nulla volutpat elit dictum ornare at eu libero. Maecenas felis "
+"enim, tempor a tincidunt id, commodo consequat lectus.\n"
+"Morbi tincidunt adipiscing lacus eu dignissim. Pellentesque augue elit, "
+"ultrices vitae fermentum et, faucibus et purus. Nam ante libero, lacinia "
+"id tincidunt at, ultricies a lorem. Donec non neque at purus condimentum "
+"eleifend quis sit amet libero. Sed semper, mi ut tempus tincidunt, lacus "
+"eros pellentesque lacus, id vehicula est diam eu quam. Integer tristique "
+"fringilla rhoncus. Phasellus convallis, justo ut mollis viverra, dui odio "
+"euismod ante, nec fringilla nisl mi ac diam.\n"
+"Maecenas mi urna, ornare commodo feugiat id, cursus in massa. Vivamus "
+"augue augue, aliquam at varius eu, venenatis fermentum felis. Sed varius "
+"turpis a felis ultrices quis aliquet nunc tincidunt. Suspendisse posuere "
+"commodo nunc non viverra. Praesent condimentum varius quam, vel "
+"consectetur odio volutpat in. Sed malesuada augue ut lectus commodo porta. "
+"Vivamus eget mauris sit amet diam ultrices sollicitudin. Cras pharetra leo "
+"non elit lacinia vulputate.\n"
+"Donec ac enim justo, ornare scelerisque diam. Ut vel ante at lorem "
+"placerat bibendum ultricies mattis metus. Phasellus in imperdiet odio. "
+"Proin semper lacinia libero, sed rutrum eros blandit non. Duis tincidunt "
+"ligula est, non pellentesque mauris. Aliquam in erat scelerisque lacus "
+"dictum suscipit eget semper magna. Nullam luctus imperdiet risus a "
+"semper.\n"
+"Curabitur sit amet tempor sapien. Quisque et tortor in lacus dictum "
+"pulvinar. Nunc at nisl ut velit vehicula hendrerit. Mauris elementum "
+"sollicitudin leo ac ullamcorper. Proin vel leo nec justo tempus aliquet "
+"nec ut mi. Pellentesque vel nisl id dui hendrerit fermentum nec quis "
+"tortor. Proin eu sem luctus est consequat euismod. Vestibulum ante ipsum "
+"primis in faucibus orci luctus et ultrices posuere cubilia Curae; Fusce "
+"consectetur ultricies nisl ornare dictum. Cras sagittis consectetur lorem "
+"sed posuere. Mauris accumsan laoreet arcu, id molestie lorem faucibus eu. "
+"Vivamus commodo, neque nec imperdiet pretium, lorem metus viverra turpis, "
+"malesuada vulputate justo eros sit amet neque. Nunc quis justo elit, non "
+"rutrum mauris. Maecenas blandit condimentum nibh, nec vulputate orci "
+"pulvinar at. Proin sed arcu vel odio tempus lobortis sed posuere ipsum. Ut "
+"feugiat pellentesque tortor nec ornare.\n";
+
 static char *output = NULL;
 static float resolution = 72;
 static int res_specified = 0;
@@ -39,7 +89,6 @@ static int files = 0;
 
 static char *mujstest_filename = NULL;
 static FILE *mujstest_file = NULL;
-static int mujstest_page = 0;
 static int mujstest_count = 0;
 
 static struct {
@@ -103,6 +152,31 @@ static int isrange(char *s)
 	return 1;
 }
 
+static void escape_string(FILE *out, int len, const char *string)
+{
+	while (len-- && *string)
+	{
+		char c = *string++;
+		switch (c)
+		{
+		case '\n':
+			fputc('\\', out);
+			fputc('n', out);
+			break;
+		case '\r':
+			fputc('\\', out);
+			fputc('r', out);
+			break;
+		case '\t':
+			fputc('\\', out);
+			fputc('t', out);
+			break;
+		default:
+			fputc(c, out);
+		}
+	}
+}
+
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
 	fz_page *page;
@@ -110,6 +184,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_device *dev = NULL;
 	int start;
 	fz_cookie cookie = { 0 };
+	int needshot = 0;
 
 	fz_var(list);
 	fz_var(dev);
@@ -134,13 +209,40 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		if (annot)
 		{
 			fprintf(mujstest_file, "GOTO %d\n", pagenum);
+			needshot = 1;
 		}
 		for (;annot; annot = fz_next_annot(doc, annot))
 		{
 			fz_rect rect = fz_bound_annot(doc, annot);
+			int w = (rect.x1-rect.x0);
+			int h = (rect.y1-rect.y0);
+			int len;
+
+			/* If height is low, assume a single row, and base
+			 * the width off that. */
+			if (h < 10)
+			{
+				w = (w+h-1) / (h ? h : 1);
+				h = 1;
+			}
+			/* Otherwise, if width is low, work off height */
+			else if (w < 10)
+			{
+				h = (w+h-1) / (w ? w : 1);
+				w = 1;
+			}
+			else
+			{
+				w = (w+9)/10;
+				h = (h+9)/10;
+			}
+			len = w*h;
+			if (len < 2)
+				len = 2;
 			fprintf(mujstest_file, "%% %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
-			fprintf(mujstest_file, "TEXT %dTestText\n", ++mujstest_count);
-			fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
+			fprintf(mujstest_file, "TEXT %d ", ++mujstest_count);
+			escape_string(mujstest_file, len-2, lorem);
+			fprintf(mujstest_file, "\nCLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
 		}
 	}
 
@@ -400,11 +502,10 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	fz_flush_warnings(ctx);
 
-	if (mujstest_file && mujstest_page < 0)
+	if (mujstest_file && needshot)
 	{
 		fprintf(mujstest_file, "SCREENSHOT\n");
 	}
-
 
 	if (cookie.errors)
 		errored = 1;
