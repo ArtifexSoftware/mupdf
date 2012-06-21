@@ -556,10 +556,10 @@ pdf_flush_text(pdf_csi *csi)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	fz_text *text;
-	int dofill = 0;
-	int dostroke = 0;
-	int doclip = 0;
-	int doinvisible = 0;
+	int dofill;
+	int dostroke;
+	int doclip;
+	int doinvisible;
 	fz_context *ctx = csi->dev->ctx;
 
 	if (!csi->text)
