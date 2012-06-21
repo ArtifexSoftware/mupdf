@@ -1317,6 +1317,51 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+static void reset_field(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+
+	switch (get_field_type(doc, obj))
+	{
+	case FZ_WIDGET_TYPE_RADIOBUTTON:
+	case FZ_WIDGET_TYPE_CHECKBOX:
+		{
+			pdf_obj *name = NULL;
+
+			fz_var(name);
+			fz_try(ctx)
+			{
+				name = fz_new_name(ctx, "Off");
+				pdf_dict_puts(obj, "AS", name);
+			}
+			fz_always(ctx)
+			{
+				pdf_drop_obj(name);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow(ctx);
+			}
+		}
+		break;
+	default:
+		{
+			pdf_obj *def_val = pdf_dict_gets(obj, "DV");
+
+			if (def_val)
+			{
+				pdf_dict_puts(obj, "V", def_val);
+			}
+			else
+			{
+				pdf_dict_dels(obj, "V");
+			}
+
+			pdf_field_mark_dirty(ctx, obj);
+		}
+	}
+}
+
 static void execute_action(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
@@ -1346,6 +1391,40 @@ static void execute_action(pdf_document *doc, pdf_obj *obj)
 				{
 					fz_rethrow(ctx);
 				}
+			}
+		}
+		else if (!strcmp(type, "ResetForm"))
+		{
+			int flags = pdf_to_int(pdf_dict_gets(a, "Flags"));
+			pdf_obj *affected_fields = pdf_dict_gets(a, "Fields");
+			pdf_obj *all_fields = pdf_dict_getp(doc->trailer, "Root/AcroForm/Fields");
+			int i, n = pdf_array_len(all_fields);
+
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *field = pdf_array_get(all_fields, i);
+				char *name = pdf_to_str_buf(pdf_dict_gets(field, "T"));
+				int j, m = pdf_array_len(affected_fields);
+				int found = 0;
+
+				for (j = 0; j < m && !found; j++)
+				{
+					pdf_obj *tfield = pdf_array_get(affected_fields, j);
+					char *tname;
+
+					/* Elements if the array are either indirect references
+					 * to fields or field names. */
+					tname = pdf_to_str_buf(pdf_is_string(tfield) ? tfield : pdf_dict_gets(tfield, "T"));
+
+					if (!strcmp(tname, name))
+						found = 1;
+				}
+
+				if (flags & 1)
+					found = !found;
+
+				if (found)
+					reset_field(doc, field);
 			}
 		}
 
