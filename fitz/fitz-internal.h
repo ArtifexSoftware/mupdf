@@ -436,6 +436,13 @@ void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
 */
 void fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);
 
+/*
+	fz_buffer_printf: print a string formatted as a pdf string to a buffer.
+	The buffer will grow.
+*/
+void
+fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
+
 struct fz_stream_s
 {
 	fz_context *ctx;

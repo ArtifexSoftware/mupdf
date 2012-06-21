@@ -187,3 +187,79 @@ fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
 
 	va_end(args);
 }
+
+void
+fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
+{
+	int len = 2;
+	const char *s = text;
+	char *d;
+	char c;
+
+	while (c = *s++)
+	{
+		switch (c)
+		{
+		case '\n':
+		case '\r':
+		case '\t':
+		case '\b':
+		case '\f':
+		case '(':
+		case ')':
+		case '\\':
+			len++;
+			break;
+		}
+		len++;
+	}
+
+	while(buffer->cap - buffer->len < len)
+		fz_grow_buffer(ctx, buffer);
+
+	s = text;
+	d = (char *)buffer->data + buffer->len;
+	*d++ = '(';
+	while (c = *s++)
+	{
+		switch (c)
+		{
+		case '\n':
+			*d++ = '\\';
+			*d++ = 'n';
+			break;
+		case '\r':
+			*d++ = '\\';
+			*d++ = 'r';
+			break;
+		case '\t':
+			*d++ = '\\';
+			*d++ = 't';
+			break;
+		case '\b':
+			*d++ = '\\';
+			*d++ = 'b';
+			break;
+		case '\f':
+			*d++ = '\\';
+			*d++ = 'f';
+			break;
+		case '(':
+			*d++ = '\\';
+			*d++ = '(';
+			break;
+		case ')':
+			*d++ = '\\';
+			*d++ = ')';
+			break;
+		case '\\':
+			*d++ = '\\';
+			*d++ = '\\';
+			break;
+		default:
+			*d++ = c;
+		}
+	}
+	*d++ = ')';
+	buffer->len += len;
+}

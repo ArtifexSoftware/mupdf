@@ -78,7 +78,7 @@ static const char *fmt_n = "n\n";
 static const char *fmt_BT = "BT\n";
 static const char *fmt_Tm = "%1.2f %1.2f %1.2f %1.2f %1.2f %1.2f Tm\n";
 static const char *fmt_Td = "%f %f Td\n";
-static const char *fmt_Tj = "(%s) Tj\n";
+static const char *fmt_Tj = " Tj\n";
 static const char *fmt_ET = "ET\n";
 static const char *fmt_Q = "Q\n";
 static const char *fmt_EMC = "EMC\n";
@@ -422,7 +422,8 @@ static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, fz_rect *clip, f
 	if (tm)
 		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 
-	fz_buffer_printf(ctx, fzbuf, fmt_Tj, text);
+	fz_buffer_cat_pdf_string(ctx, fzbuf, text);
+	fz_buffer_printf(ctx, fzbuf, fmt_Tj);
 	fz_buffer_printf(ctx, fzbuf, fmt_ET);
 	fz_buffer_printf(ctx, fzbuf, fmt_Q);
 }
