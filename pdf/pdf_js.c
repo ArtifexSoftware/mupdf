@@ -243,7 +243,20 @@ static void preload_helpers(pdf_js *js)
 		"border.d = \"Dashed\";\n"
 		"border.b = \"Beveled\";\n"
 		"border.i = \"Inset\";\n"
-		"border.u = \"Underline\";\n");
+		"border.u = \"Underline\";\n"
+		"var color = new Array();\n"
+		"color.transparent = [ \"T\" ];\n"
+		"color.black = [ \"G\", 0];\n"
+		"color.white = [ \"G\", 1];\n"
+		"color.red = [ \"RGB\", 1,0,0 ];\n"
+		"color.green = [ \"RGB\", 0,1,0 ];\n"
+		"color.blue = [ \"RGB\", 0,0,1 ];\n"
+		"color.cyan = [ \"CMYK\", 1,0,0,0 ];\n"
+		"color.magenta = [ \"CMYK\", 0,1,0,0 ];\n"
+		"color.yellow = [ \"CMYK\", 0,0,1,0 ];\n"
+		"color.dkGray = [ \"G\", 0.25];\n"
+		"color.gray = [ \"G\", 0.5];\n"
+		"color.ltGray = [ \"G\", 0.75];\n");
 }
 
 pdf_js *pdf_new_js(pdf_document *doc)
