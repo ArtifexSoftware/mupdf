@@ -1432,23 +1432,53 @@ static void execute_action(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+static void check_off(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_obj *off = NULL;
+
+	fz_var(off);
+	fz_try(ctx);
+	{
+		off = fz_new_name(ctx, "Off");
+		pdf_dict_puts(obj, "AS", off);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(off);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *as;
+	fz_context *ctx = doc->ctx;
+	pdf_obj *as = pdf_dict_gets(obj, "AS");
+	int ff = get_field_flags(doc, obj);
 
-	as = pdf_dict_gets(obj, "AS");
-
-	if (strcmp(pdf_to_name(as), "Off"))
+	if (as && strcmp(pdf_to_name(as), "Off"))
 	{
-		/* "as" neither missing nor set to Off. Set it to Off. */
-		pdf_obj *off = fz_new_name(doc->ctx, "Off");
-		pdf_dict_puts(obj, "AS", off);
-		pdf_drop_obj(off);
+		/* "as" neither missing nor set to Off. Set it to Off, unless
+		 * this is a non-toggle-off radio button. */
+		if ((ff & (Ff_Pushbutton|Ff_NoToggleToOff|Ff_Radio)) != (Ff_NoToggleToOff|Ff_Radio))
+			check_off(ctx, obj);
 	}
 	else
 	{
 	    pdf_obj *ap, *n, *key;
 		int len, i;
+
+		/* For radio buttons, first turn off all buttons in the group */
+		if ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio)
+		{
+			pdf_obj *kids = pdf_dict_getp(obj, "Parent/Kids");
+			int i, n = pdf_array_len(kids);
+
+			for (i = 0; i < n; i++)
+				check_off(ctx, pdf_array_get(kids, i));
+		}
 
 		ap = pdf_dict_gets(obj, "AP");
 		n = pdf_dict_gets(ap, "N");
