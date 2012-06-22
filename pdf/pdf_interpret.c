@@ -2697,7 +2697,7 @@ static void
 pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 {
 	fz_context *ctx = csi->dev->ctx;
-	pdf_lexbuf_large *buf;
+	pdf_lexbuf *buf;
 	int save_in_text;
 
 	fz_var(buf);
@@ -2706,18 +2706,19 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 		return;
 
 	buf = fz_malloc(ctx, sizeof(*buf)); /* we must be re-entrant for type3 fonts */
-	buf->base.size = PDF_LEXBUF_LARGE;
+	pdf_lexbuf_init(ctx, buf, PDF_LEXBUF_SMALL);
 	save_in_text = csi->in_text;
 	csi->in_text = 0;
 	fz_try(ctx)
 	{
-		pdf_run_stream(csi, rdb, file, &buf->base);
+		pdf_run_stream(csi, rdb, file, buf);
 	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "Content stream parsing error - rendering truncated");
 	}
 	csi->in_text = save_in_text;
+	pdf_lexbuf_fin(buf);
 	fz_free(ctx, buf);
 }
 

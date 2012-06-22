@@ -840,6 +840,8 @@ pdf_close_document(pdf_document *xref)
 
 	fz_empty_store(ctx);
 
+	pdf_lexbuf_fin(&xref->lexbuf.base);
+
 	fz_free(ctx, xref);
 }
 
@@ -1270,7 +1272,7 @@ pdf_new_document(fz_stream *file)
 	doc->super.meta = (void*)pdf_meta;
 	doc->super.interact = (void*)pdf_interact;
 
-	doc->lexbuf.base.size = PDF_LEXBUF_LARGE;
+	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(file);
 	doc->ctx = ctx;
 

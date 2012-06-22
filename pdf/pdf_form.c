@@ -293,8 +293,7 @@ static void parse_da(fz_context *ctx, char *da, da_info *di)
 	pdf_lexbuf lbuf;
 	fz_stream *str = fz_open_memory(ctx, (unsigned char *)da, strlen(da));
 
-	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
-	lbuf.size = sizeof(lbuf.scratch);
+	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
 
 	fz_var(str);
 	fz_var(name);
@@ -347,6 +346,7 @@ static void parse_da(fz_context *ctx, char *da, da_info *di)
 	{
 		fz_free(ctx, name);
 		fz_close(str);
+		pdf_lexbuf_fin(&lbuf);
 	}
 	fz_catch(ctx)
 	{
@@ -852,8 +852,7 @@ static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffe
 	int            len;
 	fz_buffer *newbuf = NULL;
 
-	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
-	lbuf.size = sizeof(lbuf.scratch);
+	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
 
 	fz_var(str_outer);
 	fz_var(str_inner);
@@ -922,6 +921,7 @@ static void update_marked_content(pdf_document *doc, pdf_xobject *form, fz_buffe
 		fz_close(str_outer);
 		fz_close(str_inner);
 		fz_drop_buffer(ctx, newbuf);
+		pdf_lexbuf_fin(&lbuf);
 	}
 	fz_catch(ctx)
 	{
@@ -938,8 +938,7 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 
 	str = pdf_open_stream(doc, pdf_to_num(form->contents), pdf_to_gen(form->contents));
 
-	memset(lbuf.scratch, 0, sizeof(lbuf.scratch));
-	lbuf.size = sizeof(lbuf.scratch);
+	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
 
 	fz_try(ctx)
 	{
@@ -1004,6 +1003,7 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 	fz_always(ctx)
 	{
 		fz_close(str);
+		pdf_lexbuf_fin(&lbuf);
 	}
 	fz_catch(ctx)
 	{
