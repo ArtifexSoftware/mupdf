@@ -6,11 +6,16 @@
 enum
 {
 	Ff_Multiline = 1 << (13-1),
+	Ff_Password = 1 << (14-1),
 	Ff_NoToggleToOff = 1 << (15-1),
-	Ff_Radio         = 1 << (16-1),
-	Ff_Pushbutton    = 1 << (17-1),
-	Ff_RadioInUnison = 1 << (26-1),
-	Ff_Combo         = 1 << (18-1)
+	Ff_Radio = 1 << (16-1),
+	Ff_Pushbutton = 1 << (17-1),
+	Ff_Combo = 1 << (18-1),
+	Ff_FileSelect = 1 << (21-1),
+	Ff_DoNotSpellCheck = 1 << (23-1),
+	Ff_DoNotScroll = 1 << (24-1),
+	Ff_Comb = 1 << (25-1),
+	Ff_RadioInUnison = 1 << (26-1)
 };
 
 enum
@@ -62,6 +67,8 @@ typedef struct text_widget_info_s
 	font_info font_rec;
 	int q;
 	int multiline;
+	int comb;
+	int max_len;
 } text_widget_info;
 
 static const char *fmt_re = "%f %f %f %f re\n";
@@ -374,10 +381,19 @@ static void font_info_fin(fz_context *ctx, font_info *font_rec)
 static void get_text_widget_info(pdf_document *doc, pdf_obj *widget, text_widget_info *info)
 {
 	char *da = pdf_to_str_buf(get_inheritable(doc, widget, "DA"));
+	int ff = get_field_flags(doc, widget);
+	pdf_obj *ml = get_inheritable(doc, widget, "MaxLen");
 
 	info->dr = get_inheritable(doc, widget, "DR");
 	info->q = pdf_to_int(get_inheritable(doc, widget, "Q"));
-	info->multiline = (get_field_flags(doc, widget) & Ff_Multiline) != 0;
+	info->multiline = (ff & Ff_Multiline) != 0;
+	info->comb = (ff & (Ff_Multiline|Ff_Password|Ff_FileSelect|Ff_Comb)) == Ff_Comb;
+
+	if (ml == NULL)
+		info->comb = 0;
+	else
+		info->max_len = pdf_to_int(ml);
+
 	get_font_info(doc, info->dr, da, &info->font_rec);
 }
 
@@ -679,6 +695,7 @@ static void fzbuf_print_text_end(fz_context *ctx, fz_buffer *fzbuf)
 {
 	fz_buffer_printf(ctx, fzbuf, fmt_ET);
 	fz_buffer_printf(ctx, fzbuf, fmt_Q);
+	fz_buffer_printf(ctx, fzbuf, fmt_EMC);
 }
 
 static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, float y, char *text, int count)
@@ -790,6 +807,26 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 			fzbuf_print_text_start(ctx, fzbuf, &rect, &info->font_rec, &tm);
 
 			fz_buffer_cat(ctx, fzbuf, fztmp);
+
+			fzbuf_print_text_end(ctx, fzbuf);
+		}
+		else if (info->comb)
+		{
+			int i, n = min((int)strlen(text), info->max_len);
+			float comb_width = width/info->max_len;
+			float char_width = pdf_text_stride(ctx, info->font_rec.font, fontsize, (unsigned char *)"M", 1, FLT_MAX, NULL);
+			float init_skip = (comb_width - char_width)/2.0;
+
+			tm = fz_identity;
+			tm.e = rect.x0;
+			tm.f = rect.y1 - (height+(ascent-descent)*fontsize)/2.0;
+
+			fzbuf = fz_new_buffer(ctx, 0);
+
+			fzbuf_print_text_start(ctx, fzbuf, &rect, &info->font_rec, &tm);
+
+			for (i = 0; i < n; i++)
+				fzbuf_print_text_word(ctx, fzbuf, i == 0 ? init_skip : comb_width, 0.0, text+i, 1);
 
 			fzbuf_print_text_end(ctx, fzbuf);
 		}

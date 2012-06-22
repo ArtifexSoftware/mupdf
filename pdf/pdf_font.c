@@ -1202,7 +1202,8 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 		x -= h.w * fontsize / 1000.0;
 	}
 
-	*count = i;
+	if (count)
+		*count = i;
 
 	return x;
 }
