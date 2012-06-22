@@ -716,7 +716,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 	fz_context *ctx = doc->ctx;
 	int fontsize;
 	int variable;
-	float height, width;
+	float height, width, full_width;
 	fz_buffer *fzbuf = NULL;
 	fz_buffer *fztmp = NULL;
 	fz_rect rect;
@@ -733,6 +733,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 
 	height = rect.y1 - rect.y0;
 	width = rect.x1 - rect.x0;
+	full_width = bbox->x1 - bbox->x0;
 
 	fz_var(fzbuf);
 	fz_var(fztmp);
@@ -813,7 +814,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 		else if (info->comb)
 		{
 			int i, n = min((int)strlen(text), info->max_len);
-			float comb_width = width/info->max_len;
+			float comb_width = full_width/info->max_len;
 			float char_width = pdf_text_stride(ctx, info->font_rec.font, fontsize, (unsigned char *)"M", 1, FLT_MAX, NULL);
 			float init_skip = (comb_width - char_width)/2.0;
 
@@ -1052,11 +1053,12 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 
 static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 {
-	pdf_obj *parent = pdf_dict_gets(obj, "Parent");
 	pdf_obj *sobj = NULL;
 
-	if (parent)
-		obj = parent;
+	/* obj is an annotation. If it isn't also a field then the parent is
+	 * the associated field */
+	if (!pdf_dict_gets(obj, "FT"))
+		obj = pdf_dict_gets(obj, "Parent");
 
 	fz_var(sobj);
 	fz_try(ctx)
