@@ -196,7 +196,7 @@ fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
 	char *d;
 	char c;
 
-	while (c = *s++)
+	while ((c = *s++) != 0)
 	{
 		switch (c)
 		{
@@ -220,7 +220,7 @@ fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
 	s = text;
 	d = (char *)buffer->data + buffer->len;
 	*d++ = '(';
-	while (c = *s++)
+	while ((c = *s++) != 0)
 	{
 		switch (c)
 		{

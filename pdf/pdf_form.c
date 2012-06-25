@@ -823,7 +823,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 		}
 		else if (info->comb)
 		{
-			int i, n = min((int)strlen(text), info->max_len);
+			int i, n = MIN((int)strlen(text), info->max_len);
 			float comb_width = full_width/info->max_len;
 			float char_width = pdf_text_stride(ctx, info->font_rec.font, fontsize, (unsigned char *)"M", 1, FLT_MAX, NULL);
 			float init_skip = (comb_width - char_width)/2.0;
