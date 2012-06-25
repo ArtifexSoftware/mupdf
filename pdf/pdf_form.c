@@ -212,6 +212,16 @@ static int get_field_type(pdf_document *doc, pdf_obj *obj)
 		return -1;
 }
 
+/* Find the point in a field hierarchy where all descendents
+ * share the same name */
+static pdf_obj *find_head_of_field_group(pdf_obj *obj)
+{
+	if (obj == NULL || pdf_dict_gets(obj, "T"))
+		return obj;
+	else
+		return find_head_of_field_group(pdf_dict_gets(obj, "Parent"));
+}
+
 static void pdf_field_mark_dirty(fz_context *ctx, pdf_obj *field)
 {
 	if (!pdf_dict_gets(field, "Dirty"))
@@ -1054,11 +1064,13 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 {
 	pdf_obj *sobj = NULL;
+	pdf_obj *grp;
 
-	/* obj is an annotation. If it isn't also a field then the parent is
-	 * the associated field */
-	if (!pdf_dict_gets(obj, "FT"))
-		obj = pdf_dict_gets(obj, "Parent");
+	/* All fields of the same name should be updated, so
+	 * set the value at the head of the group */
+	grp = find_head_of_field_group(obj);
+	if (grp)
+		obj = grp;
 
 	fz_var(sobj);
 	fz_try(ctx)
@@ -1492,6 +1504,52 @@ static void check_off(fz_context *ctx, pdf_obj *obj)
 	}
 }
 
+static void set_check(fz_context *ctx, pdf_obj *chk, char *name)
+{
+	pdf_obj *n = pdf_dict_getp(chk, "AP/N");
+	pdf_obj *val = NULL;
+
+	fz_var(val);
+	fz_try(ctx)
+	{
+		/* If name is a possible value of this check
+		* box then use it, otherwise use "Off" */
+		if (pdf_dict_gets(n, name))
+			val = fz_new_name(ctx, name);
+		else
+			val = fz_new_name(ctx, "Off");
+
+		pdf_dict_puts(chk, "AS", val);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(val);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+/* Set the values of all fields in a group defined by a node
+ * in the hierarchy */
+static void set_check_grp(fz_context *ctx, pdf_obj *grp, char *val)
+{
+	pdf_obj *kids = pdf_dict_gets(grp, "Kids");
+
+	if (kids == NULL)
+	{
+		set_check(ctx, grp, val);
+	}
+	else
+	{
+		int i, n = pdf_array_len(kids);
+
+		for (i = 0; i < n; i++)
+			set_check_grp(ctx, pdf_array_get(kids, i), val);
+	}
+}
+
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
@@ -1507,21 +1565,10 @@ static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 	}
 	else
 	{
-	    pdf_obj *ap, *n, *key;
+	    pdf_obj *n, *key = NULL;
 		int len, i;
 
-		/* For radio buttons, first turn off all buttons in the group */
-		if ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio)
-		{
-			pdf_obj *kids = pdf_dict_getp(obj, "Parent/Kids");
-			int i, n = pdf_array_len(kids);
-
-			for (i = 0; i < n; i++)
-				check_off(ctx, pdf_array_get(kids, i));
-		}
-
-		ap = pdf_dict_gets(obj, "AP");
-		n = pdf_dict_gets(ap, "N");
+		n = pdf_dict_getp(obj, "AP/N");
 
 		/* Look for a key that isn't "Off" */
 		len = pdf_dict_len(n);
@@ -1529,10 +1576,37 @@ static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 		{
 			key = pdf_dict_get_key(n, i);
 			if (pdf_is_name(key) && strcmp(pdf_to_name(key), "Off"))
-			{
-				pdf_dict_puts(obj, "AS", key);
 				break;
-			}
+		}
+
+		/* If we found no alternative value to Off then we have no value to use */
+		if (!key)
+			return;
+
+		/* For radio buttons, first turn off all buttons in the group and
+		 * then set the one that was clicked */
+		if ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio)
+		{
+			pdf_obj *kids = pdf_dict_getp(obj, "Parent/Kids");
+			int i, n = pdf_array_len(kids);
+
+			for (i = 0; i < n; i++)
+				check_off(ctx, pdf_array_get(kids, i));
+
+			pdf_dict_puts(obj, "AS", key);
+		}
+		else
+		{
+			/* For check boxes, locate the node of the field hierarchy below
+			 * which all fields share a name with the clicked one, and set
+			 * all to the same value. This may cause the group to act like
+			 * radio buttons, if each have distinct "On" values */
+			pdf_obj *grp = find_head_of_field_group(obj);
+
+			if (grp)
+				set_check_grp(doc->ctx, grp, pdf_to_name(key));
+			else
+				set_check(doc->ctx, obj, pdf_to_name(key));
 		}
 	}
 
