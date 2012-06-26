@@ -25,9 +25,16 @@ V8LIB_CHOICE := debug
 endif
 
 # If you are building for 32bit linux use V8_ARCH=ia32
+# MacOSX has a 64bit kernel, but a 32 bit userspace.
+ifeq "$(OS)" "Darwin"
+V8_ARCH ?= ia32
+V8_DIR ?= out-mac
+else
 V8_ARCH ?= x64
+V8_DIR ?= out
+endif
 
-V8LIBS = -L$(V8_DIR)/out/$(V8_ARCH).$(V8LIB_CHOICE)/obj.target/tools/gyp
+V8LIBS = -L$(V8_DIR)/$(V8_DIR)/$(V8_ARCH).$(V8LIB_CHOICE)/obj.target/tools/gyp
 
 V8_PRESENT := 1
 else

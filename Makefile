@@ -201,7 +201,9 @@ install: $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
 # --- Clean and Default ---
 
-all: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY) $(JSTARGETS)
+all: all-nojs $(JSTARGETS)
+
+all-nojs: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
 clean:
 	rm -rf $(OUT)
