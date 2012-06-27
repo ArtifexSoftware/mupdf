@@ -590,14 +590,6 @@ pdf_flush_text(pdf_csi *csi)
 		if (doinvisible)
 			fz_ignore_text(csi->dev, text, gstate->ctm);
 
-		if (doclip)
-		{
-			if (csi->accumulate < 2)
-				gstate->clip_depth++;
-			fz_clip_text(csi->dev, text, gstate->ctm, csi->accumulate);
-			csi->accumulate = 2;
-		}
-
 		if (dofill)
 		{
 			switch (gstate->fill.kind)
@@ -654,6 +646,14 @@ pdf_flush_text(pdf_csi *csi)
 				}
 				break;
 			}
+		}
+
+		if (doclip)
+		{
+			if (csi->accumulate < 2)
+				gstate->clip_depth++;
+			fz_clip_text(csi->dev, text, gstate->ctm, csi->accumulate);
+			csi->accumulate = 2;
 		}
 
 		pdf_end_group(csi);
