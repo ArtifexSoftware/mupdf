@@ -1156,7 +1156,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	return form;
 }
 
-static void update_text_appearance(pdf_document *doc, pdf_obj *obj)
+static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *eventValue)
 {
 	fz_context *ctx = doc->ctx;
 	text_widget_info info;
@@ -1175,7 +1175,11 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj)
 	fz_var(text);
 	fz_try(ctx)
 	{
-		text = pdf_field_getValue(doc, obj);
+		if (eventValue)
+			text = fz_strdup(ctx, eventValue);
+		else
+			text = pdf_field_getValue(doc, obj);
+
 		get_text_widget_info(doc, obj, &info);
 		form = load_or_create_form(doc, obj, &rect);
 
@@ -1348,27 +1352,6 @@ static void update_pushbutton_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
-void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
-{
-	if (!pdf_dict_gets(obj, "AP") || pdf_dict_gets(obj, "Dirty"))
-	{
-		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
-		{
-			switch(get_field_type(doc, obj))
-			{
-			case FZ_WIDGET_TYPE_TEXT:
-				update_text_appearance(doc, obj);
-				break;
-			case FZ_WIDGET_TYPE_PUSHBUTTON:
-				update_pushbutton_appearance(doc, obj);
-				break;
-			}
-		}
-
-		pdf_dict_dels(obj, "Dirty");
-	}
-}
-
 static void reset_field(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
@@ -1414,13 +1397,10 @@ static void reset_field(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
-static void execute_action(pdf_document *doc, pdf_obj *obj)
+static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_obj *a;
-
-	a = pdf_dict_gets(obj, "A");
-	while (a)
+	if (a)
 	{
 		char *type = pdf_to_name(pdf_dict_gets(a, "S"));
 
@@ -1479,7 +1459,53 @@ static void execute_action(pdf_document *doc, pdf_obj *obj)
 					reset_field(doc, field);
 			}
 		}
+	}
+}
 
+void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
+{
+	if (!pdf_dict_gets(obj, "AP") || pdf_dict_gets(obj, "Dirty"))
+	{
+		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
+		{
+			switch(get_field_type(doc, obj))
+			{
+			case FZ_WIDGET_TYPE_TEXT:
+				{
+					pdf_obj *formatting = pdf_dict_getp(obj, "AA/F");
+					if (formatting)
+					{
+						/* Apply formatting */
+						execute_action(doc, obj, formatting);
+						/* Update appearance from JS event.value */
+						update_text_appearance(doc, obj, pdf_js_getEventValue(doc->js));
+					}
+					else
+					{
+						/* Update appearance from field value */
+						update_text_appearance(doc, obj, NULL);
+					}
+				}
+				break;
+			case FZ_WIDGET_TYPE_PUSHBUTTON:
+				update_pushbutton_appearance(doc, obj);
+				break;
+			}
+		}
+
+		pdf_dict_dels(obj, "Dirty");
+	}
+}
+
+static void execute_action_chain(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *a;
+
+	a = pdf_dict_gets(obj, "A");
+	while (a)
+	{
+		execute_action(doc, obj, a);
 		a = pdf_dict_gets(a, "Next");
 	}
 }
@@ -1670,7 +1696,7 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 						break;
 					}
 
-					execute_action(doc, annot->obj);
+					execute_action_chain(doc, annot->obj);
 				}
 				break;
 			}

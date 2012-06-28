@@ -4,6 +4,7 @@
 typedef struct pdf_js_event_s
 {
 	pdf_obj *target;
+	char *value;
 } pdf_js_event;
 
 struct pdf_js_s
@@ -170,6 +171,23 @@ static void event_setTarget(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	fz_warn(js->doc->ctx, "Unexpected call to event_setTarget");
 }
 
+static pdf_jsimp_obj *event_getValue(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	pdf_js_event *e = (pdf_js_event *)obj;
+
+	return pdf_jsimp_fromString(js->imp, js->event.value);
+}
+
+static void event_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	fz_free(ctx, js->event.value);
+	js->event.value = NULL;
+	js->event.value = fz_strdup(ctx, pdf_jsimp_toString(js->imp, val));
+}
+
 static pdf_jsimp_obj *doc_getEvent(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
@@ -222,6 +240,7 @@ static void declare_dom(pdf_js *js)
 	/* Create the event type */
 	js->eventtype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addproperty(imp, js->eventtype, "target", event_getTarget, event_setTarget);
+	pdf_jsimp_addproperty(imp, js->eventtype, "value", event_getValue, event_setValue);
 
 	/* Create the field type */
 	js->fieldtype = pdf_jsimp_new_type(imp, NULL);
@@ -256,7 +275,84 @@ static void preload_helpers(pdf_js *js)
 		"color.yellow = [ \"CMYK\", 0,0,1,0 ];\n"
 		"color.dkGray = [ \"G\", 0.25];\n"
 		"color.gray = [ \"G\", 0.5];\n"
-		"color.ltGray = [ \"G\", 0.75];\n");
+		"color.ltGray = [ \"G\", 0.75];\n"
+		"\n"
+		"function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyPrepend)\n"
+		"{\n"
+		"	var val = event.value;\n"
+		"	var fracpart;\n"
+		"	var intpart;\n"
+		"	var point = sepStyle&2 ? ',' : '.';\n"
+		"	var separator = sepStyle&2 ? '.' : ',';\n"
+		"\n"
+		"	if (/^\\D*\\./.test(val))\n"
+		"		val = '0'+val;\n"
+		"\n"
+		"	var groups = val.match(/\\d+/g);\n"
+		"\n"
+		"	switch (groups.length)\n"
+		"	{\n"
+		"	case 0:\n"
+		"		return;\n"
+		"	case 1:\n"
+		"		fracpart = '';\n"
+		"		intpart = groups[0];\n"
+		"		break;\n"
+		"	default:\n"
+		"		fracpart = groups.pop();\n"
+		"		intpart = groups.join('');\n"
+		"		break;\n"
+		"	}\n"
+		"\n"
+		"	// Remove leading zeros\n"
+		"	intpart = intpart.replace(/^0*/,'');\n"
+		"	if (!intpart)\n"
+		"		intpart = '0';\n"
+		"\n"
+		"	if ((sepStyle & 1) == 0)\n"
+		"	{\n"
+		"		// Add the thousands sepearators: pad to length multiple of 3 with zeros,\n"
+		"		// split into 3s, join with separator, and remove the leading zeros\n"
+		"		intpart = new Array(2-(intpart.length+2)%3+1).join('0') + intpart;\n"
+		"		intpart = intpart.match(/.../g).join(separator).replace(/^0*/,'');\n"
+		"	}\n"
+		"\n"
+		"	if (!intpart)\n"
+		"		intpart = '0';\n"
+		"\n"
+		"	// Adjust fractional part to correct number of decimal places\n"
+		"	fracpart += new Array(nDec+1).join('0');\n"
+		"	fracpart = fracpart.substr(0,nDec);\n"
+		"\n"
+		"	if (fracpart)\n"
+		"		intpart += point+fracpart;\n"
+		"\n"
+		"	if (bCurrencyPrepend)\n"
+		"		intpart = strCurrency+intpart;\n"
+		"	else\n"
+		"		intpart += strCurrency;\n"
+		"\n"
+		"	if (/-/.test(val))\n"
+		"	{\n"
+		"		switch (negStyle)\n"
+		"		{\n"
+		"		case 0:\n"
+		"			intpart = '-'+intpart;\n"
+		"			break;\n"
+		"		case 1:\n"
+		"			break;\n"
+		"		case 2:\n"
+		"		case 3:\n"
+		"			intpart = '('+intpart+')';\n"
+		"			break;\n"
+		"		}\n"
+		"	}\n"
+		"\n"
+		"	if (negStyle&1)\n"
+		"		event.target.textColor = /-/.text(val) ? color.red : color.black;\n"
+		"\n"
+		"	event.value = intpart;\n"
+		"}\n");
 }
 
 pdf_js *pdf_new_js(pdf_document *doc)
@@ -338,6 +434,7 @@ void pdf_drop_js(pdf_js *js)
 	if (js)
 	{
 		fz_context *ctx = js->doc->ctx;
+		fz_free(ctx, js->event.value);
 		pdf_jsimp_drop_type(js->imp, js->fieldtype);
 		pdf_jsimp_drop_type(js->imp, js->doctype);
 		pdf_drop_jsimp(js->imp);
@@ -348,7 +445,21 @@ void pdf_drop_js(pdf_js *js)
 void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
 {
 	if (js)
+	{
+		fz_context *ctx = js->doc->ctx;
+		char *val = pdf_field_getValue(js->doc, target);
+
 		js->event.target = target;
+
+		fz_free(ctx, js->event.value);
+		js->event.value = NULL;
+		js->event.value = fz_strdup(ctx, val?val:"");
+	}
+}
+
+char *pdf_js_getEventValue(pdf_js *js)
+{
+	return js ? js->event.value : NULL;
 }
 
 void pdf_js_execute(pdf_js *js, char *code)

@@ -17,6 +17,11 @@ void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
 {
 }
 
+char *pdf_js_getEventValue(pdf_js *js)
+{
+	return "";
+}
+
 void pdf_js_execute(pdf_js *js, char *code)
 {
 }
