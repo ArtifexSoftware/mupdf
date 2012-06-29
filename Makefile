@@ -28,15 +28,17 @@ THIRD_LIBS += $(ZLIB_LIB)
 ifeq "$(verbose)" ""
 QUIET_AR = @ echo ' ' ' ' AR $@ ;
 QUIET_CC = @ echo ' ' ' ' CC $@ ;
+QUIET_CXX = @ echo ' ' ' ' CXX $@ ;
 QUIET_GEN = @ echo ' ' ' ' GEN $@ ;
 QUIET_LINK = @ echo ' ' ' ' LINK $@ ;
 QUIET_MKDIR = @ echo ' ' ' ' MKDIR $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
+CXX_CMD = $(QUIET_CXX) $(CXX) $(CFLAGS) -o $@ -c $<
 AR_CMD = $(QUIET_AR) $(AR) cru $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-LINK_V8_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS_V8)
+LINK_V8_CMD = $(QUIET_LINK) $(CXX) $(LDFLAGS) -o $@ $^ $(LIBS_V8)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 
 # --- Rules ---
@@ -62,6 +64,8 @@ $(OUT)/%.o : draw/%.c $(FITZ_HDR) | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : pdf/%.c $(MUPDF_HDR) | $(OUT)
 	$(CC_CMD)
+$(OUT)/%.o : pdf/%.cpp $(MUPDF_HDR) | $(OUT)
+	$(CXX_CMD)
 $(OUT)/%.o : xps/%.c $(MUXPS_HDR) | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : cbz/%.c $(MUCBZ_HDR) | $(OUT)
@@ -80,10 +84,10 @@ FITZ_V8_LIB := $(OUT)/libfitzv8.a
 
 FITZ_SRC := $(notdir $(wildcard fitz/*.c draw/*.c))
 FITZ_SRC := $(filter-out draw_simple_scale.c, $(FITZ_SRC))
-MUPDF_SRC := $(notdir $(wildcard pdf/*.c))
-MUPDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(MUPDF_SRC))
-MUPDF_V8_SRC := $(filter-out pdf_js_none, $(MUPDF_SRC))
-MUPDF_V8_SRC := pdf_js.c pdf_jsimp_cpp.c $(MUPDF_V8_SRC)
+MUPDF_ALL_SRC := $(notdir $(wildcard pdf/*.c))
+MUPDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(MUPDF_ALL_SRC))
+MUPDF_V8_SRC := $(filter-out pdf_js_none.c, $(MUPDF_ALL_SRC))
+MUPDF_V8_CPP_SRC := $(notdir $(wildcard pdf/*.cpp))
 MUXPS_SRC := $(notdir $(wildcard xps/*.c))
 MUCBZ_SRC := $(notdir $(wildcard cbz/*.c))
 
@@ -94,6 +98,7 @@ $(FITZ_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
 
 $(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(FITZ_SRC:%.c=%.o))
 $(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUPDF_V8_SRC:%.c=%.o))
+$(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUPDF_V8_CPP_SRC:%.cpp=%.o))
 $(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
 $(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
 

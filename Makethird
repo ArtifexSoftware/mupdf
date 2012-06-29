@@ -9,7 +9,7 @@ JBIG2DEC_DIR := $(wildcard thirdparty/jbig2dec*)
 JPEG_DIR := $(wildcard thirdparty/jpeg*)
 OPENJPEG_DIR := $(wildcard thirdparty/openjpeg*/libopenjpeg)
 ZLIB_DIR := $(wildcard thirdparty/zlib*)
-V8_DIR := $(wildcard thirdparty/v8*/)
+V8_DIR := $(wildcard thirdparty/v8*)
 
 # --- V8 ---
 
@@ -28,13 +28,11 @@ endif
 # MacOSX has a 64bit kernel, but a 32 bit userspace.
 ifeq "$(OS)" "Darwin"
 V8_ARCH ?= ia32
-V8_DIR ?= out-mac
+V8LIBS = -L$(V8_DIR)/out-mac/$(V8_ARCH).$(V8LIB_CHOICE)/ -lv8_base -lv8_snapshot
 else
 V8_ARCH ?= x64
-V8_DIR ?= out
+V8LIBS = -L$(V8_DIR)/out/$(V8_ARCH).$(V8LIB_CHOICE)/obj.target/tools/gyp -lv8_base -lv8_snapshot -lpthread
 endif
-
-V8LIBS = -L$(V8_DIR)/$(V8_DIR)/$(V8_ARCH).$(V8LIB_CHOICE)/obj.target/tools/gyp
 
 V8_PRESENT := 1
 else
