@@ -150,6 +150,7 @@ my_getline(FILE *file)
 	if (c < 0)
 		return NULL;
 
+	/* Read the line in */
 	do
 	{
 		*d++ = (char)c;
@@ -157,6 +158,7 @@ my_getline(FILE *file)
 	}
 	while (c >= 32 && space--);
 
+	/* If we ran out of space, skip the rest of the line */
 	if (space == 0)
 	{
 		while (c >= 32)
@@ -181,6 +183,11 @@ match(char **line, const char *match)
 
 	while (*s == *match)
 	{
+		if (*s == 0)
+		{
+			*line = s;
+			return 1;
+		}
 		s++;
 		match++;
 	}
@@ -284,7 +291,7 @@ main(int argc, char *argv[])
 				if (line == NULL)
 					continue;
 				if (verbosity)
-					fprintf(stderr, "%s\n", line);
+					fprintf(stderr, "'%s'\n", line);
 				if (match(&line, "%"))
 				{
 					/* Comment */
@@ -346,6 +353,10 @@ main(int argc, char *argv[])
 				else if (match(&line, "TEXT"))
 				{
 					unescape_string(td_textinput, line);
+				}
+				else
+				{
+					fprintf(stderr, "Unmatched: %s\n", line);
 				}
 			}
 			while (!feof(script));
