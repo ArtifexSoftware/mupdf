@@ -201,31 +201,53 @@ static void doc_setEvent(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	fz_warn(js->doc->ctx, "Unexpected call to doc_setEvent");
 }
 
+static pdf_obj *find_field(pdf_obj *dict, char *name, int len)
+{
+	pdf_obj *field;
+
+	int i, n = pdf_array_len(dict);
+
+	for (i = 0; i < n; i++)
+	{
+		char *part;
+
+		field = pdf_array_get(dict, i);
+		part = pdf_to_str_buf(pdf_dict_gets(field, "T"));
+		if (strlen(part) == len && !memcmp(part, name, len))
+			break;
+	}
+
+	return i < n ? field : NULL;
+}
+
 static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
 {
 	pdf_js  *js = (pdf_js *)jsctx;
-	pdf_obj *field;
-	int      n, i;
-	char    *name;
+	pdf_obj *arr = js->form;
+	pdf_obj *dict = NULL;
+	int      len;
+	char    *name, *dot;
 
 	if (argc != 1)
 		return NULL;
 
+	/* Process the fully qualified field name which has
+	 * the partial names delimited by '.' */
 	name = pdf_jsimp_toString(js->imp, args[0]);
+	/* Pretend there was a preceding '.' to simplify the loop */
+	dot = name - 1;
 
-	n = pdf_array_len(js->form);
-
-	for (i = 0; i < n; i++)
+	while (dot && arr)
 	{
-		pdf_obj *t;
-		field = pdf_array_get(js->form, i);
-		t = pdf_dict_gets(field, "T");
-		if (!strcmp(name, pdf_to_str_buf(t)))
-			break;
+		name = dot + 1;
+		dot = strchr(name, '.');
+		len = dot ? dot - name : strlen(name);
+		dict = find_field(arr, name, len);
+		if (dot)
+			arr = pdf_dict_gets(dict, "Kids");
 	}
 
-	return (i < n) ? pdf_jsimp_new_obj(js->imp, js->fieldtype, field)
-				   : NULL;
+	return dict ? pdf_jsimp_new_obj(js->imp, js->fieldtype, dict) : NULL;
 }
 
 static void declare_dom(pdf_js *js)
@@ -352,6 +374,59 @@ static void preload_helpers(pdf_js *js)
 		"		event.target.textColor = /-/.text(val) ? color.red : color.black;\n"
 		"\n"
 		"	event.value = intpart;\n"
+		"}\n"
+		"\n"
+		"function AFSimple_Calculate(op, list)\n"
+		"{\n"
+		"	var res;\n"
+		"\n"
+		"	switch (op)\n"
+		"	{\n"
+		"		case 'SUM':\n"
+		"			res = 0;\n"
+		"			break;\n"
+		"		case 'PRD':\n"
+		"			res = 1;\n"
+		"			break;\n"
+		"		case 'AVG':\n"
+		"			res = 0;\n"
+		"			break;\n"
+		"	}\n"
+		"\n"
+		"	if (typeof list == 'string')\n"
+		"		list = list.split(/ *, */);\n"
+		"\n"
+		"	for (var i = 0; i < list.length; i++)\n"
+		"	{\n"
+		"		var field = getField(list[i]);\n"
+		"		var value = Number(field.value);\n"
+		"\n"
+		"		switch (op)\n"
+		"		{\n"
+		"			case 'SUM':\n"
+		"				res += value;\n"
+		"				break;\n"
+		"			case 'PRD':\n"
+		"				res *= value;\n"
+		"				break;\n"
+		"			case 'AVG':\n"
+		"				res += value;\n"
+		"				break;\n"
+		"			case 'MIN':\n"
+		"				if (i == 0 || value < res)\n"
+		"					res = value;\n"
+		"				break;\n"
+		"			case 'MAX':\n"
+		"				if (i == 0 || value > res)\n"
+		"					res = value;\n"
+		"				break;\n"
+		"		}\n"
+		"	}\n"
+		"\n"
+		"	if (op == 'AVG')\n"
+		"		res /= list.length;\n"
+		"\n"
+		"	event.value = res;\n"
 		"}\n");
 }
 

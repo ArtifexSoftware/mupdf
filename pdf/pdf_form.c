@@ -1743,9 +1743,35 @@ char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 	return get_string_or_stream(doc, get_inheritable(doc, field, "V"));
 }
 
+static void recalculate(pdf_document *doc)
+{
+	pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
+
+	if (co)
+	{
+		int i, n = pdf_array_len(co);
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *field = pdf_array_get(co, i);
+			pdf_obj *calc = pdf_dict_getp(field, "AA/C");
+
+			if (calc)
+			{
+				execute_action(doc, field, calc);
+				/* A calculate action, updates event.value. We need
+				 * to place the value in the field */
+				update_text_field_value(doc->ctx, field, pdf_js_getEventValue(doc->js));
+				pdf_field_mark_dirty(doc->ctx, field);
+			}
+		}
+	}
+}
+
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
 	update_text_field_value(doc->ctx, field, text);
+	recalculate(doc);
 	pdf_field_mark_dirty(doc->ctx, field);
 }
 
