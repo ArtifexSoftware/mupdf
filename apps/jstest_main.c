@@ -326,7 +326,10 @@ main(int argc, char *argv[])
 					char text[1024];
 
 					sprintf(text, output, ++shotcount);
-					fz_write_png(ctx, gapp.image, text, 0);
+					if (strstr(text, ".pgm") || strstr(text, ".ppm") || strstr(text, ".pnm"))
+						fz_write_pnm(ctx, gapp.image, text);
+					else
+						fz_write_png(ctx, gapp.image, text, 0);
 				}
 				else if (match(&line, "RESIZE"))
 				{
