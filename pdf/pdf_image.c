@@ -77,6 +77,7 @@ pdf_cmp_image_key(void *k0_, void *k1_)
 	return k0->image == k1->image && k0->factor == k1->factor;
 }
 
+#ifndef NDEBUG
 static void
 pdf_debug_image(void *key_)
 {
@@ -84,6 +85,7 @@ pdf_debug_image(void *key_)
 
 	printf("(image %d x %d sf=%d) ", key->image->w, key->image->h, key->factor);
 }
+#endif
 
 static fz_store_type pdf_image_store_type =
 {
@@ -91,7 +93,9 @@ static fz_store_type pdf_image_store_type =
 	pdf_keep_image_key,
 	pdf_drop_image_key,
 	pdf_cmp_image_key,
+#ifndef NDEBUG
 	pdf_debug_image
+#endif
 };
 
 static fz_pixmap *

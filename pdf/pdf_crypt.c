@@ -822,6 +822,7 @@ pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int n
 	return chain;
 }
 
+#ifndef NDEBUG
 void pdf_print_crypt(pdf_crypt *crypt)
 {
 	int i;
@@ -845,3 +846,4 @@ void pdf_print_crypt(pdf_crypt *crypt)
 
 	printf("}\n");
 }
+#endif

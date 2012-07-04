@@ -1144,6 +1144,7 @@ pdf_load_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 	return fontdesc;
 }
 
+#ifndef NDEBUG
 void
 pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
@@ -1175,3 +1176,4 @@ pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc)
 		printf("\t}\n");
 	}
 }
+#endif

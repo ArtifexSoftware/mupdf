@@ -117,6 +117,7 @@ struct ps_stack_s
 	int sp;
 };
 
+#ifndef NDEBUG
 void
 pdf_debug_ps_stack(ps_stack *st)
 {
@@ -147,6 +148,7 @@ pdf_debug_ps_stack(ps_stack *st)
 	printf("\n");
 
 }
+#endif
 
 static void
 ps_init_stack(ps_stack *st)
@@ -1495,6 +1497,7 @@ pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, flo
  * Debugging prints
  */
 
+#ifndef NDEBUG
 static void
 pdf_debug_indent(char *prefix, int level, char *suffix)
 {
@@ -1710,3 +1713,4 @@ pdf_debug_function(pdf_function *func)
 {
 	pdf_debug_function_imp(func, 0);
 }
+#endif
