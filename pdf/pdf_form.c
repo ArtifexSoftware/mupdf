@@ -606,6 +606,10 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 
 	stride = pdf_text_stride(ctx, splitter->info->font, fontsize, (unsigned char *)text, len, room, &count);
 
+	/* If not a single char fits although the line is empty, then force one char */
+	if (count == 0 && splitter->x == 0.0)
+		stride = pdf_text_stride(ctx, splitter->info->font, fontsize, (unsigned char *)text, 1, FLT_MAX, &count);
+
 	if (count < len && splitter->retry)
 	{
 		/* The word didn't fit and we are in retry mode. Work out the
