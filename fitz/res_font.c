@@ -6,6 +6,9 @@
 
 #define MAX_BBOX_TABLE_SIZE 4096
 
+/* 20 degrees */
+#define SHEAR 0.36397f
+
 static void fz_drop_freetype(fz_context *ctx);
 
 static fz_font *
@@ -398,7 +401,7 @@ fz_render_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, int a
 	trm = fz_adjust_ft_glyph_width(ctx, font, gid, trm);
 
 	if (font->ft_italic)
-		trm = fz_concat(fz_shear(0.3f, 0), trm);
+		trm = fz_concat(fz_shear(SHEAR, 0), trm);
 
 	/*
 	Freetype mutilates complex glyphs if they are loaded
@@ -471,7 +474,7 @@ retry_unhinted:
 
 	if (font->ft_bold)
 	{
-		float strength = fz_matrix_expansion(trm) * 0.04f;
+		float strength = fz_matrix_expansion(trm) * 0.02f;
 		FT_Outline_Embolden(&face->glyph->outline, strength * 64);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 32, -strength * 32);
 	}
@@ -507,7 +510,7 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix tr
 	trm = fz_adjust_ft_glyph_width(ctx, font, gid, trm);
 
 	if (font->ft_italic)
-		trm = fz_concat(fz_shear(0.3f, 0), trm);
+		trm = fz_concat(fz_shear(SHEAR, 0), trm);
 
 	m.xx = trm.a * 64; /* should be 65536 */
 	m.yx = trm.b * 64;
@@ -614,7 +617,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm)
 	trm = fz_adjust_ft_glyph_width(ctx, font, gid, trm);
 
 	if (font->ft_italic)
-		trm = fz_concat(fz_shear(0.3f, 0), trm);
+		trm = fz_concat(fz_shear(SHEAR, 0), trm);
 
 	m.xx = trm.a * 64; /* should be 65536 */
 	m.yx = trm.b * 64;
