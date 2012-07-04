@@ -1631,7 +1631,7 @@ typedef struct fz_text_page_s fz_text_page;
 /*
 	fz_text_sheet: A text sheet contains a list of distinct text styles
 	used on a page (or a series of pages).
-*/ 
+*/
 struct fz_text_sheet_s
 {
 	int maxid;
@@ -1641,7 +1641,7 @@ struct fz_text_sheet_s
 /*
 	fz_text_style: A text style contains details of a distinct text style
 	used on a page.
-*/ 
+*/
 struct fz_text_style_s
 {
 	fz_text_style *next;
@@ -1656,7 +1656,7 @@ struct fz_text_style_s
 /*
 	fz_text_page: A text page is a list of blocks of text, together with
 	an overall bounding box.
-*/ 
+*/
 struct fz_text_page_s
 {
 	fz_rect mediabox;
@@ -1668,7 +1668,7 @@ struct fz_text_page_s
 	fz_text_block: A text block is a list of lines of text. In typical
 	cases this may correspond to a paragraph or a column of text. A
 	collection of blocks makes up a page.
-*/ 
+*/
 struct fz_text_block_s
 {
 	fz_rect bbox;
@@ -1681,7 +1681,7 @@ struct fz_text_block_s
 	(or very similar) baseline. In typical cases this should correspond
 	(as expected) to complete lines of text. A collection of lines makes
 	up a block.
-*/ 
+*/
 struct fz_text_line_s
 {
 	fz_rect bbox;
@@ -1696,7 +1696,7 @@ struct fz_text_line_s
 	enough to represent a complete line. In cases where multiple
 	font styles are used (for example italics), then a line will be
 	broken down into a series of spans.
-*/ 
+*/
 struct fz_text_span_s
 {
 	fz_rect bbox;
@@ -1708,7 +1708,7 @@ struct fz_text_span_s
 /*
 	fz_text_char: A text char is a unicode character and the bounding
 	box with which it appears on the page.
-*/ 
+*/
 struct fz_text_char_s
 {
 	fz_rect bbox;
@@ -1755,22 +1755,22 @@ void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
 /*
 	fz_print_text_sheet: Output a text sheet to a file as CSS.
-*/ 
+*/
 void fz_print_text_sheet(fz_context *ctx, FILE *out, fz_text_sheet *sheet);
 
 /*
 	fz_print_text_page_html: Output a page to a file in HTML format.
-*/ 
+*/
 void fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page);
 
 /*
 	fz_print_text_page_xml: Output a page to a file in XML format.
-*/ 
+*/
 void fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page);
 
 /*
 	fz_print_text_page: Output a page to a file in UTF-8 format.
-*/ 
+*/
 void fz_print_text_page(fz_context *ctx, FILE *out, fz_text_page *page);
 
 /*
@@ -1965,7 +1965,7 @@ enum {
 		gotor.new_window: If true, the destination should open in a
 		new window.
 
-	For FZ_LINK_URI:		
+	For FZ_LINK_URI:
 
 		uri.uri: A UTF-8 encoded URI to launch.
 
