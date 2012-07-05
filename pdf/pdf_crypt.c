@@ -191,7 +191,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 			pdf_free_crypt(ctx, crypt);
 			fz_throw(ctx, "invalid encryption key length");
 		}
-		if (crypt->length > 256)
+		if (crypt->length < 0 || crypt->length > 256)
 		{
 			pdf_free_crypt(ctx, crypt);
 			fz_throw(ctx, "invalid encryption key length");
@@ -312,6 +312,13 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 		cf->length = cf->length * 8;
 
 	if ((cf->length % 8) != 0)
+		fz_throw(ctx, "invalid key length: %d", cf->length);
+
+	if ((crypt->r == 1 || crypt->r == 2 || crypt->r == 4) &&
+		(cf->length < 0 || cf->length > 32))
+		fz_throw(ctx, "invalid key length: %d", cf->length);
+	if (crypt->r == 5 &&
+		(cf->length != 128 && cf->length != 192 && cf->length == 256))
 		fz_throw(ctx, "invalid key length: %d", cf->length);
 }
 
