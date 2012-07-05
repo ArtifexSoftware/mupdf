@@ -89,7 +89,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_warn(ctx, "encryption dictionary missing revision value, guessing...");
 		if (crypt->v < 2)
 			crypt->r = 2;
-		else if (crypt->v == 2 || crypt->v == 3)
+		else if (crypt->v == 2)
 			crypt->r = 3;
 		else if (crypt->v == 4)
 			crypt->r = 4;
