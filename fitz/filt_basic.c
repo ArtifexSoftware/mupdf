@@ -21,7 +21,7 @@ static int
 read_null(fz_stream *stm, unsigned char *buf, int len)
 {
 	struct null_filter *state = stm->state;
-	int amount = MIN(len, state->remain);
+	int amount = fz_mini(len, state->remain);
 	int n;
 
 	fz_seek(state->chain, state->pos, 0);
@@ -46,6 +46,8 @@ fz_open_null(fz_stream *chain, int len, int offset)
 	struct null_filter *state;
 	fz_context *ctx = chain->ctx;
 
+	if (len < 0)
+		len = 0;
 	fz_try(ctx)
 	{
 		state = fz_malloc_struct(ctx, struct null_filter);
@@ -350,7 +352,11 @@ read_a85d(fz_stream *stm, unsigned char *buf, int len)
 			case 0:
 				break;
 			case 1:
-				fz_throw(stm->ctx, "partial final byte in a85d");
+				/* Specifically illegal in the spec, but adobe
+				 * and gs both cope. See normal_87.pdf for a
+				 * case where this matters. */
+				fz_warn(stm->ctx, "partial final byte in a85d");
+				break;
 			case 2:
 				word = word * (85 * 85 * 85) + 0xffffff;
 				state->bp[0] = word >> 24;

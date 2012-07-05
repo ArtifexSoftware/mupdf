@@ -87,8 +87,8 @@ static void retainpages(int argc, char **argv)
 			if (spage > epage)
 				page = spage, spage = epage, epage = page;
 
-			spage = CLAMP(spage, 1, pagecount);
-			epage = CLAMP(epage, 1, pagecount);
+			spage = fz_clampi(spage, 1, pagecount);
+			epage = fz_clampi(epage, 1, pagecount);
 
 			for (page = spage; page <= epage; page++)
 			{
@@ -123,8 +123,9 @@ static void retainpages(int argc, char **argv)
 		pdf_obj *names = pdf_new_dict(ctx, 1);
 		pdf_obj *dests = pdf_new_dict(ctx, 1);
 		pdf_obj *names_list = pdf_new_array(ctx, 32);
+		int len = pdf_dict_len(olddests);
 
-		for (i = 0; i < pdf_dict_len(olddests); i++)
+		for (i = 0; i < len; i++)
 		{
 			pdf_obj *key = pdf_dict_get_key(olddests, i);
 			pdf_obj *val = pdf_dict_get_val(olddests, i);

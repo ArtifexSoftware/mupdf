@@ -210,6 +210,8 @@ all: all-nojs $(JSTARGETS)
 
 all-nojs: $(THIRD_LIBS) $(FITZ_LIB) $(MUVIEW) $(MUDRAW) $(MUBUSY)
 
+third: $(THIRD_LIBS)
+
 clean:
 	rm -rf $(OUT)
 nuke:

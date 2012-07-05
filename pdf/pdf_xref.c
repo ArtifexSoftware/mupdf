@@ -36,7 +36,7 @@ pdf_read_start_xref(pdf_document *xref)
 
 	xref->file_size = fz_tell(xref->file);
 
-	t = MAX(0, xref->file_size - (int)sizeof buf);
+	t = fz_maxi(0, xref->file_size - (int)sizeof buf);
 	fz_seek(xref->file, t, 0);
 
 	n = fz_read(xref->file, buf, sizeof buf);

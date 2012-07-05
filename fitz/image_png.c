@@ -192,7 +192,7 @@ png_deinterlace(struct info *info, int *passw, int *passh, int *passofs)
 
 	for (p = 0; p < 7; p++)
 	{
-	  unsigned char *sp = info->samples + (unsigned int)(passofs[p]);
+		unsigned char *sp = info->samples + (unsigned int)(passofs[p]);
 		int w = passw[p];
 		int h = passh[p];
 

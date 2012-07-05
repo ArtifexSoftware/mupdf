@@ -31,6 +31,7 @@ static inline int getcomponent(unsigned char *line, int x, int bpc)
 	case 2: return (line[x >> 2] >> ( ( 3 - (x & 3) ) << 1 ) ) & 3;
 	case 4: return (line[x >> 1] >> ( ( 1 - (x & 1) ) << 2 ) ) & 15;
 	case 8: return line[x];
+	case 16: return (line[x<<1]<<8)+line[(x<<1)+1];
 	}
 	return 0;
 }
@@ -43,6 +44,7 @@ static inline void putcomponent(unsigned char *buf, int x, int bpc, int value)
 	case 2: buf[x >> 2] |= value << ((3 - (x & 3)) << 1); break;
 	case 4: buf[x >> 1] |= value << ((1 - (x & 1)) << 2); break;
 	case 8: buf[x] = value; break;
+	case 16: buf[x<<1] = value>>8; buf[(x<<1)+1] = value; break;
 	}
 }
 
@@ -50,9 +52,9 @@ static inline int paeth(int a, int b, int c)
 {
 	/* The definitions of ac and bc are correct, not a typo. */
 	int ac = b - c, bc = a - c, abcc = ac + bc;
-	int pa = ABS(ac);
-	int pb = ABS(bc);
-	int pc = ABS(abcc);
+	int pa = fz_absi(ac);
+	int pb = fz_absi(bc);
+	int pc = fz_absi(abcc);
 	return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
 }
 
@@ -61,9 +63,11 @@ fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in, int le
 {
 	int left[MAXC];
 	int i, k;
+	const int mask = (1 << state->bpc)-1;
 
 	for (k = 0; k < state->colors; k++)
 		left[k] = 0;
+	memset(out, 0, state->stride);
 
 	for (i = 0; i < state->columns; i++)
 	{
@@ -71,7 +75,7 @@ fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in, int le
 		{
 			int a = getcomponent(in, i * state->colors + k, state->bpc);
 			int b = a + left[k];
-			int c = b % (1 << state->bpc);
+			int c = b & mask;
 			putcomponent(out, i * state->colors + k, state->bpc, c);
 			left[k] = c;
 		}

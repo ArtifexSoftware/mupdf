@@ -175,8 +175,18 @@ static int lookup_mre_code(char *name)
 static void
 pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 {
+	char buf[256], *comma = NULL;
 	unsigned char *data;
 	unsigned int len;
+
+	if (strchr(fontname, ','))
+	{
+		fz_strlcpy(buf, fontname, sizeof buf);
+		comma = strchr(buf, ',');
+		if (comma)
+			*comma++ = 0;
+		fontname = buf;
+	}
 
 	data = pdf_lookup_builtin_font(fontname, &len);
 	if (!data)
@@ -187,6 +197,14 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 
 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
 		fontdesc->flags |= PDF_FD_SYMBOLIC;
+
+	if (comma)
+	{
+		if (strstr(comma, "Italic"))
+			fontdesc->font->ft_italic = 1;
+		if (strstr(comma, "Bold"))
+			fontdesc->font->ft_bold = 1;
+	}
 }
 
 static void
@@ -742,7 +760,7 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 				fz_throw(ctx, "cid font is missing info");
 
 			obj = pdf_dict_gets(cidinfo, "Registry");
-			tmplen = MIN(sizeof tmpstr - 1, pdf_to_str_len(obj));
+			tmplen = fz_mini(sizeof tmpstr - 1, pdf_to_str_len(obj));
 			memcpy(tmpstr, pdf_to_str_buf(obj), tmplen);
 			tmpstr[tmplen] = '\0';
 			fz_strlcpy(collection, tmpstr, sizeof collection);
@@ -750,7 +768,7 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 			fz_strlcat(collection, "-", sizeof collection);
 
 			obj = pdf_dict_gets(cidinfo, "Ordering");
-			tmplen = MIN(sizeof tmpstr - 1, pdf_to_str_len(obj));
+			tmplen = fz_mini(sizeof tmpstr - 1, pdf_to_str_len(obj));
 			memcpy(tmpstr, pdf_to_str_buf(obj), tmplen);
 			tmpstr[tmplen] = '\0';
 			fz_strlcat(collection, tmpstr, sizeof collection);

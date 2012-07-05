@@ -415,16 +415,12 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 
 			annot->next = NULL;
 
-
-			if (annot)
+			if (!head)
+				head = tail = annot;
+			else
 			{
-				if (!head)
-					head = tail = annot;
-				else
-				{
-					tail->next = annot;
-					tail = annot;
-				}
+				tail->next = annot;
+				tail = annot;
 			}
 		}
 	}

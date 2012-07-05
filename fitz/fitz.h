@@ -40,12 +40,6 @@
 
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
 
-#define ABS(x) ( (x) < 0 ? -(x) : (x) )
-#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#define CLAMP(x,a,b) ( (x) > (b) ? (b) : ( (x) < (a) ? (a) : (x) ) )
-#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
-
 /*
 	Some differences in libc can be smoothed over
 */
@@ -125,6 +119,63 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define __printflike(fmtarg, firstvararg)
 #endif
 #endif
+
+/*
+	Some standard math functions, done as static inlines for speed.
+	People with compilers that do not adequately implement inlines may
+	like to reimplement these using macros.
+*/
+static inline float fz_abs(float f)
+{
+	return (f < 0 ? -f : f);
+}
+
+static inline int fz_absi(int i)
+{
+	return (i < 0 ? -i : i);
+}
+
+static inline float fz_min(float a, float b)
+{
+	return (a < b ? a : b);
+}
+
+static inline int fz_mini(int a, int b)
+{
+	return (a < b ? a : b);
+}
+
+static inline float fz_max(float a, float b)
+{
+	return (a > b ? a : b);
+}
+
+static inline int fz_maxi(int a, int b)
+{
+	return (a > b ? a : b);
+}
+
+static inline float fz_clamp(float f, float min, float max)
+{
+	return (f > min ? (f < max ? f : max) : min);
+}
+
+static inline int fz_clampi(int i, float min, float max)
+{
+	return (i > min ? (i < max ? i : max) : min);
+}
+
+static inline double fz_clampd(double d, double min, double max)
+{
+	return (d > min ? (d < max ? d : max) : min);
+}
+
+static inline void *fz_clampp(void *p, void *min, void *max)
+{
+	return (p > min ? (p < max ? p : max) : min);
+}
+
+#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
 
 /*
 	Contexts

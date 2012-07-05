@@ -199,7 +199,7 @@ fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval)
 		for (k = 0; k < n; k++)
 		{
 			int value = (add[k] + (((p[k] << 8) * mul[k]) >> 8)) >> 8;
-			p[k] = CLAMP(value, 0, 255);
+			p[k] = fz_clampi(value, 0, 255);
 		}
 		p += n + 1;
 	}
@@ -212,7 +212,7 @@ fz_decode_tile(fz_pixmap *pix, float *decode)
 	int mul[FZ_MAX_COLORS];
 	unsigned char *p = pix->samples;
 	int len = pix->w * pix->h;
-	int n = MAX(1, pix->n - 1);
+	int n = fz_maxi(1, pix->n - 1);
 	int needed;
 	int k;
 
@@ -234,7 +234,7 @@ fz_decode_tile(fz_pixmap *pix, float *decode)
 		for (k = 0; k < n; k++)
 		{
 			int value = add[k] + fz_mul255(p[k], mul[k]);
-			p[k] = CLAMP(value, 0, 255);
+			p[k] = fz_clampi(value, 0, 255);
 		}
 		p += pix->n;
 	}

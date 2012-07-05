@@ -632,7 +632,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 		vstretchwidth = splitter->width * (splitter->max_lines + 1) * splitter->fontsize
 			/ splitter->height;
 
-		bestwidth = MIN(fitwidth, MIN(hstretchwidth, vstretchwidth));
+		bestwidth = fz_min(fitwidth, fz_min(hstretchwidth, vstretchwidth));
 
 		if (bestwidth == vstretchwidth)
 			splitter->max_lines ++;
@@ -827,7 +827,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, fz_rect *bbox, fz_ma
 		}
 		else if (info->comb)
 		{
-			int i, n = MIN((int)strlen(text), info->max_len);
+			int i, n = fz_mini((int)strlen(text), info->max_len);
 			float comb_width = full_width/info->max_len;
 			float char_width = pdf_text_stride(ctx, info->font_rec.font, fontsize, (unsigned char *)"M", 1, FLT_MAX, NULL);
 			float init_skip = (comb_width - char_width)/2.0;
