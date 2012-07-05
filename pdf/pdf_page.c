@@ -161,7 +161,7 @@ pdf_load_page_tree(pdf_document *xref)
 
 	if (!pdf_is_dict(pages))
 		fz_throw(ctx, "missing page tree");
-	if (!pdf_is_int(count))
+	if (!pdf_is_int(count) || pdf_to_int(count) < 0)
 		fz_throw(ctx, "missing page count");
 
 	xref->page_cap = pdf_to_int(count);
