@@ -343,12 +343,12 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		if (imagemask)
 			bpc = 1;
 
-		if (w == 0)
-			fz_throw(ctx, "image width is zero");
-		if (h == 0)
-			fz_throw(ctx, "image height is zero");
-		if (bpc == 0)
-			fz_throw(ctx, "image depth is zero");
+		if (w <= 0)
+			fz_throw(ctx, "image width is zero (or less)");
+		if (h <= 0)
+			fz_throw(ctx, "image height is zero (or less)");
+		if (bpc <= 0)
+			fz_throw(ctx, "image depth is zero (or less)");
 		if (bpc > 16)
 			fz_throw(ctx, "image depth is too large: %d", bpc);
 		if (w > (1 << 16))
