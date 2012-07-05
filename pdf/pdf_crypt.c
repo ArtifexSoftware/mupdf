@@ -79,80 +79,6 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_throw(ctx, "unknown encryption version");
 	}
 
-	crypt->length = 40;
-	if (crypt->v == 2 || crypt->v == 4)
-	{
-		obj = pdf_dict_gets(dict, "Length");
-		if (pdf_is_int(obj))
-			crypt->length = pdf_to_int(obj);
-
-		/* work-around for pdf generators that assume length is in bytes */
-		if (crypt->length < 40)
-			crypt->length = crypt->length * 8;
-
-		if (crypt->length % 8 != 0)
-		{
-			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "invalid encryption key length");
-		}
-		if (crypt->length > 256)
-		{
-			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "invalid encryption key length");
-		}
-	}
-
-	if (crypt->v == 5)
-		crypt->length = 256;
-
-	if (crypt->v == 1 || crypt->v == 2)
-	{
-		crypt->stmf.method = PDF_CRYPT_RC4;
-		crypt->stmf.length = crypt->length;
-
-		crypt->strf.method = PDF_CRYPT_RC4;
-		crypt->strf.length = crypt->length;
-	}
-
-	if (crypt->v == 4 || crypt->v == 5)
-	{
-		crypt->stmf.method = PDF_CRYPT_NONE;
-		crypt->stmf.length = crypt->length;
-
-		crypt->strf.method = PDF_CRYPT_NONE;
-		crypt->strf.length = crypt->length;
-
-		obj = pdf_dict_gets(dict, "CF");
-		if (pdf_is_dict(obj))
-		{
-			crypt->cf = pdf_keep_obj(obj);
-		}
-		else
-		{
-			crypt->cf = NULL;
-		}
-
-		fz_try(ctx)
-		{
-			obj = pdf_dict_gets(dict, "StmF");
-			if (pdf_is_name(obj))
-				pdf_parse_crypt_filter(ctx, &crypt->stmf, crypt, pdf_to_name(obj));
-
-			obj = pdf_dict_gets(dict, "StrF");
-			if (pdf_is_name(obj))
-				pdf_parse_crypt_filter(ctx, &crypt->strf, crypt, pdf_to_name(obj));
-		}
-		fz_catch(ctx)
-		{
-			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "cannot parse string crypt filter (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
-		}
-
-		/* in crypt revision 4, the crypt filter determines the key length */
-		if (crypt->strf.method != PDF_CRYPT_NONE)
-			crypt->length = crypt->stmf.length;
-	}
-
 	/* Standard security handler (PDF 1.7 table 3.19) */
 
 	obj = pdf_dict_gets(dict, "R");
@@ -246,6 +172,82 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	}
 	else
 		fz_warn(ctx, "missing file identifier, may not be able to do decryption");
+
+	/* Determine encryption key length */
+
+	crypt->length = 40;
+	if (crypt->v == 2 || crypt->v == 4)
+	{
+		obj = pdf_dict_gets(dict, "Length");
+		if (pdf_is_int(obj))
+			crypt->length = pdf_to_int(obj);
+
+		/* work-around for pdf generators that assume length is in bytes */
+		if (crypt->length < 40)
+			crypt->length = crypt->length * 8;
+
+		if (crypt->length % 8 != 0)
+		{
+			pdf_free_crypt(ctx, crypt);
+			fz_throw(ctx, "invalid encryption key length");
+		}
+		if (crypt->length > 256)
+		{
+			pdf_free_crypt(ctx, crypt);
+			fz_throw(ctx, "invalid encryption key length");
+		}
+	}
+
+	if (crypt->v == 5)
+		crypt->length = 256;
+
+	if (crypt->v == 1 || crypt->v == 2)
+	{
+		crypt->stmf.method = PDF_CRYPT_RC4;
+		crypt->stmf.length = crypt->length;
+
+		crypt->strf.method = PDF_CRYPT_RC4;
+		crypt->strf.length = crypt->length;
+	}
+
+	if (crypt->v == 4 || crypt->v == 5)
+	{
+		crypt->stmf.method = PDF_CRYPT_NONE;
+		crypt->stmf.length = crypt->length;
+
+		crypt->strf.method = PDF_CRYPT_NONE;
+		crypt->strf.length = crypt->length;
+
+		obj = pdf_dict_gets(dict, "CF");
+		if (pdf_is_dict(obj))
+		{
+			crypt->cf = pdf_keep_obj(obj);
+		}
+		else
+		{
+			crypt->cf = NULL;
+		}
+
+		fz_try(ctx)
+		{
+			obj = pdf_dict_gets(dict, "StmF");
+			if (pdf_is_name(obj))
+				pdf_parse_crypt_filter(ctx, &crypt->stmf, crypt, pdf_to_name(obj));
+
+			obj = pdf_dict_gets(dict, "StrF");
+			if (pdf_is_name(obj))
+				pdf_parse_crypt_filter(ctx, &crypt->strf, crypt, pdf_to_name(obj));
+		}
+		fz_catch(ctx)
+		{
+			pdf_free_crypt(ctx, crypt);
+			fz_throw(ctx, "cannot parse string crypt filter (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+		}
+
+		/* in crypt revision 4, the crypt filter determines the key length */
+		if (crypt->strf.method != PDF_CRYPT_NONE)
+			crypt->length = crypt->stmf.length;
+	}
 
 	return crypt;
 }
