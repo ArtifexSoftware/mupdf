@@ -326,10 +326,10 @@ pdf_load_page(pdf_document *xref, int number)
 	if (!fz_is_empty_rect(cropbox))
 		mediabox = fz_intersect_rect(mediabox, cropbox);
 
-	page->mediabox.x0 = MIN(mediabox.x0, mediabox.x1) * userunit;
-	page->mediabox.y0 = MIN(mediabox.y0, mediabox.y1) * userunit;
-	page->mediabox.x1 = MAX(mediabox.x0, mediabox.x1) * userunit;
-	page->mediabox.y1 = MAX(mediabox.y0, mediabox.y1) * userunit;
+	page->mediabox.x0 = fz_min(mediabox.x0, mediabox.x1) * userunit;
+	page->mediabox.y0 = fz_min(mediabox.y0, mediabox.y1) * userunit;
+	page->mediabox.x1 = fz_max(mediabox.x0, mediabox.x1) * userunit;
+	page->mediabox.y1 = fz_max(mediabox.y0, mediabox.y1) * userunit;
 
 	if (page->mediabox.x1 - page->mediabox.x0 < 1 || page->mediabox.y1 - page->mediabox.y0 < 1)
 	{

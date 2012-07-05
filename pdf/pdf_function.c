@@ -209,7 +209,7 @@ ps_push_real(ps_stack *st, float n)
 			 * cause a divide by 0. Same reason as in fz_atof. */
 			n = 1.0;
 		}
-		st->stack[st->sp].u.f = CLAMP(n, -FLT_MAX, FLT_MAX);
+		st->stack[st->sp].u.f = fz_clamp(n, -FLT_MAX, FLT_MAX);
 		st->sp++;
 	}
 }
@@ -897,7 +897,7 @@ eval_postscript_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 
 	for (i = 0; i < func->m; i++)
 	{
-		x = CLAMP(in[i], func->domain[i][0], func->domain[i][1]);
+		x = fz_clamp(in[i], func->domain[i][0], func->domain[i][1]);
 		ps_push_real(&st, x);
 	}
 
@@ -906,7 +906,7 @@ eval_postscript_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 	for (i = func->n - 1; i >= 0; i--)
 	{
 		x = ps_pop_real(&st);
-		out[i] = CLAMP(x, func->range[i][0], func->range[i][1]);
+		out[i] = fz_clamp(x, func->range[i][0], func->range[i][1]);
 	}
 }
 
@@ -1068,10 +1068,10 @@ eval_sample_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 	/* encode input coordinates */
 	for (i = 0; i < func->m; i++)
 	{
-		x = CLAMP(in[i], func->domain[i][0], func->domain[i][1]);
+		x = fz_clamp(in[i], func->domain[i][0], func->domain[i][1]);
 		x = lerp(x, func->domain[i][0], func->domain[i][1],
 			func->u.sa.encode[i][0], func->u.sa.encode[i][1]);
-		x = CLAMP(x, 0, func->u.sa.size[i] - 1);
+		x = fz_clamp(x, 0, func->u.sa.size[i] - 1);
 		e0[i] = floorf(x);
 		e1[i] = ceilf(x);
 		efrac[i] = x - floorf(x);
@@ -1091,7 +1091,7 @@ eval_sample_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 			float ab = a + (b - a) * efrac[0];
 
 			out[i] = lerp(ab, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
-			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
+			out[i] = fz_clamp(out[i], func->range[i][0], func->range[i][1]);
 		}
 
 		else if (func->m == 2)
@@ -1109,14 +1109,14 @@ eval_sample_func(fz_context *ctx, pdf_function *func, float *in, float *out)
 			float abcd = ab + (cd - ab) * efrac[1];
 
 			out[i] = lerp(abcd, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
-			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
+			out[i] = fz_clamp(out[i], func->range[i][0], func->range[i][1]);
 		}
 
 		else
 		{
 			float x = interpolate_sample(func, scale, e0, e1, efrac, func->m - 1, i);
 			out[i] = lerp(x, 0, 1, func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
-			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
+			out[i] = fz_clamp(out[i], func->range[i][0], func->range[i][1]);
 		}
 	}
 }
@@ -1177,7 +1177,7 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 	float tmp;
 	int i;
 
-	x = CLAMP(x, func->domain[0][0], func->domain[0][1]);
+	x = fz_clamp(x, func->domain[0][0], func->domain[0][1]);
 
 	/* constraint */
 	if ((func->u.e.n != (int)func->u.e.n && x < 0) || (func->u.e.n < 0 && x == 0))
@@ -1191,7 +1191,7 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 	{
 		out[i] = func->u.e.c0[i] + tmp * (func->u.e.c1[i] - func->u.e.c0[i]);
 		if (func->has_range)
-			out[i] = CLAMP(out[i], func->range[i][0], func->range[i][1]);
+			out[i] = fz_clamp(out[i], func->range[i][0], func->range[i][1]);
 	}
 }
 
@@ -1287,7 +1287,7 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 	float *bounds = func->u.st.bounds;
 	int i;
 
-	in = CLAMP(in, func->domain[0][0], func->domain[0][1]);
+	in = fz_clamp(in, func->domain[0][0], func->domain[0][1]);
 
 	for (i = 0; i < k - 1; i++)
 	{

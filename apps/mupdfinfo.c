@@ -921,8 +921,8 @@ showinfo(char *filename, int show, char *pagelist)
 		if (spage > epage)
 			page = spage, spage = epage, epage = page;
 
-		spage = CLAMP(spage, 1, pagecount);
-		epage = CLAMP(epage, 1, pagecount);
+		spage = fz_clampi(spage, 1, pagecount);
+		epage = fz_clampi(epage, 1, pagecount);
 
 		if (allpages)
 			printf("Retrieving info from pages %d-%d...\n", spage, epage);
