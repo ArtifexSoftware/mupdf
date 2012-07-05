@@ -40,7 +40,7 @@ struct pdf_crypt_s
 	fz_context *ctx;
 };
 
-static void pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_obj *dict, char *name, int defaultlength);
+static void pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, char *name);
 
 /*
  * Create crypt object for decrypting strings and streams
@@ -136,11 +136,11 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		{
 			obj = pdf_dict_gets(dict, "StmF");
 			if (pdf_is_name(obj))
-				pdf_parse_crypt_filter(ctx, &crypt->stmf, crypt->cf, pdf_to_name(obj), crypt->length);
+				pdf_parse_crypt_filter(ctx, &crypt->stmf, crypt, pdf_to_name(obj));
 
 			obj = pdf_dict_gets(dict, "StrF");
 			if (pdf_is_name(obj))
-				pdf_parse_crypt_filter(ctx, &crypt->strf, crypt->cf, pdf_to_name(obj), crypt->length);
+				pdf_parse_crypt_filter(ctx, &crypt->strf, crypt, pdf_to_name(obj));
 		}
 		fz_catch(ctx)
 		{
@@ -262,7 +262,7 @@ pdf_free_crypt(fz_context *ctx, pdf_crypt *crypt)
  */
 
 static void
-pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_obj *cf_obj, char *name, int defaultlength)
+pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, char *name)
 {
 	pdf_obj *obj;
 	pdf_obj *dict;
@@ -270,20 +270,20 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_obj *cf_obj, c
 	int is_stdcf = (!is_identity && (strcmp(name, "StdCF") == 0));
 
 	if (!is_identity && !is_stdcf)
-		fz_throw(ctx, "Crypt Filter not Identity or StdCF (%d %d R)", pdf_to_num(cf_obj), pdf_to_gen(cf_obj));
+		fz_throw(ctx, "Crypt Filter not Identity or StdCF (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
 
 	cf->method = PDF_CRYPT_NONE;
-	cf->length = defaultlength;
+	cf->length = crypt->length;
 
-	if (!cf_obj)
+	if (!crypt->cf)
 	{
 		cf->method = (is_identity ? PDF_CRYPT_NONE : PDF_CRYPT_RC4);
 		return;
 	}
 
-	dict = pdf_dict_gets(cf_obj, name);
+	dict = pdf_dict_gets(crypt->cf, name);
 	if (!pdf_is_dict(dict))
-		fz_throw(ctx, "cannot parse crypt filter (%d %d R)", pdf_to_num(cf_obj), pdf_to_gen(cf_obj));
+		fz_throw(ctx, "cannot parse crypt filter (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
 
 	obj = pdf_dict_gets(dict, "CFM");
 	if (pdf_is_name(obj))
@@ -816,7 +816,7 @@ pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int n
 	if (strcmp(name, "Identity"))
 	{
 		pdf_crypt_filter cf;
-		pdf_parse_crypt_filter(chain->ctx, &cf, crypt->cf, name, crypt->length);
+		pdf_parse_crypt_filter(chain->ctx, &cf, crypt, name);
 		return pdf_open_crypt_imp(chain, crypt, &cf, num, gen);
 	}
 	return chain;
