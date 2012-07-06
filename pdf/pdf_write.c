@@ -616,7 +616,7 @@ static void compactxref(pdf_document *xref, pdf_write_options *opts)
 	for (num = 1; num < xref->len; num++)
 	{
 		/* If it's not used, map it to zero */
-		if (!opts->use_list[num])
+		if (!opts->use_list[opts->renumber_map[num]])
 		{
 			opts->renumber_map[num] = 0;
 		}
