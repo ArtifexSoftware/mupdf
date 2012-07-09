@@ -334,12 +334,19 @@ extern "C" char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, voi
 	Local<Object> obj = vType->templ->NewInstance();
 	obj->SetInternalField(0, External::New(natobj));
 
-	/* Arrange for destructor to be called on the client sire object
+	/* Arrange for destructor to be called on the client-side object
 	 * when the v8 object is garbage collected */
 	if (vType->dtr)
 	{
+		/* Wrap obj in a PDFJSImpGCObj, which takes a persistent handle to
+		 * obj, and stores its type with it. The persistent handle tells v8
+		 * it cannot just destroy obj leaving the client-side object hanging */
 		PDFJSImpGCObj *gco = new PDFJSImpGCObj(obj, vType);
+		/* Keep the wrapped object in a list, so that we can take back control
+		 * of destroying client-side objects when shutting down this context */
 		vType->imp->gclist.insert(gco);
+		/* Tell v8 that it can destroy the persistent handle to obj when it has
+		 * no further need for it, but it must inform us via gcCallback */
 		gco->pobj.MakeWeak(gco, gcCallback);
 	}
 
