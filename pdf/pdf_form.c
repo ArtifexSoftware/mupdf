@@ -3,6 +3,8 @@
 
 #define MATRIX_COEFS (6)
 
+#define FZ_WIDGET_TYPE_NOT_WIDGET (-1)
+
 enum
 {
 	Ff_Multiline = 1 << (13-1),
@@ -32,19 +34,6 @@ enum
 	Q_Left  = 0,
 	Q_Cent  = 1,
 	Q_Right = 2
-};
-
-struct fz_widget_s
-{
-	pdf_document *doc;
-	int           type;
-	pdf_obj      *obj;
-};
-
-struct fz_widget_text_s
-{
-	fz_widget super;
-	char     *text;
 };
 
 typedef struct da_info_s
@@ -185,7 +174,7 @@ static int get_field_flags(pdf_document *doc, pdf_obj *obj)
 	return pdf_to_int(get_inheritable(doc, obj, "Ff"));
 }
 
-static int get_field_type(pdf_document *doc, pdf_obj *obj)
+int pdf_field_getType(pdf_document *doc, pdf_obj *obj)
 {
 	char *type = get_field_type_name(doc, obj);
 	int   flags = get_field_flags(doc, obj);
@@ -209,7 +198,7 @@ static int get_field_type(pdf_document *doc, pdf_obj *obj)
 			return FZ_WIDGET_TYPE_LISTBOX;
 	}
 	else
-		return -1;
+		return FZ_WIDGET_TYPE_NOT_WIDGET;
 }
 
 /* Find the point in a field hierarchy where all descendents
@@ -254,36 +243,6 @@ static void copy_resources(pdf_obj *dst, pdf_obj *src)
 		if (!pdf_dict_get(dst, key))
 			pdf_dict_put(dst, key, pdf_dict_get_val(src, i));
 	}
-}
-
-static fz_widget *new_widget(pdf_document *doc, pdf_obj *obj)
-{
-	fz_widget *widget = NULL;
-
-	fz_try(doc->ctx)
-	{
-		int type = get_field_type(doc, obj);
-
-		switch(type)
-		{
-		case FZ_WIDGET_TYPE_TEXT:
-			widget = &(fz_malloc_struct(doc->ctx, fz_widget_text)->super);
-			break;
-		default:
-			widget = fz_malloc_struct(doc->ctx, fz_widget);
-			break;
-		}
-
-		widget->doc  = doc;
-		widget->type = type;
-		widget->obj  = pdf_keep_obj(obj);
-	}
-	fz_catch(doc->ctx)
-	{
-		fz_warn(doc->ctx, "failed to load foccussed widget");
-	}
-
-	return widget;
 }
 
 static void da_info_fin(fz_context *ctx, da_info *di)
@@ -1360,7 +1319,7 @@ static void reset_field(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
 
-	switch (get_field_type(doc, obj))
+	switch (pdf_field_getType(doc, obj))
 	{
 	case FZ_WIDGET_TYPE_RADIOBUTTON:
 	case FZ_WIDGET_TYPE_CHECKBOX:
@@ -1472,7 +1431,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 	{
 		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
 		{
-			switch(get_field_type(doc, obj))
+			switch(pdf_field_getType(doc, obj))
 			{
 			case FZ_WIDGET_TYPE_TEXT:
 				{
@@ -1664,15 +1623,15 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 			switch (ui_event->event.pointer.ptype)
 			{
 			case FZ_POINTER_DOWN:
-				if (doc->focus)
-				{
-					fz_free_widget(doc->ctx, doc->focus);
-					doc->focus = NULL;
-				}
+				doc->focus = NULL;
+				pdf_drop_obj(doc->focus_obj);
+				doc->focus_obj = NULL;
 
 				if (annot)
 				{
-					doc->focus = new_widget(doc, annot->obj);
+					doc->focus = annot;
+					doc->focus_obj = pdf_keep_obj(annot->obj);
+
 					hp->num = pdf_to_num(annot->obj);
 					hp->gen = pdf_to_gen(annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
@@ -1690,7 +1649,7 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 
 				if (annot)
 				{
-					switch(get_field_type(doc, annot->obj))
+					switch(annot->type)
 					{
 					case FZ_WIDGET_TYPE_RADIOBUTTON:
 					case FZ_WIDGET_TYPE_CHECKBOX:
@@ -1718,28 +1677,36 @@ fz_rect *pdf_get_screen_update(pdf_document *doc)
 
 fz_widget *pdf_get_focussed_widget(pdf_document *doc)
 {
-	return doc->focus;
+	return (fz_widget *)doc->focus;
 }
 
-void fz_free_widget(fz_context *ctx, fz_widget *widget)
+fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page)
 {
-	if (widget)
-	{
-		switch(widget->type)
-		{
-		case FZ_WIDGET_TYPE_TEXT:
-			fz_free(ctx, ((fz_widget_text *)widget)->text);
-			break;
-		}
+	pdf_annot *annot = page->annots;
 
-		pdf_drop_obj(widget->obj);
-		fz_free(ctx, widget);
-	}
+	while (annot && annot->type == FZ_WIDGET_TYPE_NOT_WIDGET)
+		annot = annot->next;
+
+	return (fz_widget *)annot;
+}
+
+fz_widget *pdf_next_widget(fz_widget *previous)
+{
+	pdf_annot *annot = (pdf_annot *)previous;
+
+	if (annot)
+		annot = annot->next;
+
+	while (annot && annot->type == FZ_WIDGET_TYPE_NOT_WIDGET)
+		annot = annot->next;
+
+	return (fz_widget *)annot;
 }
 
 int fz_widget_get_type(fz_widget *widget)
 {
-	return widget->type;
+	pdf_annot *annot = (pdf_annot *)widget;
+	return annot->type;
 }
 
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
@@ -1835,7 +1802,7 @@ void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
 
 	fz_try(ctx);
 	{
-		if (get_field_type(doc, field) == FZ_WIDGET_TYPE_PUSHBUTTON)
+		if (pdf_field_getType(doc, field) == FZ_WIDGET_TYPE_PUSHBUTTON)
 		{
 			pdf_dict_putp(field, "MK/CA", val);
 			pdf_field_mark_dirty(ctx, field);
@@ -1898,35 +1865,82 @@ void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 	}
 }
 
-char *fz_widget_text_get_text(fz_widget_text *tw)
+fz_rect *fz_widget_get_bbox(fz_widget *widget)
 {
-	pdf_document *doc = tw->super.doc;
+	pdf_annot *annot = (pdf_annot *)widget;
+
+	return &annot->pagerect;
+}
+
+char *pdf_widget_text_get_text(pdf_document *doc, fz_widget_text *tw)
+{
+	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
+	char *text = NULL;
 
-	fz_free(ctx, tw->text);
-	tw->text = NULL;
-
+	fz_var(text);
 	fz_try(ctx)
 	{
-		tw->text = pdf_field_getValue(doc, tw->super.obj);
+		text = pdf_field_getValue(doc, annot->obj);
 	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "failed allocation in fz_widget_text_get_text");
 	}
 
-	return tw->text;
+	return text;
 }
 
-void fz_widget_text_set_text(fz_widget_text *tw, char *text)
+int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget_text *tw)
 {
-	fz_context *ctx = tw->super.doc->ctx;
+	pdf_annot *annot = (pdf_annot *)tw;
+
+	return pdf_to_int(get_inheritable(doc, annot->obj, "MaxLen"));
+}
+
+int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget_text *tw)
+{
+	pdf_annot *annot = (pdf_annot *)tw;
+	fz_context *ctx = doc->ctx;
+	char *code = NULL;
+	int type = FZ_WIDGET_CONTENT_UNRESTRAINED;
+
+	fz_var(code);
+	fz_try(ctx)
+	{
+		code = get_string_or_stream(doc, pdf_dict_getp(annot->obj, "AA/F/JS"));
+		if (code)
+		{
+			if (strstr(code, "AFNumber_Format"))
+				type = FZ_WIDGET_CONTENT_NUMBER;
+			else if (strstr(code, "AFSpecial_Format"))
+				type = FZ_WIDGET_CONTENT_SPECIAL;
+			else if (strstr(code, "AFDate_FormatEx"))
+				type = FZ_WIDGET_CONTENT_DATE;
+			else if (strstr(code, "AFTime_FormatEx"))
+				type = FZ_WIDGET_CONTENT_TIME;
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, code);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "failure in fz_widget_text_get_content_type");
+	}
+
+	return type;
+}
+
+void pdf_widget_text_set_text(pdf_document *doc, fz_widget_text *tw, char *text)
+{
+	pdf_annot *annot = (pdf_annot *)tw;
+	fz_context *ctx = doc->ctx;
 
 	fz_try(ctx)
 	{
-		pdf_field_setValue(tw->super.doc, tw->super.obj, text);
-		fz_free(ctx, tw->text);
-		tw->text = fz_strdup(ctx, text);
+		pdf_field_setValue(doc, annot->obj, text);
 	}
 	fz_catch(ctx)
 	{

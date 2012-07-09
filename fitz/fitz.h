@@ -2351,6 +2351,16 @@ enum
 	FZ_WIDGET_TYPE_COMBOBOX
 };
 
+/* Types of text widget content */
+enum
+{
+	FZ_WIDGET_CONTENT_UNRESTRAINED,
+	FZ_WIDGET_CONTENT_NUMBER,
+	FZ_WIDGET_CONTENT_SPECIAL,
+	FZ_WIDGET_CONTENT_DATE,
+	FZ_WIDGET_CONTENT_TIME
+};
+
 /* Types of UI event */
 enum
 {
@@ -2444,6 +2454,16 @@ fz_rect *fz_get_screen_update(fz_interactive *idoc);
 fz_widget *fz_get_focussed_widget(fz_interactive *idoc);
 
 /*
+	fz_first_widget: get first widget when enumerating
+*/
+fz_widget *fz_first_widget(fz_interactive *idoc, fz_page *page);
+
+/*
+	fz_next_widget: get next widget when enumerating
+*/
+fz_widget *fz_next_widget(fz_interactive *idoc, fz_widget *previous);
+
+/*
 	fz_widget_get_type: find out the type of a widget.
 
 	The type determines what widget subclass the widget
@@ -2454,18 +2474,30 @@ int fz_widget_get_type(fz_widget *widget);
 /*
 	fz_widget_get_bbox: get the bounding box of a widget.
 */
-fz_bbox *fz_widget_get_bbox(fz_widget *widget);
+fz_rect *fz_widget_get_bbox(fz_widget *widget);
 
 /*
 	fz_widget_text_get_text: Get the text currently displayed in
 	a text widget.
 */
-char *fz_widget_text_get_text(fz_widget_text *tw);
+char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget_text *tw);
+
+/*
+	fz_widget_text_max_len: get the maximum number of
+	characters permitted in a text widget
+*/
+int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget_text *tw);
+
+/*
+	fz_widget_text_get_content_type: get the type of content
+	required by a text widget
+*/
+int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget_text *tw);
 
 /*
 	fz_widget_text_set_text: Update the text of a text widget.
 */
-void fz_widget_text_set_text(fz_widget_text *tw, char *text);
+void fz_widget_text_set_text(fz_interactive *idoc, fz_widget_text *tw, char *text);
 
 
 typedef struct fz_write_options_s fz_write_options;

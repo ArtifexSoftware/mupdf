@@ -221,7 +221,8 @@ struct pdf_document_s
 
 	pdf_lexbuf_large lexbuf;
 
-	fz_widget *focus;
+	pdf_annot *focus;
+	pdf_obj *focus_obj;
 
 	pdf_js *js;
 };
@@ -538,6 +539,7 @@ struct pdf_annot_s
 	pdf_xobject *ap;
 	fz_matrix matrix;
 	pdf_annot *next;
+	int type;
 };
 
 fz_link_dest pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest);
@@ -551,6 +553,7 @@ fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ct
 pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
+int pdf_field_getType(pdf_document *doc, pdf_obj *field);
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field);
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
 char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field);
@@ -594,6 +597,12 @@ void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
 fz_rect *pdf_get_screen_update(pdf_document *doc);
 fz_widget *pdf_get_focussed_widget(pdf_document *doc);
+fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page);
+fz_widget *pdf_next_widget(fz_widget *previous);
+char *pdf_widget_text_get_text(pdf_document *doc, fz_widget_text *tw);
+int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget_text *tw);
+int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget_text *tw);
+void pdf_widget_text_set_text(pdf_document *doc, fz_widget_text *tw, char *text);
 
 /*
  * Javascript handler

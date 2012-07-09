@@ -412,5 +412,10 @@ pdf_free_page(pdf_document *xref, pdf_page *page)
 		fz_drop_link(xref->ctx, page->links);
 	if (page->annots)
 		pdf_free_annot(xref->ctx, page->annots);
+	/* xref->focus, when not NULL, refers to one of
+	 * the annotations and must be NULLed when the
+	 * annotations are destroyed. xref->focus_obj
+	 * keeps track of the actual annotation object. */
+	xref->focus = NULL;
 	fz_free(xref->ctx, page);
 }
