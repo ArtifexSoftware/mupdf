@@ -105,10 +105,11 @@ $(FITZ_V8_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
 libs: $(FITZ_LIB) $(THIRD_LIBS)
 libs_v8: libs $(FITZ_V8_LIB)
 
-# --- Generated CMAP and FONT files ---
+# --- Generated CMAP, FONT and JAVASCRIPT files ---
 
 CMAPDUMP := $(OUT)/cmapdump
 FONTDUMP := $(OUT)/fontdump
+CQUOTE := $(OUT)/cquote
 
 CMAP_CNS_SRC := $(wildcard cmaps/cns/*)
 CMAP_GB_SRC := $(wildcard cmaps/gb/*)
@@ -117,6 +118,7 @@ CMAP_KOREA_SRC := $(wildcard cmaps/korea/*)
 FONT_BASE14_SRC := $(wildcard fonts/*.cff)
 FONT_DROID_SRC := fonts/droid/DroidSans.ttf fonts/droid/DroidSansMono.ttf
 FONT_CJK_SRC := fonts/droid/DroidSansFallback.ttf
+JAVASCRIPT_SRC := javascript/util.js
 
 $(GEN)/cmap_cns.h : $(CMAP_CNS_SRC)
 	$(QUIET_GEN) ./$(CMAPDUMP) $@ $(CMAP_CNS_SRC)
@@ -134,18 +136,24 @@ $(GEN)/font_droid.h : $(FONT_DROID_SRC)
 $(GEN)/font_cjk.h : $(FONT_CJK_SRC)
 	$(QUIET_GEN) ./$(FONTDUMP) $@ $(FONT_CJK_SRC)
 
+$(GEN)/js_util.h : $(JAVASCRIPT_SRC)
+	$(QUIET_GEN) ./$(CQUOTE) $@ $(JAVASCRIPT_SRC)
+
 CMAP_HDR := $(addprefix $(GEN)/, cmap_cns.h cmap_gb.h cmap_japan.h cmap_korea.h)
 FONT_HDR := $(GEN)/font_base14.h $(GEN)/font_droid.h $(GEN)/font_cjk.h
+JAVASCRIPT_HDR := $(GEN)/js_util.h
 
 ifeq "$(CROSSCOMPILE)" ""
 $(CMAP_HDR) : $(CMAPDUMP) | $(GEN)
 $(FONT_HDR) : $(FONTDUMP) | $(GEN)
+$(JAVASCRIPT_HDR) : $(CQUOTE) | $(GEN)
 endif
 
-generate: $(CMAP_HDR) $(FONT_HDR)
+generate: $(CMAP_HDR) $(FONT_HDR) $(JAVASCRIPT_HDR)
 
 $(OUT)/pdf_cmap_table.o : $(CMAP_HDR)
 $(OUT)/pdf_fontfile.o : $(FONT_HDR)
+$(OUT)/pdf_js.o : $(JAVASCRIPT_HDR)
 $(OUT)/cmapdump.o : pdf/pdf_cmap.c pdf/pdf_cmap_parse.c
 
 # --- Tools and Apps ---

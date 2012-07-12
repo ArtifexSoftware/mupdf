@@ -88,6 +88,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\scripts\cquote.c"
+				>
+			</File>
+			<File
 				RelativePath="..\scripts\fontdump.c"
 				>
 			</File>
