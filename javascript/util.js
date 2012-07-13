@@ -21,6 +21,16 @@ MuPDF.padZeros = function(num, places)
 	return s;
 }
 
+MuPDF.convertCase = function(str,cmd)
+{
+	switch (cmd)
+	{
+		case '>': return str.toUpperCase();
+		case '<': return str.toLowerCase();
+		default: return str;
+	}
+}
+
 var border = new Array();
 border.s = "Solid";
 border.d = "Dashed";
@@ -78,6 +88,72 @@ util.printd = function(fmt, d)
 			case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
 			default: res += tokens[i];
 		}
+	}
+
+	return res;
+}
+
+util.printx = function(fmt, val)
+{
+	var cs = '=';
+	var res = '';
+	var i = 0;
+	var m;
+
+	while (i < fmt.length)
+	{
+		switch (fmt.charAt(i))
+		{
+			case '\\':
+				i++;
+				if (i >= fmt.length) return res;
+				res += fmt.charAt(i);
+				break;
+
+			case 'X':
+				m = val.match(/\w/);
+				if (!m) return res;
+				res += MuPDF.convertCase(m[0],cs);
+				val = val.replace(/^\W*\w/,'');
+				break;
+
+			case 'A':
+				m = val.match(/[A-z]/);
+				if (!m) return res;
+				res += MuPDF.convertCase(m[0],cs);
+				val = val.replace(/^[^A-z]*[A-z]/,'');
+				break;
+
+			case '9':
+				m = val.match(/\d/);
+				if (!m) return res;
+				res += m[0];
+				val = val.replace(/^\D*\d/,'');
+				break;
+
+			case '*':
+				res += val;
+				val = '';
+				break;
+
+			case '?':
+				if (!val) return res;
+				res += MuPDF.convertCase(val.charAt(0),cs);
+				val = val.substr(1);
+				break;
+
+			case '=':
+			case '>':
+			case '<':
+				cs = fmt.charAt(i);
+				break;
+
+			default:
+				res += MuPDF.convertCase(fmt.charAt(i),cs);
+				break;
+		}
+
+		i++;
 	}
 
 	return res;
@@ -251,6 +327,30 @@ function AFTime_Format(index)
 	var formats = ['HH:MM','h:MM tt','HH:MM:ss','h:MM:ss tt'];
 
 	AFTime_FormatEx(formats[index]);
+}
+
+function AFSpecial_Format(index)
+{
+	var res;
+
+	switch (index)
+	{
+		case 0:
+			res = util.printx('99999', event.value);
+			break;
+		case 1:
+			res = util.printx('99999-9999', event.value);
+			break;
+		case 2:
+			res = util.printx('9999999999', event.value);
+			res = util.printx(res.length >= 10 ? '(999) 999-9999' : '999-9999', event.value);
+			break;
+		case 3:
+			res = util.printx('999-99-9999', event.value);
+			break;
+	}
+
+	event.value = res ? res : '';
 }
 
 function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyPrepend)
