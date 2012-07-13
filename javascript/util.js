@@ -128,6 +128,9 @@ function AFParseTime(str, d)
 	if (!str)
 		return d;
 
+	if (!d)
+		d = new Date();
+
 	var ampm = str.match(/(am|pm)/);
 	var nums = str.match(/\d+/g);
 	var hour, min, sec;
@@ -226,7 +229,28 @@ function AFDate_FormatEx(fmt)
 {
 	var d = AFParseDateEx(event.value, fmt);
 
-	event.value = util.printd(fmt, d);
+	event.value = d ? util.printd(fmt, d) : "";
+}
+
+function AFDate_Format(index)
+{
+	var formats = ['m/d','m/d/yy','mm/dd/yy','mm/yy','d-mmm','d-mmm-yy','dd-mm-yy','yy-mm-dd',
+				'mmm-yy','mmmm-yy','mmm d, yyyy','mmmm d, yyyy','m/d/yy h:MM tt','m/d/yy HH:MM'];
+	AFDate_FormatEx(formats[index]);
+}
+
+function AFTime_FormatEx(fmt)
+{
+	var d = AFParseTime(event.value, null);
+
+	event.value = d ? util.printd(fmt, d) : '';
+}
+
+function AFTime_Format(index)
+{
+	var formats = ['HH:MM','h:MM tt','HH:MM:ss','h:MM:ss tt'];
+
+	AFTime_FormatEx(formats[index]);
 }
 
 function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyPrepend)
