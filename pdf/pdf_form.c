@@ -1716,26 +1716,43 @@ char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 
 static void recalculate(pdf_document *doc)
 {
-	pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
+	fz_context *ctx = doc->ctx;
 
-	if (co)
+	if (doc->recalculating)
+		return;
+
+	doc->recalculating = 1;
+	fz_try(ctx)
 	{
-		int i, n = pdf_array_len(co);
+		pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
 
-		for (i = 0; i < n; i++)
+		if (co)
 		{
-			pdf_obj *field = pdf_array_get(co, i);
-			pdf_obj *calc = pdf_dict_getp(field, "AA/C");
+			int i, n = pdf_array_len(co);
 
-			if (calc)
+			for (i = 0; i < n; i++)
 			{
-				execute_action(doc, field, calc);
-				/* A calculate action, updates event.value. We need
-				 * to place the value in the field */
-				update_text_field_value(doc->ctx, field, pdf_js_getEventValue(doc->js));
-				pdf_field_mark_dirty(doc->ctx, field);
+				pdf_obj *field = pdf_array_get(co, i);
+				pdf_obj *calc = pdf_dict_getp(field, "AA/C");
+
+				if (calc)
+				{
+					execute_action(doc, field, calc);
+					/* A calculate action, updates event.value. We need
+					* to place the value in the field */
+					update_text_field_value(doc->ctx, field, pdf_js_getEventValue(doc->js));
+					pdf_field_mark_dirty(doc->ctx, field);
+				}
 			}
 		}
+	}
+	fz_always(ctx)
+	{
+		doc->recalculating = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 

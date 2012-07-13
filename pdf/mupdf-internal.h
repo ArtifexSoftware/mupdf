@@ -225,6 +225,7 @@ struct pdf_document_s
 	pdf_obj *focus_obj;
 
 	pdf_js *js;
+	int recalculating;
 };
 
 pdf_document *pdf_open_document_no_run(fz_context *ctx, const char *filename);
