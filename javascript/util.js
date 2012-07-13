@@ -45,17 +45,16 @@ var util = new Array();
 
 util.printd = function(fmt, d)
 {
-	var regexp = /^(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/;
+	var regexp = /(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g;
 	var res = '';
 
 	if (!d)
 		return null;
 
-	while (fmt)
+	var tokens = fmt.match(regexp);
+	for (var i = 0; i < tokens.length; i++)
 	{
-		var token = fmt.match(regexp)[0];
-
-		switch(token)
+		switch(tokens[i])
 		{
 			case 'mmmm': res += MuPDF.monthName[d.getMonth()]; break;
 			case 'mmm': res += MuPDF.monthName[d.getMonth()].substr(0,3); break;
@@ -77,10 +76,8 @@ util.printd = function(fmt, d)
 			case 's': res += d.getSeconds(); break;
 			case 'tt': res += d.getHours() < 12 ? 'am' : 'pm'; break;
 			case 't': res += d.getHours() < 12 ? 'a' : 'p'; break;
-			default: res += token;
+			default: res += tokens[i];
 		}
-
-		fmt = fmt.substr(token.length);
 	}
 
 	return res;
