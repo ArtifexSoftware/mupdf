@@ -50,3 +50,23 @@ void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text)
 {
 	pdf_widget_text_set_text((pdf_document *)idoc, tw, text);
 }
+
+int fz_widget_choice_get_options(fz_interactive *idoc, fz_widget *tw, char *opts[])
+{
+	return pdf_widget_choice_get_options((pdf_document *)idoc, tw, opts);
+}
+
+int fz_widget_choice_is_multiselect(fz_interactive *idoc, fz_widget *tw)
+{
+	return pdf_widget_choice_is_multiselect((pdf_document *)idoc, tw);
+}
+
+int fz_widget_choice_get_value(fz_interactive *idoc, fz_widget *tw, char *opts[])
+{
+	return pdf_widget_choice_get_value((pdf_document *)idoc, tw, opts);
+}
+
+void fz_widget_choice_set_value(fz_interactive *idoc, fz_widget *tw, int n, char *opts[])
+{
+	pdf_widget_choice_set_value((pdf_document *)idoc, tw, n, opts);
+}

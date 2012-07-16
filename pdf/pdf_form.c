@@ -14,6 +14,7 @@ enum
 	Ff_Pushbutton = 1 << (17-1),
 	Ff_Combo = 1 << (18-1),
 	Ff_FileSelect = 1 << (21-1),
+	Ff_MultiSelect = 1 << (22-1),
 	Ff_DoNotSpellCheck = 1 << (23-1),
 	Ff_DoNotScroll = 1 << (24-1),
 	Ff_Comb = 1 << (25-1),
@@ -1962,5 +1963,117 @@ void pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "fz_widget_text_set_text failed");
+	}
+}
+
+int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[])
+{
+	pdf_annot *annot = (pdf_annot *)tw;
+	pdf_obj *optarr;
+	int i, n;
+
+	if (!annot)
+		return 0;
+
+	optarr = pdf_dict_gets(annot->obj, "Opt");
+	n = pdf_array_len(optarr);
+
+	if (opts)
+	{
+		for (i = 0; i < n; i++)
+		{
+			opts[i] = pdf_to_str_buf(pdf_array_get(optarr, i));
+		}
+	}
+
+	return n;
+}
+
+int pdf_widget_choice_is_multiselect(pdf_document *doc, fz_widget *tw)
+{
+	pdf_annot *annot = (pdf_annot *)tw;
+
+	if (!annot) return 0;
+
+	switch(pdf_field_getType(doc, annot->obj))
+	{
+	case FZ_WIDGET_TYPE_LISTBOX:
+	case FZ_WIDGET_TYPE_COMBOBOX:
+		return (get_field_flags(doc, annot->obj) & Ff_MultiSelect) != 0;
+	default:
+		return 0;
+	}
+}
+
+int pdf_widget_choice_get_value(pdf_document *doc, fz_widget *tw, char *opts[])
+{
+	pdf_annot *annot = (pdf_annot *)tw;
+	pdf_obj *optarr;
+	int i, n;
+
+	if (!annot)
+		return 0;
+
+	optarr = pdf_dict_gets(annot->obj, "V");
+
+	if (pdf_is_string(optarr))
+	{
+		if (opts)
+			opts[0] = pdf_to_str_buf(optarr);
+
+		return 1;
+	}
+	else
+	{
+		n = pdf_array_len(optarr);
+
+		if (opts)
+		{
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *elem = pdf_array_get(optarr, i);
+
+				if (pdf_is_array(elem))
+					elem = pdf_array_get(elem, 1);
+
+				opts[i] = pdf_to_str_buf(elem);
+			}
+		}
+
+		return n;
+	}
+}
+
+void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[])
+{
+	fz_context *ctx = doc->ctx;
+	pdf_annot *annot = (pdf_annot *)tw;
+	pdf_obj *optarr = NULL, *opt = NULL;
+	int i;
+
+	if (!annot)
+		return;
+
+	fz_var(opts);
+	fz_var(opt);
+	fz_try(ctx)
+	{
+		optarr = pdf_new_array(ctx, n);
+
+		for (i = 0; i < n; i++)
+		{
+			opt = pdf_new_string(ctx, opts[i], strlen(opts[i]));
+			pdf_array_push(optarr, opt);
+			pdf_drop_obj(opt);
+			opt = NULL;
+		}
+
+		pdf_dict_puts(annot->obj, "V", optarr);
+		pdf_drop_obj(optarr);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(opt);
+		fz_rethrow(ctx);
 	}
 }

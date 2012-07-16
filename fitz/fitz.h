@@ -2494,6 +2494,35 @@ int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw);
 */
 void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
 
+/*
+	fz_widget_choice_get_options: get the list of options for a list
+	box or combo box. Returns the number of options and fills in their
+	names within the supplied array. Should first be called with a
+	NULL array to find out how big the array should be.
+*/
+int fz_widget_choice_get_options(fz_interactive *idoc, fz_widget *tw, char *opts[]);
+
+/*
+	fz_widget_choice_is_multiselect: returns whether a list box or
+	combo box supports selection of multiple options
+*/
+int fz_widget_choice_is_multiselect(fz_interactive *idoc, fz_widget *tw);
+
+/*
+	fz_widget_choice_get_value: get the value of a choice widget.
+	Returns the number of options curently selected and fills in
+	the supplied array with their strings. Should first be called
+	with NULL as the array to find out how big the arrray need to
+	be. The filled in elements should not be freed by the caller.
+*/
+int fz_widget_choice_get_value(fz_interactive *idoc, fz_widget *tw, char *opts[]);
+
+/*
+	fz_widget_set_value: set the value of a choice widget. The
+	caller should pass the number of options selected and an
+	array of their names
+*/
+void fz_widget_choice_set_value(fz_interactive *idoc, fz_widget *tw, int n, char *opts[]);
 
 typedef struct fz_write_options_s fz_write_options;
 
