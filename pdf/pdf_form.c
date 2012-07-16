@@ -1889,7 +1889,7 @@ fz_rect *fz_widget_get_bbox(fz_widget *widget)
 	return &annot->pagerect;
 }
 
-char *pdf_widget_text_get_text(pdf_document *doc, fz_widget_text *tw)
+char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
@@ -1908,14 +1908,14 @@ char *pdf_widget_text_get_text(pdf_document *doc, fz_widget_text *tw)
 	return text;
 }
 
-int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget_text *tw)
+int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
 	return pdf_to_int(get_inheritable(doc, annot->obj, "MaxLen"));
 }
 
-int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget_text *tw)
+int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
@@ -1950,7 +1950,7 @@ int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget_text *tw)
 	return type;
 }
 
-void pdf_widget_text_set_text(pdf_document *doc, fz_widget_text *tw, char *text)
+void pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;

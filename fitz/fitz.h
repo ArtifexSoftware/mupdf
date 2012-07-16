@@ -2403,11 +2403,6 @@ typedef struct fz_ui_event_s
 typedef struct fz_widget_s fz_widget;
 
 /*
-	Specific types of widget
-*/
-typedef struct fz_widget_text_s fz_widget_text;
-
-/*
 	Obtain an interface for interaction from a document.
 	For document types that don't support interaction, NULL
 	is returned.
@@ -2480,24 +2475,24 @@ fz_rect *fz_widget_get_bbox(fz_widget *widget);
 	fz_widget_text_get_text: Get the text currently displayed in
 	a text widget.
 */
-char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget_text *tw);
+char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget *tw);
 
 /*
 	fz_widget_text_max_len: get the maximum number of
 	characters permitted in a text widget
 */
-int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget_text *tw);
+int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget *tw);
 
 /*
 	fz_widget_text_get_content_type: get the type of content
 	required by a text widget
 */
-int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget_text *tw);
+int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw);
 
 /*
 	fz_widget_text_set_text: Update the text of a text widget.
 */
-void fz_widget_text_set_text(fz_interactive *idoc, fz_widget_text *tw, char *text);
+void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
 
 
 typedef struct fz_write_options_s fz_write_options;

@@ -31,22 +31,22 @@ fz_widget *fz_next_widget(fz_interactive *idoc, fz_widget *previous)
 	return pdf_next_widget(previous);
 }
 
-char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget_text *tw)
+char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget *tw)
 {
 	return pdf_widget_text_get_text((pdf_document *)idoc, tw);
 }
 
-int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget_text *tw)
+int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget *tw)
 {
 	return pdf_widget_text_get_max_len((pdf_document *)idoc, tw);
 }
 
-int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget_text *tw)
+int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw)
 {
 	return pdf_widget_text_get_content_type((pdf_document *)idoc, tw);
 }
 
-void fz_widget_text_set_text(fz_interactive *idoc, fz_widget_text *tw, char *text)
+void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text)
 {
 	pdf_widget_text_set_text((pdf_document *)idoc, tw, text);
 }

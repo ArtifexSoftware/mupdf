@@ -600,10 +600,10 @@ fz_rect *pdf_get_screen_update(pdf_document *doc);
 fz_widget *pdf_get_focussed_widget(pdf_document *doc);
 fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page);
 fz_widget *pdf_next_widget(fz_widget *previous);
-char *pdf_widget_text_get_text(pdf_document *doc, fz_widget_text *tw);
-int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget_text *tw);
-int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget_text *tw);
-void pdf_widget_text_set_text(pdf_document *doc, fz_widget_text *tw, char *text);
+char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw);
+int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget *tw);
+int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw);
+void pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text);
 
 /*
  * Javascript handler
