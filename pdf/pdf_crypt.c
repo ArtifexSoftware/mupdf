@@ -315,7 +315,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 		fz_throw(ctx, "invalid key length: %d", cf->length);
 
 	if ((crypt->r == 1 || crypt->r == 2 || crypt->r == 4) &&
-		(cf->length < 0 || cf->length > 32))
+		(cf->length < 0 || cf->length > 256))
 		fz_throw(ctx, "invalid key length: %d", cf->length);
 	if (crypt->r == 5 &&
 		(cf->length != 128 && cf->length != 192 && cf->length == 256))
