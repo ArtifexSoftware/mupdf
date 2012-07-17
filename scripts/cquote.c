@@ -24,6 +24,7 @@ main(int argc, char **argv)
 	char name[256];
 	char *realname;
 	int i, c;
+	int bol = 1;
 
 	if (argc < 3)
 	{
@@ -68,11 +69,16 @@ main(int argc, char **argv)
 
 		fprintf(fo, "\n/* %s */\n\n", name);
 
-		fputc('\"', fo);
 		c = fgetc(fi);
 		while (c != EOF)
 		{
 			int eol = 0;
+
+			if (bol)
+			{
+				fputc('\"', fo);
+				bol = 0;
+			}
 
 			switch (c)
 			{
@@ -96,9 +102,10 @@ main(int argc, char **argv)
 
 			if (eol)
 			{
-				fprintf(fo, "\\n\"\n\"");
+				fprintf(fo, "\\n\"\n");
 				while ((c = fgetc(fi)) == '\r' || c == '\n')
 					;
+				bol = 1;
 			}
 			else
 			{
@@ -106,11 +113,12 @@ main(int argc, char **argv)
 			}
 		}
 
-		fprintf(fo, "\\n\"\n");
+		if (!bol)
+			fprintf(fi, "\\n\"\n");
 
-		if (fclose(fo))
+		if (fclose(fi))
 		{
-			fprintf(stderr, "cmapdump: could not close output file '%s'\n", argv[1]);
+			fprintf(stderr, "cquote: could not close input file '%s'\n", argv[i]);
 			return 1;
 		}
 
@@ -118,7 +126,7 @@ main(int argc, char **argv)
 
 	if (fclose(fo))
 	{
-		fprintf(stderr, "cmapdump: could not close output file '%s'\n", argv[1]);
+		fprintf(stderr, "cquote: could not close output file '%s'\n", argv[1]);
 		return 1;
 	}
 
