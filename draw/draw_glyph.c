@@ -98,7 +98,11 @@ fz_pixmap *
 fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *stroke, fz_bbox scissor)
 {
 	if (font->ft_face)
+	{
+		if (stroke->dash_len > 0)
+			return NULL;
 		return fz_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, stroke);
+	}
 	return fz_render_glyph(ctx, font, gid, trm, NULL, scissor);
 }
 
