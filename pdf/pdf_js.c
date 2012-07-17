@@ -278,6 +278,15 @@ static void declare_dom(pdf_js *js)
 
 static void preload_helpers(pdf_js *js)
 {
+	/* When testing on the cluster, redefine the Date object
+	 * to use a fixed date */
+#ifdef CLUSTER
+	pdf_jsimp_execute(js->imp,
+"var MuPDFOldDate = Date\n"
+"Date = function() { return new MuPDFOldDate(1979,5,15); }\n"
+	);
+#endif
+
 	pdf_jsimp_execute(js->imp,
 #include "../generated/js_util.h"
 	);
