@@ -946,8 +946,8 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 			fz_throw(ctx, "malformed /Encode");
 		for (i = 0; i < func->m; i++)
 		{
-			func->u.sa.encode[i][0] = pdf_to_real(pdf_array_get(obj, i*2+0));
-			func->u.sa.encode[i][1] = pdf_to_real(pdf_array_get(obj, i*2+1));
+			func->u.sa.encode[i][0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
+			func->u.sa.encode[i][1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
 		}
 	}
 	else
@@ -966,8 +966,8 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 			fz_throw(ctx, "malformed /Decode");
 		for (i = 0; i < func->n; i++)
 		{
-			func->u.sa.decode[i][0] = pdf_to_real(pdf_array_get(obj, i*2+0));
-			func->u.sa.decode[i][1] = pdf_to_real(pdf_array_get(obj, i*2+1));
+			func->u.sa.decode[i][0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
+			func->u.sa.decode[i][1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
 		}
 	}
 	else
@@ -1252,18 +1252,18 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 		if (pdf_array_len(obj) != k - 1)
 			fz_throw(ctx, "malformed /Bounds (wrong length)");
 
-		for (i = 0; i < k-1; i++)
+		for (i = 0; i < k - 1; i++)
 		{
 			num = pdf_array_get(obj, i);
 			if (!pdf_is_int(num) && !pdf_is_real(num))
 				fz_throw(ctx, "malformed /Bounds (item not real)");
 			func->u.st.bounds[i] = pdf_to_real(num);
-			if (i && func->u.st.bounds[i-1] > func->u.st.bounds[i])
+			if (i && func->u.st.bounds[i - 1] > func->u.st.bounds[i])
 				fz_throw(ctx, "malformed /Bounds (item not monotonic)");
 		}
 
 		if (k != 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
-			func->domain[0][1] < func->u.st.bounds[k-2]))
+			func->domain[0][1] < func->u.st.bounds[k - 2]))
 			fz_warn(ctx, "malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 
@@ -1275,8 +1275,8 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 			fz_throw(ctx, "malformed /Encode");
 		for (i = 0; i < k; i++)
 		{
-			func->u.st.encode[i*2+0] = pdf_to_real(pdf_array_get(obj, i*2+0));
-			func->u.st.encode[i*2+1] = pdf_to_real(pdf_array_get(obj, i*2+1));
+			func->u.st.encode[i * 2 + 0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
+			func->u.st.encode[i * 2 + 1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
 		}
 	}
 }
@@ -1309,16 +1309,16 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
 	}
 	else if (i == k - 1)
 	{
-		low = bounds[k-2];
+		low = bounds[k - 2];
 		high = func->domain[0][1];
 	}
 	else
 	{
-		low = bounds[i-1];
+		low = bounds[i - 1];
 		high = bounds[i];
 	}
 
-	in = lerp(in, low, high, func->u.st.encode[i*2+0], func->u.st.encode[i*2+1]);
+	in = lerp(in, low, high, func->u.st.encode[i * 2 + 0], func->u.st.encode[i * 2 + 1]);
 
 	pdf_eval_function(ctx, func->u.st.funcs[i], &in, 1, out, func->n);
 }
