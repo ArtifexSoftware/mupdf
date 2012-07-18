@@ -29,7 +29,7 @@ pdf_load_outline_imp(pdf_document *xref, pdf_obj *dict)
 
 			obj = pdf_dict_gets(dict, "Title");
 			if (obj)
-				node->title = pdf_to_utf8(ctx, obj);
+				node->title = pdf_to_utf8(xref, obj);
 
 			if ((obj = pdf_dict_gets(dict, "Dest")))
 				node->dest = pdf_parse_link_dest(xref, obj);

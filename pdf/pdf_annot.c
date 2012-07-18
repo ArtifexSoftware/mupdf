@@ -213,7 +213,7 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 	{
 		ld.kind = FZ_LINK_URI;
 		ld.ld.uri.is_map = pdf_to_bool(pdf_dict_gets(action, "IsMap"));
-		ld.ld.uri.uri = pdf_to_utf8(ctx, pdf_dict_gets(action, "URI"));
+		ld.ld.uri.uri = pdf_to_utf8(xref, pdf_dict_gets(action, "URI"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Launch"))
 	{
@@ -221,20 +221,20 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 		ld.kind = FZ_LINK_LAUNCH;
 		if (pdf_is_dict(dest))
 			dest = pdf_dict_gets(dest, "F");
-		ld.ld.launch.file_spec = pdf_to_utf8(ctx, dest);
+		ld.ld.launch.file_spec = pdf_to_utf8(xref, dest);
 		ld.ld.launch.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Named"))
 	{
 		ld.kind = FZ_LINK_NAMED;
-		ld.ld.named.named = pdf_to_utf8(ctx, pdf_dict_gets(action, "N"));
+		ld.ld.named.named = pdf_to_utf8(xref, pdf_dict_gets(action, "N"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "GoToR"))
 	{
 		dest = pdf_dict_gets(action, "D");
 		ld = pdf_parse_link_dest(xref, dest);
 		ld.kind = FZ_LINK_GOTOR;
-		ld.ld.gotor.file_spec = pdf_to_utf8(ctx, pdf_dict_gets(action, "F"));
+		ld.ld.gotor.file_spec = pdf_to_utf8(xref, pdf_dict_gets(action, "F"));
 		ld.ld.gotor.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	return ld;

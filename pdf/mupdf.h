@@ -85,10 +85,10 @@ int pdf_fprint_obj(FILE *fp, pdf_obj *obj, int tight);
 void pdf_print_obj(pdf_obj *obj);
 void pdf_print_ref(pdf_obj *obj);
 
-char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
-unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src); /* sumatrapdf */
-pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_obj *src);
-char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
+char *pdf_to_utf8(pdf_document *xref, pdf_obj *src);
+unsigned short *pdf_to_ucs2(pdf_document *xref, pdf_obj *src); /* sumatrapdf */
+pdf_obj *pdf_to_utf8_name(pdf_document *xref, pdf_obj *src);
+char *pdf_from_ucs2(pdf_document *xref, unsigned short *str);
 
 fz_rect pdf_to_rect(fz_context *ctx, pdf_obj *array);
 fz_matrix pdf_to_matrix(fz_context *ctx, pdf_obj *array);
