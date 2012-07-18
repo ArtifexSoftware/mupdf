@@ -1440,7 +1440,7 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 			pdf_obj *js = pdf_dict_gets(a, "JS");
 			if (js)
 			{
-				char *code = get_string_or_stream(doc, js);
+				char *code = pdf_to_utf8(doc, js);
 				fz_try(ctx)
 				{
 					pdf_js_setup_event(doc->js, obj);

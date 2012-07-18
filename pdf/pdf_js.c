@@ -297,11 +297,11 @@ pdf_js *pdf_new_js(pdf_document *doc)
 	fz_context *ctx = doc->ctx;
 	pdf_js     *js = NULL;
 	pdf_obj    *javascript = NULL;
-	fz_buffer  *fzbuf = NULL;
+	char *codebuf = NULL;
 
 	fz_var(js);
 	fz_var(javascript);
-	fz_var(fzbuf);
+	fz_var(codebuf);
 	fz_try(ctx)
 	{
 		int len, i;
@@ -332,19 +332,15 @@ pdf_js *pdf_new_js(pdf_document *doc)
 
 			if (pdf_is_stream(doc, pdf_to_num(code), pdf_to_gen(code)))
 			{
-				unsigned char *buf;
-				int len;
-
 				fz_try(ctx)
 				{
-					fzbuf = pdf_load_stream(doc, pdf_to_num(code), pdf_to_gen(code));
-					len = fz_buffer_storage(ctx, fzbuf, &buf);
-					pdf_jsimp_execute_count(js->imp, (char *)buf, len);
+					codebuf = pdf_to_utf8(doc, code);
+					pdf_jsimp_execute(js->imp, codebuf);
 				}
 				fz_always(ctx)
 				{
-					fz_drop_buffer(ctx, fzbuf);
-					fzbuf = NULL;
+					fz_free(ctx, codebuf);
+					codebuf = NULL;
 				}
 				fz_catch(ctx)
 				{
