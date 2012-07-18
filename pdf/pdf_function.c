@@ -1131,8 +1131,9 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	pdf_obj *obj;
 	int i;
 
-	if (func->m != 1)
-		fz_throw(ctx, "/Domain must be one dimension (%d)", func->m);
+	if (func->m > 1)
+		fz_warn(ctx, "exponential functions have at most one input");
+	func->m = 1;
 
 	obj = pdf_dict_gets(dict, "N");
 	if (!pdf_is_int(obj) && !pdf_is_real(obj))
@@ -1212,8 +1213,9 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 
 	func->u.st.k = 0;
 
-	if (func->m != 1)
-		fz_throw(ctx, "/Domain must be one dimension (%d)", func->m);
+	if (func->m > 1)
+		fz_warn(ctx, "stitching functions have at most one input");
+	func->m = 1;
 
 	obj = pdf_dict_gets(dict, "Functions");
 	if (!pdf_is_array(obj))
