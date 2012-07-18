@@ -929,8 +929,10 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 	func->u.sa.samples = NULL;
 
 	obj = pdf_dict_gets(dict, "Size");
-	if (!pdf_is_array(obj) || pdf_array_len(obj) != func->m)
-		fz_throw(ctx, "malformed /Size");
+	if (pdf_array_len(obj) < func->m)
+		fz_throw(ctx, "too few sample function dimension sizes");
+	if (pdf_array_len(obj) > func->m)
+		fz_warn(ctx, "too many sample function dimension sizes");
 	for (i = 0; i < func->m; i++)
 		func->u.sa.size[i] = pdf_to_int(pdf_array_get(obj, i));
 
@@ -994,7 +996,7 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 		if (fz_is_eof_bits(stream))
 		{
 			fz_close(stream);
-			fz_throw(ctx, "truncated sample stream");
+			fz_throw(ctx, "truncated sample function stream");
 		}
 
 		switch (bps)
