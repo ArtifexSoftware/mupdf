@@ -1137,9 +1137,24 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	func->m = 1;
 
 	obj = pdf_dict_gets(dict, "N");
-	if (!pdf_is_int(obj) && !pdf_is_real(obj))
-		fz_throw(ctx, "malformed /N");
 	func->u.e.n = pdf_to_real(obj);
+
+	/* See exponential functions (PDF 1.7 section 3.9.2) */
+	if (func->u.e.n != (int) func->u.e.n)
+	{
+		/* If N is non-integer, input values may never be negative */
+		for (i = 0; i < func->m; i++)
+			if (func->domain[i][0] < 0 || func->domain[i][1] < 0)
+				fz_warn(ctx, "exponential function input domain includes illegal negative input values");
+	}
+	else if (func->u.e.n < 0)
+	{
+		/* if N is negative, input values may never be zero */
+		for (i = 0; i < func->m; i++)
+			if (func->domain[i][0] == 0 || func->domain[i][1] == 0 ||
+				(func->domain[i][0] < 0 && func->domain[i][1] > 0))
+				fz_warn(ctx, "exponential function input domain includes illegal input value zero");
+	}
 
 	obj = pdf_dict_gets(dict, "C0");
 	if (pdf_is_array(obj))
@@ -1181,12 +1196,9 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
 
 	x = fz_clamp(x, func->domain[0][0], func->domain[0][1]);
 
-	/* constraint */
+	/* Default output is zero, which is suitable for violated constraints */
 	if ((func->u.e.n != (int)func->u.e.n && x < 0) || (func->u.e.n < 0 && x == 0))
-	{
-		fz_warn(ctx, "constraint error");
 		return;
-	}
 
 	tmp = powf(x, func->u.e.n);
 	for (i = 0; i < func->n; i++)
