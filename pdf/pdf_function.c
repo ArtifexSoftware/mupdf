@@ -1466,20 +1466,27 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 }
 
 void
-pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen)
+pdf_eval_function(fz_context *ctx, pdf_function *func, float *in_, int inlen, float *out_, int outlen)
 {
-	memset(out, 0, sizeof(float) * outlen);
+	float fakein[MAXN];
+	float fakeout[MAXN];
+	float *in = in_;
+	float *out = out_;
 
-	if (inlen != func->m)
+	if (inlen < func->m)
 	{
-		fz_warn(ctx, "tried to evaluate function with wrong number of inputs");
-		return;
+		in = fakein;
+		memset(in, 0, sizeof(float) * func->m);
+		memcpy(in, in_, sizeof(float) * inlen);
 	}
-	if (func->n != outlen)
+
+	if (outlen < func->n)
 	{
-		fz_warn(ctx, "tried to evaluate function with wrong number of outputs");
-		return;
+		out = fakeout;
+		memset(out, 0, sizeof(float) * func->n);
 	}
+	else
+		memset(out, 0, sizeof(float) * outlen);
 
 	switch(func->type)
 	{
@@ -1488,6 +1495,9 @@ pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, flo
 	case STITCHING: eval_stitching_func(ctx, func, *in, out); break;
 	case POSTSCRIPT: eval_postscript_func(ctx, func, in, out); break;
 	}
+
+	if (outlen < func->n)
+		memcpy(out_, out, sizeof(float) * outlen);
 }
 
 /*
