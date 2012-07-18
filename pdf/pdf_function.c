@@ -935,8 +935,6 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 		func->u.sa.size[i] = pdf_to_int(pdf_array_get(obj, i));
 
 	obj = pdf_dict_gets(dict, "BitsPerSample");
-	if (!pdf_is_int(obj))
-		fz_throw(ctx, "malformed /BitsPerSample");
 	func->u.sa.bps = bps = pdf_to_int(obj);
 
 	obj = pdf_dict_gets(dict, "Encode");
