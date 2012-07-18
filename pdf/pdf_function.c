@@ -937,43 +937,42 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 	obj = pdf_dict_gets(dict, "BitsPerSample");
 	func->u.sa.bps = bps = pdf_to_int(obj);
 
+	for (i = 0; i < func->m; i++)
+	{
+		func->u.sa.encode[i][0] = 0;
+		func->u.sa.encode[i][1] = func->u.sa.size[i] - 1;
+	}
 	obj = pdf_dict_gets(dict, "Encode");
 	if (pdf_is_array(obj))
 	{
-		if (pdf_array_len(obj) != func->m * 2)
-			fz_throw(ctx, "malformed /Encode");
-		for (i = 0; i < func->m; i++)
+		int ranges = fz_mini(func->m, pdf_array_len(obj) / 2);
+		if (ranges != func->m)
+			fz_warn(ctx, "too few/many sample function input mappings");
+
+		for (i = 0; i < ranges; i++)
 		{
 			func->u.sa.encode[i][0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
 			func->u.sa.encode[i][1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
 		}
 	}
-	else
+
+	for (i = 0; i < func->n; i++)
 	{
-		for (i = 0; i < func->m; i++)
-		{
-			func->u.sa.encode[i][0] = 0;
-			func->u.sa.encode[i][1] = func->u.sa.size[i] - 1;
-		}
+		func->u.sa.decode[i][0] = func->range[i][0];
+		func->u.sa.decode[i][1] = func->range[i][1];
 	}
 
 	obj = pdf_dict_gets(dict, "Decode");
 	if (pdf_is_array(obj))
 	{
-		if (pdf_array_len(obj) != func->n * 2)
-			fz_throw(ctx, "malformed /Decode");
-		for (i = 0; i < func->n; i++)
+		int ranges = fz_mini(func->n, pdf_array_len(obj) / 2);
+		if (ranges != func->n)
+			fz_warn(ctx, "too few/many sample function output mappings");
+
+		for (i = 0; i < ranges; i++)
 		{
 			func->u.sa.decode[i][0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
 			func->u.sa.decode[i][1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
-		}
-	}
-	else
-	{
-		for (i = 0; i < func->n; i++)
-		{
-			func->u.sa.decode[i][0] = func->range[i][0];
-			func->u.sa.decode[i][1] = func->range[i][1];
 		}
 	}
 
@@ -1265,13 +1264,20 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 			fz_warn(ctx, "malformed shading function bounds (domain mismatch), proceeding anyway.");
 	}
 
-	obj = pdf_dict_gets(dict, "Encode");
-	if (!pdf_is_array(obj))
-		fz_throw(ctx, "stitching function is missing encoding");
+	for (i = 0; i < k; i++)
 	{
-		if (pdf_array_len(obj) != k * 2)
-			fz_throw(ctx, "malformed /Encode");
-		for (i = 0; i < k; i++)
+		func->u.st.encode[i * 2 + 0] = 0;
+		func->u.st.encode[i * 2 + 1] = 0;
+	}
+
+	obj = pdf_dict_gets(dict, "Encode");
+	if (pdf_is_array(obj))
+	{
+		int ranges = fz_mini(k, pdf_array_len(obj) / 2);
+		if (ranges != k)
+			fz_warn(ctx, "too few/many stitching function input mappings");
+
+		for (i = 0; i < ranges; i++)
 		{
 			func->u.st.encode[i * 2 + 0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
 			func->u.st.encode[i * 2 + 1] = pdf_to_real(pdf_array_get(obj, i * 2 + 1));
