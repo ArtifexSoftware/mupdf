@@ -731,7 +731,7 @@ static void renumberobjs(pdf_document *xref, pdf_write_options *opts)
 				if (newlen < opts->renumber_map[num])
 					newlen = opts->renumber_map[num];
 				xref->table[opts->renumber_map[num]] = oldxref[num];
-				new_use_list[opts->renumber_map[num]] = opts->use_list[num];
+				new_use_list[opts->renumber_map[num]] = 1;
 			}
 			else
 			{
@@ -2120,6 +2120,9 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 		/* Sweep & mark objects from the trailer */
 		if (opts.do_garbage >= 1)
 			sweepobj(xref, &opts, xref->trailer);
+		else
+			for (num = 0; num < xref->len; num++)
+				opts.use_list[num] = 1;
 
 		/* Coalesce and renumber duplicate objects */
 		if (opts.do_garbage >= 3)
