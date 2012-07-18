@@ -1229,7 +1229,7 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 		for (i = 0; i < k; i++)
 		{
 			sub = pdf_array_get(obj, i);
-			funcs[i] = pdf_load_function(xref, sub);
+			funcs[i] = pdf_load_function(xref, sub, 1, func->n);
 			/* RJW: "cannot load sub function %d (%d %d R)", i, pdf_to_num(sub), pdf_to_gen(sub) */
 			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
 				fz_throw(ctx, "sub function %d /Domain or /Range mismatch", i);
@@ -1237,9 +1237,7 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 			func->u.st.k ++;
 		}
 
-		if (!func->n)
-			func->n = funcs[0]->n;
-		else if (func->n != funcs[0]->n)
+		if (func->n != funcs[0]->n)
 			fz_throw(ctx, "sub function /Domain or /Range mismatch");
 	}
 
@@ -1371,7 +1369,7 @@ pdf_function_size(pdf_function *func)
 }
 
 pdf_function *
-pdf_load_function(pdf_document *xref, pdf_obj *dict)
+pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 {
 	fz_context *ctx = xref->ctx;
 	pdf_function *func;
@@ -1414,8 +1412,13 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict)
 	else
 	{
 		func->has_range = 0;
-		func->n = 0;
+		func->n = out;
 	}
+
+	if (func->m != in)
+		fz_warn(ctx, "too few/many function inputs");
+	if (func->n != out)
+		fz_warn(ctx, "too few/many function outputs");
 
 	fz_try(ctx)
 	{
