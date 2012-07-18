@@ -205,44 +205,101 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (mujstest_file)
 	{
-		fz_annot *annot = fz_first_annot(doc, page);
-		if (annot)
+		fz_interactive *inter = fz_interact(doc);
+		fz_widget *widget = NULL;
+	
+		if (inter)
+			widget = fz_first_widget(inter, page);
+
+		if (widget)
 		{
 			fprintf(mujstest_file, "GOTO %d\n", pagenum);
 			needshot = 1;
 		}
-		for (;annot; annot = fz_next_annot(doc, annot))
+		for (;widget; widget = fz_next_widget(inter, widget))
 		{
-			fz_rect rect = fz_bound_annot(doc, annot);
+			fz_rect rect = *fz_widget_get_bbox(widget);
 			int w = (rect.x1-rect.x0);
 			int h = (rect.y1-rect.y0);
 			int len;
+			int type = fz_widget_get_type(widget);
 
-			/* If height is low, assume a single row, and base
-			 * the width off that. */
-			if (h < 10)
+			++mujstest_count;
+			switch (type)
 			{
-				w = (w+h-1) / (h ? h : 1);
-				h = 1;
-			}
-			/* Otherwise, if width is low, work off height */
-			else if (w < 10)
+			default:
+				fprintf(mujstest_file, "%% UNKNOWN %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
+			case FZ_WIDGET_TYPE_PUSHBUTTON:
+				fprintf(mujstest_file, "%% PUSHBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
+			case FZ_WIDGET_TYPE_CHECKBOX:
+				fprintf(mujstest_file, "%% CHECKBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
+			case FZ_WIDGET_TYPE_RADIOBUTTON:
+				fprintf(mujstest_file, "%% RADIOBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
+			case FZ_WIDGET_TYPE_TEXT:
 			{
-				h = (w+h-1) / (w ? w : 1);
-				w = 1;
+				int maxlen = fz_widget_text_get_max_len(inter, widget);
+				int texttype = fz_widget_text_get_content_type(inter, widget);
+
+				/* If height is low, assume a single row, and base
+				 * the width off that. */
+				if (h < 10)
+				{
+					w = (w+h-1) / (h ? h : 1);
+					h = 1;
+				}
+				/* Otherwise, if width is low, work off height */
+				else if (w < 10)
+				{
+					h = (w+h-1) / (w ? w : 1);
+					w = 1;
+				}
+				else
+				{
+					w = (w+9)/10;
+					h = (h+9)/10;
+				}
+				len = w*h;
+				if (len < 2)
+					len = 2;
+				if (len > maxlen)
+					len = maxlen;
+				fprintf(mujstest_file, "%% TEXT %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				switch (texttype)
+				{
+				default:
+				case FZ_WIDGET_CONTENT_UNRESTRAINED:
+					fprintf(mujstest_file, "TEXT %d ", mujstest_count);
+					escape_string(mujstest_file, len-3, lorem);
+					fprintf(mujstest_file, "\n");
+					break;
+				case FZ_WIDGET_CONTENT_NUMBER:
+					fprintf(mujstest_file, "TEXT %d\n", mujstest_count);
+					break;
+				case FZ_WIDGET_CONTENT_SPECIAL:
+					fprintf(mujstest_file, "TEXT %d\n", 46702919800 + mujstest_count);
+					break;
+				case FZ_WIDGET_CONTENT_DATE:
+					fprintf(mujstest_file, "TEXT Jun %d 1979\n", 1 + ((13 + mujstest_count) % 30));
+					break;
+				case FZ_WIDGET_CONTENT_TIME:
+					++mujstest_count;
+					fprintf(mujstest_file, "TEXT %02d:%02d\n", ((mujstest_count/60) % 24), mujstest_count % 60);
+					break;
+				}
+				break;
 			}
-			else
-			{
-				w = (w+9)/10;
-				h = (h+9)/10;
+			case FZ_WIDGET_TYPE_LISTBOX:
+				fprintf(mujstest_file, "%% LISTBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
+			case FZ_WIDGET_TYPE_COMBOBOX:
+				fprintf(mujstest_file, "%% COMBOBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+				break;
 			}
-			len = w*h;
-			if (len < 2)
-				len = 2;
-			fprintf(mujstest_file, "%% %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
-			fprintf(mujstest_file, "TEXT %d ", ++mujstest_count);
-			escape_string(mujstest_file, len-2, lorem);
-			fprintf(mujstest_file, "\nCLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
+			fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
 		}
 	}
 
