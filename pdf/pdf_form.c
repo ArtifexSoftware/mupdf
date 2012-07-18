@@ -1120,6 +1120,72 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	return form;
 }
 
+static char *to_font_encoding(fz_context *ctx, pdf_font_desc *font, char *utf8)
+{
+	int i;
+	int needs_converting = 0;
+
+	/* Temporay partial solution. We are using a slow lookup in the conversion
+	 * below, so we avoid performing the conversion unnecessarily. We check for
+	 * top-bit-set chars, and convert only if they are present. We should also
+	 * check that the font encoding is one that agrees with utf8 from 0 to 7f,
+	 * but for now we get away without doing so. This is after all an improvement
+	 * on just strdup */
+	for (i = 0; utf8[i] != '\0'; i++)
+	{
+		if (utf8[i] & 0x80)
+			needs_converting = 1;
+	}
+
+	/* Even if we need to convert, we cannot do so if the font has no cid_to_ucs mapping */
+	if (needs_converting && font->cid_to_ucs)
+	{
+		char *buf = fz_malloc(ctx, strlen(utf8) + 1);
+		char *bufp = buf;
+
+		fz_try(ctx)
+		{
+			while(*utf8)
+			{
+				if (*utf8 & 0x80)
+				{
+					int rune;
+
+					utf8 += fz_chartorune(&rune, utf8);
+
+					/* Slow search for the cid that maps to the unicode value held in 'rune" */
+					for (i = 0; i < font->cid_to_ucs_len && font->cid_to_ucs[i] != rune; i++)
+						;
+
+					/* If found store the cid */
+					if (i < font->cid_to_ucs_len)
+						*bufp++ = i;
+				}
+				else
+				{
+					*bufp++ = *utf8++;
+				}
+			}
+
+			*bufp = '\0';
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, buf);
+			fz_rethrow(ctx);
+		}
+
+		return buf;
+	}
+	else
+	{
+		/* If either no conversion is needed or the font has no cid_to_ucs
+		 * mapping then leave unconverted, although in the latter case the result
+		 * is likely incorrect */
+		return fz_strdup(ctx, utf8);
+	}
+}
+
 static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *eventValue)
 {
 	fz_context *ctx = doc->ctx;
@@ -1139,12 +1205,13 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *eventV
 	fz_var(text);
 	fz_try(ctx)
 	{
+		get_text_widget_info(doc, obj, &info);
+
 		if (eventValue)
-			text = fz_strdup(ctx, eventValue);
+			text = to_font_encoding(ctx, info.font_rec.font, eventValue);
 		else
 			text = pdf_field_getValue(doc, obj);
 
-		get_text_widget_info(doc, obj, &info);
 		form = load_or_create_form(doc, obj, &rect);
 
 		has_tm = get_matrix(doc, form, info.q, &tm);
