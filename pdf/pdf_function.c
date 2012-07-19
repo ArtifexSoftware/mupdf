@@ -1258,22 +1258,22 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 	if (!pdf_is_array(obj))
 		fz_throw(ctx, "stitching function has no bounds");
 	{
-		if (pdf_array_len(obj) != k - 1)
-			fz_throw(ctx, "malformed /Bounds (wrong length)");
+		if (pdf_array_len(obj) < k - 1)
+			fz_throw(ctx, "too few subfunction boundaries");
+		if (pdf_array_len(obj) > k)
+			fz_warn(ctx, "too many subfunction boundaries");
 
 		for (i = 0; i < k - 1; i++)
 		{
 			num = pdf_array_get(obj, i);
-			if (!pdf_is_int(num) && !pdf_is_real(num))
-				fz_throw(ctx, "malformed /Bounds (item not real)");
 			func->u.st.bounds[i] = pdf_to_real(num);
 			if (i && func->u.st.bounds[i - 1] > func->u.st.bounds[i])
-				fz_throw(ctx, "malformed /Bounds (item not monotonic)");
+				fz_throw(ctx, "subfunction %d boundary out of range", i);
 		}
 
-		if (k != 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
+		if (k > 1 && (func->domain[0][0] > func->u.st.bounds[0] ||
 			func->domain[0][1] < func->u.st.bounds[k - 2]))
-			fz_warn(ctx, "malformed shading function bounds (domain mismatch), proceeding anyway.");
+			fz_warn(ctx, "subfunction boundaries outside of input mapping");
 	}
 
 	for (i = 0; i < k; i++)
