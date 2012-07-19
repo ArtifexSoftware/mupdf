@@ -1203,21 +1203,23 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 {
 	pdf_hmtx h;
 	int gid;
-	int i;
+	int i = 0;
 	float x = 0.0;
 
-	for (i = 0; i < len && x <= room; i++)
+	while(i < len)
 	{
+		float span;
+
 		gid = pdf_font_cid_to_gid(ctx, fontdesc, buf[i]);
 		h = pdf_lookup_hmtx(ctx, fontdesc, buf[i]);
 
-		x += h.w * fontsize / 1000.0;
-	}
+		span = h.w * fontsize / 1000.0;
 
-	if (x > room)
-	{
-		i --;
-		x -= h.w * fontsize / 1000.0;
+		if (x + span > room)
+			break;
+
+		x += span;
+		i ++;
 	}
 
 	if (count)
