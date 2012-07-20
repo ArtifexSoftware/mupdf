@@ -260,12 +260,15 @@ pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, c
 		else if (!strcmp(collection, "Adobe-Korea1"))
 			pdf_load_substitute_cjk_font(ctx, fontdesc, PDF_ROS_KOREA, serif);
 		else
-			fz_throw(ctx, "unknown cid collection: %s", collection);
-		return;
+		{
+			fz_warn(ctx, "unknown cid collection: %s", collection);
+			pdf_load_substitute_font(ctx, fontdesc, mono, serif, bold, italic);
+		}
 	}
-
-	pdf_load_substitute_font(ctx, fontdesc, mono, serif, bold, italic);
-	/* RJW: "cannot load substitute font" */
+	else
+	{
+		pdf_load_substitute_font(ctx, fontdesc, mono, serif, bold, italic);
+	}
 }
 
 static void
