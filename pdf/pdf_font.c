@@ -183,7 +183,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 	if (!data)
 		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
 
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
+	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 	/* RJW: "cannot load freetype font from memory" */
 
 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
@@ -191,7 +191,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 }
 
 static void
-pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int serif, int bold, int italic)
+pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int mono, int serif, int bold, int italic)
 {
 	unsigned char *data;
 	unsigned int len;
@@ -200,7 +200,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 	if (!data)
 		fz_throw(ctx, "cannot find substitute font");
 
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 1);
+	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
 	/* RJW: "cannot load freetype font from memory" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -209,7 +209,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, int mono, int
 }
 
 static void
-pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, int serif)
+pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int ros, int serif)
 {
 	unsigned char *data;
 	unsigned int len;
@@ -219,7 +219,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, int ros, 
 		fz_throw(ctx, "cannot find builtin CJK font");
 
 	/* a glyph bbox cache is too big for droid sans fallback (51k glyphs!) */
-	fontdesc->font = fz_new_font_from_memory(ctx, data, len, 0, 0);
+	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 0);
 	/* RJW: "cannot load builtin CJK font" */
 
 	fontdesc->font->ft_substitute = 1;
@@ -252,27 +252,27 @@ pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, c
 	if (collection)
 	{
 		if (!strcmp(collection, "Adobe-CNS1"))
-			pdf_load_substitute_cjk_font(ctx, fontdesc, PDF_ROS_CNS, serif);
+			pdf_load_substitute_cjk_font(ctx, fontdesc, fontname, PDF_ROS_CNS, serif);
 		else if (!strcmp(collection, "Adobe-GB1"))
-			pdf_load_substitute_cjk_font(ctx, fontdesc, PDF_ROS_GB, serif);
+			pdf_load_substitute_cjk_font(ctx, fontdesc, fontname, PDF_ROS_GB, serif);
 		else if (!strcmp(collection, "Adobe-Japan1"))
-			pdf_load_substitute_cjk_font(ctx, fontdesc, PDF_ROS_JAPAN, serif);
+			pdf_load_substitute_cjk_font(ctx, fontdesc, fontname, PDF_ROS_JAPAN, serif);
 		else if (!strcmp(collection, "Adobe-Korea1"))
-			pdf_load_substitute_cjk_font(ctx, fontdesc, PDF_ROS_KOREA, serif);
+			pdf_load_substitute_cjk_font(ctx, fontdesc, fontname, PDF_ROS_KOREA, serif);
 		else
 		{
 			fz_warn(ctx, "unknown cid collection: %s", collection);
-			pdf_load_substitute_font(ctx, fontdesc, mono, serif, bold, italic);
+			pdf_load_substitute_font(ctx, fontdesc, fontname, mono, serif, bold, italic);
 		}
 	}
 	else
 	{
-		pdf_load_substitute_font(ctx, fontdesc, mono, serif, bold, italic);
+		pdf_load_substitute_font(ctx, fontdesc, fontname, mono, serif, bold, italic);
 	}
 }
 
 static void
-pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *stmref)
+pdf_load_embedded_font(pdf_document *xref, pdf_font_desc *fontdesc, char *fontname, pdf_obj *stmref)
 {
 	fz_buffer *buf;
 	fz_context *ctx = xref->ctx;
@@ -288,7 +288,7 @@ pdf_load_embedded_font(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *stm
 
 	fz_try(ctx)
 	{
-		fontdesc->font = fz_new_font_from_memory(ctx, buf->data, buf->len, 0, 1);
+		fontdesc->font = fz_new_font_from_memory(ctx, fontname, buf->data, buf->len, 0, 1);
 	}
 	fz_catch(ctx)
 	{
@@ -1010,7 +1010,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *d
 	{
 		fz_try(ctx)
 		{
-			pdf_load_embedded_font(fontdesc, xref, obj);
+			pdf_load_embedded_font(xref, fontdesc, fontname, obj);
 		}
 		fz_catch(ctx)
 		{
