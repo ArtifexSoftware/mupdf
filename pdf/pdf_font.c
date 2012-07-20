@@ -179,6 +179,8 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 	unsigned char *data;
 	unsigned int len;
 
+	fontname = clean_font_name(fontname);
+
 	data = pdf_lookup_builtin_font(fontname, &len);
 	if (!data)
 		fz_throw(ctx, "cannot find builtin font: '%s'", fontname);
@@ -432,15 +434,14 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		if (descriptor)
 			pdf_load_font_descriptor(fontdesc, xref, descriptor, NULL, basefont);
 		else
-			pdf_load_builtin_font(ctx, fontdesc, clean_font_name(basefont));
+			pdf_load_builtin_font(ctx, fontdesc, basefont);
 
 		/* Some chinese documents mistakenly consider WinAnsiEncoding to be codepage 936 */
-		if (!*fontdesc->font->name &&
+		if (descriptor && pdf_is_string(pdf_dict_gets(descriptor, "FontName")) &&
 			!pdf_dict_gets(dict, "ToUnicode") &&
 			!strcmp(pdf_to_name(pdf_dict_gets(dict, "Encoding")), "WinAnsiEncoding") &&
 			pdf_to_int(pdf_dict_gets(descriptor, "Flags")) == 4)
 		{
-			/* note: without the comma, pdf_load_font_descriptor would prefer /FontName over /BaseFont */
 			char *cp936fonts[] = {
 				"\xCB\xCE\xCC\xE5", "SimSun,Regular",
 				"\xBA\xDA\xCC\xE5", "SimHei,Regular",
@@ -545,10 +546,8 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 						item = pdf_array_get(diff, i);
 						if (pdf_is_int(item))
 							k = pdf_to_int(item);
-						if (pdf_is_name(item))
+						if (pdf_is_name(item) && k >= 0 && k < 256)
 							estrings[k++] = pdf_to_name(item);
-						if (k < 0) k = 0;
-						if (k > 255) k = 255;
 					}
 				}
 			}
@@ -564,7 +563,13 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		subtype = pdf_to_name(pdf_dict_gets(dict, "Subtype"));
 		if (!strcmp(subtype, "Type1"))
 			kind = TYPE1;
+		else if (!strcmp(subtype, "MMType1"))
+			kind = TYPE1;
 		else if (!strcmp(subtype, "TrueType"))
+			kind = TRUETYPE;
+		else if (!strcmp(subtype, "CIDFontType0"))
+			kind = TYPE1;
+		else if (!strcmp(subtype, "CIDFontType2"))
 			kind = TRUETYPE;
 
 		/* encode by glyph name where we can */
@@ -998,23 +1003,12 @@ static void
 pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont)
 {
 	pdf_obj *obj1, *obj2, *obj3, *obj;
-	char *fontname, *origname, *p;
+	char *fontname, *origname;
 	FT_Face face;
 	fz_context *ctx = xref->ctx;
 
-	/* The descriptor's FontName should be the same as the font's BaseFont. */
-	origname = pdf_to_name(pdf_dict_gets(dict, "FontName"));
-	if (!origname)
-		origname = basefont;
-
-	/* Prefer BaseFont if it has a style suffix */
-	if (strchr(basefont, ','))
-		origname = basefont;
-
-	/* Strip the SUBSET+ prefix */
-	p = strchr(origname, '+');
-	if (p)
-		origname = p + 1;
+	/* Prefer BaseFont; don't bother with FontName */
+	origname = basefont;
 
 	/* Look through list of alternate names for built in fonts */
 	fontname = clean_font_name(origname);
