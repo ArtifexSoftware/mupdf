@@ -916,6 +916,8 @@ eval_postscript_func(fz_context *ctx, pdf_function *func, float *in, float *out)
  * Sample function
  */
 
+#define MAX_SAMPLE_FUNCTION_SIZE (100 << 20)
+
 static void
 load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num, int gen)
 {
@@ -980,6 +982,9 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 
 	for (i = 0, samplecount = func->n; i < func->m; i++)
 		samplecount *= func->u.sa.size[i];
+
+	if (samplecount > MAX_SAMPLE_FUNCTION_SIZE)
+		fz_throw(ctx, "sample function too large");
 
 	func->u.sa.samples = fz_malloc_array(ctx, samplecount, sizeof(float));
 	func->size += samplecount * sizeof(float);
