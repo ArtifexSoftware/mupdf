@@ -405,6 +405,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 	pdf_obj *widths;
 	unsigned short *etable = NULL;
 	pdf_font_desc *fontdesc = NULL;
+	char *subtype;
 	FT_Face face;
 	FT_CharMap cmap;
 	int symbolic;
@@ -555,8 +556,16 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		for (i = 0; i < 256; i++)
 			etable[i] = ft_char_index(face, i);
 
-		/* encode by glyph name where we can */
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
+
+		/* built-in and substitute fonts may be a different type than what the document expects */
+		subtype = pdf_to_name(pdf_dict_gets(dict, "Subtype"));
+		if (!strcmp(subtype, "Type1"))
+			kind = TYPE1;
+		else if (!strcmp(subtype, "TrueType"))
+			kind = TRUETYPE;
+
+		/* encode by glyph name where we can */
 		if (kind == TYPE1)
 		{
 			for (i = 0; i < 256; i++)
@@ -649,6 +658,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 				}
 			}
 		}
+
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
