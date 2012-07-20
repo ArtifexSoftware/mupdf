@@ -411,7 +411,6 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 	int kind;
 
 	char *basefont;
-	char *fontname;
 	char *estrings[256];
 	char ebuffer[256][32];
 	int i, k, n;
@@ -422,7 +421,6 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 	fz_var(etable);
 
 	basefont = pdf_to_name(pdf_dict_gets(dict, "BaseFont"));
-	fontname = clean_font_name(basefont);
 
 	/* Load font file */
 	fz_try(ctx)
@@ -433,7 +431,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		if (descriptor)
 			pdf_load_font_descriptor(fontdesc, xref, descriptor, NULL, basefont);
 		else
-			pdf_load_builtin_font(ctx, fontdesc, fontname);
+			pdf_load_builtin_font(ctx, fontdesc, clean_font_name(basefont));
 
 		/* Some chinese documents mistakenly consider WinAnsiEncoding to be codepage 936 */
 		if (!*fontdesc->font->name &&
@@ -982,15 +980,25 @@ static void
 pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont)
 {
 	pdf_obj *obj1, *obj2, *obj3, *obj;
-	char *fontname;
-	char *origname;
+	char *fontname, *origname, *p;
 	FT_Face face;
 	fz_context *ctx = xref->ctx;
 
-	if (!strchr(basefont, ',') || strchr(basefont, '+'))
-		origname = pdf_to_name(pdf_dict_gets(dict, "FontName"));
-	else
+	/* The descriptor's FontName should be the same as the font's BaseFont. */
+	origname = pdf_to_name(pdf_dict_gets(dict, "FontName"));
+	if (!origname)
 		origname = basefont;
+
+	/* Prefer BaseFont if it has a style suffix */
+	if (strchr(basefont, ','))
+		origname = basefont;
+
+	/* Strip the SUBSET+ prefix */
+	p = strchr(origname, '+');
+	if (p)
+		origname = p + 1;
+
+	/* Look through list of alternate names for built in fonts */
 	fontname = clean_font_name(origname);
 
 	fontdesc->flags = pdf_to_int(pdf_dict_gets(dict, "Flags"));
@@ -1019,7 +1027,6 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *d
 				pdf_load_builtin_font(ctx, fontdesc, fontname);
 			else
 				pdf_load_system_font(ctx, fontdesc, fontname, collection);
-			/* RJW: "cannot load font descriptor (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict) */
 		}
 	}
 	else
@@ -1028,10 +1035,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *d
 			pdf_load_builtin_font(ctx, fontdesc, fontname);
 		else
 			pdf_load_system_font(ctx, fontdesc, fontname, collection);
-		/* RJW: "cannot load font descriptor (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict) */
 	}
-
-	fz_strlcpy(fontdesc->font->name, fontname, sizeof fontdesc->font->name);
 
 	/* Check for DynaLab fonts that must use hinting */
 	face = fontdesc->font->ft_face;
