@@ -497,6 +497,8 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 					cmap = test;
 				if (test->platform_id == 3 && test->encoding_id == 1)
 					cmap = test;
+				if (symbolic && test->platform_id == 3 && test->encoding_id == 0)
+					cmap = test;
 			}
 		}
 
