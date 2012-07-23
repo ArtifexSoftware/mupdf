@@ -668,8 +668,14 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		fontdesc->cid_to_gid_len = 256;
 		fontdesc->cid_to_gid = etable;
 
-		pdf_load_to_unicode(xref, fontdesc, estrings, NULL, pdf_dict_gets(dict, "ToUnicode"));
-		/* RJW: "cannot load to_unicode" */
+		fz_try(ctx)
+		{
+			pdf_load_to_unicode(xref, fontdesc, estrings, NULL, pdf_dict_gets(dict, "ToUnicode"));
+		}
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "cannot load ToUnicode CMap");
+		}
 
 	skip_encoding:
 
