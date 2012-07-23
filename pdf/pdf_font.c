@@ -666,6 +666,14 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 			}
 		}
 
+		/* symbolic Type 1 fonts with an implicit encoding and non-standard glyph names */
+		if (kind == TYPE1 && symbolic)
+		{
+			for (i = 0; i < 256; i++)
+				if (etable[i] && estrings[i] && !pdf_lookup_agl(estrings[i]))
+					estrings[i] = (char*) pdf_standard[i];
+		}
+
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
