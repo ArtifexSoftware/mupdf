@@ -627,7 +627,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 			}
 
 			/* Symbolic cmap */
-			else
+			else if (!face->charmap || face->charmap->encoding != FT_ENCODING_MS_SYMBOL)
 			{
 				for (i = 0; i < 256; i++)
 				{
