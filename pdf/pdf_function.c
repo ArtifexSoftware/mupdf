@@ -1156,34 +1156,32 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 				fz_warn(ctx, "exponential function input domain includes illegal input value zero");
 	}
 
+	for (i = 0; i < func->n; i++)
+	{
+		func->u.e.c0[i] = 0;
+		func->u.e.c1[i] = 1;
+	}
+
 	obj = pdf_dict_gets(dict, "C0");
 	if (pdf_is_array(obj))
 	{
-		func->n = pdf_array_len(obj);
-		if (func->n >= MAXN)
-			fz_throw(ctx, "exponential function result array out of range");
-		for (i = 0; i < func->n; i++)
+		int ranges = fz_mini(func->n, pdf_array_len(obj));
+		if (ranges != func->n)
+			fz_warn(ctx, "too few/many C0 constants for exponential function");
+
+		for (i = 0; i < ranges; i++)
 			func->u.e.c0[i] = pdf_to_real(pdf_array_get(obj, i));
-	}
-	else
-	{
-		func->n = 1;
-		func->u.e.c0[0] = 0;
 	}
 
 	obj = pdf_dict_gets(dict, "C1");
 	if (pdf_is_array(obj))
 	{
-		if (pdf_array_len(obj) != func->n)
-			fz_throw(ctx, "/C1 must match /C0 length");
-		for (i = 0; i < func->n; i++)
+		int ranges = fz_mini(func->n, pdf_array_len(obj));
+		if (ranges != func->n)
+			fz_warn(ctx, "too few/many C1 constants for exponential function");
+
+		for (i = 0; i < ranges; i++)
 			func->u.e.c1[i] = pdf_to_real(pdf_array_get(obj, i));
-	}
-	else
-	{
-		if (func->n != 1)
-			fz_throw(ctx, "/C1 must match /C0 length");
-		func->u.e.c1[0] = 1;
 	}
 }
 
