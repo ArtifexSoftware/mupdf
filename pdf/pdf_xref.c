@@ -495,7 +495,8 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 	if (!size)
 		fz_throw(ctx, "trailer missing Size entry");
 
-	pdf_resize_xref(xref, size);
+	if (size > xref->len)
+		pdf_resize_xref(xref, size);
 
 	pdf_read_xref_sections(xref, xref->startxref, buf);
 
