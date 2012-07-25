@@ -347,6 +347,17 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 		w1 = pdf_to_int(pdf_array_get(obj, 1));
 		w2 = pdf_to_int(pdf_array_get(obj, 2));
 
+		if (w0 < 0)
+			fz_warn(ctx, "xref stream objects have corrupt type");
+		if (w1 < 0)
+			fz_warn(ctx, "xref stream objects have corrupt offset");
+		if (w2 < 0)
+			fz_warn(ctx, "xref stream objects have corrupt generation");
+
+		w0 = w0 < 0 ? 0 : w0;
+		w1 = w1 < 0 ? 0 : w1;
+		w2 = w2 < 0 ? 0 : w2;
+
 		index = pdf_dict_gets(trailer, "Index");
 
 		stm = pdf_open_stream_with_offset(xref, num, gen, trailer, stm_ofs);
