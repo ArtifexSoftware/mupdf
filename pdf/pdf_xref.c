@@ -445,12 +445,17 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 			xrefstmofs = pdf_to_int(pdf_dict_gets(trailer, "XRefStm"));
 			prevofs = pdf_to_int(pdf_dict_gets(trailer, "Prev"));
 
+			if (xrefstmofs < 0)
+				fz_throw(ctx, "negative xref stream offset");
+			if (prevofs < 0)
+				fz_throw(ctx, "negative xref stream offset for previous xref stream");
+
 			/* We only recurse if we have both xrefstm and prev.
 			 * Hopefully this happens infrequently. */
 			if (xrefstmofs && prevofs)
 				pdf_read_xref_sections(xref, xrefstmofs, buf);
 			if (prevofs)
- 				ofs = prevofs;
+				ofs = prevofs;
 			else if (xrefstmofs)
 				ofs = xrefstmofs;
 			pdf_drop_obj(trailer);
