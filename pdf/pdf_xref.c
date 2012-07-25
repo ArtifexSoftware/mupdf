@@ -900,6 +900,11 @@ pdf_load_obj_stm(pdf_document *xref, int num, int gen, pdf_lexbuf *buf)
 		count = pdf_to_int(pdf_dict_gets(objstm, "N"));
 		first = pdf_to_int(pdf_dict_gets(objstm, "First"));
 
+		if (count < 0)
+			fz_throw(ctx, "negative number of objects in object stream");
+		if (first < 0)
+			fz_throw(ctx, "first object in object stream resides outside stream");
+
 		numbuf = fz_calloc(ctx, count, sizeof(int));
 		ofsbuf = fz_calloc(ctx, count, sizeof(int));
 
