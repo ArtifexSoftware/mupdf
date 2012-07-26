@@ -106,6 +106,9 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 		first = pdf_to_int(pdf_dict_gets(dict, "FirstChar"));
 		last = pdf_to_int(pdf_dict_gets(dict, "LastChar"));
 
+		if (first < 0 || last > 255 || first > last)
+			first = last = 0;
+
 		widths = pdf_dict_gets(dict, "Widths");
 		if (!widths)
 		{
