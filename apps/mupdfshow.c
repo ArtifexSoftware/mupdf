@@ -32,7 +32,7 @@ static void showxref(void)
 {
 	if (!doc)
 		fz_throw(ctx, "no file specified");
-	pdf_fprint_obj(stdout, doc, 0);
+	pdf_print_xref(doc);
 	printf("\n");
 }
 
