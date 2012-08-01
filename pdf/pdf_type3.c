@@ -89,8 +89,7 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 						k = pdf_to_int(item);
 					if (pdf_is_name(item))
 						estrings[k++] = pdf_to_name(item);
-					if (k < 0) k = 0;
-					if (k > 255) k = 255;
+					k = fz_clampi(k, 0, 255);
 				}
 			}
 		}
@@ -106,6 +105,9 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 
 		first = pdf_to_int(pdf_dict_gets(dict, "FirstChar"));
 		last = pdf_to_int(pdf_dict_gets(dict, "LastChar"));
+
+		if (first < 0 || last > 255 || first > last)
+			first = last = 0;
 
 		widths = pdf_dict_gets(dict, "Widths");
 		if (!widths)
