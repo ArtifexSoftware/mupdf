@@ -859,7 +859,6 @@ pdf_close_document(pdf_document *xref)
 	fz_free(ctx, xref);
 }
 
-#ifndef NDEBUG
 void
 pdf_print_xref(pdf_document *xref)
 {
@@ -875,7 +874,6 @@ pdf_print_xref(pdf_document *xref)
 			xref->table[i].stm_buf);
 	}
 }
-#endif
 
 /*
  * compressed object streams

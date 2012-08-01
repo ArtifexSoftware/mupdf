@@ -225,9 +225,7 @@ void pdf_repair_obj_stms(pdf_document *doc);
 void pdf_resize_xref(pdf_document *doc, int newcap);
 pdf_obj *pdf_new_ref(pdf_document *doc, pdf_obj *obj);
 
-#ifndef NDEBUG
 void pdf_print_xref(pdf_document *);
-#endif
 
 /*
  * Encryption
