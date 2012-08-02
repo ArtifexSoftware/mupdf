@@ -198,14 +198,35 @@ void pdfapp_close(pdfapp_t *app)
 	fz_flush_warnings(app->ctx);
 }
 
+static int pdfapp_save(pdfapp_t *app)
+{
+	char buf[PATH_MAX];
+
+	if (wingetsavepath(app, buf, PATH_MAX))
+	{
+		fz_write_options opts;
+
+		opts.do_ascii = 1;
+		opts.do_expand = 0;
+		opts.do_garbage = 1;
+		opts.do_linear = 0;
+
+		fz_write_document(app->doc, buf, &opts);
+
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 int pdfapp_preclose(pdfapp_t *app)
 {
 	fz_interactive *idoc = fz_interact(app->doc);
 
 	if (idoc && fz_has_unsaved_changes(idoc))
 	{
-		char buf[PATH_MAX];
-
 		switch (winsavequery(app))
 		{
 		case DISCARD:
@@ -215,23 +236,7 @@ int pdfapp_preclose(pdfapp_t *app)
 			return 0;
 
 		case SAVE:
-			if (wingetsavepath(app, buf, PATH_MAX))
-			{
-				fz_write_options opts;
-
-				opts.do_ascii = 1;
-				opts.do_expand = 0;
-				opts.do_garbage = 1;
-				opts.do_linear = 0;
-
-				fz_write_document(app->doc, buf, &opts);
-
-				return 1;
-			}
-			else
-			{
-				return 0;
-			}
+			return pdfapp_save(app);
 		}
 	}
 
@@ -961,6 +966,13 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	case '>':
 		panto = PAN_TO_TOP;
 		app->pageno += 10;
+		break;
+
+	/*
+	 * Saving the file
+	 */
+	case 'S':
+		pdfapp_save(app);
 		break;
 
 	/*
