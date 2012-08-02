@@ -1387,6 +1387,8 @@ static void reset_field(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
 
+	doc->dirty = 1;
+
 	switch (pdf_field_getType(doc, obj))
 	{
 	case FZ_WIDGET_TYPE_RADIOBUTTON:
@@ -1670,6 +1672,11 @@ static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 	/* FIXME: should probably update the V entry in the field dictionary too */
 }
 
+int pdf_has_unsaved_changes(pdf_document *doc)
+{
+	return doc->dirty;
+}
+
 int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 {
 	pdf_annot *annot;
@@ -1826,6 +1833,8 @@ static void recalculate(pdf_document *doc)
 
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
+	doc->dirty = 1;
+
 	update_text_field_value(doc->ctx, field, text);
 	recalculate(doc);
 	pdf_field_mark_dirty(doc->ctx, field);

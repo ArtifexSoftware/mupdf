@@ -228,6 +228,8 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 	fz_var(info);
 	fz_var(list);
 
+	xref->dirty = 1;
+
 	fz_seek(xref->file, 0, 0);
 
 	fz_try(ctx)

@@ -226,6 +226,7 @@ struct pdf_document_s
 
 	pdf_js *js;
 	int recalculating;
+	int dirty;
 };
 
 pdf_document *pdf_open_document_no_run(fz_context *ctx, const char *filename);
@@ -604,6 +605,7 @@ void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 /*
  * PDF interaction interface
  */
+int pdf_has_unsaved_changes(pdf_document *doc);
 int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
 fz_rect *pdf_get_screen_update(pdf_document *doc);
 fz_widget *pdf_get_focussed_widget(pdf_document *doc);

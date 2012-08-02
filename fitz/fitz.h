@@ -2410,6 +2410,12 @@ typedef struct fz_widget_s fz_widget;
 fz_interactive *fz_interact(fz_document *doc);
 
 /*
+	Determine whether changes have been made since the
+	document was opened or last saved.
+*/
+int fz_has_unsaved_changes(fz_interactive *idoc);
+
+/*
 	fz_pass_event: Pass a UI event to an interactive
 	document.
 

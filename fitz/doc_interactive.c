@@ -6,6 +6,11 @@
 	to indirect through function pointers.
 */
 
+int fz_has_unsaved_changes(fz_interactive *idoc)
+{
+	return pdf_has_unsaved_changes((pdf_document*)idoc);
+}
+
 int fz_pass_event(fz_interactive *idoc, fz_page *page, fz_ui_event *ui_event)
 {
 	return pdf_pass_event((pdf_document*)idoc, (pdf_page*)page, ui_event);
