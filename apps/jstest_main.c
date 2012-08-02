@@ -64,6 +64,16 @@ void winclose(pdfapp_t *app)
 	exit(0);
 }
 
+int winsavequery(pdfapp_t *app)
+{
+	return DISCARD;
+}
+
+int wingetsavepath(pdfapp_t *app, char *buf, int len)
+{
+	return 0;
+}
+
 void wincursor(pdfapp_t *app, int curs)
 {
 }

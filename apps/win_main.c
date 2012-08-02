@@ -99,6 +99,16 @@ void winerror(pdfapp_t *app, char *msg)
 	exit(1);
 }
 
+int winsavequery(pdfapp_t *app)
+{
+	switch(MessageBoxA(hwndframe, "File has unsaved changes. Do you want to save", "MuPDF", MB_YESNOCANCEL))
+	{
+	case IDYES: return SAVE;
+	case IDNO: return DISCARD;
+	default: return CANCEL;
+	}
+}
+
 int winfilename(wchar_t *buf, int len)
 {
 	OPENFILENAME ofn;
@@ -113,6 +123,34 @@ int winfilename(wchar_t *buf, int len)
 	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.zip)\0*.zip;*.cbz;*.xps;*.pdf\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	return GetOpenFileNameW(&ofn);
+}
+
+int wingetsavepath(pdfapp_t *app, char *buf, int len)
+{
+	OPENFILENAMEA ofn;
+	buf[0] = 0;
+	if (strlen(filename) < (unsigned int)len)
+		strcpy(buf, filename);
+	memset(&ofn, 0, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = hwndframe;
+	ofn.lpstrFile = buf;
+	ofn.nMaxFile = len;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrTitle = "MuPDF: Save PDF file";
+	ofn.lpstrFilter = "Documents (*.pdf;*.xps;*.cbz;*.zip)\0*.zip;*.cbz;*.xps;*.pdf\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0All Files\0*\0\0";
+	ofn.Flags = OFN_HIDEREADONLY;
+	if (GetSaveFileNameA(&ofn))
+	{
+		if (strlen(buf) < sizeof(filename))
+			strcpy(filename, buf);
+
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 static char pd_filename[256] = "The file is encrypted.";
@@ -411,8 +449,11 @@ void winopen()
 
 void winclose(pdfapp_t *app)
 {
-	pdfapp_close(app);
-	exit(0);
+	if (pdfapp_preclose(app))
+	{
+		pdfapp_close(app);
+		exit(0);
+	}
 }
 
 void wincursor(pdfapp_t *app, int curs)
@@ -740,6 +781,10 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_NOTIFY:
 	case WM_COMMAND:
 		return SendMessage(hwndview, message, wParam, lParam);
+
+	case WM_CLOSE:
+		if (!pdfapp_preclose(&gapp))
+			return 0;
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);

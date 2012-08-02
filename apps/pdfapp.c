@@ -7,6 +7,9 @@
 
 #define ZOOMSTEP 1.142857
 #define BEYOND_THRESHHOLD 40
+#ifndef PATH_MAX
+#define PATH_MAX (1024)
+#endif
 
 enum panning
 {
@@ -193,6 +196,46 @@ void pdfapp_close(pdfapp_t *app)
 	}
 
 	fz_flush_warnings(app->ctx);
+}
+
+int pdfapp_preclose(pdfapp_t *app)
+{
+	fz_interactive *idoc = fz_interact(app->doc);
+
+	if (idoc && fz_has_unsaved_changes(idoc))
+	{
+		char buf[PATH_MAX];
+
+		switch (winsavequery(app))
+		{
+		case DISCARD:
+			return 1;
+
+		case CANCEL:
+			return 0;
+
+		case SAVE:
+			if (wingetsavepath(app, buf, PATH_MAX))
+			{
+				fz_write_options opts;
+
+				opts.do_ascii = 1;
+				opts.do_expand = 0;
+				opts.do_garbage = 1;
+				opts.do_linear = 0;
+
+				fz_write_document(app->doc, buf, &opts);
+
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+	}
+
+	return 1;
 }
 
 static fz_matrix pdfapp_viewctm(pdfapp_t *app)

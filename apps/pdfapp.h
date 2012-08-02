@@ -16,6 +16,8 @@ typedef struct pdfapp_s pdfapp_t;
 
 enum { ARROW, HAND, WAIT, CARET };
 
+enum { DISCARD, SAVE, CANCEL };
+
 extern void winwarn(pdfapp_t*, char *s);
 extern void winerror(pdfapp_t*, char *s);
 extern void wintitle(pdfapp_t*, char *title);
@@ -32,6 +34,8 @@ extern void windrawstring(pdfapp_t*, int x, int y, char *s);
 extern void winclose(pdfapp_t*);
 extern void winhelp(pdfapp_t*);
 extern void winfullscreen(pdfapp_t*, int state);
+extern int winsavequery(pdfapp_t*);
+extern int wingetsavepath(pdfapp_t*, char *buf, int len);
 
 struct pdfapp_s
 {
@@ -107,6 +111,7 @@ struct pdfapp_s
 void pdfapp_init(fz_context *ctx, pdfapp_t *app);
 void pdfapp_open(pdfapp_t *app, char *filename, int reload);
 void pdfapp_close(pdfapp_t *app);
+int pdfapp_preclose(pdfapp_t *app);
 
 char *pdfapp_version(pdfapp_t *app);
 char *pdfapp_usage(pdfapp_t *app);

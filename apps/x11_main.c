@@ -226,6 +226,18 @@ void winclose(pdfapp_t *app)
 	closing = 1;
 }
 
+int winsavequery(pdfapp_t *app)
+{
+	/* FIXME: temporary dummy implementation */
+	return DISCARD;
+}
+
+int wingetsavepath(pdfapp_t *app, char *buf, int len)
+{
+	/* FIXME: temporary dummy implementation */
+	return 0;
+}
+
 void cleanup(pdfapp_t *app)
 {
 	fz_context *ctx = app->ctx;
