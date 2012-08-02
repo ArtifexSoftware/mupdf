@@ -1295,6 +1295,7 @@ pdf_new_document(fz_stream *file)
 	doc->super.free_page = (void*)pdf_free_page;
 	doc->super.meta = (void*)pdf_meta;
 	doc->super.interact = (void*)pdf_interact;
+	doc->super.write = (void*)pdf_write_document;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(file);
