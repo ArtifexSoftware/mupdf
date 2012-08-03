@@ -156,6 +156,10 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 static char pd_filename[256] = "The file is encrypted.";
 static char pd_password[256] = "";
 static char td_textinput[1024] = "";
+static int cd_nopts;
+static int *cd_nvals;
+static char **cd_opts;
+static char **cd_vals;
 static int pd_okay = 0;
 
 INT CALLBACK
@@ -185,7 +189,7 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 INT CALLBACK
-dlogtextinput(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
 	{
@@ -198,6 +202,54 @@ dlogtextinput(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case 1:
 			pd_okay = 1;
 			GetDlgItemTextA(hwnd, 3, td_textinput, sizeof td_textinput);
+			EndDialog(hwnd, 1);
+			return TRUE;
+		case 2:
+			pd_okay = 0;
+			EndDialog(hwnd, 1);
+			return TRUE;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+INT CALLBACK
+dlogchoiceproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	HWND listbox;
+	int i;
+	int item;
+	int sel;
+	switch(message)
+	{
+	case WM_INITDIALOG:
+		listbox = GetDlgItem(hwnd, 3);
+		for (i = 0; i < cd_nopts; i++)
+			SendMessageA(listbox, LB_ADDSTRING, 0, (LPARAM)cd_opts[i]);
+
+		/* FIXME: handle multiple select */
+		if (*cd_nvals > 0)
+		{
+			item = SendMessageA(listbox, LB_FINDSTRINGEXACT, -1, (LPARAM)cd_vals[0]);
+			if (item != LB_ERR)
+				SendMessageA(listbox, LB_SETCURSEL, item, 0);
+		}
+		return TRUE;
+	case WM_COMMAND:
+		switch(wParam)
+		{
+		case 1:
+			listbox = GetDlgItem(hwnd, 3);
+			*cd_nvals = 0;
+			for (i = 0; i < cd_nopts; i++)
+			{
+				item = SendMessageA(listbox, LB_FINDSTRINGEXACT, -1, (LPARAM)cd_opts[i]);
+				sel = SendMessageA(listbox, LB_GETSEL, item, 0);
+				if (sel && sel != LB_ERR)
+					cd_vals[(*cd_nvals)++] = cd_opts[i];
+			}
+			pd_okay = 1;
 			EndDialog(hwnd, 1);
 			return TRUE;
 		case 2:
@@ -233,12 +285,25 @@ char *wintextinput(pdfapp_t *app, char *inittext)
 {
 	int code;
 	strncpy(td_textinput, inittext?inittext:"", sizeof(td_textinput));
-	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextinput);
+	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextproc);
 	if (code <= 0)
 		winerror(app, "cannot create text input dialog");
 	if (pd_okay)
 		return td_textinput;
 	return NULL;
+}
+
+int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *vals[])
+{
+	int code;
+	cd_nopts = nopts;
+	cd_nvals = nvals;
+	cd_opts = opts;
+	cd_vals = vals;
+	code = DialogBoxW(NULL, L"IDD_DLOGLIST", hwndframe, dlogchoiceproc);
+	if (code <= 0)
+		winerror(app, "cannot create text input dialog");
+	return pd_okay;
 }
 
 INT CALLBACK

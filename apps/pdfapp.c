@@ -11,6 +11,10 @@
 #define PATH_MAX (1024)
 #endif
 
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
 enum panning
 {
 	DONT_PAN = 0,
@@ -1052,6 +1056,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
+	fz_context *ctx = app->ctx;
 	fz_bbox rect = fz_pixmap_bbox(app->ctx, app->image);
 	fz_link *link;
 	fz_matrix ctm;
@@ -1084,13 +1089,56 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 			widget = fz_get_focussed_widget(idoc);
 
-			if (widget && fz_widget_get_type(widget) == FZ_WIDGET_TYPE_TEXT)
+			if (widget)
 			{
-				char *text = fz_widget_text_get_text(idoc, widget);
-				char *newtext = wintextinput(app, text);
-				fz_free(app->ctx, text);
-				if (newtext)
-					fz_widget_text_set_text(idoc, widget, newtext);
+				switch (fz_widget_get_type(widget))
+				{
+				case FZ_WIDGET_TYPE_TEXT:
+					{
+						char *text = fz_widget_text_get_text(idoc, widget);
+						char *newtext = wintextinput(app, text);
+						fz_free(app->ctx, text);
+						if (newtext)
+							fz_widget_text_set_text(idoc, widget, newtext);
+					}
+					break;
+
+				case FZ_WIDGET_TYPE_LISTBOX:
+				case FZ_WIDGET_TYPE_COMBOBOX:
+					{
+						int nopts;
+						int nvals;
+						char **opts = NULL;
+						char **vals = NULL;
+
+						fz_var(opts);
+						fz_var(vals);
+
+						fz_try(ctx)
+						{
+							nopts = fz_widget_choice_get_options(idoc, widget, NULL);
+							opts = fz_malloc(ctx, nopts * sizeof(*opts));
+							(void)fz_widget_choice_get_options(idoc, widget, opts);
+
+							nvals = fz_widget_choice_get_value(idoc, widget, NULL);
+							vals = fz_malloc(ctx, MAX(nvals,nopts) * sizeof(*vals));
+							(void)fz_widget_choice_get_value(idoc, widget, vals);
+
+							if (winchoiceinput(app, nopts, opts, &nvals, vals))
+								fz_widget_choice_set_value(idoc, widget, nvals, vals);
+						}
+						fz_always(ctx)
+						{
+							fz_free(ctx, opts);
+							fz_free(ctx, vals);
+						}
+						fz_catch(ctx)
+						{
+							pdfapp_warn(app, "setting of choice failed");
+						}
+					}
+					break;
+				}
 			}
 
 			app->nowaitcursor = 1;

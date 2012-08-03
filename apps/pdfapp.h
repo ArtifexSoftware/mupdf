@@ -26,6 +26,7 @@ extern void winrepaint(pdfapp_t*);
 extern void winrepaintsearch(pdfapp_t*);
 extern char *winpassword(pdfapp_t*, char *filename);
 extern char *wintextinput(pdfapp_t*, char *inittext);
+extern int winchoiceinput(pdfapp_t*, int nopts, char *opts[], int *nvals, char *vals[]);
 extern void winopenuri(pdfapp_t*, char *s);
 extern void wincursor(pdfapp_t*, int curs);
 extern void windocopy(pdfapp_t*);

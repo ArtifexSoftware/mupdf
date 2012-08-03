@@ -125,6 +125,12 @@ char *wintextinput(pdfapp_t *app, char *inittext)
 	return buf;
 }
 
+int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *vals[])
+{
+	/* FIXME: temporary dummy implementation */
+	return 0;
+}
+
 /*
  * X11 magic
  */

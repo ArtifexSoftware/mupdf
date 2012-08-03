@@ -54,6 +54,11 @@ char *wintextinput(pdfapp_t *app, char *inittext)
 	return inittext;
 }
 
+int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *vals[])
+{
+	return 0;
+}
+
 void winhelp(pdfapp_t*app)
 {
 }

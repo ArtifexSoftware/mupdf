@@ -2518,7 +2518,7 @@ int fz_widget_choice_is_multiselect(fz_interactive *idoc, fz_widget *tw);
 	fz_widget_choice_get_value: get the value of a choice widget.
 	Returns the number of options curently selected and fills in
 	the supplied array with their strings. Should first be called
-	with NULL as the array to find out how big the arrray need to
+	with NULL as the array to find out how big the array need to
 	be. The filled in elements should not be freed by the caller.
 */
 int fz_widget_choice_get_value(fz_interactive *idoc, fz_widget *tw, char *opts[]);
