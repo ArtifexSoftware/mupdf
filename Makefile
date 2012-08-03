@@ -118,7 +118,7 @@ CMAP_KOREA_SRC := $(wildcard cmaps/korea/*)
 FONT_BASE14_SRC := $(wildcard fonts/*.cff)
 FONT_DROID_SRC := fonts/droid/DroidSans.ttf fonts/droid/DroidSansMono.ttf
 FONT_CJK_SRC := fonts/droid/DroidSansFallback.ttf
-JAVASCRIPT_SRC := javascript/util.js
+JAVASCRIPT_SRC := pdf/pdf_util.js
 
 $(GEN)/cmap_cns.h : $(CMAP_CNS_SRC)
 	$(QUIET_GEN) ./$(CMAPDUMP) $@ $(CMAP_CNS_SRC)

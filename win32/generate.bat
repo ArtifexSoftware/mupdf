@@ -25,7 +25,7 @@ if not exist generated/cmap_japan.h cmapdump.exe generated/cmap_japan.h cmaps/ja
 
 if not exist generated/cmap_korea.h cmapdump.exe generated/cmap_korea.h cmaps/korea/Adobe-Korea1-UCS2 cmaps/korea/Adobe-Korea1-0 cmaps/korea/Adobe-Korea1-1 cmaps/korea/Adobe-Korea1-2 cmaps/korea/KSC-EUC-H cmaps/korea/KSC-EUC-V cmaps/korea/KSC-H cmaps/korea/KSC-Johab-H cmaps/korea/KSC-Johab-V cmaps/korea/KSC-V cmaps/korea/KSCms-UHC-H cmaps/korea/KSCms-UHC-HW-H cmaps/korea/KSCms-UHC-HW-V cmaps/korea/KSCms-UHC-V cmaps/korea/KSCpc-EUC-H cmaps/korea/KSCpc-EUC-V cmaps/korea/UniKS-UCS2-H cmaps/korea/UniKS-UCS2-V cmaps/korea/UniKS-UTF16-H cmaps/korea/UniKS-UTF16-V
 
-if not exist generated/js_util.h cquote.exe generated/js_util.h javascript/util.js
+if not exist generated/js_util.h cquote.exe generated/js_util.h pdf/pdf_util.js
 
 del cmapdump.obj fontdump.obj cquote.obj cmapdump.exe fontdump.exe cquote.exe
 
