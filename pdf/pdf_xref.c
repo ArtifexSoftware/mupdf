@@ -388,7 +388,6 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(trailer);
-		pdf_drop_obj(index);
 		fz_rethrow(ctx);
 	}
 
