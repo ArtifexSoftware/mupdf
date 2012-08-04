@@ -453,11 +453,13 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 		{
 			pdf_dict_puts(xref->trailer, "Root", root);
 			pdf_drop_obj(root);
+			root = NULL;
 		}
 		if (info)
 		{
 			pdf_dict_puts(xref->trailer, "Info", info);
 			pdf_drop_obj(info);
+			info = NULL;
 		}
 
 		if (encrypt)
@@ -471,6 +473,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 			}
 			pdf_dict_puts(xref->trailer, "Encrypt", encrypt);
 			pdf_drop_obj(encrypt);
+			encrypt = NULL;
 		}
 
 		if (id)
