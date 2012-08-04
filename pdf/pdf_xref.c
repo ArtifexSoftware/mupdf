@@ -551,8 +551,7 @@ pdf_ocg_set_config(pdf_document *xref, int config)
 			fz_throw(xref->ctx, "Illegal OCG config");
 	}
 
-	if (desc->intent)
-		pdf_drop_obj(desc->intent);
+	pdf_drop_obj(desc->intent);
 	desc->intent = pdf_dict_gets(cobj, "Intent");
 	if (desc->intent)
 		pdf_keep_obj(desc->intent);
@@ -677,8 +676,7 @@ pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
 	if (!desc)
 		return;
 
-	if (desc->intent)
-		pdf_drop_obj(desc->intent);
+	pdf_drop_obj(desc->intent);
 	fz_free(ctx, desc->ocgs);
 	fz_free(ctx, desc);
 }
@@ -845,8 +843,7 @@ pdf_close_document(pdf_document *xref)
 
 	if (xref->file)
 		fz_close(xref->file);
-	if (xref->trailer)
-		pdf_drop_obj(xref->trailer);
+	pdf_drop_obj(xref->trailer);
 	if (xref->crypt)
 		pdf_free_crypt(ctx, xref->crypt);
 
@@ -1154,8 +1151,7 @@ pdf_update_object(pdf_document *xref, int num, pdf_obj *newobj)
 
 	x = &xref->table[num];
 
-	if (x->obj)
-		pdf_drop_obj(x->obj);
+	pdf_drop_obj(x->obj);
 
 	x->type = 'n';
 	x->ofs = 0;

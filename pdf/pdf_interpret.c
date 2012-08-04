@@ -996,8 +996,7 @@ pdf_clear_stack(pdf_csi *csi)
 {
 	int i;
 
-	if (csi->obj)
-		pdf_drop_obj(csi->obj);
+	pdf_drop_obj(csi->obj);
 	csi->obj = NULL;
 
 	csi->name[0] = 0;

@@ -404,10 +404,8 @@ pdf_load_links(pdf_document *xref, pdf_page *page)
 void
 pdf_free_page(pdf_document *xref, pdf_page *page)
 {
-	if (page->resources)
-		pdf_drop_obj(page->resources);
-	if (page->contents)
-		pdf_drop_obj(page->contents);
+	pdf_drop_obj(page->resources);
+	pdf_drop_obj(page->contents);
 	if (page->links)
 		fz_drop_link(xref->ctx, page->links);
 	if (page->annots)

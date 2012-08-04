@@ -54,16 +54,14 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 			obj = pdf_dict_gets(dict, "Encrypt");
 			if (obj)
 			{
-				if (*encrypt)
-					pdf_drop_obj(*encrypt);
+				pdf_drop_obj(*encrypt);
 				*encrypt = pdf_keep_obj(obj);
 			}
 
 			obj = pdf_dict_gets(dict, "ID");
 			if (obj)
 			{
-				if (*id)
-					pdf_drop_obj(*id);
+				pdf_drop_obj(*id);
 				*id = pdf_keep_obj(obj);
 			}
 		}
@@ -363,32 +361,28 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 				obj = pdf_dict_gets(dict, "Encrypt");
 				if (obj)
 				{
-					if (encrypt)
-						pdf_drop_obj(encrypt);
+					pdf_drop_obj(encrypt);
 					encrypt = pdf_keep_obj(obj);
 				}
 
 				obj = pdf_dict_gets(dict, "ID");
 				if (obj)
 				{
-					if (id)
-						pdf_drop_obj(id);
+					pdf_drop_obj(id);
 					id = pdf_keep_obj(obj);
 				}
 
 				obj = pdf_dict_gets(dict, "Root");
 				if (obj)
 				{
-					if (root)
-						pdf_drop_obj(root);
+					pdf_drop_obj(root);
 					root = pdf_keep_obj(obj);
 				}
 
 				obj = pdf_dict_gets(dict, "Info");
 				if (obj)
 				{
-					if (info)
-						pdf_drop_obj(info);
+					pdf_drop_obj(info);
 					info = pdf_keep_obj(obj);
 				}
 
@@ -490,16 +484,17 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 			}
 			pdf_dict_puts(xref->trailer, "ID", id);
 			pdf_drop_obj(id);
+			id = NULL;
 		}
 
 		fz_free(ctx, list);
 	}
 	fz_catch(ctx)
 	{
-		if (encrypt) pdf_drop_obj(encrypt);
-		if (id) pdf_drop_obj(id);
-		if (root) pdf_drop_obj(root);
-		if (info) pdf_drop_obj(info);
+		pdf_drop_obj(encrypt);
+		pdf_drop_obj(id);
+		pdf_drop_obj(root);
+		pdf_drop_obj(info);
 		fz_free(ctx, list);
 		fz_rethrow(ctx);
 	}
