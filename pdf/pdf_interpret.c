@@ -2561,9 +2561,6 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 		{
 			do
 			{
-				if (csi->top == nelem(csi->stack) - 1)
-					fz_throw(ctx, "stack overflow");
-
 				/* Check the cookie */
 				if (csi->cookie)
 				{
@@ -2640,13 +2637,21 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					break;
 
 				case PDF_TOK_INT:
-					csi->stack[csi->top] = buf->i;
-					csi->top ++;
+					if (csi->top < nelem(csi->stack)) {
+						csi->stack[csi->top] = buf->i;
+						csi->top ++;
+					}
+					else
+						fz_throw(ctx, "stack overflow");
 					break;
 
 				case PDF_TOK_REAL:
-					csi->stack[csi->top] = buf->f;
-					csi->top ++;
+					if (csi->top < nelem(csi->stack)) {
+						csi->stack[csi->top] = buf->f;
+						csi->top ++;
+					}
+					else
+						fz_throw(ctx, "stack overflow");
 					break;
 
 				case PDF_TOK_STRING:
