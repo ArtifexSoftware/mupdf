@@ -1422,7 +1422,7 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 
 	/* required for all */
 	obj = pdf_dict_gets(dict, "Domain");
-	func->m = fz_clampi(pdf_array_len(obj) / 2, 1, MAXN);
+	func->m = fz_clampi(pdf_array_len(obj) / 2, 1, MAXM);
 	for (i = 0; i < func->m; i++)
 	{
 		func->domain[i][0] = pdf_to_real(pdf_array_get(obj, i * 2 + 0));
@@ -1498,7 +1498,7 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 void
 pdf_eval_function(fz_context *ctx, pdf_function *func, float *in_, int inlen, float *out_, int outlen)
 {
-	float fakein[MAXN];
+	float fakein[MAXM];
 	float fakeout[MAXN];
 	float *in = in_;
 	float *out = out_;
