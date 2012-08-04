@@ -19,12 +19,14 @@ put_marker_bool(fz_context *ctx, pdf_obj *rdb, char *marker, int val)
 	{
 		pdf_dict_puts(rdb, marker, tmp);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		pdf_drop_obj(tmp);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
-	pdf_drop_obj(tmp);
 }
 
 typedef struct pdf_page_load_s pdf_page_load;
@@ -270,12 +272,14 @@ found:
 			useBM = 1;
 		}
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		pdf_dict_unmark(rdb);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
-	pdf_dict_unmark(rdb);
 
 	put_marker_bool(ctx, rdb, ".useBM", useBM);
 	return useBM;

@@ -130,15 +130,17 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			dev = fz_new_list_device(ctx, list);
 			fz_run_page(doc, page, dev, fz_identity, &cookie);
 		}
-		fz_catch(ctx)
+		fz_always(ctx)
 		{
 			fz_free_device(dev);
+			dev = NULL;
+		}
+		fz_catch(ctx)
+		{
 			fz_free_display_list(ctx, list);
 			fz_free_page(doc, page);
 			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
-		fz_free_device(dev);
-		dev = NULL;
 	}
 
 	if (showxml)

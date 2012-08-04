@@ -539,12 +539,14 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 		if (dofill || dostroke)
 			pdf_end_group(csi);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_free_path(ctx, path);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
-	fz_free_path(ctx, path);
 }
 
 /*
@@ -658,13 +660,14 @@ pdf_flush_text(pdf_csi *csi)
 
 		pdf_end_group(csi);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_free_text(ctx, text);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
-
-	fz_free_text(ctx, text);
 }
 
 static void
@@ -1311,17 +1314,17 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 				{
 					pdf_run_contents_object(csi, pat->resources, pat->contents);
 				}
-				fz_catch(ctx)
+				fz_always(ctx)
 				{
 					pdf_grestore(csi);
 					while (oldtop < csi->gtop)
 						pdf_grestore(csi);
+				}
+				fz_catch(ctx)
+				{
 					csi->top_ctm = oldtopctm;
 					fz_throw(ctx, "cannot render pattern tile");
 				}
-				pdf_grestore(csi);
-				while (oldtop < csi->gtop)
-					pdf_grestore(csi);
 			}
 		}
 	}
@@ -1786,13 +1789,14 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 		{
 			pdf_run_xobject(csi, xobj->resources, xobj, fz_identity);
 		}
-		fz_catch(ctx)
+		fz_always(ctx)
 		{
 			pdf_drop_xobject(ctx, xobj);
+		}
+		fz_catch(ctx)
+		{
 			fz_throw(ctx, "cannot draw xobject (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 		}
-
-		pdf_drop_xobject(ctx, xobj);
 	}
 
 	else if (!strcmp(pdf_to_name(subtype), "Image"))
@@ -2317,12 +2321,14 @@ static void pdf_run_sh(pdf_csi *csi, pdf_obj *rdb)
 		{
 			pdf_show_shade(csi, shd);
 		}
-		fz_catch(ctx)
+		fz_always(ctx)
 		{
 			fz_drop_shade(ctx, shd);
+		}
+		fz_catch(ctx)
+		{
 			fz_rethrow(ctx);
 		}
-		fz_drop_shade(ctx, shd);
 	}
 }
 
@@ -2872,10 +2878,12 @@ pdf_run_glyph(pdf_document *xref, pdf_obj *resources, fz_buffer *contents, fz_de
 	{
 		pdf_run_contents_buffer(csi, resources, contents);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		pdf_free_csi(csi);
+	}
+	fz_catch(ctx)
+	{
 		fz_throw(ctx, "cannot parse glyph content stream");
 	}
-	pdf_free_csi(csi);
 }
