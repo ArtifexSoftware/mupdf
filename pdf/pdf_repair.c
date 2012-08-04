@@ -3,6 +3,9 @@
 
 /* Scan file for objects and reconstruct xref table */
 
+/* Define in PDF 1.7 to be 8388607, but mupdf is more lenient. */
+#define MAX_OBJECT_NUMBER (10 << 20)
+
 struct entry
 {
 	int num;
@@ -170,6 +173,16 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 				fz_throw(ctx, "corrupt object stream (%d %d R)", num, gen);
 
 			n = buf.i;
+			if (n < 0)
+			{
+				fz_warn(ctx, "ignoring object with invalid object number (%d %d R)", n, i);
+				continue;
+			}
+			else if (n > MAX_OBJECT_NUMBER)
+			{
+				fz_warn(ctx, "ignoring object with invalid object number (%d %d R)", n, i);
+				continue;
+			}
 			if (n >= xref->len)
 				pdf_resize_xref(xref, n + 1);
 
@@ -298,6 +311,19 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 					fz_warn(ctx, "cannot parse object (%d %d R) - ignoring rest of file", num, gen);
 					break;
 				}
+
+				if (num < 0)
+				{
+					fz_warn(ctx, "ignoring object with invalid object number (%d %d R)", num, gen);
+					continue;
+				}
+				else if (num > MAX_OBJECT_NUMBER)
+				{
+					fz_warn(ctx, "ignoring object with invalid object number (%d %d R)", num, gen);
+					continue;
+				}
+
+				gen = fz_clampi(gen, 0, 65535);
 
 				if (listlen + 1 == listcap)
 				{
