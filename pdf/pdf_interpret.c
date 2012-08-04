@@ -2540,6 +2540,7 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 	fz_context *ctx = csi->dev->ctx;
 	int tok = PDF_TOK_ERROR;
 	int in_array;
+	int ignoring_errors = 0;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
@@ -2680,7 +2681,11 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 			/* Swallow the error */
 			if (csi->cookie)
 				csi->cookie->errors++;
-			fz_warn(ctx, "Ignoring error during rendering");
+			if (!ignoring_errors)
+			{
+				fz_warn(ctx, "Ignoring errors during rendering");
+				ignoring_errors = 1;
+			}
 			/* If we do catch an error, then reset ourselves to a
 			 * base lexing state */
 			in_array = 0;
