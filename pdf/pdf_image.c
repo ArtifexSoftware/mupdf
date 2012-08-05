@@ -456,7 +456,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_image(ctx, &image->base);
+		pdf_free_image(ctx, (fz_storable *) image);
 		fz_rethrow(ctx);
 	}
 	return image;
