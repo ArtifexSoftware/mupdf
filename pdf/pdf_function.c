@@ -1256,15 +1256,16 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 			sub = pdf_array_get(obj, i);
 			funcs[i] = pdf_load_function(xref, sub, 1, func->n);
 			/* RJW: "cannot load sub function %d (%d %d R)", i, pdf_to_num(sub), pdf_to_gen(sub) */
-			if (funcs[i]->m != 1 || funcs[i]->n != funcs[0]->n)
-				fz_throw(ctx, "sub function %d /Domain or /Range mismatch", i);
 			func->size += pdf_function_size(funcs[i]);
 			func->u.st.k ++;
-		}
 
-		if (func->n != funcs[0]->n)
-			fz_throw(ctx, "sub function /Domain or /Range mismatch");
+			if (funcs[i]->m != func->m)
+				fz_warn(ctx, "sub function %d has too few/many inputs", i);
+			if (funcs[i]->n != func->n)
+				fz_warn(ctx, "sub function %d has too few/many outputs", i);
+		}
 	}
+
 
 	obj = pdf_dict_gets(dict, "Bounds");
 	if (!pdf_is_array(obj))
