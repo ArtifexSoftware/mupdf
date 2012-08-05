@@ -1643,9 +1643,19 @@ static void pdf_run_BI(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 		if (fz_peek_byte(file) == '\n')
 			fz_read_byte(file);
 
-	img = pdf_load_inline_image(csi->xref, rdb, obj, file);
-	pdf_drop_obj(obj);
-	/* RJW: "cannot load inline image" */
+	fz_try(ctx)
+	{
+		img = pdf_load_inline_image(csi->xref, rdb, obj, file);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(obj);
+	}
+	fz_catch(ctx)
+	{
+		/* RJW: "cannot load inline image" */
+		fz_rethrow(ctx);
+	}
 
 	pdf_show_image(csi, img);
 
