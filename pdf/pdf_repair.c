@@ -506,6 +506,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 void
 pdf_repair_obj_stms(pdf_document *xref)
 {
+	fz_context *ctx = xref->ctx;
 	pdf_obj *dict;
 	int i;
 
@@ -514,9 +515,19 @@ pdf_repair_obj_stms(pdf_document *xref)
 		if (xref->table[i].stm_ofs)
 		{
 			dict = pdf_load_object(xref, i, 0);
-			if (!strcmp(pdf_to_name(pdf_dict_gets(dict, "Type")), "ObjStm"))
-				pdf_repair_obj_stm(xref, i, 0);
-			pdf_drop_obj(dict);
+			fz_try(ctx)
+			{
+				if (!strcmp(pdf_to_name(pdf_dict_gets(dict, "Type")), "ObjStm"))
+					pdf_repair_obj_stm(xref, i, 0);
+			}
+			fz_always(ctx)
+			{
+				pdf_drop_obj(dict);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow(ctx);
+			}
 		}
 	}
 
