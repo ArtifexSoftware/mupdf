@@ -43,6 +43,12 @@ void fz_warn(fz_context *ctx, char *fmt, ...)
 
 /* Error context */
 
+int fz_too_deeply_nested(fz_context *ctx)
+{
+	fz_error_context *ex = ctx->error;
+	return ex->top + 1 >= nelem(ex->stack);
+}
+
 static void throw(fz_error_context *ex)
 {
 	if (ex->top >= 0) {

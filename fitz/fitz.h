@@ -255,6 +255,7 @@ void fz_push_try(fz_error_context *ex);
 void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
 void fz_rethrow(fz_context *);
 void fz_warn(fz_context *ctx, char *fmt, ...) __printflike(2, 3);
+int fz_too_deeply_nested(fz_context *ctx);
 
 /*
 	fz_flush_warnings: Flush any repeated warnings.
