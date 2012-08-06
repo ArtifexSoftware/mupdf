@@ -29,7 +29,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 	stm_len = 0;
 
 	tok = pdf_lex(file, buf);
-	/* RJW: "cannot parse object" */
+
 	if (tok == PDF_TOK_OPEN_DICT)
 	{
 		pdf_obj *dict, *obj;
@@ -80,7 +80,6 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 		tok != PDF_TOK_INT )
 	{
 		tok = pdf_lex(file, buf);
-		/* RJW: "cannot scan for endobj or stream token" */
 	}
 
 	if (tok == PDF_TOK_INT)
@@ -134,7 +133,6 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 
 atobjend:
 		tok = pdf_lex(file, buf);
-		/* RJW: "cannot scan for endobj token" */
 		if (tok != PDF_TOK_ENDOBJ)
 			fz_warn(ctx, "object missing 'endobj' token");
 	}
@@ -412,7 +410,6 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 			if (list[i].stm_len >= 0)
 			{
 				dict = pdf_load_object(xref, list[i].num, list[i].gen);
-				/* RJW: "cannot load stream object (%d %d R)", list[i].num, list[i].gen */
 
 				length = pdf_new_int(ctx, list[i].stm_len);
 				pdf_dict_puts(dict, "Length", length);

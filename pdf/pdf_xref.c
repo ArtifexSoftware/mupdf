@@ -363,12 +363,10 @@ pdf_read_new_xref(pdf_document *xref, pdf_lexbuf *buf)
 		index = pdf_dict_gets(trailer, "Index");
 
 		stm = pdf_open_stream_with_offset(xref, num, gen, trailer, stm_ofs);
-		/* RJW: Ensure pdf_open_stream does fz_throw(ctx, "cannot open compressed xref stream (%d %d R)", num, gen); */
 
 		if (!index)
 		{
 			pdf_read_new_xref_section(xref, stm, 0, size, w0, w1, w2);
-			/* RJW: Ensure above does fz_throw(ctx, "cannot read xref stream (%d %d R)", num, gen); */
 		}
 		else
 		{
@@ -931,7 +929,6 @@ pdf_load_obj_stm(pdf_document *xref, int num, int gen, pdf_lexbuf *buf)
 			fz_seek(stm, first + ofsbuf[i], 0);
 
 			obj = pdf_parse_stm_obj(xref, stm, buf);
-			/* RJW: Ensure above does fz_throw(ctx, "cannot parse object %d in stream (%d %d R)", i, num, gen); */
 
 			if (numbuf[i] < 1 || numbuf[i] >= xref->len)
 			{

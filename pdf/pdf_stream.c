@@ -11,7 +11,6 @@ pdf_is_stream(pdf_document *xref, int num, int gen)
 		return 0;
 
 	pdf_cache_object(xref, num, gen);
-	/* RJW: "cannot load object, ignoring error" */
 
 	return xref->table[num].stm_ofs != 0 || xref->table[num].stm_buf;
 }
@@ -326,7 +325,6 @@ pdf_open_raw_renumbered_stream(pdf_document *xref, int num, int gen, int orig_nu
 	x = xref->table + num;
 
 	pdf_cache_object(xref, num, gen);
-	/* RJW: "cannot load stream object (%d %d R)", num, gen */
 
 	if (x->stm_ofs == 0)
 		fz_throw(xref->ctx, "object is not a stream");
@@ -356,7 +354,6 @@ pdf_open_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 	x = xref->table + num;
 
 	pdf_cache_object(xref, num, gen);
-	/* RJW: "cannot load stream object (%d %d R)", num, gen */
 
 	if (x->stm_ofs == 0 && x->stm_buf == NULL)
 		fz_throw(xref->ctx, "object is not a stream");
@@ -438,17 +435,14 @@ pdf_load_raw_renumbered_stream(pdf_document *xref, int num, int gen, int orig_nu
 		return fz_keep_buffer(xref->ctx, xref->table[num].stm_buf);
 
 	dict = pdf_load_object(xref, num, gen);
-	/* RJW: "cannot load stream dictionary (%d %d R)", num, gen */
 
 	len = pdf_to_int(pdf_dict_gets(dict, "Length"));
 
 	pdf_drop_obj(dict);
 
 	stm = pdf_open_raw_renumbered_stream(xref, num, gen, orig_num, orig_gen);
-	/* RJW: "cannot open raw stream (%d %d R)", num, gen */
 
 	buf = fz_read_all(stm, len);
-	/* RJW: "cannot read raw stream (%d %d R)", num, gen */
 
 	fz_close(stm);
 	return buf;
@@ -500,7 +494,6 @@ pdf_load_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 		return fz_keep_buffer(xref->ctx, xref->table[num].stm_buf);
 
 	dict = pdf_load_object(xref, num, gen);
-	/* RJW: "cannot load stream dictionary (%d %d R)", num, gen */
 
 	len = pdf_to_int(pdf_dict_gets(dict, "Length"));
 	obj = pdf_dict_gets(dict, "Filter");
@@ -512,7 +505,6 @@ pdf_load_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 	pdf_drop_obj(dict);
 
 	stm = pdf_open_image_stream(xref, num, gen, orig_num, orig_gen, params);
-	/* RJW: "cannot open stream (%d %d R)", num, gen */
 
 	fz_try(ctx)
 	{

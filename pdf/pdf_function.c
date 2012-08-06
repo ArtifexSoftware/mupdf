@@ -711,7 +711,6 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr, pdf_lexbuf *buf)
 	while (1)
 	{
 		tok = pdf_lex(stream, buf);
-		/* RJW: "calculator function lexical error" */
 
 		switch(tok)
 		{
@@ -754,19 +753,15 @@ parse_code(pdf_function *func, fz_stream *stream, int *codeptr, pdf_lexbuf *buf)
 
 			ifptr = *codeptr;
 			parse_code(func, stream, codeptr, buf);
-			/* RJW: "error in 'if' branch" */
 
 			tok = pdf_lex(stream, buf);
-			/* RJW: "calculator function syntax error" */
 
 			if (tok == PDF_TOK_OPEN_BRACE)
 			{
 				elseptr = *codeptr;
 				parse_code(func, stream, codeptr, buf);
-				/* RJW: "error in 'else' branch" */
 
 				tok = pdf_lex(stream, buf);
-				/* RJW: "calculator function syntax error" */
 			}
 			else
 			{
@@ -861,7 +856,6 @@ load_postscript_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int 
 	fz_try(ctx)
 	{
 		stream = pdf_open_stream(xref, num, gen);
-		/* RJW: "cannot open calculator function stream" */
 
 		tok = pdf_lex(stream, &buf);
 		if (tok != PDF_TOK_OPEN_BRACE)
@@ -997,7 +991,6 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 	func->size += samplecount * sizeof(float);
 
 	stream = pdf_open_stream(xref, num, gen);
-	/* RJW: "cannot open samples stream (%d %d R)", num, gen */
 
 	/* read samples */
 	for (i = 0; i < samplecount; i++)
@@ -1255,7 +1248,7 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 		{
 			sub = pdf_array_get(obj, i);
 			funcs[i] = pdf_load_function(xref, sub, 1, func->n);
-			/* RJW: "cannot load sub function %d (%d %d R)", i, pdf_to_num(sub), pdf_to_gen(sub) */
+
 			func->size += pdf_function_size(funcs[i]);
 			func->u.st.k ++;
 

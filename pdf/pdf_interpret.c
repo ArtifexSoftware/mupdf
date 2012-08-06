@@ -319,7 +319,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 		fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 			softmask->colorspace, gstate->softmask_bc);
 		pdf_run_xobject(csi, NULL, softmask, fz_identity);
-		/* RJW: "cannot run softmask" */
+
 		fz_end_mask(csi->dev);
 
 		gstate->softmask = softmask;
@@ -1296,7 +1296,6 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 		csi->top_ctm = gstate->ctm;
 		pdf_gsave(csi);
 		pdf_run_contents_object(csi, pat->resources, pat->contents);
-		/* RJW: "cannot render pattern tile" */
 		pdf_grestore(csi);
 		while (oldtop < csi->gtop)
 			pdf_grestore(csi);
@@ -1378,7 +1377,6 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, fz_matrix t
 				fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 					softmask->colorspace, gstate->softmask_bc);
 				pdf_run_xobject(csi, resources, softmask, fz_identity);
-				/* RJW: "cannot run softmask" */
 				fz_end_mask(csi->dev);
 
 				pdf_drop_xobject(ctx, softmask);
@@ -1412,7 +1410,6 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, fz_matrix t
 			resources = xobj->resources;
 
 		pdf_run_contents_object(csi, resources, xobj->contents);
-		/* RJW: "cannot interpret XObject stream" */
 	}
 	fz_always(ctx)
 	{
@@ -1472,7 +1469,6 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 				}
 
 				gstate->font = pdf_load_font(csi->xref, rdb, font);
-				/* RJW: "cannot load font (%d %d R)", pdf_to_num(font), pdf_to_gen(font) */
 				if (!gstate->font)
 					fz_throw(ctx, "cannot find font in store");
 				gstate->size = pdf_to_real(pdf_array_get(val, 1));
@@ -1554,7 +1550,6 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 				if (!group)
 					fz_throw(ctx, "cannot load softmask xobject (%d %d R)", pdf_to_num(val), pdf_to_gen(val));
 				xobj = pdf_load_xobject(csi->xref, group);
-				/* RJW: "cannot load xobject (%d %d R)", pdf_to_num(val), pdf_to_gen(val) */
 
 				colorspace = xobj->colorspace;
 				if (!colorspace)
@@ -1637,7 +1632,6 @@ static void pdf_run_BI(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	pdf_obj *obj;
 
 	obj = pdf_parse_dict(csi->xref, file, &csi->xref->lexbuf.base);
-	/* RJW: "cannot parse inline image dictionary" */
 
 	/* read whitespace after ID keyword */
 	ch = fz_read_byte(file);
@@ -1655,7 +1649,6 @@ static void pdf_run_BI(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		/* RJW: "cannot load inline image" */
 		fz_rethrow(ctx);
 	}
 
@@ -1732,7 +1725,6 @@ static void pdf_run_cs_imp(pdf_csi *csi, pdf_obj *rdb, int what)
 			if (!obj)
 				fz_throw(ctx, "cannot find colorspace resource '%s'", csi->name);
 			colorspace = pdf_load_colorspace(csi->xref, obj);
-			/* RJW: "cannot load colorspace (%d 0 R)", pdf_to_num(obj) */
 		}
 
 		pdf_set_colorspace(csi, what, colorspace);
@@ -1746,7 +1738,6 @@ static void pdf_run_CS(pdf_csi *csi, pdf_obj *rdb)
 	csi->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
 
 	pdf_run_cs_imp(csi, rdb, PDF_STROKE);
-	/* RJW: "cannot set colorspace" */
 }
 
 static void pdf_run_cs(pdf_csi *csi, pdf_obj *rdb)
@@ -1754,7 +1745,6 @@ static void pdf_run_cs(pdf_csi *csi, pdf_obj *rdb)
 	csi->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
 
 	pdf_run_cs_imp(csi, rdb, PDF_FILL);
-	/* RJW: "cannot set colorspace" */
 }
 
 static void pdf_run_DP(pdf_csi *csi)
@@ -1791,7 +1781,6 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 		pdf_xobject *xobj;
 
 		xobj = pdf_load_xobject(csi->xref, obj);
-		/* RJW: "cannot load xobject (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj) */
 
 		/* Inherit parent resources, in case this one was empty XXX check where it's loaded */
 		if (!xobj->resources)
@@ -1816,7 +1805,7 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 		if ((csi->dev->hints & FZ_IGNORE_IMAGE) == 0)
 		{
 			fz_image *img = pdf_load_image(csi->xref, obj);
-			/* RJW: "cannot load image (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj) */
+
 			fz_try(ctx)
 			{
 				pdf_show_image(csi, img);
@@ -1955,7 +1944,6 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_obj *rdb, int what, pdf_material *m
 		{
 			pdf_pattern *pat;
 			pat = pdf_load_pattern(csi->xref, obj);
-			/* RJW: "cannot load pattern (%d 0 R)", pdf_to_num(obj) */
 			pdf_set_pattern(csi, what, pat, csi->top > 0 ? csi->stack : NULL);
 			pdf_drop_pattern(ctx, pat);
 		}
@@ -1963,7 +1951,6 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_obj *rdb, int what, pdf_material *m
 		{
 			fz_shade *shd;
 			shd = pdf_load_shading(csi->xref, obj);
-			/* RJW: "cannot load shading (%d 0 R)", pdf_to_num(obj) */
 			pdf_set_shade(csi, what, shd);
 			fz_drop_shade(ctx, shd);
 		}
@@ -1983,7 +1970,6 @@ static void pdf_run_SC(pdf_csi *csi, pdf_obj *rdb)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	csi->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
 	pdf_run_SC_imp(csi, rdb, PDF_STROKE, &gstate->stroke);
-	/* RJW: "cannot set color and colorspace" */
 }
 
 static void pdf_run_sc(pdf_csi *csi, pdf_obj *rdb)
@@ -1991,7 +1977,6 @@ static void pdf_run_sc(pdf_csi *csi, pdf_obj *rdb)
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
 	csi->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
 	pdf_run_SC_imp(csi, rdb, PDF_FILL, &gstate->fill);
-	/* RJW: "cannot set color and colorspace" */
 }
 
 static void pdf_run_Tc(pdf_csi *csi)
@@ -2041,7 +2026,6 @@ static void pdf_run_Tf(pdf_csi *csi, pdf_obj *rdb)
 		fz_throw(ctx, "cannot find font resource: '%s'", csi->name);
 
 	gstate->font = pdf_load_font(csi->xref, rdb, obj);
-	/* RJW: "cannot load font (%d 0 R)", pdf_to_num(obj) */
 }
 
 static void pdf_run_Tr(pdf_csi *csi)
@@ -2224,7 +2208,6 @@ static void pdf_run_gs(pdf_csi *csi, pdf_obj *rdb)
 		fz_throw(ctx, "cannot find extgstate resource '%s'", csi->name);
 
 	pdf_run_extgstate(csi, rdb, obj);
-	/* RJW: "cannot set ExtGState (%d 0 R)", pdf_to_num(obj) */
 }
 
 static void pdf_run_h(pdf_csi *csi)
@@ -2328,7 +2311,7 @@ static void pdf_run_sh(pdf_csi *csi, pdf_obj *rdb)
 	if ((csi->dev->hints & FZ_IGNORE_SHADE) == 0)
 	{
 		shd = pdf_load_shading(csi->xref, obj);
-		/* RJW: "cannot load shading (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj) */
+
 		fz_try(ctx)
 		{
 			pdf_show_shade(csi, shd);
@@ -2437,7 +2420,6 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 	case C('B','D','C'): pdf_run_BDC(csi, rdb); break;
 	case B('B','I'):
 		pdf_run_BI(csi, rdb, file);
-		/* RJW: "cannot draw inline image" */
 		break;
 	case C('B','M','C'): pdf_run_BMC(csi); break;
 	case B('B','T'): pdf_run_BT(csi); break;
@@ -2590,7 +2572,6 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 				}
 
 				tok = pdf_lex(file, buf);
-				/* RJW: "lexical error in content stream" */
 
 				if (in_array)
 				{
@@ -2636,7 +2617,6 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					if (!csi->in_text)
 					{
 						csi->obj = pdf_parse_array(csi->xref, file, buf);
-						/* RJW: "cannot parse array" */
 					}
 					else
 					{
@@ -2646,7 +2626,6 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 
 				case PDF_TOK_OPEN_DICT:
 					csi->obj = pdf_parse_dict(csi->xref, file, buf);
-					/* RJW: "cannot parse dictionary" */
 					break;
 
 				case PDF_TOK_NAME:
@@ -2688,7 +2667,6 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					{
 						tok = PDF_TOK_EOF;
 					}
-					/* RJW: "cannot run keyword" */
 					pdf_clear_stack(csi);
 					break;
 
