@@ -636,10 +636,17 @@ pdf_crypt_key(pdf_document *xref)
 }
 
 int
-pdf_crypt_revision(pdf_document *xref)
+pdf_crypt_version(pdf_document *xref)
 {
 	if (xref->crypt)
 		return xref->crypt->v;
+	return 0;
+}
+
+int pdf_crypt_revision(pdf_document *xref)
+{
+	if (xref->crypt)
+		return xref->crypt->r;
 	return 0;
 }
 
