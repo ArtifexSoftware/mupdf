@@ -1189,7 +1189,8 @@ pdf_meta(pdf_document *doc, int key, void *ptr, int size)
 		return FZ_META_OK;
 	case FZ_META_CRYPT_INFO:
 		if (doc->crypt)
-			sprintf((char *)ptr, "Standard V%d %d-bit %s",
+			sprintf((char *)ptr, "Standard V%d R%d %d-bit %s",
+				pdf_crypt_version(doc),
 				pdf_crypt_revision(doc),
 				pdf_crypt_length(doc),
 				pdf_crypt_method(doc));
