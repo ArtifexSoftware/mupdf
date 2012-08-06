@@ -929,6 +929,8 @@ copy_state(fz_context *ctx, pdf_gstate *gs, pdf_gstate *old)
 	gs->fill = old->fill;
 	gs->font = old->font;
 	gs->softmask = old->softmask;
+
+	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, old->stroke_state);
 
 	pdf_keep_material(ctx, &gs->stroke);
