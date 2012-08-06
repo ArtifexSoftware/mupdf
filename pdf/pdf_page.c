@@ -154,7 +154,7 @@ pdf_load_page_tree(pdf_document *xref)
 	pdf_obj *count;
 	struct info info;
 
-	if (xref->page_len)
+	if (xref->page_refs)
 		return;
 
 	catalog = pdf_dict_gets(xref->trailer, "Root");
