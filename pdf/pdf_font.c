@@ -546,7 +546,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 						item = pdf_array_get(diff, i);
 						if (pdf_is_int(item))
 							k = pdf_to_int(item);
-						if (pdf_is_name(item) && k >= 0 && k < 256)
+						if (pdf_is_name(item) && k >= 0 && k < nelem(estrings))
 							estrings[k++] = pdf_to_name(item);
 					}
 				}

@@ -87,9 +87,8 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 					item = pdf_array_get(diff, i);
 					if (pdf_is_int(item))
 						k = pdf_to_int(item);
-					if (pdf_is_name(item))
+					if (pdf_is_name(item) && k >= 0 && k < nelem(estrings))
 						estrings[k++] = pdf_to_name(item);
-					k = fz_clampi(k, 0, 255);
 				}
 			}
 		}
