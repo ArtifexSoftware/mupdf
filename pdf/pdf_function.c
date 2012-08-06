@@ -958,7 +958,7 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 	{
 		int ranges = fz_mini(func->m, pdf_array_len(obj) / 2);
 		if (ranges != func->m)
-			fz_warn(ctx, "too few/many sample function input mappings");
+			fz_warn(ctx, "wrong number of sample function input mappings");
 
 		for (i = 0; i < ranges; i++)
 		{
@@ -978,7 +978,7 @@ load_sample_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int num,
 	{
 		int ranges = fz_mini(func->n, pdf_array_len(obj) / 2);
 		if (ranges != func->n)
-			fz_warn(ctx, "too few/many sample function output mappings");
+			fz_warn(ctx, "wrong number of sample function output mappings");
 
 		for (i = 0; i < ranges; i++)
 		{
@@ -1179,7 +1179,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	{
 		int ranges = fz_mini(func->n, pdf_array_len(obj));
 		if (ranges != func->n)
-			fz_warn(ctx, "too few/many C0 constants for exponential function");
+			fz_warn(ctx, "wrong number of C0 constants for exponential function");
 
 		for (i = 0; i < ranges; i++)
 			func->u.e.c0[i] = pdf_to_real(pdf_array_get(obj, i));
@@ -1190,7 +1190,7 @@ load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 	{
 		int ranges = fz_mini(func->n, pdf_array_len(obj));
 		if (ranges != func->n)
-			fz_warn(ctx, "too few/many C1 constants for exponential function");
+			fz_warn(ctx, "wrong number of C1 constants for exponential function");
 
 		for (i = 0; i < ranges; i++)
 			func->u.e.c1[i] = pdf_to_real(pdf_array_get(obj, i));
@@ -1260,9 +1260,9 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 			func->u.st.k ++;
 
 			if (funcs[i]->m != func->m)
-				fz_warn(ctx, "sub function %d has too few/many inputs", i);
+				fz_warn(ctx, "wrong number of inputs for sub function %d", i);
 			if (funcs[i]->n != func->n)
-				fz_warn(ctx, "sub function %d has too few/many outputs", i);
+				fz_warn(ctx, "wrong number of outputs for sub function %d", i);
 		}
 	}
 
@@ -1300,7 +1300,7 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 	{
 		int ranges = fz_mini(k, pdf_array_len(obj) / 2);
 		if (ranges != k)
-			fz_warn(ctx, "too few/many stitching function input mappings");
+			fz_warn(ctx, "wrong number of stitching function input mappings");
 
 		for (i = 0; i < ranges; i++)
 		{
@@ -1449,9 +1449,9 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 	}
 
 	if (func->m != in)
-		fz_warn(ctx, "too few/many function inputs");
+		fz_warn(ctx, "wrong number of function inputs");
 	if (func->n != out)
-		fz_warn(ctx, "too few/many function outputs");
+		fz_warn(ctx, "wrong number of function outputs");
 
 	fz_try(ctx)
 	{
