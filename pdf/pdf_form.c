@@ -1232,6 +1232,56 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *eventV
 	}
 }
 
+static void update_combobox_appearance(pdf_document *doc, pdf_obj *obj)
+{
+	fz_context *ctx = doc->ctx;
+	text_widget_info info;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
+	fz_matrix tm;
+	fz_rect rect;
+	int has_tm;
+	pdf_obj *val;
+	char *text;
+
+	memset(&info, 0, sizeof(info));
+
+	fz_var(info);
+	fz_var(form);
+	fz_var(fzbuf);
+	fz_try(ctx)
+	{
+		get_text_widget_info(doc, obj, &info);
+
+		val = get_inheritable(doc, obj, "V");
+
+		if (pdf_is_array(val))
+			val = pdf_array_get(val, 0);
+
+		text = pdf_to_str_buf(val);
+
+		if (!text)
+			text = "";
+
+		form = load_or_create_form(doc, obj, &rect);
+
+		has_tm = get_matrix(doc, form, info.q, &tm);
+		fzbuf = create_text_appearance(doc, &form->bbox, has_tm ? &tm : NULL, &info,
+			text?text:"");
+		update_marked_content(doc, form, fzbuf);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_xobject(ctx, form);
+		fz_drop_buffer(ctx, fzbuf);
+		font_info_fin(ctx, &info.font_rec);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "update_text_appearance failed");
+	}
+}
+
 static void fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, int stroke, float adj)
 {
 	switch(pdf_array_len(arr))
@@ -1522,6 +1572,12 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 				break;
 			case FZ_WIDGET_TYPE_PUSHBUTTON:
 				update_pushbutton_appearance(doc, obj);
+				break;
+			case FZ_WIDGET_TYPE_LISTBOX:
+			case FZ_WIDGET_TYPE_COMBOBOX:
+				/* Treating listbox and combobox identically for now,
+				 * and the behaviour is most appropriate for a combobox */
+				update_combobox_appearance(doc, obj);
 				break;
 			}
 		}
