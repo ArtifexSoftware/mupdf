@@ -2134,19 +2134,33 @@ void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *
 	fz_var(opt);
 	fz_try(ctx)
 	{
-		optarr = pdf_new_array(ctx, n);
-
-		for (i = 0; i < n; i++)
+		if (n != 1)
 		{
-			opt = pdf_new_string(ctx, opts[i], strlen(opts[i]));
-			pdf_array_push(optarr, opt);
+			optarr = pdf_new_array(ctx, n);
+
+			for (i = 0; i < n; i++)
+			{
+				opt = pdf_new_string(ctx, opts[i], strlen(opts[i]));
+				pdf_array_push(optarr, opt);
+				pdf_drop_obj(opt);
+				opt = NULL;
+			}
+
+			pdf_dict_puts(annot->obj, "V", optarr);
+			pdf_drop_obj(optarr);
+		}
+		else
+		{
+			opt = pdf_new_string(ctx, opts[0], strlen(opts[0]));
+			pdf_dict_puts(annot->obj, "V", opt);
 			pdf_drop_obj(opt);
-			opt = NULL;
 		}
 
-		pdf_dict_puts(annot->obj, "V", optarr);
-		pdf_drop_obj(optarr);
+		/* FIXME: when n > 1, we should be regenerating the indexes */
+		pdf_dict_dels(annot->obj, "I");
+
 		pdf_field_mark_dirty(ctx, annot->obj);
+		doc->dirty = 1;
 	}
 	fz_catch(ctx)
 	{
