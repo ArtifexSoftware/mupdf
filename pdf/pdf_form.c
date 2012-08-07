@@ -2130,7 +2130,7 @@ void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *
 	if (!annot)
 		return;
 
-	fz_var(opts);
+	fz_var(optarr);
 	fz_var(opt);
 	fz_try(ctx)
 	{
@@ -2146,9 +2146,11 @@ void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *
 
 		pdf_dict_puts(annot->obj, "V", optarr);
 		pdf_drop_obj(optarr);
+		pdf_field_mark_dirty(ctx, annot->obj);
 	}
 	fz_catch(ctx)
 	{
+		pdf_drop_obj(optarr);
 		pdf_drop_obj(opt);
 		fz_rethrow(ctx);
 	}
