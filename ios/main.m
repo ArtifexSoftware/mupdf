@@ -1053,15 +1053,22 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) viewWillAppear: (BOOL)animated
 {
-	CGSize size = [canvas frame].size;
-	width = size.width;
-	height = size.height;
-
 	[self setTitle: [key lastPathComponent]];
 
 	[slider setValue: current];
 
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
+
+	[[self navigationController] setToolbarHidden: NO animated: animated];
+}
+
+- (void) viewWillLayoutSubviews
+{
+	CGSize size = [canvas frame].size;
+	int max_width = MAX(width, size.width);
+
+	width = size.width;
+	height = size.height;
 
 	[canvas setContentInset: UIEdgeInsetsZero];
 	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
@@ -1070,7 +1077,24 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[sliderWrapper setWidth: SLIDER_W];
 	[searchBar setFrame: CGRectMake(0,0,SEARCH_W,32)];
 
-	[[self navigationController] setToolbarHidden: NO animated: animated];
+	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
+
+	// use max_width so we don't clamp the content offset too early during animation
+	[canvas setContentSize: CGSizeMake(count_pages(doc) * max_width, height)];
+	[canvas setContentOffset: CGPointMake(current * width, 0)];
+
+	for (MuPageView *view in [canvas subviews]) {
+		if ([view number] == current) {
+			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+			[view willRotate];
+		}
+	}
+	for (MuPageView *view in [canvas subviews]) {
+		if ([view number] != current) {
+			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+			[view willRotate];
+		}
+	}
 }
 
 - (void) viewDidAppear: (BOOL)animated
@@ -1399,37 +1423,6 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (BOOL) shouldAutorotateToInterfaceOrientation: (UIInterfaceOrientation)o
 {
 	return YES;
-}
-
-- (void) willAnimateRotationToInterfaceOrientation: (UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
-{
-	CGSize size = [canvas frame].size;
-	int max_width = MAX(width, size.width);
-
-	width = size.width;
-	height = size.height;
-
-	[sliderWrapper setWidth: SLIDER_W];
-	[searchBar setFrame: CGRectMake(0,0,SEARCH_W,32)];
-
-	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
-
-	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentSize: CGSizeMake(count_pages(doc) * max_width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0)];
-
-	for (MuPageView *view in [canvas subviews]) {
-		if ([view number] == current) {
-			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
-			[view willRotate];
-		}
-	}
-	for (MuPageView *view in [canvas subviews]) {
-		if ([view number] != current) {
-			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
-			[view willRotate];
-		}
-	}
 }
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
