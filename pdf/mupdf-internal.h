@@ -263,6 +263,7 @@ void pdf_crypt_buffer(fz_context *ctx, pdf_crypt *crypt, fz_buffer *buf, int num
 fz_stream *pdf_open_crypt(fz_stream *chain, pdf_crypt *crypt, int num, int gen);
 fz_stream *pdf_open_crypt_with_filter(fz_stream *chain, pdf_crypt *crypt, char *name, int num, int gen);
 
+int pdf_crypt_version(pdf_document *doc);
 int pdf_crypt_revision(pdf_document *doc);
 char *pdf_crypt_method(pdf_document *doc);
 int pdf_crypt_length(pdf_document *doc);

@@ -81,6 +81,7 @@ static int width = 0;
 static int height = 0;
 static int fit = 0;
 static int errored = 0;
+static int ignore_errors = 0;
 
 static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
@@ -123,6 +124,7 @@ static void usage(void)
 		"\t-I\tinvert output\n"
 		"\t-l\tprint outline\n"
 		"\t-j -\tOutput mujstest file\n"
+		"\t-i\tignore errors and continue with the next file\n"
 		"\tpages\tcomma separated list of ranges\n");
 	exit(1);
 }
@@ -311,15 +313,17 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			dev = fz_new_list_device(ctx, list);
 			fz_run_page(doc, page, dev, fz_identity, &cookie);
 		}
-		fz_catch(ctx)
+		fz_always(ctx)
 		{
 			fz_free_device(dev);
+			dev = NULL;
+		}
+		fz_catch(ctx)
+		{
 			fz_free_display_list(ctx, list);
 			fz_free_page(doc, page);
 			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
-		fz_free_device(dev);
-		dev = NULL;
 	}
 
 	if (showxml)
@@ -631,7 +635,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:fj:")) != -1)
+	while ((c = fz_getopt(argc, argv, "lo:p:r:R:ab:dgmtx5G:Iw:h:fij:")) != -1)
 	{
 		switch (c)
 		{
@@ -654,6 +658,7 @@ int main(int argc, char **argv)
 		case 'f': fit = 1; break;
 		case 'I': invert++; break;
 		case 'j': mujstest_filename = fz_optarg; break;
+		case 'i': ignore_errors = 1; break;
 		default: usage(); break;
 		}
 	}
@@ -724,51 +729,62 @@ int main(int argc, char **argv)
 	{
 		while (fz_optind < argc)
 		{
-			filename = argv[fz_optind++];
-			files++;
-
 			fz_try(ctx)
 			{
-				doc = fz_open_document(ctx, filename);
+				filename = argv[fz_optind++];
+				files++;
+
+				fz_try(ctx)
+				{
+					doc = fz_open_document(ctx, filename);
+				}
+				fz_catch(ctx)
+				{
+					fz_throw(ctx, "cannot open document: %s", filename);
+				}
+
+				if (fz_needs_password(doc))
+				{
+					if (!fz_authenticate_password(doc, password))
+						fz_throw(ctx, "cannot authenticate password: %s", filename);
+					if (mujstest_file)
+						fprintf(mujstest_file, "PASSWORD %s\n", password);
+				}
+
+				if (mujstest_file)
+				{
+					fprintf(mujstest_file, "OPEN %s\n", filename);
+				}
+
+				if (showxml || showtext == TEXT_XML)
+					printf("<document name=\"%s\">\n", filename);
+
+				if (showoutline)
+					drawoutline(ctx, doc);
+
+				if (showtext || showxml || showtime || showmd5 || output || mujstest_file)
+				{
+					if (fz_optind == argc || !isrange(argv[fz_optind]))
+						drawrange(ctx, doc, "1-");
+					if (fz_optind < argc && isrange(argv[fz_optind]))
+						drawrange(ctx, doc, argv[fz_optind++]);
+				}
+
+				if (showxml || showtext == TEXT_XML)
+					printf("</document>\n");
+
+				fz_close_document(doc);
+				doc = NULL;
 			}
 			fz_catch(ctx)
 			{
-				fz_throw(ctx, "cannot open document: %s", filename);
+				if (!ignore_errors)
+					fz_rethrow(ctx);
+
+				fz_close_document(doc);
+				doc = NULL;
+				fz_warn(ctx, "ignoring error in '%s'", filename);
 			}
-
-			if (fz_needs_password(doc))
-			{
-				if (!fz_authenticate_password(doc, password))
-					fz_throw(ctx, "cannot authenticate password: %s", filename);
-				if (mujstest_file)
-					fprintf(mujstest_file, "PASSWORD %s\n", password);
-
-			}
-
-			if (mujstest_file)
-			{
-				fprintf(mujstest_file, "OPEN %s\n", filename);
-			}
-
-			if (showxml || showtext == TEXT_XML)
-				printf("<document name=\"%s\">\n", filename);
-
-			if (showoutline)
-				drawoutline(ctx, doc);
-
-			if (showtext || showxml || showtime || showmd5 || output || mujstest_file)
-			{
-				if (fz_optind == argc || !isrange(argv[fz_optind]))
-					drawrange(ctx, doc, "1-");
-				if (fz_optind < argc && isrange(argv[fz_optind]))
-					drawrange(ctx, doc, argv[fz_optind++]);
-			}
-
-			if (showxml || showtext == TEXT_XML)
-				printf("</document>\n");
-
-			fz_close_document(doc);
-			doc = NULL;
 		}
 	}
 	fz_catch(ctx)

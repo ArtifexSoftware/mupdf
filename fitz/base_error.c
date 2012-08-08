@@ -54,15 +54,21 @@ static void throw(fz_error_context *ex)
 	}
 }
 
-void fz_push_try(fz_error_context *ex)
+int fz_push_try(fz_error_context *ex)
 {
 	assert(ex);
-	if (ex->top + 1 >= nelem(ex->stack))
-	{
-		fprintf(stderr, "exception stack overflow!\n");
-		exit(EXIT_FAILURE);
-	}
 	ex->top++;
+	/* Normal case, get out of here quick */
+	if (ex->top < nelem(ex->stack)-1)
+		return 1;
+	/* We reserve the top slot on the exception stack purely to cope with
+	 * the case when we overflow. If we DO hit this, then we 'throw'
+	 * immediately - returning 0 stops the setjmp happening and takes us
+	 * direct to the always/catch clauses. */
+	assert(ex->top == nelem(ex->stack)-1);
+	strcpy(ex->message, "exception stack overflow!\n");
+	ex->stack[ex->top].code = 1;
+	return 0;
 }
 
 char *fz_caught(fz_context *ctx)

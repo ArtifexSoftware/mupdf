@@ -415,11 +415,10 @@ fz_print_path(fz_context *ctx, FILE *out, fz_path *path, int indent)
 fz_stroke_state *
 fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-
 	if (!stroke)
 		return NULL;
 
+	fz_lock(ctx, FZ_LOCK_ALLOC);
 	if (stroke->refs > 0)
 		stroke->refs++;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);

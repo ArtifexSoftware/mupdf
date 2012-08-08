@@ -36,7 +36,7 @@ endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
 CXX_CMD = $(QUIET_CXX) $(CXX) $(CFLAGS) -o $@ -c $<
-AR_CMD = $(QUIET_AR) $(AR) cru $@ $^
+AR_CMD = $(QUIET_AR) $(AR) cr $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 LINK_V8_CMD = $(QUIET_LINK) $(CXX) $(LDFLAGS) -o $@ $^ $(LIBS_V8)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@

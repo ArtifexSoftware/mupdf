@@ -237,8 +237,8 @@ void fz_var_imp(void *);
 */
 
 #define fz_try(ctx) \
-	if (fz_push_try(ctx->error), \
-		(ctx->error->stack[ctx->error->top].code = fz_setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0) \
+	if (fz_push_try(ctx->error) && \
+		((ctx->error->stack[ctx->error->top].code = fz_setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0))\
 	{ do {
 
 #define fz_always(ctx) \
@@ -251,7 +251,7 @@ void fz_var_imp(void *);
 	} \
 	if (ctx->error->stack[ctx->error->top--].code)
 
-void fz_push_try(fz_error_context *ex);
+int fz_push_try(fz_error_context *ex);
 void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
 void fz_rethrow(fz_context *);
 void fz_warn(fz_context *ctx, char *fmt, ...) __printflike(2, 3);
