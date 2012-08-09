@@ -355,6 +355,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pdf\pdf_write.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pdf\pdf_xobject.c"
 				>
 			</File>
