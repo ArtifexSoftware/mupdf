@@ -1498,11 +1498,6 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 				char *code = pdf_to_utf8(doc, js);
 				fz_try(ctx)
 				{
-					pdf_js_event e;
-
-					e.target = obj;
-					e.value = pdf_field_getValue(doc, obj);
-					pdf_js_setup_event(doc->js, &e);
 					pdf_js_execute(doc->js, code);
 				}
 				fz_always(ctx)
@@ -1566,6 +1561,11 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 					if (formatting)
 					{
 						/* Apply formatting */
+						pdf_js_event e;
+
+						e.target = obj;
+						e.value = pdf_field_getValue(doc, obj);
+						pdf_js_setup_event(doc->js, &e);
 						execute_action(doc, obj, formatting);
 						/* Update appearance from JS event.value */
 						update_text_appearance(doc, obj, pdf_js_get_event(doc->js)->value);
@@ -1875,6 +1875,11 @@ static void recalculate(pdf_document *doc)
 
 				if (calc)
 				{
+					pdf_js_event e;
+
+					e.target = field;
+					e.value = pdf_field_getValue(doc, field);
+					pdf_js_setup_event(doc->js, &e);
 					execute_action(doc, field, calc);
 					/* A calculate action, updates event.value. We need
 					* to place the value in the field */
