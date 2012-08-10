@@ -1030,6 +1030,9 @@ static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 	pdf_obj *sobj = NULL;
 	pdf_obj *grp;
 
+	if (!text)
+		text = "";
+
 	/* All fields of the same name should be updated, so
 	 * set the value at the head of the group */
 	grp = find_head_of_field_group(obj);
@@ -1495,7 +1498,11 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 				char *code = pdf_to_utf8(doc, js);
 				fz_try(ctx)
 				{
-					pdf_js_setup_event(doc->js, obj);
+					pdf_js_event e;
+
+					e.target = obj;
+					e.value = pdf_field_getValue(doc, obj);
+					pdf_js_setup_event(doc->js, &e);
 					pdf_js_execute(doc->js, code);
 				}
 				fz_always(ctx)
@@ -1561,7 +1568,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 						/* Apply formatting */
 						execute_action(doc, obj, formatting);
 						/* Update appearance from JS event.value */
-						update_text_appearance(doc, obj, pdf_js_getEventValue(doc->js));
+						update_text_appearance(doc, obj, pdf_js_get_event(doc->js)->value);
 					}
 					else
 					{
@@ -1871,7 +1878,7 @@ static void recalculate(pdf_document *doc)
 					execute_action(doc, field, calc);
 					/* A calculate action, updates event.value. We need
 					* to place the value in the field */
-					update_text_field_value(doc->ctx, field, pdf_js_getEventValue(doc->js));
+					update_text_field_value(doc->ctx, field, pdf_js_get_event(doc->js)->value);
 					pdf_field_mark_dirty(doc->ctx, field);
 				}
 			}

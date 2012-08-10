@@ -624,10 +624,16 @@ void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *
 /*
  * Javascript handler
  */
+typedef struct pdf_js_event_s
+{
+	pdf_obj *target;
+	char *value;
+} pdf_js_event;
+
 pdf_js *pdf_new_js(pdf_document *doc);
 void pdf_drop_js(pdf_js *js);
-void pdf_js_setup_event(pdf_js *js, pdf_obj *target);
-char *pdf_js_getEventValue(pdf_js *js);
+void pdf_js_setup_event(pdf_js *js, pdf_js_event *e);
+pdf_js_event *pdf_js_get_event(pdf_js *js);
 void pdf_js_execute(pdf_js *js, char *code);
 void pdf_js_execute_count(pdf_js *js, char *code, int count);
 

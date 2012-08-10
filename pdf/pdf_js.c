@@ -1,12 +1,6 @@
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
 
-typedef struct pdf_js_event_s
-{
-	pdf_obj *target;
-	char *value;
-} pdf_js_event;
-
 struct pdf_js_s
 {
 	pdf_document *doc;
@@ -175,8 +169,9 @@ static pdf_jsimp_obj *event_getValue(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_js_event *e = (pdf_js_event *)obj;
+	char *v = js->event.value;
 
-	return pdf_jsimp_fromString(js->imp, js->event.value);
+	return pdf_jsimp_fromString(js->imp, v?v:"");
 }
 
 static void event_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -375,24 +370,26 @@ void pdf_drop_js(pdf_js *js)
 	}
 }
 
-void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
+void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
 {
 	if (js)
 	{
 		fz_context *ctx = js->doc->ctx;
-		char *val = pdf_field_getValue(js->doc, target);
 
-		js->event.target = target;
+		js->event.target = e->target;
 
-		fz_free(ctx, js->event.value);
-		js->event.value = NULL;
-		js->event.value = fz_strdup(ctx, val?val:"");
+		if (e->value)
+		{
+			fz_free(ctx, js->event.value);
+			js->event.value = NULL;
+			js->event.value = fz_strdup(ctx, e->value);
+		}
 	}
 }
 
-char *pdf_js_getEventValue(pdf_js *js)
+pdf_js_event *pdf_js_get_event(pdf_js *js)
 {
-	return js ? js->event.value : NULL;
+	return js ? &js->event : NULL;
 }
 
 void pdf_js_execute(pdf_js *js, char *code)

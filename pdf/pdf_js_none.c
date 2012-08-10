@@ -1,25 +1,47 @@
 #include "fitz-internal.h"
 #include "mupdf-internal.h"
 
+struct pdf_js_s
+{
+	fz_context *ctx;
+	pdf_js_event event;
+};
 
 pdf_js *pdf_new_js(pdf_document *doc)
 {
-	static int x;
+	fz_context *ctx = doc->ctx;
+	pdf_js *js = fz_malloc_struct(ctx, pdf_js);
 
-	return (pdf_js *)&x;
+	fz_try(ctx)
+	{
+		js->ctx = doc->ctx;
+		js->event.target = NULL;
+		js->event.value = fz_strdup(ctx, "");
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_js(js);
+	}
+
+	return js;
 }
 
 void pdf_drop_js(pdf_js *js)
 {
+	if (js)
+	{
+		fz_free(js->ctx, js->event.value);
+		fz_free(js->ctx, js);
+	}
 }
 
-void pdf_js_setup_event(pdf_js *js, pdf_obj *target)
+void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
 {
 }
 
-char *pdf_js_getEventValue(pdf_js *js)
+pdf_js_event *pdf_js_get_event(pdf_js *js)
 {
-	return "";
+	return js ? &js->event : NULL;
 }
 
 void pdf_js_execute(pdf_js *js, char *code)
