@@ -154,9 +154,8 @@ static void field_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 static pdf_jsimp_obj *event_getTarget(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
-	pdf_js_event *e = (pdf_js_event *)obj;
 
-	return pdf_jsimp_new_obj(js->imp, js->fieldtype, e->target);
+	return pdf_jsimp_new_obj(js->imp, js->fieldtype, js->event.target);
 }
 
 static void event_setTarget(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -168,7 +167,6 @@ static void event_setTarget(void *jsctx, void *obj, pdf_jsimp_obj *val)
 static pdf_jsimp_obj *event_getValue(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
-	pdf_js_event *e = (pdf_js_event *)obj;
 	char *v = js->event.value;
 
 	return pdf_jsimp_fromString(js->imp, v?v:"");
@@ -181,6 +179,33 @@ static void event_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	fz_free(ctx, js->event.value);
 	js->event.value = NULL;
 	js->event.value = fz_strdup(ctx, pdf_jsimp_toString(js->imp, val));
+}
+
+static pdf_jsimp_obj *event_getWillCommit(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	return pdf_jsimp_fromNumber(js->imp, 1.0);
+}
+
+static void event_setWillCommit(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_warn(js->doc->ctx, "Unexpected call to event_setWillCommit");
+}
+
+static pdf_jsimp_obj *event_getRC(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	return pdf_jsimp_fromNumber(js->imp, (double)js->event.rc);
+}
+
+static void event_setRC(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	js->event.rc = (int)pdf_jsimp_toNumber(js->imp, val);
 }
 
 static pdf_jsimp_obj *doc_getEvent(void *jsctx, void *obj)
@@ -258,6 +283,8 @@ static void declare_dom(pdf_js *js)
 	js->eventtype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addproperty(imp, js->eventtype, "target", event_getTarget, event_setTarget);
 	pdf_jsimp_addproperty(imp, js->eventtype, "value", event_getValue, event_setValue);
+	pdf_jsimp_addproperty(imp, js->eventtype, "willCommit", event_getWillCommit, event_setWillCommit);
+	pdf_jsimp_addproperty(imp, js->eventtype, "rc", event_getRC, event_setRC);
 
 	/* Create the field type */
 	js->fieldtype = pdf_jsimp_new_type(imp, NULL);
@@ -384,6 +411,8 @@ void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
 			js->event.value = NULL;
 			js->event.value = fz_strdup(ctx, e->value);
 		}
+
+		js->event.rc = 1;
 	}
 }
 

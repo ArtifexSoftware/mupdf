@@ -17,6 +17,7 @@ pdf_js *pdf_new_js(pdf_document *doc)
 		js->ctx = doc->ctx;
 		js->event.target = NULL;
 		js->event.value = fz_strdup(ctx, "");
+		js->event.rc = 1;
 	}
 	fz_catch(ctx)
 	{

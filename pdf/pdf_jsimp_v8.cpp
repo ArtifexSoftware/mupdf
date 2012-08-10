@@ -143,6 +143,11 @@ public:
 		pobj = Persistent<Value>::New(String::New(str));
 	}
 
+	PDFJSImpObject(double num): utf8(NULL)
+	{
+		pobj = Persistent<Value>::New(Number::New(num));
+	}
+
 	~PDFJSImpObject()
 	{
 		delete utf8;
@@ -369,6 +374,12 @@ extern "C" char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_o
 extern "C" char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str)
 {
 	*str = reinterpret_cast<PDFJSImpObject *>(obj)->toString();
+	return NULL;
+}
+
+extern "C" char *pdf_jsimp_fromNumber_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj)
+{
+	*obj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(num));
 	return NULL;
 }
 

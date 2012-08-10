@@ -1901,7 +1901,28 @@ static void recalculate(pdf_document *doc)
 
 void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
+	pdf_obj *k, *v;
 	doc->dirty = 1;
+
+	k = pdf_dict_getp(field, "AA/K");
+	v = pdf_dict_getp(field, "AA/V");
+
+	if (k || v)
+	{
+		pdf_js_event e;
+
+		e.target = field;
+		e.value = text;
+		pdf_js_setup_event(doc->js, &e);
+
+		if (k)
+			execute_action(doc, field, k);
+
+		if (v)
+			execute_action(doc, field, v);
+
+		text = pdf_js_get_event(doc->js)->value;
+	}
 
 	update_text_field_value(doc->ctx, field, text);
 	recalculate(doc);

@@ -628,6 +628,7 @@ typedef struct pdf_js_event_s
 {
 	pdf_obj *target;
 	char *value;
+	int rc;
 } pdf_js_event;
 
 pdf_js *pdf_new_js(pdf_document *doc);
@@ -664,6 +665,7 @@ void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
 char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
+pdf_jsimp_obj *pdf_jsimp_fromNumber(pdf_jsimp *imp, double num);
 double pdf_jsimp_toNumber(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 int pdf_jsimp_array_len(pdf_jsimp *imp, pdf_jsimp_obj *obj);
