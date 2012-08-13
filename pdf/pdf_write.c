@@ -1165,7 +1165,7 @@ lpr_inherit(fz_context *ctx, pdf_obj *node, char *text, int depth)
 }
 
 static int
-lpr(fz_context *ctx, pdf_write_options *opts, pdf_obj *node, int depth, int page)
+lpr(fz_context *ctx, pdf_obj *node, int depth, int page)
 {
 	pdf_obj *kids;
 	pdf_obj *o = NULL;
@@ -1216,7 +1216,7 @@ lpr(fz_context *ctx, pdf_write_options *opts, pdf_obj *node, int depth, int page
 			n = pdf_array_len(kids);
 			for(i = 0; i < n; i++)
 			{
-				page = lpr(ctx, opts, pdf_array_get(kids, i), depth+1, page);
+				page = lpr(ctx, pdf_array_get(kids, i), depth+1, page);
 			}
 			pdf_dict_dels(node, "Resources");
 			pdf_dict_dels(node, "MediaBox");
@@ -1241,12 +1241,17 @@ lpr(fz_context *ctx, pdf_write_options *opts, pdf_obj *node, int depth, int page
 	return page;
 }
 
-static void
-linearize_page_resources(pdf_document *xref, pdf_write_options *opts)
+void
+pdf_localise_page_resources(pdf_document *xref)
 {
 	fz_context *ctx = xref->ctx;
 
-	lpr(ctx, opts, pdf_dict_gets(pdf_dict_gets(xref->trailer, "Root"), "Pages"), 0, 0);
+	if (xref->resources_localised)
+		return;
+
+	lpr(ctx, pdf_dict_getp(xref->trailer, "Root/Pages"), 0, 0);
+
+	xref->resources_localised = 1;
 }
 
 static void
@@ -1265,7 +1270,7 @@ linearize(pdf_document *xref, pdf_write_options *opts)
 	/* FIXME: We could 'thin' the resources according to what is actually
 	 * required for each page, but this would require us to run the page
 	 * content streams. */
-	linearize_page_resources(xref, opts);
+	pdf_localise_page_resources(xref);
 
 	/* Walk the objects for each page, marking which ones are used, where */
 	memset(opts->use_list, 0, n * sizeof(int));
