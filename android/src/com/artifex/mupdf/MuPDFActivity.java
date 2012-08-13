@@ -16,6 +16,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -725,8 +726,23 @@ public class MuPDFActivity extends Activity
 
 	@Override
 	public boolean onSearchRequested() {
-		showButtons();
-		searchModeOn();
+		if (mButtonsVisible && mTopBarIsSearch) {
+			hideButtons();
+		} else {
+			showButtons();
+			searchModeOn();
+		}
 		return super.onSearchRequested();
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		if (mButtonsVisible && !mTopBarIsSearch) {
+			hideButtons();
+		} else {
+			showButtons();
+			searchModeOff();
+		}
+		return super.onPrepareOptionsMenu(menu);
 	}
 }
