@@ -270,8 +270,8 @@ public class MuPDFActivity extends Activity
 				if (core == null)
 					return;
 				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
-				mPageSlider.setMax(core.countPages()-1);
-				mPageSlider.setProgress(i);
+				mPageSlider.setMax((core.countPages()-1)*2);
+				mPageSlider.setProgress(i*2);
 				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber != i) {
 					SearchTaskResult.set(null);
 					mDocView.resetupChildren();
@@ -307,14 +307,14 @@ public class MuPDFActivity extends Activity
 		// Activate the seekbar
 		mPageSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			public void onStopTrackingTouch(SeekBar seekBar) {
-				mDocView.setDisplayedViewIndex(seekBar.getProgress());
+				mDocView.setDisplayedViewIndex((seekBar.getProgress()+1)/2);
 			}
 
 			public void onStartTrackingTouch(SeekBar seekBar) {}
 
 			public void onProgressChanged(SeekBar seekBar, int progress,
 					boolean fromUser) {
-				updatePageNumView(progress);
+				updatePageNumView((progress+1)/2);
 			}
 		});
 
@@ -511,8 +511,8 @@ public class MuPDFActivity extends Activity
 			// Update page number text and slider
 			int index = mDocView.getDisplayedViewIndex();
 			updatePageNumView(index);
-			mPageSlider.setMax(core.countPages()-1);
-			mPageSlider.setProgress(index);
+			mPageSlider.setMax((core.countPages()-1)*2);
+			mPageSlider.setProgress(index*2);
 			if (mTopBarIsSearch) {
 				mSearchText.requestFocus();
 				showKeyboard();
