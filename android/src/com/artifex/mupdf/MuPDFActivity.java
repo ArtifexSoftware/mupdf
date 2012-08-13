@@ -576,21 +576,25 @@ public class MuPDFActivity extends Activity
 	}
 
 	void searchModeOn() {
-		mTopBarIsSearch = true;
-		//Focus on EditTextWidget
-		mSearchText.requestFocus();
-		showKeyboard();
-		mTopBarSwitcher.showNext();
+		if (!mTopBarIsSearch) {
+			mTopBarIsSearch = true;
+			//Focus on EditTextWidget
+			mSearchText.requestFocus();
+			showKeyboard();
+			mTopBarSwitcher.showNext();
+		}
 	}
 
 	void searchModeOff() {
-		mTopBarIsSearch = false;
-		hideKeyboard();
-		mTopBarSwitcher.showPrevious();
-		SearchTaskResult.set(null);
-		// Make the ReaderView act on the change to mSearchTaskResult
-		// via overridden onChildSetup method.
-		mDocView.resetupChildren();
+		if (mTopBarIsSearch) {
+			mTopBarIsSearch = false;
+			hideKeyboard();
+			mTopBarSwitcher.showPrevious();
+			SearchTaskResult.set(null);
+			// Make the ReaderView act on the change to mSearchTaskResult
+			// via overridden onChildSetup method.
+			mDocView.resetupChildren();
+		}
 	}
 
 	void updatePageNumView(int index) {
@@ -717,5 +721,12 @@ public class MuPDFActivity extends Activity
 		};
 
 		mSearchTask.safeExecute(new Integer(direction));
+	}
+
+	@Override
+	public boolean onSearchRequested() {
+		showButtons();
+		searchModeOn();
+		return super.onSearchRequested();
 	}
 }
