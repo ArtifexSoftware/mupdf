@@ -690,7 +690,7 @@ public class MuPDFActivity extends Activity
 					// via overridden onChildSetup method.
 				    mDocView.resetupChildren();
 				} else {
-					mAlertBuilder.setTitle(R.string.text_not_found);
+					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurences_found);
 					AlertDialog alert = mAlertBuilder.create();
 					alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
 							(DialogInterface.OnClickListener)null);
