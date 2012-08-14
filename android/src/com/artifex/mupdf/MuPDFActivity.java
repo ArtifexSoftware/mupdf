@@ -149,6 +149,7 @@ public class MuPDFActivity extends Activity
 					}
 				}
 				core = openFile(Uri.decode(uri.getEncodedPath()));
+				SearchTaskResult.set(null);
 			}
 			if (core != null && core.needsPassword()) {
 				requestPassword(savedInstanceState);
