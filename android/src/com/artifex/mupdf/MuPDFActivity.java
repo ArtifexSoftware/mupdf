@@ -83,6 +83,7 @@ public class MuPDFActivity extends Activity
 	private EditText     mPasswordView;
 	private TextView     mFilenameView;
 	private SeekBar      mPageSlider;
+	private int          mPageSliderRes;
 	private TextView     mPageNumberView;
 	private ImageButton  mSearchButton;
 	private ImageButton  mCancelButton;
@@ -272,8 +273,8 @@ public class MuPDFActivity extends Activity
 				if (core == null)
 					return;
 				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
-				mPageSlider.setMax((core.countPages()-1)*2);
-				mPageSlider.setProgress(i*2);
+				mPageSlider.setMax((core.countPages()-1) * mPageSliderRes);
+				mPageSlider.setProgress(i * mPageSliderRes);
 				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber != i) {
 					SearchTaskResult.set(null);
 					mDocView.resetupChildren();
@@ -303,20 +304,24 @@ public class MuPDFActivity extends Activity
 		// controls in variables
 		makeButtonsView();
 
+		// Set up the page slider
+		int smax = core.countPages()-1;
+		mPageSliderRes = ((10 + smax - 1)/smax) * 2;
+
 		// Set the file-name text
 		mFilenameView.setText(mFileName);
 
 		// Activate the seekbar
 		mPageSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			public void onStopTrackingTouch(SeekBar seekBar) {
-				mDocView.setDisplayedViewIndex((seekBar.getProgress()+1)/2);
+				mDocView.setDisplayedViewIndex((seekBar.getProgress()+mPageSliderRes/2)/mPageSliderRes);
 			}
 
 			public void onStartTrackingTouch(SeekBar seekBar) {}
 
 			public void onProgressChanged(SeekBar seekBar, int progress,
 					boolean fromUser) {
-				updatePageNumView((progress+1)/2);
+				updatePageNumView((progress+mPageSliderRes/2)/mPageSliderRes);
 			}
 		});
 
@@ -513,8 +518,8 @@ public class MuPDFActivity extends Activity
 			// Update page number text and slider
 			int index = mDocView.getDisplayedViewIndex();
 			updatePageNumView(index);
-			mPageSlider.setMax((core.countPages()-1)*2);
-			mPageSlider.setProgress(index*2);
+			mPageSlider.setMax((core.countPages()-1)*mPageSliderRes);
+			mPageSlider.setProgress(index*mPageSliderRes);
 			if (mTopBarIsSearch) {
 				mSearchText.requestFocus();
 				showKeyboard();
