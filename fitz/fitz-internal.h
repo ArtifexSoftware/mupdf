@@ -3,12 +3,26 @@
 
 #include "fitz.h"
 
+#ifdef _WIN32 /* Microsoft Visual C++ */
+
+typedef signed char int8_t;
+typedef short int int16_t;
+typedef int int32_t;
+typedef __int64 int64_t;
+
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+
+#else
+#include <inttypes.h>
+#endif
+
 struct fz_warn_context_s
 {
 	char message[256];
 	int count;
 };
-
 
 fz_context *fz_clone_context_internal(fz_context *ctx);
 
