@@ -103,8 +103,8 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	obj = pdf_dict_gets(dict, "O");
 	if (pdf_is_string(obj) && pdf_to_str_len(obj) == 32)
 		memcpy(crypt->o, pdf_to_str_buf(obj), 32);
-	/* /O and /U are supposed to be 48 bytes long for revision 5, they're often longer, though */
-	else if (crypt->r == 5 && pdf_is_string(obj) && pdf_to_str_len(obj) >= 48)
+	/* /O and /U are supposed to be 48 bytes long for revision 5 and 6, they're often longer, though */
+	else if (crypt->r >= 5 && pdf_is_string(obj) && pdf_to_str_len(obj) >= 48)
 		memcpy(crypt->o, pdf_to_str_buf(obj), 48);
 	else
 	{
@@ -115,8 +115,8 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	obj = pdf_dict_gets(dict, "U");
 	if (pdf_is_string(obj) && pdf_to_str_len(obj) == 32)
 		memcpy(crypt->u, pdf_to_str_buf(obj), 32);
-	/* /O and /U are supposed to be 48 bytes long for revision 5, they're often longer, though */
-	else if (crypt->r == 5 && pdf_is_string(obj) && pdf_to_str_len(obj) >= 48)
+	/* /O and /U are supposed to be 48 bytes long for revision 5 and 6, they're often longer, though */
+	else if (crypt->r >= 5 && pdf_is_string(obj) && pdf_to_str_len(obj) >= 48)
 		memcpy(crypt->u, pdf_to_str_buf(obj), 48);
 	else if (pdf_is_string(obj) && pdf_to_str_len(obj) < 32)
 	{
@@ -138,7 +138,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		crypt->p = 0xfffffffc;
 	}
 
-	if (crypt->r == 5)
+	if (crypt->r == 5 || crypt->r == 6)
 	{
 		obj = pdf_dict_gets(dict, "OE");
 		if (!pdf_is_string(obj) || pdf_to_str_len(obj) != 32)
@@ -320,6 +320,9 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 	if (crypt->r == 5 &&
 		(cf->length != 128 && cf->length != 192 && cf->length != 256))
 		fz_throw(ctx, "invalid key length: %d", cf->length);
+	if (crypt->r == 6 &&
+		(cf->length != 256))
+		fz_throw(ctx, "invalid key length: %d", cf->length);
 }
 
 /*
@@ -445,6 +448,101 @@ pdf_compute_encryption_key_r5(pdf_crypt *crypt, unsigned char *password, int pwl
 }
 
 /*
+ * Compute an encryption key (PDF 1.7 ExtensionLevel 8 algorithm)
+ *
+ * Adobe has not yet released the details, so the algorithm reference is:
+ * http://esec-lab.sogeti.com/post/The-undocumented-password-validation-algorithm-of-Adobe-Reader-X
+ */
+
+static void
+pdf_compute_hardened_hash_r6(unsigned char *password, int pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
+{
+	unsigned char data[(128 + 64 + 48) * 64];
+	unsigned char block[64];
+	int block_size = 32;
+	int data_len = 0;
+	int i, j, sum;
+
+	fz_sha256 sha256;
+	fz_sha384 sha384;
+	fz_sha512 sha512;
+	fz_aes aes;
+
+	/* Step 1: calculate initial data block */
+	fz_sha256_init(&sha256);
+	fz_sha256_update(&sha256, password, pwlen);
+	fz_sha256_update(&sha256, salt, 8);
+	if (ownerkey)
+		fz_sha256_update(&sha256, ownerkey, 48);
+	fz_sha256_final(&sha256, block);
+
+	for (i = 0; i < 64 || i < data[data_len * 64 - 1] + 32; i++)
+	{
+		/* Step 2: repeat password and data block 64 times */
+		memcpy(data, password, pwlen);
+		memcpy(data + pwlen, block, block_size);
+		memcpy(data + pwlen + block_size, ownerkey, ownerkey ? 48 : 0);
+		data_len = pwlen + block_size + (ownerkey ? 48 : 0);
+		for (j = 1; j < 64; j++)
+			memcpy(data + j * data_len, data, data_len);
+
+		/* Step 3: encrypt data using data block as key and iv */
+		aes_setkey_enc(&aes, block, 128);
+		aes_crypt_cbc(&aes, AES_ENCRYPT, data_len * 64, block + 16, data, data);
+
+		/* Step 4: determine SHA-2 hash size for this round */
+		for (j = 0, sum = 0; j < 16; j++)
+			sum += data[j];
+
+		/* Step 5: calculate data block for next round */
+		block_size = 32 + (sum % 3) * 16;
+		switch (block_size)
+		{
+		case 32:
+			fz_sha256_init(&sha256);
+			fz_sha256_update(&sha256, data, data_len * 64);
+			fz_sha256_final(&sha256, block);
+			break;
+		case 48:
+			fz_sha384_init(&sha384);
+			fz_sha384_update(&sha384, data, data_len * 64);
+			fz_sha384_final(&sha384, block);
+			break;
+		case 64:
+			fz_sha512_init(&sha512);
+			fz_sha512_update(&sha512, data, data_len * 64);
+			fz_sha512_final(&sha512, block);
+			break;
+		}
+	}
+
+	memset(data, 0, sizeof(data));
+	memcpy(hash, block, 32);
+}
+
+static void
+pdf_compute_encryption_key_r6(pdf_crypt *crypt, unsigned char *password, int pwlen, int ownerkey, unsigned char *validationkey)
+{
+	unsigned char hash[32];
+	unsigned char iv[16];
+	fz_aes aes;
+
+	if (pwlen > 127)
+		pwlen = 127;
+
+	pdf_compute_hardened_hash_r6(password, pwlen,
+		(ownerkey ? crypt->o : crypt->u) + 32,
+		ownerkey ? crypt->u : NULL, validationkey);
+	pdf_compute_hardened_hash_r6(password, pwlen,
+		crypt->u + 40, NULL, hash);
+
+	memset(iv, 0, sizeof(iv));
+	aes_setkey_dec(&aes, hash, 256);
+	aes_crypt_cbc(&aes, AES_DECRYPT, 32, iv,
+		ownerkey ? crypt->oe : crypt->ue, crypt->key);
+}
+
+/*
  * Computing the user password (PDF 1.7 algorithm 3.4 and 3.5)
  * Also save the generated key for decrypting objects and streams in crypt->key.
  */
@@ -496,6 +594,11 @@ pdf_compute_user_password(pdf_crypt *crypt, unsigned char *password, int pwlen, 
 	{
 		pdf_compute_encryption_key_r5(crypt, password, pwlen, 0, output);
 	}
+
+	if (crypt->r == 6)
+	{
+		pdf_compute_encryption_key_r6(crypt, password, pwlen, 0, output);
+	}
 }
 
 /*
@@ -510,7 +613,7 @@ pdf_authenticate_user_password(pdf_crypt *crypt, unsigned char *password, int pw
 {
 	unsigned char output[32];
 	pdf_compute_user_password(crypt, password, pwlen, output);
-	if (crypt->r == 2 || crypt->r == 5)
+	if (crypt->r == 2 || crypt->r == 5 || crypt->r == 6)
 		return memcmp(output, crypt->u, 32) == 0;
 	if (crypt->r == 3 || crypt->r == 4)
 		return memcmp(output, crypt->u, 16) == 0;
@@ -538,9 +641,13 @@ pdf_authenticate_owner_password(pdf_crypt *crypt, unsigned char *ownerpass, int 
 	if (crypt->r == 5)
 	{
 		/* PDF 1.7 ExtensionLevel 3 algorithm 3.12 */
-
 		pdf_compute_encryption_key_r5(crypt, ownerpass, pwlen, 1, key);
-
+		return !memcmp(key, crypt->o, 32);
+	}
+	else if (crypt->r == 6)
+	{
+		/* PDF 1.7 ExtensionLevel 8 algorithm */
+		pdf_compute_encryption_key_r6(crypt, ownerpass, pwlen, 1, key);
 		return !memcmp(key, crypt->o, 32);
 	}
 
