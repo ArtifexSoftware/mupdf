@@ -93,7 +93,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
-	private SafeAsyncTask<Integer,Integer,SearchTaskResult> mSearchTask;
+	private SafeAsyncTask<Void,Integer,SearchTaskResult> mSearchTask;
 	//private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 	private LinkState    mLinkState = LinkState.DEFAULT;
@@ -648,6 +648,9 @@ public class MuPDFActivity extends Activity
 			return;
 		killSearch();
 
+		final int increment = direction;
+		final int startIndex = SearchTaskResult.get() == null ? mDocView.getDisplayedViewIndex() : SearchTaskResult.get().pageNumber + increment;
+
 		final ProgressDialogX progressDialog = new ProgressDialogX(this);
 		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 		progressDialog.setTitle(getString(R.string.searching_));
@@ -658,14 +661,10 @@ public class MuPDFActivity extends Activity
 		});
 		progressDialog.setMax(core.countPages());
 
-		mSearchTask = new SafeAsyncTask<Integer,Integer,SearchTaskResult>() {
+		mSearchTask = new SafeAsyncTask<Void,Integer,SearchTaskResult>() {
 			@Override
-			protected SearchTaskResult doInBackground(Integer... params) {
-				int index;
-				if (SearchTaskResult.get() == null)
-					index = mDocView.getDisplayedViewIndex();
-				else
-					index = SearchTaskResult.get().pageNumber + params[0].intValue();
+			protected SearchTaskResult doInBackground(Void... params) {
+				int index = startIndex;
 
 				while (0 <= index && index < core.countPages() && !isCancelled()) {
 					publishProgress(index);
@@ -674,7 +673,7 @@ public class MuPDFActivity extends Activity
 					if (searchHits != null && searchHits.length > 0)
 						return new SearchTaskResult(mSearchText.getText().toString(), index, searchHits);
 
-					index += params[0].intValue();
+					index += increment;
 				}
 				return null;
 			}
@@ -716,13 +715,16 @@ public class MuPDFActivity extends Activity
 				mHandler.postDelayed(new Runnable() {
 					public void run() {
 						if (!progressDialog.isCancelled())
+						{
 							progressDialog.show();
+							progressDialog.setProgress(startIndex);
+						}
 					}
 				}, SEARCH_PROGRESS_DELAY);
 			}
 		};
 
-		mSearchTask.safeExecute(new Integer(direction));
+		mSearchTask.safeExecute();
 	}
 
 	@Override
