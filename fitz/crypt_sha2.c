@@ -28,7 +28,7 @@ static inline unsigned int bswap32(unsigned int num)
 }
 
 /* At least on x86, GCC is able to optimize this to a rotate instruction. */
-#define rotr_32(num, amount) ((num) >> (amount) | (num) << (32 - (amount)))
+#define rotr(num, amount) ((num) >> (amount) | (num) << (8 * sizeof(num) - (amount)))
 
 #define blk0(i) (W[i] = data[i])
 #define blk2(i) (W[i & 15] += s1(W[(i - 2) & 15]) + W[(i - 7) & 15] \
@@ -47,15 +47,17 @@ static inline unsigned int bswap32(unsigned int num)
 #define h(i) T[(7 - i) & 7]
 
 #define R(i) \
-	h(i) += S1(e(i)) + Ch(e(i), f(i), g(i)) + SHA256_K[i + j] \
+	h(i) += S1(e(i)) + Ch(e(i), f(i), g(i)) + K[i + j] \
 		+ (j ? blk2(i) : blk0(i)); \
 	d(i) += h(i); \
 	h(i) += S0(a(i)) + Maj(a(i), b(i), c(i))
 
-#define S0(x) (rotr_32(x, 2) ^ rotr_32(x, 13) ^ rotr_32(x, 22))
-#define S1(x) (rotr_32(x, 6) ^ rotr_32(x, 11) ^ rotr_32(x, 25))
-#define s0(x) (rotr_32(x, 7) ^ rotr_32(x, 18) ^ (x >> 3))
-#define s1(x) (rotr_32(x, 17) ^ rotr_32(x, 19) ^ (x >> 10))
+/* For SHA256 */
+
+#define S0(x) (rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22))
+#define S1(x) (rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25))
+#define s0(x) (rotr(x, 7) ^ rotr(x, 18) ^ (x >> 3))
+#define s1(x) (rotr(x, 17) ^ rotr(x, 19) ^ (x >> 10))
 
 static const unsigned int SHA256_K[64] = {
 	0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
@@ -77,8 +79,9 @@ static const unsigned int SHA256_K[64] = {
 };
 
 static void
-transform(unsigned int state[8], const unsigned int data_xe[16])
+transform256(unsigned int state[8], const unsigned int data_xe[16])
 {
+	const unsigned int *K = SHA256_K;
 	unsigned int data[16];
 	unsigned int W[16];
 	unsigned int T[8];
@@ -109,6 +112,11 @@ transform(unsigned int state[8], const unsigned int data_xe[16])
 	state[6] += g(0);
 	state[7] += h(0);
 }
+
+#undef S0
+#undef S1
+#undef s0
+#undef s1
 
 void fz_sha256_init(fz_sha256 *context)
 {
@@ -147,7 +155,7 @@ void fz_sha256_update(fz_sha256 *context, const unsigned char *input, unsigned i
 			context->count[1]++;
 
 		if ((context->count[0] & 0x3F) == 0)
-			transform(context->state, context->buffer.u32);
+			transform256(context->state, context->buffer.u32);
 	}
 }
 
@@ -162,7 +170,7 @@ void fz_sha256_final(fz_sha256 *context, unsigned char digest[32])
 	{
 		if (j == 64)
 		{
-			transform(context->state, context->buffer.u32);
+			transform256(context->state, context->buffer.u32);
 			j = 0;
 		}
 		context->buffer.u8[j++] = 0x00;
@@ -174,7 +182,7 @@ void fz_sha256_final(fz_sha256 *context, unsigned char digest[32])
 
 	context->buffer.u32[14] = bswap32(context->count[1]);
 	context->buffer.u32[15] = bswap32(context->count[0]);
-	transform(context->state, context->buffer.u32);
+	transform256(context->state, context->buffer.u32);
 
 	for (j = 0; j < 8; j++)
 		((unsigned int *)digest)[j] = bswap32(context->state[j]);
