@@ -5,7 +5,7 @@
 struct info
 {
 	fz_context *ctx;
-	int width, height, depth, n;
+	unsigned int width, height, depth, n;
 	int interlace, indexed;
 	int size;
 	unsigned char *samples;
@@ -15,7 +15,7 @@ struct info
 	int xres, yres;
 };
 
-static inline int getint(unsigned char *p)
+static inline unsigned int getuint(unsigned char *p)
 {
 	return p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3];
 }
@@ -226,8 +226,8 @@ png_read_ihdr(struct info *info, unsigned char *p, int size)
 	if (size != 13)
 		fz_throw(info->ctx, "IHDR chunk is the wrong size");
 
-	info->width = getint(p + 0);
-	info->height = getint(p + 4);
+	info->width = getuint(p + 0);
+	info->height = getuint(p + 4);
 	info->depth = p[8];
 
 	color = p[9];
@@ -360,8 +360,8 @@ png_read_phys(struct info *info, unsigned char *p, int size)
 		fz_throw(info->ctx, "pHYs chunk is the wrong size");
 	if (p[8] == 1)
 	{
-		info->xres = getint(p) * 254 / 10000;
-		info->yres = getint(p + 4) * 254 / 10000;
+		info->xres = getuint(p) * 254 / 10000;
+		info->yres = getuint(p + 4) * 254 / 10000;
 	}
 }
 
@@ -369,7 +369,7 @@ static void
 png_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total)
 {
 	int passw[7], passh[7], passofs[8];
-	int code, size;
+	unsigned int code, size;
 	z_stream stm;
 
 	memset(info, 0, sizeof (struct info));
@@ -388,7 +388,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total)
 
 	/* Read IHDR chunk (must come first) */
 
-	size = getint(p);
+	size = getuint(p);
 
 	if (size + 12 > total)
 		fz_throw(info->ctx, "premature end of data in png image");
@@ -434,7 +434,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total)
 		/* Read remaining chunks until IEND */
 		while (total > 8)
 		{
-			size = getint(p);
+			size = getuint(p);
 
 			if (size + 12 > total)
 				fz_throw(info->ctx, "premature end of data in png image");
