@@ -305,7 +305,7 @@ public class MuPDFActivity extends Activity
 		makeButtonsView();
 
 		// Set up the page slider
-		int smax = core.countPages()-1;
+		int smax = Math.max(core.countPages()-1,1);
 		mPageSliderRes = ((10 + smax - 1)/smax) * 2;
 
 		// Set the file-name text
