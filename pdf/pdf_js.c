@@ -407,9 +407,9 @@ void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
 
 		if (e->value)
 		{
+			char *v = fz_strdup(ctx, e->value);
 			fz_free(ctx, js->event.value);
-			js->event.value = NULL;
-			js->event.value = fz_strdup(ctx, e->value);
+			js->event.value = v;
 		}
 
 		js->event.rc = 1;
