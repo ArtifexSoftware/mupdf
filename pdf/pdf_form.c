@@ -1911,7 +1911,7 @@ int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 		pdf_js_setup_event(doc->js, &e);
 		execute_action(doc, field, v);
 
-		if (!e.rc)
+		if (!pdf_js_get_event(doc->js)->rc)
 			return 0;
 
 		text = pdf_js_get_event(doc->js)->value;
@@ -2125,7 +2125,7 @@ static int run_keystroke(pdf_document *doc, pdf_obj *field, char **text)
 		pdf_js_setup_event(doc->js, &e);
 		execute_action(doc, field, k);
 
-		if (!e.rc)
+		if (!pdf_js_get_event(doc->js)->rc)
 			return 0;
 
 		*text = pdf_js_get_event(doc->js)->value;
