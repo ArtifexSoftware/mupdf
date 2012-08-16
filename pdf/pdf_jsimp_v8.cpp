@@ -177,20 +177,20 @@ extern "C" fz_context *pdf_jsimp_ctx_cpp(pdf_jsimp *imp)
 	return reinterpret_cast<PDFJSImp *>(imp)->ctx;
 }
 
-extern "C" char *pdf_new_jsimp_cpp(fz_context *ctx, void *jsctx, pdf_jsimp **imp)
+extern "C" const char *pdf_new_jsimp_cpp(fz_context *ctx, void *jsctx, pdf_jsimp **imp)
 {
 	*imp = reinterpret_cast<pdf_jsimp *>(new PDFJSImp(ctx, jsctx));
 
 	return NULL;
 }
 
-extern "C" char *pdf_drop_jsimp_cpp(pdf_jsimp *imp)
+extern "C" const char *pdf_drop_jsimp_cpp(pdf_jsimp *imp)
 {
 	delete reinterpret_cast<PDFJSImp *>(imp);
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_new_type_cpp(pdf_jsimp *imp, pdf_jsimp_dtr *dtr, pdf_jsimp_type **type)
+extern "C" const char *pdf_jsimp_new_type_cpp(pdf_jsimp *imp, pdf_jsimp_dtr *dtr, pdf_jsimp_type **type)
 {
 	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
 	PDFJSImpType *vType = new PDFJSImpType(vImp, dtr);
@@ -199,7 +199,7 @@ extern "C" char *pdf_jsimp_new_type_cpp(pdf_jsimp *imp, pdf_jsimp_dtr *dtr, pdf_
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_drop_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
+extern "C" const char *pdf_jsimp_drop_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
 {
 	/* Types are recorded and destroyed as part of PDFJSImp */
 	return NULL;
@@ -239,7 +239,7 @@ static Handle<Value> callMethod(const Arguments &args)
 	return scope.Close(val);
 }
 
-extern "C" char *pdf_jsimp_addmethod_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth)
+extern "C" const char *pdf_jsimp_addmethod_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_method *meth)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -298,7 +298,7 @@ static void setProp(Local<String> property, Local<Value> value, const AccessorIn
 	delete obj;
 }
 
-extern "C" char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set)
+extern "C" const char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char *name, pdf_jsimp_getter *get, pdf_jsimp_setter *set)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -309,7 +309,7 @@ extern "C" char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type,
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_set_global_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
+extern "C" const char *pdf_jsimp_set_global_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type)
 {
 	PDFJSImp	 *vImp  = reinterpret_cast<PDFJSImp *>(imp);
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
@@ -332,7 +332,7 @@ static void gcCallback(Persistent<Value> val, void *parm)
 	delete gco; /* Disposes of the persistent handle */
 }
 
-extern "C" char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, pdf_jsimp_obj **robj)
+extern "C" const char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, pdf_jsimp_obj **robj)
 {
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
@@ -359,37 +359,37 @@ extern "C" char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, voi
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+extern "C" const char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	delete reinterpret_cast<PDFJSImpObject *>(obj);
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj)
+extern "C" const char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj)
 {
 	*obj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(str));
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str)
+extern "C" const char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str)
 {
 	*str = reinterpret_cast<PDFJSImpObject *>(obj)->toString();
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_fromNumber_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj)
+extern "C" const char *pdf_jsimp_fromNumber_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj)
 {
 	*obj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(num));
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_toNumber_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num)
+extern "C" const char *pdf_jsimp_toNumber_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num)
 {
 	*num = reinterpret_cast<PDFJSImpObject *>(obj)->toNumber();
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len)
+extern "C" const char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len)
 {
 	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
 	Local<Array> arr = Local<Array>::Cast(val);
@@ -397,7 +397,7 @@ extern "C" char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item)
+extern "C" const char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item)
 {
 	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
 	Local<Array> arr = Local<Array>::Cast(val);
@@ -405,7 +405,7 @@ extern "C" char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, in
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code)
+extern "C" const char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code)
 {
 	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
 	HandleScope scope;
@@ -417,7 +417,7 @@ extern "C" char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code)
 	return NULL;
 }
 
-extern "C" char *pdf_jsimp_execute_count_cpp(pdf_jsimp *imp, char *code, int count)
+extern "C" const char *pdf_jsimp_execute_count_cpp(pdf_jsimp *imp, char *code, int count)
 {
 	PDFJSImp *vImp = reinterpret_cast<PDFJSImp *>(imp);
 	HandleScope scope;

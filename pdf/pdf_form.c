@@ -1595,7 +1595,6 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 
 static void execute_action_chain(pdf_document *doc, pdf_obj *obj)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_obj *a;
 
 	a = pdf_dict_gets(obj, "A");

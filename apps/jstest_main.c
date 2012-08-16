@@ -238,7 +238,7 @@ static void unescape_string(char *d, const char *s)
 {
 	char c;
 
-	while (c = *s++)
+	while ((c = *s++) != 0)
 	{
 		if (c == '\\')
 		{
