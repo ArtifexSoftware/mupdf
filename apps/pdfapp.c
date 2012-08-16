@@ -1102,10 +1102,17 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 				case FZ_WIDGET_TYPE_TEXT:
 					{
 						char *text = fz_widget_text_get_text(idoc, widget);
-						char *newtext = wintextinput(app, text);
+						char *current_text = text;
+						int retry = 0;
+
+						do
+						{
+							current_text = wintextinput(app, current_text, retry);
+							retry = 1;
+						}
+						while (current_text && !fz_widget_text_set_text(idoc, widget, current_text));
+
 						fz_free(app->ctx, text);
-						if (newtext)
-							fz_widget_text_set_text(idoc, widget, newtext);
 					}
 					break;
 

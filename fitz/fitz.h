@@ -2497,8 +2497,10 @@ int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw);
 
 /*
 	fz_widget_text_set_text: Update the text of a text widget.
+	The text is first validated and accepted only if it passes. The
+	function returns whether validation passed.
 */
-void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
+int fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
 
 /*
 	fz_widget_choice_get_options: get the list of options for a list

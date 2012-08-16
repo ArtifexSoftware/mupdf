@@ -567,7 +567,7 @@ void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 int pdf_field_getType(pdf_document *doc, pdf_obj *field);
 char *pdf_field_getValue(pdf_document *doc, pdf_obj *field);
-void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
+int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
 char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field);
 void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text);
 void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text);
@@ -615,7 +615,7 @@ fz_widget *pdf_next_widget(fz_widget *previous);
 char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw);
 int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget *tw);
 int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw);
-void pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text);
+int pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text);
 int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[]);
 int pdf_widget_choice_is_multiselect(pdf_document *doc, fz_widget *tw);
 int pdf_widget_choice_get_value(pdf_document *doc, fz_widget *tw, char *opts[]);

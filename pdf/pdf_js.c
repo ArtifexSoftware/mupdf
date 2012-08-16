@@ -148,7 +148,7 @@ static void field_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
-	pdf_field_setValue(js->doc, field, pdf_jsimp_toString(js->imp, val));
+	(void)pdf_field_setValue(js->doc, field, pdf_jsimp_toString(js->imp, val));
 }
 
 static pdf_jsimp_obj *event_getTarget(void *jsctx, void *obj)

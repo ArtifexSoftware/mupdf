@@ -117,9 +117,13 @@ char *winpassword(pdfapp_t *app, char *filename)
 	return r;
 }
 
-char *wintextinput(pdfapp_t *app, char *inittext)
+char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 {
 	static char buf[256];
+
+	if (retry)
+		return NULL;
+
 	printf("> [%s] ", inittext);
 	fgets(buf, sizeof buf, stdin);
 	return buf;

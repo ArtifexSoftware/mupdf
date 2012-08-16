@@ -1899,34 +1899,31 @@ static void recalculate(pdf_document *doc)
 	}
 }
 
-void pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
+int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
-	pdf_obj *k, *v;
-	doc->dirty = 1;
+	pdf_obj *v = pdf_dict_getp(field, "AA/V");
 
-	k = pdf_dict_getp(field, "AA/K");
-	v = pdf_dict_getp(field, "AA/V");
-
-	if (k || v)
+	if (v)
 	{
 		pdf_js_event e;
 
 		e.target = field;
 		e.value = text;
 		pdf_js_setup_event(doc->js, &e);
+		execute_action(doc, field, v);
 
-		if (k)
-			execute_action(doc, field, k);
-
-		if (v)
-			execute_action(doc, field, v);
+		if (!e.rc)
+			return 0;
 
 		text = pdf_js_get_event(doc->js)->value;
 	}
 
+	doc->dirty = 1;
 	update_text_field_value(doc->ctx, field, text);
 	recalculate(doc);
 	pdf_field_mark_dirty(doc->ctx, field);
+
+	return 1;
 }
 
 char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field)
@@ -2116,19 +2113,46 @@ int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw)
 	return type;
 }
 
-void pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
+static int run_keystroke(pdf_document *doc, pdf_obj *field, char **text)
+{
+	pdf_obj *k = pdf_dict_getp(field, "AA/K");
+
+	if (k)
+	{
+		pdf_js_event e;
+
+		e.target = field;
+		e.value = *text;
+		pdf_js_setup_event(doc->js, &e);
+		execute_action(doc, field, k);
+
+		if (!e.rc)
+			return 0;
+
+		*text = pdf_js_get_event(doc->js)->value;
+	}
+
+	return 1;
+}
+
+int pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
+	int accepted = 0;
 
 	fz_try(ctx)
 	{
-		pdf_field_setValue(doc, annot->obj, text);
+		accepted = run_keystroke(doc, annot->obj, &text);
+		if (accepted)
+			accepted = pdf_field_setValue(doc, annot->obj, text);
 	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "fz_widget_text_set_text failed");
 	}
+
+	return accepted;
 }
 
 int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[])

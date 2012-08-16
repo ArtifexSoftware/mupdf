@@ -47,8 +47,11 @@ char *winpassword(pdfapp_t *app, char *filename)
 	return pd_password;
 }
 
-char *wintextinput(pdfapp_t *app, char *inittext)
+char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 {
+	if (retry)
+		return NULL;
+
 	if (td_textinput[0] != 0)
 		return td_textinput;
 	return inittext;

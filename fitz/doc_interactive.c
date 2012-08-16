@@ -51,9 +51,9 @@ int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw)
 	return pdf_widget_text_get_content_type((pdf_document *)idoc, tw);
 }
 
-void fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text)
+int fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text)
 {
-	pdf_widget_text_set_text((pdf_document *)idoc, tw, text);
+	return pdf_widget_text_set_text((pdf_document *)idoc, tw, text);
 }
 
 int fz_widget_choice_get_options(fz_interactive *idoc, fz_widget *tw, char *opts[])

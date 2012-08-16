@@ -156,6 +156,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 static char pd_filename[256] = "The file is encrypted.";
 static char pd_password[256] = "";
 static char td_textinput[1024] = "";
+static int td_retry = 0;
 static int cd_nopts;
 static int *cd_nvals;
 static char **cd_opts;
@@ -195,6 +196,8 @@ dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG:
 		SetDlgItemTextA(hwnd, 3, td_textinput);
+		if (!td_retry)
+			ShowWindow(GetDlgItem(hwnd, 4), SW_HIDE);
 		return TRUE;
 	case WM_COMMAND:
 		switch(wParam)
@@ -208,6 +211,15 @@ dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			pd_okay = 0;
 			EndDialog(hwnd, 1);
 			return TRUE;
+		}
+		break;
+	case WM_CTLCOLORSTATIC:
+		if ((HWND)lParam == GetDlgItem(hwnd, 4))
+		{
+			SetTextColor((HDC)wParam, RGB(255,0,0));
+			SetBkMode((HDC)wParam, TRANSPARENT);
+
+			return (INT)GetStockObject(NULL_BRUSH);
 		}
 		break;
 	}
@@ -281,9 +293,10 @@ char *winpassword(pdfapp_t *app, char *filename)
 	return NULL;
 }
 
-char *wintextinput(pdfapp_t *app, char *inittext)
+char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 {
 	int code;
+	td_retry = retry;
 	strncpy(td_textinput, inittext?inittext:"", sizeof(td_textinput));
 	code = DialogBoxW(NULL, L"IDD_DLOGTEXT", hwndframe, dlogtextproc);
 	if (code <= 0)
