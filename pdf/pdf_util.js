@@ -301,6 +301,19 @@ function AFParseDateEx(d, fmt)
 	return AFParseTime(dt[1], dout);
 }
 
+function AFDate_KeystrokeEx(fmt)
+{
+	if (event.willCommit && !AFParseDateEx(event.value))
+		event.rc = false;
+}
+
+function AFDate_Keystroke(index)
+{
+	var formats = ['m/d','m/d/yy','mm/dd/yy','mm/yy','d-mmm','d-mmm-yy','dd-mm-yy','yy-mm-dd',
+				'mmm-yy','mmmm-yy','mmm d, yyyy','mmmm d, yyyy','m/d/yy h:MM tt','m/d/yy HH:MM'];
+	AFDate_KeystrokeEx(formats[index]);
+}
+
 function AFDate_FormatEx(fmt)
 {
 	var d = AFParseDateEx(event.value, fmt);
@@ -313,6 +326,12 @@ function AFDate_Format(index)
 	var formats = ['m/d','m/d/yy','mm/dd/yy','mm/yy','d-mmm','d-mmm-yy','dd-mm-yy','yy-mm-dd',
 				'mmm-yy','mmmm-yy','mmm d, yyyy','mmmm d, yyyy','m/d/yy h:MM tt','m/d/yy HH:MM'];
 	AFDate_FormatEx(formats[index]);
+}
+
+function AFTime_Keystroke(index)
+{
+	if (event.willCommit && !AFParseTime(event.value, null))
+		event.rc = false;
 }
 
 function AFTime_FormatEx(fmt)
@@ -351,6 +370,29 @@ function AFSpecial_Format(index)
 	}
 
 	event.value = res ? res : '';
+}
+
+function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend)
+{
+	if (sepStyle & 2)
+	{
+		if (!event.value.match(/^[+-]?\d*[,.]?\d*$/))
+		{
+			event.rc = false;
+			return;
+		}
+	}
+	else
+	{
+		if (!event.value.match(/^[+-]?\d*\.?\d*$/))
+		{
+			event.rc = false;
+			return;
+		}
+	}
+
+	if (event.willCommit && !event.value.match(/\d/))
+		event.rc = false;
 }
 
 function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyPrepend)
@@ -481,4 +523,13 @@ function AFSimple_Calculate(op, list)
 		res /= list.length;
 
 	event.value = res;
+}
+
+function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit)
+{
+	if (upperCheck && event.value > upperLimit)
+		event.rc = false;
+
+	if (lowerCheck && event.value < lowerLimit)
+		event.rc = false;
 }
