@@ -301,14 +301,14 @@ void fz_sha512_init(fz_sha512 *context)
 {
 	context->count[0] = context->count[1] = 0;
 
-	context->state[0] = 0x6A09E667F3BCC908;
-	context->state[1] = 0xBB67AE8584CAA73B;
-	context->state[2] = 0x3C6EF372FE94F82B;
-	context->state[3] = 0xA54FF53A5F1D36F1;
-	context->state[4] = 0x510E527FADE682D1;
-	context->state[5] = 0x9B05688C2B3E6C1F;
-	context->state[6] = 0x1F83D9ABFB41BD6B;
-	context->state[7] = 0x5BE0CD19137E2179;
+	context->state[0] = 0x6A09E667F3BCC908ull;
+	context->state[1] = 0xBB67AE8584CAA73Bull;
+	context->state[2] = 0x3C6EF372FE94F82Bull;
+	context->state[3] = 0xA54FF53A5F1D36F1ull;
+	context->state[4] = 0x510E527FADE682D1ull;
+	context->state[5] = 0x9B05688C2B3E6C1Full;
+	context->state[6] = 0x1F83D9ABFB41BD6Bull;
+	context->state[7] = 0x5BE0CD19137E2179ull;
 }
 
 void fz_sha512_update(fz_sha512 *context, const unsigned char *input, unsigned int inlen)
@@ -372,14 +372,14 @@ void fz_sha384_init(fz_sha384 *context)
 {
 	context->count[0] = context->count[1] = 0;
 
-	context->state[0] = 0xCBBB9D5DC1059ED8;
-	context->state[1] = 0x629A292A367CD507;
-	context->state[2] = 0x9159015A3070DD17;
-	context->state[3] = 0x152FECD8F70E5939;
-	context->state[4] = 0x67332667FFC00B31;
-	context->state[5] = 0x8EB44A8768581511;
-	context->state[6] = 0xDB0C2E0D64F98FA7;
-	context->state[7] = 0x47B5481DBEFA4FA4;
+	context->state[0] = 0xCBBB9D5DC1059ED8ull;
+	context->state[1] = 0x629A292A367CD507ull;
+	context->state[2] = 0x9159015A3070DD17ull;
+	context->state[3] = 0x152FECD8F70E5939ull;
+	context->state[4] = 0x67332667FFC00B31ull;
+	context->state[5] = 0x8EB44A8768581511ull;
+	context->state[6] = 0xDB0C2E0D64F98FA7ull;
+	context->state[7] = 0x47B5481DBEFA4FA4ull;
 }
 
 void fz_sha384_update(fz_sha384 *context, const unsigned char *input, unsigned int inlen)
