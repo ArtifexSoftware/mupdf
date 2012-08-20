@@ -1,0 +1,15 @@
+[submodule "thirdparty/jbig2dec"]
+	path = thirdparty/jbig2dec
+	url = git://git.ghostscript.com/jbig2dec.git
+[submodule "thirdparty/freetype"]
+	path = thirdparty/freetype
+	url = git://git.ghostscript.com/thirdparty/freetype.git
+[submodule "thirdparty/jpeg"]
+	path = thirdparty/jpeg
+	url = git://git.ghostscript.com/thirdparty/jpeg.git
+[submodule "thirdparty/openjpeg"]
+	path = thirdparty/openjpeg
+	url = git://git.ghostscript.com/thirdparty/openjpeg.git
+[submodule "thirdparty/zlib"]
+	path = thirdparty/zlib
+	url = git://git.ghostscript.com/thirdparty/zlib.git
