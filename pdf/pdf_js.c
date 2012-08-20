@@ -402,16 +402,13 @@ void pdf_js_setup_event(pdf_js *js, pdf_js_event *e)
 	if (js)
 	{
 		fz_context *ctx = js->doc->ctx;
+		char *ev = e->value ? e->value : "";
+		char *v = fz_strdup(ctx, ev);
+
+		fz_free(ctx, js->event.value);
+		js->event.value = v;
 
 		js->event.target = e->target;
-
-		if (e->value)
-		{
-			char *v = fz_strdup(ctx, e->value);
-			fz_free(ctx, js->event.value);
-			js->event.value = v;
-		}
-
 		js->event.rc = 1;
 	}
 }
