@@ -62,7 +62,9 @@ util.printd = function(fmt, d)
 		return null;
 
 	var tokens = fmt.match(regexp);
-	for (var i = 0; i < tokens.length; i++)
+	var length = tokens ? tokens.length : 0;
+
+	for (var i = 0; i < length; i++)
 	{
 		switch(tokens[i])
 		{
@@ -99,14 +101,15 @@ util.printx = function(fmt, val)
 	var res = '';
 	var i = 0;
 	var m;
+	var length = fmt ? fmt.length : 0;
 
-	while (i < fmt.length)
+	while (i < length)
 	{
 		switch (fmt.charAt(i))
 		{
 			case '\\':
 				i++;
-				if (i >= fmt.length) return res;
+				if (i >= length) return res;
 				res += fmt.charAt(i);
 				break;
 
@@ -157,6 +160,26 @@ util.printx = function(fmt, val)
 	}
 
 	return res;
+}
+
+function AFMergeChange(event)
+{
+	return event.value;
+}
+
+function AFMakeNumber(str)
+{
+	var nums = str.match(/\d+/g);
+
+	if (!nums)
+		return null;
+
+	var res = nums.join('.');
+
+	if (str.match(/^[^0-9]*\./))
+		res = '0.'+res;
+
+	return res * (str.match(/-/) ? -1.0 : 1.0);
 }
 
 function AFExtractTime(dt)
@@ -256,7 +279,7 @@ function AFParseDateEx(d, fmt)
 
 	dout.setHours(12,0,0);
 
-	if (nums.length < 1 || nums.length > 3)
+	if (!nums || nums.length < 1 || nums.length > 3)
 		return null;
 
 	if (nums.length < 3 && text_month)
@@ -348,6 +371,121 @@ function AFTime_Format(index)
 	AFTime_FormatEx(formats[index]);
 }
 
+function AFSpecial_KeystrokeEx(fmt)
+{
+	var cs = '=';
+	var val = event.value;
+	var res = '';
+	var i = 0;
+	var m;
+	var length = fmt ? fmt.length : 0;
+
+	while (i < length)
+	{
+		switch (fmt.charAt(i))
+		{
+			case '\\':
+				i++;
+				if (i >= length)
+					break;
+				res += fmt.charAt(i);
+				if (val && val.charAt(0) == fmt.charAt(i))
+					val = val.substr(1);
+				break;
+
+			case 'X':
+				m = val.match(/^\w/);
+				if (!m)
+				{
+					event.rc = false;
+					return;
+				}
+				res += MuPDF.convertCase(m[0],cs);
+				val = val.substr(1);
+				break;
+
+			case 'A':
+				m = val.match(/^[A-z]/);
+				if (!m)
+				{
+					event.rc = false;
+					return;
+				}
+				res += MuPDF.convertCase(m[0],cs);
+				val = val.substr(1);
+				break;
+
+			case '9':
+				m = val.match(/^\d/);
+				if (!m)
+				{
+					event.rc = false;
+					return;
+				}
+				res += m[0];
+				val = val.substr(1);
+				break;
+
+			case '*':
+				res += val;
+				val = '';
+				break;
+
+			case '?':
+				if (!val)
+				{
+					event.rc = false;
+					return;
+				}
+				res += MuPDF.convertCase(val.charAt(0),cs);
+				val = val.substr(1);
+				break;
+
+			case '=':
+			case '>':
+			case '<':
+				cs = fmt.charAt(i);
+				break;
+
+			default:
+				res += fmt.charAt(i);
+				if (val && val.charAt(0) == fmt.charAt(i))
+					val = val.substr(1);
+				break;
+		}
+
+		i++;
+	}
+
+	event.value = res;
+}
+
+function AFSpecial_Keystroke(index)
+{
+	if (event.willCommit)
+	{
+		switch (index)
+		{
+			case 0:
+				if (!event.value.match(/^\d{5}$/))
+					event.rc = false;
+				break;
+			case 1:
+				if (!event.value.match(/^\d{5}[-. ]?\d{4}$/))
+					event.rc = false;
+				break;
+			case 2:
+				if (!event.value.match(/^((\(\d{3}\)|\d{3})[-. ]?)?\d{3}[-. ]?\d{4}$/))
+					event.rc = false;
+				break;
+			case 3:
+				if (!event.value.match(/^\d{3}[-. ]?\d{2}[-. ]?\d{4}$/))
+					event.rc = false;
+				break;
+		}
+	}
+}
+
 function AFSpecial_Format(index)
 {
 	var res;
@@ -407,6 +545,9 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 		val = '0'+val;
 
 	var groups = val.match(/\d+/g);
+
+	if (!groups)
+		return;
 
 	switch (groups.length)
 	{
@@ -470,6 +611,26 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 		event.target.textColor = /-/.text(val) ? color.red : color.black;
 
 	event.value = intpart;
+}
+
+function AFPercent_Keystroke(nDec, sepStyle)
+{
+	AFNumber_Keystroke(nDec, sepStyle, 0, 0, "", true);
+}
+
+function AFPercent_Format(nDec, sepStyle)
+{
+	var val = AFMakeNumber(event.value);
+
+	if (!val)
+	{
+		event.value = '';
+		return;
+	}
+
+	event.value = (val * 100) + '';
+
+	AFNumber_Format(nDec, sepStyle, 0, 0, "%", false);
 }
 
 function AFSimple_Calculate(op, list)
