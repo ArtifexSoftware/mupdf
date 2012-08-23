@@ -408,22 +408,20 @@ pdf_js *pdf_new_js(pdf_document *doc)
 			pdf_obj *fragment = pdf_dict_get_val(javascript, i);
 			pdf_obj *code = pdf_dict_gets(fragment, "JS");
 
-			if (pdf_is_stream(doc, pdf_to_num(code), pdf_to_gen(code)))
+			fz_var(codebuf);
+			fz_try(ctx)
 			{
-				fz_try(ctx)
-				{
-					codebuf = pdf_to_utf8(doc, code);
-					pdf_jsimp_execute(js->imp, codebuf);
-				}
-				fz_always(ctx)
-				{
-					fz_free(ctx, codebuf);
-					codebuf = NULL;
-				}
-				fz_catch(ctx)
-				{
-					fz_warn(ctx, "Warning: %s", ctx->error->message);
-				}
+				codebuf = pdf_to_utf8(doc, code);
+				pdf_jsimp_execute(js->imp, codebuf);
+			}
+			fz_always(ctx)
+			{
+				fz_free(ctx, codebuf);
+				codebuf = NULL;
+			}
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "Warning: %s", ctx->error->message);
 			}
 		}
 	}
