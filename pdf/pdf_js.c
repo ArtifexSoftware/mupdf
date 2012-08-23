@@ -279,30 +279,38 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 	fz_context *ctx = js->doc->ctx;
 	pdf_obj *arr = js->form;
 	pdf_obj *dict = NULL;
-	int      len;
-	char    *utf8, *name, *dot;
+	int len;
+	char *utf8, *dot;
+	char *name = NULL;
+	char *namep;
 
 	if (argc != 1)
 		return NULL;
 
-	/* Process the fully qualified field name which has
-	 * the partial names delimited by '.' */
-	utf8 = pdf_jsimp_toString(js->imp, args[0]);
-	name = utf8_to_pdf(ctx, utf8);
-
-	/* Pretend there was a preceding '.' to simplify the loop */
-	dot = name - 1;
-
+	fz_var(dict);
+	fz_var(name);
 	fz_try(ctx)
 	{
-		while (dot && arr)
+		utf8 = pdf_jsimp_toString(js->imp, args[0]);
+
+		if (utf8)
 		{
-			name = dot + 1;
-			dot = strchr(name, '.');
-			len = dot ? dot - name : strlen(name);
-			dict = find_field(arr, name, len);
-			if (dot)
-				arr = pdf_dict_gets(dict, "Kids");
+			name = utf8_to_pdf(ctx, utf8);
+
+			/* Process the fully qualified field name which has
+			* the partial names delimited by '.'. Pretend there
+			* was a preceding '.' to simplify the loop */
+			dot = name - 1;
+
+			while (dot && arr)
+			{
+				namep = dot + 1;
+				dot = strchr(namep, '.');
+				len = dot ? dot - namep : strlen(namep);
+				dict = find_field(arr, namep, len);
+				if (dot)
+					arr = pdf_dict_gets(dict, "Kids");
+			}
 		}
 	}
 	fz_always(ctx)
@@ -311,7 +319,8 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow(ctx);
+		fz_warn(ctx, "doc_getField failed: %s", ctx->error->message);
+		dict = NULL;
 	}
 
 	return dict ? pdf_jsimp_new_obj(js->imp, js->fieldtype, dict) : NULL;
