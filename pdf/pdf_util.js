@@ -608,7 +608,7 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 	}
 
 	if (negStyle&1)
-		event.target.textColor = /-/.text(val) ? color.red : color.black;
+		event.target.textColor = /-/.test(val) ? color.red : color.black;
 
 	event.value = intpart;
 }
