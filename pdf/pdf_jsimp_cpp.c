@@ -106,7 +106,7 @@ char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 pdf_jsimp_obj *pdf_jsimp_fromNumber(pdf_jsimp *imp, double num)
 {
 	pdf_jsimp_obj *obj = NULL;
-	char *err = pdf_jsimp_fromNumber_cpp(imp, num, &obj);
+	const char *err = pdf_jsimp_fromNumber_cpp(imp, num, &obj);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 

@@ -27,6 +27,10 @@ pdf_js *pdf_new_js(pdf_document *doc)
 	return js;
 }
 
+void pdf_js_load_document_level(pdf_js *js)
+{
+}
+
 void pdf_drop_js(pdf_js *js)
 {
 	if (js)

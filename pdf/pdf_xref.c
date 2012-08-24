@@ -782,6 +782,7 @@ pdf_init_document(pdf_document *xref)
 			}
 		}
 		xref->js = pdf_new_js(xref);
+		pdf_js_load_document_level(xref->js);
 	}
 	fz_catch(ctx)
 	{

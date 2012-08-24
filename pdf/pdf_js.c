@@ -244,7 +244,7 @@ static char *utf8_to_pdf(fz_context *ctx, char *utf8)
 {
 	char *pdf = fz_malloc(ctx, strlen(utf8)+1);
 	int i = 0;
-	char c;
+	unsigned char c;
 
 	while ((c = *utf8) != 0)
 	{
@@ -374,16 +374,12 @@ pdf_js *pdf_new_js(pdf_document *doc)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_js     *js = NULL;
-	pdf_obj    *javascript = NULL;
-	char *codebuf = NULL;
 
 	fz_var(js);
-	fz_var(javascript);
-	fz_var(codebuf);
 	fz_try(ctx)
 	{
-		int len, i;
 		pdf_obj *root, *acroform;
+
 		js = fz_malloc_struct(ctx, pdf_js);
 		js->doc = doc;
 
@@ -399,6 +395,28 @@ pdf_js *pdf_new_js(pdf_document *doc)
 		declare_dom(js);
 
 		preload_helpers(js);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_js(js);
+		js = NULL;
+	}
+
+	return js;
+}
+
+void pdf_js_load_document_level(pdf_js *js)
+{
+	pdf_document *doc = js->doc;
+	fz_context *ctx = doc->ctx;
+	pdf_obj    *javascript = NULL;
+	char *codebuf = NULL;
+
+	fz_var(javascript);
+	fz_var(codebuf);
+	fz_try(ctx)
+	{
+		int len, i;
 
 		javascript = pdf_load_name_tree(doc, "JavaScript");
 		len = pdf_dict_len(javascript);
@@ -431,11 +449,8 @@ pdf_js *pdf_new_js(pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_js(js);
-		js = NULL;
+		fz_rethrow(ctx);
 	}
-
-	return js;
 }
 
 void pdf_drop_js(pdf_js *js)

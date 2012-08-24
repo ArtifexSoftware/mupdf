@@ -1558,7 +1558,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 			case FZ_WIDGET_TYPE_TEXT:
 				{
 					pdf_obj *formatting = pdf_dict_getp(obj, "AA/F");
-					if (formatting)
+					if (formatting && doc->js)
 					{
 						/* Apply formatting */
 						pdf_js_event e;
@@ -1863,7 +1863,7 @@ static void recalculate(pdf_document *doc)
 	{
 		pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
 
-		if (co)
+		if (co && doc->js)
 		{
 			int i, n = pdf_array_len(co);
 
@@ -1902,7 +1902,7 @@ int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
 	pdf_obj *v = pdf_dict_getp(field, "AA/V");
 
-	if (v)
+	if (v && doc->js)
 	{
 		pdf_js_event e;
 
@@ -2116,7 +2116,7 @@ static int run_keystroke(pdf_document *doc, pdf_obj *field, char **text)
 {
 	pdf_obj *k = pdf_dict_getp(field, "AA/K");
 
-	if (k)
+	if (k && doc->js)
 	{
 		pdf_js_event e;
 
