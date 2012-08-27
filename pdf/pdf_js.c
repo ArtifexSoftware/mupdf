@@ -10,6 +10,7 @@ struct pdf_js_s
 	pdf_jsimp_type *doctype;
 	pdf_jsimp_type *eventtype;
 	pdf_jsimp_type *fieldtype;
+	pdf_jsimp_type *apptype;
 };
 
 static pdf_obj *load_color(fz_context *ctx, pdf_jsimp *imp, pdf_jsimp_obj *val)
@@ -221,6 +222,19 @@ static void doc_setEvent(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	fz_warn(js->doc->ctx, "Unexpected call to doc_setEvent");
 }
 
+static pdf_jsimp_obj *doc_getApp(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	return pdf_jsimp_new_obj(js->imp, js->apptype, NULL);
+}
+
+static void doc_setApp(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_warn(js->doc->ctx, "Unexpected call to doc_setApp");
+}
+
 static pdf_obj *find_field(pdf_obj *dict, char *name, int len)
 {
 	pdf_obj *field;
@@ -334,6 +348,7 @@ static void declare_dom(pdf_js *js)
 	js->doctype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addmethod(imp, js->doctype, "getField", doc_getField);
 	pdf_jsimp_addproperty(imp, js->doctype, "event", doc_getEvent, doc_setEvent);
+	pdf_jsimp_addproperty(imp, js->doctype, "app", doc_getApp, doc_setApp);
 
 	/* Create the event type */
 	js->eventtype = pdf_jsimp_new_type(imp, NULL);
@@ -349,6 +364,9 @@ static void declare_dom(pdf_js *js)
 	pdf_jsimp_addproperty(imp, js->fieldtype, "textColor", field_getTextColor, field_setTextColor);
 	pdf_jsimp_addproperty(imp, js->fieldtype, "fillColor", field_getFillColor, field_setFillColor);
 	pdf_jsimp_addmethod(imp, js->fieldtype, "buttonSetCaption", field_buttonSetCaption);
+
+	/* Create the app type */
+	js->apptype = pdf_jsimp_new_type(imp, NULL);
 
 	/* Create the document object and tell the engine to use */
 	pdf_jsimp_set_global_type(js->imp, js->doctype);
@@ -459,6 +477,7 @@ void pdf_drop_js(pdf_js *js)
 	{
 		fz_context *ctx = js->doc->ctx;
 		fz_free(ctx, js->event.value);
+		pdf_jsimp_drop_type(js->imp, js->apptype);
 		pdf_jsimp_drop_type(js->imp, js->fieldtype);
 		pdf_jsimp_drop_type(js->imp, js->doctype);
 		pdf_drop_jsimp(js->imp);
