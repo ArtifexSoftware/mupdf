@@ -1307,9 +1307,8 @@ static int pdf_meta_shim(fz_document *doc, int key, void *ptr, int size)
 }
 
 static pdf_document *
-pdf_new_document(fz_stream *file)
+pdf_new_document(fz_context *ctx, fz_stream *file)
 {
-	fz_context *ctx = file->ctx;
 	pdf_document *doc = fz_malloc_struct(ctx, pdf_document);
 
 	doc->super.close = pdf_close_document_shim;
@@ -1332,9 +1331,9 @@ pdf_new_document(fz_stream *file)
 }
 
 pdf_document *
-pdf_open_document_no_run_with_stream(fz_stream *file)
+pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *file)
 {
-	pdf_document *doc = pdf_new_document(file);
+	pdf_document *doc = pdf_new_document(ctx, file);
 	pdf_init_document(doc);
 	return doc;
 }
@@ -1350,7 +1349,7 @@ pdf_open_document_no_run(fz_context *ctx, const char *filename)
 	fz_try(ctx)
 	{
 		file = fz_open_file(ctx, filename);
-		doc = pdf_new_document(file);
+		doc = pdf_new_document(ctx, file);
 		pdf_init_document(doc);
 	}
 	fz_always(ctx)

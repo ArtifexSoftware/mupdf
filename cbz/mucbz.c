@@ -285,9 +285,8 @@ cbz_read_zip_dir(cbz_document *doc)
 }
 
 cbz_document *
-cbz_open_document_with_stream(fz_stream *file)
+cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
-	fz_context *ctx = file->ctx;
 	cbz_document *doc;
 
 	doc = fz_malloc_struct(ctx, cbz_document);
@@ -323,7 +322,7 @@ cbz_open_document(fz_context *ctx, char *filename)
 		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx) {
-		doc = cbz_open_document_with_stream(file);
+		doc = cbz_open_document_with_stream(ctx, file);
 	} fz_always(ctx) {
 		fz_close(file);
 	} fz_catch(ctx) {

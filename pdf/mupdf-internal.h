@@ -206,7 +206,7 @@ struct pdf_document_s
 };
 
 pdf_document *pdf_open_document_no_run(fz_context *ctx, const char *filename);
-pdf_document *pdf_open_document_no_run_with_stream(fz_stream *file);
+pdf_document *pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *file);
 
 void pdf_cache_object(pdf_document *doc, int num, int gen);
 
