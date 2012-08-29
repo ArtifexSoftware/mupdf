@@ -1452,7 +1452,7 @@ static void reset_field(pdf_document *doc, pdf_obj *obj)
 			fz_var(name);
 			fz_try(ctx)
 			{
-				name = fz_new_name(ctx, "Off");
+				name = pdf_new_name(ctx, "Off");
 				pdf_dict_puts(obj, "AS", name);
 			}
 			fz_always(ctx)
@@ -1612,7 +1612,7 @@ static void check_off(fz_context *ctx, pdf_obj *obj)
 	fz_var(off);
 	fz_try(ctx);
 	{
-		off = fz_new_name(ctx, "Off");
+		off = pdf_new_name(ctx, "Off");
 		pdf_dict_puts(obj, "AS", off);
 	}
 	fz_always(ctx)
@@ -1636,9 +1636,9 @@ static void set_check(fz_context *ctx, pdf_obj *chk, char *name)
 		/* If name is a possible value of this check
 		* box then use it, otherwise use "Off" */
 		if (pdf_dict_gets(n, name))
-			val = fz_new_name(ctx, name);
+			val = pdf_new_name(ctx, name);
 		else
-			val = fz_new_name(ctx, "Off");
+			val = pdf_new_name(ctx, "Off");
 
 		pdf_dict_puts(chk, "AS", val);
 	}
@@ -1947,15 +1947,15 @@ void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text)
 	pdf_obj *val = NULL;
 
 	if (!strcmp(text, "Solid"))
-		val = fz_new_name(ctx, "S");
+		val = pdf_new_name(ctx, "S");
 	else if (!strcmp(text, "Dashed"))
-		val = fz_new_name(ctx, "D");
+		val = pdf_new_name(ctx, "D");
 	else if (!strcmp(text, "Beveled"))
-		val = fz_new_name(ctx, "B");
+		val = pdf_new_name(ctx, "B");
 	else if (!strcmp(text, "Inset"))
-		val = fz_new_name(ctx, "I");
+		val = pdf_new_name(ctx, "I");
 	else if (!strcmp(text, "Underline"))
-		val = fz_new_name(ctx, "U");
+		val = pdf_new_name(ctx, "U");
 	else
 		return;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2011 Artifex Software, Inc.
+/* Copyright (C) 2001-2012 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -6,16 +6,18 @@
 
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
+   license. Refer to licensing information at http://www.artifex.com
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+
 /* Inspired by Fortify by Simon P Bullen. */
+
 
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
-#undef MEMENTO_LEAKONLY
+/* #define MEMENTO_LEAKONLY */
 
 #ifndef MEMENTO_STACKTRACE_METHOD
 #ifdef __GNUC__
@@ -28,9 +30,27 @@
 #define MEMENTO_FREELIST_MAX_SINGLE_BLOCK (MEMENTO_FREELIST_MAX/4)
 
 #define COMPILING_MEMENTO_C
+
+/* We have some GS specific tweaks; more for the GS build environment than
+ * anything else. */
+#undef MEMENTO_GS_HACKS
+
+#ifdef MEMENTO_GS_HACKS
+/* For GS we include malloc_.h. Anyone else would just include memento.h */
+#include "malloc_.h"
+#ifdef __MACH__
+#include <string.h>
+#else
+#ifndef memset
+void *memset(void *,int,size_t);
+#endif
+#endif
+int atexit(void (*)(void));
+#else
 #include "memento.h"
 #include <stdio.h>
 #include <stdlib.h>
+#endif
 
 #if defined(__linux__)
 #define MEMENTO_HAS_FORK
@@ -48,8 +68,6 @@ void *MEMENTO_UNDERLYING_CALLOC(size_t,size_t);
  * files, just in case they pull in unexpected others. */
 int atoi(const char *);
 char *getenv(const char *);
-//void *memset(void *,int,size_t);
-//int atexit(void (*)(void));
 
 /* How far to search for pointers in each block when calculating nestings */
 /* mupdf needs at least 34000ish (sizeof(fz_shade))/ */
@@ -61,12 +79,16 @@ char *getenv(const char *);
 
 #ifdef MEMENTO
 
+#ifdef MEMENTO_GS_HACKS
+#include "valgrind.h"
+#else
 #ifdef HAVE_VALGRIND
 #include "valgrind/memcheck.h"
 #else
 #define VALGRIND_MAKE_MEM_NOACCESS(p,s)  do { } while (0==1)
 #define VALGRIND_MAKE_MEM_UNDEFINED(p,s)  do { } while (0==1)
 #define VALGRIND_MAKE_MEM_DEFINED(p,s)  do { } while (0==1)
+#endif
 #endif
 
 enum {
@@ -76,8 +98,29 @@ enum {
 
 enum {
     Memento_Flag_OldBlock = 1,
-    Memento_Flag_HasParent = 2
+    Memento_Flag_HasParent = 2,
+    Memento_Flag_BreakOnFree = 4,
+    Memento_Flag_BreakOnRealloc = 8
 };
+
+/* When we list leaked blocks at the end of execution, we search for pointers
+ * between blocks in order to be able to give a nice nested view.
+ * Unfortunately, if you have are running your own allocator (such as
+ * ghostscripts chunk allocator) you can often find that the header of the
+ * block always contains pointers to next or previous blocks. This tends to
+ * mean the nesting displayed is "uninteresting" at best :)
+ *
+ * As a hack to get around this, we have a define MEMENTO_SKIP_SEARCH that
+ * indicates how many bytes to skip over at the start of the chunk.
+ * This may cause us to miss true nestings, but such is life...
+ */
+#ifndef MEMENTO_SEARCH_SKIP
+#ifdef MEMENTO_GS_HACKS
+#define MEMENTO_SEARCH_SKIP (2*sizeof(void *))
+#else
+#define MEMENTO_SEARCH_SKIP 0
+#endif
+#endif
 
 typedef struct Memento_BlkHeader Memento_BlkHeader;
 
@@ -88,6 +131,7 @@ struct Memento_BlkHeader
     int                lastCheckedOK;
     int                flags;
     Memento_BlkHeader *next;
+    Memento_BlkHeader *parent; /* Only used while printing out nested list */
 
     const char        *label;
 
@@ -321,6 +365,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
         /* FAIL! Will have been reported to user earlier, so just exit. */
         return;
     }
+    VALGRIND_MAKE_MEM_DEFINED(blks->tail, sizeof(*blks->tail));
     if (*blks->tail == head) {
         /* Removing the tail of the list */
         if (prev == NULL) {
@@ -428,12 +473,14 @@ static void showBlock(Memento_BlkHeader *b, int space)
 
 static void blockDisplay(Memento_BlkHeader *b, int n)
 {
-    int i = 0;
     n++;
-    while(i < n)
+    while(n > 0)
     {
-        fprintf(stderr, "%s", &"                                "[32-((n-i)&31)]);
-        i += ((n-i)&31);
+        int i = n;
+        if (i > 32)
+            i = 32;
+        n -= i;
+        fprintf(stderr, "%s", &"                                "[32-i]);
     }
     showBlock(b, '\t');
     fprintf(stderr, "\n");
@@ -464,12 +511,13 @@ static int ptrcmp(const void *a_, const void *b_)
     return (int)(*a-*b);
 }
 
+static
 int Memento_listBlocksNested(void)
 {
     int count, size, i;
     Memento_BlkHeader *b;
     void **blocks, *minptr, *maxptr;
-    int mask;
+    long mask;
 
     /* Count the blocks */
     count = 0;
@@ -487,10 +535,10 @@ int Memento_listBlocksNested(void)
     /* Populate our block list */
     b = globals.used.head;
     minptr = maxptr = MEMBLK_TOBLK(b);
-    mask = (int)minptr;
+    mask = (long)minptr;
     for (i = 0; b; b = b->next, i++) {
         void *p = MEMBLK_TOBLK(b);
-        mask &= (int)p;
+        mask &= (long)p;
         if (p < minptr)
             minptr = p;
         if (p > maxptr)
@@ -499,6 +547,7 @@ int Memento_listBlocksNested(void)
         b->flags &= ~Memento_Flag_HasParent;
         b->child   = NULL;
         b->sibling = NULL;
+        b->parent  = NULL;
     }
     qsort(blocks, count, sizeof(void *), ptrcmp);
 
@@ -506,7 +555,7 @@ int Memento_listBlocksNested(void)
     for (b = globals.used.head; b; b = b->next) {
         char *p = MEMBLK_TOBLK(b);
         int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
-        for (i = 0; i < end; i += sizeof(void *)) {
+        for (i = MEMENTO_SEARCH_SKIP; i < end; i += sizeof(void *)) {
             void *q = *(void **)(&p[i]);
             void **r;
 
@@ -519,14 +568,26 @@ int Memento_listBlocksNested(void)
             if (r) {
                 /* Found child */
                 Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
+                Memento_BlkHeader *parent;
 
                 /* We're assuming tree structure, not graph - ignore second
                  * and subsequent pointers. */
+                if (child->parent != NULL)
+                    continue;
                 if (child->flags & Memento_Flag_HasParent)
+                    continue;
+
+                /* We're also assuming acyclicness here. If this is one of
+                 * our parents, ignore it. */
+                parent = b->parent;
+                while (parent != NULL && parent != child)
+                    parent = parent->parent;
+                if (parent == child)
                     continue;
 
                 child->sibling = b->child;
                 b->child = child;
+                child->parent = b;
                 child->flags |= Memento_Flag_HasParent;
             }
         }
@@ -974,6 +1035,9 @@ void Memento_free(void *blk)
     if (checkBlock(memblk, "free"))
         return;
 
+    if (memblk->flags & Memento_Flag_BreakOnFree)
+        Memento_breakpoint();
+
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     globals.alloc -= memblk->rawsize;
     globals.numFrees++;
@@ -998,6 +1062,7 @@ void *Memento_realloc(void *blk, size_t newsize)
 {
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
+    int                flags;
 
     if (blk == NULL)
         return Memento_malloc(newsize);
@@ -1013,11 +1078,15 @@ void *Memento_realloc(void *blk, size_t newsize)
     if (checkBlock(memblk, "realloc"))
         return NULL;
 
+    if (memblk->flags & Memento_Flag_BreakOnRealloc)
+        Memento_breakpoint();
+
     if (globals.maxMemory != 0 && globals.alloc - memblk->rawsize + newsize > globals.maxMemory)
         return NULL;
 
     newsizemem = MEMBLK_SIZE(newsize);
     Memento_removeBlock(&globals.used, memblk);
+    flags = memblk->flags;
     newmemblk  = MEMENTO_UNDERLYING_REALLOC(memblk, newsizemem);
     if (newmemblk == NULL)
     {
@@ -1030,6 +1099,7 @@ void *Memento_realloc(void *blk, size_t newsize)
     globals.alloc      += newsize;
     if (globals.peakAlloc < globals.alloc)
         globals.peakAlloc = globals.alloc;
+    newmemblk->flags = flags;
     if (newmemblk->rawsize < newsize) {
         char *newbytes = ((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize;
 #ifndef MEMENTO_LEAKONLY
@@ -1241,6 +1311,72 @@ int Memento_find(void *a)
     return 0;
 }
 
+void Memento_breakOnFree(void *a)
+{
+    findBlkData data;
+
+    data.addr  = a;
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Will stop when address 0x%p (in %sallocated block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, ") is freed\n");
+        data.blk->flags |= Memento_Flag_BreakOnFree;
+        return;
+    }
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Can't stop on free; address 0x%p is in %sfreed block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
+        return;
+    }
+    fprintf(stderr, "Can't stop on free; address 0x%p is not in a known block.\n", a);
+}
+
+void Memento_breakOnRealloc(void *a)
+{
+    findBlkData data;
+
+    data.addr  = a;
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Will stop when address 0x%p (in %sallocated block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, ") is freed (or realloced)\n");
+        data.blk->flags |= Memento_Flag_BreakOnFree | Memento_Flag_BreakOnRealloc;
+        return;
+    }
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Can't stop on free/realloc; address 0x%p is in %sfreed block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
+        return;
+    }
+    fprintf(stderr, "Can't stop on free/realloc; address 0x%p is not in a known block.\n", a);
+}
+
 int Memento_failAt(int i)
 {
     globals.failAt = i;
@@ -1306,6 +1442,14 @@ int (Memento_find)(void *a)
 int (Memento_failAt)(int i)
 {
     return 0;
+}
+
+void (Memento_breakOnFree)(void *a)
+{
+}
+
+void (Memento_breakOnRealloc)(void *a)
+{
 }
 
 #undef Memento_malloc

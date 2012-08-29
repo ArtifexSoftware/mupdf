@@ -1538,7 +1538,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 			if (pdf_is_dict(val))
 			{
 				pdf_xobject *xobj;
-				pdf_obj *group, *luminosity, *bc;
+				pdf_obj *group, *luminosity, *bc, *tr;
 
 				if (gstate->softmask)
 				{
@@ -1572,6 +1572,19 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 					gstate->luminosity = 1;
 				else
 					gstate->luminosity = 0;
+
+				tr = pdf_dict_gets(val, "TR2");
+				if (tr)
+				{
+					if (strcmp(pdf_to_name(tr), "Identity") && strcmp(pdf_to_name(tr), "Default"))
+						fz_warn(ctx, "ignoring transfer function");
+				}
+				else
+				{
+					tr = pdf_dict_gets(val, "TR");
+					if (strcmp(pdf_to_name(tr), "Identity"))
+						fz_warn(ctx, "ignoring transfer function");
+				}
 			}
 			else if (pdf_is_name(val) && !strcmp(pdf_to_name(val), "None"))
 			{

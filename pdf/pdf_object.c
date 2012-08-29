@@ -117,7 +117,7 @@ pdf_new_string(fz_context *ctx, char *str, int len)
 }
 
 pdf_obj *
-fz_new_name(fz_context *ctx, char *str)
+pdf_new_name(fz_context *ctx, char *str)
 {
 	pdf_obj *obj;
 	obj = Memento_label(fz_malloc(ctx, offsetof(pdf_obj, u.n) + strlen(str) + 1), "pdf_obj(name)");
@@ -588,12 +588,12 @@ pdf_obj *pdf_new_rect(fz_context *ctx, fz_rect *rect)
 		pdf_drop_obj(item);
 		item = NULL;
 
-		item = pdf_new_real(ctx, rect->x1 - rect->x0);
+		item = pdf_new_real(ctx, rect->x1);
 		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
 
-		item = pdf_new_real(ctx, rect->y1 - rect->y0);
+		item = pdf_new_real(ctx, rect->y1);
 		pdf_array_push(arr, item);
 		pdf_drop_obj(item);
 		item = NULL;
@@ -945,7 +945,7 @@ pdf_dict_put(pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 void
 pdf_dict_puts(pdf_obj *obj, char *key, pdf_obj *val)
 {
-	pdf_obj *keyobj = fz_new_name(obj->ctx, key);
+	pdf_obj *keyobj = pdf_new_name(obj->ctx, key);
 	pdf_dict_put(obj, keyobj, val);
 	pdf_drop_obj(keyobj);
 }
