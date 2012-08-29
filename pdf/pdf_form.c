@@ -1854,6 +1854,14 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 				break;
 	}
 
+	if (annot)
+	{
+		int f = pdf_to_int(pdf_dict_gets(annot->obj, "F"));
+
+		if (f & (F_Hidden|F_NoView))
+			annot = NULL;
+	}
+
 	switch (ui_event->etype)
 	{
 	case FZ_EVENT_TYPE_POINTER:
