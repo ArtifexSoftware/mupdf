@@ -573,6 +573,8 @@ void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text);
 void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text);
 void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
 void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
+int pdf_field_getDisplay(pdf_document *doc, pdf_obj *field);
+void pdf_field_setDisplay(pdf_document *doc, pdf_obj *field, int d);
 
 /*
  * Page tree, pages and related objects

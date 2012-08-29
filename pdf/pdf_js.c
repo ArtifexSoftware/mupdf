@@ -67,6 +67,43 @@ static pdf_jsimp_obj *field_buttonSetCaption(void *jsctx, void *obj, int argc, p
 	return NULL;
 }
 
+static pdf_jsimp_obj *field_getDisplay(void *jsctx, void *obj)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	pdf_obj *field = (pdf_obj *)obj;
+	pdf_jsimp_obj *res = NULL;
+
+	fz_try(ctx)
+	{
+		int d = pdf_field_getDisplay(js->doc, field);
+		res = pdf_jsimp_fromNumber(js->imp, (double)d);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "%s", ctx->error->message);
+	}
+
+	return res;
+}
+
+static void field_setDisplay(void *jsctx, void *obj, pdf_jsimp_obj *val)
+{
+	pdf_js *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	pdf_obj *field = (pdf_obj *)obj;
+
+	fz_try(ctx)
+	{
+		int ival = (int)pdf_jsimp_toNumber(js->imp, val);
+		pdf_field_setDisplay(js->doc, field, ival);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "%s", ctx->error->message);
+	}
+}
+
 static pdf_jsimp_obj *field_getFillColor(void *jsctx, void *obj)
 {
 	return NULL;
@@ -363,6 +400,7 @@ static void declare_dom(pdf_js *js)
 	pdf_jsimp_addproperty(imp, js->fieldtype, "borderStyle", field_getBorderStyle, field_setBorderStyle);
 	pdf_jsimp_addproperty(imp, js->fieldtype, "textColor", field_getTextColor, field_setTextColor);
 	pdf_jsimp_addproperty(imp, js->fieldtype, "fillColor", field_getFillColor, field_setFillColor);
+	pdf_jsimp_addproperty(imp, js->fieldtype, "display", field_getDisplay, field_setDisplay);
 	pdf_jsimp_addmethod(imp, js->fieldtype, "buttonSetCaption", field_buttonSetCaption);
 
 	/* Create the app type */

@@ -23,12 +23,36 @@ enum
 
 enum
 {
+	F_Invisible = 1 << (1-1),
+	F_Hidden = 1 << (2-1),
+	F_Print = 1 << (3-1),
+	F_NoZoom = 1 << (4-1),
+	F_NoRotate = 1 << (5-1),
+	F_NoView = 1 << (6-1),
+	F_ReadOnly = 1 << (7-1),
+	F_Locked = 1 << (8-1),
+	F_ToggleNoView = 1 << (9-1),
+	F_LockedContents = 1 << (10-1)
+};
+
+enum
+{
 	BS_Solid,
 	BS_Dashed,
 	BS_Beveled,
 	BS_Inset,
 	BS_Underline
 };
+
+/* Must be kept in sync with definitions in pdf_util.js */
+enum
+{
+	Display_Visible,
+	Display_Hidden,
+	Display_NoPrint,
+	Display_NoView
+};
+
 
 enum
 {
@@ -1994,6 +2018,89 @@ void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
+	}
+}
+
+int pdf_field_getDisplay(pdf_document *doc, pdf_obj *field)
+{
+	pdf_obj *kids;
+	int f, res = Display_Visible;
+
+	/* Base response on first of children. Not ideal,
+	 * but not clear how to handle children with
+	 * differing values */
+	while ((kids = pdf_dict_gets(field, "Kids")) != NULL)
+		field = pdf_array_get(kids, 0);
+
+	f = pdf_to_int(pdf_dict_gets(field, "F"));
+
+	if (f & F_Hidden)
+	{
+		res = Display_Hidden;
+	}
+	else if (f & F_Print)
+	{
+		if (f & F_NoView)
+			res = Display_NoView;
+	}
+	else
+	{
+		if (f & F_NoView)
+			res = Display_Hidden;
+		else
+			res = Display_NoPrint;
+	}
+
+	return res;
+}
+
+void pdf_field_setDisplay(pdf_document *doc, pdf_obj *field, int d)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *kids = pdf_dict_gets(field, "Kids");
+
+	if (!kids)
+	{
+		int mask = (F_Hidden|F_Print|F_NoView);
+		int f = pdf_to_int(pdf_dict_gets(field, "F")) & ~mask;
+		pdf_obj *fo = NULL;
+
+		switch (d)
+		{
+		case Display_Visible:
+			f |= F_Print;
+			break;
+		case Display_Hidden:
+			f |= F_Hidden;
+			break;
+		case Display_NoView:
+			f |= (F_Print|F_NoView);
+			break;
+		case Display_NoPrint:
+			break;
+		}
+
+		fz_var(fo);
+		fz_try(ctx)
+		{
+			fo = pdf_new_int(ctx, f);
+			pdf_dict_puts(field, "F", fo);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(fo);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+	}
+	else
+	{
+		int i, n = pdf_array_len(kids);
+
+		for (i = 0; i < n; i++)
+			pdf_field_setDisplay(doc, pdf_array_get(kids, i), d);
 	}
 }
 

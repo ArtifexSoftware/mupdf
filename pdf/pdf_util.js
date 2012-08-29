@@ -31,6 +31,12 @@ MuPDF.convertCase = function(str,cmd)
 	}
 }
 
+/* display must be kept in sync with an enum in pdf_form.c */
+var display = new Array();
+display.visible = 0;
+display.hidden = 1;
+display.noPrint = 2;
+display.noView = 3;
 var border = new Array();
 border.s = "Solid";
 border.d = "Dashed";
