@@ -12,6 +12,7 @@ const char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char
 const char *pdf_jsimp_set_global_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type);
 const char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, pdf_jsimp_obj **obj);
 const char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+const char *pdf_jsimp_toType_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *type);
 const char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj);
 const char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str);
 const char *pdf_jsimp_fromNumber_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj);

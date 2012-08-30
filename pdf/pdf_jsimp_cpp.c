@@ -83,6 +83,16 @@ void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 		fz_warn(pdf_jsimp_ctx_cpp(imp), "%s", err);
 }
 
+int pdf_jsimp_toType(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+{
+	int type = 0;
+	const char *err = pdf_jsimp_toType_cpp(imp, obj, &type);
+	if (err != NULL)
+		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
+
+	return type;
+}
+
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str)
 {
 	pdf_jsimp_obj *obj = NULL;

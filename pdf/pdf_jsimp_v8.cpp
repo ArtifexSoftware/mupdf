@@ -154,6 +154,20 @@ public:
 		pobj.Dispose();
 	}
 
+	int type()
+	{
+		if (pobj->IsNull())
+			return JS_TYPE_NULL;
+		else if (pobj->IsString() || pobj->IsStringObject())
+			return JS_TYPE_STRING;
+		else if (pobj->IsNumber() || pobj->IsNumberObject())
+			return JS_TYPE_NUMBER;
+		else if (pobj->IsArray())
+			return JS_TYPE_ARRAY;
+		else
+			return JS_TYPE_UNKNOWN;
+	}
+
 	char *toString()
 	{
 		delete utf8;
@@ -362,6 +376,12 @@ extern "C" const char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *typ
 extern "C" const char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	delete reinterpret_cast<PDFJSImpObject *>(obj);
+	return NULL;
+}
+
+extern "C" const char *pdf_jsimp_toType_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *type)
+{
+	*type = reinterpret_cast<PDFJSImpObject *>(obj)->type();
 	return NULL;
 }
 

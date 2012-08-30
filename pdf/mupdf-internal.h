@@ -653,6 +653,15 @@ typedef pdf_jsimp_obj *(pdf_jsimp_method)(void *jsctx, void *obj, int argc, pdf_
 typedef pdf_jsimp_obj *(pdf_jsimp_getter)(void *jsctx, void *obj);
 typedef void (pdf_jsimp_setter)(void *jsctx, void *obj, pdf_jsimp_obj *val);
 
+enum
+{
+	JS_TYPE_UNKNOWN,
+	JS_TYPE_NULL,
+	JS_TYPE_STRING,
+	JS_TYPE_NUMBER,
+	JS_TYPE_ARRAY
+};
+
 pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx);
 void pdf_drop_jsimp(pdf_jsimp *imp);
 
@@ -664,6 +673,8 @@ void pdf_jsimp_set_global_type(pdf_jsimp *imp, pdf_jsimp_type *type);
 
 pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *obj);
 void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+
+int pdf_jsimp_toType(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
 char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
