@@ -324,16 +324,38 @@ static char *utf8_to_pdf(fz_context *ctx, char *utf8)
 	return pdf;
 }
 
+static pdf_obj *get_field(pdf_obj *form, char *name)
+{
+	char *dot;
+	char *namep;
+	pdf_obj *dict = NULL;
+	int len;
+
+	/* Process the fully qualified field name which has
+	* the partial names delimited by '.'. Pretend there
+	* was a preceding '.' to simplify the loop */
+	dot = name - 1;
+
+	while (dot && form)
+	{
+		namep = dot + 1;
+		dot = strchr(namep, '.');
+		len = dot ? dot - namep : strlen(namep);
+		dict = find_field(form, namep, len);
+		if (dot)
+			form = pdf_dict_gets(dict, "Kids");
+	}
+
+	return dict;
+}
+
 static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
 {
 	pdf_js  *js = (pdf_js *)jsctx;
 	fz_context *ctx = js->doc->ctx;
-	pdf_obj *arr = js->form;
 	pdf_obj *dict = NULL;
-	int len;
-	char *utf8, *dot;
+	char *utf8;
 	char *name = NULL;
-	char *namep;
 
 	if (argc != 1)
 		return NULL;
@@ -347,21 +369,7 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 		if (utf8)
 		{
 			name = utf8_to_pdf(ctx, utf8);
-
-			/* Process the fully qualified field name which has
-			* the partial names delimited by '.'. Pretend there
-			* was a preceding '.' to simplify the loop */
-			dot = name - 1;
-
-			while (dot && arr)
-			{
-				namep = dot + 1;
-				dot = strchr(namep, '.');
-				len = dot ? dot - namep : strlen(namep);
-				dict = find_field(arr, namep, len);
-				if (dot)
-					arr = pdf_dict_gets(dict, "Kids");
-			}
+			dict = get_field(js->form, name);
 		}
 	}
 	fz_always(ctx)
@@ -377,6 +385,103 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 	return dict ? pdf_jsimp_new_obj(js->imp, js->fieldtype, dict) : NULL;
 }
 
+static void reset_field(pdf_js *js, pdf_jsimp_obj *item)
+{
+	fz_context *ctx = js->doc->ctx;
+	char *name = NULL;
+	char *utf8 = pdf_jsimp_toString(js->imp, item);
+
+	if (utf8)
+	{
+		pdf_obj *field;
+
+		fz_var(name);
+		fz_try(ctx)
+		{
+			name = utf8_to_pdf(ctx, utf8);
+			field = get_field(js->form, name);
+			if (field)
+				pdf_field_reset(js->doc, field);
+		}
+		fz_always(ctx)
+		{
+			fz_free(ctx, name);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+	}
+}
+
+static pdf_jsimp_obj *doc_resetForm(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	pdf_js  *js = (pdf_js *)jsctx;
+	fz_context *ctx = js->doc->ctx;
+	pdf_jsimp_obj *arr = NULL;
+	pdf_jsimp_obj *elem = NULL;
+
+	switch (argc)
+	{
+	case 0:
+		break;
+	case 1:
+		switch (pdf_jsimp_toType(js->imp, args[0]))
+		{
+		case JS_TYPE_NULL:
+			break;
+		case JS_TYPE_ARRAY:
+			arr = args[0];
+			break;
+		case JS_TYPE_STRING:
+			elem = args[0];
+			break;
+		default:
+			return NULL;
+		}
+		break;
+	default:
+		return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		if(arr)
+		{
+			/* An array of fields has been passed in. Call
+			 * pdf_reset_field on each */
+			int i, n = pdf_jsimp_array_len(js->imp, arr);
+
+			for (i = 0; i < n; i++)
+			{
+				pdf_jsimp_obj *item = pdf_jsimp_array_item(js->imp, arr, i);
+
+				if (item)
+					reset_field(js, item);
+
+			}
+		}
+		else if (elem)
+		{
+			reset_field(js, elem);
+		}
+		else
+		{
+			/* No argument or null passed in means reset all. */
+			int i, n = pdf_array_len(js->form);
+
+			for (i = 0; i < n; i++)
+				pdf_field_reset(js->doc, pdf_array_get(js->form, i));
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "doc_resetForm failed: %s", ctx->error->message);
+	}
+
+	return NULL;
+}
+
 static void declare_dom(pdf_js *js)
 {
 	pdf_jsimp      *imp       = js->imp;
@@ -384,6 +489,7 @@ static void declare_dom(pdf_js *js)
 	/* Create the document type */
 	js->doctype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addmethod(imp, js->doctype, "getField", doc_getField);
+	pdf_jsimp_addmethod(imp, js->doctype, "resetForm", doc_resetForm);
 	pdf_jsimp_addproperty(imp, js->doctype, "event", doc_getEvent, doc_setEvent);
 	pdf_jsimp_addproperty(imp, js->doctype, "app", doc_getApp, doc_setApp);
 

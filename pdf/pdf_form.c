@@ -1462,6 +1462,77 @@ static void update_pushbutton_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+void pdf_field_reset(pdf_document *doc, pdf_obj *field)
+{
+	fz_context *ctx = doc->ctx;
+	/* Descend through the hierarchy, setting V to DV where
+	 * ever DV is present, and deleting V where DV is not.
+	 * FIXME: we assume for now that V has not been set unequal
+	 * to DV higher in the hierarchy than "field".
+	 *
+	 *  At the bottom of the hierarchy we may find widget annotations
+	 * that aren't also fields, but DV and V will not be present in their
+	 * dictionaries, and attempts to remove V will be harmless. */
+	pdf_obj *dv = pdf_dict_gets(field, "DV");
+	pdf_obj *kids = pdf_dict_gets(field, "Kids");
+
+	if (dv)
+		pdf_dict_puts(field, "V", dv);
+	else
+		pdf_dict_dels(field, "V");
+
+	if (kids)
+	{
+		int i, n = pdf_array_len(kids);
+
+		for (i = 0; i < n; i++)
+			pdf_field_reset(doc, pdf_array_get(kids, i));
+	}
+	else
+	{
+		/* The leaves of the tree are widget annotations
+		 * In some cases we need to update the appearance state;
+		 * in others we need to mark the field as dirty so that
+		 * the appearance stream will be regenerated. */
+		switch (pdf_field_getType(doc, field))
+		{
+		case FZ_WIDGET_TYPE_RADIOBUTTON:
+		case FZ_WIDGET_TYPE_CHECKBOX:
+			{
+				pdf_obj *leafv = get_inheritable(doc, field, "V");
+
+				if (leafv)
+					pdf_keep_obj(leafv);
+				else
+					leafv = pdf_new_name(ctx, "Off");
+
+				fz_try(ctx)
+				{
+					pdf_dict_puts(field, "AS", leafv);
+				}
+				fz_always(ctx)
+				{
+					pdf_drop_obj(leafv);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
+				}
+			}
+			break;
+
+		case FZ_WIDGET_TYPE_PUSHBUTTON:
+			break;
+
+		default:
+			pdf_field_mark_dirty(ctx, field);
+			break;
+		}
+	}
+
+	doc->dirty = 1;
+}
+
 static void reset_field(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
