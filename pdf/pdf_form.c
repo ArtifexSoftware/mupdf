@@ -1462,6 +1462,50 @@ static void update_pushbutton_appearance(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+static pdf_obj *find_field(pdf_obj *dict, char *name, int len)
+{
+	pdf_obj *field;
+
+	int i, n = pdf_array_len(dict);
+
+	for (i = 0; i < n; i++)
+	{
+		char *part;
+
+		field = pdf_array_get(dict, i);
+		part = pdf_to_str_buf(pdf_dict_gets(field, "T"));
+		if (strlen(part) == len && !memcmp(part, name, len))
+			return field;
+	}
+
+	return NULL;
+}
+
+pdf_obj *pdf_get_field(pdf_obj *form, char *name)
+{
+	char *dot;
+	char *namep;
+	pdf_obj *dict = NULL;
+	int len;
+
+	/* Process the fully qualified field name which has
+	* the partial names delimited by '.'. Pretend there
+	* was a preceding '.' to simplify the loop */
+	dot = name - 1;
+
+	while (dot && form)
+	{
+		namep = dot + 1;
+		dot = strchr(namep, '.');
+		len = dot ? dot - namep : strlen(namep);
+		dict = find_field(form, namep, len);
+		if (dot)
+			form = pdf_dict_gets(dict, "Kids");
+	}
+
+	return dict;
+}
+
 void pdf_field_reset(pdf_document *doc, pdf_obj *field)
 {
 	fz_context *ctx = doc->ctx;
@@ -1475,6 +1519,11 @@ void pdf_field_reset(pdf_document *doc, pdf_obj *field)
 	 * dictionaries, and attempts to remove V will be harmless. */
 	pdf_obj *dv = pdf_dict_gets(field, "DV");
 	pdf_obj *kids = pdf_dict_gets(field, "Kids");
+	pdf_obj *noreset = pdf_dict_gets(field, "NoReset");
+
+	/* Don't process fields we have marked not to be reset */
+	if (noreset)
+		return;
 
 	if (dv)
 		pdf_dict_puts(field, "V", dv);
@@ -1533,49 +1582,75 @@ void pdf_field_reset(pdf_document *doc, pdf_obj *field)
 	doc->dirty = 1;
 }
 
-static void reset_field(pdf_document *doc, pdf_obj *obj)
+
+static void reset_form(pdf_document *doc, pdf_obj *fields, int exclude)
 {
 	fz_context *ctx = doc->ctx;
+	pdf_obj *form = pdf_dict_getp(doc->trailer, "Root/AcroForm/Fields");
+	int i, n;
 
-	doc->dirty = 1;
-
-	switch (pdf_field_getType(doc, obj))
+	if (exclude)
 	{
-	case FZ_WIDGET_TYPE_RADIOBUTTON:
-	case FZ_WIDGET_TYPE_CHECKBOX:
-		{
-			pdf_obj *name = NULL;
+		/* mark the fields we don't want to reset */
+		pdf_obj *nil = pdf_new_null(ctx);
 
-			fz_var(name);
-			fz_try(ctx)
+		fz_try(ctx)
+		{
+			n = pdf_array_len(fields);
+
+			for (i = 0; i < n; i++)
 			{
-				name = pdf_new_name(ctx, "Off");
-				pdf_dict_puts(obj, "AS", name);
-			}
-			fz_always(ctx)
-			{
-				pdf_drop_obj(name);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow(ctx);
+				pdf_obj *field = pdf_array_get(fields, i);
+
+				if (pdf_is_string(field))
+					field = pdf_get_field(form, pdf_to_str_buf(field));
+
+				if (field)
+					pdf_dict_puts(field, "NoReset", nil);
 			}
 		}
-		break;
-	default:
+		fz_always(ctx)
 		{
-			pdf_obj *def_val = pdf_dict_gets(obj, "DV");
+			pdf_drop_obj(nil);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
 
-			if (def_val)
-			{
-				pdf_dict_puts(obj, "V", def_val);
-			}
-			else
-			{
-				pdf_dict_dels(obj, "V");
-			}
+		/* reset all unmarked fields */
+		n = pdf_array_len(form);
 
-			pdf_field_mark_dirty(ctx, obj);
+		for (i = 0; i < n; i++)
+			pdf_field_reset(doc, pdf_array_get(form, i));
+
+		/* Unmark the marked fields */
+		n = pdf_array_len(fields);
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *field = pdf_array_get(fields, i);
+
+			if (pdf_is_string(field))
+				field = pdf_get_field(form, pdf_to_str_buf(field));
+
+			if (field)
+				pdf_dict_dels(field, "NoReset");
+		}
+	}
+	else
+	{
+		n = pdf_array_len(fields);
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *field = pdf_array_get(fields, i);
+
+			if (pdf_is_string(field))
+				field = pdf_get_field(form, pdf_to_str_buf(field));
+
+			if (field)
+				pdf_field_reset(doc, field);
 		}
 	}
 }
@@ -1609,37 +1684,7 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 		}
 		else if (!strcmp(type, "ResetForm"))
 		{
-			int flags = pdf_to_int(pdf_dict_gets(a, "Flags"));
-			pdf_obj *affected_fields = pdf_dict_gets(a, "Fields");
-			pdf_obj *all_fields = pdf_dict_getp(doc->trailer, "Root/AcroForm/Fields");
-			int i, n = pdf_array_len(all_fields);
-
-			for (i = 0; i < n; i++)
-			{
-				pdf_obj *field = pdf_array_get(all_fields, i);
-				char *name = pdf_to_str_buf(pdf_dict_gets(field, "T"));
-				int j, m = pdf_array_len(affected_fields);
-				int found = 0;
-
-				for (j = 0; j < m && !found; j++)
-				{
-					pdf_obj *tfield = pdf_array_get(affected_fields, j);
-					char *tname;
-
-					/* Elements if the array are either indirect references
-					 * to fields or field names. */
-					tname = pdf_to_str_buf(pdf_is_string(tfield) ? tfield : pdf_dict_gets(tfield, "T"));
-
-					if (!strcmp(tname, name))
-						found = 1;
-				}
-
-				if (flags & 1)
-					found = !found;
-
-				if (found)
-					reset_field(doc, field);
-			}
+			reset_form(doc, pdf_dict_gets(a, "Fields"), pdf_to_int(pdf_dict_gets(a, "Flags")) & 1);
 		}
 	}
 }
