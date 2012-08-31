@@ -1077,6 +1077,8 @@ static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 	{
 		fz_rethrow(ctx);
 	}
+
+	pdf_field_mark_dirty(ctx, obj);
 }
 
 static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect *rect)
@@ -1695,18 +1697,73 @@ static void set_check_grp(fz_context *ctx, pdf_obj *grp, char *val)
 	}
 }
 
+static void recalculate(pdf_document *doc)
+{
+	fz_context *ctx = doc->ctx;
+
+	if (doc->recalculating)
+		return;
+
+	doc->recalculating = 1;
+	fz_try(ctx)
+	{
+		pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
+
+		if (co && doc->js)
+		{
+			int i, n = pdf_array_len(co);
+
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *field = pdf_array_get(co, i);
+				pdf_obj *calc = pdf_dict_getp(field, "AA/C");
+
+				if (calc)
+				{
+					pdf_js_event e;
+
+					e.target = field;
+					e.value = pdf_field_getValue(doc, field);
+					pdf_js_setup_event(doc->js, &e);
+					execute_action(doc, field, calc);
+					/* A calculate action, updates event.value. We need
+					* to place the value in the field */
+					update_text_field_value(doc->ctx, field, pdf_js_get_event(doc->js)->value);
+				}
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		doc->recalculating = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *as = pdf_dict_gets(obj, "AS");
 	int ff = get_field_flags(doc, obj);
+	int radio = ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio);
+	char *val = NULL;
+	pdf_obj *grp = radio ? pdf_dict_gets(obj, "Parent") : find_head_of_field_group(obj);
+
+	if (!grp)
+		grp = obj;
 
 	if (as && strcmp(pdf_to_name(as), "Off"))
 	{
 		/* "as" neither missing nor set to Off. Set it to Off, unless
 		 * this is a non-toggle-off radio button. */
 		if ((ff & (Ff_Pushbutton|Ff_NoToggleToOff|Ff_Radio)) != (Ff_NoToggleToOff|Ff_Radio))
+		{
 			check_off(ctx, obj);
+			val = "Off";
+		}
 	}
 	else
 	{
@@ -1728,11 +1785,13 @@ static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 		if (!key)
 			return;
 
-		/* For radio buttons, first turn off all buttons in the group and
-		 * then set the one that was clicked */
-		if ((ff & (Ff_Pushbutton|Ff_Radio)) == Ff_Radio)
+		val = pdf_to_name(key);
+
+		if (radio)
 		{
-			pdf_obj *kids = pdf_dict_getp(obj, "Parent/Kids");
+			/* For radio buttons, first turn off all buttons in the group and
+			 * then set the one that was clicked */
+			pdf_obj *kids = pdf_dict_gets(grp, "Kids");
 			int i, n = pdf_array_len(kids);
 
 			for (i = 0; i < n; i++)
@@ -1742,20 +1801,38 @@ static void toggle_check_box(pdf_document *doc, pdf_obj *obj)
 		}
 		else
 		{
-			/* For check boxes, locate the node of the field hierarchy below
-			 * which all fields share a name with the clicked one, and set
+			/* For check boxes, we have located the node of the field hierarchy
+			 * below which all fields share a name with the clicked one. Set
 			 * all to the same value. This may cause the group to act like
 			 * radio buttons, if each have distinct "On" values */
-			pdf_obj *grp = find_head_of_field_group(obj);
-
 			if (grp)
-				set_check_grp(doc->ctx, grp, pdf_to_name(key));
+				set_check_grp(doc->ctx, grp, val);
 			else
-				set_check(doc->ctx, obj, pdf_to_name(key));
+				set_check(doc->ctx, obj, val);
 		}
 	}
 
-	/* FIXME: should probably update the V entry in the field dictionary too */
+	if (val && grp)
+	{
+		pdf_obj *v = NULL;
+
+		fz_var(v);
+		fz_try(ctx)
+		{
+			v = pdf_new_string(ctx, val, strlen(val));
+			pdf_dict_puts(grp, "V", v);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(v);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+
+		recalculate(doc);
+	}
 }
 
 int pdf_has_unsaved_changes(pdf_document *doc)
@@ -1875,53 +1952,6 @@ char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
 	return get_string_or_stream(doc, get_inheritable(doc, field, "V"));
 }
 
-static void recalculate(pdf_document *doc)
-{
-	fz_context *ctx = doc->ctx;
-
-	if (doc->recalculating)
-		return;
-
-	doc->recalculating = 1;
-	fz_try(ctx)
-	{
-		pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
-
-		if (co && doc->js)
-		{
-			int i, n = pdf_array_len(co);
-
-			for (i = 0; i < n; i++)
-			{
-				pdf_obj *field = pdf_array_get(co, i);
-				pdf_obj *calc = pdf_dict_getp(field, "AA/C");
-
-				if (calc)
-				{
-					pdf_js_event e;
-
-					e.target = field;
-					e.value = pdf_field_getValue(doc, field);
-					pdf_js_setup_event(doc->js, &e);
-					execute_action(doc, field, calc);
-					/* A calculate action, updates event.value. We need
-					* to place the value in the field */
-					update_text_field_value(doc->ctx, field, pdf_js_get_event(doc->js)->value);
-					pdf_field_mark_dirty(doc->ctx, field);
-				}
-			}
-		}
-	}
-	fz_always(ctx)
-	{
-		doc->recalculating = 0;
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
 int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 {
 	pdf_obj *v = pdf_dict_getp(field, "AA/V");
@@ -1944,7 +1974,6 @@ int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 	doc->dirty = 1;
 	update_text_field_value(doc->ctx, field, text);
 	recalculate(doc);
-	pdf_field_mark_dirty(doc->ctx, field);
 
 	return 1;
 }
