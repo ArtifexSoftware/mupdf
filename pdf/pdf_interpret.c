@@ -379,7 +379,7 @@ pdf_show_image(pdf_csi *csi, fz_image *image)
 
 	if (image->mask)
 	{
-		/* apply blend group even though we skip the softmask */
+		/* apply blend group even though we skip the soft mask */
 		if (gstate->blendmode)
 			fz_begin_group(csi->dev, bbox, 0, 0, gstate->blendmode, 1);
 		fz_clip_image_mask(csi->dev, image->mask, &bbox, image_ctm);
@@ -1258,7 +1258,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, fz_rect area, int what)
 		pdf_unset_pattern(csi, what);
 	}
 
-	/* don't apply softmasks to objects in the pattern as well */
+	/* don't apply soft masks to objects in the pattern as well */
 	if (gstate->softmask)
 	{
 		pdf_drop_xobject(ctx, gstate->softmask);
