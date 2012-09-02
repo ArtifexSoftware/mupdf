@@ -408,8 +408,8 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 			xref->table[list[i].num].stm_ofs = list[i].stm_ofs;
 
-			/* corrected stream length */
-			if (list[i].stm_len >= 0)
+			/* correct stream length for unencrypted documents */
+			if (!encrypt && list[i].stm_len >= 0)
 			{
 				dict = pdf_load_object(xref, list[i].num, list[i].gen);
 
