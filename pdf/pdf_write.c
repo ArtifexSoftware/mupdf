@@ -1007,10 +1007,7 @@ add_linearization_objs(pdf_document *xref, pdf_write_options *opts)
 		opts->rev_renumber_map[params_num] = params_num;
 		opts->gen_list[params_num] = 0;
 		opts->rev_gen_list[params_num] = 0;
-		o = pdf_new_real(ctx, 1.0);
-		pdf_dict_puts(params_obj, "Linearized", o);
-		pdf_drop_obj(o);
-		o = NULL;
+		pdf_dict_puts_drop(params_obj, "Linearized", pdf_new_real(ctx, 1.0));
 		opts->linear_l = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_puts(params_obj, "L", opts->linear_l);
 		opts->linear_h0 = pdf_new_int(ctx, INT_MIN);
@@ -1018,8 +1015,7 @@ add_linearization_objs(pdf_document *xref, pdf_write_options *opts)
 		pdf_array_push(o, opts->linear_h0);
 		opts->linear_h1 = pdf_new_int(ctx, INT_MIN);
 		pdf_array_push(o, opts->linear_h1);
-		pdf_dict_puts(params_obj, "H", o);
-		pdf_drop_obj(o);
+		pdf_dict_puts_drop(params_obj, "H", o);
 		o = NULL;
 		opts->linear_o = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_puts(params_obj, "O", opts->linear_o);
@@ -1040,10 +1036,7 @@ add_linearization_objs(pdf_document *xref, pdf_write_options *opts)
 		opts->rev_renumber_map[hint_num] = hint_num;
 		opts->gen_list[hint_num] = 0;
 		opts->rev_gen_list[hint_num] = 0;
-		o = pdf_new_int(ctx, 0);
-		pdf_dict_puts(hint_obj, "P", o);
-		pdf_drop_obj(o);
-		o = NULL;
+		pdf_dict_puts_drop(hint_obj, "P", pdf_new_int(ctx, 0));
 		opts->hints_s = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_puts(hint_obj, "S", opts->hints_s);
 		/* FIXME: Do we have thumbnails? Do a T entry */
@@ -1054,10 +1047,7 @@ add_linearization_objs(pdf_document *xref, pdf_write_options *opts)
 		/* FIXME: Do we have document information? Do an I entry */
 		/* FIXME: Do we have logical structure heirarchy? Do a C entry */
 		/* FIXME: Do L, Page Label hint table */
-		o = pdf_new_name(ctx, "FlateDecode");
-		pdf_dict_puts(hint_obj, "Filter", o);
-		pdf_drop_obj(o);
-		o = NULL;
+		pdf_dict_puts_drop(hint_obj, "Filter", pdf_new_name(ctx, "FlateDecode"));
 		opts->hints_length = pdf_new_int(ctx, INT_MIN);
 		pdf_dict_puts(hint_obj, "Length", opts->hints_length);
 		xref->table[hint_num].stm_ofs = -1;
