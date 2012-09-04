@@ -1033,7 +1033,7 @@ pdf_cache_object(pdf_document *xref, int num, int gen)
 	}
 	else
 	{
-		fz_throw(ctx, "assert: corrupt xref struct");
+		fz_throw(ctx, "cannot find object in xref (%d %d R)", num, gen);
 	}
 }
 
