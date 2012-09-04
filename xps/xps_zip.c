@@ -576,9 +576,8 @@ xps_open_document_with_directory(fz_context *ctx, char *directory)
 }
 
 xps_document *
-xps_open_document_with_stream(fz_stream *file)
+xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
-	fz_context *ctx = file->ctx;
 	xps_document *doc;
 
 	doc = fz_malloc_struct(ctx, xps_document);
@@ -624,7 +623,7 @@ xps_open_document(fz_context *ctx, char *filename)
 
 	fz_try(ctx)
 	{
-		doc = xps_open_document_with_stream(file);
+		doc = xps_open_document_with_stream(ctx, file);
 	}
 	fz_always(ctx)
 	{

@@ -2143,6 +2143,16 @@ typedef struct fz_page_s fz_page;
 fz_document *fz_open_document(fz_context *ctx, char *filename);
 
 /*
+	fz_open_document_with_stream: Open a PDF, XPS or CBZ document.
+
+	Open a document using the specified stream object rather than
+	opening a file on disk.
+
+	magic: a string used to detect document type; either a file name or mime-type.
+*/
+fz_document *fz_open_document_with_stream(fz_context *ctx, char *magic, fz_stream *stream);
+
+/*
 	fz_close_document: Close and free an open document.
 
 	The resource store in the context associated with fz_document

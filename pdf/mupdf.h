@@ -167,7 +167,7 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 	fz_open_file_w or fz_open_fd for opening a stream, and
 	fz_close for closing an open stream.
 */
-pdf_document *pdf_open_document_with_stream(fz_stream *file);
+pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
 	pdf_close_document: Closes and frees an opened PDF document.
