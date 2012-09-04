@@ -565,17 +565,17 @@ fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ct
 pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots, fz_matrix page_ctm);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
-int pdf_field_getType(pdf_document *doc, pdf_obj *field);
-char *pdf_field_getValue(pdf_document *doc, pdf_obj *field);
-int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text);
-char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field);
-void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text);
-void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text);
-void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
-void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col);
-int pdf_field_getDisplay(pdf_document *doc, pdf_obj *field);
-void pdf_field_setDisplay(pdf_document *doc, pdf_obj *field, int d);
-pdf_obj *pdf_get_field(pdf_obj *form, char *name);
+int pdf_field_type(pdf_document *doc, pdf_obj *field);
+char *pdf_field_value(pdf_document *doc, pdf_obj *field);
+int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text);
+char *pdf_field_border_style(pdf_document *doc, pdf_obj *field);
+void pdf_field_set_border_style(pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_set_button_caption(pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_set_fill_color(pdf_document *doc, pdf_obj *field, pdf_obj *col);
+void pdf_field_set_text_color(pdf_document *doc, pdf_obj *field, pdf_obj *col);
+int pdf_field_display(pdf_document *doc, pdf_obj *field);
+void pdf_field_set_display(pdf_document *doc, pdf_obj *field, int d);
+pdf_obj *pdf_lookup_field(pdf_obj *form, char *name);
 void pdf_field_reset(pdf_document *doc, pdf_obj *field);
 
 /*
@@ -612,18 +612,18 @@ void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
  */
 int pdf_has_unsaved_changes(pdf_document *doc);
 int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
-fz_rect *pdf_get_screen_update(pdf_document *doc);
-fz_widget *pdf_get_focussed_widget(pdf_document *doc);
+fz_rect *pdf_poll_screen_update(pdf_document *doc);
+fz_widget *pdf_focused_widget(pdf_document *doc);
 fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page);
 fz_widget *pdf_next_widget(fz_widget *previous);
-char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw);
-int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget *tw);
-int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw);
-int pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text);
-int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[]);
-int pdf_widget_choice_is_multiselect(pdf_document *doc, fz_widget *tw);
-int pdf_widget_choice_get_value(pdf_document *doc, fz_widget *tw, char *opts[]);
-void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[]);
+char *pdf_text_widget_text(pdf_document *doc, fz_widget *tw);
+int pdf_text_widget_max_len(pdf_document *doc, fz_widget *tw);
+int pdf_text_widget_content_type(pdf_document *doc, fz_widget *tw);
+int pdf_text_widget_set_text(pdf_document *doc, fz_widget *tw, char *text);
+int pdf_choice_widget_options(pdf_document *doc, fz_widget *tw, char *opts[]);
+int pdf_choice_widget_is_multiselect(pdf_document *doc, fz_widget *tw);
+int pdf_choice_widget_value(pdf_document *doc, fz_widget *tw, char *opts[]);
+void pdf_choice_widget_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[]);
 
 /*
  * Javascript handler
@@ -676,13 +676,13 @@ void pdf_jsimp_set_global_type(pdf_jsimp *imp, pdf_jsimp_type *type);
 pdf_jsimp_obj *pdf_jsimp_new_obj(pdf_jsimp *imp, pdf_jsimp_type *type, void *obj);
 void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
-int pdf_jsimp_toType(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+int pdf_jsimp_to_type(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
-pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str);
-char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+pdf_jsimp_obj *pdf_jsimp_from_string(pdf_jsimp *imp, char *str);
+char *pdf_jsimp_to_string(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
-pdf_jsimp_obj *pdf_jsimp_fromNumber(pdf_jsimp *imp, double num);
-double pdf_jsimp_toNumber(pdf_jsimp *imp, pdf_jsimp_obj *obj);
+pdf_jsimp_obj *pdf_jsimp_from_number(pdf_jsimp *imp, double num);
+double pdf_jsimp_to_number(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 
 int pdf_jsimp_array_len(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 pdf_jsimp_obj *pdf_jsimp_array_item(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i);

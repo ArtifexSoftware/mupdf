@@ -12,11 +12,11 @@ const char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, char
 const char *pdf_jsimp_set_global_type_cpp(pdf_jsimp *imp, pdf_jsimp_type *type);
 const char *pdf_jsimp_new_obj_cpp(pdf_jsimp *imp, pdf_jsimp_type *type, void *natobj, pdf_jsimp_obj **obj);
 const char *pdf_jsimp_drop_obj_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj);
-const char *pdf_jsimp_toType_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *type);
-const char *pdf_jsimp_fromString_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj);
-const char *pdf_jsimp_toString_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str);
-const char *pdf_jsimp_fromNumber_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj);
-const char *pdf_jsimp_toNumber_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num);
+const char *pdf_jsimp_to_type_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *type);
+const char *pdf_jsimp_from_string_cpp(pdf_jsimp *imp, char *str, pdf_jsimp_obj **obj);
+const char *pdf_jsimp_to_string_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char **str);
+const char *pdf_jsimp_from_number_cpp(pdf_jsimp *imp, double num, pdf_jsimp_obj **obj);
+const char *pdf_jsimp_to_number_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, double *num);
 const char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len);
 const char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item);
 const char *pdf_jsimp_execute_cpp(pdf_jsimp *imp, char *code);

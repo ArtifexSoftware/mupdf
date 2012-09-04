@@ -220,7 +220,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		for (;widget; widget = fz_next_widget(inter, widget))
 		{
-			fz_rect rect = *fz_widget_get_bbox(widget);
+			fz_rect rect = *fz_widget_bbox(widget);
 			int w = (rect.x1-rect.x0);
 			int h = (rect.y1-rect.y0);
 			int len;
@@ -243,8 +243,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				break;
 			case FZ_WIDGET_TYPE_TEXT:
 			{
-				int maxlen = fz_widget_text_get_max_len(inter, widget);
-				int texttype = fz_widget_text_get_content_type(inter, widget);
+				int maxlen = fz_text_widget_max_len(inter, widget);
+				int texttype = fz_text_widget_content_type(inter, widget);
 
 				/* If height is low, assume a single row, and base
 				 * the width off that. */

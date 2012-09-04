@@ -1093,7 +1093,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		{
 			fz_widget *widget;
 
-			widget = fz_get_focussed_widget(idoc);
+			widget = fz_focused_widget(idoc);
 
 			if (widget)
 			{
@@ -1101,7 +1101,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 				{
 				case FZ_WIDGET_TYPE_TEXT:
 					{
-						char *text = fz_widget_text_get_text(idoc, widget);
+						char *text = fz_text_widget_text(idoc, widget);
 						char *current_text = text;
 						int retry = 0;
 
@@ -1110,7 +1110,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 							current_text = wintextinput(app, current_text, retry);
 							retry = 1;
 						}
-						while (current_text && !fz_widget_text_set_text(idoc, widget, current_text));
+						while (current_text && !fz_text_widget_set_text(idoc, widget, current_text));
 
 						fz_free(app->ctx, text);
 					}
@@ -1129,16 +1129,16 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 						fz_try(ctx)
 						{
-							nopts = fz_widget_choice_get_options(idoc, widget, NULL);
+							nopts = fz_choice_widget_options(idoc, widget, NULL);
 							opts = fz_malloc(ctx, nopts * sizeof(*opts));
-							(void)fz_widget_choice_get_options(idoc, widget, opts);
+							(void)fz_choice_widget_options(idoc, widget, opts);
 
-							nvals = fz_widget_choice_get_value(idoc, widget, NULL);
+							nvals = fz_choice_widget_value(idoc, widget, NULL);
 							vals = fz_malloc(ctx, MAX(nvals,nopts) * sizeof(*vals));
-							(void)fz_widget_choice_get_value(idoc, widget, vals);
+							(void)fz_choice_widget_value(idoc, widget, vals);
 
 							if (winchoiceinput(app, nopts, opts, &nvals, vals))
-								fz_widget_choice_set_value(idoc, widget, nvals, vals);
+								fz_choice_widget_set_value(idoc, widget, nvals, vals);
 						}
 						fz_always(ctx)
 						{

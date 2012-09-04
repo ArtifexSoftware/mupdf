@@ -83,50 +83,50 @@ void pdf_jsimp_drop_obj(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 		fz_warn(pdf_jsimp_ctx_cpp(imp), "%s", err);
 }
 
-int pdf_jsimp_toType(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+int pdf_jsimp_to_type(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	int type = 0;
-	const char *err = pdf_jsimp_toType_cpp(imp, obj, &type);
+	const char *err = pdf_jsimp_to_type_cpp(imp, obj, &type);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 
 	return type;
 }
 
-pdf_jsimp_obj *pdf_jsimp_fromString(pdf_jsimp *imp, char *str)
+pdf_jsimp_obj *pdf_jsimp_from_string(pdf_jsimp *imp, char *str)
 {
 	pdf_jsimp_obj *obj = NULL;
-	const char *err = pdf_jsimp_fromString_cpp(imp, str, &obj);
+	const char *err = pdf_jsimp_from_string_cpp(imp, str, &obj);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 
 	return obj;
 }
 
-char *pdf_jsimp_toString(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+char *pdf_jsimp_to_string(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	char *str = NULL;
-	const char *err = pdf_jsimp_toString_cpp(imp, obj, &str);
+	const char *err = pdf_jsimp_to_string_cpp(imp, obj, &str);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 
 	return str;
 }
 
-pdf_jsimp_obj *pdf_jsimp_fromNumber(pdf_jsimp *imp, double num)
+pdf_jsimp_obj *pdf_jsimp_from_number(pdf_jsimp *imp, double num)
 {
 	pdf_jsimp_obj *obj = NULL;
-	const char *err = pdf_jsimp_fromNumber_cpp(imp, num, &obj);
+	const char *err = pdf_jsimp_from_number_cpp(imp, num, &obj);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 
 	return obj;
 }
 
-double pdf_jsimp_toNumber(pdf_jsimp *imp, pdf_jsimp_obj *obj)
+double pdf_jsimp_to_number(pdf_jsimp *imp, pdf_jsimp_obj *obj)
 {
 	double num;
-	const char *err = pdf_jsimp_toNumber_cpp(imp, obj, &num);
+	const char *err = pdf_jsimp_to_number_cpp(imp, obj, &num);
 	if (err != NULL)
 		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
 

@@ -199,7 +199,7 @@ static int get_field_flags(pdf_document *doc, pdf_obj *obj)
 	return pdf_to_int(get_inheritable(doc, obj, "Ff"));
 }
 
-int pdf_field_getType(pdf_document *doc, pdf_obj *obj)
+int pdf_field_type(pdf_document *doc, pdf_obj *obj)
 {
 	char *type = get_field_type_name(doc, obj);
 	int   flags = get_field_flags(doc, obj);
@@ -1239,7 +1239,7 @@ static void update_text_appearance(pdf_document *doc, pdf_obj *obj, char *eventV
 		if (eventValue)
 			text = to_font_encoding(ctx, info.font_rec.font, eventValue);
 		else
-			text = pdf_field_getValue(doc, obj);
+			text = pdf_field_value(doc, obj);
 
 		form = load_or_create_form(doc, obj, &rect);
 
@@ -1481,7 +1481,7 @@ static pdf_obj *find_field(pdf_obj *dict, char *name, int len)
 	return NULL;
 }
 
-pdf_obj *pdf_get_field(pdf_obj *form, char *name)
+pdf_obj *pdf_lookup_field(pdf_obj *form, char *name)
 {
 	char *dot;
 	char *namep;
@@ -1543,7 +1543,7 @@ void pdf_field_reset(pdf_document *doc, pdf_obj *field)
 		 * In some cases we need to update the appearance state;
 		 * in others we need to mark the field as dirty so that
 		 * the appearance stream will be regenerated. */
-		switch (pdf_field_getType(doc, field))
+		switch (pdf_field_type(doc, field))
 		{
 		case FZ_WIDGET_TYPE_RADIOBUTTON:
 		case FZ_WIDGET_TYPE_CHECKBOX:
@@ -1603,7 +1603,7 @@ static void reset_form(pdf_document *doc, pdf_obj *fields, int exclude)
 				pdf_obj *field = pdf_array_get(fields, i);
 
 				if (pdf_is_string(field))
-					field = pdf_get_field(form, pdf_to_str_buf(field));
+					field = pdf_lookup_field(form, pdf_to_str_buf(field));
 
 				if (field)
 					pdf_dict_puts(field, "NoReset", nil);
@@ -1632,7 +1632,7 @@ static void reset_form(pdf_document *doc, pdf_obj *fields, int exclude)
 			pdf_obj *field = pdf_array_get(fields, i);
 
 			if (pdf_is_string(field))
-				field = pdf_get_field(form, pdf_to_str_buf(field));
+				field = pdf_lookup_field(form, pdf_to_str_buf(field));
 
 			if (field)
 				pdf_dict_dels(field, "NoReset");
@@ -1647,7 +1647,7 @@ static void reset_form(pdf_document *doc, pdf_obj *fields, int exclude)
 			pdf_obj *field = pdf_array_get(fields, i);
 
 			if (pdf_is_string(field))
-				field = pdf_get_field(form, pdf_to_str_buf(field));
+				field = pdf_lookup_field(form, pdf_to_str_buf(field));
 
 			if (field)
 				pdf_field_reset(doc, field);
@@ -1695,7 +1695,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 	{
 		if (!strcmp(pdf_to_name(pdf_dict_gets(obj, "Subtype")), "Widget"))
 		{
-			switch(pdf_field_getType(doc, obj))
+			switch(pdf_field_type(doc, obj))
 			{
 			case FZ_WIDGET_TYPE_TEXT:
 				{
@@ -1706,7 +1706,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 						pdf_js_event e;
 
 						e.target = obj;
-						e.value = pdf_field_getValue(doc, obj);
+						e.value = pdf_field_value(doc, obj);
 						pdf_js_setup_event(doc->js, &e);
 						execute_action(doc, obj, formatting);
 						/* Update appearance from JS event.value */
@@ -1839,7 +1839,7 @@ static void recalculate(pdf_document *doc)
 					pdf_js_event e;
 
 					e.target = field;
-					e.value = pdf_field_getValue(doc, field);
+					e.value = pdf_field_value(doc, field);
 					pdf_js_setup_event(doc->js, &e);
 					execute_action(doc, field, calc);
 					/* A calculate action, updates event.value. We need
@@ -2032,12 +2032,12 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 	return changed;
 }
 
-fz_rect *pdf_get_screen_update(pdf_document *doc)
+fz_rect *pdf_poll_screen_update(pdf_document *doc)
 {
 	return NULL;
 }
 
-fz_widget *pdf_get_focussed_widget(pdf_document *doc)
+fz_widget *pdf_focused_widget(pdf_document *doc)
 {
 	return (fz_widget *)doc->focus;
 }
@@ -2071,12 +2071,12 @@ int fz_widget_get_type(fz_widget *widget)
 	return annot->type;
 }
 
-char *pdf_field_getValue(pdf_document *doc, pdf_obj *field)
+char *pdf_field_value(pdf_document *doc, pdf_obj *field)
 {
 	return get_string_or_stream(doc, get_inheritable(doc, field, "V"));
 }
 
-int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
+int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text)
 {
 	pdf_obj *v = pdf_dict_getp(field, "AA/V");
 
@@ -2102,7 +2102,7 @@ int pdf_field_setValue(pdf_document *doc, pdf_obj *field, char *text)
 	return 1;
 }
 
-char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field)
+char *pdf_field_border_style(pdf_document *doc, pdf_obj *field)
 {
 	char *bs = pdf_to_name(pdf_dict_getp(field, "BS/S"));
 
@@ -2118,7 +2118,7 @@ char *pdf_field_getBorderStyle(pdf_document *doc, pdf_obj *field)
 	return "Solid";
 }
 
-void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text)
+void pdf_field_set_border_style(pdf_document *doc, pdf_obj *field, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *val = NULL;
@@ -2151,14 +2151,14 @@ void pdf_field_setBorderStyle(pdf_document *doc, pdf_obj *field, char *text)
 	}
 }
 
-void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
+void pdf_field_set_button_caption(pdf_document *doc, pdf_obj *field, char *text)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *val = pdf_new_string(ctx, text, strlen(text));
 
 	fz_try(ctx);
 	{
-		if (pdf_field_getType(doc, field) == FZ_WIDGET_TYPE_PUSHBUTTON)
+		if (pdf_field_type(doc, field) == FZ_WIDGET_TYPE_PUSHBUTTON)
 		{
 			pdf_dict_putp(field, "MK/CA", val);
 			pdf_field_mark_dirty(ctx, field);
@@ -2174,7 +2174,7 @@ void pdf_field_buttonSetCaption(pdf_document *doc, pdf_obj *field, char *text)
 	}
 }
 
-int pdf_field_getDisplay(pdf_document *doc, pdf_obj *field)
+int pdf_field_display(pdf_document *doc, pdf_obj *field)
 {
 	pdf_obj *kids;
 	int f, res = Display_Visible;
@@ -2207,7 +2207,7 @@ int pdf_field_getDisplay(pdf_document *doc, pdf_obj *field)
 	return res;
 }
 
-void pdf_field_setDisplay(pdf_document *doc, pdf_obj *field, int d)
+void pdf_field_set_display(pdf_document *doc, pdf_obj *field, int d)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *kids = pdf_dict_gets(field, "Kids");
@@ -2253,17 +2253,17 @@ void pdf_field_setDisplay(pdf_document *doc, pdf_obj *field, int d)
 		int i, n = pdf_array_len(kids);
 
 		for (i = 0; i < n; i++)
-			pdf_field_setDisplay(doc, pdf_array_get(kids, i), d);
+			pdf_field_set_display(doc, pdf_array_get(kids, i), d);
 	}
 }
 
-void pdf_field_setFillColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
+void pdf_field_set_fill_color(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 {
 	pdf_dict_putp(field, "MK/BG", col);
 	pdf_field_mark_dirty(doc->ctx, field);
 }
 
-void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
+void pdf_field_set_text_color(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 {
 	fz_context *ctx = doc->ctx;
 	da_info di;
@@ -2304,14 +2304,14 @@ void pdf_field_setTextColor(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 	}
 }
 
-fz_rect *fz_widget_get_bbox(fz_widget *widget)
+fz_rect *fz_widget_bbox(fz_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
 
 	return &annot->pagerect;
 }
 
-char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw)
+char *pdf_text_widget_text(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
@@ -2320,24 +2320,24 @@ char *pdf_widget_text_get_text(pdf_document *doc, fz_widget *tw)
 	fz_var(text);
 	fz_try(ctx)
 	{
-		text = pdf_field_getValue(doc, annot->obj);
+		text = pdf_field_value(doc, annot->obj);
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "failed allocation in fz_widget_text_get_text");
+		fz_warn(ctx, "failed allocation in fz_text_widget_text");
 	}
 
 	return text;
 }
 
-int pdf_widget_text_get_max_len(pdf_document *doc, fz_widget *tw)
+int pdf_text_widget_max_len(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
 	return pdf_to_int(get_inheritable(doc, annot->obj, "MaxLen"));
 }
 
-int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw)
+int pdf_text_widget_content_type(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
@@ -2366,7 +2366,7 @@ int pdf_widget_text_get_content_type(pdf_document *doc, fz_widget *tw)
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "failure in fz_widget_text_get_content_type");
+		fz_warn(ctx, "failure in fz_text_widget_content_type");
 	}
 
 	return type;
@@ -2394,7 +2394,7 @@ static int run_keystroke(pdf_document *doc, pdf_obj *field, char **text)
 	return 1;
 }
 
-int pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
+int pdf_text_widget_set_text(pdf_document *doc, fz_widget *tw, char *text)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	fz_context *ctx = doc->ctx;
@@ -2404,17 +2404,17 @@ int pdf_widget_text_set_text(pdf_document *doc, fz_widget *tw, char *text)
 	{
 		accepted = run_keystroke(doc, annot->obj, &text);
 		if (accepted)
-			accepted = pdf_field_setValue(doc, annot->obj, text);
+			accepted = pdf_field_set_value(doc, annot->obj, text);
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "fz_widget_text_set_text failed");
+		fz_warn(ctx, "fz_text_widget_set_text failed");
 	}
 
 	return accepted;
 }
 
-int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[])
+int pdf_choice_widget_options(pdf_document *doc, fz_widget *tw, char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -2437,13 +2437,13 @@ int pdf_widget_choice_get_options(pdf_document *doc, fz_widget *tw, char *opts[]
 	return n;
 }
 
-int pdf_widget_choice_is_multiselect(pdf_document *doc, fz_widget *tw)
+int pdf_choice_widget_is_multiselect(pdf_document *doc, fz_widget *tw)
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 
 	if (!annot) return 0;
 
-	switch(pdf_field_getType(doc, annot->obj))
+	switch(pdf_field_type(doc, annot->obj))
 	{
 	case FZ_WIDGET_TYPE_LISTBOX:
 	case FZ_WIDGET_TYPE_COMBOBOX:
@@ -2453,7 +2453,7 @@ int pdf_widget_choice_is_multiselect(pdf_document *doc, fz_widget *tw)
 	}
 }
 
-int pdf_widget_choice_get_value(pdf_document *doc, fz_widget *tw, char *opts[])
+int pdf_choice_widget_value(pdf_document *doc, fz_widget *tw, char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
 	pdf_obj *optarr;
@@ -2492,7 +2492,7 @@ int pdf_widget_choice_get_value(pdf_document *doc, fz_widget *tw, char *opts[])
 	}
 }
 
-void pdf_widget_choice_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[])
+void pdf_choice_widget_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[])
 {
 	fz_context *ctx = doc->ctx;
 	pdf_annot *annot = (pdf_annot *)tw;

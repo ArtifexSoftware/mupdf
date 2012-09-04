@@ -2432,12 +2432,12 @@ int fz_has_unsaved_changes(fz_interactive *idoc);
 int fz_pass_event(fz_interactive *idoc, fz_page *page, fz_ui_event *ui_event);
 
 /*
-	fz_ui_event_pointer: Set up a pointer event
+	fz_init_ui_pointer_event: Set up a pointer event
 */
-void fz_ui_event_pointer(fz_ui_event *event, int type, float x, float y);
+void fz_init_ui_pointer_event(fz_ui_event *event, int type, float x, float y);
 
 /*
-	fz_get_screen_update: Get the bounding box of an area needing
+	fz_poll_screen_update: Get the bounding box of an area needing
 	update because of a visual change.
 
 	After a sequence of interactions with a document that may cause
@@ -2446,10 +2446,10 @@ void fz_ui_event_pointer(fz_ui_event *event, int type, float x, float y);
 	enumerate the changed areas for which screen updates are
 	needed.
 */
-fz_rect *fz_get_screen_update(fz_interactive *idoc);
+fz_rect *fz_poll_screen_update(fz_interactive *idoc);
 
 /*
-	fz_get_focussed_widget: returns the currently focussed widget
+	fz_focused_widget: returns the currently focussed widget
 
 	Widgets can become focussed as a result of passing in ui events.
 	NULL is returned if there is no currently focussed widget. An
@@ -2457,7 +2457,7 @@ fz_rect *fz_get_screen_update(fz_interactive *idoc);
 	widget, e.g., to collect the text for a text widget, rather than
 	routing key strokes through fz_pass_event.
 */
-fz_widget *fz_get_focussed_widget(fz_interactive *idoc);
+fz_widget *fz_focused_widget(fz_interactive *idoc);
 
 /*
 	fz_first_widget: get first widget when enumerating
@@ -2478,64 +2478,64 @@ fz_widget *fz_next_widget(fz_interactive *idoc, fz_widget *previous);
 int fz_widget_get_type(fz_widget *widget);
 
 /*
-	fz_widget_get_bbox: get the bounding box of a widget.
+	fz_widget_bbox: get the bounding box of a widget.
 */
-fz_rect *fz_widget_get_bbox(fz_widget *widget);
+fz_rect *fz_widget_bbox(fz_widget *widget);
 
 /*
-	fz_widget_text_get_text: Get the text currently displayed in
+	fz_text_widget_text: Get the text currently displayed in
 	a text widget.
 */
-char *fz_widget_text_get_text(fz_interactive *idoc, fz_widget *tw);
+char *fz_text_widget_text(fz_interactive *idoc, fz_widget *tw);
 
 /*
 	fz_widget_text_max_len: get the maximum number of
 	characters permitted in a text widget
 */
-int fz_widget_text_get_max_len(fz_interactive *idoc, fz_widget *tw);
+int fz_text_widget_max_len(fz_interactive *idoc, fz_widget *tw);
 
 /*
-	fz_widget_text_get_content_type: get the type of content
+	fz_text_widget_content_type: get the type of content
 	required by a text widget
 */
-int fz_widget_text_get_content_type(fz_interactive *idoc, fz_widget *tw);
+int fz_text_widget_content_type(fz_interactive *idoc, fz_widget *tw);
 
 /*
-	fz_widget_text_set_text: Update the text of a text widget.
+	fz_text_widget_set_text: Update the text of a text widget.
 	The text is first validated and accepted only if it passes. The
 	function returns whether validation passed.
 */
-int fz_widget_text_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
+int fz_text_widget_set_text(fz_interactive *idoc, fz_widget *tw, char *text);
 
 /*
-	fz_widget_choice_get_options: get the list of options for a list
+	fz_choice_widget_options: get the list of options for a list
 	box or combo box. Returns the number of options and fills in their
 	names within the supplied array. Should first be called with a
 	NULL array to find out how big the array should be.
 */
-int fz_widget_choice_get_options(fz_interactive *idoc, fz_widget *tw, char *opts[]);
+int fz_choice_widget_options(fz_interactive *idoc, fz_widget *tw, char *opts[]);
 
 /*
-	fz_widget_choice_is_multiselect: returns whether a list box or
+	fz_choice_widget_is_multiselect: returns whether a list box or
 	combo box supports selection of multiple options
 */
-int fz_widget_choice_is_multiselect(fz_interactive *idoc, fz_widget *tw);
+int fz_choice_widget_is_multiselect(fz_interactive *idoc, fz_widget *tw);
 
 /*
-	fz_widget_choice_get_value: get the value of a choice widget.
+	fz_choice_widget_value: get the value of a choice widget.
 	Returns the number of options curently selected and fills in
 	the supplied array with their strings. Should first be called
 	with NULL as the array to find out how big the array need to
 	be. The filled in elements should not be freed by the caller.
 */
-int fz_widget_choice_get_value(fz_interactive *idoc, fz_widget *tw, char *opts[]);
+int fz_choice_widget_value(fz_interactive *idoc, fz_widget *tw, char *opts[]);
 
 /*
 	fz_widget_set_value: set the value of a choice widget. The
 	caller should pass the number of options selected and an
 	array of their names
 */
-void fz_widget_choice_set_value(fz_interactive *idoc, fz_widget *tw, int n, char *opts[]);
+void fz_choice_widget_set_value(fz_interactive *idoc, fz_widget *tw, int n, char *opts[]);
 
 typedef struct fz_write_options_s fz_write_options;
 

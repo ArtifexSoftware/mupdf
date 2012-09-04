@@ -32,7 +32,7 @@ static pdf_obj *load_color(fz_context *ctx, pdf_jsimp *imp, pdf_jsimp_obj *val)
 			for (i = 0; i < 3; i++)
 			{
 				jscomp = pdf_jsimp_array_item(imp, val, i+1);
-				comp = pdf_new_real(ctx, pdf_jsimp_toNumber(imp, jscomp));
+				comp = pdf_new_real(ctx, pdf_jsimp_to_number(imp, jscomp));
 				pdf_array_push(col, comp);
 				pdf_jsimp_drop_obj(imp, jscomp);
 				jscomp = NULL;
@@ -61,8 +61,8 @@ static pdf_jsimp_obj *field_buttonSetCaption(void *jsctx, void *obj, int argc, p
 	if (argc != 1)
 		return NULL;
 
-	name = pdf_jsimp_toString(js->imp, args[0]);
-	pdf_field_buttonSetCaption(js->doc, field, name);
+	name = pdf_jsimp_to_string(js->imp, args[0]);
+	pdf_field_set_button_caption(js->doc, field, name);
 
 	return NULL;
 }
@@ -76,8 +76,8 @@ static pdf_jsimp_obj *field_getDisplay(void *jsctx, void *obj)
 
 	fz_try(ctx)
 	{
-		int d = pdf_field_getDisplay(js->doc, field);
-		res = pdf_jsimp_fromNumber(js->imp, (double)d);
+		int d = pdf_field_display(js->doc, field);
+		res = pdf_jsimp_from_number(js->imp, (double)d);
 	}
 	fz_catch(ctx)
 	{
@@ -95,8 +95,8 @@ static void field_setDisplay(void *jsctx, void *obj, pdf_jsimp_obj *val)
 
 	fz_try(ctx)
 	{
-		int ival = (int)pdf_jsimp_toNumber(js->imp, val);
-		pdf_field_setDisplay(js->doc, field, ival);
+		int ival = (int)pdf_jsimp_to_number(js->imp, val);
+		pdf_field_set_display(js->doc, field, ival);
 	}
 	fz_catch(ctx)
 	{
@@ -118,7 +118,7 @@ static void field_setFillColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
 
 	fz_try(ctx)
 	{
-		pdf_field_setFillColor(js->doc, field, col);
+		pdf_field_set_fill_color(js->doc, field, col);
 	}
 	fz_always(ctx)
 	{
@@ -144,7 +144,7 @@ static void field_setTextColor(void *jsctx, void *obj, pdf_jsimp_obj *val)
 
 	fz_try(ctx)
 	{
-		pdf_field_setTextColor(js->doc, field, col);
+		pdf_field_set_text_color(js->doc, field, col);
 	}
 	fz_always(ctx)
 	{
@@ -161,7 +161,7 @@ static pdf_jsimp_obj *field_getBorderStyle(void *jsctx, void *obj)
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
-	return pdf_jsimp_fromString(js->imp, pdf_field_getBorderStyle(js->doc, field));
+	return pdf_jsimp_from_string(js->imp, pdf_field_border_style(js->doc, field));
 }
 
 static void field_setBorderStyle(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -169,16 +169,16 @@ static void field_setBorderStyle(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
-	pdf_field_setBorderStyle(js->doc, field, pdf_jsimp_toString(js->imp, val));
+	pdf_field_set_border_style(js->doc, field, pdf_jsimp_to_string(js->imp, val));
 }
 
 static pdf_jsimp_obj *field_getValue(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
-	char *fval = pdf_field_getValue(js->doc, field);
+	char *fval = pdf_field_value(js->doc, field);
 
-	return pdf_jsimp_fromString(js->imp, fval?fval:"");
+	return pdf_jsimp_from_string(js->imp, fval?fval:"");
 }
 
 static void field_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -186,7 +186,7 @@ static void field_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	pdf_js *js = (pdf_js *)jsctx;
 	pdf_obj *field = (pdf_obj *)obj;
 
-	(void)pdf_field_setValue(js->doc, field, pdf_jsimp_toString(js->imp, val));
+	(void)pdf_field_set_value(js->doc, field, pdf_jsimp_to_string(js->imp, val));
 }
 
 static pdf_jsimp_obj *event_getTarget(void *jsctx, void *obj)
@@ -207,7 +207,7 @@ static pdf_jsimp_obj *event_getValue(void *jsctx, void *obj)
 	pdf_js *js = (pdf_js *)jsctx;
 	char *v = js->event.value;
 
-	return pdf_jsimp_fromString(js->imp, v?v:"");
+	return pdf_jsimp_from_string(js->imp, v?v:"");
 }
 
 static void event_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -216,14 +216,14 @@ static void event_setValue(void *jsctx, void *obj, pdf_jsimp_obj *val)
 	fz_context *ctx = js->doc->ctx;
 	fz_free(ctx, js->event.value);
 	js->event.value = NULL;
-	js->event.value = fz_strdup(ctx, pdf_jsimp_toString(js->imp, val));
+	js->event.value = fz_strdup(ctx, pdf_jsimp_to_string(js->imp, val));
 }
 
 static pdf_jsimp_obj *event_getWillCommit(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
 
-	return pdf_jsimp_fromNumber(js->imp, 1.0);
+	return pdf_jsimp_from_number(js->imp, 1.0);
 }
 
 static void event_setWillCommit(void *jsctx, void *obj, pdf_jsimp_obj *val)
@@ -236,14 +236,14 @@ static pdf_jsimp_obj *event_getRC(void *jsctx, void *obj)
 {
 	pdf_js *js = (pdf_js *)jsctx;
 
-	return pdf_jsimp_fromNumber(js->imp, (double)js->event.rc);
+	return pdf_jsimp_from_number(js->imp, (double)js->event.rc);
 }
 
 static void event_setRC(void *jsctx, void *obj, pdf_jsimp_obj *val)
 {
 	pdf_js *js = (pdf_js *)jsctx;
 
-	js->event.rc = (int)pdf_jsimp_toNumber(js->imp, val);
+	js->event.rc = (int)pdf_jsimp_to_number(js->imp, val);
 }
 
 static pdf_jsimp_obj *doc_getEvent(void *jsctx, void *obj)
@@ -320,12 +320,12 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 	fz_var(name);
 	fz_try(ctx)
 	{
-		utf8 = pdf_jsimp_toString(js->imp, args[0]);
+		utf8 = pdf_jsimp_to_string(js->imp, args[0]);
 
 		if (utf8)
 		{
 			name = utf8_to_pdf(ctx, utf8);
-			dict = pdf_get_field(js->form, name);
+			dict = pdf_lookup_field(js->form, name);
 		}
 	}
 	fz_always(ctx)
@@ -345,7 +345,7 @@ static void reset_field(pdf_js *js, pdf_jsimp_obj *item)
 {
 	fz_context *ctx = js->doc->ctx;
 	char *name = NULL;
-	char *utf8 = pdf_jsimp_toString(js->imp, item);
+	char *utf8 = pdf_jsimp_to_string(js->imp, item);
 
 	if (utf8)
 	{
@@ -355,7 +355,7 @@ static void reset_field(pdf_js *js, pdf_jsimp_obj *item)
 		fz_try(ctx)
 		{
 			name = utf8_to_pdf(ctx, utf8);
-			field = pdf_get_field(js->form, name);
+			field = pdf_lookup_field(js->form, name);
 			if (field)
 				pdf_field_reset(js->doc, field);
 		}
@@ -382,7 +382,7 @@ static pdf_jsimp_obj *doc_resetForm(void *jsctx, void *obj, int argc, pdf_jsimp_
 	case 0:
 		break;
 	case 1:
-		switch (pdf_jsimp_toType(js->imp, args[0]))
+		switch (pdf_jsimp_to_type(js->imp, args[0]))
 		{
 		case JS_TYPE_NULL:
 			break;

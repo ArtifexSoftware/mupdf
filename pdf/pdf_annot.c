@@ -400,7 +400,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 			annot->rect = pdf_to_rect(ctx, rect);
 			annot->pagerect = fz_transform_rect(page_ctm, annot->rect);
 			annot->ap = NULL;
-			annot->type = pdf_field_getType(xref, obj);
+			annot->type = pdf_field_type(xref, obj);
 
 			if (pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
 			{
