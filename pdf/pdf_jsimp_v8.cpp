@@ -17,28 +17,28 @@ extern "C" {
 using namespace v8;
 using namespace std;
 
+struct PDFJSImp;
+
 /* Object we pass to FunctionTemplate::New, which v8 passes back to us in
  * callMethod, allowing us to call our client's, passed-in method. */
 struct PDFJSImpMethod
 {
-	void             *jsctx;
+	PDFJSImp *imp;
 	pdf_jsimp_method *meth;
 
-	PDFJSImpMethod(void *jsctx, pdf_jsimp_method *meth) : jsctx(jsctx), meth(meth) {}
+	PDFJSImpMethod(PDFJSImp *imp, pdf_jsimp_method *meth) : imp(imp), meth(meth) {}
 };
 
 /* Object we pass to ObjectTemplate::SetAccessor, which v8 passes back to us in
  * setProp and getProp, allowing us to call our client's, passed-in set/get methods. */
 struct PDFJSImpProperty
 {
-	void             *jsctx;
+	PDFJSImp *imp;
 	pdf_jsimp_getter *get;
 	pdf_jsimp_setter *set;
 
-	PDFJSImpProperty(void *jsctx, pdf_jsimp_getter *get, pdf_jsimp_setter *set) : jsctx(jsctx), get(get), set(set) {}
+	PDFJSImpProperty(PDFJSImp *imp, pdf_jsimp_getter *get, pdf_jsimp_setter *set) : imp(imp), get(get), set(set) {}
 };
-
-struct PDFJSImp;
 
 /* Internal representation of the pdf_jsimp_type object */
 struct PDFJSImpType
@@ -239,7 +239,7 @@ static Handle<Value> callMethod(const Arguments &args)
 	for (int i = 0; i < c; i++)
 		native_args[i] = new PDFJSImpObject(args[i]);
 
-	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(m->meth(m->jsctx, nself, c, reinterpret_cast<pdf_jsimp_obj **>(native_args)));
+	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(pdf_jsimp_call_method(reinterpret_cast<pdf_jsimp *>(m->imp), m->meth, m->imp->jsctx, nself, c, reinterpret_cast<pdf_jsimp_obj **>(native_args)));
 	Handle<Value> val;
 	if (obj)
 		val = obj->toValue();
@@ -258,7 +258,7 @@ extern "C" const char *pdf_jsimp_addmethod_cpp(pdf_jsimp *imp, pdf_jsimp_type *t
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
 
-	PDFJSImpMethod *pmeth = new PDFJSImpMethod(vType->imp->jsctx, meth);
+	PDFJSImpMethod *pmeth = new PDFJSImpMethod(vType->imp, meth);
 	vType->templ->Set(String::New(name), FunctionTemplate::New(callMethod, External::New(pmeth)));
 	vType->methods.push_back(pmeth);
 	return NULL;
@@ -283,7 +283,7 @@ static Handle<Value> getProp(Local<String> property, const AccessorInfo &info)
 		}
 	}
 
-	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(p->get(p->jsctx, nself));
+	PDFJSImpObject *obj = reinterpret_cast<PDFJSImpObject *>(pdf_jsimp_call_getter(reinterpret_cast<pdf_jsimp *>(p->imp), p->get, p->imp->jsctx, nself));
 	Handle<Value> val;
 	if (obj)
 		val = obj->toValue();
@@ -308,7 +308,7 @@ static void setProp(Local<String> property, Local<Value> value, const AccessorIn
 
 	PDFJSImpObject *obj = new PDFJSImpObject(value);
 
-	p->set(p->jsctx, nself, reinterpret_cast<pdf_jsimp_obj *>(obj));
+	pdf_jsimp_call_setter(reinterpret_cast<pdf_jsimp *>(p->imp), p->set, p->imp->jsctx, nself, reinterpret_cast<pdf_jsimp_obj *>(obj));
 	delete obj;
 }
 
@@ -317,7 +317,7 @@ extern "C" const char *pdf_jsimp_addproperty_cpp(pdf_jsimp *imp, pdf_jsimp_type 
 	PDFJSImpType *vType = reinterpret_cast<PDFJSImpType *>(type);
 	HandleScope scope;
 
-	PDFJSImpProperty *prop = new PDFJSImpProperty(vType->imp->jsctx, get, set);
+	PDFJSImpProperty *prop = new PDFJSImpProperty(vType->imp, get, set);
 	vType->templ->SetAccessor(String::New(name), getProp, setProp, External::New(prop));
 	vType->properties.push_back(prop);
 	return NULL;
