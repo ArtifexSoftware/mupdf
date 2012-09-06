@@ -153,6 +153,16 @@ pdf_jsimp_obj *pdf_jsimp_array_item(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i)
 	return item;
 }
 
+pdf_jsimp_obj *pdf_jsimp_property(pdf_jsimp *imp, pdf_jsimp_obj *obj, char *prop)
+{
+	pdf_jsimp_obj *pobj = NULL;
+	const char *err = pdf_jsimp_property_cpp(imp, obj, prop, &pobj);
+	if (err != NULL)
+		fz_throw(pdf_jsimp_ctx_cpp(imp), "%s", err);
+
+	return pobj;
+}
+
 void pdf_jsimp_execute(pdf_jsimp *imp, char *code)
 {
 	const char *err = pdf_jsimp_execute_cpp(imp, code);

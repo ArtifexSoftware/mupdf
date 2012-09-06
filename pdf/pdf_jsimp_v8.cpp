@@ -411,17 +411,23 @@ extern "C" const char *pdf_jsimp_to_number_cpp(pdf_jsimp *imp, pdf_jsimp_obj *ob
 
 extern "C" const char *pdf_jsimp_array_len_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int *len)
 {
-	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
-	Local<Array> arr = Local<Array>::Cast(val);
+	Local<Object> jsobj = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
+	Local<Array> arr = Local<Array>::Cast(jsobj);
 	*len = arr->Length();
 	return NULL;
 }
 
 extern "C" const char *pdf_jsimp_array_item_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i, pdf_jsimp_obj **item)
 {
-	Local<Value> val = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
-	Local<Array> arr = Local<Array>::Cast(val);
-	*item = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(arr->Get(Number::New(i))));
+	Local<Object> jsobj = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
+	*item = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(jsobj->Get(Number::New(i))));
+	return NULL;
+}
+
+extern "C" const char *pdf_jsimp_property_cpp(pdf_jsimp *imp, pdf_jsimp_obj *obj, char *prop, pdf_jsimp_obj **pobj)
+{
+	Local<Object> jsobj = reinterpret_cast<PDFJSImpObject *>(obj)->toValue()->ToObject();
+	*pobj = reinterpret_cast<pdf_jsimp_obj *>(new PDFJSImpObject(jsobj->Get(String::New(prop))));
 	return NULL;
 }
 

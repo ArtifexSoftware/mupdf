@@ -690,6 +690,8 @@ double pdf_jsimp_to_number(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 int pdf_jsimp_array_len(pdf_jsimp *imp, pdf_jsimp_obj *obj);
 pdf_jsimp_obj *pdf_jsimp_array_item(pdf_jsimp *imp, pdf_jsimp_obj *obj, int i);
 
+pdf_jsimp_obj *pdf_jsimp_property(pdf_jsimp *imp, pdf_jsimp_obj *obj, char *prop);
+
 void pdf_jsimp_execute(pdf_jsimp *imp, char *code);
 void pdf_jsimp_execute_count(pdf_jsimp *imp, char *code, int count);
 
