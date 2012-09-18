@@ -2602,6 +2602,7 @@ void fz_set_doc_event_callback(fz_interactive *idoc, fz_doc_event_cb *fn, void *
 */
 typedef struct
 {
+	char *message;
 	int icon_type;
 	int button_group_type;
 	char *title;
@@ -2645,7 +2646,7 @@ enum
 	structire are owned by mupdf and need not be freed by the
 	caller.
 */
-fz_alert_event *fz_access_alert_event(fz_interactive *idoc);
+fz_alert_event *fz_access_alert_event(fz_doc_event *event);
 
 /*
 	fz_submit_event: details of a submit event. The app should submit
