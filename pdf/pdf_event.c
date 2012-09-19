@@ -31,6 +31,16 @@ void pdf_event_issue_alert(pdf_document *doc, fz_alert_event *alert)
 	}
 }
 
+void pdf_event_issue_print(pdf_document *doc)
+{
+	fz_doc_event e;
+
+	e.type = FZ_DOCUMENT_EVENT_PRINT;
+
+	if (doc->event_cb)
+		doc->event_cb(&e, doc->event_cb_data);
+}
+
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *fn, void *data)
 {
 	doc->event_cb = fn;

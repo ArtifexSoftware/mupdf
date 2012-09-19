@@ -1688,6 +1688,13 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 		{
 			reset_form(doc, pdf_dict_gets(a, "Fields"), pdf_to_int(pdf_dict_gets(a, "Flags")) & 1);
 		}
+		else if (!strcmp(type, "Named"))
+		{
+			char *name = pdf_to_name(pdf_dict_gets(a, "N"));
+
+			if (!strcmp(name, "Print"))
+				pdf_event_issue_print(doc);
+		}
 	}
 }
 

@@ -113,6 +113,9 @@ static void event_cb(fz_doc_event *event, void *data)
 			winalert(app, alert);
 		}
 		break;
+	case FZ_DOCUMENT_EVENT_PRINT:
+		winprint(app);
+		break;
 	}
 }
 

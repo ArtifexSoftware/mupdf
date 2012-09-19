@@ -519,6 +519,15 @@ static pdf_jsimp_obj *doc_resetForm(void *jsctx, void *obj, int argc, pdf_jsimp_
 	return NULL;
 }
 
+static pdf_jsimp_obj *doc_print(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	pdf_js  *js = (pdf_js *)jsctx;
+
+	pdf_event_issue_print(js->doc);
+
+	return NULL;
+}
+
 static void declare_dom(pdf_js *js)
 {
 	pdf_jsimp      *imp       = js->imp;
@@ -527,6 +536,7 @@ static void declare_dom(pdf_js *js)
 	js->doctype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addmethod(imp, js->doctype, "getField", doc_getField);
 	pdf_jsimp_addmethod(imp, js->doctype, "resetForm", doc_resetForm);
+	pdf_jsimp_addmethod(imp, js->doctype, "print", doc_print);
 	pdf_jsimp_addproperty(imp, js->doctype, "event", doc_getEvent, doc_setEvent);
 	pdf_jsimp_addproperty(imp, js->doctype, "app", doc_getApp, doc_setApp);
 
