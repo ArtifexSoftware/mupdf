@@ -1589,7 +1589,9 @@ static void reset_form(pdf_document *doc, pdf_obj *fields, int exclude)
 	pdf_obj *form = pdf_dict_getp(doc->trailer, "Root/AcroForm/Fields");
 	int i, n;
 
-	if (exclude)
+	/* The 'fields' array not being present signals that all fields
+	 * should be reset, so handle it using the exclude case - excluding none */
+	if (exclude || !fields)
 	{
 		/* mark the fields we don't want to reset */
 		pdf_obj *nil = pdf_new_null(ctx);
