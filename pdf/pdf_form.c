@@ -1753,6 +1753,21 @@ static void execute_action_chain(pdf_document *doc, pdf_obj *obj)
 	}
 }
 
+static void execute_additional_action(pdf_document *doc, pdf_obj *obj, char *act)
+{
+	pdf_obj *a = pdf_dict_getp(obj, act);
+
+	if (a)
+	{
+		pdf_js_event e;
+
+		e.target = obj;
+		e.value = "";
+		pdf_js_setup_event(doc->js, &e);
+		execute_action(doc, obj, a);
+	}
+}
+
 static void check_off(fz_context *ctx, pdf_obj *obj)
 {
 	pdf_obj *off = NULL;
@@ -2004,6 +2019,8 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 					hp->gen = pdf_to_gen(annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
 					changed = 1;
+					/* Exectute the down action */
+					execute_additional_action(doc, annot->obj, "AA/D");
 				}
 				break;
 
@@ -2027,6 +2044,9 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 						break;
 					}
 
+					/* Execute the up action */
+					execute_additional_action(doc, annot->obj, "AA/U");
+					/* Execute the main action chain */
 					execute_action_chain(doc, annot->obj);
 				}
 				break;
