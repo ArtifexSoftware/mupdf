@@ -635,6 +635,7 @@ void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *event_cb, vo
 void pdf_event_issue_alert(pdf_document *doc, fz_alert_event *event);
 void pdf_event_issue_print(pdf_document *doc);
 void pdf_event_issue_exec_menu_item(pdf_document *doc, char *item);
+void pdf_event_issue_exec_dialog(pdf_document *doc);
 
 /*
  * Javascript handler

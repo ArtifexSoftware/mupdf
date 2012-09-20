@@ -129,6 +129,10 @@ static void event_cb(fz_doc_event *event, void *data)
 				pdfapp_warn(app, "The document attempted to execute menu item: %s. (Not supported)", item);
 		}
 		break;
+
+	case FZ_DOCUMENT_EVENT_EXEC_DIALOG:
+		pdfapp_warn(app, "The document attempted to open a dialog box. (Not supported)");
+		break;
 	}
 }
 

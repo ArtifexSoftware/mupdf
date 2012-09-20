@@ -101,6 +101,10 @@ static pdf_jsimp_obj *app_alert(void *jsctx, void *obj, int argc, pdf_jsimp_obj 
 
 static pdf_jsimp_obj *app_execDialog(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
 {
+	pdf_js *js = (pdf_js *)jsctx;
+
+	pdf_event_issue_exec_dialog(js->doc);
+
 	return NULL;
 }
 

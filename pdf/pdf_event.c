@@ -69,6 +69,16 @@ void pdf_event_issue_exec_menu_item(pdf_document *doc, char *item)
 	}
 }
 
+void pdf_event_issue_exec_dialog(pdf_document *doc)
+{
+	fz_doc_event e;
+
+	e.type = FZ_DOCUMENT_EVENT_EXEC_DIALOG;
+
+	if (doc->event_cb)
+		doc->event_cb(&e, doc->event_cb_data);
+}
+
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *fn, void *data)
 {
 	doc->event_cb = fn;
