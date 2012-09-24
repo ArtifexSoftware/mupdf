@@ -10,9 +10,15 @@ TAGS
 win32/*.user
 win32/*.ncb
 win32/*.suo
+win32/Debug
+win32/Release
+win32/Memento
 android/obj
 android/bin
 android/libs
 android/gen
 android/local.properties
+android/.classpath
+android/.project
+android/.settings
 doc/source
