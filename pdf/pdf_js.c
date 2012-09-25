@@ -99,6 +99,26 @@ static pdf_jsimp_obj *app_alert(void *jsctx, void *obj, int argc, pdf_jsimp_obj 
 	return nButton_obj;
 }
 
+static pdf_jsimp_obj *app_execDialog(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	return NULL;
+}
+
+static pdf_jsimp_obj *app_execMenuItem(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	pdf_js *js = (pdf_js *)jsctx;
+
+	if (argc == 1)
+		pdf_event_issue_exec_menu_item(js->doc, pdf_jsimp_to_string(js->imp, args[0]));
+
+	return NULL;
+}
+
+static pdf_jsimp_obj *app_launchURL(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
+{
+	return NULL;
+}
+
 static pdf_obj *load_color(fz_context *ctx, pdf_jsimp *imp, pdf_jsimp_obj *val)
 {
 	pdf_obj *col = NULL;
@@ -559,6 +579,9 @@ static void declare_dom(pdf_js *js)
 	/* Create the app type */
 	js->apptype = pdf_jsimp_new_type(imp, NULL);
 	pdf_jsimp_addmethod(imp, js->apptype, "alert", app_alert);
+	pdf_jsimp_addmethod(imp, js->apptype, "execDialog", app_execDialog);
+	pdf_jsimp_addmethod(imp, js->apptype, "execMenuItem", app_execMenuItem);
+	pdf_jsimp_addmethod(imp, js->apptype, "launchURL", app_launchURL);
 
 	/* Create the document object and tell the engine to use */
 	pdf_jsimp_set_global_type(js->imp, js->doctype);

@@ -114,8 +114,20 @@ static void event_cb(fz_doc_event *event, void *data)
 			winalert(app, alert);
 		}
 		break;
+
 	case FZ_DOCUMENT_EVENT_PRINT:
 		winprint(app);
+		break;
+
+	case FZ_DOCUMENT_EVENT_EXEC_MENU_ITEM:
+		{
+			char *item = fz_access_exec_menu_item_event(event);
+
+			if (!strcmp(item, "Print"))
+				winprint(app);
+			else
+				pdfapp_warn(app, "The document attempted to execute menu item: %s. (Not supported)", item);
+		}
 		break;
 	}
 }

@@ -2575,7 +2575,8 @@ enum
 	FZ_DOCUMENT_EVENT_PRINT,
 	FZ_DOCUMENT_EVENT_LAUNCH_URL,
 	FZ_DOCUMENT_EVENT_MAIL_DOC,
-	FZ_DOCUMENT_EVENT_SUBMIT
+	FZ_DOCUMENT_EVENT_SUBMIT,
+	FZ_DOCUMENT_EVENT_EXEC_MENU_ITEM
 };
 
 /*
@@ -2647,6 +2648,12 @@ enum
 	caller.
 */
 fz_alert_event *fz_access_alert_event(fz_doc_event *event);
+
+/*
+	fz_access_exec_menu_item_event: access the details of am execMenuItem
+	event, which consists of just the name of the menu item
+*/
+char *fz_access_exec_menu_item_event(fz_doc_event *event);
 
 /*
 	fz_submit_event: details of a submit event. The app should submit
