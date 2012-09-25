@@ -674,7 +674,8 @@ enum
 	JS_TYPE_NULL,
 	JS_TYPE_STRING,
 	JS_TYPE_NUMBER,
-	JS_TYPE_ARRAY
+	JS_TYPE_ARRAY,
+	JS_TYPE_BOOLEAN
 };
 
 pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx);
