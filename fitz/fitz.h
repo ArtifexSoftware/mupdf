@@ -2693,6 +2693,26 @@ typedef struct
 */
 fz_launch_url_event *fz_access_launch_url_event(fz_doc_event *event);
 
+/*
+	fz_mail_doc_event: details of a mail_doc event. The app should save
+	the current state of the document and email it using the specified
+	parameters.
+*/
+typedef struct
+{
+	int ask_user;
+	char *to;
+	char *cc;
+	char *bcc;
+	char *subject;
+	char *message;
+} fz_mail_doc_event;
+
+/*
+	fz_acccess_mail_doc_event: access the details of a mail-doc event.
+*/
+fz_mail_doc_event *fz_access_mail_doc_event(fz_doc_event *event);
+
 typedef struct fz_write_options_s fz_write_options;
 
 /*

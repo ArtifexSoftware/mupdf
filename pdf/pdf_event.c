@@ -108,6 +108,35 @@ void pdf_event_issue_launch_url(pdf_document *doc, char *url, int new_frame)
 	}
 }
 
+typedef struct
+{
+	fz_doc_event base;
+	fz_mail_doc_event mail_doc;
+} fz_mail_doc_event_internal;
+
+fz_mail_doc_event *fz_access_mail_doc_event(fz_doc_event *event)
+{
+	fz_mail_doc_event *mail_doc = NULL;
+
+	if (event->type == FZ_DOCUMENT_EVENT_MAIL_DOC)
+		mail_doc = &((fz_mail_doc_event_internal *)event)->mail_doc;
+
+	return mail_doc;
+}
+
+void pdf_event_issue_mail_doc(pdf_document *doc, fz_mail_doc_event *event)
+{
+	if (doc->event_cb)
+	{
+		fz_mail_doc_event_internal e;
+
+		e.base.type = FZ_DOCUMENT_EVENT_MAIL_DOC;
+		e.mail_doc = *event;
+
+		doc->event_cb((fz_doc_event *)&e, doc->event_cb_data);
+	}
+}
+
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *fn, void *data)
 {
 	doc->event_cb = fn;
