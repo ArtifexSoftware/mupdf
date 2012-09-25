@@ -636,6 +636,7 @@ void pdf_event_issue_alert(pdf_document *doc, fz_alert_event *event);
 void pdf_event_issue_print(pdf_document *doc);
 void pdf_event_issue_exec_menu_item(pdf_document *doc, char *item);
 void pdf_event_issue_exec_dialog(pdf_document *doc);
+void pdf_event_issue_launch_url(pdf_document *doc, char *url, int new_frame);
 
 /*
  * Javascript handler

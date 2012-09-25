@@ -2676,6 +2676,23 @@ typedef struct
 */
 fz_submit_event *fz_access_submit_event(fz_doc_event *event);
 
+/*
+	fz_launch_url_event: details of a launch-url event. The app should
+	open the url, either in a new frame or in the current window.
+*/
+typedef struct
+{
+	char *url;
+	int new_frame;
+} fz_launch_url_event;
+
+/*
+	fz_access_launch_url_event: access the details of a launch-url
+	event. The returned pointer and all data referred to by the structure
+	are owned by mupdf and need not be freed by the caller.
+*/
+fz_launch_url_event *fz_access_launch_url_event(fz_doc_event *event);
+
 typedef struct fz_write_options_s fz_write_options;
 
 /*

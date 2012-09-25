@@ -120,6 +120,22 @@ static pdf_jsimp_obj *app_execMenuItem(void *jsctx, void *obj, int argc, pdf_jsi
 
 static pdf_jsimp_obj *app_launchURL(void *jsctx, void *obj, int argc, pdf_jsimp_obj *args[])
 {
+	pdf_js *js = (pdf_js *)jsctx;
+	char *cUrl;
+	int bNewFrame = 0;
+
+	switch(argc)
+	{
+	default:
+		return NULL;
+	case 2:
+		bNewFrame = (int)pdf_jsimp_to_number(js->imp, args[1]);
+	case 1:
+		cUrl = pdf_jsimp_to_string(js->imp, args[0]);
+	}
+
+	pdf_event_issue_launch_url(js->doc, cUrl, bNewFrame);
+
 	return NULL;
 }
 

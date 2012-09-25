@@ -79,6 +79,35 @@ void pdf_event_issue_exec_dialog(pdf_document *doc)
 		doc->event_cb(&e, doc->event_cb_data);
 }
 
+typedef struct
+{
+	fz_doc_event base;
+	fz_launch_url_event launch_url;
+} fz_launch_url_event_internal;
+
+fz_launch_url_event *fz_access_launch_url_event(fz_doc_event *event)
+{
+	fz_launch_url_event *launch_url = NULL;
+
+	if (event->type == FZ_DOCUMENT_EVENT_LAUNCH_URL)
+		launch_url = &((fz_launch_url_event_internal *)event)->launch_url;
+
+	return launch_url;
+}
+
+void pdf_event_issue_launch_url(pdf_document *doc, char *url, int new_frame)
+{
+	if (doc->event_cb)
+	{
+		fz_launch_url_event_internal e;
+
+		e.base.type = FZ_DOCUMENT_EVENT_LAUNCH_URL;
+		e.launch_url.url = url;
+		e.launch_url.new_frame = new_frame;
+		doc->event_cb((fz_doc_event *)&e, doc->event_cb_data);
+	}
+}
+
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *fn, void *data)
 {
 	doc->event_cb = fn;

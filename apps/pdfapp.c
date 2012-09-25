@@ -133,6 +133,14 @@ static void event_cb(fz_doc_event *event, void *data)
 	case FZ_DOCUMENT_EVENT_EXEC_DIALOG:
 		pdfapp_warn(app, "The document attempted to open a dialog box. (Not supported)");
 		break;
+
+	case FZ_DOCUMENT_EVENT_LAUNCH_URL:
+		{
+			fz_launch_url_event *launch_url = fz_access_launch_url_event(event);
+
+			pdfapp_warn(app, "The document attempted to open url: %s. (Not supported by app)", launch_url->url);
+		}
+		break;
 	}
 }
 
