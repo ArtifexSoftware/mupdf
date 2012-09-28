@@ -500,12 +500,12 @@ fz_paint_linear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 	fz_point e0, e1;
 	float theta;
 
-	p0.x = shade->mesh[0];
-	p0.y = shade->mesh[1];
+	p0.x = shade->u.a_or_r.coords[0][0];
+	p0.y = shade->u.a_or_r.coords[0][1];
 	p0 = fz_transform_point(ctm, p0);
 
-	p1.x = shade->mesh[3];
-	p1.y = shade->mesh[4];
+	p1.x = shade->u.a_or_r.coords[1][0];
+	p1.y = shade->u.a_or_r.coords[1][1];
 	p1 = fz_transform_point(ctm, p1);
 
 	theta = my_atan2f(p1.y - p0.y, p1.x - p0.x);
@@ -518,7 +518,7 @@ fz_paint_linear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 
 	fz_paint_quad(dest, v0, v1, v2, v3, 0, 255, 0, 255, 3, bbox);
 
-	if (shade->extend[0])
+	if (shade->u.a_or_r.extend[0])
 	{
 		e0.x = v0.x - (p1.x - p0.x) * HUGENUM;
 		e0.y = v0.y - (p1.y - p0.y) * HUGENUM;
@@ -529,7 +529,7 @@ fz_paint_linear(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 		fz_paint_quad(dest, e0, e1, v0, v2, 0, 0, 0, 0, 3, bbox);
 	}
 
-	if (shade->extend[1])
+	if (shade->u.a_or_r.extend[1])
 	{
 		e0.x = v1.x + (p1.x - p0.x) * HUGENUM;
 		e0.y = v1.y + (p1.y - p0.y) * HUGENUM;
@@ -587,15 +587,15 @@ fz_paint_radial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 	fz_point e;
 	float er, rs;
 
-	p0.x = shade->mesh[0];
-	p0.y = shade->mesh[1];
-	r0 = shade->mesh[2];
+	p0.x = shade->u.a_or_r.coords[0][0];
+	p0.y = shade->u.a_or_r.coords[0][1];
+	r0 = shade->u.a_or_r.coords[0][2];
 
-	p1.x = shade->mesh[3];
-	p1.y = shade->mesh[4];
-	r1 = shade->mesh[5];
+	p1.x = shade->u.a_or_r.coords[1][0];
+	p1.y = shade->u.a_or_r.coords[1][1];
+	r1 = shade->u.a_or_r.coords[1][2];
 
-	if (shade->extend[0])
+	if (shade->u.a_or_r.extend[0])
 	{
 		if (r0 < r1)
 			rs = r0 / (r0 - r1);
@@ -611,7 +611,7 @@ fz_paint_radial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 
 	fz_paint_annulus(ctm, p0, r0, 0, p1, r1, 255, dest, bbox);
 
-	if (shade->extend[1])
+	if (shade->u.a_or_r.extend[1])
 	{
 		if (r0 > r1)
 			rs = r1 / (r1 - r0);
@@ -626,43 +626,50 @@ fz_paint_radial(fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 	}
 }
 
-static void
-fz_paint_mesh(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
+struct paint_tri_data
 {
-	float tri[3][MAXN];
-	fz_point p;
-	float *mesh;
-	int ntris;
+	fz_context *ctx;
+	fz_shade *shade;
+	fz_pixmap *dest;
+	fz_bbox bbox;
+};
+
+static void
+do_paint_tri(void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv)
+{
+	struct paint_tri_data *ptd = (struct paint_tri_data *)arg;
 	int i, k;
+	fz_vertex *vertices[3];
+	fz_vertex *v;
+	float *ltri;
+	fz_context *ctx;
+	fz_shade *shade;
+	fz_pixmap *dest;
+	float local[3][MAXN];
 
-	mesh = shade->mesh;
+	vertices[0] = av;
+	vertices[1] = bv;
+	vertices[2] = cv;
 
-	if (shade->use_function)
-		ntris = shade->mesh_len / 9;
-	else
-		ntris = shade->mesh_len / ((2 + shade->colorspace->n) * 3);
-
-	while (ntris--)
+	dest = ptd->dest;
+	ctx = ptd->ctx;
+	shade = ptd->shade;
+	for (k = 0; k < 3; k++)
 	{
-		for (k = 0; k < 3; k++)
+		v = vertices[k];
+		ltri = &local[k][0];
+		ltri[0] = v->p.x;
+		ltri[1] = v->p.y;
+		if (shade->use_function)
+			ltri[2] = v->c[0] * 255;
+		else
 		{
-			p.x = *mesh++;
-			p.y = *mesh++;
-			p = fz_transform_point(ctm, p);
-			tri[k][0] = p.x;
-			tri[k][1] = p.y;
-			if (shade->use_function)
-				tri[k][2] = *mesh++ * 255;
-			else
-			{
-				fz_convert_color(ctx, dest->colorspace, tri[k] + 2, shade->colorspace, mesh);
-				for (i = 0; i < dest->colorspace->n; i++)
-					tri[k][i + 2] *= 255;
-				mesh += shade->colorspace->n;
-			}
+			fz_convert_color(ctx, dest->colorspace, &ltri[2], shade->colorspace, v->c);
+			for (i = 0; i < dest->colorspace->n; i++)
+				ltri[i + 2] *= 255;
 		}
-		fz_paint_triangle(dest, tri[0], tri[1], tri[2], 2 + dest->colorspace->n, bbox);
 	}
+	fz_paint_triangle(dest, local[0], local[1], local[2], 2 + dest->colorspace->n, ptd->bbox);
 }
 
 void
@@ -703,7 +710,16 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest,
 		{
 		case FZ_LINEAR: fz_paint_linear(shade, ctm, temp, bbox); break;
 		case FZ_RADIAL: fz_paint_radial(shade, ctm, temp, bbox); break;
-		case FZ_MESH: fz_paint_mesh(ctx, shade, ctm, temp, bbox); break;
+		default:
+		{
+			struct paint_tri_data ptd;
+			ptd.ctx = ctx;
+			ptd.dest = temp;
+			ptd.shade = shade;
+			ptd.bbox = bbox;
+			fz_process_mesh(ctx, shade, ctm, &do_paint_tri, &ptd);
+			break;
+		}
 		}
 
 		if (shade->use_function)
