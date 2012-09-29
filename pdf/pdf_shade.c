@@ -190,6 +190,7 @@ struct mesh_params
 static void
 pdf_load_mesh_params(fz_shade *shade, pdf_document *xref, pdf_obj *dict)
 {
+	fz_context *ctx = xref->ctx;
 	pdf_obj *obj;
 	int i, n;
 
@@ -221,20 +222,33 @@ pdf_load_mesh_params(fz_shade *shade, pdf_document *xref, pdf_obj *dict)
 		}
 	}
 
-	if (shade->u.m.vprow < 2)
+	if (shade->u.m.vprow < 2 && shade->type == 5)
+	{
+		fz_warn(ctx, "Too few vertices per row (%d)", shade->u.m.vprow);
 		shade->u.m.vprow = 2;
+	}
 
-	if (shade->u.m.bpflag != 2 && shade->u.m.bpflag != 4 && shade->u.m.bpflag != 8)
+	if (shade->u.m.bpflag != 2 && shade->u.m.bpflag != 4 && shade->u.m.bpflag != 8 &&
+		shade->type != 5)
+	{
+		fz_warn(ctx, "Invalid number of bits per flag (%d)", shade->u.m.bpflag);
 		shade->u.m.bpflag = 8;
+	}
 
 	if (shade->u.m.bpcoord != 1 && shade->u.m.bpcoord != 2 && shade->u.m.bpcoord != 4 &&
 		shade->u.m.bpcoord != 8 && shade->u.m.bpcoord != 12 && shade->u.m.bpcoord != 16 &&
 		shade->u.m.bpcoord != 24 && shade->u.m.bpcoord != 32)
+	{
+		fz_warn(ctx, "Invalid number of bits per coordinate (%d)", shade->u.m.bpcoord);
 		shade->u.m.bpcoord = 8;
+	}
 
 	if (shade->u.m.bpcomp != 1 && shade->u.m.bpcomp != 2 && shade->u.m.bpcomp != 4 &&
 		shade->u.m.bpcomp != 8 && shade->u.m.bpcomp != 12 && shade->u.m.bpcomp != 16)
+	{
+		fz_warn(ctx, "Invalid number of bits per component (%d)", shade->u.m.bpcomp);
 		shade->u.m.bpcomp = 8;
+	}
 }
 
 static void
