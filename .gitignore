@@ -4,6 +4,9 @@ build
 DerivedData
 generated
 cscope.*
+*.pdf
+*.pnm
+*.png
 tags
 TAGS
 win32/*.user
