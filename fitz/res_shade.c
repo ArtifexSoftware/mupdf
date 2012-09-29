@@ -12,7 +12,7 @@ static void
 paint_quad(fz_mesh_processor *painter, fz_vertex *v0, fz_vertex *v1, fz_vertex *v2, fz_vertex *v3)
 {
 	painter->process(painter->process_arg, v0, v1, v3);
-	painter->process(painter->process_arg, v1, v3, v2);
+	painter->process(painter->process_arg, v2, v3, v1);
 }
 
 static void
@@ -63,6 +63,179 @@ fz_mesh_type1_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 			SWAP(v,vn);
 		}
 		y = yn;
+	}
+}
+
+/* FIXME: Nasty */
+#define HUGENUM 32000 /* how far to extend axial/radial shadings */
+
+static fz_point
+fz_point_on_circle(fz_point p, float r, float theta)
+{
+	p.x = p.x + cosf(theta) * r;
+	p.y = p.y + sinf(theta) * r;
+
+	return p;
+}
+
+static void
+fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
+{
+	fz_point p0, p1;
+	fz_vertex v0, v1, v2, v3;
+	fz_vertex e0, e1;
+	float theta;
+
+	p0.x = shade->u.a_or_r.coords[0][0];
+	p0.y = shade->u.a_or_r.coords[0][1];
+	p0 = fz_transform_point(ctm, p0);
+
+	p1.x = shade->u.a_or_r.coords[1][0];
+	p1.y = shade->u.a_or_r.coords[1][1];
+	p1 = fz_transform_point(ctm, p1);
+
+	theta = atan2f(p1.y - p0.y, p1.x - p0.x);
+	theta += (float)M_PI * 0.5f;
+
+	v0.p = fz_point_on_circle(p0, HUGENUM, theta);
+	v1.p = fz_point_on_circle(p1, HUGENUM, theta);
+	v2.p = fz_point_on_circle(p0, -HUGENUM, theta);
+	v3.p = fz_point_on_circle(p1, -HUGENUM, theta);
+
+	v0.c[0] = 0;
+	v1.c[0] = 1;
+	v2.c[0] = 0;
+	v3.c[0] = 1;
+
+	paint_quad(painter, &v0, &v2, &v3, &v1);
+
+	if (shade->u.a_or_r.extend[0])
+	{
+		e0.p.x = v0.p.x - (p1.x - p0.x) * HUGENUM;
+		e0.p.y = v0.p.y - (p1.y - p0.y) * HUGENUM;
+
+		e1.p.x = v2.p.x - (p1.x - p0.x) * HUGENUM;
+		e1.p.y = v2.p.y - (p1.y - p0.y) * HUGENUM;
+
+		e0.c[0] = 0;
+		e1.c[0] = 0;
+		v0.c[0] = 0;
+		v2.c[0] = 0;
+
+		paint_quad(painter, &e0, &v0, &v2, &e1);
+	}
+
+	if (shade->u.a_or_r.extend[1])
+	{
+		e0.p.x = v1.p.x + (p1.x - p0.x) * HUGENUM;
+		e0.p.y = v1.p.y + (p1.y - p0.y) * HUGENUM;
+
+		e1.p.x = v3.p.x + (p1.x - p0.x) * HUGENUM;
+		e1.p.y = v3.p.y + (p1.y - p0.y) * HUGENUM;
+
+		e0.c[0] = 1;
+		e1.c[0] = 1;
+		v1.c[0] = 1;
+		v3.c[0] = 1;
+
+		paint_quad(painter, &e0, &v1, &v3, &e1);
+	}
+}
+
+/* FIXME: Nasty */
+#define RADSEGS 32 /* how many segments to generate for radial meshes */
+
+static void
+fz_paint_annulus(fz_matrix ctm,
+		fz_point p0, float r0, float c0,
+		fz_point p1, float r1, float c1,
+		fz_mesh_processor *painter)
+{
+	fz_vertex t0, t1, t2, t3, b0, b1, b2, b3;
+	float theta, step;
+	int i;
+
+	theta = atan2f(p1.y - p0.y, p1.x - p0.x);
+	step = (float)M_PI * 2 / RADSEGS;
+
+	for (i = 0; i < RADSEGS / 2; i++)
+	{
+		t0.p = fz_point_on_circle(p0, r0, theta + i * step);
+		t1.p = fz_point_on_circle(p0, r0, theta + i * step + step);
+		t2.p = fz_point_on_circle(p1, r1, theta + i * step);
+		t3.p = fz_point_on_circle(p1, r1, theta + i * step + step);
+		b0.p = fz_point_on_circle(p0, r0, theta - i * step);
+		b1.p = fz_point_on_circle(p0, r0, theta - i * step - step);
+		b2.p = fz_point_on_circle(p1, r1, theta - i * step);
+		b3.p = fz_point_on_circle(p1, r1, theta - i * step - step);
+
+		t0.p = fz_transform_point(ctm, t0.p);
+		t1.p = fz_transform_point(ctm, t1.p);
+		t2.p = fz_transform_point(ctm, t2.p);
+		t3.p = fz_transform_point(ctm, t3.p);
+		b0.p = fz_transform_point(ctm, b0.p);
+		b1.p = fz_transform_point(ctm, b1.p);
+		b2.p = fz_transform_point(ctm, b2.p);
+		b3.p = fz_transform_point(ctm, b3.p);
+
+		t0.c[0] = c0;
+		t1.c[0] = c0;
+		t2.c[0] = c1;
+		t3.c[0] = c1;
+		b0.c[0] = c0;
+		b1.c[0] = c0;
+		b2.c[0] = c1;
+		b3.c[0] = c1;
+
+		paint_quad(painter, &t0, &t2, &t3, &t1);
+		paint_quad(painter, &b0, &b2, &b3, &b1);
+	}
+}
+
+static void
+fz_mesh_type3_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
+{
+	fz_point p0, p1;
+	float r0, r1;
+	fz_point e;
+	float er, rs;
+
+	p0.x = shade->u.a_or_r.coords[0][0];
+	p0.y = shade->u.a_or_r.coords[0][1];
+	r0 = shade->u.a_or_r.coords[0][2];
+
+	p1.x = shade->u.a_or_r.coords[1][0];
+	p1.y = shade->u.a_or_r.coords[1][1];
+	r1 = shade->u.a_or_r.coords[1][2];
+
+	if (shade->u.a_or_r.extend[0])
+	{
+		if (r0 < r1)
+			rs = r0 / (r0 - r1);
+		else
+			rs = -HUGENUM;
+
+		e.x = p0.x + (p1.x - p0.x) * rs;
+		e.y = p0.y + (p1.y - p0.y) * rs;
+		er = r0 + (r1 - r0) * rs;
+
+		fz_paint_annulus(ctm, e, er, 0, p0, r0, 0, painter);
+	}
+
+	fz_paint_annulus(ctm, p0, r0, 0, p1, r1, 1, painter);
+
+	if (shade->u.a_or_r.extend[1])
+	{
+		if (r0 > r1)
+			rs = r1 / (r1 - r0);
+		else
+			rs = -HUGENUM;
+
+		e.x = p1.x + (p0.x - p1.x) * rs;
+		e.y = p1.y + (p0.y - p1.y) * rs;
+		er = r1 + (r0 - r1) * rs;
+
+		fz_paint_annulus(ctm, p1, r1, 1, e, er, 1, painter);
 	}
 }
 
@@ -738,6 +911,10 @@ fz_process_mesh(fz_context *ctx, fz_shade *shade, fz_matrix ctm,
 
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_mesh_type1_process(ctx, shade, ctm, &painter);
+	else if (shade->type == FZ_LINEAR)
+		fz_mesh_type2_process(ctx, shade, ctm, &painter);
+	else if (shade->type == FZ_RADIAL)
+		fz_mesh_type3_process(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE4)
 		fz_mesh_type4_process(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE5)
