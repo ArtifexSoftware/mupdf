@@ -61,7 +61,7 @@ pdf_load_function_based_shading(fz_shade *shade, pdf_document *xref, pdf_obj *di
 	x0 = y0 = 0;
 	x1 = y1 = 1;
 	obj = pdf_dict_gets(dict, "Domain");
-	if (pdf_array_len(obj) == 4)
+	if (obj)
 	{
 		x0 = pdf_to_real(pdf_array_get(obj, 0));
 		x1 = pdf_to_real(pdf_array_get(obj, 1));
@@ -71,7 +71,7 @@ pdf_load_function_based_shading(fz_shade *shade, pdf_document *xref, pdf_obj *di
 
 	matrix = fz_identity;
 	obj = pdf_dict_gets(dict, "Matrix");
-	if (pdf_array_len(obj) == 6)
+	if (obj)
 		matrix = pdf_to_matrix(ctx, obj);
 	shade->u.f.matrix = matrix;
 	shade->u.f.xdivs = FUNSEGS;
@@ -114,7 +114,7 @@ pdf_load_axial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int f
 	d0 = 0;
 	d1 = 1;
 	obj = pdf_dict_gets(dict, "Domain");
-	if (pdf_array_len(obj) == 2)
+	if (obj)
 	{
 		d0 = pdf_to_real(pdf_array_get(obj, 0));
 		d1 = pdf_to_real(pdf_array_get(obj, 1));
@@ -122,7 +122,7 @@ pdf_load_axial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int f
 
 	e0 = e1 = 0;
 	obj = pdf_dict_gets(dict, "Extend");
-	if (pdf_array_len(obj) == 2)
+	if (obj)
 	{
 		e0 = pdf_to_bool(pdf_array_get(obj, 0));
 		e1 = pdf_to_bool(pdf_array_get(obj, 1));
@@ -153,7 +153,7 @@ pdf_load_radial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int 
 	d0 = 0;
 	d1 = 1;
 	obj = pdf_dict_gets(dict, "Domain");
-	if (pdf_array_len(obj) == 2)
+	if (obj)
 	{
 		d0 = pdf_to_real(pdf_array_get(obj, 0));
 		d1 = pdf_to_real(pdf_array_get(obj, 1));
@@ -161,7 +161,7 @@ pdf_load_radial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int 
 
 	e0 = e1 = 0;
 	obj = pdf_dict_gets(dict, "Extend");
-	if (pdf_array_len(obj) == 2)
+	if (obj)
 	{
 		e0 = pdf_to_bool(pdf_array_get(obj, 0));
 		e1 = pdf_to_bool(pdf_array_get(obj, 1));
