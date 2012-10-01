@@ -249,7 +249,7 @@ static inline float read_sample(fz_stream *stream, int bits, float min, float ma
 static void
 fz_mesh_type4_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
-	fz_stream *stream = fz_open_buffer(ctx, shade->buffer);
+	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex v[4];
 	fz_vertex *va = &v[0];
 	fz_vertex *vb = &v[1];
@@ -328,7 +328,7 @@ fz_mesh_type4_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 static void
 fz_mesh_type5_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
-	fz_stream *stream = fz_open_buffer(ctx, shade->buffer);
+	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex *buf = NULL;
 	fz_vertex *ref = NULL;
 	int first;
@@ -645,7 +645,7 @@ make_tensor_patch(tensor_patch *p, int type, fz_point *pt)
 static void
 fz_mesh_type6_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
-	fz_stream *stream = fz_open_buffer(ctx, shade->buffer);
+	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	int haspatch, hasprevpatch;
 	float prevc[4][FZ_MAX_COLORS];
 	fz_point prevp[12];
@@ -773,7 +773,7 @@ fz_mesh_type6_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 static void
 fz_mesh_type7_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
-	fz_stream *stream = fz_open_buffer(ctx, shade->buffer);
+	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	int bpflag = shade->u.m.bpflag;
 	int bpcoord = shade->u.m.bpcoord;
 	int bpcomp = shade->u.m.bpcomp;
@@ -942,7 +942,7 @@ fz_free_shade_imp(fz_context *ctx, fz_storable *shade_)
 		fz_drop_colorspace(ctx, shade->colorspace);
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_free(ctx, shade->u.f.fn_vals);
-	fz_drop_buffer(ctx, shade->buffer);
+	fz_free_compressed_buffer(ctx, shade->buffer);
 	fz_free(ctx, shade);
 }
 

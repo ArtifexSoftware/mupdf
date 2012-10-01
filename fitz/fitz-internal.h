@@ -697,7 +697,9 @@ fz_bbox fz_pixmap_bbox_no_ctx(fz_pixmap *src);
 typedef struct fz_compression_params_s fz_compression_params;
 
 typedef struct fz_compressed_buffer_s fz_compressed_buffer;
+unsigned int fz_compressed_buffer_size(fz_compressed_buffer *buffer);
 
+fz_stream *fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *fz_open_image_decomp_stream(fz_context *ctx, fz_compressed_buffer *, int *factor);
 
 enum
@@ -1077,7 +1079,7 @@ struct fz_shade_s
 		} f;
 	} u;
 
-	fz_buffer *buffer;
+	fz_compressed_buffer *buffer;
 };
 
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);

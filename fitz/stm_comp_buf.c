@@ -60,9 +60,17 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_compressed_buffer *buffer, int *
 }
 
 fz_stream *
-fz_open_compressed_stream(fz_context *ctx, fz_compressed_buffer *buffer)
+fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buffer)
 {
 	int factor = 1;
 
 	return fz_open_image_decomp_stream(ctx, buffer, &factor);
+}
+
+unsigned int
+fz_compressed_buffer_size(fz_compressed_buffer *buffer)
+{
+	if (!buffer || !buffer->buffer)
+		return 0;
+	return (unsigned int)buffer->buffer->cap;
 }

@@ -256,16 +256,13 @@ pdf_load_type4_shade(fz_shade *shade, pdf_document *xref, pdf_obj *dict,
 	int funcs, pdf_function **func)
 {
 	fz_context *ctx = xref->ctx;
-	fz_stream *stream;
 
 	pdf_load_mesh_params(shade, xref, dict);
 
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	stream = pdf_open_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
-	shade->buffer = fz_read_all(stream, 1024 /* FIXME */);
-	fz_close(stream);
+	shade->buffer = pdf_load_compressed_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
 }
 
 static void
@@ -273,16 +270,13 @@ pdf_load_type5_shade(fz_shade *shade, pdf_document *xref, pdf_obj *dict,
 	int funcs, pdf_function **func)
 {
 	fz_context *ctx = xref->ctx;
-	fz_stream *stream;
 
 	pdf_load_mesh_params(shade, xref, dict);
 
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	stream = pdf_open_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
-	shade->buffer = fz_read_all(stream, 1024 /* FIXME */);
-	fz_close(stream);
+	shade->buffer = pdf_load_compressed_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
 }
 
 /* Type 6 & 7 -- Patch mesh shadings */
@@ -292,16 +286,13 @@ pdf_load_type6_shade(fz_shade *shade, pdf_document *xref, pdf_obj *dict,
 	int funcs, pdf_function **func)
 {
 	fz_context *ctx = xref->ctx;
-	fz_stream *stream;
 
 	pdf_load_mesh_params(shade, xref, dict);
 
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	stream = pdf_open_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
-	shade->buffer = fz_read_all(stream, 1024 /* FIXME */);
-	fz_close(stream);
+	shade->buffer = pdf_load_compressed_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
 }
 
 static void
@@ -309,16 +300,13 @@ pdf_load_type7_shade(fz_shade *shade, pdf_document *xref, pdf_obj *dict,
 	int funcs, pdf_function **func)
 {
 	fz_context *ctx = xref->ctx;
-	fz_stream *stream;
 
 	pdf_load_mesh_params(shade, xref, dict);
 
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	stream = pdf_open_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
-	shade->buffer = fz_read_all(stream, 1024 /* FIXME */);
-	fz_close(stream);
+	shade->buffer = pdf_load_compressed_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
 }
 
 /* Load all of the shading dictionary parameters, then switch on the shading type. */
@@ -445,9 +433,9 @@ fz_shade_size(fz_shade *s)
 {
 	if (s == NULL)
 		return 0;
-	if (s->type != 1)
-		return sizeof(*s);
-	return sizeof(*s) + sizeof(float) * s->u.f.xdivs * s->u.f.ydivs * s->colorspace->n;
+	if (s->type == FZ_FUNCTION_BASED)
+		return sizeof(*s) + sizeof(float) * s->u.f.xdivs * s->u.f.ydivs * s->colorspace->n;
+	return sizeof(*s) + fz_compressed_buffer_size(s->buffer);
 }
 
 fz_shade *
