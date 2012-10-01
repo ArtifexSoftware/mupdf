@@ -225,13 +225,7 @@ void pdf_print_crypt(pdf_crypt *crypt);
  * Functions, Colorspaces, Shadings and Images
  */
 
-typedef struct pdf_function_s pdf_function;
-
-pdf_function *pdf_load_function(pdf_document *doc, pdf_obj *ref, int in, int out);
-void pdf_eval_function(fz_context *ctx, pdf_function *func, float *in, int inlen, float *out, int outlen);
-pdf_function *pdf_keep_function(fz_context *ctx, pdf_function *func);
-void pdf_drop_function(fz_context *ctx, pdf_function *func);
-unsigned int pdf_function_size(pdf_function *func);
+fz_function *pdf_load_function(pdf_document *doc, pdf_obj *ref, int in, int out);
 
 fz_colorspace *pdf_load_colorspace(pdf_document *doc, pdf_obj *obj);
 fz_pixmap *pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);

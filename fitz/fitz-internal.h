@@ -1274,6 +1274,38 @@ fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
 void fz_print_text(fz_context *ctx, FILE *out, fz_text*);
 
 /*
+ * The generic function support.
+ */
+
+typedef struct fz_function_s fz_function;
+
+void fz_eval_function(fz_context *ctx, fz_function *func, float *in, int inlen, float *out, int outlen);
+fz_function *fz_keep_function(fz_context *ctx, fz_function *func);
+void fz_drop_function(fz_context *ctx, fz_function *func);
+unsigned int fz_function_size(fz_function *func);
+#ifndef DEBUG
+void pdf_debug_function(fz_function *func);
+#endif
+
+enum
+{
+	FZ_FN_MAXN = FZ_MAX_COLORS,
+	FZ_FN_MAXM = FZ_MAX_COLORS
+};
+
+struct fz_function_s
+{
+	fz_storable storable;
+	unsigned int size;
+	int m;					/* number of input values */
+	int n;					/* number of output values */
+	void (*evaluate)(fz_context *ctx, fz_function *func, float *in, float *out);
+#ifndef NDEBUG
+	void (*debug)(fz_function *func);
+#endif
+};
+
+/*
  * The shading code uses gouraud shaded triangle meshes.
  */
 
