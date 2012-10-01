@@ -982,14 +982,14 @@ struct fz_shade_s
 	int use_function;
 	float function[256][FZ_MAX_COLORS + 1];
 
-	int type; /* function, axial, radial, mesh */
+	int type; /* function, linear, radial, mesh */
 	union
 	{
 		struct
 		{
 			int extend[2];
 			float coords[2][3]; /* (x,y,r) twice */
-		} a_or_r;
+		} l_or_r;
 		struct
 		{
 			int vprow;

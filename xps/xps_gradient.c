@@ -219,17 +219,17 @@ xps_draw_one_radial_gradient(xps_document *doc, fz_matrix ctm,
 	shade->use_background = 0;
 	shade->use_function = 1;
 	shade->type = FZ_RADIAL;
-	shade->u.a_or_r.extend[0] = extend;
-	shade->u.a_or_r.extend[1] = extend;
+	shade->u.l_or_r.extend[0] = extend;
+	shade->u.l_or_r.extend[1] = extend;
 
 	xps_sample_gradient_stops(shade, stops, count);
 
-	shade->u.a_or_r.coords[0][0] = x0;
-	shade->u.a_or_r.coords[0][1] = y0;
-	shade->u.a_or_r.coords[0][2] = r0;
-	shade->u.a_or_r.coords[1][0] = x1;
-	shade->u.a_or_r.coords[1][1] = y1;
-	shade->u.a_or_r.coords[1][2] = r1;
+	shade->u.l_or_r.coords[0][0] = x0;
+	shade->u.l_or_r.coords[0][1] = y0;
+	shade->u.l_or_r.coords[0][2] = r0;
+	shade->u.l_or_r.coords[1][0] = x1;
+	shade->u.l_or_r.coords[1][1] = y1;
+	shade->u.l_or_r.coords[1][2] = r1;
 
 	fz_fill_shade(doc->dev, shade, ctm, 1);
 
@@ -237,7 +237,7 @@ xps_draw_one_radial_gradient(xps_document *doc, fz_matrix ctm,
 }
 
 /*
- * Linear gradients map to Axial shadings.
+ * Linear gradients.
  */
 
 static void
@@ -257,17 +257,17 @@ xps_draw_one_linear_gradient(xps_document *doc, fz_matrix ctm,
 	shade->use_background = 0;
 	shade->use_function = 1;
 	shade->type = FZ_LINEAR;
-	shade->u.a_or_r.extend[0] = extend;
-	shade->u.a_or_r.extend[1] = extend;
+	shade->u.l_or_r.extend[0] = extend;
+	shade->u.l_or_r.extend[1] = extend;
 
 	xps_sample_gradient_stops(shade, stops, count);
 
-	shade->u.a_or_r.coords[0][0] = x0;
-	shade->u.a_or_r.coords[0][1] = y0;
-	shade->u.a_or_r.coords[0][2] = 0;
-	shade->u.a_or_r.coords[1][0] = x1;
-	shade->u.a_or_r.coords[1][1] = y1;
-	shade->u.a_or_r.coords[1][2] = 0;
+	shade->u.l_or_r.coords[0][0] = x0;
+	shade->u.l_or_r.coords[0][1] = y0;
+	shade->u.l_or_r.coords[0][2] = 0;
+	shade->u.l_or_r.coords[1][0] = x1;
+	shade->u.l_or_r.coords[1][1] = y1;
+	shade->u.l_or_r.coords[1][2] = 0;
 
 	fz_fill_shade(doc->dev, shade, ctm, doc->opacity[doc->opacity_top]);
 

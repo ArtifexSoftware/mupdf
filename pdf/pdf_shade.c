@@ -45,7 +45,7 @@ pdf_sample_shade_function(fz_context *ctx, fz_shade *shade, int funcs, pdf_funct
 		pdf_sample_component_shade_function(ctx, shade, funcs, func, t0, t1);
 }
 
-/* Type 1-3 -- Function-based, axial and radial shadings */
+/* Type 1-3 -- Function-based, linear and radial shadings */
 
 static void
 pdf_load_function_based_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, pdf_function *func)
@@ -98,7 +98,7 @@ pdf_load_function_based_shading(fz_shade *shade, pdf_document *xref, pdf_obj *di
 }
 
 static void
-pdf_load_axial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int funcs, pdf_function **func)
+pdf_load_linear_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int funcs, pdf_function **func)
 {
 	pdf_obj *obj;
 	float d0, d1;
@@ -106,10 +106,10 @@ pdf_load_axial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int f
 	fz_context *ctx = xref->ctx;
 
 	obj = pdf_dict_gets(dict, "Coords");
-	shade->u.a_or_r.coords[0][0] = pdf_to_real(pdf_array_get(obj, 0));
-	shade->u.a_or_r.coords[0][1] = pdf_to_real(pdf_array_get(obj, 1));
-	shade->u.a_or_r.coords[1][0] = pdf_to_real(pdf_array_get(obj, 2));
-	shade->u.a_or_r.coords[1][1] = pdf_to_real(pdf_array_get(obj, 3));
+	shade->u.l_or_r.coords[0][0] = pdf_to_real(pdf_array_get(obj, 0));
+	shade->u.l_or_r.coords[0][1] = pdf_to_real(pdf_array_get(obj, 1));
+	shade->u.l_or_r.coords[1][0] = pdf_to_real(pdf_array_get(obj, 2));
+	shade->u.l_or_r.coords[1][1] = pdf_to_real(pdf_array_get(obj, 3));
 
 	d0 = 0;
 	d1 = 1;
@@ -130,8 +130,8 @@ pdf_load_axial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int f
 
 	pdf_sample_shade_function(ctx, shade, funcs, func, d0, d1);
 
-	shade->u.a_or_r.extend[0] = e0;
-	shade->u.a_or_r.extend[1] = e1;
+	shade->u.l_or_r.extend[0] = e0;
+	shade->u.l_or_r.extend[1] = e1;
 }
 
 static void
@@ -143,12 +143,12 @@ pdf_load_radial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int 
 	fz_context *ctx = xref->ctx;
 
 	obj = pdf_dict_gets(dict, "Coords");
-	shade->u.a_or_r.coords[0][0] = pdf_to_real(pdf_array_get(obj, 0));
-	shade->u.a_or_r.coords[0][1] = pdf_to_real(pdf_array_get(obj, 1));
-	shade->u.a_or_r.coords[0][2] = pdf_to_real(pdf_array_get(obj, 2));
-	shade->u.a_or_r.coords[1][0] = pdf_to_real(pdf_array_get(obj, 3));
-	shade->u.a_or_r.coords[1][1] = pdf_to_real(pdf_array_get(obj, 4));
-	shade->u.a_or_r.coords[1][2] = pdf_to_real(pdf_array_get(obj, 5));
+	shade->u.l_or_r.coords[0][0] = pdf_to_real(pdf_array_get(obj, 0));
+	shade->u.l_or_r.coords[0][1] = pdf_to_real(pdf_array_get(obj, 1));
+	shade->u.l_or_r.coords[0][2] = pdf_to_real(pdf_array_get(obj, 2));
+	shade->u.l_or_r.coords[1][0] = pdf_to_real(pdf_array_get(obj, 3));
+	shade->u.l_or_r.coords[1][1] = pdf_to_real(pdf_array_get(obj, 4));
+	shade->u.l_or_r.coords[1][2] = pdf_to_real(pdf_array_get(obj, 5));
 
 	d0 = 0;
 	d1 = 1;
@@ -169,8 +169,8 @@ pdf_load_radial_shading(fz_shade *shade, pdf_document *xref, pdf_obj *dict, int 
 
 	pdf_sample_shade_function(ctx, shade, funcs, func, d0, d1);
 
-	shade->u.a_or_r.extend[0] = e0;
-	shade->u.a_or_r.extend[1] = e1;
+	shade->u.l_or_r.extend[0] = e0;
+	shade->u.l_or_r.extend[1] = e1;
 }
 
 /* Type 4-7 -- Triangle and patch mesh shadings */
@@ -414,7 +414,7 @@ pdf_load_shading_dict(pdf_document *xref, pdf_obj *dict, fz_matrix transform)
 		switch (type)
 		{
 		case 1: pdf_load_function_based_shading(shade, xref, dict, func[0]); break;
-		case 2: pdf_load_axial_shading(shade, xref, dict, funcs, func); break;
+		case 2: pdf_load_linear_shading(shade, xref, dict, funcs, func); break;
 		case 3: pdf_load_radial_shading(shade, xref, dict, funcs, func); break;
 		case 4: pdf_load_type4_shade(shade, xref, dict, funcs, func); break;
 		case 5: pdf_load_type5_shade(shade, xref, dict, funcs, func); break;

@@ -67,7 +67,7 @@ fz_mesh_type1_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 }
 
 /* FIXME: Nasty */
-#define HUGENUM 32000 /* how far to extend axial/radial shadings */
+#define HUGENUM 32000 /* how far to extend linear/radial shadings */
 
 static fz_point
 fz_point_on_circle(fz_point p, float r, float theta)
@@ -86,12 +86,12 @@ fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 	fz_vertex e0, e1;
 	float theta;
 
-	p0.x = shade->u.a_or_r.coords[0][0];
-	p0.y = shade->u.a_or_r.coords[0][1];
+	p0.x = shade->u.l_or_r.coords[0][0];
+	p0.y = shade->u.l_or_r.coords[0][1];
 	p0 = fz_transform_point(ctm, p0);
 
-	p1.x = shade->u.a_or_r.coords[1][0];
-	p1.y = shade->u.a_or_r.coords[1][1];
+	p1.x = shade->u.l_or_r.coords[1][0];
+	p1.y = shade->u.l_or_r.coords[1][1];
 	p1 = fz_transform_point(ctm, p1);
 
 	theta = atan2f(p1.y - p0.y, p1.x - p0.x);
@@ -109,7 +109,7 @@ fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 
 	paint_quad(painter, &v0, &v2, &v3, &v1);
 
-	if (shade->u.a_or_r.extend[0])
+	if (shade->u.l_or_r.extend[0])
 	{
 		e0.p.x = v0.p.x - (p1.x - p0.x) * HUGENUM;
 		e0.p.y = v0.p.y - (p1.y - p0.y) * HUGENUM;
@@ -125,7 +125,7 @@ fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 		paint_quad(painter, &e0, &v0, &v2, &e1);
 	}
 
-	if (shade->u.a_or_r.extend[1])
+	if (shade->u.l_or_r.extend[1])
 	{
 		e0.p.x = v1.p.x + (p1.x - p0.x) * HUGENUM;
 		e0.p.y = v1.p.y + (p1.y - p0.y) * HUGENUM;
@@ -200,15 +200,15 @@ fz_mesh_type3_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 	fz_point e;
 	float er, rs;
 
-	p0.x = shade->u.a_or_r.coords[0][0];
-	p0.y = shade->u.a_or_r.coords[0][1];
-	r0 = shade->u.a_or_r.coords[0][2];
+	p0.x = shade->u.l_or_r.coords[0][0];
+	p0.y = shade->u.l_or_r.coords[0][1];
+	r0 = shade->u.l_or_r.coords[0][2];
 
-	p1.x = shade->u.a_or_r.coords[1][0];
-	p1.y = shade->u.a_or_r.coords[1][1];
-	r1 = shade->u.a_or_r.coords[1][2];
+	p1.x = shade->u.l_or_r.coords[1][0];
+	p1.y = shade->u.l_or_r.coords[1][1];
+	r1 = shade->u.l_or_r.coords[1][2];
 
-	if (shade->u.a_or_r.extend[0])
+	if (shade->u.l_or_r.extend[0])
 	{
 		if (r0 < r1)
 			rs = r0 / (r0 - r1);
@@ -224,7 +224,7 @@ fz_mesh_type3_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_p
 
 	fz_paint_annulus(ctm, p0, r0, 0, p1, r1, 1, painter);
 
-	if (shade->u.a_or_r.extend[1])
+	if (shade->u.l_or_r.extend[1])
 	{
 		if (r0 > r1)
 			rs = r1 / (r1 - r0);
