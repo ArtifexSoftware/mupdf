@@ -217,7 +217,7 @@ static inline float my_atan2f(float o, float a)
 
 #define sinf(x) my_sinf(x)
 #define cosf(x) my_sinf(((float)(M_PI/2.0f)) + (x))
-#define atin2f(x,y) my_atan2f((x),(y))
+#define atan2f(x,y) my_atan2f((x),(y))
 #endif
 
 /* Range checking atof */
