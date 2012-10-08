@@ -338,14 +338,14 @@ void fz_sha512_update(fz_sha512 *context, const unsigned char *input, unsigned i
 	}
 }
 
-void fz_sha512_final(fz_sha512 *context, unsigned char digest[128])
+void fz_sha512_final(fz_sha512 *context, unsigned char digest[64])
 {
 	/* Add padding as described in RFC 3174 (it describes SHA-1 but
 	 * the same padding style is used for SHA-512 too). */
 	unsigned int j = context->count[0] & 0x7F;
 	context->buffer.u8[j++] = 0x80;
 
-	while (j != 120)
+	while (j != 112)
 	{
 		if (j == 128)
 		{
@@ -363,7 +363,7 @@ void fz_sha512_final(fz_sha512 *context, unsigned char digest[128])
 	context->buffer.u64[15] = bswap64(context->count[0]);
 	transform512(context->state, context->buffer.u64);
 
-	for (j = 0; j < 16; j++)
+	for (j = 0; j < 8; j++)
 		((uint64_t *)digest)[j] = bswap64(context->state[j]);
 	memset(context, 0, sizeof(fz_sha512));
 }
@@ -387,7 +387,7 @@ void fz_sha384_update(fz_sha384 *context, const unsigned char *input, unsigned i
 	fz_sha512_update(context, input, inlen);
 }
 
-void fz_sha384_final(fz_sha384 *context, unsigned char digest[48])
+void fz_sha384_final(fz_sha384 *context, unsigned char digest[64])
 {
 	fz_sha512_final(context, digest);
 }

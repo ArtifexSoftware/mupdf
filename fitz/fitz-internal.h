@@ -331,7 +331,7 @@ struct fz_sha512_s
 
 void fz_sha512_init(fz_sha512 *state);
 void fz_sha512_update(fz_sha512 *state, const unsigned char *input, unsigned int inlen);
-void fz_sha512_final(fz_sha512 *state, unsigned char digest[32]);
+void fz_sha512_final(fz_sha512 *state, unsigned char digest[64]);
 
 /* sha-384 digests */
 
@@ -339,7 +339,7 @@ typedef struct fz_sha512_s fz_sha384;
 
 void fz_sha384_init(fz_sha384 *state);
 void fz_sha384_update(fz_sha384 *state, const unsigned char *input, unsigned int inlen);
-void fz_sha384_final(fz_sha384 *state, unsigned char digest[32]);
+void fz_sha384_final(fz_sha384 *state, unsigned char digest[64]);
 
 /* arc4 crypto */
 
