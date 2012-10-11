@@ -51,6 +51,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/fitz/doc_document.c \
 	$(MY_ROOT)/fitz/doc_link.c \
 	$(MY_ROOT)/fitz/doc_outline.c \
+	$(MY_ROOT)/fitz/doc_interactive.c \
 	$(MY_ROOT)/fitz/filt_basic.c \
 	$(MY_ROOT)/fitz/filt_dctd.c \
 	$(MY_ROOT)/fitz/filt_faxd.c \

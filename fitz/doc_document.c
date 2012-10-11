@@ -189,6 +189,11 @@ fz_interactive *fz_interact(fz_document *doc)
 	return NULL;
 }
 
+int fz_javascript_supported()
+{
+	return pdf_js_supported();
+}
+
 void
 fz_write_document(fz_document *doc, char *filename, fz_write_options *opts)
 {
