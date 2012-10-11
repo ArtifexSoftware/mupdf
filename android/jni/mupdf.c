@@ -22,6 +22,14 @@
 
 #define MAX_SEARCH_HITS (500)
 
+enum
+{
+	NONE,
+	TEXT,
+	LISTBOX,
+	COMBOBOX
+};
+
 /* Globals */
 fz_colorspace *colorspace;
 fz_document *doc;
@@ -768,4 +776,88 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 	}
 
 	return changed;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTextInternal(JNIEnv * env, jobject thiz)
+{
+	char *text = "";
+
+	fz_try(ctx)
+	{
+		fz_interactive *idoc = fz_interact(doc);
+
+		if (idoc)
+		{
+			fz_widget *focus = fz_focused_widget(idoc);
+
+			if (focus)
+				text = fz_text_widget_text(idoc, focus);
+		}
+	}
+	fz_catch(ctx)
+	{
+		LOGE("getFocusedWidgetText failed: %s", ctx->error->message);
+	}
+
+	return (*env)->NewStringUTF(env, text);
+}
+
+JNIEXPORT int JNICALL
+Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetTextInternal(JNIEnv * env, jobject thiz, jstring jtext)
+{
+	const char *text;
+	int result = 0;
+
+	text = (*env)->GetStringUTFChars(env, jtext, NULL);
+	if (text == NULL)
+	{
+		LOGE("Failed to get text");
+		return 0;
+	}
+
+	fz_try(ctx)
+	{
+		fz_interactive *idoc = fz_interact(doc);
+
+		if (idoc)
+		{
+			fz_widget *focus = fz_focused_widget(idoc);
+
+			if (focus)
+				result = fz_text_widget_set_text(idoc, focus, text);
+		}
+	}
+	fz_catch(ctx)
+	{
+		LOGE("setFocusedWidgetText failed: %s", ctx->error->message);
+	}
+
+	(*env)->ReleaseStringUTFChars(env, jtext, text);
+
+	return result;
+}
+
+JNIEXPORT int JNICALL
+Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTypeInternal(JNIEnv * env, jobject thiz)
+{
+	fz_interactive *idoc = fz_interact(doc);
+	fz_widget *focus;
+
+	if (idoc == NULL)
+		return NONE;
+
+	focus = fz_focused_widget(idoc);
+
+	if (focus == NULL)
+		return NONE;
+
+	switch (fz_widget_get_type(focus))
+	{
+	case FZ_WIDGET_TYPE_TEXT: return TEXT;
+	case FZ_WIDGET_TYPE_LISTBOX: return LISTBOX;
+	case FZ_WIDGET_TYPE_COMBOBOX: return COMBOBOX;
+	}
+
+	return NONE;
 }

@@ -31,6 +31,9 @@ public class MuPDFCore
 	private static native RectF[] searchPage(String text);
 	private static native int getPageLink(int page, float x, float y);
 	private static native int passClickEventInternal(int page, float x, float y);
+	private static native int setFocusedWidgetTextInternal(String text);
+	private static native String getFocusedWidgetTextInternal();
+	private static native int getFocusedWidgetTypeInternal();
 	private static native LinkInfo [] getPageLinksInternal(int page);
 	private static native RectF[] getWidgetAreasInternal(int page);
 	private static native OutlineItem [] getOutlineInternal();
@@ -95,8 +98,21 @@ public class MuPDFCore
 		return bm;
 	}
 
-	public synchronized boolean passClickEvent(int page, float x, float y) {
+	public synchronized PassClickResult passClickEvent(int page, float x, float y) {
 		boolean changed = passClickEventInternal(page, x, y) != 0;
+		int type = getFocusedWidgetTypeInternal();
+		WidgetType wtype = WidgetType.values()[type];
+		String text;
+
+		switch (wtype)
+		{
+		case TEXT:
+			text = getFocusedWidgetTextInternal();
+			break;
+		default:
+			text = "";
+			break;
+		}
 
 		if (changed) {
 			if (page == pageNum)
@@ -105,7 +121,20 @@ public class MuPDFCore
 			markDirtyInternal(page);
 		}
 
-		return changed;
+		return new PassClickResult(changed, wtype, text);
+	}
+
+	public synchronized boolean setFocusedWidgetText(int page, String text) {
+		boolean success;
+		gotoPage(page);
+		success = setFocusedWidgetTextInternal(text) != 0 ? true : false;
+
+		if (success) {
+			pageNum = -1;
+			markDirtyInternal(page);
+		}
+
+		return success;
 	}
 
 	public synchronized int hitLinkPage(int page, float x, float y) {
