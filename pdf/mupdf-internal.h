@@ -552,6 +552,9 @@ struct pdf_page_s
 	pdf_obj *contents;
 	fz_link *links;
 	pdf_annot *annots;
+	float duration;
+	int transition_present;
+	fz_transition transition;
 };
 
 /*

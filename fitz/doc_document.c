@@ -183,6 +183,19 @@ fz_meta(fz_document *doc, int key, void *ptr, int size)
 	return FZ_META_UNKNOWN_KEY;
 }
 
+fz_transition *
+fz_page_presentation(fz_document *doc, fz_page *page, float *duration)
+{
+	float dummy;
+	if (duration)
+		*duration = 0;
+	else
+		duration = &dummy;
+	if (doc && doc->page_presentation && page)
+		return doc->page_presentation(doc, page, duration);
+	return NULL;
+}
+
 fz_interactive *fz_interact(fz_document *doc)
 {
 	if (doc && doc->interact)
