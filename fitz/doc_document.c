@@ -9,6 +9,7 @@ extern struct pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_st
 extern struct xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 extern struct cbz_document *cbz_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
+extern int pdf_js_supported(void);
 
 static inline int fz_tolower(int c)
 {
