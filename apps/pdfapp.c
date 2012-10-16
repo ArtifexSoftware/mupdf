@@ -420,6 +420,45 @@ static void pdfapp_loadpage(pdfapp_t *app)
 	app->errored = errored;
 }
 
+static void pdfapp_recreate_displaylist(pdfapp_t *app)
+{
+	fz_device *mdev = NULL;
+	int errored = 0;
+	fz_cookie cookie = { 0 };
+
+	fz_var(mdev);
+
+	if (app->page_list)
+	{
+		fz_free_display_list(app->ctx, app->page_list);
+		app->page_list = NULL;
+	}
+
+	fz_try(app->ctx)
+	{
+		/* Create display list */
+		app->page_list = fz_new_display_list(app->ctx);
+		mdev = fz_new_list_device(app->ctx, app->page_list);
+		fz_run_page(app->doc, app->page, mdev, fz_identity, &cookie);
+		if (cookie.errors)
+		{
+			pdfapp_warn(app, "Errors found on page");
+			errored = 1;
+		}
+	}
+	fz_always(app->ctx)
+	{
+		fz_free_device(mdev);
+	}
+	fz_catch(app->ctx)
+	{
+		pdfapp_warn(app, "Cannot load page");
+		errored = 1;
+	}
+
+	app->errored = errored;
+}
+
 #define MAX_TITLE 256
 
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint)
@@ -437,20 +476,29 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 	if (loadpage)
 	{
-		pdfapp_loadpage(app);
-
-		/* Zero search hit position */
-		app->hit = -1;
-		app->hitlen = 0;
-
-		/* Extract text */
-		app->page_sheet = fz_new_text_sheet(app->ctx);
-		app->page_text = fz_new_text_page(app->ctx, app->page_bbox);
-		if (app->page_list)
+		if (loadpage == 1)
 		{
-			tdev = fz_new_text_device(app->ctx, app->page_sheet, app->page_text);
-			fz_run_display_list(app->page_list, tdev, fz_identity, fz_infinite_bbox, &cookie);
-			fz_free_device(tdev);
+			pdfapp_loadpage(app);
+
+			/* Zero search hit position */
+			app->hit = -1;
+			app->hitlen = 0;
+
+			/* Extract text */
+			app->page_sheet = fz_new_text_sheet(app->ctx);
+			app->page_text = fz_new_text_page(app->ctx, app->page_bbox);
+
+			if (app->page_list)
+			{
+				tdev = fz_new_text_device(app->ctx, app->page_sheet, app->page_text);
+				fz_run_display_list(app->page_list, tdev, fz_identity, fz_infinite_bbox, &cookie);
+				fz_free_device(tdev);
+			}
+		}
+		else
+		{
+			/* pdfapp_onmouse passes loadpage == 2, meaning only recreate the display list */
+			pdfapp_recreate_displaylist(app);
 		}
 	}
 
@@ -1217,7 +1265,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			}
 
 			app->nowaitcursor = 1;
-			pdfapp_showpage(app, 1, 1, 1);
+			pdfapp_showpage(app, 2, 1, 1);
 			app->nowaitcursor = 0;
 			processed = 1;
 		}
