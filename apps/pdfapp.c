@@ -1568,6 +1568,7 @@ void pdfapp_postblit(pdfapp_t *app)
 		app->image = app->new_image;
 		app->new_image = NULL;
 		fz_drop_pixmap(app->ctx, app->old_image);
+		app->old_image = NULL;
 		if (app->duration != 0)
 			winadvancetimer(app, app->duration);
 	}
