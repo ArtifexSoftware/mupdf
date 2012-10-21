@@ -14,13 +14,18 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.FileObserver;
+import android.os.Handler;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class ChoosePDFActivity extends ListActivity {
-	private File    mDirectory;
-	private File [] mFiles;
+	private File         mDirectory;
+	private File []      mFiles;
+	private Handler	     mHandler;
+	private Runnable     mUpdateFiles;
+	private ArrayAdapter<String> adapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -58,25 +63,44 @@ public class ChoosePDFActivity extends ListActivity {
 		super.onResume();
 
 		mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-		mFiles = mDirectory.listFiles(new FilenameFilter() {
-			public boolean accept(File file, String name) {
-				if (name.toLowerCase().endsWith(".pdf"))
-					return true;
-				if (name.toLowerCase().endsWith(".xps"))
-					return true;
-				if (name.toLowerCase().endsWith(".cbz"))
-					return true;
-				return false;
-			}
 
-		});
+		// Create a list adapter...
 		List<String> fileNames = new ArrayList<String>();
-		if (mFiles != null)
-			for (File f : mFiles)
-				fileNames.add(f.getName());
-
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.picker_entry, fileNames);
+		adapter = new ArrayAdapter<String>(this, R.layout.picker_entry, fileNames);
 		setListAdapter(adapter);
+
+		// ...that is updated dynamically when files are scanned
+		mHandler = new Handler();
+		mUpdateFiles = new Runnable() {
+			public void run() {
+				mFiles = mDirectory.listFiles(new FilenameFilter() {
+					public boolean accept(File file, String name) {
+						if (name.toLowerCase().endsWith(".pdf"))
+							return true;
+						if (name.toLowerCase().endsWith(".xps"))
+							return true;
+						if (name.toLowerCase().endsWith(".cbz"))
+							return true;
+						return false;
+					}
+				});
+				adapter.clear();
+				if (mFiles != null)
+					for (File f : mFiles)
+						adapter.add(f.getName());
+			}
+		};
+
+		// Start initial file scan...
+		mHandler.post(mUpdateFiles);
+
+		// ...and observe the directory and scan files upon changes.
+		FileObserver observer = new FileObserver(mDirectory.getPath(), FileObserver.CREATE | FileObserver.DELETE) {
+			public void onEvent(int event, String path) {
+				mHandler.post(mUpdateFiles);
+			}
+		};
+		observer.startWatching();
 	}
 
 	@Override
