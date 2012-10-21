@@ -65,8 +65,9 @@ public class ChoosePDFActivity extends ListActivity {
 
 		});
 		List<String> fileNames = new ArrayList<String>();
-		for (File f : mFiles)
-			fileNames.add(f.getName());
+		if (mFiles != null)
+			for (File f : mFiles)
+				fileNames.add(f.getName());
 
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.picker_entry, fileNames);
 		setListAdapter(adapter);
