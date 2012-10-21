@@ -51,6 +51,12 @@ public class ChoosePDFActivity extends ListActivity {
 			return;
 		}
 
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
 		mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 		mFiles = mDirectory.listFiles(new FilenameFilter() {
 			public boolean accept(File file, String name) {
