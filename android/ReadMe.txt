@@ -74,15 +74,12 @@ the top level directory, and that ANT_HOME/bin is on the PATH.
 8) Now we are ready to build mupdf for Android. Check out a copy of MuPDF
 (but you've done that already, cos you're reading this, right?).
 
-9) Copy the android/local.properties.sample file to be
-android/local.properties and edit the contents to match your setup.
-
-10) You will also need a copy of mupdf-thirdparty.zip (see the source code
+9) You will also need a copy of mupdf-thirdparty.zip (see the source code
 link on http://mupdf.com/). Unpack the contents of this into a 'thirdparty'
 directory created within the mupdf directory (i.e. at the same level as
 fitz, pdf, android etc).
 
-11) Finally, you will need a copy of a 'generated' directory. This is not
+10) Finally, you will need a copy of a 'generated' directory. This is not
 currently available to download.
 
 The normal mupdf build process involves running some code on the host
@@ -107,11 +104,12 @@ as simple as running 'make' in the top level directory. Even if the
 make process fails, it should get far enough to generate you the required
 'generated' directory, and you can continue through these instructions.
 
-12) Change into the android directory, and edit local.properties into your
-favourite editor. Change the sdk path there as appropriate. This should be
-the only bit of localisation you need to do.
+11) Change into mupdf's android directory. Copy the
+android/local.properties.sample file to be android/local.properties and
+change the sdk path there as appropriate. This should be the only bit of
+localisation you need to do.
 
-13) Change into the android directory (note, the android directory, NOT
+12) Change into the android directory (note, the android directory, NOT
 the android/jni directory!), and execute (in a Cygwin window on Windows!):
 
        ndk-build
@@ -129,7 +127,7 @@ to
 
 and this should solve the problem.
 
-14) Then execute:
+13) Then execute:
 
        ant debug
 
@@ -139,13 +137,13 @@ or on windows under cygwin:
 
 This should build the java wrapper.
 
-15) Now start the emulator by executing:
+14) Now start the emulator by executing:
 
        emulator -avd FroyoEm
 
 This will take a while to full start up (be patient).
 
-16) We now need to give the demo file something to chew on, so let's copy
+15) We now need to give the demo file something to chew on, so let's copy
 a file into the SD card image of the emulator (this should only need to be
 done once). With the emulator running type:
 
@@ -155,14 +153,14 @@ done once). With the emulator running type:
 machine, and  under Windows, should start c:/ even if invoked from cygwin)
 (adb lives in <sdk>/platform-tools if it's not on your path).
 
-17) With the emulator running (see step 14), execute
+16) With the emulator running (see step 14), execute
 
        ant debug install
 
 ('ant.bat debug install' on Windows) and that will copy MuPDF into the
 emulator where you can run it from the launchpad screen.
 
-18) To see debug messages from the emulator (including stdout/stderr from
+17) To see debug messages from the emulator (including stdout/stderr from
 our app), execute:
 
        adb logcat
