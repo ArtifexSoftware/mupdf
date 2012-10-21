@@ -10,6 +10,7 @@ import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -24,6 +25,12 @@ public class ChoosePDFActivity extends ListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		Resources res = getResources();
+		String appName = res.getString(R.string.app_name);
+		String version = res.getString(R.string.version);
+		String title = res.getString(R.string.picker_title);
+		setTitle(String.format(title, appName, version));
 
 		String storageState = Environment.getExternalStorageState();
 
