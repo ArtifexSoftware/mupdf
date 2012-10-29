@@ -1392,6 +1392,21 @@ unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix);
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
 /*
+	fz_clear_pixmap_with_value: Clears a subrect of a pixmap with the given value.
+
+	pix: The pixmap to clear.
+
+	value: Values in the range 0 to 255 are valid. Each component
+	sample for each pixel in the pixmap will be set to this value,
+	while alpha will always be set to 255 (non-transparent).
+
+	r: the rectangle.
+
+	Does not throw exceptions.
+*/
+void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, fz_bbox r);
+
+/*
 	fz_clear_pixmap_with_value: Sets all components (including alpha) of
 	all pixels in a pixmap to 0.
 
