@@ -1336,6 +1336,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			}
 
 			app->nowaitcursor = 1;
+			fz_update_page(idoc, app->page, NULL, NULL);
 			pdfapp_showpage(app, 2, 1, 1, 0);
 			app->nowaitcursor = 0;
 			processed = 1;

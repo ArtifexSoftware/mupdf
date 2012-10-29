@@ -2547,21 +2547,31 @@ int fz_has_unsaved_changes(fz_interactive *idoc);
 int fz_pass_event(fz_interactive *idoc, fz_page *page, fz_ui_event *ui_event);
 
 /*
+	fz_update_page: update a page for the sake of changes caused by a call
+	to fz_pass_event. fz_update_page regenerates any appearance streams that
+	are out of date, checks for cases where different appearance streams
+	should be selected because of state changes, and records internally
+	each annotation that has changed appearance. The list of chagned annotations
+	is then available via fz_poll_changed_annotation. Note that a call to
+	fz_pass_event for one page may lead to changes on any other, so an app
+	should call fz_update_page for every page it currently displays. Also
+	it is important that the fz_page object is the one used to last render
+	the page. If instead the app were to drop the page and reload it then
+	a call to fz_update_page would not reliably be able to report all changed
+	areas.
+*/
+void fz_update_page(fz_interactive *idoc, fz_page *page);
+
+/*
+	fz_poll_changed_annot: enumerate the changed annotations recoreded
+	by a call to fz_update_page.
+*/
+fz_annot *fz_poll_changed_annot(fz_interactive *idoc, fz_page *page);
+
+/*
 	fz_init_ui_pointer_event: Set up a pointer event
 */
 void fz_init_ui_pointer_event(fz_ui_event *event, int type, float x, float y);
-
-/*
-	fz_poll_screen_update: Get the bounding box of an area needing
-	update because of a visual change.
-
-	After a sequence of interactions with a document that may cause
-	it to change in appearance - such as passing ui events - this
-	method should be called repeatedly until it returns NULL, to
-	enumerate the changed areas for which screen updates are
-	needed.
-*/
-fz_rect *fz_poll_screen_update(fz_interactive *idoc);
 
 /*
 	fz_focused_widget: returns the currently focussed widget
