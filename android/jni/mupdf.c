@@ -21,6 +21,7 @@
 #undef TIME_DISPLAY_LIST
 
 #define MAX_SEARCH_HITS (500)
+#define NUM_CACHE (3)
 
 enum
 {
@@ -30,26 +31,42 @@ enum
 	COMBOBOX
 };
 
+typedef struct
+{
+	int number;
+	int width;
+	int height;
+	fz_rect media_box;
+	fz_page *page;
+	fz_display_list *page_list;
+	fz_display_list *annot_list;
+} page_cache;
+
+
 /* Globals */
 fz_colorspace *colorspace;
 fz_document *doc;
-int pagenum = 1;
 int resolution = 160;
-float pageWidth = 100;
-float pageHeight = 100;
-fz_display_list *currentPageList;
-fz_display_list *currentAnnotationList;
-fz_rect currentMediabox;
 fz_context *ctx;
-int currentPageNumber = -1;
-fz_page *currentPage = NULL;
 fz_bbox *hit_bbox = NULL;
+int current;
+
+page_cache pages[NUM_CACHE] = {{0}};
+
+static void drop_page_cache(page_cache *pc)
+{
+	fz_free_display_list(ctx, pc->page_list);
+	pc->page_list = NULL;
+	fz_free_display_list(ctx, pc->annot_list);
+	pc->annot_list = NULL;
+	fz_free_page(doc, pc->page);
+	pc->page = NULL;
+}
 
 JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jfilename)
 {
 	const char *filename;
-	int pages = 0;
 	int result = 0;
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
@@ -107,82 +124,101 @@ Java_com_artifex_mupdf_MuPDFCore_countPagesInternal(JNIEnv *env, jobject thiz)
 JNIEXPORT void JNICALL
 Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int page)
 {
+	int i;
+	int furthest;
+	int furthest_dist = -1;
 	float zoom;
 	fz_matrix ctm;
 	fz_bbox bbox;
+	page_cache *pc;
 
-	if (page == pagenum && currentPage != NULL)
-		return;
-
-	if (currentPage != NULL)
+	for (i = 0; i < NUM_CACHE; i++)
 	{
-		fz_free_page(doc, currentPage);
-		currentPage = NULL;
+		if (pages[i].page != NULL && pages[i].number == page)
+		{
+			/* The page is already cached */
+			current = i;
+			return;
+		}
+
+		if (pages[i].page == NULL)
+		{
+			/* cache record unused, and so a good one to use */
+			furthest = i;
+			furthest_dist = INT_MAX;
+		}
+		else
+		{
+			int dist = abs(pages[i].number - page);
+
+			/* Further away - less likely to be needed again */
+			if (dist > furthest_dist)
+			{
+				furthest_dist = dist;
+				furthest = i;
+			}
+		}
 	}
 
-	/* In the event of an error, ensure we give a non-empty page */
-	pageWidth = 100;
-	pageHeight = 100;
+	current = furthest;
+	pc = &pages[current];
 
-	currentPageNumber = page;
+	drop_page_cache(pc);
+
+	/* In the event of an error, ensure we give a non-empty page */
+	pc->width = 100;
+	pc->height = 100;
+
+	pc->number = page;
 	LOGE("Goto page %d...", page);
 	fz_try(ctx)
 	{
-		if (currentPageList != NULL)
-		{
-			fz_free_display_list(ctx, currentPageList);
-			currentPageList = NULL;
-		}
-		if (currentAnnotationList != NULL)
-		{
-			fz_free_display_list(ctx, currentAnnotationList);
-			currentAnnotationList = NULL;
-		}
-		pagenum = page;
-		currentPage = fz_load_page(doc, pagenum);
+		pc->page = fz_load_page(doc, pc->number);
 		zoom = resolution / 72;
-		currentMediabox = fz_bound_page(doc, currentPage);
+		pc->media_box = fz_bound_page(doc, pc->page);
 		ctm = fz_scale(zoom, zoom);
-		bbox = fz_round_rect(fz_transform_rect(ctm, currentMediabox));
-		pageWidth = bbox.x1-bbox.x0;
-		pageHeight = bbox.y1-bbox.y0;
+		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		pc->width = bbox.x1-bbox.x0;
+		pc->height = bbox.y1-bbox.y0;
 	}
 	fz_catch(ctx)
 	{
-		LOGE("cannot make displaylist from page %d", pagenum);
+		LOGE("cannot make displaylist from page %d", pc->number);
 	}
 }
 
 JNIEXPORT void JNICALL
 Java_com_artifex_mupdf_MuPDFCore_markDirtyInternal(JNIEnv *env, jobject thiz, int page)
 {
-	if (currentPage)
-	{
-		fz_interactive *idoc = fz_interact(doc);
+	int i;
 
-		if (idoc)
-			fz_update_page(idoc, currentPage, NULL, NULL);
-	}
-
-	if (currentAnnotationList != NULL && page == pagenum)
+	for (i = 0 ; i < NUM_CACHE; i++)
 	{
-		fz_free_display_list(ctx, currentAnnotationList);
-		currentAnnotationList = NULL;
+		if (pages[i].page != NULL && pages[i].number == page)
+		{
+			fz_interactive *idoc = fz_interact(doc);
+
+			if (idoc)
+				fz_update_page(idoc, pages[i].page);
+
+			fz_free_display_list(ctx, pages[i].annot_list);
+			pages[i].annot_list = NULL;
+		}
 	}
 }
 
 JNIEXPORT float JNICALL
 Java_com_artifex_mupdf_MuPDFCore_getPageWidth(JNIEnv *env, jobject thiz)
 {
-	LOGE("PageWidth=%g", pageWidth);
-	return pageWidth;
+	LOGE("PageWidth=%g", pages[current].width);
+	return pages[current].width;
 }
 
 JNIEXPORT float JNICALL
 Java_com_artifex_mupdf_MuPDFCore_getPageHeight(JNIEnv *env, jobject thiz)
 {
-	LOGE("PageHeight=%g", pageHeight);
-	return pageHeight;
+	LOGE("PageHeight=%g", pages[current].height);
+	return pages[current].height;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -205,6 +241,10 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
 	fz_bbox rect;
+	page_cache *pc = &pages[current];
+
+	if (pc->page == NULL)
+		return 0;
 
 	fz_var(pix);
 	fz_var(dev);
@@ -233,14 +273,14 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 
 	fz_try(ctx)
 	{
-		if (currentPageList == NULL)
+		if (pc->page_list == NULL)
 		{
 			/* Render to list */
-			currentPageList = fz_new_display_list(ctx);
-			dev = fz_new_list_device(ctx, currentPageList);
-			fz_run_page_contents(doc, currentPage, dev, fz_identity, NULL);
+			pc->page_list = fz_new_display_list(ctx);
+			dev = fz_new_list_device(ctx, pc->page_list);
+			fz_run_page_contents(doc, pc->page, dev, fz_identity, NULL);
 		}
-		if (currentAnnotationList == NULL)
+		if (pc->annot_list == NULL)
 		{
 			fz_annot *annot;
 			if (dev)
@@ -248,17 +288,17 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 				fz_free_device(dev);
 				dev = NULL;
 			}
-			currentAnnotationList = fz_new_display_list(ctx);
-			dev = fz_new_list_device(ctx, currentAnnotationList);
-			for (annot = fz_first_annot(doc, currentPage); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, currentPage, annot, dev, fz_identity, NULL);
+			pc->annot_list = fz_new_display_list(ctx);
+			dev = fz_new_list_device(ctx, pc->annot_list);
+			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
+				fz_run_annot(doc, pc->page, annot, dev, fz_identity, NULL);
 		}
 		rect.x0 = patchX;
 		rect.y0 = patchY;
 		rect.x1 = patchX + patchW;
 		rect.y1 = patchY + patchH;
 		pix = fz_new_pixmap_with_bbox_and_data(ctx, colorspace, rect, pixels);
-		if (currentPageList == NULL && currentAnnotationList == NULL)
+		if (pc->page_list == NULL && pc->annot_list == NULL)
 		{
 			fz_clear_pixmap_with_value(ctx, pix, 0xd0);
 			break;
@@ -267,13 +307,13 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
-		bbox = fz_round_rect(fz_transform_rect(ctm,currentMediabox));
+		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
 		/* Now, adjust ctm so that it would give the correct page width
 		 * heights. */
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
 		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
-		bbox = fz_round_rect(fz_transform_rect(ctm,currentMediabox));
+		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
 		dev = fz_new_draw_device(ctx, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
@@ -284,10 +324,10 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 			time = clock();
 			for (i=0; i<100;i++) {
 #endif
-				if (currentPageList)
-					fz_run_display_list(currentPageList, dev, ctm, bbox, NULL);
-				if (currentAnnotationList)
-					fz_run_display_list(currentAnnotationList, dev, ctm, bbox, NULL);
+				if (pc->page_list)
+					fz_run_display_list(pc->page_list, dev, ctm, bbox, NULL);
+				if (pc->annot_list)
+					fz_run_display_list(pc->annot_list, dev, ctm, bbox, NULL);
 #ifdef TIME_DISPLAY_LIST
 			}
 			time = clock() - time;
@@ -510,6 +550,7 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 	int            i, n;
 	int            hit_count = 0;
 	const char    *str;
+	page_cache    *pc = &pages[current];
 
 	rectClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectClass == NULL) return NULL;
@@ -531,11 +572,11 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 
 		zoom = resolution / 72;
 		ctm = fz_scale(zoom, zoom);
-		rect = fz_transform_rect(ctm, currentMediabox);
+		rect = fz_transform_rect(ctm, pc->media_box);
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx, rect);
 		dev  = fz_new_text_device(ctx, sheet, text);
-		fz_run_page(doc, currentPage, dev, ctm, NULL);
+		fz_run_page(doc, pc->page, dev, ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
 
@@ -595,17 +636,14 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 JNIEXPORT void JNICALL
 Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
 {
+	int i;
+
 	fz_free(ctx, hit_bbox);
 	hit_bbox = NULL;
-	fz_free_display_list(ctx, currentPageList);
-	currentPageList = NULL;
-	fz_free_display_list(ctx, currentAnnotationList);
-	currentAnnotationList = NULL;
-	if (currentPage != NULL)
-	{
-		fz_free_page(doc, currentPage);
-		currentPage = NULL;
-	}
+
+	for (i = 0; i < NUM_CACHE; i++)
+		drop_page_cache(&pages[i]);
+
 	fz_close_document(doc);
 	doc = NULL;
 }
@@ -622,6 +660,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz
 	fz_link     *list;
 	fz_link     *link;
 	int          count;
+	page_cache  *pc;
 
 	linkInfoClass = (*env)->FindClass(env, "com/artifex/mupdf/LinkInfo");
 	if (linkInfoClass == NULL) return NULL;
@@ -629,13 +668,14 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz
 	if (ctor == NULL) return NULL;
 
 	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
-	if (currentPageNumber == -1 || currentPage == NULL)
+	pc = &pages[current];
+	if (pc->page == NULL || pc->number != pageNumber)
 		return NULL;
 
 	zoom = resolution / 72;
 	ctm = fz_scale(zoom, zoom);
 
-	list = fz_load_links(doc, currentPage);
+	list = fz_load_links(doc, pc->page);
 	count = 0;
 	for (link = list; link; link = link->next)
 	{
@@ -679,6 +719,7 @@ Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject th
 	fz_matrix    ctm;
 	float        zoom;
 	int          count;
+	page_cache  *pc;
 
 	rectFClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectFClass == NULL) return NULL;
@@ -686,7 +727,8 @@ Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject th
 	if (ctor == NULL) return NULL;
 
 	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
-	if (currentPageNumber == -1 || currentPage == NULL)
+	pc = &pages[current];
+	if (pc->number != pageNumber || pc->page == NULL)
 		return NULL;
 
 	idoc = fz_interact(doc);
@@ -697,14 +739,14 @@ Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject th
 	ctm = fz_scale(zoom, zoom);
 
 	count = 0;
-	for (widget = fz_first_widget(idoc, currentPage); widget; widget = fz_next_widget(idoc, widget))
+	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
 		count ++;
 
 	arr = (*env)->NewObjectArray(env, count, rectFClass, NULL);
 	if (arr == NULL) return NULL;
 
 	count = 0;
-	for (widget = fz_first_widget(idoc, currentPage); widget; widget = fz_next_widget(idoc, widget))
+	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
 	{
 		fz_rect rect = fz_transform_rect(ctm, *fz_widget_bbox(widget));
 
@@ -727,9 +769,11 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLink(JNIEnv * env, jobject thiz, int pag
 	float zoom;
 	fz_link *link;
 	fz_point p;
+	page_cache *pc;
 
 	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
-	if (currentPageNumber == -1 || currentPage == NULL)
+	pc = &pages[current];
+	if (pc->number != pageNumber || pc->page == NULL)
 		return -1;
 
 	p.x = x;
@@ -744,7 +788,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLink(JNIEnv * env, jobject thiz, int pag
 
 	p = fz_transform_point(ctm, p);
 
-	for (link = fz_load_links(doc, currentPage); link; link = link->next)
+	for (link = fz_load_links(doc, pc->page); link; link = link->next)
 	{
 		if (p.x >= link->rect.x0 && p.x <= link->rect.x1)
 			if (p.y >= link->rect.y0 && p.y <= link->rect.y1)
@@ -773,12 +817,14 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 	fz_point p;
 	fz_ui_event event;
 	int changed = 0;
+	page_cache *pc;
 
 	if (idoc == NULL)
 		return 0;
 
 	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
-	if (currentPageNumber == -1 || currentPage == NULL)
+	pc = &pages[current];
+	if (pc->number != pageNumber || pc->page == NULL)
 		return 0;
 
 	p.x = x;
@@ -798,9 +844,9 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 		event.etype = FZ_EVENT_TYPE_POINTER;
 		event.event.pointer.pt = p;
 		event.event.pointer.ptype = FZ_POINTER_DOWN;
-		changed = fz_pass_event(idoc, currentPage, &event);
+		changed = fz_pass_event(idoc, pc->page, &event);
 		event.event.pointer.ptype = FZ_POINTER_UP;
-		changed |= fz_pass_event(idoc, currentPage, &event);
+		changed |= fz_pass_event(idoc, pc->page, &event);
 	}
 	fz_catch(ctx)
 	{
