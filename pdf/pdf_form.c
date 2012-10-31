@@ -2013,9 +2013,14 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 			switch (ui_event->event.pointer.ptype)
 			{
 			case FZ_POINTER_DOWN:
-				doc->focus = NULL;
-				pdf_drop_obj(doc->focus_obj);
-				doc->focus_obj = NULL;
+				if (doc->focus_obj)
+				{
+					/* Execute the blur action */
+					execute_additional_action(doc, doc->focus_obj, "AA/Bl");
+					doc->focus = NULL;
+					pdf_drop_obj(doc->focus_obj);
+					doc->focus_obj = NULL;
+				}
 
 				if (annot)
 				{
@@ -2026,7 +2031,8 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 					hp->gen = pdf_to_gen(annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
 					changed = 1;
-					/* Exectute the down action */
+					/* Exectute the down and focus actions */
+					execute_additional_action(doc, annot->obj, "AA/Fo");
 					execute_additional_action(doc, annot->obj, "AA/D");
 				}
 				break;
