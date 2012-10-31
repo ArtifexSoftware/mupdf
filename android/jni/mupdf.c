@@ -77,6 +77,16 @@ static void clear_hq_pages()
 	}
 }
 
+static void dump_annotation_display_lists()
+{
+	int i;
+
+	for (i = 0; i < NUM_CACHE; i++) {
+		fz_free_display_list(ctx, pages[i].annot_list);
+		pages[i].annot_list = NULL;
+	}
+}
+
 JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jfilename)
 {
@@ -264,8 +274,8 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 	}
 
 	/* Call mupdf to render display list to screen */
-	LOGE("Rendering page=%dx%d patch=[%d,%d,%d,%d]",
-			pageW, pageH, patchX, patchY, patchW, patchH);
+	LOGE("Rendering page(%d)=%dx%d patch=[%d,%d,%d,%d]",
+			pc->number, pageW, pageH, patchX, patchY, patchW, patchH);
 
 	fz_try(ctx)
 	{
@@ -366,6 +376,18 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 	return 1;
 }
 
+static char *widget_type_string(int t)
+{
+	switch(t)
+	{
+	case FZ_WIDGET_TYPE_PUSHBUTTON: return "pushbutton";
+	case FZ_WIDGET_TYPE_CHECKBOX: return "checkbox";
+	case FZ_WIDGET_TYPE_RADIOBUTTON: return "radiobutton";
+	case FZ_WIDGET_TYPE_TEXT: return "text";
+	case FZ_WIDGET_TYPE_LISTBOX: return "listbox";
+	case FZ_WIDGET_TYPE_COMBOBOX: return "combobox";
+	}
+}
 JNIEXPORT jboolean JNICALL
 Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, jobject bitmap, int page,
 		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
@@ -424,8 +446,8 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 	}
 
 	/* Call mupdf to render display list to screen */
-	LOGE("Rendering page=%dx%d patch=[%d,%d,%d,%d]",
-			pageW, pageH, patchX, patchY, patchW, patchH);
+	LOGE("Rendering page(%d)=%dx%d patch=[%d,%d,%d,%d]",
+			pc->number, pageW, pageH, patchX, patchY, patchW, patchH);
 
 	fz_try(ctx)
 	{
@@ -444,18 +466,16 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 			fz_run_page_contents(doc, page, dev, fz_identity, NULL);
 		}
 
-		fz_free_display_list(ctx, pc->annot_list);
-		pc->annot_list = NULL;
-
-		if (dev)
-		{
-			fz_free_device(dev);
-			dev = NULL;
+		if (pc->annot_list == NULL) {
+			if (dev) {
+				fz_free_device(dev);
+				dev = NULL;
+			}
+			pc->annot_list = fz_new_display_list(ctx);
+			dev = fz_new_list_device(ctx, pc->annot_list);
+			for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
+				fz_run_annot(doc, page, annot, dev, fz_identity, NULL);
 		}
-		pc->annot_list = fz_new_display_list(ctx);
-		dev = fz_new_list_device(ctx, pc->annot_list);
-		for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
-			fz_run_annot(doc, page, annot, dev, fz_identity, NULL);
 
 		rect.x0 = patchX;
 		rect.y0 = patchY;
@@ -479,7 +499,8 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 			fz_bbox abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
 			abox = fz_intersect_bbox(abox, bbox);
 
-			LOGI("Update rectangle");
+			LOGI("Update rectanglefor %s - (%d, %d, %d, %d)", widget_type_string(fz_widget_get_type((fz_widget*)annot)),
+					abox.x0, abox.y0, abox.x1, abox.y1);
 			if (!fz_is_empty_bbox(abox))
 			{
 				LOGI("And it isn't empty");
@@ -1006,6 +1027,9 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 		changed = fz_pass_event(idoc, pc->page, &event);
 		event.event.pointer.ptype = FZ_POINTER_UP;
 		changed |= fz_pass_event(idoc, pc->page, &event);
+		if (changed) {
+			dump_annotation_display_lists();
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -1062,7 +1086,10 @@ Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetTextInternal(JNIEnv * env, jobj
 			fz_widget *focus = fz_focused_widget(idoc);
 
 			if (focus)
+			{
 				result = fz_text_widget_set_text(idoc, focus, text);
+				dump_annotation_display_lists();
+			}
 		}
 	}
 	fz_catch(ctx)
