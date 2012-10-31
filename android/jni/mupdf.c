@@ -38,6 +38,7 @@ typedef struct
 	int height;
 	fz_rect media_box;
 	fz_page *page;
+	fz_page *hq_page;
 	fz_display_list *page_list;
 	fz_display_list *annot_list;
 } page_cache;
@@ -55,12 +56,15 @@ page_cache pages[NUM_CACHE] = {{0}};
 
 static void drop_page_cache(page_cache *pc)
 {
+	LOGI("Drop page %d", pc->number);
 	fz_free_display_list(ctx, pc->page_list);
 	pc->page_list = NULL;
 	fz_free_display_list(ctx, pc->annot_list);
 	pc->annot_list = NULL;
 	fz_free_page(doc, pc->page);
 	pc->page = NULL;
+	fz_free_page(doc, pc->hq_page);
+	pc->hq_page = NULL;
 }
 
 JNIEXPORT int JNICALL
@@ -173,6 +177,7 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 	LOGE("Goto page %d...", page);
 	fz_try(ctx)
 	{
+		LOGI("Load page %d", pc->number);
 		pc->page = fz_load_page(doc, pc->number);
 		zoom = resolution / 72;
 		pc->media_box = fz_bound_page(doc, pc->page);
@@ -184,26 +189,6 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 	fz_catch(ctx)
 	{
 		LOGE("cannot make displaylist from page %d", pc->number);
-	}
-}
-
-JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_markDirtyInternal(JNIEnv *env, jobject thiz, int page)
-{
-	int i;
-
-	for (i = 0 ; i < NUM_CACHE; i++)
-	{
-		if (pages[i].page != NULL && pages[i].number == page)
-		{
-			fz_interactive *idoc = fz_interact(doc);
-
-			if (idoc)
-				fz_update_page(idoc, pages[i].page);
-
-			fz_free_display_list(ctx, pages[i].annot_list);
-			pages[i].annot_list = NULL;
-		}
 	}
 }
 
@@ -242,6 +227,7 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 	float xscale, yscale;
 	fz_bbox rect;
 	page_cache *pc = &pages[current];
+	int hq = (patchW < pageW || patchH < pageH);
 
 	if (pc->page == NULL)
 		return 0;
@@ -273,6 +259,23 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 
 	fz_try(ctx)
 	{
+		fz_interactive *idoc = fz_interact(doc);
+
+		// Call fz_update_page now to ensure future calls yield the
+		// changes from the current state
+		fz_update_page(idoc, pc->page);
+
+		if (hq) {
+			// This is a rendering of the hq patch. Ensure there's a second copy of the
+			// page for use when updating this patch
+			if (pc->hq_page) {
+				if (idoc)
+					fz_update_page(idoc, pc->hq_page);
+			} else {
+				pc->hq_page = fz_load_page(doc, pc->number);
+			}
+		}
+
 		if (pc->page_list == NULL)
 		{
 			/* Render to list */
@@ -345,6 +348,149 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 		LOGE("Render failed");
 	}
 
+	AndroidBitmap_unlockPixels(env, bitmap);
+
+	return 1;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, jobject bitmap, int page,
+		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
+{
+	AndroidBitmapInfo info;
+	void *pixels;
+	int ret;
+	fz_device *dev = NULL;
+	float zoom;
+	fz_matrix ctm;
+	fz_bbox bbox;
+	fz_pixmap *pix = NULL;
+	float xscale, yscale;
+	fz_bbox rect;
+	fz_interactive *idoc;
+	page_cache *pc = NULL;
+	int hq = (patchW < pageW || patchH < pageH);
+	int i;
+
+	for (i = 0; i < NUM_CACHE; i++)
+	{
+		if (pages[i].page != NULL && pages[i].number == page)
+		{
+			pc = &pages[i];
+			break;
+		}
+	}
+
+	if (pc == NULL || (hq && pc->hq_page == NULL))
+	{
+		Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, page);
+		return Java_com_artifex_mupdf_MuPDFCore_drawPage(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
+	}
+
+	idoc = fz_interact(doc);
+
+	fz_var(pix);
+	fz_var(dev);
+
+	LOGI("In native method\n");
+	if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
+		LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+		return 0;
+	}
+
+	LOGI("Checking format\n");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+		LOGE("Bitmap format is not RGBA_8888 !");
+		return 0;
+	}
+
+	LOGI("locking pixels\n");
+	if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
+		LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+		return 0;
+	}
+
+	/* Call mupdf to render display list to screen */
+	LOGE("Rendering page=%dx%d patch=[%d,%d,%d,%d]",
+			pageW, pageH, patchX, patchY, patchW, patchH);
+
+	fz_try(ctx)
+	{
+		fz_annot *annot;
+		// Unimportant which page object we use for rendering but we
+		// must use the correct one for calculating updates
+		fz_page *page = hq ? pc->hq_page : pc->page;
+
+		fz_update_page(idoc, page);
+
+		if (pc->page_list == NULL)
+		{
+			/* Render to list */
+			pc->page_list = fz_new_display_list(ctx);
+			dev = fz_new_list_device(ctx, pc->page_list);
+			fz_run_page_contents(doc, page, dev, fz_identity, NULL);
+		}
+
+		fz_free_display_list(ctx, pc->annot_list);
+		pc->annot_list = NULL;
+
+		if (dev)
+		{
+			fz_free_device(dev);
+			dev = NULL;
+		}
+		pc->annot_list = fz_new_display_list(ctx);
+		dev = fz_new_list_device(ctx, pc->annot_list);
+		for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
+			fz_run_annot(doc, page, annot, dev, fz_identity, NULL);
+
+		rect.x0 = patchX;
+		rect.y0 = patchY;
+		rect.x1 = patchX + patchW;
+		rect.y1 = patchY + patchH;
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, colorspace, rect, pixels);
+
+		zoom = resolution / 72;
+		ctm = fz_scale(zoom, zoom);
+		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		/* Now, adjust ctm so that it would give the correct page width
+		 * heights. */
+		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
+		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
+		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
+		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+
+		LOGI("Start polling for updates");
+		while ((annot = fz_poll_changed_annot(idoc, page)) != NULL)
+		{
+			fz_bbox abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
+			abox = fz_intersect_bbox(abox, bbox);
+
+			LOGI("Update rectangle");
+			if (!fz_is_empty_bbox(abox))
+			{
+				LOGI("And it isn't empty");
+				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, abox);
+				dev = fz_new_draw_device_with_bbox(ctx, pix, abox);
+				if (pc->page_list)
+					fz_run_display_list(pc->page_list, dev, ctm, abox, NULL);
+				if (pc->annot_list)
+					fz_run_display_list(pc->annot_list, dev, ctm, abox, NULL);
+				fz_free_device(dev);
+				dev = NULL;
+			}
+		}
+		LOGI("Done polling for updates");
+
+		LOGE("Rendered");
+	}
+	fz_catch(ctx)
+	{
+		fz_free_device(dev);
+		LOGE("Render failed");
+	}
+
+	fz_drop_pixmap(ctx, pix);
 	AndroidBitmap_unlockPixels(env, bitmap);
 
 	return 1;
