@@ -67,6 +67,16 @@ static void drop_page_cache(page_cache *pc)
 	pc->hq_page = NULL;
 }
 
+static void clear_hq_pages()
+{
+	int i;
+
+	for (i = 0; i < NUM_CACHE; i++) {
+		fz_free_page(doc, pages[i].hq_page);
+		pages[i].hq_page = NULL;
+	}
+}
+
 JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jfilename)
 {
@@ -272,6 +282,9 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 				if (idoc)
 					fz_update_page(idoc, pc->hq_page);
 			} else {
+				// There is only ever one hq patch, so we need
+				// cache only one page object for the sake of hq
+				clear_hq_pages();
 				pc->hq_page = fz_load_page(doc, pc->number);
 			}
 		}
