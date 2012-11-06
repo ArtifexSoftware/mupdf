@@ -25,6 +25,7 @@ endif
 
 ifeq "$(OS)" "Linux"
 SYS_FREETYPE_INC := `pkg-config --cflags freetype2`
+SYS_OPENJPEG_INC := `pkg-config --cflags libopenjpeg`
 X11_LIBS := -lX11 -lXext
 endif
 
