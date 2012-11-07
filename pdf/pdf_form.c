@@ -2301,6 +2301,51 @@ int pdf_field_display(pdf_document *doc, pdf_obj *field)
 	return res;
 }
 
+/*
+ * get the field name in a char buffer that has spare room to
+ * add more characters at the end.
+ */
+static char *get_field_name(pdf_document *doc, pdf_obj *field, int spare)
+{
+	fz_context *ctx = doc->ctx;
+	char *res = NULL;
+	pdf_obj *parent = pdf_dict_gets(field, "Parent");
+	char *lname = pdf_to_str_buf(pdf_dict_gets(field, "T"));
+	int llen = strlen(lname);
+
+	/*
+	 * If we found a name at this point in the field hierarchy
+	 * then we'll need extra space for it and a dot
+	 */
+	if (llen)
+		spare += llen+1;
+
+	if (parent)
+	{
+		res = get_field_name(doc, parent, spare);
+	}
+	else
+	{
+		res = fz_malloc(ctx, spare+1);
+		res[0] = 0;
+	}
+
+	if (llen)
+	{
+		if (res[0])
+			strcat(res, ".");
+
+		strcat(res, lname);
+	}
+
+	return res;
+}
+
+char *pdf_field_name(pdf_document *doc, pdf_obj *field)
+{
+	return get_field_name(doc, field, 0);
+}
+
 void pdf_field_set_display(pdf_document *doc, pdf_obj *field, int d)
 {
 	fz_context *ctx = doc->ctx;
