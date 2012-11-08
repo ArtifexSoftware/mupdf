@@ -12,10 +12,9 @@ public class MuPDFCore
 	}
 
 	/* Readable members */
-	private int pageNum  = -1;;
 	private int numPages = -1;
-	public  float pageWidth;
-	public  float pageHeight;
+	private float pageWidth;
+	private float pageHeight;
 
 	/* The native functions */
 	private static native int openFile(String filename);
@@ -75,10 +74,7 @@ public class MuPDFCore
 			page = numPages-1;
 		else if (page < 0)
 			page = 0;
-		if (this.pageNum == page)
-			return;
 		gotoPageInternal(page);
-		this.pageNum = page;
 		this.pageWidth = getPageWidth();
 		this.pageHeight = getPageHeight();
 	}
