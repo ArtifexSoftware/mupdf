@@ -1105,7 +1105,7 @@ static int get_matrix(pdf_document *doc, pdf_xobject *form, int q, fz_matrix *mt
 	return found;
 }
 
-static void update_text_field_value(fz_context *ctx, pdf_obj *obj, char *text)
+static void update_field_value(fz_context *ctx, pdf_obj *obj, char *text)
 {
 	pdf_obj *sobj = NULL;
 	pdf_obj *grp;
@@ -1904,7 +1904,7 @@ static void recalculate(pdf_document *doc)
 					execute_action(doc, field, calc);
 					/* A calculate action, updates event.value. We need
 					* to place the value in the field */
-					update_text_field_value(doc->ctx, field, pdf_js_get_event(doc->js)->value);
+					update_field_value(doc->ctx, field, pdf_js_get_event(doc->js)->value);
 				}
 			}
 		}
@@ -2184,7 +2184,7 @@ char *pdf_field_value(pdf_document *doc, pdf_obj *field)
 	return get_string_or_stream(doc, get_inheritable(doc, field, "V"));
 }
 
-int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text)
+static int set_text_field_value(pdf_document *doc, pdf_obj *field, char *text)
 {
 	pdf_obj *v = pdf_dict_getp(field, "AA/V");
 
@@ -2204,10 +2204,81 @@ int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text)
 	}
 
 	doc->dirty = 1;
-	update_text_field_value(doc->ctx, field, text);
-	recalculate(doc);
+	update_field_value(doc->ctx, field, text);
 
 	return 1;
+}
+
+static void update_checkbox_selector(pdf_document *doc, pdf_obj *field, char *val)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *kids = pdf_dict_gets(field, "Kids");
+
+	if (kids)
+	{
+		int i, n = pdf_array_len(kids);
+
+		for (i = 0; i < n; i++)
+			update_checkbox_selector(doc, pdf_array_get(kids, i), val);
+	}
+	else
+	{
+		pdf_obj *n = pdf_dict_getp(field, "AP/N");
+		pdf_obj *oval = NULL;
+
+		fz_var(oval);
+		fz_try(ctx)
+		{
+			if (pdf_dict_gets(n, val))
+				oval = pdf_new_name(ctx, val);
+			else
+				oval = pdf_new_name(ctx, "Off");
+
+			pdf_dict_puts(field, "AS", oval);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(oval);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+	}
+}
+
+static int set_checkbox_value(pdf_document *doc, pdf_obj *field, char *val)
+{
+	update_checkbox_selector(doc, field, val);
+	update_field_value(doc->ctx, field, val);
+	return 1;
+}
+
+int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text)
+{
+	int res = 0;
+
+	switch (pdf_field_type(doc, field))
+	{
+	case FZ_WIDGET_TYPE_TEXT:
+		res = set_text_field_value(doc, field, text);
+		break;
+
+	case FZ_WIDGET_TYPE_CHECKBOX:
+	case FZ_WIDGET_TYPE_RADIOBUTTON:
+		res = set_checkbox_value(doc, field, text);
+		break;
+
+	default:
+		/* text updater will do in most cases */
+		update_field_value(doc->ctx, field, text);
+		res = 1;
+		break;
+	}
+
+	recalculate(doc);
+
+	return res;
 }
 
 char *pdf_field_border_style(pdf_document *doc, pdf_obj *field)
