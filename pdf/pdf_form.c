@@ -398,10 +398,24 @@ static void fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, da_info *di)
 	if (di->font_name != NULL && di->font_size != 0)
 		fz_buffer_printf(ctx, fzbuf, "/%s %d Tf", di->font_name, di->font_size);
 
-	if (di->col_size != 0)
+	switch (di->col_size)
+	{
+	case 1:
+		fz_buffer_printf(ctx, fzbuf, " %f g", di->col[0]);
+		break;
+
+	case 3:
 		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
-	else
+		break;
+
+	case 4:
+		fz_buffer_printf(ctx, fzbuf, " %f %f %f %f k", di->col[0], di->col[1], di->col[2], di->col[3]);
+		break;
+
+	default:
 		fz_buffer_printf(ctx, fzbuf, " 0 g");
+		break;
+	}
 }
 
 static fz_rect measure_text(pdf_document *doc, font_info *font_rec, const fz_matrix *tm, char *text)
@@ -2422,11 +2436,14 @@ void pdf_field_set_text_color(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 	fz_var(daobj);
 	fz_try(ctx)
 	{
+		int i;
+
 		parse_da(ctx, da, &di);
-		di.col_size = 3;
-		di.col[0] = pdf_to_real(pdf_array_get(col, 0));
-		di.col[1] = pdf_to_real(pdf_array_get(col, 1));
-		di.col[2] = pdf_to_real(pdf_array_get(col, 2));
+		di.col_size = pdf_array_len(col);
+
+		for (i = 0; i < di.col_size; i++)
+			di.col[i] = pdf_to_real(pdf_array_get(col, i));
+
 		fzbuf = fz_new_buffer(ctx, 0);
 		fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
