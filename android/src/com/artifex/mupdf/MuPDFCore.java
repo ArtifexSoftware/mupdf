@@ -88,38 +88,32 @@ public class MuPDFCore
 		destroying();
 	}
 
-	public synchronized Bitmap drawPage(int page,
+	public synchronized void drawPage(BitmapHolder h, int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
 			int patchW, int patchH) {
 		gotoPage(page);
 		Bitmap bm = Bitmap.createBitmap(patchW, patchH, Config.ARGB_8888);
 		drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH);
-		return bm;
+		h.setBm(bm);
 	}
 
-	public synchronized Bitmap updatePage(BitmapHolder h, int page,
+	public synchronized void updatePage(BitmapHolder h, int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
 			int patchW, int patchH) {
 		Bitmap bm = null;
 		Bitmap old_bm = h.getBm();
-		h.setBm(null);
 
-		if (old_bm != null)
-			bm = old_bm.copy(Bitmap.Config.ARGB_8888, false);
+		if (old_bm == null)
+			return;
 
+		bm = old_bm.copy(Bitmap.Config.ARGB_8888, false);
 		old_bm = null;
 
-		if (bm != null) {
-			updatePageInternal(bm, page, pageW, pageH, patchX, patchY, patchW, patchH);
-		} else {
-			bm = Bitmap.createBitmap(patchW, patchH, Config.ARGB_8888);
-			gotoPage(page);
-			drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH);
-		}
+		h.setBm(bm);
 
-		return bm;
+		updatePageInternal(bm, page, pageW, pageH, patchX, patchY, patchW, patchH);
 	}
 
 	public synchronized PassClickResult passClickEvent(int page, float x, float y) {
