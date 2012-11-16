@@ -245,7 +245,7 @@ nearend:
 	return x;
 }
 
-static int
+static inline int
 find_changing_color(const unsigned char *line, int x, int w, int color)
 {
 	if (!line)

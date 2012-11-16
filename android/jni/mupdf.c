@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef NDK_PROFILER
+#include "prof.h"
+#endif
+
 #include "fitz.h"
 #include "mupdf.h"
 
@@ -205,6 +209,10 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 {
 	const char *filename;
 	int result = 0;
+
+#ifdef NDK_PROFILER
+	monstartup("libmupdf.so");
+#endif
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 	if (filename == NULL)
@@ -943,6 +951,14 @@ Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
 
 	fz_close_document(doc);
 	doc = NULL;
+#ifdef NDK_PROFILER
+	// Apparently we should really be writing to whatever path we get
+	// from calling getFilesDir() in the java part, which supposedly
+	// gives /sdcard/data/data/com.artifex.MuPDF/gmon.out, but that's
+	// unfriendly.
+	setenv("CPUPROFILE", "/sdcard/gmon.out", 1);
+	moncleanup();
+#endif
 }
 
 JNIEXPORT jobjectArray JNICALL
