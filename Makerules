@@ -34,6 +34,12 @@ LDFLAGS += -L/usr/local/lib
 X11_LIBS := -lX11 -lXext
 endif
 
+ifeq "$(OS)" "SunOS"
+SYS_FREETYPE_INC := `pkg-config --cflags freetype2`
+LDFLAGS += -L/usr/local/lib
+X11_LIBS := -lX11 -lXext
+endif
+
 # Mac OS X build depends on some thirdparty libs
 ifeq "$(OS)" "Darwin"
 SYS_FREETYPE_INC := -I/usr/X11R6/include/freetype2
@@ -117,3 +123,4 @@ RANLIB_CMD = $(PLATFORM_DEVELOPER_BIN_DIR)/ranlib $@
 CROSSCOMPILE=yes
 NOX11=yes
 endif
+
