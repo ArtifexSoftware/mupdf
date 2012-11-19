@@ -836,6 +836,7 @@ fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
 unsigned int fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip);
+void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
 fz_bbox fz_pixmap_bbox_no_ctx(fz_pixmap *src);
 

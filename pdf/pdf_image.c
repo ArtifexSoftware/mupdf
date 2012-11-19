@@ -99,15 +99,15 @@ static fz_store_type pdf_image_store_type =
 };
 
 static fz_pixmap *
-decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int in_line, int indexed, int l2factor, int cache)
+decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int in_line, int indexed, int l2factor, int native_l2factor, int cache)
 {
 	fz_pixmap *tile = NULL;
 	fz_pixmap *existing_tile;
 	int stride, len, i;
 	unsigned char *samples = NULL;
-	int f = 1<<l2factor;
-	int w = (image->base.w + f-1) >> l2factor;
-	int h = (image->base.h + f-1) >> l2factor;
+	int f = 1<<native_l2factor;
+	int w = (image->base.w + f-1) >> native_l2factor;
+	int h = (image->base.h + f-1) >> native_l2factor;
 	pdf_image_key *key;
 
 	fz_var(tile);
@@ -195,6 +195,14 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 		fz_rethrow(ctx);
 	}
 
+	/* Now apply any extra subsampling required */
+	if (l2factor - native_l2factor > 0)
+	{
+		if (l2factor - native_l2factor > 8)
+			l2factor = native_l2factor + 8;
+		fz_subsample_pixmap(ctx, tile, l2factor - native_l2factor);
+	}
+
 	if (!cache)
 		return tile;
 
@@ -249,6 +257,7 @@ pdf_image_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h)
 	fz_stream *stm;
 	int l2factor;
 	pdf_image_key key;
+	int native_l2factor;
 
 	/* Check for 'simple' images which are just pixmaps */
 	if (image->buffer == NULL)
@@ -285,9 +294,10 @@ pdf_image_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h)
 	while (key.l2factor >= 0);
 
 	/* We need to make a new one. */
-	stm = fz_open_image_decomp_stream(ctx, image->buffer, &l2factor);
+	native_l2factor = l2factor;
+	stm = fz_open_image_decomp_stream(ctx, image->buffer, &native_l2factor);
 
-	return decomp_image_from_stream(ctx, stm, image, 0, 0, l2factor, 1);
+	return decomp_image_from_stream(ctx, stm, image, 0, 0, l2factor, native_l2factor, 1);
 }
 
 static pdf_image *
@@ -450,7 +460,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 			stm = pdf_open_stream(xref, pdf_to_num(dict), pdf_to_gen(dict));
 		}
 
-		image->tile = decomp_image_from_stream(ctx, stm, image, cstm != NULL, indexed, 0, 0);
+		image->tile = decomp_image_from_stream(ctx, stm, image, cstm != NULL, indexed, 0, 0, 0);
 	}
 	fz_catch(ctx)
 	{
