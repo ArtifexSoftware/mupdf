@@ -689,7 +689,7 @@ static pdf_jsimp_obj *doc_mailDoc(void *jsctx, void *obj, int argc, pdf_jsimp_ob
 }
 
 static void declare_dom(pdf_js *js)
-
+{
 	pdf_jsimp *imp = js->imp;
 
 	/* Create the document type */
