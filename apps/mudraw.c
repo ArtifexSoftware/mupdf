@@ -209,7 +209,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_interactive *inter = fz_interact(doc);
 		fz_widget *widget = NULL;
-	
+
 		if (inter)
 			widget = fz_first_widget(inter, page);
 
