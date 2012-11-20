@@ -101,7 +101,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
-	private SafeAsyncTask<Void,Integer,SearchTaskResult> mSearchTask;
+	private AsyncTask<Void,Integer,SearchTaskResult> mSearchTask;
 	//private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 	private LinkState    mLinkState = LinkState.DEFAULT;
@@ -793,7 +793,7 @@ public class MuPDFActivity extends Activity
 		});
 		progressDialog.setMax(core.countPages());
 
-		mSearchTask = new SafeAsyncTask<Void,Integer,SearchTaskResult>() {
+		mSearchTask = new AsyncTask<Void,Integer,SearchTaskResult>() {
 			@Override
 			protected SearchTaskResult doInBackground(Void... params) {
 				int index = startIndex;
@@ -856,7 +856,7 @@ public class MuPDFActivity extends Activity
 			}
 		};
 
-		mSearchTask.safeExecute();
+		mSearchTask.execute();
 	}
 
 	@Override
