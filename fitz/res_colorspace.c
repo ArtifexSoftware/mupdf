@@ -2,28 +2,6 @@
 
 #define SLOWCMYK
 
-#ifdef NDK_PROFILER
-extern void __gnu_mcount_nc(void);
-#define ENTER_PG "push {lr}\nbl __gnu_mcount_nc\n"
-#else
-#define ENTER_PG
-#endif
-
-/* If we're compiling as thumb code, then we need to tell the compiler
- * to enter and exit ARM mode around our assembly sections. If we move
- * the ARM functions to a separate file and arrange for it to be compiled
- * without thumb mode, we can save some time on entry.
- */
-#ifdef ARCH_ARM
-#ifdef ARCH_THUMB
-#define ENTER_ARM ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n" ENTER_PG
-#define ENTER_THUMB "9:.thumb\n" ENTER_PG
-#else
-#define ENTER_ARM
-#define ENTER_THUMB
-#endif
-#endif
-
 void
 fz_free_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
