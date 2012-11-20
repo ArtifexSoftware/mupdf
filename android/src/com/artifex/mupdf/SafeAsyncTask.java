@@ -1,6 +1,5 @@
 package com.artifex.mupdf;
 
-import android.os.AsyncTask;
 import java.util.concurrent.RejectedExecutionException;
 
 

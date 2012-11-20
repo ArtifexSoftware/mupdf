@@ -12,7 +12,6 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.RectF;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
@@ -122,7 +121,7 @@ public class MuPDFActivity extends Activity
 			mAlertTask.cancel(true);
 			mAlertTask = null;
 		}
-		mAlertTask = new SafeAsyncTask<Void,Void,MuPDFAlert>() {
+		mAlertTask = new AsyncTask<Void,Void,MuPDFAlert>() {
 
 			@Override
 			protected MuPDFAlert doInBackground(Void... arg0) {
