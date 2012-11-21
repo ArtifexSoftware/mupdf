@@ -898,7 +898,7 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 		int back4 = strayX*n-1;
 		int strayY = h%f;
 		int divY = (strayY ? 65536/(strayY*f) : 0);
-		int back5 = fwd * strayY - 1;
+		int back5 = fwd * strayY - n;
 		int divXY = (strayY*strayX ? 65536/(strayX*strayY) : 0);
 		fz_subsample_pixmap_ARM(s, w, h, f, factor, n, fwd, back,
 					back2, fwd2, divX, back4, fwd4, fwd3,
@@ -957,7 +957,7 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 	if (y > 0)
 	{
 		int div = y * f;
-		int back5 = fwd * y - 1;
+		int back5 = fwd * y - n;
 		for (x = w - f; x >= 0; x -= f)
 		{
 			for (nn = n; nn > 0; nn--)
