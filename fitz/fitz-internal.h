@@ -860,6 +860,13 @@ fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
 unsigned int fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip);
+
+typedef struct fz_scale_cache_s fz_scale_cache;
+
+fz_scale_cache *fz_new_scale_cache(fz_context *ctx);
+void fz_free_scale_cache(fz_context *ctx, fz_scale_cache *cache);
+fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y);
+
 void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
 fz_bbox fz_pixmap_bbox_no_ctx(fz_pixmap *src);
