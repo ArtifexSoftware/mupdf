@@ -237,7 +237,7 @@ nearend:
 	if ((x<<3) == w)
 		return w;
 	b = a&1;
-	b = line[x];
+	a = line[x];
 	b = (b<<7) ^ a ^ (a>>1);
 	x = (x<<3) + clz[b];
 	if (x > w)
