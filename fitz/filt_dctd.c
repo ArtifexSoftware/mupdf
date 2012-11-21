@@ -224,7 +224,7 @@ skip:
 fz_stream *
 fz_open_dctd(fz_stream *chain, int color_transform)
 {
-	return fz_open_resized_dctd(chain, color_transform, 1);
+	return fz_open_resized_dctd(chain, color_transform, 0);
 }
 
 fz_stream *

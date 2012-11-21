@@ -33,8 +33,8 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_compressed_buffer *buffer, int *
 				params->u.fax.end_of_block,
 				params->u.fax.black_is_1);
 	case FZ_IMAGE_JPEG:
-		if (*l2factor > 8)
-			*l2factor = 8;
+		if (*l2factor > 3)
+			*l2factor = 3;
 		return fz_open_resized_dctd(chain, params->u.jpeg.color_transform, *l2factor);
 	case FZ_IMAGE_RLD:
 		*l2factor = 0;
