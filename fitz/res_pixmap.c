@@ -936,7 +936,7 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 			for (nn = n; nn > 0; nn--)
 			{
 				int v = 0;
-				for (;x > 0; x--)
+				for (xx = x; xx > 0; xx--)
 				{
 					for (yy = f; yy > 0; yy--)
 					{
@@ -985,9 +985,9 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 			for (nn = n; nn > 0; nn--)
 			{
 				int v = 0;
-				for (;x > 0; x--)
+				for (xx = x; xx > 0; xx--)
 				{
-					for (; y > 0; y--)
+					for (yy = y; yy > 0; yy--)
 					{
 						v += *s;
 						s += fwd;
