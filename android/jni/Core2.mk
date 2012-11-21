@@ -35,8 +35,7 @@ endif
 
 LOCAL_MODULE    := mupdfcore2
 LOCAL_SRC_FILES := \
-	$(MY_ROOT)/fitz/res_shade.c \
-	$(MY_ROOT)/draw/draw_simple_scale.c
+	$(MY_ROOT)/fitz/res_shade.c
 
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
 

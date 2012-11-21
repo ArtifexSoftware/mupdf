@@ -850,6 +850,7 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	"bgt	5b			@ 			\n"
 	"8:							\n"
 	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
+	".ltorg							\n"
 	ENTER_THUMB
 	);
 }
