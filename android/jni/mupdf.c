@@ -1318,7 +1318,7 @@ Java_com_artifex_mupdf_MuPDFCore_waitForAlertInternal(JNIEnv * env, jobject thiz
 	if (message == NULL)
 		return NULL;
 
-	return (*env)->NewObject(env, alertClass, ctor, title, alert.icon_type, alert.button_group_type, message, alert.button_pressed);
+	return (*env)->NewObject(env, alertClass, ctor, message, alert.icon_type, alert.button_group_type, title, alert.button_pressed);
 }
 
 JNIEXPORT void JNICALL
