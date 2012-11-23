@@ -1011,6 +1011,7 @@ struct fz_font_s
 	fz_matrix t3matrix;
 	void *t3resources;
 	fz_buffer **t3procs; /* has 256 entries if used */
+	fz_display_list **t3lists; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
 	char *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
@@ -1157,6 +1158,7 @@ fz_pixmap *fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, f
 fz_pixmap *fz_render_glyph(fz_context *ctx, fz_font*, int, fz_matrix, fz_colorspace *model, fz_bbox scissor);
 fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_font*, int, fz_matrix, fz_matrix, fz_stroke_state *stroke, fz_bbox scissor);
 void fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, fz_matrix trm, void *gstate);
+void fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid);
 
 /*
  * Text buffer.
