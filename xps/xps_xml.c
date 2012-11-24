@@ -1,4 +1,10 @@
-#include "muxps-internal.h"
+#include "muxps.h"
+
+struct parser
+{
+	fz_xml *head;
+	fz_context *ctx;
+};
 
 struct attribute
 {
@@ -7,18 +13,12 @@ struct attribute
 	struct attribute *next;
 };
 
-struct element
+struct fz_xml_s
 {
 	char name[40];
 	char *text;
 	struct attribute *atts;
-	struct element *up, *down, *next;
-};
-
-struct parser
-{
-	struct element *head;
-	fz_context *ctx;
+	fz_xml *up, *down, *next;
 };
 
 static inline void indent(int n)
@@ -26,7 +26,7 @@ static inline void indent(int n)
 	while (n--) putchar(' ');
 }
 
-void xml_print_element(struct element *item, int level)
+void fz_print_xml(fz_xml *item, int level)
 {
 	while (item) {
 		if (item->text) {
@@ -39,7 +39,7 @@ void xml_print_element(struct element *item, int level)
 				printf(" %s=\"%s\"", att->name, att->value);
 			if (item->down) {
 				printf(">\n");
-				xml_print_element(item->down, level + 1);
+				fz_print_xml(item->down, level + 1);
 				indent(level);
 				printf("</%s>\n", item->name);
 			}
@@ -51,27 +51,27 @@ void xml_print_element(struct element *item, int level)
 	}
 }
 
-struct element *xml_next(struct element *item)
+fz_xml *fz_xml_next(fz_xml *item)
 {
 	return item->next;
 }
 
-struct element *xml_down(struct element *item)
+fz_xml *fz_xml_down(fz_xml *item)
 {
 	return item->down;
 }
 
-char *xml_text(struct element *item)
+char *fz_xml_text(fz_xml *item)
 {
 	return item->text;
 }
 
-char *xml_tag(struct element *item)
+char *fz_xml_tag(fz_xml *item)
 {
 	return item->name;
 }
 
-char *xml_att(struct element *item, const char *name)
+char *fz_xml_att(fz_xml *item, const char *name)
 {
 	struct attribute *att;
 	for (att = item->atts; att; att = att->next)
@@ -91,22 +91,22 @@ static void xml_free_attribute(fz_context *ctx, struct attribute *att)
 	}
 }
 
-void xml_free_element(fz_context *ctx, struct element *item)
+void fz_free_xml(fz_context *ctx, fz_xml *item)
 {
 	while (item) {
-		struct element *next = item->next;
+		fz_xml *next = item->next;
 		if (item->text)
 			fz_free(ctx, item->text);
 		if (item->atts)
 			xml_free_attribute(ctx, item->atts);
 		if (item->down)
-			xml_free_element(ctx, item->down);
+			fz_free_xml(ctx, item->down);
 		fz_free(ctx, item);
 		item = next;
 	}
 }
 
-void xml_detach(xml_element *node)
+void fz_detach_xml(fz_xml *node)
 {
 	if (node->up)
 		node->up->down = NULL;
@@ -162,9 +162,9 @@ static inline int iswhite(int c)
 
 static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 {
-	struct element *head, *tail;
+	fz_xml *head, *tail;
 
-	head = fz_malloc_struct(parser->ctx, struct element);
+	head = fz_malloc_struct(parser->ctx, fz_xml);
 	if (b - a > sizeof(head->name) - 1)
 		b = a + sizeof(head->name) - 1;
 	memcpy(head->name, a, b - a);
@@ -191,7 +191,7 @@ static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 
 static void xml_emit_att_name(struct parser *parser, char *a, char *b)
 {
-	struct element *head = parser->head;
+	fz_xml *head = parser->head;
 	struct attribute *att;
 
 	att = fz_malloc_struct(parser->ctx, struct attribute);
@@ -206,7 +206,7 @@ static void xml_emit_att_name(struct parser *parser, char *a, char *b)
 
 static void xml_emit_att_value(struct parser *parser, char *a, char *b)
 {
-	struct element *head = parser->head;
+	fz_xml *head = parser->head;
 	struct attribute *att = head->atts;
 	char *s;
 	int c;
@@ -234,7 +234,7 @@ static void xml_emit_close_tag(struct parser *parser)
 static void xml_emit_text(struct parser *parser, char *a, char *b)
 {
 	static char *empty = "";
-	struct element *head;
+	fz_xml *head;
 	char *s;
 	int c;
 
@@ -413,11 +413,11 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n)
 	return (char*)s;
 }
 
-struct element *
-xml_parse_document(fz_context *ctx, unsigned char *s, int n)
+fz_xml *
+fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 {
 	struct parser parser;
-	struct element root;
+	fz_xml root;
 	char *p, *error;
 
 	/* s is already null-terminated (see xps_new_part) */

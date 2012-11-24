@@ -13,9 +13,9 @@ struct closure
 {
 	char *base_uri;
 	xps_resource *dict;
-	xml_element *root;
+	fz_xml *root;
 	void *user;
-	void (*func)(xps_document*, fz_matrix, fz_rect, char*, xps_resource*, xml_element*, void*);
+	void (*func)(xps_document*, fz_matrix, fz_rect, char*, xps_resource*, fz_xml*, void*);
 };
 
 static void
@@ -64,10 +64,10 @@ xps_paint_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect viewbox, int ti
 
 void
 xps_parse_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xml_element *root,
-	void (*func)(xps_document*, fz_matrix, fz_rect, char*, xps_resource*, xml_element*, void*), void *user)
+	char *base_uri, xps_resource *dict, fz_xml *root,
+	void (*func)(xps_document*, fz_matrix, fz_rect, char*, xps_resource*, fz_xml*, void*), void *user)
 {
-	xml_element *node;
+	fz_xml *node;
 	struct closure c;
 
 	char *opacity_att;
@@ -78,7 +78,7 @@ xps_parse_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	char *viewbox_units_att;
 	char *viewport_units_att;
 
-	xml_element *transform_tag = NULL;
+	fz_xml *transform_tag = NULL;
 
 	fz_matrix transform;
 	fz_rect viewbox;
@@ -87,13 +87,13 @@ xps_parse_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	float xscale, yscale;
 	int tile_mode;
 
-	opacity_att = xml_att(root, "Opacity");
-	transform_att = xml_att(root, "Transform");
-	viewbox_att = xml_att(root, "Viewbox");
-	viewport_att = xml_att(root, "Viewport");
-	tile_mode_att = xml_att(root, "TileMode");
-	viewbox_units_att = xml_att(root, "ViewboxUnits");
-	viewport_units_att = xml_att(root, "ViewportUnits");
+	opacity_att = fz_xml_att(root, "Opacity");
+	transform_att = fz_xml_att(root, "Transform");
+	viewbox_att = fz_xml_att(root, "Viewbox");
+	viewport_att = fz_xml_att(root, "Viewport");
+	tile_mode_att = fz_xml_att(root, "TileMode");
+	viewbox_units_att = fz_xml_att(root, "ViewboxUnits");
+	viewport_units_att = fz_xml_att(root, "ViewportUnits");
 
 	c.base_uri = base_uri;
 	c.dict = dict;
@@ -101,12 +101,12 @@ xps_parse_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 	c.user = user;
 	c.func = func;
 
-	for (node = xml_down(root); node; node = xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(xml_tag(node), "ImageBrush.Transform"))
-			transform_tag = xml_down(node);
-		if (!strcmp(xml_tag(node), "VisualBrush.Transform"))
-			transform_tag = xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "ImageBrush.Transform"))
+			transform_tag = fz_xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "VisualBrush.Transform"))
+			transform_tag = fz_xml_down(node);
 	}
 
 	xps_resolve_resource_reference(doc, dict, &transform_att, &transform_tag, NULL);
@@ -215,27 +215,27 @@ xps_parse_tiling_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 
 static void
 xps_paint_visual_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xml_element *root, void *visual_tag)
+	char *base_uri, xps_resource *dict, fz_xml *root, void *visual_tag)
 {
-	xps_parse_element(doc, ctm, area, base_uri, dict, (xml_element *)visual_tag);
+	xps_parse_element(doc, ctm, area, base_uri, dict, (fz_xml *)visual_tag);
 }
 
 void
 xps_parse_visual_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
-	char *base_uri, xps_resource *dict, xml_element *root)
+	char *base_uri, xps_resource *dict, fz_xml *root)
 {
-	xml_element *node;
+	fz_xml *node;
 
 	char *visual_uri;
 	char *visual_att;
-	xml_element *visual_tag = NULL;
+	fz_xml *visual_tag = NULL;
 
-	visual_att = xml_att(root, "Visual");
+	visual_att = fz_xml_att(root, "Visual");
 
-	for (node = xml_down(root); node; node = xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(xml_tag(node), "VisualBrush.Visual"))
-			visual_tag = xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "VisualBrush.Visual"))
+			visual_tag = fz_xml_down(node);
 	}
 
 	visual_uri = base_uri;
@@ -249,10 +249,10 @@ xps_parse_visual_brush(xps_document *doc, fz_matrix ctm, fz_rect area,
 }
 
 void
-xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, xml_element *root)
+xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri, xps_resource *dict, fz_xml *root)
 {
 	xps_resource *new_dict = NULL;
-	xml_element *node;
+	fz_xml *node;
 	char *opacity_mask_uri;
 
 	char *transform_att;
@@ -261,21 +261,21 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 	char *opacity_mask_att;
 	char *navigate_uri_att;
 
-	xml_element *transform_tag = NULL;
-	xml_element *clip_tag = NULL;
-	xml_element *opacity_mask_tag = NULL;
+	fz_xml *transform_tag = NULL;
+	fz_xml *clip_tag = NULL;
+	fz_xml *opacity_mask_tag = NULL;
 
 	fz_matrix transform;
 
-	transform_att = xml_att(root, "RenderTransform");
-	clip_att = xml_att(root, "Clip");
-	opacity_att = xml_att(root, "Opacity");
-	opacity_mask_att = xml_att(root, "OpacityMask");
-	navigate_uri_att = xml_att(root, "FixedPage.NavigateUri");
+	transform_att = fz_xml_att(root, "RenderTransform");
+	clip_att = fz_xml_att(root, "Clip");
+	opacity_att = fz_xml_att(root, "Opacity");
+	opacity_mask_att = fz_xml_att(root, "OpacityMask");
+	navigate_uri_att = fz_xml_att(root, "FixedPage.NavigateUri");
 
-	for (node = xml_down(root); node; node = xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(xml_tag(node), "Canvas.Resources") && xml_down(node))
+		if (!strcmp(fz_xml_tag(node), "Canvas.Resources") && fz_xml_down(node))
 		{
 			if (new_dict)
 			{
@@ -283,7 +283,7 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 			}
 			else
 			{
-				new_dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
+				new_dict = xps_parse_resource_dictionary(doc, base_uri, fz_xml_down(node));
 				if (new_dict)
 				{
 					new_dict->parent = dict;
@@ -292,12 +292,12 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 			}
 		}
 
-		if (!strcmp(xml_tag(node), "Canvas.RenderTransform"))
-			transform_tag = xml_down(node);
-		if (!strcmp(xml_tag(node), "Canvas.Clip"))
-			clip_tag = xml_down(node);
-		if (!strcmp(xml_tag(node), "Canvas.OpacityMask"))
-			opacity_mask_tag = xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "Canvas.RenderTransform"))
+			transform_tag = fz_xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "Canvas.Clip"))
+			clip_tag = fz_xml_down(node);
+		if (!strcmp(fz_xml_tag(node), "Canvas.OpacityMask"))
+			opacity_mask_tag = fz_xml_down(node);
 	}
 
 	opacity_mask_uri = base_uri;
@@ -320,7 +320,7 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 
 	xps_begin_opacity(doc, ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
-	for (node = xml_down(root); node; node = xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
 		xps_parse_element(doc, ctm, area, base_uri, dict, node);
 	}
@@ -337,7 +337,7 @@ xps_parse_canvas(xps_document *doc, fz_matrix ctm, fz_rect area, char *base_uri,
 void
 xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page)
 {
-	xml_element *node;
+	fz_xml *node;
 	xps_resource *dict;
 	char base_uri[1024];
 	fz_rect area;
@@ -358,14 +358,14 @@ xps_parse_fixed_page(xps_document *doc, fz_matrix ctm, xps_page *page)
 
 	area = fz_transform_rect(fz_scale(page->width, page->height), fz_unit_rect);
 
-	for (node = xml_down(page->root); node; node = xml_next(node))
+	for (node = fz_xml_down(page->root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(xml_tag(node), "FixedPage.Resources") && xml_down(node))
+		if (!strcmp(fz_xml_tag(node), "FixedPage.Resources") && fz_xml_down(node))
 		{
 			if (dict)
 				fz_warn(doc->ctx, "ignoring follow-up resource dictionaries");
 			else
-				dict = xps_parse_resource_dictionary(doc, base_uri, xml_down(node));
+				dict = xps_parse_resource_dictionary(doc, base_uri, fz_xml_down(node));
 		}
 		xps_parse_element(doc, ctm, area, base_uri, dict, node);
 	}

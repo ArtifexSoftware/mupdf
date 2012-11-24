@@ -15,18 +15,18 @@ xps_find_last_outline_at_level(fz_outline *node, int level, int target_level)
 }
 
 static fz_outline *
-xps_parse_document_outline(xps_document *doc, xml_element *root)
+xps_parse_document_outline(xps_document *doc, fz_xml *root)
 {
-	xml_element *node;
+	fz_xml *node;
 	fz_outline *head = NULL, *entry, *tail;
 	int last_level = 1, this_level;
-	for (node = xml_down(root); node; node = xml_next(node))
+	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(xml_tag(node), "OutlineEntry"))
+		if (!strcmp(fz_xml_tag(node), "OutlineEntry"))
 		{
-			char *level = xml_att(node, "OutlineLevel");
-			char *target = xml_att(node, "OutlineTarget");
-			char *description = xml_att(node, "Description");
+			char *level = fz_xml_att(node, "OutlineLevel");
+			char *target = fz_xml_att(node, "OutlineTarget");
+			char *description = fz_xml_att(node, "Description");
 			if (!target || !description)
 				continue;
 
@@ -60,16 +60,16 @@ xps_parse_document_outline(xps_document *doc, xml_element *root)
 }
 
 static fz_outline *
-xps_parse_document_structure(xps_document *doc, xml_element *root)
+xps_parse_document_structure(xps_document *doc, fz_xml *root)
 {
-	xml_element *node;
-	if (!strcmp(xml_tag(root), "DocumentStructure"))
+	fz_xml *node;
+	if (!strcmp(fz_xml_tag(root), "DocumentStructure"))
 	{
-		node = xml_down(root);
-		if (!strcmp(xml_tag(node), "DocumentStructure.Outline"))
+		node = fz_xml_down(root);
+		if (!strcmp(fz_xml_tag(node), "DocumentStructure.Outline"))
 		{
-			node = xml_down(node);
-			if (!strcmp(xml_tag(node), "DocumentOutline"))
+			node = fz_xml_down(node);
+			if (!strcmp(fz_xml_tag(node), "DocumentOutline"))
 				return xps_parse_document_outline(doc, node);
 		}
 	}
@@ -80,13 +80,13 @@ static fz_outline *
 xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 {
 	xps_part *part;
-	xml_element *root;
+	fz_xml *root;
 	fz_outline *outline;
 
 	part = xps_read_part(doc, fixdoc->outline);
 	fz_try(doc->ctx)
 	{
-		root = xml_parse_document(doc->ctx, part->data, part->size);
+		root = fz_parse_xml(doc->ctx, part->data, part->size);
 	}
 	fz_always(doc->ctx)
 	{
@@ -105,7 +105,7 @@ xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 	}
 	fz_always(doc->ctx)
 	{
-		xml_free_element(doc->ctx, root);
+		fz_free_xml(doc->ctx, root);
 	}
 	fz_catch(doc->ctx)
 	{
