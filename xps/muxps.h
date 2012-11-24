@@ -7,22 +7,6 @@ typedef struct xps_document_s xps_document;
 typedef struct xps_page_s xps_page;
 
 /*
- * XML document model
- */
-
-typedef struct fz_xml_s fz_xml;
-
-fz_xml *fz_parse_xml(fz_context *doc, unsigned char *buf, int len);
-fz_xml *fz_xml_next(fz_xml *item);
-fz_xml *fz_xml_down(fz_xml *item);
-char *fz_xml_tag(fz_xml *item);
-char *fz_xml_att(fz_xml *item, const char *att);
-char *fz_xml_text(fz_xml *item);
-void fz_free_xml(fz_context *doc, fz_xml *item);
-void fz_print_xml(fz_xml *item, int level);
-void fz_detach_xml(fz_xml *node);
-
-/*
 	xps_open_document: Open a document.
 
 	Open a document for reading so the library is able to locate

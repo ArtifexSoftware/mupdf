@@ -1,4 +1,4 @@
-#include "muxps.h"
+#include "fitz.h"
 
 struct parser
 {
@@ -26,7 +26,7 @@ static inline void indent(int n)
 	while (n--) putchar(' ');
 }
 
-void fz_print_xml(fz_xml *item, int level)
+void fz_debug_xml(fz_xml *item, int level)
 {
 	while (item) {
 		if (item->text) {
@@ -39,7 +39,7 @@ void fz_print_xml(fz_xml *item, int level)
 				printf(" %s=\"%s\"", att->name, att->value);
 			if (item->down) {
 				printf(">\n");
-				fz_print_xml(item->down, level + 1);
+				fz_debug_xml(item->down, level + 1);
 				indent(level);
 				printf("</%s>\n", item->name);
 			}
