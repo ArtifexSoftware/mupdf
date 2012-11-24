@@ -17,6 +17,7 @@ xml_element *xml_next(xml_element *item);
 xml_element *xml_down(xml_element *item);
 char *xml_tag(xml_element *item);
 char *xml_att(xml_element *item, const char *att);
+char *xml_text(xml_element *item);
 void xml_free_element(fz_context *doc, xml_element *item);
 void xml_print_element(xml_element *item, int level);
 void xml_detach(xml_element *node);
