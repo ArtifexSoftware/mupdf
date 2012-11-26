@@ -415,7 +415,7 @@ public class MuPDFActivity extends Activity
 			protected void onMoveToChild(int i) {
 				if (core == null)
 					return;
-				mPageNumberView.setText(String.format("%d/%d", i+1, core.countPages()));
+				mPageNumberView.setText(String.format("%d / %d", i+1, core.countPages()));
 				mPageSlider.setMax((core.countPages()-1) * mPageSliderRes);
 				mPageSlider.setProgress(i * mPageSliderRes);
 				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber != i) {
@@ -546,11 +546,11 @@ public class MuPDFActivity extends Activity
 		mLinkButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				if (mLinkHighlight) {
-					mLinkButton.setColorFilter(Color.argb(255, 255, 255, 255));
+					mLinkButton.setColorFilter(Color.argb(0xFF, 255, 255, 255));
 					mLinkHighlight = false;
 				} else {
-					// light blue tint
-					mLinkButton.setColorFilter(Color.argb(255, (37+255)/2, (114+255)/2, (172+255)/2));
+					// LINK_COLOR tint
+					mLinkButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
 					mLinkHighlight = true;
 				}
 				// Inform pages of the change.
@@ -753,7 +753,7 @@ public class MuPDFActivity extends Activity
 	void updatePageNumView(int index) {
 		if (core == null)
 			return;
-		mPageNumberView.setText(String.format("%d/%d", index+1, core.countPages()));
+		mPageNumberView.setText(String.format("%d / %d", index+1, core.countPages()));
 	}
 
 	void makeButtonsView() {
