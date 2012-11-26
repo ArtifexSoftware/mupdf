@@ -9,6 +9,8 @@ cscope.*
 *.png
 tags
 TAGS
+*.xcworkspace
+*.xcuserdatad
 win32/*.user
 win32/*.ncb
 win32/*.suo
