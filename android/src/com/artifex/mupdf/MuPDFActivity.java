@@ -919,4 +919,26 @@ public class MuPDFActivity extends Activity
 
 		super.onStop();
 	}
+
+	@Override
+	public void onBackPressed() {
+		if (core.hasChanges()) {
+			DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+					if (which == AlertDialog.BUTTON_POSITIVE)
+						core.save();
+
+					finish();
+				}
+			};
+			AlertDialog alert = mAlertBuilder.create();
+			alert.setTitle("MuPDF");
+			alert.setMessage("Document has changes. Save them?");
+			alert.setButton(AlertDialog.BUTTON_POSITIVE, "Yes", listener);
+			alert.setButton(AlertDialog.BUTTON_NEGATIVE, "No", listener);
+			alert.show();
+		} else {
+			super.onBackPressed();
+		}
+	}
 }
