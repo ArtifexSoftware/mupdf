@@ -6,7 +6,6 @@ generated
 cscope.*
 *.pdf
 *.pnm
-*.png
 tags
 TAGS
 *.xcworkspace
