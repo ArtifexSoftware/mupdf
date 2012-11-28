@@ -156,7 +156,7 @@ public class MuPDFCore
 		case COMBOBOX:
 			return new PassClickResultChoice(changed, getFocusedWidgetChoiceOptions(), getFocusedWidgetChoiceSelected());
 		default:
-			return null;
+			return new PassClickResult(changed);
 		}
 
 	}

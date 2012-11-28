@@ -15,14 +15,15 @@ abstract class PassClickResultVisitor {
 	public abstract void visitChoice(PassClickResultChoice result);
 }
 
-abstract class PassClickResult {
+class PassClickResult {
 	public final boolean changed;
 
 	public PassClickResult(boolean _changed) {
 		changed = _changed;
 	}
 
-	public abstract void acceptVisitor(PassClickResultVisitor vistor);
+	public void acceptVisitor(PassClickResultVisitor visitor) {
+	}
 }
 
 class PassClickResultText extends PassClickResult {
