@@ -35,6 +35,9 @@ public class MuPDFCore
 	private native RectF[] searchPage(String text);
 	private native int getPageLink(int page, float x, float y);
 	private native int passClickEventInternal(int page, float x, float y);
+	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
+	private native String [] getFocusedWidgetChoiceSelected();
+	private native String [] getFocusedWidgetChoiceOptions();
 	private native int setFocusedWidgetTextInternal(String text);
 	private native String getFocusedWidgetTextInternal();
 	private native int getFocusedWidgetTypeInternal();
@@ -144,21 +147,18 @@ public class MuPDFCore
 
 	public synchronized PassClickResult passClickEvent(int page, float x, float y) {
 		boolean changed = passClickEventInternal(page, x, y) != 0;
-		int type = getFocusedWidgetTypeInternal();
-		WidgetType wtype = WidgetType.values()[type];
-		String text;
 
-		switch (wtype)
+		switch (WidgetType.values()[getFocusedWidgetTypeInternal()])
 		{
 		case TEXT:
-			text = getFocusedWidgetTextInternal();
-			break;
+			return new PassClickResultText(changed, getFocusedWidgetTextInternal());
+		case LISTBOX:
+		case COMBOBOX:
+			return new PassClickResultChoice(changed, getFocusedWidgetChoiceOptions(), getFocusedWidgetChoiceSelected());
 		default:
-			text = "";
-			break;
+			return null;
 		}
 
-		return new PassClickResult(changed, wtype, text);
 	}
 
 	public synchronized boolean setFocusedWidgetText(int page, String text) {
@@ -167,6 +167,10 @@ public class MuPDFCore
 		success = setFocusedWidgetTextInternal(text) != 0 ? true : false;
 
 		return success;
+	}
+
+	public synchronized void setFocusedWidgetChoiceSelected(String [] selected) {
+		setFocusedWidgetChoiceSelectedInternal(selected);
 	}
 
 	public synchronized int hitLinkPage(int page, float x, float y) {

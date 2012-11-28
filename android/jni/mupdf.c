@@ -1313,6 +1313,176 @@ Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetTextInternal(JNIEnv * env, jobj
 	return result;
 }
 
+JNIEXPORT jobjectArray JNICALL
+Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceOptions(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_interactive *idoc = fz_interact(glo->doc);
+	fz_widget *focus;
+	int type;
+	int nopts, i;
+	char **opts = NULL;
+	jclass stringClass;
+	jobjectArray arr;
+
+	if (idoc == NULL)
+		return NULL;
+
+	focus = fz_focused_widget(idoc);
+	if (focus == NULL)
+		return NULL;
+
+	type = fz_widget_get_type(focus);
+	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+		return NULL;
+
+	fz_var(opts);
+	fz_try(ctx)
+	{
+		nopts = fz_choice_widget_options(idoc, focus, NULL);
+		opts = fz_malloc(ctx, nopts * sizeof(*opts));
+		(void)fz_choice_widget_options(idoc, focus, opts);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, opts);
+		LOGE("Failed in getFocuseedWidgetChoiceOptions");
+		return NULL;
+	}
+
+	stringClass = (*env)->FindClass(env, "java/lang/String");
+
+	arr = (*env)->NewObjectArray(env, nopts, stringClass, NULL);
+
+	for (i = 0; i < nopts; i++)
+	{
+		jstring s = (*env)->NewStringUTF(env, opts[i]);
+		if (s != NULL)
+			(*env)->SetObjectArrayElement(env, arr, i, s);
+
+		(*env)->DeleteLocalRef(env, s);
+	}
+
+	fz_free(ctx, opts);
+
+	return arr;
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceSelected(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_interactive *idoc = fz_interact(glo->doc);
+	fz_widget *focus;
+	int type;
+	int nsel, i;
+	char **sel = NULL;
+	jclass stringClass;
+	jobjectArray arr;
+
+	if (idoc == NULL)
+		return NULL;
+
+	focus = fz_focused_widget(idoc);
+	if (focus == NULL)
+		return NULL;
+
+	type = fz_widget_get_type(focus);
+	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+		return NULL;
+
+	fz_var(sel);
+	fz_try(ctx)
+	{
+		nsel = fz_choice_widget_value(idoc, focus, NULL);
+		sel = fz_malloc(ctx, nsel * sizeof(*sel));
+		(void)fz_choice_widget_value(idoc, focus, sel);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, sel);
+		LOGE("Failed in getFocuseedWidgetChoiceOptions");
+		return NULL;
+	}
+
+	stringClass = (*env)->FindClass(env, "java/lang/String");
+
+	arr = (*env)->NewObjectArray(env, nsel, stringClass, NULL);
+
+	for (i = 0; i < nsel; i++)
+	{
+		jstring s = (*env)->NewStringUTF(env, sel[i]);
+		if (s != NULL)
+			(*env)->SetObjectArrayElement(env, arr, i, s);
+
+		(*env)->DeleteLocalRef(env, s);
+	}
+
+	fz_free(ctx, sel);
+
+	return arr;
+}
+
+JNIEXPORT void JNICALL
+Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetChoiceSelectedInternal(JNIEnv * env, jobject thiz, jobjectArray arr)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_interactive *idoc = fz_interact(glo->doc);
+	fz_widget *focus;
+	int type;
+	int nsel, i;
+	char **sel = NULL;
+	jstring *objs = NULL;
+
+	if (idoc == NULL)
+		return;
+
+	focus = fz_focused_widget(idoc);
+	if (focus == NULL)
+		return;
+
+	type = fz_widget_get_type(focus);
+	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+		return;
+
+	nsel = (*env)->GetArrayLength(env, arr);
+
+	sel = calloc(nsel, sizeof(*sel));
+	objs = calloc(nsel, sizeof(*objs));
+	if (objs == NULL || sel == NULL)
+	{
+		free(sel);
+		free(objs);
+		LOGE("Failed in setFocusWidgetChoiceSelected");
+		return;
+	}
+
+	for (i = 0; i < nsel; i++)
+	{
+		objs[i] = (jstring)(*env)->GetObjectArrayElement(env, arr, i);
+		sel[i] = (char *)(*env)->GetStringUTFChars(env, objs[i], NULL);
+	}
+
+	fz_try(ctx)
+	{
+		fz_choice_widget_set_value(idoc, focus, nsel, sel);
+		dump_annotation_display_lists(glo);
+	}
+	fz_catch(ctx)
+	{
+		LOGE("Failed in setFocusWidgetChoiceSelected");
+	}
+
+	for (i = 0; i < nsel; i++)
+		(*env)->ReleaseStringUTFChars(env, objs[i], sel[i]);
+
+	free(sel);
+	free(objs);
+}
+
 JNIEXPORT int JNICALL
 Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTypeInternal(JNIEnv * env, jobject thiz)
 {
