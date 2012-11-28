@@ -428,6 +428,10 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 	parser.head = &root;
 	parser.ctx = ctx;
 
+	/* skip BOM in UTF-8 text */
+	if (s[0] == 0xEF && s[1] == 0xBB && s[2] == 0xBF)
+		s += 3;
+
 	p = convert_to_utf8(ctx, s, n);
 
 	error = xml_parse_document_imp(&parser, p);
