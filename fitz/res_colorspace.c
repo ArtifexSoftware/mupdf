@@ -710,7 +710,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	float srcv[FZ_MAX_COLORS];
 	float dstv[FZ_MAX_COLORS];
 	int srcn, dstn;
-	int y, x, k, i;
+	int k, i;
 	unsigned int xy;
 
 	fz_colorspace *ss = src->colorspace;
