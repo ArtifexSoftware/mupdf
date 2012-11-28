@@ -2114,7 +2114,7 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 	pdf_write_options opts = { 0 };
 	fz_context *ctx;
 
-	if (!xref || !fz_opts)
+	if (!xref)
 		return;
 
 	ctx = xref->ctx;
