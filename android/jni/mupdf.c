@@ -450,7 +450,8 @@ Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bit
 
 		// Call fz_update_page now to ensure future calls yield the
 		// changes from the current state
-		fz_update_page(idoc, pc->page);
+		if (idoc)
+			fz_update_page(idoc, pc->page);
 
 		if (hq) {
 			// This is a rendering of the hq patch. Ensure there's a second copy of the
@@ -626,7 +627,8 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 		// must use the correct one for calculating updates
 		fz_page *page = hq ? pc->hq_page : pc->page;
 
-		fz_update_page(idoc, page);
+		if (idoc)
+			fz_update_page(idoc, page);
 
 		if (pc->page_list == NULL)
 		{
@@ -664,7 +666,7 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
 
 		LOGI("Start polling for updates");
-		while ((annot = fz_poll_changed_annot(idoc, page)) != NULL)
+		while (idoc && (annot = fz_poll_changed_annot(idoc, page)) != NULL)
 		{
 			fz_bbox abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
 			abox = fz_intersect_bbox(abox, rect);
