@@ -1737,6 +1737,14 @@ dowriteobject(pdf_document *xref, pdf_write_options *opts, int num, int pass)
 	if (xref->table[num].type == 'o')
 		opts->gen_list[num] = 0;
 
+	/* If we are renumbering, then make sure all generation numbers are
+	 * zero (except object 0 which must be free, and have a gen number of
+	 * 65535). Changing the generation numbers (and indeed object numbers)
+	 * will break encryption - so only do this if we are renumbering
+	 * anyway. */
+	if (opts->do_garbage >= 2)
+		opts->gen_list[num] = (num == 0 ? 65535 : 0);
+
 	if (opts->do_garbage && !opts->use_list[num])
 		return;
 

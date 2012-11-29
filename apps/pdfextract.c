@@ -96,6 +96,8 @@ static void savefont(pdf_obj *dict, int num)
 			ext = "cff";
 		else if (!strcmp(subtype, "CIDFontType0C"))
 			ext = "cid";
+		else if (!strcmp(subtype, "OpenType"))
+			ext = "otf";
 		else
 			fz_throw(ctx, "Unhandled font type '%s'", subtype);
 	}

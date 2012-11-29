@@ -419,7 +419,6 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 				pdf_drop_obj(dict);
 			}
-
 		}
 
 		xref->table[0].type = 'f';

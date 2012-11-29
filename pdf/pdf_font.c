@@ -260,7 +260,8 @@ pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, c
 			pdf_load_substitute_cjk_font(ctx, fontdesc, fontname, PDF_ROS_KOREA, serif);
 		else
 		{
-			fz_warn(ctx, "unknown cid collection: %s", collection);
+			if (strcmp(collection, "Adobe-Identity") != 0)
+				fz_warn(ctx, "unknown cid collection: %s", collection);
 			pdf_load_substitute_font(ctx, fontdesc, fontname, mono, serif, bold, italic);
 		}
 	}

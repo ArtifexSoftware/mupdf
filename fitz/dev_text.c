@@ -714,7 +714,7 @@ fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page)
 						break;
 					}
 					fprintf(out, "\"/>\n");
-			}
+				}
 				fprintf(out, "</span>\n");
 			}
 			fprintf(out, "</line>\n");

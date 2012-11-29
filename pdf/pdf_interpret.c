@@ -28,7 +28,7 @@ struct pdf_material_s
 	pdf_pattern *pattern;
 	fz_shade *shade;
 	float alpha;
-	float v[32];
+	float v[FZ_MAX_COLORS];
 };
 
 struct pdf_gstate_s

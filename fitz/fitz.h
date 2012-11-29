@@ -166,7 +166,7 @@ static inline float fz_clamp(float f, float min, float max)
 	return (f > min ? (f < max ? f : max) : min);
 }
 
-static inline int fz_clampi(int i, float min, float max)
+static inline int fz_clampi(int i, int min, int max)
 {
 	return (i > min ? (i < max ? i : max) : min);
 }
