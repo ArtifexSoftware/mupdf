@@ -434,12 +434,22 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 
 	p = convert_to_utf8(ctx, s, n);
 
-	error = xml_parse_document_imp(&parser, p);
-	if (error)
-		fz_throw(ctx, "%s", error);
-
-	if (p != (char*)s)
-		fz_free(ctx, p);
+	fz_try(ctx)
+	{
+		error = xml_parse_document_imp(&parser, p);
+		if (error)
+			fz_throw(ctx, "%s", error);
+	}
+	fz_always(ctx)
+	{
+		if (p != (char*)s)
+			fz_free(ctx, p);
+	}
+	fz_catch(ctx)
+	{
+		fz_free_xml(ctx, root.down);
+		fz_rethrow(ctx);
+	}
 
 	return root.down;
 }

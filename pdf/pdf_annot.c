@@ -360,8 +360,9 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 	int i, len;
 	fz_context *ctx = xref->ctx;
 
+	fz_var(annot);
+
 	head = tail = NULL;
-	annot = NULL;
 
 	len = pdf_array_len(annots);
 	for (i = 0; i < len; i++)
@@ -374,7 +375,11 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 		ap = pdf_dict_gets(obj, "AP");
 		as = pdf_dict_gets(obj, "AS");
 
-		if (pdf_is_dict(ap))
+		if (!pdf_is_dict(ap))
+			continue;
+
+		annot = NULL;
+		fz_try(ctx)
 		{
 			pdf_hotspot *hp = &xref->hotspot;
 
@@ -394,7 +399,6 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 			if (!pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
 				n = pdf_dict_get(n, as);
 
-
 			annot = fz_malloc_struct(ctx, pdf_annot);
 			annot->obj = pdf_keep_obj(obj);
 			annot->rect = pdf_to_rect(ctx, rect);
@@ -404,16 +408,9 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 
 			if (pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
 			{
-				fz_try(ctx)
-				{
-					annot->ap = pdf_load_xobject(xref, n);
-					pdf_transform_annot(annot);
-					annot->ap_iteration = annot->ap->iteration;
-				}
-				fz_catch(ctx)
-				{
-					fz_warn(ctx, "ignoring broken annotation");
-				}
+				annot->ap = pdf_load_xobject(xref, n);
+				pdf_transform_annot(annot);
+				annot->ap_iteration = annot->ap->iteration;
 			}
 
 			annot->next = NULL;
@@ -428,6 +425,11 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 				tail->next = annot;
 				tail = annot;
 			}
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, annot);
+			fz_warn(ctx, "ignoring broken annotation");
 		}
 	}
 

@@ -366,11 +366,24 @@ xps_parse_metadata(xps_document *doc, xps_part *part, xps_fixdoc *fixdoc)
 static void
 xps_read_and_process_metadata_part(xps_document *doc, char *name, xps_fixdoc *fixdoc)
 {
-	if (xps_has_part(doc, name))
+	fz_context *ctx = doc->ctx;
+	xps_part *part;
+
+	if (!xps_has_part(doc, name))
+		return;
+
+	part = xps_read_part(doc, name);
+	fz_try(ctx)
 	{
-		xps_part *part = xps_read_part(doc, name);
 		xps_parse_metadata(doc, part, fixdoc);
+	}
+	fz_always(ctx)
+	{
 		xps_free_part(doc, part);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 
@@ -415,10 +428,21 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	fz_xml *root;
 	char *width_att;
 	char *height_att;
+	fz_context *ctx = doc->ctx;
 
 	part = xps_read_part(doc, page->name);
-	root = fz_parse_xml(doc->ctx, part->data, part->size);
-	xps_free_part(doc, part);
+	fz_try(ctx)
+	{
+		root = fz_parse_xml(doc->ctx, part->data, part->size);
+	}
+	fz_always(ctx)
+	{
+		xps_free_part(doc, part);
+	}
+	fz_catch(ctx)
+	{
+		root = NULL;
+	}
 	if (!root)
 		fz_throw(doc->ctx, "FixedPage missing root element");
 
