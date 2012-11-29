@@ -99,6 +99,10 @@ read_lzwd(fz_stream *stm, unsigned char *buf, int len)
 		{
 			old_code = code;
 		}
+		else if (code > next_code || next_code >= NUM_CODES)
+		{
+			fz_warn(stm->ctx, "out of range code encountered in lzw decode");
+		}
 		else
 		{
 			/* add new entry to the code table */

@@ -198,7 +198,8 @@ pdf_parse_bf_range_array(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_l
 
 		if (buf->len / 2)
 		{
-			for (i = 0; i < buf->len / 2; i++)
+			int len = fz_mini(buf->len / 2, nelem(dst));
+			for (i = 0; i < len; i++)
 				dst[i] = pdf_code_from_string(&buf->scratch[i * 2], 2);
 
 			pdf_map_one_to_many(ctx, cmap, lo, dst, buf->len / 2);
@@ -248,7 +249,8 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 				if (buf->len / 2)
 				{
-					for (i = 0; i < buf->len / 2; i++)
+					int len = fz_mini(buf->len / 2, nelem(dststr));
+					for (i = 0; i < len; i++)
 						dststr[i] = pdf_code_from_string(&buf->scratch[i * 2], 2);
 
 					while (lo <= hi)
@@ -300,7 +302,8 @@ pdf_parse_bf_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf *
 
 		if (buf->len / 2)
 		{
-			for (i = 0; i < buf->len / 2; i++)
+			int len = fz_mini(buf->len / 2, nelem(dst));
+			for (i = 0; i < len; i++)
 				dst[i] = pdf_code_from_string(&buf->scratch[i * 2], 2);
 			pdf_map_one_to_many(ctx, cmap, src, dst, i);
 		}
