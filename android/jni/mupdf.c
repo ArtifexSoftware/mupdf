@@ -259,6 +259,7 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 	if (!ctx)
 	{
 		LOGE("Failed to initialise context");
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 		free(glo);
 		return 0;
 	}
