@@ -99,6 +99,7 @@ struct pdf_csi_s
 	pdf_gstate *gstate;
 	int gcap;
 	int gtop;
+	int gbot;
 
 	/* cookie support */
 	fz_cookie *cookie;
@@ -306,6 +307,7 @@ static void
 pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 {
 	pdf_gstate *gstate = csi->gstate + csi->gtop;
+	fz_context *ctx = csi->dev->ctx;
 
 	if (gstate->softmask)
 	{
@@ -318,7 +320,17 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 
 		fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 			softmask->colorspace, gstate->softmask_bc);
-		pdf_run_xobject(csi, NULL, softmask, fz_identity);
+		fz_try(ctx)
+		{
+			pdf_run_xobject(csi, NULL, softmask, fz_identity);
+		}
+		fz_catch(ctx)
+		{
+			/* FIXME: Ignore error - nasty, but if we throw from
+			 * here the clip stack would be messed up. */
+			if (csi->cookie)
+				csi->cookie->errors++;
+		}
 
 		fz_end_mask(csi->dev);
 
@@ -983,6 +995,7 @@ pdf_new_csi(pdf_document *xref, fz_device *dev, fz_matrix ctm, char *event, fz_c
 		if (gstate)
 			copy_state(ctx, &csi->gstate[0], gstate);
 		csi->gtop = 0;
+		csi->gbot = 0;
 
 		csi->cookie = cookie;
 	}
@@ -1044,7 +1057,7 @@ pdf_grestore(pdf_csi *csi)
 	pdf_gstate *gs = csi->gstate + csi->gtop;
 	int clip_depth = gs->clip_depth;
 
-	if (csi->gtop == 0)
+	if (csi->gtop <= csi->gbot)
 	{
 		fz_warn(ctx, "gstate underflow in content stream");
 		return;
@@ -1376,7 +1389,18 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, fz_matrix t
 
 				fz_begin_mask(csi->dev, bbox, gstate->luminosity,
 					softmask->colorspace, gstate->softmask_bc);
-				pdf_run_xobject(csi, resources, softmask, fz_identity);
+				fz_try(ctx)
+				{
+					pdf_run_xobject(csi, resources, softmask, fz_identity);
+				}
+				fz_catch(ctx)
+				{
+					/* FIXME: Ignore error - nasty, but if
+					 * we throw from here the clip stack
+					 * would be messed up */
+					if (csi->cookie)
+						csi->cookie->errors++;
+				}
 				fz_end_mask(csi->dev);
 
 				pdf_drop_xobject(ctx, softmask);
@@ -2717,6 +2741,7 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	fz_context *ctx = csi->dev->ctx;
 	pdf_lexbuf *buf;
 	int save_in_text;
+	int save_gbot;
 
 	fz_var(buf);
 
@@ -2727,6 +2752,8 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	pdf_lexbuf_init(ctx, buf, PDF_LEXBUF_SMALL);
 	save_in_text = csi->in_text;
 	csi->in_text = 0;
+	save_gbot = csi->gbot;
+	csi->gbot = csi->gtop;
 	fz_try(ctx)
 	{
 		pdf_run_stream(csi, rdb, file, buf);
@@ -2735,6 +2762,9 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	{
 		fz_warn(ctx, "Content stream parsing error - rendering truncated");
 	}
+	while (csi->gtop > csi->gbot)
+		pdf_grestore(csi);
+	csi->gbot = save_gbot;
 	csi->in_text = save_in_text;
 	pdf_lexbuf_fin(buf);
 	fz_free(ctx, buf);
