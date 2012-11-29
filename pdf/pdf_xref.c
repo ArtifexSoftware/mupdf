@@ -422,8 +422,17 @@ pdf_read_xref(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 	return trailer;
 }
 
+typedef struct ofs_list_s ofs_list;
+
+struct ofs_list_s
+{
+	int max;
+	int len;
+	int *list;
+};
+
 static void
-pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
+do_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf, ofs_list *offsets)
 {
 	pdf_obj *trailer = NULL;
 	fz_context *ctx = xref->ctx;
@@ -438,6 +447,25 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 	{
 		do
 		{
+			int i;
+			/* Avoid potential infinite recursion */
+			for (i = 0; i < offsets->len; i ++)
+			{
+				if (offsets->list[i] == ofs)
+					break;
+			}
+			if (i < offsets->len)
+			{
+				fz_warn(ctx, "ignoring xref recursion with offset %d", ofs);
+				break;
+			}
+			if (offsets->len == offsets->max)
+			{
+				offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(int));
+				offsets->max *= 2;
+			}
+			offsets->list[offsets->len++] = ofs;
+
 			trailer = pdf_read_xref(xref, ofs, buf);
 
 			/* FIXME: do we overwrite free entries properly? */
@@ -452,7 +480,7 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 			/* We only recurse if we have both xrefstm and prev.
 			 * Hopefully this happens infrequently. */
 			if (xrefstmofs && prevofs)
-				pdf_read_xref_sections(xref, xrefstmofs, buf);
+				do_read_xref_sections(xref, xrefstmofs, buf, offsets);
 			if (prevofs)
 				ofs = prevofs;
 			else if (xrefstmofs)
@@ -466,6 +494,29 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 	{
 		pdf_drop_obj(trailer);
 		fz_throw(ctx, "cannot read xref at offset %d", ofs);
+	}
+}
+
+static void
+pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
+{
+	fz_context *ctx = xref->ctx;
+	ofs_list list;
+
+	list.len = 0;
+	list.max = 10;
+	list.list = fz_malloc_array(ctx, 10, sizeof(int));
+	fz_try(ctx)
+	{
+		do_read_xref_sections(xref, ofs, buf, &list);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, list.list);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 
