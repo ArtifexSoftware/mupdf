@@ -29,6 +29,9 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 {
 	fz_pixmap *pix;
 
+	if (w < 0 || h < 0)
+		fz_throw(ctx, "Illegal dimensions for pixmap %d %d", w, h);
+
 	pix = fz_malloc_struct(ctx, fz_pixmap);
 	FZ_INIT_STORABLE(pix, 1, fz_free_pixmap_imp);
 	pix->x = 0;
