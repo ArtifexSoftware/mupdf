@@ -3,18 +3,13 @@
 #include <jpeglib.h>
 #include <setjmp.h>
 
-struct jpeg_error_mgr_jmp
-{
-	struct jpeg_error_mgr super;
-	jmp_buf env;
-	char msg[JMSG_LENGTH_MAX];
-};
-
 static void error_exit(j_common_ptr cinfo)
 {
-	struct jpeg_error_mgr_jmp *err = (struct jpeg_error_mgr_jmp *)cinfo->err;
-	cinfo->err->format_message(cinfo, err->msg);
-	longjmp(err->env, 1);
+	char msg[JMSG_LENGTH_MAX];
+	fz_context *ctx = (fz_context *)cinfo->client_data;
+
+	cinfo->err->format_message(cinfo, msg);
+	fz_throw(ctx, "jpeg error: %s", msg);
 }
 
 static void init_source(j_decompress_ptr cinfo)
@@ -53,7 +48,7 @@ fz_pixmap *
 fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 {
 	struct jpeg_decompress_struct cinfo;
-	struct jpeg_error_mgr_jmp err;
+	struct jpeg_error_mgr err;
 	struct jpeg_source_mgr src;
 	unsigned char *row[1], *sp, *dp;
 	fz_colorspace *colorspace;
@@ -68,13 +63,8 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 
 	fz_try(ctx)
 	{
-		if (setjmp(err.env))
-		{
-			fz_throw(ctx, "jpeg error: %s", err.msg);
-		}
-
-		cinfo.err = jpeg_std_error(&err.super);
-		err.super.error_exit = error_exit;
+		cinfo.err = jpeg_std_error(&err);
+		err.error_exit = error_exit;
 
 		jpeg_create_decompress(&cinfo);
 
@@ -136,7 +126,15 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 	{
 		fz_free(ctx, row[0]);
 		row[0] = NULL;
-		jpeg_finish_decompress(&cinfo);
+		fz_try(ctx)
+		{
+			/* Annoyingly, jpeg_finish_decompress can throw */
+			jpeg_finish_decompress(&cinfo);
+		}
+		fz_catch(ctx)
+		{
+			/* Ignore any errors here */
+		}
 		jpeg_destroy_decompress(&cinfo);
 	}
 	fz_catch(ctx)
