@@ -63,6 +63,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 
 	fz_try(ctx)
 	{
+		cinfo.client_data = ctx;
 		cinfo.err = jpeg_std_error(&err);
 		err.error_exit = error_exit;
 
