@@ -1457,7 +1457,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
 	[window setBackgroundColor: [UIColor scrollViewTexturedBackgroundColor]];
-	[window addSubview: [navigator view]];
+	[window setRootViewController: navigator];
 	[window makeKeyAndVisible];
 
 	filename = [[NSUserDefaults standardUserDefaults] objectForKey: @"OpenDocumentKey"];
