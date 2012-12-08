@@ -5,11 +5,6 @@
 #undef MAX
 
 #include "fitz/fitz.h"
-#include "pdf/mupdf.h"
-#include "xps/muxps.h"
-#include "cbz/mucbz.h"
-
-#include "document.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
@@ -24,7 +19,7 @@ static fz_context *ctx = NULL;
 {
 	NSArray *files;
 	NSTimer *timer;
-	struct document *_doc; // temporaries for juggling password dialog
+	fz_document *_doc; // temporaries for juggling password dialog
 	NSString *_filename;
 }
 - (void) openDocument: (NSString*)filename;
@@ -49,24 +44,26 @@ static fz_context *ctx = NULL;
 	int hitCount;
 	CGRect hitRects[500];
 }
-- (id) initWithSearchResults: (int)n forDocument: (struct document *)doc;
+- (id) initWithSearchResults: (int)n forDocument: (fz_document *)doc;
 - (void) setPageSize: (CGSize)s;
 @end
 
 @interface MuPageView : UIScrollView <UIScrollViewDelegate>
 {
-	struct document *doc;
+	fz_document *doc;
+	fz_page *page;
 	int number;
 	UIActivityIndicatorView *loadingView;
 	UIImageView *imageView;
 	UIImageView *tileView;
 	MuHitView *hitView;
+	MuHitView *linkView;
 	CGSize pageSize;
 	CGRect tileFrame;
 	float tileScale;
 	BOOL cancel;
 }
-- (id) initWithFrame: (CGRect)frame document: (struct document*)aDoc page: (int)aNumber;
+- (id) initWithFrame: (CGRect)frame document: (fz_document*)aDoc page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
 - (void) resizeImage;
 - (void) loadPage;
@@ -80,7 +77,7 @@ static fz_context *ctx = NULL;
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UISearchBarDelegate>
 {
-	struct document *doc;
+	fz_document *doc;
 	NSString *key;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
@@ -96,7 +93,7 @@ static fz_context *ctx = NULL;
 	int current; // currently visible page
 	int scroll_animating; // stop view updates during scrolling animations
 }
-- (id) initWithFilename: (NSString*)nsfilename document: (struct document *)aDoc;
+- (id) initWithFilename: (NSString*)nsfilename document: (fz_document *)aDoc;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;
@@ -119,6 +116,35 @@ static fz_context *ctx = NULL;
 @end
 
 #pragma mark -
+
+static int hit_count = 0;
+static fz_bbox hit_bbox[500];
+
+static int
+search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
+{
+	fz_page *page = fz_load_page(doc, number);
+
+	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
+	fz_text_page *text = fz_new_text_page(ctx, fz_empty_rect);
+	fz_device *dev = fz_new_text_device(ctx, sheet, text);
+	fz_run_page(doc, page, dev, fz_identity, cookie);
+	fz_free_device(dev);
+
+	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));;
+
+	fz_free_text_page(ctx, text);
+	fz_free_text_sheet(ctx, sheet);
+	fz_free_page(doc, page);
+
+	return hit_count;
+}
+
+static fz_bbox
+search_result_bbox(fz_document *doc, int i)
+{
+	return hit_bbox[i];
+}
 
 static void showAlert(NSString *msg, NSString *filename)
 {
@@ -156,10 +182,6 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	}
 }
 
-static void loadOutline(NSMutableArray *titles, NSMutableArray *pages, struct document *doc)
-{
-}
-
 static void releasePixmap(void *info, const void *data, size_t size)
 {
 	fz_drop_pixmap(ctx, info);
@@ -195,14 +217,16 @@ static CGSize fitPageToScreen(CGSize page, CGSize screen)
 	return CGSizeMake(hscale, vscale);
 }
 
-static CGSize measurePage(struct document *doc, int number)
+static CGSize measurePage(fz_document *doc, fz_page *page)
 {
 	CGSize pageSize;
-	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	fz_rect bounds = fz_bound_page(doc, page);
+	pageSize.width = bounds.x1 - bounds.x0;
+	pageSize.height = bounds.y1 - bounds.y0;
 	return pageSize;
 }
 
-static UIImage *renderPage(struct document *doc, int number, CGSize screenSize)
+static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 {
 	CGSize pageSize;
 	fz_bbox bbox;
@@ -214,7 +238,7 @@ static UIImage *renderPage(struct document *doc, int number, CGSize screenSize)
 	screenSize.width *= screenScale;
 	screenSize.height *= screenScale;
 
-	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
 	ctm = fz_scale(scale.width, scale.height);
 	bbox = (fz_bbox){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
@@ -223,13 +247,13 @@ static UIImage *renderPage(struct document *doc, int number, CGSize screenSize)
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
-	draw_page(doc, number, dev, ctm, NULL);
+	fz_run_page(doc, page, dev, ctm, NULL);
 	fz_free_device(dev);
 
 	return newImageWithPixmap(pix);
 }
 
-static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, CGRect tileRect, float zoom)
+static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	CGSize pageSize;
 	fz_rect rect;
@@ -246,7 +270,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	tileRect.size.width *= screenScale;
 	tileRect.size.height *= screenScale;
 
-	measure_page(doc, number, &pageSize.width, &pageSize.height);
+	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
 	ctm = fz_scale(scale.width * zoom, scale.height * zoom);
 
@@ -260,7 +284,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
-	draw_page(doc, number, dev, ctm, NULL);
+	fz_run_page(doc, page, dev, ctm, NULL);
 	fz_free_device(dev);
 
 	return newImageWithPixmap(pix);
@@ -425,13 +449,13 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	printf("open document '%s'\n", filename);
 
 	_filename = [nsfilename retain];
-	_doc = open_document(ctx, filename);
+	_doc = fz_open_document(ctx, filename);
 	if (!_doc) {
 		showAlert(@"Cannot open document", nsfilename);
 		return;
 	}
 
-	if (needs_password(_doc))
+	if (fz_needs_password(_doc))
 		[self askForPassword: @"'%@' needs a password:"];
 	else
 		[self onPasswordOkay];
@@ -455,7 +479,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	char *password = (char*) [[[alertView textFieldAtIndex: 0] text] UTF8String];
 	[alertView dismissWithClickedButtonIndex: buttonIndex animated: TRUE];
 	if (buttonIndex == 1) {
-		if (authenticate_password(_doc, password))
+		if (fz_authenticate_password(_doc, password))
 			[self onPasswordOkay];
 		else
 			[self askForPassword: @"Wrong password for '%@'. Try again:"];
@@ -480,7 +504,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 {
 	[_filename release];
 	printf("close document (password cancel)\n");
-	close_document(_doc);
+	fz_close_document(_doc);
 	_doc = NULL;
 }
 
@@ -560,7 +584,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 @implementation MuHitView
 
-- (id) initWithSearchResults: (int)n forDocument: (struct document *)doc
+- (id) initWithSearchResults: (int)n forDocument: (fz_document *)doc
 {
 	self = [super initWithFrame: CGRectMake(0,0,100,100)];
 	if (self) {
@@ -607,7 +631,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 @implementation MuPageView
 
-- (id) initWithFrame: (CGRect)frame document: (struct document*)aDoc page: (int)aNumber
+- (id) initWithFrame: (CGRect)frame document: (fz_document*)aDoc page: (int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {
@@ -645,6 +669,13 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 		__block id block_self = self; // don't auto-retain self!
 		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
 	} else {
+		__block fz_page *block_page = page;
+		__block fz_document *block_doc = doc;
+		dispatch_async(queue, ^{
+			if (block_page)
+				fz_free_page(block_doc, block_page);
+		});
+		[linkView release];
 		[hitView release];
 		[tileView release];
 		[loadingView release];
@@ -706,13 +737,15 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) loadPage
 {
-	if (number < 0 || number >= count_pages(doc))
+	if (number < 0 || number >= fz_count_pages(doc))
 		return;
 	dispatch_async(queue, ^{
 		if (!cancel) {
 			printf("render page %d\n", number);
-			CGSize size = measurePage(doc, number);
-			UIImage *image = renderPage(doc, number, self.bounds.size);
+			if (!page)
+				page = fz_load_page(doc, number);
+			CGSize size = measurePage(doc, page);
+			UIImage *image = renderPage(doc, page, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				pageSize = size;
 				[self displayImage: image];
@@ -852,8 +885,11 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 			return;
 		}
 
+		if (!page)
+			page = fz_load_page(doc, number);
+
 		printf("render tile\n");
-		UIImage *image = renderTile(doc, number, screenSize, viewFrame, scale);
+		UIImage *image = renderTile(doc, page, screenSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
@@ -917,7 +953,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 @implementation MuDocumentController
 
-- (id) initWithFilename: (NSString*)filename document: (struct document *)aDoc
+- (id) initWithFilename: (NSString*)filename document: (fz_document *)aDoc
 {
 	self = [super init];
 	if (!self)
@@ -928,7 +964,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	dispatch_sync(queue, ^{});
 
-	fz_outline *root = load_outline(doc);
+	fz_outline *root = fz_load_outline(doc);
 	if (root) {
 		NSMutableArray *titles = [[NSMutableArray alloc] init];
 		NSMutableArray *pages = [[NSMutableArray alloc] init];
@@ -948,7 +984,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
 
 	current = [[NSUserDefaults standardUserDefaults] integerForKey: key];
-	if (current < 0 || current >= count_pages(doc))
+	if (current < 0 || current >= fz_count_pages(doc))
 		current = 0;
 
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
@@ -980,7 +1016,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
-	[slider setMaximumValue: count_pages(doc) - 1];
+	[slider setMaximumValue: fz_count_pages(doc) - 1];
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
 	sliderWrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
@@ -1028,10 +1064,10 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 - (void) dealloc
 {
 	if (doc) {
-		struct document *self_doc = doc; // don't auto-retain self here!
+		fz_document *self_doc = doc; // don't auto-retain self here!
 		dispatch_async(queue, ^{
 			printf("close document\n");
-			close_document(self_doc);
+			fz_close_document(self_doc);
 		});
 	}
 
@@ -1057,7 +1093,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	[slider setValue: current];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(doc)]];
 
 	[[self navigationController] setToolbarHidden: NO animated: animated];
 }
@@ -1071,7 +1107,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	height = size.height;
 
 	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	[sliderWrapper setWidth: SLIDER_W];
@@ -1080,7 +1116,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentSize: CGSizeMake(count_pages(doc) * max_width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	for (MuPageView *view in [canvas subviews]) {
@@ -1221,7 +1257,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 	cancelSearch = NO;
 
 	dispatch_async(queue, ^{
-		for (int i = start; i >= 0 && i < count_pages(doc); i += dir) {
+		for (int i = start; i >= 0 && i < fz_count_pages(doc); i += dir) {
 			int n = search_page(doc, i, needle, NULL);
 			if (n) {
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -1292,7 +1328,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 {
 	int number = [slider value];
 	if ([slider isTracking])
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, count_pages(doc)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(doc)]];
 	else
 		[self gotoPage: number animated: NO];
 }
@@ -1335,7 +1371,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, count_pages(doc)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(doc)]];
 	[slider setValue: current];
 
 	// swap the distant page views out
@@ -1362,7 +1398,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) createPageView: (int)number
 {
-	if (number < 0 || number >= count_pages(doc))
+	if (number < 0 || number >= fz_count_pages(doc))
 		return;
 	int found = 0;
 	for (MuPageView *view in [canvas subviews])
@@ -1379,8 +1415,8 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 {
 	if (number < 0)
 		number = 0;
-	if (number >= count_pages(doc))
-		number = count_pages(doc) - 1;
+	if (number >= fz_count_pages(doc))
+		number = fz_count_pages(doc) - 1;
 	if (current == number)
 		return;
 	if (animated) {
@@ -1403,7 +1439,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 		[slider setValue: number];
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, count_pages(doc)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(doc)]];
 
 		[UIView commitAnimations];
 	} else {
@@ -1427,7 +1463,7 @@ static UIImage *renderTile(struct document *doc, int number, CGSize screenSize, 
 
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
-	[canvas setContentSize: CGSizeMake(count_pages(doc) * width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 
