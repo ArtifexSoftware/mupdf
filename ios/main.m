@@ -43,8 +43,12 @@ static fz_context *ctx = NULL;
 	CGSize pageSize;
 	int hitCount;
 	CGRect hitRects[500];
+	int linkPage[500];
+	char *linkUrl[500];
+	UIColor *color;
 }
 - (id) initWithSearchResults: (int)n forDocument: (fz_document *)doc;
+- (id) initWithLinks: (fz_link*)links forDocument: (fz_document *)doc;
 - (void) setPageSize: (CGSize)s;
 @end
 
@@ -72,6 +76,8 @@ static fz_context *ctx = NULL;
 - (void) resetZoomAnimated: (BOOL)animated;
 - (void) showSearchResults: (int)count;
 - (void) clearSearchResults;
+- (void) showLinks;
+- (void) hideLinks;
 - (int) number;
 @end
 
@@ -84,10 +90,11 @@ static fz_context *ctx = NULL;
 	UILabel *indicator;
 	UISlider *slider;
 	UISearchBar *searchBar;
-	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton;
+	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
 	UIBarButtonItem *sliderWrapper;
 	int searchPage;
 	int cancelSearch;
+	int showLinks;
 	int width; // current screen size
 	int height;
 	int current; // currently visible page
@@ -590,6 +597,8 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	if (self) {
 		[self setOpaque: NO];
 
+		color = [[UIColor colorWithRed: 0x25/255.0 green: 0x72/255.0 blue: 0xAC/255.0 alpha: 0.5] retain];
+
 		pageSize = CGSizeMake(100,100);
 
 		for (int i = 0; i < n && i < nelem(hitRects); i++) {
@@ -600,6 +609,33 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 			hitRects[i].size.height = bbox.y1 - bbox.y0;
 		}
 		hitCount = n;
+	}
+	return self;
+}
+
+- (id) initWithLinks: (fz_link*)link forDocument: (fz_document *)doc
+{
+	self = [super initWithFrame: CGRectMake(0,0,100,100)];
+	if (self) {
+		[self setOpaque: NO];
+
+		color = [[UIColor colorWithRed: 0xAC/255.0 green: 0x72/255.0 blue: 0x25/255.0 alpha: 0.5] retain];
+
+		pageSize = CGSizeMake(100,100);
+
+		while (link && hitCount < nelem(hitRects)) {
+			if (link->dest.kind == FZ_LINK_GOTO || link->dest.kind == FZ_LINK_URI) {
+				fz_bbox bbox = fz_round_rect(link->rect);
+				hitRects[hitCount].origin.x = bbox.x0;
+				hitRects[hitCount].origin.y = bbox.y0;
+				hitRects[hitCount].size.width = bbox.x1 - bbox.x0;
+				hitRects[hitCount].size.height = bbox.y1 - bbox.y0;
+				linkPage[hitCount] = link->dest.kind == FZ_LINK_GOTO ? link->dest.ld.gotor.page : -1;
+				linkUrl[hitCount] = link->dest.kind == FZ_LINK_URI ? strdup(link->dest.ld.uri.uri) : nil;
+				hitCount++;
+			}
+			link = link->next;
+		}
 	}
 	return self;
 }
@@ -615,7 +651,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 {
 	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
 
-	[[UIColor colorWithRed: 0.3 green: 0.3 blue: 1 alpha: 0.5] set];
+	[color set];
 
 	for (int i = 0; i < hitCount; i++) {
 		CGRect rect = hitRects[i];
@@ -625,6 +661,15 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 		rect.size.height *= scale.height;
 		UIRectFill(rect);
 	}
+}
+
+- (void) dealloc
+{
+	int i;
+	[color release];
+	for (i = 0; i < hitCount; i++)
+		free(linkUrl[i]);
+	[super dealloc];
 }
 
 @end
@@ -687,6 +732,35 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 - (int) number
 {
 	return number;
+}
+
+- (void) showLinks
+{
+	if (!linkView) {
+		dispatch_async(queue, ^{
+			if (!page)
+				page = fz_load_page(doc, number);
+			fz_link *links = fz_load_links(doc, page);
+			dispatch_async(dispatch_get_main_queue(), ^{
+				linkView = [[MuHitView alloc] initWithLinks: links forDocument: doc];
+				dispatch_async(queue, ^{
+					fz_drop_link(ctx, links);
+				});
+				if (imageView) {
+					[linkView setFrame: [imageView frame]];
+					[linkView setPageSize: pageSize];
+				}
+				[self addSubview: linkView];
+			});
+		});
+	}
+}
+
+- (void) hideLinks
+{
+	[linkView removeFromSuperview];
+	[linkView release];
+	linkView = nil;
 }
 
 - (void) showSearchResults: (int)count
@@ -1030,6 +1104,9 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
 			target:self action:@selector(onShowOutline:)];
 	}
+	linkButton = [[UIBarButtonItem alloc]
+		initWithBarButtonSystemItem: UIBarButtonSystemItemAction
+		target:self action:@selector(onToggleLinks:)];
 	cancelButton = [[UIBarButtonItem alloc]
 		initWithTitle: @"Cancel" style: UIBarButtonItemStyleBordered
 		target:self action:@selector(onCancelSearch:)];
@@ -1053,7 +1130,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	[nextButton setEnabled: NO];
 
 	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: searchButton, outlineButton, nil]];
+		[NSArray arrayWithObjects: searchButton, linkButton, outlineButton, nil]];
 
 	// TODO: add activityindicator to search bar
 
@@ -1191,6 +1268,18 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	[[self navigationController] pushViewController: outline animated: YES];
 }
 
+- (void) onToggleLinks: (id)sender
+{
+	showLinks = !showLinks;
+ 	for (MuPageView *view in [canvas subviews])
+	{
+		if (showLinks)
+			[view showLinks];
+		else
+			[view hideLinks];
+	}
+}
+
 - (void) onShowSearch: (id)sender
 {
 	[[self navigationItem] setTitleView: searchBar];
@@ -1206,7 +1295,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	[searchBar resignFirstResponder];
 	[[self navigationItem] setTitleView: nil];
 	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: searchButton, outlineButton, nil]];
+		[NSArray arrayWithObjects: searchButton, linkButton, outlineButton, nil]];
 	[[self navigationItem] setLeftBarButtonItem: nil];
 	[self resetSearch];
 }
@@ -1407,6 +1496,8 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	if (!found) {
 		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: doc page: number];
 		[canvas addSubview: view];
+		if (showLinks)
+			[view showLinks];
 		[view release];
 	}
 }
