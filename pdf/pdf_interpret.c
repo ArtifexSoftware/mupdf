@@ -599,7 +599,8 @@ pdf_flush_text(pdf_csi *csi)
 
 	fz_try(ctx)
 	{
-		pdf_begin_group(csi, csi->text_bbox);
+		fz_rect tb = fz_transform_rect(gstate->ctm, csi->text_bbox);
+		pdf_begin_group(csi, tb);
 
 		if (doinvisible)
 			fz_ignore_text(csi->dev, text, gstate->ctm);
