@@ -619,7 +619,7 @@ pdf_flush_text(pdf_csi *csi)
 				if (gstate->fill.pattern)
 				{
 					fz_clip_text(csi->dev, text, gstate->ctm, 0);
-					pdf_show_pattern(csi, gstate->fill.pattern, csi->text_bbox, PDF_FILL);
+					pdf_show_pattern(csi, gstate->fill.pattern, tb, PDF_FILL);
 					fz_pop_clip(csi->dev);
 				}
 				break;
@@ -648,7 +648,7 @@ pdf_flush_text(pdf_csi *csi)
 				if (gstate->stroke.pattern)
 				{
 					fz_clip_stroke_text(csi->dev, text, gstate->stroke_state, gstate->ctm);
-					pdf_show_pattern(csi, gstate->stroke.pattern, csi->text_bbox, PDF_STROKE);
+					pdf_show_pattern(csi, gstate->stroke.pattern, tb, PDF_STROKE);
 					fz_pop_clip(csi->dev);
 				}
 				break;
