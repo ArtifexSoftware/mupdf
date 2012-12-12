@@ -96,7 +96,7 @@ int fz_push_try(fz_error_context *ex)
 	 * direct to the always/catch clauses. */
 	assert(ex->top == nelem(ex->stack)-1);
 	strcpy(ex->message, "exception stack overflow!\n");
-	ex->stack[ex->top].code = 1;
+	ex->stack[ex->top].code = 2;
 	return 0;
 }
 
