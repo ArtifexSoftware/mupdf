@@ -69,7 +69,7 @@ xps_parse_document_structure(xps_document *doc, fz_xml *root)
 		if (node && !strcmp(fz_xml_tag(node), "DocumentStructure.Outline"))
 		{
 			node = fz_xml_down(node);
-			if (!strcmp(fz_xml_tag(node), "DocumentOutline"))
+			if (node && !strcmp(fz_xml_tag(node), "DocumentOutline"))
 				return xps_parse_document_outline(doc, node);
 		}
 	}
