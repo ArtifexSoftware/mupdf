@@ -1598,18 +1598,9 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 				else
 					gstate->luminosity = 0;
 
-				tr = pdf_dict_gets(val, "TR2");
-				if (tr)
-				{
-					if (strcmp(pdf_to_name(tr), "Identity") && strcmp(pdf_to_name(tr), "Default"))
-						fz_warn(ctx, "ignoring transfer function");
-				}
-				else
-				{
-					tr = pdf_dict_gets(val, "TR");
-					if (strcmp(pdf_to_name(tr), "Identity"))
-						fz_warn(ctx, "ignoring transfer function");
-				}
+				tr = pdf_dict_gets(val, "TR");
+				if (strcmp(pdf_to_name(tr), "Identity"))
+					fz_warn(ctx, "ignoring transfer function");
 			}
 			else if (pdf_is_name(val) && !strcmp(pdf_to_name(val), "None"))
 			{
@@ -1621,9 +1612,17 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 			}
 		}
 
+		else if (!strcmp(s, "TR2"))
+		{
+			if (strcmp(pdf_to_name(val), "Identity") && strcmp(pdf_to_name(val), "Default"))
+				fz_warn(ctx, "ignoring transfer function");
+		}
+
 		else if (!strcmp(s, "TR"))
 		{
-			if (!pdf_is_name(val) || strcmp(pdf_to_name(val), "Identity"))
+			/* TR is ignored in the presence of TR2 */
+			pdf_obj *tr2 = pdf_dict_gets(extgstate, "TR2");
+			if (!tr2 && !pdf_is_name(val) || strcmp(pdf_to_name(val), "Identity"))
 				fz_warn(ctx, "ignoring transfer function");
 		}
 	}
