@@ -1396,6 +1396,9 @@ struct fz_device_s
 
 	void (*begin_tile)(fz_device *, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm);
 	void (*end_tile)(fz_device *);
+
+	int error_depth;
+	char errmess[256];
 };
 
 void fz_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm, fz_colorspace *colorspace, float *color, float alpha);

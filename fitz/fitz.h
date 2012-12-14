@@ -261,9 +261,11 @@ void fz_var_imp(void *);
 	if (ctx->error->stack[ctx->error->top--].code > 1)
 
 int fz_push_try(fz_error_context *ex);
-void fz_throw(fz_context *, char *, ...) __printflike(2, 3);
+void fz_throw(fz_context *, const char *, ...) __printflike(2, 3);
 void fz_rethrow(fz_context *);
-void fz_warn(fz_context *ctx, char *fmt, ...) __printflike(2, 3);
+void fz_warn(fz_context *ctx, const char *fmt, ...) __printflike(2, 3);
+const char *fz_caught(fz_context *ctx);
+
 
 /*
 	fz_flush_warnings: Flush any repeated warnings.
