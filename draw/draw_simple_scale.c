@@ -1237,6 +1237,10 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 
 	DBUG(("Scale: (%d,%d) to (%g,%g) at (%g,%g)\n",src->w,src->h,w,h,x,y));
 
+	/* Avoid extreme scales where overflows become problematic. */
+	if (w > (1<<24) || h > (1<<24) || w < -(1<<24) || h < -(1<<24))
+		return NULL;
+
 	/* Find the destination bbox, width/height, and sub pixel offset,
 	 * allowing for whether we're flipping or not. */
 	/* The (x,y) position given describes where the top left corner of the
