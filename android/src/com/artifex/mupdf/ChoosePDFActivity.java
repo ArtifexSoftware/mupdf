@@ -81,6 +81,8 @@ public class ChoosePDFActivity extends ListActivity {
 						return file.isDirectory();
 					}
 				});
+				if (mDirs == null)
+					mDirs = new File[0];
 
 				mFiles = mDirectory.listFiles(new FileFilter() {
 
@@ -97,6 +99,8 @@ public class ChoosePDFActivity extends ListActivity {
 						return false;
 					}
 				});
+				if (mFiles == null)
+					mFiles = new File[0];
 
 				Arrays.sort(mFiles, new Comparator<File>() {
 					public int compare(File arg0, File arg1) {
@@ -113,12 +117,10 @@ public class ChoosePDFActivity extends ListActivity {
 				adapter.clear();
 				if (mParent != null)
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, ".."));
-				if (mDirs != null)
-					for (File f : mDirs)
-						adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
-				if (mFiles != null)
-					for (File f : mFiles)
-						adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DOC, f.getName()));
+				for (File f : mDirs)
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
+				for (File f : mFiles)
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DOC, f.getName()));
 			}
 		};
 
