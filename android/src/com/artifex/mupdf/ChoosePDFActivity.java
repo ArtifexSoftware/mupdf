@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -21,6 +23,7 @@ import android.widget.ListView;
 
 public class ChoosePDFActivity extends ListActivity {
 	static private File  mDirectory;
+	static private Map<String, Integer> mPositions = new HashMap<String, Integer>();
 	private File         mParent;
 	private File []      mDirs;
 	private File []      mFiles;
@@ -56,11 +59,6 @@ public class ChoosePDFActivity extends ListActivity {
 			alert.show();
 			return;
 		}
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
 
 		if (mDirectory == null)
 			mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
@@ -121,6 +119,8 @@ public class ChoosePDFActivity extends ListActivity {
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
 				for (File f : mFiles)
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DOC, f.getName()));
+
+				lastPosition();
 			}
 		};
 
@@ -136,9 +136,17 @@ public class ChoosePDFActivity extends ListActivity {
 		observer.startWatching();
 	}
 
+	private void lastPosition() {
+		String p = mDirectory.getAbsolutePath();
+		if (mPositions.containsKey(p))
+			getListView().setSelection(mPositions.get(p));
+	}
+
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
+
+		mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
 
 		if (position < (mParent == null ? 0 : 1)) {
 			mDirectory = mParent;
@@ -161,5 +169,11 @@ public class ChoosePDFActivity extends ListActivity {
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(uri);
 		startActivity(intent);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
 	}
 }
