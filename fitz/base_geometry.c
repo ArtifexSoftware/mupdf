@@ -351,3 +351,48 @@ fz_transform_bbox(fz_matrix m, fz_bbox b)
 	return b;
 
 }
+
+fz_bbox
+fz_expand_bbox(fz_bbox a, int expand)
+{
+	fz_bbox b;
+
+	if (fz_is_infinite_bbox(a))
+		return a;
+
+	b.x0 = a.x0 - expand;
+	b.y0 = a.y0 - expand;
+	b.x1 = a.x1 + expand;
+	b.y1 = a.y1 + expand;
+	/* Check for overflow */
+	if (((~a.x0^-expand)&(a.x0^b.x0)) < 0)
+	{
+		if (-expand < 0)
+			b.x0 = INT_MIN;
+		else
+			b.x0 = INT_MAX;
+	}
+	if (((~a.x1^expand)&(a.x1^b.x1)) < 0)
+	{
+		if (expand < 0)
+			b.x1 = INT_MIN;
+		else
+			b.x1 = INT_MAX;
+	}
+	if (((~a.y0^-expand)&(a.y0^b.y0)) < 0)
+	{
+		if (-expand < 0)
+			b.y0 = INT_MIN;
+		else
+			b.y0 = INT_MAX;
+	}
+	if (((~a.y1^expand)&(a.y1^b.y1)) < 0)
+	{
+		if (expand < 0)
+			b.y1 = INT_MIN;
+		else
+			b.y1 = INT_MAX;
+	}
+	return b;
+
+}

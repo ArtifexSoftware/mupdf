@@ -1647,8 +1647,9 @@ fz_draw_end_tile(fz_device *devp)
 {
 	fz_draw_device *dev = devp->user;
 	float xstep, ystep;
-	fz_matrix ctm, ttm, shapectm;
-	fz_rect area;
+	fz_matrix ttm, ctm, shapectm;
+	fz_rect area, scissor;
+	fz_bbox scissor_box;
 	int x0, y0, x1, y1, x, y;
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state;
@@ -1664,6 +1665,16 @@ fz_draw_end_tile(fz_device *devp)
 	ystep = state[1].ystep;
 	area = state[1].area;
 	ctm = state[1].ctm;
+
+	/* Fudge the scissor bbox a little to allow for inaccuracies in the
+	 * matrix inversion. */
+	scissor_box = fz_expand_bbox(state[0].scissor, 1);
+	scissor.x0 = (float)scissor_box.x0;
+	scissor.y0 = (float)scissor_box.y0;
+	scissor.x1 = (float)scissor_box.x1;
+	scissor.y1 = (float)scissor_box.y1;
+	scissor = fz_transform_rect(fz_invert_matrix(ctm), scissor);
+	area = fz_intersect_rect(area, scissor);
 
 	x0 = floorf(area.x0 / xstep);
 	y0 = floorf(area.y0 / ystep);
@@ -1696,6 +1707,10 @@ fz_draw_end_tile(fz_device *devp)
 			ttm = fz_concat(fz_translate(x * xstep, y * ystep), ctm);
 			state[1].dest->x = ttm.e;
 			state[1].dest->y = ttm.f;
+			if (state[1].dest->x > 0 && state[1].dest->x + state[1].dest->w < 0)
+				continue;
+			if (state[1].dest->y > 0 && state[1].dest->y + state[1].dest->h < 0)
+				continue;
 			fz_paint_pixmap_with_rect(state[0].dest, state[1].dest, 255, state[0].scissor);
 			if (state[1].shape)
 			{
