@@ -382,7 +382,15 @@ pdf_load_shading_dict(pdf_document *xref, pdf_obj *dict, fz_matrix transform)
 		{
 			funcs = pdf_array_len(obj);
 			if (funcs != 1 && funcs != shade->colorspace->n)
+			{
+				funcs = 0;
 				fz_throw(ctx, "incorrect number of shading functions");
+			}
+			if (funcs > FZ_MAX_COLORS)
+			{
+				funcs = 0;
+				fz_throw(ctx, "too many shading functions");
+			}
 
 			if (type == 1)
 				in = 2;
