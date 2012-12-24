@@ -354,6 +354,7 @@ pdf_begin_group(pdf_csi *csi, fz_rect bbox)
 
 		fz_end_mask(csi->dev);
 
+		gstate = csi->gstate + csi->gtop;
 		gstate->softmask = softmask;
 		gstate->ctm = save_ctm;
 	}
