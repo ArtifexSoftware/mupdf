@@ -2963,6 +2963,9 @@ struct fz_write_options_s
 	int do_garbage; /* If non-zero then attempt (where possible) to
 				garbage collect the file before writing. */
 	int do_linear; /* If non-zero then write linearised. */
+	int continue_on_error; /* If non-zero, errors are (optionally)
+					counted and writing continues. */
+	int *errors;   /* Pointer to a place to store a count of errors */
 };
 
 /*	An enumeration of bitflags to use in the above 'do_expand' field of
