@@ -1511,8 +1511,11 @@ static void expandstream(pdf_document *xref, pdf_write_options *opts, pdf_obj *o
 	fz_context *ctx = xref->ctx;
 	int orig_num = opts->rev_renumber_map[num];
 	int orig_gen = opts->rev_gen_list[num];
+	int truncated = 0;
 
-	buf = pdf_load_renumbered_stream(xref, num, gen, orig_num, orig_gen);
+	buf = pdf_load_renumbered_stream(xref, num, gen, orig_num, orig_gen, (opts->continue_on_error ? &truncated : NULL));
+	if (truncated && opts->errors)
+		(*opts->errors)++;
 
 	obj = pdf_copy_dict(ctx, obj_orig);
 	pdf_dict_dels(obj, "Filter");
