@@ -2686,6 +2686,11 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 				case PDF_TOK_OPEN_ARRAY:
 					if (!csi->in_text)
 					{
+						if (csi->obj)
+						{
+							pdf_drop_obj(csi->obj);
+							csi->obj = NULL;
+						}
 						csi->obj = pdf_parse_array(csi->xref, file, buf);
 					}
 					else
@@ -2695,6 +2700,11 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					break;
 
 				case PDF_TOK_OPEN_DICT:
+					if (csi->obj)
+					{
+						pdf_drop_obj(csi->obj);
+						csi->obj = NULL;
+					}
 					csi->obj = pdf_parse_dict(csi->xref, file, buf);
 					break;
 
@@ -2728,6 +2738,11 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					}
 					else
 					{
+						if (csi->obj)
+						{
+							pdf_drop_obj(csi->obj);
+							csi->obj = NULL;
+						}
 						csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
 					}
 					break;
