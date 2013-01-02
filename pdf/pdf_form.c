@@ -1176,6 +1176,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 			tobj = pdf_new_dict(ctx, 1);
 			pdf_dict_puts(obj, "AP", tobj);
 			ap = tobj;
+			pdf_drop_obj(tobj);
 			tobj = NULL;
 		}
 
@@ -1185,6 +1186,7 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 			tobj = pdf_new_xobject(doc, rect, &mat);
 			pdf_dict_puts(ap, dn, tobj);
 			formobj = tobj;
+			pdf_drop_obj(tobj);
 			tobj = NULL;
 			create_form = 1;
 		}
