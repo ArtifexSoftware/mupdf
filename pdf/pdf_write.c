@@ -1589,7 +1589,7 @@ static void writeobject(pdf_document *xref, pdf_write_options *opts, int num, in
 			fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 			if (opts->errors)
 				(*opts->errors)++;
-			fz_warn(ctx, fz_caught(ctx));
+			fz_warn(ctx, "%s", fz_caught(ctx));
 			return;
 		}
 		else
@@ -1669,7 +1669,7 @@ static void writeobject(pdf_document *xref, pdf_write_options *opts, int num, in
 				fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 				if (opts->errors)
 					(*opts->errors)++;
-				fz_warn(ctx, fz_caught(ctx));
+				fz_warn(ctx, "%s", fz_caught(ctx));
 			}
 			else
 			{
