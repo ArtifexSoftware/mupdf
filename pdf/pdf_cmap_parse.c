@@ -232,6 +232,11 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 			fz_throw(ctx, "expected string");
 
 		hi = pdf_code_from_string(buf->scratch, buf->len);
+		if (lo < 0 || lo > 65535 || hi < 0 || hi > 65535 || lo > hi)
+		{
+			fz_warn(ctx, "bf_range limits out of range in cmap %s", cmap->cmap_name);
+			return;
+		}
 
 		tok = pdf_lex_cmap(file, buf);
 
