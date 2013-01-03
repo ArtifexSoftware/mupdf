@@ -1236,7 +1236,10 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 	obj = pdf_dict_gets(dict, "Functions");
 	if (!pdf_is_array(obj))
 		fz_throw(ctx, "stitching function has no input functions");
+
+	fz_try(ctx)
 	{
+		pdf_obj_mark(obj);
 		k = pdf_array_len(obj);
 
 		func->u.st.funcs = fz_malloc_array(ctx, k, sizeof(pdf_function*));
@@ -1258,7 +1261,14 @@ load_stitching_func(pdf_function *func, pdf_document *xref, pdf_obj *dict)
 				fz_warn(ctx, "wrong number of outputs for sub function %d", i);
 		}
 	}
-
+	fz_always(ctx)
+	{
+		pdf_obj_unmark(obj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 
 	obj = pdf_dict_gets(dict, "Bounds");
 	if (!pdf_is_array(obj))
@@ -1401,6 +1411,9 @@ pdf_load_function(pdf_document *xref, pdf_obj *dict, int in, int out)
 	pdf_function *func;
 	pdf_obj *obj;
 	int i;
+
+	if (pdf_obj_marked(dict))
+		fz_throw(ctx, "Recursion in function definition");
 
 	if ((func = pdf_find_item(ctx, pdf_free_function_imp, dict)))
 	{

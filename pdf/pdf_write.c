@@ -793,7 +793,7 @@ mark_all(pdf_document *xref, pdf_write_options *opts, pdf_obj *val, int flag, in
 {
 	fz_context *ctx = xref->ctx;
 
-	if (pdf_dict_mark(val))
+	if (pdf_obj_mark(val))
 		return;
 
 	fz_try(ctx)
@@ -831,7 +831,7 @@ mark_all(pdf_document *xref, pdf_write_options *opts, pdf_obj *val, int flag, in
 	}
 	fz_always(ctx)
 	{
-		pdf_dict_unmark(val);
+		pdf_obj_unmark(val);
 	}
 	fz_catch(ctx)
 	{
@@ -844,7 +844,7 @@ mark_pages(pdf_document *xref, pdf_write_options *opts, pdf_obj *val, int pagenu
 {
 	fz_context *ctx = xref->ctx;
 
-	if (pdf_dict_mark(val))
+	if (pdf_obj_mark(val))
 		return pagenum;
 
 	fz_try(ctx)
@@ -854,7 +854,7 @@ mark_pages(pdf_document *xref, pdf_write_options *opts, pdf_obj *val, int pagenu
 			if (!strcmp("Page", pdf_to_name(pdf_dict_gets(val, "Type"))))
 			{
 				int num = pdf_to_num(val);
-				pdf_dict_unmark(val);
+				pdf_obj_unmark(val);
 				mark_all(xref, opts, val, pagenum == 0 ? USE_PAGE1 : (pagenum<<USE_PAGE_SHIFT), pagenum);
 				page_objects_list_set_page_object(ctx, opts, pagenum, num);
 				pagenum++;
@@ -899,7 +899,7 @@ mark_pages(pdf_document *xref, pdf_write_options *opts, pdf_obj *val, int pagenu
 	}
 	fz_always(ctx)
 	{
-		pdf_dict_unmark(val);
+		pdf_obj_unmark(val);
 	}
 	fz_catch(ctx)
 	{
@@ -914,7 +914,7 @@ mark_root(pdf_document *xref, pdf_write_options *opts, pdf_obj *dict)
 	fz_context *ctx = xref->ctx;
 	int i, n = pdf_dict_len(dict);
 
-	if (pdf_dict_mark(dict))
+	if (pdf_obj_mark(dict))
 		return;
 
 	fz_try(ctx)
@@ -945,7 +945,7 @@ mark_root(pdf_document *xref, pdf_write_options *opts, pdf_obj *dict)
 	}
 	fz_always(ctx)
 	{
-		pdf_dict_unmark(dict);
+		pdf_obj_unmark(dict);
 	}
 	fz_catch(ctx)
 	{
@@ -959,7 +959,7 @@ mark_trailer(pdf_document *xref, pdf_write_options *opts, pdf_obj *dict)
 	fz_context *ctx = xref->ctx;
 	int i, n = pdf_dict_len(dict);
 
-	if (pdf_dict_mark(dict))
+	if (pdf_obj_mark(dict))
 		return;
 
 	fz_try(ctx)
@@ -977,7 +977,7 @@ mark_trailer(pdf_document *xref, pdf_write_options *opts, pdf_obj *dict)
 	}
 	fz_always(ctx)
 	{
-		pdf_dict_unmark(dict);
+		pdf_obj_unmark(dict);
 	}
 	fz_catch(ctx)
 	{
@@ -1168,7 +1168,7 @@ lpr(fz_context *ctx, pdf_obj *node, int depth, int page)
 	pdf_obj *o = NULL;
 	int i, n;
 
-	if (pdf_dict_mark(node))
+	if (pdf_obj_mark(node))
 		return page;
 
 	fz_var(o);
@@ -1233,7 +1233,7 @@ lpr(fz_context *ctx, pdf_obj *node, int depth, int page)
 		fz_rethrow(ctx);
 	}
 
-	pdf_dict_unmark(node);
+	pdf_obj_unmark(node);
 
 	return page;
 }
