@@ -2607,7 +2607,7 @@ static void
 pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 {
 	fz_context *ctx = csi->dev->ctx;
-	int tok = PDF_TOK_ERROR;
+	pdf_token tok = PDF_TOK_ERROR;
 	int in_array;
 	int ignoring_errors = 0;
 

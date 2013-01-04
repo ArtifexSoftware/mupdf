@@ -703,7 +703,7 @@ resize_code(fz_context *ctx, pdf_function *func, int newsize)
 static void
 parse_code(pdf_function *func, fz_stream *stream, int *codeptr, pdf_lexbuf *buf)
 {
-	int tok;
+	pdf_token tok;
 	int opptr, elseptr, ifptr;
 	int a, b, mid, cmp;
 	fz_context *ctx = stream->ctx;
@@ -844,7 +844,7 @@ load_postscript_func(pdf_function *func, pdf_document *xref, pdf_obj *dict, int 
 	fz_stream *stream = NULL;
 	int codeptr;
 	pdf_lexbuf buf;
-	int tok;
+	pdf_token tok;
 	fz_context *ctx = xref->ctx;
 	int locked = 0;
 

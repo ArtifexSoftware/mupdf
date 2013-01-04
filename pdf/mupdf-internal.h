@@ -31,7 +31,7 @@ struct pdf_image_s
  * tokenizer and low-level object parser
  */
 
-enum
+typedef enum
 {
 	PDF_TOK_ERROR, PDF_TOK_EOF,
 	PDF_TOK_OPEN_ARRAY, PDF_TOK_CLOSE_ARRAY,
@@ -43,7 +43,7 @@ enum
 	PDF_TOK_STREAM, PDF_TOK_ENDSTREAM,
 	PDF_TOK_XREF, PDF_TOK_TRAILER, PDF_TOK_STARTXREF,
 	PDF_NUM_TOKENS
-};
+} pdf_token;
 
 enum
 {

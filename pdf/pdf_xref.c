@@ -69,7 +69,7 @@ pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 	int len;
 	char *s;
 	int t;
-	int tok;
+	pdf_token tok;
 	int c;
 
 	fz_read_line(xref->file, buf->scratch, buf->size);
@@ -193,7 +193,7 @@ pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 	int ofs, len;
 	char *s;
 	int n;
-	int tok;
+	pdf_token tok;
 	int i;
 	int c;
 	pdf_obj *trailer;
@@ -942,7 +942,7 @@ pdf_load_obj_stm(pdf_document *xref, int num, int gen, pdf_lexbuf *buf)
 	int first;
 	int count;
 	int i;
-	int tok;
+	pdf_token tok;
 	fz_context *ctx = xref->ctx;
 
 	fz_var(numbuf);
