@@ -17,6 +17,10 @@
  * === DO NOT FORGET TO CHANGE 'config.nix' APPROPRIATELY. ====
 */
 
+#define USE_JPIP
+#define USE JPWL
+#define OPJ_PACKAGE_VERSION "2.0.0"
+
 /* DO NOT DEFINE BOTH VERSIONS OF LCMS */
 /* define to 1 if you have both liblcms and lcms.h installed */
 #undef HAVE_LIBLCMS1
