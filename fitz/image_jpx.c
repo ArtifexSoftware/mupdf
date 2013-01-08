@@ -35,6 +35,8 @@ OPJ_SIZE_T stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_dat
 	len = sb->size - sb->pos;
 	if (len < 0)
 		len = 0;
+	if (len == 0)
+		return (OPJ_SIZE_T)-1;  /* End of file! */
 	if (len > p_nb_bytes)
 		len = p_nb_bytes;
 	memcpy(p_buffer, sb->data + sb->pos, len);
