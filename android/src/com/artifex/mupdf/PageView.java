@@ -43,6 +43,53 @@ class OpaqueImageView extends ImageView {
 	}
 }
 
+abstract class TextSelector {
+	final private TextWord[][] mText;
+	final private RectF mSelectBox;
+
+	public TextSelector(TextWord[][] text, RectF selectBox) {
+		mText = text;
+		mSelectBox = selectBox;
+	}
+
+	protected abstract void onStartLine();
+	protected abstract void onWord(TextWord word);
+	protected abstract void onEndLine();
+
+	public void select() {
+		ArrayList<TextWord[]> lines = new ArrayList<TextWord[]>();
+		for (TextWord[] line : mText)
+			if (line[0].bottom > mSelectBox.top && line[0].top < mSelectBox.bottom)
+				lines.add(line);
+
+		Iterator<TextWord[]> it = lines.iterator();
+		while (it.hasNext()) {
+			TextWord[] line = it.next();
+			boolean firstLine = line[0].top < mSelectBox.top;
+			boolean lastLine = line[0].bottom > mSelectBox.bottom;
+			float start = Float.NEGATIVE_INFINITY;
+			float end = Float.POSITIVE_INFINITY;
+
+			if (firstLine && lastLine) {
+				start = Math.min(mSelectBox.left, mSelectBox.right);
+				end = Math.max(mSelectBox.left, mSelectBox.right);
+			} else if (firstLine) {
+				start = mSelectBox.left;
+			} else if (lastLine) {
+				end = mSelectBox.right;
+			}
+
+			onStartLine();
+
+			for (TextWord word : line)
+				if (word.right > start && word.left < end)
+					onWord(word);
+
+			onEndLine();
+		}
+	}
+}
+
 public abstract class PageView extends ViewGroup {
 	private static final int HIGHLIGHT_COLOR = 0x802572AC;
 	private static final int LINK_COLOR = 0x80AC7225;
@@ -233,14 +280,14 @@ public abstract class PageView extends ViewGroup {
 		if (mSearchView == null) {
 			mSearchView = new View(mContext) {
 				@Override
-				protected void onDraw(Canvas canvas) {
+				protected void onDraw(final Canvas canvas) {
 					super.onDraw(canvas);
-					float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
-					Paint paint = new Paint();
+					// Work out current total scale factor
+					// from source to view
+					final float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
+					final Paint paint = new Paint();
 
 					if (!mIsBlank && mSearchBoxes != null) {
-						// Work out current total scale factor
-						// from source to view
 						paint.setColor(HIGHLIGHT_COLOR);
 						for (RectF rect : mSearchBoxes)
 							canvas.drawRect(rect.left*scale, rect.top*scale,
@@ -249,8 +296,6 @@ public abstract class PageView extends ViewGroup {
 					}
 
 					if (!mIsBlank && mLinks != null && mHighlightLinks) {
-						// Work out current total scale factor
-						// from source to view
 						paint.setColor(LINK_COLOR);
 						for (LinkInfo link : mLinks)
 							canvas.drawRect(link.rect.left*scale, link.rect.top*scale,
@@ -260,37 +305,27 @@ public abstract class PageView extends ViewGroup {
 
 					if (mSelectBox != null && mText != null) {
 						paint.setColor(HIGHLIGHT_COLOR);
+						TextSelector sel = new TextSelector(mText, mSelectBox) {
+							RectF rect;
 
-						ArrayList<TextWord[]> lines = new ArrayList<TextWord[]>();
-						for (TextWord[] line : mText)
-							if (line[0].bottom > mSelectBox.top && line[0].top < mSelectBox.bottom)
-								lines.add(line);
-
-						Iterator<TextWord[]> it = lines.iterator();
-						while (it.hasNext()) {
-							TextWord[] line = it.next();
-							boolean startLine = line[0].top < mSelectBox.top;
-							boolean endLine = line[0].bottom > mSelectBox.bottom;
-							float start = Float.NEGATIVE_INFINITY;
-							float end = Float.POSITIVE_INFINITY;
-
-							if (startLine && endLine) {
-								start = Math.min(mSelectBox.left, mSelectBox.right);
-								end = Math.max(mSelectBox.left, mSelectBox.right);
-							} else if (startLine) {
-								start = mSelectBox.left;
-							} else if (endLine) {
-								end = mSelectBox.right;
+							@Override
+							protected void onStartLine() {
+								rect = new RectF();
 							}
 
-							RectF rect = new RectF();
-							for (TextWord word : line)
-								if (word.right > start && word.left < end)
-									rect.union(word);
+							@Override
+							protected void onWord(TextWord word) {
+								rect.union(word);
+							}
 
-							if (!rect.isEmpty())
-								canvas.drawRect(rect.left*scale, rect.top*scale, rect.right*scale, rect.bottom*scale, paint);
-						}
+							@Override
+							protected void onEndLine() {
+								if (!rect.isEmpty())
+									canvas.drawRect(rect.left*scale, rect.top*scale, rect.right*scale, rect.bottom*scale, paint);
+							}
+						};
+
+						sel.select();
 					}
 				}
 			};
@@ -324,7 +359,9 @@ public abstract class PageView extends ViewGroup {
 		else
 			mSelectBox = new RectF(docRelX1, docRelY1, docRelX0, docRelY0);
 
-		if (mText == null) {
+		mSearchView.invalidate();
+
+		if (mGetText == null) {
 			mGetText = new AsyncTask<Void,Void,TextWord[][]>() {
 				@Override
 				protected TextWord[][] doInBackground(Void... params) {
