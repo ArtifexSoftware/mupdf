@@ -124,6 +124,8 @@ public class MuPDFCore
 			int patchX, int patchY,
 			int patchW, int patchH) {
 		gotoPage(page);
+		// Clear the reference out before creating the new bitmap
+		h.setBm(null);
 		Bitmap bm = Bitmap.createBitmap(patchW, patchH, Config.ARGB_8888);
 		drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH);
 		h.setBm(bm);

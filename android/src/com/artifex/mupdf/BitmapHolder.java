@@ -10,6 +10,8 @@ public class BitmapHolder {
 	}
 
 	public synchronized void setBm(Bitmap abm) {
+		if (bm != null && bm != abm)
+			bm.recycle();
 		bm = abm;
 	}
 
