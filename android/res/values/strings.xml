@@ -16,4 +16,5 @@
     <string name="searching_">Searching...</string>
     <string name="link_control">Link highlighting and enabling</string>
     <string name="no_further_occurences_found">No further occurences found</string>
+    <string name="select">Select</string>
 </resources>

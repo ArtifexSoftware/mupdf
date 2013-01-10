@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
@@ -95,6 +96,7 @@ public class MuPDFActivity extends Activity
 	private int          mPageSliderRes;
 	private TextView     mPageNumberView;
 	private ImageButton  mSearchButton;
+	private ImageButton mSelectButton;
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ViewSwitcher mTopBarSwitcher;
@@ -107,6 +109,7 @@ public class MuPDFActivity extends Activity
 	//private SearchTaskResult mSearchTaskResult;
 	private AlertDialog.Builder mAlertBuilder;
 	private boolean    mLinkHighlight = false;
+	private boolean mSelecting = false;
 	private final Handler mHandler = new Handler();
 	private boolean mAlertsActive= false;
 	private AsyncTask<Void,Void,MuPDFAlert> mAlertTask;
@@ -343,7 +346,7 @@ public class MuPDFActivity extends Activity
 			private boolean showButtonsDisabled;
 
 			public boolean onSingleTapUp(MotionEvent e) {
-				if (!showButtonsDisabled) {
+				if (!mSelecting && !showButtonsDisabled) {
 					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
 					if (MuPDFCore.javascriptSupported() && pageView.passClickEvent(e.getX(), e.getY())) {
 						// If the page consumes the event do nothing else
@@ -385,10 +388,26 @@ public class MuPDFActivity extends Activity
 			}
 
 			public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-				if (!showButtonsDisabled)
-					hideButtons();
+				if (!mSelecting) {
+					if (!showButtonsDisabled)
+						hideButtons();
 
-				return super.onScroll(e1, e2, distanceX, distanceY);
+					return super.onScroll(e1, e2, distanceX, distanceY);
+				} else {
+					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
+					if (pageView != null)
+						pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
+					return true;
+				}
+			}
+
+			@Override
+			public boolean onFling(MotionEvent e1, MotionEvent e2,
+					float velocityX, float velocityY) {
+				if (!mSelecting)
+					return super.onFling(e1, e2, velocityX, velocityY);
+				else
+					return true;
 			}
 
 			public boolean onScaleBegin(ScaleGestureDetector d) {
@@ -486,6 +505,14 @@ public class MuPDFActivity extends Activity
 		mSearchButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				searchModeOn();
+			}
+		});
+
+		// Activate the select button
+		mSelectButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				mSelecting = !mSelecting;
+				mSelectButton.setColorFilter(Color.WHITE, mSelecting?PorterDuff.Mode.XOR: PorterDuff.Mode.DST);
 			}
 		});
 
@@ -776,6 +803,7 @@ public class MuPDFActivity extends Activity
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
 		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
+		mSelectButton = (ImageButton)mButtonsView.findViewById(R.id.selectButton);
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
 		mTopBarSwitcher = (ViewSwitcher)mButtonsView.findViewById(R.id.switcher);

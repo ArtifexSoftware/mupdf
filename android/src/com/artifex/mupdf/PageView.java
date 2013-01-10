@@ -1,5 +1,8 @@
 package com.artifex.mupdf;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -53,6 +56,7 @@ public abstract class PageView extends ViewGroup {
 
 	private       ImageView mEntire; // Image rendered at minimum zoom
 	private       BitmapHolder mEntireBm;
+	private       AsyncTask<Void,Void,TextWord[][]> mGetText;
 	private       AsyncTask<Void,Void,LinkInfo[]> mGetLinkInfo;
 	private       AsyncTask<Void,Void,Void> mDrawEntire;
 
@@ -63,6 +67,8 @@ public abstract class PageView extends ViewGroup {
 	private       AsyncTask<PatchInfo,Void,PatchInfo> mDrawPatch;
 	private       RectF     mSearchBoxes[];
 	protected     LinkInfo  mLinks[];
+	private       RectF     mSelectBox;
+	private       TextWord  mText[][];
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
 	private       boolean   mHighlightLinks;
@@ -82,8 +88,9 @@ public abstract class PageView extends ViewGroup {
 	protected abstract void drawPage(BitmapHolder h, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract void updatePage(BitmapHolder h, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract LinkInfo[] getLinkInfo();
+	protected abstract TextWord[][] getText();
 
-	public void releaseResources() {
+	private void reinit() {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
 			mDrawEntire.cancel(true);
@@ -93,6 +100,16 @@ public abstract class PageView extends ViewGroup {
 		if (mDrawPatch != null) {
 			mDrawPatch.cancel(true);
 			mDrawPatch = null;
+		}
+
+		if (mGetLinkInfo != null) {
+			mGetLinkInfo.cancel(true);
+			mGetLinkInfo = null;
+		}
+
+		if (mGetText != null) {
+			mGetText.cancel(true);
+			mGetText = null;
 		}
 
 		mIsBlank = true;
@@ -111,6 +128,15 @@ public abstract class PageView extends ViewGroup {
 			mPatch.setImageBitmap(null);
 		}
 
+		mSearchBoxes = null;
+		mLinks = null;
+		mSelectBox = null;
+		mText = null;
+	}
+
+	public void releaseResources() {
+		reinit();
+
 		if (mBusyIndicator != null) {
 			removeView(mBusyIndicator);
 			mBusyIndicator = null;
@@ -118,32 +144,8 @@ public abstract class PageView extends ViewGroup {
 	}
 
 	public void blank(int page) {
-		// Cancel pending render task
-		if (mDrawEntire != null) {
-			mDrawEntire.cancel(true);
-			mDrawEntire = null;
-		}
-
-		if (mDrawPatch != null) {
-			mDrawPatch.cancel(true);
-			mDrawPatch = null;
-		}
-
-		mIsBlank = true;
+		reinit();
 		mPageNumber = page;
-
-		if (mSize == null)
-			mSize = mParentSize;
-
-		if (mEntire != null) {
-			mEntireBm.setBm(null);
-			mEntire.setImageBitmap(null);
-		}
-
-		if (mPatch != null) {
-			mPatchBm.setBm(null);
-			mPatch.setImageBitmap(null);
-		}
 
 		if (mBusyIndicator == null) {
 			mBusyIndicator = new ProgressBar(mContext);
@@ -255,6 +257,41 @@ public abstract class PageView extends ViewGroup {
 									        link.rect.right*scale, link.rect.bottom*scale,
 									        paint);
 					}
+
+					if (mSelectBox != null && mText != null) {
+						paint.setColor(HIGHLIGHT_COLOR);
+
+						ArrayList<TextWord[]> lines = new ArrayList<TextWord[]>();
+						for (TextWord[] line : mText)
+							if (line[0].bottom > mSelectBox.top && line[0].top < mSelectBox.bottom)
+								lines.add(line);
+
+						Iterator<TextWord[]> it = lines.iterator();
+						while (it.hasNext()) {
+							TextWord[] line = it.next();
+							boolean startLine = line[0].top < mSelectBox.top;
+							boolean endLine = line[0].bottom > mSelectBox.bottom;
+							float start = Float.NEGATIVE_INFINITY;
+							float end = Float.POSITIVE_INFINITY;
+
+							if (startLine && endLine) {
+								start = Math.min(mSelectBox.left, mSelectBox.right);
+								end = Math.max(mSelectBox.left, mSelectBox.right);
+							} else if (startLine) {
+								start = mSelectBox.left;
+							} else if (endLine) {
+								end = mSelectBox.right;
+							}
+
+							RectF rect = new RectF();
+							for (TextWord word : line)
+								if (word.right > start && word.left < end)
+									rect.union(word);
+
+							if (!rect.isEmpty())
+								canvas.drawRect(rect.left*scale, rect.top*scale, rect.right*scale, rect.bottom*scale, paint);
+						}
+					}
 				}
 			};
 
@@ -273,6 +310,35 @@ public abstract class PageView extends ViewGroup {
 		mHighlightLinks = f;
 		if (mSearchView != null)
 			mSearchView.invalidate();
+	}
+
+	public void selectText(float x0, float y0, float x1, float y1) {
+		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
+		float docRelX0 = (x0 - getLeft())/scale;
+		float docRelY0 = (y0 - getTop())/scale;
+		float docRelX1 = (x1 - getLeft())/scale;
+		float docRelY1 = (y1 - getTop())/scale;
+		// Order on Y but maintain the point grouping
+		if (docRelY0 <= docRelY1)
+			mSelectBox = new RectF(docRelX0, docRelY0, docRelX1, docRelY1);
+		else
+			mSelectBox = new RectF(docRelX1, docRelY1, docRelX0, docRelY0);
+
+		if (mText == null) {
+			mGetText = new AsyncTask<Void,Void,TextWord[][]>() {
+				@Override
+				protected TextWord[][] doInBackground(Void... params) {
+					return getText();
+				}
+				@Override
+				protected void onPostExecute(TextWord[][] result) {
+					mText = result;
+					mSearchView.invalidate();
+				}
+			};
+
+			mGetText.execute();
+		}
 	}
 
 	@Override

@@ -35,10 +35,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/outlineButton"
+                android:layout_toLeftOf="@+id/selectButton"
                 android:contentDescription="@string/link_control"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_link" />
+
+            <ImageButton
+                android:id="@+id/selectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/outlineButton"
+                android:contentDescription="@string/select"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_select" />
 
             <ImageButton
                 android:id="@+id/outlineButton"

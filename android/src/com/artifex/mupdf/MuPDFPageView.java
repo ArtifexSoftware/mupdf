@@ -217,6 +217,11 @@ public class MuPDFPageView extends PageView {
 	}
 
 	@Override
+	protected TextWord[][] getText() {
+		return mCore.textLines(mPageNumber);
+	}
+
+	@Override
 	public void setPage(final int page, PointF size) {
 		mLoadWidgetAreas = new AsyncTask<Void,Void,RectF[]> () {
 			@Override
