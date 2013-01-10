@@ -928,16 +928,16 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 
 	fz_try(ctx)
 	{
-		fz_rect rect;
+		fz_rect mbrect;
 
 		if (glo->hit_bbox == NULL)
 			glo->hit_bbox = fz_malloc_array(ctx, MAX_SEARCH_HITS, sizeof(*glo->hit_bbox));
 
 		zoom = glo->resolution / 72;
 		ctm = fz_scale(zoom, zoom);
-		rect = fz_transform_rect(ctm, pc->media_box);
+		mbrect = fz_transform_rect(ctm, pc->media_box);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, rect);
+		text = fz_new_text_page(ctx, mbrect);
 		dev  = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, ctm, NULL);
 		fz_free_device(dev);
@@ -994,6 +994,117 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 	}
 
 	return arr;
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_com_artifex_mupdf_MuPDFCore_text(JNIEnv * env, jobject thiz)
+{
+	jclass textCharClass;
+	jclass textSpanClass;
+	jclass textLineClass;
+	jclass textBlockClass;
+	jmethodID ctor;
+	jobjectArray barr = NULL;
+	fz_text_sheet *sheet = NULL;
+	fz_text_page *text = NULL;
+	fz_device *dev  = NULL;
+	float zoom;
+	fz_matrix ctm;
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	page_cache *pc = &glo->pages[glo->current];
+
+	textCharClass = (*env)->FindClass(env, "com/artifex/mupdf/TextChar");
+	if (textCharClass == NULL) return NULL;
+	textSpanClass = (*env)->FindClass(env, "[Lcom/artifex/mupdf/TextChar;");
+	if (textSpanClass == NULL) return NULL;
+	textLineClass = (*env)->FindClass(env, "[[Lcom/artifex/mupdf/TextChar;");
+	if (textLineClass == NULL) return NULL;
+	textBlockClass = (*env)->FindClass(env, "[[[Lcom/artifex/mupdf/TextChar;");
+	if (textBlockClass == NULL) return NULL;
+	ctor = (*env)->GetMethodID(env, textCharClass, "<init>", "(FFFFC)V");
+	if (ctor == NULL) return NULL;
+
+	fz_var(sheet);
+	fz_var(text);
+	fz_var(dev);
+
+	fz_try(ctx)
+	{
+		fz_rect mbrect;
+		int b, l, s, c;
+
+		zoom = glo->resolution / 72;
+		ctm = fz_scale(zoom, zoom);
+		mbrect = fz_transform_rect(ctm, pc->media_box);
+		sheet = fz_new_text_sheet(ctx);
+		text = fz_new_text_page(ctx, mbrect);
+		dev  = fz_new_text_device(ctx, sheet, text);
+		fz_run_page(doc, pc->page, dev, ctm, NULL);
+		fz_free_device(dev);
+		dev = NULL;
+
+		barr = (*env)->NewObjectArray(env, text->len, textBlockClass, NULL);
+		if (barr == NULL) fz_throw(ctx, "NewObjectArray failed");
+
+		for (b = 0; b < text->len; b++)
+		{
+			fz_text_block *block = &text->blocks[b];
+			jobjectArray *larr = (*env)->NewObjectArray(env, block->len, textLineClass, NULL);
+			if (larr == NULL) fz_throw(ctx, "NewObjectArray failed");
+
+			for (l = 0; l < block->len; l++)
+			{
+				fz_text_line *line = &block->lines[l];
+				jobjectArray *sarr = (*env)->NewObjectArray(env, line->len, textSpanClass, NULL);
+				if (sarr == NULL) fz_throw(ctx, "NewObjectArray failed");
+
+				for (s = 0; s < line->len; s++)
+				{
+					fz_text_span *span = &line->spans[s];
+					jobjectArray *carr = (*env)->NewObjectArray(env, span->len, textCharClass, NULL);
+					if (carr == NULL) fz_throw(ctx, "NewObjectArray failed");
+
+					for (c = 0; c < span->len; c++)
+					{
+						fz_text_char *ch = &span->text[c];
+						jobject cobj = (*env)->NewObject(env, textCharClass, ctor, ch->bbox.x0, ch->bbox.y0, ch->bbox.x1, ch->bbox.y1, ch->c);
+						if (cobj == NULL) fz_throw(ctx, "NewObjectfailed");
+
+						(*env)->SetObjectArrayElement(env, carr, c, cobj);
+						(*env)->DeleteLocalRef(env, cobj);
+					}
+
+					(*env)->SetObjectArrayElement(env, sarr, s, carr);
+					(*env)->DeleteLocalRef(env, carr);
+				}
+
+				(*env)->SetObjectArrayElement(env, larr, l, sarr);
+				(*env)->DeleteLocalRef(env, sarr);
+			}
+
+			(*env)->SetObjectArrayElement(env, barr, b, larr);
+			(*env)->DeleteLocalRef(env, larr);
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_free_text_page(ctx, text);
+		fz_free_text_sheet(ctx, sheet);
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+		if (cls != NULL)
+			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_searchPage");
+		(*env)->DeleteLocalRef(env, cls);
+
+		return NULL;
+	}
+
+	return barr;
 }
 
 static void close_doc(globals *glo)

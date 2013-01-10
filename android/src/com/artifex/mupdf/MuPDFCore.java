@@ -1,4 +1,6 @@
 package com.artifex.mupdf;
+import java.util.ArrayList;
+
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.PointF;
@@ -33,6 +35,7 @@ public class MuPDFCore
 			int patchX, int patchY,
 			int patchW, int patchH);
 	private native RectF[] searchPage(String text);
+	private native TextChar[][][][] text();
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
 	private native String [] getFocusedWidgetChoiceSelected();
@@ -183,6 +186,42 @@ public class MuPDFCore
 	public synchronized RectF [] searchPage(int page, String text) {
 		gotoPage(page);
 		return searchPage(text);
+	}
+
+	public synchronized TextWord [][] textLines(int page) {
+		gotoPage(page);
+		TextChar[][][][] chars = text();
+
+		// The text of the page held in a hierarchy (blocks, lines, spans).
+		// Currently we don't need to distinguish the blocks level or
+		// the spans, and we need to collect the text into words.
+		ArrayList<TextWord[]> lns = new ArrayList<TextWord[]>();
+
+		for (TextChar[][][] bl: chars) {
+			for (TextChar[][] ln: bl) {
+				ArrayList<TextWord> wds = new ArrayList<TextWord>();
+				TextWord wd = new TextWord();
+
+				for (TextChar[] sp: ln) {
+					for (TextChar tc: sp) {
+						if (tc.c != ' ') {
+							wd.Add(tc);
+						} else if (wd.w.length() > 0) {
+							wds.add(wd);
+							wd = new TextWord();
+						}
+					}
+				}
+
+				if (wd.w.length() > 0)
+					wds.add(wd);
+
+				if (wds.size() > 0)
+					lns.add(wds.toArray(new TextWord[wds.size()]));
+			}
+		}
+
+		return lns.toArray(new TextWord[lns.size()][]);
 	}
 
 	public synchronized boolean hasOutline() {
