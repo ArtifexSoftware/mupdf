@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <ViewSwitcher
+    <ViewAnimator
         android:id="@+id/switcher"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -97,7 +97,7 @@
                 android:layout_toRightOf="@+id/cancel"
                 android:layout_toLeftOf="@+id/searchBack"
                 android:inputType="text"
-                android:hint="Search"
+                android:hint="@string/search"
                 android:singleLine="true" />
 
             <ImageButton
@@ -122,7 +122,34 @@
 
         </RelativeLayout>
 
-    </ViewSwitcher>
+        <RelativeLayout
+            android:id="@+id/topBar3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/toolbar" >
+
+            <ImageButton
+                android:id="@+id/cancelSelectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentLeft="true"
+                android:contentDescription="@string/cancel"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_cancel" />
+
+            <ImageButton
+                android:id="@+id/copySelectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:contentDescription="@string/copy"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_clipboard" />
+
+        </RelativeLayout>
+    </ViewAnimator>
 
     <RelativeLayout
         android:id="@+id/lowerButtons"
@@ -160,4 +187,14 @@
 
     </RelativeLayout>
 
+    <TextView
+        android:id="@+id/info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/pageSlider"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/page_num"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textColor="#FFFFFF" />
 </RelativeLayout>

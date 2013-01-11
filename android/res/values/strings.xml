@@ -17,4 +17,6 @@
     <string name="link_control">Link highlighting and enabling</string>
     <string name="no_further_occurences_found">No further occurences found</string>
     <string name="select">Select</string>
+    <string name="search">Search</string>
+    <string name="copy">Copy</string>
 </resources>

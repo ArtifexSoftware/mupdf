@@ -2,6 +2,9 @@ package com.artifex.mupdf;
 
 import java.util.concurrent.Executor;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -11,7 +14,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
@@ -33,7 +35,7 @@ import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.ViewSwitcher;
+import android.widget.ViewAnimator;
 
 class ThreadPerTaskExecutor implements Executor {
 	public void execute(Runnable r) {
@@ -95,11 +97,14 @@ public class MuPDFActivity extends Activity
 	private SeekBar      mPageSlider;
 	private int          mPageSliderRes;
 	private TextView     mPageNumberView;
+	private TextView     mInfoView;
 	private ImageButton  mSearchButton;
 	private ImageButton mSelectButton;
+	private ImageButton mCancelSelectButton;
+	private ImageButton mCopySelectButton;
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
-	private ViewSwitcher mTopBarSwitcher;
+	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
 	private boolean      mTopBarIsSearch;
 	private ImageButton  mSearchBack;
@@ -511,8 +516,49 @@ public class MuPDFActivity extends Activity
 		// Activate the select button
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				mSelecting = !mSelecting;
-				mSelectButton.setColorFilter(Color.WHITE, mSelecting?PorterDuff.Mode.XOR: PorterDuff.Mode.DST);
+				mSelecting = true;
+				mTopBarSwitcher.setDisplayedChild(2);
+			}
+		});
+
+		mCancelSelectButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				PageView pageView = (PageView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.deselectText();
+				mSelecting = false;
+				mTopBarSwitcher.setDisplayedChild(0);
+			}
+		});
+
+		final Context context = this;
+		mCopySelectButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				PageView pageView = (PageView) mDocView.getDisplayedView();
+				boolean copied = false;
+				if (pageView != null)
+					copied = pageView.copySelection();
+				mSelecting = false;
+				mTopBarSwitcher.setDisplayedChild(0);
+				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
+				AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.info);
+				set.setTarget(mInfoView);
+				set.addListener(new Animator.AnimatorListener() {
+					public void onAnimationStart(Animator animation) {
+						mInfoView.setVisibility(View.VISIBLE);
+					}
+
+					public void onAnimationRepeat(Animator animation) {
+					}
+
+					public void onAnimationEnd(Animator animation) {
+						mInfoView.setVisibility(View.INVISIBLE);
+					}
+
+					public void onAnimationCancel(Animator animation) {
+					}
+				});
+				set.start();
 			}
 		});
 
@@ -775,7 +821,7 @@ public class MuPDFActivity extends Activity
 			//Focus on EditTextWidget
 			mSearchText.requestFocus();
 			showKeyboard();
-			mTopBarSwitcher.showNext();
+			mTopBarSwitcher.setDisplayedChild(1);
 		}
 	}
 
@@ -783,7 +829,7 @@ public class MuPDFActivity extends Activity
 		if (mTopBarIsSearch) {
 			mTopBarIsSearch = false;
 			hideKeyboard();
-			mTopBarSwitcher.showPrevious();
+			mTopBarSwitcher.setDisplayedChild(0);
 			SearchTaskResult.set(null);
 			// Make the ReaderView act on the change to mSearchTaskResult
 			// via overridden onChildSetup method.
@@ -802,17 +848,21 @@ public class MuPDFActivity extends Activity
 		mFilenameView = (TextView)mButtonsView.findViewById(R.id.docNameText);
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
+		mInfoView = (TextView)mButtonsView.findViewById(R.id.info);
 		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
 		mSelectButton = (ImageButton)mButtonsView.findViewById(R.id.selectButton);
+		mCancelSelectButton = (ImageButton)mButtonsView.findViewById(R.id.cancelSelectButton);
+		mCopySelectButton = (ImageButton)mButtonsView.findViewById(R.id.copySelectButton);
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
-		mTopBarSwitcher = (ViewSwitcher)mButtonsView.findViewById(R.id.switcher);
+		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
 		mLinkButton = (ImageButton)mButtonsView.findViewById(R.id.linkButton);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
 		mPageNumberView.setVisibility(View.INVISIBLE);
+		mInfoView.setVisibility(View.INVISIBLE);
 		mPageSlider.setVisibility(View.INVISIBLE);
 	}
 

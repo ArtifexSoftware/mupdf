@@ -3,6 +3,8 @@ package com.artifex.mupdf;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -57,6 +59,9 @@ abstract class TextSelector {
 	protected abstract void onEndLine();
 
 	public void select() {
+		if (mText == null || mSelectBox == null)
+			return;
+
 		ArrayList<TextWord[]> lines = new ArrayList<TextWord[]>();
 		for (TextWord[] line : mText)
 			if (line[0].bottom > mSelectBox.top && line[0].top < mSelectBox.bottom)
@@ -347,6 +352,11 @@ public abstract class PageView extends ViewGroup {
 			mSearchView.invalidate();
 	}
 
+	public void deselectText() {
+		mSelectBox = null;
+		mSearchView.invalidate();
+	}
+
 	public void selectText(float x0, float y0, float x1, float y1) {
 		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
 		float docRelX0 = (x0 - getLeft())/scale;
@@ -376,6 +386,47 @@ public abstract class PageView extends ViewGroup {
 
 			mGetText.execute();
 		}
+	}
+
+	public boolean copySelection() {
+		final StringBuilder text = new StringBuilder();
+
+		TextSelector sel = new TextSelector(mText, mSelectBox) {
+			StringBuilder line;
+
+			@Override
+			protected void onStartLine() {
+				line = new StringBuilder();
+			}
+
+			@Override
+			protected void onWord(TextWord word) {
+				if (line.length() > 0)
+					line.append(' ');
+				line.append(word.w);
+			}
+
+			@Override
+			protected void onEndLine() {
+				if (text.length() > 0)
+					text.append('\n');
+				text.append(line);
+			}
+		};
+
+		sel.select();
+
+		if (text.length() == 0)
+			return false;
+
+		ClipboardManager cm = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+
+		cm.setPrimaryClip(ClipData.newPlainText("MuPDF", text));
+
+		mSelectBox = null;
+		mSearchView.invalidate();
+
+		return true;
 	}
 
 	@Override
