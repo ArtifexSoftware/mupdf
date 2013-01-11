@@ -2300,7 +2300,7 @@ typedef struct fz_page_s fz_page;
 
 	filename: a path to a file as it would be given to open(2).
 */
-fz_document *fz_open_document(fz_context *ctx, char *filename);
+fz_document *fz_open_document(fz_context *ctx, const char *filename);
 
 /*
 	fz_open_document_with_stream: Open a PDF, XPS or CBZ document.
@@ -2310,7 +2310,7 @@ fz_document *fz_open_document(fz_context *ctx, char *filename);
 
 	magic: a string used to detect document type; either a file name or mime-type.
 */
-fz_document *fz_open_document_with_stream(fz_context *ctx, char *magic, fz_stream *stream);
+fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
 
 /*
 	fz_close_document: Close and free an open document.
