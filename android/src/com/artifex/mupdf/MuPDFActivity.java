@@ -351,42 +351,39 @@ public class MuPDFActivity extends Activity
 			private boolean showButtonsDisabled;
 
 			public boolean onSingleTapUp(MotionEvent e) {
+				LinkInfo link = null;
+
 				if (!mSelecting && !showButtonsDisabled) {
 					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
 					if (MuPDFCore.javascriptSupported() && pageView.passClickEvent(e.getX(), e.getY())) {
 						// If the page consumes the event do nothing else
+					} else if (mLinkHighlight && pageView != null && (link = pageView.hitLink(e.getX(), e.getY())) != null) {
+						link.acceptVisitor(new LinkInfoVisitor() {
+							@Override
+							public void visitInternal(LinkInfoInternal li) {
+								// Clicked on an internal (GoTo) link
+								mDocView.setDisplayedViewIndex(li.pageNumber);
+							}
+
+							@Override
+							public void visitExternal(LinkInfoExternal li) {
+								Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(li.url));
+								startActivity(intent);
+							}
+
+							@Override
+							public void visitRemote(LinkInfoRemote li) {
+								// Clicked on a remote (GoToR) link
+							}
+						});
 					} else if (e.getX() < super.getWidth()/TAP_PAGE_MARGIN) {
 						super.moveToPrevious();
 					} else if (e.getX() > super.getWidth()*(TAP_PAGE_MARGIN-1)/TAP_PAGE_MARGIN) {
 						super.moveToNext();
+					} else if (!mButtonsVisible) {
+						showButtons();
 					} else {
-						LinkInfo link = null;
-						if (mLinkHighlight && pageView != null) {
-							link = pageView.hitLink(e.getX(), e.getY());
-						}
-						if (link != null) {
-							link.acceptVisitor(new LinkInfoVisitor() {
-								@Override
-								public void visitInternal(LinkInfoInternal li) {
-									// Clicked on an internal (GoTo) link
-									mDocView.setDisplayedViewIndex(li.pageNumber);
-								}
-								@Override
-								public void visitExternal(LinkInfoExternal li) {
-									// Clicked on an external (URI) link: li.url
-								}
-								@Override
-								public void visitRemote(LinkInfoRemote li) {
-									// Clicked on a remote (GoToR) link
-								}
-							});
-						} else {
-							if (!mButtonsVisible) {
-								showButtons();
-							} else {
-								hideButtons();
-							}
-						}
+						hideButtons();
 					}
 				}
 				return super.onSingleTapUp(e);
