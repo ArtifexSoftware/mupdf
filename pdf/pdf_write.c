@@ -620,7 +620,7 @@ static void removeduplicateobjs(pdf_document *xref, pdf_write_options *opts)
 					sb = pdf_load_raw_renumbered_stream(xref, other, 0, other, 0);
 					lena = fz_buffer_storage(ctx, sa, &dataa);
 					lenb = fz_buffer_storage(ctx, sb, &datab);
-					if (lena != lenb && memcmp(dataa, datab, lena) == 0)
+					if (lena == lenb && memcmp(dataa, datab, lena) == 0)
 						differ = 0;
 				}
 				fz_always(ctx)
