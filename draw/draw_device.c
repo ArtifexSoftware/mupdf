@@ -348,7 +348,7 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, fz_
 }
 
 static void
-fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, fz_matrix ctm)
+fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect rect, int even_odd, fz_matrix ctm)
 {
 	fz_draw_device *dev = devp->user;
 	float expansion = fz_matrix_expansion(ctm);
@@ -367,8 +367,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, f
 
 	bbox = fz_bound_gel(dev->gel);
 	bbox = fz_intersect_rect(bbox, state->scissor);
-	if (rect)
-		bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(*rect));
+	bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(rect));
 
 	if (fz_is_empty_rect(bbox) || fz_is_rect_gel(dev->gel))
 	{
@@ -407,7 +406,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect *rect, int even_odd, f
 }
 
 static void
-fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect *rect, fz_stroke_state *stroke, fz_matrix ctm)
+fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect rect, fz_stroke_state *stroke, fz_matrix ctm)
 {
 	fz_draw_device *dev = devp->user;
 	float expansion = fz_matrix_expansion(ctm);
@@ -433,8 +432,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect *rect, fz_strok
 
 	bbox = fz_bound_gel(dev->gel);
 	bbox = fz_intersect_rect(bbox, state->scissor);
-	if (rect)
-		bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(*rect));
+	bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(rect));
 
 	fz_try(ctx)
 	{
@@ -1213,7 +1211,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_image *image, fz_matrix ctm,
 }
 
 static void
-fz_draw_clip_image_mask(fz_device *devp, fz_image *image, fz_rect *rect, fz_matrix ctm)
+fz_draw_clip_image_mask(fz_device *devp, fz_image *image, fz_rect rect, fz_matrix ctm)
 {
 	fz_draw_device *dev = devp->user;
 	fz_context *ctx = dev->ctx;
@@ -1253,8 +1251,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, fz_rect *rect, fz_matr
 
 	bbox = fz_rect_covering_rect(fz_transform_rect(ctm, fz_unit_rect));
 	bbox = fz_intersect_rect(bbox, state->scissor);
-	if (rect)
-		bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(*rect));
+	bbox = fz_intersect_rect(bbox, fz_rect_covering_rect(rect));
 
 	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
