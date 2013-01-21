@@ -1,4 +1,4 @@
-package com.artifex.mupdf;
+package com.artifex.mupdfdemo;
 
 import android.app.AlertDialog;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package com.artifex.mupdf;
+package com.artifex.mupdfdemo;
 
 abstract public class LinkInfoVisitor {
 	public abstract void visitInternal(LinkInfoInternal li);

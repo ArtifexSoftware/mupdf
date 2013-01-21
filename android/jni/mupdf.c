@@ -15,6 +15,9 @@
 #include "fitz.h"
 #include "mupdf.h"
 
+#define JNI_FN(A) Java_com_artifex_mupdfdemo_ ## A
+#define PACKAGENAME "com/artifex/mupdfdemo"
+
 #define LOG_TAG "libmupdf"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define LOGT(...) __android_log_print(ANDROID_LOG_INFO,"alert",__VA_ARGS__)
@@ -226,7 +229,7 @@ static globals *get_globals(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jfilename)
+JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 {
 	const char *filename;
 	globals    *glo;
@@ -299,7 +302,7 @@ Java_com_artifex_mupdf_MuPDFCore_openFile(JNIEnv * env, jobject thiz, jstring jf
 }
 
 JNIEXPORT int JNICALL
-Java_com_artifex_mupdf_MuPDFCore_countPagesInternal(JNIEnv *env, jobject thiz)
+JNI_FN(MuPDFCore_countPagesInternal)(JNIEnv *env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
@@ -307,7 +310,7 @@ Java_com_artifex_mupdf_MuPDFCore_countPagesInternal(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int page)
+JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 {
 	int i;
 	int furthest;
@@ -376,7 +379,7 @@ Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(JNIEnv *env, jobject thiz, int
 }
 
 JNIEXPORT float JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getPageWidth(JNIEnv *env, jobject thiz)
+JNI_FN(MuPDFCore_getPageWidth)(JNIEnv *env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	LOGE("PageWidth=%d", glo->pages[glo->current].width);
@@ -384,7 +387,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageWidth(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT float JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getPageHeight(JNIEnv *env, jobject thiz)
+JNI_FN(MuPDFCore_getPageHeight)(JNIEnv *env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	LOGE("PageHeight=%d", glo->pages[glo->current].height);
@@ -392,13 +395,13 @@ Java_com_artifex_mupdf_MuPDFCore_getPageHeight(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_javascriptSupported(JNIEnv *env, jobject thiz)
+JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 {
 	return fz_javascript_supported();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_drawPage(JNIEnv *env, jobject thiz, jobject bitmap,
+JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
 {
 	AndroidBitmapInfo info;
@@ -558,7 +561,7 @@ static char *widget_type_string(int t)
 	}
 }
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, jobject bitmap, int page,
+JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, int page,
 		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
 {
 	AndroidBitmapInfo info;
@@ -590,8 +593,8 @@ Java_com_artifex_mupdf_MuPDFCore_updatePageInternal(JNIEnv *env, jobject thiz, j
 
 	if (pc == NULL || (hq && pc->hq_page == NULL))
 	{
-		Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, page);
-		return Java_com_artifex_mupdf_MuPDFCore_drawPage(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
+		JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, page);
+		return JNI_FN(MuPDFCore_drawPage)(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
 	}
 
 	idoc = fz_interact(doc);
@@ -831,7 +834,7 @@ fillInOutlineItems(JNIEnv * env, jclass olClass, jmethodID ctor, jobjectArray ar
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_needsPasswordInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_needsPasswordInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
@@ -839,7 +842,7 @@ Java_com_artifex_mupdf_MuPDFCore_needsPasswordInternal(JNIEnv * env, jobject thi
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_authenticatePasswordInternal(JNIEnv *env, jobject thiz, jstring password)
+JNI_FN(MuPDFCore_authenticatePasswordInternal)(JNIEnv *env, jobject thiz, jstring password)
 {
 	const char *pw;
 	int         result;
@@ -855,7 +858,7 @@ Java_com_artifex_mupdf_MuPDFCore_authenticatePasswordInternal(JNIEnv *env, jobje
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_hasOutlineInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 {
 	globals    *glo = get_globals(env, thiz);
 	fz_outline *outline = fz_load_outline(glo->doc);
@@ -864,7 +867,7 @@ Java_com_artifex_mupdf_MuPDFCore_hasOutlineInternal(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getOutlineInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 {
 	jclass        olClass;
 	jmethodID     ctor;
@@ -874,7 +877,7 @@ Java_com_artifex_mupdf_MuPDFCore_getOutlineInternal(JNIEnv * env, jobject thiz)
 	int           nItems;
 	globals      *glo = get_globals(env, thiz);
 
-	olClass = (*env)->FindClass(env, "com/artifex/mupdf/OutlineItem");
+	olClass = (*env)->FindClass(env, PACKAGENAME "/OutlineItem");
 	if (olClass == NULL) return NULL;
 	ctor = (*env)->GetMethodID(env, olClass, "<init>", "(ILjava/lang/String;I)V");
 	if (ctor == NULL) return NULL;
@@ -894,7 +897,7 @@ Java_com_artifex_mupdf_MuPDFCore_getOutlineInternal(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring jtext)
+JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 {
 	jclass         rectClass;
 	jmethodID      ctor;
@@ -997,7 +1000,7 @@ Java_com_artifex_mupdf_MuPDFCore_searchPage(JNIEnv * env, jobject thiz, jstring 
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_text(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 {
 	jclass textCharClass;
 	jclass textSpanClass;
@@ -1015,13 +1018,13 @@ Java_com_artifex_mupdf_MuPDFCore_text(JNIEnv * env, jobject thiz)
 	fz_document *doc = glo->doc;
 	page_cache *pc = &glo->pages[glo->current];
 
-	textCharClass = (*env)->FindClass(env, "com/artifex/mupdf/TextChar");
+	textCharClass = (*env)->FindClass(env, PACKAGENAME "/TextChar");
 	if (textCharClass == NULL) return NULL;
-	textSpanClass = (*env)->FindClass(env, "[Lcom/artifex/mupdf/TextChar;");
+	textSpanClass = (*env)->FindClass(env, "[L" PACKAGENAME "/TextChar;");
 	if (textSpanClass == NULL) return NULL;
-	textLineClass = (*env)->FindClass(env, "[[Lcom/artifex/mupdf/TextChar;");
+	textLineClass = (*env)->FindClass(env, "[[L" PACKAGENAME "/TextChar;");
 	if (textLineClass == NULL) return NULL;
-	textBlockClass = (*env)->FindClass(env, "[[[Lcom/artifex/mupdf/TextChar;");
+	textBlockClass = (*env)->FindClass(env, "[[[L" PACKAGENAME "/TextChar;");
 	if (textBlockClass == NULL) return NULL;
 	ctor = (*env)->GetMethodID(env, textCharClass, "<init>", "(FFFFC)V");
 	if (ctor == NULL) return NULL;
@@ -1124,7 +1127,7 @@ static void close_doc(globals *glo)
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
@@ -1145,7 +1148,7 @@ Java_com_artifex_mupdf_MuPDFCore_destroying(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz, int pageNumber)
+JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumber)
 {
 	jclass       linkInfoClass;
 	jclass       linkInfoInternalClass;
@@ -1164,13 +1167,13 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz
 	page_cache  *pc;
 	globals     *glo = get_globals(env, thiz);
 
-	linkInfoClass = (*env)->FindClass(env, "com/artifex/mupdf/LinkInfo");
+	linkInfoClass = (*env)->FindClass(env, PACKAGENAME "/LinkInfo");
 	if (linkInfoClass == NULL) return NULL;
-	linkInfoInternalClass = (*env)->FindClass(env, "com/artifex/mupdf/LinkInfoInternal");
+	linkInfoInternalClass = (*env)->FindClass(env, PACKAGENAME "/LinkInfoInternal");
 	if (linkInfoInternalClass == NULL) return NULL;
-	linkInfoExternalClass = (*env)->FindClass(env, "com/artifex/mupdf/LinkInfoExternal");
+	linkInfoExternalClass = (*env)->FindClass(env, PACKAGENAME "/LinkInfoExternal");
 	if (linkInfoExternalClass == NULL) return NULL;
-	linkInfoRemoteClass = (*env)->FindClass(env, "com/artifex/mupdf/LinkInfoRemote");
+	linkInfoRemoteClass = (*env)->FindClass(env, PACKAGENAME "/LinkInfoRemote");
 	if (linkInfoRemoteClass == NULL) return NULL;
 	ctorInternal = (*env)->GetMethodID(env, linkInfoInternalClass, "<init>", "(FFFFI)V");
 	if (ctorInternal == NULL) return NULL;
@@ -1179,7 +1182,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz
 	ctorRemote = (*env)->GetMethodID(env, linkInfoRemoteClass, "<init>", "(FFFFLjava/lang/String;IZ)V");
 	if (ctorRemote == NULL) return NULL;
 
-	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
+	JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, pageNumber);
 	pc = &glo->pages[glo->current];
 	if (pc->page == NULL || pc->number != pageNumber)
 		return NULL;
@@ -1250,7 +1253,7 @@ Java_com_artifex_mupdf_MuPDFCore_getPageLinksInternal(JNIEnv * env, jobject thiz
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject thiz, int pageNumber)
+JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNumber)
 {
 	jclass       rectFClass;
 	jmethodID    ctor;
@@ -1269,7 +1272,7 @@ Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject th
 	ctor = (*env)->GetMethodID(env, rectFClass, "<init>", "(FFFF)V");
 	if (ctor == NULL) return NULL;
 
-	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
+	JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, pageNumber);
 	pc = &glo->pages[glo->current];
 	if (pc->number != pageNumber || pc->page == NULL)
 		return NULL;
@@ -1306,7 +1309,7 @@ Java_com_artifex_mupdf_MuPDFCore_getWidgetAreasInternal(JNIEnv * env, jobject th
 }
 
 JNIEXPORT int JNICALL
-Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject thiz, int pageNumber, float x, float y)
+JNI_FN(MuPDFCore_passClickEventInternal)(JNIEnv * env, jobject thiz, int pageNumber, float x, float y)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1321,7 +1324,7 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 	if (idoc == NULL)
 		return 0;
 
-	Java_com_artifex_mupdf_MuPDFCore_gotoPageInternal(env, thiz, pageNumber);
+	JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, pageNumber);
 	pc = &glo->pages[glo->current];
 	if (pc->number != pageNumber || pc->page == NULL)
 		return 0;
@@ -1359,7 +1362,7 @@ Java_com_artifex_mupdf_MuPDFCore_passClickEventInternal(JNIEnv * env, jobject th
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTextInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_getFocusedWidgetTextInternal)(JNIEnv * env, jobject thiz)
 {
 	char *text = "";
 	globals *glo = get_globals(env, thiz);
@@ -1386,7 +1389,7 @@ Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTextInternal(JNIEnv * env, jobj
 }
 
 JNIEXPORT int JNICALL
-Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetTextInternal(JNIEnv * env, jobject thiz, jstring jtext)
+JNI_FN(MuPDFCore_setFocusedWidgetTextInternal)(JNIEnv * env, jobject thiz, jstring jtext)
 {
 	const char *text;
 	int result = 0;
@@ -1426,7 +1429,7 @@ Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetTextInternal(JNIEnv * env, jobj
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceOptions(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_getFocusedWidgetChoiceOptions)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1482,7 +1485,7 @@ Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceOptions(JNIEnv * env, job
 }
 
 JNIEXPORT jobjectArray JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceSelected(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_getFocusedWidgetChoiceSelected)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1538,7 +1541,7 @@ Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetChoiceSelected(JNIEnv * env, jo
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetChoiceSelectedInternal(JNIEnv * env, jobject thiz, jobjectArray arr)
+JNI_FN(MuPDFCore_setFocusedWidgetChoiceSelectedInternal)(JNIEnv * env, jobject thiz, jobjectArray arr)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1596,7 +1599,7 @@ Java_com_artifex_mupdf_MuPDFCore_setFocusedWidgetChoiceSelectedInternal(JNIEnv *
 }
 
 JNIEXPORT int JNICALL
-Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTypeInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_interactive *idoc = fz_interact(glo->doc);
@@ -1621,7 +1624,7 @@ Java_com_artifex_mupdf_MuPDFCore_getFocusedWidgetTypeInternal(JNIEnv * env, jobj
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_artifex_mupdf_MuPDFCore_waitForAlertInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_waitForAlertInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	jclass alertClass;
@@ -1651,7 +1654,7 @@ Java_com_artifex_mupdf_MuPDFCore_waitForAlertInternal(JNIEnv * env, jobject thiz
 	if (!alert_present)
 		return NULL;
 
-	alertClass = (*env)->FindClass(env, "com/artifex/mupdf/MuPDFAlertInternal");
+	alertClass = (*env)->FindClass(env, PACKAGENAME "/MuPDFAlertInternal");
 	if (alertClass == NULL)
 		return NULL;
 
@@ -1671,14 +1674,14 @@ Java_com_artifex_mupdf_MuPDFCore_waitForAlertInternal(JNIEnv * env, jobject thiz
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_replyToAlertInternal(JNIEnv * env, jobject thiz, jobject alert)
+JNI_FN(MuPDFCore_replyToAlertInternal)(JNIEnv * env, jobject thiz, jobject alert)
 {
 	globals *glo = get_globals(env, thiz);
 	jclass alertClass;
 	jfieldID field;
 	int button_pressed;
 
-	alertClass = (*env)->FindClass(env, "com/artifex/mupdf/MuPDFAlertInternal");
+	alertClass = (*env)->FindClass(env, PACKAGENAME "/MuPDFAlertInternal");
 	if (alertClass == NULL)
 		return;
 
@@ -1704,7 +1707,7 @@ Java_com_artifex_mupdf_MuPDFCore_replyToAlertInternal(JNIEnv * env, jobject thiz
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_startAlertsInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_startAlertsInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
@@ -1724,7 +1727,7 @@ Java_com_artifex_mupdf_MuPDFCore_startAlertsInternal(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_stopAlertsInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_stopAlertsInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
@@ -1746,7 +1749,7 @@ Java_com_artifex_mupdf_MuPDFCore_stopAlertsInternal(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_artifex_mupdf_MuPDFCore_hasChangesInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_hasChangesInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_interactive *idoc = fz_interact(glo->doc);
@@ -1779,7 +1782,7 @@ static char *tmp_path(char *path)
 }
 
 JNIEXPORT void JNICALL
-Java_com_artifex_mupdf_MuPDFCore_saveInternal(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.artifex.mupdf;
+package com.artifex.mupdfdemo;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.BlockingQueue;

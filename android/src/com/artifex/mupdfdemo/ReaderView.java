@@ -1,4 +1,4 @@
-package com.artifex.mupdf;
+package com.artifex.mupdfdemo;
 
 import java.util.LinkedList;
 import java.util.NoSuchElementException;

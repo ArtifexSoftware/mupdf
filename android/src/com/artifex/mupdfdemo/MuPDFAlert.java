@@ -1,4 +1,4 @@
-package com.artifex.mupdf;
+package com.artifex.mupdfdemo;
 
 public class MuPDFAlert {
 	public enum IconType {Error,Warning,Question,Status};
