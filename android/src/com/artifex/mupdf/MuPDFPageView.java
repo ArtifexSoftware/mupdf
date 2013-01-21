@@ -3,6 +3,7 @@ package com.artifex.mupdf;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -200,15 +201,15 @@ public class MuPDFPageView extends PageView {
 	}
 
 	@Override
-	protected void drawPage(BitmapHolder h, int sizeX, int sizeY,
+	protected Bitmap drawPage(BitmapHolder h, int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
-		mCore.drawPage(h, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
+		return mCore.drawPage(h, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
 	}
 
 	@Override
-	protected void updatePage(BitmapHolder h, int sizeX, int sizeY,
+	protected Bitmap updatePage(BitmapHolder h, int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
-		mCore.updatePage(h, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
+		return mCore.updatePage(h, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
 	}
 
 	@Override
