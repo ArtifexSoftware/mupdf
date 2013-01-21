@@ -180,6 +180,9 @@ public abstract class PageView extends ViewGroup {
 			mPatch.setImageBitmap(null);
 		}
 
+		mPatchViewSize = null;
+		mPatchArea = null;
+
 		mSearchBoxes = null;
 		mLinks = null;
 		mSelectBox = null;
