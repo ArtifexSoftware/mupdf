@@ -119,13 +119,11 @@ public class MuPDFCore
 		globals = 0;
 	}
 
-	public synchronized Bitmap drawPage(BitmapHolder h, int page,
+	public synchronized Bitmap drawPage(int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
 			int patchW, int patchH) {
 		gotoPage(page);
-		// Clear the reference out before creating the new bitmap
-		h.setBm(null);
 		Bitmap bm = Bitmap.createBitmap(patchW, patchH, Config.ARGB_8888);
 		drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH);
 		return bm;
