@@ -81,21 +81,21 @@ fz_point_on_circle(fz_point p, float r, float theta)
 static void
 fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_mesh_processor *painter)
 {
-	fz_point p0, p1;
+	fz_point p0, p1, dir;
 	fz_vertex v0, v1, v2, v3;
 	fz_vertex e0, e1;
 	float theta;
 
 	p0.x = shade->u.l_or_r.coords[0][0];
 	p0.y = shade->u.l_or_r.coords[0][1];
-	p0 = fz_transform_point(ctm, p0);
-
 	p1.x = shade->u.l_or_r.coords[1][0];
 	p1.y = shade->u.l_or_r.coords[1][1];
+	dir.x = p0.y - p1.y;
+	dir.y = p1.x - p0.x;
+	p0 = fz_transform_point(ctm, p0);
 	p1 = fz_transform_point(ctm, p1);
-
-	theta = atan2f(p1.y - p0.y, p1.x - p0.x);
-	theta += (float)M_PI * 0.5f;
+	dir = fz_transform_vector(ctm, dir);
+	theta = atan2f(dir.y, dir.x);
 
 	v0.p = fz_point_on_circle(p0, HUGENUM, theta);
 	v1.p = fz_point_on_circle(p1, HUGENUM, theta);
