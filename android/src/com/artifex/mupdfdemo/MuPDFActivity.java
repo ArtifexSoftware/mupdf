@@ -554,24 +554,35 @@ public class MuPDFActivity extends Activity
 				mSelecting = false;
 				mTopBarSwitcher.setDisplayedChild(0);
 				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
-				AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.info);
-				set.setTarget(mInfoView);
-				set.addListener(new Animator.AnimatorListener() {
-					public void onAnimationStart(Animator animation) {
-						mInfoView.setVisibility(View.VISIBLE);
-					}
 
-					public void onAnimationRepeat(Animator animation) {
-					}
+				int currentApiVersion = android.os.Build.VERSION.SDK_INT;
+				if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+					AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.info);
+					set.setTarget(mInfoView);
+					set.addListener(new Animator.AnimatorListener() {
+						public void onAnimationStart(Animator animation) {
+							mInfoView.setVisibility(View.VISIBLE);
+						}
 
-					public void onAnimationEnd(Animator animation) {
-						mInfoView.setVisibility(View.INVISIBLE);
-					}
+						public void onAnimationRepeat(Animator animation) {
+						}
 
-					public void onAnimationCancel(Animator animation) {
-					}
-				});
-				set.start();
+						public void onAnimationEnd(Animator animation) {
+							mInfoView.setVisibility(View.INVISIBLE);
+						}
+
+						public void onAnimationCancel(Animator animation) {
+						}
+					});
+					set.start();
+				} else {
+					mInfoView.setVisibility(View.VISIBLE);
+					mHandler.postDelayed(new Runnable() {
+						public void run() {
+							mInfoView.setVisibility(View.INVISIBLE);
+						}
+					}, 500);
+				}
 			}
 		});
 

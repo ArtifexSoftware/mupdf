@@ -425,9 +425,15 @@ public abstract class PageView extends ViewGroup {
 		if (text.length() == 0)
 			return false;
 
-		ClipboardManager cm = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+		int currentApiVersion = android.os.Build.VERSION.SDK_INT;
+		if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+			android.content.ClipboardManager cm = (android.content.ClipboardManager)mContext.getSystemService(Context.CLIPBOARD_SERVICE);
 
-		cm.setPrimaryClip(ClipData.newPlainText("MuPDF", text));
+			cm.setPrimaryClip(ClipData.newPlainText("MuPDF", text));
+		} else {
+			android.text.ClipboardManager cm = (android.text.ClipboardManager)mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+			cm.setText(text);
+		}
 
 		mSelectBox = null;
 		mSearchView.invalidate();
