@@ -21,6 +21,7 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
@@ -85,7 +86,7 @@ class ProgressDialogX extends ProgressDialog {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
-	private final int    TAP_PAGE_MARGIN = 5;
+	private static int   tapPageMargin;
 	private static final int    SEARCH_PROGRESS_DELAY = 200;
 	private MuPDFCore    core;
 	private String       mFileName;
@@ -265,6 +266,21 @@ public class MuPDFActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 
+		// Get the screen size etc to customise tap margins.
+		// We calculate the size of 1 inch of the screen for tapping.
+		// On some devices the dpi values returned are wrong, so we
+		// sanity check it: we first restrict it so that we are never
+		// less than 100 pixels (the smallest Android device screen
+		// dimension I've seen is 480 pixels or so). Then we check
+		// to ensure we are never more than 1/5 of the screen width.
+		DisplayMetrics dm = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(dm);
+		tapPageMargin = (int)dm.xdpi;
+		if (tapPageMargin < 100)
+			tapPageMargin = 100;
+		if (tapPageMargin > dm.widthPixels/5)
+			tapPageMargin = dm.widthPixels/5;
+
 		mAlertBuilder = new AlertDialog.Builder(this);
 
 		if (core == null) {
@@ -376,9 +392,9 @@ public class MuPDFActivity extends Activity
 								// Clicked on a remote (GoToR) link
 							}
 						});
-					} else if (e.getX() < super.getWidth()/TAP_PAGE_MARGIN) {
+					} else if (e.getX() < tapPageMargin) {
 						super.moveToPrevious();
-					} else if (e.getX() > super.getWidth()*(TAP_PAGE_MARGIN-1)/TAP_PAGE_MARGIN) {
+					} else if (e.getX() > super.getWidth()-tapPageMargin) {
 						super.moveToNext();
 					} else if (!mButtonsVisible) {
 						showButtons();
