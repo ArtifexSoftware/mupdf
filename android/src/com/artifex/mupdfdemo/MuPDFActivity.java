@@ -393,9 +393,13 @@ public class MuPDFActivity extends Activity
 							}
 						});
 					} else if (e.getX() < tapPageMargin) {
-						super.moveToPrevious();
+						super.smartMoveBackwards();
 					} else if (e.getX() > super.getWidth()-tapPageMargin) {
-						super.moveToNext();
+						super.smartMoveForwards();
+					} else if (e.getY() < tapPageMargin) {
+						super.smartMoveBackwards();
+					} else if (e.getY() > super.getHeight()-tapPageMargin) {
+						super.smartMoveForwards();
 					} else if (!mButtonsVisible) {
 						showButtons();
 					} else {
