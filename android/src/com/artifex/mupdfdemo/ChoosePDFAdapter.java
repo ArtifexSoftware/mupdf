@@ -2,6 +2,7 @@ package com.artifex.mupdfdemo;
 
 import java.util.LinkedList;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,7 +58,8 @@ public class ChoosePDFAdapter extends BaseAdapter {
 		}
 		ChoosePDFItem item = mItems.get(position);
 		((TextView)v.findViewById(R.id.name)).setText(item.name);
-		((ImageView)v.findViewById(R.id.icon)).setBackgroundResource(iconForType(item.type));
+		((ImageView)v.findViewById(R.id.icon)).setImageResource(iconForType(item.type));
+		((ImageView)v.findViewById(R.id.icon)).setColorFilter(Color.argb(255, 0, 0, 0));
 		return v;
 	}
 
