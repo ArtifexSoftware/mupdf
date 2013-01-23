@@ -35,12 +35,6 @@ public class ChoosePDFActivity extends ListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Resources res = getResources();
-		String appName = res.getString(R.string.app_name);
-		String version = res.getString(R.string.version);
-		String title = res.getString(R.string.picker_title);
-		setTitle(String.format(title, appName, version));
-
 		String storageState = Environment.getExternalStorageState();
 
 		if (!Environment.MEDIA_MOUNTED.equals(storageState)
@@ -71,6 +65,12 @@ public class ChoosePDFActivity extends ListActivity {
 		mHandler = new Handler();
 		mUpdateFiles = new Runnable() {
 			public void run() {
+				Resources res = getResources();
+				String appName = res.getString(R.string.app_name);
+				String version = res.getString(R.string.version);
+				String title = res.getString(R.string.picker_title);
+				setTitle(String.format(title, appName, version, mDirectory));
+
 				mParent = mDirectory.getParentFile();
 
 				mDirs = mDirectory.listFiles(new FileFilter() {
@@ -114,7 +114,7 @@ public class ChoosePDFActivity extends ListActivity {
 
 				adapter.clear();
 				if (mParent != null)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, ".."));
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, "[Up one level]"));
 				for (File f : mDirs)
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
 				for (File f : mFiles)
