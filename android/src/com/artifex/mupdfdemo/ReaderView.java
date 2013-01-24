@@ -105,6 +105,31 @@ public class ReaderView extends AdapterView<Adapter>
 			slideViewOntoScreen(v);
 	}
 
+	// When advancing down the page, we want to advance by about
+	// 90% of a screenful. But we'd be happy to advance by between
+	// 80% and 95% if it means we hit the bottom in a whole number
+	// of steps.
+	private int smartAdvanceAmount(int screenHeight, int max) {
+		int advance = (int)(screenHeight * 0.9 + 0.5);
+		int leftOver = max % advance;
+		int steps = max / advance;
+		if (leftOver == 0) {
+			// We'll make it exactly. No adjustment
+		} else if ((float)leftOver / steps <= screenHeight * 0.05) {
+			// We can adjust up by less than 5% to make it exact.
+			advance += (int)((float)leftOver/steps + 0.5);
+		} else {
+			int overshoot = advance - leftOver;
+			if ((float)overshoot / steps <= screenHeight * 0.1) {
+				// We can adjust down by less than 10% to make it exact.
+				advance -= (int)((float)overshoot/steps + 0.5);
+			}
+		}
+		if (advance > max)
+			advance = max;
+		return advance;
+	}
+
 	public void smartMoveForwards() {
 		View v = mChildViews.get(mCurrent);
 		if (v == null)
@@ -171,9 +196,7 @@ public class ReaderView extends AdapterView<Adapter>
 		} else {
 			// Advance by 90% of the screen height downwards (in case lines are partially cut off)
 			xOffset = 0;
-			yOffset = (int)(screenHeight * 0.9 + 0.5);
-			if (yOffset + bottom > docHeight)
-				yOffset = docHeight - bottom;
+			yOffset = smartAdvanceAmount(screenHeight, docHeight - bottom);
 		}
 		mScrollerLastX = mScrollerLastY = 0;
 		mScroller.startScroll(0, 0, remainingX - xOffset, remainingY - yOffset, 400);
@@ -246,9 +269,7 @@ public class ReaderView extends AdapterView<Adapter>
 		} else {
 			// Retreat by 90% of the screen height downwards (in case lines are partially cut off)
 			xOffset = 0;
-			yOffset = - (int)(screenHeight * 0.9 + 0.5);
-			if (yOffset < -top)
-				yOffset = -top;
+			yOffset = -smartAdvanceAmount(screenHeight, top);
 		}
 		mScrollerLastX = mScrollerLastY = 0;
 		mScroller.startScroll(0, 0, remainingX - xOffset, remainingY - yOffset, 400);
