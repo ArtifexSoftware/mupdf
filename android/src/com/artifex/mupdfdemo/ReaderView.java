@@ -235,10 +235,9 @@ public class ReaderView extends AdapterView<Adapter>
 						xOffset = prevDocWidth - screenWidth;
 					while (xOffset + screenWidth*2 < prevDocWidth)
 						xOffset += screenWidth;
-					yOffset -= screenHeight-prevDocHeight;
 				}
 				xOffset -= prevLeft;
-				yOffset -= prevTop;
+				yOffset -= prevTop-prevDocHeight+screenHeight;
 			} else {
 				// Move to bottom of previous column
 				xOffset = -screenWidth;
