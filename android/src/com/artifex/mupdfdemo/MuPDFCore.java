@@ -18,9 +18,11 @@ public class MuPDFCore
 	private float pageWidth;
 	private float pageHeight;
 	private long globals;
+	private byte fileBuffer[];
 
 	/* The native functions */
 	private native long openFile(String filename);
+	private native long openBuffer();
 	private native int countPagesInternal();
 	private native void gotoPageInternal(int localActionPageNum);
 	private native float getPageWidth();
@@ -65,6 +67,16 @@ public class MuPDFCore
 		if (globals == 0)
 		{
 			throw new Exception("Failed to open "+filename);
+		}
+	}
+
+	public MuPDFCore(byte buffer[]) throws Exception
+	{
+		fileBuffer = buffer;
+		globals = openBuffer();
+		if (globals == 0)
+		{
+			throw new Exception("Failed to open buffer");
 		}
 	}
 

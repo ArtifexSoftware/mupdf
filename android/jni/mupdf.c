@@ -13,6 +13,7 @@
 #endif
 
 #include "fitz.h"
+#include "fitz-internal.h"
 #include "mupdf.h"
 
 #define JNI_FN(A) Java_com_artifex_mupdfdemo_ ## A
@@ -89,9 +90,15 @@ struct globals_s
 	int alert_reply;
 	pthread_cond_t alert_request_cond;
 	pthread_cond_t alert_reply_cond;
+
+	// For the buffer reading mode, we need to implement stream reading, which
+	// needs access to the following.
+	JNIEnv *env;
+	jclass thiz;
 };
 
 static jfieldID global_fid;
+static jfieldID buffer_fid;
 
 static void drop_page_cache(globals *glo, page_cache *pc)
 {
@@ -225,7 +232,10 @@ static void alerts_fin(globals *glo)
 
 static globals *get_globals(JNIEnv *env, jobject thiz)
 {
-	return (globals *)(void *)((*env)->GetLongField(env, thiz, global_fid));
+	globals *glo = (globals *)(void *)((*env)->GetLongField(env, thiz, global_fid));
+	glo->env = env;
+	glo->thiz = thiz;
+	return glo;
 }
 
 JNIEXPORT jlong JNICALL
@@ -281,7 +291,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "Cannot open document: '%s'\n", filename);
+			fz_throw(ctx, "Cannot open document: '%s'", filename);
 		}
 		LOGE("Done!");
 	}
@@ -297,6 +307,123 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 	}
 
 	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+
+	return (jlong)(void *)glo;
+}
+
+static int bufferStreamRead(fz_stream *stream, unsigned char *buf, int len)
+{
+	globals    *glo = (globals *)stream->state;
+	JNIEnv     *env = glo->env;
+	jbyteArray  array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
+	int         arrayLength = (*env)->GetArrayLength(env, array);
+
+	if (stream->pos > arrayLength)
+		stream->pos = arrayLength;
+	if (stream->pos < 0)
+		stream->pos = 0;
+	if (len + stream->pos > arrayLength)
+		len = arrayLength - stream->pos;
+
+	(*env)->GetByteArrayRegion(env, array, stream->pos, len, buf);
+	(*env)->DeleteLocalRef(env, array);
+	return len;
+}
+
+static void bufferStreamClose(fz_context *ctx, void *state)
+{
+	/* Nothing to do */
+}
+
+static void bufferStreamSeek(fz_stream *stream, int offset, int whence)
+{
+	globals    *glo = (globals *)stream->state;
+	JNIEnv     *env = glo->env;
+	jbyteArray  array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
+	int         arrayLength = (*env)->GetArrayLength(env, array);
+
+	(*env)->DeleteLocalRef(env, array);
+
+	if (whence == 0) /* SEEK_SET */
+		stream->pos = offset;
+	else if (whence == 1) /* SEEK_CUR */
+		stream->pos += offset;
+	else if (whence == 2) /* SEEK_END */
+		stream->pos = arrayLength + offset;
+
+	if (stream->pos > arrayLength)
+		stream->pos = arrayLength;
+	if (stream->pos < 0)
+		stream->pos = 0;
+
+	stream->rp = stream->bp;
+	stream->wp = stream->bp;
+}
+
+JNIEXPORT jlong JNICALL
+JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
+{
+	globals    *glo;
+	fz_context *ctx;
+	jclass      clazz;
+	fz_stream *stream;
+
+#ifdef NDK_PROFILER
+	monstartup("libmupdf.so");
+#endif
+
+	clazz = (*env)->GetObjectClass(env, thiz);
+	global_fid = (*env)->GetFieldID(env, clazz, "globals", "J");
+
+	glo = calloc(1, sizeof(*glo));
+	if (glo == NULL)
+		return 0;
+	glo->resolution = 160;
+	glo->alerts_initialised = 0;
+	glo->env = env;
+	glo->thiz = thiz;
+	buffer_fid = (*env)->GetFieldID(env, clazz, "fileBuffer", "[B");
+
+	/* 128 MB store for low memory devices. Tweak as necessary. */
+	glo->ctx = ctx = fz_new_context(NULL, NULL, 128 << 20);
+	if (!ctx)
+	{
+		LOGE("Failed to initialise context");
+		free(glo);
+		return 0;
+	}
+
+	glo->doc = NULL;
+	fz_try(ctx)
+	{
+		stream = fz_new_stream(ctx, glo, bufferStreamRead, bufferStreamClose);
+		stream->seek = bufferStreamSeek;
+
+		glo->colorspace = fz_device_rgb;
+
+		LOGE("Opening document...");
+		fz_try(ctx)
+		{
+			glo->current_path = NULL;
+			glo->doc = fz_open_document_with_stream(ctx, "", stream);
+			alerts_init(glo);
+		}
+		fz_catch(ctx)
+		{
+			fz_throw(ctx, "Cannot open memory document");
+		}
+		LOGE("Done!");
+	}
+	fz_catch(ctx)
+	{
+		LOGE("Failed: %s", ctx->error->message);
+		fz_close_document(glo->doc);
+		glo->doc = NULL;
+		fz_free_context(ctx);
+		glo->ctx = NULL;
+		free(glo);
+		glo = NULL;
+	}
 
 	return (jlong)(void *)glo;
 }

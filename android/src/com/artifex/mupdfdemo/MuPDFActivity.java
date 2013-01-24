@@ -1,6 +1,8 @@
 package com.artifex.mupdfdemo;
 
 import java.util.concurrent.Executor;
+import java.io.InputStream;
+import java.io.FileInputStream;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
@@ -12,6 +14,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.RectF;
@@ -260,6 +263,23 @@ public class MuPDFActivity extends Activity
 		return core;
 	}
 
+	private MuPDFCore openBuffer(byte buffer[])
+	{
+		System.out.println("Trying to open byte buffer");
+		try
+		{
+			core = new MuPDFCore(buffer);
+			// New file: drop the old outline data
+			OutlineActivityData.set(null);
+		}
+		catch (Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+		return core;
+	}
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -292,6 +312,7 @@ public class MuPDFActivity extends Activity
 		}
 		if (core == null) {
 			Intent intent = getIntent();
+			byte buffer[] = null;
 			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				Uri uri = intent.getData();
 				if (uri.toString().startsWith("content://")) {
@@ -300,10 +321,51 @@ public class MuPDFActivity extends Activity
 					// using explicit paths.
 					Cursor cursor = getContentResolver().query(uri, new String[]{"_data"}, null, null, null);
 					if (cursor.moveToFirst()) {
-						uri = Uri.parse(cursor.getString(0));
+						String str = cursor.getString(0);
+						String failString = null;
+						if (str == null) {
+							try {
+								InputStream is = getContentResolver().openInputStream(uri);
+								int len = is.available();
+								buffer = new byte[len];
+								is.read(buffer, 0, len);
+								is.close();
+							}
+							catch (java.lang.OutOfMemoryError e)
+							{
+								System.out.println("Out of memory during buffer reading");
+								failString = e.toString();
+							}
+							catch (Exception e) {
+								failString = e.toString();
+							}
+							if (failString != null)
+							{
+								buffer = null;
+								Resources res = getResources();
+								AlertDialog alert = mAlertBuilder.create();
+								String contentFailure = res.getString(R.string.content_failure);
+								String openFailed = res.getString(R.string.open_failed);
+								setTitle(String.format(contentFailure, openFailed, failString));
+								alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+										new DialogInterface.OnClickListener() {
+											public void onClick(DialogInterface dialog, int which) {
+												finish();
+											}
+										});
+								alert.show();
+								return;
+							}
+						} else {
+							uri = Uri.parse(str);
+						}
 					}
 				}
-				core = openFile(Uri.decode(uri.getEncodedPath()));
+				if (buffer != null) {
+					core = openBuffer(buffer);
+				} else {
+					core = openFile(Uri.decode(uri.getEncodedPath()));
+				}
 				SearchTaskResult.set(null);
 			}
 			if (core != null && core.needsPassword()) {
@@ -1023,17 +1085,21 @@ public class MuPDFActivity extends Activity
 	@Override
 	protected void onStart() {
 		if (core != null)
+		{
 			core.startAlerts();
+			createAlertWaiter();
+		}
 
-		createAlertWaiter();
 		super.onStart();
 	}
 
 	@Override
 	protected void onStop() {
-		destroyAlertWaiter();
 		if (core != null)
+		{
+			destroyAlertWaiter();
 			core.stopAlerts();
+		}
 
 		super.onStop();
 	}
