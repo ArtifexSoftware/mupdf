@@ -24,7 +24,7 @@ fz_free_link_dest(fz_context *ctx, fz_link_dest *dest)
 }
 
 fz_link *
-fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest)
+fz_new_link(fz_context *ctx, const fz_rect *bbox, fz_link_dest dest)
 {
 	fz_link *link;
 
@@ -39,7 +39,7 @@ fz_new_link(fz_context *ctx, fz_rect bbox, fz_link_dest dest)
 		fz_rethrow(ctx);
 	}
 	link->dest = dest;
-	link->rect = bbox;
+	link->rect = *bbox;
 	link->next = NULL;
 	return link;
 }

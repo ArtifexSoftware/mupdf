@@ -183,6 +183,7 @@ pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
 	unsigned char *s, *d;
 	int y, x, k, n, high;
 	unsigned char *lookup;
+	fz_bbox bbox;
 
 	assert(src->colorspace->to_rgb == indexed_to_rgb);
 	assert(src->n == 2);
@@ -192,7 +193,7 @@ pdf_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
 	lookup = idx->lookup;
 	n = idx->base->n;
 
-	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src));
+	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src, &bbox));
 	s = src->samples;
 	d = dst->samples;
 

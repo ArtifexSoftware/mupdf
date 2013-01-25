@@ -379,11 +379,14 @@ fz_paint_pixmap_with_bbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_bbox bbo
 {
 	unsigned char *sp, *dp;
 	int x, y, w, h, n;
+	fz_bbox bbox2;
 
 	assert(dst->n == src->n);
 
-	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(dst));
-	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(src));
+	fz_pixmap_bbox_no_ctx(dst, &bbox2);
+	fz_intersect_bbox(&bbox, &bbox2);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_bbox(&bbox, &bbox2);
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -409,12 +412,14 @@ fz_paint_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
 {
 	unsigned char *sp, *dp;
 	fz_bbox bbox;
+	fz_bbox bbox2;
 	int x, y, w, h, n;
 
 	assert(dst->n == src->n);
 
-	bbox = fz_pixmap_bbox_no_ctx(dst);
-	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(src));
+	fz_pixmap_bbox_no_ctx(dst, &bbox);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_bbox(&bbox, &bbox2);
 
 	x = bbox.x0;
 	y = bbox.y0;
@@ -439,15 +444,17 @@ void
 fz_paint_pixmap_with_mask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 {
 	unsigned char *sp, *dp, *mp;
-	fz_bbox bbox;
+	fz_bbox bbox, bbox2;
 	int x, y, w, h, n;
 
 	assert(dst->n == src->n);
 	assert(msk->n == 1);
 
-	bbox = fz_pixmap_bbox_no_ctx(dst);
-	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(src));
-	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(msk));
+	fz_pixmap_bbox_no_ctx(dst, &bbox);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_bbox(&bbox, &bbox2);
+	fz_pixmap_bbox_no_ctx(msk, &bbox2);
+	fz_intersect_bbox(&bbox, &bbox2);
 
 	x = bbox.x0;
 	y = bbox.y0;

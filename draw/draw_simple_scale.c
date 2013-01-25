@@ -1220,7 +1220,7 @@ fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, floa
 }
 
 fz_pixmap *
-fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_bbox *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y)
+fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, const fz_bbox *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y)
 {
 	fz_scale_filter *filter = &fz_scale_filter_simple;
 	fz_weights *contrib_rows = NULL;
