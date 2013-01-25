@@ -1651,7 +1651,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 		{
 			/* TR is ignored in the presence of TR2 */
 			pdf_obj *tr2 = pdf_dict_gets(extgstate, "TR2");
-			if (!tr2 && !pdf_is_name(val) || strcmp(pdf_to_name(val), "Identity"))
+			if (tr2 && strcmp(pdf_to_name(val), "Identity"))
 				fz_warn(ctx, "ignoring transfer function");
 		}
 	}
