@@ -183,7 +183,7 @@ fz_free(fz_context *ctx, void *p)
 }
 
 char *
-fz_strdup(fz_context *ctx, char *s)
+fz_strdup(fz_context *ctx, const char *s)
 {
 	int len = strlen(s) + 1;
 	char *ns = fz_malloc(ctx, len);
@@ -192,7 +192,7 @@ fz_strdup(fz_context *ctx, char *s)
 }
 
 char *
-fz_strdup_no_throw(fz_context *ctx, char *s)
+fz_strdup_no_throw(fz_context *ctx, const char *s)
 {
 	int len = strlen(s) + 1;
 	char *ns = fz_malloc_no_throw(ctx, len);
