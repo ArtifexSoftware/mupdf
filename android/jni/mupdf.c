@@ -61,7 +61,7 @@ struct globals_s
 	fz_document *doc;
 	int resolution;
 	fz_context *ctx;
-	fz_bbox *hit_bbox;
+	fz_rect *hit_bbox;
 	int current;
 	char *current_path;
 
@@ -444,7 +444,7 @@ JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 	int furthest_dist = -1;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_rect bbox;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -537,10 +537,10 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_rect bbox;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
-	fz_bbox rect;
+	fz_rect rect;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
@@ -697,10 +697,10 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_rect bbox;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
-	fz_bbox rect;
+	fz_rect rect;
 	fz_interactive *idoc;
 	page_cache *pc = NULL;
 	int hq = (patchW < pageW || patchH < pageH);
@@ -799,12 +799,12 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		LOGI("Start polling for updates");
 		while (idoc && (annot = fz_poll_changed_annot(idoc, page)) != NULL)
 		{
-			fz_bbox abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
-			abox = fz_intersect_bbox(abox, rect);
+			fz_rect abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
+			abox = fz_intersect_rect(abox, rect);
 
 			LOGI("Update rectanglefor %s - (%d, %d, %d, %d)", widget_type_string(fz_widget_get_type((fz_widget*)annot)),
 					abox.x0, abox.y0, abox.x1, abox.y1);
-			if (!fz_is_empty_bbox(abox))
+			if (!fz_is_empty_rect(abox))
 			{
 				LOGI("And it isn't empty");
 				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, abox);
@@ -868,10 +868,10 @@ charat(fz_text_page *page, int idx)
 	return textcharat(page, idx).c;
 }
 
-static fz_bbox
+static fz_rect
 bboxcharat(fz_text_page *page, int idx)
 {
-	return fz_round_rect(textcharat(page, idx).bbox);
+	return textcharat(page, idx).bbox;
 }
 
 static int
@@ -1076,12 +1076,12 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		len = textlen(text);
 		for (pos = 0; pos < len; pos++)
 		{
-			fz_bbox rr = fz_empty_bbox;
+			fz_rect rr = fz_empty_rect;
 			n = match(text, str, pos);
 			for (i = 0; i < n; i++)
-				rr = fz_union_bbox(rr, bboxcharat(text, pos + i));
+				rr = fz_union_rect(rr, bboxcharat(text, pos + i));
 
-			if (!fz_is_empty_bbox(rr) && hit_count < MAX_SEARCH_HITS)
+			if (!fz_is_empty_rect(rr) && hit_count < MAX_SEARCH_HITS)
 				glo->hit_bbox[hit_count++] = rr;
 		}
 	}
@@ -1421,7 +1421,7 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	count = 0;
 	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
 	{
-		fz_rect rect = fz_transform_rect(ctm, *fz_widget_bbox(widget));
+		fz_rect rect = fz_transform_rect(ctm, fz_widget_bbox(widget));
 
 		rectF = (*env)->NewObject(env, rectFClass, ctor,
 				(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1);

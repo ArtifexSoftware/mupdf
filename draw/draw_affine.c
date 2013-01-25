@@ -597,14 +597,14 @@ fz_gridfit_matrix(fz_matrix *m)
 /* Draw an image with an affine transform on destination */
 
 static void
-fz_paint_image_imp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, byte *color, int alpha)
+fz_paint_image_imp(fz_pixmap *dst, fz_rect scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, byte *color, int alpha)
 {
 	byte *dp, *sp, *hp;
 	int u, v, fa, fb, fc, fd;
 	int x, y, w, h;
 	int sw, sh, n, hw;
 	fz_matrix inv;
-	fz_bbox bbox;
+	fz_rect bbox;
 	int dolerp;
 	void (*paintfn)(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, int fb, int w, int n, int alpha, byte *color, byte *hp);
 
@@ -629,8 +629,10 @@ fz_paint_image_imp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap 
 			dolerp = 0;
 	}
 
-	bbox = fz_bbox_covering_rect(fz_transform_rect(ctm, fz_unit_rect));
-	bbox = fz_intersect_bbox(bbox, scissor);
+	bbox = fz_transform_rect(ctm, fz_unit_rect);
+	bbox = fz_intersect_rect(bbox, scissor);
+	bbox = fz_rect_covering_rect(bbox);
+
 	x = bbox.x0;
 	if (shape && shape->x > x)
 		x = shape->x;
@@ -729,14 +731,14 @@ fz_paint_image_imp(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap 
 }
 
 void
-fz_paint_image_with_color(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, byte *color)
+fz_paint_image_with_color(fz_pixmap *dst, fz_rect scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, byte *color)
 {
 	assert(img->n == 1);
 	fz_paint_image_imp(dst, scissor, shape, img, ctm, color, 255);
 }
 
 void
-fz_paint_image(fz_pixmap *dst, fz_bbox scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, int alpha)
+fz_paint_image(fz_pixmap *dst, fz_rect scissor, fz_pixmap *shape, fz_pixmap *img, fz_matrix ctm, int alpha)
 {
 	assert(dst->n == img->n || (dst->n == 4 && img->n == 2));
 	fz_paint_image_imp(dst, scissor, shape, img, ctm, NULL, alpha);

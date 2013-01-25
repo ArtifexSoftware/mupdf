@@ -3,24 +3,6 @@
 #define MAX4(a,b,c,d) fz_max(fz_max(a,b), fz_max(c,d))
 #define MIN4(a,b,c,d) fz_min(fz_min(a,b), fz_min(c,d))
 
-/*	A useful macro to add with overflow detection and clamping.
-
-	We want to do "b = a + x", but to allow for overflow. Consider the
-	top bits, and the cases in which overflow occurs:
-
-	overflow    a   x   b ~a^x  a^b   (~a^x)&(a^b)
-	   no       0   0   0   1    0          0
-	   yes      0   0   1   1    1          1
-	   no       0   1   0   0    0          0
-	   no       0   1   1   0    1          0
-	   no       1   0   0   0    1          0
-	   no       1   0   1   0    0          0
-	   yes      1   1   0   1    1          1
-	   no       1   1   1   1    0          0
-*/
-#define ADD_WITH_SAT(b,a,x) \
-	((b) = (a) + (x), (b) = (((~(a)^(x))&((a)^(b))) < 0 ? ((x) < 0 ? INT_MIN : INT_MAX) : (b)))
-
 /* Matrices, points and affine transformations */
 
 const fz_matrix fz_identity = { 1, 0, 0, 1, 0, 0 };
@@ -180,43 +162,44 @@ fz_transform_vector(fz_matrix m, fz_point p)
 
 /* Rectangles and bounding boxes */
 
+/* biggest and smallest integers that a float can represent perfectly (i.e. 24 bits) */
+#define MAX_SAFE_INT 16777216
+#define MIN_SAFE_INT -16777216
+
 const fz_rect fz_infinite_rect = { 1, 1, -1, -1 };
 const fz_rect fz_empty_rect = { 0, 0, 0, 0 };
 const fz_rect fz_unit_rect = { 0, 0, 1, 1 };
 
-const fz_bbox fz_infinite_bbox = { 1, 1, -1, -1 };
-const fz_bbox fz_empty_bbox = { 0, 0, 0, 0 };
-const fz_bbox fz_unit_bbox = { 0, 0, 1, 1 };
-
-#define SAFE_INT(f) ((f > INT_MAX) ? INT_MAX : ((f < INT_MIN) ? INT_MIN : (int)f))
-fz_bbox
-fz_bbox_covering_rect(fz_rect f)
+fz_rect
+fz_rect_covering_rect(fz_rect f)
 {
-	fz_bbox i;
 	f.x0 = floorf(f.x0);
 	f.y0 = floorf(f.y0);
 	f.x1 = ceilf(f.x1);
 	f.y1 = ceilf(f.y1);
-	i.x0 = SAFE_INT(f.x0);
-	i.y0 = SAFE_INT(f.y0);
-	i.x1 = SAFE_INT(f.x1);
-	i.y1 = SAFE_INT(f.y1);
-	return i;
+
+	/* check for integer overflow */
+	f.x0 = fz_clamp(f.x0, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.y0 = fz_clamp(f.y0, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.x1 = fz_clamp(f.x1, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.y1 = fz_clamp(f.y1, MIN_SAFE_INT, MAX_SAFE_INT);
+	return f;
 }
 
-fz_bbox
+fz_rect
 fz_round_rect(fz_rect f)
 {
-	fz_bbox i;
 	f.x0 = floorf(f.x0 + 0.001);
 	f.y0 = floorf(f.y0 + 0.001);
 	f.x1 = ceilf(f.x1 - 0.001);
 	f.y1 = ceilf(f.y1 - 0.001);
-	i.x0 = SAFE_INT(f.x0);
-	i.y0 = SAFE_INT(f.y0);
-	i.x1 = SAFE_INT(f.x1);
-	i.y1 = SAFE_INT(f.y1);
-	return i;
+
+	/* check for integer overflow */
+	f.x0 = fz_clamp(f.x0, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.y0 = fz_clamp(f.y0, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.x1 = fz_clamp(f.x1, MIN_SAFE_INT, MAX_SAFE_INT);
+	f.y1 = fz_clamp(f.y1, MIN_SAFE_INT, MAX_SAFE_INT);
+	return f;
 }
 
 fz_rect
@@ -251,52 +234,6 @@ fz_union_rect(fz_rect a, fz_rect b)
 	return r;
 }
 
-fz_bbox
-fz_intersect_bbox(fz_bbox a, fz_bbox b)
-{
-	fz_bbox r;
-	/* Check for empty box before infinite box */
-	if (fz_is_empty_rect(a)) return fz_empty_bbox;
-	if (fz_is_empty_rect(b)) return fz_empty_bbox;
-	if (fz_is_infinite_rect(a)) return b;
-	if (fz_is_infinite_rect(b)) return a;
-	r.x0 = fz_maxi(a.x0, b.x0);
-	r.y0 = fz_maxi(a.y0, b.y0);
-	r.x1 = fz_mini(a.x1, b.x1);
-	r.y1 = fz_mini(a.y1, b.y1);
-	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_bbox : r;
-}
-
-fz_bbox
-fz_translate_bbox(fz_bbox a, int xoff, int yoff)
-{
-	fz_bbox b;
-
-	if (fz_is_empty_rect(a)) return a;
-	if (fz_is_infinite_rect(a)) return a;
-	ADD_WITH_SAT(b.x0, a.x0, xoff);
-	ADD_WITH_SAT(b.y0, a.y0, yoff);
-	ADD_WITH_SAT(b.x1, a.x1, xoff);
-	ADD_WITH_SAT(b.y1, a.y1, yoff);
-	return b;
-}
-
-fz_bbox
-fz_union_bbox(fz_bbox a, fz_bbox b)
-{
-	fz_bbox r;
-	/* Check for empty box before infinite box */
-	if (fz_is_empty_rect(a)) return b;
-	if (fz_is_empty_rect(b)) return a;
-	if (fz_is_infinite_rect(a)) return a;
-	if (fz_is_infinite_rect(b)) return b;
-	r.x0 = fz_mini(a.x0, b.x0);
-	r.y0 = fz_mini(a.y0, b.y0);
-	r.x1 = fz_maxi(a.x1, b.x1);
-	r.y1 = fz_maxi(a.y1, b.y1);
-	return r;
-}
-
 fz_rect
 fz_transform_rect(fz_matrix m, fz_rect r)
 {
@@ -320,42 +257,28 @@ fz_transform_rect(fz_matrix m, fz_rect r)
 	return r;
 }
 
-fz_bbox
-fz_transform_bbox(fz_matrix m, fz_bbox b)
+fz_rect
+fz_translate_rect(fz_rect a, float xoff, float yoff)
 {
-	fz_point s, t, u, v;
-
-	if (fz_is_infinite_bbox(b))
-		return b;
-
-	s.x = b.x0; s.y = b.y0;
-	t.x = b.x0; t.y = b.y1;
-	u.x = b.x1; u.y = b.y1;
-	v.x = b.x1; v.y = b.y0;
-	s = fz_transform_point(m, s);
-	t = fz_transform_point(m, t);
-	u = fz_transform_point(m, u);
-	v = fz_transform_point(m, v);
-	b.x0 = MIN4(s.x, t.x, u.x, v.x);
-	b.y0 = MIN4(s.y, t.y, u.y, v.y);
-	b.x1 = MAX4(s.x, t.x, u.x, v.x);
-	b.y1 = MAX4(s.y, t.y, u.y, v.y);
+	fz_rect b;
+	if (fz_is_empty_rect(a)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	b.x0 = a.x0 + xoff;
+	b.y0 = a.y0 + yoff;
+	b.x1 = a.x1 + xoff;
+	b.y1 = a.y1 + yoff;
 	return b;
-
 }
 
-fz_bbox
-fz_expand_bbox(fz_bbox a, int expand)
+fz_rect
+fz_expand_rect(fz_rect a, float expand)
 {
-	fz_bbox b;
-
-	if (fz_is_infinite_bbox(a))
-		return a;
-
-	ADD_WITH_SAT(b.x0, a.x0, -expand);
-	ADD_WITH_SAT(b.y0, a.y0, -expand);
-	ADD_WITH_SAT(b.x1, a.x1,  expand);
-	ADD_WITH_SAT(b.y1, a.y1,  expand);
+	fz_rect b;
+	if (fz_is_empty_rect(a)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	b.x0 = a.x0 - expand;
+	b.y0 = a.y0 - expand;
+	b.x1 = a.x1 + expand;
+	b.y1 = a.y1 + expand;
 	return b;
-
 }

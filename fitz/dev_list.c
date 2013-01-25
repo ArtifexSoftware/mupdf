@@ -588,12 +588,10 @@ fz_free_display_list(fz_context *ctx, fz_display_list *list)
 }
 
 void
-fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm, fz_bbox scissor, fz_cookie *cookie)
+fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm, fz_rect scissor, fz_cookie *cookie)
 {
 	fz_display_node *node;
 	fz_matrix ctm;
-	fz_rect rect;
-	fz_bbox bbox;
 	int clipped = 0;
 	int tiled = 0;
 	int empty;
@@ -624,9 +622,7 @@ fz_run_display_list(fz_display_list *list, fz_device *dev, fz_matrix top_ctm, fz
 		}
 		else
 		{
-			bbox = fz_bbox_covering_rect(fz_transform_rect(top_ctm, node->rect));
-			bbox = fz_intersect_bbox(bbox, scissor);
-			empty = fz_is_empty_bbox(bbox);
+			empty = fz_is_empty_rect(fz_intersect_rect(fz_transform_rect(top_ctm, node->rect), scissor));
 		}
 
 		if (clipped || empty)
@@ -725,30 +721,36 @@ visible:
 				fz_pop_clip(dev);
 				break;
 			case FZ_CMD_BEGIN_MASK:
-				rect = fz_transform_rect(top_ctm, node->rect);
-				fz_begin_mask(dev, rect, node->flag, node->colorspace, node->color);
+			{
+				fz_rect trect = fz_transform_rect(top_ctm, node->rect);
+				fz_begin_mask(dev, trect, node->flag, node->colorspace, node->color);
 				break;
+			}
 			case FZ_CMD_END_MASK:
 				fz_end_mask(dev);
 				break;
 			case FZ_CMD_BEGIN_GROUP:
-				rect = fz_transform_rect(top_ctm, node->rect);
-				fz_begin_group(dev, rect,
+			{
+				fz_rect trect = fz_transform_rect(top_ctm, node->rect);
+				fz_begin_group(dev, trect,
 					(node->flag & ISOLATED) != 0, (node->flag & KNOCKOUT) != 0,
 					node->item.blendmode, node->alpha);
 				break;
+			}
 			case FZ_CMD_END_GROUP:
 				fz_end_group(dev);
 				break;
 			case FZ_CMD_BEGIN_TILE:
+			{
+				fz_rect rect;
 				tiled++;
 				rect.x0 = node->color[2];
 				rect.y0 = node->color[3];
 				rect.x1 = node->color[4];
 				rect.y1 = node->color[5];
-				fz_begin_tile(dev, node->rect, rect,
-					node->color[0], node->color[1], ctm);
+				fz_begin_tile(dev, node->rect, rect, node->color[0], node->color[1], ctm);
 				break;
+			}
 			case FZ_CMD_END_TILE:
 				tiled--;
 				fz_end_tile(dev);

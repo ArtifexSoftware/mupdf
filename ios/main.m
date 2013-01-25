@@ -125,7 +125,7 @@ static fz_context *ctx = NULL;
 #pragma mark -
 
 static int hit_count = 0;
-static fz_bbox hit_bbox[500];
+static fz_rect hit_bbox[500];
 
 static int
 search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
@@ -147,7 +147,7 @@ search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	return hit_count;
 }
 
-static fz_bbox
+static fz_rect
 search_result_bbox(fz_document *doc, int i)
 {
 	return hit_bbox[i];
@@ -236,7 +236,7 @@ static CGSize measurePage(fz_document *doc, fz_page *page)
 static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 {
 	CGSize pageSize;
-	fz_bbox bbox;
+	fz_rect bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
@@ -248,7 +248,7 @@ static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
 	ctm = fz_scale(scale.width, scale.height);
-	bbox = (fz_bbox){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
+	bbox = (fz_rect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
 
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
@@ -263,8 +263,7 @@ static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	CGSize pageSize;
-	fz_rect rect;
-	fz_bbox bbox;
+	fz_rect bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
@@ -281,11 +280,10 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	scale = fitPageToScreen(pageSize, screenSize);
 	ctm = fz_scale(scale.width * zoom, scale.height * zoom);
 
-	rect.x0 = tileRect.origin.x;
-	rect.y0 = tileRect.origin.y;
-	rect.x1 = tileRect.origin.x + tileRect.size.width;
-	rect.y1 = tileRect.origin.y + tileRect.size.height;
-	bbox = fz_round_rect(rect);
+	bbox.x0 = tileRect.origin.x;
+	bbox.y0 = tileRect.origin.y;
+	bbox.x1 = tileRect.origin.x + tileRect.size.width;
+	bbox.y1 = tileRect.origin.y + tileRect.size.height;
 
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
@@ -602,7 +600,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 		pageSize = CGSizeMake(100,100);
 
 		for (int i = 0; i < n && i < nelem(hitRects); i++) {
-			fz_bbox bbox = search_result_bbox(doc, i); // this is thread-safe enough
+			fz_rect bbox = search_result_bbox(doc, i); // this is thread-safe enough
 			hitRects[i].origin.x = bbox.x0;
 			hitRects[i].origin.y = bbox.y0;
 			hitRects[i].size.width = bbox.x1 - bbox.x0;
@@ -625,7 +623,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 
 		while (link && hitCount < nelem(hitRects)) {
 			if (link->dest.kind == FZ_LINK_GOTO || link->dest.kind == FZ_LINK_URI) {
-				fz_bbox bbox = fz_round_rect(link->rect);
+				fz_rect bbox = link->rect;
 				hitRects[hitCount].origin.x = bbox.x0;
 				hitRects[hitCount].origin.y = bbox.y0;
 				hitRects[hitCount].size.width = bbox.x1 - bbox.x0;

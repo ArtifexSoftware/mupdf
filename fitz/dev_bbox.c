@@ -6,63 +6,58 @@ static void
 fz_bbox_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_bound_path(dev->ctx, path, NULL, ctm));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_bound_path(dev->ctx, path, NULL, ctm));
 }
 
 static void
 fz_bbox_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_bound_path(dev->ctx, path, stroke, ctm));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_bound_path(dev->ctx, path, stroke, ctm));
 }
 
 static void
 fz_bbox_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_bound_text(dev->ctx, text, ctm));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_bound_text(dev->ctx, text, ctm));
 }
 
 static void
 fz_bbox_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_bound_text(dev->ctx, text, ctm));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_bound_text(dev->ctx, text, ctm));
 }
 
 static void
 fz_bbox_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_bound_shade(dev->ctx, shade, ctm));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_bound_shade(dev->ctx, shade, ctm));
 }
 
 static void
 fz_bbox_fill_image(fz_device *dev, fz_image *image, fz_matrix ctm, float alpha)
 {
-	fz_bbox *result = dev->user;
-	fz_bbox bbox = fz_bbox_covering_rect(fz_transform_rect(ctm, fz_unit_rect));
-	*result = fz_union_bbox(*result, bbox);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_transform_rect(ctm, fz_unit_rect));
 }
 
 static void
 fz_bbox_fill_image_mask(fz_device *dev, fz_image *image, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_bbox_fill_image(dev, image, ctm, alpha);
+	fz_rect *result = dev->user;
+	*result = fz_union_rect(*result, fz_transform_rect(ctm, fz_unit_rect));
 }
 
 fz_device *
-fz_new_bbox_device(fz_context *ctx, fz_bbox *result)
+fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 {
 	fz_device *dev;
 
@@ -76,7 +71,7 @@ fz_new_bbox_device(fz_context *ctx, fz_bbox *result)
 	dev->fill_image = fz_bbox_fill_image;
 	dev->fill_image_mask = fz_bbox_fill_image_mask;
 
-	*result = fz_empty_bbox;
+	*result = fz_empty_rect;
 
 	return dev;
 }
