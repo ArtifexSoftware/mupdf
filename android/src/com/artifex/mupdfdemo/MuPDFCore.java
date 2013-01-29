@@ -38,6 +38,7 @@ public class MuPDFCore
 			int patchW, int patchH);
 	private native RectF[] searchPage(String text);
 	private native TextChar[][][][] text();
+	private native void addStrikeOutAnnotationInternal(RectF[] lines);
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
 	private native String [] getFocusedWidgetChoiceSelected();
@@ -233,6 +234,11 @@ public class MuPDFCore
 		}
 
 		return lns.toArray(new TextWord[lns.size()][]);
+	}
+
+	public synchronized void addStrikeOutAnnotation(int page, RectF[] lines) {
+		gotoPage(page);
+		addStrikeOutAnnotationInternal(lines);
 	}
 
 	public synchronized boolean hasOutline() {

@@ -103,6 +103,8 @@ public abstract class PageView extends ViewGroup {
 	private static final int LINK_COLOR = 0x80AC7225;
 	private static final int BACKGROUND_COLOR = 0xFFFFFFFF;
 	private static final int PROGRESS_DIALOG_DELAY = 200;
+	private static final float LINE_THICKNESS = 0.07f;
+	private static final float STRIKE_HEIGHT = 0.375f;
 	private final Context   mContext;
 	protected     int       mPageNumber;
 	private       Point     mParentSize;
@@ -112,6 +114,7 @@ public abstract class PageView extends ViewGroup {
 	private       ImageView mEntire; // Image rendered at minimum zoom
 	private       BitmapHolder mEntireBmh;
 	private       AsyncTask<Void,Void,TextWord[][]> mGetText;
+	private       AsyncTask<RectF[],Void,Void> mAddStrikeOut;
 	private       AsyncTask<Void,Void,LinkInfo[]> mGetLinkInfo;
 	private       AsyncTask<Void,Void,Bitmap> mDrawEntire;
 
@@ -144,6 +147,7 @@ public abstract class PageView extends ViewGroup {
 	protected abstract Bitmap updatePage(BitmapHolder h, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract LinkInfo[] getLinkInfo();
 	protected abstract TextWord[][] getText();
+	protected abstract void addStrikeOut(RectF[] lines);
 
 	private void reinit() {
 		// Cancel pending render task
@@ -439,6 +443,56 @@ public abstract class PageView extends ViewGroup {
 		mSearchView.invalidate();
 
 		return true;
+	}
+
+	public void strikeOutSelection() {
+		final ArrayList<RectF> lines = new ArrayList<RectF>();
+		TextSelector sel = new TextSelector(mText, mSelectBox) {
+			RectF rect;
+
+			@Override
+			protected void onStartLine() {
+				rect = new RectF();
+			}
+
+			@Override
+			protected void onWord(TextWord word) {
+				rect.union(word);
+			}
+
+			@Override
+			protected void onEndLine() {
+				if (!rect.isEmpty()) {
+					// These are vertical lines so we can specify
+					// both position and thickness with a RectF
+					float vcenter = rect.bottom - (rect.bottom - rect.top)*STRIKE_HEIGHT;
+					float thickness = (rect.bottom - rect.top)*LINE_THICKNESS;
+					rect.top = vcenter - thickness/2;
+					rect.bottom = vcenter + thickness/2;
+					lines.add(rect);
+				}
+			}
+		};
+
+		sel.select();
+
+		mAddStrikeOut = new AsyncTask<RectF[],Void,Void>() {
+			@Override
+			protected Void doInBackground(RectF[]... params) {
+				addStrikeOut(params[0]);
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				update();
+			}
+		};
+
+		mAddStrikeOut.execute(lines.toArray(new RectF[lines.size()]));
+
+		mSelectBox = null;
+		mSearchView.invalidate();
 	}
 
 	@Override

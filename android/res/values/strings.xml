@@ -20,4 +20,5 @@
     <string name="select">Select</string>
     <string name="search">Search</string>
     <string name="copy">Copy</string>
+    <string name="strike_out">Strike out</string>
 </resources>

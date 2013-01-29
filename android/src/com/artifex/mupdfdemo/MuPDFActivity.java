@@ -106,6 +106,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton mSelectButton;
 	private ImageButton mCancelSelectButton;
 	private ImageButton mCopySelectButton;
+	private ImageButton mStrikeOutButton;
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ViewAnimator mTopBarSwitcher;
@@ -652,6 +653,16 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
+		mStrikeOutButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				PageView pageView = (PageView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.strikeOutSelection();
+				mSelecting = false;
+				mTopBarSwitcher.setDisplayedChild(0);
+			}
+		});
+
 		mCancelButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				searchModeOff();
@@ -943,6 +954,7 @@ public class MuPDFActivity extends Activity
 		mSelectButton = (ImageButton)mButtonsView.findViewById(R.id.selectButton);
 		mCancelSelectButton = (ImageButton)mButtonsView.findViewById(R.id.cancelSelectButton);
 		mCopySelectButton = (ImageButton)mButtonsView.findViewById(R.id.copySelectButton);
+		mStrikeOutButton = (ImageButton)mButtonsView.findViewById(R.id.strikeOutButton);
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
 		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);

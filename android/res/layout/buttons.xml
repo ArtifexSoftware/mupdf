@@ -139,6 +139,16 @@
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
+                android:id="@+id/strikeOutButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/copySelectButton"
+                android:contentDescription="@string/strike_out"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_strike" />
+
+            <ImageButton
                 android:id="@+id/copySelectButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

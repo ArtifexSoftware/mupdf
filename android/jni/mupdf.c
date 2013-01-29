@@ -685,6 +685,7 @@ static char *widget_type_string(int t)
 	case FZ_WIDGET_TYPE_TEXT: return "text";
 	case FZ_WIDGET_TYPE_LISTBOX: return "listbox";
 	case FZ_WIDGET_TYPE_COMBOBOX: return "combobox";
+	default: return "non-widget";
 	}
 }
 JNIEXPORT jboolean JNICALL
@@ -1230,13 +1231,131 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	{
 		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 		if (cls != NULL)
-			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_searchPage");
+			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_text");
 		(*env)->DeleteLocalRef(env, cls);
 
 		return NULL;
 	}
 
 	return barr;
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray lines)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	fz_interactive *idoc = fz_interact(doc);
+	page_cache *pc = &glo->pages[glo->current];
+	jclass rect_cls;
+	jfieldID x0_fid, y0_fid, x1_fid, y1_fid;
+	int i, n;
+	fz_path *path = NULL;
+	fz_stroke_state *stroke = NULL;
+	fz_device *dev = NULL;
+	fz_display_list *strike_list;
+
+	if (idoc == NULL)
+		return;
+
+	strike_list = fz_new_display_list(ctx);
+
+	fz_var(path);
+	fz_var(stroke);
+	fz_var(dev);
+	fz_try(ctx)
+	{
+		fz_annot *annot;
+		fz_matrix ctm;
+
+		float color[3] = {1.0, 0.0, 0.0};
+		float zoom = glo->resolution / 72;
+		zoom = 1.0 / zoom;
+		ctm = fz_scale(zoom, zoom);
+		LOGI("P1 %f", zoom);
+		rect_cls = (*env)->FindClass(env, "android.graphics.RectF");
+		if (rect_cls == NULL) fz_throw(ctx, "FindClass");
+		LOGI("P2");
+		x0_fid = (*env)->GetFieldID(env, rect_cls, "left", "F");
+		if (x0_fid == NULL) fz_throw(ctx, "GetFieldID(left)");
+		LOGI("P3");
+		y0_fid = (*env)->GetFieldID(env, rect_cls, "top", "F");
+		if (y0_fid == NULL) fz_throw(ctx, "GetFieldID(top)");
+		LOGI("P4");
+		x1_fid = (*env)->GetFieldID(env, rect_cls, "right", "F");
+		if (x1_fid == NULL) fz_throw(ctx, "GetFieldID(right)");
+		LOGI("P5");
+		y1_fid = (*env)->GetFieldID(env, rect_cls, "bottom", "F");
+		if (y1_fid == NULL) fz_throw(ctx, "GetFieldID(bottom)");
+		LOGI("P6");
+
+		n = (*env)->GetArrayLength(env, lines);
+		LOGI("nlines=%d", n);
+
+		dev = fz_new_list_device(ctx, strike_list);
+
+		for (i = 0; i < n; i++)
+		{
+			jobject line = (*env)->GetObjectArrayElement(env, lines, i);
+			float x0 = (*env)->GetFloatField(env, line, x0_fid);
+			float y0 = (*env)->GetFloatField(env, line, y0_fid);
+			float x1 = (*env)->GetFloatField(env, line, x1_fid);
+			float y1 = (*env)->GetFloatField(env, line, y1_fid);
+			float vcenter = (y0 + y1)/2;
+			float thickness = y1 - y0;
+
+			if (!stroke || stroke->linewidth != thickness)
+			{
+				if (stroke)
+				{
+					// assert(path)
+					fz_stroke_path(dev, path, stroke, ctm, fz_device_rgb, color, 1.0);
+					LOGI("Path stroked");
+					fz_drop_stroke_state(ctx, stroke);
+					stroke = NULL;
+					fz_free_path(ctx, path);
+					path = NULL;
+				}
+
+				stroke = fz_new_stroke_state(ctx);
+				LOGI("thickness(%f)", thickness);
+				stroke->linewidth = thickness;
+				path = fz_new_path(ctx);
+			}
+
+			fz_moveto(ctx, path, x0, vcenter);
+			LOGI("moveto(%f,%f)", x0, vcenter);
+			fz_lineto(ctx, path, x1, vcenter);
+			LOGI("lineto(%f,%f)", x1, vcenter);
+		}
+
+		if (stroke)
+		{
+			fz_stroke_path(dev, path, stroke, ctm, fz_device_rgb, color, 1.0);
+			LOGI("Path stroked");
+		}
+
+		annot = fz_make_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
+		fz_set_annot_appearance(idoc, annot, strike_list);
+		dump_annotation_display_lists(glo);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+		fz_drop_stroke_state(ctx, stroke);
+		fz_free_path(ctx, path);
+		fz_free_display_list(ctx, strike_list);
+	}
+	fz_catch(ctx)
+	{
+		fz_free_device(dev);
+		LOGE("addStrikeOutAnnotation: %s failed", ctx->error->message);
+		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+		if (cls != NULL)
+			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_searchPage");
+		(*env)->DeleteLocalRef(env, cls);
+	}
 }
 
 static void close_doc(globals *glo)
