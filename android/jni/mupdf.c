@@ -41,6 +41,14 @@ enum
 	COMBOBOX
 };
 
+typedef struct rect_node_s rect_node;
+
+struct rect_node_s
+{
+	fz_rect rect;
+	rect_node *next;
+};
+
 typedef struct
 {
 	int number;
@@ -48,7 +56,8 @@ typedef struct
 	int height;
 	fz_rect media_box;
 	fz_page *page;
-	fz_page *hq_page;
+	rect_node *changed_rects;
+	rect_node *hq_changed_rects;
 	fz_display_list *page_list;
 	fz_display_list *annot_list;
 } page_cache;
@@ -100,6 +109,19 @@ struct globals_s
 static jfieldID global_fid;
 static jfieldID buffer_fid;
 
+static void drop_changed_rects(fz_context *ctx, rect_node **nodePtr)
+{
+	rect_node *node = *nodePtr;
+	while (node)
+	{
+		rect_node *tnode = node;
+		node = node->next;
+		fz_free(ctx, tnode);
+	}
+
+	*nodePtr = NULL;
+}
+
 static void drop_page_cache(globals *glo, page_cache *pc)
 {
 	fz_context  *ctx = glo->ctx;
@@ -112,19 +134,8 @@ static void drop_page_cache(globals *glo, page_cache *pc)
 	pc->annot_list = NULL;
 	fz_free_page(doc, pc->page);
 	pc->page = NULL;
-	fz_free_page(doc, pc->hq_page);
-	pc->hq_page = NULL;
-}
-
-static void clear_hq_pages(globals *glo)
-{
-	int i;
-	fz_document *doc = glo->doc;
-
-	for (i = 0; i < NUM_CACHE; i++) {
-		fz_free_page(doc, glo->pages[i].hq_page);
-		glo->pages[i].hq_page = NULL;
-	}
+	drop_changed_rects(ctx, &pc->changed_rects);
+	drop_changed_rects(ctx, &pc->hq_changed_rects);
 }
 
 static void dump_annotation_display_lists(globals *glo)
@@ -527,6 +538,25 @@ JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 	return fz_javascript_supported();
 }
 
+static void update_changed_rects(globals *glo, page_cache *pc, fz_interactive *idoc)
+{
+	fz_annot *annot;
+
+	fz_update_page(idoc, pc->page);
+	while ((annot = fz_poll_changed_annot(idoc, pc->page)) != NULL)
+	{
+		rect_node *node = fz_malloc_struct(glo->ctx, rect_node);
+		node->rect = fz_bound_annot(glo->doc, annot);
+		node->next = pc->changed_rects;
+		pc->changed_rects = node;
+
+		node = fz_malloc_struct(glo->ctx, rect_node);
+		node->rect = fz_bound_annot(glo->doc, annot);
+		node->next = pc->hq_changed_rects;
+		pc->hq_changed_rects = node;
+	}
+}
+
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
@@ -579,23 +609,14 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	{
 		fz_interactive *idoc = fz_interact(doc);
 
-		// Call fz_update_page now to ensure future calls yield the
-		// changes from the current state
 		if (idoc)
-			fz_update_page(idoc, pc->page);
+		{
+			/* Update the changed-rects for both hq patch and main bitmap */
+			update_changed_rects(glo, pc, idoc);
 
-		if (hq) {
-			// This is a rendering of the hq patch. Ensure there's a second copy of the
-			// page for use when updating this patch
-			if (pc->hq_page) {
-				if (idoc)
-					fz_update_page(idoc, pc->hq_page);
-			} else {
-				// There is only ever one hq patch, so we need
-				// cache only one page object for the sake of hq
-				clear_hq_pages(glo);
-				pc->hq_page = fz_load_page(doc, pc->number);
-			}
+			/* Then drop the changed-rects for the bitmap we're about to
+			render because we are rendering the entire area */
+			drop_changed_rects(ctx, hq ? &pc->hq_changed_rects : &pc->changed_rects);
 		}
 
 		if (pc->page_list == NULL)
@@ -709,6 +730,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
+	rect_node *crect;
 
 	for (i = 0; i < NUM_CACHE; i++)
 	{
@@ -719,8 +741,10 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		}
 	}
 
-	if (pc == NULL || (hq && pc->hq_page == NULL))
+	if (pc == NULL)
 	{
+		/* Without a cached page object we cannot perform a partial update so
+		render the entire bitmap instead */
 		JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, page);
 		return JNI_FN(MuPDFCore_drawPage)(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
 	}
@@ -755,19 +779,19 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_try(ctx)
 	{
 		fz_annot *annot;
-		// Unimportant which page object we use for rendering but we
-		// must use the correct one for calculating updates
-		fz_page *page = hq ? pc->hq_page : pc->page;
 
 		if (idoc)
-			fz_update_page(idoc, page);
+		{
+			/* Update the changed-rects for both hq patch and main bitmap */
+			update_changed_rects(glo, pc, idoc);
+		}
 
 		if (pc->page_list == NULL)
 		{
 			/* Render to list */
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
-			fz_run_page_contents(doc, page, dev, fz_identity, NULL);
+			fz_run_page_contents(doc, pc->page, dev, fz_identity, NULL);
 		}
 
 		if (pc->annot_list == NULL) {
@@ -777,8 +801,8 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			}
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
-			for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, page, annot, dev, fz_identity, NULL);
+			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
+				fz_run_annot(doc, pc->page, annot, dev, fz_identity, NULL);
 		}
 
 		bbox.x0 = patchX;
@@ -797,16 +821,15 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
 		rect = fz_transform_rect(ctm, pc->media_box);
 
-		LOGI("Start polling for updates");
-		while (idoc && (annot = fz_poll_changed_annot(idoc, page)) != NULL)
+		LOGI("Start partial update");
+		for (crect = hq ? pc->hq_changed_rects : pc->changed_rects; crect; crect = crect->next)
 		{
 			fz_bbox abox;
-			fz_rect arect = fz_transform_rect(ctm, fz_bound_annot(doc, annot));
+			fz_rect arect = fz_transform_rect(ctm, crect->rect);
 			arect = fz_intersect_rect(arect, rect);
 			abox = fz_round_rect(arect);
 
-			LOGI("Update rectangle for %s - (%d, %d, %d, %d)", widget_type_string(fz_widget_get_type((fz_widget*)annot)),
-					arect.x0, arect.y0, arect.x1, arect.y1);
+			LOGI("Update rectangle (%d, %d, %d, %d)", abox.x0, abox.y0, abox.x1, abox.y1);
 			if (!fz_is_empty_rect(abox))
 			{
 				LOGI("And it isn't empty");
@@ -820,7 +843,10 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 				dev = NULL;
 			}
 		}
-		LOGI("Done polling for updates");
+		LOGI("End partial update");
+
+		/* Drop the changed rects we've just rendered */
+		drop_changed_rects(ctx, hq ? &pc->hq_changed_rects : &pc->changed_rects);
 
 		LOGE("Rendered");
 	}
