@@ -992,7 +992,7 @@ fz_transform_pixmap(fz_draw_device *dev, fz_pixmap *image, fz_matrix *ctm, int x
 		/* Unrotated or X-flip or Y-flip or XY-flip */
 		fz_matrix m = *ctm;
 		if (gridfit)
-			fz_gridfit_matrix(&m);
+			m = fz_gridfit_matrix(m);
 		scaled = fz_scale_pixmap_cached(ctx, image, m.e, m.f, m.a, m.d, clip, dev->cache_x, dev->cache_y);
 		if (!scaled)
 			return NULL;
@@ -1009,7 +1009,7 @@ fz_transform_pixmap(fz_draw_device *dev, fz_pixmap *image, fz_matrix *ctm, int x
 		fz_matrix m = *ctm;
 		fz_irect rclip;
 		if (gridfit)
-			fz_gridfit_matrix(&m);
+			m = fz_gridfit_matrix(m);
 		if (clip)
 		{
 			rclip.x0 = clip->y0;

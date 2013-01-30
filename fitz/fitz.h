@@ -2653,7 +2653,7 @@ int fz_widget_get_type(fz_widget *widget);
 /*
 	fz_widget_bbox: get the bounding box of a widget.
 */
-fz_rect *fz_widget_bbox(fz_widget *widget);
+fz_rect fz_widget_bbox(fz_widget *widget);
 
 /*
 	fz_text_widget_text: Get the text currently displayed in

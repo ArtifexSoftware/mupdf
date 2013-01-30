@@ -300,7 +300,7 @@ static inline int fz_mul255(int a, int b)
  * AMOUNT (in the 0...256 range). */
 #define FZ_BLEND(SRC, DST, AMOUNT) ((((SRC)-(DST))*(AMOUNT) + ((DST)<<8))>>8)
 
-void fz_gridfit_matrix(fz_matrix *m);
+fz_matrix fz_gridfit_matrix(fz_matrix m);
 float fz_matrix_max_expansion(fz_matrix m);
 
 /*
@@ -1162,7 +1162,7 @@ void fz_transform_path(fz_context *ctx, fz_path *path, fz_matrix transform);
 fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
 fz_rect fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm);
-void fz_adjust_rect_for_stroke(fz_rect *r, fz_stroke_state *stroke, fz_matrix *ctm);
+fz_rect fz_adjust_rect_for_stroke(fz_rect r, fz_stroke_state *stroke, fz_matrix ctm);
 
 fz_stroke_state *fz_new_stroke_state(fz_context *ctx);
 fz_stroke_state *fz_new_stroke_state_with_len(fz_context *ctx, int len);

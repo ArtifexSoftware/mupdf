@@ -220,7 +220,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		for (;widget; widget = fz_next_widget(inter, widget))
 		{
-			fz_rect rect = *fz_widget_bbox(widget);
+			fz_rect rect = fz_widget_bbox(widget);
 			int w = (rect.x1-rect.x0);
 			int h = (rect.y1-rect.y0);
 			int len;
