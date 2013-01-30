@@ -1151,7 +1151,6 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *ap = NULL;
-	pdf_obj *tobj = NULL;
 	fz_matrix mat;
 	int rot;
 	pdf_obj *formobj = NULL;
@@ -1161,7 +1160,6 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	int create_form = 0;
 
 	fz_var(formobj);
-	fz_var(tobj);
 	fz_var(form);
 	fz_var(fzbuf);
 	fz_try(ctx)
@@ -1176,21 +1174,15 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 		ap = pdf_dict_gets(obj, "AP");
 		if (ap == NULL)
 		{
-			tobj = pdf_new_dict(ctx, 1);
-			pdf_dict_puts(obj, "AP", tobj);
-			ap = tobj;
-			pdf_drop_obj(tobj);
-			tobj = NULL;
+			ap = pdf_new_dict(ctx, 1);
+			pdf_dict_puts_drop(obj, "AP", ap);
 		}
 
 		formobj = pdf_dict_gets(ap, dn);
 		if (formobj == NULL)
 		{
-			tobj = pdf_new_xobject(doc, *rect, mat);
-			pdf_dict_puts(ap, dn, tobj);
-			formobj = tobj;
-			pdf_drop_obj(tobj);
-			tobj = NULL;
+			formobj = pdf_new_xobject(doc, *rect, mat);
+			pdf_dict_puts_drop(ap, dn, formobj);
 			create_form = 1;
 		}
 
@@ -1205,7 +1197,6 @@ static pdf_xobject *load_or_create_form(pdf_document *doc, pdf_obj *obj, fz_rect
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(tobj);
 		fz_drop_buffer(ctx, fzbuf);
 	}
 	fz_catch(ctx)
