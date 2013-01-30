@@ -942,7 +942,7 @@ fz_irect fz_intersect_irect(fz_irect a, fz_irect b);
 fz_rect fz_union_rect(fz_rect a, fz_rect b);
 
 /*
-	fz_rect_covering_rect: Convert a rect into the minimal bounding box
+	fz_irect_from_rect: Convert a rect into the minimal bounding box
 	that covers the rectangle.
 
 	Coordinates in a bounding box are integers, so rounding of the
@@ -953,7 +953,7 @@ fz_rect fz_union_rect(fz_rect a, fz_rect b);
 	Does not throw exceptions.
 */
 
-fz_irect fz_rect_covering_rect(fz_rect rect);
+fz_irect fz_irect_from_rect(fz_rect rect);
 
 /*
 	fz_round_rect: Round rectangle coordinates.
@@ -963,7 +963,7 @@ fz_irect fz_rect_covering_rect(fz_rect rect);
 	upwards and left while the bottom right corner is rounded
 	downwards and to the right.
 
-	This differs from fz_rect_covering_rect, in that fz_rect_covering_rect
+	This differs from fz_irect_from_rect, in that fz_rect_covering_rect
 	slavishly follows the numbers (i.e any slight over/under calculations
 	can cause whole extra pixels to be added). fz_round_rect
 	allows for a small amount of rounding error when calculating

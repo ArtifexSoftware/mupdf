@@ -193,7 +193,7 @@ const fz_irect fz_empty_irect = { 0, 0, 0, 0 };
 const fz_irect fz_unit_irect = { 0, 0, 1, 1 };
 
 fz_irect
-fz_rect_covering_rect(fz_rect a)
+fz_irect_from_rect(fz_rect a)
 {
 	fz_irect b;
 

@@ -367,7 +367,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, fz_rect rect, int even_odd, fz
 
 	bbox = fz_bound_gel(dev->gel);
 	bbox = fz_intersect_irect(bbox, state->scissor);
-	bbox = fz_intersect_irect(bbox, fz_rect_covering_rect(rect));
+	bbox = fz_intersect_irect(bbox, fz_irect_from_rect(rect));
 
 	if (fz_is_empty_rect(bbox) || fz_is_rect_gel(dev->gel))
 	{
@@ -432,7 +432,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, fz_rect rect, fz_stroke
 
 	bbox = fz_bound_gel(dev->gel);
 	bbox = fz_intersect_irect(bbox, state->scissor);
-	bbox = fz_intersect_irect(bbox, fz_rect_covering_rect(rect));
+	bbox = fz_intersect_irect(bbox, fz_irect_from_rect(rect));
 
 	fz_try(ctx)
 	{
@@ -666,7 +666,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, fz_matrix ctm, int accumulate)
 	if (accumulate == 0)
 	{
 		/* make the mask the exact size needed */
-		bbox = fz_rect_covering_rect(fz_bound_text(dev->ctx, text, ctm));
+		bbox = fz_irect_from_rect(fz_bound_text(dev->ctx, text, ctm));
 		bbox = fz_intersect_irect(bbox, state->scissor);
 	}
 	else
@@ -791,7 +791,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 	fz_colorspace *model = state->dest->colorspace;
 
 	/* make the mask the exact size needed */
-	bbox = fz_rect_covering_rect(fz_bound_text(dev->ctx, text, ctm));
+	bbox = fz_irect_from_rect(fz_bound_text(dev->ctx, text, ctm));
 	bbox = fz_intersect_irect(bbox, state->scissor);
 
 	fz_try(ctx)
@@ -902,7 +902,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, fz_matrix ctm, float alpha)
 
 	bounds = fz_bound_shade(dev->ctx, shade, ctm);
 	scissor = state->scissor;
-	bbox = fz_intersect_irect(fz_rect_covering_rect(bounds), scissor);
+	bbox = fz_intersect_irect(fz_irect_from_rect(bounds), scissor);
 
 	if (fz_is_empty_rect(bbox))
 		return;
@@ -1249,9 +1249,9 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, fz_rect rect, fz_matri
 	dump_spaces(dev->top-1, "Clip (image mask) begin\n");
 #endif
 
-	bbox = fz_rect_covering_rect(fz_transform_rect(ctm, fz_unit_rect));
+	bbox = fz_irect_from_rect(fz_transform_rect(ctm, fz_unit_rect));
 	bbox = fz_intersect_irect(bbox, state->scissor);
-	bbox = fz_intersect_irect(bbox, fz_rect_covering_rect(rect));
+	bbox = fz_intersect_irect(bbox, fz_irect_from_rect(rect));
 
 	dx = sqrtf(ctm.a * ctm.a + ctm.b * ctm.b);
 	dy = sqrtf(ctm.c * ctm.c + ctm.d * ctm.d);
@@ -1365,7 +1365,7 @@ fz_draw_begin_mask(fz_device *devp, fz_rect rect, int luminosity, fz_colorspace 
 	fz_pixmap *shape = state->shape;
 	fz_context *ctx = dev->ctx;
 
-	bbox = fz_rect_covering_rect(rect);
+	bbox = fz_irect_from_rect(rect);
 	bbox = fz_intersect_irect(bbox, state->scissor);
 
 	fz_try(ctx)
@@ -1478,7 +1478,7 @@ fz_draw_begin_group(fz_device *devp, fz_rect rect, int isolated, int knockout, i
 		fz_knockout_begin(dev);
 
 	state = push_stack(dev);
-	bbox = fz_rect_covering_rect(rect);
+	bbox = fz_irect_from_rect(rect);
 	bbox = fz_intersect_irect(bbox, state->scissor);
 
 	fz_try(ctx)
@@ -1603,7 +1603,7 @@ fz_draw_begin_tile(fz_device *devp, fz_rect area, fz_rect view, float xstep, flo
 		fz_knockout_begin(dev);
 
 	state = push_stack(dev);
-	bbox = fz_rect_covering_rect(fz_transform_rect(ctm, view));
+	bbox = fz_irect_from_rect(fz_transform_rect(ctm, view));
 	/* We should never have a bbox that entirely covers our destination.
 	 * If we do, then the check for only 1 tile being visible above has
 	 * failed. Actually, this *can* fail due to the round_rect, at extreme
@@ -1624,7 +1624,7 @@ fz_draw_begin_tile(fz_device *devp, fz_rect area, fz_rect view, float xstep, flo
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].xstep = xstep;
 		state[1].ystep = ystep;
-		state[1].area = fz_rect_covering_rect(area);
+		state[1].area = fz_irect_from_rect(area);
 		state[1].ctm = ctm;
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Tile begin\n");
@@ -1668,7 +1668,7 @@ fz_draw_end_tile(fz_device *devp)
 	scissor_tmp = fz_rect_from_irect(state[0].scissor);
 	scissor_tmp = fz_expand_rect(scissor_tmp, 1);
 	scissor_tmp = fz_transform_rect(fz_invert_matrix(ctm), scissor_tmp);
-	scissor = fz_rect_covering_rect(scissor_tmp);
+	scissor = fz_irect_from_rect(scissor_tmp);
 	area = fz_intersect_irect(area, scissor);
 
 	x0 = floorf(area.x0 / xstep);

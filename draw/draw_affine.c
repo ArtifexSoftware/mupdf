@@ -629,7 +629,7 @@ fz_paint_image_imp(fz_pixmap *dst, fz_irect scissor, fz_pixmap *shape, fz_pixmap
 			dolerp = 0;
 	}
 
-	bbox = fz_rect_covering_rect(fz_transform_rect(ctm, fz_unit_rect));
+	bbox = fz_irect_from_rect(fz_transform_rect(ctm, fz_unit_rect));
 	bbox = fz_intersect_irect(bbox, scissor);
 
 	x = bbox.x0;

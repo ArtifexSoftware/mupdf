@@ -923,7 +923,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_co
 
 	bounds = fz_bound_glyph(ctx, font, gid, trm);
 	bounds = fz_expand_rect(bounds, 1);
-	bbox = fz_rect_covering_rect(bounds);
+	bbox = fz_irect_from_rect(bounds);
 	bbox = fz_intersect_irect(bbox, scissor);
 
 	glyph = fz_new_pixmap_with_bbox(ctx, model ? model : fz_device_gray, bbox);
