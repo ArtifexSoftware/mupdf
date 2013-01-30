@@ -546,6 +546,7 @@ struct pdf_page_s
 	fz_link *links;
 	pdf_annot *annots;
 	pdf_annot *changed_annots;
+	pdf_obj *me;
 	float duration;
 	int transition_present;
 	fz_transition transition;
