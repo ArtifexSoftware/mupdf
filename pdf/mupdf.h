@@ -78,6 +78,7 @@ void pdf_dict_put(pdf_obj *dict, pdf_obj *key, pdf_obj *val);
 void pdf_dict_puts(pdf_obj *dict, const char *key, pdf_obj *val);
 void pdf_dict_puts_drop(pdf_obj *dict, const char *key, pdf_obj *val);
 void pdf_dict_putp(pdf_obj *dict, const char *key, pdf_obj *val);
+void pdf_dict_putp_drop(pdf_obj *dict, const char *key, pdf_obj *val);
 void pdf_dict_del(pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(pdf_obj *dict, const char *key);
 void pdf_sort_dict(pdf_obj *dict);

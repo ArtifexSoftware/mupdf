@@ -3,8 +3,6 @@
 
 #define MATRIX_COEFS (6)
 
-#define FZ_WIDGET_TYPE_NOT_WIDGET (-1)
-
 enum
 {
 	Ff_Multiline = 1 << (13-1),

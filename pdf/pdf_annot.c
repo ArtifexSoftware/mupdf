@@ -353,7 +353,7 @@ pdf_transform_annot(pdf_annot *annot)
 }
 
 pdf_annot *
-pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
+pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 {
 	pdf_annot *annot, *head, *tail;
 	pdf_obj *obj, *ap, *as, *n, *rect;
@@ -400,9 +400,10 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, fz_matrix page_ctm)
 				n = pdf_dict_get(n, as);
 
 			annot = fz_malloc_struct(ctx, pdf_annot);
+			annot->page = page;
 			annot->obj = pdf_keep_obj(obj);
 			annot->rect = pdf_to_rect(ctx, rect);
-			annot->pagerect = fz_transform_rect(page_ctm, annot->rect);
+			annot->pagerect = fz_transform_rect(page->ctm, annot->rect);
 			annot->ap = NULL;
 			annot->type = pdf_field_type(xref, obj);
 
@@ -506,4 +507,128 @@ pdf_bound_annot(pdf_document *doc, pdf_annot *annot)
 	if (annot)
 		return annot->pagerect;
 	return fz_empty_rect;
+}
+
+pdf_annot *
+pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_annot *annot = NULL;
+	pdf_obj *annot_obj = pdf_new_dict(ctx, 0);
+
+	fz_var(annot);
+	fz_try(ctx)
+	{
+		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
+		char *type_str = "";
+		pdf_obj *annot_arr = pdf_dict_gets(page->me, "Annots");
+		if (annot_arr == NULL)
+		{
+			annot_arr = pdf_new_array(ctx, 0);
+			pdf_dict_puts_drop(page->me, "Annots", annot_arr);
+		}
+
+		pdf_dict_puts_drop(annot_obj, "Type", pdf_new_name(ctx, "Annot"));
+
+		switch(type)
+		{
+		case FZ_ANNOT_STRIKEOUT:
+			type_str = "StrikeOut";
+			break;
+		}
+
+		pdf_dict_puts_drop(annot_obj, "Subtype", pdf_new_name(ctx, type_str));
+		pdf_dict_puts_drop(annot_obj, "Rect", pdf_new_rect(ctx, rect));
+
+		annot = fz_malloc_struct(ctx, pdf_annot);
+		annot->page = page;
+		annot->obj = pdf_keep_obj(annot_obj);
+		annot->rect = rect;
+		annot->pagerect = rect;
+		annot->ap = NULL;
+		annot->type = FZ_WIDGET_TYPE_NOT_WIDGET;
+
+		/*
+			Both annotation object and annotation structure are now created.
+			Insert the object in the hierarchy and the structure in the
+			page's array.
+		*/
+		pdf_array_push(annot_arr, annot_obj);
+
+		/*
+			Linking must be done before any call that might throw because
+			pdf_free_annot below actually frees a list
+		*/
+		annot->next = page->annots;
+		page->annots = annot;
+
+		doc->dirty = 1;
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(annot_obj);
+	}
+	fz_catch(ctx)
+	{
+		pdf_free_annot(ctx, annot);
+		fz_rethrow(ctx);
+	}
+
+	return annot;
+}
+
+void
+pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *disp_list)
+{
+	fz_context *ctx = doc->ctx;
+	fz_matrix ctm = fz_invert_matrix(annot->page->ctm);
+	fz_rect rect;
+	fz_matrix mat = fz_identity;
+	fz_device *dev = fz_new_bbox_device(ctx, &rect);
+
+	fz_try(ctx)
+	{
+		pdf_obj *ap_obj;
+
+		fz_run_display_list(disp_list, dev, ctm, fz_infinite_rect, NULL);
+		fz_free_device(dev);
+		dev = NULL;
+
+		pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(ctx, rect));
+
+		/* See if there is a current normal appearance */
+		ap_obj = pdf_dict_getp(annot->obj, "AP/N");
+		if (!pdf_is_stream(doc, pdf_to_num(annot->obj), pdf_to_gen(annot->obj)))
+			ap_obj = NULL;
+
+		if (ap_obj == NULL)
+		{
+			ap_obj = pdf_new_xobject(doc, rect, mat);
+			pdf_dict_putp_drop(annot->obj, "AP/N", ap_obj);
+		}
+		else
+		{
+			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(ctx, rect));
+			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(ctx, mat));
+		}
+
+		/* Remove annot reference to the xobject and don't recreate it
+		so that pdf_update_page counts it as dirty */
+		pdf_drop_xobject(ctx, annot->ap);
+		annot->ap = NULL;
+
+		annot->rect = rect;
+		annot->pagerect = fz_transform_rect(annot->page->ctm, rect);
+
+		dev = pdf_new_pdf_device(doc, ap_obj, pdf_dict_gets(ap_obj, "Resources"), mat);
+		fz_run_display_list(disp_list, dev, ctm, fz_infinite_rect, NULL);
+		fz_free_device(dev);
+
+		doc->dirty = 1;
+	}
+	fz_catch(ctx)
+	{
+		fz_free_device(dev);
+		fz_rethrow(ctx);
+	}
 }

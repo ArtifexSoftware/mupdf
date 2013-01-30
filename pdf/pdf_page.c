@@ -408,7 +408,7 @@ pdf_load_page(pdf_document *xref, int number)
 	if (obj)
 	{
 		page->links = pdf_load_link_annots(xref, obj, page->ctm);
-		page->annots = pdf_load_annots(xref, obj, page->ctm);
+		page->annots = pdf_load_annots(xref, obj, page);
 	}
 
 	page->duration = pdf_to_real(pdf_dict_gets(pageobj, "Dur"));
