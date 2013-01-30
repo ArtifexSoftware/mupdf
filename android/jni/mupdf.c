@@ -444,7 +444,7 @@ JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 	int furthest_dist = -1;
 	float zoom;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_bbox bbox;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -537,10 +537,10 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_bbox bbox;
+	fz_rect rect;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
-	fz_rect rect;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
@@ -618,11 +618,11 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
 				fz_run_annot(doc, pc->page, annot, dev, fz_identity, NULL);
 		}
-		rect.x0 = patchX;
-		rect.y0 = patchY;
-		rect.x1 = patchX + patchW;
-		rect.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, rect, pixels);
+		bbox.x0 = patchX;
+		bbox.y0 = patchY;
+		bbox.x1 = patchX + patchW;
+		bbox.y1 = patchY + patchH;
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, bbox, pixels);
 		if (pc->page_list == NULL && pc->annot_list == NULL)
 		{
 			fz_clear_pixmap_with_value(ctx, pix, 0xd0);
@@ -638,7 +638,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
 		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
-		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		rect = fz_transform_rect(ctm, pc->media_box);
 		dev = fz_new_draw_device(ctx, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
@@ -650,9 +650,9 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			for (i=0; i<100;i++) {
 #endif
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, ctm, bbox, NULL);
+					fz_run_display_list(pc->page_list, dev, ctm, rect, NULL);
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, ctm, bbox, NULL);
+					fz_run_display_list(pc->annot_list, dev, ctm, rect, NULL);
 #ifdef TIME_DISPLAY_LIST
 			}
 			time = clock() - time;
@@ -697,10 +697,10 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_bbox bbox;
+	fz_rect rect;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
-	fz_rect rect;
 	fz_interactive *idoc;
 	page_cache *pc = NULL;
 	int hq = (patchW < pageW || patchH < pageH);
@@ -780,11 +780,11 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 				fz_run_annot(doc, page, annot, dev, fz_identity, NULL);
 		}
 
-		rect.x0 = patchX;
-		rect.y0 = patchY;
-		rect.x1 = patchX + patchW;
-		rect.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, rect, pixels);
+		bbox.x0 = patchX;
+		bbox.y0 = patchY;
+		bbox.x1 = patchX + patchW;
+		bbox.y1 = patchY + patchH;
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, bbox, pixels);
 
 		zoom = glo->resolution / 72;
 		ctm = fz_scale(zoom, zoom);
@@ -794,25 +794,27 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
 		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
-		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		rect = fz_transform_rect(ctm, pc->media_box);
 
 		LOGI("Start polling for updates");
 		while (idoc && (annot = fz_poll_changed_annot(idoc, page)) != NULL)
 		{
-			fz_rect abox = fz_round_rect(fz_transform_rect(ctm, fz_bound_annot(doc, annot)));
-			abox = fz_intersect_rect(abox, rect);
+			fz_bbox abox;
+			fz_rect arect = fz_transform_rect(ctm, fz_bound_annot(doc, annot));
+			arect = fz_intersect_rect(arect, rect);
+			abox = fz_round_rect(arect);
 
-			LOGI("Update rectanglefor %s - (%d, %d, %d, %d)", widget_type_string(fz_widget_get_type((fz_widget*)annot)),
-					abox.x0, abox.y0, abox.x1, abox.y1);
+			LOGI("Update rectangle for %s - (%d, %d, %d, %d)", widget_type_string(fz_widget_get_type((fz_widget*)annot)),
+					arect.x0, arect.y0, arect.x1, arect.y1);
 			if (!fz_is_empty_rect(abox))
 			{
 				LOGI("And it isn't empty");
 				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, abox);
 				dev = fz_new_draw_device_with_bbox(ctx, pix, abox);
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, ctm, abox, NULL);
+					fz_run_display_list(pc->page_list, dev, ctm, arect, NULL);
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, ctm, abox, NULL);
+					fz_run_display_list(pc->annot_list, dev, ctm, arect, NULL);
 				fz_free_device(dev);
 				dev = NULL;
 			}
