@@ -402,7 +402,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		float zoom;
 		fz_matrix ctm;
-		fz_rect bounds, tbounds, ibounds;
+		fz_rect bounds, tbounds;
+		fz_irect ibounds;
 		fz_pixmap *pix = NULL;
 		int w, h;
 
@@ -477,7 +478,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 			dev = fz_new_draw_device(ctx, pix);
 			if (list)
-				fz_run_display_list(list, dev, ctm, ibounds, &cookie);
+				fz_run_display_list(list, dev, ctm, tbounds, &cookie);
 			else
 				fz_run_page(doc, page, dev, ctm, &cookie);
 			fz_free_device(dev);

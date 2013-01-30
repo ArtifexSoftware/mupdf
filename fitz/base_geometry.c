@@ -3,6 +3,24 @@
 #define MAX4(a,b,c,d) fz_max(fz_max(a,b), fz_max(c,d))
 #define MIN4(a,b,c,d) fz_min(fz_min(a,b), fz_min(c,d))
 
+/*	A useful macro to add with overflow detection and clamping.
+
+	We want to do "b = a + x", but to allow for overflow. Consider the
+	top bits, and the cases in which overflow occurs:
+
+	overflow    a   x   b ~a^x  a^b   (~a^x)&(a^b)
+	   no       0   0   0   1    0          0
+	   yes      0   0   1   1    1          1
+	   no       0   1   0   0    0          0
+	   no       0   1   1   0    1          0
+	   no       1   0   0   0    1          0
+	   no       1   0   1   0    0          0
+	   yes      1   1   0   1    1          1
+	   no       1   1   1   1    0          0
+*/
+#define ADD_WITH_SAT(b,a,x) \
+	((b) = (a) + (x), (b) = (((~(a)^(x))&((a)^(b))) < 0 ? ((x) < 0 ? INT_MIN : INT_MAX) : (b)))
+
 /* Matrices, points and affine transformations */
 
 const fz_matrix fz_identity = { 1, 0, 0, 1, 0, 0 };
@@ -170,36 +188,57 @@ const fz_rect fz_infinite_rect = { 1, 1, -1, -1 };
 const fz_rect fz_empty_rect = { 0, 0, 0, 0 };
 const fz_rect fz_unit_rect = { 0, 0, 1, 1 };
 
-fz_rect
-fz_rect_covering_rect(fz_rect f)
+const fz_irect fz_infinite_irect = { 1, 1, -1, -1 };
+const fz_irect fz_empty_irect = { 0, 0, 0, 0 };
+const fz_irect fz_unit_irect = { 0, 0, 1, 1 };
+
+fz_irect
+fz_rect_covering_rect(fz_rect a)
 {
-	f.x0 = floorf(f.x0);
-	f.y0 = floorf(f.y0);
-	f.x1 = ceilf(f.x1);
-	f.y1 = ceilf(f.y1);
+	fz_irect b;
+
+	a.x0 = floorf(a.x0);
+	a.y0 = floorf(a.y0);
+	a.x1 = ceilf(a.x1);
+	a.y1 = ceilf(a.y1);
 
 	/* check for integer overflow */
-	f.x0 = fz_clamp(f.x0, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.y0 = fz_clamp(f.y0, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.x1 = fz_clamp(f.x1, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.y1 = fz_clamp(f.y1, MIN_SAFE_INT, MAX_SAFE_INT);
-	return f;
+	b.x0 = fz_clamp(a.x0, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.y0 = fz_clamp(a.y0, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.x1 = fz_clamp(a.x1, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.y1 = fz_clamp(a.y1, MIN_SAFE_INT, MAX_SAFE_INT);
+
+	return b;
 }
 
 fz_rect
-fz_round_rect(fz_rect f)
+fz_rect_from_irect(fz_irect a)
 {
-	f.x0 = floorf(f.x0 + 0.001);
-	f.y0 = floorf(f.y0 + 0.001);
-	f.x1 = ceilf(f.x1 - 0.001);
-	f.y1 = ceilf(f.y1 - 0.001);
+	fz_rect b;
+	b.x0 = a.x0;
+	b.y0 = a.y0;
+	b.x1 = a.x1;
+	b.y1 = a.y1;
+	return b;
+}
+
+fz_irect
+fz_round_rect(fz_rect a)
+{
+	fz_irect b;
+
+	a.x0 = floorf(a.x0 + 0.001);
+	a.y0 = floorf(a.y0 + 0.001);
+	a.x1 = ceilf(a.x1 - 0.001);
+	a.y1 = ceilf(a.y1 - 0.001);
 
 	/* check for integer overflow */
-	f.x0 = fz_clamp(f.x0, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.y0 = fz_clamp(f.y0, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.x1 = fz_clamp(f.x1, MIN_SAFE_INT, MAX_SAFE_INT);
-	f.y1 = fz_clamp(f.y1, MIN_SAFE_INT, MAX_SAFE_INT);
-	return f;
+	b.x0 = fz_clamp(a.x0, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.y0 = fz_clamp(a.y0, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.x1 = fz_clamp(a.x1, MIN_SAFE_INT, MAX_SAFE_INT);
+	b.y1 = fz_clamp(a.y1, MIN_SAFE_INT, MAX_SAFE_INT);
+
+	return b;
 }
 
 fz_rect
@@ -216,6 +255,22 @@ fz_intersect_rect(fz_rect a, fz_rect b)
 	r.x1 = fz_min(a.x1, b.x1);
 	r.y1 = fz_min(a.y1, b.y1);
 	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_rect : r;
+}
+
+fz_irect
+fz_intersect_irect(fz_irect a, fz_irect b)
+{
+	fz_irect r;
+	/* Check for empty box before infinite box */
+	if (fz_is_empty_rect(a)) return fz_empty_irect;
+	if (fz_is_empty_rect(b)) return fz_empty_irect;
+	if (fz_is_infinite_rect(a)) return b;
+	if (fz_is_infinite_rect(b)) return a;
+	r.x0 = fz_maxi(a.x0, b.x0);
+	r.y0 = fz_maxi(a.y0, b.y0);
+	r.x1 = fz_mini(a.x1, b.x1);
+	r.y1 = fz_mini(a.y1, b.y1);
+	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_irect : r;
 }
 
 fz_rect
@@ -267,6 +322,19 @@ fz_translate_rect(fz_rect a, float xoff, float yoff)
 	b.y0 = a.y0 + yoff;
 	b.x1 = a.x1 + xoff;
 	b.y1 = a.y1 + yoff;
+	return b;
+}
+
+fz_irect
+fz_translate_irect(fz_irect a, int xoff, int yoff)
+{
+	fz_irect b;
+	if (fz_is_empty_rect(a)) return a;
+	if (fz_is_infinite_rect(a)) return a;
+	ADD_WITH_SAT(b.x0, a.x0, xoff);
+	ADD_WITH_SAT(b.y0, a.y0, yoff);
+	ADD_WITH_SAT(b.x1, a.x1, xoff);
+	ADD_WITH_SAT(b.y1, a.y1, yoff);
 	return b;
 }
 

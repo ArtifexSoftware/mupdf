@@ -95,7 +95,7 @@ fz_keep_glyph_cache(fz_context *ctx)
 }
 
 fz_pixmap *
-fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *stroke, fz_rect scissor)
+fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, fz_matrix ctm, fz_stroke_state *stroke, fz_irect scissor)
 {
 	if (font->ft_face)
 	{
@@ -116,7 +116,7 @@ fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix trm, 
 		This must not be inserted into the cache.
  */
 fz_pixmap *
-fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_colorspace *model, fz_rect scissor)
+fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_colorspace *model, fz_irect scissor)
 {
 	fz_glyph_cache *cache;
 	fz_glyph_key key;
@@ -126,7 +126,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix ctm, fz_color
 
 	if (size <= MAX_GLYPH_SIZE)
 	{
-		scissor = fz_infinite_rect;
+		scissor = fz_infinite_irect;
 		do_cache = 1;
 	}
 	else

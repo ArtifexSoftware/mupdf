@@ -100,7 +100,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 
 void pdfapp_invert(pdfapp_t *app, fz_rect rect)
 {
-	fz_invert_pixmap_rect(app->image, rect);
+	fz_invert_pixmap_rect(app->image, fz_round_rect(rect));
 }
 
 static void event_cb(fz_doc_event *event, void *data)
@@ -566,14 +566,15 @@ static void pdfapp_updatepage(pdfapp_t *app)
 
 	while ((annot = fz_poll_changed_annot(idoc, app->page)) != NULL)
 	{
-		fz_rect bbox = fz_transform_rect(ctm, fz_bound_annot(app->doc, annot));
+		fz_rect bounds = fz_transform_rect(ctm, fz_bound_annot(app->doc, annot));
+		fz_irect bbox = fz_round_rect(bounds);
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, bbox);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, bbox);
 
 		if (app->page_list)
-			fz_run_display_list(app->page_list, idev, ctm, bbox, NULL);
+			fz_run_display_list(app->page_list, idev, ctm, bounds, NULL);
 		if (app->annotations_list)
-			fz_run_display_list(app->annotations_list, idev, ctm, bbox, NULL);
+			fz_run_display_list(app->annotations_list, idev, ctm, bounds, NULL);
 
 		fz_free_device(idev);
 	}
@@ -589,7 +590,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	fz_device *tdev;
 	fz_colorspace *colorspace;
 	fz_matrix ctm;
-	fz_rect bbox;
+	fz_rect bounds;
+	fz_irect bbox;
 	fz_cookie cookie = { 0 };
 
 	if (!app->nowaitcursor)
@@ -646,7 +648,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		wintitle(app, buf);
 
 		ctm = pdfapp_viewctm(app);
-		bbox = fz_transform_rect(ctm, app->page_bbox);
+		bounds = fz_transform_rect(ctm, app->page_bbox);
+		bbox = fz_round_rect(bounds);
 
 		/* Draw */
 		if (app->image)
@@ -662,9 +665,9 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		{
 			idev = fz_new_draw_device(app->ctx, app->image);
 			if (app->page_list)
-				fz_run_display_list(app->page_list, idev, ctm, bbox, &cookie);
+				fz_run_display_list(app->page_list, idev, ctm, bounds, &cookie);
 			if (app->annotations_list)
-				fz_run_display_list(app->annotations_list, idev, ctm, bbox, &cookie);
+				fz_run_display_list(app->annotations_list, idev, ctm, bounds, &cookie);
 			fz_free_device(idev);
 		}
 		if (app->invert)
@@ -1336,7 +1339,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
 	fz_context *ctx = app->ctx;
-	fz_rect rect = fz_pixmap_bbox(app->ctx, app->image);
+	fz_irect rect = fz_pixmap_bbox(app->ctx, app->image);
 	fz_link *link;
 	fz_matrix ctm;
 	fz_point p;

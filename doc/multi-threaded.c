@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 
 		// Create a white pixmap using the correct dimensions.
 
-		fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, bbox);
+		fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, fz_round_rect(bbox));
 		fz_clear_pixmap_with_value(ctx, pix, 0xff);
 
 		// Populate the data structure to be sent to the
