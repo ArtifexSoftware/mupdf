@@ -320,7 +320,7 @@ pdf_dev_stroke_state(pdf_device *pdev, fz_stroke_state *stroke_state)
 		return;
 	if (!gs->stroke_state || gs->stroke_state->linewidth != stroke_state->linewidth)
 	{
-		fz_buffer_printf(ctx, gs->buf, "%f w\n");
+		fz_buffer_printf(ctx, gs->buf, "%f w\n", stroke_state->linewidth);
 	}
 	if (!gs->stroke_state || gs->stroke_state->start_cap != stroke_state->start_cap)
 	{
