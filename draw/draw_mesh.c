@@ -213,7 +213,7 @@ static inline void step_edge(int *ael, int *del, int n)
 }
 
 static void
-fz_paint_triangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_irect bbox)
+fz_paint_triangle(fz_pixmap *pix, float *av, float *bv, float *cv, int n, fz_bbox bbox)
 {
 	float poly[MAXV][MAXN];
 	float temp[MAXV][MAXN];
@@ -307,7 +307,7 @@ struct paint_tri_data
 	fz_context *ctx;
 	fz_shade *shade;
 	fz_pixmap *dest;
-	fz_irect bbox;
+	fz_bbox bbox;
 };
 
 static void
@@ -349,7 +349,7 @@ do_paint_tri(void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv)
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_irect bbox)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_matrix ctm, fz_pixmap *dest, fz_bbox bbox)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;

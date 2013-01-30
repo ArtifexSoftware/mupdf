@@ -188,14 +188,14 @@ const fz_rect fz_infinite_rect = { 1, 1, -1, -1 };
 const fz_rect fz_empty_rect = { 0, 0, 0, 0 };
 const fz_rect fz_unit_rect = { 0, 0, 1, 1 };
 
-const fz_irect fz_infinite_irect = { 1, 1, -1, -1 };
-const fz_irect fz_empty_irect = { 0, 0, 0, 0 };
-const fz_irect fz_unit_irect = { 0, 0, 1, 1 };
+const fz_bbox fz_infinite_bbox = { 1, 1, -1, -1 };
+const fz_bbox fz_empty_bbox = { 0, 0, 0, 0 };
+const fz_bbox fz_unit_bbox = { 0, 0, 1, 1 };
 
-fz_irect
-fz_irect_from_rect(fz_rect a)
+fz_bbox
+fz_bbox_from_rect(fz_rect a)
 {
-	fz_irect b;
+	fz_bbox b;
 
 	a.x0 = floorf(a.x0);
 	a.y0 = floorf(a.y0);
@@ -212,7 +212,7 @@ fz_irect_from_rect(fz_rect a)
 }
 
 fz_rect
-fz_rect_from_irect(fz_irect a)
+fz_rect_from_bbox(fz_bbox a)
 {
 	fz_rect b;
 	b.x0 = a.x0;
@@ -222,10 +222,10 @@ fz_rect_from_irect(fz_irect a)
 	return b;
 }
 
-fz_irect
+fz_bbox
 fz_round_rect(fz_rect a)
 {
-	fz_irect b;
+	fz_bbox b;
 
 	a.x0 = floorf(a.x0 + 0.001);
 	a.y0 = floorf(a.y0 + 0.001);
@@ -257,20 +257,20 @@ fz_intersect_rect(fz_rect a, fz_rect b)
 	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_rect : r;
 }
 
-fz_irect
-fz_intersect_irect(fz_irect a, fz_irect b)
+fz_bbox
+fz_intersect_bbox(fz_bbox a, fz_bbox b)
 {
-	fz_irect r;
+	fz_bbox r;
 	/* Check for empty box before infinite box */
-	if (fz_is_empty_rect(a)) return fz_empty_irect;
-	if (fz_is_empty_rect(b)) return fz_empty_irect;
+	if (fz_is_empty_rect(a)) return fz_empty_bbox;
+	if (fz_is_empty_rect(b)) return fz_empty_bbox;
 	if (fz_is_infinite_rect(a)) return b;
 	if (fz_is_infinite_rect(b)) return a;
 	r.x0 = fz_maxi(a.x0, b.x0);
 	r.y0 = fz_maxi(a.y0, b.y0);
 	r.x1 = fz_mini(a.x1, b.x1);
 	r.y1 = fz_mini(a.y1, b.y1);
-	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_irect : r;
+	return (r.x1 < r.x0 || r.y1 < r.y0) ? fz_empty_bbox : r;
 }
 
 fz_rect
@@ -325,10 +325,10 @@ fz_translate_rect(fz_rect a, float xoff, float yoff)
 	return b;
 }
 
-fz_irect
-fz_translate_irect(fz_irect a, int xoff, int yoff)
+fz_bbox
+fz_translate_bbox(fz_bbox a, int xoff, int yoff)
 {
-	fz_irect b;
+	fz_bbox b;
 	if (fz_is_empty_rect(a)) return a;
 	if (fz_is_infinite_rect(a)) return a;
 	ADD_WITH_SAT(b.x0, a.x0, xoff);

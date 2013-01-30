@@ -403,7 +403,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		float zoom;
 		fz_matrix ctm;
 		fz_rect bounds, tbounds;
-		fz_irect ibounds;
+		fz_bbox ibounds;
 		fz_pixmap *pix = NULL;
 		int w, h;
 

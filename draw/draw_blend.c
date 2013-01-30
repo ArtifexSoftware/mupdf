@@ -574,7 +574,7 @@ void
 fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int isolated, fz_pixmap *shape)
 {
 	unsigned char *sp, *dp;
-	fz_irect bbox;
+	fz_bbox bbox;
 	int x, y, w, h, n;
 
 	/* TODO: fix this hack! */
@@ -590,7 +590,7 @@ fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int is
 	}
 
 	bbox = fz_pixmap_bbox_no_ctx(dst);
-	bbox = fz_intersect_irect(bbox, fz_pixmap_bbox_no_ctx(src));
+	bbox = fz_intersect_bbox(bbox, fz_pixmap_bbox_no_ctx(src));
 
 	x = bbox.x0;
 	y = bbox.y0;

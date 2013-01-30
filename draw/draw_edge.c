@@ -203,7 +203,7 @@ fz_new_gel(fz_context *ctx)
 }
 
 void
-fz_reset_gel(fz_gel *gel, fz_irect clip)
+fz_reset_gel(fz_gel *gel, fz_bbox clip)
 {
 	fz_aa_context *ctxaa = gel->ctx->aa;
 
@@ -235,13 +235,13 @@ fz_free_gel(fz_gel *gel)
 	fz_free(gel->ctx, gel);
 }
 
-fz_irect
+fz_bbox
 fz_bound_gel(fz_gel *gel)
 {
-	fz_irect bbox;
+	fz_bbox bbox;
 	fz_aa_context *ctxaa = gel->ctx->aa;
 	if (gel->len == 0)
-		return fz_empty_irect;
+		return fz_empty_bbox;
 	bbox.x0 = fz_idiv(gel->bbox.x0, fz_aa_hscale);
 	bbox.y0 = fz_idiv(gel->bbox.y0, fz_aa_vscale);
 	bbox.x1 = fz_idiv(gel->bbox.x1, fz_aa_hscale) + 1;
@@ -666,7 +666,7 @@ static inline void blit_aa(fz_pixmap *dst, int x, int y,
 }
 
 static void
-fz_scan_convert_aa(fz_gel *gel, int eofill, fz_irect clip,
+fz_scan_convert_aa(fz_gel *gel, int eofill, fz_bbox clip,
 	fz_pixmap *dst, unsigned char *color)
 {
 	unsigned char *alphas;
@@ -851,7 +851,7 @@ clip_ended:
  */
 
 static inline void blit_sharp(int x0, int x1, int y,
-	fz_irect clip, fz_pixmap *dst, unsigned char *color)
+	fz_bbox clip, fz_pixmap *dst, unsigned char *color)
 {
 	unsigned char *dp;
 	x0 = fz_clampi(x0, dst->x, dst->x + dst->w);
@@ -867,7 +867,7 @@ static inline void blit_sharp(int x0, int x1, int y,
 }
 
 static inline void non_zero_winding_sharp(fz_gel *gel, int y,
-	fz_irect clip, fz_pixmap *dst, unsigned char *color)
+	fz_bbox clip, fz_pixmap *dst, unsigned char *color)
 {
 	int winding = 0;
 	int x = 0;
@@ -883,7 +883,7 @@ static inline void non_zero_winding_sharp(fz_gel *gel, int y,
 }
 
 static inline void even_odd_sharp(fz_gel *gel, int y,
-	fz_irect clip, fz_pixmap *dst, unsigned char *color)
+	fz_bbox clip, fz_pixmap *dst, unsigned char *color)
 {
 	int even = 0;
 	int x = 0;
@@ -899,7 +899,7 @@ static inline void even_odd_sharp(fz_gel *gel, int y,
 }
 
 static void
-fz_scan_convert_sharp(fz_gel *gel, int eofill, fz_irect clip,
+fz_scan_convert_sharp(fz_gel *gel, int eofill, fz_bbox clip,
 	fz_pixmap *dst, unsigned char *color)
 {
 	int e = 0;
@@ -955,7 +955,7 @@ fz_scan_convert_sharp(fz_gel *gel, int eofill, fz_irect clip,
 }
 
 void
-fz_scan_convert(fz_gel *gel, int eofill, fz_irect clip,
+fz_scan_convert(fz_gel *gel, int eofill, fz_bbox clip,
 	fz_pixmap *dst, unsigned char *color)
 {
 	fz_aa_context *ctxaa = gel->ctx->aa;

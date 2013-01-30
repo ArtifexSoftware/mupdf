@@ -567,7 +567,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 	while ((annot = fz_poll_changed_annot(idoc, app->page)) != NULL)
 	{
 		fz_rect bounds = fz_transform_rect(ctm, fz_bound_annot(app->doc, annot));
-		fz_irect bbox = fz_round_rect(bounds);
+		fz_bbox bbox = fz_round_rect(bounds);
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, bbox);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, bbox);
 
@@ -591,7 +591,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	fz_colorspace *colorspace;
 	fz_matrix ctm;
 	fz_rect bounds;
-	fz_irect bbox;
+	fz_bbox bbox;
 	fz_cookie cookie = { 0 };
 
 	if (!app->nowaitcursor)
@@ -1339,7 +1339,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
 	fz_context *ctx = app->ctx;
-	fz_irect rect = fz_pixmap_bbox(app->ctx, app->image);
+	fz_bbox rect = fz_pixmap_bbox(app->ctx, app->image);
 	fz_link *link;
 	fz_matrix ctm;
 	fz_point p;
