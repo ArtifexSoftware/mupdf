@@ -568,7 +568,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_rect bounds;
 		fz_bbox ibounds;
 		fz_transform_rect(fz_bound_annot(app->doc, annot, &bounds), &ctm);
-		fz_round_rect(&ibounds, &bounds);
+		fz_rect_from_bbox(&bounds, fz_round_rect(&ibounds, &bounds));
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, &ibounds);
 
@@ -651,6 +651,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		pdfapp_viewctm(&ctm, app);
 		bounds = app->page_bbox;
 		fz_round_rect(&ibounds, fz_transform_rect(&bounds, &ctm));
+		fz_rect_from_bbox(&bounds, &ibounds);
 
 		/* Draw */
 		if (app->image)

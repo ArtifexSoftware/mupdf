@@ -469,6 +469,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_transform_rect(&tbounds, &ctm);
 		}
 		fz_round_rect(&ibounds, &tbounds);
+		fz_rect_from_bbox(&tbounds, &ibounds);
 
 		/* TODO: banded rendering and multi-page ppm */
 
