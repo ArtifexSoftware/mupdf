@@ -805,7 +805,17 @@ extern const fz_bbox fz_infinite_bbox;
 
 	An empty rectangle is defined as one whose area is zero.
 */
-#define fz_is_empty_rect(r) ((r)->x0 == (r)->x1 || (r)->y0 == (r)->y1)
+static inline int
+fz_is_empty_rect(const fz_rect *r)
+{
+	return ((r)->x0 == (r)->x1 || (r)->y0 == (r)->y1);
+}
+
+static inline int
+fz_is_empty_bbox(const fz_bbox *r)
+{
+	return ((r)->x0 == (r)->x1 || (r)->y0 == (r)->y1);
+}
 
 /*
 	fz_is_infinite: Check if rectangle is infinite.
@@ -813,7 +823,17 @@ extern const fz_bbox fz_infinite_bbox;
 	An infinite rectangle is defined as one where either of the
 	two relationships between corner coordinates are not true.
 */
-#define fz_is_infinite_rect(r) ((r)->x0 > (r)->x1 || (r)->y0 > (r)->y1)
+static inline int
+fz_is_infinite_rect(const fz_rect *r)
+{
+	return ((r)->x0 > (r)->x1 || (r)->y0 > (r)->y1);
+}
+
+static inline int
+fz_is_infinite_bbox(const fz_bbox *r)
+{
+	return ((r)->x0 > (r)->x1 || (r)->y0 > (r)->y1);
+}
 
 /*
 	fz_matrix is a a row-major 3x3 matrix used for representing
@@ -840,7 +860,7 @@ struct fz_matrix_s
 */
 extern const fz_matrix fz_identity;
 
-static inline fz_matrix *fz_copy_matrix(fz_matrix *m, const fz_matrix *s)
+static inline fz_matrix *fz_copy_matrix(fz_matrix *restrict m, const fz_matrix *restrict s)
 {
 	*m = *s;
 	return m;

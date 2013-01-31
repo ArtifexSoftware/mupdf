@@ -260,7 +260,7 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, const fz_matrix 
 
 	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 
-	if (fz_is_empty_rect(&bbox))
+	if (fz_is_empty_bbox(&bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -316,7 +316,7 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, con
 
 	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 
-	if (fz_is_empty_rect(&bbox))
+	if (fz_is_empty_bbox(&bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -370,7 +370,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, const fz_rect *rect, int even_
 		fz_intersect_bbox(&bbox, fz_bbox_from_rect(&bbox2, rect));
 	}
 
-	if (fz_is_empty_rect(&bbox) || fz_is_rect_gel(dev->gel))
+	if (fz_is_empty_bbox(&bbox) || fz_is_rect_gel(dev->gel))
 	{
 		state[1].scissor = bbox;
 		state[1].mask = NULL;
@@ -450,7 +450,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 			fz_clear_pixmap(dev->ctx, state[1].shape);
 		}
 
-		if (!fz_is_empty_rect(&bbox))
+		if (!fz_is_empty_bbox(&bbox))
 			fz_scan_convert(dev->gel, 0, &bbox, state[1].mask, NULL);
 
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
@@ -713,7 +713,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 			dev->top--;
 		}
 
-		if (!fz_is_empty_rect(&bbox) && mask)
+		if (!fz_is_empty_bbox(&bbox) && mask)
 		{
 			tm = text->trm;
 
@@ -822,7 +822,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 		dump_spaces(dev->top-1, "Clip (stroke text) begin\n");
 #endif
 
-		if (!fz_is_empty_rect(&bbox))
+		if (!fz_is_empty_bbox(&bbox))
 		{
 			tm = text->trm;
 
@@ -912,7 +912,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, const fz_matrix *ctm, float
 	scissor = state->scissor;
 	fz_intersect_bbox(fz_bbox_from_rect(&bbox, &bounds), &scissor);
 
-	if (fz_is_empty_rect(&bbox))
+	if (fz_is_empty_bbox(&bbox))
 		return;
 
 	if (!model)

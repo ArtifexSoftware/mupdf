@@ -243,7 +243,7 @@ fz_matrix_max_expansion(const fz_matrix *m)
 }
 
 fz_point *
-fz_transform_point(fz_point *p, const fz_matrix *m)
+fz_transform_point(fz_point *restrict p, const fz_matrix *restrict m)
 {
 	float x = p->x;
 	p->x = x * m->a + p->y * m->c + m->e;
@@ -252,7 +252,7 @@ fz_transform_point(fz_point *p, const fz_matrix *m)
 }
 
 fz_point *
-fz_transform_vector(fz_point *p, const fz_matrix *m)
+fz_transform_vector(fz_point *restrict p, const fz_matrix *restrict m)
 {
 	float x = p->x;
 	p->x = x * m->a + p->y * m->c;
@@ -275,7 +275,7 @@ const fz_bbox fz_empty_bbox = { 0, 0, 0, 0 };
 const fz_bbox fz_unit_bbox = { 0, 0, 1, 1 };
 
 fz_bbox *
-fz_bbox_from_rect(fz_bbox *b, const fz_rect *r)
+fz_bbox_from_rect(fz_bbox *restrict b, const fz_rect *restrict r)
 {
 	int i;
 
@@ -292,7 +292,7 @@ fz_bbox_from_rect(fz_bbox *b, const fz_rect *r)
 }
 
 fz_rect *
-fz_rect_from_bbox(fz_rect *r, const fz_bbox *a)
+fz_rect_from_bbox(fz_rect *restrict r, const fz_bbox *restrict a)
 {
 	r->x0 = a->x0;
 	r->y0 = a->y0;
@@ -302,7 +302,7 @@ fz_rect_from_bbox(fz_rect *r, const fz_bbox *a)
 }
 
 fz_bbox *
-fz_round_rect(fz_bbox *b, const fz_rect *r)
+fz_round_rect(fz_bbox * restrict b, const fz_rect *restrict r)
 {
 	int i;
 
@@ -319,7 +319,7 @@ fz_round_rect(fz_bbox *b, const fz_rect *r)
 }
 
 fz_rect *
-fz_intersect_rect(fz_rect *a, const fz_rect *b)
+fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b)
 {
 	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(a)) return a;
@@ -346,17 +346,17 @@ fz_intersect_rect(fz_rect *a, const fz_rect *b)
 }
 
 fz_bbox *
-fz_intersect_bbox(fz_bbox *a, const fz_bbox *b)
+fz_intersect_bbox(fz_bbox *restrict a, const fz_bbox *restrict b)
 {
 	/* Check for empty box before infinite box */
-	if (fz_is_empty_rect(a)) return a;
-	if (fz_is_empty_rect(b))
+	if (fz_is_empty_bbox(a)) return a;
+	if (fz_is_empty_bbox(b))
 	{
 		*a = fz_empty_bbox;
 		return a;
 	}
-	if (fz_is_infinite_rect(b)) return a;
-	if (fz_is_infinite_rect(a))
+	if (fz_is_infinite_bbox(b)) return a;
+	if (fz_is_infinite_bbox(a))
 	{
 		*a = *b;
 		return a;
@@ -375,7 +375,7 @@ fz_intersect_bbox(fz_bbox *a, const fz_bbox *b)
 }
 
 fz_rect *
-fz_union_rect(fz_rect *a, const fz_rect *b)
+fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b)
 {
 	/* Check for empty box before infinite box */
 	if (fz_is_empty_rect(b)) return a;
@@ -404,8 +404,8 @@ fz_translate_bbox(fz_bbox *a, int xoff, int yoff)
 {
 	int t;
 
-	if (fz_is_empty_rect(a)) return a;
-	if (fz_is_infinite_rect(a)) return a;
+	if (fz_is_empty_bbox(a)) return a;
+	if (fz_is_infinite_bbox(a)) return a;
 	a->x0 = ADD_WITH_SAT(t, a->x0, xoff);
 	a->y0 = ADD_WITH_SAT(t, a->y0, yoff);
 	a->x1 = ADD_WITH_SAT(t, a->x1, xoff);
@@ -414,7 +414,7 @@ fz_translate_bbox(fz_bbox *a, int xoff, int yoff)
 }
 
 fz_rect *
-fz_transform_rect(fz_rect *r, const fz_matrix *m)
+fz_transform_rect(fz_rect *restrict r, const fz_matrix *restrict m)
 {
 	fz_point s, t, u, v;
 

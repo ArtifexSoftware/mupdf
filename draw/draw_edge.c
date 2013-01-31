@@ -207,7 +207,7 @@ fz_reset_gel(fz_gel *gel, const fz_bbox *clip)
 {
 	fz_aa_context *ctxaa = gel->ctx->aa;
 
-	if (fz_is_infinite_rect(clip))
+	if (fz_is_infinite_bbox(clip))
 	{
 		gel->clip.x0 = gel->clip.y0 = BBOX_MAX;
 		gel->clip.x1 = gel->clip.y1 = BBOX_MIN;
