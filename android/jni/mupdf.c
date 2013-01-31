@@ -1362,7 +1362,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 			LOGI("Path stroked");
 		}
 
-		annot = fz_make_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
+		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
 		fz_set_annot_appearance(idoc, annot, strike_list);
 		dump_annotation_display_lists(glo);
 	}
