@@ -200,6 +200,36 @@ public class MuPDFCore
 		return searchPage(text);
 	}
 
+	public synchronized String html(int page) {
+		gotoPage(page);
+		TextChar[][][][] chars = text();
+		String res = new String();
+
+		res += "<html><body>";
+
+		boolean first = true;
+		for (TextChar[][][] bl: chars) {
+			if (!first) res += "<p>";
+			first = false;
+			for (TextChar[][] ln: bl) {
+				for (TextChar[] sp: ln) {
+					for (TextChar tc: sp) {
+						switch (tc.c) {
+						case '<': res += "&lt;";break;
+						case '>': res += "&gt;";break;
+						case '&': res += "&amp;";break;
+						default: res += (tc.c >= 32 && tc.c <= 127) ? tc.c : "#x"+Integer.toHexString(tc.c);
+						}
+					}
+				}
+			}
+		}
+
+		res += "</body></html>";
+
+		return res;
+	}
+
 	public synchronized TextWord [][] textLines(int page) {
 		gotoPage(page);
 		TextChar[][][][] chars = text();
