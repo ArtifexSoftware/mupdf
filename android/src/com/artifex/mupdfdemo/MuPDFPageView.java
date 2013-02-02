@@ -55,7 +55,7 @@ class PassClickResultChoice extends PassClickResult {
 	}
 }
 
-public class MuPDFPageView extends PageView {
+public class MuPDFPageView extends PageView implements MuPDFView {
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];

@@ -433,7 +433,7 @@ public class MuPDFActivity extends Activity
 				LinkInfo link = null;
 
 				if (!mSelecting && !showButtonsDisabled) {
-					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
+					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 					if (MuPDFCore.javascriptSupported() && pageView.passClickEvent(e.getX(), e.getY())) {
 						// If the page consumes the event do nothing else
 					} else if (mLinkHighlight && pageView != null && (link = pageView.hitLink(e.getX(), e.getY())) != null) {
@@ -479,7 +479,7 @@ public class MuPDFActivity extends Activity
 
 					return super.onScroll(e1, e2, distanceX, distanceY);
 				} else {
-					MuPDFPageView pageView = (MuPDFPageView) mDocView.getDisplayedView();
+					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 					if (pageView != null)
 						pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
 					return true;
@@ -512,18 +512,18 @@ public class MuPDFActivity extends Activity
 
 			protected void onChildSetup(int i, View v) {
 				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber == i)
-					((PageView)v).setSearchBoxes(SearchTaskResult.get().searchBoxes);
+					((MuPDFView)v).setSearchBoxes(SearchTaskResult.get().searchBoxes);
 				else
-					((PageView)v).setSearchBoxes(null);
+					((MuPDFView)v).setSearchBoxes(null);
 
-				((PageView)v).setLinkHighlighting(mLinkHighlight);
+				((MuPDFView)v).setLinkHighlighting(mLinkHighlight);
 
-				((MuPDFPageView)v).setChangeReporter(new Runnable() {
+				((MuPDFView)v).setChangeReporter(new Runnable() {
 					public void run() {
 						mDocView.applyToChildren(new ReaderView.ViewMapper() {
 							@Override
 							void applyToView(View view) {
-								((MuPDFPageView)view).update();
+								((MuPDFView)view).update();
 							}
 						});
 					}
@@ -545,18 +545,18 @@ public class MuPDFActivity extends Activity
 			protected void onSettle(View v) {
 				// When the layout has settled ask the page to render
 				// in HQ
-				((PageView)v).addHq(false);
+				((MuPDFView)v).addHq(false);
 			}
 
 			protected void onUnsettle(View v) {
 				// When something changes making the previous settled view
 				// no longer appropriate, tell the page to remove HQ
-				((PageView)v).removeHq();
+				((MuPDFView)v).removeHq();
 			}
 
 			@Override
 			protected void onNotInUse(View v) {
-				((PageView)v).releaseResources();
+				((MuPDFView)v).releaseResources();
 			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
@@ -603,7 +603,7 @@ public class MuPDFActivity extends Activity
 
 		mCancelSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				PageView pageView = (PageView) mDocView.getDisplayedView();
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.deselectText();
 				mSelecting = false;
@@ -614,7 +614,7 @@ public class MuPDFActivity extends Activity
 		final Context context = this;
 		mCopySelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				PageView pageView = (PageView) mDocView.getDisplayedView();
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				boolean copied = false;
 				if (pageView != null)
 					copied = pageView.copySelection();
@@ -655,7 +655,7 @@ public class MuPDFActivity extends Activity
 
 		mStrikeOutButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				PageView pageView = (PageView) mDocView.getDisplayedView();
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.strikeOutSelection();
 				mSelecting = false;
