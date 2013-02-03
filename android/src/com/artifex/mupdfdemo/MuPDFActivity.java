@@ -122,6 +122,7 @@ public class MuPDFActivity extends Activity
 	private boolean mSelecting = false;
 	private final Handler mHandler = new Handler();
 	private boolean mAlertsActive= false;
+	private boolean mReflow = false;
 	private AsyncTask<Void,Void,MuPDFAlert> mAlertTask;
 	private AlertDialog mAlertDialog;
 
@@ -589,7 +590,8 @@ public class MuPDFActivity extends Activity
 		// Activate the search-preparing button
 		mSearchButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				searchModeOn();
+				//searchModeOn();
+				toggleReflow();
 			}
 		});
 
@@ -792,6 +794,16 @@ public class MuPDFActivity extends Activity
 		MuPDFCore mycore = core;
 		core = null;
 		return mycore;
+	}
+
+	private void toggleReflow() {
+		mReflow = !mReflow;
+		if (mReflow) {
+			mDocView.setAdapter(new MuPDFReflowAdapter(this, core));
+		} else {
+			mDocView.setAdapter(new MuPDFPageAdapter(this, core));
+		}
+		mDocView.refresh(mReflow);
 	}
 
 	@Override

@@ -205,7 +205,7 @@ public class MuPDFCore
 		TextChar[][][][] chars = text();
 		String res = new String();
 
-		res += "<html><body>";
+		res += "<html><body><div>";
 
 		boolean first = true;
 		for (TextChar[][][] bl: chars) {
@@ -225,7 +225,7 @@ public class MuPDFCore
 			}
 		}
 
-		res += "</body></html>";
+		res += "</div></body></html>";
 
 		return res;
 	}

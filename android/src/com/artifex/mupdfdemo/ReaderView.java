@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -46,6 +47,7 @@ public class ReaderView extends AdapterView<Adapter>
 	private float             mScale     = 1.0f;
 	private int               mXScroll;    // Scroll amounts recorded from events.
 	private int               mYScroll;    // and then accounted for in onLayout
+	private boolean           mReflow = false;
 	private final GestureDetector
 				  mGestureDetector;
 	private final ScaleGestureDetector
@@ -284,6 +286,23 @@ public class ReaderView extends AdapterView<Adapter>
 	public void applyToChildren(ViewMapper mapper) {
 		for (int i = 0; i < mChildViews.size(); i++)
 			mapper.applyToView(mChildViews.valueAt(i));
+	}
+
+	public void refresh(boolean reflow) {
+		mReflow = reflow;
+
+		mXScroll = mYScroll = 0;
+
+		int numChildren = mChildViews.size();
+		for (int i = 0; i < numChildren; i++) {
+			View v = mChildViews.valueAt(i);
+			onNotInUse(v);
+			removeViewInLayout(v);
+		}
+		mChildViews.clear();
+		mViewCache.clear();
+
+		requestLayout();
 	}
 
 	protected void onChildSetup(int i, View v) {}
@@ -662,12 +681,18 @@ public class ReaderView extends AdapterView<Adapter>
 	private void measureView(View v) {
 		// See what size the view wants to be
 		v.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+
+		if (!mReflow) {
 		// Work out a scale that will fit it to this view
 		float scale = Math.min((float)getWidth()/(float)v.getMeasuredWidth(),
 					(float)getHeight()/(float)v.getMeasuredHeight());
 		// Use the fitting values scaled by our current scale factor
 		v.measure(View.MeasureSpec.EXACTLY | (int)(v.getMeasuredWidth()*scale*mScale),
 				View.MeasureSpec.EXACTLY | (int)(v.getMeasuredHeight()*scale*mScale));
+		} else {
+			v.measure(View.MeasureSpec.EXACTLY | (int)(v.getMeasuredWidth()),
+					View.MeasureSpec.EXACTLY | (int)(v.getMeasuredHeight()));
+		}
 	}
 
 	private Rect getScrollBounds(int left, int top, int right, int bottom) {
