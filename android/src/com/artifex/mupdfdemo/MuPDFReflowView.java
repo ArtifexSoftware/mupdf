@@ -26,6 +26,12 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		mContentHeight = parentSize.y;
 	}
 
+	private void requestHeight() {
+		// Get the webview to report the content height via the interface setup
+		// above. Workaround for getContentHeight not working
+		loadUrl("javascript:elem=document.getElementById('content');window.HTMLOUT.reportContentHeight("+mParentSize.x+"*elem.offsetHeight/elem.offsetWidth)");
+	}
+
 	public void setPage(int page, PointF size) {
 		mPage = page;
 		getSettings().setJavaScriptEnabled(true);
@@ -37,9 +43,7 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		setWebViewClient(new WebViewClient() {
 			@Override
 			public void onPageFinished(WebView view, String url) {
-				// Get the webview to report the content height via the interface setup
-				// above. Workaround for getContentHeight not working
-				view.loadUrl("javascript:elem=document.getElementsByTagName('html')[0];window.HTMLOUT.reportContentHeight("+mParentSize.x+"*elem.offsetHeight/elem.offsetWidth)");
+				requestHeight();
 			}
 		});
 		mLoadHTML = new AsyncTask<Void,Void,String>() {
@@ -67,6 +71,8 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	}
 
 	public void setScale(float scale) {
+		loadUrl("javascript:document.getElementById('content').style.fontSize=\""+(int)(scale*100)+"%\"");
+		requestHeight();
 	}
 
 	public void blank(int page) {
