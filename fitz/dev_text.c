@@ -626,11 +626,11 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
 		block = &page->blocks[block_n];
-		fz_printf(out, "<div class=\"block\">\n");
+		fz_printf(out, "<div class=\"block\"><p>\n");
 		for (line_n = 0; line_n < block->len; line_n++)
 		{
 			line = &block->lines[line_n];
-			fz_printf(out, "<p>");
+			fz_printf(out, "<span>");
 			style = NULL;
 
 			for (span_n = 0; span_n < line->len; span_n++)
@@ -661,9 +661,9 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 			}
 			if (style)
 				fz_print_style_end(out, style);
-			fz_printf(out, "</p>\n");
+			fz_printf(out, "</span>\n");
 		}
-		fz_printf(out, "</div>\n");
+		fz_printf(out, "</p></div>\n");
 	}
 
 	fz_printf(out, "</div>\n");
