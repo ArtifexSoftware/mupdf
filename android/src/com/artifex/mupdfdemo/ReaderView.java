@@ -32,6 +32,7 @@ public class ReaderView extends AdapterView<Adapter>
 
 	private static final float MIN_SCALE        = 1.0f;
 	private static final float MAX_SCALE        = 5.0f;
+	private static final float REFLOW_SCALE_FACTOR = 0.5f;
 
 	private Adapter           mAdapter;
 	private int               mCurrent;    // Adapter's index for the current view
@@ -424,7 +425,10 @@ public class ReaderView extends AdapterView<Adapter>
 
 	public boolean onScale(ScaleGestureDetector detector) {
 		float previousScale = mScale;
-		mScale = Math.min(Math.max(mScale * detector.getScaleFactor(), MIN_SCALE), MAX_SCALE);
+		float scale_factor = mReflow ? REFLOW_SCALE_FACTOR : 1.0f;
+		float min_scale = MIN_SCALE * scale_factor;
+		float max_scale = MAX_SCALE * scale_factor;
+		mScale = Math.min(Math.max(mScale * detector.getScaleFactor(), min_scale), max_scale);
 
 		if (mReflow) {
 			applyToChildren(new ViewMapper() {
