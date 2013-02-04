@@ -1266,6 +1266,86 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	return barr;
 }
 
+JNIEXPORT jbyteArray JNICALL
+JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
+{
+	fz_text_sheet *sheet = NULL;
+	fz_text_page *text = NULL;
+	fz_device *dev  = NULL;
+	float zoom;
+	fz_matrix ctm;
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	page_cache *pc = &glo->pages[glo->current];
+	jbyteArray bArray = NULL;
+	fz_buffer *buf = NULL;
+	fz_output *out = NULL;
+
+	fz_var(sheet);
+	fz_var(text);
+	fz_var(dev);
+
+	fz_try(ctx)
+	{
+		fz_rect mbrect;
+		int b, l, s, c;
+
+		zoom = glo->resolution / 72;
+		ctm = fz_scale(zoom, zoom);
+		mbrect = fz_transform_rect(ctm, pc->media_box);
+		sheet = fz_new_text_sheet(ctx);
+		text = fz_new_text_page(ctx, mbrect);
+		dev  = fz_new_text_device(ctx, sheet, text);
+		fz_run_page(doc, pc->page, dev, ctm, NULL);
+		fz_free_device(dev);
+		dev = NULL;
+
+		buf = fz_new_buffer(ctx, 256);
+		out = fz_new_output_buffer(ctx, buf);
+		fz_printf(out, "<html>\n");
+		fz_printf(out, "<style>\n");
+		fz_printf(out, "body{margin:0;}\n");
+		fz_printf(out, "div.page{background-color:white;}\n");
+		fz_printf(out, "div.block{margin:0pt;padding:0pt;}\n");
+		//fz_printf(out, "p{margin:0;padding:0;}\n");
+		fz_printf(out, "</style>\n");
+		fz_printf(out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
+		fz_print_text_page_html(ctx, out, text);
+		fz_printf(out, "</div></body>\n");
+		fz_printf(out, "<style>\n");
+		fz_print_text_sheet(ctx, out, sheet);
+		fz_printf(out, "</style>\n</html>\n");
+		fz_close_output(out);
+		out = NULL;
+
+		bArray = (*env)->NewByteArray(env, buf->len);
+		if (bArray == NULL)
+			fz_throw(ctx, "Failed to make byteArray");
+		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, buf->data);
+
+	}
+	fz_always(ctx)
+	{
+		fz_free_text_page(ctx, text);
+		fz_free_text_sheet(ctx, sheet);
+		fz_free_device(dev);
+		fz_close_output(out);
+		fz_drop_buffer(ctx, buf);
+	}
+	fz_catch(ctx)
+	{
+		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+		if (cls != NULL)
+			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_textAsHtml");
+		(*env)->DeleteLocalRef(env, cls);
+
+		return NULL;
+	}
+
+	return bArray;
+}
+
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray lines)
 {

@@ -38,6 +38,7 @@ public class MuPDFCore
 			int patchW, int patchH);
 	private native RectF[] searchPage(String text);
 	private native TextChar[][][][] text();
+	private native byte[] textAsHtml();
 	private native void addStrikeOutAnnotationInternal(RectF[] lines);
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
@@ -202,30 +203,14 @@ public class MuPDFCore
 
 	public synchronized String html(int page) {
 		gotoPage(page);
-		TextChar[][][][] chars = text();
+		byte chars[] = textAsHtml();
 		String res = new String();
+		int i;
+		int len = chars.length;
 
-		res += "<html><body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">";
-
-		boolean first = true;
-		for (TextChar[][][] bl: chars) {
-			if (!first) res += "<p>";
-			first = false;
-			for (TextChar[][] ln: bl) {
-				for (TextChar[] sp: ln) {
-					for (TextChar tc: sp) {
-						switch (tc.c) {
-						case '<': res += "&lt;";break;
-						case '>': res += "&gt;";break;
-						case '&': res += "&amp;";break;
-						default: res += tc.c;
-						}
-					}
-				}
-			}
+		for (i = 0; i < len; i++) {
+			res += (char)(chars[i] & 0xFF);
 		}
-
-		res += "</div></body></html>";
 
 		return res;
 	}
