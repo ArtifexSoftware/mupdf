@@ -292,6 +292,7 @@ public class ReaderView extends AdapterView<Adapter>
 	public void refresh(boolean reflow) {
 		mReflow = reflow;
 
+		mScale = 1.0f;
 		mXScroll = mYScroll = 0;
 
 		int numChildren = mChildViews.size();
