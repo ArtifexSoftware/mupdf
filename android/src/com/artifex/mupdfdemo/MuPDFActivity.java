@@ -561,6 +561,11 @@ public class MuPDFActivity extends Activity
 			protected void onNotInUse(View v) {
 				((MuPDFView)v).releaseResources();
 			}
+
+			@Override
+			protected void onScaleChild(View v, Float scale) {
+				((MuPDFView)v).setScale(scale);
+			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
 

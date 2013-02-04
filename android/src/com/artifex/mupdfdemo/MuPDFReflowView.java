@@ -66,6 +66,9 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		return mPage;
 	}
 
+	public void setScale(float scale) {
+	}
+
 	public void blank(int page) {
 	}
 

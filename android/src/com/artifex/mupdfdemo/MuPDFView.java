@@ -6,6 +6,7 @@ import android.graphics.RectF;
 
 public interface MuPDFView {
 	public void setPage(int page, PointF size);
+	public void setScale(float scale);
 	public int getPage();
 	public void blank(int page);
 	public boolean passClickEvent(float x, float y);

@@ -315,6 +315,8 @@ public class ReaderView extends AdapterView<Adapter>
 
 	protected void onNotInUse(View v) {};
 
+	protected void onScaleChild(View v, Float scale) {};
+
 	public View getDisplayedView() {
 		return mChildViews.get(mCurrent);
 	}
@@ -423,17 +425,27 @@ public class ReaderView extends AdapterView<Adapter>
 	public boolean onScale(ScaleGestureDetector detector) {
 		float previousScale = mScale;
 		mScale = Math.min(Math.max(mScale * detector.getScaleFactor(), MIN_SCALE), MAX_SCALE);
-		float factor = mScale/previousScale;
 
-		View v = mChildViews.get(mCurrent);
-		if (v != null) {
-			// Work out the focus point relative to the view top left
-			int viewFocusX = (int)detector.getFocusX() - (v.getLeft() + mXScroll);
-			int viewFocusY = (int)detector.getFocusY() - (v.getTop() + mYScroll);
-			// Scroll to maintain the focus point
-			mXScroll += viewFocusX - viewFocusX * factor;
-			mYScroll += viewFocusY - viewFocusY * factor;
-			requestLayout();
+		if (mReflow) {
+			applyToChildren(new ViewMapper() {
+				@Override
+				void applyToView(View view) {
+					onScaleChild(view, mScale);
+				}
+			});
+		} else {
+			float factor = mScale/previousScale;
+
+			View v = mChildViews.get(mCurrent);
+			if (v != null) {
+				// Work out the focus point relative to the view top left
+				int viewFocusX = (int)detector.getFocusX() - (v.getLeft() + mXScroll);
+				int viewFocusY = (int)detector.getFocusY() - (v.getTop() + mYScroll);
+				// Scroll to maintain the focus point
+				mXScroll += viewFocusX - viewFocusX * factor;
+				mYScroll += viewFocusY - viewFocusY * factor;
+				requestLayout();
+			}
 		}
 		return true;
 	}
@@ -664,6 +676,7 @@ public class ReaderView extends AdapterView<Adapter>
 			addAndMeasureChild(i, v);
 		}
 		onChildSetup(i, v);
+		onScaleChild(v, mScale);
 
 		return v;
 	}
