@@ -55,10 +55,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/searchButton"
+                android:layout_toLeftOf="@+id/reflowButton"
                 android:contentDescription="@string/search_document"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_list" />
+
+            <ImageButton
+                android:id="@+id/reflowButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/searchButton"
+                android:contentDescription="@string/search_document"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_reflow" />
 
             <ImageButton
                 android:id="@+id/searchButton"

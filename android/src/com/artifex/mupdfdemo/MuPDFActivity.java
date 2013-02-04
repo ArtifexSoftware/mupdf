@@ -17,6 +17,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
@@ -103,6 +104,7 @@ public class MuPDFActivity extends Activity
 	private TextView     mPageNumberView;
 	private TextView     mInfoView;
 	private ImageButton  mSearchButton;
+	private ImageButton  mReflowButton;
 	private ImageButton mSelectButton;
 	private ImageButton mCancelSelectButton;
 	private ImageButton mCopySelectButton;
@@ -590,7 +592,13 @@ public class MuPDFActivity extends Activity
 		// Activate the search-preparing button
 		mSearchButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				//searchModeOn();
+				searchModeOn();
+			}
+		});
+
+		// Activate the reflow button
+		mReflowButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
 				toggleReflow();
 			}
 		});
@@ -963,6 +971,7 @@ public class MuPDFActivity extends Activity
 		mPageNumberView = (TextView)mButtonsView.findViewById(R.id.pageNumber);
 		mInfoView = (TextView)mButtonsView.findViewById(R.id.info);
 		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
+		mReflowButton = (ImageButton)mButtonsView.findViewById(R.id.reflowButton);
 		mSelectButton = (ImageButton)mButtonsView.findViewById(R.id.selectButton);
 		mCancelSelectButton = (ImageButton)mButtonsView.findViewById(R.id.cancelSelectButton);
 		mCopySelectButton = (ImageButton)mButtonsView.findViewById(R.id.copySelectButton);
