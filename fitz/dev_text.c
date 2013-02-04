@@ -569,43 +569,43 @@ static int font_is_italic(fz_font *font)
 }
 
 static void
-fz_print_style_begin(FILE *out, fz_text_style *style)
+fz_print_style_begin(fz_output *out, fz_text_style *style)
 {
 	int script = style->script;
-	fprintf(out, "<span class=\"s%d\">", style->id);
+	fz_printf(out, "<span class=\"s%d\">", style->id);
 	while (script-- > 0)
-		fprintf(out, "<sup>");
+		fz_printf(out, "<sup>");
 	while (++script < 0)
-		fprintf(out, "<sub>");
+		fz_printf(out, "<sub>");
 }
 
 static void
-fz_print_style_end(FILE *out, fz_text_style *style)
+fz_print_style_end(fz_output *out, fz_text_style *style)
 {
 	int script = style->script;
 	while (script-- > 0)
-		fprintf(out, "</sup>");
+		fz_printf(out, "</sup>");
 	while (++script < 0)
-		fprintf(out, "</sub>");
-	fprintf(out, "</span>");
+		fz_printf(out, "</sub>");
+	fz_printf(out, "</span>");
 }
 
 static void
-fz_print_style(FILE *out, fz_text_style *style)
+fz_print_style(fz_output *out, fz_text_style *style)
 {
 	char *s = strchr(style->font->name, '+');
 	s = s ? s + 1 : style->font->name;
-	fprintf(out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
+	fz_printf(out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
 		style->id, s, style->size);
 	if (font_is_italic(style->font))
-		fprintf(out, "font-style:italic;");
+		fz_printf(out, "font-style:italic;");
 	if (font_is_bold(style->font))
-		fprintf(out, "font-weight:bold;");
-	fprintf(out, "}\n");
+		fz_printf(out, "font-weight:bold;");
+	fz_printf(out, "}\n");
 }
 
 void
-fz_print_text_sheet(fz_context *ctx, FILE *out, fz_text_sheet *sheet)
+fz_print_text_sheet(fz_context *ctx, fz_output *out, fz_text_sheet *sheet)
 {
 	fz_text_style *style;
 	for (style = sheet->style; style; style = style->next)
@@ -613,7 +613,7 @@ fz_print_text_sheet(fz_context *ctx, FILE *out, fz_text_sheet *sheet)
 }
 
 void
-fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
+fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
 	int block_n, line_n, span_n, ch_n;
 	fz_text_style *style = NULL;
@@ -621,16 +621,16 @@ fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 	fz_text_line *line;
 	fz_text_span *span;
 
-	fprintf(out, "<div class=\"page\">\n");
+	fz_printf(out, "<div class=\"page\">\n");
 
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
 		block = &page->blocks[block_n];
-		fprintf(out, "<div class=\"block\">\n");
+		fz_printf(out, "<div class=\"block\">\n");
 		for (line_n = 0; line_n < block->len; line_n++)
 		{
 			line = &block->lines[line_n];
-			fprintf(out, "<p>");
+			fz_printf(out, "<p>");
 			style = NULL;
 
 			for (span_n = 0; span_n < line->len; span_n++)
@@ -648,29 +648,29 @@ fz_print_text_page_html(fz_context *ctx, FILE *out, fz_text_page *page)
 				{
 					fz_text_char *ch = &span->text[ch_n];
 					if (ch->c == '<')
-						fprintf(out, "&lt;");
+						fz_printf(out, "&lt;");
 					else if (ch->c == '>')
-						fprintf(out, "&gt;");
+						fz_printf(out, "&gt;");
 					else if (ch->c == '&')
-						fprintf(out, "&amp;");
+						fz_printf(out, "&amp;");
 					else if (ch->c >= 32 && ch->c <= 127)
-						fprintf(out, "%c", ch->c);
+						fz_printf(out, "%c", ch->c);
 					else
-						fprintf(out, "&#x%x;", ch->c);
+						fz_printf(out, "&#x%x;", ch->c);
 				}
 			}
 			if (style)
 				fz_print_style_end(out, style);
-			fprintf(out, "</p>\n");
+			fz_printf(out, "</p>\n");
 		}
-		fprintf(out, "</div>\n");
+		fz_printf(out, "</div>\n");
 	}
 
-	fprintf(out, "</div>\n");
+	fz_printf(out, "</div>\n");
 }
 
 void
-fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page)
+fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
@@ -678,54 +678,54 @@ fz_print_text_page_xml(fz_context *ctx, FILE *out, fz_text_page *page)
 	fz_text_char *ch;
 	char *s;
 
-	fprintf(out, "<page>\n");
+	fz_printf(out, "<page>\n");
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
-		fprintf(out, "<block bbox=\"%g %g %g %g\">\n",
+		fz_printf(out, "<block bbox=\"%g %g %g %g\">\n",
 			block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			fprintf(out, "<line bbox=\"%g %g %g %g\">\n",
+			fz_printf(out, "<line bbox=\"%g %g %g %g\">\n",
 				line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1);
 			for (span = line->spans; span < line->spans + line->len; span++)
 			{
 				fz_text_style *style = span->style;
 				s = strchr(style->font->name, '+');
 				s = s ? s + 1 : style->font->name;
-				fprintf(out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",
+				fz_printf(out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",
 					span->bbox.x0, span->bbox.y0, span->bbox.x1, span->bbox.y1,
 					s, style->size);
 				for (ch = span->text; ch < span->text + span->len; ch++)
 				{
-					fprintf(out, "<char bbox=\"%g %g %g %g\" c=\"",
+					fz_printf(out, "<char bbox=\"%g %g %g %g\" c=\"",
 						ch->bbox.x0, ch->bbox.y0, ch->bbox.x1, ch->bbox.y1);
 					switch (ch->c)
 					{
-					case '<': fprintf(out, "&lt;"); break;
-					case '>': fprintf(out, "&gt;"); break;
-					case '&': fprintf(out, "&amp;"); break;
-					case '"': fprintf(out, "&quot;"); break;
-					case '\'': fprintf(out, "&apos;"); break;
+					case '<': fz_printf(out, "&lt;"); break;
+					case '>': fz_printf(out, "&gt;"); break;
+					case '&': fz_printf(out, "&amp;"); break;
+					case '"': fz_printf(out, "&quot;"); break;
+					case '\'': fz_printf(out, "&apos;"); break;
 					default:
 						if (ch->c >= 32 && ch->c <= 127)
-							fprintf(out, "%c", ch->c);
+							fz_printf(out, "%c", ch->c);
 						else
-							fprintf(out, "&#x%x;", ch->c);
+							fz_printf(out, "&#x%x;", ch->c);
 						break;
 					}
-					fprintf(out, "\"/>\n");
+					fz_printf(out, "\"/>\n");
 				}
-				fprintf(out, "</span>\n");
+				fz_printf(out, "</span>\n");
 			}
-			fprintf(out, "</line>\n");
+			fz_printf(out, "</line>\n");
 		}
-		fprintf(out, "</block>\n");
+		fz_printf(out, "</block>\n");
 	}
-	fprintf(out, "</page>\n");
+	fz_printf(out, "</page>\n");
 }
 
 void
-fz_print_text_page(fz_context *ctx, FILE *out, fz_text_page *page)
+fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
@@ -744,11 +744,11 @@ fz_print_text_page(fz_context *ctx, FILE *out, fz_text_page *page)
 				{
 					n = fz_runetochar(utf, ch->c);
 					for (i = 0; i < n; i++)
-						putc(utf[i], out);
+						fz_printf(out, "%c", utf[i]);
 				}
 			}
-			fprintf(out, "\n");
+			fz_printf(out, "\n");
 		}
-		fprintf(out, "\n");
+		fz_printf(out, "\n");
 	}
 }
