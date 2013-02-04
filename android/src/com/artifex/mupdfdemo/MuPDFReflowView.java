@@ -1,9 +1,12 @@
 package com.artifex.mupdfdemo;
 
+import java.io.UnsupportedEncodingException;
+
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Base64;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
@@ -46,7 +49,14 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 			}
 			@Override
 			protected void onPostExecute(String result) {
-				loadData(result, "text/html", null);
+				byte [] utf8;
+				try {
+					utf8 = result.getBytes("UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					utf8 = result.getBytes();
+				}
+				String b64 = Base64.encodeToString(utf8, Base64.DEFAULT);
+				loadData(b64, "text/html; charset=utf-8", "base64");
 			}
 		};
 		mLoadHTML.execute();

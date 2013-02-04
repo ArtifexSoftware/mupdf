@@ -218,7 +218,7 @@ public class MuPDFCore
 						case '<': res += "&lt;";break;
 						case '>': res += "&gt;";break;
 						case '&': res += "&amp;";break;
-						default: res += (tc.c >= 32 && tc.c <= 127) ? tc.c : "#x"+Integer.toHexString(tc.c);
+						default: res += tc.c;
 						}
 					}
 				}
