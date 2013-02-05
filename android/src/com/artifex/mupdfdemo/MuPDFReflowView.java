@@ -24,16 +24,6 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		mCore = core;
 		mParentSize = parentSize;
 		mContentHeight = parentSize.y;
-	}
-
-	private void requestHeight() {
-		// Get the webview to report the content height via the interface setup
-		// above. Workaround for getContentHeight not working
-		loadUrl("javascript:elem=document.getElementById('content');window.HTMLOUT.reportContentHeight("+mParentSize.x+"*elem.offsetHeight/elem.offsetWidth)");
-	}
-
-	public void setPage(int page, PointF size) {
-		mPage = page;
 		getSettings().setJavaScriptEnabled(true);
 		addJavascriptInterface(new Object(){
 			public void reportContentHeight(String value) {
@@ -46,6 +36,19 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 				requestHeight();
 			}
 		});
+	}
+
+	private void requestHeight() {
+		// Get the webview to report the content height via the interface setup
+		// above. Workaround for getContentHeight not working
+		loadUrl("javascript:elem=document.getElementById('content');window.HTMLOUT.reportContentHeight("+mParentSize.x+"*elem.offsetHeight/elem.offsetWidth)");
+	}
+
+	public void setPage(int page, PointF size) {
+		mPage = page;
+		if (mLoadHTML != null) {
+			mLoadHTML.cancel(true);
+		}
 		mLoadHTML = new AsyncTask<Void,Void,byte[]>() {
 			@Override
 			protected byte[] doInBackground(Void... params) {
@@ -112,6 +115,10 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	}
 
 	public void releaseResources() {
+		if (mLoadHTML != null) {
+			mLoadHTML.cancel(true);
+			mLoadHTML = null;
+		}
 	}
 
 	@Override
