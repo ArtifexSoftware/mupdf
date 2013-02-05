@@ -65,7 +65,7 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	}
 
 	public void setScale(float scale) {
-		loadUrl("javascript:document.getElementById('content').style.fontSize=\""+(int)(scale*100)+"%\"");
+		loadUrl("javascript:document.getElementById('content').style.zoom=\""+(int)(scale*100)+"%\"");
 		requestHeight();
 	}
 
