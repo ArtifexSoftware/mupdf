@@ -30,10 +30,7 @@ public class MuPDFReflowAdapter extends BaseAdapter {
 
 	public View getView(int position, View convertView, ViewGroup parent) {
 		final MuPDFReflowView reflowView;
-		// Should reuse old views if possible, but WebViews seem to refuse to
-		// decrease height even when new content is loaded, so create a new view
-		// each time as a workaround
-		if (true || convertView == null) {
+		if (convertView == null) {
 			reflowView = new MuPDFReflowView(mContext, mCore, new Point(parent.getWidth(), parent.getHeight()));
 		} else {
 			reflowView = (MuPDFReflowView) convertView;
