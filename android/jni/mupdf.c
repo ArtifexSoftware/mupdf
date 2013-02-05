@@ -1272,7 +1272,6 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
 	fz_device *dev  = NULL;
-	float zoom;
 	fz_matrix ctm;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1291,8 +1290,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_rect mbrect;
 		int b, l, s, c;
 
-		zoom = glo->resolution / 72;
-		ctm = fz_scale(zoom, zoom);
+		ctm = fz_identity;
 		mbrect = fz_transform_rect(ctm, pc->media_box);
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx, mbrect);
