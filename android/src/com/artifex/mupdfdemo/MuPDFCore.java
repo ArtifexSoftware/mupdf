@@ -201,18 +201,9 @@ public class MuPDFCore
 		return searchPage(text);
 	}
 
-	public synchronized String html(int page) {
+	public synchronized byte[] html(int page) {
 		gotoPage(page);
-		byte chars[] = textAsHtml();
-		String res = new String();
-		int i;
-		int len = chars.length;
-
-		for (i = 0; i < len; i++) {
-			res += (char)(chars[i] & 0xFF);
-		}
-
-		return res;
+		return textAsHtml();
 	}
 
 	public synchronized TextWord [][] textLines(int page) {

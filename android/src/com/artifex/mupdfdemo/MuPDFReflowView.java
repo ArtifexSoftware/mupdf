@@ -17,7 +17,7 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	private final Point mParentSize;
 	private int mPage;
 	private int mContentHeight;
-	AsyncTask<Void,Void,String> mLoadHTML;
+	AsyncTask<Void,Void,byte[]> mLoadHTML;
 
 	public MuPDFReflowView(Context c, MuPDFCore core, Point parentSize) {
 		super(c);
@@ -46,20 +46,14 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 				requestHeight();
 			}
 		});
-		mLoadHTML = new AsyncTask<Void,Void,String>() {
+		mLoadHTML = new AsyncTask<Void,Void,byte[]>() {
 			@Override
-			protected String doInBackground(Void... params) {
+			protected byte[] doInBackground(Void... params) {
 				return mCore.html(mPage);
 			}
 			@Override
-			protected void onPostExecute(String result) {
-				byte [] utf8;
-				try {
-					utf8 = result.getBytes("UTF-8");
-				} catch (UnsupportedEncodingException e) {
-					utf8 = result.getBytes();
-				}
-				String b64 = Base64.encodeToString(utf8, Base64.DEFAULT);
+			protected void onPostExecute(byte[] result) {
+				String b64 = Base64.encodeToString(result, Base64.DEFAULT);
 				loadData(b64, "text/html; charset=utf-8", "base64");
 			}
 		};
