@@ -886,45 +886,18 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	return 1;
 }
 
-static fz_text_char textcharat(fz_text_page *page, int idx)
-{
-	static fz_text_char emptychar = { {0,0,0,0}, ' ' };
-	fz_text_block *block;
-	fz_text_line *line;
-	fz_text_span *span;
-	int ofs = 0;
-	for (block = page->blocks; block < page->blocks + page->len; block++)
-	{
-		for (line = block->lines; line < block->lines + block->len; line++)
-		{
-			for (span = line->spans; span < line->spans + line->len; span++)
-			{
-				if (idx < ofs + span->len)
-					return span->text[idx - ofs];
-				/* pseudo-newline */
-				if (span + 1 == line->spans + line->len)
-				{
-					if (idx == ofs + span->len)
-						return emptychar;
-					ofs++;
-				}
-				ofs += span->len;
-			}
-		}
-	}
-	return emptychar;
-}
-
 static int
 charat(fz_text_page *page, int idx)
 {
-	return textcharat(page, idx).c;
+	fz_char_and_box cab;
+	return fz_text_char_at(&cab, page, idx)->c;
 }
 
 static fz_rect
 bboxcharat(fz_text_page *page, int idx)
 {
-	return textcharat(page, idx).bbox;
+	fz_char_and_box cab;
+	return fz_text_char_at(&cab, page, idx)->bbox;
 }
 
 static int
@@ -932,14 +905,17 @@ textlen(fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
 	int len = 0;
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			for (span = line->spans; span < line->spans + line->len; span++)
+			int span_num;
+			for (span_num = 0; span_num < line->len; span_num++)
+			{
+				fz_text_span *span = line->spans[span_num];
 				len += span->len;
+			}
 			len++; /* pseudo-newline */
 		}
 	}
@@ -1250,14 +1226,16 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 				for (s = 0; s < line->len; s++)
 				{
-					fz_text_span *span = &line->spans[s];
+					fz_text_span *span = line->spans[s];
 					jobjectArray *carr = (*env)->NewObjectArray(env, span->len, textCharClass, NULL);
 					if (carr == NULL) fz_throw(ctx, "NewObjectArray failed");
 
 					for (c = 0; c < span->len; c++)
 					{
 						fz_text_char *ch = &span->text[c];
-						jobject cobj = (*env)->NewObject(env, textCharClass, ctor, ch->bbox.x0, ch->bbox.y0, ch->bbox.x1, ch->bbox.y1, ch->c);
+						fz_rect bbox;
+						fz_text_char_bbox(&bbox, span, c);
+						jobject cobj = (*env)->NewObject(env, textCharClass, ctor, bbox.x0, bbox.y0, bbox.x1, bbox.y1, ch->c);
 						if (cobj == NULL) fz_throw(ctx, "NewObjectfailed");
 
 						(*env)->SetObjectArrayElement(env, carr, c, cobj);
@@ -1328,6 +1306,8 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
+
+		fz_text_analysis(ctx, sheet, text);
 
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_buffer(ctx, buf);

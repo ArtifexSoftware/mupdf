@@ -376,6 +376,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			}
 			else if (showtext == TEXT_HTML)
 			{
+				fz_text_analysis(ctx, sheet, text);
 				fz_print_text_page_html(ctx, out, text);
 			}
 			else if (showtext == TEXT_PLAIN)

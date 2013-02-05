@@ -2,8 +2,12 @@
 
 #define LINE_DIST 0.9f
 #define SPACE_DIST 0.2f
-#define SPACE_MAX_DIST 15.0f
+#define SPACE_MAX_DIST 0.8f
 #define PARAGRAPH_DIST 0.5f
+
+#undef DEBUG_SPANS
+#undef DEBUG_INTERNALS
+#undef DEBUG_LINE_HEIGHTS
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -11,15 +15,326 @@
 
 typedef struct fz_text_device_s fz_text_device;
 
+typedef struct span_soup_s span_soup;
+
 struct fz_text_device_s
 {
 	fz_text_sheet *sheet;
 	fz_text_page *page;
-	fz_text_line cur_line;
-	fz_text_span cur_span;
-	fz_point point;
+	span_soup *spans;
+	fz_text_span *cur_span;
 	int lastchar;
 };
+
+static fz_rect *
+add_point_to_rect(fz_rect *a, const fz_point *p)
+{
+	if (p->x < a->x0)
+		a->x0 = p->x;
+	if (p->x > a->x1)
+		a->x1 = p->x;
+	if (p->y < a->y0)
+		a->y0 = p->y;
+	if (p->y > a->y1)
+		a->y1 = p->y;
+	return a;
+}
+
+fz_rect *
+fz_text_char_bbox(fz_rect *bbox, fz_text_span *span, int i)
+{
+	fz_point a, d;
+	const fz_point *max;
+	fz_text_char *ch;
+
+	if (!span || i >= span->len)
+	{
+		*bbox = fz_empty_rect;
+	}
+	ch = &span->text[i];
+	if (i == span->len-1)
+		max = &span->max;
+	else
+		max = &span->text[i+1].p;
+	a.x = 0;
+	a.y = span->ascender_max;
+	fz_transform_vector(&a, &span->transform);
+	d.x = 0;
+	d.y = span->descender_min;
+	fz_transform_vector(&d, &span->transform);
+	bbox->x0 = bbox->x1 = ch->p.x + a.x;
+	bbox->y0 = bbox->y1 = ch->p.y + a.y;
+	a.x += max->x;
+	a.y += max->y;
+	add_point_to_rect(bbox, &a);
+	a.x = ch->p.x + d.x;
+	a.y = ch->p.y + d.y;
+	add_point_to_rect(bbox, &a);
+	a.x = max->x + d.x;
+	a.y = max->y + d.y;
+	add_point_to_rect(bbox, &a);
+	return bbox;
+}
+
+static void
+add_bbox_to_span(fz_text_span *span)
+{
+	fz_point a, d;
+	fz_rect *bbox = &span->bbox;
+
+	if (!span)
+		return;
+	a.x = 0;
+	a.y = span->ascender_max;
+	fz_transform_vector(&a, &span->transform);
+	d.x = 0;
+	d.y = span->descender_min;
+	fz_transform_vector(&d, &span->transform);
+	bbox->x0 = bbox->x1 = span->min.x + a.x;
+	bbox->y0 = bbox->y1 = span->min.y + a.y;
+	a.x += span->max.x;
+	a.y += span->max.y;
+	add_point_to_rect(bbox, &a);
+	a.x = span->min.x + d.x;
+	a.y = span->min.y + d.y;
+	add_point_to_rect(bbox, &a);
+	a.x = span->max.x + d.x;
+	a.y = span->max.y + d.y;
+	add_point_to_rect(bbox, &a);
+}
+
+struct span_soup_s
+{
+	fz_context *ctx;
+	int len, cap;
+	fz_text_span **spans;
+};
+
+static span_soup *
+new_span_soup(fz_context *ctx)
+{
+	span_soup *soup = fz_malloc_struct(ctx, span_soup);
+	soup->ctx = ctx;
+	soup->len = 0;
+	soup->cap = 0;
+	soup->spans = NULL;
+	return soup;
+}
+
+static void
+free_span_soup(span_soup *soup)
+{
+	int i;
+
+	if (soup == NULL)
+		return;
+	for (i = 0; i < soup->len; i++)
+	{
+		fz_free(soup->ctx, soup->spans[i]);
+	}
+	fz_free(soup->ctx, soup->spans);
+	fz_free(soup->ctx, soup);
+}
+
+static void
+add_span_to_soup(span_soup *soup, fz_text_span *span)
+{
+	if (span == NULL)
+		return;
+	if (soup->len == soup->cap)
+	{
+		int newcap = (soup->cap ? soup->cap * 2 : 16);
+		soup->spans = fz_resize_array(soup->ctx, soup->spans, newcap, sizeof(*soup->spans));
+		soup->cap = newcap;
+	}
+	add_bbox_to_span(span);
+	soup->spans[soup->len++] = span;
+}
+
+static fz_text_line *
+push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_line, float distance)
+{
+	fz_text_line *line;
+	fz_text_block *block;
+	fz_text_page *page = tdev->page;
+
+	if (new_line)
+	{
+		/* So, a new line. Part of the same block or not? */
+		float size = fz_matrix_expansion(&span->transform);
+		if (distance == 0 || distance > size * 1.5 || distance < -size * PARAGRAPH_DIST || page->len == 0)
+		{
+			/* New block */
+			if (page->len == page->cap)
+			{
+				int newcap = (page->cap ? page->cap*2 : 4);
+				page->blocks = fz_resize_array(ctx, page->blocks, newcap, sizeof(*page->blocks));
+				page->cap = newcap;
+			}
+			page->blocks[page->len].cap = 0;
+			page->blocks[page->len].len = 0;
+			page->blocks[page->len].lines = 0;
+			page->blocks[page->len].bbox = fz_empty_rect;
+			page->len++;
+			distance = 0;
+		}
+
+		/* New line */
+		block = &page->blocks[page->len-1];
+		if (block->len == block->cap)
+		{
+			int newcap = (block->cap ? block->cap*2 : 4);
+			block->lines = fz_resize_array(ctx, block->lines, newcap, sizeof(*block->lines));
+			block->cap = newcap;
+		}
+		block->lines[block->len].cap = 0;
+		block->lines[block->len].len = 0;
+		block->lines[block->len].spans = NULL;
+		block->lines[block->len].distance = distance;
+		block->lines[block->len].bbox = fz_empty_rect;
+		block->len++;
+	}
+
+	/* Find last line and append to it */
+	block = &page->blocks[page->len-1];
+	line = &block->lines[block->len-1];
+
+	if (line->len == line->cap)
+	{
+		int newcap = (line->cap ? line->cap*2 : 4);
+		line->spans = fz_resize_array(ctx, line->spans, newcap, sizeof(*line->spans));
+		line->cap = newcap;
+	}
+	fz_union_rect(&block->lines[block->len-1].bbox, &span->bbox);
+	fz_union_rect(&block->bbox, &span->bbox);
+	span->base_offset = distance;
+	line->spans[line->len++] = span;
+	return line;
+}
+
+#ifdef DEBUG_SPANS
+static void
+dump_span(fz_text_span *s)
+{
+	int i;
+	for (i=0; i < s->len; i++)
+	{
+		printf("%c", s->text[i].c);
+	}
+}
+#endif
+
+static inline void
+normalise(fz_point *p)
+{
+	float len = p->x * p->x + p->y * p->y;
+	if (len != 0)
+	{
+		len = sqrtf(len);
+		p->x /= len;
+		p->y /= len;
+	}
+}
+
+static void
+strain_soup(fz_context *ctx, fz_text_device *tdev)
+{
+	span_soup *soup = tdev->spans;
+	fz_text_line *last_line = NULL;
+	fz_text_span *last_span = NULL;
+	int span_num;
+
+	/* Really dumb implementation to match what we had before */
+	for (span_num=0; span_num < soup->len; span_num++)
+	{
+		fz_text_span *span = soup->spans[span_num];
+		int new_line = 1;
+		float distance = 0;
+		float spacing = 0;
+		soup->spans[span_num] = NULL;
+		if (last_span)
+		{
+			/* If we have a last_span, we must have a last_line */
+			/* Do span and last_line share the same baseline? */
+			fz_point p, q, perp_r;
+			float dot;
+			float size = fz_matrix_expansion(&span->transform);
+
+#ifdef DEBUG_SPANS
+			{
+				printf("Comparing: \"");
+				dump_span(last_span);
+				printf("\" and \"");
+				dump_span(span);
+				printf("\"\n");
+			}
+#endif
+
+			p.x = last_line->spans[0]->max.x - last_line->spans[0]->min.x;
+			p.y = last_line->spans[0]->max.y - last_line->spans[0]->min.y;
+			normalise(&p);
+			q.x = span->max.x - span->min.x;
+			q.y = span->max.y - span->min.y;
+			normalise(&q);
+#ifdef DEBUG_SPANS
+			printf("last_span=%g %g -> %g %g = %g %g\n", last_span->min.x, last_span->min.y, last_span->max.x, last_span->max.y, p.x, p.y);
+			printf("span     =%g %g -> %g %g = %g %g\n", span->min.x, span->min.y, span->max.x, span->max.y, q.x, q.y);
+#endif
+			perp_r.y = last_line->spans[0]->min.x - span->min.x;
+			perp_r.x = -(last_line->spans[0]->min.y - span->min.y);
+			/* Check if p and q are parallel. If so, then this
+			 * line is parallel with the last one. */
+			dot = p.x * q.x + p.y * q.y;
+			if (fabsf(dot) > 0.9995)
+			{
+				/* If we take the dot product of normalised(p) and
+				 * perp(r), we get the perpendicular distance from
+				 * one line to the next (assuming they are parallel). */
+				distance = p.x * perp_r.x + p.y * perp_r.y;
+				/* We allow 'small' distances of baseline changes
+				 * to cope with super/subscript. FIXME: We should
+				 * gather subscript/superscript information here. */
+				new_line = (fabsf(distance) > size * LINE_DIST);
+			}
+			else
+			{
+				new_line = 1;
+				distance = 0;
+			}
+			if (!new_line)
+			{
+				fz_point delta;
+
+				delta.x = span->min.x - last_span->max.x;
+				delta.y = span->min.y - last_span->max.y;
+
+				spacing = (p.x * delta.x + p.y * delta.y);
+				spacing = fabsf(spacing);
+				/* Only allow changes in baseline (subscript/superscript etc)
+				 * when the spacing is small. */
+				if (spacing * fabsf(distance) > size * LINE_DIST && fabsf(distance) > size * 0.1f)
+				{
+					new_line = 1;
+					distance = 0;
+					spacing = 0;
+				}
+				else
+				{
+					spacing /= size * SPACE_DIST;
+					/* Apply the same logic here as when we're adding chars to build spans. */
+					if (spacing >= 1 && spacing < (SPACE_MAX_DIST/SPACE_DIST))
+						spacing = 1;
+				}
+			}
+#ifdef DEBUG_SPANS
+			printf("dot=%g new_line=%d distance=%g size=%g spacing=%g\n", dot, new_line, distance, size, spacing);
+#endif
+		}
+		span->spacing = spacing;
+		last_line = push_span(ctx, tdev, span, new_line, distance);
+		last_span = span;
+	}
+}
 
 fz_text_sheet *
 fz_new_text_sheet(fz_context *ctx)
@@ -103,197 +418,221 @@ fz_new_text_page(fz_context *ctx, const fz_rect *mediabox)
 	return page;
 }
 
+static void
+fz_free_text_line_contents(fz_context *ctx, fz_text_line *line)
+{
+	int span_num;
+	for (span_num = 0; span_num < line->len; span_num++)
+	{
+		fz_text_span *span = line->spans[span_num];
+		fz_free(ctx, span->text);
+		fz_free(ctx, span);
+	}
+	fz_free(ctx, line->spans);
+}
+
 void
 fz_free_text_page(fz_context *ctx, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
 		for (line = block->lines; line < block->lines + block->len; line++)
-		{
-			for (span = line->spans; span < line->spans + line->len; span++)
-			{
-				fz_free(ctx, span->text);
-			}
-			fz_free(ctx, line->spans);
-		}
+			fz_free_text_line_contents(ctx, line);
 		fz_free(ctx, block->lines);
 	}
 	fz_free(ctx, page->blocks);
 	fz_free(ctx, page);
 }
 
+static fz_text_span *
+fz_new_text_span(fz_context *ctx, const fz_point *p, int wmode, const fz_matrix *trm)
+{
+	fz_text_span *span = fz_malloc_struct(ctx, fz_text_span);
+	span->ascender_max = 0;
+	span->descender_min = 0;
+	span->cap = 0;
+	span->len = 0;
+	span->min = *p;
+	span->max = *p;
+	span->wmode = wmode;
+	span->transform.a = trm->a;
+	span->transform.b = trm->b;
+	span->transform.c = trm->c;
+	span->transform.d = trm->d;
+	span->transform.e = 0;
+	span->transform.f = 0;
+	span->text = NULL;
+	return span;
+}
+
 static void
-append_char(fz_context *ctx, fz_text_span *span, int c, fz_rect bbox)
+add_char_to_span(fz_context *ctx, fz_text_span *span, int c, fz_point *p, fz_point *max, fz_text_style *style)
 {
 	if (span->len == span->cap)
 	{
-		int new_cap = fz_maxi(64, span->cap * 2);
-		span->text = fz_resize_array(ctx, span->text, new_cap, sizeof(*span->text));
-		span->cap = new_cap;
+		int newcap = (span->cap ? span->cap * 2 : 16);
+		span->text = fz_resize_array(ctx, span->text, newcap, sizeof(fz_text_char));
+		span->cap = newcap;
+		span->bbox = fz_empty_rect;
 	}
-	fz_union_rect(&span->bbox, &bbox);
+	span->max = *max;
+	if (style->ascender > span->ascender_max)
+		span->ascender_max = style->ascender;
+	if (style->descender < span->descender_min)
+		span->descender_min = style->descender;
 	span->text[span->len].c = c;
-	span->text[span->len].bbox = bbox;
+	span->text[span->len].p = *p;
+	span->text[span->len].style = style;
 	span->len++;
 }
 
 static void
-init_span(fz_context *ctx, fz_text_span *span, fz_text_style *style)
+fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style, int c, fz_matrix *trm, float adv, int wmode)
 {
-	span->style = style;
-	span->bbox = fz_empty_rect;
-	span->len = span->cap = 0;
-	span->text = NULL;
-}
+	int can_append = 1;
+	int add_space = 0;
+	fz_point dir, ndir, p, q;
+	float size;
+	fz_point delta;
+	float spacing = 0;
+	float base_offset = 0;
 
-static void
-append_span(fz_context *ctx, fz_text_line *line, fz_text_span *span)
-{
-	if (span->len == 0)
-		return;
-	if (line->len == line->cap)
+	if (wmode == 0)
 	{
-		int new_cap = fz_maxi(8, line->cap * 2);
-		line->spans = fz_resize_array(ctx, line->spans, new_cap, sizeof(*line->spans));
-		line->cap = new_cap;
+		dir.x = 1;
+		dir.y = 0;
 	}
-	fz_union_rect(&line->bbox, &span->bbox);
-	line->spans[line->len++] = *span;
-}
-
-static void
-init_line(fz_context *ctx, fz_text_line *line)
-{
-	line->bbox = fz_empty_rect;
-	line->len = line->cap = 0;
-	line->spans = NULL;
-}
-
-static void
-append_line(fz_context *ctx, fz_text_block *block, fz_text_line *line)
-{
-	if (block->len == block->cap)
+	else
 	{
-		int new_cap = fz_maxi(16, block->cap * 2);
-		block->lines = fz_resize_array(ctx, block->lines, new_cap, sizeof *block->lines);
-		block->cap = new_cap;
+		dir.x = 0;
+		dir.y = 1;
 	}
-	fz_union_rect(&block->bbox, &line->bbox);
-	block->lines[block->len++] = *line;
-}
+	fz_transform_vector(&dir, trm);
+	ndir = dir;
+	normalise(&ndir);
+	/* dir = direction vector for motion. ndir = normalised(dir) */
 
-static fz_text_block *
-lookup_block_for_line(fz_context *ctx, fz_text_page *page, fz_text_line *line)
-{
-	float size = line->len > 0 && line->spans[0].len > 0 ? line->spans[0].style->size : 1;
-	int i;
+	size = fz_matrix_expansion(trm);
 
-	for (i = 0; i < page->len; i++)
+	if (dev->cur_span == NULL ||
+		trm->a != dev->cur_span->transform.a || trm->b != dev->cur_span->transform.b ||
+		trm->c != dev->cur_span->transform.c || trm->d != dev->cur_span->transform.d)
 	{
-		fz_text_block *block = page->blocks + i;
-		float w = block->bbox.x1 - block->bbox.x0;
-		float dx = line->bbox.x0 - block->bbox.x0;
-		float dy = line->bbox.y0 - block->bbox.y1;
-		if (dy > -size * 1.5f && dy < size * PARAGRAPH_DIST)
-			if (line->bbox.x0 <= block->bbox.x1 && line->bbox.x1 >= block->bbox.x0)
-				if (fz_abs(dx) < w / 2)
-					return block;
+		/* If the matrix has changed (or if we don't have a span at
+		 * all), then we can't append. */
+#ifdef DEBUG_SPANS
+		printf("Transform changed\n");
+#endif
+		can_append = 0;
 	}
-
-	if (page->len == page->cap)
+	else
 	{
-		int new_cap = fz_maxi(16, page->cap * 2);
-		page->blocks = fz_resize_array(ctx, page->blocks, new_cap, sizeof(*page->blocks));
-		page->cap = new_cap;
+		/* Calculate how far we've moved since the end of the current
+		 * span. */
+		delta.x = trm->e - dev->cur_span->max.x;
+		delta.y = trm->f - dev->cur_span->max.y;
+
+		/* The transform has not changed, so we know we're in the same
+		 * direction. Calculate 2 distances; how far off the previous
+		 * baseline we are, together with how far along the baseline
+		 * we are from the expected position. */
+		spacing = ndir.x * delta.x + ndir.y * delta.y;
+		base_offset = -ndir.y * delta.x + ndir.x * delta.y;
+
+		spacing /= size * SPACE_DIST;
+		spacing = fabsf(spacing);
+		if (fabsf(base_offset) < size * 0.1)
+		{
+			/* Only a small amount off the baseline - we'll take this */
+			if (spacing < 1.0)
+			{
+				/* Motion is in line, and small. */
+			}
+			else if (spacing >= 1 && spacing < (SPACE_MAX_DIST/SPACE_DIST))
+			{
+				/* Motion is in line, but large enough
+				 * to warrant us adding a space */
+				if (dev->lastchar != ' ' && wmode == 0)
+					add_space = 1;
+			}
+			else
+			{
+				/* Motion is in line, but too large - split to a new span */
+				can_append = 0;
+			}
+		}
+		else
+		{
+			can_append = 0;
+			spacing = 0;
+		}
 	}
 
-	page->blocks[page->len].bbox = fz_empty_rect;
-	page->blocks[page->len].len = 0;
-	page->blocks[page->len].cap = 0;
-	page->blocks[page->len].lines = NULL;
+#ifdef DEBUG_SPANS
+	printf("%c%c append=%d space=%d size=%g spacing=%g base_offset=%g\n", dev->lastchar, c, can_append, add_space, size, spacing, base_offset);
+#endif
 
-	return &page->blocks[page->len++];
-}
-
-static void
-insert_line(fz_context *ctx, fz_text_page *page, fz_text_line *line)
-{
-	if (line->len == 0)
-		return;
-	append_line(ctx, lookup_block_for_line(ctx, page, line), line);
-}
-
-static fz_rect
-fz_split_bbox(fz_rect bbox, int i, int n)
-{
-	float w = (bbox.x1 - bbox.x0) / n;
-	float x0 = bbox.x0;
-	bbox.x0 = x0 + i * w;
-	bbox.x1 = x0 + (i + 1) * w;
-	return bbox;
-}
-
-static void
-fz_flush_text_line(fz_context *ctx, fz_text_device *dev, fz_text_style *style)
-{
-	append_span(ctx, &dev->cur_line, &dev->cur_span);
-	insert_line(ctx, dev->page, &dev->cur_line);
-	init_span(ctx, &dev->cur_span, style);
-	init_line(ctx, &dev->cur_line);
-}
-
-static void
-fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style, int c, fz_rect bbox)
-{
-	if (!dev->cur_span.style)
-		dev->cur_span.style = style;
-	if (style != dev->cur_span.style)
+	p.x = trm->e;
+	p.y = trm->f;
+	if (can_append == 0)
 	{
-		append_span(ctx, &dev->cur_line, &dev->cur_span);
-		init_span(ctx, &dev->cur_span, style);
+		/* Start a new span */
+		add_span_to_soup(dev->spans, dev->cur_span);
+		dev->cur_span = NULL;
+		dev->cur_span = fz_new_text_span(ctx, &p, wmode, trm);
+		dev->cur_span->spacing = 0;
 	}
-	append_char(ctx, &dev->cur_span, c, bbox);
+	if (add_space)
+	{
+		q.x = - 0.2f;
+		q.y = 0;
+		fz_transform_point(&q, trm);
+		add_char_to_span(ctx, dev->cur_span, ' ', &p, &q, style);
+	}
+	/* Advance the matrix */
+	q.x = trm->e += adv * dir.x;
+	q.y = trm->f += adv * dir.y;
+	add_char_to_span(ctx, dev->cur_span, c, &p, &q, style);
 }
 
 static void
-fz_add_text_char(fz_context *ctx, fz_text_device *dev, fz_text_style *style, int c, fz_rect bbox)
+fz_add_text_char(fz_context *ctx, fz_text_device *dev, fz_text_style *style, int c, fz_matrix *trm, float adv, int wmode)
 {
 	switch (c)
 	{
 	case -1: /* ignore when one unicode character maps to multiple glyphs */
 		break;
 	case 0xFB00: /* ff */
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 0, 2));
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 1, 2));
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
 		break;
 	case 0xFB01: /* fi */
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 0, 2));
-		fz_add_text_char_imp(ctx, dev, style, 'i', fz_split_bbox(bbox, 1, 2));
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'i', trm, adv/2, wmode);
 		break;
 	case 0xFB02: /* fl */
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 0, 2));
-		fz_add_text_char_imp(ctx, dev, style, 'l', fz_split_bbox(bbox, 1, 2));
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'l', trm, adv/2, wmode);
 		break;
 	case 0xFB03: /* ffi */
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 0, 3));
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 1, 3));
-		fz_add_text_char_imp(ctx, dev, style, 'i', fz_split_bbox(bbox, 2, 3));
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'i', trm, adv/3, wmode);
 		break;
 	case 0xFB04: /* ffl */
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 0, 3));
-		fz_add_text_char_imp(ctx, dev, style, 'f', fz_split_bbox(bbox, 1, 3));
-		fz_add_text_char_imp(ctx, dev, style, 'l', fz_split_bbox(bbox, 2, 3));
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 'l', trm, adv/3, wmode);
 		break;
 	case 0xFB05: /* long st */
 	case 0xFB06: /* st */
-		fz_add_text_char_imp(ctx, dev, style, 's', fz_split_bbox(bbox, 0, 2));
-		fz_add_text_char_imp(ctx, dev, style, 't', fz_split_bbox(bbox, 1, 2));
+		fz_add_text_char_imp(ctx, dev, style, 's', trm, adv/2, wmode);
+		fz_add_text_char_imp(ctx, dev, style, 't', trm, adv/2, wmode);
 		break;
 	default:
-		fz_add_text_char_imp(ctx, dev, style, c, bbox);
+		fz_add_text_char_imp(ctx, dev, style, c, trm, adv, wmode);
 		break;
 	}
 }
@@ -301,17 +640,11 @@ fz_add_text_char(fz_context *ctx, fz_text_device *dev, fz_text_style *style, int
 static void
 fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_matrix *ctm, fz_text_style *style)
 {
-	fz_point *pen = &dev->point;
 	fz_font *font = text->font;
 	FT_Face face = font->ft_face;
 	fz_matrix tm = text->trm;
 	fz_matrix trm;
-	float size;
 	float adv;
-	fz_rect rect;
-	fz_point dir, ndir;
-	fz_point delta, ndelta;
-	float dist, dot;
 	float ascender = 1;
 	float descender = 0;
 	int multi;
@@ -335,30 +668,12 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 		ascender = font->bbox.y1;
 		descender = font->bbox.y0;
 	}
-
-	rect = fz_empty_rect;
-
-	if (text->wmode == 0)
-	{
-		dir.x = 1;
-		dir.y = 0;
-	}
-	else
-	{
-		dir.x = 0;
-		dir.y = 1;
-	}
+	style->ascender = ascender;
+	style->descender = descender;
 
 	tm.e = 0;
 	tm.f = 0;
 	fz_concat(&trm, &tm, ctm);
-
-	fz_transform_vector(&dir, &trm);
-	dist = sqrtf(dir.x * dir.x + dir.y * dir.y);
-	ndir.x = dir.x / dist;
-	ndir.y = dir.y / dist;
-
-	size = fz_matrix_expansion(&trm);
 
 	for (i = 0; i < text->len; i++)
 	{
@@ -366,41 +681,6 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 		tm.e = text->items[i].x;
 		tm.f = text->items[i].y;
 		fz_concat(&trm, &tm, ctm);
-
-		delta.x = pen->x - trm.e;
-		delta.y = pen->y - trm.f;
-		if (pen->x == -1 && pen->y == -1)
-			delta.x = delta.y = 0;
-
-		dist = sqrtf(delta.x * delta.x + delta.y * delta.y);
-
-		/* Add space and newlines based on pen movement */
-		if (dist > 0)
-		{
-			ndelta.x = delta.x / dist;
-			ndelta.y = delta.y / dist;
-			dot = ndelta.x * ndir.x + ndelta.y * ndir.y;
-
-			if (fabsf(dot) > 0.9995f && dist > size * SPACE_DIST && dist < size * SPACE_MAX_DIST)
-			{
-				if (dev->lastchar != ' ')
-				{
-					fz_rect spacerect;
-					spacerect.x0 = -0.2f;
-					spacerect.y0 = descender;
-					spacerect.x1 = 0;
-					spacerect.y1 = ascender;
-					fz_transform_rect(&spacerect, &trm);
-					fz_add_text_char(ctx, dev, style, ' ', spacerect);
-					dev->lastchar = ' ';
-				}
-			}
-			else if (dist > size * LINE_DIST)
-			{
-				fz_flush_text_line(ctx, dev, style);
-				dev->lastchar = ' ';
-			}
-		}
 
 		/* Calculate bounding box and new pen position based on font metrics */
 		if (font->ft_face)
@@ -418,24 +698,11 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 			FT_Get_Advance(font->ft_face, text->items[i].gid, mask, &ftadv);
 			adv = ftadv / 65536.0f;
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
-
-			rect.x0 = 0;
-			rect.y0 = descender;
-			rect.x1 = adv;
-			rect.y1 = ascender;
 		}
 		else
 		{
 			adv = font->t3widths[text->items[i].gid];
-			rect.x0 = 0;
-			rect.y0 = descender;
-			rect.x1 = adv;
-			rect.y1 = ascender;
 		}
-
-		fz_transform_rect(&rect, &trm);
-		pen->x = trm.e + dir.x * adv;
-		pen->y = trm.f + dir.y * adv;
 
 		/* Check for one glyph to many char mapping */
 		for (j = i + 1; j < text->len; j++)
@@ -445,14 +712,13 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 
 		if (multi == 1)
 		{
-			fz_add_text_char(ctx, dev, style, text->items[i].ucs, rect);
+			fz_add_text_char(ctx, dev, style, text->items[i].ucs, &trm, adv, text->wmode);
 		}
 		else
 		{
 			for (j = 0; j < multi; j++)
 			{
-				fz_rect part = fz_split_bbox(rect, j, multi);
-				fz_add_text_char(ctx, dev, style, text->items[i + j].ucs, part);
+				fz_add_text_char(ctx, dev, style, text->items[i + j].ucs, &trm, adv/multi, text->wmode);
 			}
 			i += j - 1;
 		}
@@ -514,8 +780,11 @@ fz_text_free_user(fz_device *dev)
 	fz_context *ctx = dev->ctx;
 	fz_text_device *tdev = dev->user;
 
-	append_span(ctx, &tdev->cur_line, &tdev->cur_span);
-	insert_line(ctx, tdev->page, &tdev->cur_line);
+	add_span_to_soup(tdev->spans, tdev->cur_span);
+	tdev->cur_span = NULL;
+
+	strain_soup(ctx, tdev);
+	free_span_soup(tdev->spans);
 
 	/* TODO: smart sorting of blocks in reading order */
 	/* TODO: unicode NFC normalization */
@@ -532,12 +801,9 @@ fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 	fz_text_device *tdev = fz_malloc_struct(ctx, fz_text_device);
 	tdev->sheet = sheet;
 	tdev->page = page;
-	tdev->point.x = -1;
-	tdev->point.y = -1;
+	tdev->spans = new_span_soup(ctx);
+	tdev->cur_span = NULL;
 	tdev->lastchar = ' ';
-
-	init_line(ctx, &tdev->cur_line);
-	init_span(ctx, &tdev->cur_span, NULL);
 
 	dev = fz_new_device(ctx, tdev);
 	dev->hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
@@ -623,7 +889,6 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 	fz_text_style *style = NULL;
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
 
 	fz_printf(out, "<div class=\"page\">\n");
 
@@ -634,23 +899,30 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 		for (line_n = 0; line_n < block->len; line_n++)
 		{
 			line = &block->lines[line_n];
-			fz_printf(out, "<span>");
 			style = NULL;
 
+#ifdef DEBUG_INTERNALS
+			fz_printf(out, "<span class=\"line\">");
+#endif
 			for (span_n = 0; span_n < line->len; span_n++)
 			{
-				span = &line->spans[span_n];
-				if (style != span->style)
-				{
-					if (style)
-						fz_print_style_end(out, style);
-					fz_print_style_begin(out, span->style);
-					style = span->style;
-				}
-
+				fz_text_span *span = line->spans[span_n];
+#ifdef DEBUG_INTERNALS
+				fz_printf(out, "<span class=\"internal_span\">");
+#endif
+				if (span->spacing >= 1)
+					fz_printf(out, " ");
 				for (ch_n = 0; ch_n < span->len; ch_n++)
 				{
 					fz_text_char *ch = &span->text[ch_n];
+					if (style != ch->style)
+					{
+						if (style)
+							fz_print_style_end(out, style);
+						fz_print_style_begin(out, ch->style);
+						style = ch->style;
+					}
+
 					if (ch->c == '<')
 						fz_printf(out, "&lt;");
 					else if (ch->c == '>')
@@ -662,10 +934,19 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					else
 						fz_printf(out, "&#x%x;", ch->c);
 				}
+				if (style)
+				{
+					fz_print_style_end(out, style);
+					style = NULL;
+				}
+#ifdef DEBUG_INTERNALS
+				fz_printf(out, "</span>");
+#endif
 			}
-			if (style)
-				fz_print_style_end(out, style);
-			fz_printf(out, "</span>\n");
+#ifdef DEBUG_INTERNALS
+			fz_printf(out, "</span>");
+#endif
+			fz_printf(out, "\n");
 		}
 		fz_printf(out, "</p></div>\n");
 	}
@@ -678,8 +959,6 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
-	fz_text_char *ch;
 	char *s;
 
 	fz_printf(out, "<page>\n");
@@ -689,20 +968,36 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 			block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
+			int span_num;
 			fz_printf(out, "<line bbox=\"%g %g %g %g\">\n",
 				line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1);
-			for (span = line->spans; span < line->spans + line->len; span++)
+			for (span_num = 0; span_num < line->len; span_num++)
 			{
-				fz_text_style *style = span->style;
-				s = strchr(style->font->name, '+');
-				s = s ? s + 1 : style->font->name;
-				fz_printf(out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",
-					span->bbox.x0, span->bbox.y0, span->bbox.x1, span->bbox.y1,
-					s, style->size);
-				for (ch = span->text; ch < span->text + span->len; ch++)
+				fz_text_span *span = line->spans[span_num];
+				fz_text_style *style = NULL;
+				int char_num;
+				for (char_num = 0; char_num < span->len; char_num++)
 				{
-					fz_printf(out, "<char bbox=\"%g %g %g %g\" c=\"",
-						ch->bbox.x0, ch->bbox.y0, ch->bbox.x1, ch->bbox.y1);
+					fz_text_char *ch = &span->text[char_num];
+					if (ch->style != style)
+					{
+						if (style)
+						{
+							fz_printf(out, "</span>\n");
+						}
+						style = ch->style;
+						s = strchr(style->font->name, '+');
+						s = s ? s + 1 : style->font->name;
+						fz_printf(out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",
+							span->bbox.x0, span->bbox.y0, span->bbox.x1, span->bbox.y1,
+							s, style->size);
+					}
+					{
+						fz_rect rect;
+						fz_text_char_bbox(&rect, span, char_num);
+						fz_printf(out, "<char bbox=\"%g %g %g %g\" x=\"%g\" y=\"%g\" c=\"",
+							rect.x0, rect.y0, rect.x1, rect.y1, ch->p.x, ch->p.y);
+					}
 					switch (ch->c)
 					{
 					case '<': fz_printf(out, "&lt;"); break;
@@ -719,7 +1014,8 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 					}
 					fz_printf(out, "\"/>\n");
 				}
-				fz_printf(out, "</span>\n");
+				if (style)
+					fz_printf(out, "</span>\n");
 			}
 			fz_printf(out, "</line>\n");
 		}
@@ -733,7 +1029,6 @@ fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
 	fz_text_char *ch;
 	char utf[10];
 	int i, n;
@@ -742,8 +1037,10 @@ fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 	{
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			for (span = line->spans; span < line->spans + line->len; span++)
+			int span_num;
+			for (span_num = 0; span_num < line->len; span_num++)
 			{
+				fz_text_span *span = line->spans[span_num];
 				for (ch = span->text; ch < span->text + span->len; ch++)
 				{
 					n = fz_runetochar(utf, ch->c);
@@ -781,9 +1078,22 @@ new_line_heights(fz_context *ctx)
 }
 
 static void
+free_line_heights(line_heights *lh)
+{
+	if (!lh)
+		return;
+	fz_free(lh->ctx, lh->lh);
+	fz_free(lh->ctx, lh);
+}
+
+static void
 insert_line_height(line_heights *lh, fz_text_style *style, float height)
 {
 	int i;
+
+#ifdef DEBUG_LINE_HEIGHTS
+	printf("style=%x height=%g\n", style, height);
+#endif
 
 	/* If we have one already, add it in */
 	for (i=0; i < lh->cap; i++)
@@ -817,6 +1127,14 @@ cull_line_heights(line_heights *lh)
 {
 	int i, j, k;
 
+#ifdef DEBUG_LINE_HEIGHTS
+	printf("Before culling:\n");
+	for (i = 0; i < lh->len; i++)
+	{
+		fz_text_style *style = lh->lh[i].style;
+		printf("style=%x height=%g count=%d\n", style, lh->lh[i].height, lh->lh[i].count);
+	}
+#endif
 	for (i = 0; i < lh->len; i++)
 	{
 		fz_text_style *style = lh->lh[i].style;
@@ -854,6 +1172,14 @@ cull_line_heights(line_heights *lh)
 		}
 		lh->len = j;
 	}
+#ifdef DEBUG_LINE_HEIGHTS
+	printf("After culling:\n");
+	for (i = 0; i < lh->len; i++)
+	{
+		fz_text_style *style = lh->lh[i].style;
+		printf("style=%x height=%g count=%d\n", style, lh->lh[i].height, lh->lh[i].count);
+	}
+#endif
 }
 
 static float
@@ -870,7 +1196,7 @@ line_height_for_style(line_heights *lh, fz_text_style *style)
 }
 
 static void
-split_block(fz_context *ctx, fz_text_page *page, int blocknum, int linenum)
+split_block(fz_context *ctx, fz_text_page *page, int block_num, int linenum)
 {
 	int split_len;
 
@@ -881,19 +1207,20 @@ split_block(fz_context *ctx, fz_text_page *page, int blocknum, int linenum)
 		page->cap = new_cap;
 	}
 
-	memmove(page->blocks+blocknum+1, page->blocks+blocknum, (page->len - blocknum)*sizeof(*page->blocks));
+	memmove(page->blocks+block_num+1, page->blocks+block_num, (page->len - block_num)*sizeof(*page->blocks));
 	page->len++;
 
-	split_len = page->blocks[blocknum].len - linenum;
-	page->blocks[blocknum+1].bbox = page->blocks[blocknum].bbox; /* FIXME! */
-	page->blocks[blocknum+1].cap = 0;
-	page->blocks[blocknum+1].len = 0;
-	page->blocks[blocknum+1].lines = NULL;
-	page->blocks[blocknum+1].lines = fz_malloc_array(ctx, split_len, sizeof(fz_text_line));
-	page->blocks[blocknum+1].cap = page->blocks[blocknum+1].len;
-	page->blocks[blocknum+1].len = split_len;
-	page->blocks[blocknum].len = linenum;
-	memcpy(page->blocks[blocknum+1].lines, page->blocks[blocknum].lines + linenum, split_len * sizeof(fz_text_line));
+	split_len = page->blocks[block_num].len - linenum;
+	page->blocks[block_num+1].bbox = page->blocks[block_num].bbox; /* FIXME! */
+	page->blocks[block_num+1].cap = 0;
+	page->blocks[block_num+1].len = 0;
+	page->blocks[block_num+1].lines = NULL;
+	page->blocks[block_num+1].lines = fz_malloc_array(ctx, split_len, sizeof(fz_text_line));
+	page->blocks[block_num+1].cap = page->blocks[block_num+1].len;
+	page->blocks[block_num+1].len = split_len;
+	page->blocks[block_num].len = linenum;
+	memcpy(page->blocks[block_num+1].lines, page->blocks[block_num].lines + linenum, split_len * sizeof(fz_text_line));
+	page->blocks[block_num+1].lines[0].distance = 0;
 }
 
 void
@@ -901,10 +1228,8 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
-	fz_text_span *span;
-	fz_text_line *prev_line;
 	line_heights *lh;
-	int blocknum;
+	int block_num;
 
 	/* Simple paragraph analysis; look for the most common 'inter line'
 	 * spacing. This will be assumed to be our line spacing. Anything
@@ -913,37 +1238,65 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 
 	/* Step 1: Gather the line height information */
 	lh = new_line_heights(ctx);
-	prev_line = NULL;
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			/* In a line made up of several spans, find the tallest
-			 * span. This line difference will count as being a
-			 * difference in a line of that style. */
-			fz_text_span *tallest_span = NULL;
-			float tallest = 0;
-			float span_height;
-			for (span = line->spans; span < line->spans + line->len; span++)
+			/* For every style in the line, add lineheight to the
+			 * record for that style. FIXME: This is a nasty n^2
+			 * algorithm at the moment. */
+			int span_num;
+			fz_text_style *style = NULL;
+
+			if (line->distance == 0)
+				continue;
+
+			for (span_num = 0; span_num < line->len; span_num++)
 			{
-				span_height = span->bbox.y1 - span->bbox.y0;
-				if (tallest_span == NULL || span_height > tallest)
+				fz_text_span *span = line->spans[span_num];
+				int char_num;
+				for (char_num = 0; char_num < span->len; char_num++)
 				{
-					tallest_span = span;
-					tallest = span_height;
+					fz_text_char *chr = &span->text[char_num];
+					if (chr->style != style)
+					{
+						/* Have we had this style before? */
+						int match = 0;
+						int span_num2;
+						for (span_num2 = 0; span_num2 < span_num; span_num2++)
+						{
+							fz_text_span *span2 = line->spans[span_num2];
+							int char_num2;
+							for (char_num2 = 0; char_num2 < span2->len; char_num2++)
+							{
+								fz_text_char *chr2 = &span2->text[char_num2];
+								if (chr2->style == chr->style)
+								{
+									match = 1;
+									break;
+								}
+							}
+						}
+						if (char_num > 0 && match == 0)
+						{
+							fz_text_span *span2 = line->spans[span_num];
+							int char_num2;
+							for (char_num2 = 0; char_num2 < char_num; char_num2++)
+							{
+								fz_text_char *chr2 = &span2->text[char_num2];
+								if (chr2->style == chr->style)
+								{
+									match = 1;
+									break;
+								}
+							}
+						}
+						if (match == 0)
+							insert_line_height(lh, chr->style, line->distance);
+						style = chr->style;
+					}
 				}
 			}
-			if (prev_line)
-			{
-				/* Should really work on the baseline positions,
-				 * but we don't have that at this stage. */
-				float line_step = line->bbox.y1 - prev_line->bbox.y1;
-				if (line_step > 0)
-				{
-					insert_line_height(lh, tallest_span->style, line_step);
-				}
-			}
-			prev_line = line;
 		}
 	}
 
@@ -952,39 +1305,53 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 
 	/* Step 3: Run through the blocks, breaking each block into two if
 	 * the line height isn't right. */
-	prev_line = NULL;
-	for (blocknum = 0; blocknum < page->len; blocknum++)
+	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		block = &page->blocks[blocknum];
-		for (line = block->lines; line < block->lines + block->len; line++)
+		int line_num;
+		block = &page->blocks[block_num];
+		for (line_num = 0; line_num < block->len; line_num++)
 		{
-			/* In a line made up of several spans, find the tallest
-			 * span. This line difference will count as being a
-			 * difference in a line of that style. */
-			fz_text_span *tallest_span = NULL;
-			float tallest = 0;
-			float span_height;
-			for (span = line->spans; span < line->spans + line->len; span++)
+			/* For every style in the line, check to see if lineheight
+			 * is correct for that style. FIXME: We check each style
+			 * more than once, currently. */
+			int span_num;
+			int ok = 0;
+			fz_text_style *style = NULL;
+			line = &block->lines[line_num];
+
+			if (line->distance == 0)
+				continue;
+
+#ifdef DEBUG_LINE_HEIGHTS
+			printf("line height=%g nspans=%d\n", line->distance, line->len);
+#endif
+			for (span_num = 0; span_num < line->len; span_num++)
 			{
-				span_height = span->bbox.y1 - span->bbox.y0;
-				if (tallest_span == NULL || span_height > tallest)
+				fz_text_span *span = line->spans[span_num];
+				int char_num;
+				for (char_num = 0; char_num < span->len; char_num++)
 				{
-					tallest_span = span;
-					tallest = span_height;
+					fz_text_char *chr = &span->text[char_num];
+					if (chr->style != style)
+					{
+						float proper_step = line_height_for_style(lh, chr->style);
+						if (proper_step * 0.95 <= line->distance && line->distance <= proper_step * 1.05)
+						{
+							ok = 1;
+							break;
+						}
+						style = chr->style;
+					}
 				}
-			}
-			if (prev_line)
-			{
-				float proper_step = line_height_for_style(lh, tallest_span->style);
-				float line_step = line->bbox.y1 - prev_line->bbox.y1;
-				if (proper_step * 0.95 > line_step || line_step > proper_step * 1.05)
-				{
-					split_block(ctx, page, block - page->blocks, line - block->lines);
-					prev_line = NULL;
+				if (ok)
 					break;
-				}
 			}
-			prev_line = line;
+			if (!ok)
+			{
+				split_block(ctx, page, block_num, line_num);
+				break;
+			}
 		}
 	}
+	free_line_heights(lh);
 }
