@@ -1,11 +1,10 @@
 package com.artifex.mupdfdemo;
 
-import java.io.UnsupportedEncodingException;
-
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Handler;
 import android.util.Base64;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,6 +13,7 @@ import android.webkit.WebViewClient;
 
 public class MuPDFReflowView extends WebView implements MuPDFView {
 	private final MuPDFCore mCore;
+	private final Handler mHandler;
 	private final Point mParentSize;
 	private int mPage;
 	private int mContentHeight;
@@ -21,6 +21,7 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 
 	public MuPDFReflowView(Context c, MuPDFCore core, Point parentSize) {
 		super(c);
+		mHandler = new Handler();
 		mCore = core;
 		mParentSize = parentSize;
 		mContentHeight = parentSize.y;
@@ -28,6 +29,11 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		addJavascriptInterface(new Object(){
 			public void reportContentHeight(String value) {
 				mContentHeight = (int)Float.parseFloat(value);
+				mHandler.post(new Runnable() {
+					public void run() {
+						requestLayout();
+					}
+				});
 			}
 		}, "HTMLOUT");
 		setWebViewClient(new WebViewClient() {
