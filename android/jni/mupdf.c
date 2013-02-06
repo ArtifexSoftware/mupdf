@@ -501,12 +501,14 @@ JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 	LOGE("Goto page %d...", page);
 	fz_try(ctx)
 	{
+		fz_rect rect;
 		LOGI("Load page %d", pc->number);
 		pc->page = fz_load_page(glo->doc, pc->number);
 		zoom = glo->resolution / 72;
-		pc->media_box = fz_bound_page(glo->doc, pc->page);
-		ctm = fz_scale(zoom, zoom);
-		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		fz_bound_page(glo->doc, pc->page, &pc->media_box);
+		fz_scale(&ctm, zoom, zoom);
+		rect = pc->media_box;
+		fz_round_rect(&bbox, fz_transform_rect(&rect, &ctm));
 		pc->width = bbox.x1-bbox.x0;
 		pc->height = bbox.y1-bbox.y0;
 	}
@@ -545,13 +547,14 @@ static void update_changed_rects(globals *glo, page_cache *pc, fz_interactive *i
 	fz_update_page(idoc, pc->page);
 	while ((annot = fz_poll_changed_annot(idoc, pc->page)) != NULL)
 	{
+		/* FIXME: We bound the annot twice here */
 		rect_node *node = fz_malloc_struct(glo->ctx, rect_node);
-		node->rect = fz_bound_annot(glo->doc, annot);
+		fz_bound_annot(glo->doc, annot, &node->rect);
 		node->next = pc->changed_rects;
 		pc->changed_rects = node;
 
 		node = fz_malloc_struct(glo->ctx, rect_node);
-		node->rect = fz_bound_annot(glo->doc, annot);
+		fz_bound_annot(glo->doc, annot, &node->rect);
 		node->next = pc->hq_changed_rects;
 		pc->hq_changed_rects = node;
 	}
@@ -576,6 +579,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	fz_document *doc = glo->doc;
 	page_cache *pc = &glo->pages[glo->current];
 	int hq = (patchW < pageW || patchH < pageH);
+	fz_matrix scale;
 
 	if (pc->page == NULL)
 		return 0;
@@ -624,7 +628,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			/* Render to list */
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
-			fz_run_page_contents(doc, pc->page, dev, fz_identity, NULL);
+			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
 		}
 		if (pc->annot_list == NULL)
 		{
@@ -637,13 +641,13 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, pc->page, annot, dev, fz_identity, NULL);
+				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
 		}
 		bbox.x0 = patchX;
 		bbox.y0 = patchY;
 		bbox.x1 = patchX + patchW;
 		bbox.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, bbox, pixels);
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &bbox, pixels);
 		if (pc->page_list == NULL && pc->annot_list == NULL)
 		{
 			fz_clear_pixmap_with_value(ctx, pix, 0xd0);
@@ -652,14 +656,16 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		fz_clear_pixmap_with_value(ctx, pix, 0xff);
 
 		zoom = glo->resolution / 72;
-		ctm = fz_scale(zoom, zoom);
-		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		fz_scale(&ctm, zoom, zoom);
+		rect = pc->media_box;
+		fz_round_rect(&bbox, fz_transform_rect(&rect, &ctm));
 		/* Now, adjust ctm so that it would give the correct page width
 		 * heights. */
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
-		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
-		rect = fz_transform_rect(ctm, pc->media_box);
+		fz_concat(&ctm, &ctm, fz_scale(&scale, xscale, yscale));
+		rect = pc->media_box;
+		fz_transform_rect(&rect, &ctm);
 		dev = fz_new_draw_device(ctx, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
@@ -671,9 +677,9 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			for (i=0; i<100;i++) {
 #endif
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, ctm, rect, NULL);
+					fz_run_display_list(pc->page_list, dev, &ctm, &rect, NULL);
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, ctm, rect, NULL);
+					fz_run_display_list(pc->annot_list, dev, &ctm, &rect, NULL);
 #ifdef TIME_DISPLAY_LIST
 			}
 			time = clock() - time;
@@ -731,6 +737,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
 	rect_node *crect;
+	fz_matrix scale;
 
 	for (i = 0; i < NUM_CACHE; i++)
 	{
@@ -791,7 +798,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			/* Render to list */
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
-			fz_run_page_contents(doc, pc->page, dev, fz_identity, NULL);
+			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
 		}
 
 		if (pc->annot_list == NULL) {
@@ -802,43 +809,45 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, pc->page, annot, dev, fz_identity, NULL);
+				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
 		}
 
 		bbox.x0 = patchX;
 		bbox.y0 = patchY;
 		bbox.x1 = patchX + patchW;
 		bbox.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, bbox, pixels);
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &bbox, pixels);
 
 		zoom = glo->resolution / 72;
-		ctm = fz_scale(zoom, zoom);
-		bbox = fz_round_rect(fz_transform_rect(ctm, pc->media_box));
+		fz_scale(&ctm, zoom, zoom);
+		rect = pc->media_box;
+		fz_round_rect(&bbox, fz_transform_rect(&rect, &ctm));
 		/* Now, adjust ctm so that it would give the correct page width
 		 * heights. */
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
-		ctm = fz_concat(ctm, fz_scale(xscale, yscale));
-		rect = fz_transform_rect(ctm, pc->media_box);
+		fz_concat(&ctm, &ctm, fz_scale(&scale, xscale, yscale));
+		rect = pc->media_box;
+		fz_transform_rect(&rect, &ctm);
 
 		LOGI("Start partial update");
 		for (crect = hq ? pc->hq_changed_rects : pc->changed_rects; crect; crect = crect->next)
 		{
 			fz_irect abox;
-			fz_rect arect = fz_transform_rect(ctm, crect->rect);
-			arect = fz_intersect_rect(arect, rect);
-			abox = fz_round_rect(arect);
+			fz_rect arect = crect->rect;
+			fz_intersect_rect(fz_transform_rect(&arect, &ctm), &rect);
+			fz_round_rect(&abox, &arect);
 
 			LOGI("Update rectangle (%d, %d, %d, %d)", abox.x0, abox.y0, abox.x1, abox.y1);
-			if (!fz_is_empty_rect(abox))
+			if (!fz_is_empty_irect(&abox))
 			{
 				LOGI("And it isn't empty");
-				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, abox);
-				dev = fz_new_draw_device_with_bbox(ctx, pix, abox);
+				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, &abox);
+				dev = fz_new_draw_device_with_bbox(ctx, pix, &abox);
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, ctm, arect, NULL);
+					fz_run_display_list(pc->page_list, dev, &ctm, &arect, NULL);
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, ctm, arect, NULL);
+					fz_run_display_list(pc->annot_list, dev, &ctm, &arect, NULL);
 				fz_free_device(dev);
 				dev = NULL;
 			}
@@ -1093,12 +1102,13 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 			glo->hit_bbox = fz_malloc_array(ctx, MAX_SEARCH_HITS, sizeof(*glo->hit_bbox));
 
 		zoom = glo->resolution / 72;
-		ctm = fz_scale(zoom, zoom);
-		mbrect = fz_transform_rect(ctm, pc->media_box);
+		fz_scale(&ctm, zoom, zoom);
+		mbrect = pc->media_box;
+		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, mbrect);
+		text = fz_new_text_page(ctx, &mbrect);
 		dev  = fz_new_text_device(ctx, sheet, text);
-		fz_run_page(doc, pc->page, dev, ctm, NULL);
+		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
 
@@ -1108,9 +1118,12 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 			fz_rect rr = fz_empty_rect;
 			n = match(text, str, pos);
 			for (i = 0; i < n; i++)
-				rr = fz_union_rect(rr, bboxcharat(text, pos + i));
+			{
+				fz_rect bbox = bboxcharat(text, pos + i);
+				fz_union_rect(&rr, &bbox);
+			}
 
-			if (!fz_is_empty_rect(rr) && hit_count < MAX_SEARCH_HITS)
+			if (!fz_is_empty_rect(&rr) && hit_count < MAX_SEARCH_HITS)
 				glo->hit_bbox[hit_count++] = rr;
 		}
 	}
@@ -1195,12 +1208,13 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		int b, l, s, c;
 
 		zoom = glo->resolution / 72;
-		ctm = fz_scale(zoom, zoom);
-		mbrect = fz_transform_rect(ctm, pc->media_box);
+		fz_scale(&ctm, zoom, zoom);
+		mbrect = pc->media_box;
+		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, mbrect);
+		text = fz_new_text_page(ctx, &mbrect);
 		dev  = fz_new_text_device(ctx, sheet, text);
-		fz_run_page(doc, pc->page, dev, ctm, NULL);
+		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
 
@@ -1291,11 +1305,12 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		int b, l, s, c;
 
 		ctm = fz_identity;
-		mbrect = fz_transform_rect(ctm, pc->media_box);
+		mbrect = pc->media_box;
+		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, mbrect);
+		text = fz_new_text_page(ctx, &mbrect);
 		dev  = fz_new_text_device(ctx, sheet, text);
-		fz_run_page(doc, pc->page, dev, ctm, NULL);
+		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
 
@@ -1376,7 +1391,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 		float color[3] = {1.0, 0.0, 0.0};
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
-		ctm = fz_scale(zoom, zoom);
+		fz_scale(&ctm, zoom, zoom);
 		LOGI("P1 %f", zoom);
 		rect_cls = (*env)->FindClass(env, "android.graphics.RectF");
 		if (rect_cls == NULL) fz_throw(ctx, "FindClass");
@@ -1414,7 +1429,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 				if (stroke)
 				{
 					// assert(path)
-					fz_stroke_path(dev, path, stroke, ctm, fz_device_rgb, color, 1.0);
+					fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
 					LOGI("Path stroked");
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
@@ -1436,7 +1451,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 
 		if (stroke)
 		{
-			fz_stroke_path(dev, path, stroke, ctm, fz_device_rgb, color, 1.0);
+			fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
 			LOGI("Path stroked");
 		}
 
@@ -1540,7 +1555,7 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 		return NULL;
 
 	zoom = glo->resolution / 72;
-	ctm = fz_scale(zoom, zoom);
+	fz_scale(&ctm, zoom, zoom);
 
 	list = fz_load_links(glo->doc, pc->page);
 	count = 0;
@@ -1561,7 +1576,8 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 	count = 0;
 	for (link = list; link; link = link->next)
 	{
-		fz_rect rect = fz_transform_rect(ctm, link->rect);
+		fz_rect rect = link->rect;
+		fz_transform_rect(&rect, &ctm);
 
 		switch (link->dest.kind)
 		{
@@ -1634,7 +1650,7 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 		return NULL;
 
 	zoom = glo->resolution / 72;
-	ctm = fz_scale(zoom, zoom);
+	fz_scale(&ctm, zoom, zoom);
 
 	count = 0;
 	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
@@ -1646,7 +1662,9 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	count = 0;
 	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
 	{
-		fz_rect rect = fz_transform_rect(ctm, fz_widget_bbox(widget));
+		fz_rect rect;
+		fz_bound_widget(widget, &rect);
+		fz_transform_rect(&rect, &ctm);
 
 		rectF = (*env)->NewObject(env, rectFClass, ctor,
 				(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1);
@@ -1688,10 +1706,10 @@ JNI_FN(MuPDFCore_passClickEventInternal)(JNIEnv * env, jobject thiz, int pageNum
 	 * with the link details in, but for now, page number will suffice.
 	 */
 	zoom = glo->resolution / 72;
-	ctm = fz_scale(zoom, zoom);
-	ctm = fz_invert_matrix(ctm);
+	fz_scale(&ctm, zoom, zoom);
+	fz_invert_matrix(&ctm, &ctm);
 
-	p = fz_transform_point(ctm, p);
+	fz_transform_point(&p, &ctm);
 
 	fz_try(ctx)
 	{
