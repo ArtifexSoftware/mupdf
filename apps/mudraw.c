@@ -727,14 +727,14 @@ int main(int argc, char **argv)
 	timing.minfilename = "";
 	timing.maxfilename = "";
 
-	if (showtext)
-	{
+	if (showxml || showtext)
 		out = fz_new_output_file(ctx, stdout);
-		sheet = fz_new_text_sheet(ctx);
-	}
 
 	if (showxml || showtext == TEXT_XML)
 		fz_printf(out, "<?xml version=\"1.0\"?>\n");
+
+	if (showtext)
+		sheet = fz_new_text_sheet(ctx);
 
 	if (showtext == TEXT_HTML)
 	{
@@ -825,8 +825,10 @@ int main(int argc, char **argv)
 	}
 
 	if (showtext)
-	{
 		fz_free_text_sheet(ctx, sheet);
+
+	if (showxml || showtext)
+	{
 		fz_close_output(out);
 		out = NULL;
 	}
