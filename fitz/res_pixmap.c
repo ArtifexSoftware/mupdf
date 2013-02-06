@@ -83,7 +83,7 @@ fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h)
 }
 
 fz_pixmap *
-fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_bbox *r)
+fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r)
 {
 	fz_pixmap *pixmap;
 	pixmap = fz_new_pixmap(ctx, colorspace, r->x1 - r->x0, r->y1 - r->y0);
@@ -93,7 +93,7 @@ fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_bbo
 }
 
 fz_pixmap *
-fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_bbox *r, unsigned char *samples)
+fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r, unsigned char *samples)
 {
 	fz_pixmap *pixmap = fz_new_pixmap_with_data(ctx, colorspace, r->x1 - r->x0, r->y1 - r->y0, samples);
 	pixmap->x = r->x0;
@@ -101,8 +101,8 @@ fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, con
 	return pixmap;
 }
 
-fz_bbox *
-fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_bbox *bbox)
+fz_irect *
+fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_irect *bbox)
 {
 	bbox->x0 = pix->x;
 	bbox->y0 = pix->y;
@@ -111,8 +111,8 @@ fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_bbox *bbox)
 	return bbox;
 }
 
-fz_bbox *
-fz_pixmap_bbox_no_ctx(fz_pixmap *pix, fz_bbox *bbox)
+fz_irect *
+fz_pixmap_bbox_no_ctx(fz_pixmap *pix, fz_irect *bbox)
 {
 	bbox->x0 = pix->x;
 	bbox->y0 = pix->y;
@@ -163,16 +163,16 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 }
 
 void
-fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_bbox *b)
+fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *b)
 {
 	const unsigned char *srcp;
 	unsigned char *destp;
 	int x, y, w, destspan, srcspan;
-	fz_bbox local_b, bb;
+	fz_irect local_b, bb;
 
 	local_b = *b;
-	fz_intersect_bbox(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
-	fz_intersect_bbox(&local_b, fz_pixmap_bbox(ctx, src, &bb));
+	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
+	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, src, &bb));
 	w = local_b.x1 - local_b.x0;
 	y = local_b.y1 - local_b.y0;
 	if (w <= 0 || y <= 0)
@@ -265,14 +265,14 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_b
 }
 
 void
-fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, const fz_bbox *b)
+fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, const fz_irect *b)
 {
 	unsigned char *destp;
 	int x, y, w, k, destspan;
-	fz_bbox bb;
-	fz_bbox local_b = *b;
+	fz_irect bb;
+	fz_irect local_b = *b;
 
-	fz_intersect_bbox(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
+	fz_intersect_irect(&local_b, fz_pixmap_bbox(ctx, dest, &bb));
 	w = local_b.x1 - local_b.x0;
 	y = local_b.y1 - local_b.y0;
 	if (w <= 0 || y <= 0)
@@ -347,7 +347,7 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
 	fz_pixmap *alpha;
 	unsigned char *sp, *dp;
 	int len;
-	fz_bbox bbox;
+	fz_irect bbox;
 
 	assert(gray->n == 2);
 
@@ -384,7 +384,7 @@ fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 }
 
-void fz_invert_pixmap_rect(fz_pixmap *image, const fz_bbox *rect)
+void fz_invert_pixmap_rect(fz_pixmap *image, const fz_irect *rect)
 {
 	unsigned char *p;
 	int x, y, n;

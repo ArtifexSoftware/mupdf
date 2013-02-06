@@ -764,12 +764,12 @@ static inline fz_point *fz_rect_max(fz_rect *f)
 }
 
 /*
-	fz_bbox is a rectangle using integers instead of floats.
+	fz_irect is a rectangle using integers instead of floats.
 
 	It's used in the draw device and for pixmap dimensions.
 */
-typedef struct fz_bbox_s fz_bbox;
-struct fz_bbox_s
+typedef struct fz_irect_s fz_irect;
+struct fz_irect_s
 {
 	int x0, y0;
 	int x1, y1;
@@ -789,7 +789,7 @@ extern const fz_rect fz_unit_rect;
 	Both the top left and bottom right corner are at (0, 0).
 */
 extern const fz_rect fz_empty_rect;
-extern const fz_bbox fz_empty_bbox;
+extern const fz_irect fz_empty_irect;
 
 /*
 	An infinite rectangle with negative area.
@@ -798,7 +798,7 @@ extern const fz_bbox fz_empty_bbox;
 	at (-1, -1).
 */
 extern const fz_rect fz_infinite_rect;
-extern const fz_bbox fz_infinite_bbox;
+extern const fz_irect fz_infinite_irect;
 
 /*
 	fz_is_empty_rect: Check if rectangle is empty.
@@ -812,7 +812,7 @@ fz_is_empty_rect(const fz_rect *r)
 }
 
 static inline int
-fz_is_empty_bbox(const fz_bbox *r)
+fz_is_empty_irect(const fz_irect *r)
 {
 	return ((r)->x0 == (r)->x1 || (r)->y0 == (r)->y1);
 }
@@ -830,7 +830,7 @@ fz_is_infinite_rect(const fz_rect *r)
 }
 
 static inline int
-fz_is_infinite_bbox(const fz_bbox *r)
+fz_is_infinite_irect(const fz_irect *r)
 {
 	return ((r)->x0 > (r)->x1 || (r)->y0 > (r)->y1);
 }
@@ -1056,14 +1056,14 @@ float fz_matrix_expansion(const fz_matrix *m); /* sumatrapdf */
 fz_rect *fz_intersect_rect(fz_rect *a, const fz_rect *b);
 
 /*
-	fz_intersect_bbox: Compute intersection of two bounding boxes.
+	fz_intersect_irect: Compute intersection of two bounding boxes.
 
 	Similar to fz_intersect_rect but operates on two bounding
 	boxes instead of two rectangles.
 
 	Does not throw exceptions.
 */
-fz_bbox *fz_intersect_bbox(fz_bbox *a, const fz_bbox *b);
+fz_irect *fz_intersect_irect(fz_irect *a, const fz_irect *b);
 
 /*
 	fz_union_rect: Compute union of two rectangles.
@@ -1080,7 +1080,7 @@ fz_bbox *fz_intersect_bbox(fz_bbox *a, const fz_bbox *b);
 fz_rect *fz_union_rect(fz_rect *a, const fz_rect *b);
 
 /*
-	fz_bbox_from_rect: Convert a rect into the minimal bounding box
+	fz_irect_from_rect: Convert a rect into the minimal bounding box
 	that covers the rectangle.
 
 	bbox: Place to store the returned bbox.
@@ -1097,7 +1097,7 @@ fz_rect *fz_union_rect(fz_rect *a, const fz_rect *b);
 	Does not throw exceptions.
 */
 
-fz_bbox *fz_bbox_from_rect(fz_bbox *bbox, const fz_rect *rect);
+fz_irect *fz_irect_from_rect(fz_irect *bbox, const fz_rect *rect);
 
 /*
 	fz_round_rect: Round rectangle coordinates.
@@ -1107,7 +1107,7 @@ fz_bbox *fz_bbox_from_rect(fz_bbox *bbox, const fz_rect *rect);
 	upwards and left while the bottom right corner is rounded
 	downwards and to the right.
 
-	This differs from fz_bbox_from_rect, in that fz_bbox_from_rect
+	This differs from fz_irect_from_rect, in that fz_irect_from_rect
 	slavishly follows the numbers (i.e any slight over/under calculations
 	can cause whole extra pixels to be added). fz_round_rect
 	allows for a small amount of rounding error when calculating
@@ -1115,10 +1115,10 @@ fz_bbox *fz_bbox_from_rect(fz_bbox *bbox, const fz_rect *rect);
 
 	Does not throw exceptions.
 */
-fz_bbox *fz_round_rect(fz_bbox *bbox, const fz_rect *rect);
+fz_irect *fz_round_rect(fz_irect *bbox, const fz_rect *rect);
 
 /*
-	fz_rect_from_bbox: Convert a bbox into a rect.
+	fz_rect_from_irect: Convert a bbox into a rect.
 
 	For our purposes, a rect can represent all the values we meet in
 	a bbox, so nothing can go wrong.
@@ -1131,7 +1131,7 @@ fz_bbox *fz_round_rect(fz_bbox *bbox, const fz_rect *rect);
 
 	Does not throw exceptions.
 */
-fz_rect *fz_rect_from_bbox(fz_rect *rect, const fz_bbox *bbox);
+fz_rect *fz_rect_from_irect(fz_rect *rect, const fz_irect *bbox);
 
 /*
 	fz_expand_rect: Expand a bbox by a given amount in all directions.
@@ -1141,13 +1141,13 @@ fz_rect *fz_rect_from_bbox(fz_rect *rect, const fz_bbox *bbox);
 fz_rect *fz_expand_rect(fz_rect *b, float expand);
 
 /*
-	fz_translate_bbox: Translate bounding box.
+	fz_translate_irect: Translate bounding box.
 
 	Translate a bbox by a given x and y offset. Allows for overflow.
 
 	Does not throw exceptions.
 */
-fz_bbox *fz_translate_bbox(fz_bbox *a, int xoff, int yoff);
+fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 
 /*
 	fz_translate_rect: Translate rectangle.
@@ -1435,7 +1435,7 @@ typedef struct fz_pixmap_s fz_pixmap;
 /*
 	fz_pixmap_bbox: Return the bounding box for a pixmap.
 */
-fz_bbox *fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_bbox *bbox);
+fz_irect *fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_irect *bbox);
 
 /*
 	fz_pixmap_width: Return the width of the pixmap in pixels.
@@ -1479,7 +1479,7 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h);
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_bbox *bbox);
+fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *bbox);
 
 /*
 	fz_new_pixmap_with_data: Create a new pixmap, with it's origin at
@@ -1518,7 +1518,7 @@ fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, i
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_bbox *rect, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *rect, unsigned char *samples);
 
 /*
 	fz_keep_pixmap: Take a reference to a pixmap.
@@ -1586,7 +1586,7 @@ void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
 	Does not throw exceptions.
 */
-void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, const fz_bbox *r);
+void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, const fz_irect *r);
 
 /*
 	fz_clear_pixmap_with_value: Sets all components (including alpha) of
@@ -1613,7 +1613,7 @@ void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 	Does not throw exceptions.
 */
-void fz_invert_pixmap_rect(fz_pixmap *image, const fz_bbox *rect);
+void fz_invert_pixmap_rect(fz_pixmap *image, const fz_irect *rect);
 
 /*
 	fz_gamma_pixmap: Apply gamma correction to a pixmap. All components
@@ -1814,7 +1814,7 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 	clip: Bounding box to restrict any marking operations of the
 	draw device.
 */
-fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_bbox *clip);
+fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_irect *clip);
 
 /*
 	Text extraction device: Used for searching, format conversion etc.

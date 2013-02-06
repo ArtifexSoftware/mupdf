@@ -22,7 +22,7 @@ enum {
 typedef struct fz_draw_state_s fz_draw_state;
 
 struct fz_draw_state_s {
-	fz_bbox scissor;
+	fz_irect scissor;
 	fz_pixmap *dest;
 	fz_pixmap *mask;
 	fz_pixmap *shape;
@@ -31,7 +31,7 @@ struct fz_draw_state_s {
 	float alpha;
 	fz_matrix ctm;
 	float xstep, ystep;
-	fz_bbox area;
+	fz_irect area;
 };
 
 struct fz_draw_device_s
@@ -127,7 +127,7 @@ static fz_draw_state *
 fz_knockout_begin(fz_draw_device *dev)
 {
 	fz_context *ctx = dev->ctx;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_pixmap *dest, *shape;
 	fz_draw_state *state = &dev->stack[dev->top];
 	int isolated = state->blendmode & FZ_BLEND_ISOLATED;
@@ -138,7 +138,7 @@ fz_knockout_begin(fz_draw_device *dev)
 	state = push_stack(dev);
 
 	fz_pixmap_bbox(dev->ctx, state->dest, &bbox);
-	fz_intersect_bbox(&bbox, &state->scissor);
+	fz_intersect_irect(&bbox, &state->scissor);
 	dest = fz_new_pixmap_with_bbox(dev->ctx, state->dest->colorspace, &bbox);
 
 	if (isolated)
@@ -246,7 +246,7 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, const fz_matrix 
 	float flatness = 0.3f / expansion;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	float colorfv[FZ_MAX_COLORS];
-	fz_bbox bbox;
+	fz_irect bbox;
 	int i;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
@@ -258,9 +258,9 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, const fz_matrix 
 	fz_flatten_fill_path(dev->gel, path, ctm, flatness);
 	fz_sort_gel(dev->gel);
 
-	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
+	fz_intersect_irect(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 
-	if (fz_is_empty_bbox(&bbox))
+	if (fz_is_empty_irect(&bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -296,7 +296,7 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, con
 	float linewidth = stroke->linewidth;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	float colorfv[FZ_MAX_COLORS];
-	fz_bbox bbox;
+	fz_irect bbox;
 	int i;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
@@ -314,9 +314,9 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, con
 		fz_flatten_stroke_path(dev->gel, path, stroke, ctm, flatness, linewidth);
 	fz_sort_gel(dev->gel);
 
-	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
+	fz_intersect_irect(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 
-	if (fz_is_empty_bbox(&bbox))
+	if (fz_is_empty_irect(&bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -351,7 +351,7 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, const fz_rect *rect, int even_
 	fz_draw_device *dev = devp->user;
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
 	fz_context *ctx = dev->ctx;
@@ -363,14 +363,14 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, const fz_rect *rect, int even_
 	state = push_stack(dev);
 	model = state->dest->colorspace;
 
-	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
+	fz_intersect_irect(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 	if (rect)
 	{
-		fz_bbox bbox2;
-		fz_intersect_bbox(&bbox, fz_bbox_from_rect(&bbox2, rect));
+		fz_irect bbox2;
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
 	}
 
-	if (fz_is_empty_bbox(&bbox) || fz_is_rect_gel(dev->gel))
+	if (fz_is_empty_irect(&bbox) || fz_is_rect_gel(dev->gel))
 	{
 		state[1].scissor = bbox;
 		state[1].mask = NULL;
@@ -413,7 +413,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 	float expansion = fz_matrix_expansion(ctm);
 	float flatness = 0.3f / expansion;
 	float linewidth = stroke->linewidth;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
 	fz_context *ctx = dev->ctx;
@@ -431,11 +431,11 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 	state = push_stack(dev);
 	model = state->dest->colorspace;
 
-	fz_intersect_bbox(fz_bound_gel(dev->gel, &bbox), &state->scissor);
+	fz_intersect_irect(fz_bound_gel(dev->gel, &bbox), &state->scissor);
 	if (rect)
 	{
-		fz_bbox bbox2;
-		fz_intersect_bbox(&bbox, fz_bbox_from_rect(&bbox2, rect));
+		fz_irect bbox2;
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
 	}
 
 	fz_try(ctx)
@@ -450,7 +450,7 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 			fz_clear_pixmap(dev->ctx, state[1].shape);
 		}
 
-		if (!fz_is_empty_bbox(&bbox))
+		if (!fz_is_empty_irect(&bbox))
 			fz_scan_convert(dev->gel, 0, &bbox, state[1].mask, NULL);
 
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
@@ -467,15 +467,15 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 
 static void
 draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_pixmap *msk,
-	int xorig, int yorig, const fz_bbox *scissor)
+	int xorig, int yorig, const fz_irect *scissor)
 {
 	unsigned char *dp, *mp;
-	fz_bbox bbox;
+	fz_irect bbox;
 	int x, y, w, h;
 
 	fz_pixmap_bbox_no_ctx(msk, &bbox);
-	fz_translate_bbox(&bbox, xorig, yorig);
-	fz_intersect_bbox(&bbox, scissor); /* scissor < dst */
+	fz_translate_irect(&bbox, xorig, yorig);
+	fz_intersect_irect(&bbox, scissor); /* scissor < dst */
 	x = bbox.x0;
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
@@ -510,7 +510,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 	int i, x, y, gid;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_bbox scissor = state->scissor;
+	fz_irect scissor = state->scissor;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
@@ -590,7 +590,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke,
 	int i, x, y, gid;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_bbox scissor = state->scissor;
+	fz_irect scissor = state->scissor;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
@@ -653,7 +653,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 {
 	fz_draw_device *dev = devp->user;
 	fz_context *ctx = dev->ctx;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_pixmap *mask, *dest, *shape;
 	fz_matrix tm, trm, trunc_trm;
 	fz_pixmap *glyph;
@@ -673,8 +673,8 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 		/* make the mask the exact size needed */
 		fz_rect rect;
 
-		fz_bbox_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
-		fz_intersect_bbox(&bbox, &state->scissor);
+		fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
+		fz_intersect_irect(&bbox, &state->scissor);
 	}
 	else
 	{
@@ -713,7 +713,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 			dev->top--;
 		}
 
-		if (!fz_is_empty_bbox(&bbox) && mask)
+		if (!fz_is_empty_irect(&bbox) && mask)
 		{
 			tm = text->trm;
 
@@ -789,7 +789,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 {
 	fz_draw_device *dev = devp->user;
 	fz_context *ctx = dev->ctx;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_pixmap *mask, *dest, *shape;
 	fz_matrix tm, trm, trunc_trm;
 	fz_pixmap *glyph;
@@ -799,8 +799,8 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 	fz_rect rect;
 
 	/* make the mask the exact size needed */
-	fz_bbox_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
-	fz_intersect_bbox(&bbox, &state->scissor);
+	fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
+	fz_intersect_irect(&bbox, &state->scissor);
 
 	fz_try(ctx)
 	{
@@ -822,7 +822,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 		dump_spaces(dev->top-1, "Clip (stroke text) begin\n");
 #endif
 
-		if (!fz_is_empty_bbox(&bbox))
+		if (!fz_is_empty_irect(&bbox))
 		{
 			tm = text->trm;
 
@@ -901,7 +901,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, const fz_matrix *ctm, float
 {
 	fz_draw_device *dev = devp->user;
 	fz_rect bounds;
-	fz_bbox bbox, scissor;
+	fz_irect bbox, scissor;
 	fz_pixmap *dest, *shape;
 	float colorfv[FZ_MAX_COLORS];
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
@@ -910,9 +910,9 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, const fz_matrix *ctm, float
 
 	fz_bound_shade(dev->ctx, shade, ctm, &bounds);
 	scissor = state->scissor;
-	fz_intersect_bbox(fz_bbox_from_rect(&bbox, &bounds), &scissor);
+	fz_intersect_irect(fz_irect_from_rect(&bbox, &bounds), &scissor);
 
-	if (fz_is_empty_bbox(&bbox))
+	if (fz_is_empty_irect(&bbox))
 		return;
 
 	if (!model)
@@ -990,7 +990,7 @@ fz_draw_fill_shade(fz_device *devp, fz_shade *shade, const fz_matrix *ctm, float
 }
 
 static fz_pixmap *
-fz_transform_pixmap(fz_draw_device *dev, fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy, int gridfit, const fz_bbox *clip)
+fz_transform_pixmap(fz_draw_device *dev, fz_pixmap *image, fz_matrix *ctm, int x, int y, int dx, int dy, int gridfit, const fz_irect *clip)
 {
 	fz_pixmap *scaled;
 	fz_context *ctx = dev->ctx;
@@ -1015,7 +1015,7 @@ fz_transform_pixmap(fz_draw_device *dev, fz_pixmap *image, fz_matrix *ctm, int x
 	{
 		/* Other orthogonal flip/rotation cases */
 		fz_matrix m = *ctm;
-		fz_bbox rclip;
+		fz_irect rclip;
 		if (gridfit)
 			fz_gridfit_matrix(&m);
 		if (clip)
@@ -1058,10 +1058,10 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, const fz_matrix *ctm, float
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_bbox clip;
+	fz_irect clip;
 	fz_matrix local_ctm = *ctm;
 
-	fz_intersect_bbox(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
+	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
 	fz_var(scaled);
 
@@ -1095,7 +1095,7 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, const fz_matrix *ctm, float
 
 		if (pixmap->colorspace != model && !after)
 		{
-			fz_bbox bbox;
+			fz_irect bbox;
 			fz_pixmap_bbox(ctx, pixmap, &bbox);
 			converted = fz_new_pixmap_with_bbox(ctx, model, &bbox);
 			fz_convert_pixmap(ctx, converted, pixmap);
@@ -1127,7 +1127,7 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, const fz_matrix *ctm, float
 			}
 			else
 			{
-				fz_bbox bbox;
+				fz_irect bbox;
 				fz_pixmap_bbox(ctx, pixmap, &bbox);
 				converted = fz_new_pixmap_with_bbox(ctx, model, &bbox);
 				fz_convert_pixmap(ctx, converted, pixmap);
@@ -1167,11 +1167,11 @@ fz_draw_fill_image_mask(fz_device *devp, fz_image *image, const fz_matrix *ctm,
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_bbox clip;
+	fz_irect clip;
 	fz_matrix local_ctm = *ctm;
 
 	fz_pixmap_bbox(ctx, state->dest, &clip);
-	fz_intersect_bbox(&clip, &state->scissor);
+	fz_intersect_irect(&clip, &state->scissor);
 
 	if (image->w == 0 || image->h == 0)
 		return;
@@ -1230,7 +1230,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, const fz_rect *rect, c
 {
 	fz_draw_device *dev = devp->user;
 	fz_context *ctx = dev->ctx;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_pixmap *mask = NULL;
 	fz_pixmap *dest = NULL;
 	fz_pixmap *shape = NULL;
@@ -1240,12 +1240,12 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, const fz_rect *rect, c
 	int dx, dy;
 	fz_draw_state *state = push_stack(dev);
 	fz_colorspace *model = state->dest->colorspace;
-	fz_bbox clip;
+	fz_irect clip;
 	fz_matrix local_ctm = *ctm;
 	fz_rect urect;
 
 	fz_pixmap_bbox(ctx, state->dest, &clip);
-	fz_intersect_bbox(&clip, &state->scissor);
+	fz_intersect_irect(&clip, &state->scissor);
 
 	fz_var(mask);
 	fz_var(dest);
@@ -1258,7 +1258,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, const fz_rect *rect, c
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Clip (image mask) (empty) begin\n");
 #endif
-		state[1].scissor = fz_empty_bbox;
+		state[1].scissor = fz_empty_irect;
 		state[1].mask = NULL;
 		return;
 	}
@@ -1268,12 +1268,12 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, const fz_rect *rect, c
 #endif
 
 	urect = fz_unit_rect;
-	fz_bbox_from_rect(&bbox, fz_transform_rect(&urect, &local_ctm));
-	fz_intersect_bbox(&bbox, &state->scissor);
+	fz_irect_from_rect(&bbox, fz_transform_rect(&urect, &local_ctm));
+	fz_intersect_irect(&bbox, &state->scissor);
 	if (rect)
 	{
-		fz_bbox bbox2;
-		fz_intersect_bbox(&bbox, fz_bbox_from_rect(&bbox2, rect));
+		fz_irect bbox2;
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
 	}
 
 	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
@@ -1383,12 +1383,12 @@ fz_draw_begin_mask(fz_device *devp, const fz_rect *rect, int luminosity, fz_colo
 {
 	fz_draw_device *dev = devp->user;
 	fz_pixmap *dest;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_draw_state *state = push_stack(dev);
 	fz_pixmap *shape = state->shape;
 	fz_context *ctx = dev->ctx;
 
-	fz_intersect_bbox(fz_bbox_from_rect(&bbox, rect), &state->scissor);
+	fz_intersect_irect(fz_irect_from_rect(&bbox, rect), &state->scissor);
 
 	fz_try(ctx)
 	{
@@ -1438,7 +1438,7 @@ fz_draw_end_mask(fz_device *devp)
 {
 	fz_draw_device *dev = devp->user;
 	fz_pixmap *temp, *dest;
-	fz_bbox bbox;
+	fz_irect bbox;
 	int luminosity;
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state;
@@ -1490,7 +1490,7 @@ static void
 fz_draw_begin_group(fz_device *devp, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_draw_device *dev = devp->user;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_pixmap *dest, *shape;
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -1500,7 +1500,7 @@ fz_draw_begin_group(fz_device *devp, const fz_rect *rect, int isolated, int knoc
 		fz_knockout_begin(dev);
 
 	state = push_stack(dev);
-	fz_intersect_bbox(fz_bbox_from_rect(&bbox, rect), &state->scissor);
+	fz_intersect_irect(fz_irect_from_rect(&bbox, rect), &state->scissor);
 
 	fz_try(ctx)
 	{
@@ -1612,7 +1612,7 @@ fz_draw_begin_tile(fz_device *devp, const fz_rect *area, const fz_rect *view, fl
 	fz_draw_device *dev = devp->user;
 	fz_pixmap *dest = NULL;
 	fz_pixmap *shape;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_context *ctx = dev->ctx;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
@@ -1625,7 +1625,7 @@ fz_draw_begin_tile(fz_device *devp, const fz_rect *area, const fz_rect *view, fl
 		fz_knockout_begin(dev);
 
 	state = push_stack(dev);
-	fz_bbox_from_rect(&bbox, fz_transform_rect(&local_view, ctm));
+	fz_irect_from_rect(&bbox, fz_transform_rect(&local_view, ctm));
 	/* We should never have a bbox that entirely covers our destination.
 	 * If we do, then the check for only 1 tile being visible above has
 	 * failed. Actually, this *can* fail due to the round_rect, at extreme
@@ -1646,7 +1646,7 @@ fz_draw_begin_tile(fz_device *devp, const fz_rect *area, const fz_rect *view, fl
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].xstep = xstep;
 		state[1].ystep = ystep;
-		fz_bbox_from_rect(&state[1].area, area);
+		fz_irect_from_rect(&state[1].area, area);
 		state[1].ctm = *ctm;
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Tile begin\n");
@@ -1667,7 +1667,7 @@ fz_draw_end_tile(fz_device *devp)
 	fz_draw_device *dev = devp->user;
 	float xstep, ystep;
 	fz_matrix ttm, ctm, shapectm;
-	fz_bbox area, scissor;
+	fz_irect area, scissor;
 	fz_rect scissor_tmp;
 	int x0, y0, x1, y1, x, y;
 	fz_context *ctx = dev->ctx;
@@ -1687,9 +1687,9 @@ fz_draw_end_tile(fz_device *devp)
 
 	/* Fudge the scissor bbox a little to allow for inaccuracies in the
 	 * matrix inversion. */
-	fz_rect_from_bbox(&scissor_tmp, &state[0].scissor);
+	fz_rect_from_irect(&scissor_tmp, &state[0].scissor);
 	fz_transform_rect(fz_expand_rect(&scissor_tmp, 1), fz_invert_matrix(&ttm, &ctm));
-	fz_intersect_bbox(&area, fz_bbox_from_rect(&scissor, &scissor_tmp));
+	fz_intersect_irect(&area, fz_irect_from_rect(&scissor, &scissor_tmp));
 
 	/* FIXME: area is a bbox, so FP not appropriate here */
 	x0 = floorf(area.x0 / xstep);
@@ -1852,7 +1852,7 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 }
 
 fz_device *
-fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_bbox *clip)
+fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_irect *clip)
 {
 	fz_device *dev = fz_new_draw_device(ctx, dest);
 	fz_draw_device *ddev = dev->user;

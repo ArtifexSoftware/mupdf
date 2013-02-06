@@ -455,7 +455,7 @@ JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 	int furthest_dist = -1;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_irect bbox;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -567,7 +567,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_rect rect;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
@@ -719,7 +719,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
-	fz_bbox bbox;
+	fz_irect bbox;
 	fz_rect rect;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
@@ -824,7 +824,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		LOGI("Start partial update");
 		for (crect = hq ? pc->hq_changed_rects : pc->changed_rects; crect; crect = crect->next)
 		{
-			fz_bbox abox;
+			fz_irect abox;
 			fz_rect arect = fz_transform_rect(ctm, crect->rect);
 			arect = fz_intersect_rect(arect, rect);
 			abox = fz_round_rect(arect);

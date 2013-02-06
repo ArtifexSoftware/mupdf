@@ -10,7 +10,7 @@ void fz_write_pixmap(fz_context *ctx, fz_pixmap *img, char *file, int rgb)
 
 	if (rgb && img->colorspace && img->colorspace != fz_device_rgb)
 	{
-		fz_bbox bbox;
+		fz_irect bbox;
 		converted = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, fz_pixmap_bbox(ctx, img, &bbox));
 		fz_convert_pixmap(ctx, converted, img);
 		img = converted;
