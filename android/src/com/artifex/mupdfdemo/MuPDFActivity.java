@@ -51,10 +51,9 @@ class ThreadPerTaskExecutor implements Executor {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
-	private static int   tapPageMargin;
 	private MuPDFCore    core;
 	private String       mFileName;
-	private ReaderView   mDocView;
+	private MuPDFReaderView mDocView;
 	private View         mButtonsView;
 	private boolean      mButtonsVisible;
 	private EditText     mPasswordView;
@@ -80,7 +79,6 @@ public class MuPDFActivity extends Activity
 	private SearchTask   mSearchTask;
 	private AlertDialog.Builder mAlertBuilder;
 	private boolean    mLinkHighlight = false;
-	private boolean mSelecting = false;
 	private final Handler mHandler = new Handler();
 	private boolean mAlertsActive= false;
 	private boolean mReflow = false;
@@ -249,20 +247,6 @@ public class MuPDFActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 
-		// Get the screen size etc to customise tap margins.
-		// We calculate the size of 1 inch of the screen for tapping.
-		// On some devices the dpi values returned are wrong, so we
-		// sanity check it: we first restrict it so that we are never
-		// less than 100 pixels (the smallest Android device screen
-		// dimension I've seen is 480 pixels or so). Then we check
-		// to ensure we are never more than 1/5 of the screen width.
-		DisplayMetrics dm = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(dm);
-		tapPageMargin = (int)dm.xdpi;
-		if (tapPageMargin < 100)
-			tapPageMargin = 100;
-		if (tapPageMargin > dm.widthPixels/5)
-			tapPageMargin = dm.widthPixels/5;
 
 		mAlertBuilder = new AlertDialog.Builder(this);
 
@@ -386,144 +370,31 @@ public class MuPDFActivity extends Activity
 			return;
 
 		// Now create the UI.
-		// First create the document view making use of the ReaderView's internal
-		// gesture recognition
-		mDocView = new ReaderView(this) {
-			private boolean showButtonsDisabled;
-
-			public boolean onSingleTapUp(MotionEvent e) {
-				LinkInfo link = null;
-
-				if (!mSelecting && !showButtonsDisabled) {
-					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-					if (MuPDFCore.javascriptSupported() && pageView.passClickEvent(e.getX(), e.getY())) {
-						// If the page consumes the event do nothing else
-					} else if (mLinkHighlight && pageView != null && (link = pageView.hitLink(e.getX(), e.getY())) != null) {
-						link.acceptVisitor(new LinkInfoVisitor() {
-							@Override
-							public void visitInternal(LinkInfoInternal li) {
-								// Clicked on an internal (GoTo) link
-								mDocView.setDisplayedViewIndex(li.pageNumber);
-							}
-
-							@Override
-							public void visitExternal(LinkInfoExternal li) {
-								Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(li.url));
-								startActivity(intent);
-							}
-
-							@Override
-							public void visitRemote(LinkInfoRemote li) {
-								// Clicked on a remote (GoToR) link
-							}
-						});
-					} else if (e.getX() < tapPageMargin) {
-						super.smartMoveBackwards();
-					} else if (e.getX() > super.getWidth()-tapPageMargin) {
-						super.smartMoveForwards();
-					} else if (e.getY() < tapPageMargin) {
-						super.smartMoveBackwards();
-					} else if (e.getY() > super.getHeight()-tapPageMargin) {
-						super.smartMoveForwards();
-					} else if (!mButtonsVisible) {
-						showButtons();
-					} else {
-						hideButtons();
-					}
-				}
-				return super.onSingleTapUp(e);
-			}
-
-			public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-				if (!mSelecting) {
-					if (!showButtonsDisabled)
-						hideButtons();
-
-					return super.onScroll(e1, e2, distanceX, distanceY);
-				} else {
-					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-					if (pageView != null)
-						pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
-					return true;
-				}
-			}
-
+		// First create the document view
+		mDocView = new MuPDFReaderView(this) {
 			@Override
-			public boolean onFling(MotionEvent e1, MotionEvent e2,
-					float velocityX, float velocityY) {
-				if (!mSelecting)
-					return super.onFling(e1, e2, velocityX, velocityY);
-				else
-					return true;
-			}
-
-			public boolean onScaleBegin(ScaleGestureDetector d) {
-				// Disabled showing the buttons until next touch.
-				// Not sure why this is needed, but without it
-				// pinch zoom can make the buttons appear
-				showButtonsDisabled = true;
-				return super.onScaleBegin(d);
-			}
-
-			public boolean onTouchEvent(MotionEvent event) {
-				if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
-					showButtonsDisabled = false;
-
-				return super.onTouchEvent(event);
-			}
-
-			protected void onChildSetup(int i, View v) {
-				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber == i)
-					((MuPDFView)v).setSearchBoxes(SearchTaskResult.get().searchBoxes);
-				else
-					((MuPDFView)v).setSearchBoxes(null);
-
-				((MuPDFView)v).setLinkHighlighting(mLinkHighlight);
-
-				((MuPDFView)v).setChangeReporter(new Runnable() {
-					public void run() {
-						mDocView.applyToChildren(new ReaderView.ViewMapper() {
-							@Override
-							void applyToView(View view) {
-								((MuPDFView)view).update();
-							}
-						});
-					}
-				});
-			}
-
 			protected void onMoveToChild(int i) {
 				if (core == null)
 					return;
-				mPageNumberView.setText(String.format("%d / %d", i+1, core.countPages()));
-				mPageSlider.setMax((core.countPages()-1) * mPageSliderRes);
+				mPageNumberView.setText(String.format("%d / %d", i + 1,
+						core.countPages()));
+				mPageSlider.setMax((core.countPages() - 1) * mPageSliderRes);
 				mPageSlider.setProgress(i * mPageSliderRes);
-				if (SearchTaskResult.get() != null && SearchTaskResult.get().pageNumber != i) {
-					SearchTaskResult.set(null);
-					mDocView.resetupChildren();
+				super.onMoveToChild(i);
+			}
+
+			@Override
+			protected void onTapMainDocArea() {
+				if (!mButtonsVisible) {
+					showButtons();
+				} else {
+					hideButtons();
 				}
 			}
 
-			protected void onSettle(View v) {
-				// When the layout has settled ask the page to render
-				// in HQ
-				((MuPDFView)v).addHq(false);
-			}
-
-			protected void onUnsettle(View v) {
-				// When something changes making the previous settled view
-				// no longer appropriate, tell the page to remove HQ
-				((MuPDFView)v).removeHq();
-			}
-
 			@Override
-			protected void onNotInUse(View v) {
-				((MuPDFView)v).releaseResources();
-			}
-
-			@Override
-			protected void onScaleChild(View v, Float scale) {
-				((MuPDFView)v).setScale(scale);
+			protected void onDocMotion() {
+				hideButtons();
 			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
@@ -582,7 +453,7 @@ public class MuPDFActivity extends Activity
 		// Activate the select button
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				mSelecting = true;
+				mDocView.setSelectionMode(true);
 				mTopBarSwitcher.setDisplayedChild(2);
 			}
 		});
@@ -592,7 +463,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.deselectText();
-				mSelecting = false;
+				mDocView.setSelectionMode(false);
 				mTopBarSwitcher.setDisplayedChild(0);
 			}
 		});
@@ -604,7 +475,7 @@ public class MuPDFActivity extends Activity
 				boolean copied = false;
 				if (pageView != null)
 					copied = pageView.copySelection();
-				mSelecting = false;
+				mDocView.setSelectionMode(false);
 				mTopBarSwitcher.setDisplayedChild(0);
 				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
 
@@ -644,7 +515,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.strikeOutSelection();
-				mSelecting = false;
+				mDocView.setSelectionMode(false);
 				mTopBarSwitcher.setDisplayedChild(0);
 			}
 		});
@@ -728,7 +599,7 @@ public class MuPDFActivity extends Activity
 					mLinkHighlight = true;
 				}
 				// Inform pages of the change.
-				mDocView.resetupChildren();
+				mDocView.setLinksEnabled(mLinkHighlight);
 			}
 		});
 
