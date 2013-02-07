@@ -48,50 +48,10 @@ class ThreadPerTaskExecutor implements Executor {
 	}
 }
 
-class SearchTaskResult {
-	public final String txt;
-	public final int   pageNumber;
-	public final RectF searchBoxes[];
-	static private SearchTaskResult singleton;
-
-	SearchTaskResult(String _txt, int _pageNumber, RectF _searchBoxes[]) {
-		txt = _txt;
-		pageNumber = _pageNumber;
-		searchBoxes = _searchBoxes;
-	}
-
-	static public SearchTaskResult get() {
-		return singleton;
-	}
-
-	static public void set(SearchTaskResult r) {
-		singleton = r;
-	}
-}
-
-class ProgressDialogX extends ProgressDialog {
-	public ProgressDialogX(Context context) {
-		super(context);
-	}
-
-	private boolean mCancelled = false;
-
-	public boolean isCancelled() {
-		return mCancelled;
-	}
-
-	@Override
-	public void cancel() {
-		mCancelled = true;
-		super.cancel();
-	}
-}
-
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
 	private static int   tapPageMargin;
-	private static final int    SEARCH_PROGRESS_DELAY = 200;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private ReaderView   mDocView;
@@ -117,8 +77,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
-	private AsyncTask<Void,Integer,SearchTaskResult> mSearchTask;
-	//private SearchTaskResult mSearchTaskResult;
+	private SearchTask   mSearchTask;
 	private AlertDialog.Builder mAlertBuilder;
 	private boolean    mLinkHighlight = false;
 	private boolean mSelecting = false;
@@ -569,6 +528,18 @@ public class MuPDFActivity extends Activity
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
 
+		mSearchTask = new SearchTask(this, core) {
+			@Override
+			protected void onTextFound(SearchTaskResult result) {
+				SearchTaskResult.set(result);
+				// Ask the ReaderView to move to the resulting page
+				mDocView.setDisplayedViewIndex(result.pageNumber);
+				// Make the ReaderView act on the change to SearchTaskResult
+				// via overridden onChildSetup method.
+				mDocView.resetupChildren();
+			}
+		};
+
 		// Make the buttons overlay, and store all its
 		// controls in variables
 		makeButtonsView();
@@ -847,7 +818,7 @@ public class MuPDFActivity extends Activity
 	protected void onPause() {
 		super.onPause();
 
-		killSearch();
+		mSearchTask.stop();
 
 		if (mFileName != null && mDocView != null) {
 			SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
@@ -1006,96 +977,12 @@ public class MuPDFActivity extends Activity
 			imm.hideSoftInputFromWindow(mSearchText.getWindowToken(), 0);
 	}
 
-	void killSearch() {
-		if (mSearchTask != null) {
-			mSearchTask.cancel(true);
-			mSearchTask = null;
-		}
-	}
-
 	void search(int direction) {
 		hideKeyboard();
-		if (core == null)
-			return;
-		killSearch();
-
-		final int increment = direction;
-		final int startIndex = SearchTaskResult.get() == null ? mDocView.getDisplayedViewIndex() : SearchTaskResult.get().pageNumber + increment;
-
-		final ProgressDialogX progressDialog = new ProgressDialogX(this);
-		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		progressDialog.setTitle(getString(R.string.searching_));
-		progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				killSearch();
-			}
-		});
-		progressDialog.setMax(core.countPages());
-
-		mSearchTask = new AsyncTask<Void,Integer,SearchTaskResult>() {
-			@Override
-			protected SearchTaskResult doInBackground(Void... params) {
-				int index = startIndex;
-
-				while (0 <= index && index < core.countPages() && !isCancelled()) {
-					publishProgress(index);
-					RectF searchHits[] = core.searchPage(index, mSearchText.getText().toString());
-
-					if (searchHits != null && searchHits.length > 0)
-						return new SearchTaskResult(mSearchText.getText().toString(), index, searchHits);
-
-					index += increment;
-				}
-				return null;
-			}
-
-			@Override
-			protected void onPostExecute(SearchTaskResult result) {
-				progressDialog.cancel();
-				if (result != null) {
-					// Ask the ReaderView to move to the resulting page
-					mDocView.setDisplayedViewIndex(result.pageNumber);
-				    SearchTaskResult.set(result);
-					// Make the ReaderView act on the change to mSearchTaskResult
-					// via overridden onChildSetup method.
-				    mDocView.resetupChildren();
-				} else {
-					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurences_found);
-					AlertDialog alert = mAlertBuilder.create();
-					alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
-							(DialogInterface.OnClickListener)null);
-					alert.show();
-				}
-			}
-
-			@Override
-			protected void onCancelled() {
-				super.onCancelled();
-				progressDialog.cancel();
-			}
-
-			@Override
-			protected void onProgressUpdate(Integer... values) {
-				super.onProgressUpdate(values);
-				progressDialog.setProgress(values[0].intValue());
-			}
-
-			@Override
-			protected void onPreExecute() {
-				super.onPreExecute();
-				mHandler.postDelayed(new Runnable() {
-					public void run() {
-						if (!progressDialog.isCancelled())
-						{
-							progressDialog.show();
-							progressDialog.setProgress(startIndex);
-						}
-					}
-				}, SEARCH_PROGRESS_DELAY);
-			}
-		};
-
-		mSearchTask.execute();
+		int displayPage = mDocView.getDisplayedViewIndex();
+		SearchTaskResult r = SearchTaskResult.get();
+		int searchPage = r != null ? r.pageNumber : -1;
+		mSearchTask.go(mSearchText.getText().toString(), direction, displayPage, searchPage);
 	}
 
 	@Override
