@@ -381,7 +381,7 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 			ndelta.y = delta.y / dist;
 			dot = ndelta.x * ndir.x + ndelta.y * ndir.y;
 
-			if (fabsf(dot) > 0.95f && dist > size * SPACE_DIST && dist < size * SPACE_MAX_DIST)
+			if (fabsf(dot) > 0.9995f && dist > size * SPACE_DIST && dist < size * SPACE_MAX_DIST)
 			{
 				if (dev->lastchar != ' ')
 				{
