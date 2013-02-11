@@ -133,9 +133,9 @@ search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	fz_page *page = fz_load_page(doc, number);
 
 	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx, fz_empty_rect);
+	fz_text_page *text = fz_new_text_page(ctx, &fz_empty_rect);
 	fz_device *dev = fz_new_text_device(ctx, sheet, text);
-	fz_run_page(doc, page, dev, fz_identity, cookie);
+	fz_run_page(doc, page, dev, &fz_identity, cookie);
 	fz_free_device(dev);
 
 	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));;
@@ -227,7 +227,8 @@ static CGSize fitPageToScreen(CGSize page, CGSize screen)
 static CGSize measurePage(fz_document *doc, fz_page *page)
 {
 	CGSize pageSize;
-	fz_rect bounds = fz_bound_page(doc, page);
+	fz_rect bounds;
+	fz_bound_page(doc, page, &bounds);
 	pageSize.width = bounds.x1 - bounds.x0;
 	pageSize.height = bounds.y1 - bounds.y0;
 	return pageSize;
@@ -236,7 +237,7 @@ static CGSize measurePage(fz_document *doc, fz_page *page)
 static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 {
 	CGSize pageSize;
-	fz_rect bbox;
+	fz_irect bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
@@ -247,14 +248,14 @@ static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 
 	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
-	ctm = fz_scale(scale.width, scale.height);
-	bbox = (fz_rect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
+	fz_scale(&ctm, scale.width, scale.height);
+	bbox = (fz_irect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, &bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, ctm, NULL);
+	fz_run_page(doc, page, dev, &ctm, NULL);
 	fz_free_device(dev);
 
 	return newImageWithPixmap(pix);
@@ -263,7 +264,7 @@ static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	CGSize pageSize;
-	fz_rect bbox;
+	fz_irect bbox;
 	fz_matrix ctm;
 	fz_device *dev;
 	fz_pixmap *pix;
@@ -278,18 +279,18 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 
 	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
-	ctm = fz_scale(scale.width * zoom, scale.height * zoom);
+	fz_scale(&ctm, scale.width * zoom, scale.height * zoom);
 
 	bbox.x0 = tileRect.origin.x;
 	bbox.y0 = tileRect.origin.y;
 	bbox.x1 = tileRect.origin.x + tileRect.size.width;
 	bbox.y1 = tileRect.origin.y + tileRect.size.height;
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, &bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, ctm, NULL);
+	fz_run_page(doc, page, dev, &ctm, NULL);
 	fz_free_device(dev);
 
 	return newImageWithPixmap(pix);
@@ -717,6 +718,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 		dispatch_async(queue, ^{
 			if (block_page)
 				fz_free_page(block_doc, block_page);
+			block_page = nil;
 		});
 		[linkView release];
 		[hitView release];
