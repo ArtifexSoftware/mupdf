@@ -9,6 +9,8 @@
 #undef DEBUG_INTERNALS
 #undef DEBUG_LINE_HEIGHTS
 
+#undef SPOT_LINE_NUMBERS
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
@@ -1223,6 +1225,156 @@ split_block(fz_context *ctx, fz_text_page *page, int block_num, int linenum)
 	page->blocks[block_num+1].lines[0].distance = 0;
 }
 
+static inline int
+is_unicode_wspace(int c)
+{
+	return (c == 9 || /* TAB */
+		c == 0x0a || /* HT */
+		c == 0x0b || /* LF */
+		c == 0x0c || /* VT */
+		c == 0x0d || /* FF */
+		c == 0x20 || /* CR */
+		c == 0x85 || /* NEL */
+		c == 0xA0 || /* No break space */
+		c == 0x1680 || /* Ogham space mark */
+		c == 0x180E || /* Mongolian Vowel Separator */
+		c == 0x2000 || /* En quad */
+		c == 0x2001 || /* Em quad */
+		c == 0x2002 || /* En space */
+		c == 0x2003 || /* Em space */
+		c == 0x2004 || /* Three-per-Em space */
+		c == 0x2005 || /* Four-per-Em space */
+		c == 0x2006 || /* Five-per-Em space */
+		c == 0x2007 || /* Figure space */
+		c == 0x2008 || /* Punctuation space */
+		c == 0x2009 || /* Thin space */
+		c == 0x200A || /* Hair space */
+		c == 0x2028 || /* Line separator */
+		c == 0x2029 || /* Paragraph separator */
+		c == 0x202F || /* Narrow no-break space */
+		c == 0x205F || /* Medium mathematical space */
+		c == 0x3000); /* Ideographic space */
+}
+
+static inline int
+is_unicode_bullet(int c)
+{
+	/* The last 2 aren't strictly bullets, but will do for our usage here */
+	return (c == 0x2022 || /* Bullet */
+		c == 0x2023 || /* Triangular bullet */
+		c == 0x25e6 || /* White bullet */
+		c == 0x2043 || /* Hyphen bullet */
+		c == 0x2219 || /* Bullet operator */
+		c == 149 || /* Ascii bullet */
+		c == '*');
+}
+
+static inline int
+is_number(int c)
+{
+	return ((c >= '0' && c <= '9') ||
+		(c == '.'));
+}
+
+static inline int
+is_latin_char(int c)
+{
+	return ((c >= 'A' && c <= 'Z') ||
+		(c >= 'a' && c <= 'z'));
+}
+
+static inline int
+is_roman(int c)
+{
+	return (c == 'i' || c == 'I' ||
+		c == 'v' || c == 'V' ||
+		c == 'x' || c == 'X' ||
+		c == 'l' || c == 'L' ||
+		c == 'c' || c == 'C' ||
+		c == 'm' || c == 'M');
+}
+
+static int
+is_list_entry(fz_text_span *span, int *char_num_ptr, int span_num)
+{
+	int char_num;
+	fz_text_char *chr;
+
+	/* First, skip over any whitespace */
+	for (char_num = 0; char_num < span->len; char_num++)
+	{
+		chr = &span->text[char_num];
+		if (!is_unicode_wspace(chr->c))
+			break;
+	}
+	*char_num_ptr = char_num;
+
+	if (span_num != 0 || char_num >= span->len)
+		return 0;
+
+	/* Now we check for various special cases, which we consider to mean
+	 * that this is probably a list entry and therefore should always count
+	 * as a separate paragraph (and hence not be entered in the line height
+	 * table). */
+	chr = &span->text[char_num];
+
+	/* Is the first char on the line, a bullet point? */
+	if (is_unicode_bullet(chr->c))
+		return 1;
+
+#ifdef SPOT_LINE_NUMBERS
+	/* Is the entire first span a number? Or does it start with a number
+	 * followed by ) or : ? Allow to involve single latin chars too. */
+	if (is_number(chr->c) || is_latin_char(chr->c))
+	{
+		int cn = char_num;
+		int met_char = is_latin_char(chr->c);
+		for (cn = char_num+1; cn < span->len; cn++)
+		{
+			fz_text_char *chr2 = &span->text[cn];
+
+			if (is_latin_char(chr2->c) && !met_char)
+			{
+				met_char = 1;
+				continue;
+			}
+			met_char = 0;
+			if (!is_number(chr2->c) && !is_unicode_wspace(chr2->c))
+				break;
+			else if (chr2->c == ')' || chr2->c == ':')
+			{
+				cn = span->len;
+				break;
+			}
+		}
+		if (cn == span->len)
+			return 1;
+	}
+
+	/* Is the entire first span a roman numeral? Or does it start with
+	 * a roman numeral followed by ) or : ? */
+	if (is_roman(chr->c))
+	{
+		int cn = char_num;
+		for (cn = char_num+1; cn < span->len; cn++)
+		{
+			fz_text_char *chr2 = &span->text[cn];
+
+			if (!is_roman(chr2->c) && !is_unicode_wspace(chr2->c))
+				break;
+			else if (chr2->c == ')' || chr2->c == ':')
+			{
+				cn = span->len;
+				break;
+			}
+		}
+		if (cn == span->len)
+			return 1;
+	}
+#endif
+	return 0;
+}
+
 void
 fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
@@ -1255,9 +1407,18 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 			{
 				fz_text_span *span = line->spans[span_num];
 				int char_num;
-				for (char_num = 0; char_num < span->len; char_num++)
+
+				if (is_list_entry(span, &char_num, span_num))
+					goto list_entry;
+
+				for (; char_num < span->len; char_num++)
 				{
 					fz_text_char *chr = &span->text[char_num];
+
+					/* Ignore any whitespace chars */
+					if (is_unicode_wspace(chr->c))
+						continue;
+
 					if (chr->style != style)
 					{
 						/* Have we had this style before? */
@@ -1296,6 +1457,8 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 						style = chr->style;
 					}
 				}
+list_entry:
+				{}
 			}
 		}
 	}
@@ -1315,7 +1478,7 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 			 * is correct for that style. FIXME: We check each style
 			 * more than once, currently. */
 			int span_num;
-			int ok = 0;
+			int ok = 0; /* -1 = early exit, split now. 0 = split. 1 = don't split. */
 			fz_text_style *style = NULL;
 			line = &block->lines[line_num];
 
@@ -1329,9 +1492,19 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 			{
 				fz_text_span *span = line->spans[span_num];
 				int char_num;
-				for (char_num = 0; char_num < span->len; char_num++)
+
+				if (is_list_entry(span, &char_num, span_num))
+					goto force_paragraph;
+
+				/* Now we do the rest of the line */
+				for (; char_num < span->len; char_num++)
 				{
 					fz_text_char *chr = &span->text[char_num];
+
+					/* Ignore any whitespace chars */
+					if (is_unicode_wspace(chr->c))
+						continue;
+
 					if (chr->style != style)
 					{
 						float proper_step = line_height_for_style(lh, chr->style);
@@ -1348,6 +1521,7 @@ fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 			}
 			if (!ok)
 			{
+force_paragraph:
 				split_block(ctx, page, block_num, line_num);
 				break;
 			}
