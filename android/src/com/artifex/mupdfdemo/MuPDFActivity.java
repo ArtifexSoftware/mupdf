@@ -372,6 +372,7 @@ public class MuPDFActivity extends Activity
 		alert.show();
 	}
 
+
 	public void createUI(Bundle savedInstanceState) {
 		if (core == null)
 			return;
@@ -755,9 +756,11 @@ public class MuPDFActivity extends Activity
 		if (mReflow) {
 			mDocView.setAdapter(new MuPDFReflowAdapter(this, core));
 			mReflowButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
+			showInfo("Entering reflow mode");
 		} else {
 			mDocView.setAdapter(new MuPDFPageAdapter(this, core));
 			mReflowButton.setColorFilter(Color.argb(0xFF, 255, 255, 255));
+			showInfo("Exited reflow mode");
 		}
 		mDocView.refresh(mReflow);
 	}
