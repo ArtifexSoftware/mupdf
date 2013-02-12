@@ -655,8 +655,10 @@ public class MuPDFActivity extends Activity
 		mReflow = !mReflow;
 		if (mReflow) {
 			mDocView.setAdapter(new MuPDFReflowAdapter(this, core));
+			mReflowButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
 		} else {
 			mDocView.setAdapter(new MuPDFPageAdapter(this, core));
+			mReflowButton.setColorFilter(Color.argb(0xFF, 255, 255, 255));
 		}
 		mDocView.refresh(mReflow);
 	}
