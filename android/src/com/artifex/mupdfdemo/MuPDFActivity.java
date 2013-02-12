@@ -728,6 +728,9 @@ public class MuPDFActivity extends Activity
 		if(savedInstanceState != null && savedInstanceState.getBoolean("SearchMode", false))
 			searchModeOn();
 
+		if(savedInstanceState != null && savedInstanceState.getBoolean("ReflowMode", false))
+			reflowModeSet(true);
+
 		// Stick the document view and the buttons overlay into a parent view
 		RelativeLayout layout = new RelativeLayout(this);
 		layout.addView(mDocView);
@@ -751,8 +754,9 @@ public class MuPDFActivity extends Activity
 		return mycore;
 	}
 
-	private void toggleReflow() {
-		mReflow = !mReflow;
+	private void reflowModeSet(boolean reflow)
+	{
+		mReflow = reflow;
 		if (mReflow) {
 			mDocView.setAdapter(new MuPDFReflowAdapter(this, core));
 			mReflowButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
@@ -763,6 +767,11 @@ public class MuPDFActivity extends Activity
 			showInfo("Exited reflow mode");
 		}
 		mDocView.refresh(mReflow);
+	}
+
+	private void toggleReflow() {
+		reflowModeSet(!mReflow);
+		popUp(mReflow ? "Entering reflow mode" : "Leaving reflow mode");
 	}
 
 	@Override
@@ -787,6 +796,9 @@ public class MuPDFActivity extends Activity
 
 		if (mTopBarMode == TopBarMode.Search)
 			outState.putBoolean("SearchMode", true);
+
+		if (mReflow)
+			outState.putBoolean("ReflowMode", true);
 	}
 
 	@Override
