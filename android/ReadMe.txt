@@ -115,9 +115,7 @@ capable of building for android is capable of doing a normal hosted
 build.
 
 On windows (where you are using cygwin), or on linux/macos, this can be
-as simple as running 'make' in the top level directory. Even if the
-make process fails, it should get far enough to generate you the required
-'generated' directory, and you can continue through these instructions.
+as simple as running 'make generate' in the top level directory.
 
 11) Change into mupdf's android directory. Copy the
 android/local.properties.sample file to be android/local.properties and
