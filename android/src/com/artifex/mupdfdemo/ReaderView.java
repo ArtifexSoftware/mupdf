@@ -88,6 +88,7 @@ public class ReaderView extends AdapterView<Adapter>
 
 	public void setDisplayedViewIndex(int i) {
 		if (0 <= i && i < mAdapter.getCount()) {
+			onMoveOffChild(mCurrent);
 			mCurrent = i;
 			onMoveToChild(i);
 			mResetLayout = true;
@@ -309,6 +310,8 @@ public class ReaderView extends AdapterView<Adapter>
 
 	protected void onMoveToChild(int i) {}
 
+	protected void onMoveOffChild(int i) {}
+
 	protected void onSettle(View v) {};
 
 	protected void onUnsettle(View v) {};
@@ -316,6 +319,10 @@ public class ReaderView extends AdapterView<Adapter>
 	protected void onNotInUse(View v) {};
 
 	protected void onScaleChild(View v, Float scale) {};
+
+	public View getView(int i) {
+		return mChildViews.get(i);
+	}
 
 	public View getDisplayedView() {
 		return mChildViews.get(mCurrent);
@@ -533,6 +540,7 @@ public class ReaderView extends AdapterView<Adapter>
 					// where we must set hq area for the new current view
 					post(this);
 
+					onMoveOffChild(mCurrent);
 					mCurrent++;
 					onMoveToChild(mCurrent);
 				}
@@ -543,6 +551,7 @@ public class ReaderView extends AdapterView<Adapter>
 					// where we must set hq area for the new current view
 					post(this);
 
+					onMoveOffChild(mCurrent);
 					mCurrent--;
 					onMoveToChild(mCurrent);
 				}

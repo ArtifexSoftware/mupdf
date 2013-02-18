@@ -108,6 +108,9 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	public void setLinkHighlighting(boolean f) {
 	}
 
+	public void setItemSelectBox(RectF rect) {
+	}
+
 	public void setChangeReporter(Runnable reporter) {
 	}
 

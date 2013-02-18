@@ -101,6 +101,7 @@ class TextSelector {
 public abstract class PageView extends ViewGroup {
 	private static final int HIGHLIGHT_COLOR = 0x802572AC;
 	private static final int LINK_COLOR = 0x80AC7225;
+	private static final int BOX_COLOR = 0xFF4444FF;
 	private static final int BACKGROUND_COLOR = 0xFFFFFFFF;
 	private static final int PROGRESS_DIALOG_DELAY = 200;
 	protected final Context   mContext;
@@ -124,6 +125,7 @@ public abstract class PageView extends ViewGroup {
 	protected     LinkInfo  mLinks[];
 	private       RectF     mSelectBox;
 	private       TextWord  mText[][];
+	private       RectF     mItemSelectBox;
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
 	private       boolean   mHighlightLinks;
@@ -191,6 +193,7 @@ public abstract class PageView extends ViewGroup {
 		mLinks = null;
 		mSelectBox = null;
 		mText = null;
+		mItemSelectBox = null;
 	}
 
 	public void releaseResources() {
@@ -337,6 +340,12 @@ public abstract class PageView extends ViewGroup {
 							}
 						});
 					}
+
+					if (mItemSelectBox != null) {
+						paint.setStyle(Paint.Style.STROKE);
+						paint.setColor(BOX_COLOR);
+						canvas.drawRect(mItemSelectBox.left*scale, mItemSelectBox.top*scale, mItemSelectBox.right*scale, mItemSelectBox.bottom*scale, paint);
+					}
 				}
 			};
 
@@ -395,6 +404,12 @@ public abstract class PageView extends ViewGroup {
 
 	protected void processSelectedText(TextProcessor tp) {
 		(new TextSelector(mText, mSelectBox)).select(tp);
+	}
+
+	public void setItemSelectBox(RectF rect) {
+		mItemSelectBox = rect;
+		if (mSearchView != null)
+			mSearchView.invalidate();
 	}
 
 	@Override

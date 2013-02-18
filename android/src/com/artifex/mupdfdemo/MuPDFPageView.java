@@ -64,7 +64,9 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
+	private Annotation mAnnotations[];
 	private AsyncTask<Void,Void,RectF[]> mLoadWidgetAreas;
+	private AsyncTask<Void,Void,Annotation[]> mLoadAnnotations;
 	private AlertDialog.Builder mTextEntryBuilder;
 	private AlertDialog.Builder mChoiceEntryBuilder;
 	private AlertDialog mTextEntry;
@@ -165,15 +167,37 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
 		final float docRelX = (x - getLeft())/scale;
 		final float docRelY = (y - getTop())/scale;
-		boolean hitWidget = false;
+		boolean hit = false;
+		int i;
 
-		if (mWidgetAreas != null) {
-			for (int i = 0; i < mWidgetAreas.length && !hitWidget; i++)
-				if (mWidgetAreas[i].contains(docRelX, docRelY))
-					hitWidget = true;
+		if (mAnnotations != null) {
+			for (i = 0; i < mAnnotations.length; i++)
+				if (mAnnotations[i].contains(docRelX, docRelY)) {
+					hit = true;
+					break;
+				}
+
+			if (hit) {
+				switch (mAnnotations[i].type) {
+				case HIGHLIGHT:
+				case UNDERLINE:
+				case SQUIGGLY:
+				case STRIKEOUT:
+					setItemSelectBox(mAnnotations[i]);
+					return true;
+				}
+			}
 		}
 
-		if (hitWidget) {
+		setItemSelectBox(null);
+
+		if (mWidgetAreas != null) {
+			for (i = 0; i < mWidgetAreas.length && !hit; i++)
+				if (mWidgetAreas[i].contains(docRelX, docRelY))
+					hit = true;
+		}
+
+		if (hit) {
 			mPassClick = new AsyncTask<Void,Void,PassClickResult>() {
 				@Override
 				protected PassClickResult doInBackground(Void... arg0) {
@@ -203,7 +227,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			mPassClick.execute();
 		}
 
-		return hitWidget;
+		return hit;
 	}
 
 	public boolean copySelection() {
@@ -282,6 +306,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 
 			@Override
 			protected void onPostExecute(Void result) {
+				loadAnnotations();
 				update();
 			}
 		};
@@ -318,8 +343,29 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		mCore.addStrikeOutAnnotation(mPageNumber, lines);
 	}
 
+	private void loadAnnotations() {
+		mAnnotations = null;
+		if (mLoadAnnotations != null)
+			mLoadAnnotations.cancel(true);
+		mLoadAnnotations = new AsyncTask<Void,Void,Annotation[]> () {
+			@Override
+			protected Annotation[] doInBackground(Void... params) {
+				return mCore.getAnnoations(mPageNumber);
+			}
+
+			@Override
+			protected void onPostExecute(Annotation[] result) {
+				mAnnotations = result;
+			}
+		};
+
+		mLoadAnnotations.execute();
+	}
+
 	@Override
 	public void setPage(final int page, PointF size) {
+		loadAnnotations();
+
 		mLoadWidgetAreas = new AsyncTask<Void,Void,RectF[]> () {
 			@Override
 			protected RectF[] doInBackground(Void... arg0) {
@@ -352,6 +398,11 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		if (mLoadWidgetAreas != null) {
 			mLoadWidgetAreas.cancel(true);
 			mLoadWidgetAreas = null;
+		}
+
+		if (mLoadAnnotations != null) {
+			mLoadAnnotations.cancel(true);
+			mLoadAnnotations = null;
 		}
 
 		if (mSetWidgetText != null) {

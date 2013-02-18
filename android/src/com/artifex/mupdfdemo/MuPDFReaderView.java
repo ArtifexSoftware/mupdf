@@ -159,6 +159,13 @@ public class MuPDFReaderView extends ReaderView {
 		}
 	}
 
+	@Override
+	protected void onMoveOffChild(int i) {
+		View v = getView(i);
+		if (v != null)
+			((MuPDFView)v).setItemSelectBox(null);
+	}
+
 	protected void onSettle(View v) {
 		// When the layout has settled ask the page to render
 		// in HQ
