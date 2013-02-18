@@ -1,6 +1,9 @@
 package com.artifex.mupdfdemo;
 
+import java.util.ArrayList;
+
 import android.app.AlertDialog;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -56,6 +59,8 @@ class PassClickResultChoice extends PassClickResult {
 }
 
 public class MuPDFPageView extends PageView implements MuPDFView {
+	private static final float LINE_THICKNESS = 0.07f;
+	private static final float STRIKE_HEIGHT = 0.375f;
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
@@ -66,6 +71,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private EditText mEditText;
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
 	private AsyncTask<String,Void,Void> mSetWidgetChoice;
+	private       AsyncTask<RectF[],Void,Void> mAddStrikeOut;
 	private Runnable changeReporter;
 
 	public MuPDFPageView(Context c, MuPDFCore core, Point parentSize) {
@@ -200,6 +206,91 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		return hitWidget;
 	}
 
+	public boolean copySelection() {
+		final StringBuilder text = new StringBuilder();
+
+		processSelectedText(new TextProcessor() {
+			StringBuilder line;
+
+			public void onStartLine() {
+				line = new StringBuilder();
+			}
+
+			public void onWord(TextWord word) {
+				if (line.length() > 0)
+					line.append(' ');
+				line.append(word.w);
+			}
+
+			public void onEndLine() {
+				if (text.length() > 0)
+					text.append('\n');
+				text.append(line);
+			}
+		});
+
+		if (text.length() == 0)
+			return false;
+
+		int currentApiVersion = android.os.Build.VERSION.SDK_INT;
+		if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+			android.content.ClipboardManager cm = (android.content.ClipboardManager)mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+
+			cm.setPrimaryClip(ClipData.newPlainText("MuPDF", text));
+		} else {
+			android.text.ClipboardManager cm = (android.text.ClipboardManager)mContext.getSystemService(Context.CLIPBOARD_SERVICE);
+			cm.setText(text);
+		}
+
+		deselectText();
+
+		return true;
+	}
+
+	public void strikeOutSelection() {
+		final ArrayList<RectF> lines = new ArrayList<RectF>();
+		processSelectedText(new TextProcessor() {
+			RectF rect;
+
+			public void onStartLine() {
+				rect = new RectF();
+			}
+
+			public void onWord(TextWord word) {
+				rect.union(word);
+			}
+
+			public void onEndLine() {
+				if (!rect.isEmpty()) {
+					// These are vertical lines so we can specify
+					// both position and thickness with a RectF
+					float vcenter = rect.bottom - (rect.bottom - rect.top)*STRIKE_HEIGHT;
+					float thickness = (rect.bottom - rect.top)*LINE_THICKNESS;
+					rect.top = vcenter - thickness/2;
+					rect.bottom = vcenter + thickness/2;
+					lines.add(rect);
+				}
+			}
+		});
+
+		mAddStrikeOut = new AsyncTask<RectF[],Void,Void>() {
+			@Override
+			protected Void doInBackground(RectF[]... params) {
+				addStrikeOut(params[0]);
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				update();
+			}
+		};
+
+		mAddStrikeOut.execute(lines.toArray(new RectF[lines.size()]));
+
+		deselectText();
+	}
+
 	@Override
 	protected Bitmap drawPage(int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
@@ -249,5 +340,35 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	public void setScale(float scale) {
 		// This type of view scales automatically to fit the size
 		// determined by the parent view groups during layout
+	}
+
+	@Override
+	public void releaseResources() {
+		if (mPassClick != null) {
+			mPassClick.cancel(true);
+			mPassClick = null;
+		}
+
+		if (mLoadWidgetAreas != null) {
+			mLoadWidgetAreas.cancel(true);
+			mLoadWidgetAreas = null;
+		}
+
+		if (mSetWidgetText != null) {
+			mSetWidgetText.cancel(true);
+			mSetWidgetText = null;
+		}
+
+		if (mSetWidgetChoice != null) {
+			mSetWidgetChoice.cancel(true);
+			mSetWidgetChoice = null;
+		}
+
+		if (mAddStrikeOut != null) {
+			mAddStrikeOut.cancel(true);
+			mAddStrikeOut = null;
+		}
+
+		super.releaseResources();
 	}
 }
