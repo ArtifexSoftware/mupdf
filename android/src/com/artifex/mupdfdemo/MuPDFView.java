@@ -1,7 +1,6 @@
 package com.artifex.mupdfdemo;
 
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.graphics.RectF;
 
 public interface MuPDFView {

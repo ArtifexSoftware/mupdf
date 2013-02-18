@@ -1,15 +1,13 @@
 package com.artifex.mupdfdemo;
 
-import java.util.concurrent.Executor;
 import java.io.InputStream;
-import java.io.FileInputStream;
+import java.util.concurrent.Executor;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,19 +15,14 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
-import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;

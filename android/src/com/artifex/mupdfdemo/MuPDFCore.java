@@ -49,6 +49,7 @@ public class MuPDFCore
 	private native int getFocusedWidgetTypeInternal();
 	private native LinkInfo [] getPageLinksInternal(int page);
 	private native RectF[] getWidgetAreasInternal(int page);
+	private native Annotation[] getAnnotationsInternal(int page);
 	private native OutlineItem [] getOutlineInternal();
 	private native boolean hasOutlineInternal();
 	private native boolean needsPasswordInternal();
@@ -194,6 +195,10 @@ public class MuPDFCore
 
 	public synchronized RectF [] getWidgetAreas(int page) {
 		return getWidgetAreasInternal(page);
+	}
+
+	public synchronized Annotation [] getAnnoations(int page) {
+		return getAnnotationsInternal(page);
 	}
 
 	public synchronized RectF [] searchPage(int page, String text) {

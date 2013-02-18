@@ -1678,6 +1678,60 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	return arr;
 }
 
+JNIEXPORT jobjectArray JNICALL
+JNI_FN(MuPDFCore_getAnnotationsInternal)(JNIEnv * env, jobject thiz, int pageNumber)
+{
+	jclass annotClass;
+	jmethodID ctor;
+	jobjectArray arr;
+	jobject jannot;
+	fz_annot *annot;
+	fz_matrix ctm;
+	float zoom;
+	int count;
+	page_cache *pc;
+	globals *glo = get_globals(env, thiz);
+
+	annotClass = (*env)->FindClass(env, PACKAGENAME "/Annotation");
+	if (annotClass == NULL) return NULL;
+	ctor = (*env)->GetMethodID(env, annotClass, "<init>", "(FFFFI)V");
+	if (ctor == NULL) return NULL;
+
+	JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, pageNumber);
+	pc = &glo->pages[glo->current];
+	if (pc->number != pageNumber || pc->page == NULL)
+		return NULL;
+
+	zoom = glo->resolution / 72;
+	fz_scale(&ctm, zoom, zoom);
+
+	count = 0;
+	for (annot = fz_first_annot(glo->doc, pc->page); annot; annot = fz_next_annot(glo->doc, annot))
+		count ++;
+
+	arr = (*env)->NewObjectArray(env, count, annotClass, NULL);
+	if (arr == NULL) return NULL;
+
+	count = 0;
+	for (annot = fz_first_annot(glo->doc, pc->page); annot; annot = fz_next_annot(glo->doc, annot))
+	{
+		fz_rect rect;
+		fz_annot_type type = fz_get_annot_type(annot);
+		fz_bound_annot(glo->doc, annot, &rect);
+		fz_transform_rect(&rect, &ctm);
+
+		jannot = (*env)->NewObject(env, annotClass, ctor,
+				(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1, type);
+		if (jannot == NULL) return NULL;
+		(*env)->SetObjectArrayElement(env, arr, count, jannot);
+		(*env)->DeleteLocalRef(env, jannot);
+
+		count ++;
+	}
+
+	return arr;
+}
+
 JNIEXPORT int JNICALL
 JNI_FN(MuPDFCore_passClickEventInternal)(JNIEnv * env, jobject thiz, int pageNumber, float x, float y)
 {

@@ -7,7 +7,6 @@ import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -232,7 +231,6 @@ public class ReaderView extends AdapterView<Adapter>
 		int left  = -(v.getLeft() + mXScroll + remainingX);
 		int top   = -(v.getTop()  + mYScroll + remainingY);
 		// docWidth/Height are the width/height of the scaled document e.g. 2000x3000
-		int docWidth  = v.getMeasuredWidth();
 		int docHeight = v.getMeasuredHeight();
 
 		int xOffset, yOffset;
