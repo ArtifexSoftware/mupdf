@@ -44,6 +44,8 @@ class ThreadPerTaskExecutor implements Executor {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
+	enum TopBarMode {Main, Search, Text, Annotation};
+
 	private MuPDFCore    core;
 	private String       mFileName;
 	private MuPDFReaderView mDocView;
@@ -65,7 +67,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mOutlineButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
-	private boolean      mTopBarIsSearch;
+	private TopBarMode   mTopBarMode;
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
@@ -389,6 +391,24 @@ public class MuPDFActivity extends Activity
 			protected void onDocMotion() {
 				hideButtons();
 			}
+
+			@Override
+			protected void onHit(Hit item) {
+				switch (item) {
+				case Annotation:
+					showButtons();
+					mTopBarMode = TopBarMode.Annotation;
+					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+					break;
+				case Widget:
+				case Nothing:
+					if (mTopBarMode == TopBarMode.Annotation) {
+						mTopBarMode = TopBarMode.Main;
+						mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+					}
+					break;
+				}
+			}
 		};
 		mDocView.setAdapter(new MuPDFPageAdapter(this, core));
 
@@ -447,7 +467,8 @@ public class MuPDFActivity extends Activity
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				mDocView.setSelectionMode(true);
-				mTopBarSwitcher.setDisplayedChild(2);
+				mTopBarMode = TopBarMode.Text;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
 		});
 
@@ -457,7 +478,8 @@ public class MuPDFActivity extends Activity
 				if (pageView != null)
 					pageView.deselectText();
 				mDocView.setSelectionMode(false);
-				mTopBarSwitcher.setDisplayedChild(0);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
 		});
 
@@ -469,7 +491,8 @@ public class MuPDFActivity extends Activity
 				if (pageView != null)
 					copied = pageView.copySelection();
 				mDocView.setSelectionMode(false);
-				mTopBarSwitcher.setDisplayedChild(0);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
 
 				int currentApiVersion = android.os.Build.VERSION.SDK_INT;
@@ -509,7 +532,8 @@ public class MuPDFActivity extends Activity
 				if (pageView != null)
 					pageView.strikeOutSelection();
 				mDocView.setSelectionMode(false);
-				mTopBarSwitcher.setDisplayedChild(0);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
 		});
 
@@ -676,7 +700,7 @@ public class MuPDFActivity extends Activity
 		if (!mButtonsVisible)
 			outState.putBoolean("ButtonsHidden", true);
 
-		if (mTopBarIsSearch)
+		if (mTopBarMode == TopBarMode.Search)
 			outState.putBoolean("SearchMode", true);
 	}
 
@@ -716,7 +740,7 @@ public class MuPDFActivity extends Activity
 			updatePageNumView(index);
 			mPageSlider.setMax((core.countPages()-1)*mPageSliderRes);
 			mPageSlider.setProgress(index*mPageSliderRes);
-			if (mTopBarIsSearch) {
+			if (mTopBarMode == TopBarMode.Search) {
 				mSearchText.requestFocus();
 				showKeyboard();
 			}
@@ -779,20 +803,20 @@ public class MuPDFActivity extends Activity
 	}
 
 	void searchModeOn() {
-		if (!mTopBarIsSearch) {
-			mTopBarIsSearch = true;
+		if (mTopBarMode != TopBarMode.Search) {
+			mTopBarMode = TopBarMode.Search;
 			//Focus on EditTextWidget
 			mSearchText.requestFocus();
 			showKeyboard();
-			mTopBarSwitcher.setDisplayedChild(1);
+			mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		}
 	}
 
 	void searchModeOff() {
-		if (mTopBarIsSearch) {
-			mTopBarIsSearch = false;
+		if (mTopBarMode == TopBarMode.Search) {
+			mTopBarMode = TopBarMode.Main;
 			hideKeyboard();
-			mTopBarSwitcher.setDisplayedChild(0);
+			mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			SearchTaskResult.set(null);
 			// Make the ReaderView act on the change to mSearchTaskResult
 			// via overridden onChildSetup method.
@@ -853,7 +877,7 @@ public class MuPDFActivity extends Activity
 
 	@Override
 	public boolean onSearchRequested() {
-		if (mButtonsVisible && mTopBarIsSearch) {
+		if (mButtonsVisible && mTopBarMode == TopBarMode.Search) {
 			hideButtons();
 		} else {
 			showButtons();
@@ -864,7 +888,7 @@ public class MuPDFActivity extends Activity
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		if (mButtonsVisible && !mTopBarIsSearch) {
+		if (mButtonsVisible && mTopBarMode != TopBarMode.Search) {
 			hideButtons();
 		} else {
 			showButtons();

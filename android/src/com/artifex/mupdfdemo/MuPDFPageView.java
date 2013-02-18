@@ -163,7 +163,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		changeReporter = reporter;
 	}
 
-	public boolean passClickEvent(float x, float y) {
+	public Hit passClickEvent(float x, float y) {
 		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
 		final float docRelX = (x - getLeft())/scale;
 		final float docRelY = (y - getTop())/scale;
@@ -184,12 +184,15 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 				case SQUIGGLY:
 				case STRIKEOUT:
 					setItemSelectBox(mAnnotations[i]);
-					return true;
+					return Hit.Annotation;
 				}
 			}
 		}
 
 		setItemSelectBox(null);
+
+		if (!MuPDFCore.javascriptSupported())
+			return Hit.Nothing;
 
 		if (mWidgetAreas != null) {
 			for (i = 0; i < mWidgetAreas.length && !hit; i++)
@@ -225,9 +228,10 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			};
 
 			mPassClick.execute();
+			return Hit.Widget;
 		}
 
-		return hit;
+		return Hit.Nothing;
 	}
 
 	public boolean copySelection() {

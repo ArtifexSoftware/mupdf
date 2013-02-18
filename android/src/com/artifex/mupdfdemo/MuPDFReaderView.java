@@ -18,6 +18,7 @@ public class MuPDFReaderView extends ReaderView {
 
 	protected void onTapMainDocArea() {}
 	protected void onDocMotion() {}
+	protected void onHit(Hit item) {};
 
 	public void setLinksEnabled(boolean b) {
 		mLinksEnabled = b;
@@ -52,40 +53,41 @@ public class MuPDFReaderView extends ReaderView {
 
 		if (!mSelecting && !tapDisabled) {
 			MuPDFView pageView = (MuPDFView) getDisplayedView();
-			if (MuPDFCore.javascriptSupported()
-					&& pageView.passClickEvent(e.getX(), e.getY())) {
-				// If the page consumes the event do nothing else
-			} else if (mLinksEnabled && pageView != null
-					&& (link = pageView.hitLink(e.getX(), e.getY())) != null) {
-				link.acceptVisitor(new LinkInfoVisitor() {
-					@Override
-					public void visitInternal(LinkInfoInternal li) {
-						// Clicked on an internal (GoTo) link
-						setDisplayedViewIndex(li.pageNumber);
-					}
+			Hit item = pageView.passClickEvent(e.getX(), e.getY());
+			onHit(item);
+			if (item == Hit.Nothing) {
+				if (mLinksEnabled && pageView != null
+				&& (link = pageView.hitLink(e.getX(), e.getY())) != null) {
+					link.acceptVisitor(new LinkInfoVisitor() {
+						@Override
+						public void visitInternal(LinkInfoInternal li) {
+							// Clicked on an internal (GoTo) link
+							setDisplayedViewIndex(li.pageNumber);
+						}
 
-					@Override
-					public void visitExternal(LinkInfoExternal li) {
-						Intent intent = new Intent(Intent.ACTION_VIEW, Uri
-								.parse(li.url));
-						mContext.startActivity(intent);
-					}
+						@Override
+						public void visitExternal(LinkInfoExternal li) {
+							Intent intent = new Intent(Intent.ACTION_VIEW, Uri
+									.parse(li.url));
+							mContext.startActivity(intent);
+						}
 
-					@Override
-					public void visitRemote(LinkInfoRemote li) {
-						// Clicked on a remote (GoToR) link
-					}
-				});
-			} else if (e.getX() < tapPageMargin) {
-				super.smartMoveBackwards();
-			} else if (e.getX() > super.getWidth() - tapPageMargin) {
-				super.smartMoveForwards();
-			} else if (e.getY() < tapPageMargin) {
-				super.smartMoveBackwards();
-			} else if (e.getY() > super.getHeight() - tapPageMargin) {
-				super.smartMoveForwards();
-			} else {
-				onTapMainDocArea();
+						@Override
+						public void visitRemote(LinkInfoRemote li) {
+							// Clicked on a remote (GoToR) link
+						}
+					});
+				} else if (e.getX() < tapPageMargin) {
+					super.smartMoveBackwards();
+				} else if (e.getX() > super.getWidth() - tapPageMargin) {
+					super.smartMoveForwards();
+				} else if (e.getY() < tapPageMargin) {
+					super.smartMoveBackwards();
+				} else if (e.getY() > super.getHeight() - tapPageMargin) {
+					super.smartMoveForwards();
+				} else {
+					onTapMainDocArea();
+				}
 			}
 		}
 		return super.onSingleTapUp(e);
