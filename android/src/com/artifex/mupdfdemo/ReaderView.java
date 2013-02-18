@@ -677,9 +677,9 @@ public class ReaderView extends AdapterView<Adapter>
 		if (v == null) {
 			v = mAdapter.getView(i, getCached(), this);
 			addAndMeasureChild(i, v);
+			onChildSetup(i, v);
+			onScaleChild(v, mScale);
 		}
-		onChildSetup(i, v);
-		onScaleChild(v, mScale);
 
 		return v;
 	}

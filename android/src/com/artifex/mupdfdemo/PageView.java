@@ -224,6 +224,9 @@ public abstract class PageView extends ViewGroup {
 		}
 
 		mIsBlank = false;
+		// Highlights may be missing because mIsBlank was true on last draw
+		if (mSearchView != null)
+			mSearchView.invalidate();
 
 		mPageNumber = page;
 		if (mEntire == null) {
