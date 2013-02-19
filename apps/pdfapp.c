@@ -342,7 +342,7 @@ static int pdfapp_save(pdfapp_t *app)
 				if (written)
 				{
 					char buf2[PATH_MAX];
-					strncpy(buf2, app->docpath, PATH_MAX);
+					fz_strlcpy(buf2, app->docpath, PATH_MAX);
 					pdfapp_close(app);
 					winreplacefile(buf, buf2);
 					pdfapp_open(app, buf2, 1);
