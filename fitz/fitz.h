@@ -1050,7 +1050,7 @@ float fz_matrix_expansion(const fz_matrix *m); /* sumatrapdf */
 
 	Does not throw exceptions.
 */
-fz_rect *fz_intersect_rect(fz_rect *a, const fz_rect *b);
+fz_rect *fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b);
 
 /*
 	fz_intersect_irect: Compute intersection of two bounding boxes.
@@ -1060,7 +1060,7 @@ fz_rect *fz_intersect_rect(fz_rect *a, const fz_rect *b);
 
 	Does not throw exceptions.
 */
-fz_irect *fz_intersect_irect(fz_irect *a, const fz_irect *b);
+fz_irect *fz_intersect_irect(fz_irect *restrict a, const fz_irect *restrict b);
 
 /*
 	fz_union_rect: Compute union of two rectangles.
@@ -1074,7 +1074,7 @@ fz_irect *fz_intersect_irect(fz_irect *a, const fz_irect *b);
 
 	Does not throw exceptions.
 */
-fz_rect *fz_union_rect(fz_rect *a, const fz_rect *b);
+fz_rect *fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b);
 
 /*
 	fz_irect_from_rect: Convert a rect into the minimal bounding box
@@ -1094,7 +1094,7 @@ fz_rect *fz_union_rect(fz_rect *a, const fz_rect *b);
 	Does not throw exceptions.
 */
 
-fz_irect *fz_irect_from_rect(fz_irect *bbox, const fz_rect *rect);
+fz_irect *fz_irect_from_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
 
 /*
 	fz_round_rect: Round rectangle coordinates.
@@ -1112,7 +1112,7 @@ fz_irect *fz_irect_from_rect(fz_irect *bbox, const fz_rect *rect);
 
 	Does not throw exceptions.
 */
-fz_irect *fz_round_rect(fz_irect *bbox, const fz_rect *rect);
+fz_irect *fz_round_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
 
 /*
 	fz_rect_from_irect: Convert a bbox into a rect.
@@ -1128,7 +1128,7 @@ fz_irect *fz_round_rect(fz_irect *bbox, const fz_rect *rect);
 
 	Does not throw exceptions.
 */
-fz_rect *fz_rect_from_irect(fz_rect *rect, const fz_irect *bbox);
+fz_rect *fz_rect_from_irect(fz_rect *restrict rect, const fz_irect *restrict bbox);
 
 /*
 	fz_expand_rect: Expand a bbox by a given amount in all directions.
@@ -1147,15 +1147,6 @@ fz_rect *fz_expand_rect(fz_rect *b, float expand);
 fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 
 /*
-	fz_translate_rect: Translate rectangle.
-
-	Translate a rectangle by a given x and y offset. Allows for overflow.
-
-	Does not throw exceptions.
-*/
-fz_rect *fz_translate_rect(fz_rect *a, int xoff, int yoff);
-
-/*
 	fz_transform_point: Apply a transformation to a point.
 
 	transform: Transformation matrix to apply. See fz_concat,
@@ -1168,7 +1159,7 @@ fz_rect *fz_translate_rect(fz_rect *a, int xoff, int yoff);
 
 	Does not throw exceptions.
 */
-fz_point *fz_transform_point(fz_point *point, const fz_matrix *transform);
+fz_point *fz_transform_point(fz_point *restrict point, const fz_matrix *restrict transform);
 
 /*
 	fz_transform_vector: Apply a transformation to a vector.
@@ -1181,7 +1172,7 @@ fz_point *fz_transform_point(fz_point *point, const fz_matrix *transform);
 
 	Does not throw exceptions.
 */
-fz_point *fz_transform_vector(fz_point *vector, const fz_matrix *transform);
+fz_point *fz_transform_vector(fz_point *restrict vector, const fz_matrix *restrict transform);
 
 /*
 	fz_transform_rect: Apply a transform to a rectangle.
@@ -1200,7 +1191,7 @@ fz_point *fz_transform_vector(fz_point *vector, const fz_matrix *transform);
 
 	Does not throw exceptions.
 */
-fz_rect *fz_transform_rect(fz_rect *rect, const fz_matrix *transform);
+fz_rect *fz_transform_rect(fz_rect *restrict rect, const fz_matrix *restrict transform);
 
 /*
 	fz_buffer is a wrapper around a dynamically allocated array of bytes.
