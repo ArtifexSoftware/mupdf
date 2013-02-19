@@ -544,6 +544,25 @@ pdf_array_push(pdf_obj *obj, pdf_obj *item)
 }
 
 void
+pdf_array_push_drop(pdf_obj *obj, pdf_obj *item)
+{
+	fz_context *ctx = obj->ctx;
+
+	fz_try(ctx)
+	{
+		pdf_array_push(obj, item);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(item);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void
 pdf_array_insert(pdf_obj *obj, pdf_obj *item)
 {
 	RESOLVE(obj);
@@ -1189,6 +1208,30 @@ pdf_drop_obj(pdf_obj *obj)
 		pdf_free_dict(obj);
 	else
 		fz_free(obj->ctx, obj);
+}
+
+pdf_obj *pdf_new_obj_from_str(fz_context *ctx, const char *src)
+{
+	pdf_obj *result;
+	pdf_lexbuf lexbuf;
+	fz_stream *stream = fz_open_memory(ctx, (unsigned char *)src, strlen(src));
+
+	pdf_lexbuf_init(ctx, &lexbuf, PDF_LEXBUF_SMALL);
+	fz_try(ctx)
+	{
+		result = pdf_parse_stm_obj(NULL, stream, &lexbuf);
+	}
+	fz_always(ctx)
+	{
+		pdf_lexbuf_fin(&lexbuf);
+		fz_close(stream);
+	}
+	fz_catch(ctx)
+	{
+		return NULL;
+	}
+
+	return result;
 }
 
 /* Pretty printing objects */

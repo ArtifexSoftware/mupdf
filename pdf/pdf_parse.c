@@ -150,6 +150,35 @@ pdf_to_ucs2(pdf_document *xref, pdf_obj *src)
 	return dst;
 }
 
+/* allow to convert to UCS-2 without the need for an fz_context */
+/* (buffer must be at least (fz_to_str_len(src) + 1) * 2 bytes in size) */
+void
+pdf_to_ucs2_buf(unsigned short *buffer, pdf_obj *src)
+{
+	unsigned char *srcptr = (unsigned char *) pdf_to_str_buf(src);
+	unsigned short *dstptr = buffer;
+	int srclen = pdf_to_str_len(src);
+	int i;
+
+	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
+	{
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] << 8 | srcptr[i+1];
+	}
+	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
+	{
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] | srcptr[i+1] << 8;
+	}
+	else
+	{
+		for (i = 0; i < srclen; i++)
+			*dstptr++ = pdf_doc_encoding[srcptr[i]];
+	}
+
+	*dstptr = '\0';
+}
+
 /* Convert UCS-2 string into PdfDocEncoding for authentication */
 char *
 pdf_from_ucs2(pdf_document *xref, unsigned short *src)
