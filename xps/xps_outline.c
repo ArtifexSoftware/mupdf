@@ -121,11 +121,20 @@ xps_load_outline(xps_document *doc)
 	xps_fixdoc *fixdoc;
 	fz_outline *head = NULL, *tail, *outline;
 
-	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next) {
-		if (fixdoc->outline) {
-			outline = xps_load_document_structure(doc, fixdoc);
+	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
+	{
+		if (fixdoc->outline)
+		{
+			fz_try(doc->ctx)
+			{
+				outline = xps_load_document_structure(doc, fixdoc);
+			}
+			fz_catch(doc->ctx) {
+				outline = NULL;
+			}
 			if (!outline)
 				continue;
+
 			if (!head)
 				head = outline;
 			else

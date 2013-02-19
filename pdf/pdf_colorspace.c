@@ -259,23 +259,21 @@ load_indexed(pdf_document *xref, pdf_obj *array)
 		{
 			fz_stream *file = NULL;
 
+			fz_var(file);
+
 			fz_try(ctx)
 			{
 				file = pdf_open_stream(xref, pdf_to_num(lookup), pdf_to_gen(lookup));
+				i = fz_read(file, idx->lookup, n);
+			}
+			fz_always(ctx)
+			{
+				fz_close(file);
 			}
 			fz_catch(ctx)
 			{
 				fz_throw(ctx, "cannot open colorspace lookup table (%d 0 R)", pdf_to_num(lookup));
 			}
-
-			i = fz_read(file, idx->lookup, n);
-			if (i < 0)
-			{
-				fz_close(file);
-				fz_throw(ctx, "cannot read colorspace lookup table (%d 0 R)", pdf_to_num(lookup));
-			}
-
-			fz_close(file);
 		}
 		else
 		{

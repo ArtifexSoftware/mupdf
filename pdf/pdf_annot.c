@@ -295,8 +295,16 @@ pdf_load_link_annots(pdf_document *xref, pdf_obj *annots, const fz_matrix *page_
 	n = pdf_array_len(annots);
 	for (i = 0; i < n; i++)
 	{
-		obj = pdf_array_get(annots, i);
-		link = pdf_load_link(xref, obj, page_ctm);
+		fz_try(xref->ctx)
+		{
+			obj = pdf_array_get(annots, i);
+			link = pdf_load_link(xref, obj, page_ctm);
+		}
+		fz_catch(xref->ctx)
+		{
+			link = NULL;
+		}
+
 		if (link)
 		{
 			if (!head)
@@ -317,7 +325,7 @@ pdf_free_annot(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_annot *next;
 
-	do
+	while (annot)
 	{
 		next = annot->next;
 		if (annot->ap)
@@ -326,7 +334,6 @@ pdf_free_annot(fz_context *ctx, pdf_annot *annot)
 		fz_free(ctx, annot);
 		annot = next;
 	}
-	while (annot);
 }
 
 static void
@@ -366,13 +373,20 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 	len = pdf_array_len(annots);
 	for (i = 0; i < len; i++)
 	{
-		obj = pdf_array_get(annots, i);
+		fz_try(ctx)
+		{
+			obj = pdf_array_get(annots, i);
 
-		pdf_update_appearance(xref, obj);
+			pdf_update_appearance(xref, obj);
 
-		rect = pdf_dict_gets(obj, "Rect");
-		ap = pdf_dict_gets(obj, "AP");
-		as = pdf_dict_gets(obj, "AS");
+			rect = pdf_dict_gets(obj, "Rect");
+			ap = pdf_dict_gets(obj, "AP");
+			as = pdf_dict_gets(obj, "AS");
+		}
+		fz_catch(ctx)
+		{
+			ap = NULL;
+		}
 
 		if (!pdf_is_dict(ap))
 			continue;
@@ -429,7 +443,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 		}
 		fz_catch(ctx)
 		{
-			fz_free(ctx, annot);
+			pdf_free_annot(ctx, annot);
 			fz_warn(ctx, "ignoring broken annotation");
 		}
 	}
