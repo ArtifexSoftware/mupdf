@@ -2,11 +2,7 @@
  * mutool -- swiss army knife of pdf manipulation tools
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define nelem(x) (sizeof(x)/sizeof((x)[0]))
+#include <fitz.h>
 
 int pdfclean_main(int argc, char *argv[]);
 int pdfextract_main(int argc, char *argv[]);

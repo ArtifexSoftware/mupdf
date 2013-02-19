@@ -1,7 +1,6 @@
 #include "fitz-internal.h"
 
 #include <jpeglib.h>
-#include <setjmp.h>
 
 static void error_exit(j_common_ptr cinfo)
 {
