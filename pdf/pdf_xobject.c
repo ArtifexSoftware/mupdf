@@ -79,7 +79,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 
 			form->isolated = pdf_to_bool(pdf_dict_gets(attrs, "I"));
 			form->knockout = pdf_to_bool(pdf_dict_gets(attrs, "K"));
-	
+
 			obj = pdf_dict_gets(attrs, "S");
 			if (pdf_is_name(obj) && !strcmp(pdf_to_name(obj), "Transparency"))
 				form->transparency = 1;

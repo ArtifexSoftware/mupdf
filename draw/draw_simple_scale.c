@@ -1242,7 +1242,7 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 		return NULL;
 
 	/* Clamp small ranges of w and h */
-        if (w <= -1)
+	if (w <= -1)
 	{
 	}
 	else if (w < 0)
@@ -1253,7 +1253,7 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 	{
 		w = 1;
 	}
-        if (h <= -1)
+	if (h <= -1)
 	{
 	}
 	else if (h < 0)

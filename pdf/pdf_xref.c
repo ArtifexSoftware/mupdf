@@ -1321,7 +1321,6 @@ pdf_page_presentation(pdf_document *doc, pdf_page *page, float *duration)
 	return &page->transition;
 }
 
-
 static fz_interactive *
 pdf_interact(pdf_document *doc)
 {

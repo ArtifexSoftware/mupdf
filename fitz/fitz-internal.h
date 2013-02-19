@@ -95,7 +95,6 @@ extern void __gnu_mcount_nc(void);
 #endif
 #endif
 
-
 /*
  * Basic runtime and utility functions
  */
@@ -1459,8 +1458,6 @@ void fz_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, flo
 void fz_end_tile(fz_device *dev);
 
 fz_device *fz_new_device(fz_context *ctx, void *user);
-
-
 
 /*
  * Plotting functions.

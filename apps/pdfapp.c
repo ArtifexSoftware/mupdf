@@ -580,7 +580,6 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_free_device(idev);
 	}
 
-
 	pdfapp_showpage(app, 0, 0, 1, 0);
 }
 
