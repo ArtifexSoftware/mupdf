@@ -178,6 +178,7 @@ fz_pop_clip(fz_device *dev)
 		dev->error_depth--;
 		if (dev->error_depth == 0)
 			fz_throw(dev->ctx, "%s", dev->errmess);
+		return;
 	}
 	if (dev->pop_clip)
 		dev->pop_clip(dev);
@@ -303,6 +304,7 @@ fz_end_group(fz_device *dev)
 		dev->error_depth--;
 		if (dev->error_depth == 0)
 			fz_throw(dev->ctx, "%s", dev->errmess);
+		return;
 	}
 	if (dev->end_group)
 		dev->end_group(dev);
