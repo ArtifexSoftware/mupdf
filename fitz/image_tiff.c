@@ -758,7 +758,13 @@ fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, in
 
 	tiff->rp = tiff->bp + offset;
 
+	if (tiff->rp < tiff->bp || tiff->rp > tiff->ep)
+		fz_throw(tiff->ctx, "invalid IFD offset %u", offset);
+
 	count = readshort(tiff);
+
+	if (count * 12 > (unsigned)(tiff->ep - tiff->rp))
+		fz_throw(tiff->ctx, "overlarge IFD entry count %u", count);
 
 	offset += 2;
 	for (i = 0; i < count; i++)
