@@ -93,7 +93,8 @@ static void xml_free_attribute(fz_context *ctx, struct attribute *att)
 
 void fz_free_xml(fz_context *ctx, fz_xml *item)
 {
-	while (item) {
+	while (item)
+	{
 		fz_xml *next = item->next;
 		if (item->text)
 			fz_free(ctx, item->text);

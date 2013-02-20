@@ -342,6 +342,7 @@ fz_end_tile(fz_device *dev)
 		dev->error_depth--;
 		if (dev->error_depth == 0)
 			fz_throw(dev->ctx, "%s", dev->errmess);
+		return;
 	}
 	if (dev->end_tile)
 		dev->end_tile(dev);

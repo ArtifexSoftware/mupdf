@@ -1658,7 +1658,6 @@ fz_draw_begin_tile(fz_device *devp, const fz_rect *area, const fz_rect *view, fl
 	{
 		emergency_pop_stack(dev, state);
 	}
-
 }
 
 static void

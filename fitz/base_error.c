@@ -95,8 +95,10 @@ int fz_push_try(fz_error_context *ex)
 	 * immediately - returning 0 stops the setjmp happening and takes us
 	 * direct to the always/catch clauses. */
 	assert(ex->top == nelem(ex->stack)-1);
-	strcpy(ex->message, "exception stack overflow!\n");
+	strcpy(ex->message, "exception stack overflow!");
 	ex->stack[ex->top].code = 2;
+	fprintf(stderr, "error: %s\n", ex->message);
+	LOGE("error: %s\n", ex->message);
 	return 0;
 }
 

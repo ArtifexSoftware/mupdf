@@ -129,7 +129,8 @@ xps_load_outline(xps_document *doc)
 			{
 				outline = xps_load_document_structure(doc, fixdoc);
 			}
-			fz_catch(doc->ctx) {
+			fz_catch(doc->ctx)
+			{
 				outline = NULL;
 			}
 			if (!outline)
