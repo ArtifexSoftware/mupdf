@@ -382,7 +382,7 @@ parse_attribute_value:
 	return "end of data in attribute value";
 }
 
-static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n)
+static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n, int *dofree)
 {
 	unsigned char *e = s + n;
 	char *dst, *d;
@@ -397,6 +397,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n)
 			s += 2;
 		}
 		*d = 0;
+		*dofree = 1;
 		return dst;
 	}
 
@@ -409,8 +410,14 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n)
 			s += 2;
 		}
 		*d = 0;
+		*dofree = 1;
 		return dst;
 	}
+
+	*dofree = 0;
+
+	if (s[0] == 0xEF && s[1] == 0xBB && s[2] == 0xBF)
+		return (char*)s+3;
 
 	return (char*)s;
 }
@@ -421,6 +428,7 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 	struct parser parser;
 	fz_xml root;
 	char *p, *error;
+	int dofree;
 
 	/* s is already null-terminated (see xps_new_part) */
 
@@ -428,11 +436,7 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 	parser.head = &root;
 	parser.ctx = ctx;
 
-	/* skip BOM in UTF-8 text */
-	if (s[0] == 0xEF && s[1] == 0xBB && s[2] == 0xBF)
-		s += 3;
-
-	p = convert_to_utf8(ctx, s, n);
+	p = convert_to_utf8(ctx, s, n, &dofree);
 
 	fz_try(ctx)
 	{
@@ -442,7 +446,7 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 	}
 	fz_always(ctx)
 	{
-		if (p != (char*)s)
+		if (dofree)
 			fz_free(ctx, p);
 	}
 	fz_catch(ctx)
