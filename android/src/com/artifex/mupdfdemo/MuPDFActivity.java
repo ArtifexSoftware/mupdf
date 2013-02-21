@@ -65,6 +65,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton mStrikeOutButton;
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
+	private ImageButton  mDeleteButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
 	private TopBarMode   mTopBarMode;
@@ -635,6 +636,16 @@ public class MuPDFActivity extends Activity
 			mOutlineButton.setVisibility(View.GONE);
 		}
 
+		mDeleteButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				View cv = mDocView.getDisplayedView();
+				if (cv != null)
+					((MuPDFView)cv).deleteSelectedAnnotation();
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
 		// Reenstate last state if it was recorded
 		SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
 		mDocView.setDisplayedViewIndex(prefs.getInt("page"+mFileName, 0));
@@ -844,6 +855,7 @@ public class MuPDFActivity extends Activity
 		mStrikeOutButton = (ImageButton)mButtonsView.findViewById(R.id.strikeOutButton);
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
+		mDeleteButton = (ImageButton)mButtonsView.findViewById(R.id.deleteButton);
 		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);

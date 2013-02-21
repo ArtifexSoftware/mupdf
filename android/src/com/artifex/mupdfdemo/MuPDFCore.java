@@ -40,6 +40,7 @@ public class MuPDFCore
 	private native TextChar[][][][] text();
 	private native byte[] textAsHtml();
 	private native void addStrikeOutAnnotationInternal(RectF[] lines);
+	private native void deleteAnnotationInternal(int annot_index);
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
 	private native String [] getFocusedWidgetChoiceSelected();
@@ -250,6 +251,11 @@ public class MuPDFCore
 	public synchronized void addStrikeOutAnnotation(int page, RectF[] lines) {
 		gotoPage(page);
 		addStrikeOutAnnotationInternal(lines);
+	}
+
+	public synchronized void deleteAnnotation(int page, int annot_index) {
+		gotoPage(page);
+		deleteAnnotationInternal(annot_index);
 	}
 
 	public synchronized boolean hasOutline() {

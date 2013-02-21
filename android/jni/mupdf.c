@@ -1477,6 +1477,38 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 	}
 }
 
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot_index)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	fz_interactive *idoc = fz_interact(doc);
+	page_cache *pc = &glo->pages[glo->current];
+	fz_annot *annot;
+	int i;
+
+	if (idoc == NULL)
+		return;
+
+	fz_try(ctx)
+	{
+	    annot = fz_first_annot(glo->doc, pc->page);
+	    for (i = 0; i < annot_index && annot; i++)
+	       annot = fz_next_annot(glo->doc, annot);
+
+	    if (annot)
+		{
+		    fz_delete_annot(idoc, pc->page, annot);
+			dump_annotation_display_lists(glo);
+		}
+	}
+	fz_catch(ctx)
+	{
+		LOGE("deleteAnnotationInternal: %s", ctx->error->message);
+	}
+}
+
 static void close_doc(globals *glo)
 {
 	int i;

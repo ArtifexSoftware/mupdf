@@ -165,7 +165,7 @@ public class MuPDFReaderView extends ReaderView {
 	protected void onMoveOffChild(int i) {
 		View v = getView(i);
 		if (v != null)
-			((MuPDFView)v).setItemSelectBox(null);
+			((MuPDFView)v).deselectAnnotation();
 	}
 
 	protected void onSettle(View v) {

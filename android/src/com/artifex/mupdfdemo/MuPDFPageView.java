@@ -65,6 +65,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
 	private Annotation mAnnotations[];
+	private int mSelectedAnnotationIndex = -1;
 	private AsyncTask<Void,Void,RectF[]> mLoadWidgetAreas;
 	private AsyncTask<Void,Void,Annotation[]> mLoadAnnotations;
 	private AlertDialog.Builder mTextEntryBuilder;
@@ -73,7 +74,8 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private EditText mEditText;
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
 	private AsyncTask<String,Void,Void> mSetWidgetChoice;
-	private       AsyncTask<RectF[],Void,Void> mAddStrikeOut;
+	private AsyncTask<RectF[],Void,Void> mAddStrikeOut;
+	private AsyncTask<Integer,Void,Void> mDeleteAnnotation;
 	private Runnable changeReporter;
 
 	public MuPDFPageView(Context c, MuPDFCore core, Point parentSize) {
@@ -183,12 +185,14 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 				case UNDERLINE:
 				case SQUIGGLY:
 				case STRIKEOUT:
+					mSelectedAnnotationIndex = i;
 					setItemSelectBox(mAnnotations[i]);
 					return Hit.Annotation;
 				}
 			}
 		}
 
+		mSelectedAnnotationIndex = -1;
 		setItemSelectBox(null);
 
 		if (!MuPDFCore.javascriptSupported())
@@ -320,6 +324,37 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		deselectText();
 	}
 
+	public void deleteSelectedAnnotation() {
+		if (mSelectedAnnotationIndex != -1) {
+			if (mDeleteAnnotation != null)
+				mDeleteAnnotation.cancel(true);
+
+			mDeleteAnnotation = new AsyncTask<Integer,Void,Void>() {
+				@Override
+				protected Void doInBackground(Integer... params) {
+					mCore.deleteAnnotation(mPageNumber, params[0]);
+					return null;
+				}
+
+				@Override
+				protected void onPostExecute(Void result) {
+					loadAnnotations();
+					update();
+				}
+			};
+
+			mDeleteAnnotation.execute(mSelectedAnnotationIndex);
+
+			mSelectedAnnotationIndex = -1;
+			setItemSelectBox(null);
+		}
+	}
+
+	public void deselectAnnotation() {
+		mSelectedAnnotationIndex = -1;
+		setItemSelectBox(null);
+	}
+
 	@Override
 	protected Bitmap drawPage(int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
@@ -422,6 +457,11 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		if (mAddStrikeOut != null) {
 			mAddStrikeOut.cancel(true);
 			mAddStrikeOut = null;
+		}
+
+		if (mDeleteAnnotation != null) {
+			mDeleteAnnotation.cancel(true);
+			mDeleteAnnotation = null;
 		}
 
 		super.releaseResources();
