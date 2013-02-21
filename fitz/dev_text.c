@@ -5,6 +5,8 @@
 #define SPACE_MAX_DIST 0.8f
 #define PARAGRAPH_DIST 0.5f
 #define MY_EPSILON 0.001f
+#define SUBSCRIPT_OFFSET 0.2f
+#define SUPERSCRIPT_OFFSET -0.2f
 
 #undef DEBUG_SPANS
 #undef DEBUG_INTERNALS
@@ -165,8 +167,8 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 
 	if (new_line)
 	{
-		/* So, a new line. Part of the same block or not? */
 		float size = fz_matrix_expansion(&span->transform);
+		/* So, a new line. Part of the same block or not? */
 		if (distance == 0 || distance > size * 1.5 || distance < -size * PARAGRAPH_DIST || page->len == 0)
 		{
 			/* New block */
@@ -212,7 +214,7 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 	}
 	fz_union_rect(&block->lines[block->len-1].bbox, &span->bbox);
 	fz_union_rect(&block->bbox, &span->bbox);
-	span->base_offset = distance;
+	span->base_offset = (new_line ? 0 : distance);
 	line->spans[line->len++] = span;
 	return line;
 }
@@ -992,6 +994,8 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 			for (span_n = 0; span_n < line->len; span_n++)
 			{
 				fz_text_span *span = line->spans[span_n];
+				float size = fz_matrix_expansion(&span->transform);
+				float base_offset = span->base_offset / size;
 #ifdef DEBUG_INTERNALS
 				fz_printf(out, "<span class=\"internal_span\"");
 				if (span->column)
@@ -1011,6 +1015,10 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 				}
 				if (span->spacing >= 1)
 					fz_printf(out, " ");
+				if (base_offset > SUBSCRIPT_OFFSET)
+					fz_printf(out, "<sub>");
+				else if (base_offset < SUPERSCRIPT_OFFSET)
+					fz_printf(out, "<sup>");
 				for (ch_n = 0; ch_n < span->len; ch_n++)
 				{
 					fz_text_char *ch = &span->text[ch_n];
@@ -1033,6 +1041,10 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					else
 						fz_printf(out, "&#x%x;", ch->c);
 				}
+				if (base_offset > SUBSCRIPT_OFFSET)
+					fz_printf(out, "</sub>");
+				else if (base_offset < SUPERSCRIPT_OFFSET)
+					fz_printf(out, "</sup>");
 				if (style)
 				{
 					fz_print_style_end(out, style);
