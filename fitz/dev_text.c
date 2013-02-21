@@ -2081,6 +2081,62 @@ region_masks_alignment(region_masks *rms)
 	}
 }
 
+static int
+is_unicode_hyphen(int c)
+{
+	/* We omit 0x2011 (Non breaking hyphen) and 0x2043 (Hyphen Bullet)
+	 * from this list. */
+	return (c == '-' ||
+		c == 0x2010 || /* Hyphen */
+		c == 0x002d || /* Hyphen-Minus */
+		c == 0x00ad || /* Soft hyphen */
+		c == 0x058a || /* Armenian Hyphen */
+		c == 0x1400 || /* Canadian Syllabive Hyphen */
+		c == 0x1806); /* Mongolian Todo soft hyphen */
+}
+
+static int
+is_unicode_hyphenatable(int c)
+{
+	/* This is a pretty ad-hoc collection. It may need tuning. */
+	return ((c >= 'A' && c <= 'Z') ||
+		(c >= 'a' && c <= 'z') ||
+		(c >= 0x00c0 && c <= 0x00d6) ||
+		(c >= 0x00d8 && c <= 0x00f6) ||
+		(c >= 0x00f8 && c <= 0x02af) ||
+		(c >= 0x1d00 && c <= 0x1dbf) ||
+		(c >= 0x1e00 && c <= 0x1eff) ||
+		(c >= 0x2c60 && c <= 0x2c7f) ||
+		(c >= 0xa722 && c <= 0xa78e) ||
+		(c >= 0xa790 && c <= 0xa793) ||
+		(c >= 0xa7a8 && c <= 0xa7af) ||
+		(c >= 0xfb00 && c <= 0xfb07) ||
+		(c >= 0xff21 && c <= 0xff3a) ||
+		(c >= 0xff41 && c <= 0xff5a));
+}
+
+static void
+dehyphenate(fz_text_span *s1, fz_text_span *s2)
+{
+	int i;
+
+	for (i = s1->len-1; i > 0; i--)
+		if (!is_unicode_wspace(s1->text[i].c))
+			break;
+	/* Can't leave an empty span. */
+	if (i == 0)
+		return;
+
+	if (!is_unicode_hyphen(s1->text[i].c))
+		return;
+	if (!is_unicode_hyphenatable(s1->text[i-1].c))
+		return;
+	if (!is_unicode_hyphenatable(s2->text[0].c))
+		return;
+	s1->len = i;
+	s2->spacing = 0;
+}
+
 void
 fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
@@ -2483,6 +2539,7 @@ force_paragraph:
 						if (last_from == 1)
 						{
 							prev_line->spans[newlen+1]->spacing = 1;
+							dehyphenate(prev_line->spans[newlen], prev_line->spans[newlen+1]);
 							last_from = 0;
 						}
 					}
