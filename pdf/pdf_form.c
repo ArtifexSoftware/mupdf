@@ -2131,7 +2131,7 @@ int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event)
 
 				if (annot)
 				{
-					switch(annot->type)
+					switch(annot->widget_type)
 					{
 					case FZ_WIDGET_TYPE_RADIOBUTTON:
 					case FZ_WIDGET_TYPE_CHECKBOX:
@@ -2206,7 +2206,7 @@ fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page)
 {
 	pdf_annot *annot = page->annots;
 
-	while (annot && annot->type == FZ_WIDGET_TYPE_NOT_WIDGET)
+	while (annot && annot->widget_type == FZ_WIDGET_TYPE_NOT_WIDGET)
 		annot = annot->next;
 
 	return (fz_widget *)annot;
@@ -2219,7 +2219,7 @@ fz_widget *pdf_next_widget(fz_widget *previous)
 	if (annot)
 		annot = annot->next;
 
-	while (annot && annot->type == FZ_WIDGET_TYPE_NOT_WIDGET)
+	while (annot && annot->widget_type == FZ_WIDGET_TYPE_NOT_WIDGET)
 		annot = annot->next;
 
 	return (fz_widget *)annot;
@@ -2228,7 +2228,7 @@ fz_widget *pdf_next_widget(fz_widget *previous)
 int fz_widget_get_type(fz_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-	return annot->type;
+	return annot->widget_type;
 }
 
 char *pdf_field_value(pdf_document *doc, pdf_obj *field)

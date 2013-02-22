@@ -1193,11 +1193,6 @@ fz_pixmap *fz_render_stroked_glyph(fz_context *ctx, fz_font*, int, const fz_matr
 void fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, const fz_matrix *trm, void *gstate, int nestedDepth);
 void fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nestedDepth);
 
-typedef enum
-{
-	FZ_ANNOT_STRIKEOUT
-} fz_annot_type;
-
 /*
 	fz_create_annot: create a new annotation of the specified type on the
 	specified page. The returned pdf_annot structure is owned by the page

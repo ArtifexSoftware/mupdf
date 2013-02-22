@@ -81,6 +81,11 @@ void fz_choice_widget_set_value(fz_interactive *idoc, fz_widget *tw, int n, char
 	pdf_choice_widget_set_value((pdf_document *)idoc, tw, n, opts);
 }
 
+fz_annot_type fz_get_annot_type(fz_annot *annot)
+{
+	return pdf_annot_type((pdf_annot *)annot);
+}
+
 fz_annot *fz_create_annot(fz_interactive *idoc, fz_page *page, fz_annot_type type)
 {
 	return (fz_annot *)pdf_create_annot((pdf_document *)idoc, (pdf_page *)page, type);

@@ -503,7 +503,8 @@ struct pdf_annot_s
 	fz_matrix matrix;
 	pdf_annot *next;
 	pdf_annot *next_changed;
-	int type;
+	int annot_type;
+	int widget_type;
 };
 
 fz_link_dest pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest);

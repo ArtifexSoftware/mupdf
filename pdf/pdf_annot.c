@@ -356,6 +356,63 @@ pdf_transform_annot(pdf_annot *annot)
 	fz_pre_scale(fz_translate(&annot->matrix, x, y), w, h);
 }
 
+static int annot_type(pdf_obj *obj)
+{
+	char *subtype = pdf_to_name(pdf_dict_gets(obj, "Subtype"));
+	if (!strcmp(subtype, "Text"))
+		return FZ_ANNOT_TEXT;
+	else if (!strcmp(subtype, "Link"))
+		return FZ_ANNOT_LINK;
+	else if (!strcmp(subtype, "FreeText"))
+		return FZ_ANNOT_FREETEXT;
+	else if (!strcmp(subtype, "Line"))
+		return FZ_ANNOT_LINE;
+	else if (!strcmp(subtype, "Square"))
+		return FZ_ANNOT_SQUARE;
+	else if (!strcmp(subtype, "Circle"))
+		return FZ_ANNOT_CIRCLE;
+	else if (!strcmp(subtype, "Polygon"))
+		return FZ_ANNOT_POLYGON;
+	else if (!strcmp(subtype, "PolyLine"))
+		return FZ_ANNOT_POLYLINE;
+	else if (!strcmp(subtype, "Highlight"))
+		return FZ_ANNOT_HIGHLIGHT;
+	else if (!strcmp(subtype, "Underline"))
+		return FZ_ANNOT_UNDERLINE;
+	else if (!strcmp(subtype, "Squiggly"))
+		return FZ_ANNOT_SQUIGGLY;
+	else if (!strcmp(subtype, "StrikeOut"))
+		return FZ_ANNOT_STRIKEOUT;
+	else if (!strcmp(subtype, "Stamp"))
+		return FZ_ANNOT_STAMP;
+	else if (!strcmp(subtype, "Caret"))
+		return FZ_ANNOT_CARET;
+	else if (!strcmp(subtype, "Ink"))
+		return FZ_ANNOT_INK;
+	else if (!strcmp(subtype, "Popup"))
+		return FZ_ANNOT_POPUP;
+	else if (!strcmp(subtype, "FileAttachment"))
+		return FZ_ANNOT_FILEATTACHMENT;
+	else if (!strcmp(subtype, "Sound"))
+		return FZ_ANNOT_SOUND;
+	else if (!strcmp(subtype, "Movie"))
+		return FZ_ANNOT_MOVIE;
+	else if (!strcmp(subtype, "Widget"))
+		return FZ_ANNOT_WIDGET;
+	else if (!strcmp(subtype, "Screen"))
+		return FZ_ANNOT_SCREEN;
+	else if (!strcmp(subtype, "PrinterMark"))
+		return FZ_ANNOT_PRINTERMARK;
+	else if (!strcmp(subtype, "TrapNet"))
+		return FZ_ANNOT_TRAPNET;
+	else if (!strcmp(subtype, "Watermark"))
+		return FZ_ANNOT_WATERMARK;
+	else if (!strcmp(subtype, "3D"))
+		return FZ_ANNOT_3D;
+	else
+		return -1;
+}
+
 pdf_annot *
 pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 {
@@ -419,7 +476,8 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 			annot->pagerect = annot->rect;
 			fz_transform_rect(&annot->pagerect, &page->ctm);
 			annot->ap = NULL;
-			annot->type = pdf_field_type(xref, obj);
+			annot->annot_type = annot_type(obj);
+			annot->widget_type = annot->annot_type == FZ_ANNOT_WIDGET ? pdf_field_type(xref, obj) : FZ_WIDGET_TYPE_NOT_WIDGET;
 
 			if (pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
 			{
@@ -528,6 +586,12 @@ pdf_bound_annot(pdf_document *doc, pdf_annot *annot, fz_rect *rect)
 	return rect;
 }
 
+fz_annot_type
+pdf_annot_type(pdf_annot *annot)
+{
+	return annot->annot_type;
+}
+
 pdf_annot *
 pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 {
@@ -557,6 +621,8 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		case FZ_ANNOT_STRIKEOUT:
 			type_str = "StrikeOut";
 			break;
+		default:
+			break;
 		}
 
 		pdf_dict_puts_drop(annot_obj, "Subtype", pdf_new_name(ctx, type_str));
@@ -568,7 +634,8 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		annot->rect = rect;
 		annot->pagerect = rect;
 		annot->ap = NULL;
-		annot->type = FZ_WIDGET_TYPE_NOT_WIDGET;
+		annot->widget_type = FZ_WIDGET_TYPE_NOT_WIDGET;
+		annot->annot_type = type;
 
 		/*
 			Both annotation object and annotation structure are now created.
