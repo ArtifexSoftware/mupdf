@@ -1013,6 +1013,14 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 						lastcol++;
 					}
 				}
+				if (span->indent > 1)
+				{
+					fz_printf(out, "<span style=\"padding-left:3em;text-indent:-3em;\">");
+				}
+				else if (span->indent < -1)
+				{
+					fz_printf(out, "<span style=\"text-indent:3em;\">");
+				}
 				if (span->spacing >= 1)
 					fz_printf(out, " ");
 				if (base_offset > SUBSCRIPT_OFFSET)
@@ -1041,14 +1049,22 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					else
 						fz_printf(out, "&#x%x;", ch->c);
 				}
-				if (base_offset > SUBSCRIPT_OFFSET)
-					fz_printf(out, "</sub>");
-				else if (base_offset < SUPERSCRIPT_OFFSET)
-					fz_printf(out, "</sup>");
 				if (style)
 				{
 					fz_print_style_end(out, style);
 					style = NULL;
+				}
+				if (base_offset > SUBSCRIPT_OFFSET)
+					fz_printf(out, "</sub>");
+				else if (base_offset < SUPERSCRIPT_OFFSET)
+					fz_printf(out, "</sup>");
+				if (span->indent > 1)
+				{
+					fz_printf(out, "</span>");
+				}
+				else if (span->indent < -1)
+				{
+					fz_printf(out, "</span>");
 				}
 #ifdef DEBUG_INTERNALS
 				fz_printf(out, "</span>");
@@ -2019,7 +2035,7 @@ region_mask_add(region_mask *rm, const fz_point *min, const fz_point *max)
 }
 
 static int
-region_mask_column(region_mask *rm, const fz_point *min, const fz_point *max, int *align, float *colw)
+region_mask_column(region_mask *rm, const fz_point *min, const fz_point *max, int *align, float *colw, float *left_)
 {
 	float start, end, left, right;
 	int i;
@@ -2049,6 +2065,7 @@ region_mask_column(region_mask *rm, const fz_point *min, const fz_point *max, in
 		*align = 2; /* Right */
 	else
 		*align = 1;
+	*left_ = left;
 	// *align = rm->mask[i].align;
 	*colw = rm->mask[i].colw;
 	/* Single column things return 0 */
@@ -2451,7 +2468,7 @@ force_paragraph:
 				fz_point *region_max = &span->max;
 				int sn;
 				int col, align;
-				float colw;
+				float colw, left;
 
 				/* Treat adjacent spans as one big region */
 #ifdef DEBUG_ALIGN
@@ -2464,7 +2481,7 @@ force_paragraph:
 					dump_span(line->spans[sn]);
 #endif
 				}
-				col = region_mask_column(match, region_min, region_max, &align, &colw);
+				col = region_mask_column(match, region_min, region_max, &align, &colw, &left);
 #ifdef DEBUG_ALIGN
 				printf(" = col%d colw=%g align=%d\n", col, colw, align);
 #endif
@@ -2472,6 +2489,7 @@ force_paragraph:
 				{
 					line->spans[span_num]->column = col;
 					line->spans[span_num]->align = align;
+					line->spans[span_num]->indent = left;
 					line->spans[span_num]->column_width = colw;
 					span_num++;
 				}
@@ -2502,14 +2520,21 @@ force_paragraph:
 			if (prev_line->region == line->region)
 			{
 				int in1, in2, newlen, i, col;
+				float indent;
 
 				/* We only merge lines if the second line
 				 * only uses 1 of the columns. */
 				col = line->spans[0]->column;
+				/* Copy the left value for the first span
+				 * in the first column in this line forward
+				 * for all the rest of the spans in the same
+				 * column. */
+				indent = line->spans[0]->indent;
 				for (i = 1; i < line->len; i++)
 				{
 					if (col != line->spans[i]->column)
 						break;
+					line->spans[i]->indent = indent;
 				}
 				if (i != line->len)
 				{
@@ -2573,5 +2598,37 @@ force_paragraph:
 				block->lines[prev_line_num++] = *line;
 		}
 		block->len = prev_line_num;
+		/* Now try to spot indents */
+		for (line_num = 0; line_num < block->len; line_num++)
+		{
+			int span_num, sn, col;
+			line = &block->lines[line_num];
+			/* Run through the spans... */
+			for (span_num = 0; span_num < line->len; span_num++)
+			{
+				float indent = 0;
+				/* For each set of spans that share the same
+				 * column... */
+				col = line->spans[span_num]->column;
+				/* find the average indent of all but the first.. */
+				for (sn = span_num+1; sn < line->len && line->spans[sn]->column == col; sn++)
+				{
+					indent += line->spans[sn]->indent;
+					line->spans[sn]->indent = 0;
+				}
+				if (sn > span_num+1)
+					indent /= sn-span_num+1;
+				/* And compare this indent with the first one... */
+				indent -= line->spans[span_num]->indent;
+				if (fabsf(indent) < 1)
+				{
+					/* No indent worth speaking of */
+					indent = 0;
+				}
+				line->spans[span_num]->indent = indent;
+				span_num = sn;
+			}
+
+		}
 	}
 }

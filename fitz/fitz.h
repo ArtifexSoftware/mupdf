@@ -1938,6 +1938,7 @@ struct fz_text_span_s
 	int column; /* If non zero, the column that it's in */
 	float column_width; /* Percentage */
 	int align; /* 0 = left, 1 = centre, 2 = right */
+	float indent; /* The indent position for this column. */
 };
 
 /*
