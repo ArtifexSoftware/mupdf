@@ -149,6 +149,26 @@
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
+                android:id="@+id/highlightButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/underlineButton"
+                android:contentDescription="@string/highlight"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_highlight" />
+
+            <ImageButton
+                android:id="@+id/underlineButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/strikeOutButton"
+                android:contentDescription="@string/underline"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_underline" />
+
+            <ImageButton
                 android:id="@+id/strikeOutButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

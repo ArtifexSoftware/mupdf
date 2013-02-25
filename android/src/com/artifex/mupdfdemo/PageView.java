@@ -146,7 +146,7 @@ public abstract class PageView extends ViewGroup {
 	protected abstract Bitmap updatePage(BitmapHolder h, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract LinkInfo[] getLinkInfo();
 	protected abstract TextWord[][] getText();
-	protected abstract void addStrikeOut(PointF[] quadPoints);
+	protected abstract void addMarkup(PointF[] quadPoints, Annotation.Type type);
 
 	private void reinit() {
 		// Cancel pending render task

@@ -33,6 +33,7 @@
 #define MAX_SEARCH_HITS (500)
 #define NUM_CACHE (3)
 #define STRIKE_HEIGHT (0.375f)
+#define UNDERLINE_HEIGHT (0.075f)
 #define LINE_THICKNESS (0.07f)
 #define SMALL_FLOAT (0.00001)
 
@@ -1363,7 +1364,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT void JNICALL
-JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray points)
+JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray points, fz_annot_type type)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1378,9 +1379,43 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
 	fz_display_list *strike_list;
+	float color[3];
+	float alpha;
+	float line_height;
+	float line_thickness;
 
 	if (idoc == NULL)
 		return;
+
+	switch (type)
+	{
+		case FZ_ANNOT_HIGHLIGHT:
+			color[0] = 1.0;
+			color[1] = 1.0;
+			color[2] = 0.0;
+			alpha = 0.5;
+			line_thickness = 1.0;
+			line_height = 0.5;
+			break;
+		case FZ_ANNOT_UNDERLINE:
+			color[0] = 0.0;
+			color[1] = 0.0;
+			color[2] = 1.0;
+			alpha = 1.0;
+			line_thickness = LINE_THICKNESS;
+			line_height = UNDERLINE_HEIGHT;
+			break;
+		case FZ_ANNOT_STRIKEOUT:
+			color[0] = 1.0;
+			color[1] = 0.0;
+			color[2] = 0.0;
+			alpha = 1.0;
+			line_thickness = LINE_THICKNESS;
+			line_height = STRIKE_HEIGHT;
+			break;
+		default:
+			return;
+	}
 
 	strike_list = fz_new_display_list(ctx);
 
@@ -1393,7 +1428,6 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 		fz_annot *annot;
 		fz_matrix ctm;
 
-		float color[3] = {1.0, 0.0, 0.0};
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
@@ -1417,7 +1451,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 			pts[i].y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
 		}
 
-		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
+		annot = fz_create_annot(idoc, pc->page, type);
 
 		fz_set_markup_annot_quadpoints(idoc, annot, pts, n);
 
@@ -1431,19 +1465,19 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 			up.x = pts[i+2].x - pts[i+1].x;
 			up.y = pts[i+2].y - pts[i+1].y;
 
-			pt0.x += STRIKE_HEIGHT * up.x;
-			pt0.y += STRIKE_HEIGHT * up.y;
-			pt1.x += STRIKE_HEIGHT * up.x;
-			pt1.y += STRIKE_HEIGHT * up.y;
+			pt0.x += line_height * up.x;
+			pt0.y += line_height * up.y;
+			pt1.x += line_height * up.x;
+			pt1.y += line_height * up.y;
 
-			thickness = sqrtf(up.x * up.x + up.y * up.y) * LINE_THICKNESS;
+			thickness = sqrtf(up.x * up.x + up.y * up.y) * line_thickness;
 
 			if (!stroke || fz_abs(stroke->linewidth - thickness) < SMALL_FLOAT)
 			{
 				if (stroke)
 				{
 					// assert(path)
-					fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
+					fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, alpha);
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
 					fz_free_path(ctx, path);
@@ -1461,7 +1495,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 
 		if (stroke)
 		{
-			fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
+			fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, alpha);
 		}
 
 		fz_set_annot_appearance(idoc, annot, strike_list);

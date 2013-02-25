@@ -22,4 +22,6 @@
     <string name="copy">Copy</string>
     <string name="strike_out">Strike out</string>
     <string name="delete">Delete</string>
+    <string name="highlight">Highlight</string>
+    <string name="underline">Underline</string>
 </resources>

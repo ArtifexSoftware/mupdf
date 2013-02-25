@@ -62,6 +62,8 @@ public class MuPDFActivity extends Activity
 	private ImageButton mSelectButton;
 	private ImageButton mCancelSelectButton;
 	private ImageButton mCopySelectButton;
+	private ImageButton mHighlightButton;
+	private ImageButton mUnderlineButton;
 	private ImageButton mStrikeOutButton;
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
@@ -527,11 +529,33 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
+		mHighlightButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.markupSelection(Annotation.Type.HIGHLIGHT);
+				mDocView.setSelectionMode(false);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mUnderlineButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.markupSelection(Annotation.Type.UNDERLINE);
+				mDocView.setSelectionMode(false);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
 		mStrikeOutButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
-					pageView.strikeOutSelection();
+					pageView.markupSelection(Annotation.Type.STRIKEOUT);
 				mDocView.setSelectionMode(false);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
@@ -852,6 +876,8 @@ public class MuPDFActivity extends Activity
 		mSelectButton = (ImageButton)mButtonsView.findViewById(R.id.selectButton);
 		mCancelSelectButton = (ImageButton)mButtonsView.findViewById(R.id.cancelSelectButton);
 		mCopySelectButton = (ImageButton)mButtonsView.findViewById(R.id.copySelectButton);
+		mHighlightButton = (ImageButton)mButtonsView.findViewById(R.id.highlightButton);
+		mUnderlineButton = (ImageButton)mButtonsView.findViewById(R.id.underlineButton);
 		mStrikeOutButton = (ImageButton)mButtonsView.findViewById(R.id.strikeOutButton);
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
