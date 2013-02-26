@@ -1316,6 +1316,9 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_printf(out, "body{margin:0;}\n");
 		fz_printf(out, "div.page{background-color:white;}\n");
 		fz_printf(out, "div.block{margin:0pt;padding:0pt;}\n");
+		fz_printf(out, "div.metaline{display:table;width:100%%}\n");
+		fz_printf(out, "div.line{display:table-row;}\n");
+		fz_printf(out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
 		//fz_printf(out, "p{margin:0;padding:0;}\n");
 		fz_printf(out, "</style>\n");
 		fz_printf(out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");

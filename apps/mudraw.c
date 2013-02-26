@@ -749,10 +749,13 @@ int main(int argc, char **argv)
 	if (showtext == TEXT_HTML)
 	{
 		fz_printf(out, "<style>\n");
-		fz_printf(out, "body{background-color:gray;margin:12tp;}\n");
+		fz_printf(out, "body{background-color:gray;margin:12pt;}\n");
 		fz_printf(out, "div.page{background-color:white;margin:6pt;padding:6pt;}\n");
 		fz_printf(out, "div.block{border:1px solid gray;margin:6pt;padding:6pt;}\n");
-		fz_printf(out, "p{margin:0;padding:0;}\n");
+		fz_printf(out, "div.metaline{display:table;width:100%%}\n");
+		fz_printf(out, "div.line{display:table-row;padding:6pt}\n");
+		fz_printf(out, "div.cell{display:table-cell;padding-left:6pt;padding-right:6pt}\n");
+		fz_printf(out, "p{margin:0pt;padding:0pt;}\n");
 		fz_printf(out, "</style>\n");
 		fz_printf(out, "<body>\n");
 	}

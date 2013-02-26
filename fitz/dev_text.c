@@ -13,6 +13,7 @@
 #undef DEBUG_LINE_HEIGHTS
 #undef DEBUG_MASKS
 #undef DEBUG_ALIGN
+#undef DEBUG_INDENTS
 
 #undef SPOT_LINE_NUMBERS
 
@@ -219,7 +220,7 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 	return line;
 }
 
-#if defined(DEBUG_SPANS) || defined(DEBUG_ALIGN)
+#if defined(DEBUG_SPANS) || defined(DEBUG_ALIGN) || defined(DEBUG_INDENTS)
 static void
 dump_span(fz_text_span *s)
 {
@@ -912,115 +913,75 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 	fz_text_style *style = NULL;
 	fz_text_block *block;
 	fz_text_line *line;
-	int in_block = 0;
-	void *in_table = NULL;
+	void *last_region = NULL;
 
 	fz_printf(out, "<div class=\"page\">\n");
 
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
 		block = &page->blocks[block_n];
+		fz_printf(out, "<div class=\"block\"><p>\n");
 		for (line_n = 0; line_n < block->len; line_n++)
 		{
-			int table;
-			int lastcol=0;
+			int lastcol=-1;
 			line = &block->lines[line_n];
 			style = NULL;
 
-			table = line->spans[0]->column;
-			if (table)
+			if (line->region != last_region)
 			{
-				/* Finish any non-table block that we may be in */
-				if (in_table == NULL && in_block)
-				{
-					fz_printf(out, "</p></div>\n");
-					in_block = 0;
-				}
-				/* If the table type has changed... */
-				if (in_table != line->region)
-				{
-					/* Finish any table */
-					if (in_table)
-					{
-						fz_printf(out, "</tr></table>");
-					}
-					/* Start a block if required */
-					if (!in_block)
-					{
-						fz_printf(out, "<div class=\"block\"><p>\n");
-						in_block = 1;
-					}
-					/* Start the new table */
-					fz_printf(out, "<table width=\"100%%\">");
-					for (span_n = 0; span_n < line->len; span_n++)
-					{
-						fz_text_span *span = line->spans[span_n];
-						if (lastcol < span->column)
-						{
-							while (lastcol < span->column-1)
-							{
-								fz_printf(out, "<col width=\"0%%\">");
-								lastcol++;
-							}
-							fz_printf(out, "<col width=\"%g%%\">", span->column_width);
-							lastcol++;
-						}
-					}
-					in_table = line->region;
-				}
-				/* New table row */
-				fz_printf(out, "<tr valign=\"top\">");
-				lastcol = 0;
+				if (last_region)
+					fz_printf(out, "</div>");
+				fz_printf(out, "<div class=\"metaline\">");
+				last_region = line->region;
 			}
-			else
-			{
-				if (in_table)
-				{
-					fz_printf(out, "</tr></table>");
-					in_table = NULL;
-				}
-				if (!in_block)
-				{
-					fz_printf(out, "<div class=\"block\"><p>\n");
-					in_block = 1;
-				}
-			}
+			fz_printf(out, "<div class=\"line\"");
 #ifdef DEBUG_INTERNALS
-			fz_printf(out, "<span class=\"line\"");
 			if (line->region)
 				fz_printf(out, " region=\"%x\"", line->region);
-			fz_printf(out, ">");
 #endif
+			fz_printf(out, ">");
 			for (span_n = 0; span_n < line->len; span_n++)
 			{
 				fz_text_span *span = line->spans[span_n];
 				float size = fz_matrix_expansion(&span->transform);
 				float base_offset = span->base_offset / size;
+
+				if (lastcol != span->column)
+				{
+					if (lastcol >= 0)
+					{
+						fz_printf(out, "</div>");
+					}
+					/* If we skipped any columns then output some spacer spans */
+					while (lastcol < span->column-1)
+					{
+						fz_printf(out, "<div class=\"cell\"></div>");
+						lastcol++;
+					}
+					lastcol++;
+					/* Now output the span to contain this entire column */
+					fz_printf(out, "<div class=\"cell\" style=\"");
+					{
+						int sn;
+						for (sn = span_n+1; sn < line->len; sn++)
+						{
+							if (line->spans[sn]->column != lastcol)
+								break;
+						}
+						fz_printf(out, "width:%g%%;align:%s", span->column_width, (span->align == 0 ? "left" : (span->align == 1 ? "center" : "right")));
+					}
+					if (span->indent > 1)
+						fz_printf(out, ";padding-left:1em;text-indent:-1em");
+					if (span->indent < -1)
+						fz_printf(out, ";text-indent:1em");
+					fz_printf(out, "\">");
+				}
 #ifdef DEBUG_INTERNALS
 				fz_printf(out, "<span class=\"internal_span\"");
 				if (span->column)
 					fz_printf(out, " col=\"%x\"", span->column);
 				fz_printf(out, ">");
 #endif
-				if (table && lastcol != span->column)
-				{
-					if (style)
-						fz_print_style_end(out, style);
-					style = NULL;
-					while (lastcol < span->column)
-					{
-						fz_printf(out, "<td align=\"%s\">", (span->align == 0 ? "left" : (span->align == 1 ? "center" : "right")));
-						lastcol++;
-					}
-				}
-				if (span->indent > 1)
-				{
-					fz_printf(out, "<span style=\"padding-left:3em;text-indent:-3em;\">");
-				}
-				else if (span->indent < -1)
-				{
-					fz_printf(out, "<span style=\"text-indent:3em;\">");
-				}
 				if (span->spacing >= 1)
 					fz_printf(out, " ");
 				if (base_offset > SUBSCRIPT_OFFSET)
@@ -1058,34 +1019,22 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					fz_printf(out, "</sub>");
 				else if (base_offset < SUPERSCRIPT_OFFSET)
 					fz_printf(out, "</sup>");
-				if (span->indent > 1)
-				{
-					fz_printf(out, "</span>");
-				}
-				else if (span->indent < -1)
-				{
-					fz_printf(out, "</span>");
-				}
 #ifdef DEBUG_INTERNALS
 				fz_printf(out, "</span>");
 #endif
 			}
+			/* Close our floating span */
+			fz_printf(out, "</div>");
 #ifdef DEBUG_INTERNALS
-			fz_printf(out, "</span>");
 #endif
+			/* Close the line */
+			fz_printf(out, "</div>");
 			fz_printf(out, "\n");
 		}
-		if (in_table)
-		{
-			/* Output in a table. */
-			fz_printf(out, "</tr></table>");
-			in_table = NULL;
-		}
-		if (in_block)
-		{
-			fz_printf(out, "</p></div>\n");
-			in_block = 0;
-		}
+		/* Close the metaline */
+		fz_printf(out, "</div>");
+		last_region = NULL;
+		fz_printf(out, "</p></div>\n");
 	}
 
 	fz_printf(out, "</div>\n");
@@ -2066,12 +2015,8 @@ region_mask_column(region_mask *rm, const fz_point *min, const fz_point *max, in
 	else
 		*align = 1;
 	*left_ = left;
-	// *align = rm->mask[i].align;
 	*colw = rm->mask[i].colw;
-	/* Single column things return 0 */
-	if (rm->len <= 1)
-		return 0;
-	return i+1;
+	return i;
 }
 
 static void
@@ -2604,31 +2549,53 @@ force_paragraph:
 			int span_num, sn, col;
 			line = &block->lines[line_num];
 			/* Run through the spans... */
-			for (span_num = 0; span_num < line->len; span_num++)
+			span_num = 0;
 			{
 				float indent = 0;
 				/* For each set of spans that share the same
 				 * column... */
 				col = line->spans[span_num]->column;
+#ifdef DEBUG_INDENTS
+				printf("Indent %g: ", line->spans[span_num]->indent);
+				dump_span(line->spans[span_num]);
+				printf("\n");
+#endif
 				/* find the average indent of all but the first.. */
 				for (sn = span_num+1; sn < line->len && line->spans[sn]->column == col; sn++)
 				{
+#ifdef DEBUG_INDENTS
+					printf("Indent %g: ", line->spans[sn]->indent);
+					dump_span(line->spans[sn]);
+				printf("\n");
+#endif
 					indent += line->spans[sn]->indent;
 					line->spans[sn]->indent = 0;
 				}
 				if (sn > span_num+1)
-					indent /= sn-span_num+1;
+					indent /= sn-(span_num+1);
 				/* And compare this indent with the first one... */
+#ifdef DEBUG_INDENTS
+				printf("Average indent %g ", indent);
+#endif
 				indent -= line->spans[span_num]->indent;
+#ifdef DEBUG_INDENTS
+				printf("delta %g ", indent);
+#endif
 				if (fabsf(indent) < 1)
 				{
 					/* No indent worth speaking of */
 					indent = 0;
 				}
+#ifdef DEBUG_INDENTS
+				printf("recorded %g\n", indent);
+#endif
 				line->spans[span_num]->indent = indent;
 				span_num = sn;
 			}
-
+			for (; span_num < line->len; span_num++)
+			{
+				line->spans[span_num]->indent = 0;
+			}
 		}
 	}
 }
