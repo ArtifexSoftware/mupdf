@@ -74,7 +74,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private EditText mEditText;
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
 	private AsyncTask<String,Void,Void> mSetWidgetChoice;
-	private AsyncTask<RectF[],Void,Void> mAddStrikeOut;
+	private AsyncTask<PointF[],Void,Void> mAddStrikeOut;
 	private AsyncTask<Integer,Void,Void> mDeleteAnnotation;
 	private Runnable changeReporter;
 
@@ -280,7 +280,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	}
 
 	public void strikeOutSelection() {
-		final ArrayList<RectF> lines = new ArrayList<RectF>();
+		final ArrayList<PointF> quadPoints = new ArrayList<PointF>();
 		processSelectedText(new TextProcessor() {
 			RectF rect;
 
@@ -294,20 +294,17 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 
 			public void onEndLine() {
 				if (!rect.isEmpty()) {
-					// These are vertical lines so we can specify
-					// both position and thickness with a RectF
-					float vcenter = rect.bottom - (rect.bottom - rect.top)*STRIKE_HEIGHT;
-					float thickness = (rect.bottom - rect.top)*LINE_THICKNESS;
-					rect.top = vcenter - thickness/2;
-					rect.bottom = vcenter + thickness/2;
-					lines.add(rect);
+					quadPoints.add(new PointF(rect.left, rect.bottom));
+					quadPoints.add(new PointF(rect.right, rect.bottom));
+					quadPoints.add(new PointF(rect.right, rect.top));
+					quadPoints.add(new PointF(rect.left, rect.top));
 				}
 			}
 		});
 
-		mAddStrikeOut = new AsyncTask<RectF[],Void,Void>() {
+		mAddStrikeOut = new AsyncTask<PointF[],Void,Void>() {
 			@Override
-			protected Void doInBackground(RectF[]... params) {
+			protected Void doInBackground(PointF[]... params) {
 				addStrikeOut(params[0]);
 				return null;
 			}
@@ -319,7 +316,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			}
 		};
 
-		mAddStrikeOut.execute(lines.toArray(new RectF[lines.size()]));
+		mAddStrikeOut.execute(quadPoints.toArray(new PointF[quadPoints.size()]));
 
 		deselectText();
 	}
@@ -378,8 +375,8 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	}
 
 	@Override
-	protected void addStrikeOut(RectF[] lines) {
-		mCore.addStrikeOutAnnotation(mPageNumber, lines);
+	protected void addStrikeOut(PointF[] quadPoints) {
+		mCore.addStrikeOutAnnotation(mPageNumber, quadPoints);
 	}
 
 	private void loadAnnotations() {

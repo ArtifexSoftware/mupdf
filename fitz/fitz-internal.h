@@ -1212,6 +1212,11 @@ void fz_delete_annot(fz_interactive *idoc, fz_page *page, fz_annot *annot);
 void fz_set_annot_appearance(fz_interactive *idoc, fz_annot *annot, fz_display_list *disp_list);
 
 /*
+	fz_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
+*/
+void fz_set_markup_annot_quadpoints(fz_interactive *idoc, fz_annot *annot, fz_point *qp, int n);
+
+/*
  * Text buffer.
  *
  * The trm field contains the a, b, c and d coefficients.

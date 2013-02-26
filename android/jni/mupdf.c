@@ -32,6 +32,9 @@
 
 #define MAX_SEARCH_HITS (500)
 #define NUM_CACHE (3)
+#define STRIKE_HEIGHT (0.375f)
+#define LINE_THICKNESS (0.07f)
+#define SMALL_FLOAT (0.00001)
 
 enum
 {
@@ -1360,16 +1363,17 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT void JNICALL
-JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray lines)
+JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray points)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
 	fz_interactive *idoc = fz_interact(doc);
 	page_cache *pc = &glo->pages[glo->current];
-	jclass rect_cls;
-	jfieldID x0_fid, y0_fid, x1_fid, y1_fid;
+	jclass pt_cls;
+	jfieldID x_fid, y_fid;
 	int i, n;
+	fz_point *pts = NULL;
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
@@ -1380,6 +1384,7 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 
 	strike_list = fz_new_display_list(ctx);
 
+	fz_var(pts);
 	fz_var(path);
 	fz_var(stroke);
 	fz_var(dev);
@@ -1392,45 +1397,53 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
-		LOGI("P1 %f", zoom);
-		rect_cls = (*env)->FindClass(env, "android.graphics.RectF");
-		if (rect_cls == NULL) fz_throw(ctx, "FindClass");
-		LOGI("P2");
-		x0_fid = (*env)->GetFieldID(env, rect_cls, "left", "F");
-		if (x0_fid == NULL) fz_throw(ctx, "GetFieldID(left)");
-		LOGI("P3");
-		y0_fid = (*env)->GetFieldID(env, rect_cls, "top", "F");
-		if (y0_fid == NULL) fz_throw(ctx, "GetFieldID(top)");
-		LOGI("P4");
-		x1_fid = (*env)->GetFieldID(env, rect_cls, "right", "F");
-		if (x1_fid == NULL) fz_throw(ctx, "GetFieldID(right)");
-		LOGI("P5");
-		y1_fid = (*env)->GetFieldID(env, rect_cls, "bottom", "F");
-		if (y1_fid == NULL) fz_throw(ctx, "GetFieldID(bottom)");
-		LOGI("P6");
+		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
+		if (pt_cls == NULL) fz_throw(ctx, "FindClass");
+		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
+		if (x_fid == NULL) fz_throw(ctx, "GetFieldID(x)");
+		y_fid = (*env)->GetFieldID(env, pt_cls, "y", "F");
+		if (y_fid == NULL) fz_throw(ctx, "GetFieldID(y)");
 
-		n = (*env)->GetArrayLength(env, lines);
-		LOGI("nlines=%d", n);
+		n = (*env)->GetArrayLength(env, points);
+
+		pts = fz_malloc_array(ctx, n, sizeof(fz_point));
 
 		dev = fz_new_list_device(ctx, strike_list);
 
 		for (i = 0; i < n; i++)
 		{
-			jobject line = (*env)->GetObjectArrayElement(env, lines, i);
-			float x0 = (*env)->GetFloatField(env, line, x0_fid);
-			float y0 = (*env)->GetFloatField(env, line, y0_fid);
-			float x1 = (*env)->GetFloatField(env, line, x1_fid);
-			float y1 = (*env)->GetFloatField(env, line, y1_fid);
-			float vcenter = (y0 + y1)/2;
-			float thickness = y1 - y0;
+			jobject opt = (*env)->GetObjectArrayElement(env, points, i);
+			pts[i].x = opt ? (*env)->GetFloatField(env, opt, x_fid) : 0.0f;
+			pts[i].y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
+		}
 
-			if (!stroke || stroke->linewidth != thickness)
+		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
+
+		fz_set_markup_annot_quadpoints(idoc, annot, pts, n);
+
+		for (i = 0; i < n; i += 4)
+		{
+			fz_point pt0 = pts[i];
+			fz_point pt1 = pts[i+1];
+			fz_point up;
+			float thickness;
+
+			up.x = pts[i+2].x - pts[i+1].x;
+			up.y = pts[i+2].y - pts[i+1].y;
+
+			pt0.x += STRIKE_HEIGHT * up.x;
+			pt0.y += STRIKE_HEIGHT * up.y;
+			pt1.x += STRIKE_HEIGHT * up.x;
+			pt1.y += STRIKE_HEIGHT * up.y;
+
+			thickness = sqrtf(up.x * up.x + up.y * up.y) * LINE_THICKNESS;
+
+			if (!stroke || fz_abs(stroke->linewidth - thickness) < SMALL_FLOAT)
 			{
 				if (stroke)
 				{
 					// assert(path)
 					fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
-					LOGI("Path stroked");
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
 					fz_free_path(ctx, path);
@@ -1438,29 +1451,25 @@ JNI_FN(MuPDFCore_addStrikeOutAnnotationInternal)(JNIEnv * env, jobject thiz, job
 				}
 
 				stroke = fz_new_stroke_state(ctx);
-				LOGI("thickness(%f)", thickness);
 				stroke->linewidth = thickness;
 				path = fz_new_path(ctx);
 			}
 
-			fz_moveto(ctx, path, x0, vcenter);
-			LOGI("moveto(%f,%f)", x0, vcenter);
-			fz_lineto(ctx, path, x1, vcenter);
-			LOGI("lineto(%f,%f)", x1, vcenter);
+			fz_moveto(ctx, path, pt0.x, pt0.y);
+			fz_lineto(ctx, path, pt1.x, pt1.y);
 		}
 
 		if (stroke)
 		{
 			fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, 1.0);
-			LOGI("Path stroked");
 		}
 
-		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_STRIKEOUT);
 		fz_set_annot_appearance(idoc, annot, strike_list);
 		dump_annotation_display_lists(glo);
 	}
 	fz_always(ctx)
 	{
+		fz_free(ctx, pts);
 		fz_free_device(dev);
 		fz_drop_stroke_state(ctx, stroke);
 		fz_free_path(ctx, path);

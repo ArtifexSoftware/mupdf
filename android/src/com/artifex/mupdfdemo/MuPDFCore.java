@@ -39,7 +39,7 @@ public class MuPDFCore
 	private native RectF[] searchPage(String text);
 	private native TextChar[][][][] text();
 	private native byte[] textAsHtml();
-	private native void addStrikeOutAnnotationInternal(RectF[] lines);
+	private native void addStrikeOutAnnotationInternal(PointF[] quadPoints);
 	private native void deleteAnnotationInternal(int annot_index);
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
@@ -248,9 +248,9 @@ public class MuPDFCore
 		return lns.toArray(new TextWord[lns.size()][]);
 	}
 
-	public synchronized void addStrikeOutAnnotation(int page, RectF[] lines) {
+	public synchronized void addStrikeOutAnnotation(int page, PointF[] quadPoints) {
 		gotoPage(page);
-		addStrikeOutAnnotationInternal(lines);
+		addStrikeOutAnnotationInternal(quadPoints);
 	}
 
 	public synchronized void deleteAnnotation(int page, int annot_index) {

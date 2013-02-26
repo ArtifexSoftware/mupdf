@@ -101,6 +101,11 @@ void fz_set_annot_appearance(fz_interactive *idoc, fz_annot *annot, fz_display_l
 	pdf_set_annot_appearance((pdf_document *)idoc, (pdf_annot *)annot, disp_list);
 }
 
+void fz_set_markup_annot_quadpoints(fz_interactive *idoc, fz_annot *annot, fz_point *qp, int n)
+{
+	pdf_set_markup_annot_quadpoints((pdf_document *)idoc, (pdf_annot *)annot, qp, n);
+}
+
 void fz_set_doc_event_callback(fz_interactive *idoc, fz_doc_event_cb *event_cb, void *data)
 {
 	pdf_set_doc_event_callback((pdf_document *)idoc, event_cb, data);

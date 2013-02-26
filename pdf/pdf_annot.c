@@ -741,6 +741,31 @@ pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot)
 }
 
 void
+pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n)
+{
+	fz_context *ctx = doc->ctx;
+	fz_matrix ctm;
+	pdf_obj *arr = pdf_new_array(ctx, n*2);
+	int i;
+
+	fz_invert_matrix(&ctm, &annot->page->ctm);
+
+	pdf_dict_puts_drop(annot->obj, "QuadPoints", arr);
+
+	for (i = 0; i < n; i++)
+	{
+		fz_point pt = qp[i];
+		pdf_obj *r;
+
+		fz_transform_point(&pt, &ctm);
+		r = pdf_new_real(ctx, pt.x);
+		pdf_array_push_drop(arr, r);
+		r = pdf_new_real(ctx, pt.y);
+		pdf_array_push_drop(arr, r);
+	}
+}
+
+void
 pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *disp_list)
 {
 	fz_context *ctx = doc->ctx;
