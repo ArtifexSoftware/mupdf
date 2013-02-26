@@ -671,6 +671,76 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 }
 
 void
+pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_annot **annotptr;
+	pdf_obj *old_annot_arr;
+	pdf_obj *annot_arr;
+
+	if (annot == NULL)
+		return;
+
+	/* Remove annot from page's list */
+	for (annotptr = &page->annots; *annotptr; annotptr = &(*annotptr)->next)
+	{
+		if (*annotptr == annot)
+			break;
+	}
+
+	/* Check the passed annotation was of this page */
+	if (*annotptr == NULL)
+		return;
+
+	*annotptr = annot->next;
+
+	/* Stick it in the deleted list */
+	annot->next = page->deleted_annots;
+	page->deleted_annots = annot;
+
+	pdf_drop_xobject(ctx, annot->ap);
+	annot->ap = NULL;
+
+	/* Recreate the "Annots" array with this annot removed */
+	old_annot_arr = pdf_dict_gets(page->me, "Annots");
+
+	if (old_annot_arr)
+	{
+		int i, n = pdf_array_len(old_annot_arr);
+		annot_arr = pdf_new_array(ctx, n?(n-1):0);
+
+		fz_try(ctx)
+		{
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *obj = pdf_array_get(old_annot_arr, i);
+
+				if (obj != annot->obj)
+					pdf_array_push(annot_arr, obj);
+			}
+
+			/*
+			Overwrite "Annots" in the page dictionary, which has the
+			side-effect of releasing the last reference to old_annot_arr
+			*/
+			pdf_dict_puts(page->me, "Annots", annot_arr);
+		}
+		fz_always(ctx)
+		{
+			pdf_drop_obj(annot_arr);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+	}
+
+	pdf_drop_obj(annot->obj);
+	annot->obj = NULL;
+	doc->dirty = 1;
+}
+
+void
 pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *disp_list)
 {
 	fz_context *ctx = doc->ctx;

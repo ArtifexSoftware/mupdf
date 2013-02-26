@@ -2160,7 +2160,20 @@ void pdf_update_page(pdf_document *doc, pdf_page *page)
 	fz_context *ctx = doc->ctx;
 	pdf_annot *annot;
 
+	/* Reset changed_annots to empty */
 	page->changed_annots = NULL;
+
+	/*
+		Free all annots in tmp_annots, since these were
+		referenced only from changed_annots.
+	*/
+	if (page->tmp_annots)
+	{
+		pdf_free_annot(ctx, page->tmp_annots);
+		page->tmp_annots = NULL;
+	}
+
+	/* Add all changed annots to the list */
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		pdf_xobject *ap = pdf_keep_xobject(ctx, annot->ap);
@@ -2185,6 +2198,24 @@ void pdf_update_page(pdf_document *doc, pdf_page *page)
 			fz_rethrow(ctx);
 		}
 	}
+
+	/*
+		Add all deleted annots to the list, since these also
+		warrant a screen update
+	*/
+	for (annot = page->deleted_annots; annot; annot = annot->next)
+	{
+		annot->next_changed = page->changed_annots;
+		page->changed_annots = annot;
+	}
+
+	/*
+		Move deleted_annots to tmp_annots to keep them separate
+		from any future deleted ones. They cannot yet be freed
+		since they are linked into changed_annots
+	*/
+	page->tmp_annots = page->deleted_annots;
+	page->deleted_annots = NULL;
 }
 
 pdf_annot *pdf_poll_changed_annot(pdf_document *idoc, pdf_page *page)

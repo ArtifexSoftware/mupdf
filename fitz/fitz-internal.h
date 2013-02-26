@@ -1201,6 +1201,11 @@ void fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nestedDept
 fz_annot *fz_create_annot(fz_interactive *idoc, fz_page *page, fz_annot_type type);
 
 /*
+	fz_delete_annot: delete an annotation
+*/
+void fz_delete_annot(fz_interactive *idoc, fz_page *page, fz_annot *annot);
+
+/*
 	fz_set_annot_appearance: update the appearance of an annotation based
 	on a display list.
 */
