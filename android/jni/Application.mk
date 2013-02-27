@@ -1,6 +1,12 @@
 # The ARMv7 is significanly faster due to the use of the hardware FPU
 APP_PLATFORM=android-8
+
+# We only build for arm variants by default. If you want more, uncomment
+# the appropriate line below.
 APP_ABI := armeabi armeabi-v7a
+#APP_ABI := armeabi armeabi-v7a x86 mips
+#APP_ABI := all
+
 ifdef NDK_PROFILER
 # The profiler doesn't seem to receive ticks when run on release code.
 # Accordingly, we need to build as debug - but this turns optimisations
