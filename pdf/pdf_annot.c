@@ -413,6 +413,39 @@ static int annot_type(pdf_obj *obj)
 		return -1;
 }
 
+static const char *annot_type_str(fz_annot_type type)
+{
+	switch (type)
+	{
+	case FZ_ANNOT_TEXT: return "Text";
+	case FZ_ANNOT_LINK: return "Link";
+	case FZ_ANNOT_FREETEXT: return "FreeText";
+	case FZ_ANNOT_LINE: return "Line";
+	case FZ_ANNOT_SQUARE: return "Square";
+	case FZ_ANNOT_CIRCLE: return "Circle";
+	case FZ_ANNOT_POLYGON: return "Polygon";
+	case FZ_ANNOT_POLYLINE: return "PolyLine";
+	case FZ_ANNOT_HIGHLIGHT: return "Highlight";
+	case FZ_ANNOT_UNDERLINE: return "Underline";
+	case FZ_ANNOT_SQUIGGLY: return "Squiggly";
+	case FZ_ANNOT_STRIKEOUT: return "StrikeOut";
+	case FZ_ANNOT_STAMP: return "Stamp";
+	case FZ_ANNOT_CARET: return "Caret";
+	case FZ_ANNOT_INK: return "Ink";
+	case FZ_ANNOT_POPUP: return "Popup";
+	case FZ_ANNOT_FILEATTACHMENT: return "FileAttachment";
+	case FZ_ANNOT_SOUND: return "Sound";
+	case FZ_ANNOT_MOVIE: return "Movie";
+	case FZ_ANNOT_WIDGET: return "Widget";
+	case FZ_ANNOT_SCREEN: return "Screen";
+	case FZ_ANNOT_PRINTERMARK: return "PrinterMark";
+	case FZ_ANNOT_TRAPNET: return "TrapNet";
+	case FZ_ANNOT_WATERMARK: return "Watermark";
+	case FZ_ANNOT_3D: return "3D";
+	default: return "";
+	}
+}
+
 pdf_annot *
 pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 {
@@ -606,7 +639,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 	{
 		int ind_obj_num;
 		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
-		char *type_str = "";
+		char *type_str = annot_type_str(type);
 		pdf_obj *annot_arr = pdf_dict_gets(page->me, "Annots");
 		if (annot_arr == NULL)
 		{
@@ -615,15 +648,6 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		}
 
 		pdf_dict_puts_drop(annot_obj, "Type", pdf_new_name(ctx, "Annot"));
-
-		switch(type)
-		{
-		case FZ_ANNOT_STRIKEOUT:
-			type_str = "StrikeOut";
-			break;
-		default:
-			break;
-		}
 
 		pdf_dict_puts_drop(annot_obj, "Subtype", pdf_new_name(ctx, type_str));
 		pdf_dict_puts_drop(annot_obj, "Rect", pdf_new_rect(ctx, &rect));
