@@ -673,7 +673,11 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 	 * that we have found. */
 	if (dolerp) {
 		u -= 32768;
+		if (u < 0)
+			u = 0;
 		v -= 32768;
+		if (v < 0)
+			v = 0;
 	}
 
 	dp = dst->samples + (unsigned int)(((y - dst->y) * dst->w + (x - dst->x)) * dst->n);
