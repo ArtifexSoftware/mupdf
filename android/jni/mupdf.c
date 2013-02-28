@@ -1427,6 +1427,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 	{
 		fz_annot *annot;
 		fz_matrix ctm;
+		fz_rect rect = fz_empty_rect;
 
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
@@ -1449,6 +1450,17 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 			jobject opt = (*env)->GetObjectArrayElement(env, points, i);
 			pts[i].x = opt ? (*env)->GetFloatField(env, opt, x_fid) : 0.0f;
 			pts[i].y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
+			fz_transform_point(&pts[i], &ctm);
+
+			if (i == 0)
+			{
+				rect.x0 = rect.x1 = pts[i].x;
+				rect.y0 = rect.y1 = pts[i].y;
+			}
+			else
+			{
+				fz_include_point_in_rect(&rect, &pts[i]);
+			}
 		}
 
 		annot = fz_create_annot(idoc, pc->page, type);
@@ -1477,7 +1489,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 				if (stroke)
 				{
 					// assert(path)
-					fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, alpha);
+					fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb, color, alpha);
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
 					fz_free_path(ctx, path);
@@ -1495,10 +1507,10 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 
 		if (stroke)
 		{
-			fz_stroke_path(dev, path, stroke, &ctm, fz_device_rgb, color, alpha);
+			fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb, color, alpha);
 		}
 
-		fz_set_annot_appearance(idoc, annot, strike_list);
+		fz_set_annot_appearance(idoc, annot, &rect, strike_list);
 		dump_annotation_display_lists(glo);
 	}
 	fz_always(ctx)

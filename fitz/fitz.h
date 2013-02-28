@@ -1138,6 +1138,14 @@ fz_rect *fz_rect_from_irect(fz_rect *restrict rect, const fz_irect *restrict bbo
 fz_rect *fz_expand_rect(fz_rect *b, float expand);
 
 /*
+	fz_include_point_in_rect: Expand a bbox to include a given point.
+	To create a rectangle that encompasses a sequence of points, the
+	rectangle must first be set to be the empty rectangle at one of
+	the points before including the others.
+*/
+fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p);
+
+/*
 	fz_translate_irect: Translate bounding box.
 
 	Translate a bbox by a given x and y offset. Allows for overflow.

@@ -639,7 +639,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 	{
 		int ind_obj_num;
 		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
-		char *type_str = annot_type_str(type);
+		const char *type_str = annot_type_str(type);
 		pdf_obj *annot_arr = pdf_dict_gets(page->me, "Annots");
 		if (annot_arr == NULL)
 		{
@@ -790,24 +790,22 @@ pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *q
 }
 
 void
-pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *disp_list)
+pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)
 {
 	fz_context *ctx = doc->ctx;
 	fz_matrix ctm;
-	fz_rect rect;
 	fz_matrix mat = fz_identity;
-	fz_device *dev = fz_new_bbox_device(ctx, &rect);
+	fz_device *dev = NULL;
 
 	fz_invert_matrix(&ctm, &annot->page->ctm);
 	fz_try(ctx)
 	{
 		pdf_obj *ap_obj;
+		fz_rect trect = *rect;
 
-		fz_run_display_list(disp_list, dev, &ctm, &fz_infinite_rect, NULL);
-		fz_free_device(dev);
-		dev = NULL;
+		fz_transform_rect(&trect, &ctm);
 
-		pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(ctx, &rect));
+		pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(ctx, &trect));
 
 		/* See if there is a current normal appearance */
 		ap_obj = pdf_dict_getp(annot->obj, "AP/N");
@@ -816,12 +814,12 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *d
 
 		if (ap_obj == NULL)
 		{
-			ap_obj = pdf_new_xobject(doc, &rect, &mat);
+			ap_obj = pdf_new_xobject(doc, &trect, &mat);
 			pdf_dict_putp_drop(annot->obj, "AP/N", ap_obj);
 		}
 		else
 		{
-			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(ctx, &rect));
+			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(ctx, &trect));
 			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(ctx, &mat));
 		}
 
@@ -830,9 +828,8 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *d
 		pdf_drop_xobject(ctx, annot->ap);
 		annot->ap = NULL;
 
-		annot->rect = rect;
-		annot->pagerect = rect;
-		fz_transform_rect(&annot->pagerect, &annot->page->ctm);
+		annot->rect = trect;
+		annot->pagerect = *rect;
 
 		dev = pdf_new_pdf_device(doc, ap_obj, pdf_dict_gets(ap_obj, "Resources"), &mat);
 		fz_run_display_list(disp_list, dev, &ctm, &fz_infinite_rect, NULL);

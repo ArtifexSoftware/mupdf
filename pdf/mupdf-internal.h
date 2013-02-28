@@ -589,7 +589,7 @@ int pdf_choice_widget_value(pdf_document *doc, fz_widget *tw, char *opts[]);
 void pdf_choice_widget_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[]);
 pdf_annot *pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type);
 void pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot);
-void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_display_list *disp_list);
+void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list);
 void pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n);
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *event_cb, void *data);
 
