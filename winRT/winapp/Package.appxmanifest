@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
+  <Identity Name="d9462f36-8b87-4b46-897a-66f6c91774ec" Publisher="CN=michaelv" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>winapp</DisplayName>
+    <PublisherDisplayName>michaelv</PublisherDisplayName>
+    <Logo>Assets\mupdf_storelogo.png</Logo>
+  </Properties>
+  <Prerequisites>
+    <OSMinVersion>6.2.1</OSMinVersion>
+    <OSMaxVersionTested>6.2.1</OSMaxVersionTested>
+  </Prerequisites>
+  <Resources>
+    <Resource Language="x-generate" />
+  </Resources>
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="winapp.App">
+      <VisualElements DisplayName="winapp" Logo="Assets\mupdf_logo.png" SmallLogo="Assets\mupdf_smallogo.png" Description="winapp" ForegroundText="light" BackgroundColor="#464646">
+        <DefaultTile ShowName="allLogos" />
+        <SplashScreen Image="Assets\mupdf_splash.png" />
+      </VisualElements>
+      <Extensions>
+        <Extension Category="windows.fileOpenPicker">
+          <FileOpenPicker>
+            <SupportedFileTypes>
+              <FileType>.pdf</FileType>
+              <FileType>.xps</FileType>
+              <FileType>.oxps</FileType>
+            </SupportedFileTypes>
+          </FileOpenPicker>
+        </Extension>
+        <Extension Category="windows.fileTypeAssociation">
+          <FileTypeAssociation Name=".pdf">
+            <SupportedFileTypes>
+              <FileType>.pdf</FileType>
+            </SupportedFileTypes>
+          </FileTypeAssociation>
+        </Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <Capabilities>
+    <Capability Name="documentsLibrary" />
+    <Capability Name="internetClient" />
+  </Capabilities>
+</Package>

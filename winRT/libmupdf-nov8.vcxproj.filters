@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="pdf">
+      <UniqueIdentifier>{6f183396-5a5d-449c-ad81-5f2b5d38d467}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pdf\pdf_js_none.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

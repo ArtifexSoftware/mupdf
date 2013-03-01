@@ -1,0 +1,85 @@
+﻿//
+// MainPage.xaml.h
+// Declaration of the MainPage class.
+//
+
+#pragma once
+
+#include "MainPage.g.h"
+#include "fitz.h"
+#include "fitz-internal.h"
+#include "muxps.h"
+#include "mupdf.h"
+
+using namespace Windows::Storage;
+using namespace Windows::UI::Xaml;
+using namespace Windows::UI::Xaml::Media::Imaging;
+using namespace Windows::Storage::Streams;
+using namespace Windows::Foundation;
+using namespace Windows::UI::Xaml::Controls;
+using namespace Windows::UI::Xaml::Media;
+using namespace Windows::UI::Xaml::Input;
+
+namespace winapp
+{
+	/// <summary>
+	/// An empty page that can be used on its own or navigated to within a Frame.
+	/// </summary>
+	public ref class MainPage sealed
+	{
+	public:
+		MainPage();
+
+	protected:
+		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
+
+    /* added */
+    private:
+        bool m_file_open;
+        int  m_currpage;
+        int  m_num_pages;
+        int  m_slider_min;
+        int  m_slider_max;
+        bool m_init_done;
+        bool m_first_time;
+        Point m_display_size;
+        long long m_memory_use;
+        double m_curr_zoom;
+        Point m_zoom_size;
+        fz_document *m_doc; 
+        Point m_touchpoint;
+        Point m_canvas_translate;
+        Windows::UI::Input::ManipulationDelta m_changes;
+        ImageBrush^ m_renderedImage;
+        ImageBrush^ m_blankPage;
+        FlipView^ m_flipView;
+        Canvas^ m_Canvas;
+        ImageBrush^ m_zoomedImage;
+        bool m_zoom_mode;
+        bool m_zoom_handled;
+        bool m_insearch;
+		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void OpenDocument(StorageFile^ file);
+        void RenderPage(fz_document *doc, fz_page *page, int *width, int *height, double scale);
+        void RenderRange(int curr_page);
+        void AddPage(int page_num);
+        void ReplacePage(int page_num);
+        void AddBlankPage(int page_num);
+        void CreateBlank(int width, int height);
+        void HandleFileNotFoundException(Platform::COMException^ e); 
+        void NotifyUserFileNotExist();
+        void SetupCanvas();
+        void Prepare_bmp(int width, int height, DataWriter ^dw);
+        void PixToMemStream(fz_pixmap *pix, DataWriter ^dw, Platform::Array<unsigned char> ^arr);
+        void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
+        void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
+        void FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
+        void Canvas_ManipulationDelta(Object^ sender, ManipulationDeltaRoutedEventArgs^ e);
+        void Canvas_ManipulationStarted(Object^ sender, ManipulationStartedRoutedEventArgs^ e);
+        void Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e);  
+        void Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
+        void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+    };
+}

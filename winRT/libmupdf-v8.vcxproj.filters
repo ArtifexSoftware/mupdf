@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="pdf">
+      <UniqueIdentifier>{29553168-4cc5-4fc1-9bcc-61b9c6d39b23}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pdf\pdf_js.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_jsimp_cpp.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_jsimp_v8.cpp">
+      <Filter>pdf</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\pdf\pdf_jsimp_cpp.h">
+      <Filter>pdf</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
