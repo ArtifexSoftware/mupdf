@@ -59,12 +59,17 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define isnan _isnan
 #define hypotf _hypotf
 
+#define fopen fopen_utf8
+
+FILE *fopen_utf8(const char *name, const char *mode);
+
 #else /* Unix or close enough */
 
 #include <unistd.h>
 
 #ifndef O_BINARY
 #define O_BINARY 0
+
 #endif
 
 #endif
@@ -628,7 +633,7 @@ int fz_strlcat(char *dst, const char *src, int n);
 
 	Returns the number of bytes consumed. Does not throw exceptions.
 */
-int fz_chartorune(int *rune, char *str);
+int fz_chartorune(int *rune, const char *str);
 
 /*
 	fz_runetochar: UTF8 encode a rune to a sequence of chars.
