@@ -133,6 +133,10 @@ FILE *fopen_utf8(const char *name, const char *mode);
 #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 	Shut the compiler up about unused variables
 */
@@ -3340,5 +3344,9 @@ enum
 	May throw exceptions.
 */
 void fz_write_document(fz_document *doc, char *filename, fz_write_options *opts);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
