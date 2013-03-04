@@ -102,6 +102,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/pdf/pdf_device.c \
 	$(MY_ROOT)/pdf/pdf_encoding.c \
 	$(MY_ROOT)/pdf/pdf_event.c \
+	$(MY_ROOT)/pdf/pdf_field.c \
 	$(MY_ROOT)/pdf/pdf_font.c \
 	$(MY_ROOT)/pdf/pdf_fontfile.c \
 	$(MY_ROOT)/pdf/pdf_form.c \

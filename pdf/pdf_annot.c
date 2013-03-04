@@ -465,7 +465,8 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 		{
 			obj = pdf_array_get(annots, i);
 
-			pdf_update_appearance(xref, obj);
+			if (xref->update_appearance)
+				xref->update_appearance(xref, obj);
 
 			rect = pdf_dict_gets(obj, "Rect");
 			ap = pdf_dict_gets(obj, "AP");
@@ -550,7 +551,8 @@ pdf_update_annot(pdf_document *xref, pdf_annot *annot)
 
 	obj = annot->obj;
 
-	pdf_update_appearance(xref, obj);
+	if (xref->update_appearance)
+		xref->update_appearance(xref, obj);
 
 	ap = pdf_dict_gets(obj, "AP");
 	as = pdf_dict_gets(obj, "AS");
