@@ -10,19 +10,13 @@
 #define MIN_SCALE 0.5
 #define MAX_SCALE 4
 #define MARGIN_BUFF 400
-
-typedef struct RectSize_s
-{
-    float width;
-    float height;
-} RectSize;
+#define MAX_SEARCH 500
 
 static float screenScale = 1;
 static fz_context *ctx = NULL;
 
 using namespace winapp;
 
-using namespace Platform;
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::UI::Xaml;
@@ -31,6 +25,7 @@ using namespace Windows::UI::Xaml::Controls::Primitives;
 using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
+using namespace Windows::UI::Xaml::Shapes;
 
 //****************** Added *****************
 using namespace Windows::Storage::Pickers;
@@ -59,6 +54,7 @@ MainPage::MainPage()
     m_zoom_handled = false;
     m_first_time = false;
     m_insearch = false;
+    ResetSearch();
 
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
@@ -67,6 +63,15 @@ MainPage::MainPage()
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
     this->xaml_PageSlider->IsEnabled = false;
+
+    //Text Search Box
+    Windows::UI::Color color;
+    color.R = 0x25;
+    color.G = 0x72;
+    color.B = 0xAC;
+    color.A = 0x7F;
+    SolidColorBrush^ m_color_brush = ref new SolidColorBrush(color);
+
 
 	// use at most 128M for resource cache
 	ctx = fz_new_context(NULL, NULL, 128<<20);
@@ -135,6 +140,17 @@ void MainPage::HandleFileNotFoundException(Platform::COMException^ e)
     }
 }
 
+RectSize MainPage::currPageSize(int page)
+{
+	RectSize Size;
+
+    FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(page);
+
+    Size.height = flipview_temp->ActualHeight;
+    Size.width = flipview_temp->ActualWidth;
+    return Size;
+}
+
 static RectSize measurePage(fz_document *doc, fz_page *page)
 {
 	RectSize pageSize;
@@ -186,7 +202,8 @@ void MainPage::Prepare_bmp(int width, int height, DataWriter ^dw)
 void MainPage::AddPage(int page_num) 
 {
     FlipViewItem ^flipview_temp = ref new FlipViewItem();
-    flipview_temp->Background = this->m_renderedImage;
+    flipview_temp->Content = this->m_renderedCanvas;
+    flipview_temp->Background = nullptr;
     m_flipView->Items->Append(flipview_temp);
 }
 
@@ -194,7 +211,8 @@ void MainPage::AddPage(int page_num)
 void MainPage::ReplacePage(int page_num) 
 {
     FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(page_num);
-    flipview_temp->Background = this->m_renderedImage;
+    flipview_temp->Content = this->m_renderedCanvas;    
+    flipview_temp->Background = nullptr;
 }
 
 /* Add rendered page into flipview structure at location page_num */
@@ -326,7 +344,8 @@ void winapp::MainPage::RenderPage(fz_document *doc, fz_page *page, int *width, i
     RectSize pageSize;
     RectSize scale;
     RectSize screenSize;
-    int bmp_width, bmp_height; 
+    int bmp_width, bmp_height;
+    Canvas^ my_Canvas = ref new Canvas();
 
     screenSize.height = this->ActualHeight;
     screenSize.width = this->ActualWidth;
@@ -369,35 +388,39 @@ void winapp::MainPage::RenderPage(fz_document *doc, fz_page *page, int *width, i
     m_renderedImage->ImageSource = bmp;
     *width = bmp_width;
     *height = bmp_height;
+    m_renderedCanvas = ref new Canvas();
+    m_renderedCanvas->Height = bmp_height;
+    m_renderedCanvas->Width = bmp_width;
+    m_renderedCanvas->Background = this->m_renderedImage;
 }
 
-void winapp::MainPage::SetupCanvas()
+void winapp::MainPage::SetupZoomCanvas()
 {
     int height = this->ActualHeight;
     int width = this->ActualWidth;
 
-    m_Canvas = ref new Canvas();
+    m_ZoomCanvas = ref new Canvas();
 
-    m_Canvas->Height =  height;        
-    m_Canvas->Width = width;
+    m_ZoomCanvas->Height =  height;        
+    m_ZoomCanvas->Width = width;
 
-    m_Canvas->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-    m_Canvas->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-    m_Canvas->ManipulationMode = Windows::UI::Xaml::Input::ManipulationModes::All;
-    m_Canvas->ManipulationDelta += 
+    m_ZoomCanvas->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+    m_ZoomCanvas->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+    m_ZoomCanvas->ManipulationMode = Windows::UI::Xaml::Input::ManipulationModes::All;
+    m_ZoomCanvas->ManipulationDelta += 
        ref new ManipulationDeltaEventHandler(this, &MainPage::Canvas_ManipulationDelta);
-    m_Canvas->ManipulationStarted +=
+    m_ZoomCanvas->ManipulationStarted +=
       ref new ManipulationStartedEventHandler(this, &MainPage::Canvas_ManipulationStarted);
-    m_Canvas->ManipulationStarting +=
+    m_ZoomCanvas->ManipulationStarting +=
        ref new ManipulationStartingEventHandler(this, &MainPage::Canvas_ManipulationStarting);
-    m_Canvas->DoubleTapped +=
+    m_ZoomCanvas->DoubleTapped +=
         ref new DoubleTappedEventHandler(this, &MainPage::Canvas_Double);
 
     CreateBlank(width, height);
-    m_Canvas->Background = this->m_blankPage;
-    m_Canvas->Children->Append(m_flipView);
-    xaml_MainGrid->Children->Append(m_Canvas);
-    m_Canvas->Background->Opacity = 0;
+    m_ZoomCanvas->Background = this->m_blankPage;
+    m_ZoomCanvas->Children->Append(m_flipView);
+    xaml_MainGrid->Children->Append(m_ZoomCanvas);
+    m_ZoomCanvas->Background->Opacity = 0;
 }
 
 void winapp::MainPage::OpenDocument(StorageFile^ file)
@@ -407,7 +430,7 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
     int size = wcslen(w);
 
     /* Set up the canvas */
-    this->SetupCanvas();
+    this->SetupZoomCanvas();
 
     create_task(file->OpenAsync(FileAccessMode::Read)).then([this, file](task<IRandomAccessStream^> task)
     {
@@ -454,7 +477,6 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
                    page which will get bumped as we move through the doc. */
                 if (m_num_pages > LOOK_AHEAD + 2)
                 {
-                    CreateBlank(width, height);
                     for (int k = LOOK_AHEAD + 2; k < m_num_pages; k++) 
                     {
                         AddBlankPage(k);
@@ -486,7 +508,7 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
     });
 }
 
-void winapp::MainPage::RenderRange(int curr_page)
+void winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
 {
     /* Render +/- the look ahead from where we are if blank page is present */
     for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
@@ -497,13 +519,15 @@ void winapp::MainPage::RenderRange(int curr_page)
             if (flipview_temp->Background == this->m_blankPage) 
             {
                 fz_page *page = fz_load_page(m_doc, k);
-                int width, height;
-			    this->RenderPage(m_doc, page, &width, &height, 1);
+			    this->RenderPage(m_doc, page, width, height, 1);
                 ReplacePage(k);
                 fz_free_page(m_doc, page);
             } 
         }
     }
+    RectSize rectsize = this->currPageSize(curr_page);
+    *height = rectsize.height;
+    *width = rectsize.width;
 }
 
 void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
@@ -513,7 +537,9 @@ void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
         this->m_flipView->SelectedIndex = newValue;
-        this->RenderRange(newValue);
+        int height, width;
+        this->RenderRange(newValue, &height, &width);
+        ResetSearch();
     }
      Windows::UI::Xaml::Input::ManipulationModes temp = m_flipView->ManipulationMode;
 }
@@ -521,26 +547,11 @@ void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI
 void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
 {
     int pos = this->m_flipView->SelectedIndex;
+    int height, width;
 
     if (m_init_done)
-        this->RenderRange(pos);
-}
-
-void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
-{
-    if (!m_zoom_mode)
-    {
-        m_zoom_mode = true;
-        int pos = this->m_flipView->SelectedIndex;
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
-        ImageBrush^ Image = (ImageBrush^) (flipview_temp->Background);
-        m_flipView->IsEnabled = false;
-        this->m_Canvas->Background = Image;
-        this->m_Canvas->Background->Opacity = 1;
-        this->m_flipView->Opacity = 0;
-        m_zoom_handled = true;
-        m_first_time = true;
-    }
+        this->RenderRange(pos, &height, &width);
+    ResetSearch();
 }
 
 void winapp::MainPage::Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e)
@@ -570,13 +581,15 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
         if (m_curr_zoom < MIN_SCALE) m_curr_zoom = MIN_SCALE;
         if (m_curr_zoom > MAX_SCALE) m_curr_zoom = MAX_SCALE;
         this->RenderPage(m_doc, page, &width, &height, m_curr_zoom);
-        this->m_Canvas->Background = this->m_renderedImage;
+        this->m_ZoomCanvas->Background = this->m_renderedImage;
+        this->m_ZoomCanvas->Width = width;
+        this->m_ZoomCanvas->Height = height;
         m_zoom_size.X = width;
         m_zoom_size.Y = height;
         m_first_time = false;
     }
 
-    Windows::UI::Xaml::Media::TranslateTransform ^trans_transform = ref new TranslateTransform();
+    TranslateTransform ^trans_transform = ref new TranslateTransform();
     m_canvas_translate.X += e->Delta.Translation.X;
     m_canvas_translate.Y += e->Delta.Translation.Y;
     
@@ -600,30 +613,61 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
 
     trans_transform->X = m_canvas_translate.X;
     trans_transform->Y = m_canvas_translate.Y;
-    this->m_Canvas->Background->Transform = trans_transform;
+    this->m_ZoomCanvas->RenderTransform = trans_transform;
+}
+
+void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
+{
+    if (!m_zoom_mode)
+    {
+        m_zoom_mode = true;
+        int pos = this->m_flipView->SelectedIndex;
+        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
+        Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
+        m_flipView->IsEnabled = false;
+        this->m_ZoomCanvas->Background = Curr_Canvas->Background;
+        this->m_ZoomCanvas->Background->Opacity = 1;
+        this->m_flipView->Opacity = 0.0;
+        m_zoom_handled = true;
+        m_first_time = true;
+    }
 }
 
 void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
 {
+    TranslateTransform ^trans_transform = ref new TranslateTransform();
+
     if (m_zoom_mode && !m_zoom_handled)
     {
         m_zoom_mode = false;
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(this->m_currpage);
-        this->m_Canvas->Background->Opacity = 0;
+        int pos = this->m_flipView->SelectedIndex;
+
+        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
+        Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
+
+       if (this->m_ZoomCanvas->Background != Curr_Canvas->Background)
+            this->m_ZoomCanvas->Background->Opacity = 0;
+        else 
+            this->m_ZoomCanvas->Background = nullptr;
         this->m_flipView->Opacity = 1;
         m_flipView->IsEnabled = true;
         m_first_time = true;
     }
     m_zoom_handled = false;
     m_curr_zoom = 1.0;
+    this->m_ZoomCanvas->Height = this->ActualHeight;
+    this->m_ZoomCanvas->Width = this->ActualWidth;
+    trans_transform->X = 0;
+    trans_transform->Y = 0;
     m_canvas_translate.X = 0;
     m_canvas_translate.Y = 0;
+    this->m_ZoomCanvas->RenderTransform = trans_transform;
 }
 
 /* Search Related Code */
 
 static int hit_count = 0;
-static fz_rect hit_bbox[500];
+static fz_rect hit_bbox[MAX_SEARCH];
 
 static int
 search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
@@ -679,12 +723,56 @@ void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::Rou
 	}
 }
 
+void winapp::MainPage::ShowSearchResults(SearchResult_t result)
+{
+    int height, width;
+    this->m_flipView->SelectedIndex = result.page_num;
+    this->RenderRange(result.page_num, &height, &width);
+    Canvas^ results_Canvas = ref new Canvas();
+    RectSize screenSize;
+    RectSize pageSize;
+    RectSize scale;
+	fz_page *page = fz_load_page(m_doc, result.page_num);
+
+    results_Canvas->Height = height;
+    results_Canvas->Width = width;
+    results_Canvas->Background = this->m_renderedImage;
+    m_flipView->Items->SetAt(result.page_num, results_Canvas);
+
+    screenSize.height = this->ActualHeight;
+    screenSize.width = this->ActualWidth;
+
+	screenSize.width *= screenScale;
+	screenSize.height *= screenScale;
+    
+    pageSize = measurePage(m_doc, page);
+	scale = fitPageToScreen(pageSize, screenSize);
+
+    /* Now add the rects */
+    for (int k = 0; k < result.box_count && k < MAX_SEARCH; k++) 
+    {
+        /* Create a new ref counted Rectangle */
+        Rectangle^ a_rectangle = ref new Rectangle();
+        TranslateTransform ^trans_transform = ref new TranslateTransform();
+        a_rectangle->Width = hit_bbox[k].x1 - hit_bbox[k].x0;
+        a_rectangle->Height = hit_bbox[k].y1 - hit_bbox[k].y0;
+        trans_transform->X = hit_bbox[k].x0 * scale.width;
+        trans_transform->Y = hit_bbox[k].y0 *  scale.height;
+		a_rectangle->Width *= scale.width;
+		a_rectangle->Height *= scale.height;
+        a_rectangle->RenderTransform = trans_transform;
+        a_rectangle->Fill = m_color_brush;
+        results_Canvas->Children->Append(a_rectangle);
+    }
+}
+
 void winapp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
     String^ textToFind = findBox->Text;
 
+    SearchInDirection(1, textToFind);
 }
 
 void winapp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -693,4 +781,73 @@ void winapp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::R
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
     String^ textToFind = findBox->Text;
 
+    SearchInDirection(-1, textToFind);
+}
+
+void winapp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+   m_searchcts.cancel();
+}
+
+void winapp::MainPage::ResetSearch(void)
+{
+	m_searchpage = -1;
+}
+
+void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
+{
+	int start;
+    const wchar_t *w = textToFind->Data();
+    int cb = WideCharToMultiByte(CP_UTF8, 0, textToFind->Data(), -1, nullptr, 0, nullptr, nullptr);
+	char* needle = new char[cb];
+    fz_document *local_doc = m_doc;
+    auto cancel_token = m_searchcts.get_token();  /* Cancelation token */
+    SearchResult_t result;
+
+    result.box_count = 0;
+    result.page_num = -1;
+
+    WideCharToMultiByte(CP_UTF8, 0, textToFind->Data() ,-1 ,needle ,cb ,nullptr, nullptr);
+
+	if (m_searchpage == m_currpage)
+		start = m_currpage + dir;
+	else
+		start = m_currpage;
+
+    this->m_flipView->SelectedIndex = result.page_num + 1;
+    /* Get the ui thread */
+    auto ui = task_continuation_context::use_current();
+
+    /* Do task lambdas here to avoid UI blocking issues */
+    auto search_task = create_task([this, needle, dir, start, local_doc, &result]()->SearchResult_t
+    {
+		for (int i = start; i >= 0 && i < fz_count_pages(local_doc); i += dir) 
+        {
+			result.box_count = search_page(local_doc, i, needle, NULL);
+            result.page_num = i;
+			if (result.box_count) 
+            {
+                free(needle);
+                return result;
+			}
+            if (is_task_cancellation_requested()) 
+            {
+                free(needle);
+            }
+        }
+        /* Todo no matches found alert */
+        free(needle);
+        return result;
+    }, cancel_token);
+
+    /* Do the continuation on the ui thread */
+    search_task.then([this](task<SearchResult_t> the_task)
+    {
+        SearchResult_t the_result = the_task.get();
+        if (the_result.box_count > 0) 
+        {
+            this->m_flipView->SelectedIndex = the_result.page_num;
+            this->ShowSearchResults(the_result);
+        }
+    }, ui);
 }

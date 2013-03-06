@@ -10,7 +10,10 @@
 #include "fitz-internal.h"
 #include "muxps.h"
 #include "mupdf.h"
+#include "ppl.h"
 
+using namespace Platform;
+using namespace Concurrency;
 using namespace Windows::Storage;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Media::Imaging;
@@ -19,6 +22,18 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
+
+typedef struct SearchResult_s
+{
+    int box_count;
+    int page_num;
+} SearchResult_t;
+
+typedef struct RectSize_s
+{
+    float width;
+    float height;
+} RectSize;
 
 namespace winapp
 {
@@ -37,12 +52,14 @@ namespace winapp
     private:
         bool m_file_open;
         int  m_currpage;
+        int  m_searchpage;
         int  m_num_pages;
         int  m_slider_min;
         int  m_slider_max;
         bool m_init_done;
         bool m_first_time;
         Point m_display_size;
+        cancellation_token_source m_searchcts;
         long long m_memory_use;
         double m_curr_zoom;
         Point m_zoom_size;
@@ -53,8 +70,10 @@ namespace winapp
         ImageBrush^ m_renderedImage;
         ImageBrush^ m_blankPage;
         FlipView^ m_flipView;
-        Canvas^ m_Canvas;
+        Canvas^ m_renderedCanvas;
+        Canvas^ m_ZoomCanvas;
         ImageBrush^ m_zoomedImage;
+        SolidColorBrush^ m_color_brush;        
         bool m_zoom_mode;
         bool m_zoom_handled;
         bool m_insearch;
@@ -62,14 +81,15 @@ namespace winapp
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocument(StorageFile^ file);
         void RenderPage(fz_document *doc, fz_page *page, int *width, int *height, double scale);
-        void RenderRange(int curr_page);
+        void RenderRange(int curr_page, int *height, int *width);
         void AddPage(int page_num);
         void ReplacePage(int page_num);
         void AddBlankPage(int page_num);
         void CreateBlank(int width, int height);
         void HandleFileNotFoundException(Platform::COMException^ e); 
         void NotifyUserFileNotExist();
-        void SetupCanvas();
+        void SetupZoomCanvas();
+        RectSize currPageSize(int page);
         void Prepare_bmp(int width, int height, DataWriter ^dw);
         void PixToMemStream(fz_pixmap *pix, DataWriter ^dw, Platform::Array<unsigned char> ^arr);
         void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
@@ -81,5 +101,9 @@ namespace winapp
         void Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
         void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ResetSearch(void);  
+        void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void SearchInDirection(int dir, String^ textToFind);    
+        void ShowSearchResults(SearchResult_t result);
     };
 }
