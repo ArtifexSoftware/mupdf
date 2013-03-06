@@ -471,7 +471,7 @@ public class MuPDFActivity extends Activity
 		// Activate the select button
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				mDocView.setSelectionMode(true);
+				mDocView.setMode(MuPDFReaderView.Mode.Selecting);
 				mTopBarMode = TopBarMode.Text;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
@@ -482,7 +482,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.deselectText();
-				mDocView.setSelectionMode(false);
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
@@ -495,7 +495,7 @@ public class MuPDFActivity extends Activity
 				boolean copied = false;
 				if (pageView != null)
 					copied = pageView.copySelection();
-				mDocView.setSelectionMode(false);
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
@@ -536,7 +536,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.markupSelection(Annotation.Type.HIGHLIGHT);
-				mDocView.setSelectionMode(false);
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
@@ -547,7 +547,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.markupSelection(Annotation.Type.UNDERLINE);
-				mDocView.setSelectionMode(false);
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}
@@ -558,7 +558,7 @@ public class MuPDFActivity extends Activity
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
 					pageView.markupSelection(Annotation.Type.STRIKEOUT);
-				mDocView.setSelectionMode(false);
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 			}

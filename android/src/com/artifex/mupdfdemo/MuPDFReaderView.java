@@ -10,9 +10,10 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 
 public class MuPDFReaderView extends ReaderView {
+	enum Mode {Viewing, Selecting, Drawing}
 	private final Context mContext;
 	private boolean mLinksEnabled = false;
-	private boolean mSelecting = false;
+	private Mode mMode = Mode.Viewing;
 	private boolean tapDisabled = false;
 	private int tapPageMargin;
 
@@ -25,8 +26,8 @@ public class MuPDFReaderView extends ReaderView {
 		resetupChildren();
 	}
 
-	public void setSelectionMode(boolean b) {
-		mSelecting = b;
+	public void setMode(Mode m) {
+		mMode = m;
 	}
 
 	public MuPDFReaderView(Activity act) {
@@ -51,7 +52,7 @@ public class MuPDFReaderView extends ReaderView {
 	public boolean onSingleTapUp(MotionEvent e) {
 		LinkInfo link = null;
 
-		if (!mSelecting && !tapDisabled) {
+		if (mMode == Mode.Viewing && !tapDisabled) {
 			MuPDFView pageView = (MuPDFView) getDisplayedView();
 			Hit item = pageView.passClickEvent(e.getX(), e.getY());
 			onHit(item);
@@ -93,17 +94,30 @@ public class MuPDFReaderView extends ReaderView {
 		return super.onSingleTapUp(e);
 	}
 
+	@Override
+	public void onShowPress(MotionEvent e) {
+		switch (mMode) {
+		case Drawing:
+			break;
+		}
+	}
+
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
 			float distanceY) {
-		if (!mSelecting) {
+		switch (mMode) {
+		case Viewing:
 			if (!tapDisabled)
 				onDocMotion();
 
 			return super.onScroll(e1, e2, distanceX, distanceY);
-		} else {
+		case Selecting:
 			MuPDFView pageView = (MuPDFView)getDisplayedView();
 			if (pageView != null)
 				pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
+			return true;
+		case Drawing:
+			return true;
+		default:
 			return true;
 		}
 	}
@@ -111,10 +125,12 @@ public class MuPDFReaderView extends ReaderView {
 	@Override
 	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 			float velocityY) {
-		if (!mSelecting)
+		switch (mMode) {
+		case Viewing:
 			return super.onFling(e1, e2, velocityX, velocityY);
-		else
+		default:
 			return true;
+		}
 	}
 
 	public boolean onScaleBegin(ScaleGestureDetector d) {
