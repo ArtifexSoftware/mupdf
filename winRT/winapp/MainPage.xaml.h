@@ -58,6 +58,7 @@ namespace winapp
         int  m_slider_max;
         bool m_init_done;
         bool m_first_time;
+        bool m_flip_from_search;
         Point m_display_size;
         cancellation_token_source m_searchcts;
         long long m_memory_use;

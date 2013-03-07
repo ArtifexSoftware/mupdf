@@ -84,6 +84,8 @@
     		</LinearGradientBrush>
     	</Grid.Background>
 
+        <ProgressBar x:Name="xaml_Progress" IsIndeterminate="False" Maximum="100" Value="0" Height="10" Width="400" IsEnabled="False" Opacity="0"/>
+
         <Grid x:Name="xaml_MainGrid" Margin="-106,10,106,-10" HorizontalAlignment="Center" VerticalAlignment="Top">
         </Grid>
     </Grid>
