@@ -54,6 +54,7 @@ MainPage::MainPage()
     m_zoom_handled = false;
     m_first_time = false;
     m_insearch = false;
+    m_flip_from_search = false;
     ResetSearch();
 
     m_curr_zoom = 1.0;
@@ -62,16 +63,16 @@ MainPage::MainPage()
 
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
-    this->xaml_PageSlider->IsEnabled = false;
+    this->xaml_PageSlider->IsEnabled = false;    
 
     //Text Search Box
     Windows::UI::Color color;
-    color.R = 0x25;
+    color.R = 0xAC;
     color.G = 0x72;
-    color.B = 0xAC;
-    color.A = 0x7F;
-    SolidColorBrush^ m_color_brush = ref new SolidColorBrush(color);
+    color.B = 0x25;
+    color.A = 0x40;
 
+    m_color_brush = ref new SolidColorBrush(color);
 
 	// use at most 128M for resource cache
 	ctx = fz_new_context(NULL, NULL, 128<<20);
@@ -203,7 +204,6 @@ void MainPage::AddPage(int page_num)
 {
     FlipViewItem ^flipview_temp = ref new FlipViewItem();
     flipview_temp->Content = this->m_renderedCanvas;
-    flipview_temp->Background = nullptr;
     m_flipView->Items->Append(flipview_temp);
 }
 
@@ -453,6 +453,10 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
                 m_doc = fz_open_document_with_stream(ctx, "pdf", str);
                 m_num_pages = m_doc->count_pages(m_doc);
 
+                /* Set up the search progress bar */
+                ProgressBar^ xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
+                xaml_Progress->Maximum = m_num_pages;
+
                 if ((m_currpage) >= m_num_pages) 
                 {
                     m_currpage = m_num_pages - 1;
@@ -528,11 +532,13 @@ void winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
     RectSize rectsize = this->currPageSize(curr_page);
     *height = rectsize.height;
     *width = rectsize.width;
+    m_currpage = curr_page;
 }
 
 void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
 {
-    int newValue= (int) this->xaml_PageSlider->Value - 1;  /* zero based */
+    int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
+    return;
 
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
@@ -549,9 +555,18 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
     int pos = this->m_flipView->SelectedIndex;
     int height, width;
 
+    if (m_flip_from_search)
+    {
+        m_flip_from_search = false;
+        return;
+    } 
+    else
+    {
+        ResetSearch();
+    }
+
     if (m_init_done)
         this->RenderRange(pos, &height, &width);
-    ResetSearch();
 }
 
 void winapp::MainPage::Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e)
@@ -726,18 +741,15 @@ void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::Rou
 void winapp::MainPage::ShowSearchResults(SearchResult_t result)
 {
     int height, width;
-    this->m_flipView->SelectedIndex = result.page_num;
     this->RenderRange(result.page_num, &height, &width);
-    Canvas^ results_Canvas = ref new Canvas();
     RectSize screenSize;
     RectSize pageSize;
     RectSize scale;
 	fz_page *page = fz_load_page(m_doc, result.page_num);
+    FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(result.page_num);
+    Canvas^ results_Canvas = (Canvas^) (flipview_temp->Content);
 
-    results_Canvas->Height = height;
-    results_Canvas->Width = width;
-    results_Canvas->Background = this->m_renderedImage;
-    m_flipView->Items->SetAt(result.page_num, results_Canvas);
+    m_searchpage = result.page_num;
 
     screenSize.height = this->ActualHeight;
     screenSize.width = this->ActualWidth;
@@ -760,9 +772,15 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
         trans_transform->Y = hit_bbox[k].y0 *  scale.height;
 		a_rectangle->Width *= scale.width;
 		a_rectangle->Height *= scale.height;
+
         a_rectangle->RenderTransform = trans_transform;
         a_rectangle->Fill = m_color_brush;
         results_Canvas->Children->Append(a_rectangle);
+    }
+    if (result.box_count > 0)
+    {
+        m_flip_from_search = true;
+        this->m_flipView->SelectedIndex = result.page_num;
     }
 }
 
@@ -803,20 +821,45 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
     fz_document *local_doc = m_doc;
     auto cancel_token = m_searchcts.get_token();  /* Cancelation token */
     SearchResult_t result;
+    int pos = m_currpage;
 
     result.box_count = 0;
     result.page_num = -1;
 
     WideCharToMultiByte(CP_UTF8, 0, textToFind->Data() ,-1 ,needle ,cb ,nullptr, nullptr);
 
-	if (m_searchpage == m_currpage)
-		start = m_currpage + dir;
+	if (m_searchpage == pos)
+		start = pos + dir;
 	else
-		start = m_currpage;
+		start = pos;
 
-    this->m_flipView->SelectedIndex = result.page_num + 1;
+ /*   ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
+    my_xaml_Progress->Value = start;
+    my_xaml_Progress->IsEnabled = true;
+    my_xaml_Progress->Opacity = 1.0; */
+
+ /*   ProgressBar^ my_bar = (ProgressBar^) (xaml_MainGrid->FindName("search_progress"));
+
+    if (my_bar == nullptr)
+    {
+        my_bar = ref new ProgressBar();
+        my_bar->Name = "search_progress";
+        my_bar->Maximum = this->m_num_pages;
+        my_bar->Value = start;
+        my_bar->IsIndeterminate = false;
+        my_bar->Height = 10; 
+        my_bar->Width = 400;
+        xaml_MainGrid->Children->Append(my_bar);
+    }
+    else
+    {
+        my_bar->Value = start;
+    }  */
+
+
     /* Get the ui thread */
     auto ui = task_continuation_context::use_current();
+
 
     /* Do task lambdas here to avoid UI blocking issues */
     auto search_task = create_task([this, needle, dir, start, local_doc, &result]()->SearchResult_t
@@ -825,6 +868,8 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
         {
 			result.box_count = search_page(local_doc, i, needle, NULL);
             result.page_num = i;
+            
+            //my_xaml_Progress->Value = i;
 			if (result.box_count) 
             {
                 free(needle);
@@ -846,8 +891,10 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
         SearchResult_t the_result = the_task.get();
         if (the_result.box_count > 0) 
         {
-            this->m_flipView->SelectedIndex = the_result.page_num;
-            this->ShowSearchResults(the_result);
+          //  ProgressBar^ xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
+         //   xaml_Progress->IsEnabled = false;
+          //  xaml_Progress->Opacity = 0.0;
+         //   this->ShowSearchResults(the_result);
         }
     }, ui);
 }
