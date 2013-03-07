@@ -83,6 +83,7 @@ namespace winapp
         void OpenDocument(StorageFile^ file);
         void RenderPage(fz_document *doc, fz_page *page, int *width, int *height, double scale);
         void RenderRange(int curr_page, int *height, int *width);
+        void CleanUp();
         void AddPage(int page_num);
         void ReplacePage(int page_num);
         void AddBlankPage(int page_num);
