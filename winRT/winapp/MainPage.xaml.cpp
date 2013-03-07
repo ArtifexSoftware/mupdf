@@ -43,28 +43,6 @@ static win_stream_struct win_stream;
 MainPage::MainPage()
 {
 	InitializeComponent();
-    m_currpage = 0;
-    m_file_open = false;
-    m_doc = NULL;
-    m_slider_min = 0;
-    m_slider_max = 0;
-    m_init_done = false;
-    m_memory_use = 0;
-    m_zoom_mode = false;
-    m_zoom_handled = false;
-    m_first_time = false;
-    m_insearch = false;
-    m_flip_from_search = false;
-    ResetSearch();
-
-    m_curr_zoom = 1.0;
-    m_canvas_translate.X = 0;
-    m_canvas_translate.Y = 0;
-
-    this->xaml_PageSlider->Minimum = m_slider_min;
-    this->xaml_PageSlider->Maximum = m_slider_max;
-    this->xaml_PageSlider->IsEnabled = false;    
-
     //Text Search Box
     Windows::UI::Color color;
     color.R = 0xAC;
@@ -73,21 +51,13 @@ MainPage::MainPage()
     color.A = 0x40;
 
     m_color_brush = ref new SolidColorBrush(color);
+    // Create the image brush
+    m_renderedImage = ref new ImageBrush();
+    m_ZoomCanvas = nullptr;
+    CleanUp();
 
 	// use at most 128M for resource cache
 	ctx = fz_new_context(NULL, NULL, 128<<20);
-
-    // Create the flipview object
-    m_flipView = ref new FlipView();
-    m_flipView->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-    m_flipView->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-    m_flipView->SelectionChanged += 
-                    ref new SelectionChangedEventHandler(this, &MainPage::FlipView_SelectionChanged);
-     m_flipView->DoubleTapped +=
-        ref new DoubleTappedEventHandler(this, &MainPage::FlipView_Double);
-     
-    // Create the image brush
-    m_renderedImage = ref new ImageBrush();
 }
 
 /// <summary>
@@ -415,6 +385,7 @@ void winapp::MainPage::SetupZoomCanvas()
        ref new ManipulationStartingEventHandler(this, &MainPage::Canvas_ManipulationStarting);
     m_ZoomCanvas->DoubleTapped +=
         ref new DoubleTappedEventHandler(this, &MainPage::Canvas_Double);
+    m_ZoomCanvas->Name = "zoomCanvas";
 
     CreateBlank(width, height);
     m_ZoomCanvas->Background = this->m_blankPage;
@@ -423,13 +394,59 @@ void winapp::MainPage::SetupZoomCanvas()
     m_ZoomCanvas->Background->Opacity = 0;
 }
 
+/* Clean up everything as we are opening a new document after having another
+   one open */
+void winapp::MainPage::CleanUp()
+{
+
+    /* Blow away the flip view object and the canvas */
+    if (m_ZoomCanvas != nullptr)
+        m_ZoomCanvas->Children->Clear();
+
+    xaml_MainGrid->Children->Clear();
+    m_currpage = 0;
+    m_file_open = false;
+    m_doc = NULL;
+    m_slider_min = 0;
+    m_slider_max = 0;
+    m_init_done = false;
+    m_memory_use = 0;
+    m_zoom_mode = false;
+    m_zoom_handled = false;
+    m_first_time = false;
+    m_insearch = false;
+    m_flip_from_search = false;
+    m_num_pages = -1;
+    ResetSearch();
+
+    m_curr_zoom = 1.0;
+    m_canvas_translate.X = 0;
+    m_canvas_translate.Y = 0;
+
+    this->xaml_PageSlider->Minimum = m_slider_min;
+    this->xaml_PageSlider->Maximum = m_slider_max;
+    this->xaml_PageSlider->IsEnabled = false;    
+
+    // Create the flipview object
+    m_flipView = ref new FlipView();
+    m_flipView->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+    m_flipView->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+    m_flipView->SelectionChanged += 
+                    ref new SelectionChangedEventHandler(this, &MainPage::FlipView_SelectionChanged);
+     m_flipView->DoubleTapped +=
+        ref new DoubleTappedEventHandler(this, &MainPage::FlipView_Double);
+    m_flipView->Name = "flipView";
+}
+
 void winapp::MainPage::OpenDocument(StorageFile^ file)
 {
     String^ path = file->Path;
     const wchar_t *w = path->Data();
     int size = wcslen(w);
 
-    /* Set up the canvas */
+    if (this->m_num_pages != -1)
+        CleanUp();
+        
     this->SetupZoomCanvas();
 
     create_task(file->OpenAsync(FileAccessMode::Read)).then([this, file](task<IRandomAccessStream^> task)
