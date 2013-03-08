@@ -61,13 +61,10 @@
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" DoubleTapped="Canvas_Double" 
                     ManipulationDelta="Canvas_ManipulationDelta" ManipulationStarted="Canvas_ManipulationStarted" 
                     ManipulationStarting="Canvas_ManipulationStarting" ManipulationMode="All">
-
-                <Rectangle Canvas.Left="30" Canvas.Top="30" 
-                    Fill="Red" Width="200" Height="200" />
-
-
+                <FlipView x:Name="xaml_flipView" SelectionChanged="FlipView_SelectionChanged" DoubleTapped="FlipView_Double" VerticalAlignment="Center"
+                          HorizontalAlignment="Center">
+                </FlipView>
             </Canvas>
         </Grid>
     </Grid>
-   <!-- Resources to allow me to switch between vertical and horizontal scrolling -->
 </Page>

@@ -54,7 +54,6 @@ MainPage::MainPage()
     m_color_brush = ref new SolidColorBrush(color);
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
-    m_ZoomCanvas = nullptr;
     m_doc = NULL;
     CleanUp();
 
@@ -117,7 +116,7 @@ RectSize MainPage::currPageSize(int page)
 {
 	RectSize Size;
 
-    FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(page);
+    FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(page);
 
     Size.height = flipview_temp->ActualHeight;
     Size.width = flipview_temp->ActualWidth;
@@ -176,13 +175,13 @@ void MainPage::AddPage(int page_num)
 {
     FlipViewItem ^flipview_temp = ref new FlipViewItem();
     flipview_temp->Content = this->m_renderedCanvas;
-    m_flipView->Items->Append(flipview_temp);
+    xaml_flipView->Items->Append(flipview_temp);
 }
 
 /* Replace rendered page into flipview structure at location page_num */
 void MainPage::ReplacePage(int page_num) 
 {
-    FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(page_num);
+    FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(page_num);
     flipview_temp->Content = this->m_renderedCanvas;    
     flipview_temp->Background = nullptr;
 }
@@ -192,7 +191,7 @@ void MainPage::AddBlankPage(int page_num)
 {
     FlipViewItem ^flipview_temp = ref new FlipViewItem();
     flipview_temp->Background = this->m_blankPage;
-    m_flipView->Items->Append(flipview_temp);
+    xaml_flipView->Items->Append(flipview_temp);
 }
 
 /* Create white image for us to use as place holder in large document for flip
@@ -373,7 +372,6 @@ void winapp::MainPage::SetupZoomCanvas()
 
     CreateBlank(width, height);
     xaml_zoomCanvas->Background = this->m_blankPage;
-    this->xaml_zoomCanvas->Children->Append(m_flipView);
     xaml_zoomCanvas->Background->Opacity = 0;
 }
 
@@ -381,19 +379,14 @@ void winapp::MainPage::SetupZoomCanvas()
    one open */
 void winapp::MainPage::CleanUp()
 {
+    /* Remove current pages in the flipview */
+    if (xaml_flipView->Items->Size) 
+        xaml_flipView->Items->Clear();
 
-    FlipView^ old_flip = (FlipView^) xaml_zoomCanvas->FindName("flipView");
-    if (old_flip != nullptr)
-    {
-        unsigned int index;
-        if (xaml_zoomCanvas->Children->IndexOf(old_flip, &index))
-            xaml_zoomCanvas->Children->RemoveAt(index);
-    }
     /* Clean up mupdf */
     if (this->m_doc != NULL) 
         fz_close_document(m_doc);
 
-   // xaml_MainGrid->Children->Clear();
     m_currpage = 0;
     m_file_open = false;
     m_doc = NULL;
@@ -416,16 +409,6 @@ void winapp::MainPage::CleanUp()
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
     this->xaml_PageSlider->IsEnabled = false;    
-
-    // Create the flipview object
-    m_flipView = ref new FlipView();
-    m_flipView->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-    m_flipView->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-    m_flipView->SelectionChanged += 
-                    ref new SelectionChangedEventHandler(this, &MainPage::FlipView_SelectionChanged);
-     m_flipView->DoubleTapped +=
-        ref new DoubleTappedEventHandler(this, &MainPage::FlipView_Double);
-    m_flipView->Name = "flipView";
 }
 
 void winapp::MainPage::OpenDocument(StorageFile^ file)
@@ -526,7 +509,7 @@ void winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
     {
         if (k >= 0 && k < m_num_pages) 
         {
-            FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(k);
+            FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(k);
             if (flipview_temp->Background == this->m_blankPage) 
             {
                 fz_page *page = fz_load_page(m_doc, k);
@@ -549,31 +532,34 @@ void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI
 
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
-        this->m_flipView->SelectedIndex = newValue;
+        this->xaml_flipView->SelectedIndex = newValue;
         int height, width;
         this->RenderRange(newValue, &height, &width);
         ResetSearch();
     }
-     Windows::UI::Xaml::Input::ManipulationModes temp = m_flipView->ManipulationMode;
+     Windows::UI::Xaml::Input::ManipulationModes temp = xaml_flipView->ManipulationMode;
 }
 
 void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
 {
-    int pos = this->m_flipView->SelectedIndex;
+    int pos = this->xaml_flipView->SelectedIndex;
     int height, width;
 
-    if (m_flip_from_search)
+    if (pos >= 0) 
     {
-        m_flip_from_search = false;
-        return;
-    } 
-    else
-    {
-        ResetSearch();
-    }
+        if (m_flip_from_search)
+        {
+            m_flip_from_search = false;
+            return;
+        } 
+        else
+        {
+            ResetSearch();
+        }
 
-    if (m_init_done)
-        this->RenderRange(pos, &height, &width);
+        if (m_init_done)
+            this->RenderRange(pos, &height, &width);
+    }
 }
 
 void winapp::MainPage::Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e)
@@ -597,7 +583,7 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
     if (e->Delta.Scale != 1 || m_first_time) 
     {
         /* Render at scaled resolution */
-        int pos = this->m_flipView->SelectedIndex;
+        int pos = this->xaml_flipView->SelectedIndex;
         fz_page *page = fz_load_page(m_doc, pos);
         m_curr_zoom = m_curr_zoom * e->Delta.Scale;
         if (m_curr_zoom < MIN_SCALE) m_curr_zoom = MIN_SCALE;
@@ -643,13 +629,13 @@ void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventAr
     if (!m_zoom_mode)
     {
         m_zoom_mode = true;
-        int pos = this->m_flipView->SelectedIndex;
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
+        int pos = this->xaml_flipView->SelectedIndex;
+        FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(pos);
         Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
-        m_flipView->IsEnabled = false;
+        xaml_flipView->IsEnabled = false;
         this->xaml_zoomCanvas->Background = Curr_Canvas->Background;
         this->xaml_zoomCanvas->Background->Opacity = 1;
-        this->m_flipView->Opacity = 0.0;
+        this->xaml_flipView->Opacity = 0.0;
         m_zoom_handled = true;
         m_first_time = true;
     }
@@ -662,17 +648,17 @@ void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs
     if (m_zoom_mode && !m_zoom_handled)
     {
         m_zoom_mode = false;
-        int pos = this->m_flipView->SelectedIndex;
+        int pos = this->xaml_flipView->SelectedIndex;
 
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
+        FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(pos);
         Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
 
        if (this->xaml_zoomCanvas->Background != Curr_Canvas->Background)
             this->xaml_zoomCanvas->Background->Opacity = 0;
         else 
             this->xaml_zoomCanvas->Background = nullptr;
-        this->m_flipView->Opacity = 1;
-        m_flipView->IsEnabled = true;
+        this->xaml_flipView->Opacity = 1;
+        xaml_flipView->IsEnabled = true;
         m_first_time = true;
     }
     m_zoom_handled = false;
@@ -753,7 +739,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
     RectSize pageSize;
     RectSize scale;
 	fz_page *page = fz_load_page(m_doc, result.page_num);
-    FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(result.page_num);
+    FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(result.page_num);
     Canvas^ results_Canvas = (Canvas^) (flipview_temp->Content);
 
     m_searchpage = result.page_num;
@@ -787,7 +773,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
     if (result.box_count > 0)
     {
         m_flip_from_search = true;
-        this->m_flipView->SelectedIndex = result.page_num;
+        this->xaml_flipView->SelectedIndex = result.page_num;
     }
 }
 
