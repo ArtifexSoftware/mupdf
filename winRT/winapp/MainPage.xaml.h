@@ -70,9 +70,7 @@ namespace winapp
         Windows::UI::Input::ManipulationDelta m_changes;
         ImageBrush^ m_renderedImage;
         ImageBrush^ m_blankPage;
-        FlipView^ m_flipView;
         Canvas^ m_renderedCanvas;
-        Canvas^ m_ZoomCanvas;
         ImageBrush^ m_zoomedImage;
         SolidColorBrush^ m_color_brush;        
         bool m_zoom_mode;
