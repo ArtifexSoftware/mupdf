@@ -18,6 +18,12 @@
       <VisualElements DisplayName="winapp" Logo="Assets\mupdf_logo.png" SmallLogo="Assets\mupdf_smallogo.png" Description="winapp" ForegroundText="light" BackgroundColor="#464646">
         <DefaultTile ShowName="allLogos" />
         <SplashScreen Image="Assets\mupdf_splash.png" />
+        <InitialRotationPreference>
+          <Rotation Preference="portrait" />
+          <Rotation Preference="landscape" />
+          <Rotation Preference="portraitFlipped" />
+          <Rotation Preference="landscapeFlipped" />
+        </InitialRotationPreference>
       </VisualElements>
       <Extensions>
         <Extension Category="windows.fileOpenPicker">
@@ -33,6 +39,8 @@
           <FileTypeAssociation Name=".pdf">
             <SupportedFileTypes>
               <FileType>.pdf</FileType>
+              <FileType>.xps</FileType>
+              <FileType>.oxps</FileType>
             </SupportedFileTypes>
           </FileTypeAssociation>
         </Extension>
