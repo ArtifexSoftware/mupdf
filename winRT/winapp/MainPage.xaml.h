@@ -107,5 +107,6 @@ namespace winapp
         void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchInDirection(int dir, String^ textToFind);    
         void ShowSearchResults(SearchResult_t result);
+        void GridSizeChanged();
     };
 }

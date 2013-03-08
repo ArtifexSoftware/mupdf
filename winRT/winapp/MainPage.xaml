@@ -6,44 +6,15 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-	<Page.Resources>
-		<Style x:Key="ButtonStyle1" TargetType="Button">
-			<Setter Property="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="Button">
-						<Grid>
-							<VisualStateManager.VisualStateGroups>
-								<VisualStateGroup x:Name="CommonStates">
-									<VisualState x:Name="Pressed"/>
-									<VisualState x:Name="Disabled"/>
-									<VisualState x:Name="PointerOver"/>
-								</VisualStateGroup>
-								<VisualStateGroup x:Name="FocusStates">
-									<VisualState x:Name="Focused"/>
-									<VisualState x:Name="PointerFocused"/>
-								</VisualStateGroup>
-							</VisualStateManager.VisualStateGroups>
-							<Image Source="Assets/mupdf_splash.png" Stretch="Fill"/>
-							<ContentPresenter x:Name="Mupdf_button" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-						</Grid>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
-		</Style>
-	</Page.Resources>
 	<Page.BottomAppBar>
 		<AppBar>
-			<Grid Background="{StaticResource AppBarBackgroundThemeBrush}" HorizontalAlignment="Left" Width="1346">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <StackPanel x:Name="LeftBottomPanel" Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" ValueChanged="Slider_ValueChanged" HorizontalAlignment="Left"  Width="1122" Margin="10,12,0,12" />
-                </StackPanel>
-                <StackPanel x:Name="RightBottomPanel" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="Find_File" Style="{StaticResource OpenFileAppBarButtonStyle}" Tag="OpenFile" Click="Picker"/>
-                </StackPanel>
+			<Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" ValueChanged="Slider_ValueChanged" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" />
+                <Button x:Name="Find_File" Style="{StaticResource OpenFileAppBarButtonStyle}" Tag="OpenFile"  HorizontalAlignment="Right" Grid.Column="1" Click="Picker"/>
 			</Grid>
 		</AppBar>
 	</Page.BottomAppBar>
@@ -85,8 +56,18 @@
     	</Grid.Background>
 
         <ProgressBar x:Name="xaml_Progress" IsIndeterminate="False" Maximum="100" Value="0" Height="10" Width="400" IsEnabled="False" Opacity="0"/>
+        
+        <Grid x:Name="xaml_MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="GridSizeChanged">
+            <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" DoubleTapped="Canvas_Double" 
+                    ManipulationDelta="Canvas_ManipulationDelta" ManipulationStarted="Canvas_ManipulationStarted" 
+                    ManipulationStarting="Canvas_ManipulationStarting" ManipulationMode="All">
 
-        <Grid x:Name="xaml_MainGrid" Margin="-106,10,106,-10" HorizontalAlignment="Center" VerticalAlignment="Top">
+                <Rectangle Canvas.Left="30" Canvas.Top="30" 
+                    Fill="Red" Width="200" Height="200" />
+
+
+            </Canvas>
         </Grid>
     </Grid>
+   <!-- Resources to allow me to switch between vertical and horizontal scrolling -->
 </Page>

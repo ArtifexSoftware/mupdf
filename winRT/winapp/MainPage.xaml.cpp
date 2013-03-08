@@ -26,6 +26,7 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::UI::Xaml::Shapes;
+using namespace Windows::Graphics::Display;
 
 //****************** Added *****************
 using namespace Windows::Storage::Pickers;
@@ -54,6 +55,7 @@ MainPage::MainPage()
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
     m_ZoomCanvas = nullptr;
+    m_doc = NULL;
     CleanUp();
 
 	// use at most 128M for resource cache
@@ -369,29 +371,10 @@ void winapp::MainPage::SetupZoomCanvas()
     int height = this->ActualHeight;
     int width = this->ActualWidth;
 
-    m_ZoomCanvas = ref new Canvas();
-
-    m_ZoomCanvas->Height =  height;        
-    m_ZoomCanvas->Width = width;
-
-    m_ZoomCanvas->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-    m_ZoomCanvas->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-    m_ZoomCanvas->ManipulationMode = Windows::UI::Xaml::Input::ManipulationModes::All;
-    m_ZoomCanvas->ManipulationDelta += 
-       ref new ManipulationDeltaEventHandler(this, &MainPage::Canvas_ManipulationDelta);
-    m_ZoomCanvas->ManipulationStarted +=
-      ref new ManipulationStartedEventHandler(this, &MainPage::Canvas_ManipulationStarted);
-    m_ZoomCanvas->ManipulationStarting +=
-       ref new ManipulationStartingEventHandler(this, &MainPage::Canvas_ManipulationStarting);
-    m_ZoomCanvas->DoubleTapped +=
-        ref new DoubleTappedEventHandler(this, &MainPage::Canvas_Double);
-    m_ZoomCanvas->Name = "zoomCanvas";
-
     CreateBlank(width, height);
-    m_ZoomCanvas->Background = this->m_blankPage;
-    m_ZoomCanvas->Children->Append(m_flipView);
-    xaml_MainGrid->Children->Append(m_ZoomCanvas);
-    m_ZoomCanvas->Background->Opacity = 0;
+    xaml_zoomCanvas->Background = this->m_blankPage;
+    this->xaml_zoomCanvas->Children->Append(m_flipView);
+    xaml_zoomCanvas->Background->Opacity = 0;
 }
 
 /* Clean up everything as we are opening a new document after having another
@@ -399,11 +382,18 @@ void winapp::MainPage::SetupZoomCanvas()
 void winapp::MainPage::CleanUp()
 {
 
-    /* Blow away the flip view object and the canvas */
-    if (m_ZoomCanvas != nullptr)
-        m_ZoomCanvas->Children->Clear();
+    FlipView^ old_flip = (FlipView^) xaml_zoomCanvas->FindName("flipView");
+    if (old_flip != nullptr)
+    {
+        unsigned int index;
+        if (xaml_zoomCanvas->Children->IndexOf(old_flip, &index))
+            xaml_zoomCanvas->Children->RemoveAt(index);
+    }
+    /* Clean up mupdf */
+    if (this->m_doc != NULL) 
+        fz_close_document(m_doc);
 
-    xaml_MainGrid->Children->Clear();
+   // xaml_MainGrid->Children->Clear();
     m_currpage = 0;
     m_file_open = false;
     m_doc = NULL;
@@ -613,9 +603,9 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
         if (m_curr_zoom < MIN_SCALE) m_curr_zoom = MIN_SCALE;
         if (m_curr_zoom > MAX_SCALE) m_curr_zoom = MAX_SCALE;
         this->RenderPage(m_doc, page, &width, &height, m_curr_zoom);
-        this->m_ZoomCanvas->Background = this->m_renderedImage;
-        this->m_ZoomCanvas->Width = width;
-        this->m_ZoomCanvas->Height = height;
+        this->xaml_zoomCanvas->Background = this->m_renderedImage;
+        this->xaml_zoomCanvas->Width = width;
+        this->xaml_zoomCanvas->Height = height;
         m_zoom_size.X = width;
         m_zoom_size.Y = height;
         m_first_time = false;
@@ -645,7 +635,7 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
 
     trans_transform->X = m_canvas_translate.X;
     trans_transform->Y = m_canvas_translate.Y;
-    this->m_ZoomCanvas->RenderTransform = trans_transform;
+    this->xaml_zoomCanvas->RenderTransform = trans_transform;
 }
 
 void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
@@ -657,8 +647,8 @@ void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventAr
         FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
         Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
         m_flipView->IsEnabled = false;
-        this->m_ZoomCanvas->Background = Curr_Canvas->Background;
-        this->m_ZoomCanvas->Background->Opacity = 1;
+        this->xaml_zoomCanvas->Background = Curr_Canvas->Background;
+        this->xaml_zoomCanvas->Background->Opacity = 1;
         this->m_flipView->Opacity = 0.0;
         m_zoom_handled = true;
         m_first_time = true;
@@ -677,23 +667,23 @@ void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs
         FlipViewItem ^flipview_temp = (FlipViewItem^) m_flipView->Items->GetAt(pos);
         Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
 
-       if (this->m_ZoomCanvas->Background != Curr_Canvas->Background)
-            this->m_ZoomCanvas->Background->Opacity = 0;
+       if (this->xaml_zoomCanvas->Background != Curr_Canvas->Background)
+            this->xaml_zoomCanvas->Background->Opacity = 0;
         else 
-            this->m_ZoomCanvas->Background = nullptr;
+            this->xaml_zoomCanvas->Background = nullptr;
         this->m_flipView->Opacity = 1;
         m_flipView->IsEnabled = true;
         m_first_time = true;
     }
     m_zoom_handled = false;
     m_curr_zoom = 1.0;
-    this->m_ZoomCanvas->Height = this->ActualHeight;
-    this->m_ZoomCanvas->Width = this->ActualWidth;
+    this->xaml_zoomCanvas->Height = this->ActualHeight;
+    this->xaml_zoomCanvas->Width = this->ActualWidth;
     trans_transform->X = 0;
     trans_transform->Y = 0;
     m_canvas_translate.X = 0;
     m_canvas_translate.Y = 0;
-    this->m_ZoomCanvas->RenderTransform = trans_transform;
+    this->xaml_zoomCanvas->RenderTransform = trans_transform;
 }
 
 /* Search Related Code */
@@ -915,3 +905,27 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
         }
     }, ui);
 }
+
+/* This is here to handle when we rotate or go into the snapview mode */
+void winapp::MainPage::GridSizeChanged()
+{
+    if (DisplayProperties::CurrentOrientation == DisplayOrientations::Portrait ||
+        DisplayProperties::CurrentOrientation == DisplayOrientations::PortraitFlipped)
+    {
+
+        int t;
+
+        t = 1;
+
+    }
+    else
+    {
+
+        int s;
+
+        s = 1;
+
+    }
+
+}
+
