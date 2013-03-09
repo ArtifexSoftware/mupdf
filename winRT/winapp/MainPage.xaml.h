@@ -11,6 +11,7 @@
 #include "muxps.h"
 #include "mupdf.h"
 #include "ppl.h"
+#include "Binding.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -22,6 +23,7 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
+using namespace winapp::DataBinding;
 
 typedef struct SearchResult_s
 {
@@ -72,10 +74,12 @@ namespace winapp
         ImageBrush^ m_blankPage;
         Canvas^ m_renderedCanvas;
         ImageBrush^ m_zoomedImage;
-        SolidColorBrush^ m_color_brush;        
+        SolidColorBrush^ m_color_brush; 
         bool m_zoom_mode;
         bool m_zoom_handled;
         bool m_insearch;
+        bool m_sliderchange;
+        bool m_update_flip;
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocument(StorageFile^ file);
@@ -93,6 +97,7 @@ namespace winapp
         void Prepare_bmp(int width, int height, DataWriter ^dw);
         void PixToMemStream(fz_pixmap *pix, DataWriter ^dw, Platform::Array<unsigned char> ^arr);
         void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
+        void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
         void FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
         void Canvas_ManipulationDelta(Object^ sender, ManipulationDeltaRoutedEventArgs^ e);
@@ -106,5 +111,6 @@ namespace winapp
         void SearchInDirection(int dir, String^ textToFind);    
         void ShowSearchResults(SearchResult_t result);
         void GridSizeChanged();
+        void UpDatePageSizes();
     };
 }

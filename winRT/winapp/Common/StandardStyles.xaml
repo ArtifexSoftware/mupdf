@@ -435,6 +435,11 @@
         <Setter Property="AutomationProperties.Name" Value="No"/>
         <Setter Property="Content" Value="&#xE10A;"/>
     </Style>
+    <Style x:Key="SettingsAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
+        <Setter Property="AutomationProperties.AutomationId" Value="SettingsAppBarButton"/>
+        <Setter Property="AutomationProperties.Name" Value="Settings"/>
+        <Setter Property="Content" Value="&#xE115;"/>
+    </Style>
 
 
     <!--

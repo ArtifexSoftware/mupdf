@@ -8,12 +8,12 @@
     mc:Ignorable="d">
 	<Page.BottomAppBar>
 		<AppBar>
-			<Grid>
+			<Grid Margin="38,0,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" ValueChanged="Slider_ValueChanged" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" />
+                <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" ValueChanged="Slider_ValueChanged" LostFocus="Slider_Released" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" />
                 <Button x:Name="Find_File" Style="{StaticResource OpenFileAppBarButtonStyle}" Tag="OpenFile"  HorizontalAlignment="Right" Grid.Column="1" Click="Picker"/>
 			</Grid>
 		</AppBar>
@@ -63,6 +63,11 @@
                     ManipulationStarting="Canvas_ManipulationStarting" ManipulationMode="All">
                 <FlipView x:Name="xaml_flipView" SelectionChanged="FlipView_SelectionChanged" DoubleTapped="FlipView_Double" VerticalAlignment="Center"
                           HorizontalAlignment="Center">
+                    <FlipView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </FlipView.ItemsPanel>
                 </FlipView>
             </Canvas>
         </Grid>
