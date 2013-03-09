@@ -398,6 +398,7 @@ void winapp::MainPage::CleanUp()
     m_zoom_handled = false;
     m_first_time = false;
     m_insearch = false;
+    m_sliderchange = false;
     m_flip_from_search = false;
     m_num_pages = -1;
     ResetSearch();
@@ -408,21 +409,26 @@ void winapp::MainPage::CleanUp()
 
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
-    this->xaml_PageSlider->IsEnabled = false;    
+    this->xaml_PageSlider->IsEnabled = false;   
+    
 }
 
 void winapp::MainPage::OpenDocument(StorageFile^ file)
 {
     String^ path = file->Path;
     const wchar_t *w = path->Data();
-    int size = wcslen(w);
+    int cb = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+	char* name = new char[cb];
+
+    WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,name ,cb ,nullptr, nullptr);
+    char *ext = strrchr(name, '.');
 
     if (this->m_num_pages != -1)
         CleanUp();
         
     this->SetupZoomCanvas();
 
-    create_task(file->OpenAsync(FileAccessMode::Read)).then([this, file](task<IRandomAccessStream^> task)
+    create_task(file->OpenAsync(FileAccessMode::Read)).then([this, file, ext](task<IRandomAccessStream^> task)
     {
         try
         {
@@ -440,7 +446,8 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
                 str->state =  reinterpret_cast <void*> (&win_stream);
                     
                 /* Now lets see if we can render the file */
-                m_doc = fz_open_document_with_stream(ctx, "pdf", str);
+                
+                m_doc = fz_open_document_with_stream(ctx, ext, str);
                 m_num_pages = m_doc->count_pages(m_doc);
 
                 /* Set up the search progress bar */
@@ -525,25 +532,52 @@ void winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
     m_currpage = curr_page;
 }
 
+void winapp::MainPage::Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
+{
+    int height, width;
+    int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
+
+    this->RenderRange(newValue, &height, &width);
+    this->m_currpage = newValue;
+}
+
 void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
 {
     int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
-    return;
 
+    if (m_update_flip)
+    {
+        m_update_flip = false;
+        return;
+    }
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
+        FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(newValue);
+        if (flipview_temp->Background == this->m_blankPage) 
+        {
+            int width, height;
+            fz_page *page = fz_load_page(m_doc, newValue);
+            this->RenderPage(m_doc, page, &width, &height, 1);
+            ReplacePage(newValue);
+            this->m_currpage = newValue;
+            fz_free_page(m_doc, page);
+        } 
+        m_sliderchange = true;
         this->xaml_flipView->SelectedIndex = newValue;
-        int height, width;
-        this->RenderRange(newValue, &height, &width);
         ResetSearch();
     }
-     Windows::UI::Xaml::Input::ManipulationModes temp = xaml_flipView->ManipulationMode;
 }
 
 void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
 {
     int pos = this->xaml_flipView->SelectedIndex;
     int height, width;
+
+    m_update_flip = true;
+    if (xaml_PageSlider->IsEnabled)
+    {
+        xaml_PageSlider->Value = pos;
+    }
 
     if (pos >= 0) 
     {
@@ -552,11 +586,15 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
             m_flip_from_search = false;
             return;
         } 
+        else if (m_sliderchange)
+        {
+            m_sliderchange = false;
+            return;
+        }
         else
         {
             ResetSearch();
         }
-
         if (m_init_done)
             this->RenderRange(pos, &height, &width);
     }
@@ -892,26 +930,51 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
     }, ui);
 }
 
-/* This is here to handle when we rotate or go into the snapview mode */
+/* This is here to handle when we rotate or go into the snapview mode 
+   ToDo  add in data binding to change the scroll direction */
 void winapp::MainPage::GridSizeChanged()
 {
+
+    int height = this->ActualHeight;
+    int width = this->ActualWidth;
+
     if (DisplayProperties::CurrentOrientation == DisplayOrientations::Portrait ||
         DisplayProperties::CurrentOrientation == DisplayOrientations::PortraitFlipped)
     {
-
-        int t;
-
-        t = 1;
-
+        if (!m_zoom_mode)
+        {
+            this->xaml_zoomCanvas->Height = height;
+            this->xaml_zoomCanvas->Width = width;
+            this->xaml_flipView->Height = height;
+            this->xaml_flipView->Width = width;
+        }
     }
     else
     {
-
-        int s;
-
-        s = 1;
-
+        if (!m_zoom_mode)
+        {
+            this->xaml_zoomCanvas->Height = height;
+            this->xaml_zoomCanvas->Width = width;
+            this->xaml_flipView->Height = height;
+            this->xaml_flipView->Width = width;
+        }
     }
-
+    UpDatePageSizes();
 }
 
+void winapp::MainPage::UpDatePageSizes()
+{
+    int width, height;
+
+    /* Render our current pages at the new resolution and mark the rest with the blank */
+    if (m_num_pages > 0)
+    {
+        for (int i = 0; i < m_num_pages; i++)
+        {
+            FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(i);
+            flipview_temp->Content = nullptr;    
+            flipview_temp->Background = this->m_blankPage;
+        }
+        this->RenderRange(this->m_currpage, &height, &width);
+    }
+};
