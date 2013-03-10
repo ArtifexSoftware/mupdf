@@ -61,6 +61,7 @@ namespace winapp
         bool m_init_done;
         bool m_first_time;
         bool m_flip_from_search;
+        int m_search_rect_count;
         Point m_display_size;
         cancellation_token_source m_searchcts;
         long long m_memory_use;
