@@ -96,10 +96,10 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);C:\vrhel\Artifex_laptop\git_mupdf\mupdf\win32\Debug/libmupdf.lib;C:\vrhel\Artifex_laptop\git_mupdf\mupdf\win32\Debug/libthirdparty.lib;C:\vrhel\Artifex_laptop\git_mupdf\mupdf\win32\Debug/libmupdf-nov8.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);..\Debug/libmupdf.lib;..\Debug/libthirdparty.lib;..\Debug/libmupdf-nov8.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">

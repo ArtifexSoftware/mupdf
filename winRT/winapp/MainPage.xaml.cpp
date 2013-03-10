@@ -46,9 +46,9 @@ MainPage::MainPage()
 	InitializeComponent();
     //Text Search Box
     Windows::UI::Color color;
-    color.R = 0xAC;
+    color.R = 0x25;
     color.G = 0x72;
-    color.B = 0x25;
+    color.B = 0xAC;
     color.A = 0x40;
 
     m_color_brush = ref new SolidColorBrush(color);
@@ -401,6 +401,7 @@ void winapp::MainPage::CleanUp()
     m_sliderchange = false;
     m_flip_from_search = false;
     m_num_pages = -1;
+    m_search_rect_count = 0;
     ResetSearch();
 
     m_curr_zoom = 1.0;
@@ -578,7 +579,6 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
     {
         xaml_PageSlider->Value = pos;
     }
-
     if (pos >= 0) 
     {
         if (m_flip_from_search)
@@ -779,6 +779,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
 	fz_page *page = fz_load_page(m_doc, result.page_num);
     FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_flipView->Items->GetAt(result.page_num);
     Canvas^ results_Canvas = (Canvas^) (flipview_temp->Content);
+   // wchar_t buf[20];
 
     m_searchpage = result.page_num;
 
@@ -803,10 +804,15 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
         trans_transform->Y = hit_bbox[k].y0 *  scale.height;
 		a_rectangle->Width *= scale.width;
 		a_rectangle->Height *= scale.height;
-
+        /* Give it a unique name */
+#if 0
+        int len = swprintf_s(buf, 20, L"%s_%d", L"Rect",k );
+        a_rectangle->Name = ref new String(buf);
+#endif
         a_rectangle->RenderTransform = trans_transform;
         a_rectangle->Fill = m_color_brush;
         results_Canvas->Children->Append(a_rectangle);
+        m_search_rect_count += 1;
     }
     if (result.box_count > 0)
     {
@@ -841,6 +847,24 @@ void winapp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml:
 void winapp::MainPage::ResetSearch(void)
 {
 	m_searchpage = -1;
+#if 0
+    wchar_t buf[20];
+    String^ TempString = ref new String(buf);
+
+    /*  Remove all the rects */
+    for (int k = 0; k < this->m_search_rect_count; k++)
+    {
+        unsigned int index;
+        int len = swprintf_s(buf, 20, L"%s_%d", L"Rect",k);
+        Rectangle^ curr_rect = (Rectangle^) (xaml_flipView->FindName(TempString));
+        if (curr_rect != nullptr)
+        {
+            Canvas^ results_Canvas = (Canvas^) curr_rect->Parent;
+            results_Canvas->Children->IndexOf(curr_rect, &index);
+            results_Canvas->Children->RemoveAt(index);
+        }
+    }
+#endif
 }
 
 void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
@@ -891,7 +915,6 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
     /* Get the ui thread */
     auto ui = task_continuation_context::use_current();
 
-
     /* Do task lambdas here to avoid UI blocking issues */
     auto search_task = create_task([this, needle, dir, start, local_doc, &result]()->SearchResult_t
     {
@@ -925,7 +948,7 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
           //  ProgressBar^ xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
          //   xaml_Progress->IsEnabled = false;
           //  xaml_Progress->Opacity = 0.0;
-         //   this->ShowSearchResults(the_result);
+         this->ShowSearchResults(the_result);
         }
     }, ui);
 }
