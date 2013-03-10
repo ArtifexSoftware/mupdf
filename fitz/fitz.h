@@ -113,6 +113,13 @@ FILE *fopen_utf8(const char *name, const char *mode);
 #define restrict
 #endif
 
+/* noreturn is a GCC extension */
+#ifdef __GNUC__
+#define FZ_NORETURN __attribute__((noreturn))
+#else
+#define FZ_NORETURN
+#endif
+
 /*
 	GCC can do type checking of printf strings
 */
@@ -265,8 +272,8 @@ void fz_var_imp(void *);
 	if (ctx->error->stack[ctx->error->top--].code > 1)
 
 int fz_push_try(fz_error_context *ex);
-void fz_throw(fz_context *, const char *, ...) __printflike(2, 3);
-void fz_rethrow(fz_context *);
+void fz_throw(fz_context *, const char *, ...) __printflike(2, 3) FZ_NORETURN;
+void fz_rethrow(fz_context *) FZ_NORETURN;
 void fz_warn(fz_context *ctx, const char *fmt, ...) __printflike(2, 3);
 const char *fz_caught(fz_context *ctx);
 
