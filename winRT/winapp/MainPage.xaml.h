@@ -76,6 +76,7 @@ namespace winapp
         Canvas^ m_renderedCanvas;
         ImageBrush^ m_zoomedImage;
         SolidColorBrush^ m_color_brush; 
+        FlipView^ m_curr_flipView;
         bool m_zoom_mode;
         bool m_zoom_handled;
         bool m_insearch;
@@ -90,6 +91,7 @@ namespace winapp
         void AddPage(int page_num);
         void ReplacePage(int page_num);
         void AddBlankPage(int page_num);
+        void AddBlankPage(int page_num, FlipView^ flip_view);
         void CreateBlank(int width, int height);
         void HandleFileNotFoundException(Platform::COMException^ e); 
         void NotifyUserFileNotExist();
