@@ -11,7 +11,7 @@
 #include "muxps.h"
 #include "mupdf.h"
 #include "ppl.h"
-#include "Binding.h"
+//#include "Binding.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -23,7 +23,7 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
-using namespace winapp::DataBinding;
+//using namespace winapp::DataBinding;
 
 typedef struct SearchResult_s
 {
