@@ -78,7 +78,8 @@ namespace winapp
         SolidColorBrush^ m_color_brush; 
         FlipView^ m_curr_flipView;
         bool m_zoom_mode;
-        bool m_zoom_handled;
+        bool m_from_doubleflip;
+        bool m_scaling_occured;
         bool m_insearch;
         bool m_sliderchange;
         bool m_update_flip;
@@ -116,5 +117,7 @@ namespace winapp
         void GridSizeChanged();
         void UpDatePageSizes();
         void ShowThumbnail();
+        void PageSize(fz_document *doc, fz_page *page, int *width, int *height, double scale_factor);
+        void Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
     };
 }
