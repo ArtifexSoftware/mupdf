@@ -315,6 +315,24 @@ void winapp::MainPage::PixToMemStream(fz_pixmap *pix, DataWriter ^dw, Platform::
     }
 }
 
+void winapp::MainPage::PageSize(fz_document *doc, fz_page *page, int *width, int *height, double scale_factor)
+{
+    RectSize pageSize;
+    RectSize scale;
+    RectSize screenSize;
+
+    screenSize.height = this->ActualHeight;
+    screenSize.width = this->ActualWidth;
+
+	screenSize.width *= screenScale;
+	screenSize.height *= screenScale;
+    
+    pageSize = measurePage(doc, page);
+	scale = fitPageToScreen(pageSize, screenSize);
+    *width = pageSize.width * scale.width * scale_factor;
+    *height = pageSize.height * scale.height * scale_factor;
+}
+
 void winapp::MainPage::RenderPage(fz_document *doc, fz_page *page, int *width, int *height, double scale_factor)
 {
 	fz_matrix ctm, *pctm = &ctm;
@@ -404,6 +422,7 @@ void winapp::MainPage::CleanUp()
     if (this->m_doc != NULL) 
         fz_close_document(m_doc);
 
+    this->m_curr_flipView = nullptr;
     m_currpage = 0;
     m_file_open = false;
     m_doc = NULL;
@@ -412,7 +431,7 @@ void winapp::MainPage::CleanUp()
     m_init_done = false;
     m_memory_use = 0;
     m_zoom_mode = false;
-    m_zoom_handled = false;
+    m_from_doubleflip = false;
     m_first_time = false;
     m_insearch = false;
     m_sliderchange = false;
@@ -639,6 +658,23 @@ void winapp::MainPage::Canvas_ManipulationStarted(Object^ sender, ManipulationSt
     this->m_touchpoint = e->Position;
 }
 
+void winapp::MainPage::Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e)
+{
+    if (m_scaling_occured)
+    {
+        int width, height;
+        int pos = this->m_curr_flipView->SelectedIndex;
+        fz_page *page = fz_load_page(m_doc, pos);
+
+        RenderPage(m_doc, page, &width, &height, m_curr_zoom);
+        this->xaml_zoomCanvas->Background = this->m_renderedImage;
+        m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+
+        this->xaml_zoomCanvas->Width = width;
+        this->xaml_zoomCanvas->Height = height;
+    }
+}
+
 void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDeltaRoutedEventArgs^ e)
 {
     int width, height;
@@ -652,13 +688,23 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
         m_curr_zoom = m_curr_zoom * e->Delta.Scale;
         if (m_curr_zoom < MIN_SCALE) m_curr_zoom = MIN_SCALE;
         if (m_curr_zoom > MAX_SCALE) m_curr_zoom = MAX_SCALE;
-        this->RenderPage(m_doc, page, &width, &height, m_curr_zoom);
-        this->xaml_zoomCanvas->Background = this->m_renderedImage;
+        if (m_first_time)
+        {
+            RenderPage(m_doc, page, &width, &height, m_curr_zoom);
+            this->xaml_zoomCanvas->Background = this->m_renderedImage;
+            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+        }
+        else
+        {
+            PageSize(m_doc, page, &width, &height, m_curr_zoom);
+            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::Fill;
+        }
         this->xaml_zoomCanvas->Width = width;
         this->xaml_zoomCanvas->Height = height;
         m_zoom_size.X = width;
         m_zoom_size.Y = height;
         m_first_time = false;
+        m_scaling_occured = true;
     }
 
     TranslateTransform ^trans_transform = ref new TranslateTransform();
@@ -690,18 +736,26 @@ void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDelt
 
 void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
 {
-    if (!m_zoom_mode)
+    if (!m_zoom_mode && this->m_num_pages != -1)
     {
         m_zoom_mode = true;
         int pos = this->m_curr_flipView->SelectedIndex;
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(pos);
-        Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
+        int width, height;
+        fz_page *page = fz_load_page(m_doc, pos);
+
+        RenderPage(m_doc, page, &width, &height, 1);
+        this->xaml_zoomCanvas->Background = this->m_renderedImage;
+        m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+
+        this->xaml_zoomCanvas->Width = width;
+        this->xaml_zoomCanvas->Height = height;
+
         m_curr_flipView->IsEnabled = false;
-        this->xaml_zoomCanvas->Background = Curr_Canvas->Background;
         this->xaml_zoomCanvas->Background->Opacity = 1;
         this->m_curr_flipView->Opacity = 0.0;
-        m_zoom_handled = true;
         m_first_time = true;
+        m_from_doubleflip = true;
+        m_curr_zoom = 1.0;
     }
 }
 
@@ -709,7 +763,7 @@ void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs
 {
     TranslateTransform ^trans_transform = ref new TranslateTransform();
 
-    if (m_zoom_mode && !m_zoom_handled)
+    if (m_zoom_mode && !m_from_doubleflip)
     {
         m_zoom_mode = false;
         int pos = this->m_curr_flipView->SelectedIndex;
@@ -723,17 +777,15 @@ void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs
             this->xaml_zoomCanvas->Background = nullptr;
         this->m_curr_flipView->Opacity = 1;
         m_curr_flipView->IsEnabled = true;
-        m_first_time = true;
+        this->xaml_zoomCanvas->Height = this->ActualHeight;
+        this->xaml_zoomCanvas->Width = this->ActualWidth;
+        trans_transform->X = 0;
+        trans_transform->Y = 0;
+        m_canvas_translate.X = 0;
+        m_canvas_translate.Y = 0;
+        this->xaml_zoomCanvas->RenderTransform = trans_transform;
     }
-    m_zoom_handled = false;
-    m_curr_zoom = 1.0;
-    this->xaml_zoomCanvas->Height = this->ActualHeight;
-    this->xaml_zoomCanvas->Width = this->ActualWidth;
-    trans_transform->X = 0;
-    trans_transform->Y = 0;
-    m_canvas_translate.X = 0;
-    m_canvas_translate.Y = 0;
-    this->xaml_zoomCanvas->RenderTransform = trans_transform;
+    m_from_doubleflip = false;
 }
 
 /* Search Related Code */
@@ -987,6 +1039,10 @@ void winapp::MainPage::GridSizeChanged()
     int width = this->ActualWidth;
     FlipView^ old_flip = m_curr_flipView;
 
+    if (m_zoom_mode) 
+    {
+        Canvas_Double(nullptr, nullptr);
+    }
     if (height > width)
     {
         m_curr_flipView = this->xaml_vert_flipView;
@@ -1040,3 +1096,5 @@ void winapp::MainPage::UpDatePageSizes()
         this->RenderRange(this->m_currpage, &height, &width);
     }
 };
+
+
