@@ -1217,6 +1217,12 @@ void fz_set_annot_appearance(fz_interactive *idoc, fz_annot *annot, fz_rect *rec
 void fz_set_markup_annot_quadpoints(fz_interactive *idoc, fz_annot *annot, fz_point *qp, int n);
 
 /*
+	fz_set_markup_appearance: set the appearance stream of a text markup annotations, basing it on
+	its QuadPoints array
+*/
+void fz_set_markup_appearance(fz_interactive *idoc, fz_annot *annot, float color[3], float alpha, float line_thickness, float line_height);
+
+/*
  * Text buffer.
  *
  * The trm field contains the a, b, c and d coefficients.

@@ -1375,10 +1375,6 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 	jfieldID x_fid, y_fid;
 	int i, n;
 	fz_point *pts = NULL;
-	fz_path *path = NULL;
-	fz_stroke_state *stroke = NULL;
-	fz_device *dev = NULL;
-	fz_display_list *strike_list;
 	float color[3];
 	float alpha;
 	float line_height;
@@ -1417,17 +1413,11 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 			return;
 	}
 
-	strike_list = fz_new_display_list(ctx);
-
 	fz_var(pts);
-	fz_var(path);
-	fz_var(stroke);
-	fz_var(dev);
 	fz_try(ctx)
 	{
 		fz_annot *annot;
 		fz_matrix ctm;
-		fz_rect rect = fz_empty_rect;
 
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
@@ -1443,87 +1433,27 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 
 		pts = fz_malloc_array(ctx, n, sizeof(fz_point));
 
-		dev = fz_new_list_device(ctx, strike_list);
-
 		for (i = 0; i < n; i++)
 		{
 			jobject opt = (*env)->GetObjectArrayElement(env, points, i);
 			pts[i].x = opt ? (*env)->GetFloatField(env, opt, x_fid) : 0.0f;
 			pts[i].y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
 			fz_transform_point(&pts[i], &ctm);
-
-			if (i == 0)
-			{
-				rect.x0 = rect.x1 = pts[i].x;
-				rect.y0 = rect.y1 = pts[i].y;
-			}
-			else
-			{
-				fz_include_point_in_rect(&rect, &pts[i]);
-			}
 		}
 
 		annot = fz_create_annot(idoc, pc->page, type);
 
 		fz_set_markup_annot_quadpoints(idoc, annot, pts, n);
+		fz_set_markup_appearance(idoc, annot, color, alpha, line_thickness, line_height);
 
-		for (i = 0; i < n; i += 4)
-		{
-			fz_point pt0 = pts[i];
-			fz_point pt1 = pts[i+1];
-			fz_point up;
-			float thickness;
-
-			up.x = pts[i+2].x - pts[i+1].x;
-			up.y = pts[i+2].y - pts[i+1].y;
-
-			pt0.x += line_height * up.x;
-			pt0.y += line_height * up.y;
-			pt1.x += line_height * up.x;
-			pt1.y += line_height * up.y;
-
-			thickness = sqrtf(up.x * up.x + up.y * up.y) * line_thickness;
-
-			if (!stroke || fz_abs(stroke->linewidth - thickness) < SMALL_FLOAT)
-			{
-				if (stroke)
-				{
-					// assert(path)
-					fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb, color, alpha);
-					fz_drop_stroke_state(ctx, stroke);
-					stroke = NULL;
-					fz_free_path(ctx, path);
-					path = NULL;
-				}
-
-				stroke = fz_new_stroke_state(ctx);
-				stroke->linewidth = thickness;
-				path = fz_new_path(ctx);
-			}
-
-			fz_moveto(ctx, path, pt0.x, pt0.y);
-			fz_lineto(ctx, path, pt1.x, pt1.y);
-		}
-
-		if (stroke)
-		{
-			fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb, color, alpha);
-		}
-
-		fz_set_annot_appearance(idoc, annot, &rect, strike_list);
 		dump_annotation_display_lists(glo);
 	}
 	fz_always(ctx)
 	{
 		fz_free(ctx, pts);
-		fz_free_device(dev);
-		fz_drop_stroke_state(ctx, stroke);
-		fz_free_path(ctx, path);
-		fz_free_display_list(ctx, strike_list);
 	}
 	fz_catch(ctx)
 	{
-		fz_free_device(dev);
 		LOGE("addStrikeOutAnnotation: %s failed", ctx->error->message);
 		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 		if (cls != NULL)

@@ -595,6 +595,7 @@ void pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key);
 int pdf_has_unsaved_changes(pdf_document *doc);
 int pdf_pass_event(pdf_document *doc, pdf_page *page, fz_ui_event *ui_event);
 void pdf_update_page(pdf_document *doc, pdf_page *page);
+fz_annot_type pdf_annot_obj_type(pdf_obj *obj);
 pdf_annot *pdf_poll_changed_annot(pdf_document *idoc, pdf_page *page);
 fz_widget *pdf_focused_widget(pdf_document *doc);
 fz_widget *pdf_first_widget(pdf_document *doc, pdf_page *page);
@@ -611,6 +612,8 @@ pdf_annot *pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type typ
 void pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot);
 void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list);
 void pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n);
+void pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3], float alpha, float line_thickness, float line_height);
+void pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[3], float alpha, float line_thickness, float line_height);
 void pdf_set_doc_event_callback(pdf_document *doc, fz_doc_event_cb *event_cb, void *data);
 
 void pdf_event_issue_alert(pdf_document *doc, fz_alert_event *event);
