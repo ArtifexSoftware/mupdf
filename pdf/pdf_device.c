@@ -1130,13 +1130,14 @@ pdf_dev_end_group(fz_device *dev)
 	pdf_drop_obj(form_ref);
 }
 
-static void
-pdf_dev_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm)
+static int
+pdf_dev_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
 {
 	pdf_device *pdev = (pdf_device *)dev->user;
 
 	/* FIXME */
 	pdf_dev_end_text(pdev);
+	return 0;
 }
 
 static void

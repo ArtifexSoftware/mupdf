@@ -201,6 +201,7 @@ static inline void *fz_clampp(void *p, void *min, void *max)
 
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
+typedef struct fz_id_context_s fz_id_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_aa_context_s fz_aa_context;
@@ -294,6 +295,7 @@ struct fz_context_s
 {
 	fz_alloc_context *alloc;
 	fz_locks_context *locks;
+	fz_id_context *id;
 	fz_error_context *error;
 	fz_warn_context *warn;
 	fz_font_context *font;
@@ -662,6 +664,12 @@ int fz_runetochar(char *str, int rune);
 	Returns the number of bytes required to represent this run in UTF8.
 */
 int fz_runelen(int rune);
+
+/*
+	fz_gen_id: Generate an id (guaranteed unique within this family of
+	contexts).
+*/
+int fz_gen_id(fz_context *ctx);
 
 /*
 	getopt: Simple functions/variables for use in tools.

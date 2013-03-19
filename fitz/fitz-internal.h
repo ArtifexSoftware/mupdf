@@ -473,6 +473,11 @@ struct fz_store_hash_s
 			void *ptr;
 			int i;
 		} pi;
+		struct
+		{
+			int id;
+			float m[4];
+		} im;
 	} u;
 };
 
@@ -1440,7 +1445,7 @@ struct fz_device_s
 	void (*begin_group)(fz_device *, const fz_rect *, int isolated, int knockout, int blendmode, float alpha);
 	void (*end_group)(fz_device *);
 
-	void (*begin_tile)(fz_device *, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm);
+	int (*begin_tile)(fz_device *, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 	void (*end_tile)(fz_device *);
 
 	int error_depth;
@@ -1466,6 +1471,7 @@ void fz_end_mask(fz_device *dev);
 void fz_begin_group(fz_device *dev, const fz_rect *area, int isolated, int knockout, int blendmode, float alpha);
 void fz_end_group(fz_device *dev);
 void fz_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm);
+int fz_begin_tile_id(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 void fz_end_tile(fz_device *dev);
 
 fz_device *fz_new_device(fz_context *ctx, void *user);

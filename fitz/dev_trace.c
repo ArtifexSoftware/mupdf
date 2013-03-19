@@ -267,8 +267,8 @@ fz_trace_end_group(fz_device *dev)
 	printf("</group>\n");
 }
 
-static void
-fz_trace_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm)
+static int
+fz_trace_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
 {
 	printf("<tile");
 	printf(" area=\"%g %g %g %g\"", area->x0, area->y0, area->x1, area->y1);
@@ -276,6 +276,7 @@ fz_trace_begin_tile(fz_device *dev, const fz_rect *area, const fz_rect *view, fl
 	printf(" xstep=\"%g\" ystep=\"%g\"", xstep, ystep);
 	fz_trace_matrix(ctm);
 	printf(">\n");
+	return 0;
 }
 
 static void
