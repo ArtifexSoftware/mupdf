@@ -510,7 +510,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 	int i, x, y, gid;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_irect scissor = state->scissor;
+	fz_irect scissor;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
@@ -539,8 +539,10 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 		trunc_trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trunc_trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		scissor.x0 -= x; scissor.x1 -= x;
-		scissor.y0 -= y; scissor.y1 -= y;
+		scissor.x0 = state->scissor.x0 - x;
+		scissor.y0 = state->scissor.y0 - y;
+		scissor.x1 = state->scissor.x1 - x;
+		scissor.y1 = state->scissor.y1 - y;
 
 		glyph = fz_render_glyph(dev->ctx, text->font, gid, &trunc_trm, model, scissor);
 		if (glyph)
@@ -590,7 +592,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke,
 	int i, x, y, gid;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	fz_irect scissor = state->scissor;
+	fz_irect scissor;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(dev);
@@ -618,8 +620,10 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke,
 		trunc_trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 		trunc_trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-		scissor.x0 -= x; scissor.x1 -= x;
-		scissor.y0 -= y; scissor.y1 -= y;
+		scissor.x0 = state->scissor.x0 - x;
+		scissor.y0 = state->scissor.y0 - y;
+		scissor.x1 = state->scissor.x1 - x;
+		scissor.y1 = state->scissor.y1 - y;
 
 		glyph = fz_render_stroked_glyph(dev->ctx, text->font, gid, &trunc_trm, ctm, stroke, scissor);
 		if (glyph)
@@ -719,6 +723,8 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 
 			for (i = 0; i < text->len; i++)
 			{
+				fz_irect scissor;
+
 				gid = text->items[i].gid;
 				if (gid < 0)
 					continue;
@@ -732,8 +738,12 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 				trunc_trm = trm;
 				trunc_trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 				trunc_trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
+				scissor.x0 = bbox.x0 - x;
+				scissor.y0 = bbox.y0 - y;
+				scissor.x1 = bbox.x1 - x;
+				scissor.y1 = bbox.y1 - y;
 
-				glyph = fz_render_glyph(dev->ctx, text->font, gid, &trunc_trm, model, bbox);
+				glyph = fz_render_glyph(dev->ctx, text->font, gid, &trunc_trm, model, scissor);
 				if (glyph)
 				{
 					draw_glyph(NULL, mask, glyph, x, y, &bbox);
@@ -828,6 +838,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 
 			for (i = 0; i < text->len; i++)
 			{
+				fz_irect scissor;
 				gid = text->items[i].gid;
 				if (gid < 0)
 					continue;
@@ -842,7 +853,12 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 				trunc_trm.e = QUANT(trm.e - floorf(trm.e), HSUBPIX);
 				trunc_trm.f = QUANT(trm.f - floorf(trm.f), VSUBPIX);
 
-				glyph = fz_render_stroked_glyph(dev->ctx, text->font, gid, &trunc_trm, ctm, stroke, bbox);
+				scissor.x0 = bbox.x0 - x;
+				scissor.y0 = bbox.y0 - y;
+				scissor.x1 = bbox.x1 - x;
+				scissor.y1 = bbox.y1 - y;
+
+				glyph = fz_render_stroked_glyph(dev->ctx, text->font, gid, &trunc_trm, ctm, stroke, scissor);
 				if (glyph)
 				{
 					draw_glyph(NULL, mask, glyph, x, y, &bbox);
