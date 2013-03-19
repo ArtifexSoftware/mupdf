@@ -279,7 +279,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		return true;
 	}
 
-	public void markupSelection(final Annotation.Type type) {
+	public boolean markupSelection(final Annotation.Type type) {
 		final ArrayList<PointF> quadPoints = new ArrayList<PointF>();
 		processSelectedText(new TextProcessor() {
 			RectF rect;
@@ -302,6 +302,9 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			}
 		});
 
+		if (quadPoints.size() == 0)
+			return false;
+
 		mAddStrikeOut = new AsyncTask<PointF[],Void,Void>() {
 			@Override
 			protected Void doInBackground(PointF[]... params) {
@@ -319,6 +322,8 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		mAddStrikeOut.execute(quadPoints.toArray(new PointF[quadPoints.size()]));
 
 		deselectText();
+
+		return true;
 	}
 
 	public void deleteSelectedAnnotation() {

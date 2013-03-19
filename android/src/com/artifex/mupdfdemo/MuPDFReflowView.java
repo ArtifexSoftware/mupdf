@@ -99,7 +99,8 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		return false;
 	}
 
-	public void markupSelection(Annotation.Type type) {
+	public boolean markupSelection(Annotation.Type type) {
+		return false;
 	}
 
 	public void setSearchBoxes(RectF[] searchBoxes) {

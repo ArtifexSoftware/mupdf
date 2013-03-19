@@ -488,7 +488,6 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
-		final Context context = this;
 		mCopySelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
@@ -498,69 +497,49 @@ public class MuPDFActivity extends Activity
 				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-				mInfoView.setText(copied?"Copied to clipboard":"No text selected");
-
-				int currentApiVersion = android.os.Build.VERSION.SDK_INT;
-				if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-					AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.info);
-					set.setTarget(mInfoView);
-					set.addListener(new Animator.AnimatorListener() {
-						public void onAnimationStart(Animator animation) {
-							mInfoView.setVisibility(View.VISIBLE);
-						}
-
-						public void onAnimationRepeat(Animator animation) {
-						}
-
-						public void onAnimationEnd(Animator animation) {
-							mInfoView.setVisibility(View.INVISIBLE);
-						}
-
-						public void onAnimationCancel(Animator animation) {
-						}
-					});
-					set.start();
-				} else {
-					mInfoView.setVisibility(View.VISIBLE);
-					mHandler.postDelayed(new Runnable() {
-						public void run() {
-							mInfoView.setVisibility(View.INVISIBLE);
-						}
-					}, 500);
-				}
+				showInfo(copied?"Copied to clipboard":"No text selected");
 			}
 		});
 
 		mHighlightButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				boolean success = false;
 				if (pageView != null)
-					pageView.markupSelection(Annotation.Type.HIGHLIGHT);
+					success = pageView.markupSelection(Annotation.Type.HIGHLIGHT);
 				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				if (!success)
+					showInfo("No text selected");
 			}
 		});
 
 		mUnderlineButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				boolean success = false;
 				if (pageView != null)
-					pageView.markupSelection(Annotation.Type.UNDERLINE);
+					success = pageView.markupSelection(Annotation.Type.UNDERLINE);
 				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				if (!success)
+					showInfo("No text selected");
 			}
 		});
 
 		mStrikeOutButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				boolean success = false;
 				if (pageView != null)
-					pageView.markupSelection(Annotation.Type.STRIKEOUT);
+					success = pageView.markupSelection(Annotation.Type.STRIKEOUT);
 				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				if (!success)
+					showInfo("No text selected");
 			}
 		});
 
@@ -866,6 +845,39 @@ public class MuPDFActivity extends Activity
 		if (core == null)
 			return;
 		mPageNumberView.setText(String.format("%d / %d", index+1, core.countPages()));
+	}
+
+	private void showInfo(String message) {
+		mInfoView.setText(message);
+
+		int currentApiVersion = android.os.Build.VERSION.SDK_INT;
+		if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+			AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.info);
+			set.setTarget(mInfoView);
+			set.addListener(new Animator.AnimatorListener() {
+				public void onAnimationStart(Animator animation) {
+					mInfoView.setVisibility(View.VISIBLE);
+				}
+
+				public void onAnimationRepeat(Animator animation) {
+				}
+
+				public void onAnimationEnd(Animator animation) {
+					mInfoView.setVisibility(View.INVISIBLE);
+				}
+
+				public void onAnimationCancel(Animator animation) {
+				}
+			});
+			set.start();
+		} else {
+			mInfoView.setVisibility(View.VISIBLE);
+			mHandler.postDelayed(new Runnable() {
+				public void run() {
+					mInfoView.setVisibility(View.INVISIBLE);
+				}
+			}, 500);
+		}
 	}
 
 	void makeButtonsView() {
