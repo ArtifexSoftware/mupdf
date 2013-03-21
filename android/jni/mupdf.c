@@ -447,8 +447,18 @@ JNIEXPORT int JNICALL
 JNI_FN(MuPDFCore_countPagesInternal)(JNIEnv *env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	int count = 0;
 
-	return fz_count_pages(glo->doc);
+	fz_try(ctx)
+	{
+		count = fz_count_pages(glo->doc);
+	}
+	fz_catch(ctx)
+	{
+		LOGE("exception while counting pages: %s", ctx->error->message);
+	}
+	return count;
 }
 
 JNIEXPORT void JNICALL

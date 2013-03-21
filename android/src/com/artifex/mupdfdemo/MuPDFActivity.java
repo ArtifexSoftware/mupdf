@@ -312,6 +312,8 @@ public class MuPDFActivity extends Activity
 					core = openFile(Uri.decode(uri.getEncodedPath()));
 				}
 				SearchTaskResult.set(null);
+				if (core.countPages() == 0)
+					core = null;
 			}
 			if (core != null && core.needsPassword()) {
 				requestPassword(savedInstanceState);
@@ -743,7 +745,8 @@ public class MuPDFActivity extends Activity
 	protected void onPause() {
 		super.onPause();
 
-		mSearchTask.stop();
+		if (mSearchTask != null)
+			mSearchTask.stop();
 
 		if (mFileName != null && mDocView != null) {
 			SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
