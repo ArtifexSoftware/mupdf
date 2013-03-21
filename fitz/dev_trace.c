@@ -120,7 +120,8 @@ fz_trace_clip_path(fz_device *dev, fz_path *path, const fz_rect *rect, int even_
 	else
 		printf(" winding=\"nonzero\"");
 	fz_trace_matrix(ctm);
-	printf(" contentbbox=\"%g %g %g %g\">\n", rect->x0, rect->y0, rect->x1, rect->y1);
+	if (rect)
+		printf(" contentbbox=\"%g %g %g %g\">\n", rect->x0, rect->y0, rect->x1, rect->y1);
 	fz_trace_path(path, 0);
 	printf("</clip_path>\n");
 }
