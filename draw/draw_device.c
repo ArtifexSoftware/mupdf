@@ -1688,11 +1688,11 @@ fz_cmp_tile_key(void *k0_, void *k1_)
 
 #ifndef NDEBUG
 static void
-fz_debug_tile(void *key_)
+fz_debug_tile(FILE *out, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
 
-	printf("(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
+	fprintf(out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
 }
 #endif
 

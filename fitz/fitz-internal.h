@@ -490,7 +490,7 @@ struct fz_store_type_s
 	void (*drop_key)(fz_context *,void *);
 	int (*cmp_key)(void *, void *);
 #ifndef NDEBUG
-	void (*debug)(void *);
+	void (*debug)(FILE *, void *);
 #endif
 };
 
