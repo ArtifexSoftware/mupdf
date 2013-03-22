@@ -4,10 +4,13 @@
 #define SPACE_DIST 0.2f
 #define SPACE_MAX_DIST 0.8f
 #define PARAGRAPH_DIST 0.5f
+#define MY_EPSILON 0.001f
 
 #undef DEBUG_SPANS
 #undef DEBUG_INTERNALS
 #undef DEBUG_LINE_HEIGHTS
+#undef DEBUG_MASKS
+#undef DEBUG_ALIGN
 
 #undef SPOT_LINE_NUMBERS
 
@@ -214,7 +217,7 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 	return line;
 }
 
-#ifdef DEBUG_SPANS
+#if defined(DEBUG_SPANS) || defined(DEBUG_ALIGN)
 static void
 dump_span(fz_text_span *s)
 {
@@ -223,6 +226,22 @@ dump_span(fz_text_span *s)
 	{
 		printf("%c", s->text[i].c);
 	}
+}
+#endif
+
+#ifdef DEBUG_ALIGN
+static void
+dump_line(fz_text_line *line)
+{
+	int i;
+	for (i=0; i < line->len; i++)
+	{
+		fz_text_span *s = line->spans[i];
+		if (s->spacing > 1)
+			printf(" ");
+		dump_span(s);
+	}
+	printf("\n");
 }
 #endif
 
@@ -891,27 +910,105 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 	fz_text_style *style = NULL;
 	fz_text_block *block;
 	fz_text_line *line;
+	int in_block = 0;
+	void *in_table = NULL;
 
 	fz_printf(out, "<div class=\"page\">\n");
 
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
 		block = &page->blocks[block_n];
-		fz_printf(out, "<div class=\"block\"><p>\n");
 		for (line_n = 0; line_n < block->len; line_n++)
 		{
+			int table;
+			int lastcol=0;
 			line = &block->lines[line_n];
 			style = NULL;
 
+			table = line->spans[0]->column;
+			if (table)
+			{
+				/* Finish any non-table block that we may be in */
+				if (in_table == NULL && in_block)
+				{
+					fz_printf(out, "</p></div>\n");
+					in_block = 0;
+				}
+				/* If the table type has changed... */
+				if (in_table != line->region)
+				{
+					/* Finish any table */
+					if (in_table)
+					{
+						fz_printf(out, "</tr></table>");
+					}
+					/* Start a block if required */
+					if (!in_block)
+					{
+						fz_printf(out, "<div class=\"block\"><p>\n");
+						in_block = 1;
+					}
+					/* Start the new table */
+					fz_printf(out, "<table width=\"100%%\">");
+					for (span_n = 0; span_n < line->len; span_n++)
+					{
+						fz_text_span *span = line->spans[span_n];
+						if (lastcol < span->column)
+						{
+							while (lastcol < span->column-1)
+							{
+								fz_printf(out, "<col width=\"0%%\">");
+								lastcol++;
+							}
+							fz_printf(out, "<col width=\"%g%%\">", span->column_width);
+							lastcol++;
+						}
+					}
+					in_table = line->region;
+				}
+				/* New table row */
+				fz_printf(out, "<tr valign=\"top\">");
+				lastcol = 0;
+			}
+			else
+			{
+				if (in_table)
+				{
+					fz_printf(out, "</tr></table>");
+					in_table = NULL;
+				}
+				if (!in_block)
+				{
+					fz_printf(out, "<div class=\"block\"><p>\n");
+					in_block = 1;
+				}
+			}
 #ifdef DEBUG_INTERNALS
-			fz_printf(out, "<span class=\"line\">");
+			fz_printf(out, "<span class=\"line\"");
+			if (line->region)
+				fz_printf(out, " region=\"%x\"", line->region);
+			fz_printf(out, ">");
 #endif
 			for (span_n = 0; span_n < line->len; span_n++)
 			{
 				fz_text_span *span = line->spans[span_n];
 #ifdef DEBUG_INTERNALS
-				fz_printf(out, "<span class=\"internal_span\">");
+				fz_printf(out, "<span class=\"internal_span\"");
+				if (span->column)
+					fz_printf(out, " col=\"%x\"", span->column);
+				fz_printf(out, ">");
 #endif
+				if (table && lastcol != span->column)
+				{
+					if (style)
+						fz_print_style_end(out, style);
+					style = NULL;
+					while (lastcol < span->column)
+					{
+						fz_printf(out, "<td align=\"%s\">", (span->align == 0 ? "left" : (span->align == 1 ? "center" : "right")));
+						lastcol++;
+					}
+				}
 				if (span->spacing >= 1)
 					fz_printf(out, " ");
 				for (ch_n = 0; ch_n < span->len; ch_n++)
@@ -950,7 +1047,17 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 #endif
 			fz_printf(out, "\n");
 		}
-		fz_printf(out, "</p></div>\n");
+		if (in_table)
+		{
+			/* Output in a table. */
+			fz_printf(out, "</tr></table>");
+			in_table = NULL;
+		}
+		if (in_block)
+		{
+			fz_printf(out, "</p></div>\n");
+			in_block = 0;
+		}
 	}
 
 	fz_printf(out, "</div>\n");
@@ -1163,14 +1270,8 @@ cull_line_heights(line_heights *lh)
 		j = i+1;
 		for (k = j; k < lh->len; k++)
 		{
-			if (lh->lh[k].style == style)
-			{
-				k++;
-			}
-			else
-			{
+			if (lh->lh[k].style != style)
 				lh->lh[j++] = lh->lh[k];
-			}
 		}
 		lh->len = j;
 	}
@@ -1375,12 +1476,618 @@ is_list_entry(fz_text_span *span, int *char_num_ptr, int span_num)
 	return 0;
 }
 
+typedef struct region_masks_s region_masks;
+
+typedef struct region_mask_s region_mask;
+
+typedef struct region_s region;
+
+struct region_s
+{
+	float start;
+	float stop;
+	float ave_start;
+	float ave_stop;
+	int align;
+	float colw;
+};
+
+struct region_mask_s
+{
+	fz_context *ctx;
+	int freq;
+	fz_point blv;
+	int cap;
+	int len;
+	float size;
+	region *mask;
+};
+
+struct region_masks_s
+{
+	fz_context *ctx;
+	int cap;
+	int len;
+	region_mask **mask;
+};
+
+static region_masks *
+new_region_masks(fz_context *ctx)
+{
+	region_masks *rms = fz_malloc_struct(ctx, region_masks);
+	rms->ctx = ctx;
+	rms->cap = 0;
+	rms->len = 0;
+	rms->mask = NULL;
+	return rms;
+}
+
+static void
+free_region_mask(region_mask *rm)
+{
+	if (!rm)
+		return;
+	fz_free(rm->ctx, rm->mask);
+	fz_free(rm->ctx, rm);
+}
+
+static void
+free_region_masks(region_masks *rms)
+{
+	int i;
+
+	if (!rms)
+		return;
+	for (i=0; i < rms->len; i++)
+	{
+		free_region_mask(rms->mask[i]);
+	}
+	fz_free(rms->ctx, rms->mask);
+	fz_free(rms->ctx, rms);
+}
+
+static int region_masks_mergeable(const region_mask *rm1, const region_mask *rm2, float *score)
+{
+	int i1, i2;
+	int count = 0;
+
+	*score = 0;
+	if (fabsf(rm1->blv.x-rm2->blv.x) >= MY_EPSILON || fabsf(rm1->blv.y-rm2->blv.y) >= MY_EPSILON)
+		return 0;
+
+	for (i1 = 0, i2 = 0; i1 < rm1->len && i2 < rm2->len; )
+	{
+		if (rm1->mask[i1].stop < rm2->mask[i2].start)
+		{
+			/* rm1's region is entirely before rm2's */
+			*score += rm1->mask[i1].stop - rm1->mask[i1].start;
+			i1++;
+		}
+		else if (rm1->mask[i1].start > rm2->mask[i2].stop)
+		{
+			/* rm2's region is entirely before rm1's */
+			*score += rm2->mask[i2].stop - rm2->mask[i2].start;
+			i2++;
+		}
+		else
+		{
+			float lscore, rscore;
+			if (rm1->mask[i1].start < rm2->mask[i2].start)
+			{
+				if (i2 > 0 && rm2->mask[i2-1].stop >= rm1->mask[i1].start)
+					return 0; /* Not compatible */
+				lscore = rm2->mask[i2].start - rm1->mask[i1].start;
+			}
+			else
+			{
+				if (i1 > 0 && rm1->mask[i1-1].stop >= rm2->mask[i2].start)
+					return 0; /* Not compatible */
+				lscore = rm1->mask[i1].start - rm2->mask[i2].start;
+			}
+			if (rm1->mask[i1].stop > rm2->mask[i2].stop)
+			{
+				if (i2+1 < rm2->len && rm2->mask[i2+1].start <= rm1->mask[i1].stop)
+					return 0; /* Not compatible */
+				rscore = rm1->mask[i1].stop - rm2->mask[i2].stop;
+			}
+			else
+			{
+				if (i1+1 < rm1->len && rm1->mask[i1+1].start <= rm2->mask[i2].stop)
+					return 0; /* Not compatible */
+				rscore = rm2->mask[i2].stop - rm1->mask[i1].stop;
+			}
+			/* In order to allow a region to merge, either the
+			 * left, the right, or the centre must agree */
+			if (lscore < 1)
+			{
+				if (rscore < 1)
+				{
+					rscore = 0;
+				}
+				lscore = 0;
+			}
+			else if (rscore < 1)
+			{
+				rscore = 0;
+			}
+			else
+			{
+				/* Neither Left or right agree. Does the centre? */
+				float ave1 = rm1->mask[i1].start + rm1->mask[i1].stop;
+				float ave2 = rm2->mask[i2].start + rm2->mask[i2].stop;
+				if (fabsf(ave1-ave2) > 1)
+				{
+					/* Nothing agrees, so don't merge */
+					return 0;
+				}
+				lscore = 0;
+				rscore = 0;
+			}
+			*score += lscore + rscore;
+			/* These two regions could be merged */
+			i1++;
+			i2++;
+		}
+		count++;
+	}
+	count += rm1->len-i1 + rm2->len-i2;
+	return count;
+}
+
+static int region_mask_matches(const region_mask *rm1, const region_mask *rm2, float *score)
+{
+	int i1, i2;
+	int close = 1;
+
+	*score = 0;
+	if (fabsf(rm1->blv.x-rm2->blv.x) >= MY_EPSILON || fabsf(rm1->blv.y-rm2->blv.y) >= MY_EPSILON)
+		return 0;
+
+	for (i1 = 0, i2 = 0; i1 < rm1->len && i2 < rm2->len; )
+	{
+		if (rm1->mask[i1].stop < rm2->mask[i2].start)
+		{
+			/* rm1's region is entirely before rm2's */
+			*score += rm1->mask[i1].stop - rm1->mask[i1].start;
+			i1++;
+		}
+		else if (rm1->mask[i1].start > rm2->mask[i2].stop)
+		{
+			/* Not compatible */
+			return 0;
+		}
+		else
+		{
+			float lscore, rscore;
+			if (rm1->mask[i1].start > rm2->mask[i2].start)
+			{
+				/* Not compatible */
+				return 0;
+			}
+			if (rm1->mask[i1].stop < rm2->mask[i2].stop)
+			{
+				/* Not compatible */
+				return 0;
+			}
+			lscore = rm2->mask[i2].start - rm1->mask[i1].start;
+			rscore = rm1->mask[i1].stop - rm2->mask[i2].stop;
+			if (lscore < 1)
+			{
+				if (rscore < 1)
+					close++;
+				close++;
+			}
+			else if (rscore < 1)
+				close++;
+			else if (fabsf(lscore - rscore) < 1)
+			{
+				lscore = fabsf(lscore-rscore);
+				rscore = 0;
+				close++;
+			}
+			*score += lscore + rscore;
+			i1++;
+			i2++;
+		}
+	}
+	if (i1 < rm1->len)
+	{
+		/* Still more to go in rm1 */
+		if (rm1->mask[i1].start < rm2->mask[rm2->len-1].stop)
+			return 0;
+	}
+	else if (i2 < rm2->len)
+	{
+		/* Still more to go in rm2 */
+		if (rm2->mask[i2].start < rm1->mask[rm1->len-1].stop)
+			return 0;
+	}
+
+	return close;
+}
+
+static void region_mask_merge(region_mask *rm1, const region_mask *rm2, int newlen)
+{
+	int o, i1, i2;
+
+	/* First, ensure that rm1 is long enough */
+	if (rm1->cap < newlen)
+	{
+		int newcap = rm1->cap ? rm1->cap : 2;
+		do
+		{
+			newcap *= 2;
+		}
+		while (newcap < newlen);
+		rm1->mask = fz_resize_array(rm1->ctx, rm1->mask, newcap, sizeof(*rm1->mask));
+		rm1->cap = newcap;
+	}
+
+	/* Now run backwards along rm1, filling it out with the merged regions */
+	for (o = newlen-1, i1 = rm1->len-1, i2 = rm2->len-1; o >= 0; o--)
+	{
+		/* So we read from i1 and i2 and store in o */
+		if (i1 < 0)
+		{
+			/* Just copy i2 */
+			rm1->mask[o] = rm2->mask[i2];
+			i2--;
+		}
+		else if (i2 < 0)
+		{
+			/* Just copy i1 */
+			rm1->mask[o] = rm1->mask[i1];
+			i1--;
+		}
+		else if (rm1->mask[i1].stop < rm2->mask[i2].start)
+		{
+			/* rm1's region is entirely before rm2's - copy rm2's */
+			rm1->mask[o] = rm2->mask[i2];
+			i2--;
+		}
+		else if (rm2->mask[i2].stop < rm1->mask[i1].start)
+		{
+			/* rm2's region is entirely before rm1's - copy rm1's */
+			rm1->mask[o] = rm1->mask[i1];
+			i1--;
+		}
+		else
+		{
+			/* We must be merging */
+			rm1->mask[o].ave_start = (rm1->mask[i1].start * rm1->freq + rm2->mask[i2].start * rm2->freq)/(rm1->freq + rm2->freq);
+			rm1->mask[o].ave_stop = (rm1->mask[i1].stop * rm1->freq + rm2->mask[i2].stop * rm2->freq)/(rm1->freq + rm2->freq);
+			rm1->mask[o].start = fz_min(rm1->mask[i1].start, rm2->mask[i2].start);
+			rm1->mask[o].stop = fz_max(rm1->mask[i1].stop, rm2->mask[i2].stop);
+			i1--;
+			i2--;
+		}
+	}
+	rm1->freq += rm2->freq;
+	rm1->len = newlen;
+}
+
+static region_mask *region_masks_match(const region_masks *rms, const region_mask *rm, fz_text_line *line, region_mask *prev_match)
+{
+	int i;
+	float best_score = 9999999;
+	float score;
+	int best = -1;
+	int best_count = 0;
+
+	/* If the 'previous match' matches, use it regardless. */
+	if (prev_match && region_mask_matches(prev_match, rm, &score))
+	{
+		return prev_match;
+	}
+
+	/* Run through and find the 'most compatible' region mask. We are
+	 * guaranteed that there will always be at least one compatible one!
+	 */
+	for (i=0; i < rms->len; i++)
+	{
+		int count = region_mask_matches(rms->mask[i], rm, &score);
+		if (count > best_count || (count == best_count && (score < best_score || best == -1)))
+		{
+			best = i;
+			best_score = score;
+			best_count = count;
+		}
+	}
+	assert(best >= 0 && best < rms->len);
+
+	/* So we have the matching mask. */
+	return rms->mask[best];
+}
+
+#ifdef DEBUG_MASKS
+static void
+dump_region_mask(const region_mask *rm)
+{
+	int j;
+	for (j = 0; j < rm->len; j++)
+	{
+		printf("%g->%g ", rm->mask[j].start, rm->mask[j].stop);
+	}
+	printf("* %d\n", rm->freq);
+}
+
+static void
+dump_region_masks(const region_masks *rms)
+{
+	int i;
+
+	for (i = 0; i < rms->len; i++)
+	{
+		region_mask *rm = rms->mask[i];
+		dump_region_mask(rm);
+	}
+}
+#endif
+
+static void region_masks_add(region_masks *rms, region_mask *rm)
+{
+	/* Add rm to rms */
+	if (rms->len == rms->cap)
+	{
+		int newcap = (rms->cap ? rms->cap * 2 : 4);
+		rms->mask = fz_resize_array(rms->ctx, rms->mask, newcap, sizeof(*rms->mask));
+		rms->cap = newcap;
+	}
+	rms->mask[rms->len] = rm;
+	rms->len++;
+}
+
+static void region_masks_sort(region_masks *rms)
+{
+	int i, j;
+
+	/* First calculate sizes */
+	for (i=0; i < rms->len; i++)
+	{
+		region_mask *rm = rms->mask[i];
+		float size = 0;
+		for (j=0; j < rm->len; j++)
+		{
+			size += rm->mask[j].stop - rm->mask[j].start;
+		}
+		rm->size = size;
+	}
+
+	/* Now, sort on size */
+	/* FIXME: bubble sort - use heapsort for efficiency */
+	for (i=0; i < rms->len-1; i++)
+	{
+		for (j=i+1; j < rms->len; j++)
+		{
+			if (rms->mask[i]->size < rms->mask[j]->size)
+			{
+				region_mask *tmp = rms->mask[i];
+				rms->mask[i] = rms->mask[j];
+				rms->mask[j] = tmp;
+			}
+		}
+	}
+}
+
+static void region_masks_merge(region_masks *rms, region_mask *rm)
+{
+	int i;
+	float best_score = 9999999;
+	float score;
+	int best = -1;
+	int best_count = 0;
+
+#ifdef DEBUG_MASKS
+	printf("\nAdding:\n");
+	dump_region_mask(rm);
+	printf("To:\n");
+	dump_region_masks(rms);
+#endif
+	for (i=0; i < rms->len; i++)
+	{
+		int count = region_masks_mergeable(rms->mask[i], rm, &score);
+		if (count && (score < best_score || best == -1))
+		{
+			best = i;
+			best_count = count;
+			best_score = score;
+		}
+	}
+	if (best != -1)
+	{
+		region_mask_merge(rms->mask[best], rm, best_count);
+#ifdef DEBUG_MASKS
+		printf("Merges to give:\n");
+		dump_region_masks(rms);
+#endif
+		free_region_mask(rm);
+		return;
+	}
+	region_masks_add(rms, rm);
+#ifdef DEBUG_MASKS
+	printf("Adding new one to give:\n");
+	dump_region_masks(rms);
+#endif
+}
+
+static region_mask *
+new_region_mask(fz_context *ctx, const fz_point *blv)
+{
+	region_mask *rm = fz_malloc_struct(ctx, region_mask);
+	rm->ctx = ctx;
+	rm->freq = 1;
+	rm->blv = *blv;
+	rm->cap = 0;
+	rm->len = 0;
+	rm->mask = NULL;
+	return rm;
+}
+
+static void
+region_mask_project(const region_mask *rm, const fz_point *min, const fz_point *max, float *start, float *end)
+{
+	/* We project min and max down onto the blv */
+	float s = min->x * rm->blv.x + min->y * rm->blv.y;
+	float e = max->x * rm->blv.x + max->y * rm->blv.y;
+	if (s > e)
+	{
+		*start = e;
+		*end = s;
+	}
+	else
+	{
+		*start = s;
+		*end = e;
+	}
+}
+
+static void
+region_mask_add(region_mask *rm, const fz_point *min, const fz_point *max)
+{
+	float start, end;
+	int i, j;
+
+	region_mask_project(rm, min, max, &start, &end);
+
+	/* Now add start/end into our region list. Typically we will be adding
+	 * to the end of the region list, so search from there backwards. */
+	for (i = rm->len; i > 0;)
+	{
+		if (start > rm->mask[i-1].stop)
+			break;
+		i--;
+	}
+	/* So we know that our interval can only affect list items >= i.
+	 * We know that start is after our previous end. */
+	if (i == rm->len || end < rm->mask[i].start)
+	{
+		/* Insert new one. No overlap. No merging */
+		if (rm->len == rm->cap)
+		{
+			int newcap = (rm->cap ? rm->cap * 2 : 4);
+			rm->mask = fz_resize_array(rm->ctx, rm->mask, newcap, sizeof(*rm->mask));
+			rm->cap = newcap;
+		}
+		if (rm->len > i)
+			memmove(&rm->mask[i+1], &rm->mask[i], (rm->len - i) * sizeof(*rm->mask));
+		rm->mask[i].ave_start = start;
+		rm->mask[i].ave_stop = end;
+		rm->mask[i].start = start;
+		rm->mask[i].stop = end;
+		rm->len++;
+	}
+	else
+	{
+		/* Extend current one down. */
+		rm->mask[i].ave_start = start;
+		rm->mask[i].start = start;
+		if (rm->mask[i].stop < end)
+		{
+			rm->mask[i].stop = end;
+			rm->mask[i].ave_stop = end;
+			/* Our region may now extend upwards too far */
+			i++;
+			j = i;
+			while (j < rm->len && rm->mask[j].start <= end)
+			{
+				rm->mask[i-1].stop = end = rm->mask[j].stop;
+				j++;
+			}
+			if (i != j)
+			{
+				/* Move everything from j down to i */
+				while (j < rm->len)
+				{
+					rm->mask[i++] = rm->mask[j++];
+				}
+			}
+			rm->len -= j-i;
+		}
+	}
+}
+
+static int
+region_mask_column(region_mask *rm, const fz_point *min, const fz_point *max, int *align, float *colw)
+{
+	float start, end, left, right;
+	int i;
+
+	region_mask_project(rm, min, max, &start, &end);
+
+	for (i = 0; i < rm->len; i++)
+	{
+		/* The use of MY_EPSILON here is because we might be matching
+		 * start/end values calculated with slightly different blv's */
+		if (rm->mask[i].start - MY_EPSILON <= start && rm->mask[i].stop + MY_EPSILON >= end)
+			break;
+	}
+	if (i >= rm->len)
+	{
+		*align = 0;
+		*colw = 0;
+		return 0;
+	}
+	left = start - rm->mask[i].start;
+	right = rm->mask[i].stop - end;
+	if (left < 1 && right < 1)
+		*align = rm->mask[i].align;
+	else if (left*2 <= right)
+		*align = 0; /* Left */
+	else if (right * 2 < left)
+		*align = 2; /* Right */
+	else
+		*align = 1;
+	// *align = rm->mask[i].align;
+	*colw = rm->mask[i].colw;
+	/* Single column things return 0 */
+	if (rm->len <= 1)
+		return 0;
+	return i+1;
+}
+
+static void
+region_mask_alignment(region_mask *rm)
+{
+	int i;
+	float width = 0;
+
+	for (i = 0; i < rm->len; i++)
+	{
+		width += rm->mask[i].stop - rm->mask[i].start;
+	}
+	for (i = 0; i < rm->len; i++)
+	{
+		region *r = &rm->mask[i];
+		float left = r->ave_start - r->start;
+		float right = r->stop - r->ave_stop;
+		if (left*2 <= right)
+			r->align = 0; /* Left */
+		else if (right * 2 < left)
+			r->align = 2; /* Right */
+		else
+			r->align = 1;
+		r->colw = 100 * (rm->mask[i].stop - rm->mask[i].start) / width;
+	}
+}
+
+static void
+region_masks_alignment(region_masks *rms)
+{
+	int i;
+
+	for (i = 0; i < rms->len; i++)
+	{
+		region_mask_alignment(rms->mask[i]);
+	}
+}
+
 void
 fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
 	fz_text_block *block;
 	fz_text_line *line;
 	line_heights *lh;
+	region_masks *rms;
 	int block_num;
 
 	/* Simple paragraph analysis; look for the most common 'inter line'
@@ -1528,4 +2235,274 @@ force_paragraph:
 		}
 	}
 	free_line_heights(lh);
+
+	/* Simple line region analysis:
+	 * For each line:
+	 *    form a list of 'start/stop' points (henceforth a 'region mask')
+	 *    find the normalised baseline vector for the line.
+	 *    Store the region mask and baseline vector.
+	 * Collate lines that have compatible region masks and identical
+	 * baseline vectors.
+	 * If the collated masks are column-like, then split into columns.
+	 * Otherwise split into tables.
+	 */
+	rms = new_region_masks(ctx);
+	/* Step 1: Form the region masks and store them into a list with the
+	 * normalised baseline vectors. */
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		for (line = block->lines; line < block->lines + block->len; line++)
+		{
+			fz_point blv;
+			region_mask *rm;
+			int span_num;
+
+#ifdef DEBUG_MASKS
+			printf("Line: ");
+			dump_line(line);
+#endif
+			blv = line->spans[0]->max;
+			blv.x -= line->spans[0]->min.x;
+			blv.y -= line->spans[0]->min.y;
+			normalise(&blv);
+
+			rm = new_region_mask(ctx, &blv);
+			for (span_num = 0; span_num < line->len; span_num++)
+			{
+				fz_text_span *span = line->spans[span_num];
+				fz_point *region_min = &span->min;
+				fz_point *region_max = &span->max;
+
+				/* Treat adjacent spans as one big region */
+				while (span_num+1 < line->len && line->spans[span_num+1]->spacing < 1.5)
+				{
+					span_num++;
+					span = line->spans[span_num];
+					region_max = &span->max;
+				}
+
+				region_mask_add(rm, region_min, region_max);
+			}
+#ifdef DEBUG_MASKS
+			dump_region_mask(rm);
+#endif
+			region_masks_add(rms, rm);
+		}
+	}
+
+	/* Step 2: Sort the region_masks by size of masked region */
+	region_masks_sort(rms);
+
+#ifdef DEBUG_MASKS
+	printf("Sorted list of regions:\n");
+	dump_region_masks(rms);
+#endif
+	/* Step 3: Merge the region masks where possible (large ones first) */
+	{
+		int i;
+		region_masks *rms2;
+		rms2 = new_region_masks(ctx);
+		for (i=0; i < rms->len; i++)
+		{
+			region_mask *rm = rms->mask[i];
+			rms->mask[i] = NULL;
+			region_masks_merge(rms2, rm);
+		}
+		free_region_masks(rms);
+		rms = rms2;
+	}
+
+#ifdef DEBUG_MASKS
+	printf("Merged list of regions:\n");
+	dump_region_masks(rms);
+#endif
+
+	/* Step 4: Figure out alignment */
+	region_masks_alignment(rms);
+
+	/* Step 5: At this point, we should probably look at the region masks
+	 * to try to guess which ones represent columns on the page. With our
+	 * current code, we could only get blocks of lines that span 2 or more
+	 * columns if the PDF producer wrote text out horizontally across 2
+	 * or more columns, and we've never seen that (yet!). So we skip this
+	 * step for now. */
+
+	/* Step 6: Run through the lines again, deciding which ones fit into
+	 * which region mask. */
+	{
+	region_mask *prev_match = NULL;
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		for (line = block->lines; line < block->lines + block->len; line++)
+		{
+			fz_point blv;
+			region_mask *rm;
+			int span_num;
+			region_mask *match;
+
+			blv = line->spans[0]->max;
+			blv.x -= line->spans[0]->min.x;
+			blv.y -= line->spans[0]->min.y;
+			normalise(&blv);
+
+#ifdef DEBUG_MASKS
+			dump_line(line);
+#endif
+			rm = new_region_mask(ctx, &blv);
+			for (span_num = 0; span_num < line->len; span_num++)
+			{
+				fz_text_span *span = line->spans[span_num];
+				fz_point *region_min = &span->min;
+				fz_point *region_max = &span->max;
+
+				/* Treat adjacent spans as one big region */
+				while (span_num+1 < line->len && line->spans[span_num+1]->spacing < 1.5)
+				{
+					span_num++;
+					span = line->spans[span_num];
+					region_max = &span->max;
+				}
+
+				region_mask_add(rm, region_min, region_max);
+			}
+#ifdef DEBUG_MASKS
+			printf("Mask: ");
+			dump_region_mask(rm);
+#endif
+			match = region_masks_match(rms, rm, line, prev_match);
+			prev_match = match;
+#ifdef DEBUG_MASKS
+			printf("Matches: ");
+			dump_region_mask(match);
+#endif
+			free_region_mask(rm);
+			for (span_num = 0; span_num < line->len; )
+			{
+				fz_text_span *span = line->spans[span_num];
+				fz_point *region_min = &span->min;
+				fz_point *region_max = &span->max;
+				int sn;
+				int col, align;
+				float colw;
+
+				/* Treat adjacent spans as one big region */
+#ifdef DEBUG_ALIGN
+				dump_span(line->spans[span_num]);
+#endif
+				for (sn = span_num+1; sn < line->len && line->spans[sn]->spacing < 1.5; sn++)
+				{
+					region_max = &line->spans[sn]->max;
+#ifdef DEBUG_ALIGN
+					dump_span(line->spans[sn]);
+#endif
+				}
+				col = region_mask_column(match, region_min, region_max, &align, &colw);
+#ifdef DEBUG_ALIGN
+				printf(" = col%d colw=%g align=%d\n", col, colw, align);
+#endif
+				do
+				{
+					line->spans[span_num]->column = col;
+					line->spans[span_num]->align = align;
+					line->spans[span_num]->column_width = colw;
+					span_num++;
+				}
+				while (span_num < sn);
+			}
+			line->region = match;
+		}
+	}
+	free_region_masks(rms);
+	}
+
+	/* Step 7: Collate lines within a block that share the same region
+	 * mask. */
+	for (block = page->blocks; block < page->blocks + page->len; block++)
+	{
+		int line_num;
+		int prev_line_num;
+		int last_from = -1;
+
+		/* First merge lines. This may leave empty lines behind. */
+		for (prev_line_num = 0, line_num = 1; line_num < block->len; line_num++)
+		{
+			fz_text_line *prev_line;
+			line = &block->lines[line_num];
+			if (line->len == 0)
+				continue;
+			prev_line = &block->lines[prev_line_num];
+			if (prev_line->region == line->region)
+			{
+				int in1, in2, newlen, i, col;
+
+				/* We only merge lines if the second line
+				 * only uses 1 of the columns. */
+				col = line->spans[0]->column;
+				for (i = 1; i < line->len; i++)
+				{
+					if (col != line->spans[i]->column)
+						break;
+				}
+				if (i != line->len)
+				{
+					prev_line_num = line_num;
+					continue;
+				}
+
+				/* Merge line into prev_line */
+				newlen = prev_line->len + line->len;
+				if (newlen > prev_line->cap)
+				{
+					int newcap = prev_line->cap ? prev_line->cap : 2;
+					do
+					{
+						newcap *= 2;
+					}
+					while (newcap < newlen);
+
+					prev_line->spans = fz_resize_array(ctx, prev_line->spans, newcap, sizeof(*prev_line->spans));
+					prev_line->cap = newcap;
+				}
+
+				in1 = prev_line->len-1;
+				in2 = line->len-1;
+				prev_line->len = newlen;
+				for (; in1 >= 0 || in2 >= 0; )
+				{
+					newlen--;
+					if (in1 < 0 || (in2 >= 0 && line->spans[in2]->column >= prev_line->spans[in1]->column))
+					{
+						prev_line->spans[newlen] = line->spans[in2];
+						in2--;
+						last_from = 1;
+					}
+					else
+					{
+						prev_line->spans[newlen] = prev_line->spans[in1];
+						in1--;
+						if (last_from == 1)
+						{
+							prev_line->spans[newlen+1]->spacing = 1;
+							last_from = 0;
+						}
+					}
+				}
+
+				/* Leave line empty */
+				line->len = 0;
+			}
+			else
+				prev_line_num = line_num;
+		}
+		/* Now get rid of the empty lines */
+		for (prev_line_num = 0, line_num = 0; line_num < block->len; line_num++)
+		{
+			line = &block->lines[line_num];
+			if (line->len == 0)
+				fz_free(ctx, line->spans);
+			else
+				block->lines[prev_line_num++] = *line;
+		}
+		block->len = prev_line_num;
+	}
 }

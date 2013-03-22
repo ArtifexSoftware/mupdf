@@ -1910,6 +1910,7 @@ struct fz_text_line_s
 	/* Cached information */
 	float distance; /* Perpendicular distance from previous line */
 	fz_rect bbox;
+	void *region; /* Opaque value for matching line masks */
 };
 
 /*
@@ -1934,6 +1935,9 @@ struct fz_text_span_s
 	/* Cached information */
 	float base_offset; /* Perpendicular distance from baseline of line */
 	float spacing; /* Distance along baseline from previous span in this line (or 0 if first) */
+	int column; /* If non zero, the column that it's in */
+	float column_width; /* Percentage */
+	int align; /* 0 = left, 1 = centre, 2 = right */
 };
 
 /*
