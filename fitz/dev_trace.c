@@ -122,6 +122,8 @@ fz_trace_clip_path(fz_device *dev, fz_path *path, const fz_rect *rect, int even_
 	fz_trace_matrix(ctm);
 	if (rect)
 		printf(" contentbbox=\"%g %g %g %g\">\n", rect->x0, rect->y0, rect->x1, rect->y1);
+	else
+		printf(">\n");
 	fz_trace_path(path, 0);
 	printf("</clip_path>\n");
 }
