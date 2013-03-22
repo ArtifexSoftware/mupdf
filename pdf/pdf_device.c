@@ -436,7 +436,10 @@ pdf_dev_color(pdf_device *pdev, fz_colorspace *colorspace, float *color, int str
 	}
 
 	if (gs->colorspace[stroke] != colorspace)
+	{
 		gs->colorspace[stroke] = colorspace;
+		diff = 1;
+	}
 
 	for (i=0; i < colorspace->n; i++)
 		if (gs->color[stroke][i] != color[i])
@@ -444,6 +447,9 @@ pdf_dev_color(pdf_device *pdev, fz_colorspace *colorspace, float *color, int str
 			gs->color[stroke][i] = color[i];
 			diff = 1;
 		}
+
+	if (diff == 0)
+		return;
 
 	switch (cspace + stroke*8)
 	{
