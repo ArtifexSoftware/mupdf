@@ -24,4 +24,7 @@
     <string name="delete">Delete</string>
     <string name="highlight">Highlight</string>
     <string name="underline">Underline</string>
+    <string name="edit_annotations">Edit annotations</string>
+    <string name="ink">Ink</string>
+    <string name="save">Save</string>
 </resources>

@@ -95,15 +95,20 @@ public class MuPDFReaderView extends ReaderView {
 	}
 
 	@Override
-	public void onShowPress(MotionEvent e) {
+	public boolean onDown(MotionEvent e) {
 		switch (mMode) {
 		case Drawing:
+			MuPDFView pageView = (MuPDFView)getDisplayedView();
+			if (pageView != null)
+				pageView.startDraw(e.getX(), e.getY());
 			break;
 		}
+		return super.onDown(e);
 	}
 
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
 			float distanceY) {
+		MuPDFView pageView = (MuPDFView)getDisplayedView();
 		switch (mMode) {
 		case Viewing:
 			if (!tapDisabled)
@@ -111,11 +116,12 @@ public class MuPDFReaderView extends ReaderView {
 
 			return super.onScroll(e1, e2, distanceX, distanceY);
 		case Selecting:
-			MuPDFView pageView = (MuPDFView)getDisplayedView();
 			if (pageView != null)
 				pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
 			return true;
 		case Drawing:
+			if (pageView != null)
+				pageView.continueDraw(e2.getX(), e2.getY());
 			return true;
 		default:
 			return true;

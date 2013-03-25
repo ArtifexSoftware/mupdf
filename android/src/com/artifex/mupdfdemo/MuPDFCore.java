@@ -40,6 +40,7 @@ public class MuPDFCore
 	private native TextChar[][][][] text();
 	private native byte[] textAsHtml();
 	private native void addMarkupAnnotationInternal(PointF[] quadPoints, int type);
+	private native void addInkAnnotationInternal(PointF[][] arcs);
 	private native void deleteAnnotationInternal(int annot_index);
 	private native int passClickEventInternal(int page, float x, float y);
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
@@ -251,6 +252,11 @@ public class MuPDFCore
 	public synchronized void addMarkupAnnotation(int page, PointF[] quadPoints, Annotation.Type type) {
 		gotoPage(page);
 		addMarkupAnnotationInternal(quadPoints, type.ordinal());
+	}
+
+	public synchronized void addInkAnnotation(int page, PointF[][] arcs) {
+		gotoPage(page);
+		addInkAnnotationInternal(arcs);
 	}
 
 	public synchronized void deleteAnnotation(int page, int annot_index) {

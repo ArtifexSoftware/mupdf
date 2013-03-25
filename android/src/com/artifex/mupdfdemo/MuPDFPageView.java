@@ -59,8 +59,6 @@ class PassClickResultChoice extends PassClickResult {
 }
 
 public class MuPDFPageView extends PageView implements MuPDFView {
-	private static final float LINE_THICKNESS = 0.07f;
-	private static final float STRIKE_HEIGHT = 0.375f;
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
@@ -75,6 +73,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
 	private AsyncTask<String,Void,Void> mSetWidgetChoice;
 	private AsyncTask<PointF[],Void,Void> mAddStrikeOut;
+	private AsyncTask<PointF[][],Void,Void> mAddInk;
 	private AsyncTask<Integer,Void,Void> mDeleteAnnotation;
 	private Runnable changeReporter;
 
@@ -185,6 +184,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 				case UNDERLINE:
 				case SQUIGGLY:
 				case STRIKEOUT:
+				case INK:
 					mSelectedAnnotationIndex = i;
 					setItemSelectBox(mAnnotations[i]);
 					return Hit.Annotation;
@@ -355,6 +355,34 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	public void deselectAnnotation() {
 		mSelectedAnnotationIndex = -1;
 		setItemSelectBox(null);
+	}
+
+	public void saveDraw() {
+		PointF[][] path = getDraw();
+
+		if (path != null) {
+			if (mAddInk != null) {
+				mAddInk.cancel(true);
+				mAddInk = null;
+			}
+			mAddInk = new AsyncTask<PointF[][],Void,Void>() {
+				@Override
+				protected Void doInBackground(PointF[][]... params) {
+					mCore.addInkAnnotation(mPageNumber, params[0]);
+					return null;
+				}
+
+				@Override
+				protected void onPostExecute(Void result) {
+					loadAnnotations();
+					update();
+				}
+
+			};
+
+			mAddInk.execute(getDraw());
+			cancelDraw();
+		}
 	}
 
 	@Override

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
@@ -102,6 +103,8 @@ public abstract class PageView extends ViewGroup {
 	private static final int HIGHLIGHT_COLOR = 0x802572AC;
 	private static final int LINK_COLOR = 0x80AC7225;
 	private static final int BOX_COLOR = 0xFF4444FF;
+	private static final int INK_COLOR = 0xFFFF0000;
+	private static final float INK_THICKNESS = 10.0f;
 	private static final int BACKGROUND_COLOR = 0xFFFFFFFF;
 	private static final int PROGRESS_DIALOG_DELAY = 200;
 	protected final Context   mContext;
@@ -126,6 +129,7 @@ public abstract class PageView extends ViewGroup {
 	private       RectF     mSelectBox;
 	private       TextWord  mText[][];
 	private       RectF     mItemSelectBox;
+	protected     ArrayList<ArrayList<PointF>> mDrawing;
 	private       View      mSearchView;
 	private       boolean   mIsBlank;
 	private       boolean   mHighlightLinks;
@@ -346,6 +350,28 @@ public abstract class PageView extends ViewGroup {
 						paint.setColor(BOX_COLOR);
 						canvas.drawRect(mItemSelectBox.left*scale, mItemSelectBox.top*scale, mItemSelectBox.right*scale, mItemSelectBox.bottom*scale, paint);
 					}
+
+					if (mDrawing != null) {
+						Path path = new Path();
+						PointF p;
+						Iterator<ArrayList<PointF>> it = mDrawing.iterator();
+						while (it.hasNext()) {
+							ArrayList<PointF> arc = it.next();
+							if (arc.size() >= 2) {
+								Iterator<PointF> iit = arc.iterator();
+								p = iit.next();
+								path.moveTo(p.x*scale, p.y*scale);
+								while (iit.hasNext()) {
+									p = iit.next();
+									path.lineTo(p.x*scale, p.y*scale);
+								}
+							}
+						}
+						paint.setStyle(Paint.Style.STROKE);
+						paint.setStrokeWidth(INK_THICKNESS*scale);
+						paint.setColor(INK_COLOR);
+						canvas.drawPath(path, paint);
+					}
 				}
 			};
 
@@ -400,6 +426,49 @@ public abstract class PageView extends ViewGroup {
 
 			mGetText.execute();
 		}
+	}
+
+	public void startDraw(float x, float y) {
+		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
+		float docRelX = (x - getLeft())/scale;
+		float docRelY = (y - getTop())/scale;
+		if (mDrawing == null)
+			mDrawing = new ArrayList<ArrayList<PointF>>();
+
+		ArrayList<PointF> arc = new ArrayList<PointF>();
+		arc.add(new PointF(docRelX, docRelY));
+		mDrawing.add(arc);
+	}
+
+	public void continueDraw(float x, float y) {
+		float scale = mSourceScale*(float)getWidth()/(float)mSize.x;
+		float docRelX = (x - getLeft())/scale;
+		float docRelY = (y - getTop())/scale;
+
+		if (mDrawing != null && mDrawing.size() > 0) {
+			ArrayList<PointF> arc = mDrawing.get(mDrawing.size() - 1);
+			arc.add(new PointF(docRelX, docRelY));
+			mSearchView.invalidate();
+		}
+	}
+
+	public void cancelDraw() {
+		mDrawing = null;
+		mSearchView.invalidate();
+	}
+
+	protected PointF[][] getDraw() {
+		if (mDrawing == null)
+			return null;
+
+		PointF[][] path = new PointF[mDrawing.size()][];
+
+		for (int i = 0; i < mDrawing.size(); i++) {
+			ArrayList<PointF> arc = mDrawing.get(i);
+			path[i] = arc.toArray(new PointF[arc.size()]);
+		}
+
+		return path;
 	}
 
 	protected void processSelectedText(TextProcessor tp) {

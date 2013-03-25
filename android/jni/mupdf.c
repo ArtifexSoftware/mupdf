@@ -35,6 +35,7 @@
 #define STRIKE_HEIGHT (0.375f)
 #define UNDERLINE_HEIGHT (0.075f)
 #define LINE_THICKNESS (0.07f)
+#define INK_THICKNESS (4.0f)
 #define SMALL_FLOAT (0.00001)
 
 enum
@@ -1465,6 +1466,99 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 	fz_catch(ctx)
 	{
 		LOGE("addStrikeOutAnnotation: %s failed", ctx->error->message);
+		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
+		if (cls != NULL)
+			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_searchPage");
+		(*env)->DeleteLocalRef(env, cls);
+	}
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectArray arcs)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	fz_interactive *idoc = fz_interact(doc);
+	page_cache *pc = &glo->pages[glo->current];
+	jclass pt_cls;
+	jfieldID x_fid, y_fid;
+	int i, j, k, n;
+	fz_point *pts = NULL;
+	int *counts = NULL;
+	int total = 0;
+	float color[3];
+
+	if (idoc == NULL)
+		return;
+
+	color[0] = 1.0;
+	color[1] = 0.0;
+	color[2] = 0.0;
+
+	fz_var(pts);
+	fz_var(counts);
+	fz_try(ctx)
+	{
+		fz_annot *annot;
+		fz_matrix ctm;
+
+		float zoom = glo->resolution / 72;
+		zoom = 1.0 / zoom;
+		fz_scale(&ctm, zoom, zoom);
+		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
+		if (pt_cls == NULL) fz_throw(ctx, "FindClass");
+		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
+		if (x_fid == NULL) fz_throw(ctx, "GetFieldID(x)");
+		y_fid = (*env)->GetFieldID(env, pt_cls, "y", "F");
+		if (y_fid == NULL) fz_throw(ctx, "GetFieldID(y)");
+
+		n = (*env)->GetArrayLength(env, arcs);
+
+		counts = fz_malloc_array(ctx, n, sizeof(int));
+
+		for (i = 0; i < n; i++)
+		{
+			jobjectArray arc = (jobjectArray)(*env)->GetObjectArrayElement(env, arcs, i);
+			int count = (*env)->GetArrayLength(env, arc);
+
+			counts[i] = count;
+			total += count;
+		}
+
+		pts = fz_malloc_array(ctx, total, sizeof(fz_point));
+
+		k = 0;
+		for (i = 0; i < n; i++)
+		{
+			jobjectArray arc = (jobjectArray)(*env)->GetObjectArrayElement(env, arcs, i);
+			int count = counts[i];
+
+			for (j = 0; j < count; j++)
+			{
+				jobject pt = (*env)->GetObjectArrayElement(env, arc, j);
+
+				pts[k].x = pt ? (*env)->GetFloatField(env, pt, x_fid) : 0.0f;
+				pts[k].y = pt ? (*env)->GetFloatField(env, pt, y_fid) : 0.0f;
+				fz_transform_point(&pts[k], &ctm);
+				k++;
+			}
+		}
+
+		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_INK);
+
+		fz_set_ink_annot_list(idoc, annot, pts, counts, n, color, INK_THICKNESS);
+
+		dump_annotation_display_lists(glo);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, pts);
+		fz_free(ctx, counts);
+	}
+	fz_catch(ctx)
+	{
+		LOGE("addInkAnnotation: %s failed", ctx->error->message);
 		jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 		if (cls != NULL)
 			(*env)->ThrowNew(env, cls, "Out of memory in MuPDFCore_searchPage");

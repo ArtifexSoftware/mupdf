@@ -28,6 +28,7 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
@@ -44,7 +45,7 @@ class ThreadPerTaskExecutor implements Executor {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
-	enum TopBarMode {Main, Search, Text, Annotation};
+	enum TopBarMode {Main, Search, Text, AnnotSelect, AnnotCreate, InkCreate};
 
 	private MuPDFCore    core;
 	private String       mFileName;
@@ -68,6 +69,12 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mCancelButton;
 	private ImageButton  mOutlineButton;
 	private ImageButton  mDeleteButton;
+	private ImageButton mCancelDeleteButton;
+	private ImageButton mAnnotButton;
+	private ImageButton mCancelAnnotButton;
+	private ImageButton mInkButton;
+	private Button mSaveInkButton;
+	private ImageButton mCancelInkButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
 	private TopBarMode   mTopBarMode;
@@ -402,12 +409,12 @@ public class MuPDFActivity extends Activity
 				switch (item) {
 				case Annotation:
 					showButtons();
-					mTopBarMode = TopBarMode.Annotation;
+					mTopBarMode = TopBarMode.AnnotSelect;
 					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 					break;
 				case Widget:
 				case Nothing:
-					if (mTopBarMode == TopBarMode.Annotation) {
+					if (mTopBarMode == TopBarMode.AnnotSelect) {
 						mTopBarMode = TopBarMode.Main;
 						mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 					}
@@ -468,6 +475,13 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
+		mAnnotButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				mTopBarMode = TopBarMode.AnnotCreate;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
 		// Activate the select button
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
@@ -478,6 +492,58 @@ public class MuPDFActivity extends Activity
 		});
 
 		mCancelSelectButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.deselectText();
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
+				mTopBarMode = TopBarMode.AnnotCreate;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mInkButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				mDocView.setMode(MuPDFReaderView.Mode.Drawing);
+				mTopBarMode = TopBarMode.InkCreate;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mCancelInkButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.cancelDraw();
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
+				mTopBarMode = TopBarMode.AnnotCreate;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mSaveInkButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.saveDraw();
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mCancelDeleteButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				if (pageView != null)
+					pageView.deselectAnnotation();
+				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
+				mTopBarMode = TopBarMode.Main;
+				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+			}
+		});
+
+		mCancelAnnotButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 				if (pageView != null)
@@ -897,6 +963,12 @@ public class MuPDFActivity extends Activity
 		mCancelButton = (ImageButton)mButtonsView.findViewById(R.id.cancel);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
 		mDeleteButton = (ImageButton)mButtonsView.findViewById(R.id.deleteButton);
+		mCancelDeleteButton = (ImageButton)mButtonsView.findViewById(R.id.cancelDeleteButton);
+		mAnnotButton = (ImageButton)mButtonsView.findViewById(R.id.annotButton);
+		mCancelAnnotButton = (ImageButton)mButtonsView.findViewById(R.id.cancelAnnotButton);
+		mInkButton = (ImageButton)mButtonsView.findViewById(R.id.inkButton);
+		mSaveInkButton = (Button)mButtonsView.findViewById(R.id.saveInkButton);
+		mCancelInkButton = (ImageButton)mButtonsView.findViewById(R.id.cancelInkButton);
 		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
