@@ -244,7 +244,6 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 		}
 		fz_catch(ctx)
 		{
-			store->size -= itemsize;
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
 			fz_free(ctx, item);
 			type->drop_key(ctx, key);
