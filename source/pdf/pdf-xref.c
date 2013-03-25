@@ -1550,3 +1550,48 @@ pdf_document *pdf_specifics(fz_document *doc)
 {
 	return (pdf_document *)(doc->close == (void *)pdf_close_document ? doc : NULL);
 }
+
+pdf_document *pdf_create_document(fz_context *ctx)
+{
+	pdf_document *xref;
+	pdf_obj *o = NULL;
+	pdf_obj *root;
+	pdf_obj *pages;
+	pdf_obj *trailer = NULL;
+
+	fz_var(o);
+	fz_var(trailer);
+
+	xref = pdf_new_document(ctx, NULL);
+	fz_try(ctx)
+	{
+		xref->version = 14;
+		xref->file_size = 0;
+		xref->startxref = 0;
+		xref->num_xref_sections = 0;
+		pdf_get_populating_xref_entry(xref, 0);
+		xref->xref_altered = 1;
+		trailer = pdf_new_dict(ctx, 2);
+		pdf_dict_puts_drop(trailer, "Size", pdf_new_int(ctx, 3));
+		o = root = pdf_new_dict(ctx, 2);
+		pdf_dict_puts_drop(trailer, "Root", pdf_new_ref(xref, o));
+		pdf_drop_obj(o);
+		o = NULL;
+		pdf_dict_puts_drop(root, "Type", pdf_new_name(ctx, "Catalog"));
+		o = pages = pdf_new_dict(ctx, 3);
+		pdf_dict_puts_drop(root, "Pages", pdf_new_ref(xref, o));
+		pdf_drop_obj(o);
+		o = NULL;
+		pdf_dict_puts_drop(pages, "Type", pdf_new_name(ctx, "Pages"));
+		pdf_dict_puts_drop(pages, "Count", pdf_new_int(ctx, 0));
+		pdf_dict_puts_drop(pages, "Kids", pdf_new_array(ctx, 1));
+		pdf_set_populating_xref_trailer(xref, trailer);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(trailer);
+		pdf_drop_obj(o);
+		fz_rethrow_message(ctx, "Failed to create empty document");
+	}
+	return xref;
+}

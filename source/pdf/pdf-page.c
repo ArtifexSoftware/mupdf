@@ -487,3 +487,132 @@ pdf_free_page(pdf_document *xref, pdf_page *page)
 	pdf_drop_obj(page->me);
 	fz_free(xref->ctx, page);
 }
+
+void
+pdf_delete_page(pdf_document *xref, int page)
+{
+	pdf_delete_page_range(xref, page, page+1);
+}
+
+void
+pdf_delete_page_range(pdf_document *xref, int start, int end)
+{
+	int i;
+
+	if (start > end)
+	{
+		int tmp = start;
+		start = end;
+		end = tmp;
+	}
+
+	if (!xref || start >= xref->page_len || end < 0)
+		return;
+
+	for (i=start; i < end; i++)
+		pdf_drop_obj(xref->page_refs[i]);
+	if (xref->page_len > end)
+	{
+		memmove(&xref->page_refs[start], &xref->page_refs[end], sizeof(pdf_page *) * (xref->page_len - end + start));
+		memmove(&xref->page_refs[start], &xref->page_refs[end], sizeof(pdf_page *) * (xref->page_len - end + start));
+	}
+
+	xref->page_len -= end - start;
+	xref->needs_page_tree_rebuild = 1;
+}
+
+void
+pdf_insert_page(pdf_document *xref, pdf_page *page, int at)
+{
+	if (!xref || !page)
+		return;
+	if (at < 0)
+		at = 0;
+	if (at > xref->page_len)
+		at = xref->page_len;
+
+	if (xref->page_len + 1 >= xref->page_cap)
+	{
+		int newmax = xref->page_cap * 2;
+		if (newmax == 0)
+			newmax = 4;
+		xref->page_refs = fz_resize_array(xref->ctx, xref->page_refs, newmax, sizeof(pdf_page *));
+		xref->page_objs = fz_resize_array(xref->ctx, xref->page_objs, newmax, sizeof(pdf_page *));
+		xref->page_cap = newmax;
+	}
+	if (xref->page_len > at)
+	{
+		memmove(&xref->page_objs[at+1], &xref->page_objs[at], xref->page_len - at);
+		memmove(&xref->page_refs[at+1], &xref->page_refs[at], xref->page_len - at);
+	}
+
+	xref->page_len++;
+	xref->page_objs[at] = pdf_keep_obj(page->me);
+	xref->page_refs[at] = NULL;
+	xref->page_refs[at] = pdf_new_ref(xref, page->me);
+	xref->needs_page_tree_rebuild = 1;
+}
+
+pdf_page *
+pdf_create_page(pdf_document *xref, fz_rect mediabox, int res, int rotate)
+{
+	pdf_page *page = NULL;
+	pdf_obj *pageobj, *obj;
+	float userunit = 1;
+	fz_context *ctx = xref->ctx;
+	fz_matrix ctm, tmp;
+	fz_rect realbox;
+
+	page = fz_malloc_struct(ctx, pdf_page);
+	obj = NULL;
+	fz_var(obj);
+
+	fz_try(ctx)
+	{
+		page->resources = NULL;
+		page->contents = NULL;
+		page->transparency = 0;
+		page->links = NULL;
+		page->annots = NULL;
+		page->me = pageobj = pdf_new_dict(ctx, 4);
+
+		pdf_dict_puts_drop(pageobj, "Type", pdf_new_name(ctx, "Page"));
+
+		page->mediabox.x0 = fz_min(mediabox.x0, mediabox.x1) * userunit;
+		page->mediabox.y0 = fz_min(mediabox.y0, mediabox.y1) * userunit;
+		page->mediabox.x1 = fz_max(mediabox.x0, mediabox.x1) * userunit;
+		page->mediabox.y1 = fz_max(mediabox.y0, mediabox.y1) * userunit;
+		pdf_dict_puts_drop(pageobj, "MediaBox", pdf_new_rect(ctx, &page->mediabox));
+
+		/* Snap page->rotate to 0, 90, 180 or 270 */
+		if (page->rotate < 0)
+			page->rotate = 360 - ((-page->rotate) % 360);
+		if (page->rotate >= 360)
+			page->rotate = page->rotate % 360;
+		page->rotate = 90*((page->rotate + 45)/90);
+		if (page->rotate > 360)
+			page->rotate = 0;
+		pdf_dict_puts_drop(pageobj, "Rotate", pdf_new_int(ctx, page->rotate));
+
+		fz_pre_rotate(fz_scale(&ctm, 1, -1), -page->rotate);
+		realbox = page->mediabox;
+		fz_transform_rect(&realbox, &ctm);
+		fz_pre_scale(fz_translate(&tmp, -realbox.x0, -realbox.y0), userunit, userunit);
+		fz_concat(&ctm, &ctm, &tmp);
+		page->ctm = ctm;
+		obj = pdf_new_dict(ctx, 4);
+		page->contents = pdf_new_ref(xref, obj);
+		pdf_drop_obj(obj);
+		obj = NULL;
+		pdf_dict_puts(pageobj, "Contents", page->contents);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(page->me);
+		pdf_drop_obj(obj);
+		fz_free(ctx, page);
+		fz_rethrow_message(ctx, "Failed to create page");
+	}
+
+	return page;
+}

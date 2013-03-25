@@ -191,6 +191,7 @@ struct pdf_document_s
 	pdf_obj **page_objs;
 	pdf_obj **page_refs;
 	int resources_localised;
+	int needs_page_tree_rebuild;
 
 	pdf_lexbuf_large lexbuf;
 
@@ -205,5 +206,26 @@ struct pdf_document_s
 	pdf_doc_event_cb *event_cb;
 	void *event_cb_data;
 };
+
+/*
+	PDF creation
+*/
+
+/*
+	pdf_create_document: Create a blank PDF document
+*/
+pdf_document *pdf_create_document(fz_context *ctx);
+
+pdf_page *pdf_create_page(pdf_document *doc, fz_rect rect, int res, int rotate);
+
+void pdf_insert_page(pdf_document *doc, pdf_page *page, int at);
+
+void pdf_delete_page(pdf_document *doc, int number);
+
+void pdf_delete_page_range(pdf_document *doc, int start, int end);
+
+fz_device *pdf_page_write(pdf_document *doc, pdf_page *page);
+
+void pdf_finish_edit(pdf_document *doc);
 
 #endif

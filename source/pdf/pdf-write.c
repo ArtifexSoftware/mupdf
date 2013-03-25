@@ -2223,12 +2223,16 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 	int num;
 	pdf_write_options opts = { 0 };
 	fz_context *ctx;
-	int xref_len = pdf_xref_len(xref);
+	int xref_len;
 
 	if (!xref)
 		return;
 
 	ctx = xref->ctx;
+
+	pdf_finish_edit(xref);
+
+	xref_len = pdf_xref_len(xref);
 
 	opts.out = fopen(filename, "wb");
 	if (!opts.out)
@@ -2360,4 +2364,96 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 	{
 		fz_rethrow(ctx);
 	}
+}
+
+#define KIDS_PER_LEVEL 32
+
+static pdf_obj *
+make_page_tree_node(pdf_document *xref, int l, int r, pdf_obj *parent_ref, int root)
+{
+	fz_context *ctx = xref->ctx;
+	int count_per_kid, spaces;
+	pdf_obj *a = NULL;
+	pdf_obj *me = NULL;
+	pdf_obj *o = NULL;
+	pdf_obj *me_ref = NULL;
+
+	count_per_kid = 1;
+	while(count_per_kid * KIDS_PER_LEVEL < r-l)
+		count_per_kid *= KIDS_PER_LEVEL;
+
+	fz_var(o);
+	fz_var(me);
+	fz_var(a);
+	fz_var(me_ref);
+
+	fz_try(ctx)
+	{
+		me = pdf_new_dict(ctx, 2);
+		pdf_dict_puts_drop(me, "Type", pdf_new_name(ctx, "Pages"));
+		pdf_dict_puts_drop(me, "Count", pdf_new_int(ctx, r-l));
+		if (!root)
+			pdf_dict_puts(me, "Parent", parent_ref);
+		a = pdf_new_array(ctx, KIDS_PER_LEVEL);
+		me_ref = pdf_new_ref(xref, me);
+
+		for (spaces = KIDS_PER_LEVEL; l < r; spaces--)
+		{
+			if (spaces >= r-l)
+			{
+				o = pdf_keep_obj(xref->page_refs[l++]);
+				pdf_dict_puts(o, "Parent", me_ref);
+			}
+			else
+			{
+				int j = l+count_per_kid;
+				if (j > r)
+					j = r;
+				o = make_page_tree_node(xref, l, j, me_ref, 0);
+				l = j;
+			}
+			pdf_array_push(a, o);
+			pdf_drop_obj(o);
+			o = NULL;
+		}
+		pdf_dict_puts_drop(me, "Kids", a);
+		a = NULL;
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(me);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(a);
+		pdf_drop_obj(o);
+		pdf_drop_obj(me);
+		fz_rethrow_message(ctx, "Failed to synthesize new page tree");
+	}
+	return me_ref;
+}
+
+static void
+pdf_rebuild_page_tree(pdf_document *xref)
+{
+	pdf_obj *catalog;
+	pdf_obj *pages;
+
+	if (!xref || !xref->needs_page_tree_rebuild)
+		return;
+
+	catalog = pdf_dict_gets(pdf_trailer(xref), "Root");
+	pages = make_page_tree_node(xref, 0, xref->page_len, catalog, 1);
+	pdf_dict_puts_drop(catalog, "Pages", pages);
+
+	xref->needs_page_tree_rebuild = 0;
+}
+
+
+void pdf_finish_edit(pdf_document *xref)
+{
+	if (!xref)
+		return;
+
+	pdf_rebuild_page_tree(xref);
 }

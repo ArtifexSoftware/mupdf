@@ -118,6 +118,9 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 	int bpc = 8;
 	fz_colorspace *colorspace = image->colorspace;
 
+	/* If we can maintain compression, do so */
+	cbuffer = image->buffer;
+
 	fz_var(pixmap);
 	fz_var(buffer);
 	fz_var(imobj);
@@ -125,7 +128,12 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 
 	fz_try(ctx)
 	{
-		if (cbuffer == NULL)
+		if (cbuffer != NULL && cbuffer->params.type != FZ_IMAGE_PNG && cbuffer->params.type != FZ_IMAGE_TIFF)
+		{
+			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
+			cp = &cbuffer->params;
+		}
+		else
 		{
 			unsigned int size;
 			int n;
@@ -155,11 +163,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 						s++, mod = n;
 				}
 			}
-		}
-		else
-		{
-			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
-			cp = &cbuffer->params;
 		}
 
 		fz_md5_init(&state);
@@ -202,9 +205,11 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 			pdf_dict_puts_drop(imobj, "ColorSpace", pdf_new_name(ctx, "DeviceRGB"));
 		else if (colorspace->n == 4)
 			pdf_dict_puts_drop(imobj, "ColorSpace", pdf_new_name(ctx, "DeviceCMYK"));
+		if (!mask)
+			pdf_dict_puts_drop(imobj, "BitsPerComponent", pdf_new_int(ctx, image->bpc));
 		switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
 		{
-		case FZ_IMAGE_UNKNOWN:
+		case FZ_IMAGE_UNKNOWN: /* Unknown also means raw */
 		default:
 			break;
 		case FZ_IMAGE_JPEG:
@@ -251,6 +256,7 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 			if (cp->u.flate.bpc)
 				bpc = cp->u.flate.bpc;
 			pdf_dict_puts(imobj, "Filter", pdf_new_name(ctx, "FlateDecode"));
+			pdf_dict_puts_drop(imobj, "BitsPerComponent", pdf_new_int(ctx, image->bpc));
 			break;
 		case FZ_IMAGE_LZW:
 			if (cp->u.lzw.columns)
@@ -279,8 +285,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 			int smasknum = send_image(pdev, image->mask, 0, 1);
 			pdf_dict_puts(imobj, "SMask", pdev->images[smasknum].ref);
 		}
-		if (bpc)
-			pdf_dict_puts_drop(imobj, "BitsPerComponent", pdf_new_int(ctx, bpc));
 
 		imref = pdf_new_ref(pdev->xref, imobj);
 		pdf_update_stream(pdev->xref, pdf_to_num(imref), buffer);
@@ -371,23 +375,23 @@ pdf_dev_path(pdf_device *pdev, fz_path *path)
 		case FZ_MOVETO:
 			x = path->items[i++].v;
 			y = path->items[i++].v;
-			fz_buffer_printf(ctx, gs->buf, "%g %g m\n", x, y);
+			fz_buffer_printf(ctx, gs->buf, "%f %f m\n", x, y);
 			break;
 		case FZ_LINETO:
 			x = path->items[i++].v;
 			y = path->items[i++].v;
-			fz_buffer_printf(ctx, gs->buf, "%g %g l\n", x, y);
+			fz_buffer_printf(ctx, gs->buf, "%f %f l\n", x, y);
 			break;
 		case FZ_CURVETO:
 			x = path->items[i++].v;
 			y = path->items[i++].v;
-			fz_buffer_printf(ctx, gs->buf, "%g %g ", x, y);
+			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
 			x = path->items[i++].v;
 			y = path->items[i++].v;
-			fz_buffer_printf(ctx, gs->buf, "%g %g ", x, y);
+			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
 			x = path->items[i++].v;
 			y = path->items[i++].v;
-			fz_buffer_printf(ctx, gs->buf, "%g %g c\n", x, y);
+			fz_buffer_printf(ctx, gs->buf, "%f %f c\n", x, y);
 			break;
 		case FZ_CLOSE_PATH:
 			fz_buffer_printf(ctx, gs->buf, "h\n");
@@ -589,7 +593,7 @@ pdf_dev_font(pdf_device *pdev, fz_font *font, float size)
 		}
 		pdev->num_fonts++;
 	}
-	fz_buffer_printf(ctx, gs->buf, "/F%d %g Tf\n", i, size);
+	fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", i, size);
 }
 
 static void
@@ -677,7 +681,7 @@ pdf_dev_text(pdf_device *pdev, fz_text *text)
 		fz_transform_point(&delta, &inverse);
 		if (delta.x != 0 || delta.y != 0)
 		{
-			fz_buffer_printf(pdev->ctx, gs->buf, "%g %g Td ", delta.x, delta.y);
+			fz_buffer_printf(pdev->ctx, gs->buf, "%f %f Td ", delta.x, delta.y);
 			trm.e = it->x;
 			trm.f = it->y;
 		}
@@ -901,6 +905,9 @@ pdf_dev_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
 	pdf_dev_font(pdev, text->font, 1);
+	pdf_dev_ctm(pdev, ctm);
+	pdf_dev_alpha(pdev, alpha, 0);
+	pdf_dev_color(pdev, colorspace, color, 0);
 	pdf_dev_text(pdev, text);
 }
 
@@ -912,6 +919,9 @@ pdf_dev_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, cons
 
 	pdf_dev_begin_text(pdev, &text->trm, 1);
 	pdf_dev_font(pdev, text->font, 1);
+	pdf_dev_ctm(pdev, ctm);
+	pdf_dev_alpha(pdev, alpha, 1);
+	pdf_dev_color(pdev, colorspace, color, 1);
 	pdf_dev_text(pdev, text);
 }
 
@@ -921,6 +931,7 @@ pdf_dev_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accum
 	pdf_device *pdev = dev->user;
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
+	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_font(pdev, text->font, 7);
 	pdf_dev_text(pdev, text);
 }
@@ -932,6 +943,7 @@ pdf_dev_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
 	pdf_dev_font(pdev, text->font, 5);
+	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_text(pdev, text);
 }
 
@@ -941,6 +953,7 @@ pdf_dev_ignore_text(fz_device *dev, fz_text *text, const fz_matrix *ctm)
 	pdf_device *pdev = dev->user;
 
 	pdf_dev_begin_text(pdev, &text->trm, 0);
+	pdf_dev_ctm(pdev, ctm);
 	pdf_dev_font(pdev, text->font, 3);
 	pdf_dev_text(pdev, text);
 }
@@ -955,13 +968,12 @@ pdf_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 
 	pdf_dev_end_text(pdev);
 	num = send_image(pdev, image, 0, 0);
-	fz_buffer_printf(dev->ctx, gs->buf, "q\n");
 	pdf_dev_alpha(pdev, alpha, 0);
 	/* PDF images are upside down, so fiddle the ctm */
 	fz_pre_scale(&local_ctm, 1, -1);
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(pdev, &local_ctm);
-	fz_buffer_printf(dev->ctx, gs->buf, "/Img%d Do Q\n", num);
+	fz_buffer_printf(dev->ctx, gs->buf, "/Img%d Do\n", num);
 }
 
 static void
@@ -1169,8 +1181,6 @@ pdf_dev_free_user(fz_device *dev)
 
 	pdf_dict_puts_drop(pdev->contents, "Length", pdf_new_int(ctx, gs->buf->len));
 
-	pdf_update_stream(pdev->xref, pdf_to_num(pdev->contents), gs->buf);
-
 	for (i = pdev->num_gstates-1; i >= 0; i--)
 	{
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
@@ -1185,6 +1195,9 @@ pdf_dev_free_user(fz_device *dev)
 	{
 		pdf_drop_obj(pdev->images[i].ref);
 	}
+
+	pdf_update_stream(pdev->xref, pdf_to_num(pdev->contents), pdev->gstates[0].buf);
+	fz_drop_buffer(ctx, pdev->gstates[0].buf);
 
 	pdf_drop_obj(pdev->contents);
 	pdf_drop_obj(pdev->resources);
@@ -1260,4 +1273,18 @@ fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *res
 	dev->end_tile = pdf_dev_end_tile;
 
 	return dev;
+}
+
+fz_device *pdf_page_write(pdf_document *doc, pdf_page *page)
+{
+	pdf_obj *resources = pdf_dict_gets(page->me, "Resources");
+	fz_matrix ctm;
+	fz_pre_translate(fz_scale(&ctm, 1, -1), 0, page->mediabox.y0-page->mediabox.y1);
+	if (resources == NULL)
+	{
+		resources = pdf_new_dict(doc->ctx, 0);
+		pdf_dict_puts_drop(page->me, "Resources", resources);
+	}
+
+	return pdf_new_pdf_device(doc, page->contents, resources, &ctm);
 }
