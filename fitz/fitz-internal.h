@@ -1228,6 +1228,12 @@ void fz_set_markup_annot_quadpoints(fz_interactive *idoc, fz_annot *annot, fz_po
 void fz_set_markup_appearance(fz_interactive *idoc, fz_annot *annot, float color[3], float alpha, float line_thickness, float line_height);
 
 /*
+	fz_set_ink_annot_list: set the details of an ink annotation. All the points of the multiple arcs
+	are carried in a single array, with the counts for each arc held in a secondary array.
+*/
+void fz_set_ink_annot_list(fz_interactive *idoc, fz_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness);
+
+/*
  * Text buffer.
  *
  * The trm field contains the a, b, c and d coefficients.
