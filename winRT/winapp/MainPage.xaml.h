@@ -112,6 +112,7 @@ namespace winapp
         bool m_update_flip;
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void OpenDocumentPrep(StorageFile^ file);
         void OpenDocument(StorageFile^ file);
         task<int> RenderRange(int curr_page, int *height, int *width);
         void CleanUp();
@@ -147,5 +148,6 @@ namespace winapp
         void InitThumbnails();
         void RenderThumbs();
         void SetThumb(int page_num);
+        void ReleasePages(int old_page, int new_page);
     };
 }
