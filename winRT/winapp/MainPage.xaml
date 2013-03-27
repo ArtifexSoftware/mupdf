@@ -60,7 +60,8 @@
         <Grid x:Name="xaml_MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="GridSizeChanged">
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" DoubleTapped="Canvas_Double" 
                     ManipulationDelta="Canvas_ManipulationDelta" ManipulationStarted="Canvas_ManipulationStarted" 
-                    ManipulationStarting="Canvas_ManipulationStarting" ManipulationCompleted="Canvas_ManipulationCompleted"  ManipulationMode="All">
+                    ManipulationStarting="Canvas_ManipulationStarting" ManipulationCompleted="Canvas_ManipulationCompleted" 
+                    ManipulationMode="All">
                 <FlipView x:Name="xaml_horiz_flipView" SelectionChanged="FlipView_SelectionChanged" DoubleTapped="FlipView_Double" VerticalAlignment="Center"
                           HorizontalAlignment="Center">
                     <FlipView.ItemsPanel>

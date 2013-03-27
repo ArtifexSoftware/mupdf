@@ -23,7 +23,13 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
-//using namespace winapp::DataBinding;
+
+typedef enum {
+    REN_AVAILABLE = 0,
+    REN_THUMBS,
+    REN_UPDATE_THUMB_CANVAS,
+    REN_PAGE            /* Used to ignore value when source based setting */  
+} RenderingStatus_t;
 
 typedef struct SearchResult_s
 {
@@ -36,6 +42,21 @@ typedef struct RectSize_s
     float width;
     float height;
 } RectSize;
+
+typedef struct spatial_info_s
+{
+    RectSize size;   
+    double scale_factor;
+} spatial_info_t;
+
+typedef struct thumbs_s
+{
+    Array<InMemoryRandomAccessStream^>^ raster;  
+    Array<double>^ scale;
+    Array<Point>^  size;
+    Array<Canvas^>^ canvas_v;
+    Array<Canvas^>^ canvas_h;
+} thumbs_t;
 
 namespace winapp
 {
@@ -64,10 +85,10 @@ namespace winapp
         int m_search_rect_count;
         Point m_display_size;
         cancellation_token_source m_searchcts;
+        cancellation_token_source m_thumbcts;
         long long m_memory_use;
         double m_curr_zoom;
         Point m_zoom_size;
-        fz_document *m_doc; 
         Point m_touchpoint;
         Point m_canvas_translate;
         Windows::UI::Input::ManipulationDelta m_changes;
@@ -77,17 +98,22 @@ namespace winapp
         ImageBrush^ m_zoomedImage;
         SolidColorBrush^ m_color_brush; 
         FlipView^ m_curr_flipView;
+        thumbs_t m_thumbnails;
+        RenderingStatus_t m_ren_status;
+        int m_thumb_page_start;
+        int m_thumb_page_stop;
+        cancellation_token_source m_ThumbCancel;
         bool m_zoom_mode;
         bool m_from_doubleflip;
         bool m_scaling_occured;
-        bool m_insearch;
+        bool m_insearch;  /* Used for UI display */
+        bool m_search_active;  /* Used to avoid multiple UI clicks */
         bool m_sliderchange;
         bool m_update_flip;
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocument(StorageFile^ file);
-        void RenderPage(fz_document *doc, fz_page *page, int *width, int *height, double scale);
-        void RenderRange(int curr_page, int *height, int *width);
+        task<int> RenderRange(int curr_page, int *height, int *width);
         void CleanUp();
         void AddPage(int page_num);
         void ReplacePage(int page_num);
@@ -98,8 +124,6 @@ namespace winapp
         void NotifyUserFileNotExist();
         void SetupZoomCanvas();
         RectSize currPageSize(int page);
-        void Prepare_bmp(int width, int height, DataWriter ^dw);
-        void PixToMemStream(fz_pixmap *pix, DataWriter ^dw, Platform::Array<unsigned char> ^arr);
         void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
@@ -117,7 +141,11 @@ namespace winapp
         void GridSizeChanged();
         void UpDatePageSizes();
         void ShowThumbnail();
-        void PageSize(fz_document *doc, fz_page *page, int *width, int *height, double scale_factor);
         void Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
+        void AddThumbNail(int page_num, FlipView^ flip_view);
+        spatial_info_t InitSpatial(double scale);
+        void InitThumbnails();
+        void RenderThumbs();
+        void SetThumb(int page_num);
     };
 }
