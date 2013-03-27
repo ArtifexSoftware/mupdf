@@ -54,13 +54,13 @@ extern "C" {
     // The IsMainThread function returns true if the current thread is the app's main thread and false otherwise.
     bool IsMainThread()
     {
-        return (_mainThreadId == 0U || _mainThreadId == GetCurrentThreadId());
+        return (_mainThreadId == GetCurrentThreadId());
     }
 
     // The IsBackgroundThread function returns false if the current thread is the app's main thread and true otherwise.
     bool IsBackgroundThread()
     {
-        return (_mainThreadId == 0U || _mainThreadId != GetCurrentThreadId());
+        return (_mainThreadId != GetCurrentThreadId());
     }
 
     // The RecordMainThread function registers the main thread ID for use by the IsMainThread and IsBackgroundThread functions.
@@ -132,9 +132,7 @@ void winapp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Route
 	{ 
 		if (file) 
 		{ 		
-            this->OpenDocument(file);
-            /* File selected.  Start rendering and switch view. */
-			//txtBlockOutput->Text = "Picked photo: " + file->Name;
+            this->OpenDocumentPrep(file);
 		} 
 		else 
 		{ 
@@ -226,6 +224,25 @@ void Prepare_bmp(int width, int height, DataWriter ^dw)
     dw->WriteInt32(2835);
     dw->WriteInt32(0);
     dw->WriteInt32(0);
+}
+
+void MainPage::ReleasePages(int old_page, int new_page)
+{
+    /* To keep from having memory issue reset the page back to 
+        the thumb if we are done rendering the thumbnails */
+    if (this->m_thumb_page_start == this->m_num_pages)
+    {
+        for (int k = old_page - LOOK_AHEAD; k <= old_page + LOOK_AHEAD; k++) 
+        {
+            if (k < new_page - LOOK_AHEAD || k > new_page + LOOK_AHEAD) 
+            {
+                if (k >= 0 && k < this->m_num_pages)
+                {
+                    SetThumb(k);
+                }
+            }
+        }
+    }
 }
 
 void MainPage::InitThumbnails()
@@ -469,6 +486,54 @@ InMemoryRandomAccessStream^ RenderBitMap(fz_document *doc, fz_page *page, int *w
     return ras;
 }
 
+task<Canvas^> RenderPage_Task(fz_document *doc, int page_num, int *width, int *height, 
+                   spatial_info_t spatial_info, ImageBrush^ *renderedImage)
+{
+    fz_page *page = fz_load_page(doc, page_num);
+    int width_val, height_val;
+    auto p = std::make_shared<std::pair<int,int>>(-1,-1);
+
+    /* This will launch rendering on another thread */
+    auto t = create_task([spatial_info, page_num, doc, page, width, height, p]()-> InMemoryRandomAccessStream^
+    {
+        InMemoryRandomAccessStream^ ras;
+
+        /* Get raster bitmap stream */
+        ras = RenderBitMap(doc, page, &(p->first), &(p->second), spatial_info);
+        *width = p->first;
+        *height = p->second;
+
+        return ras;
+    });
+    return t.then([renderedImage, doc, page, p](task<InMemoryRandomAccessStream^> the_task) 
+    {
+        /* And store in a new image brush.  Note: creation of WriteableBitmap
+           MUST be done by the UI thread. */
+        InMemoryRandomAccessStream^ ras;
+
+        assert(IsMainThread);
+        try
+        {
+           ras = the_task.get();
+        } 
+        catch (const task_canceled& e)
+        {
+            return (Canvas^) nullptr;
+        }
+        WriteableBitmap ^bmp = ref new WriteableBitmap(p->first, p->second);
+        bmp->SetSource(ras);
+        *renderedImage = ref new ImageBrush();
+        (*renderedImage)->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+        (*renderedImage)->ImageSource = bmp;
+        Canvas^ ret_Canvas = ref new Canvas();
+        ret_Canvas->Width = p->first;
+        ret_Canvas->Height = p->second;
+        ret_Canvas->Background = *renderedImage;
+        fz_free_page(doc, page);
+        return ret_Canvas;
+    }, task_continuation_context::use_current());
+}
+
 Canvas^ RenderPage(fz_document *doc, fz_page *page, int *width, int *height, 
                    spatial_info_t spatial_info, ImageBrush^ *renderedImage)
 {
@@ -629,7 +694,9 @@ void winapp::MainPage::RenderThumbs()
                 from race conditions.  Creation of bmp has to be done in ui thread */
             FlipViewItem ^flipview_temp_v = (FlipViewItem^) xaml_vert_flipView->Items->GetAt(k);
             FlipViewItem ^flipview_temp_h = (FlipViewItem^) xaml_horiz_flipView->Items->GetAt(k);
-            if (flipview_temp_h->Background != nullptr) 
+            FlipViewItem ^flipview_temp_curr = (FlipViewItem^) m_curr_flipView->Items->GetAt(k);
+
+            if (flipview_temp_curr->Background != nullptr) 
             {
                 WriteableBitmap ^bmp = ref new WriteableBitmap(m_thumbnails.size[k].Y, m_thumbnails.size[k].X);
                 bmp->SetSource(m_thumbnails.raster[k]);
@@ -653,6 +720,38 @@ void winapp::MainPage::RenderThumbs()
     }, task_continuation_context::use_current());
 }
 
+void winapp::MainPage::OpenDocumentPrep(StorageFile^ file)
+{
+    if (this->m_num_pages != -1) 
+    {
+        /* If the thumbnail thread is running then we need to end that first */
+        RenderingStatus_t *ren_status = &m_ren_status;
+        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
+
+        /* Create a task to wait until the renderer is available, then clean up then open */
+        auto t = create_task([ren_status, ThumbCancel]()->int
+        {
+            if (*ren_status == REN_THUMBS) {
+                ThumbCancel->cancel();
+                while (*ren_status == REN_THUMBS) {
+                }
+            } 
+            return 0;
+        }).then([this](task<int> the_task)
+        {
+            CleanUp();
+            return 0;
+        }, task_continuation_context::use_current()).then([this, file](task<int> the_task)
+        {
+            OpenDocument(file);    
+        }, task_continuation_context::use_current());
+    }
+    else
+    {
+        OpenDocument(file);    
+    }
+}
+
 void winapp::MainPage::OpenDocument(StorageFile^ file)
 {
     String^ path = file->Path;
@@ -662,29 +761,6 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
 
     WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,name ,cb ,nullptr, nullptr);
     char *ext = strrchr(name, '.');
-
-    if (this->m_num_pages != -1) 
-    {
-        /* If the thumbnail thread is running then we need to end that first */
-        RenderingStatus_t *ren_status = &m_ren_status;
-        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-
-        /* Create a task to wait until the renderer is available */
-        auto t = create_task([ren_status, ThumbCancel]()->int
-        {
-            if (*ren_status == REN_THUMBS) {
-                ThumbCancel->cancel();
-                while (*ren_status == REN_THUMBS) {
-                }
-            } 
-            return 0;
-        });
-
-        t.then([this](task<int> the_task)
-        {
-            CleanUp();
-        }, task_continuation_context::use_current());
-    }
         
     this->SetupZoomCanvas();
     auto ui = task_continuation_context::use_current();
@@ -826,7 +902,7 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
 
         /* Check if thumb rendering is done.  If not then restart */
         if (this->m_num_pages != this->m_thumb_page_start)
-            this->RenderThumbs();
+           // this->RenderThumbs();
         return val;
     }, task_continuation_context::use_current());
 }
@@ -917,21 +993,7 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
             task<int> task = this->RenderRange(pos, &height, &width);
             task.then([this, curr_page, pos](int val)
             {
-                /* To keep from having memory issue reset the page back to 
-                   the thumb if we are done rendering the thumbnails */
-                if (this->m_thumb_page_start == this->m_num_pages)
-                {
-                    for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
-                    {
-                        if (k < pos - LOOK_AHEAD || k > pos + LOOK_AHEAD) 
-                        {
-                            if (k >= 0 && k < this->m_num_pages)
-                            {
-                                SetThumb(k);
-                            }
-                        }
-                    }
-                }
+                this->ReleasePages(curr_page, pos);
             }, task_continuation_context::use_current());
         }
     }
@@ -1035,26 +1097,40 @@ void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventAr
 {
     if (!m_zoom_mode && this->m_num_pages != -1)
     {
-        m_zoom_mode = true;
-        int pos = this->m_curr_flipView->SelectedIndex;
-        int width, height;
-        fz_page *page = fz_load_page(m_doc, pos);
-        spatial_info_t spatial_info = InitSpatial(1);
+        RenderingStatus_t *ren_status = &m_ren_status;
+        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
 
-        m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
-                                      &m_renderedImage);
-        m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-        this->xaml_zoomCanvas->Background = m_renderedImage;
+        /* Create a task to wait until the renderer is available */
+        auto t = create_task([ren_status, ThumbCancel]()
+        {
+            if (*ren_status == REN_THUMBS) {
+                ThumbCancel->cancel();
+                while (*ren_status == REN_THUMBS) {
+                }
+            } 
+        }).then([this]()
+        {
+            m_zoom_mode = true;
+            int pos = this->m_curr_flipView->SelectedIndex;
+            int width, height;
+            fz_page *page = fz_load_page(m_doc, pos);
+            spatial_info_t spatial_info = InitSpatial(1);
 
-        this->xaml_zoomCanvas->Width = width;
-        this->xaml_zoomCanvas->Height = height;
+            m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
+                                          &m_renderedImage);
+            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+            this->xaml_zoomCanvas->Background = m_renderedImage;
 
-        m_curr_flipView->IsEnabled = false;
-        this->xaml_zoomCanvas->Background->Opacity = 1;
-        this->m_curr_flipView->Opacity = 0.0;
-        m_first_time = true;
-        m_from_doubleflip = true;
-        m_curr_zoom = 1.0;
+            this->xaml_zoomCanvas->Width = width;
+            this->xaml_zoomCanvas->Height = height;
+
+            m_curr_flipView->IsEnabled = false;
+            this->xaml_zoomCanvas->Background->Opacity = 1;
+            this->m_curr_flipView->Opacity = 0.0;
+            m_first_time = true;
+            m_from_doubleflip = true;
+            m_curr_zoom = 1.0;
+        }, task_continuation_context::use_current());
     }
 }
 
@@ -1149,11 +1225,33 @@ void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::Rou
 void winapp::MainPage::ShowSearchResults(SearchResult_t result)
 {
     int height, width;
-    task<int> task = this->RenderRange(result.page_num, &height, &width);
+    int old_page = this->m_currpage;
+    int new_page = result.page_num;
+    spatial_info_t spatial_info = InitSpatial(1);
 
-    /* Once the rendering is done launch this task to show the result */
-    task.then([this, result](int val)
+    //task<int> task = this->RenderRange(new_page, &height, &width);
+    this->m_ren_status = REN_PAGE;
+    task<Canvas^> the_task = RenderPage_Task(m_doc, new_page, &width, &height, 
+                                         spatial_info, &m_renderedImage);
+    the_task.then([this, old_page, new_page](task<Canvas^> the_task)
     {
+        assert(IsMainThread);
+
+        try
+        {
+           this->m_renderedCanvas = the_task.get();
+        } 
+        catch (const task_canceled& e)
+        {
+            this->m_renderedCanvas = nullptr;
+        }
+        ReplacePage(new_page);
+        this->m_ren_status = REN_AVAILABLE;
+        this->ReleasePages(old_page, new_page);
+    }, task_continuation_context::use_current()).then([this, result]() 
+    
+    {
+        /* Once the rendering is done launch this task to show the result */
         RectSize screenSize;
         RectSize pageSize;
         RectSize scale;
@@ -1194,6 +1292,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
         {
             m_flip_from_search = true;
             this->m_curr_flipView->SelectedIndex = result.page_num;
+            m_currpage = result.page_num;
         }
     }, task_continuation_context::use_current());
 }
@@ -1318,8 +1417,6 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
     {
         my_bar->Value = start;
     }  */
-    /* Get the ui thread */
-    auto ui = task_continuation_context::use_current();
     this->m_search_active = true;
 
     /* Do task lambdas here to avoid UI blocking issues */
@@ -1357,7 +1454,7 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
             this->ShowSearchResults(the_result);
             this->m_search_active = false;
         }
-    }, ui);
+    }, task_continuation_context::use_current());
 }
 
 /* This is here to handle when we rotate or go into the snapview mode 
