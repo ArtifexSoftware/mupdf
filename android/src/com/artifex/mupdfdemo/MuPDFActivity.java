@@ -771,7 +771,7 @@ public class MuPDFActivity extends Activity
 
 	private void toggleReflow() {
 		reflowModeSet(!mReflow);
-		popUp(mReflow ? "Entering reflow mode" : "Leaving reflow mode");
+		showInfo(mReflow ? "Entering reflow mode" : "Leaving reflow mode");
 	}
 
 	@Override
