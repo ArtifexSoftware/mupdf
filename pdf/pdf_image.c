@@ -119,7 +119,7 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 		tile = fz_new_pixmap(ctx, image->base.colorspace, w, h);
 		tile->interpolate = image->interpolate;
 
-		stride = (w * image->n * image->bpc + 7) / 8;
+		stride = (w * image->n * image->base.bpc + 7) / 8;
 
 		samples = fz_malloc_array(ctx, h, stride);
 
@@ -162,7 +162,7 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 				p[i] = ~p[i];
 		}
 
-		fz_unpack_tile(tile, samples, image->n, image->bpc, stride, indexed);
+		fz_unpack_tile(tile, samples, image->n, image->base.bpc, stride, indexed);
 
 		fz_free(ctx, samples);
 		samples = NULL;
@@ -173,10 +173,11 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 		if (indexed)
 		{
 			fz_pixmap *conv;
-			fz_decode_indexed_tile(tile, image->decode, (1 << image->bpc) - 1);
+			fz_decode_indexed_tile(tile, image->decode, (1 << image->base.bpc) - 1);
 			conv = pdf_expand_indexed_pixmap(ctx, tile);
 			fz_drop_pixmap(ctx, tile);
 			tile = conv;
+			image->base.bpc = 8;
 		}
 		else
 		{
@@ -345,6 +346,8 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		w = pdf_to_int(pdf_dict_getsa(dict, "Width", "W"));
 		h = pdf_to_int(pdf_dict_getsa(dict, "Height", "H"));
 		bpc = pdf_to_int(pdf_dict_getsa(dict, "BitsPerComponent", "BPC"));
+		if (bpc == 0)
+			bpc = 8;
 		imagemask = pdf_to_bool(pdf_dict_getsa(dict, "ImageMask", "IM"));
 		interpolate = pdf_to_bool(pdf_dict_getsa(dict, "Interpolate", "I"));
 
@@ -434,8 +437,8 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		image->base.get_pixmap = pdf_image_get_pixmap;
 		image->base.w = w;
 		image->base.h = h;
+		image->base.bpc = bpc;
 		image->n = n;
-		image->bpc = bpc;
 		image->interpolate = interpolate;
 		image->imagemask = imagemask;
 		image->usecolorkey = usecolorkey;
@@ -453,7 +456,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		/* We need to decompress the image now */
 		if (cstm)
 		{
-			int stride = (w * image->n * image->bpc + 7) / 8;
+			int stride = (w * image->n * image->base.bpc + 7) / 8;
 			stm = pdf_open_inline_stream(xref, dict, stride * h, cstm, NULL);
 		}
 		else
@@ -560,11 +563,11 @@ pdf_load_jpx(pdf_document *xref, pdf_obj *dict, pdf_image *image, int forcemask)
 	image->base.get_pixmap = pdf_image_get_pixmap;
 	image->base.w = img->w;
 	image->base.h = img->h;
+	image->base.bpc = 8;
 	image->base.colorspace = colorspace;
 	image->buffer = NULL;
 	image->tile = img;
 	image->n = img->n;
-	image->bpc = 8;
 	image->interpolate = 0;
 	image->imagemask = 0;
 	image->usecolorkey = 0;
