@@ -17,6 +17,8 @@ static float screenScale = 1;
 static fz_context *ctx = NULL;
 fz_document *m_doc; 
 
+int linkPage[MAX_SEARCH];
+char *linkUrl[MAX_SEARCH];
 
 using namespace winapp;
 
@@ -78,14 +80,20 @@ extern "C" {
 MainPage::MainPage()
 {
 	InitializeComponent();
-    //Text Search Box
+
     Windows::UI::Color color;
     color.R = 0x25;
     color.G = 0x72;
     color.B = 0xAC;
     color.A = 0x40;
+    m_textcolor_brush = ref new SolidColorBrush(color);
 
-    m_color_brush = ref new SolidColorBrush(color);
+    color.R = 0xAC;
+    color.G = 0x72;
+    color.B = 0x25;
+    color.A = 0x40;
+    m_linkcolor_brush = ref new SolidColorBrush(color);
+
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
     m_doc = NULL;
@@ -608,6 +616,7 @@ void winapp::MainPage::CleanUp()
     m_ren_status = REN_AVAILABLE;
     m_thumb_page_start = 0;
     m_thumb_page_stop = 0;
+    m_links_on = false;
 
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
@@ -892,14 +901,30 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
                     ReplacePage(k);
                     fz_free_page(m_doc, page);
                     this->m_ren_status = REN_AVAILABLE;
-                } 
+                }
+                else
+                {
+                    Canvas^ curr_canvas = (Canvas^) (flipview_temp->Content);
+                    Canvas^ link_canvas = (Canvas^) (curr_canvas->FindName("linkCanvas"));
+                    if (link_canvas != nullptr)
+                    {
+                        int index;
+
+                        /* The canvas should have only one child, which is the linkCanvas */
+                        curr_canvas->Children->Clear();
+                    }
+                }
             }
         } 
         RectSize rectsize = this->currPageSize(curr_page);
         *height = rectsize.height;
         *width = rectsize.width;
         m_currpage = curr_page;
-
+        if (this->m_links_on) 
+        {
+            fz_drop_link(ctx, this->m_links);
+            AddLinkCanvas();
+        }
         /* Check if thumb rendering is done.  If not then restart */
         if (this->m_num_pages != this->m_thumb_page_start)
            // this->RenderThumbs();
@@ -1284,7 +1309,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
 		    a_rectangle->Width *= scale.width;
 		    a_rectangle->Height *= scale.height;
             a_rectangle->RenderTransform = trans_transform;
-            a_rectangle->Fill = m_color_brush;
+            a_rectangle->Fill = m_textcolor_brush;
             results_Canvas->Children->Append(a_rectangle);
             m_search_rect_count += 1;
         }
@@ -1532,3 +1557,81 @@ void winapp::MainPage::UpDatePageSizes()
         this->RenderRange(this->m_currpage, &height, &width);
     }
 };
+
+/* Link related code */
+void winapp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+        m_links_on = !m_links_on;
+        
+        if (m_links_on)
+        {
+            /* To render current page with links */
+            AddLinkCanvas();
+        }
+        else
+        {
+            /* Need to remove links if currently on TODO */
+
+
+        }
+}
+
+void winapp::MainPage::AddLinkCanvas()
+{
+    if (m_links_on)
+    {
+        /* To render current page with links */
+        fz_page *page = fz_load_page(m_doc, this->m_currpage);
+		m_links = fz_load_links(m_doc, page);
+
+        if (m_links != NULL) 
+        {
+            RectSize screenSize;
+            RectSize pageSize;
+            RectSize scale;
+
+            screenSize.height = this->ActualHeight;
+            screenSize.width = this->ActualWidth;
+
+	        screenSize.width *= screenScale;
+	        screenSize.height *= screenScale;
+            pageSize = measurePage(m_doc, page);
+	        scale = fitPageToScreen(pageSize, screenSize);
+
+            /* A new canvas */
+            Canvas^ link_canvas = ref new Canvas(); 
+            link_canvas->Name = "linkCanvas";
+
+            /* Get current flipview item */
+            FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(this->m_currpage);
+            Canvas^ curr_canvas = (Canvas^) flipview_temp->Content;
+
+            link_canvas->Height = curr_canvas->Height;
+            link_canvas->Width = curr_canvas->Width;
+
+            curr_canvas->Children->Append(link_canvas);
+
+            /* Now add the rects */
+            fz_link *curr_link = m_links;
+            fz_rect curr_rect;
+
+            while (curr_link != NULL)
+            {
+                Rectangle^ a_rectangle = ref new Rectangle();
+                TranslateTransform ^trans_transform = ref new TranslateTransform();
+
+                curr_rect = curr_link->rect;
+                a_rectangle->Width = curr_rect.x1 - curr_rect.x0;
+                a_rectangle->Height = curr_rect.y1 - curr_rect.y0;
+                trans_transform->X = curr_rect.x0 * scale.width;
+                trans_transform->Y = curr_rect.y0 *  scale.height;
+		        a_rectangle->Width *= scale.width;
+		        a_rectangle->Height *= scale.height;
+                a_rectangle->RenderTransform = trans_transform;
+                a_rectangle->Fill = m_linkcolor_brush;
+                link_canvas->Children->Append(a_rectangle);
+                curr_link = curr_link->next;
+            }
+        }
+    }
+}

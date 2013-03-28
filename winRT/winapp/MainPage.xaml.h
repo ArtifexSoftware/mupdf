@@ -82,6 +82,7 @@ namespace winapp
         bool m_init_done;
         bool m_first_time;
         bool m_flip_from_search;
+        bool m_links_on;
         int m_search_rect_count;
         Point m_display_size;
         cancellation_token_source m_searchcts;
@@ -96,7 +97,8 @@ namespace winapp
         ImageBrush^ m_blankPage;
         Canvas^ m_renderedCanvas;
         ImageBrush^ m_zoomedImage;
-        SolidColorBrush^ m_color_brush; 
+        SolidColorBrush^ m_textcolor_brush; 
+        SolidColorBrush^ m_linkcolor_brush; 
         FlipView^ m_curr_flipView;
         thumbs_t m_thumbnails;
         RenderingStatus_t m_ren_status;
@@ -149,5 +151,8 @@ namespace winapp
         void RenderThumbs();
         void SetThumb(int page_num);
         void ReleasePages(int old_page, int new_page);
+        void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void AddLinkCanvas();
+        fz_link *m_links;
     };
 }
