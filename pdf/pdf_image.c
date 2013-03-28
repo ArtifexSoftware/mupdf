@@ -177,7 +177,6 @@ decomp_image_from_stream(fz_context *ctx, fz_stream *stm, pdf_image *image, int 
 			conv = pdf_expand_indexed_pixmap(ctx, tile);
 			fz_drop_pixmap(ctx, tile);
 			tile = conv;
-			image->base.bpc = 8;
 		}
 		else
 		{
@@ -260,6 +259,7 @@ pdf_image_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h)
 	int l2factor;
 	pdf_image_key key;
 	int native_l2factor;
+	int indexed;
 
 	/* Check for 'simple' images which are just pixmaps */
 	if (image->buffer == NULL)
@@ -299,7 +299,8 @@ pdf_image_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h)
 	native_l2factor = l2factor;
 	stm = fz_open_image_decomp_stream(ctx, image->buffer, &native_l2factor);
 
-	return decomp_image_from_stream(ctx, stm, image, 0, 0, l2factor, native_l2factor, 1);
+	indexed = fz_colorspace_is_indexed(image->base.colorspace);
+	return decomp_image_from_stream(ctx, stm, image, 0, indexed, l2factor, native_l2factor, 1);
 }
 
 static pdf_image *
@@ -443,7 +444,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 		image->imagemask = imagemask;
 		image->usecolorkey = usecolorkey;
 		image->base.mask = mask;
-		if (!indexed && !cstm)
+		if (!cstm)
 		{
 			/* Just load the compressed image data now and we can
 			 * decode it on demand. */
