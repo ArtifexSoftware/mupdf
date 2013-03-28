@@ -30,6 +30,7 @@
                 </StackPanel>
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="Search" Style="{StaticResource SearchAppBarButtonStyle}" Tag="Search" Click="Searcher"/>
+                    <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Search" Click="Linker"/>
                     <Button x:Name="Help" Style="{StaticResource HelpAppBarButtonStyle}" Tag="Help"/>
                 </StackPanel>
             </Grid>
