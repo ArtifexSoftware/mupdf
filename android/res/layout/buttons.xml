@@ -89,13 +89,14 @@
             android:background="@color/toolbar" >
 
             <ImageButton
-                android:id="@+id/cancel"
+                android:id="@+id/cancelSearch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
+                android:onClick="OnCancelSearchButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <EditText
@@ -104,7 +105,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toRightOf="@+id/cancel"
+                android:layout_toRightOf="@+id/cancelSearch"
                 android:layout_toLeftOf="@+id/searchBack"
                 android:inputType="text"
                 android:hint="@string/search"
@@ -146,6 +147,7 @@
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
+                android:onClick="OnCancelSelectButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
@@ -156,6 +158,7 @@
                 android:layout_toLeftOf="@+id/underlineButton"
                 android:contentDescription="@string/highlight"
                 android:background="@drawable/button"
+                android:onClick="OnHighlightButtonClick"
                 android:src="@drawable/ic_highlight" />
 
             <ImageButton
@@ -166,6 +169,7 @@
                 android:layout_toLeftOf="@+id/strikeOutButton"
                 android:contentDescription="@string/underline"
                 android:background="@drawable/button"
+                android:onClick="OnUnderlineButtonClick"
                 android:src="@drawable/ic_underline" />
 
             <ImageButton
@@ -176,6 +180,7 @@
                 android:layout_toLeftOf="@+id/copySelectButton"
                 android:contentDescription="@string/strike_out"
                 android:background="@drawable/button"
+                android:onClick="OnStrikeOutButtonClick"
                 android:src="@drawable/ic_strike" />
 
             <ImageButton
@@ -186,6 +191,7 @@
                 android:layout_alignParentRight="true"
                 android:contentDescription="@string/copy"
                 android:background="@drawable/button"
+                android:onClick="OnCopySelectButtonClick"
                 android:src="@drawable/ic_clipboard" />
 
         </RelativeLayout>
@@ -204,6 +210,7 @@
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
+                android:onClick="OnCancelDeleteButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
@@ -214,6 +221,7 @@
                 android:layout_alignParentRight="true"
                 android:contentDescription="@string/delete"
                 android:background="@drawable/button"
+                android:onClick="OnDeleteButtonClick"
                 android:src="@drawable/ic_trash" />
 
         </RelativeLayout>
@@ -232,6 +240,7 @@
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
+                android:onClick="OnCancelAnnotButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
@@ -242,6 +251,7 @@
                 android:layout_toLeftOf="@+id/selectButton"
                 android:contentDescription="@string/print"
                 android:background="@drawable/button"
+                android:onClick="OnPrintButtonClick"
                 android:src="@drawable/ic_print" />
 
             <ImageButton
@@ -252,6 +262,7 @@
                 android:layout_toLeftOf="@+id/inkButton"
                 android:contentDescription="@string/select"
                 android:background="@drawable/button"
+                android:onClick="OnSelectButtonClick"
                 android:src="@drawable/ic_select" />
 
             <ImageButton
@@ -262,6 +273,7 @@
                 android:layout_alignParentRight="true"
                 android:contentDescription="@string/ink"
                 android:background="@drawable/button"
+                android:onClick="OnInkButtonClick"
                 android:src="@drawable/ic_pen" />
         </RelativeLayout>
 
@@ -279,6 +291,7 @@
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
+                android:onClick="OnCancelInkButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <Button
@@ -287,6 +300,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
+                android:onClick="OnSaveInkButtonClick"
                 android:text="@string/save" />
         </RelativeLayout>
         </ViewAnimator>
