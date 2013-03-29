@@ -477,12 +477,19 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
-		mAnnotButton.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View v) {
-				mTopBarMode = TopBarMode.AnnotCreate;
-				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-			}
-		});
+		if (core.fileFormat().startsWith("PDF"))
+		{
+			mAnnotButton.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					mTopBarMode = TopBarMode.AnnotCreate;
+					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				}
+			});
+		}
+		else
+		{
+			mAnnotButton.setVisibility(View.GONE);
+		}
 
 		// Activate the select button
 		mSelectButton.setOnClickListener(new View.OnClickListener() {
@@ -490,6 +497,7 @@ public class MuPDFActivity extends Activity
 				mDocView.setMode(MuPDFReaderView.Mode.Selecting);
 				mTopBarMode = TopBarMode.Text;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				showInfo("Select text");
 			}
 		});
 
@@ -509,6 +517,7 @@ public class MuPDFActivity extends Activity
 				mDocView.setMode(MuPDFReaderView.Mode.Drawing);
 				mTopBarMode = TopBarMode.InkCreate;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				showInfo("Draw annotation");
 			}
 		});
 
@@ -532,11 +541,14 @@ public class MuPDFActivity extends Activity
 		mSaveInkButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+				boolean success = false;
 				if (pageView != null)
-					pageView.saveDraw();
+					success = pageView.saveDraw();
 				mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 				mTopBarMode = TopBarMode.Main;
 				mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				if (!success)
+					showInfo("Nothing to save");
 			}
 		});
 
@@ -634,15 +646,8 @@ public class MuPDFActivity extends Activity
 
 			public void afterTextChanged(Editable s) {
 				boolean haveText = s.toString().length() > 0;
-				mSearchBack.setEnabled(haveText);
-				mSearchFwd.setEnabled(haveText);
-				if (haveText) {
-					mSearchBack.setColorFilter(Color.argb(255, 255, 255, 255));
-					mSearchFwd.setColorFilter(Color.argb(255, 255, 255, 255));
-				} else {
-					mSearchBack.setColorFilter(Color.argb(255, 128, 128, 128));
-					mSearchFwd.setColorFilter(Color.argb(255, 128, 128, 128));
-				}
+				setButtonEnabled(mSearchBack, haveText);
+				setButtonEnabled(mSearchFwd, haveText);
 
 				// Remove any previous search results
 				if (SearchTaskResult.get() != null && !mSearchText.getText().toString().equals(SearchTaskResult.get().txt)) {
@@ -687,16 +692,7 @@ public class MuPDFActivity extends Activity
 
 		mLinkButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				if (mLinkHighlight) {
-					mLinkButton.setColorFilter(Color.argb(0xFF, 255, 255, 255));
-					mLinkHighlight = false;
-				} else {
-					// LINK_COLOR tint
-					mLinkButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
-					mLinkHighlight = true;
-				}
-				// Inform pages of the change.
-				mDocView.setLinksEnabled(mLinkHighlight);
+				setLinkHighlight(!mLinkHighlight);
 			}
 		});
 
@@ -764,15 +760,12 @@ public class MuPDFActivity extends Activity
 	private void reflowModeSet(boolean reflow)
 	{
 		mReflow = reflow;
-		if (mReflow) {
-			mDocView.setAdapter(new MuPDFReflowAdapter(this, core));
-			mReflowButton.setColorFilter(Color.argb(0xFF, 172, 114, 37));
-			showInfo("Entering reflow mode");
-		} else {
-			mDocView.setAdapter(new MuPDFPageAdapter(this, core));
-			mReflowButton.setColorFilter(Color.argb(0xFF, 255, 255, 255));
-			showInfo("Exited reflow mode");
-		}
+		mDocView.setAdapter(mReflow ? new MuPDFReflowAdapter(this, core) : new MuPDFPageAdapter(this, core));
+		mReflowButton.setColorFilter(mReflow ? Color.argb(0xFF, 172, 114, 37) : Color.argb(0xFF, 255, 255, 255));
+		setButtonEnabled(mAnnotButton, !reflow);
+		setButtonEnabled(mSearchButton, !reflow);
+		if (reflow) setLinkHighlight(false);
+		setButtonEnabled(mLinkButton, !reflow);
 		mDocView.refresh(mReflow);
 	}
 
@@ -835,7 +828,20 @@ public class MuPDFActivity extends Activity
 		super.onDestroy();
 	}
 
-	void showButtons() {
+	private void setButtonEnabled(ImageButton button, boolean enabled) {
+		button.setEnabled(enabled);
+		button.setColorFilter(enabled ? Color.argb(255, 255, 255, 255):Color.argb(255, 128, 128, 128));
+	}
+
+	private void setLinkHighlight(boolean highlight) {
+		mLinkHighlight = highlight;
+		// LINK_COLOR tint
+		mLinkButton.setColorFilter(highlight ? Color.argb(0xFF, 172, 114, 37) : Color.argb(0xFF, 255, 255, 255));
+		// Inform pages of the change.
+		mDocView.setLinksEnabled(highlight);
+	}
+
+	private void showButtons() {
 		if (core == null)
 			return;
 		if (!mButtonsVisible) {
@@ -876,7 +882,7 @@ public class MuPDFActivity extends Activity
 		}
 	}
 
-	void hideButtons() {
+	private void hideButtons() {
 		if (mButtonsVisible) {
 			mButtonsVisible = false;
 			hideKeyboard();
@@ -907,7 +913,7 @@ public class MuPDFActivity extends Activity
 		}
 	}
 
-	void searchModeOn() {
+	private void searchModeOn() {
 		if (mTopBarMode != TopBarMode.Search) {
 			mTopBarMode = TopBarMode.Search;
 			//Focus on EditTextWidget
@@ -917,7 +923,7 @@ public class MuPDFActivity extends Activity
 		}
 	}
 
-	void searchModeOff() {
+	private void searchModeOff() {
 		if (mTopBarMode == TopBarMode.Search) {
 			mTopBarMode = TopBarMode.Main;
 			hideKeyboard();
@@ -929,7 +935,7 @@ public class MuPDFActivity extends Activity
 		}
 	}
 
-	void updatePageNumView(int index) {
+	private void updatePageNumView(int index) {
 		if (core == null)
 			return;
 		mPageNumberView.setText(String.format("%d / %d", index+1, core.countPages()));
@@ -985,7 +991,7 @@ public class MuPDFActivity extends Activity
 		}
 	}
 
-	void makeButtonsView() {
+	private void makeButtonsView() {
 		mButtonsView = getLayoutInflater().inflate(R.layout.buttons,null);
 		mFilenameView = (TextView)mButtonsView.findViewById(R.id.docNameText);
 		mPageSlider = (SeekBar)mButtonsView.findViewById(R.id.pageSlider);
@@ -1020,19 +1026,19 @@ public class MuPDFActivity extends Activity
 		mPageSlider.setVisibility(View.INVISIBLE);
 	}
 
-	void showKeyboard() {
+	private void showKeyboard() {
 		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 		if (imm != null)
 			imm.showSoftInput(mSearchText, 0);
 	}
 
-	void hideKeyboard() {
+	private void hideKeyboard() {
 		InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 		if (imm != null)
 			imm.hideSoftInputFromWindow(mSearchText.getWindowToken(), 0);
 	}
 
-	void search(int direction) {
+	private void search(int direction) {
 		hideKeyboard();
 		int displayPage = mDocView.getDisplayedViewIndex();
 		SearchTaskResult r = SearchTaskResult.get();

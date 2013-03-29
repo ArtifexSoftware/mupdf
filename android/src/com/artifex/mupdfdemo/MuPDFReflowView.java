@@ -112,7 +112,8 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	public void cancelDraw() {
 	}
 
-	public void saveDraw() {
+	public boolean saveDraw() {
+		return false;
 	}
 
 	public void setSearchBoxes(RectF[] searchBoxes) {

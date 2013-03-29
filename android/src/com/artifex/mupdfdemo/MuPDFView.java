@@ -23,7 +23,7 @@ public interface MuPDFView {
 	public void startDraw(float x, float y);
 	public void continueDraw(float x, float y);
 	public void cancelDraw();
-	public void saveDraw();
+	public boolean saveDraw();
 	public void setChangeReporter(Runnable reporter);
 	public void update();
 	public void addHq(boolean update);

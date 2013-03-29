@@ -357,32 +357,35 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		setItemSelectBox(null);
 	}
 
-	public void saveDraw() {
+	public boolean saveDraw() {
 		PointF[][] path = getDraw();
 
-		if (path != null) {
-			if (mAddInk != null) {
-				mAddInk.cancel(true);
-				mAddInk = null;
-			}
-			mAddInk = new AsyncTask<PointF[][],Void,Void>() {
-				@Override
-				protected Void doInBackground(PointF[][]... params) {
-					mCore.addInkAnnotation(mPageNumber, params[0]);
-					return null;
-				}
+		if (path == null)
+			return false;
 
-				@Override
-				protected void onPostExecute(Void result) {
-					loadAnnotations();
-					update();
-				}
-
-			};
-
-			mAddInk.execute(getDraw());
-			cancelDraw();
+		if (mAddInk != null) {
+			mAddInk.cancel(true);
+			mAddInk = null;
 		}
+		mAddInk = new AsyncTask<PointF[][],Void,Void>() {
+			@Override
+			protected Void doInBackground(PointF[][]... params) {
+				mCore.addInkAnnotation(mPageNumber, params[0]);
+				return null;
+			}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				loadAnnotations();
+				update();
+			}
+
+		};
+
+		mAddInk.execute(getDraw());
+		cancelDraw();
+
+		return true;
 	}
 
 	@Override

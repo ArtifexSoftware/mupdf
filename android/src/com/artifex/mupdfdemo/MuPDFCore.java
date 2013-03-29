@@ -19,10 +19,12 @@ public class MuPDFCore
 	private float pageHeight;
 	private long globals;
 	private byte fileBuffer[];
+	private String file_format;
 
 	/* The native functions */
 	private native long openFile(String filename);
 	private native long openBuffer();
+	private native String fileFormatInternal();
 	private native int countPagesInternal();
 	private native void gotoPageInternal(int localActionPageNum);
 	private native float getPageWidth();
@@ -73,6 +75,7 @@ public class MuPDFCore
 		{
 			throw new Exception("Failed to open "+filename);
 		}
+		file_format = fileFormatInternal();
 	}
 
 	public MuPDFCore(byte buffer[]) throws Exception
@@ -83,6 +86,7 @@ public class MuPDFCore
 		{
 			throw new Exception("Failed to open buffer");
 		}
+		file_format = fileFormatInternal();
 	}
 
 	public  int countPages()
@@ -91,6 +95,11 @@ public class MuPDFCore
 			numPages = countPagesSynchronized();
 
 		return numPages;
+	}
+
+	public String fileFormat()
+	{
+		return file_format;
 	}
 
 	private synchronized int countPagesSynchronized() {

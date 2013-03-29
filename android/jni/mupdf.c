@@ -462,6 +462,17 @@ JNI_FN(MuPDFCore_countPagesInternal)(JNIEnv *env, jobject thiz)
 	return count;
 }
 
+JNIEXPORT jstring JNICALL
+JNI_FN(MuPDFCore_fileFormatInternal)(JNIEnv * env, jobject thiz)
+{
+	char info[64];
+	globals *glo = get_globals(env, thiz);
+
+	fz_meta(glo->doc, FZ_META_FORMAT_INFO, info, sizeof(info));
+
+	return (*env)->NewStringUTF(env, info);
+}
+
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 {
