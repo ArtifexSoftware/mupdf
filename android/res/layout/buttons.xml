@@ -235,6 +235,16 @@
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
+                android:id="@+id/printButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/selectButton"
+                android:contentDescription="@string/print"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_print" />
+
+            <ImageButton
                 android:id="@+id/selectButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

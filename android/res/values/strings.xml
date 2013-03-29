@@ -27,4 +27,5 @@
     <string name="edit_annotations">Edit annotations</string>
     <string name="ink">Ink</string>
     <string name="save">Save</string>
+    <string name="print">Print</string>
 </resources>

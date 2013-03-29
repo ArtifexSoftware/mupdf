@@ -75,6 +75,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton mInkButton;
 	private Button mSaveInkButton;
 	private ImageButton mCancelInkButton;
+	private ImageButton mPrintButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
 	private TopBarMode   mTopBarMode;
@@ -522,6 +523,12 @@ public class MuPDFActivity extends Activity
 			}
 		});
 
+		mPrintButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				printDoc();
+			}
+		});
+
 		mSaveInkButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
@@ -928,6 +935,23 @@ public class MuPDFActivity extends Activity
 		mPageNumberView.setText(String.format("%d / %d", index+1, core.countPages()));
 	}
 
+	private void printDoc() {
+		Intent myIntent = getIntent();
+		Uri docUri = myIntent != null ? myIntent.getData() : null;
+
+		if (docUri == null) {
+			showInfo("Print failed");
+		}
+
+		if (docUri.getScheme() == null)
+			docUri = Uri.parse("file://"+docUri.toString());
+
+		Intent printIntent = new Intent(this, PrintDialogActivity.class);
+		printIntent.setDataAndType(docUri, "aplication/pdf");
+		printIntent.putExtra("title", mFileName);
+		startActivity(printIntent);
+	}
+
 	private void showInfo(String message) {
 		mInfoView.setText(message);
 
@@ -984,6 +1008,7 @@ public class MuPDFActivity extends Activity
 		mInkButton = (ImageButton)mButtonsView.findViewById(R.id.inkButton);
 		mSaveInkButton = (Button)mButtonsView.findViewById(R.id.saveInkButton);
 		mCancelInkButton = (ImageButton)mButtonsView.findViewById(R.id.cancelInkButton);
+		mPrintButton = (ImageButton)mButtonsView.findViewById(R.id.printButton);
 		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);

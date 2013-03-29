@@ -5,6 +5,7 @@
     android:versionName="@string/version"
     android:installLocation="auto">
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <supports-screens
         android:smallScreens="true"
         android:normalScreens="true"
@@ -76,6 +77,11 @@
             android:name="OutlineActivity"
             android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen"
             android:label="@string/outline_title">
+        </activity>
+        <activity
+            android:name="PrintDialogActivity"
+            android:theme="@android:style/Theme.Light.NoTitleBar.Fullscreen"
+            android:label="@string/print">
         </activity>
     </application>
 </manifest> 
