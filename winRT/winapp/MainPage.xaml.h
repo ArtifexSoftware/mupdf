@@ -11,7 +11,9 @@
 #include "muxps.h"
 #include "mupdf.h"
 #include "ppl.h"
-//#include "Binding.h"
+#include <collection.h>
+#include <algorithm>
+#include "LVContents.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -23,6 +25,11 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
+using namespace Windows::Foundation::Collections;
+using namespace Windows::UI::Xaml::Shapes;
+using namespace Windows::Foundation::Collections;
+using namespace Platform::Collections;
+using namespace ListViewContents;
 
 typedef enum {
     REN_AVAILABLE = 0,
@@ -58,6 +65,17 @@ typedef struct thumbs_s
     Array<Canvas^>^ canvas_h;
 } thumbs_t;
 
+typedef struct content_s
+{
+    int num;
+    Vector<int>^  page;
+    Vector<String^>^ string_orig;
+    Vector<String^>^ string_margin;
+} content_t;
+
+
+
+
 namespace winapp
 {
 	/// <summary>
@@ -73,6 +91,7 @@ namespace winapp
 
     /* added */
     private:
+        LVContents temp;
         bool m_file_open;
         int  m_currpage;
         int  m_searchpage;
@@ -81,7 +100,7 @@ namespace winapp
         int  m_slider_max;
         bool m_init_done;
         bool m_first_time;
-        bool m_flip_from_search;
+        bool m_flip_from_searchlink;
         bool m_links_on;
         int m_search_rect_count;
         Point m_display_size;
@@ -105,6 +124,8 @@ namespace winapp
         int m_thumb_page_start;
         int m_thumb_page_stop;
         cancellation_token_source m_ThumbCancel;
+        fz_link *m_links;
+        content_t m_content;
         bool m_zoom_mode;
         bool m_from_doubleflip;
         bool m_scaling_occured;
@@ -153,6 +174,14 @@ namespace winapp
         void ReleasePages(int old_page, int new_page);
         void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void AddLinkCanvas();
-        fz_link *m_links;
+        void Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
+        bool CheckRect(Rectangle^ curr_rect, Point pt);
+        void JumpToLink(int index);
+        void ClearLinksCanvas();
+        void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void FlattenOutline(fz_outline *outline, int level);
+        void ListView_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
+        void ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e);
+        void ContentChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs^ e);
     };
 }

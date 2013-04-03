@@ -30,6 +30,7 @@
                 </StackPanel>
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="Search" Style="{StaticResource SearchAppBarButtonStyle}" Tag="Search" Click="Searcher"/>
+                    <Button x:Name="Contents" Style="{StaticResource ContentsBarButtonStyle}" Tag="Contents" Click="ContentDisplay"/>
                     <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Search" Click="Linker"/>
                     <Button x:Name="Help" Style="{StaticResource HelpAppBarButtonStyle}" Tag="Help"/>
                 </StackPanel>
@@ -62,7 +63,7 @@
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" DoubleTapped="Canvas_Double" 
                     ManipulationDelta="Canvas_ManipulationDelta" ManipulationStarted="Canvas_ManipulationStarted" 
                     ManipulationStarting="Canvas_ManipulationStarting" ManipulationCompleted="Canvas_ManipulationCompleted" 
-                    ManipulationMode="All">
+                    ManipulationMode="All" IsTapEnabled="True" Tapped="Canvas_Single_Tap">
                 <FlipView x:Name="xaml_horiz_flipView" SelectionChanged="FlipView_SelectionChanged" DoubleTapped="FlipView_Double" VerticalAlignment="Center"
                           HorizontalAlignment="Center">
                     <FlipView.ItemsPanel>
@@ -81,6 +82,22 @@
                     </FlipView.ItemsPanel>
                 </FlipView>
             </Canvas>
+            <ListView x:Name="xaml_ListView" Foreground="Black" HorizontalAlignment="Stretch" 
+                      VerticalAlignment="Stretch" Opacity="0" IsItemClickEnabled="True" 
+                      ItemClick="ContentSelected" SelectionMode="Single" IsEnabled="False">
+
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">
+                            <TextBlock TextWrapping="Wrap" Text="{Binding ContentItem}" FontFamily="Segoe UI" FontSize="20" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+
+                <ListView.Background>
+                    <SolidColorBrush Color="LightGray"></SolidColorBrush>
+                </ListView.Background>
+            </ListView>
         </Grid>
     </Grid>
 </Page>

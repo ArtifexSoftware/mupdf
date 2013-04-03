@@ -5,6 +5,7 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
+#include "LVContents.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
 #define MIN_SCALE 0.5
@@ -23,15 +24,14 @@ char *linkUrl[MAX_SEARCH];
 using namespace winapp;
 
 using namespace Windows::Foundation;
-using namespace Windows::Foundation::Collections;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Controls::Primitives;
 using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
-using namespace Windows::UI::Xaml::Shapes;
 using namespace Windows::Graphics::Display;
+using namespace ListViewContents;
 
 //****************** Added *****************
 using namespace Windows::Storage::Pickers;
@@ -97,6 +97,7 @@ MainPage::MainPage()
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
     m_doc = NULL;
+    m_content.num = 0;
     CleanUp();
     RecordMainThread();
 
@@ -236,6 +237,8 @@ void Prepare_bmp(int width, int height, DataWriter ^dw)
 
 void MainPage::ReleasePages(int old_page, int new_page)
 {
+
+    if (old_page == new_page) return;
     /* To keep from having memory issue reset the page back to 
         the thumb if we are done rendering the thumbnails */
     if (this->m_thumb_page_start == this->m_num_pages)
@@ -609,7 +612,7 @@ void winapp::MainPage::CleanUp()
     m_insearch = false;
     m_search_active = false;
     m_sliderchange = false;
-    m_flip_from_search = false;
+    m_flip_from_searchlink = false;
     m_num_pages = -1;
     m_search_rect_count = 0;
     ResetSearch();
@@ -617,6 +620,14 @@ void winapp::MainPage::CleanUp()
     m_thumb_page_start = 0;
     m_thumb_page_stop = 0;
     m_links_on = false;
+
+    if (m_content.num)
+    {
+        //m_content.page->;
+       // m_content.string_margin->Dispose();
+        //m_content.string_orig->Dispose();
+        m_content.num = 0;
+    }
 
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
@@ -740,11 +751,10 @@ void winapp::MainPage::OpenDocumentPrep(StorageFile^ file)
         /* Create a task to wait until the renderer is available, then clean up then open */
         auto t = create_task([ren_status, ThumbCancel]()->int
         {
-            if (*ren_status == REN_THUMBS) {
+            if (*ren_status == REN_THUMBS)
                 ThumbCancel->cancel();
-                while (*ren_status == REN_THUMBS) {
-                }
-            } 
+            while (*ren_status != REN_AVAILABLE) {
+            }
             return 0;
         }).then([this](task<int> the_task)
         {
@@ -875,11 +885,10 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
     /* Create a task to wait until the renderer is available */
     auto t = create_task([ren_status, ThumbCancel]()
     {
-        if (*ren_status == REN_THUMBS) {
+        if (*ren_status == REN_THUMBS)
             ThumbCancel->cancel();
-            while (*ren_status == REN_THUMBS) {
-            }
-        } 
+        while (*ren_status != REN_AVAILABLE) {
+        }
     });
         
     return t.then([this, height, width, curr_page, spatial_info]()
@@ -902,20 +911,20 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
                     fz_free_page(m_doc, page);
                     this->m_ren_status = REN_AVAILABLE;
                 }
-                else
-                {
-                    Canvas^ curr_canvas = (Canvas^) (flipview_temp->Content);
-                    Canvas^ link_canvas = (Canvas^) (curr_canvas->FindName("linkCanvas"));
-                    if (link_canvas != nullptr)
-                    {
-                        int index;
-
-                        /* The canvas should have only one child, which is the linkCanvas */
-                        curr_canvas->Children->Clear();
-                    }
-                }
             }
         } 
+
+        Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
+        if (link_canvas != nullptr)
+        {
+            Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
+            if (Parent_Canvas != nullptr)
+            {
+                Parent_Canvas->Children->RemoveAtEnd();
+                delete link_canvas;
+            }
+        }
+
         RectSize rectsize = this->currPageSize(curr_page);
         *height = rectsize.height;
         *width = rectsize.width;
@@ -927,7 +936,7 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
         }
         /* Check if thumb rendering is done.  If not then restart */
         if (this->m_num_pages != this->m_thumb_page_start)
-           // this->RenderThumbs();
+            this->RenderThumbs();
         return val;
     }, task_continuation_context::use_current());
 }
@@ -960,11 +969,10 @@ void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI
         {
             create_task([ren_status, ThumbCancel]()
             {
-                if (*ren_status == REN_THUMBS) {
+                if (*ren_status == REN_THUMBS)
                     ThumbCancel->cancel();
-                    while (*ren_status == REN_THUMBS) {
-                    }
-                } 
+                while (*ren_status != REN_AVAILABLE) {
+                }
             }).then([this, newValue]() 
             {
                 int width, height;
@@ -997,9 +1005,9 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
     }
     if (pos >= 0) 
     {
-        if (m_flip_from_search)
+        if (m_flip_from_searchlink)
         {
-            m_flip_from_search = false;
+            m_flip_from_searchlink = false;
             return;
         } 
         else if (m_sliderchange)
@@ -1018,7 +1026,7 @@ void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChange
             task<int> task = this->RenderRange(pos, &height, &width);
             task.then([this, curr_page, pos](int val)
             {
-                this->ReleasePages(curr_page, pos);
+               this->ReleasePages(curr_page, pos);
             }, task_continuation_context::use_current());
         }
     }
@@ -1128,11 +1136,10 @@ void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventAr
         /* Create a task to wait until the renderer is available */
         auto t = create_task([ren_status, ThumbCancel]()
         {
-            if (*ren_status == REN_THUMBS) {
+            if (*ren_status == REN_THUMBS)
                 ThumbCancel->cancel();
-                while (*ren_status == REN_THUMBS) {
-                }
-            } 
+            while (*ren_status != REN_AVAILABLE) {
+            }
         }).then([this]()
         {
             m_zoom_mode = true;
@@ -1280,7 +1287,12 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
         RectSize screenSize;
         RectSize pageSize;
         RectSize scale;
-    
+
+        if (this->m_links_on) 
+        {
+            fz_drop_link(ctx, this->m_links);
+            AddLinkCanvas();
+        }
 	    fz_page *page = fz_load_page(m_doc, result.page_num);
         FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(result.page_num);
         Canvas^ results_Canvas = (Canvas^) (flipview_temp->Content);
@@ -1315,7 +1327,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
         }
         if (result.box_count > 0)
         {
-            m_flip_from_search = true;
+            m_flip_from_searchlink = true;
             this->m_curr_flipView->SelectedIndex = result.page_num;
             m_currpage = result.page_num;
         }
@@ -1333,11 +1345,10 @@ void winapp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::R
     /* Create a task to wait until the renderer is available */
     create_task([ren_status, ThumbCancel]()
     {
-        if (*ren_status == REN_THUMBS) {
+        if (*ren_status == REN_THUMBS)
             ThumbCancel->cancel();
-            while (*ren_status == REN_THUMBS) {
+        while (*ren_status != REN_AVAILABLE) {
             }
-        } 
     }).then([this, textToFind]() 
     {
         if (this->m_search_active == false)
@@ -1356,11 +1367,10 @@ void winapp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::R
     /* Create a task to wait until the renderer is available */
     create_task([ren_status, ThumbCancel]()
     {
-        if (*ren_status == REN_THUMBS) {
+        if (*ren_status == REN_THUMBS)
             ThumbCancel->cancel();
-            while (*ren_status == REN_THUMBS) {
-            }
-        } 
+        while (*ren_status != REN_AVAILABLE) {
+        }
     }).then([this, textToFind]() 
     {
         if (this->m_search_active == false)
@@ -1523,10 +1533,18 @@ void winapp::MainPage::GridSizeChanged()
         xaml_vert_flipView->IsEnabled = false;
         xaml_vert_flipView->Opacity = 0;
     }
+   // if (m_num_pages > 0 && this->m_links_on)
+   //     ClearLinksCanvas();
+
     UpDatePageSizes();
 
     if (m_num_pages > 0 && old_flip != m_curr_flipView && old_flip != nullptr)
-        this->m_curr_flipView->SelectedIndex = this->m_currpage;
+    {
+        if ((this->m_curr_flipView->SelectedIndex == this->m_currpage) && this->m_links_on)
+            FlipView_SelectionChanged(nullptr, nullptr);
+        else
+            this->m_curr_flipView->SelectedIndex = this->m_currpage;
+    }
 }
 
 void winapp::MainPage::UpDatePageSizes()
@@ -1554,32 +1572,56 @@ void winapp::MainPage::UpDatePageSizes()
                 curr_canvas->Width = curr_canvas_width / min_scale;
             }
         }  
-        this->RenderRange(this->m_currpage, &height, &width);
+
+     //   this->RenderRange(this->m_currpage, &height, &width);
     }
 };
+
+void winapp::MainPage::ClearLinksCanvas()
+{
+    Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
+    if (link_canvas != nullptr) 
+    {
+        Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
+        if (Parent_Canvas != nullptr)
+        {
+            Parent_Canvas->Children->RemoveAtEnd();
+            delete link_canvas;
+        }
+    }
+}
 
 /* Link related code */
 void winapp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-        m_links_on = !m_links_on;
+    m_links_on = !m_links_on;
+    RenderingStatus_t *ren_status = &m_ren_status;
+    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
         
-        if (m_links_on)
+    if (m_links_on)
+    {
+       auto t = create_task([ren_status, ThumbCancel]()
         {
-            /* To render current page with links */
+            if (*ren_status == REN_THUMBS)
+                ThumbCancel->cancel();
+            while (*ren_status != REN_AVAILABLE) {
+            }
+        });
+        
+        t.then([this]()
+        {
             AddLinkCanvas();
-        }
-        else
-        {
-            /* Need to remove links if currently on TODO */
-
-
-        }
+        }, task_continuation_context::use_current());
+    }
+    else
+        ClearLinksCanvas();
 }
 
 void winapp::MainPage::AddLinkCanvas()
 {
     if (m_links_on)
     {
+        ClearLinksCanvas();
         /* To render current page with links */
         fz_page *page = fz_load_page(m_doc, this->m_currpage);
 		m_links = fz_load_links(m_doc, page);
@@ -1608,7 +1650,6 @@ void winapp::MainPage::AddLinkCanvas()
 
             link_canvas->Height = curr_canvas->Height;
             link_canvas->Width = curr_canvas->Width;
-
             curr_canvas->Children->Append(link_canvas);
 
             /* Now add the rects */
@@ -1620,6 +1661,7 @@ void winapp::MainPage::AddLinkCanvas()
                 Rectangle^ a_rectangle = ref new Rectangle();
                 TranslateTransform ^trans_transform = ref new TranslateTransform();
 
+                a_rectangle->IsTapEnabled = true;
                 curr_rect = curr_link->rect;
                 a_rectangle->Width = curr_rect.x1 - curr_rect.x0;
                 a_rectangle->Height = curr_rect.y1 - curr_rect.y0;
@@ -1635,3 +1677,234 @@ void winapp::MainPage::AddLinkCanvas()
         }
     }
 }
+
+bool winapp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
+{
+    TranslateTransform ^trans_transform = (TranslateTransform^) curr_rect->RenderTransform;
+    Point rect_start;
+    Point rect_end;
+
+    rect_start.X = trans_transform->X;
+    rect_start.Y = trans_transform->Y;
+    rect_end.X = rect_start.X + curr_rect->Width;
+    rect_end.Y = rect_start.Y + curr_rect->Height;
+    if ((rect_start.X < pt.X) && (pt.X < rect_end.X) && (rect_start.Y < pt.Y) && (pt.Y < rect_end.Y)) 
+        return true;
+    return false;
+}
+
+void winapp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
+{
+    /* See if we are currently viewing any links */
+    if (m_links_on)
+    {
+        Point pt;
+        Canvas^ link_canvas = (Canvas^) (m_curr_flipView->FindName("linkCanvas"));
+        if (link_canvas != nullptr)
+        {
+            pt = e->GetPosition(link_canvas);
+            IIterator<UIElement^> ^it = link_canvas->Children->First();
+            int count = 0;
+            while (it->HasCurrent)
+            {
+                Rectangle^ curr_rect = (Rectangle^) (it->Current);
+                if (CheckRect(curr_rect, pt))
+                {
+                    JumpToLink(count);
+                    break;
+                }
+                it->MoveNext();
+                count += 1;
+            }
+        }
+    }
+}
+
+/* Window string hurdles.... */
+String^ char_to_String(char *char_in)
+{
+        size_t size = MultiByteToWideChar(CP_ACP, 0, char_in, -1, NULL, 0);
+        wchar_t *pw;
+        pw = new wchar_t[size];
+        if (!pw)
+        {
+            delete []pw;
+            return nullptr;
+        }
+        MultiByteToWideChar (CP_ACP, 0, char_in, -1, pw, size );
+        String^ str_out = ref new String(pw);
+        delete []pw;
+        return str_out;
+}
+
+void winapp::MainPage::JumpToLink(int index)
+{
+    fz_link *link = this->m_links;
+    RenderingStatus_t *ren_status = &m_ren_status;
+    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
+
+    /* Get through the list */
+    for (int k = 0; k < index; k++)
+        link = link->next;
+
+    if (link->dest.kind == FZ_LINK_GOTO)
+    {
+        int page = link->dest.ld.gotor.page;
+        this->m_curr_flipView->SelectedIndex = page;
+        this->m_currpage = page;
+
+        if (this->m_links_on) 
+        {
+            fz_drop_link(ctx, this->m_links);
+        }
+    } 
+    else if (link->dest.kind == FZ_LINK_URI)
+    {
+        String^ str = char_to_String(link->dest.ld.uri.uri);
+        // The URI to launch
+        auto uri = ref new Windows::Foundation::Uri(str);
+        // Set the option to show a warning
+        auto launchOptions = ref new Windows::System::LauncherOptions();
+        launchOptions->TreatAsUntrusted = true;
+
+        // Launch the URI with a warning prompt
+        concurrency::task<bool> launchUriOperation(Windows::System::Launcher::LaunchUriAsync(uri, launchOptions));
+        launchUriOperation.then([](bool success)
+       {
+          if (success)
+          {
+             // URI launched
+          }
+          else
+          {
+             // URI launch failed
+          }
+       });
+    }
+}
+
+void winapp::MainPage::FlattenOutline(fz_outline *outline, int level)
+{
+	char indent[8*4+1];
+	if (level > 8)
+		level = 8;
+	memset(indent, ' ', level * 4);
+	indent[level * 4] = 0;
+
+    String^ indent_str = char_to_String(indent);
+    String^ str_indent;
+
+	while (outline)
+	{
+		if (outline->dest.kind == FZ_LINK_GOTO)
+		{
+			int page = outline->dest.ld.gotor.page;
+			if (page >= 0 && outline->title)
+			{
+                /* Add to the contents */
+                m_content.page->Append(page);
+                String^ str = char_to_String(outline->title);
+                m_content.string_orig->Append(str);
+                str_indent = str_indent->Concat(indent_str, str);
+                m_content.string_margin->Append(str_indent);
+                m_content.num += 1;
+			}
+		}
+		FlattenOutline(outline->down, level + 1);
+		outline = outline->next;
+	}
+}
+
+/* Bring up the contents */
+void winapp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    if (this->m_num_pages < 0) return;
+
+    if (this->xaml_ListView->IsEnabled) 
+    {
+        this->xaml_ListView->Opacity = 0.0;
+        this->xaml_ListView->IsEnabled = false;
+        this->m_curr_flipView->Opacity = 1.0;
+        this->m_curr_flipView->IsEnabled = true;
+    } 
+    else
+    {
+        if (!m_content.num)
+        {
+            /* Make sure we are good to go */
+            RenderingStatus_t *ren_status = &m_ren_status;
+            cancellation_token_source *ThumbCancel = &m_ThumbCancel;
+            fz_outline *root = NULL;
+
+            /* Create a task to wait until the renderer is available */
+            auto t = create_task([ren_status, ThumbCancel]()
+            {
+                if (*ren_status == REN_THUMBS)
+                    ThumbCancel->cancel();
+                while (*ren_status != REN_AVAILABLE) {
+                }
+            }).then([this, &root]()
+            {
+                root = fz_load_outline(m_doc);
+	            if (root)
+                {
+                    /* Flatten here if needed */
+                    m_content.page = ref new Vector<int>;
+                    m_content.string_margin = ref new Vector<String^>;
+                    m_content.string_orig = ref new Vector<String^>;
+
+
+		            FlattenOutline(root, 0);
+                    fz_free_outline(ctx, root);
+
+                    /* Bring up the content now */
+                    for (int k = 0; k < m_content.num; k++)
+                    {
+                        auto content_val = ref new LVContents;
+                        content_val->Page = m_content.page->GetAt(k);
+                        content_val->ContentItem = m_content.string_margin->GetAt(k);
+                        this->xaml_ListView->Items->Append(content_val);
+                    }
+	            }
+                if (m_content.num)
+                {
+                    this->xaml_ListView->Opacity = 1.0;
+                    this->xaml_ListView->IsEnabled = true;
+                    this->m_curr_flipView->Opacity = 0.0;
+                    this->m_curr_flipView->IsEnabled = false;
+                }
+                /* Check if thumb rendering is done.  If not then restart */
+                if (this->m_num_pages != this->m_thumb_page_start)
+                    this->RenderThumbs();
+            }, task_continuation_context::use_current());
+        }  
+        else 
+        {
+            this->xaml_ListView->Opacity = 1.0;
+            this->xaml_ListView->IsEnabled = true;
+            this->m_curr_flipView->Opacity = 0.0;
+            this->m_curr_flipView->IsEnabled = false;
+        }
+    }
+        
+}
+
+void winapp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
+{
+
+    LVContents^ b = safe_cast<LVContents^>(e->ClickedItem);
+    int newpage = b->Page;
+
+    if (newpage > -1 && newpage < this->m_num_pages)
+    {
+        this->xaml_ListView->Opacity = 0.0;
+        this->xaml_ListView->IsEnabled = false;
+        this->m_curr_flipView->Opacity = 1.0;
+        this->m_curr_flipView->IsEnabled = true;
+
+        int old_page = this->m_currpage;
+        this->m_curr_flipView->SelectedIndex = newpage;
+        this->m_currpage = newpage;
+    }
+}
+
