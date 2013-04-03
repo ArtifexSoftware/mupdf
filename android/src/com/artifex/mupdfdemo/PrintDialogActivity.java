@@ -39,10 +39,13 @@ public class PrintDialogActivity extends Activity {
    */
   Intent cloudPrintIntent;
 
+  private int resultCode;
+
   @Override
   public void onCreate(Bundle icicle) {
     super.onCreate(icicle);
 
+    resultCode = RESULT_OK;
     setContentView(R.layout.print_dialog);
     dialogWebView = (WebView) findViewById(R.id.webview);
     cloudPrintIntent = this.getIntent();
@@ -90,8 +93,13 @@ public class PrintDialogActivity extends Activity {
 
         return Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
       } catch (FileNotFoundException e) {
+        resultCode = RESULT_CANCELED;
         e.printStackTrace();
       } catch (IOException e) {
+        resultCode = RESULT_CANCELED;
+        e.printStackTrace();
+      } catch (OutOfMemoryError e) {
+        resultCode = RESULT_CANCELED;
         e.printStackTrace();
       }
       return "";
@@ -103,6 +111,7 @@ public class PrintDialogActivity extends Activity {
 
     public void onPostMessage(String message) {
       if (message.startsWith(CLOSE_POST_MESSAGE_NAME)) {
+        setResult(resultCode);
         finish();
       }
     }

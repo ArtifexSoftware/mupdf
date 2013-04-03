@@ -47,6 +47,8 @@ public class MuPDFActivity extends Activity
 	/* The core rendering instance */
 	enum TopBarMode {Main, Search, Text, AnnotSelect, AnnotCreate, InkCreate};
 
+	private final int    OUTLINE_REQUEST=0;
+	private final int    PRINT_REQUEST=1;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private MuPDFReaderView mDocView;
@@ -545,7 +547,7 @@ public class MuPDFActivity extends Activity
 					if (outline != null) {
 						OutlineActivityData.get().items = outline;
 						Intent intent = new Intent(MuPDFActivity.this, OutlineActivity.class);
-						startActivityForResult(intent, 0);
+						startActivityForResult(intent, OUTLINE_REQUEST);
 					}
 				}
 			});
@@ -577,8 +579,16 @@ public class MuPDFActivity extends Activity
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode >= 0)
-			mDocView.setDisplayedViewIndex(resultCode);
+		switch (requestCode) {
+		case OUTLINE_REQUEST:
+			if (resultCode >= 0)
+				mDocView.setDisplayedViewIndex(resultCode);
+			break;
+		case PRINT_REQUEST:
+			if (resultCode == RESULT_CANCELED)
+				showInfo(getString(R.string.print_failed));
+			break;
+		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
 
@@ -787,7 +797,7 @@ public class MuPDFActivity extends Activity
 		Intent printIntent = new Intent(this, PrintDialogActivity.class);
 		printIntent.setDataAndType(docUri, "aplication/pdf");
 		printIntent.putExtra("title", mFileName);
-		startActivity(printIntent);
+		startActivityForResult(printIntent, PRINT_REQUEST);
 	}
 
 	private void showInfo(String message) {
