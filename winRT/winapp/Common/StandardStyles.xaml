@@ -441,10 +441,17 @@
         <Setter Property="Content" Value="&#xE115;"/>
     </Style>
     <Style x:Key="LinksAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
-        <Setter Property="AutomationProperties.AutomationId" Value="HelpAppBarButton"/>
+        <Setter Property="AutomationProperties.AutomationId" Value="LinksAppBarButton"/>
         <Setter Property="AutomationProperties.Name" Value="Links"/>
         <Setter Property="Content" Value="&#xE167;"/>
     </Style>
+    <Style x:Key="ContentsBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
+        <Setter Property="AutomationProperties.AutomationId" Value="AllAppsAppBarButton"/>
+        <Setter Property="AutomationProperties.Name" Value="Contents"/>
+        <Setter Property="Content" Value="&#xE179;"/>
+    </Style>    
+    
+    
     <!--
     
     <Style x:Key="SkipBackAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
