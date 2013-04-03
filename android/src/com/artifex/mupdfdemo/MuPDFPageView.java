@@ -81,16 +81,16 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		super(c, parentSize);
 		mCore = core;
 		mTextEntryBuilder = new AlertDialog.Builder(c);
-		mTextEntryBuilder.setTitle("MuPDF: fill out text field");
+		mTextEntryBuilder.setTitle("MuPDF: "+getContext().getString(R.string.fill_out_text_field));
 		LayoutInflater inflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		mEditText = (EditText)inflater.inflate(R.layout.textentry, null);
 		mTextEntryBuilder.setView(mEditText);
-		mTextEntryBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		mTextEntryBuilder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				dialog.dismiss();
 			}
 		});
-		mTextEntryBuilder.setPositiveButton("Okay", new DialogInterface.OnClickListener() {
+		mTextEntryBuilder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				mSetWidgetText = new AsyncTask<String,Void,Boolean> () {
 					@Override
@@ -111,7 +111,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		mTextEntry = mTextEntryBuilder.create();
 
 		mChoiceEntryBuilder = new AlertDialog.Builder(c);
-		mChoiceEntryBuilder.setTitle("MuPDF: choose value");
+		mChoiceEntryBuilder.setTitle("MuPDF: "+getContext().getString(R.string.choose_value));
 	}
 
 	public LinkInfo hitLink(float x, float y) {

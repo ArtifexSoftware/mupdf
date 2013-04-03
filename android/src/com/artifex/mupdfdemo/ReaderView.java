@@ -658,7 +658,7 @@ public class ReaderView extends AdapterView<Adapter>
 
 	@Override
 	public View getSelectedView() {
-		throw new UnsupportedOperationException("Not supported");
+		throw new UnsupportedOperationException(getContext().getString(R.string.not_supported));
 	}
 
 	@Override
@@ -671,7 +671,7 @@ public class ReaderView extends AdapterView<Adapter>
 
 	@Override
 	public void setSelection(int arg0) {
-		throw new UnsupportedOperationException("Not supported");
+		throw new UnsupportedOperationException(getContext().getString(R.string.not_supported));
 	}
 
 	private View getCached() {

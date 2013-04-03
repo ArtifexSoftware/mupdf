@@ -92,7 +92,7 @@ public abstract class SearchTask {
 				} else {
 					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurences_found);
 					AlertDialog alert = mAlertBuilder.create();
-					alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+					alert.setButton(AlertDialog.BUTTON_POSITIVE, mContext.getString(R.string.dismiss),
 							(DialogInterface.OnClickListener)null);
 					alert.show();
 				}

@@ -44,7 +44,7 @@ public class ChoosePDFActivity extends ListActivity {
 			builder.setTitle(R.string.no_media_warning);
 			builder.setMessage(R.string.no_media_hint);
 			AlertDialog alert = builder.create();
-			alert.setButton(AlertDialog.BUTTON_POSITIVE,"Dismiss",
+			alert.setButton(AlertDialog.BUTTON_POSITIVE,getString(R.string.dismiss),
 					new OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							finish();
@@ -114,7 +114,7 @@ public class ChoosePDFActivity extends ListActivity {
 
 				adapter.clear();
 				if (mParent != null)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, "[Up one level]"));
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, getString(R.string._up_one_level_)));
 				for (File f : mDirs)
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
 				for (File f : mFiles)

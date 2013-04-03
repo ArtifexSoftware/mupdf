@@ -1,6 +1,7 @@
 package com.artifex.mupdfdemo;
 import java.util.ArrayList;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.PointF;
@@ -68,23 +69,23 @@ public class MuPDFCore
 
 	public static native boolean javascriptSupported();
 
-	public MuPDFCore(String filename) throws Exception
+	public MuPDFCore(Context context, String filename) throws Exception
 	{
 		globals = openFile(filename);
 		if (globals == 0)
 		{
-			throw new Exception("Failed to open "+filename);
+			throw new Exception(context.getString(R.string.failed_to_open_)+filename);
 		}
 		file_format = fileFormatInternal();
 	}
 
-	public MuPDFCore(byte buffer[]) throws Exception
+	public MuPDFCore(Context context, byte buffer[]) throws Exception
 	{
 		fileBuffer = buffer;
 		globals = openBuffer();
 		if (globals == 0)
 		{
-			throw new Exception("Failed to open buffer");
+			throw new Exception(context.getString(R.string.failed_to_open_buffer));
 		}
 		file_format = fileFormatInternal();
 	}

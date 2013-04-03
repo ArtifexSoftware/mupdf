@@ -149,19 +149,19 @@ public class MuPDFActivity extends Activity
 				switch (result.buttonGroupType)
 				{
 				case OkCancel:
-					mAlertDialog.setButton(AlertDialog.BUTTON2, "Cancel", listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON2, getString(R.string.cancel), listener);
 					pressed[1] = MuPDFAlert.ButtonPressed.Cancel;
 				case Ok:
-					mAlertDialog.setButton(AlertDialog.BUTTON1, "Ok", listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON1, getString(R.string.ok), listener);
 					pressed[0] = MuPDFAlert.ButtonPressed.Ok;
 					break;
 				case YesNoCancel:
-					mAlertDialog.setButton(AlertDialog.BUTTON3, "Cancel", listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON3, getString(R.string.cancel), listener);
 					pressed[2] = MuPDFAlert.ButtonPressed.Cancel;
 				case YesNo:
-					mAlertDialog.setButton(AlertDialog.BUTTON1, "Yes", listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON1, getString(R.string.yes), listener);
 					pressed[0] = MuPDFAlert.ButtonPressed.Yes;
-					mAlertDialog.setButton(AlertDialog.BUTTON2, "No", listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON2, getString(R.string.no), listener);
 					pressed[1] = MuPDFAlert.ButtonPressed.No;
 					break;
 				}
@@ -204,7 +204,7 @@ public class MuPDFActivity extends Activity
 		System.out.println("Trying to open "+path);
 		try
 		{
-			core = new MuPDFCore(path);
+			core = new MuPDFCore(this, path);
 			// New file: drop the old outline data
 			OutlineActivityData.set(null);
 		}
@@ -221,7 +221,7 @@ public class MuPDFActivity extends Activity
 		System.out.println("Trying to open byte buffer");
 		try
 		{
-			core = new MuPDFCore(buffer);
+			core = new MuPDFCore(this, buffer);
 			// New file: drop the old outline data
 			OutlineActivityData.set(null);
 		}
@@ -245,8 +245,8 @@ public class MuPDFActivity extends Activity
 		if (core == null) {
 			core = (MuPDFCore)getLastNonConfigurationInstance();
 
-			if (savedInstanceState != null && savedInstanceState.containsKey("FileName")) {
-				mFileName = savedInstanceState.getString("FileName");
+			if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.filename))) {
+				mFileName = savedInstanceState.getString(getString(R.string.filename));
 			}
 		}
 		if (core == null) {
@@ -286,7 +286,7 @@ public class MuPDFActivity extends Activity
 								String contentFailure = res.getString(R.string.content_failure);
 								String openFailed = res.getString(R.string.open_failed);
 								setTitle(String.format(contentFailure, openFailed, failString));
-								alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+								alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
 										new DialogInterface.OnClickListener() {
 											public void onClick(DialogInterface dialog, int which) {
 												finish();
@@ -318,7 +318,7 @@ public class MuPDFActivity extends Activity
 		{
 			AlertDialog alert = mAlertBuilder.create();
 			alert.setTitle(R.string.open_failed);
-			alert.setButton(AlertDialog.BUTTON_POSITIVE, "Dismiss",
+			alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
 							finish();
@@ -339,7 +339,7 @@ public class MuPDFActivity extends Activity
 		AlertDialog alert = mAlertBuilder.create();
 		alert.setTitle(R.string.enter_password);
 		alert.setView(mPasswordView);
-		alert.setButton(AlertDialog.BUTTON_POSITIVE, "Ok",
+		alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
 				new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				if (core.authenticatePassword(mPasswordView.getText().toString())) {
@@ -349,7 +349,7 @@ public class MuPDFActivity extends Activity
 				}
 			}
 		});
-		alert.setButton(AlertDialog.BUTTON_NEGATIVE, "Cancel",
+		alert.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.cancel),
 				new DialogInterface.OnClickListener() {
 
 			public void onClick(DialogInterface dialog, int which) {
@@ -603,7 +603,7 @@ public class MuPDFActivity extends Activity
 
 	private void toggleReflow() {
 		reflowModeSet(!mReflow);
-		showInfo(mReflow ? "Entering reflow mode" : "Leaving reflow mode");
+		showInfo(mReflow ? getString(R.string.entering_reflow_mode) : getString(R.string.leaving_reflow_mode));
 	}
 
 	@Override
@@ -611,7 +611,7 @@ public class MuPDFActivity extends Activity
 		super.onSaveInstanceState(outState);
 
 		if (mFileName != null && mDocView != null) {
-			outState.putString("FileName", mFileName);
+			outState.putString(getString(R.string.filename), mFileName);
 
 			// Store current page in the prefs against the file name,
 			// so that we can pick it up each time the file is loaded
@@ -778,7 +778,7 @@ public class MuPDFActivity extends Activity
 		Uri docUri = myIntent != null ? myIntent.getData() : null;
 
 		if (docUri == null) {
-			showInfo("Print failed");
+			showInfo(getString(R.string.print_failed));
 		}
 
 		if (docUri.getScheme() == null)
@@ -848,7 +848,7 @@ public class MuPDFActivity extends Activity
 		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
 		mTopBarMode = TopBarMode.Text;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		showInfo("Select text");
+		showInfo(getString(R.string.select_text));
 	}
 
 	public void OnCancelSelectButtonClick(View v) {
@@ -868,7 +868,7 @@ public class MuPDFActivity extends Activity
 		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 		mTopBarMode = TopBarMode.Main;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		showInfo(copied?"Copied to clipboard":"No text selected");
+		showInfo(copied?getString(R.string.copied_to_clipboard):getString(R.string.no_text_selected));
 	}
 
 	public void OnHighlightButtonClick(View v) {
@@ -880,7 +880,7 @@ public class MuPDFActivity extends Activity
 		mTopBarMode = TopBarMode.Main;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		if (!success)
-			showInfo("No text selected");
+			showInfo(getString(R.string.no_text_selected));
 	}
 
 	public void OnUnderlineButtonClick(View v) {
@@ -892,7 +892,7 @@ public class MuPDFActivity extends Activity
 		mTopBarMode = TopBarMode.Main;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		if (!success)
-			showInfo("No text selected");
+			showInfo(getString(R.string.no_text_selected));
 	}
 
 	public void OnStrikeOutButtonClick(View v) {
@@ -904,7 +904,7 @@ public class MuPDFActivity extends Activity
 		mTopBarMode = TopBarMode.Main;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		if (!success)
-			showInfo("No text selected");
+			showInfo(getString(R.string.no_text_selected));
 	}
 
 	public void OnCancelSearchButtonClick(View v) {
@@ -941,7 +941,7 @@ public class MuPDFActivity extends Activity
 		mDocView.setMode(MuPDFReaderView.Mode.Drawing);
 		mTopBarMode = TopBarMode.InkCreate;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		showInfo("Draw annotation");
+		showInfo(getString(R.string.draw_annotation));
 	}
 
 	public void OnSaveInkButtonClick(View v) {
@@ -953,7 +953,7 @@ public class MuPDFActivity extends Activity
 		mTopBarMode = TopBarMode.Main;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		if (!success)
-			showInfo("Nothing to save");
+			showInfo(getString(R.string.nothing_to_save));
 	}
 
 	public void OnCancelInkButtonClick(View v) {
@@ -1046,9 +1046,9 @@ public class MuPDFActivity extends Activity
 			};
 			AlertDialog alert = mAlertBuilder.create();
 			alert.setTitle("MuPDF");
-			alert.setMessage("Document has changes. Save them?");
-			alert.setButton(AlertDialog.BUTTON_POSITIVE, "Yes", listener);
-			alert.setButton(AlertDialog.BUTTON_NEGATIVE, "No", listener);
+			alert.setMessage(getString(R.string.document_has_changes_save_them_));
+			alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.yes), listener);
+			alert.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.no), listener);
 			alert.show();
 		} else {
 			super.onBackPressed();

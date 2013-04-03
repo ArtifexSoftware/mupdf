@@ -28,4 +28,26 @@
     <string name="ink">Ink</string>
     <string name="save">Save</string>
     <string name="print">Print</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="_up_one_level_">[Up one level]</string>
+    <string name="ok">Ok</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="filename">FileName</string>
+    <string name="out_of_memory_during_buffer_reading">Out of memory during buffer reading</string>
+    <string name="entering_reflow_mode">Entering reflow mode</string>
+    <string name="leaving_reflow_mode">Leaving reflow mode</string>
+    <string name="print_failed">Print failed</string>
+    <string name="select_text">Select text</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="no_text_selected">No text selected</string>
+    <string name="draw_annotation">Draw annotation</string>
+    <string name="nothing_to_save">Nothing to save</string>
+    <string name="document_has_changes_save_them_">Document has changes. Save them?</string>
+    <string name="failed_to_open_">"Failed to open "</string>
+    <string name="failed_to_open_buffer">Failed to open buffer</string>
+    <string name="fill_out_text_field">fill out text field</string>
+    <string name="okay">Okay</string>
+    <string name="choose_value">choose value</string>
+    <string name="not_supported">Not supported</string>
 </resources>
