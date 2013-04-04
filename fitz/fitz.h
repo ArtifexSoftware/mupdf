@@ -1849,6 +1849,8 @@ typedef struct fz_text_char_s fz_text_char;
 typedef struct fz_text_span_s fz_text_span;
 typedef struct fz_text_line_s fz_text_line;
 typedef struct fz_text_block_s fz_text_block;
+typedef struct fz_image_block_s fz_image_block;
+typedef struct fz_page_block_s fz_page_block;
 
 typedef struct fz_text_sheet_s fz_text_sheet;
 typedef struct fz_text_page_s fz_text_page;
@@ -1881,14 +1883,33 @@ struct fz_text_style_s
 };
 
 /*
-	fz_text_page: A text page is a list of blocks of text, together with
+	fz_text_page: A text page is a list of page blocks, together with
 	an overall bounding box.
 */
 struct fz_text_page_s
 {
 	fz_rect mediabox;
 	int len, cap;
-	fz_text_block *blocks;
+	fz_page_block *blocks;
+};
+
+/*
+	fz_page_block: A page block is a typed block pointer.
+*/
+struct fz_page_block_s
+{
+	int type;
+	union
+	{
+		fz_text_block *text;
+		fz_image_block *image;
+	} u;
+};
+
+enum
+{
+	FZ_PAGE_BLOCK_TEXT = 0,
+	FZ_PAGE_BLOCK_IMAGE = 1
 };
 
 /*
@@ -1904,6 +1925,20 @@ struct fz_text_block_s
 };
 
 enum { FZ_MAX_COLORS = 32 };
+
+/*
+	fz_image_block: An image block is an image, together with the  list of lines of text. In typical
+	cases this may correspond to a paragraph or a column of text. A
+	collection of blocks makes up a page.
+*/
+struct fz_image_block_s
+{
+	fz_rect bbox;
+	fz_matrix mat;
+	fz_image *image;
+	fz_colorspace *cspace;
+	float colors[FZ_MAX_COLORS];
+};
 
 /*
 	fz_text_line: A text line is a list of text spans, with the same
