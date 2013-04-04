@@ -121,7 +121,7 @@ static void usage(void)
 		"\t-d\tdisable use of display list\n"
 		"\t-5\tshow md5 checksums\n"
 		"\t-R -\trotate clockwise by given number of degrees\n"
-		"\t-G gamma\tgamma correct output\n"
+		"\t-G -\tgamma correct output\n"
 		"\t-I\tinvert output\n"
 		"\t-l\tprint outline\n"
 		"\t-j -\tOutput mujstest file\n"
