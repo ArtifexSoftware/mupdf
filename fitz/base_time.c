@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_WINRT)
 
 #include <time.h>
 #ifndef METRO

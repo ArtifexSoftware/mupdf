@@ -78,12 +78,6 @@
                         </ItemsPanelTemplate>
                     </FlipView.ItemsPanel>
                 </FlipView>
-
-
-
-
-
-
             </Canvas>
         </Grid>
     </Grid>
