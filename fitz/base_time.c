@@ -1,4 +1,4 @@
-#if defined(_WIN32) && !defined(_WINRT)
+#if defined(_WIN32)
 
 #include <time.h>
 #ifndef METRO
@@ -12,6 +12,12 @@
 #else
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 #endif
+
+#if defined(_WINRT)
+
+void fz_gettimeofday_dummy() { }
+
+#else
 
 struct timeval;
 
@@ -38,6 +44,8 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 	return 0;
 }
 
+#endif
+
 FILE *fopen_utf8(const char *name, const char *mode)
 {
 	wchar_t *wname, *wmode, *d;
@@ -45,7 +53,7 @@ FILE *fopen_utf8(const char *name, const char *mode)
 	int c;
 	FILE *file;
 
-	d = wname = malloc((strlen(name)+1) * sizeof(wchar_t));
+	d = wname = (wchar_t*) malloc((strlen(name)+1) * sizeof(wchar_t));
 	if (d == NULL)
 		return NULL;
 	s = name;
@@ -54,7 +62,7 @@ FILE *fopen_utf8(const char *name, const char *mode)
 		*d++ = c;
 	}
 	*d = 0;
-	d = wmode = malloc((strlen(mode)+1) * sizeof(wchar_t));
+	d = wmode = (wchar_t*) malloc((strlen(mode)+1) * sizeof(wchar_t));
 	if (d == NULL)
 	{
 		free(wname);

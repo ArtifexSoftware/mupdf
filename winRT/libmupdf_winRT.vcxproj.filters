@@ -342,6 +342,12 @@
     <ClCompile Include="..\xps\xps_zip.c">
       <Filter>xps</Filter>
     </ClCompile>
+    <ClCompile Include="..\pdf\pdf_field.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fitz\res_func.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\cbz\mucbz.h">

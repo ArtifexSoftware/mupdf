@@ -449,9 +449,14 @@
         <Setter Property="AutomationProperties.AutomationId" Value="AllAppsAppBarButton"/>
         <Setter Property="AutomationProperties.Name" Value="Contents"/>
         <Setter Property="Content" Value="&#xE179;"/>
-    </Style>    
-    
-    
+    </Style>
+    <Style x:Key="ReflowAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
+        <Setter Property="AutomationProperties.AutomationId" Value="ReflowAppBarButton"/>
+        <Setter Property="AutomationProperties.Name" Value="Reflow"/>
+        <Setter Property="Content" Value="&#xE18B;"/>
+    </Style>
+
+
     <!--
     
     <Style x:Key="SkipBackAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
