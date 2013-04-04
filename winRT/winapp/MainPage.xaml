@@ -31,7 +31,8 @@
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="Search" Style="{StaticResource SearchAppBarButtonStyle}" Tag="Search" Click="Searcher"/>
                     <Button x:Name="Contents" Style="{StaticResource ContentsBarButtonStyle}" Tag="Contents" Click="ContentDisplay"/>
-                    <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Search" Click="Linker"/>
+                    <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Links" Click="Linker"/>
+                    <Button x:Name="Reflow" Style="{StaticResource ReflowAppBarButtonStyle}" Tag="Reflow" Click="Reflower"/>
                     <Button x:Name="Help" Style="{StaticResource HelpAppBarButtonStyle}" Tag="Help"/>
                 </StackPanel>
             </Grid>
@@ -81,6 +82,7 @@
                         </ItemsPanelTemplate>
                     </FlipView.ItemsPanel>
                 </FlipView>
+
             </Canvas>
             <ListView x:Name="xaml_ListView" Foreground="Black" HorizontalAlignment="Stretch" 
                       VerticalAlignment="Stretch" Opacity="0" IsItemClickEnabled="True" 
@@ -98,6 +100,12 @@
                     <SolidColorBrush Color="LightGray"></SolidColorBrush>
                 </ListView.Background>
             </ListView>
+            <WebView x:Name="xaml_WebView" HorizontalAlignment="Stretch" 
+                     VerticalAlignment="Stretch" Visibility="Collapsed" 
+                     ManipulationDelta="WebViewDelta" 
+                     ManipulationStarting="WebViewStarting"
+                     ManipulationCompleted="WebViewCompleted" ManipulationMode="All"
+                     />
         </Grid>
     </Grid>
-</Page>
+ </Page>

@@ -91,6 +91,7 @@
     <ClCompile Include="..\fitz\res_bitmap.c" />
     <ClCompile Include="..\fitz\res_colorspace.c" />
     <ClCompile Include="..\fitz\res_font.c" />
+    <ClCompile Include="..\fitz\res_func.c" />
     <ClCompile Include="..\fitz\res_halftone.c" />
     <ClCompile Include="..\fitz\res_path.c" />
     <ClCompile Include="..\fitz\res_pixmap.c" />
@@ -112,6 +113,7 @@
     <ClCompile Include="..\pdf\pdf_device.c" />
     <ClCompile Include="..\pdf\pdf_encoding.c" />
     <ClCompile Include="..\pdf\pdf_event.c" />
+    <ClCompile Include="..\pdf\pdf_field.c" />
     <ClCompile Include="..\pdf\pdf_font.c" />
     <ClCompile Include="..\pdf\pdf_fontfile.c" />
     <ClCompile Include="..\pdf\pdf_form.c" />

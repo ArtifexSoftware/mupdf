@@ -1908,3 +1908,88 @@ void winapp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xa
     }
 }
 
+
+
+void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    if (xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible)
+    {
+        /* Go back to flip view */
+        xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+        this->xaml_MainGrid->Opacity = 1.0;
+        this->m_curr_flipView->IsEnabled = true;
+    } 
+    else if (this->m_curr_flipView->IsEnabled)
+    {
+        /* Only go from flip view to reflow */
+        RenderingStatus_t *ren_status = &m_ren_status;
+        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
+        /* Create a task to wait until the renderer is available */
+        auto t = create_task([ren_status, ThumbCancel]()
+        {
+            if (*ren_status == REN_THUMBS)
+                ThumbCancel->cancel();
+            while (*ren_status != REN_AVAILABLE) {
+            }
+        }).then([this]()
+        {
+			fz_rect bounds;
+            fz_output *out;
+	        fz_page *page = fz_load_page(m_doc, this->m_currpage);
+	        fz_text_sheet *sheet = fz_new_text_sheet(ctx);
+	        fz_text_page *text = fz_new_text_page(ctx, &fz_empty_rect);
+	        fz_device *dev = fz_new_text_device(ctx, sheet, text);
+
+	        fz_run_page(m_doc, page, dev, &fz_identity, NULL);
+	        fz_free_device(dev);
+            dev = NULL;
+			fz_text_analysis(ctx, sheet, text);
+            fz_buffer *buf = fz_new_buffer(ctx, 256);
+            out = fz_new_output_buffer(ctx, buf);
+			fz_print_text_page_html(ctx, out, text);
+
+            xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
+            this->xaml_MainGrid->Opacity = 0.0;
+            this->m_curr_flipView->IsEnabled = false;
+            String^ html_string = char_to_String((char*) buf->data);
+           // WebViewBrush^ web_brush = ref new WebViewBrush();
+            this->xaml_WebView->NavigateToString(html_string);
+
+          //  web_brush->SourceName = "xaml_WebView";
+           // web_brush->Redraw();
+           // this->xaml_zoomCanvas->Background = web_brush;
+           // xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+
+
+            /* Check if thumb rendering is done.  If not then restart */
+            if (this->m_num_pages != this->m_thumb_page_start)
+                this->RenderThumbs();
+        }, task_continuation_context::use_current());
+    }
+}
+
+
+
+void winapp::MainPage::WebViewDelta(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs^ e)
+{
+    double scale_val = e->Delta.Scale;
+}
+
+
+void winapp::MainPage::WebViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e)
+{
+    int zz = 1;
+}
+
+
+void winapp::MainPage::WebViewCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e)
+{
+ int zz = 1;
+}
+
+
+void winapp::MainPage::TempViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e)
+{
+
+    int zz = 1;
+}
