@@ -1,8 +1,6 @@
 package com.artifex.mupdfdemo;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 
 import android.app.Activity;
@@ -92,14 +90,10 @@ public class PrintDialogActivity extends Activity {
         baos.flush();
 
         return Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT);
-      } catch (FileNotFoundException e) {
+      } catch (Throwable e) {
         resultCode = RESULT_CANCELED;
-        e.printStackTrace();
-      } catch (IOException e) {
-        resultCode = RESULT_CANCELED;
-        e.printStackTrace();
-      } catch (OutOfMemoryError e) {
-        resultCode = RESULT_CANCELED;
+        setResult(resultCode);
+        finish();
         e.printStackTrace();
       }
       return "";
