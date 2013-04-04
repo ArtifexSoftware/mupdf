@@ -115,5 +115,6 @@ namespace winapp
         void ShowSearchResults(SearchResult_t result);
         void GridSizeChanged();
         void UpDatePageSizes();
+        void ShowThumbnail();
     };
 }

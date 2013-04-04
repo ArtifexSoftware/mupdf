@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="pdf">
-      <UniqueIdentifier>{6f183396-5a5d-449c-ad81-5f2b5d38d467}</UniqueIdentifier>
+      <UniqueIdentifier>{9cbc5d32-1ade-452f-9a40-cd43b9e313aa}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
