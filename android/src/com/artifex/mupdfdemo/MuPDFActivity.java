@@ -42,7 +42,8 @@ class ThreadPerTaskExecutor implements Executor {
 public class MuPDFActivity extends Activity
 {
 	/* The core rendering instance */
-	enum TopBarMode {Main, Search, Text, AnnotSelect, AnnotCreate, InkCreate};
+	enum TopBarMode {Main, Search, Annot, Delete, More, Accept};
+	enum AcceptMode {Highlight, Underline, StrikeOut, Ink, CopyText};
 
 	private final int    OUTLINE_REQUEST=0;
 	private final int    PRINT_REQUEST=1;
@@ -60,10 +61,12 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchButton;
 	private ImageButton  mReflowButton;
 	private ImageButton  mOutlineButton;
+	private TextView     mAnnotTypeText;
 	private ImageButton mAnnotButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
 	private TopBarMode   mTopBarMode;
+	private AcceptMode   mAcceptMode;
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
@@ -382,7 +385,8 @@ public class MuPDFActivity extends Activity
 				if (!mButtonsVisible) {
 					showButtons();
 				} else {
-					hideButtons();
+					if (mTopBarMode == TopBarMode.Main)
+						hideButtons();
 				}
 			}
 
@@ -393,18 +397,25 @@ public class MuPDFActivity extends Activity
 
 			@Override
 			protected void onHit(Hit item) {
-				switch (item) {
-				case Annotation:
-					showButtons();
-					mTopBarMode = TopBarMode.AnnotSelect;
-					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-					break;
-				case Widget:
-				case Nothing:
-					if (mTopBarMode == TopBarMode.AnnotSelect) {
-						mTopBarMode = TopBarMode.Main;
+				switch (mTopBarMode) {
+				case Annot:
+					if (item == Hit.Annotation) {
+						showButtons();
+						mTopBarMode = TopBarMode.Delete;
 						mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 					}
+					break;
+				case Delete:
+					mTopBarMode = TopBarMode.Annot;
+					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+				// fall through
+				default:
+					// Not in annotation editing mode, but the pageview will
+					// still select and highlight hit annotations, so
+					// deselect just in case.
+					MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+					if (pageView != null)
+						pageView.deselectAnnotation();
 					break;
 				}
 			}
@@ -466,7 +477,7 @@ public class MuPDFActivity extends Activity
 		{
 			mAnnotButton.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {
-					mTopBarMode = TopBarMode.AnnotCreate;
+					mTopBarMode = TopBarMode.Annot;
 					mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 				}
 			});
@@ -822,7 +833,8 @@ public class MuPDFActivity extends Activity
 		mSearchButton = (ImageButton)mButtonsView.findViewById(R.id.searchButton);
 		mReflowButton = (ImageButton)mButtonsView.findViewById(R.id.reflowButton);
 		mOutlineButton = (ImageButton)mButtonsView.findViewById(R.id.outlineButton);
-		mAnnotButton = (ImageButton)mButtonsView.findViewById(R.id.annotButton);
+		mAnnotButton = (ImageButton)mButtonsView.findViewById(R.id.editAnnotButton);
+		mAnnotTypeText = (TextView)mButtonsView.findViewById(R.id.annotType);
 		mTopBarSwitcher = (ViewAnimator)mButtonsView.findViewById(R.id.switcher);
 		mSearchBack = (ImageButton)mButtonsView.findViewById(R.id.searchBack);
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
@@ -834,67 +846,138 @@ public class MuPDFActivity extends Activity
 		mPageSlider.setVisibility(View.INVISIBLE);
 	}
 
-	public void OnSelectButtonClick(View v) {
-		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
-		mTopBarMode = TopBarMode.Text;
+	public void OnMoreButtonClick(View v) {
+		mTopBarMode = TopBarMode.More;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+	}
+
+	public void OnCancelMoreButtonClick(View v) {
+		mTopBarMode = TopBarMode.Main;
+		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+	}
+
+	public void OnPrintButtonClick(View v) {
+		printDoc();
+	}
+
+	public void OnCopyTextButtonClick(View v) {
+		mTopBarMode = TopBarMode.Accept;
+		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+		mAcceptMode = AcceptMode.CopyText;
+		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
+		mAnnotTypeText.setText(getString(R.string.copy_text));
 		showInfo(getString(R.string.select_text));
 	}
 
-	public void OnCancelSelectButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		if (pageView != null)
-			pageView.deselectText();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.AnnotCreate;
+	public void OnEditAnnotButtonClick(View v) {
+		mTopBarMode = TopBarMode.Annot;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 	}
 
-	public void OnCopySelectButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		boolean copied = false;
-		if (pageView != null)
-			copied = pageView.copySelection();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
+	public void OnCancelAnnotButtonClick(View v) {
+		mTopBarMode = TopBarMode.More;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		showInfo(copied?getString(R.string.copied_to_clipboard):getString(R.string.no_text_selected));
 	}
 
 	public void OnHighlightButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		boolean success = false;
-		if (pageView != null)
-			success = pageView.markupSelection(Annotation.Type.HIGHLIGHT);
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
+		mTopBarMode = TopBarMode.Accept;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		if (!success)
-			showInfo(getString(R.string.no_text_selected));
+		mAcceptMode = AcceptMode.Highlight;
+		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
+		mAnnotTypeText.setText(R.string.highlight);
+		showInfo(getString(R.string.select_text));
 	}
 
 	public void OnUnderlineButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		boolean success = false;
-		if (pageView != null)
-			success = pageView.markupSelection(Annotation.Type.UNDERLINE);
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
+		mTopBarMode = TopBarMode.Accept;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		if (!success)
-			showInfo(getString(R.string.no_text_selected));
+		mAcceptMode = AcceptMode.Underline;
+		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
+		mAnnotTypeText.setText(R.string.underline);
+		showInfo(getString(R.string.select_text));
 	}
 
 	public void OnStrikeOutButtonClick(View v) {
+		mTopBarMode = TopBarMode.Accept;
+		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+		mAcceptMode = AcceptMode.StrikeOut;
+		mDocView.setMode(MuPDFReaderView.Mode.Selecting);
+		mAnnotTypeText.setText(R.string.strike_out);
+		showInfo(getString(R.string.select_text));
+	}
+
+	public void OnInkButtonClick(View v) {
+		mTopBarMode = TopBarMode.Accept;
+		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+		mAcceptMode = AcceptMode.Ink;
+		mDocView.setMode(MuPDFReaderView.Mode.Drawing);
+		mAnnotTypeText.setText(R.string.ink);
+		showInfo(getString(R.string.draw_annotation));
+	}
+
+	public void OnCancelAcceptButtonClick(View v) {
+		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+		if (pageView != null) {
+			pageView.deselectText();
+			pageView.cancelDraw();
+		}
+		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
+		switch (mAcceptMode) {
+		case CopyText:
+			mTopBarMode = TopBarMode.More;
+			break;
+		default:
+			mTopBarMode = TopBarMode.Annot;
+			break;
+		}
+		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
+	}
+
+	public void OnAcceptButtonClick(View v) {
 		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 		boolean success = false;
-		if (pageView != null)
-			success = pageView.markupSelection(Annotation.Type.STRIKEOUT);
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
+		switch (mAcceptMode) {
+		case CopyText:
+			if (pageView != null)
+				success = pageView.copySelection();
+			mTopBarMode = TopBarMode.More;
+			showInfo(success?getString(R.string.copied_to_clipboard):getString(R.string.no_text_selected));
+			break;
+
+		case Highlight:
+			if (pageView != null)
+				success = pageView.markupSelection(Annotation.Type.HIGHLIGHT);
+			mTopBarMode = TopBarMode.Annot;
+			if (!success)
+				showInfo(getString(R.string.no_text_selected));
+			break;
+
+		case Underline:
+			if (pageView != null)
+				success = pageView.markupSelection(Annotation.Type.UNDERLINE);
+			mTopBarMode = TopBarMode.Annot;
+			if (!success)
+				showInfo(getString(R.string.no_text_selected));
+			break;
+
+		case StrikeOut:
+			if (pageView != null)
+				success = pageView.markupSelection(Annotation.Type.STRIKEOUT);
+			mTopBarMode = TopBarMode.Annot;
+			if (!success)
+				showInfo(getString(R.string.no_text_selected));
+			break;
+
+		case Ink:
+			if (pageView != null)
+				success = pageView.saveDraw();
+			mTopBarMode = TopBarMode.Annot;
+			if (!success)
+				showInfo(getString(R.string.nothing_to_save));
+			break;
+		}
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		if (!success)
-			showInfo(getString(R.string.no_text_selected));
+		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
 	}
 
 	public void OnCancelSearchButtonClick(View v) {
@@ -902,10 +985,10 @@ public class MuPDFActivity extends Activity
 	}
 
 	public void OnDeleteButtonClick(View v) {
-		View cv = mDocView.getDisplayedView();
-		if (cv != null)
-			((MuPDFView)cv).deleteSelectedAnnotation();
-		mTopBarMode = TopBarMode.Main;
+		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
+		if (pageView != null)
+			pageView.deleteSelectedAnnotation();
+		mTopBarMode = TopBarMode.Annot;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 	}
 
@@ -913,50 +996,8 @@ public class MuPDFActivity extends Activity
 		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
 		if (pageView != null)
 			pageView.deselectAnnotation();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
+		mTopBarMode = TopBarMode.Annot;
 		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-	}
-
-	public void OnCancelAnnotButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		if (pageView != null)
-			pageView.deselectText();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
-		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-	}
-
-	public void OnInkButtonClick(View v) {
-		mDocView.setMode(MuPDFReaderView.Mode.Drawing);
-		mTopBarMode = TopBarMode.InkCreate;
-		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		showInfo(getString(R.string.draw_annotation));
-	}
-
-	public void OnSaveInkButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		boolean success = false;
-		if (pageView != null)
-			success = pageView.saveDraw();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.Main;
-		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-		if (!success)
-			showInfo(getString(R.string.nothing_to_save));
-	}
-
-	public void OnCancelInkButtonClick(View v) {
-		MuPDFView pageView = (MuPDFView) mDocView.getDisplayedView();
-		if (pageView != null)
-			pageView.cancelDraw();
-		mDocView.setMode(MuPDFReaderView.Mode.Viewing);
-		mTopBarMode = TopBarMode.AnnotCreate;
-		mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
-	}
-
-	public void OnPrintButtonClick(View v) {
-		printDoc();
 	}
 
 	private void showKeyboard() {

@@ -12,7 +12,7 @@
         android:layout_centerHorizontal="true" >
 
         <RelativeLayout
-            android:id="@+id/topBar"
+			android:id="@+id/topBar0Main"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
@@ -35,55 +35,56 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/annotButton"
+                android:layout_toLeftOf="@+id/reflowButton"
                 android:contentDescription="@string/link_control"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_link" />
-
-            <ImageButton
-                android:id="@+id/annotButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/outlineButton"
-                android:contentDescription="@string/edit_annotations"
-                android:background="@drawable/button"
-                android:src="@drawable/ic_annot" />
-
-            <ImageButton
-                android:id="@+id/outlineButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/reflowButton"
-                android:contentDescription="@string/search_document"
-                android:background="@drawable/button"
-                android:src="@drawable/ic_list" />
 
             <ImageButton
                 android:id="@+id/reflowButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/searchButton"
+                android:layout_toLeftOf="@+id/outlineButton"
                 android:contentDescription="@string/search_document"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_reflow" />
+
+            <ImageButton
+                android:id="@+id/outlineButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/searchButton"
+                android:contentDescription="@string/search_document"
+                android:background="@drawable/button"
+                android:src="@drawable/ic_list" />
 
             <ImageButton
                 android:id="@+id/searchButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_alignParentRight="true"
+                android:layout_toLeftOf="@+id/moreButton"
                 android:contentDescription="@string/search_document"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_magnifying_glass" />
 
+            <ImageButton
+                android:id="@+id/moreButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:contentDescription="@string/more"
+				android:background="@drawable/button"
+				android:onClick="OnMoreButtonClick"
+                android:src="@drawable/ic_more" />
+
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/topBar2"
+            android:id="@+id/topBar1Search"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
@@ -134,20 +135,20 @@
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/topBar3"
+            android:id="@+id/topBar2Annot"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
 
             <ImageButton
-                android:id="@+id/cancelSelectButton"
+                android:id="@+id/cancelAnnotButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
-                android:onClick="OnCancelSelectButtonClick"
+                android:onClick="OnCancelAnnotButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
@@ -177,27 +178,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/copySelectButton"
+                android:layout_toLeftOf="@+id/inkButton"
                 android:contentDescription="@string/strike_out"
                 android:background="@drawable/button"
                 android:onClick="OnStrikeOutButtonClick"
                 android:src="@drawable/ic_strike" />
 
             <ImageButton
-                android:id="@+id/copySelectButton"
+                android:id="@+id/inkButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
-                android:contentDescription="@string/copy"
+                android:contentDescription="@string/ink"
                 android:background="@drawable/button"
-                android:onClick="OnCopySelectButtonClick"
-                android:src="@drawable/ic_clipboard" />
+                android:onClick="OnInkButtonClick"
+                android:src="@drawable/ic_pen" />
 
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/topBar4"
+            android:id="@+id/topBar3Delete"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
@@ -227,20 +228,20 @@
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/topBar5"
+            android:id="@+id/topBar4More"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
 
             <ImageButton
-                android:id="@+id/cancelAnnotButton"
+                android:id="@+id/cancelMoreButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
-                android:onClick="OnCancelAnnotButtonClick"
+                android:onClick="OnCancelMoreButtonClick"
                 android:src="@drawable/ic_cancel" />
 
             <ImageButton
@@ -248,60 +249,75 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/selectButton"
+                android:layout_toLeftOf="@+id/copyTextButton"
                 android:contentDescription="@string/print"
                 android:background="@drawable/button"
                 android:onClick="OnPrintButtonClick"
                 android:src="@drawable/ic_print" />
 
             <ImageButton
-                android:id="@+id/selectButton"
+                android:id="@+id/copyTextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toLeftOf="@+id/inkButton"
-                android:contentDescription="@string/select"
+                android:layout_toLeftOf="@+id/editAnnotButton"
+                android:contentDescription="@string/copy_text_to_the_clipboard"
                 android:background="@drawable/button"
-                android:onClick="OnSelectButtonClick"
-                android:src="@drawable/ic_select" />
+                android:onClick="OnCopyTextButtonClick"
+                android:src="@drawable/ic_clipboard" />
 
             <ImageButton
-                android:id="@+id/inkButton"
+                android:id="@+id/editAnnotButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
-                android:contentDescription="@string/ink"
+                android:contentDescription="@string/edit_annotations"
                 android:background="@drawable/button"
-                android:onClick="OnInkButtonClick"
-                android:src="@drawable/ic_pen" />
+                android:onClick="OnEditAnnotButtonClick"
+                android:src="@drawable/ic_annotation" />
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/topBar6"
+            android:id="@+id/topBar5Accept"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/toolbar" >
 
             <ImageButton
-                android:id="@+id/cancelInkButton"
+                android:id="@+id/cancelAcceptButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentLeft="true"
                 android:contentDescription="@string/cancel"
                 android:background="@drawable/button"
-                android:onClick="OnCancelInkButtonClick"
+                android:onClick="OnCancelAcceptButtonClick"
                 android:src="@drawable/ic_cancel" />
 
-            <Button
-                android:id="@+id/saveInkButton"
+            <TextView
+                android:id="@+id/annotType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/cancelAcceptButton"
+                android:layout_toLeftOf="@+id/acceptButton"
+                android:gravity="center"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <ImageButton
+                android:id="@+id/acceptButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
-                android:onClick="OnSaveInkButtonClick"
-                android:text="@string/save" />
+                android:contentDescription="@string/accept"
+                android:background="@drawable/button"
+                android:onClick="OnAcceptButtonClick"
+                android:src="@drawable/ic_check" />
         </RelativeLayout>
         </ViewAnimator>
 

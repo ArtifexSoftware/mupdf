@@ -14,13 +14,13 @@
     <string name="outline_title">Table of Contents</string>
     <string name="enter_password">Enter Password</string>
     <string name="text_not_found">Text not found</string>
-    <string name="searching_">Searching...</string>
+    <string name="searching_">Searching&#8230;</string>
     <string name="link_control">Link highlighting and enabling</string>
-    <string name="no_further_occurences_found">No further occurences found</string>
+    <string name="no_further_occurences_found">No further occurrences found</string>
     <string name="select">Select</string>
     <string name="search">Search</string>
     <string name="copy">Copy</string>
-    <string name="strike_out">Strike out</string>
+    <string name="strike_out">Strike-out</string>
     <string name="delete">Delete</string>
     <string name="highlight">Highlight</string>
     <string name="underline">Underline</string>
@@ -50,4 +50,8 @@
     <string name="okay">Okay</string>
     <string name="choose_value">choose value</string>
     <string name="not_supported">Not supported</string>
+    <string name="copy_text_to_the_clipboard">Copy text to the clipboard</string>
+    <string name="more">More</string>
+    <string name="accept">Accept</string>
+    <string name="copy_text">copy text</string>
 </resources>
