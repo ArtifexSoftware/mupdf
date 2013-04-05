@@ -54,4 +54,5 @@
     <string name="more">More</string>
     <string name="accept">Accept</string>
     <string name="copy_text">copy text</string>
+    <string name="format_currently_not_supported">Format currently not supported</string>
 </resources>

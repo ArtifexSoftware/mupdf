@@ -792,6 +792,11 @@ public class MuPDFActivity extends Activity
 	}
 
 	private void printDoc() {
+		if (!core.fileFormat().startsWith("PDF")) {
+			showInfo(getString(R.string.format_currently_not_supported));
+			return;
+		}
+
 		Intent myIntent = getIntent();
 		Uri docUri = myIntent != null ? myIntent.getData() : null;
 

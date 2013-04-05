@@ -261,6 +261,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/editAnnotButton"
+                android:layout_alignWithParentIfMissing="true"
                 android:contentDescription="@string/copy_text_to_the_clipboard"
                 android:background="@drawable/button"
                 android:onClick="OnCopyTextButtonClick"
