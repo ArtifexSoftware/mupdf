@@ -145,3 +145,70 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 
 	return image;
 }
+
+void
+fz_load_jpeg_info(fz_context *ctx, unsigned char *rbuf, int rlen, int *xp, int *yp, int *xresp, int *yresp, fz_colorspace **cspacep)
+{
+	struct jpeg_decompress_struct cinfo;
+	struct jpeg_error_mgr err;
+	struct jpeg_source_mgr src;
+
+	fz_try(ctx)
+	{
+		cinfo.client_data = ctx;
+		cinfo.err = jpeg_std_error(&err);
+		err.error_exit = error_exit;
+
+		jpeg_create_decompress(&cinfo);
+
+		cinfo.src = &src;
+		src.init_source = init_source;
+		src.fill_input_buffer = fill_input_buffer;
+		src.skip_input_data = skip_input_data;
+		src.resync_to_restart = jpeg_resync_to_restart;
+		src.term_source = term_source;
+		src.next_input_byte = rbuf;
+		src.bytes_in_buffer = rlen;
+
+		jpeg_read_header(&cinfo, 1);
+
+		if (cinfo.num_components == 1)
+			*cspacep = fz_device_gray;
+		else if (cinfo.num_components == 3)
+			*cspacep = fz_device_rgb;
+		else if (cinfo.num_components == 4)
+			*cspacep = fz_device_cmyk;
+		else
+			fz_throw(ctx, "bad number of components in jpeg: %d", cinfo.num_components);
+
+		*xp = cinfo.image_width;
+		*yp = cinfo.image_height;
+
+		if (cinfo.density_unit == 1)
+		{
+			*xresp = cinfo.X_density;
+			*yresp = cinfo.Y_density;
+		}
+		else if (cinfo.density_unit == 2)
+		{
+			*xresp = cinfo.X_density * 254 / 100;
+			*yresp = cinfo.Y_density * 254 / 100;
+		}
+		else
+		{
+			*xresp = 0;
+			*yresp = 0;
+		}
+
+		if (*xresp <= 0) *xresp = 72;
+		if (*yresp <= 0) *yresp = 72;
+	}
+	fz_always(ctx)
+	{
+		jpeg_destroy_decompress(&cinfo);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}

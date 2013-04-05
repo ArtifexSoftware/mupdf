@@ -74,6 +74,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/fitz/res_colorspace.c \
 	$(MY_ROOT)/fitz/res_font.c \
 	$(MY_ROOT)/fitz/res_func.c \
+	$(MY_ROOT)/fitz/res_image.c \
 	$(MY_ROOT)/fitz/res_path.c \
 	$(MY_ROOT)/fitz/res_pixmap.c \
 	$(MY_ROOT)/fitz/res_store.c \
