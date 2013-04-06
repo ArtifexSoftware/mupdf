@@ -38,7 +38,7 @@
             </Grid>
         </AppBar>
     </Page.TopAppBar>
-    <Grid>
+    <Grid x:Name="xaml_OutsideGrid">
     	<Grid.Background>
     		<LinearGradientBrush EndPoint="-0.074,-0.068" StartPoint="1.027,1.024">
     			<GradientStop Color="Black"/>
@@ -59,7 +59,7 @@
     	</Grid.Background>
 
         <ProgressBar x:Name="xaml_Progress" IsIndeterminate="False" Maximum="100" Value="0" Height="10" Width="400" IsEnabled="False" Opacity="0"/>
-        
+
         <Grid x:Name="xaml_MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="GridSizeChanged">
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" DoubleTapped="Canvas_Double" 
                     ManipulationDelta="Canvas_ManipulationDelta" ManipulationStarted="Canvas_ManipulationStarted" 
@@ -100,12 +100,16 @@
                     <SolidColorBrush Color="LightGray"></SolidColorBrush>
                 </ListView.Background>
             </ListView>
-            <WebView x:Name="xaml_WebView" HorizontalAlignment="Stretch" 
-                     VerticalAlignment="Stretch" Visibility="Collapsed" 
-                     ManipulationDelta="WebViewDelta" 
-                     ManipulationStarting="WebViewStarting"
-                     ManipulationCompleted="WebViewCompleted" ManipulationMode="All"
-                     />
         </Grid>
+        <StackPanel x:Name="xaml_RichGrid" Orientation="Vertical" Margin="5,5,5,50" 
+                    Width="Auto" Height="Auto" Visibility="Collapsed">
+        <TextBlock   HorizontalAlignment="Center" Text="FontSize:" FontSize="18" Margin="0, 10, 0, -10"/>
+                    <Slider x:Name="fontSizeSlider" Width="200" Value="20" Minimum="8" Maximum="40" 
+                            TickFrequency="4" Orientation="Horizontal" HorizontalAlignment="Center" />
+                <RichEditBox x:Name="xaml_RichText" FontSize="{Binding Value, ElementName=fontSizeSlider}" 
+                             Visibility="Collapsed" HorizontalAlignment="Center" 
+                             VerticalAlignment="Top">
+                    </RichEditBox>
+            </StackPanel>
     </Grid>
  </Page>
