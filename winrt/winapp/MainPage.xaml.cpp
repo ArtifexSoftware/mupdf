@@ -629,6 +629,11 @@ void winapp::MainPage::CleanUp()
         m_content.num = 0;
     }
 
+
+
+
+
+
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
     m_canvas_translate.Y = 0;
@@ -744,6 +749,7 @@ void winapp::MainPage::OpenDocumentPrep(StorageFile^ file)
 {
     if (this->m_num_pages != -1) 
     {
+        m_init_done = false;
         /* If the thumbnail thread is running then we need to end that first */
         RenderingStatus_t *ren_status = &m_ren_status;
         cancellation_token_source *ThumbCancel = &m_ThumbCancel;
@@ -1533,8 +1539,14 @@ void winapp::MainPage::GridSizeChanged()
         xaml_vert_flipView->IsEnabled = false;
         xaml_vert_flipView->Opacity = 0;
     }
-   // if (m_num_pages > 0 && this->m_links_on)
-   //     ClearLinksCanvas();
+
+    if (xaml_RichText->Visibility == Windows::UI::Xaml::Visibility::Visible)
+    {
+        int height = xaml_OutsideGrid->ActualHeight;
+        int height_app = TopAppBar1->ActualHeight;
+  
+        xaml_RichText->Height = height - height_app;
+    }
 
     UpDatePageSizes();
 
@@ -1723,7 +1735,7 @@ void winapp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::
 /* Window string hurdles.... */
 String^ char_to_String(char *char_in)
 {
-        size_t size = MultiByteToWideChar(CP_ACP, 0, char_in, -1, NULL, 0);
+        size_t size = MultiByteToWideChar(CP_UTF8, 0, char_in, -1, NULL, 0);
         wchar_t *pw;
         pw = new wchar_t[size];
         if (!pw)
@@ -1731,7 +1743,7 @@ String^ char_to_String(char *char_in)
             delete []pw;
             return nullptr;
         }
-        MultiByteToWideChar (CP_ACP, 0, char_in, -1, pw, size );
+        MultiByteToWideChar (CP_UTF8, 0, char_in, -1, pw, size );
         String^ str_out = ref new String(pw);
         delete []pw;
         return str_out;
@@ -1908,16 +1920,20 @@ void winapp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xa
     }
 }
 
-
-
 void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-    if (xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible)
+
+    if (this->m_num_pages < 0) return;
+
+    if (xaml_RichText->Visibility == Windows::UI::Xaml::Visibility::Visible)
     {
         /* Go back to flip view */
-        xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+        xaml_RichText->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
         this->xaml_MainGrid->Opacity = 1.0;
         this->m_curr_flipView->IsEnabled = true;
+            xaml_RichGrid->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+            xaml_RichGrid->Opacity = 0.0;
+
     } 
     else if (this->m_curr_flipView->IsEnabled)
     {
@@ -1946,20 +1962,19 @@ void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::Rou
 			fz_text_analysis(ctx, sheet, text);
             fz_buffer *buf = fz_new_buffer(ctx, 256);
             out = fz_new_output_buffer(ctx, buf);
-			fz_print_text_page_html(ctx, out, text);
-
-            xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
+			fz_print_text_page(ctx, out, text);
+            xaml_RichText->Visibility = Windows::UI::Xaml::Visibility::Visible;
             this->xaml_MainGrid->Opacity = 0.0;
             this->m_curr_flipView->IsEnabled = false;
             String^ html_string = char_to_String((char*) buf->data);
-           // WebViewBrush^ web_brush = ref new WebViewBrush();
-            this->xaml_WebView->NavigateToString(html_string);
 
-          //  web_brush->SourceName = "xaml_WebView";
-           // web_brush->Redraw();
-           // this->xaml_zoomCanvas->Background = web_brush;
-           // xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
-
+            xaml_RichGrid->Visibility = Windows::UI::Xaml::Visibility::Visible;
+            xaml_RichGrid->Opacity = 1.0;
+            int height = xaml_OutsideGrid->ActualHeight;
+            int height_app = TopAppBar1->ActualHeight;
+  
+            xaml_RichText->Height = height - height_app;
+            this->xaml_RichText->Document->SetText(Windows::UI::Text::TextSetOptions::FormatRtf, html_string);
 
             /* Check if thumb rendering is done.  If not then restart */
             if (this->m_num_pages != this->m_thumb_page_start)
@@ -1968,28 +1983,3 @@ void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::Rou
     }
 }
 
-
-
-void winapp::MainPage::WebViewDelta(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs^ e)
-{
-    double scale_val = e->Delta.Scale;
-}
-
-
-void winapp::MainPage::WebViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e)
-{
-    int zz = 1;
-}
-
-
-void winapp::MainPage::WebViewCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e)
-{
- int zz = 1;
-}
-
-
-void winapp::MainPage::TempViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e)
-{
-
-    int zz = 1;
-}
