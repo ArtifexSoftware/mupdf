@@ -3,9 +3,6 @@ package com.artifex.mupdfdemo;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 
-import android.animation.Animator;
-import android.animation.AnimatorInflater;
-import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -805,24 +802,7 @@ public class MuPDFActivity extends Activity
 
 		int currentApiVersion = android.os.Build.VERSION.SDK_INT;
 		if (currentApiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-			AnimatorSet set = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.info);
-			set.setTarget(mInfoView);
-			set.addListener(new Animator.AnimatorListener() {
-				public void onAnimationStart(Animator animation) {
-					mInfoView.setVisibility(View.VISIBLE);
-				}
-
-				public void onAnimationRepeat(Animator animation) {
-				}
-
-				public void onAnimationEnd(Animator animation) {
-					mInfoView.setVisibility(View.INVISIBLE);
-				}
-
-				public void onAnimationCancel(Animator animation) {
-				}
-			});
-			set.start();
+			SafeAnimatorInflater safe = new SafeAnimatorInflater((Activity)this, R.animator.info, (View)mInfoView);
 		} else {
 			mInfoView.setVisibility(View.VISIBLE);
 			mHandler.postDelayed(new Runnable() {
