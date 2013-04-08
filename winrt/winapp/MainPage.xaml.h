@@ -176,7 +176,7 @@ namespace winapp
         void AddLinkCanvas();
         void Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
         bool CheckRect(Rectangle^ curr_rect, Point pt);
-        void JumpToLink(int index);
+        int JumpToLink(int index);
         void ClearLinksCanvas();
         void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void FlattenOutline(fz_outline *outline, int level);

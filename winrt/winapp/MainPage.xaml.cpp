@@ -522,7 +522,7 @@ task<Canvas^> RenderPage_Task(fz_document *doc, int page_num, int *width, int *h
            MUST be done by the UI thread. */
         InMemoryRandomAccessStream^ ras;
 
-        assert(IsMainThread);
+        assert(IsMainThread());
         try
         {
            ras = the_task.get();
@@ -629,11 +629,6 @@ void winapp::MainPage::CleanUp()
         m_content.num = 0;
     }
 
-
-
-
-
-
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
     m_canvas_translate.Y = 0;
@@ -694,7 +689,7 @@ void winapp::MainPage::RenderThumbs()
     }, token).then([this](task<int> the_task) 
     {
         int new_end;
-        assert(IsMainThread);
+        assert(IsMainThread());
 
         try
         {
@@ -721,22 +716,22 @@ void winapp::MainPage::RenderThumbs()
             FlipViewItem ^flipview_temp_h = (FlipViewItem^) xaml_horiz_flipView->Items->GetAt(k);
             FlipViewItem ^flipview_temp_curr = (FlipViewItem^) m_curr_flipView->Items->GetAt(k);
 
+            WriteableBitmap ^bmp = ref new WriteableBitmap(m_thumbnails.size[k].Y, m_thumbnails.size[k].X);
+            bmp->SetSource(m_thumbnails.raster[k]);
+            ImageBrush^ renderedImage = ref new ImageBrush();
+            renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::Fill;
+            renderedImage->ImageSource = bmp;
+            /* Different flip view items cannot share the same canvas */
+            m_thumbnails.canvas_h[k] = ref new Canvas();
+            m_thumbnails.canvas_h[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
+            m_thumbnails.canvas_h[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
+            m_thumbnails.canvas_h[k]->Background = renderedImage;
+            m_thumbnails.canvas_v[k] = ref new Canvas();
+            m_thumbnails.canvas_v[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
+            m_thumbnails.canvas_v[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
+            m_thumbnails.canvas_v[k]->Background = renderedImage;
             if (flipview_temp_curr->Background != nullptr) 
             {
-                WriteableBitmap ^bmp = ref new WriteableBitmap(m_thumbnails.size[k].Y, m_thumbnails.size[k].X);
-                bmp->SetSource(m_thumbnails.raster[k]);
-                ImageBrush^ renderedImage = ref new ImageBrush();
-                renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::Fill;
-                renderedImage->ImageSource = bmp;
-                /* Different flip view items cannot share the same canvas */
-                m_thumbnails.canvas_h[k] = ref new Canvas();
-                m_thumbnails.canvas_h[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
-                m_thumbnails.canvas_h[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
-                m_thumbnails.canvas_h[k]->Background = renderedImage;
-                m_thumbnails.canvas_v[k] = ref new Canvas();
-                m_thumbnails.canvas_v[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
-                m_thumbnails.canvas_v[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
-                m_thumbnails.canvas_v[k]->Background = renderedImage;
                 flipview_temp_h->Content = m_thumbnails.canvas_h[k];   
                 flipview_temp_v->Content = m_thumbnails.canvas_v[k];   
             }
@@ -899,7 +894,7 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
         
     return t.then([this, height, width, curr_page, spatial_info]()
     {
-       // assert(IsMainThread);
+        assert(IsMainThread());
         int val = 0;
         /* This runs on the main ui thread */
         for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
@@ -951,8 +946,6 @@ void winapp::MainPage::Slider_Released(Platform::Object^ sender, Windows::UI::Xa
 {
     int height, width;
     int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
-
-   // this->RenderRange(newValue, &height, &width);
 }
 
 void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
@@ -1273,7 +1266,7 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
                                          spatial_info, &m_renderedImage);
     the_task.then([this, old_page, new_page](task<Canvas^> the_task)
     {
-        assert(IsMainThread);
+        assert(IsMainThread());
 
         try
         {
@@ -1493,8 +1486,8 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
          //   xaml_Progress->IsEnabled = false;
           //  xaml_Progress->Opacity = 0.0;
             this->ShowSearchResults(the_result);
-            this->m_search_active = false;
         }
+        this->m_search_active = false;
     }, task_continuation_context::use_current());
 }
 
@@ -1722,8 +1715,10 @@ void winapp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::
                 Rectangle^ curr_rect = (Rectangle^) (it->Current);
                 if (CheckRect(curr_rect, pt))
                 {
-                    JumpToLink(count);
-                    break;
+                    int page = JumpToLink(count);
+                    if (page >= 0)
+                        this->m_curr_flipView->SelectedIndex = page;
+                    return;
                 }
                 it->MoveNext();
                 count += 1;
@@ -1749,11 +1744,9 @@ String^ char_to_String(char *char_in)
         return str_out;
 }
 
-void winapp::MainPage::JumpToLink(int index)
-{
+int winapp::MainPage::JumpToLink(int index)
+{    
     fz_link *link = this->m_links;
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
 
     /* Get through the list */
     for (int k = 0; k < index; k++)
@@ -1761,14 +1754,7 @@ void winapp::MainPage::JumpToLink(int index)
 
     if (link->dest.kind == FZ_LINK_GOTO)
     {
-        int page = link->dest.ld.gotor.page;
-        this->m_curr_flipView->SelectedIndex = page;
-        this->m_currpage = page;
-
-        if (this->m_links_on) 
-        {
-            fz_drop_link(ctx, this->m_links);
-        }
+        return link->dest.ld.gotor.page;
     } 
     else if (link->dest.kind == FZ_LINK_URI)
     {
@@ -1792,6 +1778,7 @@ void winapp::MainPage::JumpToLink(int index)
              // URI launch failed
           }
        });
+       return -1;
     }
 }
 
@@ -1830,7 +1817,7 @@ void winapp::MainPage::FlattenOutline(fz_outline *outline, int level)
 /* Bring up the contents */
 void winapp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-    if (this->m_num_pages < 0) return;
+    if (this->m_num_pages < 0 || m_zoom_mode) return;
 
     if (this->xaml_ListView->IsEnabled) 
     {
@@ -1982,4 +1969,3 @@ void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::Rou
         }, task_continuation_context::use_current());
     }
 }
-
