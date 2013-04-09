@@ -141,10 +141,15 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/xps/xps_zip.c \
 	$(MY_ROOT)/cbz/mucbz.c
 ifdef V8_BUILD
+ifeq ($(V8_OK),1)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/pdf/pdf_js.c \
 	$(MY_ROOT)/pdf/pdf_jsimp_cpp.c \
 	$(MY_ROOT)/pdf/pdf_jsimp_v8.cpp
+else
+LOCAL_SRC_FILES += \
+	$(MY_ROOT)/pdf/pdf_js_none.c
+endif
 else
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/pdf/pdf_js_none.c
