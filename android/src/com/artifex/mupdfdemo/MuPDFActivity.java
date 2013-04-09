@@ -65,7 +65,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton mAnnotButton;
 	private ViewAnimator mTopBarSwitcher;
 	private ImageButton  mLinkButton;
-	private TopBarMode   mTopBarMode;
+	private TopBarMode   mTopBarMode = TopBarMode.Main;
 	private AcceptMode   mAcceptMode;
 	private ImageButton  mSearchBack;
 	private ImageButton  mSearchFwd;
