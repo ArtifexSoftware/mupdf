@@ -154,7 +154,7 @@ public class MuPDFActivity extends Activity
 					mAlertDialog.setButton(AlertDialog.BUTTON2, getString(R.string.cancel), listener);
 					pressed[1] = MuPDFAlert.ButtonPressed.Cancel;
 				case Ok:
-					mAlertDialog.setButton(AlertDialog.BUTTON1, getString(R.string.ok), listener);
+					mAlertDialog.setButton(AlertDialog.BUTTON1, getString(R.string.okay), listener);
 					pressed[0] = MuPDFAlert.ButtonPressed.Ok;
 					break;
 				case YesNoCancel:
@@ -247,8 +247,8 @@ public class MuPDFActivity extends Activity
 		if (core == null) {
 			core = (MuPDFCore)getLastNonConfigurationInstance();
 
-			if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.filename))) {
-				mFileName = savedInstanceState.getString(getString(R.string.filename));
+			if (savedInstanceState != null && savedInstanceState.containsKey("FileName")) {
+				mFileName = savedInstanceState.getString("FileName");
 			}
 		}
 		if (core == null) {
@@ -263,7 +263,7 @@ public class MuPDFActivity extends Activity
 					Cursor cursor = getContentResolver().query(uri, new String[]{"_data"}, null, null, null);
 					if (cursor.moveToFirst()) {
 						String str = cursor.getString(0);
-						String failString = null;
+						String reason = null;
 						if (str == null) {
 							try {
 								InputStream is = getContentResolver().openInputStream(uri);
@@ -275,19 +275,17 @@ public class MuPDFActivity extends Activity
 							catch (java.lang.OutOfMemoryError e)
 							{
 								System.out.println("Out of memory during buffer reading");
-								failString = e.toString();
+								reason = e.toString();
 							}
 							catch (Exception e) {
-								failString = e.toString();
+								reason = e.toString();
 							}
-							if (failString != null)
+							if (reason != null)
 							{
 								buffer = null;
 								Resources res = getResources();
 								AlertDialog alert = mAlertBuilder.create();
-								String contentFailure = res.getString(R.string.content_failure);
-								String openFailed = res.getString(R.string.open_failed);
-								setTitle(String.format(contentFailure, openFailed, failString));
+								setTitle(String.format(res.getString(R.string.cannot_open_document_Reason), reason));
 								alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
 										new DialogInterface.OnClickListener() {
 											public void onClick(DialogInterface dialog, int which) {
@@ -319,7 +317,7 @@ public class MuPDFActivity extends Activity
 		if (core == null)
 		{
 			AlertDialog alert = mAlertBuilder.create();
-			alert.setTitle(R.string.open_failed);
+			alert.setTitle(R.string.cannot_open_document);
 			alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
 					new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
@@ -341,7 +339,7 @@ public class MuPDFActivity extends Activity
 		AlertDialog alert = mAlertBuilder.create();
 		alert.setTitle(R.string.enter_password);
 		alert.setView(mPasswordView);
-		alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
+		alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.okay),
 				new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				if (core.authenticatePassword(mPasswordView.getText().toString())) {
@@ -629,7 +627,7 @@ public class MuPDFActivity extends Activity
 		super.onSaveInstanceState(outState);
 
 		if (mFileName != null && mDocView != null) {
-			outState.putString(getString(R.string.filename), mFileName);
+			outState.putString("FileName", mFileName);
 
 			// Store current page in the prefs against the file name,
 			// so that we can pick it up each time the file is loaded

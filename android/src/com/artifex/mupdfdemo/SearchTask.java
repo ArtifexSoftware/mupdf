@@ -90,7 +90,7 @@ public abstract class SearchTask {
 				if (result != null) {
 				    onTextFound(result);
 				} else {
-					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurences_found);
+					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurrences_found);
 					AlertDialog alert = mAlertBuilder.create();
 					alert.setButton(AlertDialog.BUTTON_POSITIVE, mContext.getString(R.string.dismiss),
 							(DialogInterface.OnClickListener)null);

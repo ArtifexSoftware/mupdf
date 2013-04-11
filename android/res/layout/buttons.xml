@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/reflowButton"
-                android:contentDescription="@string/link_control"
+                android:contentDescription="@string/toggle_links"
                 android:background="@drawable/button"
                 android:src="@drawable/ic_link" />
 
