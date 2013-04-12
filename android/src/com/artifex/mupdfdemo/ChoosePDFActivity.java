@@ -114,7 +114,7 @@ public class ChoosePDFActivity extends ListActivity {
 
 				adapter.clear();
 				if (mParent != null)
-					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, getString(R.string._up_one_level_)));
+					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.PARENT, getString(R.string.parent_directory)));
 				for (File f : mDirs)
 					adapter.add(new ChoosePDFItem(ChoosePDFItem.Type.DIR, f.getName()));
 				for (File f : mFiles)

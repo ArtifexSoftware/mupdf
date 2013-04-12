@@ -27,7 +27,7 @@
     <string name="save">Save</string>
     <string name="print">Print</string>
     <string name="dismiss">Dismiss</string>
-    <string name="_up_one_level_">[Up one level]</string>
+    <string name="parent_directory">[Up one level]</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="entering_reflow_mode">Entering reflow mode</string>

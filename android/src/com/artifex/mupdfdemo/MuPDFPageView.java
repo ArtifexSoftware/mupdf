@@ -81,7 +81,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		super(c, parentSize);
 		mCore = core;
 		mTextEntryBuilder = new AlertDialog.Builder(c);
-		mTextEntryBuilder.setTitle("MuPDF: "+getContext().getString(R.string.fill_out_text_field));
+		mTextEntryBuilder.setTitle(getContext().getString(R.string.fill_out_text_field));
 		LayoutInflater inflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		mEditText = (EditText)inflater.inflate(R.layout.textentry, null);
 		mTextEntryBuilder.setView(mEditText);
@@ -111,7 +111,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		mTextEntry = mTextEntryBuilder.create();
 
 		mChoiceEntryBuilder = new AlertDialog.Builder(c);
-		mChoiceEntryBuilder.setTitle("MuPDF: "+getContext().getString(R.string.choose_value));
+		mChoiceEntryBuilder.setTitle(getContext().getString(R.string.choose_value));
 	}
 
 	public LinkInfo hitLink(float x, float y) {
