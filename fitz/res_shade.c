@@ -415,10 +415,10 @@ triangulate_patch(fz_mesh_processor *painter, tensor_patch p)
 	paint_quad(painter, &v0, &v1, &v2, &v3);
 }
 
-static inline void midcolor(float *c, float *c1, float *c2)
+static inline void midcolor(float *c, float *c1, float *c2, int n)
 {
 	int i;
-	for (i = 0; i < FZ_MAX_COLORS; i++)
+	for (i = 0; i < n; i++)
 		c[i] = (c1[i] + c2[i]) * 0.5f;
 }
 
@@ -459,7 +459,7 @@ split_curve(fz_point *pole, fz_point *q0, fz_point *q1, int polestep)
 }
 
 static void
-split_stripe(tensor_patch *p, tensor_patch *s0, tensor_patch *s1)
+split_stripe(tensor_patch *p, tensor_patch *s0, tensor_patch *s1, int n)
 {
 	/*
 	split all horizontal bezier curves in patch,
@@ -471,15 +471,15 @@ split_stripe(tensor_patch *p, tensor_patch *s0, tensor_patch *s1)
 	split_curve(&p->pole[0][3], &s0->pole[0][3], &s1->pole[0][3], 4);
 
 	/* interpolate the colors for the two new patches. */
-	memcpy(s0->color[0], p->color[0], sizeof(s0->color[0]));
-	memcpy(s0->color[1], p->color[1], sizeof(s0->color[1]));
-	midcolor(s0->color[2], p->color[1], p->color[2]);
-	midcolor(s0->color[3], p->color[0], p->color[3]);
+	memcpy(s0->color[0], p->color[0], n * sizeof(s0->color[0][0]));
+	memcpy(s0->color[1], p->color[1], n * sizeof(s0->color[1][0]));
+	midcolor(s0->color[2], p->color[1], p->color[2], n);
+	midcolor(s0->color[3], p->color[0], p->color[3], n);
 
-	memcpy(s1->color[0], s0->color[3], sizeof(s1->color[0]));
-	memcpy(s1->color[1], s0->color[2], sizeof(s1->color[1]));
-	memcpy(s1->color[2], p->color[2], sizeof(s1->color[2]));
-	memcpy(s1->color[3], p->color[3], sizeof(s1->color[3]));
+	memcpy(s1->color[0], s0->color[3], n * sizeof(s1->color[0][0]));
+	memcpy(s1->color[1], s0->color[2], n * sizeof(s1->color[1][0]));
+	memcpy(s1->color[2], p->color[2], n * sizeof(s1->color[2][0]));
+	memcpy(s1->color[3], p->color[3], n * sizeof(s1->color[3][0]));
 }
 
 static void
@@ -488,7 +488,7 @@ draw_stripe(fz_mesh_processor *painter, tensor_patch *p, int depth)
 	tensor_patch s0, s1;
 
 	/* split patch into two half-height patches */
-	split_stripe(p, &s0, &s1);
+	split_stripe(p, &s0, &s1, painter->ncomp);
 
 	depth--;
 	if (depth == 0)
@@ -506,7 +506,7 @@ draw_stripe(fz_mesh_processor *painter, tensor_patch *p, int depth)
 }
 
 static void
-split_patch(tensor_patch *p, tensor_patch *s0, tensor_patch *s1)
+split_patch(tensor_patch *p, tensor_patch *s0, tensor_patch *s1, int n)
 {
 	/*
 	split all vertical bezier curves in patch,
@@ -518,15 +518,15 @@ split_patch(tensor_patch *p, tensor_patch *s0, tensor_patch *s1)
 	split_curve(p->pole[3], s0->pole[3], s1->pole[3], 1);
 
 	/* interpolate the colors for the two new patches. */
-	memcpy(s0->color[0], p->color[0], sizeof(s0->color[0]));
-	midcolor(s0->color[1], p->color[0], p->color[1]);
-	midcolor(s0->color[2], p->color[2], p->color[3]);
-	memcpy(s0->color[3], p->color[3], sizeof(s0->color[3]));
+	memcpy(s0->color[0], p->color[0], n * sizeof(s0->color[0][0]));
+	midcolor(s0->color[1], p->color[0], p->color[1], n);
+	midcolor(s0->color[2], p->color[2], p->color[3], n);
+	memcpy(s0->color[3], p->color[3], n * sizeof(s0->color[3][0]));
 
-	memcpy(s1->color[0], s0->color[1], sizeof(s1->color[0]));
-	memcpy(s1->color[1], p->color[1], sizeof(s1->color[1]));
-	memcpy(s1->color[2], p->color[2], sizeof(s1->color[2]));
-	memcpy(s1->color[3], s0->color[2], sizeof(s1->color[3]));
+	memcpy(s1->color[0], s0->color[1], n * sizeof(s1->color[0][0]));
+	memcpy(s1->color[1], p->color[1], n * sizeof(s1->color[1][0]));
+	memcpy(s1->color[2], p->color[2], n * sizeof(s1->color[2][0]));
+	memcpy(s1->color[3], s0->color[2], n * sizeof(s1->color[3][0]));
 }
 
 static void
@@ -535,7 +535,7 @@ draw_patch(fz_mesh_processor *painter, tensor_patch *p, int depth, int origdepth
 	tensor_patch s0, s1;
 
 	/* split patch into two half-width patches */
-	split_patch(p, &s0, &s1);
+	split_patch(p, &s0, &s1, painter->ncomp);
 
 	depth--;
 	if (depth == 0)
