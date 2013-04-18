@@ -899,6 +899,100 @@ fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
 		fz_throw(ctx, "Unexpected mesh type %d\n", shade->type);
 }
 
+static fz_rect *
+fz_bound_mesh_type1(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
+{
+	bbox->x0 = shade->u.f.domain[0][0];
+	bbox->y0 = shade->u.f.domain[0][1];
+	bbox->x1 = shade->u.f.domain[1][0];
+	bbox->y1 = shade->u.f.domain[1][1];
+	return fz_transform_rect(bbox, &shade->u.f.matrix);
+}
+
+static fz_rect *
+fz_bound_mesh_type2(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
+{
+	/* FIXME: If axis aligned and not extended, the bbox may only be
+	 * infinite in one direction */
+	*bbox = fz_infinite_rect;
+	return bbox;
+}
+
+static fz_rect *
+fz_bound_mesh_type3(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
+{
+	fz_point p0, p1;
+	float r0, r1;
+
+	r0 = shade->u.l_or_r.coords[0][2];
+	r1 = shade->u.l_or_r.coords[1][2];
+
+	if (shade->u.l_or_r.extend[0])
+	{
+		if (r0 >= r1)
+		{
+			*bbox = fz_infinite_rect;
+			return bbox;
+		}
+	}
+
+	if (shade->u.l_or_r.extend[1])
+	{
+		if (r0 <= r1)
+		{
+			*bbox = fz_infinite_rect;
+			return bbox;
+		}
+	}
+
+	p0.x = shade->u.l_or_r.coords[0][0];
+	p0.y = shade->u.l_or_r.coords[0][1];
+	p1.x = shade->u.l_or_r.coords[1][0];
+	p1.y = shade->u.l_or_r.coords[1][1];
+
+	bbox->x0 = p0.x - r0; bbox->y0 = p0.y - r0;
+	bbox->x1 = p0.x + r0; bbox->y1 = p0.x + r0;
+	if (bbox->x0 > p1.x - r1)
+		bbox->x0 = p1.x - r1;
+	if (bbox->x1 < p1.x + r1)
+		bbox->x1 = p1.x + r1;
+	if (bbox->y0 > p1.y - r1)
+		bbox->y0 = p1.y - r1;
+	if (bbox->y1 < p1.y + r1)
+		bbox->y1 = p1.y + r1;
+	return bbox;
+}
+
+static fz_rect *
+fz_bound_mesh_type4567(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
+{
+	bbox->x0 = shade->u.m.x0;
+	bbox->y0 = shade->u.m.y0;
+	bbox->x1 = shade->u.m.x1;
+	bbox->y1 = shade->u.m.y1;
+	return bbox;
+}
+
+static fz_rect *
+fz_bound_mesh(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
+{
+	if (shade->type == FZ_FUNCTION_BASED)
+		fz_bound_mesh_type1(ctx, shade, bbox);
+	else if (shade->type == FZ_LINEAR)
+		fz_bound_mesh_type2(ctx, shade, bbox);
+	else if (shade->type == FZ_RADIAL)
+		fz_bound_mesh_type3(ctx, shade, bbox);
+	else if (shade->type == FZ_MESH_TYPE4 ||
+		shade->type == FZ_MESH_TYPE5 ||
+		shade->type == FZ_MESH_TYPE6 ||
+		shade->type == FZ_MESH_TYPE7)
+		fz_bound_mesh_type4567(ctx, shade, bbox);
+	else
+		fz_throw(ctx, "Unexpected mesh type %d\n", shade->type);
+
+	return bbox;
+}
+
 fz_shade *
 fz_keep_shade(fz_context *ctx, fz_shade *shade)
 {
@@ -924,62 +1018,20 @@ fz_drop_shade(fz_context *ctx, fz_shade *shade)
 	fz_drop_storable(ctx, &shade->storable);
 }
 
-struct bound_mesh_data
-{
-	fz_rect rect;
-	int first;
-};
-
-static void
-bound_tri(void *arg, fz_vertex *v1, fz_vertex *v2, fz_vertex *v3)
-{
-	struct bound_mesh_data *bmd = (struct bound_mesh_data *)arg;
-
-	if (bmd->first)
-	{
-		bmd->rect.x0 = bmd->rect.x1 = v1->p.x;
-		bmd->rect.y0 = bmd->rect.y1 = v1->p.y;
-		bmd->first = 0;
-	}
-	else
-	{
-		if (v1->p.x < bmd->rect.x0) bmd->rect.x0 = v1->p.x;
-		if (v1->p.y < bmd->rect.y0) bmd->rect.y0 = v1->p.y;
-		if (v1->p.x > bmd->rect.x1) bmd->rect.x1 = v1->p.x;
-		if (v1->p.y > bmd->rect.y1) bmd->rect.y1 = v1->p.y;
-	}
-
-	if (v2->p.x < bmd->rect.x0) bmd->rect.x0 = v2->p.x;
-	if (v2->p.y < bmd->rect.y0) bmd->rect.y0 = v2->p.y;
-	if (v2->p.x > bmd->rect.x1) bmd->rect.x1 = v2->p.x;
-	if (v2->p.y > bmd->rect.y1) bmd->rect.y1 = v2->p.y;
-
-	if (v3->p.x < bmd->rect.x0) bmd->rect.x0 = v3->p.x;
-	if (v3->p.y < bmd->rect.y0) bmd->rect.y0 = v3->p.y;
-	if (v3->p.x > bmd->rect.x1) bmd->rect.x1 = v3->p.x;
-	if (v3->p.y > bmd->rect.y1) bmd->rect.y1 = v3->p.y;
-}
-
 fz_rect *
 fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *s)
 {
 	fz_matrix local_ctm;
-	struct bound_mesh_data bmd;
+	fz_rect rect;
 
 	fz_concat(&local_ctm, &shade->matrix, ctm);
 	*s = shade->bbox;
-	fz_transform_rect(s, &local_ctm);
-	if (shade->type == FZ_LINEAR)
-		return s;
-	if (shade->type == FZ_RADIAL)
-		return s;
-
-	bmd.rect = fz_empty_rect;
-	bmd.first = 1;
-	fz_process_mesh(ctx, shade, &local_ctm, &bound_tri, &bmd);
-
-	fz_intersect_rect(s, &bmd.rect);
-	return s;
+	if (shade->type != FZ_LINEAR && shade->type != FZ_RADIAL)
+	{
+		fz_bound_mesh(ctx, shade, &rect);
+		fz_intersect_rect(s, &rect);
+	}
+	return fz_transform_rect(s, &local_ctm);
 }
 
 #ifndef NDEBUG
