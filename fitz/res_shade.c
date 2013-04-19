@@ -16,7 +16,7 @@ paint_quad(fz_mesh_processor *painter, fz_vertex *v0, fz_vertex *v1, fz_vertex *
 }
 
 static void
-fz_mesh_type1_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type1(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	float *p = shade->u.f.fn_vals;
 	int xdivs = shade->u.f.xdivs;
@@ -80,7 +80,7 @@ fz_point_on_circle(fz_point p, float r, float theta)
 }
 
 static void
-fz_mesh_type2_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type2(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_point p0, p1, dir;
 	fz_vertex v0, v1, v2, v3;
@@ -194,7 +194,7 @@ fz_paint_annulus(const fz_matrix *ctm,
 }
 
 static void
-fz_mesh_type3_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type3(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_point p0, p1;
 	float r0, r1;
@@ -248,7 +248,7 @@ static inline float read_sample(fz_stream *stream, int bits, float min, float ma
 }
 
 static void
-fz_mesh_type4_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type4(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex v[4];
@@ -326,7 +326,7 @@ fz_mesh_type4_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz
 }
 
 static void
-fz_mesh_type5_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type5(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex *buf = NULL;
@@ -643,7 +643,7 @@ make_tensor_patch(tensor_patch *p, int type, fz_point *pt)
 #define SUBDIV 3 /* how many levels to subdivide patches */
 
 static void
-fz_mesh_type6_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type6(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	float color_storage[2][4][FZ_MAX_COLORS];
@@ -757,7 +757,7 @@ fz_mesh_type6_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz
 }
 
 static void
-fz_mesh_type7_process(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type7(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	int bpflag = shade->u.m.bpflag;
@@ -882,19 +882,19 @@ fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
 	painter.ncomp = (shade->use_function > 0 ? 1 : shade->colorspace->n);
 
 	if (shade->type == FZ_FUNCTION_BASED)
-		fz_mesh_type1_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type1(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_LINEAR)
-		fz_mesh_type2_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type2(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_RADIAL)
-		fz_mesh_type3_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type3(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE4)
-		fz_mesh_type4_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type4(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE5)
-		fz_mesh_type5_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type5(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE6)
-		fz_mesh_type6_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type6(ctx, shade, ctm, &painter);
 	else if (shade->type == FZ_MESH_TYPE7)
-		fz_mesh_type7_process(ctx, shade, ctm, &painter);
+		fz_process_mesh_type7(ctx, shade, ctm, &painter);
 	else
 		fz_throw(ctx, "Unexpected mesh type %d\n", shade->type);
 }
