@@ -2062,6 +2062,10 @@ void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
 void fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
 
+/*
+	Generic output streams - generalise between outputting to a file,
+	a buffer, etc.
+*/
 typedef struct fz_output_s fz_output;
 
 struct fz_output_s
@@ -2069,14 +2073,33 @@ struct fz_output_s
 	fz_context *ctx;
 	void *opaque;
 	int (*printf)(fz_output *, const char *, va_list ap);
+	int (*write)(fz_output *, const char *, int n);
 	void (*close)(fz_output *);
 };
 
+/*
+	fz_new_output_file: Open an output stream onto a FILE *.
+
+	The stream does NOT take ownership of the FILE *.
+*/
 fz_output *fz_new_output_file(fz_context *, FILE *);
 
+/*
+	fz_new_output_buffer: Open an output stream onto a buffer.
+
+	The stream doesn NOT take ownership of the buffer.
+*/
 fz_output *fz_new_output_buffer(fz_context *, fz_buffer *);
 
+/*
+	fz_printf: fprintf equivalent for output streams.
+*/
 int fz_printf(fz_output *, const char *, ...);
+
+/*
+	fz_write: fwrite equivalent for output streams.
+*/
+int fz_write(fz_output *out, const char *data, int len);
 
 /*
 	fz_close_output: Close a previously opened fz_output stream.
