@@ -912,6 +912,18 @@ fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 	return dev;
 }
 
+void
+fz_enable_device_hints(fz_device *dev, int hints)
+{
+	dev->hints |= hints;
+}
+
+void
+fz_disable_device_hints(fz_device *dev, int hints)
+{
+	dev->hints &= ~hints;
+}
+
 /* XML, HTML and plain-text output */
 
 static int font_is_bold(fz_font *font)

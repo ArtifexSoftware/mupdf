@@ -1468,10 +1468,6 @@ fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
 enum
 {
-	/* Hints */
-	FZ_IGNORE_IMAGE = 1,
-	FZ_IGNORE_SHADE = 2,
-
 	/* Flags */
 	FZ_DEVFLAG_MASK = 1,
 	FZ_DEVFLAG_COLOR = 2,

@@ -1839,6 +1839,37 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_irect *clip);
 
 /*
+	fz_enable_device_hints : Enable hints in a device.
+
+	hints: mask of hints to enable.
+
+	For example: By default the draw device renders shadings. For some
+	purposes (perhaps rendering fast low quality thumbnails) you may want
+	to tell it to ignore shadings. For this you would enable the
+	FZ_IGNORE_SHADE hint.
+*/
+void fz_enable_device_hints(fz_device *dev, int hints);
+
+/*
+	fz_disable_device_hints : Disable hints in a device.
+
+	hints: mask of hints to disable.
+
+	For example: By default the text extraction device ignores images.
+	For some purposes however (such as extracting HTML) you may want to
+	enable the capturing of image data too. For this you would disable
+	the FZ_IGNORE_IMAGE hint.
+*/
+void fz_disable_device_hints(fz_device *dev, int hints);
+
+enum
+{
+	/* Hints */
+	FZ_IGNORE_IMAGE = 1,
+	FZ_IGNORE_SHADE = 2,
+};
+
+/*
 	Text extraction device: Used for searching, format conversion etc.
 
 	(In development - Subject to change in future versions)
