@@ -2102,6 +2102,11 @@ int fz_printf(fz_output *, const char *, ...);
 int fz_write(fz_output *out, const char *data, int len);
 
 /*
+	Output a pixmap to an output stream as a png.
+*/
+void fz_output_pixmap_to_png(fz_context *ctx, fz_pixmap *pixmap, fz_output *out, int savealpha);
+
+/*
 	fz_close_output: Close a previously opened fz_output stream.
 
 	Note: whether or not this closes the underlying output method is
