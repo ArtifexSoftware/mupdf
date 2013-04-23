@@ -990,6 +990,44 @@ fz_print_text_sheet(fz_context *ctx, fz_output *out, fz_text_sheet *sheet)
 		fz_print_style(out, style);
 }
 
+static void
+send_data_base64(fz_output *out, fz_buffer *buffer)
+{
+	int i, len;
+	static const char set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+	len = buffer->len/3;
+	for (i = 0; i < len; i++)
+	{
+		int c = buffer->data[3*i];
+		int d = buffer->data[3*i+1];
+		int e = buffer->data[3*i+2];
+		if ((i & 15) == 0)
+			fz_printf(out, "\n");
+		fz_printf(out, "%c%c%c%c", set[c>>2], set[((c&3)<<4)|(d>>4)], set[((d&15)<<2)|(e>>6)], set[e & 63]);
+	}
+	i *= 3;
+	switch (buffer->len-i)
+	{
+		case 2:
+		{
+			int c = buffer->data[i];
+			int d = buffer->data[i+1];
+			fz_printf(out, "%c%c%c=", set[c>>2], set[((c&3)<<4)|(d>>4)], set[((d&15)<<2)]);
+			break;
+		}
+	case 1:
+		{
+			int c = buffer->data[i];
+			fz_printf(out, "%c%c==", set[c>>2], set[(c&3)<<4]);
+			break;
+		}
+	default:
+	case 0:
+		break;
+	}
+}
+
 void
 fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
@@ -1123,7 +1161,35 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 			break;
 		}
 		case FZ_PAGE_BLOCK_IMAGE:
+		{
+			fz_image_block *image = page->blocks[block_n].u.image;
+			fz_printf(out, "<img width=%d height=%d src=\"data:", image->image->w, image->image->h);
+			switch (image->image->buffer == NULL ? FZ_IMAGE_JPX : image->image->buffer->params.type)
+			{
+			case FZ_IMAGE_JPEG:
+				fz_printf(out, "image/jpeg;base64,");
+				send_data_base64(out, image->image->buffer->buffer);
+				break;
+			case FZ_IMAGE_PNG:
+				fz_printf(out, "image/png;base64,");
+				send_data_base64(out, image->image->buffer->buffer);
+				break;
+			default:
+				{
+					fz_pixmap *pix = fz_image_get_pixmap(ctx, image->image, image->image->w, image->image->h);
+					fz_buffer *buf = fz_new_buffer(ctx, 1024);
+					fz_output *out2 = fz_new_output_buffer(ctx, buf);
+					fz_output_pixmap_to_png(ctx, pix, out2, 0);
+					fz_close_output(out2);
+					fz_printf(out, "image/png;base64,");
+					send_data_base64(out, buf);
+					fz_drop_buffer(ctx, buf);
+					break;
+				}
+			}
+			fz_printf(out, "\">\n");
 			break;
+		}
 		}
 	}
 
