@@ -271,6 +271,7 @@ void *fz_hash_get_val(fz_context *ctx, fz_hash_table *table, int idx);
 
 #ifndef NDEBUG
 void fz_print_hash(fz_context *ctx, FILE *out, fz_hash_table *table);
+void fz_print_hash_details(fz_context *ctx, FILE *out, fz_hash_table *table, void (*details)(FILE *, void *));
 #endif
 
 /*
@@ -587,6 +588,7 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase);
 */
 #ifndef NDEBUG
 void fz_print_store(fz_context *ctx, FILE *out);
+void fz_print_store_locked(fz_context *ctx, FILE *out);
 #endif
 
 struct fz_buffer_s
