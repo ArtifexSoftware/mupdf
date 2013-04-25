@@ -311,7 +311,8 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 		while (size > store->max)
 		{
 			/* ensure_space may drop, then retake the lock */
-			if (ensure_space(ctx, size - store->max) == 0)
+			int saved = ensure_space(ctx, size - store->max);
+			if (saved == 0)
 			{
 				/* Failed to free any space. */
 				/* If we are using the hash table, then we've already
@@ -333,6 +334,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 					val->refs--;
 				return NULL;
 			}
+			size -= saved;
 		}
 	}
 	store->size += itemsize;
