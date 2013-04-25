@@ -9,7 +9,7 @@ file_printf(fz_output *out, const char *fmt, va_list ap)
 }
 
 static int
-file_write(fz_output *out, const char *buffer, int count)
+file_write(fz_output *out, const void *buffer, int count)
 {
 	FILE *file = (FILE *)out->opaque;
 
@@ -55,7 +55,7 @@ fz_printf(fz_output *out, const char *fmt, ...)
 }
 
 int
-fz_write(fz_output *out, const char *data, int len)
+fz_write(fz_output *out, const void *data, int len)
 {
 	if (!out)
 		return 0;
@@ -71,7 +71,7 @@ buffer_printf(fz_output *out, const char *fmt, va_list list)
 }
 
 static int
-buffer_write(fz_output *out, const char *data, int len)
+buffer_write(fz_output *out, const void *data, int len)
 {
 	fz_buffer *buffer = (fz_buffer *)out->opaque;
 

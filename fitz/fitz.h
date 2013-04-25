@@ -2104,7 +2104,7 @@ struct fz_output_s
 	fz_context *ctx;
 	void *opaque;
 	int (*printf)(fz_output *, const char *, va_list ap);
-	int (*write)(fz_output *, const char *, int n);
+	int (*write)(fz_output *, const void *, int n);
 	void (*close)(fz_output *);
 };
 
@@ -2130,7 +2130,7 @@ int fz_printf(fz_output *, const char *, ...);
 /*
 	fz_write: fwrite equivalent for output streams.
 */
-int fz_write(fz_output *out, const char *data, int len);
+int fz_write(fz_output *out, const void *data, int len);
 
 /*
 	Output a pixmap to an output stream as a png.
