@@ -1677,7 +1677,6 @@ void pdfapp_postblit(pdfapp_t *app)
 	if (llama >= 256)
 	{
 		/* Completed. */
-		app->in_transit = 0;
 		fz_drop_pixmap(app->ctx, app->image);
 		app->image = app->new_image;
 		app->new_image = NULL;
@@ -1689,4 +1688,9 @@ void pdfapp_postblit(pdfapp_t *app)
 	else
 		fz_generate_transition(app->image, app->old_image, app->new_image, llama, &app->transition);
 	winrepaint(app);
+	if (llama >= 256)
+	{
+		/* Completed. */
+		app->in_transit = 0;
+	}
 }
