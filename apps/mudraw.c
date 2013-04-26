@@ -631,7 +631,7 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 	fz_var(out);
 	fz_try(ctx)
 	{
-		out = fz_new_output_file(ctx, stdout);
+		out = fz_new_output_with_file(ctx, stdout);
 		if (showoutline > 1)
 			fz_print_outline_xml(ctx, out, outline);
 		else
@@ -740,7 +740,7 @@ int main(int argc, char **argv)
 	timing.maxfilename = "";
 
 	if (showxml || showtext)
-		out = fz_new_output_file(ctx, stdout);
+		out = fz_new_output_with_file(ctx, stdout);
 
 	if (showxml || showtext == TEXT_XML)
 		fz_printf(out, "<?xml version=\"1.0\"?>\n");

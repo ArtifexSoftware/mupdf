@@ -1178,7 +1178,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 				{
 					fz_pixmap *pix = fz_image_get_pixmap(ctx, image->image, image->image->w, image->image->h);
 					fz_buffer *buf = fz_new_buffer(ctx, 1024);
-					fz_output *out2 = fz_new_output_buffer(ctx, buf);
+					fz_output *out2 = fz_new_output_with_buffer(ctx, buf);
 					fz_output_pixmap_to_png(ctx, pix, out2, 0);
 					fz_close_output(out2);
 					fz_printf(out, "image/png;base64,");

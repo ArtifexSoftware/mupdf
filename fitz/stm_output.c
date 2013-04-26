@@ -17,7 +17,7 @@ file_write(fz_output *out, const void *buffer, int count)
 }
 
 fz_output *
-fz_new_output_file(fz_context *ctx, FILE *file)
+fz_new_output_with_file(fz_context *ctx, FILE *file)
 {
 	fz_output *out = fz_malloc_struct(ctx, fz_output);
 	out->ctx = ctx;
@@ -80,7 +80,7 @@ buffer_write(fz_output *out, const void *data, int len)
 }
 
 fz_output *
-fz_new_output_buffer(fz_context *ctx, fz_buffer *buf)
+fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	fz_output *out = fz_malloc_struct(ctx, fz_output);
 	out->ctx = ctx;

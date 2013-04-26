@@ -2109,18 +2109,18 @@ struct fz_output_s
 };
 
 /*
-	fz_new_output_file: Open an output stream onto a FILE *.
+	fz_new_output_with_file: Open an output stream onto a FILE *.
 
 	The stream does NOT take ownership of the FILE *.
 */
-fz_output *fz_new_output_file(fz_context *, FILE *);
+fz_output *fz_new_output_with_file(fz_context *, FILE *);
 
 /*
-	fz_new_output_buffer: Open an output stream onto a buffer.
+	fz_new_output_with_buffer: Open an output stream onto a buffer.
 
 	The stream doesn NOT take ownership of the buffer.
 */
-fz_output *fz_new_output_buffer(fz_context *, fz_buffer *);
+fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
 
 /*
 	fz_printf: fprintf equivalent for output streams.
@@ -2141,8 +2141,8 @@ void fz_output_pixmap_to_png(fz_context *ctx, fz_pixmap *pixmap, fz_output *out,
 	fz_close_output: Close a previously opened fz_output stream.
 
 	Note: whether or not this closes the underlying output method is
-	method dependent. FILE * streams created by fz_new_output_file are
-	NOT closed.
+	method dependent. FILE * streams created by fz_new_output_with_file
+	are NOT closed.
 */
 void fz_close_output(fz_output *);
 

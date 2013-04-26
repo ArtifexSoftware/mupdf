@@ -574,7 +574,7 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	fz_try(ctx)
 	{
-		fz_output_pixmap_to_png(ctx, pixmap, fz_new_output_file(ctx, fp), savealpha);
+		fz_output_pixmap_to_png(ctx, pixmap, fz_new_output_with_file(ctx, fp), savealpha);
 	}
 	fz_always(ctx)
 	{
