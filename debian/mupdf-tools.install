@@ -1,3 +1,2 @@
-debian/tmp/usr/bin/mupdfclean
+debian/tmp/usr/bin/mutool
 debian/tmp/usr/bin/mudraw
-debian/tmp/usr/bin/mupdfshow

@@ -15,7 +15,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	-$(MAKE) clean
+	-$(MAKE) nuke
 	dh_clean
 
 # Build architecture-independent files here.

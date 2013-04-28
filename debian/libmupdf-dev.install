@@ -1,5 +1,3 @@
-fitz/fitz.h usr/include
-pdf/mupdf.h usr/include
-xps/muxps.h usr/include
+debian/tmp/usr/include
+debian/tmp/usr/lib
 debian/mupdf.pc usr/lib/pkgconfig
-debian/tmp/usr/lib/libmupdf.a
