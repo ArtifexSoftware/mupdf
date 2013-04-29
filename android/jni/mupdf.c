@@ -1321,7 +1321,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_text_analysis(ctx, sheet, text);
 
 		buf = fz_new_buffer(ctx, 256);
-		out = fz_new_output_buffer(ctx, buf);
+		out = fz_new_output_with_buffer(ctx, buf);
 		fz_printf(out, "<html>\n");
 		fz_printf(out, "<style>\n");
 		fz_printf(out, "body{margin:0;}\n");
