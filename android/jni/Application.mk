@@ -23,6 +23,9 @@ endif
 ifdef V8_BUILD
 APP_STL := stlport_static
 endif
+ifdef MEMENTO
+APP_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
+endif
 
 # If the ndk is r8b then workaround bug by uncommenting the following line
 #NDK_TOOLCHAIN_VERSION=4.4.3

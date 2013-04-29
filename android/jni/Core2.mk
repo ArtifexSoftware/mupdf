@@ -18,6 +18,9 @@ NDK_APP_CFLAGS :=
 endif
 endif
 LOCAL_CFLAGS += -DAA_BITS=8
+ifdef MEMENTO
+LOCAL_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
+endif
 
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \

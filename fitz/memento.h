@@ -137,6 +137,12 @@
 
 #include <memory.h>
 
+#ifdef __ANDROID__
+#define MEMENTO_ANDROID
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 #define MEMENTO_H
 
 #ifndef MEMENTO_UNDERLYING_MALLOC

@@ -17,6 +17,9 @@ LOCAL_CFLAGS += -pg -DNDK_PROFILER -O2
 endif
 endif
 LOCAL_CFLAGS += -DAA_BITS=8
+ifdef MEMENTO
+LOCAL_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
+endif
 
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \
@@ -141,6 +144,9 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/xps/xps_util.c \
 	$(MY_ROOT)/xps/xps_zip.c \
 	$(MY_ROOT)/cbz/mucbz.c
+ifdef MEMENTO
+	LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
+endif
 ifdef V8_BUILD
 ifeq ($(V8_OK),1)
 LOCAL_SRC_FILES += \

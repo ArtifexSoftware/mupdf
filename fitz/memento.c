@@ -19,12 +19,6 @@
  * to speed the operation */
 /* #define MEMENTO_LEAKONLY */
 
-#ifndef MEMENTO_STACKTRACE_METHOD
-#ifdef __GNUC__
-#define MEMENTO_STACKTRACE_METHOD 1
-#endif
-#endif
-
 /* Don't keep blocks around if they'd mean losing more than a quarter of
  * the freelist. */
 #define MEMENTO_FREELIST_MAX_SINGLE_BLOCK (MEMENTO_FREELIST_MAX/4)
@@ -50,6 +44,29 @@ int atexit(void (*)(void));
 #include "memento.h"
 #include <stdio.h>
 #include <stdlib.h>
+#endif
+
+#ifdef MEMENTO_ANDROID
+#include <android/log.h>
+
+static int
+android_fprintf(FILE *file, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	__android_log_vprint(ANDROID_LOG_ERROR,"memento", fmt, args);
+	va_end(args);
+}
+
+#define fprintf android_fprintf
+#define MEMENTO_STACKTRACE_METHOD 0
+#endif
+
+#ifndef MEMENTO_STACKTRACE_METHOD
+#ifdef __GNUC__
+#define MEMENTO_STACKTRACE_METHOD 1
+#endif
 #endif
 
 #if defined(__linux__)
@@ -476,8 +493,8 @@ static void blockDisplay(Memento_BlkHeader *b, int n)
     n++;
     while (n > 40)
     {
-	    fprintf(stderr, "*");
-	    n -= 40;
+            fprintf(stderr, "*");
+            n -= 40;
     }
     while(n > 0)
     {
@@ -507,14 +524,14 @@ static void doNestedDisplay(Memento_BlkHeader *b,
     /* Try and avoid recursion if we can help it */
     do {
         blockDisplay(b, depth);
-	if (b->sibling) {
+        if (b->sibling) {
             if (b->child)
                 doNestedDisplay(b->child, depth+1);
             b = b->sibling;
-	} else {
+        } else {
             b = b->child;
             depth++;
-	}
+        }
     } while (b);
 }
 
@@ -754,8 +771,12 @@ static void Memento_init(void)
 /* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
+#ifdef MEMENTO_STACKTRACE_METHOD
+#if MEMENTO_STACKTRACE_METHOD == 1
 extern size_t backtrace(void **, int);
 extern void backtrace_symbols_fd(void **, size_t, int);
+#endif
+#endif
 
 static void Memento_signal(void)
 {
@@ -851,7 +872,7 @@ static void Memento_signal(void)
     globals.segv = 1;
     /* If we just return from this function the SEGV will be unhandled, and
      * we'll launch into whatever JIT debugging system the OS provides. At
-     * least output something useful first. If MEMENTO_NOJIT is set, then
+     * least fprintf(stderr, something useful first. If MEMENTO_NOJIT is set, then
      * just exit to avoid the JIT (and get the usual atexit handling). */
     if (getenv("MEMENTO_NOJIT"))
         exit(1);

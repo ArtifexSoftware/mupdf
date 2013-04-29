@@ -249,8 +249,11 @@ static void alerts_fin(globals *glo)
 static globals *get_globals(JNIEnv *env, jobject thiz)
 {
 	globals *glo = (globals *)(void *)((*env)->GetLongField(env, thiz, global_fid));
-	glo->env = env;
-	glo->thiz = thiz;
+	if (glo != NULL)
+	{
+		glo->env = env;
+		glo->thiz = thiz;
+	}
 	return glo;
 }
 
@@ -429,6 +432,10 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 			fz_throw(ctx, "Cannot open memory document");
 		}
 		LOGE("Done!");
+	}
+	fz_always(ctx)
+	{
+		fz_close(stream);
 	}
 	fz_catch(ctx)
 	{
@@ -655,19 +662,18 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
+			fz_free_device(dev);
+			dev = NULL;
 		}
 		if (pc->annot_list == NULL)
 		{
 			fz_annot *annot;
-			if (dev)
-			{
-				fz_free_device(dev);
-				dev = NULL;
-			}
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
 				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
+			fz_free_device(dev);
+			dev = NULL;
 		}
 		bbox.x0 = patchX;
 		bbox.y0 = patchY;
@@ -717,9 +723,13 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		fz_drop_pixmap(ctx, pix);
 		LOGE("Rendered");
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_free_device(dev);
+		dev = NULL;
+	}
+	fz_catch(ctx)
+	{
 		LOGE("Render failed");
 	}
 
@@ -825,17 +835,17 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
+			fz_free_device(dev);
+			dev = NULL;
 		}
 
 		if (pc->annot_list == NULL) {
-			if (dev) {
-				fz_free_device(dev);
-				dev = NULL;
-			}
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
 				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
+			fz_free_device(dev);
+			dev = NULL;
 		}
 
 		bbox.x0 = patchX;
@@ -885,9 +895,13 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 
 		LOGE("Rendered");
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_free_device(dev);
+		dev = NULL;
+	}
+	fz_catch(ctx)
+	{
 		LOGE("Render failed");
 	}
 
@@ -1030,6 +1044,7 @@ JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 	globals    *glo = get_globals(env, thiz);
 	fz_outline *outline = fz_load_outline(glo->doc);
 
+	fz_free_outline(glo->ctx, outline);
 	return (outline == NULL) ? JNI_FALSE : JNI_TRUE;
 }
 
@@ -1043,6 +1058,7 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 	fz_outline   *outline;
 	int           nItems;
 	globals      *glo = get_globals(env, thiz);
+	int	      ret;
 
 	olClass = (*env)->FindClass(env, PACKAGENAME "/OutlineItem");
 	if (olClass == NULL) return NULL;
@@ -1058,9 +1074,11 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 					NULL);
 	if (arr == NULL) return NULL;
 
-	return fillInOutlineItems(env, olClass, ctor, arr, 0, outline, 0) > 0
+	ret = fillInOutlineItems(env, olClass, ctor, arr, 0, outline, 0) > 0
 			? arr
 			:NULL;
+	fz_free_outline(glo->ctx, outline);
+	return ret;
 }
 
 JNIEXPORT jobjectArray JNICALL
@@ -1606,6 +1624,8 @@ static void close_doc(globals *glo)
 
 	fz_close_document(glo->doc);
 	glo->doc = NULL;
+	fz_free_context(glo->ctx);
+	glo->ctx = NULL;
 }
 
 JNIEXPORT void JNICALL
@@ -1613,12 +1633,19 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 
+	if (glo == NULL)
+		return;
 	LOGI("Destroying");
-	close_doc(glo);
 	fz_free(glo->ctx, glo->current_path);
 	glo->current_path = NULL;
+	close_doc(glo);
 	free(glo);
-
+#ifdef MEMENTO
+	LOGI("Destroying dump start");
+	Memento_listBlocks();
+	Memento_stats();
+	LOGI("Destroying dump end");
+#endif
 #ifdef NDK_PROFILER
 	// Apparently we should really be writing to whatever path we get
 	// from calling getFilesDir() in the java part, which supposedly
@@ -1686,7 +1713,11 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 	}
 
 	arr = (*env)->NewObjectArray(env, count, linkInfoClass, NULL);
-	if (arr == NULL) return NULL;
+	if (arr == NULL)
+	{
+		fz_drop_link(glo->ctx, list);
+		return NULL;
+	}
 
 	count = 0;
 	for (link = list; link; link = link->next)
@@ -1726,11 +1757,16 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 			continue;
 		}
 
-		if (linkInfo == NULL) return NULL;
+		if (linkInfo == NULL)
+		{
+			fz_drop_link(glo->ctx, list);
+			return NULL;
+		}
 		(*env)->SetObjectArrayElement(env, arr, count, linkInfo);
 		(*env)->DeleteLocalRef(env, linkInfo);
 		count++;
 	}
+	fz_drop_link(glo->ctx, list);
 
 	return arr;
 }
@@ -2360,4 +2396,18 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 			free(tmp);
 		}
 	}
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_dumpMemoryInternal)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+
+#ifdef MEMENTO
+	LOGE("dumpMemoryInternal start");
+	Memento_listNewBlocks();
+	Memento_stats();
+	LOGE("dumpMemoryInternal end");
+#endif
 }
