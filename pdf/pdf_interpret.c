@@ -1325,6 +1325,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, const fz_rect *area, int what)
 	fz_matrix ptm, invptm;
 	fz_matrix oldtopctm;
 	int x0, y0, x1, y1;
+	float fx0, fy0, fx1, fy1;
 	int oldtop;
 	fz_rect local_area;
 
@@ -1370,20 +1371,20 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, const fz_rect *area, int what)
 	local_area = *area;
 	fz_transform_rect(&local_area, &invptm);
 
-	/* When calculating the number of tiles required, we adjust by a small
-	 * amount to allow for rounding errors. By choosing this amount to be
-	 * smaller than 1/256, we guarantee we won't cause problems that will
-	 * be visible even under our most extreme antialiasing. */
-	x0 = floorf((local_area.x0 - pat->bbox.x0) / pat->xstep + 0.001);
-	y0 = floorf((local_area.y0 - pat->bbox.y0) / pat->ystep + 0.001);
-	x1 = ceilf((local_area.x1 - pat->bbox.x0) / pat->xstep - 0.001);
-	y1 = ceilf((local_area.y1 - pat->bbox.y0) / pat->ystep - 0.001);
+	fx0 = (local_area.x0 - pat->bbox.x0) / pat->xstep;
+	fy0 = (local_area.y0 - pat->bbox.y0) / pat->ystep;
+	fx1 = (local_area.x1 - pat->bbox.x0) / pat->xstep;
+	fy1 = (local_area.y1 - pat->bbox.y0) / pat->ystep;
 
 	oldtopctm = csi->top_ctm;
 	oldtop = csi->gtop;
 
 #ifdef TILE
-	if ((x1 - x0) * (y1 - y0) > 1)
+	/* We have tried various formulations in the past, but this one is
+	 * best we've found; only use it as a tile if a whole repeat is
+	 * required in at least one direction. Note, that this allows for
+	 * 'sections' of 4 tiles to be show, but all non-overlapping. */
+	if (fx1-fx0 > 1 || fy1-fy0 > 1)
 #else
 	if (0)
 #endif
@@ -1401,6 +1402,17 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, const fz_rect *area, int what)
 	else
 	{
 		int x, y;
+
+		/* When calculating the number of tiles required, we adjust by
+		 * a small amount to allow for rounding errors. By choosing
+		 * this amount to be smaller than 1/256, we guarantee we won't
+		 * cause problems that will be visible even under our most
+		 * extreme antialiasing. */
+		x0 = floorf(fx0 + 0.001);
+		y0 = floorf(fy0 + 0.001);
+		x1 = ceilf(fx1 - 0.001);
+		y1 = ceilf(fy1 - 0.001);
+
 		for (y = y0; y < y1; y++)
 		{
 			for (x = x0; x < x1; x++)
