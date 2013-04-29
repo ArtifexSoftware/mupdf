@@ -471,6 +471,7 @@ fz_free_text_block(fz_context *ctx, fz_text_block *block)
 	for (line = block->lines; line < block->lines + block->len; line++)
 		fz_free_text_line_contents(ctx, line);
 	fz_free(ctx, block->lines);
+	fz_free(ctx, block);
 }
 
 static void
@@ -480,6 +481,7 @@ fz_free_image_block(fz_context *ctx, fz_image_block *block)
 		return;
 	fz_drop_image(ctx, block->image);
 	fz_drop_colorspace(ctx, block->cspace);
+	fz_free(ctx, block);
 }
 
 void
@@ -1184,6 +1186,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					fz_printf(out, "image/png;base64,");
 					send_data_base64(out, buf);
 					fz_drop_buffer(ctx, buf);
+					fz_drop_pixmap(ctx, pix);
 					break;
 				}
 			}
