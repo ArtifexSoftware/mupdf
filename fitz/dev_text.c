@@ -1365,7 +1365,7 @@ insert_line_height(line_heights *lh, fz_text_style *style, float height)
 #endif
 
 	/* If we have one already, add it in */
-	for (i=0; i < lh->cap; i++)
+	for (i=0; i < lh->len; i++)
 	{
 		/* Match if we are within 5% */
 		if (lh->lh[i].style == style && lh->lh[i].height * 0.95 <= height && lh->lh[i].height * 1.05 >= height)
