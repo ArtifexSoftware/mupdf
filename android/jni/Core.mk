@@ -56,13 +56,11 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/fitz/dev_bbox.c \
 	$(MY_ROOT)/fitz/dev_list.c \
 	$(MY_ROOT)/fitz/dev_null.c \
-	$(MY_ROOT)/fitz/dev_text.c \
 	$(MY_ROOT)/fitz/dev_trace.c \
 	$(MY_ROOT)/fitz/doc_document.c \
 	$(MY_ROOT)/fitz/doc_interactive.c \
 	$(MY_ROOT)/fitz/doc_link.c \
 	$(MY_ROOT)/fitz/doc_outline.c \
-	$(MY_ROOT)/fitz/doc_search.c \
 	$(MY_ROOT)/fitz/filt_basic.c \
 	$(MY_ROOT)/fitz/filt_dctd.c \
 	$(MY_ROOT)/fitz/filt_faxd.c \
@@ -87,6 +85,10 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/fitz/stm_open.c \
 	$(MY_ROOT)/fitz/stm_output.c \
 	$(MY_ROOT)/fitz/stm_read.c \
+	$(MY_ROOT)/fitz/text_extract.c \
+	$(MY_ROOT)/fitz/text_output.c \
+	$(MY_ROOT)/fitz/text_paragraph.c \
+	$(MY_ROOT)/fitz/text_search.c \
 	$(MY_ROOT)/draw/draw_affine.c \
 	$(MY_ROOT)/draw/draw_blend.c \
 	$(MY_ROOT)/draw/draw_device.c \
