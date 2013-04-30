@@ -928,11 +928,17 @@ bboxcharat(fz_text_page *page, int idx)
 static int
 textlen(fz_text_page *page)
 {
-	fz_text_block *block;
-	fz_text_line *line;
 	int len = 0;
-	for (block = page->blocks; block < page->blocks + page->len; block++)
+	int block_num;
+
+	for (block_num = 0; block_num < page->len; block_num)
 	{
+		fz_text_block *block;
+		fz_text_line *line;
+
+		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+			continue;
+		block = page->blocks[block_num].u.text;
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
 			int span_num;
@@ -1058,7 +1064,7 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 	fz_outline   *outline;
 	int           nItems;
 	globals      *glo = get_globals(env, thiz);
-	int	      ret;
+	jobjectArray  ret;
 
 	olClass = (*env)->FindClass(env, PACKAGENAME "/OutlineItem");
 	if (olClass == NULL) return NULL;
@@ -1243,8 +1249,13 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 		for (b = 0; b < text->len; b++)
 		{
-			fz_text_block *block = &text->blocks[b];
-			jobjectArray *larr = (*env)->NewObjectArray(env, block->len, textLineClass, NULL);
+			fz_text_block *block;
+			jobjectArray *larr;
+
+			if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
+				continue;
+			block = text->blocks[b].u.text;
+			larr = (*env)->NewObjectArray(env, block->len, textLineClass, NULL);
 			if (larr == NULL) fz_throw(ctx, "NewObjectArray failed");
 
 			for (l = 0; l < block->len; l++)
