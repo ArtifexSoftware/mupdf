@@ -199,9 +199,8 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 			block->lines = fz_resize_array(ctx, block->lines, newcap, sizeof(*block->lines));
 			block->cap = newcap;
 		}
-		block->lines[block->len].cap = 0;
-		block->lines[block->len].len = 0;
-		block->lines[block->len].spans = NULL;
+		block->lines[block->len].first_span = NULL;
+		block->lines[block->len].last_span = NULL;
 		block->lines[block->len].distance = distance;
 		block->lines[block->len].bbox = fz_empty_rect;
 		block->len++;
@@ -211,16 +210,21 @@ push_span(fz_context *ctx, fz_text_device *tdev, fz_text_span *span, int new_lin
 	block = page->blocks[page->len-1].u.text;
 	line = &block->lines[block->len-1];
 
-	if (line->len == line->cap)
-	{
-		int newcap = (line->cap ? line->cap*2 : 4);
-		line->spans = fz_resize_array(ctx, line->spans, newcap, sizeof(*line->spans));
-		line->cap = newcap;
-	}
 	fz_union_rect(&block->lines[block->len-1].bbox, &span->bbox);
 	fz_union_rect(&block->bbox, &span->bbox);
 	span->base_offset = (new_line ? 0 : distance);
-	line->spans[line->len++] = span;
+
+	if (!line->first_span)
+	{
+		line->first_span = line->last_span = span;
+		span->next = NULL;
+	}
+	else
+	{
+		line->last_span->next = span;
+		line->last_span = span;
+	}
+
 	return line;
 }
 
@@ -286,8 +290,8 @@ strain_soup(fz_context *ctx, fz_text_device *tdev)
 			}
 #endif
 
-			p.x = last_line->spans[0]->max.x - last_line->spans[0]->min.x;
-			p.y = last_line->spans[0]->max.y - last_line->spans[0]->min.y;
+			p.x = last_line->first_span->max.x - last_line->first_span->min.x;
+			p.y = last_line->first_span->max.y - last_line->first_span->min.y;
 			fz_normalize_vector(&p);
 			q.x = span->max.x - span->min.x;
 			q.y = span->max.y - span->min.y;
@@ -296,8 +300,8 @@ strain_soup(fz_context *ctx, fz_text_device *tdev)
 			printf("last_span=%g %g -> %g %g = %g %g\n", last_span->min.x, last_span->min.y, last_span->max.x, last_span->max.y, p.x, p.y);
 			printf("span     =%g %g -> %g %g = %g %g\n", span->min.x, span->min.y, span->max.x, span->max.y, q.x, q.y);
 #endif
-			perp_r.y = last_line->spans[0]->min.x - span->min.x;
-			perp_r.x = -(last_line->spans[0]->min.y - span->min.y);
+			perp_r.y = last_line->first_span->min.x - span->min.x;
+			perp_r.x = -(last_line->first_span->min.y - span->min.y);
 			/* Check if p and q are parallel. If so, then this
 			 * line is parallel with the last one. */
 			dot = p.x * q.x + p.y * q.y;
@@ -437,14 +441,13 @@ fz_new_text_page(fz_context *ctx, const fz_rect *mediabox)
 static void
 fz_free_text_line_contents(fz_context *ctx, fz_text_line *line)
 {
-	int span_num;
-	for (span_num = 0; span_num < line->len; span_num++)
+	fz_text_span *span, *next;
+	for (span = line->first_span; span; span=next)
 	{
-		fz_text_span *span = line->spans[span_num];
+		next = span->next;
 		fz_free(ctx, span->text);
 		fz_free(ctx, span);
 	}
-	fz_free(ctx, line->spans);
 }
 
 static void
@@ -507,6 +510,7 @@ fz_new_text_span(fz_context *ctx, const fz_point *p, int wmode, const fz_matrix 
 	span->transform.e = 0;
 	span->transform.f = 0;
 	span->text = NULL;
+	span->next = NULL;
 	return span;
 }
 

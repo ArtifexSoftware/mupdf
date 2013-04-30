@@ -1983,8 +1983,7 @@ struct fz_image_block_s
 */
 struct fz_text_line_s
 {
-	int len, cap;
-	fz_text_span **spans;
+	fz_text_span *first_span, *last_span;
 
 	/* Cached information */
 	float distance; /* Perpendicular distance from previous line */
@@ -2018,6 +2017,8 @@ struct fz_text_span_s
 	float column_width; /* Percentage */
 	int align; /* 0 = left, 1 = centre, 2 = right */
 	float indent; /* The indent position for this column. */
+
+	fz_text_span *next;
 };
 
 /*

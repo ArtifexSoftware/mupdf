@@ -113,9 +113,10 @@ send_data_base64(fz_output *out, fz_buffer *buffer)
 void
 fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 {
-	int block_n, line_n, span_n, ch_n;
+	int block_n, line_n, ch_n;
 	fz_text_style *style = NULL;
 	fz_text_line *line;
+	fz_text_span *span;
 	void *last_region = NULL;
 
 	fz_printf(out, "<div class=\"page\">\n");
@@ -147,9 +148,8 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 					fz_printf(out, " region=\"%x\"", line->region);
 #endif
 				fz_printf(out, ">");
-				for (span_n = 0; span_n < line->len; span_n++)
+				for (span = line->first_span; span; span = span->next)
 				{
-					fz_text_span *span = line->spans[span_n];
 					float size = fz_matrix_expansion(&span->transform);
 					float base_offset = span->base_offset / size;
 
@@ -169,10 +169,10 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 						/* Now output the span to contain this entire column */
 						fz_printf(out, "<div class=\"cell\" style=\"");
 						{
-							int sn;
-							for (sn = span_n+1; sn < line->len; sn++)
+							fz_text_span *sn;
+							for (sn = span->next; sn; sn = sn->next)
 							{
-								if (line->spans[sn]->column != lastcol)
+								if (sn->column != lastcol)
 									break;
 							}
 							fz_printf(out, "width:%g%%;align:%s", span->column_width, (span->align == 0 ? "left" : (span->align == 1 ? "center" : "right")));
@@ -299,12 +299,11 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 				block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 			for (line = block->lines; line < block->lines + block->len; line++)
 			{
-				int span_num;
+				fz_text_span *span;
 				fz_printf(out, "<line bbox=\"%g %g %g %g\">\n",
 					line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1);
-				for (span_num = 0; span_num < line->len; span_num++)
+				for (span = line->first_span; span; span = span->next)
 				{
-					fz_text_span *span = line->spans[span_num];
 					fz_text_style *style = NULL;
 					int char_num;
 					for (char_num = 0; char_num < span->len; char_num++)
@@ -381,10 +380,9 @@ fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 
 			for (line = block->lines; line < block->lines + block->len; line++)
 			{
-				int span_num;
-				for (span_num = 0; span_num < line->len; span_num++)
+				fz_text_span *span;
+				for (span = line->first_span; span; span = span->next)
 				{
-					fz_text_span *span = line->spans[span_num];
 					for (ch = span->text; ch < span->text + span->len; ch++)
 					{
 						n = fz_runetochar(utf, ch->c);
