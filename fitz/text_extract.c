@@ -252,18 +252,6 @@ dump_line(fz_text_line *line)
 }
 #endif
 
-static inline void
-normalise(fz_point *p)
-{
-	float len = p->x * p->x + p->y * p->y;
-	if (len != 0)
-	{
-		len = sqrtf(len);
-		p->x /= len;
-		p->y /= len;
-	}
-}
-
 static void
 strain_soup(fz_context *ctx, fz_text_device *tdev)
 {
@@ -300,10 +288,10 @@ strain_soup(fz_context *ctx, fz_text_device *tdev)
 
 			p.x = last_line->spans[0]->max.x - last_line->spans[0]->min.x;
 			p.y = last_line->spans[0]->max.y - last_line->spans[0]->min.y;
-			normalise(&p);
+			fz_normalize_vector(&p);
 			q.x = span->max.x - span->min.x;
 			q.y = span->max.y - span->min.y;
-			normalise(&q);
+			fz_normalize_vector(&q);
 #ifdef DEBUG_SPANS
 			printf("last_span=%g %g -> %g %g = %g %g\n", last_span->min.x, last_span->min.y, last_span->max.x, last_span->max.y, p.x, p.y);
 			printf("span     =%g %g -> %g %g = %g %g\n", span->min.x, span->min.y, span->max.x, span->max.y, q.x, q.y);
@@ -566,7 +554,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	}
 	fz_transform_vector(&dir, trm);
 	ndir = dir;
-	normalise(&ndir);
+	fz_normalize_vector(&ndir);
 	/* dir = direction vector for motion. ndir = normalised(dir) */
 
 	size = fz_matrix_expansion(trm);

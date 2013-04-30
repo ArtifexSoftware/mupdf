@@ -11,18 +11,6 @@
 
 #undef SPOT_LINE_NUMBERS
 
-static inline void
-normalise(fz_point *p)
-{
-	float len = p->x * p->x + p->y * p->y;
-	if (len != 0)
-	{
-		len = sqrtf(len);
-		p->x /= len;
-		p->y /= len;
-	}
-}
-
 typedef struct line_height_s
 {
 	float height;
@@ -1199,7 +1187,7 @@ force_paragraph:
 			blv = line->spans[0]->max;
 			blv.x -= line->spans[0]->min.x;
 			blv.y -= line->spans[0]->min.y;
-			normalise(&blv);
+			fz_normalize_vector(&blv);
 
 			rm = new_region_mask(ctx, &blv);
 			for (span_num = 0; span_num < line->len; span_num++)
@@ -1284,7 +1272,7 @@ force_paragraph:
 			blv = line->spans[0]->max;
 			blv.x -= line->spans[0]->min.x;
 			blv.y -= line->spans[0]->min.y;
-			normalise(&blv);
+			fz_normalize_vector(&blv);
 
 #ifdef DEBUG_MASKS
 			dump_line(line);
