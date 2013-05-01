@@ -868,6 +868,17 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 
 		pdf_load_to_unicode(xref, fontdesc, NULL, collection, to_unicode);
 
+		/* If we have an identity encoding, we're supposed to use the glyph ids directly.
+		 * If we only have a substitute font, that won't work.
+		 * Make a last ditch attempt by using
+		 * the ToUnicode table if it exists to map via the substitute font's cmap. */
+		if (strstr(fontdesc->encoding->cmap_name, "Identity-") && fontdesc->font->ft_substitute)
+		{
+			fz_warn(ctx, "non-embedded font using identity encoding: %s", basefont);
+			if (fontdesc->to_unicode && !fontdesc->to_ttf_cmap)
+				fontdesc->to_ttf_cmap = pdf_keep_cmap(ctx, fontdesc->to_unicode);
+		}
+
 		/* Horizontal */
 
 		dw = 1000;
