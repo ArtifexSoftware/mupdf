@@ -5,7 +5,7 @@
 #include FT_FREETYPE_H
 #include FT_XFREE86_H
 
-static void pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont);
+static void pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont, int iscidfont);
 
 static char *base_font_names[][10] =
 {
@@ -430,7 +430,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 
 		descriptor = pdf_dict_gets(dict, "FontDescriptor");
 		if (descriptor)
-			pdf_load_font_descriptor(fontdesc, xref, descriptor, NULL, basefont);
+			pdf_load_font_descriptor(fontdesc, xref, descriptor, NULL, basefont, 0);
 		else
 			pdf_load_builtin_font(ctx, fontdesc, basefont);
 
@@ -457,7 +457,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 				pdf_drop_font(ctx, fontdesc);
 				fontdesc = NULL;
 				fontdesc = pdf_new_font_desc(ctx);
-				pdf_load_font_descriptor(fontdesc, xref, descriptor, "Adobe-GB1", cp936fonts[i+1]);
+				pdf_load_font_descriptor(fontdesc, xref, descriptor, "Adobe-GB1", cp936fonts[i+1], 0);
 				fontdesc->encoding = pdf_load_system_cmap(ctx, "GBK-EUC-H");
 				fontdesc->to_unicode = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
 				fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
@@ -794,7 +794,7 @@ load_cid_font(pdf_document *xref, pdf_obj *dict, pdf_obj *encoding, pdf_obj *to_
 		descriptor = pdf_dict_gets(dict, "FontDescriptor");
 		if (!descriptor)
 			fz_throw(ctx, "syntaxerror: missing font descriptor");
-		pdf_load_font_descriptor(fontdesc, xref, descriptor, collection, basefont);
+		pdf_load_font_descriptor(fontdesc, xref, descriptor, collection, basefont, 1);
 
 		face = fontdesc->font->ft_face;
 		kind = ft_kind(face);
@@ -1004,7 +1004,7 @@ pdf_load_type0_font(pdf_document *xref, pdf_obj *dict)
  */
 
 static void
-pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont)
+pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *dict, char *collection, char *basefont, int iscidfont)
 {
 	pdf_obj *obj1, *obj2, *obj3, *obj;
 	char *fontname, *origname;
@@ -1039,7 +1039,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *d
 		fz_catch(ctx)
 		{
 			fz_warn(ctx, "ignored error when loading embedded font; attempting to load system font");
-			if (origname != fontname)
+			if (origname != fontname && !iscidfont)
 				pdf_load_builtin_font(ctx, fontdesc, fontname);
 			else
 				pdf_load_system_font(ctx, fontdesc, fontname, collection);
@@ -1047,7 +1047,7 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *xref, pdf_obj *d
 	}
 	else
 	{
-		if (origname != fontname)
+		if (origname != fontname && !iscidfont)
 			pdf_load_builtin_font(ctx, fontdesc, fontname);
 		else
 			pdf_load_system_font(ctx, fontdesc, fontname, collection);
