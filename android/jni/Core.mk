@@ -100,6 +100,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/draw/draw_path.c \
 	$(MY_ROOT)/draw/draw_simple_scale.c \
 	$(MY_ROOT)/draw/draw_unpack.c \
+	$(MY_ROOT)/ucdn/ucdn.c \
 	$(MY_ROOT)/pdf/pdf_annot.c \
 	$(MY_ROOT)/pdf/pdf_cmap.c \
 	$(MY_ROOT)/pdf/pdf_cmap_load.c \
