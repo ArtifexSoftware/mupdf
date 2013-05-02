@@ -1259,7 +1259,7 @@ pdf_update_stream(pdf_document *xref, int num, fz_buffer *newbuf)
 int
 pdf_meta(pdf_document *doc, int key, void *ptr, int size)
 {
-	switch(key)
+	switch (key)
 	{
 	/*
 		ptr: Pointer to block (uninitialised on entry)

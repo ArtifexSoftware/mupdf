@@ -202,7 +202,7 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 			pdf_dict_puts_drop(imobj, "ColorSpace", pdf_new_name(ctx, "DeviceRGB"));
 		else if (colorspace->n == 4)
 			pdf_dict_puts_drop(imobj, "ColorSpace", pdf_new_name(ctx, "DeviceCMYK"));
-		switch(cp ? cp->type : FZ_IMAGE_UNKNOWN)
+		switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
 		{
 		case FZ_IMAGE_UNKNOWN:
 		default:

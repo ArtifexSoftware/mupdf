@@ -479,7 +479,7 @@ fz_free_text_page(fz_context *ctx, fz_text_page *page)
 	fz_page_block *block;
 	for (block = page->blocks; block < page->blocks + page->len; block++)
 	{
-		switch(block->type)
+		switch (block->type)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 			fz_free_text_block(ctx, block->u.text);

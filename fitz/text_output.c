@@ -123,7 +123,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
-		switch(page->blocks[block_n].type)
+		switch (page->blocks[block_n].type)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
@@ -287,7 +287,7 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 	fz_printf(out, "<page>\n");
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
-		switch(page->blocks[block_n].type)
+		switch (page->blocks[block_n].type)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
@@ -368,7 +368,7 @@ fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 
 	for (block_n = 0; block_n < page->len; block_n++)
 	{
-		switch(page->blocks[block_n].type)
+		switch (page->blocks[block_n].type)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
