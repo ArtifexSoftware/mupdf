@@ -12,6 +12,24 @@
 
 enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
+enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM };
+
+typedef struct
+{
+	char *suffix;
+	int format;
+} suffix_t;
+
+static const suffix_t suffix_table[] =
+{
+	{ ".png", OUT_PNG },
+	{ ".pgm", OUT_PGM },
+	{ ".ppm", OUT_PPM },
+	{ ".pnm", OUT_PNM },
+	{ ".pam", OUT_PAM },
+	{ ".pbm", OUT_PBM },
+};
+
 /*
 	A useful bit of bash script to call this to generate mjs files:
 	for f in tests_private/pdf/forms/v1.3/ *.pdf ; do g=${f%.*} ; echo $g ; ../mupdf.git/win32/debug/mudraw.exe -j $g.mjs $g.pdf ; done
@@ -82,6 +100,7 @@ static int height = 0;
 static int fit = 0;
 static int errored = 0;
 static int ignore_errors = 0;
+static int output_format;
 
 static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
@@ -505,13 +524,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			{
 				char buf[512];
 				sprintf(buf, output, pagenum);
-				if (strstr(output, ".pgm") || strstr(output, ".ppm") || strstr(output, ".pnm"))
+				if (output_format == OUT_PGM || output_format == OUT_PPM)
 					fz_write_pnm(ctx, pix, buf);
-				else if (strstr(output, ".pam"))
+				else if (output_format == OUT_PAM)
 					fz_write_pam(ctx, pix, buf, savealpha);
-				else if (strstr(output, ".png"))
+				else if (output_format == OUT_PNG)
 					fz_write_png(ctx, pix, buf, savealpha);
-				else if (strstr(output, ".pbm")) {
+				else if (output_format == OUT_PBM) {
 					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 					fz_write_pbm(ctx, bit, buf);
 					fz_drop_bitmap(ctx, bit);
@@ -720,14 +739,28 @@ int main(int argc, char **argv)
 
 	fz_set_aa_level(ctx, alphabits);
 
+	/* Determine output type */
+	output_format = OUT_PNG;
+	if (output)
+	{
+		char *suffix = output;
+		int i;
+
+		for (i = 0; i < nelem(suffix_table); i++)
+		{
+			char *s = strstr(suffix, suffix_table[i].suffix);
+
+			if (s != NULL)
+			{
+				suffix = s+1;
+				output_format = suffix_table[i].format;
+				i = 0;
+			}
+		}
+	}
+
 	colorspace = fz_device_rgb;
-	if (output && strstr(output, ".pgm"))
-		colorspace = fz_device_gray;
-	if (output && strstr(output, ".ppm"))
-		colorspace = fz_device_rgb;
-	if (output && strstr(output, ".pbm"))
-		colorspace = fz_device_gray;
-	if (grayscale)
+	if (grayscale || output_format == OUT_PGM || output_format == OUT_PBM)
 		colorspace = fz_device_gray;
 
 	timing.count = 0;
