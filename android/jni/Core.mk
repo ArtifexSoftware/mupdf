@@ -32,6 +32,7 @@ LOCAL_C_INCLUDES := \
 	../pdf \
 	../xps \
 	../cbz \
+	../image \
 	../scripts \
 	..
 ifdef V8_BUILD
@@ -145,7 +146,8 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/xps/xps_tile.c \
 	$(MY_ROOT)/xps/xps_util.c \
 	$(MY_ROOT)/xps/xps_zip.c \
-	$(MY_ROOT)/cbz/mucbz.c
+	$(MY_ROOT)/cbz/mucbz.c \
+	$(MY_ROOT)/image/muimage.c
 ifdef MEMENTO
 	LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
 endif

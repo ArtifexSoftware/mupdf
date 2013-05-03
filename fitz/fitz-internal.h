@@ -977,7 +977,8 @@ void fz_free_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf);
 
 fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
-fz_image *fz_new_image_from_buffer(fz_context *ctx, unsigned char *buf, int len);
+fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len);
+fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 fz_pixmap *fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h);
 void fz_free_image(fz_context *ctx, fz_storable *image);
 fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int in_line, int indexed, int l2factor, int native_l2factor);

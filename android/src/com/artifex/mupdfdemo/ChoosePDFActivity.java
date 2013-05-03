@@ -94,6 +94,22 @@ public class ChoosePDFActivity extends ListActivity {
 							return true;
 						if (fname.endsWith(".cbz"))
 							return true;
+						if (fname.endsWith(".png"))
+							return true;
+						if (fname.endsWith(".jpe"))
+							return true;
+						if (fname.endsWith(".jpeg"))
+							return true;
+						if (fname.endsWith(".jpg"))
+							return true;
+						if (fname.endsWith(".jfif"))
+							return true;
+						if (fname.endsWith(".jfif-tbnl"))
+							return true;
+						if (fname.endsWith(".tif"))
+							return true;
+						if (fname.endsWith(".tiff"))
+							return true;
 						return false;
 					}
 				});
