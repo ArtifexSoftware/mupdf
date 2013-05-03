@@ -1,4 +1,5 @@
 #include "fitz-internal.h"
+#include "ucdn.h"
 
 /* Extract text into an unsorted span soup. */
 
@@ -858,6 +859,92 @@ fz_text_fill_image(fz_device *dev, fz_image *img, const fz_matrix *ctm, float al
 	fz_text_fill_image_mask(dev, img, ctm, NULL, NULL, alpha);
 }
 
+static int
+fz_bidi_direction(int bidiclass, int curdir)
+{
+	switch (bidiclass)
+	{
+	/* strong */
+	case UCDN_BIDI_CLASS_L: return 1;
+	case UCDN_BIDI_CLASS_R: return -1;
+	case UCDN_BIDI_CLASS_AL: return -1;
+
+	/* weak */
+	case UCDN_BIDI_CLASS_EN:
+	case UCDN_BIDI_CLASS_ES:
+	case UCDN_BIDI_CLASS_ET:
+	case UCDN_BIDI_CLASS_AN:
+	case UCDN_BIDI_CLASS_CS:
+	case UCDN_BIDI_CLASS_NSM:
+	case UCDN_BIDI_CLASS_BN:
+		return curdir;
+
+	/* neutral */
+	case UCDN_BIDI_CLASS_B:
+	case UCDN_BIDI_CLASS_S:
+	case UCDN_BIDI_CLASS_WS:
+	case UCDN_BIDI_CLASS_ON:
+		return curdir;
+
+	/* embedding, override, pop ... we don't support them */
+	default:
+		return 0;
+	}
+}
+
+static void
+fz_bidi_reorder_run(fz_text_span *span, int a, int b, int dir)
+{
+	if (a < b && dir == -1)
+	{
+		fz_text_char c;
+		int m = a + (b - a) / 2;
+		while (a < m)
+		{
+			b--;
+			c = span->text[a];
+			span->text[a] = span->text[b];
+			span->text[b] = c;
+			a++;
+		}
+	}
+}
+
+static void
+fz_bidi_reorder_span(fz_text_span *span)
+{
+	int a, b, dir, curdir;
+
+	a = 0;
+	curdir = 1;
+	for (b = 0; b < span->len; b++)
+	{
+		dir = fz_bidi_direction(ucdn_get_bidi_class(span->text[b].c), curdir);
+		if (dir != curdir)
+		{
+			fz_bidi_reorder_run(span, a, b, curdir);
+			curdir = dir;
+			a = b;
+		}
+	}
+	fz_bidi_reorder_run(span, a, b, curdir);
+}
+
+static void
+fz_bidi_reorder_text_page(fz_context *ctx, fz_text_page *page)
+{
+	fz_page_block *pageblock;
+	fz_text_block *block;
+	fz_text_line *line;
+	fz_text_span *span;
+
+	for (pageblock = page->blocks; pageblock < page->blocks + page->len; page++)
+		if (pageblock->type == FZ_PAGE_BLOCK_TEXT)
+			for (block = pageblock->u.text, line = block->lines; line < block->lines + block->len; line++)
+				for (span = line->first_span; span; span = span->next)
+					fz_bidi_reorder_span(span);
+}
+
 static void
 fz_text_free_user(fz_device *dev)
 {
@@ -872,7 +959,8 @@ fz_text_free_user(fz_device *dev)
 
 	/* TODO: smart sorting of blocks in reading order */
 	/* TODO: unicode NFC normalization */
-	/* TODO: bidi logical reordering */
+
+	fz_bidi_reorder_text_page(ctx, tdev->page);
 
 	fz_free(dev->ctx, tdev);
 }

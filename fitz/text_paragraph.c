@@ -988,8 +988,8 @@ dehyphenate(fz_text_span *s1, fz_text_span *s2)
 	s2->spacing = 0;
 }
 
-static void
-fz_text_analysis_paragraph(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
+void
+fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
 	fz_text_line *line;
 	fz_text_span *span;
@@ -1497,16 +1497,4 @@ force_paragraph:
 			}
 		}
 	}
-}
-
-static void
-fz_text_analysis_rtl(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
-{
-}
-
-void
-fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
-{
-	fz_text_analysis_paragraph(ctx, sheet, page);
-	fz_text_analysis_rtl(ctx, sheet, page);
 }

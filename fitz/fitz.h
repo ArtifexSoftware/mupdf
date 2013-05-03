@@ -2097,7 +2097,7 @@ void fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet);
 fz_text_page *fz_new_text_page(fz_context *ctx, const fz_rect *mediabox);
 void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
-void fz_text_analysis(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
+void fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
 
 /*
 	Generic output streams - generalise between outputting to a file,

@@ -1347,7 +1347,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_free_device(dev);
 		dev = NULL;
 
-		fz_text_analysis(ctx, sheet, text);
+		fz_analyze_text(ctx, sheet, text);
 
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
