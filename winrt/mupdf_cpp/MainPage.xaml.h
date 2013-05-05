@@ -6,14 +6,13 @@
 #pragma once
 
 #include "MainPage.g.h"
-#include "fitz.h"
-#include "fitz-internal.h"
-#include "muxps.h"
-#include "mupdf.h"
 #include "ppl.h"
+#include "ppltasks.h"
 #include <collection.h>
 #include <algorithm>
 #include "LVContents.h"
+#include "mudocument.h"
+#include "DocumentPage.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -25,7 +24,6 @@ using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Input;
-using namespace Windows::Foundation::Collections;
 using namespace Windows::UI::Xaml::Shapes;
 using namespace Windows::Foundation::Collections;
 using namespace Platform::Collections;
@@ -33,6 +31,7 @@ using namespace ListViewContents;
 using namespace Windows::UI::ViewManagement;
 using namespace Windows::UI::Popups;
 using namespace Windows::UI::Xaml::Navigation;
+using namespace mupdfwinrt;
 
 typedef enum
 {
@@ -53,15 +52,9 @@ typedef struct SearchResult_s
     int page_num;
 } SearchResult_t;
 
-typedef struct RectSize_s
-{
-    float width;
-    float height;
-} RectSize;
-
 typedef struct spatial_info_s
 {
-    RectSize size;   
+    Point size;   
     double scale_factor;
 } spatial_info_t;
 
@@ -70,8 +63,6 @@ typedef struct thumbs_s
     Array<InMemoryRandomAccessStream^>^ raster;  
     Array<double>^ scale;
     Array<Point>^  size;
-    Array<Canvas^>^ canvas_v;
-    Array<Canvas^>^ canvas_h;
 } thumbs_t;
 
 typedef struct content_s
@@ -82,10 +73,7 @@ typedef struct content_s
     Vector<String^>^ string_margin;
 } content_t;
 
-
-
-
-namespace winapp
+namespace mupdf_cpp
 {
 	/// <summary>
 	/// An empty page that can be used on its own or navigated to within a Frame.
@@ -100,6 +88,8 @@ namespace winapp
 
     /* added */
     private:
+        Vector<DocumentPage^>^ m_docPages;
+        mudocument^ mu_doc; 
         LVContents temp;
         bool m_file_open;
         int  m_currpage;
@@ -115,6 +105,7 @@ namespace winapp
         Point m_display_size;
         cancellation_token_source m_searchcts;
         cancellation_token_source m_thumbcts;
+        bool m_page_update;
         long long m_memory_use;
         double m_curr_zoom;
         Point m_zoom_size;
@@ -123,6 +114,7 @@ namespace winapp
         Windows::UI::Input::ManipulationDelta m_changes;
         ImageBrush^ m_renderedImage;
         ImageBrush^ m_blankPage;
+        WriteableBitmap ^m_BlankBmp;
         Canvas^ m_renderedCanvas;
         ImageBrush^ m_zoomedImage;
         SolidColorBrush^ m_textcolor_brush; 
@@ -133,7 +125,6 @@ namespace winapp
         int m_thumb_page_start;
         int m_thumb_page_stop;
         cancellation_token_source m_ThumbCancel;
-        fz_link *m_links;
         content_t m_content;
         TextBlock^ m_StatusBlock;
         bool m_zoom_mode;
@@ -147,25 +138,17 @@ namespace winapp
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocumentPrep(StorageFile^ file);
         void OpenDocument(StorageFile^ file);
-        task<int> RenderRange(int curr_page, int *height, int *width);
+        task<int> RenderRange(int curr_page);
         void CleanUp();
-        void AddPage(int page_num);
-        void ReplacePage(int page_num);
-        void AddBlankPage(int page_num);
-        void AddBlankPage(int page_num, FlipView^ flip_view);
+        void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type);
         void CreateBlank(int width, int height);
         void HandleFileNotFoundException(Platform::COMException^ e); 
         void NotifyUserFileNotExist();
-        void SetupZoomCanvas();
-        RectSize currPageSize(int page);
+        void SetFlipView();
+        Point currPageSize(int page);
         void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
-        void FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
-        void Canvas_ManipulationDelta(Object^ sender, ManipulationDeltaRoutedEventArgs^ e);
-        void Canvas_ManipulationStarted(Object^ sender, ManipulationStartedRoutedEventArgs^ e);
-        void Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e);  
-        void Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e);
         void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ResetSearch(void);  
@@ -180,7 +163,7 @@ namespace winapp
         spatial_info_t InitSpatial(double scale);
         void InitThumbnails();
         void RenderThumbs();
-        void SetThumb(int page_num);
+        void SetThumb(int page_num, bool replace);
         void ReleasePages(int old_page, int new_page);
         void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void AddLinkCanvas();
@@ -209,5 +192,7 @@ namespace winapp
         void NotifyUser(String^ strMessage, NotifyType_t type);
         void ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command);
         void OKInvokedHandler(Windows::UI::Popups::IUICommand^ command);
+        Point ComputePageSize(spatial_info_t spatial_info, int page_num);
+        void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
 };
 }

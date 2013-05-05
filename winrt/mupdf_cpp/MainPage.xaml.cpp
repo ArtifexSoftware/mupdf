@@ -12,16 +12,17 @@
 #define MAX_SCALE 4
 #define MARGIN_BUFF 400
 #define MAX_SEARCH 500
-#define SCALE_THUMB 0.25 
+#define SCALE_THUMB 0.1 
+
+#define BLANK_WIDTH 17
+#define BLANK_HEIGHT 22
 
 static float screenScale = 1;
-static fz_context *ctx = NULL;
-fz_document *m_doc; 
 
 int linkPage[MAX_SEARCH];
 char *linkUrl[MAX_SEARCH];
 
-using namespace winapp;
+using namespace mupdf_cpp;
 
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml;
@@ -39,12 +40,6 @@ using namespace Windows::Devices::Enumeration;
 using namespace concurrency;
 using namespace Windows::Graphics::Imaging;
 //****************** End Add ****************
-
-typedef struct win_stream_struct_s
-{
-    IRandomAccessStream^ stream;
-} win_stream_struct;
-static win_stream_struct win_stream;
 
 #ifndef NDEBUG
 unsigned int _mainThreadId = 0U;
@@ -82,9 +77,9 @@ MainPage::MainPage()
 	InitializeComponent();
 
     Windows::UI::Color color;
-    color.R = 0x25;
-    color.G = 0x72;
-    color.B = 0xAC;
+    color.R = 0x00;
+    color.G = 0x00;
+    color.B = 0xFF;
     color.A = 0x40;
     m_textcolor_brush = ref new SolidColorBrush(color);
 
@@ -96,13 +91,14 @@ MainPage::MainPage()
 
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
-    m_doc = NULL;
     m_content.num = 0;
+    mu_doc = nullptr;
+    m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
     CleanUp();
     RecordMainThread();
-
-	// use at most 128M for resource cache
-	ctx = fz_new_context(NULL, NULL, 128<<20);
+    mu_doc = ref new mudocument(); 
+    if (mu_doc == nullptr)
+        throw ref new FailureException("Document allocation failed!");
 }
 
 /// <summary>
@@ -115,17 +111,17 @@ void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 	(void) e;	// Unused parameter
 }
 
-void winapp::MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)
+void mupdf_cpp::MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)
 {
 
 }
 
-void winapp::MainPage::OKInvokedHandler(Windows::UI::Popups::IUICommand^ command)
+void mupdf_cpp::MainPage::OKInvokedHandler(Windows::UI::Popups::IUICommand^ command)
 {
 
 }
 
-void winapp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
+void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 {
     MessageDialog^ msg = ref new MessageDialog(strMessage);
     UICommand^ ExitCommand = nullptr;
@@ -135,7 +131,7 @@ void winapp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
     {
     case StatusMessage:
         OKCommand = ref new UICommand("OK", 
-            ref new UICommandInvokedHandler(this, &winapp::MainPage::OKInvokedHandler));        
+            ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::OKInvokedHandler));        
          msg->Commands->Append(OKCommand);
         /// Set the command that will be invoked by default
         msg->DefaultCommandIndex = 0;
@@ -144,7 +140,7 @@ void winapp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
         break;
     case ErrorMessage:
         ExitCommand = ref new UICommand("Exit", 
-            ref new UICommandInvokedHandler(this, &winapp::MainPage::ExitInvokedHandler));
+            ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::ExitInvokedHandler));
         msg->Commands->Append(ExitCommand);
         /// Set the command that will be invoked by default
         msg->DefaultCommandIndex = 0;
@@ -158,7 +154,7 @@ void winapp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
     msg->ShowAsync();
 }
 
-bool winapp::MainPage::EnsureUnsnapped()
+bool mupdf_cpp::MainPage::EnsureUnsnapped()
 {
     // FilePicker APIs will not work if the application is in a snapped state.
     // If an app wants to show a FilePicker while snapped, it must attempt to unsnap first
@@ -172,7 +168,7 @@ bool winapp::MainPage::EnsureUnsnapped()
     return unsnapped;
 }
 
-void winapp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     if (!EnsureUnsnapped())
         return;
@@ -197,54 +193,76 @@ void winapp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Route
 	});
 }
 
-void MainPage::NotifyUserFileNotExist()
+/* Set the page with the new raster information */
+void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, 
+                          Point ras_size, Page_Content_t content_type)
 {
-    //NotifyUser("The file '" + Filename + "' does not exist. Use scenario one to create this file.", NotifyType::ErrorMessage);
-}
+    assert(IsMainThread());
 
-void MainPage::HandleFileNotFoundException(Platform::COMException^ e)
-{
-    if (e->HResult == 0x80070002) // Catch FileNotExistException
+    WriteableBitmap ^bmp = ref new WriteableBitmap(ras_size.X, ras_size.Y);
+    bmp->SetSource(ras);
+
+    DocumentPage^ doc_page = ref new DocumentPage();
+    doc_page->Image = bmp;
+
+    if (content_type == THUMBNAIL)
     {
-        NotifyUserFileNotExist();
+        doc_page->Height = ras_size.Y / SCALE_THUMB;
+        doc_page->Width = ras_size.X / SCALE_THUMB;
     }
     else
     {
-        throw e;
+        doc_page->Height = ras_size.Y;
+        doc_page->Width = ras_size.X;
     }
+    doc_page->Content = content_type;
+
+    /* We do not want flipview change notification to occur for ourselves */
+    m_page_update = true;
+    this->m_docPages->SetAt(page_num, doc_page);
+    m_page_update = false;
+
 }
 
-RectSize MainPage::currPageSize(int page)
+Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
 {
-	RectSize Size;
+    Point screenSize;
+    Point pageSize;
+    Point size = mu_doc->GetPageSize(page_num);
+
+    screenSize = spatial_info.size;
+	screenSize.Y *= screenScale;
+	screenSize.X *= screenScale;
+
+	float hscale = screenSize.X / size.X;
+	float vscale = screenSize.Y / size.Y;
+	float scale = min(hscale, vscale);
+    pageSize.X = size.X * scale * spatial_info.scale_factor;
+    pageSize.Y = size.Y * scale * spatial_info.scale_factor;
+
+    return pageSize;
+}
+
+Point MainPage::currPageSize(int page)
+{
+	Point Size;
 
     FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(page);
 
-    Size.height = flipview_temp->ActualHeight;
-    Size.width = flipview_temp->ActualWidth;
+    Size.Y = flipview_temp->ActualHeight;
+    Size.X = flipview_temp->ActualWidth;
     return Size;
 }
 
-static RectSize measurePage(fz_document *doc, fz_page *page)
+static Point fitPageToScreen(Point page, Point screen)
 {
-	RectSize pageSize;
-    fz_rect rect;
-	fz_rect *bounds = fz_bound_page(doc, page, &rect);
+    Point pageSize;
 
-	pageSize.width = bounds->x1 - bounds->x0;
-	pageSize.height = bounds->y1 - bounds->y0;
-	return pageSize;
-}
-
-static RectSize fitPageToScreen(RectSize page, RectSize screen)
-{
-    RectSize pageSize;
-
-	float hscale = screen.width / page.width;
-	float vscale = screen.height / page.height;
+	float hscale = screen.X / page.X;
+	float vscale = screen.Y / page.Y;
 	float scale = fz_min(hscale, vscale);
-    pageSize.width = floorf(page.width * scale) / page.width;
-	pageSize.height = floorf(page.height * scale) / page.height;
+    pageSize.X = floorf(page.X * scale) / page.X;
+	pageSize.Y = floorf(page.Y * scale) / page.Y;
 	return pageSize;
 }
 
@@ -252,8 +270,8 @@ spatial_info_t MainPage::InitSpatial(double scale)
 {
     spatial_info_t value;
 
-    value.size.height = this->ActualHeight;
-    value.size.width = this->ActualWidth;
+    value.size.Y = this->ActualHeight;
+    value.size.X = this->ActualWidth;
     value.scale_factor = scale;
     return value;
 }
@@ -284,20 +302,16 @@ void Prepare_bmp(int width, int height, DataWriter ^dw)
 
 void MainPage::ReleasePages(int old_page, int new_page)
 {
-
     if (old_page == new_page) return;
     /* To keep from having memory issue reset the page back to 
         the thumb if we are done rendering the thumbnails */
-    if (this->m_thumb_page_start == this->m_num_pages)
+    for (int k = old_page - LOOK_AHEAD; k <= old_page + LOOK_AHEAD; k++) 
     {
-        for (int k = old_page - LOOK_AHEAD; k <= old_page + LOOK_AHEAD; k++) 
+        if (k < new_page - LOOK_AHEAD || k > new_page + LOOK_AHEAD) 
         {
-            if (k < new_page - LOOK_AHEAD || k > new_page + LOOK_AHEAD) 
+            if (k >= 0 && k < this->m_num_pages)
             {
-                if (k >= 0 && k < this->m_num_pages)
-                {
-                    SetThumb(k);
-                }
+                SetThumb(k, true);
             }
         }
     }
@@ -307,61 +321,20 @@ void MainPage::InitThumbnails()
 {
     this->m_thumbnails.raster = ref new Array<InMemoryRandomAccessStream^>(m_num_pages);
     this->m_thumbnails.scale = ref new Array<double>(m_num_pages);
-    this->m_thumbnails.canvas_h = ref new Array<Canvas^>(m_num_pages);
-    this->m_thumbnails.canvas_v = ref new Array<Canvas^>(m_num_pages);
     this->m_thumbnails.size = ref new Array<Point>(m_num_pages);
 }
 
-/* Return this page from a full res image to the thumb image.  This should only
-   be called after all thumbs have been rendered. */
-void MainPage::SetThumb(int page_num)
+/* Return this page from a full res image to the thumb image or only set to thumb
+   if it has not already been set */
+void MainPage::SetThumb(int page_num, bool replace)
 {
-    FlipViewItem ^flipview_temp = (FlipViewItem^) xaml_vert_flipView->Items->GetAt(page_num);
-    flipview_temp->Content = this->m_thumbnails.canvas_v[page_num];    
-    flipview_temp->Background = this->m_blankPage;
-    flipview_temp = (FlipViewItem^) xaml_horiz_flipView->Items->GetAt(page_num);
-    flipview_temp->Content = this->m_thumbnails.canvas_h[page_num];    
-    flipview_temp->Background = this->m_blankPage;
-}
+    /* See what is there now */
+    auto doc = this->m_docPages->GetAt(page_num);
+    if (doc->Content == THUMBNAIL) return;
 
-/* Add rendered page into flipview structure at location page_num */
-void MainPage::AddPage(int page_num) 
-{
-    FlipViewItem ^flipview_temp = ref new FlipViewItem();
-    flipview_temp->Content = this->m_renderedCanvas;
-    m_curr_flipView->Items->Append(flipview_temp);
-}
-
-/* Replace rendered page into flipview structure at location page_num */
-void MainPage::ReplacePage(int page_num) 
-{
-    FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(page_num);
-    flipview_temp->Content = this->m_renderedCanvas;    
-    flipview_temp->Background = nullptr;
-}
-
-/* Add rendered page into flipview structure at location page_num */
-void MainPage::AddBlankPage(int page_num) 
-{
-    FlipViewItem ^flipview_temp = ref new FlipViewItem();
-    flipview_temp->Background = this->m_blankPage;
-    m_curr_flipView->Items->Append(flipview_temp);
-}
-
-/* Add rendered page into flipview structure at location page_num */
-void MainPage::AddBlankPage(int page_num, FlipView^ flip_view) 
-{
-    FlipViewItem ^flipview_temp = ref new FlipViewItem();
-    flipview_temp->Background = this->m_blankPage;
-    flip_view->Items->Append(flipview_temp);
-}
-
-/* Add rendered page into flipview structure at location page_num */
-void MainPage::AddThumbNail(int page_num, FlipView^ flip_view) 
-{
-    FlipViewItem ^flipview_temp = ref new FlipViewItem();
-    flipview_temp->Content = this->m_renderedCanvas;
-    flip_view->Items->Append(flipview_temp);
+    if ((replace || doc->Content == DUMMY) && this->m_thumbnails.raster[page_num] != nullptr) 
+        UpdatePage(page_num, this->m_thumbnails.raster[page_num], 
+                   this->m_thumbnails.size[page_num], THUMBNAIL);
 }
 
 /* Create white image for us to use as place holder in large document for flip
@@ -388,237 +361,15 @@ void MainPage::CreateBlank(int width, int height)
     }
     /* And store in a the image brush */
     bmp->SetSource(ras);
-    m_blankPage = ref new ImageBrush();
-    m_blankPage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-    m_blankPage->ImageSource = bmp;
+    m_BlankBmp = bmp;
 }
 
-/* win_read_file.  Reading of windows managed stream.  This is not ideal as I have 
-   to read into a managed buffer and then transfer to the actual buffer I want.  I
-   would like a more direct approach */
-static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
-{
-    void *temp = stm->state;
-    win_stream_struct *stream = reinterpret_cast <win_stream_struct*> (temp);
-    IRandomAccessStream^ Stream = stream->stream;
-    unsigned long long curr_pos = Stream->Position;
-    unsigned long long length = Stream->Size;
-    
-    DataReader^ local_reader = ref new DataReader(Stream);
-    DataReaderLoadOperation^ result = local_reader->LoadAsync(len);
-
-    /* Block on the Async call */
-    while(result->Status != AsyncStatus::Completed) {
-
-    }
-    result->GetResults();
-    int curr_len2 = local_reader->UnconsumedBufferLength;
-    if (curr_len2 < len)
-        len = curr_len2;
-
-    Platform::Array<unsigned char>^ arrByte = ref new Platform::Array<unsigned char>(len);
-    local_reader->ReadBytes(arrByte);
-
-    memcpy(buf, arrByte->Data, len);
-    local_reader->DetachStream();
-
-	return len;
-}
-
-static void win_seek_file(fz_stream *stm, int offset, int whence)
-{
-    void *temp = stm->state;
-    win_stream_struct *stream = reinterpret_cast <win_stream_struct*> (temp);
-    IRandomAccessStream^ Stream = stream->stream;
-    unsigned long long curr_pos = Stream->Position;
-    unsigned long long length = Stream->Size;
-    unsigned long long n;
-
-    if (whence == SEEK_END) 
-    {
-        n = length + offset;
-    } 
-    else if (whence == SEEK_CUR)
-    {
-        n = curr_pos + offset;
-    }
-    else if (whence == SEEK_SET)
-    {
-        n = offset;
-    } 
-    Stream->Seek(n);
-    curr_pos = Stream->Position;
-    stm->pos = n;
-	stm->rp = stm->bp;
-	stm->wp = stm->bp;
-}
-
-static void win_close_file(fz_context *ctx, void *state)
-{
-
-    DataReader^ dataReader = reinterpret_cast <DataReader^> (state);
-
-    delete dataReader;
-}
-
-void PixToMemStream(DataWriter ^dw, Platform::Array<unsigned char> ^arr)
-{
-    /* Write the data */
-    dw->WriteBytes(arr);
-
-    DataWriterStoreOperation^ result = dw->StoreAsync();
-    /* Block on the Async call */
-    while(result->Status != AsyncStatus::Completed) {
-    }
-}
-
-void PageSize(fz_document *doc, fz_page *page, int *width, int *height, spatial_info_t spatial_info)
-{
-    RectSize pageSize;
-    RectSize scale;
-    RectSize screenSize;
-
-    screenSize.height = spatial_info.size.height;
-    screenSize.width = spatial_info.size.width;
-
-	screenSize.width *= screenScale;
-	screenSize.height *= screenScale;
-    
-    pageSize = measurePage(doc, page);
-	scale = fitPageToScreen(pageSize, screenSize);
-    *width = pageSize.width * scale.width * spatial_info.scale_factor;
-    *height = pageSize.height * scale.height * spatial_info.scale_factor;
-}
-
-InMemoryRandomAccessStream^ RenderBitMap(fz_document *doc, fz_page *page, int *width, 
-                                         int *height, spatial_info_t spatial_info)
-{
-	fz_matrix ctm, *pctm = &ctm;
-	fz_device *dev;
-	fz_pixmap *pix;
-    RectSize pageSize;
-    RectSize scale;
-    RectSize screenSize;
-    int bmp_width, bmp_height;
-
-    screenSize.height = spatial_info.size.height;
-    screenSize.width = spatial_info.size.width;
-
-	screenSize.width *= screenScale;
-	screenSize.height *= screenScale;
-    
-    pageSize = measurePage(doc, page);
-	scale = fitPageToScreen(pageSize, screenSize);
-	pctm = fz_scale(pctm, scale.width * spatial_info.scale_factor, scale.height * spatial_info.scale_factor);
-    bmp_width = pageSize.width * scale.width * spatial_info.scale_factor;
-    bmp_height = pageSize.height * scale.height * spatial_info.scale_factor;
-    *width = bmp_width;
-    *height = bmp_height;
-
-    /* Y is flipped for some reason */
-    ctm.f = bmp_height;
-    ctm.d = -ctm.d;
-
-    /* Allocate space for bmp */
-    Array<unsigned char>^ bmp_data = 
-            ref new Array<unsigned char>(bmp_height * 4 * bmp_width);
-    /* Set up the memory stream */
-    InMemoryRandomAccessStream ^ras = ref new InMemoryRandomAccessStream();
-    DataWriter ^dw = ref new DataWriter(ras->GetOutputStreamAt(0));
-    //m_memory_use += bmp_height * 4 * bmp_width;
-    /* Go ahead and write our header data into the memory stream */
-    Prepare_bmp(bmp_width, bmp_height, dw);
-    /* Now get a pointer to our samples and pass it to fitz to use */
-    pix = fz_new_pixmap_with_data(ctx, fz_device_bgr, bmp_width, bmp_height, &(bmp_data[0]));
-	fz_clear_pixmap_with_value(ctx, pix, 255);
-	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, pctm, NULL);
-	fz_free_device(dev);
-    /* Now the data into the memory stream */
-	PixToMemStream(dw, bmp_data);
-    /* Return raster stream */
-    return ras;
-}
-
-task<Canvas^> RenderPage_Task(fz_document *doc, int page_num, int *width, int *height, 
-                   spatial_info_t spatial_info, ImageBrush^ *renderedImage)
-{
-    fz_page *page = fz_load_page(doc, page_num);
-    int width_val, height_val;
-    auto p = std::make_shared<std::pair<int,int>>(-1,-1);
-
-    /* This will launch rendering on another thread */
-    auto t = create_task([spatial_info, page_num, doc, page, width, height, p]()-> InMemoryRandomAccessStream^
-    {
-        InMemoryRandomAccessStream^ ras;
-
-        /* Get raster bitmap stream */
-        ras = RenderBitMap(doc, page, &(p->first), &(p->second), spatial_info);
-        *width = p->first;
-        *height = p->second;
-
-        return ras;
-    });
-    return t.then([renderedImage, doc, page, p](task<InMemoryRandomAccessStream^> the_task) 
-    {
-        /* And store in a new image brush.  Note: creation of WriteableBitmap
-           MUST be done by the UI thread. */
-        InMemoryRandomAccessStream^ ras;
-
-        assert(IsMainThread());
-        try
-        {
-           ras = the_task.get();
-        } 
-        catch (const task_canceled& e)
-        {
-            return (Canvas^) nullptr;
-        }
-        WriteableBitmap ^bmp = ref new WriteableBitmap(p->first, p->second);
-        bmp->SetSource(ras);
-        *renderedImage = ref new ImageBrush();
-        (*renderedImage)->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-        (*renderedImage)->ImageSource = bmp;
-        Canvas^ ret_Canvas = ref new Canvas();
-        ret_Canvas->Width = p->first;
-        ret_Canvas->Height = p->second;
-        ret_Canvas->Background = *renderedImage;
-        fz_free_page(doc, page);
-        return ret_Canvas;
-    }, task_continuation_context::use_current());
-}
-
-Canvas^ RenderPage(fz_document *doc, fz_page *page, int *width, int *height, 
-                   spatial_info_t spatial_info, ImageBrush^ *renderedImage)
-{
-    InMemoryRandomAccessStream^ ras;
-    
-    /* Get raster bitmap stream */
-    ras = RenderBitMap(doc, page, width, height, spatial_info);
-
-    /* And store in a new image brush.  Note: creation of WriteableBitmap
-       MUST be done by the UI thread. */
-    WriteableBitmap ^bmp = ref new WriteableBitmap(*width, *height);
-    bmp->SetSource(ras);
-    *renderedImage = ref new ImageBrush();
-    (*renderedImage)->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-    (*renderedImage)->ImageSource = bmp;
-    Canvas^ ret_Canvas = ref new Canvas();
-    ret_Canvas->Height = *height;
-    ret_Canvas->Width = *width;
-    ret_Canvas->Background = *renderedImage;
-    return ret_Canvas;
-}
-
-void winapp::MainPage::SetupZoomCanvas()
+void mupdf_cpp::MainPage::SetFlipView()
 {
     int height = this->ActualHeight;
     int width = this->ActualWidth;
 
-    CreateBlank(width, height);
-    xaml_zoomCanvas->Background = this->m_blankPage;
-    xaml_zoomCanvas->Background->Opacity = 0;
-
+    CreateBlank(BLANK_WIDTH, BLANK_HEIGHT);
     /* Set the current flip view mode */
     if (height > width)
         this->m_curr_flipView = xaml_vert_flipView;
@@ -628,7 +379,7 @@ void winapp::MainPage::SetupZoomCanvas()
 
 /* Clean up everything as we are opening a new document after having another
    one open */
-void winapp::MainPage::CleanUp()
+void mupdf_cpp::MainPage::CleanUp()
 {
     /* Remove current pages in the flipviews */
     if (xaml_vert_flipView->Items->Size) 
@@ -637,19 +388,13 @@ void winapp::MainPage::CleanUp()
     if (xaml_horiz_flipView->Items->Size) 
         xaml_horiz_flipView->Items->Clear();
 
-    /* Clean up mupdf */
-    if (m_doc != NULL) 
-        fz_close_document(m_doc);
-
     this->m_curr_flipView = nullptr;
     m_currpage = -1;
     m_file_open = false;
-    m_doc = NULL;
     m_slider_min = 0;
     m_slider_max = 0;
     m_init_done = false;
     m_memory_use = 0;
-    m_zoom_mode = false;
     m_from_doubleflip = false;
     m_first_time = false;
     m_insearch = false;
@@ -681,50 +426,65 @@ void winapp::MainPage::CleanUp()
     this->xaml_PageSlider->IsEnabled = false;  
 }
 
-/* Create the thumbnail images. This is started when we have space
-   on the render thread */
-void winapp::MainPage::RenderThumbs()
+/* Create the thumbnail images */
+void mupdf_cpp::MainPage::RenderThumbs()
 {
     spatial_info_t spatial_info = this->InitSpatial(1);
     int num_pages = this->m_num_pages;
     int thumb_pages = this->m_thumb_page_start;
-    int max_display = 
-        max(spatial_info.size.height, spatial_info.size.width) * SCALE_THUMB;
     cancellation_token_source cts;
     auto token = cts.get_token();
     m_ThumbCancel = cts;
 
     this->m_ren_status = REN_THUMBS;
     thumbs_t thumbnails = m_thumbnails;
+    DWORD thread0_id = GetCurrentThreadId();
 
-    create_task([spatial_info, max_display, num_pages, thumb_pages, thumbnails, this]()-> int
+    create_task([spatial_info, num_pages, thumb_pages, thumbnails, this, thread0_id]()-> int
     {
         spatial_info_t spatial_info_local = spatial_info;
+        spatial_info_local.scale_factor = SCALE_THUMB;
+
         InMemoryRandomAccessStream ^ras = ref new InMemoryRandomAccessStream();
 
         for (int k = thumb_pages; k < num_pages; k++)
         {
-            int width, height;
-            int max_page_size;
-            double scale_factor;
+            Point ras_size = ComputePageSize(spatial_info_local, k);
+            bool done = false;
+            DWORD thread1_id = GetCurrentThreadId();
+            auto task = create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y)).then([this, k, ras_size, thumbnails, &done, thread1_id, thread0_id] (InMemoryRandomAccessStream^ ras)
+            {
+                DWORD thread2_id = GetCurrentThreadId();
+                thumbnails.raster[k] = ras;
+                thumbnails.scale[k] = SCALE_THUMB;
+                thumbnails.size[k] = ras_size;
+                done = true;
+            }, task_continuation_context::use_current());  
 
-            fz_page *page = fz_load_page(m_doc, k);
-            // Get page size 
-            spatial_info_local.scale_factor = 1;
-            PageSize(m_doc, page, &width, &height, spatial_info_local);
-            // Determine thumb scale factor
-            max_page_size = max(width, height);
-            scale_factor = (double) max_display/ (double) max_page_size;
-            spatial_info_local.scale_factor = 0.1;
-            thumbnails.raster[k] = RenderBitMap(m_doc, page, &width, &height, 
-                                                            spatial_info_local);
-            thumbnails.scale[k] = 0.1;
-            thumbnails.size[k].Y = height;
-            thumbnails.size[k].X = width;
+
+            try
+            {
+                task.get();  // get exception
+            }
+            catch (Exception^ exception)
+            {
+            }
+
+             /* Don't start new thumb until this one is finished, lest we launch a
+               thousand thumbnail renderings */
+            while (!done) 
+            {
+            }
+
+            /* If cancelled then save the last one as the continuation will not
+               have occured.  */
             if (is_task_cancellation_requested()) 
             {
-                /* Just return the pages that we have done so far.*/
+                thumbnails.raster[k] = ras;
+                thumbnails.scale[k] = SCALE_THUMB;
+                thumbnails.size[k] = ras_size;
                 this->m_thumb_page_stop = k + 1;
+                
                 cancel_current_task();
             }
         }
@@ -732,8 +492,6 @@ void winapp::MainPage::RenderThumbs()
     }, token).then([this](task<int> the_task) 
     {
         int new_end;
-        assert(IsMainThread());
-
         try
         {
            new_end = the_task.get();
@@ -751,39 +509,14 @@ void winapp::MainPage::RenderThumbs()
 
         for (int k = old_end; k < new_end; k++)
         {
-            /* See if we already have something here as the main thread
-                may have already put in place the full scale image.  Since this
-                operation is done on the main thread we should be safe here 
-                from race conditions.  Creation of bmp has to be done in ui thread */
-            FlipViewItem ^flipview_temp_v = (FlipViewItem^) xaml_vert_flipView->Items->GetAt(k);
-            FlipViewItem ^flipview_temp_h = (FlipViewItem^) xaml_horiz_flipView->Items->GetAt(k);
-            FlipViewItem ^flipview_temp_curr = (FlipViewItem^) m_curr_flipView->Items->GetAt(k);
-
-            WriteableBitmap ^bmp = ref new WriteableBitmap(m_thumbnails.size[k].Y, m_thumbnails.size[k].X);
-            bmp->SetSource(m_thumbnails.raster[k]);
-            ImageBrush^ renderedImage = ref new ImageBrush();
-            renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::Fill;
-            renderedImage->ImageSource = bmp;
-            /* Different flip view items cannot share the same canvas */
-            m_thumbnails.canvas_h[k] = ref new Canvas();
-            m_thumbnails.canvas_h[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
-            m_thumbnails.canvas_h[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
-            m_thumbnails.canvas_h[k]->Background = renderedImage;
-            m_thumbnails.canvas_v[k] = ref new Canvas();
-            m_thumbnails.canvas_v[k]->Height =  m_thumbnails.size[k].Y / m_thumbnails.scale[k];
-            m_thumbnails.canvas_v[k]->Width =  m_thumbnails.size[k].X / m_thumbnails.scale[k];
-            m_thumbnails.canvas_v[k]->Background = renderedImage;
-            if (flipview_temp_curr->Background != nullptr) 
-            {
-                flipview_temp_h->Content = m_thumbnails.canvas_h[k];   
-                flipview_temp_v->Content = m_thumbnails.canvas_v[k];   
-            }
+            assert(IsMainThread());
+            SetThumb(k, false);
         }
         this->m_ren_status = REN_AVAILABLE;
     }, task_continuation_context::use_current());
 }
 
-void winapp::MainPage::OpenDocumentPrep(StorageFile^ file)
+void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
 {
     if (this->m_num_pages != -1) 
     {
@@ -815,7 +548,7 @@ void winapp::MainPage::OpenDocumentPrep(StorageFile^ file)
     }
 }
 
-void winapp::MainPage::OpenDocument(StorageFile^ file)
+void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 {
     String^ path = file->Path;
     const wchar_t *w = path->Data();
@@ -825,100 +558,83 @@ void winapp::MainPage::OpenDocument(StorageFile^ file)
     WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,name ,cb ,nullptr, nullptr);
     char *ext = strrchr(name, '.');
         
-    this->SetupZoomCanvas();
-    auto ui = task_continuation_context::use_current();
+    this->SetFlipView();
 
-    create_task(file->OpenAsync(FileAccessMode::Read)).then([this, file, ext, ui](task<IRandomAccessStream^> task)
+    /* Open document and when open, push on */
+    auto open_task = create_task(mu_doc->OpenFile(file));
+
+    open_task.then([this]
     {
-        try
+        assert(IsMainThread());
+
+        m_num_pages = mu_doc->GetNumPages();
+        if ((m_currpage) >= m_num_pages) 
         {
-            IRandomAccessStream^ readStream = task.get();
-            UINT64 const size = readStream->Size;
-            win_stream.stream = readStream;
-            
-            if (size <= MAXUINT32)
+            m_currpage = m_num_pages - 1;
+        } 
+        else if (m_currpage < 0) 
+        {
+            m_currpage = 0;
+        }
+
+         /* Initialize all the flipvew items with blanks */
+        for (int k = 0; k < m_num_pages; k++) 
+        {
+            DocumentPage^ doc_page = ref new DocumentPage();
+            doc_page->Image = this->m_BlankBmp;
+            doc_page->Height = BLANK_HEIGHT;
+            doc_page->Width = BLANK_WIDTH;
+            doc_page->Content = DUMMY;
+            this->m_docPages->Append(doc_page);
+        }
+
+        this->xaml_horiz_flipView->ItemsSource = m_docPages; 
+        this->xaml_vert_flipView->ItemsSource = m_docPages;
+
+        /* Do the first few pages, then start the thumbs */
+        spatial_info_t spatial_info = InitSpatial(1);
+
+        for (int k = 0; k < LOOK_AHEAD + 2; k++) 
+        {
+            if (m_num_pages > k ) 
             {
-                /* assign data reader to stream object */
-                fz_stream *str;
+                Point ras_size = ComputePageSize(spatial_info, k);
 
-                str =  fz_new_stream(ctx, 0, win_read_file, win_close_file);
-                str->seek = win_seek_file;
-                str->state =  reinterpret_cast <void*> (&win_stream);
-                    
-                /* Now lets see if we can render the file */
-                m_doc = fz_open_document_with_stream(ctx, ext, str);
-                m_num_pages = m_doc->count_pages(m_doc);
+                auto render_task = 
+                    create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
 
-                if ((m_currpage) >= m_num_pages) 
+                render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
                 {
-                    m_currpage = m_num_pages - 1;
-                } 
-                else if (m_currpage < 0) 
-                {
-                    m_currpage = 0;
-                }
-
-                /* Set up both flip views and intialize with blank pages  */
-                FlipView^ temp_flip;
-                if (this->m_curr_flipView == xaml_vert_flipView)
-                    temp_flip = xaml_horiz_flipView;
-                else
-                    temp_flip = xaml_vert_flipView;
-
-                /* Initialize all the flipvew items */
-                for (int k = 0; k < m_num_pages; k++) 
-                {
-                    AddBlankPage(k, xaml_horiz_flipView);
-                    AddBlankPage(k, xaml_vert_flipView);
-                }
-                /* Do the current page now though */
-                int height, width;
-                spatial_info_t spatial_info = InitSpatial(1);
-
-                for (int k = 0; k < LOOK_AHEAD + 2; k++) 
-                {
-                    if (m_num_pages > k ) 
-                    {
-                        fz_page *page = fz_load_page(m_doc, k);
-			            this->m_renderedCanvas = RenderPage(m_doc, page, &width, 
-                                                            &height, spatial_info,
-                                                            &m_renderedImage);
-                        ReplacePage(k);
-                        fz_free_page(m_doc, page);
-                    }
-                }
-
-                /* Update the slider settings, if more than one page */
-                if (m_num_pages > 1) 
-                {
-                    this->xaml_PageSlider->Maximum = m_num_pages;
-                    this->xaml_PageSlider->Minimum = 1;
-                    this->xaml_PageSlider->IsEnabled = true;
-                } 
-                else
-                {
-                    this->xaml_PageSlider->Maximum = 0;
-                    this->xaml_PageSlider->Minimum = 0;
-                    this->xaml_PageSlider->IsEnabled = false;
-                }
-                this->m_init_done = true;
-            }
-            else
-            {
-                delete readStream; 
+                    /* Set up the image brush when rendering is completed, must be on
+                       UI thread */
+                    UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+                }, task_continuation_context::use_current());
             }
         }
-        catch(COMException^ ex) {
-            this->HandleFileNotFoundException(ex);
+
+        /* Update the slider settings, if more than one page */
+        if (m_num_pages > 1) 
+        {
+            this->xaml_PageSlider->Maximum = m_num_pages;
+            this->xaml_PageSlider->Minimum = 1;
+            this->xaml_PageSlider->IsEnabled = true;
+        } 
+        else
+        {
+            this->xaml_PageSlider->Maximum = 0;
+            this->xaml_PageSlider->Minimum = 0;
+            this->xaml_PageSlider->IsEnabled = false;
         }
-    }).then([this, ui]()
+        /* All done with initial pages */
+        this->m_init_done = true;
+    }).then([this]
     {
         InitThumbnails();
         this->RenderThumbs();
-    });
+    }, task_continuation_context::use_current());
 }
 
-task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
+task<int> mupdf_cpp::MainPage::RenderRange(int curr_page)
 {
     /* Render +/- the look ahead from where we are if blank page is present */
     spatial_info_t spatial_info = InitSpatial(1);
@@ -935,7 +651,7 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
         }
     });
         
-    return t.then([this, height, width, curr_page, spatial_info]()
+    return t.then([this, curr_page, spatial_info]()
     {
         assert(IsMainThread());
         int val = 0;
@@ -944,20 +660,24 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
         {
             if (k >= 0 && k < m_num_pages) 
             {
-                FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(k);
-                if (flipview_temp->Background == this->m_blankPage) 
+                /* Check if page is already rendered */
+                auto doc = this->m_docPages->GetAt(k);
+                if (doc->Content != FULL_RESOLUTION) 
                 {
-                    fz_page *page = fz_load_page(m_doc, k);
-                    this->m_ren_status = REN_PAGE;
-			        m_renderedCanvas = RenderPage(m_doc, page, width, height, 
-                                                  spatial_info, &m_renderedImage);
-                    ReplacePage(k);
-                    fz_free_page(m_doc, page);
-                    this->m_ren_status = REN_AVAILABLE;
+                    Point ras_size = ComputePageSize(spatial_info, k);
+                    auto render_task = 
+                        create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
+
+                    render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
+                    {
+                        /* Set up the image brush when rendering is completed, must be on
+                           UI thread */
+                        UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+                        this->m_ren_status = REN_AVAILABLE;                    
+                    }, task_continuation_context::use_current());
                 }
             }
         } 
-
         Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
         if (link_canvas != nullptr)
         {
@@ -968,14 +688,9 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
                 delete link_canvas;
             }
         }
-
-        RectSize rectsize = this->currPageSize(curr_page);
-        *height = rectsize.height;
-        *width = rectsize.width;
         m_currpage = curr_page;
         if (this->m_links_on) 
         {
-            fz_drop_link(ctx, this->m_links);
             AddLinkCanvas();
         }
         /* Check if thumb rendering is done.  If not then restart */
@@ -985,29 +700,28 @@ task<int> winapp::MainPage::RenderRange(int curr_page, int *height, int *width)
     }, task_continuation_context::use_current());
 }
 
-void winapp::MainPage::Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
+void mupdf_cpp::MainPage::Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
 {
-    int height, width;
-    int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
+    /* Check if thumb rendering is done.  If not then restart */
+    if (this->m_num_pages != this->m_thumb_page_start)
+        this->RenderThumbs();
 }
 
-void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
+void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
 {
     int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
     RenderingStatus_t *ren_status = &m_ren_status;
     cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-    auto ui = task_continuation_context::use_current();
 
     if (m_update_flip)
     {
         m_update_flip = false;
         return;
     }
-
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(newValue);
-        if (flipview_temp->Background == this->m_blankPage) 
+        auto doc = this->m_docPages->GetAt(newValue);
+        if (doc->Content != FULL_RESOLUTION) 
         {
             create_task([ren_status, ThumbCancel]()
             {
@@ -1017,252 +731,66 @@ void winapp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI
                 }
             }).then([this, newValue]() 
             {
-                int width, height;
-                fz_page *page = fz_load_page(m_doc, newValue);
                 spatial_info_t spatial_info = InitSpatial(1);
-                this->m_ren_status = REN_PAGE;
-                m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
-                                                &m_renderedImage);
-                ReplacePage(newValue);
-                this->m_ren_status = REN_AVAILABLE;
-                this->m_currpage = newValue;
-                fz_free_page(m_doc, page); 
-                m_sliderchange = true;
-                this->m_curr_flipView->SelectedIndex = newValue;
-                ResetSearch(); 
-            }, ui);
-        }
-    }
-}
+                Point ras_size = ComputePageSize(spatial_info, newValue);
+                auto render_task = 
+                    create_task(mu_doc->RenderPage(newValue, ras_size.X, ras_size.Y));
 
-void winapp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
-{
-    int pos = this->m_curr_flipView->SelectedIndex;
-    int height, width;
-
-    m_update_flip = true;
-    if (xaml_PageSlider->IsEnabled)
-    {
-        xaml_PageSlider->Value = pos;
-    }
-    if (pos >= 0) 
-    {
-        if (m_flip_from_searchlink)
-        {
-            m_flip_from_searchlink = false;
-            return;
-        } 
-        else if (m_sliderchange)
-        {
-            m_sliderchange = false;
-            return;
-        }
-        else
-        {
-            ResetSearch();
-        }
-        if (m_init_done) 
-        {
-            /* Get the current page */
-            int curr_page = this->m_currpage;
-            task<int> task = this->RenderRange(pos, &height, &width);
-            task.then([this, curr_page, pos](int val)
-            {
-               this->ReleasePages(curr_page, pos);
+                render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
+                {
+                    UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
+                    this->m_ren_status = REN_AVAILABLE;  
+                    this->m_currpage = newValue;
+                    m_sliderchange = true;
+                    this->m_curr_flipView->SelectedIndex = newValue;
+                    ResetSearch(); 
+                }, task_continuation_context::use_current());
             }, task_continuation_context::use_current());
         }
     }
 }
 
-void winapp::MainPage::Canvas_ManipulationStarting(Object^ sender, ManipulationStartingRoutedEventArgs^ e)
+void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
 {
-    bool handled;
-
-    e->GetType();
-    handled = e->Handled;
-}
-
-void winapp::MainPage::Canvas_ManipulationStarted(Object^ sender, ManipulationStartedRoutedEventArgs^ e)
-{
-    this->m_touchpoint = e->Position;
-}
-
-void winapp::MainPage::Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e)
-{
-    if (m_scaling_occured)
+    if (m_init_done && !m_page_update)
     {
-        int width, height;
         int pos = this->m_curr_flipView->SelectedIndex;
-        fz_page *page = fz_load_page(m_doc, pos);
-        spatial_info_t spatial_info = InitSpatial(m_curr_zoom);
 
-        m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
-                                      &m_renderedImage);
-        this->xaml_zoomCanvas->Background = this->m_renderedImage;
-        m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-
-        this->xaml_zoomCanvas->Width = width;
-        this->xaml_zoomCanvas->Height = height;
-    }
-}
-
-void winapp::MainPage::Canvas_ManipulationDelta(Object^ sender, ManipulationDeltaRoutedEventArgs^ e)
-{
-    int width, height;
-
-    m_changes = e->Cumulative;
-    if (e->Delta.Scale != 1 || m_first_time) 
-    {
-        /* Render at scaled resolution */
-        int pos = this->m_curr_flipView->SelectedIndex;
-        fz_page *page = fz_load_page(m_doc, pos);
-        spatial_info_t spatial_info = InitSpatial(m_curr_zoom);
-
-        m_curr_zoom = m_curr_zoom * e->Delta.Scale;
-        if (m_curr_zoom < MIN_SCALE) m_curr_zoom = MIN_SCALE;
-        if (m_curr_zoom > MAX_SCALE) m_curr_zoom = MAX_SCALE;
-        if (m_first_time)
+        m_update_flip = true;
+        if (xaml_PageSlider->IsEnabled)
         {
-            m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
-                                          &m_renderedImage);
-            this->xaml_zoomCanvas->Background = this->m_renderedImage;
-            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
+            xaml_PageSlider->Value = pos;
         }
-        else
+        if (pos >= 0) 
         {
-            PageSize(m_doc, page, &width, &height, spatial_info);
-            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::Fill;
-        }
-        this->xaml_zoomCanvas->Width = width;
-        this->xaml_zoomCanvas->Height = height;
-        m_zoom_size.X = width;
-        m_zoom_size.Y = height;
-        m_first_time = false;
-        m_scaling_occured = true;
-    }
-
-    TranslateTransform ^trans_transform = ref new TranslateTransform();
-    m_canvas_translate.X += e->Delta.Translation.X;
-    m_canvas_translate.Y += e->Delta.Translation.Y;
-    
-    if (m_canvas_translate.Y > ((this->ActualHeight + m_zoom_size.Y) / 2 - MARGIN_BUFF) ) 
-    {
-        m_canvas_translate.Y = (this->ActualHeight + m_zoom_size.Y) / 2 - MARGIN_BUFF;
-    }
-    if (m_canvas_translate.Y < (MARGIN_BUFF - (this->ActualHeight + m_zoom_size.Y) / 2) ) 
-    {
-        m_canvas_translate.Y = MARGIN_BUFF - (this->ActualHeight + m_zoom_size.Y) / 2;
-    }
-    if (m_canvas_translate.X > ((this->ActualWidth + m_zoom_size.X) / 2 - MARGIN_BUFF)) 
-    {
-        m_canvas_translate.X = (this->ActualWidth + m_zoom_size.X) / 2 - MARGIN_BUFF;
-    }
-
-    if (m_canvas_translate.X < (MARGIN_BUFF - (this->ActualWidth + m_zoom_size.X) / 2)) 
-    {
-        m_canvas_translate.X = (MARGIN_BUFF - (this->ActualWidth + m_zoom_size.X) / 2);
-    } 
-
-    trans_transform->X = m_canvas_translate.X;
-    trans_transform->Y = m_canvas_translate.Y;
-    this->xaml_zoomCanvas->RenderTransform = trans_transform;
-}
-
-void winapp::MainPage::FlipView_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
-{
-    if (!m_zoom_mode && this->m_num_pages != -1)
-    {
-        RenderingStatus_t *ren_status = &m_ren_status;
-        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-
-        /* Create a task to wait until the renderer is available */
-        auto t = create_task([ren_status, ThumbCancel]()
-        {
-            if (*ren_status == REN_THUMBS)
-                ThumbCancel->cancel();
-            while (*ren_status != REN_AVAILABLE) {
+            if (m_flip_from_searchlink)
+            {
+                m_flip_from_searchlink = false;
+                return;
+            } 
+            else if (m_sliderchange)
+            {
+                m_sliderchange = false;
+                return;
             }
-        }).then([this]()
-        {
-            m_zoom_mode = true;
-            int pos = this->m_curr_flipView->SelectedIndex;
-            int width, height;
-            fz_page *page = fz_load_page(m_doc, pos);
-            spatial_info_t spatial_info = InitSpatial(1);
-
-            m_renderedCanvas = RenderPage(m_doc, page, &width, &height, spatial_info,
-                                          &m_renderedImage);
-            m_renderedImage->Stretch = Windows::UI::Xaml::Media::Stretch::None;
-            this->xaml_zoomCanvas->Background = m_renderedImage;
-
-            this->xaml_zoomCanvas->Width = width;
-            this->xaml_zoomCanvas->Height = height;
-
-            m_curr_flipView->IsEnabled = false;
-            this->xaml_zoomCanvas->Background->Opacity = 1;
-            this->m_curr_flipView->Opacity = 0.0;
-            m_first_time = true;
-            m_from_doubleflip = true;
-            m_curr_zoom = 1.0;
-        }, task_continuation_context::use_current());
+            else
+            {
+                ResetSearch();
+            }
+            /* Get the current page */
+            int curr_page = this->m_currpage;
+            task<int> task = this->RenderRange(pos);
+            task.then([this, curr_page, pos](int val)
+            {
+                this->ReleasePages(curr_page, pos);
+            }, task_continuation_context::use_current());
+        }
     }
-}
-
-void winapp::MainPage::Canvas_Double(Object^ sender, DoubleTappedRoutedEventArgs^ e)
-{
-    TranslateTransform ^trans_transform = ref new TranslateTransform();
-
-    if (m_zoom_mode && !m_from_doubleflip)
-    {
-        m_zoom_mode = false;
-        int pos = this->m_curr_flipView->SelectedIndex;
-
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(pos);
-        Canvas^ Curr_Canvas = (Canvas^) (flipview_temp->Content);
-
-       if (this->xaml_zoomCanvas->Background != Curr_Canvas->Background)
-            this->xaml_zoomCanvas->Background->Opacity = 0;
-        else 
-            this->xaml_zoomCanvas->Background = nullptr;
-        this->m_curr_flipView->Opacity = 1;
-        m_curr_flipView->IsEnabled = true;
-        this->xaml_zoomCanvas->Height = this->ActualHeight;
-        this->xaml_zoomCanvas->Width = this->ActualWidth;
-        trans_transform->X = 0;
-        trans_transform->Y = 0;
-        m_canvas_translate.X = 0;
-        m_canvas_translate.Y = 0;
-        this->xaml_zoomCanvas->RenderTransform = trans_transform;
-    }
-    m_from_doubleflip = false;
 }
 
 /* Search Related Code */
 
-static int hit_count = 0;
-static fz_rect hit_bbox[MAX_SEARCH];
-
-static int
-search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
-{
-	fz_page *page = fz_load_page(doc, number);
-
-	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx, &fz_empty_rect);
-	fz_device *dev = fz_new_text_device(ctx, sheet, text);
-	fz_run_page(doc, page, dev, &fz_identity, cookie);
-	fz_free_device(dev);
-
-	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));;
-
-	fz_free_text_page(ctx, text);
-	fz_free_text_sheet(ctx, sheet);
-	fz_free_page(doc, page);
-
-	return hit_count;
-}
-
-void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     /* Update the app bar so that we can do the search */
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
@@ -1285,11 +813,11 @@ void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::Rou
         m_insearch = true;
 	    Windows::UI::Xaml::Controls::Button^ PrevButton = ref new Button();
         PrevButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("PreviousAppBarButtonStyle"));
-	    PrevButton->Click += ref new RoutedEventHandler(this, &winapp::MainPage::SearchPrev);
+	    PrevButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchPrev);
         
 	    Windows::UI::Xaml::Controls::Button^ NextButton = ref new Button();
         NextButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("NextAppBarButtonStyle"));
-	    NextButton->Click += ref new RoutedEventHandler(this, &winapp::MainPage::SearchNext);
+	    NextButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchNext);
 
         Windows::UI::Xaml::Controls::TextBox^ SearchBox = ref new TextBox();
         SearchBox->Name = "findBox";
@@ -1302,14 +830,17 @@ void winapp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::Rou
 	}
 }
 
-void winapp::MainPage::ShowSearchResults(SearchResult_t result)
+void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
 {
     int height, width;
     int old_page = this->m_currpage;
     int new_page = result.page_num;
     spatial_info_t spatial_info = InitSpatial(1);
+    return;
 
-    //task<int> task = this->RenderRange(new_page, &height, &width);
+    /* This will be fixed and turned on when I determine how best to show the
+       canvas and bind to the xmal content */
+#if 0
     this->m_ren_status = REN_PAGE;
     task<Canvas^> the_task = RenderPage_Task(m_doc, new_page, &width, &height, 
                                          spatial_info, &m_renderedImage);
@@ -1332,9 +863,9 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
     
     {
         /* Once the rendering is done launch this task to show the result */
-        RectSize screenSize;
-        RectSize pageSize;
-        RectSize scale;
+        Point screenSize;
+        Point pageSize;
+        Point scale;
 
         if (this->m_links_on) 
         {
@@ -1347,11 +878,11 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
 
         m_searchpage = result.page_num;
 
-        screenSize.height = this->ActualHeight;
-        screenSize.width = this->ActualWidth;
+        screenSize.Y = this->ActualHeight;
+        screenSize.X = this->ActualWidth;
 
-	    screenSize.width *= screenScale;
-	    screenSize.height *= screenScale;
+	    screenSize.X *= screenScale;
+	    screenSize.Y *= screenScale;
     
         pageSize = measurePage(m_doc, page);
 	    scale = fitPageToScreen(pageSize, screenSize);
@@ -1364,10 +895,10 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
             TranslateTransform ^trans_transform = ref new TranslateTransform();
             a_rectangle->Width = hit_bbox[k].x1 - hit_bbox[k].x0;
             a_rectangle->Height = hit_bbox[k].y1 - hit_bbox[k].y0;
-            trans_transform->X = hit_bbox[k].x0 * scale.width;
-            trans_transform->Y = hit_bbox[k].y0 *  scale.height;
-		    a_rectangle->Width *= scale.width;
-		    a_rectangle->Height *= scale.height;
+            trans_transform->X = hit_bbox[k].x0 * scale.X;
+            trans_transform->Y = hit_bbox[k].y0 *  scale.Y;
+		    a_rectangle->Width *= scale.X;
+		    a_rectangle->Height *= scale.Y;
             a_rectangle->RenderTransform = trans_transform;
             a_rectangle->Fill = m_textcolor_brush;
             results_Canvas->Children->Append(a_rectangle);
@@ -1380,9 +911,10 @@ void winapp::MainPage::ShowSearchResults(SearchResult_t result)
             m_currpage = result.page_num;
         }
     }, task_continuation_context::use_current());
+#endif
 }
 
-void winapp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
@@ -1404,7 +936,7 @@ void winapp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::R
     }, task_continuation_context::use_current());
 }
 
-void winapp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
@@ -1426,12 +958,12 @@ void winapp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::R
     }, task_continuation_context::use_current());
 }
 
-void winapp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
    m_searchcts.cancel();
 }
 
-void winapp::MainPage::ResetSearch(void)
+void mupdf_cpp::MainPage::ResetSearch(void)
 {
 	m_searchpage = -1;
 #if 0
@@ -1454,24 +986,17 @@ void winapp::MainPage::ResetSearch(void)
 #endif
 }
 
-void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
+void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 {
-	int start;
-    const wchar_t *w = textToFind->Data();
-    int cb = WideCharToMultiByte(CP_UTF8, 0, textToFind->Data(), -1, nullptr, 0, nullptr, nullptr);
-	char* needle = new char[cb];
-    fz_document *local_doc = m_doc;
-
     cancellation_token_source cts;
     auto token = cts.get_token();
     m_searchcts = cts;
-    SearchResult_t result;
     int pos = m_currpage;
+    int start;
+    SearchResult_t result;
 
     result.box_count = 0;
     result.page_num = -1;
-
-    WideCharToMultiByte(CP_UTF8, 0, textToFind->Data() ,-1 ,needle ,cb ,nullptr, nullptr);
 
 	if (m_searchpage == pos)
 		start = pos + dir;
@@ -1503,26 +1028,23 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
     this->m_search_active = true;
 
     /* Do task lambdas here to avoid UI blocking issues */
-    auto search_task = create_task([this, needle, dir, start, local_doc, &result]()->SearchResult_t
+    auto search_task = create_task([this, textToFind, dir, start, &result]()->SearchResult_t
     {
-		for (int i = start; i >= 0 && i < fz_count_pages(local_doc); i += dir) 
+		for (int i = start; i >= 0 && i < this->m_num_pages; i += dir) 
         {
-			result.box_count = search_page(local_doc, i, needle, NULL);
+            result.box_count = this->mu_doc->ComputeTextSearch(textToFind, i);
             result.page_num = i;
-            
+
             //my_xaml_Progress->Value = i;
-			if (result.box_count) 
+			if (result.box_count > 0) 
             {
-                free(needle);
                 return result;
 			}
             if (is_task_cancellation_requested()) 
             {
-                free(needle);
             }
         }
         /* Todo no matches found alert */
-        free(needle);
         return result;
     }, token);
     /* Do the continuation on the ui thread */
@@ -1542,7 +1064,7 @@ void winapp::MainPage::SearchInDirection(int dir, String^ textToFind)
 
 /* This is here to handle when we rotate or go into the snapview mode 
    ToDo  add in data binding to change the scroll direction */
-void winapp::MainPage::GridSizeChanged()
+void mupdf_cpp::MainPage::GridSizeChanged()
 {
     int height = this->ActualHeight;
     int width = this->ActualWidth;
@@ -1554,10 +1076,6 @@ void winapp::MainPage::GridSizeChanged()
         UpdateAppBarButtonViewState();
     }
 
-    if (m_zoom_mode) 
-    {
-        Canvas_Double(nullptr, nullptr);
-    }
     if (height > width)
     {
         m_curr_flipView = this->xaml_vert_flipView;
@@ -1607,10 +1125,8 @@ void winapp::MainPage::GridSizeChanged()
     }
 }
 
-void winapp::MainPage::UpDatePageSizes()
+void mupdf_cpp::MainPage::UpDatePageSizes()
 {
-    int width, height;
-
     /* Render our current pages at the new resolution and rescale the thumbnail 
        canvas if needed */
     if (m_num_pages > 0)
@@ -1632,12 +1148,10 @@ void winapp::MainPage::UpDatePageSizes()
                 curr_canvas->Width = curr_canvas_width / min_scale;
             }
         }  
-
-     //   this->RenderRange(this->m_currpage, &height, &width);
     }
 };
 
-void winapp::MainPage::ClearLinksCanvas()
+void mupdf_cpp::MainPage::ClearLinksCanvas()
 {
     Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
     if (link_canvas != nullptr) 
@@ -1652,7 +1166,7 @@ void winapp::MainPage::ClearLinksCanvas()
 }
 
 /* Link related code */
-void winapp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     m_links_on = !m_links_on;
     RenderingStatus_t *ren_status = &m_ren_status;
@@ -1677,68 +1191,72 @@ void winapp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Route
         ClearLinksCanvas();
 }
 
-void winapp::MainPage::AddLinkCanvas()
+void mupdf_cpp::MainPage::AddLinkCanvas()
 {
+    return;  
+    /* This is disabled for now until I figure out how to add the canvas 
+       with rects into the data template for the scroll view object */
     if (m_links_on)
     {
         ClearLinksCanvas();
-        /* To render current page with links */
-        fz_page *page = fz_load_page(m_doc, this->m_currpage);
-		m_links = fz_load_links(m_doc, page);
 
-        if (m_links != NULL) 
+        int num_links = mu_doc->ComputeLinks(m_currpage);
+        if (num_links == 0) return;
+
+        Point screenSize;
+        Point pageSize;
+        Point scale;
+
+        screenSize.Y = this->ActualHeight;
+        screenSize.X = this->ActualWidth;
+        screenSize.X *= screenScale;
+        screenSize.Y *= screenScale;
+        pageSize = mu_doc->GetPageSize(m_currpage);
+        scale = fitPageToScreen(pageSize, screenSize);
+
+        /* A new canvas */
+        Canvas^ link_canvas = ref new Canvas(); 
+        link_canvas->Name = "linkCanvas";
+
+        /* Get current scrollview item */
+        auto currItem = m_curr_flipView->ItemContainerGenerator->ContainerFromItem(m_curr_flipView->SelectedItem);
+        if (currItem == nullptr)
         {
-            RectSize screenSize;
-            RectSize pageSize;
-            RectSize scale;
+            return;
+        }
 
-            screenSize.height = this->ActualHeight;
-            screenSize.width = this->ActualWidth;
+        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(m_currpage);
+        Canvas^ curr_canvas = (Canvas^) flipview_temp->Content;
 
-	        screenSize.width *= screenScale;
-	        screenSize.height *= screenScale;
-            pageSize = measurePage(m_doc, page);
-	        scale = fitPageToScreen(pageSize, screenSize);
+        link_canvas->Height = curr_canvas->Height;
+        link_canvas->Width = curr_canvas->Width;
+        curr_canvas->Children->Append(link_canvas);
 
-            /* A new canvas */
-            Canvas^ link_canvas = ref new Canvas(); 
-            link_canvas->Name = "linkCanvas";
-
-            /* Get current flipview item */
-            FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(this->m_currpage);
-            Canvas^ curr_canvas = (Canvas^) flipview_temp->Content;
-
-            link_canvas->Height = curr_canvas->Height;
-            link_canvas->Width = curr_canvas->Width;
-            curr_canvas->Children->Append(link_canvas);
-
-            /* Now add the rects */
-            fz_link *curr_link = m_links;
-            fz_rect curr_rect;
-
-            while (curr_link != NULL)
+        /* Now add the rects */
+        for (int k = 0; k < num_links; k++)
+        {
+            auto curr_link = mu_doc->GetLink(k);
+            if (curr_link->Type != NOT_SET)
             {
                 Rectangle^ a_rectangle = ref new Rectangle();
                 TranslateTransform ^trans_transform = ref new TranslateTransform();
 
                 a_rectangle->IsTapEnabled = true;
-                curr_rect = curr_link->rect;
-                a_rectangle->Width = curr_rect.x1 - curr_rect.x0;
-                a_rectangle->Height = curr_rect.y1 - curr_rect.y0;
-                trans_transform->X = curr_rect.x0 * scale.width;
-                trans_transform->Y = curr_rect.y0 *  scale.height;
-		        a_rectangle->Width *= scale.width;
-		        a_rectangle->Height *= scale.height;
+                a_rectangle->Width = curr_link->LowerRight.X - curr_link->UpperLeft.X;
+                a_rectangle->Height = curr_link->UpperLeft.Y - curr_link->LowerRight.Y;
+                trans_transform->X = curr_link->UpperLeft.X * scale.X;
+                trans_transform->Y = curr_link->UpperLeft.Y *  scale.Y;
+		        a_rectangle->Width *= scale.X;
+		        a_rectangle->Height *= scale.Y;
                 a_rectangle->RenderTransform = trans_transform;
                 a_rectangle->Fill = m_linkcolor_brush;
                 link_canvas->Children->Append(a_rectangle);
-                curr_link = curr_link->next;
             }
         }
     }
 }
 
-bool winapp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
+bool mupdf_cpp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
 {
     TranslateTransform ^trans_transform = (TranslateTransform^) curr_rect->RenderTransform;
     Point rect_start;
@@ -1753,7 +1271,7 @@ bool winapp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
     return false;
 }
 
-void winapp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
+void mupdf_cpp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
 {
     /* See if we are currently viewing any links */
     if (m_links_on)
@@ -1783,7 +1301,7 @@ void winapp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::
 }
 
 /* Window string hurdles.... */
-String^ char_to_String(char *char_in)
+static String^ char_to_String(char *char_in)
 {
         size_t size = MultiByteToWideChar(CP_UTF8, 0, char_in, -1, NULL, 0);
         wchar_t *pw;
@@ -1799,29 +1317,22 @@ String^ char_to_String(char *char_in)
         return str_out;
 }
 
-int winapp::MainPage::JumpToLink(int index)
+int mupdf_cpp::MainPage::JumpToLink(int index)
 {    
-    fz_link *link = this->m_links;
+    auto link = mu_doc->GetLink(index);
 
-    /* Get through the list */
-    for (int k = 0; k < index; k++)
-        link = link->next;
-
-    if (link->dest.kind == FZ_LINK_GOTO)
+    if (link->Type == LINK_GOTO)
     {
-        return link->dest.ld.gotor.page;
+        return link->PageNum;
     } 
-    else if (link->dest.kind == FZ_LINK_URI)
+    else if (link->Type == LINK_URI)
     {
-        String^ str = char_to_String(link->dest.ld.uri.uri);
-        // The URI to launch
-        auto uri = ref new Windows::Foundation::Uri(str);
         // Set the option to show a warning
         auto launchOptions = ref new Windows::System::LauncherOptions();
         launchOptions->TreatAsUntrusted = true;
 
         // Launch the URI with a warning prompt
-        concurrency::task<bool> launchUriOperation(Windows::System::Launcher::LaunchUriAsync(uri, launchOptions));
+        concurrency::task<bool> launchUriOperation(Windows::System::Launcher::LaunchUriAsync(link->Uri, launchOptions));
         launchUriOperation.then([](bool success)
        {
           if (success)
@@ -1835,10 +1346,12 @@ int winapp::MainPage::JumpToLink(int index)
        });
        return -1;
     }
+    return 0;
 }
 
-void winapp::MainPage::FlattenOutline(fz_outline *outline, int level)
+void mupdf_cpp::MainPage::FlattenOutline(fz_outline *outline, int level)
 {
+#if 0
 	char indent[8*4+1];
 	if (level > 8)
 		level = 8;
@@ -1867,11 +1380,13 @@ void winapp::MainPage::FlattenOutline(fz_outline *outline, int level)
 		FlattenOutline(outline->down, level + 1);
 		outline = outline->next;
 	}
+#endif
 }
 
 /* Bring up the contents */
-void winapp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+#if 0
     if (this->m_num_pages < 0 || m_zoom_mode) return;
 
     if (this->xaml_ListView->IsEnabled) 
@@ -1940,10 +1455,10 @@ void winapp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xam
             this->m_curr_flipView->IsEnabled = false;
         }
     }
-        
+#endif   
 }
 
-void winapp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
+void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
 {
 
     LVContents^ b = safe_cast<LVContents^>(e->ClickedItem);
@@ -1962,9 +1477,9 @@ void winapp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xa
     }
 }
 
-void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-
+#if 0
     if (this->m_num_pages < 0) return;
 
     if (xaml_RichText->Visibility == Windows::UI::Xaml::Visibility::Visible)
@@ -2023,16 +1538,17 @@ void winapp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::Rou
                 this->RenderThumbs();
         }, task_continuation_context::use_current());
     }
+#endif
 }
 
 /* Need to handle resizing of app bar to make sure everything fits */
 
-void winapp::MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void mupdf_cpp::MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     UpdateAppBarButtonViewState();
 }
 
-void winapp::MainPage::UpdateAppBarButtonViewState()
+void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
 {
     String ^viewState = Windows::UI::ViewManagement::ApplicationView::Value.ToString();
     VisualStateManager::GoToState(Search, viewState, true);
@@ -2040,4 +1556,10 @@ void winapp::MainPage::UpdateAppBarButtonViewState()
     VisualStateManager::GoToState(Links, viewState, true);
     VisualStateManager::GoToState(Reflow, viewState, true);
     VisualStateManager::GoToState(Help, viewState, true); 
+}
+
+void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
+{
+
+ int zz = 1;
 }

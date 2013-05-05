@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>0204a4e7-f1b8-4268-a67c-a2c674b4742d</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>a297f943-f0d7-4847-867e-a7aa1ef7f484</UniqueIdentifier>
+    </Filter>
+    <Page Include="Common\StandardStyles.xaml">
+      <Filter>Common</Filter>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App.xaml.cpp" />
+    <ClCompile Include="MainPage.xaml.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="LVContents.cpp" />
+    <ClCompile Include="DocumentPage.cpp" />
+    <ClCompile Include="RectList.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="App.xaml.h" />
+    <ClInclude Include="MainPage.xaml.h" />
+    <ClInclude Include="LVContents.h" />
+    <ClInclude Include="DocumentPage.h" />
+    <ClInclude Include="RectList.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="mupdf_cpp_TemporaryKey.pfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="MainPage.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\mupdf_logo.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\mupdf_smallogo.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\mupdf_splash.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\mupdf_storelogo.png">
+      <Filter>Assets</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
