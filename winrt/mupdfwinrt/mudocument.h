@@ -33,6 +33,7 @@ namespace mupdfwinrt
             Point GetPageSize(int page_num);
             Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^  
                 RenderPage(int page_num, int width, int height);
+            String^ ComputeHTML(int page_num);            
             int ComputeTextSearch(String^ text, int page_num);
             Links^ GetTextSearch(int k);
             int ComputeContents(void);

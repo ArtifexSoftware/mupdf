@@ -1094,12 +1094,12 @@ void mupdf_cpp::MainPage::GridSizeChanged()
         xaml_vert_flipView->Opacity = 0;
     }
 
-    if (xaml_RichText->Visibility == Windows::UI::Xaml::Visibility::Visible)
+    if (xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible)
     {
         int height = xaml_OutsideGrid->ActualHeight;
         int height_app = TopAppBar1->ActualHeight;
   
-        xaml_RichText->Height = height - height_app;
+        xaml_WebView->Height = height - height_app;
     }
 
     UpDatePageSizes();
@@ -1416,17 +1416,16 @@ void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI:
 
 void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-#if 0
     if (this->m_num_pages < 0) return;
 
-    if (xaml_RichText->Visibility == Windows::UI::Xaml::Visibility::Visible)
+    if (xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible)
     {
         /* Go back to flip view */
-        xaml_RichText->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+        xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
         this->xaml_MainGrid->Opacity = 1.0;
         this->m_curr_flipView->IsEnabled = true;
-            xaml_RichGrid->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
-            xaml_RichGrid->Opacity = 0.0;
+        xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+        xaml_WebView->Opacity = 0.0;
 
     } 
     else if (this->m_curr_flipView->IsEnabled)
@@ -1443,39 +1442,16 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
             }
         }).then([this]()
         {
-			fz_rect bounds;
-            fz_output *out;
-	        fz_page *page = fz_load_page(m_doc, this->m_currpage);
-	        fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	        fz_text_page *text = fz_new_text_page(ctx, &fz_empty_rect);
-	        fz_device *dev = fz_new_text_device(ctx, sheet, text);
-
-	        fz_run_page(m_doc, page, dev, &fz_identity, NULL);
-	        fz_free_device(dev);
-            dev = NULL;
-			fz_text_analysis(ctx, sheet, text);
-            fz_buffer *buf = fz_new_buffer(ctx, 256);
-            out = fz_new_output_buffer(ctx, buf);
-			fz_print_text_page(ctx, out, text);
-            xaml_RichText->Visibility = Windows::UI::Xaml::Visibility::Visible;
+            String^ html_string = mu_doc->ComputeHTML(this->m_currpage);
+            xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
             this->xaml_MainGrid->Opacity = 0.0;
             this->m_curr_flipView->IsEnabled = false;
-            String^ html_string = char_to_String((char*) buf->data);
-
-            xaml_RichGrid->Visibility = Windows::UI::Xaml::Visibility::Visible;
-            xaml_RichGrid->Opacity = 1.0;
-            int height = xaml_OutsideGrid->ActualHeight;
-            int height_app = TopAppBar1->ActualHeight;
-  
-            xaml_RichText->Height = height - height_app;
-            this->xaml_RichText->Document->SetText(Windows::UI::Text::TextSetOptions::FormatRtf, html_string);
-
+            this->xaml_WebView->NavigateToString(html_string);
             /* Check if thumb rendering is done.  If not then restart */
             if (this->m_num_pages != this->m_thumb_page_start)
                 this->RenderThumbs();
         }, task_continuation_context::use_current());
     }
-#endif
 }
 
 /* Need to handle resizing of app bar to make sure everything fits */

@@ -290,7 +290,7 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	{
 	    page = fz_load_page(mu_doc, page_num);
 	    sheet = fz_new_text_sheet(ctx_clone);
-	    text = fz_new_text_page(ctx_clone, &fz_empty_rect);
+	    text = fz_new_text_page(ctx_clone, &fz_empty_rect);  // Free?
 	    dev = fz_new_text_device(ctx_clone, sheet, text);
 	    fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
         fz_free_device(dev);  /* Why does this need to be done here?  Seems odd */
@@ -467,4 +467,65 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	fz_free_context(ctx_clone);
 
 	return S_OK;
+}
+
+String^ muctx::GetHTML(int page_num)
+{
+    fz_output *out;
+    fz_rect bounds;
+    fz_device *dev;
+    fz_page *page;
+    fz_text_sheet *sheet;
+    fz_text_page *text;
+    fz_context *ctx_clone;
+    fz_buffer *buf;
+    String^ html;
+
+    if (mu_cookie->abort == 1) 
+        return nullptr;
+
+    ctx_clone = fz_clone_context(mu_ctx);
+
+    fz_var(dev);
+    fz_var(page);
+    fz_var(sheet);
+    fz_var(text);  // Free?
+    fz_var(buf);   // Free?
+	fz_try(ctx_clone)
+	{
+        page = fz_load_page(mu_doc, page_num);
+        sheet = fz_new_text_sheet(ctx_clone);
+        text = fz_new_text_page(ctx_clone, &fz_empty_rect);
+        dev = fz_new_text_device(ctx_clone, sheet, text);
+	    fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
+        fz_free_device(dev);
+        dev = NULL;
+        fz_text_analysis(ctx_clone, sheet, text);
+        buf = fz_new_buffer(ctx_clone, 256);
+        out = fz_new_output_buffer(ctx_clone, buf);
+        fz_print_text_page_html(ctx_clone, out, text);
+        html = char_to_String((char*) buf->data);
+    }
+	fz_always(ctx_clone)
+	{
+        if (dev != NULL)
+        {
+			fz_free_device(dev);
+		}
+        if (page != NULL)
+        {
+            fz_free_page(mu_doc, page);
+        }
+        if (sheet != NULL)
+        {
+            fz_free_text_sheet(ctx_clone, sheet);
+        }
+    }
+	fz_catch(ctx_clone)
+	{
+        return nullptr;
+    }
+
+	fz_free_context(ctx_clone);
+    return html;
 }

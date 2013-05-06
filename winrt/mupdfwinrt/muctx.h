@@ -54,6 +54,9 @@ typedef struct content_s
 #define sh_content std::shared_ptr<content_t>
 #define sh_vector_content std::shared_ptr<std::vector<sh_content>> 
 
+/* Used for HTML return */
+#define sh_vector_char std::shared_ptr<std::vector<char>> 
+
 /* Needed for file handling */
 using namespace Windows::Storage::Streams;
 using namespace Windows::Foundation;
@@ -90,4 +93,5 @@ public:
     int GetLinks(int page_num, sh_vector_link links_vec);
     int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
     int GetContents(sh_vector_content contents_vec);
+    String^ GetHTML(int page_num);
 };
