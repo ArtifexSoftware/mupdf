@@ -230,3 +230,9 @@ ContentItem^ mudocument::GetContent(int k)
        return nullptr;
    return this->contents->GetAt(k);
 }
+
+String^ mudocument::ComputeHTML(int page_num)
+{
+    std::lock_guard<std::mutex> lock(mutex_lock);
+    return mu_object.GetHTML(page_num);
+}
