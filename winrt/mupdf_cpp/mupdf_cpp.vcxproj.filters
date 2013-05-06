@@ -18,7 +18,6 @@
     <ClCompile Include="App.xaml.cpp" />
     <ClCompile Include="MainPage.xaml.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="LVContents.cpp" />
     <ClCompile Include="DocumentPage.cpp" />
     <ClCompile Include="RectList.cpp" />
   </ItemGroup>
@@ -26,7 +25,6 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.xaml.h" />
     <ClInclude Include="MainPage.xaml.h" />
-    <ClInclude Include="LVContents.h" />
     <ClInclude Include="DocumentPage.h" />
     <ClInclude Include="RectList.h" />
   </ItemGroup>

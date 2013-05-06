@@ -124,7 +124,7 @@
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">
-                            <TextBlock TextWrapping="Wrap" Text="{Binding ContentItem}" FontFamily="Segoe UI" FontSize="20" />
+                            <TextBlock TextWrapping="Wrap" Text="{Binding StringMargin}" FontFamily="Segoe UI" FontSize="20" />
                         </StackPanel>
                     </DataTemplate>
                 </ListView.ItemTemplate>
