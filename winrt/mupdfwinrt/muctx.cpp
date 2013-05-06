@@ -200,6 +200,74 @@ Point muctx::MeasurePage(fz_page *page)
 	return pageSize;
 }
 
+void muctx::FlattenOutline(fz_outline *outline, int level, 
+                          sh_vector_content contents_vec)
+{
+	char indent[8*4+1];
+	if (level > 8)
+		level = 8;
+	memset(indent, ' ', level * 4);
+	indent[level * 4] = 0;
+
+    String^ indent_str = char_to_String(indent);
+    String^ str_indent;
+
+	while (outline)
+	{
+		if (outline->dest.kind == FZ_LINK_GOTO)
+		{
+			int page = outline->dest.ld.gotor.page;
+			if (page >= 0 && outline->title)
+			{
+                /* Add to the contents std:vec */
+                sh_content content_item(new content_t());
+                content_item->page = page;
+                content_item->string_orig = char_to_String(outline->title);
+                content_item->string_margin = 
+                    str_indent->Concat(indent_str, content_item->string_orig);
+                contents_vec->push_back(content_item);
+            }
+        }
+		FlattenOutline(outline->down, level + 1, contents_vec);
+		outline = outline->next;
+	}
+}
+
+int muctx::GetContents(sh_vector_content contents_vec)
+{
+    fz_outline *root = NULL;
+    fz_context *ctx_clone;
+    int has_content = 0;
+
+    if (mu_cookie->abort == 1) 
+        return has_content;
+
+    ctx_clone = fz_clone_context(mu_ctx);
+
+    fz_var(root);
+	fz_try(ctx_clone)
+	{
+        root = fz_load_outline(mu_doc);
+        if (root != NULL)
+        {
+            has_content = 1;
+            FlattenOutline(root, 0, contents_vec);
+        }
+    }
+	fz_always(ctx_clone)
+	{
+        if (root != NULL)
+        {
+            fz_free_outline(ctx_clone, root);
+        }
+    }
+	fz_catch(ctx_clone)
+	{
+		return E_FAIL;
+	}
+    return has_content;
+}
+
 int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 {
     fz_page *page;
@@ -207,8 +275,8 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
     fz_device *dev;
     fz_context *ctx_clone;
     fz_text_page *text;
-    int k;
     int hit_count = 0;
+    int k;
 
     if (mu_cookie->abort == 1) 
         return hit_count;
@@ -260,8 +328,6 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	}
     return hit_count;
 }
-
-
 
 /* Get the links and pack into a smart pointer structure */
 int muctx::GetLinks(int page_num, sh_vector_link links_vec)

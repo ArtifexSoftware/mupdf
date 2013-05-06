@@ -11,6 +11,8 @@
     <ClCompile Include="mudocument.cpp" />
     <ClCompile Include="muctx.cpp" />
     <ClCompile Include="Links.cpp" />
+    <ClCompile Include="ContentItem.cpp" />
+    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -18,5 +20,6 @@
     <ClInclude Include="muctx.h" />
     <ClInclude Include="Links.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="ContentItem.h" />
   </ItemGroup>
 </Project>

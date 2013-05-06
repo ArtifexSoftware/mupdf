@@ -1,36 +1,15 @@
 ﻿// mudocument.cpp
+
+/* This file contains the interface between the muctx class, which 
+   implements the mupdf calls and the WinRT objects enabling calling from 
+   C#, C++, Visual Basic, JavaScript applications */
+
 #include "pch.h"
 #include "mudocument.h"
 
 using namespace mupdfwinrt;
 using namespace concurrency;
 using namespace Platform::Collections;
-
-/* Window string hurdles.... */
-static String^ char_to_String(char *char_in)
-{
-        size_t size = MultiByteToWideChar(CP_UTF8, 0, char_in, -1, NULL, 0);
-        wchar_t *pw;
-        pw = new wchar_t[size];
-        if (!pw)
-        {
-            delete []pw;
-            return nullptr;
-        }
-        MultiByteToWideChar(CP_UTF8, 0, char_in, -1, pw, size );
-        String^ str_out = ref new String(pw);
-        delete []pw;
-        return str_out;
-}
-
-static char* String_to_char(String^ text)
-{
-    const wchar_t *w = text->Data();
-    int cb = WideCharToMultiByte(CP_UTF8, 0, text->Data(), -1, nullptr, 0, nullptr, nullptr);
-	char* charout = new char[cb];
-    WideCharToMultiByte(CP_UTF8, 0, text->Data() ,-1 ,charout ,cb ,nullptr, nullptr);
-    return charout;
-}
 
 mudocument::mudocument()
 {
@@ -210,3 +189,44 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
     return num_items;
 }
 
+Links^ mudocument::GetTextSearch(int k)
+{
+   if (k >= this->textsearch->Size)
+       return nullptr;
+   return this->textsearch->GetAt(k);
+}
+
+int mudocument::ComputeContents()
+{
+    std::lock_guard<std::mutex> lock(mutex_lock);
+    /* We get back a standard smart pointer from muctx interface and go to WinRT
+       type here */
+
+    sh_vector_content content_smart_ptr_vec(new std::vector<sh_content>());
+
+    int has_content = mu_object.GetContents(content_smart_ptr_vec);
+
+    if (!has_content)
+        return 0;
+    /* Pack into winRT type*/
+    this->contents = ref new Platform::Collections::Vector<ContentItem^>();
+    int num_items = content_smart_ptr_vec->size();
+
+    for (int k = 0; k < num_items; k++)
+    {
+        auto new_content = ref new ContentItem(); 
+        sh_content muctx_content = content_smart_ptr_vec->at(k);
+        new_content->Page = muctx_content->page;
+        new_content->StringMargin = muctx_content->string_margin;
+        new_content->StringOrig = muctx_content->string_orig;
+        this->contents->Append(new_content);
+    }
+    return num_items;
+}
+
+ContentItem^ mudocument::GetContent(int k)
+{
+   if (k >= this->contents->Size)
+       return nullptr;
+   return this->contents->GetAt(k);
+}

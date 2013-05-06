@@ -19,7 +19,8 @@ typedef enum {
         
 namespace mupdf_cpp
 {
-    [Windows::UI::Xaml::Data::Bindable] // in c++, adding this attribute to ref classes enables data binding for more info search for 'Bindable' on the page http://go.microsoft.com/fwlink/?LinkId=254639 
+    // enables data binding with this class
+    [Windows::UI::Xaml::Data::Bindable] 
 
     public ref class DocumentPage sealed
     {

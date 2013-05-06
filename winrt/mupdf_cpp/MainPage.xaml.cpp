@@ -5,7 +5,6 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
-#include "LVContents.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
 #define MIN_SCALE 0.5
@@ -32,7 +31,6 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::Graphics::Display;
-using namespace ListViewContents;
 
 //****************** Added *****************
 using namespace Windows::Storage::Pickers;
@@ -91,7 +89,6 @@ MainPage::MainPage()
 
     // Create the image brush
     m_renderedImage = ref new ImageBrush();
-    m_content.num = 0;
     mu_doc = nullptr;
     m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
     CleanUp();
@@ -408,15 +405,6 @@ void mupdf_cpp::MainPage::CleanUp()
     m_thumb_page_start = 0;
     m_thumb_page_stop = 0;
     m_links_on = false;
-
-    if (m_content.num)
-    {
-        //m_content.page->;
-       // m_content.string_margin->Dispose();
-        //m_content.string_orig->Dispose();
-        m_content.num = 0;
-    }
-
     m_curr_zoom = 1.0;
     m_canvas_translate.X = 0;
     m_canvas_translate.Y = 0;
@@ -1193,7 +1181,7 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 
 void mupdf_cpp::MainPage::AddLinkCanvas()
 {
-    return;  
+    return;
     /* This is disabled for now until I figure out how to add the canvas 
        with rects into the data template for the scroll view object */
     if (m_links_on)
@@ -1349,45 +1337,11 @@ int mupdf_cpp::MainPage::JumpToLink(int index)
     return 0;
 }
 
-void mupdf_cpp::MainPage::FlattenOutline(fz_outline *outline, int level)
-{
-#if 0
-	char indent[8*4+1];
-	if (level > 8)
-		level = 8;
-	memset(indent, ' ', level * 4);
-	indent[level * 4] = 0;
-
-    String^ indent_str = char_to_String(indent);
-    String^ str_indent;
-
-	while (outline)
-	{
-		if (outline->dest.kind == FZ_LINK_GOTO)
-		{
-			int page = outline->dest.ld.gotor.page;
-			if (page >= 0 && outline->title)
-			{
-                /* Add to the contents */
-                m_content.page->Append(page);
-                String^ str = char_to_String(outline->title);
-                m_content.string_orig->Append(str);
-                str_indent = str_indent->Concat(indent_str, str);
-                m_content.string_margin->Append(str_indent);
-                m_content.num += 1;
-			}
-		}
-		FlattenOutline(outline->down, level + 1);
-		outline = outline->next;
-	}
-#endif
-}
-
 /* Bring up the contents */
 void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-#if 0
-    if (this->m_num_pages < 0 || m_zoom_mode) return;
+    if (this->m_num_pages < 0) 
+        return;
 
     if (this->xaml_ListView->IsEnabled) 
     {
@@ -1398,12 +1352,11 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
     } 
     else
     {
-        if (!m_content.num)
+        if (xaml_ListView->Items->Size == 0)
         {
             /* Make sure we are good to go */
             RenderingStatus_t *ren_status = &m_ren_status;
             cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-            fz_outline *root = NULL;
 
             /* Create a task to wait until the renderer is available */
             auto t = create_task([ren_status, ThumbCancel]()
@@ -1412,30 +1365,16 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
                     ThumbCancel->cancel();
                 while (*ren_status != REN_AVAILABLE) {
                 }
-            }).then([this, &root]()
+            }).then([this]()
             {
-                root = fz_load_outline(m_doc);
-	            if (root)
+                int size_content = mu_doc->ComputeContents();
+                /* Bring up the content now */
+                for (int k = 0; k < size_content; k++)
                 {
-                    /* Flatten here if needed */
-                    m_content.page = ref new Vector<int>;
-                    m_content.string_margin = ref new Vector<String^>;
-                    m_content.string_orig = ref new Vector<String^>;
-
-
-		            FlattenOutline(root, 0);
-                    fz_free_outline(ctx, root);
-
-                    /* Bring up the content now */
-                    for (int k = 0; k < m_content.num; k++)
-                    {
-                        auto content_val = ref new LVContents;
-                        content_val->Page = m_content.page->GetAt(k);
-                        content_val->ContentItem = m_content.string_margin->GetAt(k);
-                        this->xaml_ListView->Items->Append(content_val);
-                    }
-	            }
-                if (m_content.num)
+                    ContentItem^ item = mu_doc->GetContent(k);
+                    this->xaml_ListView->Items->Append(item);
+                }
+                if (size_content > 0)
                 {
                     this->xaml_ListView->Opacity = 1.0;
                     this->xaml_ListView->IsEnabled = true;
@@ -1454,14 +1393,12 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
             this->m_curr_flipView->Opacity = 0.0;
             this->m_curr_flipView->IsEnabled = false;
         }
-    }
-#endif   
+    }  
 }
 
 void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
 {
-
-    LVContents^ b = safe_cast<LVContents^>(e->ClickedItem);
+    ContentItem^ b = safe_cast<ContentItem^>(e->ClickedItem);
     int newpage = b->Page;
 
     if (newpage > -1 && newpage < this->m_num_pages)

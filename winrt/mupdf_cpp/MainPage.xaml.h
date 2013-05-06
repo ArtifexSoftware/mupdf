@@ -10,7 +10,6 @@
 #include "ppltasks.h"
 #include <collection.h>
 #include <algorithm>
-#include "LVContents.h"
 #include "mudocument.h"
 #include "DocumentPage.h"
 
@@ -27,7 +26,6 @@ using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Shapes;
 using namespace Windows::Foundation::Collections;
 using namespace Platform::Collections;
-using namespace ListViewContents;
 using namespace Windows::UI::ViewManagement;
 using namespace Windows::UI::Popups;
 using namespace Windows::UI::Xaml::Navigation;
@@ -65,14 +63,6 @@ typedef struct thumbs_s
     Array<Point>^  size;
 } thumbs_t;
 
-typedef struct content_s
-{
-    int num;
-    Vector<int>^  page;
-    Vector<String^>^ string_orig;
-    Vector<String^>^ string_margin;
-} content_t;
-
 namespace mupdf_cpp
 {
 	/// <summary>
@@ -90,7 +80,6 @@ namespace mupdf_cpp
     private:
         Vector<DocumentPage^>^ m_docPages;
         mudocument^ mu_doc; 
-        LVContents temp;
         bool m_file_open;
         int  m_currpage;
         int  m_searchpage;
@@ -125,7 +114,6 @@ namespace mupdf_cpp
         int m_thumb_page_start;
         int m_thumb_page_stop;
         cancellation_token_source m_ThumbCancel;
-        content_t m_content;
         TextBlock^ m_StatusBlock;
         bool m_zoom_mode;
         bool m_from_doubleflip;
