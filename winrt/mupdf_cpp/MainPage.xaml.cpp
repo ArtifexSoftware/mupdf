@@ -88,7 +88,6 @@ MainPage::MainPage()
     m_linkcolor_brush = ref new SolidColorBrush(color);
 
     // Create the image brush
-    m_renderedImage = ref new ImageBrush();
     mu_doc = nullptr;
     m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
     CleanUp();
@@ -392,8 +391,6 @@ void mupdf_cpp::MainPage::CleanUp()
     m_slider_max = 0;
     m_init_done = false;
     m_memory_use = 0;
-    m_from_doubleflip = false;
-    m_first_time = false;
     m_insearch = false;
     m_search_active = false;
     m_sliderchange = false;
@@ -405,9 +402,6 @@ void mupdf_cpp::MainPage::CleanUp()
     m_thumb_page_start = 0;
     m_thumb_page_stop = 0;
     m_links_on = false;
-    m_curr_zoom = 1.0;
-    m_canvas_translate.X = 0;
-    m_canvas_translate.Y = 0;
 
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
