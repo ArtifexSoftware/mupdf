@@ -378,11 +378,8 @@ void mupdf_cpp::MainPage::SetFlipView()
 void mupdf_cpp::MainPage::CleanUp()
 {
     /* Remove current pages in the flipviews */
-    if (xaml_vert_flipView->Items->Size) 
-        xaml_vert_flipView->Items->Clear();
-
-    if (xaml_horiz_flipView->Items->Size) 
-        xaml_horiz_flipView->Items->Clear();
+    if (m_docPages != nullptr && m_docPages->Size > 0)
+        m_docPages->Clear();
 
     this->m_curr_flipView = nullptr;
     m_currpage = -1;
