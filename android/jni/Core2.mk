@@ -33,6 +33,7 @@ LOCAL_C_INCLUDES := \
 	../pdf \
 	../xps \
 	../cbz \
+	../ucdn \
 	../scripts \
 	..
 ifdef V8_BUILD

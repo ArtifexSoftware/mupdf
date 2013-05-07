@@ -941,10 +941,10 @@ textlen(fz_text_page *page)
 		block = page->blocks[block_num].u.text;
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			int span_num;
-			for (span_num = 0; span_num < line->len; span_num++)
+			fz_text_span *span;
+
+			for (span = line->first_span; span; span = span->next)
 			{
-				fz_text_span *span = line->spans[span_num];
 				len += span->len;
 			}
 			len++; /* pseudo-newline */
@@ -1261,12 +1261,18 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 			for (l = 0; l < block->len; l++)
 			{
 				fz_text_line *line = &block->lines[l];
-				jobjectArray *sarr = (*env)->NewObjectArray(env, line->len, textSpanClass, NULL);
+				jobjectArray *sarr;
+				fz_text_span *span;
+				int len = 0;
+
+				for (span = line->first_span; span; span = span->next)
+					len++;
+
+				sarr = (*env)->NewObjectArray(env, len, textSpanClass, NULL);
 				if (sarr == NULL) fz_throw(ctx, "NewObjectArray failed");
 
-				for (s = 0; s < line->len; s++)
+				for (span = line->first_span; span; span = span->next)
 				{
-					fz_text_span *span = line->spans[s];
 					jobjectArray *carr = (*env)->NewObjectArray(env, span->len, textCharClass, NULL);
 					if (carr == NULL) fz_throw(ctx, "NewObjectArray failed");
 

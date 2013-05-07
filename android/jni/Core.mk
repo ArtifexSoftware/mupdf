@@ -33,6 +33,7 @@ LOCAL_C_INCLUDES := \
 	../xps \
 	../cbz \
 	../image \
+	../ucdn \
 	../scripts \
 	..
 ifdef V8_BUILD
