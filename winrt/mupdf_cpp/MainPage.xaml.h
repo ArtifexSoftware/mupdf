@@ -87,25 +87,14 @@ namespace mupdf_cpp
         int  m_slider_min;
         int  m_slider_max;
         bool m_init_done;
-        bool m_first_time;
         bool m_flip_from_searchlink;
         bool m_links_on;
         int m_search_rect_count;
-        Point m_display_size;
         cancellation_token_source m_searchcts;
         cancellation_token_source m_thumbcts;
         bool m_page_update;
         long long m_memory_use;
-        double m_curr_zoom;
-        Point m_zoom_size;
-        Point m_touchpoint;
-        Point m_canvas_translate;
-        Windows::UI::Input::ManipulationDelta m_changes;
-        ImageBrush^ m_renderedImage;
-        ImageBrush^ m_blankPage;
         WriteableBitmap ^m_BlankBmp;
-        Canvas^ m_renderedCanvas;
-        ImageBrush^ m_zoomedImage;
         SolidColorBrush^ m_textcolor_brush; 
         SolidColorBrush^ m_linkcolor_brush; 
         FlipView^ m_curr_flipView;
@@ -114,14 +103,12 @@ namespace mupdf_cpp
         int m_thumb_page_start;
         int m_thumb_page_stop;
         cancellation_token_source m_ThumbCancel;
-        TextBlock^ m_StatusBlock;
-        bool m_zoom_mode;
-        bool m_from_doubleflip;
-        bool m_scaling_occured;
+        bool m_zoom_mode;  // remove
         bool m_insearch;  /* Used for UI display */
         bool m_search_active;  /* Used to avoid multiple UI clicks */
         bool m_sliderchange;
         bool m_update_flip;
+
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocumentPrep(StorageFile^ file);
@@ -165,15 +152,6 @@ namespace mupdf_cpp
         void ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e);
         void ContentChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs^ e);
         void Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-        void WebViewDelta(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs^ e);
-        void WebViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e);
-        void WebViewCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
-        void TempViewStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e);
-        void RichGridSizeChanged(Platform::Object^ sender, Windows::UI::Xaml::SizeChangedEventArgs^ e);
-        void RichGridManipulationStarting(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartingRoutedEventArgs^ e);
-        void RichGridManipulationDelta(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs^ e);
-        void RichGridManipulationStarted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs^ e);
-        void RichGridManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
         void topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void UpdateAppBarButtonViewState();
         bool EnsureUnsnapped();
