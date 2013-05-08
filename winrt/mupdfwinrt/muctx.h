@@ -84,6 +84,7 @@ private:
 public:
     muctx(void);
     ~muctx(void);
+    void CleanUp(void);
     HRESULT InitializeStream(IRandomAccessStream^ readStream, char *ext);
     int GetPageCount();   
     HRESULT InitializeContext();

@@ -17,6 +17,11 @@ mudocument::mudocument()
     this->links = nullptr;
 }
 
+void mudocument::CleanUp()
+{
+    this->mu_object.CleanUp();
+}
+
 int mudocument::GetNumPages()
 {
     return this->mu_object.GetPageCount();
@@ -97,7 +102,7 @@ static void Prepare_bmp(int width, int height, DataWriter ^dw)
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^ 
     mudocument::RenderPage(int page_num, int width, int height)
 {
-    return create_async([this, width, height, page_num]() -> InMemoryRandomAccessStream^
+    return create_async([this, width, height, page_num](cancellation_token ct) -> InMemoryRandomAccessStream^
     {
         /* Allocate space for bmp */
         Array<unsigned char>^ bmp_data = ref new Array<unsigned char>(height * 4 * width);
