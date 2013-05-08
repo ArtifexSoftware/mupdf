@@ -7,6 +7,7 @@
 #include "MainPage.xaml.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
+#define THUMB_PREADD 30
 #define MIN_SCALE 0.5
 #define MAX_SCALE 4
 #define MARGIN_BUFF 400
@@ -90,11 +91,9 @@ MainPage::MainPage()
     // Create the image brush
     mu_doc = nullptr;
     m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
+    m_thumbnails = ref new Platform::Collections::Vector<DocumentPage^>();
     CleanUp();
     RecordMainThread();
-    mu_doc = ref new mudocument(); 
-    if (mu_doc == nullptr)
-        throw ref new FailureException("Document allocation failed!");
 }
 
 /// <summary>
@@ -179,7 +178,7 @@ void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 	create_task(openPicker->PickSingleFileAsync()).then([this](StorageFile^ file) 
 	{ 
 		if (file) 
-		{ 		
+		{ 	
             this->OpenDocumentPrep(file);
 		} 
 		else 
@@ -215,6 +214,7 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 
     /* We do not want flipview change notification to occur for ourselves */
     m_page_update = true;
+    //this->m_docPages->BindableSetAt(page_num, doc_page);
     this->m_docPages->SetAt(page_num, doc_page);
     m_page_update = false;
 
@@ -313,13 +313,6 @@ void MainPage::ReleasePages(int old_page, int new_page)
     }
 }
 
-void MainPage::InitThumbnails()
-{
-    this->m_thumbnails.raster = ref new Array<InMemoryRandomAccessStream^>(m_num_pages);
-    this->m_thumbnails.scale = ref new Array<double>(m_num_pages);
-    this->m_thumbnails.size = ref new Array<Point>(m_num_pages);
-}
-
 /* Return this page from a full res image to the thumb image or only set to thumb
    if it has not already been set */
 void MainPage::SetThumb(int page_num, bool replace)
@@ -327,10 +320,14 @@ void MainPage::SetThumb(int page_num, bool replace)
     /* See what is there now */
     auto doc = this->m_docPages->GetAt(page_num);
     if (doc->Content == THUMBNAIL) return;
+    if (doc->Content == FULL_RESOLUTION && replace == false) return;
 
-    if ((replace || doc->Content == DUMMY) && this->m_thumbnails.raster[page_num] != nullptr) 
-        UpdatePage(page_num, this->m_thumbnails.raster[page_num], 
-                   this->m_thumbnails.size[page_num], THUMBNAIL);
+    if (this->m_thumbnails->Size > page_num)
+    {
+        m_page_update = true;
+        this->m_docPages->SetAt(page_num, this->m_thumbnails->GetAt(page_num));
+        m_page_update = false;
+    }
 }
 
 /* Create white image for us to use as place holder in large document for flip
@@ -380,6 +377,15 @@ void mupdf_cpp::MainPage::CleanUp()
     /* Remove current pages in the flipviews */
     if (m_docPages != nullptr && m_docPages->Size > 0)
         m_docPages->Clear();
+    if (m_thumbnails != nullptr && m_thumbnails->Size > 0)
+        m_thumbnails->Clear();
+
+    if (this->mu_doc != nullptr) 
+        mu_doc->CleanUp();
+
+    mu_doc = ref new mudocument(); 
+    if (mu_doc == nullptr)
+        throw ref new FailureException("Document allocation failed!");
 
     this->m_curr_flipView = nullptr;
     m_currpage = -1;
@@ -396,8 +402,6 @@ void mupdf_cpp::MainPage::CleanUp()
     m_search_rect_count = 0;
     ResetSearch();
     m_ren_status = REN_AVAILABLE;
-    m_thumb_page_start = 0;
-    m_thumb_page_stop = 0;
     m_links_on = false;
 
     this->xaml_PageSlider->Minimum = m_slider_min;
@@ -410,86 +414,77 @@ void mupdf_cpp::MainPage::RenderThumbs()
 {
     spatial_info_t spatial_info = this->InitSpatial(1);
     int num_pages = this->m_num_pages;
-    int thumb_pages = this->m_thumb_page_start;
     cancellation_token_source cts;
     auto token = cts.get_token();
     m_ThumbCancel = cts;
 
     this->m_ren_status = REN_THUMBS;
-    thumbs_t thumbnails = m_thumbnails;
-    DWORD thread0_id = GetCurrentThreadId();
-
-    create_task([spatial_info, num_pages, thumb_pages, thumbnails, this, thread0_id]()-> int
+    Vector<DocumentPage^>^ thumbnails = m_thumbnails;
+    auto ui = task_continuation_context::use_current();
+    create_task([spatial_info, num_pages, thumbnails, this, ui, token]()-> int
     {
         spatial_info_t spatial_info_local = spatial_info;
         spatial_info_local.scale_factor = SCALE_THUMB;
 
-        InMemoryRandomAccessStream ^ras = ref new InMemoryRandomAccessStream();
-
-        for (int k = thumb_pages; k < num_pages; k++)
+        for (int k = 0; k < num_pages; k++)
         {
             Point ras_size = ComputePageSize(spatial_info_local, k);
             bool done = false;
             DWORD thread1_id = GetCurrentThreadId();
-            auto task = create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y)).then([this, k, ras_size, thumbnails, &done, thread1_id, thread0_id] (InMemoryRandomAccessStream^ ras)
-            {
-                DWORD thread2_id = GetCurrentThreadId();
-                thumbnails.raster[k] = ras;
-                thumbnails.scale[k] = SCALE_THUMB;
-                thumbnails.size[k] = ras_size;
-                done = true;
-            }, task_continuation_context::use_current());  
+            auto task2 = create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
 
-
-            try
+            task2.then([this, k, thumbnails, ras_size](InMemoryRandomAccessStream^ ras)
             {
-                task.get();  // get exception
-            }
-            catch (Exception^ exception)
-            {
-            }
-
-             /* Don't start new thumb until this one is finished, lest we launch a
-               thousand thumbnail renderings */
-            while (!done) 
-            {
-            }
+                assert(IsMainThread());
+                WriteableBitmap ^bmp = ref new WriteableBitmap(ras_size.X, ras_size.Y);
+                bmp->SetSource(ras);
+                DocumentPage^ doc_page = ref new DocumentPage();
+                doc_page->Image = bmp;
+                doc_page->Height = ras_size.Y / SCALE_THUMB;
+                doc_page->Width = ras_size.X / SCALE_THUMB;
+                doc_page->Content = THUMBNAIL;
+                if (this->m_ren_status == REN_THUMBS) {
+                    m_thumbnails->Append(doc_page);
+                    /* Flipview object get overwhelmed unless I do this */
+                    if ((k < THUMB_PREADD))
+                        SetThumb(k, false);
+                }
+            }, ui).then([this] (task<void> t)
+                {
+                try
+                {
+                    t.get();
+                }
+                catch(Platform::InvalidArgumentException^ e)
+                {
+                    //TODO handle error.
+                }
+            }, token); //end task chain */
 
             /* If cancelled then save the last one as the continuation will not
                have occured.  */
             if (is_task_cancellation_requested()) 
             {
-                thumbnails.raster[k] = ras;
-                thumbnails.scale[k] = SCALE_THUMB;
-                thumbnails.size[k] = ras_size;
-                this->m_thumb_page_stop = k + 1;
-                
                 cancel_current_task();
             }
         }
         return num_pages; /* all done with thumbnails! */
     }, token).then([this](task<int> the_task) 
     {
-        int new_end;
+        /* Finish adding them, but not if we were cancelled. */
+        bool is_cancelled = false;
         try
         {
-           new_end = the_task.get();
+           the_task.get();
         } 
         catch (const task_canceled& e)
         {
-            new_end = this->m_thumb_page_stop;
+            is_cancelled = true;
         }
-
-        int old_end = this->m_thumb_page_start;
-
-        /* Now go ahead and create the proper stuctures */
-        this->m_ren_status = REN_UPDATE_THUMB_CANVAS;
-        this->m_thumb_page_start = new_end;
-
-        for (int k = old_end; k < new_end; k++)
+        if (!is_cancelled)
         {
-            assert(IsMainThread());
-            SetThumb(k, false);
+            for (int k = THUMB_PREADD; k < m_num_pages; k++)
+                SetThumb(k, false);
         }
         this->m_ren_status = REN_AVAILABLE;
     }, task_continuation_context::use_current());
@@ -500,6 +495,11 @@ void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
     if (this->m_num_pages != -1) 
     {
         m_init_done = false;
+
+        /* Set the index to the start of the document */
+        this->xaml_vert_flipView->SelectedIndex = 0;
+        this->xaml_horiz_flipView->SelectedIndex = 0;
+
         /* If the thumbnail thread is running then we need to end that first */
         RenderingStatus_t *ren_status = &m_ren_status;
         cancellation_token_source *ThumbCancel = &m_ThumbCancel;
@@ -572,7 +572,6 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
         /* Do the first few pages, then start the thumbs */
         spatial_info_t spatial_info = InitSpatial(1);
-
         for (int k = 0; k < LOOK_AHEAD + 2; k++) 
         {
             if (m_num_pages > k ) 
@@ -590,7 +589,6 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
                 }, task_continuation_context::use_current());
             }
         }
-
         /* Update the slider settings, if more than one page */
         if (m_num_pages > 1) 
         {
@@ -608,89 +606,58 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
         this->m_init_done = true;
     }).then([this]
     {
-        InitThumbnails();
         this->RenderThumbs();
     }, task_continuation_context::use_current());
 }
 
-task<int> mupdf_cpp::MainPage::RenderRange(int curr_page)
+
+void mupdf_cpp::MainPage::RenderRange(int curr_page)
 {
     /* Render +/- the look ahead from where we are if blank page is present */
     spatial_info_t spatial_info = InitSpatial(1);
 
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-
-    /* Create a task to wait until the renderer is available */
-    auto t = create_task([ren_status, ThumbCancel]()
+    assert(IsMainThread());
+    for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
     {
-        if (*ren_status == REN_THUMBS)
-            ThumbCancel->cancel();
-        while (*ren_status != REN_AVAILABLE) {
-        }
-    });
-        
-    return t.then([this, curr_page, spatial_info]()
-    {
-        assert(IsMainThread());
-        int val = 0;
-        /* This runs on the main ui thread */
-        for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
+        if (k >= 0 && k < m_num_pages) 
         {
-            if (k >= 0 && k < m_num_pages) 
+            /* Check if page is already rendered */
+            auto doc = this->m_docPages->GetAt(k);
+            if (doc->Content != FULL_RESOLUTION) 
             {
-                /* Check if page is already rendered */
-                auto doc = this->m_docPages->GetAt(k);
-                if (doc->Content != FULL_RESOLUTION) 
+                Point ras_size = ComputePageSize(spatial_info, k);
+                auto render_task = 
+                    create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
+
+                render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
                 {
-                    Point ras_size = ComputePageSize(spatial_info, k);
-                    auto render_task = 
-                        create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
-
-                    render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
-                    {
-                        /* Set up the image brush when rendering is completed, must be on
-                           UI thread */
-                        UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
-                        this->m_ren_status = REN_AVAILABLE;                    
-                    }, task_continuation_context::use_current());
-                }
-            }
-        } 
-        Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
-        if (link_canvas != nullptr)
-        {
-            Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
-            if (Parent_Canvas != nullptr)
-            {
-                Parent_Canvas->Children->RemoveAtEnd();
-                delete link_canvas;
+                    /* Set up the image brush when rendering is completed, must be on
+                        UI thread */
+                    UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+                }, task_continuation_context::use_current());
             }
         }
-        m_currpage = curr_page;
-        if (this->m_links_on) 
+    } 
+    Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
+    if (link_canvas != nullptr)
+    {
+        Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
+        if (Parent_Canvas != nullptr)
         {
-            AddLinkCanvas();
+            Parent_Canvas->Children->RemoveAtEnd();
+            delete link_canvas;
         }
-        /* Check if thumb rendering is done.  If not then restart */
-        if (this->m_num_pages != this->m_thumb_page_start)
-            this->RenderThumbs();
-        return val;
-    }, task_continuation_context::use_current());
-}
-
-void mupdf_cpp::MainPage::Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
-{
-    /* Check if thumb rendering is done.  If not then restart */
-    if (this->m_num_pages != this->m_thumb_page_start)
-        this->RenderThumbs();
+    }
+    m_currpage = curr_page;
+    if (this->m_links_on) 
+    {
+        AddLinkCanvas();
+    }
 }
 
 void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
 {
     int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
 
     if (m_update_flip)
     {
@@ -702,28 +669,19 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
         auto doc = this->m_docPages->GetAt(newValue);
         if (doc->Content != FULL_RESOLUTION) 
         {
-            create_task([ren_status, ThumbCancel]()
-            {
-                if (*ren_status == REN_THUMBS)
-                    ThumbCancel->cancel();
-                while (*ren_status != REN_AVAILABLE) {
-                }
-            }).then([this, newValue]() 
-            {
-                spatial_info_t spatial_info = InitSpatial(1);
-                Point ras_size = ComputePageSize(spatial_info, newValue);
-                auto render_task = 
-                    create_task(mu_doc->RenderPage(newValue, ras_size.X, ras_size.Y));
+            spatial_info_t spatial_info = InitSpatial(1);
+            Point ras_size = ComputePageSize(spatial_info, newValue);
+            auto render_task = 
+                create_task(mu_doc->RenderPage(newValue, ras_size.X, ras_size.Y));
 
-                render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
-                {
-                    UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
-                    this->m_ren_status = REN_AVAILABLE;  
-                    this->m_currpage = newValue;
-                    m_sliderchange = true;
-                    this->m_curr_flipView->SelectedIndex = newValue;
-                    ResetSearch(); 
-                }, task_continuation_context::use_current());
+            render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
+            {
+                UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
+                this->m_ren_status = REN_AVAILABLE;  
+                this->m_currpage = newValue;
+                m_sliderchange = true;
+                this->m_curr_flipView->SelectedIndex = newValue;
+                ResetSearch(); 
             }, task_continuation_context::use_current());
         }
     }
@@ -758,11 +716,8 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
             }
             /* Get the current page */
             int curr_page = this->m_currpage;
-            task<int> task = this->RenderRange(pos);
-            task.then([this, curr_page, pos](int val)
-            {
-                this->ReleasePages(curr_page, pos);
-            }, task_continuation_context::use_current());
+            this->RenderRange(pos);
+            this->ReleasePages(curr_page, pos);
         }
     }
 }
@@ -898,21 +853,9 @@ void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
     String^ textToFind = findBox->Text;
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
 
-    /* Create a task to wait until the renderer is available */
-    create_task([ren_status, ThumbCancel]()
-    {
-        if (*ren_status == REN_THUMBS)
-            ThumbCancel->cancel();
-        while (*ren_status != REN_AVAILABLE) {
-            }
-    }).then([this, textToFind]() 
-    {
-        if (this->m_search_active == false)
-            SearchInDirection(1, textToFind);
-    }, task_continuation_context::use_current());
+    if (this->m_search_active == false)
+        SearchInDirection(1, textToFind);
 }
 
 void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -920,21 +863,9 @@ void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml
     StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
     TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
     String^ textToFind = findBox->Text;
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
 
-    /* Create a task to wait until the renderer is available */
-    create_task([ren_status, ThumbCancel]()
-    {
-        if (*ren_status == REN_THUMBS)
-            ThumbCancel->cancel();
-        while (*ren_status != REN_AVAILABLE) {
-        }
-    }).then([this, textToFind]() 
-    {
-        if (this->m_search_active == false)
-            SearchInDirection(-1, textToFind);
-    }, task_continuation_context::use_current());
+    if (this->m_search_active == false)
+        SearchInDirection(-1, textToFind);
 }
 
 void mupdf_cpp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -1148,24 +1079,9 @@ void mupdf_cpp::MainPage::ClearLinksCanvas()
 void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     m_links_on = !m_links_on;
-    RenderingStatus_t *ren_status = &m_ren_status;
-    cancellation_token_source *ThumbCancel = &m_ThumbCancel;
         
     if (m_links_on)
-    {
-       auto t = create_task([ren_status, ThumbCancel]()
-        {
-            if (*ren_status == REN_THUMBS)
-                ThumbCancel->cancel();
-            while (*ren_status != REN_AVAILABLE) {
-            }
-        });
-        
-        t.then([this]()
-        {
-            AddLinkCanvas();
-        }, task_continuation_context::use_current());
-    }
+        AddLinkCanvas();
     else
         ClearLinksCanvas();
 }
@@ -1345,37 +1261,20 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
     {
         if (xaml_ListView->Items->Size == 0)
         {
-            /* Make sure we are good to go */
-            RenderingStatus_t *ren_status = &m_ren_status;
-            cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-
-            /* Create a task to wait until the renderer is available */
-            auto t = create_task([ren_status, ThumbCancel]()
+            int size_content = mu_doc->ComputeContents();
+            /* Bring up the content now */
+            for (int k = 0; k < size_content; k++)
             {
-                if (*ren_status == REN_THUMBS)
-                    ThumbCancel->cancel();
-                while (*ren_status != REN_AVAILABLE) {
-                }
-            }).then([this]()
+                ContentItem^ item = mu_doc->GetContent(k);
+                this->xaml_ListView->Items->Append(item);
+            }
+            if (size_content > 0)
             {
-                int size_content = mu_doc->ComputeContents();
-                /* Bring up the content now */
-                for (int k = 0; k < size_content; k++)
-                {
-                    ContentItem^ item = mu_doc->GetContent(k);
-                    this->xaml_ListView->Items->Append(item);
-                }
-                if (size_content > 0)
-                {
-                    this->xaml_ListView->Opacity = 1.0;
-                    this->xaml_ListView->IsEnabled = true;
-                    this->m_curr_flipView->Opacity = 0.0;
-                    this->m_curr_flipView->IsEnabled = false;
-                }
-                /* Check if thumb rendering is done.  If not then restart */
-                if (this->m_num_pages != this->m_thumb_page_start)
-                    this->RenderThumbs();
-            }, task_continuation_context::use_current());
+                this->xaml_ListView->Opacity = 1.0;
+                this->xaml_ListView->IsEnabled = true;
+                this->m_curr_flipView->Opacity = 0.0;
+                this->m_curr_flipView->IsEnabled = false;
+            }
         }  
         else 
         {
@@ -1421,27 +1320,13 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
     } 
     else if (this->m_curr_flipView->IsEnabled)
     {
-        /* Only go from flip view to reflow */
-        RenderingStatus_t *ren_status = &m_ren_status;
-        cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-        /* Create a task to wait until the renderer is available */
-        auto t = create_task([ren_status, ThumbCancel]()
-        {
-            if (*ren_status == REN_THUMBS)
-                ThumbCancel->cancel();
-            while (*ren_status != REN_AVAILABLE) {
-            }
-        }).then([this]()
-        {
-            String^ html_string = mu_doc->ComputeHTML(this->m_currpage);
-            xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
-            this->xaml_MainGrid->Opacity = 0.0;
-            this->m_curr_flipView->IsEnabled = false;
-            this->xaml_WebView->NavigateToString(html_string);
-            /* Check if thumb rendering is done.  If not then restart */
-            if (this->m_num_pages != this->m_thumb_page_start)
-                this->RenderThumbs();
-        }, task_continuation_context::use_current());
+        String^ html_string = mu_doc->ComputeHTML(this->m_currpage);
+        xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
+        this->xaml_MainGrid->Opacity = 0.0;
+        this->m_curr_flipView->IsEnabled = false;
+        this->xaml_WebView->NavigateToString(html_string);
+        this->xaml_WebView->Height = this->ActualHeight - 2 * this->BottomAppBar->ActualHeight;
+        /* Check if thumb rendering is done.  If not then restart */
     }
 }
 

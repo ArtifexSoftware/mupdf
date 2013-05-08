@@ -88,6 +88,23 @@ static void unlock_mutex(void *user, int lock)
 	LeaveCriticalSection((LPCRITICAL_SECTION)user);
 }
 
+void muctx::CleanUp(void)
+{
+    free(this->mu_cookie);
+    if (mu_outline != NULL)
+		fz_free_outline(mu_ctx, mu_outline);
+    if (mu_doc != NULL)
+		fz_close_document(mu_doc);
+    if (mu_ctx != NULL)
+		fz_free_context(mu_ctx);
+
+    this->mu_cookie = NULL;
+    this->mu_ctx = NULL;
+    this->mu_doc = NULL;
+    this->mu_outline = NULL;
+    this->mu_stream = NULL;
+}
+
 /* Set up the context, mutex and cookie */
 HRESULT muctx::InitializeContext()
 {

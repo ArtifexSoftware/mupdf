@@ -28,6 +28,7 @@ namespace mupdfwinrt
             Platform::Collections::Vector<ContentItem^>^ contents;
         public:
             mudocument();
+            void CleanUp();
             Windows::Foundation::IAsyncAction^ OpenFile(StorageFile^ file);
             int GetNumPages(void);
             Point GetPageSize(int page_num);

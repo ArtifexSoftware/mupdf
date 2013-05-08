@@ -56,13 +56,6 @@ typedef struct spatial_info_s
     double scale_factor;
 } spatial_info_t;
 
-typedef struct thumbs_s
-{
-    Array<InMemoryRandomAccessStream^>^ raster;  
-    Array<double>^ scale;
-    Array<Point>^  size;
-} thumbs_t;
-
 namespace mupdf_cpp
 {
 	/// <summary>
@@ -79,6 +72,7 @@ namespace mupdf_cpp
     /* added */
     private:
         Vector<DocumentPage^>^ m_docPages;
+        Vector<DocumentPage^>^ m_thumbnails;
         mudocument^ mu_doc; 
         bool m_file_open;
         int  m_currpage;
@@ -91,17 +85,13 @@ namespace mupdf_cpp
         bool m_links_on;
         int m_search_rect_count;
         cancellation_token_source m_searchcts;
-        cancellation_token_source m_thumbcts;
         bool m_page_update;
         long long m_memory_use;
         WriteableBitmap ^m_BlankBmp;
         SolidColorBrush^ m_textcolor_brush; 
         SolidColorBrush^ m_linkcolor_brush; 
         FlipView^ m_curr_flipView;
-        thumbs_t m_thumbnails;
         RenderingStatus_t m_ren_status;
-        int m_thumb_page_start;
-        int m_thumb_page_stop;
         cancellation_token_source m_ThumbCancel;
         bool m_zoom_mode;  // remove
         bool m_insearch;  /* Used for UI display */
@@ -113,7 +103,7 @@ namespace mupdf_cpp
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocumentPrep(StorageFile^ file);
         void OpenDocument(StorageFile^ file);
-        task<int> RenderRange(int curr_page);
+        void RenderRange(int curr_page);
         void CleanUp();
         void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type);
         void CreateBlank(int width, int height);
@@ -136,7 +126,6 @@ namespace mupdf_cpp
         void Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
         void AddThumbNail(int page_num, FlipView^ flip_view);
         spatial_info_t InitSpatial(double scale);
-        void InitThumbnails();
         void RenderThumbs();
         void SetThumb(int page_num, bool replace);
         void ReleasePages(int old_page, int new_page);
