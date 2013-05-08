@@ -972,8 +972,7 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
     }, task_continuation_context::use_current());
 }
 
-/* This is here to handle when we rotate or go into the snapview mode 
-   ToDo  add in data binding to change the scroll direction */
+/* This is here to handle when we rotate or go into the snapview mode  */
 void mupdf_cpp::MainPage::GridSizeChanged()
 {
     int height = this->ActualHeight;
@@ -1037,25 +1036,24 @@ void mupdf_cpp::MainPage::GridSizeChanged()
 
 void mupdf_cpp::MainPage::UpDatePageSizes()
 {
-    /* Render our current pages at the new resolution and rescale the thumbnail 
-       canvas if needed */
+    /* Reset the thumb view scaling value */
     if (m_num_pages > 0)
     {
-        for (int i = 0; i < m_num_pages; i++)
+        int num_items = m_thumbnails->Size;
+        for (int i = 0; i < num_items; i++)
         {
-            FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(i);
-            if (flipview_temp != nullptr && flipview_temp->Content != nullptr)
+            DocumentPage ^thumb_page = m_thumbnails->GetAt(i);
+            if (thumb_page != nullptr && thumb_page->Image != nullptr)
             {
-                Canvas^ curr_canvas = (Canvas^) flipview_temp->Content;
-                int curr_canvas_height = curr_canvas->Height;
-                int curr_canvas_width = curr_canvas->Width;
+                int curr_height = thumb_page->Height;
+                int curr_width = thumb_page->Width;
 
-                double scale_x = (double) curr_canvas_height / (double) this->xaml_zoomCanvas->Height;
-                double scale_y = (double) curr_canvas_width / (double) this->xaml_zoomCanvas->Width;
+                double scale_x = (double) curr_height / (double) this->xaml_zoomCanvas->Height;
+                double scale_y = (double) curr_width / (double) this->xaml_zoomCanvas->Width;
 
                 double min_scale = max(scale_x, scale_y);
-                curr_canvas->Height = curr_canvas_height / min_scale;
-                curr_canvas->Width = curr_canvas_width / min_scale;
+                thumb_page->Height = curr_height / min_scale;
+                thumb_page->Width = curr_width / min_scale;
             }
         }  
     }
