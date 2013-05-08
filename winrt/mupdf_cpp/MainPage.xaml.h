@@ -135,8 +135,6 @@ namespace mupdf_cpp
         void ReleasePages(int old_page, int new_page);
         void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void AddLinkCanvas();
-        void Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
-        bool CheckRect(Rectangle^ curr_rect, Point pt);
         int JumpToLink(int index);
         void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void FlattenOutline(fz_outline *outline, int level);
@@ -152,5 +150,6 @@ namespace mupdf_cpp
         void OKInvokedHandler(Windows::UI::Popups::IUICommand^ command);
         Point ComputePageSize(spatial_info_t spatial_info, int page_num);
         void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
-};
+        void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
+    };
 }

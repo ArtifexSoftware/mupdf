@@ -656,9 +656,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
     }
     m_currpage = curr_page;
     if (this->m_links_on) 
-    {
         AddLinkCanvas();
-    }
 }
 
 void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
@@ -1134,6 +1132,7 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
                 rect_item->Type = curr_link->Type;
                 rect_item->Urilink = curr_link->Uri;
                 rect_item->PageNum = curr_link->PageNum;
+                rect_item->Index = k.ToString();
                 link_list->Append(rect_item);
             }
         }
@@ -1148,80 +1147,43 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
     m_page_update = false;
 }
 
-bool mupdf_cpp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
+/* A link was tapped */
+void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
 {
-    TranslateTransform ^trans_transform = (TranslateTransform^) curr_rect->RenderTransform;
-    Point rect_start;
-    Point rect_end;
-
-    rect_start.X = trans_transform->X;
-    rect_start.Y = trans_transform->Y;
-    rect_end.X = rect_start.X + curr_rect->Width;
-    rect_end.Y = rect_start.Y + curr_rect->Height;
-    if ((rect_start.X < pt.X) && (pt.X < rect_end.X) && (rect_start.Y < pt.Y) && (pt.Y < rect_end.Y)) 
-        return true;
-    return false;
-}
-
-void mupdf_cpp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
-{
-    /* See if we are currently viewing any links */
-    if (m_links_on)
+    Rectangle^ rect = safe_cast<Rectangle^>(e->OriginalSource);
+    String^ str_index = safe_cast<String^>(rect->Tag);
+    int index = _wtof(str_index->Data()); 
+    
+    if (index >= 0 && index < m_num_pages) 
     {
-        Point pt;
-        Canvas^ link_canvas = (Canvas^) (m_curr_flipView->FindName("linkCanvas"));
-        if (link_canvas != nullptr)
+        auto link_list = m_page_link_list->GetAt(m_currpage);
+        auto link = link_list->GetAt(index);
+
+        if (link->Type == LINK_GOTO)
         {
-            pt = e->GetPosition(link_canvas);
-            IIterator<UIElement^> ^it = link_canvas->Children->First();
-            int count = 0;
-            while (it->HasCurrent)
-            {
-                Rectangle^ curr_rect = (Rectangle^) (it->Current);
-                if (CheckRect(curr_rect, pt))
-                {
-                    int page = JumpToLink(count);
-                    if (page >= 0)
-                        this->m_curr_flipView->SelectedIndex = page;
-                    return;
-                }
-                it->MoveNext();
-                count += 1;
-            }
+            this->m_curr_flipView->SelectedIndex = link->PageNum;
+        } 
+        else if (link->Type == LINK_URI)
+        {
+            // Set the option to show a warning
+            auto launchOptions = ref new Windows::System::LauncherOptions();
+            launchOptions->TreatAsUntrusted = true;
+
+            // Launch the URI with a warning prompt
+            concurrency::task<bool> launchUriOperation(Windows::System::Launcher::LaunchUriAsync(link->Urilink, launchOptions));
+            launchUriOperation.then([](bool success)
+           {
+              if (success)
+              {
+                 // URI launched
+              }
+              else
+              {
+                 // URI launch failed
+              }
+           });
         }
     }
-}
-
-int mupdf_cpp::MainPage::JumpToLink(int index)
-{    
-    auto link = mu_doc->GetLink(index);
-
-    if (link->Type == LINK_GOTO)
-    {
-        return link->PageNum;
-    } 
-    else if (link->Type == LINK_URI)
-    {
-        // Set the option to show a warning
-        auto launchOptions = ref new Windows::System::LauncherOptions();
-        launchOptions->TreatAsUntrusted = true;
-
-        // Launch the URI with a warning prompt
-        concurrency::task<bool> launchUriOperation(Windows::System::Launcher::LaunchUriAsync(link->Uri, launchOptions));
-        launchUriOperation.then([](bool success)
-       {
-          if (success)
-          {
-             // URI launched
-          }
-          else
-          {
-             // URI launch failed
-          }
-       });
-       return -1;
-    }
-    return 0;
 }
 
 /* Bring up the contents */
@@ -1332,3 +1294,5 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, Windows::UI::X
 
  int zz = 1;
 }
+
+
