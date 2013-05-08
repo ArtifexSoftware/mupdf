@@ -98,7 +98,8 @@
                             <VirtualizingStackPanel Orientation="Vertical"/>
                         </ItemsPanelTemplate>
                     </FlipView.ItemsPanel>
-                    <DataTemplate>
+                    <FlipView.ItemTemplate>
+                        <DataTemplate>
                         <ScrollViewer
                             ZoomMode="Enabled" 
                             ViewChanged="ScrollChanged"
@@ -114,6 +115,7 @@
                                 Stretch="Uniform" HorizontalAlignment="Center" Margin="0"/>
                         </ScrollViewer>
                     </DataTemplate>
+                    </FlipView.ItemTemplate>
                 </FlipView>
 
             </Canvas>
