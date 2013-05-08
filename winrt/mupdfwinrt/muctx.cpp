@@ -380,7 +380,7 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
             link->upper_left.X = curr_rect.x0;
             link->upper_left.Y = curr_rect.y0;
             link->lower_right.X = curr_rect.x1;
-            link->lower_right.Y = curr_rect.x1;
+            link->lower_right.Y = curr_rect.y1;
 
             switch (curr_link->dest.kind)
             {

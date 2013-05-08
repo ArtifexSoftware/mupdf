@@ -73,6 +73,10 @@ namespace mupdf_cpp
     private:
         Vector<DocumentPage^>^ m_docPages;
         Vector<DocumentPage^>^ m_thumbnails;
+        Vector<IVector<RectList^>^>^ m_page_link_list;
+        Vector<int>^ m_linkset;   
+        Vector<RectList^>^ m_text_list;
+        int m_rectlist_page;
         mudocument^ mu_doc; 
         bool m_file_open;
         int  m_currpage;
@@ -88,8 +92,8 @@ namespace mupdf_cpp
         bool m_page_update;
         long long m_memory_use;
         WriteableBitmap ^m_BlankBmp;
-        SolidColorBrush^ m_textcolor_brush; 
-        SolidColorBrush^ m_linkcolor_brush; 
+        String^ m_textcolor; 
+        String^ m_linkcolor; 
         FlipView^ m_curr_flipView;
         RenderingStatus_t m_ren_status;
         cancellation_token_source m_ThumbCancel;
@@ -134,7 +138,6 @@ namespace mupdf_cpp
         void Canvas_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
         bool CheckRect(Rectangle^ curr_rect, Point pt);
         int JumpToLink(int index);
-        void ClearLinksCanvas();
         void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void FlattenOutline(fz_outline *outline, int level);
         void ListView_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);

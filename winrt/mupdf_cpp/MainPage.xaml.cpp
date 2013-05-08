@@ -74,24 +74,14 @@ extern "C" {
 MainPage::MainPage()
 {
 	InitializeComponent();
-
-    Windows::UI::Color color;
-    color.R = 0x00;
-    color.G = 0x00;
-    color.B = 0xFF;
-    color.A = 0x40;
-    m_textcolor_brush = ref new SolidColorBrush(color);
-
-    color.R = 0xAC;
-    color.G = 0x72;
-    color.B = 0x25;
-    color.A = 0x40;
-    m_linkcolor_brush = ref new SolidColorBrush(color);
-
-    // Create the image brush
+    m_textcolor="#2572AC40";
+    m_linkcolor="#AC722540";
     mu_doc = nullptr;
     m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
     m_thumbnails = ref new Platform::Collections::Vector<DocumentPage^>();
+    m_page_link_list = ref new Platform::Collections::Vector<IVector<RectList^>^>();
+    m_text_list = ref new Platform::Collections::Vector<RectList^>();
+    m_linkset = ref new Platform::Collections::Vector<int>();
     CleanUp();
     RecordMainThread();
 }
@@ -214,10 +204,8 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 
     /* We do not want flipview change notification to occur for ourselves */
     m_page_update = true;
-    //this->m_docPages->BindableSetAt(page_num, doc_page);
     this->m_docPages->SetAt(page_num, doc_page);
     m_page_update = false;
-
 }
 
 Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
@@ -379,6 +367,13 @@ void mupdf_cpp::MainPage::CleanUp()
         m_docPages->Clear();
     if (m_thumbnails != nullptr && m_thumbnails->Size > 0)
         m_thumbnails->Clear();
+    /* With the ref counting this should not leak */
+    if (m_page_link_list != nullptr && m_page_link_list->Size > 0)
+        m_page_link_list->Clear();
+    if (m_text_list != nullptr && m_text_list->Size > 0)
+        m_text_list->Clear();    
+    if (m_linkset != nullptr && m_linkset->Size > 0)
+        m_linkset->Clear();
 
     if (this->mu_doc != nullptr) 
         mu_doc->CleanUp();
@@ -403,6 +398,7 @@ void mupdf_cpp::MainPage::CleanUp()
     ResetSearch();
     m_ren_status = REN_AVAILABLE;
     m_links_on = false;
+    m_rectlist_page = -1;
 
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
@@ -443,6 +439,8 @@ void mupdf_cpp::MainPage::RenderThumbs()
                 doc_page->Height = ras_size.Y / SCALE_THUMB;
                 doc_page->Width = ras_size.X / SCALE_THUMB;
                 doc_page->Content = THUMBNAIL;
+                doc_page->TextBox = nullptr;
+                doc_page->LinkBox = nullptr;
                 if (this->m_ren_status == REN_THUMBS) {
                     m_thumbnails->Append(doc_page);
                     /* Flipview object get overwhelmed unless I do this */
@@ -559,12 +557,20 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
          /* Initialize all the flipvew items with blanks */
         for (int k = 0; k < m_num_pages; k++) 
         {
+            /* Blank pages */
             DocumentPage^ doc_page = ref new DocumentPage();
             doc_page->Image = this->m_BlankBmp;
             doc_page->Height = BLANK_HEIGHT;
             doc_page->Width = BLANK_WIDTH;
             doc_page->Content = DUMMY;
+            doc_page->TextBox = nullptr;
+            doc_page->LinkBox = nullptr;
             this->m_docPages->Append(doc_page);
+            /* Create empty lists for our links and specify that they have not
+               been computed for these pages */
+            Vector<RectList^>^ temp_link = ref new Vector<RectList^>();
+            m_page_link_list->Append(temp_link);
+            m_linkset->Append(false);
         }
 
         this->xaml_horiz_flipView->ItemsSource = m_docPages; 
@@ -1059,20 +1065,6 @@ void mupdf_cpp::MainPage::UpDatePageSizes()
     }
 };
 
-void mupdf_cpp::MainPage::ClearLinksCanvas()
-{
-    Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
-    if (link_canvas != nullptr) 
-    {
-        Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
-        if (Parent_Canvas != nullptr)
-        {
-            Parent_Canvas->Children->RemoveAtEnd();
-            delete link_canvas;
-        }
-    }
-}
-
 /* Link related code */
 void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
@@ -1081,18 +1073,33 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
     if (m_links_on)
         AddLinkCanvas();
     else
-        ClearLinksCanvas();
+    {
+        /* Make sure surrounding render pages lose their links */
+        for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++) 
+        {
+            if (k >= 0 && k < m_num_pages) 
+            {
+                auto doc_page = this->m_docPages->GetAt(k);
+                if (doc_page->Content == FULL_RESOLUTION) 
+                {
+                    doc_page->LinkBox = nullptr;
+                    m_page_update = true;
+                    this->m_docPages->SetAt(m_currpage, doc_page);
+                    m_page_update = false;
+                }
+            }
+        }
+    }
 }
 
+/* Add in the link rects.  If we have not already computed them then do that now */
 void mupdf_cpp::MainPage::AddLinkCanvas()
 {
-    return;
-    /* This is disabled for now until I figure out how to add the canvas 
-       with rects into the data template for the scroll view object */
-    if (m_links_on)
+    /* See if the link object for this page has already been computed */
+    int link_page = m_linkset->GetAt(m_currpage);
+    if (!link_page)
     {
-        ClearLinksCanvas();
-
+        m_linkset->SetAt(m_currpage, true);
         int num_links = mu_doc->ComputeLinks(m_currpage);
         if (num_links == 0) return;
 
@@ -1107,23 +1114,8 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
         pageSize = mu_doc->GetPageSize(m_currpage);
         scale = fitPageToScreen(pageSize, screenSize);
 
-        /* A new canvas */
-        Canvas^ link_canvas = ref new Canvas(); 
-        link_canvas->Name = "linkCanvas";
-
-        /* Get current scrollview item */
-        auto currItem = m_curr_flipView->ItemContainerGenerator->ContainerFromItem(m_curr_flipView->SelectedItem);
-        if (currItem == nullptr)
-        {
-            return;
-        }
-
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(m_currpage);
-        Canvas^ curr_canvas = (Canvas^) flipview_temp->Content;
-
-        link_canvas->Height = curr_canvas->Height;
-        link_canvas->Width = curr_canvas->Width;
-        curr_canvas->Children->Append(link_canvas);
+        /* Create a new RectList collection */
+        auto link_list = ref new Platform::Collections::Vector<RectList^>();
 
         /* Now add the rects */
         for (int k = 0; k < num_links; k++)
@@ -1131,22 +1123,29 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
             auto curr_link = mu_doc->GetLink(k);
             if (curr_link->Type != NOT_SET)
             {
-                Rectangle^ a_rectangle = ref new Rectangle();
-                TranslateTransform ^trans_transform = ref new TranslateTransform();
-
-                a_rectangle->IsTapEnabled = true;
-                a_rectangle->Width = curr_link->LowerRight.X - curr_link->UpperLeft.X;
-                a_rectangle->Height = curr_link->UpperLeft.Y - curr_link->LowerRight.Y;
-                trans_transform->X = curr_link->UpperLeft.X * scale.X;
-                trans_transform->Y = curr_link->UpperLeft.Y *  scale.Y;
-		        a_rectangle->Width *= scale.X;
-		        a_rectangle->Height *= scale.Y;
-                a_rectangle->RenderTransform = trans_transform;
-                a_rectangle->Fill = m_linkcolor_brush;
-                link_canvas->Children->Append(a_rectangle);
+                RectList^ rect_item = ref new RectList();
+                rect_item->Color = m_linkcolor;
+                rect_item->Height = curr_link->LowerRight.Y - curr_link->UpperLeft.Y;
+                rect_item->Width = curr_link->LowerRight.X - curr_link->UpperLeft.X;
+                rect_item->X = curr_link->UpperLeft.X * scale.X;
+                rect_item->Y = curr_link->UpperLeft.Y * scale.Y;
+                rect_item->Width *= scale.X;
+		        rect_item->Height *= scale.Y;
+                rect_item->Type = curr_link->Type;
+                rect_item->Urilink = curr_link->Uri;
+                rect_item->PageNum = curr_link->PageNum;
+                link_list->Append(rect_item);
             }
         }
+        /* Now set it in our list of links */
+        m_page_link_list->SetAt(m_currpage, link_list);
     }
+    /* Go ahead and set our doc item to this in the vertical and horizontal view */
+    auto doc_page = this->m_docPages->GetAt(m_currpage);
+    doc_page->LinkBox = m_page_link_list->GetAt(m_currpage);
+    m_page_update = true;
+    this->m_docPages->SetAt(m_currpage, doc_page);
+    m_page_update = false;
 }
 
 bool mupdf_cpp::MainPage::CheckRect(Rectangle^ curr_rect, Point pt)
@@ -1191,23 +1190,6 @@ void mupdf_cpp::MainPage::Canvas_Single_Tap(Platform::Object^ sender, Windows::U
             }
         }
     }
-}
-
-/* Window string hurdles.... */
-static String^ char_to_String(char *char_in)
-{
-        size_t size = MultiByteToWideChar(CP_UTF8, 0, char_in, -1, NULL, 0);
-        wchar_t *pw;
-        pw = new wchar_t[size];
-        if (!pw)
-        {
-            delete []pw;
-            return nullptr;
-        }
-        MultiByteToWideChar (CP_UTF8, 0, char_in, -1, pw, size );
-        String^ str_out = ref new String(pw);
-        delete []pw;
-        return str_out;
 }
 
 int mupdf_cpp::MainPage::JumpToLink(int index)
