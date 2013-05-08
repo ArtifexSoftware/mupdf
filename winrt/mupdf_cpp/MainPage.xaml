@@ -104,7 +104,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                <Rectangle Name="{Binding Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>
@@ -127,7 +127,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsTapEnabled="True" Tapped="LinkTapped">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>
@@ -179,7 +179,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsTapEnabled="True" Tapped="LinkTapped">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>

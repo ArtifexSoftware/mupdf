@@ -21,8 +21,27 @@ namespace mupdf_cpp
         int type;
         int pagenum;
         Windows::Foundation::Uri ^uri;
+        String^ index; // For identify which rectangle was tapped 
     public:
         RectList(void);
+
+        property String^ Index
+        {
+            String^ get() { return ((String^) index); }
+            void set(String^ value)
+            {
+                index = value;
+            }
+        }
+
+        property String^ Color
+        {
+            String^ get() { return (color); }
+            void set(String^ value)
+            {
+                color = value;
+            }
+        }
 
         property int Height
         {
@@ -34,15 +53,6 @@ namespace mupdf_cpp
                     throw ref new Platform::InvalidArgumentException(); 
                 }
                 height = value;
-            }
-        }
-
-        property String^ Color
-        {
-            String^ get() { return (color); }
-            void set(String^ value)
-            {
-                color = value;
             }
         }
 
