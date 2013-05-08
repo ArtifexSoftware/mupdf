@@ -63,6 +63,7 @@
 
         <Grid x:Name="xaml_MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="GridSizeChanged">
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" ManipulationMode="All" >
+                <!-- Horizontal flip view -->
                 <FlipView x:Name="xaml_horiz_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
                           HorizontalAlignment="Center">
                     <FlipView.ItemsPanel>
@@ -70,7 +71,6 @@
                             <VirtualizingStackPanel Orientation="Horizontal"/>
                         </ItemsPanelTemplate>
                     </FlipView.ItemsPanel>
-
                     <FlipView.ItemTemplate>
                         <DataTemplate>
                             <ScrollViewer
@@ -84,13 +84,64 @@
                             VerticalScrollBarVisibility="Auto"
                             MinZoomFactor="1"            
                             MaxZoomFactor="4">
-                                <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
-                                Stretch="Uniform" HorizontalAlignment="Center" Margin="0"/>
+                                <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="{Binding Height}" Width="{Binding Width}">
+                                   <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
+                                Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"/>
+                                    <!-- After much work, figured out how to have a binding for the rectangles.  TextBox and LinkBox are
+                                         a collection that is in the other main collection used for the scroll viewer.  It works
+                                         nicely and cleanly once you figure out how to set up all the templates and the bindings -->
+                                <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                                                <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                    <Rectangle.RenderTransform>
+                                                        <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                                    </Rectangle.RenderTransform>
+                                                </Rectangle>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl ItemsSource="{Binding Path=LinkBox}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                                                <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                    <Rectangle.RenderTransform>
+                                                        <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                                    </Rectangle.RenderTransform>
+                                                </Rectangle>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                </Canvas>
                             </ScrollViewer>
                         </DataTemplate>
                     </FlipView.ItemTemplate>
                 </FlipView>
-
+                <!-- Vertical flip view -->
                 <FlipView x:Name="xaml_vert_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
                           HorizontalAlignment="Center" IsEnabled="False" Opacity="0">
                     <FlipView.ItemsPanel>
@@ -111,13 +162,59 @@
                             VerticalScrollBarVisibility="Auto"
                             MinZoomFactor="1"            
                             MaxZoomFactor="4">
-                            <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
-                                Stretch="Uniform" HorizontalAlignment="Center" Margin="0"/>
-                        </ScrollViewer>
+                                <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="{Binding Height}" Width="{Binding Width}">
+                                    <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
+                                Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"/>
+                                    <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                                                <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                    <Rectangle.RenderTransform>
+                                                        <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                                    </Rectangle.RenderTransform>
+                                                </Rectangle>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <ItemsControl ItemsSource="{Binding Path=LinkBox}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                                                <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                    <Rectangle.RenderTransform>
+                                                        <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                                    </Rectangle.RenderTransform>
+                                                </Rectangle>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Canvas>
+                            </ScrollViewer>
                     </DataTemplate>
                     </FlipView.ItemTemplate>
                 </FlipView>
-
             </Canvas>
             <ListView x:Name="xaml_ListView" Foreground="Black" HorizontalAlignment="Stretch" 
                       VerticalAlignment="Stretch" Opacity="0" IsItemClickEnabled="True" 

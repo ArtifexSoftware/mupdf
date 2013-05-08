@@ -30,9 +30,29 @@ namespace mupdf_cpp
         double zoom;
         WriteableBitmap^ image;
         Page_Content_t content;
-
+        IVector<RectList^>^ textbox;
+        IVector<RectList^>^ linkbox;
     public:
         DocumentPage(void);
+
+        /* Note IVector needed for WinRT interface */
+        property IVector<RectList^>^ TextBox
+        {
+            IVector<RectList^>^ get() { return (textbox); }
+            void set(IVector<RectList^>^ value)
+            {
+                textbox = value;
+            }
+        }
+
+        property IVector<RectList^>^ LinkBox
+        {
+            IVector<RectList^>^ get() { return (linkbox); }
+            void set(IVector<RectList^>^ value)
+            {
+                linkbox = value;
+            }
+        }
 
         property int Content
         {
