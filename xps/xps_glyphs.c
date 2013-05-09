@@ -573,7 +573,7 @@ xps_parse_glyphs(xps_document *doc, const fz_matrix *ctm,
 			fz_atof(origin_x_att), fz_atof(origin_y_att),
 			is_sideways, bidi_level, indices_att, unicode_att);
 
-	fz_bound_text(doc->ctx, text, &local_ctm, &area);
+	fz_bound_text(doc->ctx, text, NULL, &local_ctm, &area);
 
 	if (navigate_uri_att)
 		xps_add_link(doc, &area, base_uri, navigate_uri_att);

@@ -1202,8 +1202,8 @@ void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transfor
 
 fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
-fz_rect *fz_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
-fz_rect *fz_adjust_rect_for_stroke(fz_rect *r, fz_stroke_state *stroke, const fz_matrix *ctm);
+fz_rect *fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
+fz_rect *fz_adjust_rect_for_stroke(fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);
 
 fz_stroke_state *fz_new_stroke_state(fz_context *ctx);
 fz_stroke_state *fz_new_stroke_state_with_len(fz_context *ctx, int len);
@@ -1304,7 +1304,7 @@ struct fz_text_s
 fz_text *fz_new_text(fz_context *ctx, fz_font *face, const fz_matrix *trm, int wmode);
 void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y);
 void fz_free_text(fz_context *ctx, fz_text *text);
-fz_rect *fz_bound_text(fz_context *ctx, fz_text *text, const fz_matrix *ctm, fz_rect *r);
+fz_rect *fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
 void fz_print_text(fz_context *ctx, FILE *out, fz_text*);
 

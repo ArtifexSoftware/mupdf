@@ -26,7 +26,7 @@ fz_bbox_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 {
 	fz_rect *result = dev->user;
 	fz_rect r;
-	fz_union_rect(result, fz_bound_text(dev->ctx, text, ctm, &r));
+	fz_union_rect(result, fz_bound_text(dev->ctx, text, NULL, ctm, &r));
 }
 
 static void
@@ -35,7 +35,7 @@ fz_bbox_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 {
 	fz_rect *result = dev->user;
 	fz_rect r;
-	fz_union_rect(result, fz_bound_text(dev->ctx, text, ctm, &r));
+	fz_union_rect(result, fz_bound_text(dev->ctx, text, stroke, ctm, &r));
 }
 
 static void

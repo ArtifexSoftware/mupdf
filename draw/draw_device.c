@@ -678,7 +678,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 		/* make the mask the exact size needed */
 		fz_rect rect;
 
-		fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
+		fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, NULL, ctm, &rect));
 		fz_intersect_irect(&bbox, &state->scissor);
 	}
 	else
@@ -810,7 +810,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 	fz_rect rect;
 
 	/* make the mask the exact size needed */
-	fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, ctm, &rect));
+	fz_irect_from_rect(&bbox, fz_bound_text(dev->ctx, text, stroke, ctm, &rect));
 	fz_intersect_irect(&bbox, &state->scissor);
 
 	fz_try(ctx)
