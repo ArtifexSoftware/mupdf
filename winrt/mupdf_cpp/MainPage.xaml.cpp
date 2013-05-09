@@ -442,8 +442,8 @@ void mupdf_cpp::MainPage::RenderThumbs()
                 doc_page->TextBox = nullptr;
                 doc_page->LinkBox = nullptr;
                 if (this->m_ren_status == REN_THUMBS) {
-                    m_thumbnails->Append(doc_page);
-                    /* Flipview object get overwhelmed unless I do this */
+                    m_thumbnails->SetAt(k, doc_page);  /* This avoids out of order returns from task */
+                    /* Flipview object gets overwhelmed unless I do this */
                     if ((k < THUMB_PREADD))
                         SetThumb(k, false);
                 }
@@ -554,18 +554,19 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
             m_currpage = 0;
         }
 
-         /* Initialize all the flipvew items with blanks */
+         /* Initialize all the flipvew items with blanks and the thumbnails. */
         for (int k = 0; k < m_num_pages; k++) 
         {
             /* Blank pages */
             DocumentPage^ doc_page = ref new DocumentPage();
-            doc_page->Image = this->m_BlankBmp;
+            doc_page->Image = m_BlankBmp;
             doc_page->Height = BLANK_HEIGHT;
             doc_page->Width = BLANK_WIDTH;
             doc_page->Content = DUMMY;
             doc_page->TextBox = nullptr;
             doc_page->LinkBox = nullptr;
-            this->m_docPages->Append(doc_page);
+            m_docPages->Append(doc_page);
+            m_thumbnails->Append(doc_page);
             /* Create empty lists for our links and specify that they have not
                been computed for these pages */
             Vector<RectList^>^ temp_link = ref new Vector<RectList^>();
@@ -621,6 +622,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 {
     /* Render +/- the look ahead from where we are if blank page is present */
     spatial_info_t spatial_info = InitSpatial(1);
+    bool curr_page_rendered = true;
 
     assert(IsMainThread());
     for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
@@ -636,26 +638,26 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
                     create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
 
                 render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
-                {
-                    /* Set up the image brush when rendering is completed, must be on
-                        UI thread */
+                { 
                     UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
-                }, task_continuation_context::use_current());
+                }, task_continuation_context::use_current()).then([this, k, curr_page]()
+                {
+                    if (k == curr_page && this->m_links_on)
+                        AddLinkCanvas();
+                },task_continuation_context::use_current());
+            }
+            else 
+            {
+                /* We did not need to render the curr_page, so add links below if
+                   needed.   Otherwise, we need to wait for the task above to 
+                   complete before we add the links. */
+                if (k == curr_page)
+                    curr_page_rendered = false;
             }
         }
     } 
-    Canvas^ link_canvas = (Canvas^) (this->FindName("linkCanvas"));
-    if (link_canvas != nullptr)
-    {
-        Canvas^ Parent_Canvas = (Canvas^) link_canvas->Parent;
-        if (Parent_Canvas != nullptr)
-        {
-            Parent_Canvas->Children->RemoveAtEnd();
-            delete link_canvas;
-        }
-    }
     m_currpage = curr_page;
-    if (this->m_links_on) 
+    if (this->m_links_on && !curr_page_rendered) 
         AddLinkCanvas();
 }
 
@@ -919,6 +921,10 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
     {
         my_bar->Value = start;
     }  */
+    if (start < 0)
+        return;
+    if (start > this->m_num_pages - 1)
+        return;
     this->m_search_active = true;
 
     /* Do task lambdas here to avoid UI blocking issues */
@@ -1121,10 +1127,16 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
     }
     /* Go ahead and set our doc item to this in the vertical and horizontal view */
     auto doc_page = this->m_docPages->GetAt(m_currpage);
-    doc_page->LinkBox = m_page_link_list->GetAt(m_currpage);
-    m_page_update = true;
-    this->m_docPages->SetAt(m_currpage, doc_page);
-    m_page_update = false;
+    if (doc_page->LinkBox == nullptr)
+    {
+        if (doc_page->Content == FULL_RESOLUTION)  // We should not be doing links for thumbnails
+        {
+            doc_page->LinkBox = m_page_link_list->GetAt(m_currpage);
+            m_page_update = true;
+            this->m_docPages->SetAt(m_currpage, doc_page);
+            m_page_update = false;
+        }
+    }
 }
 
 /* A link was tapped */
@@ -1269,10 +1281,22 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
     VisualStateManager::GoToState(Help, viewState, true); 
 }
 
-void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
+void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, 
+                                        Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
 {
+    ScrollViewer^ scrollviewer = safe_cast<ScrollViewer^> (sender);
+    auto doc_page = this->m_docPages->GetAt(m_currpage);
 
- int zz = 1;
+    if (scrollviewer->ZoomFactor == doc_page->Zoom)
+        return;
+
+    if (!e->IsIntermediate)
+    {
+        doc_page->Zoom = scrollviewer->ZoomFactor;
+        /* Render at new resolution */
+
+
+    }
 }
 
 
