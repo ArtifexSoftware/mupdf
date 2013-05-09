@@ -1786,6 +1786,64 @@ fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 typedef struct fz_font_s fz_font;
 
 /*
+	Generic output streams - generalise between outputting to a file,
+	a buffer, etc.
+*/
+typedef struct fz_output_s fz_output;
+
+struct fz_output_s
+{
+	fz_context *ctx;
+	void *opaque;
+	int (*printf)(fz_output *, const char *, va_list ap);
+	int (*write)(fz_output *, const void *, int n);
+	void (*close)(fz_output *);
+};
+
+/*
+	fz_new_output_with_file: Open an output stream onto a FILE *.
+
+	The stream does NOT take ownership of the FILE *.
+*/
+fz_output *fz_new_output_with_file(fz_context *, FILE *);
+
+/*
+	fz_new_output_with_buffer: Open an output stream onto a buffer.
+
+	The stream does NOT take ownership of the buffer.
+*/
+fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
+
+/*
+	fz_printf: fprintf equivalent for output streams.
+*/
+int fz_printf(fz_output *, const char *, ...);
+
+/*
+	fz_write: fwrite equivalent for output streams.
+*/
+int fz_write(fz_output *out, const void *data, int len);
+
+/*
+	Output a pixmap to an output stream as a png.
+*/
+void fz_output_png(fz_context *ctx, const fz_pixmap *pixmap, fz_output *out, int savealpha);
+
+/*
+	Get an image as a png in a buffer.
+*/
+fz_buffer *fz_image_as_png(fz_context *ctx, fz_image *image, int w, int h);
+
+/*
+	fz_close_output: Close a previously opened fz_output stream.
+
+	Note: whether or not this closes the underlying output method is
+	method dependent. FILE * streams created by fz_new_output_with_file
+	are NOT closed.
+*/
+void fz_close_output(fz_output *);
+
+/*
 	The different format handlers (pdf, xps etc) interpret pages to a
 	device. These devices can then process the stream of calls they
 	recieve in various ways:
@@ -2098,59 +2156,6 @@ fz_text_page *fz_new_text_page(fz_context *ctx, const fz_rect *mediabox);
 void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
 void fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
-
-/*
-	Generic output streams - generalise between outputting to a file,
-	a buffer, etc.
-*/
-typedef struct fz_output_s fz_output;
-
-struct fz_output_s
-{
-	fz_context *ctx;
-	void *opaque;
-	int (*printf)(fz_output *, const char *, va_list ap);
-	int (*write)(fz_output *, const void *, int n);
-	void (*close)(fz_output *);
-};
-
-/*
-	fz_new_output_with_file: Open an output stream onto a FILE *.
-
-	The stream does NOT take ownership of the FILE *.
-*/
-fz_output *fz_new_output_with_file(fz_context *, FILE *);
-
-/*
-	fz_new_output_with_buffer: Open an output stream onto a buffer.
-
-	The stream doesn NOT take ownership of the buffer.
-*/
-fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
-
-/*
-	fz_printf: fprintf equivalent for output streams.
-*/
-int fz_printf(fz_output *, const char *, ...);
-
-/*
-	fz_write: fwrite equivalent for output streams.
-*/
-int fz_write(fz_output *out, const void *data, int len);
-
-/*
-	Output a pixmap to an output stream as a png.
-*/
-void fz_output_pixmap_to_png(fz_context *ctx, fz_pixmap *pixmap, fz_output *out, int savealpha);
-
-/*
-	fz_close_output: Close a previously opened fz_output stream.
-
-	Note: whether or not this closes the underlying output method is
-	method dependent. FILE * streams created by fz_new_output_with_file
-	are NOT closed.
-*/
-void fz_close_output(fz_output *);
 
 /*
 	fz_print_text_sheet: Output a text sheet to a file as CSS.

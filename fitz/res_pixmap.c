@@ -574,7 +574,7 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	fz_try(ctx)
 	{
-		fz_output_pixmap_to_png(ctx, pixmap, fz_new_output_with_file(ctx, fp), savealpha);
+		fz_output_png(ctx, pixmap, fz_new_output_with_file(ctx, fp), savealpha);
 	}
 	fz_always(ctx)
 	{
@@ -587,7 +587,7 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 }
 
 void
-fz_output_pixmap_to_png(fz_context *ctx, fz_pixmap *pixmap, fz_output *out, int savealpha)
+fz_output_png(fz_context *ctx, const fz_pixmap *pixmap, fz_output *out, int savealpha)
 {
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	unsigned char head[13];
@@ -674,6 +674,42 @@ fz_output_pixmap_to_png(fz_context *ctx, fz_pixmap *pixmap, fz_output *out, int 
 
 	fz_free(ctx, udata);
 	fz_free(ctx, cdata);
+}
+
+fz_buffer *
+fz_image_as_png(fz_context *ctx, fz_image *image, int w, int h)
+{
+	fz_pixmap *pix = fz_image_get_pixmap(ctx, image, image->w, image->h);
+	fz_buffer *buf = NULL;
+	fz_output *out;
+
+	fz_var(buf);
+	fz_var(out);
+
+	fz_try(ctx)
+	{
+		if (pix->colorspace != fz_device_gray || pix->colorspace != fz_device_rgb)
+		{
+			fz_pixmap *pix2 = fz_new_pixmap(ctx, fz_device_rgb, pix->w, pix->h);
+			fz_convert_pixmap(ctx, pix2, pix);
+			fz_drop_pixmap(ctx, pix);
+			pix = pix2;
+		}
+		buf = fz_new_buffer(ctx, 1024);
+		out = fz_new_output_with_buffer(ctx, buf);
+		fz_output_png(ctx, pix, out, 0);
+	}
+	fz_always(ctx)
+	{
+		fz_close_output(out);
+		fz_drop_pixmap(ctx, pix);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
+	return buf;
 }
 
 unsigned int
