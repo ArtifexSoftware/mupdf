@@ -90,7 +90,7 @@
                                     <!-- After much work, figured out how to have a binding for the rectangles.  TextBox and LinkBox are
                                          a collection that is in the other main collection used for the scroll viewer.  It works
                                          nicely and cleanly once you figure out how to set up all the templates and the bindings -->
-                                <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                                    <ItemsControl ItemsSource="{Binding Path=TextBox}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <Canvas/>
@@ -104,7 +104,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Name="{Binding Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>

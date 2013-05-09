@@ -194,6 +194,7 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
     return num_items;
 }
 
+/* Returns the kth item for a page after a text search query */
 Links^ mudocument::GetTextSearch(int k)
 {
    if (k >= this->textsearch->Size)

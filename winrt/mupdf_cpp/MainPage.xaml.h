@@ -135,7 +135,6 @@ namespace mupdf_cpp
         void ReleasePages(int old_page, int new_page);
         void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void AddLinkCanvas();
-        int JumpToLink(int index);
         void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void FlattenOutline(fz_outline *outline, int level);
         void ListView_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);

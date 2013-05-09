@@ -74,8 +74,8 @@ extern "C" {
 MainPage::MainPage()
 {
 	InitializeComponent();
-    m_textcolor="#2572AC40";
-    m_linkcolor="#AC722540";
+    m_textcolor="#402572AC";
+    m_linkcolor="#40AC7225";
     mu_doc = nullptr;
     m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
     m_thumbnails = ref new Platform::Collections::Vector<DocumentPage^>();
@@ -670,6 +670,10 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
     }
     if (m_init_done && this->xaml_PageSlider->IsEnabled) 
     {
+        /* Make sure to clear any text search */
+        auto doc_old = this->m_docPages->GetAt(m_currpage);
+        doc_old->TextBox = nullptr;
+
         auto doc = this->m_docPages->GetAt(newValue);
         if (doc->Content != FULL_RESOLUTION) 
         {
@@ -716,7 +720,9 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
             }
             else
             {
-                ResetSearch();
+                 /* Make sure to clear any text search */
+                auto doc_old = this->m_docPages->GetAt(m_currpage);
+                doc_old->TextBox = nullptr;
             }
             /* Get the current page */
             int curr_page = this->m_currpage;
@@ -773,83 +779,57 @@ void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
     int height, width;
     int old_page = this->m_currpage;
     int new_page = result.page_num;
-    spatial_info_t spatial_info = InitSpatial(1);
+
+    /* Clear out any old search result */
+    if (m_text_list != nullptr && m_text_list->Size > 0)
+        m_text_list->Clear();
+
+    /* Compute any scalings */
+    Point screenSize;
+    Point pageSize;
+    Point scale;
+
+    screenSize.Y = this->ActualHeight;
+    screenSize.X = this->ActualWidth;
+    screenSize.X *= screenScale;
+    screenSize.Y *= screenScale;
+    pageSize = mu_doc->GetPageSize(m_currpage);
+    scale = fitPageToScreen(pageSize, screenSize);
+
+    /* Construct our list of rectangles */
+    for (int k = 0; k < result.box_count; k++)
+    {
+        RectList^ rect_item = ref new RectList();
+        auto curr_box = mu_doc->GetTextSearch(k);
+
+        rect_item->Color = m_textcolor;
+        rect_item->Height = curr_box->LowerRight.Y - curr_box->UpperLeft.Y;
+        rect_item->Width = curr_box->LowerRight.X - curr_box->UpperLeft.X;
+        rect_item->X = curr_box->UpperLeft.X * scale.X;
+        rect_item->Y = curr_box->UpperLeft.Y * scale.Y;
+        rect_item->Width *= scale.X;
+		rect_item->Height *= scale.Y;
+        rect_item->Index = k.ToString();
+        m_text_list->Append(rect_item);
+    }
+    /* Make sure the current page has its text results cleared */
+    auto doc_page = this->m_docPages->GetAt(old_page);
+    doc_page->TextBox = nullptr;
+    m_page_update = true;
+    this->m_docPages->SetAt(old_page, doc_page);
+    m_page_update = false;
+
+    /* Now get the upcoming page */
+    auto doc_page_new = this->m_docPages->GetAt(new_page);
+    doc_page_new->TextBox = m_text_list;
+    m_page_update = true;
+    this->m_docPages->SetAt(new_page, doc_page_new);
+    m_page_update = false;
+
+    /* Go ahead and set our doc item to this in the vertical and horizontal view */
+    m_searchpage = new_page;
+    this->m_curr_flipView->SelectedIndex = new_page;
     return;
-
-    /* This will be fixed and turned on when I determine how best to show the
-       canvas and bind to the xmal content */
-#if 0
-    this->m_ren_status = REN_PAGE;
-    task<Canvas^> the_task = RenderPage_Task(m_doc, new_page, &width, &height, 
-                                         spatial_info, &m_renderedImage);
-    the_task.then([this, old_page, new_page](task<Canvas^> the_task)
-    {
-        assert(IsMainThread());
-
-        try
-        {
-           this->m_renderedCanvas = the_task.get();
-        } 
-        catch (const task_canceled& e)
-        {
-            this->m_renderedCanvas = nullptr;
-        }
-        ReplacePage(new_page);
-        this->m_ren_status = REN_AVAILABLE;
-        this->ReleasePages(old_page, new_page);
-    }, task_continuation_context::use_current()).then([this, result]() 
-    
-    {
-        /* Once the rendering is done launch this task to show the result */
-        Point screenSize;
-        Point pageSize;
-        Point scale;
-
-        if (this->m_links_on) 
-        {
-            fz_drop_link(ctx, this->m_links);
-            AddLinkCanvas();
-        }
-	    fz_page *page = fz_load_page(m_doc, result.page_num);
-        FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(result.page_num);
-        Canvas^ results_Canvas = (Canvas^) (flipview_temp->Content);
-
-        m_searchpage = result.page_num;
-
-        screenSize.Y = this->ActualHeight;
-        screenSize.X = this->ActualWidth;
-
-	    screenSize.X *= screenScale;
-	    screenSize.Y *= screenScale;
-    
-        pageSize = measurePage(m_doc, page);
-	    scale = fitPageToScreen(pageSize, screenSize);
-
-        /* Now add the rects */
-        for (int k = 0; k < result.box_count && k < MAX_SEARCH; k++) 
-        {
-            /* Create a new ref counted Rectangle */
-            Rectangle^ a_rectangle = ref new Rectangle();
-            TranslateTransform ^trans_transform = ref new TranslateTransform();
-            a_rectangle->Width = hit_bbox[k].x1 - hit_bbox[k].x0;
-            a_rectangle->Height = hit_bbox[k].y1 - hit_bbox[k].y0;
-            trans_transform->X = hit_bbox[k].x0 * scale.X;
-            trans_transform->Y = hit_bbox[k].y0 *  scale.Y;
-		    a_rectangle->Width *= scale.X;
-		    a_rectangle->Height *= scale.Y;
-            a_rectangle->RenderTransform = trans_transform;
-            a_rectangle->Fill = m_textcolor_brush;
-            results_Canvas->Children->Append(a_rectangle);
-            m_search_rect_count += 1;
-        }
-        if (result.box_count > 0)
-        {
-            m_flip_from_searchlink = true;
-            this->m_curr_flipView->SelectedIndex = result.page_num;
-            m_currpage = result.page_num;
-        }
-    }, task_continuation_context::use_current());
-#endif
 }
 
 void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)

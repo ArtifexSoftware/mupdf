@@ -320,7 +320,7 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
             text_search->upper_left.X = mu_hit_bbox[k].x0;
             text_search->upper_left.Y = mu_hit_bbox[k].y0;
             text_search->lower_right.X = mu_hit_bbox[k].x1;
-            text_search->lower_right.Y = mu_hit_bbox[k].x1;
+            text_search->lower_right.Y = mu_hit_bbox[k].y1;
             texts_vec->push_back(text_search);
         }
     }
