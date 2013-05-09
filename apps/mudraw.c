@@ -12,7 +12,7 @@
 
 enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
-enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM };
+enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG };
 
 typedef struct
 {
@@ -28,6 +28,7 @@ static const suffix_t suffix_table[] =
 	{ ".pnm", OUT_PNM },
 	{ ".pam", OUT_PAM },
 	{ ".pbm", OUT_PBM },
+	{ ".svg", OUT_SVG },
 };
 
 /*
@@ -423,7 +424,53 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (showmd5 || showtime)
 		printf("page %s %d", filename, pagenum);
 
-	if (output || showmd5 || showtime)
+	if (output && output_format == OUT_SVG)
+	{
+		float zoom;
+		fz_matrix ctm;
+		fz_rect bounds, tbounds;
+		char buf[512];
+		FILE *file;
+		fz_output *out;
+
+		sprintf(buf, output, pagenum);
+		file = fopen(buf, "wb");
+		if (file == NULL)
+			fz_throw(ctx, "cannot open file '%s': %s", buf, strerror(errno));
+		out = fz_new_output_with_file(ctx, file);
+
+		fz_bound_page(doc, page, &bounds);
+		zoom = resolution / 72;
+		fz_pre_rotate(fz_scale(&ctm, zoom, zoom), rotation);
+		tbounds = bounds;
+		fz_transform_rect(&tbounds, &ctm);
+
+		fz_try(ctx)
+		{
+			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0);
+			if (list)
+				fz_run_display_list(list, dev, &ctm, &tbounds, &cookie);
+			else
+				fz_run_page(doc, page, dev, &ctm, &cookie);
+			fz_free_device(dev);
+			dev = NULL;
+		}
+		fz_always(ctx)
+		{
+			fz_free_device(dev);
+			dev = NULL;
+			fz_close_output(out);
+			fclose(file);
+		}
+		fz_catch(ctx)
+		{
+			fz_free_display_list(ctx, list);
+			fz_free_page(doc, page);
+			fz_rethrow(ctx);
+		}
+	}
+
+	if ((output && output_format != OUT_SVG)|| showmd5 || showtime)
 	{
 		float zoom;
 		fz_matrix ctm;

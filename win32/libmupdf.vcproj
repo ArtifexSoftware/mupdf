@@ -437,6 +437,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fitz\dev_svg.c"
+				>
+			</File>
+			<File
 				RelativePath="..\fitz\dev_trace.c"
 				>
 			</File>

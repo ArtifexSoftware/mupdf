@@ -1901,6 +1901,8 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 */
 fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_irect *clip);
 
+fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height);
+
 /*
 	fz_enable_device_hints : Enable hints in a device.
 
