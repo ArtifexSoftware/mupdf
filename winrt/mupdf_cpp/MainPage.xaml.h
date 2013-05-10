@@ -103,6 +103,7 @@ namespace mupdf_cpp
         bool m_sliderchange;
         bool m_update_flip;
 
+        void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size);
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void OpenDocumentPrep(StorageFile^ file);
@@ -120,7 +121,6 @@ namespace mupdf_cpp
         void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
         void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-        void ResetSearch(void);  
         void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchInDirection(int dir, String^ textToFind);    
         void ShowSearchResults(SearchResult_t result);

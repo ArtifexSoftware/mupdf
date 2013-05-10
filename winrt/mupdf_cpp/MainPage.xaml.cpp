@@ -208,6 +208,22 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
     m_page_update = false;
 }
 
+/* Set the page with the new raster information but only the image data */
+void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, 
+                            Point ras_size)
+{
+    assert(IsMainThread());
+
+    WriteableBitmap ^bmp = ref new WriteableBitmap(ras_size.X, ras_size.Y);
+    bmp->SetSource(ras);
+
+    DocumentPage^ doc_page = this->m_docPages->GetAt(page_num);
+    doc_page->Image = bmp;
+
+    doc_page->Height = ras_size.Y;
+    doc_page->Width = ras_size.X;
+}
+
 Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
 {
     Point screenSize;
@@ -395,7 +411,6 @@ void mupdf_cpp::MainPage::CleanUp()
     m_flip_from_searchlink = false;
     m_num_pages = -1;
     m_search_rect_count = 0;
-    ResetSearch();
     m_ren_status = REN_AVAILABLE;
     m_links_on = false;
     m_rectlist_page = -1;
@@ -590,8 +605,6 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
                 render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
                 {
-                    /* Set up the image brush when rendering is completed, must be on
-                       UI thread */
                     UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
                 }, task_continuation_context::use_current());
             }
@@ -704,7 +717,6 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
                 this->m_currpage = newValue;
                 m_sliderchange = true;
                 this->m_curr_flipView->SelectedIndex = newValue;
-                ResetSearch(); 
             }, task_continuation_context::use_current());
         }
     }
@@ -810,6 +822,7 @@ void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
     screenSize.Y *= screenScale;
     pageSize = mu_doc->GetPageSize(m_currpage);
     scale = fitPageToScreen(pageSize, screenSize);
+    auto doc_page = this->m_docPages->GetAt(old_page);
 
     /* Construct our list of rectangles */
     for (int k = 0; k < result.box_count; k++)
@@ -822,17 +835,13 @@ void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
         rect_item->Width = curr_box->LowerRight.X - curr_box->UpperLeft.X;
         rect_item->X = curr_box->UpperLeft.X * scale.X;
         rect_item->Y = curr_box->UpperLeft.Y * scale.Y;
-        rect_item->Width *= scale.X;
-		rect_item->Height *= scale.Y;
+        rect_item->Width *= (scale.X * doc_page->Zoom);
+		rect_item->Height *= (scale.Y * doc_page->Zoom);
         rect_item->Index = k.ToString();
         m_text_list->Append(rect_item);
     }
     /* Make sure the current page has its text results cleared */
-    auto doc_page = this->m_docPages->GetAt(old_page);
     doc_page->TextBox = nullptr;
-    m_page_update = true;
-    this->m_docPages->SetAt(old_page, doc_page);
-    m_page_update = false;
 
     /* Go ahead and set our doc item to this in the vertical and horizontal view */
     m_searchpage = new_page;
@@ -874,29 +883,6 @@ void mupdf_cpp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xa
    m_searchcts.cancel();
 }
 
-void mupdf_cpp::MainPage::ResetSearch(void)
-{
-	m_searchpage = -1;
-#if 0
-    wchar_t buf[20];
-    String^ TempString = ref new String(buf);
-
-    /*  Remove all the rects */
-    for (int k = 0; k < this->m_search_rect_count; k++)
-    {
-        unsigned int index;
-        int len = swprintf_s(buf, 20, L"%s_%d", L"Rect",k);
-        Rectangle^ curr_rect = (Rectangle^) (m_curr_flipView->FindName(TempString));
-        if (curr_rect != nullptr)
-        {
-            Canvas^ results_Canvas = (Canvas^) curr_rect->Parent;
-            results_Canvas->Children->IndexOf(curr_rect, &index);
-            results_Canvas->Children->RemoveAt(index);
-        }
-    }
-#endif
-}
-
 void mupdf_cpp::MainPage::AddTextCanvas()
 {
     /* Go ahead and set our doc item to this in the vertical and horizontal view */
@@ -905,9 +891,6 @@ void mupdf_cpp::MainPage::AddTextCanvas()
     if (doc_page->Content == FULL_RESOLUTION)  // We should not be doing links for thumbnails
     {
         doc_page->TextBox = m_text_list;
-        m_page_update = true;
-        this->m_docPages->SetAt(m_currpage, doc_page);
-        m_page_update = false;
     }
     this->m_search_active = false;
 }
@@ -1095,9 +1078,6 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
                 if (doc_page->Content == FULL_RESOLUTION) 
                 {
                     doc_page->LinkBox = nullptr;
-                    m_page_update = true;
-                    this->m_docPages->SetAt(m_currpage, doc_page);
-                    m_page_update = false;
                 }
             }
         }
@@ -1109,6 +1089,8 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
 {
     /* See if the link object for this page has already been computed */
     int link_page = m_linkset->GetAt(m_currpage);
+    auto doc_page = this->m_docPages->GetAt(m_currpage);
+
     if (!link_page)
     {
         m_linkset->SetAt(m_currpage, true);
@@ -1141,8 +1123,8 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
                 rect_item->Width = curr_link->LowerRight.X - curr_link->UpperLeft.X;
                 rect_item->X = curr_link->UpperLeft.X * scale.X;
                 rect_item->Y = curr_link->UpperLeft.Y * scale.Y;
-                rect_item->Width *= scale.X;
-		        rect_item->Height *= scale.Y;
+                rect_item->Width *= (scale.X * doc_page->Zoom);
+		        rect_item->Height *= (scale.Y * doc_page->Zoom);
                 rect_item->Type = curr_link->Type;
                 rect_item->Urilink = curr_link->Uri;
                 rect_item->PageNum = curr_link->PageNum;
@@ -1154,13 +1136,11 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
         m_page_link_list->SetAt(m_currpage, link_list);
     }
     /* Go ahead and set our doc item to this in the vertical and horizontal view */
-    auto doc_page = this->m_docPages->GetAt(m_currpage);
     if (doc_page->LinkBox == nullptr)
     {
         if (doc_page->Content == FULL_RESOLUTION)  // We should not be doing links for thumbnails
         {
             doc_page->LinkBox = m_page_link_list->GetAt(m_currpage);
-            this->m_docPages->SetAt(m_currpage, doc_page);
         }
     }
 }
@@ -1319,8 +1299,17 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
     if (!e->IsIntermediate)
     {
         doc_page->Zoom = scrollviewer->ZoomFactor;
+        int page = m_currpage;
         /* Render at new resolution */
+        spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
+        Point ras_size = ComputePageSize(spatial_info, page);
 
+        auto render_task = 
+            create_task(mu_doc->RenderPage(page, ras_size.X, ras_size.Y));
 
+        render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
+        {
+            ReplaceImage(page, ras, ras_size);
+        }, task_continuation_context::use_current());
     }
 }
