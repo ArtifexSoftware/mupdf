@@ -124,6 +124,8 @@ namespace mupdf_cpp
         void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchInDirection(int dir, String^ textToFind);    
         void ShowSearchResults(SearchResult_t result);
+        void ClearTextSearch();
+        void AddTextCanvas();
         void GridSizeChanged();
         void UpDatePageSizes();
         void ShowThumbnail();

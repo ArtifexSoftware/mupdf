@@ -370,7 +370,7 @@ void mupdf_cpp::MainPage::CleanUp()
     /* With the ref counting this should not leak */
     if (m_page_link_list != nullptr && m_page_link_list->Size > 0)
         m_page_link_list->Clear();
-    if (m_text_list != nullptr && m_text_list->Size > 0)
+    if (m_text_list->Size > 0)
         m_text_list->Clear();    
     if (m_linkset != nullptr && m_linkset->Size > 0)
         m_linkset->Clear();
@@ -617,14 +617,16 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
     }, task_continuation_context::use_current());
 }
 
-
 void mupdf_cpp::MainPage::RenderRange(int curr_page)
 {
     /* Render +/- the look ahead from where we are if blank page is present */
     spatial_info_t spatial_info = InitSpatial(1);
     bool curr_page_rendered = true;
+    int range = LOOK_AHEAD;
 
     assert(IsMainThread());
+    if (m_flip_from_searchlink)
+        range = 0;
     for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
     {
         if (k >= 0 && k < m_num_pages) 
@@ -644,6 +646,12 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
                 {
                     if (k == curr_page && this->m_links_on)
                         AddLinkCanvas();
+                    if (k == curr_page && this->m_text_list->Size > 0 && 
+                        m_flip_from_searchlink) 
+                    {
+                        AddTextCanvas();
+                        m_flip_from_searchlink = false;
+                    }
                 },task_continuation_context::use_current());
             }
             else 
@@ -659,6 +667,11 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
     m_currpage = curr_page;
     if (this->m_links_on && !curr_page_rendered) 
         AddLinkCanvas();
+    if (this->m_text_list->Size > 0 && !curr_page_rendered && m_flip_from_searchlink)
+    {
+        AddTextCanvas();
+        m_flip_from_searchlink = false;
+    }
 }
 
 void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
@@ -703,19 +716,14 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
     {
         int pos = this->m_curr_flipView->SelectedIndex;
 
-        m_update_flip = true;
-        if (xaml_PageSlider->IsEnabled)
-        {
-            xaml_PageSlider->Value = pos;
-        }
         if (pos >= 0) 
         {
-            if (m_flip_from_searchlink)
+            m_update_flip = true;
+            if (xaml_PageSlider->IsEnabled)
             {
-                m_flip_from_searchlink = false;
-                return;
-            } 
-            else if (m_sliderchange)
+                xaml_PageSlider->Value = pos;
+            }
+            if (m_sliderchange)
             {
                 m_sliderchange = false;
                 return;
@@ -776,15 +784,20 @@ void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::
 	}
 }
 
+void mupdf_cpp::MainPage::ClearTextSearch()
+{
+    /* Clear out any old search result */
+    if (m_text_list->Size > 0)
+        m_text_list->Clear();
+}
+
 void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
 {
     int height, width;
     int old_page = this->m_currpage;
     int new_page = result.page_num;
 
-    /* Clear out any old search result */
-    if (m_text_list != nullptr && m_text_list->Size > 0)
-        m_text_list->Clear();
+    ClearTextSearch();
 
     /* Compute any scalings */
     Point screenSize;
@@ -821,16 +834,18 @@ void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
     this->m_docPages->SetAt(old_page, doc_page);
     m_page_update = false;
 
-    /* Now get the upcoming page */
-    auto doc_page_new = this->m_docPages->GetAt(new_page);
-    doc_page_new->TextBox = m_text_list;
-    m_page_update = true;
-    this->m_docPages->SetAt(new_page, doc_page_new);
-    m_page_update = false;
-
     /* Go ahead and set our doc item to this in the vertical and horizontal view */
     m_searchpage = new_page;
-    this->m_curr_flipView->SelectedIndex = new_page;
+    m_flip_from_searchlink = true;
+
+    if (old_page == new_page)
+    {
+        FlipView_SelectionChanged(nullptr, nullptr);
+    }
+    else
+    {
+        this->m_curr_flipView->SelectedIndex = new_page;
+    }
     return;
 }
 
@@ -880,6 +895,21 @@ void mupdf_cpp::MainPage::ResetSearch(void)
         }
     }
 #endif
+}
+
+void mupdf_cpp::MainPage::AddTextCanvas()
+{
+    /* Go ahead and set our doc item to this in the vertical and horizontal view */
+    auto doc_page = this->m_docPages->GetAt(m_currpage);
+    assert(doc_page->Content == FULL_RESOLUTION);
+    if (doc_page->Content == FULL_RESOLUTION)  // We should not be doing links for thumbnails
+    {
+        doc_page->TextBox = m_text_list;
+        m_page_update = true;
+        this->m_docPages->SetAt(m_currpage, doc_page);
+        m_page_update = false;
+    }
+    this->m_search_active = false;
 }
 
 void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
@@ -958,7 +988,6 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
           //  xaml_Progress->Opacity = 0.0;
             this->ShowSearchResults(the_result);
         }
-        this->m_search_active = false;
     }, task_continuation_context::use_current());
 }
 
@@ -968,7 +997,6 @@ void mupdf_cpp::MainPage::GridSizeChanged()
     int height = this->ActualHeight;
     int width = this->ActualWidth;
     FlipView^ old_flip = m_curr_flipView;
-
 
     if (TopAppBar1->IsOpen)
     {
@@ -1132,9 +1160,7 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
         if (doc_page->Content == FULL_RESOLUTION)  // We should not be doing links for thumbnails
         {
             doc_page->LinkBox = m_page_link_list->GetAt(m_currpage);
-            m_page_update = true;
             this->m_docPages->SetAt(m_currpage, doc_page);
-            m_page_update = false;
         }
     }
 }
@@ -1298,5 +1324,3 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 
     }
 }
-
-
