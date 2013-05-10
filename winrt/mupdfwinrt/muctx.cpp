@@ -253,7 +253,7 @@ void muctx::FlattenOutline(fz_outline *outline, int level,
 int muctx::GetContents(sh_vector_content contents_vec)
 {
     fz_outline *root = NULL;
-    fz_context *ctx_clone;
+    fz_context *ctx_clone = NULL;
     int has_content = 0;
 
     if (mu_cookie->abort == 1) 
@@ -280,18 +280,20 @@ int muctx::GetContents(sh_vector_content contents_vec)
     }
 	fz_catch(ctx_clone)
 	{
+        fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
+    fz_free_context(ctx_clone);
     return has_content;
 }
 
 int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 {
-    fz_page *page;
-    fz_text_sheet *sheet;
-    fz_device *dev;
-    fz_context *ctx_clone;
-    fz_text_page *text;
+    fz_page *page = NULL;
+    fz_text_sheet *sheet = NULL;
+    fz_device *dev = NULL;
+    fz_context *ctx_clone = NULL;
+    fz_text_page *text = NULL;
     int hit_count = 0;
     int k;
 
@@ -338,20 +340,26 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
         {
             fz_free_text_sheet(ctx_clone, sheet);
         }
+        if (text != NULL)
+        {
+            fz_free_text_page(ctx_clone, text);
+        }
     }
 	fz_catch(ctx_clone)
 	{
-		return E_FAIL;
+        fz_free_context(ctx_clone);
+        return E_FAIL;
 	}
+    fz_free_context(ctx_clone);
     return hit_count;
 }
 
 /* Get the links and pack into a smart pointer structure */
 int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 {
-    fz_page *page;
-    fz_link *links;
-    fz_context *ctx_clone;
+    fz_page *page = NULL;
+    fz_link *links = NULL;
+    fz_context *ctx_clone = NULL;
     int k = 0;
     int num_links = 0;
 
@@ -368,45 +376,45 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
         links = fz_load_links(mu_doc, page);
 
         fz_link *curr_link = links;
-        if (curr_link == NULL)
-            return num_links;
-
-        /* Get our smart pointer structure filled */
-        while (curr_link != NULL)
+        if (curr_link != NULL)
         {
-            fz_rect curr_rect = curr_link->rect;
-            sh_link link(new document_link_t());
-
-            link->upper_left.X = curr_rect.x0;
-            link->upper_left.Y = curr_rect.y0;
-            link->lower_right.X = curr_rect.x1;
-            link->lower_right.Y = curr_rect.y1;
-
-            switch (curr_link->dest.kind)
+            /* Get our smart pointer structure filled */
+            while (curr_link != NULL)
             {
-            case FZ_LINK_GOTO:
+                fz_rect curr_rect = curr_link->rect;
+                sh_link link(new document_link_t());
 
-                link->type = LINK_GOTO;
-                link->page_num = curr_link->dest.ld.gotor.page;
-                break;
+                link->upper_left.X = curr_rect.x0;
+                link->upper_left.Y = curr_rect.y0;
+                link->lower_right.X = curr_rect.x1;
+                link->lower_right.Y = curr_rect.y1;
 
-            case FZ_LINK_URI:
-            {
-                int lenstr = strlen(curr_link->dest.ld.uri.uri);
-                std::unique_ptr<char[]> uri(new char[lenstr + 1]);
-                strcpy_s(uri.get(), lenstr + 1, curr_link->dest.ld.uri.uri);
-                link->uri.swap(uri);
-                link->type = LINK_URI;
-                break;
+                switch (curr_link->dest.kind)
+                {
+                case FZ_LINK_GOTO:
+
+                    link->type = LINK_GOTO;
+                    link->page_num = curr_link->dest.ld.gotor.page;
+                    break;
+
+                case FZ_LINK_URI:
+                {
+                    int lenstr = strlen(curr_link->dest.ld.uri.uri);
+                    std::unique_ptr<char[]> uri(new char[lenstr + 1]);
+                    strcpy_s(uri.get(), lenstr + 1, curr_link->dest.ld.uri.uri);
+                    link->uri.swap(uri);
+                    link->type = LINK_URI;
+                    break;
+                }
+
+                default:
+                    link->type = NOT_SET;
+
+                }
+                links_vec->push_back(link);
+                curr_link = curr_link->next;
+                num_links += 1;
             }
-
-            default:
-                link->type = NOT_SET;
-
-            }
-            links_vec->push_back(link);
-            curr_link = curr_link->next;
-            num_links += 1;
         }
     }
 	fz_always(ctx_clone)
@@ -422,8 +430,10 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	}
 	fz_catch(ctx_clone)
 	{
+        fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
+    fz_free_context(ctx_clone);
     return num_links;
 }
 
@@ -431,12 +441,12 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 HRESULT muctx::RenderPage(int page_num, int width, int height, 
                           unsigned char *bmp_data)
 {
-    fz_device *dev;
-    fz_pixmap *pix;
-    fz_page *page;
+    fz_device *dev = NULL;
+    fz_pixmap *pix = NULL;
+    fz_page *page = NULL;
 	fz_matrix ctm, *pctm = &ctm;
     Point page_size;
-    fz_context *ctx_clone;
+    fz_context *ctx_clone = NULL;
 
     if (mu_cookie->abort == 1) 
         return S_OK;
@@ -478,24 +488,23 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	}
 	fz_catch(ctx_clone)
 	{
+        fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
 
 	fz_free_context(ctx_clone);
-
 	return S_OK;
 }
 
 String^ muctx::GetHTML(int page_num)
 {
-    fz_output *out;
-    fz_rect bounds;
-    fz_device *dev;
-    fz_page *page;
-    fz_text_sheet *sheet;
-    fz_text_page *text;
-    fz_context *ctx_clone;
-    fz_buffer *buf;
+    fz_output *out = NULL;
+    fz_device *dev = NULL;
+    fz_page *page = NULL;
+    fz_text_sheet *sheet = NULL;
+    fz_text_page *text = NULL;
+    fz_context *ctx_clone = NULL;
+    fz_buffer *buf = NULL;
     String^ html;
 
     if (mu_cookie->abort == 1) 
@@ -540,6 +549,7 @@ String^ muctx::GetHTML(int page_num)
     }
 	fz_catch(ctx_clone)
 	{
+        fz_free_context(ctx_clone);
         return nullptr;
     }
 

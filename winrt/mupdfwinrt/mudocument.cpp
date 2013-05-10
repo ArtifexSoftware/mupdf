@@ -191,6 +191,7 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
         new_link->Type = TEXTBOX;
         this->textsearch->Append(new_link);
     }
+    delete []text_char;
     return num_items;
 }
 
