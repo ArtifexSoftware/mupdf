@@ -10,5 +10,8 @@ namespace mupdf_cpp
         this->Width = 0;
         this->Zoom = 1.0;
         this->Content = NOTSET;
+        _isPropertyChangedObserved = false;
     }
 }
+
+

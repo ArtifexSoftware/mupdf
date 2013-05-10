@@ -8,6 +8,7 @@
 using namespace Windows::UI::Xaml::Media::Imaging;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::Foundation::Collections;
+using namespace Windows::UI::Xaml::Data;
 
 typedef enum {
     FULL_RESOLUTION = 0,
@@ -21,8 +22,7 @@ namespace mupdf_cpp
 {
     // enables data binding with this class
     [Windows::UI::Xaml::Data::Bindable] 
-
-    public ref class DocumentPage sealed
+    public ref class DocumentPage sealed : Windows::UI::Xaml::Data::INotifyPropertyChanged
     {
     private:
         int height;
@@ -42,6 +42,7 @@ namespace mupdf_cpp
             void set(IVector<RectList^>^ value)
             {
                 textbox = value;
+                DocumentPage::OnPropertyChanged("TextBox");
             }
         }
 
@@ -51,6 +52,7 @@ namespace mupdf_cpp
             void set(IVector<RectList^>^ value)
             {
                 linkbox = value;
+                DocumentPage::OnPropertyChanged("LinkBox");
             }
         }
 
@@ -112,7 +114,58 @@ namespace mupdf_cpp
             void set(WriteableBitmap^ value)
             {
                 image = value;
+                DocumentPage::OnPropertyChanged("Image");
             }
         }
+
+        private:
+            bool _isPropertyChangedObserved;
+            event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _privatePropertyChanged;
+
+
+        protected:
+            /// <summary>
+            /// Notifies listeners that a property value has changed.
+            /// </summary>
+            /// <param name="propertyName">Name of the property used to notify listeners.</param>
+            void OnPropertyChanged(String^ propertyName)
+            {
+                if (_isPropertyChangedObserved)
+                {
+                    PropertyChanged(this, ref new PropertyChangedEventArgs(propertyName));
+                }
+            }
+
+        public:
+
+            // in c++, it is not neccessary to include definitions of add, remove, and raise.
+            //  these definitions have been made explicitly here so that we can check if the 
+            //  event has listeners before firing the event
+            virtual event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ PropertyChanged
+            {
+                virtual Windows::Foundation::EventRegistrationToken add(Windows::UI::Xaml::Data::PropertyChangedEventHandler^ e)
+                {
+                    _isPropertyChangedObserved = true;
+                    return _privatePropertyChanged += e;
+                }
+                virtual void remove(Windows::Foundation::EventRegistrationToken t)
+                {
+                    _privatePropertyChanged -= t;
+                }
+
+        protected:
+                virtual void raise(Object^ sender, Windows::UI::Xaml::Data::PropertyChangedEventArgs^ e)
+                {
+                    if (_isPropertyChangedObserved)
+                    {
+                        _privatePropertyChanged(sender, e);
+                    }
+                }
+            }
+#pragma endregion
+
+
+
+
     };
 }
