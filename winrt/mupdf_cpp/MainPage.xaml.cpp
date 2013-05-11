@@ -7,7 +7,7 @@
 #include "MainPage.xaml.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
-#define THUMB_PREADD 30
+#define THUMB_PREADD 10
 #define MIN_SCALE 0.5
 #define MAX_SCALE 4
 #define MARGIN_BUFF 400
@@ -243,24 +243,13 @@ Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
     return pageSize;
 }
 
-Point MainPage::currPageSize(int page)
-{
-	Point Size;
-
-    FlipViewItem ^flipview_temp = (FlipViewItem^) m_curr_flipView->Items->GetAt(page);
-
-    Size.Y = flipview_temp->ActualHeight;
-    Size.X = flipview_temp->ActualWidth;
-    return Size;
-}
-
 static Point fitPageToScreen(Point page, Point screen)
 {
     Point pageSize;
 
 	float hscale = screen.X / page.X;
 	float vscale = screen.Y / page.Y;
-	float scale = fz_min(hscale, vscale);
+	float scale = min(hscale, vscale);
     pageSize.X = floorf(page.X * scale) / page.X;
 	pageSize.Y = floorf(page.Y * scale) / page.Y;
 	return pageSize;
@@ -755,7 +744,6 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 }
 
 /* Search Related Code */
-
 void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     /* Update the app bar so that we can do the search */
@@ -805,7 +793,6 @@ void mupdf_cpp::MainPage::ClearTextSearch()
 
 void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
 {
-    int height, width;
     int old_page = this->m_currpage;
     int new_page = result.page_num;
 
@@ -912,28 +899,11 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 	else
 		start = pos;
 
- /*   ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
+    /* ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
     my_xaml_Progress->Value = start;
     my_xaml_Progress->IsEnabled = true;
     my_xaml_Progress->Opacity = 1.0; */
 
- /*   ProgressBar^ my_bar = (ProgressBar^) (xaml_MainGrid->FindName("search_progress"));
-
-    if (my_bar == nullptr)
-    {
-        my_bar = ref new ProgressBar();
-        my_bar->Name = "search_progress";
-        my_bar->Maximum = this->m_num_pages;
-        my_bar->Value = start;
-        my_bar->IsIndeterminate = false;
-        my_bar->Height = 10; 
-        my_bar->Width = 400;
-        xaml_MainGrid->Children->Append(my_bar);
-    }
-    else
-    {
-        my_bar->Value = start;
-    }  */
     if (start < 0)
         return;
     if (start > this->m_num_pages - 1)
@@ -948,8 +918,9 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
             result.box_count = this->mu_doc->ComputeTextSearch(textToFind, i);
             result.page_num = i;
 
-            //my_xaml_Progress->Value = i;
-			if (result.box_count > 0) 
+           // my_xaml_Progress->Value = i;
+
+            if (result.box_count > 0) 
             {
                 return result;
 			}
@@ -966,9 +937,6 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
         SearchResult_t the_result = the_task.get();
         if (the_result.box_count > 0) 
         {
-          //  ProgressBar^ xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
-         //   xaml_Progress->IsEnabled = false;
-          //  xaml_Progress->Opacity = 0.0;
             this->ShowSearchResults(the_result);
         }
     }, task_continuation_context::use_current());
