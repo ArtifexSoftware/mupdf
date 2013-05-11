@@ -115,7 +115,6 @@ namespace mupdf_cpp
         void HandleFileNotFoundException(Platform::COMException^ e); 
         void NotifyUserFileNotExist();
         void SetFlipView();
-        Point currPageSize(int page);
         void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
         void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);

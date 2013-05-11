@@ -19,10 +19,6 @@ typedef unsigned __int64 uint64_t;
 #include <inttypes.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct fz_warn_context_s
 {
 	char message[256];
@@ -1628,9 +1624,5 @@ struct fz_document_s
 	fz_annot *(*next_annot)(fz_document *doc, fz_annot *annot);
 	fz_rect *(*bound_annot)(fz_document *doc, fz_annot *annot, fz_rect *rect);
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
