@@ -526,9 +526,9 @@ String^ muctx::GetHTML(int page_num)
 	    fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
         fz_free_device(dev);
         dev = NULL;
-        fz_text_analysis(ctx_clone, sheet, text);
+        fz_analyze_text(ctx_clone, sheet, text);
         buf = fz_new_buffer(ctx_clone, 256);
-        out = fz_new_output_buffer(ctx_clone, buf);
+        out = fz_new_output_with_buffer(ctx_clone, buf);
         fz_print_text_page_html(ctx_clone, out, text);
         html = char_to_String((char*) buf->data);
     }
