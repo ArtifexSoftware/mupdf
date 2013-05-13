@@ -2848,3 +2848,30 @@ void pdf_choice_widget_set_value(pdf_document *doc, fz_widget *tw, int n, char *
 		fz_rethrow(ctx);
 	}
 }
+
+int pdf_signature_widget_byte_range(pdf_document *doc, fz_widget *widget, int (*byte_range)[2])
+{
+	pdf_annot *annot = (pdf_annot *)widget;
+	pdf_obj *br = pdf_dict_getp(annot->obj, "V/ByteRange");
+	int i, n = pdf_array_len(br)/2;
+
+	if (byte_range)
+	{
+		for (i = 0; i < n; i++)
+		{
+			byte_range[i][0] = pdf_to_int(pdf_array_get(br, 2*i));
+			byte_range[i][1] = pdf_to_int(pdf_array_get(br, 2*i+1));
+		}
+	}
+
+	return n;
+}
+
+int pdf_signature_widget_contents(pdf_document *doc, fz_widget *widget, char **contents)
+{
+	pdf_annot *annot = (pdf_annot *)widget;
+	pdf_obj *c = pdf_dict_getp(annot->obj, "V/Contents");
+	if (contents)
+		*contents = pdf_to_str_buf(c);
+	return pdf_to_str_len(c);
+}

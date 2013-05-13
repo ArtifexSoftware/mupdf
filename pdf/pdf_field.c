@@ -50,6 +50,8 @@ int pdf_field_type(pdf_document *doc, pdf_obj *obj)
 		else
 			return FZ_WIDGET_TYPE_LISTBOX;
 	}
+	else if (!strcmp(type, "Sig"))
+		return FZ_WIDGET_TYPE_SIGNATURE;
 	else
 		return FZ_WIDGET_TYPE_NOT_WIDGET;
 }

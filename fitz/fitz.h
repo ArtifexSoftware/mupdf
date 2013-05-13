@@ -3032,7 +3032,8 @@ enum
 	FZ_WIDGET_TYPE_RADIOBUTTON,
 	FZ_WIDGET_TYPE_TEXT,
 	FZ_WIDGET_TYPE_LISTBOX,
-	FZ_WIDGET_TYPE_COMBOBOX
+	FZ_WIDGET_TYPE_COMBOBOX,
+	FZ_WIDGET_TYPE_SIGNATURE
 };
 
 /* Types of text widget content */
@@ -3225,6 +3226,16 @@ int fz_choice_widget_value(fz_interactive *idoc, fz_widget *tw, char *opts[]);
 	array of their names
 */
 void fz_choice_widget_set_value(fz_interactive *idoc, fz_widget *tw, int n, char *opts[]);
+
+/*
+	fz_signature_widget_byte_range: retrieve the byte range for a signature widget
+*/
+int fz_signature_widget_byte_range(fz_interactive *idoc, fz_widget *widget, int (*byte_range)[2]);
+
+/*
+	fz_signature_widget_contents: retrieve the contents for a signature widget
+*/
+int fz_signature_widget_contents(fz_interactive *idoc, fz_widget *widget, char **contents);
 
 /*
 	Document events: the objects via which MuPDF informs the calling app

@@ -587,6 +587,8 @@ int pdf_choice_widget_options(pdf_document *doc, fz_widget *tw, char *opts[]);
 int pdf_choice_widget_is_multiselect(pdf_document *doc, fz_widget *tw);
 int pdf_choice_widget_value(pdf_document *doc, fz_widget *tw, char *opts[]);
 void pdf_choice_widget_set_value(pdf_document *doc, fz_widget *tw, int n, char *opts[]);
+int pdf_signature_widget_byte_range(pdf_document *doc, fz_widget *widget, int (*byte_range)[2]);
+int pdf_signature_widget_contents(pdf_document *doc, fz_widget *widget, char **contents);
 pdf_annot *pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type);
 void pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot);
 void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list);
