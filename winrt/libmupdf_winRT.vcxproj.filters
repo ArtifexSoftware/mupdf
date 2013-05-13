@@ -16,6 +16,12 @@
     <Filter Include="xps">
       <UniqueIdentifier>{be1af520-39c9-4c25-938e-4c90e486c89c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ucdn">
+      <UniqueIdentifier>{3e7ffbf1-2975-4b19-96d3-ed2e168c870e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="image">
+      <UniqueIdentifier>{726654cd-aa58-4ed2-90df-7e02c3615031}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cbz\mucbz.c">
@@ -102,9 +108,6 @@
     <ClCompile Include="..\fitz\dev_null.c">
       <Filter>fitz</Filter>
     </ClCompile>
-    <ClCompile Include="..\fitz\dev_text.c">
-      <Filter>fitz</Filter>
-    </ClCompile>
     <ClCompile Include="..\fitz\dev_trace.c">
       <Filter>fitz</Filter>
     </ClCompile>
@@ -118,9 +121,6 @@
       <Filter>fitz</Filter>
     </ClCompile>
     <ClCompile Include="..\fitz\doc_outline.c">
-      <Filter>fitz</Filter>
-    </ClCompile>
-    <ClCompile Include="..\fitz\doc_search.c">
       <Filter>fitz</Filter>
     </ClCompile>
     <ClCompile Include="..\fitz\filt_basic.c">
@@ -348,6 +348,27 @@
     <ClCompile Include="..\fitz\res_func.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\fitz\text_extract.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fitz\text_output.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fitz\text_paragraph.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fitz\text_search.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ucdn\ucdn.c">
+      <Filter>ucdn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fitz\res_image.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\image\muimage.c">
+      <Filter>image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\cbz\mucbz.h">
@@ -379,6 +400,9 @@
     </ClInclude>
     <ClInclude Include="..\xps\muxps.h">
       <Filter>xps</Filter>
+    </ClInclude>
+    <ClInclude Include="..\image\muimage.h">
+      <Filter>image</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

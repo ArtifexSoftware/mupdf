@@ -67,13 +67,11 @@
     <ClCompile Include="..\fitz\dev_bbox.c" />
     <ClCompile Include="..\fitz\dev_list.c" />
     <ClCompile Include="..\fitz\dev_null.c" />
-    <ClCompile Include="..\fitz\dev_text.c" />
     <ClCompile Include="..\fitz\dev_trace.c" />
     <ClCompile Include="..\fitz\doc_document.c" />
     <ClCompile Include="..\fitz\doc_interactive.c" />
     <ClCompile Include="..\fitz\doc_link.c" />
     <ClCompile Include="..\fitz\doc_outline.c" />
-    <ClCompile Include="..\fitz\doc_search.c" />
     <ClCompile Include="..\fitz\filt_basic.c" />
     <ClCompile Include="..\fitz\filt_dctd.c" />
     <ClCompile Include="..\fitz\filt_faxd.c" />
@@ -93,6 +91,7 @@
     <ClCompile Include="..\fitz\res_font.c" />
     <ClCompile Include="..\fitz\res_func.c" />
     <ClCompile Include="..\fitz\res_halftone.c" />
+    <ClCompile Include="..\fitz\res_image.c" />
     <ClCompile Include="..\fitz\res_path.c" />
     <ClCompile Include="..\fitz\res_pixmap.c" />
     <ClCompile Include="..\fitz\res_shade.c" />
@@ -103,6 +102,11 @@
     <ClCompile Include="..\fitz\stm_open.c" />
     <ClCompile Include="..\fitz\stm_output.c" />
     <ClCompile Include="..\fitz\stm_read.c" />
+    <ClCompile Include="..\fitz\text_extract.c" />
+    <ClCompile Include="..\fitz\text_output.c" />
+    <ClCompile Include="..\fitz\text_paragraph.c" />
+    <ClCompile Include="..\fitz\text_search.c" />
+    <ClCompile Include="..\image\muimage.c" />
     <ClCompile Include="..\pdf\pdf_annot.c" />
     <ClCompile Include="..\pdf\pdf_cmap.c" />
     <ClCompile Include="..\pdf\pdf_cmap_load.c" />
@@ -138,6 +142,7 @@
     <ClCompile Include="..\pdf\pdf_xobject.c" />
     <ClCompile Include="..\pdf\pdf_xref.c" />
     <ClCompile Include="..\pdf\pdf_xref_aux.c" />
+    <ClCompile Include="..\ucdn\ucdn.c" />
     <ClCompile Include="..\xps\xps_common.c" />
     <ClCompile Include="..\xps\xps_doc.c" />
     <ClCompile Include="..\xps\xps_glyphs.c" />
@@ -155,6 +160,7 @@
     <ClInclude Include="..\fitz\fitz-internal.h" />
     <ClInclude Include="..\fitz\fitz.h" />
     <ClInclude Include="..\fitz\memento.h" />
+    <ClInclude Include="..\image\muimage.h" />
     <ClInclude Include="..\pdf\data_encodings.h" />
     <ClInclude Include="..\pdf\data_glyphlist.h" />
     <ClInclude Include="..\pdf\mupdf-internal.h" />
@@ -300,7 +306,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
