@@ -69,7 +69,7 @@ typedef struct win_stream_struct_s
 class muctx
 {
 private:
-	CRITICAL_SECTION mu_criticalsec;
+	CRITICAL_SECTION mu_criticalsec[FZ_LOCK_MAX];
 	win_stream_struct win_stream;
 	fz_locks_context mu_locks;
 	fz_context *mu_ctx;

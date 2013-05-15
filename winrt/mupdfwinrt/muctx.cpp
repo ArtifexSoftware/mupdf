@@ -81,12 +81,14 @@ static void win_close_file(fz_context *ctx, void *state)
 /* mutext functions see mupdf readme for details */
 static void lock_mutex(void *user, int lock)
 {
-	EnterCriticalSection((LPCRITICAL_SECTION)user);
+	LPCRITICAL_SECTION locks = (LPCRITICAL_SECTION)user;
+	EnterCriticalSection(&locks[lock]);
 }
 
 static void unlock_mutex(void *user, int lock)
 {
-	LeaveCriticalSection((LPCRITICAL_SECTION)user);
+	LPCRITICAL_SECTION locks = (LPCRITICAL_SECTION)user;
+	LeaveCriticalSection(&locks[lock]);
 }
 
 void muctx::CleanUp(void)
@@ -109,9 +111,12 @@ void muctx::CleanUp(void)
 /* Set up the context, mutex and cookie */
 HRESULT muctx::InitializeContext()
 {
-	/* Get the mutex set up */
-	InitializeCriticalSectionEx(&mu_criticalsec, 0, 0);
-	mu_locks.user = &mu_criticalsec;
+	int i;
+
+	/* Get the mutexes set up */
+	for (i = 0; i < FZ_LOCK_MAX; i++)
+		InitializeCriticalSectionEx(&mu_criticalsec[i], 0, 0);
+	mu_locks.user = &mu_criticalsec[0];
 	mu_locks.lock = lock_mutex;
 	mu_locks.unlock = unlock_mutex;
 
