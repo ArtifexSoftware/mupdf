@@ -17,6 +17,16 @@ mudocument::mudocument()
     this->links = nullptr;
 }
 
+bool mudocument::RequiresPassword()
+{
+    return mu_object.RequiresPassword();
+}
+
+bool mudocument::ApplyPassword(String^ password)
+{
+    return mu_object.ApplyPassword(password);
+}
+
 void mudocument::CleanUp()
 {
     this->mu_object.CleanUp();
@@ -33,7 +43,7 @@ Point mudocument::GetPageSize(int page_num)
     return this->mu_object.MeasurePage(page_num);
 }
 
-Windows::Foundation::IAsyncAction^ mudocument::OpenFile(StorageFile^ file)
+Windows::Foundation::IAsyncAction^ mudocument::OpenFileAsync(StorageFile^ file)
 {
     return create_async([this, file]()
     {
@@ -98,9 +108,58 @@ static void Prepare_bmp(int width, int height, DataWriter ^dw)
     dw->WriteInt32(0);
 }
 
-/* Pack the page into a bmp stream so that we can use it with an image brush */
+/* Do the search through the pages with an async task with progress callback */
+Windows::Foundation::IAsyncOperationWithProgress<int, double>^ 
+    mudocument::SearchDocumentWithProgressAsync(String^ textToFind, int dir, int start_page)
+{
+    return create_async([this, textToFind, dir, start_page](progress_reporter<double> reporter) -> int
+    {
+        int num_pages = this->GetNumPages();
+        double progress;
+        int box_count, result;
+
+        for (int i = start_page; i >= 0 && i < num_pages; i += dir) 
+        {
+            box_count = this->ComputeTextSearch(textToFind, i);
+            result = i;
+            if (dir == SEARCH_FORWARD)
+            {
+                progress = 100.0 * (double) (i + 1) / (double) num_pages;
+            }
+            else
+            {
+                progress = 100.0 * (double) (num_pages - i) / (double) num_pages;
+            }
+            /* We could have it only update with certain percentage changes but
+               we are just looping over the pages here so it is not too bad */
+            reporter.report(progress);
+
+            if (is_task_cancellation_requested())
+            {
+                // Cancel the current task.
+                cancel_current_task();
+            }
+
+            if (box_count > 0) 
+            {
+                return result;
+			}
+            if (is_task_cancellation_requested()) 
+            {
+            }
+        }
+        reporter.report(100.0);
+        /* Todo no matches found alert */
+        if (box_count == 0)
+            return TEXT_NOT_FOUND;
+        else
+            return result;
+    });
+}
+
+/* Pack the page into a bmp stream */
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^ 
-    mudocument::RenderPage(int page_num, int width, int height)
+    mudocument::RenderPageAsync(int page_num, int width, int height)
 {
     return create_async([this, width, height, page_num](cancellation_token ct) -> InMemoryRandomAccessStream^
     {
@@ -193,6 +252,15 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
     }
     delete []text_char;
     return num_items;
+}
+
+/* Return number of hits found on most recent page */
+int mudocument::TextSearchCount(void)
+{
+    if (this->textsearch != nullptr)
+        return this->textsearch->Size;
+    else
+        return 0;
 }
 
 /* Returns the kth item for a page after a text search query */

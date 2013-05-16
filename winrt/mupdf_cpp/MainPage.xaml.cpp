@@ -6,24 +6,21 @@
 #include "pch.h"
 #include "MainPage.xaml.h"
 
-#define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
+#define LOOK_AHEAD 0 /* A +/- count on the pages to pre-render */
 #define THUMB_PREADD 10
 #define MIN_SCALE 0.5
-#define MAX_SCALE 4
-#define MARGIN_BUFF 400
-#define MAX_SEARCH 500
+
 #define SCALE_THUMB 0.1 
 
 #define BLANK_WIDTH 17
 #define BLANK_HEIGHT 22
 
+#define KEY_PLUS 0xbb
+#define KEY_MINUS 0xbd
+
 static float screenScale = 1;
 
-int linkPage[MAX_SEARCH];
-char *linkUrl[MAX_SEARCH];
-
 using namespace mupdf_cpp;
-
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
@@ -403,6 +400,7 @@ void mupdf_cpp::MainPage::CleanUp()
     m_ren_status = REN_AVAILABLE;
     m_links_on = false;
     m_rectlist_page = -1;
+    m_Progress = 0.0;
 
     this->xaml_PageSlider->Minimum = m_slider_min;
     this->xaml_PageSlider->Maximum = m_slider_max;
@@ -431,7 +429,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
             Point ras_size = ComputePageSize(spatial_info_local, k);
             bool done = false;
             DWORD thread1_id = GetCurrentThreadId();
-            auto task2 = create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
+            auto task2 = create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
             task2.then([this, k, thumbnails, ras_size](InMemoryRandomAccessStream^ ras)
             {
@@ -542,13 +540,14 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
     this->SetFlipView();
 
     /* Open document and when open, push on */
-    auto open_task = create_task(mu_doc->OpenFile(file));
+    auto open_task = create_task(mu_doc->OpenFileAsync(file));
 
     open_task.then([this]
     {
         assert(IsMainThread());
 
         m_num_pages = mu_doc->GetNumPages();
+
         if ((m_currpage) >= m_num_pages) 
         {
             m_currpage = m_num_pages - 1;
@@ -557,7 +556,6 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
         {
             m_currpage = 0;
         }
-
          /* Initialize all the flipvew items with blanks and the thumbnails. */
         for (int k = 0; k < m_num_pages; k++) 
         {
@@ -590,7 +588,7 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
                 Point ras_size = ComputePageSize(spatial_info, k);
 
                 auto render_task = 
-                    create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
+                    create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
                 render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
                 {
@@ -639,7 +637,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
             {
                 Point ras_size = ComputePageSize(spatial_info, k);
                 auto render_task = 
-                    create_task(mu_doc->RenderPage(k, ras_size.X, ras_size.Y));
+                    create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
                 render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
                 { 
@@ -697,7 +695,7 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
             spatial_info_t spatial_info = InitSpatial(1);
             Point ras_size = ComputePageSize(spatial_info, newValue);
             auto render_task = 
-                create_task(mu_doc->RenderPage(newValue, ras_size.X, ras_size.Y));
+                create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y));
 
             render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
             {
@@ -791,10 +789,10 @@ void mupdf_cpp::MainPage::ClearTextSearch()
         m_text_list->Clear();
 }
 
-void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
+void mupdf_cpp::MainPage::ShowSearchResults(int page_num, int box_count)
 {
     int old_page = this->m_currpage;
-    int new_page = result.page_num;
+    int new_page = page_num;
 
     ClearTextSearch();
 
@@ -812,7 +810,7 @@ void mupdf_cpp::MainPage::ShowSearchResults(SearchResult_t result)
     auto doc_page = this->m_docPages->GetAt(old_page);
 
     /* Construct our list of rectangles */
-    for (int k = 0; k < result.box_count; k++)
+    for (int k = 0; k < box_count; k++)
     {
         RectList^ rect_item = ref new RectList();
         auto curr_box = mu_doc->GetTextSearch(k);
@@ -868,6 +866,8 @@ void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml
 void mupdf_cpp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
    m_searchcts.cancel();
+   xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+   this->m_search_active = false;
 }
 
 void mupdf_cpp::MainPage::AddTextCanvas()
@@ -882,6 +882,11 @@ void mupdf_cpp::MainPage::AddTextCanvas()
     this->m_search_active = false;
 }
 
+void mupdf_cpp::MainPage::SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status)
+{
+    xaml_Progress->Value = status;
+}
+
 void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 {
     cancellation_token_source cts;
@@ -889,20 +894,11 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
     m_searchcts = cts;
     int pos = m_currpage;
     int start;
-    SearchResult_t result;
-
-    result.box_count = 0;
-    result.page_num = -1;
 
 	if (m_searchpage == pos)
 		start = pos + dir;
 	else
 		start = pos;
-
-    /* ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
-    my_xaml_Progress->Value = start;
-    my_xaml_Progress->IsEnabled = true;
-    my_xaml_Progress->Opacity = 1.0; */
 
     if (start < 0)
         return;
@@ -910,34 +906,31 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
         return;
     this->m_search_active = true;
 
-    /* Do task lambdas here to avoid UI blocking issues */
-    auto search_task = create_task([this, textToFind, dir, start, &result]()->SearchResult_t
-    {
-		for (int i = start; i >= 0 && i < this->m_num_pages; i += dir) 
-        {
-            result.box_count = this->mu_doc->ComputeTextSearch(textToFind, i);
-            result.page_num = i;
+    ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
+    xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Visible;
+    auto temp = mu_doc->SearchDocumentWithProgressAsync(textToFind, dir, start);
+    temp->Progress = ref new AsyncOperationProgressHandler<int, double>(this, &MainPage::SearchProgress);
 
-           // my_xaml_Progress->Value = i;
+    auto search_task = create_task(temp, token);
 
-            if (result.box_count > 0) 
-            {
-                return result;
-			}
-            if (is_task_cancellation_requested()) 
-            {
-            }
-        }
-        /* Todo no matches found alert */
-        return result;
-    }, token);
     /* Do the continuation on the ui thread */
-    search_task.then([this](task<SearchResult_t> the_task)
+    auto con_task = search_task.then([this, textToFind](int page_num)
     {
-        SearchResult_t the_result = the_task.get();
-        if (the_result.box_count > 0) 
+        xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+        if (page_num == TEXT_NOT_FOUND)
         {
-            this->ShowSearchResults(the_result);
+            auto str1 = "\"" + textToFind + "\" Was Not Found In The Search";    
+            NotifyUser(str1, StatusMessage);
+            this->m_search_active = false;
+        }
+        else
+        {
+            int box_count = mu_doc->TextSearchCount();
+
+            if (box_count > 0) 
+            {
+                this->ShowSearchResults(page_num, box_count);
+            }
         }
     }, task_continuation_context::use_current());
 }
@@ -1255,6 +1248,7 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
     VisualStateManager::GoToState(Help, viewState, true); 
 }
 
+/* Manipulation zooming with touch input */
 void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, 
                                         Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
 {
@@ -1273,11 +1267,47 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
         Point ras_size = ComputePageSize(spatial_info, page);
 
         auto render_task = 
-            create_task(mu_doc->RenderPage(page, ras_size.X, ras_size.Y));
+            create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y));
 
         render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
         {
             ReplaceImage(page, ras, ras_size);
         }, task_continuation_context::use_current());
     }
+}
+
+/* Zoom in and out for keyboard only case */
+void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
+{
+    return; /* Waiting until I can get zoom factor in scroll viewer. */
+
+    auto doc_page = this->m_docPages->GetAt(m_currpage);
+    double curr_zoom = doc_page->Zoom;
+ 
+    long val = (long) (e->Key);
+    if (val == KEY_PLUS)
+    {
+        curr_zoom = curr_zoom + 0.25;
+        if (curr_zoom > 4) curr_zoom = 4;
+    } 
+    else if (val == KEY_MINUS)
+    {
+        curr_zoom = curr_zoom - 0.25;
+        if (curr_zoom < 0.25) curr_zoom = 0.25;
+    } else
+        return;
+
+    doc_page->Zoom = curr_zoom;
+    int page = m_currpage;
+    /* Render at new resolution */
+    spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
+    Point ras_size = ComputePageSize(spatial_info, page);
+
+    auto render_task = 
+        create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y));
+
+    render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
+    {
+        ReplaceImage(page, ras, ras_size);
+    }, task_continuation_context::use_current());
 }

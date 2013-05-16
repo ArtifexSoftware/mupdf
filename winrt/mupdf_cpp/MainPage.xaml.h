@@ -44,12 +44,6 @@ typedef enum {
     REN_PAGE            /* Used to ignore value when source based setting */  
 } RenderingStatus_t;
 
-typedef struct SearchResult_s
-{
-    int box_count;
-    int page_num;
-} SearchResult_t;
-
 typedef struct spatial_info_s
 {
     Point size;   
@@ -68,6 +62,7 @@ namespace mupdf_cpp
 
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
+        virtual void OnKeyDown(Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e) override;
 
     /* added */
     private:
@@ -102,6 +97,7 @@ namespace mupdf_cpp
         bool m_search_active;  /* Used to avoid multiple UI clicks */
         bool m_sliderchange;
         bool m_update_flip;
+        double m_Progress;
 
         void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size);
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
@@ -122,7 +118,7 @@ namespace mupdf_cpp
         void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SearchInDirection(int dir, String^ textToFind);    
-        void ShowSearchResults(SearchResult_t result);
+        void ShowSearchResults(int page_num, int box_count);
         void ClearTextSearch();
         void AddTextCanvas();
         void GridSizeChanged();
@@ -151,5 +147,6 @@ namespace mupdf_cpp
         Point ComputePageSize(spatial_info_t spatial_info, int page_num);
         void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
         void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
+        void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
     };
 }

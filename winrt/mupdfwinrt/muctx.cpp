@@ -496,6 +496,18 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	return S_OK;
 }
 
+bool muctx::RequiresPassword(void)
+{
+    return fz_needs_password(mu_doc);   
+}
+
+bool muctx::ApplyPassword(String^ password)
+{
+    /* Need to do String to char here */
+   // return fz_authenticate_password(mu_doc, password) != 0;
+    return 0;
+}
+
 String^ muctx::GetHTML(int page_num)
 {
     fz_output *out = NULL;

@@ -2,7 +2,7 @@
 
 /* This file contains the interface between the muctx class, which 
    implements the mupdf calls and the WinRT objects enabling calling from 
-   C#, C++, Visual Basic, JavaScript applications */
+   C#, C++, and JavaScript applications */
 
 #include "muctx.h"
 #include "Links.h"
@@ -15,6 +15,10 @@ using namespace Windows::Storage;
 using namespace Platform;
 using namespace Concurrency;
 using namespace Platform::Collections;
+
+#define SEARCH_FORWARD 1
+#define SEARCH_BACKWARD -1
+#define TEXT_NOT_FOUND -1
 
 namespace mupdfwinrt
 {
@@ -29,17 +33,22 @@ namespace mupdfwinrt
         public:
             mudocument();
             void CleanUp();
-            Windows::Foundation::IAsyncAction^ OpenFile(StorageFile^ file);
+            Windows::Foundation::IAsyncAction^ OpenFileAsync(StorageFile^ file);
             int GetNumPages(void);
             Point GetPageSize(int page_num);
             Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^  
-                RenderPage(int page_num, int width, int height);
+                RenderPageAsync(int page_num, int width, int height);
+            Windows::Foundation::IAsyncOperationWithProgress<int, double>^ 
+                SearchDocumentWithProgressAsync(String^ textToFind, int dir, int start_page);
             String^ ComputeHTML(int page_num);            
             int ComputeTextSearch(String^ text, int page_num);
             Links^ GetTextSearch(int k);
+            int TextSearchCount(void);
             int ComputeContents(void);
             ContentItem^ GetContent(int k);
             int ComputeLinks(int page_num);
             Links^ GetLink(int k);
+            bool RequiresPassword();
+            bool ApplyPassword(String^ password);
     };
 }
