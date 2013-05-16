@@ -5,7 +5,7 @@ using namespace mupdfwinrt;
 
 ContentItem::ContentItem(void)
 {
-    StringOrig = nullptr;
-    StringMargin = nullptr;
-    Page = 0;
+	StringOrig = nullptr;
+	StringMargin = nullptr;
+	Page = 0;
 }

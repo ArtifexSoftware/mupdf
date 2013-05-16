@@ -18,28 +18,28 @@ using namespace Platform::Collections;
 
 namespace mupdfwinrt
 {
-    public ref class mudocument sealed
-    {
-        private:
-            muctx mu_object;
-            std::mutex mutex_lock; 
-            Platform::Collections::Vector<Links^>^ links;
-            Platform::Collections::Vector<Links^>^ textsearch;
-            Platform::Collections::Vector<ContentItem^>^ contents;
-        public:
-            mudocument();
-            void CleanUp();
-            Windows::Foundation::IAsyncAction^ OpenFile(StorageFile^ file);
-            int GetNumPages(void);
-            Point GetPageSize(int page_num);
-            Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^  
-                RenderPage(int page_num, int width, int height);
-            String^ ComputeHTML(int page_num);            
-            int ComputeTextSearch(String^ text, int page_num);
-            Links^ GetTextSearch(int k);
-            int ComputeContents(void);
-            ContentItem^ GetContent(int k);
-            int ComputeLinks(int page_num);
-            Links^ GetLink(int k);
-    };
+	public ref class mudocument sealed
+	{
+		private:
+			muctx mu_object;
+			std::mutex mutex_lock; 
+			Platform::Collections::Vector<Links^>^ links;
+			Platform::Collections::Vector<Links^>^ textsearch;
+			Platform::Collections::Vector<ContentItem^>^ contents;
+		public:
+			mudocument();
+			void CleanUp();
+			Windows::Foundation::IAsyncAction^ OpenFile(StorageFile^ file);
+			int GetNumPages(void);
+			Point GetPageSize(int page_num);
+			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^  
+				RenderPage(int page_num, int width, int height);
+			String^ ComputeHTML(int page_num);			
+			int ComputeTextSearch(String^ text, int page_num);
+			Links^ GetTextSearch(int k);
+			int ComputeContents(void);
+			ContentItem^ GetContent(int k);
+			int ComputeLinks(int page_num);
+			Links^ GetLink(int k);
+	};
 }

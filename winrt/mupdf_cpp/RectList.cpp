@@ -3,14 +3,7 @@
 
 namespace mupdf_cpp
 {
-    RectList::RectList(void)
-    {
-
-
-
-
-    }
-
+	RectList::RectList(void)
+	{
+	}
 }
-
-
