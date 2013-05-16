@@ -1703,6 +1703,14 @@ void fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int saveal
 void fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 
 /*
+	fz_write_pwg: Save a pixmap as a pwg
+
+	filename: The filename to save as (including extension).
+	append: If non-zero, then append a new page to existing file.
+*/
+void fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append);
+
+/*
 	fz_write_pbm: Save a bitmap as a pbm
 
 	filename: The filename to save as (including extension).
@@ -1827,7 +1835,22 @@ int fz_write(fz_output *out, const void *data, int len);
 /*
 	Output a pixmap to an output stream as a png.
 */
-void fz_output_png(fz_context *ctx, const fz_pixmap *pixmap, fz_output *out, int savealpha);
+void fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha);
+
+/*
+	Output a pixmap to an output stream as a pwg raster.
+*/
+void fz_output_pwg(fz_output *out, const fz_pixmap *pixmap);
+
+/*
+	Output the file header to a pwg stream, ready for pages to follow it.
+*/
+void fz_output_pwg_file_header(fz_output *out);
+
+/*
+	Output a page to a pwg stream to follow a header, or other pages.
+*/
+void fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap);
 
 /*
 	Get an image as a png in a buffer.

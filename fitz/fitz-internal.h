@@ -799,6 +799,26 @@ static inline int fz_is_eof_bits(fz_stream *stm)
 	return fz_is_eof(stm) && (stm->avail == 0 || stm->bits == EOF);
 }
 
+static inline int fz_write_int32be(fz_output *out, int x)
+{
+	char data[4];
+
+	data[0] = x>>24;
+	data[1] = x>>16;
+	data[2] = x>>8;
+	data[3] = x;
+
+	return fz_write(out, data, 4);
+}
+
+static inline void
+fz_write_byte(fz_output *out, int x)
+{
+	char data = x;
+
+	fz_write(out, &data, 1);
+}
+
 /*
  * Data filters.
  */

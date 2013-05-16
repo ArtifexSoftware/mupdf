@@ -12,7 +12,7 @@
 
 enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
-enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG };
+enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG, OUT_PWG };
 
 typedef struct
 {
@@ -29,6 +29,7 @@ static const suffix_t suffix_table[] =
 	{ ".pam", OUT_PAM },
 	{ ".pbm", OUT_PBM },
 	{ ".svg", OUT_SVG },
+	{ ".pwg", OUT_PWG },
 };
 
 /*
@@ -102,6 +103,7 @@ static int fit = 0;
 static int errored = 0;
 static int ignore_errors = 0;
 static int output_format;
+static int append = 0;
 
 static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
@@ -577,6 +579,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_write_pam(ctx, pix, buf, savealpha);
 				else if (output_format == OUT_PNG)
 					fz_write_png(ctx, pix, buf, savealpha);
+				else if (output_format == OUT_PWG)
+				{
+					if (strstr(output, "%d") != NULL)
+						append = 0;
+					fz_write_pwg(ctx, pix, buf, append);
+					append = 1;
+				}
 				else if (output_format == OUT_PBM) {
 					fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 					fz_write_pbm(ctx, bit, buf);
