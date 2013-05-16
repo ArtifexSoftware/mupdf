@@ -13,5 +13,3 @@ namespace mupdf_cpp
 		_isPropertyChangedObserved = false;
 	}
 }
-
-

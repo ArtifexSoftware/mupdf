@@ -72,7 +72,7 @@
                     <FlipView.ItemTemplate>
                         <DataTemplate>
                             <ScrollViewer
-                            ZoomMode="Enabled" 
+                            ZoomMode="Enabled"
                             ViewChanged="ScrollChanged"
                             HorizontalScrollMode="Auto"
                             VerticalScrollMode="Auto"
@@ -80,10 +80,10 @@
                             HorizontalSnapPointsType="None"
                             HorizontalScrollBarVisibility="Auto"
                             VerticalScrollBarVisibility="Auto"
-                            MinZoomFactor="0.25"            
+                            MinZoomFactor="0.25"
                             MaxZoomFactor="4">
                                 <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="{Binding Height}" Width="{Binding Width}">
-                                   <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
+                                   <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}"
                                 Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"/>
                                     <!-- After much work, figured out how to have a binding for the rectangles.  TextBox and LinkBox are
                                          a collection that is in the other main collection used for the scroll viewer.  It works
@@ -150,7 +150,7 @@
                     <FlipView.ItemTemplate>
                         <DataTemplate>
                         <ScrollViewer
-                            ZoomMode="Enabled" 
+                            ZoomMode="Enabled"
                             ViewChanged="ScrollChanged"
                             HorizontalScrollMode="Auto"
                             VerticalScrollMode="Auto"
@@ -158,10 +158,10 @@
                             HorizontalSnapPointsType="None"
                             HorizontalScrollBarVisibility="Auto"
                             VerticalScrollBarVisibility="Auto"
-                            MinZoomFactor="0.25"            
+                            MinZoomFactor="0.25"
                             MaxZoomFactor="4">
                                 <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="{Binding Height}" Width="{Binding Width}">
-                                    <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}" 
+                                    <Image Source="{Binding Image}" Width="{Binding Width}" Height="{Binding Height}"
                                 Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"/>
                                     <ItemsControl ItemsSource="{Binding Path=TextBox}">
                                         <ItemsControl.ItemsPanel>
@@ -214,8 +214,8 @@
                     </FlipView.ItemTemplate>
                 </FlipView>
             </Canvas>
-            <ListView x:Name="xaml_ListView" Foreground="Black" HorizontalAlignment="Stretch" 
-                      VerticalAlignment="Stretch" Opacity="0" IsItemClickEnabled="True" 
+            <ListView x:Name="xaml_ListView" Foreground="Black" HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" Opacity="0" IsItemClickEnabled="True"
                       ItemClick="ContentSelected" SelectionMode="Single" IsEnabled="False">
 
                 <ListView.ItemTemplate>
@@ -232,19 +232,19 @@
             </ListView>
         </Grid>
         <WebView x:Name="xaml_WebView" HorizontalAlignment="Stretch" Width="Auto" Height="Auto"
-                     VerticalAlignment="Stretch" Visibility="Collapsed" 
-                     ScrollViewer.HorizontalScrollBarVisibility="Visible" 
-                     ScrollViewer.VerticalScrollBarVisibility="Visible" 
-                     ScrollViewer.VerticalScrollMode="Enabled" 
-                     ScrollViewer.HorizontalScrollMode="Enabled"                     
+                     VerticalAlignment="Stretch" Visibility="Collapsed"
+                     ScrollViewer.HorizontalScrollBarVisibility="Visible"
+                     ScrollViewer.VerticalScrollBarVisibility="Visible"
+                     ScrollViewer.VerticalScrollMode="Enabled"
+                     ScrollViewer.HorizontalScrollMode="Enabled"
                      ScrollViewer.ZoomMode="Enabled"/>
 
         <StackPanel x:Name="xaml_ProgressStack" Opacity="1" VerticalAlignment="Center" Visibility="Collapsed">
             <Border BorderThickness="5" BorderBrush="Black" Margin="300">
                 <StackPanel Background="LightGray" >
-                    <TextBlock HorizontalAlignment="Center" Margin="10" 
+                    <TextBlock HorizontalAlignment="Center" Margin="10"
         				Text="Text Search Progress" FontSize="20"/>
-                    <ProgressBar x:Name="xaml_Progress" Margin="5" Height="15" 
+                    <ProgressBar x:Name="xaml_Progress" Margin="5" Height="15"
         				IsIndeterminate="False" Maximum="100" VerticalAlignment="Stretch" />
                     <Button HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10" Click="CancelSearch" Height="39">
                         <TextBlock HorizontalAlignment="Center" Text="Cancel"/>
@@ -255,4 +255,3 @@
 
     </Grid>
 </Page>
-

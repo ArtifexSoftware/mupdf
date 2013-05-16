@@ -41,12 +41,12 @@ typedef enum {
 	REN_AVAILABLE = 0,
 	REN_THUMBS,
 	REN_UPDATE_THUMB_CANVAS,
-	REN_PAGE			/* Used to ignore value when source based setting */  
+	REN_PAGE			/* Used to ignore value when source based setting */
 } RenderingStatus_t;
 
 typedef struct spatial_info_s
 {
-	Point size;   
+	Point size;
 	double scale_factor;
 } spatial_info_t;
 
@@ -69,10 +69,10 @@ namespace mupdf_cpp
 		Vector<DocumentPage^>^ m_docPages;
 		Vector<DocumentPage^>^ m_thumbnails;
 		Vector<IVector<RectList^>^>^ m_page_link_list;
-		Vector<int>^ m_linkset;   
+		Vector<int>^ m_linkset;
 		Vector<RectList^>^ m_text_list;
 		int m_rectlist_page;
-		mudocument^ mu_doc; 
+		mudocument^ mu_doc;
 		bool m_file_open;
 		int  m_currpage;
 		int  m_searchpage;
@@ -87,8 +87,8 @@ namespace mupdf_cpp
 		bool m_page_update;
 		long long m_memory_use;
 		WriteableBitmap ^m_BlankBmp;
-		String^ m_textcolor; 
-		String^ m_linkcolor; 
+		String^ m_textcolor;
+		String^ m_linkcolor;
 		FlipView^ m_curr_flipView;
 		RenderingStatus_t m_ren_status;
 		cancellation_token_source m_ThumbCancel;
@@ -108,7 +108,7 @@ namespace mupdf_cpp
 		void CleanUp();
 		void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type);
 		void CreateBlank(int width, int height);
-		void HandleFileNotFoundException(Platform::COMException^ e); 
+		void HandleFileNotFoundException(Platform::COMException^ e);
 		void NotifyUserFileNotExist();
 		void SetFlipView();
 		void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
@@ -117,7 +117,7 @@ namespace mupdf_cpp
 		void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-		void SearchInDirection(int dir, String^ textToFind);	
+		void SearchInDirection(int dir, String^ textToFind);
 		void ShowSearchResults(int page_num, int box_count);
 		void ClearTextSearch();
 		void AddTextCanvas();

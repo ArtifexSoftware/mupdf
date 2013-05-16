@@ -20,7 +20,7 @@ extern "C" {
 using namespace Platform;  /* For String */
 using namespace Windows::Foundation;  /* For Point */
 
-/* These are the std objects used to interface to muctx.  We do use windows 
+/* These are the std objects used to interface to muctx.  We do use windows
    String and Point types however */
 
 /* Links */
@@ -33,7 +33,7 @@ typedef struct document_link_s
 	int page_num;
 } document_link_t;
 #define sh_link std::shared_ptr<document_link_t>
-#define sh_vector_link std::shared_ptr<std::vector<sh_link>> 
+#define sh_vector_link std::shared_ptr<std::vector<sh_link>>
 
 /* Text Search */
 typedef struct text_search_s
@@ -42,7 +42,7 @@ typedef struct text_search_s
 	Point lower_right;
 } text_search_t;
 #define sh_text std::shared_ptr<text_search_t>
-#define sh_vector_text std::shared_ptr<std::vector<sh_text>> 
+#define sh_vector_text std::shared_ptr<std::vector<sh_text>>
 
 /* Content Results */
 typedef struct content_s
@@ -52,10 +52,10 @@ typedef struct content_s
 	String^ string_margin;
 } content_t;
 #define sh_content std::shared_ptr<content_t>
-#define sh_vector_content std::shared_ptr<std::vector<sh_content>> 
+#define sh_vector_content std::shared_ptr<std::vector<sh_content>>
 
 /* Used for HTML return */
-#define sh_vector_char std::shared_ptr<std::vector<char>> 
+#define sh_vector_char std::shared_ptr<std::vector<char>>
 
 /* Needed for file handling */
 using namespace Windows::Storage::Streams;
@@ -78,7 +78,7 @@ private:
 	fz_rect mu_hit_bbox[MAX_SEARCH];
 	fz_cookie *mu_cookie;
 	fz_stream *mu_stream;
-	void FlattenOutline(fz_outline *outline, int level, 
+	void FlattenOutline(fz_outline *outline, int level,
 					   sh_vector_content contents_vec);
 
 public:
@@ -86,7 +86,7 @@ public:
 	~muctx(void);
 	void CleanUp(void);
 	HRESULT InitializeStream(IRandomAccessStream^ readStream, char *ext);
-	int GetPageCount();   
+	int GetPageCount();
 	HRESULT InitializeContext();
 	HRESULT RenderPage(int page_num, int width, int height, unsigned char *bmp_data);
 	Point MeasurePage(int page_num);

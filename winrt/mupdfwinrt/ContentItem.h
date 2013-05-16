@@ -24,7 +24,7 @@ namespace mupdfwinrt {
 			void set(int value)
 		        {
 				if (value < 0)
-					throw ref new Platform::InvalidArgumentException(); 
+					throw ref new Platform::InvalidArgumentException();
 				page = value;
 			}
 		}

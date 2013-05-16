@@ -10,7 +10,7 @@
 #define THUMB_PREADD 10
 #define MIN_SCALE 0.5
 
-#define SCALE_THUMB 0.1 
+#define SCALE_THUMB 0.1
 
 #define BLANK_WIDTH 17
 #define BLANK_HEIGHT 22
@@ -112,8 +112,8 @@ void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 	switch (type)
 	{
 	case StatusMessage:
-		OKCommand = ref new UICommand("OK", 
-			ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::OKInvokedHandler));		
+		OKCommand = ref new UICommand("OK",
+			ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::OKInvokedHandler));
 		msg->Commands->Append(OKCommand);
 		/// Set the command that will be invoked by default
 		msg->DefaultCommandIndex = 0;
@@ -121,7 +121,7 @@ void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 		msg->CancelCommandIndex = 1;
 		break;
 	case ErrorMessage:
-		ExitCommand = ref new UICommand("Exit", 
+		ExitCommand = ref new UICommand("Exit",
 			ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::ExitInvokedHandler));
 		msg->Commands->Append(ExitCommand);
 		/// Set the command that will be invoked by default
@@ -141,7 +141,7 @@ bool mupdf_cpp::MainPage::EnsureUnsnapped()
 	// FilePicker APIs will not work if the application is in a snapped state.
 	// If an app wants to show a FilePicker while snapped, it must attempt to unsnap first
 
-	bool unsnapped = (ApplicationView::Value != ApplicationViewState::Snapped  || 
+	bool unsnapped = (ApplicationView::Value != ApplicationViewState::Snapped  ||
 		ApplicationView::TryUnsnap());
 	if (!unsnapped)
 	{
@@ -162,21 +162,21 @@ void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 	openPicker->FileTypeFilter->Append(".xps");
 	openPicker->FileTypeFilter->Append(".oxps");
 
-	create_task(openPicker->PickSingleFileAsync()).then([this](StorageFile^ file) 
-	{ 
-		if (file) 
-		{ 	
+	create_task(openPicker->PickSingleFileAsync()).then([this](StorageFile^ file)
+	{
+		if (file)
+		{
 			this->OpenDocumentPrep(file);
-		} 
-		else 
-		{ 
+		}
+		else
+		{
 			/* Nothing selected */
-		} 
+		}
 	});
 }
 
 /* Set the page with the new raster information */
-void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, 
+void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 			  Point ras_size, Page_Content_t content_type)
 {
 	assert(IsMainThread());
@@ -206,7 +206,7 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 }
 
 /* Set the page with the new raster information but only the image data */
-void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, 
+void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras,
 				Point ras_size)
 {
 	assert(IsMainThread());
@@ -291,11 +291,11 @@ void Prepare_bmp(int width, int height, DataWriter ^dw)
 void MainPage::ReleasePages(int old_page, int new_page)
 {
 	if (old_page == new_page) return;
-	/* To keep from having memory issue reset the page back to 
+	/* To keep from having memory issue reset the page back to
 		the thumb if we are done rendering the thumbnails */
-	for (int k = old_page - LOOK_AHEAD; k <= old_page + LOOK_AHEAD; k++) 
+	for (int k = old_page - LOOK_AHEAD; k <= old_page + LOOK_AHEAD; k++)
 	{
-		if (k < new_page - LOOK_AHEAD || k > new_page + LOOK_AHEAD) 
+		if (k < new_page - LOOK_AHEAD || k > new_page + LOOK_AHEAD)
 		{
 			if (k >= 0 && k < this->m_num_pages)
 			{
@@ -375,14 +375,14 @@ void mupdf_cpp::MainPage::CleanUp()
 	if (m_page_link_list != nullptr && m_page_link_list->Size > 0)
 		m_page_link_list->Clear();
 	if (m_text_list->Size > 0)
-		m_text_list->Clear();	
+		m_text_list->Clear();
 	if (m_linkset != nullptr && m_linkset->Size > 0)
 		m_linkset->Clear();
 
-	if (this->mu_doc != nullptr) 
+	if (this->mu_doc != nullptr)
 		mu_doc->CleanUp();
 
-	mu_doc = ref new mudocument(); 
+	mu_doc = ref new mudocument();
 	if (mu_doc == nullptr)
 		throw ref new FailureException("Document allocation failed!");
 
@@ -406,7 +406,7 @@ void mupdf_cpp::MainPage::CleanUp()
 
 	this->xaml_PageSlider->Minimum = m_slider_min;
 	this->xaml_PageSlider->Maximum = m_slider_max;
-	this->xaml_PageSlider->IsEnabled = false;  
+	this->xaml_PageSlider->IsEnabled = false;
 }
 
 /* Create the thumbnail images */
@@ -465,20 +465,20 @@ void mupdf_cpp::MainPage::RenderThumbs()
 
 			/* If cancelled then save the last one as the continuation will not
 			   have occured.  */
-			if (is_task_cancellation_requested()) 
+			if (is_task_cancellation_requested())
 			{
 				cancel_current_task();
 			}
 		}
 		return num_pages; /* all done with thumbnails! */
-	}, token).then([this](task<int> the_task) 
+	}, token).then([this](task<int> the_task)
 	{
 		/* Finish adding them, but not if we were cancelled. */
 		bool is_cancelled = false;
 		try
 		{
 		   the_task.get();
-		} 
+		}
 		catch (const task_canceled& e)
 		{
 			is_cancelled = true;
@@ -495,7 +495,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 
 void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
 {
-	if (this->m_num_pages != -1) 
+	if (this->m_num_pages != -1)
 	{
 		m_init_done = false;
 
@@ -521,12 +521,12 @@ void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
 			return 0;
 		}, task_continuation_context::use_current()).then([this, file](task<int> the_task)
 		{
-			OpenDocument(file);	
+			OpenDocument(file);
 		}, task_continuation_context::use_current());
 	}
 	else
 	{
-		OpenDocument(file);	
+		OpenDocument(file);
 	}
 }
 
@@ -539,7 +539,7 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
 	WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,name ,cb ,nullptr, nullptr);
 	char *ext = strrchr(name, '.');
-		
+
 	this->SetFlipView();
 
 	/* Open document and when open, push on */
@@ -551,16 +551,16 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
 		m_num_pages = mu_doc->GetNumPages();
 
-		if ((m_currpage) >= m_num_pages) 
+		if ((m_currpage) >= m_num_pages)
 		{
 			m_currpage = m_num_pages - 1;
-		} 
-		else if (m_currpage < 0) 
+		}
+		else if (m_currpage < 0)
 		{
 			m_currpage = 0;
 		}
 		 /* Initialize all the flipvew items with blanks and the thumbnails. */
-		for (int k = 0; k < m_num_pages; k++) 
+		for (int k = 0; k < m_num_pages; k++)
 		{
 			/* Blank pages */
 			DocumentPage^ doc_page = ref new DocumentPage();
@@ -579,18 +579,18 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 			m_linkset->Append(false);
 		}
 
-		this->xaml_horiz_flipView->ItemsSource = m_docPages; 
+		this->xaml_horiz_flipView->ItemsSource = m_docPages;
 		this->xaml_vert_flipView->ItemsSource = m_docPages;
 
 		/* Do the first few pages, then start the thumbs */
 		spatial_info_t spatial_info = InitSpatial(1);
-		for (int k = 0; k < LOOK_AHEAD + 2; k++) 
+		for (int k = 0; k < LOOK_AHEAD + 2; k++)
 		{
-			if (m_num_pages > k ) 
+			if (m_num_pages > k )
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
 
-				auto render_task = 
+				auto render_task =
 					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
 				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
@@ -600,12 +600,12 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 			}
 		}
 		/* Update the slider settings, if more than one page */
-		if (m_num_pages > 1) 
+		if (m_num_pages > 1)
 		{
 			this->xaml_PageSlider->Maximum = m_num_pages;
 			this->xaml_PageSlider->Minimum = 1;
 			this->xaml_PageSlider->IsEnabled = true;
-		} 
+		}
 		else
 		{
 			this->xaml_PageSlider->Maximum = 0;
@@ -630,45 +630,45 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 	assert(IsMainThread());
 	if (m_flip_from_searchlink)
 		range = 0;
-	for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++) 
+	for (int k = curr_page - LOOK_AHEAD; k <= curr_page + LOOK_AHEAD; k++)
 	{
-		if (k >= 0 && k < m_num_pages) 
+		if (k >= 0 && k < m_num_pages)
 		{
 			/* Check if page is already rendered */
 			auto doc = this->m_docPages->GetAt(k);
-			if (doc->Content != FULL_RESOLUTION) 
+			if (doc->Content != FULL_RESOLUTION)
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
-				auto render_task = 
+				auto render_task =
 					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
 				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
-				{ 
+				{
 					UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
 				}, task_continuation_context::use_current()).then([this, k, curr_page]()
 				{
 					if (k == curr_page && this->m_links_on)
 						AddLinkCanvas();
-					if (k == curr_page && this->m_text_list->Size > 0 && 
-						m_flip_from_searchlink) 
+					if (k == curr_page && this->m_text_list->Size > 0 &&
+						m_flip_from_searchlink)
 					{
 						AddTextCanvas();
 						m_flip_from_searchlink = false;
 					}
 				},task_continuation_context::use_current());
 			}
-			else 
+			else
 			{
 				/* We did not need to render the curr_page, so add links below if
-				   needed.   Otherwise, we need to wait for the task above to 
+				   needed.   Otherwise, we need to wait for the task above to
 				   complete before we add the links. */
 				if (k == curr_page)
 					curr_page_rendered = false;
 			}
 		}
-	} 
+	}
 	m_currpage = curr_page;
-	if (this->m_links_on && !curr_page_rendered) 
+	if (this->m_links_on && !curr_page_rendered)
 		AddLinkCanvas();
 	if (this->m_text_list->Size > 0 && !curr_page_rendered && m_flip_from_searchlink)
 	{
@@ -686,24 +686,24 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 		m_update_flip = false;
 		return;
 	}
-	if (m_init_done && this->xaml_PageSlider->IsEnabled) 
+	if (m_init_done && this->xaml_PageSlider->IsEnabled)
 	{
 		/* Make sure to clear any text search */
 		auto doc_old = this->m_docPages->GetAt(m_currpage);
 		doc_old->TextBox = nullptr;
 
 		auto doc = this->m_docPages->GetAt(newValue);
-		if (doc->Content != FULL_RESOLUTION) 
+		if (doc->Content != FULL_RESOLUTION)
 		{
 			spatial_info_t spatial_info = InitSpatial(1);
 			Point ras_size = ComputePageSize(spatial_info, newValue);
-			auto render_task = 
+			auto render_task =
 				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y));
 
 			render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
 				UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
-				this->m_ren_status = REN_AVAILABLE;  
+				this->m_ren_status = REN_AVAILABLE;
 				this->m_currpage = newValue;
 				m_sliderchange = true;
 				this->m_curr_flipView->SelectedIndex = newValue;
@@ -718,7 +718,7 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 	{
 		int pos = this->m_curr_flipView->SelectedIndex;
 
-		if (pos >= 0) 
+		if (pos >= 0)
 		{
 			m_update_flip = true;
 			if (xaml_PageSlider->IsEnabled)
@@ -759,7 +759,7 @@ void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::
 	}
 	else if (leftPanel != nullptr && !m_insearch)
 	{
-		/* Search is not going to work in snapped view for now to simplify UI 
+		/* Search is not going to work in snapped view for now to simplify UI
 		   in this cramped case.  So see if we can get out of snapped mode. */
 
 		if (!EnsureUnsnapped())
@@ -769,7 +769,7 @@ void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::
 		Windows::UI::Xaml::Controls::Button^ PrevButton = ref new Button();
 		PrevButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("PreviousAppBarButtonStyle"));
 		PrevButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchPrev);
-		
+
 		Windows::UI::Xaml::Controls::Button^ NextButton = ref new Button();
 		NextButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("NextAppBarButtonStyle"));
 		NextButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchNext);
@@ -778,7 +778,7 @@ void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::
 		SearchBox->Name = "findBox";
 		SearchBox->Width = 200;
 		SearchBox->Height = 20;
-		
+
 		leftPanel->Children->Append(SearchBox);
 		leftPanel->Children->Append(PrevButton);
 		leftPanel->Children->Append(NextButton);
@@ -922,7 +922,7 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 		xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 		if (page_num == TEXT_NOT_FOUND)
 		{
-			auto str1 = "\"" + textToFind + "\" Was Not Found In The Search";	
+			auto str1 = "\"" + textToFind + "\" Was Not Found In The Search";
 			NotifyUser(str1, StatusMessage);
 			this->m_search_active = false;
 		}
@@ -984,7 +984,7 @@ void mupdf_cpp::MainPage::GridSizeChanged()
 	{
 		int height = xaml_OutsideGrid->ActualHeight;
 		int height_app = TopAppBar1->ActualHeight;
-  
+
 		xaml_WebView->Height = height - height_app;
 	}
 
@@ -1020,7 +1020,7 @@ void mupdf_cpp::MainPage::UpDatePageSizes()
 				thumb_page->Height = curr_height / min_scale;
 				thumb_page->Width = curr_width / min_scale;
 			}
-		}  
+		}
 	}
 };
 
@@ -1028,18 +1028,18 @@ void mupdf_cpp::MainPage::UpDatePageSizes()
 void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	m_links_on = !m_links_on;
-		
+
 	if (m_links_on)
 		AddLinkCanvas();
 	else
 	{
 		/* Make sure surrounding render pages lose their links */
-		for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++) 
+		for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++)
 		{
-			if (k >= 0 && k < m_num_pages) 
+			if (k >= 0 && k < m_num_pages)
 			{
 				auto doc_page = this->m_docPages->GetAt(k);
-				if (doc_page->Content == FULL_RESOLUTION) 
+				if (doc_page->Content == FULL_RESOLUTION)
 				{
 					doc_page->LinkBox = nullptr;
 				}
@@ -1114,9 +1114,9 @@ void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml
 {
 	Rectangle^ rect = safe_cast<Rectangle^>(e->OriginalSource);
 	String^ str_index = safe_cast<String^>(rect->Tag);
-	int index = _wtof(str_index->Data()); 
-	
-	if (index >= 0 && index < m_num_pages) 
+	int index = _wtof(str_index->Data());
+
+	if (index >= 0 && index < m_num_pages)
 	{
 		auto link_list = m_page_link_list->GetAt(m_currpage);
 		auto link = link_list->GetAt(index);
@@ -1124,7 +1124,7 @@ void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml
 		if (link->Type == LINK_GOTO)
 		{
 			this->m_curr_flipView->SelectedIndex = link->PageNum;
-		} 
+		}
 		else if (link->Type == LINK_URI)
 		{
 			// Set the option to show a warning
@@ -1151,16 +1151,16 @@ void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml
 /* Bring up the contents */
 void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	if (this->m_num_pages < 0) 
+	if (this->m_num_pages < 0)
 		return;
 
-	if (this->xaml_ListView->IsEnabled) 
+	if (this->xaml_ListView->IsEnabled)
 	{
 		this->xaml_ListView->Opacity = 0.0;
 		this->xaml_ListView->IsEnabled = false;
 		this->m_curr_flipView->Opacity = 1.0;
 		this->m_curr_flipView->IsEnabled = true;
-	} 
+	}
 	else
 	{
 		if (xaml_ListView->Items->Size == 0)
@@ -1179,15 +1179,15 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
 				this->m_curr_flipView->Opacity = 0.0;
 				this->m_curr_flipView->IsEnabled = false;
 			}
-		}  
-		else 
+		}
+		else
 		{
 			this->xaml_ListView->Opacity = 1.0;
 			this->xaml_ListView->IsEnabled = true;
 			this->m_curr_flipView->Opacity = 0.0;
 			this->m_curr_flipView->IsEnabled = false;
 		}
-	}  
+	}
 }
 
 void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
@@ -1221,7 +1221,7 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
 		xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 		xaml_WebView->Opacity = 0.0;
 
-	} 
+	}
 	else if (this->m_curr_flipView->IsEnabled)
 	{
 		String^ html_string = mu_doc->ComputeHTML(this->m_currpage);
@@ -1248,11 +1248,11 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
 	VisualStateManager::GoToState(Contents, viewState, true);
 	VisualStateManager::GoToState(Links, viewState, true);
 	VisualStateManager::GoToState(Reflow, viewState, true);
-	VisualStateManager::GoToState(Help, viewState, true); 
+	VisualStateManager::GoToState(Help, viewState, true);
 }
 
 /* Manipulation zooming with touch input */
-void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender, 
+void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 					Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
 {
 	ScrollViewer^ scrollviewer = safe_cast<ScrollViewer^> (sender);
@@ -1269,7 +1269,7 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 		spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
 		Point ras_size = ComputePageSize(spatial_info, page);
 
-		auto render_task = 
+		auto render_task =
 			create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y));
 
 		render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-/* This file contains the interface between the muctx class, which 
-   implements the mupdf calls and the WinRT objects enabling calling from 
+/* This file contains the interface between the muctx class, which
+   implements the mupdf calls and the WinRT objects enabling calling from
    C#, C++, and JavaScript applications */
 
 #include "muctx.h"
@@ -26,7 +26,7 @@ namespace mupdfwinrt
 	{
 		private:
 			muctx mu_object;
-			std::mutex mutex_lock; 
+			std::mutex mutex_lock;
 			Platform::Collections::Vector<Links^>^ links;
 			Platform::Collections::Vector<Links^>^ textsearch;
 			Platform::Collections::Vector<ContentItem^>^ contents;
@@ -36,11 +36,11 @@ namespace mupdfwinrt
 			Windows::Foundation::IAsyncAction^ OpenFileAsync(StorageFile^ file);
 			int GetNumPages(void);
 			Point GetPageSize(int page_num);
-			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^  
+			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 				RenderPageAsync(int page_num, int width, int height);
-			Windows::Foundation::IAsyncOperationWithProgress<int, double>^ 
+			Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 				SearchDocumentWithProgressAsync(String^ textToFind, int dir, int start_page);
-			String^ ComputeHTML(int page_num);			
+			String^ ComputeHTML(int page_num);
 			int ComputeTextSearch(String^ text, int page_num);
 			Links^ GetTextSearch(int k);
 			int TextSearchCount(void);

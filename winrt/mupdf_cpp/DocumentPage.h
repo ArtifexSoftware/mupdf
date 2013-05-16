@@ -3,7 +3,6 @@
 #include "RectList.h"
 #include <collection.h>
 
-
 /* Used for binding to the xaml in the scroll view. */
 using namespace Windows::UI::Xaml::Media::Imaging;
 using namespace Windows::UI::Xaml::Controls;
@@ -17,11 +16,10 @@ typedef enum {
 	NOTSET
 } Page_Content_t;
 
-		
 namespace mupdf_cpp
 {
 	// enables data binding with this class
-	[Windows::UI::Xaml::Data::Bindable] 
+	[Windows::UI::Xaml::Data::Bindable]
 	public ref class DocumentPage sealed : Windows::UI::Xaml::Data::INotifyPropertyChanged
 	{
 	private:
@@ -74,8 +72,8 @@ namespace mupdf_cpp
 			void set(int value)
 			{
 				if (value > NOTSET)
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				content = (Page_Content_t) value;
 			}
@@ -90,9 +88,9 @@ namespace mupdf_cpp
 
 			void set(int value)
 			{
-				if (value < 0) 
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				height = value;
 			}
@@ -107,9 +105,9 @@ namespace mupdf_cpp
 
 			void set(int value)
 			{
-				if (value < 0) 
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				width = value;
 			}
@@ -124,9 +122,9 @@ namespace mupdf_cpp
 
 			void set(double value)
 			{
-				if (value < 0) 
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				zoom = value;
 			}
@@ -149,7 +147,6 @@ namespace mupdf_cpp
 		private:
 			bool _isPropertyChangedObserved;
 			event Windows::UI::Xaml::Data::PropertyChangedEventHandler^ _privatePropertyChanged;
-
 
 		protected:
 			/// <summary>

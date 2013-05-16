@@ -52,10 +52,10 @@ static void win_seek_file(fz_stream *stm, int offset, int whence)
 	unsigned long long length = Stream->Size;
 	unsigned long long n;
 
-	if (whence == SEEK_END) 
+	if (whence == SEEK_END)
 	{
 		n = length + offset;
-	} 
+	}
 	else if (whence == SEEK_CUR)
 	{
 		n = curr_pos + offset;
@@ -63,7 +63,7 @@ static void win_seek_file(fz_stream *stm, int offset, int whence)
 	else if (whence == SEEK_SET)
 	{
 		n = offset;
-	} 
+	}
 	Stream->Seek(n);
 	curr_pos = Stream->Position;
 	stm->pos = n;
@@ -174,7 +174,7 @@ HRESULT muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 	this->mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file);
 	this->mu_stream->seek = win_seek_file;
 	this->mu_stream->state =  reinterpret_cast <void*> (&win_stream);
-					
+
 	/* Now lets see if we can open the file */
 	mu_doc = fz_open_document_with_stream(mu_ctx, ext, this->mu_stream);
 
@@ -223,7 +223,7 @@ Point muctx::MeasurePage(fz_page *page)
 	return pageSize;
 }
 
-void muctx::FlattenOutline(fz_outline *outline, int level, 
+void muctx::FlattenOutline(fz_outline *outline, int level,
 			  sh_vector_content contents_vec)
 {
 	char indent[8*4+1];
@@ -246,7 +246,7 @@ void muctx::FlattenOutline(fz_outline *outline, int level,
 				sh_content content_item(new content_t());
 				content_item->page = page;
 				content_item->string_orig = char_to_String(outline->title);
-				content_item->string_margin = 
+				content_item->string_margin =
 					str_indent->Concat(indent_str, content_item->string_orig);
 				contents_vec->push_back(content_item);
 			}
@@ -262,7 +262,7 @@ int muctx::GetContents(sh_vector_content contents_vec)
 	fz_context *ctx_clone = NULL;
 	int has_content = 0;
 
-	if (mu_cookie->abort == 1) 
+	if (mu_cookie->abort == 1)
 		return has_content;
 
 	ctx_clone = fz_clone_context(mu_ctx);
@@ -303,13 +303,13 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	int hit_count = 0;
 	int k;
 
-	if (mu_cookie->abort == 1) 
+	if (mu_cookie->abort == 1)
 		return hit_count;
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(page);
-	fz_var(sheet);	
+	fz_var(sheet);
 	fz_var(dev);
 	fz_try(ctx_clone)
 	{
@@ -369,7 +369,7 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	int k = 0;
 	int num_links = 0;
 
-	if (mu_cookie->abort == 1) 
+	if (mu_cookie->abort == 1)
 		return num_links;
 
 	ctx_clone = fz_clone_context(mu_ctx);
@@ -444,7 +444,7 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 }
 
 /* Render page_num to size width by height into bmp_data buffer */
-HRESULT muctx::RenderPage(int page_num, int width, int height, 
+HRESULT muctx::RenderPage(int page_num, int width, int height,
 			  unsigned char *bmp_data)
 {
 	fz_device *dev = NULL;
@@ -454,7 +454,7 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	Point page_size;
 	fz_context *ctx_clone = NULL;
 
-	if (mu_cookie->abort == 1) 
+	if (mu_cookie->abort == 1)
 		return S_OK;
 
 	ctx_clone = fz_clone_context(mu_ctx);
@@ -525,7 +525,7 @@ String^ muctx::GetHTML(int page_num)
 	fz_buffer *buf = NULL;
 	String^ html;
 
-	if (mu_cookie->abort == 1) 
+	if (mu_cookie->abort == 1)
 		return nullptr;
 
 	ctx_clone = fz_clone_context(mu_ctx);

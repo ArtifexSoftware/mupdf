@@ -13,7 +13,7 @@ namespace mupdfwinrt
 		Point upper_left;
 		Point lower_right;
 		Windows::Foundation::Uri ^uri;
-		int page_num;	
+		int page_num;
 	public:
 		Links(void);
 
@@ -27,7 +27,7 @@ namespace mupdfwinrt
 			void set(int value)
 			{
 				if (value > NOT_SET)
-					throw ref new Platform::InvalidArgumentException(); 
+					throw ref new Platform::InvalidArgumentException();
 				type = value;
 			}
 		}

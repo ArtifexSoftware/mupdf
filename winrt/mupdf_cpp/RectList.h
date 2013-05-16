@@ -7,7 +7,7 @@ using namespace Platform;  /* For String */
 
 namespace mupdf_cpp
 {
-	[Windows::UI::Xaml::Data::Bindable] // in c++, adding this attribute to ref classes enables data binding for more info search for 'Bindable' on the page http://go.microsoft.com/fwlink/?LinkId=254639 
+	[Windows::UI::Xaml::Data::Bindable] // in c++, adding this attribute to ref classes enables data binding for more info search for 'Bindable' on the page http://go.microsoft.com/fwlink/?LinkId=254639
 
 	public ref class RectList sealed
 	{
@@ -15,13 +15,13 @@ namespace mupdf_cpp
 		int height;
 		int width;
 		int x;
-		int y; 
+		int y;
 		String^ color;
 		/* These are used to store the link infomation */
 		int type;
 		int pagenum;
 		Windows::Foundation::Uri ^uri;
-		String^ index; // For identify which rectangle was tapped 
+		String^ index; // For identify which rectangle was tapped
 	public:
 		RectList(void);
 
@@ -61,8 +61,8 @@ namespace mupdf_cpp
 			void set(int value)
 			{
 				if (value < 0)
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				height = value;
 			}
@@ -77,9 +77,9 @@ namespace mupdf_cpp
 
 			void set(int value)
 			{
-				if (value < 0) 
-				{ 
-					throw ref new Platform::InvalidArgumentException(); 
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
 				}
 				width = value;
 			}

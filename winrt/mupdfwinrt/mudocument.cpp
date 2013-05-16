@@ -1,7 +1,7 @@
 ﻿// mudocument.cpp
 
-/* This file contains the interface between the muctx class, which 
-   implements the mupdf calls and the WinRT objects enabling calling from 
+/* This file contains the interface between the muctx class, which
+   implements the mupdf calls and the WinRT objects enabling calling from
    C#, C++, Visual Basic, JavaScript applications */
 
 #include "pch.h"
@@ -38,7 +38,7 @@ int mudocument::GetNumPages()
 }
 
 Point mudocument::GetPageSize(int page_num)
-{				
+{
 	std::lock_guard<std::mutex> lock(mutex_lock);
 	return this->mu_object.MeasurePage(page_num);
 }
@@ -56,14 +56,14 @@ Windows::Foundation::IAsyncAction^ mudocument::OpenFileAsync(StorageFile^ file)
 		char *ext = strrchr(name, '.');
 
 		auto t = create_task(file->OpenAsync(FileAccessMode::Read));
-	
+
 		return t.then([this, file, ext](task<IRandomAccessStream^> task)
 		{
 			try
 			{
 				IRandomAccessStream^ readStream = task.get();
 				UINT64 const size = readStream->Size;
-			
+
 				if (size <= MAXUINT32)
 				{
 					HRESULT code = this->mu_object.InitializeStream(readStream, ext);
@@ -71,7 +71,7 @@ Windows::Foundation::IAsyncAction^ mudocument::OpenFileAsync(StorageFile^ file)
 				}
 				else
 				{
-					delete readStream; 
+					delete readStream;
 					return;
 				}
 			}
@@ -158,7 +158,7 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 }
 
 /* Pack the page into a bmp stream */
-Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^ 
+Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 	mudocument::RenderPageAsync(int page_num, int width, int height)
 {
 	return create_async([this, width, height, page_num](cancellation_token ct) -> InMemoryRandomAccessStream^
@@ -171,12 +171,12 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 
 		/* Go ahead and write our header data into the memory stream */
 		Prepare_bmp(width, height, dw);
-	
+
 		std::lock_guard<std::mutex> lock(mutex_lock);
 
 		/* Get raster bitmap stream */
-		HRESULT code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0])); 
-		if (code != S_OK) 
+		HRESULT code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]));
+		if (code != S_OK)
 		{
 			throw ref new FailureException("Page Rendering Failed");
 		}
@@ -204,7 +204,7 @@ int mudocument::ComputeLinks(int page_num)
 	this->links = ref new Platform::Collections::Vector<Links^>();
 	for (int k = 0; k < num_items; k++)
 	{
-		auto new_link = ref new Links(); 
+		auto new_link = ref new Links();
 		sh_link muctx_link = link_smart_ptr_vec->at(k);
 		new_link->LowerRight = muctx_link->lower_right;
 		new_link->UpperLeft = muctx_link->upper_left;
@@ -243,7 +243,7 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
 	this->textsearch = ref new Platform::Collections::Vector<Links^>();
 	for (int k = 0; k < num_items; k++)
 	{
-		auto new_link = ref new Links(); 
+		auto new_link = ref new Links();
 		sh_text muctx_text = text_smart_ptr_vec->at(k);
 		new_link->LowerRight = muctx_text->lower_right;
 		new_link->UpperLeft = muctx_text->upper_left;
@@ -289,7 +289,7 @@ int mudocument::ComputeContents()
 
 	for (int k = 0; k < num_items; k++)
 	{
-		auto new_content = ref new ContentItem(); 
+		auto new_content = ref new ContentItem();
 		sh_content muctx_content = content_smart_ptr_vec->at(k);
 		new_content->Page = muctx_content->page;
 		new_content->StringMargin = muctx_content->string_margin;
