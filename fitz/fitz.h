@@ -204,6 +204,7 @@ typedef struct fz_error_context_s fz_error_context;
 typedef struct fz_id_context_s fz_id_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
+typedef struct fz_colorspace_context_s fz_colorspace_context;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_locks_context_s fz_locks_context;
 typedef struct fz_store_s fz_store;
@@ -299,6 +300,7 @@ struct fz_context_s
 	fz_error_context *error;
 	fz_warn_context *warn;
 	fz_font_context *font;
+	fz_colorspace_context *colorspace;
 	fz_aa_context *aa;
 	fz_store *store;
 	fz_glyph_cache *glyph_cache;
@@ -1428,28 +1430,44 @@ fz_colorspace *fz_find_device_colorspace(fz_context *ctx, char *name);
 int fz_colorspace_is_indexed(fz_colorspace *cs);
 
 /*
-	fz_device_gray: Abstract colorspace representing device specific
-	gray.
+	fz_device_gray: Get colorspace representing device specific gray.
 */
-extern fz_colorspace *fz_device_gray;
+fz_colorspace *fz_device_gray(fz_context *ctx);
 
 /*
-	fz_device_rgb: Abstract colorspace representing device specific
-	rgb.
+	fz_device_rgb: Get colorspace representing device specific rgb.
 */
-extern fz_colorspace *fz_device_rgb;
+fz_colorspace *fz_device_rgb(fz_context *ctx);
 
 /*
-	fz_device_bgr: Abstract colorspace representing device specific
-	bgr.
+	fz_device_bgr: Get colorspace representing device specific bgr.
 */
-extern fz_colorspace *fz_device_bgr;
+fz_colorspace *fz_device_bgr(fz_context *ctx);
 
 /*
-	fz_device_cmyk: Abstract colorspace representing device specific
-	CMYK.
+	fz_device_cmyk: Get colorspace representing device specific CMYK.
 */
-extern fz_colorspace *fz_device_cmyk;
+fz_colorspace *fz_device_cmyk(fz_context *ctx);
+
+/*
+	fz_set_device_gray: Set colorspace representing device specific gray.
+*/
+void fz_set_device_gray(fz_context *ctx, fz_colorspace *cs);
+
+/*
+	fz_set_device_rgb: Set colorspace representing device specific rgb.
+*/
+void fz_set_device_rgb(fz_context *ctx, fz_colorspace *cs);
+
+/*
+	fz_set_device_bgr: Set colorspace representing device specific bgr.
+*/
+void fz_set_device_bgr(fz_context *ctx, fz_colorspace *cs);
+
+/*
+	fz_set_device_cmyk: Set colorspace representing device specific CMYK.
+*/
+void fz_set_device_cmyk(fz_context *ctx, fz_colorspace *cs);
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a

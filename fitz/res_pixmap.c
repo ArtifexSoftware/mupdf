@@ -694,9 +694,9 @@ fz_image_as_png(fz_context *ctx, fz_image *image, int w, int h)
 
 	fz_try(ctx)
 	{
-		if (pix->colorspace != fz_device_gray || pix->colorspace != fz_device_rgb)
+		if (pix->colorspace != fz_device_gray(ctx) || pix->colorspace != fz_device_rgb(ctx))
 		{
-			fz_pixmap *pix2 = fz_new_pixmap(ctx, fz_device_rgb, pix->w, pix->h);
+			fz_pixmap *pix2 = fz_new_pixmap(ctx, fz_device_rgb(ctx), pix->w, pix->h);
 			fz_convert_pixmap(ctx, pix2, pix);
 			fz_drop_pixmap(ctx, pix);
 			pix = pix2;

@@ -92,9 +92,9 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->resolution = 72;
 	app->ctx = ctx;
 #ifdef _WIN32
-	app->colorspace = fz_device_bgr;
+	app->colorspace = fz_device_bgr(ctx);
 #else
-	app->colorspace = fz_device_rgb;
+	app->colorspace = fz_device_rgb(ctx);
 #endif
 }
 
@@ -656,7 +656,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		if (app->image)
 			fz_drop_pixmap(app->ctx, app->image);
 		if (app->grayscale)
-			colorspace = fz_device_gray;
+			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
 		app->image = NULL;

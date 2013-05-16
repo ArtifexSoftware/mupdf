@@ -112,7 +112,7 @@ svg_dev_fill_color(svg_device *sdev, fz_colorspace *colorspace, float *color, fl
 	fz_output *out = sdev->out;
 	float rgb[FZ_MAX_COLORS];
 
-	if (colorspace != fz_device_rgb)
+	if (colorspace != fz_device_rgb(ctx))
 	{
 		/* If it's not rgb, make it rgb */
 		colorspace->to_rgb(ctx, colorspace, color, rgb);
@@ -136,7 +136,7 @@ svg_dev_stroke_color(svg_device *sdev, fz_colorspace *colorspace, float *color, 
 	fz_output *out = sdev->out;
 	float rgb[FZ_MAX_COLORS];
 
-	if (colorspace != fz_device_rgb)
+	if (colorspace != fz_device_rgb(ctx))
 	{
 		/* If it's not rgb, make it rgb */
 		colorspace->to_rgb(ctx, colorspace, color, rgb);
@@ -273,7 +273,7 @@ svg_dev_clip_stroke_path(fz_device *dev, fz_path *path, const fz_rect *rect, fz_
 	fz_printf(out, "<path");
 	svg_dev_ctm(sdev, ctm);
 	svg_dev_stroke_state(sdev, stroke);
-	svg_dev_stroke_color(sdev, fz_device_rgb, white, 1);
+	svg_dev_stroke_color(sdev, fz_device_rgb(ctx), white, 1);
 	svg_dev_path(sdev, path);
 	fz_printf(out, "/>\n</mask>\n<g mask=\"url(#ma%d)\">\n", num);
 }
@@ -319,7 +319,7 @@ svg_dev_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accum
 	fz_printf(out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\" >\n",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_printf(out, "<text");
-	svg_dev_fill_color(sdev, fz_device_rgb, white, 1.0f);
+	svg_dev_fill_color(sdev, fz_device_rgb(ctx), white, 1.0f);
 	svg_dev_text(sdev, ctm, text);
 	fz_printf(out, "</mask>\n<g mask=\"url(#ma%d)\">\n", num);
 }
@@ -340,7 +340,7 @@ svg_dev_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
 	fz_printf(out, "<text");
 	svg_dev_stroke_state(sdev, stroke);
-	svg_dev_stroke_color(sdev, fz_device_rgb, white, 1.0f);
+	svg_dev_stroke_color(sdev, fz_device_rgb(ctx), white, 1.0f);
 	svg_dev_text(sdev, ctm, text);
 	fz_printf(out, "</mask>\n<g mask=\"url(#ma%d)\">\n", num);
 }

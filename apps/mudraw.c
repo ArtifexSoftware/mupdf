@@ -815,9 +815,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	colorspace = fz_device_rgb;
+	colorspace = fz_device_rgb(ctx);
 	if (grayscale || output_format == OUT_PGM || output_format == OUT_PBM)
-		colorspace = fz_device_gray;
+		colorspace = fz_device_gray(ctx);
 
 	timing.count = 0;
 	timing.total = 0;

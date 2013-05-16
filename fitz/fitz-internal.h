@@ -1060,8 +1060,11 @@ fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_free_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
-
 void fz_convert_color(fz_context *ctx, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, float *srcv);
+
+void fz_new_colorspace_context(fz_context *ctx);
+fz_colorspace_context *fz_keep_colorspace_context(fz_context *ctx);
+void fz_drop_colorspace_context(fz_context *ctx);
 
 typedef struct fz_color_converter_s fz_color_converter;
 

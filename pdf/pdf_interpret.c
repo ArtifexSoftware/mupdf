@@ -969,7 +969,7 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->stroke_state = fz_new_stroke_state(ctx);
 
 	gs->stroke.kind = PDF_MAT_COLOR;
-	gs->stroke.colorspace = fz_device_gray; /* No fz_keep_colorspace as static */
+	gs->stroke.colorspace = fz_device_gray(ctx); /* No fz_keep_colorspace as static */
 	gs->stroke.v[0] = 0;
 	gs->stroke.pattern = NULL;
 	gs->stroke.shade = NULL;
@@ -977,7 +977,7 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->stroke.gstate_num = -1;
 
 	gs->fill.kind = PDF_MAT_COLOR;
-	gs->fill.colorspace = fz_device_gray; /* No fz_keep_colorspace as static */
+	gs->fill.colorspace = fz_device_gray(ctx); /* No fz_keep_colorspace as static */
 	gs->fill.v[0] = 0;
 	gs->fill.pattern = NULL;
 	gs->fill.shade = NULL;
@@ -1697,7 +1697,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 
 				colorspace = xobj->colorspace;
 				if (!colorspace)
-					colorspace = fz_device_gray;
+					colorspace = fz_device_gray(ctx);
 
 				/* The softmask_ctm no longer has the softmask matrix rolled into it, as this
 				 * causes the softmask matrix to be applied twice. */
@@ -1869,11 +1869,11 @@ static void pdf_run_cs_imp(pdf_csi *csi, pdf_obj *rdb, int what)
 	else
 	{
 		if (!strcmp(csi->name, "DeviceGray"))
-			colorspace = fz_device_gray; /* No fz_keep_colorspace as static */
+			colorspace = fz_device_gray(ctx); /* No fz_keep_colorspace as static */
 		else if (!strcmp(csi->name, "DeviceRGB"))
-			colorspace = fz_device_rgb; /* No fz_keep_colorspace as static */
+			colorspace = fz_device_rgb(ctx); /* No fz_keep_colorspace as static */
 		else if (!strcmp(csi->name, "DeviceCMYK"))
-			colorspace = fz_device_cmyk; /* No fz_keep_colorspace as static */
+			colorspace = fz_device_cmyk(ctx); /* No fz_keep_colorspace as static */
 		else
 		{
 			dict = pdf_dict_gets(rdb, "ColorSpace");
@@ -2016,7 +2016,7 @@ static void pdf_run_F(pdf_csi *csi)
 static void pdf_run_G(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_STROKE, fz_device_gray);
+	pdf_set_colorspace(csi, PDF_STROKE, fz_device_gray(csi->dev->ctx));
 	pdf_set_color(csi, PDF_STROKE, csi->stack);
 }
 
@@ -2033,7 +2033,7 @@ static void pdf_run_J(pdf_csi *csi)
 static void pdf_run_K(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_STROKE, fz_device_cmyk);
+	pdf_set_colorspace(csi, PDF_STROKE, fz_device_cmyk(csi->dev->ctx));
 	pdf_set_color(csi, PDF_STROKE, csi->stack);
 }
 
@@ -2057,7 +2057,7 @@ static void pdf_run_Q(pdf_csi *csi)
 static void pdf_run_RG(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_STROKE, fz_device_rgb);
+	pdf_set_colorspace(csi, PDF_STROKE, fz_device_rgb(csi->dev->ctx));
 	pdf_set_color(csi, PDF_STROKE, csi->stack);
 }
 
@@ -2348,7 +2348,7 @@ static void pdf_run_fstar(pdf_csi *csi)
 static void pdf_run_g(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_FILL, fz_device_gray);
+	pdf_set_colorspace(csi, PDF_FILL, fz_device_gray(csi->dev->ctx));
 	pdf_set_color(csi, PDF_FILL, csi->stack);
 }
 
@@ -2389,7 +2389,7 @@ static void pdf_run_j(pdf_csi *csi)
 static void pdf_run_k(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_FILL, fz_device_cmyk);
+	pdf_set_colorspace(csi, PDF_FILL, fz_device_cmyk(csi->dev->ctx));
 	pdf_set_color(csi, PDF_FILL, csi->stack);
 }
 
@@ -2439,7 +2439,7 @@ static void pdf_run_re(pdf_csi *csi)
 static void pdf_run_rg(pdf_csi *csi)
 {
 	csi->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, PDF_FILL, fz_device_rgb);
+	pdf_set_colorspace(csi, PDF_FILL, fz_device_rgb(csi->dev->ctx));
 	pdf_set_color(csi, PDF_FILL, csi->stack);
 }
 
