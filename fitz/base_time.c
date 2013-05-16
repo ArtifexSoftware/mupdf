@@ -1,11 +1,11 @@
-#ifdef _WIN32
-
 #include <time.h>
+#include "fitz.h"
+
+#ifdef _WIN32
 #ifndef METRO
 #include <winsock2.h>
 #endif
 #include <windows.h>
-#include "fitz.h"
 
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
@@ -13,11 +13,7 @@
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 #endif
 
-#if defined(_WINRT)
-
-void fz_gettimeofday_dummy() { }
-
-#else
+#ifndef _WINRT
 
 struct timeval;
 
@@ -44,7 +40,11 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 	return 0;
 }
 
-#endif
+#else /* !_WINRT */
+
+void fz_gettimeofday_dummy() { }
+
+#endif /* !_WINRT) */
 
 FILE *fopen_utf8(const char *name, const char *mode)
 {
@@ -80,8 +80,4 @@ FILE *fopen_utf8(const char *name, const char *mode)
 	return file;
 }
 
-#else
-
-void fz_gettimeofday_dummy() { }
-
-#endif
+#endif /* _WIN32 */
