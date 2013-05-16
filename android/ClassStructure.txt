@@ -1,0 +1,187 @@
+MuPDFActivity
+~~~~~~~~~~~~~
+
+MuPDFActivity is the main activity used when displaying and interacting with a
+document. This class is responsible for creating the view hierarchy and the
+menus.
+
+
+Main view classes
+~~~~~~~~~~~~~~~~~
+
+ReaderView
+~~~~~~~~~~
+MuPDF uses Android's standard Adapter/AdapterView paradigm, where a subclass of
+BaseAdapter supplies multiple views that have their motion on screen
+choreographed by a subclass of AdapterView. There are several standard
+AdapterView subclasses, but none support zooming into a specific subview and
+then panning within it, so MuPDF has its own AdapterView subclass, namely
+ReaderView. The class is intended to be general purpose and usable within any
+document-viewing application. During page viewing, ReaderView handles all touch
+events, recognises gestures and positions the displayed document pages
+accordingly. ReaderView needs to handle positioning slightly differently
+depending on whether MuPDF is reflowing text or not, and so it has two slightly
+different modes of operation.
+
+MuPDFReaderView
+~~~~~~~~~~~~~~~
+MuPDFReaderView subclasses ReaderView, so as to provide some of the
+page-positioning behaviour that is specific to MuPDF. It overrides some of the
+gesture recognition methods of ReaderView, so that it can perform special
+handling of (e.g.) tapping on the side of the screen for page progression, and
+tapping on links or form fields. It also handles the disabling of scrolling
+during text-selection and annotation-drawing, and it performs the setup
+operations needed by the individual page views as each newly appears.
+
+MuPDFView
+~~~~~~~~~
+Document viewing uses different View subclasses to display the individual pages
+depending on whether reflowing text or displaying pages unaltered. MuPDFView is
+the common interface to the two view subclasses.
+
+PageView
+~~~~~~~~
+PageView is the main View class used for non-reflow display of a page. Like
+ReaderView, it is intended to be, as much as is possible, independent of the
+specifics of MuPDF and usable in general document display apps. It is a
+subclass of ViewGroup because page displays are built from several layers. The
+lowest layer is a rendering of the page at a resolution that matches the screen
+exactly when maximally zoomed out so that the page fits the screen. As the user
+zooms in, this layer maintains a visible appearance of the page, but one that
+becomes more blurred as zooming in progresses. A second layer provides a higher
+resolution rendering of just the area of the page that is visible on screen,
+and at a resolution that matches the screen. As the user pans, this layer is
+updated on a background thread, so parts of the blurred layer will temporarily
+become visible, but only momentarily later to be replaced by the high-quality
+rendering. There is one further layer that is used to draw transparent shapes
+for highlighting and the like.
+
+MuPDFPageView
+~~~~~~~~~~~~~
+MuPDFPageView is a subclass of PageView, which handles some of the specifics of
+MuPDF's behaviour, such as taps on links and form fields, text selection, and
+annotation drawing. It also handles its parent class's bitmap rendering calls.
+This is the class used to display pages in non-reflow mode. It implements the
+MuPDFView interface.
+
+MuPDFReflowView
+~~~~~~~~~~~~~~~
+This is the class used to display pages in reflow mode. Like MuPDFPageView it
+implements the MuPDFView interface. It is a subclass of WebView, and achieves
+reflowing by loading an HTML version of the page, which the MuPDF core
+constructs.
+
+MuPDFPageAdapter and MuPDFReflowAdapter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+As with any AdapterView subclass, ReaderView needs an Adapter subclass to
+supply, on demand, the subviews for the pages currently displayed. These are
+the two Adapter subclasses, supplying the subviews as MuPDFPageView and
+MuPDFReflowView objects respectively. The former is a little more complex than
+the latter, since it caches the sizes of the pages corresponding to the views
+it supplies. It does so, so that page views, on their second and subsequent
+appearances, can take on their correct size immediately. (The determining of
+page size is not a completely trivial operation and is performed on a
+background thread, as is all interaction with the core MuPDF library).
+
+
+C library wrapper
+~~~~~~~~~~~~~~~~~
+
+MuPDFCore
+~~~~~~~~~
+This class is the interface to the MuPDF C library. It is used to render bitmap
+versions of the page for display in the view classes mentioned above. It also
+provides for interaction with objects within the page, such as the individual
+text objects and annotations. Many of the methods take too long an execution
+time to be run on the UI thread, hence they need to be run in the background,
+and because even the fast methods have to be synchronised with the slower
+methods, (almost) all methods should be called in the background. There are a
+few non synchronised ones that have special purposes.
+
+
+Link handling
+~~~~~~~~~~~~~
+There are three types of PDF links, each entailing different information and
+requiring different handling. There are five classes involved in their
+representation.
+
+LinkInfo is the base class representing any one of the three
+
+LinkInfoExternal, LinkInfoInternal and LinkInfoRemote are the three subclasses
+representing the specific cases.
+
+LinkInfoVisitor is a class implementing a common Java paradigm which allows
+case analysis on the three different types of link, executing different methods
+for each.
+
+BitmapHolder
+~~~~~~~~~~~~
+BitmapHolder is the solution to a problem in allocating the Bitmaps to which
+rendering is performed by background tasks. Renderings for the purpose of
+update have to be passed a Bitmap with the current page state.  During frenetic
+page flicking a large number of rendering tasks can be queued, each holding
+reference to a Bitmap. Rather than pass the Bitmap directly, we pass a
+BitmapHolder containing a reference to the Bitmap. When a page view transitions
+off screen, the BitmapHolder's reference to the Bitmap can be nulled to release
+it.
+
+SearchTask and SearchTaskResult
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SearchTask encapsulates the process of searching for a text string within a
+document. The class uses an AsyncTask internally to perform the search in the
+background and reports the result by calling onTextFound. A SearchTaskResult
+object is used to return the result of the search.
+
+SafeAnimatorInflator
+~~~~~~~~~~~~~~~~~~~~
+This class is a simple wrapper around AnimatorInflator. AnimatorInflator
+doesn't exist in some of the Android API levels MuPDF supports, and the wrapper
+allows for a test of API-level before the point at which the class would be
+loaded.
+
+MuPDFAlert and MuPDFAlertInternal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This class represents the information issued by a javascript app.alert call.
+MuPDFAlertInternal represents the same information, but with Java enums
+replaced by ints, which are easier to return from JNI code.
+
+TextChar and TextWord
+~~~~~~~~~~~~~~~~~~~~~
+TextChar is used when processing the individual characters of the page. Each
+TextChar object contains the character and the rectangular area of the page at
+which it appears. TextWord is used to gather TextChars into words.
+
+Annotation
+~~~~~~~~~~
+This class represents the type and position on page of a PDF annotation.
+
+Other activities
+~~~~~~~~~~~~~~~~
+The app has three activities other than document-viewing.
+
+ChoosePDFActivity
+~~~~~~~~~~~~~~~~~
+ChoosePDFActivity allows the user to navigate local disc directories and view a
+list of loadable files, from which one can be chosen. It derives off
+ListActivity, and so displays the files in a standard ListView. ChoosePDFItem
+represents the various types of list entry: up-one, directory or file.
+ChoosePDFAdapter populates the list view.
+
+OutlineActivity
+~~~~~~~~~~~~~~~
+OutlineActivity displays a PDF document's outline as a list of selectable
+section titles. OutlineActivityData represents the current state of the
+activity. OutlineItem represents the individual items, and OutlineAdapter
+populates the list view.
+
+PrintDialogActivity
+~~~~~~~~~~~~~~~~~~~
+This activity allows the user to print documents via Google Cloud Print.
+
+
+Copied system classes
+~~~~~~~~~~~~~~~~~~~~~
+AsyncTask has had improvements made to it since issuing at the lowest android
+API level we support, and so we include the improved version as part of the
+MuPDF app. We also include Deque and ArrayDeque, which are used my AsyncTask.
+
