@@ -95,4 +95,6 @@ public:
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
 	String^ GetHTML(int page_num);
+	bool RequiresPassword(void);
+	bool ApplyPassword(String^ password);
 };
