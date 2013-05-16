@@ -176,15 +176,16 @@ MUTOOL := $(addprefix $(OUT)/, mutool)
 $(MUTOOL) : $(addprefix $(OUT)/, pdfclean.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o) $(FITZ_LIB) $(THIRD_LIBS)
 
 ifeq "$(NOX11)" ""
+
 MUVIEW := $(OUT)/mupdf
 $(MUVIEW) : $(FITZ_LIB) $(THIRD_LIBS)
 $(MUVIEW) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
-	$(LINK_CMD) $(X11_LIBS)
+	$(LINK_CMD) $(SYS_X11_LIBS)
 
 MUVIEW_V8 := $(OUT)/mupdf-v8
 $(MUVIEW_V8) : $(FITZ_V8_LIB) $(THIRD_LIBS)
 $(MUVIEW_V8) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
-	$(LINK_V8_CMD) $(X11_LIBS)
+	$(LINK_V8_CMD) $(SYS_X11_LIBS)
 endif
 
 MUJSTEST_V8 := $(OUT)/mujstest-v8
