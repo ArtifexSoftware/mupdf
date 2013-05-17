@@ -186,7 +186,7 @@ endif
 # --- OpenJPEG ---
 
 ifneq "$(wildcard $(OPENJPEG_DIR)/README)" ""
-CFLAGS += -I$(OPENJPEG_DIR)/src/lib/openjp2  -DOPJ_STATIC -DOPJ_HAVE_STDINT_H -DHAVE_SSIZE_T -DHAVE_INTTYPES_H
+CFLAGS += -I$(OPENJPEG_DIR)/src/lib/openjp2
 LIBS := $(filter-out -lopenjpeg, $(LIBS))
 OPENJPEG_LIB := $(OUT)/libopenjpeg.a
 
@@ -218,7 +218,7 @@ OPENJPEG_SRC := \
 
 $(OPENJPEG_LIB): $(addprefix $(OUT)/opj_, $(OPENJPEG_SRC:%.c=%.o))
 $(OUT)/opj_%.o: $(OPENJPEG_DIR)/src/lib/openjp2/%.c | $(OUT)
-	$(CC_CMD)
+	$(CC_CMD) -DOPJ_STATIC -DOPJ_HAVE_STDINT_H
 else
 SYS_OPENJPEG_CFLAGS := $(SYS_OPENJPEG_CFLAGS)
 CFLAGS += $(SYS_OPENJPEG_CFLAGS)
