@@ -44,7 +44,7 @@ OPJ_SIZE_T stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_dat
 		len = 0;
 	if (len == 0)
 		return (OPJ_SIZE_T)-1;  /* End of file! */
-	if (len > p_nb_bytes)
+	if ((OPJ_SIZE_T)len > p_nb_bytes)
 		len = p_nb_bytes;
 	memcpy(p_buffer, sb->data + sb->pos, len);
 	sb->pos += len;
@@ -118,6 +118,8 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	opj_stream_set_skip_function(stream, stream_skip);
 	opj_stream_set_seek_function(stream, stream_seek);
 	opj_stream_set_user_data(stream, &sb);
+	/* Set the length to avoid an assert */
+	opj_stream_set_user_data_length(stream, size);
 
 	if (!opj_read_header(stream, codec, &jpx))
 	{
@@ -141,7 +143,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	if (!jpx)
 		fz_throw(ctx, "opj_decode failed");
 
-	for (k = 1; k < jpx->numcomps; k++)
+	for (k = 1; k < (int)jpx->numcomps; k++)
 	{
 		if (jpx->comps[k].w != jpx->comps[0].w)
 		{
