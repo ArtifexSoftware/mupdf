@@ -736,9 +736,9 @@ fz_output_pwg_file_header(fz_output *out)
 }
 
 void
-fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap)
+fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
-	static const unsigned char zero[4] = { 0 };
+	static const unsigned char zero[64] = { 0 };
 	unsigned char *sp;
 	int y, x, i, sn, dn, ss;
 	fz_context *ctx;
@@ -757,33 +757,53 @@ fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap)
 		dn--;
 
 	/* Page Header: */
-	for (i=0; i < 276; i += 4)
-		fz_write(out, zero, 4);
+	fz_write(out, pwg ? pwg->media_class : zero, 64);
+	fz_write(out, pwg ? pwg->media_color : zero, 64);
+	fz_write(out, pwg ? pwg->media_type : zero, 64);
+	fz_write(out, pwg ? pwg->output_type : zero, 64);
+	fz_write_int32be(out, pwg ? pwg->advance_distance : 0);
+	fz_write_int32be(out, pwg ? pwg->advance_media : 0);
+	fz_write_int32be(out, pwg ? pwg->collate : 0);
+	fz_write_int32be(out, pwg ? pwg->cut_media : 0);
+	fz_write_int32be(out, pwg ? pwg->duplex : 0);
 	fz_write_int32be(out, pixmap->xres);
 	fz_write_int32be(out, pixmap->yres);
 	/* CUPS format says that 284->300 are supposed to be the bbox of the
 	 * page in points. PWG says 'Reserved'. */
 	for (i=284; i < 300; i += 4)
 		fz_write(out, zero, 4);
-	for (i=300; i < 340; i += 4)
+	fz_write_int32be(out, pwg ? pwg->insert_sheet : 0);
+	fz_write_int32be(out, pwg ? pwg->jog : 0);
+	fz_write_int32be(out, pwg ? pwg->leading_edge : 0);
+	/* CUPS format says that 312->320 are supposed to be the margins of
+	 * the lower left hand edge of page in points. PWG says 'Reserved'. */
+	for (i=312; i < 320; i += 4)
 		fz_write(out, zero, 4);
-	fz_write_int32be(out, 1); /* 1 copy */
-	for (i=344; i < 352; i += 4)
-		fz_write(out, zero, 4);
+	fz_write_int32be(out, pwg ? pwg->manual_feed : 0);
+	fz_write_int32be(out, pwg ? pwg->media_position : 0);
+	fz_write_int32be(out, pwg ? pwg->media_weight : 0);
+	fz_write_int32be(out, pwg ? pwg->mirror_print : 0);
+	fz_write_int32be(out, pwg ? pwg->negative_print : 0);
+	fz_write_int32be(out, pwg ? pwg->num_copies : 0);
+	fz_write_int32be(out, pwg ? pwg->orientation : 0);
+	fz_write_int32be(out, pwg ? pwg->output_face_up : 0);
 	fz_write_int32be(out, pixmap->w * 72/ pixmap->xres);	/* Page size in points */
 	fz_write_int32be(out, pixmap->h * 72/ pixmap->yres);
-	for (i=360; i < 372; i += 4)
-		fz_write(out, zero, 4);
+	fz_write_int32be(out, pwg ? pwg->separations : 0);
+	fz_write_int32be(out, pwg ? pwg->tray_switch : 0);
+	fz_write_int32be(out, pwg ? pwg->tumble : 0);
 	fz_write_int32be(out, pixmap->w); /* Page image in pixels */
 	fz_write_int32be(out, pixmap->h);
-	fz_write_int32be(out, 0); /* Reserved */
+	fz_write_int32be(out, pwg ? pwg->media_type_num : 0);
 	fz_write_int32be(out, 8); /* Bits per color */
 	fz_write_int32be(out, 8*dn); /* Bits per pixel */
 	fz_write_int32be(out, pixmap->w * dn); /* Bytes per line */
 	fz_write_int32be(out, 0); /* Chunky pixels */
 	fz_write_int32be(out, dn == 1 ? 18 /* Sgray */ : 19 /* Srgb */); /* Colorspace */
-	for (i=404; i < 420; i += 4)
-		fz_write(out, zero, 4);
+	fz_write_int32be(out, pwg ? pwg->compression : 0);
+	fz_write_int32be(out, pwg ? pwg->row_count : 0);
+	fz_write_int32be(out, pwg ? pwg->row_feed : 0);
+	fz_write_int32be(out, pwg ? pwg->row_step : 0);
 	fz_write_int32be(out, dn); /* Num Colors */
 	for (i=424; i < 452; i += 4)
 		fz_write(out, zero, 4);
@@ -794,8 +814,10 @@ fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap)
 	fz_write_int32be(out, 0); /* ImageBoxTop */
 	fz_write_int32be(out, pixmap->w); /* ImageBoxRight */
 	fz_write_int32be(out, pixmap->h); /* ImageBoxBottom */
-	for (i=480; i < 1796; i += 4)
+	for (i=480; i < 1668; i += 4)
 		fz_write(out, zero, 4);
+	fz_write(out, pwg ? pwg->rendering_intent : zero, 64);
+	fz_write(out, pwg ? pwg->page_size_name : zero, 64);
 
 	/* Now output the actual bitmap, using a packbits like compression */
 	sp = pixmap->samples;
@@ -866,14 +888,14 @@ fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap)
 }
 
 void
-fz_output_pwg(fz_output *out, const fz_pixmap *pixmap)
+fz_output_pwg(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
 	fz_output_pwg_file_header(out);
-	fz_output_pwg_page(out, pixmap);
+	fz_output_pwg_page(out, pixmap, pwg);
 }
 
 void
-fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append)
+fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg)
 {
 	FILE *fp;
 	fz_output *out = NULL;
@@ -891,7 +913,7 @@ fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append)
 		out = fz_new_output_with_file(ctx, fp);
 		if (!append)
 			fz_output_pwg_file_header(out);
-		fz_output_pwg_page(out, pixmap);
+		fz_output_pwg_page(out, pixmap, pwg);
 	}
 	fz_always(ctx)
 	{

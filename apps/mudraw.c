@@ -583,7 +583,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				{
 					if (strstr(output, "%d") != NULL)
 						append = 0;
-					fz_write_pwg(ctx, pix, buf, append);
+					fz_write_pwg(ctx, pix, buf, append, NULL);
 					append = 1;
 				}
 				else if (output_format == OUT_PBM) {
