@@ -1271,7 +1271,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 				sarr = (*env)->NewObjectArray(env, len, textSpanClass, NULL);
 				if (sarr == NULL) fz_throw(ctx, "NewObjectArray failed");
 
-				for (span = line->first_span; span; span = span->next)
+				for (s=0, span = line->first_span; span; s++, span = span->next)
 				{
 					jobjectArray *carr = (*env)->NewObjectArray(env, span->len, textCharClass, NULL);
 					if (carr == NULL) fz_throw(ctx, "NewObjectArray failed");
