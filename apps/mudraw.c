@@ -71,7 +71,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PGM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PBM, CS_MONO, { CS_MONO } },
 	{ OUT_SVG, CS_UNSET, { CS_UNSET } },
-	{ OUT_PWG, CS_RGB, { CS_GRAY, CS_RGB } }
+	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB } }
 };
 
 /*
@@ -627,7 +627,14 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				{
 					if (strstr(output, "%d") != NULL)
 						append = 0;
-					fz_write_pwg(ctx, pix, buf, append, NULL);
+					if (out_cs == CS_MONO)
+					{
+						fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
+						fz_write_pwg_bitmap(ctx, bit, buf, append, NULL);
+						fz_drop_bitmap(ctx, bit);
+					}
+					else
+						fz_write_pwg(ctx, pix, buf, append, NULL);
 					append = 1;
 				}
 				else if (output_format == OUT_PBM) {

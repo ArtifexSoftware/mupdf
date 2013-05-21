@@ -1777,6 +1777,18 @@ struct fz_pwg_options_s
 void fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);
 
 /*
+	fz_write_pwg_bitmap: Save a bitmap as a pwg
+
+	filename: The filename to save as (including extension).
+
+	append: If non-zero, then append a new page to existing file.
+
+	pwg: NULL, or a pointer to an options structure (initialised to zero
+	before being filled in, for future expansion).
+*/
+void fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg);
+
+/*
 	fz_write_pbm: Save a bitmap as a pbm
 
 	filename: The filename to save as (including extension).
@@ -1917,6 +1929,11 @@ void fz_output_pwg_file_header(fz_output *out);
 	Output a page to a pwg stream to follow a header, or other pages.
 */
 void fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
+
+/*
+	Output a bitmap page to a pwg stream to follow a header, or other pages.
+*/
+void fz_output_pwg_bitmap_page(fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
 /*
 	Get an image as a png in a buffer.
