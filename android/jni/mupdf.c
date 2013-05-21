@@ -299,7 +299,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 	glo->doc = NULL;
 	fz_try(ctx)
 	{
-		glo->colorspace = fz_device_rgb;
+		glo->colorspace = fz_device_rgb(ctx);
 
 		LOGE("Opening document...");
 		fz_try(ctx)
@@ -418,7 +418,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 		stream = fz_new_stream(ctx, glo, bufferStreamRead, bufferStreamClose);
 		stream->seek = bufferStreamSeek;
 
-		glo->colorspace = fz_device_rgb;
+		glo->colorspace = fz_device_rgb(ctx);
 
 		LOGE("Opening document...");
 		fz_try(ctx)
@@ -931,7 +931,7 @@ textlen(fz_text_page *page)
 	int len = 0;
 	int block_num;
 
-	for (block_num = 0; block_num < page->len; block_num)
+	for (block_num = 0; block_num < page->len; block_num++)
 	{
 		fz_text_block *block;
 		fz_text_line *line;
