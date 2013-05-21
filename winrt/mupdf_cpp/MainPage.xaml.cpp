@@ -366,6 +366,7 @@ void mupdf_cpp::MainPage::SetFlipView()
    one open */
 void mupdf_cpp::MainPage::CleanUp()
 {
+	m_init_done = false;
 	/* Remove current pages in the flipviews */
 	if (m_docPages != nullptr && m_docPages->Size > 0)
 		m_docPages->Clear();
@@ -391,7 +392,6 @@ void mupdf_cpp::MainPage::CleanUp()
 	m_file_open = false;
 	m_slider_min = 0;
 	m_slider_max = 0;
-	m_init_done = false;
 	m_memory_use = 0;
 	m_insearch = false;
 	m_search_active = false;
@@ -421,7 +421,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 	this->m_ren_status = REN_THUMBS;
 	Vector<DocumentPage^>^ thumbnails = m_thumbnails;
 	auto ui = task_continuation_context::use_current();
-	create_task([spatial_info, num_pages, thumbnails, this, ui, token]()-> int
+	auto task_thumb = create_task([spatial_info, num_pages, thumbnails, this, ui, token]()-> int
 	{
 		spatial_info_t spatial_info_local = spatial_info;
 		spatial_info_local.scale_factor = SCALE_THUMB;
@@ -429,8 +429,6 @@ void mupdf_cpp::MainPage::RenderThumbs()
 		for (int k = 0; k < num_pages; k++)
 		{
 			Point ras_size = ComputePageSize(spatial_info_local, k);
-			bool done = false;
-			DWORD thread1_id = GetCurrentThreadId();
 			auto task2 = create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
 
 			task2.then([this, k, thumbnails, ras_size](InMemoryRandomAccessStream^ ras)
@@ -445,10 +443,10 @@ void mupdf_cpp::MainPage::RenderThumbs()
 				doc_page->Content = THUMBNAIL;
 				doc_page->TextBox = nullptr;
 				doc_page->LinkBox = nullptr;
-				if (this->m_ren_status == REN_THUMBS) {
+				if (m_init_done)
+				{
 					m_thumbnails->SetAt(k, doc_page);  /* This avoids out of order returns from task */
-					/* Flipview object gets overwhelmed unless I do this */
-					if ((k < THUMB_PREADD))
+					if (k < THUMB_PREADD) /* Flip view gets overwhelmed if I don't do this */
 						SetThumb(k, false);
 				}
 			}, ui).then([this] (task<void> t)
@@ -477,7 +475,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 		bool is_cancelled = false;
 		try
 		{
-		   the_task.get();
+			the_task.get();
 		}
 		catch (const task_canceled& e)
 		{
@@ -544,80 +542,108 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
 	/* Open document and when open, push on */
 	auto open_task = create_task(mu_doc->OpenFileAsync(file));
-
-	open_task.then([this]
+	open_task.then([this]() -> bool
 	{
 		assert(IsMainThread());
-
-		m_num_pages = mu_doc->GetNumPages();
-
-		if ((m_currpage) >= m_num_pages)
+		/* We need to check if password is required */
+		if (mu_doc->RequiresPassword())
 		{
-			m_currpage = m_num_pages - 1;
-		}
-		else if (m_currpage < 0)
-		{
-			m_currpage = 0;
-		}
-		 /* Initialize all the flipvew items with blanks and the thumbnails. */
-		for (int k = 0; k < m_num_pages; k++)
-		{
-			/* Blank pages */
-			DocumentPage^ doc_page = ref new DocumentPage();
-			doc_page->Image = m_BlankBmp;
-			doc_page->Height = BLANK_HEIGHT;
-			doc_page->Width = BLANK_WIDTH;
-			doc_page->Content = DUMMY;
-			doc_page->TextBox = nullptr;
-			doc_page->LinkBox = nullptr;
-			m_docPages->Append(doc_page);
-			m_thumbnails->Append(doc_page);
-			/* Create empty lists for our links and specify that they have not
-			   been computed for these pages */
-			Vector<RectList^>^ temp_link = ref new Vector<RectList^>();
-			m_page_link_list->Append(temp_link);
-			m_linkset->Append(false);
-		}
-
-		this->xaml_horiz_flipView->ItemsSource = m_docPages;
-		this->xaml_vert_flipView->ItemsSource = m_docPages;
-
-		/* Do the first few pages, then start the thumbs */
-		spatial_info_t spatial_info = InitSpatial(1);
-		for (int k = 0; k < LOOK_AHEAD + 2; k++)
-		{
-			if (m_num_pages > k )
-			{
-				Point ras_size = ComputePageSize(spatial_info, k);
-
-				auto render_task =
-					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
-
-				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
-				{
-					UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
-				}, task_continuation_context::use_current());
-			}
-		}
-		/* Update the slider settings, if more than one page */
-		if (m_num_pages > 1)
-		{
-			this->xaml_PageSlider->Maximum = m_num_pages;
-			this->xaml_PageSlider->Minimum = 1;
-			this->xaml_PageSlider->IsEnabled = true;
+			xaml_PasswordStack->Visibility = Windows::UI::Xaml::Visibility::Visible;
+			return false;
 		}
 		else
 		{
-			this->xaml_PageSlider->Maximum = 0;
-			this->xaml_PageSlider->Minimum = 0;
-			this->xaml_PageSlider->IsEnabled = false;
+			xaml_PasswordStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+			return true;
 		}
-		/* All done with initial pages */
-		this->m_init_done = true;
-	}).then([this]
+	}).then([this](bool password_ok)->bool
 	{
-		this->RenderThumbs();
+		assert(IsMainThread());
+		if (!password_ok)
+			return password_ok;
+		else
+		{
+			InitialRender();
+			return password_ok;
+		}
+	}, task_continuation_context::use_current()).then([this](bool password_ok)
+	{
+		if (password_ok)
+			RenderThumbs();
 	}, task_continuation_context::use_current());
+}
+
+void mupdf_cpp::MainPage::InitialRender()
+{
+	assert(IsMainThread());
+	m_num_pages = mu_doc->GetNumPages();
+
+	if ((m_currpage) >= m_num_pages)
+	{
+		m_currpage = m_num_pages - 1;
+	}
+	else if (m_currpage < 0)
+	{
+		m_currpage = 0;
+	}
+
+	/* Initialize all the flipvew items with blanks and the thumbnails. */
+	for (int k = 0; k < m_num_pages; k++)
+	{
+		/* Blank pages */
+		DocumentPage^ doc_page = ref new DocumentPage();
+		doc_page->Image = m_BlankBmp;
+		doc_page->Height = BLANK_HEIGHT;
+		doc_page->Width = BLANK_WIDTH;
+		doc_page->Content = DUMMY;
+		doc_page->TextBox = nullptr;
+		doc_page->LinkBox = nullptr;
+		m_docPages->Append(doc_page);
+		m_thumbnails->Append(doc_page);
+		/* Create empty lists for our links and specify that they have
+			not been computed for these pages */
+		Vector<RectList^>^ temp_link = ref new Vector<RectList^>();
+		m_page_link_list->Append(temp_link);
+		m_linkset->Append(false);
+	}
+
+	this->xaml_horiz_flipView->ItemsSource = m_docPages;
+	this->xaml_vert_flipView->ItemsSource = m_docPages;
+
+	/* Do the first few pages, then start the thumbs */
+	spatial_info_t spatial_info = InitSpatial(1);
+	for (int k = 0; k < LOOK_AHEAD + 2; k++)
+	{
+		if (m_num_pages > k )
+		{
+			Point ras_size = ComputePageSize(spatial_info, k);
+
+			auto render_task =
+				create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
+
+			render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
+			{
+				UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+			}, task_continuation_context::use_current());
+		}
+	}
+
+	/* Update the slider settings, if more than one page */
+	if (m_num_pages > 1)
+	{
+		this->xaml_PageSlider->Maximum = m_num_pages;
+		this->xaml_PageSlider->Minimum = 1;
+		this->xaml_PageSlider->IsEnabled = true;
+	}
+	else
+	{
+		this->xaml_PageSlider->Maximum = 0;
+		this->xaml_PageSlider->Minimum = 0;
+		this->xaml_PageSlider->IsEnabled = false;
+	}
+
+	/* All done with initial pages */
+	this->m_init_done = true;
 }
 
 void mupdf_cpp::MainPage::RenderRange(int curr_page)
@@ -703,7 +729,6 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 			render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
 				UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
-				this->m_ren_status = REN_AVAILABLE;
 				this->m_currpage = newValue;
 				m_sliderchange = true;
 				this->m_curr_flipView->SelectedIndex = newValue;
@@ -1313,4 +1338,18 @@ void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 	{
 		ReplaceImage(page, ras, ras_size);
 	}, task_continuation_context::use_current());
+}
+
+void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	/* If password checks out then go ahead and start rendering */
+	if (mu_doc->ApplyPassword(xaml_password->Password))
+	{
+		xaml_password->Password = nullptr;
+		xaml_PasswordStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+		InitialRender();
+		RenderThumbs();
+	}
+	else
+		NotifyUser("Incorrect Password", StatusMessage);
 }

@@ -79,7 +79,7 @@ private:
 	fz_cookie *mu_cookie;
 	fz_stream *mu_stream;
 	void FlattenOutline(fz_outline *outline, int level,
-					   sh_vector_content contents_vec);
+				sh_vector_content contents_vec);
 
 public:
 	muctx(void);
@@ -96,5 +96,5 @@ public:
 	int GetContents(sh_vector_content contents_vec);
 	String^ GetHTML(int page_num);
 	bool RequiresPassword(void);
-	bool ApplyPassword(String^ password);
+	bool ApplyPassword(char* password);
 };

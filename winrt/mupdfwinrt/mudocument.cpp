@@ -24,7 +24,10 @@ bool mudocument::RequiresPassword()
 
 bool mudocument::ApplyPassword(String^ password)
 {
-	return mu_object.ApplyPassword(password);
+	char* pass_char = String_to_char(password);
+	bool ok = mu_object.ApplyPassword(pass_char);
+	delete []pass_char;
+	return ok;
 }
 
 void mudocument::CleanUp()

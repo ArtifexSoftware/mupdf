@@ -507,11 +507,9 @@ bool muctx::RequiresPassword(void)
 	return fz_needs_password(mu_doc);
 }
 
-bool muctx::ApplyPassword(String^ password)
+bool muctx::ApplyPassword(char* password)
 {
-	/* Need to do String to char here */
-	// return fz_authenticate_password(mu_doc, password) != 0;
-	return 0;
+	return fz_authenticate_password(mu_doc, password);
 }
 
 String^ muctx::GetHTML(int page_num)

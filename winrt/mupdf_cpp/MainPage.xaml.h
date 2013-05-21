@@ -104,6 +104,7 @@ namespace mupdf_cpp
 		void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void OpenDocumentPrep(StorageFile^ file);
 		void OpenDocument(StorageFile^ file);
+		void InitialRender();
 		void RenderRange(int curr_page);
 		void CleanUp();
 		void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type);
@@ -148,5 +149,6 @@ namespace mupdf_cpp
 		void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
 		void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
+		void PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 	};
 }
