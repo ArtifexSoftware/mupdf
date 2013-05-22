@@ -130,11 +130,14 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	{
 		opj_stream_destroy(stream);
 		opj_destroy_codec(codec);
+		opj_image_destroy(jpx);
 		fz_throw(ctx, "Failed to decode JPX image");
 	}
 
+	opj_stream_destroy(stream);
 	opj_destroy_codec(codec);
 
+	/* jpx should never be NULL here, but check anyway */
 	if (!jpx)
 		fz_throw(ctx, "opj_decode failed");
 
