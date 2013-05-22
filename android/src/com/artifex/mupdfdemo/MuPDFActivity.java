@@ -578,8 +578,6 @@ public class MuPDFActivity extends Activity
 		RelativeLayout layout = new RelativeLayout(this);
 		layout.addView(mDocView);
 		layout.addView(mButtonsView);
-		layout.setBackgroundResource(R.drawable.tiled_background);
-		//layout.setBackgroundResource(R.color.canvas);
 		setContentView(layout);
 	}
 

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
@@ -219,6 +220,8 @@ public abstract class PageView extends ViewGroup {
 			mBusyIndicator.setBackgroundResource(R.drawable.busy);
 			addView(mBusyIndicator);
 		}
+
+		setBackgroundColor(BACKGROUND_COLOR);
 	}
 
 	public void setPage(int page, PointF size) {
@@ -270,6 +273,7 @@ public abstract class PageView extends ViewGroup {
 			}
 
 			protected void onPreExecute() {
+				setBackgroundColor(BACKGROUND_COLOR);
 				mEntire.setImageBitmap(null);
 				mEntireBmh.setBm(null);
 
@@ -293,7 +297,7 @@ public abstract class PageView extends ViewGroup {
 				mBusyIndicator = null;
 				mEntire.setImageBitmap(bm);
 				mEntireBmh.setBm(bm);
-				invalidate();
+				setBackgroundColor(Color.TRANSPARENT);
 			}
 		};
 
