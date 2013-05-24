@@ -230,6 +230,9 @@ pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 			fz_seek(xref->file, -(2 + (int)strlen(s)), 1);
 		}
 
+		if (ofs < 0)
+			fz_throw(xref->ctx, "out of range object num in xref: %d", ofs);
+
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
 		if (ofs + len > xref->len)
 		{
