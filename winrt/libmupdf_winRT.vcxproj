@@ -306,7 +306,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\fitz;..\pdf;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

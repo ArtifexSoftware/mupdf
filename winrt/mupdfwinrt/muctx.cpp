@@ -472,7 +472,7 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 		/* Flip on Y */
 		ctm.f = height;
 		ctm.d = -ctm.d;
-		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr, width, height, bmp_data);
+		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone), width, height, bmp_data);
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
 		fz_run_page(mu_doc, page, dev, pctm, NULL);
