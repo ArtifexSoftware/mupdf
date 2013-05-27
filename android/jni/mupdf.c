@@ -1595,6 +1595,8 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 	}
 }
 
+/* Close the document, at least enough to be able to save over it. This
+ * may be called again later, so must be idempotent. */
 static void close_doc(globals *glo)
 {
 	int i;
@@ -1609,8 +1611,6 @@ static void close_doc(globals *glo)
 
 	fz_close_document(glo->doc);
 	glo->doc = NULL;
-	fz_free_context(glo->ctx);
-	glo->ctx = NULL;
 }
 
 JNIEXPORT void JNICALL
@@ -1624,6 +1624,8 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 	fz_free(glo->ctx, glo->current_path);
 	glo->current_path = NULL;
 	close_doc(glo);
+	fz_free_context(glo->ctx);
+	glo->ctx = NULL;
 	free(glo);
 #ifdef MEMENTO
 	LOGI("Destroying dump start");
