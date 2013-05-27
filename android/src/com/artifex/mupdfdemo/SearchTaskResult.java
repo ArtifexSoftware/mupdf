@@ -22,4 +22,3 @@ public class SearchTaskResult {
 		singleton = r;
 	}
 }
-

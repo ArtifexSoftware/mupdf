@@ -129,7 +129,7 @@ static void drop_changed_rects(fz_context *ctx, rect_node **nodePtr)
 
 static void drop_page_cache(globals *glo, page_cache *pc)
 {
-	fz_context  *ctx = glo->ctx;
+	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
 
 	LOGI("Drop page %d", pc->number);
@@ -261,9 +261,9 @@ JNIEXPORT jlong JNICALL
 JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 {
 	const char *filename;
-	globals    *glo;
+	globals *glo;
 	fz_context *ctx;
-	jclass      clazz;
+	jclass clazz;
 
 #ifdef NDK_PROFILER
 	monstartup("libmupdf.so");
@@ -332,10 +332,10 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 
 static int bufferStreamRead(fz_stream *stream, unsigned char *buf, int len)
 {
-	globals    *glo = (globals *)stream->state;
-	JNIEnv     *env = glo->env;
-	jbyteArray  array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
-	int         arrayLength = (*env)->GetArrayLength(env, array);
+	globals *glo = (globals *)stream->state;
+	JNIEnv *env = glo->env;
+	jbyteArray array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
+	int arrayLength = (*env)->GetArrayLength(env, array);
 
 	if (stream->pos > arrayLength)
 		stream->pos = arrayLength;
@@ -356,10 +356,10 @@ static void bufferStreamClose(fz_context *ctx, void *state)
 
 static void bufferStreamSeek(fz_stream *stream, int offset, int whence)
 {
-	globals    *glo = (globals *)stream->state;
-	JNIEnv     *env = glo->env;
-	jbyteArray  array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
-	int         arrayLength = (*env)->GetArrayLength(env, array);
+	globals *glo = (globals *)stream->state;
+	JNIEnv *env = glo->env;
+	jbyteArray array = (jbyteArray)(void *)((*env)->GetObjectField(env, glo->thiz, buffer_fid));
+	int arrayLength = (*env)->GetArrayLength(env, array);
 
 	(*env)->DeleteLocalRef(env, array);
 
@@ -382,9 +382,9 @@ static void bufferStreamSeek(fz_stream *stream, int offset, int whence)
 JNIEXPORT jlong JNICALL
 JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 {
-	globals    *glo;
+	globals *glo;
 	fz_context *ctx;
-	jclass      clazz;
+	jclass clazz;
 	fz_stream *stream;
 
 #ifdef NDK_PROFILER
@@ -1032,8 +1032,8 @@ JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_authenticatePasswordInternal)(JNIEnv *env, jobject thiz, jstring password)
 {
 	const char *pw;
-	int         result;
-	globals    *glo = get_globals(env, thiz);
+	int result;
+	globals *glo = get_globals(env, thiz);
 
 	pw = (*env)->GetStringUTFChars(env, password, NULL);
 	if (pw == NULL)
@@ -1047,7 +1047,7 @@ JNI_FN(MuPDFCore_authenticatePasswordInternal)(JNIEnv *env, jobject thiz, jstrin
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 {
-	globals    *glo = get_globals(env, thiz);
+	globals *glo = get_globals(env, thiz);
 	fz_outline *outline = fz_load_outline(glo->doc);
 
 	fz_free_outline(glo->ctx, outline);
@@ -1057,14 +1057,14 @@ JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 JNIEXPORT jobjectArray JNICALL
 JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 {
-	jclass        olClass;
-	jmethodID     ctor;
-	jobjectArray  arr;
-	jobject       ol;
-	fz_outline   *outline;
-	int           nItems;
-	globals      *glo = get_globals(env, thiz);
-	jobjectArray  ret;
+	jclass olClass;
+	jmethodID ctor;
+	jobjectArray arr;
+	jobject ol;
+	fz_outline *outline;
+	int nItems;
+	globals *glo = get_globals(env, thiz);
+	jobjectArray ret;
 
 	olClass = (*env)->FindClass(env, PACKAGENAME "/OutlineItem");
 	if (olClass == NULL) return NULL;
@@ -1090,24 +1090,24 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 JNIEXPORT jobjectArray JNICALL
 JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 {
-	jclass         rectClass;
-	jmethodID      ctor;
-	jobjectArray   arr;
-	jobject        rect;
+	jclass rectClass;
+	jmethodID ctor;
+	jobjectArray arr;
+	jobject rect;
 	fz_text_sheet *sheet = NULL;
-	fz_text_page  *text = NULL;
-	fz_device     *dev  = NULL;
-	float          zoom;
-	fz_matrix      ctm;
-	int            pos;
-	int            len;
-	int            i, n;
-	int            hit_count = 0;
-	const char    *str;
-	globals       *glo = get_globals(env, thiz);
-	fz_context    *ctx = glo->ctx;
-	fz_document   *doc = glo->doc;
-	page_cache    *pc = &glo->pages[glo->current];
+	fz_text_page *text = NULL;
+	fz_device *dev = NULL;
+	float zoom;
+	fz_matrix ctm;
+	int pos;
+	int len;
+	int i, n;
+	int hit_count = 0;
+	const char *str;
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	fz_document *doc = glo->doc;
+	page_cache *pc = &glo->pages[glo->current];
 
 	rectClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectClass == NULL) return NULL;
@@ -1133,7 +1133,7 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx, &mbrect);
-		dev  = fz_new_text_device(ctx, sheet, text);
+		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
@@ -1205,7 +1205,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	jobjectArray barr = NULL;
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
-	fz_device *dev  = NULL;
+	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
 	globals *glo = get_globals(env, thiz);
@@ -1239,7 +1239,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx, &mbrect);
-		dev  = fz_new_text_device(ctx, sheet, text);
+		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
@@ -1324,7 +1324,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 {
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
-	fz_device *dev  = NULL;
+	fz_device *dev = NULL;
 	fz_matrix ctm;
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -1348,7 +1348,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx, &mbrect);
-		dev  = fz_new_text_device(ctx, sheet, text);
+		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
 		dev = NULL;
@@ -1611,13 +1611,13 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 
 	fz_try(ctx)
 	{
-	    annot = fz_first_annot(glo->doc, pc->page);
-	    for (i = 0; i < annot_index && annot; i++)
-	       annot = fz_next_annot(glo->doc, annot);
+		annot = fz_first_annot(glo->doc, pc->page);
+		for (i = 0; i < annot_index && annot; i++)
+			annot = fz_next_annot(glo->doc, annot);
 
-	    if (annot)
+		if (annot)
 		{
-		    fz_delete_annot(idoc, pc->page, annot);
+			fz_delete_annot(idoc, pc->page, annot);
 			dump_annotation_display_lists(glo);
 		}
 	}
@@ -1676,22 +1676,22 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 JNIEXPORT jobjectArray JNICALL
 JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumber)
 {
-	jclass       linkInfoClass;
-	jclass       linkInfoInternalClass;
-	jclass       linkInfoExternalClass;
-	jclass       linkInfoRemoteClass;
-	jmethodID    ctorInternal;
-	jmethodID    ctorExternal;
-	jmethodID    ctorRemote;
+	jclass linkInfoClass;
+	jclass linkInfoInternalClass;
+	jclass linkInfoExternalClass;
+	jclass linkInfoRemoteClass;
+	jmethodID ctorInternal;
+	jmethodID ctorExternal;
+	jmethodID ctorRemote;
 	jobjectArray arr;
-	jobject      linkInfo;
-	fz_matrix    ctm;
-	float        zoom;
-	fz_link     *list;
-	fz_link     *link;
-	int          count;
-	page_cache  *pc;
-	globals     *glo = get_globals(env, thiz);
+	jobject linkInfo;
+	fz_matrix ctm;
+	float zoom;
+	fz_link *list;
+	fz_link *link;
+	int count;
+	page_cache *pc;
+	globals *glo = get_globals(env, thiz);
 
 	linkInfoClass = (*env)->FindClass(env, PACKAGENAME "/LinkInfo");
 	if (linkInfoClass == NULL) return NULL;
@@ -1791,17 +1791,17 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 JNIEXPORT jobjectArray JNICALL
 JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNumber)
 {
-	jclass       rectFClass;
-	jmethodID    ctor;
+	jclass rectFClass;
+	jmethodID ctor;
 	jobjectArray arr;
-	jobject      rectF;
+	jobject rectF;
 	fz_interactive *idoc;
 	fz_widget *widget;
-	fz_matrix    ctm;
-	float        zoom;
-	int          count;
-	page_cache  *pc;
-	globals     *glo = get_globals(env, thiz);
+	fz_matrix ctm;
+	float zoom;
+	int count;
+	page_cache *pc;
+	globals *glo = get_globals(env, thiz);
 
 	rectFClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectFClass == NULL) return NULL;

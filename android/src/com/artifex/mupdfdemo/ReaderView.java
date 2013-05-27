@@ -16,10 +16,9 @@ import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.Scroller;
 
-public class ReaderView extends AdapterView<Adapter>
-                        implements GestureDetector.OnGestureListener,
-                                   ScaleGestureDetector.OnScaleGestureListener,
-                                   Runnable {
+public class ReaderView
+		extends AdapterView<Adapter>
+		implements GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener, Runnable {
 	private static final int  MOVING_DIAGONALLY = 0;
 	private static final int  MOVING_LEFT       = 1;
 	private static final int  MOVING_RIGHT      = 2;

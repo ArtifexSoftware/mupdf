@@ -70,7 +70,7 @@ in the entries as follows:
      CPU/ABI: ARM (armeabi)     (If this option exists)
      SD card: Size: 1024MiB
      Skin: Resolution: 480x756  (756 just fits my macbook screen, but 800 may
-     	   	       		 be 'more standard')
+                                 be 'more standard')
 
 Click 'Create AVD' (on old versions you may have to wait for a minute or
 so while it is prepared. Now you can exit the GUI.
@@ -186,13 +186,13 @@ Forms support
 To build with PDF forms support, the only change is to the ndk-build stage.
 Run:
 
-	V8_BUILD=yes ndk-build
+        V8_BUILD=yes ndk-build
 
 The build will need v8 headers and libraries to be present in the thirdparty
 directory. The files assumed are:
 
-	thirdparty/v8-3.9/android/libv8_base.a
-	thirdparty/v8-3.9/android/libv8_snapshot.a
-	thirdparty/v8-3.9/include/v8.h
-	thirdparty/v8-3.9/include/v8stdint.h
+        thirdparty/v8-3.9/android/libv8_base.a
+        thirdparty/v8-3.9/android/libv8_snapshot.a
+        thirdparty/v8-3.9/include/v8.h
+        thirdparty/v8-3.9/include/v8stdint.h
 

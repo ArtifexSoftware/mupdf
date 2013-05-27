@@ -241,7 +241,6 @@ public class MuPDFActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 
-
 		mAlertBuilder = new AlertDialog.Builder(this);
 
 		if (core == null) {
@@ -358,7 +357,6 @@ public class MuPDFActivity extends Activity
 		});
 		alert.show();
 	}
-
 
 	public void createUI(Bundle savedInstanceState) {
 		if (core == null)

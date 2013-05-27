@@ -7,17 +7,18 @@ import android.widget.ListView;
 
 public class OutlineActivity extends ListActivity {
 	OutlineItem mItems[];
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-	    super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState);
 
-	    mItems = OutlineActivityData.get().items;
-	    setListAdapter(new OutlineAdapter(getLayoutInflater(),mItems));
-	    // Restore the position within the list from last viewing
-	    getListView().setSelection(OutlineActivityData.get().position);
-        getListView().setDividerHeight(0);
-	    setResult(-1);
+		mItems = OutlineActivityData.get().items;
+		setListAdapter(new OutlineAdapter(getLayoutInflater(),mItems));
+		// Restore the position within the list from last viewing
+		getListView().setSelection(OutlineActivityData.get().position);
+		getListView().setDividerHeight(0);
+		setResult(-1);
 	}
 
 	@Override
