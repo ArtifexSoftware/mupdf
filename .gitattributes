@@ -1,1 +1,13 @@
-*		text=auto
+# Macros:
+[attr]tabs		whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=4
+[attr]spaces		whitespace=trailing-space,space-before-tab,tabs-in-indent
+
+# Files:
+*			text=auto
+Make*			tabs
+*.mk			tabs
+*.[ch]			tabs
+*.java			tabs
+*.xml			tabs
+memento.*		spaces
+*.vcxproj*		spaces
