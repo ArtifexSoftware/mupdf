@@ -1177,7 +1177,6 @@ fz_convert_color(fz_context *ctx, fz_colorspace *ds, float *dv, fz_colorspace *s
 	cc.convert(&cc, dv, sv);
 }
 
-
 /* Indexed */
 
 struct indexed

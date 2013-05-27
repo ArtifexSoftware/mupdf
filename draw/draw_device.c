@@ -1847,7 +1847,6 @@ fz_draw_end_tile(fz_device *devp)
 	tile_record *tile;
 	tile_key *key;
 
-
 	if (dev->top == 0)
 	{
 		fz_warn(ctx, "Unexpected end_tile");
@@ -1961,7 +1960,6 @@ fz_draw_end_tile(fz_device *devp)
 	{
 		/* Do nothing */
 	}
-
 
 	fz_drop_pixmap(dev->ctx, state[1].dest);
 	fz_drop_pixmap(dev->ctx, state[1].shape);

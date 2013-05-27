@@ -1486,7 +1486,6 @@ void fz_flatten_dash_path(fz_gel *gel, fz_path *path, const fz_stroke_state *str
 
 fz_irect *fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth);
 
-
 /*
  * The device interface.
  */
