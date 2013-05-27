@@ -954,25 +954,6 @@ textlen(fz_text_page *page)
 }
 
 static int
-match(fz_text_page *page, const char *s, int n)
-{
-	int orig = n;
-	int c;
-	while (*s) {
-		s += fz_chartorune(&c, (char *)s);
-		if (c == ' ' && charat(page, n) == ' ') {
-			while (charat(page, n) == ' ')
-				n++;
-		} else {
-			if (tolower(c) != tolower(charat(page, n)))
-				return 0;
-			n++;
-		}
-	}
-	return n - orig;
-}
-
-static int
 countOutlineItems(fz_outline *outline)
 {
 	int count = 0;
@@ -1138,20 +1119,7 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		fz_free_device(dev);
 		dev = NULL;
 
-		len = textlen(text);
-		for (pos = 0; pos < len; pos++)
-		{
-			fz_rect rr = fz_empty_rect;
-			n = match(text, str, pos);
-			for (i = 0; i < n; i++)
-			{
-				fz_rect bbox = bboxcharat(text, pos + i);
-				fz_union_rect(&rr, &bbox);
-			}
-
-			if (!fz_is_empty_rect(&rr) && hit_count < MAX_SEARCH_HITS)
-				glo->hit_bbox[hit_count++] = rr;
-		}
+		hit_count = fz_search_text_page(ctx, text, str, glo->hit_bbox, MAX_SEARCH_HITS);
 	}
 	fz_always(ctx)
 	{

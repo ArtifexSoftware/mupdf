@@ -2292,7 +2292,7 @@ void fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page);
 
 	NOTE: This is an experimental interface and subject to change without notice.
 */
-int fz_search_text_page(fz_context *ctx, fz_text_page *text, char *needle, fz_rect *hit_bbox, int hit_max);
+int fz_search_text_page(fz_context *ctx, fz_text_page *text, const char *needle, fz_rect *hit_bbox, int hit_max);
 
 /*
 	fz_highlight_selection: Return a list of rectangles to highlight given a selection rectangle.
