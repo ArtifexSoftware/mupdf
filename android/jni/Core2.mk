@@ -24,7 +24,7 @@ endif
 
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \
-	../thirdparty/$(OPENJPEG)/libopenjpeg \
+	../thirdparty/$(OPENJPEG)/src/lib/openjp2 \
 	../thirdparty/$(JPEG) \
 	../thirdparty/$(ZLIB) \
 	../thirdparty/$(FREETYPE)/include \
