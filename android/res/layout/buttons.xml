@@ -214,6 +214,20 @@
 				android:onClick="OnCancelDeleteButtonClick"
 				android:src="@drawable/ic_cancel" />
 
+			<TextView
+				android:id="@+id/deleteLabel"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_centerVertical="true"
+				android:layout_toRightOf="@+id/cancelDeleteButton"
+				android:layout_toLeftOf="@+id/deleteButton"
+				android:gravity="center"
+				android:singleLine="true"
+				android:textColor="#FFFFFF"
+				android:textStyle="bold"
+				android:text="@string/delete"
+				android:textAppearance="?android:attr/textAppearanceMedium" />
+
 			<ImageButton
 				android:id="@+id/deleteButton"
 				android:layout_width="wrap_content"
