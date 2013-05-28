@@ -763,7 +763,7 @@ static void renumberobjs(pdf_document *xref, pdf_write_options *opts)
 	fz_try(ctx)
 	{
 		/* Apply renumber map to indirect references in all objects in xref */
-		renumberobj(xref, opts, xref->trailer);
+		renumberobj(xref, opts, pdf_trailer(xref));
 		for (num = 0; num < xref->len; num++)
 		{
 			pdf_obj *obj = xref->table[num].obj;
@@ -1301,7 +1301,7 @@ pdf_localise_page_resources(pdf_document *xref)
 	if (xref->resources_localised)
 		return;
 
-	lpr(ctx, pdf_dict_getp(xref->trailer, "Root/Pages"), 0, 0);
+	lpr(ctx, pdf_dict_getp(pdf_trailer(xref), "Root/Pages"), 0, 0);
 
 	xref->resources_localised = 1;
 }
@@ -1326,7 +1326,7 @@ linearize(pdf_document *xref, pdf_write_options *opts)
 
 	/* Walk the objects for each page, marking which ones are used, where */
 	memset(opts->use_list, 0, n * sizeof(int));
-	mark_trailer(xref, opts, xref->trailer);
+	mark_trailer(xref, opts, pdf_trailer(xref));
 
 	/* Add new objects required for linearization */
 	add_linearization_objs(xref, opts);
@@ -1769,15 +1769,15 @@ static void writexref(pdf_document *xref, pdf_write_options *opts, int from, int
 
 		if (first)
 		{
-			obj = pdf_dict_gets(xref->trailer, "Info");
+			obj = pdf_dict_gets(pdf_trailer(xref), "Info");
 			if (obj)
 				pdf_dict_puts(trailer, "Info", obj);
 
-			obj = pdf_dict_gets(xref->trailer, "Root");
+			obj = pdf_dict_gets(pdf_trailer(xref), "Root");
 			if (obj)
 				pdf_dict_puts(trailer, "Root", obj);
 
-			obj = pdf_dict_gets(xref->trailer, "ID");
+			obj = pdf_dict_gets(pdf_trailer(xref), "ID");
 			if (obj)
 				pdf_dict_puts(trailer, "ID", obj);
 		}
@@ -2256,7 +2256,7 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 
 		/* Sweep & mark objects from the trailer */
 		if (opts.do_garbage >= 1)
-			sweepobj(xref, &opts, xref->trailer);
+			sweepobj(xref, &opts, pdf_trailer(xref));
 		else
 			for (num = 0; num < xref->len; num++)
 				opts.use_list[num] = 1;

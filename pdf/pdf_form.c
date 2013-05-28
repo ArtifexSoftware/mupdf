@@ -1578,7 +1578,7 @@ static void add_field_hierarchy_to_array(pdf_obj *array, pdf_obj *field)
 static pdf_obj *specified_fields(pdf_document *doc, pdf_obj *fields, int exclude)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_obj *form = pdf_dict_getp(doc->trailer, "Root/AcroForm/Fields");
+	pdf_obj *form = pdf_dict_getp(pdf_trailer(doc), "Root/AcroForm/Fields");
 	int i, n;
 	pdf_obj *result = pdf_new_array(ctx, 0);
 	pdf_obj *nil = NULL;
@@ -1924,7 +1924,7 @@ static void recalculate(pdf_document *doc)
 	doc->recalculating = 1;
 	fz_try(ctx)
 	{
-		pdf_obj *co = pdf_dict_getp(doc->trailer, "Root/AcroForm/CO");
+		pdf_obj *co = pdf_dict_getp(pdf_trailer(doc), "Root/AcroForm/CO");
 
 		if (co && doc->js)
 		{

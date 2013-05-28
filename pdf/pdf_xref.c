@@ -12,6 +12,17 @@ static inline int iswhite(int ch)
  * magic version tag and startxref
  */
 
+pdf_obj *pdf_trailer(pdf_document *doc)
+{
+	return doc->trailer;
+}
+
+void pdf_set_xref_trailer(pdf_document *doc, pdf_obj *trailer)
+{
+	pdf_drop_obj(doc->trailer);
+	doc->trailer = pdf_keep_obj(trailer);
+}
+
 static void
 pdf_load_version(pdf_document *xref)
 {
@@ -102,6 +113,7 @@ pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 
 	fz_try(xref->ctx)
 	{
+		pdf_obj *trailer;
 		tok = pdf_lex(xref->file, buf);
 		if (tok != PDF_TOK_TRAILER)
 			fz_throw(xref->ctx, "expected trailer marker");
@@ -110,7 +122,9 @@ pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 		if (tok != PDF_TOK_OPEN_DICT)
 			fz_throw(xref->ctx, "expected trailer dictionary");
 
-		xref->trailer = pdf_parse_dict(xref, xref->file, buf);
+		trailer = pdf_parse_dict(xref, xref->file, buf);
+		pdf_set_xref_trailer(xref, trailer);
+		pdf_drop_obj(trailer);
 	}
 	fz_catch(xref->ctx)
 	{
@@ -123,16 +137,19 @@ pdf_read_new_trailer(pdf_document *xref, pdf_lexbuf *buf)
 {
 	fz_try(xref->ctx)
 	{
+		pdf_obj *trailer;
 		int num, gen, stm_ofs, ofs;
 		ofs = fz_tell(xref->file);
-		xref->trailer = pdf_parse_ind_obj(xref, xref->file, buf, &num, &gen, &stm_ofs);
+		trailer = pdf_parse_ind_obj(xref, xref->file, buf, &num, &gen, &stm_ofs);
+		pdf_set_xref_trailer(xref, trailer);
+		pdf_drop_obj(trailer);
 		if (num >= xref->len)
 			pdf_resize_xref(xref, num+1);
 		xref->table[num].ofs = ofs;
 		xref->table[num].gen = gen;
 		xref->table[num].stm_ofs = stm_ofs;
 		pdf_drop_obj(xref->table[num].obj);
-		xref->table[num].obj = pdf_keep_obj(xref->trailer);
+		xref->table[num].obj = pdf_keep_obj(pdf_trailer(xref));
 		xref->table[num].type = 'n';
 	}
 	fz_catch(xref->ctx)
@@ -561,7 +578,7 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 	pdf_read_trailer(xref, buf);
 
-	size = pdf_to_int(pdf_dict_gets(xref->trailer, "Size"));
+	size = pdf_to_int(pdf_dict_gets(pdf_trailer(xref), "Size"));
 	if (!size)
 		fz_throw(ctx, "trailer missing Size entry");
 
@@ -600,7 +617,7 @@ pdf_ocg_set_config(pdf_document *xref, int config)
 	pdf_obj *obj, *cobj;
 	char *name;
 
-	obj = pdf_dict_gets(pdf_dict_gets(xref->trailer, "Root"), "OCProperties");
+	obj = pdf_dict_gets(pdf_dict_gets(pdf_trailer(xref), "Root"), "OCProperties");
 	if (!obj)
 	{
 		if (config == 0)
@@ -706,7 +723,7 @@ pdf_read_ocg(pdf_document *xref)
 
 	fz_var(desc);
 
-	obj = pdf_dict_gets(pdf_dict_gets(xref->trailer, "Root"), "OCProperties");
+	obj = pdf_dict_gets(pdf_dict_gets(pdf_trailer(xref), "Root"), "OCProperties");
 	if (!obj)
 		return;
 	ocg = pdf_dict_gets(obj, "OCGs");
@@ -781,11 +798,7 @@ pdf_init_document(pdf_document *xref)
 			xref->table = NULL;
 			xref->len = 0;
 		}
-		if (xref->trailer)
-		{
-			pdf_drop_obj(xref->trailer);
-			xref->trailer = NULL;
-		}
+		pdf_set_xref_trailer(xref, NULL);
 		fz_warn(xref->ctx, "trying to repair broken xref");
 		repaired = 1;
 	}
@@ -797,8 +810,8 @@ pdf_init_document(pdf_document *xref)
 		if (repaired)
 			pdf_repair_xref(xref, &xref->lexbuf.base);
 
-		encrypt = pdf_dict_gets(xref->trailer, "Encrypt");
-		id = pdf_dict_gets(xref->trailer, "ID");
+		encrypt = pdf_dict_gets(pdf_trailer(xref), "Encrypt");
+		id = pdf_dict_gets(pdf_trailer(xref), "ID");
 		if (pdf_is_dict(encrypt))
 			xref->crypt = pdf_new_crypt(ctx, encrypt, id);
 
@@ -809,8 +822,8 @@ pdf_init_document(pdf_document *xref)
 		{
 			pdf_repair_obj_stms(xref);
 
-			hasroot = (pdf_dict_gets(xref->trailer, "Root") != NULL);
-			hasinfo = (pdf_dict_gets(xref->trailer, "Info") != NULL);
+			hasroot = (pdf_dict_gets(pdf_trailer(xref), "Root") != NULL);
+			hasinfo = (pdf_dict_gets(pdf_trailer(xref), "Info") != NULL);
 
 			for (i = 1; i < xref->len; i++)
 			{
@@ -833,7 +846,7 @@ pdf_init_document(pdf_document *xref)
 					if (pdf_is_name(obj) && !strcmp(pdf_to_name(obj), "Catalog"))
 					{
 						nobj = pdf_new_indirect(ctx, i, 0, xref);
-						pdf_dict_puts(xref->trailer, "Root", nobj);
+						pdf_dict_puts(pdf_trailer(xref), "Root", nobj);
 						pdf_drop_obj(nobj);
 						nobj = NULL;
 					}
@@ -844,7 +857,7 @@ pdf_init_document(pdf_document *xref)
 					if (pdf_dict_gets(dict, "Creator") || pdf_dict_gets(dict, "Producer"))
 					{
 						nobj = pdf_new_indirect(ctx, i, 0, xref);
-						pdf_dict_puts(xref->trailer, "Info", nobj);
+						pdf_dict_puts(pdf_trailer(xref), "Info", nobj);
 						pdf_drop_obj(nobj);
 						nobj = NULL;
 					}
@@ -919,7 +932,7 @@ pdf_close_document(pdf_document *xref)
 		pdf_drop_obj(xref->focus_obj);
 	if (xref->file)
 		fz_close(xref->file);
-	pdf_drop_obj(xref->trailer);
+	pdf_drop_obj(pdf_trailer(xref));
 	if (xref->crypt)
 		pdf_free_crypt(ctx, xref->crypt);
 
@@ -1306,7 +1319,7 @@ pdf_meta(pdf_document *doc, int key, void *ptr, int size)
 	}
 	case FZ_META_INFO:
 	{
-		pdf_obj *info = pdf_dict_gets(doc->trailer, "Info");
+		pdf_obj *info = pdf_dict_gets(pdf_trailer(doc), "Info");
 		if (!info)
 		{
 			if (ptr)

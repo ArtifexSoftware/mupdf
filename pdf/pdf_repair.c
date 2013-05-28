@@ -441,21 +441,25 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 
 		/* create a repaired trailer, Root will be added later */
 
-		xref->trailer = pdf_new_dict(ctx, 5);
+		obj = pdf_new_dict(ctx, 5);
+		pdf_set_xref_trailer(xref, obj);
+		pdf_drop_obj(obj);
+		obj = NULL;
 
 		obj = pdf_new_int(ctx, maxnum + 1);
-		pdf_dict_puts(xref->trailer, "Size", obj);
+		pdf_dict_puts(pdf_trailer(xref), "Size", obj);
 		pdf_drop_obj(obj);
+		obj = NULL;
 
 		if (root)
 		{
-			pdf_dict_puts(xref->trailer, "Root", root);
+			pdf_dict_puts(pdf_trailer(xref), "Root", root);
 			pdf_drop_obj(root);
 			root = NULL;
 		}
 		if (info)
 		{
-			pdf_dict_puts(xref->trailer, "Info", info);
+			pdf_dict_puts(pdf_trailer(xref), "Info", info);
 			pdf_drop_obj(info);
 			info = NULL;
 		}
@@ -469,7 +473,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 				pdf_drop_obj(encrypt);
 				encrypt = obj;
 			}
-			pdf_dict_puts(xref->trailer, "Encrypt", encrypt);
+			pdf_dict_puts(pdf_trailer(xref), "Encrypt", encrypt);
 			pdf_drop_obj(encrypt);
 			encrypt = NULL;
 		}
@@ -483,7 +487,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 				pdf_drop_obj(id);
 				id = obj;
 			}
-			pdf_dict_puts(xref->trailer, "ID", id);
+			pdf_dict_puts(pdf_trailer(xref), "ID", id);
 			pdf_drop_obj(id);
 			id = NULL;
 		}

@@ -173,6 +173,8 @@ fz_buffer *pdf_load_raw_renumbered_stream(pdf_document *doc, int num, int gen, i
 fz_buffer *pdf_load_renumbered_stream(pdf_document *doc, int num, int gen, int orig_num, int orig_gen, int *truncated);
 fz_stream *pdf_open_raw_renumbered_stream(pdf_document *doc, int num, int gen, int orig_num, int orig_gen);
 
+pdf_obj *pdf_trailer(pdf_document *doc);
+void pdf_set_xref_trailer(pdf_document *doc, pdf_obj *trailer);
 void pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf);
 void pdf_repair_obj_stms(pdf_document *doc);
 void pdf_resize_xref(pdf_document *doc, int newcap);
