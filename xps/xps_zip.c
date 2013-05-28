@@ -103,7 +103,7 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 	z_stream stream;
 	unsigned char *inbuf;
 	int sig;
-	int version, general, method;
+	int method;
 	int namelength, extralength;
 	int code;
 	fz_context *ctx = doc->ctx;
@@ -116,8 +116,8 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 		fz_throw(doc->ctx, "wrong zip local file signature (0x%x)", sig);
 	}
 
-	version = getshort(doc->file);
-	general = getshort(doc->file);
+	(void) getshort(doc->file); /* version */
+	(void) getshort(doc->file); /* general */
 	method = getshort(doc->file);
 	(void) getshort(doc->file); /* file time */
 	(void) getshort(doc->file); /* file date */
