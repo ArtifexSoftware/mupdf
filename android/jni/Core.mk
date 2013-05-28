@@ -4,10 +4,6 @@ include $(CLEAR_VARS)
 
 MY_ROOT := ../..
 
-OPENJPEG := openjpeg
-JPEG := jpeg
-ZLIB := zlib
-FREETYPE := freetype
 V8 := v8-3.9
 
 ifeq ($(TARGET_ARCH),arm)
@@ -23,16 +19,15 @@ endif
 
 LOCAL_C_INCLUDES := \
 	../thirdparty/jbig2dec \
-	../thirdparty/$(OPENJPEG)/src/lib/openjp2 \
-	../thirdparty/$(JPEG) \
-	../thirdparty/$(ZLIB) \
-	../thirdparty/$(FREETYPE)/include \
+	../thirdparty/openjpeg/src/lib/openjp2 \
+	../thirdparty/jpeg \
+	../thirdparty/zlib \
+	../thirdparty/freetype/include \
 	../draw \
 	../fitz \
 	../pdf \
 	../xps \
 	../cbz \
-	../image \
 	../ucdn \
 	../scripts \
 	..
