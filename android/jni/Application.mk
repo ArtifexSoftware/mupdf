@@ -1,11 +1,25 @@
-# The ARMv7 is significanly faster due to the use of the hardware FPU
-APP_PLATFORM=android-8
+# When we build for google play, we build 4 different apk's, each with
+# a different version, by uncommenting one of the pairs of lines below.
+# Suppose our base version is X:
 
-# We only build for arm variants by default. If you want more, uncomment
-# the appropriate line below.
-APP_ABI := armeabi armeabi-v7a
-#APP_ABI := armeabi armeabi-v7a x86 mips
-#APP_ABI := all
+# Version X: armeabi
+#APP_PLATFORM=android-8
+#APP_ABI := armeabi
+
+# Version X+1: armeabi-v7a (Much faster due to the availability of hardware
+# FP, but cannot be run in the emulator).
+APP_PLATFORM=android-8
+APP_ABI := armeabi-v7a
+
+# Version X+2: x86 (Requires android-9, so a change needs to be made in
+# AndroidManifest.xml too)
+#APP_PLATFORM=android-9
+#APP_ABI := x86
+
+# Version X+3: mips (Requires android-9, so a change needs to be made in
+# AndroidManifest.xml too)
+#APP_PLATFORM=android-9
+#APP_ABI := mips
 
 ifdef NDK_PROFILER
 # The profiler doesn't seem to receive ticks when run on release code.
