@@ -148,7 +148,7 @@ public class MuPDFReaderView extends ReaderView {
 	}
 
 	public boolean onTouchEvent(MotionEvent event) {
-		if (event.getActionMasked() == MotionEvent.ACTION_DOWN)
+		if ((event.getAction() & event.ACTION_MASK) == MotionEvent.ACTION_DOWN)
 			tapDisabled = false;
 
 		return super.onTouchEvent(event);
