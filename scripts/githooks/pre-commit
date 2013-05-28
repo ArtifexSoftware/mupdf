@@ -13,7 +13,7 @@ PATCH=P.diff
 if ! git diff --cached --check --quiet
 then
 	git diff --cached > $PATCH
-	git apply --cached --whitespace=fix -R $PATCH
+	git apply --cached -R $PATCH
 	git apply --cached --whitespace=fix $PATCH
 	rm $PATCH
 fi
