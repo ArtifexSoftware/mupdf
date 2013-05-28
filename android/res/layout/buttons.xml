@@ -46,7 +46,7 @@
 				android:layout_height="wrap_content"
 				android:layout_centerVertical="true"
 				android:layout_toLeftOf="@+id/outlineButton"
-				android:contentDescription="@string/search_document"
+				android:contentDescription="@string/toggle_reflow_mode"
 				android:background="@drawable/button"
 				android:src="@drawable/ic_reflow" />
 
@@ -56,7 +56,7 @@
 				android:layout_height="wrap_content"
 				android:layout_centerVertical="true"
 				android:layout_toLeftOf="@+id/searchButton"
-				android:contentDescription="@string/search_document"
+				android:contentDescription="@string/outline_title"
 				android:background="@drawable/button"
 				android:src="@drawable/ic_list" />
 

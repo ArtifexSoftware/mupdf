@@ -61,6 +61,7 @@ public class MuPDFActivity extends Activity
 	private ImageButton  mSearchButton;
 	private ImageButton  mReflowButton;
 	private ImageButton  mOutlineButton;
+	private ImageButton	mMoreButton;
 	private TextView     mAnnotTypeText;
 	private ImageButton mAnnotButton;
 	private ViewAnimator mTopBarSwitcher;
@@ -610,6 +611,7 @@ public class MuPDFActivity extends Activity
 		setButtonEnabled(mSearchButton, !reflow);
 		if (reflow) setLinkHighlight(false);
 		setButtonEnabled(mLinkButton, !reflow);
+		setButtonEnabled(mMoreButton, !reflow);
 		mDocView.refresh(mReflow);
 	}
 
@@ -839,6 +841,7 @@ public class MuPDFActivity extends Activity
 		mSearchFwd = (ImageButton)mButtonsView.findViewById(R.id.searchForward);
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
 		mLinkButton = (ImageButton)mButtonsView.findViewById(R.id.linkButton);
+		mMoreButton = (ImageButton)mButtonsView.findViewById(R.id.moreButton);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
 		mPageNumberView.setVisibility(View.INVISIBLE);
 		mInfoView.setVisibility(View.INVISIBLE);

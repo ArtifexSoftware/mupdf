@@ -52,4 +52,5 @@
 	<string name="accept">Accept</string>
 	<string name="copy_text">copy text</string>
 	<string name="format_currently_not_supported">Format currently not supported</string>
+	<string name="toggle_reflow_mode">Toggle reflow mode</string>
 </resources>
