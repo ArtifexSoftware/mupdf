@@ -57,7 +57,7 @@ void pdf_lexbuf_init(fz_context *ctx, pdf_lexbuf *lexbuf, int size);
 void pdf_lexbuf_fin(pdf_lexbuf *lexbuf);
 ptrdiff_t pdf_lexbuf_grow(pdf_lexbuf *lexbuf);
 
-int pdf_lex(fz_stream *f, pdf_lexbuf *lexbuf);
+pdf_token pdf_lex(fz_stream *f, pdf_lexbuf *lexbuf);
 
 pdf_obj *pdf_parse_array(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
 pdf_obj *pdf_parse_dict(pdf_document *doc, fz_stream *f, pdf_lexbuf *buf);
