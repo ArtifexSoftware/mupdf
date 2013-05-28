@@ -13,6 +13,7 @@ typedef enum {
 	FULL_RESOLUTION = 0,
 	THUMBNAIL,
 	DUMMY,
+	OLD_RESOLUTION,
 	NOTSET
 } Page_Content_t;
 

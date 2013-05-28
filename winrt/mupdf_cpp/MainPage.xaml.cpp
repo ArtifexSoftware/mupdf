@@ -1017,10 +1017,13 @@ void mupdf_cpp::MainPage::GridSizeChanged()
 
 	if (m_num_pages > 0 && old_flip != m_curr_flipView && old_flip != nullptr)
 	{
-		if ((this->m_curr_flipView->SelectedIndex == this->m_currpage) && this->m_links_on)
-			FlipView_SelectionChanged(nullptr, nullptr);
-		else
-			this->m_curr_flipView->SelectedIndex = this->m_currpage;
+		/* If links are on or off, we need to invalidate */
+		ClearLinks();
+		InvalidateLinks();
+		auto doc = this->m_docPages->GetAt(m_currpage);
+		doc->Content = OLD_RESOLUTION; /* To force a rerender */
+		this->m_curr_flipView->SelectedIndex = this->m_currpage;
+		FlipView_SelectionChanged(nullptr, nullptr);
 	}
 }
 
@@ -1057,20 +1060,29 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 	if (m_links_on)
 		AddLinkCanvas();
 	else
+		ClearLinks();
+}
+
+void mupdf_cpp::MainPage::ClearLinks()
+{
+	/* Make sure surrounding render pages lose their links */
+	for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++)
 	{
-		/* Make sure surrounding render pages lose their links */
-		for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++)
+		if (k >= 0 && k < m_num_pages)
 		{
-			if (k >= 0 && k < m_num_pages)
+			auto doc_page = this->m_docPages->GetAt(k);
+			if (doc_page->Content == FULL_RESOLUTION)
 			{
-				auto doc_page = this->m_docPages->GetAt(k);
-				if (doc_page->Content == FULL_RESOLUTION)
-				{
-					doc_page->LinkBox = nullptr;
-				}
+				doc_page->LinkBox = nullptr;
 			}
 		}
 	}
+}
+
+void mupdf_cpp::MainPage::InvalidateLinks()
+{
+	for (int k = 0; k < m_num_pages; k++)
+		m_linkset->SetAt(k, false);
 }
 
 /* Add in the link rects.  If we have not already computed them then do that now */
