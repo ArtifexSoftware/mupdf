@@ -79,7 +79,7 @@ xps_compare_entries(const void *a0, const void *b0)
 }
 
 static xps_entry *
-xps_find_zip_entry(xps_document *doc, char *name)
+xps_lookup_zip_entry(xps_document *doc, char *name)
 {
 	int l = 0;
 	int r = doc->zip_count - 1;
@@ -342,7 +342,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 		name ++;
 
 	/* All in one piece */
-	ent = xps_find_zip_entry(doc, name);
+	ent = xps_lookup_zip_entry(doc, name);
 	if (ent)
 	{
 		part = xps_new_part(doc, partname, ent->usize);
@@ -364,11 +364,11 @@ xps_read_zip_part(xps_document *doc, char *partname)
 	while (!seen_last)
 	{
 		sprintf(buf, "%s/[%d].piece", name, count);
-		ent = xps_find_zip_entry(doc, buf);
+		ent = xps_lookup_zip_entry(doc, buf);
 		if (!ent)
 		{
 			sprintf(buf, "%s/[%d].last.piece", name, count);
-			ent = xps_find_zip_entry(doc, buf);
+			ent = xps_lookup_zip_entry(doc, buf);
 			seen_last = (ent != NULL);
 		}
 		if (!ent)
@@ -390,7 +390,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 				sprintf(buf, "%s/[%d].piece", name, i);
 			else
 				sprintf(buf, "%s/[%d].last.piece", name, i);
-			ent = xps_find_zip_entry(doc, buf);
+			ent = xps_lookup_zip_entry(doc, buf);
 			fz_try(doc->ctx)
 			{
 				xps_read_zip_entry(doc, ent, part->data + offset);
@@ -415,13 +415,13 @@ xps_has_zip_part(xps_document *doc, char *name)
 	char buf[2048];
 	if (name[0] == '/')
 		name++;
-	if (xps_find_zip_entry(doc, name))
+	if (xps_lookup_zip_entry(doc, name))
 		return 1;
 	sprintf(buf, "%s/[0].piece", name);
-	if (xps_find_zip_entry(doc, buf))
+	if (xps_lookup_zip_entry(doc, buf))
 		return 1;
 	sprintf(buf, "%s/[0].last.piece", name);
-	if (xps_find_zip_entry(doc, buf))
+	if (xps_lookup_zip_entry(doc, buf))
 		return 1;
 	return 0;
 }

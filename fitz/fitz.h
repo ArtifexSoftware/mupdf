@@ -1418,10 +1418,10 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 typedef struct fz_colorspace_s fz_colorspace;
 
 /*
-	fz_find_device_colorspace: Find a standard colorspace based upon
+	fz_lookup_device_colorspace: Find a standard colorspace based upon
 	it's name.
 */
-fz_colorspace *fz_find_device_colorspace(fz_context *ctx, char *name);
+fz_colorspace *fz_lookup_device_colorspace(fz_context *ctx, char *name);
 
 /*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
