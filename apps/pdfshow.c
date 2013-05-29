@@ -161,7 +161,8 @@ static void showgrep(char *filename)
 	len = pdf_count_objects(doc);
 	for (i = 0; i < len; i++)
 	{
-		if (doc->table[i].type == 'n' || doc->table[i].type == 'o')
+		pdf_xref_entry *entry = pdf_get_xref_entry(doc, i);
+		if (entry->type == 'n' || entry->type == 'o')
 		{
 			fz_try(ctx)
 			{
