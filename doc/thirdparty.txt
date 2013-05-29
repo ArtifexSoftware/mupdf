@@ -1,0 +1,38 @@
+			Third Party Libraries Used by MuPDF
+			===================================
+
+
+Library		Version		Function	License			URL
+
+
+
+freetype	2.4.11		Font scaling	Freetype		http://www.freetype.org/
+				and rendering	License
+
+
+
+jpeg		9.0		JPEG decoding	"Free", with
+						acknowledgement		http://www.ijg.org/
+
+
+
+openjpeg	2.0.0		JPEG 2000	BSD-style 		http://www.openjpeg.org/
+		(with patches)	decoding
+
+
+zlib		1.2.7		(De)Flate	zlib License 		http://www.zlib.net/
+				compression
+
+
+
+(Optional)
+v8		3.9		JavaScript	BSD			http://code.google.com/p/v8/
+				interpreter
+
+
+
+
+
+NOTE: jbig2dec is included in "thirdparty" but is copyright Artifex Software Inc.
+
+
