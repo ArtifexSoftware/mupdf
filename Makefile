@@ -13,17 +13,29 @@ default: all
 # XCFLAGS or XLIBS instead. Make ignores any lines in the makefile that
 # set a variable that was set on the command line.
 CFLAGS += $(XCFLAGS) -Ifitz -Ipdf -Ixps -Icbz -Iimage -Iucdn -Iscripts
-LIBS += $(XLIBS) -lfreetype -ljbig2dec -ljpeg -lopenjpeg -lz -lm
+LIBS += $(XLIBS) -lm
 LIBS_V8 = $(LIBS) $(V8LIBS)
 
 include Makerules
 include Makethird
 
-THIRD_LIBS := $(FREETYPE_LIB)
+THIRD_LIBS += $(FREETYPE_LIB)
 THIRD_LIBS += $(JBIG2DEC_LIB)
 THIRD_LIBS += $(JPEG_LIB)
 THIRD_LIBS += $(OPENJPEG_LIB)
 THIRD_LIBS += $(ZLIB_LIB)
+
+LIBS += $(FREETYPE_LIBS)
+LIBS += $(JBIG2DEC_LIBS)
+LIBS += $(JPEG_LIBS)
+LIBS += $(OPENJPEG_LIBS)
+LIBS += $(ZLIB_LIBS)
+
+CFLAGS += $(FREETYPE_CFLAGS)
+CFLAGS += $(JBIG2DEC_CFLAGS)
+CFLAGS += $(JPEG_CFLAGS)
+CFLAGS += $(OPENJPEG_CFLAGS)
+CFLAGS += $(ZLIB_CFLAGS)
 
 ifeq "$(verbose)" ""
 QUIET_AR = @ echo ' ' ' ' AR $@ ;
@@ -180,12 +192,12 @@ ifeq "$(NOX11)" ""
 MUVIEW := $(OUT)/mupdf
 $(MUVIEW) : $(FITZ_LIB) $(THIRD_LIBS)
 $(MUVIEW) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
-	$(LINK_CMD) $(SYS_X11_LIBS)
+	$(LINK_CMD) $(X11_LIBS)
 
 MUVIEW_V8 := $(OUT)/mupdf-v8
 $(MUVIEW_V8) : $(FITZ_V8_LIB) $(THIRD_LIBS)
 $(MUVIEW_V8) : $(addprefix $(OUT)/, x11_main.o x11_image.o pdfapp.o)
-	$(LINK_V8_CMD) $(SYS_X11_LIBS)
+	$(LINK_V8_CMD) $(X11_LIBS)
 endif
 
 MUJSTEST_V8 := $(OUT)/mujstest-v8
