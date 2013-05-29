@@ -23,9 +23,9 @@ V8_DIR := $(wildcard thirdparty/v8*)
 ifneq "$(V8_DIR)" ""
 
 CFLAGS += -I$(V8_DIR)/include
-ifeq "$(BUILD)" "release"
+ifeq "$(build)" "release"
 V8LIB_CHOICE := release
-else ifeq "$(BUILD)" "profile"
+else ifeq "$(build)" "profile"
 V8LIB_CHOICE := release
 else
 V8LIB_CHOICE := debug
