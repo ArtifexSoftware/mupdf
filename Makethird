@@ -10,6 +10,7 @@ FREETYPE_DIR := thirdparty/freetype
 JBIG2DEC_DIR := thirdparty/jbig2dec
 JPEG_DIR := thirdparty/jpeg
 OPENJPEG_DIR := thirdparty/openjpeg
+OPENSSL_DIR := thirdparty/openssl
 ZLIB_DIR := thirdparty/zlib
 
 # --- V8 ---
@@ -259,6 +260,34 @@ ZLIB_CFLAGS := -I$(ZLIB_DIR)
 else
 ZLIB_CFLAGS := $(SYS_ZLIB_CFLAGS)
 ZLIB_LIBS := $(SYS_ZLIB_LIBS)
+endif
+
+# --- OpenSSL ---
+
+ifneq "$(wildcard $(OPENSSL_DIR)/README)" ""
+
+OPENSSL_LIB := $(OUT)/libcrypto.a
+
+OPENSSL_DIR_MAK := $(OPENSSL_DIR)/Makefile
+OPENSSL_DIR_LIB := $(OPENSSL_DIR)/libcrypto.a
+
+$(OPENSSL_DIR_MAK):
+	cd $(OPENSSL_DIR) && ./config no-threads no-zlib no-shared no-asm no-dso
+
+$(OPENSSL_DIR_LIB): $(OPENSSL_DIR_MAK)
+	$(MAKE) -C $(OPENSSL_DIR) build_crypto
+
+$(OPENSSL_LIB): $(OPENSSL_DIR_LIB) | $(OUT)
+	cp $(OPENSSL_DIR_LIB) $(OPENSSL_LIB)
+
+openssl-clean:
+	$(MAKE) -C $(OPENSSL_DIR) clean
+	rm -f thirdparty/openssl/Makefile thirdparty/openssl/libcrypto.a
+
+OPENSSL_CFLAGS := -DHAVE_OPENSSL -I$(OPENSSL_DIR)/include
+else
+OPENSSL_CFLAGS := $(SYS_OPENSSL_CFLAGS)
+OPENSSL_LIBS := $(SYS_OPENSSL_LIBS)
 endif
 
 # --- X11 ---
