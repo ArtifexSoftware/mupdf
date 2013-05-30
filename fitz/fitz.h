@@ -1906,6 +1906,11 @@ fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
 int fz_printf(fz_output *, const char *, ...);
 
 /*
+	fz_puts: fputs equivalent for output streams.
+*/
+int fz_puts(fz_output *, const char *);
+
+/*
 	fz_write: fwrite equivalent for output streams.
 */
 int fz_write(fz_output *out, const void *data, int len);
