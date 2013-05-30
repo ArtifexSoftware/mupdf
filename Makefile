@@ -187,7 +187,7 @@ generate: $(CMAP_HDR) $(FONT_HDR) $(JAVASCRIPT_HDR) $(ADOBECA_HDR)
 $(OUT)/pdf_cmap_table.o : $(CMAP_HDR)
 $(OUT)/pdf_fontfile.o : $(FONT_HDR)
 $(OUT)/pdf_js.o : $(JAVASCRIPT_HDR)
-$(OUT)/crypto_pkcs7_openssl.o : $(ADOBECA_HDR)
+$(OUT)/crypt_pkcs7.o : $(ADOBECA_HDR)
 $(OUT)/cmapdump.o : pdf/pdf_cmap.c pdf/pdf_cmap_parse.c
 
 # --- Tools and Apps ---

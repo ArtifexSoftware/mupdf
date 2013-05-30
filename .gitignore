@@ -14,9 +14,13 @@ win32/*.user
 win32/*.ncb
 win32/*.suo
 win32/Debug
+win32/DebugOpenssl
 win32/Profile
 win32/Release
+win32/ReleaseOpenssl
 win32/Memento
+thirdparty/v8-3.9
+thirdparty/openssl
 android/obj
 android/bin
 android/libs

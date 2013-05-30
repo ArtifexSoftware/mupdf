@@ -3238,6 +3238,11 @@ int fz_signature_widget_byte_range(fz_interactive *idoc, fz_widget *widget, int 
 int fz_signature_widget_contents(fz_interactive *idoc, fz_widget *widget, char **contents);
 
 /*
+	fz_check_signature: check a signature's certificate chain and digest
+*/
+int fz_check_signature(fz_context *ctx, fz_interactive *idoc, fz_widget *widget, char *file, char *ebuf, int ebufsize);
+
+/*
 	Document events: the objects via which MuPDF informs the calling app
 	of occurrences emanating from the document, possibly from user interaction
 	or javascript execution. MuPDF informs the app of document events via a
