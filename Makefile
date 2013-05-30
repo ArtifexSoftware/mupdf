@@ -86,14 +86,19 @@ $(OUT)/%.o : xps/%.c $(MUXPS_HDR) | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : cbz/%.c $(MUCBZ_HDR) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : image/%.c $(MUCBZ_HDR) | $(OUT)
-	$(CC_CMD)
-$(OUT)/%.o : apps/%.c fitz/fitz.h pdf/mupdf.h xps/muxps.h cbz/mucbz.h image/muimage.h | $(OUT)
+$(OUT)/%.o : image/%.c $(MUIMAGE_HDR) | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : ucdn/%.c | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : scripts/%.c | $(OUT)
 	$(CC_CMD)
+
+$(OUT)/x11_%.o : apps/x11_%.c $(FITZ_HDR) | $(OUT)
+	$(CC_CMD) $(X11_CFLAGS)
+
+$(OUT)/%.o : apps/%.c $(FITZ_HDR) $(MUPDF_HDR) | $(OUT)
+	$(CC_CMD)
+
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 
