@@ -47,6 +47,7 @@ QUIET_CXX = @ echo ' ' ' ' CXX $@ ;
 QUIET_GEN = @ echo ' ' ' ' GEN $@ ;
 QUIET_LINK = @ echo ' ' ' ' LINK $@ ;
 QUIET_MKDIR = @ echo ' ' ' ' MKDIR $@ ;
+QUIET_RM = @ echo ' ' ' ' RM $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
@@ -55,6 +56,7 @@ AR_CMD = $(QUIET_AR) $(AR) cr $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 LINK_V8_CMD = $(QUIET_LINK) $(CXX) $(LDFLAGS) -o $@ $^ $(LIBS_V8)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
+RM_CMD = $(QUIET_RM) rm -f $@
 
 # --- Rules ---
 
@@ -68,6 +70,7 @@ $(OUT) $(GEN) :
 	$(MKDIR_CMD)
 
 $(OUT)/%.a :
+	$(RM_CMD)
 	$(AR_CMD)
 	$(RANLIB_CMD)
 
