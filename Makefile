@@ -133,6 +133,7 @@ libs_v8: libs $(FITZ_V8_LIB)
 CMAPDUMP := $(OUT)/cmapdump
 FONTDUMP := $(OUT)/fontdump
 CQUOTE := $(OUT)/cquote
+BIN2HEX := $(OUT)/bin2hex
 
 CMAP_CNS_SRC := $(wildcard cmaps/cns/*)
 CMAP_GB_SRC := $(wildcard cmaps/gb/*)
@@ -143,6 +144,7 @@ FONT_DROID_SRC := fonts/droid/DroidSans.ttf fonts/droid/DroidSansMono.ttf
 FONT_CJK_SRC := fonts/droid/DroidSansFallback.ttf
 FONT_CJK_FULL_SRC := fonts/droid/DroidSansFallbackFull.ttf
 JAVASCRIPT_SRC := pdf/pdf_util.js
+ADOBECA_SRC := certs/AdobeCA.p7c
 
 $(GEN)/cmap_cns.h : $(CMAP_CNS_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_CNS_SRC)
@@ -165,21 +167,27 @@ $(GEN)/font_cjk_full.h : $(FONT_CJK_FULL_SRC)
 $(GEN)/js_util.h : $(JAVASCRIPT_SRC)
 	$(QUIET_GEN) $(CQUOTE) $@ $(JAVASCRIPT_SRC)
 
+$(GEN)/adobe_ca.h : $(ADOBECA_SRC)
+	$(QUIET_GEN) $(BIN2HEX) $@ $(ADOBECA_SRC)
+
 CMAP_HDR := $(addprefix $(GEN)/, cmap_cns.h cmap_gb.h cmap_japan.h cmap_korea.h)
 FONT_HDR := $(GEN)/font_base14.h $(GEN)/font_droid.h $(GEN)/font_cjk.h $(GEN)/font_cjk_full.h
 JAVASCRIPT_HDR := $(GEN)/js_util.h
+ADOBECA_HDR := $(GEN)/adobe_ca.h
 
 ifeq "$(CROSSCOMPILE)" ""
 $(CMAP_HDR) : $(CMAPDUMP) | $(GEN)
 $(FONT_HDR) : $(FONTDUMP) | $(GEN)
 $(JAVASCRIPT_HDR) : $(CQUOTE) | $(GEN)
+$(ADOBECA_HDR) : $(BIN2HEX) | $(GEN)
 endif
 
-generate: $(CMAP_HDR) $(FONT_HDR) $(JAVASCRIPT_HDR)
+generate: $(CMAP_HDR) $(FONT_HDR) $(JAVASCRIPT_HDR) $(ADOBECA_HDR)
 
 $(OUT)/pdf_cmap_table.o : $(CMAP_HDR)
 $(OUT)/pdf_fontfile.o : $(FONT_HDR)
 $(OUT)/pdf_js.o : $(JAVASCRIPT_HDR)
+$(OUT)/crypto_pkcs7_openssl.o : $(ADOBECA_HDR)
 $(OUT)/cmapdump.o : pdf/pdf_cmap.c pdf/pdf_cmap_parse.c
 
 # --- Tools and Apps ---

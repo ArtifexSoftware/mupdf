@@ -84,6 +84,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\scripts\bin2hex.c"
+				>
+			</File>
+			<File
 				RelativePath="..\scripts\cmapdump.c"
 				>
 			</File>
