@@ -33,7 +33,6 @@
                     <Button x:Name="Contents" Style="{StaticResource ContentsBarButtonStyle}" Tag="Contents" Click="ContentDisplay"/>
                     <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Links" Click="Linker"/>
                     <Button x:Name="Reflow" Style="{StaticResource ReflowAppBarButtonStyle}" Tag="Reflow" Click="Reflower"/>
-                    <Button x:Name="Help" Style="{StaticResource HelpAppBarButtonStyle}" Tag="Help"/>
                 </StackPanel>
             </Grid>
         </AppBar>
@@ -72,6 +71,7 @@
                     <FlipView.ItemTemplate>
                         <DataTemplate>
                             <ScrollViewer
+                            Name="xaml_ScrollView_h"
                             ZoomMode="Enabled"
                             ViewChanged="ScrollChanged"
                             HorizontalScrollMode="Auto"
@@ -150,6 +150,7 @@
                     <FlipView.ItemTemplate>
                         <DataTemplate>
                         <ScrollViewer
+                            Name="xaml_ScrollView_v"
                             ZoomMode="Enabled"
                             ViewChanged="ScrollChanged"
                             HorizontalScrollMode="Auto"
@@ -239,9 +240,9 @@
                      ScrollViewer.HorizontalScrollMode="Enabled"
                      ScrollViewer.ZoomMode="Enabled"/>
 
-        <StackPanel x:Name="xaml_ProgressStack" Opacity="1" VerticalAlignment="Center" Visibility="Collapsed">
-            <Border BorderThickness="5" BorderBrush="Black" Margin="300">
-                <StackPanel Background="LightGray" >
+        <StackPanel x:Name="xaml_ProgressStack" Opacity="1" VerticalAlignment="Center" Margin="0,15" HorizontalAlignment="Center" Visibility="Collapsed">
+            <Border BorderThickness="5" BorderBrush="Black" >
+                <StackPanel Background="LightGray" HorizontalAlignment="Left" Width="756" >
                     <TextBlock HorizontalAlignment="Center" Margin="10"
         				Text="Text Search Progress" FontSize="20"/>
                     <ProgressBar x:Name="xaml_Progress" Margin="5" Height="15"
@@ -253,24 +254,17 @@
             </Border>
         </StackPanel>
 
-        <StackPanel x:Name="xaml_PasswordStack" Opacity="1" VerticalAlignment="Center" Visibility="Collapsed">
-            <Border BorderThickness="5" BorderBrush="Black" Margin="300">
+        <StackPanel x:Name="xaml_PasswordStack" Opacity="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+            <Border BorderThickness="5" BorderBrush="Black" >
                 <StackPanel Background="LightGray" >
                     <TextBlock HorizontalAlignment="Center" Margin="10"
         				Text="Password Required" FontSize="20"/>
-                    <PasswordBox x:Name="xaml_password" Height="35" Width="300"/>
+                    <PasswordBox x:Name="xaml_password" Height="35" Width="400" Margin="20"/>
                     <Button HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10" Click="PasswordOK" Height="39">
                         <TextBlock HorizontalAlignment="Center" Text="OK"/>
                     </Button>
                 </StackPanel>
             </Border>
         </StackPanel>
-
-
-
-
-
-
-
     </Grid>
 </Page>

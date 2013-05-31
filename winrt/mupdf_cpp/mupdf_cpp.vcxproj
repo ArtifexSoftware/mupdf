@@ -152,6 +152,7 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="RectList.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -193,6 +194,9 @@
     <Image Include="Assets\mupdf_smallogo.png" />
     <Image Include="Assets\mupdf_splash.png" />
     <Image Include="Assets\mupdf_storelogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mupdf_cpp.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

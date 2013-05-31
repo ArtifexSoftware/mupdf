@@ -24,11 +24,10 @@ static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
 	DataReader^ local_reader = ref new DataReader(Stream);
 	DataReaderLoadOperation^ result = local_reader->LoadAsync(len);
 
-	/* Block on the Async call */
+	/* Block on the Async call.  This is not on the UI thread. */
 	while(result->Status != AsyncStatus::Completed) {
 
 	}
-
 	result->GetResults();
 	int curr_len2 = local_reader->UnconsumedBufferLength;
 	if (curr_len2 < len)
@@ -93,7 +92,6 @@ static void unlock_mutex(void *user, int lock)
 
 void muctx::CleanUp(void)
 {
-	free(this->mu_cookie);
 	if (mu_outline != NULL)
 		fz_free_outline(mu_ctx, mu_outline);
 	if (mu_doc != NULL)
@@ -101,7 +99,6 @@ void muctx::CleanUp(void)
 	if (mu_ctx != NULL)
 		fz_free_context(mu_ctx);
 
-	this->mu_cookie = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
@@ -128,21 +125,13 @@ HRESULT muctx::InitializeContext()
 	}
 	else
 	{
-		/* If we are fine, allocate the cookie for progress etc. */
-		this->mu_cookie = (fz_cookie*)malloc(sizeof(fz_cookie));
-		if (this->mu_cookie == NULL) {
-			fz_free_context(this->mu_ctx);
-			return E_OUTOFMEMORY;
-		}
-		else
-			return S_OK;
+		return S_OK;
 	}
 }
 
 /* Initializer */
 muctx::muctx(void)
 {
-	this->mu_cookie = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
@@ -152,7 +141,6 @@ muctx::muctx(void)
 /* Destructor */
 muctx::~muctx(void)
 {
-	free(this->mu_cookie);
 	if (mu_outline != NULL)
 		fz_free_outline(mu_ctx, mu_outline);
 	if (mu_doc != NULL)
@@ -160,7 +148,6 @@ muctx::~muctx(void)
 	if (mu_ctx != NULL)
 		fz_free_context(mu_ctx);
 
-	this->mu_cookie = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
@@ -262,9 +249,6 @@ int muctx::GetContents(sh_vector_content contents_vec)
 	fz_context *ctx_clone = NULL;
 	int has_content = 0;
 
-	if (mu_cookie->abort == 1)
-		return has_content;
-
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(root);
@@ -303,9 +287,6 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	int hit_count = 0;
 	int k;
 
-	if (mu_cookie->abort == 1)
-		return hit_count;
-
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(page);
@@ -315,7 +296,7 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	{
 		page = fz_load_page(mu_doc, page_num);
 		sheet = fz_new_text_sheet(ctx_clone);
-		text = fz_new_text_page(ctx_clone, &fz_empty_rect);  // Free?
+		text = fz_new_text_page(ctx_clone, &fz_empty_rect);  
 		dev = fz_new_text_device(ctx_clone, sheet, text);
 		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
 		fz_free_device(dev);  /* Why does this need to be done here?  Seems odd */
@@ -368,9 +349,6 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	fz_context *ctx_clone = NULL;
 	int k = 0;
 	int num_links = 0;
-
-	if (mu_cookie->abort == 1)
-		return num_links;
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
@@ -454,9 +432,6 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	Point page_size;
 	fz_context *ctx_clone = NULL;
 
-	if (mu_cookie->abort == 1)
-		return S_OK;
-
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
@@ -523,16 +498,13 @@ String^ muctx::GetHTML(int page_num)
 	fz_buffer *buf = NULL;
 	String^ html;
 
-	if (mu_cookie->abort == 1)
-		return nullptr;
-
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
 	fz_var(page);
 	fz_var(sheet);
-	fz_var(text);  // Free?
-	fz_var(buf);   // Free?
+	fz_var(text);
+	fz_var(buf);
 	fz_try(ctx_clone)
 	{
 		page = fz_load_page(mu_doc, page_num);
@@ -561,6 +533,14 @@ String^ muctx::GetHTML(int page_num)
 		if (sheet != NULL)
 		{
 			fz_free_text_sheet(ctx_clone, sheet);
+		}
+		if (text != NULL)
+		{
+			fz_free_text_page(ctx_clone, text);
+		}
+		if (buf != NULL)
+		{
+			fz_drop_buffer(ctx_clone, buf);
 		}
 	}
 	fz_catch(ctx_clone)

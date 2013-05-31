@@ -15,6 +15,10 @@
 #define BLANK_WIDTH 17
 #define BLANK_HEIGHT 22
 
+#define KEYBOARD_ZOOM_STEP 0.25
+#define ZOOM_MAX 4
+#define ZOOM_MIN 0.25
+
 #define KEY_PLUS 0xbb
 #define KEY_MINUS 0xbd
 
@@ -71,6 +75,8 @@ extern "C" {
 MainPage::MainPage()
 {
 	InitializeComponent();
+	Application::Current->Suspending += 
+		ref new SuspendingEventHandler(this, &MainPage::App_Suspending);
 	m_textcolor="#402572AC";
 	m_linkcolor="#40AC7225";
 	mu_doc = nullptr;
@@ -91,6 +97,11 @@ MainPage::MainPage()
 void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 {
 	(void) e;	// Unused parameter
+}
+
+void mupdf_cpp::MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
+{
+
 }
 
 void mupdf_cpp::MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)
@@ -479,6 +490,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 		}
 		catch (const task_canceled& e)
 		{
+			(void) e;	// Unused parameter
 			is_cancelled = true;
 		}
 		if (!is_cancelled)
@@ -877,7 +889,7 @@ void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml
 	TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
 	String^ textToFind = findBox->Text;
 
-	if (this->m_search_active == false)
+	if (this->m_search_active == false && textToFind != nullptr)
 		SearchInDirection(1, textToFind);
 }
 
@@ -887,7 +899,7 @@ void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml
 	TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
 	String^ textToFind = findBox->Text;
 
-	if (this->m_search_active == false)
+	if (this->m_search_active == false && textToFind != nullptr)
 		SearchInDirection(-1, textToFind);
 }
 
@@ -978,27 +990,24 @@ void mupdf_cpp::MainPage::GridSizeChanged()
 	if (height > width)
 	{
 		m_curr_flipView = this->xaml_vert_flipView;
-		if (!m_zoom_mode)
-		{
-			this->xaml_zoomCanvas->Height = height;
-			this->xaml_zoomCanvas->Width = width;
-			this->m_curr_flipView->Height = height;
-			this->m_curr_flipView->Width = width;
-		}
+		this->xaml_zoomCanvas->Height = height;
+		this->xaml_zoomCanvas->Width = width;
+		this->m_curr_flipView->Height = height;
+		this->m_curr_flipView->Width = width;
+
 		xaml_vert_flipView->IsEnabled = true;
 		xaml_vert_flipView->Opacity = 1;
 		xaml_horiz_flipView->IsEnabled = false;
-		xaml_horiz_flipView->Opacity = 0;	}
+		xaml_horiz_flipView->Opacity = 0;	
+	}
 	else
 	{
 		m_curr_flipView = this->xaml_horiz_flipView;
-		if (!m_zoom_mode)
-		{
-			this->xaml_zoomCanvas->Height = height;
-			this->xaml_zoomCanvas->Width = width;
-			this->m_curr_flipView->Height = height;
-			this->m_curr_flipView->Width = width;
-		}
+		this->xaml_zoomCanvas->Height = height;
+		this->xaml_zoomCanvas->Width = width;
+		this->m_curr_flipView->Height = height;
+		this->m_curr_flipView->Width = width;
+
 		xaml_horiz_flipView->IsEnabled = true;
 		xaml_horiz_flipView->Opacity = 1;
 		xaml_vert_flipView->IsEnabled = false;
@@ -1285,7 +1294,6 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
 	VisualStateManager::GoToState(Contents, viewState, true);
 	VisualStateManager::GoToState(Links, viewState, true);
 	VisualStateManager::GoToState(Reflow, viewState, true);
-	VisualStateManager::GoToState(Help, viewState, true);
 }
 
 /* Manipulation zooming with touch input */
@@ -1316,40 +1324,65 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 	}
 }
 
-/* Zoom in and out for keyboard only case */
+/* Needed to find scrollviewer child from template of flipview item */
+Windows::UI::Xaml::FrameworkElement^ FindVisualChildByName(DependencyObject^ obj, String^ name)
+{
+	FrameworkElement^ ret;
+	int numChildren = VisualTreeHelper::GetChildrenCount(obj);
+
+	for (int i = 0; i < numChildren; i++)
+	{
+		auto objChild = VisualTreeHelper::GetChild(obj, i);
+		auto child = safe_cast<FrameworkElement^>(objChild);
+		if (child != nullptr && child->Name == name)
+		{
+			return child;
+		}
+		ret = FindVisualChildByName(objChild, name);
+		if (ret != nullptr)
+			break;
+	}
+	return ret;
+}
+
+/* Zoom in and out for keyboard only case. */
 void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 {
-	return; /* Waiting until I can get zoom factor in scroll viewer. */
+	ScrollViewer^ scrollviewer;
+	FlipViewItem^ item = safe_cast<FlipViewItem^> 
+		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
+	auto item2 = m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage);
 
-	auto doc_page = this->m_docPages->GetAt(m_currpage);
-	double curr_zoom = doc_page->Zoom;
+	/* We don't know which one so check for both */
+	ScrollViewer^ t1 = 
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_v"));
+	ScrollViewer^ t2 = 
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_h"));
+
+	if (t1 != nullptr)
+		scrollviewer = t1;
+	else
+		scrollviewer = t2;
+
+	if (scrollviewer == nullptr) 
+		return;
+
+	double curr_zoom = scrollviewer->ZoomFactor;
 
 	long val = (long) (e->Key);
 	if (val == KEY_PLUS)
 	{
-		curr_zoom = curr_zoom + 0.25;
-		if (curr_zoom > 4) curr_zoom = 4;
+		curr_zoom = curr_zoom + KEYBOARD_ZOOM_STEP;
+		if (curr_zoom > ZOOM_MAX) curr_zoom = ZOOM_MAX;
 	}
 	else if (val == KEY_MINUS)
 	{
-		curr_zoom = curr_zoom - 0.25;
-		if (curr_zoom < 0.25) curr_zoom = 0.25;
+		curr_zoom = curr_zoom - KEYBOARD_ZOOM_STEP;
+		if (curr_zoom < ZOOM_MIN) curr_zoom = ZOOM_MIN;
 	} else
 		return;
 
-	doc_page->Zoom = curr_zoom;
-	int page = m_currpage;
-	/* Render at new resolution */
-	spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
-	Point ras_size = ComputePageSize(spatial_info, page);
-
-	auto render_task =
-		create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y));
-
-	render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
-	{
-		ReplaceImage(page, ras, ras_size);
-	}, task_continuation_context::use_current());
+	scrollviewer->ZoomToFactor(curr_zoom);
 }
 
 void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)

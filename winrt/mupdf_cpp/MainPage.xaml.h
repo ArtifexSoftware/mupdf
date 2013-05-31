@@ -29,6 +29,7 @@ using namespace Platform::Collections;
 using namespace Windows::UI::ViewManagement;
 using namespace Windows::UI::Popups;
 using namespace Windows::UI::Xaml::Navigation;
+using namespace Windows::ApplicationModel;
 using namespace mupdfwinrt;
 
 typedef enum
@@ -64,7 +65,6 @@ namespace mupdf_cpp
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 		virtual void OnKeyDown(Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e) override;
 
-	/* added */
 	private:
 		Vector<DocumentPage^>^ m_docPages;
 		Vector<DocumentPage^>^ m_thumbnails;
@@ -92,8 +92,7 @@ namespace mupdf_cpp
 		FlipView^ m_curr_flipView;
 		RenderingStatus_t m_ren_status;
 		cancellation_token_source m_ThumbCancel;
-		bool m_zoom_mode;  // remove
-		bool m_insearch;  /* Used for UI display */
+		bool m_insearch;		/* Used for UI display */
 		bool m_search_active;  /* Used to avoid multiple UI clicks */
 		bool m_sliderchange;
 		bool m_update_flip;
@@ -152,5 +151,6 @@ namespace mupdf_cpp
 		void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
 		void PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void App_Suspending(Object^ sender, SuspendingEventArgs^ e);
 	};
 }

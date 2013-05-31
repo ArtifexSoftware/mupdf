@@ -27,6 +27,7 @@
     <ClInclude Include="MainPage.xaml.h" />
     <ClInclude Include="DocumentPage.h" />
     <ClInclude Include="RectList.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -50,5 +51,8 @@
     <Image Include="Assets\mupdf_storelogo.png">
       <Filter>Assets</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mupdf_cpp.rc" />
   </ItemGroup>
 </Project>

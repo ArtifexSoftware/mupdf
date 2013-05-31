@@ -76,7 +76,6 @@ private:
 	fz_document *mu_doc;
 	fz_outline *mu_outline;
 	fz_rect mu_hit_bbox[MAX_SEARCH];
-	fz_cookie *mu_cookie;
 	fz_stream *mu_stream;
 	void FlattenOutline(fz_outline *outline, int level,
 				sh_vector_content contents_vec);
