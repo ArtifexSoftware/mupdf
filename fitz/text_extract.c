@@ -938,7 +938,7 @@ fz_bidi_reorder_text_page(fz_context *ctx, fz_text_page *page)
 	fz_text_line *line;
 	fz_text_span *span;
 
-	for (pageblock = page->blocks; pageblock < page->blocks + page->len; page++)
+	for (pageblock = page->blocks; pageblock < page->blocks + page->len; pageblock++)
 		if (pageblock->type == FZ_PAGE_BLOCK_TEXT)
 			for (block = pageblock->u.text, line = block->lines; line < block->lines + block->len; line++)
 				for (span = line->first_span; span; span = span->next)
