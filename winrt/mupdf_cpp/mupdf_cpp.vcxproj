@@ -190,10 +190,35 @@
     <ClCompile Include="RectList.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Assets\mupdf_logo.png" />
+    <Image Include="Assets\Logo.Scale-100.png" />
+    <Image Include="Assets\Logo.Scale-140.png" />
+    <Image Include="Assets\Logo.Scale-180.png" />
+    <Image Include="Assets\Logo.Scale-80.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
     <Image Include="Assets\mupdf_smallogo.png" />
     <Image Include="Assets\mupdf_splash.png" />
-    <Image Include="Assets\mupdf_storelogo.png" />
+    <Image Include="Assets\StoreLogo.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\StoreLogo.scale-140.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\StoreLogo.scale-180.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\WideLogo.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\WideLogo.scale-140.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\WideLogo.scale-180.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
+    <Image Include="Assets\WideLogo.scale-80.png">
+      <DeploymentContent>true</DeploymentContent>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mupdf_cpp.rc" />

@@ -3,8 +3,8 @@
   <Identity Name="faab8eca-be5e-4e0d-b782-213ccbbc5f34" Publisher="CN=michaelv" Version="1.0.0.0" />
   <Properties>
     <DisplayName>mupdf_cpp</DisplayName>
-    <PublisherDisplayName>michaelv</PublisherDisplayName>
-    <Logo>Assets\mupdf_storelogo.png</Logo>
+    <PublisherDisplayName>Artifex Software Inc.</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Prerequisites>
     <OSMinVersion>6.2.1</OSMinVersion>
@@ -15,8 +15,8 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="mupdf_cpp.App">
-      <VisualElements DisplayName="mupdf_cpp" Logo="Assets\mupdf_logo.png" SmallLogo="Assets\mupdf_smallogo.png" Description="mupdf_cpp" ForegroundText="light" BackgroundColor="#464646">
-        <DefaultTile ShowName="allLogos" />
+      <VisualElements DisplayName="MuPDF" Logo="Assets\Logo.png" SmallLogo="assets/mupdf_smallogo.png" Description="A lightweight, high quality PDF/XPS/CBZ viewer for Windows 8 devices." ForegroundText="light" BackgroundColor="#464646">
+        <DefaultTile ShowName="allLogos" WideLogo="Assets\WideLogo.png" />
         <SplashScreen Image="Assets\mupdf_splash.png" />
       </VisualElements>
       <Extensions>
@@ -25,16 +25,17 @@
             <SupportedFileTypes>
               <FileType>.pdf</FileType>
               <FileType>.xps</FileType>
-              <FileType>.oxps</FileType>
+              <FileType>.cbz</FileType>
             </SupportedFileTypes>
           </FileOpenPicker>
         </Extension>
         <Extension Category="windows.fileTypeAssociation">
           <FileTypeAssociation Name=".pdf">
+            <EditFlags OpenIsSafe="true" />
             <SupportedFileTypes>
               <FileType>.pdf</FileType>
               <FileType>.xps</FileType>
-              <FileType>.oxps</FileType>
+              <FileType>.cbz</FileType>
             </SupportedFileTypes>
           </FileTypeAssociation>
         </Extension>
@@ -43,6 +44,5 @@
   </Applications>
   <Capabilities>
     <Capability Name="documentsLibrary" />
-    <Capability Name="internetClient" />
   </Capabilities>
 </Package>

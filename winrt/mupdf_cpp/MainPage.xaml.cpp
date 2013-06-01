@@ -168,10 +168,10 @@ void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 
 	FileOpenPicker^ openPicker = ref new FileOpenPicker();
 	openPicker->ViewMode = PickerViewMode::List;
-	openPicker->SuggestedStartLocation = PickerLocationId::PicturesLibrary;
+	openPicker->SuggestedStartLocation = PickerLocationId::DocumentsLibrary;
 	openPicker->FileTypeFilter->Append(".pdf");
 	openPicker->FileTypeFilter->Append(".xps");
-	openPicker->FileTypeFilter->Append(".oxps");
+	openPicker->FileTypeFilter->Append(".cbz");
 
 	create_task(openPicker->PickSingleFileAsync()).then([this](StorageFile^ file)
 	{
