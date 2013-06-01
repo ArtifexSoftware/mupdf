@@ -416,10 +416,12 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 	char ebuffer[256][32];
 	int i, k, n;
 	int fterr;
+	int has_lock = 0;
 	fz_context *ctx = xref->ctx;
 
 	fz_var(fontdesc);
 	fz_var(etable);
+	fz_var(has_lock);
 
 	basefont = pdf_to_name(pdf_dict_gets(dict, "BaseFont"));
 
@@ -556,6 +558,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 			etable[i] = ft_char_index(face, i);
 
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
+		has_lock = 1;
 
 		/* built-in and substitute fonts may be a different type than what the document expects */
 		subtype = pdf_to_name(pdf_dict_gets(dict, "Subtype"));
@@ -673,6 +676,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		}
 
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		has_lock = 0;
 
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
 		fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
@@ -714,6 +718,7 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 		else
 		{
 			fz_lock(ctx, FZ_LOCK_FREETYPE);
+			has_lock = 1;
 			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 			if (fterr)
 				fz_warn(ctx, "freetype set character size: %s", ft_error_string(fterr));
@@ -722,12 +727,15 @@ pdf_load_simple_font(pdf_document *xref, pdf_obj *dict)
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
 			}
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
+			has_lock = 0;
 		}
 
 		pdf_end_hmtx(ctx, fontdesc);
 	}
 	fz_catch(ctx)
 	{
+		if (has_lock)
+			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
