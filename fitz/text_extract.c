@@ -951,18 +951,29 @@ fz_text_free_user(fz_device *dev)
 	fz_context *ctx = dev->ctx;
 	fz_text_device *tdev = dev->user;
 
-	add_span_to_soup(tdev->spans, tdev->cur_span);
-	tdev->cur_span = NULL;
+	fz_try(ctx)
+	{
 
-	strain_soup(ctx, tdev);
-	free_span_soup(tdev->spans);
+		add_span_to_soup(tdev->spans, tdev->cur_span);
+		tdev->cur_span = NULL;
 
-	/* TODO: smart sorting of blocks in reading order */
-	/* TODO: unicode NFC normalization */
+		strain_soup(ctx, tdev);
 
-	fz_bidi_reorder_text_page(ctx, tdev->page);
+		/* TODO: smart sorting of blocks in reading order */
+		/* TODO: unicode NFC normalization */
 
-	fz_free(dev->ctx, tdev);
+		fz_bidi_reorder_text_page(ctx, tdev->page);
+	}
+	fz_always(ctx)
+	{
+		free_span_soup(tdev->spans);
+		fz_free(dev->ctx, tdev);
+	}
+	fz_catch(ctx)
+	{
+		/* TODO: mark fz_free_device as "doesn't throw" (else rethrowing would
+		   have to be caught/rethrown again in fz_free_device) */
+	}
 }
 
 fz_device *
