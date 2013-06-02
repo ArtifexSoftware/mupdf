@@ -1866,8 +1866,13 @@ fz_draw_end_tile(fz_device *devp)
 	fz_intersect_irect(&area, fz_irect_from_rect(&scissor, &scissor_tmp));
 
 	/* FIXME: area is a bbox, so FP not appropriate here */
-	x0 = floorf(area.x0 / xstep);
-	y0 = floorf(area.y0 / ystep);
+	/* In PDF files xstep/ystep can be smaller than view (the area of a
+	 * single tile) (see fts_15_1506.pdf for an example). This means that
+	 * we have to bias the left hand/bottom edge calculations by the
+	 * difference between the step and the width/height of the tile. */
+	/* state[0].scissor = view, transformed by ctm */
+	x0 = floorf((area.x0 + xstep - state[0].scissor.x1 + state[0].scissor.x0) / xstep);
+	y0 = floorf((area.y0 + ystep - state[0].scissor.y1 + state[0].scissor.y0) / ystep);
 	x1 = ceilf(area.x1 / xstep);
 	y1 = ceilf(area.y1 / ystep);
 
