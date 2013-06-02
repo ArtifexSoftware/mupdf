@@ -193,6 +193,34 @@ pdf_parse_link_dest(pdf_document *xref, pdf_obj *dest)
 	return ld;
 }
 
+static char *
+pdf_parse_file_spec(pdf_document *xref, pdf_obj *file_spec)
+{
+	fz_context *ctx = xref->ctx;
+	pdf_obj *filename;
+
+	if (pdf_is_string(file_spec))
+		return pdf_to_utf8(xref, file_spec);
+
+	if (pdf_is_dict(file_spec)) {
+		fz_warn(ctx, "parsing dict");
+		filename = pdf_dict_gets(file_spec, "UF");
+		if (!filename)
+			filename = pdf_dict_gets(file_spec, "F");
+		if (!filename)
+			filename = pdf_dict_gets(file_spec, "Unix");
+		if (!filename)
+			filename = pdf_dict_gets(file_spec, "Mac");
+		if (!filename)
+			filename = pdf_dict_gets(file_spec, "DOS");
+
+		return pdf_to_utf8(xref, filename);
+	}
+
+	fz_warn(ctx, "cannot parse file specification");
+	return NULL;
+}
+
 fz_link_dest
 pdf_parse_action(pdf_document *xref, pdf_obj *action)
 {
@@ -221,11 +249,10 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 	}
 	else if (!strcmp(pdf_to_name(obj), "Launch"))
 	{
-		dest = pdf_dict_gets(action, "F");
 		ld.kind = FZ_LINK_LAUNCH;
-		if (pdf_is_dict(dest))
-			dest = pdf_dict_gets(dest, "F");
-		ld.ld.launch.file_spec = pdf_to_utf8(xref, dest);
+		dest = pdf_dict_gets(action, "F");
+		ld.ld.launch.file_spec = pdf_parse_file_spec(xref, dest);
+		fz_warn(ctx, "launch: %s", ld.ld.launch.file_spec);
 		ld.ld.launch.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Named"))
@@ -238,7 +265,9 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 		dest = pdf_dict_gets(action, "D");
 		ld = pdf_parse_link_dest(xref, dest);
 		ld.kind = FZ_LINK_GOTOR;
-		ld.ld.gotor.file_spec = pdf_to_utf8(xref, pdf_dict_gets(action, "F"));
+		dest = pdf_dict_gets(action, "F");
+		ld.ld.gotor.file_spec = pdf_parse_file_spec(xref, dest);
+		fz_warn(ctx, "link remote: %s", ld.ld.gotor.file_spec);
 		ld.ld.gotor.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	return ld;
