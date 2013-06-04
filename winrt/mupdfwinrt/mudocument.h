@@ -33,7 +33,7 @@ namespace mupdfwinrt
 		public:
 			mudocument();
 			void CleanUp();
-			Windows::Foundation::IAsyncAction^ OpenFileAsync(StorageFile^ file);
+			Windows::Foundation::IAsyncOperation<int>^ OpenFileAsync(StorageFile^ file);
 			int GetNumPages(void);
 			Point GetPageSize(int page_num);
 			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^

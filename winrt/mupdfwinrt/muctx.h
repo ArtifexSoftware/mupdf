@@ -4,7 +4,6 @@
 #include <functional>
 #include <vector>
 #include <windows.h>
-#include <Winerror.h>
 #include <mutex>
 #include "utils.h"
 
@@ -14,6 +13,13 @@ extern "C" {
 	#include "muxps.h"
 	#include "mupdf.h"
 }
+
+typedef enum {
+	S_ISOK = 0,
+	E_FAILURE = 1,
+	E_OUTOFMEM = 2,
+	E_NEEDPASSWORD
+} status_t;
 
 #define MAX_SEARCH 500
 
@@ -76,7 +82,6 @@ private:
 	fz_document *mu_doc;
 	fz_outline *mu_outline;
 	fz_rect mu_hit_bbox[MAX_SEARCH];
-	fz_stream *mu_stream;
 	void FlattenOutline(fz_outline *outline, int level,
 				sh_vector_content contents_vec);
 
@@ -84,10 +89,10 @@ public:
 	muctx(void);
 	~muctx(void);
 	void CleanUp(void);
-	HRESULT InitializeStream(IRandomAccessStream^ readStream, char *ext);
+	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
 	int GetPageCount();
-	HRESULT InitializeContext();
-	HRESULT RenderPage(int page_num, int width, int height, unsigned char *bmp_data);
+	status_t InitializeContext();
+	status_t RenderPage(int page_num, int width, int height, unsigned char *bmp_data);
 	Point MeasurePage(int page_num);
 	Point MeasurePage(fz_page *page);
 	int GetLinks(int page_num, sh_vector_link links_vec);

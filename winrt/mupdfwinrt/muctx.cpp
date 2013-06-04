@@ -72,9 +72,9 @@ static void win_seek_file(fz_stream *stm, int offset, int whence)
 
 static void win_close_file(fz_context *ctx, void *state)
 {
-	DataReader^ dataReader = reinterpret_cast <DataReader^> (state);
-
-	delete dataReader;
+	win_stream_struct *win_stream = reinterpret_cast <win_stream_struct*> (state);
+	IRandomAccessStream^ stream = win_stream->stream;
+	delete stream;
 }
 
 /* mutext functions see mupdf readme for details */
@@ -102,11 +102,10 @@ void muctx::CleanUp(void)
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
-	this->mu_stream = NULL;
 }
 
 /* Set up the context, mutex and cookie */
-HRESULT muctx::InitializeContext()
+status_t muctx::InitializeContext()
 {
 	int i;
 
@@ -121,11 +120,11 @@ HRESULT muctx::InitializeContext()
 	this->mu_ctx = fz_new_context(NULL, &mu_locks, FZ_STORE_DEFAULT);
 	if (this->mu_ctx == NULL)
 	{
-		return E_OUTOFMEMORY;
+		return E_OUTOFMEM;
 	}
 	else
 	{
-		return S_OK;
+		return S_ISOK;
 	}
 }
 
@@ -135,7 +134,6 @@ muctx::muctx(void)
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
-	this->mu_stream = NULL;
 }
 
 /* Destructor */
@@ -151,24 +149,30 @@ muctx::~muctx(void)
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
-	this->mu_stream = NULL;
 }
 
 /* Set up the stream access */
-HRESULT muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
+status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 {
 	win_stream.stream = readStream;
-	this->mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file);
-	this->mu_stream->seek = win_seek_file;
-	this->mu_stream->state =  reinterpret_cast <void*> (&win_stream);
+	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file);
+	mu_stream->seek = win_seek_file;
+	mu_stream->state =  reinterpret_cast <void*> (&win_stream);
 
 	/* Now lets see if we can open the file */
-	mu_doc = fz_open_document_with_stream(mu_ctx, ext, this->mu_stream);
-
-	if (mu_doc == NULL)
-		return E_FAIL;
-	else
-		return S_OK;
+	fz_try(mu_ctx)
+	{
+		mu_doc = fz_open_document_with_stream(mu_ctx, ext, mu_stream);
+	}
+	fz_always(mu_ctx)
+	{
+		fz_close(mu_stream);
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAILURE;
+	}
+	return S_ISOK;
 }
 
 /* Return the documents page count */
@@ -263,10 +267,7 @@ int muctx::GetContents(sh_vector_content contents_vec)
 	}
 	fz_always(ctx_clone)
 	{
-		if (root != NULL)
-		{
-			fz_free_outline(ctx_clone, root);
-		}
+		fz_free_outline(ctx_clone, root);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -315,22 +316,10 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	}
 	fz_always(ctx_clone)
 	{
-		if (page != NULL)
-		{
-			fz_free_page(mu_doc, page);
-		}
-		if (dev != NULL)
-		{
-			fz_free_device(dev);
-		}
-		if (sheet != NULL)
-		{
-			fz_free_text_sheet(ctx_clone, sheet);
-		}
-		if (text != NULL)
-		{
-			fz_free_text_page(ctx_clone, text);
-		}
+		fz_free_page(mu_doc, page);
+		fz_free_device(dev);
+		fz_free_text_sheet(ctx_clone, sheet);
+		fz_free_text_page(ctx_clone, text);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -403,14 +392,8 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	}
 	fz_always(ctx_clone)
 	{
-		if (page != NULL)
-		{
-			fz_free_page(mu_doc, page);
-		}
-		if (links != NULL)
-		{
-			fz_drop_link(ctx_clone, links);
-		}
+		fz_free_page(mu_doc, page);
+		fz_drop_link(ctx_clone, links);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -422,7 +405,7 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 }
 
 /* Render page_num to size width by height into bmp_data buffer */
-HRESULT muctx::RenderPage(int page_num, int width, int height,
+status_t muctx::RenderPage(int page_num, int width, int height,
 			  unsigned char *bmp_data)
 {
 	fz_device *dev = NULL;
@@ -454,27 +437,18 @@ HRESULT muctx::RenderPage(int page_num, int width, int height,
 	}
 	fz_always(ctx_clone)
 	{
-		if (dev != NULL)
-		{
-			fz_free_device(dev);
-		}
-		if (pix != NULL)
-		{
-			fz_drop_pixmap(ctx_clone, pix);
-		}
-		if (page != NULL)
-		{
-			fz_free_page(mu_doc, page);
-		}
+		fz_free_device(dev);
+		fz_drop_pixmap(ctx_clone, pix);
+		fz_free_page(mu_doc, page);
 	}
 	fz_catch(ctx_clone)
 	{
 		fz_free_context(ctx_clone);
-		return E_FAIL;
+		return E_FAILURE;
 	}
 
 	fz_free_context(ctx_clone);
-	return S_OK;
+	return S_ISOK;
 }
 
 bool muctx::RequiresPassword(void)
@@ -522,26 +496,11 @@ String^ muctx::GetHTML(int page_num)
 	}
 	fz_always(ctx_clone)
 	{
-		if (dev != NULL)
-		{
-			fz_free_device(dev);
-		}
-		if (page != NULL)
-		{
-			fz_free_page(mu_doc, page);
-		}
-		if (sheet != NULL)
-		{
-			fz_free_text_sheet(ctx_clone, sheet);
-		}
-		if (text != NULL)
-		{
-			fz_free_text_page(ctx_clone, text);
-		}
-		if (buf != NULL)
-		{
-			fz_drop_buffer(ctx_clone, buf);
-		}
+		fz_free_device(dev);
+		fz_free_page(mu_doc, page);
+		fz_free_text_sheet(ctx_clone, sheet);
+		fz_free_text_page(ctx_clone, text);
+		fz_drop_buffer(ctx_clone, buf);
 	}
 	fz_catch(ctx_clone)
 	{

@@ -46,7 +46,7 @@ Point mudocument::GetPageSize(int page_num)
 	return this->mu_object.MeasurePage(page_num);
 }
 
-Windows::Foundation::IAsyncAction^ mudocument::OpenFileAsync(StorageFile^ file)
+Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile^ file)
 {
 	return create_async([this, file]()
 	{
@@ -69,13 +69,15 @@ Windows::Foundation::IAsyncAction^ mudocument::OpenFileAsync(StorageFile^ file)
 
 				if (size <= MAXUINT32)
 				{
-					HRESULT code = this->mu_object.InitializeStream(readStream, ext);
-					return;
+					status_t code = this->mu_object.InitializeStream(readStream, ext);
+					if (code != S_ISOK)
+						delete readStream;
+					return (int) code;
 				}
 				else
 				{
 					delete readStream;
-					return;
+					return (int) E_FAILURE;
 				}
 			}
 			catch(COMException^ ex) {
@@ -178,8 +180,8 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 		std::lock_guard<std::mutex> lock(mutex_lock);
 
 		/* Get raster bitmap stream */
-		HRESULT code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]));
-		if (code != S_OK)
+		status_t code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]));
+		if (code != S_ISOK)
 		{
 			throw ref new FailureException("Page Rendering Failed");
 		}

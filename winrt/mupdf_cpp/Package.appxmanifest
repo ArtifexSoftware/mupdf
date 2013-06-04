@@ -36,6 +36,7 @@
               <FileType>.pdf</FileType>
               <FileType>.xps</FileType>
               <FileType>.cbz</FileType>
+              <FileType>.oxps</FileType>
             </SupportedFileTypes>
           </FileTypeAssociation>
         </Extension>

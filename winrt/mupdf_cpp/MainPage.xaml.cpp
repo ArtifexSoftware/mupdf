@@ -172,6 +172,7 @@ void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 	openPicker->FileTypeFilter->Append(".pdf");
 	openPicker->FileTypeFilter->Append(".xps");
 	openPicker->FileTypeFilter->Append(".cbz");
+	openPicker->FileTypeFilter->Append(".oxps");
 
 	create_task(openPicker->PickSingleFileAsync()).then([this](StorageFile^ file)
 	{
@@ -554,34 +555,42 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 
 	/* Open document and when open, push on */
 	auto open_task = create_task(mu_doc->OpenFileAsync(file));
-	open_task.then([this]() -> bool
+	open_task.then([this](int code) -> int
 	{
 		assert(IsMainThread());
+		if (code != S_ISOK)
+		{
+			return code;
+		}
 		/* We need to check if password is required */
 		if (mu_doc->RequiresPassword())
 		{
 			xaml_PasswordStack->Visibility = Windows::UI::Xaml::Visibility::Visible;
-			return false;
+			return E_NEEDPASSWORD;
 		}
 		else
 		{
 			xaml_PasswordStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
-			return true;
+			return S_ISOK;
 		}
-	}).then([this](bool password_ok)->bool
+	}).then([this](int code)->int
 	{
 		assert(IsMainThread());
-		if (!password_ok)
-			return password_ok;
+		if (code == S_ISOK)
+			InitialRender();
+		return code;
+	}, task_continuation_context::use_current()).then([this](int code)
+	{
+		if (code == S_ISOK)
+			RenderThumbs();
 		else
 		{
-			InitialRender();
-			return password_ok;
+			if (code != E_NEEDPASSWORD)
+			{
+				NotifyUser("Sorry, an issue was encountered in opening file", 
+							StatusMessage);
+			}
 		}
-	}, task_continuation_context::use_current()).then([this](bool password_ok)
-	{
-		if (password_ok)
-			RenderThumbs();
 	}, task_continuation_context::use_current());
 }
 
@@ -1328,6 +1337,8 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 Windows::UI::Xaml::FrameworkElement^ FindVisualChildByName(DependencyObject^ obj, String^ name)
 {
 	FrameworkElement^ ret;
+	if (obj == nullptr) return nullptr;
+
 	int numChildren = VisualTreeHelper::GetChildrenCount(obj);
 
 	for (int i = 0; i < numChildren; i++)
@@ -1348,6 +1359,8 @@ Windows::UI::Xaml::FrameworkElement^ FindVisualChildByName(DependencyObject^ obj
 /* Zoom in and out for keyboard only case. */
 void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 {
+	if (!m_init_done) return;
+
 	ScrollViewer^ scrollviewer;
 	FlipViewItem^ item = safe_cast<FlipViewItem^> 
 		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
