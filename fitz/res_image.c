@@ -417,9 +417,29 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 fz_image *
 fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len)
 {
-	fz_buffer *buffer = fz_new_buffer_from_data(ctx, data, len);
+	fz_buffer *buffer = NULL;
+	fz_image *image;
 
-	return fz_new_image_from_buffer(ctx, buffer);
+	fz_var(buffer);
+	fz_var(data);
+
+	fz_try(ctx)
+	{
+		buffer = fz_new_buffer_from_data(ctx, data, len);
+		data = NULL;
+		image = fz_new_image_from_buffer(ctx, buffer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, data);
+		fz_rethrow(ctx);
+	}
+
+	return image;
 }
 
 fz_image *
@@ -428,12 +448,10 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	fz_compressed_buffer *bc = NULL;
 	int w, h, xres, yres;
 	fz_colorspace *cspace;
-	fz_buffer *drop_buffer = buffer;
 	int len = buffer->len;
 	unsigned char *buf = buffer->data;
 
 	fz_var(bc);
-	fz_var(drop_buffer);
 
 	fz_try(ctx)
 	{
@@ -441,8 +459,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 			fz_throw(ctx, "unknown image file format");
 
 		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
-		bc->buffer = fz_new_buffer_from_data(ctx, buf, len);
-		drop_buffer = NULL;
+		bc->buffer = fz_keep_buffer(ctx, buffer);
 
 		if (buf[0] == 0xff && buf[1] == 0xd8)
 		{
@@ -467,7 +484,6 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_buffer(ctx, drop_buffer);
 		fz_free_compressed_buffer(ctx, bc);
 		fz_rethrow(ctx);
 	}
