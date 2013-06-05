@@ -69,7 +69,7 @@ pdf_load_version(pdf_document *xref)
 {
 	char buf[20];
 
-	fz_seek(xref->file, 0, 0);
+	fz_seek(xref->file, 0, SEEK_SET);
 	fz_read_line(xref->file, buf, sizeof buf);
 	if (memcmp(buf, "%PDF-", 5) != 0)
 		fz_throw(xref->ctx, "cannot recognize version marker");
@@ -84,12 +84,12 @@ pdf_read_start_xref(pdf_document *xref)
 	int t, n;
 	int i;
 
-	fz_seek(xref->file, 0, 2);
+	fz_seek(xref->file, 0, SEEK_END);
 
 	xref->file_size = fz_tell(xref->file);
 
 	t = fz_maxi(0, xref->file_size - (int)sizeof buf);
-	fz_seek(xref->file, t, 0);
+	fz_seek(xref->file, t, SEEK_SET);
 
 	n = fz_read(xref->file, buf, sizeof buf);
 	if (n < 0)
@@ -115,14 +115,19 @@ pdf_read_start_xref(pdf_document *xref)
  * trailer dictionary
  */
 
-static void
-pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
+static int
+pdf_xref_size_from_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 {
 	int len;
 	char *s;
 	int t;
 	pdf_token tok;
 	int c;
+	int size;
+	int ofs;
+
+	/* Record the current file read offset so that we can reinstate it */
+	ofs = fz_tell(xref->file);
 
 	fz_read_line(xref->file, buf->scratch, buf->size);
 	if (strncmp(buf->scratch, "xref", 4) != 0)
@@ -143,13 +148,13 @@ pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
-			fz_seek(xref->file, -(2 + (int)strlen(s)), 1);
+			fz_seek(xref->file, -(2 + (int)strlen(s)), SEEK_CUR);
 
 		t = fz_tell(xref->file);
 		if (t < 0)
 			fz_throw(xref->ctx, "cannot tell in file");
 
-		fz_seek(xref->file, t + 20 * len, 0);
+		fz_seek(xref->file, t + 20 * len, SEEK_SET);
 	}
 
 	fz_try(xref->ctx)
@@ -164,65 +169,21 @@ pdf_read_old_trailer(pdf_document *xref, pdf_lexbuf *buf)
 			fz_throw(xref->ctx, "expected trailer dictionary");
 
 		trailer = pdf_parse_dict(xref, xref->file, buf);
-		pdf_set_xref_trailer(xref, trailer);
+
+		size = pdf_to_int(pdf_dict_gets(trailer, "Size"));
+		if (!size)
+			fz_throw(xref->ctx, "trailer missing Size entry");
+
 		pdf_drop_obj(trailer);
 	}
 	fz_catch(xref->ctx)
 	{
 		fz_throw(xref->ctx, "cannot parse trailer");
 	}
-}
 
-static void
-pdf_read_new_trailer(pdf_document *xref, pdf_lexbuf *buf)
-{
-	fz_try(xref->ctx)
-	{
-		pdf_xref_entry *entry;
-		pdf_obj *trailer;
-		int num, gen, stm_ofs, ofs;
-		ofs = fz_tell(xref->file);
-		trailer = pdf_parse_ind_obj(xref, xref->file, buf, &num, &gen, &stm_ofs);
-		pdf_set_xref_trailer(xref, trailer);
-		pdf_drop_obj(trailer);
-		entry = pdf_get_xref_entry(xref, num);
-		entry->ofs = ofs;
-		entry->gen = gen;
-		entry->stm_ofs = stm_ofs;
-		pdf_drop_obj(entry->obj);
-		entry->obj = pdf_keep_obj(pdf_trailer(xref));
-		entry->type = 'n';
-	}
-	fz_catch(xref->ctx)
-	{
-		fz_throw(xref->ctx, "cannot parse trailer (compressed)");
-	}
-}
+	fz_seek(xref->file, ofs, SEEK_SET);
 
-static void
-pdf_read_trailer(pdf_document *xref, pdf_lexbuf *buf)
-{
-	int c;
-
-	fz_seek(xref->file, xref->startxref, 0);
-
-	while (iswhite(fz_peek_byte(xref->file)))
-		fz_read_byte(xref->file);
-
-	fz_try(xref->ctx)
-	{
-		c = fz_peek_byte(xref->file);
-		if (c == 'x')
-			pdf_read_old_trailer(xref, buf);
-		else if (c >= '0' && c <= '9')
-			pdf_read_new_trailer(xref, buf);
-		else
-			fz_throw(xref->ctx, "cannot recognize xref format: '%c'", c);
-	}
-	fz_catch(xref->ctx)
-	{
-		fz_throw(xref->ctx, "cannot read trailer");
-	}
+	return size;
 }
 
 pdf_obj *
@@ -243,7 +204,10 @@ pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 	int i;
 	int c;
 	pdf_obj *trailer;
-	int xref_len = pdf_xref_len(xref);
+	int xref_len = pdf_xref_size_from_old_trailer(xref, buf);
+
+	/* Access last entry to ensure xref size up front and avoid reallocs */
+	(void)pdf_get_xref_entry(xref, xref_len - 1);
 
 	fz_read_line(xref->file, buf->scratch, buf->size);
 	if (strncmp(buf->scratch, "xref", 4) != 0)
@@ -264,7 +228,7 @@ pdf_read_old_xref(pdf_document *xref, pdf_lexbuf *buf)
 		if (s && *s != '\0')
 		{
 			fz_warn(xref->ctx, "broken xref section. proceeding anyway.");
-			fz_seek(xref->file, -(2 + (int)strlen(s)), 1);
+			fz_seek(xref->file, -(2 + (int)strlen(s)), SEEK_CUR);
 		}
 
 		if (ofs < 0)
@@ -462,7 +426,7 @@ pdf_read_xref(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 	fz_context *ctx = xref->ctx;
 	pdf_obj *trailer;
 
-	fz_seek(xref->file, ofs, 0);
+	fz_seek(xref->file, ofs, SEEK_SET);
 
 	while (iswhite(fz_peek_byte(xref->file)))
 		fz_read_byte(xref->file);
@@ -493,8 +457,8 @@ struct ofs_list_s
 	int *list;
 };
 
-static void
-do_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf, ofs_list *offsets)
+static int
+read_xref_section(pdf_document *xref, int ofs, pdf_lexbuf *buf, ofs_list *offsets)
 {
 	pdf_obj *trailer = NULL;
 	fz_context *ctx = xref->ctx;
@@ -502,61 +466,63 @@ do_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf, ofs_list *of
 	int prevofs = 0;
 
 	fz_var(trailer);
-	fz_var(xrefstmofs);
-	fz_var(prevofs);
 
 	fz_try(ctx)
 	{
-		do
+		int i;
+		/* Avoid potential infinite recursion */
+		for (i = 0; i < offsets->len; i ++)
 		{
-			int i;
-			/* Avoid potential infinite recursion */
-			for (i = 0; i < offsets->len; i ++)
-			{
-				if (offsets->list[i] == ofs)
-					break;
-			}
-			if (i < offsets->len)
-			{
-				fz_warn(ctx, "ignoring xref recursion with offset %d", ofs);
+			if (offsets->list[i] == ofs)
 				break;
-			}
-			if (offsets->len == offsets->max)
-			{
-				offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(int));
-				offsets->max *= 2;
-			}
-			offsets->list[offsets->len++] = ofs;
+		}
+		if (i < offsets->len)
+		{
+			fz_warn(ctx, "ignoring xref recursion with offset %d", ofs);
+			return 0;
+		}
+		if (offsets->len == offsets->max)
+		{
+			offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(int));
+			offsets->max *= 2;
+		}
+		offsets->list[offsets->len++] = ofs;
 
-			trailer = pdf_read_xref(xref, ofs, buf);
+		trailer = pdf_read_xref(xref, ofs, buf);
 
-			/* FIXME: do we overwrite free entries properly? */
-			xrefstmofs = pdf_to_int(pdf_dict_gets(trailer, "XRefStm"));
-			prevofs = pdf_to_int(pdf_dict_gets(trailer, "Prev"));
+		/* Currently we only store the trailer most recently added to the doc */
+		if (!pdf_trailer(xref))
+			pdf_set_xref_trailer(xref, trailer);
 
+		/* FIXME: do we overwrite free entries properly? */
+		xrefstmofs = pdf_to_int(pdf_dict_gets(trailer, "XRefStm"));
+		if (xrefstmofs)
+		{
 			if (xrefstmofs < 0)
 				fz_throw(ctx, "negative xref stream offset");
-			if (prevofs < 0)
-				fz_throw(ctx, "negative xref stream offset for previous xref stream");
 
-			/* We only recurse if we have both xrefstm and prev.
-			 * Hopefully this happens infrequently. */
-			if (xrefstmofs && prevofs)
-				do_read_xref_sections(xref, xrefstmofs, buf, offsets);
-			if (prevofs)
-				ofs = prevofs;
-			else if (xrefstmofs)
-				ofs = xrefstmofs;
-			pdf_drop_obj(trailer);
-			trailer = NULL;
+			/*
+				Read the XRefStm stream, but throw away the resulting trailer. We do not
+				follow any Prev tag therein, as specified on Page 108 of the PDF reference
+				1.7
+			*/
+			pdf_drop_obj(pdf_read_xref(xref, xrefstmofs, buf));
 		}
-		while (prevofs || xrefstmofs);
+
+		prevofs = pdf_to_int(pdf_dict_gets(trailer, "Prev"));
+		if (prevofs < 0)
+			fz_throw(ctx, "negative xref stream offset for previous xref stream");
+
+		pdf_drop_obj(trailer);
+		trailer = NULL;
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(trailer);
 		fz_throw(ctx, "cannot read xref at offset %d", ofs);
 	}
+
+	return prevofs;
 }
 
 static void
@@ -570,7 +536,8 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 	list.list = fz_malloc_array(ctx, 10, sizeof(int));
 	fz_try(ctx)
 	{
-		do_read_xref_sections(xref, ofs, buf, &list);
+		while(ofs)
+			ofs = read_xref_section(xref, ofs, buf, &list);
 	}
 	fz_always(ctx)
 	{
@@ -591,7 +558,6 @@ pdf_read_xref_sections(pdf_document *xref, int ofs, pdf_lexbuf *buf)
 static void
 pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 {
-	int size;
 	int i;
 	int xref_len;
 	fz_context *ctx = xref->ctx;
@@ -599,15 +565,6 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 	pdf_load_version(xref);
 
 	pdf_read_start_xref(xref);
-
-	pdf_read_trailer(xref, buf);
-
-	size = pdf_to_int(pdf_dict_gets(pdf_trailer(xref), "Size"));
-	if (!size)
-		fz_throw(ctx, "trailer missing Size entry");
-
-	/* access entry to ensure xref table size */
-	(void)pdf_get_xref_entry(xref, size-1);
 
 	pdf_read_xref_sections(xref, xref->startxref, buf);
 
@@ -1038,13 +995,13 @@ pdf_load_obj_stm(pdf_document *xref, int num, int gen, pdf_lexbuf *buf)
 			ofsbuf[i] = buf->i;
 		}
 
-		fz_seek(stm, first, 0);
+		fz_seek(stm, first, SEEK_SET);
 
 		for (i = 0; i < count; i++)
 		{
 			int xref_len = pdf_xref_len(xref);
 			pdf_xref_entry *entry;
-			fz_seek(stm, first + ofsbuf[i], 0);
+			fz_seek(stm, first + ofsbuf[i], SEEK_SET);
 
 			obj = pdf_parse_stm_obj(xref, stm, buf);
 
@@ -1116,7 +1073,7 @@ pdf_cache_object(pdf_document *xref, int num, int gen)
 	}
 	else if (x->type == 'n')
 	{
-		fz_seek(xref->file, x->ofs, 0);
+		fz_seek(xref->file, x->ofs, SEEK_SET);
 
 		fz_try(ctx)
 		{
