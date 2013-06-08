@@ -203,7 +203,6 @@ pdf_parse_file_spec(pdf_document *xref, pdf_obj *file_spec)
 		return pdf_to_utf8(xref, file_spec);
 
 	if (pdf_is_dict(file_spec)) {
-		fz_warn(ctx, "parsing dict");
 		filename = pdf_dict_gets(file_spec, "UF");
 		if (!filename)
 			filename = pdf_dict_gets(file_spec, "F");
@@ -252,7 +251,6 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 		ld.kind = FZ_LINK_LAUNCH;
 		dest = pdf_dict_gets(action, "F");
 		ld.ld.launch.file_spec = pdf_parse_file_spec(xref, dest);
-		fz_warn(ctx, "launch: %s", ld.ld.launch.file_spec);
 		ld.ld.launch.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Named"))
@@ -267,7 +265,6 @@ pdf_parse_action(pdf_document *xref, pdf_obj *action)
 		ld.kind = FZ_LINK_GOTOR;
 		dest = pdf_dict_gets(action, "F");
 		ld.ld.gotor.file_spec = pdf_parse_file_spec(xref, dest);
-		fz_warn(ctx, "link remote: %s", ld.ld.gotor.file_spec);
 		ld.ld.gotor.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	return ld;
