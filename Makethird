@@ -9,6 +9,7 @@
 FREETYPE_DIR := thirdparty/freetype
 JBIG2DEC_DIR := thirdparty/jbig2dec
 JPEG_DIR := thirdparty/jpeg
+LCMS2_DIR := thirdparty/lcms2
 OPENJPEG_DIR := thirdparty/openjpeg
 OPENSSL_DIR := thirdparty/openssl
 ZLIB_DIR := thirdparty/zlib
@@ -74,7 +75,6 @@ FREETYPE_SRC := \
 	truetype.c \
 	type1.c \
 	type1cid.c \
-
 
 $(FREETYPE_LIB): $(addprefix $(FREETYPE_OUT)/, $(FREETYPE_SRC:%.c=%.o))
 
@@ -198,6 +198,51 @@ JPEG_CFLAGS := -I$(JPEG_DIR)
 else
 JPEG_CFLAGS := $(SYS_JPEG_CFLAGS)
 JPEG_LIBS := $(SYS_JPEG_LIBS)
+endif
+
+# --- Little-CMS 2 ---
+
+ifneq "$(wildcard $(LCMS2_DIR)/COPYING)" ""
+
+LCMS2_LIB := $(OUT)/liblcms2.a
+LCMS2_OUT := $(OUT)/lcms2
+LCMS2_SRC := \
+	cmscam02.c \
+	cmscgats.c \
+	cmscnvrt.c \
+	cmserr.c \
+	cmsgamma.c \
+	cmsgmt.c \
+	cmshalf.c \
+	cmsintrp.c \
+	cmsio0.c \
+	cmsio1.c \
+	cmslut.c \
+	cmsmd5.c \
+	cmsmtrx.c \
+	cmsnamed.c \
+	cmsopt.c \
+	cmspack.c \
+	cmspcs.c \
+	cmsplugin.c \
+	cmsps2.c \
+	cmssamp.c \
+	cmssm.c \
+	cmstypes.c \
+	cmsvirt.c \
+	cmswtpnt.c \
+	cmsxform.c \
+
+$(LCMS2_LIB): $(addprefix $(LCMS2_OUT)/, $(LCMS2_SRC:%.c=%.o))
+$(LCMS2_OUT):
+	$(MKDIR_CMD)
+$(LCMS2_OUT)/%.o: $(LCMS2_DIR)/src/%.c | $(LCMS2_OUT)
+	$(CC_CMD)
+
+LCMS2_CFLAGS := -I$(LCMS2_DIR)/include
+else
+LCMS2_CFLAGS := $(SYS_LCMS2_CFLAGS)
+LCMS2_LIBS := $(SYS_LCMS2_LIBS)
 endif
 
 # --- OpenJPEG ---

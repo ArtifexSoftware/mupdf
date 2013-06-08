@@ -41,6 +41,7 @@ SYS_X11_LIBS = -L/usr/X11R6/lib -lX11 -lXext
 
 SYS_FREETYPE_CFLAGS = -I/usr/X11R6/include/freetype2
 SYS_FREETYPE_LIBS = -lfreetype
+SYS_LCMS2_LIBS = -llcms2
 SYS_OPENJPEG_LIBS = -lopenjpeg
 SYS_JBIG2DEC_LIBS = -ljbig2dec
 SYS_JPEG_LIBS = -ljpeg
@@ -66,6 +67,8 @@ SYS_X11_LIBS = $(shell pkg-config --libs x11 xext)
 
 SYS_FREETYPE_CFLAGS = $(shell pkg-config --cflags freetype2)
 SYS_FREETYPE_LIBS = $(shell pkg-config --libs freetype2)
+SYS_LCMS2_CFLAGS = $(shell pkg-config --cflags lcms2)
+SYS_LCMS2_LIBS = $(shell pkg-config --libs lcms2)
 SYS_OPENJPEG_CFLAGS = $(shell pkg-config --cflags libopenjpeg1)
 SYS_OPENJPEG_LIBS = $(shell pkg-config --libs libopenjpeg1)
 SYS_JBIG2DEC_LIBS = -ljbig2dec
