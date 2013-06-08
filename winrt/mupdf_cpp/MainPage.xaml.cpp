@@ -1075,6 +1075,8 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 {
 	m_links_on = !m_links_on;
 
+	if (!m_init_done)
+		return;
 	if (m_links_on)
 		AddLinkCanvas();
 	else
