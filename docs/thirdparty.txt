@@ -20,12 +20,18 @@ openjpeg	2.0.0		JPEG 2000	BSD-style 		http://www.openjpeg.org/
 		(with patches)	decoding
 
 
+lcms2		2.4		Color		MIT license		http://www.littlecms.com/
+				management
+
 zlib		1.2.7		(De)Flate	zlib License 		http://www.zlib.net/
 				compression
 
 
-
 (Optional)
+
+openssl		1.0.1e		Certificate	Apache-style		https://www.openssl.org/
+				verification
+
 v8		3.9		JavaScript	BSD			http://code.google.com/p/v8/
 				interpreter
 
@@ -35,5 +41,3 @@ curl		7.31.0		HTTP data	MIT-style		http://curl.haxx.se/
 
 
 NOTE: jbig2dec is included in "thirdparty" but is copyright Artifex Software Inc.
-
-
