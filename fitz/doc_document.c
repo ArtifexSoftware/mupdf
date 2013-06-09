@@ -255,13 +255,6 @@ fz_page_presentation(fz_document *doc, fz_page *page, float *duration)
 	return NULL;
 }
 
-fz_interactive *fz_interact(fz_document *doc)
-{
-	if (doc && doc->interact)
-		return doc->interact(doc);
-	return NULL;
-}
-
 int fz_javascript_supported(void)
 {
 	return pdf_js_supported();

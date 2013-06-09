@@ -15,6 +15,7 @@
 #include "fitz.h"
 #include "fitz-internal.h"
 #include "mupdf.h"
+#include "mupdf-internal.h"
 
 #define JNI_FN(A) Java_com_artifex_mupdfdemo_ ## A
 #define PACKAGENAME "com/artifex/mupdfdemo"
@@ -96,7 +97,7 @@ struct globals_s
 	int alerts_active;
 	// Pointer to the alert struct passed in by show_alert, and valid while
 	// show_alert is blocked.
-	fz_alert_event *current_alert;
+	pdf_alert_event *current_alert;
 	// Flag and condition varibles to signal a request is present and a reply
 	// is present, respectively. The condition variables alone are not sufficient
 	// because of the pthreads permit spurious signals.
@@ -154,7 +155,7 @@ static void dump_annotation_display_lists(globals *glo)
 	}
 }
 
-static void show_alert(globals *glo, fz_alert_event *alert)
+static void show_alert(globals *glo, pdf_alert_event *alert)
 {
 	pthread_mutex_lock(&glo->fin_lock2);
 	pthread_mutex_lock(&glo->alert_lock);
@@ -180,21 +181,21 @@ static void show_alert(globals *glo, fz_alert_event *alert)
 	pthread_mutex_unlock(&glo->fin_lock2);
 }
 
-static void event_cb(fz_doc_event *event, void *data)
+static void event_cb(pdf_doc_event *event, void *data)
 {
 	globals *glo = (globals *)data;
 
 	switch (event->type)
 	{
-	case FZ_DOCUMENT_EVENT_ALERT:
-		show_alert(glo, fz_access_alert_event(event));
+	case PDF_DOCUMENT_EVENT_ALERT:
+		show_alert(glo, pdf_access_alert_event(event));
 		break;
 	}
 }
 
 static void alerts_init(globals *glo)
 {
-	fz_interactive *idoc = fz_interact(glo->doc);
+	pdf_document *idoc = pdf_specifics(glo->doc);
 
 	if (!idoc || glo->alerts_initialised)
 		return;
@@ -208,20 +209,20 @@ static void alerts_init(globals *glo)
 	pthread_cond_init(&glo->alert_request_cond, NULL);
 	pthread_cond_init(&glo->alert_reply_cond, NULL);
 
-	fz_set_doc_event_callback(idoc, event_cb, glo);
+	pdf_set_doc_event_callback(idoc, event_cb, glo);
 	LOGT("alert_init");
 	glo->alerts_initialised = 1;
 }
 
 static void alerts_fin(globals *glo)
 {
-	fz_interactive *idoc = fz_interact(glo->doc);
+	pdf_document *idoc = pdf_specifics(glo->doc);
 	if (!glo->alerts_initialised)
 		return;
 
 	LOGT("Enter alerts_fin");
 	if (idoc)
-		fz_set_doc_event_callback(idoc, NULL, NULL);
+		pdf_set_doc_event_callback(idoc, NULL, NULL);
 
 	// Set alerts_active false and wake up show_alert and waitForAlertInternal,
 	pthread_mutex_lock(&glo->alert_lock);
@@ -573,12 +574,12 @@ JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 	return fz_javascript_supported();
 }
 
-static void update_changed_rects(globals *glo, page_cache *pc, fz_interactive *idoc)
+static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *idoc)
 {
 	fz_annot *annot;
 
-	fz_update_page(idoc, pc->page);
-	while ((annot = fz_poll_changed_annot(idoc, pc->page)) != NULL)
+	pdf_update_page(idoc, (pdf_page *)pc->page);
+	while ((annot = (fz_annot *)pdf_poll_changed_annot(idoc, (pdf_page *)pc->page)) != NULL)
 	{
 		/* FIXME: We bound the annot twice here */
 		rect_node *node = fz_malloc_struct(glo->ctx, rect_node);
@@ -644,7 +645,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 
 	fz_try(ctx)
 	{
-		fz_interactive *idoc = fz_interact(doc);
+		pdf_document *idoc = pdf_specifics(doc);
 
 		if (idoc)
 		{
@@ -742,12 +743,12 @@ static char *widget_type_string(int t)
 {
 	switch(t)
 	{
-	case FZ_WIDGET_TYPE_PUSHBUTTON: return "pushbutton";
-	case FZ_WIDGET_TYPE_CHECKBOX: return "checkbox";
-	case FZ_WIDGET_TYPE_RADIOBUTTON: return "radiobutton";
-	case FZ_WIDGET_TYPE_TEXT: return "text";
-	case FZ_WIDGET_TYPE_LISTBOX: return "listbox";
-	case FZ_WIDGET_TYPE_COMBOBOX: return "combobox";
+	case PDF_WIDGET_TYPE_PUSHBUTTON: return "pushbutton";
+	case PDF_WIDGET_TYPE_CHECKBOX: return "checkbox";
+	case PDF_WIDGET_TYPE_RADIOBUTTON: return "radiobutton";
+	case PDF_WIDGET_TYPE_TEXT: return "text";
+	case PDF_WIDGET_TYPE_LISTBOX: return "listbox";
+	case PDF_WIDGET_TYPE_COMBOBOX: return "combobox";
 	default: return "non-widget";
 	}
 }
@@ -765,7 +766,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_rect rect;
 	fz_pixmap *pix = NULL;
 	float xscale, yscale;
-	fz_interactive *idoc;
+	pdf_document *idoc;
 	page_cache *pc = NULL;
 	int hq = (patchW < pageW || patchH < pageH);
 	int i;
@@ -792,7 +793,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		return JNI_FN(MuPDFCore_drawPage)(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
 	}
 
-	idoc = fz_interact(doc);
+	idoc = pdf_specifics(doc);
 
 	fz_var(pix);
 	fz_var(dev);
@@ -1377,7 +1378,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
-	fz_interactive *idoc = fz_interact(doc);
+	pdf_document *idoc = pdf_specifics(doc);
 	page_cache *pc = &glo->pages[glo->current];
 	jclass pt_cls;
 	jfieldID x_fid, y_fid;
@@ -1449,10 +1450,10 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 			fz_transform_point(&pts[i], &ctm);
 		}
 
-		annot = fz_create_annot(idoc, pc->page, type);
+		annot = (fz_annot *)pdf_create_annot(idoc, (pdf_page *)pc->page, type);
 
-		fz_set_markup_annot_quadpoints(idoc, annot, pts, n);
-		fz_set_markup_appearance(idoc, annot, color, alpha, line_thickness, line_height);
+		pdf_set_markup_annot_quadpoints(idoc, (pdf_annot *)annot, pts, n);
+		pdf_set_markup_appearance(idoc, (pdf_annot *)annot, color, alpha, line_thickness, line_height);
 
 		dump_annotation_display_lists(glo);
 	}
@@ -1476,7 +1477,7 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
-	fz_interactive *idoc = fz_interact(doc);
+	pdf_document *idoc = pdf_specifics(doc);
 	page_cache *pc = &glo->pages[glo->current];
 	jclass pt_cls;
 	jfieldID x_fid, y_fid;
@@ -1542,9 +1543,9 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 			}
 		}
 
-		annot = fz_create_annot(idoc, pc->page, FZ_ANNOT_INK);
+		annot = (fz_annot *)pdf_create_annot(idoc, (pdf_page *)pc->page, FZ_ANNOT_INK);
 
-		fz_set_ink_annot_list(idoc, annot, pts, counts, n, color, INK_THICKNESS);
+		pdf_set_ink_annot_list(idoc, (pdf_annot *)annot, pts, counts, n, color, INK_THICKNESS);
 
 		dump_annotation_display_lists(glo);
 	}
@@ -1569,7 +1570,7 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_document *doc = glo->doc;
-	fz_interactive *idoc = fz_interact(doc);
+	pdf_document *idoc = pdf_specifics(doc);
 	page_cache *pc = &glo->pages[glo->current];
 	fz_annot *annot;
 	int i;
@@ -1585,7 +1586,7 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 
 		if (annot)
 		{
-			fz_delete_annot(idoc, pc->page, annot);
+			pdf_delete_annot(idoc, (pdf_page *)pc->page, (pdf_annot *)annot);
 			dump_annotation_display_lists(glo);
 		}
 	}
@@ -1765,8 +1766,8 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	jmethodID ctor;
 	jobjectArray arr;
 	jobject rectF;
-	fz_interactive *idoc;
-	fz_widget *widget;
+	pdf_document *idoc;
+	pdf_widget *widget;
 	fz_matrix ctm;
 	float zoom;
 	int count;
@@ -1783,7 +1784,7 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	if (pc->number != pageNumber || pc->page == NULL)
 		return NULL;
 
-	idoc = fz_interact(glo->doc);
+	idoc = pdf_specifics(glo->doc);
 	if (idoc == NULL)
 		return NULL;
 
@@ -1791,17 +1792,17 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	fz_scale(&ctm, zoom, zoom);
 
 	count = 0;
-	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
+	for (widget = pdf_first_widget(idoc, (pdf_page *)pc->page); widget; widget = pdf_next_widget(widget))
 		count ++;
 
 	arr = (*env)->NewObjectArray(env, count, rectFClass, NULL);
 	if (arr == NULL) return NULL;
 
 	count = 0;
-	for (widget = fz_first_widget(idoc, pc->page); widget; widget = fz_next_widget(idoc, widget))
+	for (widget = pdf_first_widget(idoc, (pdf_page *)pc->page); widget; widget = pdf_next_widget(widget))
 	{
 		fz_rect rect;
-		fz_bound_widget(widget, &rect);
+		pdf_bound_widget(widget, &rect);
 		fz_transform_rect(&rect, &ctm);
 
 		rectF = (*env)->NewObject(env, rectFClass, ctor,
@@ -1854,7 +1855,7 @@ JNI_FN(MuPDFCore_getAnnotationsInternal)(JNIEnv * env, jobject thiz, int pageNum
 	for (annot = fz_first_annot(glo->doc, pc->page); annot; annot = fz_next_annot(glo->doc, annot))
 	{
 		fz_rect rect;
-		fz_annot_type type = fz_get_annot_type(annot);
+		fz_annot_type type = pdf_annot_type((pdf_annot *)annot);
 		fz_bound_annot(glo->doc, annot, &rect);
 		fz_transform_rect(&rect, &ctm);
 
@@ -1876,10 +1877,10 @@ JNI_FN(MuPDFCore_passClickEventInternal)(JNIEnv * env, jobject thiz, int pageNum
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	fz_matrix ctm;
-	fz_interactive *idoc = fz_interact(glo->doc);
+	pdf_document *idoc = pdf_specifics(glo->doc);
 	float zoom;
 	fz_point p;
-	fz_ui_event event;
+	pdf_ui_event event;
 	int changed = 0;
 	page_cache *pc;
 
@@ -1905,12 +1906,12 @@ JNI_FN(MuPDFCore_passClickEventInternal)(JNIEnv * env, jobject thiz, int pageNum
 
 	fz_try(ctx)
 	{
-		event.etype = FZ_EVENT_TYPE_POINTER;
+		event.etype = PDF_EVENT_TYPE_POINTER;
 		event.event.pointer.pt = p;
-		event.event.pointer.ptype = FZ_POINTER_DOWN;
-		changed = fz_pass_event(idoc, pc->page, &event);
-		event.event.pointer.ptype = FZ_POINTER_UP;
-		changed |= fz_pass_event(idoc, pc->page, &event);
+		event.event.pointer.ptype = PDF_POINTER_DOWN;
+		changed = pdf_pass_event(idoc, (pdf_page *)pc->page, &event);
+		event.event.pointer.ptype = PDF_POINTER_UP;
+		changed |= pdf_pass_event(idoc, (pdf_page *)pc->page, &event);
 		if (changed) {
 			dump_annotation_display_lists(glo);
 		}
@@ -1932,14 +1933,14 @@ JNI_FN(MuPDFCore_getFocusedWidgetTextInternal)(JNIEnv * env, jobject thiz)
 
 	fz_try(ctx)
 	{
-		fz_interactive *idoc = fz_interact(glo->doc);
+		pdf_document *idoc = pdf_specifics(glo->doc);
 
 		if (idoc)
 		{
-			fz_widget *focus = fz_focused_widget(idoc);
+			pdf_widget *focus = pdf_focused_widget(idoc);
 
 			if (focus)
-				text = fz_text_widget_text(idoc, focus);
+				text = pdf_text_widget_text(idoc, focus);
 		}
 	}
 	fz_catch(ctx)
@@ -1967,15 +1968,15 @@ JNI_FN(MuPDFCore_setFocusedWidgetTextInternal)(JNIEnv * env, jobject thiz, jstri
 
 	fz_try(ctx)
 	{
-		fz_interactive *idoc = fz_interact(glo->doc);
+		pdf_document *idoc = pdf_specifics(glo->doc);
 
 		if (idoc)
 		{
-			fz_widget *focus = fz_focused_widget(idoc);
+			pdf_widget *focus = pdf_focused_widget(idoc);
 
 			if (focus)
 			{
-				result = fz_text_widget_set_text(idoc, focus, (char *)text);
+				result = pdf_text_widget_set_text(idoc, focus, (char *)text);
 				dump_annotation_display_lists(glo);
 			}
 		}
@@ -1995,8 +1996,8 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceOptions)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
-	fz_interactive *idoc = fz_interact(glo->doc);
-	fz_widget *focus;
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
 	int type;
 	int nopts, i;
 	char **opts = NULL;
@@ -2006,20 +2007,20 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceOptions)(JNIEnv * env, jobject thiz)
 	if (idoc == NULL)
 		return NULL;
 
-	focus = fz_focused_widget(idoc);
+	focus = pdf_focused_widget(idoc);
 	if (focus == NULL)
 		return NULL;
 
-	type = fz_widget_get_type(focus);
-	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+	type = pdf_widget_get_type(focus);
+	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return NULL;
 
 	fz_var(opts);
 	fz_try(ctx)
 	{
-		nopts = fz_choice_widget_options(idoc, focus, NULL);
+		nopts = pdf_choice_widget_options(idoc, focus, NULL);
 		opts = fz_malloc(ctx, nopts * sizeof(*opts));
-		(void)fz_choice_widget_options(idoc, focus, opts);
+		(void)pdf_choice_widget_options(idoc, focus, opts);
 	}
 	fz_catch(ctx)
 	{
@@ -2051,8 +2052,8 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceSelected)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
-	fz_interactive *idoc = fz_interact(glo->doc);
-	fz_widget *focus;
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
 	int type;
 	int nsel, i;
 	char **sel = NULL;
@@ -2062,20 +2063,20 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceSelected)(JNIEnv * env, jobject thiz)
 	if (idoc == NULL)
 		return NULL;
 
-	focus = fz_focused_widget(idoc);
+	focus = pdf_focused_widget(idoc);
 	if (focus == NULL)
 		return NULL;
 
-	type = fz_widget_get_type(focus);
-	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+	type = pdf_widget_get_type(focus);
+	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return NULL;
 
 	fz_var(sel);
 	fz_try(ctx)
 	{
-		nsel = fz_choice_widget_value(idoc, focus, NULL);
+		nsel = pdf_choice_widget_value(idoc, focus, NULL);
 		sel = fz_malloc(ctx, nsel * sizeof(*sel));
-		(void)fz_choice_widget_value(idoc, focus, sel);
+		(void)pdf_choice_widget_value(idoc, focus, sel);
 	}
 	fz_catch(ctx)
 	{
@@ -2107,8 +2108,8 @@ JNI_FN(MuPDFCore_setFocusedWidgetChoiceSelectedInternal)(JNIEnv * env, jobject t
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
-	fz_interactive *idoc = fz_interact(glo->doc);
-	fz_widget *focus;
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
 	int type;
 	int nsel, i;
 	char **sel = NULL;
@@ -2117,12 +2118,12 @@ JNI_FN(MuPDFCore_setFocusedWidgetChoiceSelectedInternal)(JNIEnv * env, jobject t
 	if (idoc == NULL)
 		return;
 
-	focus = fz_focused_widget(idoc);
+	focus = pdf_focused_widget(idoc);
 	if (focus == NULL)
 		return;
 
-	type = fz_widget_get_type(focus);
-	if (type != FZ_WIDGET_TYPE_LISTBOX && type != FZ_WIDGET_TYPE_COMBOBOX)
+	type = pdf_widget_get_type(focus);
+	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return;
 
 	nsel = (*env)->GetArrayLength(env, arr);
@@ -2145,7 +2146,7 @@ JNI_FN(MuPDFCore_setFocusedWidgetChoiceSelectedInternal)(JNIEnv * env, jobject t
 
 	fz_try(ctx)
 	{
-		fz_choice_widget_set_value(idoc, focus, nsel, sel);
+		pdf_choice_widget_set_value(idoc, focus, nsel, sel);
 		dump_annotation_display_lists(glo);
 	}
 	fz_catch(ctx)
@@ -2164,22 +2165,22 @@ JNIEXPORT int JNICALL
 JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
-	fz_interactive *idoc = fz_interact(glo->doc);
-	fz_widget *focus;
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
 
 	if (idoc == NULL)
 		return NONE;
 
-	focus = fz_focused_widget(idoc);
+	focus = pdf_focused_widget(idoc);
 
 	if (focus == NULL)
 		return NONE;
 
-	switch (fz_widget_get_type(focus))
+	switch (pdf_widget_get_type(focus))
 	{
-	case FZ_WIDGET_TYPE_TEXT: return TEXT;
-	case FZ_WIDGET_TYPE_LISTBOX: return LISTBOX;
-	case FZ_WIDGET_TYPE_COMBOBOX: return COMBOBOX;
+	case PDF_WIDGET_TYPE_TEXT: return TEXT;
+	case PDF_WIDGET_TYPE_LISTBOX: return LISTBOX;
+	case PDF_WIDGET_TYPE_COMBOBOX: return COMBOBOX;
 	}
 
 	return NONE;
@@ -2194,7 +2195,7 @@ JNI_FN(MuPDFCore_waitForAlertInternal)(JNIEnv * env, jobject thiz)
 	jstring title;
 	jstring message;
 	int alert_present;
-	fz_alert_event alert;
+	pdf_alert_event alert;
 
 	LOGT("Enter waitForAlert");
 	pthread_mutex_lock(&glo->fin_lock);
@@ -2314,9 +2315,9 @@ JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_hasChangesInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
-	fz_interactive *idoc = fz_interact(glo->doc);
+	pdf_document *idoc = pdf_specifics(glo->doc);
 
-	return (idoc && fz_has_unsaved_changes(idoc)) ? JNI_TRUE : JNI_FALSE;
+	return (idoc && pdf_has_unsaved_changes(idoc)) ? JNI_TRUE : JNI_FALSE;
 }
 
 static char *tmp_path(char *path)

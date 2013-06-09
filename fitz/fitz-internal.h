@@ -1260,41 +1260,6 @@ void fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, i
 void fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nestedDepth);
 
 /*
-	fz_create_annot: create a new annotation of the specified type on the
-	specified page. The returned pdf_annot structure is owned by the page
-	and does not need to be freed.
-*/
-fz_annot *fz_create_annot(fz_interactive *idoc, fz_page *page, fz_annot_type type);
-
-/*
-	fz_delete_annot: delete an annotation
-*/
-void fz_delete_annot(fz_interactive *idoc, fz_page *page, fz_annot *annot);
-
-/*
-	fz_set_annot_appearance: update the appearance of an annotation based
-	on a display list.
-*/
-void fz_set_annot_appearance(fz_interactive *idoc, fz_annot *annot, fz_rect *rect, fz_display_list *disp_list);
-
-/*
-	fz_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
-*/
-void fz_set_markup_annot_quadpoints(fz_interactive *idoc, fz_annot *annot, fz_point *qp, int n);
-
-/*
-	fz_set_markup_appearance: set the appearance stream of a text markup annotations, basing it on
-	its QuadPoints array
-*/
-void fz_set_markup_appearance(fz_interactive *idoc, fz_annot *annot, float color[3], float alpha, float line_thickness, float line_height);
-
-/*
-	fz_set_ink_annot_list: set the details of an ink annotation. All the points of the multiple arcs
-	are carried in a single array, with the counts for each arc held in a secondary array.
-*/
-void fz_set_ink_annot_list(fz_interactive *idoc, fz_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness);
-
-/*
  * Text buffer.
  *
  * The trm field contains the a, b, c and d coefficients.
@@ -1641,7 +1606,6 @@ struct fz_document_s
 	void (*free_page)(fz_document *doc, fz_page *page);
 	int (*meta)(fz_document *doc, int key, void *ptr, int size);
 	fz_transition *(*page_presentation)(fz_document *doc, fz_page *page, float *duration);
-	fz_interactive *(*interact)(fz_document *doc);
 	void (*write)(fz_document *doc, char *filename, fz_write_options *opts);
 	fz_annot *(*first_annot)(fz_document *doc, fz_page *page);
 	fz_annot *(*next_annot)(fz_document *doc, fz_annot *annot);

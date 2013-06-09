@@ -3,6 +3,7 @@
  */
 
 #include "fitz.h"
+#include "mupdf-internal.h"
 
 #ifdef _MSC_VER
 #include <winsock2.h>
@@ -274,24 +275,24 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (mujstest_file)
 	{
-		fz_interactive *inter = fz_interact(doc);
-		fz_widget *widget = NULL;
+		pdf_document *inter = pdf_specifics(doc);
+		pdf_widget *widget = NULL;
 
 		if (inter)
-			widget = fz_first_widget(inter, page);
+			widget = pdf_first_widget(inter, (pdf_page *)page);
 
 		if (widget)
 		{
 			fprintf(mujstest_file, "GOTO %d\n", pagenum);
 			needshot = 1;
 		}
-		for (;widget; widget = fz_next_widget(inter, widget))
+		for (;widget; widget = pdf_next_widget(widget))
 		{
 			fz_rect rect;
 			int w, h, len;
-			int type = fz_widget_get_type(widget);
+			int type = pdf_widget_get_type(widget);
 
-			fz_bound_widget(widget, &rect);
+			pdf_bound_widget(widget, &rect);
 			w = (rect.x1 - rect.x0);
 			h = (rect.y1 - rect.y0);
 			++mujstest_count;
@@ -300,19 +301,19 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			default:
 				fprintf(mujstest_file, "%% UNKNOWN %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
-			case FZ_WIDGET_TYPE_PUSHBUTTON:
+			case PDF_WIDGET_TYPE_PUSHBUTTON:
 				fprintf(mujstest_file, "%% PUSHBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
-			case FZ_WIDGET_TYPE_CHECKBOX:
+			case PDF_WIDGET_TYPE_CHECKBOX:
 				fprintf(mujstest_file, "%% CHECKBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
-			case FZ_WIDGET_TYPE_RADIOBUTTON:
+			case PDF_WIDGET_TYPE_RADIOBUTTON:
 				fprintf(mujstest_file, "%% RADIOBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
-			case FZ_WIDGET_TYPE_TEXT:
+			case PDF_WIDGET_TYPE_TEXT:
 			{
-				int maxlen = fz_text_widget_max_len(inter, widget);
-				int texttype = fz_text_widget_content_type(inter, widget);
+				int maxlen = pdf_text_widget_max_len(inter, widget);
+				int texttype = pdf_text_widget_content_type(inter, widget);
 
 				/* If height is low, assume a single row, and base
 				 * the width off that. */
@@ -341,31 +342,31 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				switch (texttype)
 				{
 				default:
-				case FZ_WIDGET_CONTENT_UNRESTRAINED:
+				case PDF_WIDGET_CONTENT_UNRESTRAINED:
 					fprintf(mujstest_file, "TEXT %d ", mujstest_count);
 					escape_string(mujstest_file, len-3, lorem);
 					fprintf(mujstest_file, "\n");
 					break;
-				case FZ_WIDGET_CONTENT_NUMBER:
+				case PDF_WIDGET_CONTENT_NUMBER:
 					fprintf(mujstest_file, "TEXT %d\n", mujstest_count);
 					break;
-				case FZ_WIDGET_CONTENT_SPECIAL:
+				case PDF_WIDGET_CONTENT_SPECIAL:
 					fprintf(mujstest_file, "TEXT %lld\n", 46702919800LL + mujstest_count);
 					break;
-				case FZ_WIDGET_CONTENT_DATE:
+				case PDF_WIDGET_CONTENT_DATE:
 					fprintf(mujstest_file, "TEXT Jun %d 1979\n", 1 + ((13 + mujstest_count) % 30));
 					break;
-				case FZ_WIDGET_CONTENT_TIME:
+				case PDF_WIDGET_CONTENT_TIME:
 					++mujstest_count;
 					fprintf(mujstest_file, "TEXT %02d:%02d\n", ((mujstest_count/60) % 24), mujstest_count % 60);
 					break;
 				}
 				break;
 			}
-			case FZ_WIDGET_TYPE_LISTBOX:
+			case PDF_WIDGET_TYPE_LISTBOX:
 				fprintf(mujstest_file, "%% LISTBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
-			case FZ_WIDGET_TYPE_COMBOBOX:
+			case PDF_WIDGET_TYPE_COMBOBOX:
 				fprintf(mujstest_file, "%% COMBOBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 				break;
 			}
