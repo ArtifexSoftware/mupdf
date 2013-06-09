@@ -429,10 +429,10 @@ void mupdf_cpp::MainPage::RenderThumbs()
 	cancellation_token_source cts;
 	auto token = cts.get_token();
 	m_ThumbCancel = cts;
+	auto ui = task_continuation_context::use_current();
 
 	this->m_ren_status = REN_THUMBS;
 	Vector<DocumentPage^>^ thumbnails = m_thumbnails;
-	auto ui = task_continuation_context::use_current();
 	auto task_thumb = create_task([spatial_info, num_pages, thumbnails, this, ui, token]()-> int
 	{
 		spatial_info_t spatial_info_local = spatial_info;
@@ -441,7 +441,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 		for (int k = 0; k < num_pages; k++)
 		{
 			Point ras_size = ComputePageSize(spatial_info_local, k);
-			auto task2 = create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
+			auto task2 = create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, false));
 
 			task2.then([this, k, thumbnails, ras_size](InMemoryRandomAccessStream^ ras)
 			{
@@ -640,7 +640,7 @@ void mupdf_cpp::MainPage::InitialRender()
 			Point ras_size = ComputePageSize(spatial_info, k);
 
 			auto render_task =
-				create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
+				create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, false));
 
 			render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
@@ -687,7 +687,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
 				auto render_task =
-					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y));
+					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, false));
 
 				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
 				{
@@ -745,7 +745,7 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 			spatial_info_t spatial_info = InitSpatial(1);
 			Point ras_size = ComputePageSize(spatial_info, newValue);
 			auto render_task =
-				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y));
+				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y, false));
 
 			render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
@@ -1321,17 +1321,26 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 	{
 		doc_page->Zoom = scrollviewer->ZoomFactor;
 		int page = m_currpage;
+
 		/* Render at new resolution */
 		spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
 		Point ras_size = ComputePageSize(spatial_info, page);
 
-		auto render_task =
-			create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y));
-
-		render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
+		/* Go ahead and create display list if we dont have one for this page */
+		auto ui = task_continuation_context::use_current();
+		auto display_task = create_task(mu_doc->CreateDisplayList(page));
+		display_task.then([this, page, ras_size, ui] (int code)
 		{
-			ReplaceImage(page, ras, ras_size);
-		}, task_continuation_context::use_current());
+			if (code == S_ISOK)
+			{
+				auto render_task =
+					create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
+				render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
+				{
+					ReplaceImage(page, ras, ras_size);
+				}, ui);
+			}
+		});
 	}
 }
 

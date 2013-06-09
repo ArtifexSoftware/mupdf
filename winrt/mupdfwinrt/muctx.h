@@ -80,6 +80,8 @@ private:
 	fz_locks_context mu_locks;
 	fz_context *mu_ctx;
 	fz_document *mu_doc;
+	fz_display_list *mu_dlist;
+	int dlist_pagenum;
 	fz_outline *mu_outline;
 	fz_rect mu_hit_bbox[MAX_SEARCH];
 	void FlattenOutline(fz_outline *outline, int level,
@@ -92,7 +94,9 @@ public:
 	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
 	int GetPageCount();
 	status_t InitializeContext();
-	status_t RenderPage(int page_num, int width, int height, unsigned char *bmp_data);
+	status_t RenderPage(int page_num, int width, int height, unsigned char *bmp_data, bool use_dlist);
+	status_t CreateDisplayList(int page_num);
+	int GetDisplayListPage(void);
 	Point MeasurePage(int page_num);
 	Point MeasurePage(fz_page *page);
 	int GetLinks(int page_num, sh_vector_link links_vec);
