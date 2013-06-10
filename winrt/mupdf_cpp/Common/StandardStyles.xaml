@@ -455,6 +455,16 @@
         <Setter Property="AutomationProperties.Name" Value="Reflow"/>
         <Setter Property="Content" Value="&#xE18B;"/>
     </Style>
+    <Style x:Key="ZoomInAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
+        <Setter Property="AutomationProperties.AutomationId" Value="ZoomInAppBarButton"/>
+        <Setter Property="AutomationProperties.Name" Value="Zoom In"/>
+        <Setter Property="Content" Value="&#xE12E;"/>
+    </Style>
+    <Style x:Key="ZoomOutAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
+        <Setter Property="AutomationProperties.AutomationId" Value="ZoomOutAppBarButton"/>
+        <Setter Property="AutomationProperties.Name" Value="Zoom Out"/>
+        <Setter Property="Content" Value="&#xE1A4;"/>
+    </Style>
 
     <!--
 

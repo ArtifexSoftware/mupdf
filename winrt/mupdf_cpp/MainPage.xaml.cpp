@@ -21,6 +21,8 @@
 
 #define KEY_PLUS 0xbb
 #define KEY_MINUS 0xbd
+#define ZOOM_IN 0
+#define ZOOM_OUT 1
 
 static float screenScale = 1;
 
@@ -728,6 +730,9 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 {
 	int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
 
+	if (IsNotStandardView())
+		return;
+
 	if (m_update_flip)
 	{
 		m_update_flip = false;
@@ -793,41 +798,33 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 /* Search Related Code */
 void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+	ShowSearchBox();
+	UpdateAppBarButtonViewState();
+}
+
+void mupdf_cpp::MainPage::ShowSearchBox()
+{
 	/* Update the app bar so that we can do the search */
 	StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
 
 	if (leftPanel != nullptr && m_insearch)
 	{
 		m_insearch = false;
-		leftPanel->Children->RemoveAtEnd();
-		leftPanel->Children->RemoveAtEnd();
-		leftPanel->Children->RemoveAtEnd();
+		FindBox->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+		PrevSearch->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+		NextSearch->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 	}
 	else if (leftPanel != nullptr && !m_insearch)
 	{
 		/* Search is not going to work in snapped view for now to simplify UI
 		   in this cramped case.  So see if we can get out of snapped mode. */
-
 		if (!EnsureUnsnapped())
 			return;
 
 		m_insearch = true;
-		Windows::UI::Xaml::Controls::Button^ PrevButton = ref new Button();
-		PrevButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("PreviousAppBarButtonStyle"));
-		PrevButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchPrev);
-
-		Windows::UI::Xaml::Controls::Button^ NextButton = ref new Button();
-		NextButton->Style = safe_cast<Windows::UI::Xaml::Style^>(App::Current->Resources->Lookup("NextAppBarButtonStyle"));
-		NextButton->Click += ref new RoutedEventHandler(this, &mupdf_cpp::MainPage::SearchNext);
-
-		Windows::UI::Xaml::Controls::TextBox^ SearchBox = ref new TextBox();
-		SearchBox->Name = "findBox";
-		SearchBox->Width = 200;
-		SearchBox->Height = 20;
-
-		leftPanel->Children->Append(SearchBox);
-		leftPanel->Children->Append(PrevButton);
-		leftPanel->Children->Append(NextButton);
+		FindBox->Visibility = Windows::UI::Xaml::Visibility::Visible;
+		PrevSearch->Visibility = Windows::UI::Xaml::Visibility::Visible;
+		NextSearch->Visibility = Windows::UI::Xaml::Visibility::Visible;
 	}
 }
 
@@ -894,8 +891,11 @@ void mupdf_cpp::MainPage::ShowSearchResults(int page_num, int box_count)
 
 void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+	if (IsNotStandardView())
+		return;
+
 	StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
-	TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
+	TextBox^ findBox = (TextBox^) leftPanel->FindName("FindBox");
 	String^ textToFind = findBox->Text;
 
 	if (this->m_search_active == false && textToFind != nullptr)
@@ -904,8 +904,11 @@ void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml
 
 void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+	if (IsNotStandardView())
+		return;
+
 	StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
-	TextBox^ findBox = (TextBox^) leftPanel->FindName("findBox");
+	TextBox^ findBox = (TextBox^) leftPanel->FindName("FindBox");
 	String^ textToFind = findBox->Text;
 
 	if (this->m_search_active == false && textToFind != nullptr)
@@ -1075,7 +1078,7 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 {
 	m_links_on = !m_links_on;
 
-	if (!m_init_done)
+	if (!m_init_done || IsNotStandardView())
 		return;
 	if (m_links_on)
 		AddLinkCanvas();
@@ -1211,12 +1214,16 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
 	if (this->m_num_pages < 0)
 		return;
 
+	if (IsNotStandardView() && !this->xaml_ListView->IsEnabled)
+		return;
+
 	if (this->xaml_ListView->IsEnabled)
 	{
 		this->xaml_ListView->Opacity = 0.0;
 		this->xaml_ListView->IsEnabled = false;
 		this->m_curr_flipView->Opacity = 1.0;
 		this->m_curr_flipView->IsEnabled = true;
+		this->xaml_PageSlider->IsEnabled = true;
 	}
 	else
 	{
@@ -1235,6 +1242,7 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
 				this->xaml_ListView->IsEnabled = true;
 				this->m_curr_flipView->Opacity = 0.0;
 				this->m_curr_flipView->IsEnabled = false;
+				this->xaml_PageSlider->IsEnabled = false;
 			}
 		}
 		else
@@ -1243,6 +1251,7 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
 			this->xaml_ListView->IsEnabled = true;
 			this->m_curr_flipView->Opacity = 0.0;
 			this->m_curr_flipView->IsEnabled = false;
+			this->xaml_PageSlider->IsEnabled = false;
 		}
 	}
 }
@@ -1258,6 +1267,7 @@ void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI:
 		this->xaml_ListView->IsEnabled = false;
 		this->m_curr_flipView->Opacity = 1.0;
 		this->m_curr_flipView->IsEnabled = true;
+		this->xaml_PageSlider->IsEnabled = true;
 
 		int old_page = this->m_currpage;
 		this->m_curr_flipView->SelectedIndex = newpage;
@@ -1275,6 +1285,7 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
 		xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 		this->xaml_MainGrid->Opacity = 1.0;
 		this->m_curr_flipView->IsEnabled = true;
+		this->xaml_PageSlider->IsEnabled = true;
 		xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 		xaml_WebView->Opacity = 0.0;
 
@@ -1285,6 +1296,7 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
 		xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Visible;
 		this->xaml_MainGrid->Opacity = 0.0;
 		this->m_curr_flipView->IsEnabled = false;
+		this->xaml_PageSlider->IsEnabled = false;
 		this->xaml_WebView->NavigateToString(html_string);
 		this->xaml_WebView->Height = this->ActualHeight - 2 * this->BottomAppBar->ActualHeight;
 		/* Check if thumb rendering is done.  If not then restart */
@@ -1292,9 +1304,11 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
 }
 
 /* Need to handle resizing of app bar to make sure everything fits */
-
 void mupdf_cpp::MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+	/* Remove search box in snapped view as we don't have the room for it */
+	if (ApplicationView::Value == ApplicationViewState::Snapped && m_insearch)
+		ShowSearchBox();
 	UpdateAppBarButtonViewState();
 }
 
@@ -1305,6 +1319,10 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
 	VisualStateManager::GoToState(Contents, viewState, true);
 	VisualStateManager::GoToState(Links, viewState, true);
 	VisualStateManager::GoToState(Reflow, viewState, true);
+	VisualStateManager::GoToState(ZoomIn, viewState, true);
+	VisualStateManager::GoToState(ZoomOut, viewState, true);
+	VisualStateManager::GoToState(PrevSearch, viewState, true);
+	VisualStateManager::GoToState(NextSearch, viewState, true);
 }
 
 /* Manipulation zooming with touch input */
@@ -1367,11 +1385,20 @@ Windows::UI::Xaml::FrameworkElement^ FindVisualChildByName(DependencyObject^ obj
 	return ret;
 }
 
-/* Zoom in and out for keyboard only case. */
-void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
+void mupdf_cpp::MainPage::ZoomInPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	if (!m_init_done) return;
+	if (!m_init_done || IsNotStandardView()) return;
+	NonTouchZoom(ZOOM_IN);
+}
 
+void mupdf_cpp::MainPage::ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+	if (!m_init_done || IsNotStandardView()) return;
+	NonTouchZoom(ZOOM_OUT);
+}
+
+void MainPage::NonTouchZoom(int zoom)
+{
 	ScrollViewer^ scrollviewer;
 	FlipViewItem^ item = safe_cast<FlipViewItem^> 
 		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
@@ -1392,14 +1419,12 @@ void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 		return;
 
 	double curr_zoom = scrollviewer->ZoomFactor;
-
-	long val = (long) (e->Key);
-	if (val == KEY_PLUS)
+	if (zoom == ZOOM_IN)
 	{
 		curr_zoom = curr_zoom + KEYBOARD_ZOOM_STEP;
 		if (curr_zoom > ZOOM_MAX) curr_zoom = ZOOM_MAX;
 	}
-	else if (val == KEY_MINUS)
+	else if (zoom == ZOOM_OUT)
 	{
 		curr_zoom = curr_zoom - KEYBOARD_ZOOM_STEP;
 		if (curr_zoom < ZOOM_MIN) curr_zoom = ZOOM_MIN;
@@ -1407,6 +1432,21 @@ void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 		return;
 
 	scrollviewer->ZoomToFactor(curr_zoom);
+}
+
+/* Zoom in and out for keyboard only case. */
+void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
+{
+	if (!m_init_done || IsNotStandardView()) return;
+
+	long val = (long) (e->Key);
+
+	if (val == KEY_PLUS)
+		NonTouchZoom(ZOOM_IN);
+	else if (val == KEY_MINUS)
+		NonTouchZoom(ZOOM_OUT);
+	else
+		return;
 }
 
 void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
@@ -1421,4 +1461,12 @@ void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml
 	}
 	else
 		NotifyUser("Incorrect Password", StatusMessage);
+}
+
+/* So that we know if we are in a standard view case and not in reflow, or
+ * content type */
+bool mupdf_cpp::MainPage::IsNotStandardView()
+{
+	return (this->xaml_ListView->Opacity == 1.0 ||
+			xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible);
 }

@@ -152,5 +152,10 @@ namespace mupdf_cpp
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
 		void PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void App_Suspending(Object^ sender, SuspendingEventArgs^ e);
+		void ZoomInPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void NonTouchZoom(int zoom);
+		void ShowSearchBox();
+		bool IsNotStandardView();
 	};
 }

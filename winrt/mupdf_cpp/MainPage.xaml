@@ -26,10 +26,16 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <StackPanel x:Name="LeftPanel" Orientation="Horizontal">
+                <StackPanel x:Name="LeftPanel" Orientation="Horizontal" HorizontalAlignment="Left" >
+                    <TextBox x:Name="FindBox" Width="200" Height="20" Visibility="Collapsed"/>
+                    <Button x:Name="PrevSearch" Style="{StaticResource PreviousAppBarButtonStyle}"  Visibility="Collapsed" Click="SearchPrev"/>
+                    <Button x:Name="NextSearch" Style="{StaticResource NextAppBarButtonStyle}" Visibility="Collapsed"  Click="SearchNext"/>
+
                 </StackPanel>
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="Search" Style="{StaticResource SearchAppBarButtonStyle}" Tag="Search" Click="Searcher"/>
+                    <Button x:Name="ZoomIn" Style="{StaticResource ZoomInAppBarButtonStyle}" Tag="ZoomIn" Click="ZoomInPress"/>
+                    <Button x:Name="ZoomOut" Style="{StaticResource ZoomOutAppBarButtonStyle}" Tag="ZoomOut" Click="ZoomOutPress"/>
                     <Button x:Name="Contents" Style="{StaticResource ContentsBarButtonStyle}" Tag="Contents" Click="ContentDisplay"/>
                     <Button x:Name="Links" Style="{StaticResource LinksAppBarButtonStyle}" Tag="Links" Click="Linker"/>
                     <Button x:Name="Reflow" Style="{StaticResource ReflowAppBarButtonStyle}" Tag="Reflow" Click="Reflower"/>
