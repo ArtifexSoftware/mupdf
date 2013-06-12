@@ -11,9 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Inspired by Fortify by Simon P Bullen. */
-
 
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */

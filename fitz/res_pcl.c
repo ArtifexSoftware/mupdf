@@ -4,7 +4,7 @@
 /*
  * The notion that there is such a thing as a "PCL printer" is a fiction: no
  * two "PCL" printers, even at the same PCL level, have identical command
- * sets.  (The H-P documentation isn't fully accurate either; for example,
+ * sets. (The H-P documentation isn't fully accurate either; for example,
  * it doesn't reveal that the DeskJet printers implement anything beyond PCL
  * 3.)
  *
@@ -13,14 +13,14 @@
  * printers that Ghostscript currently supports.
  */
 
-/* Printer spacing capabilities.  Include at most one of these. */
+/* Printer spacing capabilities. Include at most one of these. */
 #define PCL_NO_SPACING	0	/* no vertical spacing capability, must be 0 */
 #define PCL3_SPACING	1	/* <ESC>*p+<n>Y (PCL 3) */
 #define PCL4_SPACING	2	/* <ESC>*b<n>Y (PCL 4) */
 #define PCL5_SPACING	4	/* <ESC>*b<n>Y and clear seed row (PCL 5) */
 /* The following is only used internally. */
-#define PCL_ANY_SPACING\
-  (PCL3_SPACING | PCL4_SPACING | PCL5_SPACING)
+#define PCL_ANY_SPACING \
+	(PCL3_SPACING | PCL4_SPACING | PCL5_SPACING)
 
 /* Individual printer properties.  Any subset of these may be included. */
 #define PCL_MODE_2_COMPRESSION		8	/* compression mode 2 supported */
@@ -205,7 +205,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		default:
 			fz_throw(ctx, "Unsupported PCL spacing %d (0-3 only)", val);
 		}
-        }
+	}
 	else if (!strcmp(option, "mode2"))
 	{
 		if (val == 0)
@@ -213,8 +213,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_MODE_2_COMPRESSION;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for mode2 value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for mode2 value");
+	}
 	else if (!strcmp(option, "mode3"))
 	{
 		if (val == 0)
@@ -222,8 +222,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_MODE_3_COMPRESSION;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for mode3 value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for mode3 value");
+	}
 	else if (!strcmp(option, "eog_reset"))
 	{
 		if (val == 0)
@@ -231,8 +231,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_END_GRAPHICS_DOES_RESET;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for eog_reset value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for eog_reset value");
+	}
 	else if (!strcmp(option, "has_duplex"))
 	{
 		if (val == 0)
@@ -240,8 +240,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_HAS_DUPLEX;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for has_duplex value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for has_duplex value");
+	}
 	else if (!strcmp(option, "has_papersize"))
 	{
 		if (val == 0)
@@ -249,8 +249,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_CAN_SET_PAPER_SIZE;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
+	}
 	else if (!strcmp(option, "has_copies"))
 	{
 		if (val == 0)
@@ -258,8 +258,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_CAN_PRINT_COPIES;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
+	}
 	else if (!strcmp(option, "is_ljet4pjl"))
 	{
 		if (val == 0)
@@ -267,8 +267,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= HACK__IS_A_LJET4PJL;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for is_ljet4pjl value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for is_ljet4pjl value");
+	}
 	else if (!strcmp(option, "is_oce9050"))
 	{
 		if (val == 0)
@@ -276,8 +276,8 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= HACK__IS_A_OCE9050;
 		else
-                	fz_throw(ctx, "Expected 0 or 1 for is_oce9050 value");
-        }
+			fz_throw(ctx, "Expected 0 or 1 for is_oce9050 value");
+	}
 	else
 		fz_throw(ctx, "Unknown pcl option '%s'", option);
 }
@@ -309,7 +309,7 @@ pcl_header(fz_output *out, fz_pcl_options *pcl, int num_copies, int xres)
 
 	make_init(pcl, odd_page_init, sizeof(odd_page_init), pcl->odd_page_init, xres);
 	make_init(pcl, even_page_init, sizeof(even_page_init), pcl->even_page_init, xres);
-	
+
 	if (pcl->page_count == 0)
 	{
 		if (pcl->features & HACK__IS_A_LJET4PJL)
@@ -504,7 +504,7 @@ mode2compress(unsigned char *out, unsigned char *in, int in_len)
 	int x;
 	int out_len = 0;
 	int run;
-    
+
 	for (x = 0; x < in_len; x += run)
 	{
 		/* How far do we have to look to find a value that isn't repeated? */
@@ -520,7 +520,7 @@ mode2compress(unsigned char *out, unsigned char *in, int in_len)
 		else
 		{
 			int i;
-		    
+
 			/* How many literals do we need to copy? */
 			for (run = 1; run < 127 && x+run < in_len; run++)
 				if (in[run] == in[run+1])
@@ -547,7 +547,7 @@ mode3compress(unsigned char *out, const unsigned char *in, unsigned char *prev, 
 	unsigned char *compressed = out;
 	const unsigned char *cur = in;
 	const unsigned char *end = in + in_len;
-    
+
 	while (cur < end) {		/* Detect a maximum run of unchanged bytes. */
 		const unsigned char *run = cur;
 		const unsigned char *diff;
@@ -592,7 +592,6 @@ mode3compress(unsigned char *out, const unsigned char *in, unsigned char *prev, 
 void wind(void)
 {}
 
-
 void
 fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl)
 {
@@ -607,7 +606,7 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 	int out_count;
 	int max_mode_2_size;
 	int max_mode_3_size;
-	
+
 	if (!out || !bitmap)
 		return;
 
@@ -624,7 +623,7 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 	fz_var(prev_row);
 	fz_var(out_row_mode_2);
 	fz_var(out_row_mode_3);
-	
+
 	fz_try(ctx)
 	{
 		num_blank_lines = 0;
@@ -642,7 +641,7 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 		for (y = 0; y < bitmap->h; y++, data += ss)
 		{
 			unsigned char *end_data = data + line_size;
-			
+
 			if ((end_data[-1] & rmask) == 0)
 			{
 				end_data--;
@@ -656,6 +655,7 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 				continue;
 			}
 			wind();
+
 			/* We've reached a non-blank line. */
 			/* Put out a spacing command if necessary. */
 			if (num_blank_lines == y) {
@@ -682,6 +682,7 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 						fz_puts(out, "\033*bW");
 				}
 			}
+
 			/* Skip blank lines if any */
 			else if (num_blank_lines != 0)
 			{
@@ -694,10 +695,9 @@ fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pc
 				 * compression mode 3.
 				 */
 				if ((num_blank_lines < MIN_SKIP_LINES && compression != 3) ||
-					!(pcl->features & PCL_ANY_SPACING))
+						!(pcl->features & PCL_ANY_SPACING))
 				{
 					int mode_3ns = ((pcl->features & PCL_MODE_3_COMPRESSION) && !(pcl->features & PCL_ANY_SPACING));
-
 					if (mode_3ns && compression != 2)
 					{
 						/* Switch to mode 2 */

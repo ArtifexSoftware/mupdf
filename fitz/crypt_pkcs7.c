@@ -104,7 +104,6 @@ static long bsegs_callback_ctrl(BIO *b, int cmd, bio_info_cb *fp)
 	return BIO_callback_ctrl(b->next_bio, cmd, fp);
 }
 
-
 static BIO_METHOD methods_bsegs =
 {
 	0,"segment reader",
@@ -130,7 +129,6 @@ static void BIO_set_segments(BIO *b, int (*seg)[2], int nsegs)
 	ctx->seg = seg;
 	ctx->nsegs = nsegs;
 }
-
 
 typedef struct verify_context_s
 {
@@ -258,7 +256,6 @@ exit:
 
 	return res;
 }
-
 
 static unsigned char adobe_ca[] =
 {

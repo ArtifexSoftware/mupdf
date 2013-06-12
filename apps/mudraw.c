@@ -595,7 +595,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 			pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds);
 			fz_pixmap_set_resolution(pix, resolution);
-			
+
 			if (savealpha)
 				fz_clear_pixmap(ctx, pix);
 			else
@@ -646,7 +646,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_pcl_options options;
 
 					fz_pcl_preset(ctx, &options, "ljet4");
-				    
+
 					if (strstr(output, "%d") != NULL)
 						append = 0;
 					if (out_cs == CS_MONO)
