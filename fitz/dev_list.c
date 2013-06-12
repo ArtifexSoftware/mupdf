@@ -814,7 +814,7 @@ visible:
 				tile_rect.y0 = node->color[3];
 				tile_rect.x1 = node->color[4];
 				tile_rect.y1 = node->color[5];
-				cached = fz_begin_tile_id(dev, &node_rect, &tile_rect, node->color[0], node->color[1], &ctm, node->flag);
+				cached = fz_begin_tile_id(dev, &node->rect, &tile_rect, node->color[0], node->color[1], &ctm, node->flag);
 				if (cached)
 					node = skip_to_end_tile(node, &progress);
 				break;
