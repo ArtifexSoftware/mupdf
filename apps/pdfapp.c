@@ -536,6 +536,16 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 	app->errored = errored;
 }
 
+static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix *ctm, const fz_rect *rect, fz_cookie *cookie)
+{
+	fz_begin_page(dev, rect, ctm);
+	if (app->page_list)
+		fz_run_display_list(app->page_list, dev, ctm, rect, cookie);
+	if (app->annotations_list)
+		fz_run_display_list(app->annotations_list, dev, ctm, rect, cookie);
+	fz_end_page(dev);
+}
+
 #define MAX_TITLE 256
 
 static void pdfapp_updatepage(pdfapp_t *app)
@@ -557,12 +567,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, &ibounds);
-
-		if (app->page_list)
-			fz_run_display_list(app->page_list, idev, &ctm, &bounds, NULL);
-		if (app->annotations_list)
-			fz_run_display_list(app->annotations_list, idev, &ctm, &bounds, NULL);
-
+		pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
 		fz_free_device(idev);
 	}
 
@@ -606,10 +611,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		if (app->page_list || app->annotations_list)
 		{
 			tdev = fz_new_text_device(app->ctx, app->page_sheet, app->page_text);
-			if (app->page_list)
-				fz_run_display_list(app->page_list, tdev, &fz_identity, &fz_infinite_rect, &cookie);
-			if (app->annotations_list)
-				fz_run_display_list(app->annotations_list, tdev, &fz_identity, &fz_infinite_rect, &cookie);
+			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
 			fz_free_device(tdev);
 		}
 	}
@@ -650,10 +652,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		if (app->page_list || app->annotations_list)
 		{
 			idev = fz_new_draw_device(app->ctx, app->image);
-			if (app->page_list)
-				fz_run_display_list(app->page_list, idev, &ctm, &bounds, &cookie);
-			if (app->annotations_list)
-				fz_run_display_list(app->annotations_list, idev, &ctm, &bounds, &cookie);
+			pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
 			fz_free_device(idev);
 		}
 		if (app->invert)
