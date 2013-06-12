@@ -133,7 +133,7 @@ search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	fz_page *page = fz_load_page(doc, number);
 
 	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx, &fz_empty_rect);
+	fz_text_page *text = fz_new_text_page(ctx);
 	fz_device *dev = fz_new_text_device(ctx, sheet, text);
 	fz_run_page(doc, page, dev, &fz_identity, cookie);
 	fz_free_device(dev);

@@ -601,7 +601,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		/* Extract text */
 		app->page_sheet = fz_new_text_sheet(app->ctx);
-		app->page_text = fz_new_text_page(app->ctx, &app->page_bbox);
+		app->page_text = fz_new_text_page(app->ctx);
 
 		if (app->page_list || app->annotations_list)
 		{

@@ -426,8 +426,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 		fz_try(ctx)
 		{
-			fz_rect bounds;
-			text = fz_new_text_page(ctx, fz_bound_page(doc, page, &bounds));
+			text = fz_new_text_page(ctx);
 			dev = fz_new_text_device(ctx, sheet, text);
 			if (showtext == TEXT_HTML)
 				fz_disable_device_hints(dev, FZ_IGNORE_IMAGE);

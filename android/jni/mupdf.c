@@ -1104,17 +1104,13 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 
 	fz_try(ctx)
 	{
-		fz_rect mbrect;
-
 		if (glo->hit_bbox == NULL)
 			glo->hit_bbox = fz_malloc_array(ctx, MAX_SEARCH_HITS, sizeof(*glo->hit_bbox));
 
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
-		mbrect = pc->media_box;
-		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, &mbrect);
+		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
@@ -1199,15 +1195,12 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 	fz_try(ctx)
 	{
-		fz_rect mbrect;
 		int b, l, s, c;
 
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
-		mbrect = pc->media_box;
-		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, &mbrect);
+		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);
@@ -1309,14 +1302,11 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 
 	fz_try(ctx)
 	{
-		fz_rect mbrect;
 		int b, l, s, c;
 
 		ctm = fz_identity;
-		mbrect = pc->media_box;
-		fz_transform_rect(&mbrect, &ctm);
 		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx, &mbrect);
+		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
 		fz_free_device(dev);

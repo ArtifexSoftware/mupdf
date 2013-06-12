@@ -2100,6 +2100,7 @@ struct fz_text_page_s
 	fz_rect mediabox;
 	int len, cap;
 	fz_page_block *blocks;
+	fz_text_page *next;
 };
 
 /*
@@ -2267,7 +2268,7 @@ void fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet);
 	The text page is filled out by the text device to contain the blocks,
 	lines and spans of text on the page.
 */
-fz_text_page *fz_new_text_page(fz_context *ctx, const fz_rect *mediabox);
+fz_text_page *fz_new_text_page(fz_context *ctx);
 void fz_free_text_page(fz_context *ctx, fz_text_page *page);
 
 void fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
