@@ -1,4 +1,4 @@
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 struct parser
 {

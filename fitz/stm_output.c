@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 static int
 file_printf(fz_output *out, const char *fmt, va_list ap)

@@ -1,4 +1,4 @@
-#include "muxps-internal.h"
+#include "mupdf/xps-internal.h"
 
 static fz_image *
 xps_load_image(fz_context *ctx, xps_part *part)

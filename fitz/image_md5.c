@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 void fz_md5_pixmap(fz_pixmap *pix, unsigned char digest[16])
 {

@@ -1,4 +1,4 @@
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
 
 typedef struct svg_device_s svg_device;
 

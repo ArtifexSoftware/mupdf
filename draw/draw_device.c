@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 #define QUANT(x,a) (((int)((x) * (a))) / (a))
 #define HSUBPIX 5.0

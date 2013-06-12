@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 fz_buffer *
 fz_new_buffer(fz_context *ctx, int size)

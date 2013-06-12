@@ -1,6 +1,7 @@
 #ifdef _MSC_VER
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
+
 #include <time.h>
 #include <windows.h>
 

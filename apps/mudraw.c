@@ -2,8 +2,8 @@
  * mudraw -- command line tool for drawing pdf/xps/cbz documents
  */
 
-#include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz.h"
+#include "mupdf/pdf-internal.h" /* for mujstest */
 
 #ifdef _MSC_VER
 #include <winsock2.h>

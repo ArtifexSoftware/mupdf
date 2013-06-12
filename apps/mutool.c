@@ -2,7 +2,7 @@
  * mutool -- swiss army knife of pdf manipulation tools
  */
 
-#include <fitz.h>
+#include "mupdf/fitz.h"
 
 #ifdef _MSC_VER
 #define main main_utf8

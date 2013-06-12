@@ -1,8 +1,8 @@
 #ifndef MUPDF_INTERNAL_H
 #define MUPDF_INTERNAL_H
 
-#include "mupdf.h"
-#include "fitz-internal.h"
+#include "mupdf/pdf.h"
+#include "mupdf/fitz-internal.h"
 
 void pdf_set_str_len(pdf_obj *obj, int newlen);
 void *pdf_get_indirect_document(pdf_obj *obj);

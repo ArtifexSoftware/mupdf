@@ -1,7 +1,7 @@
 #ifndef MUPDF_H
 #define MUPDF_H
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 typedef struct pdf_document_s pdf_document;
 

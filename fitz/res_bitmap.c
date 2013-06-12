@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 fz_bitmap *
 fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yres)

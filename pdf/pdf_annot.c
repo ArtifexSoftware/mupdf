@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 
 #define SMALL_FLOAT (0.00001)
 

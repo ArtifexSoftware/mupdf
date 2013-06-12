@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 
 /* Load or synthesize ToUnicode map for fonts */
 

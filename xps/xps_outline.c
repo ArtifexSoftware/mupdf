@@ -1,4 +1,4 @@
-#include "muxps-internal.h"
+#include "mupdf/xps-internal.h"
 
 /*
  * Parse the document structure / outline parts referenced from fixdoc relationships.

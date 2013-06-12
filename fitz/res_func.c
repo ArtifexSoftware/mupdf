@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 void
 fz_eval_function(fz_context *ctx, fz_function *func, float *in_, int inlen, float *out_, int outlen)

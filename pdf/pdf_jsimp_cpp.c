@@ -2,8 +2,8 @@
  * in C++, from which calls to fz_throw aren't safe. The C++ versions
  * return errors explicitly, and these wrappers then throw them. */
 
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 #include "pdf_jsimp_cpp.h"
 
 pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx)

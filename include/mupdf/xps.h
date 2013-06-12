@@ -1,7 +1,7 @@
 #ifndef MUXPS_H
 #define MUXPS_H
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 typedef struct xps_document_s xps_document;
 typedef struct xps_page_s xps_page;

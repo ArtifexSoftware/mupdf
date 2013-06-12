@@ -1,8 +1,7 @@
 #ifndef PDFAPP_H
 #define PDFAPP_H
 
-#include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf/pdf-internal.h"
 
 /*
  * Utility object for handling a pdf application / view

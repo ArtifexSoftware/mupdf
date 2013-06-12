@@ -1,7 +1,7 @@
 #ifndef FITZ_INTERNAL_H
 #define FITZ_INTERNAL_H
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 #ifdef _WIN32 /* Microsoft Visual C++ */
 

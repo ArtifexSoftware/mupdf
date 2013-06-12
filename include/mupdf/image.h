@@ -1,7 +1,7 @@
 #ifndef MUIMAGE_H
 #define MUIMAGE_H
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 typedef struct image_document_s image_document;
 typedef struct image_page_s image_page;

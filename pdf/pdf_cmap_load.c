@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 
 unsigned int
 pdf_cmap_size(fz_context *ctx, pdf_cmap *cmap)

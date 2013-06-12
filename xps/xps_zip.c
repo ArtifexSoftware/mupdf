@@ -1,4 +1,4 @@
-#include "muxps-internal.h"
+#include "mupdf/xps-internal.h"
 
 #include <zlib.h>
 

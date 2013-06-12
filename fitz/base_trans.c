@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 static int
 fade(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)

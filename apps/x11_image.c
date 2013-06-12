@@ -12,7 +12,7 @@
 
 #define noSHOWINFO
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

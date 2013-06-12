@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 /* Yuck! Promiscuous we are. */
 extern struct pdf_document *pdf_open_document(fz_context *ctx, const char *filename);

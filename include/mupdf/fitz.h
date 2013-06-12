@@ -21,7 +21,7 @@
 
 #include <setjmp.h>
 
-#include "memento.h"
+#include "mupdf/memento.h"
 
 #ifdef __APPLE__
 #define HAVE_SIGSETJMP

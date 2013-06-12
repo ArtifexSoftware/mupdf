@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 #define SWAP(a,b) {fz_vertex *t = (a); (a) = (b); (b) = t;}
 

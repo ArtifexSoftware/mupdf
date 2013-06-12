@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 void
 fz_free_outline(fz_context *ctx, fz_outline *outline)

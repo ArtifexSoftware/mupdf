@@ -1,4 +1,4 @@
-#include "mupdf-internal.h"
+#include "mupdf/pdf-internal.h"
 
 #ifdef HAVE_OPENSSL
 

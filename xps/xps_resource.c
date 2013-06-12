@@ -1,4 +1,4 @@
-#include "muxps-internal.h"
+#include "mupdf/xps-internal.h"
 
 static fz_xml *
 xps_lookup_resource(xps_document *doc, xps_resource *dict, char *name, char **urip)

@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 #define MAX4(a,b,c,d) fz_max(fz_max(a,b), fz_max(c,d))
 #define MIN4(a,b,c,d) fz_min(fz_min(a,b), fz_min(c,d))

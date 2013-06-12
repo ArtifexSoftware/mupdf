@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "mucbz.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/cbz.h"
 
 #include <zlib.h>
 

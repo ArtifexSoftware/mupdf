@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 fz_halftone *
 fz_new_halftone(fz_context *ctx, int comps)

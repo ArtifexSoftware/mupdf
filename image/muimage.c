@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "muimage.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/image.h"
 
 #include <ctype.h> /* for tolower */
 

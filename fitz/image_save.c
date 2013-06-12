@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 void fz_write_pixmap(fz_context *ctx, fz_pixmap *img, char *file, int rgb)
 {

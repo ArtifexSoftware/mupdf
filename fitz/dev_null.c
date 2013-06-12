@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 fz_device *
 fz_new_device(fz_context *ctx, void *user)

@@ -6,8 +6,8 @@
 /* We never want to build memento versions of the cmapdump util */
 #undef MEMENTO
 
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 
 #include "../fitz/base_context.c"
 #include "../fitz/base_error.c"

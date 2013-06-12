@@ -1,8 +1,8 @@
 #ifndef MUXPS_INTERNAL_H
 #define MUXPS_INTERNAL_H
 
-#include "muxps.h"
-#include "fitz-internal.h"
+#include "mupdf/xps.h"
+#include "mupdf/fitz-internal.h"
 
 typedef unsigned char byte;
 

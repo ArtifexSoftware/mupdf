@@ -1,7 +1,7 @@
 #ifndef MUCBZ_H
 #define MUCBZ_H
 
-#include "fitz.h"
+#include "mupdf/fitz.h"
 
 typedef struct cbz_document_s cbz_document;
 typedef struct cbz_page_s cbz_page;

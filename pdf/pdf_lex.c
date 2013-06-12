@@ -1,5 +1,5 @@
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz-internal.h"
+#include "mupdf/pdf-internal.h"
 
 #define IS_NUMBER \
 	'+':case'-':case'.':case'0':case'1':case'2':case'3':\

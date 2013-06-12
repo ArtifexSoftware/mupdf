@@ -2,15 +2,12 @@
 
 // Compile a debug build of mupdf, then compile and run this example:
 //
-// gcc -g -o build/debug/example -I fitz doc/example.c \
-//	build/debug/libfitz.a build/debug/libfreetype.a \
-//	build/debug/libopenjpeg.a build/debug/libjbig2dec.a \
-//	build/debug/libjpeg.a -lm
+// gcc -g -o build/debug/example -Iinclude doc/example.c build/debug/lib*.a -lm
 //
 // build/debug/example /path/to/document.pdf 1 200 25
 
 // Include the MuPDF header file.
-#include <fitz.h>
+#include <mupdf/fitz.h>
 
 void
 render(char *filename, int pagenumber, int zoom, int rotation)

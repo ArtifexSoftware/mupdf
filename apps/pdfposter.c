@@ -9,8 +9,8 @@
  * TODO: linearize document for fast web view
  */
 
-#include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz.h"
+#include "mupdf/pdf-internal.h"
 
 static int x_factor = 0;
 static int y_factor = 0;

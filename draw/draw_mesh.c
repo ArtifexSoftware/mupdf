@@ -1,4 +1,4 @@
-#include "fitz-internal.h"
+#include "mupdf/fitz-internal.h"
 
 enum { MAXN = 2 + FZ_MAX_COLORS };
 

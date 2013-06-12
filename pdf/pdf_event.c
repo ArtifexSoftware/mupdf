@@ -1,5 +1,5 @@
-#include "fitz.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz.h"
+#include "mupdf/pdf-internal.h"
 
 typedef struct
 {
