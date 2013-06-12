@@ -1485,6 +1485,9 @@ struct fz_device_s
 	void (*free_user)(fz_device *);
 	fz_context *ctx;
 
+	void (*begin_page)(fz_device *, const fz_rect *rect, const fz_matrix *ctm);
+	void (*end_page)(fz_device *);
+
 	void (*fill_path)(fz_device *, fz_path *, int even_odd, const fz_matrix *, fz_colorspace *, float *color, float alpha);
 	void (*stroke_path)(fz_device *, fz_path *, fz_stroke_state *, const fz_matrix *, fz_colorspace *, float *color, float alpha);
 	void (*clip_path)(fz_device *, fz_path *, const fz_rect *rect, int even_odd, const fz_matrix *);
@@ -1515,6 +1518,8 @@ struct fz_device_s
 	char errmess[256];
 };
 
+void fz_begin_page(fz_device *dev, const fz_rect *rect, const fz_matrix *ctm);
+void fz_end_page(fz_device *dev);
 void fz_fill_path(fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha);
 void fz_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha);
 void fz_clip_path(fz_device *dev, fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm);

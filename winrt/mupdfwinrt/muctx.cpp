@@ -297,7 +297,7 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	{
 		page = fz_load_page(mu_doc, page_num);
 		sheet = fz_new_text_sheet(ctx_clone);
-		text = fz_new_text_page(ctx_clone, &fz_empty_rect);  
+		text = fz_new_text_page(ctx_clone, &fz_empty_rect);
 		dev = fz_new_text_device(ctx_clone, sheet, text);
 		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
 		fz_free_device(dev);  /* Why does this need to be done here?  Seems odd */

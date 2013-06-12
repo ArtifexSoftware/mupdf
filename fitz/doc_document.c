@@ -202,6 +202,10 @@ void
 fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
 {
 	fz_annot *annot;
+	fz_rect mediabox;
+
+	fz_bound_page(doc, page, &mediabox);
+	fz_begin_page(dev, &mediabox, transform);
 
 	fz_run_page_contents(doc, page, dev, transform, cookie);
 
@@ -225,6 +229,8 @@ fz_run_page(fz_document *doc, fz_page *page, fz_device *dev, const fz_matrix *tr
 
 		fz_run_annot(doc, page, annot, dev, transform, cookie);
 	}
+
+	fz_end_page(dev);
 }
 
 void

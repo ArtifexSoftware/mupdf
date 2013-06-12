@@ -400,12 +400,10 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_try(ctx)
 		{
 			dev = fz_new_trace_device(ctx);
-			fz_printf(out, "<page number=\"%d\">\n", pagenum);
 			if (list)
 				fz_run_display_list(list, dev, &fz_identity, &fz_infinite_rect, &cookie);
 			else
 				fz_run_page(doc, page, dev, &fz_identity, &cookie);
-			fz_printf(out, "</page>\n");
 		}
 		fz_always(ctx)
 		{
