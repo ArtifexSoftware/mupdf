@@ -613,7 +613,7 @@ read_xref_section(pdf_document *xref, int ofs, pdf_lexbuf *buf, ofs_list *offset
 		if (i < offsets->len)
 		{
 			fz_warn(ctx, "ignoring xref recursion with offset %d", ofs);
-			return 0;
+			break;
 		}
 		if (offsets->len == offsets->max)
 		{
@@ -703,6 +703,9 @@ pdf_load_xref(pdf_document *xref, pdf_lexbuf *buf)
 	pdf_read_start_xref(xref);
 
 	pdf_read_xref_sections(xref, xref->startxref, buf);
+
+	if (pdf_xref_len(xref) == 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "found xref was empty");
 
 	/* broken pdfs where first object is not free */
 	if (pdf_get_xref_entry(xref, 0)->type != 'f')
