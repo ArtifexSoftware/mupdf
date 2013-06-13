@@ -134,9 +134,9 @@ static void drop_page_cache(globals *glo, page_cache *pc)
 	fz_document *doc = glo->doc;
 
 	LOGI("Drop page %d", pc->number);
-	fz_free_display_list(ctx, pc->page_list);
+	fz_drop_display_list(ctx, pc->page_list);
 	pc->page_list = NULL;
-	fz_free_display_list(ctx, pc->annot_list);
+	fz_drop_display_list(ctx, pc->annot_list);
 	pc->annot_list = NULL;
 	fz_free_page(doc, pc->page);
 	pc->page = NULL;
@@ -150,7 +150,7 @@ static void dump_annotation_display_lists(globals *glo)
 	int i;
 
 	for (i = 0; i < NUM_CACHE; i++) {
-		fz_free_display_list(ctx, glo->pages[i].annot_list);
+		fz_drop_display_list(ctx, glo->pages[i].annot_list);
 		glo->pages[i].annot_list = NULL;
 	}
 }
