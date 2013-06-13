@@ -442,8 +442,8 @@ ptrdiff_t pdf_lexbuf_grow(pdf_lexbuf *lb)
 	return lb->scratch - old;
 }
 
-static pdf_token
-do_lex(fz_stream *f, pdf_lexbuf *buf, int repair)
+pdf_token
+pdf_lex(fz_stream *f, pdf_lexbuf *buf)
 {
 	while (1)
 	{
@@ -495,13 +495,6 @@ do_lex(fz_stream *f, pdf_lexbuf *buf, int repair)
 		case '}':
 			return PDF_TOK_CLOSE_BRACE;
 		case IS_NUMBER:
-			/* In the 'repair' case, we want to stop before
-			 * consuming the int. */
-			if (repair)
-			{
-				fz_unread_byte(f);
-				return PDF_TOK_INT;
-			}
 			return lex_number(f, buf, c);
 		default: /* isregular: !isdelim && !iswhite && c != EOF */
 			fz_unread_byte(f);
@@ -509,18 +502,6 @@ do_lex(fz_stream *f, pdf_lexbuf *buf, int repair)
 			return pdf_token_from_keyword(buf->scratch);
 		}
 	}
-}
-
-pdf_token
-pdf_lex(fz_stream *f, pdf_lexbuf *buf)
-{
-	return do_lex(f, buf, 0);
-}
-
-pdf_token
-pdf_lex_repair(fz_stream *f, pdf_lexbuf *buf)
-{
-	return do_lex(f, buf, 1);
 }
 
 void pdf_print_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *buf)
