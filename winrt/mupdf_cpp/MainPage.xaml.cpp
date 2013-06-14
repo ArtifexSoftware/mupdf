@@ -760,6 +760,10 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 				this->m_curr_flipView->SelectedIndex = newValue;
 			}, task_continuation_context::use_current());
 		}
+		else
+		{
+			this->m_curr_flipView->SelectedIndex = newValue;
+		}
 	}
 }
 
