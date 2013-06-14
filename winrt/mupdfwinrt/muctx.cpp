@@ -421,6 +421,8 @@ fz_display_list * muctx::CreateDisplayList(int page_num)
 	/* Apparently not, lets go ahead and create and add to cache */
 	fz_var(dev);
 	fz_var(page);
+	fz_var(dlist);
+
 	fz_try(ctx_clone)
 	{
 		page = fz_load_page(mu_doc, page_num);
@@ -439,6 +441,7 @@ fz_display_list * muctx::CreateDisplayList(int page_num)
 	}
 	fz_catch(ctx_clone)
 	{
+		fz_drop_display_list(ctx_clone, dlist);
 		fz_free_context(ctx_clone);
 		return NULL;
 	}
@@ -466,6 +469,7 @@ status_t muctx::RenderPage(int page_num, int width, int height,
 	fz_var(dev);
 	fz_var(pix);
 	fz_var(page);
+	fz_var(dlist);
 
 	fz_try(ctx_clone)
 	{
