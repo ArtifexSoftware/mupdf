@@ -13,6 +13,7 @@
     <ClCompile Include="Links.cpp" />
     <ClCompile Include="ContentItem.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="Cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -21,5 +22,6 @@
     <ClInclude Include="Links.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="ContentItem.h" />
+    <ClInclude Include="Cache.h" />
   </ItemGroup>
 </Project>

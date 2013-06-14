@@ -131,11 +131,10 @@ status_t muctx::InitializeContext()
 /* Initializer */
 muctx::muctx(void)
 {
-	this->mu_ctx = NULL;
-	this->mu_doc = NULL;
-	this->mu_outline = NULL;
-	this->mu_dlist = NULL;
-	this->dlist_pagenum = -1;
+	mu_ctx = NULL;
+	mu_doc = NULL;
+	mu_outline = NULL;
+	display_list_cache = new Cache();
 }
 
 /* Destructor */
@@ -143,14 +142,14 @@ muctx::~muctx(void)
 {
 	fz_free_outline(mu_ctx, mu_outline);
 	fz_close_document(mu_doc);
-	fz_free_display_list(mu_ctx, mu_dlist);
+	display_list_cache->Empty(mu_ctx);
 	fz_free_context(mu_ctx);
 
-	this->mu_ctx = NULL;
-	this->mu_doc = NULL;
-	this->mu_outline = NULL;
-	this->mu_dlist = NULL;
-	this->dlist_pagenum = -1;
+	mu_ctx = NULL;
+	mu_doc = NULL;
+	mu_outline = NULL;
+	delete display_list_cache;
+	display_list_cache = NULL;
 }
 
 /* Set up the stream access */
@@ -406,7 +405,7 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	return num_links;
 }
 
-status_t muctx::CreateDisplayList(int page_num)
+fz_display_list * muctx::CreateDisplayList(int page_num)
 {
 	fz_context *ctx_clone = NULL;
 	fz_device *dev = NULL;
@@ -414,20 +413,24 @@ status_t muctx::CreateDisplayList(int page_num)
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
+	/* First see if we have this one in the cache */
+	fz_display_list *dlist = display_list_cache->UseEntry(page_num, ctx_clone);
+	if (dlist != NULL)
+		return dlist;
+
+	/* Apparently not, lets go ahead and create and add to cache */
 	fz_var(dev);
 	fz_var(page);
 	fz_try(ctx_clone)
 	{
 		page = fz_load_page(mu_doc, page_num);
 
-		/* Free current list if we have one */
-		if (mu_dlist != NULL)
-			fz_free_display_list(ctx_clone, mu_dlist);
-
 		/* Create a new list */
-		mu_dlist = fz_new_display_list(ctx_clone);
-		dev = fz_new_list_device(ctx_clone, mu_dlist);
+		dlist = fz_new_display_list(ctx_clone);
+		dev = fz_new_list_device(ctx_clone, dlist);
 		fz_run_page_contents(mu_doc, page, dev, &fz_identity, NULL);
+		/* Add it to the cache and set that it is in use */
+		display_list_cache->AddEntry(page_num, dlist, ctx_clone);
 	}
 	fz_always(ctx_clone)
 	{
@@ -437,16 +440,9 @@ status_t muctx::CreateDisplayList(int page_num)
 	fz_catch(ctx_clone)
 	{
 		fz_free_context(ctx_clone);
-		dlist_pagenum = -1;
-		return E_FAILURE;
+		return NULL;
 	}
-	dlist_pagenum = page_num;
-	return S_ISOK;
-}
-
-int muctx::GetDisplayListPage(void)
-{
-	return dlist_pagenum;
+	return dlist;
 }
 
 /* Render page_num to size width by height into bmp_data buffer */
@@ -459,15 +455,18 @@ status_t muctx::RenderPage(int page_num, int width, int height,
 	fz_matrix ctm, *pctm = &ctm;
 	Point page_size;
 	fz_context *ctx_clone = NULL;
+	fz_display_list *dlist = NULL;
 
-	if (mu_dlist == NULL && use_dlist)
-		return E_FAILURE;
+	if (use_dlist)
+		if ((dlist = CreateDisplayList(page_num)) == NULL)
+			return E_FAILURE;
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
 	fz_var(pix);
 	fz_var(page);
+
 	fz_try(ctx_clone)
 	{
 		page = fz_load_page(mu_doc, page_num);
@@ -482,7 +481,7 @@ status_t muctx::RenderPage(int page_num, int width, int height,
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
 		if (use_dlist)
-			fz_run_display_list(mu_dlist, dev, pctm, NULL, NULL);
+			fz_run_display_list(dlist, dev, pctm, NULL, NULL);
 		else
 			fz_run_page(mu_doc, page, dev, pctm, NULL);
 	}
@@ -491,6 +490,9 @@ status_t muctx::RenderPage(int page_num, int width, int height,
 		fz_free_device(dev);
 		fz_drop_pixmap(ctx_clone, pix);
 		fz_free_page(mu_doc, page);
+		if (use_dlist)
+			fz_drop_display_list(ctx_clone, dlist);
+
 	}
 	fz_catch(ctx_clone)
 	{

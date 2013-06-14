@@ -217,6 +217,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Cache.h" />
     <ClInclude Include="Links.h" />
     <ClInclude Include="ContentItem.h" />
     <ClInclude Include="muctx.h" />
@@ -225,6 +226,7 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Cache.cpp" />
     <ClCompile Include="Links.cpp" />
     <ClCompile Include="ContentItem.cpp" />
     <ClCompile Include="muctx.cpp" />

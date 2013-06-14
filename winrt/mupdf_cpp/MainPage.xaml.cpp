@@ -642,7 +642,7 @@ void mupdf_cpp::MainPage::InitialRender()
 			Point ras_size = ComputePageSize(spatial_info, k);
 
 			auto render_task =
-				create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, false));
+				create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, true));
 
 			render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
@@ -689,7 +689,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
 				auto render_task =
-					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, false));
+					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, true));
 
 				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
 				{
@@ -750,7 +750,7 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 			spatial_info_t spatial_info = InitSpatial(1);
 			Point ras_size = ComputePageSize(spatial_info, newValue);
 			auto render_task =
-				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y, false));
+				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y, true));
 
 			render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
@@ -1345,20 +1345,12 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 		Point ras_size = ComputePageSize(spatial_info, page);
 
 		/* Go ahead and create display list if we dont have one for this page */
-		auto ui = task_continuation_context::use_current();
-		auto display_task = create_task(mu_doc->CreateDisplayList(page));
-		display_task.then([this, page, ras_size, ui] (int code)
+		auto render_task =
+			create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
+		render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
 		{
-			if (code == S_ISOK)
-			{
-				auto render_task =
-					create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
-				render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
-				{
-					ReplaceImage(page, ras, ras_size);
-				}, ui);
-			}
-		});
+			ReplaceImage(page, ras, ras_size);
+		}, task_continuation_context::use_current());
 	}
 }
 

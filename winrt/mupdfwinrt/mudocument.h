@@ -36,7 +36,6 @@ namespace mupdfwinrt
 			Windows::Foundation::IAsyncOperation<int>^ OpenFileAsync(StorageFile^ file);
 			int GetNumPages(void);
 			Point GetPageSize(int page_num);
-			Windows::Foundation::IAsyncOperation<int>^ mudocument::CreateDisplayList(int page_num);
 			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 				RenderPageAsync(int page_num, int width, int height, bool use_dlist);
 			Windows::Foundation::IAsyncOperationWithProgress<int, double>^
@@ -48,7 +47,6 @@ namespace mupdfwinrt
 			int ComputeContents(void);
 			ContentItem^ GetContent(int k);
 			int ComputeLinks(int page_num);
-			int GetDisplayListPage(void);
 			Links^ GetLink(int k);
 			bool RequiresPassword();
 			bool ApplyPassword(String^ password);

@@ -162,28 +162,6 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 	});
 }
 
-/* Create the display list for this page */
-Windows::Foundation::IAsyncOperation<int>^ mudocument::CreateDisplayList(int page_num)
-{
-	return create_async([this, page_num](cancellation_token ct) -> int
-	{
-		if (mu_object.GetDisplayListPage() == page_num)
-			return S_ISOK;
-		std::lock_guard<std::mutex> lock(mutex_lock);
-		status_t code = mu_object.CreateDisplayList(page_num);
-		if (code != S_ISOK)
-		{
-			throw ref new FailureException("Display List Creation Failed");
-		}
-		return code;
-	});
-}
-
-int mudocument::GetDisplayListPage(void)
-{
-	return mu_object.GetDisplayListPage();
-}
-
 /* Pack the page into a bmp stream */
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 	mudocument::RenderPageAsync(int page_num, int width, int height, bool use_dlist)
