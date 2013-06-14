@@ -1141,6 +1141,7 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 
 		for (i = 0; i < n; i ++)
 		{
+			fz_point pt_last;
 			pdf_obj *arc = pdf_array_get(list, i);
 			m = pdf_array_len(arc);
 
@@ -1163,8 +1164,10 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 				if (j == 0)
 					fz_moveto(ctx, path, pt.x, pt.y);
 				else
-					fz_lineto(ctx, path, pt.x, pt.y);
+					fz_curvetov(ctx, path, pt_last.x, pt_last.y, (pt.x + pt_last.x) / 2, (pt.y + pt_last.y) / 2);
+				pt_last = pt;
 			}
+			fz_lineto(ctx, path, pt_last.x, pt_last.y);
 		}
 
 		fz_stroke_path(dev, path, stroke, &fz_identity, cs, color, 1.0f);

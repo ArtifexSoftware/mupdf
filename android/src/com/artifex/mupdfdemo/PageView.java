@@ -364,16 +364,30 @@ public abstract class PageView extends ViewGroup {
 							if (arc.size() >= 2) {
 								Iterator<PointF> iit = arc.iterator();
 								p = iit.next();
-								path.moveTo(p.x*scale, p.y*scale);
+								float mX = p.x * scale;
+								float mY = p.y * scale;
+								path.moveTo(mX, mY);
 								while (iit.hasNext()) {
 									p = iit.next();
-									path.lineTo(p.x*scale, p.y*scale);
+									float x = p.x * scale;
+									float y = p.y * scale;
+									path.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+									mX = x;
+									mY = y;
 								}
+								path.lineTo(mX, mY);
 							}
 						}
+
+						paint.setAntiAlias(true);
+						paint.setDither(true);
+						paint.setStrokeJoin(Paint.Join.ROUND);
+						paint.setStrokeCap(Paint.Cap.ROUND);
+
 						paint.setStyle(Paint.Style.STROKE);
-						paint.setStrokeWidth(INK_THICKNESS*scale);
+						paint.setStrokeWidth(INK_THICKNESS * scale);
 						paint.setColor(INK_COLOR);
+
 						canvas.drawPath(path, paint);
 					}
 				}

@@ -96,13 +96,7 @@ public class MuPDFReaderView extends ReaderView {
 
 	@Override
 	public boolean onDown(MotionEvent e) {
-		switch (mMode) {
-		case Drawing:
-			MuPDFView pageView = (MuPDFView)getDisplayedView();
-			if (pageView != null)
-				pageView.startDraw(e.getX(), e.getY());
-			break;
-		}
+
 		return super.onDown(e);
 	}
 
@@ -118,10 +112,6 @@ public class MuPDFReaderView extends ReaderView {
 		case Selecting:
 			if (pageView != null)
 				pageView.selectText(e1.getX(), e1.getY(), e2.getX(), e2.getY());
-			return true;
-		case Drawing:
-			if (pageView != null)
-				pageView.continueDraw(e2.getX(), e2.getY());
 			return true;
 		default:
 			return true;
@@ -148,10 +138,67 @@ public class MuPDFReaderView extends ReaderView {
 	}
 
 	public boolean onTouchEvent(MotionEvent event) {
-		if ((event.getAction() & event.ACTION_MASK) == MotionEvent.ACTION_DOWN)
+
+		if ( mMode == Mode.Drawing )
+		{
+			float x = event.getX();
+			float y = event.getY();
+			switch (event.getAction())
+			{
+				case MotionEvent.ACTION_DOWN:
+					touch_start(x, y);
+					break;
+				case MotionEvent.ACTION_MOVE:
+					touch_move(x, y);
+					break;
+				case MotionEvent.ACTION_UP:
+					touch_up();
+					break;
+			}
+		}
+
+		if ((event.getAction() & event.getActionMasked()) == MotionEvent.ACTION_DOWN)
+		{
 			tapDisabled = false;
+		}
 
 		return super.onTouchEvent(event);
+	}
+
+	private float mX, mY;
+
+	private static final float TOUCH_TOLERANCE = 2;
+
+	private void touch_start(float x, float y) {
+
+		MuPDFView pageView = (MuPDFView)getDisplayedView();
+		if (pageView != null)
+		{
+			pageView.startDraw(x, y);
+		}
+		mX = x;
+		mY = y;
+	}
+
+	private void touch_move(float x, float y) {
+
+		float dx = Math.abs(x - mX);
+		float dy = Math.abs(y - mY);
+		if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE)
+		{
+			MuPDFView pageView = (MuPDFView)getDisplayedView();
+			if (pageView != null)
+			{
+				pageView.continueDraw(x, y);
+			}
+			mX = x;
+			mY = y;
+		}
+	}
+
+	private void touch_up() {
+
+		// NOOP
 	}
 
 	protected void onChildSetup(int i, View v) {
