@@ -15,8 +15,7 @@
  * or can trust the parser to give us optimal mappings.
  */
 
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 /* Macros for accessing the combined extent_flags field */
 #define pdf_range_high(r) ((r)->low + ((r)->extent_flags >> 2))

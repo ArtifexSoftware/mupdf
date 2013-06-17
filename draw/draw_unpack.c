@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 /* Unpack image samples and optionally pad pixels with opaque alpha */
 

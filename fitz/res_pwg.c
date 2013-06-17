@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 void
 fz_output_pwg_file_header(fz_output *out)

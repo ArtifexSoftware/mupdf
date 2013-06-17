@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 /* Assemble span soup into blocks and lines. */
 

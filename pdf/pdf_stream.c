@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 /*
  * Check if an object is a stream or not.

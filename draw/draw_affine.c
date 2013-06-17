@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 typedef unsigned char byte;
 

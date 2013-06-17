@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 pdf_obj *pdf_get_inheritable(pdf_document *doc, pdf_obj *obj, char *key)
 {

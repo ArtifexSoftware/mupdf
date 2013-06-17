@@ -2,7 +2,7 @@
 
 build ?= debug
 
-OUT ?= build/$(build)
+OUT := build/$(build)
 GEN := generated
 
 # --- Variables, Commands, etc... ---
@@ -12,7 +12,7 @@ default: all
 # Do not specify CFLAGS or LIBS on the make invocation line - specify
 # XCFLAGS or XLIBS instead. Make ignores any lines in the makefile that
 # set a variable that was set on the command line.
-CFLAGS += $(XCFLAGS) -Iinclude -Iucdn -Iscripts
+CFLAGS += $(XCFLAGS) -Iinclude -Iscripts -I$(GEN) -Iucdn
 LIBS += $(XLIBS) -lm
 
 include Makerules
@@ -58,9 +58,9 @@ RM_CMD = $(QUIET_RM) rm -f $@
 
 # --- Rules ---
 
-FITZ_HDR := include/mupdf/fitz.h include/mupdf/fitz-internal.h
-MUPDF_HDR := $(FITZ_HDR) include/mupdf/pdf.h include/mupdf/pdf-internal.h
-MUXPS_HDR := $(FITZ_HDR) include/mupdf/xps.h include/mupdf/xps-internal.h
+FITZ_HDR := include/mupdf/fitz.h
+MUPDF_HDR := $(FITZ_HDR) include/mupdf/pdf.h
+MUXPS_HDR := $(FITZ_HDR) include/mupdf/xps.h
 MUCBZ_HDR := $(FITZ_HDR) include/mupdf/cbz.h
 MUIMAGE_HDR := $(FITZ_HDR) include/mupdf/image.h
 

@@ -1,4 +1,4 @@
-#include "mupdf/xps-internal.h"
+#include "mupdf/xps.h"
 
 #define REL_START_PART \
 	"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"

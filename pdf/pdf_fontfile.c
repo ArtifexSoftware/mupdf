@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 /*
 	Which fonts are embedded is based on a few preprocessor definitions.
@@ -19,17 +18,17 @@
 #define NOCJKFONT
 #endif
 
-#include "../generated/font_base14.h"
+#include "font_base14.h"
 
 #ifndef NODROIDFONT
-#include "../generated/font_droid.h"
+#include "font_droid.h"
 #endif
 
 #ifndef NOCJKFONT
 #ifndef NOCJKFULL
-#include "../generated/font_cjk_full.h"
+#include "font_cjk_full.h"
 #else
-#include "../generated/font_cjk.h"
+#include "font_cjk.h"
 #endif
 #endif
 

@@ -1,4 +1,4 @@
-#include "mupdf/xps-internal.h"
+#include "mupdf/xps.h"
 
 #define TILE
 

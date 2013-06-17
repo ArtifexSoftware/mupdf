@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 fz_text *
 fz_new_text(fz_context *ctx, fz_font *font, const fz_matrix *trm, int wmode)

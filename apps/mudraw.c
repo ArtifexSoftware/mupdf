@@ -3,7 +3,7 @@
  */
 
 #include "mupdf/fitz.h"
-#include "mupdf/pdf-internal.h" /* for mujstest */
+#include "mupdf/pdf.h" /* for mujstest */
 
 #ifdef _MSC_VER
 #include <winsock2.h>

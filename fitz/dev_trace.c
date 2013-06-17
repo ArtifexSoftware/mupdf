@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 static void
 fz_trace_matrix(const fz_matrix *ctm)

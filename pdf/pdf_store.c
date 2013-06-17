@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 static int
 pdf_make_hash_key(fz_store_hash *hash, void *key_)

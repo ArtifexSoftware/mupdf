@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 fz_pixmap *
 fz_image_to_pixmap(fz_context *ctx, fz_image *image, int w, int h)

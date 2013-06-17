@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 pdf_xobject *
 pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj)

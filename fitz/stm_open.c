@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 fz_stream *
 fz_new_stream(fz_context *ctx, void *state,

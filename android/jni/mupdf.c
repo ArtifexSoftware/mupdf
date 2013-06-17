@@ -12,10 +12,8 @@
 #include "prof.h"
 #endif
 
-#include "fitz.h"
-#include "fitz-internal.h"
-#include "mupdf.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 
 #define JNI_FN(A) Java_com_artifex_mupdfdemo_ ## A
 #define PACKAGENAME "com/artifex/mupdfdemo"

@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 /* FIXME: Remove this somehow */
 #define FUNSEGS 32 /* size of sampled mesh for function-based shadings */

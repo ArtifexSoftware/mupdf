@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 static fz_image *pdf_load_jpx(pdf_document *xref, pdf_obj *dict, int forcemask);
 

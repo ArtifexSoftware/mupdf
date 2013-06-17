@@ -1,11 +1,10 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 #ifndef NOCJK
-#include "../generated/cmap_cns.h"
-#include "../generated/cmap_gb.h"
-#include "../generated/cmap_japan.h"
-#include "../generated/cmap_korea.h"
+#include "cmap_cns.h"
+#include "cmap_gb.h"
+#include "cmap_japan.h"
+#include "cmap_korea.h"
 #endif
 
 static const struct { char *name; pdf_cmap *cmap; } cmap_table[] =

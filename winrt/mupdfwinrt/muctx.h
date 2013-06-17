@@ -9,10 +9,7 @@
 #include "Cache.h"
 
 extern "C" {
-	#include "fitz.h"
-	#include "fitz-internal.h"
-	#include "muxps.h"
-	#include "mupdf.h"
+	#include "mupdf/fitz.h"
 }
 
 typedef enum {

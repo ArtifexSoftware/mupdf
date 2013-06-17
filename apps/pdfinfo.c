@@ -3,8 +3,7 @@
  * Print information about the input pdf.
  */
 
-#include "mupdf/fitz.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 pdf_document *xref;
 fz_context *ctx;

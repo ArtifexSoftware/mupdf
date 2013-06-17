@@ -1,4 +1,4 @@
-#include "mupdf/xps-internal.h"
+#include "mupdf/xps.h"
 
 static char *
 xps_parse_float_array(char *s, int num, float *x)

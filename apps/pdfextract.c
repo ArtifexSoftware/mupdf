@@ -3,7 +3,6 @@
  */
 
 #include "mupdf/pdf.h"
-#include "mupdf/pdf-internal.h"
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;

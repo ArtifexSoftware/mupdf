@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 fz_path *
 fz_new_path(fz_context *ctx)

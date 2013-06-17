@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 fz_rect *
 pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *r)

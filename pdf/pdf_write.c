@@ -1,5 +1,4 @@
-#include "mupdf/fitz-internal.h"
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 /* #define DEBUG_LINEARIZATION */
 /* #define DEBUG_HEAP_SORT */

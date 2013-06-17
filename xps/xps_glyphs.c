@@ -1,4 +1,4 @@
-#include "mupdf/xps-internal.h"
+#include "mupdf/xps.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -97,8 +97,8 @@ xps_insert_font(xps_document *doc, char *name, fz_font *font)
 static void
 xps_deobfuscate_font_resource(xps_document *doc, xps_part *part)
 {
-	byte buf[33];
-	byte key[16];
+	unsigned char buf[33];
+	unsigned char key[16];
 	char *p;
 	int i;
 

@@ -2,10 +2,7 @@
 
 #include <mutex>
 extern "C" {
-	#include "fitz.h"
-	#include "fitz-internal.h"
-	#include "muxps.h"
-	#include "mupdf.h"
+	#include "mupdf/fitz.h"
 }
 
 #define MAX_DISPLAY_CACHE_SIZE 3

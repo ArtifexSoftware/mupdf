@@ -1,4 +1,3 @@
-#include "mupdf/fitz-internal.h"
 #include "mupdf/cbz.h"
 
 #include <zlib.h>

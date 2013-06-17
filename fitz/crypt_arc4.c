@@ -21,7 +21,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 void
 fz_arc4_init(fz_arc4 *arc4, const unsigned char *key, unsigned keylen)

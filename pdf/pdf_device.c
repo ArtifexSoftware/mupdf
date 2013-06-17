@@ -1,4 +1,4 @@
-#include "mupdf/pdf-internal.h"
+#include "mupdf/pdf.h"
 
 typedef struct pdf_device_s pdf_device;
 

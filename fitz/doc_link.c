@@ -1,4 +1,4 @@
-#include "mupdf/fitz-internal.h"
+#include "mupdf/fitz.h"
 
 void
 fz_free_link_dest(fz_context *ctx, fz_link_dest *dest)
