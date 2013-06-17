@@ -49,7 +49,7 @@ struct pdf_obj_s
 		struct {
 			int num;
 			int gen;
-			struct pdf_xref_s *xref;
+			pdf_document *xref;
 		} r;
 	} u;
 };
@@ -311,7 +311,7 @@ int pdf_to_gen(pdf_obj *obj)
 	return obj->u.r.gen;
 }
 
-void *pdf_get_indirect_document(pdf_obj *obj)
+pdf_document *pdf_get_indirect_document(pdf_obj *obj)
 {
 	if (!obj || obj->kind != PDF_INDIRECT)
 		return NULL;

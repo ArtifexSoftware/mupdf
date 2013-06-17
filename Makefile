@@ -59,7 +59,7 @@ RM_CMD = $(QUIET_RM) rm -f $@
 # --- Rules ---
 
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
-MUPDF_HDR := $(FITZ_HDR) include/mupdf/pdf.h
+MUPDF_HDR := $(FITZ_HDR) include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 MUXPS_HDR := $(FITZ_HDR) include/mupdf/xps.h
 MUCBZ_HDR := $(FITZ_HDR) include/mupdf/cbz.h
 MUIMAGE_HDR := $(FITZ_HDR) include/mupdf/image.h
