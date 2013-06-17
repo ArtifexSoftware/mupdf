@@ -59,9 +59,14 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #define isnan _isnan
 #define hypotf _hypotf
 
-#define fopen fopen_utf8
+#define fopen fz_fopen_utf8
 
-FILE *fopen_utf8(const char *name, const char *mode);
+char *fz_utf8_from_wchar(const wchar_t *s);
+wchar_t *fz_wchar_from_utf8(const char *s);
+
+FILE *fz_fopen_utf8(const char *name, const char *mode);
+char **fz_argv_from_wargv(int argc, wchar_t **wargv);
+void fz_free_argv(int argc, char **argv);
 
 #else /* Unix or close enough */
 

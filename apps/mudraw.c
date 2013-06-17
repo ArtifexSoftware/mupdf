@@ -7,6 +7,7 @@
 
 #ifdef _MSC_VER
 #include <winsock2.h>
+#define main main_utf8
 #else
 #include <sys/time.h>
 #endif
@@ -812,11 +813,7 @@ parse_colorspace(const char *name)
 	return -1;
 }
 
-#ifdef _MSC_VER
-static int main_utf8(int argc, char **argv)
-#else
 int main(int argc, char **argv)
-#endif
 {
 	char *password = "";
 	fz_document *doc = NULL;
@@ -1083,61 +1080,11 @@ int main(int argc, char **argv)
 }
 
 #ifdef _MSC_VER
-static char *
-wchar_to_utf8(wchar_t *s)
-{
-	wchar_t *src = s;
-	char *d;
-	char *dst;
-	int len = 1;
-
-	while (*src)
-	{
-		len += fz_runelen(*src++);
-	}
-
-	d = malloc(len);
-	if (d != NULL)
-	{
-		dst = d;
-		src = s;
-		while (*src)
-		{
-			dst += fz_runetochar(dst, *src++);
-		}
-		*dst = 0;
-	}
-	return d;
-}
-
 int wmain(int argc, wchar_t *wargv[])
 {
-	int i, ret;
-	char **argv = calloc(argc, sizeof(char *));
-	if (argv == NULL)
-		goto oom;
-
-	for (i = 0; i < argc; i++)
-	{
-		argv[i] = wchar_to_utf8(wargv[i]);
-		if (argv[i] == NULL)
-			goto oom;
-	}
-
-	ret = main_utf8(argc, argv);
-
-	if (0)
-	{
-oom:
-		ret = 1;
-		fprintf(stderr, "Out of memory while processing command line args\n");
-	}
-	for (i = 0; i < argc; i++)
-	{
-		free(argv[i]);
-	}
-	free(argv);
-
+	char **argv = fz_argv_from_wargv(argc, wargv);
+	int ret = main(argc, argv);
+	fz_free_argv(argc, argv);
 	return ret;
 }
 #endif

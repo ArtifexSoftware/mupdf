@@ -1,21 +1,15 @@
-#include <time.h>
+#ifdef _MSC_VER
+
 #include "fitz.h"
-
-#ifdef _WIN32
-#ifndef METRO
-#include <winsock2.h>
-#endif
+#include <time.h>
 #include <windows.h>
-
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
-#else
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
-#endif
 
 #ifndef _WINRT
 
+#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
+
 struct timeval;
+struct timezone;
 
 int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
@@ -40,44 +34,110 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 	return 0;
 }
 
-#else /* !_WINRT */
+#endif /* !_WINRT */
 
-void fz_gettimeofday_dummy() { }
-
-#endif /* !_WINRT) */
-
-FILE *fopen_utf8(const char *name, const char *mode)
+char *
+fz_utf8_from_wchar(const wchar_t *s)
 {
-	wchar_t *wname, *wmode, *d;
-	const char *s;
-	int c;
-	FILE *file;
+	const wchar_t *src = s;
+	char *d;
+	char *dst;
+	int len = 1;
 
-	d = wname = (wchar_t*) malloc((strlen(name)+1) * sizeof(wchar_t));
-	if (d == NULL)
+	while (*src)
+	{
+		len += fz_runelen(*src++);
+	}
+
+	d = malloc(len);
+	if (d != NULL)
+	{
+		dst = d;
+		src = s;
+		while (*src)
+		{
+			dst += fz_runetochar(dst, *src++);
+		}
+		*dst = 0;
+	}
+	return d;
+}
+
+wchar_t *
+fz_wchar_from_utf8(const char *s)
+{
+	wchar_t *d, *r;
+	int c;
+	r = d = malloc((strlen(s) + 1) * sizeof(wchar_t));
+	if (!r)
 		return NULL;
-	s = name;
 	while (*s) {
 		s += fz_chartorune(&c, s);
 		*d++ = c;
 	}
 	*d = 0;
-	d = wmode = (wchar_t*) malloc((strlen(mode)+1) * sizeof(wchar_t));
-	if (d == NULL)
+	return r;
+}
+
+FILE *
+fz_fopen_utf8(const char *name, const char *mode)
+{
+	wchar_t *wname, *wmode;
+	FILE *file;
+
+	wname = fz_wchar_from_utf8(name);
+	if (wname == NULL)
+	{
+		return NULL;
+	}
+
+	wmode = fz_wchar_from_utf8(mode);
+	if (wmode == NULL)
 	{
 		free(wname);
 		return NULL;
 	}
-	s = mode;
-	while (*s) {
-		s += fz_chartorune(&c, s);
-		*d++ = c;
-	}
-	*d = 0;
+
 	file = _wfopen(wname, wmode);
+
 	free(wname);
 	free(wmode);
 	return file;
 }
 
-#endif /* _WIN32 */
+char **
+fz_argv_from_wargv(int argc, wchar_t **wargv)
+{
+	char **argv;
+	int i;
+
+	argv = calloc(argc, sizeof(char *));
+	if (argv == NULL)
+	{
+		fprintf(stderr, "Out of memory while processing command line args!\n");
+		exit(1);
+	}
+
+	for (i = 0; i < argc; i++)
+	{
+		argv[i] = fz_utf8_from_wchar(wargv[i]);
+		if (argv[i] == NULL)
+		{
+			fprintf(stderr, "Out of memory while processing command line args!\n");
+			exit(1);
+		}
+	}
+
+	return argv;
+}
+
+void
+fz_free_argv(int argc, char **argv)
+{
+	int i;
+	for (i = 0; i < argc; i++)
+		free(argv[i]);
+	free(argv);
+}
+
+#endif /* _MSC_VER */
