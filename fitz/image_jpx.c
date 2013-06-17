@@ -4,7 +4,7 @@
  * due to the use of __stdcall. We believe it is required on some
  * linux toolchains too. */
 #define OPJ_STATIC
-#ifndef _WIN32
+#ifndef _MSC_VER
 #define OPJ_HAVE_STDINT_H
 #endif
 

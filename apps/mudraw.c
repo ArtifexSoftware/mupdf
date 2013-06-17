@@ -351,7 +351,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fprintf(mujstest_file, "TEXT %d\n", mujstest_count);
 					break;
 				case PDF_WIDGET_CONTENT_SPECIAL:
+#ifdef __MINGW32__
+					fprintf(mujstest_file, "TEXT %I64d\n", 46702919800LL + mujstest_count);
+#else
 					fprintf(mujstest_file, "TEXT %lld\n", 46702919800LL + mujstest_count);
+#endif
 					break;
 				case PDF_WIDGET_CONTENT_DATE:
 					fprintf(mujstest_file, "TEXT Jun %d 1979\n", 1 + ((13 + mujstest_count) % 30));
@@ -808,14 +812,10 @@ parse_colorspace(const char *name)
 	return -1;
 }
 
-#ifdef MUPDF_COMBINED_EXE
-int draw_main(int argc, char **argv)
-#else
-#ifdef _WIN32
+#ifdef _MSC_VER
 static int main_utf8(int argc, char **argv)
 #else
 int main(int argc, char **argv)
-#endif
 #endif
 {
 	char *password = "";
@@ -1082,7 +1082,7 @@ int main(int argc, char **argv)
 	return (errored != 0);
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 static char *
 wchar_to_utf8(wchar_t *s)
 {
