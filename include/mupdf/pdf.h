@@ -959,7 +959,6 @@ enum
 	PDF_POINTER_UP,
 };
 
-
 /*
 	UI events that can be passed to an interactive document.
 */

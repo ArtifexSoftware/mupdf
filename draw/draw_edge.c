@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "draw-imp.h"
 
 #define BBOX_MIN -(1<<20)
 #define BBOX_MAX (1<<20)

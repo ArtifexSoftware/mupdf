@@ -11,6 +11,7 @@ intermediate results rather than ints.
 */
 
 #include "mupdf/fitz.h"
+#include "draw-imp.h"
 
 /* Do we special case handling of single pixel high/wide images? The
  * 'purest' handling is given by not special casing them, but certain

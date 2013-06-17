@@ -1,5 +1,5 @@
-#ifndef MUCBZ_H
-#define MUCBZ_H
+#ifndef MUPDF_CBZ_H
+#define MUPDF_CBZ_H
 
 #include "mupdf/fitz.h"
 

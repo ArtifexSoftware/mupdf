@@ -11,7 +11,6 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Memento: A library to aid debugging of memory leaks/heap corruption.
  *
  * Usage:

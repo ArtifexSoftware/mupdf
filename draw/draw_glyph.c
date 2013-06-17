@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "draw-imp.h"
 
 #define MAX_GLYPH_SIZE 256
 #define MAX_CACHE_SIZE (1024*1024)

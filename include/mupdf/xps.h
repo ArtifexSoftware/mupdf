@@ -1,5 +1,5 @@
-#ifndef MUXPS_H
-#define MUXPS_H
+#ifndef MUPDF_XPS_H
+#define MUPDF_XPS_H
 
 #include "mupdf/fitz.h"
 

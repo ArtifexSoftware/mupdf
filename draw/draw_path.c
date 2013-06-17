@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "draw-imp.h"
 
 #define MAX_DEPTH 8
 
