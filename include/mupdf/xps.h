@@ -128,6 +128,7 @@ fz_outline *xps_load_outline(xps_document *doc);
 
 int xps_lookup_link_target(xps_document *doc, char *target_uri);
 void xps_add_link(xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri);
+
 /*
  * Images, fonts, and colorspaces.
  */

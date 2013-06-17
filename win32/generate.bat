@@ -3,10 +3,10 @@
 if not exist scripts/fontdump.c cd ..
 if not exist generated mkdir generated
 
-cl /nologo -Ifitz -Ipdf scripts/fontdump.c
-cl /nologo -Ifitz -Ipdf scripts/cmapdump.c
-cl /nologo -Ifitz -Ipdf scripts/cquote.c
-cl /nologo -Ifitz -Ipdf scripts/bin2hex.c
+cl /nologo -Iinclude scripts/fontdump.c
+cl /nologo -Iinclude scripts/cmapdump.c
+cl /nologo -Iinclude scripts/cquote.c
+cl /nologo -Iinclude scripts/bin2hex.c
 
 if not exist fontdump.exe goto usage
 if not exist cmapdump.exe goto usage
