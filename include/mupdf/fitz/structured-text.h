@@ -1,6 +1,15 @@
 #ifndef MUPDF_FITZ_STRUCTURED_TEXT_H
 #define MUPDF_FITZ_STRUCTURED_TEXT_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/font.h"
+#include "mupdf/fitz/colorspace.h"
+#include "mupdf/fitz/image.h"
+#include "mupdf/fitz/output.h"
+#include "mupdf/fitz/device.h"
+
 /*
 	Text extraction device: Used for searching, format conversion etc.
 

@@ -1,6 +1,15 @@
 #ifndef MUPDF_FITZ_OUTPUT_PNG_H
 #define MUPDF_FITZ_OUTPUT_PNG_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/output.h"
+#include "mupdf/fitz/pixmap.h"
+#include "mupdf/fitz/bitmap.h"
+
+#include "mupdf/fitz/buffer.h"
+#include "mupdf/fitz/image.h"
+
 /*
 	fz_write_png: Save a pixmap as a png
 

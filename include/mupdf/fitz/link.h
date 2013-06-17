@@ -1,6 +1,10 @@
 #ifndef MUPDF_FITZ_LINK_H
 #define MUPDF_FITZ_LINK_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/math.h"
+
 /*
 	Links
 

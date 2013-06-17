@@ -1,6 +1,8 @@
 #ifndef MUPDF_FITZ_CONTEXT_H
 #define MUPDF_FITZ_CONTEXT_H
 
+#include "mupdf/fitz/system.h"
+
 /*
 	Contexts
 */

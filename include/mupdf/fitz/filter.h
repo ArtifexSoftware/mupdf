@@ -1,9 +1,10 @@
 #ifndef MUPDF_FITZ_FILTER_H
 #define MUPDF_FITZ_FILTER_H
 
-/*
- * Data filters.
- */
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/buffer.h"
+#include "mupdf/fitz/stream.h"
 
 fz_stream *fz_open_copy(fz_stream *chain);
 fz_stream *fz_open_null(fz_stream *chain, int len, int offset);

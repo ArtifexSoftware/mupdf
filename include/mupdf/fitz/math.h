@@ -1,6 +1,8 @@
 #ifndef MUPDF_FITZ_MATH_H
 #define MUPDF_FITZ_MATH_H
 
+#include "mupdf/fitz/system.h"
+
 /* Multiply scaled two integers in the 0..255 range */
 static inline int fz_mul255(int a, int b)
 {

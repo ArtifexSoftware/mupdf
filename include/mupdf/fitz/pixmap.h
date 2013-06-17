@@ -1,6 +1,12 @@
 #ifndef MUPDF_FITZ_PIXMAP_H
 #define MUPDF_FITZ_PIXMAP_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/store.h"
+#include "mupdf/fitz/colorspace.h"
+
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
 	plane. Each pixel has n components per pixel, the last of which is

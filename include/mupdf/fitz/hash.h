@@ -1,6 +1,9 @@
 #ifndef MUPDF_FITZ_HASH_H
 #define MUPDF_FITZ_HASH_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+
 /*
  * Generic hash-table with fixed-length keys.
  */

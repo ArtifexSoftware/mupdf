@@ -1,6 +1,10 @@
 #ifndef MUPDF_FITZ_WRITE_DOCUMENT_H
 #define MUPDF_FITZ_WRITE_DOCUMENT_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/document.h"
+
 /*
 	In calls to fz_write, the following options structure can be used
 	to control aspects of the writing process. This structure may grow

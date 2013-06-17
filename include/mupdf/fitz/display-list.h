@@ -1,6 +1,11 @@
 #ifndef MUPDF_FITZ_DISPLAY_LIST_H
 #define MUPDF_FITZ_DISPLAY_LIST_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/device.h"
+
 /*
 	Display list device -- record and play back device commands.
 */

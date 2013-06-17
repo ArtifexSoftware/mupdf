@@ -1,6 +1,12 @@
 #ifndef MUPDF_FITZ_OUTPUT_PCL_H
 #define MUPDF_FITZ_OUTPUT_PCL_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/output.h"
+#include "mupdf/fitz/pixmap.h"
+#include "mupdf/fitz/bitmap.h"
+
 /*
 	PCL output
 */

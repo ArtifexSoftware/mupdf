@@ -1,6 +1,14 @@
 #ifndef MUPDF_FITZ_SHADE_H
 #define MUPDF_FITZ_SHADE_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/store.h"
+#include "mupdf/fitz/colorspace.h"
+#include "mupdf/fitz/pixmap.h"
+#include "mupdf/fitz/compressed-buffer.h"
+
 /*
  * The shading code uses gouraud shaded triangle meshes.
  */

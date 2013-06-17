@@ -1,6 +1,10 @@
 #ifndef MUPDF_FITZ_META_H
 #define MUPDF_FITZ_META_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/document.h"
+
 /*
 	fz_meta: Perform a meta operation on a document.
 

@@ -1,6 +1,11 @@
 #ifndef MUPDF_FITZ_TEXT_H
 #define MUPDF_FITZ_TEXT_H
 
+#include "mupdf/fitz/system.h"
+#include "mupdf/fitz/context.h"
+#include "mupdf/fitz/font.h"
+#include "mupdf/fitz/path.h"
+
 /*
  * Text buffer.
  *
