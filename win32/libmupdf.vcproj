@@ -509,10 +509,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fitz\image_save.c"
-				>
-			</File>
-			<File
 				RelativePath="..\fitz\image_tiff.c"
 				>
 			</File>

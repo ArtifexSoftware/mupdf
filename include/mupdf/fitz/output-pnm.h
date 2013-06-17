@@ -8,17 +8,6 @@
 #include "mupdf/fitz/bitmap.h"
 
 /*
-	fz_write_pixmap: Save a pixmap out.
-
-	name: The prefix for the name of the pixmap. The pixmap will be saved
-	as "name.png" if the pixmap is RGB or Greyscale, "name.pam" otherwise.
-
-	rgb: If non zero, the pixmap is converted to rgb (if possible) before
-	saving.
-*/
-void fz_write_pixmap(fz_context *ctx, fz_pixmap *img, char *name, int rgb);
-
-/*
 	fz_write_pnm: Save a pixmap as a pnm
 
 	filename: The filename to save as (including extension).

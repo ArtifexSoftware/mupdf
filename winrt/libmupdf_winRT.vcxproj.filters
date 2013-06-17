@@ -153,9 +153,6 @@
     <ClCompile Include="..\fitz\image_png.c">
       <Filter>fitz</Filter>
     </ClCompile>
-    <ClCompile Include="..\fitz\image_save.c">
-      <Filter>fitz</Filter>
-    </ClCompile>
     <ClCompile Include="..\fitz\image_tiff.c">
       <Filter>fitz</Filter>
     </ClCompile>

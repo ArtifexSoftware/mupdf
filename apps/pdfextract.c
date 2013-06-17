@@ -28,10 +28,42 @@ static int isfontdesc(pdf_obj *obj)
 	return pdf_is_name(type) && !strcmp(pdf_to_name(type), "FontDescriptor");
 }
 
+static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
+{
+	char name[1024];
+	fz_pixmap *converted = NULL;
+
+	if (!pix)
+		return;
+
+	if (rgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
+	{
+		fz_irect bbox;
+		converted = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_pixmap_bbox(ctx, pix, &bbox));
+		fz_convert_pixmap(ctx, converted, pix);
+		pix = converted;
+	}
+
+	if (pix->n <= 4)
+	{
+		sprintf(name, "%s.png", file);
+		printf("extracting image %s\n", name);
+		fz_write_png(ctx, pix, name, 0);
+	}
+	else
+	{
+		sprintf(name, "%s.pam", file);
+		printf("extracting image %s\n", name);
+		fz_write_pam(ctx, pix, name, 0);
+	}
+
+	fz_drop_pixmap(ctx, converted);
+}
+
 static void saveimage(int num)
 {
 	fz_image *image;
-	fz_pixmap *img;
+	fz_pixmap *pix;
 	pdf_obj *ref;
 	char name[32];
 
@@ -40,13 +72,13 @@ static void saveimage(int num)
 	/* TODO: detect DCTD and save as jpeg */
 
 	image = pdf_load_image(doc, ref);
-	img = fz_image_to_pixmap(ctx, image, 0, 0);
+	pix = fz_image_to_pixmap(ctx, image, 0, 0);
 	fz_drop_image(ctx, image);
 
 	sprintf(name, "img-%04d", num);
-	fz_write_pixmap(ctx, img, name, dorgb);
+	writepixmap(ctx, pix, name, dorgb);
 
-	fz_drop_pixmap(ctx, img);
+	fz_drop_pixmap(ctx, pix);
 	pdf_drop_obj(ref);
 }
 
