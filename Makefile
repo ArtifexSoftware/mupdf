@@ -59,10 +59,10 @@ RM_CMD = $(QUIET_RM) rm -f $@
 # --- Rules ---
 
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
-MUPDF_HDR := $(FITZ_HDR) include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
-MUXPS_HDR := $(FITZ_HDR) include/mupdf/xps.h
-MUCBZ_HDR := $(FITZ_HDR) include/mupdf/cbz.h
-MUIMAGE_HDR := $(FITZ_HDR) include/mupdf/image.h
+PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
+XPS_HDR := include/mupdf/xps.h
+CBZ_HDR := include/mupdf/cbz.h
+IMG_HDR := include/mupdf/image.h
 
 $(OUT) $(GEN) :
 	$(MKDIR_CMD)
@@ -75,19 +75,19 @@ $(OUT)/%.a :
 $(OUT)/% : $(OUT)/%.o
 	$(LINK_CMD)
 
-$(OUT)/%.o : fitz/%.c $(FITZ_HDR) | $(OUT)
+$(OUT)/%.o : fitz/%.c $(FITZ_HDR) $(wildcard fitz/*.h) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : draw/%.c $(FITZ_HDR) | $(OUT)
+$(OUT)/%.o : draw/%.c $(FITZ_HDR) $(wildcard draw/*.h) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : pdf/%.c $(MUPDF_HDR) | $(OUT)
+$(OUT)/%.o : pdf/%.c $(FITZ_HDR) $(PDF_HDR) $(wildcard pdf/*.h) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : pdf/%.cpp $(MUPDF_HDR) | $(OUT)
+$(OUT)/%.o : pdf/%.cpp $(FITZ_HDR) $(PDF_HDR) $(wildcard pdf/*.h) | $(OUT)
 	$(CXX_CMD)
-$(OUT)/%.o : xps/%.c $(MUXPS_HDR) | $(OUT)
+$(OUT)/%.o : xps/%.c $(FITZ_HDR) $(XPS_HDR) $(wildcard xps/*.h) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : cbz/%.c $(MUCBZ_HDR) | $(OUT)
+$(OUT)/%.o : cbz/%.c $(FITZ_HDR) $(CBZ_HDR) | $(OUT)
 	$(CC_CMD)
-$(OUT)/%.o : image/%.c $(MUIMAGE_HDR) | $(OUT)
+$(OUT)/%.o : image/%.c $(FITZ_HDR) $(IMG_HDR) | $(OUT)
 	$(CC_CMD)
 $(OUT)/%.o : ucdn/%.c | $(OUT)
 	$(CC_CMD)
@@ -97,7 +97,7 @@ $(OUT)/%.o : scripts/%.c | $(OUT)
 $(OUT)/x11_%.o : apps/x11_%.c $(FITZ_HDR) | $(OUT)
 	$(CC_CMD) $(X11_CFLAGS)
 
-$(OUT)/%.o : apps/%.c $(FITZ_HDR) $(MUPDF_HDR) | $(OUT)
+$(OUT)/%.o : apps/%.c $(FITZ_HDR) $(PDF_HDR) | $(OUT)
 	$(CC_CMD)
 
 
@@ -110,26 +110,26 @@ MUPDF_V8_LIB := $(OUT)/libmupdf-v8.a
 
 FITZ_SRC := $(notdir $(wildcard fitz/*.c draw/*.c ucdn/*.c))
 FITZ_SRC := $(filter-out draw_simple_scale.c, $(FITZ_SRC))
-MUPDF_ALL_SRC := $(notdir $(wildcard pdf/*.c))
-MUPDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(MUPDF_ALL_SRC))
-MUPDF_V8_SRC := $(filter-out pdf_js_none.c, $(MUPDF_ALL_SRC))
-MUPDF_V8_CPP_SRC := $(notdir $(wildcard pdf/*.cpp))
-MUXPS_SRC := $(notdir $(wildcard xps/*.c))
-MUCBZ_SRC := $(notdir $(wildcard cbz/*.c))
-MUIMAGE_SRC := $(notdir $(wildcard image/*.c))
+PDF_ALL_SRC := $(notdir $(wildcard pdf/*.c))
+PDF_SRC := $(filter-out pdf_js.c pdf_jsimp_cpp.c, $(PDF_ALL_SRC))
+PDF_V8_SRC := $(filter-out pdf_js_none.c, $(PDF_ALL_SRC))
+PDF_V8_CPP_SRC := $(notdir $(wildcard pdf/*.cpp))
+XPS_SRC := $(notdir $(wildcard xps/*.c))
+CBZ_SRC := $(notdir $(wildcard cbz/*.c))
+IMG_SRC := $(notdir $(wildcard image/*.c))
 
 $(MUPDF_LIB) : $(addprefix $(OUT)/, $(FITZ_SRC:%.c=%.o))
-$(MUPDF_LIB) : $(addprefix $(OUT)/, $(MUPDF_SRC:%.c=%.o))
-$(MUPDF_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
-$(MUPDF_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
-$(MUPDF_LIB) : $(addprefix $(OUT)/, $(MUIMAGE_SRC:%.c=%.o))
+$(MUPDF_LIB) : $(addprefix $(OUT)/, $(PDF_SRC:%.c=%.o))
+$(MUPDF_LIB) : $(addprefix $(OUT)/, $(XPS_SRC:%.c=%.o))
+$(MUPDF_LIB) : $(addprefix $(OUT)/, $(CBZ_SRC:%.c=%.o))
+$(MUPDF_LIB) : $(addprefix $(OUT)/, $(IMG_SRC:%.c=%.o))
 
 $(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(FITZ_SRC:%.c=%.o))
-$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(MUPDF_V8_SRC:%.c=%.o))
-$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(MUPDF_V8_CPP_SRC:%.cpp=%.o))
-$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(MUXPS_SRC:%.c=%.o))
-$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(MUCBZ_SRC:%.c=%.o))
-$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(MUIMAGE_SRC:%.c=%.o))
+$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(PDF_V8_SRC:%.c=%.o))
+$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(PDF_V8_CPP_SRC:%.cpp=%.o))
+$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(XPS_SRC:%.c=%.o))
+$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(CBZ_SRC:%.c=%.o))
+$(MUPDF_V8_LIB) : $(addprefix $(OUT)/, $(IMG_SRC:%.c=%.o))
 
 libs: $(MUPDF_LIB) $(THIRD_LIBS)
 libs_v8: libs $(MUPDF_V8_LIB)
