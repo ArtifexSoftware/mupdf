@@ -759,7 +759,7 @@ static void preload_helpers(pdf_js *js)
 #endif
 
 	pdf_jsimp_execute(js->imp,
-#include "../generated/js_util.h"
+#include "gen_js_util.h"
 	);
 }
 

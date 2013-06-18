@@ -5,8 +5,8 @@
  */
 
 extern "C" {
-#include "fitz-internal.h"
-#include "mupdf-internal.h"
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf_jsimp_cpp.h"
 }
 
