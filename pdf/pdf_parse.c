@@ -292,7 +292,7 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 
 			case PDF_TOK_R:
 				if (n != 2)
-					fz_throw(ctx, "cannot parse indirect reference in array");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse indirect reference in array");
 				obj = pdf_new_indirect(ctx, a, b, xref);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
@@ -352,7 +352,7 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 				break;
 
 			default:
-				fz_throw(ctx, "cannot parse token in array");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse token in array");
 			}
 		}
 end:
@@ -362,7 +362,7 @@ end:
 	{
 		pdf_drop_obj(obj);
 		pdf_drop_obj(ary);
-		fz_throw(ctx, "cannot parse array");
+		fz_rethrow_message(ctx, "cannot parse array");
 	}
 	return op;
 }
@@ -396,7 +396,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 				break;
 
 			if (tok != PDF_TOK_NAME)
-				fz_throw(ctx, "invalid key in dict");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid key in dict");
 
 			key = pdf_new_name(ctx, buf->scratch);
 
@@ -444,10 +444,10 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 						break;
 					}
 				}
-				fz_throw(ctx, "invalid indirect reference in dict");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid indirect reference in dict");
 
 			default:
-				fz_throw(ctx, "unknown token in dict");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "unknown token in dict");
 			}
 
 			pdf_dict_put(dict, key, val);
@@ -462,7 +462,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 		pdf_drop_obj(dict);
 		pdf_drop_obj(key);
 		pdf_drop_obj(val);
-		fz_throw(ctx, "cannot parse dict");
+		fz_rethrow_message(ctx, "cannot parse dict");
 	}
 	return dict;
 }
@@ -488,7 +488,7 @@ pdf_parse_stm_obj(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 	case PDF_TOK_FALSE: return pdf_new_bool(ctx, 0); break;
 	case PDF_TOK_NULL: return pdf_new_null(ctx); break;
 	case PDF_TOK_INT: return pdf_new_int(ctx, buf->i); break;
-	default: fz_throw(ctx, "unknown token in object stream");
+	default: fz_throw(ctx, FZ_ERROR_GENERIC, "unknown token in object stream");
 	}
 	return NULL; /* Stupid MSVC */
 }
@@ -508,17 +508,17 @@ pdf_parse_ind_obj(pdf_document *xref,
 
 	tok = pdf_lex(file, buf);
 	if (tok != PDF_TOK_INT)
-		fz_throw(ctx, "expected object number");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected object number");
 	num = buf->i;
 
 	tok = pdf_lex(file, buf);
 	if (tok != PDF_TOK_INT)
-		fz_throw(ctx, "expected generation number (%d ? obj)", num);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected generation number (%d ? obj)", num);
 	gen = buf->i;
 
 	tok = pdf_lex(file, buf);
 	if (tok != PDF_TOK_OBJ)
-		fz_throw(ctx, "expected 'obj' keyword (%d %d ?)", num, gen);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected 'obj' keyword (%d %d ?)", num, gen);
 
 	tok = pdf_lex(file, buf);
 
@@ -558,14 +558,14 @@ pdf_parse_ind_obj(pdf_document *xref,
 				break;
 			}
 		}
-		fz_throw(ctx, "expected 'R' keyword (%d %d R)", num, gen);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected 'R' keyword (%d %d R)", num, gen);
 
 	case PDF_TOK_ENDOBJ:
 		obj = pdf_new_null(ctx);
 		goto skip;
 
 	default:
-		fz_throw(ctx, "syntax error in object (%d %d R)", num, gen);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in object (%d %d R)", num, gen);
 	}
 
 	fz_try(ctx)
@@ -575,7 +575,7 @@ pdf_parse_ind_obj(pdf_document *xref,
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(obj);
-		fz_throw(ctx, "cannot parse indirect object (%d %d R)", num, gen);
+		fz_rethrow_message(ctx, "cannot parse indirect object (%d %d R)", num, gen);
 	}
 
 skip:

@@ -84,6 +84,7 @@ fz_fill_buffer(fz_stream *stm)
 	}
 	fz_catch(stm->ctx)
 	{
+		/* FIXME: TryLater */
 		fz_warn(stm->ctx, "read error; treating as end of file");
 		stm->error = 1;
 	}
@@ -121,7 +122,7 @@ fz_read_best(fz_stream *stm, int initial, int *truncated)
 
 			if (buf->len >= MIN_BOMB && buf->len / 200 > initial)
 			{
-				fz_throw(ctx, "compression bomb detected");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "compression bomb detected");
 			}
 
 			n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
@@ -133,6 +134,7 @@ fz_read_best(fz_stream *stm, int initial, int *truncated)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater */
 		if (truncated)
 		{
 			*truncated = 1;

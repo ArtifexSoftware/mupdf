@@ -113,7 +113,7 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 	sig = getlong(doc->file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
 	{
-		fz_throw(doc->ctx, "wrong zip local file signature (0x%x)", sig);
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip local file signature (0x%x)", sig);
 	}
 
 	(void) getshort(doc->file); /* version */
@@ -152,27 +152,27 @@ xps_read_zip_entry(xps_document *doc, xps_entry *ent, unsigned char *outbuf)
 		if (code != Z_OK)
 		{
 			fz_free(ctx, inbuf);
-			fz_throw(ctx, "zlib inflateInit2 error: %s", stream.msg);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflateInit2 error: %s", stream.msg);
 		}
 		code = inflate(&stream, Z_FINISH);
 		if (code != Z_STREAM_END)
 		{
 			inflateEnd(&stream);
 			fz_free(ctx, inbuf);
-			fz_throw(ctx, "zlib inflate error: %s", stream.msg);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflate error: %s", stream.msg);
 		}
 		code = inflateEnd(&stream);
 		if (code != Z_OK)
 		{
 			fz_free(ctx, inbuf);
-			fz_throw(ctx, "zlib inflateEnd error: %s", stream.msg);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflateEnd error: %s", stream.msg);
 		}
 
 		fz_free(ctx, inbuf);
 	}
 	else
 	{
-		fz_throw(ctx, "unknown compression method (%d)", method);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown compression method (%d)", method);
 	}
 }
 
@@ -192,7 +192,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 
 	sig = getlong(doc->file);
 	if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
-		fz_throw(doc->ctx, "wrong zip end of central directory signature (0x%x)", sig);
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip end of central directory signature (0x%x)", sig);
 
 	(void) getshort(doc->file); /* this disk */
 	(void) getshort(doc->file); /* start disk */
@@ -208,18 +208,18 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 
 		sig = getlong(doc->file);
 		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIG)
-			fz_throw(doc->ctx, "wrong zip64 end of central directory locator signature (0x%x)", sig);
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip64 end of central directory locator signature (0x%x)", sig);
 
 		(void) getlong(doc->file); /* start disk */
 		offset = getlong64(doc->file); /* offset to end of central directory record */
 		if (offset < 0)
-			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 
 		fz_seek(doc->file, offset, 0);
 
 		sig = getlong(doc->file);
 		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_SIG)
-			fz_throw(doc->ctx, "wrong zip64 end of central directory signature (0x%x)", sig);
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip64 end of central directory signature (0x%x)", sig);
 
 		(void) getlong64(doc->file); /* size of record */
 		(void) getshort(doc->file); /* version made by */
@@ -232,7 +232,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 		offset = getlong64(doc->file); /* offset to central directory */
 
 		if (count < 0 || offset < 0)
-			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 	}
 
 	doc->zip_table = fz_malloc_array(doc->ctx, count, sizeof(xps_entry));
@@ -245,7 +245,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 	{
 		sig = getlong(doc->file);
 		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
-			fz_throw(doc->ctx, "wrong zip central directory signature (0x%x)", sig);
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip central directory signature (0x%x)", sig);
 
 		(void) getshort(doc->file); /* version made by */
 		(void) getshort(doc->file); /* version to extract */
@@ -283,7 +283,7 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 			metasize -= 4 + size;
 		}
 		if (doc->zip_table[i].usize < 0 || doc->zip_table[i].csize < 0 || doc->zip_table[i].offset < 0)
-			fz_throw(doc->ctx, "zip64 files larger than 2 GB aren't supported");
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 
 		fz_seek(doc->file, commentsize, 1);
 	}
@@ -321,7 +321,7 @@ xps_find_and_read_zip_dir(xps_document *doc)
 		back += sizeof buf - 4;
 	}
 
-	fz_throw(ctx, "cannot find end of central directory");
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find end of central directory");
 }
 
 /*
@@ -377,7 +377,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 		size += ent->usize;
 	}
 	if (!seen_last)
-		fz_throw(doc->ctx, "cannot find all pieces for part '%s'", partname);
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find all pieces for part '%s'", partname);
 
 	/* Inflate the pieces */
 	if (count)
@@ -405,7 +405,7 @@ xps_read_zip_part(xps_document *doc, char *partname)
 		return part;
 	}
 
-	fz_throw(doc->ctx, "cannot find part '%s'", partname);
+	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find part '%s'", partname);
 	return NULL;
 }
 
@@ -475,7 +475,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 		fclose(file);
 	}
 	if (!seen_last)
-		fz_throw(doc->ctx, "cannot find all pieces for part '%s'", name);
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find all pieces for part '%s'", name);
 
 	/* Inflate the pieces */
 	if (count)
@@ -492,7 +492,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 			if (!file)
 			{
 				xps_free_part(doc, part);
-				fz_throw(doc->ctx, "cannot open file '%s'", buf);
+				fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot open file '%s'", buf);
 			}
 			n = fread(part->data + offset, 1, size - offset, file);
 			offset += n;
@@ -501,7 +501,7 @@ xps_read_dir_part(xps_document *doc, char *name)
 		return part;
 	}
 
-	fz_throw(doc->ctx, "cannot find part '%s'", name);
+	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find part '%s'", name);
 	return NULL;
 }
 
@@ -619,7 +619,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 
 	file = fz_open_file(ctx, filename);
 	if (!file)
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
 	{
@@ -631,7 +631,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot load document '%s'", filename);
+		fz_rethrow_message(ctx, "cannot load document '%s'", filename);
 	}
 	return doc;
 }

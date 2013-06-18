@@ -8,7 +8,7 @@ static void error_exit(j_common_ptr cinfo)
 	fz_context *ctx = (fz_context *)cinfo->client_data;
 
 	cinfo->err->format_message(cinfo, msg);
-	fz_throw(ctx, "jpeg error: %s", msg);
+	fz_throw(ctx, FZ_ERROR_GENERIC, "jpeg error: %s", msg);
 }
 
 static void init_source(j_decompress_ptr cinfo)
@@ -76,7 +76,7 @@ fz_load_jpeg_info(fz_context *ctx, unsigned char *rbuf, int rlen, int *xp, int *
 		else if (cinfo.num_components == 4)
 			*cspacep = fz_device_cmyk(ctx);
 		else
-			fz_throw(ctx, "bad number of components in jpeg: %d", cinfo.num_components);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "bad number of components in jpeg: %d", cinfo.num_components);
 
 		*xp = cinfo.image_width;
 		*yp = cinfo.image_height;

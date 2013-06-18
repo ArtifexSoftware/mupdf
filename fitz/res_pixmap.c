@@ -30,7 +30,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	fz_pixmap *pix;
 
 	if (w < 0 || h < 0)
-		fz_throw(ctx, "Illegal dimensions for pixmap %d %d", w, h);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal dimensions for pixmap %d %d", w, h);
 
 	pix = fz_malloc_struct(ctx, fz_pixmap);
 	FZ_INIT_STORABLE(pix, 1, fz_free_pixmap_imp);
@@ -60,7 +60,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		fz_try(ctx)
 		{
 			if (pix->w + pix->n - 1 > INT_MAX / pix->n)
-				fz_throw(ctx, "overly wide image");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "overly wide image");
 			pix->samples = fz_malloc_array(ctx, pix->h, pix->w * pix->n);
 		}
 		fz_catch(ctx)
@@ -439,11 +439,11 @@ fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 	int len;
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		fz_throw(ctx, "pixmap must be grayscale or rgb to write as pnm");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
 
 	fp = fopen(filename, "wb");
 	if (!fp)
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	if (pixmap->n == 1 || pixmap->n == 2)
 		fprintf(fp, "P5\n");
@@ -498,7 +498,7 @@ fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	fp = fopen(filename, "wb");
 	if (!fp)
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fprintf(fp, "P7\n");
 	fprintf(fp, "WIDTH %d\n", pixmap->w);
@@ -565,7 +565,7 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 
 	if (!fp)
 	{
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	fz_var(out);
@@ -609,7 +609,7 @@ fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha)
 	fz_var(cdata);
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		fz_throw(ctx, "pixmap must be grayscale or rgb to write as png");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
 
 	sn = pixmap->n;
 	dn = pixmap->n;
@@ -662,7 +662,7 @@ fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha)
 	{
 		fz_free(ctx, udata);
 		fz_free(ctx, cdata);
-		fz_throw(ctx, "cannot compress image data");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot compress image data");
 	}
 
 	big32(head+0, pixmap->w);

@@ -85,7 +85,7 @@ cbz_read_zip_entry(cbz_document *doc, int offset, int *sizep)
 
 	sig = getlong(doc->file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
-		fz_throw(ctx, "wrong zip local file signature (0x%x)", sig);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip local file signature (0x%x)", sig);
 
 	(void) getshort(doc->file); /* version */
 	(void) getshort(doc->file); /* general */
@@ -135,15 +135,15 @@ cbz_read_zip_entry(cbz_document *doc, int offset, int *sizep)
 		{
 			code = inflateInit2(&stream, -15);
 			if (code != Z_OK)
-				fz_throw(ctx, "zlib inflateInit2 error: %s", stream.msg);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflateInit2 error: %s", stream.msg);
 			code = inflate(&stream, Z_FINISH);
 			if (code != Z_STREAM_END) {
 				inflateEnd(&stream);
-				fz_throw(ctx, "zlib inflate error: %s", stream.msg);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflate error: %s", stream.msg);
 			}
 			code = inflateEnd(&stream);
 			if (code != Z_OK)
-				fz_throw(ctx, "zlib inflateEnd error: %s", stream.msg);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflateEnd error: %s", stream.msg);
 		}
 		fz_always(ctx)
 		{
@@ -159,7 +159,7 @@ cbz_read_zip_entry(cbz_document *doc, int offset, int *sizep)
 		return udata;
 	}
 
-	fz_throw(ctx, "unknown zip method: %d", method);
+	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown zip method: %d", method);
 	return NULL; /* not reached */
 }
 
@@ -184,7 +184,7 @@ cbz_read_zip_dir_imp(cbz_document *doc, int startoffset)
 
 	sig = getlong(file);
 	if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
-		fz_throw(ctx, "wrong zip end of central directory signature (0x%x)", sig);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip end of central directory signature (0x%x)", sig);
 
 	(void) getshort(file); /* this disk */
 	(void) getshort(file); /* start disk */
@@ -204,7 +204,7 @@ cbz_read_zip_dir_imp(cbz_document *doc, int startoffset)
 
 		sig = getlong(doc->file);
 		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
-			fz_throw(doc->ctx, "wrong zip central directory signature (0x%x)", sig);
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip central directory signature (0x%x)", sig);
 
 		(void) getshort(file); /* version made by */
 		(void) getshort(file); /* version to extract */
@@ -271,7 +271,7 @@ cbz_read_zip_dir(cbz_document *doc)
 		back += sizeof buf - 4;
 	}
 
-	fz_throw(doc->ctx, "cannot find end of central directory");
+	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find end of central directory");
 }
 
 cbz_document *
@@ -309,13 +309,18 @@ cbz_open_document(fz_context *ctx, const char *filename)
 
 	file = fz_open_file(ctx, filename);
 	if (!file)
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
-	fz_try(ctx) {
+	fz_try(ctx)
+	{
 		doc = cbz_open_document_with_stream(ctx, file);
-	} fz_always(ctx) {
+	}
+	fz_always(ctx)
+	{
 		fz_close(file);
-	} fz_catch(ctx) {
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
 

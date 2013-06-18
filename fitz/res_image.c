@@ -142,7 +142,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 		len = fz_read(stm, samples, h * stride);
 		if (len < 0)
 		{
-			fz_throw(ctx, "cannot read image data");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read image data");
 		}
 
 		/* Make sure we read the EOF marker (for inline images only) */
@@ -157,6 +157,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 			}
 			fz_catch(ctx)
 			{
+				/* FIXME: TryLater? */
 				fz_warn(ctx, "ignoring error at end of image");
 			}
 		}
@@ -456,7 +457,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	fz_try(ctx)
 	{
 		if (len < 8)
-			fz_throw(ctx, "unknown image file format");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
 
 		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
 		bc->buffer = fz_keep_buffer(ctx, buffer);
@@ -473,14 +474,14 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 			fz_load_png_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
-			fz_throw(ctx, "JPEG-XR codec is not available");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "JPEG-XR codec is not available");
 		else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 		{
 			bc->params.type = FZ_IMAGE_TIFF;
 			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else
-			fz_throw(ctx, "unknown image file format");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
 	}
 	fz_catch(ctx)
 	{

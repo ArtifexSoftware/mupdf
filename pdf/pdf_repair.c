@@ -44,9 +44,10 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater */
 			/* Don't let a broken object at EOF overwrite a good one */
 			if (file->eof)
-				fz_throw(ctx, "broken object at EOF ignored");
+				fz_rethrow_message(ctx, "broken object at EOF ignored");
 			/* Silently swallow the error */
 			dict = pdf_new_dict(ctx, 2);
 		}
@@ -84,7 +85,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 	{
 		*tmpofs = fz_tell(file);
 		if (*tmpofs < 0)
-			fz_throw(ctx, "cannot tell in file");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
 		tok = pdf_lex(file, buf);
 	}
 
@@ -99,7 +100,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 
 		*stmofsp = fz_tell(file);
 		if (*stmofsp < 0)
-			fz_throw(ctx, "cannot seek in file");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek in file");
 
 		if (stm_len > 0)
 		{
@@ -110,6 +111,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 			}
 			fz_catch(ctx)
 			{
+				/* FIXME: TryLater */
 				fz_warn(ctx, "cannot find endstream token, falling back to scanning");
 			}
 			if (tok == PDF_TOK_ENDSTREAM)
@@ -119,7 +121,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 
 		n = fz_read(file, (unsigned char *) buf->scratch, 9);
 		if (n < 0)
-			fz_throw(ctx, "cannot read from file");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read from file");
 
 		while (memcmp(buf->scratch, "endstream", 9) != 0)
 		{
@@ -135,7 +137,7 @@ pdf_repair_obj(fz_stream *file, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf
 atobjend:
 		*tmpofs = fz_tell(file);
 		if (*tmpofs < 0)
-			fz_throw(ctx, "cannot tell in file");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
 		tok = pdf_lex(file, buf);
 		if (tok != PDF_TOK_ENDOBJ)
 			fz_warn(ctx, "object missing 'endobj' token");
@@ -144,7 +146,7 @@ atobjend:
 			/* Read another token as we always return the next one */
 			*tmpofs = fz_tell(file);
 			if (*tmpofs < 0)
-				fz_throw(ctx, "cannot tell in file");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
 			tok = pdf_lex(file, buf);
 		}
 	}
@@ -181,7 +183,7 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 
 			tok = pdf_lex(stm, &buf);
 			if (tok != PDF_TOK_INT)
-				fz_throw(ctx, "corrupt object stream (%d %d R)", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d %d R)", num, gen);
 
 			n = buf.i;
 			if (n < 0)
@@ -205,7 +207,7 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 
 			tok = pdf_lex(stm, &buf);
 			if (tok != PDF_TOK_INT)
-				fz_throw(ctx, "corrupt object stream (%d %d R)", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d %d R)", num, gen);
 		}
 	}
 	fz_always(ctx)
@@ -215,7 +217,7 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot load object stream object (%d %d R)", num, gen);
+		fz_rethrow_message(ctx, "cannot load object stream object (%d %d R)", num, gen);
 	}
 }
 
@@ -266,7 +268,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 		/* look for '%PDF' version marker within first kilobyte of file */
 		n = fz_read(xref->file, (unsigned char *)buf->scratch, fz_mini(buf->size, 1024));
 		if (n < 0)
-			fz_throw(ctx, "cannot read from file");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot read from file");
 
 		fz_seek(xref->file, 0, 0);
 		for (i = 0; i < n - 4; i++)
@@ -289,7 +291,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 		{
 			tmpofs = fz_tell(xref->file);
 			if (tmpofs < 0)
-				fz_throw(ctx, "cannot tell in file");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
 
 			fz_try(ctx)
 			{
@@ -297,6 +299,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 			}
 			fz_catch(ctx)
 			{
+				/* FIXME: TryLater */
 				fz_warn(ctx, "ignoring the rest of the file");
 				break;
 			}
@@ -322,6 +325,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 				}
 				fz_catch(ctx)
 				{
+					/* FIXME: TryLater */
 					/* If we haven't seen a root yet, there is nothing
 					 * we can do, but give up. Otherwise, we'll make
 					 * do. */
@@ -372,6 +376,7 @@ pdf_repair_xref(pdf_document *xref, pdf_lexbuf *buf)
 				}
 				fz_catch(ctx)
 				{
+					/* FIXME: TryLater */
 					/* If we haven't seen a root yet, there is nothing
 					 * we can do, but give up. Otherwise, we'll make
 					 * do. */
@@ -577,6 +582,6 @@ pdf_repair_obj_stms(pdf_document *xref)
 		pdf_xref_entry *entry = pdf_get_populating_xref_entry(xref, i);
 
 		if (entry->type == 'o' && pdf_get_populating_xref_entry(xref, entry->ofs)->type != 'n')
-			fz_throw(xref->ctx, "invalid reference to non-object-stream: %d (%d 0 R)", entry->ofs, i);
+			fz_throw(xref->ctx, FZ_ERROR_GENERIC, "invalid reference to non-object-stream: %d (%d 0 R)", entry->ofs, i);
 	}
 }

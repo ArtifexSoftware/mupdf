@@ -16,7 +16,7 @@ load_icc_based(pdf_document *xref, pdf_obj *dict)
 	case 4: return fz_device_cmyk(xref->ctx);
 	}
 
-	fz_throw(xref->ctx, "syntaxerror: ICCBased must have 1, 3 or 4 components");
+	fz_throw(xref->ctx, FZ_ERROR_GENERIC, "syntaxerror: ICCBased must have 1, 3 or 4 components");
 	return NULL; /* Stupid MSVC */
 }
 
@@ -111,7 +111,7 @@ load_separation(pdf_document *xref, pdf_obj *array)
 		n = 1;
 
 	if (n > FZ_MAX_COLORS)
-		fz_throw(ctx, "too many components in colorspace");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many components in colorspace");
 
 	base = pdf_load_colorspace(xref, baseobj);
 
@@ -188,12 +188,12 @@ load_indexed(pdf_document *xref, pdf_obj *array)
 			}
 			fz_catch(ctx)
 			{
-				fz_throw(ctx, "cannot open colorspace lookup table (%d 0 R)", pdf_to_num(lookupobj));
+				fz_rethrow_message(ctx, "cannot open colorspace lookup table (%d 0 R)", pdf_to_num(lookupobj));
 			}
 		}
 		else
 		{
-			fz_throw(ctx, "cannot parse colorspace lookup table");
+			fz_rethrow_message(ctx, "cannot parse colorspace lookup table");
 		}
 
 		cs = fz_new_indexed_colorspace(ctx, base, high, lookup);
@@ -216,7 +216,7 @@ pdf_load_colorspace_imp(pdf_document *xref, pdf_obj *obj)
 	fz_context *ctx = xref->ctx;
 
 	if (pdf_obj_marked(obj))
-		fz_throw(ctx, "Recursion in colorspace definition");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in colorspace definition");
 
 	if (pdf_is_name(obj))
 	{
@@ -236,7 +236,7 @@ pdf_load_colorspace_imp(pdf_document *xref, pdf_obj *obj)
 		else if (!strcmp(str, "DeviceCMYK"))
 			return fz_device_cmyk(ctx);
 		else
-			fz_throw(ctx, "unknown colorspace: %s", pdf_to_name(obj));
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown colorspace: %s", pdf_to_name(obj));
 	}
 
 	else if (pdf_is_array(obj))
@@ -300,7 +300,7 @@ pdf_load_colorspace_imp(pdf_document *xref, pdf_obj *obj)
 						cs = pdf_load_colorspace(xref, pobj);
 					}
 					else
-						fz_throw(ctx, "syntaxerror: unknown colorspace %s", str);
+						fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown colorspace %s", str);
 				}
 				fz_always(ctx)
 				{
@@ -315,7 +315,7 @@ pdf_load_colorspace_imp(pdf_document *xref, pdf_obj *obj)
 		}
 	}
 
-	fz_throw(xref->ctx, "syntaxerror: could not parse color space (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+	fz_throw(xref->ctx, FZ_ERROR_GENERIC, "syntaxerror: could not parse color space (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 	return NULL; /* Stupid MSVC */
 }
 

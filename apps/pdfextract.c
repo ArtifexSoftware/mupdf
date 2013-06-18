@@ -120,7 +120,7 @@ static void savefont(pdf_obj *dict, int num)
 
 		obj = pdf_dict_gets(obj, "Subtype");
 		if (obj && !pdf_is_name(obj))
-			fz_throw(ctx, "Invalid font descriptor subtype");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid font descriptor subtype");
 
 		subtype = pdf_to_name(obj);
 		if (!strcmp(subtype, "Type1C"))
@@ -130,7 +130,7 @@ static void savefont(pdf_obj *dict, int num)
 		else if (!strcmp(subtype, "OpenType"))
 			ext = "otf";
 		else
-			fz_throw(ctx, "Unhandled font type '%s'", subtype);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Unhandled font type '%s'", subtype);
 	}
 
 	if (!stream)
@@ -146,15 +146,15 @@ static void savefont(pdf_obj *dict, int num)
 
 	f = fopen(name, "wb");
 	if (!f)
-		fz_throw(ctx, "Error creating font file");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Error creating font file");
 
 	len = fz_buffer_storage(ctx, buf, &data);
 	n = fwrite(data, 1, len, f);
 	if (n < len)
-		fz_throw(ctx, "Error writing font file");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Error writing font file");
 
 	if (fclose(f) < 0)
-		fz_throw(ctx, "Error closing font file");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Error closing font file");
 
 	fz_drop_buffer(ctx, buf);
 }
@@ -164,7 +164,7 @@ static void showobject(int num)
 	pdf_obj *obj;
 
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 
 	obj = pdf_load_object(doc, num, 0);
 
@@ -207,7 +207,7 @@ int pdfextract_main(int argc, char **argv)
 	doc = pdf_open_document_no_run(ctx, infile);
 	if (pdf_needs_password(doc))
 		if (!pdf_authenticate_password(doc, password))
-			fz_throw(ctx, "cannot authenticate password: %s", infile);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
 
 	if (fz_optind == argc)
 	{

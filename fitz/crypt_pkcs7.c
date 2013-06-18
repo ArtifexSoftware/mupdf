@@ -379,7 +379,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 	fz_catch(ctx)
 	{
 		res = 0;
-		strncpy(ebuf, ctx->error->message, ebufsize);
+		strncpy(ebuf, fz_caught_message(ctx), ebufsize);
 	}
 
 	if (ebufsize > 0)

@@ -92,7 +92,7 @@ fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options
 	ctx = out->ctx;
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		fz_throw(ctx, "pixmap must be grayscale or rgb to write as pwg");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pwg");
 
 	sn = pixmap->n;
 	dn = pixmap->n;
@@ -262,7 +262,7 @@ fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, con
 	fp = fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	fz_var(out);
@@ -294,7 +294,7 @@ fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int appe
 	fp = fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	fz_var(out);

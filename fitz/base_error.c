@@ -89,6 +89,7 @@ int fz_push_try(fz_error_context *ex)
 {
 	assert(ex);
 	ex->top++;
+	ex->errcode = FZ_ERROR_NONE;
 	/* Normal case, get out of here quick */
 	if (ex->top < nelem(ex->stack)-1)
 		return 1; /* We exit here, and the setjmp sets the code to 0 */
@@ -104,16 +105,24 @@ int fz_push_try(fz_error_context *ex)
 	return 0;
 }
 
-const char *fz_caught(fz_context *ctx)
+int fz_caught(fz_context *ctx)
+{
+	assert(ctx);
+	assert(ctx->error);
+	return ctx->error->errcode;
+}
+
+const char *fz_caught_message(fz_context *ctx)
 {
 	assert(ctx);
 	assert(ctx->error);
 	return ctx->error->message;
 }
 
-void fz_throw(fz_context *ctx, const char *fmt, ...)
+void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 {
 	va_list args;
+	ctx->error->errcode = code;
 	va_start(args, fmt);
 	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
 	va_end(args);
@@ -127,5 +136,19 @@ void fz_throw(fz_context *ctx, const char *fmt, ...)
 
 void fz_rethrow(fz_context *ctx)
 {
+	throw(ctx->error);
+}
+
+void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
+	va_end(args);
+
+	fz_flush_warnings(ctx);
+	fprintf(stderr, "error: %s\n", ctx->error->message);
+	LOGE("error: %s\n", ctx->error->message);
+
 	throw(ctx->error);
 }

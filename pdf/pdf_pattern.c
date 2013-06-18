@@ -77,7 +77,7 @@ pdf_load_pattern(pdf_document *xref, pdf_obj *dict)
 	{
 		pdf_remove_item(ctx, pdf_free_pattern_imp, dict);
 		pdf_drop_pattern(ctx, pat);
-		fz_throw(ctx, "cannot load pattern stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
+		fz_rethrow_message(ctx, "cannot load pattern stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
 	}
 	return pat;
 }

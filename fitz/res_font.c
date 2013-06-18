@@ -237,7 +237,7 @@ fz_keep_freetype(fz_context *ctx)
 	{
 		char *mess = ft_error_string(fterr);
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		fz_throw(ctx, "cannot init freetype: %s", mess);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot init freetype: %s", mess);
 	}
 
 	FT_Library_Version(fct->ftlib, &maj, &min, &pat);
@@ -247,7 +247,7 @@ fz_keep_freetype(fz_context *ctx)
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		fz_throw(ctx, "freetype version too old: %d.%d.%d", maj, min, pat);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "freetype version too old: %d.%d.%d", maj, min, pat);
 	}
 
 	fct->ftlib_refs++;
@@ -286,7 +286,7 @@ fz_new_font_from_file(fz_context *ctx, char *name, char *path, int index, int us
 	if (fterr)
 	{
 		fz_drop_freetype(ctx);
-		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
 	if (!name)
@@ -318,7 +318,7 @@ fz_new_font_from_memory(fz_context *ctx, char *name, unsigned char *data, int le
 	if (fterr)
 	{
 		fz_drop_freetype(ctx);
-		fz_throw(ctx, "freetype: cannot load font: %s", ft_error_string(fterr));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "freetype: cannot load font: %s", ft_error_string(fterr));
 	}
 
 	if (!name)
@@ -834,15 +834,16 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 		FT_Outline_Decompose(&face->glyph->outline, &outline_funcs, &cc);
 		fz_closepath(ctx, cc.path);
 	}
+	fz_always(ctx)
+	{
+		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+	}
 	fz_catch(ctx)
 	{
 		fz_warn(ctx, "freetype cannot decompose outline");
 		fz_free(ctx, cc.path);
-		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		return NULL;
 	}
-
-	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 
 	return cc.path;
 }

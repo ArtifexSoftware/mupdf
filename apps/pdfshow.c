@@ -22,7 +22,7 @@ static void usage(void)
 static void showtrailer(void)
 {
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 	printf("trailer\n");
 	pdf_fprint_obj(stdout, pdf_trailer(doc), 0);
 	printf("\n");
@@ -33,10 +33,10 @@ static void showencrypt(void)
 	pdf_obj *encrypt;
 
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 	encrypt = pdf_dict_gets(pdf_trailer(doc), "Encrypt");
 	if (!encrypt)
-		fz_throw(ctx, "document not encrypted");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "document not encrypted");
 	printf("encryption dictionary\n");
 	pdf_fprint_obj(stdout, pdf_resolve_indirect(encrypt), 0);
 	printf("\n");
@@ -45,7 +45,7 @@ static void showencrypt(void)
 static void showxref(void)
 {
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 	pdf_print_xref(doc);
 	printf("\n");
 }
@@ -57,7 +57,7 @@ static void showpagetree(void)
 	int i;
 
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 
 	count = pdf_count_pages(doc);
 	for (i = 0; i < count; i++)
@@ -123,7 +123,7 @@ static void showobject(int num, int gen)
 	pdf_obj *obj;
 
 	if (!doc)
-		fz_throw(ctx, "no file specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 
 	obj = pdf_load_object(doc, num, gen);
 

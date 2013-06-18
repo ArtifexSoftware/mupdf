@@ -305,7 +305,7 @@ static void get_font_info(pdf_document *doc, pdf_obj *dr, char *da, font_info *f
 
 	parse_da(ctx, da, &font_rec->da_rec);
 	if (font_rec->da_rec.font_name == NULL)
-		fz_throw(ctx, "No font name in default appearance");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "No font name in default appearance");
 	font_rec->font = pdf_load_font(doc, dr, pdf_dict_gets(pdf_dict_gets(dr, "Font"), font_rec->da_rec.font_name), 0);
 }
 
@@ -2602,7 +2602,7 @@ void pdf_field_set_text_color(pdf_document *doc, pdf_obj *field, pdf_obj *col)
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "%s", ctx->error->message);
+		fz_warn(ctx, "%s", fz_caught_message(ctx));
 	}
 }
 

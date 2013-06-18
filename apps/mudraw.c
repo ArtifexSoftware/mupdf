@@ -271,7 +271,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot load page %d in file '%s'", pagenum, filename);
+		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
 	}
 
 	if (mujstest_file)
@@ -396,7 +396,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			fz_drop_display_list(ctx, list);
 			fz_free_page(doc, page);
-			fz_throw(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
+			fz_rethrow_message(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
 	}
 
@@ -485,7 +485,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		sprintf(buf, output, pagenum);
 		file = fopen(buf, "wb");
 		if (file == NULL)
-			fz_throw(ctx, "cannot open file '%s': %s", buf, strerror(errno));
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", buf, strerror(errno));
 		out = fz_new_output_with_file(ctx, file);
 
 		fz_bound_page(doc, page, &bounds);
@@ -983,13 +983,13 @@ int main(int argc, char **argv)
 				}
 				fz_catch(ctx)
 				{
-					fz_throw(ctx, "cannot open document: %s", filename);
+					fz_rethrow_message(ctx, "cannot open document: %s", filename);
 				}
 
 				if (fz_needs_password(doc))
 				{
 					if (!fz_authenticate_password(doc, password))
-						fz_throw(ctx, "cannot authenticate password: %s", filename);
+						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 					if (mujstest_file)
 						fprintf(mujstest_file, "PASSWORD %s\n", password);
 				}

@@ -60,12 +60,12 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	if (!pdf_is_name(obj))
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "unspecified encryption handler");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unspecified encryption handler");
 	}
 	if (strcmp(pdf_to_name(obj), "Standard") != 0)
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "unknown encryption handler: '%s'", pdf_to_name(obj));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption handler: '%s'", pdf_to_name(obj));
 	}
 
 	crypt->v = 0;
@@ -75,7 +75,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	if (crypt->v != 1 && crypt->v != 2 && crypt->v != 4 && crypt->v != 5)
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "unknown encryption version");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption version");
 	}
 
 	/* Standard security handler (PDF 1.7 table 3.19) */
@@ -96,7 +96,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	else
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "encryption dictionary missing version and revision value");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing version and revision value");
 	}
 
 	obj = pdf_dict_gets(dict, "O");
@@ -108,7 +108,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	else
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "encryption dictionary missing owner password");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing owner password");
 	}
 
 	obj = pdf_dict_gets(dict, "U");
@@ -125,7 +125,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 	else
 	{
 		pdf_free_crypt(ctx, crypt);
-		fz_throw(ctx, "encryption dictionary missing user password");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing user password");
 	}
 
 	obj = pdf_dict_gets(dict, "P");
@@ -143,7 +143,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		if (!pdf_is_string(obj) || pdf_to_str_len(obj) != 32)
 		{
 			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "encryption dictionary missing owner encryption key");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing owner encryption key");
 		}
 		memcpy(crypt->oe, pdf_to_str_buf(obj), 32);
 
@@ -151,7 +151,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		if (!pdf_is_string(obj) || pdf_to_str_len(obj) != 32)
 		{
 			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "encryption dictionary missing user encryption key");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing user encryption key");
 		}
 		memcpy(crypt->ue, pdf_to_str_buf(obj), 32);
 	}
@@ -188,12 +188,12 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		if (crypt->length % 8 != 0)
 		{
 			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "invalid encryption key length");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid encryption key length");
 		}
 		if (crypt->length < 0 || crypt->length > 256)
 		{
 			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "invalid encryption key length");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid encryption key length");
 		}
 	}
 
@@ -240,7 +240,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_catch(ctx)
 		{
 			pdf_free_crypt(ctx, crypt);
-			fz_throw(ctx, "cannot parse string crypt filter (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+			fz_rethrow_message(ctx, "cannot parse string crypt filter (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 		}
 
 		/* in crypt revision 4, the crypt filter determines the key length */
@@ -272,7 +272,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 	int is_stdcf = (!is_identity && (strcmp(name, "StdCF") == 0));
 
 	if (!is_identity && !is_stdcf)
-		fz_throw(ctx, "Crypt Filter not Identity or StdCF (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Crypt Filter not Identity or StdCF (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
 
 	cf->method = PDF_CRYPT_NONE;
 	cf->length = crypt->length;
@@ -285,7 +285,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 
 	dict = pdf_dict_gets(crypt->cf, name);
 	if (!pdf_is_dict(dict))
-		fz_throw(ctx, "cannot parse crypt filter (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d %d R)", pdf_to_num(crypt->cf), pdf_to_gen(crypt->cf));
 
 	obj = pdf_dict_gets(dict, "CFM");
 	if (pdf_is_name(obj))
@@ -311,13 +311,13 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 		cf->length = cf->length * 8;
 
 	if ((cf->length % 8) != 0)
-		fz_throw(ctx, "invalid key length: %d", cf->length);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid key length: %d", cf->length);
 
 	if ((crypt->r == 1 || crypt->r == 2 || crypt->r == 4) &&
 		(cf->length < 0 || cf->length > 128))
-		fz_throw(ctx, "invalid key length: %d", cf->length);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid key length: %d", cf->length);
 	if ((crypt->r == 5 || crypt->r == 6) && cf->length != 256)
-		fz_throw(ctx, "invalid key length: %d", cf->length);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid key length: %d", cf->length);
 }
 
 /*
@@ -439,7 +439,7 @@ pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 	/* clear password buffer and use it as iv */
 	memset(buffer + 32, 0, sizeof(buffer) - 32);
 	if (aes_setkey_dec(&aes, buffer, crypt->length))
-		fz_throw(ctx, "AES key init failed (keylen=%d)", crypt->length);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", crypt->length);
 	aes_crypt_cbc(&aes, AES_DECRYPT, 32, buffer + 32, ownerkey ? crypt->oe : crypt->ue, crypt->key);
 }
 
@@ -484,7 +484,7 @@ pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, int pwlen
 
 		/* Step 3: encrypt data using data block as key and iv */
 		if (aes_setkey_enc(&aes, block, 128))
-			fz_throw(ctx, "AES key init failed (keylen=%d)", 128);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", 128);
 		aes_crypt_cbc(&aes, AES_ENCRYPT, data_len * 64, block + 16, data, data);
 
 		/* Step 4: determine SHA-2 hash size for this round */
@@ -535,7 +535,7 @@ pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 
 	memset(iv, 0, sizeof(iv));
 	if (aes_setkey_dec(&aes, hash, 256))
-		fz_throw(ctx, "AES key init failed (keylen=256)");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
 	aes_crypt_cbc(&aes, AES_DECRYPT, 32, iv,
 		ownerkey ? crypt->oe : crypt->ue, crypt->key);
 }
@@ -901,7 +901,7 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, unsigned char
 				fz_aes aes;
 				memcpy(iv, s, 16);
 				if (aes_setkey_dec(&aes, key, keylen * 8))
-					fz_throw(ctx, "AES key init failed (keylen=%d)", keylen * 8);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
 				aes_crypt_cbc(&aes, AES_DECRYPT, n - 16, iv, s + 16, s);
 				/* delete space used for iv and padding bytes at end */
 				if (s[n - 17] < 1 || s[n - 17] > 16)

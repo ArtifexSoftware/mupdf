@@ -401,13 +401,13 @@ dec1d(fz_context *ctx, fz_faxd *fax)
 		code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 	if (code == UNCOMPRESSED)
-		fz_throw(ctx, "uncompressed data in faxd");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "uncompressed data in faxd");
 
 	if (code < 0)
-		fz_throw(ctx, "negative code in 1d faxd");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "negative code in 1d faxd");
 
 	if (fax->a + code > fax->columns)
-		fz_throw(ctx, "overflow in 1d faxd");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "overflow in 1d faxd");
 
 	if (fax->c)
 		setbits(fax->dst, fax->a, fax->a + code);
@@ -440,13 +440,13 @@ dec2d(fz_context *ctx, fz_faxd *fax)
 			code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
 
 		if (code == UNCOMPRESSED)
-			fz_throw(ctx, "uncompressed data in faxd");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "uncompressed data in faxd");
 
 		if (code < 0)
-			fz_throw(ctx, "negative code in 2d faxd");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "negative code in 2d faxd");
 
 		if (fax->a + code > fax->columns)
-			fz_throw(ctx, "overflow in 2d faxd");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "overflow in 2d faxd");
 
 		if (fax->c)
 			setbits(fax->dst, fax->a, fax->a + code);
@@ -539,13 +539,13 @@ dec2d(fz_context *ctx, fz_faxd *fax)
 		break;
 
 	case UNCOMPRESSED:
-		fz_throw(ctx, "uncompressed data in faxd");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "uncompressed data in faxd");
 
 	case ERROR:
-		fz_throw(ctx, "invalid code in 2d faxd");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid code in 2d faxd");
 
 	default:
-		fz_throw(ctx, "invalid code in 2d faxd (%d)", code);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid code in 2d faxd (%d)", code);
 	}
 }
 

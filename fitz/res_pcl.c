@@ -178,7 +178,7 @@ void fz_pcl_preset(fz_context *ctx, fz_pcl_options *opts, const char *preset)
 	else if (!strcmp(preset, "oce9050"))
 		copy_opts(opts, &fz_pcl_options_oce9050);
 	else
-		fz_throw(ctx, "Unknown preset '%s'", preset);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown preset '%s'", preset);
 }
 
 void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, int val)
@@ -203,7 +203,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 			opts->features = (opts->features & ~PCL_ANY_SPACING) | PCL5_SPACING;
 			break;
 		default:
-			fz_throw(ctx, "Unsupported PCL spacing %d (0-3 only)", val);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported PCL spacing %d (0-3 only)", val);
 		}
 	}
 	else if (!strcmp(option, "mode2"))
@@ -213,7 +213,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_MODE_2_COMPRESSION;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for mode2 value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for mode2 value");
 	}
 	else if (!strcmp(option, "mode3"))
 	{
@@ -222,7 +222,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_MODE_3_COMPRESSION;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for mode3 value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for mode3 value");
 	}
 	else if (!strcmp(option, "eog_reset"))
 	{
@@ -231,7 +231,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_END_GRAPHICS_DOES_RESET;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for eog_reset value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for eog_reset value");
 	}
 	else if (!strcmp(option, "has_duplex"))
 	{
@@ -240,7 +240,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_HAS_DUPLEX;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for has_duplex value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for has_duplex value");
 	}
 	else if (!strcmp(option, "has_papersize"))
 	{
@@ -249,7 +249,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_CAN_SET_PAPER_SIZE;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for has_papersize value");
 	}
 	else if (!strcmp(option, "has_copies"))
 	{
@@ -258,7 +258,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= PCL_CAN_PRINT_COPIES;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for has_papersize value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for has_papersize value");
 	}
 	else if (!strcmp(option, "is_ljet4pjl"))
 	{
@@ -267,7 +267,7 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= HACK__IS_A_LJET4PJL;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for is_ljet4pjl value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for is_ljet4pjl value");
 	}
 	else if (!strcmp(option, "is_oce9050"))
 	{
@@ -276,10 +276,10 @@ void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, in
 		else if (val == 1)
 			opts->features |= HACK__IS_A_OCE9050;
 		else
-			fz_throw(ctx, "Expected 0 or 1 for is_oce9050 value");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Expected 0 or 1 for is_oce9050 value");
 	}
 	else
-		fz_throw(ctx, "Unknown pcl option '%s'", option);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown pcl option '%s'", option);
 }
 
 static void
@@ -409,7 +409,7 @@ fz_output_pcl(fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
 	ctx = out->ctx;
 
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		fz_throw(ctx, "pixmap must be grayscale or rgb to write as pcl");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pcl");
 
 	pcl_header(out, pcl, 1, pixmap->xres);
 
@@ -804,7 +804,7 @@ fz_write_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_
 	fp = fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	fz_var(out);
@@ -834,7 +834,7 @@ fz_write_pcl_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int appe
 	fp = fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 	}
 
 	fz_var(out);

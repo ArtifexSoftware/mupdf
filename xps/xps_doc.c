@@ -400,7 +400,7 @@ xps_read_page_list(xps_document *doc)
 	xps_read_and_process_metadata_part(doc, "/_rels/.rels", NULL);
 
 	if (!doc->start_part)
-		fz_throw(doc->ctx, "cannot find fixed document sequence start part");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find fixed document sequence start part");
 
 	xps_read_and_process_metadata_part(doc, doc->start_part, NULL);
 
@@ -414,6 +414,7 @@ xps_read_page_list(xps_document *doc)
 		}
 		fz_catch(doc->ctx)
 		{
+			/* FIXME: TryLater ? */
 			fz_warn(doc->ctx, "cannot process FixedDocument rels part");
 		}
 		xps_read_and_process_metadata_part(doc, fixdoc->name, fixdoc);
@@ -446,10 +447,11 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater ? */
 		root = NULL;
 	}
 	if (!root)
-		fz_throw(doc->ctx, "FixedPage missing root element");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing root element");
 
 	if (!strcmp(fz_xml_tag(root), "mc:AlternateContent"))
 	{
@@ -457,7 +459,7 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 		if (!node)
 		{
 			fz_free_xml(doc->ctx, root);
-			fz_throw(doc->ctx, "FixedPage missing alternate root element");
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing alternate root element");
 		}
 		fz_detach_xml(node);
 		fz_free_xml(doc->ctx, root);
@@ -467,21 +469,21 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	if (strcmp(fz_xml_tag(root), "FixedPage"))
 	{
 		fz_free_xml(doc->ctx, root);
-		fz_throw(doc->ctx, "expected FixedPage element");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected FixedPage element");
 	}
 
 	width_att = fz_xml_att(root, "Width");
 	if (!width_att)
 	{
 		fz_free_xml(doc->ctx, root);
-		fz_throw(doc->ctx, "FixedPage missing required attribute: Width");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Width");
 	}
 
 	height_att = fz_xml_att(root, "Height");
 	if (!height_att)
 	{
 		fz_free_xml(doc->ctx, root);
-		fz_throw(doc->ctx, "FixedPage missing required attribute: Height");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Height");
 	}
 
 	page->width = atoi(width_att);
@@ -507,7 +509,7 @@ xps_load_page(xps_document *doc, int number)
 		n ++;
 	}
 
-	fz_throw(doc->ctx, "cannot find page %d", number + 1);
+	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find page %d", number + 1);
 	return NULL;
 }
 

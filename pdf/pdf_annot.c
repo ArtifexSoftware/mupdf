@@ -327,6 +327,7 @@ pdf_load_link_annots(pdf_document *xref, pdf_obj *annots, const fz_matrix *page_
 		}
 		fz_catch(xref->ctx)
 		{
+			/* FIXME: TryLater */
 			link = NULL;
 		}
 
@@ -502,6 +503,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater */
 			ap = NULL;
 			is_dict = 0;
 		}
@@ -564,6 +566,7 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 		{
 			pdf_free_annot(ctx, annot);
 			fz_warn(ctx, "ignoring broken annotation");
+			/* FIXME: TryLater */
 		}
 	}
 
@@ -618,6 +621,7 @@ pdf_update_annot(pdf_document *xref, pdf_annot *annot)
 			fz_catch(ctx)
 			{
 				fz_warn(ctx, "ignoring broken annotation");
+				/* FIXME: TryLater */
 			}
 		}
 	}

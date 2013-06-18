@@ -1231,7 +1231,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
-		fz_throw(ctx, "failed to create indexed colorspace");
+		fz_rethrow_message(ctx, "failed to create indexed colorspace");
 	}
 	return cs;
 }

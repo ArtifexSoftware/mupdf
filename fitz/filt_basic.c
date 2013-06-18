@@ -134,19 +134,12 @@ fz_open_concat(fz_context *ctx, int len, int pad)
 {
 	struct concat_filter *state;
 
-	fz_try(ctx)
-	{
-		state = fz_calloc(ctx, 1, sizeof(struct concat_filter) + (len-1)*sizeof(fz_stream *));
-		state->max = len;
-		state->count = 0;
-		state->current = 0;
-		state->pad = pad;
-		state->ws = 0; /* We never send padding byte at the start */
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	state = fz_calloc(ctx, 1, sizeof(struct concat_filter) + (len-1)*sizeof(fz_stream *));
+	state->max = len;
+	state->count = 0;
+	state->current = 0;
+	state->pad = pad;
+	state->ws = 0; /* We never send padding byte at the start */
 
 	return fz_new_stream(ctx, state, read_concat, close_concat);
 }
@@ -157,7 +150,7 @@ fz_concat_push(fz_stream *concat, fz_stream *chain)
 	struct concat_filter *state = (struct concat_filter *)concat->state;
 
 	if (state->count == state->max)
-		fz_throw(concat->ctx, "Concat filter size exceeded");
+		fz_throw(concat->ctx, FZ_ERROR_GENERIC, "Concat filter size exceeded");
 
 	state->chain[state->count++] = chain;
 }
@@ -238,7 +231,7 @@ read_ahxd(fz_stream *stm, unsigned char *buf, int len)
 		}
 		else if (!iswhite(c))
 		{
-			fz_throw(stm->ctx, "bad data in ahxd: '%c'", c);
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "bad data in ahxd: '%c'", c);
 		}
 	}
 
@@ -384,7 +377,7 @@ read_a85d(fz_stream *stm, unsigned char *buf, int len)
 
 		else if (!iswhite(c))
 		{
-			fz_throw(stm->ctx, "bad data in a85d: '%c'", c);
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "bad data in a85d: '%c'", c);
 		}
 
 		while (state->rp < state->wp && p < ep)
@@ -461,7 +454,7 @@ read_rld(fz_stream *stm, unsigned char *buf, int len)
 				state->n = 257 - state->run;
 				state->c = fz_read_byte(state->chain);
 				if (state->c < 0)
-					fz_throw(stm->ctx, "premature end of data in run length decode");
+					fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
 			}
 		}
 
@@ -471,7 +464,7 @@ read_rld(fz_stream *stm, unsigned char *buf, int len)
 			{
 				int c = fz_read_byte(state->chain);
 				if (c < 0)
-					fz_throw(stm->ctx, "premature end of data in run length decode");
+					fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
 				*p++ = c;
 				state->n--;
 			}
@@ -598,7 +591,7 @@ read_aesd(fz_stream *stm, unsigned char *buf, int len)
 	{
 		int c = fz_read_byte(state->chain);
 		if (c < 0)
-			fz_throw(stm->ctx, "premature end in aes filter");
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end in aes filter");
 		state->iv[state->ivcount++] = c;
 	}
 
@@ -611,7 +604,7 @@ read_aesd(fz_stream *stm, unsigned char *buf, int len)
 		if (n == 0)
 			return p - buf;
 		else if (n < 16)
-			fz_throw(stm->ctx, "partial block in aes filter");
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "partial block in aes filter");
 
 		aes_crypt_cbc(&state->aes, AES_DECRYPT, 16, state->iv, state->bp, state->bp);
 		state->rp = state->bp;
@@ -622,7 +615,7 @@ read_aesd(fz_stream *stm, unsigned char *buf, int len)
 		{
 			int pad = state->bp[15];
 			if (pad < 1 || pad > 16)
-				fz_throw(stm->ctx, "aes padding out of range: %d", pad);
+				fz_throw(stm->ctx, FZ_ERROR_GENERIC, "aes padding out of range: %d", pad);
 			state->wp -= pad;
 		}
 
@@ -654,7 +647,7 @@ fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 		state = fz_malloc_struct(ctx, fz_aesd);
 		state->chain = chain;
 		if (aes_setkey_dec(&state->aes, key, keylen * 8))
-			fz_throw(ctx, "AES key init failed (keylen=%d)", keylen * 8);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
 		state->ivcount = 0;
 		state->rp = state->bp;
 		state->wp = state->bp;

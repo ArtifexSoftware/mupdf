@@ -87,7 +87,7 @@ fz_clip_path(fz_device *dev, fz_path *path, const fz_rect *rect, int even_odd, c
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -111,7 +111,7 @@ fz_clip_stroke_path(fz_device *dev, fz_path *path, const fz_rect *rect, fz_strok
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -158,7 +158,7 @@ fz_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate
 		if (accumulate == 2)
 			fz_rethrow(ctx);
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -182,7 +182,7 @@ fz_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, cons
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -203,7 +203,7 @@ fz_pop_clip(fz_device *dev)
 	{
 		dev->error_depth--;
 		if (dev->error_depth == 0)
-			fz_throw(dev->ctx, "%s", dev->errmess);
+			fz_throw(dev->ctx, FZ_ERROR_GENERIC, "%s", dev->errmess);
 		return;
 	}
 	if (dev->pop_clip)
@@ -257,7 +257,7 @@ fz_clip_image_mask(fz_device *dev, fz_image *image, const fz_rect *rect, const f
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -281,7 +281,7 @@ fz_begin_mask(fz_device *dev, const fz_rect *area, int luminosity, fz_colorspace
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -317,7 +317,7 @@ fz_begin_group(fz_device *dev, const fz_rect *area, int isolated, int knockout, 
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 }
@@ -329,7 +329,7 @@ fz_end_group(fz_device *dev)
 	{
 		dev->error_depth--;
 		if (dev->error_depth == 0)
-			fz_throw(dev->ctx, "%s", dev->errmess);
+			fz_throw(dev->ctx, FZ_ERROR_GENERIC, "%s", dev->errmess);
 		return;
 	}
 	if (dev->end_group)
@@ -367,7 +367,7 @@ fz_begin_tile_id(fz_device *dev, const fz_rect *area, const fz_rect *view, float
 	fz_catch(ctx)
 	{
 		dev->error_depth = 1;
-		strcpy(dev->errmess, fz_caught(ctx));
+		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */
 	}
 	return ret;
@@ -380,7 +380,7 @@ fz_end_tile(fz_device *dev)
 	{
 		dev->error_depth--;
 		if (dev->error_depth == 0)
-			fz_throw(dev->ctx, "%s", dev->errmess);
+			fz_throw(dev->ctx, FZ_ERROR_GENERIC, "%s", dev->errmess);
 		return;
 	}
 	if (dev->end_tile)

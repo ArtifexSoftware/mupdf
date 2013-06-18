@@ -177,7 +177,7 @@ fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 		}
 	}
 	if (newents == NULL)
-		fz_throw(ctx, "hash table resize failed; out of memory (%d entries)", newsize);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "hash table resize failed; out of memory (%d entries)", newsize);
 	table->ents = newents;
 	memset(table->ents, 0, sizeof(fz_hash_entry) * newsize);
 	table->size = newsize;

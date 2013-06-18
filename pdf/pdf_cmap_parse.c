@@ -67,7 +67,7 @@ pdf_parse_codespace_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_
 		else break;
 	}
 
-	fz_throw(ctx, "expected string or endcodespacerange");
+	fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or endcodespacerange");
 }
 
 static void
@@ -84,19 +84,19 @@ pdf_parse_cid_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf
 			return;
 
 		else if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string or endcidrange");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or endcidrange");
 
 		lo = pdf_code_from_string(buf->scratch, buf->len);
 
 		tok = pdf_lex(file, buf);
 		if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
 
 		hi = pdf_code_from_string(buf->scratch, buf->len);
 
 		tok = pdf_lex(file, buf);
 		if (tok != PDF_TOK_INT)
-			fz_throw(ctx, "expected integer");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected integer");
 
 		dst = buf->i;
 
@@ -118,13 +118,13 @@ pdf_parse_cid_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 			return;
 
 		else if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string or endcidchar");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or endcidchar");
 
 		src = pdf_code_from_string(buf->scratch, buf->len);
 
 		tok = pdf_lex(file, buf);
 		if (tok != PDF_TOK_INT)
-			fz_throw(ctx, "expected integer");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected integer");
 
 		dst = buf->i;
 
@@ -148,7 +148,7 @@ pdf_parse_bf_range_array(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_l
 
 		/* Note: does not handle [ /Name /Name ... ] */
 		else if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string or ]");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or ]");
 
 		if (buf->len / 2)
 		{
@@ -177,13 +177,13 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 			return;
 
 		else if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string or endbfrange");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or endbfrange");
 
 		lo = pdf_code_from_string(buf->scratch, buf->len);
 
 		tok = pdf_lex(file, buf);
 		if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
 
 		hi = pdf_code_from_string(buf->scratch, buf->len);
 		if (lo < 0 || lo > 65535 || hi < 0 || hi > 65535 || lo > hi)
@@ -229,7 +229,7 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 		else
 		{
-			fz_throw(ctx, "expected string or array or endbfrange");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or array or endbfrange");
 		}
 	}
 }
@@ -250,14 +250,14 @@ pdf_parse_bf_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf *
 			return;
 
 		else if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string or endbfchar");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string or endbfchar");
 
 		src = pdf_code_from_string(buf->scratch, buf->len);
 
 		tok = pdf_lex(file, buf);
 		/* Note: does not handle /dstName */
 		if (tok != PDF_TOK_STRING)
-			fz_throw(ctx, "expected string");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
 
 		if (buf->len / 2)
 		{
@@ -337,7 +337,7 @@ pdf_load_cmap(fz_context *ctx, fz_stream *file)
 	fz_catch(ctx)
 	{
 		pdf_drop_cmap(ctx, cmap);
-		fz_throw(ctx, "syntaxerror in cmap");
+		fz_rethrow_message(ctx, "syntaxerror in cmap");
 	}
 
 	return cmap;

@@ -443,7 +443,7 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n)
 	{
 		error = xml_parse_document_imp(&parser, p);
 		if (error)
-			fz_throw(ctx, "%s", error);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "%s", error);
 	}
 	fz_always(ctx)
 	{

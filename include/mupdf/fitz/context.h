@@ -34,6 +34,7 @@ struct fz_error_context_s
 		int code;
 		fz_jmp_buf buffer;
 	} stack[256];
+	int errcode;
 	char message[256];
 };
 
@@ -64,10 +65,19 @@ void fz_var_imp(void *);
 	if (ctx->error->stack[ctx->error->top--].code > 1)
 
 int fz_push_try(fz_error_context *ex);
-void fz_throw(fz_context *, const char *, ...) __printflike(2, 3) FZ_NORETURN;
+void fz_throw(fz_context *, int errcode, const char *, ...) __printflike(3, 4) FZ_NORETURN;
 void fz_rethrow(fz_context *) FZ_NORETURN;
+void fz_rethrow_message(fz_context *, const char *, ...)  __printflike(2, 3) FZ_NORETURN;
 void fz_warn(fz_context *ctx, const char *fmt, ...) __printflike(2, 3);
-const char *fz_caught(fz_context *ctx);
+const char *fz_caught_message(fz_context *ctx);
+int fz_caught(fz_context *ctx);
+
+enum
+{
+	FZ_ERROR_NONE = 0,
+	FZ_ERROR_GENERIC = 1,
+	FZ_ERROR_COUNT
+};
 
 /*
 	fz_flush_warnings: Flush any repeated warnings.

@@ -161,9 +161,9 @@ pdf_load_page_tree(pdf_document *xref)
 	count = pdf_dict_gets(pages, "Count");
 
 	if (!pdf_is_dict(pages))
-		fz_throw(ctx, "missing page tree");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "missing page tree");
 	if (!pdf_is_int(count) || pdf_to_int(count) < 0)
-		fz_throw(ctx, "missing page count");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "missing page count");
 
 	xref->page_cap = pdf_to_int(count);
 	xref->page_len = 0;
@@ -343,7 +343,7 @@ pdf_load_page(pdf_document *xref, int number)
 
 	pdf_load_page_tree(xref);
 	if (number < 0 || number >= xref->page_len)
-		fz_throw(ctx, "cannot find page %d", number + 1);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d", number + 1);
 
 	pageobj = xref->page_objs[number];
 	pageref = xref->page_refs[number];
@@ -440,7 +440,7 @@ pdf_load_page(pdf_document *xref, int number)
 	fz_catch(ctx)
 	{
 		pdf_free_page(xref, page);
-		fz_throw(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
+		fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
 	}
 
 	return page;

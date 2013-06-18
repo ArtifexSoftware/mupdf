@@ -279,13 +279,13 @@ fz_expand_tiff_colormap(struct tiff *tiff)
 	/* image can be with or without extrasamples: comps is 1 or 2 */
 
 	if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 2)
-		fz_throw(tiff->ctx, "invalid number of samples for RGBPal");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "invalid number of samples for RGBPal");
 
 	if (tiff->bitspersample != 4 && tiff->bitspersample != 8)
-		fz_throw(tiff->ctx, "invalid number of bits for RGBPal");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "invalid number of bits for RGBPal");
 
 	if (tiff->colormaplen < (unsigned)maxval * 3)
-		fz_throw(tiff->ctx, "insufficient colormap data");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "insufficient colormap data");
 
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
@@ -344,14 +344,14 @@ fz_decode_tiff_strips(struct tiff *tiff)
 	unsigned i;
 
 	if (!tiff->rowsperstrip || !tiff->stripoffsets || !tiff->stripbytecounts)
-		fz_throw(tiff->ctx, "no image data in tiff; maybe it is tiled");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "no image data in tiff; maybe it is tiled");
 
 	if (tiff->stripoffsetslen < (tiff->imagelength - 1) / tiff->rowsperstrip + 1 ||
 		tiff->stripbytecountslen < (tiff->imagelength - 1) / tiff->rowsperstrip + 1)
-		fz_throw(tiff->ctx, "insufficient strip offset data");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "insufficient strip offset data");
 
 	if (tiff->planar != 1)
-		fz_throw(tiff->ctx, "image data is not in chunky format");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
@@ -377,7 +377,7 @@ fz_decode_tiff_strips(struct tiff *tiff)
 		tiff->colorspace = fz_device_rgb(tiff->ctx);
 		break;
 	default:
-		fz_throw(tiff->ctx, "unknown photometric: %d", tiff->photometric);
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
 	}
 
 	switch (tiff->resolutionunit)
@@ -418,7 +418,7 @@ fz_decode_tiff_strips(struct tiff *tiff)
 			wlen = tiff->samples + (unsigned int)(tiff->stride * tiff->imagelength) - wp;
 
 		if (rp + rlen > tiff->ep)
-			fz_throw(tiff->ctx, "strip extends beyond the end of the file");
+			fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "strip extends beyond the end of the file");
 
 		/* the bits are in un-natural order */
 		if (tiff->fillorder == 2)
@@ -446,7 +446,7 @@ fz_decode_tiff_strips(struct tiff *tiff)
 			fz_decode_tiff_lzw(tiff, stm, wp, wlen);
 			break;
 		case 6:
-			fz_throw(tiff->ctx, "deprecated JPEG in TIFF compression not supported");
+			fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "deprecated JPEG in TIFF compression not supported");
 			break;
 		case 7:
 			fz_decode_tiff_jpeg(tiff, stm, wp, wlen);
@@ -458,7 +458,7 @@ fz_decode_tiff_strips(struct tiff *tiff)
 			fz_decode_tiff_packbits(tiff, stm, wp, wlen);
 			break;
 		default:
-			fz_throw(tiff->ctx, "unknown TIFF compression: %d", tiff->compression);
+			fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
 		}
 
 		/* scramble the bits back into original order */
@@ -687,7 +687,7 @@ fz_read_tiff_tag(struct tiff *tiff, unsigned offset)
 	case TileLength:
 	case TileOffsets:
 	case TileByteCounts:
-		fz_throw(tiff->ctx, "tiled tiffs not supported");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "tiled tiffs not supported");
 
 	default:
 		/* printf("unknown tag: %d t=%d n=%d\n", tag, type, count); */
@@ -742,12 +742,12 @@ fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, in
 	tiff->order = TII;
 	tiff->order = readshort(tiff);
 	if (tiff->order != TII && tiff->order != TMM)
-		fz_throw(tiff->ctx, "not a TIFF file, wrong magic marker");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "not a TIFF file, wrong magic marker");
 
 	/* check version */
 	version = readshort(tiff);
 	if (version != 42)
-		fz_throw(tiff->ctx, "not a TIFF file, wrong version marker");
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "not a TIFF file, wrong version marker");
 
 	/* get offset of IFD */
 	offset = readlong(tiff);
@@ -759,12 +759,12 @@ fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, in
 	tiff->rp = tiff->bp + offset;
 
 	if (tiff->rp < tiff->bp || tiff->rp > tiff->ep)
-		fz_throw(tiff->ctx, "invalid IFD offset %u", offset);
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "invalid IFD offset %u", offset);
 
 	count = readshort(tiff);
 
 	if (count * 12 > (unsigned)(tiff->ep - tiff->rp))
-		fz_throw(tiff->ctx, "overlarge IFD entry count %u", count);
+		fz_throw(tiff->ctx, FZ_ERROR_GENERIC, "overlarge IFD entry count %u", count);
 
 	offset += 2;
 	for (i = 0; i < count; i++)
@@ -830,7 +830,7 @@ fz_load_tiff(fz_context *ctx, unsigned char *buf, int len)
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "out of memory");
+		fz_rethrow_message(ctx, "out of memory loading tiff");
 	}
 
 	return image;
@@ -862,6 +862,6 @@ fz_load_tiff_info(fz_context *ctx, unsigned char *buf, int len, int *wp, int *hp
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "out of memory");
+		fz_rethrow_message(ctx, "out of memory loading tiff");
 	}
 }

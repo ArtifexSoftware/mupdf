@@ -576,7 +576,7 @@ gatherresourceinfo(int page, pdf_obj *rsrc, int show)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		fz_throw(ctx, "cannot retrieve info from page %d", page);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot retrieve info from page %d", page);
 
 	font = pdf_dict_gets(rsrc, "Font");
 	if (show & FONTS && font)
@@ -644,7 +644,7 @@ gatherpageinfo(int page, int show)
 	pageref = xref->page_refs[page-1];
 
 	if (!pageobj)
-		fz_throw(ctx, "cannot retrieve info from page %d", page);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot retrieve info from page %d", page);
 
 	gatherdimensions(page, pageref, pageobj);
 
@@ -1008,7 +1008,7 @@ int pdfinfo_main(int argc, char **argv)
 			xref = pdf_open_document_no_run(ctx, filename);
 			if (pdf_needs_password(xref))
 				if (!pdf_authenticate_password(xref, password))
-					fz_throw(ctx, "cannot authenticate password: %s", filename);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 			pagecount = pdf_count_pages(xref);
 
 			showglobalinfo();

@@ -31,7 +31,7 @@ pdf_load_embedded_cmap(pdf_document *xref, pdf_obj *stmobj)
 	fz_var(cmap);
 
 	if (pdf_obj_marked(stmobj))
-		fz_throw(ctx, "Recursion in embedded cmap");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in embedded cmap");
 
 	if ((cmap = pdf_find_item(ctx, pdf_free_cmap_imp, stmobj)))
 	{
@@ -77,16 +77,16 @@ pdf_load_embedded_cmap(pdf_document *xref, pdf_obj *stmobj)
 		if (cmap)
 			pdf_drop_cmap(ctx, cmap);
 		if (phase < 1)
-			fz_throw(ctx, "cannot open cmap stream (%d %d R)", pdf_to_num(stmobj), pdf_to_gen(stmobj));
+			fz_rethrow_message(ctx, "cannot open cmap stream (%d %d R)", pdf_to_num(stmobj), pdf_to_gen(stmobj));
 		else if (phase < 2)
-			fz_throw(ctx, "cannot parse cmap stream (%d %d R)", pdf_to_num(stmobj), pdf_to_gen(stmobj));
+			fz_rethrow_message(ctx, "cannot parse cmap stream (%d %d R)", pdf_to_num(stmobj), pdf_to_gen(stmobj));
 		else if (phase < 3)
-			fz_throw(ctx, "cannot load system usecmap '%s'", pdf_to_name(obj));
+			fz_rethrow_message(ctx, "cannot load system usecmap '%s'", pdf_to_name(obj));
 		else
 		{
 			if (phase == 3)
 				pdf_obj_unmark(obj);
-			fz_throw(ctx, "cannot load embedded usecmap (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+			fz_rethrow_message(ctx, "cannot load embedded usecmap (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 		}
 	}
 
@@ -127,13 +127,13 @@ pdf_load_system_cmap(fz_context *ctx, char *cmap_name)
 
 	cmap = pdf_load_builtin_cmap(ctx, cmap_name);
 	if (!cmap)
-		fz_throw(ctx, "no builtin cmap file: %s", cmap_name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no builtin cmap file: %s", cmap_name);
 
 	if (cmap->usecmap_name[0] && !cmap->usecmap)
 	{
 		usecmap = pdf_load_builtin_cmap(ctx, cmap->usecmap_name);
 		if (!usecmap)
-			fz_throw(ctx, "nu builtin cmap file: %s", cmap->usecmap_name);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "nu builtin cmap file: %s", cmap->usecmap_name);
 		pdf_set_usecmap(ctx, cmap, usecmap);
 	}
 

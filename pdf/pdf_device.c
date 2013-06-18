@@ -813,6 +813,7 @@ pdf_dev_new_form(pdf_obj **form_ref, pdf_device *pdev, const fz_rect *bbox, int 
 	}
 	fz_catch(ctx)
 	{
+		pdf_drop_obj(form);
 		fz_rethrow(ctx);
 	}
 

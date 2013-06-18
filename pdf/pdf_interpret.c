@@ -372,6 +372,7 @@ begin_softmask(pdf_csi * csi, softmask_save *save)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater */
 		/* FIXME: Ignore error - nasty, but if we throw from
 		 * here the clip stack would be messed up. */
 		if (csi->cookie)
@@ -1187,6 +1188,7 @@ pdf_grestore(pdf_csi *csi)
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater */
 			/* Silently swallow the problem */
 		}
 		clip_depth--;
@@ -1472,7 +1474,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_pattern *pat, pdf_gstate *pat_gstate, const f
 					}
 					fz_catch(ctx)
 					{
-						fz_throw(ctx, "cannot render pattern tile");
+						fz_rethrow_message(ctx, "cannot render pattern tile");
 					}
 				}
 			}
@@ -1619,11 +1621,11 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 
 				gstate->font = pdf_load_font(csi->xref, rdb, font, csi->nested_depth);
 				if (!gstate->font)
-					fz_throw(ctx, "cannot find font in store");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font in store");
 				gstate->size = pdf_to_real(pdf_array_get(val, 1));
 			}
 			else
-				fz_throw(ctx, "malformed /Font dictionary");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed /Font dictionary");
 		}
 
 		else if (!strcmp(s, "LC"))
@@ -1666,7 +1668,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 				gstate->stroke_state->dash_phase = pdf_to_real(pdf_array_get(val, 1));
 			}
 			else
-				fz_throw(ctx, "malformed /D");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed /D");
 		}
 
 		else if (!strcmp(s, "CA"))
@@ -1697,7 +1699,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_obj *rdb, pdf_obj *extgstate)
 
 				group = pdf_dict_gets(val, "G");
 				if (!group)
-					fz_throw(ctx, "cannot load softmask xobject (%d %d R)", pdf_to_num(val), pdf_to_gen(val));
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d %d R)", pdf_to_num(val), pdf_to_gen(val));
 				xobj = pdf_load_xobject(csi->xref, group);
 
 				colorspace = xobj->colorspace;
@@ -1825,7 +1827,7 @@ static void pdf_run_BI(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 		ch = fz_read_byte(file);
 	ch = fz_read_byte(file);
 	if (ch != 'I')
-		fz_throw(ctx, "syntax error after inline image");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error after inline image");
 }
 
 static void pdf_run_B(pdf_csi *csi)
@@ -1883,10 +1885,10 @@ static void pdf_run_cs_imp(pdf_csi *csi, pdf_obj *rdb, int what)
 		{
 			dict = pdf_dict_gets(rdb, "ColorSpace");
 			if (!dict)
-				fz_throw(ctx, "cannot find ColorSpace dictionary");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ColorSpace dictionary");
 			obj = pdf_dict_gets(dict, csi->name);
 			if (!obj)
-				fz_throw(ctx, "cannot find colorspace resource '%s'", csi->name);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find colorspace resource '%s'", csi->name);
 			colorspace = pdf_load_colorspace(csi->xref, obj);
 		}
 
@@ -1923,15 +1925,15 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 
 	dict = pdf_dict_gets(rdb, "XObject");
 	if (!dict)
-		fz_throw(ctx, "cannot find XObject dictionary when looking for: '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject dictionary when looking for: '%s'", csi->name);
 
 	obj = pdf_dict_gets(dict, csi->name);
 	if (!obj)
-		fz_throw(ctx, "cannot find xobject resource: '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find xobject resource: '%s'", csi->name);
 
 	subtype = pdf_dict_gets(obj, "Subtype");
 	if (!pdf_is_name(subtype))
-		fz_throw(ctx, "no XObject subtype specified");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no XObject subtype specified");
 
 	if (pdf_is_hidden_ocg(pdf_dict_gets(obj, "OC"), csi, rdb))
 		return;
@@ -1959,7 +1961,7 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "cannot draw xobject (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+			fz_rethrow_message(ctx, "cannot draw xobject (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 		}
 	}
 
@@ -1991,7 +1993,7 @@ static void pdf_run_Do(pdf_csi *csi, pdf_obj *rdb)
 
 	else
 	{
-		fz_throw(ctx, "unknown XObject subtype: '%s'", pdf_to_name(subtype));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown XObject subtype: '%s'", pdf_to_name(subtype));
 	}
 }
 
@@ -2086,7 +2088,7 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_obj *rdb, int what, pdf_material *m
 	switch (kind)
 	{
 	case PDF_MAT_NONE:
-		fz_throw(ctx, "cannot set color in mask objects");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set color in mask objects");
 
 	case PDF_MAT_COLOR:
 		pdf_set_color(csi, what, csi->stack);
@@ -2095,11 +2097,11 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_obj *rdb, int what, pdf_material *m
 	case PDF_MAT_PATTERN:
 		dict = pdf_dict_gets(rdb, "Pattern");
 		if (!dict)
-			fz_throw(ctx, "cannot find Pattern dictionary");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern dictionary");
 
 		obj = pdf_dict_gets(dict, csi->name);
 		if (!obj)
-			fz_throw(ctx, "cannot find pattern resource '%s'", csi->name);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find pattern resource '%s'", csi->name);
 
 		patterntype = pdf_dict_gets(obj, "PatternType");
 
@@ -2119,12 +2121,12 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_obj *rdb, int what, pdf_material *m
 		}
 		else
 		{
-			fz_throw(ctx, "unknown pattern type: %d", pdf_to_int(patterntype));
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown pattern type: %d", pdf_to_int(patterntype));
 		}
 		break;
 
 	case PDF_MAT_SHADE:
-		fz_throw(ctx, "cannot set color in shade objects");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set color in shade objects");
 	}
 	mat->gstate_num = csi->gparent;
 }
@@ -2183,11 +2185,11 @@ static void pdf_run_Tf(pdf_csi *csi, pdf_obj *rdb)
 
 	dict = pdf_dict_gets(rdb, "Font");
 	if (!dict)
-		fz_throw(ctx, "cannot find Font dictionary");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font dictionary");
 
 	obj = pdf_dict_gets(dict, csi->name);
 	if (!obj)
-		fz_throw(ctx, "cannot find font resource: '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font resource: '%s'", csi->name);
 
 	gstate->font = pdf_load_font(csi->xref, rdb, obj, csi->nested_depth);
 }
@@ -2365,11 +2367,11 @@ static void pdf_run_gs(pdf_csi *csi, pdf_obj *rdb)
 
 	dict = pdf_dict_gets(rdb, "ExtGState");
 	if (!dict)
-		fz_throw(ctx, "cannot find ExtGState dictionary");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ExtGState dictionary");
 
 	obj = pdf_dict_gets(dict, csi->name);
 	if (!obj)
-		fz_throw(ctx, "cannot find extgstate resource '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find extgstate resource '%s'", csi->name);
 
 	pdf_run_extgstate(csi, rdb, obj);
 }
@@ -2466,11 +2468,11 @@ static void pdf_run_sh(pdf_csi *csi, pdf_obj *rdb)
 
 	dict = pdf_dict_gets(rdb, "Shading");
 	if (!dict)
-		fz_throw(ctx, "cannot find shading dictionary");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find shading dictionary");
 
 	obj = pdf_dict_gets(dict, csi->name);
 	if (!obj)
-		fz_throw(ctx, "cannot find shading resource: '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find shading resource: '%s'", csi->name);
 
 	if ((csi->dev->hints & FZ_IGNORE_SHADE) == 0)
 	{
@@ -2593,7 +2595,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "cannot draw xobject/image");
+			fz_rethrow_message(ctx, "cannot draw xobject/image");
 		}
 		break;
 	case C('E','M','C'): pdf_run_EMC(csi); break;
@@ -2623,7 +2625,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "cannot set font");
+			fz_rethrow_message(ctx, "cannot set font");
 		}
 		break;
 	case B('T','j'): pdf_run_Tj(csi); break;
@@ -2652,7 +2654,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "cannot set graphics state");
+			fz_rethrow_message(ctx, "cannot set graphics state");
 		}
 		break;
 	case A('h'): pdf_run_h(csi); break;
@@ -2676,7 +2678,7 @@ pdf_run_keyword(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, char *buf)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "cannot draw shading");
+			fz_rethrow_message(ctx, "cannot draw shading");
 		}
 		break;
 	case A('v'): pdf_run_v(csi); break;
@@ -2758,12 +2760,12 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
 							fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
 						else
-							fz_throw(ctx, "syntax error in array");
+							fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in array");
 					}
 					else if (tok == PDF_TOK_EOF)
 						break;
 					else
-						fz_throw(ctx, "syntax error in array");
+						fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in array");
 				}
 
 				else switch (tok)
@@ -2808,7 +2810,7 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 						csi->top ++;
 					}
 					else
-						fz_throw(ctx, "stack overflow");
+						fz_throw(ctx, FZ_ERROR_GENERIC, "stack overflow");
 					break;
 
 				case PDF_TOK_REAL:
@@ -2817,7 +2819,7 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 						csi->top ++;
 					}
 					else
-						fz_throw(ctx, "stack overflow");
+						fz_throw(ctx, FZ_ERROR_GENERIC, "stack overflow");
 					break;
 
 				case PDF_TOK_STRING:
@@ -2846,13 +2848,14 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					break;
 
 				default:
-					fz_throw(ctx, "syntax error in content stream");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in content stream");
 				}
 			}
 			while (tok != PDF_TOK_EOF);
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater */
 			/* Swallow the error */
 			if (csi->cookie)
 				csi->cookie->errors++;
@@ -2898,6 +2901,7 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater */
 		fz_warn(ctx, "Content stream parsing error - rendering truncated");
 	}
 	while (csi->gtop > csi->gbot)
@@ -2986,7 +2990,7 @@ static void pdf_run_page_contents_with_usage(pdf_document *xref, pdf_page *page,
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot parse page content stream");
+		fz_rethrow_message(ctx, "cannot parse page content stream");
 	}
 
 	if (page->transparency)
@@ -3034,7 +3038,7 @@ static void pdf_run_annot_with_usage(pdf_document *xref, pdf_page *page, pdf_ann
 			while (csi->gtop > 0)
 				pdf_grestore(csi);
 			pdf_free_csi(csi);
-			fz_throw(ctx, "cannot parse annotation appearance stream");
+			fz_rethrow_message(ctx, "cannot parse annotation appearance stream");
 		}
 	}
 	pdf_free_csi(csi);
@@ -3093,7 +3097,7 @@ pdf_run_glyph(pdf_document *xref, pdf_obj *resources, fz_buffer *contents, fz_de
 	fz_try(ctx)
 	{
 		if (nested_depth > 10)
-			fz_throw(ctx, "Too many nestings of Type3 glyphs");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Too many nestings of Type3 glyphs");
 		pdf_run_contents_buffer(csi, resources, contents);
 	}
 	fz_always(ctx)
@@ -3102,6 +3106,6 @@ pdf_run_glyph(pdf_document *xref, pdf_obj *resources, fz_buffer *contents, fz_de
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot parse glyph content stream");
+		fz_rethrow_message(ctx, "cannot parse glyph content stream");
 	}
 }

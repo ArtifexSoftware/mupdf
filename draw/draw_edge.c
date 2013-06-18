@@ -702,7 +702,7 @@ fz_scan_convert_aa(fz_gel *gel, int eofill, const fz_irect *clip,
 	{
 		fz_free(ctx, alphas);
 		fz_free(ctx, deltas);
-		fz_throw(ctx, "scan conversion failed (malloc failure)");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "scan conversion failed (malloc failure)");
 	}
 	memset(deltas, 0, (xmax - xmin + 1) * sizeof(int));
 	gel->alen = 0;

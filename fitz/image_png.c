@@ -224,7 +224,7 @@ png_read_ihdr(struct info *info, unsigned char *p, unsigned int size)
 	int color, compression, filter;
 
 	if (size != 13)
-		fz_throw(info->ctx, "IHDR chunk is the wrong size");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "IHDR chunk is the wrong size");
 
 	info->width = getuint(p + 0);
 	info->height = getuint(p + 4);
@@ -236,21 +236,21 @@ png_read_ihdr(struct info *info, unsigned char *p, unsigned int size)
 	info->interlace = p[12];
 
 	if (info->width <= 0)
-		fz_throw(info->ctx, "image width must be > 0");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "image width must be > 0");
 	if (info->height <= 0)
-		fz_throw(info->ctx, "image height must be > 0");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 
 	if (info->depth != 1 && info->depth != 2 && info->depth != 4 &&
 			info->depth != 8 && info->depth != 16)
-		fz_throw(info->ctx, "image bit depth must be one of 1, 2, 4, 8, 16");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "image bit depth must be one of 1, 2, 4, 8, 16");
 	if (color == 2 && info->depth < 8)
-		fz_throw(info->ctx, "illegal bit depth for truecolor");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "illegal bit depth for truecolor");
 	if (color == 3 && info->depth > 8)
-		fz_throw(info->ctx, "illegal bit depth for indexed");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "illegal bit depth for indexed");
 	if (color == 4 && info->depth < 8)
-		fz_throw(info->ctx, "illegal bit depth for grayscale with alpha");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "illegal bit depth for grayscale with alpha");
 	if (color == 6 && info->depth < 8)
-		fz_throw(info->ctx, "illegal bit depth for truecolor with alpha");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "illegal bit depth for truecolor with alpha");
 
 	info->indexed = 0;
 	if (color == 0) /* gray */
@@ -267,14 +267,14 @@ png_read_ihdr(struct info *info, unsigned char *p, unsigned int size)
 		info->n = 1;
 	}
 	else
-		fz_throw(info->ctx, "unknown color type");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "unknown color type");
 
 	if (compression != 0)
-		fz_throw(info->ctx, "unknown compression method");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "unknown compression method");
 	if (filter != 0)
-		fz_throw(info->ctx, "unknown filter method");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "unknown filter method");
 	if (info->interlace != 0 && info->interlace != 1)
-		fz_throw(info->ctx, "interlace method not supported");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "interlace method not supported");
 }
 
 static void
@@ -328,7 +328,7 @@ png_read_trns(struct info *info, unsigned char *p, unsigned int size)
 	else
 	{
 		if (size != info->n * 2)
-			fz_throw(info->ctx, "tRNS chunk is the wrong size");
+			fz_throw(info->ctx, FZ_ERROR_GENERIC, "tRNS chunk is the wrong size");
 		for (i = 0; i < info->n; i++)
 			info->trns[i] = (p[i * 2] << 8 | p[i * 2 + 1]) & ((1 << info->depth) - 1);
 	}
@@ -344,12 +344,12 @@ png_read_idat(struct info *info, unsigned char *p, unsigned int size, z_stream *
 
 	code = inflate(stm, Z_SYNC_FLUSH);
 	if (code != Z_OK && code != Z_STREAM_END)
-		fz_throw(info->ctx, "zlib error: %s", stm->msg);
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm->msg);
 	if (stm->avail_in != 0)
 	{
 		if (stm->avail_out == 0)
-			fz_throw(info->ctx, "ran out of output before input");
-		fz_throw(info->ctx, "inflate did not consume buffer (%d remaining)", stm->avail_in);
+			fz_throw(info->ctx, FZ_ERROR_GENERIC, "ran out of output before input");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "inflate did not consume buffer (%d remaining)", stm->avail_in);
 	}
 }
 
@@ -357,7 +357,7 @@ static void
 png_read_phys(struct info *info, unsigned char *p, unsigned int size)
 {
 	if (size != 9)
-		fz_throw(info->ctx, "pHYs chunk is the wrong size");
+		fz_throw(info->ctx, FZ_ERROR_GENERIC, "pHYs chunk is the wrong size");
 	if (p[8] == 1)
 	{
 		info->xres = getuint(p) * 254 / 10000;
@@ -381,7 +381,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 	/* Read signature */
 
 	if (total < 8 + 12 || memcmp(p, png_signature, 8))
-		fz_throw(ctx, "not a png image (wrong signature)");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "not a png image (wrong signature)");
 
 	p += 8;
 	total -= 8;
@@ -390,12 +390,12 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 
 	size = getuint(p);
 	if (total < 12 || size > total - 12)
-		fz_throw(ctx, "premature end of data in png image");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in png image");
 
 	if (!memcmp(p + 4, "IHDR", 4))
 		png_read_ihdr(info, p + 8, size);
 	else
-		fz_throw(ctx, "png file must start with IHDR chunk");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "png file must start with IHDR chunk");
 
 	p += size + 12;
 	total -= size + 12;
@@ -425,7 +425,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 	if (code != Z_OK)
 	{
 		fz_free(ctx, info->samples);
-		fz_throw(ctx, "zlib error: %s", stm.msg);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
 	}
 
 	fz_try(ctx)
@@ -436,7 +436,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 			size = getuint(p);
 
 			if (total < 12 || size > total - 12)
-				fz_throw(ctx, "premature end of data in png image");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in png image");
 
 			if (!memcmp(p + 4, "PLTE", 4))
 				png_read_plte(info, p + 8, size);
@@ -464,7 +464,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 	if (code != Z_OK)
 	{
 		fz_free(ctx, info->samples);
-		fz_throw(ctx, "zlib error: %s", stm.msg);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
 	}
 
 	/* Apply prediction filter and deinterlacing */
@@ -558,7 +558,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 	fz_catch(ctx)
 	{
 		fz_free(png.ctx, png.samples);
-		fz_throw(ctx, "out of memory");
+		fz_rethrow_message(ctx, "out of memory loading png");
 	}
 
 	image->xres = png.xres;

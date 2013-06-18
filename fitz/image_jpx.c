@@ -88,7 +88,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	stream_block sb;
 
 	if (size < 2)
-		fz_throw(ctx, "not enough data to determine image format");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "not enough data to determine image format");
 
 	/* Check for SOC marker -- if found we have a bare J2K stream */
 	if (data[0] == 0xFF && data[1] == 0x4F)
@@ -106,7 +106,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	opj_set_error_handler(codec, fz_opj_error_callback, ctx);
 	if (!opj_setup_decoder(codec, &params))
 	{
-		fz_throw(ctx, "j2k decode failed");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "j2k decode failed");
 	}
 
 	stream = opj_stream_default_create(OPJ_TRUE);
@@ -125,7 +125,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	{
 		opj_stream_destroy(stream);
 		opj_destroy_codec(codec);
-		fz_throw(ctx, "Failed to read JPX header");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read JPX header");
 	}
 
 	if (!opj_decode(codec, stream, jpx))
@@ -133,7 +133,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 		opj_stream_destroy(stream);
 		opj_destroy_codec(codec);
 		opj_image_destroy(jpx);
-		fz_throw(ctx, "Failed to decode JPX image");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to decode JPX image");
 	}
 
 	opj_stream_destroy(stream);
@@ -141,24 +141,24 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 
 	/* jpx should never be NULL here, but check anyway */
 	if (!jpx)
-		fz_throw(ctx, "opj_decode failed");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "opj_decode failed");
 
 	for (k = 1; k < (int)jpx->numcomps; k++)
 	{
 		if (jpx->comps[k].w != jpx->comps[0].w)
 		{
 			opj_image_destroy(jpx);
-			fz_throw(ctx, "image components have different width");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image components have different width");
 		}
 		if (jpx->comps[k].h != jpx->comps[0].h)
 		{
 			opj_image_destroy(jpx);
-			fz_throw(ctx, "image components have different height");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image components have different height");
 		}
 		if (jpx->comps[k].prec != jpx->comps[0].prec)
 		{
 			opj_image_destroy(jpx);
-			fz_throw(ctx, "image components have different precision");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image components have different precision");
 		}
 	}
 
@@ -205,7 +205,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	fz_catch(ctx)
 	{
 		opj_image_destroy(jpx);
-		fz_throw(ctx, "out of memory");
+		fz_rethrow_message(ctx, "out of memory loading jpx");
 	}
 
 	p = img->samples;

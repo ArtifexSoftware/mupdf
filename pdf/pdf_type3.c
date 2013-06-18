@@ -60,7 +60,7 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 		encoding = pdf_dict_gets(dict, "Encoding");
 		if (!encoding)
 		{
-			fz_throw(ctx, "syntaxerror: Type3 font missing Encoding");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Encoding");
 		}
 
 		if (pdf_is_name(encoding))
@@ -108,7 +108,7 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 		widths = pdf_dict_gets(dict, "Widths");
 		if (!widths)
 		{
-			fz_throw(ctx, "syntaxerror: Type3 font missing Widths");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Widths");
 		}
 
 		for (i = first; i <= last; i++)
@@ -140,7 +140,7 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 		charprocs = pdf_dict_gets(dict, "CharProcs");
 		if (!charprocs)
 		{
-			fz_throw(ctx, "syntaxerror: Type3 font missing CharProcs");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing CharProcs");
 		}
 
 		for (i = 0; i < 256; i++)
@@ -161,7 +161,7 @@ pdf_load_type3_font(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict)
 	{
 		if (fontdesc)
 			pdf_drop_font(ctx, fontdesc);
-		fz_throw(ctx, "cannot load type3 font (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
+		fz_rethrow_message(ctx, "cannot load type3 font (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
 	}
 	return fontdesc;
 }
@@ -184,6 +184,7 @@ void pdf_load_type3_glyphs(pdf_document *xref, pdf_font_desc *fontdesc, int nest
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "Type3 glyph load failed: %s", fz_caught(ctx));
+		/* FIXME: TryLater */
+		fz_warn(ctx, "Type3 glyph load failed: %s", fz_caught_message(ctx));
 	}
 }

@@ -329,14 +329,14 @@ pdf_open_raw_renumbered_stream(pdf_document *xref, int num, int gen, int orig_nu
 	pdf_xref_entry *x;
 
 	if (num < 0 || num >= pdf_xref_len(xref))
-		fz_throw(xref->ctx, "object id out of range (%d %d R)", num, gen);
+		fz_throw(xref->ctx, FZ_ERROR_GENERIC, "object id out of range (%d %d R)", num, gen);
 
 	x = pdf_get_xref_entry(xref, num);
 
 	pdf_cache_object(xref, num, gen);
 
 	if (x->stm_ofs == 0)
-		fz_throw(xref->ctx, "object is not a stream");
+		fz_throw(xref->ctx, FZ_ERROR_GENERIC, "object is not a stream");
 
 	return pdf_open_raw_filter(xref->file, xref, x->obj, num, orig_num, orig_gen, x->stm_ofs);
 }
@@ -347,14 +347,14 @@ pdf_open_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 	pdf_xref_entry *x;
 
 	if (num < 0 || num >= pdf_xref_len(xref))
-		fz_throw(xref->ctx, "object id out of range (%d %d R)", num, gen);
+		fz_throw(xref->ctx, FZ_ERROR_GENERIC, "object id out of range (%d %d R)", num, gen);
 
 	x = pdf_get_xref_entry(xref, num);
 
 	pdf_cache_object(xref, num, gen);
 
 	if (x->stm_ofs == 0 && x->stm_buf == NULL)
-		fz_throw(xref->ctx, "object is not a stream");
+		fz_throw(xref->ctx, FZ_ERROR_GENERIC, "object is not a stream");
 
 	return pdf_open_filter(xref->file, xref, x->obj, orig_num, orig_gen, x->stm_ofs, params);
 }
@@ -374,7 +374,7 @@ fz_stream *
 pdf_open_stream_with_offset(pdf_document *xref, int num, int gen, pdf_obj *dict, int stm_ofs)
 {
 	if (stm_ofs == 0)
-		fz_throw(xref->ctx, "object is not a stream");
+		fz_throw(xref->ctx, FZ_ERROR_GENERIC, "object is not a stream");
 
 	return pdf_open_filter(xref->file, xref, dict, num, gen, stm_ofs, NULL);
 }
@@ -477,7 +477,7 @@ pdf_load_image_stream(pdf_document *xref, int num, int gen, int orig_num, int or
 	}
 	fz_catch(ctx)
 	{
-		fz_throw(ctx, "cannot read raw stream (%d %d R)", num, gen);
+		fz_rethrow_message(ctx, "cannot read raw stream (%d %d R)", num, gen);
 	}
 
 	return buf;
@@ -536,6 +536,7 @@ pdf_open_object_array(pdf_document *xref, pdf_obj *list)
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater */
 			fz_warn(ctx, "cannot load content stream part %d/%d", i + 1, n);
 			continue;
 		}

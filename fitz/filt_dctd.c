@@ -53,6 +53,7 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TRYLATER */
 		return 0;
 	}
 	src->next_input_byte = chain->rp;
@@ -96,7 +97,7 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 	{
 		if (cinfo->src)
 			state->chain->rp = state->chain->wp - cinfo->src->bytes_in_buffer;
-		fz_throw(stm->ctx, "jpeg error: %s", state->msg);
+		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "jpeg error: %s", state->msg);
 	}
 
 	if (!state->init)

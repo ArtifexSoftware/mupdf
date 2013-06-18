@@ -50,7 +50,7 @@ read_jbig2d(fz_stream *stm, unsigned char *buf, int len)
 
 		state->page = jbig2_page_out(state->ctx);
 		if (!state->page)
-			fz_throw(stm->ctx, "jbig2_page_out failed");
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "jbig2_page_out failed");
 	}
 
 	s = state->page->data;

@@ -178,7 +178,7 @@ void pdfapp_open(pdfapp_t *app, char *filename, int reload)
 			{
 				password = winpassword(app, filename);
 				if (!password)
-					fz_throw(ctx, "Needs a password");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Needs a password");
 				okay = fz_authenticate_password(app->doc, password);
 				if (!okay)
 					pdfapp_warn(app, "Invalid password.");

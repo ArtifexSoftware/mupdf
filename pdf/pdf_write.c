@@ -531,6 +531,7 @@ static pdf_obj *sweepref(pdf_document *xref, pdf_write_options *opts, pdf_obj *o
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater */
 		/* Leave broken */
 	}
 
@@ -1642,12 +1643,13 @@ static void writeobject(pdf_document *xref, pdf_write_options *opts, int num, in
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater ? */
 		if (opts->continue_on_error)
 		{
 			fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 			if (opts->errors)
 				(*opts->errors)++;
-			fz_warn(ctx, "%s", fz_caught(ctx));
+			fz_warn(ctx, "%s", fz_caught_message(ctx));
 			return;
 		}
 		else
@@ -1723,12 +1725,13 @@ static void writeobject(pdf_document *xref, pdf_write_options *opts, int num, in
 		}
 		fz_catch(ctx)
 		{
+			/* FIXME: TryLater ? */
 			if (opts->continue_on_error)
 			{
 				fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 				if (opts->errors)
 					(*opts->errors)++;
-				fz_warn(ctx, "%s", fz_caught(ctx));
+				fz_warn(ctx, "%s", fz_caught_message(ctx));
 			}
 			else
 			{
@@ -2229,7 +2232,7 @@ void pdf_write_document(pdf_document *xref, char *filename, fz_write_options *fz
 
 	opts.out = fopen(filename, "wb");
 	if (!opts.out)
-		fz_throw(ctx, "cannot open output file '%s'", filename);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open output file '%s'", filename);
 
 	fz_try(ctx)
 	{

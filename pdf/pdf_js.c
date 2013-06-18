@@ -493,7 +493,8 @@ static pdf_jsimp_obj *doc_getField(void *jsctx, void *obj, int argc, pdf_jsimp_o
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "doc_getField failed: %s", ctx->error->message);
+		/* FIXME: TryLater ? */
+		fz_warn(ctx, "doc_getField failed: %s", fz_caught_message(ctx));
 		dict = NULL;
 	}
 
@@ -591,7 +592,7 @@ static pdf_jsimp_obj *doc_resetForm(void *jsctx, void *obj, int argc, pdf_jsimp_
 	}
 	fz_catch(ctx)
 	{
-		fz_warn(ctx, "doc_resetForm failed: %s", ctx->error->message);
+		fz_warn(ctx, "doc_resetForm failed: %s", fz_caught_message(ctx));
 	}
 
 	return NULL;
@@ -832,7 +833,8 @@ void pdf_js_load_document_level(pdf_js *js)
 			}
 			fz_catch(ctx)
 			{
-				fz_warn(ctx, "Warning: %s", ctx->error->message);
+				/* FIXME: TryLater ? */
+				fz_warn(ctx, "Warning: %s", fz_caught_message(ctx));
 			}
 		}
 	}

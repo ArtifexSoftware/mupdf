@@ -867,7 +867,7 @@ pdf_dict_getp(pdf_obj *obj, const char *keys)
 	char *k, *e;
 
 	if (strlen(keys)+1 > 256)
-		fz_throw(obj->ctx, "buffer overflow in pdf_dict_getp");
+		fz_throw(obj->ctx, FZ_ERROR_GENERIC, "buffer overflow in pdf_dict_getp");
 
 	strcpy(buf, keys);
 
@@ -1021,7 +1021,7 @@ pdf_dict_putp(pdf_obj *obj, const char *keys, pdf_obj *val)
 	pdf_obj *cobj = NULL;
 
 	if (strlen(keys)+1 > 256)
-		fz_throw(obj->ctx, "buffer overflow in pdf_dict_getp");
+		fz_throw(obj->ctx, FZ_ERROR_GENERIC, "buffer overflow in pdf_dict_getp");
 
 	strcpy(buf, keys);
 
@@ -1227,6 +1227,7 @@ pdf_obj *pdf_new_obj_from_str(fz_context *ctx, const char *src)
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater */
 		return NULL;
 	}
 

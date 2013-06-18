@@ -58,7 +58,7 @@ fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 
 	fp = fopen(filename, "wb");
 	if (!fp)
-		fz_throw(ctx, "cannot open file '%s': %s", filename, strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	assert(bitmap->n == 1);
 

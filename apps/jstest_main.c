@@ -326,7 +326,7 @@ main(int argc, char *argv[])
 			scriptname = argv[fz_optind++];
 			script = fopen(scriptname, "rb");
 			if (script == NULL)
-				fz_throw(ctx, "cannot open script: %s", scriptname);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open script: %s", scriptname);
 
 			do
 			{

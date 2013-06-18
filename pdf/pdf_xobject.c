@@ -88,7 +88,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 			{
 				form->colorspace = pdf_load_colorspace(xref, obj);
 				if (!form->colorspace)
-					fz_throw(ctx, "cannot load xobject colorspace");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load xobject colorspace");
 			}
 		}
 
@@ -102,7 +102,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 	{
 		pdf_remove_item(ctx, pdf_free_xobject_imp, dict);
 		pdf_drop_xobject(ctx, form);
-		fz_throw(ctx, "cannot load xobject content stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
+		fz_rethrow_message(ctx, "cannot load xobject content stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
 	}
 	form->me = pdf_keep_obj(dict);
 
@@ -217,7 +217,7 @@ pdf_new_xobject(pdf_document *xref, const fz_rect *bbox, const fz_matrix *mat)
 		pdf_drop_obj(dict);
 		pdf_drop_obj(idict);
 		pdf_drop_xobject(ctx, form);
-		fz_throw(ctx, "failed to create xobject)");
+		fz_rethrow_message(ctx, "failed to create xobject)");
 	}
 
 	return idict;

@@ -37,7 +37,7 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 			{
 				fz_pixmap *mask_pixmap;
 				if (image->n != 2)
-					fz_throw(ctx, "soft mask must be grayscale");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "soft mask must be grayscale");
 				mask_pixmap = fz_alpha_from_gray(ctx, image->tile, 1);
 				fz_drop_pixmap(ctx, image->tile);
 				image->tile = mask_pixmap;
@@ -61,17 +61,17 @@ pdf_load_image_imp(pdf_document *xref, pdf_obj *rdb, pdf_obj *dict, fz_stream *c
 			bpc = 1;
 
 		if (w <= 0)
-			fz_throw(ctx, "image width is zero (or less)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image width is zero (or less)");
 		if (h <= 0)
-			fz_throw(ctx, "image height is zero (or less)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image height is zero (or less)");
 		if (bpc <= 0)
-			fz_throw(ctx, "image depth is zero (or less)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is zero (or less)");
 		if (bpc > 16)
-			fz_throw(ctx, "image depth is too large: %d", bpc);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is too large: %d", bpc);
 		if (w > (1 << 16))
-			fz_throw(ctx, "image is too wide");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too wide");
 		if (h > (1 << 16))
-			fz_throw(ctx, "image is too high");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too high");
 
 		obj = pdf_dict_getsa(dict, "ColorSpace", "CS");
 		if (obj && !imagemask && !forcemask)

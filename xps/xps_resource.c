@@ -75,6 +75,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	}
 	fz_catch(ctx)
 	{
+		/* FIXME: TryLater ? */
 		xml = NULL;
 	}
 
@@ -84,7 +85,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	if (strcmp(fz_xml_tag(xml), "ResourceDictionary"))
 	{
 		fz_free_xml(doc->ctx, xml);
-		fz_throw(doc->ctx, "expected ResourceDictionary element");
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected ResourceDictionary element");
 	}
 
 	fz_strlcpy(part_uri, part_name, sizeof part_uri);

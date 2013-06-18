@@ -59,7 +59,7 @@ read_flated(fz_stream *stm, unsigned char *outbuf, int outlen)
 		}
 		else if (code != Z_OK)
 		{
-			fz_throw(stm->ctx, "zlib error: %s", zp->msg);
+			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "zlib error: %s", zp->msg);
 		}
 	}
 
@@ -103,7 +103,7 @@ fz_open_flated(fz_stream *chain)
 
 		code = inflateInit(&state->z);
 		if (code != Z_OK)
-			fz_throw(ctx, "zlib error: inflateInit: %s", state->z.msg);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: inflateInit: %s", state->z.msg);
 	}
 	fz_catch(ctx)
 	{
