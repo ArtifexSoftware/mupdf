@@ -150,35 +150,35 @@ FONT_DROID_SRC := fonts/droid/DroidSans.ttf fonts/droid/DroidSansMono.ttf
 FONT_CJK_SRC := fonts/droid/DroidSansFallback.ttf
 FONT_CJK_FULL_SRC := fonts/droid/DroidSansFallbackFull.ttf
 
-$(GEN)/cmap_cns.h : $(CMAP_CNS_SRC)
+$(GEN)/gen_cmap_cns.h : $(CMAP_CNS_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_CNS_SRC)
-$(GEN)/cmap_gb.h : $(CMAP_GB_SRC)
+$(GEN)/gen_cmap_gb.h : $(CMAP_GB_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_GB_SRC)
-$(GEN)/cmap_japan.h : $(CMAP_JAPAN_SRC)
+$(GEN)/gen_cmap_japan.h : $(CMAP_JAPAN_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_JAPAN_SRC)
-$(GEN)/cmap_korea.h : $(CMAP_KOREA_SRC)
+$(GEN)/gen_cmap_korea.h : $(CMAP_KOREA_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_KOREA_SRC)
 
-CMAP_GEN := $(addprefix $(GEN)/, cmap_cns.h cmap_gb.h cmap_japan.h cmap_korea.h)
+CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cns.h gen_cmap_gb.h gen_cmap_japan.h gen_cmap_korea.h)
 
-$(GEN)/font_base14.h : $(FONT_BASE14_SRC)
+$(GEN)/gen_font_base14.h : $(FONT_BASE14_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_BASE14_SRC)
-$(GEN)/font_droid.h : $(FONT_DROID_SRC)
+$(GEN)/gen_font_droid.h : $(FONT_DROID_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_DROID_SRC)
-$(GEN)/font_cjk.h : $(FONT_CJK_SRC)
+$(GEN)/gen_font_cjk.h : $(FONT_CJK_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_SRC)
-$(GEN)/font_cjk_full.h : $(FONT_CJK_FULL_SRC)
+$(GEN)/gen_font_cjk_full.h : $(FONT_CJK_FULL_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_FULL_SRC)
 
-FONT_GEN := $(GEN)/font_base14.h $(GEN)/font_droid.h $(GEN)/font_cjk.h $(GEN)/font_cjk_full.h
+FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_droid.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
 
 JAVASCRIPT_SRC := pdf/pdf_util.js
-JAVASCRIPT_GEN := $(GEN)/js_util.h
+JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
 $(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC)
 	$(QUIET_GEN) $(CQUOTE) $@ $(JAVASCRIPT_SRC)
 
 ADOBECA_SRC := certs/AdobeCA.p7c
-ADOBECA_GEN := $(GEN)/adobe_ca.h
+ADOBECA_GEN := $(GEN)/gen_adobe_ca.h
 $(ADOBECA_GEN) : $(ADOBECA_SRC)
 	$(QUIET_GEN) $(BIN2HEX) $@ $(ADOBECA_SRC)
 

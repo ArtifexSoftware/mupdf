@@ -259,7 +259,7 @@ exit:
 
 static unsigned char adobe_ca[] =
 {
-#include "../generated/adobe_ca.h"
+#include "gen_adobe_ca.h"
 };
 
 static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)

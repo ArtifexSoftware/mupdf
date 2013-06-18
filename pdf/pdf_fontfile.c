@@ -18,17 +18,17 @@
 #define NOCJKFONT
 #endif
 
-#include "font_base14.h"
+#include "gen_font_base14.h"
 
 #ifndef NODROIDFONT
-#include "font_droid.h"
+#include "gen_font_droid.h"
 #endif
 
 #ifndef NOCJKFONT
 #ifndef NOCJKFULL
-#include "font_cjk_full.h"
+#include "gen_font_cjk_full.h"
 #else
-#include "font_cjk.h"
+#include "gen_font_cjk.h"
 #endif
 #endif
 

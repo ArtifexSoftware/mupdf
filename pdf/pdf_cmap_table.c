@@ -1,10 +1,10 @@
 #include "mupdf/pdf.h"
 
 #ifndef NOCJK
-#include "cmap_cns.h"
-#include "cmap_gb.h"
-#include "cmap_japan.h"
-#include "cmap_korea.h"
+#include "gen_cmap_cns.h"
+#include "gen_cmap_gb.h"
+#include "gen_cmap_japan.h"
+#include "gen_cmap_korea.h"
 #endif
 
 static const struct { char *name; pdf_cmap *cmap; } cmap_table[] =
