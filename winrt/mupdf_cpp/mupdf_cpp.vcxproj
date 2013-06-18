@@ -119,7 +119,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -129,7 +129,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -139,7 +139,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -149,7 +149,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -159,7 +159,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -169,7 +169,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>../../fitz/;../../pdf/;../../xps/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
