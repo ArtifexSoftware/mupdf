@@ -91,6 +91,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <PackageCertificateKeyFile>mupdf_cpp_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>9417B1B38E16F42A27C3D0AA69B4CE6DEB584BAC</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>

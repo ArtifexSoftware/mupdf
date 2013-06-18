@@ -50,8 +50,8 @@ Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile
 {
 	return create_async([this, file]()
 	{
-		String^ path = file->Path;
-		const wchar_t *w = path->Data();
+		String^ filetype = file->FileType;
+		const wchar_t *w = filetype->Data();
 		int cb = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
 		char* name = new char[cb];
 

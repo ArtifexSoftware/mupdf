@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="faab8eca-be5e-4e0d-b782-213ccbbc5f34" Publisher="CN=michaelv" Version="1.0.0.0" />
+  <Identity Name="faab8eca-be5e-4e0d-b782-213ccbbc5f34" Publisher="CN=Artifex Software" Version="1.0.0.0" />
   <Properties>
     <DisplayName>mupdf_cpp</DisplayName>
     <PublisherDisplayName>Artifex Software Inc.</PublisherDisplayName>
@@ -20,15 +20,6 @@
         <SplashScreen Image="Assets\mupdf_splash.png" />
       </VisualElements>
       <Extensions>
-        <Extension Category="windows.fileOpenPicker">
-          <FileOpenPicker>
-            <SupportedFileTypes>
-              <FileType>.pdf</FileType>
-              <FileType>.xps</FileType>
-              <FileType>.cbz</FileType>
-            </SupportedFileTypes>
-          </FileOpenPicker>
-        </Extension>
         <Extension Category="windows.fileTypeAssociation">
           <FileTypeAssociation Name=".pdf">
             <EditFlags OpenIsSafe="true" />

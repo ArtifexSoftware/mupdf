@@ -92,13 +92,13 @@ static void unlock_mutex(void *user, int lock)
 
 void muctx::CleanUp(void)
 {
-	if (mu_outline != NULL)
-		fz_free_outline(mu_ctx, mu_outline);
-	if (mu_doc != NULL)
-		fz_close_document(mu_doc);
-	if (mu_ctx != NULL)
-		fz_free_context(mu_ctx);
+	fz_free_outline(mu_ctx, mu_outline);
+	fz_close_document(mu_doc);
+	display_list_cache->Empty(mu_ctx);
+	fz_free_context(mu_ctx);
 
+	delete display_list_cache;
+	display_list_cache = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;

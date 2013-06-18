@@ -14,18 +14,20 @@ Cache::~Cache(void)
 
 void Cache::Empty(fz_context *mu_ctx)
 {
-	cache_entry_t *curr_entry = this->head;
+	if (this != nullptr) {
+		cache_entry_t *curr_entry = this->head;
 
-	while (curr_entry != NULL)
-	{
-		cache_entry_t *old_entry = curr_entry;
-		curr_entry = old_entry->next;
-		fz_drop_display_list(mu_ctx, old_entry->dlist);
-		delete old_entry;
+		while (curr_entry != NULL)
+		{
+			cache_entry_t *old_entry = curr_entry;
+			curr_entry = old_entry->next;
+			fz_drop_display_list(mu_ctx, old_entry->dlist);
+			delete old_entry;
+		}
+		this->size = 0;
+		this->head = NULL;
+		this->tail = NULL;
 	}
-	this->size = 0;
-	this->head = NULL;
-	this->tail = NULL;
 }
 
 void Cache::AddEntry(int value, fz_display_list *dlist, fz_context *mu_ctx)

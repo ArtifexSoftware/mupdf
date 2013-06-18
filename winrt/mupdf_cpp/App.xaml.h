@@ -17,7 +17,7 @@ namespace mupdf_cpp
 	public:
 		App();
 		virtual void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs^ args) override;
-
+	virtual void App::OnFileActivated(Windows::ApplicationModel::Activation::FileActivatedEventArgs^ args) override;
 	private:
 		void OnSuspending(Platform::Object^ sender, Windows::ApplicationModel::SuspendingEventArgs^ e);
 	};

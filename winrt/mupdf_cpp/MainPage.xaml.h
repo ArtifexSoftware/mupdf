@@ -61,11 +61,24 @@ namespace mupdf_cpp
 	public:
 		MainPage();
 
+		property Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ ProtocolEvent
+		{
+			Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ get() { return _protocolEventArgs; }
+			void set(Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ value) { _protocolEventArgs = value; }
+		}
+
+		property Windows::ApplicationModel::Activation::FileActivatedEventArgs^ FileEvent
+		{
+			Windows::ApplicationModel::Activation::FileActivatedEventArgs^ get() { return _fileEventArgs; }
+			void set(Windows::ApplicationModel::Activation::FileActivatedEventArgs^ value) { _fileEventArgs = value; }
+		}
+
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 		virtual void OnKeyDown(Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e) override;
 
 	private:
+		Windows::Foundation::EventRegistrationToken _pageLoadedHandlerToken;
 		Vector<DocumentPage^>^ m_docPages;
 		Vector<DocumentPage^>^ m_thumbnails;
 		Vector<IVector<RectList^>^>^ m_page_link_list;
@@ -157,5 +170,8 @@ namespace mupdf_cpp
 		void NonTouchZoom(int zoom);
 		void ShowSearchBox();
 		bool IsNotStandardView();
+		void Page_Loaded(Object^ sender, RoutedEventArgs^ e);
+		Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ _protocolEventArgs;
+		Windows::ApplicationModel::Activation::FileActivatedEventArgs^ _fileEventArgs;
 	};
 }

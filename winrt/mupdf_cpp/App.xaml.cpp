@@ -71,6 +71,10 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		}
 		// Place the frame in the current Window
 		Window::Current->Content = rootFrame;
+		auto rootPage = safe_cast<MainPage^>(rootFrame->Content);
+		rootPage->FileEvent = nullptr;
+		rootPage->ProtocolEvent = nullptr;
+
 		// Ensure the current window is active
 		Window::Current->Activate();
 	}
@@ -89,6 +93,20 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 		// Ensure the current window is active
 		Window::Current->Activate();
 	}
+}
+
+// Handle file activations.
+void App::OnFileActivated(Windows::ApplicationModel::Activation::FileActivatedEventArgs^ args)
+{
+	auto rootFrame = ref new Frame();
+	TypeName pageType = { "mupdf_cpp.MainPage", TypeKind::Custom };
+	rootFrame->Navigate(pageType, args);
+	Window::Current->Content = rootFrame;
+	auto rootPage = safe_cast<MainPage^>(rootFrame->Content);
+	rootPage->FileEvent = args;
+	rootPage->ProtocolEvent = nullptr;
+
+	Window::Current->Activate();
 }
 
 /// <summary>

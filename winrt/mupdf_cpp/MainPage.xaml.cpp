@@ -74,7 +74,7 @@ extern "C" {
 
 #endif /* not NDEBUG */
 
-MainPage::MainPage()
+mupdf_cpp::MainPage::MainPage()
 {
 	InitializeComponent();
 	Application::Current->Suspending += 
@@ -89,6 +89,25 @@ MainPage::MainPage()
 	m_linkset = ref new Platform::Collections::Vector<int>();
 	CleanUp();
 	RecordMainThread();
+	/* So that we can catch special loading events (e.g. open with) */
+	_pageLoadedHandlerToken = Loaded += ref new RoutedEventHandler(this, &MainPage::Page_Loaded);
+}
+
+/* Used during launch of application from file */
+void MainPage::Page_Loaded(Object^ sender, RoutedEventArgs^ e)
+{
+	MainPage^ rootPage = dynamic_cast<MainPage^>(sender);
+	if (rootPage->FileEvent != nullptr)
+	{
+		/* Launched with an "open with", or as default app */
+		if (rootPage->FileEvent->Files->Size > 0)
+		{
+			IStorageItem ^file = rootPage->FileEvent->Files->GetAt(0);
+			StorageFile ^sfile = safe_cast<StorageFile^>(file);
+
+			OpenDocumentPrep(sfile);
+		}
+	}
 }
 
 /// <summary>
@@ -98,7 +117,7 @@ MainPage::MainPage()
 /// property is typically used to configure the page.</param>
 void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 {
-	(void) e;	// Unused parameter
+
 }
 
 void mupdf_cpp::MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
@@ -545,14 +564,6 @@ void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
 
 void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 {
-	String^ path = file->Path;
-	const wchar_t *w = path->Data();
-	int cb = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
-	char* name = new char[cb];
-
-	WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,name ,cb ,nullptr, nullptr);
-	char *ext = strrchr(name, '.');
-
 	this->SetFlipView();
 
 	/* Open document and when open, push on */
