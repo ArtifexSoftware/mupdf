@@ -701,7 +701,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		pdf_array_push(annot_arr, ind_obj);
 
 		/*
-			Linking must be done before any call that might throw because
+			Linking must be done after any call that might throw because
 			pdf_free_annot below actually frees a list
 		*/
 		annot->next = page->annots;

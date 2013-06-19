@@ -403,7 +403,7 @@
 				>
 				<Tool
 					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\thirdparty\openssl\include"
+					AdditionalIncludeDirectories="..\thirdparty\openssl\include;..\generated"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
