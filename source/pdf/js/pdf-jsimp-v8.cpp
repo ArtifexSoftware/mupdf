@@ -7,7 +7,7 @@
 extern "C" {
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
-#include "pdf_jsimp_cpp.h"
+#include "pdf-jsimp-cpp.h"
 }
 
 #include <vector>

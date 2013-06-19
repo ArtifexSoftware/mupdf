@@ -3,7 +3,7 @@
  * return errors explicitly, and these wrappers then throw them. */
 
 #include "mupdf/pdf.h"
-#include "pdf_jsimp_cpp.h"
+#include "pdf-jsimp-cpp.h"
 
 pdf_jsimp *pdf_new_jsimp(fz_context *ctx, void *jsctx)
 {

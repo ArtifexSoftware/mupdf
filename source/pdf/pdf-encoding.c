@@ -1,7 +1,7 @@
 #include "mupdf/pdf.h"
 
-#include "data_encodings.h"
-#include "data_glyphlist.h"
+#include "pdf-encodings.h"
+#include "pdf-glyphlist.h"
 
 void
 pdf_load_encoding(char **estrings, char *encoding)

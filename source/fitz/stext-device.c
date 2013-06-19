@@ -370,7 +370,7 @@ void
 fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet)
 {
 	fz_text_style *style;
-	
+
 	if (sheet == NULL)
 		return;
 
