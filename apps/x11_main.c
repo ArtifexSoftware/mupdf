@@ -173,7 +173,7 @@ static void winopen(void)
 
 	xdpy = XOpenDisplay(NULL);
 	if (!xdpy)
-		fz_throw(gapp.ctx, "cannot open display");
+		fz_throw(gapp.ctx, FZ_ERROR_GENERIC, "cannot open display");
 
 	XA_CLIPBOARD = XInternAtom(xdpy, "CLIPBOARD", False);
 	XA_TARGETS = XInternAtom(xdpy, "TARGETS", False);
@@ -211,7 +211,7 @@ static void winopen(void)
 		0,
 		NULL);
 	if (xwin == None)
-		fz_throw(gapp.ctx, "cannot create window");
+		fz_throw(gapp.ctx, FZ_ERROR_GENERIC, "cannot create window");
 
 	XSetWindowColormap(xdpy, xwin, ximage_get_colormap());
 	XSelectInput(xdpy, xwin,
