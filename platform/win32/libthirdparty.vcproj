@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\scripts;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include"
+				AdditionalIncludeDirectories="..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;DEBUG=1;verbose=-1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -102,7 +102,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\scripts;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include"
+				AdditionalIncludeDirectories="..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -162,7 +162,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\scripts;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\libopenjpeg;..\thirdparty\zlib;..\thirdparty\freetype\include"
+				AdditionalIncludeDirectories="..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;MEMENTO=1;DEBUG=1;verbose=-1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -206,127 +206,127 @@
 			Name="libjpeg"
 			>
 			<File
-				RelativePath="..\thirdparty\jpeg\jaricom.c"
+				RelativePath="..\..\thirdparty\jpeg\jaricom.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jcomapi.c"
+				RelativePath="..\..\thirdparty\jpeg\jcomapi.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdapimin.c"
+				RelativePath="..\..\thirdparty\jpeg\jdapimin.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdapistd.c"
+				RelativePath="..\..\thirdparty\jpeg\jdapistd.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdarith.c"
+				RelativePath="..\..\thirdparty\jpeg\jdarith.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdatadst.c"
+				RelativePath="..\..\thirdparty\jpeg\jdatadst.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdatasrc.c"
+				RelativePath="..\..\thirdparty\jpeg\jdatasrc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdcoefct.c"
+				RelativePath="..\..\thirdparty\jpeg\jdcoefct.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdcolor.c"
+				RelativePath="..\..\thirdparty\jpeg\jdcolor.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jddctmgr.c"
+				RelativePath="..\..\thirdparty\jpeg\jddctmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdhuff.c"
+				RelativePath="..\..\thirdparty\jpeg\jdhuff.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdinput.c"
+				RelativePath="..\..\thirdparty\jpeg\jdinput.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdmainct.c"
+				RelativePath="..\..\thirdparty\jpeg\jdmainct.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdmarker.c"
+				RelativePath="..\..\thirdparty\jpeg\jdmarker.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdmaster.c"
+				RelativePath="..\..\thirdparty\jpeg\jdmaster.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdmerge.c"
+				RelativePath="..\..\thirdparty\jpeg\jdmerge.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdpostct.c"
+				RelativePath="..\..\thirdparty\jpeg\jdpostct.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdsample.c"
+				RelativePath="..\..\thirdparty\jpeg\jdsample.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jdtrans.c"
+				RelativePath="..\..\thirdparty\jpeg\jdtrans.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jerror.c"
+				RelativePath="..\..\thirdparty\jpeg\jerror.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jfdctflt.c"
+				RelativePath="..\..\thirdparty\jpeg\jfdctflt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jfdctfst.c"
+				RelativePath="..\..\thirdparty\jpeg\jfdctfst.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jfdctint.c"
+				RelativePath="..\..\thirdparty\jpeg\jfdctint.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jidctflt.c"
+				RelativePath="..\..\thirdparty\jpeg\jidctflt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jidctfst.c"
+				RelativePath="..\..\thirdparty\jpeg\jidctfst.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jidctint.c"
+				RelativePath="..\..\thirdparty\jpeg\jidctint.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jmemmgr.c"
+				RelativePath="..\..\thirdparty\jpeg\jmemmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jmemnobs.c"
+				RelativePath="..\..\thirdparty\jpeg\jmemnobs.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jquant1.c"
+				RelativePath="..\..\thirdparty\jpeg\jquant1.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jquant2.c"
+				RelativePath="..\..\thirdparty\jpeg\jquant2.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jpeg\jutils.c"
+				RelativePath="..\..\thirdparty\jpeg\jutils.c"
 				>
 			</File>
 		</Filter>
@@ -334,63 +334,63 @@
 			Name="libjbig2dec"
 			>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_arith.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_arith.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_arith_iaid.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_arith_iaid.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_arith_int.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_arith_int.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_generic.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_generic.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_halftone.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_halftone.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_huffman.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_huffman.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_image.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_image.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_metadata.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_metadata.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_mmr.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_mmr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_page.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_page.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_refinement.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_refinement.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_segment.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_segment.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_symbol_dict.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_symbol_dict.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\jbig2dec\jbig2_text.c"
+				RelativePath="..\..\thirdparty\jbig2dec\jbig2_text.c"
 				>
 			</File>
 		</Filter>
@@ -398,43 +398,43 @@
 			Name="libz"
 			>
 			<File
-				RelativePath="..\thirdparty\zlib\adler32.c"
+				RelativePath="..\..\thirdparty\zlib\adler32.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\compress.c"
+				RelativePath="..\..\thirdparty\zlib\compress.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\crc32.c"
+				RelativePath="..\..\thirdparty\zlib\crc32.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\deflate.c"
+				RelativePath="..\..\thirdparty\zlib\deflate.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\inffast.c"
+				RelativePath="..\..\thirdparty\zlib\inffast.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\inflate.c"
+				RelativePath="..\..\thirdparty\zlib\inflate.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\inftrees.c"
+				RelativePath="..\..\thirdparty\zlib\inftrees.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\trees.c"
+				RelativePath="..\..\thirdparty\zlib\trees.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\uncompr.c"
+				RelativePath="..\..\thirdparty\zlib\uncompr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\zlib\zutil.c"
+				RelativePath="..\..\thirdparty\zlib\zutil.c"
 				>
 			</File>
 		</Filter>
@@ -445,211 +445,211 @@
 				Name="openjp2"
 				>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\bio.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\bio.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\cio.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\cio.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\dwt.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\dwt.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\event.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\event.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\event.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\event.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\function_list.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\function_list.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\image.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\image.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\image.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\image.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\indexbox_manager.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\indexbox_manager.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\invert.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\invert.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\j2k.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\j2k.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\jp2.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\jp2.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\mct.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\mct.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\mqc.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\mqc.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_includes.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_includes.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_intmath.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_intmath.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_inttypes.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_inttypes.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_malloc.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_malloc.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\opj_stdint.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_stdint.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\phix_manager.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\phix_manager.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\pi.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\pi.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\ppix_manager.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\ppix_manager.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\raw.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\raw.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t1.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t1.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t1_generate_luts.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_generate_luts.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t1_luts.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_luts.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t2.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\t2.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\tcd.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\tcd.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\tgt.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\tgt.h"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.h"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\thix_manager.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\thix_manager.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c"
+					RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c"
 					>
 				</File>
 			</Filter>
@@ -658,90 +658,90 @@
 			Name="libfreetype"
 			>
 			<File
-				RelativePath="..\thirdparty\freetype\src\cff\cff.c"
+				RelativePath="..\..\thirdparty\freetype\src\cff\cff.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\psaux\psaux.c"
+				RelativePath="..\..\thirdparty\freetype\src\psaux\psaux.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\pshinter\pshinter.c"
+				RelativePath="..\..\thirdparty\freetype\src\pshinter\pshinter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\psnames\psnames.c"
+				RelativePath="..\..\thirdparty\freetype\src\psnames\psnames.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\raster\raster.c"
+				RelativePath="..\..\thirdparty\freetype\src\raster\raster.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\sfnt\sfnt.c"
+				RelativePath="..\..\thirdparty\freetype\src\sfnt\sfnt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\smooth\smooth.c"
+				RelativePath="..\..\thirdparty\freetype\src\smooth\smooth.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\truetype\truetype.c"
+				RelativePath="..\..\thirdparty\freetype\src\truetype\truetype.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\type1\type1.c"
+				RelativePath="..\..\thirdparty\freetype\src\type1\type1.c"
 				>
 			</File>
 			<File
-				RelativePath="..\thirdparty\freetype\src\cid\type1cid.c"
+				RelativePath="..\..\thirdparty\freetype\src\cid\type1cid.c"
 				>
 			</File>
 			<Filter
 				Name="base"
 				>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftbase.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftbase.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftbbox.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftbbox.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftbitmap.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftbitmap.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftgasp.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftgasp.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftglyph.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftglyph.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftinit.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftinit.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftstroke.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftstroke.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftsynth.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftsynth.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftsystem.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftsystem.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\fttype1.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\fttype1.c"
 					>
 				</File>
 				<File
-					RelativePath="..\thirdparty\freetype\src\base\ftxf86.c"
+					RelativePath="..\..\thirdparty\freetype\src\base\ftxf86.c"
 					>
 				</File>
 			</Filter>
@@ -749,201 +749,201 @@
 				Name="include"
 				>
 				<File
-					RelativePath="..\thirdparty\freetype\include\ft2build.h"
+					RelativePath="..\..\thirdparty\freetype\include\ft2build.h"
 					>
 				</File>
 				<Filter
 					Name="freetype"
 					>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\freetype.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\freetype.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftadvanc.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftadvanc.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftbbox.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftbbox.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftbdf.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftbdf.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftbitmap.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftbitmap.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftbzip2.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftbzip2.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftcache.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftcache.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftchapters.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftchapters.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftcid.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftcid.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\fterrdef.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\fterrdef.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\fterrors.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\fterrors.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftgasp.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftgasp.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftglyph.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftglyph.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftgxval.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftgxval.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftgzip.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftgzip.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftimage.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftimage.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftincrem.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftincrem.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftlcdfil.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftlcdfil.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftlist.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftlist.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftlzw.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftlzw.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftmac.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftmac.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftmm.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftmm.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftmodapi.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftmodapi.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftmoderr.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftmoderr.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftotval.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftotval.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftoutln.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftoutln.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftpfr.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftpfr.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftrender.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftrender.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftsizes.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftsizes.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftsnames.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftsnames.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftstroke.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftstroke.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftsynth.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftsynth.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftsystem.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftsystem.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\fttrigon.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\fttrigon.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\fttypes.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\fttypes.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftwinfnt.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftwinfnt.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ftxf86.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ftxf86.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\t1tables.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\t1tables.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ttnameid.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ttnameid.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\tttables.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\tttables.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\tttags.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\tttags.h"
 						>
 					</File>
 					<File
-						RelativePath="..\thirdparty\freetype\include\freetype\ttunpat.h"
+						RelativePath="..\..\thirdparty\freetype\include\freetype\ttunpat.h"
 						>
 					</File>
 					<Filter
 						Name="config"
 						>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\config\ftconfig.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\config\ftconfig.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\config\ftheader.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\config\ftheader.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\config\ftmodule.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\config\ftmodule.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\config\ftoption.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\config\ftoption.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\config\ftstdlib.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\config\ftstdlib.h"
 							>
 						</File>
 					</Filter>
@@ -951,150 +951,150 @@
 						Name="internal"
 						>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\autohint.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\autohint.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftcalc.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftcalc.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftdebug.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftdebug.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftdriver.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftdriver.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftgloadr.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftgloadr.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftmemory.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftmemory.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftobjs.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftobjs.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftpic.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftpic.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftrfork.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftrfork.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftserv.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftserv.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftstream.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftstream.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\fttrace.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\fttrace.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\ftvalid.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\ftvalid.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\internal.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\internal.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\psaux.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\psaux.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\pshints.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\pshints.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\sfnt.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\sfnt.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\t1types.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\t1types.h"
 							>
 						</File>
 						<File
-							RelativePath="..\thirdparty\freetype\include\freetype\internal\tttypes.h"
+							RelativePath="..\..\thirdparty\freetype\include\freetype\internal\tttypes.h"
 							>
 						</File>
 						<Filter
 							Name="services"
 							>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svbdf.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svbdf.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svcid.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svcid.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svgldict.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svgldict.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svgxval.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svgxval.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svkern.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svkern.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svmm.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svmm.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svotval.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svotval.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svpfr.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svpfr.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svpostnm.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svpostnm.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svpscmap.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svpscmap.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svpsinfo.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svpsinfo.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svsfnt.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svsfnt.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svttcmap.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svttcmap.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svtteng.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svtteng.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svttglyf.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svttglyf.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svwinfnt.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svwinfnt.h"
 								>
 							</File>
 							<File
-								RelativePath="..\thirdparty\freetype\include\freetype\internal\services\svxf86nm.h"
+								RelativePath="..\..\thirdparty\freetype\include\freetype\internal\services\svxf86nm.h"
 								>
 							</File>
 						</Filter>

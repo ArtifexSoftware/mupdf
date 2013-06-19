@@ -28,7 +28,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mutool", "mutool.vcproj", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generated", "generated.vcproj", "{A5053AA7-02E5-4903-B596-04F17AEB1526}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf-v8", "libmupdf-v8.vcproj", "{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf-js-v8", "libmupdf-js-v8.vcproj", "{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 	EndProjectSection
@@ -45,7 +45,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mujstest-v8", "mujstest-v8.
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D} = {2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf-nov8", "libmupdf-nov8.vcproj", "{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf-js-none", "libmupdf-js-none.vcproj", "{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519} = {5F615F91-DFF8-4F05-BF48-6222B7D86519}
 	EndProjectSection
@@ -81,14 +81,14 @@ Global
 		{5EDCF4FD-0291-4FB9-8D96-D58957CA5E3C}.ReleaseOpenssl|Win32.Build.0 = Release|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Debug|Win32.ActiveCfg = Debug|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Debug|Win32.Build.0 = Debug|Win32
-		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.DebugOpenssl|Win32.ActiveCfg = Debug|Win32
-		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.DebugOpenssl|Win32.Build.0 = Debug|Win32
+		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.DebugOpenssl|Win32.ActiveCfg = DebugOpenssl|Win32
+		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.DebugOpenssl|Win32.Build.0 = DebugOpenssl|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Memento|Win32.ActiveCfg = Memento|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Memento|Win32.Build.0 = Memento|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Release|Win32.ActiveCfg = Release|Win32
 		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.Release|Win32.Build.0 = Release|Win32
-		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.ReleaseOpenssl|Win32.ActiveCfg = Release|Win32
-		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.ReleaseOpenssl|Win32.Build.0 = Release|Win32
+		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.ReleaseOpenssl|Win32.ActiveCfg = ReleaseOpenssl|Win32
+		{5F615F91-DFF8-4F05-BF48-6222B7D86519}.ReleaseOpenssl|Win32.Build.0 = ReleaseOpenssl|Win32
 		{0B51171B-B10E-4EAC-8FFA-19226A1828A3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0B51171B-B10E-4EAC-8FFA-19226A1828A3}.Debug|Win32.Build.0 = Debug|Win32
 		{0B51171B-B10E-4EAC-8FFA-19226A1828A3}.DebugOpenssl|Win32.ActiveCfg = Debug|Win32
@@ -121,14 +121,14 @@ Global
 		{A5053AA7-02E5-4903-B596-04F17AEB1526}.ReleaseOpenssl|Win32.Build.0 = Release|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Debug|Win32.Build.0 = Debug|Win32
-		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.DebugOpenssl|Win32.ActiveCfg = Debug|Win32
-		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.DebugOpenssl|Win32.Build.0 = Debug|Win32
+		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.DebugOpenssl|Win32.ActiveCfg = DebugOpenssl|Win32
+		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.DebugOpenssl|Win32.Build.0 = DebugOpenssl|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Memento|Win32.ActiveCfg = Memento|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Memento|Win32.Build.0 = Memento|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Release|Win32.ActiveCfg = Release|Win32
 		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.Release|Win32.Build.0 = Release|Win32
-		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.ReleaseOpenssl|Win32.ActiveCfg = Release|Win32
-		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.ReleaseOpenssl|Win32.Build.0 = Release|Win32
+		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.ReleaseOpenssl|Win32.ActiveCfg = ReleaseOpenssl|Win32
+		{2E5DAFDB-A060-4011-B760-32F6A3A4BC9D}.ReleaseOpenssl|Win32.Build.0 = ReleaseOpenssl|Win32
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.Debug|Win32.ActiveCfg = Debug|Win32
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.Debug|Win32.Build.0 = Debug|Win32
 		{9035A4F3-4219-45A5-985D-FBF4D9609713}.DebugOpenssl|Win32.ActiveCfg = DebugOpenssl|Win32
@@ -151,14 +151,14 @@ Global
 		{21E28758-E4D2-4B84-8EC5-B631CEE66B30}.ReleaseOpenssl|Win32.Build.0 = ReleaseOpenssl|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Debug|Win32.ActiveCfg = Debug|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Debug|Win32.Build.0 = Debug|Win32
-		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.DebugOpenssl|Win32.ActiveCfg = Debug|Win32
-		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.DebugOpenssl|Win32.Build.0 = Debug|Win32
+		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.DebugOpenssl|Win32.ActiveCfg = DebugOpenssl|Win32
+		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.DebugOpenssl|Win32.Build.0 = DebugOpenssl|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Memento|Win32.ActiveCfg = Memento|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Memento|Win32.Build.0 = Memento|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Release|Win32.ActiveCfg = Release|Win32
 		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.Release|Win32.Build.0 = Release|Win32
-		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.ReleaseOpenssl|Win32.ActiveCfg = Release|Win32
-		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.ReleaseOpenssl|Win32.Build.0 = Release|Win32
+		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.ReleaseOpenssl|Win32.ActiveCfg = ReleaseOpenssl|Win32
+		{EC81A9F3-88A6-4170-B7B4-C41CB789A7F6}.ReleaseOpenssl|Win32.Build.0 = ReleaseOpenssl|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

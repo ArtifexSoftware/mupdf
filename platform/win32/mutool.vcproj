@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -113,7 +113,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -185,7 +185,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="MEMENTO=1;DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -237,27 +237,27 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\apps\mutool.c"
+			RelativePath="..\..\source\tools\mutool.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfclean.c"
+			RelativePath="..\..\source\tools\pdfclean.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfextract.c"
+			RelativePath="..\..\source\tools\pdfextract.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfinfo.c"
+			RelativePath="..\..\source\tools\pdfinfo.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfposter.c"
+			RelativePath="..\..\source\tools\pdfposter.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfshow.c"
+			RelativePath="..\..\source\tools\pdfshow.c"
 			>
 		</File>
 	</Files>

@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="FT2_BUILD_LIBRARY;OPJ_STATIC;DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -60,7 +60,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/FORCE"
 				AdditionalDependencies="v8_base.lib v8_snapshot.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9\build\Debug\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\thirdparty\v8-3.9\build\Debug\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -116,7 +116,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -134,7 +134,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="v8_base.lib v8_snapshot.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9\Build\release\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\thirdparty\v8-3.9\Build\release\lib&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -190,7 +190,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="FT2_BUILD_LIBRARY;OPJ_STATIC;MEMENTO=1;DEBUG=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -210,7 +210,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="v8_base.lib v8_snapshot.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9\Build\Debug\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\thirdparty\v8-3.9\Build\Debug\lib&quot;"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -264,7 +264,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="FT2_BUILD_LIBRARY;OPJ_STATIC;DEBUG=1;HAVE_OPENSSL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -285,7 +285,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/FORCE"
 				AdditionalDependencies="v8_base.lib v8_snapshot.lib libeay32.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9\build\Debug\lib&quot;;..\thirdparty\openssl\lib"
+				AdditionalLibraryDirectories="&quot;..\..\thirdparty\v8-3.9\build\Debug\lib&quot;;..\..\thirdparty\openssl\lib"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -341,7 +341,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\include"
+				AdditionalIncludeDirectories="..\..\include"
 				PreprocessorDefinitions="HAVE_OPENSSL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -360,7 +360,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="v8_base.lib v8_snapshot.lib libeay32.lib ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\thirdparty\v8-3.9\Build\release\lib&quot;;..\thirdparty\openssl\lib"
+				AdditionalLibraryDirectories="&quot;..\..\thirdparty\v8-3.9\Build\release\lib&quot;;..\..\thirdparty\openssl\lib"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -396,39 +396,19 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\fitz\crypt_pkcs7.c"
-			>
-			<FileConfiguration
-				Name="DebugOpenssl|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\thirdparty\openssl\include;..\generated"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseOpenssl|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories="..\thirdparty\openssl\include"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\apps\pdfapp.c"
+			RelativePath="..\..\platform\x11\pdfapp.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\pdfapp.h"
+			RelativePath="..\..\platform\x11\pdfapp.h"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\win_main.c"
+			RelativePath="..\..\platform\x11\win_main.c"
 			>
 		</File>
 		<File
-			RelativePath="..\apps\win_res.rc"
+			RelativePath="..\..\platform\x11\win_res.rc"
 			>
 		</File>
 	</Files>

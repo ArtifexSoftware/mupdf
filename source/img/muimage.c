@@ -1,4 +1,4 @@
-#include "mupdf/image.h"
+#include "mupdf/img.h"
 
 #include <ctype.h> /* for tolower */
 
