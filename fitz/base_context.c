@@ -93,7 +93,7 @@ new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
 	if (!ctx->error)
 		goto cleanup;
 	ctx->error->top = -1;
-	ctx->error->errcode = 0;
+	ctx->error->errcode = FZ_ERROR_NONE;
 	ctx->error->message[0] = 0;
 
 	ctx->warn = fz_malloc_no_throw(ctx, sizeof(fz_warn_context));
