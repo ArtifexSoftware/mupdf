@@ -309,7 +309,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "Cannot open document: '%s'", filename);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot open document: '%s'", filename);
 		}
 		LOGE("Done!");
 	}
@@ -428,7 +428,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 		}
 		fz_catch(ctx)
 		{
-			fz_throw(ctx, "Cannot open memory document");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot open memory document");
 		}
 		LOGE("Done!");
 	}
@@ -1205,7 +1205,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		dev = NULL;
 
 		barr = (*env)->NewObjectArray(env, text->len, textBlockClass, NULL);
-		if (barr == NULL) fz_throw(ctx, "NewObjectArray failed");
+		if (barr == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectArray failed");
 
 		for (b = 0; b < text->len; b++)
 		{
@@ -1216,7 +1216,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 				continue;
 			block = text->blocks[b].u.text;
 			larr = (*env)->NewObjectArray(env, block->len, textLineClass, NULL);
-			if (larr == NULL) fz_throw(ctx, "NewObjectArray failed");
+			if (larr == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectArray failed");
 
 			for (l = 0; l < block->len; l++)
 			{
@@ -1229,12 +1229,12 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 					len++;
 
 				sarr = (*env)->NewObjectArray(env, len, textSpanClass, NULL);
-				if (sarr == NULL) fz_throw(ctx, "NewObjectArray failed");
+				if (sarr == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectArray failed");
 
 				for (s=0, span = line->first_span; span; s++, span = span->next)
 				{
 					jobjectArray *carr = (*env)->NewObjectArray(env, span->len, textCharClass, NULL);
-					if (carr == NULL) fz_throw(ctx, "NewObjectArray failed");
+					if (carr == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectArray failed");
 
 					for (c = 0; c < span->len; c++)
 					{
@@ -1242,7 +1242,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 						fz_rect bbox;
 						fz_text_char_bbox(&bbox, span, c);
 						jobject cobj = (*env)->NewObject(env, textCharClass, ctor, bbox.x0, bbox.y0, bbox.x1, bbox.y1, ch->c);
-						if (cobj == NULL) fz_throw(ctx, "NewObjectfailed");
+						if (cobj == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectfailed");
 
 						(*env)->SetObjectArrayElement(env, carr, c, cobj);
 						(*env)->DeleteLocalRef(env, cobj);
@@ -1335,7 +1335,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 
 		bArray = (*env)->NewByteArray(env, buf->len);
 		if (bArray == NULL)
-			fz_throw(ctx, "Failed to make byteArray");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to make byteArray");
 		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, buf->data);
 
 	}
@@ -1420,11 +1420,11 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
 		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
-		if (pt_cls == NULL) fz_throw(ctx, "FindClass");
+		if (pt_cls == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "FindClass");
 		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
-		if (x_fid == NULL) fz_throw(ctx, "GetFieldID(x)");
+		if (x_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(x)");
 		y_fid = (*env)->GetFieldID(env, pt_cls, "y", "F");
-		if (y_fid == NULL) fz_throw(ctx, "GetFieldID(y)");
+		if (y_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(y)");
 
 		n = (*env)->GetArrayLength(env, points);
 
@@ -1493,11 +1493,11 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
 		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
-		if (pt_cls == NULL) fz_throw(ctx, "FindClass");
+		if (pt_cls == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "FindClass");
 		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
-		if (x_fid == NULL) fz_throw(ctx, "GetFieldID(x)");
+		if (x_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(x)");
 		y_fid = (*env)->GetFieldID(env, pt_cls, "y", "F");
-		if (y_fid == NULL) fz_throw(ctx, "GetFieldID(y)");
+		if (y_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(y)");
 
 		n = (*env)->GetArrayLength(env, arcs);
 
