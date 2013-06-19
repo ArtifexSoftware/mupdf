@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.h"
+#include "status.h"
 
 using namespace Windows::Foundation;
 

@@ -7,17 +7,11 @@
 #include <mutex>
 #include "utils.h"
 #include "Cache.h"
+#include "status.h"
 
 extern "C" {
 	#include "mupdf/fitz.h"
 }
-
-typedef enum {
-	S_ISOK = 0,
-	E_FAILURE = 1,
-	E_OUTOFMEM = 2,
-	E_NEEDPASSWORD
-} status_t;
 
 #define MAX_SEARCH 500
 

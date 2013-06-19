@@ -10,8 +10,9 @@
 #include "ppltasks.h"
 #include <collection.h>
 #include <algorithm>
-#include "mudocument.h"
+#include <assert.h>
 #include "DocumentPage.h"
+#include "status.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -148,7 +149,6 @@ namespace mupdf_cpp
 		void ClearLinks();
 		void InvalidateLinks();
 		void ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-		void FlattenOutline(fz_outline *outline, int level);
 		void ListView_Single_Tap(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
 		void ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e);
 		void ContentChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::SelectionChangedEventArgs^ e);

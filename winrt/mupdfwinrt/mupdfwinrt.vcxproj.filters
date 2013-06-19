@@ -23,5 +23,6 @@
     <ClInclude Include="utils.h" />
     <ClInclude Include="ContentItem.h" />
     <ClInclude Include="Cache.h" />
+    <ClInclude Include="status.h" />
   </ItemGroup>
 </Project>

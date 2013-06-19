@@ -16,10 +16,6 @@ using namespace Platform;
 using namespace Concurrency;
 using namespace Platform::Collections;
 
-#define SEARCH_FORWARD 1
-#define SEARCH_BACKWARD -1
-#define TEXT_NOT_FOUND -1
-
 namespace mupdfwinrt
 {
 	public ref class mudocument sealed

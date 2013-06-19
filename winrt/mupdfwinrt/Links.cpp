@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Links.h"
+#include "status.h"
 
 using namespace mupdfwinrt;
 

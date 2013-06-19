@@ -90,8 +90,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <PackageCertificateKeyFile>mupdf_cpp_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <PackageCertificateThumbprint>9417B1B38E16F42A27C3D0AA69B4CE6DEB584BAC</PackageCertificateThumbprint>
+    <PackageCertificateKeyFile>mupdf_cpp_StoreKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>CD9F039F746ECFA4533010958399D3B0FFB6B3B5</PackageCertificateThumbprint>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -123,6 +124,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <AdditionalOptions>/APPCONTAINER /SAFESEH %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -133,6 +135,9 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <SectionAlignment>
+      </SectionAlignment>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -143,6 +148,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <AdditionalOptions>/APPCONTAINER /SAFESEH %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -153,6 +159,9 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <SectionAlignment>
+      </SectionAlignment>
+      <AdditionalOptions>/APPCONTAINER /SAFESEH %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -163,6 +172,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <AdditionalOptions>/APPCONTAINER /SAFESEH %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,9 +183,13 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <SectionAlignment>
+      </SectionAlignment>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\mupdfwinrt\status.h" />
     <ClInclude Include="DocumentPage.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.xaml.h">
@@ -201,6 +215,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="mupdf_cpp_StoreKey.pfx" />
     <None Include="mupdf_cpp_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -239,18 +254,14 @@
     <Image Include="Assets\StoreLogo.scale-180.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="Assets\WideLogo.scale-100.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-140.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-180.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-80.png">
-      <DeploymentContent>true</DeploymentContent>
-    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mupdfwinrt\mupdfwinrt.vcxproj">
+      <Project>{9e6ab41d-09a7-45a6-a53b-1e4bf3ac5b33}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Package.StoreAssociation.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -27,12 +27,15 @@
     <ClInclude Include="MainPage.xaml.h" />
     <ClInclude Include="DocumentPage.h" />
     <ClInclude Include="RectList.h" />
+    <ClInclude Include="..\mupdfwinrt\status.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="mupdf_cpp_TemporaryKey.pfx" />
+    <None Include="Package.StoreAssociation.xml" />
+    <None Include="mupdf_cpp_StoreKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />
@@ -51,18 +54,6 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="Assets\Logo.Scale-180.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-100.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-140.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-180.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="Assets\WideLogo.scale-80.png">
       <Filter>Assets</Filter>
     </Image>
     <Image Include="Assets\mupdf_splash.png">

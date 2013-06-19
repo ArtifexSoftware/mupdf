@@ -2,7 +2,6 @@
 
 #include "pch.h"
 #include "muctx.h"
-#include "Links.h"
 
 /* This class interfaces to mupdf API with minimal windows objects
  * (other than the file streaming stuff) */

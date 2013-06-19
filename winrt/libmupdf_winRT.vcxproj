@@ -80,7 +80,6 @@
     <ClCompile Include="..\fitz\filt_predict.c" />
     <ClCompile Include="..\fitz\image_jpeg.c" />
     <ClCompile Include="..\fitz\image_jpx.c" />
-    <ClCompile Include="..\fitz\image_md5.c" />
     <ClCompile Include="..\fitz\image_png.c" />
     <ClCompile Include="..\fitz\image_tiff.c" />
     <ClCompile Include="..\fitz\memento.c" />

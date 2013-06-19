@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "mudocument.h"
+#include "status.h"
 
 using namespace mupdfwinrt;
 using namespace concurrency;

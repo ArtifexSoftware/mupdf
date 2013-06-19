@@ -147,9 +147,6 @@
     <ClCompile Include="..\fitz\image_jpx.c">
       <Filter>fitz</Filter>
     </ClCompile>
-    <ClCompile Include="..\fitz\image_md5.c">
-      <Filter>fitz</Filter>
-    </ClCompile>
     <ClCompile Include="..\fitz\image_png.c">
       <Filter>fitz</Filter>
     </ClCompile>
