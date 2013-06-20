@@ -1095,7 +1095,7 @@ fz_draw_fill_image(fz_device *devp, fz_image *image, const fz_matrix *ctm, float
 	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
 	dy = sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d);
 
-	pixmap = fz_image_to_pixmap(ctx, image, dx, dy);
+	pixmap = fz_new_pixmap_from_image(ctx, image, dx, dy);
 	orig_pixmap = pixmap;
 
 	/* convert images with more components (cmyk->rgb) before scaling */
@@ -1196,7 +1196,7 @@ fz_draw_fill_image_mask(fz_device *devp, fz_image *image, const fz_matrix *ctm,
 
 	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
 	dy = sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d);
-	pixmap = fz_image_to_pixmap(ctx, image, dx, dy);
+	pixmap = fz_new_pixmap_from_image(ctx, image, dx, dy);
 	orig_pixmap = pixmap;
 
 	fz_try(ctx)
@@ -1299,7 +1299,7 @@ fz_draw_clip_image_mask(fz_device *devp, fz_image *image, const fz_rect *rect, c
 
 	fz_try(ctx)
 	{
-		pixmap = fz_image_to_pixmap(ctx, image, dx, dy);
+		pixmap = fz_new_pixmap_from_image(ctx, image, dx, dy);
 		orig_pixmap = pixmap;
 
 		state[1].mask = mask = fz_new_pixmap_with_bbox(dev->ctx, NULL, &bbox);

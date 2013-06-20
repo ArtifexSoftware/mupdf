@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 
 fz_pixmap *
-fz_image_to_pixmap(fz_context *ctx, fz_image *image, int w, int h)
+fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 {
 	if (image == NULL)
 		return NULL;

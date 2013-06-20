@@ -20,7 +20,7 @@
 typedef struct fz_image_s fz_image;
 
 /*
-	fz_image_to_pixmap: Called to get a handle to a pixmap from an image.
+	fz_new_pixmap_from_image: Called to get a handle to a pixmap from an image.
 
 	image: The image to retrieve a pixmap from.
 
@@ -34,7 +34,7 @@ typedef struct fz_image_s fz_image;
 
 	Returns a non NULL pixmap pointer. May throw exceptions.
 */
-fz_pixmap *fz_image_to_pixmap(fz_context *ctx, fz_image *image, int w, int h);
+fz_pixmap *fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h);
 
 /*
 	fz_drop_image: Drop a reference to an image.
