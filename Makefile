@@ -291,9 +291,7 @@ install: libs apps
 tags: $(shell find include source -name '*.[ch]')
 	ctags $^
 
-all: all-nojs $(JSTARGETS)
-
-all-nojs: $(THIRD_LIBS) $(MUPDF_LIB) $(MUVIEW) $(MUDRAW) $(MUTOOL)
+all: libs apps
 
 clean:
 	rm -rf $(OUT)
