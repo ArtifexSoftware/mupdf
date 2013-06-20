@@ -69,25 +69,25 @@ void pdf_update_annot(pdf_document *, pdf_annot *annot);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 
 /*
-	fz_create_annot: create a new annotation of the specified type on the
+	pdf_create_annot: create a new annotation of the specified type on the
 	specified page. The returned pdf_annot structure is owned by the page
 	and does not need to be freed.
 */
 pdf_annot *pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type);
 
 /*
-	fz_delete_annot: delete an annotation
+	pdf_delete_annot: delete an annotation
 */
 void pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot);
 
 /*
-	fz_set_annot_appearance: update the appearance of an annotation based
+	pdf_set_annot_appearance: update the appearance of an annotation based
 	on a display list.
 */
 void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list);
 
 /*
-	fz_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
+	pdf_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
 */
 void pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n);
 
