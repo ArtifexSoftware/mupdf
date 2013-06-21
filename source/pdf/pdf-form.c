@@ -1717,7 +1717,7 @@ static void execute_action(pdf_document *doc, pdf_obj *obj, pdf_obj *a)
 	}
 }
 
-static void update_text_markup_appearance(pdf_document *doc, pdf_obj *annot, fz_annot_type type)
+static void update_text_markup_appearance(pdf_document *doc, pdf_annot *annot, fz_annot_type type)
 {
 	float color[3];
 	float alpha;
@@ -1754,11 +1754,12 @@ static void update_text_markup_appearance(pdf_document *doc, pdf_obj *annot, fz_
 			return;
 	}
 
-	pdf_set_markup_obj_appearance(doc, annot, color, alpha, line_thickness, line_height);
+	pdf_set_markup_appearance(doc, annot, color, alpha, line_thickness, line_height);
 }
 
-void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
+void pdf_update_appearance(pdf_document *doc, pdf_annot *annot)
 {
+	pdf_obj *obj = annot->obj;
 	if (!pdf_dict_gets(obj, "AP") || pdf_dict_gets(obj, "Dirty"))
 	{
 		fz_annot_type type = pdf_annot_obj_type(obj);
@@ -1803,10 +1804,10 @@ void pdf_update_appearance(pdf_document *doc, pdf_obj *obj)
 		case FZ_ANNOT_STRIKEOUT:
 		case FZ_ANNOT_UNDERLINE:
 		case FZ_ANNOT_HIGHLIGHT:
-			update_text_markup_appearance(doc, obj, type);
+			update_text_markup_appearance(doc, annot, type);
 			break;
 		case FZ_ANNOT_INK:
-			pdf_set_ink_obj_appearance(doc, obj);
+			pdf_set_ink_appearance(doc, annot);
 			break;
 		default:
 			break;

@@ -477,46 +477,66 @@ static const char *annot_type_str(fz_annot_type type)
 pdf_annot *
 pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 {
-	pdf_annot *annot, *head, *tail;
+	pdf_annot *annot, *head, *tail, **itr;
 	pdf_obj *obj, *ap, *as, *n, *rect;
 	int i, len, is_dict;
 	fz_context *ctx = xref->ctx;
 
 	fz_var(annot);
+	fz_var(itr);
 
 	head = tail = NULL;
 
 	len = pdf_array_len(annots);
+	/*
+	Create an initial linked list of pdf_annot structures with only the obj field
+	filled in. We do this because update_appearance has the potential to change
+	the annot array, so we don't want to be iterating through the array while
+	that happens.
+	*/
 	for (i = 0; i < len; i++)
 	{
-		fz_try(ctx)
+		obj = pdf_array_get(annots, i);
+		annot = fz_malloc_struct(ctx, pdf_annot);
+		annot->obj = pdf_keep_obj(obj);
+		annot->page = page;
+		annot->next = NULL;
+
+		if (!head)
+			head = tail = annot;
+		else
 		{
-			obj = pdf_array_get(annots, i);
-
-			if (xref->update_appearance)
-				xref->update_appearance(xref, obj);
-
-			rect = pdf_dict_gets(obj, "Rect");
-			ap = pdf_dict_gets(obj, "AP");
-			as = pdf_dict_gets(obj, "AS");
-			is_dict = pdf_is_dict(ap);
+			tail->next = annot;
+			tail = annot;
 		}
-		fz_catch(ctx)
-		{
-			/* FIXME: TryLater */
-			ap = NULL;
-			is_dict = 0;
-		}
+	}
 
-		if (!is_dict)
-			continue;
+	/*
+	Iterate through the newly created annot linked list, using a double pointer to
+	facilitate deleting broken annotations.
+	*/
+	itr = &head;
+	while (*itr)
+	{
+		annot = *itr;
 
-		annot = NULL;
 		fz_try(ctx)
 		{
 			pdf_hotspot *hp = &xref->hotspot;
 
 			n = NULL;
+
+			if (xref->update_appearance)
+				xref->update_appearance(xref, annot);
+
+			obj = annot->obj;
+			rect = pdf_dict_gets(obj, "Rect");
+			ap = pdf_dict_gets(obj, "AP");
+			as = pdf_dict_gets(obj, "AS");
+			is_dict = pdf_is_dict(ap);
+
+			if (!is_dict)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Annotation object not a dictionary");
 
 			if (hp->num == pdf_to_num(obj)
 				&& hp->gen == pdf_to_gen(obj)
@@ -532,9 +552,6 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 			if (!pdf_is_stream(xref, pdf_to_num(n), pdf_to_gen(n)))
 				n = pdf_dict_get(n, as);
 
-			annot = fz_malloc_struct(ctx, pdf_annot);
-			annot->page = page;
-			annot->obj = pdf_keep_obj(obj);
 			pdf_to_rect(ctx, rect, &annot->rect);
 			annot->pagerect = annot->rect;
 			fz_transform_rect(&annot->pagerect, &page->ctm);
@@ -549,21 +566,17 @@ pdf_load_annots(pdf_document *xref, pdf_obj *annots, pdf_page *page)
 				annot->ap_iteration = annot->ap->iteration;
 			}
 
-			annot->next = NULL;
-
 			if (obj == xref->focus_obj)
 				xref->focus = annot;
 
-			if (!head)
-				head = tail = annot;
-			else
-			{
-				tail->next = annot;
-				tail = annot;
-			}
+			/* Move to next item in the linked list */
+			itr = &annot->next;
 		}
 		fz_catch(ctx)
 		{
+			/* Move to next item in the linked list, dropping this one */
+			*itr = annot->next;
+			annot->next = NULL; /* Required because pdf_free_annot follows the "next" chain */
 			pdf_free_annot(ctx, annot);
 			fz_warn(ctx, "ignoring broken annotation");
 			/* FIXME: TryLater */
@@ -579,10 +592,10 @@ pdf_update_annot(pdf_document *xref, pdf_annot *annot)
 	pdf_obj *obj, *ap, *as, *n;
 	fz_context *ctx = xref->ctx;
 
-	obj = annot->obj;
-
 	if (xref->update_appearance)
-		xref->update_appearance(xref, obj);
+		xref->update_appearance(xref, annot);
+
+	obj = annot->obj;
 
 	ap = pdf_dict_gets(obj, "AP");
 	as = pdf_dict_gets(obj, "AS");
@@ -944,9 +957,11 @@ pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *
 }
 
 void
-pdf_set_annot_obj_appearance(pdf_document *doc, pdf_obj *obj, const fz_matrix *page_ctm, fz_rect *rect, fz_display_list *disp_list)
+pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)
 {
 	fz_context *ctx = doc->ctx;
+	pdf_obj *obj = annot->obj;
+	const fz_matrix *page_ctm = &annot->page->ctm;
 	fz_matrix ctm;
 	fz_matrix mat = fz_identity;
 	fz_device *dev = NULL;
@@ -993,6 +1008,8 @@ pdf_set_annot_obj_appearance(pdf_document *doc, pdf_obj *obj, const fz_matrix *p
 		}
 
 		doc->dirty = 1;
+
+		update_rect(ctx, annot);
 	}
 	fz_catch(ctx)
 	{
@@ -1002,22 +1019,16 @@ pdf_set_annot_obj_appearance(pdf_document *doc, pdf_obj *obj, const fz_matrix *p
 }
 
 void
-pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)
-{
-	pdf_set_annot_obj_appearance(doc, annot->obj, &annot->page->ctm, rect, disp_list);
-	update_rect(doc->ctx, annot);
-}
-
-void
-pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3], float alpha, float line_thickness, float line_height)
+pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[3], float alpha, float line_thickness, float line_height)
 {
 	fz_context *ctx = doc->ctx;
+	const fz_matrix *page_ctm = &annot->page->ctm;
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
 	fz_display_list *strike_list = NULL;
 	int i, n;
-	fz_point *qp = quadpoints(doc, annot, &n);
+	fz_point *qp = quadpoints(doc, annot->obj, &n);
 
 	if (!qp || n <= 0)
 		return;
@@ -1060,7 +1071,7 @@ pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3],
 				if (stroke)
 				{
 					// assert(path)
-					fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb(ctx), color, alpha);
+					fz_stroke_path(dev, path, stroke, page_ctm, fz_device_rgb(ctx), color, alpha);
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
 					fz_free_path(ctx, path);
@@ -1078,10 +1089,11 @@ pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3],
 
 		if (stroke)
 		{
-			fz_stroke_path(dev, path, stroke, &fz_identity, fz_device_rgb(ctx), color, alpha);
+			fz_stroke_path(dev, path, stroke, page_ctm, fz_device_rgb(ctx), color, alpha);
 		}
 
-		pdf_set_annot_obj_appearance(doc, annot, &fz_identity, &rect, strike_list);
+		fz_transform_rect(&rect, page_ctm);
+		pdf_set_annot_appearance(doc, annot, &rect, strike_list);
 	}
 	fz_always(ctx)
 	{
@@ -1098,9 +1110,10 @@ pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3],
 }
 
 void
-pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
+pdf_set_ink_appearance(pdf_document *doc, pdf_annot *annot)
 {
 	fz_context *ctx = doc->ctx;
+	const fz_matrix *page_ctm = &annot->page->ctm;
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
@@ -1119,7 +1132,7 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 		pdf_obj *list;
 		int n, m, i, j;
 
-		cs = pdf_to_color(doc, pdf_dict_gets(annot, "C"), color);
+		cs = pdf_to_color(doc, pdf_dict_gets(annot->obj, "C"), color);
 		if (!cs)
 		{
 			cs = fz_device_rgb(ctx);
@@ -1128,11 +1141,11 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 			color[2] = 0.0f;
 		}
 
-		width = pdf_to_real(pdf_dict_gets(pdf_dict_gets(annot, "BS"), "W"));
+		width = pdf_to_real(pdf_dict_gets(pdf_dict_gets(annot->obj, "BS"), "W"));
 		if (width == 0.0f)
 			width = 1.0f;
 
-		list = pdf_dict_gets(annot, "InkList");
+		list = pdf_dict_gets(annot->obj, "InkList");
 
 		n = pdf_array_len(list);
 
@@ -1173,11 +1186,12 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 			fz_lineto(ctx, path, pt_last.x, pt_last.y);
 		}
 
-		fz_stroke_path(dev, path, stroke, &fz_identity, cs, color, 1.0f);
+		fz_stroke_path(dev, path, stroke, page_ctm, cs, color, 1.0f);
 
 		fz_expand_rect(&rect, width);
 
-		pdf_set_annot_obj_appearance(doc, annot, &fz_identity, &rect, strike_list);
+		fz_transform_rect(&rect, page_ctm);
+		pdf_set_annot_appearance(doc, annot, &rect, strike_list);
 	}
 	fz_always(ctx)
 	{
@@ -1190,11 +1204,4 @@ pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot)
 	{
 		fz_rethrow(ctx);
 	}
-}
-
-void
-pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[3], float alpha, float line_thickness, float line_height)
-{
-	pdf_set_markup_obj_appearance(doc, annot->obj, color, alpha, line_thickness, line_height);
-	update_rect(doc->ctx, annot);
 }

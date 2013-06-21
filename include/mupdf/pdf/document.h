@@ -201,7 +201,7 @@ struct pdf_document_s
 	pdf_js *js;
 	int recalculating;
 	int dirty;
-	void (*update_appearance)(pdf_document *xref, pdf_obj *annot);
+	void (*update_appearance)(pdf_document *xref, pdf_annot *annot);
 
 	pdf_doc_event_cb *event_cb;
 	void *event_cb_data;

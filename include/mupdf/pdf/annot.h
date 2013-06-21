@@ -91,8 +91,6 @@ void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect
 */
 void pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n);
 
-void pdf_set_markup_obj_appearance(pdf_document *doc, pdf_obj *annot, float color[3], float alpha, float line_thickness, float line_height);
-
 /*
 	fz_set_markup_appearance: set the appearance stream of a text markup annotations, basing it on
 	its QuadPoints array
@@ -104,7 +102,7 @@ void pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[
 	are carried in a single array, with the counts for each arc held in a secondary array.
 */
 void pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness);
-void pdf_set_ink_obj_appearance(pdf_document *doc, pdf_obj *annot);
+void pdf_set_ink_appearance(pdf_document *doc, pdf_annot *annot);
 
 fz_annot_type pdf_annot_obj_type(pdf_obj *obj);
 

@@ -72,6 +72,6 @@ pdf_xobject *pdf_keep_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_update_xobject_contents(pdf_document *xref, pdf_xobject *form, fz_buffer *buffer);
 
-void pdf_update_appearance(pdf_document *doc, pdf_obj *obj);
+void pdf_update_appearance(pdf_document *doc, pdf_annot *annot);
 
 #endif
