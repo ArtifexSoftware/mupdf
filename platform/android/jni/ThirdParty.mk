@@ -5,12 +5,12 @@ include $(CLEAR_VARS)
 MY_ROOT := ../..
 
 LOCAL_C_INCLUDES := \
-	../thirdparty/jbig2dec \
-	../thirdparty/openjpeg/src/lib/openjp2 \
-	../thirdparty/jpeg \
-	../thirdparty/zlib \
-	../thirdparty/freetype/include \
-	../scripts
+	../../thirdparty/jbig2dec \
+	../../thirdparty/openjpeg/src/lib/openjp2 \
+	../../thirdparty/jpeg \
+	../../thirdparty/zlib \
+	../../thirdparty/freetype/include \
+	../../scripts
 
 LOCAL_CFLAGS := \
 	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -DHAVE_STDINT_H \
@@ -128,5 +128,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/freetype/src/sfnt/sfnt.c \
 	$(MY_ROOT)/thirdparty/freetype/src/truetype/truetype.c \
 	$(MY_ROOT)/thirdparty/freetype/src/type1/type1.c
+
+LOCAL_SRC_FILES := $(addprefix ../, $(LOCAL_SRC_FILES))
 
 include $(BUILD_STATIC_LIBRARY)
