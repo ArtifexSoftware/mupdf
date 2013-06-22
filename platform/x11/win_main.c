@@ -1158,6 +1158,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	}
 
 	pdfapp_close(&gapp);
+	fz_free_context(ctx);
 
 	return 0;
 }
