@@ -676,7 +676,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_annot *annot = NULL;
-	pdf_obj *annot_obj = pdf_new_dict(ctx, 0);
+	pdf_obj *annot_obj = pdf_new_dict(doc, 0);
 	pdf_obj *ind_obj = NULL;
 
 	fz_var(annot);
@@ -689,14 +689,14 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		pdf_obj *annot_arr = pdf_dict_gets(page->me, "Annots");
 		if (annot_arr == NULL)
 		{
-			annot_arr = pdf_new_array(ctx, 0);
+			annot_arr = pdf_new_array(doc, 0);
 			pdf_dict_puts_drop(page->me, "Annots", annot_arr);
 		}
 
-		pdf_dict_puts_drop(annot_obj, "Type", pdf_new_name(ctx, "Annot"));
+		pdf_dict_puts_drop(annot_obj, "Type", pdf_new_name(doc, "Annot"));
 
-		pdf_dict_puts_drop(annot_obj, "Subtype", pdf_new_name(ctx, type_str));
-		pdf_dict_puts_drop(annot_obj, "Rect", pdf_new_rect(ctx, &rect));
+		pdf_dict_puts_drop(annot_obj, "Subtype", pdf_new_name(doc, type_str));
+		pdf_dict_puts_drop(annot_obj, "Rect", pdf_new_rect(doc, &rect));
 
 		annot = fz_malloc_struct(ctx, pdf_annot);
 		annot->page = page;
@@ -714,7 +714,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		*/
 		ind_obj_num = pdf_create_object(doc);
 		pdf_update_object(doc, ind_obj_num, annot_obj);
-		ind_obj = pdf_new_indirect(ctx, ind_obj_num, 0, doc);
+		ind_obj = pdf_new_indirect(doc, ind_obj_num, 0);
 		pdf_array_push(annot_arr, ind_obj);
 
 		/*
@@ -777,7 +777,7 @@ pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot)
 	if (old_annot_arr)
 	{
 		int i, n = pdf_array_len(old_annot_arr);
-		annot_arr = pdf_new_array(ctx, n?(n-1):0);
+		annot_arr = pdf_new_array(doc, n?(n-1):0);
 
 		fz_try(ctx)
 		{
@@ -872,7 +872,7 @@ pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *q
 {
 	fz_context *ctx = doc->ctx;
 	fz_matrix ctm;
-	pdf_obj *arr = pdf_new_array(ctx, n*2);
+	pdf_obj *arr = pdf_new_array(doc, n*2);
 	int i;
 
 	fz_invert_matrix(&ctm, &annot->page->ctm);
@@ -885,9 +885,9 @@ pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *q
 		pdf_obj *r;
 
 		fz_transform_point(&pt, &ctm);
-		r = pdf_new_real(ctx, pt.x);
+		r = pdf_new_real(doc, pt.x);
 		pdf_array_push_drop(arr, r);
-		r = pdf_new_real(ctx, pt.y);
+		r = pdf_new_real(doc, pt.y);
 		pdf_array_push_drop(arr, r);
 	}
 }
@@ -904,7 +904,7 @@ pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *
 {
 	fz_context *ctx = doc->ctx;
 	fz_matrix ctm;
-	pdf_obj *list = pdf_new_array(ctx, ncount);
+	pdf_obj *list = pdf_new_array(doc, ncount);
 	pdf_obj *bs, *col;
 	fz_rect rect;
 	int i, k = 0;
@@ -916,7 +916,7 @@ pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *
 	for (i = 0; i < ncount; i++)
 	{
 		int j;
-		pdf_obj *arc = pdf_new_array(ctx, counts[i]);
+		pdf_obj *arc = pdf_new_array(doc, counts[i]);
 
 		pdf_array_push_drop(list, arc);
 
@@ -936,24 +936,24 @@ pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *
 				fz_include_point_in_rect(&rect, &pt);
 			}
 
-			pdf_array_push_drop(arc, pdf_new_real(ctx, pt.x));
-			pdf_array_push_drop(arc, pdf_new_real(ctx, pt.y));
+			pdf_array_push_drop(arc, pdf_new_real(doc, pt.x));
+			pdf_array_push_drop(arc, pdf_new_real(doc, pt.y));
 			k++;
 		}
 	}
 
 	fz_expand_rect(&rect, thickness);
-	pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(ctx, &rect));
+	pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(doc, &rect));
 	update_rect(ctx, annot);
 
-	bs = pdf_new_dict(ctx, 1);
+	bs = pdf_new_dict(doc, 1);
 	pdf_dict_puts_drop(annot->obj, "BS", bs);
-	pdf_dict_puts_drop(bs, "W", pdf_new_real(ctx, thickness));
+	pdf_dict_puts_drop(bs, "W", pdf_new_real(doc, thickness));
 
-	col = pdf_new_array(ctx, 3);
+	col = pdf_new_array(doc, 3);
 	pdf_dict_puts_drop(annot->obj, "C", col);
 	for (i = 0; i < 3; i++)
-		pdf_array_push_drop(col, pdf_new_real(ctx, color[i]));
+		pdf_array_push_drop(col, pdf_new_real(doc, color[i]));
 }
 
 void
@@ -977,7 +977,7 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_
 
 		fz_transform_rect(&trect, &ctm);
 
-		pdf_dict_puts_drop(obj, "Rect", pdf_new_rect(ctx, &trect));
+		pdf_dict_puts_drop(obj, "Rect", pdf_new_rect(doc, &trect));
 
 		/* See if there is a current normal appearance */
 		ap_obj = pdf_dict_getp(obj, "AP/N");
@@ -991,8 +991,8 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_
 		}
 		else
 		{
-			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(ctx, &trect));
-			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(ctx, &mat));
+			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(doc, &trect));
+			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(doc, &mat));
 		}
 
 		dev = pdf_new_pdf_device(doc, ap_obj, pdf_dict_gets(ap_obj, "Resources"), &mat);

@@ -9,11 +9,12 @@ struct info
 };
 
 static void
-put_marker_bool(fz_context *ctx, pdf_obj *rdb, char *marker, int val)
+put_marker_bool(pdf_document *doc, pdf_obj *rdb, char *marker, int val)
 {
 	pdf_obj *tmp;
+	fz_context *ctx = doc->ctx;
 
-	tmp = pdf_new_bool(ctx, val);
+	tmp = pdf_new_bool(doc, val);
 	fz_try(ctx)
 	{
 		pdf_dict_puts(rdb, marker, tmp);
@@ -199,10 +200,10 @@ pdf_lookup_page_number(pdf_document *xref, pdf_obj *page)
 
 /* We need to know whether to install a page-level transparency group */
 
-static int pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb);
+static int pdf_resources_use_blending(pdf_document *doc, pdf_obj *rdb);
 
 static int
-pdf_extgstate_uses_blending(fz_context *ctx, pdf_obj *dict)
+pdf_extgstate_uses_blending(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *obj = pdf_dict_gets(dict, "BM");
 	if (pdf_is_name(obj) && strcmp(pdf_to_name(obj), "Normal"))
@@ -211,26 +212,27 @@ pdf_extgstate_uses_blending(fz_context *ctx, pdf_obj *dict)
 }
 
 static int
-pdf_pattern_uses_blending(fz_context *ctx, pdf_obj *dict)
+pdf_pattern_uses_blending(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *obj;
 	obj = pdf_dict_gets(dict, "Resources");
-	if (pdf_resources_use_blending(ctx, obj))
+	if (pdf_resources_use_blending(doc, obj))
 		return 1;
 	obj = pdf_dict_gets(dict, "ExtGState");
-	return pdf_extgstate_uses_blending(ctx, obj);
+	return pdf_extgstate_uses_blending(doc, obj);
 }
 
 static int
-pdf_xobject_uses_blending(fz_context *ctx, pdf_obj *dict)
+pdf_xobject_uses_blending(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *obj = pdf_dict_gets(dict, "Resources");
-	return pdf_resources_use_blending(ctx, obj);
+	return pdf_resources_use_blending(doc, obj);
 }
 
 static int
-pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb)
+pdf_resources_use_blending(pdf_document *doc, pdf_obj *rdb)
 {
+	fz_context *ctx = doc->ctx;
 	pdf_obj *obj;
 	int i, n, useBM = 0;
 
@@ -251,19 +253,19 @@ pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb)
 		obj = pdf_dict_gets(rdb, "ExtGState");
 		n = pdf_dict_len(obj);
 		for (i = 0; i < n; i++)
-			if (pdf_extgstate_uses_blending(ctx, pdf_dict_get_val(obj, i)))
+			if (pdf_extgstate_uses_blending(doc, pdf_dict_get_val(obj, i)))
 				goto found;
 
 		obj = pdf_dict_gets(rdb, "Pattern");
 		n = pdf_dict_len(obj);
 		for (i = 0; i < n; i++)
-			if (pdf_pattern_uses_blending(ctx, pdf_dict_get_val(obj, i)))
+			if (pdf_pattern_uses_blending(doc, pdf_dict_get_val(obj, i)))
 				goto found;
 
 		obj = pdf_dict_gets(rdb, "XObject");
 		n = pdf_dict_len(obj);
 		for (i = 0; i < n; i++)
-			if (pdf_xobject_uses_blending(ctx, pdf_dict_get_val(obj, i)))
+			if (pdf_xobject_uses_blending(doc, pdf_dict_get_val(obj, i)))
 				goto found;
 		if (0)
 		{
@@ -280,7 +282,7 @@ found:
 		fz_rethrow(ctx);
 	}
 
-	put_marker_bool(ctx, rdb, ".useBM", useBM);
+	put_marker_bool(doc, rdb, ".useBM", useBM);
 	return useBM;
 }
 
@@ -331,9 +333,9 @@ pdf_load_transition(pdf_document *xref, pdf_page *page, pdf_obj *transdict)
 }
 
 pdf_page *
-pdf_load_page(pdf_document *xref, int number)
+pdf_load_page(pdf_document *doc, int number)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	pdf_page *page;
 	pdf_annot *annot;
 	pdf_obj *pageobj, *pageref, *obj;
@@ -341,12 +343,12 @@ pdf_load_page(pdf_document *xref, int number)
 	float userunit;
 	fz_matrix mat;
 
-	pdf_load_page_tree(xref);
-	if (number < 0 || number >= xref->page_len)
+	pdf_load_page_tree(doc);
+	if (number < 0 || number >= doc->page_len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find page %d", number + 1);
 
-	pageobj = xref->page_objs[number];
-	pageref = xref->page_refs[number];
+	pageobj = doc->page_objs[number];
+	pageref = doc->page_refs[number];
 
 	page = fz_malloc_struct(ctx, pdf_page);
 	page->resources = NULL;
@@ -408,8 +410,8 @@ pdf_load_page(pdf_document *xref, int number)
 	obj = pdf_dict_gets(pageobj, "Annots");
 	if (obj)
 	{
-		page->links = pdf_load_link_annots(xref, obj, &page->ctm);
-		page->annots = pdf_load_annots(xref, obj, page);
+		page->links = pdf_load_link_annots(doc, obj, &page->ctm);
+		page->annots = pdf_load_annots(doc, obj, page);
 	}
 
 	page->duration = pdf_to_real(pdf_dict_gets(pageobj, "Dur"));
@@ -418,7 +420,7 @@ pdf_load_page(pdf_document *xref, int number)
 	page->transition_present = (obj != NULL);
 	if (obj)
 	{
-		pdf_load_transition(xref, page, obj);
+		pdf_load_transition(doc, page, obj);
 	}
 
 	page->resources = pdf_dict_gets(pageobj, "Resources");
@@ -430,16 +432,16 @@ pdf_load_page(pdf_document *xref, int number)
 	{
 		page->contents = pdf_keep_obj(obj);
 
-		if (pdf_resources_use_blending(ctx, page->resources))
+		if (pdf_resources_use_blending(doc, page->resources))
 			page->transparency = 1;
 
 		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
-			if (annot->ap && pdf_resources_use_blending(ctx, annot->ap->resources))
+			if (annot->ap && pdf_resources_use_blending(doc, annot->ap->resources))
 				page->transparency = 1;
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_page(xref, page);
+		pdf_free_page(doc, page);
 		fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
 	}
 
@@ -554,12 +556,12 @@ pdf_insert_page(pdf_document *xref, pdf_page *page, int at)
 }
 
 pdf_page *
-pdf_create_page(pdf_document *xref, fz_rect mediabox, int res, int rotate)
+pdf_create_page(pdf_document *doc, fz_rect mediabox, int res, int rotate)
 {
 	pdf_page *page = NULL;
 	pdf_obj *pageobj, *obj;
 	float userunit = 1;
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	fz_matrix ctm, tmp;
 	fz_rect realbox;
 
@@ -574,15 +576,15 @@ pdf_create_page(pdf_document *xref, fz_rect mediabox, int res, int rotate)
 		page->transparency = 0;
 		page->links = NULL;
 		page->annots = NULL;
-		page->me = pageobj = pdf_new_dict(ctx, 4);
+		page->me = pageobj = pdf_new_dict(doc, 4);
 
-		pdf_dict_puts_drop(pageobj, "Type", pdf_new_name(ctx, "Page"));
+		pdf_dict_puts_drop(pageobj, "Type", pdf_new_name(doc, "Page"));
 
 		page->mediabox.x0 = fz_min(mediabox.x0, mediabox.x1) * userunit;
 		page->mediabox.y0 = fz_min(mediabox.y0, mediabox.y1) * userunit;
 		page->mediabox.x1 = fz_max(mediabox.x0, mediabox.x1) * userunit;
 		page->mediabox.y1 = fz_max(mediabox.y0, mediabox.y1) * userunit;
-		pdf_dict_puts_drop(pageobj, "MediaBox", pdf_new_rect(ctx, &page->mediabox));
+		pdf_dict_puts_drop(pageobj, "MediaBox", pdf_new_rect(doc, &page->mediabox));
 
 		/* Snap page->rotate to 0, 90, 180 or 270 */
 		if (page->rotate < 0)
@@ -592,7 +594,7 @@ pdf_create_page(pdf_document *xref, fz_rect mediabox, int res, int rotate)
 		page->rotate = 90*((page->rotate + 45)/90);
 		if (page->rotate > 360)
 			page->rotate = 0;
-		pdf_dict_puts_drop(pageobj, "Rotate", pdf_new_int(ctx, page->rotate));
+		pdf_dict_puts_drop(pageobj, "Rotate", pdf_new_int(doc, page->rotate));
 
 		fz_pre_rotate(fz_scale(&ctm, 1, -1), -page->rotate);
 		realbox = page->mediabox;
@@ -600,8 +602,8 @@ pdf_create_page(pdf_document *xref, fz_rect mediabox, int res, int rotate)
 		fz_pre_scale(fz_translate(&tmp, -realbox.x0, -realbox.y0), userunit, userunit);
 		fz_concat(&ctm, &ctm, &tmp);
 		page->ctm = ctm;
-		obj = pdf_new_dict(ctx, 4);
-		page->contents = pdf_new_ref(xref, obj);
+		obj = pdf_new_dict(doc, 4);
+		page->contents = pdf_new_ref(doc, obj);
 		pdf_drop_obj(obj);
 		obj = NULL;
 		pdf_dict_puts(pageobj, "Contents", page->contents);

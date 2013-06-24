@@ -11,21 +11,21 @@ typedef struct pdf_document_s pdf_document;
 
 typedef struct pdf_obj_s pdf_obj;
 
-pdf_obj *pdf_new_null(fz_context *ctx);
-pdf_obj *pdf_new_bool(fz_context *ctx, int b);
-pdf_obj *pdf_new_int(fz_context *ctx, int i);
-pdf_obj *pdf_new_real(fz_context *ctx, float f);
-pdf_obj *pdf_new_name(fz_context *ctx, const char *str);
-pdf_obj *pdf_new_string(fz_context *ctx, const char *str, int len);
-pdf_obj *pdf_new_indirect(fz_context *ctx, int num, int gen, void *doc);
-pdf_obj *pdf_new_array(fz_context *ctx, int initialcap);
-pdf_obj *pdf_new_dict(fz_context *ctx, int initialcap);
-pdf_obj *pdf_new_rect(fz_context *ctx, const fz_rect *rect);
-pdf_obj *pdf_new_matrix(fz_context *ctx, const fz_matrix *mtx);
-pdf_obj *pdf_copy_array(fz_context *ctx, pdf_obj *array);
-pdf_obj *pdf_copy_dict(fz_context *ctx, pdf_obj *dict);
+pdf_obj *pdf_new_null(pdf_document *doc);
+pdf_obj *pdf_new_bool(pdf_document *doc, int b);
+pdf_obj *pdf_new_int(pdf_document *doc, int i);
+pdf_obj *pdf_new_real(pdf_document *doc, float f);
+pdf_obj *pdf_new_name(pdf_document *doc, const char *str);
+pdf_obj *pdf_new_string(pdf_document *doc, const char *str, int len);
+pdf_obj *pdf_new_indirect(pdf_document *doc, int num, int gen);
+pdf_obj *pdf_new_array(pdf_document *doc, int initialcap);
+pdf_obj *pdf_new_dict(pdf_document *doc, int initialcap);
+pdf_obj *pdf_new_rect(pdf_document *doc, const fz_rect *rect);
+pdf_obj *pdf_new_matrix(pdf_document *doc, const fz_matrix *mtx);
+pdf_obj *pdf_copy_array(pdf_obj *array);
+pdf_obj *pdf_copy_dict(pdf_obj *dict);
 
-pdf_obj *pdf_new_obj_from_str(fz_context *ctx, const char *src);
+pdf_obj *pdf_new_obj_from_str(pdf_document *doc, const char *src);
 
 pdf_obj *pdf_keep_obj(pdf_obj *obj);
 void pdf_drop_obj(pdf_obj *obj);

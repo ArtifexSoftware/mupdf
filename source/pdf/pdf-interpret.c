@@ -2835,7 +2835,7 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 							pdf_drop_obj(csi->obj);
 							csi->obj = NULL;
 						}
-						csi->obj = pdf_new_string(ctx, buf->scratch, buf->len);
+						csi->obj = pdf_new_string(csi->xref, buf->scratch, buf->len);
 					}
 					break;
 

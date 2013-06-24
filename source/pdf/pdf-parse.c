@@ -219,16 +219,16 @@ pdf_from_ucs2(pdf_document *xref, unsigned short *src)
 }
 
 pdf_obj *
-pdf_to_utf8_name(pdf_document *xref, pdf_obj *src)
+pdf_to_utf8_name(pdf_document *doc, pdf_obj *src)
 {
-	char *buf = pdf_to_utf8(xref, src);
-	pdf_obj *dst = pdf_new_name(xref->ctx, buf);
-	fz_free(xref->ctx, buf);
+	char *buf = pdf_to_utf8(doc, src);
+	pdf_obj *dst = pdf_new_name(doc, buf);
+	fz_free(doc->ctx, buf);
 	return dst;
 }
 
 pdf_obj *
-pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
+pdf_parse_array(pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
 {
 	pdf_obj *ary = NULL;
 	pdf_obj *obj = NULL;
@@ -239,7 +239,7 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 
 	fz_var(obj);
 
-	ary = pdf_new_array(ctx, 4);
+	ary = pdf_new_array(doc, 4);
 
 	fz_try(ctx)
 	{
@@ -251,14 +251,14 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 			{
 				if (n > 0)
 				{
-					obj = pdf_new_int(ctx, a);
+					obj = pdf_new_int(doc, a);
 					pdf_array_push(ary, obj);
 					pdf_drop_obj(obj);
 					obj = NULL;
 				}
 				if (n > 1)
 				{
-					obj = pdf_new_int(ctx, b);
+					obj = pdf_new_int(doc, b);
 					pdf_array_push(ary, obj);
 					pdf_drop_obj(obj);
 					obj = NULL;
@@ -268,7 +268,7 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 
 			if (tok == PDF_TOK_INT && n == 2)
 			{
-				obj = pdf_new_int(ctx, a);
+				obj = pdf_new_int(doc, a);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
@@ -293,7 +293,7 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 			case PDF_TOK_R:
 				if (n != 2)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse indirect reference in array");
-				obj = pdf_new_indirect(ctx, a, b, xref);
+				obj = pdf_new_indirect(doc, a, b);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
@@ -301,51 +301,51 @@ pdf_parse_array(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 				break;
 
 			case PDF_TOK_OPEN_ARRAY:
-				obj = pdf_parse_array(xref, file, buf);
+				obj = pdf_parse_array(doc, file, buf);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 
 			case PDF_TOK_OPEN_DICT:
-				obj = pdf_parse_dict(xref, file, buf);
+				obj = pdf_parse_dict(doc, file, buf);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 
 			case PDF_TOK_NAME:
-				obj = pdf_new_name(ctx, buf->scratch);
+				obj = pdf_new_name(doc, buf->scratch);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 			case PDF_TOK_REAL:
-				obj = pdf_new_real(ctx, buf->f);
+				obj = pdf_new_real(doc, buf->f);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 			case PDF_TOK_STRING:
-				obj = pdf_new_string(ctx, buf->scratch, buf->len);
+				obj = pdf_new_string(doc, buf->scratch, buf->len);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 			case PDF_TOK_TRUE:
-				obj = pdf_new_bool(ctx, 1);
+				obj = pdf_new_bool(doc, 1);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 			case PDF_TOK_FALSE:
-				obj = pdf_new_bool(ctx, 0);
+				obj = pdf_new_bool(doc, 0);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
 				break;
 			case PDF_TOK_NULL:
-				obj = pdf_new_null(ctx);
+				obj = pdf_new_null(doc);
 				pdf_array_push(ary, obj);
 				pdf_drop_obj(obj);
 				obj = NULL;
@@ -368,7 +368,7 @@ end:
 }
 
 pdf_obj *
-pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
+pdf_parse_dict(pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
 {
 	pdf_obj *dict;
 	pdf_obj *key = NULL;
@@ -377,7 +377,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 	int a, b;
 	fz_context *ctx = file->ctx;
 
-	dict = pdf_new_dict(ctx, 8);
+	dict = pdf_new_dict(doc, 8);
 
 	fz_var(key);
 	fz_var(val);
@@ -398,26 +398,26 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 			if (tok != PDF_TOK_NAME)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid key in dict");
 
-			key = pdf_new_name(ctx, buf->scratch);
+			key = pdf_new_name(doc, buf->scratch);
 
 			tok = pdf_lex(file, buf);
 
 			switch (tok)
 			{
 			case PDF_TOK_OPEN_ARRAY:
-				val = pdf_parse_array(xref, file, buf);
+				val = pdf_parse_array(doc, file, buf);
 				break;
 
 			case PDF_TOK_OPEN_DICT:
-				val = pdf_parse_dict(xref, file, buf);
+				val = pdf_parse_dict(doc, file, buf);
 				break;
 
-			case PDF_TOK_NAME: val = pdf_new_name(ctx, buf->scratch); break;
-			case PDF_TOK_REAL: val = pdf_new_real(ctx, buf->f); break;
-			case PDF_TOK_STRING: val = pdf_new_string(ctx, buf->scratch, buf->len); break;
-			case PDF_TOK_TRUE: val = pdf_new_bool(ctx, 1); break;
-			case PDF_TOK_FALSE: val = pdf_new_bool(ctx, 0); break;
-			case PDF_TOK_NULL: val = pdf_new_null(ctx); break;
+			case PDF_TOK_NAME: val = pdf_new_name(doc, buf->scratch); break;
+			case PDF_TOK_REAL: val = pdf_new_real(doc, buf->f); break;
+			case PDF_TOK_STRING: val = pdf_new_string(doc, buf->scratch, buf->len); break;
+			case PDF_TOK_TRUE: val = pdf_new_bool(doc, 1); break;
+			case PDF_TOK_FALSE: val = pdf_new_bool(doc, 0); break;
+			case PDF_TOK_NULL: val = pdf_new_null(doc); break;
 
 			case PDF_TOK_INT:
 				/* 64-bit to allow for numbers > INT_MAX and overflow */
@@ -426,7 +426,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 				if (tok == PDF_TOK_CLOSE_DICT || tok == PDF_TOK_NAME ||
 					(tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "ID")))
 				{
-					val = pdf_new_int(ctx, a);
+					val = pdf_new_int(doc, a);
 					pdf_dict_put(dict, key, val);
 					pdf_drop_obj(val);
 					val = NULL;
@@ -440,7 +440,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 					tok = pdf_lex(file, buf);
 					if (tok == PDF_TOK_R)
 					{
-						val = pdf_new_indirect(ctx, a, b, xref);
+						val = pdf_new_indirect(doc, a, b);
 						break;
 					}
 				}
@@ -468,7 +468,7 @@ pdf_parse_dict(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 }
 
 pdf_obj *
-pdf_parse_stm_obj(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
+pdf_parse_stm_obj(pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
 {
 	pdf_token tok;
 	fz_context *ctx = file->ctx;
@@ -478,23 +478,23 @@ pdf_parse_stm_obj(pdf_document *xref, fz_stream *file, pdf_lexbuf *buf)
 	switch (tok)
 	{
 	case PDF_TOK_OPEN_ARRAY:
-		return pdf_parse_array(xref, file, buf);
+		return pdf_parse_array(doc, file, buf);
 	case PDF_TOK_OPEN_DICT:
-		return pdf_parse_dict(xref, file, buf);
-	case PDF_TOK_NAME: return pdf_new_name(ctx, buf->scratch); break;
-	case PDF_TOK_REAL: return pdf_new_real(ctx, buf->f); break;
-	case PDF_TOK_STRING: return pdf_new_string(ctx, buf->scratch, buf->len); break;
-	case PDF_TOK_TRUE: return pdf_new_bool(ctx, 1); break;
-	case PDF_TOK_FALSE: return pdf_new_bool(ctx, 0); break;
-	case PDF_TOK_NULL: return pdf_new_null(ctx); break;
-	case PDF_TOK_INT: return pdf_new_int(ctx, buf->i); break;
+		return pdf_parse_dict(doc, file, buf);
+	case PDF_TOK_NAME: return pdf_new_name(doc, buf->scratch); break;
+	case PDF_TOK_REAL: return pdf_new_real(doc, buf->f); break;
+	case PDF_TOK_STRING: return pdf_new_string(doc, buf->scratch, buf->len); break;
+	case PDF_TOK_TRUE: return pdf_new_bool(doc, 1); break;
+	case PDF_TOK_FALSE: return pdf_new_bool(doc, 0); break;
+	case PDF_TOK_NULL: return pdf_new_null(doc); break;
+	case PDF_TOK_INT: return pdf_new_int(doc, buf->i); break;
 	default: fz_throw(ctx, FZ_ERROR_GENERIC, "unknown token in object stream");
 	}
 	return NULL; /* Stupid MSVC */
 }
 
 pdf_obj *
-pdf_parse_ind_obj(pdf_document *xref,
+pdf_parse_ind_obj(pdf_document *doc,
 	fz_stream *file, pdf_lexbuf *buf,
 	int *onum, int *ogen, int *ostmofs)
 {
@@ -525,19 +525,19 @@ pdf_parse_ind_obj(pdf_document *xref,
 	switch (tok)
 	{
 	case PDF_TOK_OPEN_ARRAY:
-		obj = pdf_parse_array(xref, file, buf);
+		obj = pdf_parse_array(doc, file, buf);
 		break;
 
 	case PDF_TOK_OPEN_DICT:
-		obj = pdf_parse_dict(xref, file, buf);
+		obj = pdf_parse_dict(doc, file, buf);
 		break;
 
-	case PDF_TOK_NAME: obj = pdf_new_name(ctx, buf->scratch); break;
-	case PDF_TOK_REAL: obj = pdf_new_real(ctx, buf->f); break;
-	case PDF_TOK_STRING: obj = pdf_new_string(ctx, buf->scratch, buf->len); break;
-	case PDF_TOK_TRUE: obj = pdf_new_bool(ctx, 1); break;
-	case PDF_TOK_FALSE: obj = pdf_new_bool(ctx, 0); break;
-	case PDF_TOK_NULL: obj = pdf_new_null(ctx); break;
+	case PDF_TOK_NAME: obj = pdf_new_name(doc, buf->scratch); break;
+	case PDF_TOK_REAL: obj = pdf_new_real(doc, buf->f); break;
+	case PDF_TOK_STRING: obj = pdf_new_string(doc, buf->scratch, buf->len); break;
+	case PDF_TOK_TRUE: obj = pdf_new_bool(doc, 1); break;
+	case PDF_TOK_FALSE: obj = pdf_new_bool(doc, 0); break;
+	case PDF_TOK_NULL: obj = pdf_new_null(doc); break;
 
 	case PDF_TOK_INT:
 		a = buf->i;
@@ -545,7 +545,7 @@ pdf_parse_ind_obj(pdf_document *xref,
 
 		if (tok == PDF_TOK_STREAM || tok == PDF_TOK_ENDOBJ)
 		{
-			obj = pdf_new_int(ctx, a);
+			obj = pdf_new_int(doc, a);
 			goto skip;
 		}
 		if (tok == PDF_TOK_INT)
@@ -554,14 +554,14 @@ pdf_parse_ind_obj(pdf_document *xref,
 			tok = pdf_lex(file, buf);
 			if (tok == PDF_TOK_R)
 			{
-				obj = pdf_new_indirect(ctx, a, b, xref);
+				obj = pdf_new_indirect(doc, a, b);
 				break;
 			}
 		}
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected 'R' keyword (%d %d R)", num, gen);
 
 	case PDF_TOK_ENDOBJ:
-		obj = pdf_new_null(ctx);
+		obj = pdf_new_null(doc);
 		goto skip;
 
 	default:

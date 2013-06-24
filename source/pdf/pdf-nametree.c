@@ -149,17 +149,17 @@ pdf_load_name_tree_imp(pdf_obj *dict, pdf_document *xref, pdf_obj *node)
 }
 
 pdf_obj *
-pdf_load_name_tree(pdf_document *xref, char *which)
+pdf_load_name_tree(pdf_document *doc, char *which)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 
-	pdf_obj *root = pdf_dict_gets(pdf_trailer(xref), "Root");
+	pdf_obj *root = pdf_dict_gets(pdf_trailer(doc), "Root");
 	pdf_obj *names = pdf_dict_gets(root, "Names");
 	pdf_obj *tree = pdf_dict_gets(names, which);
 	if (pdf_is_dict(tree))
 	{
-		pdf_obj *dict = pdf_new_dict(ctx, 100);
-		pdf_load_name_tree_imp(dict, xref, tree);
+		pdf_obj *dict = pdf_new_dict(doc, 100);
+		pdf_load_name_tree_imp(dict, doc, tree);
 		return dict;
 	}
 	return NULL;
