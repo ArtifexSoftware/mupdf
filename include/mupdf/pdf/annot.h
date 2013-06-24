@@ -39,7 +39,7 @@ fz_annot_type pdf_annot_type(pdf_annot *annot);
 	ctm: A transformation matrix applied to the objects on the page,
 	e.g. to scale or rotate the page contents as desired.
 */
-void pdf_run_annot(pdf_document *xref, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
+void pdf_run_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 struct pdf_annot_s
 {

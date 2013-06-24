@@ -155,13 +155,13 @@ atobjend:
 }
 
 static void
-pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
+pdf_repair_obj_stm(pdf_document *doc, int num, int gen)
 {
 	pdf_obj *obj;
 	fz_stream *stm = NULL;
 	pdf_token tok;
 	int i, n, count;
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	pdf_lexbuf buf;
 
 	fz_var(stm);
@@ -170,13 +170,13 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 
 	fz_try(ctx)
 	{
-		obj = pdf_load_object(xref, num, gen);
+		obj = pdf_load_object(doc, num, gen);
 
 		count = pdf_to_int(pdf_dict_gets(obj, "N"));
 
 		pdf_drop_obj(obj);
 
-		stm = pdf_open_stream(xref, num, gen);
+		stm = pdf_open_stream(doc, num, gen);
 
 		for (i = 0; i < count; i++)
 		{
@@ -198,7 +198,7 @@ pdf_repair_obj_stm(pdf_document *xref, int num, int gen)
 				continue;
 			}
 
-			entry = pdf_get_populating_xref_entry(xref, n);
+			entry = pdf_get_populating_xref_entry(doc, n);
 			entry->ofs = num;
 			entry->gen = i;
 			entry->stm_ofs = 0;
@@ -542,24 +542,24 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 }
 
 void
-pdf_repair_obj_stms(pdf_document *xref)
+pdf_repair_obj_stms(pdf_document *doc)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	pdf_obj *dict;
 	int i;
-	int xref_len = pdf_xref_len(xref);
+	int xref_len = pdf_xref_len(doc);
 
 	for (i = 0; i < xref_len; i++)
 	{
-		pdf_xref_entry *entry = pdf_get_populating_xref_entry(xref, i);
+		pdf_xref_entry *entry = pdf_get_populating_xref_entry(doc, i);
 
 		if (entry->stm_ofs)
 		{
-			dict = pdf_load_object(xref, i, 0);
+			dict = pdf_load_object(doc, i, 0);
 			fz_try(ctx)
 			{
 				if (!strcmp(pdf_to_name(pdf_dict_gets(dict, "Type")), "ObjStm"))
-					pdf_repair_obj_stm(xref, i, 0);
+					pdf_repair_obj_stm(doc, i, 0);
 			}
 			fz_always(ctx)
 			{
@@ -575,9 +575,9 @@ pdf_repair_obj_stms(pdf_document *xref)
 	/* Ensure that streamed objects reside inside a known non-streamed object */
 	for (i = 0; i < xref_len; i++)
 	{
-		pdf_xref_entry *entry = pdf_get_populating_xref_entry(xref, i);
+		pdf_xref_entry *entry = pdf_get_populating_xref_entry(doc, i);
 
-		if (entry->type == 'o' && pdf_get_populating_xref_entry(xref, entry->ofs)->type != 'n')
-			fz_throw(xref->ctx, FZ_ERROR_GENERIC, "invalid reference to non-object-stream: %d (%d 0 R)", entry->ofs, i);
+		if (entry->type == 'o' && pdf_get_populating_xref_entry(doc, entry->ofs)->type != 'n')
+			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "invalid reference to non-object-stream: %d (%d 0 R)", entry->ofs, i);
 	}
 }

@@ -41,11 +41,11 @@ struct pdf_page_load_s
 };
 
 static void
-pdf_load_page_tree_node(pdf_document *xref, pdf_obj *node, struct info info)
+pdf_load_page_tree_node(pdf_document *doc, pdf_obj *node, struct info info)
 {
 	pdf_obj *dict, *kids, *count;
 	pdf_obj *obj;
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	pdf_page_load *stack = NULL;
 	int stacklen = -1;
 	int stackmax = 0;
@@ -101,17 +101,17 @@ pdf_load_page_tree_node(pdf_document *xref, pdf_obj *node, struct info info)
 					if (info.rotate && !pdf_dict_gets(dict, "Rotate"))
 						pdf_dict_puts(dict, "Rotate", info.rotate);
 
-					if (xref->page_len == xref->page_cap)
+					if (doc->page_len == doc->page_cap)
 					{
 						fz_warn(ctx, "found more pages than expected");
-						xref->page_refs = fz_resize_array(ctx, xref->page_refs, xref->page_cap+1, sizeof(pdf_obj*));
-						xref->page_objs = fz_resize_array(ctx, xref->page_objs, xref->page_cap+1, sizeof(pdf_obj*));
-						xref->page_cap ++;
+						doc->page_refs = fz_resize_array(ctx, doc->page_refs, doc->page_cap+1, sizeof(pdf_obj*));
+						doc->page_objs = fz_resize_array(ctx, doc->page_objs, doc->page_cap+1, sizeof(pdf_obj*));
+						doc->page_cap ++;
 					}
 
-					xref->page_refs[xref->page_len] = pdf_keep_obj(node);
-					xref->page_objs[xref->page_len] = pdf_keep_obj(dict);
-					xref->page_len ++;
+					doc->page_refs[doc->page_len] = pdf_keep_obj(node);
+					doc->page_objs[doc->page_len] = pdf_keep_obj(dict);
+					doc->page_len ++;
 					pdf_obj_unmark(node);
 				}
 			}
@@ -146,18 +146,18 @@ pdf_load_page_tree_node(pdf_document *xref, pdf_obj *node, struct info info)
 }
 
 static void
-pdf_load_page_tree(pdf_document *xref)
+pdf_load_page_tree(pdf_document *doc)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	pdf_obj *catalog;
 	pdf_obj *pages;
 	pdf_obj *count;
 	struct info info;
 
-	if (xref->page_refs)
+	if (doc->page_refs)
 		return;
 
-	catalog = pdf_dict_gets(pdf_trailer(xref), "Root");
+	catalog = pdf_dict_gets(pdf_trailer(doc), "Root");
 	pages = pdf_dict_gets(catalog, "Pages");
 	count = pdf_dict_gets(pages, "Count");
 
@@ -166,34 +166,34 @@ pdf_load_page_tree(pdf_document *xref)
 	if (!pdf_is_int(count) || pdf_to_int(count) < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "missing page count");
 
-	xref->page_cap = pdf_to_int(count);
-	xref->page_len = 0;
-	xref->page_refs = fz_malloc_array(ctx, xref->page_cap, sizeof(pdf_obj*));
-	xref->page_objs = fz_malloc_array(ctx, xref->page_cap, sizeof(pdf_obj*));
+	doc->page_cap = pdf_to_int(count);
+	doc->page_len = 0;
+	doc->page_refs = fz_malloc_array(ctx, doc->page_cap, sizeof(pdf_obj*));
+	doc->page_objs = fz_malloc_array(ctx, doc->page_cap, sizeof(pdf_obj*));
 
 	info.resources = NULL;
 	info.mediabox = NULL;
 	info.cropbox = NULL;
 	info.rotate = NULL;
 
-	pdf_load_page_tree_node(xref, pages, info);
+	pdf_load_page_tree_node(doc, pages, info);
 }
 
 int
-pdf_count_pages(pdf_document *xref)
+pdf_count_pages(pdf_document *doc)
 {
-	pdf_load_page_tree(xref);
-	return xref->page_len;
+	pdf_load_page_tree(doc);
+	return doc->page_len;
 }
 
 int
-pdf_lookup_page_number(pdf_document *xref, pdf_obj *page)
+pdf_lookup_page_number(pdf_document *doc, pdf_obj *page)
 {
 	int i, num = pdf_to_num(page);
 
-	pdf_load_page_tree(xref);
-	for (i = 0; i < xref->page_len; i++)
-		if (num == pdf_to_num(xref->page_refs[i]))
+	pdf_load_page_tree(doc);
+	for (i = 0; i < doc->page_len; i++)
+		if (num == pdf_to_num(doc->page_refs[i]))
 			return i;
 	return -1;
 }
@@ -287,7 +287,7 @@ found:
 }
 
 static void
-pdf_load_transition(pdf_document *xref, pdf_page *page, pdf_obj *transdict)
+pdf_load_transition(pdf_document *doc, pdf_page *page, pdf_obj *transdict)
 {
 	char *name;
 	pdf_obj *obj;
@@ -449,7 +449,7 @@ pdf_load_page(pdf_document *doc, int number)
 }
 
 fz_rect *
-pdf_bound_page(pdf_document *xref, pdf_page *page, fz_rect *bounds)
+pdf_bound_page(pdf_document *doc, pdf_page *page, fz_rect *bounds)
 {
 	fz_matrix mtx;
 	fz_rect mediabox = page->mediabox;
@@ -461,43 +461,43 @@ pdf_bound_page(pdf_document *xref, pdf_page *page, fz_rect *bounds)
 }
 
 fz_link *
-pdf_load_links(pdf_document *xref, pdf_page *page)
+pdf_load_links(pdf_document *doc, pdf_page *page)
 {
-	return fz_keep_link(xref->ctx, page->links);
+	return fz_keep_link(doc->ctx, page->links);
 }
 
 void
-pdf_free_page(pdf_document *xref, pdf_page *page)
+pdf_free_page(pdf_document *doc, pdf_page *page)
 {
 	if (page == NULL)
 		return;
 	pdf_drop_obj(page->resources);
 	pdf_drop_obj(page->contents);
 	if (page->links)
-		fz_drop_link(xref->ctx, page->links);
+		fz_drop_link(doc->ctx, page->links);
 	if (page->annots)
-		pdf_free_annot(xref->ctx, page->annots);
+		pdf_free_annot(doc->ctx, page->annots);
 	if (page->deleted_annots)
-		pdf_free_annot(xref->ctx, page->deleted_annots);
+		pdf_free_annot(doc->ctx, page->deleted_annots);
 	if (page->tmp_annots)
-		pdf_free_annot(xref->ctx, page->tmp_annots);
-	/* xref->focus, when not NULL, refers to one of
+		pdf_free_annot(doc->ctx, page->tmp_annots);
+	/* doc->focus, when not NULL, refers to one of
 	 * the annotations and must be NULLed when the
-	 * annotations are destroyed. xref->focus_obj
+	 * annotations are destroyed. doc->focus_obj
 	 * keeps track of the actual annotation object. */
-	xref->focus = NULL;
+	doc->focus = NULL;
 	pdf_drop_obj(page->me);
-	fz_free(xref->ctx, page);
+	fz_free(doc->ctx, page);
 }
 
 void
-pdf_delete_page(pdf_document *xref, int page)
+pdf_delete_page(pdf_document *doc, int page)
 {
-	pdf_delete_page_range(xref, page, page+1);
+	pdf_delete_page_range(doc, page, page+1);
 }
 
 void
-pdf_delete_page_range(pdf_document *xref, int start, int end)
+pdf_delete_page_range(pdf_document *doc, int start, int end)
 {
 	int i;
 
@@ -508,51 +508,51 @@ pdf_delete_page_range(pdf_document *xref, int start, int end)
 		end = tmp;
 	}
 
-	if (!xref || start >= xref->page_len || end < 0)
+	if (!doc || start >= doc->page_len || end < 0)
 		return;
 
 	for (i=start; i < end; i++)
-		pdf_drop_obj(xref->page_refs[i]);
-	if (xref->page_len > end)
+		pdf_drop_obj(doc->page_refs[i]);
+	if (doc->page_len > end)
 	{
-		memmove(&xref->page_refs[start], &xref->page_refs[end], sizeof(pdf_page *) * (xref->page_len - end + start));
-		memmove(&xref->page_refs[start], &xref->page_refs[end], sizeof(pdf_page *) * (xref->page_len - end + start));
+		memmove(&doc->page_refs[start], &doc->page_refs[end], sizeof(pdf_page *) * (doc->page_len - end + start));
+		memmove(&doc->page_refs[start], &doc->page_refs[end], sizeof(pdf_page *) * (doc->page_len - end + start));
 	}
 
-	xref->page_len -= end - start;
-	xref->needs_page_tree_rebuild = 1;
+	doc->page_len -= end - start;
+	doc->needs_page_tree_rebuild = 1;
 }
 
 void
-pdf_insert_page(pdf_document *xref, pdf_page *page, int at)
+pdf_insert_page(pdf_document *doc, pdf_page *page, int at)
 {
-	if (!xref || !page)
+	if (!doc || !page)
 		return;
 	if (at < 0)
 		at = 0;
-	if (at > xref->page_len)
-		at = xref->page_len;
+	if (at > doc->page_len)
+		at = doc->page_len;
 
-	if (xref->page_len + 1 >= xref->page_cap)
+	if (doc->page_len + 1 >= doc->page_cap)
 	{
-		int newmax = xref->page_cap * 2;
+		int newmax = doc->page_cap * 2;
 		if (newmax == 0)
 			newmax = 4;
-		xref->page_refs = fz_resize_array(xref->ctx, xref->page_refs, newmax, sizeof(pdf_page *));
-		xref->page_objs = fz_resize_array(xref->ctx, xref->page_objs, newmax, sizeof(pdf_page *));
-		xref->page_cap = newmax;
+		doc->page_refs = fz_resize_array(doc->ctx, doc->page_refs, newmax, sizeof(pdf_page *));
+		doc->page_objs = fz_resize_array(doc->ctx, doc->page_objs, newmax, sizeof(pdf_page *));
+		doc->page_cap = newmax;
 	}
-	if (xref->page_len > at)
+	if (doc->page_len > at)
 	{
-		memmove(&xref->page_objs[at+1], &xref->page_objs[at], xref->page_len - at);
-		memmove(&xref->page_refs[at+1], &xref->page_refs[at], xref->page_len - at);
+		memmove(&doc->page_objs[at+1], &doc->page_objs[at], doc->page_len - at);
+		memmove(&doc->page_refs[at+1], &doc->page_refs[at], doc->page_len - at);
 	}
 
-	xref->page_len++;
-	xref->page_objs[at] = pdf_keep_obj(page->me);
-	xref->page_refs[at] = NULL;
-	xref->page_refs[at] = pdf_new_ref(xref, page->me);
-	xref->needs_page_tree_rebuild = 1;
+	doc->page_len++;
+	doc->page_objs[at] = pdf_keep_obj(page->me);
+	doc->page_refs[at] = NULL;
+	doc->page_refs[at] = pdf_new_ref(doc, page->me);
+	doc->needs_page_tree_rebuild = 1;
 }
 
 pdf_page *

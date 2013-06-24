@@ -34,11 +34,11 @@ pdf_xobject_size(pdf_xobject *xobj)
 }
 
 pdf_xobject *
-pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
+pdf_load_xobject(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_xobject *form;
 	pdf_obj *obj;
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 
 	if ((form = pdf_find_item(ctx, pdf_free_xobject_imp, dict)))
 	{
@@ -86,7 +86,7 @@ pdf_load_xobject(pdf_document *xref, pdf_obj *dict)
 			obj = pdf_dict_gets(attrs, "CS");
 			if (obj)
 			{
-				form->colorspace = pdf_load_colorspace(xref, obj);
+				form->colorspace = pdf_load_colorspace(doc, obj);
 				if (!form->colorspace)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load xobject colorspace");
 			}

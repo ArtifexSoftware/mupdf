@@ -91,10 +91,10 @@ void pdf_print_obj(pdf_obj *obj);
 void pdf_print_ref(pdf_obj *obj);
 #endif
 
-char *pdf_to_utf8(pdf_document *xref, pdf_obj *src);
-unsigned short *pdf_to_ucs2(pdf_document *xref, pdf_obj *src);
-pdf_obj *pdf_to_utf8_name(pdf_document *xref, pdf_obj *src);
-char *pdf_from_ucs2(pdf_document *xref, unsigned short *str);
+char *pdf_to_utf8(pdf_document *doc, pdf_obj *src);
+unsigned short *pdf_to_ucs2(pdf_document *doc, pdf_obj *src);
+pdf_obj *pdf_to_utf8_name(pdf_document *doc, pdf_obj *src);
+char *pdf_from_ucs2(pdf_document *doc, unsigned short *str);
 void pdf_to_ucs2_buf(unsigned short *buffer, pdf_obj *src);
 
 fz_rect *pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *rect);

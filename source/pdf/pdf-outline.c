@@ -1,9 +1,9 @@
 #include "mupdf/pdf.h"
 
 static fz_outline *
-pdf_load_outline_imp(pdf_document *xref, pdf_obj *dict)
+pdf_load_outline_imp(pdf_document *doc, pdf_obj *dict)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	fz_outline *node, **prev, *first;
 	pdf_obj *obj;
 	pdf_obj *odict = dict;
@@ -29,16 +29,16 @@ pdf_load_outline_imp(pdf_document *xref, pdf_obj *dict)
 
 			obj = pdf_dict_gets(dict, "Title");
 			if (obj)
-				node->title = pdf_to_utf8(xref, obj);
+				node->title = pdf_to_utf8(doc, obj);
 
 			if ((obj = pdf_dict_gets(dict, "Dest")))
-				node->dest = pdf_parse_link_dest(xref, obj);
+				node->dest = pdf_parse_link_dest(doc, obj);
 			else if ((obj = pdf_dict_gets(dict, "A")))
-				node->dest = pdf_parse_action(xref, obj);
+				node->dest = pdf_parse_action(doc, obj);
 
 			obj = pdf_dict_gets(dict, "First");
 			if (obj)
-				node->down = pdf_load_outline_imp(xref, obj);
+				node->down = pdf_load_outline_imp(doc, obj);
 
 			dict = pdf_dict_gets(dict, "Next");
 		}
@@ -58,15 +58,15 @@ pdf_load_outline_imp(pdf_document *xref, pdf_obj *dict)
 }
 
 fz_outline *
-pdf_load_outline(pdf_document *xref)
+pdf_load_outline(pdf_document *doc)
 {
 	pdf_obj *root, *obj, *first;
 
-	root = pdf_dict_gets(pdf_trailer(xref), "Root");
+	root = pdf_dict_gets(pdf_trailer(doc), "Root");
 	obj = pdf_dict_gets(root, "Outlines");
 	first = pdf_dict_gets(obj, "First");
 	if (first)
-		return pdf_load_outline_imp(xref, first);
+		return pdf_load_outline_imp(doc, first);
 
 	return NULL;
 }

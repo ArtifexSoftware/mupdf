@@ -28,9 +28,9 @@ pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *m)
 
 /* Convert Unicode/PdfDocEncoding string into utf-8 */
 char *
-pdf_to_utf8(pdf_document *xref, pdf_obj *src)
+pdf_to_utf8(pdf_document *doc, pdf_obj *src)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	fz_buffer *strmbuf = NULL;
 	unsigned char *srcptr;
 	char *dstptr, *dst;
@@ -47,9 +47,9 @@ pdf_to_utf8(pdf_document *xref, pdf_obj *src)
 			srcptr = (unsigned char *) pdf_to_str_buf(src);
 			srclen = pdf_to_str_len(src);
 		}
-		else if (pdf_is_stream(xref, pdf_to_num(src), pdf_to_gen(src)))
+		else if (pdf_is_stream(doc, pdf_to_num(src), pdf_to_gen(src)))
 		{
-			strmbuf = pdf_load_stream(xref, pdf_to_num(src), pdf_to_gen(src));
+			strmbuf = pdf_load_stream(doc, pdf_to_num(src), pdf_to_gen(src));
 			srclen = fz_buffer_storage(ctx, strmbuf, (unsigned char **)&srcptr);
 		}
 		else
@@ -118,9 +118,9 @@ pdf_to_utf8(pdf_document *xref, pdf_obj *src)
 
 /* Convert Unicode/PdfDocEncoding string into ucs-2 */
 unsigned short *
-pdf_to_ucs2(pdf_document *xref, pdf_obj *src)
+pdf_to_ucs2(pdf_document *doc, pdf_obj *src)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	unsigned char *srcptr = (unsigned char *) pdf_to_str_buf(src);
 	unsigned short *dstptr, *dst;
 	int srclen = pdf_to_str_len(src);
@@ -180,9 +180,9 @@ pdf_to_ucs2_buf(unsigned short *buffer, pdf_obj *src)
 
 /* Convert UCS-2 string into PdfDocEncoding for authentication */
 char *
-pdf_from_ucs2(pdf_document *xref, unsigned short *src)
+pdf_from_ucs2(pdf_document *doc, unsigned short *src)
 {
-	fz_context *ctx = xref->ctx;
+	fz_context *ctx = doc->ctx;
 	int i, j, len;
 	char *docstr;
 

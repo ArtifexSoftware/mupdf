@@ -13,6 +13,6 @@ fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *res
 */
 void pdf_write_document(pdf_document *doc, char *filename, fz_write_options *opts);
 
-void pdf_localise_page_resources(pdf_document *xref);
+void pdf_localise_page_resources(pdf_document *doc);
 
 #endif
