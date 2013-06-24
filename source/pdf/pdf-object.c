@@ -19,11 +19,17 @@ struct keyval
 	pdf_obj *v;
 };
 
+enum
+{
+	PDF_FLAGS_MARKED = 1,
+	PDF_FLAGS_SORTED = 2
+};
+
 struct pdf_obj_s
 {
-	int refs;
-	char kind;
-	char marked;
+	unsigned short refs;
+	unsigned char kind;
+	unsigned char flags;
 	fz_context *ctx;
 	union
 	{
@@ -41,7 +47,6 @@ struct pdf_obj_s
 			pdf_obj **items;
 		} a;
 		struct {
-			char sorted;
 			int len;
 			int cap;
 			struct keyval *items;
@@ -62,7 +67,7 @@ pdf_new_null(fz_context *ctx)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_NULL;
-	obj->marked = 0;
+	obj->flags = 0;
 	return obj;
 }
 
@@ -74,7 +79,7 @@ pdf_new_bool(fz_context *ctx, int b)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_BOOL;
-	obj->marked = 0;
+	obj->flags = 0;
 	obj->u.b = b;
 	return obj;
 }
@@ -87,7 +92,7 @@ pdf_new_int(fz_context *ctx, int i)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_INT;
-	obj->marked = 0;
+	obj->flags = 0;
 	obj->u.i = i;
 	return obj;
 }
@@ -100,7 +105,7 @@ pdf_new_real(fz_context *ctx, float f)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_REAL;
-	obj->marked = 0;
+	obj->flags = 0;
 	obj->u.f = f;
 	return obj;
 }
@@ -113,7 +118,7 @@ pdf_new_string(fz_context *ctx, const char *str, int len)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_STRING;
-	obj->marked = 0;
+	obj->flags = 0;
 	obj->u.s.len = len;
 	memcpy(obj->u.s.buf, str, len);
 	obj->u.s.buf[len] = '\0';
@@ -128,7 +133,7 @@ pdf_new_name(fz_context *ctx, const char *str)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_NAME;
-	obj->marked = 0;
+	obj->flags = 0;
 	strcpy(obj->u.n, str);
 	return obj;
 }
@@ -141,7 +146,7 @@ pdf_new_indirect(fz_context *ctx, int num, int gen, void *xref)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_INDIRECT;
-	obj->marked = 0;
+	obj->flags = 0;
 	obj->u.r.num = num;
 	obj->u.r.gen = gen;
 	obj->u.r.xref = xref;
@@ -427,7 +432,7 @@ pdf_new_array(fz_context *ctx, int initialcap)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_ARRAY;
-	obj->marked = 0;
+	obj->flags = 0;
 
 	obj->u.a.len = 0;
 	obj->u.a.cap = initialcap > 1 ? initialcap : 6;
@@ -704,9 +709,8 @@ pdf_new_dict(fz_context *ctx, int initialcap)
 	obj->ctx = ctx;
 	obj->refs = 1;
 	obj->kind = PDF_DICT;
-	obj->marked = 0;
+	obj->flags = 0;
 
-	obj->u.d.sorted = 0;
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
 
@@ -802,7 +806,7 @@ pdf_dict_get_val(pdf_obj *obj, int i)
 static int
 pdf_dict_finds(pdf_obj *obj, const char *key, int *location)
 {
-	if (obj->u.d.sorted && obj->u.d.len > 0)
+	if ((obj->flags & PDF_FLAGS_SORTED) && obj->u.d.len > 0)
 	{
 		int l = 0;
 		int r = obj->u.d.len - 1;
@@ -939,7 +943,7 @@ pdf_dict_put(pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 		return;
 	}
 
-	if (obj->u.d.len > 100 && !obj->u.d.sorted)
+	if (obj->u.d.len > 100 && !(obj->flags & PDF_FLAGS_SORTED))
 		pdf_sort_dict(obj);
 
 	i = pdf_dict_finds(obj, s, &location);
@@ -957,7 +961,7 @@ pdf_dict_put(pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			pdf_dict_grow(obj);
 
 		i = location;
-		if (obj->u.d.sorted && obj->u.d.len > 0)
+		if ((obj->flags & PDF_FLAGS_SORTED) && obj->u.d.len > 0)
 			memmove(&obj->u.d.items[i + 1],
 				&obj->u.d.items[i],
 				(obj->u.d.len - i) * sizeof(struct keyval));
@@ -1108,7 +1112,7 @@ pdf_dict_dels(pdf_obj *obj, const char *key)
 		{
 			pdf_drop_obj(obj->u.d.items[i].k);
 			pdf_drop_obj(obj->u.d.items[i].v);
-			obj->u.d.sorted = 0;
+			obj->flags &= ~PDF_FLAGS_SORTED;
 			obj->u.d.items[i] = obj->u.d.items[obj->u.d.len-1];
 			obj->u.d.len --;
 		}
@@ -1131,10 +1135,10 @@ pdf_sort_dict(pdf_obj *obj)
 	RESOLVE(obj);
 	if (!obj || obj->kind != PDF_DICT)
 		return;
-	if (!obj->u.d.sorted)
+	if (!(obj->flags & PDF_FLAGS_SORTED))
 	{
 		qsort(obj->u.d.items, obj->u.d.len, sizeof(struct keyval), keyvalcmp);
-		obj->u.d.sorted = 1;
+		obj->flags |= PDF_FLAGS_SORTED;
 	}
 }
 
@@ -1144,7 +1148,7 @@ pdf_obj_marked(pdf_obj *obj)
 	RESOLVE(obj);
 	if (!obj)
 		return 0;
-	return obj->marked;
+	return !!(obj->flags & PDF_FLAGS_MARKED);
 }
 
 int
@@ -1154,8 +1158,8 @@ pdf_obj_mark(pdf_obj *obj)
 	RESOLVE(obj);
 	if (!obj)
 		return 0;
-	marked = obj->marked;
-	obj->marked = 1;
+	marked = !!(obj->flags & PDF_FLAGS_MARKED);
+	obj->flags |= PDF_FLAGS_MARKED;
 	return marked;
 }
 
@@ -1165,7 +1169,7 @@ pdf_obj_unmark(pdf_obj *obj)
 	RESOLVE(obj);
 	if (!obj)
 		return;
-	obj->marked = 0;
+	obj->flags &= ~PDF_FLAGS_MARKED;
 }
 
 static void
