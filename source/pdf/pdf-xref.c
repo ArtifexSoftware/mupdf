@@ -67,6 +67,11 @@ static void pdf_populate_next_xref_level(pdf_document *doc)
 	xref->len = 0;
 	xref->table = NULL;
 	xref->trailer = NULL;
+	/* All new levels must be at least as big as the level before */
+	if (doc->num_xref_sections > 1)
+	{
+		pdf_resize_xref(doc->ctx, xref, doc->xref_sections[doc->num_xref_sections - 2].len);
+	}
 }
 
 pdf_obj *pdf_trailer(pdf_document *doc)
@@ -159,6 +164,9 @@ static pdf_xref_entry *pdf_get_new_xref_entry(pdf_document *doc, int i)
 	}
 
 	xref = &doc->xref_sections[0];
+	/* All new levels must be at least as big as the level before */
+	if (doc->xref_sections[1].len > i)
+		i = doc->xref_sections[1].len-1;
 	if (i >= xref->len)
 		pdf_resize_xref(ctx, xref, i + 1);
 
