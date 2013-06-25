@@ -484,6 +484,7 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 
 	fz_var(annot);
 	fz_var(itr);
+	fz_var(head);
 
 	head = tail = NULL;
 
@@ -494,21 +495,29 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 	the annot array, so we don't want to be iterating through the array while
 	that happens.
 	*/
-	for (i = 0; i < len; i++)
+	fz_try(ctx)
 	{
-		obj = pdf_array_get(annots, i);
-		annot = fz_malloc_struct(ctx, pdf_annot);
-		annot->obj = pdf_keep_obj(obj);
-		annot->page = page;
-		annot->next = NULL;
-
-		if (!head)
-			head = tail = annot;
-		else
+		for (i = 0; i < len; i++)
 		{
-			tail->next = annot;
-			tail = annot;
+			obj = pdf_array_get(annots, i);
+			annot = fz_malloc_struct(ctx, pdf_annot);
+			annot->obj = pdf_keep_obj(obj);
+			annot->page = page;
+			annot->next = NULL;
+
+			if (!head)
+				head = tail = annot;
+			else
+			{
+				tail->next = annot;
+				tail = annot;
+			}
 		}
+	}
+	fz_catch(ctx)
+	{
+		pdf_free_annot(ctx, head);
+		fz_rethrow(ctx);
 	}
 
 	/*
