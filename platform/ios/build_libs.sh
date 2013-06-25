@@ -23,15 +23,15 @@ esac
 
 export CFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
 export LDFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
-export OUT=build/$build-$OS-$ARCHS
+
+OUT=build/$build-$OS-$ARCHS
 
 echo Building libraries for $ARCHS.
-make -C .. libs || exit 1
+make -C ../.. OUT=$OUT third libs || exit 1
 
 echo Assembling final library in $TARGET_BUILD_DIR/.
 mkdir -p "$TARGET_BUILD_DIR"
-rm -f $TARGET_BUILD_DIR/libLibraries.a
-ar cr $TARGET_BUILD_DIR/libLibraries.a ../$OUT/*.o
-ranlib $TARGET_BUILD_DIR/libLibraries.a
+cp -f ../../$OUT/lib*.a $TARGET_BUILD_DIR
+ranlib $TARGET_BUILD_DIR/lib*.a
 
 echo Done.

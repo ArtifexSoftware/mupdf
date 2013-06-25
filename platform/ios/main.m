@@ -4,7 +4,7 @@
 #undef MIN
 #undef MAX
 
-#include "fitz/fitz.h"
+#include "mupdf/fitz.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
@@ -251,7 +251,7 @@ static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
 	fz_scale(&ctm, scale.width, scale.height);
 	bbox = (fz_irect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, &bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
@@ -286,7 +286,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	bbox.x1 = tileRect.origin.x + tileRect.size.width;
 	bbox.y1 = tileRect.origin.y + tileRect.size.height;
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb, &bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 255);
 
 	dev = fz_new_draw_device(ctx, pix);
@@ -362,7 +362,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 
 - (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection: (NSInteger)section
 {
-	return [files count] + 1;
+	return [files count];
 }
 
 - (void) actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
@@ -408,27 +408,15 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	if (!cell)
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier: cellid] autorelease];
 	int row = [indexPath row];
-	if (row == 0) {
-		[[cell textLabel] setText: @"About MuPDF"];
-		[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
-	} else {
-		[[cell textLabel] setText: [files objectAtIndex: row - 1]];
-		[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
-	}
+	[[cell textLabel] setText: [files objectAtIndex: row]];
+	[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
 
-	if (row > 0)
-	{
-		UIButton *deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
-		[deleteButton setImage: [UIImage imageNamed: @"x_alt_blue.png"] forState: UIControlStateNormal];
-		[deleteButton setFrame: CGRectMake(0, 0, 35, 35)];
-		[deleteButton addTarget: self action: @selector(onTapDelete:) forControlEvents: UIControlEventTouchUpInside];
-		[deleteButton setTag: row];
-		[cell setAccessoryView: deleteButton];
-	}
-	else
-	{
-		[cell setAccessoryView: nil];
-	}
+	UIButton *deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+	[deleteButton setImage: [UIImage imageNamed: @"x_alt_blue.png"] forState: UIControlStateNormal];
+	[deleteButton setFrame: CGRectMake(0, 0, 35, 35)];
+	[deleteButton addTarget: self action: @selector(onTapDelete:) forControlEvents: UIControlEventTouchUpInside];
+	[deleteButton setTag: row];
+	[cell setAccessoryView: deleteButton];
 
 	return cell;
 }
@@ -436,10 +424,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
 	int row = [indexPath row];
-	if (row == 0)
-		[self openDocument: @"../MuPDF.app/About.xps"];
-	else
-		[self openDocument: [files objectAtIndex: row - 1]];
+	[self openDocument: [files objectAtIndex: row]];
 }
 
 - (void) openDocument: (NSString*)nsfilename
@@ -1655,7 +1640,16 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 int main(int argc, char *argv[])
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	int retVal = UIApplicationMain(argc, argv, nil, @"MuAppDelegate");
+	int retVal;
+
+	@try {
+		retVal = UIApplicationMain(argc, argv, nil, @"MuAppDelegate");
+	}
+	@catch (NSException* exception) {
+		NSLog(@"Uncaught exception %@", exception);
+		NSLog(@"Stack trace: %@", [exception callStackSymbols]);
+	}
+
 	[pool release];
 	return retVal;
 }
