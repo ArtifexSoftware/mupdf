@@ -22,7 +22,9 @@ struct keyval
 enum
 {
 	PDF_FLAGS_MARKED = 1,
-	PDF_FLAGS_SORTED = 2
+	PDF_FLAGS_SORTED = 2,
+	PDF_FLAGS_STASH = 4,
+	PDF_FLAGS_STASH_BOOL = 8
 };
 
 struct pdf_obj_s
@@ -1186,6 +1188,25 @@ pdf_obj_unmark(pdf_obj *obj)
 	if (!obj)
 		return;
 	obj->flags &= ~PDF_FLAGS_MARKED;
+}
+
+void
+pdf_obj_stash(pdf_obj *obj, int stash)
+{
+	obj->flags |= PDF_FLAGS_STASH;
+	if (stash)
+		obj->flags |= PDF_FLAGS_STASH_BOOL;
+	else
+		obj->flags &= ~PDF_FLAGS_STASH_BOOL;
+}
+
+int
+pdf_obj_stashed(pdf_obj *obj, int *stash)
+{
+	if (!(obj->flags & PDF_FLAGS_STASH))
+		return 0;
+	*stash = !!(obj->flags & PDF_FLAGS_STASH_BOOL);
+	return 1;
 }
 
 static void

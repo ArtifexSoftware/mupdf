@@ -49,6 +49,12 @@ int pdf_obj_marked(pdf_obj *obj);
 int pdf_obj_mark(pdf_obj *obj);
 void pdf_obj_unmark(pdf_obj *obj);
 
+/* obj stashing and stash reading functions - allows us to secretly stash
+ * a bool in an object, and to read back whether there was a stash, and
+ * if so, what it was. */
+void pdf_obj_stash(pdf_obj *obj, int stash);
+int pdf_obj_stashed(pdf_obj *obj, int *stash);
+
 /* safe, silent failure, no error reporting on type mismatches */
 int pdf_to_bool(pdf_obj *obj);
 int pdf_to_int(pdf_obj *obj);

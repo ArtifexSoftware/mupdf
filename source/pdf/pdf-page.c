@@ -8,27 +8,6 @@ struct info
 	pdf_obj *rotate;
 };
 
-static void
-put_marker_bool(pdf_document *doc, pdf_obj *rdb, char *marker, int val)
-{
-	pdf_obj *tmp;
-	fz_context *ctx = doc->ctx;
-
-	tmp = pdf_new_bool(doc, val);
-	fz_try(ctx)
-	{
-		pdf_dict_puts(rdb, marker, tmp);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(tmp);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
 typedef struct pdf_page_load_s pdf_page_load;
 
 struct pdf_page_load_s
@@ -240,9 +219,8 @@ pdf_resources_use_blending(pdf_document *doc, pdf_obj *rdb)
 		return 0;
 
 	/* Have we been here before and stashed an answer? */
-	obj = pdf_dict_gets(rdb, ".useBM");
-	if (obj)
-		return pdf_to_bool(obj);
+	if (pdf_obj_stashed(rdb, &useBM))
+		return useBM;
 
 	/* stop on cyclic resource dependencies */
 	if (pdf_obj_mark(rdb))
@@ -282,7 +260,7 @@ found:
 		fz_rethrow(ctx);
 	}
 
-	put_marker_bool(doc, rdb, ".useBM", useBM);
+	pdf_obj_stash(rdb, useBM);
 	return useBM;
 }
 
