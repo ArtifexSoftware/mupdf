@@ -115,7 +115,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 	int i, num;
 	fz_md5 state;
 	unsigned char digest[16];
-	int bpc = 8;
 	fz_colorspace *colorspace = image->colorspace;
 	pdf_document *doc = pdev->doc;
 
@@ -245,7 +244,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 		case FZ_IMAGE_JBIG2:
 			/* FIXME - jbig2globals */
 			cp->type = FZ_IMAGE_UNKNOWN;
-			/* bpc = 1; */
 			break;
 		case FZ_IMAGE_FLATE:
 			if (cp->u.flate.columns)
@@ -254,8 +252,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 				pdf_dict_puts(imobj, "Colors", pdf_new_int(doc, cp->u.flate.colors));
 			if (cp->u.flate.predictor)
 				pdf_dict_puts(imobj, "Predictor", pdf_new_int(doc, cp->u.flate.predictor));
-			if (cp->u.flate.bpc)
-				bpc = cp->u.flate.bpc;
 			pdf_dict_puts(imobj, "Filter", pdf_new_name(doc, "FlateDecode"));
 			pdf_dict_puts_drop(imobj, "BitsPerComponent", pdf_new_int(doc, image->bpc));
 			break;
@@ -266,8 +262,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 				pdf_dict_puts(imobj, "Colors", pdf_new_int(doc, cp->u.lzw.colors));
 			if (cp->u.lzw.predictor)
 				pdf_dict_puts(imobj, "Predictor", pdf_new_int(doc, cp->u.lzw.predictor));
-			if (cp->u.lzw.bpc)
-				bpc = cp->u.lzw.bpc;
 			if (cp->u.lzw.early_change)
 				pdf_dict_puts(imobj, "EarlyChange", pdf_new_int(doc, cp->u.lzw.early_change));
 			pdf_dict_puts(imobj, "Filter", pdf_new_name(doc, "LZWDecode"));
@@ -279,7 +273,6 @@ send_image(pdf_device *pdev, fz_image *image, int mask, int smask)
 		if (mask)
 		{
 			pdf_dict_puts_drop(imobj, "ImageMask", pdf_new_bool(doc, 1));
-			bpc = 1;
 		}
 		if (image->mask)
 		{

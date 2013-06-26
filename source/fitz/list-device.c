@@ -744,7 +744,6 @@ fz_run_display_list(fz_display_list *list, fz_device *dev, const fz_matrix *top_
 visible:
 		fz_concat(&ctm, &node->ctm, top_ctm);
 
-
 		fz_try(ctx)
 		{
 			switch (node->cmd)

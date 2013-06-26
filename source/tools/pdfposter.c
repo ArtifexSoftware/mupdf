@@ -31,7 +31,6 @@ static void usage(void)
 static void decimatepages(pdf_document *doc)
 {
 	pdf_obj *oldroot, *root, *pages, *kids, *parent;
-	fz_context *ctx = doc->ctx;
 	int num_pages = pdf_count_pages(doc);
 	int page, kidcount;
 

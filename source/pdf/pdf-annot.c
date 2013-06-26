@@ -879,7 +879,6 @@ quadpoints(pdf_document *doc, pdf_obj *annot, int *nout)
 void
 pdf_set_markup_annot_quadpoints(pdf_document *doc, pdf_annot *annot, fz_point *qp, int n)
 {
-	fz_context *ctx = doc->ctx;
 	fz_matrix ctm;
 	pdf_obj *arr = pdf_new_array(doc, n*2);
 	int i;

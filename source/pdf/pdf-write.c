@@ -710,7 +710,6 @@ static void compactxref(pdf_document *doc, pdf_write_options *opts)
 static void renumberobj(pdf_document *doc, pdf_write_options *opts, pdf_obj *obj)
 {
 	int i;
-	fz_context *ctx = doc->ctx;
 
 	if (pdf_is_dict(obj))
 	{
@@ -1300,8 +1299,6 @@ lpr(pdf_document *doc, pdf_obj *node, int depth, int page)
 void
 pdf_localise_page_resources(pdf_document *doc)
 {
-	fz_context *ctx = doc->ctx;
-
 	if (doc->resources_localised)
 		return;
 
@@ -1485,7 +1482,6 @@ static void addhexfilter(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *f, *dp, *newf, *newdp;
 	pdf_obj *ahx, *nullobj;
-	fz_context *ctx = doc->ctx;
 
 	ahx = pdf_new_name(doc, "ASCIIHexDecode");
 	nullobj = pdf_new_null(doc);
@@ -2449,7 +2445,6 @@ pdf_rebuild_page_tree(pdf_document *doc)
 
 	doc->needs_page_tree_rebuild = 0;
 }
-
 
 void pdf_finish_edit(pdf_document *doc)
 {

@@ -243,9 +243,7 @@ static pdf_jsimp_obj *field_getDisplay(void *jsctx, void *obj)
 static void field_setDisplay(void *jsctx, void *obj, pdf_jsimp_obj *val)
 {
 	pdf_js *js = (pdf_js *)jsctx;
-	fz_context *ctx = js->doc->ctx;
 	pdf_obj *field = (pdf_obj *)obj;
-
 	if (field)
 		pdf_field_set_display(js->doc, field, (int)pdf_jsimp_to_number(js->imp, val));
 }
