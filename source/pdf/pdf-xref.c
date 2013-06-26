@@ -67,11 +67,6 @@ static void pdf_populate_next_xref_level(pdf_document *doc)
 	xref->len = 0;
 	xref->table = NULL;
 	xref->trailer = NULL;
-	/* All new levels must be at least as big as the level before */
-	if (doc->num_xref_sections > 1)
-	{
-		pdf_resize_xref(doc->ctx, xref, doc->xref_sections[doc->num_xref_sections - 2].len);
-	}
 }
 
 pdf_obj *pdf_trailer(pdf_document *doc)
@@ -99,10 +94,11 @@ int pdf_xref_len(pdf_document *doc)
 }
 
 /* Used while reading the individual xref sections from a file */
-pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int i)
+pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int num)
 {
 	/* Return an entry within the xref currently being populated */
 	pdf_xref *xref;
+	int i;
 
 	if (doc->num_xref_sections == 0)
 	{
@@ -110,12 +106,17 @@ pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int i)
 		doc->num_xref_sections = 1;
 	}
 
-	xref = &doc->xref_sections[doc->num_xref_sections - 1];
+	/* Ensure all xref sections map this entry */
+	for (i = 0; i < doc->num_xref_sections; i++)
+	{
+		xref = &doc->xref_sections[i];
 
-	if (i >= xref->len)
-		pdf_resize_xref(doc->ctx, xref, i+1);
+		if (num >= xref->len)
+			pdf_resize_xref(doc->ctx, xref, num+1);
+	}
 
-	return &xref->table[i];
+	/* Loop leaves xref pointing at the populating section */
+	return &xref->table[num];
 }
 
 /* Used after loading a document to access entries */
@@ -160,13 +161,12 @@ static pdf_xref_entry *pdf_get_new_xref_entry(pdf_document *doc, int i)
 		xref->len = 0;
 		xref->table = NULL;
 		xref->trailer = pdf_keep_obj(doc->xref_sections[1].trailer);
+		/* All new levels must be at least as big as the level before */
+		pdf_resize_xref(ctx, xref, fz_maxi(i+1, doc->xref_sections[1].len));
 		doc->xref_altered = 1;
 	}
 
 	xref = &doc->xref_sections[0];
-	/* All new levels must be at least as big as the level before */
-	if (doc->xref_sections[1].len > i)
-		i = doc->xref_sections[1].len-1;
 	if (i >= xref->len)
 		pdf_resize_xref(ctx, xref, i + 1);
 
