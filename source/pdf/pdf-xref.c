@@ -107,16 +107,18 @@ pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int num)
 	}
 
 	/* Ensure all xref sections map this entry */
-	for (i = 0; i < doc->num_xref_sections; i++)
+	for (i = doc->num_xref_sections - 1; i >= 0; i--)
 	{
 		xref = &doc->xref_sections[i];
 
 		if (num >= xref->len)
 			pdf_resize_xref(doc->ctx, xref, num+1);
+		else
+			break; /* Remaining sections already of sufficient size */
 	}
 
 	/* Loop leaves xref pointing at the populating section */
-	return &xref->table[num];
+	return &doc->xref_sections[doc->num_xref_sections-1].table[num];
 }
 
 /* Used after loading a document to access entries */

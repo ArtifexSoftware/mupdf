@@ -477,7 +477,7 @@ static const char *annot_type_str(fz_annot_type type)
 pdf_annot *
 pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 {
-	pdf_annot *annot, *head, *tail, **itr;
+	pdf_annot *annot, *head, **itr;
 	pdf_obj *obj, *ap, *as, *n, *rect;
 	int i, len, is_dict;
 	fz_context *ctx = doc->ctx;
@@ -486,7 +486,7 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 	fz_var(itr);
 	fz_var(head);
 
-	head = tail = NULL;
+	head = NULL;
 
 	len = pdf_array_len(annots);
 	/*
@@ -497,6 +497,7 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 	*/
 	fz_try(ctx)
 	{
+		itr = &head;
 		for (i = 0; i < len; i++)
 		{
 			obj = pdf_array_get(annots, i);
@@ -505,13 +506,8 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 			annot->page = page;
 			annot->next = NULL;
 
-			if (!head)
-				head = tail = annot;
-			else
-			{
-				tail->next = annot;
-				tail = annot;
-			}
+			*itr = annot;
+			itr = &annot->next;
 		}
 	}
 	fz_catch(ctx)
