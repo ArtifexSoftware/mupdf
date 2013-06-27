@@ -1027,6 +1027,11 @@ pdf_close_document(pdf_document *doc)
 		return;
 	ctx = doc->ctx;
 
+	/* Type3 glyphs in the glyph cache can contain pdf_obj pointers
+	 * that we are about to destroy. Simplest solution is to bin the
+	 * glyph cache at this point. */
+	fz_purge_glyph_cache(ctx);
+
 	pdf_drop_js(doc->js);
 
 	pdf_free_xref_sections(doc);

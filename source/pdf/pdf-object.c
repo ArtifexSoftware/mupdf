@@ -29,7 +29,7 @@ enum
 
 struct pdf_obj_s
 {
-	unsigned short refs;
+	int refs;
 	unsigned char kind;
 	unsigned char flags;
 	pdf_document *doc;
@@ -1262,7 +1262,7 @@ pdf_obj *pdf_new_obj_from_str(pdf_document *doc, const char *src)
 	pdf_lexbuf_init(ctx, &lexbuf, PDF_LEXBUF_SMALL);
 	fz_try(ctx)
 	{
-		result = pdf_parse_stm_obj(NULL, stream, &lexbuf);
+		result = pdf_parse_stm_obj(doc, stream, &lexbuf);
 	}
 	fz_always(ctx)
 	{
