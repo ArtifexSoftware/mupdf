@@ -27,10 +27,10 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle)
 			{
 				pdf_obj *obj;
 
-				if (pdf_obj_mark(node))
+				if (pdf_mark_obj(node))
 					break;
 				obj = pdf_lookup_name_imp(ctx, kid, needle);
-				pdf_obj_unmark(node);
+				pdf_unmark_obj(node);
 				return obj;
 			}
 		}
@@ -119,12 +119,12 @@ pdf_load_name_tree_imp(pdf_obj *dict, pdf_document *doc, pdf_obj *node)
 
 	UNUSED(ctx);
 
-	if (kids && !pdf_obj_mark(node))
+	if (kids && !pdf_mark_obj(node))
 	{
 		int len = pdf_array_len(kids);
 		for (i = 0; i < len; i++)
 			pdf_load_name_tree_imp(dict, doc, pdf_array_get(kids, i));
-		pdf_obj_unmark(node);
+		pdf_unmark_obj(node);
 	}
 
 	if (names)

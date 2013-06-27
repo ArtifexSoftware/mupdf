@@ -33,7 +33,7 @@ pdf_load_page_tree_node(pdf_document *doc, pdf_obj *node, struct info info)
 	{
 		do
 		{
-			if (!node || pdf_obj_mark(node))
+			if (!node || pdf_mark_obj(node))
 			{
 				/* NULL node, or we've been here before.
 				 * Nothing to do. */
@@ -91,7 +91,7 @@ pdf_load_page_tree_node(pdf_document *doc, pdf_obj *node, struct info info)
 					doc->page_refs[doc->page_len] = pdf_keep_obj(node);
 					doc->page_objs[doc->page_len] = pdf_keep_obj(dict);
 					doc->page_len ++;
-					pdf_obj_unmark(node);
+					pdf_unmark_obj(node);
 				}
 			}
 			/* Get the next node */
@@ -99,13 +99,13 @@ pdf_load_page_tree_node(pdf_document *doc, pdf_obj *node, struct info info)
 				break;
 			while (++stack[stacklen].pos == stack[stacklen].max)
 			{
-				pdf_obj_unmark(stack[stacklen].node);
+				pdf_unmark_obj(stack[stacklen].node);
 				stacklen--;
 				if (stacklen < 0) /* No more to pop! */
 					break;
 				node = stack[stacklen].node;
 				info = stack[stacklen].info;
-				pdf_obj_unmark(node); /* Unmark it, cos we're about to mark it again */
+				pdf_unmark_obj(node); /* Unmark it, cos we're about to mark it again */
 			}
 			if (stacklen >= 0)
 				node = pdf_array_get(stack[stacklen].kids, stack[stacklen].pos);
@@ -115,7 +115,7 @@ pdf_load_page_tree_node(pdf_document *doc, pdf_obj *node, struct info info)
 	fz_always(ctx)
 	{
 		while (stacklen >= 0)
-			pdf_obj_unmark(stack[stacklen--].node);
+			pdf_unmark_obj(stack[stacklen--].node);
 		fz_free(ctx, stack);
 	}
 	fz_catch(ctx)
@@ -218,12 +218,12 @@ pdf_resources_use_blending(pdf_document *doc, pdf_obj *rdb)
 	if (!rdb)
 		return 0;
 
-	/* Have we been here before and stashed an answer? */
-	if (pdf_obj_stashed(rdb, &useBM))
+	/* Have we been here before and remembered an answer? */
+	if (pdf_obj_memo(rdb, &useBM))
 		return useBM;
 
 	/* stop on cyclic resource dependencies */
-	if (pdf_obj_mark(rdb))
+	if (pdf_mark_obj(rdb))
 		return 0;
 
 	fz_try(ctx)
@@ -253,14 +253,14 @@ found:
 	}
 	fz_always(ctx)
 	{
-		pdf_obj_unmark(rdb);
+		pdf_unmark_obj(rdb);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
 
-	pdf_obj_stash(rdb, useBM);
+	pdf_set_obj_memo(rdb, useBM);
 	return useBM;
 }
 

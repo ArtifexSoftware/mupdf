@@ -46,14 +46,19 @@ int pdf_objcmp(pdf_obj *a, pdf_obj *b);
 
 /* obj marking and unmarking functions - to avoid infinite recursions. */
 int pdf_obj_marked(pdf_obj *obj);
-int pdf_obj_mark(pdf_obj *obj);
-void pdf_obj_unmark(pdf_obj *obj);
+int pdf_mark_obj(pdf_obj *obj);
+void pdf_unmark_obj(pdf_obj *obj);
 
-/* obj stashing and stash reading functions - allows us to secretly stash
- * a bool in an object, and to read back whether there was a stash, and
- * if so, what it was. */
-void pdf_obj_stash(pdf_obj *obj, int stash);
-int pdf_obj_stashed(pdf_obj *obj, int *stash);
+/* obj memo functions - allows us to secretly remember "a memo" (a bool) in
+ * an object, and to read back whether there was a memo, and if so, what it
+ * was. */
+void pdf_set_obj_memo(pdf_obj *obj, int memo);
+int pdf_obj_memo(pdf_obj *obj, int *memo);
+
+/* obj dirty bit support. */
+int pdf_obj_is_dirty(pdf_obj *obj);
+void pdf_dirty_obj(pdf_obj *obj);
+void pdf_clean_obj(pdf_obj *obj);
 
 /* safe, silent failure, no error reporting on type mismatches */
 int pdf_to_bool(pdf_obj *obj);

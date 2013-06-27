@@ -1231,7 +1231,7 @@ load_stitching_func(pdf_function *func, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		pdf_obj_mark(obj);
+		pdf_mark_obj(obj);
 		k = pdf_array_len(obj);
 
 		func->u.st.funcs = fz_malloc_array(ctx, k, sizeof(fz_function*));
@@ -1255,7 +1255,7 @@ load_stitching_func(pdf_function *func, pdf_document *doc, pdf_obj *dict)
 	}
 	fz_always(ctx)
 	{
-		pdf_obj_unmark(obj);
+		pdf_unmark_obj(obj);
 	}
 	fz_catch(ctx)
 	{

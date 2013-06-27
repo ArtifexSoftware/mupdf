@@ -17,7 +17,7 @@ pdf_load_outline_imp(pdf_document *doc, pdf_obj *dict)
 		prev = &first;
 		while (dict && pdf_is_dict(dict))
 		{
-			if (pdf_obj_mark(dict))
+			if (pdf_mark_obj(dict))
 				break;
 			node = fz_malloc_struct(ctx, fz_outline);
 			node->title = NULL;
@@ -46,7 +46,7 @@ pdf_load_outline_imp(pdf_document *doc, pdf_obj *dict)
 	fz_always(ctx)
 	{
 		for (dict = odict; dict && pdf_obj_marked(dict); dict = pdf_dict_gets(dict, "Next"))
-			pdf_obj_unmark(dict);
+			pdf_unmark_obj(dict);
 	}
 	fz_catch(ctx)
 	{

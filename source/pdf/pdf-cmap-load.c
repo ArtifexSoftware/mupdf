@@ -60,9 +60,9 @@ pdf_load_embedded_cmap(pdf_document *doc, pdf_obj *stmobj)
 		else if (pdf_is_indirect(obj))
 		{
 			phase = 3;
-			pdf_obj_mark(obj);
+			pdf_mark_obj(obj);
 			usecmap = pdf_load_embedded_cmap(doc, obj);
-			pdf_obj_unmark(obj);
+			pdf_unmark_obj(obj);
 			phase = 4;
 			pdf_set_usecmap(ctx, cmap, usecmap);
 			pdf_drop_cmap(ctx, usecmap);
@@ -85,7 +85,7 @@ pdf_load_embedded_cmap(pdf_document *doc, pdf_obj *stmobj)
 		else
 		{
 			if (phase == 3)
-				pdf_obj_unmark(obj);
+				pdf_unmark_obj(obj);
 			fz_rethrow_message(ctx, "cannot load embedded usecmap (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
 		}
 	}

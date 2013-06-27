@@ -23,8 +23,9 @@ enum
 {
 	PDF_FLAGS_MARKED = 1,
 	PDF_FLAGS_SORTED = 2,
-	PDF_FLAGS_STASH = 4,
-	PDF_FLAGS_STASH_BOOL = 8
+	PDF_FLAGS_MEMO = 4,
+	PDF_FLAGS_MEMO_BOOL = 8,
+	PDF_FLAGS_DIRTY = 16
 };
 
 struct pdf_obj_s
@@ -1170,7 +1171,7 @@ pdf_obj_marked(pdf_obj *obj)
 }
 
 int
-pdf_obj_mark(pdf_obj *obj)
+pdf_mark_obj(pdf_obj *obj)
 {
 	int marked;
 	RESOLVE(obj);
@@ -1182,7 +1183,7 @@ pdf_obj_mark(pdf_obj *obj)
 }
 
 void
-pdf_obj_unmark(pdf_obj *obj)
+pdf_unmark_obj(pdf_obj *obj)
 {
 	RESOLVE(obj);
 	if (!obj)
@@ -1191,22 +1192,43 @@ pdf_obj_unmark(pdf_obj *obj)
 }
 
 void
-pdf_obj_stash(pdf_obj *obj, int stash)
+pdf_set_obj_memo(pdf_obj *obj, int memo)
 {
-	obj->flags |= PDF_FLAGS_STASH;
-	if (stash)
-		obj->flags |= PDF_FLAGS_STASH_BOOL;
+	obj->flags |= PDF_FLAGS_MEMO;
+	if (memo)
+		obj->flags |= PDF_FLAGS_MEMO_BOOL;
 	else
-		obj->flags &= ~PDF_FLAGS_STASH_BOOL;
+		obj->flags &= ~PDF_FLAGS_MEMO_BOOL;
 }
 
 int
-pdf_obj_stashed(pdf_obj *obj, int *stash)
+pdf_obj_memo(pdf_obj *obj, int *memo)
 {
-	if (!(obj->flags & PDF_FLAGS_STASH))
+	if (!(obj->flags & PDF_FLAGS_MEMO))
 		return 0;
-	*stash = !!(obj->flags & PDF_FLAGS_STASH_BOOL);
+	*memo = !!(obj->flags & PDF_FLAGS_MEMO_BOOL);
 	return 1;
+}
+
+int pdf_obj_is_dirty(pdf_obj *obj)
+{
+	if (!obj)
+		return 0;
+	return !!(obj->flags & PDF_FLAGS_DIRTY);
+}
+
+void pdf_dirty_obj(pdf_obj *obj)
+{
+	if (!obj)
+		return;
+	obj->flags |= PDF_FLAGS_DIRTY;
+}
+
+void pdf_clean_obj(pdf_obj *obj)
+{
+	if (!obj)
+		return;
+	obj->flags &= ~PDF_FLAGS_DIRTY;
 }
 
 static void

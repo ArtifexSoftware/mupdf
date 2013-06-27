@@ -180,21 +180,9 @@ static void pdf_field_mark_dirty(pdf_document *doc, pdf_obj *field)
 		for (i = 0; i < n; i++)
 			pdf_field_mark_dirty(doc, pdf_array_get(kids, i));
 	}
-	else if (!pdf_dict_gets(field, "Dirty"))
+	else
 	{
-		pdf_obj *nullobj = pdf_new_null(doc);
-		fz_try(ctx)
-		{
-			pdf_dict_puts(field, "Dirty", nullobj);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(nullobj);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
+		pdf_dirty_obj(field);
 	}
 }
 
@@ -1762,7 +1750,7 @@ static void update_text_markup_appearance(pdf_document *doc, pdf_annot *annot, f
 void pdf_update_appearance(pdf_document *doc, pdf_annot *annot)
 {
 	pdf_obj *obj = annot->obj;
-	if (!pdf_dict_gets(obj, "AP") || pdf_dict_gets(obj, "Dirty"))
+	if (!pdf_dict_gets(obj, "AP") || pdf_obj_is_dirty(obj))
 	{
 		fz_annot_type type = pdf_annot_obj_type(obj);
 		switch (type)
@@ -1815,7 +1803,7 @@ void pdf_update_appearance(pdf_document *doc, pdf_annot *annot)
 			break;
 		}
 
-		pdf_dict_dels(obj, "Dirty");
+		pdf_clean_obj(obj);
 	}
 }
 

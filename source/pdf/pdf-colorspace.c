@@ -272,7 +272,7 @@ pdf_load_colorspace_imp(pdf_document *doc, pdf_obj *obj)
 				fz_colorspace *cs;
 				fz_try(ctx)
 				{
-					pdf_obj_mark(obj);
+					pdf_mark_obj(obj);
 					if (!strcmp(str, "ICCBased"))
 						cs = load_icc_based(doc, pdf_array_get(obj, 1));
 
@@ -304,7 +304,7 @@ pdf_load_colorspace_imp(pdf_document *doc, pdf_obj *obj)
 				}
 				fz_always(ctx)
 				{
-					pdf_obj_unmark(obj);
+					pdf_unmark_obj(obj);
 				}
 				fz_catch(ctx)
 				{

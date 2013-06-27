@@ -277,7 +277,7 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_obj *rdb)
 			combine = 0;
 		}
 
-		if (pdf_obj_mark(ocg))
+		if (pdf_mark_obj(ocg))
 			return 0; /* Should never happen */
 		fz_try(ctx)
 		{
@@ -307,7 +307,7 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_obj *rdb)
 		}
 		fz_always(ctx)
 		{
-			pdf_obj_unmark(ocg);
+			pdf_unmark_obj(ocg);
 		}
 		fz_catch(ctx)
 		{
@@ -1505,7 +1505,7 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 	fz_matrix gparent_save_ctm;
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_obj_mark(xobj->me))
+	if (xobj == NULL || pdf_mark_obj(xobj->me))
 		return;
 
 	fz_var(gstate);
@@ -1574,7 +1574,7 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 			pdf_grestore(csi);
 		}
 
-		pdf_obj_unmark(xobj->me);
+		pdf_unmark_obj(xobj->me);
 
 		/* wrap up transparency stacks */
 		if (xobj->transparency)
