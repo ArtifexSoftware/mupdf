@@ -72,7 +72,7 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
  *             catch region entered with code = 1.
  */
 
-static void throw(fz_error_context *ex) FZ_NORETURN;
+FZ_NORETURN static void throw(fz_error_context *ex);
 
 static void throw(fz_error_context *ex)
 {

@@ -155,7 +155,11 @@ void fz_free_argv(int argc, char **argv);
 #ifdef __GNUC__
 #define FZ_NORETURN __attribute__((noreturn))
 #else
+#ifdef _MSC_VER
+#define FZ_NORETURN __declspec(noreturn)
+#else
 #define FZ_NORETURN
+#endif
 #endif
 
 /*
