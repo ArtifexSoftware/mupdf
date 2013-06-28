@@ -76,7 +76,9 @@ pdf_obj *pdf_array_get(pdf_obj *array, int i);
 void pdf_array_put(pdf_obj *array, int i, pdf_obj *obj);
 void pdf_array_push(pdf_obj *array, pdf_obj *obj);
 void pdf_array_push_drop(pdf_obj *array, pdf_obj *obj);
-void pdf_array_insert(pdf_obj *array, pdf_obj *obj);
+void pdf_array_insert(pdf_obj *array, pdf_obj *obj, int index);
+void pdf_array_insert_drop(pdf_obj *array, pdf_obj *obj, int index);
+void pdf_array_delete(pdf_obj *array, int index);
 int pdf_array_contains(pdf_obj *array, pdf_obj *obj);
 
 int pdf_dict_len(pdf_obj *dict);

@@ -1506,9 +1506,9 @@ static void addhexfilter(pdf_document *doc, pdf_obj *dict)
 	}
 	else if (pdf_is_array(f))
 	{
-		pdf_array_insert(f, ahx);
+		pdf_array_insert(f, ahx, 0);
 		if (pdf_is_array(dp))
-			pdf_array_insert(dp, nullobj);
+			pdf_array_insert(dp, nullobj, 0);
 	}
 	else
 		f = ahx;

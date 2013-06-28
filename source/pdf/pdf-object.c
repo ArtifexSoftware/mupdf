@@ -608,7 +608,7 @@ pdf_array_push_drop(pdf_obj *obj, pdf_obj *item)
 }
 
 void
-pdf_array_insert(pdf_obj *obj, pdf_obj *item)
+pdf_array_insert(pdf_obj *obj, pdf_obj *item, int i)
 {
 	RESOLVE(obj);
 
@@ -618,14 +618,50 @@ pdf_array_insert(pdf_obj *obj, pdf_obj *item)
 		fz_warn(obj->doc->ctx, "assert: not an array (%s)", pdf_objkindstr(obj));
 	else
 	{
+		if (i < 0 || i > obj->u.a.len)
+			fz_throw(obj->doc->ctx, FZ_ERROR_GENERIC, "attempt to insert object %d in array of length %d", i, obj->u.a.len);
 		if (obj->u.a.len + 1 > obj->u.a.cap)
 			pdf_array_grow(obj);
-		memmove(obj->u.a.items + 1, obj->u.a.items, obj->u.a.len * sizeof(pdf_obj*));
-		obj->u.a.items[0] = pdf_keep_obj(item);
+		memmove(obj->u.a.items + i + 1, obj->u.a.items + i, (obj->u.a.len - i) * sizeof(pdf_obj*));
+		obj->u.a.items[i] = pdf_keep_obj(item);
 		obj->u.a.len++;
 	}
 
 	object_altered(obj, item);
+}
+
+void
+pdf_array_insert_drop(pdf_obj *obj, pdf_obj *item, int i)
+{
+	fz_context *ctx = obj->doc->ctx;
+	fz_try(ctx)
+	{
+		pdf_array_insert(obj, item, i);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(item);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
+void
+pdf_array_delete(pdf_obj *obj, int i)
+{
+	if (!obj)
+		return; /* Can't warn :( */
+	if (obj->kind != PDF_ARRAY)
+		fz_warn(obj->doc->ctx, "assert: not an array (%s)", pdf_objkindstr(obj));
+	else
+	{
+		pdf_drop_obj(obj->u.a.items[i]);
+		obj->u.a.items[i] = 0;
+		obj->u.a.len--;
+		memmove(obj->u.a.items + i, obj->u.a.items + i + 1, (obj->u.a.len - i) * sizeof(pdf_obj*));
+	}
 }
 
 int
