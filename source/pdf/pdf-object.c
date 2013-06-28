@@ -34,6 +34,7 @@ struct pdf_obj_s
 	unsigned char kind;
 	unsigned char flags;
 	pdf_document *doc;
+	int parent_num;
 	union
 	{
 		int b;
@@ -71,6 +72,7 @@ pdf_new_null(pdf_document *doc)
 	obj->refs = 1;
 	obj->kind = PDF_NULL;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	return obj;
 }
 
@@ -84,6 +86,7 @@ pdf_new_bool(pdf_document *doc, int b)
 	obj->refs = 1;
 	obj->kind = PDF_BOOL;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	obj->u.b = b;
 	return obj;
 }
@@ -98,6 +101,7 @@ pdf_new_int(pdf_document *doc, int i)
 	obj->refs = 1;
 	obj->kind = PDF_INT;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	obj->u.i = i;
 	return obj;
 }
@@ -112,6 +116,7 @@ pdf_new_real(pdf_document *doc, float f)
 	obj->refs = 1;
 	obj->kind = PDF_REAL;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	obj->u.f = f;
 	return obj;
 }
@@ -126,6 +131,7 @@ pdf_new_string(pdf_document *doc, const char *str, int len)
 	obj->refs = 1;
 	obj->kind = PDF_STRING;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	obj->u.s.len = len;
 	memcpy(obj->u.s.buf, str, len);
 	obj->u.s.buf[len] = '\0';
@@ -142,6 +148,7 @@ pdf_new_name(pdf_document *doc, const char *str)
 	obj->refs = 1;
 	obj->kind = PDF_NAME;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	strcpy(obj->u.n, str);
 	return obj;
 }
@@ -156,6 +163,7 @@ pdf_new_indirect(pdf_document *doc, int num, int gen)
 	obj->refs = 1;
 	obj->kind = PDF_INDIRECT;
 	obj->flags = 0;
+	obj->parent_num = 0;
 	obj->u.r.num = num;
 	obj->u.r.gen = gen;
 	return obj;
@@ -442,6 +450,7 @@ pdf_new_array(pdf_document *doc, int initialcap)
 	obj->refs = 1;
 	obj->kind = PDF_ARRAY;
 	obj->flags = 0;
+	obj->parent_num = 0;
 
 	obj->u.a.len = 0;
 	obj->u.a.cap = initialcap > 1 ? initialcap : 6;
@@ -519,6 +528,24 @@ pdf_array_get(pdf_obj *obj, int i)
 	return obj->u.a.items[i];
 }
 
+static void object_altered(pdf_obj *obj, pdf_obj *val)
+{
+	/*
+	parent_num = 0 while an object is being parsed from the file.
+	No further action is necessary.
+	*/
+	if (obj->parent_num == 0 || obj->doc->freeze_updates)
+		return;
+
+	/*
+	Otherwise we need to ensure that the containing hierarchy of objects
+	has been moved to the incremental xref section and the newly linked
+	object needs to record the parent_num
+	*/
+	pdf_xref_ensure_incremental_object(obj->doc, obj->parent_num);
+	pdf_set_objects_parent_num(val, obj->parent_num);
+}
+
 void
 pdf_array_put(pdf_obj *obj, int i, pdf_obj *item)
 {
@@ -537,6 +564,8 @@ pdf_array_put(pdf_obj *obj, int i, pdf_obj *item)
 		pdf_drop_obj(obj->u.a.items[i]);
 		obj->u.a.items[i] = pdf_keep_obj(item);
 	}
+
+	object_altered(obj, item);
 }
 
 void
@@ -555,6 +584,8 @@ pdf_array_push(pdf_obj *obj, pdf_obj *item)
 		obj->u.a.items[obj->u.a.len] = pdf_keep_obj(item);
 		obj->u.a.len++;
 	}
+
+	object_altered(obj, item);
 }
 
 void
@@ -593,6 +624,8 @@ pdf_array_insert(pdf_obj *obj, pdf_obj *item)
 		obj->u.a.items[0] = pdf_keep_obj(item);
 		obj->u.a.len++;
 	}
+
+	object_altered(obj, item);
 }
 
 int
@@ -723,6 +756,7 @@ pdf_new_dict(pdf_document *doc, int initialcap)
 	obj->refs = 1;
 	obj->kind = PDF_DICT;
 	obj->flags = 0;
+	obj->parent_num = 0;
 
 	obj->u.d.len = 0;
 	obj->u.d.cap = initialcap > 1 ? initialcap : 10;
@@ -987,6 +1021,8 @@ pdf_dict_put(pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 		obj->u.d.items[i].v = pdf_keep_obj(val);
 		obj->u.d.len ++;
 	}
+
+	object_altered(obj, val);
 }
 
 void
@@ -1136,6 +1172,8 @@ pdf_dict_dels(pdf_obj *obj, const char *key)
 			obj->u.d.len --;
 		}
 	}
+
+	object_altered(obj, NULL);
 }
 
 void
@@ -1272,6 +1310,31 @@ pdf_drop_obj(pdf_obj *obj)
 		pdf_free_dict(obj);
 	else
 		fz_free(obj->doc->ctx, obj);
+}
+
+void
+pdf_set_objects_parent_num(pdf_obj *obj, int num)
+{
+	int n, i;
+
+	if (!obj)
+		return;
+
+	obj->parent_num = num;
+
+	switch(obj->kind)
+	{
+	case PDF_ARRAY:
+		n = pdf_array_len(obj);
+		for (i = 0; i < n; i++)
+			pdf_set_objects_parent_num(pdf_array_get(obj, i), num);
+		break;
+	case PDF_DICT:
+		n = pdf_dict_len(obj);
+		for (i = 0; i < n; i++)
+			pdf_set_objects_parent_num(pdf_dict_get_val(obj, i), num);
+		break;
+	}
 }
 
 pdf_obj *pdf_new_obj_from_str(pdf_document *doc, const char *src)

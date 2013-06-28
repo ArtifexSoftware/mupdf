@@ -95,6 +95,14 @@ void pdf_dict_del(pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(pdf_obj *dict, const char *key);
 void pdf_sort_dict(pdf_obj *dict);
 
+/*
+	Recurse through the object structure setting the node's parent_num to num.
+	parent_num is used when a subobject is to be changed during a document edit.
+	The whole containing hierarchy is moved to the incremental xref section, so
+	to be later written out as an incremental file update.
+*/
+void pdf_set_objects_parent_num(pdf_obj *obj, int num);
+
 int pdf_fprint_obj(FILE *fp, pdf_obj *obj, int tight);
 
 #ifndef NDEBUG

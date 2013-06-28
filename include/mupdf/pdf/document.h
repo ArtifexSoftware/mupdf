@@ -185,6 +185,7 @@ struct pdf_document_s
 	int num_xref_sections;
 	pdf_xref *xref_sections;
 	int xref_altered;
+	int freeze_updates;
 
 	int page_len;
 	int page_cap;

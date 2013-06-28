@@ -705,7 +705,6 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 
 		annot = fz_malloc_struct(ctx, pdf_annot);
 		annot->page = page;
-		annot->obj = pdf_keep_obj(annot_obj);
 		annot->rect = rect;
 		annot->pagerect = rect;
 		annot->ap = NULL;
@@ -721,6 +720,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 		pdf_update_object(doc, ind_obj_num, annot_obj);
 		ind_obj = pdf_new_indirect(doc, ind_obj_num, 0);
 		pdf_array_push(annot_arr, ind_obj);
+		annot->obj = pdf_keep_obj(ind_obj);
 
 		/*
 			Linking must be done after any call that might throw because
@@ -794,11 +794,13 @@ pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot)
 					pdf_array_push(annot_arr, obj);
 			}
 
-			/*
-			Overwrite "Annots" in the page dictionary, which has the
-			side-effect of releasing the last reference to old_annot_arr
-			*/
-			pdf_dict_puts(page->me, "Annots", annot_arr);
+			if (pdf_is_indirect(old_annot_arr))
+				pdf_update_object(doc, pdf_to_num(old_annot_arr), annot_arr);
+			else
+				pdf_dict_puts(page->me, "Annots", annot_arr);
+
+			if (pdf_is_indirect(annot->obj))
+				pdf_delete_object(doc, pdf_to_num(annot->obj));
 		}
 		fz_always(ctx)
 		{
@@ -985,7 +987,7 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_
 
 		/* See if there is a current normal appearance */
 		ap_obj = pdf_dict_getp(obj, "AP/N");
-		if (!pdf_is_stream(doc, pdf_to_num(obj), pdf_to_gen(obj)))
+		if (!pdf_is_stream(doc, pdf_to_num(ap_obj), pdf_to_gen(ap_obj)))
 			ap_obj = NULL;
 
 		if (ap_obj == NULL)
@@ -995,6 +997,7 @@ pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_
 		}
 		else
 		{
+			pdf_xref_ensure_incremental_object(doc, pdf_to_num(ap_obj));
 			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(doc, &trect));
 			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(doc, &mat));
 		}

@@ -2225,6 +2225,7 @@ void pdf_write_document(pdf_document *doc, char *filename, fz_write_options *fz_
 	if (!doc)
 		return;
 
+	doc->freeze_updates = 1;
 	ctx = doc->ctx;
 
 	pdf_finish_edit(doc);
@@ -2356,6 +2357,7 @@ void pdf_write_document(pdf_document *doc, char *filename, fz_write_options *fz_
 		pdf_drop_obj(opts.hints_length);
 		page_objects_list_destroy(ctx, opts.page_object_lists);
 		fclose(opts.out);
+		doc->freeze_updates = 0;
 	}
 	fz_catch(ctx)
 	{

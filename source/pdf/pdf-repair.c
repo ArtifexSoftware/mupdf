@@ -256,6 +256,8 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 	fz_var(obj);
 
 	doc->dirty = 1;
+	/* Can't support incremental update after repair */
+	doc->freeze_updates = 1;
 
 	fz_seek(doc->file, 0, 0);
 

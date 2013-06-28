@@ -147,32 +147,75 @@ pdf_xref_entry *pdf_get_xref_entry(pdf_document *doc, int i)
 	return &doc->xref_sections[0].table[i];
 }
 
+/*
+		Ensure we have an incremental xref section where we can store
+		updated versions of indirect objects
+*/
+static void ensure_incremental_xref(pdf_document *doc)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_xref *xref, *pxref;
+
+	if (!doc->xref_altered)
+	{
+		pdf_xref_entry *new_table;
+		doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
+		xref = &doc->xref_sections[0];
+		pxref = &doc->xref_sections[1];
+		new_table = fz_calloc(ctx, xref->len, sizeof(pdf_xref_entry));
+		memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
+		doc->num_xref_sections++;
+		/* xref->len is already correct */
+		xref->table = new_table;
+		xref->trailer = pdf_keep_obj(pxref->trailer);
+		doc->xref_altered = 1;
+	}
+}
+
 /* Used when altering a document */
-static pdf_xref_entry *pdf_get_new_xref_entry(pdf_document *doc, int i)
+static pdf_xref_entry *pdf_get_incremental_xref_entry(pdf_document *doc, int i)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_xref *xref;
 
 	/* Make a new final xref section if we haven't already */
-	if (!doc->xref_altered)
-	{
-		doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
-		memmove(&doc->xref_sections[1], &doc->xref_sections[0], doc->num_xref_sections * sizeof(pdf_xref));
-		doc->num_xref_sections++;
-		xref = &doc->xref_sections[0];
-		xref->len = 0;
-		xref->table = NULL;
-		xref->trailer = pdf_keep_obj(doc->xref_sections[1].trailer);
-		/* All new levels must be at least as big as the level before */
-		pdf_resize_xref(ctx, xref, fz_maxi(i+1, doc->xref_sections[1].len));
-		doc->xref_altered = 1;
-	}
+	ensure_incremental_xref(doc);
 
 	xref = &doc->xref_sections[0];
 	if (i >= xref->len)
 		pdf_resize_xref(ctx, xref, i + 1);
 
 	return &xref->table[i];
+}
+
+/* Ensure that an object has been cloned into the incremental xref section */
+void pdf_xref_ensure_incremental_object(pdf_document *doc, int num)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_xref_entry *new_entry, *old_entry;
+	int i;
+
+	/* Make sure we have created an xref section for incremental updates */
+	ensure_incremental_xref(doc);
+
+	/* Search for the section that contains this object */
+	for (i = 0; i < doc->num_xref_sections; i++)
+	{
+		pdf_xref *xref = &doc->xref_sections[i];
+		if (num >= 0 && num < xref->len && xref->table[num].type)
+			break;
+	}
+
+	/* If we don't find it, or it's already in the incremental section, return */
+	if (i == 0 || i == doc->num_xref_sections)
+		return;
+
+	/* Move the object to the incremental section */
+	old_entry = &doc->xref_sections[i].table[num];
+	new_entry = pdf_get_incremental_xref_entry(doc, num);
+	*new_entry = *old_entry;
+	old_entry->obj = NULL;
+	old_entry->stm_buf = NULL;
 }
 
 void pdf_replace_xref(pdf_document *doc, pdf_xref_entry *entries, int n)
@@ -1213,7 +1256,6 @@ pdf_cache_object(pdf_document *doc, int num, int gen)
 	if (x->type == 'f')
 	{
 		x->obj = pdf_new_null(doc);
-		return;
 	}
 	else if (x->type == 'n')
 	{
@@ -1259,6 +1301,8 @@ pdf_cache_object(pdf_document *doc, int num, int gen)
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d %d R)", num, gen);
 	}
+
+	pdf_set_objects_parent_num(x->obj, num);
 }
 
 pdf_obj *
@@ -1337,7 +1381,7 @@ pdf_create_object(pdf_document *doc)
 	/* TODO: reuse free object slots by properly linking free object chains in the ofs field */
 	pdf_xref_entry *entry;
 	int num = pdf_xref_len(doc);
-	entry = pdf_get_new_xref_entry(doc, num);
+	entry = pdf_get_incremental_xref_entry(doc, num);
 	entry->type = 'f';
 	entry->ofs = -1;
 	entry->gen = 0;
@@ -1358,7 +1402,7 @@ pdf_delete_object(pdf_document *doc, int num)
 		return;
 	}
 
-	x = pdf_get_new_xref_entry(doc, num);
+	x = pdf_get_incremental_xref_entry(doc, num);
 
 	fz_drop_buffer(doc->ctx, x->stm_buf);
 	pdf_drop_obj(x->obj);
@@ -1382,7 +1426,7 @@ pdf_update_object(pdf_document *doc, int num, pdf_obj *newobj)
 		return;
 	}
 
-	x = pdf_get_new_xref_entry(doc, num);
+	x = pdf_get_incremental_xref_entry(doc, num);
 
 	pdf_drop_obj(x->obj);
 

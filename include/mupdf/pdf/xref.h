@@ -75,6 +75,7 @@ int pdf_xref_len(pdf_document *doc);
 pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int i);
 pdf_xref_entry *pdf_get_xref_entry(pdf_document *doc, int i);
 void pdf_replace_xref(pdf_document *doc, pdf_xref_entry *entries, int n);
+void pdf_xref_ensure_incremental_object(pdf_document *doc, int num);
 
 void pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf);
 void pdf_repair_obj_stms(pdf_document *doc);
