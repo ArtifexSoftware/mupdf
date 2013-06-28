@@ -100,16 +100,21 @@ pdf_lookup_page_obj(pdf_document *doc, int needle)
 static int
 pdf_count_pages_before_kid(pdf_document *doc, pdf_obj *parent, int kid_num)
 {
-	pdf_obj *count, *kid, *kids = pdf_dict_gets(parent, "Kids");
+	pdf_obj *kids = pdf_dict_gets(parent, "Kids");
 	int i, total = 0, len = pdf_array_len(kids);
 	for (i = 0; i < len; i++)
 	{
-		kid = pdf_array_get(kids, i);
+		pdf_obj *kid = pdf_array_get(kids, i);
 		if (pdf_to_num(kid) == kid_num)
 			return total;
-		count = pdf_dict_gets(kid, "Count");
-		if (count)
-			total += pdf_to_int(count);
+		if (!strcmp(pdf_to_name(pdf_dict_gets(kid, "Type")), "Pages"))
+		{
+			pdf_obj *count = pdf_dict_gets(kid, "Count");
+			int n = pdf_to_int(count);
+			if (count == NULL || n <= 0)
+				fz_throw(doc->ctx, FZ_ERROR_GENERIC, "illegal or missing count in pages tree");
+			total += n;
+		}
 		else
 			total++;
 	}
