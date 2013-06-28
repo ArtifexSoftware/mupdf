@@ -119,19 +119,38 @@ pdf_count_pages_before_kid(pdf_document *doc, pdf_obj *parent, int kid_num)
 int
 pdf_lookup_page_number(pdf_document *doc, pdf_obj *node)
 {
+	fz_context *ctx = doc->ctx;
 	int needle = pdf_to_num(node);
 	int total = 0;
-	int depth = 0;
-	pdf_obj *parent;
+	pdf_obj *parent, *parent2;
 
-	parent = pdf_dict_gets(node, "Parent");
-	while (parent)
+	parent2 = parent = pdf_dict_gets(node, "Parent");
+	fz_var(parent);
+	fz_try(ctx)
 	{
-		total += pdf_count_pages_before_kid(doc, parent, needle);
-		needle = pdf_to_num(parent);
-		parent = pdf_dict_gets(parent, "Parent");
-		if (++depth > 100)
-			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "page tree is too deep");
+		while (parent)
+		{
+			if (pdf_mark_obj(parent))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
+			total += pdf_count_pages_before_kid(doc, parent, needle);
+			needle = pdf_to_num(parent);
+			parent = pdf_dict_gets(parent, "Parent");
+		}
+	}
+	fz_always(ctx)
+	{
+		/* Run back and unmark */
+		while (parent2)
+		{
+			pdf_unmark_obj(parent2);
+			if (parent2 == parent)
+				break;
+			parent2 = pdf_dict_gets(parent2, "Parent");
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 
 	return total;
@@ -140,24 +159,42 @@ pdf_lookup_page_number(pdf_document *doc, pdf_obj *node)
 static pdf_obj *
 pdf_lookup_inherited_page_item(pdf_document *doc, pdf_obj *node, const char *key)
 {
-	int depth = 0;
+	fz_context *ctx = doc->ctx;
+	pdf_obj *node2 = node;
+	pdf_obj *val;
 
-	pdf_obj *val = pdf_dict_gets(node, key);
-	if (val)
-		return val;
+	/* fz_var(node); Not required as node passed in */
 
-	node = pdf_dict_gets(node, "Parent");
-	while (node)
+	fz_try(ctx)
 	{
-		val = pdf_dict_gets(node, key);
-		if (val)
-			return val;
-		node = pdf_dict_gets(node, "Parent");
-		if (++depth > 100)
-			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "page tree is too deep");
+		do
+		{
+			val = pdf_dict_gets(node, key);
+			if (val)
+				break;
+			if (pdf_mark_obj(node))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
+			node = pdf_dict_gets(node, "Parent");
+		}
+		while (node);
+	}
+	fz_always(ctx)
+	{
+		do
+		{
+			pdf_unmark_obj(node2);
+			if (node2 == node)
+				break;
+			node2 = pdf_dict_gets(node2, "Parent");
+		}
+		while (node2);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 
-	return NULL;
+	return val;
 }
 
 /* We need to know whether to install a page-level transparency group */
