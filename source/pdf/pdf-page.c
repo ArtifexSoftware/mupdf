@@ -16,15 +16,7 @@ pdf_lookup_page_loc_imp(pdf_document *doc, pdf_obj *node, int *skip, pdf_obj **p
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *kids, *hit;
-	int i, len, count;
-
-	count = pdf_to_int(pdf_dict_gets(node, "Count"));
-	if (*skip > count)
-	{
-		/* The princess is in another castle. */
-		*skip -= count;
-		return NULL;
-	}
+	int i, len;
 
 	kids = pdf_dict_gets(node, "Kids");
 	len = pdf_array_len(kids);
@@ -57,9 +49,17 @@ pdf_lookup_page_loc_imp(pdf_document *doc, pdf_obj *node, int *skip, pdf_obj **p
 			}
 			else if (!strcmp(type, "Pages"))
 			{
-				hit = pdf_lookup_page_loc_imp(doc, kid, skip, parentp, indexp);
-				if (hit)
-					break;
+				int count = pdf_to_int(pdf_dict_gets(kid, "Count"));
+				if (*skip < count)
+				{
+					hit = pdf_lookup_page_loc_imp(doc, kid, skip, parentp, indexp);
+					if (hit)
+						break;
+				}
+				else
+				{
+					*skip -= count;
+				}
 			}
 			else
 			{
