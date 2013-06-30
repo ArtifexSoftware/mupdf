@@ -8,14 +8,14 @@ build: build-stamp
 build-stamp:
 	dh_testdir
 	dh_testroot
-	$(MAKE) build=release prefix=$(CURDIR)/debian/tmp/usr install
+	$(MAKE) -C $(PWD)/.. build=release prefix=/usr DESTDIR=$(CURDIR)/debian/tmp install
 	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	-$(MAKE) nuke
+	-$(MAKE) -C $(PWD)/.. nuke
 	dh_clean
 
 # Build architecture-independent files here.

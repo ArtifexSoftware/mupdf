@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] ; then
+	update-alternatives --remove mupdf /usr/bin/mupdf-x11
+fi
+
+exit 0

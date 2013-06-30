@@ -1,2 +1,2 @@
-apps/man/mutool.1
-apps/man/mudraw.1
+debian/tmp/usr/share/man/man1/mutool.1
+debian/tmp/usr/share/man/man1/mudraw.1
