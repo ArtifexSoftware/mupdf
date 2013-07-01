@@ -1610,7 +1610,7 @@ pdf_open_document_no_run(fz_context *ctx, const char *filename)
 
 pdf_document *pdf_specifics(fz_document *doc)
 {
-	return (pdf_document *)(doc->close == (void *)pdf_close_document ? doc : NULL);
+	return (pdf_document *)((doc && doc->close == (void *)pdf_close_document) ? doc : NULL);
 }
 
 pdf_document *pdf_create_document(fz_context *ctx)
