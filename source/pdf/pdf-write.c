@@ -793,14 +793,23 @@ static void renumberobjs(pdf_document *doc, pdf_write_options *opts)
 		{
 			if (opts->use_list[num])
 			{
+				pdf_xref_entry *e;
 				if (newlen < opts->renumber_map[num])
 					newlen = opts->renumber_map[num];
-				newxref[opts->renumber_map[num]] = *pdf_get_xref_entry(doc, num);
+				e = pdf_get_xref_entry(doc, num);
+				newxref[opts->renumber_map[num]] = *e;
+				if (e->obj)
+				{
+					pdf_set_objects_parent_num(e->obj, opts->renumber_map[num]);
+					e->obj = NULL;
+				}
 				new_use_list[opts->renumber_map[num]] = opts->use_list[num];
 			}
 			else
 			{
-				pdf_drop_obj(pdf_get_xref_entry(doc, num)->obj);
+				pdf_xref_entry *e = pdf_get_xref_entry(doc, num);
+				pdf_drop_obj(e->obj);
+				e->obj = NULL;
 			}
 		}
 
