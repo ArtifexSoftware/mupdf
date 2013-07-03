@@ -1309,7 +1309,7 @@ pdf_cache_object(pdf_document *doc, int num, int gen)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d %d R)", num, gen);
 	}
 
-	pdf_set_objects_parent_num(x->obj, num);
+	pdf_set_obj_parent(x->obj, num);
 }
 
 pdf_obj *

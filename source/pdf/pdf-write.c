@@ -800,7 +800,7 @@ static void renumberobjs(pdf_document *doc, pdf_write_options *opts)
 				newxref[opts->renumber_map[num]] = *e;
 				if (e->obj)
 				{
-					pdf_set_objects_parent_num(e->obj, opts->renumber_map[num]);
+					pdf_set_obj_parent(e->obj, opts->renumber_map[num]);
 					e->obj = NULL;
 				}
 				new_use_list[opts->renumber_map[num]] = opts->use_list[num];
