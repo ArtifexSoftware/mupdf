@@ -1,568 +1,60 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{336f64c0-6502-4d6d-91bd-4b52ff0e5be6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="CMAPs">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
-    <Filter Include="CMAPs\cns">
-      <UniqueIdentifier>{5129a522-0f9b-4dd3-aaf8-5b20b66060d8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="CMAPs\gb">
-      <UniqueIdentifier>{75b3deb7-11ce-4813-b282-6dc1c099e669}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="CMAPs\japan">
-      <UniqueIdentifier>{1706f021-1fce-4074-9299-6fd9c516c7ca}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="CMAPs\korea">
-      <UniqueIdentifier>{f2a3739d-4175-47e4-9711-4a066e0f7094}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fonts">
-      <UniqueIdentifier>{5168e64f-094a-43e0-b53f-83df3632d7ae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Fonts\droid">
-      <UniqueIdentifier>{8462cde5-1461-408e-8708-d2b844cbb69d}</UniqueIdentifier>
+    <Filter Include="generated">
+      <UniqueIdentifier>{d381092b-b798-4bb4-851b-9d85f2072427}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\scripts\cmapdump.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\scripts\bin2hex.c">
+      <Filter>scripts</Filter>
     </ClCompile>
-    <ClCompile Include="..\scripts\cquote.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\scripts\cmapdump.c">
+      <Filter>scripts</Filter>
     </ClCompile>
-    <ClCompile Include="..\scripts\fontdump.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\scripts\cquote.c">
+      <Filter>scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scripts\fontdump.c">
+      <Filter>scripts</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\scripts\jconfig.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\generated\gen_adobe_ca.h">
+      <Filter>generated</Filter>
     </ClInclude>
-    <ClInclude Include="..\scripts\opj_config.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\generated\gen_cmap_cns.h">
+      <Filter>generated</Filter>
     </ClInclude>
-    <ClInclude Include="..\scripts\slimftmodules.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\generated\gen_cmap_gb.h">
+      <Filter>generated</Filter>
     </ClInclude>
-    <ClInclude Include="..\scripts\slimftoptions.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\generated\gen_cmap_japan.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_cmap_korea.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_font_base14.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_font_cjk.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_font_cjk_full.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_font_droid.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_js_util.h">
+      <Filter>generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\cmaps\cns\Adobe-CNS1-0">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-1">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-2">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-3">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-4">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-5">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-6">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\Adobe-CNS1-UCS2">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\B5pc-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\B5pc-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS-EUC-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS-EUC-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS1-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS1-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS2-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\CNS2-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETen-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETen-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETenms-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETenms-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETHK-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\ETHK-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKdla-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKdla-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKdlb-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKdlb-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKgccs-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKgccs-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKm314-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKm314-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKm471-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKm471-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKscs-B5-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\HKscs-B5-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\UniCNS-UCS2-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\UniCNS-UCS2-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\UniCNS-UTF16-H">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\cns\UniCNS-UTF16-V">
-      <Filter>CMAPs\cns</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-0">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-1">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-2">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-3">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-4">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-5">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\Adobe-GB1-UCS2">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GB-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GB-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GB-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GB-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBK-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBK-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBK2K-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBK2K-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBKp-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBKp-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBpc-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBpc-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBT-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBT-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBT-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBT-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBTpc-EUC-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\GBTpc-EUC-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\UniGB-UCS2-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\UniGB-UCS2-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\UniGB-UTF16-H">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\gb\UniGB-UTF16-V">
-      <Filter>CMAPs\gb</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-EUC-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-EUC-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78ms-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\78ms-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\83pv-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90ms-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90ms-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90msp-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90msp-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90pv-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\90pv-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Add-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Add-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Add-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Add-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-0">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-1">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-2">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-3">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-4">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-5">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-6">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan1-UCS2">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Adobe-Japan2-0">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\EUC-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\EUC-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Ext-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Ext-RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Ext-RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Ext-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hankaku">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hiragana">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hojo-EUC-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hojo-EUC-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hojo-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Hojo-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Katakana">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\NWP-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\NWP-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\RKSJ-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\RKSJ-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\Roman">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniHojo-UCS2-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniHojo-UCS2-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniHojo-UTF16-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniHojo-UTF16-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UCS2-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UCS2-HW-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UCS2-HW-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UCS2-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UTF16-H">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJIS-UTF16-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJISPro-UCS2-HW-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\UniJISPro-UCS2-V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\V">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\japan\WP-Symbol">
-      <Filter>CMAPs\japan</Filter>
-    </None>
-    <None Include="..\cmaps\korea\Adobe-Korea1-0">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\Adobe-Korea1-1">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\Adobe-Korea1-2">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\Adobe-Korea1-UCS2">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-EUC-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-EUC-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-Johab-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-Johab-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSC-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCms-UHC-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCms-UHC-HW-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCms-UHC-HW-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCms-UHC-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCpc-EUC-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\KSCpc-EUC-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\UniKS-UCS2-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\UniKS-UCS2-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\UniKS-UTF16-H">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\cmaps\korea\UniKS-UTF16-V">
-      <Filter>CMAPs\korea</Filter>
-    </None>
-    <None Include="..\fonts\Dingbats.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusMonL-Bold.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusMonL-BoldObli.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusMonL-Regu.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusMonL-ReguObli.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusRomNo9L-Medi.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusRomNo9L-MediItal.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusRomNo9L-Regu.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusRomNo9L-ReguItal.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusSanL-Bold.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusSanL-BoldItal.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusSanL-Regu.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\NimbusSanL-ReguItal.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\StandardSymL.cff">
-      <Filter>Fonts</Filter>
-    </None>
-    <None Include="..\fonts\droid\NOTICE">
-      <Filter>Fonts\droid</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="..\fonts\droid\DroidSans.ttf">
-      <Filter>Fonts\droid</Filter>
-    </Font>
-    <Font Include="..\fonts\droid\DroidSansFallback.ttf">
-      <Filter>Fonts\droid</Filter>
-    </Font>
-    <Font Include="..\fonts\droid\DroidSansMono.ttf">
-      <Filter>Fonts\droid</Filter>
-    </Font>
+    <None Include="generate.bat" />
   </ItemGroup>
 </Project>

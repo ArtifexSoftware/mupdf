@@ -39,131 +39,189 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cbz\mucbz.c" />
-    <ClCompile Include="..\draw\draw_affine.c" />
-    <ClCompile Include="..\draw\draw_blend.c" />
-    <ClCompile Include="..\draw\draw_device.c" />
-    <ClCompile Include="..\draw\draw_edge.c" />
-    <ClCompile Include="..\draw\draw_glyph.c" />
-    <ClCompile Include="..\draw\draw_mesh.c" />
-    <ClCompile Include="..\draw\draw_paint.c" />
-    <ClCompile Include="..\draw\draw_path.c" />
-    <ClCompile Include="..\draw\draw_simple_scale.c" />
-    <ClCompile Include="..\draw\draw_unpack.c" />
-    <ClCompile Include="..\fitz\base_context.c" />
-    <ClCompile Include="..\fitz\base_error.c" />
-    <ClCompile Include="..\fitz\base_geometry.c" />
-    <ClCompile Include="..\fitz\base_getopt.c" />
-    <ClCompile Include="..\fitz\base_hash.c" />
-    <ClCompile Include="..\fitz\base_memory.c" />
-    <ClCompile Include="..\fitz\base_string.c" />
-    <ClCompile Include="..\fitz\base_time.c" />
-    <ClCompile Include="..\fitz\base_trans.c" />
-    <ClCompile Include="..\fitz\base_xml.c" />
-    <ClCompile Include="..\fitz\crypt_aes.c" />
-    <ClCompile Include="..\fitz\crypt_arc4.c" />
-    <ClCompile Include="..\fitz\crypt_md5.c" />
-    <ClCompile Include="..\fitz\crypt_sha2.c" />
-    <ClCompile Include="..\fitz\dev_bbox.c" />
-    <ClCompile Include="..\fitz\dev_list.c" />
-    <ClCompile Include="..\fitz\dev_null.c" />
-    <ClCompile Include="..\fitz\dev_trace.c" />
-    <ClCompile Include="..\fitz\doc_document.c" />
-    <ClCompile Include="..\fitz\doc_link.c" />
-    <ClCompile Include="..\fitz\doc_outline.c" />
-    <ClCompile Include="..\fitz\filt_basic.c" />
-    <ClCompile Include="..\fitz\filt_dctd.c" />
-    <ClCompile Include="..\fitz\filt_faxd.c" />
-    <ClCompile Include="..\fitz\filt_flate.c" />
-    <ClCompile Include="..\fitz\filt_jbig2d.c" />
-    <ClCompile Include="..\fitz\filt_lzwd.c" />
-    <ClCompile Include="..\fitz\filt_predict.c" />
-    <ClCompile Include="..\fitz\image_jpeg.c" />
-    <ClCompile Include="..\fitz\image_jpx.c" />
-    <ClCompile Include="..\fitz\image_png.c" />
-    <ClCompile Include="..\fitz\image_tiff.c" />
-    <ClCompile Include="..\fitz\memento.c" />
-    <ClCompile Include="..\fitz\res_bitmap.c" />
-    <ClCompile Include="..\fitz\res_colorspace.c" />
-    <ClCompile Include="..\fitz\res_font.c" />
-    <ClCompile Include="..\fitz\res_func.c" />
-    <ClCompile Include="..\fitz\res_halftone.c" />
-    <ClCompile Include="..\fitz\res_image.c" />
-    <ClCompile Include="..\fitz\res_path.c" />
-    <ClCompile Include="..\fitz\res_pixmap.c" />
-    <ClCompile Include="..\fitz\res_shade.c" />
-    <ClCompile Include="..\fitz\res_store.c" />
-    <ClCompile Include="..\fitz\res_text.c" />
-    <ClCompile Include="..\fitz\stm_buffer.c" />
-    <ClCompile Include="..\fitz\stm_comp_buf.c" />
-    <ClCompile Include="..\fitz\stm_open.c" />
-    <ClCompile Include="..\fitz\stm_output.c" />
-    <ClCompile Include="..\fitz\stm_read.c" />
-    <ClCompile Include="..\fitz\text_extract.c" />
-    <ClCompile Include="..\fitz\text_output.c" />
-    <ClCompile Include="..\fitz\text_paragraph.c" />
-    <ClCompile Include="..\fitz\text_search.c" />
-    <ClCompile Include="..\image\muimage.c" />
-    <ClCompile Include="..\pdf\pdf_annot.c" />
-    <ClCompile Include="..\pdf\pdf_cmap.c" />
-    <ClCompile Include="..\pdf\pdf_cmap_load.c" />
-    <ClCompile Include="..\pdf\pdf_cmap_parse.c" />
-    <ClCompile Include="..\pdf\pdf_cmap_table.c" />
-    <ClCompile Include="..\pdf\pdf_colorspace.c" />
-    <ClCompile Include="..\pdf\pdf_crypt.c" />
-    <ClCompile Include="..\pdf\pdf_device.c" />
-    <ClCompile Include="..\pdf\pdf_encoding.c" />
-    <ClCompile Include="..\pdf\pdf_event.c" />
-    <ClCompile Include="..\pdf\pdf_field.c" />
-    <ClCompile Include="..\pdf\pdf_font.c" />
-    <ClCompile Include="..\pdf\pdf_fontfile.c" />
-    <ClCompile Include="..\pdf\pdf_form.c" />
-    <ClCompile Include="..\pdf\pdf_function.c" />
-    <ClCompile Include="..\pdf\pdf_image.c" />
-    <ClCompile Include="..\pdf\pdf_interpret.c" />
-    <ClCompile Include="..\pdf\pdf_lex.c" />
-    <ClCompile Include="..\pdf\pdf_metrics.c" />
-    <ClCompile Include="..\pdf\pdf_nametree.c" />
-    <ClCompile Include="..\pdf\pdf_object.c" />
-    <ClCompile Include="..\pdf\pdf_outline.c" />
-    <ClCompile Include="..\pdf\pdf_page.c" />
-    <ClCompile Include="..\pdf\pdf_parse.c" />
-    <ClCompile Include="..\pdf\pdf_pattern.c" />
-    <ClCompile Include="..\pdf\pdf_repair.c" />
-    <ClCompile Include="..\pdf\pdf_shade.c" />
-    <ClCompile Include="..\pdf\pdf_store.c" />
-    <ClCompile Include="..\pdf\pdf_stream.c" />
-    <ClCompile Include="..\pdf\pdf_type3.c" />
-    <ClCompile Include="..\pdf\pdf_unicode.c" />
-    <ClCompile Include="..\pdf\pdf_write.c" />
-    <ClCompile Include="..\pdf\pdf_xobject.c" />
-    <ClCompile Include="..\pdf\pdf_xref.c" />
-    <ClCompile Include="..\pdf\pdf_xref_aux.c" />
-    <ClCompile Include="..\ucdn\ucdn.c" />
-    <ClCompile Include="..\xps\xps_common.c" />
-    <ClCompile Include="..\xps\xps_doc.c" />
-    <ClCompile Include="..\xps\xps_glyphs.c" />
-    <ClCompile Include="..\xps\xps_gradient.c" />
-    <ClCompile Include="..\xps\xps_image.c" />
-    <ClCompile Include="..\xps\xps_outline.c" />
-    <ClCompile Include="..\xps\xps_path.c" />
-    <ClCompile Include="..\xps\xps_resource.c" />
-    <ClCompile Include="..\xps\xps_tile.c" />
-    <ClCompile Include="..\xps\xps_util.c" />
-    <ClCompile Include="..\xps\xps_zip.c" />
+    <ClCompile Include="..\..\source\cbz\mucbz.c" />
+    <ClCompile Include="..\..\source\fitz\bbox-device.c" />
+    <ClCompile Include="..\..\source\fitz\bitmap.c" />
+    <ClCompile Include="..\..\source\fitz\buffer.c" />
+    <ClCompile Include="..\..\source\fitz\colorspace.c" />
+    <ClCompile Include="..\..\source\fitz\compressed-buffer.c" />
+    <ClCompile Include="..\..\source\fitz\context.c" />
+    <ClCompile Include="..\..\source\fitz\crypt-aes.c" />
+    <ClCompile Include="..\..\source\fitz\crypt-arc4.c" />
+    <ClCompile Include="..\..\source\fitz\crypt-md5.c" />
+    <ClCompile Include="..\..\source\fitz\crypt-sha2.c" />
+    <ClCompile Include="..\..\source\fitz\device.c" />
+    <ClCompile Include="..\..\source\fitz\document.c" />
+    <ClCompile Include="..\..\source\fitz\draw-affine.c" />
+    <ClCompile Include="..\..\source\fitz\draw-blend.c" />
+    <ClCompile Include="..\..\source\fitz\draw-device.c" />
+    <ClCompile Include="..\..\source\fitz\draw-edge.c" />
+    <ClCompile Include="..\..\source\fitz\draw-glyph.c" />
+    <ClCompile Include="..\..\source\fitz\draw-mesh.c" />
+    <ClCompile Include="..\..\source\fitz\draw-paint.c" />
+    <ClCompile Include="..\..\source\fitz\draw-path.c" />
+    <ClCompile Include="..\..\source\fitz\draw-scale-simple.c" />
+    <ClCompile Include="..\..\source\fitz\draw-unpack.c" />
+    <ClCompile Include="..\..\source\fitz\error.c" />
+    <ClCompile Include="..\..\source\fitz\filter-basic.c" />
+    <ClCompile Include="..\..\source\fitz\filter-dct.c" />
+    <ClCompile Include="..\..\source\fitz\filter-fax.c" />
+    <ClCompile Include="..\..\source\fitz\filter-flate.c" />
+    <ClCompile Include="..\..\source\fitz\filter-jbig2.c" />
+    <ClCompile Include="..\..\source\fitz\filter-lzw.c" />
+    <ClCompile Include="..\..\source\fitz\filter-predict.c" />
+    <ClCompile Include="..\..\source\fitz\font.c" />
+    <ClCompile Include="..\..\source\fitz\function.c" />
+    <ClCompile Include="..\..\source\fitz\geometry.c" />
+    <ClCompile Include="..\..\source\fitz\getopt.c" />
+    <ClCompile Include="..\..\source\fitz\halftone.c" />
+    <ClCompile Include="..\..\source\fitz\hash.c" />
+    <ClCompile Include="..\..\source\fitz\image.c" />
+    <ClCompile Include="..\..\source\fitz\link.c" />
+    <ClCompile Include="..\..\source\fitz\list-device.c" />
+    <ClCompile Include="..\..\source\fitz\load-jpeg.c" />
+    <ClCompile Include="..\..\source\fitz\load-jpx.c" />
+    <ClCompile Include="..\..\source\fitz\load-png.c" />
+    <ClCompile Include="..\..\source\fitz\load-tiff.c" />
+    <ClCompile Include="..\..\source\fitz\memento.c" />
+    <ClCompile Include="..\..\source\fitz\memory.c" />
+    <ClCompile Include="..\..\source\fitz\outline.c" />
+    <ClCompile Include="..\..\source\fitz\output-pcl.c" />
+    <ClCompile Include="..\..\source\fitz\output-pwg.c" />
+    <ClCompile Include="..\..\source\fitz\output.c" />
+    <ClCompile Include="..\..\source\fitz\path.c" />
+    <ClCompile Include="..\..\source\fitz\pixmap.c" />
+    <ClCompile Include="..\..\source\fitz\shade.c" />
+    <ClCompile Include="..\..\source\fitz\stext-device.c" />
+    <ClCompile Include="..\..\source\fitz\stext-output.c" />
+    <ClCompile Include="..\..\source\fitz\stext-paragraph.c" />
+    <ClCompile Include="..\..\source\fitz\stext-search.c" />
+    <ClCompile Include="..\..\source\fitz\store.c" />
+    <ClCompile Include="..\..\source\fitz\stream-open.c" />
+    <ClCompile Include="..\..\source\fitz\stream-read.c" />
+    <ClCompile Include="..\..\source\fitz\string.c" />
+    <ClCompile Include="..\..\source\fitz\svg-device.c" />
+    <ClCompile Include="..\..\source\fitz\text.c" />
+    <ClCompile Include="..\..\source\fitz\time.c" />
+    <ClCompile Include="..\..\source\fitz\trace-device.c" />
+    <ClCompile Include="..\..\source\fitz\transition.c" />
+    <ClCompile Include="..\..\source\fitz\ucdn.c" />
+    <ClCompile Include="..\..\source\fitz\xml.c" />
+    <ClCompile Include="..\..\source\img\muimage.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-cmap-load.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-cmap-parse.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-cmap-table.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-cmap.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-colorspace.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-crypt.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-device.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-encoding.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-event.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-field.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-font.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-fontfile.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-form.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-function.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-image.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-interpret.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-lex.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-metrics.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-nametree.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-object.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-outline.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-page.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-parse.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-pattern.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-pkcs7.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-repair.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-shade.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-store.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-stream.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-type3.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-unicode.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-write.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-xobject.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-xref-aux.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-xref.c" />
+    <ClCompile Include="..\..\source\xps\xps-common.c" />
+    <ClCompile Include="..\..\source\xps\xps-doc.c" />
+    <ClCompile Include="..\..\source\xps\xps-glyphs.c" />
+    <ClCompile Include="..\..\source\xps\xps-gradient.c" />
+    <ClCompile Include="..\..\source\xps\xps-image.c" />
+    <ClCompile Include="..\..\source\xps\xps-outline.c" />
+    <ClCompile Include="..\..\source\xps\xps-path.c" />
+    <ClCompile Include="..\..\source\xps\xps-resource.c" />
+    <ClCompile Include="..\..\source\xps\xps-tile.c" />
+    <ClCompile Include="..\..\source\xps\xps-util.c" />
+    <ClCompile Include="..\..\source\xps\xps-zip.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\cbz\mucbz.h" />
-    <ClInclude Include="..\fitz\fitz-internal.h" />
-    <ClInclude Include="..\fitz\fitz.h" />
-    <ClInclude Include="..\fitz\memento.h" />
-    <ClInclude Include="..\image\muimage.h" />
-    <ClInclude Include="..\pdf\data_encodings.h" />
-    <ClInclude Include="..\pdf\data_glyphlist.h" />
-    <ClInclude Include="..\pdf\mupdf-internal.h" />
-    <ClInclude Include="..\pdf\mupdf.h" />
-    <ClInclude Include="..\xps\muxps-internal.h" />
-    <ClInclude Include="..\xps\muxps.h" />
+    <ClInclude Include="..\..\include\mupdf\cbz.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\annotation.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\bitmap.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\buffer.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\colorspace.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\compressed-buffer.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\context.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\crypt.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\device.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\display-list.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\document.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\filter.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\font.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\function.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\getopt.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\glyph-cache.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\hash.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\image.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\link.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\math.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\meta.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\outline.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output-pcl.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output-png.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output-pnm.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output-pwg.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output-svg.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\output.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\path.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\pixmap.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\shade.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\store.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\stream.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\string.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\structured-text.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\system.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\text.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\transition.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\write-document.h" />
+    <ClInclude Include="..\..\include\mupdf\fitz\xml.h" />
+    <ClInclude Include="..\..\include\mupdf\img.h" />
+    <ClInclude Include="..\..\include\mupdf\memento.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\annot.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\cmap.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\crypt.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\document.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\event.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\field.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\font.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\javascript.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\object.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\output-pdf.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\page.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\parse.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\resource.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\widget.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\xref.h" />
+    <ClInclude Include="..\..\include\mupdf\xps.h" />
+    <ClInclude Include="..\..\source\fitz\draw-imp.h" />
+    <ClInclude Include="..\..\source\fitz\ucdn.h" />
+    <ClInclude Include="..\..\source\fitz\unicodedata_db.h" />
+    <ClInclude Include="..\..\source\pdf\pdf-encodings.h" />
+    <ClInclude Include="..\..\source\pdf\pdf-glyphlist.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0715f3cf-5d1b-4617-a331-6527371365b7}</ProjectGuid>
@@ -303,7 +361,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -317,7 +375,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MEMENTO=1;DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -331,7 +389,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -346,7 +404,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -360,7 +418,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>MEMENTO=1;DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -373,7 +431,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -387,7 +445,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -401,7 +459,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MEMENTO=1;DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -415,7 +473,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\scripts;..\ucdn;..\include;..\generated;..\thirdparty\jbig2dec;..\thirdparty\jpeg;..\thirdparty\openjpeg\src\lib\openjp2;..\thirdparty\zlib;..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
