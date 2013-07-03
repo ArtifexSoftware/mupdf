@@ -61,6 +61,31 @@ android_fprintf(FILE *file, const char *fmt, ...)
 #define MEMENTO_STACKTRACE_METHOD 0
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+
+static int
+windows_fprintf(FILE *file, const char *fmt, ...)
+{
+	va_list args;
+	char text[4096];
+	int ret;
+
+	va_start(args, fmt);
+	ret = vfprintf(file, fmt, args);
+	va_end(args);
+
+	va_start(args, fmt);
+	vsnprintf(text, 4096, fmt, args);
+	OutputDebugStringA(text);
+	va_end(args);
+
+	return ret;
+}
+
+#define fprintf windows_fprintf
+#endif
+
 #ifndef MEMENTO_STACKTRACE_METHOD
 #ifdef __GNUC__
 #define MEMENTO_STACKTRACE_METHOD 1
