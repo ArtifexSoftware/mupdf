@@ -541,7 +541,7 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 			is_dict = pdf_is_dict(ap);
 
 			if (!is_dict)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Annotation object not a dictionary");
+				fz_throw(ctx, FZ_ERROR_NO_APPEARANCE_STREAM, "Annotation has no appearance stream");
 
 			if (hp->num == pdf_to_num(obj)
 				&& hp->gen == pdf_to_gen(obj)
@@ -583,7 +583,8 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 			*itr = annot->next;
 			annot->next = NULL; /* Required because pdf_free_annot follows the "next" chain */
 			pdf_free_annot(ctx, annot);
-			fz_warn(ctx, "ignoring broken annotation");
+			if (fz_caught(ctx) != FZ_ERROR_NO_APPEARANCE_STREAM)
+				fz_warn(ctx, "ignoring broken annotation");
 			/* FIXME: TryLater */
 		}
 	}
