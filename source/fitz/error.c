@@ -1,5 +1,13 @@
 #include "mupdf/fitz.h"
 
+#if defined(_WIN32) && !defined(NDEBUG)
+#define USE_OUTPUT_DEBUG_STRING
+#endif
+
+#ifdef USE_OUTPUT_DEBUG_STRING
+#include <windows.h>
+#endif
+
 /* Warning context */
 
 void fz_var_imp(void *var)
@@ -26,6 +34,10 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
+#ifdef USE_OUTPUT_DEBUG_STRING
+	OutputDebugStringA(buf);
+	OutputDebugStringA("\n");
+#endif
 
 	if (!strcmp(buf, ctx->warn->message))
 	{
@@ -81,6 +93,11 @@ static void throw(fz_error_context *ex)
 	} else {
 		fprintf(stderr, "uncaught exception: %s\n", ex->message);
 		LOGE("uncaught exception: %s\n", ex->message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+		OutputDebugStringA("uncaught exception: ");
+		OutputDebugStringA(ex->message);
+		OutputDebugStringA("\n");
+#endif
 		exit(EXIT_FAILURE);
 	}
 }
@@ -127,6 +144,11 @@ void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 	fz_flush_warnings(ctx);
 	fprintf(stderr, "error: %s\n", ctx->error->message);
 	LOGE("error: %s\n", ctx->error->message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+	OutputDebugStringA("error: ");
+	OutputDebugStringA(ctx->error->message);
+	OutputDebugStringA("\n");
+#endif
 
 	throw(ctx->error);
 }
@@ -150,6 +172,11 @@ void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)
 	fz_flush_warnings(ctx);
 	fprintf(stderr, "error: %s\n", ctx->error->message);
 	LOGE("error: %s\n", ctx->error->message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+	OutputDebugStringA("error: ");
+	OutputDebugStringA(ctx->error->message);
+	OutputDebugStringA("\n");
+#endif
 
 	throw(ctx->error);
 }
