@@ -2342,21 +2342,42 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 	{
 		char *tmp;
 		fz_write_options opts;
-		opts.do_ascii = 1;
+		opts.do_incremental = 1;
+		opts.do_ascii = 0;
 		opts.do_expand = 0;
-		opts.do_garbage = 1;
+		opts.do_garbage = 0;
 		opts.do_linear = 0;
 
 		tmp = tmp_path(glo->current_path);
 		if (tmp)
 		{
-			int written;
+			int written = 0;
 
 			fz_var(written);
 			fz_try(ctx)
 			{
-				fz_write_document(glo->doc, tmp, &opts);
-				written = 1;
+				FILE *fin = fopen(glo->current_path, "rb");
+				FILE *fout = fopen(tmp, "wb");
+				char buf[256];
+				int n, err = 1;
+
+				if (fin && fout)
+				{
+					while ((n = fread(buf, 1, sizeof(buf), fin)) > 0)
+						fwrite(buf, 1, n, fout);
+					err = (ferror(fin) || ferror(fout));
+				}
+
+				if (fin)
+					fclose(fin);
+				if (fout)
+					fclose(fout);
+
+				if (!err)
+				{
+					fz_write_document(glo->doc, tmp, &opts);
+					written = 1;
+				}
 			}
 			fz_catch(ctx)
 			{

@@ -154,21 +154,34 @@ pdf_xref_entry *pdf_get_xref_entry(pdf_document *doc, int i)
 static void ensure_incremental_xref(pdf_document *doc)
 {
 	fz_context *ctx = doc->ctx;
-	pdf_xref *xref, *pxref;
 
 	if (!doc->xref_altered)
 	{
-		pdf_xref_entry *new_table;
-		doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
-		xref = &doc->xref_sections[0];
-		pxref = &doc->xref_sections[1];
-		new_table = fz_calloc(ctx, xref->len, sizeof(pdf_xref_entry));
-		memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
-		doc->num_xref_sections++;
-		/* xref->len is already correct */
-		xref->table = new_table;
-		xref->trailer = pdf_keep_obj(pxref->trailer);
-		doc->xref_altered = 1;
+		pdf_xref *xref = &doc->xref_sections[0];
+		pdf_xref *pxref;
+		pdf_xref_entry *new_table = fz_calloc(ctx, xref->len, sizeof(pdf_xref_entry));
+		pdf_obj *trailer = NULL;
+
+		fz_var(trailer);
+		fz_try(ctx)
+		{
+			trailer = pdf_copy_dict(xref->trailer);
+			doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
+			xref = &doc->xref_sections[0];
+			pxref = &doc->xref_sections[1];
+			memmove(pxref, xref, doc->num_xref_sections * sizeof(pdf_xref));
+			/* xref->len is already correct */
+			xref->table = new_table;
+			xref->trailer = trailer;
+			doc->num_xref_sections++;
+			doc->xref_altered = 1;
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, new_table);
+			pdf_drop_obj(trailer);
+			fz_rethrow(ctx);
+		}
 	}
 }
 
@@ -186,6 +199,13 @@ static pdf_xref_entry *pdf_get_incremental_xref_entry(pdf_document *doc, int i)
 		pdf_resize_xref(ctx, xref, i + 1);
 
 	return &xref->table[i];
+}
+
+int pdf_xref_is_incremental(pdf_document *doc, int num)
+{
+	pdf_xref *xref = &doc->xref_sections[0];
+
+	return doc->xref_altered && num < xref->len && xref->table[num].type;
 }
 
 /* Ensure that an object has been cloned into the incremental xref section */

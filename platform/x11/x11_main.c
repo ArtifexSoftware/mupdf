@@ -281,6 +281,17 @@ void winreplacefile(char *source, char *target)
 	rename(source, target);
 }
 
+void wincopyfile(char *source, char *target)
+{
+	char *buf = malloc(strlen(source)+strlen(target)+4);
+	if (buf)
+	{
+		sprintf(buf, "cp %s %s", source, target);
+		system(buf);
+		free(buf);
+	}
+}
+
 void cleanup(pdfapp_t *app)
 {
 	fz_context *ctx = app->ctx;

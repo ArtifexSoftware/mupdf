@@ -248,6 +248,28 @@ void winreplacefile(char *source, char *target)
 #endif
 }
 
+void wincopyfile(char *source, char *target)
+{
+	wchar_t wsource[PATH_MAX];
+	wchar_t wtarget[PATH_MAX];
+
+	int sz = MultiByteToWideChar(CP_UTF8, 0, source, -1, wsource, PATH_MAX);
+	if (sz == 0)
+	{
+		winerror(&gapp, "cannot convert filename to Unicode");
+		return;
+	}
+
+	sz = MultiByteToWideChar(CP_UTF8, 0, target, -1, wtarget, PATH_MAX);
+	if (sz == 0)
+	{
+		winerror(&gapp, "cannot convert filename to Unicode");
+		return;
+	}
+
+	CopyFile(wsource, wtarget, FALSE);
+}
+
 static char pd_filename[256] = "The file is encrypted.";
 static char pd_password[256] = "";
 static wchar_t pd_passwordw[256] = {0};

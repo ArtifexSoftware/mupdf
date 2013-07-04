@@ -42,6 +42,7 @@ extern void winalert(pdfapp_t *, pdf_alert_event *alert);
 extern void winprint(pdfapp_t *);
 extern void winadvancetimer(pdfapp_t *, float duration);
 extern void winreplacefile(char *source, char *target);
+extern void wincopyfile(char *source, char *target);
 
 struct pdfapp_s
 {

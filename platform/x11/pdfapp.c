@@ -299,13 +299,15 @@ static int pdfapp_save(pdfapp_t *app)
 	{
 		fz_write_options opts;
 
-		opts.do_ascii = 1;
+		opts.do_incremental = 1;
+		opts.do_ascii = 0;
 		opts.do_expand = 0;
-		opts.do_garbage = 1;
+		opts.do_garbage = 0;
 		opts.do_linear = 0;
 
 		if (strcmp(buf, app->docpath) != 0)
 		{
+			wincopyfile(app->docpath, buf);
 			fz_write_document(app->doc, buf, &opts);
 			return 1;
 		}
@@ -316,6 +318,7 @@ static int pdfapp_save(pdfapp_t *app)
 
 			fz_try(app->ctx)
 			{
+				wincopyfile(app->docpath, buf);
 				fz_write_document(app->doc, buf, &opts);
 				written = 1;
 			}

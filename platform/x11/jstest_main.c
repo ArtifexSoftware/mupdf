@@ -108,6 +108,10 @@ void winreplacefile(char *source, char *target)
 {
 }
 
+void wincopyfile(char *source, char *target)
+{
+}
+
 void wincursor(pdfapp_t *app, int curs)
 {
 }
