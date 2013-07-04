@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="ArtifexSoftware.MuPDF" Publisher="CN=B93265AA-82AD-458A-A08E-7069B8ED88B5" Version="1.0.0.6" />
+  <Identity Name="ArtifexSoftware.MuPDF" Publisher="CN=B93265AA-82AD-458A-A08E-7069B8ED88B5" Version="1.0.0.10" />
   <Properties>
     <DisplayName>MuPDF</DisplayName>
     <PublisherDisplayName>Artifex Software</PublisherDisplayName>
