@@ -230,20 +230,23 @@ $(MUJSTEST_V8) : $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
 endif
 
 ifeq "$(NOX11)" ""
-MUVIEW := $(OUT)/mupdf
-$(MUVIEW) : $(MUPDF_LIB) $(MUPDF_JS_NONE_LIB) $(THIRD_LIBS)
-$(MUVIEW) : $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
+MUVIEW_X11 := $(OUT)/mupdf-x11
+$(MUVIEW_X11) : $(MUPDF_LIB) $(MUPDF_JS_NONE_LIB) $(THIRD_LIBS)
+$(MUVIEW_X11) : $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
 	$(LINK_CMD) $(X11_LIBS)
 endif
 
 ifeq "$(V8_PRESENT)" "yes"
 ifeq "$(NOX11)" ""
-MUVIEW_V8 := $(OUT)/mupdf-v8
-$(MUVIEW_V8) : $(MUPDF_LIB) $(MUPDF_JS_V8_LIB) $(THIRD_LIBS)
-$(MUVIEW_V8) : $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
+MUVIEW_X11_V8 := $(OUT)/mupdf-x11-v8
+$(MUVIEW_X11_V8) : $(MUPDF_LIB) $(MUPDF_JS_V8_LIB) $(THIRD_LIBS)
+$(MUVIEW_X11_V8) : $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
 	$(LINK_CMD) $(X11_LIBS) $(V8_LIBS)
 endif
 endif
+
+MUVIEW := $(MUVIEW_X11)
+MUVIEW_V8 := $(MUVIEW_X11_V8)
 
 INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST_V8) $(MUVIEW_V8)
 
