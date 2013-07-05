@@ -211,7 +211,6 @@ int pdf_xref_is_incremental(pdf_document *doc, int num)
 /* Ensure that an object has been cloned into the incremental xref section */
 void pdf_xref_ensure_incremental_object(pdf_document *doc, int num)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_xref_entry *new_entry, *old_entry;
 	int i;
 

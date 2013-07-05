@@ -171,7 +171,6 @@ static pdf_obj *find_head_of_field_group(pdf_obj *obj)
 
 static void pdf_field_mark_dirty(pdf_document *doc, pdf_obj *field)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_obj *kids = pdf_dict_gets(field, "Kids");
 	if (kids)
 	{
