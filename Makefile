@@ -267,6 +267,7 @@ bindir ?= $(prefix)/bin
 libdir ?= $(prefix)/lib
 incdir ?= $(prefix)/include
 mandir ?= $(prefix)/share/man
+docdir ?= $(prefix)/share/doc/mupdf
 
 third: $(THIRD_LIBS)
 libs: $(INSTALL_LIBS)
@@ -288,6 +289,9 @@ install: libs apps
 
 	install -d $(DESTDIR)$(mandir)/man1
 	install docs/man/*.1 $(DESTDIR)$(mandir)/man1
+
+	install -d $(DESTDIR)$(docdir)
+	install README COPYING CHANGES docs/*.txt $(DESTDIR)$(docdir)
 
 # --- Clean and Default ---
 
