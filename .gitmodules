@@ -13,3 +13,6 @@
 [submodule "thirdparty/zlib"]
 	path = thirdparty/zlib
 	url = git://git.ghostscript.com/thirdparty/zlib.git
+[submodule "thirdparty/curl"]
+	path = thirdparty/curl
+	url = git://git.ghostscript.com/thirdparty/curl.git
