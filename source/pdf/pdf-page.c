@@ -514,39 +514,57 @@ pdf_delete_page(pdf_document *doc, int at)
 void
 pdf_insert_page(pdf_document *doc, pdf_page *page, int at)
 {
+	fz_context *ctx = doc->ctx;
 	int count = pdf_count_pages(doc);
 	pdf_obj *parent, *kids;
+	pdf_obj *page_ref;
 	int i;
 
-	if (count == 0)
-	{
-		/* TODO: create new page tree? */
-		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "empty page tree, cannot insert page");
-	}
-	else if (at >= count)
-	{
-		if (at > count)
-			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot insert page beyond end of page tree");
+	page_ref = pdf_new_ref(doc, page->me);
 
-		/* append after last page */
-		pdf_lookup_page_loc(doc, count - 1, &parent, &i);
-		kids = pdf_dict_gets(parent, "Kids");
-		pdf_array_insert_drop(kids, pdf_new_ref(doc, page->me), i + 1);
-	}
-	else
+	fz_try(ctx)
 	{
-		/* insert before found page */
-		pdf_lookup_page_loc(doc, at, &parent, &i);
-		kids = pdf_dict_gets(parent, "Kids");
-		pdf_array_insert_drop(kids, pdf_new_ref(doc, page->me), i);
-	}
+		if (count == 0)
+		{
+			/* TODO: create new page tree? */
+			fz_throw(ctx, FZ_ERROR_GENERIC, "empty page tree, cannot insert page");
+		}
+		else if (at >= count)
+		{
+			if (at > count)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot insert page beyond end of page tree");
 
-	/* Adjust page counts */
-	while (parent)
+			/* append after last page */
+			pdf_lookup_page_loc(doc, count - 1, &parent, &i);
+			kids = pdf_dict_gets(parent, "Kids");
+			pdf_array_insert(kids, page_ref, i + 1);
+		}
+		else
+		{
+			/* insert before found page */
+			pdf_lookup_page_loc(doc, at, &parent, &i);
+			kids = pdf_dict_gets(parent, "Kids");
+			pdf_array_insert(kids, page_ref, i);
+		}
+
+		pdf_dict_puts(page->me, "Parent", page_ref);
+
+		/* Adjust page counts */
+		while (parent)
+		{
+			int count = pdf_to_int(pdf_dict_gets(parent, "Count"));
+			pdf_dict_puts_drop(parent, "Count", pdf_new_int(doc, count + 1));
+			parent = pdf_dict_gets(parent, "Parent");
+		}
+
+	}
+	fz_always(ctx)
 	{
-		int count = pdf_to_int(pdf_dict_gets(parent, "Count"));
-		pdf_dict_puts_drop(parent, "Count", pdf_new_int(doc, count + 1));
-		parent = pdf_dict_gets(parent, "Parent");
+		pdf_drop_obj(page_ref);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 }
 
