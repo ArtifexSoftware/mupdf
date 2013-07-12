@@ -57,11 +57,22 @@ pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest)
 		ld.kind = FZ_LINK_NONE;
 		return ld;
 	}
+
 	obj = pdf_array_get(dest, 0);
 	if (pdf_is_int(obj))
 		ld.ld.gotor.page = pdf_to_int(obj);
 	else
-		ld.ld.gotor.page = pdf_lookup_page_number(doc, obj);
+	{
+		fz_try(doc->ctx)
+		{
+			ld.ld.gotor.page = pdf_lookup_page_number(doc, obj);
+		}
+		fz_catch(doc->ctx)
+		{
+			ld.kind = FZ_LINK_NONE;
+			return ld;
+		}
+	}
 
 	ld.kind = FZ_LINK_GOTO;
 	ld.ld.gotor.flags = 0;

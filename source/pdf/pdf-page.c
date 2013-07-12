@@ -129,11 +129,14 @@ pdf_lookup_page_number(pdf_document *doc, pdf_obj *node)
 	int total = 0;
 	pdf_obj *parent, *parent2;
 
+	if (strcmp(pdf_to_name(pdf_dict_gets(node, "Type")), "Page") != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid page object");
+
 	parent2 = parent = pdf_dict_gets(node, "Parent");
 	fz_var(parent);
 	fz_try(ctx)
 	{
-		while (parent)
+		while (pdf_is_dict(parent))
 		{
 			if (pdf_mark_obj(parent))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree (parents)");
