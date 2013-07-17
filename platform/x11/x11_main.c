@@ -70,6 +70,7 @@ static Atom XA_UTF8_STRING;
 static Atom WM_DELETE_WINDOW;
 static Atom NET_WM_STATE;
 static Atom NET_WM_STATE_FULLSCREEN;
+static Atom WM_RELOAD_PAGE;
 static int x11fd;
 static int xscr;
 static Window xwin;
@@ -182,6 +183,7 @@ static void winopen(void)
 	WM_DELETE_WINDOW = XInternAtom(xdpy, "WM_DELETE_WINDOW", False);
 	NET_WM_STATE = XInternAtom(xdpy, "_NET_WM_STATE", False);
 	NET_WM_STATE_FULLSCREEN = XInternAtom(xdpy, "_NET_WM_STATE_FULLSCREEN", False);
+	WM_RELOAD_PAGE = XInternAtom(xdpy, "_WM_RELOAD_PAGE", False);
 
 	xscr = DefaultScreen(xdpy);
 
@@ -652,6 +654,24 @@ void onselreq(Window requestor, Atom selection, Atom target, Atom property, Time
 	XSendEvent(xdpy, requestor, False, 0, &nevt);
 }
 
+void winreloadpage(pdfapp_t *app)
+{
+	XEvent xev;
+	Display *dpy = XOpenDisplay(NULL);
+
+	xev.xclient.type = ClientMessage;
+	xev.xclient.serial = 0;
+	xev.xclient.send_event = True;
+	xev.xclient.window = xwin;
+	xev.xclient.message_type = WM_RELOAD_PAGE;
+	xev.xclient.format = 32;
+	xev.xclient.data.l[0] = 0;
+	xev.xclient.data.l[1] = 0;
+	xev.xclient.data.l[2] = 0;
+	XSendEvent(dpy, xwin, 0, 0, &xev);
+	XCloseDisplay(dpy);
+}
+
 void winreloadfile(pdfapp_t *app)
 {
 	pdfapp_close(app);
@@ -886,7 +906,9 @@ int main(int argc, char **argv)
 				break;
 
 			case ClientMessage:
-				if (xevt.xclient.format == 32 && xevt.xclient.data.l[0] == WM_DELETE_WINDOW)
+				if (xevt.xclient.message_type == WM_RELOAD_PAGE)
+					pdfapp_reloadpage(&gapp);
+				else if (xevt.xclient.format == 32 && xevt.xclient.data.l[0] == WM_DELETE_WINDOW)
 					closing = 1;
 				break;
 			}

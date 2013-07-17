@@ -43,6 +43,7 @@ extern void winprint(pdfapp_t *);
 extern void winadvancetimer(pdfapp_t *, float duration);
 extern void winreplacefile(char *source, char *target);
 extern void wincopyfile(char *source, char *target);
+extern void winreloadpage(pdfapp_t *);
 
 struct pdfapp_s
 {
@@ -51,6 +52,7 @@ struct pdfapp_s
 	char *docpath;
 	char *doctitle;
 	fz_outline *outline;
+	int outline_deferred;
 
 	int pagecount;
 
@@ -82,6 +84,7 @@ struct pdfapp_s
 	fz_text_sheet *page_sheet;
 	fz_link *page_links;
 	int errored;
+	int incomplete;
 
 	/* snapback history */
 	int hist[256];
@@ -126,6 +129,9 @@ struct pdfapp_s
 	void *userdata;
 
 	fz_context *ctx;
+#ifdef HAVE_CURL
+	fz_stream *stream;
+#endif
 };
 
 void pdfapp_init(fz_context *ctx, pdfapp_t *app);
@@ -142,6 +148,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen);
 void pdfapp_onresize(pdfapp_t *app, int w, int h);
 void pdfapp_gotopage(pdfapp_t *app, int number);
+void pdfapp_reloadpage(pdfapp_t *app);
 
 void pdfapp_invert(pdfapp_t *app, const fz_rect *rect);
 void pdfapp_inverthit(pdfapp_t *app);

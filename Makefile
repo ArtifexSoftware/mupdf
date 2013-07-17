@@ -142,7 +142,11 @@ $(OUT)/%.o : scripts/%.c | $(OUT)
 	$(CC_CMD)
 
 $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
-	$(CC_CMD) $(X11_CFLAGS)
+	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS)
+
+$(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
+	mkdir -p $(OUT)/platform/x11/curl
+	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 
@@ -234,6 +238,11 @@ MUVIEW_X11 := $(OUT)/mupdf-x11
 $(MUVIEW_X11) : $(MUPDF_LIB) $(MUPDF_JS_NONE_LIB) $(THIRD_LIBS)
 $(MUVIEW_X11) : $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
 	$(LINK_CMD) $(X11_LIBS)
+
+MUVIEW_X11_CURL := $(OUT)/mupdf-curl
+$(MUVIEW_X11_CURL) : $(MUPDF_LIB) $(MUPDF_JS_NONE_LIB) $(THIRD_LIBS) $(CURL_LIB)
+$(MUVIEW_X11_CURL) : $(addprefix $(OUT)/platform/x11/curl/, x11_main.o x11_image.o pdfapp.o curl_stream.o)
+	$(LINK_CMD) $(X11_LIBS) $(CURL_LIBS)
 endif
 
 ifeq "$(V8_PRESENT)" "yes"
@@ -247,8 +256,9 @@ endif
 
 MUVIEW := $(MUVIEW_X11)
 MUVIEW_V8 := $(MUVIEW_X11_V8)
+MUVIEW_CURL := $(MUVIEW_X11_CURL)
 
-INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST_V8) $(MUVIEW_V8)
+INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST_V8) $(MUVIEW_V8) $(MUVIEW_X11_CURL)
 
 # --- Format man pages ---
 

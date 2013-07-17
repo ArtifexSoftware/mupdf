@@ -7,10 +7,14 @@ What is progressive loading?
 The idea of progressive loading is that as you download a PDF file
 into a browser, you can display the pages as they appear.
 
-There are 2 mechanisms by which this can be achieved. The first
-relies on the file being "linearized", the second relies on the
-caller of MuPDF having fine control over the http fetch and on
+MuPDF can make use of 2 different mechanisms to achieve this. The
+first relies on the file being "linearized", the second relies on
+the caller of MuPDF having fine control over the http fetch and on
 the server supporting byte-range fetches.
+
+For optimum performance a file should be both linearized and be
+available over a byte-range supporting link, but benefits can still
+be had with either one of these alone.
 
 
 Progressive download using "linearized" files
@@ -24,9 +28,16 @@ document downloading, whereupon subsequent pages will become
 available. Adobe also refers to these as "Optimized for fast web
 view" or "Web Optimized".
 
-MuPDF can actually slightly outperform this by displaying the first
-page quickly, and then providing 'incomplete' renderings of
-subsequent pages, as more and more resources are gradually delivered.
+In fact, the standard outlines (poorly) a mechanism by which 'hints'
+can be included that enable the subsequent pages to be found within
+the file too. Unfortunately this is very poorly supported with
+many tools, and so the hints have to be treated with suspicion.
+
+MuPDF will attempt to use hints if they are available, but will also
+use a linear search of the file to discover pages if not. This means
+that the first page will be displayed quickly, and then subsequent
+ones will appear with 'incomplete' renderings that improve over time
+as more and more resources are gradually delivered.
 
 Essentially the file starts with a slightly modified header, and the
 first object in the file is a special one (the linearization object)
@@ -44,13 +55,17 @@ resources until after all the unshared page objects have been
 sent.]
 
 
-The Hint Stream, and why we don't use it.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The Hint Stream
+~~~~~~~~~~~~~~~
 
 Adobe intended Hint Stream to be useful to facilitate the display
 of subsequent pages, but it has never used it. Consequently you
-can't trust people to write it properly. Consequently no one
-actually uses it. Consequently we should make do without it too.
+can't trust people to write it properly - indeed Adobe outputs
+something that doesn't quite conform to the spec.
+
+Consequently very few people actually use it. MuPDF will use it
+after sanity checking the values, and should cope with illegal/
+incorrect values.
 
 
 So how does MuPDF handle progressive loading?
@@ -250,13 +265,13 @@ a server.
 
  + We consider the file as an (initially empty) buffer which we are
    filling by making requests. In order to ensure that we make
-   maximum use of our download link, we should ensure that whenever
+   maximum use of our download link, we ensure that whenever
    one request finishes, we immediately launch another. Further, to
    avoid the overheads for the request/response headers being too
    large, we may want to divide the file into 'chunks', perhaps 4 or 32k
    in size.
 
- + We can then imagine a receiver process that sits there in a loop
+ + We can then have a receiver process that sits there in a loop
    requesting chunks to fill this buffer. In the absence of
    any other impetus the receiver should request the next 'chunk'
    of data from the file that it does not yet have, following the last
@@ -264,26 +279,7 @@ a server.
    the file, but this will move around based on the requests made of
    the progressive stream.
 
- + We attempt to open the file, and MuPDF will read from the progressive
-   stream. It will first read the PDF file header (i.e. it will read from
-   within the area of the file we have already requested). It will then
-   attempt to seek to the end of the file to read the trailer. The
-   stream then has a choice; it can choose to block until such time as
-   data arrives (unlikely to be satisfactory as this blocks all other
-   MuPDF operations), or it can throw an FZ_ERROR_TRYLATER error.
-
- + Whichever of these it chooses to do, it knows that the next 'block'
-   of the file that is required will be at the end of the file, so it
-   can set the desired fill pointer in the receiver process to arrange
-   that the next block requested will be that at the end of the file.
-
- + When this data arrives, it can either unblock and continue, or
-   retry the MuPDF call that exited with the FZ_ERROR_TRYLATER error.
-
- + When the file trailer has been read, the file will then attempt to
-   seek and read the xref information. Again this will cause the http
-   receiver to request that area of the file next.
-
- + Accordingly, the file will be read using 'random access', where
-   the stream is in control of either blocking or asking operations
-   to retry later.
+ + Whenever MuPDF attempts to read from the stream, we check to see if
+   we have data for this area of the file already. If we do, we can
+   return it. If not, we remember this as the next "fill point" for our
+   receiver process and throw an FZ_ERROR_TRYLATER error.

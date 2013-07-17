@@ -158,6 +158,10 @@ void winreloadfile(pdfapp_t *app)
 	pdfapp_open(app, filename, 1);
 }
 
+void winreloadpage(pdfapp_t *app)
+{
+}
+
 void winopenuri(pdfapp_t *app, char *buf)
 {
 }

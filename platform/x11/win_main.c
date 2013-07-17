@@ -25,7 +25,7 @@ static HWND hwndview = NULL;
 static HDC hdc;
 static HBRUSH bgbrush;
 static HBRUSH shbrush;
-static BITMAPINFO *dibinf;
+static BITMAPINFO *dibinf = NULL;
 static HCURSOR arrowcurs, handcurs, waitcurs, caretcurs;
 static LRESULT CALLBACK frameproc(HWND, UINT, WPARAM, LPARAM);
 static LRESULT CALLBACK viewproc(HWND, UINT, WPARAM, LPARAM);
@@ -644,11 +644,18 @@ void winopen()
 	SetCursor(arrowcurs);
 }
 
+static void
+do_close(pdfapp_t *app)
+{
+	pdfapp_close(app);
+	free(dibinf);
+}
+
 void winclose(pdfapp_t *app)
 {
 	if (pdfapp_preclose(app))
 	{
-		pdfapp_close(app);
+		do_close(app);
 		exit(0);
 	}
 }
@@ -875,6 +882,11 @@ void winreloadfile(pdfapp_t *app)
 {
 	pdfapp_close(app);
 	pdfapp_open(app, filename, 1);
+}
+
+void winreloadpage(pdfapp_t *app)
+{
+	SendMessage(hwndview, WM_APP, 0, 0);
 }
 
 void winopenuri(pdfapp_t *app, char *buf)
@@ -1126,6 +1138,12 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 		}
 		return 0;
+
+	/* We use WM_APP to trigger a reload and repaint of a page */
+	case WM_APP:
+		pdfapp_reloadpage(&gapp);
+		break;
+
 	}
 
 	fflush(stdout);
@@ -1199,7 +1217,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		DispatchMessage(&msg);
 	}
 
-	pdfapp_close(&gapp);
+	do_close(&gapp);
 	fz_free_context(ctx);
 
 	return 0;
