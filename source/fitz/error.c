@@ -180,3 +180,10 @@ void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)
 
 	throw(ctx->error);
 }
+
+void fz_rethrow_if(fz_context *ctx, int err)
+{
+	assert(ctx && ctx->error && ctx->error->errcode >= FZ_ERROR_NONE);
+	if (ctx->error->errcode == err)
+		fz_rethrow(ctx);
+}

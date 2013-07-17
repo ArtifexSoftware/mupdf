@@ -28,6 +28,9 @@ typedef struct fz_stream_s fz_stream;
 */
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
 
+fz_stream *fz_open_fd_progressive(fz_context *ctx, int fd, int bps);
+fz_stream *fz_open_file_progressive(fz_context *ctx, const char *filename, int bps);
+
 /*
 	fz_open_file_w: Open the named file and wrap it in a stream.
 
@@ -125,6 +128,14 @@ int fz_read(fz_stream *stm, unsigned char *data, int len);
 */
 fz_buffer *fz_read_all(fz_stream *stm, int initial);
 
+enum
+{
+	FZ_STREAM_META_PROGRESSIVE = 1,
+	FZ_STREAM_META_LENGTH = 2
+};
+
+int fz_stream_meta(fz_stream *stm, int key, int size, void *ptr);
+
 struct fz_stream_s
 {
 	fz_context *ctx;
@@ -139,6 +150,7 @@ struct fz_stream_s
 	int (*read)(fz_stream *stm, unsigned char *buf, int len);
 	void (*close)(fz_context *ctx, void *state);
 	void (*seek)(fz_stream *stm, int offset, int whence);
+	int (*meta)(fz_stream *stm, int key, int size, void *ptr);
 	unsigned char buf[4096];
 };
 

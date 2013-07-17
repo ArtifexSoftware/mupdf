@@ -331,6 +331,7 @@ pdf_load_link_annots(pdf_document *doc, pdf_obj *annots, const fz_matrix *page_c
 	n = pdf_array_len(annots);
 	for (i = 0; i < n; i++)
 	{
+		/* FIXME: Move the try/catch out of the loop for performance? */
 		fz_try(doc->ctx)
 		{
 			obj = pdf_array_get(annots, i);
@@ -338,7 +339,7 @@ pdf_load_link_annots(pdf_document *doc, pdf_obj *annots, const fz_matrix *page_c
 		}
 		fz_catch(doc->ctx)
 		{
-			/* FIXME: TryLater */
+			fz_rethrow_if(doc->ctx, FZ_ERROR_TRYLATER);
 			link = NULL;
 		}
 
@@ -594,9 +595,13 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 		}
 		fz_catch(ctx)
 		{
+			if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			{
+				pdf_free_annot(ctx, head);
+				fz_rethrow(ctx);
+			}
 			keep_annot = 0;
 			fz_warn(ctx, "ignoring broken annotation");
-			/* FIXME: TryLater */
 		}
 		if (!keep_annot)
 		{
@@ -657,8 +662,8 @@ pdf_update_annot(pdf_document *doc, pdf_annot *annot)
 			}
 			fz_catch(ctx)
 			{
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				fz_warn(ctx, "ignoring broken annotation");
-				/* FIXME: TryLater */
 			}
 		}
 	}

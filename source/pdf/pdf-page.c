@@ -349,7 +349,14 @@ pdf_load_page(pdf_document *doc, int number)
 	float userunit;
 	fz_matrix mat;
 
-	pageref = pdf_lookup_page_obj(doc, number);
+	if (doc->file_reading_linearly)
+	{
+		pageref = pdf_progressive_advance(doc, number);
+		if (pageref == NULL)
+			fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "page %d not available yet", number);
+	}
+	else
+		pageref = pdf_lookup_page_obj(doc, number);
 	pageobj = pdf_resolve_indirect(pageref);
 
 	page = fz_malloc_struct(ctx, pdf_page);
@@ -361,6 +368,7 @@ pdf_load_page(pdf_document *doc, int number)
 	page->deleted_annots = NULL;
 	page->tmp_annots = NULL;
 	page->me = pdf_keep_obj(pageobj);
+	page->incomplete = 0;
 
 	obj = pdf_dict_gets(pageobj, "UserUnit");
 	if (pdf_is_real(obj))
@@ -409,11 +417,22 @@ pdf_load_page(pdf_document *doc, int number)
 	fz_pre_scale(fz_translate(&mat, -realbox.x0, -realbox.y0), userunit, userunit);
 	fz_concat(&page->ctm, &page->ctm, &mat);
 
-	obj = pdf_dict_gets(pageobj, "Annots");
-	if (obj)
+	fz_try(ctx)
 	{
-		page->links = pdf_load_link_annots(doc, obj, &page->ctm);
-		page->annots = pdf_load_annots(doc, obj, page);
+		obj = pdf_dict_gets(pageobj, "Annots");
+		if (obj)
+		{
+			page->links = pdf_load_link_annots(doc, obj, &page->ctm);
+			page->annots = pdf_load_annots(doc, obj, page);
+		}
+	}
+	fz_catch(ctx)
+	{
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+			fz_rethrow(ctx);
+		page->incomplete |= PDF_PAGE_INCOMPLETE_ANNOTS;
+		fz_drop_link(ctx, page->links);
+		page->links = NULL;
 	}
 
 	page->duration = pdf_to_real(pdf_dict_gets(pageobj, "Dur"));
@@ -444,8 +463,12 @@ pdf_load_page(pdf_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_page(doc, page);
-		fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
+		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+		{
+			pdf_free_page(doc, page);
+			fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
+		}
+		page->incomplete |= PDF_PAGE_INCOMPLETE_CONTENTS;
 	}
 
 	return page;

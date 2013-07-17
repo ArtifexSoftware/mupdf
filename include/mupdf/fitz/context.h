@@ -71,11 +71,13 @@ FZ_NORETURN void fz_rethrow_message(fz_context *, const char *, ...)  __printfli
 void fz_warn(fz_context *ctx, const char *fmt, ...) __printflike(2, 3);
 const char *fz_caught_message(fz_context *ctx);
 int fz_caught(fz_context *ctx);
+void fz_rethrow_if(fz_context *ctx, int errcode);
 
 enum
 {
 	FZ_ERROR_NONE = 0,
 	FZ_ERROR_GENERIC = 1,
+	FZ_ERROR_TRYLATER = 2,
 	FZ_ERROR_COUNT
 };
 

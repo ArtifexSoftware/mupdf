@@ -157,6 +157,11 @@ static void event_cb(pdf_doc_event *event, void *data)
 
 void pdfapp_open(pdfapp_t *app, char *filename, int reload)
 {
+	pdfapp_open_progressive(app, filename, reload, 0);
+}
+
+void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
+{
 	fz_context *ctx = app->ctx;
 	char *password = "";
 
@@ -164,7 +169,32 @@ void pdfapp_open(pdfapp_t *app, char *filename, int reload)
 	{
 		pdf_document *idoc;
 
-		app->doc = fz_open_document(ctx, filename);
+		if (bps == 0)
+		{
+			app->doc = fz_open_document(ctx, filename);
+		}
+		else
+		{
+			fz_stream *stream = fz_open_file_progressive(ctx, filename, bps);
+			while (1)
+			{
+				fz_try(ctx)
+				{
+					fz_seek(stream, 0, SEEK_SET);
+					app->doc = fz_open_document_with_stream(ctx, filename, stream);
+				}
+				fz_catch(ctx)
+				{
+					if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+					{
+						pdfapp_warn(app, "not enough data to open yet");
+						continue;
+					}
+					fz_rethrow(ctx);
+				}
+				break;
+			}
+		}
 
 		idoc = pdf_specifics(app->doc);
 
@@ -193,8 +223,41 @@ void pdfapp_open(pdfapp_t *app, char *filename, int reload)
 			app->doctitle = strrchr(app->doctitle, '/') + 1;
 		app->doctitle = fz_strdup(ctx, app->doctitle);
 
-		app->pagecount = fz_count_pages(app->doc);
-		app->outline = fz_load_outline(app->doc);
+		while (1)
+		{
+			fz_try(ctx)
+			{
+				app->pagecount = fz_count_pages(app->doc);
+			}
+			fz_catch(ctx)
+			{
+				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+				{
+					pdfapp_warn(app, "not enough data to count pages yet");
+					continue;
+				}
+				fz_rethrow(ctx);
+			}
+			break;
+		}
+		while (1)
+		{
+			fz_try(ctx)
+			{
+				app->outline = fz_load_outline(app->doc);
+			}
+			fz_catch(ctx)
+			{
+				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+				{
+					pdfapp_warn(app, "not enough data to load outline yet - ignoring");
+					/* FIXME: Set 'outline_deferred' and retry at end? */
+				}
+				else
+					fz_rethrow(ctx);
+			}
+			break;
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -441,6 +504,7 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		/* Create display lists */
 		app->page_list = fz_new_display_list(app->ctx);
 		mdev = fz_new_list_device(app->ctx, app->page_list);
+		cookie.incomplete_ok = 1;
 		fz_run_page_contents(app->doc, app->page, mdev, &fz_identity, &cookie);
 		fz_free_device(mdev);
 		mdev = NULL;
@@ -452,6 +516,10 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		{
 			pdfapp_warn(app, "Errors found on page");
 			errored = 1;
+		}
+		if (cookie.incomplete)
+		{
+			pdfapp_warn(app, "Incomplete page rendering");
 		}
 	}
 	fz_always(app->ctx)
