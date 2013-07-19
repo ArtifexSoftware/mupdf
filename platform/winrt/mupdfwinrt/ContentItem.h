@@ -3,7 +3,10 @@
 using namespace Platform;  /* For String */
 
 namespace mupdfwinrt {
+	/* Windows phone does not support this binding definition */
+#if !WINDOWS_PHONE	  
 	[Windows::UI::Xaml::Data::Bindable]
+#endif
 	public ref class ContentItem sealed
 	{
 		private:

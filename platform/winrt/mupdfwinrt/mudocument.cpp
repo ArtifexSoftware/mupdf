@@ -7,6 +7,9 @@
 #include "pch.h"
 #include "mudocument.h"
 #include "status.h"
+#ifdef WINDOWS_PHONE
+#include <robuffer.h>  // Needed for IBufferByteAccess
+#endif
 
 using namespace mupdfwinrt;
 using namespace concurrency;
@@ -51,6 +54,47 @@ Point mudocument::GetPageSize(int page_num)
 	return size;
 }
 
+#ifdef WINDOWS_PHONE
+Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(IStorageFile^ file, String^ filetype)
+{
+	return create_async([this, file, filetype]()
+	{
+		const wchar_t *w = filetype->Data();
+		int cb = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+		char* ext = new char[cb];
+
+		WideCharToMultiByte(CP_UTF8, 0, w ,-1 ,ext ,cb ,nullptr, nullptr);
+
+		auto t = create_task(file->OpenAsync(FileAccessMode::Read));
+
+		return t.then([this, file, ext](task<IRandomAccessStream^> task)
+		{
+			try
+			{
+				IRandomAccessStream^ readStream = task.get();
+				UINT64 const size = readStream->Size;
+
+				if (size <= MAXUINT32)
+				{
+					status_t code = this->mu_object.InitializeStream(readStream, ext);
+					if (code != S_ISOK)
+						delete readStream;
+					return (int) code;
+				}
+				else
+				{
+					delete readStream;
+					return (int) E_FAILURE;
+				}
+			}
+			catch(COMException^ ex) {
+				/* Need to do something useful here */
+				throw ex;
+			}
+		});
+	});
+}
+#else
 Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile^ file)
 {
 	return create_async([this, file]()
@@ -92,6 +136,7 @@ Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile
 		});
 	});
 }
+#endif
 
 /* Header info for bmp stream so that we can use the image brush */
 static void Prepare_bmp(int width, int height, DataWriter ^dw)
@@ -167,6 +212,7 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 	});
 }
 
+#ifndef WINDOWS_PHONE
 /* Pack the page into a bitmap.  This is used in the DirectX code for printing
    not in the xaml related code. */
 int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height, 
@@ -269,6 +315,52 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 		return ras;
 	});
 }
+#else
+/* Get pointer to IBuffer data */
+byte* GetIBUffPointer(IBuffer^ bmp_data)
+{
+	Object^ obj = bmp_data;
+	Microsoft::WRL::ComPtr<IInspectable> insp(reinterpret_cast<IInspectable*>(obj));
+
+	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> buffer_byte_access;
+	throw Platform::Exception::CreateException(insp.As(&buffer_byte_access));
+
+	byte* pixels = nullptr;
+	throw Platform::Exception::CreateException(buffer_byte_access->Buffer(&pixels));
+	return pixels;
+}
+
+/* Caller must do allocation */    
+Windows::Foundation::IAsyncOperation<int>^
+	mudocument::RenderPageAsync(int page_num, int width, int height, bool use_dlist, 
+								DataWriter^ dw, int offset)
+								//Platform::WriteOnlyArray<uint8>^ intOutArray)
+{
+	return create_async([this, width, height, page_num, use_dlist, dw, offset]
+						(cancellation_token ct) -> int
+	{
+		/* Go ahead and write our header data into the memory stream */
+		Prepare_bmp(width, height, dw);
+		std::lock_guard<std::mutex> lock(mutex_lock);
+
+		Array<unsigned char>^ bmp_data = ref new Array<unsigned char>(height * 4 * width);
+		/* Get raster bitmap stream */
+		//auto bmp_data = intOutArray->Data + offset;
+		status_t code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]),
+											 use_dlist);
+		if (code != S_ISOK)
+		{
+			throw ref new FailureException("Page Rendering Failed");
+		}
+		/* Now the data into the memory stream */
+		dw->WriteBytes(bmp_data);
+		DataWriterStoreOperation^ result = dw->StoreAsync();
+		while(result->Status != AsyncStatus::Completed) {
+		}
+		return code;
+	});
+}
+#endif
 
 int mudocument::ComputeLinks(int page_num)
 {

@@ -29,13 +29,22 @@ namespace mupdfwinrt
 		public:
 			mudocument();
 			void CleanUp();
-			Windows::Foundation::IAsyncOperation<int>^ OpenFileAsync(StorageFile^ file);
 			int GetNumPages(void);
 			Point GetPageSize(int page_num);
+#if !WINDOWS_PHONE
+			Windows::Foundation::IAsyncOperation<int>^ OpenFileAsync(StorageFile^ file);
 			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 				RenderPageAsync(int page_num, int width, int height, bool use_dlist);
 			int RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height, 
 								bool use_dlist, Array<unsigned char>^* bit_map);
+#else
+			Windows::Foundation::IAsyncOperation<int>^ OpenFileAsync(IStorageFile^ file, 
+																	 String^ extension);
+			Windows::Foundation::IAsyncOperation<int>^
+				RenderPageAsync(int page_num, int width, int height, bool use_dlist, 
+								DataWriter^ dw, int offset);
+								//Platform::WriteOnlyArray<uint8>^ intOutArray);
+#endif
 			Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 				SearchDocumentWithProgressAsync(String^ textToFind, int dir, 
 												int start_page, int num_pages);

@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>5fd0e509-b6ae-4f29-bd2a-4d2cc10f3aa0</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\mupdfwinrt\Cache.cpp" />
+    <ClCompile Include="..\mupdfwinrt\ContentItem.cpp" />
+    <ClCompile Include="..\mupdfwinrt\Links.cpp" />
+    <ClCompile Include="..\mupdfwinrt\mudocument.cpp" />
+    <ClCompile Include="..\mupdfwinrt\utils.cpp" />
+    <ClCompile Include="..\mupdfwinrt\muctx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\mupdfwinrt\Cache.h" />
+    <ClInclude Include="..\mupdfwinrt\ContentItem.h" />
+    <ClInclude Include="..\mupdfwinrt\Links.h" />
+    <ClInclude Include="..\mupdfwinrt\mudocument.h" />
+    <ClInclude Include="..\mupdfwinrt\status.h" />
+    <ClInclude Include="..\mupdfwinrt\utils.h" />
+    <ClInclude Include="..\mupdfwinrt\muctx.h" />
+  </ItemGroup>
+</Project>
