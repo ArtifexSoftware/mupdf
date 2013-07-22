@@ -690,6 +690,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-appearance.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-cmap-load.c"
 				>
 			</File>
@@ -870,6 +874,10 @@
 				>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\annot.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\pdf\appearance.h"
 					>
 				</File>
 				<File
