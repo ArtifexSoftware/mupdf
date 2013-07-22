@@ -36,7 +36,7 @@ void winerror(pdfapp_t *app, char *msg)
 
 void winalert(pdfapp_t *app, pdf_alert_event *alert)
 {
-	fprintf(stderr, "Alert %s: %s", alert->title, alert->message);
+	fprintf(stderr, "Alert %s: %s\n", alert->title, alert->message);
 	switch (alert->button_group_type)
 	{
 	case PDF_ALERT_BUTTON_GROUP_OK:
@@ -56,7 +56,7 @@ void winadvancetimer(pdfapp_t *app, float duration)
 
 void winprint(pdfapp_t *app)
 {
-	fprintf(stderr, "The MuPDF library supports printing, but this application currently does not");
+	fprintf(stderr, "The MuPDF library supports printing, but this application currently does not\n");
 }
 
 static char pd_password[256] = "";
