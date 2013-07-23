@@ -16,8 +16,9 @@
     <phone:PhoneApplicationPage.Resources>
         <DataTemplate x:Key="FileItemTemplate">
             <StackPanel VerticalAlignment="Top">
-                <Image Source="{Binding Icon}" />
-                <TextBlock  Text="{Binding Name}" />
+                <Image Source="{Binding Icon}" />                  
+                <TextBlock  Text="{Binding Name}" FontSize="32" Foreground="{Binding CurrColor}"/>
+                <TextBlock  Text="" FontSize="15"/>
             </StackPanel>
         </DataTemplate>
     </phone:PhoneApplicationPage.Resources>

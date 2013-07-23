@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
 
 namespace winphone
 {
@@ -23,7 +24,7 @@ namespace winphone
 			internal set;
 		}
 
-		public float Zoom
+		public double Zoom
 		{
 			get;
 			set;
@@ -53,9 +54,21 @@ namespace winphone
 			set;
 		}
 
+		public String PageNum
+		{
+			get;
+			set;
+		}
+
+		public MatrixTransform TransformMatrix
+		{
+			get;
+			set;
+		}
+
 		public DocumentPage(int Height, int Width, float Zoom, WriteableBitmap Image,
 							List<RectList> TextBox, List<RectList> LinkBox,
-							Page_Content_t Content)
+							Page_Content_t Content, String PageNum)
 		{
 			this.Height = Height;
 			this.Width = Width;
@@ -64,6 +77,8 @@ namespace winphone
 			this.TextBox = TextBox;
 			this.LinkBox = LinkBox;
 			this.Content = Content;
+			this.PageNum = PageNum;
+			this.TransformMatrix = new MatrixTransform();
 		}
 	};
 	public class Pages : ObservableCollection<DocumentPage>
@@ -73,4 +88,12 @@ namespace winphone
 		{
 		}
 	}
+
+	/*public class PanoPageItems : ObservableCollection<PanoramaItem>
+	{
+		public PanoPageItems()
+			: base()
+		{
+		}
+	}*/
 }

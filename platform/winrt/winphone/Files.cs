@@ -5,12 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
 
 namespace winphone
 {
 	public class Files
 	{
 		public int Type
+		{
+			get;
+			set;
+		}
+
+		public Color CurrColor
 		{
 			get;
 			set;
@@ -30,6 +37,7 @@ namespace winphone
 
 		public Files(int Type, BitmapImage Icon, String Name)
 		{
+			this.CurrColor = Colors.White;
 			this.Name = Name;
 			this.Icon = Icon;
 			this.Type = Type;

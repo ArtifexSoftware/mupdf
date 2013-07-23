@@ -9,6 +9,7 @@ using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using System.IO.IsolatedStorage;
 using System.Windows.Media.Imaging;
+using System.Windows.Media;
 
 namespace winphone
 {
@@ -32,15 +33,6 @@ namespace winphone
 
 			bmp = new BitmapImage(uri);
 			bmp.CreateOptions = BitmapCreateOptions.BackgroundCreation;
-			bmp.ImageOpened += (sender, e) =>
-			{
-				int zz = 1;
-			};
-
-			//bmp = new BitmapImage(uri);
-			/* Load in the list of files */
-
-			int temp = bmp.DecodePixelHeight;
 			
 			PopulateLocal();
 
@@ -81,7 +73,9 @@ namespace winphone
 			if (xaml_Local.SelectedItem == null)
 				return;
 
+			/* Change view of item */
 			var curr_item = (Files) xaml_Local.SelectedItem;
+			curr_item.CurrColor = Colors.Red;
 			m_filename = curr_item.Name;
 			xaml_Local.SelectedItem = null;
 

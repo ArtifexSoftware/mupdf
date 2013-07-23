@@ -7,6 +7,7 @@ using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using winphone.Resources;
+using mupdfwinrt;
 
 namespace winphone
 {
@@ -17,6 +18,11 @@ namespace winphone
 		/// </summary>
 		/// <returns>The root frame of the Phone Application.</returns>
 		public static PhoneApplicationFrame RootFrame { get; private set; }
+
+		/* For communicating between xaml pages */
+		public mudocument appMainDoc { get; set; }
+		public int appContentItem { get; set; }
+		public String appHTML_String { get; set; }
 
 		/// <summary>
 		/// Constructor for the Application object.

@@ -75,9 +75,11 @@ namespace winphone
 {
 	public partial class MainPage : PhoneApplicationPage
 	{
-		Pages m_docPages;
+		public Pages m_docPages;
 		List<DocumentPage> m_thumbnails;
 		List<List<RectList>> m_page_link_list;
+		int m_contents_size;
+		int m_content_item;
 		List<bool> m_linkset;
 		List<RectList> m_text_list;
 		private int m_rectlist_page;
@@ -106,7 +108,6 @@ namespace winphone
 		// Manipulation stuff
 		private MatrixTransform trans = new MatrixTransform();
 		private ScaleTransform resize = new ScaleTransform();
-		private double StartScale;
 
 		// Constructor
 		public MainPage()
@@ -121,6 +122,8 @@ namespace winphone
 			m_page_link_list = new List<List<RectList>>();
 			m_text_list = new List<RectList>();
 			m_linkset = new List<bool>();
+			m_contents_size = -1;  /* Not yet computed */
+			m_content_item = -1;
 
 			CreateBlank(Constants.BLANK_WIDTH, Constants.BLANK_HEIGHT);
 
@@ -130,22 +133,14 @@ namespace winphone
 			CleanUp();
 		}
 
-
 		private void Pages_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
 		{
 			/* If needed, render at new resolution */
-
-
-
-
 		}
 
 		void Pages_ManipulationStarted(object sender, ManipulationStartedEventArgs e)
 		{
 			/* Start */
-
-
-
 		}
 
 		void Pages_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
@@ -332,7 +327,8 @@ namespace winphone
 
 			DocumentPage doc_page = new DocumentPage((int) ras_size.Y, 
 													(int) ras_size.X, (float) 1.0, 
-													bmp, null, null, content_type);
+													bmp, null, null, content_type, 
+													"Page " + page_num);
 			doc_page.Image = bmp;
 
 			if (content_type == Page_Content_t.THUMBNAIL)
@@ -442,7 +438,7 @@ namespace winphone
 				/* Blank pages */
 				DocumentPage doc_page = new DocumentPage(Constants.BLANK_HEIGHT, 
 					Constants.BLANK_WIDTH, (float) 1.0, m_BlankBmp, null, null, 
-					Page_Content_t.DUMMY);
+					Page_Content_t.DUMMY, "Page " + (k+1));
 
 				m_docPages.Add(doc_page);
 				m_thumbnails.Add(doc_page);
@@ -482,7 +478,7 @@ namespace winphone
 					bmp.SetSource(mem_stream);
 					DocumentPage doc_page = new DocumentPage((int)ras_size.Y,
 						(int)(ras_size.X), (float)1.0, bmp, null, null,
-						Page_Content_t.FULL_RESOLUTION);
+						Page_Content_t.FULL_RESOLUTION, "Page " + (k + 1));
 					m_docPages[k] = doc_page;
 				}
 			}
@@ -554,9 +550,33 @@ namespace winphone
 
 		}
 
+		private void Content_Selected(int newpage)
+		{
+			if (newpage > -1 && newpage < this.m_num_pages)
+			{
+				this.xaml_Pages.SelectedItem = newpage;
+			}
+		}
+
 		private void Content_Click(object sender, EventArgs e)
 		{
+			if (this.m_num_pages < 0 || m_contents_size == 0)
+				return;
 
+			if (m_contents_size < 0)
+			{
+				/* compute the contents  */
+				m_contents_size = mu_doc.ComputeContents();
+			}
+
+			if (m_contents_size > 0)
+			{
+				/* Display contents */
+				(App.Current as App).appMainDoc = this.mu_doc;
+				(App.Current as App).appContentItem = this.m_contents_size;
+				string targetPageUri = "/Contents.xaml?method={0}";
+				NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
+			}
 		}
 
 		private void Open_Click(object sender, EventArgs e)
@@ -567,19 +587,33 @@ namespace winphone
 		
 		protected override void OnNavigatedTo(NavigationEventArgs e)
 		{
+			bool from_file = false;
+
 			if (NavigationContext.QueryString.ContainsKey("fileToken"))
 			{
 				string tempUri = e.Uri.ToString();
 				int fileIDIndex = tempUri.IndexOf("fileToken=") + 10;
 				string fileID = tempUri.Substring(fileIDIndex);
 				GetFile(fileID, true);
+				from_file = true;
 			}
 
 			if (this.ReceivedData != null)
-				if( this.ReceivedData != string.Empty)
+			{
+				if (this.ReceivedData != string.Empty)
 				{
 					GetFile(this.ReceivedData, false);
+					from_file = true;
 				}
+			}
+
+			/* Content Item Clicked.  Page number stored in app */
+			if (e.IsNavigationInitiator && !from_file)
+			{
+				this.m_content_item = (App.Current as App).appContentItem;
+				this.Content_Selected(m_content_item);
+			}
+
 			base.OnNavigatedTo(e);
 		}
 
@@ -592,14 +626,11 @@ namespace winphone
 
 		public string ReceivedData { get; set; }
 
-		private void xaml_Pages_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		private void Reflow_Click(object sender, EventArgs e)
 		{
-			int zz = 1;
-		}
-
-		private void Testing(object sender, ManipulationStartedEventArgs e)
-		{
-			int zz = 1;
+			(App.Current as App).appHTML_String = mu_doc.ComputeHTML(this.m_currpage);
+			string targetPageUri = "/ViewHTML.xaml?method={0}";
+			NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
 		}
 	}
 }
