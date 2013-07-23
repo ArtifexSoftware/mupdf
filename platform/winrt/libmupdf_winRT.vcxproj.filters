@@ -375,6 +375,9 @@
     <ClCompile Include="..\..\source\xps\xps-glyphs.c">
       <Filter>xps</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-appearance.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">
@@ -571,6 +574,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\xps.h">
       <Filter>!include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\pdf\appearance.h">
+      <Filter>!include\pdf</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -109,6 +109,7 @@
     <ClCompile Include="..\..\source\fitz\xml.c" />
     <ClCompile Include="..\..\source\img\muimage.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-load.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-parse.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-table.c" />
@@ -202,6 +203,7 @@
     <ClInclude Include="..\..\include\mupdf\memento.h" />
     <ClInclude Include="..\..\include\mupdf\pdf.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\annot.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf\appearance.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\cmap.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\crypt.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\document.h" />
