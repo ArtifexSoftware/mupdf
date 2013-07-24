@@ -436,10 +436,22 @@ void pdf_update_appearance(pdf_document *doc, pdf_annot *annot)
 					{
 						/* Apply formatting */
 						pdf_js_event e;
+						fz_context *ctx = doc->ctx;
 
 						e.target = obj;
 						e.value = pdf_field_value(doc, obj);
-						pdf_js_setup_event(doc->js, &e);
+						fz_try(ctx)
+						{
+							pdf_js_setup_event(doc->js, &e);
+						}
+						fz_always(ctx)
+						{
+							fz_free(ctx, e.value);
+						}
+						fz_catch(ctx)
+						{
+							fz_rethrow(ctx);
+						}
 						execute_action(doc, obj, formatting);
 						/* Update appearance from JS event.value */
 						pdf_update_text_appearance(doc, obj, pdf_js_get_event(doc->js)->value);
