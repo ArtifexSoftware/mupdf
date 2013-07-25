@@ -149,34 +149,12 @@ svg_dev_stroke_color(svg_device *sdev, fz_colorspace *colorspace, float *color, 
 }
 
 static inline int
-is_unicode_wspace(int c)
+is_xml_wspace(int c)
 {
 	return (c == 9 || /* TAB */
 		c == 0x0a || /* HT */
 		c == 0x0b || /* LF */
-		c == 0x0c || /* VT */
-		c == 0x0d || /* FF */
-		c == 0x20 || /* CR */
-		c == 0x85 || /* NEL */
-		c == 0xA0 || /* No break space */
-		c == 0x1680 || /* Ogham space mark */
-		c == 0x180E || /* Mongolian Vowel Separator */
-		c == 0x2000 || /* En quad */
-		c == 0x2001 || /* Em quad */
-		c == 0x2002 || /* En space */
-		c == 0x2003 || /* Em space */
-		c == 0x2004 || /* Three-per-Em space */
-		c == 0x2005 || /* Four-per-Em space */
-		c == 0x2006 || /* Five-per-Em space */
-		c == 0x2007 || /* Figure space */
-		c == 0x2008 || /* Punctuation space */
-		c == 0x2009 || /* Thin space */
-		c == 0x200A || /* Hair space */
-		c == 0x2028 || /* Line separator */
-		c == 0x2029 || /* Paragraph separator */
-		c == 0x202F || /* Narrow no-break space */
-		c == 0x205F || /* Medium mathematical space */
-		c == 0x3000); /* Ideographic space */
+		c == 0x20);
 }
 
 static void
@@ -210,7 +188,7 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	for (start=0; start < text->len; start++)
 	{
 		fz_text_item *it = &text->items[start];
-		if (!is_unicode_wspace(it->ucs))
+		if (!is_xml_wspace(it->ucs))
 			break;
 	}
 
@@ -220,7 +198,7 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	{
 		fz_text_item *it = &text->items[i];
 		fz_point p;
-		is_wspace = is_unicode_wspace(it->ucs);
+		is_wspace = is_xml_wspace(it->ucs);
 		if (is_wspace && was_wspace)
 			continue;
 		was_wspace = is_wspace;
@@ -235,7 +213,7 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	{
 		fz_text_item *it = &text->items[i];
 		fz_point p;
-		is_wspace = is_unicode_wspace(it->ucs);
+		is_wspace = is_xml_wspace(it->ucs);
 		if (is_wspace && was_wspace)
 			continue;
 		was_wspace = is_wspace;
@@ -250,7 +228,7 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	{
 		fz_text_item *it = &text->items[i];
 		int c = it->ucs;
-		is_wspace = is_unicode_wspace(c);
+		is_wspace = is_xml_wspace(c);
 		if (is_wspace && was_wspace)
 			continue;
 		was_wspace = is_wspace;
