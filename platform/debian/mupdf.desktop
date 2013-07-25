@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=MuPDF
 GenericName=PDF file viewer
-Exec=mupdf %f
-TryExec=mupdf
+Exec=mupdf-select-file %f
+TryExec=mupdf-select-file
 Icon=mupdf
 Terminal=false
 Type=Application

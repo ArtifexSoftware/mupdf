@@ -1,7 +1,7 @@
 ?package(mupdf):\
 	needs="x11" \
 	section="Applications/Viewers" \
-	command="/usr/bin/mupdf" \
+	command="/usr/bin/mupdf-select-file" \
 	title="MuPDF" \
 	hints="Documents" \
 	icon="/usr/share/pixmaps/mupdf.xpm" \

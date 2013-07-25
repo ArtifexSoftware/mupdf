@@ -3,3 +3,4 @@ debian/mupdf.png usr/share/pixmaps
 debian/mupdf.desktop usr/share/applications
 debian/mupdf.applications usr/share/application-registry
 debian/tmp/usr/bin/mupdf-x11 usr/bin
+debian/mupdf-select-file usr/bin

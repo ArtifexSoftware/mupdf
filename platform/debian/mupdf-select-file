@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ $# -gt 0 ]; then
+FILENAME="$@"
+else
+FILENAME=$(zenity --file-selection --title='Mupdf - Select file to open' --filename=$HOME/ --file-filter='All supported files | *.pdf *.xps *.rels *.oxps *.cbz *.zip *.png *.jpg *.jpeg *.jfif *.jfif-tbnl *.jpe *.tif *.tiff' --file-filter='Portable Document Format (PDF) | *.pdf' --file-filter='OpenXPS (XPS) | *.xps *.rels *.oxps' --file-filter='Comic Book Archive | *.cbz *.zip' --file-filter='Portable Network Graphics (PNG) | *.png' --file-filter='JPEG | *.jpg *.jpeg *.jfif *.jfif-tbnl *.jpe' --file-filter='Tagged Image File Format (TIFF) | *.tif *.tiff')
+fi
+
+if [ $? -eq 0 ]; then
+	mupdf "$FILENAME"
+fi
