@@ -148,6 +148,37 @@ svg_dev_stroke_color(svg_device *sdev, fz_colorspace *colorspace, float *color, 
 		fz_printf(out, " stroke-opacity=\"%g\"", alpha);
 }
 
+static inline int
+is_unicode_wspace(int c)
+{
+	return (c == 9 || /* TAB */
+		c == 0x0a || /* HT */
+		c == 0x0b || /* LF */
+		c == 0x0c || /* VT */
+		c == 0x0d || /* FF */
+		c == 0x20 || /* CR */
+		c == 0x85 || /* NEL */
+		c == 0xA0 || /* No break space */
+		c == 0x1680 || /* Ogham space mark */
+		c == 0x180E || /* Mongolian Vowel Separator */
+		c == 0x2000 || /* En quad */
+		c == 0x2001 || /* Em quad */
+		c == 0x2002 || /* En space */
+		c == 0x2003 || /* Em space */
+		c == 0x2004 || /* Three-per-Em space */
+		c == 0x2005 || /* Four-per-Em space */
+		c == 0x2006 || /* Five-per-Em space */
+		c == 0x2007 || /* Figure space */
+		c == 0x2008 || /* Punctuation space */
+		c == 0x2009 || /* Thin space */
+		c == 0x200A || /* Hair space */
+		c == 0x2028 || /* Line separator */
+		c == 0x2029 || /* Paragraph separator */
+		c == 0x202F || /* Narrow no-break space */
+		c == 0x205F || /* Medium mathematical space */
+		c == 0x3000); /* Ideographic space */
+}
+
 static void
 svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 {
@@ -156,6 +187,7 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	fz_matrix inverse;
 	fz_matrix local_trm;
 	float size;
+	int start, is_wspace, was_wspace;
 
 	/* Rely on the fact that trm.{e,f} == 0 */
 	size = fz_matrix_expansion(&text->trm);
@@ -173,31 +205,55 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	fz_printf(out, " font-size=\"%g\"", size);
 	fz_printf(out, " font-family=\"%s\"", text->font->name);
 
+	/* Leading (and repeated) whitespace presents a problem for SVG
+	 * text, so elide it here. */
+	for (start=0; start < text->len; start++)
+	{
+		fz_text_item *it = &text->items[start];
+		if (!is_unicode_wspace(it->ucs))
+			break;
+	}
+
 	fz_printf(out, " x=");
-	for (i=0; i < text->len; i++)
+	was_wspace = 0;
+	for (i=start; i < text->len; i++)
 	{
 		fz_text_item *it = &text->items[i];
 		fz_point p;
+		is_wspace = is_unicode_wspace(it->ucs);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
 		p.x = it->x;
 		p.y = it->y;
 		fz_transform_point(&p, &inverse);
-		fz_printf(out, "%c%g", i == 0 ? '\"' : ' ', p.x);
+		fz_printf(out, "%c%g", i == start ? '\"' : ' ', p.x);
 	}
 	fz_printf(out, "\" y=");
-	for (i=0; i < text->len; i++)
+	was_wspace = 0;
+	for (i=start; i < text->len; i++)
 	{
 		fz_text_item *it = &text->items[i];
 		fz_point p;
+		is_wspace = is_unicode_wspace(it->ucs);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
 		p.x = it->x;
 		p.y = it->y;
 		fz_transform_point(&p, &inverse);
-		fz_printf(out, "%c%g", i == 0 ? '\"' : ' ', p.y);
+		fz_printf(out, "%c%g", i == start ? '\"' : ' ', p.y);
 	}
 	fz_printf(out, "\">\n");
-	for (i=0; i < text->len; i++)
+	was_wspace = 0;
+	for (i=start; i < text->len; i++)
 	{
 		fz_text_item *it = &text->items[i];
 		int c = it->ucs;
+		is_wspace = is_unicode_wspace(c);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
 		if (c >= 32 && c <= 127 && c != '<' && c != '&')
 			fz_printf(out, "%c", c);
 		else
@@ -399,7 +455,7 @@ svg_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 	fz_concat(&local_ctm, &scale, ctm);
 	fz_printf(out, "<image");
 	svg_dev_ctm(sdev, &local_ctm);
-	fz_printf(out, "width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
+	fz_printf(out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
 	switch (image->buffer == NULL ? FZ_IMAGE_JPX : image->buffer->params.type)
 	{
 	case FZ_IMAGE_JPEG:
