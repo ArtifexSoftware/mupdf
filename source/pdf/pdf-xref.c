@@ -1982,10 +1982,11 @@ pdf_load_hints(pdf_document *doc, int objnum, int gennum)
 	{
 		int i, j, least_num_page_objs, page_obj_num_bits;
 		int least_page_len, page_len_num_bits, shared_hint_offset;
-		int least_page_offset, page_offset_num_bits;
-		int least_content_stream_len, content_stream_len_num_bits;
+		/* int least_page_offset, page_offset_num_bits; */
+		/* int least_content_stream_len, content_stream_len_num_bits; */
 		int num_shared_obj_num_bits, shared_obj_num_bits;
-		int numerator_bits, denominator_bits, shared;
+		/* int numerator_bits, denominator_bits; */
+		int shared;
 		int shared_obj_num, shared_obj_offset, shared_obj_count_page1;
 		int shared_obj_count_total;
 		int least_shared_group_len, shared_group_len_num_bits;
@@ -2018,14 +2019,14 @@ pdf_load_hints(pdf_document *doc, int objnum, int gennum)
 		page_obj_num_bits = fz_read_bits(stream, 16);
 		least_page_len = fz_read_bits(stream, 32);
 		page_len_num_bits = fz_read_bits(stream, 16);
-		least_page_offset = fz_read_bits(stream, 32);
-		page_offset_num_bits = fz_read_bits(stream, 16);
-		least_content_stream_len = fz_read_bits(stream, 32);
-		content_stream_len_num_bits = fz_read_bits(stream, 16);
+		/* least_page_offset = */ (void) fz_read_bits(stream, 32);
+		/* page_offset_num_bits = */ (void) fz_read_bits(stream, 16);
+		/* least_content_stream_len = */ (void) fz_read_bits(stream, 32);
+		/* content_stream_len_num_bits = */ (void) fz_read_bits(stream, 16);
 		num_shared_obj_num_bits = fz_read_bits(stream, 16);
 		shared_obj_num_bits = fz_read_bits(stream, 16);
-		numerator_bits = fz_read_bits(stream, 16);
-		denominator_bits = fz_read_bits(stream, 16);
+		/* numerator_bits = */ (void) fz_read_bits(stream, 16);
+		/* denominator_bits = */ (void) fz_read_bits(stream, 16);
 
 		/* Item 1: Page object numbers */
 		doc->hint_page[0].number = doc->linear_page1_obj_num;
@@ -2138,7 +2139,7 @@ pdf_load_hints(pdf_document *doc, int objnum, int gennum)
 		{
 			if (doc->hint_shared[i].number)
 			{
-				int dummy = fz_read_bits(stream, 128);
+				(void) fz_read_bits(stream, 128);
 			}
 		}
 		fz_sync_bits(stream);
