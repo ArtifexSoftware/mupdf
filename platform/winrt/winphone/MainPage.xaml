@@ -8,7 +8,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:telerikPrimitives="clr-namespace:Telerik.Windows.Controls;assembly=Telerik.Windows.Controls.Primitives"
     xmlns:telerikSlideView="clr-namespace:Telerik.Windows.Controls.SlideView;assembly=Telerik.Windows.Controls.Primitives"
-    
     mc:Ignorable="d"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
@@ -17,19 +16,15 @@
     shell:SystemTray.IsVisible="True">
 
     <phone:PhoneApplicationPage.Resources>
-        <DataTemplate x:Key="PageItemTemplate">
+        <DataTemplate x:Key="ContentTemplate">
             <StackPanel VerticalAlignment="Top">
-                <Image Source="{Binding Image}" Width="{Binding Width}" 
-                       Height="{Binding Height}" Stretch="Uniform" 
-                       HorizontalAlignment="Center" Margin="0"  
-                       ManipulationStarted="Pages_ManipulationStarted"
-                       ManipulationDelta="Pages_ManipulationDelta"
-                       ManipulationCompleted="Pages_ManipulationCompleted"/>
+                <TextBlock  Text="{Binding Name}" />
             </StackPanel>
         </DataTemplate>
     </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
+        
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -38,7 +33,7 @@
             <TextBlock Text="MuPDF" Style="{StaticResource PhoneTextNormalStyle}" Margin="12,0"/>
         </StackPanel>
 
-        <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0" >
+        <Grid x:Name="xaml_PageView" Grid.Row="1" Margin="12,0,12,0" >
             <telerikPrimitives:RadSlideView x:Name="xaml_Pages" ItemsSource="{Binding}" IsFilmstripModeEnabled="True" TransitionMode="Flip" >
                 <telerikPrimitives:RadSlideView.ItemTemplate>
                     <DataTemplate>
@@ -52,7 +47,34 @@
                     </DataTemplate>
                 </telerikPrimitives:RadSlideView.FilmstripModeItemTemplate>
             </telerikPrimitives:RadSlideView> 
-        </Grid>        
+        </Grid>
+
+        <Grid x:Name="xaml_ContentView" Grid.Row="1" Margin="12,0,12,0" Visibility="Collapsed">
+            <phone:LongListSelector x:Name="xaml_Contents"
+                    Background="Transparent"
+                    ItemTemplate="{StaticResource ContentTemplate}"
+                    LayoutMode="List"
+                    IsGroupingEnabled="false" 
+                    SelectionChanged="ContentPicked"
+                    />
+        </Grid>
+
+        <Grid x:Name="xaml_WebView" Grid.Row="1" Margin="12,0,12,0" Visibility="Collapsed">
+            <phone:WebBrowser HorizontalAlignment="Stretch" Margin="0,0,0,0" Name="xaml_viewhtml" VerticalAlignment="Stretch" />
+        </Grid>
+
+        <Grid x:Name="xaml_PasswordView" Grid.Row="1" Margin="12,0,12,0" 
+              VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+            <TextBlock Text="Document Password" Margin="0,20,0,0" HorizontalAlignment="Center"/>
+            <PasswordBox x:Name="xaml_Password" Margin="0,0,0,0" Height="70" Width="250" 
+             Password="HelloWorld123" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Button Margin="-10, 110, 0, 0" Height="70" Width="120" 
+            HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Content="OK" ClickMode="Press" Click="PassOK"/>
+            <Button Margin="0, 110, -10, 0" Height="70" Width="120" 
+            HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Content="Cancel" ClickMode="Press" Click="PassCancel"/>
+        </Grid>
     </Grid>
 
     <phone:PhoneApplicationPage.ApplicationBar>

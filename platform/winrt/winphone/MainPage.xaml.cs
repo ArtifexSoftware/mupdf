@@ -21,6 +21,13 @@ using System.Collections.ObjectModel;
 using System.Windows.Media;
 using System.Windows.Input;
 
+
+enum NotifyType_t
+{
+	MESS_STATUS,
+	MESS_ERROR
+};
+
 enum RenderingStatus_t 
 {
 	REN_AVAILABLE,
@@ -35,6 +42,14 @@ enum status_t
 	E_FAILURE,
 	E_OUTOFMEM,
 	E_NEEDPASSWORD
+};
+
+enum view_t
+{
+	VIEW_WEB,
+	VIEW_CONTENT,
+	VIEW_PAGE,
+	VIEW_PASSWORD
 };
 
 public enum Page_Content_t
@@ -83,6 +98,7 @@ namespace winphone
 		List<bool> m_linkset;
 		List<RectList> m_text_list;
 		private int m_rectlist_page;
+		private List<ContentEntry> m_content_list; 
 		mudocument mu_doc;
 		private bool m_file_open;
 		private int  m_currpage;
@@ -104,93 +120,73 @@ namespace winphone
 		private bool m_sliderchange;
 		private bool m_update_flip;
 		private double m_Progress;
-
-		// Manipulation stuff
-		private MatrixTransform trans = new MatrixTransform();
-		private ScaleTransform resize = new ScaleTransform();
+		int m_width;
+		int m_height;
 
 		// Constructor
 		public MainPage()
 		{
 			InitializeComponent();
+			this.Loaded += Page_Loaded;
+
 			m_textcolor="#402572AC";
 			m_linkcolor="#40AC7225";
-			//mu_doc = new mudocument();
-			//mu_doc = null;
+
 			m_docPages = new Pages();
 			m_thumbnails = new List<DocumentPage>();
 			m_page_link_list = new List<List<RectList>>();
 			m_text_list = new List<RectList>();
+			m_content_list = new List<ContentEntry>();
 			m_linkset = new List<bool>();
 			m_contents_size = -1;  /* Not yet computed */
 			m_content_item = -1;
-
-			CreateBlank(Constants.BLANK_WIDTH, Constants.BLANK_HEIGHT);
-
-			xaml_Pages.RenderTransform = trans;
-
-
+			SetView(view_t.VIEW_PAGE);
 			CleanUp();
 		}
 
-		private void Pages_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+		private void SetView(view_t newview)
 		{
-			/* If needed, render at new resolution */
+			switch (newview)
+			{
+				case view_t.VIEW_WEB:
+					this.xaml_PageView.Visibility = Visibility.Collapsed;
+					this.xaml_ContentView.Visibility = Visibility.Collapsed;
+					this.xaml_PasswordView.Visibility = Visibility.Collapsed;
+					this.xaml_WebView.Visibility = Visibility.Visible;
+					break;
+
+				case view_t.VIEW_PAGE:
+					this.xaml_WebView.Visibility = Visibility.Collapsed;
+					this.xaml_ContentView.Visibility = Visibility.Collapsed;
+					this.xaml_PasswordView.Visibility = Visibility.Collapsed;
+					this.xaml_PageView.Visibility = Visibility.Visible;
+					break;
+
+				case view_t.VIEW_CONTENT:
+					this.xaml_PageView.Visibility = Visibility.Collapsed;
+					this.xaml_WebView.Visibility = Visibility.Collapsed;
+					this.xaml_PasswordView.Visibility = Visibility.Collapsed;
+					this.xaml_ContentView.Visibility = Visibility.Visible;
+					break;
+
+				case view_t.VIEW_PASSWORD:
+					this.xaml_PageView.Visibility = Visibility.Collapsed;
+					this.xaml_WebView.Visibility = Visibility.Collapsed;
+					this.xaml_ContentView.Visibility = Visibility.Collapsed;
+					this.xaml_PasswordView.Visibility = Visibility.Visible;
+					break;
+			}
 		}
 
-		void Pages_ManipulationStarted(object sender, ManipulationStartedEventArgs e)
+		void Page_Loaded(object sender, RoutedEventArgs e)
 		{
-			/* Start */
-		}
-
-		void Pages_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
-		{
-			Matrix temp = new Matrix();
-
-			if (e.Handled == false)
-			{			
-				// Rescale, but force to be uniform.  Only X is used since the Y
-				// is used for page scrolling here
-				if (e.DeltaManipulation.Scale.X > 0)
-				{
-					var oldScale = resize.ScaleX;
-					var newScale = resize.ScaleX * e.DeltaManipulation.Scale.X;
-					if (newScale > 2)
-					{
-						newScale = 2;
-					}
-					if (newScale < 0.5)
-					{
-						newScale = 0.5;
-					}
-
-					var physicalPoint = e.ManipulationOrigin;
-
-					temp.M11 = newScale;
-					temp.M12 = 0;
-					temp.M21 = 0;
-					temp.M22 = newScale;
-					temp.OffsetX = physicalPoint.X * (1 - newScale);
-					temp.OffsetY = physicalPoint.Y * (1 - newScale);
-
-					temp.OffsetX += e.DeltaManipulation.Translation.X;
-					temp.OffsetY += e.DeltaManipulation.Translation.Y;
-
-					trans.Matrix = temp;
-
-					resize.ScaleX = newScale;
-					resize.ScaleY = newScale;
-				}
-				else if (e.DeltaManipulation.Translation.X != 0 ||
-						 e.DeltaManipulation.Translation.Y != 0)
-				{
-					temp = trans.Matrix;
-					temp.OffsetX += e.DeltaManipulation.Translation.X;
-					temp.OffsetY += e.DeltaManipulation.Translation.Y;
-					trans.Matrix = temp;
-				}
-				e.Handled = true;
-			} 
+			if (xaml_PageView.Visibility == Visibility.Visible)
+			{
+				m_height = (int)xaml_Pages.ActualHeight;
+				m_width = (int)xaml_Pages.ActualWidth;
+				(App.Current as App).appHeight = (int)xaml_Pages.ActualHeight;
+				(App.Current as App).appWidth = (int)xaml_Pages.ActualWidth;
+			}
 		}
 
 		private void Prepare_bmp(int width, int height, DataWriter dw, bool clear)
@@ -223,7 +219,7 @@ namespace winphone
 
 		/* Create white image for us to use as place holder in large document 
 		   instead of the thumbnail image  */
-		private async void CreateBlank(int width, int height)
+		private async Task CreateBlank(int width, int height)
 		{
 			/* Allocate buffer */
 			IBuffer buffer = new Windows.Storage.Streams.Buffer((uint) width * (uint) height * 4 + 
@@ -234,7 +230,7 @@ namespace winphone
 			var out_stream = mem_stream.AsOutputStream();
 			var dw = new DataWriter(out_stream);
 			Prepare_bmp(width, height, dw, true);
-			await dw.StoreAsync();
+			var TResult = await dw.StoreAsync();
 			WriteableBitmap bmp = new WriteableBitmap((int) width, (int) height);
 			bmp.SetSource(mem_stream);
 			m_BlankBmp = bmp;
@@ -281,10 +277,6 @@ namespace winphone
 			m_links_on = false;
 			m_rectlist_page = -1;
 			m_Progress = 0.0;
-
-			//this->xaml_PageSlider->Minimum = m_slider_min;
-			//this->xaml_PageSlider->Maximum = m_slider_max;
-			//this->xaml_PageSlider->IsEnabled = false;
 		}
 
 		private async void GetFile(string fileID, bool shared)
@@ -295,10 +287,11 @@ namespace winphone
 			{
 				/* Copy file locally */
 				incomingFileName = SharedStorageAccessManager.GetSharedFileName(fileID);
-				File = await SharedStorageAccessManager.CopySharedFileAsync(ApplicationData.Current.LocalFolder,
-																				incomingFileName,
-												   NameCollisionOption.ReplaceExisting,
-												   NavigationContext.QueryString["fileToken"]);
+				File = 
+					await SharedStorageAccessManager.CopySharedFileAsync(ApplicationData.Current.LocalFolder,
+																		incomingFileName,
+																		NameCollisionOption.ReplaceExisting,
+																		NavigationContext.QueryString["fileToken"]);
 			}
 			else
 			{
@@ -312,7 +305,7 @@ namespace winphone
 			var index = incomingFileName.LastIndexOfAny(anyOf);
 			string extension = incomingFileName.Substring(index + 1);
 
-			/* No do our rendering */
+			/* Now do our rendering */
 			OpenDocumentPrep(File, extension);
 		}
 		/* Set the page with the new raster information */
@@ -324,7 +317,6 @@ namespace winphone
 			{
 				bmp.SetSource(stream);
 			}
-
 			DocumentPage doc_page = new DocumentPage((int) ras_size.Y, 
 													(int) ras_size.X, (float) 1.0, 
 													bmp, null, null, content_type, 
@@ -351,10 +343,9 @@ namespace winphone
 		{
 			spatial_info_t value = new spatial_info_t();
 
-			value.size.Y = this.ActualHeight;
-			value.size.X = this.ActualWidth;
+			value.size.Y = this.m_height;
+			value.size.X = this.m_width;
 			value.scale_factor = scale;
-
 			return value;
 		}
 
@@ -421,7 +412,7 @@ namespace winphone
 
 		async private void InitialRender()
 		{
-			int m_num_pages = mu_doc.GetNumPages();
+			m_num_pages = mu_doc.GetNumPages();
 
 			if ((m_currpage) >= m_num_pages)
 			{
@@ -430,6 +421,11 @@ namespace winphone
 			else if (m_currpage < 0)
 			{
 				m_currpage = 0;
+			}
+
+			if (m_BlankBmp == null)
+			{
+				await CreateBlank(Constants.BLANK_WIDTH, Constants.BLANK_HEIGHT);
 			}
 
 			/* Initialize all the flipvew items with blanks and the thumbnails. */
@@ -501,38 +497,18 @@ namespace winphone
 			this.m_init_done = true;
 		}
 
-		private void OpenDocument(IStorageFile file, String extension)
+		private async void OpenDocument(IStorageFile file, String extension)
 		{
-			//this->SetFlipView();
 			/* Open document and when open, push on */
-			Task<Windows.Foundation.IAsyncOperation<int>> open_task =
-						new Task<Windows.Foundation.IAsyncOperation<int>>(() =>
-							mu_doc.OpenFileAsync(file, extension));
+			int result = await mu_doc.OpenFileAsync(file, extension);
 
-			/* Continuation to check on result */
-			
-			var next = open_task.ContinueWith<int>((antecedent) =>
+			/* Check if we need password */
+			if (mu_doc.RequiresPassword())
 			{
-				var temp = antecedent.Result;
-				int code = temp.GetResults();
-				if (code != (int) status_t.S_ISOK)
-				{
-					return code;
-				}
-				// We need to check if password is required 
-				if (mu_doc.RequiresPassword())
-				{
-					//xaml_PasswordStack.Visibility = Visibility.Visible;
-					return (int) status_t.E_NEEDPASSWORD;
-				}
-				else
-				{
-					//xaml_PasswordStack.Visibility = Visibility.Collapsed;
-					InitialRender();
-					return (int) status_t.S_ISOK;
-				}
-			}, TaskScheduler.FromCurrentSynchronizationContext());
-			open_task.Start(); 
+				SetView(view_t.VIEW_PASSWORD);
+				return;
+			} else
+				InitialRender();
 		}
 
 		private void PasswordOK(object sender, RoutedEventArgs e)
@@ -550,18 +526,16 @@ namespace winphone
 
 		}
 
-		private void Content_Selected(int newpage)
-		{
-			if (newpage > -1 && newpage < this.m_num_pages)
-			{
-				this.xaml_Pages.SelectedItem = newpage;
-			}
-		}
-
 		private void Content_Click(object sender, EventArgs e)
 		{
-			if (this.m_num_pages < 0 || m_contents_size == 0)
+			if (this.m_num_pages < 0 || m_contents_size == 0 )
 				return;
+
+			if (xaml_ContentView.Visibility == Visibility.Visible)
+			{
+				SetView(view_t.VIEW_PAGE);
+				return;
+			}
 
 			if (m_contents_size < 0)
 			{
@@ -571,11 +545,14 @@ namespace winphone
 
 			if (m_contents_size > 0)
 			{
-				/* Display contents */
-				(App.Current as App).appMainDoc = this.mu_doc;
-				(App.Current as App).appContentItem = this.m_contents_size;
-				string targetPageUri = "/Contents.xaml?method={0}";
-				NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
+				for (int k = 0; k < m_contents_size; k++)
+				{
+					ContentItem item = mu_doc.GetContent(k);
+					ContentEntry entry = new ContentEntry(item.StringMargin, item.Page);
+					m_content_list.Add(entry);
+				}
+				this.xaml_Contents.ItemsSource = m_content_list;
+				SetView(view_t.VIEW_CONTENT);
 			}
 		}
 
@@ -602,17 +579,13 @@ namespace winphone
 			{
 				if (this.ReceivedData != string.Empty)
 				{
+					m_height = (App.Current as App).appHeight;
+					m_width = (App.Current as App).appWidth;
 					GetFile(this.ReceivedData, false);
 					from_file = true;
 				}
 			}
 
-			/* Content Item Clicked.  Page number stored in app */
-			if (e.IsNavigationInitiator && !from_file)
-			{
-				this.m_content_item = (App.Current as App).appContentItem;
-				this.Content_Selected(m_content_item);
-			}
 
 			base.OnNavigatedTo(e);
 		}
@@ -628,10 +601,64 @@ namespace winphone
 
 		private void Reflow_Click(object sender, EventArgs e)
 		{
-			(App.Current as App).appHTML_String = mu_doc.ComputeHTML(this.m_currpage);
-			string targetPageUri = "/ViewHTML.xaml?method={0}";
-			NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
+			if (this.xaml_WebView.Visibility == Visibility.Collapsed)
+			{
+				String html = mu_doc.ComputeHTML(this.m_currpage);
+				xaml_viewhtml.NavigateToString(html);
+				SetView(view_t.VIEW_WEB);
+			}
+			else
+			{
+				SetView(view_t.VIEW_PAGE);
+			}
+		}
+
+		private void ContentPicked(object sender, SelectionChangedEventArgs e)
+		{
+			if (xaml_Contents.SelectedItem == null)
+				return;
+
+			var curr_item = (ContentEntry)xaml_Contents.SelectedItem;
+			int page_num = curr_item.PageNum;
+
+			if ((page_num > -1) && (page_num < m_num_pages))
+			{
+				this.xaml_Pages.SelectedItem = m_docPages[page_num];
+				SetView(view_t.VIEW_PAGE);
+			}
+		}
+
+		private void NotifyUser(String strMessage, NotifyType_t type)
+		{
+			switch (type)
+			{
+			case NotifyType_t.MESS_STATUS:
+				MessageBox.Show(strMessage);
+				break;
+			case NotifyType_t.MESS_ERROR:
+				MessageBox.Show("Error", strMessage, MessageBoxButton.OK);
+				break;
+			default:
+				break;
+			}
+		}
+
+		private void PassOK(object sender, RoutedEventArgs e)
+		{
+			/* Check password */
+			if (mu_doc.ApplyPassword(this.xaml_Password.Password))
+			{
+				SetView(view_t.VIEW_PAGE);
+				InitialRender();
+			}
+			else
+				NotifyUser("Incorrect Password", NotifyType_t.MESS_STATUS);
+		}
+
+		private void PassCancel(object sender, RoutedEventArgs e)
+		{
+			SetView(view_t.VIEW_PAGE);
+			return;
 		}
 	}
 }
-

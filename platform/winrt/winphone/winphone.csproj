@@ -95,9 +95,6 @@
     </Compile>
     <Compile Include="AutoLaunch.cs" />
     <Compile Include="ContentEntry.cs" />
-    <Compile Include="Contents.xaml.cs">
-      <DependentUpon>Contents.xaml</DependentUpon>
-    </Compile>
     <Compile Include="DocumentPage.cs" />
     <Compile Include="Files.cs" />
     <Compile Include="FilesPage.xaml.cs">
@@ -114,28 +111,17 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>AppResources.resx</DependentUpon>
     </Compile>
-    <Compile Include="ViewHTML.xaml.cs">
-      <DependentUpon>ViewHTML.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </ApplicationDefinition>
-    <Page Include="Contents.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="FilesPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="ViewHTML.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

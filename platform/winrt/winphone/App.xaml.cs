@@ -20,9 +20,8 @@ namespace winphone
 		public static PhoneApplicationFrame RootFrame { get; private set; }
 
 		/* For communicating between xaml pages */
-		public mudocument appMainDoc { get; set; }
-		public int appContentItem { get; set; }
-		public String appHTML_String { get; set; }
+		public int appWidth { get; set; }
+		public int appHeight { get; set; }
 
 		/// <summary>
 		/// Constructor for the Application object.

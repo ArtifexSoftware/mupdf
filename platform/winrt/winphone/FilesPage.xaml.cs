@@ -75,12 +75,7 @@ namespace winphone
 
 			/* Change view of item */
 			var curr_item = (Files) xaml_Local.SelectedItem;
-			curr_item.CurrColor = Colors.Red;
-			m_filename = curr_item.Name;
-			xaml_Local.SelectedItem = null;
-
-			string targetPageUri = "/MainPage.xaml?method={0}";
-			NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
+			curr_item.CurrColor = new SolidColorBrush(Colors.Red);
 		}
 
 		/* This is used to communicate the file name that was selected to the MainPage */
@@ -91,6 +86,19 @@ namespace winphone
 			{
 				(e.Content as MainPage).ReceivedData = m_filename;
 			}
+		}
+
+		private void LocalItemSelected(object sender, System.Windows.Input.GestureEventArgs e)
+		{
+			if (xaml_Local.SelectedItem == null)
+				return;
+
+			var curr_item = (Files)xaml_Local.SelectedItem;
+			m_filename = curr_item.Name;
+			xaml_Local.SelectedItem = null;
+
+			string targetPageUri = "/MainPage.xaml?method={0}";
+			NavigationService.Navigate(new Uri(targetPageUri, UriKind.Relative));
 		}
 	}
 }

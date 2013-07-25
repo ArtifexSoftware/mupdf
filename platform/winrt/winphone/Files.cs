@@ -17,7 +17,7 @@ namespace winphone
 			set;
 		}
 
-		public Color CurrColor
+		public SolidColorBrush CurrColor
 		{
 			get;
 			set;
@@ -37,7 +37,7 @@ namespace winphone
 
 		public Files(int Type, BitmapImage Icon, String Name)
 		{
-			this.CurrColor = Colors.White;
+			this.CurrColor = new SolidColorBrush(Colors.White);
 			this.Name = Name;
 			this.Icon = Icon;
 			this.Type = Type;
