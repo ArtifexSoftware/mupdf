@@ -1,6 +1,5 @@
 #include "mupdf/pdf.h"
 
-
 static pdf_obj *
 resolve_dest_rec(pdf_document *doc, pdf_obj *dest, int depth)
 {

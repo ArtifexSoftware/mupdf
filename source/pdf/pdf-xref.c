@@ -1521,7 +1521,6 @@ read_hinted_object(pdf_document *doc, int num)
 	if (expected == 0)	/* No hints found, just bale */
 		return 0;
 
-
 	curr_pos = fz_tell(doc->file);
 	offset = doc->hint_obj_offsets[expected];
 
