@@ -303,6 +303,9 @@ install: libs apps
 	install -d $(DESTDIR)$(docdir)
 	install README COPYING CHANGES docs/*.txt $(DESTDIR)$(docdir)
 
+tarball:
+	bash scripts/archive.sh
+
 # --- Clean and Default ---
 
 tags: $(shell find include source -name '*.[ch]')
