@@ -48,7 +48,7 @@ static void pdfapp_error(pdfapp_t *app, char *msg)
 char *pdfapp_version(pdfapp_t *app)
 {
 	return
-		"MuPDF 1.2\n"
+		"MuPDF 1.3\n"
 		"Copyright 2006-2013 Artifex Software, Inc.\n";
 }
 
