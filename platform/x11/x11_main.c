@@ -141,12 +141,17 @@ void winerror(pdfapp_t *app, char *msg)
 
 void winwarn(pdfapp_t *app, char *msg)
 {
-	fprintf(stderr, "mupdf: warning: %s\n", msg);
+	char buf[1024];
+	snprintf(buf, sizeof buf, "warning: %s", msg);
+	showmessage(app, 10, buf);
+	fprintf(stderr, "mupdf: %s\n", buf);
 }
 
 void winalert(pdfapp_t *app, pdf_alert_event *alert)
 {
-	fprintf(stderr, "Alert %s: %s\n", alert->title, alert->message);
+	char buf[1024];
+	snprintf(buf, sizeof buf, "Alert %s: %s", alert->title, alert->message);
+	fprintf(stderr, "%s\n", buf);
 	switch (alert->button_group_type)
 	{
 	case PDF_ALERT_BUTTON_GROUP_OK:
