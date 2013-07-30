@@ -741,6 +741,12 @@ static void onkey(int c)
 
 	if (!gapp.isediting && c == 'P')
 	{
+		struct timeval now;
+		struct timeval tmo;
+		tmo.tv_sec = 2;
+		tmo.tv_usec = 0;
+		gettimeofday(&now, NULL);
+		timeradd(&now, &tmo, &tmo_at);
 		showingpage = 1;
 		winrepaint(&gapp);
 		return;
@@ -973,14 +979,7 @@ int main(int argc, char **argv)
 			pdfapp_postblit(&gapp);
 		}
 
-		if (showingpage && !tmo_at.tv_sec && !tmo_at.tv_usec)
-		{
-			tmo.tv_sec = 2;
-			tmo.tv_usec = 0;
-
-			gettimeofday(&now, NULL);
-			timeradd(&now, &tmo, &tmo_at);
-		} else if (!showingpage && !showingmessage && (tmo_at.tv_sec || tmo_at.tv_usec))
+		if (!showingpage && !showingmessage && (tmo_at.tv_sec || tmo_at.tv_usec))
 		{
 			tmo_at.tv_sec = 0;
 			tmo_at.tv_usec = 0;
