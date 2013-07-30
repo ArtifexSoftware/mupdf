@@ -715,6 +715,11 @@ static void onkey(int c)
 	}
 
 	pdfapp_onkey(&gapp, c);
+
+	if (gapp.isediting)
+	{
+		showingpage = 0;
+	}
 }
 
 static void onmouse(int x, int y, int btn, int modifiers, int state)
@@ -943,6 +948,11 @@ int main(int argc, char **argv)
 
 			gettimeofday(&now, NULL);
 			timeradd(&now, &tmo, &tmo_at);
+		} else if (!showingpage && (tmo_at.tv_sec || tmo_at.tv_usec))
+		{
+			tmo_at.tv_sec = 0;
+			tmo_at.tv_usec = 0;
+			timeout = NULL;
 		}
 
 		if (XPending(xdpy) || transition_dirty)
