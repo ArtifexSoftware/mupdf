@@ -177,6 +177,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 {
 	unsigned char *data;
 	unsigned int len;
+	FT_Face face;
 
 	fontname = clean_font_name(fontname);
 
@@ -188,6 +189,10 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 
 	if (!strcmp(fontname, "Symbol") || !strcmp(fontname, "ZapfDingbats"))
 		fontdesc->flags |= PDF_FD_SYMBOLIC;
+
+	face = fontdesc->font->ft_face;
+	fontdesc->ascent = 1000.0f * face->ascender / face->units_per_EM;
+	fontdesc->descent = 1000.0f * face->descender / face->units_per_EM;
 }
 
 static void
@@ -1149,6 +1154,12 @@ pdf_load_font_descriptor(pdf_font_desc *fontdesc, pdf_document *doc, pdf_obj *di
 	{
 		if (FT_IS_TRICKY(face) || is_dynalab(fontdesc->font->name))
 			fontdesc->font->ft_hint = 1;
+
+		if (fontdesc->ascent == 0.0f)
+			fontdesc->ascent = 1000.0f * face->ascender / face->units_per_EM;
+
+		if (fontdesc->descent == 0.0f)
+			fontdesc->descent = 1000.0f * face->descender / face->units_per_EM;
 	}
 }
 
@@ -1284,23 +1295,16 @@ pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc)
 
 fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, fz_rect *acc)
 {
-	pdf_hmtx h;
-	int gid;
 	int i;
-	float x = 0.0;
-	fz_rect bbox;
+	int w = 0;
 
-	*acc = fz_empty_rect;
 	for (i = 0; i < len; i++)
-	{
-		gid = pdf_font_cid_to_gid(ctx, fontdesc, buf[i]);
-		h = pdf_lookup_hmtx(ctx, fontdesc, buf[i]);
-		fz_bound_glyph(ctx, fontdesc->font, gid, &fz_identity, &bbox);
-		bbox.x0 += x;
-		bbox.x1 += x;
-		fz_union_rect(acc, &bbox);
-		x += h.w / 1000.0;
-	}
+		w += pdf_lookup_hmtx(ctx, fontdesc, buf[i]).w;
+
+	acc->x0 = 0;
+	acc->x1 = w / 1000.0f;
+	acc->y0 = fontdesc->descent / 1000.0f;
+	acc->y1 = fontdesc->ascent / 1000.0f;
 
 	return acc;
 }
