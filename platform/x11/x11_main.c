@@ -425,7 +425,7 @@ static void fillrect(int x, int y, int w, int h)
 		XFillRectangle(xdpy, xwin, xgc, x, y, w, h);
 }
 
-static void winblitsearch(pdfapp_t *app)
+static void winblitstatusbar(pdfapp_t *app)
 {
 	if (gapp.isediting)
 	{
@@ -434,6 +434,12 @@ static void winblitsearch(pdfapp_t *app)
 		XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
 		fillrect(0, 0, gapp.winw, 30);
 		windrawstring(&gapp, 10, 20, buf);
+	}
+	else if (showingpage)
+	{
+		char buf[42];
+		snprintf(buf, sizeof buf, "Page %d/%d", gapp.pageno, gapp.pagecount);
+		windrawstringxor(&gapp, 10, 20, buf);
 	}
 }
 
@@ -507,14 +513,7 @@ static void winblit(pdfapp_t *app)
 		justcopied = 1;
 	}
 
-	winblitsearch(app);
-
-	if (showingpage)
-	{
-		char buf[42];
-		snprintf(buf, sizeof buf, "Page %d/%d", gapp.pageno, gapp.pagecount);
-		windrawstringxor(&gapp, 10, 20, buf);
-	}
+	winblitstatusbar(app);
 }
 
 void winrepaint(pdfapp_t *app)
@@ -934,7 +933,7 @@ int main(int argc, char **argv)
 			if (dirty)
 				winblit(&gapp);
 			else if (dirtysearch)
-				winblitsearch(&gapp);
+				winblitstatusbar(&gapp);
 			dirty = 0;
 			transition_dirty = 0;
 			dirtysearch = 0;
