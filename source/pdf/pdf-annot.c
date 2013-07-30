@@ -953,6 +953,7 @@ void pdf_set_free_text_details(pdf_document *doc, pdf_annot *annot, fz_point *po
 	pdf_da_info da_info;
 	fz_buffer *fzbuf = NULL;
 	fz_matrix ctm;
+	fz_point page_pos;
 
 	fz_invert_matrix(&ctm, &annot->page->ctm);
 
@@ -1008,16 +1009,18 @@ void pdf_set_free_text_details(pdf_document *doc, pdf_annot *annot, fz_point *po
 		font_desc = pdf_load_font(doc, NULL, font, 0);
 		pdf_measure_text(ctx, font_desc, (unsigned char *)text, strlen(text), &bounds);
 
+		page_pos = *pos;
+		fz_transform_point(&page_pos, &ctm);
+
 		bounds.x0 *= font_size;
 		bounds.x1 *= font_size;
 		bounds.y0 *= font_size;
 		bounds.y1 *= font_size;
 
-		bounds.x0 += pos->x;
-		bounds.x1 += pos->x;
-		bounds.y0 += pos->y;
-		bounds.y1 += pos->y;
-		fz_transform_rect(&bounds, &ctm);
+		bounds.x0 += page_pos.x;
+		bounds.x1 += page_pos.x;
+		bounds.y0 += page_pos.y;
+		bounds.y1 += page_pos.y;
 
 		pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(doc, &bounds));
 		update_rect(ctx, annot);

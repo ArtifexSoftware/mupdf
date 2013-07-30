@@ -1698,6 +1698,7 @@ void pdf_update_free_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 		char *contents = pdf_to_str_buf(pdf_dict_gets(obj, "Contents"));
 		char *da = pdf_to_str_buf(pdf_dict_gets(obj, "DA"));
 		fz_rect rect = annot->rect;
+		fz_point pos;
 
 		get_font_info(doc, dr, da, &font_rec);
 
@@ -1708,14 +1709,18 @@ void pdf_update_free_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 		case 4: cs = fz_device_cmyk(doc->ctx); break;
 		}
 
-		fz_transform_rect(&rect, page_ctm);
-		text = layout_text(ctx, &font_rec, contents, rect.x0, rect.y0);
+		/* Adjust for the descender */
+		pos.x = rect.x0;
+		pos.y = rect.y0 - font_rec.font->descent * font_rec.da_rec.font_size / 1000.0f;
+
+		text = layout_text(ctx, &font_rec, contents, pos.x, pos.y);
 
 		dlist = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, dlist);
 		fz_fill_text(dev, text, page_ctm, cs, font_rec.da_rec.col, 1.0f);
 
-		pdf_set_annot_appearance(doc, annot, &annot->rect, dlist);
+		fz_transform_rect(&rect, page_ctm);
+		pdf_set_annot_appearance(doc, annot, &rect, dlist);
 	}
 	fz_always(ctx)
 	{
