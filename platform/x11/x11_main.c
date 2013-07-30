@@ -92,18 +92,45 @@ static char copylatin1[1024 * 16] = "";
 static char copyutf8[1024 * 48] = "";
 static Time copytime;
 static char *filename;
+static char message[1024] = "";
 
 static pdfapp_t gapp;
 static int closing = 0;
 static int reloading = 0;
 static int showingpage = 0;
+static int showingmessage = 0;
 
 static int advance_scheduled = 0;
+static struct timeval tmo;
 static struct timeval tmo_advance;
+static struct timeval tmo_at;
 
 /*
  * Dialog boxes
  */
+static void showmessage(pdfapp_t *app, int timeout, char *msg)
+{
+	struct timeval now;
+
+	showingmessage = 1;
+	showingpage = 0;
+
+	fz_strlcpy(message, msg, sizeof message);
+
+	if (!tmo_at.tv_sec && !tmo_at.tv_usec)
+	{
+		tmo.tv_sec = timeout;
+		gettimeofday(&now, NULL);
+		timeradd(&now, &tmo, &tmo_at);
+	}
+	else if (tmo.tv_sec < timeout)
+	{
+		tmo.tv_sec = timeout;
+		tmo.tv_usec = 0;
+		gettimeofday(&now, NULL);
+		timeradd(&now, &tmo, &tmo_at);
+	}
+}
 
 void winerror(pdfapp_t *app, char *msg)
 {
@@ -435,6 +462,12 @@ static void winblitstatusbar(pdfapp_t *app)
 		fillrect(0, 0, gapp.winw, 30);
 		windrawstring(&gapp, 10, 20, buf);
 	}
+	else if (showingmessage)
+	{
+		XSetForeground(xdpy, xgc, WhitePixel(xdpy, xscr));
+		fillrect(0, 0, gapp.winw, 30);
+		windrawstring(&gapp, 10, 20, message);
+	}
 	else if (showingpage)
 	{
 		char buf[42];
@@ -718,6 +751,7 @@ static void onkey(int c)
 	if (gapp.isediting)
 	{
 		showingpage = 0;
+		showingmessage = 0;
 	}
 }
 
@@ -764,9 +798,7 @@ int main(int argc, char **argv)
 	int width = -1;
 	int height = -1;
 	fz_context *ctx;
-	struct timeval tmo_at;
 	struct timeval now;
-	struct timeval tmo;
 	struct timeval *timeout;
 	struct timeval tmo_advance_delay;
 
@@ -821,6 +853,7 @@ int main(int argc, char **argv)
 
 	tmo_at.tv_sec = 0;
 	tmo_at.tv_usec = 0;
+	timeout = NULL;
 
 	while (!closing)
 	{
@@ -947,7 +980,7 @@ int main(int argc, char **argv)
 
 			gettimeofday(&now, NULL);
 			timeradd(&now, &tmo, &tmo_at);
-		} else if (!showingpage && (tmo_at.tv_sec || tmo_at.tv_usec))
+		} else if (!showingpage && !showingmessage && (tmo_at.tv_sec || tmo_at.tv_usec))
 		{
 			tmo_at.tv_sec = 0;
 			tmo_at.tv_usec = 0;
@@ -969,6 +1002,7 @@ int main(int argc, char **argv)
 				tmo_at.tv_usec = 0;
 				timeout = NULL;
 				showingpage = 0;
+				showingmessage = 0;
 				winrepaint(&gapp);
 			}
 			else
@@ -1024,6 +1058,7 @@ int main(int argc, char **argv)
 				tmo_at.tv_usec = 0;
 				timeout = NULL;
 				showingpage = 0;
+				showingmessage = 0;
 				winrepaint(&gapp);
 			}
 		}
