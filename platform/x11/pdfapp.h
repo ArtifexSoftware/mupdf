@@ -118,7 +118,7 @@ struct pdfapp_s
 	int nowaitcursor;
 
 	/* search state */
-	int isediting;
+	int issearching;
 	int searchdir;
 	char search[512];
 	int searchpage;

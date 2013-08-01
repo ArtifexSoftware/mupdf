@@ -863,7 +863,7 @@ static void pdfapp_gotouri(pdfapp_t *app, char *uri)
 
 void pdfapp_gotopage(pdfapp_t *app, int number)
 {
-	app->isediting = 0;
+	app->issearching = 0;
 	winrepaint(app);
 
 	if (app->histlen + 1 == 256)
@@ -954,7 +954,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	enum panning panto = PAN_TO_TOP;
 	int loadpage = 1;
 
-	if (app->isediting)
+	if (app->issearching)
 	{
 		int n = strlen(app->search);
 		if (c < ' ')
@@ -966,7 +966,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			}
 			if (c == '\n' || c == '\r')
 			{
-				app->isediting = 0;
+				app->issearching = 0;
 				if (n > 0)
 				{
 					winrepaintsearch(app);
@@ -987,7 +987,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			}
 			if (c == '\033')
 			{
-				app->isediting = 0;
+				app->issearching = 0;
 				winrepaint(app);
 			}
 		}
@@ -1247,7 +1247,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	 */
 
 	case '?':
-		app->isediting = 1;
+		app->issearching = 1;
 		app->searchdir = -1;
 		app->search[0] = 0;
 		app->hit_count = 0;
@@ -1256,7 +1256,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case '/':
-		app->isediting = 1;
+		app->issearching = 1;
 		app->searchdir = 1;
 		app->search[0] = 0;
 		app->hit_count = 0;

@@ -709,7 +709,7 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 
 void winblitsearch()
 {
-	if (gapp.isediting)
+	if (gapp.issearching)
 	{
 		char buf[sizeof(gapp.search) + 50];
 		sprintf(buf, "Search: %s", gapp.search);

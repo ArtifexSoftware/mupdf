@@ -459,7 +459,7 @@ static void fillrect(int x, int y, int w, int h)
 
 static void winblitstatusbar(pdfapp_t *app)
 {
-	if (gapp.isediting)
+	if (gapp.issearching)
 	{
 		char buf[sizeof(gapp.search) + 50];
 		sprintf(buf, "Search: %s", gapp.search);
@@ -744,7 +744,7 @@ static void onkey(int c)
 		winrepaint(&gapp);
 	}
 
-	if (!gapp.isediting && c == 'P')
+	if (!gapp.issearching && c == 'P')
 	{
 		struct timeval now;
 		struct timeval tmo;
@@ -759,7 +759,7 @@ static void onkey(int c)
 
 	pdfapp_onkey(&gapp, c);
 
-	if (gapp.isediting)
+	if (gapp.issearching)
 	{
 		showingpage = 0;
 		showingmessage = 0;
@@ -893,7 +893,7 @@ int main(int argc, char **argv)
 			case KeyPress:
 				len = XLookupString(&xevt.xkey, buf, sizeof buf, &keysym, NULL);
 
-				if (!gapp.isediting)
+				if (!gapp.issearching)
 					switch (keysym)
 					{
 					case XK_Escape:
