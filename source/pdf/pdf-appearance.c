@@ -1541,7 +1541,7 @@ static fz_colorspace *pdf_to_color(pdf_document *doc, pdf_obj *col, float color[
 	return cs;
 }
 
-void pdf_set_ink_appearance(pdf_document *doc, pdf_annot *annot)
+void pdf_update_ink_appearance(pdf_document *doc, pdf_annot *annot)
 {
 	fz_context *ctx = doc->ctx;
 	const fz_matrix *page_ctm = &annot->page->ctm;
