@@ -127,6 +127,11 @@ void pdf_parse_da(fz_context *ctx, char *da, pdf_da_info *di)
 					di->col[2] = stack[2];
 					di->col_size = 3;
 				}
+				else if (!strcmp(lbuf.scratch, "g"))
+				{
+					di->col[0] = stack[0];
+					di->col_size = 1;
+				}
 
 				fz_free(ctx, name);
 				name = NULL;
