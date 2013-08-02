@@ -1372,7 +1372,8 @@ void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect
 		else
 		{
 			pdf_xref_ensure_incremental_object(doc, pdf_to_num(ap_obj));
-			pdf_dict_puts_drop(ap_obj, "Rect", pdf_new_rect(doc, &trect));
+			/* Update bounding box and matrix in reused xobject obj */
+			pdf_dict_puts_drop(ap_obj, "BBox", pdf_new_rect(doc, &trect));
 			pdf_dict_puts_drop(ap_obj, "Matrix", pdf_new_matrix(doc, &mat));
 		}
 
@@ -1384,6 +1385,9 @@ void pdf_set_annot_appearance(pdf_document *doc, pdf_annot *annot, fz_rect *rect
 		xobj = pdf_load_xobject(doc, ap_obj);
 		if (xobj)
 		{
+			/* Update bounding box and matrix also in the xobject structure */
+			xobj->bbox = trect;
+			xobj->matrix = mat;
 			xobj->iteration++;
 			pdf_drop_xobject(ctx, xobj);
 		}
