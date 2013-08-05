@@ -1873,6 +1873,67 @@ static void center_rect_within_rect(const fz_rect *tofit, const fz_rect *within,
 	fz_pre_translate(mat, -tofit_center.x, -tofit_center.y);
 }
 
+static void insert_signature_appearance_layers(pdf_document *doc, pdf_annot *annot)
+{
+	fz_context *ctx = doc->ctx;
+	pdf_obj *ap = pdf_dict_getp(annot->obj, "AP/N");
+	pdf_obj *main = NULL;
+	pdf_obj *frm = NULL;
+	pdf_obj *n0 = NULL;
+	fz_rect bbox;
+	fz_buffer *fzbuf = NULL;
+
+	pdf_to_rect(ctx, pdf_dict_gets(ap, "BBox"), &bbox);
+
+	fz_var(main);
+	fz_var(frm);
+	fz_var(n0);
+	fz_var(fzbuf);
+	fz_try(ctx)
+	{
+		main = pdf_new_xobject(doc, &bbox, &fz_identity);
+		frm = pdf_new_xobject(doc, &bbox, &fz_identity);
+		n0 = pdf_new_xobject(doc, &bbox, &fz_identity);
+
+		pdf_dict_putp(main, "Resources/XObject/FRM", frm);
+		fzbuf = fz_new_buffer(ctx, 8);
+		fz_buffer_printf(ctx, fzbuf, "/FRM Do");
+		pdf_update_stream(doc, pdf_to_num(main), fzbuf);
+		pdf_dict_puts_drop(main, "Length", pdf_new_int(doc, fzbuf->len));
+		fz_drop_buffer(ctx, fzbuf);
+		fzbuf = NULL;
+
+		pdf_dict_putp(frm, "Resources/XObject/n0", n0);
+		pdf_dict_putp(frm, "Resources/XObject/n2", ap);
+		fzbuf = fz_new_buffer(ctx, 8);
+		fz_buffer_printf(ctx, fzbuf, "q 1 0 0 1 0 0 cm /n0 Do Q q 1 0 0 1 0 0 cm /n2 Do Q");
+		pdf_update_stream(doc, pdf_to_num(frm), fzbuf);
+		pdf_dict_puts_drop(frm, "Length", pdf_new_int(doc, fzbuf->len));
+		fz_drop_buffer(ctx, fzbuf);
+		fzbuf = NULL;
+
+		fzbuf = fz_new_buffer(ctx, 8);
+		fz_buffer_printf(ctx, fzbuf, "%% DSBlank");
+		pdf_update_stream(doc, pdf_to_num(n0), fzbuf);
+		pdf_dict_puts_drop(n0, "Length", pdf_new_int(doc, fzbuf->len));
+		fz_drop_buffer(ctx, fzbuf);
+		fzbuf = NULL;
+
+		pdf_dict_putp(annot->obj, "AP/N", main);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(main);
+		pdf_drop_obj(frm);
+		pdf_drop_obj(n0);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, fzbuf);
+		fz_rethrow(ctx);
+	}
+}
+
 static float logo_color[3] = {1.0f, 0.85f, 0.85f};
 
 void pdf_set_signature_appearance(pdf_document *doc, pdf_annot *annot, char *name, char *dn, char *date)
@@ -1956,6 +2017,8 @@ void pdf_set_signature_appearance(pdf_document *doc, pdf_annot *annot, char *nam
 		 * force a redraw on next pdf_update_page call */
 		pdf_drop_xobject(ctx, annot->ap);
 		annot->ap = NULL;
+
+		insert_signature_appearance_layers(doc, annot);
 	}
 	fz_always(ctx)
 	{
