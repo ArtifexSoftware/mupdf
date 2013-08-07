@@ -30,6 +30,7 @@ typedef struct font_info_s
 {
 	pdf_da_info da_rec;
 	pdf_font_desc *font;
+	float lineheight;
 } font_info;
 
 typedef struct text_widget_info_s
@@ -158,11 +159,16 @@ void pdf_parse_da(fz_context *ctx, char *da, pdf_da_info *di)
 static void get_font_info(pdf_document *doc, pdf_obj *dr, char *da, font_info *font_rec)
 {
 	fz_context *ctx = doc->ctx;
+	pdf_font_desc *font;
 
 	pdf_parse_da(ctx, da, &font_rec->da_rec);
 	if (font_rec->da_rec.font_name == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "No font name in default appearance");
-	font_rec->font = pdf_load_font(doc, dr, pdf_dict_gets(pdf_dict_gets(dr, "Font"), font_rec->da_rec.font_name), 0);
+
+	font_rec->font = font = pdf_load_font(doc, dr, pdf_dict_gets(pdf_dict_gets(dr, "Font"), font_rec->da_rec.font_name), 0);
+	font_rec->lineheight = 1.0;
+	if (font && font->ascent != 0.0f && font->descent != 0.0f)
+		font_rec->lineheight = (font->ascent - font->descent) / 1000.0;
 }
 
 static void font_info_fin(fz_context *ctx, font_info *font_rec)
@@ -358,6 +364,7 @@ typedef struct text_splitter_s
 	float scale;
 	float unscaled_width;
 	float fontsize;
+	float lineheight;
 	char *text;
 	int done;
 	float x_orig;
@@ -382,10 +389,11 @@ static void text_splitter_init(text_splitter *splitter, font_info *info, char *t
 	splitter->height = height;
 	splitter->fontsize = fontsize;
 	splitter->scale = 1.0;
+	splitter->lineheight = fontsize * info->lineheight ;
 	/* RJW: The cast in the following line is important, as otherwise
 	 * under MSVC in the variable = 0 case, splitter->max_lines becomes
 	 * INT_MIN. */
-	splitter->max_lines = variable ? (int)(height/fontsize) : INT_MAX;
+	splitter->max_lines = variable ? (int)(height/splitter->lineheight) : INT_MAX;
 }
 
 static void text_splitter_start_pass(text_splitter *splitter)
@@ -460,7 +468,7 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 			? splitter->width * 1.1 / splitter->scale
 			: FLT_MAX;
 
-		vstretchwidth = splitter->width * (splitter->max_lines + 1) * splitter->fontsize
+		vstretchwidth = splitter->width * (splitter->max_lines + 1) * splitter->lineheight
 			/ splitter->height;
 
 		bestwidth = fz_min(fitwidth, fz_min(hstretchwidth, vstretchwidth));
@@ -492,10 +500,10 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 static void text_splitter_move(text_splitter *splitter, float newy, float *relx, float *rely)
 {
 	*relx = splitter->x - splitter->x_orig;
-	*rely = newy - splitter->y_orig;
+	*rely = newy * splitter->lineheight - splitter->y_orig;
 
 	splitter->x_orig = splitter->x;
-	splitter->y_orig = newy;
+	splitter->y_orig = newy * splitter->lineheight;
 }
 
 static void text_splitter_retry(text_splitter *splitter)
@@ -506,7 +514,7 @@ static void text_splitter_retry(text_splitter *splitter)
 		 * be caused by carriage control */
 		splitter->max_lines ++;
 		splitter->retry = 0;
-		splitter->unscaled_width = splitter->width * splitter->max_lines * splitter->fontsize
+		splitter->unscaled_width = splitter->width * splitter->max_lines * splitter->lineheight
 			/ splitter->height;
 		splitter->scale = splitter->width / splitter->unscaled_width;
 	}
@@ -597,7 +605,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, const fz_rect *bbox,
 
 		variable = (info->font_rec.da_rec.font_size == 0);
 		fontsize = variable
-			? (info->multiline ? 14.0 : floor(height))
+			? (info->multiline ? 14.0 : height / info->font_rec.lineheight)
 			: info->font_rec.da_rec.font_size;
 
 		info->font_rec.da_rec.font_size = fontsize;
@@ -637,7 +645,7 @@ static fz_buffer *create_text_appearance(pdf_document *doc, const fz_rect *bbox,
 							char *word = text+splitter.text_start;
 							int wordlen = splitter.text_end-splitter.text_start;
 
-							text_splitter_move(&splitter, -line*fontsize, &x, &y);
+							text_splitter_move(&splitter, -line, &x, &y);
 							fzbuf_print_text_word(ctx, fztmp, x, y, word, wordlen);
 						}
 					}
