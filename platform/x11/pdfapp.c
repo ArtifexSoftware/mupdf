@@ -1412,7 +1412,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 						char ebuf[256];
 
 						ebuf[0] = 0;
-						if (pdf_check_signature(ctx, idoc, widget, app->docpath, ebuf, sizeof(ebuf)))
+						if (pdf_check_signature(idoc, widget, app->docpath, ebuf, sizeof(ebuf)))
 						{
 							winwarn(app, "Signature is valid");
 						}

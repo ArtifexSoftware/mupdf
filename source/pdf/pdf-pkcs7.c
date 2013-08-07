@@ -339,8 +339,9 @@ exit:
 	return res;
 }
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
 {
+	fz_context *ctx = doc->ctx;
 	int (*byte_range)[2] = NULL;
 	int byte_range_len;
 	char *contents = NULL;
@@ -388,7 +389,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 #else /* HAVE_OPENSSL */
 
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
 {
 	fz_strlcpy(ebuf, "This version of MuPDF was built without signature support", ebufsize);
 	return 0;

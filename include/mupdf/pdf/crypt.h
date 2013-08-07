@@ -36,6 +36,6 @@ int pdf_signature_widget_contents(pdf_document *doc, pdf_widget *widget, char **
 /*
 	fz_check_signature: check a signature's certificate chain and digest
 */
-int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize);
+int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize);
 
 #endif
