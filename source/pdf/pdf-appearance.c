@@ -1679,7 +1679,6 @@ static fz_text *layout_text(fz_context *ctx, font_info *font_rec, char *str, flo
 	fz_matrix tm;
 	fz_font *font = font_rec->font->font;
 	fz_text *text;
-	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
 
 	fz_scale(&tm, font_rec->da_rec.font_size, font_rec->da_rec.font_size);
 	text = fz_new_text(ctx, font, &tm, 0);
@@ -1877,7 +1876,7 @@ static void insert_signature_appearance_layers(pdf_document *doc, pdf_annot *ann
 {
 	fz_context *ctx = doc->ctx;
 	pdf_obj *ap = pdf_dict_getp(annot->obj, "AP/N");
-	pdf_obj *main = NULL;
+	pdf_obj *main_ap = NULL;
 	pdf_obj *frm = NULL;
 	pdf_obj *n0 = NULL;
 	fz_rect bbox;
@@ -1885,21 +1884,21 @@ static void insert_signature_appearance_layers(pdf_document *doc, pdf_annot *ann
 
 	pdf_to_rect(ctx, pdf_dict_gets(ap, "BBox"), &bbox);
 
-	fz_var(main);
+	fz_var(main_ap);
 	fz_var(frm);
 	fz_var(n0);
 	fz_var(fzbuf);
 	fz_try(ctx)
 	{
-		main = pdf_new_xobject(doc, &bbox, &fz_identity);
+		main_ap = pdf_new_xobject(doc, &bbox, &fz_identity);
 		frm = pdf_new_xobject(doc, &bbox, &fz_identity);
 		n0 = pdf_new_xobject(doc, &bbox, &fz_identity);
 
-		pdf_dict_putp(main, "Resources/XObject/FRM", frm);
+		pdf_dict_putp(main_ap, "Resources/XObject/FRM", frm);
 		fzbuf = fz_new_buffer(ctx, 8);
 		fz_buffer_printf(ctx, fzbuf, "/FRM Do");
-		pdf_update_stream(doc, pdf_to_num(main), fzbuf);
-		pdf_dict_puts_drop(main, "Length", pdf_new_int(doc, fzbuf->len));
+		pdf_update_stream(doc, pdf_to_num(main_ap), fzbuf);
+		pdf_dict_puts_drop(main_ap, "Length", pdf_new_int(doc, fzbuf->len));
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 
@@ -1919,11 +1918,11 @@ static void insert_signature_appearance_layers(pdf_document *doc, pdf_annot *ann
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 
-		pdf_dict_putp(annot->obj, "AP/N", main);
+		pdf_dict_putp(annot->obj, "AP/N", main_ap);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(main);
+		pdf_drop_obj(main_ap);
 		pdf_drop_obj(frm);
 		pdf_drop_obj(n0);
 	}
@@ -2000,9 +1999,10 @@ void pdf_set_signature_appearance(pdf_document *doc, pdf_annot *annot, char *nam
 
 		/* Display the distinguished name in the right-hand half */
 		fzbuf = fz_new_buffer(ctx, 256);
-		fz_buffer_printf(ctx, fzbuf, "Digitally signed by %s\n", name);
-		fz_buffer_printf(ctx, fzbuf, "DN: %s\n", dn);
-		fz_buffer_printf(ctx, fzbuf, "Date: %s", date);
+		fz_buffer_printf(ctx, fzbuf, "Digitally signed by %s", name);
+		fz_buffer_printf(ctx, fzbuf, "\nDN: %s", dn);
+		if (date)
+			fz_buffer_printf(ctx, fzbuf, "\nDate: %s", date);
 		(void)fz_buffer_storage(ctx, fzbuf, &bufstr);
 		rect = annot->rect;
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
