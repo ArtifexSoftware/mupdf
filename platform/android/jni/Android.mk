@@ -31,5 +31,8 @@ LOCAL_LDLIBS    := -lm -llog -ljnigraphics
 ifdef V8_BUILD
 LOCAL_LDLIBS	+= -L$(MUPDF_ROOT)/thirdparty/v8-3.9/android -lv8_$(TARGET_ARCH_ABI)
 endif
+ifdef SSL_BUILD
+LOCAL_LDLIBS	+= -L$(MUPDF_ROOT)/thirdparty/openssl/android -lcrypto -lssl
+endif
 
 include $(BUILD_SHARED_LIBRARY)

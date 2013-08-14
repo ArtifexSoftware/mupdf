@@ -16,6 +16,9 @@ LOCAL_CFLAGS += -DAA_BITS=8
 ifdef MEMENTO
 LOCAL_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
 endif
+ifdef SSL_BUILD
+LOCAL_CFLAGS += -DHAVE_OPENSSL
+endif
 
 LOCAL_C_INCLUDES := \
 	../../thirdparty/jbig2dec \
@@ -35,6 +38,9 @@ LOCAL_C_INCLUDES := \
 	../..
 ifdef V8_BUILD
 LOCAL_C_INCLUDES += ../../thirdparty/$(V8)/include
+endif
+ifdef SSL_BUILD
+LOCAL_C_INCLUDES += ../../thirdparty/openssl/include
 endif
 
 LOCAL_MODULE    := mupdfcore
