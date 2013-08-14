@@ -1515,6 +1515,15 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 				pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
 			}
 		}
+		if (btn == 6 || btn == 7) /* scroll wheel (horizontal) */
+		{
+			/* scroll left/right or up/down if shift is pressed */
+			int dir = btn == 6 ? 1 : -1;
+			int isx = (modifiers & (1<<0));
+			int xstep = !isx ? 20 * dir : 0;
+			int ystep = isx ? 20 * dir : 0;
+			pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
+		}
 	}
 
 	else if (state == -1)
