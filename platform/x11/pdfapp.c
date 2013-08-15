@@ -84,6 +84,7 @@ char *pdfapp_usage(pdfapp_t *app)
 		"-\t\t-- zoom out\n"
 		"W\t\t-- zoom to fit window width\n"
 		"H\t\t-- zoom to fit window height\n"
+		"Z\t\t-- zoom to fit page\n"
 		"w\t\t-- shrinkwrap\n"
 		"f\t\t-- fullscreen\n"
 		"r\t\t-- reload file\n"
@@ -979,6 +980,36 @@ void pdfapp_onresize(pdfapp_t *app, int w, int h)
 	}
 }
 
+void pdfapp_autozoom_vertical(pdfapp_t *app)
+{
+	app->resolution *= (double) app->winh / (double) fz_pixmap_height(app->ctx, app->image);
+	if (app->resolution > MAXRES)
+		app->resolution = MAXRES;
+	else if (app->resolution < MINRES)
+		app->resolution = MINRES;
+	pdfapp_showpage(app, 0, 1, 1, 0, 0);
+}
+
+void pdfapp_autozoom_horizontal(pdfapp_t *app)
+{
+	app->resolution *= (double) app->winw / (double) fz_pixmap_width(app->ctx, app->image);
+	if (app->resolution > MAXRES)
+		app->resolution = MAXRES;
+	else if (app->resolution < MINRES)
+		app->resolution = MINRES;
+	pdfapp_showpage(app, 0, 1, 1, 0, 0);
+}
+
+void pdfapp_autozoom(pdfapp_t *app)
+{
+	float page_aspect = (float) fz_pixmap_width(app->ctx, app->image) / fz_pixmap_height(app->ctx, app->image);
+	float win_aspect = (float) app->winw / app->winh;
+	if (page_aspect > win_aspect)
+		pdfapp_autozoom_horizontal(app);
+	else
+		pdfapp_autozoom_vertical(app);
+}
+
 void pdfapp_onkey(pdfapp_t *app, int c)
 {
 	int oldpage = app->pageno;
@@ -1066,20 +1097,13 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 
 	case 'W':
-		app->resolution *= (double) app->winw / (double) fz_pixmap_width(app->ctx, app->image);
-		if (app->resolution > MAXRES)
-			app->resolution = MAXRES;
-		else if (app->resolution < MINRES)
-			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+		pdfapp_autozoom_horizontal(app);
 		break;
 	case 'H':
-		app->resolution *= (double) app->winh / (double) fz_pixmap_height(app->ctx, app->image);
-		if (app->resolution > MAXRES)
-			app->resolution = MAXRES;
-		else if (app->resolution < MINRES)
-			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+		pdfapp_autozoom_vertical(app);
+		break;
+	case 'Z':
+		pdfapp_autozoom(app);
 		break;
 
 	case 'L':
