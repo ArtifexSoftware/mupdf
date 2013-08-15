@@ -306,12 +306,14 @@ public class MuPDFActivity extends Activity
 					core = openFile(Uri.decode(uri.getEncodedPath()));
 				}
 				SearchTaskResult.set(null);
-				if (core.countPages() == 0)
-					core = null;
 			}
 			if (core != null && core.needsPassword()) {
 				requestPassword(savedInstanceState);
 				return;
+			}
+			if (core != null && core.countPages() == 0)
+			{
+				core = null;
 			}
 		}
 		if (core == null)
