@@ -77,6 +77,7 @@ struct fz_image_s
 	fz_pixmap *tile; /* Private to the implementation */
 	int xres; /* As given in the image, not necessarily as rendered */
 	int yres; /* As given in the image, not necessarily as rendered */
+	int invert_cmyk_jpeg;
 };
 
 fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *cs, int indexed);

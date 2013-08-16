@@ -299,6 +299,16 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 
 		indexed = fz_colorspace_is_indexed(image->colorspace);
 		tile = fz_decomp_image_from_stream(ctx, stm, image, 0, indexed, l2factor, native_l2factor);
+
+		/* CMYK JPEGs in XPS documents have to be inverted */
+		if (image->invert_cmyk_jpeg &&
+			image->buffer->params.type == FZ_IMAGE_JPEG &&
+			image->colorspace == fz_device_cmyk(ctx) &&
+			image->buffer->params.u.jpeg.color_transform)
+		{
+			fz_invert_pixmap(ctx, tile);
+		}
+
 		break;
 	}
 

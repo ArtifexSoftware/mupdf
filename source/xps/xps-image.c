@@ -110,6 +110,7 @@ xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *ar
 	fz_try(doc->ctx)
 	{
 		image = xps_load_image(doc->ctx, part);
+		image->invert_cmyk_jpeg = 1;
 	}
 	fz_always(doc->ctx)
 	{
