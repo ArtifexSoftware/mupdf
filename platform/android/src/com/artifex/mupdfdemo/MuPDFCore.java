@@ -233,6 +233,8 @@ public class MuPDFCore
 		ArrayList<TextWord[]> lns = new ArrayList<TextWord[]>();
 
 		for (TextChar[][][] bl: chars) {
+			if (bl == null)
+				continue;
 			for (TextChar[][] ln: bl) {
 				ArrayList<TextWord> wds = new ArrayList<TextWord>();
 				TextWord wd = new TextWord();
