@@ -1162,6 +1162,21 @@ pdf_init_document(pdf_document *doc)
 	{
 		fz_warn(ctx, "Ignoring Broken Optional Content");
 	}
+
+	fz_try(ctx)
+	{
+		char *version_str;
+		obj = pdf_dict_getp(pdf_trailer(doc), "Root/Version");
+		version_str = pdf_to_name(obj);
+		if (*version_str)
+		{
+			/* TODO: use fz_atof for parsing instead? */
+			int version = atoi(version_str) * 10 + atoi(version_str + 2);
+			if (version > doc->version)
+				doc->version = version;
+		}
+	}
+	fz_catch(ctx) { }
 }
 
 void
