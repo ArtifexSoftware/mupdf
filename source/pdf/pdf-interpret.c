@@ -1059,16 +1059,15 @@ static void
 pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *gs, const pdf_gstate *old)
 {
 	gs->ctm = old->ctm;
-	gs->font = old->font;
-	gs->softmask = old->softmask;
+
+	pdf_drop_font(ctx, gs->font);
+	gs->font = pdf_keep_font(ctx, old->font);
+
+	pdf_drop_xobject(ctx, gs->softmask);
+	gs->softmask = pdf_keep_xobject(ctx, old->softmask);
 
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, old->stroke_state);
-
-	if (gs->font)
-		pdf_keep_font(ctx, gs->font);
-	if (gs->softmask)
-		pdf_keep_xobject(ctx, gs->softmask);
 }
 
 static pdf_csi *

@@ -25,6 +25,7 @@ pdf_load_image_imp(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cs
 	fz_var(stm);
 	fz_var(mask);
 	fz_var(image);
+	fz_var(colorspace);
 
 	fz_try(ctx)
 	{
@@ -55,7 +56,6 @@ pdf_load_image_imp(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cs
 
 		indexed = 0;
 		usecolorkey = 0;
-		mask = NULL;
 
 		if (imagemask)
 			bpc = 1;
@@ -118,7 +118,7 @@ pdf_load_image_imp(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cs
 			else if (forcemask)
 				fz_warn(ctx, "Ignoring recursive image soft mask");
 			else
-				mask = (fz_image *)pdf_load_image_imp(doc, rdb, obj, NULL, 1);
+				mask = pdf_load_image_imp(doc, rdb, obj, NULL, 1);
 		}
 		else if (pdf_is_array(obj))
 		{
@@ -158,10 +158,14 @@ pdf_load_image_imp(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cs
 		}
 
 		image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, usecolorkey ? colorkey : NULL, NULL, mask);
+		colorspace = NULL;
+		mask = NULL;
 		image->tile = fz_decomp_image_from_stream(ctx, stm, image, cstm != NULL, indexed, 0, 0);
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_colorspace(ctx, colorspace);
+		fz_drop_image(ctx, mask);
 		fz_drop_image(ctx, image);
 		fz_rethrow(ctx);
 	}
@@ -171,7 +175,7 @@ pdf_load_image_imp(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cs
 fz_image *
 pdf_load_inline_image(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *file)
 {
-	return (fz_image *)pdf_load_image_imp(doc, rdb, dict, file, 0);
+	return pdf_load_image_imp(doc, rdb, dict, file, 0);
 }
 
 int
@@ -232,7 +236,7 @@ pdf_load_jpx(pdf_document *doc, pdf_obj *dict, int forcemask)
 			if (forcemask)
 				fz_warn(ctx, "Ignoring recursive JPX soft mask");
 			else
-				mask = (fz_image *)pdf_load_image_imp(doc, NULL, obj, NULL, 1);
+				mask = pdf_load_image_imp(doc, NULL, obj, NULL, 1);
 		}
 
 		obj = pdf_dict_getsa(dict, "Decode", "D");
