@@ -88,9 +88,12 @@ FZ_NORETURN static void throw(fz_error_context *ex);
 
 static void throw(fz_error_context *ex)
 {
-	if (ex->top >= 0) {
+	if (ex->top >= 0)
+	{
 		fz_longjmp(ex->stack[ex->top].buffer, ex->stack[ex->top].code + 2);
-	} else {
+	}
+	else
+	{
 		fprintf(stderr, "uncaught exception: %s\n", ex->message);
 		LOGE("uncaught exception: %s\n", ex->message);
 #ifdef USE_OUTPUT_DEBUG_STRING

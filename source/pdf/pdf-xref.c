@@ -568,6 +568,7 @@ pdf_read_new_xref(pdf_document *doc, pdf_lexbuf *buf)
 	}
 	fz_catch(ctx)
 	{
+		pdf_drop_obj(trailer);
 		fz_rethrow_message(ctx, "cannot parse compressed xref stream object");
 	}
 
