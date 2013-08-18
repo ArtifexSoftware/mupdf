@@ -169,6 +169,7 @@ static void
 close_lzwd(fz_context *ctx, void *state_)
 {
 	fz_lzwd *lzw = (fz_lzwd *)state_;
+	fz_sync_bits(lzw->chain);
 	fz_close(lzw->chain);
 	fz_free(ctx, lzw);
 }
