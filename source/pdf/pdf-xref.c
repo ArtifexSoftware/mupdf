@@ -1002,7 +1002,7 @@ pdf_read_ocg(pdf_document *doc)
 			pdf_obj *o = pdf_array_get(ocg, i);
 			desc->ocgs[i].num = pdf_to_num(o);
 			desc->ocgs[i].gen = pdf_to_gen(o);
-			desc->ocgs[i].state = 0;
+			desc->ocgs[i].state = 1;
 		}
 		doc->ocg = desc;
 	}
