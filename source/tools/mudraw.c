@@ -131,6 +131,7 @@ static char lorem[] =
 "feugiat pellentesque tortor nec ornare.\n";
 
 static char *output = NULL;
+static char *format = NULL;
 static float resolution = 72;
 static int res_specified = 0;
 static float rotation = 0;
@@ -177,6 +178,7 @@ static void usage(void)
 	fprintf(stderr,
 		"usage: mudraw [options] input [pages]\n"
 		"\t-o -\toutput filename (%%d for page number)\n"
+		"\t-F -\toutput format (if no -F, -o will be examined)\n"
 		"\t\tsupported formats: pgm, ppm, pam, png, pbm\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
@@ -863,11 +865,12 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:p:r:R:b:c:dgmtx5G:Iw:h:fij:")) != -1)
+	while ((c = fz_getopt(argc, argv, "lo:F:p:r:R:b:c:dgmtx5G:Iw:h:fij:")) != -1)
 	{
 		switch (c)
 		{
 		case 'o': output = fz_optarg; break;
+		case 'F': format = fz_optarg; break;
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atof(fz_optarg); res_specified = 1; break;
 		case 'R': rotation = atof(fz_optarg); break;
@@ -919,7 +922,25 @@ int main(int argc, char **argv)
 
 	/* Determine output type */
 	output_format = OUT_PNG;
-	if (output)
+	if (format)
+	{
+		int i;
+
+		for (i = 0; i < nelem(suffix_table); i++)
+		{
+			if (!strcmp(format, suffix_table[i].suffix+1))
+			{
+				output_format = suffix_table[i].format;
+				break;
+			}
+		}
+		if (i == nelem(suffix_table))
+		{
+			fprintf(stderr, "Unknown output format '%s'\n", format);
+			exit(1);
+		}
+	}
+	else if (output)
 	{
 		char *suffix = output;
 		int i;
