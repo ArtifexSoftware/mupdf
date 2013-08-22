@@ -17,6 +17,7 @@ import android.widget.EditText;
 abstract class PassClickResultVisitor {
 	public abstract void visitText(PassClickResultText result);
 	public abstract void visitChoice(PassClickResultChoice result);
+	public abstract void visitSignature(PassClickResultSignature result);
 }
 
 class PassClickResult {
@@ -58,6 +59,19 @@ class PassClickResultChoice extends PassClickResult {
 	}
 }
 
+class PassClickResultSignature extends PassClickResult {
+	public final boolean isSigned;
+
+	public PassClickResultSignature(boolean _changed, boolean _isSigned) {
+		super(_changed);
+		isSigned = _isSigned;
+	}
+
+	public void acceptVisitor(PassClickResultVisitor visitor) {
+		visitor.visitSignature(this);
+	}
+}
+
 public class MuPDFPageView extends PageView implements MuPDFView {
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
@@ -68,6 +82,8 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<Void,Void,Annotation[]> mLoadAnnotations;
 	private AlertDialog.Builder mTextEntryBuilder;
 	private AlertDialog.Builder mChoiceEntryBuilder;
+	private AlertDialog.Builder mSigningDialogBuilder;
+	private AlertDialog.Builder mSignatureReportBuilder;
 	private AlertDialog mTextEntry;
 	private EditText mEditText;
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
@@ -75,6 +91,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<PointF[],Void,Void> mAddStrikeOut;
 	private AsyncTask<PointF[][],Void,Void> mAddInk;
 	private AsyncTask<Integer,Void,Void> mDeleteAnnotation;
+	private AsyncTask<Void,Void,String> mCheckSignature;
 	private Runnable changeReporter;
 
 	public MuPDFPageView(Context c, MuPDFCore core, Point parentSize) {
@@ -112,6 +129,24 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 
 		mChoiceEntryBuilder = new AlertDialog.Builder(c);
 		mChoiceEntryBuilder.setTitle(getContext().getString(R.string.choose_value));
+
+		mSigningDialogBuilder = new AlertDialog.Builder(c);
+		mSigningDialogBuilder.setTitle("Select certificate and sign?");
+		mSigningDialogBuilder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.dismiss();
+			}
+
+		});
+		mSignatureReportBuilder = new AlertDialog.Builder(c);
+		mSignatureReportBuilder.setTitle("Signature checked");
+		mSignatureReportBuilder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.dismiss();
+			}
+		});
 	}
 
 	public LinkInfo hitLink(float x, float y) {
@@ -157,6 +192,28 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			}
 		});
 		AlertDialog dialog = mChoiceEntryBuilder.create();
+		dialog.show();
+	}
+
+	private void invokeSignatureCheckingDialog() {
+		mCheckSignature = new AsyncTask<Void,Void,String> () {
+			@Override
+			protected String doInBackground(Void... params) {
+				return mCore.checkFocusedSignature();
+			}
+			@Override
+			protected void onPostExecute(String result) {
+				AlertDialog report = mSignatureReportBuilder.create();
+				report.setMessage(result);
+				report.show();
+			}
+		};
+
+		mCheckSignature.execute();
+	}
+
+	private void invokeSigningDialog() {
+		AlertDialog dialog = mSigningDialogBuilder.create();
 		dialog.show();
 	}
 
@@ -226,6 +283,14 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 						@Override
 						public void visitChoice(PassClickResultChoice result) {
 							invokeChoiceDialog(result.options);
+						}
+
+						@Override
+						public void visitSignature(PassClickResultSignature result) {
+							if (result.isSigned)
+								invokeSignatureCheckingDialog();
+							else
+								invokeSigningDialog();
 						}
 					});
 				}

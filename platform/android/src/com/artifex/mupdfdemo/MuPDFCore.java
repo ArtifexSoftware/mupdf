@@ -49,6 +49,8 @@ public class MuPDFCore
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
 	private native String [] getFocusedWidgetChoiceSelected();
 	private native String [] getFocusedWidgetChoiceOptions();
+	private native boolean getFocusedWidgetSignatureState();
+	private native String checkFocusedSignatureInternal();
 	private native int setFocusedWidgetTextInternal(String text);
 	private native String getFocusedWidgetTextInternal();
 	private native int getFocusedWidgetTypeInternal();
@@ -183,6 +185,8 @@ public class MuPDFCore
 		case LISTBOX:
 		case COMBOBOX:
 			return new PassClickResultChoice(changed, getFocusedWidgetChoiceOptions(), getFocusedWidgetChoiceSelected());
+		case SIGNATURE:
+			return new PassClickResultSignature(changed, getFocusedWidgetSignatureState());
 		default:
 			return new PassClickResult(changed);
 		}
@@ -199,6 +203,10 @@ public class MuPDFCore
 
 	public synchronized void setFocusedWidgetChoiceSelected(String [] selected) {
 		setFocusedWidgetChoiceSelectedInternal(selected);
+	}
+
+	public synchronized String checkFocusedSignature() {
+		return checkFocusedSignatureInternal();
 	}
 
 	public synchronized LinkInfo [] getPageLinks(int page) {

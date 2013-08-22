@@ -482,10 +482,10 @@ public class ReaderView
 		if (!mScaling)
 			mGestureDetector.onTouchEvent(event);
 
-		if ((event.getAction() & event.ACTION_MASK) == MotionEvent.ACTION_DOWN) {
+		if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_DOWN) {
 			mUserInteracting = true;
 		}
-		if ((event.getAction() & event.ACTION_MASK) == MotionEvent.ACTION_UP) {
+		if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {
 			mScrollDisabled = false;
 			mUserInteracting = false;
 

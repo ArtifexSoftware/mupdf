@@ -1,12 +1,10 @@
 package com.artifex.mupdfdemo;
 
 import android.animation.Animator;
-import android.view.View;
-import android.view.animation.Animation;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
-import android.view.View;
 import android.app.Activity;
+import android.view.View;
 
 public class SafeAnimatorInflater
 {

@@ -42,7 +42,8 @@ enum
 	NONE,
 	TEXT,
 	LISTBOX,
-	COMBOBOX
+	COMBOBOX,
+	SIGNATURE
 };
 
 typedef struct rect_node_s rect_node;
@@ -747,6 +748,7 @@ static char *widget_type_string(int t)
 	case PDF_WIDGET_TYPE_TEXT: return "text";
 	case PDF_WIDGET_TYPE_LISTBOX: return "listbox";
 	case PDF_WIDGET_TYPE_COMBOBOX: return "combobox";
+	case PDF_WIDGET_TYPE_SIGNATURE: return "signature";
 	default: return "non-widget";
 	}
 }
@@ -2169,9 +2171,53 @@ JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 	case PDF_WIDGET_TYPE_TEXT: return TEXT;
 	case PDF_WIDGET_TYPE_LISTBOX: return LISTBOX;
 	case PDF_WIDGET_TYPE_COMBOBOX: return COMBOBOX;
+	case PDF_WIDGET_TYPE_SIGNATURE: return SIGNATURE;
 	}
 
 	return NONE;
+}
+
+JNIEXPORT jboolean JNICALL
+JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
+
+	if (idoc == NULL)
+		return JNI_FALSE;
+
+	focus = pdf_focused_widget(idoc);
+
+	if (focus == NULL)
+		return JNI_FALSE;
+
+	return pdf_dict_gets(((pdf_annot *)focus)->obj, "V") ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL
+JNI_FN(MuPDFCore_checkFocusedSignatureInternal)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
+	char ebuf[256] = "Failed";
+
+	if (idoc == NULL)
+		goto exit;
+
+	focus = pdf_focused_widget(idoc);
+
+	if (focus == NULL)
+		goto exit;
+
+	if (pdf_check_signature(idoc, focus, glo->current_path, ebuf, sizeof(ebuf)))
+	{
+		strcpy(ebuf, "Signature is valid");
+	}
+
+exit:
+	return (*env)->NewStringUTF(env, ebuf);
 }
 
 JNIEXPORT jobject JNICALL

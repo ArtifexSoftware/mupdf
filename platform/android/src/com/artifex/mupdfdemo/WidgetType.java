@@ -4,5 +4,6 @@ public enum WidgetType {
 	NONE,
 	TEXT,
 	LISTBOX,
-	COMBOBOX
+	COMBOBOX,
+	SIGNATURE
 }
