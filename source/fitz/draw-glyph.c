@@ -71,6 +71,7 @@ drop_glyph_cache_entry(fz_context *ctx, fz_glyph_cache_entry *entry)
 		entry->bucket_prev->bucket_next = entry->bucket_next;
 	else
 		cache->entry[entry->hash] = entry->bucket_next;
+	fz_drop_font(ctx, entry->key.font);
 	fz_drop_pixmap(ctx, entry->val);
 	fz_free(ctx, entry);
 }
