@@ -27,7 +27,7 @@ struct fz_glyph_cache_entry_s
 	fz_glyph_cache_entry *lru_next;
 	fz_glyph_cache_entry *bucket_next;
 	fz_glyph_cache_entry *bucket_prev;
-	fz_pixmap *val;
+	fz_glyph *val;
 };
 
 struct fz_glyph_cache_s
@@ -68,7 +68,7 @@ drop_glyph_cache_entry(fz_context *ctx, fz_glyph_cache_entry *entry)
 		entry->lru_prev->lru_next = entry->lru_next;
 	else
 		cache->lru_head = entry->lru_next;
-	cache->total -= entry->val->w * entry->val->h;
+	cache->total -= fz_glyph_size(ctx, entry->val);
 	if (entry->bucket_next)
 		entry->bucket_next->bucket_prev = entry->bucket_prev;
 	if (entry->bucket_prev)
@@ -76,7 +76,7 @@ drop_glyph_cache_entry(fz_context *ctx, fz_glyph_cache_entry *entry)
 	else
 		cache->entry[entry->hash] = entry->bucket_next;
 	fz_drop_font(ctx, entry->key.font);
-	fz_drop_pixmap(ctx, entry->val);
+	fz_drop_glyph(ctx, entry->val);
 	fz_free(ctx, entry);
 }
 
@@ -130,7 +130,7 @@ fz_keep_glyph_cache(fz_context *ctx)
 	return ctx->glyph_cache;
 }
 
-fz_pixmap *
+fz_glyph *
 fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *stroke, fz_irect scissor)
 {
 	if (font->ft_face)
@@ -187,12 +187,12 @@ move_to_front(fz_glyph_cache *cache, fz_glyph_cache_entry *entry)
 		Only supported for type 3 fonts.
 		This must not be inserted into the cache.
  */
-fz_pixmap *
+fz_glyph *
 fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, fz_colorspace *model, fz_irect scissor)
 {
 	fz_glyph_cache *cache;
 	fz_glyph_key key;
-	fz_pixmap *val;
+	fz_glyph *val;
 	float size = fz_matrix_expansion(ctm);
 	int do_cache, locked, caching;
 	fz_matrix local_ctm = *ctm;
@@ -238,7 +238,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 		if (memcmp(&entry->key, &key, sizeof(key)) == 0)
 		{
 			move_to_front(cache, entry);
-			val = fz_keep_pixmap(ctx, entry->val);
+			val = fz_keep_glyph(ctx, entry->val);
 			fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
 			return val;
 		}
@@ -292,9 +292,9 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 					{
 						if (memcmp(&entry->key, &key, sizeof(key)) == 0)
 						{
-							fz_drop_pixmap(ctx, val);
+							fz_drop_glyph(ctx, val);
 							move_to_front(cache, entry);
-							val = fz_keep_pixmap(ctx, entry->val);
+							val = fz_keep_glyph(ctx, entry->val);
 							fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
 							return val;
 						}
@@ -309,7 +309,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 				if (entry->bucket_next)
 					entry->bucket_next->bucket_prev = entry;
 				cache->entry[hash] = entry;
-				entry->val = fz_keep_pixmap(ctx, val);
+				entry->val = fz_keep_glyph(ctx, val);
 				fz_keep_font(ctx, key.font);
 
 				entry->lru_next = cache->lru_head;
@@ -319,12 +319,12 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 					cache->lru_tail = entry;
 				cache->lru_head = entry;
 
-				cache->total += val->w * val->h;
+				cache->total += fz_glyph_size(ctx, val);
 				while (cache->total > MAX_CACHE_SIZE)
 				{
 #ifndef NDEBUG
 					cache->num_evictions++;
-					cache->evicted += cache->lru_tail->val->w * cache->lru_tail->val->h;
+					cache->evicted += fz_glyph_size(ctx, cache->lru_tail->val);
 #endif
 					drop_glyph_cache_entry(ctx, cache->lru_tail);
 				}

@@ -852,6 +852,44 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 	return sizeof(*pix) + pix->n * pix->w * pix->h;
 }
 
+fz_pixmap *
+fz_new_pixmap_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span)
+{
+	fz_pixmap *pixmap = fz_new_pixmap(ctx, NULL, w, h);
+	pixmap->x = x;
+	pixmap->y = y;
+
+	for (y = 0; y < h; y++)
+		memcpy(pixmap->samples + y * w, sp + y * span, w);
+
+	return pixmap;
+}
+
+fz_pixmap *
+fz_new_pixmap_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span)
+{
+	fz_pixmap *pixmap = fz_new_pixmap(ctx, NULL, w, h);
+	pixmap->x = x;
+	pixmap->y = y;
+
+	for (y = 0; y < h; y++)
+	{
+		unsigned char *out = pixmap->samples + y * w;
+		unsigned char *in = sp + y * span;
+		unsigned char bit = 0x80;
+		int ww = w;
+		while (ww--)
+		{
+			*out++ = (*in & bit) ? 255 : 0;
+			bit >>= 1;
+			if (bit == 0)
+				bit = 0x80, in++;
+		}
+	}
+
+	return pixmap;
+}
+
 #ifdef ARCH_ARM
 static void
 fz_subsample_pixmap_ARM(unsigned char *ptr, int w, int h, int f, int factor,
