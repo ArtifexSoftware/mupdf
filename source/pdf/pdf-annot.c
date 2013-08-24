@@ -1,15 +1,20 @@
 #include "mupdf/pdf.h"
 
 static pdf_obj *
-resolve_dest_rec(pdf_document *doc, pdf_obj *dest, int depth)
+resolve_dest_rec(pdf_document *doc, pdf_obj *dest, fz_link_kind kind, int depth)
 {
 	if (depth > 10) /* Arbitrary to avoid infinite recursion */
 		return NULL;
 
 	if (pdf_is_name(dest) || pdf_is_string(dest))
 	{
-		dest = pdf_lookup_dest(doc, dest);
-		return resolve_dest_rec(doc, dest, depth+1);
+		if (kind == FZ_LINK_GOTO)
+		{
+			dest = pdf_lookup_dest(doc, dest);
+			dest = resolve_dest_rec(doc, dest, kind, depth+1);
+		}
+
+		return dest;
 	}
 
 	else if (pdf_is_array(dest))
@@ -20,7 +25,7 @@ resolve_dest_rec(pdf_document *doc, pdf_obj *dest, int depth)
 	else if (pdf_is_dict(dest))
 	{
 		dest = pdf_dict_gets(dest, "D");
-		return resolve_dest_rec(doc, dest, depth+1);
+		return resolve_dest_rec(doc, dest, kind, depth+1);
 	}
 
 	else if (pdf_is_indirect(dest))
@@ -30,13 +35,13 @@ resolve_dest_rec(pdf_document *doc, pdf_obj *dest, int depth)
 }
 
 static pdf_obj *
-resolve_dest(pdf_document *doc, pdf_obj *dest)
+resolve_dest(pdf_document *doc, pdf_obj *dest, fz_link_kind kind)
 {
-	return resolve_dest_rec(doc, dest, 0);
+	return resolve_dest_rec(doc, dest, kind, 0);
 }
 
 fz_link_dest
-pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest)
+pdf_parse_link_dest(pdf_document *doc, fz_link_kind kind, pdf_obj *dest)
 {
 	fz_link_dest ld;
 	pdf_obj *obj;
@@ -49,17 +54,25 @@ pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest)
 	int t_from_2 = 0;
 	int z_from_4 = 0;
 
-	ld.kind = FZ_LINK_GOTO;
+	ld.kind = kind;
 	ld.ld.gotor.flags = 0;
 	ld.ld.gotor.lt.x = 0;
 	ld.ld.gotor.lt.y = 0;
 	ld.ld.gotor.rb.x = 0;
 	ld.ld.gotor.rb.y = 0;
+	ld.ld.gotor.page = -1;
+	ld.ld.gotor.dest = NULL;
 
-	dest = resolve_dest(doc, dest);
-	if (dest == NULL || !pdf_is_array(dest))
+	dest = resolve_dest(doc, dest, kind);
+
+	if (pdf_is_name(dest))
 	{
-		ld.kind = FZ_LINK_NONE;
+		ld.ld.gotor.dest = pdf_to_name(dest);
+		return ld;
+	}
+	else if (pdf_is_string(dest))
+	{
+		ld.ld.gotor.dest = pdf_to_str_buf(dest);
 		return ld;
 	}
 
@@ -244,7 +257,7 @@ pdf_parse_action(pdf_document *doc, pdf_obj *action)
 	if (!strcmp(pdf_to_name(obj), "GoTo"))
 	{
 		dest = pdf_dict_gets(action, "D");
-		ld = pdf_parse_link_dest(doc, dest);
+		ld = pdf_parse_link_dest(doc, FZ_LINK_GOTO, dest);
 	}
 	else if (!strcmp(pdf_to_name(obj), "URI"))
 	{
@@ -269,9 +282,8 @@ pdf_parse_action(pdf_document *doc, pdf_obj *action)
 	else if (!strcmp(pdf_to_name(obj), "GoToR"))
 	{
 		dest = pdf_dict_gets(action, "D");
-		ld = pdf_parse_link_dest(doc, dest);
-		ld.kind = FZ_LINK_GOTOR;
 		file_spec = pdf_dict_gets(action, "F");
+		ld = pdf_parse_link_dest(doc, FZ_LINK_GOTOR, dest);
 		ld.ld.gotor.file_spec = pdf_parse_file_spec(doc, file_spec);
 		ld.ld.gotor.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
@@ -298,7 +310,7 @@ pdf_load_link(pdf_document *doc, pdf_obj *dict, const fz_matrix *page_ctm)
 
 	obj = pdf_dict_gets(dict, "Dest");
 	if (obj)
-		ld = pdf_parse_link_dest(doc, obj);
+		ld = pdf_parse_link_dest(doc, FZ_LINK_GOTO, obj);
 	else
 	{
 		action = pdf_dict_gets(dict, "A");
