@@ -68,7 +68,7 @@ enum {
 		case.
 
 		gotor.new_window: If true, the destination should open in a
-		new window.
+		new window. Always false in the FZ_LINK_GOTO case.
 
 	For FZ_LINK_URI:
 

@@ -49,6 +49,13 @@ pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest)
 	int t_from_2 = 0;
 	int z_from_4 = 0;
 
+	ld.kind = FZ_LINK_GOTO;
+	ld.ld.gotor.flags = 0;
+	ld.ld.gotor.lt.x = 0;
+	ld.ld.gotor.lt.y = 0;
+	ld.ld.gotor.rb.x = 0;
+	ld.ld.gotor.rb.y = 0;
+
 	dest = resolve_dest(doc, dest);
 	if (dest == NULL || !pdf_is_array(dest))
 	{
@@ -71,15 +78,6 @@ pdf_parse_link_dest(pdf_document *doc, pdf_obj *dest)
 			return ld;
 		}
 	}
-
-	ld.kind = FZ_LINK_GOTO;
-	ld.ld.gotor.flags = 0;
-	ld.ld.gotor.lt.x = 0;
-	ld.ld.gotor.lt.y = 0;
-	ld.ld.gotor.rb.x = 0;
-	ld.ld.gotor.rb.y = 0;
-	ld.ld.gotor.file_spec = NULL;
-	ld.ld.gotor.new_window = 0;
 
 	obj = pdf_array_get(dest, 1);
 	if (!pdf_is_name(obj))
@@ -232,7 +230,7 @@ fz_link_dest
 pdf_parse_action(pdf_document *doc, pdf_obj *action)
 {
 	fz_link_dest ld;
-	pdf_obj *obj, *dest;
+	pdf_obj *obj, *dest, *file_spec;
 	fz_context *ctx = doc->ctx;
 
 	UNUSED(ctx);
@@ -253,12 +251,14 @@ pdf_parse_action(pdf_document *doc, pdf_obj *action)
 		ld.kind = FZ_LINK_URI;
 		ld.ld.uri.is_map = pdf_to_bool(pdf_dict_gets(action, "IsMap"));
 		ld.ld.uri.uri = pdf_to_utf8(doc, pdf_dict_gets(action, "URI"));
+		ld.ld.gotor.file_spec = NULL;
+		ld.ld.gotor.new_window = 0;
 	}
 	else if (!strcmp(pdf_to_name(obj), "Launch"))
 	{
 		ld.kind = FZ_LINK_LAUNCH;
-		dest = pdf_dict_gets(action, "F");
-		ld.ld.launch.file_spec = pdf_parse_file_spec(doc, dest);
+		file_spec = pdf_dict_gets(action, "F");
+		ld.ld.launch.file_spec = pdf_parse_file_spec(doc, file_spec);
 		ld.ld.launch.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	else if (!strcmp(pdf_to_name(obj), "Named"))
@@ -271,8 +271,8 @@ pdf_parse_action(pdf_document *doc, pdf_obj *action)
 		dest = pdf_dict_gets(action, "D");
 		ld = pdf_parse_link_dest(doc, dest);
 		ld.kind = FZ_LINK_GOTOR;
-		dest = pdf_dict_gets(action, "F");
-		ld.ld.gotor.file_spec = pdf_parse_file_spec(doc, dest);
+		file_spec = pdf_dict_gets(action, "F");
+		ld.ld.gotor.file_spec = pdf_parse_file_spec(doc, file_spec);
 		ld.ld.gotor.new_window = pdf_to_int(pdf_dict_gets(action, "NewWindow"));
 	}
 	return ld;
@@ -298,10 +298,7 @@ pdf_load_link(pdf_document *doc, pdf_obj *dict, const fz_matrix *page_ctm)
 
 	obj = pdf_dict_gets(dict, "Dest");
 	if (obj)
-	{
-		dest = resolve_dest(doc, obj);
-		ld = pdf_parse_link_dest(doc, dest);
-	}
+		ld = pdf_parse_link_dest(doc, obj);
 	else
 	{
 		action = pdf_dict_gets(dict, "A");
