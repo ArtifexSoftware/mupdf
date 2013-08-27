@@ -10,9 +10,19 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.net.Uri;
+import android.text.method.PasswordTransformationMethod;
 import android.view.LayoutInflater;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+
+/* This enum should be kept in line with the cooresponding C enum in mupdf.c */
+enum SignatureState {
+	NoSupport,
+	Unsigned,
+	Signed
+}
 
 abstract class PassClickResultVisitor {
 	public abstract void visitText(PassClickResultText result);
@@ -60,11 +70,11 @@ class PassClickResultChoice extends PassClickResult {
 }
 
 class PassClickResultSignature extends PassClickResult {
-	public final boolean isSigned;
+	public final SignatureState state;
 
-	public PassClickResultSignature(boolean _changed, boolean _isSigned) {
+	public PassClickResultSignature(boolean _changed, int _state) {
 		super(_changed);
-		isSigned = _isSigned;
+		state = SignatureState.values()[_state];
 	}
 
 	public void acceptVisitor(PassClickResultVisitor visitor) {
@@ -73,6 +83,7 @@ class PassClickResultSignature extends PassClickResult {
 }
 
 public class MuPDFPageView extends PageView implements MuPDFView {
+	final private FilePickerSupport mFilePickerSupport;
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
@@ -84,7 +95,10 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AlertDialog.Builder mChoiceEntryBuilder;
 	private AlertDialog.Builder mSigningDialogBuilder;
 	private AlertDialog.Builder mSignatureReportBuilder;
+	private AlertDialog.Builder mPasswordEntryBuilder;
+	private EditText mPasswordText;
 	private AlertDialog mTextEntry;
+	private AlertDialog mPasswordEntry;
 	private EditText mEditText;
 	private AsyncTask<String,Void,Boolean> mSetWidgetText;
 	private AsyncTask<String,Void,Void> mSetWidgetChoice;
@@ -92,10 +106,12 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<PointF[][],Void,Void> mAddInk;
 	private AsyncTask<Integer,Void,Void> mDeleteAnnotation;
 	private AsyncTask<Void,Void,String> mCheckSignature;
+	private AsyncTask<Void,Void,Boolean> mSign;
 	private Runnable changeReporter;
 
-	public MuPDFPageView(Context c, MuPDFCore core, Point parentSize) {
+	public MuPDFPageView(Context c, FilePickerSupport filePickerSupport, MuPDFCore core, Point parentSize) {
 		super(c, parentSize);
+		mFilePickerSupport = filePickerSupport;
 		mCore = core;
 		mTextEntryBuilder = new AlertDialog.Builder(c);
 		mTextEntryBuilder.setTitle(getContext().getString(R.string.fill_out_text_field));
@@ -137,8 +153,21 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 			public void onClick(DialogInterface dialog, int which) {
 				dialog.dismiss();
 			}
-
 		});
+		mSigningDialogBuilder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				FilePicker picker = new FilePicker(mFilePickerSupport) {
+					@Override
+					void onPick(Uri uri) {
+						signWithKeyFile(uri);
+					}
+				};
+
+				picker.pick();
+			}
+		});
+
 		mSignatureReportBuilder = new AlertDialog.Builder(c);
 		mSignatureReportBuilder.setTitle("Signature checked");
 		mSignatureReportBuilder.setPositiveButton(R.string.okay, new DialogInterface.OnClickListener() {
@@ -147,6 +176,59 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 				dialog.dismiss();
 			}
 		});
+
+		mPasswordText = new EditText(c);
+		mPasswordText.setInputType(EditorInfo.TYPE_TEXT_VARIATION_PASSWORD);
+		mPasswordText.setTransformationMethod(new PasswordTransformationMethod());
+
+		mPasswordEntryBuilder = new AlertDialog.Builder(c);
+		mPasswordEntryBuilder.setTitle(R.string.enter_password);
+		mPasswordEntryBuilder.setView(mPasswordText);
+		mPasswordEntryBuilder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.dismiss();
+			}
+		});
+
+		mPasswordEntry = mPasswordEntryBuilder.create();
+	}
+
+	private void signWithKeyFile(final Uri uri) {
+		mPasswordEntry.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+		mPasswordEntry.setButton(AlertDialog.BUTTON_POSITIVE, "Sign", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.dismiss();
+				signWithKeyFileAndPassword(uri, mPasswordText.getText().toString());
+			}
+		});
+
+		mPasswordEntry.show();
+	}
+
+	private void signWithKeyFileAndPassword(final Uri uri, final String password) {
+		mSign = new AsyncTask<Void,Void,Boolean>() {
+			@Override
+			protected Boolean doInBackground(Void... params) {
+				return mCore.signFocusedSignature(Uri.decode(uri.getEncodedPath()), password);
+			}
+			@Override
+			protected void onPostExecute(Boolean result) {
+				if (result)
+				{
+					changeReporter.run();
+				}
+				else
+				{
+					mPasswordText.setText("");
+					signWithKeyFile(uri);
+				}
+			}
+
+		};
+
+		mSign.execute();
 	}
 
 	public LinkInfo hitLink(float x, float y) {
@@ -214,6 +296,12 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 
 	private void invokeSigningDialog() {
 		AlertDialog dialog = mSigningDialogBuilder.create();
+		dialog.show();
+	}
+
+	private void warnNoSignatureSupport() {
+		AlertDialog dialog = mSignatureReportBuilder.create();
+		dialog.setTitle("App built with no signature support");
 		dialog.show();
 	}
 
@@ -287,10 +375,17 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 
 						@Override
 						public void visitSignature(PassClickResultSignature result) {
-							if (result.isSigned)
-								invokeSignatureCheckingDialog();
-							else
+							switch (result.state) {
+							case NoSupport:
+								warnNoSignatureSupport();
+								break;
+							case Unsigned:
 								invokeSigningDialog();
+								break;
+							case Signed:
+								invokeSignatureCheckingDialog();
+								break;
+							}
 						}
 					});
 				}

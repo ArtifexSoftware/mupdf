@@ -2177,7 +2177,15 @@ JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 	return NONE;
 }
 
-JNIEXPORT jboolean JNICALL
+/* This enum should be kept in line with SignatureState in MuPDFPageView.java */
+enum
+{
+	Signature_NoSupport,
+	Signature_Unsigned,
+	Signature_Signed
+};
+
+JNIEXPORT int JNICALL
 JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
@@ -2185,14 +2193,17 @@ JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
 	pdf_widget *focus;
 
 	if (idoc == NULL)
-		return JNI_FALSE;
+		return Signature_NoSupport;
 
 	focus = pdf_focused_widget(idoc);
 
 	if (focus == NULL)
-		return JNI_FALSE;
+		return Signature_NoSupport;
 
-	return pdf_dict_gets(((pdf_annot *)focus)->obj, "V") ? JNI_TRUE : JNI_FALSE;
+	if (!pdf_signatures_supported())
+		return Signature_NoSupport;
+
+	return pdf_dict_gets(((pdf_annot *)focus)->obj, "V") ? Signature_Signed : Signature_Unsigned;
 }
 
 JNIEXPORT jstring JNICALL
@@ -2218,6 +2229,45 @@ JNI_FN(MuPDFCore_checkFocusedSignatureInternal)(JNIEnv * env, jobject thiz)
 
 exit:
 	return (*env)->NewStringUTF(env, ebuf);
+}
+
+JNIEXPORT jboolean JNICALL
+JNI_FN(MuPDFCore_signFocusedSignatureInternal)(JNIEnv * env, jobject thiz, jstring jkeyfile, jstring jpassword)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	pdf_widget *focus;
+	const char *keyfile;
+	const char *password;
+	jboolean res;
+
+	if (idoc == NULL)
+		return JNI_FALSE;
+
+	focus = pdf_focused_widget(idoc);
+
+	if (focus == NULL)
+		return JNI_FALSE;
+
+	keyfile = (*env)->GetStringUTFChars(env, jkeyfile, NULL);
+	password = (*env)->GetStringUTFChars(env, jpassword, NULL);
+	if (keyfile == NULL || password == NULL)
+		return JNI_FALSE;
+
+	fz_var(res);
+	fz_try(ctx)
+	{
+		pdf_sign_signature(idoc, focus, keyfile, password);
+		dump_annotation_display_lists(glo);
+		res = JNI_TRUE;
+	}
+	fz_catch(ctx)
+	{
+		res = JNI_FALSE;
+	}
+
+	return res;
 }
 
 JNIEXPORT jobject JNICALL

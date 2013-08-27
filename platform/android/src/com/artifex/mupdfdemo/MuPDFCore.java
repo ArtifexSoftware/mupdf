@@ -49,8 +49,9 @@ public class MuPDFCore
 	private native void setFocusedWidgetChoiceSelectedInternal(String [] selected);
 	private native String [] getFocusedWidgetChoiceSelected();
 	private native String [] getFocusedWidgetChoiceOptions();
-	private native boolean getFocusedWidgetSignatureState();
+	private native int getFocusedWidgetSignatureState();
 	private native String checkFocusedSignatureInternal();
+	private native boolean signFocusedSignatureInternal(String keyFile, String password);
 	private native int setFocusedWidgetTextInternal(String text);
 	private native String getFocusedWidgetTextInternal();
 	private native int getFocusedWidgetTypeInternal();
@@ -207,6 +208,10 @@ public class MuPDFCore
 
 	public synchronized String checkFocusedSignature() {
 		return checkFocusedSignatureInternal();
+	}
+
+	public synchronized boolean signFocusedSignature(String keyFile, String password) {
+		return signFocusedSignatureInternal(keyFile, password);
 	}
 
 	public synchronized LinkInfo [] getPageLinks(int page) {

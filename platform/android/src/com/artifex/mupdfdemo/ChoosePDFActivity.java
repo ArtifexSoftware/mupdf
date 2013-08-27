@@ -21,6 +21,11 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.ListView;
 
+enum Purpose {
+	PickPDF,
+	PickKeyFile
+}
+
 public class ChoosePDFActivity extends ListActivity {
 	static private File  mDirectory;
 	static private Map<String, Integer> mPositions = new HashMap<String, Integer>();
@@ -30,10 +35,14 @@ public class ChoosePDFActivity extends ListActivity {
 	private Handler	     mHandler;
 	private Runnable     mUpdateFiles;
 	private ChoosePDFAdapter adapter;
+	private Purpose      mPurpose;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		mPurpose = Intent.ACTION_MAIN.equals(getIntent().getAction()) ? Purpose.PickPDF : Purpose.PickKeyFile;
+
 
 		String storageState = Environment.getExternalStorageState();
 
@@ -88,29 +97,38 @@ public class ChoosePDFActivity extends ListActivity {
 						if (file.isDirectory())
 							return false;
 						String fname = file.getName().toLowerCase();
-						if (fname.endsWith(".pdf"))
-							return true;
-						if (fname.endsWith(".xps"))
-							return true;
-						if (fname.endsWith(".cbz"))
-							return true;
-						if (fname.endsWith(".png"))
-							return true;
-						if (fname.endsWith(".jpe"))
-							return true;
-						if (fname.endsWith(".jpeg"))
-							return true;
-						if (fname.endsWith(".jpg"))
-							return true;
-						if (fname.endsWith(".jfif"))
-							return true;
-						if (fname.endsWith(".jfif-tbnl"))
-							return true;
-						if (fname.endsWith(".tif"))
-							return true;
-						if (fname.endsWith(".tiff"))
-							return true;
-						return false;
+						switch (mPurpose) {
+						case PickPDF:
+							if (fname.endsWith(".pdf"))
+								return true;
+							if (fname.endsWith(".xps"))
+								return true;
+							if (fname.endsWith(".cbz"))
+								return true;
+							if (fname.endsWith(".png"))
+								return true;
+							if (fname.endsWith(".jpe"))
+								return true;
+							if (fname.endsWith(".jpeg"))
+								return true;
+							if (fname.endsWith(".jpg"))
+								return true;
+							if (fname.endsWith(".jfif"))
+								return true;
+							if (fname.endsWith(".jfif-tbnl"))
+								return true;
+							if (fname.endsWith(".tif"))
+								return true;
+							if (fname.endsWith(".tiff"))
+								return true;
+							return false;
+						case PickKeyFile:
+							if (fname.endsWith(".pfx"))
+								return true;
+							return false;
+						default:
+							return false;
+						}
 					}
 				});
 				if (mFiles == null)
@@ -184,7 +202,17 @@ public class ChoosePDFActivity extends ListActivity {
 		Intent intent = new Intent(this,MuPDFActivity.class);
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(uri);
-		startActivity(intent);
+		switch (mPurpose) {
+		case PickPDF:
+			// Start an activity to display the PDF file
+			startActivity(intent);
+			break;
+		case PickKeyFile:
+			// Return the uri to the caller
+			setResult(RESULT_OK, intent);
+			finish();
+			break;
+		}
 	}
 
 	@Override
