@@ -1317,6 +1317,8 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf)
 
 			entry = pdf_get_xref_entry(doc, numbuf[i]);
 
+			pdf_set_obj_parent(obj, numbuf[i]);
+
 			if (entry->type == 'o' && entry->ofs == num)
 			{
 				/* If we already have an entry for this object,
