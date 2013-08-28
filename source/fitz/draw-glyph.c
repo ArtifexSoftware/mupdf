@@ -131,13 +131,47 @@ fz_keep_glyph_cache(fz_context *ctx)
 }
 
 fz_glyph *
-fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *stroke, fz_irect scissor)
+fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *stroke, const fz_irect *scissor)
 {
 	if (font->ft_face)
 	{
+		float size = fz_matrix_expansion(trm);
+		fz_matrix subpix_trm = *trm;
+		unsigned char qe, qf;
+		int q;
+		float pix_e, pix_f, r;
+
+		/* Quantise the subpixel positions. */
+		/* We never need more than 4 subpixel positions for glyphs - arguably
+		 * even that is too much. */
+		if (size >= 48)
+			q = 0, r = 0.5f;
+		else if (size >= 24)
+			q = 128, r = 0.25f;
+		else
+			q = 192, r = 0.125f;
+
+		/* Split translation into pixel and subpixel parts */
+		subpix_trm.e += r;
+		pix_e = floorf(subpix_trm.e);
+		subpix_trm.e -= pix_e;
+		subpix_trm.f += r;
+		pix_f = floorf(subpix_trm.f);
+		subpix_trm.f -= pix_f;
+
+		/* Quantise the subpixel part */
+		qe = (int)(subpix_trm.e * 256) & q;
+		qf = (int)(subpix_trm.f * 256) & q;
+		subpix_trm.e = qe / 256.0f;
+		subpix_trm.f = qf / 256.0f;
+
+		/* Reassemble the complete translation */
+		trm->e = subpix_trm.e + pix_e;
+		trm->f = subpix_trm.f + pix_f;
+
 		if (stroke->dash_len > 0)
 			return NULL;
-		return fz_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, stroke);
+		return fz_render_ft_stroked_glyph(ctx, font, gid, &subpix_trm, ctm, stroke);
 	}
 	return fz_render_glyph(ctx, font, gid, trm, NULL, scissor);
 }
@@ -188,23 +222,25 @@ move_to_front(fz_glyph_cache *cache, fz_glyph_cache_entry *entry)
 		This must not be inserted into the cache.
  */
 fz_glyph *
-fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, fz_colorspace *model, fz_irect scissor)
+fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_glyph_cache *cache;
 	fz_glyph_key key;
 	fz_glyph *val;
 	float size = fz_matrix_expansion(ctm);
 	int do_cache, locked, caching;
-	fz_matrix local_ctm = *ctm;
+	fz_matrix subpix_ctm = *ctm;
 	fz_glyph_cache_entry *entry;
 	unsigned hash;
+	int q;
+	float pix_e, pix_f, r;
 
 	fz_var(locked);
 	fz_var(caching);
 
 	if (size <= MAX_GLYPH_SIZE)
 	{
-		scissor = fz_infinite_irect;
+		scissor = &fz_infinite_irect;
 		do_cache = 1;
 	}
 	else
@@ -216,19 +252,42 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 
 	cache = ctx->glyph_cache;
 
+	/* Quantise the subpixel positions. */
+	/* We never need more than 4 subpixel positions for glyphs - arguably
+	 * even that is too much. */
+	if (size >= 48)
+		q = 0, r = 0.5f;
+	else if (size >= 24)
+		q = 128, r = 0.25f;
+	else
+		q = 192, r = 0.125f;
+
+	/* Split translation into pixel and subpixel parts */
+	subpix_ctm.e += r;
+	pix_e = floorf(subpix_ctm.e);
+	subpix_ctm.e -= pix_e;
+	subpix_ctm.f += r;
+	pix_f = floorf(subpix_ctm.f);
+	subpix_ctm.f -= pix_f;
+
 	memset(&key, 0, sizeof key);
 	key.font = font;
 	key.gid = gid;
-	key.a = local_ctm.a * 65536;
-	key.b = local_ctm.b * 65536;
-	key.c = local_ctm.c * 65536;
-	key.d = local_ctm.d * 65536;
-	key.e = (local_ctm.e - floorf(local_ctm.e)) * 256;
-	key.f = (local_ctm.f - floorf(local_ctm.f)) * 256;
+	key.a = subpix_ctm.a * 65536;
+	key.b = subpix_ctm.b * 65536;
+	key.c = subpix_ctm.c * 65536;
+	key.d = subpix_ctm.d * 65536;
 	key.aa = fz_aa_level(ctx);
 
-	local_ctm.e = floorf(local_ctm.e) + key.e / 256.0f;
-	local_ctm.f = floorf(local_ctm.f) + key.f / 256.0f;
+	/* Quantise the subpixel part */
+	key.e = (int)(subpix_ctm.e * 256) & q;
+	key.f = (int)(subpix_ctm.f * 256) & q;
+	subpix_ctm.e = key.e / 256.0f;
+	subpix_ctm.f = key.f / 256.0f;
+
+	/* Reassemble the complete translation */
+	ctm->e = subpix_ctm.e + pix_e;
+	ctm->f = subpix_ctm.f + pix_f;
 
 	fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 	hash = do_hash((unsigned char *)&key, sizeof(key)) % GLYPH_HASH_LEN;
@@ -252,7 +311,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 	{
 		if (font->ft_face)
 		{
-			val = fz_render_ft_glyph(ctx, font, gid, &local_ctm, key.aa);
+			val = fz_render_ft_glyph(ctx, font, gid, &subpix_ctm, key.aa);
 		}
 		else if (font->t3procs)
 		{
@@ -267,7 +326,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm, f
 			 */
 			fz_unlock(ctx, FZ_LOCK_GLYPHCACHE);
 			locked = 0;
-			val = fz_render_t3_glyph(ctx, font, gid, &local_ctm, model, scissor);
+			val = fz_render_t3_glyph(ctx, font, gid, &subpix_ctm, model, scissor);
 			fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 			locked = 1;
 		}

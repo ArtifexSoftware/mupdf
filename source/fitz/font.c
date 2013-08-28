@@ -934,7 +934,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm,
 }
 
 fz_glyph *
-fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, fz_irect scissor)
+fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_display_list *list;
 	fz_matrix ctm;
@@ -970,7 +970,7 @@ fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 
 	fz_expand_rect(fz_bound_glyph(ctx, font, gid, trm, &bounds), 1);
 	fz_irect_from_rect(&bbox, &bounds);
-	fz_intersect_irect(&bbox, &scissor);
+	fz_intersect_irect(&bbox, scissor);
 
 	glyph = fz_new_pixmap_with_bbox(ctx, model ? model : fz_device_gray(ctx), &bbox);
 	fz_clear_pixmap(ctx, glyph);
