@@ -432,52 +432,64 @@ fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
  */
 
 void
-fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
+fz_output_pnm_header(fz_output *out, int w, int h, int n)
 {
-	FILE *fp;
-	unsigned char *p;
-	int len;
+	fz_context *ctx = out->ctx;
 
-	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
+	if (n != 1 && n != 2 && n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
 
-	fp = fopen(filename, "wb");
-	if (!fp)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
+	if (n == 1 || n == 2)
+		fz_printf(out, "P5\n");
+	if (n == 4)
+		fz_printf(out, "P6\n");
+	fz_printf(out, "%d %d\n", w, h);
+	fz_printf(out, "255\n");
+}
 
-	if (pixmap->n == 1 || pixmap->n == 2)
-		fprintf(fp, "P5\n");
-	if (pixmap->n == 4)
-		fprintf(fp, "P6\n");
-	fprintf(fp, "%d %d\n", pixmap->w, pixmap->h);
-	fprintf(fp, "255\n");
+void
+fz_output_pnm_band(fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *p)
+{
+	int len;
+	int start = band * bandheight;
+	int end = start + bandheight;
 
-	len = pixmap->w * pixmap->h;
-	p = pixmap->samples;
+	if (end > h)
+		end = h;
+	end -= start;
 
-	switch (pixmap->n)
+	len = w * end;
+
+	switch (n)
 	{
 	case 1:
-		fwrite(p, 1, len, fp);
+		fz_write(out, p, len);
 		break;
 	case 2:
 		while (len--)
 		{
-			putc(p[0], fp);
+			fz_putc(out, p[0]);
 			p += 2;
 		}
 		break;
 	case 4:
 		while (len--)
 		{
-			putc(p[0], fp);
-			putc(p[1], fp);
-			putc(p[2], fp);
+			fz_putc(out, p[0]);
+			fz_putc(out, p[1]);
+			fz_putc(out, p[2]);
 			p += 4;
 		}
 	}
+}
 
-	fclose(fp);
+void
+fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
+{
+	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_output_pnm_header(out, pixmap->w, pixmap->h, pixmap->n);
+	fz_output_pnm_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
+	fz_close_output(out);
 }
 
 /*
@@ -485,50 +497,64 @@ fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
  */
 
 void
-fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
+fz_output_pam_header(fz_output *out, int w, int h, int n, fz_colorspace *cs, int savealpha)
 {
-	unsigned char *sp;
-	int y, w, k;
-	FILE *fp;
-
-	int sn = pixmap->n;
-	int dn = pixmap->n;
+	int sn = n;
+	int dn = n;
 	if (!savealpha && dn > 1)
 		dn--;
 
-	fp = fopen(filename, "wb");
-	if (!fp)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-
-	fprintf(fp, "P7\n");
-	fprintf(fp, "WIDTH %d\n", pixmap->w);
-	fprintf(fp, "HEIGHT %d\n", pixmap->h);
-	fprintf(fp, "DEPTH %d\n", dn);
-	fprintf(fp, "MAXVAL 255\n");
-	if (pixmap->colorspace)
-		fprintf(fp, "# COLORSPACE %s\n", pixmap->colorspace->name);
+	fz_printf(out, "P7\n");
+	fz_printf(out, "WIDTH %d\n", w);
+	fz_printf(out, "HEIGHT %d\n", h);
+	fz_printf(out, "DEPTH %d\n", dn);
+	fz_printf(out, "MAXVAL 255\n");
+	if (cs)
+		fz_printf(out, "# COLORSPACE %s\n", cs->name);
 	switch (dn)
 	{
-	case 1: fprintf(fp, "TUPLTYPE GRAYSCALE\n"); break;
-	case 2: if (sn == 2) fprintf(fp, "TUPLTYPE GRAYSCALE_ALPHA\n"); break;
-	case 3: if (sn == 4) fprintf(fp, "TUPLTYPE RGB\n"); break;
-	case 4: if (sn == 4) fprintf(fp, "TUPLTYPE RGB_ALPHA\n"); break;
+	case 1: fz_printf(out, "TUPLTYPE GRAYSCALE\n"); break;
+	case 2: if (sn == 2) fz_printf(out, "TUPLTYPE GRAYSCALE_ALPHA\n"); break;
+	case 3: if (sn == 4) fz_printf(out, "TUPLTYPE RGB\n"); break;
+	case 4: if (sn == 4) fz_printf(out, "TUPLTYPE RGB_ALPHA\n"); break;
 	}
-	fprintf(fp, "ENDHDR\n");
+	fz_printf(out, "ENDHDR\n");
+}
 
-	sp = pixmap->samples;
-	for (y = 0; y < pixmap->h; y++)
+void
+fz_output_pam_band(fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha)
+{
+	int y, x, k;
+	int start = band * bandheight;
+	int end = start + bandheight;
+	int sn = n;
+	int dn = n;
+	if (!savealpha && dn > 1)
+		dn--;
+
+	if (end > h)
+		end = h;
+	end -= start;
+
+	for (y = 0; y < end; y++)
 	{
-		w = pixmap->w;
-		while (w--)
+		x = w;
+		while (x--)
 		{
 			for (k = 0; k < dn; k++)
-				putc(sp[k], fp);
+				fz_putc(out, sp[k]);
 			sp += sn;
 		}
 	}
+}
 
-	fclose(fp);
+void
+fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
+{
+	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_output_pam_header(out, pixmap->w, pixmap->h, pixmap->n, pixmap->colorspace, savealpha);
+	fz_output_pam_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
+	fz_close_output(out);
 }
 
 /*
@@ -560,25 +586,20 @@ static void putchunk(char *tag, unsigned char *data, int size, fz_output *out)
 void
 fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
-	FILE *fp = fopen(filename, "wb");
-	fz_output *out = NULL;
+	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_png_output_context *poc = NULL;
 
-	if (!fp)
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-	}
-
-	fz_var(out);
+	fz_var(poc);
 
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file(ctx, fp);
-		fz_output_png(out, pixmap, savealpha);
+		poc = fz_output_png_header(out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+		fz_output_png_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
 	}
 	fz_always(ctx)
 	{
+		fz_output_png_trailer(out, poc);
 		fz_close_output(out);
-		fclose(fp);
 	}
 	fz_catch(ctx)
 	{
@@ -589,30 +610,59 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 void
 fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha)
 {
-	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
-	unsigned char head[13];
-	unsigned char *udata = NULL;
-	unsigned char *cdata = NULL;
-	unsigned char *sp, *dp;
-	uLong usize, csize;
-	int y, x, k, sn, dn;
-	int color;
-	int err;
+	fz_png_output_context *poc;
 	fz_context *ctx;
 
-	if (!out || !pixmap)
+	if (!out)
 		return;
 
 	ctx = out->ctx;
+	poc = fz_output_png_header(out, pixmap->w, pixmap->h, pixmap->n, savealpha);
 
-	fz_var(udata);
-	fz_var(cdata);
+	fz_try(ctx)
+	{
+		fz_output_png_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
+	}
+	fz_always(ctx)
+	{
+		fz_output_png_trailer(out, poc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
 
-	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
+struct fz_png_output_context_s
+{
+	unsigned char *udata;
+	unsigned char *cdata;
+	uLong usize, csize;
+	z_stream stream;
+};
+
+fz_png_output_context *
+fz_output_png_header(fz_output *out, int w, int h, int n, int savealpha)
+{
+	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+	unsigned char head[13];
+	fz_context *ctx;
+	int color;
+	int sn, dn;
+	fz_png_output_context *poc;
+
+	if (!out)
+		return NULL;
+
+	ctx = out->ctx;
+
+	if (n != 1 && n != 2 && n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
 
-	sn = pixmap->n;
-	dn = pixmap->n;
+	poc = fz_malloc_struct(ctx, fz_png_output_context);
+
+	sn = n;
+	dn = n;
 	if (!savealpha && dn > 1)
 		dn--;
 
@@ -625,25 +675,76 @@ fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha)
 	case 4: color = 6; break;
 	}
 
-	usize = (pixmap->w * dn + 1) * pixmap->h;
-	csize = compressBound(usize);
-	fz_try(ctx)
+	big32(head+0, w);
+	big32(head+4, h);
+	head[8] = 8; /* depth */
+	head[9] = color;
+	head[10] = 0; /* compression */
+	head[11] = 0; /* filter */
+	head[12] = 0; /* interlace */
+
+	fz_write(out, pngsig, 8);
+	putchunk("IHDR", head, 13, out);
+
+	return poc;
+}
+
+void
+fz_output_png_band(fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha, fz_png_output_context *poc)
+{
+	unsigned char *dp;
+	int y, x, k, sn, dn, err, finalband;
+	fz_context *ctx;
+
+	if (!out || !sp || !poc)
+		return;
+
+	ctx = out->ctx;
+
+	if (n != 1 && n != 2 && n != 4)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
+
+	band *= bandheight;
+	finalband = (band+bandheight >= h);
+	if (finalband)
+		bandheight = h - band;
+
+	sn = n;
+	dn = n;
+	if (!savealpha && dn > 1)
+		dn--;
+
+	if (poc->udata == NULL)
 	{
-		udata = fz_malloc(ctx, usize);
-		cdata = fz_malloc(ctx, csize);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, udata);
-		fz_rethrow(ctx);
+		poc->usize = (w * dn + 1) * bandheight;
+		/* Sadly the bound returned by compressBound is just for a
+		 * single usize chunk; if you compress a sequence of them
+		 * the buffering can result in you suddenly getting a block
+		 * larger than compressBound outputted in one go, even if you
+		 * take all the data out each time. */
+		poc->csize = compressBound(poc->usize);
+		fz_try(ctx)
+		{
+			poc->udata = fz_malloc(ctx, poc->usize);
+			poc->cdata = fz_malloc(ctx, poc->csize);
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, poc->udata);
+			poc->udata = NULL;
+			poc->cdata = NULL;
+			fz_rethrow(ctx);
+		}
+		err = deflateInit(&poc->stream, Z_DEFAULT_COMPRESSION);
+		if (err != Z_OK)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 	}
 
-	sp = pixmap->samples;
-	dp = udata;
-	for (y = 0; y < pixmap->h; y++)
+	dp = poc->udata;
+	for (y = 0; y < bandheight; y++)
 	{
 		*dp++ = 1; /* sub prediction filter */
-		for (x = 0; x < pixmap->w; x++)
+		for (x = 0; x < w; x++)
 		{
 			for (k = 0; k < dn; k++)
 			{
@@ -657,30 +758,55 @@ fz_output_png(fz_output *out, const fz_pixmap *pixmap, int savealpha)
 		}
 	}
 
-	err = compress(cdata, &csize, udata, usize);
-	if (err != Z_OK)
+	poc->stream.next_in = (Bytef*)poc->udata;
+	poc->stream.avail_in = (uInt)(dp - poc->udata);
+	do
 	{
-		fz_free(ctx, udata);
-		fz_free(ctx, cdata);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot compress image data");
+		poc->stream.next_out = poc->cdata;
+		poc->stream.avail_out = (uInt)poc->csize;
+
+		if (!finalband)
+		{
+			err = deflate(&poc->stream, Z_NO_FLUSH);
+			if (err != Z_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
+		}
+		else
+		{
+			err = deflate(&poc->stream, Z_FINISH);
+			if (err != Z_STREAM_END)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
+		}
+
+		if (poc->stream.next_out != poc->cdata)
+			putchunk("IDAT", poc->cdata, poc->stream.next_out - poc->cdata, out);
 	}
-
-	big32(head+0, pixmap->w);
-	big32(head+4, pixmap->h);
-	head[8] = 8; /* depth */
-	head[9] = color;
-	head[10] = 0; /* compression */
-	head[11] = 0; /* filter */
-	head[12] = 0; /* interlace */
-
-	fz_write(out, pngsig, 8);
-	putchunk("IHDR", head, 13, out);
-	putchunk("IDAT", cdata, csize, out);
-	putchunk("IEND", head, 0, out);
-
-	fz_free(ctx, udata);
-	fz_free(ctx, cdata);
+	while (poc->stream.avail_out == 0);
 }
+
+void
+fz_output_png_trailer(fz_output *out, fz_png_output_context *poc)
+{
+	unsigned char block[1];
+	int err;
+	fz_context *ctx;
+
+	if (!out || !poc)
+		return;
+
+	ctx = out->ctx;
+
+	err = deflateEnd(&poc->stream);
+	if (err != Z_OK)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
+
+	fz_free(ctx, poc->cdata);
+	fz_free(ctx, poc->udata);
+	fz_free(ctx, poc);
+
+	putchunk("IEND", block, 0, out);
+}
+
 
 fz_buffer *
 fz_image_as_png(fz_context *ctx, fz_image *image, int w, int h)
