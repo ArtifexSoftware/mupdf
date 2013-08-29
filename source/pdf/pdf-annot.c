@@ -293,7 +293,6 @@ pdf_parse_action(pdf_document *doc, pdf_obj *action)
 static fz_link *
 pdf_load_link(pdf_document *doc, pdf_obj *dict, const fz_matrix *page_ctm)
 {
-	pdf_obj *dest = NULL;
 	pdf_obj *action;
 	pdf_obj *obj;
 	fz_rect bbox;
