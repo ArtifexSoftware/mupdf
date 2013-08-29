@@ -176,6 +176,52 @@ fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm,
 	return fz_render_glyph(ctx, font, gid, trm, NULL, scissor);
 }
 
+fz_pixmap *
+fz_render_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *stroke, const fz_irect *scissor)
+{
+	if (font->ft_face)
+	{
+		float size = fz_matrix_expansion(trm);
+		fz_matrix subpix_trm = *trm;
+		unsigned char qe, qf;
+		int q;
+		float pix_e, pix_f, r;
+
+		/* Quantise the subpixel positions. */
+		/* We never need more than 4 subpixel positions for glyphs - arguably
+		 * even that is too much. */
+		if (size >= 48)
+			q = 0, r = 0.5f;
+		else if (size >= 24)
+			q = 128, r = 0.25f;
+		else
+			q = 192, r = 0.125f;
+
+		/* Split translation into pixel and subpixel parts */
+		subpix_trm.e += r;
+		pix_e = floorf(subpix_trm.e);
+		subpix_trm.e -= pix_e;
+		subpix_trm.f += r;
+		pix_f = floorf(subpix_trm.f);
+		subpix_trm.f -= pix_f;
+
+		/* Quantise the subpixel part */
+		qe = (int)(subpix_trm.e * 256) & q;
+		qf = (int)(subpix_trm.f * 256) & q;
+		subpix_trm.e = qe / 256.0f;
+		subpix_trm.f = qf / 256.0f;
+
+		/* Reassemble the complete translation */
+		trm->e = subpix_trm.e + pix_e;
+		trm->f = subpix_trm.f + pix_f;
+
+		if (stroke->dash_len > 0)
+			return NULL;
+		return fz_render_ft_stroked_glyph_pixmap(ctx, font, gid, &subpix_trm, ctm, stroke);
+	}
+	return fz_render_glyph_pixmap(ctx, font, gid, trm, NULL, scissor);
+}
+
 static unsigned do_hash(unsigned char *s, int len)
 {
 	unsigned val = 0;
@@ -212,15 +258,6 @@ move_to_front(fz_glyph_cache *cache, fz_glyph_cache_entry *entry)
 	entry->lru_prev = NULL;
 }
 
-/*
-	Render a glyph and return a bitmap.
-	If the glyph is too large to fit the cache we have two choices:
-	1) Return NULL so the caller can draw the glyph using an outline.
-		Only supported for freetype fonts.
-	2) Render a clipped glyph by using the scissor rectangle.
-		Only supported for type 3 fonts.
-		This must not be inserted into the cache.
- */
 fz_glyph *
 fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
 {
@@ -402,6 +439,78 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 			fz_warn(ctx, "cannot encache glyph; continuing");
 		else
 			fz_rethrow(ctx);
+	}
+
+	return val;
+}
+
+fz_pixmap *
+fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
+{
+	fz_pixmap *val;
+	float size = fz_matrix_expansion(ctm);
+	fz_matrix subpix_ctm = *ctm;
+	int q;
+	float pix_e, pix_f, r;
+	unsigned char qe, qf;
+
+	if (size <= MAX_GLYPH_SIZE)
+	{
+		scissor = &fz_infinite_irect;
+	}
+	else
+	{
+		if (font->ft_face)
+			return NULL;
+	}
+
+	/* Quantise the subpixel positions. */
+	/* We never need more than 4 subpixel positions for glyphs - arguably
+	 * even that is too much. */
+	if (size >= 48)
+		q = 0, r = 0.5f;
+	else if (size >= 24)
+		q = 128, r = 0.25f;
+	else
+		q = 192, r = 0.125f;
+
+	/* Split translation into pixel and subpixel parts */
+	subpix_ctm.e += r;
+	pix_e = floorf(subpix_ctm.e);
+	subpix_ctm.e -= pix_e;
+	subpix_ctm.f += r;
+	pix_f = floorf(subpix_ctm.f);
+	subpix_ctm.f -= pix_f;
+
+	/* Quantise the subpixel part */
+	qe = (int)(subpix_ctm.e * 256) & q;
+	qf = (int)(subpix_ctm.f * 256) & q;
+	subpix_ctm.e = qe / 256.0f;
+	subpix_ctm.f = qf / 256.0f;
+
+	/* Reassemble the complete translation */
+	ctm->e = subpix_ctm.e + pix_e;
+	ctm->f = subpix_ctm.f + pix_f;
+
+	fz_try(ctx)
+	{
+		if (font->ft_face)
+		{
+			val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, fz_aa_level(ctx));
+		}
+		else if (font->t3procs)
+		{
+			val = fz_render_t3_glyph_pixmap(ctx, font, gid, &subpix_ctm, model, scissor);
+		}
+		else
+		{
+			fz_warn(ctx, "assert: uninitialized font structure");
+			val = NULL;
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 
 	return val;
