@@ -262,6 +262,13 @@ MUVIEW_CURL := $(MUVIEW_X11_CURL)
 
 INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST_V8) $(MUVIEW_V8) $(MUVIEW_CURL)
 
+# --- Update version string header ---
+
+VERSION = $(shell git describe --tags)
+
+version:
+	sed -i~ -e '/FZ_VERSION /s/".*"/"'$(VERSION)'"/' include/mupdf/fitz/version.h
+
 # --- Format man pages ---
 
 %.txt: %.1
