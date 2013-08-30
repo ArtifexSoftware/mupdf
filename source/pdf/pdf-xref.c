@@ -114,6 +114,10 @@ pdf_xref_entry *pdf_get_populating_xref_entry(pdf_document *doc, int num)
 		doc->num_xref_sections = 1;
 	}
 
+	/* Prevent accidental heap underflow */
+	if (num < 0)
+		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "object number must not be negative (%d)", num);
+
 	/* Ensure all xref sections map this entry */
 	for (i = doc->num_xref_sections - 1; i >= 0; i--)
 	{
@@ -421,7 +425,8 @@ pdf_read_old_xref(pdf_document *doc, pdf_lexbuf *buf)
 	int xref_len = pdf_xref_size_from_old_trailer(doc, buf);
 
 	/* Access last entry to ensure xref size up front and avoid reallocs */
-	(void)pdf_get_populating_xref_entry(doc, xref_len - 1);
+	if (xref_len > 0)
+		(void)pdf_get_populating_xref_entry(doc, xref_len - 1);
 
 	fz_read_line(doc->file, buf->scratch, buf->size);
 	if (strncmp(buf->scratch, "xref", 4) != 0)
@@ -580,10 +585,8 @@ pdf_read_new_xref(pdf_document *doc, pdf_lexbuf *buf)
 
 		size = pdf_to_int(obj);
 		/* Access xref entry to assure table size */
-		(void)pdf_get_populating_xref_entry(doc, size-1);
-
-		if (num < 0 || num >= pdf_xref_len(doc))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "object id (%d %d R) out of range (0..%d)", num, gen, pdf_xref_len(doc) - 1);
+		if (size > 0)
+			(void)pdf_get_populating_xref_entry(doc, size-1);
 
 		obj = pdf_dict_gets(trailer, "W");
 		if (!obj)
