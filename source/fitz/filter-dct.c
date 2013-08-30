@@ -8,6 +8,8 @@ typedef struct fz_dctd_s fz_dctd;
 struct fz_dctd_s
 {
 	fz_stream *chain;
+	fz_stream *jpegtables;
+	fz_stream *curr_stm;
 	fz_context *ctx;
 	int color_transform;
 	int init;
@@ -43,21 +45,21 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 {
 	struct jpeg_source_mgr *src = cinfo->src;
 	fz_dctd *state = cinfo->client_data;
-	fz_stream *chain = state->chain;
-	fz_context *ctx = chain->ctx;
+	fz_stream *curr_stm = state->curr_stm;
+	fz_context *ctx = curr_stm->ctx;
 
-	chain->rp = chain->wp;
+	curr_stm->rp = curr_stm->wp;
 	fz_try(ctx)
 	{
-		fz_fill_buffer(chain);
+		fz_fill_buffer(curr_stm);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		return 0;
 	}
-	src->next_input_byte = chain->rp;
-	src->bytes_in_buffer = chain->wp - chain->rp;
+	src->next_input_byte = curr_stm->rp;
+	src->bytes_in_buffer = curr_stm->wp - curr_stm->rp;
 
 	if (src->bytes_in_buffer == 0)
 	{
@@ -96,7 +98,7 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 	if (setjmp(state->jb))
 	{
 		if (cinfo->src)
-			state->chain->rp = state->chain->wp - cinfo->src->bytes_in_buffer;
+			state->curr_stm->rp = state->curr_stm->wp - cinfo->src->bytes_in_buffer;
 		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "jpeg error: %s", state->msg);
 	}
 
@@ -120,8 +122,20 @@ read_dctd(fz_stream *stm, unsigned char *buf, int len)
 		cinfo->src->skip_input_data = skip_input_data;
 		cinfo->src->resync_to_restart = jpeg_resync_to_restart;
 		cinfo->src->term_source = term_source;
-		cinfo->src->next_input_byte = state->chain->rp;
-		cinfo->src->bytes_in_buffer = state->chain->wp - state->chain->rp;
+
+		/* optionally load additional JPEG tables first */
+		if (state->jpegtables)
+		{
+			state->curr_stm = state->jpegtables;
+			cinfo->src->next_input_byte = state->curr_stm->rp;
+			cinfo->src->bytes_in_buffer = state->curr_stm->wp - state->curr_stm->rp;
+			jpeg_read_header(cinfo, 0);
+			state->curr_stm->rp = state->curr_stm->wp - state->cinfo.src->bytes_in_buffer;
+			state->curr_stm = state->chain;
+		}
+
+		cinfo->src->next_input_byte = state->curr_stm->rp;
+		cinfo->src->bytes_in_buffer = state->curr_stm->wp - state->curr_stm->rp;
 
 		jpeg_read_header(cinfo, 1);
 
@@ -212,24 +226,19 @@ close_dctd(fz_context *ctx, void *state_)
 
 skip:
 	if (state->cinfo.src)
-		state->chain->rp = state->chain->wp - state->cinfo.src->bytes_in_buffer;
+		state->curr_stm->rp = state->curr_stm->wp - state->cinfo.src->bytes_in_buffer;
 	if (state->init)
 		jpeg_destroy_decompress(&state->cinfo);
 
 	fz_free(ctx, state->scanline);
 	fz_close(state->chain);
+	fz_close(state->jpegtables);
 	fz_free(ctx, state);
 }
 
-/* Default: color_transform = -1 (unset) */
+/* Default: color_transform = -1 (unset), l2factor = 0, jpegtables = NULL */
 fz_stream *
-fz_open_dctd(fz_stream *chain, int color_transform)
-{
-	return fz_open_resized_dctd(chain, color_transform, 0);
-}
-
-fz_stream *
-fz_open_resized_dctd(fz_stream *chain, int color_transform, int l2factor)
+fz_open_dctd(fz_stream *chain, int color_transform, int l2factor, fz_stream *jpegtables)
 {
 	fz_context *ctx = chain->ctx;
 	fz_dctd *state = NULL;
@@ -241,6 +250,8 @@ fz_open_resized_dctd(fz_stream *chain, int color_transform, int l2factor)
 		state = fz_malloc_struct(chain->ctx, fz_dctd);
 		state->ctx = ctx;
 		state->chain = chain;
+		state->jpegtables = jpegtables;
+		state->curr_stm = chain;
 		state->color_transform = color_transform;
 		state->init = 0;
 		state->l2factor = l2factor;
@@ -249,6 +260,7 @@ fz_open_resized_dctd(fz_stream *chain, int color_transform, int l2factor)
 	{
 		fz_free(ctx, state);
 		fz_close(chain);
+		fz_close(jpegtables);
 		fz_rethrow(ctx);
 	}
 

@@ -108,7 +108,7 @@ build_filter(fz_stream *chain, pdf_document *doc, pdf_obj *f, pdf_obj *p, int nu
 			params->u.jpeg.color_transform = (ct ? pdf_to_int(ct) : -1);
 			return chain;
 		}
-		return fz_open_dctd(chain, ct ? pdf_to_int(ct) : -1);
+		return fz_open_dctd(chain, ct ? pdf_to_int(ct) : -1, 0, NULL);
 	}
 
 	else if (!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL"))

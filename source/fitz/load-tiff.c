@@ -186,7 +186,11 @@ fz_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, unsigned char 
 static void
 fz_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
-	fz_stream *stm = fz_open_dctd(chain, -1);
+	fz_stream *stm;
+	fz_stream *jpegtables = NULL;
+	if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
+		jpegtables = fz_open_memory(tiff->ctx, tiff->jpegtables, (int)tiff->jpegtableslen);
+	stm = fz_open_dctd(chain, -1, 0, jpegtables);
 	fz_read(stm, wp, wlen);
 	fz_close(stm);
 }
@@ -660,7 +664,6 @@ fz_read_tiff_tag(struct tiff *tiff, unsigned offset)
 		break;
 
 	case JPEGTables:
-		fz_warn(tiff->ctx, "jpeg tables in tiff not implemented");
 		tiff->jpegtables = tiff->bp + value;
 		tiff->jpegtableslen = count;
 		break;

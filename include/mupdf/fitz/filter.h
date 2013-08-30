@@ -15,8 +15,7 @@ fz_stream *fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen);
 fz_stream *fz_open_a85d(fz_stream *chain);
 fz_stream *fz_open_ahxd(fz_stream *chain);
 fz_stream *fz_open_rld(fz_stream *chain);
-fz_stream *fz_open_dctd(fz_stream *chain, int color_transform);
-fz_stream *fz_open_resized_dctd(fz_stream *chain, int color_transform, int l2factor);
+fz_stream *fz_open_dctd(fz_stream *chain, int color_transform, int l2factor, fz_stream *jpegtables);
 fz_stream *fz_open_faxd(fz_stream *chain,
 	int k, int end_of_line, int encoded_byte_align,
 	int columns, int rows, int end_of_block, int black_is_1);
