@@ -86,9 +86,14 @@ pdf_load_xobject(pdf_document *doc, pdf_obj *dict)
 			obj = pdf_dict_gets(attrs, "CS");
 			if (obj)
 			{
-				form->colorspace = pdf_load_colorspace(doc, obj);
-				if (!form->colorspace)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load xobject colorspace");
+				fz_try(ctx)
+				{
+					form->colorspace = pdf_load_colorspace(doc, obj);
+				}
+				fz_catch(ctx)
+				{
+					fz_warn(ctx, "cannot load xobject colorspace");
+				}
 			}
 		}
 
