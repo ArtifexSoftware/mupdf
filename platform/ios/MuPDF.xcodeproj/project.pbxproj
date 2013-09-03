@@ -30,6 +30,16 @@
 		96E1CDF41779A60700FCF717 /* x_alt_blue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		963AD8CF17D60084000B0779 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 968E1E351779A54F0050CEA3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 963AD8CB17D5FFD9000B0779;
+			remoteInfo = Generate;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		968E1E3D1779A54F0050CEA3 /* MuPDF.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MuPDF.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		968E1E401779A54F0050CEA3 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -132,6 +142,23 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXLegacyTarget section */
+		963AD8CB17D5FFD9000B0779 /* Generate */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = generate;
+			buildConfigurationList = 963AD8CE17D5FFD9000B0779 /* Build configuration list for PBXLegacyTarget "Generate" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = ../..;
+			dependencies = (
+			);
+			name = Generate;
+			passBuildSettingsInEnvironment = 1;
+			productName = Generate;
+		};
+/* End PBXLegacyTarget section */
+
 /* Begin PBXNativeTarget section */
 		968E1E3C1779A54F0050CEA3 /* MuPDF */ = {
 			isa = PBXNativeTarget;
@@ -145,6 +172,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				963AD8D017D60084000B0779 /* PBXTargetDependency */,
 			);
 			name = MuPDF;
 			productName = MuPDF;
@@ -173,6 +201,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				963AD8CB17D5FFD9000B0779 /* Generate */,
 				968E1E3C1779A54F0050CEA3 /* MuPDF */,
 			);
 		};
@@ -232,60 +261,40 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		963AD8D017D60084000B0779 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 963AD8CB17D5FFD9000B0779 /* Generate */;
+			targetProxy = 963AD8CF17D60084000B0779 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		963AD8CC17D5FFD9000B0779 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		963AD8CD17D5FFD9000B0779 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 		968E1E581779A54F0050CEA3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
 		968E1E591779A54F0050CEA3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
-				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
-				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -293,12 +302,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SDKROOT = iphoneos;
 				USER_HEADER_SEARCH_PATHS = ../../include;
-				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
 		};
@@ -306,18 +312,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SDKROOT = iphoneos;
 				USER_HEADER_SEARCH_PATHS = ../../include;
-				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		963AD8CE17D5FFD9000B0779 /* Build configuration list for PBXLegacyTarget "Generate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				963AD8CC17D5FFD9000B0779 /* Debug */,
+				963AD8CD17D5FFD9000B0779 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		968E1E381779A54F0050CEA3 /* Build configuration list for PBXProject "MuPDF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

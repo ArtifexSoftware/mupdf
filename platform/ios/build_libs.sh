@@ -4,32 +4,28 @@
 # cross compile MuPDF and third party libraries using the regular Makefile.
 # Also see "iOS" section in Makerules.
 
-echo Generating cmap and font files
-echo "Apple broke Xcode external targets yet again, and I can't be bothered to fix it."
-echo "Run the 'make generate' command manually from now on!"
-echo "If you see an error while running GEN, you've forgotten."
-
-# make -C .. verbose=yes generate || exit 1
+if [ ! -e ../../generated/gen_cmap_korea.h ]
+then
+	echo 'ERROR: You are missing the generated files.'
+	echo 'ERROR: Please run "make generate" from the mupdf directory.'
+	exit 1
+fi
 
 export OS=ios
 export build=$(echo $CONFIGURATION | tr A-Z a-z)
 
-case $ARCHS in
-	armv6) ARCHFLAGS="-arch armv6 -mno-thumb" ;;
-	armv7) ARCHFLAGS="-arch armv7 -mthumb" ;;
-	i386) ARCHFLAGS="-arch i386" ;;
-	*) echo "Unknown architecture:" $ARCHS; exit 1 ;;
-esac
+FLAGS=""
+for A in $ARCHS
+do
+	FLAGS="$FLAGS -arch $A"
+done
 
-export CFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
-export LDFLAGS="$ARCHFLAGS -isysroot $SDKROOT"
+OUT=build/$build-$OS-$(echo $ARCHS | tr ' ' '-')
 
-OUT=build/$build-$OS-$ARCHS
+echo Compiling libraries for $ARCHS.
+make -j4 -C ../.. OUT=$OUT XCFLAGS="$FLAGS" XLDFLAGS="$FLAGS" third libs || exit 1
 
-echo Building libraries for $ARCHS.
-make -C ../.. OUT=$OUT third libs || exit 1
-
-echo Assembling final library in $TARGET_BUILD_DIR/.
+echo Copying library to $TARGET_BUILD_DIR/.
 mkdir -p "$TARGET_BUILD_DIR"
 cp -f ../../$OUT/lib*.a $TARGET_BUILD_DIR
 ranlib $TARGET_BUILD_DIR/lib*.a
