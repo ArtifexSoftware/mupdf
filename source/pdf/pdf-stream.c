@@ -244,17 +244,9 @@ pdf_open_raw_filter(fz_stream *chain, pdf_document *doc, pdf_obj *stmobj, int nu
 	len = pdf_to_int(pdf_dict_gets(stmobj, "Length"));
 	chain = fz_open_null(chain, len, offset);
 
-	fz_try(ctx)
-	{
-		hascrypt = pdf_stream_has_crypt(ctx, stmobj);
-		if (doc->crypt && !hascrypt)
-			chain = pdf_open_crypt(chain, doc->crypt, orig_num, orig_gen);
-	}
-	fz_catch(ctx)
-	{
-		fz_close(chain);
-		fz_rethrow(ctx);
-	}
+	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
+	if (doc->crypt && !hascrypt)
+		chain = pdf_open_crypt(chain, doc->crypt, orig_num, orig_gen);
 
 	return chain;
 }
