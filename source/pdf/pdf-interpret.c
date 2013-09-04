@@ -1548,8 +1548,9 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 			gstate->fill.alpha = 1;
 		}
 
-		/* clip to the bounds */
+		pdf_gsave(csi); /* Save here so the clippath doesn't persist */
 
+		/* clip to the bounds */
 		fz_moveto(ctx, csi->path, xobj->bbox.x0, xobj->bbox.y0);
 		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y0);
 		fz_lineto(ctx, csi->path, xobj->bbox.x1, xobj->bbox.y1);
@@ -1567,6 +1568,15 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 	}
 	fz_always(ctx)
 	{
+		pdf_grestore(csi); /* Remove the clippath */
+
+		/* wrap up transparency stacks */
+		if (xobj->transparency)
+		{
+			fz_end_group(csi->dev);
+			end_softmask(csi, &softmask);
+		}
+
 		csi->gstate[csi->gparent].ctm = gparent_save_ctm;
 		csi->gparent = gparent_save;
 
@@ -1579,13 +1589,6 @@ pdf_run_xobject(pdf_csi *csi, pdf_obj *resources, pdf_xobject *xobj, const fz_ma
 		}
 
 		pdf_unmark_obj(xobj->me);
-
-		/* wrap up transparency stacks */
-		if (xobj->transparency)
-		{
-			fz_end_group(csi->dev);
-			end_softmask(csi, &softmask);
-		}
 	}
 	fz_catch(ctx)
 	{
