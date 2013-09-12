@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace winphone
 {
-	public class DocumentPage
+	public class DocumentPage : INotifyPropertyChanged
 	{
 		public int Height
 		{
@@ -54,21 +54,34 @@ namespace winphone
 			set;
 		}
 
-		public String PageNum
+		public String PageName
 		{
 			get;
 			set;
 		}
 
-		public MatrixTransform TransformMatrix
+		public int PageNum
 		{
 			get;
 			set;
 		}
 
-		public DocumentPage(int Height, int Width, float Zoom, WriteableBitmap Image,
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		public void PageRefresh()
+		{
+			if (PropertyChanged != null)
+			{
+				PropertyChanged(this, new PropertyChangedEventArgs("Image"));
+				PropertyChanged(this, new PropertyChangedEventArgs("Height"));
+				PropertyChanged(this, new PropertyChangedEventArgs("Width"));
+				PropertyChanged(this, new PropertyChangedEventArgs("TextBox"));
+			}
+		}
+
+		public DocumentPage(int Height, int Width, double Zoom, WriteableBitmap Image,
 							List<RectList> TextBox, List<RectList> LinkBox,
-							Page_Content_t Content, String PageNum)
+							Page_Content_t Content, int PageNum)
 		{
 			this.Height = Height;
 			this.Width = Width;
@@ -78,7 +91,7 @@ namespace winphone
 			this.LinkBox = LinkBox;
 			this.Content = Content;
 			this.PageNum = PageNum;
-			this.TransformMatrix = new MatrixTransform();
+			this.PageName = ("Page " + (PageNum + 1));
 		}
 	};
 	public class Pages : ObservableCollection<DocumentPage>
@@ -88,12 +101,4 @@ namespace winphone
 		{
 		}
 	}
-
-	/*public class PanoPageItems : ObservableCollection<PanoramaItem>
-	{
-		public PanoPageItems()
-			: base()
-		{
-		}
-	}*/
 }

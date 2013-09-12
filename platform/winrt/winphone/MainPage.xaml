@@ -13,7 +13,9 @@
     FontSize="{StaticResource PhoneFontSizeNormal}"
     Foreground="{StaticResource PhoneForegroundBrush}"
     SupportedOrientations="PortraitOrLandscape" 
-    shell:SystemTray.IsVisible="True">
+    shell:SystemTray.IsVisible="True"
+    xmlns:ctrl="clr-namespace:winphone"
+    >
 
     <phone:PhoneApplicationPage.Resources>
         <DataTemplate x:Key="ContentTemplate">
@@ -23,30 +25,115 @@
         </DataTemplate>
     </phone:PhoneApplicationPage.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="Transparent">
-        
+    <Grid x:Name="LayoutRoot" Background="Transparent">       
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
-            <TextBlock Text="MuPDF" Style="{StaticResource PhoneTextNormalStyle}" Margin="12,0"/>
+            <TextBlock Text="MuPDF" Style="{StaticResource PhoneTextNormalStyle}" 
+                                Margin="12,0"/>
         </StackPanel>
 
-        <Grid x:Name="xaml_PageView" Grid.Row="1" Margin="12,0,12,0" >
-            <telerikPrimitives:RadSlideView x:Name="xaml_Pages" ItemsSource="{Binding}" IsFilmstripModeEnabled="True" TransitionMode="Flip" >
+        <StackPanel  Grid.Row="0" Margin="12,30,0,28" x:Name="xaml_TextSearchView" Visibility="Collapsed">
+            <telerikPrimitives:RadTextBox ActionButtonVisibility="Visible" 
+                                          Watermark="Text Search" AcceptsReturn="True"
+                                          ClearButtonVisibility="Visible" 
+                                          ActionButtonTap="SearchText" 
+                                          x:Name="xaml_TextEnter">
+                <telerikPrimitives:RadTextBox.ClearButtonStyle>
+                    <Style TargetType="telerikPrimitives:RadImageButton">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Background" Value="Black"/>
+                    </Style>
+                </telerikPrimitives:RadTextBox.ClearButtonStyle>
+            </telerikPrimitives:RadTextBox>
+        </StackPanel>
+
+        <StackPanel  Grid.Row="0" Margin="12,30,0,28" x:Name="xaml_StackBusy" 
+                     Visibility="Collapsed">
+            <telerikPrimitives:RadBusyIndicator IsRunning="False" 
+                        AnimationStyle="AnimationStyle1" x:Name="xaml_Busy">
+            </telerikPrimitives:RadBusyIndicator>
+        </StackPanel>
+
+        <StackPanel x:Name="xaml_ProgressStack" Opacity="1.0" VerticalAlignment="Center" 
+                    Margin="0,15" HorizontalAlignment="Center" Visibility="Collapsed">
+            <Border BorderThickness="5" BorderBrush="Black" >
+                <StackPanel Background="LightGray" HorizontalAlignment="Center" Width="400" >
+                    <TextBlock HorizontalAlignment="Center" Margin="5,0,5,0"
+        				Text="Text Search Progress" FontSize="20"/>
+                    <ProgressBar x:Name="xaml_Progress" Margin="5,0,5,0" Height="15"
+        				IsIndeterminate="False" Maximum="100" VerticalAlignment="Stretch" />
+                    <Button HorizontalAlignment="Center" VerticalAlignment="Center" 
+                            Margin="5,0,5,0" Click="CancelSearch" Height="auto">
+                        <TextBlock HorizontalAlignment="Center" Text="Cancel"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <Grid  x:Name="xaml_PageView" Grid.Row="1" Margin="12,0,12,0" Height="Auto">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <telerikPrimitives:RadSlideView x:Name="xaml_Pages" ItemsSource="{Binding}"
+                IsFilmstripModeEnabled="True" TransitionMode="Flip" 
+                SlideAnimationCompleted="SlideAnimationDone"
+                SlideAnimationStarted="SlideAnimationStart"
+                SelectionChanged="SelectionChanged" Grid.Row="0" Grid.Column="1" >
+                <telerikPrimitives:RadSlideView.OverlayContentTemplate>
+                    <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Rectangle Tag="{Binding Path=Index}" 
+                                            Width="{Binding Path=Width}" 
+                                            Height="{Binding Path=Height}" 
+                                            Fill="{Binding Path=Color}">
+                                        <Rectangle.RenderTransform>
+                                            <TranslateTransform X="{Binding Path=X}" 
+                                                            Y="{Binding Path=Y}"/>
+                                        </Rectangle.RenderTransform>
+                                    </Rectangle>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DataTemplate>
+                </telerikPrimitives:RadSlideView.OverlayContentTemplate>
                 <telerikPrimitives:RadSlideView.ItemTemplate>
                     <DataTemplate>
-                    <telerikSlideView:PanAndZoomImage Source="{Binding Image}" ZoomMode="Free" MaximumZoom="4"/>
+                        <telerikSlideView:PanAndZoomImage x:Name="xaml_ZoomBlock" 
+                                Source="{Binding Image}" ZoomMode="Free" 
+                                MaximumZoom="3" 
+                                ManipulationCompleted="ZoomBlock_ManipulationCompleted"
+                                ManipulationDelta="ZoomBlock_ManipulationDelta"
+                                ManipulationStarted="ZoomBlock_ManipulationStarted" 
+                                />
                     </DataTemplate>
                 </telerikPrimitives:RadSlideView.ItemTemplate>
-
                 <telerikPrimitives:RadSlideView.FilmstripModeItemTemplate>
                     <DataTemplate>
                         <Image Source="{Binding Image}" Width="460" Stretch="Uniform"/>
                     </DataTemplate>
                 </telerikPrimitives:RadSlideView.FilmstripModeItemTemplate>
-            </telerikPrimitives:RadSlideView> 
+            </telerikPrimitives:RadSlideView>
+            <TextBlock x:Name="xaml_PageNumber" HorizontalAlignment="Center" Foreground="Gray"  Opacity="0.5" 
+                       Margin="5,0,5,5" VerticalAlignment="Bottom"
+        				Text="0/0" FontSize="20" Visibility="Collapsed"/>
+
+            <Slider x:Name="xaml_PageSlider"   Minimum="0"  Maximum="10" 
+                    Grid.Row="1" Grid.Column="0" Margin="10,-10, 10,-30"
+                    ManipulationCompleted="Slider_Done" VerticalAlignment="Center" 
+                    Height="80" Visibility="Collapsed" ValueChanged="Slider_Change"/>
         </Grid>
 
         <Grid x:Name="xaml_ContentView" Grid.Row="1" Margin="12,0,12,0" Visibility="Collapsed">
@@ -55,8 +142,7 @@
                     ItemTemplate="{StaticResource ContentTemplate}"
                     LayoutMode="List"
                     IsGroupingEnabled="false" 
-                    SelectionChanged="ContentPicked"
-                    />
+                    SelectionChanged="ContentPicked"/>
         </Grid>
 
         <Grid x:Name="xaml_WebView" Grid.Row="1" Margin="12,0,12,0" Visibility="Collapsed">
@@ -76,17 +162,5 @@
                     Content="Cancel" ClickMode="Press" Click="PassCancel"/>
         </Grid>
     </Grid>
-
-    <phone:PhoneApplicationPage.ApplicationBar>
-        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True" Mode="Default" Opacity="1.0" >
-            <shell:ApplicationBarIconButton IconUri="/Assets/search.png" Text="search" Click="Search_Click" />
-            <shell:ApplicationBarIconButton IconUri="/Assets/links.png" Text="Show links" Click="Links_Click" />
-            <shell:ApplicationBarIconButton IconUri="/Assets/content.png" Text="Contents" Click="Content_Click" />         
-            <shell:ApplicationBarIconButton IconUri="/Assets/open.png" Text="Open" Click="Open_Click" />
-            <shell:ApplicationBar.MenuItems>
-                <shell:ApplicationBarMenuItem Click="Reflow_Click" Text="Show Page as HTML" />
-            </shell:ApplicationBar.MenuItems>
-        </shell:ApplicationBar>
-    </phone:PhoneApplicationPage.ApplicationBar>
 
 </phone:PhoneApplicationPage>
