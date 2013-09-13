@@ -428,7 +428,7 @@ static int pdfapp_save(pdfapp_t *app)
 
 		if (gen_tmp_file(buf, PATH_MAX))
 		{
-			int written;
+			int written = 0;
 
 			fz_try(app->ctx)
 			{
@@ -438,7 +438,6 @@ static int pdfapp_save(pdfapp_t *app)
 			}
 			fz_catch(app->ctx)
 			{
-				written = 0;
 			}
 
 			if (written)
@@ -797,6 +796,10 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		fz_transition *new_trans;
 		app->new_image = app->image;
 		app->image = NULL;
+		if (app->grayscale)
+			colorspace = fz_device_gray(app->ctx);
+		else
+			colorspace = app->colorspace;
 		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds);
 		app->duration = 0;
 		new_trans = fz_page_presentation(app->doc, app->page, &app->duration);

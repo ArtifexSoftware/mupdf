@@ -55,7 +55,7 @@ bezier(fz_gel *gel, const fz_matrix *ctm, float flatness,
 	yabcd = yabc + ybcd;
 
 	xab *= 0.5f; yab *= 0.5f;
-	xbc *= 0.5f; ybc *= 0.5f;
+	/* xbc *= 0.5f; ybc *= 0.5f; */
 	xcd *= 0.5f; ycd *= 0.5f;
 
 	xabc *= 0.25f; yabc *= 0.25f;
@@ -529,7 +529,7 @@ fz_stroke_bezier(struct sctx *s,
 	yabcd = yabc + ybcd;
 
 	xab *= 0.5f; yab *= 0.5f;
-	xbc *= 0.5f; ybc *= 0.5f;
+	/* xbc *= 0.5f; ybc *= 0.5f; */
 	xcd *= 0.5f; ycd *= 0.5f;
 
 	xabc *= 0.25f; yabc *= 0.25f;
@@ -734,7 +734,7 @@ fz_dash_bezier(struct sctx *s,
 	yabcd = yabc + ybcd;
 
 	xab *= 0.5f; yab *= 0.5f;
-	xbc *= 0.5f; ybc *= 0.5f;
+	/* xbc *= 0.5f; ybc *= 0.5f; */
 	xcd *= 0.5f; ycd *= 0.5f;
 
 	xabc *= 0.25f; yabc *= 0.25f;

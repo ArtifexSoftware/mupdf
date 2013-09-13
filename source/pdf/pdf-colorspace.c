@@ -206,7 +206,7 @@ load_indexed(pdf_document *doc, pdf_obj *array)
 			fz_try(ctx)
 			{
 				file = pdf_open_stream(doc, pdf_to_num(lookupobj), pdf_to_gen(lookupobj));
-				i = fz_read(file, lookup, n);
+				(void)fz_read(file, lookup, n);
 			}
 			fz_always(ctx)
 			{
