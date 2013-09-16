@@ -3,6 +3,8 @@ package com.artifex.mupdfdemo;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 
+import com.artifex.mupdfdemo.ReaderView.ViewMapper;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -38,7 +40,7 @@ class ThreadPerTaskExecutor implements Executor {
 	}
 }
 
-public class MuPDFActivity extends Activity implements FilePickerSupport
+public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupport
 {
 	/* The core rendering instance */
 	enum TopBarMode {Main, Search, Annot, Delete, More, Accept};
@@ -670,6 +672,11 @@ public class MuPDFActivity extends Activity implements FilePickerSupport
 
 	public void onDestroy()
 	{
+		mDocView.applyToChildren(new ReaderView.ViewMapper() {
+			void applyToView(View view) {
+				((MuPDFView)view).releaseBitmaps();
+			}
+		});
 		if (core != null)
 			core.onDestroy();
 		if (mAlertTask != null) {

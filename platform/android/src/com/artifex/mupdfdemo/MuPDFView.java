@@ -29,4 +29,5 @@ public interface MuPDFView {
 	public void addHq(boolean update);
 	public void removeHq();
 	public void releaseResources();
+	public void releaseBitmaps();
 }

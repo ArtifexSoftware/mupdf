@@ -83,7 +83,7 @@ class PassClickResultSignature extends PassClickResult {
 }
 
 public class MuPDFPageView extends PageView implements MuPDFView {
-	final private FilePickerSupport mFilePickerSupport;
+	final private FilePicker.FilePickerSupport mFilePickerSupport;
 	private final MuPDFCore mCore;
 	private AsyncTask<Void,Void,PassClickResult> mPassClick;
 	private RectF mWidgetAreas[];
@@ -109,8 +109,8 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	private AsyncTask<Void,Void,Boolean> mSign;
 	private Runnable changeReporter;
 
-	public MuPDFPageView(Context c, FilePickerSupport filePickerSupport, MuPDFCore core, Point parentSize) {
-		super(c, parentSize);
+	public MuPDFPageView(Context c, FilePicker.FilePickerSupport filePickerSupport, MuPDFCore core, Point parentSize, Bitmap sharedHqBm) {
+		super(c, parentSize, sharedHqBm);
 		mFilePickerSupport = filePickerSupport;
 		mCore = core;
 		mTextEntryBuilder = new AlertDialog.Builder(c);
@@ -549,15 +549,15 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 	}
 
 	@Override
-	protected Bitmap drawPage(int sizeX, int sizeY,
+	protected void drawPage(Bitmap bm, int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
-		return mCore.drawPage(mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
+		mCore.drawPage(bm, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
 	}
 
 	@Override
-	protected Bitmap updatePage(BitmapHolder h, int sizeX, int sizeY,
+	protected void updatePage(Bitmap bm, int sizeX, int sizeY,
 			int patchX, int patchY, int patchWidth, int patchHeight) {
-		return mCore.updatePage(h, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
+		mCore.updatePage(bm, mPageNumber, sizeX, sizeY, patchX, patchY, patchWidth, patchHeight);
 	}
 
 	@Override

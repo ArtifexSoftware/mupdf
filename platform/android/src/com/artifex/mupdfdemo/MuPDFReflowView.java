@@ -147,6 +147,9 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 		}
 	}
 
+	public void releaseBitmaps() {
+	}
+
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		int x, y;

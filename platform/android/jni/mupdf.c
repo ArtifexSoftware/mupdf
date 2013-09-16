@@ -644,6 +644,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 
 	fz_try(ctx)
 	{
+		fz_irect pixbbox;
 		pdf_document *idoc = pdf_specifics(doc);
 
 		if (idoc)
@@ -679,7 +680,11 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		bbox.y0 = patchY;
 		bbox.x1 = patchX + patchW;
 		bbox.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &bbox, pixels);
+		pixbbox = bbox;
+		pixbbox.x1 = pixbbox.x0 + info.width;
+		/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
+		 * match the pixels data */
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &pixbbox, pixels);
 		if (pc->page_list == NULL && pc->annot_list == NULL)
 		{
 			fz_clear_pixmap_with_value(ctx, pix, 0xd0);
@@ -823,6 +828,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_try(ctx)
 	{
 		fz_annot *annot;
+		fz_irect pixbbox;
 
 		if (idoc)
 		{
@@ -853,7 +859,11 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		bbox.y0 = patchY;
 		bbox.x1 = patchX + patchW;
 		bbox.y1 = patchY + patchH;
-		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &bbox, pixels);
+		pixbbox = bbox;
+		pixbbox.x1 = pixbbox.x0 + info.width;
+		/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
+		 * match the pixels data */
+		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &pixbbox, pixels);
 
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
