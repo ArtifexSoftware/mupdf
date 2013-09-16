@@ -154,7 +154,7 @@
 			dependencies = (
 			);
 			name = Generate;
-			passBuildSettingsInEnvironment = 1;
+			passBuildSettingsInEnvironment = 0;
 			productName = Generate;
 		};
 /* End PBXLegacyTarget section */
