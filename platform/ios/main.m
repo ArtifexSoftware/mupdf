@@ -191,7 +191,12 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 static void releasePixmap(void *info, const void *data, size_t size)
 {
-	fz_drop_pixmap(ctx, info);
+    if (queue)
+        dispatch_async(queue, ^{
+            fz_drop_pixmap(ctx, info);
+        });
+    else
+        fz_drop_pixmap(ctx, info);
 }
 
 static UIImage *newImageWithPixmap(fz_pixmap *pix)
