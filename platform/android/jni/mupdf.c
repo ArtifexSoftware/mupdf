@@ -1309,6 +1309,8 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 	fz_var(sheet);
 	fz_var(text);
 	fz_var(dev);
+	fz_var(buf);
+	fz_var(out);
 
 	fz_try(ctx)
 	{
