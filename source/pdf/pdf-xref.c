@@ -98,7 +98,7 @@ int pdf_xref_len(pdf_document *doc)
 	/* Return the length of the document's final xref section */
 	pdf_xref *xref = &doc->xref_sections[0];
 
-	return xref->len;
+	return xref == NULL ? 0 : xref->len;
 }
 
 /* Used while reading the individual xref sections from a file */
