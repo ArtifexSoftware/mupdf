@@ -14,10 +14,12 @@
 #include "mupdf/fitz.h"
 
 #import "MuOutlineController.h"
+#import "MuDocRef.h"
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UISearchBarDelegate>
 {
 	fz_document *doc;
+	MuDocRef *docRef;
 	NSString *key;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
@@ -34,7 +36,7 @@
 	int current; // currently visible page
 	int scroll_animating; // stop view updates during scrolling animations
 }
-- (id) initWithFilename: (NSString*)nsfilename document: (fz_document *)aDoc;
+- (id) initWithFilename: (NSString*)nsfilename document: (MuDocRef *)aDoc;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;

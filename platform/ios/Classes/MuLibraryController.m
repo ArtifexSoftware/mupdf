@@ -69,6 +69,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) dealloc
 {
+	[doc release];
 	[files release];
 	[super dealloc];
 }
@@ -163,13 +164,14 @@ static void showAlert(NSString *msg, NSString *filename)
 	printf("open document '%s'\n", filename);
 
 	_filename = [nsfilename retain];
-	_doc = fz_open_document(ctx, filename);
-	if (!_doc) {
+	[doc release];
+	doc = [[MuDocRef alloc] initWithFilename:filename];
+	if (!doc) {
 		showAlert(@"Cannot open document", nsfilename);
 		return;
 	}
 
-	if (fz_needs_password(_doc))
+	if (fz_needs_password(doc->doc))
 		[self askForPassword: @"'%@' needs a password:"];
 	else
 		[self onPasswordOkay];
@@ -193,7 +195,7 @@ static void showAlert(NSString *msg, NSString *filename)
 	char *password = (char*) [[[alertView textFieldAtIndex: 0] text] UTF8String];
 	[alertView dismissWithClickedButtonIndex: buttonIndex animated: TRUE];
 	if (buttonIndex == 1) {
-		if (fz_authenticate_password(_doc, password))
+		if (fz_authenticate_password(doc->doc, password))
 			[self onPasswordOkay];
 		else
 			[self askForPassword: @"Wrong password for '%@'. Try again:"];
@@ -204,22 +206,19 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) onPasswordOkay
 {
-	MuDocumentController *document = [[MuDocumentController alloc] initWithFilename: _filename document: _doc];
+	MuDocumentController *document = [[MuDocumentController alloc] initWithFilename: _filename document: doc];
 	if (document) {
 		[self setTitle: @"Library"];
 		[[self navigationController] pushViewController: document animated: YES];
 		[document release];
 	}
 	[_filename release];
-	_doc = NULL;
 }
 
 - (void) onPasswordCancel
 {
 	[_filename release];
 	printf("close document (password cancel)\n");
-	fz_close_document(_doc);
-	_doc = NULL;
 }
 
 @end

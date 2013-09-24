@@ -41,14 +41,15 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 @implementation MuDocumentController
 
-- (id) initWithFilename: (NSString*)filename document: (fz_document *)aDoc
+- (id) initWithFilename: (NSString*)filename document: (MuDocRef *)aDoc
 {
 	self = [super init];
 	if (!self)
 		return nil;
 
 	key = [filename retain];
-	doc = aDoc;
+	docRef = [aDoc retain];
+	doc = docRef->doc;
 
 	dispatch_sync(queue, ^{});
 
@@ -154,14 +155,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 - (void) dealloc
 {
-	if (doc) {
-		fz_document *self_doc = doc; // don't auto-retain self here!
-		dispatch_async(queue, ^{
-			printf("close document\n");
-			fz_close_document(self_doc);
-		});
-	}
-
+	[docRef release]; docRef = nil; doc = NULL;
 	[indicator release]; indicator = nil;
 	[slider release]; slider = nil;
 	[sliderWrapper release]; sliderWrapper = nil;
@@ -508,7 +502,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		if ([view number] == number)
 			found = 1;
 	if (!found) {
-		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: doc page: number];
+		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: docRef page: number];
 		[canvas addSubview: view];
 		if (showLinks)
 			[view showLinks];

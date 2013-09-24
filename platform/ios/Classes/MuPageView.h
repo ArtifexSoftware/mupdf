@@ -13,10 +13,12 @@
 
 #include "mupdf/fitz.h"
 
+#import "MuDocRef.h"
 #include "MuHitView.h"
 
 @interface MuPageView : UIScrollView <UIScrollViewDelegate>
 {
+	MuDocRef *docRef;
 	fz_document *doc;
 	fz_page *page;
 	int number;
@@ -30,7 +32,7 @@
 	float tileScale;
 	BOOL cancel;
 }
-- (id) initWithFrame: (CGRect)frame document: (fz_document*)aDoc page: (int)aNumber;
+- (id) initWithFrame: (CGRect)frame document: (MuDocRef*)aDoc page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
 - (void) resizeImage;
 - (void) loadPage;

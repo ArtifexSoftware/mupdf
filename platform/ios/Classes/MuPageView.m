@@ -113,11 +113,12 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 
 @implementation MuPageView
 
-- (id) initWithFrame: (CGRect)frame document: (fz_document*)aDoc page: (int)aNumber
+- (id) initWithFrame: (CGRect)frame document: (MuDocRef *)aDoc page: (int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {
-		doc = aDoc;
+		docRef = [aDoc retain];
+		doc = docRef->doc;
 		number = aNumber;
 		cancel = NO;
 
@@ -152,12 +153,13 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
 	} else {
 		__block fz_page *block_page = page;
-		__block fz_document *block_doc = doc;
+		__block fz_document *block_doc = docRef->doc;
 		dispatch_async(queue, ^{
 			if (block_page)
 				fz_free_page(block_doc, block_page);
 			block_page = nil;
 		});
+		[docRef release];
 		[linkView release];
 		[hitView release];
 		[tileView release];

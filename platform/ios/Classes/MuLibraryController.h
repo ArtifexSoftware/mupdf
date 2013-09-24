@@ -13,11 +13,13 @@
 
 #include "mupdf/fitz.h"
 
+#import "MuDocRef.h"
+
 @interface MuLibraryController : UITableViewController <UIActionSheetDelegate>
 {
 	NSArray *files;
 	NSTimer *timer;
-	fz_document *_doc; // temporaries for juggling password dialog
+	MuDocRef *doc;
 	NSString *_filename;
 }
 - (void) openDocument: (NSString*)filename;

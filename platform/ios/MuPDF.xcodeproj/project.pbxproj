@@ -35,6 +35,7 @@
 		DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A717E864180061F586 /* MuDocumentController.m */; };
 		DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A917E864CB0061F586 /* MuAppDelegate.m */; };
 		DA1C68C417E8969C0061F586 /* common.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68C317E8969C0061F586 /* common.m */; };
+		DABDEF5A17EC484A00AC35F1 /* MuDocRef.m in Sources */ = {isa = PBXBuildFile; fileRef = DABDEF5917EC484A00AC35F1 /* MuDocRef.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +86,8 @@
 		DA1C68A917E864CB0061F586 /* MuAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuAppDelegate.m; path = Classes/MuAppDelegate.m; sourceTree = "<group>"; };
 		DA1C68C217E8968C0061F586 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		DA1C68C317E8969C0061F586 /* common.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = common.m; sourceTree = "<group>"; };
+		DABDEF5817EC484A00AC35F1 /* MuDocRef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuDocRef.h; path = Classes/MuDocRef.h; sourceTree = "<group>"; };
+		DABDEF5917EC484A00AC35F1 /* MuDocRef.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuDocRef.m; path = Classes/MuDocRef.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,6 +182,8 @@
 				DA1C68A717E864180061F586 /* MuDocumentController.m */,
 				DA1C68A817E864CB0061F586 /* MuAppDelegate.h */,
 				DA1C68A917E864CB0061F586 /* MuAppDelegate.m */,
+				DABDEF5817EC484A00AC35F1 /* MuDocRef.h */,
+				DABDEF5917EC484A00AC35F1 /* MuDocRef.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -306,6 +311,7 @@
 				DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */,
 				96C8ED011779A88E00A30AF4 /* main.m in Sources */,
 				DA1C68C417E8969C0061F586 /* common.m in Sources */,
+				DABDEF5A17EC484A00AC35F1 /* MuDocRef.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
