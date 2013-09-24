@@ -16,17 +16,19 @@
 #import "MuOutlineController.h"
 #import "MuDocRef.h"
 
-@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UISearchBarDelegate>
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate>
 {
 	fz_document *doc;
 	MuDocRef *docRef;
 	NSString *key;
+	BOOL reflowMode;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
 	UILabel *indicator;
 	UISlider *slider;
 	UISearchBar *searchBar;
 	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
+	UIBarButtonItem *reflowButton;
 	UIBarButtonItem *sliderWrapper;
 	int searchPage;
 	int cancelSearch;
@@ -35,6 +37,7 @@
 	int height;
 	int current; // currently visible page
 	int scroll_animating; // stop view updates during scrolling animations
+	float scale; // scale applied to views (only used in reflow mode)
 }
 - (id) initWithFilename: (NSString*)nsfilename document: (MuDocRef *)aDoc;
 - (void) createPageView: (int)number;

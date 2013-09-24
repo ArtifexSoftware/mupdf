@@ -19,12 +19,12 @@ static CGSize measurePage(fz_document *doc, fz_page *page)
 
 static void releasePixmap(void *info, const void *data, size_t size)
 {
-    if (queue)
-        dispatch_async(queue, ^{
-            fz_drop_pixmap(ctx, info);
-        });
-    else
-        fz_drop_pixmap(ctx, info);
+	if (queue)
+		dispatch_async(queue, ^{
+			fz_drop_pixmap(ctx, info);
+		});
+	else
+		fz_drop_pixmap(ctx, info);
 }
 
 static UIImage *newImageWithPixmap(fz_pixmap *pix)
@@ -109,9 +109,9 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	return newImageWithPixmap(pix);
 }
 
-#import "MuPageView.h"
+#import "MuPageViewNormal.h"
 
-@implementation MuPageView
+@implementation MuPageViewNormal
 
 - (id) initWithFrame: (CGRect)frame document: (MuDocRef *)aDoc page: (int)aNumber
 {
@@ -460,5 +460,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	if (hitView && imageView)
 		[hitView setFrame: [imageView frame]];
 }
+
+- (void) setScale:(float)scale {}
 
 @end

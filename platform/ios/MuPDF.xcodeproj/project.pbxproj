@@ -31,10 +31,18 @@
 		DA1C68AB17E86A500061F586 /* MuLibraryController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689917E85E8E0061F586 /* MuLibraryController.m */; };
 		DA1C68AD17E86A500061F586 /* MuOutlineController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689D17E861020061F586 /* MuOutlineController.m */; };
 		DA1C68AF17E86A500061F586 /* MuHitView.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689F17E861870061F586 /* MuHitView.m */; };
-		DA1C68B117E86A500061F586 /* MuPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A517E863C70061F586 /* MuPageView.m */; };
+		DA1C68B117E86A500061F586 /* MuPageViewNormal.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A517E863C70061F586 /* MuPageViewNormal.m */; };
 		DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A717E864180061F586 /* MuDocumentController.m */; };
 		DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A917E864CB0061F586 /* MuAppDelegate.m */; };
 		DA1C68C417E8969C0061F586 /* common.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68C317E8969C0061F586 /* common.m */; };
+		DAA6E56F17F03F96002B1E4E /* MuPageViewReflow.m in Sources */ = {isa = PBXBuildFile; fileRef = DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */; };
+		DAB9F4BB17F1B24000117D2E /* ic_arrow_left.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */; };
+		DAB9F4BC17F1B24000117D2E /* ic_arrow_right.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B617F1B24000117D2E /* ic_arrow_right.png */; };
+		DAB9F4BD17F1B24000117D2E /* ic_cancel.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B717F1B24000117D2E /* ic_cancel.png */; };
+		DAB9F4BE17F1B24000117D2E /* ic_link.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B817F1B24000117D2E /* ic_link.png */; };
+		DAB9F4BF17F1B24000117D2E /* ic_list.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B917F1B24000117D2E /* ic_list.png */; };
+		DAB9F4C017F1B24000117D2E /* ic_magnifying_glass.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4BA17F1B24000117D2E /* ic_magnifying_glass.png */; };
+		DAB9F4C217F1CB6D00117D2E /* ic_reflow.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4C117F1CB6D00117D2E /* ic_reflow.png */; };
 		DABDEF5A17EC484A00AC35F1 /* MuDocRef.m in Sources */ = {isa = PBXBuildFile; fileRef = DABDEF5917EC484A00AC35F1 /* MuDocRef.m */; };
 /* End PBXBuildFile section */
 
@@ -78,16 +86,26 @@
 		DA1C689D17E861020061F586 /* MuOutlineController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuOutlineController.m; path = Classes/MuOutlineController.m; sourceTree = "<group>"; };
 		DA1C689E17E861870061F586 /* MuHitView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuHitView.h; path = Classes/MuHitView.h; sourceTree = "<group>"; };
 		DA1C689F17E861870061F586 /* MuHitView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuHitView.m; path = Classes/MuHitView.m; sourceTree = "<group>"; };
-		DA1C68A417E863C70061F586 /* MuPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageView.h; path = Classes/MuPageView.h; sourceTree = "<group>"; };
-		DA1C68A517E863C70061F586 /* MuPageView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPageView.m; path = Classes/MuPageView.m; sourceTree = "<group>"; };
+		DA1C68A417E863C70061F586 /* MuPageViewNormal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageViewNormal.h; path = Classes/MuPageViewNormal.h; sourceTree = "<group>"; };
+		DA1C68A517E863C70061F586 /* MuPageViewNormal.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPageViewNormal.m; path = Classes/MuPageViewNormal.m; sourceTree = "<group>"; };
 		DA1C68A617E864180061F586 /* MuDocumentController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuDocumentController.h; path = Classes/MuDocumentController.h; sourceTree = "<group>"; };
 		DA1C68A717E864180061F586 /* MuDocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuDocumentController.m; path = Classes/MuDocumentController.m; sourceTree = "<group>"; };
 		DA1C68A817E864CB0061F586 /* MuAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuAppDelegate.h; path = Classes/MuAppDelegate.h; sourceTree = "<group>"; };
 		DA1C68A917E864CB0061F586 /* MuAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuAppDelegate.m; path = Classes/MuAppDelegate.m; sourceTree = "<group>"; };
 		DA1C68C217E8968C0061F586 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		DA1C68C317E8969C0061F586 /* common.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = common.m; sourceTree = "<group>"; };
+		DAA6E56D17F03AAE002B1E4E /* MuPageViewReflow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageViewReflow.h; path = Classes/MuPageViewReflow.h; sourceTree = "<group>"; };
+		DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPageViewReflow.m; path = Classes/MuPageViewReflow.m; sourceTree = "<group>"; };
+		DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_arrow_left.png; path = "../android/res/drawable-ldpi/ic_arrow_left.png"; sourceTree = "<group>"; };
+		DAB9F4B617F1B24000117D2E /* ic_arrow_right.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_arrow_right.png; path = "../android/res/drawable-ldpi/ic_arrow_right.png"; sourceTree = "<group>"; };
+		DAB9F4B717F1B24000117D2E /* ic_cancel.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_cancel.png; path = "../android/res/drawable-ldpi/ic_cancel.png"; sourceTree = "<group>"; };
+		DAB9F4B817F1B24000117D2E /* ic_link.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_link.png; path = "../android/res/drawable-ldpi/ic_link.png"; sourceTree = "<group>"; };
+		DAB9F4B917F1B24000117D2E /* ic_list.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_list.png; path = "../android/res/drawable-ldpi/ic_list.png"; sourceTree = "<group>"; };
+		DAB9F4BA17F1B24000117D2E /* ic_magnifying_glass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_magnifying_glass.png; path = "../android/res/drawable-ldpi/ic_magnifying_glass.png"; sourceTree = "<group>"; };
+		DAB9F4C117F1CB6D00117D2E /* ic_reflow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_reflow.png; path = "../android/res/drawable-ldpi/ic_reflow.png"; sourceTree = "<group>"; };
 		DABDEF5817EC484A00AC35F1 /* MuDocRef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuDocRef.h; path = Classes/MuDocRef.h; sourceTree = "<group>"; };
 		DABDEF5917EC484A00AC35F1 /* MuDocRef.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuDocRef.m; path = Classes/MuDocRef.m; sourceTree = "<group>"; };
+		DADD8D6917EB24C000C49E0B /* MuPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageView.h; path = Classes/MuPageView.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,6 +134,7 @@
 			children = (
 				DA1C68C317E8969C0061F586 /* common.m */,
 				DA1C68C217E8968C0061F586 /* common.h */,
+				96C8ED001779A88E00A30AF4 /* main.m */,
 				DA1C689717E85E4A0061F586 /* Classes */,
 				968E1E461779A54F0050CEA3 /* Resources */,
 				968E1E3F1779A54F0050CEA3 /* Frameworks */,
@@ -151,13 +170,19 @@
 		968E1E461779A54F0050CEA3 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DAB9F4C117F1CB6D00117D2E /* ic_reflow.png */,
+				DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */,
+				DAB9F4B617F1B24000117D2E /* ic_arrow_right.png */,
+				DAB9F4B717F1B24000117D2E /* ic_cancel.png */,
+				DAB9F4B817F1B24000117D2E /* ic_link.png */,
+				DAB9F4B917F1B24000117D2E /* ic_list.png */,
+				DAB9F4BA17F1B24000117D2E /* ic_magnifying_glass.png */,
 				96E1CDE71779A60700FCF717 /* Icon-72.png */,
 				96E1CDE81779A60700FCF717 /* Icon-72@2x.png */,
 				96E1CDE91779A60700FCF717 /* Icon.png */,
 				96E1CDEA1779A60700FCF717 /* Icon@2x.png */,
 				96E1CDEB1779A60700FCF717 /* iTunesArtwork.png */,
 				96E1CDEC1779A60700FCF717 /* x_alt_blue.png */,
-				96C8ED001779A88E00A30AF4 /* main.m */,
 				96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */,
 				968E1E481779A54F0050CEA3 /* Info.plist */,
 				968E1E521779A54F0050CEA3 /* Default.png */,
@@ -176,14 +201,17 @@
 				DA1C689D17E861020061F586 /* MuOutlineController.m */,
 				DA1C689E17E861870061F586 /* MuHitView.h */,
 				DA1C689F17E861870061F586 /* MuHitView.m */,
-				DA1C68A417E863C70061F586 /* MuPageView.h */,
-				DA1C68A517E863C70061F586 /* MuPageView.m */,
+				DA1C68A417E863C70061F586 /* MuPageViewNormal.h */,
+				DA1C68A517E863C70061F586 /* MuPageViewNormal.m */,
 				DA1C68A617E864180061F586 /* MuDocumentController.h */,
 				DA1C68A717E864180061F586 /* MuDocumentController.m */,
 				DA1C68A817E864CB0061F586 /* MuAppDelegate.h */,
 				DA1C68A917E864CB0061F586 /* MuAppDelegate.m */,
+				DADD8D6917EB24C000C49E0B /* MuPageView.h */,
 				DABDEF5817EC484A00AC35F1 /* MuDocRef.h */,
 				DABDEF5917EC484A00AC35F1 /* MuDocRef.m */,
+				DAA6E56D17F03AAE002B1E4E /* MuPageViewReflow.h */,
+				DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -270,6 +298,13 @@
 				96E1CDF21779A60700FCF717 /* iTunesArtwork.png in Resources */,
 				96E1CDF31779A60700FCF717 /* x_alt_blue.png in Resources */,
 				96E1CDF41779A60700FCF717 /* x_alt_blue@2x.png in Resources */,
+				DAB9F4BB17F1B24000117D2E /* ic_arrow_left.png in Resources */,
+				DAB9F4BC17F1B24000117D2E /* ic_arrow_right.png in Resources */,
+				DAB9F4BD17F1B24000117D2E /* ic_cancel.png in Resources */,
+				DAB9F4BE17F1B24000117D2E /* ic_link.png in Resources */,
+				DAB9F4BF17F1B24000117D2E /* ic_list.png in Resources */,
+				DAB9F4C017F1B24000117D2E /* ic_magnifying_glass.png in Resources */,
+				DAB9F4C217F1CB6D00117D2E /* ic_reflow.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,10 +338,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAA6E56F17F03F96002B1E4E /* MuPageViewReflow.m in Sources */,
 				DA1C68AB17E86A500061F586 /* MuLibraryController.m in Sources */,
 				DA1C68AD17E86A500061F586 /* MuOutlineController.m in Sources */,
 				DA1C68AF17E86A500061F586 /* MuHitView.m in Sources */,
-				DA1C68B117E86A500061F586 /* MuPageView.m in Sources */,
+				DA1C68B117E86A500061F586 /* MuPageViewNormal.m in Sources */,
 				DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */,
 				DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */,
 				96C8ED011779A88E00A30AF4 /* main.m in Sources */,
@@ -358,8 +394,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = ../../include;
 			};
 			name = Debug;
@@ -368,8 +406,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				USER_HEADER_SEARCH_PATHS = ../../include;
 			};
 			name = Release;

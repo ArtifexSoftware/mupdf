@@ -6,14 +6,17 @@
 //
 
 #include "common.h"
-#import "MuPageView.h"
 
+#import "MuPageViewNormal.h"
+#import "MuPageViewReflow.h"
 #import "MuDocumentController.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
 #define SLIDER_W (width - GAP - 24)
 #define SEARCH_W (width - GAP - 170)
+#define MIN_SCALE (1.0)
+#define MAX_SCALE (5.0)
 
 static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_outline *outline, int level)
 {
@@ -68,6 +71,11 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	return self;
 }
 
+- (UIBarButtonItem *) resourceBasedButton:(NSString *)resource withAction:(SEL)selector
+{
+	return [[UIBarButtonItem alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:resource ofType:@"png"]] style:UIBarButtonItemStylePlain target:self action:selector];
+}
+
 - (void) loadView
 {
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
@@ -87,7 +95,18 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[canvas setShowsVerticalScrollIndicator: NO];
 	[canvas setDelegate: self];
 
-	[canvas addGestureRecognizer: [[[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onTap:)] autorelease]];
+	UITapGestureRecognizer *tapRecog = [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onTap:)];
+	tapRecog.delegate = self;
+	[canvas addGestureRecognizer: tapRecog];
+	[tapRecog release];
+	// In reflow mode, we need to track pinch gestures on the canvas and pass
+	// the scale changes to the subviews.
+	UIPinchGestureRecognizer *pinchRecog = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(onPinch:)];
+	pinchRecog.delegate = self;
+	[canvas addGestureRecognizer:pinchRecog];
+	[pinchRecog release];
+
+	scale = 1.0;
 
 	scroll_animating = NO;
 
@@ -115,26 +134,14 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	// Set up the buttons on the navigation and search bar
 
 	if (outline) {
-		outlineButton = [[UIBarButtonItem alloc]
-			initWithBarButtonSystemItem: UIBarButtonSystemItemBookmarks
-			target:self action:@selector(onShowOutline:)];
+		outlineButton = [self resourceBasedButton:@"ic_list" withAction:@selector(onShowOutline:)];
 	}
-	linkButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemAction
-		target:self action:@selector(onToggleLinks:)];
-	cancelButton = [[UIBarButtonItem alloc]
-		initWithTitle: @"Cancel" style: UIBarButtonItemStyleBordered
-		target:self action:@selector(onCancelSearch:)];
-	searchButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemSearch
-		target:self action:@selector(onShowSearch:)];
-	prevButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemRewind
-		target:self action:@selector(onSearchPrev:)];
-	nextButton = [[UIBarButtonItem alloc]
-		initWithBarButtonSystemItem: UIBarButtonSystemItemFastForward
-		target:self action:@selector(onSearchNext:)];
-
+	linkButton = [self resourceBasedButton:@"ic_link" withAction:@selector(onToggleLinks:)];
+	cancelButton = [self resourceBasedButton:@"ic_cancel" withAction:@selector(onCancelSearch:)];
+	searchButton = [self resourceBasedButton:@"ic_magnifying_glass" withAction:@selector(onShowSearch:)];
+	prevButton = [self resourceBasedButton:@"ic_arrow_left" withAction:@selector(onSearchPrev:)];
+	nextButton = [self resourceBasedButton:@"ic_arrow_right" withAction:@selector(onSearchNext:)];
+	reflowButton = [self resourceBasedButton:@"ic_reflow" withAction:@selector(onToggleReflow:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
@@ -145,7 +152,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[nextButton setEnabled: NO];
 
 	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: searchButton, linkButton, outlineButton, nil]];
+		[NSArray arrayWithObjects: searchButton, outlineButton, reflowButton, linkButton, nil]];
 
 	// TODO: add activityindicator to search bar
 
@@ -159,6 +166,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[indicator release]; indicator = nil;
 	[slider release]; slider = nil;
 	[sliderWrapper release]; sliderWrapper = nil;
+	[reflowButton release]; reflowButton = nil;
 	[searchBar release]; searchBar = nil;
 	[outlineButton release]; outlineButton = nil;
 	[searchButton release]; searchButton = nil;
@@ -204,13 +212,13 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
-	for (MuPageView *view in [canvas subviews]) {
+	for (UIView<MuPageView> *view in [canvas subviews]) {
 		if ([view number] == current) {
 			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
 			[view willRotate];
 		}
 	}
-	for (MuPageView *view in [canvas subviews]) {
+	for (UIView<MuPageView> *view in [canvas subviews]) {
 		if ([view number] != current) {
 			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
 			[view willRotate];
@@ -279,7 +287,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 - (void) onToggleLinks: (id)sender
 {
 	showLinks = !showLinks;
- 	for (MuPageView *view in [canvas subviews])
+	for (UIView<MuPageView> *view in [canvas subviews])
 	{
 		if (showLinks)
 			[view showLinks];
@@ -288,12 +296,19 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	}
 }
 
+- (void) onToggleReflow: (id)sender
+{
+	reflowMode = !reflowMode;
+	[[canvas subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+	[self scrollViewDidScroll:canvas];
+}
+
 - (void) onShowSearch: (id)sender
 {
-	[[self navigationItem] setTitleView: searchBar];
 	[[self navigationItem] setRightBarButtonItems:
 		[NSArray arrayWithObjects: nextButton, prevButton, nil]];
 	[[self navigationItem] setLeftBarButtonItem: cancelButton];
+	[[self navigationItem] setTitleView: searchBar];
 	[searchBar becomeFirstResponder];
 }
 
@@ -311,7 +326,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 - (void) resetSearch
 {
 	searchPage = -1;
-	for (MuPageView *view in [canvas subviews])
+	for (UIView<MuPageView> *view in [canvas subviews])
 		[view clearSearchResults];
 }
 
@@ -320,7 +335,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	printf("search found match on page %d\n", number);
 	searchPage = number;
 	[self gotoPage: number animated: NO];
-	for (MuPageView *view in [canvas subviews])
+	for (UIView<MuPageView> *view in [canvas subviews])
 		if ([view number] == number)
 			[view showSearchResults: count];
 		else
@@ -430,6 +445,13 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		[self gotoPage: number animated: NO];
 }
 
+- (BOOL) gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+{
+	// For reflow mode, we load UIWebViews into the canvas. Returning YES
+	// here prevents them stealing our tap and pinch events.
+	return YES;
+}
+
 - (void) onTap: (UITapGestureRecognizer*)sender
 {
 	CGPoint p = [sender locationInView: canvas];
@@ -448,6 +470,24 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		else
 			[self hideNavigationBar];
 	}
+}
+
+- (void) onPinch:(UIPinchGestureRecognizer*)sender
+{
+	if (sender.state == UIGestureRecognizerStateBegan)
+		sender.scale = scale;
+
+	if (sender.scale < MIN_SCALE)
+		sender.scale = MIN_SCALE;
+
+	if (sender.scale > MAX_SCALE)
+		sender.scale = MAX_SCALE;
+
+	if (sender.state ==  UIGestureRecognizerStateEnded)
+		scale = sender.scale;
+
+	for (UIView<MuPageView> *view in [canvas subviews])
+		[view setScale:sender.scale];
 }
 
 - (void) scrollViewWillBeginDragging: (UIScrollView *)scrollView
@@ -474,13 +514,13 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	// swap the distant page views out
 
 	NSMutableSet *invisiblePages = [[NSMutableSet alloc] init];
-	for (MuPageView *view in [canvas subviews]) {
+	for (UIView<MuPageView> *view in [canvas subviews]) {
 		if ([view number] != current)
 			[view resetZoomAnimated: YES];
 		if ([view number] < current - 2 || [view number] > current + 2)
 			[invisiblePages addObject: view];
 	}
-	for (MuPageView *view in invisiblePages)
+	for (UIView<MuPageView> *view in invisiblePages)
 		[view removeFromSuperview];
 	[invisiblePages release]; // don't bother recycling them...
 
@@ -498,11 +538,15 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	if (number < 0 || number >= fz_count_pages(doc))
 		return;
 	int found = 0;
-	for (MuPageView *view in [canvas subviews])
+	for (UIView<MuPageView> *view in [canvas subviews])
 		if ([view number] == number)
 			found = 1;
 	if (!found) {
-		MuPageView *view = [[MuPageView alloc] initWithFrame: CGRectMake(number * width, 0, width-GAP, height) document: docRef page: number];
+		UIView<MuPageView> *view
+			= reflowMode
+				? [[MuPageViewReflow alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) document:docRef page:number]
+				: [[MuPageViewNormal alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) document:docRef page:number];
+		[view setScale:scale];
 		[canvas addSubview: view];
 		if (showLinks)
 			[view showLinks];
@@ -533,7 +577,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		[UIView setAnimationDelegate: self];
 		[UIView setAnimationDidStopSelector: @selector(onGotoPageFinished)];
 
-		for (MuPageView *view in [canvas subviews])
+		for (UIView<MuPageView> *view in [canvas subviews])
 			[view resetZoomAnimated: NO];
 
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
@@ -542,7 +586,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 		[UIView commitAnimations];
 	} else {
-		for (MuPageView *view in [canvas subviews])
+		for (UIView<MuPageView> *view in [canvas subviews])
 			[view resetZoomAnimated: NO];
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 	}
