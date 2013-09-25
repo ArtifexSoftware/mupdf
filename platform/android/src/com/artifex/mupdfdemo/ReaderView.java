@@ -436,12 +436,9 @@ public class ReaderView
 		mScale = Math.min(Math.max(mScale * detector.getScaleFactor(), min_scale), max_scale);
 
 		if (mReflow) {
-			applyToChildren(new ViewMapper() {
-				@Override
-				void applyToView(View view) {
-					onScaleChild(view, mScale);
-				}
-			});
+			View v = mChildViews.get(mCurrent);
+			if (v != null)
+				onScaleChild(v, mScale);
 		} else {
 			float factor = mScale/previousScale;
 
@@ -472,6 +469,14 @@ public class ReaderView
 	}
 
 	public void onScaleEnd(ScaleGestureDetector detector) {
+		if (mReflow) {
+			applyToChildren(new ViewMapper() {
+				@Override
+				void applyToView(View view) {
+					onScaleChild(view, mScale);
+				}
+			});
+		}
 		mScaling = false;
 	}
 
