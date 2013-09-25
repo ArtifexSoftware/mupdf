@@ -91,6 +91,8 @@ enum {
 		launch.new_window: If true, the destination should be launched
 		in a new window.
 
+		launch.is_uri: If true, launch.file_spec is a URI to launch.
+
 	For FZ_LINK_NAMED:
 
 		named.named: The named action to perform. Likely to be
@@ -122,6 +124,7 @@ struct fz_link_dest_s
 		{
 			char *file_spec;
 			int new_window;
+			int is_uri;
 		}
 		launch;
 		struct
