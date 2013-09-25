@@ -14,7 +14,7 @@
 
 enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
 
-enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG, OUT_PWG, OUT_PCL, OUT_PDF };
+enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG, OUT_PWG, OUT_PCL, OUT_PDF, OUT_TGA };
 
 enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAYALPHA, CS_RGB, CS_RGBA };
 
@@ -36,6 +36,7 @@ static const suffix_t suffix_table[] =
 	{ ".pwg", OUT_PWG },
 	{ ".pcl", OUT_PCL },
 	{ ".pdf", OUT_PDF },
+	{ ".tga", OUT_TGA },
 };
 
 typedef struct
@@ -77,7 +78,8 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB } },
 	{ OUT_PCL, CS_MONO, { CS_MONO } },
-	{ OUT_PDF, CS_RGB, { CS_RGB } }
+	{ OUT_PDF, CS_RGB, { CS_RGB } },
+	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAYALPHA, CS_RGB, CS_RGBA } },
 };
 
 /*
@@ -183,7 +185,7 @@ static void usage(void)
 		"usage: mudraw [options] input [pages]\n"
 		"\t-o -\toutput filename (%%d for page number)\n"
 		"\t-F -\toutput format (if no -F, -o will be examined)\n"
-		"\t\tsupported formats: pgm, ppm, pam, png, pbm\n"
+		"\t\tsupported formats: pgm, ppm, pam, png, pbm, tga\n"
 		"\t-p -\tpassword\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
@@ -757,6 +759,10 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
 						fz_write_pbm(ctx, bit, filename_buf);
 						fz_drop_bitmap(ctx, bit);
+					}
+					else if (output_format == OUT_TGA)
+					{
+						fz_write_tga(ctx, pix, filename_buf, savealpha);
 					}
 				}
 				ctm.f -= drawheight;

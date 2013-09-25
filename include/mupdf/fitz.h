@@ -54,5 +54,6 @@
 #include "mupdf/fitz/output-pwg.h"
 #include "mupdf/fitz/output-pcl.h"
 #include "mupdf/fitz/output-svg.h"
+#include "mupdf/fitz/output-tga.h"
 
 #endif
