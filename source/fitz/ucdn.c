@@ -33,7 +33,7 @@ typedef struct {
 } MirrorPair;
 
 typedef struct {
-	int start;
+	unsigned int start;
 	short count, index;
 } Reindex;
 
@@ -207,7 +207,7 @@ unsigned int ucdn_mirror(unsigned int code)
 	if (get_ucd_record(code)->mirrored == 0)
 		return code;
 
-	mp.from = code;
+	mp.from = (unsigned short)code;
 	res = bsearch(&mp, mirror_pairs, BIDI_MIRROR_LEN, sizeof(MirrorPair),
 			compare_mp);
 
