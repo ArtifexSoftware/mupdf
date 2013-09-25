@@ -57,6 +57,12 @@ read_flated(fz_stream *stm, unsigned char *outbuf, int outlen)
 			fz_warn(stm->ctx, "ignoring zlib error: %s", zp->msg);
 			return outlen - zp->avail_out;
 		}
+		else if (code == Z_DATA_ERROR && !strcmp(zp->msg, "incorrect data check"))
+		{
+			fz_warn(stm->ctx, "ignoring zlib error: %s", zp->msg);
+			chain->rp = chain->wp;
+			return outlen - zp->avail_out;
+		}
 		else if (code != Z_OK)
 		{
 			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "zlib error: %s", zp->msg);
