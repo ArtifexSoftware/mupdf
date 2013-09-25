@@ -487,7 +487,11 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		scale = sender.scale;
 
 	for (UIView<MuPageView> *view in [canvas subviews])
-		[view setScale:sender.scale];
+	{
+		// Zoom only the visible page until end of gesture
+		if (view.number == current || sender.state == UIGestureRecognizerStateEnded)
+			[view setScale:sender.scale];
+	}
 }
 
 - (void) scrollViewWillBeginDragging: (UIScrollView *)scrollView
