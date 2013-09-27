@@ -1919,6 +1919,13 @@ static void writexrefstream(pdf_document *doc, pdf_write_options *opts, int from
 			obj = pdf_dict_gets(pdf_trailer(doc), "ID");
 			if (obj)
 				pdf_dict_puts(dict, "ID", obj);
+
+			if (opts->do_incremental)
+			{
+				obj = pdf_dict_gets(pdf_trailer(doc), "Encrypt");
+				if (obj)
+					pdf_dict_puts(dict, "Encrypt", obj);
+			}
 		}
 
 		pdf_dict_puts_drop(dict, "Size", pdf_new_int(doc, to));
