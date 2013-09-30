@@ -14,6 +14,7 @@ void fz_sort_gel(fz_gel *gel);
 fz_irect *fz_bound_gel(const fz_gel *gel, fz_irect *bbox);
 void fz_free_gel(fz_gel *gel);
 int fz_is_rect_gel(fz_gel *gel);
+fz_rect *fz_gel_scissor(const fz_gel *gel, fz_rect *rect);
 
 void fz_scan_convert(fz_gel *gel, int eofill, const fz_irect *clip, fz_pixmap *pix, unsigned char *colorbv);
 
