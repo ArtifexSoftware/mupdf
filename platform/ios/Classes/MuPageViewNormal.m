@@ -484,10 +484,9 @@ static UIImage *renderTile(fz_document *doc, fz_display_list *page_list, fz_disp
 	float scale = tileScale;
 
 	CGRect viewFrame = frame;
-	if (self.contentOffset.x < imageView.frame.origin.x)
-		viewFrame.origin.x = 0;
-	if (self.contentOffset.y < imageView.frame.origin.y)
-		viewFrame.origin.y = 0;
+	// Adjust viewFrame to be relative to imageView's origin
+	viewFrame.origin.x -= imageView.frame.origin.x;
+	viewFrame.origin.y -= imageView.frame.origin.y;
 
 	if (scale < 1.01)
 		return;
