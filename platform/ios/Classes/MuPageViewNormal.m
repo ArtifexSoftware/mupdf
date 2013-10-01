@@ -7,16 +7,6 @@
 
 #include "common.h"
 
-static CGSize measurePage(fz_document *doc, fz_page *page)
-{
-	CGSize pageSize;
-	fz_rect bounds;
-	fz_bound_page(doc, page, &bounds);
-	pageSize.width = bounds.x1 - bounds.x0;
-	pageSize.height = bounds.y1 - bounds.y0;
-	return pageSize;
-}
-
 static void releasePixmap(void *info, const void *data, size_t size)
 {
 	if (queue)
@@ -47,40 +37,105 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix)
 	return image;
 }
 
-static UIImage *renderPage(fz_document *doc, fz_page *page, CGSize screenSize)
+static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 {
-	CGSize pageSize;
+	fz_display_list *list;
+	fz_device *dev = NULL;
+
+	fz_var(dev);
+	fz_try(ctx)
+	{
+		list = fz_new_display_list(ctx);
+		dev = fz_new_list_device(ctx, list);
+		fz_run_page_contents(doc, page, dev, &fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		return NULL;
+	}
+
+	return list;
+}
+
+static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
+{
+	fz_display_list *list;
+	fz_device *dev = NULL;
+
+	fz_var(dev);
+	fz_try(ctx)
+	{
+		fz_annot *annot;
+
+		list = fz_new_display_list(ctx);
+		dev = fz_new_list_device(ctx, list);
+		for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
+			fz_run_annot(doc, page, annot, dev, &fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		return NULL;
+	}
+
+	return list;
+}
+
+static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize)
+{
 	fz_irect bbox;
+	fz_rect rect;
 	fz_matrix ctm;
-	fz_device *dev;
-	fz_pixmap *pix;
+	fz_device *dev = NULL;
+	fz_pixmap *pix = NULL;
 	CGSize scale;
 
 	screenSize.width *= screenScale;
 	screenSize.height *= screenScale;
 
-	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
 	fz_scale(&ctm, scale.width, scale.height);
 	bbox = (fz_irect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
+	fz_rect_from_irect(&rect, &bbox);
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
-	fz_clear_pixmap_with_value(ctx, pix, 255);
+	fz_var(dev);
+	fz_var(pix);
+	fz_try(ctx)
+	{
+		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+		fz_clear_pixmap_with_value(ctx, pix, 255);
 
-	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, &ctm, NULL);
-	fz_free_device(dev);
+		dev = fz_new_draw_device(ctx, pix);
+		fz_run_display_list(page_list, dev, &ctm, &rect, NULL);
+		fz_run_display_list(annot_list, dev, &ctm, &rect, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, pix);
+		return nil;
+	}
 
 	return newImageWithPixmap(pix);
 }
 
-static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, CGRect tileRect, float zoom)
+static UIImage *renderTile(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
 {
-	CGSize pageSize;
 	fz_irect bbox;
+	fz_rect rect;
 	fz_matrix ctm;
-	fz_device *dev;
-	fz_pixmap *pix;
+	fz_device *dev = NULL;
+	fz_pixmap *pix = NULL;
 	CGSize scale;
 
 	screenSize.width *= screenScale;
@@ -90,7 +145,6 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	tileRect.size.width *= screenScale;
 	tileRect.size.height *= screenScale;
 
-	pageSize = measurePage(doc, page);
 	scale = fitPageToScreen(pageSize, screenSize);
 	fz_scale(&ctm, scale.width * zoom, scale.height * zoom);
 
@@ -98,13 +152,28 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	bbox.y0 = tileRect.origin.y;
 	bbox.x1 = tileRect.origin.x + tileRect.size.width;
 	bbox.y1 = tileRect.origin.y + tileRect.size.height;
+	fz_rect_from_irect(&rect, &bbox);
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
-	fz_clear_pixmap_with_value(ctx, pix, 255);
+	fz_var(dev);
+	fz_var(pix);
+	fz_try(ctx)
+	{
+		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+		fz_clear_pixmap_with_value(ctx, pix, 255);
 
-	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, &ctm, NULL);
-	fz_free_device(dev);
+		dev = fz_new_draw_device(ctx, pix);
+		fz_run_display_list(page_list, dev, &ctm, &rect, NULL);
+		fz_run_display_list(annot_list, dev, &ctm, &rect, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, pix);
+		return nil;
+	}
 
 	return newImageWithPixmap(pix);
 }
@@ -112,6 +181,38 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 #import "MuPageViewNormal.h"
 
 @implementation MuPageViewNormal
+
+- (void) ensurePageLoaded
+{
+	if (page)
+		return;
+
+	fz_try(ctx)
+	{
+		fz_rect bounds;
+		page = fz_load_page(doc, number);
+		fz_bound_page(doc, page, &bounds);
+		pageSize.width = bounds.x1 - bounds.x0;
+		pageSize.height = bounds.y1 - bounds.y0;
+	}
+	fz_catch(ctx)
+	{
+		return;
+	}
+}
+
+- (void) ensureDisplaylists
+{
+	[self ensurePageLoaded];
+	if (!page)
+		return;
+
+	if (!page_list)
+		page_list = create_page_list(doc, page);
+
+	if (!annot_list)
+		annot_list = create_annot_list(doc, page);
+}
 
 - (id) initWithFrame: (CGRect)frame document: (MuDocRef *)aDoc page: (int)aNumber
 {
@@ -152,9 +253,15 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 		__block id block_self = self; // don't auto-retain self!
 		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
 	} else {
+		__block fz_display_list *block_page_list = page_list;
+		__block fz_display_list *block_annot_list = annot_list;
 		__block fz_page *block_page = page;
 		__block fz_document *block_doc = docRef->doc;
 		dispatch_async(queue, ^{
+			if (block_page_list)
+				fz_drop_display_list(ctx, block_page_list);
+			if (block_annot_list)
+				fz_drop_display_list(ctx, block_annot_list);
 			if (block_page)
 				fz_free_page(block_doc, block_page);
 			block_page = nil;
@@ -178,8 +285,7 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 {
 	if (!linkView) {
 		dispatch_async(queue, ^{
-			if (!page)
-				page = fz_load_page(doc, number);
+			[self ensurePageLoaded];
 			fz_link *links = fz_load_links(doc, page);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				linkView = [[MuHitView alloc] initWithLinks: links forDocument: doc];
@@ -256,12 +362,9 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 	dispatch_async(queue, ^{
 		if (!cancel) {
 			printf("render page %d\n", number);
-			if (!page)
-				page = fz_load_page(doc, number);
-			CGSize size = measurePage(doc, page);
-			UIImage *image = renderPage(doc, page, self.bounds.size);
+			[self ensureDisplaylists];
+			UIImage *image = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
-				pageSize = size;
 				[self displayImage: image];
 				[image release];
 			});
@@ -399,11 +502,10 @@ static UIImage *renderTile(fz_document *doc, fz_page *page, CGSize screenSize, C
 			return;
 		}
 
-		if (!page)
-			page = fz_load_page(doc, number);
+		[self ensureDisplaylists];
 
 		printf("render tile\n");
-		UIImage *image = renderTile(doc, page, screenSize, viewFrame, scale);
+		UIImage *image = renderTile(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;

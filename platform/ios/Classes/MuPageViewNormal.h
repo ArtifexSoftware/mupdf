@@ -22,6 +22,8 @@
 	MuDocRef *docRef;
 	fz_document *doc;
 	fz_page *page;
+	fz_display_list *page_list;
+	fz_display_list *annot_list;
 	int number;
 	UIActivityIndicatorView *loadingView;
 	UIImageView *imageView;
