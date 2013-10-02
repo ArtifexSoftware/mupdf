@@ -88,48 +88,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	return list;
 }
 
-static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize)
-{
-	fz_irect bbox;
-	fz_rect rect;
-	fz_matrix ctm;
-	fz_device *dev = NULL;
-	fz_pixmap *pix = NULL;
-	CGSize scale;
-
-	screenSize.width *= screenScale;
-	screenSize.height *= screenScale;
-
-	scale = fitPageToScreen(pageSize, screenSize);
-	fz_scale(&ctm, scale.width, scale.height);
-	bbox = (fz_irect){0, 0, pageSize.width * scale.width, pageSize.height * scale.height};
-	fz_rect_from_irect(&rect, &bbox);
-
-	fz_var(dev);
-	fz_var(pix);
-	fz_try(ctx)
-	{
-		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
-		fz_clear_pixmap_with_value(ctx, pix, 255);
-
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_display_list(page_list, dev, &ctm, &rect, NULL);
-		fz_run_display_list(annot_list, dev, &ctm, &rect, NULL);
-	}
-	fz_always(ctx)
-	{
-		fz_free_device(dev);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_pixmap(ctx, pix);
-		return nil;
-	}
-
-	return newImageWithPixmap(pix);
-}
-
-static UIImage *renderTile(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
+static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	fz_irect bbox;
 	fz_rect rect;
@@ -363,7 +322,9 @@ static UIImage *renderTile(fz_document *doc, fz_display_list *page_list, fz_disp
 		if (!cancel) {
 			printf("render page %d\n", number);
 			[self ensureDisplaylists];
-			UIImage *image = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size);
+			CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
+			UIImage *image = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -504,7 +465,7 @@ static UIImage *renderTile(fz_document *doc, fz_display_list *page_list, fz_disp
 		[self ensureDisplaylists];
 
 		printf("render tile\n");
-		UIImage *image = renderTile(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
+		UIImage *image = renderPage(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
