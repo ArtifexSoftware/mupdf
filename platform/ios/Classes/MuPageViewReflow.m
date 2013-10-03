@@ -133,4 +133,9 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	[self stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@"document.getElementById('content').style.zoom=\"%f\"", scale]];
 }
 
+-(MuTapResult *) handleTap:(CGPoint)pt
+{
+	return nil;
+}
+
 @end

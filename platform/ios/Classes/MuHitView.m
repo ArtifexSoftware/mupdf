@@ -66,6 +66,31 @@
 	[self setNeedsDisplay];
 }
 
+- (MuTapResult *) handleTap:(CGPoint)pt
+{
+	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+	pt.x /= scale.width;
+	pt.y /= scale.height;
+
+	for (int i = 0; i < hitCount; i++)
+	{
+		if (CGRectContainsPoint(hitRects[i], pt))
+		{
+			if (linkPage[i] >= 0)
+			{
+				return [[[MuTapResultInternalLink alloc] initWithPageNumber:linkPage[i]] autorelease];
+			}
+			if (linkUrl[i])
+			{
+				NSString *url = [NSString stringWithUTF8String:linkUrl[i]];
+				return [[[MuTapResultExternalLink alloc] initWithUrl:url] autorelease];
+			}
+		}
+	}
+
+	return nil;
+}
+
 - (void) drawRect: (CGRect)r
 {
 	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);

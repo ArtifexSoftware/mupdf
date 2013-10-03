@@ -460,7 +460,28 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	float x1 = (width - GAP) - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
-	if (p.x < x0) {
+	__block BOOL tapHandled = NO;
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		CGPoint pp = [sender locationInView:view];
+		if (CGRectContainsPoint(view.bounds, pp))
+		{
+			MuTapResult *result = [view handleTap:pp];
+			[result switchCaseInternal:^(MuTapResultInternalLink *link) {
+				[self gotoPage:link.pageNumber animated:NO];
+				tapHandled = YES;
+			} caseExternal:^(MuTapResultExternalLink *link) {
+				// Not currently supported
+			} caseRemote:^(MuTapResultRemoteLink *link) {
+				// Not currently supported
+			}];
+			if (tapHandled)
+				break;
+		}
+	}
+	if (tapHandled) {
+		// Do nothing further
+	} else if (p.x < x0) {
 		[self gotoPage: current-1 animated: YES];
 	} else if (p.x > x1) {
 		[self gotoPage: current+1 animated: YES];

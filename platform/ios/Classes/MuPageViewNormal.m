@@ -525,4 +525,10 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 
 - (void) setScale:(float)scale {}
 
+- (MuTapResult *) handleTap:(CGPoint)pt
+{
+	CGPoint lpt = [self convertPoint:pt toView:linkView];
+	return linkView ? [linkView handleTap:lpt] : nil;
+}
+
 @end

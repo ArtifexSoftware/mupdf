@@ -9,7 +9,7 @@
 #import "MuDocRef.h"
 #import "MuPageView.h"
 
-@interface MuPageViewReflow : UIWebView <UIWebViewDelegate,UIGestureRecognizerDelegate,MuPageView>
+@interface MuPageViewReflow : UIWebView <UIWebViewDelegate,MuPageView>
 {
 	int number;
 	float scale;

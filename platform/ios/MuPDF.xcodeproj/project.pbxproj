@@ -36,6 +36,7 @@
 		DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A917E864CB0061F586 /* MuAppDelegate.m */; };
 		DA1C68C417E8969C0061F586 /* common.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68C317E8969C0061F586 /* common.m */; };
 		DAA6E56F17F03F96002B1E4E /* MuPageViewReflow.m in Sources */ = {isa = PBXBuildFile; fileRef = DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */; };
+		DAAC6A2E17FC6E4A00A0E83A /* MuTapResult.m in Sources */ = {isa = PBXBuildFile; fileRef = DAAC6A2D17FC6E4A00A0E83A /* MuTapResult.m */; };
 		DAB9F4BB17F1B24000117D2E /* ic_arrow_left.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */; };
 		DAB9F4BC17F1B24000117D2E /* ic_arrow_right.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B617F1B24000117D2E /* ic_arrow_right.png */; };
 		DAB9F4BD17F1B24000117D2E /* ic_cancel.png in Resources */ = {isa = PBXBuildFile; fileRef = DAB9F4B717F1B24000117D2E /* ic_cancel.png */; };
@@ -96,6 +97,8 @@
 		DA1C68C317E8969C0061F586 /* common.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = common.m; sourceTree = "<group>"; };
 		DAA6E56D17F03AAE002B1E4E /* MuPageViewReflow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageViewReflow.h; path = Classes/MuPageViewReflow.h; sourceTree = "<group>"; };
 		DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPageViewReflow.m; path = Classes/MuPageViewReflow.m; sourceTree = "<group>"; };
+		DAAC6A2C17FC6E4A00A0E83A /* MuTapResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuTapResult.h; path = Classes/MuTapResult.h; sourceTree = "<group>"; };
+		DAAC6A2D17FC6E4A00A0E83A /* MuTapResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuTapResult.m; path = Classes/MuTapResult.m; sourceTree = "<group>"; };
 		DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_arrow_left.png; path = "../android/res/drawable-ldpi/ic_arrow_left.png"; sourceTree = "<group>"; };
 		DAB9F4B617F1B24000117D2E /* ic_arrow_right.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_arrow_right.png; path = "../android/res/drawable-ldpi/ic_arrow_right.png"; sourceTree = "<group>"; };
 		DAB9F4B717F1B24000117D2E /* ic_cancel.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_cancel.png; path = "../android/res/drawable-ldpi/ic_cancel.png"; sourceTree = "<group>"; };
@@ -212,6 +215,8 @@
 				DABDEF5917EC484A00AC35F1 /* MuDocRef.m */,
 				DAA6E56D17F03AAE002B1E4E /* MuPageViewReflow.h */,
 				DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */,
+				DAAC6A2C17FC6E4A00A0E83A /* MuTapResult.h */,
+				DAAC6A2D17FC6E4A00A0E83A /* MuTapResult.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -348,6 +353,7 @@
 				96C8ED011779A88E00A30AF4 /* main.m in Sources */,
 				DA1C68C417E8969C0061F586 /* common.m in Sources */,
 				DABDEF5A17EC484A00AC35F1 /* MuDocRef.m in Sources */,
+				DAAC6A2E17FC6E4A00A0E83A /* MuTapResult.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,6 +399,7 @@
 		968E1E5B1779A54F0050CEA3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -405,6 +412,7 @@
 		968E1E5C1779A54F0050CEA3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_OPTIMIZATION_LEVEL = s;
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
