@@ -423,8 +423,14 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 	else
 		imageView.frame = frameToCenter;
 
-	if (hitView && imageView)
-		[hitView setFrame: [imageView frame]];
+	if (imageView)
+	{
+		if (hitView)
+			[hitView setFrame: [imageView frame]];
+
+		if (linkView)
+			[linkView setFrame:[imageView frame]];
+	}
 }
 
 - (UIView*) viewForZoomingInScrollView: (UIScrollView*)scrollView
@@ -483,6 +489,8 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 				[self addSubview: tileView];
 				if (hitView)
 					[self bringSubviewToFront: hitView];
+				if (linkView)
+					[self bringSubviewToFront:linkView];
 			} else {
 				printf("discard tile\n");
 			}
