@@ -1540,9 +1540,11 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 
 				pts[k].x = pt ? (*env)->GetFloatField(env, pt, x_fid) : 0.0f;
 				pts[k].y = pt ? (*env)->GetFloatField(env, pt, y_fid) : 0.0f;
+				(*env)->DeleteLocalRef(env, pt);
 				fz_transform_point(&pts[k], &ctm);
 				k++;
 			}
+			(*env)->DeleteLocalRef(env, arc);
 		}
 
 		annot = (fz_annot *)pdf_create_annot(idoc, (pdf_page *)pc->page, FZ_ANNOT_INK);
