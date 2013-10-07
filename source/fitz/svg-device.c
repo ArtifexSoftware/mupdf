@@ -3,6 +3,8 @@
 typedef struct svg_device_s svg_device;
 
 typedef struct tile_s tile;
+typedef struct font_s font;
+typedef struct glyph_s glyph;
 
 struct tile_s
 {
@@ -11,6 +13,20 @@ struct tile_s
 	fz_rect view;
 	fz_rect area;
 	fz_point step;
+};
+
+struct glyph_s
+{
+	float x_off;
+	float y_off;
+};
+
+struct font_s
+{
+	int id;
+	fz_font *font;
+	int max_sentlist;
+	glyph *sentlist;
 };
 
 struct svg_device_s
@@ -23,6 +39,10 @@ struct svg_device_s
 	int num_tiles;
 	int max_tiles;
 	tile *tiles;
+
+	int num_fonts;
+	int max_fonts;
+	font *fonts;
 };
 
 /* Helper functions */
@@ -244,32 +264,97 @@ static void
 svg_dev_text_as_paths(svg_device *sdev, const fz_matrix *ctm, fz_text *text,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
+	fz_context *ctx = sdev->ctx;
 	fz_output *out = sdev->out;
-	int i;
+	int i, font_idx;
 	fz_matrix local_trm, local_trm2;
-	float size;
+	font *fnt;
+	fz_matrix shift = { 1, 0, 0, 1, 0, 0};
 
-	/* Rely on the fact that trm.{e,f} == 0 */
-	local_trm.a = text->trm.a;
-	local_trm.b = text->trm.b;
-	local_trm.c = -text->trm.c;
-	local_trm.d = -text->trm.d;
-	local_trm.e = 0;
-	local_trm.f = 0;
-	fz_concat(&local_trm, &local_trm, ctm);
+	for (font_idx = 0; font_idx < sdev->num_fonts; font_idx++)
+	{
+		if (sdev->fonts[font_idx].font == text->font)
+			break;
+	}
+	if (font_idx == sdev->num_fonts)
+	{
+		/* New font */
+		if (font_idx == sdev->max_fonts)
+		{
+			int newmax = sdev->max_fonts * 2;
+			if (newmax == 0)
+				newmax =  4;
+			sdev->fonts = fz_resize_array(ctx, sdev->fonts, newmax, sizeof(*sdev->fonts));
+			memset(&sdev->fonts[font_idx], 0, (newmax - font_idx) * sizeof(sdev->fonts[0]));
+			sdev->max_fonts = newmax;
+		}
+		sdev->fonts[font_idx].id = sdev->id++;
+		sdev->fonts[font_idx].font = fz_keep_font(ctx, text->font);
+		sdev->num_fonts++;
+	}
+	fnt = &sdev->fonts[font_idx];
 
 	for (i=0; i < text->len; i++)
 	{
 		fz_text_item *it = &text->items[i];
-		int c = it->ucs;
-		fz_path *path;
+		int gid = it->gid;
 
+		if (gid < 0)
+			continue;
+		if (gid >= fnt->max_sentlist)
+		{
+			int j;
+			fnt->sentlist = fz_resize_array(ctx, fnt->sentlist, gid+1, sizeof(fnt->sentlist[0]));
+			for (j = fnt->max_sentlist; j <= gid; j++)
+			{
+				fnt->sentlist[j].x_off = FLT_MIN;
+				fnt->sentlist[j].y_off = FLT_MIN;
+			}
+			fnt->max_sentlist = gid+1;
+		}
+		if (fnt->sentlist[gid].x_off == FLT_MIN)
+		{
+			/* Need to send this one */
+			fz_path *path = fz_outline_glyph(sdev->ctx, text->font, gid, &fz_identity);
+			fz_rect rect;
+			fz_bound_path(ctx, path, NULL, &fz_identity, &rect);
+			shift.e = -rect.x0;
+			shift.f = -rect.y0;
+			fz_transform_path(ctx, path, &shift);
+			fz_printf(out, "<symbol id=\"font_%x_%x\">", fnt->id, gid);
+			fz_printf(out, "<path");
+			svg_dev_path(sdev, path);
+			fz_printf(out, "/>\n");
+			fz_printf(out, "</symbol>");
+			fnt->sentlist[gid].x_off = rect.x0;
+			fnt->sentlist[gid].y_off = rect.y0;
+		}
+	}
+
+	/* Rely on the fact that trm.{e,f} == 0 */
+	local_trm.a = text->trm.a;
+	local_trm.b = text->trm.b;
+	local_trm.c = text->trm.c;
+	local_trm.d = text->trm.d;
+	local_trm.e = 0;
+	local_trm.f = 0;
+
+	for (i=0; i < text->len; i++)
+	{
+		fz_text_item *it = &text->items[i];
+		int gid = it->gid;
+
+		if (gid < 0)
+			continue;
+
+		shift.e = fnt->sentlist[gid].x_off;
+		shift.f = fnt->sentlist[gid].y_off;
 		local_trm.e = it->x;
 		local_trm.f = it->y;
 		fz_concat(&local_trm2, &local_trm, ctm);
-		path = fz_outline_glyph(sdev->ctx, text->font, it->gid, &local_trm2);
-		fz_printf(out, "<path");
-		svg_dev_path(sdev, path);
+		fz_concat(&local_trm2, &shift, &local_trm2);
+		fz_printf(out, "<use xlink:href=\"#font_%x_%x\"", fnt->id, gid);
+		svg_dev_ctm(sdev, &local_trm2);
 		svg_dev_fill_color(sdev, colorspace, color, alpha);
 		fz_printf(out, "/>\n");
 	}
