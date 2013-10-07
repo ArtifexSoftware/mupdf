@@ -240,6 +240,41 @@ svg_dev_text(svg_device *sdev, const fz_matrix *ctm, fz_text *text)
 	fz_printf(out, "\n</text>\n");
 }
 
+static void
+svg_dev_text_as_paths(svg_device *sdev, const fz_matrix *ctm, fz_text *text,
+	fz_colorspace *colorspace, float *color, float alpha)
+{
+	fz_output *out = sdev->out;
+	int i;
+	fz_matrix local_trm, local_trm2;
+	float size;
+
+	/* Rely on the fact that trm.{e,f} == 0 */
+	local_trm.a = text->trm.a;
+	local_trm.b = text->trm.b;
+	local_trm.c = -text->trm.c;
+	local_trm.d = -text->trm.d;
+	local_trm.e = 0;
+	local_trm.f = 0;
+	fz_concat(&local_trm, &local_trm, ctm);
+
+	for (i=0; i < text->len; i++)
+	{
+		fz_text_item *it = &text->items[i];
+		int c = it->ucs;
+		fz_path *path;
+
+		local_trm.e = it->x;
+		local_trm.f = it->y;
+		fz_concat(&local_trm2, &local_trm, ctm);
+		path = fz_outline_glyph(sdev->ctx, text->font, it->gid, &local_trm2);
+		fz_printf(out, "<path");
+		svg_dev_path(sdev, path);
+		svg_dev_fill_color(sdev, colorspace, color, alpha);
+		fz_printf(out, "/>\n");
+	}
+}
+
 /* Entry points */
 
 static void
@@ -319,8 +354,9 @@ svg_dev_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_output *out = sdev->out;
 
 	fz_printf(out, "<text");
-	svg_dev_fill_color(sdev, colorspace, color, alpha);
+	svg_dev_fill_color(sdev, colorspace, color, 0.0f);
 	svg_dev_text(sdev, ctm, text);
+	svg_dev_text_as_paths(sdev, ctm, text, colorspace, color, alpha);
 }
 
 static void
