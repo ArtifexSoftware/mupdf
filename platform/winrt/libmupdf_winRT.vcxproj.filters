@@ -378,6 +378,9 @@
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c">
       <Filter>pdf</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\glyph.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">

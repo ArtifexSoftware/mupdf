@@ -74,6 +74,7 @@
     <ClCompile Include="..\..\source\fitz\function.c" />
     <ClCompile Include="..\..\source\fitz\geometry.c" />
     <ClCompile Include="..\..\source\fitz\getopt.c" />
+    <ClCompile Include="..\..\source\fitz\glyph.c" />
     <ClCompile Include="..\..\source\fitz\halftone.c" />
     <ClCompile Include="..\..\source\fitz\hash.c" />
     <ClCompile Include="..\..\source\fitz\image.c" />
