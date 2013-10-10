@@ -1017,7 +1017,7 @@ xps_parse_path(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_reso
 
 	if (fill_tag)
 	{
-		fz_clip_path(doc->dev, path, NULL, fill_rule == 0, &local_ctm);
+		fz_clip_path(doc->dev, path, &area, fill_rule == 0, &local_ctm);
 		xps_parse_brush(doc, &local_ctm, &area, fill_uri, dict, fill_tag);
 		fz_pop_clip(doc->dev);
 	}
@@ -1035,7 +1035,7 @@ xps_parse_path(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_reso
 
 	if (stroke_tag)
 	{
-		fz_clip_stroke_path(doc->dev, stroke_path, NULL, stroke, &local_ctm);
+		fz_clip_stroke_path(doc->dev, stroke_path, &area, stroke, &local_ctm);
 		xps_parse_brush(doc, &local_ctm, &area, stroke_uri, dict, stroke_tag);
 		fz_pop_clip(doc->dev);
 	}
