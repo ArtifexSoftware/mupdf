@@ -41,7 +41,7 @@ struct fz_draw_device_s
 	fz_scale_cache *cache_x;
 	fz_scale_cache *cache_y;
 	fz_draw_state *stack;
-	int stack_max;
+	int stack_cap;
 	fz_draw_state init_stack[STACK_SIZE];
 };
 
@@ -75,20 +75,20 @@ static void dump_spaces(int x, const char *s)
 
 static void fz_grow_stack(fz_draw_device *dev)
 {
-	int max = dev->stack_max * 2;
+	int max = dev->stack_cap * 2;
 	fz_draw_state *stack;
 
 	if (dev->stack == &dev->init_stack[0])
 	{
 		stack = fz_malloc(dev->ctx, sizeof(*stack) * max);
-		memcpy(stack, dev->stack, sizeof(*stack) * dev->stack_max);
+		memcpy(stack, dev->stack, sizeof(*stack) * dev->stack_cap);
 	}
 	else
 	{
 		stack = fz_resize_array(dev->ctx, dev->stack, max, sizeof(*stack));
 	}
 	dev->stack = stack;
-	dev->stack_max = max;
+	dev->stack_cap = max;
 }
 
 /* 'Push' the stack. Returns a pointer to the current state, with state[1]
@@ -99,7 +99,7 @@ push_stack(fz_draw_device *dev)
 {
 	fz_draw_state *state;
 
-	if (dev->top == dev->stack_max-1)
+	if (dev->top == dev->stack_cap-1)
 		fz_grow_stack(dev);
 	state = &dev->stack[dev->top];
 	dev->top++;
@@ -2000,7 +2000,7 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 		ddev->cache_x = fz_new_scale_cache(ctx);
 		ddev->cache_y = fz_new_scale_cache(ctx);
 		ddev->stack = &ddev->init_stack[0];
-		ddev->stack_max = STACK_SIZE;
+		ddev->stack_cap = STACK_SIZE;
 		ddev->stack[0].dest = dest;
 		ddev->stack[0].shape = NULL;
 		ddev->stack[0].mask = NULL;
