@@ -830,7 +830,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 		}
 		buf = fz_new_buffer(ctx, 1024);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_output_png(out, pix, 0);
+		fz_output_png(out, pix, 1);
 	}
 	fz_always(ctx)
 	{

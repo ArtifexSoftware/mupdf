@@ -731,6 +731,7 @@ svg_dev_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float 
 	else
 		fz_round_rect(&bbox, fz_intersect_rect(fz_bound_shade(ctx, shade, ctm, &rect), &dev->scissor[dev->scissor_len-1]));
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+	fz_clear_pixmap(ctx, pix);
 
 	fz_try(ctx)
 	{
