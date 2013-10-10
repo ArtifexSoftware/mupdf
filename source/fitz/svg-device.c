@@ -713,6 +713,44 @@ svg_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 static void
 svg_dev_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_context *ctx = dev->ctx;
+	fz_output *out = sdev->out;
+	fz_rect rect;
+	fz_irect bbox;
+	fz_pixmap *pix;
+	fz_buffer *buf = NULL;
+
+	fz_var(buf);
+
+	if (dev->scissor_len == 0)
+		return;
+
+	if (fz_is_infinite_rect(&shade->bbox))
+		fz_round_rect(&bbox, &dev->scissor[dev->scissor_len-1]);
+	else
+		fz_round_rect(&bbox, fz_intersect_rect(fz_bound_shade(ctx, shade, ctm, &rect), &dev->scissor[dev->scissor_len-1]));
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+
+	fz_try(ctx)
+	{
+		fz_paint_shade(ctx, shade, ctm, pix, &bbox);
+		buf = fz_new_png_from_pixmap(ctx, pix);
+		fz_printf(out, "<image");
+		fz_printf(out, " x=\"%dpx\" y=\"%dpx\" width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", pix->x, pix->y, pix->w, pix->h);
+		fz_printf(out, "image/png;base64,");
+		send_data_base64(out, buf);
+		fz_printf(out, "\"/>\n");
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_pixmap(ctx, pix);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static void
@@ -974,6 +1012,8 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 
 	dev->begin_tile = svg_dev_begin_tile;
 	dev->end_tile = svg_dev_end_tile;
+
+	dev->hints |= FZ_MAINTAIN_SCISSOR_STACK;
 
 	fz_printf(out, "<?xml version=\"1.0\" standalone=\"no\"?>\n");
 	fz_printf(out, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
