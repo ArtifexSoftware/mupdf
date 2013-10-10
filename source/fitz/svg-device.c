@@ -798,10 +798,40 @@ fz_colorspace *colorspace, float *color, float alpha)
 static void
 svg_dev_clip_image_mask(fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
-	svg_device *sdev = dev->user;
-	fz_output *out = sdev->out;
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_context *ctx = dev->ctx;
+	fz_output *out;
+	fz_matrix local_ctm = *ctm;
+	fz_matrix scale = { 1.0f/image->w, 0, 0, 1.0f/image->h, 0, 0};
+	int mask = sdev->id++;
 
-	fz_printf(out, "<g>\n");
+	fz_concat(&local_ctm, &scale, ctm);
+	out = start_def(sdev);
+	fz_printf(out, "<mask id=\"ma%d\"><image", mask);
+	svg_dev_ctm(sdev, &local_ctm);
+	fz_printf(out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
+	switch (image->buffer == NULL ? FZ_IMAGE_JPX : image->buffer->params.type)
+	{
+	case FZ_IMAGE_JPEG:
+		fz_printf(out, "image/jpeg;base64,");
+		send_data_base64(out, image->buffer->buffer);
+		break;
+	case FZ_IMAGE_PNG:
+		fz_printf(out, "image/png;base64,");
+		send_data_base64(out, image->buffer->buffer);
+		break;
+	default:
+		{
+			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
+			fz_printf(out, "image/png;base64,");
+			send_data_base64(out, buf);
+			fz_drop_buffer(ctx, buf);
+			break;
+		}
+	}
+	fz_printf(out, "\"/></mask>\n");
+	out = end_def(sdev);
+	fz_printf(out, "<g mask=\"url(#ma%d)\">\n", mask);
 }
 
 static void
