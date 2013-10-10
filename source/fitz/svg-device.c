@@ -700,7 +700,7 @@ svg_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_image_as_png(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
 			fz_printf(out, "image/png;base64,");
 			send_data_base64(out, buf);
 			fz_drop_buffer(ctx, buf);
@@ -742,7 +742,7 @@ fz_colorspace *colorspace, float *color, float alpha)
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_image_as_png(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
 			fz_printf(out, "image/png;base64,");
 			send_data_base64(out, buf);
 			fz_drop_buffer(ctx, buf);
