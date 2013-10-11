@@ -858,13 +858,20 @@ svg_dev_end_mask(fz_device *dev)
 static void
 svg_dev_begin_group(fz_device *dev, const fz_rect *bbox, int isolated, int knockout, int blendmode, float alpha)
 {
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_output *out = sdev->out;
 
+	/* SVG 1.1 doesn't support adequate blendmodes/knockout etc, so just ignore it for now */
+	fz_printf(out, "<g>\n");
 }
 
 static void
 svg_dev_end_group(fz_device *dev)
 {
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_output *out = sdev->out;
 
+	fz_printf(out, "</g>\n");
 }
 
 static int
