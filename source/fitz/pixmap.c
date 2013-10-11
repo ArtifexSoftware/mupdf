@@ -818,6 +818,9 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 	fz_var(out);
 	fz_var(pix2);
 
+	if (pix->w == 0 || pix->h == 0)
+		return NULL;
+
 	fz_try(ctx)
 	{
 		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx))
