@@ -525,7 +525,7 @@ svg_dev_clip_stroke_path(fz_device *dev, fz_path *path, const fz_rect *rect, fz_
 	fz_context *ctx = dev->ctx;
 	fz_rect bounds;
 	int num = sdev->id++;
-	float white[3] = { 255, 255, 255 };
+	float white[3] = { 1, 1, 1 };
 
 	fz_bound_path(ctx, path, stroke, ctm, &bounds);
 
@@ -580,7 +580,7 @@ svg_dev_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accum
 	fz_context *ctx = dev->ctx;
 	fz_rect bounds;
 	int num = sdev->id++;
-	float white[3] = { 255, 255, 255 };
+	float white[3] = { 1, 1, 1 };
 	font *fnt;
 
 	fz_bound_text(ctx, text, NULL, ctm, &bounds);
@@ -685,6 +685,8 @@ svg_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 	fz_matrix scale = { 1.0f/image->w, 0, 0, 1.0f/image->h, 0, 0};
 
 	fz_concat(&local_ctm, &scale, ctm);
+	if (alpha != 1.0f)
+		fz_printf(out, "<g opacity=\"%g\">", alpha);
 	fz_printf(out, "<image");
 	svg_dev_ctm(sdev, &local_ctm);
 	fz_printf(out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
@@ -708,6 +710,8 @@ svg_dev_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 		}
 	}
 	fz_printf(out, "\"/>\n");
+	if (alpha != 1.0f)
+		fz_printf(out, "</g>");
 }
 
 static void
@@ -736,11 +740,13 @@ svg_dev_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float 
 	{
 		fz_paint_shade(ctx, shade, ctm, pix, &bbox);
 		buf = fz_new_png_from_pixmap(ctx, pix);
-		fz_printf(out, "<image");
-		fz_printf(out, " x=\"%dpx\" y=\"%dpx\" width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", pix->x, pix->y, pix->w, pix->h);
-		fz_printf(out, "image/png;base64,");
+		if (alpha != 1.0f)
+			fz_printf(out, "<g opacity=\"%g\">", alpha);
+		fz_printf(out, "<image x=\"%dpx\" y=\"%dpx\" width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:image/png;base64,", pix->x, pix->y, pix->w, pix->h);
 		send_data_base64(out, buf);
 		fz_printf(out, "\"/>\n");
+		if (alpha != 1.0f)
+			fz_printf(out, "</g>");
 	}
 	fz_always(ctx)
 	{
