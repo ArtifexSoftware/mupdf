@@ -723,10 +723,10 @@ svg_dev_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float 
 
 	fz_var(buf);
 
-	if (dev->scissor_len == 0)
+	if (dev->container_len == 0)
 		return;
 
-	fz_round_rect(&bbox, fz_intersect_rect(fz_bound_shade(ctx, shade, ctm, &rect), &dev->scissor[dev->scissor_len-1]));
+	fz_round_rect(&bbox, fz_intersect_rect(fz_bound_shade(ctx, shade, ctm, &rect), &dev->container[dev->container_len-1].scissor));
 	if (fz_is_empty_irect(&bbox))
 		return;
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
@@ -847,11 +847,32 @@ svg_dev_pop_clip(fz_device *dev)
 static void
 svg_dev_begin_mask(fz_device *dev, const fz_rect *bbox, int luminosity, fz_colorspace *colorspace, float *color)
 {
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_context *ctx = dev->ctx;
+	fz_output *out;
+	int mask = sdev->id++;
+
+	out = start_def(sdev);
+	fz_printf(out, "<mask id=\"ma%d\">", mask);
+
+	if (dev->container_len > 0)
+		dev->container[dev->container_len-1].user = mask;
 }
 
 static void
 svg_dev_end_mask(fz_device *dev)
 {
+	svg_device *sdev = (svg_device *)dev->user;
+	fz_context *ctx = dev->ctx;
+	fz_output *out = sdev->out;
+	int mask = 0;
+
+	if (dev->container_len > 0)
+		mask = (int)dev->container[dev->container_len-1].user;
+
+	fz_printf(out, "\"/></mask>\n");
+	out = end_def(sdev);
+	fz_printf(out, "<g mask=\"url(#ma%d)\">\n", mask);
 
 }
 
@@ -1050,7 +1071,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	dev->begin_tile = svg_dev_begin_tile;
 	dev->end_tile = svg_dev_end_tile;
 
-	dev->hints |= FZ_MAINTAIN_SCISSOR_STACK;
+	dev->hints |= FZ_MAINTAIN_CONTAINER_STACK;
 
 	fz_printf(out, "<?xml version=\"1.0\" standalone=\"no\"?>\n");
 	fz_printf(out, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
