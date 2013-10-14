@@ -16,7 +16,9 @@ static void releasePixmap(void *info, const void *data, size_t size)
 			fz_drop_pixmap(ctx, info);
 		});
 	else
+	{
 		fz_drop_pixmap(ctx, info);
+	}
 }
 
 static CGDataProviderRef wrapPixmap(fz_pixmap *pix)
@@ -147,7 +149,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	return list;
 }
 
-static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
+static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	fz_irect bbox;
 	fz_rect rect;
@@ -194,6 +196,112 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 	}
 
 	return pix;
+}
+
+typedef struct rect_list_s rect_list;
+
+struct rect_list_s
+{
+	fz_rect rect;
+	rect_list *next;
+};
+
+static void drop_list(rect_list *list)
+{
+	while (list)
+	{
+		rect_list *n = list->next;
+		fz_free(ctx, list);
+		list = n;
+	}
+}
+
+static rect_list *updatePage(fz_document *doc, fz_page *page)
+{
+	rect_list *list = NULL;
+
+	fz_var(list);
+	fz_try(ctx)
+	{
+		pdf_document *idoc = pdf_specifics(doc);
+
+		if (idoc)
+		{
+			fz_annot *annot;
+
+			pdf_update_page(idoc, (pdf_page *)page);
+			while ((annot = (fz_annot *)pdf_poll_changed_annot(idoc, (pdf_page *)page)) != NULL)
+			{
+				rect_list *node = fz_malloc_struct(ctx, rect_list);
+
+				fz_bound_annot(doc, annot, &node->rect);
+				node->next = list;
+				list = node;
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+		drop_list(list);
+		list = NULL;
+	}
+
+	return list;
+}
+
+static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, fz_pixmap *pixmap, rect_list *rlist, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
+{
+	fz_irect bbox;
+	fz_rect rect;
+	fz_matrix ctm;
+	fz_device *dev = NULL;
+	CGSize scale;
+
+	screenSize.width *= screenScale;
+	screenSize.height *= screenScale;
+	tileRect.origin.x *= screenScale;
+	tileRect.origin.y *= screenScale;
+	tileRect.size.width *= screenScale;
+	tileRect.size.height *= screenScale;
+
+	scale = fitPageToScreen(pageSize, screenSize);
+	fz_scale(&ctm, scale.width * zoom, scale.height * zoom);
+
+	bbox.x0 = tileRect.origin.x;
+	bbox.y0 = tileRect.origin.y;
+	bbox.x1 = tileRect.origin.x + tileRect.size.width;
+	bbox.y1 = tileRect.origin.y + tileRect.size.height;
+	fz_rect_from_irect(&rect, &bbox);
+
+	fz_var(dev);
+	fz_try(ctx)
+	{
+		while (rlist)
+		{
+			fz_irect abox;
+			fz_rect arect = rlist->rect;
+			fz_transform_rect(&arect, &ctm);
+			fz_intersect_rect(&arect, &rect);
+			fz_round_rect(&abox, &arect);
+			if (!fz_is_empty_irect(&abox))
+			{
+				fz_clear_pixmap_rect_with_value(ctx, pixmap, 255, &abox);
+				dev = fz_new_draw_device_with_bbox(ctx, pixmap, &abox);
+				fz_run_display_list(page_list, dev, &ctm, &arect, NULL);
+				fz_run_display_list(annot_list, dev, &ctm, &arect, NULL);
+				fz_free_device(dev);
+				dev = NULL;
+			}
+			rlist = rlist->next;
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+	}
 }
 
 #import "MuPageViewNormal.h"
@@ -389,7 +497,7 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 			[self ensureDisplaylists];
 			CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
 			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
-			image_pix = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
+			image_pix = renderPixmap(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
 			CGDataProviderRelease(imageData);
 			imageData = wrapPixmap(image_pix);
 			UIImage *image = newImageWithPixmap(image_pix, imageData);
@@ -540,7 +648,7 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 		[self ensureDisplaylists];
 
 		printf("render tile\n");
-		tile_pix = renderPage(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
+		tile_pix = renderPixmap(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
 		CGDataProviderRelease(tileData);
 		tileData = wrapPixmap(tile_pix);
 		UIImage *image = newImageWithPixmap(tile_pix, tileData);
@@ -548,8 +656,6 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;
 			if (isValid) {
-				tileFrame = CGRectZero;
-				tileScale = 1;
 				if (tileView) {
 					[tileView removeFromSuperview];
 					[tileView release];
@@ -605,24 +711,59 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 
 - (void) setScale:(float)scale {}
 
+- (void) updatePageAndTileWithTileFrame:(CGRect)tframe tileScale:(float)tscale viewFrame:(CGRect)vframe
+{
+	rect_list *rlist = updatePage(doc, page);
+	fz_drop_display_list(ctx, annot_list);
+	annot_list = create_annot_list(doc, page);
+	if (tile_pix)
+	{
+		updatePixmap(doc, page_list, annot_list, tile_pix, rlist, pageSize, self.bounds.size, vframe, tscale);
+		UIImage *timage = newImageWithPixmap(tile_pix, tileData);
+		dispatch_async(dispatch_get_main_queue(), ^{
+			BOOL isValid = CGRectEqualToRect(tframe, tileFrame) && tscale == tileScale;
+			if (isValid)
+				[tileView setImage:timage];
+			[timage release];
+		});
+	}
+	CGSize fscale = fitPageToScreen(pageSize, self.bounds.size);
+	CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * fscale.width, pageSize.height * fscale.height}};
+	updatePixmap(doc, page_list, annot_list, image_pix, rlist,  pageSize, self.bounds.size, rect, 1.0);
+	drop_list(rlist);
+	UIImage *image = newImageWithPixmap(image_pix, imageData);
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[imageView setImage:image];
+		[image release];
+	});
+}
+
 - (void) invokeTextDialog:(NSString *)text
 {
 	[dialogCreator invokeTextDialog:text okayAction:^(NSString *newText) {
+		CGRect tframe = tileFrame;
+		float tscale = tileScale;
+		CGRect vframe = tframe;
+		vframe.origin.x -= imageView.frame.origin.x;
+		vframe.origin.y -= imageView.frame.origin.y;
+
 		dispatch_async(queue, ^{
 			BOOL accepted = setFocussedWidgetText(doc, page, [newText UTF8String]);
-			fz_drop_display_list(ctx, annot_list);
-			annot_list = NULL;
-			dispatch_async(dispatch_get_main_queue(), ^{
-				if (accepted)
-					[self loadPage];
-				else
+			if (accepted)
+			{
+				[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+			}
+			else
+			{
+				dispatch_async(dispatch_get_main_queue(), ^{
 					[self invokeTextDialog:newText];
-			});
+				});
+			}
 		});
 	}];
 }
 
-- (void) passTapToPage:(CGPoint)pt
+- (int) passTapToPage:(CGPoint)pt
 {
 	pdf_document *idoc = pdf_specifics(doc);
 	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
@@ -642,11 +783,6 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 		changed = pdf_pass_event(idoc, (pdf_page *)page, &event);
 		event.event.pointer.ptype = PDF_POINTER_UP;
 		changed |= pdf_pass_event(idoc, (pdf_page *)page, &event);
-		if (changed)
-		{
-			fz_drop_display_list(ctx, annot_list);
-			annot_list = NULL;
-		}
 
 		focus = pdf_focused_widget(idoc);
 		if (focus)
@@ -679,6 +815,8 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 	fz_catch(ctx)
 	{
 	}
+
+	return changed;
 }
 
 - (MuTapResult *) handleTap:(CGPoint)pt
@@ -689,8 +827,16 @@ static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_di
 		CGRect r = [[widgetRects objectAtIndex:i] CGRectValue];
 		if (CGRectContainsPoint([[widgetRects objectAtIndex:i] CGRectValue], ipt))
 		{
+			CGRect tframe = tileFrame;
+			float tscale = tileScale;
+			CGRect vframe = tframe;
+			vframe.origin.x -= imageView.frame.origin.x;
+			vframe.origin.y -= imageView.frame.origin.y;
+
 			dispatch_async(queue, ^{
-				[self passTapToPage:ipt];
+				int changed = [self passTapToPage:ipt];
+				if (changed)
+					[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
 			});
 			return [[[MuTapResultWidget alloc] init] autorelease];
 		}
