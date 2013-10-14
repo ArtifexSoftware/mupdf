@@ -578,14 +578,11 @@ pdf_repair_obj_stms(pdf_document *doc)
 				if (!strcmp(pdf_to_name(pdf_dict_gets(dict, "Type")), "ObjStm"))
 					pdf_repair_obj_stm(doc, i, 0);
 			}
-			fz_always(ctx)
-			{
-				pdf_drop_obj(dict);
-			}
 			fz_catch(ctx)
 			{
-				fz_rethrow(ctx);
+				fz_warn(ctx, "ignoring broken object stream (%d 0 R)", i);
 			}
+			pdf_drop_obj(dict);
 		}
 	}
 
