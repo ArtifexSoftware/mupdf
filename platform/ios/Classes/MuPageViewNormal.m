@@ -95,6 +95,31 @@ static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *te
 	return accepted;
 }
 
+static int setFocussedWidgetChoice(fz_document *doc, fz_page *page, const char *text)
+{
+	int accepted;
+
+	fz_try(ctx)
+	{
+		pdf_document *idoc = pdf_specifics(doc);
+		if (idoc)
+		{
+			pdf_widget *focus = pdf_focused_widget(idoc);
+			if (focus)
+			{
+				pdf_choice_widget_set_value(idoc, focus, 1, (char **)&text);
+				accepted = 1;
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+		accepted = 0;
+	}
+
+	return accepted;
+}
+
 static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 {
 	fz_display_list *list;
@@ -763,6 +788,32 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}];
 }
 
+- (void) invokeChoiceDialog:(NSArray *)choices
+{
+	[dialogCreator invokeChoiceDialog:choices okayAction:^(NSArray *selection) {
+		CGRect tframe = tileFrame;
+		float tscale = tileScale;
+		CGRect vframe = tframe;
+		vframe.origin.x -= imageView.frame.origin.x;
+		vframe.origin.y -= imageView.frame.origin.y;
+
+		dispatch_async(queue, ^{
+			BOOL accepted = setFocussedWidgetChoice(doc, page, [[selection objectAtIndex:0] UTF8String]);
+			if (accepted)
+			{
+				[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+			}
+			else
+			{
+				dispatch_async(dispatch_get_main_queue(), ^{
+					[self invokeChoiceDialog:choices];
+				});
+			}
+		});
+
+	}];
+}
+
 - (int) passTapToPage:(CGPoint)pt
 {
 	pdf_document *idoc = pdf_specifics(doc);
@@ -770,10 +821,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	pdf_ui_event event;
 	int changed = 0;
 	pdf_widget *focus;
+	char **opts = NULL;
+	char *text = NULL;
 
 	if (!idoc)
 		return;
 
+	fz_var(opts);
+	fz_var(text);
 	fz_try(ctx)
 	{
 		event.etype = PDF_EVENT_TYPE_POINTER;
@@ -791,18 +846,30 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			{
 				case PDF_WIDGET_TYPE_TEXT:
 				{
-					char *text = pdf_text_widget_text(idoc, focus);
-					NSString *stext = [NSString stringWithUTF8String:text?text:""];
-					fz_free(ctx, text);
+					text = pdf_text_widget_text(idoc, focus);
+					NSString *stext = [[NSString stringWithUTF8String:text?text:""] retain];
 					dispatch_async(dispatch_get_main_queue(), ^{
 						[self invokeTextDialog:stext];
+						[stext release];
 					});
 					break;
 				}
 
 				case PDF_WIDGET_TYPE_LISTBOX:
 				case PDF_WIDGET_TYPE_COMBOBOX:
+				{
+					int nopts = pdf_choice_widget_options(idoc, focus, NULL);
+					opts = fz_malloc(ctx, nopts * sizeof(*opts));
+					(void)pdf_choice_widget_options(idoc, focus, opts);
+					NSMutableArray *arr = [[NSMutableArray arrayWithCapacity:nopts] retain];
+					for (int i = 0; i < nopts; i++)
+						[arr addObject:[NSString stringWithUTF8String:opts[i]]];
+					dispatch_async(dispatch_get_main_queue(), ^{
+						[self invokeChoiceDialog:arr];
+						[arr release];
+					});
 					break;
+				}
 
 				case PDF_WIDGET_TYPE_SIGNATURE:
 					break;
@@ -811,6 +878,11 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 					break;
 			}
 		}
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, text);
+		fz_free(ctx, opts);
 	}
 	fz_catch(ctx)
 	{

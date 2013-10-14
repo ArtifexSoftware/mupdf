@@ -11,6 +11,7 @@
 #import "MuPageViewReflow.h"
 #import "MuDocumentController.h"
 #import "MuTextFieldController.h"
+#import "MuChoiceFieldController.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
@@ -627,6 +628,14 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	tf.modalPresentationStyle = UIModalPresentationFormSheet;
 	[self presentViewController:tf animated:YES completion:nil];
 	[tf release];
+}
+
+- (void) invokeChoiceDialog:(NSArray *)anArray okayAction:(void (^)(NSArray *))block
+{
+	MuChoiceFieldController *cf = [[MuChoiceFieldController alloc] initWithChoices:anArray okayAction:block];
+	cf.modalPresentationStyle = UIModalPresentationFormSheet;
+	[self presentViewController:cf animated:YES completion:nil];
+	[cf release];
 }
 
 - (void) onGotoPageFinished
