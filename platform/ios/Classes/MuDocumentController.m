@@ -10,6 +10,7 @@
 #import "MuPageViewNormal.h"
 #import "MuPageViewReflow.h"
 #import "MuDocumentController.h"
+#import "MuTextFieldController.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
@@ -474,6 +475,8 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 				// Not currently supported
 			} caseRemote:^(MuTapResultRemoteLink *link) {
 				// Not currently supported
+			} caseWidget:^(MuTapResultWidget *widget) {
+				tapHandled = YES;
 			}];
 			if (tapHandled)
 				break;
@@ -570,7 +573,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		UIView<MuPageView> *view
 			= reflowMode
 				? [[MuPageViewReflow alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) document:docRef page:number]
-				: [[MuPageViewNormal alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) document:docRef page:number];
+				: [[MuPageViewNormal alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) dialogCreator:self document:docRef page:number];
 		[view setScale:scale];
 		[canvas addSubview: view];
 		if (showLinks)
@@ -616,6 +619,14 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 	}
 	current = number;
+}
+
+- (void) invokeTextDialog:(NSString *)aString okayAction:(void (^)(NSString *))block
+{
+	MuTextFieldController *tf = [[MuTextFieldController alloc] initWithText:aString okayAction:block];
+	tf.modalPresentationStyle = UIModalPresentationFormSheet;
+	[self presentViewController:tf animated:YES completion:nil];
+	[tf release];
 }
 
 - (void) onGotoPageFinished

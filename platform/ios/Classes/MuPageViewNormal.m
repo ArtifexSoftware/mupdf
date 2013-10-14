@@ -6,6 +6,8 @@
 //
 
 #include "common.h"
+#include "mupdf/pdf.h"
+#import "MuTextFieldController.h"
 
 static void releasePixmap(void *info, const void *data, size_t size)
 {
@@ -35,6 +37,55 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix)
 	CGColorSpaceRelease(cgcolor);
 	CGImageRelease(cgimage);
 	return image;
+}
+
+static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page, CGSize pageSize, CGSize screenSize)
+{
+	pdf_document *idoc = pdf_specifics(doc);
+	pdf_widget *widget;
+	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
+	CGSize scale = fitPageToScreen(pageSize, screenSize);
+
+	if (!idoc)
+		return  nil;
+
+	for (widget = pdf_first_widget(idoc, (pdf_page *)page); widget; widget = pdf_next_widget(widget))
+	{
+		fz_rect rect;
+
+		pdf_bound_widget(widget, &rect);
+		[arr addObject:[NSValue valueWithCGRect:CGRectMake(
+			rect.x0 * scale.width,
+			rect.y0 * scale.height,
+			(rect.x1-rect.x0) * scale.width,
+			(rect.y1-rect.y0) * scale.height)]];
+	}
+
+	return [arr retain];
+}
+
+static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *text)
+{
+	int accepted;
+
+	fz_try(ctx)
+	{
+		pdf_document *idoc = pdf_specifics(doc);
+		if (idoc)
+		{
+			pdf_widget *focus = pdf_focused_widget(idoc);
+			if (focus)
+			{
+				accepted = pdf_text_widget_set_text(idoc, focus, (char *)text);
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+		accepted = 0;
+	}
+
+	return accepted;
 }
 
 static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
@@ -70,7 +121,10 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	fz_try(ctx)
 	{
 		fz_annot *annot;
+		pdf_document *idoc = pdf_specifics(doc);
 
+		if (idoc)
+			pdf_update_page(idoc, (pdf_page *)page);
 		list = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, list);
 		for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
@@ -173,7 +227,7 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 		annot_list = create_annot_list(doc, page);
 }
 
-- (id) initWithFrame: (CGRect)frame document: (MuDocRef *)aDoc page: (int)aNumber
+-(id) initWithFrame:(CGRect)frame dialogCreator:(id<MuDialogCreator>)dia document:(MuDocRef *)aDoc page:(int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {
@@ -181,6 +235,7 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 		doc = docRef->doc;
 		number = aNumber;
 		cancel = NO;
+		dialogCreator = dia;
 
 		[self setShowsVerticalScrollIndicator: NO];
 		[self setShowsHorizontalScrollIndicator: NO];
@@ -226,6 +281,7 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 			block_page = nil;
 		});
 		[docRef release];
+		[widgetRects release];
 		[linkView release];
 		[hitView release];
 		[tileView release];
@@ -325,6 +381,7 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 			CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
 			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
 			UIImage *image = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
+			widgetRects = enumerateWidgetRects(doc, page, pageSize, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -533,8 +590,96 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 
 - (void) setScale:(float)scale {}
 
+- (void) invokeTextDialog:(NSString *)text
+{
+	[dialogCreator invokeTextDialog:text okayAction:^(NSString *newText) {
+		dispatch_async(queue, ^{
+			BOOL accepted = setFocussedWidgetText(doc, page, [newText UTF8String]);
+			fz_drop_display_list(ctx, annot_list);
+			annot_list = NULL;
+			dispatch_async(dispatch_get_main_queue(), ^{
+				if (accepted)
+					[self loadPage];
+				else
+					[self invokeTextDialog:newText];
+			});
+		});
+	}];
+}
+
+- (void) passTapToPage:(CGPoint)pt
+{
+	pdf_document *idoc = pdf_specifics(doc);
+	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+	pdf_ui_event event;
+	int changed = 0;
+	pdf_widget *focus;
+
+	if (!idoc)
+		return;
+
+	fz_try(ctx)
+	{
+		event.etype = PDF_EVENT_TYPE_POINTER;
+		event.event.pointer.pt.x = pt.x / scale.width;
+		event.event.pointer.pt.y = pt.y / scale.height;
+		event.event.pointer.ptype = PDF_POINTER_DOWN;
+		changed = pdf_pass_event(idoc, (pdf_page *)page, &event);
+		event.event.pointer.ptype = PDF_POINTER_UP;
+		changed |= pdf_pass_event(idoc, (pdf_page *)page, &event);
+		if (changed)
+		{
+			fz_drop_display_list(ctx, annot_list);
+			annot_list = NULL;
+		}
+
+		focus = pdf_focused_widget(idoc);
+		if (focus)
+		{
+			switch (pdf_widget_get_type(focus))
+			{
+				case PDF_WIDGET_TYPE_TEXT:
+				{
+					char *text = pdf_text_widget_text(idoc, focus);
+					NSString *stext = [NSString stringWithUTF8String:text?text:""];
+					fz_free(ctx, text);
+					dispatch_async(dispatch_get_main_queue(), ^{
+						[self invokeTextDialog:stext];
+					});
+					break;
+				}
+
+				case PDF_WIDGET_TYPE_LISTBOX:
+				case PDF_WIDGET_TYPE_COMBOBOX:
+					break;
+
+				case PDF_WIDGET_TYPE_SIGNATURE:
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+	fz_catch(ctx)
+	{
+	}
+}
+
 - (MuTapResult *) handleTap:(CGPoint)pt
 {
+	CGPoint ipt = [self convertPoint:pt toView:imageView];
+	for (int i = 0; i < widgetRects.count; i++)
+	{
+		CGRect r = [[widgetRects objectAtIndex:i] CGRectValue];
+		if (CGRectContainsPoint([[widgetRects objectAtIndex:i] CGRectValue], ipt))
+		{
+			dispatch_async(queue, ^{
+				[self passTapToPage:ipt];
+			});
+			return [[[MuTapResultWidget alloc] init] autorelease];
+		}
+	}
 	CGPoint lpt = [self convertPoint:pt toView:linkView];
 	return linkView ? [linkView handleTap:lpt] : nil;
 }

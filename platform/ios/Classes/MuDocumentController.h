@@ -15,8 +15,9 @@
 
 #import "MuOutlineController.h"
 #import "MuDocRef.h"
+#import "MuDialogCreator.h"
 
-@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate>
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator>
 {
 	fz_document *doc;
 	MuDocRef *docRef;
