@@ -19,12 +19,18 @@ static void releasePixmap(void *info, const void *data, size_t size)
 		fz_drop_pixmap(ctx, info);
 }
 
-static UIImage *newImageWithPixmap(fz_pixmap *pix)
+static CGDataProviderRef wrapPixmap(fz_pixmap *pix)
 {
 	unsigned char *samples = fz_pixmap_samples(ctx, pix);
 	int w = fz_pixmap_width(ctx, pix);
 	int h = fz_pixmap_height(ctx, pix);
-	CGDataProviderRef cgdata = CGDataProviderCreateWithData(pix, samples, w * 4 * h, releasePixmap);
+	return CGDataProviderCreateWithData(pix, samples, w * 4 * h, releasePixmap);
+}
+
+static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
+{
+	int w = fz_pixmap_width(ctx, pix);
+	int h = fz_pixmap_height(ctx, pix);
 	CGColorSpaceRef cgcolor = CGColorSpaceCreateDeviceRGB();
 	CGImageRef cgimage = CGImageCreate(w, h, 8, 32, 4 * w,
                                        cgcolor, kCGBitmapByteOrderDefault,
@@ -33,7 +39,6 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix)
                       initWithCGImage: cgimage
                       scale: screenScale
                       orientation: UIImageOrientationUp];
-	CGDataProviderRelease(cgdata);
 	CGColorSpaceRelease(cgcolor);
 	CGImageRelease(cgimage);
 	return image;
@@ -142,7 +147,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	return list;
 }
 
-static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
+static fz_pixmap *renderPage(fz_document *doc, fz_display_list *page_list, fz_display_list *annot_list, CGSize pageSize, CGSize screenSize, CGRect tileRect, float zoom)
 {
 	fz_irect bbox;
 	fz_rect rect;
@@ -185,10 +190,10 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, pix);
-		return nil;
+		return NULL;
 	}
 
-	return newImageWithPixmap(pix);
+	return pix;
 }
 
 #import "MuPageViewNormal.h"
@@ -271,6 +276,8 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 		__block fz_display_list *block_annot_list = annot_list;
 		__block fz_page *block_page = page;
 		__block fz_document *block_doc = docRef->doc;
+		__block CGDataProviderRef block_tileData = tileData;
+		__block CGDataProviderRef block_imageData = imageData;
 		dispatch_async(queue, ^{
 			if (block_page_list)
 				fz_drop_display_list(ctx, block_page_list);
@@ -279,6 +286,8 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 			if (block_page)
 				fz_free_page(block_doc, block_page);
 			block_page = nil;
+			CGDataProviderRelease(block_tileData);
+			CGDataProviderRelease(block_imageData);
 		});
 		[docRef release];
 		[widgetRects release];
@@ -380,7 +389,10 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 			[self ensureDisplaylists];
 			CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
 			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
-			UIImage *image = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
+			image_pix = renderPage(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
+			CGDataProviderRelease(imageData);
+			imageData = wrapPixmap(image_pix);
+			UIImage *image = newImageWithPixmap(image_pix, imageData);
 			widgetRects = enumerateWidgetRects(doc, page, pageSize, self.bounds.size);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
@@ -528,7 +540,10 @@ static UIImage *renderPage(fz_document *doc, fz_display_list *page_list, fz_disp
 		[self ensureDisplaylists];
 
 		printf("render tile\n");
-		UIImage *image = renderPage(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
+		tile_pix = renderPage(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
+		CGDataProviderRelease(tileData);
+		tileData = wrapPixmap(tile_pix);
+		UIImage *image = newImageWithPixmap(tile_pix, tileData);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
 			isValid = CGRectEqualToRect(frame, tileFrame) && scale == tileScale;

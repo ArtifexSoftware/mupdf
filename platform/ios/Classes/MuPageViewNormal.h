@@ -27,7 +27,11 @@
 	fz_display_list *annot_list;
 	int number;
 	UIActivityIndicatorView *loadingView;
+	fz_pixmap *image_pix;
+	CGDataProviderRef imageData;
 	UIImageView *imageView;
+	fz_pixmap *tile_pix;
+	CGDataProviderRef tileData;
 	UIImageView *tileView;
 	MuHitView *hitView;
 	MuHitView *linkView;
