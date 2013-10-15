@@ -1350,7 +1350,7 @@ fz_device *pdf_page_write(pdf_document *doc, pdf_page *page)
 		fz_try(ctx)
 		{
 			page->contents = pdf_new_ref(doc, obj);
-			pdf_dict_puts(page->me, "Contents", obj);
+			pdf_dict_puts(page->me, "Contents", page->contents);
 		}
 		fz_always(ctx)
 		{
