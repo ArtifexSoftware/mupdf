@@ -22,7 +22,7 @@ endif
 
 LOCAL_C_INCLUDES := \
 	../../thirdparty/jbig2dec \
-	../../thirdparty/openjpeg/src/lib/openjp2 \
+	../../thirdparty/openjpeg/libopenjpeg \
 	../../thirdparty/jpeg \
 	../../thirdparty/zlib \
 	../../thirdparty/freetype/include \
