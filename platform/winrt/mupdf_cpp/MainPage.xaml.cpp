@@ -6,7 +6,7 @@
 #include "pch.h"
 #include "MainPage.xaml.h"
 
-#define LOOK_AHEAD 0 /* A +/- count on the pages to pre-render */
+#define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
 #define THUMB_PREADD 10
 #define MIN_SCALE 0.5
 
@@ -737,18 +737,44 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 	}
 }
 
-void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
+void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
+{
+	if (m_init_done && !m_page_update)
+	{
+		int pos = this->m_curr_flipView->SelectedIndex;
+
+		if (pos >= 0)
+		{
+			if (xaml_PageSlider->IsEnabled)
+			{
+				xaml_PageSlider->Value = pos;
+			}
+			if (m_sliderchange)
+			{
+				m_sliderchange = false;
+				return;
+			}
+			else
+			{
+				 /* Make sure to clear any text search */
+				auto doc_old = this->m_docPages->GetAt(m_currpage);
+				doc_old->TextBox = nullptr;
+			}
+			/* Get the current page */
+			int curr_page = this->m_currpage;
+			this->RenderRange(pos);
+			this->ReleasePages(curr_page, pos);
+		}
+	}
+}
+
+void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
 	int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
 
 	if (IsNotStandardView())
 		return;
 
-	if (m_update_flip)
-	{
-		m_update_flip = false;
-		return;
-	}
 	if (m_init_done && this->xaml_PageSlider->IsEnabled)
 	{
 		/* Make sure to clear any text search */
@@ -774,38 +800,6 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 		else
 		{
 			this->m_curr_flipView->SelectedIndex = newValue;
-		}
-	}
-}
-
-void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
-{
-	if (m_init_done && !m_page_update)
-	{
-		int pos = this->m_curr_flipView->SelectedIndex;
-
-		if (pos >= 0)
-		{
-			m_update_flip = true;
-			if (xaml_PageSlider->IsEnabled)
-			{
-				xaml_PageSlider->Value = pos;
-			}
-			if (m_sliderchange)
-			{
-				m_sliderchange = false;
-				return;
-			}
-			else
-			{
-				 /* Make sure to clear any text search */
-				auto doc_old = this->m_docPages->GetAt(m_currpage);
-				doc_old->TextBox = nullptr;
-			}
-			/* Get the current page */
-			int curr_page = this->m_currpage;
-			this->RenderRange(pos);
-			this->ReleasePages(curr_page, pos);
 		}
 	}
 }
@@ -975,7 +969,8 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 
 	ProgressBar^ my_xaml_Progress = (ProgressBar^) (this->FindName("xaml_Progress"));
 	xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Visible;
-	auto temp = mu_doc->SearchDocumentWithProgressAsync(textToFind, dir, start);
+	auto temp = mu_doc->SearchDocumentWithProgressAsync(textToFind, dir, start, 
+														m_num_pages);
 	temp->Progress = ref new AsyncOperationProgressHandler<int, double>(this, &MainPage::SearchProgress);
 
 	auto search_task = create_task(temp, token);

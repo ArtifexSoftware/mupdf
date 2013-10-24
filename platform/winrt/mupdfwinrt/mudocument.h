@@ -35,7 +35,8 @@ namespace mupdfwinrt
 			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 				RenderPageAsync(int page_num, int width, int height, bool use_dlist);
 			Windows::Foundation::IAsyncOperationWithProgress<int, double>^
-				SearchDocumentWithProgressAsync(String^ textToFind, int dir, int start_page);
+				SearchDocumentWithProgressAsync(String^ textToFind, int dir, 
+												int start_page, int num_pages);
 			String^ ComputeHTML(int page_num);
 			int ComputeTextSearch(String^ text, int page_num);
 			Links^ GetTextSearch(int k);

@@ -109,7 +109,6 @@ namespace mupdf_cpp
 		bool m_insearch;		/* Used for UI display */
 		bool m_search_active;  /* Used to avoid multiple UI clicks */
 		bool m_sliderchange;
-		bool m_update_flip;
 		double m_Progress;
 
 		void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size);
@@ -125,7 +124,6 @@ namespace mupdf_cpp
 		void HandleFileNotFoundException(Platform::COMException^ e);
 		void NotifyUserFileNotExist();
 		void SetFlipView();
-		void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
 		void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
 		void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
 		void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
@@ -173,5 +171,6 @@ namespace mupdf_cpp
 		void Page_Loaded(Object^ sender, RoutedEventArgs^ e);
 		Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ _protocolEventArgs;
 		Windows::ApplicationModel::Activation::FileActivatedEventArgs^ _fileEventArgs;
-	};
+		void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+};
 }

@@ -76,8 +76,7 @@ private:
 	fz_rect mu_hit_bbox[MAX_SEARCH];
 	void FlattenOutline(fz_outline *outline, int level,
 						sh_vector_content contents_vec);
-	Cache *display_list_cache;
-	fz_display_list* CreateDisplayList(int page_num);
+	Cache *page_cache;
 
 public:
 	muctx(void);
@@ -86,8 +85,11 @@ public:
 	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
 	int GetPageCount();
 	status_t InitializeContext();
-	status_t RenderPage(int page_num, int width, int height, unsigned char *bmp_data,
-						bool use_dlist);
+	status_t RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
+						int bmp_height);
+	status_t RenderPageMT(void *dlist, int page_width, int page_height,
+							unsigned char *bmp_data, int bmp_width, int bmp_height);
+	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
 	Point MeasurePage(int page_num);
 	Point MeasurePage(fz_page *page);
 	int GetLinks(int page_num, sh_vector_link links_vec);

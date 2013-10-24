@@ -93,11 +93,11 @@ void muctx::CleanUp(void)
 {
 	fz_free_outline(mu_ctx, mu_outline);
 	fz_close_document(mu_doc);
-	display_list_cache->Empty(mu_ctx);
+	page_cache->Empty(mu_ctx);
 	fz_free_context(mu_ctx);
 
-	delete display_list_cache;
-	display_list_cache = NULL;
+	delete page_cache;
+	page_cache = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
 	this->mu_outline = NULL;
@@ -133,7 +133,7 @@ muctx::muctx(void)
 	mu_ctx = NULL;
 	mu_doc = NULL;
 	mu_outline = NULL;
-	display_list_cache = new Cache();
+	page_cache = new Cache();
 }
 
 /* Destructor */
@@ -141,14 +141,14 @@ muctx::~muctx(void)
 {
 	fz_free_outline(mu_ctx, mu_outline);
 	fz_close_document(mu_doc);
-	display_list_cache->Empty(mu_ctx);
+	page_cache->Empty(mu_ctx);
 	fz_free_context(mu_ctx);
 
 	mu_ctx = NULL;
 	mu_doc = NULL;
 	mu_outline = NULL;
-	delete display_list_cache;
-	display_list_cache = NULL;
+	delete page_cache;
+	page_cache = NULL;
 }
 
 /* Set up the stream access */
@@ -250,13 +250,10 @@ void muctx::FlattenOutline(fz_outline *outline, int level,
 int muctx::GetContents(sh_vector_content contents_vec)
 {
 	fz_outline *root = NULL;
-	fz_context *ctx_clone = NULL;
 	int has_content = 0;
 
-	ctx_clone = fz_clone_context(mu_ctx);
-
 	fz_var(root);
-	fz_try(ctx_clone)
+	fz_try(mu_ctx)
 	{
 		root = fz_load_outline(mu_doc);
 		if (root != NULL)
@@ -265,16 +262,14 @@ int muctx::GetContents(sh_vector_content contents_vec)
 			FlattenOutline(root, 0, contents_vec);
 		}
 	}
-	fz_always(ctx_clone)
+	fz_always(mu_ctx)
 	{
-		fz_free_outline(ctx_clone, root);
+		fz_free_outline(mu_ctx, root);
 	}
-	fz_catch(ctx_clone)
+	fz_catch(mu_ctx)
 	{
-		fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
-	fz_free_context(ctx_clone);
 	return has_content;
 }
 
@@ -283,26 +278,23 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	fz_page *page = NULL;
 	fz_text_sheet *sheet = NULL;
 	fz_device *dev = NULL;
-	fz_context *ctx_clone = NULL;
 	fz_text_page *text = NULL;
 	int hit_count = 0;
 	int k;
 
-	ctx_clone = fz_clone_context(mu_ctx);
-
 	fz_var(page);
 	fz_var(sheet);
 	fz_var(dev);
-	fz_try(ctx_clone)
+	fz_try(mu_ctx)
 	{
 		page = fz_load_page(mu_doc, page_num);
-		sheet = fz_new_text_sheet(ctx_clone);
-		text = fz_new_text_page(ctx_clone);
-		dev = fz_new_text_device(ctx_clone, sheet, text);
+		sheet = fz_new_text_sheet(mu_ctx);
+		text = fz_new_text_page(mu_ctx);
+		dev = fz_new_text_device(mu_ctx, sheet, text);
 		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
 		fz_free_device(dev);  /* Why does this need to be done here?  Seems odd */
 		dev = NULL;
-		hit_count = fz_search_text_page(ctx_clone, text, needle, mu_hit_bbox, nelem(mu_hit_bbox));
+		hit_count = fz_search_text_page(mu_ctx, text, needle, mu_hit_bbox, nelem(mu_hit_bbox));
 
 		for (k = 0; k < hit_count; k++)
 		{
@@ -314,19 +306,17 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 			texts_vec->push_back(text_search);
 		}
 	}
-	fz_always(ctx_clone)
+	fz_always(mu_ctx)
 	{
 		fz_free_page(mu_doc, page);
 		fz_free_device(dev);
-		fz_free_text_sheet(ctx_clone, sheet);
-		fz_free_text_page(ctx_clone, text);
+		fz_free_text_sheet(mu_ctx, sheet);
+		fz_free_text_page(mu_ctx, text);
 	}
-	fz_catch(ctx_clone)
+	fz_catch(mu_ctx)
 	{
-		fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
-	fz_free_context(ctx_clone);
 	return hit_count;
 }
 
@@ -335,15 +325,12 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 {
 	fz_page *page = NULL;
 	fz_link *links = NULL;
-	fz_context *ctx_clone = NULL;
 	int k = 0;
 	int num_links = 0;
 
-	ctx_clone = fz_clone_context(mu_ctx);
-
 	fz_var(page);
 	fz_var(links);
-	fz_try(ctx_clone)
+	fz_try(mu_ctx)
 	{
 		page = fz_load_page(mu_doc, page_num);
 		links = fz_load_links(mu_doc, page);
@@ -390,30 +377,26 @@ int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 			}
 		}
 	}
-	fz_always(ctx_clone)
+	fz_always(mu_ctx)
 	{
 		fz_free_page(mu_doc, page);
-		fz_drop_link(ctx_clone, links);
+		fz_drop_link(mu_ctx, links);
 	}
-	fz_catch(ctx_clone)
+	fz_catch(mu_ctx)
 	{
-		fz_free_context(ctx_clone);
 		return E_FAIL;
 	}
-	fz_free_context(ctx_clone);
 	return num_links;
 }
 
-fz_display_list * muctx::CreateDisplayList(int page_num)
+fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height)
 {
-	fz_context *ctx_clone = NULL;
 	fz_device *dev = NULL;
 	fz_page *page = NULL;
-
-	ctx_clone = fz_clone_context(mu_ctx);
+	Point page_size;
 
 	/* First see if we have this one in the cache */
-	fz_display_list *dlist = display_list_cache->UseEntry(page_num, ctx_clone);
+	fz_display_list *dlist = page_cache->Use(page_num, width, height, mu_ctx);
 	if (dlist != NULL)
 		return dlist;
 
@@ -422,80 +405,67 @@ fz_display_list * muctx::CreateDisplayList(int page_num)
 	fz_var(page);
 	fz_var(dlist);
 
-	fz_try(ctx_clone)
+	fz_try(mu_ctx)
 	{
 		page = fz_load_page(mu_doc, page_num);
 
 		/* Create a new list */
-		dlist = fz_new_display_list(ctx_clone);
-		dev = fz_new_list_device(ctx_clone, dlist);
+		dlist = fz_new_display_list(mu_ctx);
+		dev = fz_new_list_device(mu_ctx, dlist);
 		fz_run_page_contents(mu_doc, page, dev, &fz_identity, NULL);
+		page_size = MeasurePage(page);
+		*width = page_size.X;
+		*height = page_size.Y;
 		/* Add it to the cache and set that it is in use */
-		display_list_cache->AddEntry(page_num, dlist, ctx_clone);
+		page_cache->Add(page_num, *width, *height, dlist, mu_ctx);
 	}
-	fz_always(ctx_clone)
+	fz_always(mu_ctx)
 	{
 		fz_free_device(dev);
 		fz_free_page(mu_doc, page);
 	}
-	fz_catch(ctx_clone)
+	fz_catch(mu_ctx)
 	{
-		fz_drop_display_list(ctx_clone, dlist);
-		fz_free_context(ctx_clone);
+		fz_drop_display_list(mu_ctx, dlist);
 		return NULL;
 	}
 	return dlist;
 }
 
-/* Render page_num to size width by height into bmp_data buffer */
-status_t muctx::RenderPage(int page_num, int width, int height,
-			unsigned char *bmp_data, bool use_dlist)
+/* Render display list bmp_data buffer.  No lock needed for this operation */
+status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
+							 unsigned char *bmp_data, int bmp_width, int bmp_height)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
-	fz_page *page = NULL;
 	fz_matrix ctm, *pctm = &ctm;
-	Point page_size;
 	fz_context *ctx_clone = NULL;
-	fz_display_list *dlist = NULL;
-
-	if (use_dlist)
-		if ((dlist = CreateDisplayList(page_num)) == NULL)
-			return E_FAILURE;
+	fz_display_list *display_list = (fz_display_list*) dlist; 
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
 	fz_var(pix);
-	fz_var(page);
-	fz_var(dlist);
+	fz_var(display_list);
 
 	fz_try(ctx_clone)
 	{
-		page = fz_load_page(mu_doc, page_num);
-		page_size = MeasurePage(page);
-
 		/* Figure out scale factors so that we get the desired size */
-		pctm = fz_scale(pctm, (float) width / page_size.X, (float) height / page_size.Y);
+		pctm = fz_scale(pctm, (float) bmp_width / page_width, (float) bmp_height / page_height);
 		/* Flip on Y */
-		ctm.f = height;
+		ctm.f = bmp_height;
 		ctm.d = -ctm.d;
-		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone), width, height, bmp_data);
+		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone), bmp_width, 
+										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
-		if (use_dlist)
-			fz_run_display_list(dlist, dev, pctm, NULL, NULL);
-		else
-			fz_run_page(mu_doc, page, dev, pctm, NULL);
+		fz_run_display_list(display_list, dev, pctm, NULL, NULL);
 	}
 	fz_always(ctx_clone)
 	{
 		fz_free_device(dev);
 		fz_drop_pixmap(ctx_clone, pix);
-		fz_free_page(mu_doc, page);
-		if (use_dlist)
-			fz_drop_display_list(ctx_clone, dlist);
-
+		fz_drop_display_list(ctx_clone, display_list);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -504,6 +474,50 @@ status_t muctx::RenderPage(int page_num, int width, int height,
 	}
 
 	fz_free_context(ctx_clone);
+	return S_ISOK;
+}
+
+/* Render page_num to size width by height into bmp_data buffer.  Lock needed. */
+status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
+						   int bmp_height)
+{
+	fz_device *dev = NULL;
+	fz_pixmap *pix = NULL;
+	fz_page *page = NULL;
+	fz_matrix ctm, *pctm = &ctm;
+	Point page_size;
+
+	fz_var(dev);
+	fz_var(pix);
+	fz_var(page);
+
+	fz_try(mu_ctx)
+	{
+		page = fz_load_page(mu_doc, page_num);
+		page_size = MeasurePage(page);
+
+		/* Figure out scale factors so that we get the desired size */
+		pctm = fz_scale(pctm, (float) bmp_width / page_size.X, 
+						(float) bmp_height / page_size.Y);
+		/* Flip on Y */
+		ctm.f = bmp_height;
+		ctm.d = -ctm.d;
+		pix = fz_new_pixmap_with_data(mu_ctx, fz_device_bgr(mu_ctx), bmp_width, 
+										bmp_height, bmp_data);
+		fz_clear_pixmap_with_value(mu_ctx, pix, 255);
+		dev = fz_new_draw_device(mu_ctx, pix);
+			fz_run_page(mu_doc, page, dev, pctm, NULL);
+	}
+	fz_always(mu_ctx)
+	{
+		fz_free_device(dev);
+		fz_drop_pixmap(mu_ctx, pix);
+		fz_free_page(mu_doc, page);
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAILURE;
+	}
 	return S_ISOK;
 }
 
@@ -524,46 +538,40 @@ String^ muctx::GetHTML(int page_num)
 	fz_page *page = NULL;
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
-	fz_context *ctx_clone = NULL;
 	fz_buffer *buf = NULL;
 	String^ html;
-
-	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
 	fz_var(page);
 	fz_var(sheet);
 	fz_var(text);
 	fz_var(buf);
-	fz_try(ctx_clone)
+	fz_try(mu_ctx)
 	{
 		page = fz_load_page(mu_doc, page_num);
-		sheet = fz_new_text_sheet(ctx_clone);
-		text = fz_new_text_page(ctx_clone);
-		dev = fz_new_text_device(ctx_clone, sheet, text);
+		sheet = fz_new_text_sheet(mu_ctx);
+		text = fz_new_text_page(mu_ctx);
+		dev = fz_new_text_device(mu_ctx, sheet, text);
 		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
 		fz_free_device(dev);
 		dev = NULL;
-		fz_analyze_text(ctx_clone, sheet, text);
-		buf = fz_new_buffer(ctx_clone, 256);
-		out = fz_new_output_with_buffer(ctx_clone, buf);
-		fz_print_text_page_html(ctx_clone, out, text);
+		fz_analyze_text(mu_ctx, sheet, text);
+		buf = fz_new_buffer(mu_ctx, 256);
+		out = fz_new_output_with_buffer(mu_ctx, buf);
+		fz_print_text_page_html(mu_ctx, out, text);
 		html = char_to_String((char*) buf->data);
 	}
-	fz_always(ctx_clone)
+	fz_always(mu_ctx)
 	{
 		fz_free_device(dev);
 		fz_free_page(mu_doc, page);
-		fz_free_text_sheet(ctx_clone, sheet);
-		fz_free_text_page(ctx_clone, text);
-		fz_drop_buffer(ctx_clone, buf);
+		fz_free_text_sheet(mu_ctx, sheet);
+		fz_free_text_page(mu_ctx, text);
+		fz_drop_buffer(mu_ctx, buf);
 	}
-	fz_catch(ctx_clone)
+	fz_catch(mu_ctx)
 	{
-		fz_free_context(ctx_clone);
 		return nullptr;
 	}
-
-	fz_free_context(ctx_clone);
 	return html;
 }

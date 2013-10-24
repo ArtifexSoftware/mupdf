@@ -43,8 +43,12 @@ int mudocument::GetNumPages()
 
 Point mudocument::GetPageSize(int page_num)
 {
-	std::lock_guard<std::mutex> lock(mutex_lock);
-	return this->mu_object.MeasurePage(page_num);
+	Point size;
+
+	mutex_lock.lock();
+	size = this->mu_object.MeasurePage(page_num);
+	mutex_lock.unlock();
+	return size;
 }
 
 Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile^ file)
@@ -116,11 +120,12 @@ static void Prepare_bmp(int width, int height, DataWriter ^dw)
 
 /* Do the search through the pages with an async task with progress callback */
 Windows::Foundation::IAsyncOperationWithProgress<int, double>^
-	mudocument::SearchDocumentWithProgressAsync(String^ textToFind, int dir, int start_page)
+	mudocument::SearchDocumentWithProgressAsync(String^ textToFind, int dir, 
+												int start_page, int num_pages)
 {
-	return create_async([this, textToFind, dir, start_page](progress_reporter<double> reporter) -> int
+	return create_async([this, textToFind, dir, start_page, num_pages]
+						(progress_reporter<double> reporter) -> int
 	{
-		int num_pages = this->GetNumPages();
 		double progress;
 		int box_count, result;
 
@@ -155,7 +160,6 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 			}
 		}
 		reporter.report(100.0);
-		/* Todo no matches found alert */
 		if (box_count == 0)
 			return TEXT_NOT_FOUND;
 		else
@@ -165,24 +169,47 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 
 /* Pack the page into a bmp stream */
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
-	mudocument::RenderPageAsync(int page_num, int width, int height, bool use_dlist)
+	mudocument::RenderPageAsync(int page_num, int bmp_width, int bmp_height, 
+								bool use_dlist)
 {
-	return create_async([this, width, height, page_num, use_dlist](cancellation_token ct) -> InMemoryRandomAccessStream^
+	return create_async([this, bmp_width, bmp_height, page_num, use_dlist]
+						(cancellation_token ct) -> InMemoryRandomAccessStream^
 	{
 		/* Allocate space for bmp */
-		Array<unsigned char>^ bmp_data = ref new Array<unsigned char>(height * 4 * width);
+		Array<unsigned char>^ bmp_data = 
+						ref new Array<unsigned char>(bmp_height * 4 * bmp_width);
 		/* Set up the memory stream */
 		InMemoryRandomAccessStream ^ras = ref new InMemoryRandomAccessStream();
 		DataWriter ^dw = ref new DataWriter(ras->GetOutputStreamAt(0));
+		status_t code;
 
 		/* Go ahead and write our header data into the memory stream */
-		Prepare_bmp(width, height, dw);
+		Prepare_bmp(bmp_width, bmp_height, dw);
 
-		std::lock_guard<std::mutex> lock(mutex_lock);
+		if (use_dlist) 
+		{
+			void *dlist;
+			int page_height;
+			int page_width;
 
-		/* Get raster bitmap stream */
-		status_t code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]),
-											 use_dlist);
+			mutex_lock.lock();
+			/* This lock will keep out issues in mupdf as well as race conditions
+			   in the page cache */
+			dlist = (void*) mu_object.CreateDisplayList(page_num, &page_width, 
+														&page_height);
+			/* Rendering of display list can occur with other threads so unlock */
+			mutex_lock.unlock();
+			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
+										  &(bmp_data[0]), bmp_width, bmp_height);
+		} 
+		else 
+		{
+			/* Rendering in immediate mode.  Keep lock in place */
+			mutex_lock.lock();
+			code = mu_object.RenderPage(page_num, &(bmp_data[0]), bmp_width, 
+										bmp_height);
+			mutex_lock.unlock();
+		}
 		if (code != S_ISOK)
 		{
 			throw ref new FailureException("Page Rendering Failed");
@@ -200,11 +227,12 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 
 int mudocument::ComputeLinks(int page_num)
 {
-	std::lock_guard<std::mutex> lock(mutex_lock);
 	/* We get back a standard smart pointer from muctx interface and go to WinRT
 	   type here */
 	sh_vector_link link_smart_ptr_vec(new std::vector<sh_link>());
+	mutex_lock.lock();
 	int num_items = mu_object.GetLinks(page_num, link_smart_ptr_vec);
+	mutex_lock.unlock();
 	if (num_items == 0)
 		return 0;
 	/* Pack into winRT type*/
@@ -237,13 +265,16 @@ Links^ mudocument::GetLink(int k)
 
 int mudocument::ComputeTextSearch(String^ text, int page_num)
 {
-	std::lock_guard<std::mutex> lock(mutex_lock);
 	/* We get back a standard smart pointer from muctx interface and go to
 	 * WinRT type here */
 	char* text_char = String_to_char(text);
 	sh_vector_text text_smart_ptr_vec(new std::vector<sh_text>());
+	int num_items;
 
-	int num_items = mu_object.GetTextSearch(page_num, text_char, text_smart_ptr_vec);
+	mutex_lock.lock();
+	num_items = mu_object.GetTextSearch(page_num, text_char, text_smart_ptr_vec);
+	mutex_lock.unlock();
+
 	if (num_items == 0)
 		return 0;
 	/* Pack into winRT type*/
@@ -280,13 +311,14 @@ Links^ mudocument::GetTextSearch(int k)
 
 int mudocument::ComputeContents()
 {
-	std::lock_guard<std::mutex> lock(mutex_lock);
 	/* We get back a standard smart pointer from muctx interface and go to
 	 * WinRT type here */
-
 	sh_vector_content content_smart_ptr_vec(new std::vector<sh_content>());
+	int has_content;
 
-	int has_content = mu_object.GetContents(content_smart_ptr_vec);
+	mutex_lock.lock();
+	has_content = mu_object.GetContents(content_smart_ptr_vec);
+	mutex_lock.unlock();
 
 	if (!has_content)
 		return 0;
@@ -315,6 +347,10 @@ ContentItem^ mudocument::GetContent(int k)
 
 String^ mudocument::ComputeHTML(int page_num)
 {
-	std::lock_guard<std::mutex> lock(mutex_lock);
-	return mu_object.GetHTML(page_num);
+	String^ html;
+
+	mutex_lock.lock();
+	html = mu_object.GetHTML(page_num);
+	mutex_lock.unlock();
+	return html;
 }

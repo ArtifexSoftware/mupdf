@@ -22,6 +22,7 @@ void Cache::Empty(fz_context *mu_ctx)
 			cache_entry_t *old_entry = curr_entry;
 			curr_entry = old_entry->next;
 			fz_drop_display_list(mu_ctx, old_entry->dlist);
+			
 			delete old_entry;
 		}
 		this->size = 0;
@@ -30,7 +31,8 @@ void Cache::Empty(fz_context *mu_ctx)
 	}
 }
 
-void Cache::AddEntry(int value, fz_display_list *dlist, fz_context *mu_ctx)
+void Cache::Add(int value, int width_in, int height_in, fz_display_list *dlist, 
+				fz_context *mu_ctx)
 {
 	std::lock_guard<std::mutex> lock(cache_lock);
 
@@ -58,6 +60,8 @@ void Cache::AddEntry(int value, fz_display_list *dlist, fz_context *mu_ctx)
 
 	new_entry->dlist = dlist;
 	new_entry->index = value;
+	new_entry->width = width_in;
+	new_entry->height = height_in;
 	new_entry->prev = NULL;
 	if (head == NULL)
 	{
@@ -76,7 +80,7 @@ void Cache::AddEntry(int value, fz_display_list *dlist, fz_context *mu_ctx)
 	fz_keep_display_list(mu_ctx, new_entry->dlist);
 }
 
-fz_display_list* Cache::UseEntry(int value, fz_context *mu_ctx)
+fz_display_list* Cache::Use(int value, int *width_out, int *height_out, fz_context *mu_ctx)
 {
 	std::lock_guard<std::mutex> lock(cache_lock);
 	cache_entry_t *curr_entry = this->head;
@@ -107,6 +111,8 @@ fz_display_list* Cache::UseEntry(int value, fz_context *mu_ctx)
 			head->prev = curr_entry;
 			head = curr_entry;
 		}
+		*width_out = curr_entry->width;
+		*height_out = curr_entry->height;
 		return curr_entry->dlist;
 	}
 	else

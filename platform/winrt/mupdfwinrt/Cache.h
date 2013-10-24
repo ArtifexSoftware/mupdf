@@ -11,6 +11,9 @@ typedef struct cache_entry_s cache_entry_t;
 
 struct cache_entry_s
 {
+	int number;
+	int width;
+	int height;
 	fz_display_list *dlist;
 	cache_entry_t *next;
 	cache_entry_t *prev;
@@ -28,7 +31,8 @@ private:
 public:
 	Cache(void);
 	~Cache(void);
-	fz_display_list* UseEntry(int value, fz_context *mu_ctx);
-	void AddEntry(int value, fz_display_list *dlist, fz_context *mu_ctx);
+	void GetSize(int *width, int *height);
+	fz_display_list* Use(int value, int *width, int *height, fz_context *mu_ctx);
+	void Add(int value, int width, int height, fz_display_list *dlist, fz_context *mu_ctx);
 	void Empty(fz_context *mu_ctx);
 };

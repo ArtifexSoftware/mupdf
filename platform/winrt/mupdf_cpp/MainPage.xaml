@@ -14,7 +14,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" ValueChanged="Slider_ValueChanged" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" />
+                <Slider x:Name="xaml_PageSlider" Minimum="0"  Maximum="10" PointerCaptureLost="Slider_ValueChanged" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" />
                 <Button x:Name="Find_File" Style="{StaticResource OpenFileAppBarButtonStyle}" Tag="OpenFile"  HorizontalAlignment="Right" Grid.Column="1" Click="Picker"/>
             </Grid>
         </AppBar>
