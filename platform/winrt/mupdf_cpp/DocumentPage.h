@@ -27,6 +27,8 @@ namespace mupdf_cpp
 		int height;
 		int width;
 		double zoom;
+		int native_height;
+		int native_width;
 		WriteableBitmap^ image;
 		Page_Content_t content;
 		IVector<RectList^>^ textbox;
@@ -94,6 +96,7 @@ namespace mupdf_cpp
 					throw ref new Platform::InvalidArgumentException();
 				}
 				height = value;
+				DocumentPage::OnPropertyChanged("Height");
 			}
 		}
 
@@ -111,6 +114,40 @@ namespace mupdf_cpp
 					throw ref new Platform::InvalidArgumentException();
 				}
 				width = value;
+				DocumentPage::OnPropertyChanged("Width");
+			}
+		}
+		property int NativeHeight
+		{
+			int get()
+			{
+				return native_height;
+			}
+
+			void set(int value)
+			{
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
+				}
+				native_height = value;
+			}
+		}
+
+		property int NativeWidth
+		{
+			int get()
+			{
+				return native_width;
+			}
+
+			void set(int value)
+			{
+				if (value < 0)
+				{
+					throw ref new Platform::InvalidArgumentException();
+				}
+				native_width = value;
 			}
 		}
 

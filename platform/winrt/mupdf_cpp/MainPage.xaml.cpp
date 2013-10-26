@@ -7,6 +7,7 @@
 #include "MainPage.xaml.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
+#define LOOK_AHEAD_SCALE 10 /* A +/- count on the pages to adjust for scale change */
 #define THUMB_PREADD 10
 #define MIN_SCALE 0.5
 
@@ -79,6 +80,8 @@ mupdf_cpp::MainPage::MainPage()
 	InitializeComponent();
 	Application::Current->Suspending += 
 		ref new SuspendingEventHandler(this, &MainPage::App_Suspending);
+	Application::Current->UnhandledException +=
+		ref new UnhandledExceptionEventHandler(this, &MainPage::ExceptionHandler);
 	m_textcolor="#402572AC";
 	m_linkcolor="#40AC7225";
 	mu_doc = nullptr;
@@ -118,6 +121,23 @@ void MainPage::Page_Loaded(Object^ sender, RoutedEventArgs^ e)
 void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 {
 
+}
+
+void mupdf_cpp::MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e)
+{
+	if (!this->m_init_done)
+	{
+		/* Windows 8.1 has some weird issues that occur before we have even tried
+		   to open a document.  For example rolling the mouse wheel throws an
+		   exception in 8.1 but not 8.0.  This is clearly a windows issue.  For 
+		   now mark as handled and move on which seems to be fine */
+		e->Handled = true;
+	}
+	else
+	{
+		e->Handled = true;
+		NotifyUser("A error was encountered", ErrorMessage);
+	}
 }
 
 void mupdf_cpp::MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
@@ -210,7 +230,7 @@ void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 
 /* Set the page with the new raster information */
 void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
-			  Point ras_size, Page_Content_t content_type)
+			  Point ras_size, Page_Content_t content_type, double zoom_in)
 {
 	assert(IsMainThread());
 
@@ -231,6 +251,7 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 		doc_page->Width = ras_size.X;
 	}
 	doc_page->Content = content_type;
+	doc_page->Zoom = zoom_in;
 
 	/* We do not want flipview change notification to occur for ourselves */
 	m_page_update = true;
@@ -240,7 +261,7 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 
 /* Set the page with the new raster information but only the image data */
 void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras,
-				Point ras_size)
+				Point ras_size, double page_zoom)
 {
 	assert(IsMainThread());
 
@@ -252,6 +273,7 @@ void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras,
 
 	doc_page->Height = ras_size.Y;
 	doc_page->Width = ras_size.X;
+	doc_page->Zoom = page_zoom;
 }
 
 Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
@@ -350,7 +372,10 @@ void MainPage::SetThumb(int page_num, bool replace)
 	if (this->m_thumbnails->Size > page_num)
 	{
 		m_page_update = true;
-		this->m_docPages->SetAt(page_num, this->m_thumbnails->GetAt(page_num));
+		auto thumb_page = this->m_thumbnails->GetAt(page_num);
+		thumb_page->Height = thumb_page->NativeHeight * m_doczoom;
+		thumb_page->Width = thumb_page->NativeWidth * m_doczoom;
+		this->m_docPages->SetAt(page_num, thumb_page);
 		m_page_update = false;
 	}
 }
@@ -436,6 +461,7 @@ void mupdf_cpp::MainPage::CleanUp()
 	m_links_on = false;
 	m_rectlist_page = -1;
 	m_Progress = 0.0;
+	m_doczoom = 1.0;
 
 	this->xaml_PageSlider->Minimum = m_slider_min;
 	this->xaml_PageSlider->Maximum = m_slider_max;
@@ -473,6 +499,8 @@ void mupdf_cpp::MainPage::RenderThumbs()
 				doc_page->Image = bmp;
 				doc_page->Height = ras_size.Y / SCALE_THUMB;
 				doc_page->Width = ras_size.X / SCALE_THUMB;
+				doc_page->NativeHeight = ras_size.Y / SCALE_THUMB;
+				doc_page->NativeWidth = ras_size.X / SCALE_THUMB;
 				doc_page->Content = THUMBNAIL;
 				doc_page->TextBox = nullptr;
 				doc_page->LinkBox = nullptr;
@@ -629,6 +657,8 @@ void mupdf_cpp::MainPage::InitialRender()
 		doc_page->Image = m_BlankBmp;
 		doc_page->Height = BLANK_HEIGHT;
 		doc_page->Width = BLANK_WIDTH;
+		doc_page->NativeHeight = BLANK_HEIGHT;
+		doc_page->NativeWidth = BLANK_WIDTH;
 		doc_page->Content = DUMMY;
 		doc_page->TextBox = nullptr;
 		doc_page->LinkBox = nullptr;
@@ -657,7 +687,7 @@ void mupdf_cpp::MainPage::InitialRender()
 
 			render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
 			{
-				UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+				UpdatePage(k, ras, ras_size, FULL_RESOLUTION, 1.0);
 			}, task_continuation_context::use_current());
 		}
 	}
@@ -683,7 +713,8 @@ void mupdf_cpp::MainPage::InitialRender()
 void mupdf_cpp::MainPage::RenderRange(int curr_page)
 {
 	/* Render +/- the look ahead from where we are if blank page is present */
-	spatial_info_t spatial_info = InitSpatial(1);
+	//spatial_info_t spatial_info = InitSpatial(1);
+	spatial_info_t spatial_info = InitSpatial(m_doczoom);
 	bool curr_page_rendered = true;
 	int range = LOOK_AHEAD;
 
@@ -696,15 +727,17 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 		{
 			/* Check if page is already rendered */
 			auto doc = this->m_docPages->GetAt(k);
-			if (doc->Content != FULL_RESOLUTION)
+			if (doc->Content != FULL_RESOLUTION ||
+				doc->Zoom != m_doczoom)
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
+				double zoom = m_doczoom;
 				auto render_task =
 					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, true));
-
-				render_task.then([this, k, ras_size] (InMemoryRandomAccessStream^ ras)
+				
+				render_task.then([this, k, ras_size, zoom] (InMemoryRandomAccessStream^ ras)
 				{
-					UpdatePage(k, ras, ras_size, FULL_RESOLUTION);
+					UpdatePage(k, ras, ras_size, FULL_RESOLUTION, zoom);
 				}, task_continuation_context::use_current()).then([this, k, curr_page]()
 				{
 					if (k == curr_page && this->m_links_on)
@@ -747,7 +780,7 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 		{
 			if (xaml_PageSlider->IsEnabled)
 			{
-				xaml_PageSlider->Value = pos;
+				xaml_PageSlider->Value = pos + 1;
 			}
 			if (m_sliderchange)
 			{
@@ -762,18 +795,31 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 			}
 			/* Get the current page */
 			int curr_page = this->m_currpage;
+			UpdateZoom(pos, false);
 			this->RenderRange(pos);
 			this->ReleasePages(curr_page, pos);
 		}
 	}
 }
 
+/* Slider via drag */
 void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
-	int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
+	Slider_Common();
+}
 
+/* Slider via keyboard */
+void mupdf_cpp::MainPage::Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e)
+{
+	Slider_Common();
+}
+
+void mupdf_cpp::MainPage::Slider_Common()
+{
 	if (IsNotStandardView())
 		return;
+
+	int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
 
 	if (m_init_done && this->xaml_PageSlider->IsEnabled)
 	{
@@ -782,16 +828,17 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 		doc_old->TextBox = nullptr;
 
 		auto doc = this->m_docPages->GetAt(newValue);
-		if (doc->Content != FULL_RESOLUTION)
+		if (doc->Content != FULL_RESOLUTION || doc->Zoom != m_doczoom)
 		{
-			spatial_info_t spatial_info = InitSpatial(1);
+			spatial_info_t spatial_info = InitSpatial(m_doczoom);
 			Point ras_size = ComputePageSize(spatial_info, newValue);
 			auto render_task =
 				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y, true));
+			double zoom = m_doczoom;
 
-			render_task.then([this, newValue, ras_size] (InMemoryRandomAccessStream^ ras)
+			render_task.then([this, newValue, ras_size, zoom] (InMemoryRandomAccessStream^ ras)
 			{
-				UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION);
+				UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION, zoom);
 				this->m_currpage = newValue;
 				m_sliderchange = true;
 				this->m_curr_flipView->SelectedIndex = newValue;
@@ -799,8 +846,10 @@ void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows:
 		}
 		else
 		{
+			m_sliderchange = true;
 			this->m_curr_flipView->SelectedIndex = newValue;
 		}
+		UpdateZoom(newValue, false);
 	}
 }
 
@@ -1069,15 +1118,17 @@ void mupdf_cpp::MainPage::UpDatePageSizes()
 			DocumentPage ^thumb_page = m_thumbnails->GetAt(i);
 			if (thumb_page != nullptr && thumb_page->Image != nullptr)
 			{
-				int curr_height = thumb_page->Height;
-				int curr_width = thumb_page->Width;
+				int curr_height = thumb_page->NativeHeight;
+				int curr_width = thumb_page->NativeWidth;
 
 				double scale_x = (double) curr_height / (double) this->xaml_zoomCanvas->Height;
 				double scale_y = (double) curr_width / (double) this->xaml_zoomCanvas->Width;
 
 				double min_scale = max(scale_x, scale_y);
-				thumb_page->Height = curr_height / min_scale;
-				thumb_page->Width = curr_width / min_scale;
+				thumb_page->Height = curr_height * m_doczoom / min_scale;
+				thumb_page->Width = curr_width * m_doczoom / min_scale;
+				thumb_page->NativeHeight = thumb_page->NativeHeight / min_scale;
+				thumb_page->NativeWidth = thumb_page->NativeWidth / min_scale;
 			}
 		}
 	}
@@ -1341,26 +1392,30 @@ void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
 {
 	ScrollViewer^ scrollviewer = safe_cast<ScrollViewer^> (sender);
 	auto doc_page = this->m_docPages->GetAt(m_currpage);
+	double new_zoom = scrollviewer->ZoomFactor;
 
-	if (scrollviewer->ZoomFactor == doc_page->Zoom)
+	if (new_zoom == 1.0)
 		return;
 
 	if (!e->IsIntermediate)
 	{
-		doc_page->Zoom = scrollviewer->ZoomFactor;
 		int page = m_currpage;
+		m_doczoom = new_zoom * m_doczoom;
+		new_zoom = m_doczoom;
 
 		/* Render at new resolution */
-		spatial_info_t spatial_info = InitSpatial(doc_page->Zoom);
+		spatial_info_t spatial_info = InitSpatial(new_zoom);
 		Point ras_size = ComputePageSize(spatial_info, page);
 
 		/* Go ahead and create display list if we dont have one for this page */
 		auto render_task =
 			create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
-		render_task.then([this, page, ras_size] (InMemoryRandomAccessStream^ ras)
+		render_task.then([this, page, ras_size, new_zoom, scrollviewer] (InMemoryRandomAccessStream^ ras)
 		{
-			ReplaceImage(page, ras, ras_size);
+			scrollviewer->ZoomToFactor(1.0);
+			ReplaceImage(page, ras, ras_size, new_zoom);
 		}, task_continuation_context::use_current());
+		UpdateZoom(m_currpage, false);
 	}
 }
 
@@ -1401,26 +1456,9 @@ void mupdf_cpp::MainPage::ZoomOutPress(Platform::Object^ sender, Windows::UI::Xa
 
 void MainPage::NonTouchZoom(int zoom)
 {
-	ScrollViewer^ scrollviewer;
-	FlipViewItem^ item = safe_cast<FlipViewItem^> 
-		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
-	auto item2 = m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage);
+	double curr_zoom = m_doczoom;
+	int page = m_currpage;
 
-	/* We don't know which one so check for both */
-	ScrollViewer^ t1 = 
-		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_v"));
-	ScrollViewer^ t2 = 
-		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_h"));
-
-	if (t1 != nullptr)
-		scrollviewer = t1;
-	else
-		scrollviewer = t2;
-
-	if (scrollviewer == nullptr) 
-		return;
-
-	double curr_zoom = scrollviewer->ZoomFactor;
 	if (zoom == ZOOM_IN)
 	{
 		curr_zoom = curr_zoom + KEYBOARD_ZOOM_STEP;
@@ -1433,7 +1471,39 @@ void MainPage::NonTouchZoom(int zoom)
 	} else
 		return;
 
-	scrollviewer->ZoomToFactor(curr_zoom);
+	auto doc_page = this->m_docPages->GetAt(page);
+
+	/* Render at new resolution */
+	spatial_info_t spatial_info = InitSpatial(curr_zoom);
+	Point ras_size = ComputePageSize(spatial_info, page);
+
+	/* Render and replace */
+	auto render_task =
+		create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
+	render_task.then([this, page, ras_size, curr_zoom] (InMemoryRandomAccessStream^ ras)
+	{
+		ReplaceImage(page, ras, ras_size, curr_zoom);
+	}, task_continuation_context::use_current());
+	m_doczoom = curr_zoom;
+	UpdateZoom(page, false);
+}
+
+/* Get adjacent pages properly scaled when zoom changed */
+void MainPage::UpdateZoom(int page_num, bool ignore_curr)
+{
+	for (int k = page_num - LOOK_AHEAD_SCALE; k <= page_num + LOOK_AHEAD_SCALE; k++)
+	{
+		bool skip = !(k == page_num && ignore_curr);
+		if (k >= 0 && k < m_num_pages)
+		{
+			auto page = this->m_docPages->GetAt(k);
+			if (page->Zoom != m_doczoom && skip) 
+			{
+				page->Height = (int) ((double) page->NativeHeight * m_doczoom);
+				page->Width = (int) ((double) page->NativeWidth * m_doczoom);
+			}
+		}
+	}
 }
 
 /* Zoom in and out for keyboard only case. */

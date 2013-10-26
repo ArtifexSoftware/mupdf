@@ -110,8 +110,9 @@ namespace mupdf_cpp
 		bool m_search_active;  /* Used to avoid multiple UI clicks */
 		bool m_sliderchange;
 		double m_Progress;
+		double m_doczoom;
 
-		void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size);
+		void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, double zoom);
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void OpenDocumentPrep(StorageFile^ file);
@@ -119,12 +120,11 @@ namespace mupdf_cpp
 		void InitialRender();
 		void RenderRange(int curr_page);
 		void CleanUp();
-		void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type);
+		void UpdatePage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, Page_Content_t content_type, double zoom);
 		void CreateBlank(int width, int height);
 		void HandleFileNotFoundException(Platform::COMException^ e);
 		void NotifyUserFileNotExist();
 		void SetFlipView();
-		void Slider_Released(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
 		void FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e);
 		void SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
@@ -163,6 +163,7 @@ namespace mupdf_cpp
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
 		void PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void App_Suspending(Object^ sender, SuspendingEventArgs^ e);
+		void ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e);
 		void ZoomInPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void NonTouchZoom(int zoom);
@@ -172,5 +173,9 @@ namespace mupdf_cpp
 		Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs^ _protocolEventArgs;
 		Windows::ApplicationModel::Activation::FileActivatedEventArgs^ _fileEventArgs;
 		void Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
+		void Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e);
+		void Slider_Common();
+		void FlipView_Started(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs^ e);
+		void UpdateZoom(int page_num, bool ignore_curr);
 };
 }
