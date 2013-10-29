@@ -142,6 +142,26 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 void
 fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 {
+	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
+	if (pix->colorspace->n == 4)
+	{
+		value = 255 - value;
+		int x, y;
+		unsigned char *s = pix->samples;
+		for (y = 0; y < pix->h; y++)
+		{
+			for (x = 0; x < pix->w; x++)
+			{
+				*s++ = 0;
+				*s++ = 0;
+				*s++ = 0;
+				*s++ = value;
+				*s++ = 255;
+			}
+		}
+		return;
+	}
+
 	if (value == 255)
 	{
 		memset(pix->samples, 255, (unsigned int)(pix->w * pix->h * pix->n));
@@ -280,14 +300,39 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, con
 
 	destspan = dest->w * dest->n;
 	destp = dest->samples + (unsigned int)(destspan * (local_b.y0 - dest->y) + dest->n * (local_b.x0 - dest->x));
+
+	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
+	if (dest->colorspace->n == 4)
+	{
+		value = 255 - value;
+		do
+		{
+			unsigned char *s = destp;
+			for (x = 0; x < w; x++)
+			{
+				*s++ = 0;
+				*s++ = 0;
+				*s++ = 0;
+				*s++ = value;
+				*s++ = 255;
+			}
+			destp += destspan;
+		}
+		while (--y);
+		return;
+	}
+
 	if (value == 255)
+	{
 		do
 		{
 			memset(destp, 255, (unsigned int)(w * dest->n));
 			destp += destspan;
 		}
 		while (--y);
+	}
 	else
+	{
 		do
 		{
 			unsigned char *s = destp;
@@ -300,6 +345,7 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, con
 			destp += destspan;
 		}
 		while (--y);
+	}
 }
 
 void
