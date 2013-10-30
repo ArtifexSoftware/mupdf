@@ -82,11 +82,11 @@ fz_rect *fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *st
 fz_rect *fz_adjust_rect_for_stroke(fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);
 
 fz_stroke_state *fz_new_stroke_state(fz_context *ctx);
-fz_stroke_state *fz_new_stroke_state_with_len(fz_context *ctx, int len);
+fz_stroke_state *fz_new_stroke_state_with_dash_len(fz_context *ctx, int len);
 fz_stroke_state *fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 void fz_drop_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 fz_stroke_state *fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *shared);
-fz_stroke_state *fz_unshare_stroke_state_with_len(fz_context *ctx, fz_stroke_state *shared, int len);
+fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len);
 
 #ifndef NDEBUG
 void fz_print_path(fz_context *ctx, FILE *out, fz_path *, int indent);

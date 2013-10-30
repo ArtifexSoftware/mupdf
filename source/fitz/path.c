@@ -393,7 +393,7 @@ fz_drop_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 }
 
 fz_stroke_state *
-fz_new_stroke_state_with_len(fz_context *ctx, int len)
+fz_new_stroke_state_with_dash_len(fz_context *ctx, int len)
 {
 	fz_stroke_state *state;
 
@@ -419,11 +419,11 @@ fz_new_stroke_state_with_len(fz_context *ctx, int len)
 fz_stroke_state *
 fz_new_stroke_state(fz_context *ctx)
 {
-	return fz_new_stroke_state_with_len(ctx, 0);
+	return fz_new_stroke_state_with_dash_len(ctx, 0);
 }
 
 fz_stroke_state *
-fz_unshare_stroke_state_with_len(fz_context *ctx, fz_stroke_state *shared, int len)
+fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len)
 {
 	int single, unsize, shsize, shlen, drop;
 	fz_stroke_state *unshared;
@@ -456,5 +456,5 @@ fz_unshare_stroke_state_with_len(fz_context *ctx, fz_stroke_state *shared, int l
 fz_stroke_state *
 fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *shared)
 {
-	return fz_unshare_stroke_state_with_len(ctx, shared, shared->dash_len);
+	return fz_unshare_stroke_state_with_dash_len(ctx, shared, shared->dash_len);
 }
