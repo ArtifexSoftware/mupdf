@@ -288,6 +288,7 @@ parse_element:
 
 parse_comment:
 	if (*p == '[') goto parse_cdata;
+	if (*p == 'D' && !memcmp(p, "DOCTYPE", 7)) goto parse_declaration;
 	if (*p++ != '-') return "syntax error in comment (<! not followed by --)";
 	if (*p++ != '-') return "syntax error in comment (<!- not followed by -)";
 	/* mark = p; */
@@ -299,6 +300,10 @@ parse_comment:
 		++p;
 	}
 	return "end of data in comment";
+
+parse_declaration:
+	while (*p) if (*p++ == '>') goto parse_text;
+	return "end of data in declaration";
 
 parse_cdata:
 	if (p[1] != 'C' || p[2] != 'D' || p[3] != 'A' || p[4] != 'T' || p[5] != 'A' || p[6] != '[')
