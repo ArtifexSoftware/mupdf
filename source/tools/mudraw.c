@@ -687,7 +687,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
 					fz_output_pnm_header(output_file, pix->w, totalheight, pix->n);
 				else if (output_format == OUT_PAM)
-					fz_output_pam_header(output_file, pix->w, totalheight, pix->n, pix->colorspace, savealpha);
+					fz_output_pam_header(output_file, pix->w, totalheight, pix->n, savealpha);
 				else if (output_format == OUT_PNG)
 					poc = fz_output_png_header(output_file, pix->w, totalheight, pix->n, savealpha);
 			}
