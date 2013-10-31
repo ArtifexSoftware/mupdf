@@ -364,11 +364,23 @@ fz_print_path(fz_context *ctx, FILE *out, fz_path *path, int indent)
 }
 #endif
 
+const fz_stroke_state fz_default_stroke_state = {
+	-2, /* -2 is the magic number we use when we have stroke states stored on the stack */
+	FZ_LINECAP_BUTT, FZ_LINECAP_BUTT, FZ_LINECAP_BUTT,
+	FZ_LINEJOIN_MITER,
+	1, 10,
+	0, 0, { 0 }
+};
+
 fz_stroke_state *
 fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {
 	if (!stroke)
 		return NULL;
+
+	/* -2 is the magic number we use when we have stroke states stored on the stack */
+	if (stroke->refs == -2)
+		return fz_clone_stroke_state(ctx, stroke);
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	if (stroke->refs > 0)
@@ -420,6 +432,17 @@ fz_stroke_state *
 fz_new_stroke_state(fz_context *ctx)
 {
 	return fz_new_stroke_state_with_dash_len(ctx, 0);
+}
+
+fz_stroke_state *
+fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
+{
+	fz_stroke_state *clone = fz_new_stroke_state_with_dash_len(ctx, stroke->dash_len);
+	int extra = stroke->dash_len - nelem(stroke->dash_list);
+	int size = sizeof(*stroke) + sizeof(stroke->dash_list[0]) * extra;
+	memcpy(clone, stroke, size);
+	clone->refs = 1;
+	return clone;
 }
 
 fz_stroke_state *
