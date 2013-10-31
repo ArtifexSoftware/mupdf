@@ -143,7 +143,7 @@ void
 fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 {
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
-	if (pix->colorspace->n == 4)
+	if (pix->colorspace && pix->colorspace->n == 4)
 	{
 		value = 255 - value;
 		int x, y;
@@ -302,7 +302,7 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, con
 	destp = dest->samples + (unsigned int)(destspan * (local_b.y0 - dest->y) + dest->n * (local_b.x0 - dest->x));
 
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
-	if (dest->colorspace->n == 4)
+	if (dest->colorspace && dest->colorspace->n == 4)
 	{
 		value = 255 - value;
 		do
