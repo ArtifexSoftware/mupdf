@@ -145,9 +145,10 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
 	if (pix->colorspace && pix->colorspace->n == 4)
 	{
-		value = 255 - value;
 		int x, y;
 		unsigned char *s = pix->samples;
+
+		value = 255 - value;
 		for (y = 0; y < pix->h; y++)
 		{
 			for (x = 0; x < pix->w; x++)
