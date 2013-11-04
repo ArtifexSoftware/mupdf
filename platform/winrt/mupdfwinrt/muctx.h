@@ -19,7 +19,7 @@ using namespace Platform;  /* For String */
 using namespace Windows::Foundation;  /* For Point */
 
 /* These are the std objects used to interface to muctx.  We do use windows
-   String and Point types however */
+	String and Point types however */
 
 /* Links */
 typedef struct document_link_s

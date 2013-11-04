@@ -64,52 +64,52 @@ namespace mupdf_cpp
 {
 
 	class PageRangeException
-    {
-    private:
-        std::wstring m_message;
-    public:
-        PageRangeException(std::wstring &message)
-        {
-            m_message = message;
-        }
-        ~PageRangeException()
-        {        
-        }
-        std::wstring get_DisplayMessage()
-        {
-            return m_message;
-        }
-    };
-
-    public value class PrintPageDesc
-    {
-    public:
-        Size    margin;
-        Size    pagesize;
-        Size    printpagesize;
-		Size	resolution;
-
-        friend bool operator == (PrintPageDesc pp1, PrintPageDesc pp2)
-        {
-            bool equal = (std::abs(pp1.pagesize.Width - pp2.pagesize.Width) < FLT_EPSILON) &&
-                         (std::abs(pp1.pagesize.Height - pp2.pagesize.Height) < FLT_EPSILON);
-            if (equal)
-            {
-                equal = (std::abs(pp1.printpagesize.Width - pp2.printpagesize.Width) < FLT_EPSILON) &&
-                        (std::abs(pp1.printpagesize.Height - pp2.printpagesize.Height) < FLT_EPSILON);
-            }
-            if (equal)
-            {
-                equal = (std::abs(pp1.resolution.Width - pp2.resolution.Width) < FLT_EPSILON) &&
-                        (std::abs(pp1.resolution.Height - pp2.resolution.Height) < FLT_EPSILON);
-            }
-            return equal;
+	{
+	private:
+		std::wstring m_message;
+	public:
+		PageRangeException(std::wstring &message)
+		{
+			m_message = message;
 		}
-        friend bool operator != (PrintPageDesc pp1, PrintPageDesc pp2)
-        {
-            return !(pp1 == pp2);
-        }
-    };
+		~PageRangeException()
+		{
+		}
+		std::wstring get_DisplayMessage()
+		{
+			return m_message;
+		}
+	};
+
+	public value class PrintPageDesc
+	{
+	public:
+		Size margin;
+		Size pagesize;
+		Size printpagesize;
+		Size resolution;
+
+		friend bool operator == (PrintPageDesc pp1, PrintPageDesc pp2)
+		{
+			bool equal = (std::abs(pp1.pagesize.Width - pp2.pagesize.Width) < FLT_EPSILON) &&
+							(std::abs(pp1.pagesize.Height - pp2.pagesize.Height) < FLT_EPSILON);
+			if (equal)
+			{
+				equal = (std::abs(pp1.printpagesize.Width - pp2.printpagesize.Width) < FLT_EPSILON) &&
+						(std::abs(pp1.printpagesize.Height - pp2.printpagesize.Height) < FLT_EPSILON);
+			}
+			if (equal)
+			{
+				equal = (std::abs(pp1.resolution.Width - pp2.resolution.Width) < FLT_EPSILON) &&
+						(std::abs(pp1.resolution.Height - pp2.resolution.Height) < FLT_EPSILON);
+			}
+			return equal;
+		}
+		friend bool operator != (PrintPageDesc pp1, PrintPageDesc pp2)
+		{
+			return !(pp1 == pp2);
+		}
+	};
 
 	/// <summary>
 	/// An empty page that can be used on its own or navigated to within a Frame.
@@ -135,13 +135,13 @@ namespace mupdf_cpp
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
 		virtual void OnKeyDown(Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e) override;
-        property Windows::Graphics::Printing::IPrintDocumentSource^ PrintDocumentSource
-        {
-            Windows::Graphics::Printing::IPrintDocumentSource^ get()
-            {
-                return m_printdoc_source;
-            }
-        }
+		property Windows::Graphics::Printing::IPrintDocumentSource^ PrintDocumentSource
+		{
+			Windows::Graphics::Printing::IPrintDocumentSource^ get()
+			{
+				return m_printdoc_source;
+			}
+		}
 
 	private:
 		Windows::Foundation::EventRegistrationToken _pageLoadedHandlerToken;
@@ -180,11 +180,11 @@ namespace mupdf_cpp
 		/* Print related */
 		Vector<DocumentPage^>^ m_printpages;
 		concurrency::critical_section m_printlock;
-        EventRegistrationToken m_printTaskRequestedEventToken;
-        PrintDocument^ m_printdoc;
-        IPrintDocumentSource^  m_printdoc_source;
-        LONGLONG m_requestCount;
-        PrintPageDesc m_printpagedesc;
+		EventRegistrationToken m_printTaskRequestedEventToken;
+		PrintDocument^ m_printdoc;
+		IPrintDocumentSource^  m_printdoc_source;
+		LONGLONG m_requestCount;
+		PrintPageDesc m_printpagedesc;
 		int m_printresolution;
 		bool m_printcrop;
 		bool m_pageRangeEditVisible;
