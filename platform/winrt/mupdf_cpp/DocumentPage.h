@@ -14,6 +14,7 @@ typedef enum {
 	THUMBNAIL,
 	DUMMY,
 	OLD_RESOLUTION,
+	PRINT_PREVIEW,
 	NOTSET
 } Page_Content_t;
 

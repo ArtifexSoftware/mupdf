@@ -5,6 +5,8 @@
 
 #include "pch.h"
 #include "MainPage.xaml.h"
+#include <regex>
+#include <sstream>
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
 #define LOOK_AHEAD_SCALE 10 /* A +/- count on the pages to adjust for scale change */
@@ -12,6 +14,7 @@
 #define MIN_SCALE 0.5
 
 #define SCALE_THUMB 0.1
+#define PRINT_PREVIEW_SCALE 0.5
 
 #define BLANK_WIDTH 17
 #define BLANK_HEIGHT 22
@@ -25,6 +28,8 @@
 #define ZOOM_IN 0
 #define ZOOM_OUT 1
 
+#define PRINTPREVIEWDPI 96;
+
 static float screenScale = 1;
 
 using namespace mupdf_cpp;
@@ -36,6 +41,7 @@ using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::Graphics::Display;
+using namespace Windows::Graphics::Printing;
 
 //****************** Added *****************
 using namespace Windows::Storage::Pickers;
@@ -75,7 +81,7 @@ extern "C" {
 
 #endif /* not NDEBUG */
 
-mupdf_cpp::MainPage::MainPage()
+MainPage::MainPage()
 {
 	InitializeComponent();
 	Application::Current->Suspending += 
@@ -86,10 +92,12 @@ mupdf_cpp::MainPage::MainPage()
 	m_linkcolor="#40AC7225";
 	mu_doc = nullptr;
 	m_docPages = ref new Platform::Collections::Vector<DocumentPage^>();
+	m_printpages = ref new Platform::Collections::Vector<DocumentPage^>();
 	m_thumbnails = ref new Platform::Collections::Vector<DocumentPage^>();
 	m_page_link_list = ref new Platform::Collections::Vector<IVector<RectList^>^>();
 	m_text_list = ref new Platform::Collections::Vector<RectList^>();
 	m_linkset = ref new Platform::Collections::Vector<int>();
+	RegisterForPrinting();
 	CleanUp();
 	RecordMainThread();
 	/* So that we can catch special loading events (e.g. open with) */
@@ -123,7 +131,7 @@ void MainPage::OnNavigatedTo(NavigationEventArgs^ e)
 
 }
 
-void mupdf_cpp::MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e)
+void MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e)
 {
 	if (!this->m_init_done)
 	{
@@ -140,22 +148,22 @@ void mupdf_cpp::MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEve
 	}
 }
 
-void mupdf_cpp::MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
+void MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
 {
 
 }
 
-void mupdf_cpp::MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)
+void MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)
 {
 
 }
 
-void mupdf_cpp::MainPage::OKInvokedHandler(Windows::UI::Popups::IUICommand^ command)
+void MainPage::OKInvokedHandler(Windows::UI::Popups::IUICommand^ command)
 {
 
 }
 
-void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
+void MainPage::NotifyUser(String^ strMessage, int type)
 {
 	MessageDialog^ msg = ref new MessageDialog(strMessage);
 	UICommand^ ExitCommand = nullptr;
@@ -165,7 +173,7 @@ void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 	{
 	case StatusMessage:
 		OKCommand = ref new UICommand("OK",
-			ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::OKInvokedHandler));
+			ref new UICommandInvokedHandler(this, &MainPage::OKInvokedHandler));
 		msg->Commands->Append(OKCommand);
 		/// Set the command that will be invoked by default
 		msg->DefaultCommandIndex = 0;
@@ -174,7 +182,7 @@ void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 		break;
 	case ErrorMessage:
 		ExitCommand = ref new UICommand("Exit",
-			ref new UICommandInvokedHandler(this, &mupdf_cpp::MainPage::ExitInvokedHandler));
+			ref new UICommandInvokedHandler(this, &MainPage::ExitInvokedHandler));
 		msg->Commands->Append(ExitCommand);
 		/// Set the command that will be invoked by default
 		msg->DefaultCommandIndex = 0;
@@ -188,7 +196,7 @@ void mupdf_cpp::MainPage::NotifyUser(String^ strMessage, NotifyType_t type)
 	msg->ShowAsync();
 }
 
-bool mupdf_cpp::MainPage::EnsureUnsnapped()
+bool MainPage::EnsureUnsnapped()
 {
 	// FilePicker APIs will not work if the application is in a snapped state.
 	// If an app wants to show a FilePicker while snapped, it must attempt to unsnap first
@@ -202,7 +210,7 @@ bool mupdf_cpp::MainPage::EnsureUnsnapped()
 	return unsnapped;
 }
 
-void mupdf_cpp::MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (!EnsureUnsnapped())
 		return;
@@ -407,7 +415,7 @@ void MainPage::CreateBlank(int width, int height)
 	m_BlankBmp = bmp;
 }
 
-void mupdf_cpp::MainPage::SetFlipView()
+void MainPage::SetFlipView()
 {
 	int height = this->ActualHeight;
 	int width = this->ActualWidth;
@@ -422,7 +430,7 @@ void mupdf_cpp::MainPage::SetFlipView()
 
 /* Clean up everything as we are opening a new document after having another
    one open */
-void mupdf_cpp::MainPage::CleanUp()
+void MainPage::CleanUp()
 {
 	m_init_done = false;
 	/* Remove current pages in the flipviews */
@@ -430,11 +438,15 @@ void mupdf_cpp::MainPage::CleanUp()
 		m_docPages->Clear();
 	if (m_thumbnails != nullptr && m_thumbnails->Size > 0)
 		m_thumbnails->Clear();
+	if (m_printpages != nullptr && m_printpages->Size > 0)
+		m_printpages->Clear();
 	/* With the ref counting this should not leak */
 	if (m_page_link_list != nullptr && m_page_link_list->Size > 0)
 		m_page_link_list->Clear();
 	if (m_text_list->Size > 0)
 		m_text_list->Clear();
+    m_ppage_num_list.clear();
+
 	if (m_linkset != nullptr && m_linkset->Size > 0)
 		m_linkset->Clear();
 
@@ -469,7 +481,7 @@ void mupdf_cpp::MainPage::CleanUp()
 }
 
 /* Create the thumbnail images */
-void mupdf_cpp::MainPage::RenderThumbs()
+void MainPage::RenderThumbs()
 {
 	spatial_info_t spatial_info = this->InitSpatial(1);
 	int num_pages = this->m_num_pages;
@@ -553,7 +565,7 @@ void mupdf_cpp::MainPage::RenderThumbs()
 
 }
 
-void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
+void MainPage::OpenDocumentPrep(StorageFile^ file)
 {
 	if (this->m_num_pages != -1)
 	{
@@ -590,7 +602,7 @@ void mupdf_cpp::MainPage::OpenDocumentPrep(StorageFile^ file)
 	}
 }
 
-void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
+void MainPage::OpenDocument(StorageFile^ file)
 {
 	this->SetFlipView();
 
@@ -635,7 +647,7 @@ void mupdf_cpp::MainPage::OpenDocument(StorageFile^ file)
 	}, task_continuation_context::use_current());
 }
 
-void mupdf_cpp::MainPage::InitialRender()
+void MainPage::InitialRender()
 {
 	assert(IsMainThread());
 	m_num_pages = mu_doc->GetNumPages();
@@ -648,6 +660,8 @@ void mupdf_cpp::MainPage::InitialRender()
 	{
 		m_currpage = 0;
 	}
+
+	//m_print.RegisterForPrinting();
 
 	/* Initialize all the flipvew items with blanks and the thumbnails. */
 	for (int k = 0; k < m_num_pages; k++)
@@ -664,6 +678,7 @@ void mupdf_cpp::MainPage::InitialRender()
 		doc_page->LinkBox = nullptr;
 		m_docPages->Append(doc_page);
 		m_thumbnails->Append(doc_page);
+		m_printpages->Append(doc_page);
 		/* Create empty lists for our links and specify that they have
 			not been computed for these pages */
 		Vector<RectList^>^ temp_link = ref new Vector<RectList^>();
@@ -710,7 +725,8 @@ void mupdf_cpp::MainPage::InitialRender()
 	this->m_init_done = true;
 }
 
-void mupdf_cpp::MainPage::RenderRange(int curr_page)
+
+void MainPage::RenderRange(int curr_page)
 {
 	/* Render +/- the look ahead from where we are if blank page is present */
 	//spatial_info_t spatial_info = InitSpatial(1);
@@ -770,7 +786,7 @@ void mupdf_cpp::MainPage::RenderRange(int curr_page)
 	}
 }
 
-void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
+void MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventArgs^ e)
 {
 	if (m_init_done && !m_page_update)
 	{
@@ -803,18 +819,18 @@ void mupdf_cpp::MainPage::FlipView_SelectionChanged(Object^ sender, SelectionCha
 }
 
 /* Slider via drag */
-void mupdf_cpp::MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
+void MainPage::Slider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
 	Slider_Common();
 }
 
 /* Slider via keyboard */
-void mupdf_cpp::MainPage::Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e)
+void MainPage::Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e)
 {
 	Slider_Common();
 }
 
-void mupdf_cpp::MainPage::Slider_Common()
+void MainPage::Slider_Common()
 {
 	if (IsNotStandardView())
 		return;
@@ -854,13 +870,13 @@ void mupdf_cpp::MainPage::Slider_Common()
 }
 
 /* Search Related Code */
-void mupdf_cpp::MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::Searcher(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	ShowSearchBox();
 	UpdateAppBarButtonViewState();
 }
 
-void mupdf_cpp::MainPage::ShowSearchBox()
+void MainPage::ShowSearchBox()
 {
 	/* Update the app bar so that we can do the search */
 	StackPanel^ leftPanel = (StackPanel^) this->TopAppBar->FindName("LeftPanel");
@@ -886,14 +902,14 @@ void mupdf_cpp::MainPage::ShowSearchBox()
 	}
 }
 
-void mupdf_cpp::MainPage::ClearTextSearch()
+void MainPage::ClearTextSearch()
 {
 	/* Clear out any old search result */
 	if (m_text_list->Size > 0)
 		m_text_list->Clear();
 }
 
-void mupdf_cpp::MainPage::ShowSearchResults(int page_num, int box_count)
+void MainPage::ShowSearchResults(int page_num, int box_count)
 {
 	int old_page = this->m_currpage;
 	int new_page = page_num;
@@ -947,7 +963,7 @@ void mupdf_cpp::MainPage::ShowSearchResults(int page_num, int box_count)
 	return;
 }
 
-void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (IsNotStandardView())
 		return;
@@ -960,7 +976,7 @@ void mupdf_cpp::MainPage::SearchNext(Platform::Object^ sender, Windows::UI::Xaml
 		SearchInDirection(1, textToFind);
 }
 
-void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (IsNotStandardView())
 		return;
@@ -973,14 +989,14 @@ void mupdf_cpp::MainPage::SearchPrev(Platform::Object^ sender, Windows::UI::Xaml
 		SearchInDirection(-1, textToFind);
 }
 
-void mupdf_cpp::MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	m_searchcts.cancel();
 	xaml_ProgressStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 	this->m_search_active = false;
 }
 
-void mupdf_cpp::MainPage::AddTextCanvas()
+void MainPage::AddTextCanvas()
 {
 	/* Go ahead and set our doc item to this in the vertical and horizontal view */
 	auto doc_page = this->m_docPages->GetAt(m_currpage);
@@ -992,12 +1008,12 @@ void mupdf_cpp::MainPage::AddTextCanvas()
 	this->m_search_active = false;
 }
 
-void mupdf_cpp::MainPage::SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status)
+void MainPage::SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status)
 {
 	xaml_Progress->Value = status;
 }
 
-void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
+void MainPage::SearchInDirection(int dir, String^ textToFind)
 {
 	cancellation_token_source cts;
 	auto token = cts.get_token();
@@ -1047,7 +1063,7 @@ void mupdf_cpp::MainPage::SearchInDirection(int dir, String^ textToFind)
 }
 
 /* This is here to handle when we rotate or go into the snapview mode  */
-void mupdf_cpp::MainPage::GridSizeChanged()
+void MainPage::GridSizeChanged()
 {
 	int height = this->ActualHeight;
 	int width = this->ActualWidth;
@@ -1107,7 +1123,7 @@ void mupdf_cpp::MainPage::GridSizeChanged()
 	}
 }
 
-void mupdf_cpp::MainPage::UpDatePageSizes()
+void MainPage::UpDatePageSizes()
 {
 	/* Reset the thumb view scaling value */
 	if (m_num_pages > 0)
@@ -1135,7 +1151,7 @@ void mupdf_cpp::MainPage::UpDatePageSizes()
 };
 
 /* Link related code */
-void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	m_links_on = !m_links_on;
 
@@ -1147,7 +1163,7 @@ void mupdf_cpp::MainPage::Linker(Platform::Object^ sender, Windows::UI::Xaml::Ro
 		ClearLinks();
 }
 
-void mupdf_cpp::MainPage::ClearLinks()
+void MainPage::ClearLinks()
 {
 	/* Make sure surrounding render pages lose their links */
 	for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++)
@@ -1163,14 +1179,14 @@ void mupdf_cpp::MainPage::ClearLinks()
 	}
 }
 
-void mupdf_cpp::MainPage::InvalidateLinks()
+void MainPage::InvalidateLinks()
 {
 	for (int k = 0; k < m_num_pages; k++)
 		m_linkset->SetAt(k, false);
 }
 
 /* Add in the link rects.  If we have not already computed them then do that now */
-void mupdf_cpp::MainPage::AddLinkCanvas()
+void MainPage::AddLinkCanvas()
 {
 	/* See if the link object for this page has already been computed */
 	int link_page = m_linkset->GetAt(m_currpage);
@@ -1231,7 +1247,7 @@ void mupdf_cpp::MainPage::AddLinkCanvas()
 }
 
 /* A link was tapped */
-void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
+void MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
 {
 	Rectangle^ rect = safe_cast<Rectangle^>(e->OriginalSource);
 	String^ str_index = safe_cast<String^>(rect->Tag);
@@ -1270,7 +1286,7 @@ void mupdf_cpp::MainPage::LinkTapped(Platform::Object^ sender, Windows::UI::Xaml
 }
 
 /* Bring up the contents */
-void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (this->m_num_pages < 0)
 		return;
@@ -1317,7 +1333,7 @@ void mupdf_cpp::MainPage::ContentDisplay(Platform::Object^ sender, Windows::UI::
 	}
 }
 
-void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
+void MainPage::ContentSelected(Platform::Object^ sender, Windows::UI::Xaml::Controls::ItemClickEventArgs^ e)
 {
 	ContentItem^ b = safe_cast<ContentItem^>(e->ClickedItem);
 	int newpage = b->Page;
@@ -1336,7 +1352,7 @@ void mupdf_cpp::MainPage::ContentSelected(Platform::Object^ sender, Windows::UI:
 	}
 }
 
-void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (this->m_num_pages < 0) return;
 
@@ -1365,7 +1381,7 @@ void mupdf_cpp::MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::
 }
 
 /* Need to handle resizing of app bar to make sure everything fits */
-void mupdf_cpp::MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	/* Remove search box in snapped view as we don't have the room for it */
 	if (ApplicationView::Value == ApplicationViewState::Snapped && m_insearch)
@@ -1373,7 +1389,7 @@ void mupdf_cpp::MainPage::topAppBar_Loaded(Platform::Object^ sender, Windows::UI
 	UpdateAppBarButtonViewState();
 }
 
-void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
+void MainPage::UpdateAppBarButtonViewState()
 {
 	String ^viewState = Windows::UI::ViewManagement::ApplicationView::Value.ToString();
 	VisualStateManager::GoToState(Search, viewState, true);
@@ -1387,7 +1403,7 @@ void mupdf_cpp::MainPage::UpdateAppBarButtonViewState()
 }
 
 /* Manipulation zooming with touch input */
-void mupdf_cpp::MainPage::ScrollChanged(Platform::Object^ sender,
+void MainPage::ScrollChanged(Platform::Object^ sender,
 					Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
 {
 	ScrollViewer^ scrollviewer = safe_cast<ScrollViewer^> (sender);
@@ -1442,13 +1458,13 @@ Windows::UI::Xaml::FrameworkElement^ FindVisualChildByName(DependencyObject^ obj
 	return ret;
 }
 
-void mupdf_cpp::MainPage::ZoomInPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::ZoomInPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (!m_init_done || IsNotStandardView()) return;
 	NonTouchZoom(ZOOM_IN);
 }
 
-void mupdf_cpp::MainPage::ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (!m_init_done || IsNotStandardView()) return;
 	NonTouchZoom(ZOOM_OUT);
@@ -1521,7 +1537,7 @@ void MainPage::OnKeyDown(KeyRoutedEventArgs^ e)
 		return;
 }
 
-void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+void MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	/* If password checks out then go ahead and start rendering */
 	if (mu_doc->ApplyPassword(xaml_password->Password))
@@ -1537,8 +1553,512 @@ void mupdf_cpp::MainPage::PasswordOK(Platform::Object^ sender, Windows::UI::Xaml
 
 /* So that we know if we are in a standard view case and not in reflow, or
  * content type */
-bool mupdf_cpp::MainPage::IsNotStandardView()
+bool MainPage::IsNotStandardView()
 {
 	return (this->xaml_ListView->Opacity == 1.0 ||
 			xaml_WebView->Visibility == Windows::UI::Xaml::Visibility::Visible);
+}
+
+/* The following code is for print support.  This is just a simple demonstration of
+   printing with MuPDF in the Windows 8 environment */
+void MainPage::RegisterForPrinting()
+{
+	m_printdoc = ref new PrintDocument();
+	m_printdoc_source = m_printdoc->DocumentSource;
+	m_printdoc->Paginate += 
+		ref new Windows::UI::Xaml::Printing::PaginateEventHandler(this, &MainPage::CreatePrintPreviewPages);
+	m_printdoc->GetPreviewPage += 
+		ref new Windows::UI::Xaml::Printing::GetPreviewPageEventHandler(this, &MainPage::GetPrintPreviewPages);
+	m_printdoc->AddPages += 
+		ref new Windows::UI::Xaml::Printing::AddPagesEventHandler(this, &MainPage::AddPrintPages);
+
+	PrintManager^ printMan = PrintManager::GetForCurrentView();
+	m_printTaskRequestedEventToken = 
+		printMan->PrintTaskRequested += 
+		ref new TypedEventHandler<PrintManager^, PrintTaskRequestedEventArgs^>(this, &MainPage::PrintTaskRequested);        
+}
+
+void MainPage::UnregisterForPrinting()
+{
+	// Remove the handler for printing initialization.
+	PrintManager^ printMan = PrintManager::GetForCurrentView();
+	printMan->PrintTaskRequested -= m_printTaskRequestedEventToken;
+}
+
+void MainPage::PrintTaskRequested(PrintManager^ sender, PrintTaskRequestedEventArgs^ e)
+{
+	auto printTaskRef = std::make_shared<PrintTask^>(nullptr);
+	*printTaskRef = e->Request->CreatePrintTask("MuPDF Printing",  
+		ref new PrintTaskSourceRequestedHandler([this, printTaskRef](PrintTaskSourceRequestedArgs^ args)
+	{
+		PrintTask^ printTask = *printTaskRef;
+		PrintTaskOptionDetails^ printDetailedOptions = 
+			PrintTaskOptionDetails::GetFromPrintTaskOptions(printTask->Options);
+
+		// Some standard printer options
+		printDetailedOptions->DisplayedOptions->Clear();
+		printDetailedOptions->DisplayedOptions->Append(Windows::Graphics::Printing::StandardPrintTaskOptions::MediaSize);
+		printDetailedOptions->DisplayedOptions->Append(Windows::Graphics::Printing::StandardPrintTaskOptions::Copies);
+
+        // Our custom options
+        PrintCustomItemListOptionDetails^ resolution = 
+			printDetailedOptions->CreateItemListOption("resolution", "Render Resolution");
+        resolution->AddItem("sres72", "72 dpi");
+        resolution->AddItem("sres150", "150 dpi");
+        resolution->AddItem("sres300", "300 dpi");
+        resolution->AddItem("sres600", "600 dpi");
+		resolution->TrySetValue("sres600");
+		m_printresolution = 600;
+        printDetailedOptions->DisplayedOptions->Append("resolution");
+
+		PrintCustomItemListOptionDetails^ scaling = printDetailedOptions->CreateItemListOption("scaling", "Scaling");
+		scaling->AddItem("sScaleToFit", "Scale To Fit");
+		scaling->AddItem("sCrop", "Crop");
+		// Add the custom option to the option list.
+		printDetailedOptions->DisplayedOptions->Append("scaling");
+		scaling->TrySetValue("sScaleToFit");
+		m_printcrop = false;
+		printTask->Options->MediaSize = PrintMediaSize::NorthAmericaLetter;
+
+		PrintCustomItemListOptionDetails^ pageFormat = printDetailedOptions->CreateItemListOption(L"PageRange", L"Page Range");
+		pageFormat->AddItem(L"PrintAll", L"Print all");
+		pageFormat->AddItem(L"PrintRange", L"Print Range");
+		printDetailedOptions->DisplayedOptions->Append(L"PageRange");
+		PrintCustomTextOptionDetails^ pageRangeEdit = printDetailedOptions->CreateTextOption(L"PageRangeEdit", L"Range");
+
+		printDetailedOptions->OptionChanged += 
+			ref new TypedEventHandler<PrintTaskOptionDetails^, PrintTaskOptionChangedEventArgs^>(this, &MainPage::PrintOptionsChanged);
+
+		// Invoked when the print job is completed.
+		printTask->Completed += ref new TypedEventHandler<PrintTask^, PrintTaskCompletedEventArgs^>(
+		[=](PrintTask^ sender, PrintTaskCompletedEventArgs^ e)
+		{
+			auto callback = ref new Windows::UI::Core::DispatchedHandler(
+			[=]()
+			{
+				ClearPrintCollection();
+				m_printpagedesc = PrintPageDesc();
+				if (e->Completion == Windows::Graphics::Printing::PrintTaskCompletion::Failed)
+				{
+					NotifyUser("Sorry, printing failed", StatusMessage);
+				}
+			});
+			Dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, callback);
+		});
+		// Set the document source.
+		args->SetSource(PrintDocumentSource);
+	}));
+}
+
+void MainPage::PrintOptionsChanged(PrintTaskOptionDetails^ sender, PrintTaskOptionChangedEventArgs^ args)
+{
+	bool force_reset = false;
+
+    if (args->OptionId == nullptr)
+        return;
+
+    String^ optionId = safe_cast<String^>(args->OptionId);
+
+    if (optionId == "resolution")
+    {
+        IPrintOptionDetails^ resolution = sender->Options->Lookup(optionId);
+        String^ resolutionValue = safe_cast<String^>(resolution->Value);
+
+        if (resolutionValue == "sres72")
+        {
+            m_printresolution = 72;
+        }
+        else if (resolutionValue == "sres150")
+        {
+            m_printresolution = 150;
+        }
+        else if (resolutionValue == "sres300")
+        {
+            m_printresolution = 300;
+        }
+        else if(resolutionValue == "sres600")
+        {
+            m_printresolution = 600;
+        }
+    }
+
+	/* Need to update preview with a change of this one */
+    if (optionId == "scaling")
+    {
+        IPrintOptionDetails^ scaling = sender->Options->Lookup(optionId);
+        String^ scaleValue = safe_cast<String^>(scaling->Value);
+
+        if (scaleValue == "sScaleToFit")
+        {
+            m_printcrop = false;
+        }
+        if (scaleValue == "sCrop")
+        {
+            m_printcrop = true;
+        }
+		force_reset = true;
+    }
+
+	if (optionId == L"PageRange")
+    {
+        IPrintOptionDetails^ pagerange = sender->Options->Lookup(optionId);
+        String^ pageRangeValue = pagerange->Value->ToString();
+
+        if(pageRangeValue == L"PrintRange")
+        {
+            sender->DisplayedOptions->Append(L"PageRangeEdit");
+            m_pageRangeEditVisible = true;
+        }
+        else
+        {
+            RemovePageRangeEdit(sender);
+        }
+        RefreshPreview();
+    }
+	
+	if (optionId == L"PageRangeEdit")
+    {
+        IPrintOptionDetails^ pagerange = sender->Options->Lookup(optionId);
+
+        std::wregex rangePattern(L"^\\s*\\d+\\s*(\\-\\s*\\d+\\s*)?(\\,\\s*\\d+\\s*(\\-\\s*\\d+\\s*)?)*$");
+        std::wstring pageRangeValue(pagerange->Value->ToString()->Data());
+
+        if(!std::regex_match(pageRangeValue.begin(), pageRangeValue.end(), rangePattern))
+        {
+            pagerange->ErrorText = L"Invalid Page Range (eg: 1-3, 5)";
+        }
+        else
+        {
+            pagerange->ErrorText = L"";
+            try
+            {
+                GetPagesInRange(pagerange->Value->ToString());
+            }
+            catch(PageRangeException* rangeException)
+            {
+                pagerange->ErrorText = ref new String(rangeException->get_DisplayMessage().data());
+                delete rangeException;
+            }
+            force_reset = true;
+        }
+    }
+	if (force_reset)
+	{
+		RefreshPreview();
+	}
+}
+
+void MainPage::SplitString(String^ string, wchar_t delimiter, std::vector<std::wstring>& words)
+{
+    std::wistringstream iss(string->Data());
+
+    std::wstring part;
+    while(std::getline(iss, part, delimiter))
+    {
+        words.push_back(part);
+    };
+}
+
+void MainPage::GetPagesInRange(String^ pagerange)
+{
+    std::vector<std::wstring> vector_range;
+    SplitString(pagerange, ',', vector_range);
+
+    m_ppage_num_list.clear();
+    for(std::vector<std::wstring>::iterator it = vector_range.begin(); it != vector_range.end(); ++ it)
+    {
+        int intervalPos = static_cast<int>((*it).find('-'));
+        if( intervalPos != -1)
+        {
+            int start = _wtoi((*it).substr(0, intervalPos).data());
+            int end = _wtoi((*it).substr(intervalPos + 1, (*it).length() - intervalPos - 1).data());
+
+            if ((start < 1) || (end > static_cast<int>(m_num_pages)) || (start >= end))
+            {
+                std::wstring message(L"Invalid page(s) in range ");
+
+                message.append(std::to_wstring(start));
+                message.append(L" - ");
+                message.append(std::to_wstring(end));
+
+				throw new PageRangeException(message);
+            }
+
+            for(int intervalPage=start; intervalPage <= end; ++intervalPage)
+            {
+                m_ppage_num_list.push_back(intervalPage);
+            }
+        }
+        else
+        {
+            int pageNr = _wtoi((*it).data());
+            std::wstring message(L"Invalid page ");
+
+            if (pageNr < 1)
+            {
+                message.append(std::to_wstring(pageNr));
+				throw new PageRangeException(message);
+            }
+            if (pageNr > static_cast<int>(m_num_pages))
+            {
+                message.append(std::to_wstring(pageNr));
+				throw new PageRangeException(message);
+            }
+            m_ppage_num_list.push_back(pageNr);
+        }
+    }
+    std::sort(m_ppage_num_list.begin(), m_ppage_num_list.end(), std::less<int>());
+    std::unique(m_ppage_num_list.begin(), m_ppage_num_list.end());
+}
+
+void MainPage::RemovePageRangeEdit(PrintTaskOptionDetails^ printTaskOptionDetails)
+{
+    if (m_pageRangeEditVisible)
+    {
+        unsigned int index;
+        if(printTaskOptionDetails->DisplayedOptions->IndexOf(ref new String(L"PageRangeEdit"), &index))
+        {
+            printTaskOptionDetails->DisplayedOptions->RemoveAt(index);
+        }
+        m_pageRangeEditVisible = false;
+    }
+}
+
+void MainPage::ClearPrintCollection()
+{
+    m_printlock.lock();
+	for (int k = 0; k < m_num_pages; k++)
+	{
+		auto thumb_page = this->m_thumbnails->GetAt(k);
+		this->m_printpages->SetAt(k, thumb_page);
+	}
+	m_printlock.unlock();
+}
+
+/* Just use the thumbnail images for now */
+void MainPage::CreatePrintPreviewPages(Object^ sender, PaginateEventArgs^ e)
+{
+    InterlockedIncrement64(&m_requestCount);
+    PrintPageDesc ppageDescription;
+    PrintTaskOptionDetails^ printDetailedOptions = 
+		PrintTaskOptionDetails::GetFromPrintTaskOptions(e->PrintTaskOptions);
+    PrintPageDescription DeviceDescription = 
+		e->PrintTaskOptions->GetPageDescription(0);
+
+	/* This has the media dimension */
+    ppageDescription.pagesize = DeviceDescription.PageSize;
+
+	ppageDescription.resolution.Width = DeviceDescription.DpiX;
+	ppageDescription.resolution.Height = DeviceDescription.DpiY;
+
+    ppageDescription.margin.Width = (std::max)(DeviceDescription.ImageableRect.Left, 
+                                               DeviceDescription.ImageableRect.Right - 
+											   DeviceDescription.PageSize.Width);
+
+    ppageDescription.margin.Height = (std::max)(DeviceDescription.ImageableRect.Top, 
+                                               DeviceDescription.ImageableRect.Bottom - 
+											   DeviceDescription.PageSize.Height);
+
+    ppageDescription.printpagesize.Width = DeviceDescription.PageSize.Width - 
+											ppageDescription.margin.Width * 2;
+    ppageDescription.printpagesize.Height = DeviceDescription.PageSize.Height - 
+											ppageDescription.margin.Height * 2;
+
+    ClearPrintCollection();
+    PrintDocument^ printDocument = safe_cast<PrintDocument^>(sender);
+	m_printpagedesc = ppageDescription;
+
+	if (m_ppage_num_list.size() > 0)
+	{
+		printDocument->SetPreviewPageCount(m_ppage_num_list.size(), 
+											PreviewPageCountType::Intermediate);
+	}
+	else
+	{
+		printDocument->SetPreviewPageCount(m_num_pages, 
+											PreviewPageCountType::Intermediate);
+	}
+}
+
+/* Set the page with the new raster information */
+void MainPage::UpdatePreview(int page_num, InMemoryRandomAccessStream^ ras,
+			  Point ras_size, Page_Content_t content_type, double zoom_in)
+{
+	assert(IsMainThread());
+
+	WriteableBitmap ^bmp = ref new WriteableBitmap(ras_size.X, ras_size.Y);
+	bmp->SetSource(ras);
+
+	DocumentPage^ doc_page = ref new DocumentPage();
+	doc_page->Image = bmp;
+
+	doc_page->Height = ras_size.Y;
+	doc_page->Width = ras_size.X;
+	doc_page->Content = content_type;
+	doc_page->Zoom = zoom_in;
+	this->m_printpages->SetAt(page_num, doc_page);
+}
+
+void MainPage::CleanUpPreview(int page_num)
+{
+	for (int k = page_num - 1; k <= page_num + 1; k++)
+	{
+		if (k >= 0 && k < this->m_num_pages && k != page_num)
+		{
+			auto doc = this->m_printpages->GetAt(k);
+			if (doc->Content == THUMBNAIL) return;
+
+			if (this->m_thumbnails->Size > k)
+			{
+				auto thumb_page = this->m_thumbnails->GetAt(k);
+				this->m_printpages->SetAt(k, thumb_page);
+			}
+		}
+	}
+}
+
+void MainPage::RefreshPreview()
+{
+    auto callback = 
+		ref new Windows::UI::Core::DispatchedHandler([this]()
+	{
+		m_printdoc->InvalidatePreview();
+	});
+    Dispatcher->RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, callback);
+}
+
+void MainPage::GetPrintPreviewPages(Object^ sender, GetPreviewPageEventArgs^ e)
+{
+    PrintDocument^ printDocument = safe_cast<PrintDocument^>(sender);
+
+    LONGLONG requestNumber = 0;
+    InterlockedExchange64(&requestNumber, m_requestCount);
+    int index_page_num = e->PageNumber;
+	int ren_page_num = index_page_num;
+
+	if (m_ppage_num_list.size() > 0)
+	{
+		ren_page_num = m_ppage_num_list[index_page_num - 1];
+	}
+	auto doc_curr = this->m_printpages->GetAt(ren_page_num - 1);
+	if (doc_curr->Content == PRINT_PREVIEW) 
+	{
+		auto bitmap = doc_curr->Image;
+		Image^ image = ref new Image();
+		image->Source = bitmap;
+		image->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+		image->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+		image->Stretch = Stretch::UniformToFill;
+		image->Width = bitmap->PixelWidth;
+		image->Height = bitmap->PixelHeight;
+		printDocument->SetPreviewPage(index_page_num, image);
+	}
+	else 
+	{
+		/* Determine the scale to fit case or crop */
+		spatial_info_t spatial_info = InitSpatial(1.0);
+		int pagNum = ren_page_num - 1;
+		Point ras_size = ComputePageSize(spatial_info, pagNum);
+		float scale = 1.0;
+
+		if (!(this->m_printcrop))
+		{
+			float scaleY = m_printpagedesc.printpagesize.Height / ras_size.Y;
+			float scaleX = m_printpagedesc.printpagesize.Width / ras_size.X;
+			scale = (std::min)(scaleY, scaleX);
+		}
+		auto render_task =
+				create_task(mu_doc->RenderPageAsync(pagNum, ras_size.X, ras_size.Y, true));
+			render_task.then([=] (InMemoryRandomAccessStream^ ras)
+			{
+				UpdatePreview(pagNum, ras, ras_size, PRINT_PREVIEW, scale);
+				auto doc_curr = this->m_printpages->GetAt(pagNum);
+				auto bitmap = doc_curr->Image;
+				Image^ image = ref new Image();
+				image->Source = bitmap;
+				image->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+				image->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+				image->Stretch = Stretch::UniformToFill;
+				image->Width = bitmap->PixelWidth * scale;
+				image->Height = bitmap->PixelHeight * scale;
+				printDocument->SetPreviewPage(index_page_num, image);
+			}, task_continuation_context::use_current());
+	}
+	this->CleanUpPreview(ren_page_num - 1);
+}
+
+void MainPage::AddPrintPages(Object^ sender, AddPagesEventArgs^ e)
+{
+    PrintDocument^ printDocument = safe_cast<PrintDocument^>(sender);
+
+    /* We create a list of tasks to create the pages for printing.  Once all the 
+	   pages are created then we can go ahead and start adding them for printing */
+    std::vector<concurrency::task<void>> createPageTasks;
+	double res_scale = ((double) m_printresolution / 72.0);
+	int page_count = m_num_pages;
+
+	if (m_ppage_num_list.size() > 0)
+		page_count = m_ppage_num_list.size();
+
+    for(int i = 0; i < page_count; ++i)
+    {
+        m_printlock.lock();
+
+		int page_num = i;
+		if (m_ppage_num_list.size() > 0)
+			page_num = m_ppage_num_list[i] - 1;
+
+		auto doc_curr = this->m_printpages->GetAt(page_num);
+		if (doc_curr->Content != FULL_RESOLUTION) 
+		{
+			spatial_info_t spatial_info = InitSpatial(res_scale);
+			Point ras_size = ComputePageSize(spatial_info, page_num);
+			float scale = 1.0;
+
+			if (!(this->m_printcrop))
+			{
+				spatial_info = InitSpatial(1.0);
+				ras_size = ComputePageSize(spatial_info, page_num);
+				float scaleY = m_printpagedesc.printpagesize.Height / ras_size.Y;
+				float scaleX = m_printpagedesc.printpagesize.Width / ras_size.X;
+				scale = (std::min)(scaleY, scaleX);
+				spatial_info = InitSpatial(res_scale * scale);
+				ras_size = ComputePageSize(spatial_info, page_num);
+			}
+			auto render_task =
+				create_task(mu_doc->RenderPageAsync(page_num, ras_size.X, ras_size.Y, true));
+			createPageTasks.push_back(render_task.then([=] (InMemoryRandomAccessStream^ ras)
+			{
+				UpdatePreview(page_num, ras, ras_size, FULL_RESOLUTION, 1.0);
+			}, task_continuation_context::use_current()));
+		}
+		m_printlock.unlock();
+    }
+
+    /* When all the tasks have finished then go ahead and add them to the print 
+	   document */
+    concurrency::when_all(createPageTasks.begin(), createPageTasks.end()). then([=]
+	{
+		for (int i = 0; i < page_count; i++) 
+		{
+			int page_num = i;
+			if (m_ppage_num_list.size() > 0)
+				page_num = m_ppage_num_list[i] - 1;
+			auto doc_curr = this->m_printpages->GetAt(page_num);
+			auto bitmap = doc_curr->Image;
+			Image^ image = ref new Image();
+			image->Source = bitmap;
+			image->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+			image->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+			image->Stretch = Stretch::UniformToFill;
+			image->Width = bitmap->PixelWidth / res_scale;
+			image->Height = bitmap->PixelHeight / res_scale;
+			printDocument->AddPage(image);  
+		}
+		/* All pages provided. */
+		printDocument->AddPagesComplete();
+		/* Reset the current page description as soon as possible since the 
+		   PrintTask.Completed event might fire later */
+		m_printpagedesc = PrintPageDesc();
+	});
 }
