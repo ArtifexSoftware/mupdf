@@ -28,26 +28,31 @@ static inline void indent(int n)
 
 void fz_debug_xml(fz_xml *item, int level)
 {
-	while (item) {
-		if (item->text) {
-			printf("%s\n", item->text);
-		} else {
-			struct attribute *att;
+	if (item->text)
+	{
+		printf("%s\n", item->text);
+	}
+	else
+	{
+		fz_xml *child;
+		struct attribute *att;
+
+		indent(level);
+		printf("<%s", item->name);
+		for (att = item->atts; att; att = att->next)
+			printf(" %s=\"%s\"", att->name, att->value);
+		if (item->down)
+		{
+			printf(">\n");
+			for (child = item->down; child; child = child->next)
+				fz_debug_xml(child, level + 1);
 			indent(level);
-			printf("<%s", item->name);
-			for (att = item->atts; att; att = att->next)
-				printf(" %s=\"%s\"", att->name, att->value);
-			if (item->down) {
-				printf(">\n");
-				fz_debug_xml(item->down, level + 1);
-				indent(level);
-				printf("</%s>\n", item->name);
-			}
-			else {
-				printf("/>\n");
-			}
+			printf("</%s>\n", item->name);
 		}
-		item = item->next;
+		else
+		{
+			printf("/>\n");
+		}
 	}
 }
 
