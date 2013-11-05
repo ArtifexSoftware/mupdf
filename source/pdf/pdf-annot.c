@@ -920,7 +920,19 @@ pdf_set_ink_annot_list(pdf_document *doc, pdf_annot *annot, fz_point *pts, int *
 		}
 	}
 
-	fz_expand_rect(&rect, thickness);
+	/*
+		Expand the rectangle by thickness all around. We cannot use
+		fz_expand_rect because the rectangle might be empty in the
+		single point case
+	*/
+	if (k > 0)
+	{
+		rect.x0 -= thickness;
+		rect.y0 -= thickness;
+		rect.x1 += thickness;
+		rect.y1 += thickness;
+	}
+
 	pdf_dict_puts_drop(annot->obj, "Rect", pdf_new_rect(doc, &rect));
 	update_rect(ctx, annot);
 
