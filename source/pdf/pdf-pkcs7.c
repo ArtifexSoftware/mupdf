@@ -746,7 +746,7 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 		dn = pdf_signer_designated_name(signer);
 		fzbuf = fz_new_buffer(ctx, 256);
 		if (!dn->cn)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Certificat has no common name");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name");
 
 		fz_buffer_printf(ctx, fzbuf, "cn=%s", dn->cn);
 
