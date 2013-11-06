@@ -740,7 +740,7 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 
 	fz_try(ctx)
 	{
-		unsigned char *dn_str;
+		char *dn_str;
 
 		pdf_signature_set_value(doc, ((pdf_annot *)widget)->obj, signer);
 		dn = pdf_signer_designated_name(signer);
@@ -762,7 +762,7 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 		if (dn->c)
 			fz_buffer_printf(ctx, fzbuf, ", c=%s", dn->c);
 
-		(void)fz_buffer_storage(ctx, fzbuf, &dn_str);
+		(void)fz_buffer_storage(ctx, fzbuf, (unsigned char **) &dn_str);
 		pdf_set_signature_appearance(doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
 	}
 	fz_always(ctx)
