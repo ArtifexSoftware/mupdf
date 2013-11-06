@@ -710,6 +710,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_annot *annot = NULL;
+	pdf_annot **lastptr;
 	pdf_obj *annot_obj = pdf_new_dict(doc, 0);
 	pdf_obj *ind_obj = NULL;
 
@@ -753,10 +754,12 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 
 		/*
 			Linking must be done after any call that might throw because
-			pdf_free_annot below actually frees a list
+			pdf_free_annot below actually frees a list. Put the new annot
+			at the end of the list, so that it will be drawn last.
 		*/
-		annot->next = page->annots;
-		page->annots = annot;
+		for (lastptr = &page->annots; *lastptr; lastptr = &(*lastptr)->next)
+			;
+		*lastptr = annot;
 
 		doc->dirty = 1;
 	}
