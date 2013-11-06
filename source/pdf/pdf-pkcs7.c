@@ -741,7 +741,6 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 	fz_try(ctx)
 	{
 		unsigned char *dn_str;
-		int first = 1;
 
 		pdf_signature_set_value(doc, ((pdf_annot *)widget)->obj, signer);
 		dn = pdf_signer_designated_name(signer);
