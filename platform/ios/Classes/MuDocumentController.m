@@ -78,6 +78,17 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	return [[UIBarButtonItem alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:resource ofType:@"png"]] style:UIBarButtonItemStylePlain target:self action:selector];
 }
 
+- (void) addMainMenuButtons
+{
+	NSMutableArray *array = [NSMutableArray arrayWithCapacity:3];
+	[array addObject:searchButton];
+	if (outlineButton)
+		[array addObject:outlineButton];
+	[array addObject:reflowButton];
+	[array addObject:linkButton];
+	[[self navigationItem] setRightBarButtonItems: array ];
+}
+
 - (void) loadView
 {
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
@@ -153,8 +164,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[prevButton setEnabled: NO];
 	[nextButton setEnabled: NO];
 
-	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: searchButton, outlineButton, reflowButton, linkButton, nil]];
+	[self addMainMenuButtons];
 
 	// TODO: add activityindicator to search bar
 
@@ -319,8 +329,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	cancelSearch = YES;
 	[searchBar resignFirstResponder];
 	[[self navigationItem] setTitleView: nil];
-	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: searchButton, linkButton, outlineButton, nil]];
+	[self addMainMenuButtons];
 	[[self navigationItem] setLeftBarButtonItem: nil];
 	[self resetSearch];
 }
