@@ -64,7 +64,7 @@ pdf_obj *pdf_load_name_tree(pdf_document *doc, char *which);
 
 fz_link *pdf_load_link_annots(pdf_document *, pdf_obj *annots, const fz_matrix *page_ctm);
 
-pdf_annot *pdf_load_annots(pdf_document *, pdf_obj *annots, pdf_page *page);
+void pdf_load_annots(pdf_document *, pdf_page *page, pdf_obj *annots);
 void pdf_update_annot(pdf_document *, pdf_annot *annot);
 void pdf_free_annot(fz_context *ctx, pdf_annot *link);
 

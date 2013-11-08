@@ -491,8 +491,8 @@ static const char *annot_type_str(fz_annot_type type)
 	}
 }
 
-pdf_annot *
-pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
+void
+pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 {
 	pdf_annot *annot, *head, **itr;
 	pdf_obj *obj, *ap, *as, *n, *rect;
@@ -505,6 +505,7 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 	fz_var(keep_annot);
 
 	head = NULL;
+	itr = &head;
 
 	len = pdf_array_len(annots);
 	/*
@@ -515,7 +516,6 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 	*/
 	fz_try(ctx)
 	{
-		itr = &head;
 		for (i = 0; i < len; i++)
 		{
 			obj = pdf_array_get(annots, i);
@@ -617,7 +617,8 @@ pdf_load_annots(pdf_document *doc, pdf_obj *annots, pdf_page *page)
 		}
 	}
 
-	return head;
+	page->annots = head;
+	page->annot_tailp = itr;
 }
 
 void
@@ -710,7 +711,6 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 {
 	fz_context *ctx = doc->ctx;
 	pdf_annot *annot = NULL;
-	pdf_annot **lastptr;
 	pdf_obj *annot_obj = pdf_new_dict(doc, 0);
 	pdf_obj *ind_obj = NULL;
 
@@ -757,9 +757,8 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 			pdf_free_annot below actually frees a list. Put the new annot
 			at the end of the list, so that it will be drawn last.
 		*/
-		for (lastptr = &page->annots; *lastptr; lastptr = &(*lastptr)->next)
-			;
-		*lastptr = annot;
+		*page->annot_tailp = annot;
+		page->annot_tailp = &annot->next;
 
 		doc->dirty = 1;
 	}
@@ -800,6 +799,9 @@ pdf_delete_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot)
 		return;
 
 	*annotptr = annot->next;
+	/* If the removed annotation was the last in the list adjust the end pointer */
+	if (*annotptr == NULL)
+		page->annot_tailp = annotptr;
 
 	/* Stick it in the deleted list */
 	annot->next = page->deleted_annots;

@@ -365,6 +365,7 @@ pdf_load_page(pdf_document *doc, int number)
 	page->transparency = 0;
 	page->links = NULL;
 	page->annots = NULL;
+	page->annot_tailp = &page->annots;
 	page->deleted_annots = NULL;
 	page->tmp_annots = NULL;
 	page->me = pdf_keep_obj(pageobj);
@@ -423,7 +424,7 @@ pdf_load_page(pdf_document *doc, int number)
 		if (obj)
 		{
 			page->links = pdf_load_link_annots(doc, obj, &page->ctm);
-			page->annots = pdf_load_annots(doc, obj, page);
+			pdf_load_annots(doc, page, obj);
 		}
 	}
 	fz_catch(ctx)
