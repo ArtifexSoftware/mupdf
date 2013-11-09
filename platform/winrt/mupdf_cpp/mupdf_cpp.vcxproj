@@ -173,7 +173,7 @@
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
+      <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
       <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -192,6 +192,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\mupdfwinrt\status.h" />
+    <ClInclude Include="PrintPage.h" />
     <ClInclude Include="DocumentPage.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.xaml.h">
@@ -224,6 +225,7 @@
     <ClCompile Include="App.xaml.cpp">
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PrintPage.cpp" />
     <ClCompile Include="DocumentPage.cpp" />
     <ClCompile Include="MainPage.xaml.cpp">
       <DependentUpon>MainPage.xaml</DependentUpon>

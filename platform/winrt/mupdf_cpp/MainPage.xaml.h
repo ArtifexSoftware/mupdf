@@ -13,6 +13,7 @@
 #include <assert.h>
 #include "DocumentPage.h"
 #include "status.h"
+#include "PrintPage.h"
 
 using namespace Platform;
 using namespace Concurrency;
@@ -62,7 +63,6 @@ typedef struct spatial_info_s
 
 namespace mupdf_cpp
 {
-
 	class PageRangeException
 	{
 	private:
@@ -116,6 +116,15 @@ namespace mupdf_cpp
 	/// </summary>
 	public ref class MainPage sealed
 	{
+
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+		if (FAILED(hr))
+		{
+			throw Platform::Exception::CreateException(hr);
+		}
+	}
+
 	public:
 		MainPage();
 
@@ -150,8 +159,8 @@ namespace mupdf_cpp
 		Vector<IVector<RectList^>^>^ m_page_link_list;
 		Vector<int>^ m_linkset;
 		Vector<RectList^>^ m_text_list;
-		int m_rectlist_page;
 		mudocument^ mu_doc;
+		int m_rectlist_page;
 		bool m_file_open;
 		int  m_currpage;
 		int  m_searchpage;
@@ -178,17 +187,26 @@ namespace mupdf_cpp
 		double m_doczoom;
 
 		/* Print related */
-		Vector<DocumentPage^>^ m_printpages;
-		concurrency::critical_section m_printlock;
-		EventRegistrationToken m_printTaskRequestedEventToken;
 		PrintDocument^ m_printdoc;
 		IPrintDocumentSource^  m_printdoc_source;
-		LONGLONG m_requestCount;
 		PrintPageDesc m_printpagedesc;
 		int m_printresolution;
-		bool m_printcrop;
+		bool m_centerprint;
 		bool m_pageRangeEditVisible;
 		std::vector<int> m_ppage_num_list;
+		int m_curr_print_count;
+		bool m_print_active;
+
+		/* DirectX Print Control */
+		PrintManager ^m_print_manager;
+		Microsoft::WRL::ComPtr<ID3D11Device> m_d3d_device;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_d3d_context;
+		Microsoft::WRL::ComPtr<ID2D1PrintControl> m_d2d_printcontrol;
+		Microsoft::WRL::ComPtr<ID2D1Device> m_d2d_device;
+		Microsoft::WRL::ComPtr<IWICImagingFactory2> m_wic_factory;
+		Microsoft::WRL::ComPtr<ID2D1Factory1> m_d2d_factory;
+		D3D_FEATURE_LEVEL m_featureLevel;
+		void *m_print_struct;
 
 		void ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras, Point ras_size, double zoom);
 		void Picker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
@@ -257,19 +275,26 @@ namespace mupdf_cpp
 
 		/* Print Related */
 		void RegisterForPrinting();
-		void UnregisterForPrinting();
-		void PrintTaskRequested(PrintManager^ sender, PrintTaskRequestedEventArgs^ e);
-		void ClearPrintCollection();
-		void CreatePrintPreviewPages(Object^ sender, PaginateEventArgs^ e);
-		void GetPrintPreviewPages(Object^ sender, GetPreviewPageEventArgs^ e);
-		void UpdatePreview(int page_num, InMemoryRandomAccessStream^ ras, 
-						   Point ras_size, Page_Content_t content_type, double zoom_in);
-		void CleanUpPreview(int new_page);
-		void AddPrintPages(Object^ sender, AddPagesEventArgs^ e);
 		void PrintOptionsChanged(PrintTaskOptionDetails^ sender, PrintTaskOptionChangedEventArgs^ args);
 		void RefreshPreview();
 		void RemovePageRangeEdit(PrintTaskOptionDetails^ printTaskOptionDetails);
 		void SplitString(String^ string, wchar_t delimiter, std::vector<std::wstring>& words);
 		void GetPagesInRange(String^ pageRange);
+		void SetPrintTask( PrintManager^, PrintTaskRequestedEventArgs^ args);
+		void SetUpDirectX();
+
+	internal:
+		void CreatePrintControl(IPrintDocumentPackageTarget* docPackageTarget,
+								D2D1_PRINT_CONTROL_PROPERTIES* printControlProperties);
+		void PrintPage(uint32 page_num, D2D1_RECT_F image_area, D2D1_SIZE_F page_area, 
+						 float device_dpi, IStream* print_ticket);
+						 HRESULT ClosePrintControl();
+		void DrawPreviewSurface(float width, float height, float scale, 
+								D2D1_RECT_F contentBox, uint32 desiredJobPage, 
+								IPrintPreviewDxgiPackageTarget* previewTarget);
+		int GetPrintPageCount();
+		void SetPrintTarget(void *print_struct);
+		void PrintProgress(PrintTask^ sender, PrintTaskProgressingEventArgs^ args);
+		void PrintCompleted(PrintTask^ sender, PrintTaskCompletedEventArgs^ args);
 	};
 }

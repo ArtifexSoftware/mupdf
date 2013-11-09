@@ -34,6 +34,8 @@ namespace mupdfwinrt
 			Point GetPageSize(int page_num);
 			Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 				RenderPageAsync(int page_num, int width, int height, bool use_dlist);
+			int RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height, 
+								bool use_dlist, Array<unsigned char>^* bit_map);
 			Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 				SearchDocumentWithProgressAsync(String^ textToFind, int dir, 
 												int start_page, int num_pages);

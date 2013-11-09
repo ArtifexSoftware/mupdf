@@ -434,7 +434,8 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 
 /* Render display list bmp_data buffer.  No lock needed for this operation */
 status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
-							 unsigned char *bmp_data, int bmp_width, int bmp_height)
+							 unsigned char *bmp_data, int bmp_width, int bmp_height,
+							 bool flipy)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
@@ -453,8 +454,11 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 		/* Figure out scale factors so that we get the desired size */
 		pctm = fz_scale(pctm, (float) bmp_width / page_width, (float) bmp_height / page_height);
 		/* Flip on Y */
-		ctm.f = bmp_height;
-		ctm.d = -ctm.d;
+		if (flipy) 
+		{
+			ctm.f = bmp_height;
+			ctm.d = -ctm.d;
+		}
 		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone), bmp_width, 
 										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
@@ -479,7 +483,7 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 
 /* Render page_num to size width by height into bmp_data buffer.  Lock needed. */
 status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
-						   int bmp_height)
+						   int bmp_height, bool flipy)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
@@ -500,8 +504,11 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 		pctm = fz_scale(pctm, (float) bmp_width / page_size.X, 
 						(float) bmp_height / page_size.Y);
 		/* Flip on Y */
-		ctm.f = bmp_height;
-		ctm.d = -ctm.d;
+		if (flipy)
+		{
+			ctm.f = bmp_height;
+			ctm.d = -ctm.d;
+		}
 		pix = fz_new_pixmap_with_data(mu_ctx, fz_device_bgr(mu_ctx), bmp_width, 
 										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(mu_ctx, pix, 255);

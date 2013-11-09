@@ -167,6 +167,50 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 	});
 }
 
+/* Pack the page into a bitmap.  This is used in the DirectX code for printing
+   not in the xaml related code. */
+int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height, 
+								bool use_dlist, Array<unsigned char>^* bit_map)
+{
+	status_t code;
+	/* Allocate space for bmp */
+	Array<unsigned char>^ bmp_data = 
+				ref new Array<unsigned char>(bmp_height * 4 * bmp_width);
+
+	if (use_dlist) 
+	{
+		void *dlist;
+		int page_height;
+		int page_width;
+
+		mutex_lock.lock();
+		/* This lock will keep out issues in mupdf as well as race conditions
+			in the page cache */
+		dlist = (void*) mu_object.CreateDisplayList(page_num, &page_width, 
+													&page_height);
+		/* Rendering of display list can occur with other threads so unlock */
+		mutex_lock.unlock();
+		code = mu_object.RenderPageMT(dlist, page_width, page_height, 
+										&(bmp_data[0]), bmp_width, bmp_height,
+										false);
+	} 
+	else 
+	{
+		/* Rendering in immediate mode.  Keep lock in place */
+		mutex_lock.lock();
+		code = mu_object.RenderPage(page_num, &(bmp_data[0]), bmp_width, 
+									bmp_height, false);
+		mutex_lock.unlock();
+	}
+	if (code != S_ISOK)
+	{
+		throw ref new FailureException("Page Rendering Failed");
+	}
+
+	*bit_map = bmp_data;
+	return (int) code;
+}
+
 /* Pack the page into a bmp stream */
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 	mudocument::RenderPageAsync(int page_num, int bmp_width, int bmp_height, 
@@ -200,14 +244,15 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 			/* Rendering of display list can occur with other threads so unlock */
 			mutex_lock.unlock();
 			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
-										  &(bmp_data[0]), bmp_width, bmp_height);
+										  &(bmp_data[0]), bmp_width, bmp_height,
+										  true);
 		} 
 		else 
 		{
 			/* Rendering in immediate mode.  Keep lock in place */
 			mutex_lock.lock();
 			code = mu_object.RenderPage(page_num, &(bmp_data[0]), bmp_width, 
-										bmp_height);
+										bmp_height, true);
 			mutex_lock.unlock();
 		}
 		if (code != S_ISOK)
