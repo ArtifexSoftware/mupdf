@@ -198,14 +198,24 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname)
 static void
 pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int mono, int serif, int bold, int italic)
 {
-	unsigned char *data;
-	unsigned int len;
+	fz_buffer *buffer;
 
-	data = pdf_lookup_substitute_font(mono, serif, bold, italic, &len);
-	if (!data)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find substitute font");
+	buffer = fz_load_system_font(ctx, fontname);
+	if (buffer)
+	{
+		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buffer, 0, 1);
+	}
+	else
+	{
+		unsigned char *data;
+		unsigned int len;
 
-	fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
+		data = pdf_lookup_substitute_font(mono, serif, bold, italic, &len);
+		if (!data)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find substitute font");
+
+		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
+	}
 
 	fontdesc->font->ft_substitute = 1;
 	fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);

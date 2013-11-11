@@ -185,6 +185,7 @@ struct fz_font_context_s {
 	int ctx_refs;
 	FT_Library ftlib;
 	int ftlib_refs;
+	fz_load_system_font_func load_font;
 };
 
 #undef __FTERRORS_H__
@@ -204,6 +205,7 @@ void fz_new_font_context(fz_context *ctx)
 	ctx->font->ctx_refs = 1;
 	ctx->font->ftlib = NULL;
 	ctx->font->ftlib_refs = 0;
+	ctx->font->load_font = NULL;
 }
 
 fz_font_context *
@@ -227,6 +229,18 @@ void fz_drop_font_context(fz_context *ctx)
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	if (drop == 0)
 		fz_free(ctx, ctx->font);
+}
+
+void fz_install_load_system_font_func(fz_context *ctx, fz_load_system_font_func f)
+{
+	ctx->font->load_font = f;
+}
+
+fz_buffer *fz_load_system_font(fz_context *ctx, const char *name)
+{
+	if (ctx->font->load_font)
+		return ctx->font->load_font(ctx, name);
+	return NULL;
 }
 
 static const struct ft_error ft_errors[] =
