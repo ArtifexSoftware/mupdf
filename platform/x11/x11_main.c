@@ -59,6 +59,8 @@ extern void ximage_blit(Drawable d, GC gc, int dstx, int dsty,
 	unsigned char *srcdata,
 	int srcx, int srcy, int srcw, int srch, int srcstride);
 
+extern fz_buffer *fz_load_system_font_fc(fz_context *ctx, const char *name);
+
 void windrawstringxor(pdfapp_t *app, int x, int y, char *s);
 void cleanup(pdfapp_t *app);
 
@@ -819,6 +821,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+#ifdef HAVE_FONTCONFIG
+	fz_install_load_system_font_func(ctx, fz_load_system_font_fc);
+#endif
 
 	while ((c = fz_getopt(argc, argv, "p:r:b:")) != -1)
 	{

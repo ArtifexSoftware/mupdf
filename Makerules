@@ -59,7 +59,11 @@ SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL $(shell pkg-config --cflags libcrypto)
 SYS_OPENSSL_LIBS = $(shell pkg-config --libs libcrypto)
 endif
 
-# TODO: use pkg-config for system CURL
+ifeq "$(shell pkg-config --exists fontconfig && echo yes)" "yes"
+SYS_FONTCONFIG_CFLAGS = -DHAVE_FONTCONFIG $(shell pkg-config --cflags fontconfig)
+SYS_FONTCONFIG_LIBS = $(shell pkg-config --libs fontconfig)
+endif
+
 SYS_CURL_DEPS = -lpthread -lrt
 
 SYS_X11_CFLAGS = $(shell pkg-config --cflags x11 xext)
