@@ -143,7 +143,7 @@ $(OUT)/%.o : scripts/%.c | $(OUT)
 	$(CC_CMD)
 
 $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
-	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS)
+	$(CC_CMD) $(X11_CFLAGS)
 
 $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
