@@ -246,6 +246,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	fz_glyph_cache *cache;
 	fz_glyph_key key;
 	fz_matrix subpix_ctm;
+	fz_irect subpix_scissor;
 	float size;
 	fz_glyph *val;
 	int do_cache, locked, caching;
@@ -267,6 +268,11 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	{
 		if (font->ft_face)
 			return NULL;
+		subpix_scissor.x0 = scissor->x0 - floorf(ctm->e);
+		subpix_scissor.y0 = scissor->y0 - floorf(ctm->f);
+		subpix_scissor.x1 = scissor->x1 - floorf(ctm->e);
+		subpix_scissor.y1 = scissor->y1 - floorf(ctm->f);
+		scissor = &subpix_scissor;
 		do_cache = 0;
 	}
 
