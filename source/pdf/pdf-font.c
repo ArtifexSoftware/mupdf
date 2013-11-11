@@ -204,6 +204,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
 	if (buffer)
 	{
 		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buffer, 0, 1);
+		fz_drop_buffer(ctx, buffer);
 	}
 	else
 	{
@@ -304,9 +305,12 @@ pdf_load_embedded_font(pdf_document *doc, pdf_font_desc *fontdesc, char *fontnam
 	{
 		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buf, 0, 1);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow_message(ctx, "cannot load embedded font (%d %d R)", pdf_to_num(stmref), pdf_to_gen(stmref));
 	}
 	fontdesc->size += buf->len;
