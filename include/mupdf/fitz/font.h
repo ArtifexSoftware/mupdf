@@ -37,7 +37,7 @@ struct fz_font_s
 
 	/* origin of font data */
 	fz_buffer *ft_buffer;
-	int ft_size;
+	char *ft_filepath; /* kept for downstream consumers (such as SumatraPDF) */
 
 	fz_matrix t3matrix;
 	void *t3resources;
