@@ -31,8 +31,7 @@ fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
 	font->ft_italic = 0;
 	font->ft_hint = 0;
 
-	font->ft_file = NULL;
-	font->ft_data = NULL;
+	font->ft_buffer = NULL;
 	font->ft_size = 0;
 
 	font->t3matrix = fz_identity;
@@ -151,8 +150,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 		fz_drop_freetype(ctx);
 	}
 
-	fz_free(ctx, font->ft_file);
-	fz_free(ctx, font->ft_data);
+	fz_drop_buffer(ctx, font->ft_buffer);
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font);
@@ -362,6 +360,14 @@ fz_new_font_from_memory(fz_context *ctx, char *name, unsigned char *data, int le
 		(float) face->bbox.xMax / face->units_per_EM,
 		(float) face->bbox.yMax / face->units_per_EM);
 
+	return font;
+}
+
+fz_font *
+fz_new_font_from_buffer(fz_context *ctx, char *name, fz_buffer *buffer, int index, int use_glyph_bbox)
+{
+	fz_font *font = fz_new_font_from_memory(ctx, name, buffer->data, buffer->len, index, use_glyph_bbox);
+	font->ft_buffer = fz_keep_buffer(ctx, buffer); /* remember buffer so we can drop it when we free the font */
 	return font;
 }
 

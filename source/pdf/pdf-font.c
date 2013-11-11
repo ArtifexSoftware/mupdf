@@ -292,7 +292,7 @@ pdf_load_embedded_font(pdf_document *doc, pdf_font_desc *fontdesc, char *fontnam
 
 	fz_try(ctx)
 	{
-		fontdesc->font = fz_new_font_from_memory(ctx, fontname, buf->data, buf->len, 0, 1);
+		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buf, 0, 1);
 	}
 	fz_catch(ctx)
 	{
@@ -300,11 +300,6 @@ pdf_load_embedded_font(pdf_document *doc, pdf_font_desc *fontdesc, char *fontnam
 		fz_rethrow_message(ctx, "cannot load embedded font (%d %d R)", pdf_to_num(stmref), pdf_to_gen(stmref));
 	}
 	fontdesc->size += buf->len;
-
-	/* save the buffer so we can free it later */
-	fontdesc->font->ft_data = buf->data;
-	fontdesc->font->ft_size = buf->len;
-	fz_free(ctx, buf); /* only free the fz_buffer struct, not the contained data */
 
 	fontdesc->is_embedded = 1;
 }
