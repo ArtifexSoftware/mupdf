@@ -494,18 +494,16 @@ static const char *annot_type_str(fz_annot_type type)
 void
 pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 {
-	pdf_annot *annot, *head, **itr;
+	pdf_annot *annot, **itr;
 	pdf_obj *obj, *ap, *as, *n, *rect;
 	int i, len, keep_annot;
 	fz_context *ctx = doc->ctx;
 
 	fz_var(annot);
 	fz_var(itr);
-	fz_var(head);
 	fz_var(keep_annot);
 
-	head = NULL;
-	itr = &head;
+	itr = &page->annots;
 
 	len = pdf_array_len(annots);
 	/*
@@ -530,7 +528,8 @@ pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_annot(ctx, head);
+		pdf_free_annot(ctx, page->annots);
+		page->annots = NULL;
 		fz_rethrow(ctx);
 	}
 
@@ -538,7 +537,7 @@ pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 	Iterate through the newly created annot linked list, using a double pointer to
 	facilitate deleting broken annotations.
 	*/
-	itr = &head;
+	itr = &page->annots;
 	while (*itr)
 	{
 		annot = *itr;
@@ -602,7 +601,8 @@ pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 		{
 			if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
 			{
-				pdf_free_annot(ctx, head);
+				pdf_free_annot(ctx, page->annots);
+				page->annots = NULL;
 				fz_rethrow(ctx);
 			}
 			keep_annot = 0;
@@ -617,7 +617,6 @@ pdf_load_annots(pdf_document *doc, pdf_page *page, pdf_obj *annots)
 		}
 	}
 
-	page->annots = head;
 	page->annot_tailp = itr;
 }
 
