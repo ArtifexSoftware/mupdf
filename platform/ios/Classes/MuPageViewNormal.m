@@ -7,7 +7,15 @@
 
 #include "common.h"
 #include "mupdf/pdf.h"
+#import "MuWord.h"
 #import "MuTextFieldController.h"
+#import "MuTextSelectView.h"
+
+#import "MuPageViewNormal.h"
+
+#define STRIKE_HEIGHT (0.375f)
+#define UNDERLINE_HEIGHT (0.075f)
+#define LINE_THICKNESS (0.07f)
 
 static void releasePixmap(void *info, const void *data, size_t size)
 {
@@ -69,6 +77,181 @@ static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page, CGSize pag
 	}
 
 	return [arr retain];
+}
+
+static NSArray *enumerateWords(fz_document *doc, fz_page *page)
+{
+	fz_text_sheet *sheet = NULL;
+	fz_text_page *text = NULL;
+	fz_device *dev = NULL;
+	NSMutableArray *lns = [NSMutableArray array];
+	NSMutableArray *wds;
+	MuWord *word;
+
+	if (!lns)
+		return NULL;
+
+	fz_var(sheet);
+	fz_var(text);
+	fz_var(dev);
+
+	fz_try(ctx);
+	{
+		int b, l, c;
+
+		sheet = fz_new_text_sheet(ctx);
+		text = fz_new_text_page(ctx);
+		dev = fz_new_text_device(ctx, sheet, text);
+		fz_run_page(doc, page, dev, &fz_identity, NULL);
+		fz_free_device(dev);
+		dev = NULL;
+
+		for (b = 0; b < text->len; b++)
+		{
+			fz_text_block *block;
+
+			if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
+				continue;
+
+			block = text->blocks[b].u.text;
+
+			for (l = 0; l < block->len; l++)
+			{
+				fz_text_line *line = &block->lines[l];
+				fz_text_span *span;
+
+				wds = [NSMutableArray array];
+				if (!wds)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create word array");
+
+				word = [MuWord word];
+				if (!word)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create word");
+
+				for (span = line->first_span; span; span = span->next)
+				{
+					for (c = 0; c < span->len; c++)
+					{
+						fz_text_char *ch = &span->text[c];
+						fz_rect bbox;
+						CGRect rect;
+
+						fz_text_char_bbox(&bbox, span, c);
+						rect = CGRectMake(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+
+						if (ch->c != ' ')
+						{
+							[word appendChar:ch->c withRect:rect];
+						}
+						else if (word.string.length > 0)
+						{
+							[wds addObject:word];
+							word = [MuWord word];
+							if (!word)
+								fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to create word");
+						}
+					}
+				}
+
+				if (word.string.length > 0)
+					[wds addObject:word];
+
+				if ([wds count] > 0)
+					[lns addObject:wds];
+			}
+		}
+	}
+	fz_always(ctx);
+	{
+		fz_free_text_page(ctx, text);
+		fz_free_text_sheet(ctx, sheet);
+		fz_free_device(dev);
+	}
+	fz_catch(ctx)
+	{
+		lns = NULL;
+	}
+
+	return [lns retain];
+}
+
+static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *rects)
+{
+	pdf_document *idoc;
+	fz_point *quadpts = NULL;
+	float color[3];
+	float alpha;
+	float line_height;
+	float line_thickness;
+
+	idoc = pdf_specifics(doc);
+	if (!idoc)
+		return;
+
+	switch (type)
+	{
+		case FZ_ANNOT_HIGHLIGHT:
+			color[0] = 1.0;
+			color[1] = 1.0;
+			color[2] = 0.0;
+			alpha = 0.5;
+			line_thickness = 1.0;
+			line_height = 0.5;
+			break;
+		case FZ_ANNOT_UNDERLINE:
+			color[0] = 0.0;
+			color[1] = 0.0;
+			color[2] = 1.0;
+			alpha = 1.0;
+			line_thickness = LINE_THICKNESS;
+			line_height = UNDERLINE_HEIGHT;
+			break;
+		case FZ_ANNOT_STRIKEOUT:
+			color[0] = 1.0;
+			color[1] = 0.0;
+			color[2] = 0.0;
+			alpha = 1.0;
+			line_thickness = LINE_THICKNESS;
+			line_height = STRIKE_HEIGHT;
+			break;
+	}
+
+	fz_var(quadpts);
+	fz_try(ctx)
+	{
+		int i;
+		pdf_annot *annot;
+
+		quadpts = fz_malloc_array(ctx, rects.count * 4, sizeof(fz_point));
+		for (i = 0; i < rects.count; i++)
+		{
+			CGRect rect = [[rects objectAtIndex:i] CGRectValue];
+			float top = rect.origin.y;
+			float bot = top + rect.size.height;
+			float left = rect.origin.x;
+			float right = left + rect.size.width;
+			quadpts[i*4].x = left;
+			quadpts[i*4].y = bot;
+			quadpts[i*4+1].x = right;
+			quadpts[i*4+1].y = bot;
+			quadpts[i*4+2].x = right;
+			quadpts[i*4+2].y = top;
+			quadpts[i*4+3].x = left;
+			quadpts[i*4+3].y = top;
+		}
+
+		annot = pdf_create_annot(idoc, (pdf_page *)page, type);
+		pdf_set_markup_annot_quadpoints(idoc, annot, quadpts, rects.count*4);
+		pdf_set_markup_appearance(idoc, annot, color, alpha, line_thickness, line_height);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, quadpts);
+	}
+	fz_catch(ctx)
+	{
+		printf("Annotation creation failed\n");
+	}
 }
 
 static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *text)
@@ -329,7 +512,6 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}
 }
 
-#import "MuPageViewNormal.h"
 
 @implementation MuPageViewNormal
 
@@ -426,6 +608,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		[widgetRects release];
 		[linkView release];
 		[hitView release];
+		[textSelectView release];
 		[tileView release];
 		[loadingView release];
 		[imageView release];
@@ -488,6 +671,47 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		[hitView release];
 		hitView = nil;
 	}
+}
+
+- (void) textSelectModeOn
+{
+	dispatch_async(queue, ^{
+		[self ensurePageLoaded];
+		NSArray *words = enumerateWords(doc, page);
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			textSelectView = [[MuTextSelectView alloc] initWithWords:words pageSize:pageSize];
+			[words release];
+			if (imageView)
+				[textSelectView setFrame:[imageView frame]];
+			[self addSubview:textSelectView];
+		});
+	});
+}
+
+- (void) textSelectModeOff
+{
+	[textSelectView removeFromSuperview];
+	[textSelectView release];
+	textSelectView = nil;
+}
+
+-(void) saveMarkup:(int)type
+{
+	CGRect tframe = tileFrame;
+	float tscale = tileScale;
+	CGRect vframe = tframe;
+	vframe.origin.x -= imageView.frame.origin.x;
+	vframe.origin.y -= imageView.frame.origin.y;
+
+	NSArray *rects = [textSelectView selectionRects];
+	if (rects.count == 0)
+		return;
+
+	dispatch_async(queue, ^{
+		addMarkupAnnot(doc, page, type, rects);
+		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+	});
+	[self textSelectModeOff];
 }
 
 - (void) resetZoomAnimated: (BOOL)animated
@@ -554,6 +778,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		[self addSubview: imageView];
 		if (hitView)
 			[self bringSubviewToFront: hitView];
+		if (textSelectView)
+			[self bringSubviewToFront:textSelectView];
 	} else {
 		[imageView setImage: image];
 	}
@@ -632,6 +858,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 		if (linkView)
 			[linkView setFrame:[imageView frame]];
+
+		if (textSelectView)
+			[textSelectView setFrame:[imageView frame]];
 	}
 }
 
@@ -694,6 +923,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 					[self bringSubviewToFront: hitView];
 				if (linkView)
 					[self bringSubviewToFront:linkView];
+				if (textSelectView)
+					[self bringSubviewToFront:textSelectView];
 			} else {
 				printf("discard tile\n");
 			}
@@ -730,8 +961,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 - (void) scrollViewDidZoom: (UIScrollView*)scrollView
 {
-	if (hitView && imageView)
-		[hitView setFrame: [imageView frame]];
+	if (imageView)
+	{
+		if (hitView)
+			[hitView setFrame: [imageView frame]];
+
+		if (textSelectView)
+			[textSelectView setFrame:[imageView frame]];
+	}
 }
 
 - (void) setScale:(float)scale {}

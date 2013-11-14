@@ -81,6 +81,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 - (void) addMainMenuButtons
 {
 	NSMutableArray *array = [NSMutableArray arrayWithCapacity:3];
+	[array addObject:moreButton];
 	[array addObject:searchButton];
 	if (outlineButton)
 		[array addObject:outlineButton];
@@ -150,11 +151,16 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		outlineButton = [self resourceBasedButton:@"ic_list" withAction:@selector(onShowOutline:)];
 	}
 	linkButton = [self resourceBasedButton:@"ic_link" withAction:@selector(onToggleLinks:)];
-	cancelButton = [self resourceBasedButton:@"ic_cancel" withAction:@selector(onCancelSearch:)];
+	cancelButton = [self resourceBasedButton:@"ic_cancel" withAction:@selector(onCancel:)];
 	searchButton = [self resourceBasedButton:@"ic_magnifying_glass" withAction:@selector(onShowSearch:)];
 	prevButton = [self resourceBasedButton:@"ic_arrow_left" withAction:@selector(onSearchPrev:)];
 	nextButton = [self resourceBasedButton:@"ic_arrow_right" withAction:@selector(onSearchNext:)];
 	reflowButton = [self resourceBasedButton:@"ic_reflow" withAction:@selector(onToggleReflow:)];
+	moreButton = [self resourceBasedButton:@"ic_more" withAction:@selector(onMore:)];
+	highlightButton = [self resourceBasedButton:@"ic_highlight" withAction:@selector(onHighlight:)];
+	underlineButton = [self resourceBasedButton:@"ic_underline" withAction:@selector(onUnderline:)];
+	strikeoutButton = [self resourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
+	tickButton = [self resourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
@@ -179,12 +185,17 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[slider release]; slider = nil;
 	[sliderWrapper release]; sliderWrapper = nil;
 	[reflowButton release]; reflowButton = nil;
+	[moreButton release]; moreButton = nil;
 	[searchBar release]; searchBar = nil;
 	[outlineButton release]; outlineButton = nil;
 	[searchButton release]; searchButton = nil;
 	[cancelButton release]; cancelButton = nil;
 	[prevButton release]; prevButton = nil;
 	[nextButton release]; nextButton = nil;
+	[highlightButton release]; highlightButton = nil;
+	[underlineButton release]; underlineButton = nil;
+	[strikeoutButton release]; strikeoutButton = nil;
+	[tickButton release]; tickButton = nil;
 	[canvas release]; canvas = nil;
 
 	[outline release];
@@ -315,6 +326,54 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[self scrollViewDidScroll:canvas];
 }
 
+- (void) showAnnotationMenu
+{
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:strikeoutButton, underlineButton, highlightButton, nil]];
+	[[self navigationItem] setLeftBarButtonItem:cancelButton];
+	barmode = BARMODE_ANNOTATION;
+}
+
+- (void) onMore: (id)sender
+{
+	[self showAnnotationMenu];
+}
+
+- (void) textSelectModeOn
+{
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:tickButton]];
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		if ([view number] == current)
+			[view textSelectModeOn];
+	}
+}
+
+- (void) textSelectModeOff
+{
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		[view textSelectModeOff];
+	}
+}
+
+- (void) onHighlight: (id)sender
+{
+	barmode = BARMODE_HIGHLIGHT;
+	[self textSelectModeOn];
+}
+
+- (void) onUnderline: (id)sender
+{
+	barmode = BARMODE_UNDERLINE;
+	[self textSelectModeOn];
+}
+
+- (void) onStrikeout: (id)sender
+{
+	barmode = BARMODE_STRIKE;
+	[self textSelectModeOn];
+}
+
 - (void) onShowSearch: (id)sender
 {
 	[[self navigationItem] setRightBarButtonItems:
@@ -322,16 +381,59 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[[self navigationItem] setLeftBarButtonItem: cancelButton];
 	[[self navigationItem] setTitleView: searchBar];
 	[searchBar becomeFirstResponder];
+	barmode = BARMODE_SEARCH;
 }
 
-- (void) onCancelSearch: (id)sender
+- (void) onTick: (id)sender
 {
-	cancelSearch = YES;
-	[searchBar resignFirstResponder];
-	[[self navigationItem] setTitleView: nil];
-	[self addMainMenuButtons];
-	[[self navigationItem] setLeftBarButtonItem: nil];
-	[self resetSearch];
+	int type;
+	switch (barmode)
+	{
+		case BARMODE_HIGHLIGHT:
+			type = FZ_ANNOT_HIGHLIGHT;
+			break;
+
+		case BARMODE_UNDERLINE:
+			type = FZ_ANNOT_UNDERLINE;
+			break;
+
+		case BARMODE_STRIKE:
+			type = FZ_ANNOT_STRIKEOUT;
+			break;
+	}
+
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		if ([view number] == current)
+			[view saveMarkup:type];
+	}
+
+	[self showAnnotationMenu];
+}
+
+- (void) onCancel: (id)sender
+{
+	switch (barmode)
+	{
+		case BARMODE_SEARCH:
+			cancelSearch = YES;
+			[searchBar resignFirstResponder];
+			[self resetSearch];
+			/* fallthrough */
+		case BARMODE_ANNOTATION:
+			[[self navigationItem] setTitleView: nil];
+			[self addMainMenuButtons];
+			[[self navigationItem] setLeftBarButtonItem: nil];
+			barmode = BARMODE_MAIN;
+			break;
+
+		case BARMODE_HIGHLIGHT:
+		case BARMODE_UNDERLINE:
+		case BARMODE_STRIKE:
+			[self showAnnotationMenu];
+			[self textSelectModeOff];
+			break;
+	}
 }
 
 - (void) resetSearch

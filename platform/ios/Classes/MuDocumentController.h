@@ -17,6 +17,16 @@
 #import "MuDocRef.h"
 #import "MuDialogCreator.h"
 
+enum
+{
+	BARMODE_MAIN,
+	BARMODE_SEARCH,
+	BARMODE_ANNOTATION,
+	BARMODE_HIGHLIGHT,
+	BARMODE_UNDERLINE,
+	BARMODE_STRIKE
+};
+
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator>
 {
 	fz_document *doc;
@@ -29,8 +39,12 @@
 	UISlider *slider;
 	UISearchBar *searchBar;
 	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
+	UIBarButtonItem *moreButton;
+	UIBarButtonItem *highlightButton, *underlineButton, *strikeoutButton;
+	UIBarButtonItem *tickButton;
 	UIBarButtonItem *reflowButton;
 	UIBarButtonItem *sliderWrapper;
+	int barmode;
 	int searchPage;
 	int cancelSearch;
 	int showLinks;
@@ -45,7 +59,7 @@
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;
 - (void) onShowSearch: (id)sender;
-- (void) onCancelSearch: (id)sender;
+- (void) onCancel: (id)sender;
 - (void) resetSearch;
 - (void) showSearchResults: (int)count forPage: (int)number;
 - (void) onSlide: (id)sender;

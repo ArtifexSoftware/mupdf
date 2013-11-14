@@ -17,6 +17,7 @@
 #import "MuPageView.h"
 #import "MuDocRef.h"
 #import "MuDialogCreator.h"
+#import "MuTextSelectView.h"
 
 @interface MuPageViewNormal : UIScrollView <UIScrollViewDelegate,MuPageView>
 {
@@ -35,6 +36,7 @@
 	UIImageView *tileView;
 	MuHitView *hitView;
 	MuHitView *linkView;
+	MuTextSelectView *textSelectView;
 	NSArray *widgetRects;
 	CGSize pageSize;
 	CGRect tileFrame;
