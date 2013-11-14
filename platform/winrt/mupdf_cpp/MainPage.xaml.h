@@ -230,7 +230,7 @@ namespace mupdf_cpp
 		void ClearTextSearch();
 		void AddTextCanvas();
 		void GridSizeChanged();
-		void UpDatePageSizes();
+		void UpDateThumbSizes();
 		void ShowThumbnail();
 		void Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
 		void AddThumbNail(int page_num, FlipView^ flip_view);
@@ -271,7 +271,7 @@ namespace mupdf_cpp
 		void Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e);
 		void Slider_Common();
 		void FlipView_Started(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs^ e);
-		void UpdateZoom(int page_num, bool ignore_curr);
+		void UpdateZoom();
 
 		/* Print Related */
 		void RegisterForPrinting();

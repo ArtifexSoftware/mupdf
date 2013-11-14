@@ -27,7 +27,7 @@ namespace mupdf_cpp
 	private:
 		int height;
 		int width;
-		double zoom;
+		double page_zoom;
 		int native_height;
 		int native_width;
 		WriteableBitmap^ image;
@@ -97,7 +97,6 @@ namespace mupdf_cpp
 					throw ref new Platform::InvalidArgumentException();
 				}
 				height = value;
-				DocumentPage::OnPropertyChanged("Height");
 			}
 		}
 
@@ -115,7 +114,6 @@ namespace mupdf_cpp
 					throw ref new Platform::InvalidArgumentException();
 				}
 				width = value;
-				DocumentPage::OnPropertyChanged("Width");
 			}
 		}
 		property int NativeHeight
@@ -152,11 +150,11 @@ namespace mupdf_cpp
 			}
 		}
 
-		property double Zoom
+		property double PageZoom
 		{
 			double get()
 			{
-				return zoom;
+				return page_zoom;
 			}
 
 			void set(double value)
@@ -165,7 +163,7 @@ namespace mupdf_cpp
 				{
 					throw ref new Platform::InvalidArgumentException();
 				}
-				zoom = value;
+				page_zoom = value;
 			}
 		}
 

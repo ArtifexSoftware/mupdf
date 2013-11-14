@@ -9,7 +9,6 @@
 #include <sstream>
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
-#define LOOK_AHEAD_SCALE 2 /* A +/- count on the pages to adjust for scale change */
 #define THUMB_PREADD 10
 #define MIN_SCALE 0.5
 
@@ -183,7 +182,7 @@ void MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e)
 	else
 	{
 		e->Handled = true;
-		NotifyUser("A error was encountered", ErrorMessage);
+		NotifyUser("An error was encountered", ErrorMessage);
 	}
 }
 
@@ -309,7 +308,7 @@ void MainPage::UpdatePage(int page_num, InMemoryRandomAccessStream^ ras,
 		doc_page->Width = ras_size.X;
 	}
 	doc_page->Content = content_type;
-	doc_page->Zoom = zoom_in;
+	doc_page->PageZoom = zoom_in;
 
 	/* We do not want flipview change notification to occur for ourselves */
 	m_page_update = true;
@@ -331,7 +330,7 @@ void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras,
 
 	doc_page->Height = ras_size.Y;
 	doc_page->Width = ras_size.X;
-	doc_page->Zoom = page_zoom;
+	doc_page->PageZoom = page_zoom;
 }
 
 Point MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num)
@@ -772,7 +771,6 @@ void MainPage::InitialRender()
 	this->m_init_done = true;
 }
 
-
 void MainPage::RenderRange(int curr_page)
 {
 	/* Render +/- the look ahead from where we are if blank page is present */
@@ -790,16 +788,25 @@ void MainPage::RenderRange(int curr_page)
 			/* Check if page is already rendered */
 			auto doc = this->m_docPages->GetAt(k);
 			if (doc->Content != FULL_RESOLUTION ||
-				doc->Zoom != m_doczoom)
+				doc->PageZoom != m_doczoom)
 			{
 				Point ras_size = ComputePageSize(spatial_info, k);
 				double zoom = m_doczoom;
 				auto render_task =
 					create_task(mu_doc->RenderPageAsync(k, ras_size.X, ras_size.Y, true));
 				
-				render_task.then([this, k, ras_size, zoom] (InMemoryRandomAccessStream^ ras)
+				render_task.then([this, k, ras_size, zoom, curr_page](InMemoryRandomAccessStream^ ras)
 				{
-					UpdatePage(k, ras, ras_size, FULL_RESOLUTION, zoom);
+					Point new_ras_size = ras_size;
+
+					/* This is so that the scroll update will apply the zoom keeping us in-sync.  And
+					   making sure that we can't exceed our limits with keyboard vs touch.  I.e. any
+					   resolution changes must go through the scroll viewer.  It make the upcoming
+					   page appear to come in at its zoom level of 1.0 but it is smoothly scaled to 
+					   the current scale resolution. */
+					new_ras_size.X = new_ras_size.X / zoom;
+					new_ras_size.Y = new_ras_size.Y / zoom;
+					UpdatePage(k, ras, new_ras_size, FULL_RESOLUTION, zoom);
 				}, task_continuation_context::use_current()).then([this, k, curr_page]()
 				{
 					if (k == curr_page && this->m_links_on)
@@ -810,6 +817,11 @@ void MainPage::RenderRange(int curr_page)
 						AddTextCanvas();
 						m_flip_from_searchlink = false;
 					}
+					if (k == curr_page)
+					{
+						m_curr_flipView->UpdateLayout();
+						UpdateZoom();
+					}
 				},task_continuation_context::use_current());
 			}
 			else
@@ -818,7 +830,10 @@ void MainPage::RenderRange(int curr_page)
 				   needed.   Otherwise, we need to wait for the task above to
 				   complete before we add the links. */
 				if (k == curr_page)
+				{
 					curr_page_rendered = false;
+					UpdateZoom();
+				}
 			}
 		}
 	}
@@ -851,13 +866,13 @@ void MainPage::FlipView_SelectionChanged(Object^ sender, SelectionChangedEventAr
 			}
 			else
 			{
-				 /* Make sure to clear any text search */
+				/* Make sure to clear any text search */
 				auto doc_old = this->m_docPages->GetAt(m_currpage);
 				doc_old->TextBox = nullptr;
 			}
 			/* Get the current page */
 			int curr_page = this->m_currpage;
-			UpdateZoom(pos, false);
+			this->m_currpage = pos;
 			this->RenderRange(pos);
 			this->ReleasePages(curr_page, pos);
 		}
@@ -878,41 +893,16 @@ void MainPage::Slider_Key(Platform::Object^ sender, Windows::UI::Xaml::Input::Ke
 
 void MainPage::Slider_Common()
 {
-	if (IsNotStandardView())
+	if (IsNotStandardView() || m_currpage == this->xaml_PageSlider->Value - 1)
 		return;
 
 	int newValue = (int) this->xaml_PageSlider->Value - 1;  /* zero based */
 
 	if (m_init_done && this->xaml_PageSlider->IsEnabled)
 	{
-		/* Make sure to clear any text search */
-		auto doc_old = this->m_docPages->GetAt(m_currpage);
-		doc_old->TextBox = nullptr;
-
-		auto doc = this->m_docPages->GetAt(newValue);
-		if (doc->Content != FULL_RESOLUTION || doc->Zoom != m_doczoom)
-		{
-			spatial_info_t spatial_info = InitSpatial(m_doczoom);
-			Point ras_size = ComputePageSize(spatial_info, newValue);
-			auto render_task =
-				create_task(mu_doc->RenderPageAsync(newValue, ras_size.X, ras_size.Y, true));
-			double zoom = m_doczoom;
-
-			render_task.then([this, newValue, ras_size, zoom] (InMemoryRandomAccessStream^ ras)
-			{
-				UpdatePage(newValue, ras, ras_size, FULL_RESOLUTION, zoom);
-				this->m_currpage = newValue;
-				m_sliderchange = true;
-				this->m_curr_flipView->SelectedIndex = newValue;
-			}, task_continuation_context::use_current());
-		}
-		else
-		{
-			m_sliderchange = true;
-			this->m_curr_flipView->SelectedIndex = newValue;
-		}
-		UpdateZoom(newValue, false);
+		this->m_curr_flipView->SelectedIndex = this->xaml_PageSlider->Value - 1;
 	}
+	return;
 }
 
 /* Search Related Code */
@@ -986,8 +976,8 @@ void MainPage::ShowSearchResults(int page_num, int box_count)
 		rect_item->Width = curr_box->LowerRight.X - curr_box->UpperLeft.X;
 		rect_item->X = curr_box->UpperLeft.X * scale.X;
 		rect_item->Y = curr_box->UpperLeft.Y * scale.Y;
-		rect_item->Width *= (scale.X * doc_page->Zoom);
-		rect_item->Height *= (scale.Y * doc_page->Zoom);
+		rect_item->Width *= (scale.X);
+		rect_item->Height *= (scale.Y);
 		rect_item->Index = k.ToString();
 		m_text_list->Append(rect_item);
 	}
@@ -1155,21 +1145,29 @@ void MainPage::GridSizeChanged()
 		xaml_WebView->Height = height - height_app;
 	}
 
-	UpDatePageSizes();
+	UpDateThumbSizes();
 
 	if (m_num_pages > 0 && old_flip != m_curr_flipView && old_flip != nullptr)
 	{
 		/* If links are on or off, we need to invalidate */
 		ClearLinks();
 		InvalidateLinks();
-		auto doc = this->m_docPages->GetAt(m_currpage);
-		doc->Content = OLD_RESOLUTION; /* To force a rerender */
+
+		/* And force a rerender */
+		for (int k = m_currpage - LOOK_AHEAD; k <= m_currpage + LOOK_AHEAD; k++)
+		{
+			if (k >= 0 && k < m_num_pages)
+			{
+				DocumentPage ^doc = this->m_docPages->GetAt(k);
+				doc->Content = OLD_RESOLUTION;
+			}
+		}
 		this->m_curr_flipView->SelectedIndex = this->m_currpage;
 		FlipView_SelectionChanged(nullptr, nullptr);
 	}
 }
 
-void MainPage::UpDatePageSizes()
+void MainPage::UpDateThumbSizes()
 {
 	/* Reset the thumb view scaling value */
 	if (m_num_pages > 0)
@@ -1183,14 +1181,12 @@ void MainPage::UpDatePageSizes()
 				int curr_height = thumb_page->NativeHeight;
 				int curr_width = thumb_page->NativeWidth;
 
-				double scale_x = (double) curr_height / (double) this->xaml_zoomCanvas->Height;
-				double scale_y = (double) curr_width / (double) this->xaml_zoomCanvas->Width;
+				double scale_x = (double) curr_height / (double) (this->xaml_zoomCanvas->Height);
+				double scale_y = (double) curr_width / (double) (this->xaml_zoomCanvas->Width);
 
 				double min_scale = max(scale_x, scale_y);
 				thumb_page->Height = curr_height * m_doczoom / min_scale;
 				thumb_page->Width = curr_width * m_doczoom / min_scale;
-				thumb_page->NativeHeight = thumb_page->NativeHeight / min_scale;
-				thumb_page->NativeWidth = thumb_page->NativeWidth / min_scale;
 			}
 		}
 	}
@@ -1270,8 +1266,8 @@ void MainPage::AddLinkCanvas()
 				rect_item->Width = curr_link->LowerRight.X - curr_link->UpperLeft.X;
 				rect_item->X = curr_link->UpperLeft.X * scale.X;
 				rect_item->Y = curr_link->UpperLeft.Y * scale.Y;
-				rect_item->Width *= (scale.X * doc_page->Zoom);
-				rect_item->Height *= (scale.Y * doc_page->Zoom);
+				rect_item->Width *= scale.X;
+				rect_item->Height *= scale.Y;
 				rect_item->Type = curr_link->Type;
 				rect_item->Urilink = curr_link->Uri;
 				rect_item->PageNum = curr_link->PageNum;
@@ -1410,8 +1406,6 @@ void MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEvent
 		this->m_curr_flipView->IsEnabled = true;
 		this->xaml_PageSlider->IsEnabled = true;
 		xaml_WebView->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
-		xaml_WebView->Opacity = 0.0;
-
 	}
 	else if (this->m_curr_flipView->IsEnabled)
 	{
@@ -1422,7 +1416,6 @@ void MainPage::Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEvent
 		this->xaml_PageSlider->IsEnabled = false;
 		this->xaml_WebView->NavigateToString(html_string);
 		this->xaml_WebView->Height = this->ActualHeight - 2 * this->BottomAppBar->ActualHeight;
-		/* Check if thumb rendering is done.  If not then restart */
 	}
 }
 
@@ -1448,36 +1441,44 @@ void MainPage::UpdateAppBarButtonViewState()
 	VisualStateManager::GoToState(NextSearch, viewState, true);
 }
 
-/* Manipulation zooming with touch input */
+/* Scroll viewer scale changes.  If first time to this page, then we essentially
+   have our scroll setting set at 1.0.   */
 void MainPage::ScrollChanged(Platform::Object^ sender,
 					Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e)
 {
 	ScrollViewer^ scrollviewer = safe_cast<ScrollViewer^> (sender);
 	auto doc_page = this->m_docPages->GetAt(m_currpage);
-	double new_zoom = scrollviewer->ZoomFactor;
+	double new_scroll_zoom = scrollviewer->ZoomFactor;
 
-	if (new_zoom == 1.0)
+	/* Check if we are already at this resolution with this page */
+	if (new_scroll_zoom == doc_page->PageZoom)
 		return;
 
 	if (!e->IsIntermediate)
 	{
 		int page = m_currpage;
-		m_doczoom = new_zoom * m_doczoom;
-		new_zoom = m_doczoom;
 
-		/* Render at new resolution */
-		spatial_info_t spatial_info = InitSpatial(new_zoom);
+		m_doczoom = new_scroll_zoom;
+		if (m_doczoom > ZOOM_MAX)
+		{
+			m_doczoom = ZOOM_MAX;
+		}
+		if (m_doczoom < ZOOM_MIN)
+		{
+			m_doczoom = ZOOM_MIN;
+		}
+		/* Render at new resolution. */
+		spatial_info_t spatial_info = InitSpatial(m_doczoom);
 		Point ras_size = ComputePageSize(spatial_info, page);
+		doc_page->PageZoom = m_doczoom;
 
-		/* Go ahead and create display list if we dont have one for this page */
 		auto render_task =
 			create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
-		render_task.then([this, page, ras_size, new_zoom, scrollviewer] (InMemoryRandomAccessStream^ ras)
-		{
-			scrollviewer->ZoomToFactor(1.0);
-			ReplaceImage(page, ras, ras_size, new_zoom);
+		render_task.then([this, page, ras_size, scrollviewer](InMemoryRandomAccessStream^ ras)
+		{ 
+			ReplaceImage(page, ras, ras_size, m_doczoom);
 		}, task_continuation_context::use_current());
-		UpdateZoom(m_currpage, false);
+		UpDateThumbSizes();
 	}
 }
 
@@ -1518,8 +1519,27 @@ void MainPage::ZoomOutPress(Platform::Object^ sender, Windows::UI::Xaml::RoutedE
 
 void MainPage::NonTouchZoom(int zoom)
 {
-	double curr_zoom = m_doczoom;
-	int page = m_currpage;
+	auto doc_page = this->m_docPages->GetAt(m_currpage);
+	double curr_zoom = doc_page->PageZoom;
+
+	ScrollViewer^ scrollviewer;
+	FlipViewItem^ item = safe_cast<FlipViewItem^>
+		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
+	auto item2 = m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage);
+
+	/* We don't know which one so check for both */
+	ScrollViewer^ t1 =
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_v"));
+	ScrollViewer^ t2 =
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_h"));
+
+	if (t1 != nullptr)
+		scrollviewer = t1;
+	else
+		scrollviewer = t2;
+
+	if (scrollviewer == nullptr)
+		return;
 
 	if (zoom == ZOOM_IN)
 	{
@@ -1533,39 +1553,42 @@ void MainPage::NonTouchZoom(int zoom)
 	} else
 		return;
 
-	auto doc_page = this->m_docPages->GetAt(page);
+	/* It all needs to be driven by the scroll viewer otherwise we
+	   end up out of sync */
+	Platform::Object^ obj_zoom = (float)curr_zoom;
+	Platform::IBox<float>^ box_zoom;
+	box_zoom = safe_cast<Platform::IBox<float>^>(obj_zoom);
 
-	/* Render at new resolution */
-	spatial_info_t spatial_info = InitSpatial(curr_zoom);
-	Point ras_size = ComputePageSize(spatial_info, page);
-
-	/* Render and replace */
-	auto render_task =
-		create_task(mu_doc->RenderPageAsync(page, ras_size.X, ras_size.Y, true));
-	render_task.then([this, page, ras_size, curr_zoom] (InMemoryRandomAccessStream^ ras)
-	{
-		ReplaceImage(page, ras, ras_size, curr_zoom);
-	}, task_continuation_context::use_current());
-	m_doczoom = curr_zoom;
-	UpdateZoom(page, false);
+	scrollviewer->ChangeView(nullptr, nullptr, box_zoom, false);
 }
 
-/* Get adjacent pages properly scaled when zoom changed */
-void MainPage::UpdateZoom(int page_num, bool ignore_curr)
+/* Adjust the page scrollviewer to the current zoom level */
+void MainPage::UpdateZoom()
 {
-	for (int k = page_num - LOOK_AHEAD_SCALE; k <= page_num + LOOK_AHEAD_SCALE; k++)
-	{
-		bool skip = !(k == page_num && ignore_curr);
-		if (k >= 0 && k < m_num_pages)
-		{
-			auto page = this->m_docPages->GetAt(k);
-			if (page->Zoom != m_doczoom && skip) 
-			{
-				page->Height = (int) ((double) page->NativeHeight * m_doczoom);
-				page->Width = (int) ((double) page->NativeWidth * m_doczoom);
-			}
-		}
-	}
+	ScrollViewer^ scrollviewer;
+	FlipViewItem^ item = safe_cast<FlipViewItem^>
+		(m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage));
+	auto item2 = m_curr_flipView->ItemContainerGenerator->ContainerFromIndex(m_currpage);
+
+	/* We don't know which one so check for both */
+	ScrollViewer^ t1 =
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_v"));
+	ScrollViewer^ t2 =
+		safe_cast<ScrollViewer^> (FindVisualChildByName(item2, "xaml_ScrollView_h"));
+
+	if (t1 != nullptr)
+		scrollviewer = t1;
+	else
+		scrollviewer = t2;
+
+	if (scrollviewer == nullptr)
+		return;
+
+	float curr_zoom = scrollviewer->ZoomFactor;
+	Platform::Object^ obj_zoom = (float)m_doczoom;
+	Platform::IBox<float>^ box_zoom;
+	box_zoom = safe_cast<Platform::IBox<float>^>(obj_zoom);
+	scrollviewer->ChangeView(nullptr, nullptr, box_zoom, false);
 }
 
 /* Zoom in and out for keyboard only case. */

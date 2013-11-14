@@ -8,7 +8,7 @@ namespace mupdf_cpp
 		this->Image = nullptr;
 		this->Height = 0;
 		this->Width = 0;
-		this->Zoom = 1.0;
+		this->PageZoom = 1.0;
 		this->Content = NOTSET;
 		_isPropertyChangedObserved = false;
 	}
