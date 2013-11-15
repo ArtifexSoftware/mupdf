@@ -315,6 +315,7 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 		return ras;
 	});
 }
+                                                                                
 #else
 /* Get pointer to IBuffer data */
 byte* GetIBUffPointer(IBuffer^ bmp_data)
@@ -330,24 +331,42 @@ byte* GetIBUffPointer(IBuffer^ bmp_data)
 	return pixels;
 }
 
-/* Caller must do allocation */    
 Windows::Foundation::IAsyncOperation<int>^
-	mudocument::RenderPageAsync(int page_num, int width, int height, bool use_dlist, 
-								DataWriter^ dw, int offset)
-								//Platform::WriteOnlyArray<uint8>^ intOutArray)
+	mudocument::RenderPageAsync(int page_num, int width, int height, 
+								bool use_dlist, DataWriter^ dw, int offset)
 {
 	return create_async([this, width, height, page_num, use_dlist, dw, offset]
 						(cancellation_token ct) -> int
 	{
-		/* Go ahead and write our header data into the memory stream */
 		Prepare_bmp(width, height, dw);
-		std::lock_guard<std::mutex> lock(mutex_lock);
-
+		/* Allocate for data */
 		Array<unsigned char>^ bmp_data = ref new Array<unsigned char>(height * 4 * width);
-		/* Get raster bitmap stream */
-		//auto bmp_data = intOutArray->Data + offset;
-		status_t code = mu_object.RenderPage(page_num, width, height, &(bmp_data[0]),
-											 use_dlist);
+		status_t code;
+
+		if (use_dlist)
+		{
+			void *dlist;
+			int page_height;
+			int page_width;
+
+			mutex_lock.lock();
+			/* This lock will keep out issues in mupdf as well as race conditions
+				in the page cache */
+			dlist = (void*)mu_object.CreateDisplayList(page_num, &page_width,
+														&page_height);
+			/* Rendering of display list can occur with other threads so unlock */
+			mutex_lock.unlock();
+			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
+											&(bmp_data[0]), height, width, true);
+		}
+		else
+		{
+			/* Rendering in immediate mode.  Keep lock in place */
+			mutex_lock.lock();
+			code = mu_object.RenderPage(page_num, &(bmp_data[0]), width, height, 
+										true);
+			mutex_lock.unlock();
+		}
 		if (code != S_ISOK)
 		{
 			throw ref new FailureException("Page Rendering Failed");

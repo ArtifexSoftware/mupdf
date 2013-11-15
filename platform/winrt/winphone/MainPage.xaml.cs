@@ -802,15 +802,12 @@ namespace winphone
 		
 		protected override void OnNavigatedTo(NavigationEventArgs e)
 		{
-			bool from_file = false;
-
 			if (NavigationContext.QueryString.ContainsKey("fileToken"))
 			{
 				string tempUri = e.Uri.ToString();
 				int fileIDIndex = tempUri.IndexOf("fileToken=") + 10;
 				string fileID = tempUri.Substring(fileIDIndex);
 				GetFile(fileID, true);
-				from_file = true;
 			}
 
 			if (this.ReceivedData != null)
@@ -820,7 +817,6 @@ namespace winphone
 					m_height = (App.Current as App).appHeight;
 					m_width = (App.Current as App).appWidth;
 					GetFile(this.ReceivedData, false);
-					from_file = true;
 				}
 			}
 			base.OnNavigatedTo(e);
@@ -1006,7 +1002,7 @@ namespace winphone
 			ProgressBar my_xaml_Progress = (ProgressBar)(this.FindName("xaml_Progress"));
 
 			xaml_ProgressStack.Visibility = Visibility.Visible;
-			var temp = mu_doc.SearchDocumentWithProgressAsync(textToFind, dir, start);
+			var temp = mu_doc.SearchDocumentWithProgressAsync(textToFind, dir, start, m_num_pages);
 			temp.Progress = new AsyncOperationProgressHandler<int, double>(SearchProgress);
 
 			var page_num = await temp;
@@ -1154,7 +1150,6 @@ namespace winphone
 					this.xaml_Pages.SelectedItem = m_docPages[newValue];
 				}
 			}
-
 		}
 
 		private void Slider_Change(object sender, RoutedPropertyChangedEventArgs<double> e)
