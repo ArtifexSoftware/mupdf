@@ -317,7 +317,7 @@ void winreplacefile(char *source, char *target)
 
 void wincopyfile(char *source, char *target)
 {
-	char *buf = malloc(strlen(source)+strlen(target)+4);
+	char *buf = malloc(strlen(source)+strlen(target)+5);
 	if (buf)
 	{
 		sprintf(buf, "cp %s %s", source, target);
