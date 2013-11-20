@@ -67,9 +67,11 @@
         <Grid x:Name="xaml_MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SizeChanged="GridSizeChanged">
             <Canvas x:Name="xaml_zoomCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" ManipulationMode="All" >
                 <!-- Horizontal flip view -->
+                <!-- Win 8.1               <FlipView x:Name="xaml_horiz_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
+                          HorizontalAlignment="Center" UseTouchAnimationsForAllNavigation="False"> -->
                 <FlipView x:Name="xaml_horiz_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
-                          HorizontalAlignment="Center" UseTouchAnimationsForAllNavigation="False">
-                    <FlipView.ItemsPanel>
+                          HorizontalAlignment="Center">
+                <FlipView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel Orientation="Horizontal"/>
                         </ItemsPanelTemplate>
@@ -146,9 +148,11 @@
                     </FlipView.ItemTemplate>
                 </FlipView>
                 <!-- Vertical flip view -->
+<!--  Win 8.1   <FlipView x:Name="xaml_vert_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
+                          HorizontalAlignment="Center" IsEnabled="False" Opacity="0" UseTouchAnimationsForAllNavigation="False"> -->
                 <FlipView x:Name="xaml_vert_flipView" SelectionChanged="FlipView_SelectionChanged" VerticalAlignment="Center"
-                          HorizontalAlignment="Center" IsEnabled="False" Opacity="0" UseTouchAnimationsForAllNavigation="False">
-                    <FlipView.ItemsPanel>
+                          HorizontalAlignment="Center" IsEnabled="False" Opacity="0" >
+                        <FlipView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel Orientation="Vertical"/>
                         </ItemsPanelTemplate>

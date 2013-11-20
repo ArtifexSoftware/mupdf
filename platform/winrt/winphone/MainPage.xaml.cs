@@ -96,7 +96,7 @@ static class Constants {
 	public const int SEARCH_FORWARD = 1;
 	public const int SEARCH_BACKWARD = -1;
 	public const int TEXT_NOT_FOUND = -1;
-	public const int MAX_FILMSTRIP_THUMB = 2;
+	public const int MAX_FILMSTRIP_THUMB = 10;
 }
 
 namespace winphone
@@ -147,7 +147,7 @@ namespace winphone
 
 			m_textcolor="#402572AC";
 			m_linkcolor="#40AC7225";
-			xaml_Pages.ShowOverlayContent();
+			xaml_Pages.HideOverlayContent();
 			m_docPages = new Pages();
 			m_thumbnails = new List<DocumentPage>();
 			m_page_link_list = new List<List<RectList>>();
@@ -367,14 +367,14 @@ namespace winphone
 			m_thumbnails[page_num].Content = Page_Content_t.THUMBNAIL;
 		}
 
-
 		private async Task<status_t> RenderPage(double zoom, int page_num, double can_offsetX,
 										double can_offsetY)
 		{
 			spatial_info_t spatial_info = InitSpatial(zoom);
 			Windows.Foundation.Point ras_size = ComputePageSize(spatial_info, page_num);
 			IBuffer buffer = new Windows.Storage.Streams.Buffer((uint)(ras_size.X) * (uint)(ras_size.Y) * 4 + 54);
-			buffer.Length = (uint)(ras_size.X) * (uint)(ras_size.Y) * 4 + 54;
+			buffer.Length = (uint)(ras_size.X) * (uint)(ras_size.Y) * 4 + 
+									Constants.HEADER_SIZE;
 			int canvas_Y = -(int) ((double) this.m_height/2.0);
 			int canvas_X = -(int) ((double) this.m_width/2.0);
 	
@@ -579,6 +579,10 @@ namespace winphone
 		{
 			spatial_info_t value = new spatial_info_t();
 
+			if (m_height == 0 || m_width == 0)
+			{
+				this.Page_Loaded(null, null);
+			}
 			value.size.Y = this.m_height;
 			value.size.X = this.m_width;
 			value.scale_factor = scale;
@@ -606,43 +610,6 @@ namespace winphone
 
 		private void OpenDocumentPrep(IStorageFile file, String extension)
 		{
-
-#if temp
-			if (this.m_num_pages != -1)
-			{
-				m_init_done = false;
-
-				/* Set the index to the start of the document */
-				//this->xaml_vert_flipView->SelectedIndex = 0;
-				//this->xaml_horiz_flipView->SelectedIndex = 0;
-
-				/* If the thumbnail thread is running then we need to end that first */
-
-				RenderingStatus_t *ren_status = &m_ren_status;
-				cancellation_token_source *ThumbCancel = &m_ThumbCancel;
-
-				/* Create a task to wait until the renderer is available, then clean up then open */
-				auto t = create_task([ren_status, ThumbCancel]()->int
-				{
-					if (*ren_status == REN_THUMBS)
-						ThumbCancel->cancel();
-					while (*ren_status != REN_AVAILABLE) {
-					}
-					return 0;
-				}).then([this](task<int> the_task)
-				{
-					CleanUp();
-					return 0;
-				}, task_continuation_context::use_current()).then([this, file](task<int> the_task)
-				{
-					OpenDocument(file);
-				}, task_continuation_context::use_current());
-			}
-			else
-			{
-				OpenDocument(file);
-			}
-#endif
 			OpenDocument(file, extension);
 		}
 
@@ -695,7 +662,7 @@ namespace winphone
 			}
 
 			xaml_Pages.DataContext = m_docPages;
-			//this.xaml_Pages.ShowOverlayContent();
+			this.xaml_Pages.ShowOverlayContent();
 
 			/* All done with initial pages */
 			this.m_init_done = true;

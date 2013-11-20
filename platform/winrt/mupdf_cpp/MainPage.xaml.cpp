@@ -1558,8 +1558,11 @@ void MainPage::NonTouchZoom(int zoom)
 	Platform::Object^ obj_zoom = (float)curr_zoom;
 	Platform::IBox<float>^ box_zoom;
 	box_zoom = safe_cast<Platform::IBox<float>^>(obj_zoom);
-
-	scrollviewer->ChangeView(nullptr, nullptr, box_zoom, false);
+#ifdef WIN_8.1
+    scrollviewer->ChangeView(nullptr, nullptr, box_zoom, false);
+#else
+    scrollviewer->ZoomToFactor(curr_zoom);
+#endif
 }
 
 /* Adjust the page scrollviewer to the current zoom level */
@@ -1588,7 +1591,12 @@ void MainPage::UpdateZoom()
 	Platform::Object^ obj_zoom = (float)m_doczoom;
 	Platform::IBox<float>^ box_zoom;
 	box_zoom = safe_cast<Platform::IBox<float>^>(obj_zoom);
+#ifdef WIN_8.1
 	scrollviewer->ChangeView(nullptr, nullptr, box_zoom, false);
+#else
+    scrollviewer->ZoomToFactor(curr_zoom);
+#endif
+
 }
 
 /* Zoom in and out for keyboard only case. */

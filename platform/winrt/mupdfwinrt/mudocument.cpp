@@ -357,7 +357,7 @@ Windows::Foundation::IAsyncOperation<int>^
 			/* Rendering of display list can occur with other threads so unlock */
 			mutex_lock.unlock();
 			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
-											&(bmp_data[0]), height, width, true);
+											&(bmp_data[0]), width, height, true);
 		}
 		else
 		{

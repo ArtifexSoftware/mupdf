@@ -30,6 +30,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf_cpp", "mupdf_cpp\mupd
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "winphone", "winphone\winphone.csproj", "{22B7861D-F588-43A1-8E43-E41BE220BAFD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C59F25DE-05A3-4BAF-B9F4-579852E83538} = {C59F25DE-05A3-4BAF-B9F4-579852E83538}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdfwinrt_wp8", "mupdfwinrt_wp8\mupdfwinrt_wp8.vcxproj", "{C59F25DE-05A3-4BAF-B9F4-579852E83538}"
 	ProjectSection(ProjectDependencies) = postProject

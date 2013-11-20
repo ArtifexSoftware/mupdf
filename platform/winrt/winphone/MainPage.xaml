@@ -81,13 +81,28 @@
             </Grid.RowDefinitions>
 
             <telerikPrimitives:RadSlideView x:Name="xaml_Pages" ItemsSource="{Binding}"
-                IsFilmstripModeEnabled="True" TransitionMode="Flip" 
+                IsFilmstripModeEnabled="True" TransitionMode="Slide"
                 SlideAnimationCompleted="SlideAnimationDone"
                 SlideAnimationStarted="SlideAnimationStart"
-                SelectionChanged="SelectionChanged" Grid.Row="0" Grid.Column="1" >
+                SelectionChanged="SelectionChanged" Grid.Row="0" Grid.Column="1">
+
+                <telerikPrimitives:RadSlideView.ItemTemplate>
+                    <DataTemplate>
+                        <telerikSlideView:PanAndZoomImage x:Name="xaml_ZoomBlock" 
+                                Source="{Binding Image}" ZoomMode="Free" 
+                                MaximumZoom="3" 
+                                ManipulationCompleted="ZoomBlock_ManipulationCompleted"
+                                ManipulationDelta="ZoomBlock_ManipulationDelta"
+                                ManipulationStarted="ZoomBlock_ManipulationStarted" 
+                                />
+                    </DataTemplate>
+                </telerikPrimitives:RadSlideView.ItemTemplate>
+
+
+
                 <telerikPrimitives:RadSlideView.OverlayContentTemplate>
                     <DataTemplate>
-                        <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                     <ItemsControl ItemsSource="{Binding Path=TextBox}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <Canvas/>
@@ -106,20 +121,11 @@
                                     </Rectangle>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        </ItemsControl> 
                     </DataTemplate>
                 </telerikPrimitives:RadSlideView.OverlayContentTemplate>
-                <telerikPrimitives:RadSlideView.ItemTemplate>
-                    <DataTemplate>
-                        <telerikSlideView:PanAndZoomImage x:Name="xaml_ZoomBlock" 
-                                Source="{Binding Image}" ZoomMode="Free" 
-                                MaximumZoom="3" 
-                                ManipulationCompleted="ZoomBlock_ManipulationCompleted"
-                                ManipulationDelta="ZoomBlock_ManipulationDelta"
-                                ManipulationStarted="ZoomBlock_ManipulationStarted" 
-                                />
-                    </DataTemplate>
-                </telerikPrimitives:RadSlideView.ItemTemplate>
+
+
                 <telerikPrimitives:RadSlideView.FilmstripModeItemTemplate>
                     <DataTemplate>
                         <Image Source="{Binding Image}" Width="460" Stretch="Uniform"/>
