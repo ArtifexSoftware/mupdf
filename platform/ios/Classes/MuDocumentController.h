@@ -24,7 +24,8 @@ enum
 	BARMODE_ANNOTATION,
 	BARMODE_HIGHLIGHT,
 	BARMODE_UNDERLINE,
-	BARMODE_STRIKE
+	BARMODE_STRIKE,
+	BARMODE_INK
 };
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator>
@@ -41,6 +42,7 @@ enum
 	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
 	UIBarButtonItem *moreButton;
 	UIBarButtonItem *highlightButton, *underlineButton, *strikeoutButton;
+	UIBarButtonItem *inkButton;
 	UIBarButtonItem *tickButton;
 	UIBarButtonItem *reflowButton;
 	UIBarButtonItem *sliderWrapper;

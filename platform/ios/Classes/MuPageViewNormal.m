@@ -9,13 +9,13 @@
 #include "mupdf/pdf.h"
 #import "MuWord.h"
 #import "MuTextFieldController.h"
-#import "MuTextSelectView.h"
 
 #import "MuPageViewNormal.h"
 
 #define STRIKE_HEIGHT (0.375f)
 #define UNDERLINE_HEIGHT (0.075f)
 #define LINE_THICKNESS (0.07f)
+#define INK_THICKNESS (4.0f)
 
 static void releasePixmap(void *info, const void *data, size_t size)
 {
@@ -247,6 +247,68 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 	fz_always(ctx)
 	{
 		fz_free(ctx, quadpts);
+	}
+	fz_catch(ctx)
+	{
+		printf("Annotation creation failed\n");
+	}
+}
+
+static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
+{
+	pdf_document *idoc;
+	fz_point *pts = NULL;
+	int *counts = NULL;
+	int total;
+	float color[3] = {1.0, 0.0, 0.0};
+
+	idoc = pdf_specifics(doc);
+	if (!idoc)
+		return;
+
+	fz_var(pts);
+	fz_var(counts);
+	fz_try(ctx)
+	{
+		int i, j, k, n;
+		pdf_annot *annot;
+
+		n = curves.count;
+
+		counts = fz_malloc_array(ctx, n, sizeof(int));
+		total = 0;
+
+		for (i = 0; i < n; i++)
+		{
+			NSArray *curve = [curves objectAtIndex:i];
+			counts[i] = curve.count;
+			total += curve.count;
+		}
+
+		pts = fz_malloc_array(ctx, total, sizeof(fz_point));
+
+		k = 0;
+		for (i = 0; i < n; i++)
+		{
+			NSArray *curve = [curves objectAtIndex:i];
+			int count = counts[i];
+
+			for (j = 0; j < count; j++)
+			{
+				CGPoint pt = [[curve objectAtIndex:j] CGPointValue];
+				pts[k].x = pt.x;
+				pts[k].y = pt.y;
+				k++;
+			}
+		}
+
+		annot = pdf_create_annot(idoc, (pdf_page *)page, FZ_ANNOT_INK);
+		pdf_set_ink_annot_list(idoc, annot, pts, counts, n, color, INK_THICKNESS);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, pts);
+		fz_free(ctx, counts);
 	}
 	fz_catch(ctx)
 	{
@@ -609,6 +671,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		[linkView release];
 		[hitView release];
 		[textSelectView release];
+		[inkView release];
 		[tileView release];
 		[loadingView release];
 		[imageView release];
@@ -688,6 +751,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	});
 }
 
+- (void) inkModeOn
+{
+	inkView = [[MuInkView alloc] initWithPageSize:pageSize];
+	if (imageView)
+		[inkView setFrame:[imageView frame]];
+	[self addSubview:inkView];
+}
+
 - (void) textSelectModeOff
 {
 	[textSelectView removeFromSuperview];
@@ -695,7 +766,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	textSelectView = nil;
 }
 
--(void) saveMarkup:(int)type
+- (void) inkModeOff
+{
+	[inkView removeFromSuperview];
+	[inkView release];
+	inkView = nil;
+}
+
+-(void) saveSelectionAsMarkup:(int)type
 {
 	CGRect tframe = tileFrame;
 	float tscale = tileScale;
@@ -707,11 +785,36 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	if (rects.count == 0)
 		return;
 
+	[rects retain];
+
 	dispatch_async(queue, ^{
 		addMarkupAnnot(doc, page, type, rects);
+		[rects release];
 		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
 	});
 	[self textSelectModeOff];
+}
+
+-(void) saveInk
+{
+	CGRect tframe = tileFrame;
+	float tscale = tileScale;
+	CGRect vframe = tframe;
+	vframe.origin.x -= imageView.frame.origin.x;
+	vframe.origin.y -= imageView.frame.origin.y;
+
+	NSArray *curves = inkView.curves;
+	if (curves.count == 0)
+		return;
+
+	[curves retain];
+
+	dispatch_async(queue, ^{
+		addInkAnnot(doc, page, curves);
+		[curves release];
+		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+	});
+	[self inkModeOff];
 }
 
 - (void) resetZoomAnimated: (BOOL)animated
@@ -780,6 +883,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			[self bringSubviewToFront: hitView];
 		if (textSelectView)
 			[self bringSubviewToFront:textSelectView];
+		if (inkView)
+			[self bringSubviewToFront:inkView];
 	} else {
 		[imageView setImage: image];
 	}
@@ -853,14 +958,19 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 	if (imageView)
 	{
+		CGRect frm = [imageView frame];
+
 		if (hitView)
-			[hitView setFrame: [imageView frame]];
+			[hitView setFrame: frm];
 
 		if (linkView)
-			[linkView setFrame:[imageView frame]];
+			[linkView setFrame:frm];
 
 		if (textSelectView)
-			[textSelectView setFrame:[imageView frame]];
+			[textSelectView setFrame:frm];
+
+		if (inkView)
+			[inkView setFrame:frm];
 	}
 }
 
@@ -925,6 +1035,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 					[self bringSubviewToFront:linkView];
 				if (textSelectView)
 					[self bringSubviewToFront:textSelectView];
+				if (inkView)
+					[self bringSubviewToFront:inkView];
 			} else {
 				printf("discard tile\n");
 			}
@@ -963,11 +1075,16 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 {
 	if (imageView)
 	{
+		CGRect frm = [imageView frame];
+
 		if (hitView)
-			[hitView setFrame: [imageView frame]];
+			[hitView setFrame: frm];
 
 		if (textSelectView)
-			[textSelectView setFrame:[imageView frame]];
+			[textSelectView setFrame:frm];
+
+		if (inkView)
+			[inkView setFrame:frm];
 	}
 }
 

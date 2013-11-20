@@ -160,6 +160,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	highlightButton = [self resourceBasedButton:@"ic_highlight" withAction:@selector(onHighlight:)];
 	underlineButton = [self resourceBasedButton:@"ic_underline" withAction:@selector(onUnderline:)];
 	strikeoutButton = [self resourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
+	inkButton = [self resourceBasedButton:@"ic_pen" withAction:@selector(onInk:)];
 	tickButton = [self resourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	[searchBar setPlaceholder: @"Search"];
@@ -195,6 +196,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[highlightButton release]; highlightButton = nil;
 	[underlineButton release]; underlineButton = nil;
 	[strikeoutButton release]; strikeoutButton = nil;
+	[inkButton release]; inkButton = nil;
 	[tickButton release]; tickButton = nil;
 	[canvas release]; canvas = nil;
 
@@ -328,7 +330,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 - (void) showAnnotationMenu
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:strikeoutButton, underlineButton, highlightButton, nil]];
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:inkButton, strikeoutButton, underlineButton, highlightButton, nil]];
 	[[self navigationItem] setLeftBarButtonItem:cancelButton];
 	barmode = BARMODE_ANNOTATION;
 }
@@ -356,6 +358,24 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	}
 }
 
+- (void) inkModeOn
+{
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:tickButton]];
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		if ([view number] == current)
+			[view inkModeOn];
+	}
+}
+
+- (void) inkModeOff
+{
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		[view inkModeOff];
+	}
+}
+
 - (void) onHighlight: (id)sender
 {
 	barmode = BARMODE_HIGHLIGHT;
@@ -374,6 +394,12 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[self textSelectModeOn];
 }
 
+- (void) onInk: (id)sender
+{
+	barmode = BARMODE_INK;
+	[self inkModeOn];
+}
+
 - (void) onShowSearch: (id)sender
 {
 	[[self navigationItem] setRightBarButtonItems:
@@ -386,26 +412,29 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 - (void) onTick: (id)sender
 {
-	int type;
-	switch (barmode)
-	{
-		case BARMODE_HIGHLIGHT:
-			type = FZ_ANNOT_HIGHLIGHT;
-			break;
-
-		case BARMODE_UNDERLINE:
-			type = FZ_ANNOT_UNDERLINE;
-			break;
-
-		case BARMODE_STRIKE:
-			type = FZ_ANNOT_STRIKEOUT;
-			break;
-	}
 
 	for (UIView<MuPageView> *view in [canvas subviews])
 	{
 		if ([view number] == current)
-			[view saveMarkup:type];
+		{
+			switch (barmode)
+			{
+				case BARMODE_HIGHLIGHT:
+					[view saveSelectionAsMarkup:FZ_ANNOT_HIGHLIGHT];
+					break;
+
+				case BARMODE_UNDERLINE:
+					[view saveSelectionAsMarkup:FZ_ANNOT_UNDERLINE];
+					break;
+
+				case BARMODE_STRIKE:
+					[view saveSelectionAsMarkup:FZ_ANNOT_STRIKEOUT];
+					break;
+
+				case BARMODE_INK:
+					[view saveInk];
+			}
+		}
 	}
 
 	[self showAnnotationMenu];
@@ -432,6 +461,11 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		case BARMODE_STRIKE:
 			[self showAnnotationMenu];
 			[self textSelectModeOff];
+			break;
+
+		case BARMODE_INK:
+			[self showAnnotationMenu];
+			[self inkModeOff];
 			break;
 	}
 }

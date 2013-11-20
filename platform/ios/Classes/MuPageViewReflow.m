@@ -124,7 +124,10 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 -(void) clearSearchResults {}
 -(void) textSelectModeOn {}
 -(void) textSelectModeOff {}
--(void) saveMarkup:(int)type {}
+-(void) inkModeOn {}
+-(void) inkModeOff {}
+-(void) saveSelectionAsMarkup:(int)type {}
+-(void) saveInk {}
 
 -(void) resetZoomAnimated: (BOOL)animated
 {

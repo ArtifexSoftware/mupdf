@@ -35,6 +35,8 @@
 		DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A717E864180061F586 /* MuDocumentController.m */; };
 		DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A917E864CB0061F586 /* MuAppDelegate.m */; };
 		DA1C68C417E8969C0061F586 /* common.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68C317E8969C0061F586 /* common.m */; };
+		DA442E2D183B796F008EF49B /* ic_pen.png in Resources */ = {isa = PBXBuildFile; fileRef = DA442E2C183B796F008EF49B /* ic_pen.png */; };
+		DA442E30183B9F13008EF49B /* MuInkView.m in Sources */ = {isa = PBXBuildFile; fileRef = DA442E2F183B9F13008EF49B /* MuInkView.m */; };
 		DAA6E56F17F03F96002B1E4E /* MuPageViewReflow.m in Sources */ = {isa = PBXBuildFile; fileRef = DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */; };
 		DAAC6A2E17FC6E4A00A0E83A /* MuTapResult.m in Sources */ = {isa = PBXBuildFile; fileRef = DAAC6A2D17FC6E4A00A0E83A /* MuTapResult.m */; };
 		DAB067A61831225D00DDA774 /* MuWord.m in Sources */ = {isa = PBXBuildFile; fileRef = DAB067A51831225D00DDA774 /* MuWord.m */; };
@@ -106,6 +108,9 @@
 		DA1C68A917E864CB0061F586 /* MuAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuAppDelegate.m; path = Classes/MuAppDelegate.m; sourceTree = "<group>"; };
 		DA1C68C217E8968C0061F586 /* common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
 		DA1C68C317E8969C0061F586 /* common.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = common.m; sourceTree = "<group>"; };
+		DA442E2C183B796F008EF49B /* ic_pen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_pen.png; path = "../android/res/drawable-ldpi/ic_pen.png"; sourceTree = "<group>"; };
+		DA442E2E183B9F13008EF49B /* MuInkView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuInkView.h; path = Classes/MuInkView.h; sourceTree = "<group>"; };
+		DA442E2F183B9F13008EF49B /* MuInkView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuInkView.m; path = Classes/MuInkView.m; sourceTree = "<group>"; };
 		DAA6E56D17F03AAE002B1E4E /* MuPageViewReflow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageViewReflow.h; path = Classes/MuPageViewReflow.h; sourceTree = "<group>"; };
 		DAA6E56E17F03AAE002B1E4E /* MuPageViewReflow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPageViewReflow.m; path = Classes/MuPageViewReflow.m; sourceTree = "<group>"; };
 		DAAC6A2C17FC6E4A00A0E83A /* MuTapResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuTapResult.h; path = Classes/MuTapResult.h; sourceTree = "<group>"; };
@@ -204,6 +209,7 @@
 				DAD47D2B1832615900E173A0 /* ic_highlight.png */,
 				DAD47D2C1832615900E173A0 /* ic_strike.png */,
 				DAD47D2D1832615900E173A0 /* ic_underline.png */,
+				DA442E2C183B796F008EF49B /* ic_pen.png */,
 				DAD47D291832475C00E173A0 /* ic_more.png */,
 				DAB9F4C117F1CB6D00117D2E /* ic_reflow.png */,
 				DAB9F4B517F1B24000117D2E /* ic_arrow_left.png */,
@@ -238,6 +244,8 @@
 				DA1C689F17E861870061F586 /* MuHitView.m */,
 				DAD2BA801835064E00E7C49D /* MuTextSelectView.h */,
 				DAD2BA811835064E00E7C49D /* MuTextSelectView.m */,
+				DA442E2E183B9F13008EF49B /* MuInkView.h */,
+				DA442E2F183B9F13008EF49B /* MuInkView.m */,
 				DAB067A41831225D00DDA774 /* MuWord.h */,
 				DAB067A51831225D00DDA774 /* MuWord.m */,
 				DA1C68A417E863C70061F586 /* MuPageViewNormal.h */,
@@ -360,6 +368,7 @@
 				DAD47D2F1832615900E173A0 /* ic_strike.png in Resources */,
 				DAD47D301832615900E173A0 /* ic_underline.png in Resources */,
 				DACD12271833CDA600D4B9C5 /* ic_check.png in Resources */,
+				DA442E2D183B796F008EF49B /* ic_pen.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -408,6 +417,7 @@
 				DABF8CC6180C2C650069CB6D /* MuChoiceFieldController.m in Sources */,
 				DAB067A61831225D00DDA774 /* MuWord.m in Sources */,
 				DAD2BA821835064E00E7C49D /* MuTextSelectView.m in Sources */,
+				DA442E30183B9F13008EF49B /* MuInkView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
