@@ -680,7 +680,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	// dealloc can trigger in background thread when the queued block is
 	// our last owner, and releases us on completion.
 	// Send the dealloc back to the main thread so we don't mess up UIKit.
-	if (dispatch_get_current_queue() != dispatch_get_main_queue()) {
+	if (![NSThread isMainThread]) {
 		__block id block_self = self; // don't auto-retain self!
 		dispatch_async(dispatch_get_main_queue(), ^{ [block_self dealloc]; });
 	} else {

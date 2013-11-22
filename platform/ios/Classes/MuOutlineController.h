@@ -7,9 +7,11 @@
 
 #import <UIKit/UIKit.h>
 
+@class MuDocumentController;
+
 @interface MuOutlineController : UITableViewController
 {
-	id target;
+	MuDocumentController *target;
 	NSMutableArray *titles;
 	NSMutableArray *pages;
 }

@@ -129,7 +129,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[indicator setText: @"0000 of 9999"];
 	[indicator sizeToFit];
 	[indicator setCenter: CGPointMake(0, INDICATOR_Y)];
-	[indicator setTextAlignment: UITextAlignmentCenter];
+	[indicator setTextAlignment: NSTextAlignmentCenter];
 	[indicator setBackgroundColor: [[UIColor blackColor] colorWithAlphaComponent: 0.5]];
 	[indicator setTextColor: [UIColor whiteColor]];
 
