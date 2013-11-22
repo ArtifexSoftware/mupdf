@@ -12,17 +12,17 @@
 
 - (id) initWithPageSize:(CGSize)_pageSize
 {
-    self = [super initWithFrame:CGRectMake(0, 0, 100, 100)];
-    if (self) {
+	self = [super initWithFrame:CGRectMake(0, 0, 100, 100)];
+	if (self) {
 		[self setOpaque:NO];
-        pageSize = _pageSize;
+		pageSize = _pageSize;
 		color = [[UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:1.0] retain];
 		curves = [[NSMutableArray array] retain];
 		UIPanGestureRecognizer *rec = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(onDrag:)];
 		[self addGestureRecognizer:rec];
 		[rec release];
-    }
-    return self;
+	}
+	return self;
 }
 
 @synthesize curves;

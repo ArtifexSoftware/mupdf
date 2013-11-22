@@ -85,8 +85,8 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 
 - (id)initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber
 {
-    self = [super initWithFrame:frame];
-    if (self) {
+	self = [super initWithFrame:frame];
+	if (self) {
 		number = aNumber;
 		scale = 1.0;
 		self.scalesPageToFit = NO;
@@ -97,8 +97,8 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 				[self loadHTMLString:cont baseURL:nil];
 			});
 		});
-    }
-    return self;
+	}
+	return self;
 }
 
 -(void) webViewDidFinishLoad:(UIWebView *)webView

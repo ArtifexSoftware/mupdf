@@ -25,23 +25,23 @@
 
 - (void)viewDidLoad
 {
-    [super viewDidLoad];
+	[super viewDidLoad];
 	_textView.text = initialText;
-    // Do any additional setup after loading the view from its nib.
+	// Do any additional setup after loading the view from its nib.
 }
 
 - (void)didReceiveMemoryWarning
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+	[super didReceiveMemoryWarning];
+	// Dispose of any resources that can be recreated.
 }
 
 - (void)dealloc
 {
 	[okayBlock release];
 	[initialText release];
-    [_textView release];
-    [super dealloc];
+	[_textView release];
+	[super dealloc];
 }
 
 - (IBAction)okayTapped:(id)sender

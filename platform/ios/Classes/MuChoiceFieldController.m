@@ -27,24 +27,24 @@
 
 - (void)viewDidLoad
 {
-    [super viewDidLoad];
+	[super viewDidLoad];
 	_picker.dataSource = self;
 	_picker.delegate = self;
-    // Do any additional setup after loading the view from its nib.
+	// Do any additional setup after loading the view from its nib.
 }
 
 - (void)didReceiveMemoryWarning
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+	[super didReceiveMemoryWarning];
+	// Dispose of any resources that can be recreated.
 }
 
 - (void)dealloc
 {
 	[okayBlock release];
 	[choices release];
-    [_picker release];
-    [super dealloc];
+	[_picker release];
+	[super dealloc];
 }
 
 - (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView

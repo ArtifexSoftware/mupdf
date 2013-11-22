@@ -43,13 +43,8 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 	int w = fz_pixmap_width(ctx, pix);
 	int h = fz_pixmap_height(ctx, pix);
 	CGColorSpaceRef cgcolor = CGColorSpaceCreateDeviceRGB();
-	CGImageRef cgimage = CGImageCreate(w, h, 8, 32, 4 * w,
-                                       cgcolor, kCGBitmapByteOrderDefault,
-                                       cgdata, NULL, NO, kCGRenderingIntentDefault);
-	UIImage *image = [[UIImage alloc]
-                      initWithCGImage: cgimage
-                      scale: screenScale
-                      orientation: UIImageOrientationUp];
+	CGImageRef cgimage = CGImageCreate(w, h, 8, 32, 4 * w, cgcolor, kCGBitmapByteOrderDefault, cgdata, NULL, NO, kCGRenderingIntentDefault);
+	UIImage *image = [[UIImage alloc] initWithCGImage: cgimage scale: screenScale orientation: UIImageOrientationUp];
 	CGColorSpaceRelease(cgcolor);
 	CGImageRelease(cgimage);
 	return image;
