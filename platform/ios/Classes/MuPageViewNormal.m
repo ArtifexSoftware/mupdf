@@ -54,12 +54,11 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 	return image;
 }
 
-static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page, CGSize pageSize, CGSize screenSize)
+static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page)
 {
 	pdf_document *idoc = pdf_specifics(doc);
 	pdf_widget *widget;
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
-	CGSize scale = fitPageToScreen(pageSize, screenSize);
 
 	if (!idoc)
 		return  nil;
@@ -70,10 +69,10 @@ static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page, CGSize pag
 
 		pdf_bound_widget(widget, &rect);
 		[arr addObject:[NSValue valueWithCGRect:CGRectMake(
-			rect.x0 * scale.width,
-			rect.y0 * scale.height,
-			(rect.x1-rect.x0) * scale.width,
-			(rect.y1-rect.y0) * scale.height)]];
+			rect.x0,
+			rect.y0,
+			rect.x1-rect.x0,
+			rect.y1-rect.y0)]];
 	}
 
 	return [arr retain];
@@ -853,7 +852,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			CGDataProviderRelease(imageData);
 			imageData = wrapPixmap(image_pix);
 			UIImage *image = newImageWithPixmap(image_pix, imageData);
-			widgetRects = enumerateWidgetRects(doc, page, pageSize, self.bounds.size);
+			widgetRects = enumerateWidgetRects(doc, page);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -1171,7 +1170,6 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 - (int) passTapToPage:(CGPoint)pt
 {
 	pdf_document *idoc = pdf_specifics(doc);
-	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
 	pdf_ui_event event;
 	int changed = 0;
 	pdf_widget *focus;
@@ -1186,8 +1184,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	fz_try(ctx)
 	{
 		event.etype = PDF_EVENT_TYPE_POINTER;
-		event.event.pointer.pt.x = pt.x / scale.width;
-		event.event.pointer.pt.y = pt.y / scale.height;
+		event.event.pointer.pt.x = pt.x;
+		event.event.pointer.pt.y = pt.y;
 		event.event.pointer.ptype = PDF_POINTER_DOWN;
 		changed = pdf_pass_event(idoc, (pdf_page *)page, &event);
 		event.event.pointer.ptype = PDF_POINTER_UP;
@@ -1248,10 +1246,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 - (MuTapResult *) handleTap:(CGPoint)pt
 {
 	CGPoint ipt = [self convertPoint:pt toView:imageView];
+	CGSize scale = fitPageToScreen(pageSize, imageView.bounds.size);
+
+	ipt.x /= scale.width;
+	ipt.y /= scale.height;
 	for (int i = 0; i < widgetRects.count; i++)
 	{
 		CGRect r = [[widgetRects objectAtIndex:i] CGRectValue];
-		if (CGRectContainsPoint([[widgetRects objectAtIndex:i] CGRectValue], ipt))
+		if (CGRectContainsPoint(r, ipt))
 		{
 			CGRect tframe = tileFrame;
 			float tscale = tileScale;
@@ -1267,8 +1269,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			return [[[MuTapResultWidget alloc] init] autorelease];
 		}
 	}
-	CGPoint lpt = [self convertPoint:pt toView:linkView];
-	return linkView ? [linkView handleTap:lpt] : nil;
+
+	if (linkView)
+	{
+		CGPoint lpt = [self convertPoint:pt toView:linkView];
+		return [linkView handleTap:lpt];
+	}
+
+	return nil;
 }
 
 @end
