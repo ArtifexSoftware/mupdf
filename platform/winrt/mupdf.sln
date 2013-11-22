@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generated", "generated.vcxproj", "{A5053AA7-02E5-4903-B596-04F17AEB1526}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf_winRT", "libmupdf_winRT.vcxproj", "{0715F3CF-5D1B-4617-A331-6527371365B7}"
@@ -28,6 +30,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf_cpp", "mupdf_cpp\mupd
 	ProjectSection(ProjectDependencies) = postProject
 		{9E6AB41D-09A7-45A6-A53B-1E4BF3AC5B33} = {9E6AB41D-09A7-45A6-A53B-1E4BF3AC5B33}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gsview", "gsview\gsview.csproj", "{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -259,6 +263,30 @@ Global
 		{0204A4E7-F1B8-4268-A67C-A2C674B4742D}.Release|x86.ActiveCfg = Release|Win32
 		{0204A4E7-F1B8-4268-A67C-A2C674B4742D}.Release|x86.Build.0 = Release|Win32
 		{0204A4E7-F1B8-4268-A67C-A2C674B4742D}.Release|x86.Deploy.0 = Release|Win32
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|Any CPU.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|Any CPU.Build.0 = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|ARM.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|Mixed Platforms.Build.0 = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|Win32.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|x64.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Memento|x86.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|ARM.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|Win32.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|x64.ActiveCfg = Release|Any CPU
+		{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
