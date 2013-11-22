@@ -6,7 +6,7 @@
 *			text=auto
 Make*			tabs
 *.mk			tabs
-*.[ch]			tabs
+*.[chm]			tabs
 *.java			tabs
 *.xml			tabs
 memento.*		spaces
