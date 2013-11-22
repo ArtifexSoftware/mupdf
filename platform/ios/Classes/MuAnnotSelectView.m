@@ -1,0 +1,42 @@
+//
+//  MuAnnotSelectView.m
+//  MuPDF
+//
+//  Created by Paul Gardiner on 21/11/2013.
+//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
+//
+
+#import "MuAnnotSelectView.h"
+
+@implementation MuAnnotSelectView
+
+- (id)initWithAnnot:(MuAnnotation *)_annot pageSize:(CGSize)_pageSize
+{
+	self = [super initWithFrame:CGRectMake(0.0, 0.0, 100.0, 100.0)];
+	if (self)
+	{
+		[self setOpaque:NO];
+		annot = [_annot retain];
+		pageSize = _pageSize;
+		color = [[UIColor colorWithRed:0x44/255.0 green:0x44/255.0 blue:1.0 alpha:1.0] retain];
+	}
+	return self;
+}
+
+-(void) dealloc
+{
+	[annot release];
+	[color release];
+	[super dealloc];
+}
+
+- (void)drawRect:(CGRect)rect
+{
+	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+	CGContextRef cref = UIGraphicsGetCurrentContext();
+	CGContextScaleCTM(cref, scale.width, scale.height);
+	[color set];
+	CGContextStrokeRect(cref, annot.rect);
+}
+
+@end

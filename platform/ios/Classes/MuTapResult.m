@@ -8,8 +8,7 @@
 #import "MuTapResult.h"
 
 @implementation MuTapResult
-
--(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock {}
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock {}
 @end
 
 
@@ -27,7 +26,7 @@
 	return self;
 }
 
--(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
 {
 	internalLinkBlock(self);
 }
@@ -55,7 +54,7 @@
 	[super dealloc];
 }
 
--(void)	switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
 {
 	externalLinkBlock(self);
 }
@@ -85,7 +84,7 @@
 	[super dealloc];
 }
 
--(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
 {
 	remoteLinkBlock(self);
 }
@@ -95,9 +94,37 @@
 
 @implementation MuTapResultWidget
 
--(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
 {
 	widgetBlock(self);
+}
+
+@end
+
+
+@implementation MuTapResultAnnotation
+
+@synthesize annot;
+
+-(id) initWithAnnotation:(MuAnnotation *)aAnnot
+{
+	self = [super init];
+	if (self)
+	{
+		annot = [aAnnot retain];
+	}
+	return self;
+}
+
+-(void) dealloc
+{
+	[annot release];
+	[super dealloc];
+}
+
+-(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
+{
+	annotationBlock(self);
 }
 
 @end

@@ -6,17 +6,20 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "MuAnnotation.h"
 
 @class MuTapResultInternalLink;
 @class MuTapResultExternalLink;
 @class MuTapResultRemoteLink;
 @class MuTapResultWidget;
+@class MuTapResultAnnotation;
 
 @interface MuTapResult : NSObject
 -(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock
 		caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock
 		caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock
-		caseWidget:(void (^)(MuTapResultWidget *))widgetBlock;
+		caseWidget:(void (^)(MuTapResultWidget *))widgetBlock
+		caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock;
 @end
 
 @interface MuTapResultInternalLink : MuTapResult
@@ -48,4 +51,12 @@
 @end
 
 @interface MuTapResultWidget : MuTapResult
+@end
+
+@interface MuTapResultAnnotation : MuTapResult
+{
+	MuAnnotation *annot;
+}
+@property(readonly) MuAnnotation *annot;
+-(id)initWithAnnotation:(MuAnnotation *)aAnnot;
 @end

@@ -20,6 +20,8 @@
 -(MuTapResult *) handleTap:(CGPoint)pt;
 -(void) textSelectModeOn;
 -(void) textSelectModeOff;
+-(void) deselectAnnotation;
+-(void) deleteSelectedAnnotation;
 -(void) inkModeOn;
 -(void) inkModeOff;
 -(void) saveSelectionAsMarkup:(int)type;

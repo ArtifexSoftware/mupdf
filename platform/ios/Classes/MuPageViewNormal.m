@@ -9,6 +9,7 @@
 #include "mupdf/pdf.h"
 #import "MuWord.h"
 #import "MuTextFieldController.h"
+#import "MuAnnotation.h"
 
 #import "MuPageViewNormal.h"
 
@@ -74,6 +75,18 @@ static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page)
 			rect.x1-rect.x0,
 			rect.y1-rect.y0)]];
 	}
+
+	return [arr retain];
+}
+
+static NSArray *enumerateAnnotations(fz_document *doc, fz_page *page)
+{
+	pdf_document *idoc = pdf_specifics(doc);
+	fz_annot *annot;
+	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
+
+	for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
+		[arr addObject:[MuAnnotation annotFromAnnot:annot forDoc:doc]];
 
 	return [arr retain];
 }
@@ -312,6 +325,28 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 	fz_catch(ctx)
 	{
 		printf("Annotation creation failed\n");
+	}
+}
+
+static void deleteAnnotation(fz_document *doc, fz_page *page, int index)
+{
+	pdf_document *idoc = pdf_specifics(doc);
+	if (!idoc)
+		return;
+
+	fz_try(ctx)
+	{
+		int i;
+		fz_annot *annot = fz_first_annot(doc, page);
+		for (i = 0; i < index && annot; i++)
+			annot = fz_next_annot(doc, annot);
+
+		if (annot)
+			pdf_delete_annot(idoc, (pdf_page *)page, (pdf_annot *)annot);
+	}
+	fz_catch(ctx)
+	{
+		printf("Annotation deletion failed\n");
 	}
 }
 
@@ -617,6 +652,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		number = aNumber;
 		cancel = NO;
 		dialogCreator = dia;
+		selectedAnnotationIndex = -1;
 
 		[self setShowsVerticalScrollIndicator: NO];
 		[self setShowsHorizontalScrollIndicator: NO];
@@ -671,6 +707,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		[hitView release];
 		[textSelectView release];
 		[inkView release];
+		[annotSelectView release];
 		[tileView release];
 		[loadingView release];
 		[imageView release];
@@ -790,6 +827,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		addMarkupAnnot(doc, page, type, rects);
 		[rects release];
 		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+		[self loadAnnotations];
 	});
 	[self textSelectModeOff];
 }
@@ -812,8 +850,46 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		addInkAnnot(doc, page, curves);
 		[curves release];
 		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+		[self loadAnnotations];
 	});
 	[self inkModeOff];
+}
+
+-(void) selectAnnotation:(int)i
+{
+	selectedAnnotationIndex = i;
+	[annotSelectView removeFromSuperview];
+	[annotSelectView release];
+	annotSelectView = [[MuAnnotSelectView alloc] initWithAnnot:[annotations objectAtIndex:i] pageSize:pageSize];
+	[self addSubview:annotSelectView];
+}
+
+-(void) deselectAnnotation
+{
+	selectedAnnotationIndex = -1;
+	[annotSelectView removeFromSuperview];
+	[annotSelectView release];
+	annotSelectView = nil;
+}
+
+-(void) deleteSelectedAnnotation
+{
+	CGRect tframe = tileFrame;
+	float tscale = tileScale;
+	CGRect vframe = tframe;
+	vframe.origin.x -= imageView.frame.origin.x;
+	vframe.origin.y -= imageView.frame.origin.y;
+
+	int index = selectedAnnotationIndex;
+	if (index >= 0)
+	{
+		dispatch_async(queue, ^{
+			deleteAnnotation(doc, page, index);
+			[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+			[self loadAnnotations];
+		});
+	}
+	[self deselectAnnotation];
 }
 
 - (void) resetZoomAnimated: (BOOL)animated
@@ -838,6 +914,18 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	[super removeFromSuperview];
 }
 
+- (void) loadAnnotations
+{
+	if (number < 0 || number >= fz_count_pages(doc))
+		return;
+
+	NSArray *annots = enumerateAnnotations(doc, page);
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[annotations release];
+		annotations = annots;
+	});
+}
+
 - (void) loadPage
 {
 	if (number < 0 || number >= fz_count_pages(doc))
@@ -853,6 +941,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			imageData = wrapPixmap(image_pix);
 			UIImage *image = newImageWithPixmap(image_pix, imageData);
 			widgetRects = enumerateWidgetRects(doc, page);
+			[self loadAnnotations];
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[self displayImage: image];
 				[image release];
@@ -884,6 +973,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			[self bringSubviewToFront:textSelectView];
 		if (inkView)
 			[self bringSubviewToFront:inkView];
+		if (annotSelectView)
+			[self bringSubviewToFront:annotSelectView];
 	} else {
 		[imageView setImage: image];
 	}
@@ -970,6 +1061,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 		if (inkView)
 			[inkView setFrame:frm];
+
+		if (annotSelectView)
+			[annotSelectView setFrame:frm];
 	}
 }
 
@@ -1036,6 +1130,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 					[self bringSubviewToFront:textSelectView];
 				if (inkView)
 					[self bringSubviewToFront:inkView];
+				if (annotSelectView)
+					[self bringSubviewToFront:annotSelectView];
 			} else {
 				printf("discard tile\n");
 			}
@@ -1084,6 +1180,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 		if (inkView)
 			[inkView setFrame:frm];
+
+		if (annotSelectView)
+			[annotSelectView setFrame:frm];
 	}
 }
 
@@ -1247,10 +1346,24 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 {
 	CGPoint ipt = [self convertPoint:pt toView:imageView];
 	CGSize scale = fitPageToScreen(pageSize, imageView.bounds.size);
+	int i;
 
 	ipt.x /= scale.width;
 	ipt.y /= scale.height;
-	for (int i = 0; i < widgetRects.count; i++)
+
+	for (i = 0; i < annotations.count; i++)
+	{
+		MuAnnotation *annot = [annotations objectAtIndex:i];
+		if (annot.type != FZ_ANNOT_WIDGET && CGRectContainsPoint(annot.rect, ipt))
+		{
+			[self selectAnnotation:i];
+			return [[[MuTapResultAnnotation alloc] initWithAnnotation:annot] autorelease];
+		}
+	}
+
+	[self deselectAnnotation];
+
+	for (i = 0; i < widgetRects.count; i++)
 	{
 		CGRect r = [[widgetRects objectAtIndex:i] CGRectValue];
 		if (CGRectContainsPoint(r, ipt))

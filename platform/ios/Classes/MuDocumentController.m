@@ -162,6 +162,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	strikeoutButton = [self resourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
 	inkButton = [self resourceBasedButton:@"ic_pen" withAction:@selector(onInk:)];
 	tickButton = [self resourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
+	deleteButton = [self resourceBasedButton:@"ic_trash" withAction:@selector(onDelete:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
@@ -198,6 +199,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[strikeoutButton release]; strikeoutButton = nil;
 	[inkButton release]; inkButton = nil;
 	[tickButton release]; tickButton = nil;
+	[deleteButton release]; deleteButton = nil;
 	[canvas release]; canvas = nil;
 
 	[outline release];
@@ -332,6 +334,13 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 {
 	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:inkButton, strikeoutButton, underlineButton, highlightButton, nil]];
 	[[self navigationItem] setLeftBarButtonItem:cancelButton];
+
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		if ([view number] == current)
+			[view deselectAnnotation];
+	}
+
 	barmode = BARMODE_ANNOTATION;
 }
 
@@ -366,6 +375,12 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		if ([view number] == current)
 			[view inkModeOn];
 	}
+}
+
+- (void) deleteModeOn
+{
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:deleteButton]];
+	barmode = BARMODE_DELETE;
 }
 
 - (void) inkModeOff
@@ -440,6 +455,16 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[self showAnnotationMenu];
 }
 
+- (void) onDelete: (id)sender
+{
+	for (UIView<MuPageView> *view in [canvas subviews])
+	{
+		if ([view number] == current)
+			[view deleteSelectedAnnotation];
+	}
+	[self showAnnotationMenu];
+}
+
 - (void) onCancel: (id)sender
 {
 	switch (barmode)
@@ -459,6 +484,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		case BARMODE_HIGHLIGHT:
 		case BARMODE_UNDERLINE:
 		case BARMODE_STRIKE:
+		case BARMODE_DELETE:
 			[self showAnnotationMenu];
 			[self textSelectModeOff];
 			break;
@@ -614,6 +640,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		if (CGRectContainsPoint(view.bounds, pp))
 		{
 			MuTapResult *result = [view handleTap:pp];
+			__block BOOL hitAnnot = NO;
 			[result switchCaseInternal:^(MuTapResultInternalLink *link) {
 				[self gotoPage:link.pageNumber animated:NO];
 				tapHandled = YES;
@@ -623,7 +650,34 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 				// Not currently supported
 			} caseWidget:^(MuTapResultWidget *widget) {
 				tapHandled = YES;
+			} caseAnnotation:^(MuTapResultAnnotation *annot) {
+				hitAnnot = YES;
 			}];
+
+			switch (barmode)
+			{
+				case BARMODE_ANNOTATION:
+					if (hitAnnot)
+						[self deleteModeOn];
+					tapHandled = YES;
+					break;
+
+				case BARMODE_DELETE:
+					if (!hitAnnot)
+						[self showAnnotationMenu];
+					tapHandled = YES;
+					break;
+
+				default:
+					if (hitAnnot)
+					{
+						// Annotation will have been selected, which is wanted
+						// only in annotation-editing mode
+						[view deselectAnnotation];
+					}
+					break;
+			}
+
 			if (tapHandled)
 				break;
 		}
