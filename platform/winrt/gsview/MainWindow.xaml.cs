@@ -16,7 +16,6 @@ using System.Windows.Forms;
 using mupdfwinrt;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.
 
 
 enum AppBar_t
@@ -160,11 +159,10 @@ namespace gsview
 				if (m_file_open)
 				{
 					CloseDoc();
-				} 
+				}
 				try
 				{
-
-
+					OpenDocument(dlg.FileName);
 				}
 				catch (UnauthorizedAccessException)
 				{
@@ -177,9 +175,13 @@ namespace gsview
 
 		private async void OpenDocument(String filename)
 		{
-			/* Open document and when open, push on */
-			int result = await mu_doc.OpenFileAsync(file, extension);
 
+			string target = ".";
+			char[] anyOf = target.ToCharArray();
+			var index = filename.LastIndexOfAny(anyOf);
+			string extension = filename.Substring(index + 1);
+
+			int result = await mu_doc.OpenFileAsync(filename, extension);
 			/* Check if we need password */
 			if (mu_doc.RequiresPassword())
 			{
@@ -189,14 +191,5 @@ namespace gsview
 			else
 				InitialRender();
 		}
-
-
-
-
-
-
-
-
-
 	}
 }
