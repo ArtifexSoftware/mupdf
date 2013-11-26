@@ -2,6 +2,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_ADVANCES_H
 #include FT_STROKER_H
 
 #define MAX_BBOX_TABLE_SIZE 4096
@@ -1233,4 +1234,49 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
 	if (!font->t3procs || !font->t3flags || gid < 0 || gid >= font->bbox_count)
 		return 1;
 	return (font->t3flags[gid] & FZ_DEVFLAG_UNCACHEABLE) == 0;
+}
+
+static float
+fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
+{
+	FT_Fixed adv;
+	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
+
+	if (font->ft_substitute && font->width_table && gid < font->width_count)
+		return font->width_table[gid];
+
+	FT_Get_Advance(font->ft_face, gid, mask, &adv);
+	return (float) adv / ((FT_Face)font->ft_face)->units_per_EM;
+}
+
+static float
+fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
+{
+	if (gid < 0 || gid > 255)
+		return 0;
+	return font->t3widths[gid];
+}
+
+float
+fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
+{
+	if (font->ft_face)
+		return fz_advance_ft_glyph(ctx, font, gid);
+	if (font->t3procs)
+		return fz_advance_t3_glyph(ctx, font, gid);
+	return 0;
+}
+
+static int
+fz_encode_ft_character(fz_context *ctx, fz_font *font, int ucs)
+{
+	return FT_Get_Char_Index(font->ft_face, ucs);
+}
+
+int
+fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
+{
+	if (font->ft_face)
+		return fz_encode_ft_character(ctx, font, ucs);
+	return ucs;
 }
