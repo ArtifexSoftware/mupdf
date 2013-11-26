@@ -52,6 +52,10 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	if (!self)
 		return nil;
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+	if ([self respondsToSelector:@selector(automaticallyAdjustsScrollViewInsets)])
+		self.automaticallyAdjustsScrollViewInsets = NO;
+#endif
 	key = [filename retain];
 	docRef = [aDoc retain];
 	doc = docRef->doc;

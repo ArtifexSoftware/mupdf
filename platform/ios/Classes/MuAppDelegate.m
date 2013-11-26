@@ -30,7 +30,7 @@
 	[navigator setDelegate: self];
 
 	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-	[window setBackgroundColor: [UIColor scrollViewTexturedBackgroundColor]];
+	[window setBackgroundColor: [UIColor grayColor]];
 	[window setRootViewController: navigator];
 	[window makeKeyAndVisible];
 
