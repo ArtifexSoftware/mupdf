@@ -13,7 +13,7 @@
 static void fz_drop_freetype(fz_context *ctx);
 
 static fz_font *
-fz_new_font(fz_context *ctx, char *name, int use_glyph_bbox, int glyph_count)
+fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_count)
 {
 	fz_font *font;
 	int i;
@@ -315,7 +315,7 @@ fz_drop_freetype(fz_context *ctx)
 }
 
 fz_font *
-fz_new_font_from_file(fz_context *ctx, char *name, char *path, int index, int use_glyph_bbox)
+fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox)
 {
 	FT_Face face;
 	fz_font *font;
@@ -347,7 +347,7 @@ fz_new_font_from_file(fz_context *ctx, char *name, char *path, int index, int us
 }
 
 fz_font *
-fz_new_font_from_memory(fz_context *ctx, char *name, unsigned char *data, int len, int index, int use_glyph_bbox)
+fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox)
 {
 	FT_Face face;
 	fz_font *font;
@@ -379,7 +379,7 @@ fz_new_font_from_memory(fz_context *ctx, char *name, unsigned char *data, int le
 }
 
 fz_font *
-fz_new_font_from_buffer(fz_context *ctx, char *name, fz_buffer *buffer, int index, int use_glyph_bbox)
+fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, int index, int use_glyph_bbox)
 {
 	fz_font *font = fz_new_font_from_memory(ctx, name, buffer->data, buffer->len, index, use_glyph_bbox);
 	font->ft_buffer = fz_keep_buffer(ctx, buffer); /* remember buffer so we can drop it when we free the font */
@@ -957,7 +957,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
  */
 
 fz_font *
-fz_new_type3_font(fz_context *ctx, char *name, const fz_matrix *matrix)
+fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix)
 {
 	fz_font *font;
 	int i;

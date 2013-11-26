@@ -69,11 +69,11 @@ typedef fz_buffer *(*fz_load_system_font_func)(fz_context *ctx, const char *name
 void fz_install_load_system_font_func(fz_context *ctx, fz_load_system_font_func f);
 fz_buffer *fz_load_system_font(fz_context *ctx, const char *name);
 
-fz_font *fz_new_type3_font(fz_context *ctx, char *name, const fz_matrix *matrix);
+fz_font *fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix);
 
-fz_font *fz_new_font_from_memory(fz_context *ctx, char *name, unsigned char *data, int len, int index, int use_glyph_bbox);
-fz_font *fz_new_font_from_buffer(fz_context *ctx, char *name, fz_buffer *buffer, int index, int use_glyph_bbox);
-fz_font *fz_new_font_from_file(fz_context *ctx, char *name, char *path, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox);
 
 fz_font *fz_keep_font(fz_context *ctx, fz_font *font);
 void fz_drop_font(fz_context *ctx, fz_font *font);

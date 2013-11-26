@@ -33,7 +33,7 @@
 #endif
 
 unsigned char *
-pdf_lookup_builtin_font(char *name, unsigned int *len)
+pdf_lookup_builtin_font(const char *name, unsigned int *len)
 {
 	if (!strcmp("Courier", name)) {
 		*len = sizeof pdf_font_NimbusMon_Reg;
