@@ -31,7 +31,9 @@ LOCAL_C_INCLUDES := \
 	../../source/xps \
 	../../source/cbz \
 	../../source/img \
-	../../scripts \
+	../../scripts/freetype \
+	../../scripts/jpeg \
+	../../scripts/openjpeg \
 	../../generated \
 	../../resources \
 	../../include \

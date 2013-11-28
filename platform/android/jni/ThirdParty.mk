@@ -10,7 +10,9 @@ LOCAL_C_INCLUDES := \
 	../../thirdparty/jpeg \
 	../../thirdparty/zlib \
 	../../thirdparty/freetype/include \
-	../../scripts
+	../../scripts/freetype \
+	../../scripts/jpeg \
+	../../scripts/openjpeg \
 
 LOCAL_CFLAGS := \
 	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -DHAVE_STDINT_H \
