@@ -220,7 +220,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Cache.h" />
-    <ClInclude Include="Links.h" />
     <ClInclude Include="ContentItem.h" />
     <ClInclude Include="muctx.h" />
     <ClInclude Include="pch.h" />

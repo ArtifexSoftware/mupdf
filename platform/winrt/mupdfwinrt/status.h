@@ -2,9 +2,9 @@
 
 typedef enum {
 	S_ISOK = 0,
-	E_FAILURE = 1,
-	E_OUTOFMEM = 2,
-	E_NEEDPASSWORD
+	E_FAILURE = -1,
+	E_OUTOFMEM = -2,
+	E_NEEDPASSWORD = -3
 } status_t;
 
 typedef enum {

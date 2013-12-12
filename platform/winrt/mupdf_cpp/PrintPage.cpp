@@ -62,7 +62,7 @@ PrintPages::MakeDocument(IInspectable* doc_options, IPrintDocumentPackageTarget*
 		m_totalpages = m_renderer->GetPrintPageCount();
 
 		for (uint32 page_num = 1; page_num <= m_totalpages; ++page_num)
-			m_renderer->PrintPage(page_num, imageableRect, pageSize, page_desc.DpiX, nullptr);
+			m_renderer->PrintPage(page_num, imageableRect, pageSize, (float) page_desc.DpiX, nullptr);
 	}
 	catch (Platform::Exception^ e)
 	{

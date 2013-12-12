@@ -30,6 +30,7 @@
     <ClInclude Include="RectList.h" />
     <ClInclude Include="..\mupdfwinrt\status.h" />
     <ClInclude Include="PrintPage.h" />
+    <ClInclude Include="..\mupdfwinrt\Links.h" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />

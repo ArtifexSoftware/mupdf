@@ -38,9 +38,6 @@
     <ClInclude Include="..\..\generated\gen_cmap_korea.h">
       <Filter>generated</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\generated\gen_font_base14.h">
-      <Filter>generated</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\generated\gen_font_cjk.h">
       <Filter>generated</Filter>
     </ClInclude>
@@ -51,6 +48,9 @@
       <Filter>generated</Filter>
     </ClInclude>
     <ClInclude Include="..\..\generated\gen_js_util.h">
+      <Filter>generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\generated\gen_font_base14.h">
       <Filter>generated</Filter>
     </ClInclude>
   </ItemGroup>

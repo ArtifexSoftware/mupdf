@@ -452,7 +452,7 @@
     </Style>
     <Style x:Key="ReflowAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">
         <Setter Property="AutomationProperties.AutomationId" Value="ReflowAppBarButton"/>
-        <Setter Property="AutomationProperties.Name" Value="Reflow"/>
+        <Setter Property="AutomationProperties.Name" Value="TextExtract"/>
         <Setter Property="Content" Value="&#xE18B;"/>
     </Style>
     <Style x:Key="ZoomInAppBarButtonStyle" TargetType="ButtonBase" BasedOn="{StaticResource AppBarButtonStyle}">

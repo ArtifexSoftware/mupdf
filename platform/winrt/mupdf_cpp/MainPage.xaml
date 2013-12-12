@@ -27,9 +27,9 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel x:Name="LeftPanel" Orientation="Horizontal" HorizontalAlignment="Left" >
-                    <TextBox x:Name="FindBox" Width="200" Height="20" Visibility="Collapsed"/>
-                    <Button x:Name="PrevSearch" Style="{StaticResource PreviousAppBarButtonStyle}"  Visibility="Collapsed" Click="SearchPrev"/>
-                    <Button x:Name="NextSearch" Style="{StaticResource NextAppBarButtonStyle}" Visibility="Collapsed"  Click="SearchNext"/>
+                    <TextBox x:Name="FindBox" Width="200" Height="20" Margin="2"/>
+                    <Button x:Name="PrevSearch" Style="{StaticResource PreviousAppBarButtonStyle}" Click="SearchPrev"/>
+                    <Button x:Name="NextSearch" Style="{StaticResource NextAppBarButtonStyle}" Click="SearchNext"/>
 
                 </StackPanel>
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -184,7 +184,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsTapEnabled="True" Tapped="LinkTapped">
+                                                <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsTapEnabled="True" Tapped="LinkTapped">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>
@@ -207,7 +207,7 @@
                                         </ItemsControl.ItemContainerStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Rectangle Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                                <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsTapEnabled="True" Tapped="LinkTapped">
                                                     <Rectangle.RenderTransform>
                                                         <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                                     </Rectangle.RenderTransform>
@@ -238,6 +238,15 @@
                 </ListView.Background>
             </ListView>
         </Grid>
+        
+        <!-- Note that windows webview does not reflow when we scale.  It 
+             will only do this with a size change.  Unfortunately, the webview 
+             object is special in that it intercepts all actions and passes
+             nothing to the application for these manipulations.  I tried 
+             various things including the use of a webview brush to 
+             capture the current webview but that is a complex issue since
+             it is a static image in that case.   The other option would
+             be to go to a Rich Text type of view.  -->
         <WebView x:Name="xaml_WebView" HorizontalAlignment="Stretch" Width="Auto" Height="Auto"
                      VerticalAlignment="Stretch" Visibility="Collapsed"
                      ScrollViewer.HorizontalScrollBarVisibility="Visible"
@@ -255,6 +264,20 @@
         				IsIndeterminate="False" Maximum="100" VerticalAlignment="Stretch" />
                     <Button HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10" Click="CancelSearch" Height="39">
                         <TextBlock HorizontalAlignment="Center" Text="Cancel"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel x:Name="xaml_PrintStack" Opacity="1" VerticalAlignment="Center" Margin="0,15" HorizontalAlignment="Center" Visibility="Collapsed">
+            <Border BorderThickness="5" BorderBrush="Black" >
+                <StackPanel Background="LightGray" HorizontalAlignment="Left" Width="756" >
+                    <TextBlock HorizontalAlignment="Center" Margin="10"
+        				Text="Print Progress" FontSize="20"/>
+                    <ProgressBar x:Name="xaml_PrintProgress" Margin="5" Height="15"
+        				IsIndeterminate="False" Maximum="100" VerticalAlignment="Stretch" />
+                    <Button HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10" Click="HideProgress" Height="39">
+                        <TextBlock HorizontalAlignment="Center" Text="Hide"/>
                     </Button>
                 </StackPanel>
             </Border>

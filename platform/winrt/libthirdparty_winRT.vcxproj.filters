@@ -25,9 +25,6 @@
     <Filter Include="libz">
       <UniqueIdentifier>{5e55ef18-6449-49c1-99aa-1cd88b6f4453}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libopenjpeg\openjp2">
-      <UniqueIdentifier>{3a31ee2f-bdac-4091-a83f-7a6236269aaf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="libfreetype\include\freetype\config">
       <UniqueIdentifier>{289ce62d-7110-4e8b-8045-72a557f8e6c0}</UniqueIdentifier>
     </Filter>
@@ -39,81 +36,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\event.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\phix_manager.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\ppix_manager.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_generate_luts.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\thix_manager.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\thirdparty\freetype\src\base\ftstroke.c">
       <Filter>libfreetype\base</Filter>
     </ClCompile>
@@ -345,89 +267,83 @@
     <ClCompile Include="..\..\thirdparty\zlib\uncompr.c">
       <Filter>libz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\bio.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\cio.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\dwt.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\event.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\function_list.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\image.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\invert.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\jp2.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\mct.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\mqc.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\phix_manager.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\pi.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\ppix_manager.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\raw.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t1.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t1_generate_luts.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t2.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tcd.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tgt.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\thix_manager.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tpix_manager.c">
+      <Filter>libopenjpeg</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\event.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\indexbox_manager.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_includes.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_intmath.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_inttypes.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_malloc.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_stdint.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_luts.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.h">
-      <Filter>libopenjpeg\openjp2</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\thirdparty\freetype\include\ft2build.h">
       <Filter>libfreetype\include</Filter>
     </ClInclude>
@@ -685,6 +601,99 @@
     </ClInclude>
     <ClInclude Include="..\..\thirdparty\freetype\include\freetype\internal\ftpic.h">
       <Filter>libfreetype\include\freetype\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\bio.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\cio.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\dwt.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\event.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\fix.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\function_list.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\image.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\indexbox_manager.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\int.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\invert.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\jp2.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\mct.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\mqc.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_config.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_config_private.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_includes.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_intmath.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_inttypes.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_malloc.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_stdint.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\pi.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\raw.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t1.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t1_luts.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t2.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\tcd.h">
+      <Filter>libopenjpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\tgt.h">
+      <Filter>libopenjpeg</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

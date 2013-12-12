@@ -21,6 +21,8 @@ static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
 	unsigned long long curr_pos = Stream->Position;
 	unsigned long long length = Stream->Size;
 	DataReader^ local_reader = ref new DataReader(Stream);
+	if (local_reader == nullptr)
+		return 0;
 	DataReaderLoadOperation^ result = local_reader->LoadAsync(len);
 
 	/* Block on the Async call.  This is not on the UI thread. */
@@ -33,6 +35,8 @@ static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
 		len = curr_len2;
 
 	Platform::Array<unsigned char>^ arrByte = ref new Platform::Array<unsigned char>(len);
+	if (arrByte == nullptr)
+		return 0;
 	local_reader->ReadBytes(arrByte);
 
 	memcpy(buf, arrByte->Data, len);
@@ -185,19 +189,24 @@ int muctx::GetPageCount()
 }
 
 /* Get page size */
-Point muctx::MeasurePage(int page_num)
+int muctx::MeasurePage(int page_num, Point *size)
 {
-	Point pageSize;
 	fz_rect rect;
 	fz_page *page;
 	fz_rect *bounds;
 
-	page = fz_load_page(mu_doc, page_num);
-	bounds = fz_bound_page(mu_doc, page, &rect);
-	pageSize.X = bounds->x1 - bounds->x0;
-	pageSize.Y = bounds->y1 - bounds->y0;
-
-	return pageSize;
+	fz_try(mu_ctx)
+	{
+		page = fz_load_page(mu_doc, page_num);
+		bounds = fz_bound_page(mu_doc, page, &rect);
+		size->X = bounds->x1 - bounds->x0;
+		size->Y = bounds->y1 - bounds->y0;
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAIL;
+	}
+	return 0;
 }
 
 /* Get page size */
@@ -321,12 +330,12 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 }
 
 /* Get the links and pack into a smart pointer structure */
-int muctx::GetLinks(int page_num, sh_vector_link links_vec)
+unsigned int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 {
 	fz_page *page = NULL;
 	fz_link *links = NULL;
 	int k = 0;
-	int num_links = 0;
+	unsigned int num_links = 0;
 
 	fz_var(page);
 	fz_var(links);
@@ -530,12 +539,12 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 
 bool muctx::RequiresPassword(void)
 {
-	return fz_needs_password(mu_doc);
+	return fz_needs_password(mu_doc) != 0;
 }
 
 bool muctx::ApplyPassword(char* password)
 {
-	return fz_authenticate_password(mu_doc, password);
+	return fz_authenticate_password(mu_doc, password) != 0;
 }
 
 String^ muctx::GetHTML(int page_num)

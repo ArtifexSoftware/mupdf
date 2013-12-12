@@ -32,6 +32,7 @@ using namespace Windows::UI::ViewManagement;
 using namespace Windows::UI::Popups;
 using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::ApplicationModel;
+using namespace Windows::UI::Core;
 using namespace mupdfwinrt;
 
 using namespace Windows::Graphics::Display;
@@ -54,6 +55,12 @@ typedef enum {
 	REN_UPDATE_THUMB_CANVAS,
 	REN_PAGE			/* Used to ignore value when source based setting */
 } RenderingStatus_t;
+
+typedef enum {
+	PRINT_INACTIVE = 0,
+	PRINT_ACTIVE,
+	PRINT_FAILED
+} PrintStatus_t;
 
 typedef struct spatial_info_s
 {
@@ -111,9 +118,6 @@ namespace mupdf_cpp
 		}
 	};
 
-	/// <summary>
-	/// An empty page that can be used on its own or navigated to within a Frame.
-	/// </summary>
 	public ref class MainPage sealed
 	{
 
@@ -121,7 +125,15 @@ namespace mupdf_cpp
 	{
 		if (FAILED(hr))
 		{
-			throw Platform::Exception::CreateException(hr);
+			/* We are in a different thread in this case. */
+			this->Dispatcher->RunAsync(CoreDispatcherPriority::Low,
+				ref new DispatchedHandler([this]()
+			{
+				this->m_print_active = PRINT_FAILED;
+				xaml_PrintStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+				this->NotifyUser("Print Failed", ErrorMessage);
+			}));
+			throw Platform::Exception::CreateException(hr, "Print Failed");
 		}
 	}
 
@@ -195,7 +207,7 @@ namespace mupdf_cpp
 		bool m_pageRangeEditVisible;
 		std::vector<int> m_ppage_num_list;
 		int m_curr_print_count;
-		bool m_print_active;
+		PrintStatus_t m_print_active;
 
 		/* DirectX Print Control */
 		PrintManager ^m_print_manager;
@@ -226,17 +238,18 @@ namespace mupdf_cpp
 		void SearchPrev(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void CancelSearch(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void SearchInDirection(int dir, String^ textToFind);
-		void ShowSearchResults(int page_num, int box_count);
+		void ShowSearchResults(int page_num, unsigned int box_count);
 		void ClearTextSearch();
 		void AddTextCanvas();
 		void GridSizeChanged();
-		void UpDateThumbSizes();
+		void UpdateThumbSizes();
+		void UpdatePreRenderedPageSizes();
 		void ShowThumbnail();
 		void Canvas_ManipulationCompleted(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
 		void AddThumbNail(int page_num, FlipView^ flip_view);
 		spatial_info_t InitSpatial(double scale);
 		void RenderThumbs();
-		void SetThumb(int page_num, bool replace);
+		void SetThumb(unsigned int page_num);
 		void ReleasePages(int old_page, int new_page);
 		void Linker(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void AddLinkCanvas();
@@ -249,10 +262,9 @@ namespace mupdf_cpp
 		void Reflower(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void topAppBar_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void UpdateAppBarButtonViewState();
-		bool EnsureUnsnapped();
 		void ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command);
 		void OKInvokedHandler(Windows::UI::Popups::IUICommand^ command);
-		Point ComputePageSize(spatial_info_t spatial_info, int page_num);
+		int ComputePageSize(spatial_info_t spatial_info, int page_num, Point *Point);
 		void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
 		void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
@@ -272,6 +284,8 @@ namespace mupdf_cpp
 		void Slider_Common();
 		void FlipView_Started(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs^ e);
 		void UpdateZoom();
+		String^ GetVisualState();
+		void SetThumbInit(unsigned int page_num);
 
 		/* Print Related */
 		void RegisterForPrinting();
@@ -296,5 +310,8 @@ namespace mupdf_cpp
 		void SetPrintTarget(void *print_struct);
 		void PrintProgress(PrintTask^ sender, PrintTaskProgressingEventArgs^ args);
 		void PrintCompleted(PrintTask^ sender, PrintTaskCompletedEventArgs^ args);
-	};
+private:
+	void Testing(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
+	void HideProgress(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+};
 }

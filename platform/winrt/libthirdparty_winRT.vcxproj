@@ -106,31 +106,31 @@
     <ClCompile Include="..\..\thirdparty\jpeg\jquant1.c" />
     <ClCompile Include="..\..\thirdparty\jpeg\jquant2.c" />
     <ClCompile Include="..\..\thirdparty\jpeg\jutils.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\event.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\phix_manager.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\ppix_manager.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_generate_luts.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\thix_manager.c" />
-    <ClCompile Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\bio.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\cio.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\dwt.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\event.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\function_list.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\image.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\invert.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\jp2.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\mct.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\mqc.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\phix_manager.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\pi.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\ppix_manager.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\raw.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t1.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t1_generate_luts.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\t2.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tcd.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tgt.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\thix_manager.c" />
+    <ClCompile Include="..\..\thirdparty\openjpeg\libopenjpeg\tpix_manager.c" />
     <ClCompile Include="..\..\thirdparty\zlib\adler32.c" />
     <ClCompile Include="..\..\thirdparty\zlib\compress.c" />
     <ClCompile Include="..\..\thirdparty\zlib\crc32.c" />
@@ -229,33 +229,37 @@
     <ClInclude Include="..\..\thirdparty\freetype\include\freetype\tttags.h" />
     <ClInclude Include="..\..\thirdparty\freetype\include\freetype\ttunpat.h" />
     <ClInclude Include="..\..\thirdparty\freetype\include\ft2build.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\bio.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cidx_manager.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\cio.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\dwt.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\event.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\function_list.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\image.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\indexbox_manager.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\invert.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\j2k.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\jp2.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mct.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\mqc.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\openjpeg.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_clock.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_includes.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_intmath.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_inttypes.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_malloc.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\opj_stdint.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\pi.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\raw.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t1_luts.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\t2.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tcd.h" />
-    <ClInclude Include="..\..\thirdparty\openjpeg\src\lib\openjp2\tgt.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\bio.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\cio.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\dwt.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\event.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\fix.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\function_list.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\image.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\indexbox_manager.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\int.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\invert.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\jp2.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\mct.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\mqc.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_config.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_config_private.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_includes.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_intmath.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_inttypes.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_malloc.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\opj_stdint.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\pi.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\raw.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t1.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t1_luts.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\t2.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\tcd.h" />
+    <ClInclude Include="..\..\thirdparty\openjpeg\libopenjpeg\tgt.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{c0d1c355-1bee-40e1-9ef4-fd9fffdbf396}</ProjectGuid>
@@ -397,8 +401,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -411,7 +415,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -425,8 +429,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -441,8 +445,8 @@
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -457,7 +461,7 @@
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -471,8 +475,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -485,7 +489,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -499,7 +503,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -513,8 +517,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\scripts;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NO_GETENV;_WINRT;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

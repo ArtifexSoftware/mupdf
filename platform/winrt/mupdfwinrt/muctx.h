@@ -91,9 +91,9 @@ public:
 							unsigned char *bmp_data, int bmp_width, int bmp_height,
 							bool flipy);
 	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
-	Point MeasurePage(int page_num);
+	int MeasurePage(int page_num, Point *size);
 	Point MeasurePage(fz_page *page);
-	int GetLinks(int page_num, sh_vector_link links_vec);
+	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
 	String^ GetHTML(int page_num);
