@@ -63,6 +63,13 @@ read_jbig2d(fz_stream *stm, unsigned char *buf, int len)
 	return p - buf;
 }
 
+static fz_stream *
+rebind_jbig2d(fz_stream *s)
+{
+	fz_jbig2d *state = s->state;
+	return state->chain;
+}
+
 fz_stream *
 fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 {
@@ -104,5 +111,5 @@ fz_open_jbig2d(fz_stream *chain, fz_buffer *globals)
 	}
 	fz_drop_buffer(ctx, globals);
 
-	return fz_new_stream(ctx, state, read_jbig2d, close_jbig2d);
+	return fz_new_stream(ctx, state, read_jbig2d, close_jbig2d, rebind_jbig2d);
 }

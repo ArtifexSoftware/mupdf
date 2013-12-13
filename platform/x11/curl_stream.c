@@ -518,7 +518,7 @@ fz_stream *fz_stream_from_curl(fz_context *ctx, char *filename, void (*more_data
 
 #endif
 
-	stream = fz_new_stream(ctx, state, stream_read, stream_close);
+	stream = fz_new_stream(ctx, state, stream_read, stream_close, NULL);
 	stream->seek = stream_seek;
 	stream->meta = stream_meta;
 	return stream;
