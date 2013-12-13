@@ -1941,6 +1941,13 @@ pdf_page_presentation(pdf_document *doc, pdf_page *page, float *duration)
 	return &page->transition;
 }
 
+static void
+pdf_rebind(pdf_document *doc, fz_context *ctx)
+{
+	doc->ctx = ctx;
+	fz_rebind_stream(doc->file, ctx);
+}
+
 /*
 	Initializers for the fz_document interface.
 
@@ -1973,6 +1980,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.meta = (void*)pdf_meta;
 	doc->super.page_presentation = (void*)pdf_page_presentation;
 	doc->super.write = (void*)pdf_write_document;
+	doc->super.rebind = (void*)pdf_rebind;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(file);
