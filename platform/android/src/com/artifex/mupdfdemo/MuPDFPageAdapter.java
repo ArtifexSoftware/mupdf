@@ -37,7 +37,7 @@ public class MuPDFPageAdapter extends BaseAdapter {
 	public View getView(final int position, View convertView, ViewGroup parent) {
 		final MuPDFPageView pageView;
 		if (convertView == null) {
-			if (mSharedHqBm == null || mSharedHqBm.getWidth() != parent.getWidth() || mSharedHqBm.getWidth() != parent.getWidth())
+			if (mSharedHqBm == null || mSharedHqBm.getWidth() != parent.getWidth() || mSharedHqBm.getHeight() != parent.getHeight())
 				mSharedHqBm = Bitmap.createBitmap(parent.getWidth(), parent.getHeight(), Bitmap.Config.ARGB_8888);
 
 			pageView = new MuPDFPageView(mContext, mFilePickerSupport, mCore, new Point(parent.getWidth(), parent.getHeight()), mSharedHqBm);
