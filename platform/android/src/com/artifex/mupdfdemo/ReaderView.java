@@ -47,6 +47,7 @@ public class ReaderView
 	private int               mXScroll;    // Scroll amounts recorded from events.
 	private int               mYScroll;    // and then accounted for in onLayout
 	private boolean           mReflow = false;
+	private boolean           mReflowChanged = false;
 	private final GestureDetector
 				  mGestureDetector;
 	private final ScaleGestureDetector
@@ -289,18 +290,11 @@ public class ReaderView
 
 	public void refresh(boolean reflow) {
 		mReflow = reflow;
+		mReflowChanged = true;
+		mResetLayout = true;
 
 		mScale = 1.0f;
 		mXScroll = mYScroll = 0;
-
-		int numChildren = mChildViews.size();
-		for (int i = 0; i < numChildren; i++) {
-			View v = mChildViews.valueAt(i);
-			onNotInUse(v);
-			removeViewInLayout(v);
-		}
-		mChildViews.clear();
-		mViewCache.clear();
 
 		requestLayout();
 	}
@@ -590,6 +584,13 @@ public class ReaderView
 				removeViewInLayout(v);
 			}
 			mChildViews.clear();
+
+			// Don't reuse cached views if the adapter has changed
+			if (mReflowChanged) {
+				mReflowChanged = false;
+				mViewCache.clear();
+			}
+
 			// post to ensure generation of hq area
 			post(this);
 		}
@@ -668,8 +669,7 @@ public class ReaderView
 	@Override
 	public void setAdapter(Adapter adapter) {
 		mAdapter = adapter;
-		mChildViews.clear();
-		removeAllViewsInLayout();
+
 		requestLayout();
 	}
 
