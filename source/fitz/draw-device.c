@@ -1857,9 +1857,15 @@ fz_draw_end_tile(fz_device *devp)
 	 * single tile) (see fts_15_1506.pdf for an example). This means that
 	 * we have to bias the left hand/bottom edge calculations by the
 	 * difference between the step and the width/height of the tile. */
-	/* state[0].scissor = view, transformed by ctm */
-	x0 = floorf((area.x0 + xstep - state[0].scissor.x1 + state[0].scissor.x0) / xstep);
-	y0 = floorf((area.y0 + ystep - state[0].scissor.y1 + state[0].scissor.y0) / ystep);
+	/* scissor, xstep and area are all in pattern space. */
+	x0 = xstep - scissor.x1 + scissor.x0;
+	if (x0 > 0)
+		x0 = 0;
+	y0 = ystep - scissor.y1 + scissor.y0;
+	if (y0 > 0)
+		y0 = 0;
+	x0 = floorf((area.x0 + x0) / xstep);
+	y0 = floorf((area.y0 + y0) / ystep);
 	x1 = ceilf(area.x1 / xstep);
 	y1 = ceilf(area.y1 / ystep);
 
