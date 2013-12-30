@@ -205,7 +205,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 	fz_pixmap *temp = NULL;
 	fz_pixmap *conv = NULL;
 	float color[FZ_MAX_COLORS];
-	struct paint_tri_data ptd;
+	struct paint_tri_data ptd = { 0 };
 	int i, k;
 	fz_matrix local_ctm;
 
@@ -241,7 +241,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_lookup_color_converter(&ptd.cc, ctx, temp->colorspace, shade->colorspace);
+		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace);
 		fz_process_mesh(ctx, shade, &local_ctm, &prepare_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)
@@ -261,6 +261,10 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			fz_drop_pixmap(ctx, conv);
 			fz_drop_pixmap(ctx, temp);
 		}
+	}
+	fz_always(ctx)
+	{
+		fz_fin_cached_color_converter(&ptd.cc);
 	}
 	fz_catch(ctx)
 	{
