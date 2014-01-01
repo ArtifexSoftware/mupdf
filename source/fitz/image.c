@@ -118,7 +118,7 @@ fz_mask_color_key(fz_pixmap *pix, int n, int *colorkey)
 }
 
 fz_pixmap *
-fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int in_line, int indexed, int l2factor, int native_l2factor)
+fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor, int native_l2factor)
 {
 	fz_pixmap *tile = NULL;
 	int stride, len, i;
@@ -280,7 +280,7 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 		stm = fz_open_image_decomp_stream(ctx, image->buffer, &native_l2factor);
 
 		indexed = fz_colorspace_is_indexed(image->colorspace);
-		tile = fz_decomp_image_from_stream(ctx, stm, image, 0, indexed, l2factor, native_l2factor);
+		tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, l2factor, native_l2factor);
 
 		/* CMYK JPEGs in XPS documents have to be inverted */
 		if (image->invert_cmyk_jpeg &&
