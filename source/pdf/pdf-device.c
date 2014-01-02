@@ -712,7 +712,7 @@ pdf_dev_text(pdf_device *pdev, fz_text *text, float size)
 		}
 
 		fz_buffer_printf(pdev->ctx, gs->buf, "<");
-		for (i = i; i < j; i++)
+		for (/* i from its current value */; i < j; i++)
 		{
 			/* FIXME: should use it->gid, rather than it->ucs, and convert
 			* to the correct encoding */
