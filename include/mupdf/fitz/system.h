@@ -74,15 +74,19 @@ typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
 
 #pragma warning( disable: 4244 ) /* conversion from X to Y, possible loss of data */
-#pragma warning( disable: 4996 ) /* The POSIX name for this item is deprecated */
-#pragma warning( disable: 4996 ) /* This function or variable may be unsafe */
+#pragma warning( disable: 4701 ) /* Potentially uninitialized local variable 'name' used */
+#pragma warning( disable: 4996 ) /* 'function': was declared deprecated */
 
 #include <io.h>
 
+struct timeval;
+struct timezone;
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 #define snprintf _snprintf
+#if _MSC_VER < 1800
 #define isnan _isnan
+#endif
 #define hypotf _hypotf
 
 #define fopen fz_fopen_utf8

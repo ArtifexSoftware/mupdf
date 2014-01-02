@@ -821,7 +821,7 @@ pdf_load_hail_mary_font(pdf_document *doc)
 	pdf_font_desc *fontdesc;
 	pdf_font_desc *existing;
 
-	if ((fontdesc = fz_find_item(ctx, pdf_free_font_imp, &hail_mary_store_type, &hail_mary_store_type)))
+	if ((fontdesc = fz_find_item(ctx, pdf_free_font_imp, &hail_mary_store_type, &hail_mary_store_type)) != NULL)
 	{
 		return fontdesc;
 	}
@@ -1101,12 +1101,9 @@ pdf_load_type0_font(pdf_document *doc, pdf_obj *dict)
 
 	if (pdf_is_name(subtype) && !strcmp(pdf_to_name(subtype), "CIDFontType0"))
 		return load_cid_font(doc, dfont, encoding, to_unicode);
-	else if (pdf_is_name(subtype) && !strcmp(pdf_to_name(subtype), "CIDFontType2"))
+	if (pdf_is_name(subtype) && !strcmp(pdf_to_name(subtype), "CIDFontType2"))
 		return load_cid_font(doc, dfont, encoding, to_unicode);
-	else
-		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown cid font type");
-
-	return NULL; /* Stupid MSVC */
+	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown cid font type");
 }
 
 /*
@@ -1224,7 +1221,7 @@ pdf_load_font(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
 	pdf_font_desc *fontdesc;
 	int type3 = 0;
 
-	if ((fontdesc = pdf_find_item(ctx, pdf_free_font_imp, dict)))
+	if ((fontdesc = pdf_find_item(ctx, pdf_free_font_imp, dict)) != NULL)
 	{
 		return fontdesc;
 	}

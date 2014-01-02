@@ -406,7 +406,6 @@ xps_read_zip_part(xps_document *doc, char *partname)
 	}
 
 	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find part '%s'", partname);
-	return NULL;
 }
 
 static int
@@ -502,7 +501,6 @@ xps_read_dir_part(xps_document *doc, char *name)
 	}
 
 	fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot find part '%s'", name);
-	return NULL;
 }
 
 static int

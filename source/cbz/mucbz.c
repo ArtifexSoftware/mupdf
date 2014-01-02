@@ -160,7 +160,6 @@ cbz_read_zip_entry(cbz_document *doc, int offset, int *sizep)
 	}
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown zip method: %d", method);
-	return NULL; /* not reached */
 }
 
 static void

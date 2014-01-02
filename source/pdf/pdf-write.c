@@ -1464,7 +1464,7 @@ static int isbinarystream(fz_buffer *buf)
 
 static fz_buffer *hexbuf(fz_context *ctx, unsigned char *p, int n)
 {
-	static const char hex[16] = "0123456789abcdef";
+	static const char hex[17] = "0123456789abcdef";
 	fz_buffer *buf;
 	int x = 0;
 
