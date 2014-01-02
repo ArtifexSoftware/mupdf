@@ -366,6 +366,16 @@ public abstract class PageView extends ViewGroup {
 					if (mDrawing != null) {
 						Path path = new Path();
 						PointF p;
+
+						paint.setAntiAlias(true);
+						paint.setDither(true);
+						paint.setStrokeJoin(Paint.Join.ROUND);
+						paint.setStrokeCap(Paint.Cap.ROUND);
+
+						paint.setStyle(Paint.Style.FILL);
+						paint.setStrokeWidth(INK_THICKNESS * scale);
+						paint.setColor(INK_COLOR);
+
 						Iterator<ArrayList<PointF>> it = mDrawing.iterator();
 						while (it.hasNext()) {
 							ArrayList<PointF> arc = it.next();
@@ -384,18 +394,13 @@ public abstract class PageView extends ViewGroup {
 									mY = y;
 								}
 								path.lineTo(mX, mY);
+							} else {
+								p = arc.get(0);
+								canvas.drawCircle(p.x * scale, p.y * scale, INK_THICKNESS * scale / 2, paint);
 							}
 						}
 
-						paint.setAntiAlias(true);
-						paint.setDither(true);
-						paint.setStrokeJoin(Paint.Join.ROUND);
-						paint.setStrokeCap(Paint.Cap.ROUND);
-
 						paint.setStyle(Paint.Style.STROKE);
-						paint.setStrokeWidth(INK_THICKNESS * scale);
-						paint.setColor(INK_COLOR);
-
 						canvas.drawPath(path, paint);
 					}
 				}
@@ -464,6 +469,7 @@ public abstract class PageView extends ViewGroup {
 		ArrayList<PointF> arc = new ArrayList<PointF>();
 		arc.add(new PointF(docRelX, docRelY));
 		mDrawing.add(arc);
+		mSearchView.invalidate();
 	}
 
 	public void continueDraw(float x, float y) {
