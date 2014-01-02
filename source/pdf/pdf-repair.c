@@ -473,7 +473,6 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 		entry->ofs = 0;
 		entry->gen = 65535;
 		entry->stm_ofs = 0;
-		entry->obj = NULL;
 
 		next = 0;
 		for (i = pdf_xref_len(doc) - 1; i >= 0; i--)
