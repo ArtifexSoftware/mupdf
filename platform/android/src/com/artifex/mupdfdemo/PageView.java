@@ -573,10 +573,15 @@ public abstract class PageView extends ViewGroup {
 		}
 	}
 
-	public void addHq(boolean update) {
+	public void updateHq(boolean update) {
 		Rect viewArea = new Rect(getLeft(),getTop(),getRight(),getBottom());
-		// If the viewArea's size matches the unzoomed size, there is no need for an hq patch
-		if (viewArea.width() != mSize.x || viewArea.height() != mSize.y) {
+		if (viewArea.width() == mSize.x || viewArea.height() == mSize.y) {
+			// If the viewArea's size matches the unzoomed size, there is no need for an hq patch
+			if (mPatch != null) {
+				mPatch.setImageBitmap(null);
+				mPatch.invalidate();
+			}
+		} else {
 			Point patchViewSize = new Point(viewArea.width(), viewArea.height());
 			Rect patchArea = new Rect(0, 0, mParentSize.x, mParentSize.y);
 
@@ -667,7 +672,7 @@ public abstract class PageView extends ViewGroup {
 
 		mDrawEntire.execute();
 
-		addHq(true);
+		updateHq(true);
 	}
 
 	public void removeHq() {

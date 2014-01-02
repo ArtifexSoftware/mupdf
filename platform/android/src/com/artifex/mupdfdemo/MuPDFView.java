@@ -26,7 +26,7 @@ public interface MuPDFView {
 	public boolean saveDraw();
 	public void setChangeReporter(Runnable reporter);
 	public void update();
-	public void addHq(boolean update);
+	public void updateHq(boolean update);
 	public void removeHq();
 	public void releaseResources();
 	public void releaseBitmaps();

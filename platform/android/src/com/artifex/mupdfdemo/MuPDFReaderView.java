@@ -240,7 +240,7 @@ public class MuPDFReaderView extends ReaderView {
 	protected void onSettle(View v) {
 		// When the layout has settled ask the page to render
 		// in HQ
-		((MuPDFView) v).addHq(false);
+		((MuPDFView) v).updateHq(false);
 	}
 
 	protected void onUnsettle(View v) {

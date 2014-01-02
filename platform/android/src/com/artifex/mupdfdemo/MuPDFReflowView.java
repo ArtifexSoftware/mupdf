@@ -137,7 +137,7 @@ public class MuPDFReflowView extends WebView implements MuPDFView {
 	public void update() {
 	}
 
-	public void addHq(boolean update) {
+	public void updateHq(boolean update) {
 	}
 
 	public void removeHq() {
