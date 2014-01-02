@@ -341,6 +341,9 @@ pdf_xref_size_from_old_trailer(pdf_document *doc, pdf_lexbuf *buf)
 	int c;
 	int size;
 	int ofs;
+	pdf_obj *trailer = NULL;
+
+	fz_var(trailer);
 
 	/* Record the current file read offset so that we can reinstate it */
 	ofs = fz_tell(doc->file);
@@ -377,7 +380,6 @@ pdf_xref_size_from_old_trailer(pdf_document *doc, pdf_lexbuf *buf)
 
 	fz_try(doc->ctx)
 	{
-		pdf_obj *trailer;
 		tok = pdf_lex(doc->file, buf);
 		if (tok != PDF_TOK_TRAILER)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected trailer marker");
@@ -391,7 +393,9 @@ pdf_xref_size_from_old_trailer(pdf_document *doc, pdf_lexbuf *buf)
 		size = pdf_to_int(pdf_dict_gets(trailer, "Size"));
 		if (!size)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "trailer missing Size entry");
-
+	}
+	fz_always(doc->ctx)
+	{
 		pdf_drop_obj(trailer);
 	}
 	fz_catch(doc->ctx)
