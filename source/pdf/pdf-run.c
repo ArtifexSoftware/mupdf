@@ -36,7 +36,24 @@ static void pdf_run_page_contents_with_usage(pdf_document *doc, pdf_page *page, 
 
 void pdf_run_page_contents(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
-	pdf_run_page_contents_with_usage(doc, page, dev, ctm, "View", cookie);
+	fz_context *ctx = doc->ctx;
+	int nocache = !!(dev->hints & FZ_NO_CACHE);
+
+	if (nocache)
+		pdf_mark_xref(doc);
+	fz_try(ctx)
+	{
+		pdf_run_page_contents_with_usage(doc, page, dev, ctm, "View", cookie);
+	}
+	fz_always(ctx)
+	{
+		if (nocache)
+			pdf_clear_xref_to_mark(doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 	if (page->incomplete & PDF_PAGE_INCOMPLETE_CONTENTS)
 		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
@@ -44,7 +61,24 @@ void pdf_run_page_contents(pdf_document *doc, pdf_page *page, fz_device *dev, co
 
 void pdf_run_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
-	pdf_run_annot_with_usage(doc, page, annot, dev, ctm, "View", cookie);
+	fz_context *ctx = doc->ctx;
+	int nocache = !!(dev->hints & FZ_NO_CACHE);
+
+	if (nocache)
+		pdf_mark_xref(doc);
+	fz_try(ctx)
+	{
+		pdf_run_annot_with_usage(doc, page, annot, dev, ctm, "View", cookie);
+	}
+	fz_always(ctx)
+	{
+		if (nocache)
+			pdf_clear_xref_to_mark(doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 	if (page->incomplete & PDF_PAGE_INCOMPLETE_ANNOTS)
 		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
@@ -78,8 +112,25 @@ static void pdf_run_page_annots_with_usage(pdf_document *doc, pdf_page *page, fz
 void
 pdf_run_page_with_usage(pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
 {
-	pdf_run_page_contents_with_usage(doc, page, dev, ctm, event, cookie);
-	pdf_run_page_annots_with_usage(doc, page, dev, ctm, event, cookie);
+	fz_context *ctx = doc->ctx;
+	int nocache = !!(dev->hints & FZ_NO_CACHE);
+
+	if (nocache)
+		pdf_mark_xref(doc);
+	fz_try(ctx)
+	{
+		pdf_run_page_contents_with_usage(doc, page, dev, ctm, event, cookie);
+		pdf_run_page_annots_with_usage(doc, page, dev, ctm, event, cookie);
+	}
+	fz_always(ctx)
+	{
+		if (nocache)
+			pdf_clear_xref_to_mark(doc);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 	if (page->incomplete)
 		fz_throw(doc->ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }

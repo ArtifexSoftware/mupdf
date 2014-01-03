@@ -26,7 +26,7 @@ enum
 	PDFAPP_OUTLINE_LOAD_NOW = 2
 };
 
-static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition);
+static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching);
 static void pdfapp_updatepage(pdfapp_t *app);
 
 static void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
@@ -330,7 +330,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 		app->pany = 0;
 	}
 
-	pdfapp_showpage(app, 1, 1, 1, 0);
+	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
 
 void pdfapp_close(pdfapp_t *app)
@@ -512,7 +512,7 @@ static void pdfapp_panview(pdfapp_t *app, int newx, int newy)
 	app->pany = newy;
 }
 
-static void pdfapp_loadpage(pdfapp_t *app)
+static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 {
 	fz_device *mdev = NULL;
 	int errored = 0;
@@ -561,6 +561,8 @@ static void pdfapp_loadpage(pdfapp_t *app)
 		/* Create display lists */
 		app->page_list = fz_new_display_list(app->ctx);
 		mdev = fz_new_list_device(app->ctx, app->page_list);
+		if (no_cache)
+			fz_enable_device_hints(mdev, FZ_NO_CACHE);
 		cookie.incomplete_ok = 1;
 		fz_run_page_contents(app->doc, app->page, mdev, &fz_identity, &cookie);
 		fz_free_device(mdev);
@@ -688,7 +690,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_free_device(idev);
 	}
 
-	pdfapp_showpage(app, 0, 0, 1, 0);
+	pdfapp_showpage(app, 0, 0, 1, 0, 0);
 }
 
 void pdfapp_reloadpage(pdfapp_t *app)
@@ -705,10 +707,10 @@ void pdfapp_reloadpage(pdfapp_t *app)
 		}
 		app->outline_deferred = 0;
 	}
-	pdfapp_showpage(app, 1, 1, 1, 0);
+	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
 
-static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition)
+static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching)
 {
 	char buf[MAX_TITLE];
 	fz_device *idev;
@@ -733,7 +735,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 	if (loadpage)
 	{
-		pdfapp_loadpage(app);
+		pdfapp_loadpage(app, searching);
 
 		/* Zero search hit position */
 		app->hit_count = 0;
@@ -878,7 +880,7 @@ void pdfapp_gotopage(pdfapp_t *app, int number)
 	}
 	app->hist[app->histlen++] = app->pageno;
 	app->pageno = number + 1;
-	pdfapp_showpage(app, 1, 1, 1, 0);
+	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
 
 void pdfapp_inverthit(pdfapp_t *app)
@@ -916,7 +918,7 @@ static void pdfapp_search_in_direction(pdfapp_t *app, enum panning *panto, int d
 		if (page != app->pageno)
 		{
 			app->pageno = page;
-			pdfapp_showpage(app, 1, 0, 0, 0);
+			pdfapp_showpage(app, 1, 0, 0, 0, 1);
 		}
 
 		app->hit_count = fz_search_text_page(app->ctx, app->page_text, app->search, app->hit_bbox, nelem(app->hit_bbox));
@@ -937,7 +939,7 @@ static void pdfapp_search_in_direction(pdfapp_t *app, enum panning *panto, int d
 	pdfapp_warn(app, "String '%s' not found.", app->search);
 
 	app->pageno = firstpage;
-	pdfapp_showpage(app, 1, 0, 0, 0);
+	pdfapp_showpage(app, 1, 0, 0, 0, 0);
 	wincursor(app, HAND);
 	winrepaint(app);
 }
@@ -982,7 +984,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 							app->pageno = app->pagecount;
 						else
 							app->pageno--;
-						pdfapp_showpage(app, 1, 1, 0, 0);
+						pdfapp_showpage(app, 1, 1, 0, 0, 1);
 					}
 
 					pdfapp_onkey(app, 'n');
@@ -1034,13 +1036,13 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		app->resolution *= ZOOMSTEP;
 		if (app->resolution > MAXRES)
 			app->resolution = MAXRES;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 	case '-':
 		app->resolution /= ZOOMSTEP;
 		if (app->resolution < MINRES)
 			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 	case 'W':
@@ -1049,7 +1051,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->resolution = MAXRES;
 		else if (app->resolution < MINRES)
 			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 	case 'H':
 		app->resolution *= (double) app->winh / (double) fz_pixmap_height(app->ctx, app->image);
@@ -1057,36 +1059,36 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 			app->resolution = MAXRES;
 		else if (app->resolution < MINRES)
 			app->resolution = MINRES;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 	case 'L':
 		app->rotate -= 90;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 	case 'R':
 		app->rotate += 90;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 	case 'c':
 		app->grayscale ^= 1;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 	case 'i':
 		app->invert ^= 1;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
 #ifndef NDEBUG
 	case 'a':
 		app->rotate -= 15;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 	case 's':
 		app->rotate += 15;
-		pdfapp_showpage(app, 0, 1, 1, 0);
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 #endif
 
@@ -1108,27 +1110,27 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		}
 		app->shrinkwrap = 1;
 		app->panx = app->pany = 0;
-		pdfapp_showpage(app, 0, 0, 1, 0);
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	case 'h':
 		app->panx += fz_pixmap_width(app->ctx, app->image) / 10;
-		pdfapp_showpage(app, 0, 0, 1, 0);
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	case 'j':
 		app->pany -= fz_pixmap_height(app->ctx, app->image) / 10;
-		pdfapp_showpage(app, 0, 0, 1, 0);
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	case 'k':
 		app->pany += fz_pixmap_height(app->ctx, app->image) / 10;
-		pdfapp_showpage(app, 0, 0, 1, 0);
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	case 'l':
 		app->panx -= fz_pixmap_width(app->ctx, app->image) / 10;
-		pdfapp_showpage(app, 0, 0, 1, 0);
+		pdfapp_showpage(app, 0, 0, 1, 0, 0);
 		break;
 
 	/*
@@ -1308,7 +1310,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		case DONT_PAN:
 			break;
 		}
-		pdfapp_showpage(app, loadpage, 1, 1, 1);
+		pdfapp_showpage(app, loadpage, 1, 1, 1, 0);
 	}
 }
 
@@ -1508,7 +1510,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					app->resolution = MAXRES;
 				if (app->resolution < MINRES)
 					app->resolution = MINRES;
-				pdfapp_showpage(app, 0, 1, 1, 0);
+				pdfapp_showpage(app, 0, 1, 1, 0, 0);
 			}
 			else
 			{
@@ -1574,7 +1576,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					if( app->pageno > 1 )
 					{
 						app->pageno--;
-						pdfapp_showpage(app, 1, 1, 1, 0);
+						pdfapp_showpage(app, 1, 1, 1, 0, 0);
 						newy = -fz_pixmap_height(app->ctx, app->image);
 					}
 					app->beyondy = 0;
@@ -1584,7 +1586,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					if( app->pageno < app->pagecount )
 					{
 						app->pageno++;
-						pdfapp_showpage(app, 1, 1, 1, 0);
+						pdfapp_showpage(app, 1, 1, 1, 0, 0);
 						newy = 0;
 					}
 					app->beyondy = 0;
