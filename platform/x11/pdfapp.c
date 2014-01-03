@@ -192,6 +192,8 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 	{
 		pdf_document *idoc;
 
+		fz_register_document_handlers(ctx);
+
 #ifdef HAVE_CURL
 		if (!strncmp(filename, "http://", 7))
 		{

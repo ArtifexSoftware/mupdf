@@ -355,4 +355,6 @@ static inline float my_atan2f(float o, float a)
 #define atan2f(x,y) my_atan2f((x),(y))
 #endif
 
+int fz_strcasecmp(const char *a, const char *b);
+
 #endif
