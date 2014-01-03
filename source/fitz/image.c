@@ -273,7 +273,7 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 		tile = fz_load_tiff(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
 	case FZ_IMAGE_JXR:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "JPEG-XR codec is not available");
+		tile = fz_load_jxr(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
 	default:
 		native_l2factor = l2factor;
@@ -468,7 +468,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
 		{
 			bc->params.type = FZ_IMAGE_JXR;
-			fz_throw(ctx, FZ_ERROR_GENERIC, "JPEG-XR codec is not available");
+			fz_load_jxr_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
 		{
