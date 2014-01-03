@@ -415,7 +415,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 	glo->doc = NULL;
 	fz_try(ctx)
 	{
-		stream = fz_new_stream(ctx, glo, bufferStreamRead, bufferStreamClose);
+		stream = fz_new_stream(ctx, glo, bufferStreamRead, bufferStreamClose, NULL);
 		stream->seek = bufferStreamSeek;
 
 		glo->colorspace = fz_device_rgb(ctx);
