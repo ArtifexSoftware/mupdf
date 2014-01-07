@@ -170,8 +170,6 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
-	// HACK to make transparent background
-	[[searchBar.subviews objectAtIndex:0] removeFromSuperview];
 
 	[prevButton setEnabled: NO];
 	[nextButton setEnabled: NO];
