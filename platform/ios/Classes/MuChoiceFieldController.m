@@ -8,7 +8,9 @@
 #import "MuChoiceFieldController.h"
 
 @interface MuChoiceFieldController ()
-
+- (IBAction)onCancel:(id)sender;
+- (IBAction)onOkay:(id)sender;
+@property (retain, nonatomic) IBOutlet UIPickerView *picker;
 @end
 
 @implementation MuChoiceFieldController
@@ -20,7 +22,7 @@
 	{
 		okayBlock = Block_copy(block);
 		choices = [_choices retain];
-		selected = -1;
+		selected = 0;
 	}
 	return self;
 }
@@ -67,14 +69,14 @@
 	selected = row;
 }
 
-- (IBAction)okayTapped:(id)sender
+- (IBAction)onOkay:(id)sender
 {
-	if (selected > -1)
+	if (selected >= 0 && selected < [choices count])
 		okayBlock([NSArray arrayWithObject:[choices objectAtIndex:selected]]);
 	[self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (IBAction)cancelTapped:(id)sender
+- (IBAction)onCancel:(id)sender
 {
 	[self dismissViewControllerAnimated:YES completion:nil];
 }
