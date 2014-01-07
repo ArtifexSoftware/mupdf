@@ -695,7 +695,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	} else {
 		if ([[self navigationController] isNavigationBarHidden])
 			[self showNavigationBar];
-		else
+		else if (barmode == BARMODE_MAIN)
 			[self hideNavigationBar];
 	}
 }
@@ -724,7 +724,8 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 
 - (void) scrollViewWillBeginDragging: (UIScrollView *)scrollView
 {
-	[self hideNavigationBar];
+	if (barmode == BARMODE_MAIN)
+		[self hideNavigationBar];
 }
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
