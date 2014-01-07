@@ -19,6 +19,7 @@
 
 	// use at most 128M for resource cache
 	ctx = fz_new_context(NULL, NULL, 128<<20);
+	fz_register_document_handlers(ctx);
 
 	screenScale = [[UIScreen mainScreen] scale];
 
