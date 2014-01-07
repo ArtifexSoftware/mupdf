@@ -1309,7 +1309,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 					(void)pdf_choice_widget_options(idoc, focus, opts);
 					NSMutableArray *arr = [[NSMutableArray arrayWithCapacity:nopts] retain];
 					for (int i = 0; i < nopts; i++)
-						[arr addObject:[NSString stringWithUTF8String:opts[i]]];
+					{
+						NSString *utf8 = [NSString stringWithUTF8String:opts[i]];
+						// FIXME: temporary patch to handle the library not converting to utf8
+						if (utf8 == nil)
+							utf8 = [NSString stringWithCString:opts[i] encoding:NSASCIIStringEncoding];
+						if (utf8 != nil)
+							[arr addObject:utf8];
+					}
 					dispatch_async(dispatch_get_main_queue(), ^{
 						[self invokeChoiceDialog:arr];
 						[arr release];
