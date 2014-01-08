@@ -97,6 +97,12 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		pdf_free_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "encryption dictionary missing version and revision value");
 	}
+	if (crypt->r < 1 || crypt->r > 6)
+	{
+		int r = crypt->r;
+		pdf_free_crypt(ctx, crypt);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown crypt revision %d", r);
+	}
 
 	obj = pdf_dict_gets(dict, "O");
 	if (pdf_is_string(obj) && pdf_to_str_len(obj) == 32)
