@@ -87,6 +87,9 @@ fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, int len
 	int i;
 	unsigned char *ref = state->ref;
 
+	if (bpp > len)
+		bpp = len;
+
 	switch (predictor)
 	{
 	case 0:
