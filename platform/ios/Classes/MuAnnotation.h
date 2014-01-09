@@ -1,11 +1,3 @@
-//
-//  MuAnnotation.h
-//  MuPDF
-//
-//  Created by Paul Gardiner on 20/11/2013.
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #include "common.h"
 #include "mupdf/pdf.h"
 #import <Foundation/Foundation.h>

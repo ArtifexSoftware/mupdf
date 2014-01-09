@@ -1,10 +1,3 @@
-//
-//  MuWord.m
-//  MuPDF
-//
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #import "MuWord.h"
 
 @implementation MuWord

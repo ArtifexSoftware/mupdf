@@ -1,10 +1,3 @@
-//
-//  MuTapResult.h
-//  MuPDF
-//
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #import <Foundation/Foundation.h>
 #import "MuAnnotation.h"
 

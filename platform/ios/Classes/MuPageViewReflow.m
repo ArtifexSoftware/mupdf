@@ -1,10 +1,3 @@
-//
-//  MuPageViewReflow.m
-//  MuPDF
-//
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #include "common.h"
 #import "MuPageViewReflow.h"
 

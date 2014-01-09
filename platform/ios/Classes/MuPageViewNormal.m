@@ -1,10 +1,3 @@
-//
-//  MuPageView.m
-//  MuPDF
-//
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #include "common.h"
 #include "mupdf/pdf.h"
 #import "MuWord.h"

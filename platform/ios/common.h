@@ -1,10 +1,3 @@
-//
-//  common.h
-//  MuPDF
-//
-//  Copyright (c) 2013 Artifex Software, Inc. All rights reserved.
-//
-
 #ifndef MuPDF_common_h
 #define MuPDF_common_h
 
