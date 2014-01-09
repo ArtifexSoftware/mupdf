@@ -34,6 +34,7 @@ enum
 	fz_document *doc;
 	MuDocRef *docRef;
 	NSString *key;
+	char *filePath;
 	BOOL reflowMode;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
@@ -47,6 +48,7 @@ enum
 	UIBarButtonItem *tickButton;
 	UIBarButtonItem *deleteButton;
 	UIBarButtonItem *reflowButton;
+	UIBarButtonItem *backButton;
 	UIBarButtonItem *sliderWrapper;
 	int barmode;
 	int searchPage;
@@ -58,7 +60,7 @@ enum
 	int scroll_animating; // stop view updates during scrolling animations
 	float scale; // scale applied to views (only used in reflow mode)
 }
-- (id) initWithFilename: (NSString*)nsfilename document: (MuDocRef *)aDoc;
+- (id) initWithFilename: (NSString*)nsfilename path:(char *)cstr document:(MuDocRef *)aDoc;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;
 - (void) onShowOutline: (id)sender;

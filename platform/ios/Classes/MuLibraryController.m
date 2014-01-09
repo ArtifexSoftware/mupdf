@@ -153,19 +153,23 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) openDocument: (NSString*)nsfilename
 {
-	char filename[PATH_MAX];
+	NSString *nspath = [[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", nsfilename, nil]
+							componentsJoinedByString:@"/"];
+	_filePath = malloc(strlen([nspath UTF8String])+1);
+	if (_filePath == NULL) {
+		showAlert(@"Out of memory in openDocument", nsfilename);
+		return;
+	}
+
+	strcpy(_filePath, [nspath UTF8String]);
 
 	dispatch_sync(queue, ^{});
 
-	strcpy(filename, [NSHomeDirectory() UTF8String]);
-	strcat(filename, "/Documents/");
-	strcat(filename, [nsfilename UTF8String]);
-
-	printf("open document '%s'\n", filename);
+	printf("open document '%s'\n", _filePath);
 
 	_filename = [nsfilename retain];
 	[doc release];
-	doc = [[MuDocRef alloc] initWithFilename:filename];
+	doc = [[MuDocRef alloc] initWithFilename:_filePath];
 	if (!doc) {
 		showAlert(@"Cannot open document", nsfilename);
 		return;
@@ -206,18 +210,20 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) onPasswordOkay
 {
-	MuDocumentController *document = [[MuDocumentController alloc] initWithFilename: _filename document: doc];
+	MuDocumentController *document = [[MuDocumentController alloc] initWithFilename: _filename path:_filePath document: doc];
 	if (document) {
 		[self setTitle: @"Library"];
 		[[self navigationController] pushViewController: document animated: YES];
 		[document release];
 	}
 	[_filename release];
+	free(_filePath);
 }
 
 - (void) onPasswordCancel
 {
 	[_filename release];
+	free(_filePath);
 	printf("close document (password cancel)\n");
 }
 

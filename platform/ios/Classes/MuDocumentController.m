@@ -44,9 +44,88 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	}
 }
 
+static char *tmp_path(char *path)
+{
+	int f;
+	char *buf = malloc(strlen(path) + 6 + 1);
+	if (!buf)
+		return NULL;
+
+	strcpy(buf, path);
+	strcat(buf, "XXXXXX");
+
+	f = mkstemp(buf);
+
+	if (f >= 0)
+	{
+		close(f);
+		return buf;
+	}
+	else
+	{
+		free(buf);
+		return NULL;
+	}
+}
+
+static void saveDoc(char *current_path, fz_document *doc)
+{
+	char *tmp;
+	fz_write_options opts;
+	opts.do_incremental = 1;
+	opts.do_ascii = 0;
+	opts.do_expand = 0;
+	opts.do_garbage = 0;
+	opts.do_linear = 0;
+
+	tmp = tmp_path(current_path);
+	if (tmp)
+	{
+		int written = 0;
+
+		fz_var(written);
+		fz_try(ctx)
+		{
+			FILE *fin = fopen(current_path, "rb");
+			FILE *fout = fopen(tmp, "wb");
+			char buf[256];
+			int n, err = 1;
+
+			if (fin && fout)
+			{
+				while ((n = fread(buf, 1, sizeof(buf), fin)) > 0)
+					fwrite(buf, 1, n, fout);
+				err = (ferror(fin) || ferror(fout));
+			}
+
+			if (fin)
+				fclose(fin);
+			if (fout)
+				fclose(fout);
+
+			if (!err)
+			{
+				fz_write_document(doc, tmp, &opts);
+				written = 1;
+			}
+		}
+		fz_catch(ctx)
+		{
+			written = 0;
+		}
+
+		if (written)
+		{
+			rename(tmp, current_path);
+		}
+
+		free(tmp);
+	}
+}
+
 @implementation MuDocumentController
 
-- (id) initWithFilename: (NSString*)filename document: (MuDocRef *)aDoc
+- (id) initWithFilename: (NSString*)filename path:(char *)cstr document: (MuDocRef *)aDoc
 {
 	self = [super init];
 	if (!self)
@@ -59,6 +138,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	key = [filename retain];
 	docRef = [aDoc retain];
 	doc = docRef->doc;
+	filePath = strdup(cstr);
 
 	dispatch_sync(queue, ^{});
 
@@ -92,6 +172,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[array addObject:reflowButton];
 	[array addObject:linkButton];
 	[[self navigationItem] setRightBarButtonItems: array ];
+	[[self navigationItem] setLeftBarButtonItem:backButton];
 }
 
 - (void) loadView
@@ -168,6 +249,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	tickButton = [self resourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
 	deleteButton = [self resourceBasedButton:@"ic_trash" withAction:@selector(onDelete:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
+	backButton = [self resourceBasedButton:@"ic_arrow_left" withAction:@selector(onBack:)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
 
@@ -203,6 +285,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	[tickButton release]; tickButton = nil;
 	[deleteButton release]; deleteButton = nil;
 	[canvas release]; canvas = nil;
+	free(filePath); filePath = NULL;
 
 	[outline release];
 	[key release];
@@ -479,7 +562,6 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 		case BARMODE_ANNOTATION:
 			[[self navigationItem] setTitleView: nil];
 			[self addMainMenuButtons];
-			[[self navigationItem] setLeftBarButtonItem: nil];
 			barmode = BARMODE_MAIN;
 			break;
 
@@ -496,6 +578,31 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 			[self inkModeOff];
 			break;
 	}
+}
+
+- (void) onBack: (id)sender
+{
+	pdf_document *idoc = pdf_specifics(doc);
+	if (idoc && pdf_has_unsaved_changes(idoc))
+	{
+		UIAlertView *saveAlert = [[UIAlertView alloc]
+			initWithTitle:@"Save changes?" message:nil delegate:self
+			cancelButtonTitle:@"Discard" otherButtonTitles:@"Save", nil];
+		[saveAlert show];
+	}
+	else
+	{
+		[[self navigationController] popViewControllerAnimated:YES];
+	}
+}
+
+- (void) alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+	if (buttonIndex == 1)
+		saveDoc(filePath, doc);
+
+	[alertView dismissWithClickedButtonIndex:buttonIndex animated:YES];
+	[[self navigationController] popViewControllerAnimated:YES];
 }
 
 - (void) resetSearch
