@@ -298,12 +298,22 @@ pdf_open_filter(fz_stream *chain, pdf_document *doc, pdf_obj *stmobj, int num, i
 
 	chain = pdf_open_raw_filter(chain, doc, stmobj, num, num, gen, offset);
 
+	fz_var(chain);
+
 	fz_try(doc->ctx)
 	{
 		if (pdf_is_name(filters))
-			chain = build_filter(chain, doc, filters, params, num, gen, imparams);
+		{
+			fz_stream *chain2 = chain;
+			chain = NULL;
+			chain = build_filter(chain2, doc, filters, params, num, gen, imparams);
+		}
 		else if (pdf_array_len(filters) > 0)
-			chain = build_filter_chain(chain, doc, filters, params, num, gen, imparams);
+		{
+			fz_stream *chain2 = chain;
+			chain = NULL;
+			chain = build_filter_chain(chain2, doc, filters, params, num, gen, imparams);
+		}
 	}
 	fz_catch(doc->ctx)
 	{
